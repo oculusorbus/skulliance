@@ -159,13 +159,31 @@ records verified constants, and tracks what still needs to be written.
   the face buttons can rock straight between them for quick on/off braking, triggers left live too
   as alternates. Standard mapping button indices (W3C spec), same as any other browser gamepad
   support -- PS4/PS5 controllers register under that mapping on current iOS/Android/desktop browsers,
-  not anything sniffed or negotiated here. gamepadconnected sets keyFaster = false (turns OFF
-  mobile's own auto-gas the instant a real gas button exists) and swaps #mobile-hint's text;
-  gamepaddisconnected sets keyFaster = true again ONLY if the touch-controls container is actually
-  visible (same display-check the touch-controls setup itself uses) so a controller disconnecting on
-  DESKTOP can't start auto-accelerating a keyboard player. The API only reveals a controller after a
-  button on it is pressed once, even after Bluetooth pairing succeeds -- browser-level privacy
-  behavior, not a bug to chase here if a freshly-paired controller doesn't do anything yet.
+  not anything sniffed or negotiated here.
+  Detection does NOT rely solely on gamepadconnected/gamepaddisconnected -- reported "finicky",
+  root-caused to that event being a genuinely unreliable way to learn a controller exists: a
+  controller already paired at the OS level before this exact page load, or various browser/OS
+  combinations, are real ways for the qualifying first press to fire without the event ever reaching
+  this page, leaving gamepadIndex null and every subsequent press going nowhere. gamepadTakeOver(i)/
+  gamepadRelease() are the actual state-change functions now (both idempotent -- safe to call
+  redundantly); the connect/disconnect LISTENERS still call them as a small optimization (instant
+  takeover the moment the browser confirms one, vs. up to one tick/~16ms later), but pollGamepad()
+  itself is what's actually authoritative: whenever gamepadIndex is null, it scans every
+  navigator.getGamepads() slot for ANY pad with gamepadHasInput() (any button pressed or axis past
+  STICK_DEADZONE) EVERY tick, and takes over the instant one matches -- "a player pressing a
+  controller button interrupts whatever mode the game is in" literally, not contingent on the event
+  having fired first. Same robustness releasing: if pads[gamepadIndex] comes back null/undefined on
+  ANY poll (slot gone, no disconnect event needed), it releases immediately rather than continuing to
+  read a dead reference or waiting on an event that may not come.
+  Genuinely CANNOT be fixed from here: pressing a DualSense/DualShock's PS/Home button while
+  connected to an iPhone opens Game Center system-wide, for every app and every website alike --
+  Apple intercepts that specific button at the OS level, unconditionally, before any page's JS ever
+  sees it. Reported as part of the same "finicky" bug report (losing the game, having to back out of
+  Game Center, controls dead on return) but it isn't the same bug -- it's what the OS does with that
+  one button on ANY MFi-class controller, full stop, and no web-facing API exists to change or
+  suppress it. The robustness work above is what actually helps the RECOVERY side of that sequence
+  (pressing any OTHER button once back on the page re-takes-over immediately, same as a fresh
+  connect) -- the Game Center detour itself isn't this codebase's to solve.
   Gamepad audio unlock (Game.onFirstInteraction() in racing/common.js, shared by every page in
   racing/ that calls it -- index.html/v4.final.html, dev.html, v1-v3 -- not just the live game):
   that function's own browser-autoplay-unlock listener only covered

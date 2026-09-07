@@ -1306,44 +1306,94 @@
     // too, as alternates, since a trigger-preferring player loses nothing
     // by leaving them live.
     //
-    // The browser only reveals a controller after a button on it is
-    // actually pressed once (a privacy/fingerprinting mitigation, not a
-    // bug here) -- gamepadconnected won't fire from just pairing over
-    // Bluetooth alone.
+    // Detection does NOT rely solely on the gamepadconnected event.
+    // Reported as "finicky" -- that event is a known-unreliable way to
+    // learn a controller exists: the browser only reveals one after a
+    // button on it is pressed once (a privacy/fingerprinting mitigation,
+    // not a bug here), but a controller already paired at the OS level
+    // before this exact page load, or various browser/OS combinations,
+    // are real-world ways for that FIRST press to simply not fire the
+    // event at all -- the API stays silent, gamepadIndex never gets set,
+    // and every button press after that goes nowhere. Instead,
+    // pollGamepad() actively scans every connected pad for genuine input
+    // whenever none is currently tracked, every single tick -- pressing
+    // ANY button on ANY controller takes over immediately, the instant it
+    // happens, rather than waiting on an event that may never come. Same
+    // robustness in reverse: if the tracked pad vanishes without a
+    // gamepaddisconnected event ever firing either, the next poll notices
+    // its slot is gone and releases control back cleanly, instead of the
+    // game silently believing a controller is still there forever.
+    // gamepadconnected/gamepaddisconnected are kept anyway, as a small
+    // optimization layered on top -- take over the exact instant the
+    // browser confirms one, rather than waiting up to one tick (~16ms,
+    // imperceptible either way) for the next poll.
     //=========================================================================
     var gamepadIndex = null; // navigator.getGamepads() index of the active controller, or null
+    var STICK_DEADZONE = 0.25; // ignore drift/noise around center, same idea as any analog-stick game
 
-    window.addEventListener('gamepadconnected', function(e) {
-      gamepadIndex = e.gamepad.index;
+    // True if ANY button is held or ANY axis is pushed past the deadzone
+    // -- what "a player is pressing a controller button" actually means,
+    // checked against every connected pad until one matches.
+    function gamepadHasInput(gp) {
+      var i;
+      for (i = 0 ; i < gp.buttons.length ; i++) {
+        if (gp.buttons[i] && gp.buttons[i].pressed) return true;
+      }
+      for (i = 0 ; i < gp.axes.length ; i++) {
+        if (Math.abs(gp.axes[i]) > STICK_DEADZONE) return true;
+      }
+      return false;
+    }
+
+    function gamepadTakeOver(index) {
+      if (gamepadIndex === index) return; // already the active one, nothing to do
+      gamepadIndex = index;
       // Mobile's own auto-gas (keyFaster set true above) exists so there's
       // nothing to hold just to go forward with only 3 touch buttons -- a
       // controller has an actual gas button, so that default no longer
-      // applies once one's live.
+      // applies once one's live. This is the literal "interrupt whatever
+      // mode the game is in" the takeover promises -- unconditional, not
+      // gated on what was active a moment ago.
       keyFaster = false;
       var hint = Dom.get('mobile-hint');
       if (hint) hint.innerHTML = 'Controller connected -- <b>D-pad</b>/<b>stick</b> to steer, <b>□</b> gas, <b>✕</b> brake.';
-    });
-    window.addEventListener('gamepaddisconnected', function(e) {
-      if (e.gamepad.index !== gamepadIndex) return; // some OTHER pad disconnecting, not the active one
+    }
+
+    function gamepadRelease() {
+      if (gamepadIndex === null) return;
       gamepadIndex = null;
       // Restore mobile's auto-gas ONLY if that's actually the control
       // scheme in play (same visibility check the touch-controls setup
-      // above uses) -- a controller disconnecting on DESKTOP must not
-      // suddenly start auto-accelerating a keyboard player who never asked
-      // for that.
+      // above uses) -- releasing on DESKTOP must not suddenly start
+      // auto-accelerating a keyboard player who never asked for that.
       var touchContainer = Dom.get('touch-controls');
       if (touchContainer && getComputedStyle(touchContainer).display !== 'none') keyFaster = true;
       var hint = Dom.get('mobile-hint');
       if (hint) hint.innerHTML = 'Driving is automatic -- hold <b>&#9664;</b>/<b>&#9654;</b> to steer, <b>BRAKE</b> to slow down.';
+    }
+
+    window.addEventListener('gamepadconnected',    function(e) { gamepadTakeOver(e.gamepad.index); });
+    window.addEventListener('gamepaddisconnected', function(e) {
+      if (e.gamepad.index === gamepadIndex) gamepadRelease(); // some OTHER pad disconnecting is none of this game's business
     });
 
     function pollGamepad() {
-      if (gamepadIndex === null) return;
       var pads = navigator.getGamepads ? navigator.getGamepads() : [];
-      var gp   = pads[gamepadIndex];
-      if (!gp) return; // browsers keep the slot but null the entry between the connect event and first poll, sometimes
 
-      var STICK_DEADZONE = 0.25; // ignore drift/noise around center, same idea as any analog-stick game
+      if (gamepadIndex === null) {
+        // Nothing tracked yet -- see this block's own top comment for why
+        // this active scan exists instead of trusting gamepadconnected
+        // alone. Whichever pad has real input right now wins; with none
+        // pressing anything, there's nothing to take over FROM yet.
+        for (var i = 0 ; i < pads.length ; i++) {
+          if (pads[i] && gamepadHasInput(pads[i])) { gamepadTakeOver(i); break; }
+        }
+        if (gamepadIndex === null) return; // still nothing active this tick
+      }
+
+      var gp = pads[gamepadIndex];
+      if (!gp) { gamepadRelease(); return; } // tracked pad's slot is gone -- release rather than keep reading a dead reference
+
       var dpadLeft  = !!(gp.buttons[14] && gp.buttons[14].pressed);
       var dpadRight = !!(gp.buttons[15] && gp.buttons[15].pressed);
       var stickX    = gp.axes[0] || 0;
