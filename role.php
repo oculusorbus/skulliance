@@ -74,6 +74,52 @@ function assignRole($discord_id, $role_id, $action="", $guild_id="94400291344393
 			. ' token=' . (empty($authToken) ? 'MISSING' : 'present')
 			. $detail
 		);
+
+		// A log line only helps someone already looking at the log, and the
+		// whole problem with this failure is that nothing announced it --
+		// roles quietly stop applying while notifications keep flowing, so
+		// the platform looks healthy from every angle you'd normally check.
+		// Ping Discord too.
+		//
+		// function_exists() rather than an include: assignRole() depends on
+		// webhooks.php having been loaded anyway (that's where $bot_token
+		// comes from), but a caller that skipped it should get a failed role
+		// assignment, not a fatal on the alerting path. Degrades to the
+		// error_log above.
+		//
+		// Throttled on status + Discord's error code, so a token that dies
+		// mid-week alerts once rather than on every page load, while a
+		// different failure appearing later still gets through immediately.
+		if (function_exists('alertAdmin')) {
+			$discord_code = 0;
+			if (isset($decoded['code'])) $discord_code = $decoded['code'];
+
+			// Most of the value is here: turn the three failures that
+			// actually happen into the thing to go fix, because
+			// "50013 Missing Permissions" does not on its own tell you the
+			// bot's role is sitting below the role it's trying to grant.
+			$hint = 'Check the bot token in credentials/webhooks_credentials.php.';
+			if (empty($authToken)) {
+				$hint = 'The bot token was EMPTY for this call -- the calling page most likely never included verify.php, so nothing set $bot_token.';
+			} else if ($http_code == 401) {
+				$hint = 'Discord rejected the bot token (401). It was probably reset -- update credentials/webhooks_credentials.php.';
+			} else if ($discord_code == 50013) {
+				$hint = 'Missing Permissions. The bot needs Manage Roles AND its own role must sit ABOVE the role it is granting in Server Settings > Roles.';
+			} else if ($discord_code == 10011) {
+				$hint = 'Unknown Role -- the role ID no longer exists in this guild.';
+			} else if ($discord_code == 10013 || $discord_code == 10007) {
+				$hint = 'Discord does not see that user as a member of this guild.';
+			}
+
+			alertAdmin(
+				'Discord role assignment failed',
+				"**" . $request . "** returned **HTTP " . $http_code . "**" . $detail . "\n\n"
+					. "guild `" . $guildid . "` · user `" . $userid . "` · role `" . $roleid . "`\n\n"
+					. $hint . "\n\n"
+					. "_Further identical failures are suppressed for 15 minutes._",
+				'assignRole|' . $http_code . '|' . $discord_code
+			);
+		}
 	}
 	return $ok;
 }

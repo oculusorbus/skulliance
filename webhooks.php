@@ -123,6 +123,66 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
         }
     }
 
+    // Operational alert to the team, pinging $discordid_oculusorbus so it
+    // actually raises a notification rather than sitting unread in a channel.
+    //
+    // Posts to the DEFAULT channel -- the same getWebhook() feed every
+    // discordmsg() call without an explicit $channel already uses. No new
+    // webhook credential to add, which is the point: this has to work on
+    // the next deploy, not once someone remembers to configure it. The
+    // <@id> ping is what makes it findable in a busy channel.
+    //
+    // Why a webhook and not a bot DM: sendDM() in message.php goes through
+    // MakeRequest(), which authenticates with $bot_token -- the very thing
+    // most likely to be dead when something worth alerting about happens.
+    // A DM alert would go silent in precisely the case it exists for. Webhook
+    // URLs are self-authenticating and don't touch the token, so this path
+    // still works when the bot side is entirely broken. The <@id> in
+    // $content gives a real phone notification either way.
+    //
+    // $signature controls throttling, NOT the message text: alerts fire from
+    // request-scoped code that can run on every page load, so an unthrottled
+    // version would post hundreds of identical messages an hour and get
+    // muted -- another way to end up not knowing. Same signature inside the
+    // cooldown is suppressed; a DIFFERENT signature alerts immediately, so a
+    // new kind of failure is never hidden behind an older one's cooldown.
+    //
+    // Never lets a monitoring failure break the page it's monitoring: the
+    // webhook post is best-effort and every filesystem call is silenced.
+    function alertAdmin($subject, $detail, $signature = "", $cooldown = 900) {
+        global $discordid_oculusorbus;
+
+        $key  = md5($subject . '|' . ($signature !== "" ? $signature : $detail));
+        $file = rtrim(sys_get_temp_dir(), '/\\') . '/skulliance_alert_' . $key;
+        $now  = time();
+
+        // Touch BEFORE sending, so concurrent requests hitting the same
+        // failure don't all get through the check while the first is still
+        // waiting on curl.
+        if (@is_file($file) && ($now - (int)@filemtime($file)) < $cooldown) {
+            return false;
+        }
+        @touch($file);
+
+        // Mentions only notify from the top-level content field -- see the
+        // note on discordmsg()'s $content parameter above.
+        $content = !empty($discordid_oculusorbus) ? '<@' . $discordid_oculusorbus . '>' : '';
+
+        discordmsg(
+            '⚠️ ' . $subject,
+            $detail,
+            "",
+            "https://skulliance.io/staking",
+            "",
+            "",
+            "CC0000",
+            null,
+            ["text" => php_uname('n') . ' · ' . date('Y-m-d H:i:s T')],
+            $content
+        );
+        return true;
+    }
+
 //    discordmsg($msg, $webhook); // SENDS MESSAGE TO DISCORD
 //    echo "sent?";
 ?>
