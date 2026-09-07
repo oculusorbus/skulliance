@@ -391,10 +391,12 @@
                                              the words within it wrapping and
                                              overlapping mid-phrase */
       #hud { flex-wrap: wrap; row-gap: 2px; }
-      /* The mute icon's normal top-right spot (in the IFRAME's own corner)
-         lands directly under the site's real hamburger menu (in the actual
-         page, outside the iframe) on a phone -- unreachable, can't tap
-         through it. Move it to the opposite corner on mobile only. */
+      /* The mute icon's normal top-right corner (of the canvas, now that
+         it's correctly nested in #racer -- see that markup's own comment)
+         lands directly under the site's real hamburger menu on a phone,
+         since portrait's canvas spans nearly the full page width too --
+         unreachable, can't tap through it. Move it to the opposite corner
+         on mobile only. */
       #mute { left: 10px; right: auto; }
       .desktop-hint { display: none; }
       .mobile-hint { display: inline; }
@@ -531,14 +533,25 @@
          entirely -- iOS 15.4+ (every real iPhone at this point) uses the
          dvh line.
 
-         The 100% ceiling is belt-and-suspenders for a landscape viewport
-         that's unusually tall for its width, so this can never demand
-         more width than the screen actually has either. */
+         CSS only computes HEIGHT here now, not a 4:3-derived width from
+         it -- widescreen mode (see the JS section below on
+         updateLandscapeCanvasSize()) needs the canvas genuinely wider
+         than 4:3 to fill the space between the side buttons, a ratio that
+         varies by device/window and can't be a fixed number in CSS ahead
+         of time. JS reads back whatever height this correctly computes
+         (same dvh-safe math as before, untouched) and sets an explicit
+         WIDTH from there based on the actual measured button-zone width,
+         rather than this block guessing a ratio it has no way to know. */
       #racer {
-        width: min(100%, calc((100vh  - 56px) * 4 / 3));
-        width: min(100%, calc((100dvh - 56px) * 4 / 3));
+        height: calc(100vh  - 56px);
+        height: calc(100dvh - 56px);
+        width: auto; /* JS-controlled -- see updateLandscapeCanvasSize() */
         margin: 0 auto;
       }
+      /* height:100% (not the unconditional aspect-ratio:4/3 rule's own
+         height:auto) -- canvas fills #racer's own height directly, JS
+         sets an explicit inline width on top once it's computed one. */
+      #canvas { width: 100%; height: 100%; aspect-ratio: auto; }
       #hud { top: 0; } /* undo the 768px block's 104px minimap-as-block offset -- minimap's back to overlaying the canvas below */
       #instructions { display: none; }
       #minimap {
@@ -641,6 +654,27 @@
           <span id="last_lap_time"    class="hud">Last Lap: <span id="last_lap_time_value" class="value">0.0</span></span>
           <span id="fast_lap_time"    class="hud">Fastest Lap: <span id="fast_lap_time_value" class="value">0.0</span></span>
         </div>
+        <!-- #mute belongs here, not out past #frame where it used to sit
+             (a leftover from when this page was iframed -- see this file's
+             own top-of-file comment on that -- its "top:8px;right:10px"
+             was written back when the iframe's own viewport WAS
+             effectively the game's viewport, so it happened to land on
+             the canvas's corner by coincidence; now that racing/index.html
+             is inlined directly into a real page with its own much bigger
+             viewport, position:absolute with no positioned ancestor
+             resolves against THAT instead -- the actual site's corner, not
+             the game's. Never visibly wrong before only because nothing
+             else ever occupied that exact spot; landscape's own
+             #touch-controls (a real fixed, full-viewport overlay with
+             buttons IN that corner) finally collided with it, reported as
+             the brake button's own label rendering wrong because the
+             icon sat right on top of it. Nesting it inside #racer (which
+             IS position:relative) gives it the same canvas-relative
+             coordinate space #minimap and #hud already use -- exactly
+             what #minimap's own comment above already assumed was true
+             ("below the HUD row + mute icon"), just not actually the case
+             until now. -->
+        <span id="mute"></span>
         <!-- Lives here in markup (before the canvas) so on mobile it can
              become a plain in-flow block above the canvas via CSS alone --
              on desktop it's still just an absolute overlay in the corner,
@@ -712,7 +746,6 @@
   <audio id='lap-sound'>
     <source src="/staking/racing/sounds/lap.mp3" type="audio/mpeg">
   </audio>
-  <span id="mute"></span>
 
   <script src="/staking/racing/common.js"></script>
   <script src="/staking/racing/sounds/engine-data.js"></script>
@@ -2588,6 +2621,7 @@
         background = images[0];
         sprites    = images[1];
         reset();
+        updateLandscapeCanvasSize(); // applies widescreen sizing immediately if the game happens to load already sideways, instead of waiting for a resize/rotation event that may never come
         Dom.storage.fast_lap_time = Dom.storage.fast_lap_time || 180;
         updateHud('fast_lap_time', formatTime(Util.toFloat(Dom.storage.fast_lap_time)));
         Dom.set('total_laps_value', totalLaps);
@@ -2634,6 +2668,71 @@
         buildMinimap();
       }
     }
+
+    //=========================================================================
+    // LANDSCAPE WIDESCREEN -- fills the space between the side touch/brake
+    // buttons instead of being locked to the fixed 4:3 every other layout
+    // uses. Util.project() in common.js scales X purely off `width` and Y
+    // purely off `height`, entirely independently (see that function's own
+    // 3 lines) -- nothing in the actual simulation/rendering math assumes
+    // 4:3, that's just the one ratio every OTHER layout (desktop, portrait)
+    // happens to pick. Widening the canvas relative to its height doesn't
+    // stretch anything, it genuinely shows more world side-to-side (same
+    // vertical FOV, a wider horizontal one) -- exactly what was asked for.
+    //
+    // CSS still owns HEIGHT for this layout (its own dvh-safe reserve
+    // math, untouched -- see #racer's own landscape rule) -- this only
+    // ever touches WIDTH, and only while the landscape query matches.
+    //=========================================================================
+    var LANDSCAPE_QUERY = window.matchMedia('(orientation: landscape) and (max-height: 500px)');
+
+    function updateLandscapeCanvasSize() {
+      var racerEl = Dom.get('racer');
+      if (!LANDSCAPE_QUERY.matches) {
+        // Every other layout -- hand width back to the stylesheet's own
+        // rule for it instead of leaving a stale inline value behind from
+        // the last time this WAS landscape (e.g. rotating back upright).
+        racerEl.style.width = '';
+        canvas.style.width  = '';
+        if (width !== 1024 || height !== 768) reset({ width: 1024, height: 768 });
+        return;
+      }
+
+      var availH = racerEl.getBoundingClientRect().height; // CSS's own dvh-safe height, read back rather than recomputed here
+
+      // Measured, not hardcoded -- the button zone's actual width is a
+      // clamp() tied to vw in CSS (see .touch-btn's own landscape rule),
+      // and duplicating that formula here risks the exact "two copies,
+      // one forgotten" drift this project's already been burned by once
+      // (the resprite/SPRITES hand-sync -- see that feature's own
+      // comment in common.js). Reading the real rendered box is the one
+      // source of truth for both.
+      var btn        = Dom.get('btn-left');
+      var buttonZone = btn ? btn.getBoundingClientRect().right : 0; // == its own width + the 10px edge inset already baked into that measurement
+      // +44px clearance beyond the raw button zone -- #mute lives at the
+      // canvas's own top-right corner now (see that element's own
+      // comment on why), 32px icon + 10px inset + a little breathing
+      // room. Without this, widening the canvas all the way out to the
+      // button zone's own edge would just recreate the exact overlap
+      // fixing #mute's position just solved, one edge over.
+      var margin = buttonZone + 44;
+      var availW = Math.max(200, window.innerWidth - (margin * 2)); // floor against a genuinely tiny/misreported viewport
+
+      racerEl.style.width = availW + 'px';
+      canvas.style.width  = availW + 'px';
+
+      if (Math.round(availW) !== width || Math.round(availH) !== height) {
+        reset({ width: Math.round(availW), height: Math.round(availH) });
+      }
+    }
+
+    window.addEventListener('resize', updateLandscapeCanvasSize);
+    // resize alone already covers rotation on every browser tested, but
+    // orientationchange + a short delay is cheap insurance against older
+    // mobile Safari's documented quirk of reporting stale
+    // innerWidth/innerHeight for a moment right after that event fires,
+    // before layout has actually settled to the new orientation.
+    window.addEventListener('orientationchange', function() { setTimeout(updateLandscapeCanvasSize, 50); });
 
     //=========================================================================
 

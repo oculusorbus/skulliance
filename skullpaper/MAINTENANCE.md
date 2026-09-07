@@ -261,6 +261,47 @@ records verified constants, and tracks what still needs to be written.
   actually specific to the portrait row (flex:1/height:100%, #btn-brake's smaller font-size to fit
   that row's narrower per-button width); landscape's own block is unaffected, it was already
   layering its own position/size rules on the (now correctly unconditional) base look.
+  #mute (racing/index.html markup) was, until now, a sibling of #frame at the very end of <body> --
+  NOT nested inside #racer despite #minimap's own comment already assuming it shared that coordinate
+  space ("below the HUD row + mute icon"). With no positioned ancestor, its position:absolute resolved
+  against the page's real viewport, not the canvas -- harmless everywhere it happened to roughly
+  coincide with the canvas's own corner by accident (every layout before landscape touch controls
+  existed), until #touch-controls became a genuine fixed, full-viewport overlay with a real button
+  living in that exact corner. Reported as the right brake button's label rendering wrong because the
+  icon sat on top of it. The 768px portrait override's own comment ("lands directly under the site's
+  real hamburger menu... outside the iframe") is stale in the same way -- this page hasn't been
+  iframed since skullracer.php switched to inlining it directly (see that file's own top comment) --
+  but the underlying concern it's protecting against is still real today, just under different
+  terminology; that override's actual VALUES needed no change, since portrait's canvas already spans
+  nearly the full page width, making canvas-relative and viewport-relative land in nearly the same
+  place there regardless. Moved the `<span id="mute">` element itself into #racer's own markup
+  (right before #minimap, matching that comment's original assumption) -- position:absolute now
+  correctly resolves against #racer everywhere, no CSS values needed changing to fix the collision,
+  just the DOM structure that was wrong underneath them.
+  Landscape widescreen (updateLandscapeCanvasSize()/LANDSCAPE_QUERY in racing/index.html, called from
+  ready:, window resize, and orientationchange): fills the actual space between the side touch/brake
+  buttons instead of staying locked to the fixed 4:3 every other layout uses. Not a hack -- Util.
+  project() in common.js (its own 3-line body) scales screen.x purely off `width` and screen.y purely
+  off `height`, entirely independently; nothing in the actual projection math assumes 4:3, that's
+  only ever been a choice every OTHER layout happened to make. Widening the canvas relative to its
+  height doesn't stretch anything, it genuinely reveals more world side-to-side (same vertical FOV, a
+  wider horizontal one) -- confirmed by `resolution = height/480` in reset() already deriving sprite
+  scale from height alone, further proof width was never load-bearing for anything visual.
+  CSS/JS split: #racer's own landscape rule now computes HEIGHT directly (`calc(100dvh - 56px)`, the
+  exact same dvh-safe reserve math from the earlier landscape-fit fix, just expressed without a
+  4:3-derived width anymore) and leaves width:auto for JS to own; #canvas gets height:100%/
+  aspect-ratio:auto instead of the unconditional rule's width:100%/aspect-ratio:4:3. JS reads
+  #racer's own CSS-computed height back via getBoundingClientRect() (never recomputes it -- one
+  source of truth for that number, not two) and sets an explicit inline width from there: measures
+  #btn-left's real rendered right edge (its width + the 10px inset already baked into that one
+  number) rather than duplicating the .touch-btn clamp() formula in JS too -- same "two copies, one
+  forgotten" drift this project got burned by once already with the resprite/SPRITES hand-sync (see
+  that feature's own comment in common.js). Adds a flat +44px beyond the measured button zone
+  specifically so the widened canvas doesn't just re-create the #mute-vs-brake-button collision one
+  edge over (32px icon + 10px inset + a little room, now that #mute sits at the canvas's own corner
+  for real). Leaving landscape mode (or #btn-left not existing at all, i.e. every non-landscape
+  layout) resets both inline widths to '' and reset()s back to the fixed 1024x768, handing control
+  back to the stylesheet's own rule exactly as if this feature didn't exist there.
   Crash reaction (CRASH_* constants/crashReactTimer in racing/index.html): purely cosmetic, fires
   whenever `crashed` is set by either collision check in update() -- a decaying canvas-translate
   screen shake (crashShakeX/Y, applied via ctx.save()/translate()/restore() wrapping the whole of

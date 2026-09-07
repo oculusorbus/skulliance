@@ -39,7 +39,9 @@ A crash doesn't just snap your speed anymore - it's a screen shake and a puff of
 
 **Landscape on a phone** sizes the game screen itself to actually fit the shorter, wider view (rather than the portrait layout's math just running into the ceiling), and the control hint steps aside to make room. Visited through the site's own nav (Play > Skull Racer, not the standalone game file directly), the site menu and its chrome step aside too - just the game screen, full height. Built with connecting to a TV in mirroring mode in mind - flip the phone sideways for a bigger view on the big screen.
 
-Touch controls move rather than disappear - height-constraining the canvas leaves real width to spare on either side of it, which a controller has no use for but a handheld player can. ◀ sits on the left edge, ▶ on the right, each taking up the bottom 3/4 of that side; the top 1/4 of EACH side is its own BRAKE button, so braking is always one thumb-length away no matter which hand is more comfortable hitting it in the moment - not a single shared button forcing one side to own it. A connected controller still works exactly the same in this mode; if it disconnects mid-race, the touch buttons are right there as a fallback instead of leaving you with no way to steer.
+Touch controls move rather than disappear. ◀ sits on the left edge, ▶ on the right, each taking up the bottom 3/4 of that side; the top 1/4 of EACH side is its own BRAKE button, so braking is always one thumb-length away no matter which hand is more comfortable hitting it in the moment - not a single shared button forcing one side to own it. A connected controller still works exactly the same in this mode; if it disconnects mid-race, the touch buttons are right there as a fallback instead of leaving you with no way to steer.
+
+The game screen itself goes properly widescreen here too, not just centered with empty space on either side - it fills the room between the two button columns, showing genuinely more of the road's sides rather than a taller or stretched version of the same view.
 
 ## CARBON & Leaderboard
 
