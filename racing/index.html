@@ -618,7 +618,15 @@
       #btn-left    { left: 10px;  top: 25%; bottom: 0;   }
       #btn-right   { right: 10px; top: 25%; bottom: 0;   }
       #btn-brake   { left: 10px;  top: 0;   bottom: 75%; font-size: 1rem; }
-      #btn-brake-2 { right: 10px; top: 0;   bottom: 75%; font-size: 1rem; display: block; }
+      /* display:flex, not block -- #btn-brake-2's OWN base rule (an ID
+         selector, `display:none`) beats .touch-btn's class-level
+         `display:flex` on specificity alone, regardless of which comes
+         later in the file, so re-enabling it here needs to say flex
+         explicitly, not just "not none". block still shows the label,
+         just top-left per normal text flow instead of centered like
+         every other .touch-btn -- reported exactly that way, the right
+         brake's text not lining up like the left one's. */
+      #btn-brake-2 { right: 10px; top: 0;   bottom: 75%; font-size: 1rem; display: flex; }
     }
   </style>
 </head>

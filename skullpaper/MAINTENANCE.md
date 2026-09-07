@@ -278,6 +278,13 @@ records verified constants, and tracks what still needs to be written.
   (right before #minimap, matching that comment's original assumption) -- position:absolute now
   correctly resolves against #racer everywhere, no CSS values needed changing to fix the collision,
   just the DOM structure that was wrong underneath them.
+  A second, separate bug on the same button: #btn-brake-2's own base rule (`display: none`, an ID
+  selector) beats .touch-btn's class-level `display: flex` on specificity alone regardless of source
+  order, so the first landscape override re-enabling it as `display: block` didn't actually restore
+  flex-centering -- its BRAKE label rendered top-left per normal block text flow instead of centered
+  like every other .touch-btn, #btn-brake included (which has no ID-level display rule fighting it).
+  Reported as the right brake's text still not matching the left one's even after the #mute fix.
+  Needs to say `display: flex` explicitly wherever it's re-enabled, not just "not none".
   Landscape widescreen (updateLandscapeCanvasSize()/LANDSCAPE_QUERY in racing/index.html, called from
   ready:, window resize, and orientationchange): fills the actual space between the side touch/brake
   buttons instead of staying locked to the fixed 4:3 every other layout uses. Not a hack -- Util.
