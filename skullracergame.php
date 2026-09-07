@@ -222,7 +222,7 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 	<section class="sr-land-section">
 		<div class="sr-land-wrap sr-land-center">
 			<h2>Boxed Like It's 1988</h2>
-			<p>Skull Racer ships with its own front and back cover art and a cartridge to match - an original dark-wasteland reskin from the road surface up, with nothing borrowed but the maths.</p>
+			<p>Skull Racer ships with its own front and back cover art and a cartridge to match - a dark-wasteland world drawn for this game alone, from the cracked road surface to the skull grinning off the back of your own car.</p>
 			<!-- Cartridge deliberately in the MIDDLE, flanked by the two
 			     box covers -- reads as the boxed product laid out, front
 			     and back, with the cart sat between them. -->
