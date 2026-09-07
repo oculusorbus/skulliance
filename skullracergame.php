@@ -221,20 +221,23 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 
 	<section class="sr-land-section">
 		<div class="sr-land-wrap sr-land-center">
-			<h2>Boxed Like It's 1994</h2>
+			<h2>Boxed Like It's 1988</h2>
 			<p>Skull Racer ships with its own front and back cover art and a cartridge to match - an original dark-wasteland reskin from the road surface up, with nothing borrowed but the maths.</p>
+			<!-- Cartridge deliberately in the MIDDLE, flanked by the two
+			     box covers -- reads as the boxed product laid out, front
+			     and back, with the cart sat between them. -->
 			<div class="sr-art-row">
 				<div class="sr-art-item">
 					<img src="/staking/racing/images/skullracer.jpg" alt="Skull Racer box art, front cover" loading="lazy" decoding="async">
 					<div class="sr-art-label">Front Cover</div>
 				</div>
 				<div class="sr-art-item">
-					<img src="/staking/racing/images/backcover.jpg" alt="Skull Racer box art, back cover" loading="lazy" decoding="async">
-					<div class="sr-art-label">Back Cover</div>
-				</div>
-				<div class="sr-art-item">
 					<img src="/staking/racing/images/front-cartridge.png" alt="Skull Racer cartridge, front" loading="lazy" decoding="async">
 					<div class="sr-art-label">Cartridge</div>
+				</div>
+				<div class="sr-art-item">
+					<img src="/staking/racing/images/backcover.jpg" alt="Skull Racer box art, back cover" loading="lazy" decoding="async">
+					<div class="sr-art-label">Back Cover</div>
 				</div>
 			</div>
 		</div>
