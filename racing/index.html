@@ -286,6 +286,56 @@
     #minimap-dot   { fill: #ffcc4d; stroke: #07111d; stroke-width: 0.75; }
 
     #touch-controls { display: none; } /* shown only in the mobile media query below */
+    /* .touch-btn's actual look (background/border/color/font/etc.) lives
+       here, unconditionally, rather than inside the max-width:768px query
+       below with the layout rules that USED to be its only neighbors --
+       the landscape query further down also shows these buttons (a wide
+       landscape phone routinely exceeds 768px, so that query never fires
+       there), and having the whole visual style trapped inside a query
+       that doesn't apply meant landscape's own position/size overrides
+       had nothing to layer on top of: no background, no border, no font-
+       size, just the bare glyph/word rendered in whatever tiny default
+       browser text looks like. Reported exactly that way -- "I see the
+       word brake in the corner, that's it, no UI buttons." Layout-only
+       bits (flex:1/height:100% for the portrait row, #btn-brake's smaller
+       font-size to fit that row) stay where they were; only what makes it
+       actually LOOK like a button, in any layout, moved here. */
+    .touch-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,200,160,0.08);
+      border: 1px solid rgba(0,200,160,0.3);
+      border-radius: 0.5rem;
+      color: #00c8a0;
+      font-size: 1.5rem;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+      line-height: normal; /* #racer sets line-height:0 -- harmless here since the label text never wraps, but same inherited gotcha #hud and #finish-box both hit, so reset it anyway rather than rely on that */
+      -webkit-tap-highlight-color: transparent;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none; /* stop the page from scrolling/zooming while a button is held */
+      /* NOT -webkit-touch-callout:none here (removed) -- on some iOS
+         versions it's a documented quirk to interfere with tap
+         recognition on the element it's set on, which is exactly what
+         broke: taps landing squarely on the label stopped registering.
+         e.preventDefault() inside touchstart below already suppresses
+         the long-press popup for these buttons on its own -- that's the
+         standard mechanism, touch-callout was redundant insurance that
+         cost more than it gave here. Still set on #frame further up for
+         everywhere that DOESN'T have JS actively handling the touch. */
+    }
+    /* The label glyph (◀/BRAKE/▶) is wrapped in its own <span> specifically
+       so this rule can make IT invisible to touch -- without it, tapping
+       directly on the character itself (as opposed to the button's empty
+       padding around it) could miss and register nothing at all, since
+       the touch's actual target was the text run, not the button div the
+       listeners are bound to. This forces every tap anywhere in the
+       button, glyph included, to resolve to the same .touch-btn element. */
+    .touch-btn span { pointer-events: none; }
+    .touch-btn.pressed { background-color: #00c8a0; color: #07111d; }
+    #btn-brake.pressed { background-color: #ff4d4d; border-color: #ff4d4d; color: #07111d; }
     .mobile-hint { display: none; }
 
     /* Not enough width for the game AND both box-art panels side by side --
@@ -396,45 +446,11 @@
         height: 30vh;
         margin-bottom: env(safe-area-inset-bottom, 0px);
       }
-      .touch-btn {
-        flex: 1;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0,200,160,0.08);
-        border: 1px solid rgba(0,200,160,0.3);
-        border-radius: 0.5rem;
-        color: #00c8a0;
-        font-size: 1.5rem;
-        font-weight: bold;
-        letter-spacing: 0.05em;
-        line-height: normal; /* #racer sets line-height:0 -- harmless here since the label text never wraps, but same inherited gotcha #hud and #finish-box both hit, so reset it anyway rather than rely on that */
-        -webkit-tap-highlight-color: transparent;
-        -webkit-user-select: none;
-        user-select: none;
-        touch-action: none; /* stop the page from scrolling/zooming while a button is held */
-        /* NOT -webkit-touch-callout:none here (removed) -- on some iOS
-           versions it's a documented quirk to interfere with tap
-           recognition on the element it's set on, which is exactly what
-           broke: taps landing squarely on the label stopped registering.
-           e.preventDefault() inside touchstart below already suppresses
-           the long-press popup for these buttons on its own -- that's the
-           standard mechanism, touch-callout was redundant insurance that
-           cost more than it gave here. Still set on #frame further up for
-           everywhere that DOESN'T have JS actively handling the touch. */
-      }
-      /* The label glyph (◀/BRAKE/▶) is wrapped in its own <span> specifically
-         so this rule can make IT invisible to touch -- without it, tapping
-         directly on the character itself (as opposed to the button's empty
-         padding around it) could miss and register nothing at all, since
-         the touch's actual target was the text run, not the button div the
-         listeners are bound to. This forces every tap anywhere in the
-         button, glyph included, to resolve to the same .touch-btn element. */
-      .touch-btn span { pointer-events: none; }
-      .touch-btn.pressed { background-color: #00c8a0; color: #07111d; }
-      #btn-brake { font-size: 0.8rem; }
-      #btn-brake.pressed { background-color: #ff4d4d; border-color: #ff4d4d; color: #07111d; }
+      /* Layout only, for the portrait row specifically -- .touch-btn's
+         actual look (background/border/color/font/etc.) is unconditional
+         now, set once near #touch-controls's own base rule above. */
+      .touch-btn { flex: 1; height: 100%; }
+      #btn-brake { font-size: 0.8rem; } /* BRAKE is a longer label than a single arrow glyph -- shrunk to fit this row's narrower per-button width */
     }
 
     /* Phone rotated to landscape (a controller-driven "bigger view, mirror

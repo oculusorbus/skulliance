@@ -243,6 +243,17 @@ records verified constants, and tracks what still needs to be written.
   in this mode now, not just auto-gas with no way to steer (see the Gamepad entry's own
   gamepaddisconnected -- it already checked touch-controls' visibility before this existed, it was
   just never true in landscape before now).
+  .touch-btn's actual look (background/border/color/font-size/etc.) is now set ONCE, unconditionally,
+  right next to #touch-controls's own base `display:none` rule -- it used to live only inside the
+  max-width:768px query, alongside the portrait-row layout rules that were its only neighbors at the
+  time. Once landscape started showing these same buttons too, that stopped being safe: a landscape
+  phone routinely exceeds 768px WIDTH (that query's whole reason for existing, see the Landscape-
+  phone-layout entry above), so on a real phone that query never fires there, and landscape's own
+  position/size overrides had no visual styling to layer on top of -- reported exactly that way, "I
+  see the word brake in the corner, that's it, no UI buttons." The 768px query now keeps only what's
+  actually specific to the portrait row (flex:1/height:100%, #btn-brake's smaller font-size to fit
+  that row's narrower per-button width); landscape's own block is unaffected, it was already
+  layering its own position/size rules on the (now correctly unconditional) base look.
   Crash reaction (CRASH_* constants/crashReactTimer in racing/index.html): purely cosmetic, fires
   whenever `crashed` is set by either collision check in update() -- a decaying canvas-translate
   screen shake (crashShakeX/Y, applied via ctx.save()/translate()/restore() wrapping the whole of
