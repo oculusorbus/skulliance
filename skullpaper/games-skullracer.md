@@ -2,7 +2,7 @@
 
 Skull Racer is a **pseudo-3D endless-highway racer** - press the gas, hold your line through the curves, and cross the finish line as fast as you can. It's built on Jake Gordon's MIT-licensed "javascript-racer" tutorial engine, completely reskinned into an original dark-wasteland theme (the tutorial's own sprite art and music were never MIT-licensed, so none of it survived the reskin) - a genuinely different kind of game from the card-based [[games-cryptcrawl]] and [[games-cryptconquest]], and the first one here that's entirely client-side: the whole race runs in your browser with no server round-trip per frame, and only reports back once, at the finish line.
 
-`skullracer.php` is the page linked in the site nav (Play > Skull Racer) - it wraps the game in the normal Skulliance header so you can navigate away and back like any other page, and it works whether you're logged in or just visiting.
+`skullracergame.php` is the page linked in the site nav (Play > Skull Racer) - a public landing page describing the game, with a Start Racing button into it. Same split [[games-cryptcrawl]] and [[games-cryptconquest]] already use, and like those it's deliberately independent of your session: it does no login check and holds no game state, so it renders identically for everyone. `skullracer.php` is the game itself, wrapping it in the normal Skulliance header so you can navigate away and back like any other page - and it works whether you're logged in or just visiting.
 
 ## The Race
 
