@@ -184,6 +184,18 @@ records verified constants, and tracks what still needs to be written.
   suppress it. The robustness work above is what actually helps the RECOVERY side of that sequence
   (pressing any OTHER button once back on the page re-takes-over immediately, same as a fresh
   connect) -- the Game Center detour itself isn't this codebase's to solve.
+  DO NOT store a gamepad slot index (pollGamepad() in racing/index.html). Two separate revisions
+  tracked "which slot is the active controller" (gamepadIndex) and both produced the same PWA bug:
+  the stored index goes stale -- iOS shuffles or empties slots, re-reports the same pad at a
+  different position, or hands back a Gamepad object that stops updating -- and every later poll then
+  reads a dead slot forever while the controller is still physically connected and sending input.
+  Reported as "it recognizes the first button press, then locks me out", recoverable only by bouncing
+  out to Game Center and back (i.e. by forcing iOS to re-hand the page a fresh pad). There is no
+  index now: every tick re-scans navigator.getGamepads() from scratch, taking any pad with live input
+  first (which also makes "a controller press takes precedence" literally true, and picks the RIGHT
+  pad when several are paired) and otherwise the first pad merely present (so releasing every button
+  coasts, rather than silently handing the car back to auto-gas mid-straight). `gamepadActive` exists
+  only to run the takeover/release side effects once -- it is never used to FIND the pad.
   DO NOT infer a gamepad disconnect from a quiet poll (pollGamepad()'s `if (!gp) return;` in
   racing/index.html). navigator.getGamepads() transiently returns null/empty entries for a frame or
   two entirely on its own -- the ORIGINAL version of that line already documented this ("browsers

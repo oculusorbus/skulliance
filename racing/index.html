@@ -1309,10 +1309,10 @@
     // not a bug here), but a controller already paired at the OS level
     // before this exact page load, or various browser/OS combinations,
     // are real-world ways for that FIRST press to simply not fire the
-    // event at all -- the API stays silent, gamepadIndex never gets set,
-    // and every button press after that goes nowhere. Instead,
+    // event at all -- the API stays silent and every button press after
+    // that goes nowhere if the event is all you listen to. Instead,
     // pollGamepad() actively scans every connected pad for genuine input
-    // whenever none is currently tracked, every single tick -- pressing
+    // every single tick, tracking nothing between them -- pressing
     // ANY button on ANY controller takes over immediately, the instant it
     // happens, rather than waiting on an event that may never come. Same
     // robustness in reverse: if the tracked pad vanishes without a
@@ -1324,7 +1324,22 @@
     // browser confirms one, rather than waiting up to one tick (~16ms,
     // imperceptible either way) for the next poll.
     //=========================================================================
-    var gamepadIndex = null; // navigator.getGamepads() index of the active controller, or null
+    // Deliberately NOT a stored gamepad index. Two separate revisions of
+    // this code tracked "which slot is the active controller" and both
+    // produced the same class of bug in the installed PWA: the stored
+    // index goes stale (iOS shuffles/empties slots, re-reports a pad under
+    // a different position, or hands back a Gamepad object whose buttons
+    // simply stop updating) and every later poll then reads a dead slot
+    // forever while the controller is still physically connected and
+    // sending input. Reported as "it recognizes the first button press,
+    // then locks me out", only recoverable by bouncing out to Game Center
+    // and back -- i.e. by forcing iOS to re-hand the page a fresh pad.
+    // There is no index to go stale now: every tick re-scans from scratch
+    // and uses whatever is actually there, which is the closest thing to
+    // the "bulletproof, just work if it's present or being pressed" the
+    // symptom calls for. gamepadActive only tracks whether the one-time
+    // takeover side effects have run -- it is never used to FIND the pad.
+    var gamepadActive = false;
     var STICK_DEADZONE = 0.25; // ignore drift/noise around center, same idea as any analog-stick game
 
     // True if ANY button is held or ANY axis is pushed past the deadzone
@@ -1341,9 +1356,9 @@
       return false;
     }
 
-    function gamepadTakeOver(index) {
-      if (gamepadIndex === index) return; // already the active one, nothing to do
-      gamepadIndex = index;
+    function gamepadTakeOver() {
+      if (gamepadActive) return; // side effects are one-time; the pad itself is re-found every tick regardless
+      gamepadActive = true;
       // Mobile's own auto-gas (keyFaster set true above) exists so there's
       // nothing to hold just to go forward with only 3 touch buttons -- a
       // controller has an actual gas button, so that default no longer
@@ -1356,8 +1371,8 @@
     }
 
     function gamepadRelease() {
-      if (gamepadIndex === null) return;
-      gamepadIndex = null;
+      if (!gamepadActive) return;
+      gamepadActive = false;
       // Restore mobile's auto-gas ONLY if that's actually the control
       // scheme in play (same visibility check the touch-controls setup
       // above uses) -- releasing on DESKTOP must not suddenly start
@@ -1368,40 +1383,60 @@
       if (hint) hint.innerHTML = 'Driving is automatic -- hold <b>&#9664;</b>/<b>&#9654;</b> to steer, <b>BRAKE</b> to slow down.';
     }
 
-    window.addEventListener('gamepadconnected',    function(e) { gamepadTakeOver(e.gamepad.index); });
-    window.addEventListener('gamepaddisconnected', function(e) {
-      if (e.gamepad.index === gamepadIndex) gamepadRelease(); // some OTHER pad disconnecting is none of this game's business
+    window.addEventListener('gamepadconnected', function() { gamepadTakeOver(); });
+    window.addEventListener('gamepaddisconnected', function() {
+      // Only genuinely give up once NOTHING is left plugged in -- with two
+      // pads paired, one leaving says nothing about the other, and on iOS
+      // this event also fires in situations where a pad comes right back.
+      // pollGamepad() re-takes-over on its own the moment any pad reports
+      // again, so being conservative here costs nothing.
+      var pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      for (var i = 0 ; i < pads.length ; i++) {
+        if (pads[i] && pads[i].connected !== false) return;
+      }
+      gamepadRelease();
     });
 
     function pollGamepad() {
       var pads = navigator.getGamepads ? navigator.getGamepads() : [];
+      var gp   = null;
+      var i;
 
-      if (gamepadIndex === null) {
-        // Nothing tracked yet -- see this block's own top comment for why
-        // this active scan exists instead of trusting gamepadconnected
-        // alone. Whichever pad has real input right now wins; with none
-        // pressing anything, there's nothing to take over FROM yet.
-        for (var i = 0 ; i < pads.length ; i++) {
-          if (pads[i] && gamepadHasInput(pads[i])) { gamepadTakeOver(i); break; }
+      // Re-found from scratch EVERY tick, never remembered between them --
+      // see gamepadActive's own comment above for why storing a slot index
+      // is what kept breaking this. Two passes, in priority order:
+      //   1. any pad actually being pressed right now wins outright, which
+      //      is the "a controller button press takes precedence over
+      //      everything else" rule stated plainly, and also means the
+      //      RIGHT pad wins when more than one is paired;
+      //   2. otherwise the first pad that's simply present, so letting go
+      //      of every button coasts (as a controller should) instead of
+      //      silently handing the car back to auto-gas mid-straight.
+      for (i = 0 ; i < pads.length ; i++) {
+        if (pads[i] && gamepadHasInput(pads[i])) { gp = pads[i]; break; }
+      }
+      if (!gp) {
+        for (i = 0 ; i < pads.length ; i++) {
+          if (pads[i]) { gp = pads[i]; break; }
         }
-        if (gamepadIndex === null) return; // still nothing active this tick
       }
 
-      var gp = pads[gamepadIndex];
-      // Just skip this tick -- do NOT treat a missing slot as a disconnect.
-      // navigator.getGamepads() transiently returns null/empty entries for a
-      // frame or two on its own (documented in the original version of this
-      // line, and very much real on iOS Safari), and an earlier revision that
-      // "helpfully" called gamepadRelease() here turned every one of those
-      // blips into a full handover back to auto-gas: control died mid-race,
-      // the hint text flipped back, and re-acquiring needed a FRESH button
-      // press with live input -- all while the controller was still perfectly
-      // connected to the phone. Reported exactly that way ("it doesn't
-      // disconnect from the phone, it just disconnects from the game"). Only
-      // the explicit gamepaddisconnected EVENT releases now -- that one is an
-      // actual statement from the browser, not something inferred from a
-      // single quiet poll.
+      // Nothing reporting at all this tick. Skip it -- do NOT read this as
+      // a disconnect. navigator.getGamepads() transiently returns null or
+      // empty entries for a frame or two entirely on its own (the original
+      // version of this line already documented that), and a revision that
+      // "helpfully" released here turned every such blip into a full
+      // handover back to auto-gas mid-race. Only the explicit
+      // gamepaddisconnected event releases, and only once nothing at all
+      // is left connected.
       if (!gp) return;
+
+      // Any pad reporting at all means the controller is in play -- run the
+      // one-time takeover if it hasn't already (no-op every tick after).
+      // Note this fires for a merely-present pad, not just a pressed one:
+      // by the time a pad appears in this list, iOS has already required a
+      // real button press to reveal it, so its presence IS the press.
+      gamepadTakeOver();
 
       var dpadLeft  = !!(gp.buttons[14] && gp.buttons[14].pressed);
       var dpadRight = !!(gp.buttons[15] && gp.buttons[15].pressed);
