@@ -172,9 +172,9 @@ records verified constants, and tracks what still needs to be written.
   navigator.getGamepads() slot for ANY pad with gamepadHasInput() (any button pressed or axis past
   STICK_DEADZONE) EVERY tick, and takes over the instant one matches -- "a player pressing a
   controller button interrupts whatever mode the game is in" literally, not contingent on the event
-  having fired first. Same robustness releasing: if pads[gamepadIndex] comes back null/undefined on
-  ANY poll (slot gone, no disconnect event needed), it releases immediately rather than continuing to
-  read a dead reference or waiting on an event that may not come.
+  having fired first. Releasing is deliberately NOT symmetrical with that -- a quiet poll is never
+  treated as a disconnect, only the explicit gamepaddisconnected event is. See the "DO NOT infer a
+  gamepad disconnect from a quiet poll" entry below for what happened when it briefly was.
   Genuinely CANNOT be fixed from here: pressing a DualSense/DualShock's PS/Home button while
   connected to an iPhone opens Game Center system-wide, for every app and every website alike --
   Apple intercepts that specific button at the OS level, unconditionally, before any page's JS ever
@@ -184,15 +184,30 @@ records verified constants, and tracks what still needs to be written.
   suppress it. The robustness work above is what actually helps the RECOVERY side of that sequence
   (pressing any OTHER button once back on the page re-takes-over immediately, same as a fresh
   connect) -- the Game Center detour itself isn't this codebase's to solve.
-  Options/Start toggles mute (optionsWasPressed, inside pollGamepad() in racing/index.html):
-  buttons[9] in the standard mapping. Edge-detected against last tick's state, not a level check --
-  pollGamepad() runs every tick and a real press is held across many of them (no human releases a
-  button within 16ms), so `if (pressed)` alone would toggle mute dozens of times over one press
-  instead of once. Dispatches a real `.click()` on #mute rather than duplicating its toggle logic --
-  that element already carries TWO click listeners (common.js's own music/Dom.storage.muted toggle,
-  and this page's second one flipping engineMuted for the Web Audio engine/collision/lap sounds, see
-  that entry above); a real click fires both, so a controller press stays in sync with tapping the
-  icon by hand with nothing new to maintain here.
+  DO NOT infer a gamepad disconnect from a quiet poll (pollGamepad()'s `if (!gp) return;` in
+  racing/index.html). navigator.getGamepads() transiently returns null/empty entries for a frame or
+  two entirely on its own -- the ORIGINAL version of that line already documented this ("browsers
+  keep the slot but null the entry between the connect event and first poll, sometimes") and simply
+  skipped the tick. A later "robustness" pass changed it to call gamepadRelease() there, reasoning
+  that a vanished slot meant a vanished controller. It did not: every transient blip became a full
+  handover back to auto-gas mid-race (keyFaster = true, hint text flipped, gamepadIndex cleared),
+  and re-acquiring then required a FRESH button press with live input, since the takeover scan only
+  fires on gamepadHasInput(). Reported as constant, unpredictable dropouts -- "the controller
+  doesn't disconnect from the phone, it just disconnects from the game" -- and correctly identified
+  by the user as a regression against code that had worked reliably. ONLY the explicit
+  gamepaddisconnected EVENT releases now; that's an actual statement from the browser rather than
+  something inferred from one quiet frame. The takeover scan (which only ever ADDS detection, never
+  removes control) was kept.
+  Options/Start -> mute was tried and REVERTED, deliberately -- do not re-add it the same way.
+  buttons[9], edge-detected, dispatching a real `.click()` on #mute (to reuse both of that element's
+  existing click listeners rather than duplicate their logic). Directly correlated with control
+  dying moments later in live testing: "I can toggle the audio with the controller but the second I
+  do, I lose control." Exact mechanism unconfirmed -- a synthetic DOM click toggling a live
+  <audio> element's muted state, fired from inside the poll loop, landing on a frame where
+  getGamepads() also went briefly quiet is the leading theory, and the tolerant `if (!gp)` above
+  removes the amplifier even if the trigger remains. A shortcut for something the mute icon already
+  does by tap is not worth risking input reliability; revisit only with an implementation that
+  touches no HTMLMediaElement and dispatches no DOM event from the poll loop.
   Gamepad audio unlock (Game.onFirstInteraction() in racing/common.js, shared by every page in
   racing/ that calls it -- index.html/v4.final.html, dev.html, v1-v3 -- not just the live game):
   that function's own browser-autoplay-unlock listener only covered
