@@ -19,7 +19,11 @@
 // -- hardcoding either host here would silently log a visitor out of the
 // game they just clicked into. See MAINTENANCE.md's own note on that.
 $sr_canonical = 'https://www.skulliance.io/staking/skullracergame.php';
-$sr_og_image  = 'https://www.skulliance.io/staking/racing/images/skullracer.jpg';
+// Real in-game screenshot, not the box art -- it's the hero here AND the
+// social/search preview, since what the game actually looks like in motion
+// sells it better than packaging does. The box art still gets its own
+// section further down, where it's the actual subject.
+$sr_og_image  = 'https://www.skulliance.io/staking/racing/images/screenshot.png';
 $sr_title     = 'Skull Racer - Free Retro Arcade Highway Racing Game | Play in Your Browser';
 $sr_desc      = 'Play Skull Racer free - a pseudo-3D arcade highway racer with boost pads, jump ramps, ghost cars of the current record holders, gamepad support, and a weekly CARBON leaderboard. Works on mobile, tablet, and desktop. No download, no signup.';
 $sr_short     = 'A free browser arcade highway racer with boost pads, jump ramps, ghost cars of the record holders and a weekly CARBON leaderboard. Play on any device - no download.';
@@ -43,7 +47,7 @@ $sr_short     = 'A free browser arcade highway racer with boost pads, jump ramps
 <meta property="og:title" content="<?php echo htmlspecialchars($sr_title); ?>">
 <meta property="og:description" content="<?php echo htmlspecialchars($sr_desc); ?>">
 <meta property="og:image" content="<?php echo $sr_og_image; ?>">
-<meta property="og:image:alt" content="Skull Racer box art - a skull-fronted hot rod on a dark desert highway">
+<meta property="og:image:alt" content="Skull Racer gameplay - racing a night desert highway under a full moon, traffic ahead and lap times on the HUD">
 <meta property="og:locale" content="en_US">
 
 <!-- Twitter Cards -->
@@ -51,7 +55,7 @@ $sr_short     = 'A free browser arcade highway racer with boost pads, jump ramps
 <meta name="twitter:title" content="<?php echo htmlspecialchars($sr_title); ?>">
 <meta name="twitter:description" content="<?php echo htmlspecialchars($sr_short); ?>">
 <meta name="twitter:image" content="<?php echo $sr_og_image; ?>">
-<meta name="twitter:image:alt" content="Skull Racer box art - a skull-fronted hot rod on a dark desert highway">
+<meta name="twitter:image:alt" content="Skull Racer gameplay - racing a night desert highway under a full moon, traffic ahead and lap times on the HUD">
 
 <!-- Schema.org structured data: VideoGame + BreadcrumbList -->
 <script type="application/ld+json">
@@ -113,8 +117,12 @@ p { margin: 0 0 1em; }
 a { color: #00c8a0; text-decoration: none; }
 a:hover { color: #34e3bb; text-decoration: underline; }
 .sr-shot-link { display: block; cursor: pointer; }
+/* Wider than the 460px the card games' landings use for their board
+   shots: this one is a busy gameplay scene with a HUD, traffic and a
+   minimap in it, and at 460px the detail that actually sells the game
+   goes muddy. Same style otherwise. */
 .sr-shot-land {
-	display: block; width: 100%; max-width: 460px; height: auto; margin: 0 auto 26px;
+	display: block; width: 100%; max-width: 620px; height: auto; margin: 0 auto 26px;
 	border-radius: 14px; border: 1px solid rgba(255,255,255,.15);
 	box-shadow: 0 30px 80px rgba(0,0,0,.7), 0 0 0 1px rgba(0,200,160,.1) inset;
 	transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
@@ -180,7 +188,7 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 <div class="sr-landing">
 	<header class="sr-hero-land">
 		<a class="sr-shot-link" href="skullracer.php" aria-label="Play Skull Racer now">
-			<img class="sr-shot-land" src="/staking/racing/images/skullracer.jpg" alt="Skull Racer box art - a skull-fronted hot rod on a dark desert highway" loading="eager" fetchpriority="high" decoding="async">
+			<img class="sr-shot-land" src="/staking/racing/images/screenshot.png" alt="Skull Racer gameplay - racing a night desert highway under a full moon, traffic ahead and lap times on the HUD" loading="eager" fetchpriority="high" decoding="async" width="1217" height="916">
 		</a>
 		<h1><span class="sr-title-land"><img src="/staking/pwa/skulliance-logo-icon.png" alt="">Skull Racer<img src="/staking/pwa/skulliance-logo-icon.png" alt=""></span><span class="sr-subtitle-land">Free Retro Arcade Highway Racer</span></h1>
 		<p class="sr-lead">Three laps of a dark desert highway at 180 mph - boost pads, jump ramps, traffic to thread, and the ghost of whoever currently holds the record running the line right beside you. No download, no signup - just drive.</p>
