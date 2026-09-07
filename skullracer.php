@@ -80,6 +80,47 @@ $racing_style = str_replace(
     ['#skullracer-embed {', '#skullracer-embed { padding: 8px; }'],
     $racing_style
 );
+
+// ── Cache busting ─────────────────────────────────────────────────────
+// The server sends `Cache-Control: max-age=604800, public` (SEVEN DAYS,
+// no revalidation) for everything static under racing/ -- common.js, the
+// sounds/*-data.js blobs, sprites.png, background.png. That's server
+// config, not something in this repo, so the only lever here is the URL:
+// change it and the old cached copy simply doesn't match any more.
+//
+// This is not hypothetical. A player hit 404s on sprites.png and
+// background.png in Chrome while both files were perfectly fine on the
+// server -- they were running a common.js from before asset paths were
+// made root-absolute (see this file's own top comment), so it was still
+// requesting them folder-relative, resolving to /staking/images/... which
+// 301s to the apex host and 404s there. Their HTML was current; a
+// week-stale script was not. Worse and quieter: sprites.png is repacked
+// whenever a sprite is added (see racing/common.js's SPRITES comment), so
+// a stale sheet + fresh coordinates means every sprite silently samples
+// the wrong part of the image.
+//
+// Token is the root VERSION file, which is already bumped on every commit
+// for the PWA update banner -- so this rides on a discipline that exists
+// rather than adding a second thing to remember. filemtime() as the
+// fallback keeps it working even if VERSION ever goes missing.
+$sr_version = @file_get_contents(__DIR__ . '/VERSION');
+$sr_asset_v = substr(preg_replace('/[^A-Za-z0-9]/', '', (string)$sr_version), 0, 20);
+if ($sr_asset_v === '') $sr_asset_v = (string)@filemtime(__DIR__ . '/racing/common.js');
+
+// <script src> tags live in the extracted body. Images are NOT here --
+// common.js builds those URLs itself at runtime, so it gets the token as
+// a global instead (see loadImages() there, and the inline script below).
+$racing_body = str_replace(
+    ['/staking/racing/common.js',
+     '/staking/racing/sounds/engine-data.js',
+     '/staking/racing/sounds/collision-data.js',
+     '/staking/racing/sounds/lap-data.js'],
+    ['/staking/racing/common.js?v=' . $sr_asset_v,
+     '/staking/racing/sounds/engine-data.js?v=' . $sr_asset_v,
+     '/staking/racing/sounds/collision-data.js?v=' . $sr_asset_v,
+     '/staking/racing/sounds/lap-data.js?v=' . $sr_asset_v],
+    $racing_body
+);
 ?>
 <style>
 #burger-menu { <?php echo isset($name) ? '' : 'display: none;'; ?> } /* same guest-hide as cryptcrawl.php/cryptconquest.php */
@@ -120,6 +161,10 @@ $racing_style = str_replace(
   #skullracer-embed { min-height: 100dvh; }
 }
 </style>
+<!-- Must come BEFORE the game's own scripts in $racing_body below, since
+     common.js reads it while loading sprites/background. See the cache
+     busting block up top for why it exists at all. -->
+<script>var RACER_ASSET_V = <?php echo json_encode($sr_asset_v); ?>;</script>
 <div id="skullracer-embed">
 <?php echo $racing_body; ?>
 </div>

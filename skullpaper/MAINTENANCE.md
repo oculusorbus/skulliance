@@ -442,6 +442,26 @@ records verified constants, and tracks what still needs to be written.
   decode -- same file:// CORS reasoning sounds/engine-data.js already documented) rather than
   fetch()'d. Both gate on the same `engineMuted` flag playPassSound() already checks, not an
   `<audio>.muted` property -- there's no HTMLMediaElement left for either sound to set one on.
+  Asset cache busting (skullracer.php's $sr_asset_v, RACER_ASSET_V global, loadImages() in
+  racing/common.js): the server sends `Cache-Control: max-age=604800, public` -- SEVEN DAYS, no
+  revalidation -- for everything static under racing/ (common.js, sounds/*-data.js, sprites.png,
+  background.png). That's server config, NOT anything in this repo (no .htaccess here), so the only
+  lever available is the URL. skullracer.php appends `?v=<token>` to the script tags in the body it
+  extracts, and sets a RACER_ASSET_V global that loadImages() appends to the sprite/background URLs
+  it builds at runtime (optional there on purpose -- standalone racing/index.html and v1-v3/dev.html
+  don't define it and load the plain URLs, exactly as before). Token is the root VERSION file, which
+  is already bumped every commit for the PWA banner, so this rides on an existing discipline rather
+  than adding a second thing to remember.
+  Reported live: a player got 404s on sprites.png and background.png in Chrome while both were
+  perfectly fine on the server (200 on www AND apex). They were running a common.js cached from
+  before asset paths were made root-absolute, so it still requested them folder-relative -- resolving
+  to /staking/images/..., which 301s to the apex host and 404s there. Their HTML was current
+  (skullracer.php is no-store, racing/index.html is max-age=3600 must-revalidate); only the week-old
+  script wasn't. The quieter version of the same failure is worse and worth knowing about: sprites.png
+  is REPACKED whenever a sprite is added (see common.js's SPRITES comment), so a stale sheet served
+  alongside freshly-loaded coordinates means every sprite silently samples the wrong part of the
+  image -- no error, just wrong art. If someone reports impossible-looking asset behaviour on this
+  game, check what their browser actually has cached before believing the code is wrong.
   No iframe (skullracer.php): used to iframe racing/index.html because header.php's nav links
   are root-relative while racing/'s own asset references were folder-relative -- incompatible in
   one document. Fixed by making every asset reference in racing/index.html and racing/common.js

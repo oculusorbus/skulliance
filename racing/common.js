@@ -155,11 +155,22 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
         callback(result);
     };
 
+    // ?v= cache-buster when the page supplied one (skullracer.php sets
+    // RACER_ASSET_V from the root VERSION file -- see its own comment on
+    // why: everything static under racing/ is served with a seven-day
+    // max-age and no revalidation, so a repacked sprites.png would
+    // otherwise keep being read from cache while the freshly-loaded
+    // coordinates in SPRITES expect the NEW sheet -- every sprite
+    // silently sampling the wrong part of the image). Optional on
+    // purpose: standalone racing/index.html and the v1-v3/dev.html pages
+    // don't define it, and just load the plain URL as before.
+    var assetV = (typeof RACER_ASSET_V !== 'undefined' && RACER_ASSET_V) ? ('?v=' + RACER_ASSET_V) : '';
+
     for(var n = 0 ; n < names.length ; n++) {
       var name = names[n];
       result[n] = document.createElement('img');
       Dom.on(result[n], 'load', onload);
-      result[n].src = "/staking/racing/images/" + name + ".png";
+      result[n].src = "/staking/racing/images/" + name + ".png" + assetV;
     }
   },
 
