@@ -203,6 +203,18 @@ records verified constants, and tracks what still needs to be written.
   mute is a GainNode value, not .muted, so a muted track keeps playing silently and unmuting resumes
   in place. v1-v3/dev.html still have an inert <audio id='music'> element in their markup -- nothing
   reads it any more, but don't take that as license to add one back here.
+  KNOWN, ACCEPTED SIDE EFFECT of all of the above: on iPhone the game is now silent when the ringer
+  switch is set to silent. That is a real behaviour change, not a bug to hunt -- <audio>/<video>
+  playback on iOS ignores the mute switch (which is why video sites play on silent), while Web Audio
+  respects it, so moving everything to Web Audio inherited that. It cost a live debugging session
+  ("nothing starts audio now... the phone was on silent") before it was spotted, hence this note.
+  There IS a WebKit API that would override it -- `navigator.audioSession.type = 'playback'` (Safari
+  16.4+) -- but 'playback' is precisely the category meant for media that belongs in Now Playing,
+  i.e. the exact thing whose session was hijacking the controller in the first place. Assume trying
+  it re-breaks controller input until someone has actually tested it on a device; the ringer switch
+  is a far cheaper thing to live with than that bug coming back. The other known workaround (playing
+  a silent looping <audio> element to promote the audio session category) is a non-starter here for
+  the same reason -- it's a playing HTMLMediaElement, which is the thing that must not exist.
   Audio unlocking must KEEP RETRYING, not fire once (Game.startMusic() in racing/common.js). An
   AudioContext starts 'suspended' and iOS only honours resume() from inside a genuine user-gesture
   call stack -- a gamepad button press very likely isn't one there (same platform family as iOS
