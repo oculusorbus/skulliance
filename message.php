@@ -1,8 +1,15 @@
 <?php
+// Direct Discord API calls as the bot (DMs, channel messages) -- NOT the
+// same path as discordmsg() in webhooks.php, which posts to webhook URLs
+// and doesn't touch $bot_token at all. Worth knowing when something looks
+// half-broken: notifications can be flowing perfectly while everything
+// here is dead, because only this side depends on the token.
+//
+// v10; was v9. See /role.php for the full note on the version bump.
 function MakeRequest($endpoint, $data) {
 	global $bot_token;
     # Set endpoint
-    $url = "https://discord.com/api/v9/".$endpoint."";
+    $url = "https://discord.com/api/v10/".$endpoint."";
 
     # Encode data, as Discord requires you to send json data.
     $data = json_encode($data);
@@ -26,8 +33,33 @@ function MakeRequest($endpoint, $data) {
         CURLOPT_POSTFIELDS => $data,
         CURLOPT_STDERR         => $f,
     ));
-    $request = curl_exec($ch);
+    $request   = curl_exec($ch);
+    $http_code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curl_err  = curl_error($ch);
     curl_close($ch);
+
+    // Same silent-failure problem /role.php had: the response was decoded
+    // and handed back, but nobody checks it, so a dead token or a retired
+    // API version just produced a null return and no sign anything went
+    // wrong. sendDM() below already guards on the decoded result, so a
+    // failure here degrades quietly by design -- log it so "quietly" isn't
+    // also "invisibly".
+    if ($http_code < 200 || $http_code >= 300) {
+        $detail  = '';
+        $decoded = json_decode((string)$request, true);
+        if (is_array($decoded) && isset($decoded['message'])) {
+            $detail = ' discord="' . $decoded['message'] . '"';
+            if (isset($decoded['code'])) $detail .= ' code=' . $decoded['code'];
+        }
+        if ($curl_err !== '') $detail .= ' curl="' . $curl_err . '"';
+        error_log(
+            'Discord MakeRequest FAILED http=' . $http_code
+            . ' endpoint=' . $endpoint
+            . ' token=' . (empty($bot_token) ? 'MISSING' : 'present')
+            . $detail
+        );
+    }
+
     return json_decode($request, true);
 }
 
