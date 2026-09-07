@@ -225,24 +225,31 @@ records verified constants, and tracks what still needs to be written.
   places, since each file hides a different set of elements the other has no reference to.
   Landscape touch controls (same `@media (orientation: landscape) and (max-height: 500px)` block,
   racing/index.html -- same #btn-left/#btn-right/#btn-brake elements and touchstart/touchend
-  listeners portrait mobile already set up, none of that JS duplicated, only repositioned via CSS):
-  height-constraining the canvas leaves real WIDTH to spare on either side of it on a landscape
-  phone (opposite of portrait, where width is what's scarce) -- #touch-controls becomes a
-  position:fixed, inset:0 full-viewport overlay (pointer-events:none on the overlay itself,
-  re-enabled per .touch-btn, so the empty middle over the canvas never eats a tap meant for
-  something else) instead of portrait's normal-flow height:30vh row below the canvas, which has no
-  floor to sit on here. #btn-left/#btn-right stack on the LEFT edge (steering under one thumb), one
-  tall #btn-brake alone on the RIGHT edge (under the other) -- deliberately NOT left-button-left-
-  edge/right-button-right-edge, which would pair brake with only one steering direction and leave
-  braking mid-turn the OTHER way needing that same thumb to do two things at once. display:block is
-  set explicitly, not left to fall through from the 768px/1300px queries (neither applies on a phone
-  this wide in landscape) -- matters beyond the visual: the portrait setup IIFE's own auto-gas/
-  listener-binding both gate on this exact computed display value being non-'none', checked ONCE at
-  load, so a player opening the game already sideways would otherwise get invisible, unbound buttons.
-  Same gate is also why a disconnected gamepad correctly falls back to a fully playable touch scheme
-  in this mode now, not just auto-gas with no way to steer (see the Gamepad entry's own
-  gamepaddisconnected -- it already checked touch-controls' visibility before this existed, it was
-  just never true in landscape before now).
+  listeners portrait mobile already set up, none of that JS duplicated, only repositioned via CSS,
+  PLUS one new element/binding, #btn-brake-2, covered below): height-constraining the canvas leaves
+  real WIDTH to spare on either side of it on a landscape phone (opposite of portrait, where width is
+  what's scarce) -- #touch-controls becomes a position:fixed, inset:0 full-viewport overlay
+  (pointer-events:none on the overlay itself, re-enabled per .touch-btn, so the empty middle over the
+  canvas never eats a tap meant for something else) instead of portrait's normal-flow height:30vh row
+  below the canvas, which has no floor to sit on here.
+  Layout is literal left-edge/right-edge steering (◀ left, ▶ right, matching hand to side) -- an
+  earlier version grouped both under one thumb with a single dedicated brake on the other side
+  instead, reported back as unintuitive. Each steering button takes the bottom 3/4 of its side
+  (`top:25%; bottom:0`); the top 1/4 of EACH side (`top:0; bottom:75%`) is its own brake button --
+  #btn-brake on the left, a new twin #btn-brake-2 on the right, both bound to the identical
+  keySlower/keyFaster flip in the setup IIFE (literally the same two callback functions passed to
+  bindHold() twice) so braking is reachable from whichever thumb is free at the moment, not locked to
+  one particular side. #btn-brake-2 stays `display:none` at the base rule (right next to
+  #touch-controls's own) so it never joins the portrait row as a stray 4th button -- this landscape
+  block is the only place that turns it on.
+  display:block is set explicitly on #touch-controls, not left to fall through from the 768px/1300px
+  queries (neither applies on a phone this wide in landscape) -- matters beyond the visual: the
+  portrait setup IIFE's own auto-gas/listener-binding both gate on this exact computed display value
+  being non-'none', checked ONCE at load, so a player opening the game already sideways would
+  otherwise get invisible, unbound buttons. Same gate is also why a disconnected gamepad correctly
+  falls back to a fully playable touch scheme in this mode now, not just auto-gas with no way to
+  steer (see the Gamepad entry's own gamepaddisconnected -- it already checked touch-controls'
+  visibility before this existed, it was just never true in landscape before now).
   .touch-btn's actual look (background/border/color/font-size/etc.) is now set ONCE, unconditionally,
   right next to #touch-controls's own base `display:none` rule -- it used to live only inside the
   max-width:768px query, alongside the portrait-row layout rules that were its only neighbors at the

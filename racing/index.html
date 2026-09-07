@@ -286,6 +286,7 @@
     #minimap-dot   { fill: #ffcc4d; stroke: #07111d; stroke-width: 0.75; }
 
     #touch-controls { display: none; } /* shown only in the mobile media query below */
+    #btn-brake-2 { display: none; } /* landscape-only second brake button -- stays hidden in the portrait row, where only the ORIGINAL 3 buttons belong; the landscape query below is the only place that turns it on */
     /* .touch-btn's actual look (background/border/color/font/etc.) lives
        here, unconditionally, rather than inside the max-width:768px query
        below with the layout rules that USED to be its only neighbors --
@@ -335,7 +336,7 @@
        button, glyph included, to resolve to the same .touch-btn element. */
     .touch-btn span { pointer-events: none; }
     .touch-btn.pressed { background-color: #00c8a0; color: #07111d; }
-    #btn-brake.pressed { background-color: #ff4d4d; border-color: #ff4d4d; color: #07111d; }
+    #btn-brake.pressed, #btn-brake-2.pressed { background-color: #ff4d4d; border-color: #ff4d4d; color: #07111d; }
     .mobile-hint { display: none; }
 
     /* Not enough width for the game AND both box-art panels side by side --
@@ -554,16 +555,17 @@
          it though (a landscape phone is far wider than a 4:3 canvas needs
          once it's sized off height instead), which is exactly what a
          controller has zero use for but a touch/handheld player can put
-         to work: steering on the left thumb (stacked ◀ on top, ▶ below --
-         a rocker, same "adjacent, quick to alternate between" idea as the
-         gamepad's own Square/Cross rocking-brake mapping above, just for
-         steering instead), one big dedicated BRAKE zone under the right
-         thumb alone. Deliberately NOT left-button-left-edge/right-button-
-         right-edge -- that pairs brake with only ONE steering direction,
-         so braking mid-turn the OTHER way means the same thumb doing two
-         things at once. Grouping both steering buttons under one thumb
-         and giving the other thumb nothing but brake means brake is
-         always free no matter which way you're already turning.
+         to work.
+
+         Literal left-edge/right-edge steering (◀ on the left, ▶ on the
+         right, matching which hand is which -- a first version grouped
+         both under one thumb instead, reported back as unintuitive), each
+         taking the bottom 3/4 of that side. Top 1/4 of EACH side is its
+         own BRAKE button, not just one shared button on a single side --
+         two independent buttons bound to the exact same keySlower flip
+         (see the JS setup above), so braking is always reachable from
+         whichever thumb is more comfortable at that moment, on either
+         side, instead of forcing one specific hand to own it.
 
          #touch-controls becomes a full-viewport fixed overlay (position/
          inset, not the portrait row's normal-flow height:30vh) so it can
@@ -596,9 +598,14 @@
         width: clamp(64px, 12vw, 120px);
         pointer-events: auto;
       }
-      #btn-left  { left: 10px; top: 6%;    bottom: 52%; }
-      #btn-right { left: 10px; top: 52%;   bottom: 6%;  }
-      #btn-brake { right: 10px; top: 6%;   bottom: 6%;  font-size: 1rem; }
+      /* Bottom 3/4 (top:25% down to the edge) for steering, top 1/4 (the
+         edge down to bottom:75%) for that side's own brake -- a hard split
+         at the 25% line, no gap carved out of either share, so the actual
+         proportions asked for stay exact rather than approximate. */
+      #btn-left    { left: 10px;  top: 25%; bottom: 0;   }
+      #btn-right   { right: 10px; top: 25%; bottom: 0;   }
+      #btn-brake   { left: 10px;  top: 0;   bottom: 75%; font-size: 1rem; }
+      #btn-brake-2 { right: 10px; top: 0;   bottom: 75%; font-size: 1rem; display: block; }
     }
   </style>
 </head>
@@ -668,6 +675,12 @@
         <div class="touch-btn" id="btn-left"><span>&#9664;</span></div>
         <div class="touch-btn" id="btn-brake"><span>BRAKE</span></div>
         <div class="touch-btn" id="btn-right"><span>&#9654;</span></div>
+        <!-- Landscape-only twin of #btn-brake -- see that CSS block's own
+             comment on why braking needs to be reachable from EITHER
+             thumb there, not just one particular side. Hidden outright
+             everywhere else (base rule right below #touch-controls's own),
+             so it never joins the portrait row as a stray 4th button. -->
+        <div class="touch-btn" id="btn-brake-2"><span>BRAKE</span></div>
       </div>
     </div>
 
@@ -1201,6 +1214,7 @@
       var btnLeft   = Dom.get('btn-left');
       var btnRight  = Dom.get('btn-right');
       var btnBrake  = Dom.get('btn-brake');
+      var btnBrake2 = Dom.get('btn-brake-2'); // landscape's second brake button, one per side -- see its own CSS comment
       var container = Dom.get('touch-controls');
       if (!btnLeft || getComputedStyle(container).display === 'none') return; // desktop -- arrow keys handle it instead
 
@@ -1218,6 +1232,16 @@
       bindHold(btnRight, function() { keyRight = true;  }, function() { keyRight = false; });
       bindHold(btnBrake, function() { keySlower = true;  keyFaster = false; },
                           function() { keySlower = false; keyFaster = true;  });
+      // Second brake button, identical behavior -- both are just alternate
+      // ways to trigger the exact same keySlower/keyFaster flip, not two
+      // separate things to track. Landscape-only (hidden everywhere else),
+      // bound unconditionally here anyway since it costs nothing to bind a
+      // hidden element's listeners and doing it only here (not duplicated
+      // in the gamepad/CSS code) is the whole reason to reuse bindHold.
+      if (btnBrake2) {
+        bindHold(btnBrake2, function() { keySlower = true;  keyFaster = false; },
+                             function() { keySlower = false; keyFaster = true;  });
+      }
     })();
 
     //=========================================================================
