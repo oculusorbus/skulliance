@@ -171,6 +171,20 @@
               "isAccessibleForFree": true,
               "publisher": { "@id": "https://www.skulliance.io/#organization" }
             }
+          },
+          {
+            "@type": "ListItem",
+            "position": 5,
+            "item": {
+              "@type": "VideoGame",
+              "name": "Skull Racer",
+              "url": "https://www.skulliance.io/staking/skullracergame.php",
+              "image": "https://www.skulliance.io/staking/racing/images/screenshot.png",
+              "genre": ["Racing", "Arcade"],
+              "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+              "isAccessibleForFree": true,
+              "publisher": { "@id": "https://www.skulliance.io/#organization" }
+            }
           }
         ]
       }
@@ -628,6 +642,14 @@
             <p>Dethrone all 12 court cards of the Necropolis with suit powers, two Jokers, and one Last Stand - illustrated entirely in Crypties NFT art.</p>
             <a class="hp-cta" href="https://www.skulliance.io/staking/cryptconquestgame.php">Play Crypt Conquest</a>
           </div>
+          <div class="hp-game">
+            <a class="hp-game-art" href="https://www.skulliance.io/staking/skullracergame.php" aria-label="Play Skull Racer, the free retro arcade highway racing game">
+              <img src="https://www.skulliance.io/staking/racing/images/screenshot.png" alt="Skull Racer arcade racing game - a night desert highway with traffic ahead" loading="lazy" decoding="async">
+            </a>
+            <h3>Skull Racer - Retro Arcade Racer</h3>
+            <p>Three laps of a night desert highway at 180 mph - boost pads, jump ramps, traffic to thread, and ghost cars of the current record holders running the line beside you.</p>
+            <a class="hp-cta" href="https://www.skulliance.io/staking/skullracergame.php">Play Skull Racer</a>
+          </div>
         </div>
       </div>
     </section>
@@ -753,6 +775,13 @@
           <div class="hp-shot-card">
             <h3>Crypt Conquest</h3>
             <a href="https://www.skulliance.io/staking/cryptconquestgame.php"><img src="https://www.skulliance.io/staking/images/cryptconquest.png" alt="Crypt Conquest screenshot" loading="lazy" decoding="async"></a>
+          </div>
+          <!-- Lives under /staking/racing/images/ with the rest of the
+               racer's own assets, so like the two above it's its own card
+               rather than another $hp_shots row off the shared base. -->
+          <div class="hp-shot-card">
+            <h3>Skull Racer</h3>
+            <a href="https://www.skulliance.io/staking/skullracergame.php"><img src="https://www.skulliance.io/staking/racing/images/screenshot.png" alt="Skull Racer screenshot" loading="lazy" decoding="async"></a>
           </div>
         </div>
         <p class="hp-center" style="margin-top: 28px;"><a class="hp-cta" href="https://www.skulliance.io/staking">Start Staking</a></p>
