@@ -1347,6 +1347,7 @@
     // takeover side effects have run -- it is never used to FIND the pad.
     var gamepadActive = false;
     var STICK_DEADZONE = 0.25; // ignore drift/noise around center, same idea as any analog-stick game
+    var optionsWasPressed = false; // last tick's Options/Start state -- see the edge-detect in pollGamepad()
 
     // True if ANY button is held or ANY axis is pushed past the deadzone
     // -- what "a player is pressing a controller button" actually means,
@@ -1374,6 +1375,14 @@
       keyFaster = false;
       var hint = Dom.get('mobile-hint');
       if (hint) hint.innerHTML = 'Controller connected -- <b>D-pad</b>/<b>stick</b> to steer, <b>□</b> gas, <b>✕</b> brake.';
+      // Have a go at starting music/engine audio here too. On a browser
+      // that treats a gamepad press as a real user gesture this is all it
+      // takes; on iOS (which likely doesn't) it's a harmless no-op and the
+      // player's first screen touch does it instead -- see Game.startMusic()
+      // in common.js for why unlocking has to keep retrying rather than
+      // being one-shot.
+      if (Game.startMusic) Game.startMusic();
+      startEngineSound();
     }
 
     function gamepadRelease() {
@@ -1457,20 +1466,28 @@
       keyFaster  = square || r2;
       keySlower  = cross  || l2;
 
-      // NO Options/Start -> mute binding here on purpose. It existed
-      // briefly and was pulled back out: dispatching a synthetic .click()
-      // on #mute mid-race (which toggles a live <audio> element's muted
-      // state, among other things) correlated directly with control
-      // dying a moment later -- reported as "I can toggle the audio with
-      // the controller but the second I do, I lose control." Whatever the
-      // precise mechanism (that click landing during a frame where
-      // getGamepads() also went briefly quiet is the leading theory --
-      // see the tolerant `if (!gp) return;` above, which no longer turns
-      // such a moment into a disconnect), a nice-to-have shortcut isn't
-      // worth risking the one thing that has to stay rock solid. The mute
-      // ICON still works by tap, same as always. Revisit only with a
-      // version that never touches an HTMLMediaElement or dispatches a
-      // DOM event from inside the poll loop.
+      // Options (PS4/PS5) / Start (Xbox) -- button 9 in the standard
+      // mapping -- toggles sound.
+      //
+      // This was pulled once, when toggling it killed controller input
+      // instantly. That turned out not to be this binding's fault at all:
+      // mute flipped .muted on the old <audio> music element, which
+      // re-asserted iOS's Now Playing session, which handed the controller
+      // to the media remote (see Game.playMusic()'s own comment). With
+      // music on Web Audio there's no media element left to poke, so it's
+      // safe again -- but it now calls Game.toggleMute() directly rather
+      // than dispatching a synthetic .click() on #mute, keeping DOM events
+      // out of the input poll loop entirely.
+      //
+      // Edge-detected against optionsWasPressed rather than a bare level
+      // check: this runs every tick and a real press spans many of them
+      // (nobody releases a button inside 16ms), so a level check would
+      // toggle mute dozens of times per press.
+      var options = !!(gp.buttons[9] && gp.buttons[9].pressed);
+      if (options && !optionsWasPressed && Game.toggleMute) {
+        engineMuted = Game.toggleMute(); // returns the new muted state -- keeps the Web Audio SFX in step with the music gain
+      }
+      optionsWasPressed = options;
     }
 
     var hud = {

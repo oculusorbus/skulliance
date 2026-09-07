@@ -203,6 +203,17 @@ records verified constants, and tracks what still needs to be written.
   mute is a GainNode value, not .muted, so a muted track keeps playing silently and unmuting resumes
   in place. v1-v3/dev.html still have an inert <audio id='music'> element in their markup -- nothing
   reads it any more, but don't take that as license to add one back here.
+  Audio unlocking must KEEP RETRYING, not fire once (Game.startMusic() in racing/common.js). An
+  AudioContext starts 'suspended' and iOS only honours resume() from inside a genuine user-gesture
+  call stack -- a gamepad button press very likely isn't one there (same platform family as iOS
+  reserving the controller's PS button system-wide). A controller-only player therefore fires the
+  first-interaction hook, has resume() quietly refused, and sits in silence forever if nothing
+  retries -- reported exactly that way the moment music moved off <audio>. So startMusic() is
+  idempotent (starting the playlist at most once) but re-attempts resume() every time it's called,
+  and is wired to click/touchstart/keydown listeners that stay attached, plus gamepadTakeOver() in
+  racing/index.html. Whichever gesture the platform does accept wins; the rest are no-ops. A source
+  started while still suspended simply begins the moment the context resumes, so nothing is lost by
+  starting the track before the unlock lands.
   DO NOT store a gamepad slot index (pollGamepad() in racing/index.html). Two separate revisions
   tracked "which slot is the active controller" (gamepadIndex) and both produced the same PWA bug:
   the stored index goes stale -- iOS shuffles or empties slots, re-reports the same pad at a
@@ -229,16 +240,17 @@ records verified constants, and tracks what still needs to be written.
   gamepaddisconnected EVENT releases now; that's an actual statement from the browser rather than
   something inferred from one quiet frame. The takeover scan (which only ever ADDS detection, never
   removes control) was kept.
-  Options/Start -> mute was tried and REVERTED, deliberately -- do not re-add it the same way.
-  buttons[9], edge-detected, dispatching a real `.click()` on #mute (to reuse both of that element's
-  existing click listeners rather than duplicate their logic). Directly correlated with control
-  dying moments later in live testing: "I can toggle the audio with the controller but the second I
-  do, I lose control." Exact mechanism unconfirmed -- a synthetic DOM click toggling a live
-  <audio> element's muted state, fired from inside the poll loop, landing on a frame where
-  getGamepads() also went briefly quiet is the leading theory, and the tolerant `if (!gp)` above
-  removes the amplifier even if the trigger remains. A shortcut for something the mute icon already
-  does by tap is not worth risking input reliability; revisit only with an implementation that
-  touches no HTMLMediaElement and dispatches no DOM event from the poll loop.
+  Options/Start -> mute (buttons[9], edge-detected against optionsWasPressed in pollGamepad()). Was
+  pulled once and is back: toggling it used to kill controller input instantly ("I can toggle the
+  audio with the controller but the second I do, I lose control"), which read as this binding's
+  fault, but wasn't -- mute flipped .muted on the old <audio> music element, re-asserting iOS's Now
+  Playing session and handing the controller to the media remote (see the no-<audio> entry above).
+  With music on Web Audio there is no media element to poke. It calls Game.toggleMute() directly
+  rather than dispatching a synthetic .click() on #mute (which is how it reused that element's two
+  listeners before) -- same end state, no DOM events fired from inside the input poll loop. That
+  function returns the new muted state, which the caller assigns to engineMuted so the Web Audio
+  SFX stay in step with the music gain; tapping the icon still goes through the click listener,
+  which updates engineMuted its own way.
   Gamepad audio unlock (Game.onFirstInteraction() in racing/common.js, shared by every page in
   racing/ that calls it -- index.html/v4.final.html, dev.html, v1-v3 -- not just the live game):
   that function's own browser-autoplay-unlock listener only covered

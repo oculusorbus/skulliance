@@ -263,6 +263,7 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
     gain.gain.value = muted ? 0 : MUSIC_VOLUME;
     gain.connect(ctx.destination);
     var currentSource = null;
+    var musicStarted  = false;
 
     function playTrack(i) {
       fetch(playlist[i])
@@ -289,26 +290,52 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
     // Mute is a gain value now, not <audio>.muted -- the track keeps
     // playing silently, exactly as before, so unmuting drops back into the
     // right place rather than restarting. Dom.storage stays the single
-    // source of truth that racing/index.html's own second listener on this
-    // same element reads for the Web Audio engine/collision/lap sounds.
-    Dom.toggleClassName('mute', 'on', muted);
-    Dom.on('mute', 'click', function() {
+    // source of truth that racing/index.html reads for the Web Audio
+    // engine/collision/lap sounds.
+    //
+    // Exposed as Game.toggleMute() rather than living only inside the click
+    // handler so the gamepad can drive it directly. It used to do that by
+    // dispatching a synthetic .click() on #mute, which meant a DOM event
+    // fired from inside the input poll loop -- harmless in itself, but it
+    // was also toggling a live <audio> element back when one existed, which
+    // is what actually killed controller input (see this function's own
+    // top comment). Calling a plain function instead keeps that whole
+    // category of interaction off the table.
+    Game.toggleMute = function() {
       muted = !muted;
       Dom.storage.muted = muted;
       gain.gain.value = muted ? 0 : MUSIC_VOLUME;
       Dom.toggleClassName('mute', 'on', muted);
-    });
+      return muted;
+    };
+    Dom.toggleClassName('mute', 'on', muted);
+    Dom.on('mute', 'click', function() { Game.toggleMute(); });
 
     // Starting immediately here (as this used to) gets silently rejected by
     // the browser's autoplay policy -- no real user gesture has happened at
-    // "page ready" time -- and nothing ever retried, so music just never
-    // started even though nothing looked broken. Deferring to the first
-    // real interaction actually satisfies that requirement, since a player
-    // has to press something to drive anyway. resume() for the same reason:
-    // an AudioContext also starts suspended until a genuine gesture.
-    Game.onFirstInteraction(function() {
-      ctx.resume();
+    // "page ready" time. Deferring to the first interaction satisfies that,
+    // since a player has to press something to drive anyway.
+    //
+    // But it can't be ONE-SHOT, and this is why: an AudioContext starts
+    // 'suspended' and iOS only honours resume() from inside a genuine
+    // user-gesture call stack. A gamepad button press very likely isn't one
+    // there (same platform family as iOS reserving the controller's PS
+    // button system-wide), so a controller-only player would fire the first
+    // -interaction hook, get resume() quietly refused, and sit in silence
+    // forever with nothing retrying -- reported exactly that way once the
+    // music moved off <audio>. So: starting is idempotent, and every later
+    // real gesture gets another go at unlocking, until one takes. resume()
+    // is safe to call repeatedly, and a source started on a still-suspended
+    // context simply begins the moment it does resume.
+    Game.startMusic = function() {
+      if (ctx.resume) ctx.resume();
+      if (musicStarted) return;
+      musicStarted = true;
       playTrack(index);
+    };
+    Game.onFirstInteraction(Game.startMusic);
+    ['click', 'touchstart', 'keydown'].forEach(function(type) {
+      document.addEventListener(type, function() { Game.startMusic(); }, { passive: true });
     });
   },
 
