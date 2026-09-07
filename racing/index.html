@@ -732,9 +732,15 @@
     </div>
   </div>
 
-  <audio id='music'>
-    <source src="/staking/racing/music/skull-racer-theme.mp3"><!-- 1/2/3 cycled in via common.js after each ends --></source>
-  </audio>
+  <!-- No <audio> elements on this page at all any more, and that's load
+       bearing, not tidying: on iOS a PLAYING HTMLMediaElement creates a
+       system "Now Playing" session, and while one exists the OS routes a
+       connected game controller's buttons to the media remote instead of
+       to this page's Gamepad API. Music was the last one left (see
+       Game.playMusic() in common.js, now Web Audio like everything else
+       here) and was single-handedly killing controller input in the
+       installed PWA. Don't reintroduce one for a sound effect without
+       reading that comment first. -->
   <!-- Collision SFX (synthesized -- no engine/collision sound existed
        anywhere in this codebase before) and the lap-complete chime
        (Crypt Crawl's own "heal" sound, copied into this game's own
@@ -1647,12 +1653,14 @@
     // Decoded from an inline base64 copy (sounds/*-data.js), not
     // fetch()'d -- fetch()/XHR of a local file is blocked by Chrome's CORS
     // rules when this page is opened directly via file:// (no server),
-    // which silently killed these sounds for exactly that reason before
-    // music (an <audio> element, unaffected by that restriction) played
-    // fine. Shared by engine/collision/lap now that all three go through
-    // the Web Audio API -- see collisionBuffer/lapBuffer below for why
-    // collision/lap joined engine/pass-sound here instead of staying
-    // <audio> elements.
+    // which silently killed these sounds for exactly that reason back when
+    // music still played through an <audio> element (unaffected by that
+    // restriction) and so seemed fine by comparison. Shared by engine/
+    // collision/lap -- see collisionBuffer/lapBuffer below for why those
+    // two joined engine/pass-sound here. Music itself is Web Audio now too
+    // (Game.playMusic() in common.js) but fetch()'d rather than embedded,
+    // since ~3MB tracks can't reasonably be inlined -- that one genuinely
+    // does need a server, which production always is.
     function decodeBase64Audio(base64, callback) {
       var raw   = atob(base64);
       var bytes = new Uint8Array(raw.length);

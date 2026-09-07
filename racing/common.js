@@ -218,8 +218,29 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
 
   //---------------------------------------------------------------------------
 
+  // Web Audio API, NOT the <audio id='music'> element this used to drive.
+  // Root cause of a long-running, badly misdiagnosed bug: on iOS, a playing
+  // HTMLMediaElement creates a system "Now Playing" session, and once one
+  // exists the OS routes a connected game controller's buttons to the MEDIA
+  // REMOTE (play/pause/skip) instead of delivering them to the page's
+  // Gamepad API at all. In the installed PWA that read as the controller
+  // working for exactly one press and then going dead -- and pausing the
+  // music from that popped-up media player handed control straight back,
+  // which is what finally identified it. Several rounds of "fixes" to the
+  // gamepad polling itself were chasing this symptom; none of them could
+  // have worked, because the input was never reaching the page to begin
+  // with. An AudioContext creates no Now Playing session, so there is
+  // nothing for iOS to hand the controller to. Same reasoning that already
+  // moved the collision/lap SFX off <audio> elements (see racing/index.html
+  // and sounds/collision-data.js) -- this is the last one that was left.
+  //
+  // fetch()+decodeAudioData rather than the SFX's base64-embedding: these
+  // tracks are ~3MB each, far too big to inline, and one at a time rather
+  // than all three up front since a decoded AudioBuffer is raw PCM (tens of
+  // MB per track) and holding all three would be pointless on a phone. The
+  // trade is a short silent gap while the next one decodes at each track
+  // change, which is a fine price for the controller working at all.
   playMusic: function() {
-    var music = Dom.get('music');
     // Original racer.mp3/racer.ogg were licensed ONLY for the upstream
     // project's own demo (see this repo's README) -- subbed in Crypt
     // Crawl's own tracks temporarily, now replaced with Skull Racer's own
@@ -234,28 +255,61 @@ var Game = {  // a modified version of the game loop from my previous boulderdas
       '/staking/racing/music/skull-racer-1.mp3',
       '/staking/racing/music/skull-racer-2.mp3'
     ];
-    var index    = 0;
-    music.loop  = false;
-    music.volume = 0.35; // was 0.05 -- inaudible at a sane system volume
-    music.muted = (Dom.storage.muted === "true");
-    music.addEventListener('ended', function() {
-      index = (index + 1) % playlist.length;
-      music.src = playlist[index];
-      music.play();
-    });
-    Dom.toggleClassName('mute', 'on', music.muted);
+    var index = 0;
+    var ctx   = new (window.AudioContext || window.webkitAudioContext)();
+    var gain  = ctx.createGain();
+    var muted = (Dom.storage.muted === "true");
+    var MUSIC_VOLUME = 0.35; // was 0.05 -- inaudible at a sane system volume
+    gain.gain.value = muted ? 0 : MUSIC_VOLUME;
+    gain.connect(ctx.destination);
+    var currentSource = null;
+
+    function playTrack(i) {
+      fetch(playlist[i])
+        .then(function(response) { return response.arrayBuffer(); })
+        .then(function(encoded) { return ctx.decodeAudioData(encoded); })
+        .then(function(audioBuffer) {
+          var src = ctx.createBufferSource();
+          src.buffer = audioBuffer;
+          src.connect(gain);
+          src.onended = function() {
+            // Ignore a node that's already been superseded -- stop()ing or
+            // replacing a source fires this too, and acting on those would
+            // skip tracks or start two at once.
+            if (src !== currentSource) return;
+            index = (index + 1) % playlist.length;
+            playTrack(index);
+          };
+          currentSource = src;
+          src.start(0);
+        })
+        .catch(function() {}); // a track failing to load shouldn't take the game's audio down with it
+    }
+
+    // Mute is a gain value now, not <audio>.muted -- the track keeps
+    // playing silently, exactly as before, so unmuting drops back into the
+    // right place rather than restarting. Dom.storage stays the single
+    // source of truth that racing/index.html's own second listener on this
+    // same element reads for the Web Audio engine/collision/lap sounds.
+    Dom.toggleClassName('mute', 'on', muted);
     Dom.on('mute', 'click', function() {
-      Dom.storage.muted = music.muted = !music.muted;
-      Dom.toggleClassName('mute', 'on', music.muted);
+      muted = !muted;
+      Dom.storage.muted = muted;
+      gain.gain.value = muted ? 0 : MUSIC_VOLUME;
+      Dom.toggleClassName('mute', 'on', muted);
     });
 
-    // Calling play() immediately here (as this used to) gets silently
-    // rejected by the browser's autoplay policy -- no real user gesture
-    // has happened yet at "page ready" time -- and nothing ever retried,
-    // so music just never started even though nothing looked broken.
-    // Deferring to the first real interaction actually satisfies that
-    // requirement, since a player has to press a key to drive anyway.
-    Game.onFirstInteraction(function() { music.play(); });
+    // Starting immediately here (as this used to) gets silently rejected by
+    // the browser's autoplay policy -- no real user gesture has happened at
+    // "page ready" time -- and nothing ever retried, so music just never
+    // started even though nothing looked broken. Deferring to the first
+    // real interaction actually satisfies that requirement, since a player
+    // has to press something to drive anyway. resume() for the same reason:
+    // an AudioContext also starts suspended until a genuine gesture.
+    Game.onFirstInteraction(function() {
+      ctx.resume();
+      playTrack(index);
+    });
   },
 
   //---------------------------------------------------------------------------

@@ -184,6 +184,25 @@ records verified constants, and tracks what still needs to be written.
   suppress it. The robustness work above is what actually helps the RECOVERY side of that sequence
   (pressing any OTHER button once back on the page re-takes-over immediately, same as a fresh
   connect) -- the Game Center detour itself isn't this codebase's to solve.
+  NO <audio>/<video> ELEMENTS ON THIS PAGE, EVER -- this is the single most important thing to know
+  about audio here, and it is load-bearing, not tidiness. On iOS a PLAYING HTMLMediaElement creates a
+  system "Now Playing" session, and while one exists the OS routes a connected game controller's
+  buttons to the MEDIA REMOTE (play/pause/skip) rather than delivering them to the page's Gamepad
+  API at all. In the installed PWA that presented as the controller working for exactly one press
+  and then going dead -- and it was identified only when a player noticed that opening the media
+  player that had popped up and PAUSING the music handed control straight back. Several consecutive
+  rounds of gamepad-polling "fixes" (stored slot index, release-on-quiet-poll, stateless re-scan)
+  were chasing that symptom; none of them could ever have worked, because the input was never
+  reaching the page. Toggling mute from the controller broke it the same way for the same reason
+  (flipping .muted on the <audio> element re-asserted the session), which is why THAT looked like a
+  separate bug too. Everything is Web Audio now -- engine, pass-by, collision, lap, and finally music
+  (Game.playMusic() in racing/common.js) -- and an AudioContext creates no Now Playing session, so
+  there is nothing for iOS to hand the controller to. Music is fetch()'d + decodeAudioData'd one
+  track at a time rather than base64-embedded like the SFX (~3MB each, and a decoded AudioBuffer is
+  raw PCM), trading a short silent gap at each track change for the controller working at all;
+  mute is a GainNode value, not .muted, so a muted track keeps playing silently and unmuting resumes
+  in place. v1-v3/dev.html still have an inert <audio id='music'> element in their markup -- nothing
+  reads it any more, but don't take that as license to add one back here.
   DO NOT store a gamepad slot index (pollGamepad() in racing/index.html). Two separate revisions
   tracked "which slot is the active controller" (gamepadIndex) and both produced the same PWA bug:
   the stored index goes stale -- iOS shuffles or empties slots, re-reports the same pad at a
