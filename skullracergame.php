@@ -205,7 +205,7 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 
 	<section class="sr-land-section" id="sr-how-it-works">
 		<div class="sr-land-wrap">
-			<h2>An Arcade Racer With a Clock On It</h2>
+			<h2>Race the Clock, and Everyone Else</h2>
 			<div class="sr-features">
 				<div class="sr-feat-card">
 					<h3>👻 Race the Record Holders</h3>
