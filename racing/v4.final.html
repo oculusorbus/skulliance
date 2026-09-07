@@ -1326,6 +1326,7 @@
     //=========================================================================
     var gamepadIndex = null; // navigator.getGamepads() index of the active controller, or null
     var STICK_DEADZONE = 0.25; // ignore drift/noise around center, same idea as any analog-stick game
+    var optionsWasPressed = false; // last tick's Options/Start state -- see pollGamepad()'s own use of it, below
 
     // True if ANY button is held or ANY axis is pushed past the deadzone
     // -- what "a player is pressing a controller button" actually means,
@@ -1402,6 +1403,28 @@
       var l2     = !!(gp.buttons[6] && gp.buttons[6].pressed); // brake, alternate
       keyFaster  = square || r2;
       keySlower  = cross  || l2;
+
+      // Options (PS4/PS5) / Start (Xbox) -- button 9 in the standard
+      // mapping -- toggles sound. Dispatched as a real .click() on #mute
+      // rather than duplicating its toggle logic here: that one element
+      // already has TWO click listeners on it (common.js's own music/
+      // Dom.storage.muted toggle, and this page's second one flipping
+      // engineMuted for the Web Audio engine/collision/lap sounds) --
+      // clicking it for real fires both, so a controller press stays in
+      // perfect sync with tapping the icon by hand, forever, with nothing
+      // new to keep in sync by hand here.
+      //
+      // Edge-detected against optionsWasPressed, not just `if (pressed)`
+      // -- pollGamepad() runs every tick, and a real press is held across
+      // many of them (a human can't release a button within 16ms), so an
+      // undetected level-check would toggle mute dozens of times over the
+      // course of one single press instead of once.
+      var options = !!(gp.buttons[9] && gp.buttons[9].pressed);
+      if (options && !optionsWasPressed) {
+        var muteEl = Dom.get('mute');
+        if (muteEl) muteEl.click();
+      }
+      optionsWasPressed = options;
     }
 
     var hud = {

@@ -184,6 +184,15 @@ records verified constants, and tracks what still needs to be written.
   suppress it. The robustness work above is what actually helps the RECOVERY side of that sequence
   (pressing any OTHER button once back on the page re-takes-over immediately, same as a fresh
   connect) -- the Game Center detour itself isn't this codebase's to solve.
+  Options/Start toggles mute (optionsWasPressed, inside pollGamepad() in racing/index.html):
+  buttons[9] in the standard mapping. Edge-detected against last tick's state, not a level check --
+  pollGamepad() runs every tick and a real press is held across many of them (no human releases a
+  button within 16ms), so `if (pressed)` alone would toggle mute dozens of times over one press
+  instead of once. Dispatches a real `.click()` on #mute rather than duplicating its toggle logic --
+  that element already carries TWO click listeners (common.js's own music/Dom.storage.muted toggle,
+  and this page's second one flipping engineMuted for the Web Audio engine/collision/lap sounds, see
+  that entry above); a real click fires both, so a controller press stays in sync with tapping the
+  icon by hand with nothing new to maintain here.
   Gamepad audio unlock (Game.onFirstInteraction() in racing/common.js, shared by every page in
   racing/ that calls it -- index.html/v4.final.html, dev.html, v1-v3 -- not just the live game):
   that function's own browser-autoplay-unlock listener only covered
