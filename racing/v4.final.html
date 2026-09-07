@@ -489,7 +489,17 @@
       body { padding: 4px; }
       .box-column { display: none; }
       #stage { gap: 0; width: 100%; }
-      #frame { width: 100%; padding: 4px; border: none; border-radius: 0; box-shadow: none; } /* the rounded-card look costs real pixels here for zero benefit on a screen this short -- border alone was only 1px/side, but it's one more thing gone */
+      /* The rounded-card look costs real pixels here for zero benefit on a
+         screen this short, so border/radius/shadow are all dropped. The
+         BACKGROUND goes too, which is less obvious but the visible one:
+         #frame's panel colour (#0a1929) is a shade lighter than the page
+         behind it (#07111d), and the touch buttons over it are deliberately
+         translucent -- so wherever the panel ended mid-button, that button
+         showed two different tones with a hard seam down it. Reported from a
+         screenshot. Transparent here means every button tints against one
+         flat colour instead. The canvas paints its own background, so
+         nothing is lost by the panel not being there. */
+      #frame { width: 100%; padding: 4px; border: none; border-radius: 0; box-shadow: none; background-color: transparent; }
       /* Constrained by HEIGHT, not 100% width -- the opposite of every
          other mobile rule above, because landscape flips which dimension
          is scarce.
