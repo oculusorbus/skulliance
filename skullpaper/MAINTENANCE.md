@@ -347,6 +347,22 @@ records verified constants, and tracks what still needs to be written.
   (1.6x) so it doesn't just sound like a second copy of your own engine. Panned by the car's lane
   offset relative to playerX, clamped to StereoPannerNode's -1..1 range. One-shot per car per
   approach via car.lastPassSoundAt + PASS_SOUND_COOLDOWN, not full enter/exit tracking.
+  Collision/lap SFX (playCollisionSound()/playLapSound(), collisionBuffer/lapBuffer, both in
+  racing/index.html; sounds/collision-data.js/sounds/lap-data.js): Web Audio API one-shot
+  BufferSourceNode -> GainNode chains now, same technique as playPassSound() just above them in the
+  file, NOT the `<audio id='collision-sound'>`/`<audio id='lap-sound'>` elements this used to be.
+  Reported live: repeatedly play()ing/pausing an HTMLMediaElement (once per hit, once per lap) was
+  triggering iOS's system "Now Playing" media overlay in the installed PWA specifically -- WebKit
+  auto-populates SOME level of media-session info for ANY HTMLMediaElement playback in standalone
+  display mode, without a site needing to touch navigator.mediaSession at all, and each fresh
+  paused->playing transition (which a short SFX finishing and re-triggering does constantly) can
+  re-surface that overlay, popping up over the game and stealing focus from an active gamepad
+  mid-race. Web Audio API buffer playback isn't treated as OS-level "media" the same way, so it
+  doesn't build that overlay in the first place -- not a workaround for the popup, just not using
+  the API that causes it. Base64-embedded (decodeBase64Audio(), shared with engineBuffer's own
+  decode -- same file:// CORS reasoning sounds/engine-data.js already documented) rather than
+  fetch()'d. Both gate on the same `engineMuted` flag playPassSound() already checks, not an
+  `<audio>.muted` property -- there's no HTMLMediaElement left for either sound to set one on.
   No iframe (skullracer.php): used to iframe racing/index.html because header.php's nav links
   are root-relative while racing/'s own asset references were folder-relative -- incompatible in
   one document. Fixed by making every asset reference in racing/index.html and racing/common.js

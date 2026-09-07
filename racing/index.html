@@ -735,28 +735,24 @@
   <audio id='music'>
     <source src="/staking/racing/music/skull-racer-theme.mp3"><!-- 1/2/3 cycled in via common.js after each ends --></source>
   </audio>
-  <!-- Collision SFX -- synthesized (no engine/collision sound existed
-       anywhere in this codebase before, confirmed by grep across every
-       version). Trial run, wired into this presentation build only.
-       Engine sound is Web Audio API instead of a plain <audio> element
-       (see the script below) -- <audio loop> isn't sample-accurate in
-       most browsers, it actually restarts with an audible gap each
-       cycle, which is exactly the "chugging with pauses" that was wrong
-       with the first attempt. -->
-  <audio id='collision-sound'>
-    <source src="/staking/racing/sounds/collision.wav" type="audio/wav">
-  </audio>
-  <!-- Lap-complete chime -- Crypt Crawl's own "heal" sound
-       (audio/sounds/heal.mp3 at the repo root), copied into this game's
-       own sounds/ folder as lap.mp3 rather than referenced across
-       folders, same self-contained-assets convention every other racing/
-       sound and image already follows. -->
-  <audio id='lap-sound'>
-    <source src="/staking/racing/sounds/lap.mp3" type="audio/mpeg">
-  </audio>
+  <!-- Collision SFX (synthesized -- no engine/collision sound existed
+       anywhere in this codebase before) and the lap-complete chime
+       (Crypt Crawl's own "heal" sound, copied into this game's own
+       sounds/ folder as lap.mp3) both play through the Web Audio API now
+       (see collisionBuffer/lapBuffer in the script below), not plain
+       <audio> elements like this comment used to describe -- repeatedly
+       play()ing/pausing an HTMLMediaElement (once per hit, once per lap)
+       is what was popping up iOS's system "Now Playing" overlay in the
+       installed PWA, stealing focus from an active gamepad mid-race.
+       Same reasoning that already moved engine sound off <audio loop>
+       (sample-accuracy, a separate problem) applies here for a different
+       one -- neither is an <audio>/<video> element left in the page
+       anymore for iOS to build a media session around. -->
 
   <script src="/staking/racing/common.js"></script>
   <script src="/staking/racing/sounds/engine-data.js"></script>
+  <script src="/staking/racing/sounds/collision-data.js"></script>
+  <script src="/staking/racing/sounds/lap-data.js"></script>
   <script>
 
     var fps            = 60;                      // how many 'update' frames per second
@@ -1417,17 +1413,13 @@
     }
 
     //=========================================================================
-    // ENGINE / COLLISION SFX (trial synthesized sounds, not part of the
-    // original codebase -- confirmed there was never any before). Kept
+    // ENGINE / COLLISION / LAP SFX (trial synthesized sounds, not part of
+    // the original codebase -- confirmed there was never any before). Kept
     // separate from Game.playMusic() in common.js on purpose, so this
-    // stays scoped to this presentation build only.
+    // stays scoped to this presentation build only. All three are Web
+    // Audio API buffers now, not <audio> elements -- see collisionBuffer/
+    // lapBuffer below, decoded alongside engineBuffer once audioCtx exists.
     //=========================================================================
-
-    var collisionSound = Dom.get('collision-sound');
-    collisionSound.volume = 0.25; // was unset (1.0), then 0.4 -- still louder than music, dropped again
-
-    var lapSound = Dom.get('lap-sound');
-    lapSound.volume = 0.45; // bumped up from 0.3, still under collisionSound
 
     //=========================================================================
     // MINIMAP -- track shape traced once from the same curve values render()
@@ -1589,20 +1581,26 @@
     var engineSourceNode = null; // only exists once actually started
     var readyToStartEngine = false;
 
-    // Decoded from the inline base64 copy (sounds/engine-data.js), not
+    // Decoded from an inline base64 copy (sounds/*-data.js), not
     // fetch()'d -- fetch()/XHR of a local file is blocked by Chrome's CORS
     // rules when this page is opened directly via file:// (no server),
-    // which silently killed the engine sound for exactly that reason while
-    // the music/collision <audio> elements (unaffected by that restriction)
-    // played fine.
-    var engineRaw = atob(ENGINE_WAV_BASE64);
-    var engineBytes = new Uint8Array(engineRaw.length);
-    for (var i = 0; i < engineRaw.length; i++) engineBytes[i] = engineRaw.charCodeAt(i);
-    audioCtx.decodeAudioData(engineBytes.buffer)
-      .then(function(audioBuffer) {
-        engineBuffer = audioBuffer;
-        if (readyToStartEngine) startEngineSound(); // interaction already happened while this was still decoding
-      });
+    // which silently killed these sounds for exactly that reason before
+    // music (an <audio> element, unaffected by that restriction) played
+    // fine. Shared by engine/collision/lap now that all three go through
+    // the Web Audio API -- see collisionBuffer/lapBuffer below for why
+    // collision/lap joined engine/pass-sound here instead of staying
+    // <audio> elements.
+    function decodeBase64Audio(base64, callback) {
+      var raw   = atob(base64);
+      var bytes = new Uint8Array(raw.length);
+      for (var i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+      audioCtx.decodeAudioData(bytes.buffer).then(callback);
+    }
+
+    decodeBase64Audio(ENGINE_WAV_BASE64, function(audioBuffer) {
+      engineBuffer = audioBuffer;
+      if (readyToStartEngine) startEngineSound(); // interaction already happened while this was still decoding
+    });
 
     function startEngineSound() {
       audioCtx.resume(); // AudioContext itself starts 'suspended' until a real user gesture, same autoplay rule as <audio>
@@ -1650,14 +1648,40 @@
       src.stop(audioCtx.currentTime + 0.5);
     }
 
+    // Collision/lap SFX -- one-shot AudioBufferSourceNodes, same technique
+    // as playPassSound() just above, in place of the <audio> elements
+    // these used to be. Reported: repeatedly play()ing/pausing an
+    // HTMLMediaElement (once per hit, once per lap) was triggering iOS's
+    // system "Now Playing" media overlay in the installed PWA, popping up
+    // over the game and stealing focus from an active gamepad mid-race.
+    // Web Audio API playback isn't treated as OS-level "media" the same
+    // way, so it doesn't build that overlay in the first place -- not a
+    // workaround, just not using the API that causes it.
+    var collisionBuffer = null;
+    var lapBuffer        = null;
+    decodeBase64Audio(COLLISION_WAV_BASE64, function(audioBuffer) { collisionBuffer = audioBuffer; });
+    decodeBase64Audio(LAP_MP3_BASE64,       function(audioBuffer) { lapBuffer       = audioBuffer; });
+
     function playCollisionSound() {
-      collisionSound.currentTime = 0;
-      collisionSound.play();
+      if (!collisionBuffer || engineMuted) return; // not decoded yet, or muted -- same gate as the player's own engine/pass sound
+      var src  = audioCtx.createBufferSource();
+      var gain = audioCtx.createGain();
+      src.buffer = collisionBuffer;
+      gain.gain.value = 0.25; // was unset (1.0), then 0.4 -- still louder than music, dropped again
+      src.connect(gain);
+      gain.connect(audioCtx.destination);
+      src.start(0);
     }
 
     function playLapSound() {
-      lapSound.currentTime = 0;
-      lapSound.play();
+      if (!lapBuffer || engineMuted) return;
+      var src  = audioCtx.createBufferSource();
+      var gain = audioCtx.createGain();
+      src.buffer = lapBuffer;
+      gain.gain.value = 0.45; // bumped up from 0.3, still under collision's own volume
+      src.connect(gain);
+      gain.connect(audioCtx.destination);
+      src.start(0);
     }
 
     //=========================================================================
@@ -2686,14 +2710,15 @@
         updateHud('lap', lapNumber);
         Dom.on('finish-replay', 'click', function() { location.reload(); });
 
-        // Engine loop respects the same mute toggle as music -- common.js's
-        // own 'mute' click handler only knows about #music, so this adds a
-        // second listener on the same element/event (both fire) rather
-        // than touching that shared function. Engine mute is a gain-node
-        // value (Web Audio), not an <audio>.muted property.
-        collisionSound.muted = lapSound.muted = engineMuted;
+        // Engine/collision/lap all respect the same mute toggle as music --
+        // common.js's own 'mute' click handler only knows about #music, so
+        // this adds a second listener on the same element/event (both
+        // fire) rather than touching that shared function. All three are
+        // Web Audio API gates now (engineGain's value, and the `engineMuted`
+        // check inside playCollisionSound()/playLapSound()), not an
+        // <audio>.muted property.
         Dom.on('mute', 'click', function() {
-          engineMuted = collisionSound.muted = lapSound.muted = (Dom.storage.muted === "true");
+          engineMuted = (Dom.storage.muted === "true");
         });
         // Same deferred-start reasoning as Game.playMusic() in common.js --
         // starting audio here directly gets silently blocked by the
