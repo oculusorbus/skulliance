@@ -22,6 +22,8 @@ Having zero cost missions allows those with few NFTs to test their luck with mis
 
 In the future, we will be adding missions with higher costs/rewards and longer durations. This will allow those with larger collections to be strategic about what missions they opt to embark on.
 
+Each project's missions form a ladder - completing one level unlocks the next. A **thin progress bar sits under each project icon** in the missions filter so you can see at a glance which projects still have levels left to unlock and which you've taken all the way. The bar turns **gold** once every mission for that project is open to you; hovering the icon gives the exact count. It's only shown when you're logged in, since it reflects your own progress.
+
 ## Inventory
 
 All of your NFTs for each mission are preselected under the inventory section. This saves you the trouble on clicking on a bunch of NFTs to start your mission. If you want to adjust your inventory, you can deselect as you wish.

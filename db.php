@@ -997,7 +997,37 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 	$sql = "SELECT DISTINCT projects.id, projects.name, projects.currency AS currency FROM quests INNER JOIN projects ON projects.id = quests.project_id ORDER BY projects.id";
 	
 	$result = $conn->query($sql);
-	
+
+	// Unlock progress per project, for the little bar under each icon.
+	//
+	// A project's missions are a ladder of quest LEVELS. Completing level N
+	// unlocks N+1, so "unlocked" is max-completed + 1, capped at the top
+	// level -- the same rule autoMissions() uses for $has_locked, kept
+	// identical on purpose so the bar can never disagree with whether the
+	// game will actually let you launch the next one.
+	//
+	// Two queries total, not two per project: the level ceilings in one
+	// grouped query, the user's completed levels in one more (the same
+	// getMissionLevels() the rest of missions uses).
+	//
+	// Guarded on being logged in. getMissionLevels() interpolates
+	// $_SESSION['userData']['user_id'] straight into SQL, so calling it for
+	// a logged-out visitor would build a broken query -- and a guest has no
+	// progress to show anyway. No session, no bars, everything else renders
+	// exactly as before.
+	$mf_logged_in = isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] > 0;
+	$mf_max_level = array();
+	$mf_completed = array();
+	if ($mf_logged_in) {
+		$mf_lr = $conn->query("SELECT project_id, MAX(level) AS max_level FROM quests GROUP BY project_id");
+		if ($mf_lr) {
+			while ($mf_row = $mf_lr->fetch_assoc()) {
+				$mf_max_level[(int)$mf_row['project_id']] = (int)$mf_row['max_level'];
+			}
+		}
+		$mf_completed = getMissionLevels($conn);
+	}
+
 	echo "<div class='missions-filters'>";
 	/*
 	echo "<div class='missions-filter' onclick='toggleMissions(\"block\");hideLockedMissions();selectProjectFilter(0);toggleSections(\"quests\");'>All</div>";
@@ -1006,7 +1036,29 @@ function getMissionsFilters($conn, $quest_id, $projects) {
 		while($row = $result->fetch_assoc()) {
 			$eligible = checkMissionInventory($conn, $row["id"]) ? " eligible" : "";
 			//echo "<div class='missions-filter".$eligible."' onclick='getQuests(".$row["id"].");toggleMissions(\"none\");showMissions(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'>".$row["name"]."</div>";
-			echo "<div class='missions-filter".$eligible."' data-tooltip='".htmlspecialchars($row["name"])."' onclick='getQuests(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'><img src='icons/".strtolower($row["currency"]).".png'/></div>";
+			$pid       = (int)$row["id"];
+			$mf_total  = isset($mf_max_level[$pid]) ? $mf_max_level[$pid] : 0;
+			$mf_done   = isset($mf_completed[$pid]) ? (int)$mf_completed[$pid] : 0;
+			// +1 because clearing a level unlocks the next; capped at the top.
+			$mf_open   = $mf_total > 0 ? min($mf_done + 1, $mf_total) : 0;
+			// (int) so the value interpolated into the style attribute is
+			// always a plain integer -- round() returns a float, and a
+			// stray "33.333333%" in inline CSS is not worth risking.
+			$mf_pct    = $mf_total > 0 ? (int)round(($mf_open / $mf_total) * 100) : 0;
+			$mf_full   = ($mf_total > 0 && $mf_open >= $mf_total);
+
+			// Progress folded into the EXISTING tooltip rather than a second
+			// title attribute -- one hover, one label, and it degrades to
+			// just the project name when there's nothing to report.
+			$mf_label  = htmlspecialchars($row["name"]);
+			$mf_bar    = "";
+			if ($mf_logged_in && $mf_total > 0) {
+				$mf_label .= " -- " . $mf_open . "/" . $mf_total . " unlocked" . ($mf_full ? " (complete)" : "");
+				$mf_bar    = "<div class='mf-progress" . ($mf_full ? " complete" : "") . "'>"
+				           . "<div class='mf-progress-fill' style='width:" . $mf_pct . "%'></div></div>";
+			}
+
+			echo "<div class='missions-filter".$eligible."' data-tooltip='".$mf_label."' onclick='getQuests(".$row["id"].");selectProjectFilter(".$row["id"].");toggleSections(\"quests\");'><img src='icons/".strtolower($row["currency"]).".png'/>".$mf_bar."</div>";
 		}
 	}
 	echo "</div>";
