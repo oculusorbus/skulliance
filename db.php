@@ -5723,19 +5723,33 @@ function resetCryptConquests($conn) {
 // crypt crawl=5, crypt conquest=5, skull race=5, raid=15, boss battle=25,
 // monstrocity session=50
 function checkActivityLeaderboard($conn, $period = 'ath') {
-	// REQUIRES A MIGRATION -- cryptcrawls has no date/timestamp column today
-	// (cryptcrawlGetMostRecentRun() orders by `id DESC` instead, a signal
-	// nothing date-based exists yet). Run once against the live DB before
-	// this 'crawl' source below can work for monthly/weekly (ath is
-	// unaffected, it never filters by date):
-	//   ALTER TABLE cryptcrawls ADD COLUMN date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER carbon_earned;
-	// No PHP-side change needed to populate it -- the DEFAULT handles every
-	// existing INSERT (cryptcrawlStartRun()) automatically. See MAINTENANCE.md.
-	// cryptconquests has the exact same gap -- the table's original CREATE
-	// TABLE (see cryptconquest.md) didn't include a date column either, so
-	// the 'conquest' source below needs this run once too before
-	// monthly/weekly can work for it:
-	//   ALTER TABLE cryptconquests ADD COLUMN date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER reward;
+	// MIGRATIONS DONE -- this block used to say cryptcrawls and cryptconquests
+	// each still needed a date_created column added before 'crawl' and
+	// 'conquest' could work for monthly/weekly. Both were run; verified
+	// against the live DB on 2026-09-08, both columns present as
+	// `datetime NOT NULL DEFAULT current_timestamp()`. Monthly and weekly
+	// counts for those two sources are live and correct. Left as a note
+	// rather than deleted because the stale version of this comment was
+	// believed and repeated long after it stopped being true.
+	//
+	// If another source ever needs the same treatment, do NOT copy the
+	// one-liner this comment used to recommend:
+	//   ADD COLUMN x DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+	// Adding a column WITH a default backfills every existing row with that
+	// default, so the entire back catalogue gets stamped with the moment the
+	// migration ran and then counts as "this week" on the weekly board. Add
+	// it nullable and defaultless first so history stays NULL (NULL fails the
+	// >= comparison below, which is what you want -- we don't know when those
+	// rows happened), then MODIFY in the default for new inserts only:
+	//   ALTER TABLE t ADD COLUMN date_created DATETIME NULL AFTER <col>;
+	//   ALTER TABLE t MODIFY COLUMN date_created DATETIME NULL DEFAULT CURRENT_TIMESTAMP;
+	// No PHP-side change is needed either way -- no INSERT here names the
+	// column, so the default populates it.
+	//
+	// A source whose query fails is skipped silently (`if (!$res) continue;`
+	// below), so a missing column shows up as all-time looking fine while
+	// monthly/weekly quietly report zero -- worth knowing when a count looks
+	// wrong on two views out of three.
 	// Build date filters per period
 	if ($period === 'monthly') {
 		$dt   = date('Y-m-01');

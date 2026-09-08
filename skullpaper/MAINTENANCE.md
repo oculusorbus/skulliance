@@ -695,13 +695,11 @@ records verified constants, and tracks what still needs to be written.
   lost - matches `checkCryptCrawlLeaderboard()`'s own "completed" definition, not every in-progress
   row, so starting-and-abandoning runs for Activity points isn't a thing), weighted 5 alongside
   mission/skullswap/gauntlet (a delve's roughly that same class of single-session attempt; nothing
-  more precise than that judgment call). **Requires a migration not yet run on the live table** -
-  `cryptcrawls` has no date/timestamp column today (`cryptcrawlGetMostRecentRun()` orders by
-  `id DESC` instead, not a date, which is the tell): `ALTER TABLE cryptcrawls ADD COLUMN
-  date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER carbon_earned;` - no PHP-side
-  change needed to populate it, the DEFAULT covers every existing INSERT
-  (`cryptcrawlStartRun()`) automatically. All-time is unaffected either way (never date-filters);
-  monthly/weekly will silently show zero crawl activity until this migration actually runs.
+  more precise than that judgment call). **Migration DONE** - `cryptcrawls.date_created` was
+  added and verified on the live DB 2026-09-08 (`datetime NOT NULL DEFAULT current_timestamp()`),
+  so monthly/weekly crawl counts are live and correct. This entry previously said the migration
+  was still outstanding and that claim outlived the fact by some margin - if you are about to
+  repeat "crawls don't count toward monthly Activity", re-check the column first.
   Verified via a dedicated PHP harness mocking all 8 sources' `$conn->query()` calls and checking
   the merged per-user totals/ranking/stats output, not just that the code parses.
 - Crypt Conquest (built 2026-08-30, directly off Crypt Crawl's own architecture -- see
@@ -817,11 +815,10 @@ records verified constants, and tracks what still needs to be written.
   Claude) -- every other channel case calls its `getXWebhook()` unconditionally, this one no-ops
   to an empty webhook URL instead of fataling until the user adds the real function. Counts
   toward Activity leaderboards (`checkActivityLeaderboard`, source `'conquest'`, weight 5,
-  matching Crypt Crawl's own `'crawl'` weight) -- **same migration gap as Crypt Crawl, flagged
-  but not run**: `cryptconquests` has no date/timestamp column, so monthly/weekly Activity
-  filtering silently shows zero Conquest activity until `ALTER TABLE cryptconquests ADD COLUMN
-  date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER reward;` actually runs on the
-  live table; all-time is unaffected. Card art (`cryptconquestGetCardArtPools`): auto-assigned
+  matching Crypt Crawl's own `'crawl'` weight) -- **migration DONE**, same as Crypt Crawl's:
+  `cryptconquests.date_created` verified present on the live DB 2026-09-08
+  (`datetime NOT NULL DEFAULT current_timestamp()`), so monthly/weekly Conquest counts are live
+  and correct. This entry previously said it was outstanding; it wasn't. Card art (`cryptconquestGetCardArtPools`): auto-assigned
   from the owner's current Crypties holdings each render (NOT hand-curated like
   `CRYPTCRAWL_CARD_ART`) -- court + number cards pull from the Crypties Season 1 collection
   (`CRYPTCONQUEST_S1_COLLECTION_ID`, the primary art wallet's holdings exhausted first, then
