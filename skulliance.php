@@ -986,7 +986,7 @@ function filterLeaderboard($page){
 			     what it was originally built for -- finding a PROJECT -- because
 			     mixing ~31 board entries in with 36+ projects made it useless for
 			     both jobs. Adding a board here again would undo that. -->
-			<option value="hub">&larr; Leaderboard Hub</option>
+			<option value="hub">Leaderboard Hub</option>
 			<!-- Delegations (project 15) intentionally not listed: it has its
 			     own card on the hub. ?filterby=15 still works -- it resolves
 			     through the numeric project branch, not a named case -- so
