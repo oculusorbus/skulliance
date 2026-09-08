@@ -1728,7 +1728,23 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       <div id="game-over-buttons">
         <button id="try-again"></button>
 		<div id="leaderboard-button"></div> <!-- Placeholder for leaderboard form -->
-		<?php echo guestSignupPrompt(); // renders nothing when logged in ?>
+		<?php // Inlined rather than calling db.php's guestSignupPrompt().
+		      // THIS FILE DOES NOT INCLUDE db.php -- it is deliberately
+		      // standalone (its own session_start() at the top, no header.php
+		      // either, see the exit-button comment above). Calling that
+		      // helper here was a fatal on an undefined function, which
+		      // truncated the page mid-markup: the game silently failed to
+		      // render, with nothing in the console because no script ever
+		      // reached the browser. Boss battles went with it, same file.
+		      // Keep the copy in step with guestSignupPrompt() by hand; there
+		      // is no shared definition to lean on from here.
+		      if ($user_id <= 0): ?>
+		<div class="guest-signup-prompt" style="margin-top:10px;font-size:0.8rem;line-height:1.4;opacity:0.85;text-align:center;max-width:320px;margin-left:auto;margin-right:auto;">
+			Playing as a guest &mdash; this run wasn't saved.
+			<a href="index.php" style="color:inherit;font-weight:bold;">Log in with Discord</a>
+			to get on the leaderboard and earn CARBON.
+		</div>
+		<?php endif; ?>
       </div>
     </div>
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">

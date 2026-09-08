@@ -99,6 +99,13 @@ records verified constants, and tracks what still needs to be written.
   Imagery is free too: `url=` points at each game's PUBLIC page, which must carry BOTH `og:image`
   AND `twitter:card=summary_large_image` or X degrades to a small thumbnail. skullswap.php had
   og:image but no twitter:card and was fixed here. Targets: cryptcrawlgame.php,
+  **monstrocity.php DOES NOT INCLUDE db.php.** It is standalone -- its own `session_start()`, no
+  header.php, no db.php -- so NO helper defined in db.php can be called from it. Calling
+  `guestSignupPrompt()` there shipped a fatal on an undefined function that truncated the page
+  mid-markup: Monstrocity AND boss battles rendered nothing, with an empty console, because no
+  script ever reached the browser. Its guest prompt is inlined instead and must be kept in step
+  with db.php's copy by hand. Check this include before using any shared helper in a game file;
+  skullswap.php, cryptcrawl.php and cryptconquest.php all DO include db.php.
   cryptconquestgame.php, skullracergame.php, match3rpg.php (Monstrocity's public page -- NOT
   monstrocity.php), skullswap.php. **These must stay outside skulliance.php's login gate** -- X
   would follow a redirect to error.php and the card would silently collapse to a bare link.
