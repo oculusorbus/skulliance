@@ -990,9 +990,6 @@ function filterLeaderboard($page){
 				<option value="monthly-streaks">'.date('F').' Streaks</option>
 			</optgroup>
 			<optgroup label="Missions">
-				<option value="gamemaster-ath">All-Time Game Master</option>
-				<option value="gamemaster-monthly">'.date('F').' Game Master</option>
-				<option value="gamemaster-weekly">Weekly Game Master</option>
 				<option value="missions">All Missions</option>
 				<option value="missions-unlocked">Missions Unlocked</option>
 				<option value="monthly">'.date('F').' Missions</option>
@@ -1007,6 +1004,11 @@ function filterLeaderboard($page){
 			<optgroup label="Factions">
 				<option value="factions">All Factions</option>
 				<option value="monthly-factions">'.date('F').' Factions</option>
+			</optgroup>
+			<optgroup label="Game Master">
+				<option value="gamemaster-ath">All-Time Game Master</option>
+				<option value="gamemaster-monthly">'.date('F').' Game Master</option>
+				<option value="gamemaster-weekly">Weekly Game Master</option>
 			</optgroup>
 			<optgroup label="Gauntlets">
 				<option value="gauntlets">All Gauntlets</option>
