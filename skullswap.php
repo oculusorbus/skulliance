@@ -843,6 +843,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
                       never runs, which is indistinguishable from X loading
                       slowly. Worst case here is a share without the score. -->
                  <a id="share-x" href="https://skulliance.io/staking/skullswap.php" target="_blank" rel="noopener">𝕏 SHARE</a>
+                 <?php echo guestSignupPrompt(); // renders nothing when logged in ?>
              </div>
          </div>
          <div id="board-btns">

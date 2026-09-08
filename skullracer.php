@@ -165,6 +165,14 @@ $racing_body = str_replace(
      common.js reads it while loading sprites/background. See the cache
      busting block up top for why it exists at all. -->
 <script>var RACER_ASSET_V = <?php echo json_encode($sr_asset_v); ?>;</script>
+<!-- racing/index.html is plain HTML with no PHP of its own (it is also served
+     standalone), so it cannot see the session. This hands it the one fact its
+     finish screen needs: whether to show the guest sign-up line.
+     Deliberately only ever set here. Visited standalone the global is absent,
+     which the finish screen treats as "don't show" -- erring toward silence,
+     because wrongly telling a logged-in player their run wasn't saved is a
+     worse failure than a guest missing the nudge. -->
+<script>var RACER_LOGGED_IN = <?php echo json_encode(isset($_SESSION['userData']['user_id']) && intval($_SESSION['userData']['user_id']) > 0); ?>;</script>
 <div id="skullracer-embed">
 <?php echo $racing_body; ?>
 </div>

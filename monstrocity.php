@@ -1728,6 +1728,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       <div id="game-over-buttons">
         <button id="try-again"></button>
 		<div id="leaderboard-button"></div> <!-- Placeholder for leaderboard form -->
+		<?php echo guestSignupPrompt(); // renders nothing when logged in ?>
       </div>
     </div>
     <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Logo" class="game-logo">

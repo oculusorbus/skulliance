@@ -751,6 +751,15 @@
                    case is a share without the times, never an empty window. -->
               <a id="finish-share" href="https://skulliance.io/staking/skullracergame.php" target="_blank" rel="noopener">𝕏 Share Result</a>
             </div>
+            <!-- Guests only. Hidden by default and revealed by the finish
+                 handler when skullracer.php has told us this is a logged-out
+                 player (RACER_LOGGED_IN === false). Absent global -- i.e.
+                 index.html opened standalone -- leaves it hidden. -->
+            <div id="finish-guest" style="display:none;margin-top:10px;font-size:0.8rem;line-height:1.4;opacity:0.85;max-width:320px;margin-left:auto;margin-right:auto;">
+              Playing as a guest &mdash; this run wasn't saved.
+              <a href="/staking/index.php" style="color:#00c8a0;font-weight:bold;">Log in with Discord</a>
+              to get on the leaderboard and earn CARBON.
+            </div>
           </div>
         </div>
       </div>
@@ -2228,6 +2237,16 @@
           + '\n\n@skulliance';
         shareLink.href = 'https://x.com/intent/post?text=' + encodeURIComponent(shareBody)
           + '&url=' + encodeURIComponent('https://skulliance.io/staking/skullracergame.php');
+      }
+
+      // Guest sign-up nudge. Strict === false, not a falsy check: the global
+      // is ABSENT when index.html is opened standalone (no PHP to set it),
+      // and undefined must mean "stay quiet" rather than "assume guest".
+      // Telling a logged-in player their run wasn't saved would be worse than
+      // a guest missing the prompt.
+      if (typeof RACER_LOGGED_IN !== 'undefined' && RACER_LOGGED_IN === false) {
+        var guestEl = Dom.get('finish-guest');
+        if (guestEl) guestEl.style.display = 'block';
       }
 
       Dom.addClassName('finish-overlay', 'show');

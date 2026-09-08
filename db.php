@@ -5775,6 +5775,40 @@ function shareOnXButton($body, $page_path, $class = 'small-button', $style = '',
 	     . htmlspecialchars($label) . '</a>';
 }
 
+//=============================================================================
+// GUEST SIGN-UP PROMPT
+//
+// One line on a finish screen, shown ONLY to logged-out players. All five
+// games are public and playable without an account, so a guest can finish a
+// strong run and never learn that it went nowhere -- no leaderboard entry, no
+// CARBON. This says so at the one moment they're most likely to care: right
+// after a result they're pleased with.
+//
+// Returns '' for logged-in players, so call sites need no conditional of
+// their own. Deliberately says the run "wasn't saved" rather than a generic
+// "sign up!" -- naming the thing they actually lost is what makes it land.
+//
+// The link is RELATIVE on purpose. The login cookie is host-only (no domain
+// param), so www.skulliance.io and skulliance.io do not share a session; an
+// absolute link here could drop someone onto the host they aren't logged in
+// on. Same rule as everywhere else that links to a login-requiring page.
+//
+// Styles are inline rather than a class because these five finish screens
+// have five completely separate stylesheets, and a shared class would need
+// defining in all of them. Neutral muted text sits acceptably on all five.
+//=============================================================================
+function guestSignupPrompt() {
+	if (isset($_SESSION['userData']['user_id']) && intval($_SESSION['userData']['user_id']) > 0) {
+		return '';
+	}
+	return '<div class="guest-signup-prompt" style="margin-top:10px;font-size:0.8rem;line-height:1.4;'
+	     . 'opacity:0.85;text-align:center;max-width:320px;margin-left:auto;margin-right:auto;">'
+	     . 'Playing as a guest &mdash; this run wasn\'t saved. '
+	     . '<a href="index.php" style="color:inherit;font-weight:bold;">Log in with Discord</a> '
+	     . 'to get on the leaderboard and earn CARBON.'
+	     . '</div>';
+}
+
 // Per-game share text. Deliberately mirrors what each game already posts to
 // Discord (cryptcrawlAnnounceResult, cryptconquestAnnounceResult, the
 // Monstrocity/Skull Swap announces, skullRacerAnnounceResult) so a player's
