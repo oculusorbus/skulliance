@@ -108,6 +108,17 @@ records verified constants, and tracks what still needs to be written.
   updated by hand if those ever change (same manual-sync caveat as common.js's SPRITES object,
   see racing/common.js's own comment on that one). "skullracer" Discord channel not yet
   configured in credentials/webhooks_credentials.php -- see webhooks.php's function_exists guard.
+  Collision punt (COLLISION PUNT block + puntCar(), racing/index.html): hitting a car throws it
+  forward and sideways, scaled by CLOSING speed (impactSpeed - car.speed), not the player's raw
+  speed -- PUNT_MIN_DV_FRAC=0.10 of maxSpeed is the threshold below which nothing happens.
+  Player recoil is deliberately unchanged: the recoil formula reads the car's speed, so the
+  collision handler snapshots carSpeedAtImpact BEFORE calling puntCar() and recoils off the
+  snapshot -- swap that order and punting quietly makes your own crashes cheaper. Cars carry
+  baseSpeed/puntTimer/puntDx (set in resetCars()); updateCarOffset() returns 0 outright while
+  puntTimer > 0, which is what suspends its "steer back on if off road" recovery long enough for
+  a car to actually leave the track. Existing leaderboard times stay comparable: the change
+  raises the floor (fewer repeat collisions) without lifting the ceiling, since a record run
+  avoids traffic rather than punting through it.
   Client-side only (racing/index.html): crest jump is a screen-space sprite offset that never
   touches steering/speed, but DOES suppress the car-collision loop while `jumping` is true (added
   so a well-timed jump can save a boost run from a car in your lane) -- off-road sprite collision

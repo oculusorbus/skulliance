@@ -1017,6 +1017,36 @@
     var draftActive = false;
 
     //=========================================================================
+    // COLLISION PUNT -- hitting a car now throws it forward and sideways,
+    // scaled by how fast you were closing on it.
+    //
+    // This fixes a real loop, not just a lack of spectacle. The collision
+    // check only fires when speed > car.speed, and it used to slow the player
+    // to below the car's speed and drop them BEHIND it while leaving the car
+    // completely untouched. So the moment you accelerated back past its speed
+    // in the same lane, you hit it again -- nothing ever moved the obstacle
+    // out of your way. Getting stuck bouncing off the same car was structural.
+    //
+    // Scaled by CLOSING speed (dv), not the player's absolute speed. Absolute
+    // speed would fling a car identically whether you rear-ended it at
+    // matched pace or caught it 120mph slower, which reads as arbitrary.
+    // dv makes a light tap a nudge and a boosted hit on a slow car a
+    // demolition -- and since boost is the only way to reach the top of the
+    // dv range, the biggest hits in the game are boosted ones.
+    //
+    // The lateral shove is what lets you run a car off the road, and it comes
+    // from which side you caught them on rather than being scripted -- clip
+    // the left of a car and it goes left.
+    //=========================================================================
+    var PUNT_MIN_DV_FRAC = 0.10; // closing speed under 10% of top speed is a scrape; leave it alone
+    var PUNT_SPEED_XFER  = 0.85; // share of the closing speed handed to the car
+    var PUNT_SPEED_CAP   = 1.15; // never launch one faster than 115% of your speed at impact
+    var PUNT_LATERAL_MAX = 1.7;  // road-offset units per second of sideways throw at a full-force hit
+    var PUNT_DURATION    = 1.1;  // seconds the shove plays out
+    var PUNT_SPEED_DECAY = 0.55; // how quickly a punted car bleeds back to its cruising speed
+    var PUNT_OFFSET_CAP  = 2.4;  // stop a monster hit throwing a car off into nowhere
+
+    //=========================================================================
     // PASSING-CAR SOUND -- a quick, stereo-panned engine blip when a
     // traffic car is right alongside the player, so nearby traffic feels
     // present instead of just visible. No dedicated "whoosh" sound file
@@ -1913,7 +1943,16 @@
           carW = car.sprite.w * SPRITES.SCALE;
           if (speed > car.speed) {
             if (Util.overlap(playerX, playerW, car.offset, carW, 0.8)) {
-              speed    = car.speed * (car.speed/speed);
+              // The player's recoil is UNCHANGED by all this: it reads the
+              // car's speed, so it has to be computed from the speed the car
+              // had at the moment of impact, not the boosted one the punt
+              // leaves behind. Snapshot first, punt second, recoil off the
+              // snapshot -- otherwise punting a car would quietly make your
+              // own crashes less punishing, which is not the deal.
+              var carSpeedAtImpact = car.speed;
+              puntCar(car, speed, playerX);
+
+              speed    = carSpeedAtImpact * (carSpeedAtImpact/speed);
               position = Util.increase(car.z, -playerZ, trackLength);
               playCollisionSound();
               crashed = true;
@@ -2173,6 +2212,20 @@
       for(n = 0 ; n < cars.length ; n++) {
         car         = cars[n];
         oldSegment  = findSegment(car.z);
+
+        // Being thrown after a hit (see puntCar). The sideways drift is
+        // applied here rather than through updateCarOffset because that
+        // function is the car's own steering, and a punted car isn't
+        // steering -- it returns 0 for the whole duration.
+        if (car.puntTimer > 0) {
+          car.puntTimer = Math.max(0, car.puntTimer - dt);
+          car.offset    = Util.limit(car.offset + car.puntDx * dt, -PUNT_OFFSET_CAP, PUNT_OFFSET_CAP);
+        } else if (car.speed > car.baseSpeed) {
+          // Bleed the borrowed speed back off, so one big hit doesn't leave a
+          // permanently quick car circulating for the rest of the race.
+          car.speed = Math.max(car.baseSpeed, car.speed - car.baseSpeed * PUNT_SPEED_DECAY * dt);
+        }
+
         car.offset  = car.offset + updateCarOffset(car, oldSegment, playerSegment, playerW);
         car.z       = Util.increase(car.z, dt * car.speed, trackLength);
         car.percent = Util.percentRemaining(car.z, segmentLength); // useful for interpolation during rendering phase
@@ -2185,7 +2238,51 @@
       }
     }
 
+    // Throw a car forward and sideways after the player hits it. See the
+    // COLLISION PUNT block near the top of this file for why this exists and
+    // why it scales on closing speed rather than the player's raw speed.
+    //
+    // `impactSpeed` is the player's speed at the moment of contact, passed in
+    // because the caller overwrites its own `speed` immediately afterwards.
+    function puntCar(car, impactSpeed, hitX) {
+      var dv = impactSpeed - car.speed;         // always > 0: the collision check requires it
+      if (dv <= maxSpeed * PUNT_MIN_DV_FRAC)    // a scrape at matched pace, not a hit
+        return;
+
+      // 0..1 across the usable range of closing speeds, so the threshold
+      // isn't a cliff -- a hit just over it is still gentle.
+      var force = Util.limit(
+        (dv - maxSpeed * PUNT_MIN_DV_FRAC) / (maxSpeed * (1 - PUNT_MIN_DV_FRAC)), 0, 1);
+
+      // Forward: shoved up toward the speed that hit it, capped so a car can
+      // never outrun the player enough to become un-catchable traffic.
+      car.speed = Math.min(impactSpeed * PUNT_SPEED_CAP, car.speed + dv * PUNT_SPEED_XFER);
+
+      // Sideways: away from the side you caught it on. Cars sitting almost
+      // dead-centre on your nose have no meaningful side, so break the tie
+      // toward the outside of the road -- that's the direction that actually
+      // clears your lane, which is the whole point.
+      var side;
+      if (Math.abs(car.offset - hitX) < 0.05)
+        side = (car.offset >= 0) ? 1 : -1;
+      else
+        side = (car.offset > hitX) ? 1 : -1;
+
+      car.puntDx    = side * PUNT_LATERAL_MAX * force;
+      car.puntTimer = PUNT_DURATION * (0.5 + 0.5 * force);
+    }
+
     function updateCarOffset(car, carSegment, playerSegment, playerW) {
+
+      // A car that's just been hit is not driving, it's being thrown. Suspend
+      // its steering entirely for the duration -- including, deliberately,
+      // the "steer back on if off road" recovery at the bottom of this
+      // function, which would otherwise drag it straight back onto the track
+      // and make running anyone off the road impossible. It recovers and
+      // steers back on once the punt expires.
+      if (car.puntTimer > 0)
+        return 0;
+
 
       var i, j, dir, segment, otherCar, otherCarW, lookahead = 20, carW = car.sprite.w * SPRITES.SCALE;
 
@@ -2699,7 +2796,12 @@
         z      = Math.floor(Math.random() * segments.length) * segmentLength;
         sprite = Util.randomChoice(SPRITES.CARS);
         speed  = maxSpeed/4 + Math.random() * maxSpeed/(sprite == SPRITES.SEMI ? 4 : 2);
-        car = { offset: offset, z: z, sprite: sprite, speed: speed };
+        // baseSpeed is the cruising speed to bleed back to after being
+        // punted; puntTimer/puntDx are the active shove. Initialised here so
+        // no car is ever missing them -- updateCars runs against every car
+        // every frame, hit or not.
+        car = { offset: offset, z: z, sprite: sprite, speed: speed,
+                baseSpeed: speed, puntTimer: 0, puntDx: 0 };
         segment = findSegment(car.z);
         segment.cars.push(car);
         cars.push(car);
