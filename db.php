@@ -4604,6 +4604,143 @@ function calculateScore($total_duration, $success, $failure, $progress){
 	return round(((($total_duration+($success*2))-($failure/2))-$progress)+1);
 }
 
+// Missions Unlocked leaderboard -- ranks how FAR players have got through the
+// mission ladders, not how many missions they've run.
+//
+// Deliberately a separate board from checkMissionsLeaderboard() above, which
+// counts missions by outcome. Those measure different things and reward
+// different play: you could run ten thousand level-1 missions and top the
+// count board while having unlocked nothing at all. This one only moves when
+// you actually get deeper.
+//
+// All-time only, and no payout -- it's a showcase board. Nothing here writes
+// to the database or touches a balance.
+function checkMissionsUnlockedLeaderboard($conn) {
+	// Ceiling per project: how many levels that project's ladder has.
+	$ceiling = array();
+	$cr = $conn->query("SELECT project_id, MAX(level) AS max_level FROM quests GROUP BY project_id");
+	if ($cr) {
+		while ($row = $cr->fetch_assoc()) $ceiling[(int)$row['project_id']] = (int)$row['max_level'];
+	}
+	if (empty($ceiling)) {
+		echo "<p>No missions are configured yet.</p>";
+		return;
+	}
+	$global_total   = array_sum($ceiling);   // every level in the game
+	$project_count  = count($ceiling);
+
+	// Furthest level each user has SUCCESSFULLY completed, per project. One
+	// grouped query for the whole board rather than per-user work.
+	$progress = array();
+	$pr = $conn->query("
+		SELECT missions.user_id, quests.project_id, MAX(quests.level) AS max_done
+		FROM missions
+		INNER JOIN quests ON quests.id = missions.quest_id
+		WHERE missions.status = '1'
+		GROUP BY missions.user_id, quests.project_id
+	");
+	if ($pr) {
+		while ($row = $pr->fetch_assoc()) {
+			$progress[(int)$row['user_id']][(int)$row['project_id']] = (int)$row['max_done'];
+		}
+	}
+	if (empty($progress)) {
+		echo "<p>Nobody has completed a mission yet.</p>";
+		return;
+	}
+
+	// Same unlock rule as the progress bars and autoMissions(): clearing
+	// level N opens N+1, capped at the ladder's top. Projects a player has
+	// never touched still contribute 1, because their first mission is
+	// already open -- which keeps this number identical to the sum of what
+	// they see under the icons on the missions page.
+	//
+	// That baseline is the same for everyone, so it shifts every total by a
+	// constant and changes no rankings. Only users with at least one
+	// completed mission are listed at all: without that, every registered
+	// account would appear tied on the baseline and bury the people who
+	// actually climbed anything.
+	$totals = array();
+	foreach ($progress as $uid => $per_project) {
+		$unlocked = 0;
+		$complete = 0;
+		foreach ($ceiling as $pid => $top) {
+			$done = isset($per_project[$pid]) ? $per_project[$pid] : 0;
+			$open = min($done + 1, $top);
+			$unlocked += $open;
+			if ($open >= $top) $complete++;
+		}
+		$totals[$uid] = array('unlocked' => $unlocked, 'complete' => $complete);
+	}
+
+	// Furthest first; ties broken by how many ladders are finished outright.
+	uasort($totals, function($a, $b) {
+		if ($a['unlocked'] !== $b['unlocked']) return $b['unlocked'] - $a['unlocked'];
+		return $b['complete'] - $a['complete'];
+	});
+
+	$uid_list = implode(',', array_map('intval', array_keys($totals)));
+	$users_r  = $conn->query("SELECT id, username, discord_id, avatar, visibility FROM users WHERE id IN ($uid_list)");
+	$users    = array();
+	if ($users_r) { while ($u = $users_r->fetch_assoc()) $users[(int)$u['id']] = $u; }
+
+	$fireworks          = false;
+	$leaderboardCounter = 0;
+	$last_score         = null;
+	$third_score        = null;
+	$lb_rows            = array();
+
+	foreach ($totals as $uid => $data) {
+		if (!isset($users[$uid])) continue;   // deleted account with surviving missions
+		$u     = $users[$uid];
+		$score = array($data['unlocked'], $data['complete']);
+		$leaderboardCounter++;
+
+		if ($leaderboardCounter <= 3) {
+			global $leaderboard_top3;
+			$leaderboard_top3[] = array(
+				'username'   => $u['username'],
+				'discord_id' => $u['discord_id'],
+				'avatar'     => $u['avatar'],
+				'visibility' => $u['visibility'],
+				'score'      => number_format($data['unlocked']) . ' / ' . number_format($global_total),
+			);
+		}
+
+		$trophy = "";
+		if ($leaderboardCounter == 1) {
+			$trophy = "first";
+		} elseif ($leaderboardCounter == 2) {
+			$trophy = ($last_score != $score) ? "second" : "first";
+			if ($last_score == $score) $leaderboardCounter--;
+		} elseif ($leaderboardCounter == 3) {
+			if ($last_score != $score) { $trophy = "third"; $third_score = $score; }
+			else { $trophy = "second"; $leaderboardCounter--; }
+		} elseif ($leaderboardCounter > 3 && $third_score == $score) {
+			$trophy = "third"; $leaderboardCounter--;
+		} elseif ($leaderboardCounter > 3 && $last_score == $score) {
+			$leaderboardCounter--;
+		}
+
+		if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $uid) $fireworks = true;
+
+		$highlight  = isset($_SESSION['userData']['user_id']) && $uid == $_SESSION['userData']['user_id'];
+		$avatar_url = "https://cdn.discordapp.com/avatars/" . $u['discord_id'] . "/" . $u['avatar'] . ".jpg";
+		$name_html  = "<a href='profile.php?username=" . urlencode($u['username']) . "'>" . htmlspecialchars($u['username']) . "</a>";
+		$pct        = $global_total > 0 ? (int)round(($data['unlocked'] / $global_total) * 100) : 0;
+		$stats      = array(
+			'Unlocked'  => number_format($data['unlocked']) . ' / ' . number_format($global_total),
+			'Progress'  => $pct . '%',
+			'Completed' => number_format($data['complete']) . ' / ' . number_format($project_count),
+		);
+		$lb_rows[] = array('rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => '');
+		$last_score = $score;
+	}
+
+	renderLeaderboardList($lb_rows);
+	if ($fireworks) fireworks();
+}
+
 function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 	$carbon = 100000;
 	$where = "";

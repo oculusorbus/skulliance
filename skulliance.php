@@ -991,6 +991,7 @@ function filterLeaderboard($page){
 			</optgroup>
 			<optgroup label="Missions">
 				<option value="missions">All Missions</option>
+				<option value="missions-unlocked">Missions Unlocked</option>
 				<option value="monthly">'.date('F').' Missions</option>
 			</optgroup>
 			<optgroup label="Raids">

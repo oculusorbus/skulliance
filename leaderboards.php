@@ -217,7 +217,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 		           $filterby != "cryptconquest" && $filterby != "monthly-cryptconquest" && $filterby != "realms" &&
 		           $filterby != "skullracer" && $filterby != "weekly-skullracer" &&
 		           $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
-				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
+				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
+				              $filterby != "missions-unlocked"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
@@ -325,6 +326,10 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = "Weekly Skull Racer Laps";
 				        $filterby = "weekly-skullracer-laps";
 				        break;
+				    case ($filterby == "missions-unlocked"):
+				        $title = "Missions Unlocked";
+				        $filterby = "missions-unlocked";
+				        break;
 				    case ($filterby == "activity-ath"):
 				        $title = "All-Time Activity";
 				        $filterby = "activity-ath";
@@ -361,7 +366,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "cryptconquest" && $filterby != "monthly-cryptconquest" && $filterby != "realms" &&
 				              $filterby != "skullracer" && $filterby != "weekly-skullracer" &&
 				              $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
-				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly"):
+				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
+				              $filterby != "missions-unlocked"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -439,6 +445,9 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				            break;
 				        case ($filterby == "weekly-skullracer-laps"):
 				            checkSkullRacerLeaderboard($conn, true, false, 'lap');
+				            break;
+				        case ($filterby == "missions-unlocked"):
+				            checkMissionsUnlockedLeaderboard($conn);
 				            break;
 				        case ($filterby == "activity-ath"):
 				            checkActivityLeaderboard($conn, 'ath');
