@@ -64,7 +64,21 @@
       align-items: center;
       justify-content: center;
       gap: 24px;
-      flex-wrap: wrap; /* narrow viewports stack instead of overflowing sideways */
+      /* nowrap, deliberately -- this was `wrap` and that was the bug, three
+         separate times (see the width formula on #racer below for the
+         archaeology: an 88px reserve, then 118px, then the 2000px container
+         cap).
+         `wrap` never had a case where it helped. Below 1300px the media
+         query hides .box-column entirely, so #stage has a single visible
+         child and there is nothing to wrap. Above 1300px, wrapping IS the
+         failure -- the right-hand art dumped onto its own line below the
+         game. So the only thing the property ever did here was turn a few
+         pixels of arithmetic error into a visibly broken layout.
+         With nowrap that failure is structurally impossible rather than
+         merely tuned-against: no future rounding error, font metric, or
+         scrollbar can produce it, because there is no second line to fall
+         onto. */
+      flex-wrap: nowrap;
     }
     .box-column {
       display: flex;
@@ -138,7 +152,20 @@
          above, just from a different direction. min(100vw, 2000px) matches
          that real ceiling; a no-op everywhere narrower, since min() just
          returns 100vw there same as before. */
-      width: min(calc(min(100vw, 2000px) - (2 * var(--box-col-width)) - 118px), 85vh * 4 / 3);
+      /* 126px, not 118px. 118 was the arithmetically EXACT reserve -- 2
+         gaps (48) + body padding (40) + this frame's own chrome (30) -- and
+         being exact is what kept breaking it. On a 2000px container that
+         yields 260 + 1392 + 260 + 48 = 1960 against 1960 available: a fit
+         with zero pixels to spare, decided by sub-pixel rounding. And
+         --box-col-width is min(18vw, 260px), so on any viewport under
+         ~1444px it is FRACTIONAL (257.04px at 1428px wide), which is
+         exactly when a browser's rounding tips the total over.
+         The extra 8px is not a tuned magic number like the last two
+         attempts -- it's an explicit allowance for the fact that layout
+         arithmetic rounds. #stage's nowrap above already makes wrapping
+         impossible; this just keeps the row from overflowing by a hair and
+         raising a horizontal scrollbar instead. */
+      width: min(calc(min(100vw, 2000px) - (2 * var(--box-col-width)) - 126px), 85vh * 4 / 3);
       max-width: 1800px; /* sane ceiling on an ultrawide/4K display */
       line-height: 0; /* kill the baseline gap under the canvas */
     }
