@@ -108,6 +108,16 @@ records verified constants, and tracks what still needs to be written.
   updated by hand if those ever change (same manual-sync caveat as common.js's SPRITES object,
   see racing/common.js's own comment on that one). "skullracer" Discord channel not yet
   configured in credentials/webhooks_credentials.php -- see webhooks.php's function_exists guard.
+  Time display: skullRacerFormatTime() in db.php is a hand port of formatTime() in
+  racing/index.html (~line 2366) -- dot-separated M.SS.T, tenths TRUNCATED not rounded, minutes
+  part omitted under 60s. Same manual-sync caveat as common.js's SPRITES object: change one and
+  you must change the other. Verified byte-identical against the JS on 9 values including its
+  float quirks (104.1 -> "1.44.0", 59.9 -> "59.8" -- the truncation can read a tenth low; the
+  game has always done this and both sides now do it identically). Before this, the leaderboard
+  and the race-finished Discord post printed raw seconds ("104.1s") while the game printed
+  "1.44.0" for the same lap, which got reported as a wrong-data bug when the data was fine.
+  Best Lap on the leaderboard is MIN(sr.fastest_lap) GROUP BY user -- already the all-time best
+  lap across every race, NOT the best lap of the best race.
   Collision punt (COLLISION PUNT block + puntCar(), racing/index.html): hitting a car throws it
   forward and sideways, scaled by CLOSING speed (impactSpeed - car.speed), not the player's raw
   speed -- PUNT_MIN_DV_FRAC=0.10 of maxSpeed is the threshold below which nothing happens.

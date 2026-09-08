@@ -53,6 +53,8 @@ Finishing a race (any time) earns a flat CARBON credit, paid the moment the race
 
 Every finished race feeds the Skull Racer leaderboard, ranked by **your own best (fastest) Total Time**, fastest lap as the tiebreak - the opposite ranking direction from Crypt Crawl/Crypt Conquest's "most wins," since a race is won by being fastest, not by accumulating victories. See [[platform-leaderboards]].
 
+The **Best Lap** column is your fastest lap from **any** race you've ever run, not the fastest lap of your best race - so a blinder of a lap still counts even if you wrecked the rest of that race. Times on the leaderboard and in the Discord post use the same `minutes.seconds.tenths` format as the race-complete screen, so a lap that reads `1.44.0` when you finish reads `1.44.0` everywhere else too.
+
 * **All-Time** shows your career best.
 * **Weekly** resets each cycle and pays out - same weekly cadence and pool size as [[games-cryptcrawl]]: the **1st place** finisher earns **50,000 CARBON (= 500 DIAMOND)**, dividing down the rankings from there. Convertible to DIAMOND at 100:1 - see [[staking-crafting]].
 

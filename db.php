@@ -12848,9 +12848,34 @@ function skullRacerAnnounceResult($conn, $run) {
 
 	$sr_carbon = intval($run['carbon_earned'] ?? 0);
 	$sr_footer = ["text" => "+" . number_format($sr_carbon) . " CARBON earned", "icon_url" => "https://skulliance.io/staking/icons/carbon.png"];
-	$sr_desc   = $sr_mention . " finished a race! 🏁\n\n⏱️ **Total Time:** " . number_format(floatval($run['total_time']), 1) . "s\n🏎️ **Fastest Lap:** " . number_format(floatval($run['fastest_lap']), 1) . "s" . $sr_badge_text;
+	// Same format as the race-complete screen the player just looked at --
+	// see skullRacerFormatTime()'s own comment for why that matters.
+	$sr_desc   = $sr_mention . " finished a race! 🏁\n\n⏱️ **Total Time:** " . skullRacerFormatTime($run['total_time']) . "\n🏎️ **Fastest Lap:** " . skullRacerFormatTime($run['fastest_lap']) . $sr_badge_text;
 
 	discordmsg("🏁 Skull Racer Finished", $sr_desc, skullRacerRandomBoxArt(), "https://skulliance.io/staking/skullracer.php", "skullracer", $sr_avatar_url, "00C8A0", $sr_author, $sr_footer);
+}
+
+// Format a Skull Racer time the way the GAME does, so a player comparing the
+// leaderboard against the race-complete screen sees the same string.
+//
+// This is a deliberate port of formatTime() in racing/index.html (search that
+// file for "function formatTime") -- dot-separated M.SS.T, tenths truncated
+// rather than rounded, and the minutes part dropped entirely under a minute.
+// Keep the two in step; a lap reading 1.44.0 in-game must read 1.44.0 here.
+//
+// It exists because the leaderboard used to print raw seconds with an "s"
+// ("104.1s") while the game printed "1.44.0" for the identical lap. Those are
+// the same number, but nobody reading them side by side would guess that, and
+// a player duly reported it as the leaderboard showing a lap he'd never
+// driven. Two formats for one quantity is the bug; the data was always right.
+function skullRacerFormatTime($seconds) {
+	$seconds = max(0, floatval($seconds));
+	$minutes = floor($seconds / 60);
+	$secs    = floor($seconds - ($minutes * 60));
+	$tenths  = floor(10 * ($seconds - floor($seconds)));
+	if ($minutes > 0)
+		return $minutes . '.' . ($secs < 10 ? '0' : '') . $secs . '.' . $tenths;
+	return $secs . '.' . $tenths;
 }
 
 // Skull Racer leaderboard -- same shape as checkCryptCrawlLeaderboard,
@@ -12901,7 +12926,7 @@ function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
 					'discord_id' => $row['discord_id'],
 					'avatar'     => $row['avatar'],
 					'visibility' => $row['visibility'],
-					'score'      => number_format(floatval($row['best_time']), 1) . 's',
+					'score'      => skullRacerFormatTime($row['best_time']),
 				];
 			}
 
@@ -12927,8 +12952,12 @@ function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
 			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
 			$reward_col = ($weekly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
 			$stats      = [
-				'Best Time'   => number_format(floatval($row['best_time']), 1) . 's',
-				'Best Lap'    => number_format(floatval($row['best_lap']), 1) . 's',
+				// Best Lap is MIN(fastest_lap) across EVERY race this user has
+				// run (see the GROUP BY above), not the best lap from their
+				// best race -- so it is already the all-time personal best a
+				// player expects it to be.
+				'Best Time'   => skullRacerFormatTime($row['best_time']),
+				'Best Lap'    => skullRacerFormatTime($row['best_lap']),
 				'Races' => number_format($row['races']),
 			];
 			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => $reward_col];
@@ -12938,7 +12967,7 @@ function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
 				updateBalance($conn, $row['user_id'], 15, round($carbon / $leaderboardCounter));
 				logCredit($conn, $row['user_id'], round($carbon / $leaderboardCounter), 15);
 				if ($counter <= 45) {
-					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Best Time: " . number_format(floatval($row['best_time']), 1) . "s, Best Lap: " . number_format(floatval($row['best_lap']), 1) . "s\r\n";
+					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Best Time: " . skullRacerFormatTime($row['best_time']) . ", Best Lap: " . skullRacerFormatTime($row['best_lap']) . "\r\n";
 					$description .= "        " . number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND\r\n";
 				}
 			}
