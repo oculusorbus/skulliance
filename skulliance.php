@@ -1017,8 +1017,10 @@ function filterLeaderboard($page){
 				<option value="monthly-cryptconquest">'.date('F').' Crypt Conquest</option>
 			</optgroup>
 			<optgroup label="Skull Racer">
-				<option value="skullracer">All Skull Racer</option>
-				<option value="weekly-skullracer">Weekly Skull Racer</option>
+				<option value="skullracer">All Skull Racer Races</option>
+				<option value="weekly-skullracer">Weekly Skull Racer Races</option>
+				<option value="skullracer-laps">All Skull Racer Laps</option>
+				<option value="weekly-skullracer-laps">Weekly Skull Racer Laps</option>
 			</optgroup>
 			<optgroup label="Skull Swaps">
 				<option value="swaps">All Skull Swaps</option>

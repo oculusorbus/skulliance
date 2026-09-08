@@ -90,7 +90,8 @@ records verified constants, and tracks what still needs to be written.
 - Skull Swap weekly LB: 25,000 CARBON (db.php:5020).
 - Gauntlets weekly LB: 25,000 CARBON (db.php:5264).
 - Boss Battles weekly LB: CLAW/CARBON split by damage (db.php:5139-5258).
-- Skull Racer weekly LB: 50,000 CARBON (db.php SKULL RACER block, end of file).
+- Skull Racer weekly LB: 50,000 CARBON x2 -- a Races board and a Laps board, each with its own
+  50,000 pool, so one driver topping both takes 100,000 (db.php SKULL RACER block, end of file).
 
 ### Games constants
 - Gauntlets (db.php:9877-9888): hand size 6, win at 3 wins (no loss = "sweep"), 100 points/win.
@@ -108,6 +109,19 @@ records verified constants, and tracks what still needs to be written.
   updated by hand if those ever change (same manual-sync caveat as common.js's SPRITES object,
   see racing/common.js's own comment on that one). "skullracer" Discord channel not yet
   configured in credentials/webhooks_credentials.php -- see webhooks.php's function_exists guard.
+  TWO leaderboards off one function: `checkSkullRacerLeaderboard($conn, $weekly, $rewards, $mode)`
+  where $mode is 'race' (ORDER BY best_time) or 'lap' (ORDER BY best_lap). Filters
+  `skullracer` / `weekly-skullracer` / `skullracer-laps` / `weekly-skullracer-laps` in
+  leaderboards.php -- note each new filter must ALSO be added to the two `$filterby != ...` guard
+  lists (~line 218 and ~362) or it falls through to the "treat it as a project id" branch and the
+  page breaks. Selector options live in skulliance.php (~line 1020), not leaderboards.php.
+  **Payout ordering is load-bearing**: rewards.php?skullracer=1 calls the function twice ('race'
+  then 'lap') against the same reward=0 rows, THEN calls resetSkullRacerRuns() once. The reset
+  used to live inside the function; if it goes back there the first board's reset flips every row
+  to reward=1 and the second board pays nobody, presenting as "no lap times this week". One cron
+  covers both -- do NOT add a second crontab entry. Verified with a harness that extracts the
+  real function from db.php, stubs updateBalance/discordmsg/etc, and asserts both orderings,
+  6 payouts across 2 boards, 2 distinct Discord posts and exactly one reset.
   Counts toward platform Activity leaderboards (db.php `checkActivityLeaderboard()`, source
   `'racer'`, weight 5, alongside crawl/conquest/mission). No status filter, unlike those two:
   every row in `skull_racer_runs` is already a finished race that passed the SKULLRACER_MIN_*

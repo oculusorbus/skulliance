@@ -50,7 +50,20 @@ if(isset($_GET['skullracer'])){
 	// Weekly, same cadence as Crypt Crawl -- needs its own crontab entry
 	// hitting rewards.php?skullracer=1 once a week. Nothing in this
 	// codebase schedules that itself, same as every other ?X=1 case here.
-	checkSkullRacerLeaderboard($conn, false, true);
+	//
+	// TWO boards, ONE cron, ONE reset -- and the order of these three lines
+	// is load-bearing. Both boards read the same reward=0 rows: 'race' ranks
+	// on best total time, 'lap' on best single lap, each paying its own
+	// 50,000 pool (so topping both is 100,000). resetSkullRacerRuns() flips
+	// every one of those rows to reward=1, which is what closes the week --
+	// so it MUST come after both payouts. It used to live inside
+	// checkSkullRacerLeaderboard() itself; leaving it there would have meant
+	// the race board paid, the reset fired, and the lap board then found an
+	// empty set and silently paid nobody, week after week, looking exactly
+	// like "nobody set a lap time".
+	checkSkullRacerLeaderboard($conn, false, true, 'race');
+	checkSkullRacerLeaderboard($conn, false, true, 'lap');
+	resetSkullRacerRuns($conn);
 }
 if(isset($_GET['cryptconquest'])){
 	// Monthly, not weekly -- needs its OWN crontab entry hitting

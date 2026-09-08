@@ -12754,6 +12754,22 @@ function skullRacerIsNewBest($conn, $user_id, $current_run_id, $total_time) {
 	return true;
 }
 
+// Same idea as skullRacerIsNewBest above, on the lap rather than the race.
+// Worth its own badge because the two genuinely come apart: a scrappy race
+// can still contain your quickest lap ever, and that is now a thing you can
+// win a payout for.
+function skullRacerIsNewBestLap($conn, $user_id, $current_run_id, $fastest_lap) {
+	$user_id = intval($user_id);
+	$current_run_id = intval($current_run_id);
+	$result = $conn->query("SELECT MIN(fastest_lap) AS best FROM skull_racer_runs WHERE user_id = $user_id AND id != $current_run_id");
+	if ($result && $result->num_rows > 0) {
+		$row = $result->fetch_assoc();
+		if ($row['best'] === null) return true;
+		return floatval($fastest_lap) < floatval($row['best']);
+	}
+	return true;
+}
+
 // Fetches the CURRENT weekly-leader and all-time-leader ghost traces (each
 // possibly null if nobody's set a qualifying time with a valid trace yet).
 // Deliberately keyed off "best run that HAS a stored trace" rather than
@@ -12811,15 +12827,19 @@ function skullRacerGetGhosts($conn) {
 // user_id currently in 1st (lowest best total_time) -- same shape as
 // cryptcrawlLeaderboardLeaderUserId, ranking direction flipped since a
 // race is won by being FASTEST, not by accumulating the most wins.
-function skullRacerLeaderboardLeaderUserId($conn, $weekly = false) {
+// $mode 'race' ranks on best total_time, 'lap' on best fastest_lap -- the same
+// two orderings checkSkullRacerLeaderboard() uses, so a "#1" badge in Discord
+// always agrees with the board it names.
+function skullRacerLeaderboardLeaderUserId($conn, $weekly = false, $mode = 'race') {
 	$where = $weekly ? "AND sr.reward = 0" : "";
+	$order = ($mode === 'lap') ? "MIN(sr.fastest_lap) ASC" : "MIN(sr.total_time) ASC";
 	$result = $conn->query("
 		SELECT u.id AS user_id
 		FROM skull_racer_runs sr
 		INNER JOIN users u ON u.id = sr.user_id
 		WHERE 1=1 $where
 		GROUP BY u.id
-		ORDER BY MIN(sr.total_time) ASC
+		ORDER BY $order
 		LIMIT 1
 	");
 	if ($result && $result->num_rows > 0) {
@@ -12868,15 +12888,28 @@ function skullRacerAnnounceResult($conn, $run) {
 	// Checked AFTER this run is already saved, so "best"/"leader" both
 	// reflect the world including this very run -- same ordering
 	// cryptcrawlAnnounceResult uses for the same reason.
+	// Race badges and lap badges are tracked separately because the two
+	// boards pay separately now -- a player wants to know they just took the
+	// lap crown even in a race they otherwise threw away, and "personal best"
+	// alone couldn't tell them which of the two it meant.
 	$badges = array();
 	if (skullRacerIsNewBest($conn, $sr_user_id, intval($run['id']), floatval($run['total_time']))) {
-		$badges[] = "🏅 **New personal best!**";
+		$badges[] = "🏅 **New personal best race!**";
 	}
-	if (skullRacerLeaderboardLeaderUserId($conn, false) === $sr_user_id) {
-		$badges[] = "👑 **#1 All-Time!**";
+	if (skullRacerIsNewBestLap($conn, $sr_user_id, intval($run['id']), floatval($run['fastest_lap']))) {
+		$badges[] = "⚡ **New personal best lap!**";
 	}
-	if (skullRacerLeaderboardLeaderUserId($conn, true) === $sr_user_id) {
-		$badges[] = "🔥 **#1 This Week!**";
+	if (skullRacerLeaderboardLeaderUserId($conn, false, 'race') === $sr_user_id) {
+		$badges[] = "👑 **#1 Race All-Time!**";
+	}
+	if (skullRacerLeaderboardLeaderUserId($conn, true, 'race') === $sr_user_id) {
+		$badges[] = "🔥 **#1 Race This Week!**";
+	}
+	if (skullRacerLeaderboardLeaderUserId($conn, false, 'lap') === $sr_user_id) {
+		$badges[] = "👑 **#1 Lap All-Time!**";
+	}
+	if (skullRacerLeaderboardLeaderUserId($conn, true, 'lap') === $sr_user_id) {
+		$badges[] = "🔥 **#1 Lap This Week!**";
 	}
 	$sr_badge_text = $badges ? ("\n\n" . implode("\n", $badges)) : "";
 
@@ -12918,9 +12951,18 @@ function skullRacerFormatTime($seconds) {
 // toward a payout (reward=0, reset by resetSkullRacerRuns() below);
 // $rewards actually pays out and is only ever called from rewards.php's
 // cron-triggered endpoint.
-function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
+function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false, $mode='race') {
 	$carbon = 50000;
 	$where  = ($weekly || $rewards) ? "AND sr.reward = 0" : "";
+	$is_lap = ($mode === 'lap');
+
+	// Two boards off the same rows, differing only in what they sort on.
+	// 'race' ranks your best 3-lap total; 'lap' ranks your single quickest
+	// lap from any race. Each pays its own 50,000 pool, so topping both is
+	// 100,000 -- deliberate: they reward different driving. A clean, careful
+	// three laps wins the race board; one perfect lap wins the lap board even
+	// if you wrecked the rest of that race.
+	$order = $is_lap ? "best_lap ASC, best_time ASC" : "best_time ASC, best_lap ASC";
 
 	$sql = "
 		SELECT
@@ -12932,7 +12974,7 @@ function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
 		INNER JOIN users u ON u.id = sr.user_id
 		WHERE 1=1 $where
 		GROUP BY u.id
-		ORDER BY best_time ASC, best_lap ASC
+		ORDER BY $order
 	";
 	$result = $conn->query($sql);
 
@@ -12951,7 +12993,14 @@ function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
 			// Composite score tuple for tie-detection -- rounded to 0.1s so
 			// two runs that differ only in float noise below display
 			// precision don't spuriously split into separate ranks.
-			$score = [round(floatval($row['best_time']), 1), round(floatval($row['best_lap']), 1)];
+			// Ordered to match $order above, so the metric this board actually
+			// ranks on is the FIRST element -- otherwise two drivers tied on
+			// the ranked metric but differing on the other would be treated as
+			// separate ranks on the lap board (and vice versa), and the podium
+			// would disagree with the ordering.
+			$score = $is_lap
+				? [round(floatval($row['best_lap']), 1),  round(floatval($row['best_time']), 1)]
+				: [round(floatval($row['best_time']), 1), round(floatval($row['best_lap']), 1)];
 
 			if ($leaderboardCounter <= 3) {
 				global $leaderboard_top3;
@@ -12960,7 +13009,7 @@ function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
 					'discord_id' => $row['discord_id'],
 					'avatar'     => $row['avatar'],
 					'visibility' => $row['visibility'],
-					'score'      => skullRacerFormatTime($row['best_time']),
+					'score'      => skullRacerFormatTime($is_lap ? $row['best_lap'] : $row['best_time']),
 				];
 			}
 
@@ -12985,14 +13034,21 @@ function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
 			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
 			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
 			$reward_col = ($weekly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
-			$stats      = [
-				// Best Lap is MIN(fastest_lap) across EVERY race this user has
-				// run (see the GROUP BY above), not the best lap from their
-				// best race -- so it is already the all-time personal best a
-				// player expects it to be.
+			// Both boards show both numbers; the one being ranked on leads, so
+			// the column you're reading down matches the order of the rows.
+			//
+			// Best Lap is MIN(fastest_lap) across EVERY race this user has run
+			// (see the GROUP BY above), not the best lap from their best race
+			// -- so it is already the all-time personal best a player expects
+			// it to be, which is exactly what makes it rankable on its own.
+			$stats      = $is_lap ? [
+				'Best Lap'    => skullRacerFormatTime($row['best_lap']),
+				'Best Time'   => skullRacerFormatTime($row['best_time']),
+				'Races'       => number_format($row['races']),
+			] : [
 				'Best Time'   => skullRacerFormatTime($row['best_time']),
 				'Best Lap'    => skullRacerFormatTime($row['best_lap']),
-				'Races' => number_format($row['races']),
+				'Races'       => number_format($row['races']),
 			];
 			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => $reward_col];
 			$last_score = $score;
@@ -13001,22 +13057,38 @@ function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false) {
 				updateBalance($conn, $row['user_id'], 15, round($carbon / $leaderboardCounter));
 				logCredit($conn, $row['user_id'], round($carbon / $leaderboardCounter), 15);
 				if ($counter <= 45) {
-					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Best Time: " . skullRacerFormatTime($row['best_time']) . ", Best Lap: " . skullRacerFormatTime($row['best_lap']) . "\r\n";
+					// Lead with whichever time won them the placing.
+					$headline = $is_lap
+						? "Best Lap: " . skullRacerFormatTime($row['best_lap']) . ", Best Time: " . skullRacerFormatTime($row['best_time'])
+						: "Best Time: " . skullRacerFormatTime($row['best_time']) . ", Best Lap: " . skullRacerFormatTime($row['best_lap']);
+					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> " . $headline . "\r\n";
 					$description .= "        " . number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND\r\n";
 				}
 			}
 		}
 
 		if ($rewards) {
-			resetSkullRacerRuns($conn);
-			discordmsg("🏁 Weekly Skull Racer Leaderboard Results", $description, skullRacerRandomBoxArt(), "https://skulliance.io/staking/leaderboards.php");
+			// NOTE: resetSkullRacerRuns() is deliberately NOT called here any
+			// more -- rewards.php runs this function twice (race board, then
+			// lap board) off the same reward=0 rows, and resetting inside
+			// would flip every row to reward=1 after the FIRST board, leaving
+			// the second to find nothing and silently pay nobody. The reset
+			// now happens once in rewards.php after both have paid. Keep it
+			// there; moving it back in here re-breaks the lap payout in a way
+			// that looks like "nobody raced this week".
+			discordmsg(
+				$is_lap ? "🏎️ Weekly Skull Racer Best Lap Results" : "🏁 Weekly Skull Racer Leaderboard Results",
+				$description, skullRacerRandomBoxArt(), "https://skulliance.io/staking/leaderboards.php"
+			);
 		}
 		renderLeaderboardList($lb_rows);
 		if ($fireworks) fireworks();
 	} else {
 		$scope = ($weekly || $rewards) ? "for the week" : "";
 		echo "<p>No Skull Racer races have been completed yet $scope.</p>";
-		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="skullracer"><input type="submit" class="small-button" value="View All Skull Racer Leaderboard"></form><br><br>';
+		$fallback = $is_lap ? 'skullracer-laps' : 'skullracer';
+		$fb_label = $is_lap ? 'View All Skull Racer Laps' : 'View All Skull Racer Races';
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="' . $fallback . '"><input type="submit" class="small-button" value="' . $fb_label . '"></form><br><br>';
 		echo '<img style="width:100%;" src="images/todolist.png"/>';
 	}
 }
