@@ -837,10 +837,12 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
                      <input type="hidden" name="filterby" value="weekly-swaps">
                      <button id="leaderboard" type="submit">LEADERBOARD</button>
                  </form>
-                 <!-- href is filled in when the game-over panel is shown, since
-                      the score isn't known until then. Opens X's public Web
-                      Intent composer -- no API, no cost. -->
-                 <a id="share-x" href="#" target="_blank" rel="noopener">𝕏 SHARE</a>
+                 <!-- Filled in with the score when the game-over panel shows.
+                      Falls back to this page rather than "#" -- with
+                      target=_blank an "#" href opens a blank tab if the writer
+                      never runs, which is indistinguishable from X loading
+                      slowly. Worst case here is a share without the score. -->
+                 <a id="share-x" href="https://skulliance.io/staking/skullswap.php" target="_blank" rel="noopener">𝕏 SHARE</a>
              </div>
          </div>
          <div id="board-btns">

@@ -742,9 +742,14 @@
             <div id="finish-buttons">
               <button id="finish-replay" type="button">Race Again</button>
               <a id="finish-leaderboard" href="/staking/leaderboards.php?filterby=weekly-skullracer">Weekly Leaderboard</a>
-              <!-- href filled in when the race actually finishes, since the
-                   times aren't known until then. -->
-              <a id="finish-share" href="#" target="_blank" rel="noopener">𝕏 Share Result</a>
+              <!-- The real href (with this race's times) is written when the
+                   race finishes. This fallback is the game's own page rather
+                   than "#": with target=_blank, an href of "#" opens a
+                   genuinely BLANK tab if the writer ever fails to run, which
+                   looks identical to X being slow to load and is impossible
+                   to tell apart after the fact. A real URL means the worst
+                   case is a share without the times, never an empty window. -->
+              <a id="finish-share" href="https://skulliance.io/staking/skullracergame.php" target="_blank" rel="noopener">𝕏 Share Result</a>
             </div>
           </div>
         </div>

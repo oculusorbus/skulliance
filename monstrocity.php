@@ -5390,7 +5390,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      // once win/loss is actually known (updateShareLink below), since that
 	      // is decided further down in each branch.
 	      leaderboardButtonDiv.innerHTML = leaderboardForm
-	          + '<a id="share-x" href="#" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;">&#120143; SHARE</a>';
+	          + '<a id="share-x" href="https://skulliance.io/staking/match3rpg.php" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;">&#120143; SHARE</a>';
 
 	      if (this.player1.health <= 0) {
 	          console.log("Player 1 health <= 0, triggering game over (loss), boss mode=" + !!this.selectedBoss);
