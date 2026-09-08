@@ -128,6 +128,14 @@ records verified constants, and tracks what still needs to be written.
   Then a cron on `rewards.php?leaderboardsnapshot=1` (hourly is fine). That endpoint is
   READ-ONLY for players: refreshLeaderboardSnapshots() calls only DISPLAY variants, never
   $rewards=true, so it never pays out, resets a reward flag or posts to Discord.
+  **FACTIONS IS THE ONLY BOARD THAT DOESN'T RANK PLAYERS** -- it ranks projects, and pushes
+  `['faction'=>true,'project_id','project_name','currency']` with no username/discord_id/avatar
+  (renderPodium() special-cases it the same way via `$is_faction`). Verified that every other
+  board pushes the standard user shape. The snapshot normalises it into the existing columns
+  rather than adding one: name column holds the project name, avatar column holds a ready-made
+  `icons/<currency>.png` path, discord_id is left EMPTY -- and empty discord_id is exactly what
+  the renderer uses to decide whether the avatar column is a Discord hash or a direct path. Any
+  future non-player board needs the same treatment or its card silently reads "No leader yet".
   It captures each board's top 3 by buffering the board's own output and keeping the global
   `$leaderboard_top3` -- so a card can never disagree with the board it links to, since there is
   one implementation of each ranking. Its dispatch map is deliberately NOT shared with

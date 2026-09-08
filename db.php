@@ -6081,12 +6081,43 @@ function refreshLeaderboardSnapshots($conn) {
 		foreach ((array)$leaderboard_top3 as $entry) {
 			$pos++;
 			if ($pos > 3) break;
+
+			// FACTIONS IS THE ODD ONE OUT and has to be normalised here.
+			// It ranks PROJECTS, not players, so its podium entries carry
+			// ['faction'=>true, 'project_name', 'currency'] and no username,
+			// discord_id or avatar at all -- which is why its card read "No
+			// leader yet" when everything else worked. renderPodium() has
+			// always special-cased it the same way ($is_faction).
+			//
+			// Verified this is the ONLY exception: every other board pushes
+			// username/discord_id/avatar/visibility/score.
+			//
+			// Rather than add a column, the two shapes are folded into the
+			// existing ones: the name column carries a project name, and the
+			// avatar column carries a ready-made icon PATH with discord_id
+			// left empty. The renderer decides which it is by whether
+			// discord_id is set -- see the comment there.
+			$is_faction = !empty($entry['faction']);
+			if ($is_faction) {
+				$name   = $entry['project_name'] ?? '';
+				$did    = '';
+				// Same icon convention getMissionsFilters() uses for the
+				// project filter buttons.
+				$avatar = ($entry['currency'] ?? '') !== ''
+					? 'icons/' . strtolower($entry['currency']) . '.png'
+					: '';
+			} else {
+				$name   = $entry['username'] ?? '';
+				$did    = $entry['discord_id'] ?? '';
+				$avatar = $entry['avatar'] ?? '';
+			}
+
 			$conn->query("INSERT INTO leaderboard_snapshots (board, rank_pos, username, discord_id, avatar, score, updated_at) VALUES ("
 				. "'" . $conn->real_escape_string($key) . "', "
 				. $pos . ", "
-				. "'" . $conn->real_escape_string($entry['username'] ?? '') . "', "
-				. "'" . $conn->real_escape_string($entry['discord_id'] ?? '') . "', "
-				. "'" . $conn->real_escape_string($entry['avatar'] ?? '') . "', "
+				. "'" . $conn->real_escape_string($name) . "', "
+				. "'" . $conn->real_escape_string($did) . "', "
+				. "'" . $conn->real_escape_string($avatar) . "', "
 				. "'" . $conn->real_escape_string($entry['score'] ?? '') . "', NOW())");
 		}
 		$done++;
@@ -6144,9 +6175,21 @@ function renderLeaderboardHub($conn) {
 			// anyone choose a leaderboard, and it was a fourth line on every
 			// tile competing with the one line people actually came for.
 			if ($champion && $champion['username'] !== '') {
-				$av = ($champion['discord_id'] && $champion['avatar'])
-					? "https://cdn.discordapp.com/avatars/" . $champion['discord_id'] . "/" . $champion['avatar'] . ".png"
-					: "icons/skull.png";
+				// Two kinds of leader. A player row has a discord_id, so the
+				// avatar column holds a Discord avatar HASH and the CDN url
+				// gets built here. A faction row has no discord_id, and its
+				// avatar column already holds a ready-made icon path (see
+				// refreshLeaderboardSnapshots). Presence of discord_id is the
+				// discriminator -- which also means rows written before this
+				// distinction existed still render, they just fall through to
+				// the skull.
+				if ($champion['discord_id'] !== '' && $champion['avatar'] !== '') {
+					$av = "https://cdn.discordapp.com/avatars/" . $champion['discord_id'] . "/" . $champion['avatar'] . ".png";
+				} else if ($champion['avatar'] !== '') {
+					$av = $champion['avatar'];
+				} else {
+					$av = "icons/skull.png";
+				}
 				echo "<div class='lb-card-champ'>"
 				   . "<img src='" . htmlspecialchars($av) . "' alt='' loading='lazy' onerror=\"this.src='icons/skull.png';\">"
 				   . "<span class='lb-card-name'>" . htmlspecialchars($champion['username']) . "</span>"
