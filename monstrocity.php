@@ -5321,6 +5321,31 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         return matches;
       }
 
+	  // Pre-fills X's public Web Intent composer with this level's result.
+	  // Free -- no API, no OAuth, no per-post charge. url= points at
+	  // match3rpg.php, Monstrocity's PUBLIC page, which carries og:image and
+	  // twitter:card=summary_large_image, so X renders its artwork as a large
+	  // card with nothing uploaded. Must stay a public page: anything behind
+	  // the login gate would serve X a redirect and the card would silently
+	  // degrade to a bare link. @skulliance is tagged so the main account sees
+	  // it. Mirrors the wording of the Discord announce in
+	  // ajax/save-monstrocity-score.php.
+	  updateShareLink(won) {
+	      const link = document.getElementById('share-x');
+	      if (!link) return;
+	      const lvl = this.currentLevel;
+	      let opp = '';
+	      if (this.selectedBoss && this.selectedBoss.name) opp = this.selectedBoss.name;
+	      else if (typeof opponentsConfig !== 'undefined' && opponentsConfig[lvl - 1]) opp = opponentsConfig[lvl - 1].name;
+	      if (!opp) opp = 'my opponent';
+	      const body = (won
+	              ? 'I vanquished ' + opp + ' on Level ' + lvl + '! 🏆'
+	              : 'I was defeated by ' + opp + ' on Level ' + lvl + '. 💀')
+	          + '\n\nMonstrocity on Skulliance\n\n@skulliance';
+	      link.href = 'https://x.com/intent/post?text=' + encodeURIComponent(body)
+	          + '&url=' + encodeURIComponent('https://skulliance.io/staking/match3rpg.php');
+	  }
+
 	  async checkGameOver() {
 	      if (this.gameOver || this.isCheckingGameOver) {
 	          console.log(`checkGameOver skipped: gameOver=${this.gameOver}, isCheckingGameOver=${this.isCheckingGameOver}, currentLevel=${this.currentLevel}`);
@@ -5361,7 +5386,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          `;
 	      }
 
-	      leaderboardButtonDiv.innerHTML = leaderboardForm;
+	      // Share button rides alongside the leaderboard form. Its href is set
+	      // once win/loss is actually known (updateShareLink below), since that
+	      // is decided further down in each branch.
+	      leaderboardButtonDiv.innerHTML = leaderboardForm
+	          + '<a id="share-x" href="#" target="_blank" rel="noopener" style="display:inline-block;text-decoration:none;">&#120143; SHARE</a>';
 
 	      if (this.player1.health <= 0) {
 	          console.log("Player 1 health <= 0, triggering game over (loss), boss mode=" + !!this.selectedBoss);
@@ -5376,6 +5405,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          this.gameOver = true;
 	          this.gameState = "gameOver";
 	          gameOver.textContent = "You Lose!";
+	          this.updateShareLink(false);
 	          if (!this.selectedBoss) {
 	              fetch('ajax/save-monstrocity-score.php', {
 	                  method: 'POST',
@@ -5434,6 +5464,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          this.gameOver = true;
 	          this.gameState = "gameOver";
 	          gameOver.textContent = "You Win!";
+	          this.updateShareLink(true);
 	          // Not "Game Over" - that misleads players (especially now the
 	          // mobile pill shows this) into thinking the whole game ended
 	          // when they only cleared a level. currentLevel hasn't been

@@ -25,3 +25,9 @@ Skulliance is home to a growing suite of games that turn your NFT collections in
 Across the games, leaderboard rewards are paid in platform points - most commonly **CARBON** (burnable for DIAMOND) and **CLAW** (Monstrocity's own points). Weekly games reset on a fixed cadence and distribute a CARBON pool that is divided down the leaderboard by rank, so even runner-ups earn their fair share. Top finishers in the external games receive core project points (DREAD for Drop Ship, MOON for Oculus Lounge) deposited directly into their Skulliance balance.
 
 Many games share the same **consumable items** used in Missions and Realms (success boosts, Fast Forward, Double Rewards, Random Reward) - see [[missions-consumable-items]].
+
+## Sharing Your Results
+
+Crypt Crawl, Crypt Conquest, Monstrocity, Skull Swap and Skull Racer all put a **Share** button on the end-of-game screen, next to the leaderboard link. One click opens X with your actual result already written - your crypt depth, your level, your score, your lap time - along with a link to that game's page, which brings its artwork along as a full-size image. The post tags **@skulliance**, so the main account sees it and can repost.
+
+It's entirely optional, and nothing is posted without you reading it first and pressing Post yourself.

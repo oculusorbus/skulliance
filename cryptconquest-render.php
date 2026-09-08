@@ -187,6 +187,7 @@ function cryptconquestMinimalGameOverHtml($run, $user_id) {
 		<!-- Shown on a WIN as well as a loss (fixed 2026-09-01) -- same fix and
 		     rationale as cryptcrawl-render.php. -->
 		<a href="leaderboards.php?filterby=monthly-cryptconquest" class="cq-btn gold" style="margin-top:8px;">👑 Monthly Leaderboard</a>
+		<?php echo shareOnXButton(cryptconquestShareText($won, $defeated), 'cryptconquestgame.php', 'cq-btn secondary', 'margin-top:8px;'); ?>
 	</div>
 	<?php
 }
@@ -441,6 +442,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 		<!-- Shown on a WIN as well as a loss (fixed 2026-09-01) -- same fix and
 		     rationale as cryptcrawl-render.php. -->
 		<a href="leaderboards.php?filterby=monthly-cryptconquest" class="cq-btn gold" style="margin-top:8px;">👑 Monthly Leaderboard</a>
+		<?php echo shareOnXButton(cryptconquestShareText($won, $defeated), 'cryptconquestgame.php', 'cq-btn secondary', 'margin-top:8px;'); ?>
 
 	<?php else: // active -- $hand/$enemy/$enemy_stats already computed above, for the mood calc
 		$enemy_hp_left = $enemy ? max(0, $enemy_stats['health'] - intval($enemy['damage_taken'])) : 0;

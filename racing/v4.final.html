@@ -278,7 +278,7 @@
       gap: 10px;
       margin-top: 16px;
     }
-    #finish-leaderboard {
+    #finish-leaderboard, #finish-share {
       display: inline-block;
       padding: 8px 20px;
       background-color: transparent;
@@ -292,7 +292,7 @@
       cursor: pointer;
       font-size: 0.85rem;
     }
-    #finish-leaderboard:hover { background-color: rgba(0,200,160,0.12); }
+    #finish-leaderboard:hover, #finish-share:hover { background-color: rgba(0,200,160,0.12); }
     #minimap {
       position: absolute;
       right: 10px;
@@ -742,6 +742,9 @@
             <div id="finish-buttons">
               <button id="finish-replay" type="button">Race Again</button>
               <a id="finish-leaderboard" href="/staking/leaderboards.php?filterby=weekly-skullracer">Weekly Leaderboard</a>
+              <!-- href filled in when the race actually finishes, since the
+                   times aren't known until then. -->
+              <a id="finish-share" href="#" target="_blank" rel="noopener">𝕏 Share Result</a>
             </div>
           </div>
         </div>
@@ -2199,6 +2202,29 @@
 
       Dom.set('finish_total_time',   formatTime(raceElapsed));
       Dom.set('finish_fastest_lap',  formatTime(Util.toFloat(Dom.storage.fast_lap_time)));
+
+      // Pre-fill X's public Web Intent composer with THIS race's numbers.
+      // Free -- the intent endpoint, not the paid API: no OAuth, no tokens,
+      // no per-post charge. url= points at skullracergame.php, the PUBLIC
+      // marketing page, which carries og:image and
+      // twitter:card=summary_large_image, so X renders its art as a large
+      // card without us uploading or generating anything. It has to stay a
+      // public page -- behind the login gate X would get a redirect and the
+      // card would quietly collapse to a bare link.
+      //
+      // Uses formatTime() so the shared numbers read exactly as they do on
+      // this screen and on the leaderboard (see skullRacerFormatTime in
+      // db.php for why that consistency matters).
+      var shareLink = Dom.get('finish-share');
+      if (shareLink) {
+        var shareBody = 'I finished a race in Skull Racer 🏁'
+          + '\n\n⏱️ Total Time: '  + formatTime(raceElapsed)
+          + '\n🏎️ Fastest Lap: ' + formatTime(Util.toFloat(Dom.storage.fast_lap_time))
+          + '\n\n@skulliance';
+        shareLink.href = 'https://x.com/intent/post?text=' + encodeURIComponent(shareBody)
+          + '&url=' + encodeURIComponent('https://skulliance.io/staking/skullracergame.php');
+      }
+
       Dom.addClassName('finish-overlay', 'show');
 
       Game.stop(); // the track loops forever otherwise -- this is the actual finish line

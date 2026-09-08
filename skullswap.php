@@ -69,6 +69,16 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
   <meta property="og:image:height" content="1207">
   <meta property="og:image:alt" content="Skull Swap match 3 puzzle game board">
   <meta property="og:locale" content="en_US">
+  <!-- X card. This page had og:image but no twitter:card, which is not the
+       same thing: without this tag X falls back to a small thumbnail card, so
+       a shared score rendered as a cramped link instead of the artwork. Every
+       other game's public page (cryptcrawlgame, cryptconquestgame,
+       skullracergame, match3rpg) already declares summary_large_image -- this
+       one was the odd one out, found when wiring up the share buttons.
+       X reads its own twitter:* tags and falls back to og:* for the rest, so
+       title/description/image above are reused and don't need repeating. -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image:alt" content="Skull Swap match 3 puzzle game board">
 
   <!-- Twitter Cards -->
   <meta name="twitter:card" content="summary_large_image">
@@ -608,7 +618,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              margin: 0 0 20px 0;
              animation: gameOverPulse 1s ease-in-out infinite;
          }
-         #try-again, #leaderboard {
+         #try-again, #leaderboard, #share-x {
              font-size: 24px;
              font-family: Arial;
 			 font-weight: bold;
@@ -623,10 +633,13 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
              box-sizing: border-box;
              text-align: center;
          }
-         #try-again:hover, #leaderboard:hover {
+         #try-again:hover, #leaderboard:hover, #share-x:hover {
              background-color: #666;
              transform: scale(1.05);
          }
+         /* It's an anchor, not a button -- kill the link styling so it sits
+            with the other two rather than looking like stray text. */
+         #share-x { display: inline-block; text-decoration: none; }
          @keyframes matchAnimation {
              0% { transform: scale(1); opacity: 1; }
              50% { transform: scale(1.2); opacity: 0.8; }
@@ -824,6 +837,10 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
                      <input type="hidden" name="filterby" value="weekly-swaps">
                      <button id="leaderboard" type="submit">LEADERBOARD</button>
                  </form>
+                 <!-- href is filled in when the game-over panel is shown, since
+                      the score isn't known until then. Opens X's public Web
+                      Intent composer -- no API, no cost. -->
+                 <a id="share-x" href="#" target="_blank" rel="noopener">𝕏 SHARE</a>
              </div>
          </div>
          <div id="board-btns">
@@ -1357,6 +1374,22 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          }
         
          document.getElementById('game-over-container').style.display = this.gameOver ? 'block' : 'none';
+         if (this.gameOver) this.updateShareLink();
+     }
+
+     // Pre-fills X's public Web Intent composer with this round's actual
+     // score. Free -- no API, no OAuth, no per-post charge. The url= points at
+     // this page, which carries og:image + twitter:card=summary_large_image,
+     // so X renders the artwork as a large card without us uploading anything.
+     // @skulliance is tagged so the main account sees the post.
+     updateShareLink() {
+         const link = document.getElementById('share-x');
+         if (!link) return;
+         const score = Number(this.score) || 0;
+         const body  = 'I scored ' + score.toLocaleString() + ' in Skull Swap!'
+                     + '\n\nSkull Swap on Skulliance\n\n@skulliance';
+         link.href = 'https://x.com/intent/post?text=' + encodeURIComponent(body)
+                   + '&url=' + encodeURIComponent('https://skulliance.io/staking/skullswap.php');
      }
 
      addEventListeners() {

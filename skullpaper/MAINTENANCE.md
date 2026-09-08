@@ -90,6 +90,24 @@ records verified constants, and tracks what still needs to be written.
 - Skull Swap weekly LB: 25,000 CARBON (db.php:5020).
 - Gauntlets weekly LB: 25,000 CARBON (db.php:5264).
 - Boss Battles weekly LB: CLAW/CARBON split by damage (db.php:5139-5258).
+- Share on X (db.php `shareOnXUrl()` / `shareOnXButton()` + per-game `*ShareText()` builders,
+  defined just above `checkActivityLeaderboard()`): finish-screen share buttons on all 5 games.
+  Uses X's PUBLIC Web Intent endpoint (`x.com/intent/post`) -- NOT the paid API. No developer
+  account, no OAuth, no tokens, no per-post charge. If anyone later proposes "upgrading" this to
+  the API, note that as of 2026 post creation costs $0.015, or **$0.20 if the post contains a
+  link** -- a 13x surcharge this design avoids entirely.
+  Imagery is free too: `url=` points at each game's PUBLIC page, which must carry BOTH `og:image`
+  AND `twitter:card=summary_large_image` or X degrades to a small thumbnail. skullswap.php had
+  og:image but no twitter:card and was fixed here. Targets: cryptcrawlgame.php,
+  cryptconquestgame.php, skullracergame.php, match3rpg.php (Monstrocity's public page -- NOT
+  monstrocity.php), skullswap.php. **These must stay outside skulliance.php's login gate** -- X
+  would follow a redirect to error.php and the card would silently collapse to a bare link.
+  Two implementations by necessity: PHP (`shareOnXButton`) for the server-rendered finish modals
+  in cryptcrawl-render.php and cryptconquest-render.php, and inline JS `updateShareLink()` for
+  the client-side ones (monstrocity.php, skullswap.php, racing/index.html) where the result isn't
+  known server-side. Both append @skulliance and budget 24 chars for the t.co-wrapped URL against
+  the 280 limit. Verified by a harness (31 assertions) covering URL shape, every target page
+  having the card tag AND no login gate, per-game text, the 280 budget, and button markup.
 - Skull Racer weekly LB: 50,000 CARBON x2 -- a Races board and a Laps board, each with its own
   50,000 pool, so one driver topping both takes 100,000 (db.php SKULL RACER block, end of file).
 

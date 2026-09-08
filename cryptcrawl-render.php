@@ -141,6 +141,7 @@ function cryptcrawlMinimalGameOverHtml($run, $user_id) {
 		     player most wants to see where they placed -- was the one outcome
 		     with no route to the leaderboard. -->
 		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
+		<?php echo shareOnXButton(cryptcrawlShareText($run), 'cryptcrawlgame.php', 'cc-btn secondary', 'margin-top:8px;'); ?>
 	</div>
 	<?php
 }
@@ -321,6 +322,7 @@ function cryptcrawlRenderGameArea($conn, $user_id) {
 		     player most wants to see where they placed -- was the one outcome
 		     with no route to the leaderboard. -->
 		<a href="leaderboards.php?filterby=weekly-cryptcrawl" class="cc-btn gold" style="margin-top:8px;">🏆 Weekly Leaderboard</a>
+		<?php echo shareOnXButton(cryptcrawlShareText($recent_run), 'cryptcrawlgame.php', 'cc-btn secondary', 'margin-top:8px;'); ?>
 
 	<?php else: // active
 		$room = json_decode($active_run['room'], true) ?: [];

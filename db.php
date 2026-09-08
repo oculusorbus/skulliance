@@ -5718,6 +5718,113 @@ function resetCryptConquests($conn) {
 	}
 }
 
+//=============================================================================
+// SHARE ON X
+//
+// Builds a pre-filled X (Twitter) "post composer" link for a player to share
+// a result from a game's finish modal. One click opens X with the text
+// already written; they press Post. Costs nothing -- this is the public Web
+// Intent endpoint, NOT the paid API. No developer account, no OAuth, no
+// tokens, no per-post charge.
+//
+// The imagery comes free too: every $page_path below points at a PUBLIC
+// marketing page carrying `twitter:card = summary_large_image` plus an
+// og:image, so X fetches that page and renders its art as a full-width card.
+// Nothing is uploaded and no image is generated per run. This is why the
+// target must stay a public page -- one behind skulliance.php's login gate
+// would serve X a redirect to error.php and the card would silently render
+// as a bare link.
+//
+// @skulliance is appended to every post so the main account sees them and can
+// repost -- the whole point being reach that isn't just the official account
+// talking to itself.
+//=============================================================================
+define('SKULLIANCE_X_HANDLE', '@skulliance');
+
+function shareOnXUrl($body, $page_path) {
+	$tail = "\n\n" . SKULLIANCE_X_HANDLE;
+
+	// X counts ANY url as 23 characters (t.co wraps them all), regardless of
+	// how long the real one is, and the url= param below is appended to the
+	// post body. Budget for that here so a long result line gets trimmed at
+	// a sensible place instead of X silently cutting the handle off the end
+	// -- which would quietly defeat the point of tagging the account.
+	$limit = 280 - 24 - mb_strlen($tail);
+	$body  = trim($body);
+	if (mb_strlen($body) > $limit) {
+		$body = rtrim(mb_substr($body, 0, $limit - 1)) . '…';
+	}
+
+	$url = 'https://skulliance.io/staking/' . ltrim($page_path, '/');
+	return 'https://x.com/intent/post?text=' . rawurlencode($body . $tail)
+	     . '&url=' . rawurlencode($url);
+}
+
+// The finish-modal button itself. Same markup everywhere so the five games
+// stay consistent; $class lets each game pass its own button styling
+// (cc-btn / cq-btn / etc) so it sits properly next to that game's own
+// buttons rather than looking bolted on.
+//
+// target=_blank with rel=noopener: the composer must not replace the game
+// the player is still sitting in.
+function shareOnXButton($body, $page_path, $class = 'small-button', $style = '', $label = '𝕏 Share Result') {
+	return '<a href="' . htmlspecialchars(shareOnXUrl($body, $page_path))
+	     . '" class="' . htmlspecialchars($class) . '"'
+	     . ($style !== '' ? ' style="' . htmlspecialchars($style) . '"' : '')
+	     . ' target="_blank" rel="noopener">'
+	     . htmlspecialchars($label) . '</a>';
+}
+
+// Per-game share text. Deliberately mirrors what each game already posts to
+// Discord (cryptcrawlAnnounceResult, cryptconquestAnnounceResult, the
+// Monstrocity/Skull Swap announces, skullRacerAnnounceResult) so a player's
+// public post says the same thing their Discord post did -- just written in
+// first person, since here they are the author rather than the subject.
+//
+// Every one of these embeds the player's ACTUAL numbers, which matters
+// beyond flavour: X's spam policy targets duplicative content, and a hundred
+// identical posts is exactly that shape. A hundred different depths and lap
+// times is just a community.
+function cryptcrawlShareText($run) {
+	$fell  = (($run['status'] ?? '') === 'lost');
+	$depth = intval($run['rooms_cleared'] ?? 0);
+	if ($fell) {
+		return "I died in the crypt. 💀\n\n💀 Crypt Depth: {$depth}/15\n\nCrypt Crawl on Skulliance";
+	}
+	return "I cleared the crypt! 🏆\n\n💀 Crypt Depth: {$depth}/15\n❤️ HP Remaining: "
+	     . intval($run['hp'] ?? 0) . "\n\nCrypt Crawl on Skulliance";
+}
+
+// Explicit params rather than a $run array: the column is `enemies_defeated`
+// (not cards_defeated, as the player-facing wording would suggest), and the
+// two render sites already unpack it into locals. Passing the values in means
+// a column rename can't silently turn every shared score into a zero.
+function cryptconquestShareText($won, $depth, $tier = '') {
+	$depth = intval($depth);
+	if ($won) {
+		return "I conquered the Necropolis! 👑\n\n"
+		     . ($tier !== '' ? "👑 {$tier}\n" : "")
+		     . "💀 Court Cards Defeated: {$depth}/12\n\nCrypt Conquest on Skulliance";
+	}
+	return "I fell to the Necropolis. 💀\n\n💀 Court Cards Defeated: {$depth}/12\n\nCrypt Conquest on Skulliance";
+}
+
+function monstrocityShareText($opponent, $level, $won) {
+	$opponent = trim((string)$opponent);
+	if ($won) {
+		return "I vanquished " . ($opponent !== '' ? $opponent : 'my opponent')
+		     . " on Level " . intval($level) . "! 🏆\n\nMonstrocity on Skulliance";
+	}
+	return "I was defeated by " . ($opponent !== '' ? $opponent : 'my opponent')
+	     . " on Level " . intval($level) . ". 💀\n\nMonstrocity on Skulliance";
+}
+
+function skullswapShareText($score, $is_high = false) {
+	return "I scored " . number_format(intval($score)) . " in Skull Swap!"
+	     . ($is_high ? " 🆕 New High Score!" : "")
+	     . "\n\nSkull Swap on Skulliance";
+}
+
 // Check Activity Leaderboard — weighted aggregate across all platform features
 // Weights: daily claim=1, mission=5, skull swap=5, gauntlet encounter=5,
 // crypt crawl=5, crypt conquest=5, skull race=5, raid=15, boss battle=25,
