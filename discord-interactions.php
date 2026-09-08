@@ -57,11 +57,28 @@ function sk_reject($why) {
 	exit('invalid request signature');
 }
 
+// This server has no ext/sodium. Checked every PHP build present -- all 18
+// CloudLinux alt-php versions and both EasyApache ones -- and none of them
+// ship it, so this is not a "flip a switch in the PHP selector" situation.
+//
+// Hence the vendored pure-PHP implementation in lib/sodium_compat (see the
+// VENDOR.md there for version and provenance). Its autoload defines the
+// sodium_* functions as polyfills when the extension is absent, so the call
+// below is unchanged either way and a server that later gains the real
+// extension silently starts using it instead -- the native one is always
+// preferred, this only fills a gap.
+//
+// Ed25519 in pure PHP costs ~25ms per verification against an interaction
+// budget of 3000ms, so the cost is irrelevant here.
 if (!function_exists('sodium_crypto_sign_verify_detached')) {
-	// Nothing to fall back to: there is no practical pure-PHP Ed25519. Fail
-	// closed and say so plainly in the log, because the symptom at the
-	// Discord end ("endpoint could not be validated") gives no hint why.
-	sk_reject('PHP sodium extension is not available on this server');
+	$sk_compat = __DIR__ . '/lib/sodium_compat/autoload.php';
+	if (is_file($sk_compat)) require_once $sk_compat;
+}
+if (!function_exists('sodium_crypto_sign_verify_detached')
+	&& !class_exists('ParagonIE_Sodium_Compat')) {
+	// Fail closed, and say why: the symptom at the Discord end ("endpoint
+	// could not be validated") gives no hint that this is the cause.
+	sk_reject('no Ed25519 available -- ext/sodium missing and lib/sodium_compat not found');
 }
 if ($signature === '' || $timestamp === '') {
 	sk_reject('missing signature headers');
@@ -75,7 +92,24 @@ $key_bin = @hex2bin($discord_public_key);
 if ($sig_bin === false || $key_bin === false) {
 	sk_reject('signature or public key is not valid hex');
 }
-if (!sodium_crypto_sign_verify_detached($sig_bin, $timestamp . $raw, $key_bin)) {
+// The two implementations disagree about how to report a bad signature, and
+// the difference is not cosmetic. ext/sodium RETURNS false; sodium_compat
+// THROWS a SodiumException when the signature isn't a valid curve point --
+// which is exactly what a forged one usually is. Uncaught, that's a 500, and
+// Discord refuses to accept an endpoint URL that answers its deliberately
+// invalid probe with anything but 401. So the gate would simply never go
+// live, having passed every test on a machine that has the extension.
+//
+// Any failure to verify, by either route, is the same answer: 401.
+$sk_signed_ok = false;
+try {
+	$sk_signed_ok = function_exists('sodium_crypto_sign_verify_detached')
+		? sodium_crypto_sign_verify_detached($sig_bin, $timestamp . $raw, $key_bin)
+		: ParagonIE_Sodium_Compat::crypto_sign_verify_detached($sig_bin, $timestamp . $raw, $key_bin);
+} catch (Throwable $e) {
+	sk_reject('signature rejected (' . get_class($e) . ': ' . $e->getMessage() . ')');
+}
+if (!$sk_signed_ok) {
 	sk_reject('signature did not verify');
 }
 
