@@ -990,6 +990,9 @@ function filterLeaderboard($page){
 				<option value="monthly-streaks">'.date('F').' Streaks</option>
 			</optgroup>
 			<optgroup label="Missions">
+				<option value="gamemaster-ath">All-Time Game Master</option>
+				<option value="gamemaster-monthly">'.date('F').' Game Master</option>
+				<option value="gamemaster-weekly">Weekly Game Master</option>
 				<option value="missions">All Missions</option>
 				<option value="missions-unlocked">Missions Unlocked</option>
 				<option value="monthly">'.date('F').' Missions</option>

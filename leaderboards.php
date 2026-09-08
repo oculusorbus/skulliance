@@ -305,7 +305,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 		           $filterby != "skullracer" && $filterby != "weekly-skullracer" &&
 		           $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
-				              $filterby != "missions-unlocked" && $filterby != "hub"):
+				              $filterby != "missions-unlocked" && $filterby != "hub" &&
+				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
@@ -422,6 +423,18 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = "Missions Unlocked";
 				        $filterby = "missions-unlocked";
 				        break;
+				    case ($filterby == "gamemaster-ath"):
+				        $title = "All-Time Game Master";
+				        $filterby = "gamemaster-ath";
+				        break;
+				    case ($filterby == "gamemaster-monthly"):
+				        $title = date("F") . " Game Master";
+				        $filterby = "gamemaster-monthly";
+				        break;
+				    case ($filterby == "gamemaster-weekly"):
+				        $title = "Weekly Game Master";
+				        $filterby = "gamemaster-weekly";
+				        break;
 				    case ($filterby == "activity-ath"):
 				        $title = "All-Time Activity";
 				        $filterby = "activity-ath";
@@ -459,7 +472,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "skullracer" && $filterby != "weekly-skullracer" &&
 				              $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
-				              $filterby != "missions-unlocked" && $filterby != "hub"):
+				              $filterby != "missions-unlocked" && $filterby != "hub" &&
+				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -546,6 +560,15 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				            break;
 				        case ($filterby == "missions-unlocked"):
 				            checkMissionsUnlockedLeaderboard($conn);
+				            break;
+				        case ($filterby == "gamemaster-ath"):
+				            checkActivityLeaderboard($conn, 'ath', 'games');
+				            break;
+				        case ($filterby == "gamemaster-monthly"):
+				            checkActivityLeaderboard($conn, 'monthly', 'games');
+				            break;
+				        case ($filterby == "gamemaster-weekly"):
+				            checkActivityLeaderboard($conn, 'weekly', 'games');
 				            break;
 				        case ($filterby == "activity-ath"):
 				            checkActivityLeaderboard($conn, 'ath');

@@ -5937,21 +5937,26 @@ $SKULLIANCE_BOARDS = array(
 	'delegations'       => array('label'=>'Delegations',       'icon'=>'💎', 'group'=>'Platform',
 		'blurb'=>'Diamond Skull delegations',
 		'periods'=>array('All-Time'=>'15')),
-	'missions'          => array('label'=>'Missions',          'icon'=>'🗺️', 'group'=>'Missions & Realms',
+	'missions'          => array('label'=>'Missions',          'icon'=>'🗺️', 'group'=>'Missions',
 		'blurb'=>'Missions run and completed',
 		'periods'=>array('All-Time'=>'missions','Monthly'=>'monthly')),
-	'missions-unlocked' => array('label'=>'Missions Unlocked', 'icon'=>'🔓', 'group'=>'Missions & Realms',
+	'missions-unlocked' => array('label'=>'Missions Unlocked', 'icon'=>'🔓', 'group'=>'Missions',
 		'blurb'=>'How far up the ladders',
 		'periods'=>array('All-Time'=>'missions-unlocked')),
-	'raids'             => array('label'=>'Raids',             'icon'=>'⚔️', 'group'=>'Missions & Realms',
+	'raids'             => array('label'=>'Raids',             'icon'=>'⚔️', 'group'=>'Realms',
 		'blurb'=>'Realm raids won',
 		'periods'=>array('All-Time'=>'raids','Monthly'=>'monthly-raids')),
-	'realms'            => array('label'=>'Realm Power',       'icon'=>'🏰', 'group'=>'Missions & Realms',
+	'realms'            => array('label'=>'Realm Power',       'icon'=>'🏰', 'group'=>'Realms',
 		'blurb'=>'Strongest realms',
 		'periods'=>array('All-Time'=>'realms')),
-	'factions'          => array('label'=>'Factions',          'icon'=>'🛡️', 'group'=>'Missions & Realms',
+	'factions'          => array('label'=>'Factions',          'icon'=>'🛡️', 'group'=>'Realms',
 		'blurb'=>'Faction standings',
 		'periods'=>array('All-Time'=>'factions','Monthly'=>'monthly-factions')),
+	// First card in Games on purpose: it's the cross-game aggregate, so it
+	// reads as the headline for the section rather than one more game.
+	'gamemaster'        => array('label'=>'Game Master',       'icon'=>'🎮', 'group'=>'Games',
+		'blurb'=>'Every game, weighted',
+		'periods'=>array('All-Time'=>'gamemaster-ath','Monthly'=>'gamemaster-monthly','Weekly'=>'gamemaster-weekly')),
 	'gauntlets'         => array('label'=>'Gauntlets',         'icon'=>'🥊', 'group'=>'Games',
 		'blurb'=>'NFT gauntlet runs',
 		'periods'=>array('All-Time'=>'gauntlets','Weekly'=>'weekly-gauntlets')),
@@ -6034,6 +6039,7 @@ function refreshLeaderboardSnapshots($conn) {
 	// editing mistake away from a cron that runs unattended.
 	$dispatch = array(
 		'activity'          => function($c) { checkActivityLeaderboard($c, 'ath'); },
+		'gamemaster'        => function($c) { checkActivityLeaderboard($c, 'ath', 'games'); },
 		'streaks'           => function($c) { checkStreaksLeaderboard($c); },
 		// Delegations is not its own board -- ?filterby=15 is a PROJECT id,
 		// routed through the holdings leaderboard like any partner project.
@@ -6146,9 +6152,10 @@ function renderLeaderboardHub($conn) {
 	// at a glance without tinting every card and adding more noise -- the
 	// colour lands on the heading rule and the card's top edge only.
 	$accents = array(
-		'Platform'          => '#00c8a0',
-		'Missions & Realms' => '#8b7bd8',
-		'Games'             => '#ffcc44',
+		'Platform' => '#00c8a0',   // teal, the site accent
+		'Missions' => '#4fa3ff',   // blue
+		'Realms'   => '#8b7bd8',   // violet
+		'Games'    => '#ffcc44',   // gold
 	);
 	foreach ($groups as $group_name => $boards) {
 		$accent = isset($accents[$group_name]) ? $accents[$group_name] : '#00c8a0';
@@ -6373,7 +6380,23 @@ function skullswapShareText($score, $is_high = false) {
 // Weights: daily claim=1, mission=5, skull swap=5, gauntlet encounter=5,
 // crypt crawl=5, crypt conquest=5, skull race=5, raid=15, boss battle=25,
 // monstrocity session=50
-function checkActivityLeaderboard($conn, $period = 'ath') {
+// $scope 'all' is the Activity board -- everything you do on the platform.
+// $scope 'games' is Game Master: the same machinery restricted to the seven
+// game sources, dropping daily claims, missions and raids.
+//
+// One function rather than two on purpose. The weighting, the date windows,
+// the per-user merge, the tie handling and the rendering are all identical;
+// a second copy would drift, and then two boards would disagree about what a
+// Crypt Crawl delve is worth. Game Master deliberately reuses Activity's
+// existing weights for the same reason -- inventing a second scale would make
+// the two boards rank the same player differently for no stated reason.
+//
+// Game Master is informational only. Like Activity it has no $rewards path
+// and pays nothing; it is scoreboard, not payout.
+function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
+	// Which sources count as "a game". Everything else -- daily claims,
+	// missions, raids -- is platform activity but not playing a game.
+	$game_sources = array('skullswap','gauntlet','crawl','conquest','racer','boss','monstrocity');
 	// MIGRATIONS DONE -- this block used to say cryptcrawls and cryptconquests
 	// each still needed a date_created column added before 'crawl' and
 	// 'conquest' could work for monthly/weekly. Both were run; verified
@@ -6466,6 +6489,13 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		'monstrocity' => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id",                                                                        50],
 	];
 
+	// Game Master runs the same sources with the non-game ones removed. Doing
+	// it here rather than with a separate $sources array means a source added
+	// later is automatically in both boards or neither, decided by one list.
+	if ($scope === 'games') {
+		$sources = array_intersect_key($sources, array_flip($game_sources));
+	}
+
 	// $activity[user_id] = ['daily'=>0, 'mission'=>0, ..., 'total_pts'=>0]
 	$activity = [];
 	foreach ($sources as $key => [$query, $weight]) {
@@ -6483,8 +6513,13 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 	}
 
 	if (empty($activity)) {
-		$scope = $period === 'weekly' ? ' for the week' : ($period === 'monthly' ? ' for the month' : '');
-		echo "<p>No activity recorded$scope.</p>";
+		// $when, not $scope -- $scope is now this function's parameter, and
+		// reassigning it here would shadow it. Harmless today because this
+		// branch returns immediately, but it is exactly the sort of thing
+		// that bites the next person who adds code after it.
+		$when  = $period === 'weekly' ? ' for the week' : ($period === 'monthly' ? ' for the month' : '');
+		$what  = ($scope === 'games') ? 'game activity' : 'activity';
+		echo "<p>No $what recorded$when.</p>";
 		return;
 	}
 
@@ -6544,17 +6579,24 @@ function checkActivityLeaderboard($conn, $period = 'ath') {
 		$name_html  = "<a href='profile.php?username=" . urlencode($u['username']) . "'>" . htmlspecialchars($u['username']) . "</a>";
 		$stats = [
 			'Points'    => number_format($data['total_pts']),
-			'Daily'     => number_format($data['daily']),
-			'Missions'  => number_format($data['mission']),
-			'Swaps'     => number_format($data['skullswap']),
-			'Gauntlets' => number_format($data['gauntlet']),
-			'Crawls'    => number_format($data['crawl']),
-			'Conquests' => number_format($data['conquest']),
-			'Races'     => number_format($data['racer']),
-			'Raids'     => number_format($data['raid']),
-			'Bosses'    => number_format($data['boss']),
-			'M3RPG'     => number_format($data['monstrocity']),
 		];
+		// Only show the columns this board actually counts -- carrying a
+		// Daily/Missions/Raids column of zeroes on Game Master would say the
+		// board was broken rather than that those don't count here.
+		if ($scope !== 'games') {
+			$stats['Daily']    = number_format($data['daily']);
+			$stats['Missions'] = number_format($data['mission']);
+		}
+		$stats['Swaps']     = number_format($data['skullswap']);
+		$stats['Gauntlets'] = number_format($data['gauntlet']);
+		$stats['Crawls']    = number_format($data['crawl']);
+		$stats['Conquests'] = number_format($data['conquest']);
+		$stats['Races']     = number_format($data['racer']);
+		if ($scope !== 'games') {
+			$stats['Raids'] = number_format($data['raid']);
+		}
+		$stats['Bosses'] = number_format($data['boss']);
+		$stats['M3RPG']  = number_format($data['monstrocity']);
 		$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => ''];
 		$last_score = $score;
 	}
