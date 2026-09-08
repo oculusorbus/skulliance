@@ -1055,8 +1055,8 @@ li form {
 }
 
 .missions-filter img{
-	width: 40px;
-	height: 40px;
+	width: 70px;
+	height: 70px;
 }
 
 .missions-filter.eligible {
@@ -1065,11 +1065,13 @@ li form {
 
 /* Mission unlock progress -- the thin bar under each project icon, so you
    can see at a glance which projects still have missions left to unlock
-   without opening each one. Width matches .missions-filter img (40px) so it
-   lines up under the icon rather than the padded box. Only rendered for
-   logged-in users; see getMissionsFilters() in db.php. */
+   without opening each one. Width tracks .missions-filter img (70px) so it
+   lines up under the icon rather than the padded box -- these two MUST be
+   changed together, or the bar sits narrower than the icon and looks
+   misaligned. Only rendered for logged-in users; see getMissionsFilters()
+   in db.php. */
 .mf-progress {
-    width: 40px;
+    width: 70px;
     height: 3px;
     margin-top: 6px;
     background-color: rgba(255,255,255,0.14);
