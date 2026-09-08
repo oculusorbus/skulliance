@@ -3094,11 +3094,19 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		        if (this.player1.health <= 0) {
 		            gameOver.textContent = "You Lose!";
 		            turnIndicator.textContent = "Game Over";
+		            // Second game-over path (boss battle resolved before it
+		            // starts). Shows the panel directly instead of going
+		            // through checkGameOver, so without this the Share button
+		            // is either absent or -- worse -- left holding the
+		            // PREVIOUS round's href. Safe to call anywhere: it no-ops
+		            // when the button isn't on screen.
+		            this.updateShareLink(false);
 		            log(`${this.player1.name} has no health left and cannot fight!`);
 		            this.sounds.loss.play();
 		        } else if (this.player2.health <= 0) {
 		            gameOver.textContent = "You Win!";
 		            turnIndicator.textContent = "Game Over";
+		            this.updateShareLink(true); // see the loss branch above
 		            log(`${this.player2.name} has been defeated before the battle begins!`);
 		            this.sounds.win.play();
 

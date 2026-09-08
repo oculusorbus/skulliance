@@ -1741,6 +1741,12 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          tiles.forEach(tile => tile.classList.add('game-over'));
          gameOverContainer.style.display = 'block';
          this.gameOver = true;
+         // THIS is the path a normal round actually ends on -- the grand
+         // finale shows the panel directly rather than going through
+         // renderBoard()'s display toggle, so the updateShareLink() call
+         // hooked there never ran and the Share button fell back to the
+         // plain game page instead of a pre-filled post. Reported live.
+         this.updateShareLink();
          this.playSound('gameOver');
          console.log('Game Over - Grand finale completed!');
          this.saveSwapScore(this.score);
