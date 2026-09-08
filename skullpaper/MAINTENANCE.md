@@ -108,6 +108,14 @@ records verified constants, and tracks what still needs to be written.
   updated by hand if those ever change (same manual-sync caveat as common.js's SPRITES object,
   see racing/common.js's own comment on that one). "skullracer" Discord channel not yet
   configured in credentials/webhooks_credentials.php -- see webhooks.php's function_exists guard.
+  Counts toward platform Activity leaderboards (db.php `checkActivityLeaderboard()`, source
+  `'racer'`, weight 5, alongside crawl/conquest/mission). No status filter, unlike those two:
+  every row in `skull_racer_runs` is already a finished race that passed the SKULLRACER_MIN_*
+  floors, since skullRacerFinalizeRun() is the only thing that inserts and it only runs on
+  completion. Unlike crawl/conquest this source needs NO migration -- `skull_racer_runs` has had
+  `created_at` since its original CREATE and the INSERT writes it explicitly, so monthly/weekly
+  filtering works immediately. Note the column is `created_at`, NOT `date_created` like most
+  tables here, hence its own `$w_sr` filter var rather than reusing one of the shared ones.
   Time display: skullRacerFormatTime() in db.php is a hand port of formatTime() in
   racing/index.html (~line 2366) -- dot-separated M.SS.T, tenths TRUNCATED not rounded, minutes
   part omitted under 60s. Same manual-sync caveat as common.js's SPRITES object: change one and

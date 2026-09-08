@@ -8,12 +8,13 @@ Leaderboards track competitive performance across the entire platform. Most mode
 * **Missions** - all-time and monthly (the monthly track pays the CARBON pool; see [[missions-monthly-rewards]]).
 * **Raids** and **Factions** - Realms competition (see [[realms-raids]] and [[realms-factions]]).
 * **Streaks** - daily-reward login streaks.
-* **Monstrocity**, **Boss Battles**, **Skull Swap**, **Gauntlets**, **Crypt Crawl**, **Crypt Conquest** - the game leaderboards (see [[games]], [[games-cryptcrawl]], and [[games-cryptconquest]]).
+* **Monstrocity**, **Boss Battles**, **Skull Swap**, **Gauntlets**, **Crypt Crawl**, **Crypt Conquest**, **Skull Racer** - the game leaderboards (see [[games]], [[games-cryptcrawl]], [[games-cryptconquest]], and [[games-skullracer]]).
 * **Activity** - overall platform engagement, all-time/monthly/weekly. A single weighted score
   combining how much you've done across the platform - daily streaks, missions, Skull Swap,
-  Gauntlets, completed Crypt Crawl delves, completed Crypt Conquest runs, raids, boss encounters,
-  and Monstrocity attempts each count toward it, weighted by roughly how substantial that action is
-  (a daily streak claim counts for much less than a Monstrocity attempt).
+  Gauntlets, completed Crypt Crawl delves, completed Crypt Conquest runs, finished Skull Racer
+  races, raids, boss encounters, and Monstrocity attempts each count toward it, weighted by roughly
+  how substantial that action is (a daily streak claim counts for much less than a Monstrocity
+  attempt). A finished race counts the same as a completed delve or conquest.
 
 ## How It Works
 
