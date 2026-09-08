@@ -115,6 +115,15 @@ records verified constants, and tracks what still needs to be written.
   known server-side. Both append @skulliance and budget 24 chars for the t.co-wrapped URL against
   the 280 limit. Verified by a harness (31 assertions) covering URL shape, every target page
   having the card tag AND no login gate, per-game text, the 280 budget, and button markup.
+- Leaderboard nav split: `filterLeaderboard()` in skulliance.php (called ONLY from
+  leaderboards.php:~460) lists **projects only** now -- Diamond Skulls/Delegations, All Projects,
+  Core and Partner. The ~31 board options were removed; boards live on the hub. Do NOT add a
+  board back to that selector: mixing 31 boards with 36+ projects is what made it useless for
+  both jobs. Consequence to preserve: since boards are no longer listed there, the
+  selector's first entry is `<option value="hub">` and the "&larr; All Leaderboards" link in
+  leaderboards.php (printed under the `<h2>`, suppressed on the hub itself). Those two are the
+  ONLY routes from a board back to the others -- removing both strands every board page. `?filterby=15` (Delegations) is reachable via the numeric project branch, not a named
+  case -- it has no dispatch `case` and does not need one.
 - Leaderboard hub (db.php `$SKULLIANCE_BOARDS` / `renderLeaderboardHub()` /
   `refreshLeaderboardSnapshots()`): card grid shown at leaderboards.php with no filter, or
   `?filterby=hub`. `$SKULLIANCE_BOARDS` is the single registry of subject -> periods; its period

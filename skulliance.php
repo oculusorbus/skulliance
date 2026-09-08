@@ -978,68 +978,15 @@ function filterLeaderboard($page){
 	$anchor = "";
 	echo'
 	<div id="filter-nfts">
-		<label for="filterLeaderboard"><strong>Filter By:</strong></label>
+		<label for="filterLeaderboard"><strong>Find a Project:</strong></label>
 		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterLeaderboard" id="filterLeaderboard">
-			<optgroup label="Activity">
-				<option value="activity-ath">All-Time Activity</option>
-				<option value="activity-monthly">'.date('F').' Activity</option>
-				<option value="activity-weekly">Weekly Activity</option>
-			</optgroup>
-			<optgroup label="Daily Rewards">
-				<option value="streaks">All Streaks</option>
-				<option value="monthly-streaks">'.date('F').' Streaks</option>
-			</optgroup>
-			<optgroup label="Missions">
-				<option value="missions">All Missions</option>
-				<option value="missions-unlocked">Missions Unlocked</option>
-				<option value="monthly">'.date('F').' Missions</option>
-			</optgroup>
-			<optgroup label="Raids">
-				<option value="raids">All Raids</option>
-				<option value="monthly-raids">'.date('F').' Raids</option>
-			</optgroup>
-			<optgroup label="Realms">
-				<option value="realms">Realm Power</option>
-			</optgroup>
-			<optgroup label="Factions">
-				<option value="factions">All Factions</option>
-				<option value="monthly-factions">'.date('F').' Factions</option>
-			</optgroup>
-			<optgroup label="Game Master">
-				<option value="gamemaster-ath">All-Time Game Master</option>
-				<option value="gamemaster-monthly">'.date('F').' Game Master</option>
-				<option value="gamemaster-weekly">Weekly Game Master</option>
-			</optgroup>
-			<optgroup label="Gauntlets">
-				<option value="gauntlets">All Gauntlets</option>
-				<option value="weekly-gauntlets">Weekly Gauntlets</option>
-			</optgroup>
-			<optgroup label="Crypt Crawl">
-				<option value="cryptcrawl">All Crypt Crawls</option>
-				<option value="weekly-cryptcrawl">Weekly Crypt Crawl</option>
-			</optgroup>
-			<optgroup label="Crypt Conquest">
-				<option value="cryptconquest">All Crypt Conquests</option>
-				<option value="monthly-cryptconquest">'.date('F').' Crypt Conquest</option>
-			</optgroup>
-			<optgroup label="Skull Racer">
-				<option value="skullracer">All Skull Racer Races</option>
-				<option value="weekly-skullracer">Weekly Skull Racer Races</option>
-				<option value="skullracer-laps">All Skull Racer Laps</option>
-				<option value="weekly-skullracer-laps">Weekly Skull Racer Laps</option>
-			</optgroup>
-			<optgroup label="Skull Swaps">
-				<option value="swaps">All Skull Swaps</option>
-				<option value="weekly-swaps">Weekly Skull Swaps</option>
-			</optgroup>
-			<optgroup label="Monstrocity">
-				<option value="monstrocity">All Monstrocity</option>
-				<option value="monthly-monstrocity">'.date('F').' Monstrocity</option>
-			</optgroup>
-			<optgroup label="Boss Battles">
-				<option value="bosses">All Boss Battles</option>
-				<option value="weekly-bosses">Weekly Boss Battles</option>
-			</optgroup>
+			<!-- Board leaderboards deliberately are NOT listed here any more.
+			     They live on the hub (leaderboards.php with no filter), which
+			     shows each with its current leader. This control went back to
+			     what it was originally built for -- finding a PROJECT -- because
+			     mixing ~31 board entries in with 36+ projects made it useless for
+			     both jobs. Adding a board here again would undo that. -->
+			<option value="hub">&larr; Leaderboard Hub</option>
 			<optgroup label="Diamond Skulls">
 				<option value="15">Delegations</option>
 			</optgroup>

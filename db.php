@@ -6226,8 +6226,9 @@ function renderLeaderboardHub($conn) {
 	// Projects are a lookup, not a browse -- 36+ of them would swamp the grid,
 	// so they stay behind the existing dropdown rather than getting cards.
 	echo "<h3 class='lb-hub-group'>Projects</h3>";
-	echo "<div class='lb-hub-note'>Holdings leaderboards for every partner project are in the filter dropdown above, "
-	   . "or <a href='leaderboards.php?filterby=0'>view all projects</a>.</div>";
+	echo "<div class='lb-hub-note'>Use <strong>Find a Project</strong> above to jump to any project's holdings "
+	   . "leaderboard, or <a href='leaderboards.php?filterby=0'>view all projects</a>. "
+	   . "That selector lists projects only &mdash; every board on this platform has a card on this page.</div>";
 
 	if ($stamp !== '') {
 		echo "<div class='lb-hub-stamp'>Leaders updated " . htmlspecialchars($stamp) . "</div>";

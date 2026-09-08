@@ -220,6 +220,18 @@ include 'header.php';
 }
 .lb-card-periods a { color: rgba(255,255,255,0.4); text-decoration: none; }
 .lb-card-periods a:hover { color: var(--lb-accent, #00c8a0); }
+/* Back-to-hub link, shown on every board page. The only route back now that
+   the dropdown no longer lists boards. */
+.lb-back {
+  display: inline-block;
+  margin: 0 0 14px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.45);
+  text-decoration: none;
+}
+.lb-back:hover { color: #00c8a0; }
 .lb-hub-note  { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
 .lb-hub-note a { color: #00c8a0; }
 .lb-hub-stamp { margin-top: 26px; font-size: 0.68rem; color: rgba(255,255,255,0.25); text-align: center; }
@@ -453,6 +465,15 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        break;
 				}
 				echo "<h2>" . $title . "</h2>";
+				// Route back to the hub. LOAD-BEARING: the boards are no
+				// longer listed in the filter dropdown (that went back to
+				// being a project finder), so without this a player who opens
+				// one board has no way to reach any other except the browser
+				// back button. Hidden on the hub itself, where it would just
+				// link to the page you are already on.
+				if ($filterby !== "hub") {
+					echo "<a class='lb-back' href='leaderboards.php'>&larr; All Leaderboards</a>";
+				}
 				?>
 
 				<div class="content" id="filtered-content">
