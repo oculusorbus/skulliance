@@ -987,9 +987,10 @@ function filterLeaderboard($page){
 			     mixing ~31 board entries in with 36+ projects made it useless for
 			     both jobs. Adding a board here again would undo that. -->
 			<option value="hub">&larr; Leaderboard Hub</option>
-			<optgroup label="Diamond Skulls">
-				<option value="15">Delegations</option>
-			</optgroup>
+			<!-- Delegations (project 15) intentionally not listed: it has its
+			     own card on the hub. ?filterby=15 still works -- it resolves
+			     through the numeric project branch, not a named case -- so
+			     the hub card and any existing link are unaffected. -->
 			<optgroup label="Projects">
 				<option value="0">All Projects</option>
 			</optgroup>
