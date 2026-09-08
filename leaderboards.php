@@ -142,52 +142,84 @@ include 'header.php';
    the leaderboard_snapshots table (see refreshLeaderboardSnapshots in
    db.php) rather than being computed here -- rendering 16 live boards on one
    page would mean running every ranking query in the platform per view. */
+/* Three bands, each with its own accent (--lb-accent, set per section in
+   renderLeaderboardHub). Generous space BETWEEN sections and tight space
+   within: that contrast is what separates the groups, rather than more
+   lines and borders. */
+.lb-hub-section { margin-bottom: 40px; }
 .lb-hub-group {
-  margin: 22px 0 10px;
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.4);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  padding-bottom: 6px;
+  color: rgba(255,255,255,0.85);
+  border-bottom: 2px solid var(--lb-accent, #00c8a0);
+  padding-bottom: 8px;
 }
 .lb-hub-grid {
   display: grid;
   /* auto-fit + minmax rather than fixed columns: the grid reflows from four
      across down to one on a phone with no breakpoints to maintain. */
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  align-items: stretch;   /* every card in a row the same height */
 }
+
+/* The card is a DIV (period links live inside it, and an <a> cannot nest an
+   <a>). Column flex so the champion row can be pushed to the bottom and the
+   footer always sits flush, which is what stops rows looking ragged when one
+   board has no leader yet. */
 .lb-card {
-  display: block;
-  background: #0a1929;
-  border: 1px solid rgba(0,200,160,0.15);
+  display: flex;
+  flex-direction: column;
+  background: #0d1e30;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-top: 2px solid var(--lb-accent, #00c8a0);
   border-radius: 8px;
-  padding: 14px;
+  overflow: hidden;
+  transition: border-color 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+}
+.lb-card:hover { background: #10263c; transform: translateY(-2px); }
+.lb-card-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;                /* fills the card so the whole tile is clickable */
+  padding: 14px 14px 10px;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s ease, transform 0.15s ease;
 }
-.lb-card:hover { border-color: #00c8a0; transform: translateY(-2px); }
-.lb-card-head { display: flex; align-items: center; gap: 8px; }
-.lb-card-icon { font-size: 1.4rem; line-height: 1; }
-.lb-card-title { font-weight: bold; font-size: 0.95rem; }
-.lb-card-blurb { font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-top: 4px; }
+.lb-card-head { display: flex; align-items: center; gap: 9px; }
+.lb-card-icon { font-size: 1.5rem; line-height: 1; }
+.lb-card-title { font-weight: bold; font-size: 1rem; }
+
+/* The champion is the reason anyone looks at this page, so it gets the
+   weight the blurb used to take: pushed to the bottom of the card, bigger
+   avatar, score in the accent colour. */
 .lb-card-champ {
-  display: flex; align-items: center; gap: 8px;
-  margin-top: 12px; padding-top: 10px;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  font-size: 0.78rem;
+  display: flex; align-items: center; gap: 9px;
+  margin-top: auto; padding-top: 14px;
+  font-size: 0.82rem;
 }
-.lb-card-champ img { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFD700; object-fit: cover; }
-.lb-card-name  { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lb-card-score { margin-left: auto; color: #00c8a0; white-space: nowrap; }
-.lb-card-empty { color: rgba(255,255,255,0.3); font-style: italic; }
-/* The second axis -- period links sit OUTSIDE the card anchor, because an
-   anchor inside an anchor is invalid and browsers will silently unnest it. */
-.lb-card-periods { display: flex; gap: 10px; margin: 6px 2px 0; font-size: 0.7rem; }
-.lb-card-periods a { color: rgba(255,255,255,0.45); text-decoration: none; }
-.lb-card-periods a:hover { color: #00c8a0; text-decoration: underline; }
+.lb-card-champ img {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 2px solid #FFD700; object-fit: cover; flex-shrink: 0;
+}
+.lb-card-name  { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.lb-card-score { margin-left: auto; color: var(--lb-accent, #00c8a0); white-space: nowrap; font-weight: bold; }
+.lb-card-empty { color: rgba(255,255,255,0.28); font-style: italic; padding-bottom: 4px; }
+
+/* Period links as a proper card footer -- contained, not a dangling tail.
+   Always rendered, even for one-period boards, so card heights match. */
+.lb-card-periods {
+  display: flex; gap: 14px;
+  padding: 9px 14px;
+  background: rgba(0,0,0,0.22);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  font-size: 0.7rem;
+}
+.lb-card-periods a { color: rgba(255,255,255,0.4); text-decoration: none; }
+.lb-card-periods a:hover { color: var(--lb-accent, #00c8a0); }
 .lb-hub-note  { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
 .lb-hub-note a { color: #00c8a0; }
 .lb-hub-stamp { margin-top: 26px; font-size: 0.68rem; color: rgba(255,255,255,0.25); text-align: center; }

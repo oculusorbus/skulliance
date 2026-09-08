@@ -6110,7 +6110,18 @@ function renderLeaderboardHub($conn) {
 	}
 
 	echo "<div class='lb-hub'>";
+	// Each group gets its own accent colour, applied via a CSS custom property
+	// on the section. That's what gives the three bands a distinct identity
+	// at a glance without tinting every card and adding more noise -- the
+	// colour lands on the heading rule and the card's top edge only.
+	$accents = array(
+		'Platform'          => '#00c8a0',
+		'Missions & Realms' => '#8b7bd8',
+		'Games'             => '#ffcc44',
+	);
 	foreach ($groups as $group_name => $boards) {
+		$accent = isset($accents[$group_name]) ? $accents[$group_name] : '#00c8a0';
+		echo "<div class='lb-hub-section' style='--lb-accent:" . $accent . "'>";
 		echo "<h3 class='lb-hub-group'>" . htmlspecialchars($group_name) . "</h3>";
 		echo "<div class='lb-hub-grid'>";
 		foreach ($boards as $key => $meta) {
@@ -6118,16 +6129,20 @@ function renderLeaderboardHub($conn) {
 			$primary  = reset($periods);          // all-time view is the card's own link
 			$champion = isset($snaps[$key][1]) ? $snaps[$key][1] : null;
 
-			// One grid CELL per board, wrapping the card and its period links.
-			// Without this wrapper the two are siblings and the grid lays the
-			// period links out as their own cell, shunting every later card
-			// one slot sideways.
-			echo "<div class='lb-cell'>";
-			echo "<a class='lb-card' href='leaderboards.php?filterby=" . urlencode($primary) . "'>";
+			// The CARD is a div, not an anchor, so the period links can live
+			// INSIDE it -- an <a> cannot contain another <a>, and having them
+			// dangle outside the card was what made every tile look like it
+			// had a stray tail. The clickable region is .lb-card-main, which
+			// stretches to fill, so the whole upper card is still one target.
+			echo "<div class='lb-card'>";
+			echo "<a class='lb-card-main' title='" . htmlspecialchars($meta['blurb']) . "' href='leaderboards.php?filterby=" . urlencode($primary) . "'>";
 			echo "<div class='lb-card-head'><span class='lb-card-icon'>" . $meta['icon'] . "</span>"
 			   . "<span class='lb-card-title'>" . htmlspecialchars($meta['label']) . "</span></div>";
-			echo "<div class='lb-card-blurb'>" . htmlspecialchars($meta['blurb']) . "</div>";
 
+			// The blurb is gone from the face of the card and lives in the
+			// title tooltip instead. "Solo dungeon card game" does not help
+			// anyone choose a leaderboard, and it was a fourth line on every
+			// tile competing with the one line people actually came for.
 			if ($champion && $champion['username'] !== '') {
 				$av = ($champion['discord_id'] && $champion['avatar'])
 					? "https://cdn.discordapp.com/avatars/" . $champion['discord_id'] . "/" . $champion['avatar'] . ".png"
@@ -6144,19 +6159,18 @@ function renderLeaderboardHub($conn) {
 			}
 			echo "</a>";
 
-			// The other axis: period links, only where a board actually has
-			// more than one. This is what stops the dropdown having to carry
-			// two entries for every subject.
-			if (count($periods) > 1) {
-				echo "<div class='lb-card-periods'>";
-				foreach ($periods as $plabel => $pfilter) {
-					echo "<a href='leaderboards.php?filterby=" . urlencode($pfilter) . "'>" . htmlspecialchars($plabel) . "</a>";
-				}
-				echo "</div>";
+			// The other axis. Always rendered, even for single-period boards,
+			// so every card is the same height and the rows stop looking
+			// ragged -- a one-period board just shows its single link.
+			echo "<div class='lb-card-periods'>";
+			foreach ($periods as $plabel => $pfilter) {
+				echo "<a href='leaderboards.php?filterby=" . urlencode($pfilter) . "'>" . htmlspecialchars($plabel) . "</a>";
 			}
-			echo "</div>"; // .lb-cell
+			echo "</div>";
+			echo "</div>"; // .lb-card
 		}
-		echo "</div>";
+		echo "</div>";   // .lb-hub-grid
+		echo "</div>";   // .lb-hub-section
 	}
 
 	// Projects are a lookup, not a browse -- 36+ of them would swamp the grid,
