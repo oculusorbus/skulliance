@@ -1077,17 +1077,21 @@ li form {
     overflow: hidden;
 }
 
+/* Still has levels to unlock -- gold, so the projects with work left are the
+   ones that catch your eye. */
 .mf-progress-fill {
     height: 100%;
-    background-color: #00c8a0;
+    background-color: #ffcc44;
     border-radius: 2px;
 }
 
-/* Fully unlocked reads as gold rather than just "a full teal bar" -- at 3px
-   a bar that is 90% full and one that is 100% full are hard to tell apart at
-   a glance, which is the entire thing this is meant to answer. */
+/* Fully unlocked switches to teal, the platform's own accent for "good to
+   go" (same #00c8a0 as .missions-filter.eligible and the buttons). The two
+   states need distinct COLORS, not just different fill widths: at 3px, a bar
+   that is 90% full and one that is 100% full are near-impossible to tell
+   apart at a glance, which is the entire question this is meant to answer. */
 .mf-progress.complete .mf-progress-fill {
-    background-color: #ffcc44;
+    background-color: #00c8a0;
 }
 
 .missions-filter:hover {
