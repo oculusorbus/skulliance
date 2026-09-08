@@ -136,6 +136,61 @@ include 'header.php';
   border-radius: 8px 8px 0 0;
   padding: 8px 4px 0;
 }
+
+/* ---- Leaderboard hub -------------------------------------------------- */
+/* Card grid shown when no specific board is selected. Champions come from
+   the leaderboard_snapshots table (see refreshLeaderboardSnapshots in
+   db.php) rather than being computed here -- rendering 16 live boards on one
+   page would mean running every ranking query in the platform per view. */
+.lb-hub-group {
+  margin: 22px 0 10px;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.4);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  padding-bottom: 6px;
+}
+.lb-hub-grid {
+  display: grid;
+  /* auto-fit + minmax rather than fixed columns: the grid reflows from four
+     across down to one on a phone with no breakpoints to maintain. */
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+.lb-card {
+  display: block;
+  background: #0a1929;
+  border: 1px solid rgba(0,200,160,0.15);
+  border-radius: 8px;
+  padding: 14px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.lb-card:hover { border-color: #00c8a0; transform: translateY(-2px); }
+.lb-card-head { display: flex; align-items: center; gap: 8px; }
+.lb-card-icon { font-size: 1.4rem; line-height: 1; }
+.lb-card-title { font-weight: bold; font-size: 0.95rem; }
+.lb-card-blurb { font-size: 0.72rem; color: rgba(255,255,255,0.45); margin-top: 4px; }
+.lb-card-champ {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  font-size: 0.78rem;
+}
+.lb-card-champ img { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #FFD700; object-fit: cover; }
+.lb-card-name  { font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-card-score { margin-left: auto; color: #00c8a0; white-space: nowrap; }
+.lb-card-empty { color: rgba(255,255,255,0.3); font-style: italic; }
+/* The second axis -- period links sit OUTSIDE the card anchor, because an
+   anchor inside an anchor is invalid and browsers will silently unnest it. */
+.lb-card-periods { display: flex; gap: 10px; margin: 6px 2px 0; font-size: 0.7rem; }
+.lb-card-periods a { color: rgba(255,255,255,0.45); text-decoration: none; }
+.lb-card-periods a:hover { color: #00c8a0; text-decoration: underline; }
+.lb-hub-note  { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+.lb-hub-note a { color: #00c8a0; }
+.lb-hub-stamp { margin-top: 26px; font-size: 0.68rem; color: rgba(255,255,255,0.25); text-align: center; }
 </style>
 
 <?php
@@ -218,13 +273,18 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 		           $filterby != "skullracer" && $filterby != "weekly-skullracer" &&
 		           $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
-				              $filterby != "missions-unlocked"):
+				              $filterby != "missions-unlocked" && $filterby != "hub"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
 				    case ($filterby === "" || $filterby === null):
-				        $title = "All-Time Activity";
-				        $filterby = "activity-ath";
+				    case ($filterby === "hub"):
+				        // Landing on leaderboards.php with no filter now shows
+				        // the hub instead of dropping straight into All-Time
+				        // Activity. Every board is still reachable by its own
+				        // ?filterby= value exactly as before.
+				        $title = "Leaderboards";
+				        $filterby = "hub";
 				        break;
 				    case ($filterby == 0):
 				        $title = "All Projects";
@@ -367,7 +427,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "skullracer" && $filterby != "weekly-skullracer" &&
 				              $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
-				              $filterby != "missions-unlocked"):
+				              $filterby != "missions-unlocked" && $filterby != "hub"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -445,6 +505,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				            break;
 				        case ($filterby == "weekly-skullracer-laps"):
 				            checkSkullRacerLeaderboard($conn, true, false, 'lap');
+				            break;
+				        case ($filterby == "hub"):
+				            // Card grid. Leaves $leaderboard_top3 empty, so the
+				            // renderPodium() call after this switch no-ops --
+				            // a podium above a grid of podiums would be odd.
+				            renderLeaderboardHub($conn);
 				            break;
 				        case ($filterby == "missions-unlocked"):
 				            checkMissionsUnlockedLeaderboard($conn);

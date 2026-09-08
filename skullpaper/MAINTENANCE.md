@@ -115,6 +115,27 @@ records verified constants, and tracks what still needs to be written.
   known server-side. Both append @skulliance and budget 24 chars for the t.co-wrapped URL against
   the 280 limit. Verified by a harness (31 assertions) covering URL shape, every target page
   having the card tag AND no login gate, per-game text, the 280 budget, and button markup.
+- Leaderboard hub (db.php `$SKULLIANCE_BOARDS` / `renderLeaderboardHub()` /
+  `refreshLeaderboardSnapshots()`): card grid shown at leaderboards.php with no filter, or
+  `?filterby=hub`. `$SKULLIANCE_BOARDS` is the single registry of subject -> periods; its period
+  values are the EXISTING `?filterby=` strings, so old links and game finish-screen buttons are
+  unaffected -- this is a navigation layer, not a re-route.
+  **REQUIRES A MIGRATION** (page works without it, cards just show "No leader yet"):
+  `CREATE TABLE leaderboard_snapshots (board VARCHAR(64) NOT NULL, rank_pos TINYINT NOT NULL,
+  username VARCHAR(255) NULL, discord_id VARCHAR(32) NULL, avatar VARCHAR(255) NULL,
+  score VARCHAR(64) NULL, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (board, rank_pos));`
+  Then a cron on `rewards.php?leaderboardsnapshot=1` (hourly is fine). That endpoint is
+  READ-ONLY for players: refreshLeaderboardSnapshots() calls only DISPLAY variants, never
+  $rewards=true, so it never pays out, resets a reward flag or posts to Discord.
+  It captures each board's top 3 by buffering the board's own output and keeping the global
+  `$leaderboard_top3` -- so a card can never disagree with the board it links to, since there is
+  one implementation of each ranking. Its dispatch map is deliberately NOT shared with
+  leaderboards.php's switch (that one also routes reward runs and project ids; coupling them
+  would put payout paths one edit away from an unattended cron). NOTE `delegations` is not a
+  board -- `?filterby=15` is a PROJECT id routed through checkLeaderboard(); there is no
+  checkDelegationsLeaderboard(). Emoji icons, not images, because images deploy by FTP outside
+  the repo and 16 missing icons would ship a broken-looking page.
 - Skull Racer weekly LB: 50,000 CARBON x2 -- a Races board and a Laps board, each with its own
   50,000 pool, so one driver topping both takes 100,000 (db.php SKULL RACER block, end of file).
 

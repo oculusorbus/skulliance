@@ -5908,6 +5908,270 @@ function resetCryptConquests($conn) {
 }
 
 //=============================================================================
+// LEADERBOARD HUB
+//
+// The filter dropdown had grown to ~31 hardcoded entries plus one per partner
+// project (36+ of those), all in one narrow select. The length was structural,
+// not cosmetic: nearly every entry is a SUBJECT x a PERIOD (All Missions /
+// Monthly Missions, All Gauntlets / Weekly Gauntlets ...), so a grid was being
+// flattened into a line. This registry is the subject axis; $periods is the
+// other one, and the hub renders them as a card each instead.
+//
+// Emoji rather than image icons on purpose: images deploy to this server by
+// FTP and are not in the repo, so a new icon per board would mean 16 uploads
+// that have to land before the page stops looking broken. Emoji ship with the
+// code and match what the game buttons and Discord posts already use.
+//
+// 'periods' keys are display labels; values are the EXISTING ?filterby=
+// values, untouched. Every old link, bookmark and game finish-screen button
+// keeps working -- this is a navigation layer over the boards, not a change
+// to them.
+//=============================================================================
+$SKULLIANCE_BOARDS = array(
+	'activity'          => array('label'=>'Activity',          'icon'=>'⚡', 'group'=>'Platform',
+		'blurb'=>'Everything you do, weighted',
+		'periods'=>array('All-Time'=>'activity-ath','Monthly'=>'activity-monthly','Weekly'=>'activity-weekly')),
+	'streaks'           => array('label'=>'Streaks',           'icon'=>'🔥', 'group'=>'Platform',
+		'blurb'=>'Daily reward login streaks',
+		'periods'=>array('All-Time'=>'streaks','Monthly'=>'monthly-streaks')),
+	'delegations'       => array('label'=>'Delegations',       'icon'=>'💎', 'group'=>'Platform',
+		'blurb'=>'Diamond Skull delegations',
+		'periods'=>array('All-Time'=>'15')),
+	'missions'          => array('label'=>'Missions',          'icon'=>'🗺️', 'group'=>'Missions & Realms',
+		'blurb'=>'Missions run and completed',
+		'periods'=>array('All-Time'=>'missions','Monthly'=>'monthly')),
+	'missions-unlocked' => array('label'=>'Missions Unlocked', 'icon'=>'🔓', 'group'=>'Missions & Realms',
+		'blurb'=>'How far up the ladders',
+		'periods'=>array('All-Time'=>'missions-unlocked')),
+	'raids'             => array('label'=>'Raids',             'icon'=>'⚔️', 'group'=>'Missions & Realms',
+		'blurb'=>'Realm raids won',
+		'periods'=>array('All-Time'=>'raids','Monthly'=>'monthly-raids')),
+	'realms'            => array('label'=>'Realm Power',       'icon'=>'🏰', 'group'=>'Missions & Realms',
+		'blurb'=>'Strongest realms',
+		'periods'=>array('All-Time'=>'realms')),
+	'factions'          => array('label'=>'Factions',          'icon'=>'🛡️', 'group'=>'Missions & Realms',
+		'blurb'=>'Faction standings',
+		'periods'=>array('All-Time'=>'factions','Monthly'=>'monthly-factions')),
+	'gauntlets'         => array('label'=>'Gauntlets',         'icon'=>'🥊', 'group'=>'Games',
+		'blurb'=>'NFT gauntlet runs',
+		'periods'=>array('All-Time'=>'gauntlets','Weekly'=>'weekly-gauntlets')),
+	'cryptcrawl'        => array('label'=>'Crypt Crawl',       'icon'=>'💀', 'group'=>'Games',
+		'blurb'=>'Solo dungeon card game',
+		'periods'=>array('All-Time'=>'cryptcrawl','Weekly'=>'weekly-cryptcrawl')),
+	'cryptconquest'     => array('label'=>'Crypt Conquest',    'icon'=>'👑', 'group'=>'Games',
+		'blurb'=>'Regicide-style card game',
+		'periods'=>array('All-Time'=>'cryptconquest','Monthly'=>'monthly-cryptconquest')),
+	'skullracer'        => array('label'=>'Skull Racer Races', 'icon'=>'🏁', 'group'=>'Games',
+		'blurb'=>'Fastest 3-lap total',
+		'periods'=>array('All-Time'=>'skullracer','Weekly'=>'weekly-skullracer')),
+	'skullracer-laps'   => array('label'=>'Skull Racer Laps',  'icon'=>'🏎️', 'group'=>'Games',
+		'blurb'=>'Fastest single lap',
+		'periods'=>array('All-Time'=>'skullracer-laps','Weekly'=>'weekly-skullracer-laps')),
+	'swaps'             => array('label'=>'Skull Swap',        'icon'=>'🔄', 'group'=>'Games',
+		'blurb'=>'Match 3 high scores',
+		'periods'=>array('All-Time'=>'swaps','Weekly'=>'weekly-swaps')),
+	'monstrocity'       => array('label'=>'Monstrocity',       'icon'=>'👾', 'group'=>'Games',
+		'blurb'=>'Match 3 RPG campaign',
+		'periods'=>array('All-Time'=>'monstrocity','Monthly'=>'monthly-monstrocity')),
+	'bosses'            => array('label'=>'Boss Battles',      'icon'=>'🐉', 'group'=>'Games',
+		'blurb'=>'Community boss fights',
+		'periods'=>array('All-Time'=>'bosses','Weekly'=>'weekly-bosses')),
+);
+
+/*
+ * Snapshot table. Run once on the live DB before the cron below:
+ *
+ *   CREATE TABLE leaderboard_snapshots (
+ *     board       VARCHAR(64)  NOT NULL,
+ *     rank_pos    TINYINT      NOT NULL,
+ *     username    VARCHAR(255) NULL,
+ *     discord_id  VARCHAR(32)  NULL,
+ *     avatar      VARCHAR(255) NULL,
+ *     score       VARCHAR(64)  NULL,
+ *     updated_at  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ *     PRIMARY KEY (board, rank_pos)
+ *   );
+ *
+ * The hub does NOT require it to exist -- a missing table just means cards
+ * render without champions. That is deliberate: shipping a navigation page
+ * that fatals until someone remembers to run a migration is how you take the
+ * leaderboards offline. Deploy first, migrate second, cards fill in third.
+ */
+
+// Read every stored champion in one query. Returns board => [rank => row].
+function getLeaderboardSnapshots($conn) {
+	$out = array();
+	$r = @$conn->query("SELECT board, rank_pos, username, discord_id, avatar, score, updated_at
+	                    FROM leaderboard_snapshots ORDER BY board, rank_pos");
+	if (!$r) return $out;   // table not created yet -- see the note above
+	while ($row = $r->fetch_assoc()) {
+		$out[$row['board']][(int)$row['rank_pos']] = $row;
+	}
+	return $out;
+}
+
+/*
+ * Recompute every board's top 3 and store it. Called from
+ * rewards.php?leaderboardsnapshot=1 on a cron.
+ *
+ * Reuses the boards themselves rather than reimplementing their scoring:
+ * each display function already populates the global $leaderboard_top3 and
+ * echoes its table, so this buffers the output, throws the HTML away, and
+ * keeps the array. That guarantees a hub card can never disagree with the
+ * board it links to -- there is only one implementation of each ranking.
+ *
+ * ONLY display variants are called. Nothing here passes $rewards=true, so
+ * nothing pays out, resets a reward flag, or posts to Discord. A snapshot
+ * refresh is read-only by construction, which is what makes it safe to run
+ * on a schedule as often as you like.
+ */
+function refreshLeaderboardSnapshots($conn) {
+	global $SKULLIANCE_BOARDS, $leaderboard_top3;
+
+	// Display-only dispatch for the all-time view of each board. Deliberately
+	// NOT shared with leaderboards.php's switch: that one also routes reward
+	// runs and project ids, and coupling the two would put payout paths one
+	// editing mistake away from a cron that runs unattended.
+	$dispatch = array(
+		'activity'          => function($c) { checkActivityLeaderboard($c, 'ath'); },
+		'streaks'           => function($c) { checkStreaksLeaderboard($c); },
+		// Delegations is not its own board -- ?filterby=15 is a PROJECT id,
+		// routed through the holdings leaderboard like any partner project.
+		// It gets a card because it's platform-wide in spirit, but it has to
+		// dispatch the way leaderboards.php dispatches it. There is no
+		// checkDelegationsLeaderboard(); assuming one existed would have made
+		// the whole cron fatal on an undefined function.
+		'delegations'       => function($c) { checkLeaderboard($c, false, 15); },
+		'missions'          => function($c) { checkMissionsLeaderboard($c); },
+		'missions-unlocked' => function($c) { checkMissionsUnlockedLeaderboard($c); },
+		'raids'             => function($c) { checkRaidsLeaderboard($c); },
+		'realms'            => function($c) { checkRealmsLeaderboard($c); },
+		'factions'          => function($c) { checkFactionsLeaderboard($c); },
+		'gauntlets'         => function($c) { checkGauntletsLeaderboard($c); },
+		'cryptcrawl'        => function($c) { checkCryptCrawlLeaderboard($c); },
+		'cryptconquest'     => function($c) { checkCryptConquestLeaderboard($c); },
+		'skullracer'        => function($c) { checkSkullRacerLeaderboard($c, false, false, 'race'); },
+		'skullracer-laps'   => function($c) { checkSkullRacerLeaderboard($c, false, false, 'lap'); },
+		'swaps'             => function($c) { checkSkullSwapsLeaderboard($c); },
+		'monstrocity'       => function($c) { checkMonstrocityLeaderboard($c); },
+		'bosses'            => function($c) { checkBossBattlesLeaderboard($c); },
+	);
+
+	$done = 0; $skipped = array();
+	foreach ($SKULLIANCE_BOARDS as $key => $meta) {
+		if (!isset($dispatch[$key])) { $skipped[] = $key; continue; }
+
+		$leaderboard_top3 = array();
+		ob_start();
+		try {
+			$dispatch[$key]($conn);
+		} catch (Throwable $e) {
+			// One broken board must not take the whole refresh -- the others
+			// still get fresh champions and the hub degrades to a stale card
+			// for this one only.
+			ob_end_clean();
+			error_log('refreshLeaderboardSnapshots: ' . $key . ' failed -- ' . $e->getMessage());
+			$skipped[] = $key;
+			continue;
+		}
+		ob_end_clean();   // the rendered table is not wanted, only the top 3
+
+		$conn->query("DELETE FROM leaderboard_snapshots WHERE board = '" . $conn->real_escape_string($key) . "'");
+		$pos = 0;
+		foreach ((array)$leaderboard_top3 as $entry) {
+			$pos++;
+			if ($pos > 3) break;
+			$conn->query("INSERT INTO leaderboard_snapshots (board, rank_pos, username, discord_id, avatar, score, updated_at) VALUES ("
+				. "'" . $conn->real_escape_string($key) . "', "
+				. $pos . ", "
+				. "'" . $conn->real_escape_string($entry['username'] ?? '') . "', "
+				. "'" . $conn->real_escape_string($entry['discord_id'] ?? '') . "', "
+				. "'" . $conn->real_escape_string($entry['avatar'] ?? '') . "', "
+				. "'" . $conn->real_escape_string($entry['score'] ?? '') . "', NOW())");
+		}
+		$done++;
+	}
+
+	$leaderboard_top3 = array();   // don't leak the last board's podium
+	return array('updated' => $done, 'skipped' => $skipped);
+}
+
+// The hub itself: a card per board, showing its current leader.
+function renderLeaderboardHub($conn) {
+	global $SKULLIANCE_BOARDS;
+	$snaps = getLeaderboardSnapshots($conn);
+
+	$groups = array();
+	foreach ($SKULLIANCE_BOARDS as $key => $meta) $groups[$meta['group']][$key] = $meta;
+
+	$stamp = '';
+	foreach ($snaps as $rows) {
+		if (isset($rows[1]['updated_at'])) { $stamp = $rows[1]['updated_at']; break; }
+	}
+
+	echo "<div class='lb-hub'>";
+	foreach ($groups as $group_name => $boards) {
+		echo "<h3 class='lb-hub-group'>" . htmlspecialchars($group_name) . "</h3>";
+		echo "<div class='lb-hub-grid'>";
+		foreach ($boards as $key => $meta) {
+			$periods  = $meta['periods'];
+			$primary  = reset($periods);          // all-time view is the card's own link
+			$champion = isset($snaps[$key][1]) ? $snaps[$key][1] : null;
+
+			// One grid CELL per board, wrapping the card and its period links.
+			// Without this wrapper the two are siblings and the grid lays the
+			// period links out as their own cell, shunting every later card
+			// one slot sideways.
+			echo "<div class='lb-cell'>";
+			echo "<a class='lb-card' href='leaderboards.php?filterby=" . urlencode($primary) . "'>";
+			echo "<div class='lb-card-head'><span class='lb-card-icon'>" . $meta['icon'] . "</span>"
+			   . "<span class='lb-card-title'>" . htmlspecialchars($meta['label']) . "</span></div>";
+			echo "<div class='lb-card-blurb'>" . htmlspecialchars($meta['blurb']) . "</div>";
+
+			if ($champion && $champion['username'] !== '') {
+				$av = ($champion['discord_id'] && $champion['avatar'])
+					? "https://cdn.discordapp.com/avatars/" . $champion['discord_id'] . "/" . $champion['avatar'] . ".png"
+					: "icons/skull.png";
+				echo "<div class='lb-card-champ'>"
+				   . "<img src='" . htmlspecialchars($av) . "' alt='' loading='lazy' onerror=\"this.src='icons/skull.png';\">"
+				   . "<span class='lb-card-name'>" . htmlspecialchars($champion['username']) . "</span>"
+				   . "<span class='lb-card-score'>" . htmlspecialchars($champion['score']) . "</span>"
+				   . "</div>";
+			} else {
+				// No snapshot yet (or nobody has played). Say so plainly rather
+				// than rendering an empty slot that reads as broken.
+				echo "<div class='lb-card-champ lb-card-empty'>No leader yet</div>";
+			}
+			echo "</a>";
+
+			// The other axis: period links, only where a board actually has
+			// more than one. This is what stops the dropdown having to carry
+			// two entries for every subject.
+			if (count($periods) > 1) {
+				echo "<div class='lb-card-periods'>";
+				foreach ($periods as $plabel => $pfilter) {
+					echo "<a href='leaderboards.php?filterby=" . urlencode($pfilter) . "'>" . htmlspecialchars($plabel) . "</a>";
+				}
+				echo "</div>";
+			}
+			echo "</div>"; // .lb-cell
+		}
+		echo "</div>";
+	}
+
+	// Projects are a lookup, not a browse -- 36+ of them would swamp the grid,
+	// so they stay behind the existing dropdown rather than getting cards.
+	echo "<h3 class='lb-hub-group'>Projects</h3>";
+	echo "<div class='lb-hub-note'>Holdings leaderboards for every partner project are in the filter dropdown above, "
+	   . "or <a href='leaderboards.php?filterby=0'>view all projects</a>.</div>";
+
+	if ($stamp !== '') {
+		echo "<div class='lb-hub-stamp'>Leaders updated " . htmlspecialchars($stamp) . "</div>";
+	}
+	echo "</div>";
+}
+
+//=============================================================================
 // SHARE ON X
 //
 // Builds a pre-filled X (Twitter) "post composer" link for a player to share

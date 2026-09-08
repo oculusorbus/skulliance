@@ -46,6 +46,18 @@ if(isset($_GET['gauntlets'])){
 if(isset($_GET['cryptcrawl'])){
 	checkCryptCrawlLeaderboard($conn, false, true);
 }
+if(isset($_GET['leaderboardsnapshot'])){
+	// Refreshes the hub's champion cards. READ-ONLY as far as players are
+	// concerned: it calls only display variants of each board, so nothing
+	// pays out, resets a reward flag or posts to Discord. Safe to run as
+	// often as you like -- hourly is plenty, and a stale card is a cosmetic
+	// problem, not a payout one.
+	set_time_limit(0);
+	$snap = refreshLeaderboardSnapshots($conn);
+	echo "leaderboard snapshots updated: " . $snap['updated'];
+	if (!empty($snap['skipped'])) echo " | skipped: " . implode(', ', $snap['skipped']);
+	echo "\n";
+}
 if(isset($_GET['skullracer'])){
 	// Weekly, same cadence as Crypt Crawl -- needs its own crontab entry
 	// hitting rewards.php?skullracer=1 once a week. Nothing in this

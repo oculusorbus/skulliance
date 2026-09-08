@@ -9,6 +9,8 @@ Leaderboards track competitive performance across the entire platform. Most mode
 * **Raids** and **Factions** - Realms competition (see [[realms-raids]] and [[realms-factions]]).
 * **Streaks** - daily-reward login streaks.
 * **Monstrocity**, **Boss Battles**, **Skull Swap**, **Gauntlets**, **Crypt Crawl**, **Crypt Conquest**, **Skull Racer** - the game leaderboards (see [[games]], [[games-cryptcrawl]], [[games-cryptconquest]], and [[games-skullracer]]).
+Landing on the leaderboards page now shows a **hub**: a card for every board, grouped into Platform, Missions & Realms and Games, each showing who currently leads it. Click a card for the full board, or use the small All-Time / Weekly / Monthly links under it to jump straight to a period. Partner project holdings stay in the filter dropdown, since with dozens of them that's a lookup rather than something to browse.
+
 * **Missions Unlocked** - all-time, how far through the mission ladders each player has climbed across every project. Distinct from the Missions board above, which counts missions run: this one only moves when you get *deeper*, so grinding easy missions doesn't climb it. See [[missions]].
 * **Activity** - overall platform engagement, all-time/monthly/weekly. A single weighted score
   combining how much you've done across the platform - daily streaks, missions, Skull Swap,
