@@ -7082,9 +7082,25 @@ function getPoliciesListing($conn, $project_id=0) {
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  	while($row = $result->fetch_assoc()) {
+			// Collection name links to the collection on Wayup, so a staker
+			// who sees a reward rate they like can go and buy into it without
+			// hunting for the policy themselves. The query already selected
+			// `policy`, so this costs no extra work.
+			//
+			// Linked ONLY when the policy is a well-formed Cardano policy id
+			// (56 hex characters). A blank or malformed value would otherwise
+			// produce a link to wayup.io/collection/ -- a dead end that looks
+			// like the platform is broken rather than like missing data. Those
+			// rows render as plain text exactly as before.
+			$gpl_policy = trim((string)($row["policy"] ?? ''));
+			$gpl_name   = htmlspecialchars($row["collection_name"]);
+			$gpl_cell   = preg_match('/^[0-9a-f]{56}$/i', $gpl_policy)
+				? "<a href='https://www.wayup.io/collection/" . $gpl_policy . "' target='_blank' rel='noopener' title='Buy " . $gpl_name . " on Wayup'>" . $gpl_name . "</a>"
+				: $gpl_name;
+
 		  	echo "<tr>";
-			echo "<td align='left'>".$row["collection_name"]."</td>";
-			echo "<td align='left'>".$row["project_name"]."</td>";
+			echo "<td align='left'>".$gpl_cell."</td>";
+			echo "<td align='left'>".htmlspecialchars($row["project_name"])."</td>";
 			echo "<td align='left'>".$row["rate"]." ".$row["currency"]."</td>";
 			echo "<td align='left'>".$row["total"]."</td>";
 			echo "</tr>";
