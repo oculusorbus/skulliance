@@ -13,12 +13,14 @@ Skulliance is home to a growing suite of games that turn your NFT collections in
 | [[games-cryptcrawl]] | Solo Scoundrel-style card game | Weekly | CARBON |
 | [[games-cryptconquest]] | Solo Regicide-style card game | Monthly | CARBON |
 
-## External Games
+## Specialty Games
 
-| Game | Host | Rewards |
-|------|------|---------|
-| [[games-drop-ship]] | madballs.net | SCRIP + DREAD |
-| [[games-oculus-lounge]] | oculuslounge.vip | TIDDIES + MOON |
+Both began life on their own sites and have since been **migrated onto Skulliance**. They run as a sub-system with their own database - tightly integrated, but their own thing - which is why they sit in their own section on the leaderboard hub rather than alongside the native games.
+
+| Game | Rewards |
+|------|---------|
+| [[games-drop-ship]] | SCRIP + DREAD |
+| [[games-oculus-lounge]] | TIDDIES + MOON |
 
 ## How Rewards Work
 

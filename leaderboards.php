@@ -165,7 +165,7 @@ include 'header.php';
   gap: 14px;
   align-items: stretch;   /* every card in a row the same height */
 }
-/* Sections that want a deliberate column count instead of auto-fit. External
+/* Sections that want a deliberate column count instead of auto-fit. Companion
    Games is exactly two boards and reads as a pair rather than two tiles
    trailing off the end of a wide row. minmax(0,1fr) not 1fr, so a long
    champion name can't push a column wider than its share. Collapses to one

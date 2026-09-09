@@ -38,7 +38,7 @@ records verified constants, and tracks what still needs to be written.
 | games-cryptconquest.md *(new)*      | Regicide-style solo    | cryptconquestgame.php (marketing), cryptconquest.php (game), cryptconquest-render.php, cryptconquest-actions.php, cryptconquest-engine.php, db.php:11343-11800ish (CRYPT CONQUEST block) |
 | games-skullracer.md *(new)*         | Pseudo-3D racer        | skullracergame.php (public marketing landing, what nav points at), skullracer.php (nav wrapper, inlines racing/index.html's style+body server-side -- no iframe), racing/index.html (game, client-side, also works visited standalone), ajax/skullracer-finalize.php, db.php SKULL RACER block (end of file) |
 | games-drop-ship.md                  | NFT battler, now in-platform | dropship/ (migrated from madballs.net; requires Skulliance login) |
-| games-oculus-lounge.md              | External game          | oculuslounge.vip (external) |
+| games-oculus-lounge.md              | Drop Ship reskin, now in-platform | dropship/ project_id 4 (migrated from oculuslounge.vip; SAME engine and database as Drop Ship, which is project_id 1 -- see dropship/oculus-lounge/) |
 | marketplace-store.md *(new)*        | Free member claims     | store.php |
 | marketplace-auctions.md *(new)*     | Bid-based NFT sales     | auctions.php, db.php:9379-9577 |
 | marketplace-raffles.md *(new)*      | Ticketed raffles        | raffles.php, db.php:9602-9828 |
@@ -125,7 +125,7 @@ records verified constants, and tracks what still needs to be written.
   `SELECT id FROM games WHERE active=1 AND project_id=N` (Drop Ship reads that from its session,
   which doesn't exist on this side) and lists individual RUNS, not a per-player aggregate, so one
   player can hold several places -- matching Drop Ship's own board.
-  They sit in their own **External Games** group, which is what puts them on a row of their own;
+  They sit in their own **Specialty Games** group, which is what puts them on a row of their own;
   `$fixed_cols` in renderLeaderboardHub forces that section to 2 columns
   (`.lb-hub-grid--cols-2`, collapsing to 1 under 560px).
   Podium backdrop: many of these players predate Skulliance and have no realm theme, so

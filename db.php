@@ -6203,12 +6203,14 @@ $SKULLIANCE_BOARDS = array(
 		'periods'=>array('All-Time'=>'bosses','Weekly'=>'weekly-bosses')),
 	// Their own group, which is what puts them on a row of their own rather
 	// than flowing into the tail of Games. Also honest: they run on a
-	// separate sub-system with its own database, and "External Games" is the
-	// vocabulary the Skull Paper already uses for them.
-	'dropship'          => array('label'=>'Drop Ship',         'icon'=>'🪖', 'group'=>'External Games',
+	// separate sub-system with its own database. NOT "External": they used to
+	// be (madballs.net / oculuslounge.vip) but both migrated onto this server,
+	// so external is simply wrong now -- same box, own database, tightly
+	// integrated. Not "Sub" either, which reads as lesser for two full games.
+	'dropship'          => array('label'=>'Drop Ship',         'icon'=>'🪖', 'group'=>'Specialty Games',
 		'blurb'=>'Best single run',
 		'periods'=>array('All-Time'=>'dropship','Weekly'=>'dropship-weekly','XP'=>'dropship-xp')),
-	'oculuslounge'      => array('label'=>'Oculus Lounge',     'icon'=>'🪩', 'group'=>'External Games',
+	'oculuslounge'      => array('label'=>'Oculus Lounge',     'icon'=>'🪩', 'group'=>'Specialty Games',
 		'blurb'=>'Best night at the club',
 		'periods'=>array('All-Time'=>'oculuslounge','Weekly'=>'oculuslounge-weekly','XP'=>'oculuslounge-xp')),
 );
@@ -6392,12 +6394,12 @@ function renderLeaderboardHub($conn) {
 		'Missions'       => '#4fa3ff',   // blue
 		'Realms'         => '#8b7bd8',   // violet
 		'Games'          => '#ffcc44',   // gold
-		'External Games' => '#ff7ad9',   // pink -- the sub-system, visibly its own thing
+		'Specialty Games' => '#ff7ad9',   // pink -- the sub-system, visibly its own thing
 	);
 	// Sections that should lay out in a fixed number of columns rather than
-	// the default auto-fit. External Games has exactly two boards and reads
+	// the default auto-fit. Specialty Games has exactly two boards and reads
 	// better as a deliberate pair than as two tiles trailing off a wide row.
-	$fixed_cols = array('External Games' => 2);
+	$fixed_cols = array('Specialty Games' => 2);
 	foreach ($groups as $group_name => $boards) {
 		$accent = isset($accents[$group_name]) ? $accents[$group_name] : '#00c8a0';
 		$cols = isset($fixed_cols[$group_name]) ? intval($fixed_cols[$group_name]) : 0;
