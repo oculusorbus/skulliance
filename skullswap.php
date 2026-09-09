@@ -813,7 +813,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
   <?php if ($is_logged_in): ?>
      <!-- Floating back button for logged-in users - the page has no nav.
           Collapses to a bare arrow once the game is activated. -->
-     <a id="ss-exit" href="dashboard.php" aria-label="Back to Skulliance staking dashboard">
+     <a id="ss-exit" href="launchpad.php" aria-label="Back to the Skulliance Launchpad">
          <span class="mx-arrow">&larr;</span>
          <span class="mx-label">Back to Staking</span>
      </a>
@@ -848,7 +848,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
          </div>
          <div id="board-btns">
              <?php if ($is_logged_in): ?>
-             <a id="back-btn" class="board-btn" href="dashboard.php" aria-label="Back to Skulliance staking dashboard">GO BACK</a>
+             <a id="back-btn" class="board-btn" href="launchpad.php" aria-label="Back to the Skulliance Launchpad">GO BACK</a>
              <?php endif; ?>
              <button id="guide-btn" class="board-btn" onclick="openGuide()">HOW TO PLAY</button>
          </div>

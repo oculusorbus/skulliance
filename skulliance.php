@@ -76,7 +76,7 @@ if(!empty($roles)){
 			break;
 		}
 	}
-	if(sizeof(getAddressesDiscord($conn)) != 0 && str_contains($_SERVER['REQUEST_URI'], "dashboard.php")){
+	if(sizeof(getAddressesDiscord($conn)) != 0 && (str_contains($_SERVER['REQUEST_URI'], "my-nfts.php") || str_contains($_SERVER['REQUEST_URI'], "dashboard.php"))){
 		$status = array();
 		$status = verifyMembershipNFTs($conn, $roles);
 		// Member

@@ -257,7 +257,7 @@ function displayRound(project_id) {
 			}
 		}else{
 			if(document.getElementById('disableMessage').innerHTML == "true"){
-				window.location.href = 'dashboard.php';
+				window.location.href = 'launchpad.php';
 			}else{
 				location.reload();
 			}
@@ -1693,8 +1693,11 @@ function _offerNFTUpload(img, nftId) {
     console.log('[upload-btn] nft ' + nftId + ': bail — missing img or nftId');
     return;
   }
-  if (window.location.pathname.indexOf('dashboard.php') === -1) {
-    console.log('[upload-btn] nft ' + nftId + ': bail — pathname is "' + window.location.pathname + '" (not dashboard.php)');
+  // my-nfts.php (was dashboard.php). Both accepted: the rename left a 301,
+  // but the final url after it is my-nfts.php, so checking only the old
+  // name meant this button silently stopped working.
+  if (window.location.pathname.indexOf('my-nfts.php') === -1 && window.location.pathname.indexOf('dashboard.php') === -1) {
+    console.log('[upload-btn] nft ' + nftId + ': bail — pathname is "' + window.location.pathname + '" (not my-nfts.php)');
     return;
   }
   // The .nft-image span typically has overflow:hidden / fixed dimensions —
