@@ -68,6 +68,7 @@ $skullpaper_nav = [
 		['slug' => 'games-cryptcrawl',    'title' => 'Crypt Crawl',   'emoji' => '💀'],
 		['slug' => 'games-cryptconquest', 'title' => 'Crypt Conquest','emoji' => '👑'],
 		['slug' => 'games-skullracer',    'title' => 'Skull Racer',  'emoji' => '🏁'],
+		['slug' => 'games-obscura',       'title' => 'Obscura',      'emoji' => '🔍'],
 		['slug' => 'games-drop-ship',     'title' => 'Drop Ship',     'emoji' => '🚀'],
 		['slug' => 'games-oculus-lounge', 'title' => 'Oculus Lounge', 'emoji' => '🛋️'],
 	]],

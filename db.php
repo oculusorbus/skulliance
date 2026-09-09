@@ -6213,6 +6213,9 @@ $SKULLIANCE_BOARDS = array(
 	'skullracer-laps'   => array('label'=>'Skull Racer Laps',  'icon'=>'🏎️', 'group'=>'Games',
 		'blurb'=>'Fastest single lap',
 		'periods'=>array('All-Time'=>'skullracer-laps','Weekly'=>'weekly-skullracer-laps')),
+	'obscura'           => array('label'=>'Obscura',           'icon'=>'🔍', 'group'=>'Games',
+		'blurb'=>'Longest art-recognition streak',
+		'periods'=>array('All-Time'=>'obscura','Weekly'=>'weekly-obscura')),
 	'swaps'             => array('label'=>'Skull Swap',        'icon'=>'🔄', 'group'=>'Games',
 		'blurb'=>'Match 3 high scores',
 		'periods'=>array('All-Time'=>'swaps','Weekly'=>'weekly-swaps')),
@@ -6311,6 +6314,7 @@ function refreshLeaderboardSnapshots($conn) {
 		'cryptconquest'     => function($c) { checkCryptConquestLeaderboard($c); },
 		'skullracer'        => function($c) { checkSkullRacerLeaderboard($c, false, false, 'race'); },
 		'skullracer-laps'   => function($c) { checkSkullRacerLeaderboard($c, false, false, 'lap'); },
+		'obscura'           => function($c) { checkObscuraLeaderboard($c); },
 		'swaps'             => function($c) { checkSkullSwapsLeaderboard($c); },
 		'monstrocity'       => function($c) { checkMonstrocityLeaderboard($c); },
 		'bosses'            => function($c) { checkBossBattlesLeaderboard($c); },
@@ -6662,7 +6666,7 @@ function skullswapShareText($score, $is_high = false) {
 function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 	// Which sources count as "a game". Everything else -- daily claims,
 	// missions, raids -- is platform activity but not playing a game.
-	$game_sources = array('skullswap','gauntlet','crawl','conquest','racer','boss','monstrocity');
+	$game_sources = array('skullswap','gauntlet','crawl','conquest','racer','boss','monstrocity','obscura');
 	// MIGRATIONS DONE -- this block used to say cryptcrawls and cryptconquests
 	// each still needed a date_created column added before 'crawl' and
 	// 'conquest' could work for monthly/weekly. Both were run; verified
@@ -6709,6 +6713,7 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 		// file), so unlike 'crawl' and 'conquest' this source needs no
 		// migration before monthly/weekly work.
 		$w_sr = "AND created_at     >= '$dt'";
+		$w_ob = "AND date_created  >= '$dt'";
 	} elseif ($period === 'weekly') {
 		$ws   = $conn->real_escape_string(gauntletGetWeekStart());
 		$w_t  = "AND date_created  >= '$ws'";
@@ -6721,8 +6726,9 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 		$w_cc = "AND date_created  >= '$ws'";
 		$w_cq = "AND date_created  >= '$ws'";
 		$w_sr = "AND created_at     >= '$ws'";
+		$w_ob = "AND date_created  >= '$ws'";
 	} else {
-		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = $w_cc = $w_cq = $w_sr = '';
+		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = $w_cc = $w_cq = $w_sr = $w_ob = '';
 	}
 
 	// Run each source as its own fast GROUP BY query, then merge in PHP.
@@ -6750,6 +6756,14 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 		// saved. Weighted with crawl/conquest/mission: a race is that same
 		// class of single completed session.
 		'racer'       => ["SELECT user_id, COUNT(*) AS cnt FROM skull_racer_runs WHERE 1=1 $w_sr GROUP BY user_id",                                                                                5],
+		// COMPLETED runs only (active = 0), same definition as crawl/conquest --
+		// an in-progress streak is on Obscura's own board, but it is not a
+		// finished session and should not count as activity until it ends.
+		// Counting RUNS rather than solves on purpose: a solve is a ~15 second
+		// unit and counting them would let Obscura outweigh every other game by
+		// sheer volume. A run is the same class of single session as a delve or
+		// a race, so it carries the same weight.
+		'obscura'     => ["SELECT user_id, COUNT(*) AS cnt FROM obscura_scores WHERE active = 0 $w_ob GROUP BY user_id",                                                                           5],
 		'raid'        => ["SELECT re.user_id, COUNT(*) AS cnt FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $w_r GROUP BY re.user_id",                      15],
 		'boss'        => ["SELECT user_id, COUNT(*) AS cnt FROM encounters WHERE 1=1 $w_e GROUP BY user_id",                                                                                     25],
 		'monstrocity' => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id",                                                                        50],
@@ -14077,5 +14091,152 @@ function resetSkullRacerRuns($conn) {
 
 /* ============================================================
    END SKULL RACER
+   ============================================================ */
+
+
+/* ============================================================
+   OBSCURA
+   ============================================================
+   Gameplay lives in obscura-lib.php, which is deliberately NOT included here.
+   Only the leaderboard, the payout and the period reset are in db.php, because
+   leaderboards.php and rewards.php include db.php and nothing else.
+   ============================================================ */
+
+define('OBSCURA_CARBON', 50000);
+
+/*
+ * Obscura's board: deepest streak, with total solves as the tie-break.
+ *
+ * Reads obscura_scores, which carries one row per run and is updated on every
+ * solve -- so a streak still in progress ranks. That matters more here than in
+ * the other games: the whole point of Obscura is an unbroken run, and a player
+ * on a 40-streak they have not lost yet is precisely who the board is for.
+ */
+function checkObscuraLeaderboard($conn, $weekly=false, $rewards=false) {
+	$carbon = OBSCURA_CARBON;
+	$where  = ($weekly || $rewards) ? "AND os.reward = 0" : "";
+
+	$sql = "
+		SELECT
+			u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
+			MAX(os.streak) AS best_streak,
+			SUM(os.solves) AS solves,
+			COUNT(*)       AS runs
+		FROM obscura_scores os
+		INNER JOIN users u ON u.id = os.user_id
+		WHERE 1=1 $where
+		GROUP BY u.id
+		ORDER BY best_streak DESC, solves DESC
+	";
+	$result = $conn->query($sql);
+
+	if ($result && $result->num_rows > 0) {
+		$fireworks          = false;
+		$leaderboardCounter = 0;
+		$last_score         = null;
+		$third_score        = null;
+		$description        = "";
+		$counter            = 0;
+		$lb_rows            = [];
+
+		while ($row = $result->fetch_assoc()) {
+			$leaderboardCounter++;
+			$counter++;
+			// Tuple ordered to match ORDER BY, so the ranked metric leads and the
+			// podium cannot disagree with the row order.
+			$score = [intval($row['best_streak']), intval($row['solves'])];
+
+			if ($leaderboardCounter <= 3) {
+				global $leaderboard_top3;
+				$leaderboard_top3[] = [
+					'username'   => $row['username'],
+					'discord_id' => $row['discord_id'],
+					'avatar'     => $row['avatar'],
+					'visibility' => $row['visibility'],
+					'score'      => number_format($row['best_streak']) . ' streak',
+				];
+			}
+
+			$trophy = "";
+			if ($leaderboardCounter == 1) {
+				$trophy = "first";
+			} elseif ($leaderboardCounter == 2) {
+				$trophy = ($last_score != $score) ? "second" : "first";
+				if ($last_score == $score) $leaderboardCounter--;
+			} elseif ($leaderboardCounter == 3) {
+				if ($last_score != $score) { $trophy = "third"; $third_score = $score; }
+				else { $trophy = "second"; $leaderboardCounter--; }
+			} elseif ($leaderboardCounter > 3 && $third_score == $score) {
+				$trophy = "third"; $leaderboardCounter--;
+			} elseif ($leaderboardCounter > 3 && $last_score == $score) {
+				$leaderboardCounter--;
+			}
+
+			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
+
+			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
+			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
+			$reward_col = ($weekly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
+			$stats      = [
+				'Best Streak' => number_format($row['best_streak']),
+				'Solved'      => number_format($row['solves']),
+				'Runs'        => number_format($row['runs']),
+			];
+			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => $reward_col];
+			$last_score = $score;
+
+			if ($rewards) {
+				updateBalance($conn, $row['user_id'], 15, round($carbon / $leaderboardCounter));
+				logCredit($conn, $row['user_id'], round($carbon / $leaderboardCounter), 15);
+				if ($counter <= 45) {
+					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Streak: " . number_format($row['best_streak']) . ", Solved: " . number_format($row['solves']) . "\r\n";
+					$description .= "        " . number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND\r\n";
+				}
+			}
+		}
+
+		if ($rewards) {
+			// resetObscuraRuns() is NOT called here -- same lesson Skull Racer
+			// learned. rewards.php closes the period once, after this returns.
+			discordmsg("🔍 Weekly Obscura Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
+		}
+		renderLeaderboardList($lb_rows);
+		if ($fireworks) fireworks();
+	} else {
+		$scope = ($weekly || $rewards) ? "for the week" : "";
+		echo "<p>No Obscura streaks have been set yet $scope.</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="obscura"><input type="submit" class="small-button" value="View All Obscura Streaks"></form><br><br>';
+		echo '<img style="width:100%;" src="images/todolist.png"/>';
+	}
+}
+
+/*
+ * Close the week.
+ *
+ * Marks every outstanding score paid, ends every run, and resets every active
+ * streak -- the period ending is the one thing that breaks a streak, which is
+ * what makes each week a genuine race rather than a permanent lead for whoever
+ * started first.
+ *
+ * THE CURRENT PUZZLE MUST BE CLEARED, not just the streak. A player at streak
+ * 40 has a puzzle stored with 12 options and 1 attempt; drop their streak to 0
+ * without clearing it and the board still shows those 12 options while
+ * obscuraDifficulty(0) says 6 -- wrong column count, wrong attempt count, and a
+ * tier label that contradicts the board. Clearing nft_id makes the next request
+ * pick a fresh puzzle at the new tier.
+ */
+function resetObscuraRuns($conn) {
+	$sql = "UPDATE obscura_scores SET reward = 1, active = 0 WHERE reward = 0";
+	if ($conn->query($sql) !== TRUE) echo "Error: " . $sql . "<br>" . $conn->error;
+
+	$sql = "UPDATE obscura_runs SET streak = 0, nft_id = NULL, answer_id = NULL,
+	        options = NULL, attempts_used = 0, wrong = NULL, updated_at = NOW()
+	        WHERE streak > 0 OR nft_id IS NOT NULL";
+	if ($conn->query($sql) !== TRUE) echo "Error: " . $sql . "<br>" . $conn->error;
+}
+
+/* ============================================================
+   END OBSCURA
    ============================================================ */
 ?>

@@ -12,6 +12,8 @@ Skulliance is home to a growing suite of games that turn your NFT collections in
 | [[games-gauntlets]] | NFT roguelike | Weekly | CARBON |
 | [[games-cryptcrawl]] | Solo Scoundrel-style card game | Weekly | CARBON |
 | [[games-cryptconquest]] | Solo Regicide-style card game | Monthly | CARBON |
+| [[games-skullracer]] | Pseudo-3D arcade racer | Weekly | CARBON |
+| [[games-obscura]] | Name the collection from a crop | Weekly | CARBON |
 
 ## Specialty Games
 

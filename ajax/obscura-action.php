@@ -6,6 +6,11 @@
  * source cannot be read for it. Everything is judged in obscura-lib.php.
  */
 include_once __DIR__ . '/../db.php';
+// Needed for the run-end Discord post: db.php does NOT include webhooks.php
+// (rewards.php includes both separately), and this endpoint is where a run
+// actually ends. obscuraAnnounceRunEnd() also guards on function_exists, so a
+// missing webhook degrades to no post rather than a fatal.
+include_once __DIR__ . '/../webhooks.php';
 include_once __DIR__ . '/../obscura-lib.php';
 
 header('Content-Type: application/json');

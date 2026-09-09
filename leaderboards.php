@@ -336,6 +336,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 		           $filterby != "skullracer" && $filterby != "weekly-skullracer" &&
 		           $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
+				              $filterby != "obscura" && $filterby != "weekly-obscura" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
@@ -451,6 +452,14 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				        $title = "Weekly Skull Racer Laps";
 				        $filterby = "weekly-skullracer-laps";
 				        break;
+				    case ($filterby == "obscura"):
+				        $title = "All Obscura Streaks";
+				        $filterby = "obscura";
+				        break;
+				    case ($filterby == "weekly-obscura"):
+				        $title = "Weekly Obscura Streaks";
+				        $filterby = "weekly-obscura";
+				        break;
 				    case ($filterby == "missions-unlocked"):
 				        $title = "Missions Unlocked";
 				        $filterby = "missions-unlocked";
@@ -537,6 +546,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "skullracer" && $filterby != "weekly-skullracer" &&
 				              $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
+				              $filterby != "obscura" && $filterby != "weekly-obscura" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
@@ -617,6 +627,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				            break;
 				        case ($filterby == "weekly-skullracer-laps"):
 				            checkSkullRacerLeaderboard($conn, true, false, 'lap');
+				            break;
+				        case ($filterby == "obscura"):
+				            checkObscuraLeaderboard($conn, false);
+				            break;
+				        case ($filterby == "weekly-obscura"):
+				            checkObscuraLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "hub"):
 				            // Card grid. Leaves $leaderboard_top3 empty, so the

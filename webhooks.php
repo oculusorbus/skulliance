@@ -63,6 +63,14 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 			// Safe to remove this guard once getCryptConquestWebhook() is
 			// actually added.
 			$webhook = function_exists('getCryptConquestWebhook') ? getCryptConquestWebhook() : "";
+		}else if($channel == "obscura"){
+			// Same guard as the two below: if the credential has not been added
+			// yet -- or was added under a different name -- this skips the post
+			// instead of fataling the guess that triggered it. A player losing a
+			// run must not see an error because a webhook is misnamed.
+			// Expected in credentials/webhooks_credentials.php as:
+			//   function getObscuraWebhook(){ return "https://discord.com/api/webhooks/..."; }
+			$webhook = function_exists('getObscuraWebhook') ? getObscuraWebhook() : "";
 		}else if($channel == "skullracer"){
 			// Same not-yet-configured situation as cryptconquest above --
 			// getSkullRacerWebhook() doesn't exist in

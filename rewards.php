@@ -77,6 +77,19 @@ if(isset($_GET['skullracer'])){
 	checkSkullRacerLeaderboard($conn, false, true, 'lap');
 	resetSkullRacerRuns($conn);
 }
+if(isset($_GET['obscura'])){
+	// Weekly -- needs its own crontab entry hitting rewards.php?obscura=1 once
+	// a week, same as skullracer and cryptcrawl. Nothing here schedules it.
+	//
+	// The order matters for the same reason it does above: the payout reads
+	// reward=0 rows, and resetObscuraRuns() is what flips them to reward=1.
+	// Reset also ends every run and zeroes every active streak -- the period
+	// ending is the one thing that breaks a streak, which is what makes each
+	// week a fresh race rather than a permanent lead. It clears the stored
+	// puzzle too; see resetObscuraRuns() for why that is not optional.
+	checkObscuraLeaderboard($conn, false, true);
+	resetObscuraRuns($conn);
+}
 if(isset($_GET['cryptconquest'])){
 	// Monthly, not weekly -- needs its OWN crontab entry hitting
 	// rewards.php?cryptconquest=1 once a month (e.g. midnight on the 1st),

@@ -37,7 +37,7 @@ records verified constants, and tracks what still needs to be written.
 | games-cryptcrawl.md *(new)*         | Scoundrel-style crawl  | cryptcrawlgame.php (marketing), cryptcrawl.php (game), cryptcrawl-render.php, cryptcrawl-actions.php, ajax/cryptcrawl-action.php, db.php:10451-10805 |
 | games-cryptconquest.md *(new)*      | Regicide-style solo    | cryptconquestgame.php (marketing), cryptconquest.php (game), cryptconquest-render.php, cryptconquest-actions.php, cryptconquest-engine.php, db.php:11343-11800ish (CRYPT CONQUEST block) |
 | games-skullracer.md *(new)*         | Pseudo-3D racer        | skullracergame.php (public marketing landing, what nav points at), skullracer.php (nav wrapper, inlines racing/index.html's style+body server-side -- no iframe), racing/index.html (game, client-side, also works visited standalone), ajax/skullracer-finalize.php, db.php SKULL RACER block (end of file) |
-| *(no page yet -- see note below)*   | Obscura: crop-reveal   | obscura.php (page), obscura-lib.php (ALL logic + the migration, deliberately outside db.php so it can be rewritten wholesale while tuning), ajax/obscura-action.php (guess/reroll), ajax/obscura-crop.php (renders the visible region server-side) |
+| games-obscura.md *(new)*            | Obscura: crop-reveal   | obscura.php (game page -- nav and Launchpad link straight to it; there is deliberately NO obscuragame.php marketing landing, unlike the other games, because this one is internal), obscura-lib.php (gameplay + score recording + the migrations), ajax/obscura-action.php (guess/reroll), ajax/obscura-crop.php (renders the visible region server-side), db.php OBSCURA block at end of file (checkObscuraLeaderboard, resetObscuraRuns, OBSCURA_CARBON=50000), rewards.php `?obscura=1` (weekly cron), webhooks.php `obscura` channel |
 | games-drop-ship.md                  | NFT battler, now in-platform | dropship/ (migrated from madballs.net; requires Skulliance login) |
 | games-oculus-lounge.md              | Drop Ship reskin, now in-platform | dropship/ project_id 4 (migrated from oculuslounge.vip; SAME engine and database as Drop Ship, which is project_id 1 -- see dropship/oculus-lounge/) |
 | platform.md (Launchpad section)     | Post-login landing     | launchpad.php ($lp_sections registry = every tile; process-oauth.php:~198 redirects here, NOT profile.php; header.php top-level link). Nav-only + 3 cheap stats (getWallets/getCurrentDailyRewardStreak/getCurrentBalance) -- NO writes, NO game logic, because it is the first page after login and must never be what breaks. Start Here strip is conditional on those 3 stats and self-clears. Emoji icons, not images (FTP deploy). The staked-NFT view is my-nfts.php (was dashboard.php -- renamed because the name promised an overview it never gave). dashboard.php REMAINS as a permanent 301 stub and must not be deleted: 46 references plus bookmarks, Discord links and in-game "back to Skulliance" buttons still point at it. Its page identifier for filterNFTs()/renderVisibility() is now "my-nfts", and skulliance.php accepts BOTH that and the old "dashboard" for the #holdings anchor. dropship/dashboard.php is a DIFFERENT file and is untouched. TWO PATH CHECKS keyed off the old filename and broke silently in the rename -- skulliance.php gating verifyMembershipNFTs() on REQUEST_URI, and skulliance.js gating the NFT upload button on window.location.pathname. Both now accept my-nfts.php (and still the old name). Anything else that keys off a page NAME rather than a link will fail the same quiet way. Game exit buttons (match3rpg, skullswap x2, monstrocity, and displayRound() in skulliance.js) go to launchpad.php, not the NFT view; wallet-ajax.php still redirects to the NFT view after connecting a wallet, which is deliberate. |
@@ -1398,13 +1398,37 @@ records verified constants, and tracks what still needs to be written.
   player ever saw they'd died. 400ms comfortably covers a double-tap gesture (~300ms) without
   reading as a delay on one deliberate tap.
 
-### Obscura (crop-reveal) - NO doc page yet, on purpose
+### Obscura (crop-reveal) - LAUNCHED
 
-The Skull Paper is **public**, and Obscura is an unlaunched prototype: no CARBON,
-no leaderboard, no hub entry, and the difficulty curve is the whole thing being
-tuned. Publishing a page now would announce a game that does not reward anything
-yet. **Write `games-obscura.md` (and add it to `$skullpaper_nav`) as part of the
-launch change**, not before.
+Launched 2026-09-09 after a prototype period. `games-obscura.md` is written and
+in `$skullpaper_nav`. **There is deliberately no public marketing page** - no
+`obscuragame.php` - because the user considers this an internal game; the nav and
+Launchpad tiles point straight at `obscura.php`. Don't add one.
+
+Two tables: `obscura_runs` (one row per player, the live run) and `obscura_scores`
+(one row per run, for the boards). Scores are written **live on every solve**, not
+at run end, because an unbeaten streak is exactly who the board should show; a
+write-on-death design would leave the current leader off it until they lost.
+`reward = 0` marks a score as unpaid - a flag, not a date comparison, so the cron
+can run whenever and pay whatever is outstanding (same idiom as
+`skull_racer_runs.reward`).
+
+Weekly: `rewards.php?obscura=1` needs its own crontab entry. It pays
+`checkObscuraLeaderboard($conn, false, true)` then calls `resetObscuraRuns()` -
+**in that order**, since the reset is what flips the rows it just paid. The reset
+also zeroes every active streak (the period ending is the one thing that breaks a
+streak) and **clears the stored puzzle**, which is not optional: a streak-40
+player has 12 options and 1 attempt stored, and dropping their streak to 0 without
+clearing leaves that board rendering against `obscuraDifficulty(0)`'s 6 options.
+
+Run-end Discord posts go to the `obscura` channel and show the artwork that beat
+the player. Requires `getObscuraWebhook()` in
+`credentials/webhooks_credentials.php`; guarded by `function_exists` at both the
+channel switch and the caller, so a missing or misnamed webhook skips the post
+rather than fataling the guess that triggered it. `ajax/obscura-action.php` had to
+start including `webhooks.php` for this - db.php does not include it.
+`OBSCURA_ANNOUNCE_MIN_STREAK` (3) keeps routine first-puzzle losses out of the
+channel; set it to 1 to post every ended run.
 
 Verified constants, from `obscuraDifficulty()` in `obscura-lib.php`:
 
@@ -1469,8 +1493,10 @@ Don't reintroduce a countdown, a speed bonus, or an auto-advancing reveal - the
 reveal parks the next puzzle behind a Next button and waits for the player
 indefinitely. Score is streak depth alone.
 
-Still to build at launch: CARBON rewards, a weekly/monthly period that resets
-streaks, leaderboard + hub entry, marketing page, nav entry, Discord notifications.
+All of the above shipped at launch. Obscura also feeds `checkActivityLeaderboard()`
+as the `obscura` source, counting **completed runs** (`active = 0`), weight 5 -
+the same class of single session as a delve or a race. Counting solves instead
+would let a ~15-second unit outweigh every other game by volume.
 
 ---
 

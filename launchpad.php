@@ -72,6 +72,7 @@ $lp_sections = array(
 			array('monstrocity.php#boss', '🐉', 'Boss Battles',    'Co-op community boss fights'),
 			array('skullswap.php',       '🔄', 'Skull Swap',      'Match 3 score chase'),
 			array('skullracer.php',      '🏁', 'Skull Racer',     'Pseudo-3D arcade racer'),
+			array('obscura.php',         '🔍', 'Obscura',         'Name the collection from a sliver'),
 			array('dropship/',           '🪖', 'Drop Ship',       'NFT battler'),
 		),
 	),

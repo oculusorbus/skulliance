@@ -42,6 +42,36 @@
  *     wrong         TEXT NULL,
  *     updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
  *   );
+ *
+ * AND, for the leaderboards (run this one if the table above already exists):
+ *
+ *   CREATE TABLE obscura_scores (
+ *     id           INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+ *     user_id      INT NOT NULL,
+ *     streak       INT NOT NULL DEFAULT 0,
+ *     solves       INT NOT NULL DEFAULT 0,
+ *     active       TINYINT NOT NULL DEFAULT 1,
+ *     reward       TINYINT NOT NULL DEFAULT 0,
+ *     date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ *     KEY user_reward (user_id, reward),
+ *     KEY reward_active (reward, active)
+ *   );
+ *
+ * ONE ROW PER RUN, updated live as the streak grows -- not written at the end.
+ * A player sitting on a 40-streak they have not lost yet is exactly who the
+ * board should be showing, and a write-on-death design would leave them off it
+ * until they failed. `active = 1` means the run is still going.
+ *
+ * `reward = 0` means "not yet paid out", which is how every other game here
+ * closes a week (see skull_racer_runs.reward). It is deliberately a flag rather
+ * than a date comparison: the payout cron can then run at any time, pay
+ * whatever is outstanding, and mark it paid, instead of depending on firing
+ * inside a particular window.
+ *
+ * date_created carries a default because this table is NEW -- there are no
+ * existing rows for that default to backfill and stamp with the migration
+ * moment. Do NOT copy that pattern when adding a date column to a table that
+ * already has history; see the note in checkActivityLeaderboard().
  */
 
 // The noose. Deliberately a plain table rather than a formula: every tier is
@@ -288,6 +318,100 @@ function obscuraEnsurePuzzle($conn, $user_id, $run) {
 	return obscuraGetRun($conn, $user_id);
 }
 
+/*
+ * Score keeping. One obscura_scores row per RUN, updated on every solve, so an
+ * unbeaten streak is on the board while it is still being built.
+ *
+ * A run that loses its very first puzzle never solved anything and so never
+ * creates a row -- there is nothing to rank, and an empty row would just dilute
+ * the "runs" count that Activity reads.
+ */
+function obscuraRecordSolve($conn, $user_id, $streak) {
+	$user_id = intval($user_id);
+	$streak  = intval($streak);
+	$r = $conn->query("SELECT id FROM obscura_scores
+	                   WHERE user_id = $user_id AND active = 1 ORDER BY id DESC LIMIT 1");
+	if ($r && $r->num_rows > 0) {
+		$id = intval($r->fetch_assoc()['id']);
+		$conn->query("UPDATE obscura_scores SET streak = $streak, solves = solves + 1 WHERE id = $id");
+	} else {
+		$conn->query("INSERT INTO obscura_scores (user_id, streak, solves) VALUES ($user_id, $streak, 1)");
+	}
+}
+
+// The run is over. Closing it is what makes the NEXT solve start a new row.
+// Returns how many puzzles that run solved, for the announcement.
+function obscuraCloseRun($conn, $user_id) {
+	$user_id = intval($user_id);
+	$solves  = 0;
+	$r = $conn->query("SELECT solves FROM obscura_scores
+	                   WHERE user_id = $user_id AND active = 1 ORDER BY id DESC LIMIT 1");
+	if ($r && $r->num_rows > 0) $solves = intval($r->fetch_assoc()['solves']);
+	$conn->query("UPDATE obscura_scores SET active = 0 WHERE user_id = $user_id AND active = 1");
+	return $solves;
+}
+
+// Who is currently topping the unpaid (i.e. this week's) board.
+function obscuraWeeklyLeaderUserId($conn) {
+	$r = $conn->query("SELECT user_id FROM obscura_scores WHERE reward = 0
+	                   GROUP BY user_id ORDER BY MAX(streak) DESC, SUM(solves) DESC LIMIT 1");
+	return ($r && $r->num_rows > 0) ? intval($r->fetch_assoc()['user_id']) : 0;
+}
+
+/*
+ * A run ended -- announce it, with the artwork that beat them.
+ *
+ * Showing the NFT is the point: the interesting part of a loss is which piece
+ * was unrecognisable from a sliver, and that is worth seeing in the channel.
+ *
+ * Deliberately NOT every run. Obscura runs end far more often than a Crypt
+ * Crawl delve does -- failing the first puzzle of a fresh run is routine and
+ * not news -- so there is a floor. Drop OBSCURA_ANNOUNCE_MIN_STREAK to 1 to
+ * post every ended run.
+ */
+define('OBSCURA_ANNOUNCE_MIN_STREAK', 3);
+
+function obscuraAnnounceRunEnd($conn, $user_id, $streak, $solves, $best_streak, $reveal, $collection_name) {
+	if (intval($streak) < OBSCURA_ANNOUNCE_MIN_STREAK) return;
+	// webhooks.php may not be loaded by whatever included us. A missing Discord
+	// post is cosmetic; a fatal here would break the guess response itself and
+	// the player would lose their run AND see a connection error.
+	if (!function_exists('discordmsg')) return;
+
+	$user_id = intval($user_id);
+	$ur = $conn->query("SELECT username, discord_id, avatar FROM users WHERE id = $user_id LIMIT 1");
+	if (!$ur || !$ur->num_rows) return;
+	$u = $ur->fetch_assoc();
+	if (empty($u['discord_id'])) return;   // nothing to mention
+
+	$username   = !empty($u['username']) ? $u['username'] : 'Unknown';
+	$avatar_url = ($u['discord_id'] && $u['avatar'])
+		? "https://cdn.discordapp.com/avatars/" . $u['discord_id'] . "/" . $u['avatar'] . ".png" : "";
+	$author  = array("name" => $username, "icon_url" => $avatar_url,
+	                 "url"  => "https://skulliance.io/staking/profile.php?username=" . urlencode($username));
+
+	// obscuraLocalArt returns a site-absolute path; Discord needs a full url.
+	$art = (!empty($reveal['art'])) ? "https://skulliance.io" . $reveal['art'] : "";
+
+	$badges = array();
+	if (intval($streak) >= intval($best_streak))            $badges[] = "🏅 **New personal best!**";
+	if (obscuraWeeklyLeaderUserId($conn) === $user_id)      $badges[] = "🔥 **#1 This Week!**";
+	$badge_text = $badges ? ("\n\n" . implode("\n", $badges)) : "";
+
+	$piece = trim((string)($reveal['name'] ?? ''));
+	$desc  = "<@" . $u['discord_id'] . "> ran out of attempts at a streak of **" . number_format($streak) . "**.\n\n"
+	       . "🔍 **Stumped by:** " . ($piece !== '' ? $piece : 'an unnamed piece') . "\n"
+	       . "🗂️ **Collection:** " . $collection_name . "\n"
+	       . "✅ **Solved this run:** " . number_format($solves)
+	       . $badge_text;
+
+	$footer = array("text" => "Obscura - name the collection from a sliver",
+	                "icon_url" => "https://skulliance.io/staking/icons/skulliance.png");
+
+	discordmsg("🔍 Obscura Run Ended", $desc, $art,
+		"https://skulliance.io/staking/obscura.php", "obscura", $avatar_url, "FF4444", $author, $footer);
+}
+
 // A player's view of the run -- never includes answer_id.
 function obscuraState($conn, $user_id) {
 	$run = obscuraGetRun($conn, $user_id);
@@ -383,6 +507,7 @@ function obscuraGuess($conn, $user_id, $collection_id) {
 		$conn->query("UPDATE obscura_runs SET streak = $streak, best_streak = $best,
 			nft_id = NULL, answer_id = NULL, options = NULL, attempts_used = 0, wrong = NULL,
 			updated_at = NOW() WHERE user_id = $user_id");
+		obscuraRecordSolve($conn, $user_id, $streak);
 		return array('result'=>'correct', 'streak'=>$streak, 'best'=>$best, 'reveal'=>$reveal,
 		             'tier_changed'=>obscuraTierIndex($streak) !== obscuraTierIndex($streak - 1),
 		             'tier_label'=>obscuraTierLabel($streak));
@@ -398,6 +523,10 @@ function obscuraGuess($conn, $user_id, $collection_id) {
 		$conn->query("UPDATE obscura_runs SET streak = 0, nft_id = NULL, answer_id = NULL,
 			options = NULL, attempts_used = 0, wrong = NULL, updated_at = NOW()
 			WHERE user_id = $user_id");
+		$run_solves = obscuraCloseRun($conn, $user_id);
+		// $streak is this run's peak, read before the reset above.
+		obscuraAnnounceRunEnd($conn, $user_id, $streak, $run_solves,
+			intval($run['best_streak']), $reveal, $name);
 		return array('result'=>'failed', 'answer_id'=>$answer, 'answer_name'=>$name,
 		             'reveal'=>$reveal, 'streak'=>0, 'best'=>intval($run['best_streak']));
 	}
