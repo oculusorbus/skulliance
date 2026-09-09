@@ -160,6 +160,25 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 @media (max-width:560px) {
   #ob-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .ob-intro   { display:none; }
+
+  /* Reorder on mobile so Next sits directly under the artwork and its caption,
+     instead of below a two-column grid of up to twelve buttons -- which pushed
+     it off the bottom of the screen exactly when it became the only thing worth
+     tapping. Flex only inside this breakpoint; the children are block-level, so
+     the column layout renders identically to the normal flow. */
+  #ob-game { display:flex; flex-direction:column; }
+  .ob-hud         { order:1; }
+  #ob-tier        { order:2; }
+  #ob-view        { order:3; }
+  #ob-reveal-info { order:4; }
+  #ob-message     { order:5; }
+  #ob-next        { order:6; align-self:center; }  /* or stretch would fill the width */
+  #ob-options     { order:7; }
+
+  /* Obscura is a single screen with its own button at the bottom of the flow --
+     a floating "back to top" over it is one more thing covering the board. The
+     rule needs !important because skulliance.js sets display inline on scroll. */
+  #back-to-top-button { display:none !important; }
 }
 .ob-opt:hover:not(:disabled) { background:#10263c; border-color:#00c8a0; }
 .ob-opt:disabled { opacity:.3; cursor:default; text-decoration:line-through; }
