@@ -163,7 +163,8 @@ function obscuraRevealDetails($conn, $nft_id) {
 	// LEFT JOIN, not INNER: an NFT with no Skulliance holder still has a name and
 	// still deserves a reveal.
 	$r = $conn->query("SELECT nfts.ipfs, nfts.name, nfts.collection_id, nfts.user_id,
-	                          collections.project_id, users.username, users.visibility
+	                          collections.project_id, users.username, users.visibility,
+	                          users.avatar, users.discord_id
 	                   FROM nfts
 	                   INNER JOIN collections ON collections.id = nfts.collection_id
 	                   LEFT JOIN users ON users.id = nfts.user_id
@@ -174,10 +175,17 @@ function obscuraRevealDetails($conn, $nft_id) {
 	$art = obscuraLocalArt($a['ipfs'], $a['collection_id'], $a['project_id']);
 	if ($art === null) return null;
 
-	$out = array('art' => $art, 'name' => (string)($a['name'] ?? ''), 'owner' => '', 'owner_url' => '');
+	$out = array('art' => $art, 'name' => (string)($a['name'] ?? ''),
+	             'owner' => '', 'owner_url' => '', 'owner_avatar' => '');
 	if (intval($a['user_id']) > 0 && intval($a['visibility']) === 2 && !empty($a['username'])) {
 		$out['owner']     = $a['username'];
 		$out['owner_url'] = 'profile.php?username=' . urlencode($a['username']);
+		// Same construction and same fallback as the leaderboard podium
+		// (leaderboards.php:302-304). The avatar is gated with the username, not
+		// separately: a face is every bit as identifying as a name.
+		$out['owner_avatar'] = ($a['avatar'] && $a['discord_id'])
+			? 'https://cdn.discordapp.com/avatars/' . $a['discord_id'] . '/' . $a['avatar'] . '.png'
+			: 'icons/skull.png';
 	}
 	return $out;
 }

@@ -120,7 +120,12 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
   margin:-8px 0 16px; min-height:1.2em; line-height:1.5;
 }
 #ob-reveal-info strong { color:rgba(255,255,255,.85); font-size:.9rem; }
-#ob-reveal-info a { color:#00c8a0; }
+#ob-reveal-info a { color:#00c8a0; text-decoration:none; }
+#ob-reveal-info a:hover { text-decoration:underline; }
+.ob-owner-avatar {
+  width:18px; height:18px; border-radius:50%; vertical-align:-4px;
+  margin-right:5px; background:#0d1e30;
+}
 /* Fixed columns per tier (--ob-cols, set from obscuraColumns): 6->3, 8->4,
    10->5, 12->4. grid-auto-rows:1fr is what keeps EVERY button the same
    height -- grid already equalises within a row, but without this a row
@@ -214,7 +219,18 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
       info.appendChild(document.createTextNode(info_.name ? ' · held by ' : 'Held by '));
       var a = document.createElement('a');
       a.href = info_.owner_url;
-      a.textContent = info_.owner;
+      if (info_.owner_avatar) {
+        var img = document.createElement('img');
+        img.className = 'ob-owner-avatar';
+        img.alt = '';
+        // A dead Discord CDN url falls back to the platform's own placeholder,
+        // the same guard the podium uses -- but only once, or a missing
+        // skull.png would loop.
+        img.onerror = function () { this.onerror = null; this.src = 'icons/skull.png'; };
+        img.src = info_.owner_avatar;
+        a.appendChild(img);
+      }
+      a.appendChild(document.createTextNode(info_.owner));
       info.appendChild(a);
     }
   }

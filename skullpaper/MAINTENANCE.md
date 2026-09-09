@@ -1452,7 +1452,11 @@ before naming anyone - the same gate `profile.php:40` and `gallery.php:33` use
 before showing a member's NFTs, because "held by X" publishes part of X's
 collection to whoever happens to be playing. Don't loosen it, and don't replace
 an unnamed holder with "private" or "anonymous": that would itself disclose that
-somebody on the platform holds the piece. Most of `nfts` is `user_id = 0` anyway,
+somebody on the platform holds the piece. **The avatar is gated with the name,
+in the same branch, and set in exactly one place** - a face identifies as surely
+as a username, so there must be no path that shows one without the other. It uses
+the podium's construction and its `icons/skull.png` fallback
+(`leaderboards.php:302-304`). Most of `nfts` is `user_id = 0` anyway,
 so the join is a LEFT JOIN - an unowned NFT still has a name and still earns a
 reveal. The name is arbitrary on-chain metadata, so the caption is built from DOM
 nodes and never from an HTML string.
