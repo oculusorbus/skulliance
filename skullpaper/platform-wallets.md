@@ -6,6 +6,8 @@ Skulliance supports **multiple Cardano wallets** per account, so you can stake N
 
 * Connect as many Cardano wallets as you like. Connecting a second wallet works
   exactly like the first - there is nothing to disconnect first.
+* Use **Connect Another Wallet** on this page, or the wallet icon in the top
+  navigation. Both open the same connect window.
 * Your staked NFTs are aggregated across all connected wallets.
 * Pick a wallet and approve the connection in that wallet's own popup. If the
   popup does not appear, the extension is usually locked or not enabled for this

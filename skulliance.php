@@ -492,8 +492,41 @@ function renderVisibility($page){
 	}
 }
 
+/*
+ * The button that opens the wallet modal.
+ *
+ * This was an empty stub, on the reasoning that connecting is "handled by the
+ * global modal in header.php". But the only thing that opens that modal is an
+ * unlabelled icon in the top nav, so wallets.php listed your wallets, told you
+ * you could connect as many as you like, and offered no way to do it. Reported
+ * by a user who could not find how to add a second wallet.
+ *
+ * On the wallets page the button is always shown -- adding another wallet is
+ * the entire point of that page. Everywhere else it appears only when the
+ * account has NO wallet yet, which is what these call sites originally existed
+ * to prompt; showing it to someone already connected is just noise.
+ */
 function renderWalletConnection($page){
-	// Wallet connection is now handled via the global modal in header.php
+	global $conn;
+	if(!isset($_SESSION['userData']['user_id'])) return;
+
+	$wallet_count = 0;
+	if(isset($conn) && $conn instanceof mysqli){
+		$wallets = getWallets($conn);
+		$wallet_count = is_array($wallets) ? count($wallets) : 0;
+	}
+
+	$is_wallets_page = ($page === "wallets");
+	if(!$is_wallets_page && $wallet_count > 0) return;
+
+	$label = $wallet_count > 0 ? "Connect Another Wallet" : "Connect a Wallet";
+	?>
+	<li class="role wallet-connect-cta">
+		<button type="button" class="small-button wallet-connect-btn" onclick="openWalletModal()">
+			<img src="icons/wallet.png" alt="" class="wallet-connect-icon"><?php echo $label; ?>
+		</button>
+	</li>
+	<?php
 }
 
 function renderCurrency($conn, $skulliance=true){

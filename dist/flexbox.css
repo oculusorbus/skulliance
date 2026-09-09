@@ -772,6 +772,26 @@ input {
 	background-color: #00a882;
 }
 
+/* The "Connect a Wallet" call to action (renderWalletConnection in
+   skulliance.php). Always on the wallets page; elsewhere only when the account
+   has no wallet yet. Bigger than a .small-button because on the wallets page it
+   is the primary action, not a row control. */
+.wallet-connect-cta {
+  list-style: none;
+  margin: 4px 0 14px;
+}
+.wallet-connect-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  font-size: 13px;
+}
+.wallet-connect-icon {
+  width: 16px;
+  height: 16px;
+}
+
 .small-button-danger {
   background-color: #c0392b;
   box-shadow: 0 4px #5a0a05;
