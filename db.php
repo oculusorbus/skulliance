@@ -4604,6 +4604,174 @@ function calculateScore($total_duration, $success, $failure, $progress){
 	return round(((($total_duration+($success*2))-($failure/2))-$progress)+1);
 }
 
+//=============================================================================
+// DROP SHIP / OCULUS LOUNGE LEADERBOARDS
+//
+// Drop Ship and Oculus Lounge live in a SEPARATE database on the same MySQL
+// server. Oculus Lounge is a Drop Ship reskin, so both are rows in the same
+// `results` table separated by project_id: 1 = Drop Ship, 4 = Oculus Lounge.
+// One function, two boards.
+//
+// READ-ONLY, and deliberately so. Drop Ship is quarantined -- it reaches into
+// Skulliance to award MOON/DREAD and nothing reaches the other way. This is
+// the first read in the opposite direction, so it is kept to the narrowest
+// possible shape: one SELECT, no writes, no schema assumptions beyond the
+// columns Drop Ship's own leaderboard already selects. If that direction is
+// unwanted, the alternative is Drop Ship pushing its top scores into
+// leaderboard_snapshots on its own cron -- same table, no reads from here.
+//
+// Only the hourly snapshot cron calls this, never a page load, so a slow or
+// unreachable Drop Ship database degrades to a stale card rather than a
+// hanging leaderboards page.
+//=============================================================================
+define('DROPSHIP_PROJECT_DROPSHIP', 1);
+define('DROPSHIP_PROJECT_LOUNGE',   4);
+
+// Second mysqli connection, using Drop Ship's own credentials.
+//
+// The include is FUNCTION-SCOPED on purpose. Both credential files define
+// $servername/$username/$password/$dbname, so including Drop Ship's at top
+// level would clobber Skulliance's copies. Inside a function they are locals
+// and cannot reach the globals that built $conn. Drop Ship does exactly this
+// in reverse -- see dropshipConnectedStakeAddresses() in dropship/db.php,
+// which has the same reasoning written out at length.
+//
+// Cached statically: the snapshot refresh asks for two boards in one run and
+// there is no reason to connect twice. `false` is a sticky failure so a down
+// database is not retried per board.
+function dropShipDbConnection() {
+	static $ds = null;
+	if ($ds !== null) return $ds === false ? null : $ds;
+
+	$path = __DIR__ . '/dropship/credentials/db_credentials.php';
+	if (!is_file($path)) {
+		$ds = false;
+		error_log('dropShipDbConnection: credentials not found at ' . $path);
+		return null;
+	}
+	include $path;   // function scope -- see above
+	$c = @new mysqli($servername, $username, $password, $dbname);
+	if ($c->connect_error) {
+		$ds = false;
+		error_log('dropShipDbConnection: ' . $c->connect_error);
+		return null;
+	}
+	$ds = $c;
+	return $ds;
+}
+
+function checkDropShipLeaderboard($conn, $ds_project_id) {
+	$ds = dropShipDbConnection();
+	if (!$ds) {
+		echo "<p>Scores are temporarily unavailable.</p>";
+		return;
+	}
+	$ds_project_id = intval($ds_project_id);
+
+	// Same shape as Drop Ship's own checkATHLeaderboard: best single run per
+	// player. LIMIT because this feeds a leaderboard page, not an export.
+	$res = $ds->query("
+		SELECT r.user_id, u.username, u.discord_id, u.avatar,
+		       MAX(r.score) AS max_score, COUNT(*) AS runs
+		FROM results r
+		LEFT JOIN users u ON u.id = r.user_id
+		WHERE r.project_id = $ds_project_id
+		GROUP BY r.user_id
+		ORDER BY max_score DESC
+		LIMIT 100
+	");
+	if (!$res || $res->num_rows === 0) {
+		echo "<p>No scores recorded yet.</p>";
+		return;
+	}
+
+	$rows = array();
+	$discord_ids = array();
+	while ($row = $res->fetch_assoc()) {
+		if (($row['username'] ?? '') === '') continue;   // orphaned result row
+		$rows[] = $row;
+		if (($row['discord_id'] ?? '') !== '') $discord_ids[] = $row['discord_id'];
+	}
+	if (empty($rows)) { echo "<p>No scores recorded yet.</p>"; return; }
+
+	// Drop Ship predates Skulliance, so plenty of its players have no account
+	// here. They are still LISTED -- a leaderboard that hid the actual best
+	// players because they never signed up would simply be wrong -- they just
+	// don't get a profile link. One lookup maps the ones who do.
+	$linked = array();
+	if (!empty($discord_ids)) {
+		$esc = array();
+		foreach ($discord_ids as $d) $esc[] = "'" . $conn->real_escape_string($d) . "'";
+		$lr = $conn->query("SELECT username, discord_id FROM users WHERE discord_id IN (" . implode(',', $esc) . ")");
+		if ($lr) while ($u = $lr->fetch_assoc()) $linked[$u['discord_id']] = $u['username'];
+	}
+
+	$fireworks          = false;
+	$leaderboardCounter = 0;
+	$last_score         = null;
+	$third_score        = null;
+	$lb_rows            = array();
+	$my_discord         = $_SESSION['userData']['discord_id'] ?? '';
+
+	foreach ($rows as $row) {
+		$score = intval($row['max_score']);
+		$leaderboardCounter++;
+
+		$did        = $row['discord_id'] ?? '';
+		$avatar_url = ($did !== '' && ($row['avatar'] ?? '') !== '')
+			? "https://cdn.discordapp.com/avatars/" . $did . "/" . $row['avatar'] . ".jpg"
+			: "icons/skull.png";
+
+		if ($leaderboardCounter <= 3) {
+			global $leaderboard_top3;
+			$leaderboard_top3[] = array(
+				'username'   => $row['username'],
+				'discord_id' => $did,
+				'avatar'     => $row['avatar'] ?? '',
+				'visibility' => 1,
+				'score'      => number_format($score),
+			);
+		}
+
+		$trophy = "";
+		if ($leaderboardCounter == 1) {
+			$trophy = "first";
+		} elseif ($leaderboardCounter == 2) {
+			$trophy = ($last_score != $score) ? "second" : "first";
+			if ($last_score == $score) $leaderboardCounter--;
+		} elseif ($leaderboardCounter == 3) {
+			if ($last_score != $score) { $trophy = "third"; $third_score = $score; }
+			else { $trophy = "second"; $leaderboardCounter--; }
+		} elseif ($leaderboardCounter > 3 && $third_score == $score) {
+			$trophy = "third"; $leaderboardCounter--;
+		} elseif ($leaderboardCounter > 3 && $last_score == $score) {
+			$leaderboardCounter--;
+		}
+
+		$is_me     = ($my_discord !== '' && $did === $my_discord);
+		if ($is_me) $fireworks = true;
+
+		// Linked players get a profile link; everyone else is plain text.
+		$name_html = isset($linked[$did])
+			? "<a href='profile.php?username=" . urlencode($linked[$did]) . "'>" . htmlspecialchars($linked[$did]) . "</a>"
+			: htmlspecialchars($row['username']);
+
+		$lb_rows[] = array(
+			'rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url,
+			'name' => $name_html, 'highlight' => $is_me,
+			'stats' => array(
+				'Best Score' => number_format($score),
+				'Runs'       => number_format(intval($row['runs'])),
+			),
+			'reward' => '',
+		);
+		$last_score = $score;
+	}
+
+	renderLeaderboardList($lb_rows);
+	if ($fireworks) fireworks();
+}
+
 // Missions Unlocked leaderboard -- ranks how FAR players have got through the
 // mission ladders, not how many missions they've run.
 //
@@ -5981,6 +6149,15 @@ $SKULLIANCE_BOARDS = array(
 	'bosses'            => array('label'=>'Boss Battles',      'icon'=>'🐉', 'group'=>'Games',
 		'blurb'=>'Community boss fights',
 		'periods'=>array('All-Time'=>'bosses','Weekly'=>'weekly-bosses')),
+	// Live in Drop Ship's separate database -- see checkDropShipLeaderboard.
+	// All-time only: Drop Ship keeps its own periodic boards, and duplicating
+	// their reset cadence here would be two sources of truth for one game.
+	'dropship'          => array('label'=>'Drop Ship',         'icon'=>'🪖', 'group'=>'Games',
+		'blurb'=>'Best single run',
+		'periods'=>array('All-Time'=>'dropship')),
+	'oculuslounge'      => array('label'=>'Oculus Lounge',     'icon'=>'🪩', 'group'=>'Games',
+		'blurb'=>'Best night at the club',
+		'periods'=>array('All-Time'=>'oculuslounge')),
 );
 
 /*
@@ -6061,6 +6238,12 @@ function refreshLeaderboardSnapshots($conn) {
 		'swaps'             => function($c) { checkSkullSwapsLeaderboard($c); },
 		'monstrocity'       => function($c) { checkMonstrocityLeaderboard($c); },
 		'bosses'            => function($c) { checkBossBattlesLeaderboard($c); },
+		// Cross-database reads. If Drop Ship's DB is unreachable these throw
+		// or return nothing; the try/catch below logs and skips them, and
+		// their cards keep whatever champion was last stored rather than the
+		// whole refresh failing.
+		'dropship'          => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_DROPSHIP); },
+		'oculuslounge'      => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_LOUNGE); },
 	);
 
 	$done = 0; $skipped = array();

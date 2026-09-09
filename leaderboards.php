@@ -318,7 +318,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 		           $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
-				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly"):
+				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
+				              $filterby != "dropship" && $filterby != "oculuslounge"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
@@ -435,6 +436,14 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = "Missions Unlocked";
 				        $filterby = "missions-unlocked";
 				        break;
+				    case ($filterby == "dropship"):
+				        $title = "Drop Ship";
+				        $filterby = "dropship";
+				        break;
+				    case ($filterby == "oculuslounge"):
+				        $title = "Oculus Lounge";
+				        $filterby = "oculuslounge";
+				        break;
 				    case ($filterby == "gamemaster-ath"):
 				        $title = "All-Time Game Master";
 				        $filterby = "gamemaster-ath";
@@ -494,7 +503,8 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
-				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly"):
+				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
+				              $filterby != "dropship" && $filterby != "oculuslounge"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -581,6 +591,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				            break;
 				        case ($filterby == "missions-unlocked"):
 				            checkMissionsUnlockedLeaderboard($conn);
+				            break;
+				        case ($filterby == "dropship"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_DROPSHIP);
+				            break;
+				        case ($filterby == "oculuslounge"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_LOUNGE);
 				            break;
 				        case ($filterby == "gamemaster-ath"):
 				            checkActivityLeaderboard($conn, 'ath', 'games');

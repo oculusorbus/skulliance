@@ -115,6 +115,26 @@ records verified constants, and tracks what still needs to be written.
   known server-side. Both append @skulliance and budget 24 chars for the t.co-wrapped URL against
   the 280 limit. Verified by a harness (31 assertions) covering URL shape, every target page
   having the card tag AND no login gate, per-game text, the 280 budget, and button markup.
+- Drop Ship / Oculus Lounge boards (db.php `checkDropShipLeaderboard()` + `dropShipDbConnection()`):
+  these two live in Drop Ship's SEPARATE database on the same MySQL server. Oculus Lounge is a
+  Drop Ship RESKIN, so both are rows in one `results` table split by project_id -- **1 = Drop
+  Ship, 4 = Oculus Lounge** (DROPSHIP_PROJECT_* constants). One function, two boards, all-time
+  only (Drop Ship runs its own periodic boards; duplicating their cadence here would be two
+  sources of truth for one game).
+  `dropShipDbConnection()` opens a second mysqli with Drop Ship's credentials and the include is
+  FUNCTION-SCOPED on purpose -- both credential files define $servername/$username/$password/
+  $dbname, so a top-level include would clobber Skulliance's and break $conn. Drop Ship does the
+  same thing in reverse in `dropshipConnectedStakeAddresses()`. Connection is statically cached
+  and a failure is sticky, so a down database isn't retried per board.
+  **Read-only, deliberately.** Drop Ship is quarantined: it reaches into Skulliance to award
+  MOON/DREAD and nothing came back the other way until this. Keep it to SELECTs -- there's a test
+  asserting no INSERT/UPDATE/DELETE/REPLACE/TRUNCATE appears in the function. If that direction
+  is ever unwanted, the alternative is Drop Ship pushing its top scores into
+  leaderboard_snapshots on its own cron.
+  **Many Drop Ship players predate Skulliance and have no account here.** They are still ranked
+  -- hiding the actual best players because they never signed up would make the board wrong --
+  they just get no profile link. Matching is by discord_id; matched players display their
+  SKULLIANCE username, unmatched their Drop Ship one.
 - Leaderboard nav split: `filterLeaderboard()` in skulliance.php (called ONLY from
   leaderboards.php:~460) lists **projects only** now -- All Projects, Core and Partner.
   Delegations was dropped from it too since it has a hub card; `?filterby=15` still resolves via
