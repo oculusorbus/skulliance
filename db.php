@@ -2603,19 +2603,40 @@ function createAddress($conn, $stake_address, $address) {
 }
 
 // Check user's Cardano address
+/*
+ * Link a stake address to the logged-in user, and SAY WHAT HAPPENED.
+ *
+ * This used to return nothing and do nothing when the stake address already
+ * existed -- including when it belonged to a DIFFERENT account. The caller then
+ * reported "Wallet connected!" regardless, so a wallet already claimed
+ * elsewhere looked like a success and simply never appeared in the user's list.
+ *
+ * Returns: 'added' | 'exists_mine' | 'exists_other' | 'claimed' | 'no_session'
+ * Both existing callers previously ignored the return, so adding one is safe.
+ */
 function checkAddress($conn, $stake_address, $address) {
-	if(isset($_SESSION['userData']['user_id'])){
-		$stake_address = $conn->real_escape_string($stake_address);
-		$sql = "SELECT stake_address FROM wallets WHERE stake_address='".$stake_address."'";
-		$result = $conn->query($sql);
+	if(!isset($_SESSION['userData']['user_id'])) return 'no_session';
 
-		if ($result->num_rows > 0) {
-		  // output data of each row
-		} else {
-		  //echo "0 results";
-			createAddress($conn, $stake_address, $address);
+	$me = intval($_SESSION['userData']['user_id']);
+	$stake_address = $conn->real_escape_string($stake_address);
+	$sql = "SELECT id, user_id FROM wallets WHERE stake_address='".$stake_address."' LIMIT 1";
+	$result = $conn->query($sql);
+
+	if ($result && $result->num_rows > 0) {
+		$row   = $result->fetch_assoc();
+		$owner = intval($row['user_id']);
+		if ($owner === $me) return 'exists_mine';
+		// An orphaned row (no owner) would otherwise lock this wallet out of
+		// every account forever, so claim it rather than refusing.
+		if ($owner <= 0) {
+			$conn->query("UPDATE wallets SET user_id='".$me."' WHERE id='".intval($row['id'])."'");
+			return 'claimed';
 		}
+		return 'exists_other';
 	}
+
+	createAddress($conn, $stake_address, $address);
+	return 'added';
 }
 
 // Get user wallet addresses

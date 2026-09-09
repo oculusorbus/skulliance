@@ -41,7 +41,21 @@ register_shutdown_function(function() use (&$completed) {
 
 if (isset($_POST['stakeaddress'])) {
 	checkUser($conn);
-	checkAddress($conn, $_POST['stakeaddress'], $_POST['address']);
+	$wallet_status = checkAddress($conn, $_POST['stakeaddress'], $_POST['address']);
+
+	// A wallet already held by another account was silently reported as
+	// connected: it never joined this user's list, and nothing said why.
+	if ($wallet_status === 'exists_other') {
+		$completed = true;
+		ob_end_clean();
+		echo json_encode([
+			'success' => false,
+			'message' => 'That wallet is already connected to a different Skulliance account. '
+			           . 'Disconnect it there first, or connect a different wallet.'
+		]);
+		exit;
+	}
+
 	$addresses = getAddresses($conn);
 	$policies = getPolicies($conn);
 	$asset_ids = getNFTAssetIDs($conn);
@@ -50,9 +64,14 @@ if (isset($_POST['stakeaddress'])) {
 	assignRole($_SESSION['userData']['discord_id'], "1119732763956871199");
 	$completed = true;
 	ob_end_clean();
+	// Reconnecting a wallet already on the account is legitimate -- it is how a
+	// user re-verifies after buying -- but calling it "connected" made people
+	// think a second wallet had been added when it had not.
 	echo json_encode([
 		'success'  => true,
-		'message'  => 'Wallet connected! Your NFTs have been verified and will begin accruing rewards nightly.',
+		'message'  => $wallet_status === 'exists_mine'
+			? 'That wallet was already connected. Your NFTs have been re-verified.'
+			: 'Wallet connected! Your NFTs have been verified and will begin accruing rewards nightly.',
 		'redirect' => 'dashboard.php'
 	]);
 	exit;

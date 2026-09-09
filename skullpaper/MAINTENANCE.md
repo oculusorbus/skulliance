@@ -50,7 +50,7 @@ records verified constants, and tracks what still needs to be written.
 | platform-leaderboards.md *(new)*    | All leaderboards        | leaderboards.php, db.php:4194-5637 |
 | platform-analytics.md *(new)*       | Personal stats          | analytics.php, ajax/analytics-*.php |
 | platform-profile.md *(new)*         | Profile + streak cal    | profile.php |
-| platform-wallets.md *(new)*         | Multi-wallet            | wallets.php, db.php:575-611 |
+| platform-wallets.md *(new)*         | Multi-wallet            | wallets.php, db.php:575-611 (getWallets), db.php checkAddress (returns 'added'/'exists_mine'/'exists_other'/'claimed'), wallet.js (connect flow), wallet-ajax.php, header.php (the global wallet modal -- `renderWalletConnection()` in skulliance.php is now an empty stub). **connectWallet() must keep its try/catch and must open the modal BEFORE its first await**: it had neither, so a locked extension, a dismissed approval popup, an unreachable Blockfrost and an undelegated wallet all produced the same symptom -- clicking a wallet icon did nothing whatsoever. Multi-wallet has always worked; a "disconnect" button is NOT needed to add a second wallet, and there is deliberately no remove-wallet feature (removing one would unstake its NFTs). |
 | platform-transactions.md *(new)*    | Ledger                  | transactions.php, db.php:4020-4081 |
 
 ---

@@ -1,21 +1,76 @@
 import {Blockfrost, Lucid} from "https://unpkg.com/lucid-cardano@0.8.7/web/mod.js";
 window.Lucid = Lucid;
 
+let walletBusy = false;
+
+/*
+ * Connect a wallet.
+ *
+ * EVERY failure in here used to be silent. There was no try/catch, and the
+ * modal was only opened once the whole chain had already succeeded -- so a
+ * locked extension, a dismissed approval popup, an unreachable Blockfrost, or
+ * a wallet with no stake key all produced exactly one symptom: clicking the
+ * icon did nothing at all. Reported by a new user trying to add a second
+ * wallet, who had no way to tell any of those apart.
+ *
+ * So: feedback before the first await, and every path ends in a message.
+ */
 async function connectWallet(wallet) {
-	if (wallet !== "none") {
+	if (wallet === "none") return;
+	if (walletBusy) return;   // a second click used to start a second chain
+	walletBusy = true;
+
+	openWalletModal();
+	showWalletConnecting(wallet);
+
+	try {
+		const the_wallet = window.cardano && window.cardano[wallet];
+		if (!the_wallet) throw new Error("missing-extension");
+
+		// enable() FIRST, because it is what raises the wallet's own approval
+		// popup. Initialising Lucid first meant waiting on a Blockfrost round
+		// trip before the user saw their wallet ask for anything.
+		const api = await the_wallet.enable();
+
 		const lucid = await Lucid.new(
 			new Blockfrost("https://mainnet.blockfrost.io/api/v0", "mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo"),
 			"Mainnet",
 		);
-		const the_wallet = window.cardano[wallet];
-		const api = await the_wallet.enable();
 		lucid.selectWallet(api);
 		const address = await lucid.wallet.address();
 		const stakeAddress = await lucid.wallet.rewardAddress();
-		if (stakeAddress !== "") {
-			sendAddress(address, stakeAddress, wallet);
-		}
+		// Previously this was `if (stakeAddress !== "")` with no else, so an
+		// undelegated wallet fell out of the function without a word.
+		if (!stakeAddress) throw new Error("no-stake-address");
+
+		sendAddress(address, stakeAddress, wallet);
+	} catch (e) {
+		walletBusy = false;
+		showWalletResult(false, walletErrorMessage(e, wallet));
 	}
+}
+
+/*
+ * Turn whatever the extension threw into something a player can act on.
+ *
+ * CIP-30 rejects with a plain {code, info} object, NOT an Error, so this has to
+ * read both shapes.
+ */
+function walletErrorMessage(e, wallet) {
+	const name = capitalizeFirstLetter(wallet);
+	if (e && e.message === "missing-extension") {
+		return name + " did not respond. Make sure the extension is installed, unlocked, and enabled for this site, then try again.";
+	}
+	if (e && e.message === "no-stake-address") {
+		return name + " returned no staking address. A wallet has to be delegated to a stake pool before it can be connected.";
+	}
+	// code 2 is CIP-30 APIError.Refused -- the approval popup was dismissed.
+	// That is a choice, not a fault, so it should not read like a crash.
+	if (e && (e.code === 2 || e.code === -3)) {
+		return "Connection cancelled in " + name + ". Nothing was changed.";
+	}
+	const detail = (e && (e.info || e.message)) ? String(e.info || e.message) : "Unknown error.";
+	return "Could not connect to " + name + ". " + detail;
 }
 
 window.connectWallet = connectWallet;
@@ -31,8 +86,8 @@ function sendAddress(address, stakeaddress, wallet) {
 
 	fetch('wallet-ajax.php', { method: 'POST', body: formData })
 		.then(r => r.json())
-		.then(data => showWalletResult(data.success, data.message, data.redirect || null))
-		.catch(() => showWalletResult(false, 'Connection error. Please try again.'));
+		.then(data => { walletBusy = false; showWalletResult(data.success, data.message, data.redirect || null); })
+		.catch(() => { walletBusy = false; showWalletResult(false, 'Connection error. Please try again.'); });
 }
 
 window.openWalletModal = function() {
@@ -55,6 +110,22 @@ function showWalletLoading() {
 	status.style.display = 'flex';
 }
 
+/*
+ * Shown the instant an icon is clicked, before anything can block or fail.
+ * Names the wallet, because the next thing the player should see is that
+ * extension's own approval popup -- and if it does not appear, knowing which
+ * one we are waiting on is the whole diagnosis.
+ */
+function showWalletConnecting(wallet) {
+	document.getElementById('wallet-grid').style.display = 'none';
+	const refresh = document.querySelector('.wallet-modal-refresh');
+	if (refresh) refresh.style.display = 'none';
+	const status = document.getElementById('wallet-status');
+	status.innerHTML = '<div class="wallet-spinner"></div><p class="wallet-status-text">Waiting for ' +
+		capitalizeFirstLetter(wallet) + '&hellip;<br><small>Approve the connection in your wallet.</small></p>';
+	status.style.display = 'flex';
+}
+
 function showWalletResult(success, message, redirect) {
 	const status = document.getElementById('wallet-status');
 	const iconClass = success ? 'wallet-result-icon success' : 'wallet-result-icon error';
@@ -72,6 +143,9 @@ function showWalletResult(success, message, redirect) {
 }
 
 window.resetWalletModal = function() {
+	// Without this, a failed attempt would leave the guard latched and every
+	// later click would be swallowed -- reintroducing the exact bug this fixes.
+	walletBusy = false;
 	document.getElementById('wallet-grid').style.display = '';
 	const refresh = document.querySelector('.wallet-modal-refresh');
 	if (refresh) refresh.style.display = '';
