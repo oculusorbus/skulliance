@@ -20,8 +20,8 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 <div class="row" id="row1">
   <div class="col1of3" style="max-width:760px;margin:0 auto;flex:1 1 100%;">
 
-	<h2>Obscura</h2>
-	<div class="ob-tagline">A sliver of artwork. Name the collection it came from.
+	<h2 class="ob-intro">Obscura</h2>
+	<div class="ob-tagline ob-intro">A sliver of artwork. Name the collection it came from.
 		Wrong answers widen the view &mdash; but the deeper your streak, the less you get.</div>
 
 	<?php if (isset($ob_state['error'])): ?>
@@ -153,8 +153,14 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
    the weight and the project sits quietly above it. */
 .ob-opt-project { font-size:.66rem; color:rgba(255,255,255,.45); letter-spacing:.04em; text-transform:uppercase; }
 .ob-opt-name    { font-size:.86rem; font-weight:bold; }
-/* Five across is unreadable on a phone; collapse to two whatever the tier. */
-@media (max-width:560px) { #ob-options { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+/* Five across is unreadable on a phone; collapse to two whatever the tier.
+   The title and tagline go at the same breakpoint: on a phone the crop plus
+   twelve buttons is already more than one screen, and the explanation is only
+   worth reading once. The nav still says where you are. */
+@media (max-width:560px) {
+  #ob-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .ob-intro   { display:none; }
+}
 .ob-opt:hover:not(:disabled) { background:#10263c; border-color:#00c8a0; }
 .ob-opt:disabled { opacity:.3; cursor:default; text-decoration:line-through; }
 .ob-opt.ob-correct { border-color:#00c8a0; background:rgba(0,200,160,.18); }
