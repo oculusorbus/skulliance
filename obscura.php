@@ -62,11 +62,12 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 		     assets -- the same cached file every other page uses. -->
 		<div id="ob-view"></div>
 
-		<div id="ob-options">
+		<div id="ob-options" style="--ob-cols:<?php echo intval($ob_state['columns']); ?>">
 			<?php foreach ($ob_state['options'] as $o): ?>
 				<button type="button" class="ob-opt" data-id="<?php echo intval($o['id']); ?>"
 					<?php echo in_array(intval($o['id']), $ob_state['wrong'], true) ? 'disabled' : ''; ?>>
-					<?php echo htmlspecialchars($o['name']); ?>
+					<span class="ob-opt-project"><?php echo htmlspecialchars($o['project'] ?? ''); ?></span>
+					<span class="ob-opt-name"><?php echo htmlspecialchars($o['name']); ?></span>
 				</button>
 			<?php endforeach; ?>
 		</div>
@@ -91,12 +92,32 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
   background-repeat:no-repeat; background-color:#0a1929;
   image-rendering:auto; transition:background-size .45s ease, background-position .45s ease;
 }
-#ob-options { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; }
+/* Fixed columns per tier (--ob-cols, set from obscuraColumns): 6->3, 8->4,
+   10->5, 12->4. grid-auto-rows:1fr is what keeps EVERY button the same
+   height -- grid already equalises within a row, but without this a row
+   holding a two-line collection name would be taller than the rest. */
+#ob-options {
+  display:grid;
+  grid-template-columns:repeat(var(--ob-cols,3), minmax(0,1fr));
+  grid-auto-rows:1fr;
+  gap:8px;
+}
 .ob-opt {
-  background:#0d1e30; color:inherit; font-size:.86rem; font-weight:bold;
-  border:1px solid rgba(255,255,255,.1); border-radius:6px; padding:11px 10px; cursor:pointer;
+  /* column flex: project sits above collection, and the pair stays vertically
+     centred however many lines either wraps to. */
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; gap:2px;
+  min-height:3.9em; line-height:1.2; hyphens:auto; overflow-wrap:anywhere;
+  background:#0d1e30; color:inherit;
+  border:1px solid rgba(255,255,255,.1); border-radius:6px; padding:10px 8px; cursor:pointer;
   transition:background-color .15s ease, border-color .15s ease;
 }
+/* Project is context, collection is the answer -- so the collection carries
+   the weight and the project sits quietly above it. */
+.ob-opt-project { font-size:.66rem; color:rgba(255,255,255,.45); letter-spacing:.04em; text-transform:uppercase; }
+.ob-opt-name    { font-size:.86rem; font-weight:bold; }
+/* Five across is unreadable on a phone; collapse to two whatever the tier. */
+@media (max-width:560px) { #ob-options { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 .ob-opt:hover:not(:disabled) { background:#10263c; border-color:#00c8a0; }
 .ob-opt:disabled { opacity:.3; cursor:default; text-decoration:line-through; }
 .ob-opt.ob-correct { border-color:#00c8a0; background:rgba(0,200,160,.18); }
@@ -172,10 +193,21 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
       (state.attempts - state.used) + ' of ' + state.attempts + ' attempts left';
 
     var box = document.getElementById('ob-options');
+    // The column count changes with the tier, so it has to move with the
+    // options rather than being set once at page load.
+    box.style.setProperty('--ob-cols', state.columns || 3);
     box.innerHTML = '';
     state.options.forEach(function (o) {
       var b = document.createElement('button');
-      b.type = 'button'; b.className = 'ob-opt'; b.dataset.id = o.id; b.textContent = o.name;
+      b.type = 'button'; b.className = 'ob-opt'; b.dataset.id = o.id;
+      // Must mirror the PHP render exactly -- project above collection.
+      // textContent alone would drop the project on every puzzle after the
+      // first, since only the initial board is server-rendered.
+      var p = document.createElement('span');
+      p.className = 'ob-opt-project'; p.textContent = o.project || '';
+      var n = document.createElement('span');
+      n.className = 'ob-opt-name'; n.textContent = o.name;
+      b.appendChild(p); b.appendChild(n);
       box.appendChild(b);
     });
     paint(state.art, state.crop_x, state.crop_y, state.zoom);

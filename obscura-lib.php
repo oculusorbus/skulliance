@@ -53,6 +53,27 @@ function obscuraDifficulty($streak) {
 	return                     array('attempts'=>3, 'options'=>6,  'zooms'=>array(15, 35, 60));
 }
 
+/*
+ * How many columns the option buttons sit in, per option count.
+ *
+ * Fixed per count rather than auto-fitting, so the board has a deliberate
+ * shape at each tier instead of reflowing into whatever the viewport allows.
+ * Twelve gets 3 rows of 4 rather than 2 of 6, which would be cramped.
+ *
+ *   6 -> 3x2    8 -> 4x2    10 -> 5x2    12 -> 4x3
+ *
+ * Anything unexpected falls back to 3 across, which never looks broken.
+ */
+function obscuraColumns($option_count) {
+	switch (intval($option_count)) {
+		case 6:  return 3;
+		case 8:  return 4;
+		case 10: return 5;
+		case 12: return 4;
+	}
+	return 3;
+}
+
 // Human-readable note shown when the difficulty changes, so the tightening
 // reads as earned pressure rather than the game misbehaving.
 function obscuraTierLabel($streak) {
@@ -103,9 +124,11 @@ function obscuraPickPuzzle($conn, $option_count) {
 		$from = random_int(1, $max);
 		$res = $conn->query("
 			SELECT nfts.id, nfts.ipfs, nfts.collection_id,
-			       collections.name AS collection_name, collections.project_id
+			       collections.name AS collection_name, collections.project_id,
+			       projects.name AS project_name
 			FROM nfts
 			INNER JOIN collections ON collections.id = nfts.collection_id
+			INNER JOIN projects ON projects.id = collections.project_id
 			WHERE nfts.id >= $from AND nfts.ipfs != ''
 			ORDER BY nfts.id ASC
 			LIMIT 25");
@@ -119,17 +142,23 @@ function obscuraPickPuzzle($conn, $option_count) {
 
 	// Decoys: other collections that actually hold NFTs, so a player is never
 	// offered a collection nothing could have come from.
+	// Each option carries its PROJECT as well as the collection: collection
+	// names alone are frequently useless on their own ("Season 1" tells you
+	// nothing), and several projects run collections with similar names.
 	$answer_id = intval($found['collection_id']);
-	$opts = array(array('id'=>$answer_id, 'name'=>$found['collection_name']));
+	$opts = array(array('id'=>$answer_id, 'name'=>$found['collection_name'], 'project'=>$found['project_name']));
 	$dr = $conn->query("
-		SELECT collections.id, collections.name
+		SELECT collections.id, collections.name, projects.name AS project_name
 		FROM collections
 		INNER JOIN nfts ON nfts.collection_id = collections.id
+		INNER JOIN projects ON projects.id = collections.project_id
 		WHERE collections.id != $answer_id
 		GROUP BY collections.id
 		ORDER BY RAND()
 		LIMIT " . (intval($option_count) - 1));
-	if ($dr) while ($d = $dr->fetch_assoc()) $opts[] = array('id'=>intval($d['id']), 'name'=>$d['name']);
+	if ($dr) while ($d = $dr->fetch_assoc()) {
+		$opts[] = array('id'=>intval($d['id']), 'name'=>$d['name'], 'project'=>$d['project_name']);
+	}
 	shuffle($opts);
 
 	return array(
@@ -206,6 +235,7 @@ function obscuraState($conn, $user_id) {
 		'crop_y'      => floatval($run['crop_y']),
 		'zoom'        => $diff['zooms'][min($used, count($diff['zooms']) - 1)],
 		'attempts'    => $diff['attempts'],
+		'columns'     => obscuraColumns($diff['options']),
 		'used'        => $used,
 		'wrong'       => json_decode($run['wrong'] ?? '[]', true) ?: array(),
 		'tier'        => obscuraTierIndex($streak),
