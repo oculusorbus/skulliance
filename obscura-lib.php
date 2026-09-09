@@ -110,6 +110,24 @@ function obscuraColumns($option_count) {
 }
 
 /*
+ * Columns on a phone. Two when there is room, three when there isn't.
+ *
+ * The whole board has to fit one screen with no scrolling: twelve buttons two
+ * across is six rows, which does not fit under the artwork on a small phone.
+ * Three across makes it four rows and buys back about a hundred pixels. Six and
+ * eight options stay at two, where the bigger tap target is affordable.
+ */
+function obscuraColumnsMobile($option_count) {
+	switch (intval($option_count)) {
+		case 6:  return 2;
+		case 8:  return 2;
+		case 10: return 3;
+		case 12: return 3;
+	}
+	return 2;
+}
+
+/*
  * The terms you are playing under RIGHT NOW, for the standing line above the
  * board. Built from obscuraDifficulty rather than written out, so it cannot
  * drift from the numbers actually in force.
@@ -516,6 +534,7 @@ function obscuraState($conn, $user_id) {
 		'crop_v'      => intval($run['nft_id']) . '-' . $used,
 		'attempts'    => $diff['attempts'],
 		'columns'     => obscuraColumns($diff['options']),
+		'columns_m'   => obscuraColumnsMobile($diff['options']),
 		'used'        => $used,
 		'wrong'       => json_decode($run['wrong'] ?? '[]', true) ?: array(),
 		'tier'        => obscuraTierIndex($streak),

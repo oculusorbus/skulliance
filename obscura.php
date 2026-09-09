@@ -64,7 +64,7 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 		     they have opted into showing their collection. -->
 		<div id="ob-reveal-info"></div>
 
-		<div id="ob-options" style="--ob-cols:<?php echo intval($ob_state['columns']); ?>">
+		<div id="ob-options" style="--ob-cols:<?php echo intval($ob_state['columns']); ?>;--ob-cols-m:<?php echo intval($ob_state['columns_m']); ?>">
 			<?php foreach ($ob_state['options'] as $o): ?>
 				<button type="button" class="ob-opt" data-id="<?php echo intval($o['id']); ?>"
 					<?php echo in_array(intval($o['id']), $ob_state['wrong'], true) ? 'disabled' : ''; ?>>
@@ -157,9 +157,68 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
    The title and tagline go at the same breakpoint: on a phone the crop plus
    twelve buttons is already more than one screen, and the explanation is only
    worth reading once. The nav still says where you are. */
+/*
+ * MOBILE: the artwork and every option button fit ONE screen, no scrolling.
+ *
+ * What was wrong: the board was laid out at desktop sizes and simply overflowed.
+ * Twelve buttons two-across is six rows, which pushed the last row under the
+ * PWA's fixed bottom strip (body::after in dist/flexbox.css) -- a solid band
+ * pinned to the viewport. Overscrolling revealed the buttons and letting go put
+ * them back underneath it, so submitting an answer took two hands.
+ *
+ * The fix is to stop overflowing rather than to fight the overlay:
+ *   - the artwork is sized in dvh, so it shrinks with the screen instead of
+ *     claiming a fixed 420px,
+ *   - high tiers go three columns (four rows, not six),
+ *   - the buttons and HUD tighten up,
+ *   - and anything pinned to the bottom of the viewport is turned off here.
+ *
+ * dvh, not vh: mobile browser chrome grows and shrinks as you scroll, and vh
+ * refers to the largest state -- which is what makes a "100vh" layout overflow
+ * exactly when the toolbar is showing. A vh fallback comes first for older
+ * engines.
+ */
 @media (max-width:560px) {
-  #ob-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .ob-intro   { display:none; }
+
+  /* Sized by HEIGHT, keeping it square, so it yields space to the buttons on a
+     short screen rather than the other way round. object-fit:contain because
+     cover would crop the crop -- hiding part of the very thing being guessed. */
+  #ob-view {
+    width:auto;
+    max-width:100%;
+    height:auto;
+    max-height:30vh;
+    max-height:30dvh;
+    aspect-ratio:1/1;
+    object-fit:contain;
+    margin:0 auto 10px;
+  }
+
+  /* Three across at 10 and 12 options, two below that -- see
+     obscuraColumnsMobile(). Falls back to two if the variable is ever missing. */
+  #ob-options { grid-template-columns:repeat(var(--ob-cols-m,2), minmax(0,1fr)); gap:6px; }
+  .ob-opt          { min-height:0; padding:7px 4px; line-height:1.15; }
+  .ob-opt-project  { font-size:.58rem; letter-spacing:.02em; }
+  .ob-opt-name     { font-size:.76rem; }
+
+  .ob-hud   { gap:12px; font-size:.72rem; margin-bottom:6px; }
+  .ob-tier  { font-size:.7rem; margin-bottom:8px; }
+  #ob-message     { margin-top:8px; font-size:.8rem; min-height:1.2em; }
+  #ob-reveal-info { margin:-4px 0 8px; }
+  #ob-next        { margin-top:10px; padding:9px 22px; }
+
+  /* Nothing pinned to the bottom of the viewport on this page. The PWA strip
+     and the quick menu both sit ON TOP of the board (z-index 1 and 2), and the
+     user does not want a quick menu here regardless. Killed with !important
+     because the strip is declared inside a display-mode media query and the
+     quick menu's visibility is toggled inline. */
+  body::after  { content:none !important; display:none !important; }
+  #quick-menu  { display:none !important; }
+
+  /* Belt and braces: if a screen is short enough that it DOES scroll, this
+     guarantees the last row can still clear whatever sits at the bottom. */
+  #ob-game { padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px); }
 
   /* Reorder on mobile so Next sits directly under the artwork and its caption,
      instead of below a two-column grid of up to twelve buttons -- which pushed
@@ -355,6 +414,7 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
     // The column count changes with the tier, so it has to move with the
     // options rather than being set once at page load.
     box.style.setProperty('--ob-cols', state.columns || 3);
+    box.style.setProperty('--ob-cols-m', state.columns_m || 2);
     box.innerHTML = '';
     state.options.forEach(function (o) {
       var b = document.createElement('button');
