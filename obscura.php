@@ -70,6 +70,10 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 		</div>
 
 		<div id="ob-message"></div>
+
+		<!-- The reveal is the payoff, so it waits for the player rather than
+		     being timed out from under them. Hidden until a puzzle resolves. -->
+		<button type="button" id="ob-next" hidden></button>
 	</div>
 	<?php endif; ?>
 
@@ -133,6 +137,18 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 .ob-opt:disabled { opacity:.3; cursor:default; text-decoration:line-through; }
 .ob-opt.ob-correct { border-color:#00c8a0; background:rgba(0,200,160,.18); }
 .ob-opt.ob-miss    { border-color:#ff4d4d; background:rgba(255,77,77,.12); }
+/* While the reveal is up the board is spent -- dim it so it does not read as
+   still answerable, and stop clicks landing on it. */
+#ob-options.ob-resolved { opacity:.4; pointer-events:none; }
+#ob-next {
+  display:block; margin:16px auto 0; padding:11px 26px;
+  background:#00c8a0; color:#04121d; font-weight:bold; font-size:.9rem;
+  border:0; border-radius:6px; cursor:pointer;
+  transition:filter .15s ease;
+}
+#ob-next:hover { filter:brightness(1.1); }
+/* The UA's [hidden] rule loses to the display above, so restate it. */
+#ob-next[hidden] { display:none; }
 #ob-message { margin-top:14px; font-size:.88rem; min-height:1.4em; }
 #ob-message .ob-win  { color:#00c8a0; font-weight:bold; }
 #ob-message .ob-lose { color:#ff4d4d; font-weight:bold; }
@@ -144,8 +160,10 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
   if (!game) return;
   var view = document.getElementById('ob-view');
   var msg  = document.getElementById('ob-message');
+  var next = document.getElementById('ob-next');
   var busy = false;
   var revealing = false;
+  var pending = null;   // the next puzzle, held until the player asks for it
   // The crop endpoint derives everything from the run row, so the client only
   // ever needs a cache-busting token to force a re-fetch when the view widens.
   function showCrop(v) {
@@ -163,6 +181,26 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
     view.classList.add('ob-reveal');
     view.src = url;
   }
+  /*
+   * A puzzle is over. Park the next one and let the player sit with the full
+   * artwork for as long as they like -- taking it in IS the reward, and timing
+   * it out from under them was the one bit of hurry left in the game.
+   */
+  function resolve(label, nextState) {
+    pending = nextState;
+    document.getElementById('ob-options').classList.add('ob-resolved');
+    next.textContent = label;
+    next.hidden = false;
+    next.focus({ preventScroll: true });   // Enter/Space advances without a reach for the mouse
+  }
+  next.addEventListener('click', function () {
+    if (!pending) return;
+    msg.textContent = '';   // cleared here, not in load(), which the reroll
+                            // path calls while its own notice is worth reading
+    var s = pending; pending = null;
+    load(s);
+  });
+
   view.addEventListener('load',  function () { view.classList.remove('ob-swapping'); });
   // A crop that will not render must never cost an attempt -- ask for a
   // different puzzle instead. The server rerolls without touching the streak.
@@ -191,6 +229,12 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
   }
 
   function load(state) {
+    // Cleared first, before the bail-out below: a dead Next button left sitting
+    // under an error message is worse than no button.
+    pending = null;
+    next.hidden = true;
+    document.getElementById('ob-options').classList.remove('ob-resolved');
+
     if (!state || state.error) {
       msg.innerHTML = '<span class="ob-lose">Could not load the next puzzle. Reload to carry on.</span>';
       return;
@@ -244,10 +288,13 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
       if (d.result === 'correct') {
         btn.classList.add('ob-correct');
         showReveal(d.reveal);   // pull back to the whole artwork
-        msg.innerHTML = '<span class="ob-win">Got it. Streak ' + d.streak + '.</span>'
+        // Name it back to them: on a solve the only clue they had was a sliver,
+        // and the option they clicked scrolls out of mind fast.
+        var named = btn.querySelector('.ob-opt-name');
+        msg.innerHTML = '<span class="ob-win">Got it'
+          + (named ? ' &mdash; ' + named.textContent : '') + '. Streak ' + d.streak + '.</span>'
           + (d.tier_changed && d.tier_label ? '<br><span style="color:#ffcc44">' + d.tier_label + '</span>' : '');
-        // Long enough to actually look at the reveal before it is replaced.
-        setTimeout(function () { load(d.next); msg.textContent = ''; }, d.tier_changed ? 3000 : 1900);
+        resolve('Next', d.next);
         return;
       }
 
@@ -256,7 +303,7 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
         showReveal(d.reveal);
         msg.innerHTML = '<span class="ob-lose">It was ' + d.answer_name + '.</span> '
           + 'Run over. Best streak: ' + d.best + '.';
-        setTimeout(function () { load(d.next); msg.textContent = ''; }, 2900);
+        resolve('Start a new run', d.next);
       }
     });
   });
