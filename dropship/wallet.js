@@ -1,26 +1,42 @@
-import {Blockfrost, Lucid} from "https://unpkg.com/lucid-cardano@0.8.7/web/mod.js";
+import {Lucid} from "https://unpkg.com/lucid-cardano@0.8.7/web/mod.js";
 window.Lucid=Lucid;
 
 async function connectWallet(wallet){
 	if(wallet != "none"){
 		document.getElementById('loading').style.display = "block";
-		const lucid = await Lucid.new(
-		        new Blockfrost("https://mainnet.blockfrost.io/api/v0", "mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo"),
-		        "Mainnet",
-		);
-		//var wallet = "nami";
-		const the_wallet = window.cardano[wallet];
-		const api = await the_wallet.enable();
-		lucid.selectWallet(api);
-		const address = await lucid.wallet.address();
-		const stakeAddress = await lucid.wallet.rewardAddress();
-		/* Old address approach
-		if(address != ""){
-			sendAddress(address, wallet);
-		}*/
-		if(stakeAddress != ""){
-			sendAddress(stakeAddress, wallet);
+		try{
+			/*
+			 * NO PROVIDER -- same fix as the main platform's wallet.js.
+			 *
+			 * Passing Blockfrost makes Lucid.new() fetch protocol parameters and
+			 * hand the cost models to CML, and Cardano now has more cost-model
+			 * entries than this pinned lucid-cardano@0.8.7 accepts:
+			 *   Uncaught (in promise) CostModel operation 166 out of bounds.
+			 * That threw for every wallet, on every attempt. Nothing here builds
+			 * a transaction -- it only reads a stake address -- and Lucid's
+			 * provider is optional, so dropping it skips the broken path.
+			 */
+			const lucid = await Lucid.new(undefined, "Mainnet");
+			//var wallet = "nami";
+			const the_wallet = window.cardano[wallet];
+			const api = await the_wallet.enable();
+			lucid.selectWallet(api);
+			const address = await lucid.wallet.address();
+			const stakeAddress = await lucid.wallet.rewardAddress();
+			/* Old address approach
+			if(address != ""){
+				sendAddress(address, wallet);
+			}*/
+			// rewardAddress() returns null, not "", when there is no stake key.
+			if(stakeAddress){
+				sendAddress(stakeAddress, wallet);
+				return;
+			}
+		}catch(e){
+			// Without this the spinner above stayed up forever on any failure.
+			console.error('Wallet connection failed:', e);
 		}
+		document.getElementById('loading').style.display = "none";
 	}
 }
 

@@ -1,4 +1,4 @@
-import {Blockfrost, Lucid} from "https://unpkg.com/lucid-cardano@0.8.7/web/mod.js";
+import {Lucid} from "https://unpkg.com/lucid-cardano@0.8.7/web/mod.js";
 window.Lucid = Lucid;
 
 let walletBusy = false;
@@ -28,19 +28,42 @@ async function connectWallet(wallet) {
 		if (!the_wallet) throw new Error("missing-extension");
 
 		// enable() FIRST, because it is what raises the wallet's own approval
-		// popup. Initialising Lucid first meant waiting on a Blockfrost round
-		// trip before the user saw their wallet ask for anything.
+		// popup. Initialising Lucid first meant waiting on a network round trip
+		// before the user saw their wallet ask for anything.
 		const api = await the_wallet.enable();
 
-		const lucid = await Lucid.new(
-			new Blockfrost("https://mainnet.blockfrost.io/api/v0", "mainnetn6TwLzWl4yFlbMUnKN9rOueczD7dOXgo"),
-			"Mainnet",
-		);
+		/*
+		 * NO PROVIDER. This is the fix for:
+		 *
+		 *   Uncaught (in promise) CostModel operation 166 out of bounds. Max is 166
+		 *
+		 * Passing a Blockfrost provider makes Lucid.new() fetch live protocol
+		 * parameters and hand the cost models to CML. Cardano has since grown
+		 * more cost-model entries than the pinned lucid-cardano@0.8.7 WASM can
+		 * accept, so that call now throws for everyone, on every wallet.
+		 *
+		 * We never build a transaction here. All we do is read two addresses,
+		 * and in Lucid the provider is optional -- every line that touches
+		 * protocol parameters and cost models sits behind `if (provider)`.
+		 * selectWallet()'s address() and rewardAddress() only decode what the
+		 * CIP-30 extension already returned. So dropping the provider skips the
+		 * broken path entirely rather than working around it.
+		 *
+		 * It also removes a Blockfrost API key that was sitting in readable
+		 * client-side source. The server uses its own key from config; this one
+		 * was separate, and is no longer needed at all.
+		 */
+		const lucid = await Lucid.new(undefined, "Mainnet");
 		lucid.selectWallet(api);
 		const address = await lucid.wallet.address();
 		const stakeAddress = await lucid.wallet.rewardAddress();
-		// Previously this was `if (stakeAddress !== "")` with no else, so an
-		// undelegated wallet fell out of the function without a word.
+		/*
+		 * Previously `if (stakeAddress !== "")` with no else, which was wrong
+		 * twice over. Lucid's rewardAddress() returns NULL when the wallet has
+		 * no stake key, not "" -- so null !== "" passed, and a wallet with no
+		 * staking address was sent to the server as though it had one. And when
+		 * it did fail the check, there was no else, so it left silently.
+		 */
 		if (!stakeAddress) throw new Error("no-stake-address");
 
 		sendAddress(address, stakeAddress, wallet);
