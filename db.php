@@ -6213,9 +6213,6 @@ $SKULLIANCE_BOARDS = array(
 	'skullracer-laps'   => array('label'=>'Skull Racer Laps',  'icon'=>'🏎️', 'group'=>'Games',
 		'blurb'=>'Fastest single lap',
 		'periods'=>array('All-Time'=>'skullracer-laps','Weekly'=>'weekly-skullracer-laps')),
-	'obscura'           => array('label'=>'Obscura',           'icon'=>'🔍', 'group'=>'Games',
-		'blurb'=>'Longest art-recognition streak',
-		'periods'=>array('All-Time'=>'obscura','Weekly'=>'weekly-obscura')),
 	'swaps'             => array('label'=>'Skull Swap',        'icon'=>'🔄', 'group'=>'Games',
 		'blurb'=>'Match 3 high scores',
 		'periods'=>array('All-Time'=>'swaps','Weekly'=>'weekly-swaps')),
@@ -6225,6 +6222,13 @@ $SKULLIANCE_BOARDS = array(
 	'bosses'            => array('label'=>'Boss Battles',      'icon'=>'🐉', 'group'=>'Games',
 		'blurb'=>'Community boss fights',
 		'periods'=>array('All-Time'=>'bosses','Weekly'=>'weekly-bosses')),
+	// LAST in Games deliberately. Obscura is the oddball of the set -- it is not
+	// a run, a race or a match-3, it is an art-recognition quiz -- so it reads
+	// better as the tail of the section than wedged between two arcade games.
+	// Game Master stays FIRST for the mirror-image reason: it's the aggregate.
+	'obscura'           => array('label'=>'Obscura',           'icon'=>'🔍', 'group'=>'Games',
+		'blurb'=>'Longest art-recognition streak',
+		'periods'=>array('All-Time'=>'obscura','Weekly'=>'weekly-obscura')),
 	// Their own group, which is what puts them on a row of their own rather
 	// than flowing into the tail of Games. Also honest: they run on a
 	// separate sub-system with its own database. NOT "External": they used to
@@ -14231,8 +14235,9 @@ function resetObscuraRuns($conn) {
 	if ($conn->query($sql) !== TRUE) echo "Error: " . $sql . "<br>" . $conn->error;
 
 	$sql = "UPDATE obscura_runs SET streak = 0, nft_id = NULL, answer_id = NULL,
-	        options = NULL, attempts_used = 0, wrong = NULL, updated_at = NOW()
-	        WHERE streak > 0 OR nft_id IS NOT NULL";
+	        options = NULL, attempts_used = 0, wrong = NULL, seen_collections = NULL,
+	        updated_at = NOW()
+	        WHERE streak > 0 OR nft_id IS NOT NULL OR seen_collections IS NOT NULL";
 	if ($conn->query($sql) !== TRUE) echo "Error: " . $sql . "<br>" . $conn->error;
 }
 

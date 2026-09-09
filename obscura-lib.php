@@ -40,8 +40,13 @@
  *     crop_y        FLOAT NOT NULL DEFAULT 50,
  *     attempts_used INT NOT NULL DEFAULT 0,
  *     wrong         TEXT NULL,
+ *     seen_collections TEXT NULL,
  *     updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
  *   );
+ *
+ * If obscura_runs already exists without the no-repeat tracking:
+ *
+ *   ALTER TABLE obscura_runs ADD COLUMN seen_collections TEXT NULL;
  *
  * AND, for the leaderboards (run this one if the table above already exists):
  *
@@ -220,19 +225,22 @@ function obscuraRevealDetails($conn, $nft_id) {
 	return $out;
 }
 
-// Pick a puzzle: one NFT with verified art, plus N-1 decoy collections.
-// Returns null if nothing suitable could be found, which the caller surfaces
-// rather than pretending a puzzle exists.
-function obscuraPickPuzzle($conn, $option_count) {
-	$max = 0;
-	if ($r = $conn->query("SELECT MAX(id) AS m FROM nfts")) { $max = intval($r->fetch_assoc()['m']); }
-	if ($max <= 0) return null;
-
-	// Random-offset sampling rather than ORDER BY RAND(), which would sort the
-	// whole table for one row. Several passes because a random id may land on
-	// a gap or on art that was never cached.
-	$found = null;
-	for ($pass = 0; $pass < 12 && !$found; $pass++) {
+/*
+ * Find one NFT with verified local art, optionally avoiding collections the
+ * player has already been asked about this run.
+ *
+ * Random-offset sampling rather than ORDER BY RAND(), which would sort the
+ * whole table for one row. Several passes because a random id may land on a
+ * gap, on art that was never cached, or -- once exclusions are in play -- on a
+ * stretch of the table belonging entirely to collections already used.
+ */
+function obscuraSampleNft($conn, $max, $exclude = array()) {
+	$not_in = '';
+	if (!empty($exclude)) {
+		$ids = array_filter(array_map('intval', $exclude));
+		if (!empty($ids)) $not_in = " AND nfts.collection_id NOT IN (" . implode(',', $ids) . ")";
+	}
+	for ($pass = 0; $pass < 12; $pass++) {
 		$from = random_int(1, $max);
 		$res = $conn->query("
 			SELECT nfts.id, nfts.ipfs, nfts.collection_id,
@@ -241,15 +249,41 @@ function obscuraPickPuzzle($conn, $option_count) {
 			FROM nfts
 			INNER JOIN collections ON collections.id = nfts.collection_id
 			INNER JOIN projects ON projects.id = collections.project_id
-			WHERE nfts.id >= $from AND nfts.ipfs != ''
+			WHERE nfts.id >= $from AND nfts.ipfs != ''$not_in
 			ORDER BY nfts.id ASC
 			LIMIT 25");
 		if (!$res) continue;
 		while ($row = $res->fetch_assoc()) {
 			$url = obscuraLocalArt($row['ipfs'], $row['collection_id'], $row['project_id']);
-			if ($url !== null) { $found = $row; $found['art'] = $url; break; }
+			if ($url !== null) { $row['art'] = $url; return $row; }
 		}
 	}
+	return null;
+}
+
+/*
+ * Pick a puzzle: one NFT with verified art, plus N-1 decoy collections.
+ *
+ * $seen holds the collections already used this run, so a run never asks about
+ * the same collection twice -- being shown three crops from the same set in one
+ * run makes the answer a gimme and the variety is the point.
+ *
+ * That exclusion is a PREFERENCE, never a blocker. A long enough streak will
+ * eventually use up every collection on the platform, and at that point the
+ * choice is between recycling one and ending the run for a reason the player
+ * did nothing to deserve. So if nothing unseen can be found, it samples again
+ * with no exclusion at all -- the cycle simply starts over.
+ *
+ * Returns null only if there is genuinely no usable art anywhere, which the
+ * caller surfaces rather than pretending a puzzle exists.
+ */
+function obscuraPickPuzzle($conn, $option_count, $seen = array()) {
+	$max = 0;
+	if ($r = $conn->query("SELECT MAX(id) AS m FROM nfts")) { $max = intval($r->fetch_assoc()['m']); }
+	if ($max <= 0) return null;
+
+	$found = obscuraSampleNft($conn, $max, $seen);
+	if (!$found && !empty($seen)) $found = obscuraSampleNft($conn, $max);   // cycle restarts
 	if (!$found) return null;
 
 	// Decoys: other collections that actually hold NFTs, so a player is never
@@ -295,26 +329,42 @@ function obscuraGetRun($conn, $user_id) {
 	return ($r2 && $r2->num_rows > 0) ? $r2->fetch_assoc() : false;
 }
 
+// Collections already used this run. Kept on the run row so it survives a
+// reload, and cleared when the run ends.
+function obscuraSeenCollections($run) {
+	$seen = json_decode($run['seen_collections'] ?? '[]', true);
+	return is_array($seen) ? $seen : array();
+}
+
 // Store a freshly picked puzzle against the run. Shared by "need a puzzle",
 // "solved, next one" and "that image was broken, swap it".
-function obscuraSetPuzzle($conn, $user_id, $puzzle) {
+function obscuraSetPuzzle($conn, $user_id, $puzzle, $seen = array()) {
 	$user_id = intval($user_id);
+	// Remember the answer's collection so the rest of this run avoids it. Capped
+	// because the column is a TEXT blob read on every request, and a very long
+	// streak would otherwise grow it without limit; the tail is also the least
+	// useful part, since those puzzles are furthest back.
+	$seen[] = intval($puzzle['answer_id']);
+	$seen = array_values(array_unique(array_map('intval', $seen)));
+	if (count($seen) > 200) $seen = array_slice($seen, -200);
+	$seen_sql = "'" . $conn->real_escape_string(json_encode($seen)) . "'";
 	$conn->query("UPDATE obscura_runs SET
 		nft_id = " . intval($puzzle['nft_id']) . ",
 		answer_id = " . intval($puzzle['answer_id']) . ",
 		options = '" . $conn->real_escape_string(json_encode($puzzle['options'])) . "',
 		crop_x = " . floatval($puzzle['crop_x']) . ",
 		crop_y = " . floatval($puzzle['crop_y']) . ",
-		attempts_used = 0, wrong = NULL, updated_at = NOW()
+		attempts_used = 0, wrong = NULL, seen_collections = $seen_sql, updated_at = NOW()
 		WHERE user_id = $user_id");
 }
 
 function obscuraEnsurePuzzle($conn, $user_id, $run) {
 	if (!empty($run['nft_id'])) return $run;
 	$diff = obscuraDifficulty(intval($run['streak']));
-	$p = obscuraPickPuzzle($conn, $diff['options']);
+	$seen = obscuraSeenCollections($run);
+	$p = obscuraPickPuzzle($conn, $diff['options'], $seen);
 	if (!$p) return $run;                            // caller reports it
-	obscuraSetPuzzle($conn, $user_id, $p);
+	obscuraSetPuzzle($conn, $user_id, $p, $seen);
 	return obscuraGetRun($conn, $user_id);
 }
 
@@ -462,9 +512,12 @@ function obscuraReroll($conn, $user_id, $run = null) {
 	$run = $run ?: obscuraGetRun($conn, $user_id);
 	if ($run === false) return false;
 	$diff = obscuraDifficulty(intval($run['streak']));
-	$p = obscuraPickPuzzle($conn, $diff['options']);
+	// A rerolled puzzle's collection still counts as used: the player is being
+	// given a replacement, not a second go at the same set.
+	$seen = obscuraSeenCollections($run);
+	$p = obscuraPickPuzzle($conn, $diff['options'], $seen);
 	if (!$p) return false;
-	obscuraSetPuzzle($conn, $user_id, $p);
+	obscuraSetPuzzle($conn, $user_id, $p, $seen);
 	return true;
 }
 
@@ -520,9 +573,11 @@ function obscuraGuess($conn, $user_id, $collection_id) {
 		$name = '';
 		$nr = $conn->query("SELECT name FROM collections WHERE id = $answer LIMIT 1");
 		if ($nr && $nr->num_rows > 0) $name = $nr->fetch_assoc()['name'];
+		// seen_collections clears with the run: the no-repeat rule is per run,
+		// so a fresh run starts with the whole catalogue available again.
 		$conn->query("UPDATE obscura_runs SET streak = 0, nft_id = NULL, answer_id = NULL,
-			options = NULL, attempts_used = 0, wrong = NULL, updated_at = NOW()
-			WHERE user_id = $user_id");
+			options = NULL, attempts_used = 0, wrong = NULL, seen_collections = NULL,
+			updated_at = NOW() WHERE user_id = $user_id");
 		$run_solves = obscuraCloseRun($conn, $user_id);
 		// $streak is this run's peak, read before the reset above.
 		obscuraAnnounceRunEnd($conn, $user_id, $streak, $run_solves,

@@ -41,6 +41,16 @@ Because you are always offered more collections than you have attempts,
 eliminating your way to the answer is never possible. The run is genuinely
 losable at every tier.
 
+## No Repeats
+
+Within a single run you will never be asked about the same collection twice.
+Three crops from the same set in one run would make the later ones a gimme, and
+the variety is most of the interest. Losing the run puts every collection back
+in play for the next one.
+
+If your streak runs long enough to use up every collection on the platform, the
+cycle simply starts again - a run is never ended for having gone on too long.
+
 ## The Reveal
 
 Solve a puzzle - or lose the run - and the artwork zooms out to the whole piece,

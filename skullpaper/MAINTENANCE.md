@@ -1430,6 +1430,19 @@ start including `webhooks.php` for this - db.php does not include it.
 `OBSCURA_ANNOUNCE_MIN_STREAK` (3) keeps routine first-puzzle losses out of the
 channel; set it to 1 to post every ended run.
 
+**No collection repeats within a run.** `obscura_runs.seen_collections` holds the
+answer collections used so far (JSON, capped at 200 - it is read on every
+request). It is a *preference*, never a blocker: `obscuraPickPuzzle()` samples
+once with the exclusion and, if nothing unseen turns up, samples again with none.
+A long enough streak WILL exhaust the catalogue, and ending a run there would
+punish a player for being good at the game. The list clears when the run ends and
+at the weekly reset - the rule is per run, not per account.
+
+Obscura sits **last in the Games group** in `$SKULLIANCE_BOARDS`, and registry
+order is display order. It is the oddball of the set (not a run, race or match-3),
+so it reads better as the tail than wedged between two arcade games. Game Master
+stays first for the mirror-image reason.
+
 Verified constants, from `obscuraDifficulty()` in `obscura-lib.php`:
 
 | Streak | Attempts | Options | Reveal ladder (% of the shorter edge) | Grid |
