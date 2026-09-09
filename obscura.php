@@ -197,15 +197,37 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 
   /* Three across at 10 and 12 options, two below that -- see
      obscuraColumnsMobile(). Falls back to two if the variable is ever missing. */
-  #ob-options { grid-template-columns:repeat(var(--ob-cols-m,2), minmax(0,1fr)); gap:6px; }
-  /* Ten options is three rows of three plus one, and that orphan sat hard left
-     looking like a mistake. Centre it.
-     :last-child:nth-child(10) matches only when there are EXACTLY ten buttons.
-     Ten is the only count that orphans one here: the tiers are 6, 8, 10 and 12,
-     6 and 8 are two across, and 12 fills four rows of three exactly. A future
-     tier ending in 4, 7 or 13 options would need the same treatment. */
-  #ob-options .ob-opt:last-child:nth-child(10) { grid-column:2; }
-  .ob-opt          { min-height:0; padding:7px 4px; line-height:1.15; }
+  /*
+   * FLEX here, not grid -- and that is the whole fix for ragged rows.
+   *
+   * A grid places items in fixed column tracks, so a last row that doesn't fill
+   * sits hard left. Centring one orphan is possible (grid-column:2); centring
+   * TWO across three columns is not, because they would have to straddle half a
+   * track. Chasing it per count meant a new nth-child rule every time a tier
+   * changed, and one forgotten rule is a ragged row nobody notices.
+   *
+   * Wrapping flex with justify-content:center centres whatever is on the last
+   * line automatically -- one orphan, two, any column count, any future tier.
+   * The basis reproduces the column width exactly, so full rows look identical
+   * to the grid they replace.
+   *
+   * The cost: grid-auto-rows:1fr made EVERY row match the tallest button on the
+   * board, and flex only equalises within a line. min-height puts a floor under
+   * that, and doubles as a proper tap target.
+   */
+  #ob-options {
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:6px;
+  }
+  .ob-opt {
+    flex:0 0 calc((100% - (var(--ob-cols-m,2) - 1) * 6px) / var(--ob-cols-m,2));
+    min-height:46px;
+  }
+  /* No min-height here: the flex rule above sets it to 46px, and this rule
+     comes later, so repeating min-height:0 would silently undo it. */
+  .ob-opt          { padding:7px 4px; line-height:1.15; }
   .ob-opt-project  { font-size:.58rem; letter-spacing:.02em; }
   .ob-opt-name     { font-size:.76rem; }
 
