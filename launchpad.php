@@ -110,6 +110,28 @@ $lp_sections = array(
  * disappears on its own once the account is set up. A permanent checklist a
  * veteran can never clear is nagging, not onboarding.
  */
+/*
+ * Greeting. "Welcome back" on someone's FIRST ever login is exactly the wrong
+ * note to open on, and it would have hit every new member, since a
+ * Discord-authenticated user always has a name.
+ *
+ * There is no join date on the users table (INSERT INTO users only writes
+ * discord_id, avatar, username), so "first login" cannot be read directly.
+ * These three signals answer the useful question instead: an account with no
+ * wallet, no points and no streak has not started yet, whether that is their
+ * first minute or their third visit. It also means the greeting and the Start
+ * Here list below always agree -- the condition that shows all three tasks is
+ * the same condition that drops the "back".
+ */
+$lp_started = ($lp_wallets > 0 || $lp_balance > 0 || $lp_streak > 0);
+if ($lp_user === '') {
+	$lp_greeting = 'Welcome to Skulliance';
+} else if ($lp_started) {
+	$lp_greeting = 'Welcome back, ' . $lp_user;
+} else {
+	$lp_greeting = 'Welcome to Skulliance, ' . $lp_user;
+}
+
 $lp_todo = array();
 if ($lp_wallets === 0) {
 	$lp_todo[] = array('wallets.php', 'Connect a wallet', 'Nothing can be staked or rewarded until Skulliance can see your NFTs.');
@@ -134,7 +156,7 @@ if ($lp_balance === 0) {
 		<img class="lp-hero-avatar" src="<?php echo htmlspecialchars($lp_avatar_url); ?>" alt=""
 		     onerror="this.src='icons/skull.png';">
 		<div class="lp-hero-text">
-			<h2><?php echo $lp_user !== '' ? 'Welcome back, ' . htmlspecialchars($lp_user) : 'Welcome to Skulliance'; ?></h2>
+			<h2><?php echo htmlspecialchars($lp_greeting); ?></h2>
 			<div class="lp-hero-stats">
 				<span><strong><?php echo number_format($lp_balance); ?></strong> points</span>
 				<span><strong><?php echo number_format($lp_streak); ?></strong> day streak</span>
