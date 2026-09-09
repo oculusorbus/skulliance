@@ -165,6 +165,15 @@ include 'header.php';
   gap: 14px;
   align-items: stretch;   /* every card in a row the same height */
 }
+/* Sections that want a deliberate column count instead of auto-fit. External
+   Games is exactly two boards and reads as a pair rather than two tiles
+   trailing off the end of a wide row. minmax(0,1fr) not 1fr, so a long
+   champion name can't push a column wider than its share. Collapses to one
+   column on a phone, same as the auto-fit grid does. */
+.lb-hub-grid--cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 560px) {
+  .lb-hub-grid--cols-2 { grid-template-columns: 1fr; }
+}
 
 /* The card is a DIV (period links live inside it, and an <a> cannot nest an
    <a>). Column flex so the champion row can be pushed to the bottom and the
@@ -238,7 +247,13 @@ include 'header.php';
 </style>
 
 <?php
-function renderPodium($top3, $conn=null, $override_theme_id=null){
+// $fallback_image: a direct image URL used when no realm/project theme
+// resolves. Drop Ship and Oculus Lounge leaders are frequently players who
+// predate Skulliance and have no realm at all, so their podium would render
+// on a flat background -- these boards pass their own game art instead.
+// Only consulted when the theme lookup comes back empty, so a leader who DOES
+// have a realm still gets their own theme.
+function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_image=null){
   if(!$top3 || count($top3) < 2) return;
   $medals  = ['🥇','🥈','🥉'];
   $ranks   = [1,2,3];
@@ -261,8 +276,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
   }
   // Display order: 2nd (left), 1st (center), 3rd (right)
   $display = [1, 0, 2];
-  $section_class = 'podium-section' . ($gold_theme_id ? ' has-theme' : '');
-  $section_style = $gold_theme_id ? ' style="background-image:url(\'images/themes/'.intval($gold_theme_id).'.jpg\')"' : '';
+  // Theme wins; the game art is only a fallback for boards that pass one.
+  $bg_url = $gold_theme_id
+    ? 'images/themes/'.intval($gold_theme_id).'.jpg'
+    : ($fallback_image ?: '');
+  $section_class = 'podium-section' . ($bg_url ? ' has-theme' : '');
+  $section_style = $bg_url ? ' style="background-image:url(\''.htmlspecialchars($bg_url, ENT_QUOTES).'\')"' : '';
   echo '<div class="'.$section_class.'"'.$section_style.'>';
   echo '<div class="podium-wrap">';
   foreach($display as $pos){
@@ -319,7 +338,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
-				              $filterby != "dropship" && $filterby != "oculuslounge"):
+				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
 				        $project = getProjectInfo($conn, $filterby);
 				        $title = $project["name"];
 				        break;
@@ -436,6 +455,22 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $title = "Missions Unlocked";
 				        $filterby = "missions-unlocked";
 				        break;
+				    case ($filterby == "dropship-weekly"):
+				        $title = "Weekly Drop Ship";
+				        $filterby = "dropship-weekly";
+				        break;
+				    case ($filterby == "dropship-xp"):
+				        $title = "Drop Ship XP";
+				        $filterby = "dropship-xp";
+				        break;
+				    case ($filterby == "oculuslounge-weekly"):
+				        $title = "Weekly Oculus Lounge";
+				        $filterby = "oculuslounge-weekly";
+				        break;
+				    case ($filterby == "oculuslounge-xp"):
+				        $title = "Oculus Lounge XP";
+				        $filterby = "oculuslounge-xp";
+				        break;
 				    case ($filterby == "dropship"):
 				        $title = "Drop Ship";
 				        $filterby = "dropship";
@@ -504,7 +539,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
-				              $filterby != "dropship" && $filterby != "oculuslounge"):
+				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -592,6 +627,18 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        case ($filterby == "missions-unlocked"):
 				            checkMissionsUnlockedLeaderboard($conn);
 				            break;
+				        case ($filterby == "dropship-weekly"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_DROPSHIP, 'weekly');
+				            break;
+				        case ($filterby == "dropship-xp"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_DROPSHIP, 'xp');
+				            break;
+				        case ($filterby == "oculuslounge-weekly"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_LOUNGE, 'weekly');
+				            break;
+				        case ($filterby == "oculuslounge-xp"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_LOUNGE, 'xp');
+				            break;
 				        case ($filterby == "dropship"):
 				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_DROPSHIP);
 				            break;
@@ -623,8 +670,19 @@ function renderPodium($top3, $conn=null, $override_theme_id=null){
 				        $pt = intval($filterby);
 				        if(file_exists('images/themes/'.$pt.'.jpg')) $project_theme_override = $pt;
 				    }
+				    // Drop Ship / Oculus Lounge leaders often have no realm --
+				    // many predate Skulliance entirely -- so their podium falls
+				    // back to that game's own artwork instead of a flat panel.
+				    // Only used when no theme resolves; a leader who has a realm
+				    // still gets their own.
+				    $podium_fallback_image = null;
+				    if (strpos((string)$filterby, 'dropship') === 0) {
+				        $podium_fallback_image = dropShipBackdrop(DROPSHIP_PROJECT_DROPSHIP);
+				    } else if (strpos((string)$filterby, 'oculuslounge') === 0) {
+				        $podium_fallback_image = dropShipBackdrop(DROPSHIP_PROJECT_LOUNGE);
+				    }
 				    echo '<div class="podium-bleed-clip">';
-				    renderPodium($leaderboard_top3, $conn, $project_theme_override);
+				    renderPodium($leaderboard_top3, $conn, $project_theme_override, $podium_fallback_image);
 				    echo '</div>';
 				    echo $table_html;
 				    ?>

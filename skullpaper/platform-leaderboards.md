@@ -13,7 +13,7 @@ Landing on the leaderboards page shows a **hub**: a card for every board, groupe
 
 The **Find a Project** selector next to it does one job: jumping to a project's holdings leaderboard. It lists projects only - the game and platform boards are all on the hub, so the selector no longer has to be waded through to reach them.
 
-* **Drop Ship** and **Oculus Lounge** - all-time best single run in each. These live in their own database as a sub-system, so their boards refresh on the same hourly cycle as the rest of the hub. Players who joined those games before Skulliance existed still appear; they just have no profile to link to.
+* **Drop Ship** and **Oculus Lounge** - each has three boards: **Weekly** (the game round currently running), **All-Time** (best single run ever) and **XP** (lifetime total score). These live in their own database as a sub-system, so their boards refresh on the same hourly cycle as the rest of the hub. Players who joined those games before Skulliance existed still appear; they just have no profile to link to.
 * **Missions Unlocked** - all-time, how far through the mission ladders each player has climbed across every project. Distinct from the Missions board above, which counts missions run: this one only moves when you get *deeper*, so grinding easy missions doesn't climb it. See [[missions]].
 * **Activity** - overall platform engagement, all-time/monthly/weekly. A single weighted score
   combining how much you've done across the platform - daily streaks, missions, Skull Swap,

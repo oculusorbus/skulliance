@@ -4627,6 +4627,20 @@ function calculateScore($total_duration, $success, $failure, $progress){
 define('DROPSHIP_PROJECT_DROPSHIP', 1);
 define('DROPSHIP_PROJECT_LOUNGE',   4);
 
+// Game art, used as the podium backdrop when the leader has no realm theme
+// -- common here, since many Drop Ship players predate Skulliance entirely.
+// Both verified live (200) before being referenced; images deploy by FTP
+// outside this repo, so a wrong path fails silently as a flat background.
+$DROPSHIP_BACKDROPS = array(
+	DROPSHIP_PROJECT_DROPSHIP => '/staking/dropship/images/dropshipbackground.jpg',
+	DROPSHIP_PROJECT_LOUNGE   => '/staking/dropship/oculus-lounge/oculusloungebackground.png',
+);
+
+function dropShipBackdrop($ds_project_id) {
+	global $DROPSHIP_BACKDROPS;
+	return isset($DROPSHIP_BACKDROPS[$ds_project_id]) ? $DROPSHIP_BACKDROPS[$ds_project_id] : null;
+}
+
 // Second mysqli connection, using Drop Ship's own credentials.
 //
 // The include is FUNCTION-SCOPED on purpose. Both credential files define
@@ -4660,7 +4674,14 @@ function dropShipDbConnection() {
 	return $ds;
 }
 
-function checkDropShipLeaderboard($conn, $ds_project_id) {
+// $mode mirrors Drop Ship's own three boards:
+//   'ath'    -> best single run ever      (its checkATHLeaderboard)
+//   'weekly' -> the currently ACTIVE game (its checkLeaderboard)
+//   'xp'     -> lifetime total score      (its checkXPLeaderboard)
+// Called "weekly" rather than Drop Ship's "current" because its game rounds
+// disperse rewards on the same cadence as everything else here, and the hub
+// already speaks in All-Time / Weekly / Monthly.
+function checkDropShipLeaderboard($conn, $ds_project_id, $mode = 'ath') {
 	$ds = dropShipDbConnection();
 	if (!$ds) {
 		echo "<p>Scores are temporarily unavailable.</p>";
@@ -4668,18 +4689,45 @@ function checkDropShipLeaderboard($conn, $ds_project_id) {
 	}
 	$ds_project_id = intval($ds_project_id);
 
-	// Same shape as Drop Ship's own checkATHLeaderboard: best single run per
-	// player. LIMIT because this feeds a leaderboard page, not an export.
-	$res = $ds->query("
-		SELECT r.user_id, u.username, u.discord_id, u.avatar,
-		       MAX(r.score) AS max_score, COUNT(*) AS runs
-		FROM results r
-		LEFT JOIN users u ON u.id = r.user_id
-		WHERE r.project_id = $ds_project_id
-		GROUP BY r.user_id
-		ORDER BY max_score DESC
-		LIMIT 100
-	");
+	if ($mode === 'weekly') {
+		// Drop Ship reads the active game from the session; from this side it
+		// has to be looked up. Same query its own db.php uses.
+		$gr = $ds->query("SELECT id FROM games WHERE active = 1 AND project_id = $ds_project_id LIMIT 1");
+		$game_id = ($gr && $gr->num_rows > 0) ? intval($gr->fetch_assoc()['id']) : 0;
+		if (!$game_id) {
+			echo "<p>No game is running right now.</p>";
+			return;
+		}
+		// Individual runs in the active game, not a per-player aggregate --
+		// matching Drop Ship's own current board, where one player can hold
+		// several places.
+		$sql = "SELECT r.user_id, u.username, u.discord_id, u.avatar,
+		               r.score AS max_score, 1 AS runs
+		        FROM results r
+		        INNER JOIN users u ON u.id = r.user_id
+		        WHERE r.game_id = $game_id AND r.project_id = $ds_project_id
+		        ORDER BY r.score DESC
+		        LIMIT 100";
+	} else if ($mode === 'xp') {
+		$sql = "SELECT r.user_id, u.username, u.discord_id, u.avatar,
+		               SUM(r.score) AS max_score, COUNT(*) AS runs
+		        FROM results r
+		        LEFT JOIN users u ON u.id = r.user_id
+		        WHERE r.project_id = $ds_project_id
+		        GROUP BY r.user_id
+		        ORDER BY max_score DESC
+		        LIMIT 100";
+	} else {
+		$sql = "SELECT r.user_id, u.username, u.discord_id, u.avatar,
+		               MAX(r.score) AS max_score, COUNT(*) AS runs
+		        FROM results r
+		        LEFT JOIN users u ON u.id = r.user_id
+		        WHERE r.project_id = $ds_project_id
+		        GROUP BY r.user_id
+		        ORDER BY max_score DESC
+		        LIMIT 100";
+	}
+	$res = $ds->query($sql);
 	if (!$res || $res->num_rows === 0) {
 		echo "<p>No scores recorded yet.</p>";
 		return;
@@ -4759,10 +4807,14 @@ function checkDropShipLeaderboard($conn, $ds_project_id) {
 		$lb_rows[] = array(
 			'rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url,
 			'name' => $name_html, 'highlight' => $is_me,
-			'stats' => array(
-				'Best Score' => number_format($score),
-				'Runs'       => number_format(intval($row['runs'])),
-			),
+			// Column names follow the mode -- calling a lifetime XP total
+			// "Best Score", or a single run's row "Runs: 1", would misdescribe
+			// what the number is.
+			'stats' => ($mode === 'xp')
+				? array('Total XP' => number_format($score), 'Runs' => number_format(intval($row['runs'])))
+				: (($mode === 'weekly')
+					? array('Score' => number_format($score))
+					: array('Best Score' => number_format($score), 'Runs' => number_format(intval($row['runs'])))),
 			'reward' => '',
 		);
 		$last_score = $score;
@@ -6149,15 +6201,16 @@ $SKULLIANCE_BOARDS = array(
 	'bosses'            => array('label'=>'Boss Battles',      'icon'=>'🐉', 'group'=>'Games',
 		'blurb'=>'Community boss fights',
 		'periods'=>array('All-Time'=>'bosses','Weekly'=>'weekly-bosses')),
-	// Live in Drop Ship's separate database -- see checkDropShipLeaderboard.
-	// All-time only: Drop Ship keeps its own periodic boards, and duplicating
-	// their reset cadence here would be two sources of truth for one game.
-	'dropship'          => array('label'=>'Drop Ship',         'icon'=>'🪖', 'group'=>'Games',
+	// Their own group, which is what puts them on a row of their own rather
+	// than flowing into the tail of Games. Also honest: they run on a
+	// separate sub-system with its own database, and "External Games" is the
+	// vocabulary the Skull Paper already uses for them.
+	'dropship'          => array('label'=>'Drop Ship',         'icon'=>'🪖', 'group'=>'External Games',
 		'blurb'=>'Best single run',
-		'periods'=>array('All-Time'=>'dropship')),
-	'oculuslounge'      => array('label'=>'Oculus Lounge',     'icon'=>'🪩', 'group'=>'Games',
+		'periods'=>array('All-Time'=>'dropship','Weekly'=>'dropship-weekly','XP'=>'dropship-xp')),
+	'oculuslounge'      => array('label'=>'Oculus Lounge',     'icon'=>'🪩', 'group'=>'External Games',
 		'blurb'=>'Best night at the club',
-		'periods'=>array('All-Time'=>'oculuslounge')),
+		'periods'=>array('All-Time'=>'oculuslounge','Weekly'=>'oculuslounge-weekly','XP'=>'oculuslounge-xp')),
 );
 
 /*
@@ -6242,8 +6295,8 @@ function refreshLeaderboardSnapshots($conn) {
 		// or return nothing; the try/catch below logs and skips them, and
 		// their cards keep whatever champion was last stored rather than the
 		// whole refresh failing.
-		'dropship'          => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_DROPSHIP); },
-		'oculuslounge'      => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_LOUNGE); },
+		'dropship'          => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_DROPSHIP, 'ath'); },
+		'oculuslounge'      => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_LOUNGE,   'ath'); },
 	);
 
 	$done = 0; $skipped = array();
@@ -6335,16 +6388,22 @@ function renderLeaderboardHub($conn) {
 	// at a glance without tinting every card and adding more noise -- the
 	// colour lands on the heading rule and the card's top edge only.
 	$accents = array(
-		'Platform' => '#00c8a0',   // teal, the site accent
-		'Missions' => '#4fa3ff',   // blue
-		'Realms'   => '#8b7bd8',   // violet
-		'Games'    => '#ffcc44',   // gold
+		'Platform'       => '#00c8a0',   // teal, the site accent
+		'Missions'       => '#4fa3ff',   // blue
+		'Realms'         => '#8b7bd8',   // violet
+		'Games'          => '#ffcc44',   // gold
+		'External Games' => '#ff7ad9',   // pink -- the sub-system, visibly its own thing
 	);
+	// Sections that should lay out in a fixed number of columns rather than
+	// the default auto-fit. External Games has exactly two boards and reads
+	// better as a deliberate pair than as two tiles trailing off a wide row.
+	$fixed_cols = array('External Games' => 2);
 	foreach ($groups as $group_name => $boards) {
 		$accent = isset($accents[$group_name]) ? $accents[$group_name] : '#00c8a0';
+		$cols = isset($fixed_cols[$group_name]) ? intval($fixed_cols[$group_name]) : 0;
 		echo "<div class='lb-hub-section' style='--lb-accent:" . $accent . "'>";
 		echo "<h3 class='lb-hub-group'>" . htmlspecialchars($group_name) . "</h3>";
-		echo "<div class='lb-hub-grid'>";
+		echo "<div class='lb-hub-grid" . ($cols ? " lb-hub-grid--cols-" . $cols : "") . "'>";
 		foreach ($boards as $key => $meta) {
 			$periods  = $meta['periods'];
 			$primary  = reset($periods);          // all-time view is the card's own link

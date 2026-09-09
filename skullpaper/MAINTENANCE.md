@@ -118,9 +118,20 @@ records verified constants, and tracks what still needs to be written.
 - Drop Ship / Oculus Lounge boards (db.php `checkDropShipLeaderboard()` + `dropShipDbConnection()`):
   these two live in Drop Ship's SEPARATE database on the same MySQL server. Oculus Lounge is a
   Drop Ship RESKIN, so both are rows in one `results` table split by project_id -- **1 = Drop
-  Ship, 4 = Oculus Lounge** (DROPSHIP_PROJECT_* constants). One function, two boards, all-time
-  only (Drop Ship runs its own periodic boards; duplicating their cadence here would be two
-  sources of truth for one game).
+  Ship, 4 = Oculus Lounge** (DROPSHIP_PROJECT_* constants). One function, SIX boards: each game
+  has $mode 'weekly' / 'ath' / 'xp', mirroring Drop Ship's own checkLeaderboard /
+  checkATHLeaderboard / checkXPLeaderboard. 'weekly' is Drop Ship's "current game" -- renamed
+  because its rounds pay out on the same cadence as everything else here; it looks up
+  `SELECT id FROM games WHERE active=1 AND project_id=N` (Drop Ship reads that from its session,
+  which doesn't exist on this side) and lists individual RUNS, not a per-player aggregate, so one
+  player can hold several places -- matching Drop Ship's own board.
+  They sit in their own **External Games** group, which is what puts them on a row of their own;
+  `$fixed_cols` in renderLeaderboardHub forces that section to 2 columns
+  (`.lb-hub-grid--cols-2`, collapsing to 1 under 560px).
+  Podium backdrop: many of these players predate Skulliance and have no realm theme, so
+  `renderPodium()` takes a 4th `$fallback_image` arg and these boards pass the game's own art
+  (`$DROPSHIP_BACKDROPS`, both URLs curl-verified 200 -- images deploy by FTP outside this repo).
+  Theme still wins when the leader has one.
   `dropShipDbConnection()` opens a second mysqli with Drop Ship's credentials and the include is
   FUNCTION-SCOPED on purpose -- both credential files define $servername/$username/$password/
   $dbname, so a top-level include would clobber Skulliance's and break $conn. Drop Ship does the
