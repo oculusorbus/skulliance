@@ -37,6 +37,7 @@ records verified constants, and tracks what still needs to be written.
 | games-cryptcrawl.md *(new)*         | Scoundrel-style crawl  | cryptcrawlgame.php (marketing), cryptcrawl.php (game), cryptcrawl-render.php, cryptcrawl-actions.php, ajax/cryptcrawl-action.php, db.php:10451-10805 |
 | games-cryptconquest.md *(new)*      | Regicide-style solo    | cryptconquestgame.php (marketing), cryptconquest.php (game), cryptconquest-render.php, cryptconquest-actions.php, cryptconquest-engine.php, db.php:11343-11800ish (CRYPT CONQUEST block) |
 | games-skullracer.md *(new)*         | Pseudo-3D racer        | skullracergame.php (public marketing landing, what nav points at), skullracer.php (nav wrapper, inlines racing/index.html's style+body server-side -- no iframe), racing/index.html (game, client-side, also works visited standalone), ajax/skullracer-finalize.php, db.php SKULL RACER block (end of file) |
+| *(no page yet -- see note below)*   | Obscura: crop-reveal   | obscura.php (page), obscura-lib.php (ALL logic + the migration, deliberately outside db.php so it can be rewritten wholesale while tuning), ajax/obscura-action.php (guess/reroll), ajax/obscura-crop.php (renders the visible region server-side) |
 | games-drop-ship.md                  | NFT battler, now in-platform | dropship/ (migrated from madballs.net; requires Skulliance login) |
 | games-oculus-lounge.md              | Drop Ship reskin, now in-platform | dropship/ project_id 4 (migrated from oculuslounge.vip; SAME engine and database as Drop Ship, which is project_id 1 -- see dropship/oculus-lounge/) |
 | platform.md (Launchpad section)     | Post-login landing     | launchpad.php ($lp_sections registry = every tile; process-oauth.php:~198 redirects here, NOT profile.php; header.php top-level link). Nav-only + 3 cheap stats (getWallets/getCurrentDailyRewardStreak/getCurrentBalance) -- NO writes, NO game logic, because it is the first page after login and must never be what breaks. Start Here strip is conditional on those 3 stats and self-clears. Emoji icons, not images (FTP deploy). The staked-NFT view is my-nfts.php (was dashboard.php -- renamed because the name promised an overview it never gave). dashboard.php REMAINS as a permanent 301 stub and must not be deleted: 46 references plus bookmarks, Discord links and in-game "back to Skulliance" buttons still point at it. Its page identifier for filterNFTs()/renderVisibility() is now "my-nfts", and skulliance.php accepts BOTH that and the old "dashboard" for the #holdings anchor. dropship/dashboard.php is a DIFFERENT file and is untouched. TWO PATH CHECKS keyed off the old filename and broke silently in the rename -- skulliance.php gating verifyMembershipNFTs() on REQUEST_URI, and skulliance.js gating the NFT upload button on window.location.pathname. Both now accept my-nfts.php (and still the old name). Anything else that keys off a page NAME rather than a link will fail the same quiet way. Game exit buttons (match3rpg, skullswap x2, monstrocity, and displayRound() in skulliance.js) go to launchpad.php, not the NFT view; wallet-ajax.php still redirects to the NFT view after connecting a wallet, which is deliberate. |
@@ -1396,6 +1397,57 @@ records verified constants, and tracks what still needs to be written.
   button's now-occupied spot, which had become "Delve Again" - starting a new run before the
   player ever saw they'd died. 400ms comfortably covers a double-tap gesture (~300ms) without
   reading as a delay on one deliberate tap.
+
+### Obscura (crop-reveal) - NO doc page yet, on purpose
+
+The Skull Paper is **public**, and Obscura is an unlaunched prototype: no CARBON,
+no leaderboard, no hub entry, and the difficulty curve is the whole thing being
+tuned. Publishing a page now would announce a game that does not reward anything
+yet. **Write `games-obscura.md` (and add it to `$skullpaper_nav`) as part of the
+launch change**, not before.
+
+Verified constants, from `obscuraDifficulty()` in `obscura-lib.php`:
+
+| Streak | Attempts | Options | Reveal ladder (% of the shorter edge) | Grid |
+|--------|----------|---------|----------------------------------------|------|
+| 0-5    | 3        | 6       | 15 -> 35 -> 60                         | 3 across |
+| 6-15   | 3        | 8       | 12 -> 25 -> 45                         | 4 across |
+| 16-30  | 2        | 10      | 10 -> 25                               | 5 across |
+| 31+    | 1        | 12      | 8                                      | 4 across |
+
+Streak counts **consecutive solves, not days**, and persists - navigating away or
+taking a break never breaks it. Options always outnumber attempts, so elimination
+can never guarantee a win; the run is genuinely losable, which is what makes an
+unbounded streak worth anything.
+
+Two rules the code exists to enforce, both easy to undo by accident:
+
+1. **The crop is rendered server-side.** `ajax/obscura-crop.php` outputs only the
+   visible region as pixels. It was CSS `background-position`/`background-size`
+   first, which shipped the entire artwork and asked the browser to look away -
+   View Source was the answer. The crop endpoint reads **nothing** from the query
+   string but a cache-buster: which NFT, where the crop sits and how far it has
+   widened all come from the player's own run row, so a client cannot request a
+   wider crop than its attempts have earned. `obscuraState()` therefore returns
+   no art url, no `crop_x`/`crop_y` and no zoom - only a `crop_v` token
+   (`nft_id-attempts_used`) whose only job is forcing a re-fetch.
+2. **A missing or broken image must never cost the player.** `obscuraLocalArt()`
+   resolves local cache files only and returns an explicit `null` on a miss -
+   it deliberately does NOT call `getIPFS()`, which hands back an `ipfs.io` url
+   that is indistinguishable from a real hit without string-matching. Files under
+   1KB are treated as truncated. When the browser still cannot render a crop, the
+   client asks for a `reroll`, which swaps the puzzle with **no** attempt spent
+   and the streak untouched. This matters most at streak 31+, where one attempt
+   is the whole run.
+
+The full artwork **is** sent once a puzzle is judged (`'reveal'` on the correct
+and failed replies, never on `'wrong'`) - the zoom-out to the whole piece is the
+payoff. It is resolved before the run row is cleared, since that drops `nft_id`,
+and by then the row already points at a new NFT, so the reveal url cannot be
+turned around on a live puzzle.
+
+Still to build at launch: CARBON rewards, a weekly/monthly period that resets
+streaks, leaderboard + hub entry, marketing page, nav entry, Discord notifications.
 
 ---
 

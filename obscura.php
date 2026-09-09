@@ -38,11 +38,7 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 		</div>
 	<?php else: ?>
 
-	<div id="ob-game"
-	     data-art="<?php echo htmlspecialchars($ob_state['art']); ?>"
-	     data-x="<?php echo $ob_state['crop_x']; ?>"
-	     data-y="<?php echo $ob_state['crop_y']; ?>"
-	     data-zoom="<?php echo $ob_state['zoom']; ?>">
+	<div id="ob-game" data-v="<?php echo htmlspecialchars($ob_state['crop_v']); ?>">
 
 		<div class="ob-hud">
 			<span>Streak <strong id="ob-streak"><?php echo $ob_state['streak']; ?></strong></span>
@@ -57,10 +53,11 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 			<div class="ob-tier"><?php echo htmlspecialchars($ob_state['tier_label']); ?></div>
 		<?php endif; ?>
 
-		<!-- The crop is a window onto the real image: background-size zooms it,
-		     background-position picks the spot. No image processing, no new
-		     assets -- the same cached file every other page uses. -->
-		<div id="ob-view"></div>
+		<!-- Only the visible region ever reaches the browser. The full artwork
+		     is cropped server-side (ajax/obscura-crop.php) because the image
+		     IS the answer -- doing it in CSS shipped the whole thing and asked
+		     the browser not to look. -->
+		<img id="ob-view" alt="A fragment of an NFT" src="ajax/obscura-crop.php?v=<?php echo urlencode($ob_state['crop_v']); ?>">
 
 		<div id="ob-options" style="--ob-cols:<?php echo intval($ob_state['columns']); ?>">
 			<?php foreach ($ob_state['options'] as $o): ?>
@@ -87,11 +84,25 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 .ob-hud strong { color:#00c8a0; font-size:1rem; }
 .ob-tier { font-size:.78rem; color:#ffcc44; border-left:2px solid #ffcc44; padding-left:10px; margin-bottom:12px; }
 #ob-view {
-  width:100%; aspect-ratio:1/1; max-width:420px; margin:0 auto 18px;
+  display:block; width:100%; aspect-ratio:1/1; max-width:420px; margin:0 auto 18px;
   border-radius:8px; border:1px solid rgba(255,255,255,.08);
-  background-repeat:no-repeat; background-color:#0a1929;
-  image-rendering:auto; transition:background-size .45s ease, background-position .45s ease;
+  background-color:#0a1929; object-fit:cover;
+  transition:opacity .25s ease;
 }
+#ob-view.ob-swapping { opacity:.35; }
+/* The reveal: the whole artwork, pulled back from the sliver. object-fit
+   switches to contain so nothing is cut off, and the scale settles from
+   slightly-too-close to 1 so it reads as zooming out rather than cutting. */
+#ob-view.ob-reveal {
+  object-fit:contain;
+  border-color:rgba(0,200,160,.5);
+  animation:ob-pullback .55s ease-out;
+}
+@keyframes ob-pullback {
+  from { transform:scale(1.18); opacity:.55; }
+  to   { transform:scale(1);    opacity:1; }
+}
+@media (prefers-reduced-motion:reduce) { #ob-view.ob-reveal { animation:none; } }
 /* Fixed columns per tier (--ob-cols, set from obscuraColumns): 6->3, 8->4,
    10->5, 12->4. grid-auto-rows:1fr is what keeps EVERY button the same
    height -- grid already equalises within a row, but without this a row
@@ -134,37 +145,34 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
   var view = document.getElementById('ob-view');
   var msg  = document.getElementById('ob-message');
   var busy = false;
-  // The current puzzle, held here rather than read back out of CSS. Widening
-  // the crop only changes the zoom, so art and position must survive intact.
-  var cur = { art: '', x: 50, y: 50, zoom: 15 };
-
-  // Render the crop. zoom is the percentage of the artwork visible, so a
-  // smaller zoom means a bigger background -- 15% visible = 1/0.15 scale.
-  function paint(art, x, y, zoom) {
-    cur = { art: art, x: x, y: y, zoom: zoom };
-    var scale = (100 / zoom) * 100;
-    view.style.backgroundImage = "url('" + art + "')";
-    view.style.backgroundSize  = scale + '% ' + scale + '%';
-    view.style.backgroundPosition = x + '% ' + y + '%';
-    verify(art);
+  var revealing = false;
+  // The crop endpoint derives everything from the run row, so the client only
+  // ever needs a cache-busting token to force a re-fetch when the view widens.
+  function showCrop(v) {
+    revealing = false;
+    view.classList.remove('ob-reveal');
+    view.classList.add('ob-swapping');
+    view.src = 'ajax/obscura-crop.php?v=' + encodeURIComponent(v);
   }
-  // Widen the same crop -- art and position unchanged, only the zoom moves.
-  function widen(zoom) { paint(cur.art, cur.x, cur.y, zoom); }
-
-  /*
-   * A broken image must never cost a run. background-image gives no error
-   * event, so the same url is loaded through an Image() purely to find out
-   * whether it renders. If it does not, ask the server for a different
-   * puzzle -- no attempt spent, streak untouched.
-   */
-  function verify(art) {
-    var probe = new Image();
-    probe.onerror = function () {
-      msg.innerHTML = '<span style="color:rgba(255,255,255,.5)">That artwork would not load &mdash; swapping in another. Nothing lost.</span>';
-      post({ action: 'reroll' }, function (d) { if (d && d.next) load(d.next); });
-    };
-    probe.src = art;
+  // Once judged, the puzzle is over and the whole artwork is the payoff.
+  // Served straight from the local cache -- no crop to apply any more.
+  function showReveal(url) {
+    if (!url) return;
+    revealing = true;
+    view.classList.remove('ob-swapping');
+    view.classList.add('ob-reveal');
+    view.src = url;
   }
+  view.addEventListener('load',  function () { view.classList.remove('ob-swapping'); });
+  // A crop that will not render must never cost an attempt -- ask for a
+  // different puzzle instead. The server rerolls without touching the streak.
+  view.addEventListener('error', function () {
+    // A reveal that fails is cosmetic: the guess is already judged and the next
+    // puzzle is queued, so rerolling here would swap out a puzzle for nothing.
+    if (revealing) { revealing = false; return; }
+    msg.innerHTML = '<span style="color:rgba(255,255,255,.5)">That artwork would not load &mdash; swapping in another. Nothing lost.</span>';
+    post({ action: 'reroll' }, function (d) { if (d && d.next) load(d.next); });
+  });
 
   function post(data, done) {
     var body = Object.keys(data).map(function (k) {
@@ -210,7 +218,7 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
       b.appendChild(p); b.appendChild(n);
       box.appendChild(b);
     });
-    paint(state.art, state.crop_x, state.crop_y, state.zoom);
+    showCrop(state.crop_v);
     busy = false;
   }
 
@@ -227,7 +235,7 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
         btn.classList.add('ob-miss');
         document.getElementById('ob-attempts').textContent =
           (d.attempts - d.used) + ' of ' + d.attempts + ' attempts left';
-        widen(d.zoom);   // the reward for being wrong
+        showCrop(d.crop_v);   // the reward for being wrong: a wider view
         msg.textContent = 'Not that one. A little more of it, then.';
         busy = false;
         return;
@@ -235,22 +243,25 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 
       if (d.result === 'correct') {
         btn.classList.add('ob-correct');
+        showReveal(d.reveal);   // pull back to the whole artwork
         msg.innerHTML = '<span class="ob-win">Got it. Streak ' + d.streak + '.</span>'
           + (d.tier_changed && d.tier_label ? '<br><span style="color:#ffcc44">' + d.tier_label + '</span>' : '');
-        setTimeout(function () { load(d.next); msg.textContent = ''; }, d.tier_changed ? 2200 : 900);
+        // Long enough to actually look at the reveal before it is replaced.
+        setTimeout(function () { load(d.next); msg.textContent = ''; }, d.tier_changed ? 3000 : 1900);
         return;
       }
 
       if (d.result === 'failed') {
         btn.classList.add('ob-miss');
+        showReveal(d.reveal);
         msg.innerHTML = '<span class="ob-lose">It was ' + d.answer_name + '.</span> '
           + 'Run over. Best streak: ' + d.best + '.';
-        setTimeout(function () { load(d.next); msg.textContent = ''; }, 2600);
+        setTimeout(function () { load(d.next); msg.textContent = ''; }, 2900);
       }
     });
   });
 
-  paint(game.dataset.art, game.dataset.x, game.dataset.y, game.dataset.zoom);
+  // First crop is already in the img src from PHP; nothing to paint.
 })();
 </script>
 

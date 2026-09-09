@@ -108,6 +108,24 @@ function obscuraLocalArt($ipfs, $collection_id, $project_id) {
 	return '/staking/images/nfts/' . intval($project_id) . '/' . intval($collection_id) . '/' . md5($ipfs) . '.' . $ext . $bust;
 }
 
+/*
+ * Resolve an NFT id straight to its local artwork url, or null.
+ *
+ * Safe to hand to the client ONLY once the puzzle it belongs to is over --
+ * while a puzzle is live the url IS the answer, which is the whole reason
+ * ajax/obscura-crop.php exists.
+ */
+function obscuraArtForNft($conn, $nft_id) {
+	$nft_id = intval($nft_id);
+	if ($nft_id <= 0) return null;
+	$r = $conn->query("SELECT nfts.ipfs, nfts.collection_id, collections.project_id
+	                   FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id
+	                   WHERE nfts.id = $nft_id LIMIT 1");
+	if (!$r || $r->num_rows === 0) return null;
+	$a = $r->fetch_assoc();
+	return obscuraLocalArt($a['ipfs'], $a['collection_id'], $a['project_id']);
+}
+
 // Pick a puzzle: one NFT with verified art, plus N-1 decoy collections.
 // Returns null if nothing suitable could be found, which the caller surfaces
 // rather than pretending a puzzle exists.
@@ -216,24 +234,30 @@ function obscuraState($conn, $user_id) {
 	$streak   = intval($run['streak']);
 	$diff     = obscuraDifficulty($streak);
 	$used     = intval($run['attempts_used']);
-	$art      = null;
-	$ar = $conn->query("SELECT nfts.ipfs, nfts.collection_id, collections.project_id
-	                    FROM nfts INNER JOIN collections ON collections.id = nfts.collection_id
-	                    WHERE nfts.id = " . intval($run['nft_id']) . " LIMIT 1");
-	if ($ar && $ar->num_rows > 0) {
-		$a = $ar->fetch_assoc();
-		$art = obscuraLocalArt($a['ipfs'], $a['collection_id'], $a['project_id']);
+	// Resolved but NOT returned: this only confirms the art is really there, so
+	// a puzzle with a missing file surfaces now instead of as a broken crop.
+	if (obscuraArtForNft($conn, $run['nft_id']) === null) {
+		return array('error' => 'art_gone');   // client will reroll
 	}
-	if ($art === null) return array('error' => 'art_gone');   // client will reroll
 
+	/*
+	 * The artwork url is DELIBERATELY not in this payload, and neither are the
+	 * crop coordinates. Cropping in CSS meant shipping the whole image and
+	 * asking the browser to look away from most of it -- devtools, or View
+	 * Source, and the answer was there. ajax/obscura-crop.php now renders only
+	 * the visible region server-side, so the full art never reaches a browser
+	 * while the puzzle is live.
+	 *
+	 * 'crop_v' only busts the image cache: the same url must re-fetch when a
+	 * wrong guess widens the view. It reveals nothing -- the server derives
+	 * the zoom from the run row, so asking for a wider crop than you have
+	 * earned is not possible.
+	 */
 	return array(
 		'streak'      => $streak,
 		'best'        => intval($run['best_streak']),
 		'options'     => json_decode($run['options'], true) ?: array(),
-		'art'         => $art,
-		'crop_x'      => floatval($run['crop_x']),
-		'crop_y'      => floatval($run['crop_y']),
-		'zoom'        => $diff['zooms'][min($used, count($diff['zooms']) - 1)],
+		'crop_v'      => intval($run['nft_id']) . '-' . $used,
 		'attempts'    => $diff['attempts'],
 		'columns'     => obscuraColumns($diff['options']),
 		'used'        => $used,
@@ -279,13 +303,22 @@ function obscuraGuess($conn, $user_id, $collection_id) {
 		return array('error' => 'bad_guess');
 	}
 
+	/*
+	 * The puzzle is over the moment it is judged, so the full artwork can go to
+	 * the client -- and should: seeing what the sliver was cut from is the
+	 * payoff. Resolved BEFORE the row is cleared, since that drops nft_id.
+	 * By the time the player has this url the run already points at a new NFT,
+	 * so it cannot be turned around on a live puzzle.
+	 */
+	$reveal = obscuraArtForNft($conn, $run['nft_id']);
+
 	if ($guess === $answer) {
 		$streak++;
 		$best = max(intval($run['best_streak']), $streak);
 		$conn->query("UPDATE obscura_runs SET streak = $streak, best_streak = $best,
 			nft_id = NULL, answer_id = NULL, options = NULL, attempts_used = 0, wrong = NULL,
 			updated_at = NOW() WHERE user_id = $user_id");
-		return array('result'=>'correct', 'streak'=>$streak, 'best'=>$best,
+		return array('result'=>'correct', 'streak'=>$streak, 'best'=>$best, 'reveal'=>$reveal,
 		             'tier_changed'=>obscuraTierIndex($streak) !== obscuraTierIndex($streak - 1),
 		             'tier_label'=>obscuraTierLabel($streak));
 	}
@@ -301,12 +334,14 @@ function obscuraGuess($conn, $user_id, $collection_id) {
 			options = NULL, attempts_used = 0, wrong = NULL, updated_at = NOW()
 			WHERE user_id = $user_id");
 		return array('result'=>'failed', 'answer_id'=>$answer, 'answer_name'=>$name,
-		             'streak'=>0, 'best'=>intval($run['best_streak']));
+		             'reveal'=>$reveal, 'streak'=>0, 'best'=>intval($run['best_streak']));
 	}
 
 	$conn->query("UPDATE obscura_runs SET attempts_used = $used,
 		wrong = '" . $conn->real_escape_string(json_encode($wrong)) . "', updated_at = NOW()
 		WHERE user_id = $user_id");
+	// crop_v changes with attempts_used, which is what makes the browser
+	// re-fetch and see the wider view. The zoom itself stays server-side.
 	return array('result'=>'wrong', 'used'=>$used, 'attempts'=>$diff['attempts'],
-	             'zoom'=>$diff['zooms'][min($used, count($diff['zooms']) - 1)], 'wrong'=>$wrong);
+	             'crop_v'=>intval($run['nft_id']) . '-' . $used, 'wrong'=>$wrong);
 }
