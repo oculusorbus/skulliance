@@ -790,6 +790,11 @@ input {
 .wallet-connect-icon {
   width: 16px;
   height: 16px;
+  /* icons/wallet.png is white, drawn for the dark top nav -- on the green
+     button it vanished. brightness(0) drives every non-transparent pixel to
+     black while leaving the alpha channel alone, so the same shipped asset
+     works on both backgrounds without a second file. */
+  filter: brightness(0);
 }
 
 .small-button-danger {
