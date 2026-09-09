@@ -24,7 +24,11 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 
-$lp_user     = $_SESSION['userData']['username'] ?? '';
+// 'name' is the key the session actually carries -- it is what header.php
+// prints in the navbar and what skullpaper.php reads. 'username' exists in
+// some rows but is not reliably in the session, so reading it alone gave an
+// empty greeting for a logged-in player. Both, name first.
+$lp_user     = $_SESSION['userData']['name'] ?? ($_SESSION['userData']['username'] ?? '');
 $lp_user_id  = intval($_SESSION['userData']['user_id'] ?? 0);
 $lp_discord  = $_SESSION['userData']['discord_id'] ?? '';
 $lp_avatar   = $_SESSION['userData']['avatar'] ?? '';
@@ -118,8 +122,13 @@ if ($lp_balance === 0) {
 }
 ?>
 
+<!-- col1of3 with the flex override is the site's full-width centred column --
+     the same pattern leaderboards.php uses. There is no ".col1" class in
+     flexbox.css; using one meant the div had no width rule at all, .row's
+     flex shrank it to its content, and 26 tiles rendered in a 455px strip
+     against 2800px of empty page. -->
 <div class="row" id="row1">
-  <div class="col1">
+  <div class="col1of3" style="max-width:1100px;margin:0 auto;flex:1 1 100%;">
 
 	<div class="lp-hero">
 		<img class="lp-hero-avatar" src="<?php echo htmlspecialchars($lp_avatar_url); ?>" alt=""
