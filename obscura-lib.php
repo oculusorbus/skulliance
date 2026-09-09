@@ -198,8 +198,9 @@ function obscuraRevealDetails($conn, $nft_id) {
 	// LEFT JOIN, not INNER: an NFT with no Skulliance holder still has a name and
 	// still deserves a reveal.
 	$r = $conn->query("SELECT nfts.ipfs, nfts.name, nfts.collection_id, nfts.user_id,
-	                          collections.project_id, users.username, users.visibility,
-	                          users.avatar, users.discord_id
+	                          collections.project_id, collections.name AS collection_name,
+	                          collections.policy,
+	                          users.username, users.visibility, users.avatar, users.discord_id
 	                   FROM nfts
 	                   INNER JOIN collections ON collections.id = nfts.collection_id
 	                   LEFT JOIN users ON users.id = nfts.user_id
@@ -211,7 +212,24 @@ function obscuraRevealDetails($conn, $nft_id) {
 	if ($art === null) return null;
 
 	$out = array('art' => $art, 'name' => (string)($a['name'] ?? ''),
+	             'collection' => (string)($a['collection_name'] ?? ''), 'collection_url' => '',
 	             'owner' => '', 'owner_url' => '', 'owner_avatar' => '');
+
+	/*
+	 * The collection links to Wayup so a player who just discovered a set they
+	 * like can go and buy into it. Safe here and ONLY here: the puzzle is over
+	 * by the time a reveal exists, so naming the collection gives nothing away.
+	 * (Linking the option buttons DURING a puzzle would hand over the answer.)
+	 *
+	 * Same rule as getPoliciesListing(): linked only when the policy is a
+	 * well-formed Cardano policy id. A blank or malformed one would produce
+	 * wayup.io/collection/ -- a dead end that reads as the platform being broken
+	 * rather than as missing data.
+	 */
+	$policy = trim((string)($a['policy'] ?? ''));
+	if (preg_match('/^[0-9a-f]{56}$/i', $policy)) {
+		$out['collection_url'] = 'https://www.wayup.io/collection/' . $policy;
+	}
 	if (intval($a['user_id']) > 0 && intval($a['visibility']) === 2 && !empty($a['username'])) {
 		$out['owner']     = $a['username'];
 		$out['owner_url'] = 'profile.php?username=' . urlencode($a['username']);

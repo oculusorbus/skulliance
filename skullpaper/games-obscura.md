@@ -54,9 +54,14 @@ cycle simply starts again - a run is never ended for having gone on too long.
 ## The Reveal
 
 Solve a puzzle - or lose the run - and the artwork zooms out to the whole piece,
-captioned with the NFT's name and, if the holder has made their collection
-visible, who holds it. Take as long as you like looking at it; the next puzzle
-waits behind a **Next** button until you are ready.
+captioned with the NFT's name, the collection it came from, and, if the holder
+has made their collection visible, who holds it. Take as long as you like looking
+at it; the next puzzle waits behind a **Next** button until you are ready.
+
+The collection name links straight to that collection on **Wayup**, in a new tab,
+so if a puzzle introduces you to a set you like you can go and buy into it. The
+link only appears once the puzzle is over - during a puzzle it would simply be
+the answer.
 
 ## Rewards
 

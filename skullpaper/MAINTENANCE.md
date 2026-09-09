@@ -1430,6 +1430,15 @@ start including `webhooks.php` for this - db.php does not include it.
 `OBSCURA_ANNOUNCE_MIN_STREAK` (3) keeps routine first-puzzle losses out of the
 channel; set it to 1 to post every ended run.
 
+The reveal caption also links the collection to **Wayup**
+(`https://www.wayup.io/collection/<policy>`), reusing `getPoliciesListing()`'s
+rule: linked only when `collections.policy` is a well-formed 56-hex policy id,
+otherwise plain text, because a malformed one produces `wayup.io/collection/` -
+a dead end that reads as the platform being broken. This is safe **only on the
+reveal**: naming the collection while a puzzle is live would be handing over the
+answer, which is why the option buttons are still not linked (see the
+Not-done note in the option-grid commit).
+
 **No collection repeats within a run.** `obscura_runs.seen_collections` holds the
 answer collections used so far (JSON, capped at 200 - it is read on every
 request). It is a *preference*, never a blocker: `obscuraPickPuzzle()` samples

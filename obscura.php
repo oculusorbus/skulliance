@@ -120,6 +120,9 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
   margin:-8px 0 16px; min-height:1.2em; line-height:1.5;
 }
 #ob-reveal-info strong { color:rgba(255,255,255,.85); font-size:.9rem; }
+/* The collection/holder line sits quieter than the piece's own name, so the
+   name still reads as the headline of the reveal. */
+#ob-reveal-info .ob-reveal-sub { font-size:.76rem; margin-top:3px; }
 #ob-reveal-info a { color:#00c8a0; text-decoration:none; }
 #ob-reveal-info a:hover { text-decoration:underline; }
 .ob-owner-avatar {
@@ -210,13 +213,37 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
     view.src = info_.art;
 
     info.textContent = '';
+
+    // Line one: what the piece is called.
     if (info_.name) {
+      var line1 = document.createElement('div');
       var n = document.createElement('strong');
       n.textContent = info_.name;
-      info.appendChild(n);
+      line1.appendChild(n);
+      info.appendChild(line1);
+    }
+
+    // Line two: the collection it came from, and who holds it.
+    var line2 = document.createElement('div');
+    line2.className = 'ob-reveal-sub';
+    if (info_.collection) {
+      if (info_.collection_url) {
+        // Straight to the collection on Wayup, for anyone who just found a set
+        // they want to buy into. New tab -- nobody should lose their streak to
+        // a marketplace link.
+        var c = document.createElement('a');
+        c.href = info_.collection_url;
+        c.target = '_blank';
+        c.rel = 'noopener';
+        c.title = 'Buy ' + info_.collection + ' on Wayup';
+        c.textContent = info_.collection;
+        line2.appendChild(c);
+      } else {
+        line2.appendChild(document.createTextNode(info_.collection));
+      }
     }
     if (info_.owner) {
-      info.appendChild(document.createTextNode(info_.name ? ' · held by ' : 'Held by '));
+      line2.appendChild(document.createTextNode(info_.collection ? ' · held by ' : 'Held by '));
       var a = document.createElement('a');
       a.href = info_.owner_url;
       if (info_.owner_avatar) {
@@ -231,8 +258,9 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
         a.appendChild(img);
       }
       a.appendChild(document.createTextNode(info_.owner));
-      info.appendChild(a);
+      line2.appendChild(a);
     }
+    if (line2.childNodes.length) info.appendChild(line2);
   }
   /*
    * A puzzle is over. Park the next one and let the player sit with the full
