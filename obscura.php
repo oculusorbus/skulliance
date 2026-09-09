@@ -198,6 +198,13 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
   /* Three across at 10 and 12 options, two below that -- see
      obscuraColumnsMobile(). Falls back to two if the variable is ever missing. */
   #ob-options { grid-template-columns:repeat(var(--ob-cols-m,2), minmax(0,1fr)); gap:6px; }
+  /* Ten options is three rows of three plus one, and that orphan sat hard left
+     looking like a mistake. Centre it.
+     :last-child:nth-child(10) matches only when there are EXACTLY ten buttons.
+     Ten is the only count that orphans one here: the tiers are 6, 8, 10 and 12,
+     6 and 8 are two across, and 12 fills four rows of three exactly. A future
+     tier ending in 4, 7 or 13 options would need the same treatment. */
+  #ob-options .ob-opt:last-child:nth-child(10) { grid-column:2; }
   .ob-opt          { min-height:0; padding:7px 4px; line-height:1.15; }
   .ob-opt-project  { font-size:.58rem; letter-spacing:.02em; }
   .ob-opt-name     { font-size:.76rem; }
@@ -206,7 +213,11 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
   .ob-tier  { font-size:.7rem; margin-bottom:8px; }
   #ob-message     { margin-top:8px; font-size:.8rem; min-height:1.2em; }
   #ob-reveal-info { margin:-4px 0 8px; }
-  #ob-next        { margin-top:10px; padding:9px 22px; }
+  /* Reordered above the grid, so it needs space UNDER it as well as over --
+     with nothing below, Next sat flush against the first row of options and
+     read as part of the board rather than the thing to press next. Flex items
+     don't collapse margins, so this is simply added. */
+  #ob-next        { margin:12px 0 20px; padding:10px 24px; }
 
   /* Nothing pinned to the bottom of the viewport on this page. The PWA strip
      and the quick menu both sit ON TOP of the board (z-index 1 and 2), and the
