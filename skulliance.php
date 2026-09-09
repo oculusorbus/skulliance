@@ -894,7 +894,9 @@ function filterNFTs($page, $username="", $method='post'){
 	$core_projects = getProjects($conn, "core");
 	$partner_projects = getProjects($conn, "partner");
 	$anchor = "";
-	if($page == "dashboard" || $page == "showcase"){
+	// "dashboard" kept alongside "my-nfts": the page was renamed but the old
+	// identifier may still arrive from a cached form or an old link.
+	if($page == "my-nfts" || $page == "dashboard" || $page == "showcase"){
 		$anchor = "#holdings";
 	}
 	$username_hidden = "";

@@ -79,7 +79,7 @@ $lp_sections = array(
 		'accent' => '#4fa3ff',
 		'blurb'  => 'Your NFTs, and the places to get more of them.',
 		'items'  => array(
-			array('dashboard.php',       '🎒', 'My NFTs',         'Everything you have staked'),
+			array('my-nfts.php',         '🎒', 'My NFTs',         'Everything you have staked'),
 			array('store.php',           '🏪', 'Store',           'Free member claims'),
 			array('auctions.php',        '🔨', 'Auctions',        'Bid on NFTs'),
 			array('raffles.php',         '🎟️', 'Raffles',         'Ticketed draws'),

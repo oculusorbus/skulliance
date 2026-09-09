@@ -187,7 +187,7 @@
 		  <div class="nav-dropdown">
 		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">NFTs</span>
 		    <div class="nav-dropdown-menu">
-		      <a href="dashboard.php">Dashboard</a>
+		      <a href="my-nfts.php">My NFTs</a>
 		      <a href="store.php">Store</a>
 		      <a href="auctions.php">Auctions</a>
 		      <a href="raffles.php">Raffles</a>
