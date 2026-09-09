@@ -1446,6 +1446,17 @@ payoff. It is resolved before the run row is cleared, since that drops `nft_id`,
 and by then the row already points at a new NFT, so the reveal url cannot be
 turned around on a live puzzle.
 
+The reveal is captioned with the NFT's name and, **only with the holder's
+consent**, who holds it. `obscuraRevealDetails()` requires `users.visibility == 2`
+before naming anyone - the same gate `profile.php:40` and `gallery.php:33` use
+before showing a member's NFTs, because "held by X" publishes part of X's
+collection to whoever happens to be playing. Don't loosen it, and don't replace
+an unnamed holder with "private" or "anonymous": that would itself disclose that
+somebody on the platform holds the piece. Most of `nfts` is `user_id = 0` anyway,
+so the join is a LEFT JOIN - an unowned NFT still has a name and still earns a
+reveal. The name is arbitrary on-chain metadata, so the caption is built from DOM
+nodes and never from an HTML string.
+
 **Nothing in Obscura is timed, and that is a decision, not an omission.** A
 per-attempt clock was built and reverted the same day: it is anxiety-inducing and
 this game is meant to be relaxing. It also fought the run-persistence promise,

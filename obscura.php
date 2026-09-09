@@ -60,6 +60,10 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 		     the browser not to look. -->
 		<img id="ob-view" alt="A fragment of an NFT" src="ajax/obscura-crop.php?v=<?php echo urlencode($ob_state['crop_v']); ?>">
 
+		<!-- Filled in only on a reveal: what the piece is, and who holds it if
+		     they have opted into showing their collection. -->
+		<div id="ob-reveal-info"></div>
+
 		<div id="ob-options" style="--ob-cols:<?php echo intval($ob_state['columns']); ?>">
 			<?php foreach ($ob_state['options'] as $o): ?>
 				<button type="button" class="ob-opt" data-id="<?php echo intval($o['id']); ?>"
@@ -111,6 +115,12 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
   to   { transform:scale(1);    opacity:1; }
 }
 @media (prefers-reduced-motion:reduce) { #ob-view.ob-reveal { animation:none; } }
+#ob-reveal-info {
+  text-align:center; font-size:.82rem; color:rgba(255,255,255,.55);
+  margin:-8px 0 16px; min-height:1.2em; line-height:1.5;
+}
+#ob-reveal-info strong { color:rgba(255,255,255,.85); font-size:.9rem; }
+#ob-reveal-info a { color:#00c8a0; }
 /* Fixed columns per tier (--ob-cols, set from obscuraColumns): 6->3, 8->4,
    10->5, 12->4. grid-auto-rows:1fr is what keeps EVERY button the same
    height -- grid already equalises within a row, but without this a row
@@ -165,6 +175,7 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
   var view = document.getElementById('ob-view');
   var msg  = document.getElementById('ob-message');
   var next = document.getElementById('ob-next');
+  var info = document.getElementById('ob-reveal-info');
   var busy = false;
   var revealing = false;
   var pending = null;   // the next puzzle, held until the player asks for it
@@ -174,16 +185,38 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
     revealing = false;
     view.classList.remove('ob-reveal');
     view.classList.add('ob-swapping');
+    info.textContent = '';   // last puzzle's caption must not outlive it
     view.src = 'ajax/obscura-crop.php?v=' + encodeURIComponent(v);
   }
-  // Once judged, the puzzle is over and the whole artwork is the payoff.
-  // Served straight from the local cache -- no crop to apply any more.
-  function showReveal(url) {
-    if (!url) return;
+  /*
+   * Once judged, the puzzle is over and the whole artwork is the payoff, so it
+   * gets a caption: what the piece is called, and who holds it when they have
+   * opted into showing their collection (the server decides that, not this).
+   *
+   * Built from DOM nodes rather than an HTML string: an NFT name is arbitrary
+   * on-chain metadata and goes straight into the page, so it must never be
+   * parsed as markup.
+   */
+  function showReveal(info_) {
+    if (!info_ || !info_.art) return;
     revealing = true;
     view.classList.remove('ob-swapping');
     view.classList.add('ob-reveal');
-    view.src = url;
+    view.src = info_.art;
+
+    info.textContent = '';
+    if (info_.name) {
+      var n = document.createElement('strong');
+      n.textContent = info_.name;
+      info.appendChild(n);
+    }
+    if (info_.owner) {
+      info.appendChild(document.createTextNode(info_.name ? ' · held by ' : 'Held by '));
+      var a = document.createElement('a');
+      a.href = info_.owner_url;
+      a.textContent = info_.owner;
+      info.appendChild(a);
+    }
   }
   /*
    * A puzzle is over. Park the next one and let the player sit with the full

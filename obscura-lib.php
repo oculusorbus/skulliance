@@ -144,6 +144,44 @@ function obscuraArtForNft($conn, $nft_id) {
 	return obscuraLocalArt($a['ipfs'], $a['collection_id'], $a['project_id']);
 }
 
+/*
+ * Everything the reveal screen shows: the artwork, what the piece is called, and
+ * who holds it. Only ever called once a puzzle is judged.
+ *
+ * THE OWNER IS NAMED ONLY WITH THEIR CONSENT. Saying "held by X" publishes part
+ * of X's collection to whoever is playing, and this platform already has a
+ * control for that: visibility == 2 is what profile.php:40 and gallery.php:33
+ * require before showing anyone's NFTs. Obscura uses the same gate rather than
+ * inventing a looser one. Anything else -- unowned (user_id 0, which is most of
+ * the table), or a holder who has not opted in -- and the holding is simply not
+ * mentioned. Not "private", not "anonymous": mentioning it at all would leak
+ * that somebody here holds it.
+ */
+function obscuraRevealDetails($conn, $nft_id) {
+	$nft_id = intval($nft_id);
+	if ($nft_id <= 0) return null;
+	// LEFT JOIN, not INNER: an NFT with no Skulliance holder still has a name and
+	// still deserves a reveal.
+	$r = $conn->query("SELECT nfts.ipfs, nfts.name, nfts.collection_id, nfts.user_id,
+	                          collections.project_id, users.username, users.visibility
+	                   FROM nfts
+	                   INNER JOIN collections ON collections.id = nfts.collection_id
+	                   LEFT JOIN users ON users.id = nfts.user_id
+	                   WHERE nfts.id = $nft_id LIMIT 1");
+	if (!$r || $r->num_rows === 0) return null;
+	$a = $r->fetch_assoc();
+
+	$art = obscuraLocalArt($a['ipfs'], $a['collection_id'], $a['project_id']);
+	if ($art === null) return null;
+
+	$out = array('art' => $art, 'name' => (string)($a['name'] ?? ''), 'owner' => '', 'owner_url' => '');
+	if (intval($a['user_id']) > 0 && intval($a['visibility']) === 2 && !empty($a['username'])) {
+		$out['owner']     = $a['username'];
+		$out['owner_url'] = 'profile.php?username=' . urlencode($a['username']);
+	}
+	return $out;
+}
+
 // Pick a puzzle: one NFT with verified art, plus N-1 decoy collections.
 // Returns null if nothing suitable could be found, which the caller surfaces
 // rather than pretending a puzzle exists.
@@ -329,7 +367,7 @@ function obscuraGuess($conn, $user_id, $collection_id) {
 	 * By the time the player has this url the run already points at a new NFT,
 	 * so it cannot be turned around on a live puzzle.
 	 */
-	$reveal = obscuraArtForNft($conn, $run['nft_id']);
+	$reveal = obscuraRevealDetails($conn, $run['nft_id']);
 
 	if ($guess === $answer) {
 		$streak++;
