@@ -74,8 +74,26 @@ function obscuraColumns($option_count) {
 	return 3;
 }
 
-// Human-readable note shown when the difficulty changes, so the tightening
-// reads as earned pressure rather than the game misbehaving.
+/*
+ * The terms you are playing under RIGHT NOW, for the standing line above the
+ * board. Built from obscuraDifficulty rather than written out, so it cannot
+ * drift from the numbers actually in force.
+ *
+ * Deliberately separate from obscuraTierLabel below. One describes a state and
+ * has to stay true for as long as it is on screen; the other announces a change
+ * and is only true at the instant it fires. Conflating them is what left "ONE
+ * attempt. 12 collections." sitting above a fresh streak-0 board.
+ */
+function obscuraTierTerms($streak) {
+	$d = obscuraDifficulty($streak);
+	return $d['options'] . ' collections, '
+	     . $d['attempts'] . ($d['attempts'] === 1 ? ' attempt, ' : ' attempts, ')
+	     . $d['zooms'][0] . '% of the artwork';
+}
+
+// Human-readable note shown ONLY when the difficulty changes, so the tightening
+// reads as earned pressure rather than the game misbehaving. Transient: it goes
+// in the result message, never in the standing line.
 function obscuraTierLabel($streak) {
 	if ($streak >= 31) return 'ONE attempt. 12 collections. 8% of the artwork.';
 	if ($streak >= 16) return 'Two attempts now, and ten collections to choose from.';
@@ -263,6 +281,7 @@ function obscuraState($conn, $user_id) {
 		'used'        => $used,
 		'wrong'       => json_decode($run['wrong'] ?? '[]', true) ?: array(),
 		'tier'        => obscuraTierIndex($streak),
+		'tier_terms'  => obscuraTierTerms($streak),
 		'tier_label'  => obscuraTierLabel($streak),
 	);
 }

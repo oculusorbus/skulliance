@@ -49,9 +49,10 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 			</span>
 		</div>
 
-		<?php if ($ob_state['tier_label'] !== ''): ?>
-			<div class="ob-tier"><?php echo htmlspecialchars($ob_state['tier_label']); ?></div>
-		<?php endif; ?>
+		<!-- The terms in force now, NOT an announcement -- it has to keep telling
+		     the truth after the streak changes, so load() refreshes it like the
+		     rest of the HUD. Tier CHANGES are announced in #ob-message instead. -->
+		<div class="ob-tier" id="ob-tier"><?php echo htmlspecialchars($ob_state['tier_terms']); ?></div>
 
 		<!-- Only the visible region ever reaches the browser. The full artwork
 		     is cropped server-side (ajax/obscura-crop.php) because the image
@@ -86,7 +87,10 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 .ob-notice a { color:#00c8a0; }
 .ob-hud { display:flex; gap:20px; font-size:.8rem; color:rgba(255,255,255,.55); margin-bottom:10px; flex-wrap:wrap; }
 .ob-hud strong { color:#00c8a0; font-size:1rem; }
-.ob-tier { font-size:.78rem; color:#ffcc44; border-left:2px solid #ffcc44; padding-left:10px; margin-bottom:12px; }
+/* Standing context, so it is muted. Yellow here read as a warning on every
+   page load; the tier CHANGE keeps the yellow, in #ob-message, where it is
+   actually news. */
+.ob-tier { font-size:.78rem; color:rgba(255,255,255,.45); border-left:2px solid rgba(255,255,255,.15); padding-left:10px; margin-bottom:12px; }
 #ob-view {
   display:block; width:100%; aspect-ratio:1/1; max-width:420px; margin:0 auto 18px;
   border-radius:8px; border:1px solid rgba(255,255,255,.08);
@@ -243,6 +247,7 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
     document.getElementById('ob-best').textContent   = state.best;
     document.getElementById('ob-attempts').textContent =
       (state.attempts - state.used) + ' of ' + state.attempts + ' attempts left';
+    document.getElementById('ob-tier').textContent = state.tier_terms || '';
 
     var box = document.getElementById('ob-options');
     // The column count changes with the tier, so it has to move with the
