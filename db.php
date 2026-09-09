@@ -6780,16 +6780,30 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 		$sources = array_intersect_key($sources, array_flip($game_sources));
 	}
 
-	// $activity[user_id] = ['daily'=>0, 'mission'=>0, ..., 'total_pts'=>0]
+	/*
+	 * $activity[user_id] = ['daily'=>0, 'mission'=>0, ..., 'total_pts'=>0]
+	 *
+	 * Zero-filled FROM $sources rather than a hand-written literal. The literal
+	 * that used to be here listed every source by hand, so adding 'obscura' to
+	 * $sources without also adding it below produced
+	 *   Warning: Undefined array key "obscura"
+	 * on Game Master for every player. Deriving the keys means a source can
+	 * never again be counted without being initialised -- the two lists cannot
+	 * drift because there is only one list.
+	 *
+	 * Correct under both scopes: 'games' filters $sources above, and the render
+	 * block below only reads the non-game keys when $scope !== 'games'.
+	 */
+	$blank = array_fill_keys(array_keys($sources), 0);
+	$blank['total_pts'] = 0;
+
 	$activity = [];
 	foreach ($sources as $key => [$query, $weight]) {
 		$res = $conn->query($query);
 		if (!$res) continue;
 		while ($row = $res->fetch_assoc()) {
 			$uid = intval($row['user_id']);
-			if (!isset($activity[$uid])) {
-				$activity[$uid] = ['daily'=>0,'mission'=>0,'skullswap'=>0,'gauntlet'=>0,'crawl'=>0,'conquest'=>0,'racer'=>0,'raid'=>0,'boss'=>0,'monstrocity'=>0,'total_pts'=>0];
-			}
+			if (!isset($activity[$uid])) $activity[$uid] = $blank;
 			$cnt = intval($row['cnt']);
 			$activity[$uid][$key]       += $cnt;
 			$activity[$uid]['total_pts'] += $cnt * $weight;
@@ -6879,8 +6893,10 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 		if ($scope !== 'games') {
 			$stats['Raids'] = number_format($data['raid']);
 		}
-		$stats['Bosses'] = number_format($data['boss']);
-		$stats['M3RPG']  = number_format($data['monstrocity']);
+		$stats['Bosses']  = number_format($data['boss']);
+		$stats['M3RPG']   = number_format($data['monstrocity']);
+		// Last, matching where Obscura sits in the Games group on the hub.
+		$stats['Obscura'] = number_format($data['obscura']);
 		$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => ''];
 		$last_score = $score;
 	}
