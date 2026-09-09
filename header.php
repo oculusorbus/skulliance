@@ -161,6 +161,11 @@
 		  <?php } ?>
 		  <a href="profile.php<?php echo (isset($name)) ? '?username='.urlencode($name) : ''; ?>"><?php echo (isset($name))?$name:"";?></a>
 
+		  <!-- Launchpad: a top-level link, deliberately not inside a dropdown.
+		       It is the page after login and the way back to everything, so
+		       burying it in a menu would defeat the point of it existing. -->
+		  <a href="launchpad.php">Launchpad</a>
+
 		  <!-- Play -->
 		  <div class="nav-dropdown navbar-first">
 		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Play</span>

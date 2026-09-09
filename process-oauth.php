@@ -195,5 +195,8 @@ $_SESSION['userData'] = [
 // is present from the first request onward, same as every other page.
 checkUser($conn);
 
-header("location: profile.php");
+// Land on the Launchpad, not profile.php. A profile page is what you look at
+// when you already know your way around; the first thing after login should
+// be what the platform actually offers.
+header("location: launchpad.php");
 exit();
