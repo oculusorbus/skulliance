@@ -1446,6 +1446,14 @@ payoff. It is resolved before the run row is cleared, since that drops `nft_id`,
 and by then the row already points at a new NFT, so the reveal url cannot be
 turned around on a live puzzle.
 
+**Nothing in Obscura is timed, and that is a decision, not an omission.** A
+per-attempt clock was built and reverted the same day: it is anxiety-inducing and
+this game is meant to be relaxing. It also fought the run-persistence promise,
+since any clock has to tell absence apart from hesitation to keep that promise.
+Don't reintroduce a countdown, a speed bonus, or an auto-advancing reveal - the
+reveal parks the next puzzle behind a Next button and waits for the player
+indefinitely. Score is streak depth alone.
+
 Still to build at launch: CARBON rewards, a weekly/monthly period that resets
 streaks, leaderboard + hub entry, marketing page, nav entry, Discord notifications.
 
