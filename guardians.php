@@ -702,6 +702,9 @@ $rg_theme_img = $rg_theme > 0
 		-->
 		<div id="rg-field">
 			<div id="rg-wall"></div>
+			<!-- Shields stack and never expire, and the wall glows the same for one
+			     as for five -- so the count is the only way to know what is banked. -->
+			<span id="rg-wall-shields" hidden></span>
 			<img id="rg-tower-icon" src="icons/locations/tower.png" alt="Tower"
 			     title="The Tower. Its garrison fires from here." onerror="this.style.display='none'">
 			<img id="rg-portal-icon" src="icons/locations/portal.png" alt="Portal"
@@ -790,6 +793,12 @@ $rg_theme_img = $rg_theme > 0
 							<span class="rg-item-name"><?php echo htmlspecialchars($rg_cu[0]); ?>
 								<b data-count="<?php echo intval($rg_cid); ?>">(0)</b></span>
 							<span class="rg-item-blurb"><?php echo htmlspecialchars($rg_cu[1]); ?></span>
+							<?php if ($rg_rowname === 'volleys'): ?>
+							<!-- Volleys are the only items with a DURATION, and any of them
+							     overwrites whatever is already running -- so all four share
+							     one countdown showing when the current boost expires. -->
+							<i class="rg-item-boost"></i>
+							<?php endif; ?>
 						</button>
 					<?php endforeach; ?>
 				</div>
@@ -1271,6 +1280,31 @@ $rg_theme_img = $rg_theme > 0
 .rg-item:disabled .rg-item-blurb { color:rgba(255,255,255,.32); }
 .rg-item:disabled .rg-item-name b { color:rgba(255,255,255,.45); }
 .rg-item:disabled img { opacity:.4; }
+/* The volley countdown. Drains along the bottom of all four, because any of
+   them overwrites whatever is running -- see paintShelf(). */
+.rg-item { position:relative; overflow:hidden; }
+.rg-item-boost { position:absolute; left:0; bottom:0; height:3px; width:0;
+                 background:#ffcc44; transition:width .1s linear; }
+/* Pressing THIS one would replace a stronger boost with a weaker one and reset
+   the clock. Marked rather than disabled -- overwriting is sometimes right,
+   just never when it is a downgrade. */
+.rg-item.rg-item-worse { border-color:rgba(255,204,68,.45); }
+.rg-item.rg-item-worse .rg-item-name { color:rgba(255,204,68,.75); }
+
+/* The free level applies ITSELF, so the card that gained it says so -- the log
+   named it, but the log keeps three lines and this fires mid-fight. */
+@keyframes rg-boon { 0% { box-shadow:0 0 0 0 rgba(255,204,68,.85); }
+                     100% { box-shadow:0 0 0 14px rgba(255,204,68,0); } }
+.rg-loc.rg-boon { border-color:rgba(255,204,68,.9); animation:rg-boon 1s ease-out 2; }
+@media (prefers-reduced-motion: reduce) { .rg-loc.rg-boon { animation:none; } }
+
+/* Shields banked, on the wall itself. They stack and never expire, and the wall
+   glows identically for one or five, so the number is the only real signal. */
+#rg-wall-shields { position:absolute; left:14px; top:6px; z-index:2; font-size:.7rem;
+                   font-weight:bold; color:#04121d; background:#00c8a0;
+                   border-radius:9px; padding:1px 7px; pointer-events:none;
+                   white-space:nowrap; }
+#rg-wall-shields[hidden] { display:none; }
 
 /* ---- THE LAST STAND -------------------------------------------------------
    Fixed rather than absolute: it announces something that just happened to the
@@ -1561,7 +1595,7 @@ $rg_theme_img = $rg_theme > 0
       // reserve/garrison hold GUARDIANS ({w,a}), not counts -- see equip().
       reserve:[],
       weapons:REALM.cache, armor:REALM.acache, dead:REALM.crypt,
-      garrison:[], items:[], shield:0, boost:0, boostFor:0, sortied:[], emerging:[],
+      garrison:[], items:[], shield:0, boost:0, boostFor:0, boostMax:0, sortied:[], emerging:[],
       wpool:REALM.wpool.slice(), apool:REALM.apool.slice(),
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
       prod:{ barracks:0, armory:0, forge:0, factory:0, mine:0, portal:0, reinforce:0, crypt:0 },
@@ -1663,6 +1697,20 @@ $rg_theme_img = $rg_theme > 0
       var k = UPGRADABLE[Math.floor(rand() * UPGRADABLE.length)];
       S.lvl[k]++;
       log('Random Reward: ' + k + ' rises to ' + S.lvl[k] + ' for nothing.');
+      /*
+       * The level applies ITSELF -- it is not a free press of an Upgrade
+       * button -- and the log said which one, but the log keeps three lines and
+       * this fires mid-fight, so it was routinely missed. The card that gained
+       * it flashes, which is where the player is already looking.
+       */
+      var lvlEl = document.getElementById('rg-lvl-' + k);
+      var card  = lvlEl && lvlEl.closest ? lvlEl.closest('.rg-loc') : null;
+      if (card) {
+        card.classList.remove('rg-boon');
+        void card.offsetWidth;            // restart the animation if it re-fires
+        card.classList.add('rg-boon');
+        setTimeout(function () { card.classList.remove('rg-boon'); }, 2000);
+      }
     } else if (it.id === 3) {                // Fast Forward -- halve the wait
       S.prod.barracks = barracksRate();
       S.prod.armory   = armoryRate();
@@ -1687,6 +1735,7 @@ $rg_theme_img = $rg_theme > 0
        * their head: the number on the tin is the number of tenths of a second.
        */
       S.boostFor = Math.round(pct * 100);
+      S.boostMax = S.boostFor;   // what the countdown on the shelf divides by
       S.hp = Math.min(S.maxhp, S.hp + 8);
       log(it.name + ': the guns bite ' + Math.round(pct * 100) + '% harder.');
     }
@@ -2906,6 +2955,10 @@ $rg_theme_img = $rg_theme > 0
    * shelf is how the items are learned, and a menu that rearranges itself
    * cannot be learned by position.
    */
+  // Mirrors useItem()'s own table -- the shelf has to know a Volley's magnitude
+  // to say whether pressing it would improve on what is already running.
+  var VOLLEY_PCT = { 2:0.25, 4:0.50, 5:0.75, 7:1.00 };
+  var shieldEl = document.getElementById('rg-wall-shields');
   var shelfEl = document.getElementById('rg-shelf');
   var shelfCountEl = document.getElementById('rg-shelf-count');
   var itemBtns = shelfEl ? shelfEl.querySelectorAll('.rg-item') : [];
@@ -2926,6 +2979,28 @@ $rg_theme_img = $rg_theme > 0
       if (badge) badge.textContent = '(' + n + ')';
       btn.disabled = n === 0 || !S.running || S.over || S.paused;
       btn.classList.toggle('rg-item-have', n > 0);
+      /*
+       * The countdown, and why it exists: volleys do NOT stack. A second one
+       * overwrites both the magnitude and the timer, so firing one while
+       * another is running throws the remainder away. The bar drains across all
+       * four, because any of them would do it.
+       *
+       * A press that would DOWNGRADE the running boost is marked separately --
+       * +25% over a live +100% is the one that actually costs you something,
+       * where +100% over a live +25% is an upgrade and perfectly fine.
+       */
+      var bar = btn.querySelector('.rg-item-boost');
+      if (bar) {
+        var live = S.boostFor > 0 && S.boostMax > 0;
+        bar.style.width = live ? Math.round(S.boostFor / S.boostMax * 100) + '%' : '0';
+        btn.classList.toggle('rg-item-worse', !!live && (VOLLEY_PCT[id] || 0) <= S.boost);
+      }
+    }
+    // Shields are invisible otherwise -- the wall glows whether one is up or
+    // five are. They stack and never expire, so the count is the whole point.
+    if (shieldEl) {
+      shieldEl.textContent = S.shield > 0 ? '\u26E8 ' + S.shield : '';
+      shieldEl.hidden = !(S.shield > 0);
     }
   }
 
