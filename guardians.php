@@ -718,9 +718,9 @@ $rg_theme_img = $rg_theme > 0
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/crypt.png" alt="" onerror="this.style.display='none'">Crypt <span class="rg-lvl" id="rg-lvl-crypt">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-dead">0</strong> dead</div>
-				<div class="rg-bar" title="Time until the Crypt can return another guardian"><i id="rg-bar-crypt"></i></div>
-					<div class="rg-cap" id="rg-cap-crypt">preparing next resurrection</div>
-				<button type="button" class="rg-act" data-act="raise" title="Bring a guardian back from the Crypt. Free — the Crypt just needs time, and a higher Crypt needs less of it.">Raise</button>
+				<div class="rg-bar" title="Time until the Crypt can perform the rite again"><i id="rg-bar-crypt"></i></div>
+					<div class="rg-cap" id="rg-cap-crypt">preparing the rite</div>
+				<button type="button" class="rg-act" data-act="raise" title="Empty the Crypt — every guardian in it comes back at once. Free; it only needs time, and a higher Crypt needs less of it. Waiting longer means more of them return in one rite.">Raise</button>
 				<button type="button" class="rg-act rg-up" data-act="up-crypt">Upgrade</button>
 			</div>
 			<div class="rg-loc">
@@ -834,10 +834,13 @@ $rg_theme_img = $rg_theme > 0
 					<li><strong>Upgrade</strong> (costs CARBON) &mdash; permanently improve a rate
 					or a cap for the rest of this run. This is the only thing CARBON buys, and it
 					compounds, so an early level is worth several late ones.</li>
-					<li><strong>Raise</strong> (free, costs time) &mdash; bring a guardian back
-					from the Crypt. The Crypt prepares one at a time and a higher Crypt prepares
-					them faster; it holds your dead indefinitely, so none are ever lost. Take
-					them when the Barracks can't replace losses quickly enough.</li>
+					<li><strong>Raise</strong> (free, costs time) &mdash; empties the Crypt:
+					<em>every</em> guardian in it comes back at once. The Crypt holds your dead
+					indefinitely, so none are ever lost, and a higher Crypt shortens the wait
+					between rites. Because one rite returns everyone, raising the instant it is
+					ready spends the whole cycle on whoever happens to be dead &mdash; holding on
+					returns everyone who falls in the meantime for the same wait. The judgement
+					is whether your wall lives long enough to be worth banking.</li>
 					<li><strong>Strike</strong> (free, costs guardians and gear) &mdash; kill
 					attackers in the open before they reach the wall. Trades bodies for wall
 					damage you never take.</li>
@@ -1624,15 +1627,24 @@ $rg_theme_img = $rg_theme > 0
    * THE CRYPT COSTS TIME, NOT CARBON.
    *
    * Raising used to be bought with CARBON, priced down by Crypt level. It reads
-   * better as a production line like every other location: the Crypt prepares a
-   * guardian, the bar shows how far along it is, and the Crypt LEVEL is what
-   * shortens the wait. Nothing is bought; you either have someone ready or you
-   * do not.
+   * better as a production line like every other location: the Crypt works up
+   * to a rite, the bar shows how far along it is, and the Crypt LEVEL is what
+   * shortens the wait. Nothing is bought; the rite is either ready or it is not.
+   *
+   * ONE RITE EMPTIES THE WHOLE CRYPT, which is what makes the wait a decision
+   * rather than a queue. Raising the moment it is ready spends the cycle on
+   * whoever happens to be dead; holding on returns everyone who falls in the
+   * meantime for the same wait. So the question is whether the wall survives
+   * long enough to be worth banking -- and the cost of being wrong is real,
+   * because a cycle spent on one body is a cycle not spent on ten.
+   *
+   * The rate is longer than it was when the rite returned a single guardian
+   * (was max(25, 180 - level*10)), because the payload is now the whole Crypt.
    *
    * The Crypt holds unlimited dead, so this line can never be blocked by
    * capacity -- only by having nobody left to bring back.
    */
-  function cryptRate()    { return Math.max(25, 180 - L('crypt') * 10); }
+  function cryptRate()    { return Math.max(50, 320 - L('crypt') * 15); }
   /*
    * Quadratic, not linear. At 18*level a wave's kills paid for two or three
    * upgrades, so defense compounded faster than the ladder climbed and the run
@@ -2252,8 +2264,10 @@ $rg_theme_img = $rg_theme > 0
      * news, and the caption says it that way rather than as a fault.
      */
     paintBar('crypt', S.prod.crypt, cryptRate(), S.prod.crypt >= cryptRate() && S.dead === 0,
-      S.dead > 0 ? 'preparing next resurrection' : 'no one to raise',
-      'ready — no one to raise');
+      S.prod.crypt >= cryptRate()
+        ? 'rite ready — raises all ' + S.dead
+        : (S.dead > 0 ? 'preparing the rite — ' + S.dead + ' waiting' : 'preparing the rite'),
+      'rite ready — no one to raise');
 
     /*
      * REUSE THE NODES. Do not rebuild innerHTML.
@@ -2431,15 +2445,17 @@ $rg_theme_img = $rg_theme > 0
       log(sent + ' to the Tower.');
     } else if (a === 'raise' && S.dead > 0 && S.prod.crypt >= cryptRate()) {
       /*
-       * One per cycle, and free. The Crypt spends TIME, so the batching that
-       * Deploy needs would be wrong here -- there is exactly one guardian
-       * prepared, and taking them resets the wait. Nothing to click faster for.
+       * The whole Crypt, in one rite, free. Deliberately NOT capped to the
+       * reserve: reserveCap governs how many the Barracks will STOCKPILE, and
+       * turning your own dead away at the door because the barracks is busy
+       * would be a bewildering way to lose a run. The Barracks simply pauses
+       * until the reserve falls back under its cap, which is self-correcting.
        */
+      var raised = S.dead;
       S.prod.crypt = 0;
-      S.dead--;
       // They come back without their kit -- it stayed where they fell.
-      S.reserve.push({ w:0, wn:'', a:0, an:'' });
-      log('The Crypt gives one back.');
+      while (S.dead > 0) { S.dead--; S.reserve.push({ w:0, wn:'', a:0, an:'' }); }
+      log('The Crypt gives ' + raised + ' back.' + (raised > 1 ? ' The wall fills again.' : ''));
     // Called STRIKE in the UI. The internal action id, the state and the CSS
     // ids stay 'sortie' -- renaming those would touch the field markup, the
     // stylesheet and the replay action log for a wording change, and the log

@@ -1562,16 +1562,22 @@ What a doc page will have to get right, because none of it is guessable:
   ~11x nerf to the panic button that was not intended. Left as-is deliberately:
   the user did not want a stronger Fortify lengthening runs, and preferred the
   agency of choosing over restored numbers.
-- **The Crypt costs TIME, not CARBON.** Raising used to be bought
-  (`raiseCost()`, priced down by Crypt level); it is now a production line like
-  every other location - `cryptRate()` = `max(25, 180 - level*10)` ticks, a bar
-  fills, and Raise takes the one prepared guardian for free and resets it.
-  17s at Crypt 1 down to a 2.5s floor at Crypt 16. Deliberately **not batched**
-  like Deploy: exactly one guardian is ever prepared, so there is nothing to
-  click faster for. The Crypt has **unlimited capacity**, so the line can never
-  stall on being full - only on having nobody left to raise, which the caption
-  says as good news rather than a fault. Consequence worth knowing: CARBON now
-  has exactly **one** sink, Upgrade.
+- **The Crypt costs TIME, not CARBON, and one rite empties it entirely.**
+  Raising used to be bought (`raiseCost()`, priced down by Crypt level); it is
+  now a production line - `cryptRate()` = `max(50, 320 - level*15)` ticks, a bar
+  fills, and Raise returns **every** guardian in the Crypt for free and resets
+  it. 30.5s at Crypt 1 down to a 5s floor at Crypt 18. The all-at-once payload
+  is what makes the wait a decision: raising the instant it is ready spends the
+  cycle on whoever happens to be dead, holding on returns everyone who falls in
+  the meantime for the same wait. Measured at Crypt 16 (8s/rite): banking beats
+  the old one-at-a-time rate above 4 bodies and is worse below it. Deliberately
+  **not** limited by `reserveCap` - that governs Barracks stockpiling, and
+  turning your own dead away because the barracks is busy would be a bewildering
+  way to lose a run; the Barracks just pauses until the reserve drops back under
+  its cap. The Crypt has **unlimited capacity**, so the line can never stall on
+  being full - only on having nobody left to raise, which the caption says as
+  good news rather than a fault. Consequence worth knowing: CARBON now has
+  exactly **one** sink, Upgrade.
 - **A progress bar completes only when something ARRIVES.** All production goes
   through one `produce(key, rate, deliver)` helper; the timer resets only if
   `deliver()` returns true, and a capped-out line holds at full (amber) instead
