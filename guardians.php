@@ -443,10 +443,10 @@ $rg_con_names = array(
  */
 $rg_con_ui = array(
 	6 => array('Wall Shield',  'Absorbs one breach, whole'),
-	7 => array('Volley +100%', '+8 wall, +100% for 6s'),
-	5 => array('Volley +75%',  '+8 wall, +75% for 6s'),
-	4 => array('Volley +50%',  '+8 wall, +50% for 6s'),
-	2 => array('Volley +25%',  '+8 wall, +25% for 6s'),
+	7 => array('Volley +100%', '+8 wall, +100% for 10s'),
+	5 => array('Volley +75%',  '+8 wall, +75% for 7.5s'),
+	4 => array('Volley +50%',  '+8 wall, +50% for 5s'),
+	2 => array('Volley +25%',  '+8 wall, +25% for 2.5s'),
 	3 => array('Rush Lines',   'Every line completes now'),
 	1 => array('Free Level',   'One random location +1'),
 );
@@ -868,11 +868,13 @@ $rg_theme_img = $rg_theme > 0
 					Strike immediately. Best used the moment you want guardians out in the field
 					and the cooldown says no.</li>
 					<li><strong>Volley +100% / +75% / +50% / +25%</strong> &mdash; each patches
-					8 onto the wall and makes the Tower hit that much harder for six seconds.
-					Two things worth knowing: the patch is capped at a full wall, so spending one
-					at 100 wastes it &mdash; and the Tower fires one shot at one attacker every
-					0.6s, so once your guardians already kill an attacker per shot, hitting
-					harder kills no faster. <em>Late in a run these are mostly the +8.</em></li>
+					8 onto the wall and makes the Tower hit that much harder. The duration
+					scales with the magnitude &mdash; the number on the tin is the number of
+					tenths of a second, so +100% runs for 10s and +25% for 2.5s. Two things
+					worth knowing: the patch is capped at a full wall, so spending one at 100
+					wastes it &mdash; and the Tower fires one shot at one attacker every 0.6s,
+					so once your guardians already kill an attacker per shot, hitting harder
+					kills no faster. <em>Late in a run these are mostly the +8.</em></li>
 					<li><strong>Free Level</strong> &mdash; one random location gains a level for
 					nothing. It is the only item that compounds, and the only one with no effect
 					on the fight in front of you. <em>Spend these early</em>, while a level still
@@ -881,6 +883,20 @@ $rg_theme_img = $rg_theme > 0
 				</ul>
 			</div>
 		</details>
+
+		<!-- The last stand. Fires once, the first time anything reaches the
+		     wall, and holds the siege while it is read. -->
+		<div id="rg-nuke" hidden role="dialog" aria-modal="true" aria-labelledby="rg-nuke-title">
+			<div class="rg-nuke-card">
+				<div class="rg-nuke-emoji" aria-hidden="true">&#9762;&#65039;</div>
+				<h3 id="rg-nuke-title">The wall is breached</h3>
+				<p>They reached it. The last stand detonates &mdash;
+				<strong><span id="rg-nuke-count">0</span></strong> swept from the field.</p>
+				<p class="rg-nuke-sub">There is only one. Whatever is still beyond the
+				edge is still coming.</p>
+				<button type="button" id="rg-nuke-ok">Hold the line</button>
+			</div>
+		</div>
 
 		<div id="rg-log"></div>
 	</div>
@@ -1154,6 +1170,27 @@ $rg_theme_img = $rg_theme > 0
 .rg-item:disabled .rg-item-name b { color:rgba(255,255,255,.45); }
 .rg-item:disabled img { opacity:.4; }
 
+/* ---- THE LAST STAND -------------------------------------------------------
+   Fixed rather than absolute: it announces something that just happened to the
+   whole board, and on a phone the board is taller than the screen -- anchoring
+   it to the page would put the announcement wherever you happened to be
+   scrolled. [hidden] guard is REQUIRED, because the rule below sets display and
+   an id selector outranks the browser's own [hidden]. */
+#rg-nuke { position:fixed; inset:0; z-index:50; display:flex; align-items:center;
+           justify-content:center; padding:20px; background:rgba(4,10,18,.82); }
+#rg-nuke[hidden] { display:none; }
+.rg-nuke-card { max-width:340px; text-align:center; background:#12263a;
+                border:1px solid rgba(255,204,68,.55); border-radius:12px;
+                padding:20px 22px; box-shadow:0 0 40px rgba(255,204,68,.28); }
+.rg-nuke-emoji { font-size:2.6rem; line-height:1; margin-bottom:8px; }
+.rg-nuke-card h3 { margin:0 0 8px; font-size:1rem; color:#ffcc44; letter-spacing:.04em;
+                   text-transform:uppercase; }
+.rg-nuke-card p { margin:0 0 8px; font-size:.82rem; color:rgba(255,255,255,.8); line-height:1.5; }
+.rg-nuke-card p.rg-nuke-sub { font-size:.74rem; color:rgba(255,255,255,.45); margin-bottom:14px; }
+.rg-nuke-card strong { color:#fff; }
+#rg-nuke-ok { background:#ffcc44; color:#1a1200; font-weight:bold; border:0;
+              border-radius:6px; padding:9px 20px; font-size:.82rem; cursor:pointer; }
+
 /* ---- PAUSED ---------------------------------------------------------------
    Unmistakable at a glance. Someone coming back to their phone after twenty
    minutes needs to see instantly that the game is held and nothing was lost --
@@ -1370,7 +1407,7 @@ $rg_theme_img = $rg_theme > 0
   var S = {};
   function reset() {
     S = {
-      running:false, over:false, paused:false, tick:0, wave:REALM.start - 1,
+      running:false, over:false, paused:false, nuked:false, tick:0, wave:REALM.start - 1,
       hp:100, maxhp:100, carbon:0,
       // The reserve is what is LEFT: everyone alive who is not already on the
       // wall or out on a raid. Without this the same guardian would be counted
@@ -1492,7 +1529,18 @@ $rg_theme_img = $rg_theme > 0
     } else {                                 // 25/50/75/100% Success
       var pct = { 2:0.25, 4:0.50, 5:0.75, 7:1.00 }[it.id] || 0.25;
       S.boost = pct;
-      S.boostFor = 60;                       // six seconds
+      /*
+       * The duration scales with the magnitude: seconds are the percentage
+       * over ten, so +25% runs 2.5s and +100% runs 10s. They were a flat six
+       * seconds each, which made the four nearly interchangeable -- the only
+       * difference was a number that, as measured earlier, often converts to no
+       * extra kills at all once a volley already one-shots.
+       *
+       * Scaling the time as well makes the rare ones genuinely rarer in effect
+       * rather than just in name, and it is the ratio a player can hold in
+       * their head: the number on the tin is the number of tenths of a second.
+       */
+      S.boostFor = Math.round(pct * 100);
       S.hp = Math.min(S.maxhp, S.hp + 8);
       log(it.name + ': the guns bite ' + Math.round(pct * 100) + '% harder.');
     }
@@ -2153,6 +2201,21 @@ $rg_theme_img = $rg_theme > 0
           }
         }
         if (S.hp <= 0) return end();
+        /*
+         * THE LAST STAND. The first attacker ever to reach the wall triggers
+         * one nuke, and everything already on the field goes with it.
+         *
+         * Once a run, and it fires on the FIRST body to touch the wall whether
+         * or not a shield or armour swallowed the hit -- what matters is that
+         * they got there at all. Anything still off screen is untouched, so it
+         * buys a breath rather than the wave: the horde beyond the edge keeps
+         * walking.
+         *
+         * Deterministic, which matters because it changes the simulation rather
+         * than just decorating it: no rand(), and the trigger is a position
+         * check, so a server replaying the same inputs nukes on the same tick.
+         */
+        if (!S.nuked) { S.nuked = true; lastStand(); return; }
       }
     }
 
@@ -2649,12 +2712,56 @@ $rg_theme_img = $rg_theme > 0
     pauseBtn.setAttribute('aria-pressed', S.paused ? 'true' : 'false');
     game.classList.toggle('rg-paused', !!S.paused);
   }
-  function setPaused(p) {
+  function setPaused(p, quiet) {
     if (!S.running || S.over || S.paused === p) return;
     S.paused = p;
-    if (p) { musicStop(); log('Siege paused. The horde waits.'); }
-    else   { if (musicOn) musicStart(); log('Siege resumed.'); }
+    if (p) { musicStop(); if (!quiet) log('Siege paused. The horde waits.'); }
+    else   { if (musicOn) musicStart(); if (!quiet) log('Siege resumed.'); }
     paintPause();
+    render();
+  }
+
+  /* ---- THE LAST STAND ---------------------------------------------------
+   * One nuke, the first time anything reaches the wall.
+   *
+   * The siege is held while the modal is up, and quietly -- a player reading
+   * why their wall just detonated should not be losing ground for it, and the
+   * ordinary "Siege paused" line would be noise on top of the announcement.
+   * Dismissing resumes.
+   */
+  /*
+   * Looked up and wired HERE, in one place. Assigning these earlier and
+   * declaring them here would have `var nukeEl = null` run AFTER the
+   * assignment and quietly wipe it -- var initialisers execute where they are
+   * written, however far the declaration hoists.
+   */
+  var nukeEl = document.getElementById('rg-nuke');
+  var nukeOk = document.getElementById('rg-nuke-ok');
+  if (nukeOk) {
+    nukeOk.addEventListener('click', function () {
+      nukeEl.hidden = true;
+      setPaused(false, true);
+    });
+  }
+  function lastStand() {
+    // Only what is ON the field. The horde still off screen keeps walking, so
+    // this buys a breath, not the wave.
+    var caught = 0;
+    for (var i = S.foes.length - 1; i >= 0; i--) {
+      if (S.foes[i].pos <= 100) { S.foes.splice(i, 1); caught++; }
+    }
+    // No CARBON: this is a desperation weapon, not a payday, and paying for it
+    // would make letting a breach through worth doing on purpose.
+    sfxPlay('demolition', 0.34);
+    log('THE WALL IS BREACHED. The last stand detonates &mdash; ' + caught +
+        ' swept from the field.', true);
+    if (nukeEl) {
+      var n = document.getElementById('rg-nuke-count');
+      if (n) n.textContent = caught;
+      nukeEl.hidden = false;
+      setPaused(true, true);
+      if (nukeOk) nukeOk.focus();
+    }
     render();
   }
   if (pauseBtn) pauseBtn.addEventListener('click', function () { setPaused(!S.paused); });
