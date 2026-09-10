@@ -58,18 +58,35 @@ Three things fall out of that, and all three are the reason to do it this way:
    synchronisation, no reconciliation. A deterministic simulation is a loop over
    a data structure.
 
-### The honest tradeoff
+### What the player actually DOES — resolved: phases
 
-Commit-your-loadout-and-watch loses the twitch layer: no dragging a hero around,
-no panic spell at the last second. What survives is the placement and economy
-puzzle, which is arguably Kingdom Rush's actual core, but it is genuinely a
-different feel and should be evaluated as such in the prototype.
+The first draft of this document said: choose your setup, press go, watch. Fixed
+build nodes along the path (the Kingdom Rush idiom, not free placement on an open
+grid — free placement lets players invent geometry you cannot balance against).
 
-**Upgrade path if the twitch layer is missed:** lockstep replay. The client sends
-actions with tick numbers (`place tower X at node Y at tick T`), the server
-replays them against the same seed and authoritative result. The deterministic
-engine is what makes that possible later; a client-authoritative engine would
-have to be thrown away first. Build the deterministic core either way.
+**That was too thin, and it was the server-authority requirement driving the
+design further than it needed to.** In real Kingdom Rush you build *during* waves,
+reacting. Commit-then-watch is not a simplified version of that; it is a
+different and much smaller game.
+
+**The answer is phases, and it fits the attrition design far better than
+placement ever did:**
+
+The siege runs wave by wave. BETWEEN waves the player decides — sortie through
+the Portal, spend Factory items, prioritise who the Crypt brings back, buy
+reinforcements with Mine income. On commit, the server resolves that wave
+deterministically and shows what happened. Then the player decides again against
+a changed board.
+
+That gives repeated decisions with visible consequences while the server still
+owns every outcome, and it needs **no netcode at all** — each decision point is
+an ordinary request. It is the deliberation of a TD without the reflexes, which
+suits a platform people play on a phone between other things.
+
+Lockstep replay (client sends tick-stamped actions, server replays them against
+the seed) stays available if real-time is ever wanted, and the deterministic core
+is what keeps that door open. But it is no longer the goal — phases are probably
+the better game for this audience, not a compromise.
 
 ---
 
@@ -239,9 +256,9 @@ Rough order:
 2. A single hardcoded scenario with **hardcoded location levels** — no realm
    reading yet. Barracks/Armory/Crypt/Tower only; skip Factory, Mine and Portal.
    Ugly is fine.
-3. The decision layer and a result animation. **Play it. Stop here and decide.**
-   The question is only ever: is spending finite supply against escalating waves
-   fun? If not, stop — realm integration cannot rescue it.
+3. The between-waves decision phase and a result animation. **Play it. Stop here
+   and decide.** The question is only ever: is spending finite supply against
+   escalating waves fun? If not, stop — realm integration cannot rescue it.
 4. Portal sorties and Factory items, the two live decisions, once the base loop
    holds up.
 5. Read real realm levels (read-only), and scale waves to total realm power.
