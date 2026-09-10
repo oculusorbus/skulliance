@@ -1545,6 +1545,18 @@ What a doc page will have to get right, because none of it is guessable:
   ones in `ajax/get-armory.php:151-163`, and Factory items *call*
   `getFactoryOdds()` rather than copying it, so a balance change there reaches
   the game for free.
+- **Issuing gear uses that same roll** (`drawFor()`), not the top of the cache.
+  Taking the front of a best-first pool meant a Strike of five drew five
+  consecutive entries from a sorted list - i.e. the same item - so every
+  guardian rode out identically armed and the Armory level was invisible once
+  you owned one good weapon. Measured: average tier issued now rises 1.80 (L1)
+  to 4.80 (L9). Levels pair up (1/2, 3/4, 5/6, 7/8) because the real odds table
+  does.
+- Any bucket read as a **batch** must be de-gradiented first (`$rg_destride`).
+  The kit query's `ORDER BY` exists so `LIMIT 400` keeps the best soldiers, but
+  it also means reading off the front hands you one gear tier. The raid line
+  and the reserve both need it; the Tower bucket deliberately does not, because
+  the best soldiers should man the wall.
 - Naming trap, verified live: icons use dashes and sounds omit separators -
   `icons/machine-gun.png` and `audio/sounds/machinegun.mp3`. Deriving one from
   the other with a single rule silently 404s. The sound whitelist mirrors

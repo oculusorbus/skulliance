@@ -179,30 +179,37 @@ if ($rg_me > 0) {
 		}
 
 		/*
-		 * BREAK UP THE GEAR GRADIENT ON THE RAID LINE.
+		 * BREAK UP THE GEAR GRADIENT.
 		 *
 		 * The ORDER BY above exists for one reason: if a realm has more than 400
 		 * soldiers, LIMIT has to keep the best rather than an arbitrary 400. But
-		 * it also hands the raid bucket over sorted by weapon level, with armour
-		 * as the tiebreaker -- so the raiders spread across the field were the
-		 * top weapon tier to a man (identically armed) while their armour, the
-		 * secondary key, still varied. It read as a bug in the weapon lookup and
-		 * was really the sort order showing through.
+		 * it also hands each bucket over sorted by weapon level, with armour as
+		 * the tiebreaker -- so any batch read off the FRONT is the top weapon
+		 * tier to a man (identically armed) while their armour, the secondary
+		 * key, still varies. It reads as a bug in the weapon lookup and is
+		 * really the sort order showing through.
 		 *
-		 * Stride through the sorted list instead of reading it front to back, so
-		 * the line is a representative mix. Deterministic -- no rand() -- so the
-		 * snapshot a replay reconstructs is byte-identical to this one. Only the
-		 * raid bucket needs this: the Tower wants the best soldiers first (they
-		 * man the wall up to the cap) and the reserve is never all on screen.
+		 * Two buckets are read as batches and both need this: the raid line,
+		 * which is drawn across the field all at once, and the reserve, which a
+		 * Strike shifts a handful off the front of. The Tower bucket is left
+		 * alone deliberately -- it wants the best soldiers first, because they
+		 * man the wall up to the cap.
+		 *
+		 * Stride through the sorted list instead of reading it front to back.
+		 * Deterministic -- no shuffle(), no rand() -- so the snapshot a replay
+		 * reconstructs is byte-identical to this one.
 		 */
-		if (count($rg_kit_raid) > 2) {
-			$stride = max(2, (int)round(sqrt(count($rg_kit_raid))));
+		$rg_destride = function ($rows) {
+			if (count($rows) <= 2) return $rows;
+			$stride = max(2, (int)round(sqrt(count($rows))));
 			$mixed = array();
 			for ($off = 0; $off < $stride; $off++) {
-				for ($i = $off; $i < count($rg_kit_raid); $i += $stride) $mixed[] = $rg_kit_raid[$i];
+				for ($i = $off; $i < count($rows); $i += $stride) $mixed[] = $rows[$i];
 			}
-			$rg_kit_raid = $mixed;
-		}
+			return $mixed;
+		};
+		$rg_kit_raid    = $rg_destride($rg_kit_raid);
+		$rg_kit_reserve = $rg_destride($rg_kit_reserve);
 
 		/*
 		 * SOLDIERS ON RAIDS ARE ALREADY IN THE FIELD.
@@ -1205,9 +1212,35 @@ $rg_theme_img = $rg_theme > 0
   function armoredCount()   { var n = 0; for (var i = 0; i < S.garrison.length; i++) if (S.garrison[i].a > 0) n++; return n; }
   // Issue from the cache to anyone short of kit. Best first: a quartermaster
   // hands out the good stuff, and it keeps early waves feeling equipped.
+  /*
+   * WHAT A SOLDIER IS HANDED FOLLOWS THE ARMORY'S OWN DROP TABLE.
+   *
+   * This used to shift() the front of the pool, which is kept best-first -- so
+   * a Strike of five drew the five best pieces, and consecutive entries in a
+   * sorted list are usually the SAME item. Every guardian rode out identically
+   * armed, which read as "default gear" and made the Armory level invisible
+   * once you owned one good weapon.
+   *
+   * The quartermaster now rolls a tier on TIER_ODDS for the current Armory
+   * level -- the same table the Armory modal shows players and the same one
+   * the forge rolls on -- and issues the nearest piece actually in the cache.
+   * So the spread of gear going out the Portal is the spread the Armory
+   * advertises, a higher Armory really does put better kit on more soldiers,
+   * and a cache holding a mix issues that mix instead of its top five.
+   *
+   * Seeded, like every other roll, so a replay issues the same gear.
+   */
+  function drawFor(pool) {
+    if (!pool.length) return null;
+    var tier = rollTier(), bi = 0;
+    for (var i = 1; i < pool.length; i++) {
+      if (Math.abs(pool[i].lvl - tier) < Math.abs(pool[bi].lvl - tier)) bi = i;
+    }
+    return pool.splice(bi, 1)[0];
+  }
   function equip(s) {
-    if (s.w === 0 && S.wpool.length) { var pw = S.wpool.shift(); s.w = pw.lvl; s.wn = pw.name; }
-    if (s.a === 0 && S.apool.length) { var pa = S.apool.shift(); s.a = pa.lvl; s.an = pa.name; }
+    if (s.w === 0) { var pw = drawFor(S.wpool); if (pw) { s.w = pw.lvl; s.wn = pw.name; } }
+    if (s.a === 0) { var pa = drawFor(S.apool); if (pa) { s.a = pa.lvl; s.an = pa.name; } }
     return s;
   }
   function poolIn(pool, piece, cap) {
