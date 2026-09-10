@@ -428,7 +428,29 @@ $rg_con_names = array(
 	1 => 'Random Reward', 2 => '25% Success', 3 => 'Fast Forward', 4 => '50% Success',
 	5 => '75% Success',   6 => 'Double Rewards', 7 => '100% Success',
 );
-$rg_build_items = function ($odds) use ($rg_con_names) {
+/*
+ * WHAT THE BUTTON SAYS, AND WHAT THE ITEM IS.
+ *
+ * Realms names these consumables for what they do THERE -- "Double Rewards" is
+ * a rewards multiplier on a location. In a siege, with the horde on the wall,
+ * that name tells you nothing about whether to press it. So each button leads
+ * with what it does HERE and carries the Realms name underneath, which keeps
+ * the two learnable as the same object without making the button cryptic at
+ * the exact moment it matters.
+ *
+ * Order is crisis-first and FIXED -- the same item is always in the same place,
+ * so it can be found by position once learned rather than read every time.
+ */
+$rg_con_ui = array(
+	6 => array('Wall Shield',  'Absorbs one breach, whole'),
+	7 => array('Volley x2',    '+8 wall, guns x2 for 6s'),
+	5 => array('Volley +75%',  '+8 wall, +75% for 6s'),
+	4 => array('Volley +50%',  '+8 wall, +50% for 6s'),
+	2 => array('Volley +25%',  '+8 wall, +25% for 6s'),
+	3 => array('Rush Lines',   'Every line completes now'),
+	1 => array('Free Level',   'One random location +1'),
+);
+$rg_build_items = function ($odds) use ($rg_con_names, $rg_con_ui) {
 	$out = array();
 	foreach ($odds as $cid => $pct) {
 		if (!isset($rg_con_names[$cid])) continue;
@@ -436,6 +458,8 @@ $rg_build_items = function ($odds) use ($rg_con_names) {
 			'id'   => intval($cid),
 			'pct'  => intval($pct),
 			'name' => $rg_con_names[$cid],
+			'ui'   => $rg_con_ui[$cid][0],
+			'blurb'=> $rg_con_ui[$cid][1],
 			// Same icon construction the factory modal uses (ajax/get-factory.php:38).
 			'icon' => 'icons/' . strtolower(str_replace(array('%', ' '), array('', '-'), $rg_con_names[$cid])) . '.png',
 		);
@@ -700,7 +724,6 @@ $rg_theme_img = $rg_theme > 0
 				<div class="rg-loc-stat"><strong id="rg-items">0</strong> items</div>
 				<div class="rg-bar" title="Time until the Factory builds the next item"><i id="rg-bar-factory"></i></div>
 					<div class="rg-cap">building next item</div>
-				<button type="button" class="rg-act" data-act="fortify" title="Spend the next Factory item. What it does depends on what the Factory built &mdash; the log says so the moment it lands">Fortify</button>
 				<button type="button" class="rg-act rg-up" data-act="up-factory">Upgrade</button>
 			</div>
 			<div class="rg-loc rg-wide">
@@ -722,6 +745,36 @@ $rg_theme_img = $rg_theme > 0
 					<input type="checkbox" id="rg-scratch"> Start from scratch
 				</label>
 				<?php endif; ?>
+			</div>
+		</div>
+
+		<!--
+			THE FACTORY SHELF.
+
+			Items used to be a QUEUE spent by one "Fortify" button: you got
+			whatever the Factory happened to build next, which made the one
+			action in the game you could not choose. Playtest: "I find myself
+			with the hordes all up on my wall and I'm mashing items hoping for a
+			miracle." Hoping is the giveaway -- that is a slot machine, not a
+			decision, and everything else in this game is a decision.
+
+			Each item is its own button now, always in the same place, showing
+			how many you hold. Nothing about the items changed; being able to
+			pick the right one is the whole upgrade.
+		-->
+		<div id="rg-shelf">
+			<div class="rg-shelf-head">Factory items &mdash; <span id="rg-shelf-count">0</span> held</div>
+			<div class="rg-shelf-grid">
+				<?php foreach ($rg_con_ui as $rg_cid => $rg_cu): ?>
+					<button type="button" class="rg-item" data-act="item-<?php echo intval($rg_cid); ?>" disabled
+					        title="<?php echo htmlspecialchars($rg_con_names[$rg_cid] . ' — ' . $rg_cu[1]); ?>">
+						<img src="icons/<?php echo strtolower(str_replace(array('%', ' '), array('', '-'), $rg_con_names[$rg_cid])); ?>.png"
+						     alt="" onerror="this.style.display='none'">
+						<span class="rg-item-name"><?php echo htmlspecialchars($rg_cu[0]); ?>
+							<b data-count="<?php echo intval($rg_cid); ?>">(0)</b></span>
+						<span class="rg-item-blurb"><?php echo htmlspecialchars($rg_cu[1]); ?></span>
+					</button>
+				<?php endforeach; ?>
 			</div>
 		</div>
 
@@ -754,15 +807,41 @@ $rg_theme_img = $rg_theme > 0
 					<li><strong>Strike</strong> (free, but costs guardians and gear) &mdash; kill
 					attackers in the open before they reach the wall. Trades bodies for wall
 					damage you never take.</li>
-					<li><strong>Fortify</strong> (costs a Factory item) &mdash; spends whatever
-					the Factory built: a shield, a free level, a rush on every production line,
-					or a burst of Tower damage. Save it for the moment a wave is about to break
-					through.</li>
+					<li><strong>Factory items</strong> (free, but each is spent for good)
+					&mdash; the shelf under the board. Which one you pick is the decision;
+					see below.</li>
 				</ul>
 				<p><strong>The strategy:</strong> spend early on upgrades while they still have
-				time to compound, then switch to raising and fortifying once waves outpace
+				time to compound, then switch to raising and spending items once waves outpace
 				production. Holding CARBON does nothing &mdash; unspent CARBON is a wave you
 				didn't survive.</p>
+
+				<p><strong>The seven items, and when they are worth spending.</strong> The
+				Factory builds them on its own and holds a limited number, so a shelf full of
+				items you are saving is a Factory that has stopped producing.</p>
+				<ul>
+					<li><strong>Wall Shield</strong> &mdash; the next attacker to reach your wall
+					is thrown back and does <em>no</em> damage at all. Stacks, and never expires:
+					three of them is three breaches cancelled. <em>The strongest thing you can
+					hold when the wall is about to be hit</em>, and worth most against the big
+					attackers, who hit for 12 where the rest hit for 5.</li>
+					<li><strong>Rush Lines</strong> &mdash; every production line completes at
+					once: a recruit, a weapon, a piece of armour, another item, CARBON, and the
+					Portal refilled. <em>The Portal is the point</em> &mdash; it means you can
+					Strike immediately. Best used the moment you want guardians out in the field
+					and the cooldown says no.</li>
+					<li><strong>Volley &times;2 / +75% / +50% / +25%</strong> &mdash; each patches
+					8 onto the wall and makes the Tower hit that much harder for six seconds.
+					Two things worth knowing: the patch is capped at a full wall, so spending one
+					at 100 wastes it &mdash; and the Tower fires one shot at one attacker every
+					0.6s, so once your guardians already kill an attacker per shot, hitting
+					harder kills no faster. <em>Late in a run these are mostly the +8.</em></li>
+					<li><strong>Free Level</strong> &mdash; one random location gains a level for
+					nothing. It is the only item that compounds, and the only one with no effect
+					on the fight in front of you. <em>Spend these early</em>, while a level still
+					has a whole run to pay you back &mdash; and spend them to clear shelf space
+					rather than sitting on them.</li>
+				</ul>
 			</div>
 		</details>
 
@@ -975,6 +1054,31 @@ $rg_theme_img = $rg_theme > 0
 #rg-scratch-wrap input { vertical-align:middle; margin-right:4px; cursor:pointer; }
 #rg-scratch-wrap:has(input:disabled) { opacity:.35; cursor:default; }
 #rg-begin[hidden] { display:none; }
+
+/* ---- THE FACTORY SHELF ----------------------------------------------------
+   Seven buttons, always in the same order, whether or not you hold any. A menu
+   that hides its empty slots cannot be learned by position, and being able to
+   reach for the right item without reading is the entire point of the change.
+   Auto-fit rather than a fixed column count, so it is a comfortable grid on a
+   monitor and two columns on a phone without a second breakpoint. */
+#rg-shelf { margin:0 0 12px; }
+#rg-shelf[hidden] { display:none; }
+.rg-shelf-head { font-size:.7rem; text-transform:uppercase; letter-spacing:.06em;
+                 color:rgba(255,255,255,.45); margin:0 0 6px; }
+.rg-shelf-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(148px, 1fr)); gap:6px; }
+.rg-item { display:grid; grid-template-columns:22px 1fr; grid-template-rows:auto auto;
+           gap:1px 8px; align-items:center; text-align:left;
+           background:#0d1e30; border:1px solid rgba(255,255,255,.1); border-radius:7px;
+           padding:7px 9px; cursor:pointer; color:inherit; font:inherit; }
+.rg-item img { grid-row:1 / span 2; width:22px; height:22px; object-fit:contain; }
+.rg-item-name { font-size:.76rem; font-weight:bold; color:#fff; line-height:1.2; }
+.rg-item-name b { color:#00c8a0; font-weight:bold; }
+.rg-item-blurb { font-size:.66rem; color:rgba(255,255,255,.45); line-height:1.25; }
+/* Holding one lights it up: at a glance the shelf shows what is available
+   without reading a single count. */
+.rg-item.rg-item-have { border-color:rgba(0,200,160,.55); background:#0e2637; }
+.rg-item:disabled { opacity:.34; cursor:default; }
+.rg-item:disabled .rg-item-name b { color:rgba(255,255,255,.5); }
 
 /* ---- PAUSED ---------------------------------------------------------------
    Unmistakable at a glance. Someone coming back to their phone after twenty
@@ -1251,25 +1355,11 @@ $rg_theme_img = $rg_theme > 0
     return REALM.items[REALM.items.length - 1];
   }
   /*
-   * What each does HERE, in the words of what it does in Realms.
-   *
-   * This is why the button names the item rather than saying "Fortify". The
-   * original generic Fortify always did one thing -- patch the wall and boost
-   * the Tower -- and that behaviour still exists, but it is now only the
-   * %-Success branch below: four of the seven items. The other three do
-   * something else entirely, so a player told only "Fortify" cannot tell
-   * whether they are about to repair the wall or bank a shield. Those are
-   * spent at completely different moments, which makes the name load-bearing.
+   * There is no help MAP here any more. Every item's name and one-line
+   * description live in $rg_con_ui in the PHP above, which is what renders the
+   * shelf buttons -- so the text a player reads and the text this file carries
+   * cannot drift apart, because there is only one of them.
    */
-  var RG_ITEM_HELP = {
-    1: 'Random Reward: a free level to a random location.',
-    2: '25% Success: repairs the wall and the Tower hits 25% harder for six seconds.',
-    3: 'Fast Forward: every production line completes immediately.',
-    4: '50% Success: repairs the wall and the Tower hits 50% harder for six seconds.',
-    5: '75% Success: repairs the wall and the Tower hits 75% harder for six seconds.',
-    6: 'Double Rewards: a shield that absorbs the next hit entirely.',
-    7: '100% Success: repairs the wall and the Tower hits twice as hard for six seconds.'
-  };
   var UPGRADABLE = ['tower','barracks','armory','crypt','portal','factory','mine'];
   function useItem(it) {
     if (!it) return;
@@ -1997,6 +2087,7 @@ $rg_theme_img = $rg_theme > 0
 
 
     paintPause();
+    paintShelf();
 
     // Locked mid-siege: swapping baselines would rebuild the state under the
     // wave already walking at you.
@@ -2013,17 +2104,8 @@ $rg_theme_img = $rg_theme > 0
       if (a === 'deploy')       b.disabled = !(S.reserve.length && S.garrison.length < garrisonCap());
       else if (a === 'raise')   b.disabled = !(S.dead > 0 && S.carbon >= raiseCost());
       else if (a === 'sortie')  b.disabled = !(S.reserve.length && S.prod.portal >= portalRate() && S.running);
-      else if (a === 'fortify') {
-        // The button says WHICH item is next, because the seven are not
-        // interchangeable -- see RG_ITEM_HELP. A shield and a Fast Forward are
-        // spent at completely different moments, and only four of the seven
-        // repair the wall at all, so "Fortify" would hide the actual decision.
-        b.disabled = !S.items.length;
-        b.textContent = S.items.length ? S.items[0].name : 'Fortify';
-        b.title = S.items.length
-          ? RG_ITEM_HELP[S.items[0].id] || 'Spend this item'
-          : 'The Factory builds these over time. What you get decides what it does.';
-      }
+      // No 'fortify' branch any more -- the items moved to their own shelf,
+      // where each has a button of its own and paintShelf() maintains it.
       else {
         var k = a.slice(3);
         b.disabled = S.carbon < upgradeCost(k);
@@ -2090,8 +2172,17 @@ $rg_theme_img = $rg_theme > 0
         S.emerging.push({ pos:PORTAL_X, w:u.w, wn:u.wn, a:u.a, an:u.an, hp:unitHp(u), max:unitHp(u), slot:unitSeq++ });
       }
       log(n + ' guardian' + (n > 1 ? 's ride' : ' rides') + ' out through the Portal.');
-    } else if (a === 'fortify' && S.items.length) {
-      useItem(S.items.shift());
+    } else if (a.indexOf('item-') === 0) {
+      /*
+       * Spend THAT item, not whatever is on top. The inventory stays a single
+       * array so the Factory's total cap keeps its meaning -- a shelf full of
+       * Free Levels really does block the next shield -- but the player picks
+       * which one leaves it.
+       */
+      var want = parseInt(a.slice(5), 10);
+      for (var ii = 0; ii < S.items.length; ii++) {
+        if (S.items[ii].id === want) { useItem(S.items.splice(ii, 1)[0]); break; }
+      }
     } else if (a.indexOf('up-') === 0) {
       var k = a.slice(3);
       if (S.carbon >= upgradeCost(k)) { S.carbon -= upgradeCost(k); S.lvl[k]++; S.bought[k]++; log(k + ' raised to ' + S.lvl[k] + '.'); }
@@ -2113,7 +2204,9 @@ $rg_theme_img = $rg_theme > 0
   }
 
   document.addEventListener('click', function (e) {
-    var b = e.target.closest('.rg-act');
+    // .rg-item carries data-act too, so the shelf goes through the same path
+    // and lands in the same replay log as every other action.
+    var b = e.target.closest('.rg-act, .rg-item');
     if (b && !b.disabled) act(b.dataset.act);
   });
 
@@ -2161,6 +2254,38 @@ $rg_theme_img = $rg_theme > 0
    * Resuming is always manual. Coming back to a siege already in progress, with
    * a wave part-way across the field, is exactly the ambush being avoided.
    */
+  /* ---- The Factory shelf -------------------------------------------------
+   * Counts are DERIVED from the inventory each paint rather than kept as a
+   * second tally that could drift out of step with it. Seven buttons is a
+   * cheap loop and there is then exactly one source of truth for what you hold.
+   *
+   * Every button is always present, including the ones you have none of: the
+   * shelf is how the items are learned, and a menu that rearranges itself
+   * cannot be learned by position.
+   */
+  var shelfEl = document.getElementById('rg-shelf');
+  var shelfCountEl = document.getElementById('rg-shelf-count');
+  var itemBtns = shelfEl ? shelfEl.querySelectorAll('.rg-item') : [];
+  function paintShelf() {
+    if (!shelfEl) return;
+    // Always on screen, including before the first siege and including the
+    // items you hold none of. It is the only place the seven are explained, and
+    // a player who has just arrived should be able to read what they are before
+    // needing one -- which was the whole complaint that produced this shelf.
+    var held = {};
+    for (var i = 0; i < S.items.length; i++) held[S.items[i].id] = (held[S.items[i].id] || 0) + 1;
+    if (shelfCountEl) shelfCountEl.textContent = S.items.length + ' / ' + itemCap();
+    for (var b = 0; b < itemBtns.length; b++) {
+      var btn = itemBtns[b];
+      var id = parseInt(btn.dataset.act.slice(5), 10);
+      var n = held[id] || 0;
+      var badge = btn.querySelector('b[data-count]');
+      if (badge) badge.textContent = '(' + n + ')';
+      btn.disabled = n === 0 || !S.running || S.over || S.paused;
+      btn.classList.toggle('rg-item-have', n > 0);
+    }
+  }
+
   var pauseBtn = document.getElementById('rg-pause');
   function paintPause() {
     if (!pauseBtn) return;

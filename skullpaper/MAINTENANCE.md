@@ -1548,6 +1548,20 @@ What a doc page will have to get right, because none of it is guessable:
   ones in `ajax/get-armory.php:151-163`, and Factory items *call*
   `getFactoryOdds()` rather than copying it, so a balance change there reaches
   the game for free.
+- **Factory items are a SHELF, not a queue.** Each of the seven has its own
+  button showing how many you hold (`#rg-shelf`), and `act('item-<id>')` spends
+  that one. It used to be a single "Fortify" that spent `S.items.shift()` -
+  whatever the Factory happened to build next - which made it the one action in
+  the game the player could not choose ("I'm mashing items hoping for a
+  miracle"). Buttons lead with what the item does *here* (`$rg_con_ui`) and keep
+  the Realms name on the tooltip; the inventory stays one array so the Factory's
+  total cap still binds, which is what makes clearing shelf space a decision.
+  **Note the known imbalance:** the `%`-Success boost is inert once a volley
+  one-shots an attacker (the Tower is single-target, one shot per 0.6s), and the
+  rework cut the heal from `12 + factory*2` (50 at Factory 19) to a flat 8 - an
+  ~11x nerf to the panic button that was not intended. Left as-is deliberately:
+  the user did not want a stronger Fortify lengthening runs, and preferred the
+  agency of choosing over restored numbers.
 - **Issuing gear uses that same roll** (`drawFor()`), not the top of the cache.
   Taking the front of a best-first pool meant a Strike of five drew five
   consecutive entries from a sorted list - i.e. the same item - so every
