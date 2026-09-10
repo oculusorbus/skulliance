@@ -972,6 +972,30 @@ $rg_theme_img = $rg_theme > 0
 #rg-scratch-wrap:has(input:disabled) { opacity:.35; cursor:default; }
 #rg-begin[hidden] { display:none; }
 
+/* ---- DOUBLE-TAP ZOOM ------------------------------------------------------
+   This game is tapped FAST -- deploy, raise, strike, fortify, upgrade -- and a
+   phone reads two quick taps near the same spot as "zoom in", so a decent burst
+   of tapping left the board magnified and half off-screen. It is native
+   behaviour, but it is not immovable: touch-action switches it off.
+
+   `manipulation` and not `none`: none would also kill scrolling, and this page
+   scrolls past the board to the log. manipulation disables double-tap zoom and
+   keeps panning AND pinch-zoom, so nobody loses the ability to magnify the
+   field deliberately -- it only stops the accidental version.
+
+   NOT user-scalable=no in the viewport meta, which is the other common answer:
+   header.php is shared by every page on the platform, so that would disable
+   pinch zoom everywhere, and iOS Safari has ignored it since 10 anyway.
+
+   Set on the container: touch-action on an ancestor restricts its descendants,
+   so this covers every control inside the board. The controls repeat it because
+   they are the elements actually being hammered. */
+#rg-game { touch-action:manipulation; }
+#rg-game button, #rg-game label, #rg-game input { touch-action:manipulation; }
+/* A fast repeat tap on a control can also start a text selection or a callout
+   on iOS. Controls only -- the log stays selectable. */
+#rg-game button, #rg-scratch-wrap { -webkit-user-select:none; user-select:none; }
+
 /* The lessons Obscura paid for: fits a phone, nothing pinned over the board. */
 @media (max-width:760px) { #rg-locations { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:560px) {
