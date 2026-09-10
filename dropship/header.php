@@ -136,7 +136,16 @@
 		  <?php if($_SESSION["userData"]["dropship_project_id"] == 1 || $_SESSION["userData"]["dropship_project_id"] == 2 || $_SESSION["userData"]["dropship_project_id"] == 4){?>
 		  <a href="instructions.php">How to Play</a>
 		  <?php } ?>
-		  <a href="../dashboard.php">&larr; Back to Skulliance</a>
+		  <!-- The LAUNCHPAD, not the dashboard. Every other game on the platform
+		       exits to launchpad.php (Monstrocity, Skull Swap, Match 3), because
+		       someone leaving a game is usually going to another one, and the
+		       launchpad is the page that lists them; the dashboard is a staking
+		       page and a detour from there. Drop Ship was the last one still
+		       pointing at the dashboard, from before it moved into this repo.
+		       Relative, never absolute: the login cookie is host-only, so a link
+		       hardcoded to www would drop a skulliance.io session (and vice
+		       versa) and land the player on a logged-out launchpad. -->
+		  <a href="../launchpad.php" aria-label="Back to the Skulliance Launchpad">&larr; Back to Skulliance</a>
 		</div>
 		<!-- Mobile bottom quick-links bar (icons/scoreboard.png etc. all
 		     curl-verified live) -- same visual pattern as Missions/Realms'
