@@ -656,7 +656,7 @@ $rg_theme_img = $rg_theme > 0
 				     below the help disclosure, which put the one button that starts
 				     the game furthest from the board -- you had to scroll past
 				     everything to start, and again to restart after a loss. -->
-				<button type="button" id="rg-begin">Begin the siege</button>
+				<button type="button" id="rg-begin">Begin the Siege</button>
 			</div>
 		</div>
 
@@ -895,10 +895,12 @@ $rg_theme_img = $rg_theme > 0
 #rg-help strong { color:rgba(255,255,255,.85); }
 #rg-log { margin-top:12px; font-size:.78rem; color:rgba(255,255,255,.45); min-height:3.2em; line-height:1.5; }
 #rg-log b { color:#ff6b6b; }
-/* On the Mine row now, so it reads as one of the row's controls rather than a
-   banner under the log -- sized to stand out from Upgrade without breaking the
-   row's rhythm. */
-#rg-begin { display:inline-block; margin:0 0 3px 0; background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:5px; padding:7px 14px; font-size:.78rem; cursor:pointer; }
+/* On the Mine row now rather than in a banner under the log, but CENTRED on
+   its own line instead of sitting inline beside Upgrade -- the button that
+   starts the game is not one of the Mine's controls and should not read as
+   one. Its own block, so it keeps the centre of the wide row whatever the
+   Upgrade button next to it is doing. */
+#rg-begin { display:block; margin:8px auto 2px; background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:6px; padding:9px 22px; font-size:.84rem; cursor:pointer; }
 #rg-begin[hidden] { display:none; }
 
 /* The lessons Obscura paid for: fits a phone, nothing pinned over the board. */
