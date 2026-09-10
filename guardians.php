@@ -582,7 +582,15 @@ $rg_theme_img = $rg_theme > 0
    header rather than only the board. Art on a ::before so it can never paint
    over the content, inset slightly so it fills the rounded corners without
    exposing an edge, overflow clipped. Everything real sits above it. */
-#row1.rg-themed { position:relative; overflow:hidden; border-radius:14px; padding:18px 0; }
+/* Full screen height whatever the board's height is -- a short run left the art
+   as a shallow band with dead page under it. dvh first for mobile, where the
+   browser chrome makes vh refer to the tallest state and overshoot. */
+#row1.rg-themed {
+  position:relative; overflow:hidden; border-radius:14px; padding:18px 0;
+  min-height:100vh;
+  min-height:100dvh;
+  align-content:flex-start;   /* content stays at the top; the art fills down */
+}
 #row1.rg-themed::before {
   content:''; position:absolute; inset:-3%;
   background-image:var(--rg-theme-img);
@@ -593,6 +601,18 @@ $rg_theme_img = $rg_theme > 0
 /* The panels need to stay legible on top of artwork. */
 #row1.rg-themed .rg-loc { background:rgba(13,30,48,.93); }
 #row1.rg-themed #rg-field { background:rgba(10,25,41,.93); }
+/* The intro is small grey text and the themes are busy artwork, so it needs its
+   own ground to sit on rather than relying on the wash alone. Only when themed;
+   over the flat background it would be a box around nothing. */
+#row1.rg-themed h2.rg-intro,
+#row1.rg-themed .rg-blurb {
+  background:rgba(7,17,29,.78);
+  border-radius:10px;
+  padding:10px 14px;
+  backdrop-filter:blur(2px);
+}
+#row1.rg-themed h2.rg-intro { display:inline-block; margin-bottom:10px; }
+#row1.rg-themed .rg-blurb { margin-top:0; }
 .rg-blurb { font-size:.82rem; color:rgba(255,255,255,.5); margin:-6px 0 16px; line-height:1.5; }
 .rg-blurb strong { color:#00c8a0; }
 .rg-tag { font-size:.6rem; text-transform:uppercase; letter-spacing:.12em; color:#ffcc44; border:1px solid rgba(255,204,68,.4); border-radius:10px; padding:2px 8px; vertical-align:middle; }
