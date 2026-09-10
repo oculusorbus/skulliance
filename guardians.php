@@ -790,8 +790,8 @@ $rg_theme_img = $rg_theme > 0
 			<div class="rg-mine-body">
 				<div class="rg-mine-stats">
 					<div class="rg-loc-stat">CARBON &middot; <span id="rg-mine-rate">+0/s</span></div>
-					<div class="rg-bar" title="Time until the Mine yields more CARBON"><i id="rg-bar-mine"></i></div>
-						<div class="rg-cap" id="rg-cap-mine">next CARBON payout</div>
+					<div class="rg-bar" title="CARBON banked toward the Mine's next level. Full means you can afford it — and it falls back when you spend on another location."><i id="rg-bar-mine"></i></div>
+						<div class="rg-cap" id="rg-cap-mine">CARBON to the next Mine level</div>
 					<button type="button" class="rg-act rg-up" data-act="up-mine">Upgrade</button>
 				</div>
 				<div class="rg-mine-start">
@@ -2260,8 +2260,28 @@ $rg_theme_img = $rg_theme > 0
     paintBar('factory', S.prod.factory, factoryRate(),
       S.items.length >= itemCap(), 'building next item',
       heldText(S.items.length, itemCap(), itemCap(fLvl + 1), 'shelf', 'spend one to restart it'));
-    // No cap on CARBON, and the Portal is a cooldown: neither can stall.
-    paintBar('mine', S.prod.mine, mineRate(), false, 'next CARBON payout', '');
+    /*
+     * THE MINE'S BAR MEASURES THE NEXT UPGRADE, NOT THE NEXT COIN.
+     *
+     * It used to show S.prod.mine against mineRate(), which at a developed Mine
+     * is a payout every 0.6s -- a bar that sweeps twice a second and tells you
+     * nothing you can act on. It was the clearest case of animation standing in
+     * for information: CARBON was visibly arriving, but "am I close to
+     * affording anything?" was the actual question and nothing answered it.
+     *
+     * Now it fills toward what the Mine's own next level costs, so full means
+     * "you can buy this" -- and it moves DOWN when you spend on another
+     * location, which is honest: that really did set the Mine back.
+     *
+     * The payout rate has not changed and is still stated in the line above the
+     * bar ("CARBON · +19 per 0.6s"), so nothing was lost by taking it off here.
+     */
+    var mineCost = upgradeCost('mine');
+    paintBar('mine', Math.min(S.carbon, mineCost), mineCost, false,
+      S.carbon >= mineCost
+        ? 'ready to upgrade the Mine'
+        : (mineCost - S.carbon) + ' CARBON to the next Mine level',
+      '');
     paintBar('portal', S.prod.portal, portalRate(), false, 'strike ready when full', '');
     /*
      * The Crypt holds unlimited dead, so it is never blocked by capacity. The
