@@ -1566,6 +1566,13 @@ What a doc page will have to get right, because none of it is guessable:
   (the replay action log is written in the id). Factory items are **implicit** -
   one button, always "Fortify"; the log says what it did after it lands.
 - **No saved progress, by design.** Every realm eventually falls to the horde.
+- A **"Start from scratch" toggle** lets a realm-holder play the conscript
+  baseline (`$rg_scratch`) - every location at level 1, no enlisted guardians,
+  a level-1 cache. It is a whole baseline object, not a flag: `REALM` points at
+  `SNAPSHOT` or `SCRATCH` and everything downstream reads it identically. The
+  toggle is hidden for players who have no realm (it would do nothing) and
+  locked while a siege runs. The gear catalogues are read *outside* the realm
+  gate for this reason - a conscript with no catalogue can never forge anything.
 
 ---
 

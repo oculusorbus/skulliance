@@ -332,20 +332,6 @@ if ($rg_me > 0) {
 	usort($rg_apool, $rg_bylvl);
 
 	/*
-	 * The catalogues, so gear FORGED in-game gets a real item rather than a bare
-	 * tier number. A rolled tier looks up the weapon or armour of that level, so
-	 * the icon it wears and the sound it makes are the platform's own.
-	 */
-	$cwr = $conn->query("SELECT name, level FROM weapons ORDER BY level ASC");
-	if ($cwr) while ($cw = $cwr->fetch_assoc()) {
-		$rg_wcat[] = array('name' => (string)$cw['name'], 'lvl' => intval($cw['level']));
-	}
-	$car = $conn->query("SELECT name, level FROM armor ORDER BY level ASC");
-	if ($car) while ($ca = $car->fetch_assoc()) {
-		$rg_acat[] = array('name' => (string)$ca['name'], 'lvl' => intval($ca['level']));
-	}
-
-	/*
 	 * ARMOR. Soldiers carry armor_id as well as weapon_id, and gear holds the
 	 * unissued pieces -- so protection is already part of the realm and was
 	 * simply missing here. Weapons decide how hard a guardian hits; armor
@@ -364,16 +350,68 @@ if ($rg_me > 0) {
 }
 
 /*
+ * The catalogues, so gear FORGED in-game gets a real item rather than a bare
+ * tier number. A rolled tier looks up the weapon or armour of that level, so
+ * the icon it wears and the sound it makes are the platform's own.
+ *
+ * OUTSIDE the realm gate: this is the platform's reference data, not anything
+ * about one player. It used to be read only when the player had a realm, which
+ * meant a conscript's catPick() found nothing and their forge could never
+ * produce a single item -- the Armory bar filled forever and handed back null.
+ */
+$cwr = $conn->query("SELECT name, level FROM weapons ORDER BY level ASC");
+if ($cwr) while ($cw = $cwr->fetch_assoc()) {
+	$rg_wcat[] = array('name' => (string)$cw['name'], 'lvl' => intval($cw['level']));
+}
+$car = $conn->query("SELECT name, level FROM armor ORDER BY level ASC");
+if ($car) while ($ca = $car->fetch_assoc()) {
+	$rg_acat[] = array('name' => (string)$ca['name'], 'lvl' => intval($ca['level']));
+}
+
+/*
  * THE CONSCRIPT FLOOR. No realm means no enlisted soldiers and nothing to
  * deploy -- not a weak position, an empty one. Without this the entry-level
  * siege is unplayable rather than merely hard, and the game recruits nobody.
+ *
+ * This is also what the "from scratch" toggle switches a realm-holder to, so
+ * it is built as a standalone baseline rather than as a mutation of $rg_*.
+ *
+ * The starting cache is REAL pieces off the bottom of the catalogue, not a
+ * bare count. It used to set $rg_cache = 2 while leaving the pool empty, so
+ * the blurb promised two weapons the quartermaster did not have and the HUD
+ * showed zero -- the numbers disagreed with the game.
  */
+$rg_floor_lvls = array('tower'=>1,'barracks'=>1,'armory'=>1,'crypt'=>1,'portal'=>1,'factory'=>1,'mine'=>1);
+$rg_floor_pool = function ($cat, $n) {
+	$out = array();
+	if (empty($cat)) return $out;
+	$first = $cat[0];   // catalogue is ordered by level ASC, so this is tier 1
+	for ($i = 0; $i < $n; $i++) $out[] = array('lvl' => intval($first['lvl']), 'name' => (string)$first['name']);
+	return $out;
+};
+$rg_scratch = array(
+	'levels' => $rg_floor_lvls,
+	'army'   => 4,  'armed'  => 1,
+	'cache'  => 2,  'acache' => 1,
+	'wlevel' => 1,  'alevel' => 1,
+	'start'  => 1,  'crypt'  => 0,
+	'wpool'  => $rg_floor_pool($rg_wcat, 2),
+	'apool'  => $rg_floor_pool($rg_acat, 1),
+	// No realm means no enlisted NFTs: nobody on the wall, nobody raiding, and
+	// an empty reserve. The Barracks is the only source of guardians.
+	'kitTower' => array(), 'kitRaid' => array(), 'kitReserve' => array(),
+	'garrison' => 0, 'garmed' => 0, 'garmored' => 0,
+	'raiders'  => 0, 'ramed'  => 0, 'rarmored' => 0,
+);
+
 if (!$rg_has_realm) {
-	$rg_levels = array('tower'=>1,'barracks'=>1,'armory'=>1,'crypt'=>1,'portal'=>1,'factory'=>1,'mine'=>1);
-	$rg_army   = 4;
-	$rg_armed  = 1;
-	$rg_cache  = 2;
-	$rg_acache = 1;
+	$rg_levels = $rg_floor_lvls;
+	$rg_army   = $rg_scratch['army'];
+	$rg_armed  = $rg_scratch['armed'];
+	$rg_cache  = $rg_scratch['cache'];
+	$rg_acache = $rg_scratch['acache'];
+	$rg_wpool  = $rg_scratch['wpool'];
+	$rg_apool  = $rg_scratch['apool'];
 }
 
 /*
@@ -390,17 +428,26 @@ $rg_con_names = array(
 	1 => 'Random Reward', 2 => '25% Success', 3 => 'Fast Forward', 4 => '50% Success',
 	5 => '75% Success',   6 => 'Double Rewards', 7 => '100% Success',
 );
-$rg_items = array();
-foreach ($rg_fodds as $rg_cid => $rg_pct) {
-	if (!isset($rg_con_names[$rg_cid])) continue;
-	$rg_items[] = array(
-		'id'   => intval($rg_cid),
-		'pct'  => intval($rg_pct),
-		'name' => $rg_con_names[$rg_cid],
-		// Same icon construction the factory modal uses (ajax/get-factory.php:38).
-		'icon' => 'icons/' . strtolower(str_replace(array('%', ' '), array('', '-'), $rg_con_names[$rg_cid])) . '.png',
-	);
-}
+$rg_build_items = function ($odds) use ($rg_con_names) {
+	$out = array();
+	foreach ($odds as $cid => $pct) {
+		if (!isset($rg_con_names[$cid])) continue;
+		$out[] = array(
+			'id'   => intval($cid),
+			'pct'  => intval($pct),
+			'name' => $rg_con_names[$cid],
+			// Same icon construction the factory modal uses (ajax/get-factory.php:38).
+			'icon' => 'icons/' . strtolower(str_replace(array('%', ' '), array('', '-'), $rg_con_names[$cid])) . '.png',
+		);
+	}
+	return $out;
+};
+$rg_items = $rg_build_items($rg_fodds);
+// The scratch baseline runs a level-1 Factory, so it must roll the level-1
+// odds rather than inherit the player's table.
+$rg_scratch['items'] = $rg_build_items(
+	function_exists('getFactoryOdds') ? getFactoryOdds(1) : array(1 => 100)
+);
 
 /*
  * A realm is fast-forward: investment sets where on the ladder you begin.
@@ -527,7 +574,7 @@ $rg_theme_img = $rg_theme > 0
   -->
   <div class="col1of3" style="margin:0 auto;flex:1 1 100%;max-width:none;">
 
-	<h2 class="rg-intro">Realm Guardians</h2>
+	<h2 class="rg-intro">Realm Guardians <span class="rg-tag">prototype</span></h2>
 	<div class="rg-blurb rg-intro">
 		<?php if ($rg_has_realm): ?>
 			<?php
@@ -546,13 +593,18 @@ $rg_theme_img = $rg_theme > 0
 			if ($rg_ready > 0)    $rg_where[] = $rg_ready . ' in reserve';
 			if ($rg_crypt > 0)    $rg_where[] = $rg_crypt . ' in the Crypt';
 			?>
-			Defending <strong><?php echo htmlspecialchars($rg_realm_name); ?></strong> &mdash;
+			<span id="rg-blurb-realm">Defending <strong><?php echo htmlspecialchars($rg_realm_name); ?></strong> &mdash;
 			<?php echo $rg_roster; ?> guardians<?php
 				if (!empty($rg_where)) echo ' (' . implode(', ', $rg_where) . ')';
 			?>,
 			<?php echo $rg_cache; ?> weapons and <?php echo $rg_acache; ?> armour in the cache,
 			<?php echo $rg_total; ?> total location levels.
-			Power <?php echo $rg_power; ?> starts you at wave <?php echo $rg_start_wave; ?>.
+			Power <?php echo $rg_power; ?> starts you at wave <?php echo $rg_start_wave; ?>.</span>
+			<!-- Swapped in by the "start from scratch" toggle. The blurb has to
+			     follow the baseline or it describes a realm this run is not using. -->
+			<span id="rg-blurb-scratch" hidden>Holding the wall with <strong>conscripts</strong> &mdash;
+			no enlisted guardians, every location at level 1, 2 weapons and 1 armour in the
+			cache. Starting at wave 1, the same place a player with no realm starts.</span>
 		<?php else: ?>
 			You have no realm, so you hold the wall with conscripts. Build a realm and you
 			start further up the same ladder.
@@ -563,11 +615,6 @@ $rg_theme_img = $rg_theme > 0
 	<div id="rg-game">
 
 		<div class="rg-hud">
-			<!-- The prototype marker lives HERE, not only in the heading, because
-			     the heading is hidden under 560px for space -- and now that this
-			     is in the nav, most of the people seeing it will be on a phone
-			     and should know what they are playing. -->
-			<span class="rg-tag rg-tag-hud">prototype</span>
 			<span>Wave <strong id="rg-wave">0</strong></span>
 			<span>Wall <strong id="rg-hp">100</strong></span>
 			<span>CARBON <strong id="rg-carbon">0</strong></span>
@@ -664,6 +711,14 @@ $rg_theme_img = $rg_theme > 0
 				     the game furthest from the board -- you had to scroll past
 				     everything to start, and again to restart after a loss. -->
 				<button type="button" id="rg-begin">Begin the Siege</button>
+				<?php if ($rg_has_realm): ?>
+				<!-- Only shown to someone who HAS a realm to switch off. Without one
+				     the game is already the scratch baseline, and a toggle that does
+				     nothing is worse than no toggle. -->
+				<label id="rg-scratch-wrap" title="Ignore your realm and hold the wall with conscripts: every location at level 1, no enlisted guardians, a level-1 cache. Your realm is untouched either way.">
+					<input type="checkbox" id="rg-scratch"> Start from scratch
+				</label>
+				<?php endif; ?>
 			</div>
 		</div>
 
@@ -772,7 +827,6 @@ $rg_theme_img = $rg_theme > 0
   flex:1 1 auto; min-width:0; text-align:right; color:#ffcc44;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.rg-tag-hud { font-size:.55rem; padding:2px 6px; }
 #rg-sound, #rg-music { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
 /* A <select> sizes itself to its WIDEST option, and "Guardians of the Realm" is
    wide. Capped, or it dictates the width of the whole bar. */
@@ -847,6 +901,9 @@ $rg_theme_img = $rg_theme > 0
 /* Armour on the other shoulder, so a guardian can visibly carry both. */
 .rg-unit u { position:absolute; left:-6px; bottom:-6px; width:12px; height:12px; background:#07111d; border-radius:50%; display:block; padding:1px; }
 .rg-unit b img, .rg-unit u img { width:100%; height:100%; object-fit:contain; border-radius:0; }
+/* Life bar, mirroring the horde's -- theirs red, yours the platform green, so
+   the two lines of bars read as two sides rather than one crowd. */
+.rg-unit i { position:absolute; left:0; bottom:-6px; height:2px; background:#00c8a0; }
 /* Armoured guardians get a steel halo. Drawn OUTSIDE the circle, so it reads
    as "fully kitted" next to the gold border without stealing another pixel of
    the artwork. */
@@ -908,12 +965,22 @@ $rg_theme_img = $rg_theme > 0
    one. Its own block, so it keeps the centre of the wide row whatever the
    Upgrade button next to it is doing. */
 #rg-begin { display:block; margin:8px auto 2px; background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:6px; padding:9px 22px; font-size:.84rem; cursor:pointer; }
+/* Under Begin and centred with it -- it is a choice ABOUT the run you are
+   about to start, so it belongs next to the button that starts it. */
+#rg-scratch-wrap { display:block; text-align:center; font-size:.72rem; color:rgba(255,255,255,.5); cursor:pointer; user-select:none; }
+#rg-scratch-wrap input { vertical-align:middle; margin-right:4px; cursor:pointer; }
+#rg-scratch-wrap:has(input:disabled) { opacity:.35; cursor:default; }
 #rg-begin[hidden] { display:none; }
 
 /* The lessons Obscura paid for: fits a phone, nothing pinned over the board. */
 @media (max-width:760px) { #rg-locations { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:560px) {
-  .rg-intro { display:none; }
+  /* The BLURB goes, not the title. The prototype marker lives in the heading
+     now, and most people reaching this from the nav are on a phone -- hiding
+     the whole intro would take the label with it and leave nothing saying what
+     they are playing. The title alone is one compact line. */
+  .rg-blurb.rg-intro { display:none; }
+  h2.rg-intro { font-size:1.05rem; margin:0 0 8px; }
   #rg-field { height:64px; }
   #rg-locations { gap:6px; }
   .rg-loc { padding:7px 8px; }
@@ -935,7 +1002,7 @@ $rg_theme_img = $rg_theme > 0
   if (!game) return;
 
   /* The snapshot, handed over from PHP. COPIES -- nothing written back. */
-  var REALM = {
+  var SNAPSHOT = {
     levels: <?php echo json_encode($rg_levels); ?>,
     army:   <?php echo intval($rg_army); ?>,
     armed:  <?php echo intval($rg_armed); ?>,
@@ -960,6 +1027,25 @@ $rg_theme_img = $rg_theme > 0
     rarmored:<?php echo intval($rg_r_armored); ?>,
     alevel: <?php echo intval($rg_alevel); ?>
   };
+
+  /*
+   * FROM SCRATCH. The same conscript floor a player with no realm gets, offered
+   * to everyone as a toggle -- an established realm is a big head start, and
+   * there is no way to feel the early game once you have one.
+   *
+   * It is a whole baseline rather than a flag, so nothing downstream has to know
+   * which mode it is in: REALM points at one object or the other and reset()
+   * reads it exactly the same way. The catalogues are shared because they are
+   * the platform's reference data, not the player's.
+   */
+  var SCRATCH = <?php echo json_encode($rg_scratch); ?>;
+  SCRATCH.wcat = SNAPSHOT.wcat;
+  SCRATCH.acat = SNAPSHOT.acat;
+
+  var HAS_REALM = <?php echo $rg_has_realm ? 'true' : 'false'; ?>;
+  var scratchOn = false;
+  // Whichever baseline is live. Reassigned by the toggle; read everywhere else.
+  var REALM = SNAPSHOT;
   // CANDIDATES, not the horde. A Discord avatar url 404s whenever someone has
   // changed their picture since we cached the hash, and the fallback turned the
   // field into a wall of identical skulls. Only verified faces get used.
@@ -1080,7 +1166,7 @@ $rg_theme_img = $rg_theme > 0
       S.sortied.push({
         pos:   PORTAL_X + 2 + r * rstep,
         w: kr.w, wn: kr.wn, a: kr.a, an: kr.an,
-        hp:    unitHp(kr),
+        hp:    unitHp(kr), max: unitHp(kr),
         slot:  unitSeq++
       });
     }
@@ -1820,15 +1906,42 @@ $rg_theme_img = $rg_theme > 0
           ai.src = asrc;
           ab.appendChild(ai); unode.appendChild(ab);
         }
+        /*
+         * A life bar, the same as the horde's. Guardians in the open already
+         * took damage and died -- nothing showed it, so a Strike looked like
+         * units vanishing at random. It is also where armour becomes legible:
+         * unitHp() is (weapon ? 6 : 4) + (armour ? 2 + level : 0), so a
+         * well-armoured guardian visibly outlasts a bare one.
+         *
+         * Held on the node rather than found with lastChild, because the badges
+         * above are conditional -- lastChild is the weapon, the armour or the
+         * bar depending on what this guardian happens to be carrying.
+         */
+        var ubar = document.createElement('i');
+        unode.appendChild(ubar);
+        unode._bar = ubar;
         unitNodes[un2.slot] = unode;
         sortieEl.appendChild(unode);
       }
       unode.style.left = un2.pos + '%';
+      if (unode._bar) {
+        unode._bar.style.width = Math.max(0, Math.round(un2.hp / (un2.max || un2.hp || 1) * 20)) + 'px';
+      }
     }
     for (var uid in unitNodes) {
       if (!useen[uid]) { sortieEl.removeChild(unitNodes[uid]); delete unitNodes[uid]; }
     }
 
+
+    // Locked mid-siege: swapping baselines would rebuild the state under the
+    // wave already walking at you.
+    if (scratchBox) {
+      scratchBox.disabled = S.running;
+      var sw = document.getElementById('rg-scratch-wrap');
+      if (sw) sw.title = S.running
+        ? 'Finish or lose this siege before switching baseline'
+        : 'Ignore your realm and hold the wall with conscripts: every location at level 1, no enlisted guardians, a level-1 cache. Your realm is untouched either way.';
+    }
 
     document.querySelectorAll('.rg-act').forEach(function (b) {
       var a = b.dataset.act;
@@ -1899,7 +2012,7 @@ $rg_theme_img = $rg_theme > 0
         var u = equip(S.reserve.shift());
         // slot picks which enlisted NFT this guardian is, and stays fixed for
         // its life so the face on the field doesn't change between renders.
-        S.emerging.push({ pos:PORTAL_X, w:u.w, wn:u.wn, a:u.a, an:u.an, hp:unitHp(u), slot:unitSeq++ });
+        S.emerging.push({ pos:PORTAL_X, w:u.w, wn:u.wn, a:u.a, an:u.an, hp:unitHp(u), max:unitHp(u), slot:unitSeq++ });
       }
       log(n + ' guardian' + (n > 1 ? 's ride' : ' rides') + ' out through the Portal.');
     } else if (a === 'fortify' && S.items.length) {
@@ -1957,6 +2070,37 @@ $rg_theme_img = $rg_theme > 0
   });
   paintSound();
 
+  /*
+   * THE SCRATCH TOGGLE. Swaps which baseline REALM points at and rebuilds the
+   * board, so the choice is visible before you commit to it -- the roster, the
+   * levels and the starting wave all change under you as you tick it.
+   *
+   * Locked while a siege is running: switching baselines mid-run would rebuild
+   * the state under the wave that is already walking at you. Remembered, like
+   * the sound choice, because someone who wants the hard version usually wants
+   * it again next time.
+   */
+  var scratchBox = document.getElementById('rg-scratch');
+  var blurbRealm = document.getElementById('rg-blurb-realm');
+  var blurbScratch = document.getElementById('rg-blurb-scratch');
+  function applyBaseline() {
+    REALM = (scratchOn && HAS_REALM) ? SCRATCH : SNAPSHOT;
+    if (blurbRealm)   blurbRealm.hidden   = scratchOn;
+    if (blurbScratch) blurbScratch.hidden = !scratchOn;
+    reset();
+    render();
+  }
+  if (scratchBox) {
+    try { scratchOn = localStorage.getItem('rg-scratch') === 'on'; } catch (e) {}
+    scratchBox.checked = scratchOn;
+    scratchBox.addEventListener('change', function () {
+      if (S.running) { scratchBox.checked = scratchOn; return; }
+      scratchOn = scratchBox.checked;
+      try { localStorage.setItem('rg-scratch', scratchOn ? 'on' : 'off'); } catch (e) {}
+      applyBaseline();
+    });
+  }
+
   var musicBtn = document.getElementById('rg-music');
   var trackSel = document.getElementById('rg-track');
   var volSlider = document.getElementById('rg-vol');
@@ -2001,8 +2145,9 @@ $rg_theme_img = $rg_theme > 0
     S.timer = setInterval(step, TICK);
   });
 
-  reset();
-  render();
+  // applyBaseline, not a bare reset: a remembered "from scratch" choice has to
+  // be in force on the first paint, not only after the box is touched again.
+  applyBaseline();
 })();
 </script>
 
