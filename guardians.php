@@ -45,6 +45,9 @@ $rg_army = 0; $rg_armed = 0; $rg_cache = 0; $rg_wlevel = 1; $rg_realm_name = '';
 $rg_has_realm = false;
 $rg_units = array();   // the player's own soldiers, as NFT art
 $rg_wicon = '';        // the best weapon in the cache, worn by armed guardians
+$rg_aicon = '';        // the best armor in the cache, worn by protected guardians
+$rg_acache = 0;        // unissued armor pieces
+$rg_alevel = 1;        // best armor level, decides how much a breach is absorbed
 
 if ($rg_me > 0) {
 	$rr = $conn->query("SELECT id, name FROM realms WHERE user_id = $rg_me AND active = 1 LIMIT 1");
@@ -136,6 +139,31 @@ if ($rg_me > 0) {
 		$wn = (string)$wr->fetch_assoc()['name'];
 		if ($wn !== '') $rg_wicon = 'icons/' . strtolower(str_replace(array('%', ' '), array('', '-'), $wn)) . '.png';
 	}
+
+	/*
+	 * ARMOR. Soldiers carry armor_id as well as weapon_id, and gear holds the
+	 * unissued pieces -- so protection is already part of the realm and was
+	 * simply missing here. Weapons decide how hard a guardian hits; armor
+	 * decides whether they walk away from a breach.
+	 */
+	$rr2 = $conn->query("SELECT COALESCE(SUM(g.quantity),0) AS qty,
+	                            COALESCE(MAX(a.level),1) AS lvl
+	                     FROM gear g
+	                     INNER JOIN armor a ON a.id = g.item_id
+	                     WHERE g.user_id = $rg_me AND g.type = 'armor' AND g.quantity > 0");
+	if ($rr2 && $rr2->num_rows) {
+		$r2 = $rr2->fetch_assoc();
+		$rg_acache = intval($r2['qty']);
+		$rg_alevel = max(1, intval($r2['lvl']));
+	}
+	$ar2 = $conn->query("SELECT a.name FROM gear g
+	                     INNER JOIN armor a ON a.id = g.item_id
+	                     WHERE g.user_id = $rg_me AND g.type = 'armor' AND g.quantity > 0
+	                     ORDER BY a.level DESC LIMIT 1");
+	if ($ar2 && $ar2->num_rows > 0) {
+		$an = (string)$ar2->fetch_assoc()['name'];
+		if ($an !== '') $rg_aicon = 'icons/' . strtolower(str_replace(array('%', ' '), array('', '-'), $an)) . '.png';
+	}
 }
 
 /*
@@ -148,6 +176,7 @@ if (!$rg_has_realm) {
 	$rg_army   = 4;
 	$rg_armed  = 1;
 	$rg_cache  = 2;
+	$rg_acache = 1;
 }
 
 /*
@@ -269,7 +298,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 						<option value="<?php echo $i; ?>"><?php echo htmlspecialchars($t['name']); ?></option>
 					<?php endforeach; ?>
 				</select>
-				<input type="range" id="rg-vol" min="0" max="100" value="45" title="Music volume">
+				<input type="range" id="rg-vol" min="0" max="100" value="70" title="Music volume">
 			<?php endif; ?>
 		</div>
 
@@ -282,7 +311,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 		<div id="rg-locations">
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/tower.png" alt="" onerror="this.style.display='none'">Tower <span class="rg-lvl" id="rg-lvl-tower">1</span></div>
-				<div class="rg-loc-stat"><strong id="rg-garrison">0</strong>/<span id="rg-garrison-cap">4</span> garrison &middot; <span id="rg-armed">0</span> armed</div>
+				<div class="rg-loc-stat"><strong id="rg-garrison">0</strong>/<span id="rg-garrison-cap">4</span> garrison &middot; <span id="rg-armed">0</span> armed &middot; <span id="rg-armored">0</span> armoured</div>
 				<button type="button" class="rg-act" data-act="deploy">Deploy</button>
 				<button type="button" class="rg-act rg-up" data-act="up-tower">Upgrade</button>
 			</div>
@@ -294,7 +323,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 			</div>
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/armory.png" alt="" onerror="this.style.display='none'">Armory <span class="rg-lvl" id="rg-lvl-armory">1</span></div>
-				<div class="rg-loc-stat"><strong id="rg-weapons">0</strong> weapons</div>
+				<div class="rg-loc-stat"><strong id="rg-weapons">0</strong> weapons &middot; <span id="rg-armor">0</span> armour</div>
 				<div class="rg-bar"><i id="rg-bar-armory"></i></div>
 				<button type="button" class="rg-act rg-up" data-act="up-armory">Upgrade</button>
 			</div>
@@ -362,7 +391,12 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 .rg-unit.rg-armed { border-color:#ffcc44; box-shadow:0 0 8px rgba(255,204,68,.6); }
 /* The weapon they carry, badged on the shoulder. */
 .rg-unit b { position:absolute; right:-5px; bottom:-5px; width:14px; height:14px; background:#07111d; border-radius:50%; display:block; padding:1px; }
-.rg-unit b img { width:100%; height:100%; object-fit:contain; border-radius:0; }
+/* Armour on the other shoulder, so a guardian can visibly carry both. */
+.rg-unit u { position:absolute; left:-5px; bottom:-5px; width:14px; height:14px; background:#07111d; border-radius:50%; display:block; padding:1px; }
+.rg-unit b img, .rg-unit u img { width:100%; height:100%; object-fit:contain; border-radius:0; }
+/* Armoured guardians get a steel ring; armed ones gold. Both shows as gold with
+   a steel inner edge, which reads as "fully kitted" at a glance. */
+.rg-unit.rg-prot { box-shadow:0 0 0 2px rgba(190,200,215,.8), 0 0 8px rgba(190,200,215,.5); }
 
 #rg-locations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 .rg-loc { background:#0d1e30; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 10px; }
@@ -413,11 +447,14 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     armed:  <?php echo intval($rg_armed); ?>,
     cache:  <?php echo intval($rg_cache); ?>,
     wlevel: <?php echo intval($rg_wlevel); ?>,
-    start:  <?php echo intval($rg_start_wave); ?>
+    start:  <?php echo intval($rg_start_wave); ?>,
+    acache: <?php echo intval($rg_acache); ?>,
+    alevel: <?php echo intval($rg_alevel); ?>
   };
   var HORDE = <?php echo json_encode($rg_horde); ?>;
   var UNITS = <?php echo json_encode($rg_units); ?>;   // your soldiers, as NFT art
   var WICON = <?php echo json_encode($rg_wicon); ?>;   // best weapon in the cache
+  var AICON = <?php echo json_encode($rg_aicon); ?>;   // best armor in the cache
 
   /* Deterministic core: seeded PRNG, fixed timestep, no Math.random. */
   var SEED = 20260909;
@@ -438,10 +475,10 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     S = {
       running:false, over:false, tick:0, wave:REALM.start - 1,
       hp:100, maxhp:100, carbon:0,
-      reserve:REALM.army, weapons:REALM.cache, dead:0,
-      garrison:0, armed:0, items:0, sortied:[],
+      reserve:REALM.army, weapons:REALM.cache, armor:REALM.acache, dead:0,
+      garrison:0, armed:0, armored:0, items:0, sortied:[],
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
-      prod:{ barracks:0, armory:0, factory:0, mine:0, portal:0 },
+      prod:{ barracks:0, armory:0, factory:0, mine:0, portal:0, reinforce:0 },
       foes:[], nextAttack:0, betweenWaves:0, fortifyFor:0
     };
   }
@@ -458,6 +495,9 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   function factoryRate()  { return Math.max(60, 240 - L('factory') * 16); }
   function mineRate()     { return Math.max(6, 26 - L('mine') * 2); }
   function portalRate()   { return Math.max(40, 170 - L('portal') * 12); }
+  // How fast the Tower refills itself from the Barracks. Faster with Barracks
+  // level, so investing there is felt as resilience rather than a bigger number.
+  function reinforceRate()  { return Math.max(4, 20 - L('barracks') * 1.5); }
   function sortieSize()   { return Math.max(1, Math.ceil(L('portal') / 2)); }
   function raiseCost()    { return Math.max(3, 12 - L('crypt') * 2); }
   /*
@@ -476,7 +516,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 
   var el = {};
   ['wave','hp','carbon','reserve','weapons','dead','garrison','garrison-cap','armed','status',
-   'sortied','items','mine-rate',
+   'sortied','items','mine-rate','armor','armored',
    'lvl-tower','lvl-barracks','lvl-armory','lvl-crypt','lvl-portal','lvl-factory','lvl-mine',
    'bar-barracks','bar-armory','bar-factory','bar-mine','bar-portal']
     .forEach(function (k) { el[k] = document.getElementById('rg-' + k); });
@@ -496,7 +536,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     var pool = [];
     for (var i = 0; i < 3; i++) {
       var a = new Audio('audio/sounds/' + name + '.mp3');
-      a.preload = 'auto'; a.volume = 0.3; pool.push(a);
+      a.preload = 'auto'; a.volume = 0.10; pool.push(a);
     }
     sfxPool[name] = { list: pool, i: 0 };
     return sfxPool[name];
@@ -505,15 +545,15 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     if (!sfxOn) return;
     var p = sfxLoad(name), a = p.list[p.i];
     p.i = (p.i + 1) % p.list.length;
-    try { a.currentTime = 0; a.volume = vol === undefined ? 0.3 : vol; a.play().catch(function () {}); } catch (e) {}
+    try { a.currentTime = 0; a.volume = vol === undefined ? 0.10 : vol; a.play().catch(function () {}); } catch (e) {}
   }
   function sfxVolley() {
     if (!sfxOn) return;
-    var shots = Math.min(3, Math.max(1, Math.ceil(S.garrison / 2)));
+    var shots = Math.min(2, Math.max(1, Math.ceil(S.garrison / 3)));
     for (var i = 0; i < shots; i++) {
       var bank = (i < S.armed) ? ARMED_SFX : UNARMED_SFX;
       var name = bank[(sfxCursor++) % bank.length];
-      (function (n, d) { setTimeout(function () { sfxPlay(n, 0.26); }, d); })(name, i * 70);
+      (function (n, d) { setTimeout(function () { sfxPlay(n, 0.10); }, d); })(name, i * 70);
     }
   }
 
@@ -521,7 +561,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
      whole reason it is here is to hear one against the other. Autoplay policy
      is satisfied because nothing starts before the Begin button. ---- */
   var TRACKS = <?php echo json_encode($rg_tracks); ?>;
-  var music = null, musicOn = true, trackIdx = 0, musicVol = 0.45;
+  var music = null, musicOn = true, trackIdx = 0, musicVol = 0.70;
 
   function musicLoad(i) {
     if (!TRACKS.length) return;
@@ -578,10 +618,10 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
    * tough. That is where the frenetic part of a tower defense actually lives.
    */
   function buildWave(n) {
-    var q = [], count = 4 + Math.floor(n * 1.9);
+    var q = [], count = 4 + Math.floor(n * 1.75);
     for (var i = 0; i < count; i++) {
       var tough = n >= 3 && rand() < 0.16 + n * 0.015;
-      var hp = (tough ? 24 : 10) + n * 5;
+      var hp = (tough ? 24 : 10) + n * 4;
       q.push({ id:foeSeq++, hp:hp, max:hp,
                speed:(tough ? 0.24 : 0.38) + n * 0.006,
                // Tight. This one number is the difference between a siege and
@@ -613,6 +653,33 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     if (S.prod.mine >= mineRate()) { S.prod.mine = 0; S.carbon += L('mine'); }
     if (S.prod.portal < portalRate()) S.prod.portal++;
 
+    /*
+     * THE BARRACKS FEEDS THE TOWER BY ITSELF.
+     *
+     * Playtest: "I can't click fast enough to knock them back or stop them
+     * destroying my wall." That was a design fault, not a difficulty one. Every
+     * replacement defender needed its own click, so at high waves the game was
+     * bounded by clicking speed rather than by judgement -- and no tower defense
+     * is fun when it is a clicking exercise.
+     *
+     * The user's own spec said this from the start: "The tower keeps deploying a
+     * garrison from the barracks." Reinforcement is automatic now, paced by
+     * Barracks level, and the player's clicks go where decisions actually live:
+     * sorties, fortifies, resurrections and upgrades.
+     *
+     * It also makes the balance model honest -- it always assumed a full
+     * garrison, which by hand was unachievable.
+     */
+    S.prod.reinforce++;
+    if (S.prod.reinforce >= reinforceRate()) {
+      S.prod.reinforce = 0;
+      if (S.reserve > 0 && S.garrison < garrisonCap()) {
+        S.reserve--; S.garrison++;
+        if (S.weapons > 0) { S.weapons--; S.armed++; }
+        if (S.armor > 0)   { S.armor--;   S.armored++; }
+      }
+    }
+
     // The Tower fires on the closest foe still short of the wall.
     S.nextAttack--;
     if (S.nextAttack <= 0 && S.foes.length && S.garrison > 0) {
@@ -640,7 +707,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
         if (u.hp <= 0) {
           S.sortied.splice(s, 1); S.dead++;
           log('A guardian falls in the open.', true);
-          sfxPlay('death', 0.35);
+          sfxPlay('death', 0.14);
         }
       } else {
         u.pos += (near.pos > u.pos) ? 0.5 : -0.5;
@@ -654,11 +721,28 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       if (f.pos <= 0) {
         S.foes.splice(j, 1);
         S.hp -= f.tough ? 12 : 5;
-        if (S.garrison > 0) {
+        /*
+         * ARMOR IS WHAT A GUARDIAN WALKS AWAY IN.
+         *
+         * A breach used to kill a defender outright. Now, if anyone on the wall
+         * is armoured, the armour takes it instead -- the piece is destroyed,
+         * the guardian lives, and the Crypt stays empty. Weapons decide how hard
+         * you hit; armour decides whether you survive being hit, which is
+         * exactly the split Realms already makes between weapon_id and armor_id.
+         *
+         * Better armour absorbs more of the wall damage too, so a good cache is
+         * felt twice.
+         */
+        if (S.armored > 0) {
+          S.armored--;
+          S.hp += Math.min(f.tough ? 12 : 5, 1 + REALM.alevel);   // partly absorbed
+          log(escAttr(foeIdentity(f).name) + ' breaks against the armour.');
+          sfxPlay('melee', 0.14);
+        } else if (S.garrison > 0) {
           S.garrison--; if (S.armed > 0) S.armed--;
           S.dead++;
           log(escAttr(foeIdentity(f).name) + ' breaches the wall. A guardian falls.', true);
-          sfxPlay('death', 0.4);
+          sfxPlay('death', 0.16);
         }
         if (S.hp <= 0) return end();
       }
@@ -682,7 +766,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     var i = S.foes.indexOf(f);
     if (i >= 0) S.foes.splice(i, 1);
     S.carbon += f.tough ? 4 : 1;   // tighter than it was; the economy was flooding
-    sfxPlay('kill', 0.22);
+    sfxPlay('kill', 0.09);
   }
 
   function render() {
@@ -691,9 +775,11 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     el.carbon.textContent = S.carbon;
     el.reserve.textContent = S.reserve;
     el.weapons.textContent = S.weapons;
+    el.armor.textContent = S.armor;
     el.dead.textContent = S.dead;
     el.garrison.textContent = S.garrison;
     el.armed.textContent = S.armed;
+    el.armored.textContent = S.armored;
     el.items.textContent = S.items;
     el.sortied.textContent = S.sortied.length;
     el['garrison-cap'].textContent = garrisonCap();
@@ -726,10 +812,11 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     for (var u = 0; u < S.sortied.length; u++) {
       var un = S.sortied[u];
       var art = UNITS.length ? UNITS[un.slot % UNITS.length] : null;
-      shtml += '<div class="rg-unit' + (un.armed ? ' rg-armed' : '') + '" style="left:' + un.pos + '%"'
+      shtml += '<div class="rg-unit' + (un.armed ? ' rg-armed' : '') + (un.prot ? ' rg-prot' : '') + '" style="left:' + un.pos + '%"'
              + (art ? ' title="' + escAttr(art.name) + '"' : '') + '>'
              + (art ? '<img src="' + escAttr(art.img) + '" alt="" onerror="this.style.display=\'none\'">' : '')
              + (un.armed && WICON ? '<b><img src="' + escAttr(WICON) + '" alt="" onerror="this.parentNode.style.display=\'none\'"></b>' : '')
+             + (un.prot && AICON ? '<u><img src="' + escAttr(AICON) + '" alt="" onerror="this.parentNode.style.display=\'none\'"></u>' : '')
              + '</div>';
     }
     sortieEl.innerHTML = shtml;
@@ -751,12 +838,24 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   function act(a) {
     if (!S.running || S.over) return;
     actionLog.push([S.tick, a]);   // what a server would replay
+    /*
+     * Deploy and Raise fill in ONE click rather than one guardian per click.
+     * Clicking twelve times to refill a tower is not a decision, it is a
+     * dexterity tax -- and it was what made the game unwinnable by hand at
+     * higher waves. The choice worth making is "reinforce now or spend the
+     * CARBON on an upgrade", and that survives batching intact.
+     */
     if (a === 'deploy' && S.reserve > 0 && S.garrison < garrisonCap()) {
-      S.reserve--; S.garrison++;
-      if (S.weapons > 0) { S.weapons--; S.armed++; }
+      var room = garrisonCap() - S.garrison, sent = 0;
+      while (room-- > 0 && S.reserve > 0) {
+        S.reserve--; S.garrison++; sent++;
+        if (S.weapons > 0) { S.weapons--; S.armed++; }
+      }
+      log(sent + ' to the wall.');
     } else if (a === 'raise' && S.dead > 0 && S.carbon >= raiseCost()) {
-      S.carbon -= raiseCost(); S.dead--; S.reserve++;
-      log('The Crypt gives one back.');
+      var raised = 0;
+      while (S.dead > 0 && S.carbon >= raiseCost()) { S.carbon -= raiseCost(); S.dead--; S.reserve++; raised++; }
+      log('The Crypt gives ' + raised + ' back.');
     } else if (a === 'sortie' && S.reserve > 0 && S.prod.portal >= portalRate()) {
       // Meet them in the open: they die before reaching the wall, but your
       // guardians fight with no tower behind them. The whole risk/reward beat.
@@ -766,9 +865,15 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
         S.reserve--;
         var armed = S.weapons > 0;
         if (armed) S.weapons--;
+        // Armour goes out with them. A sortie has no tower behind it, so this
+        // is where protection is felt most sharply.
+        var prot = S.armor > 0;
+        if (prot) S.armor--;
         // slot picks which enlisted NFT this guardian is, and stays fixed for
         // its life so the face on the field doesn't change between renders.
-        S.sortied.push({ pos:35 + i * 4, hp:armed ? 6 : 4, armed:armed, slot:unitSeq++ });
+        S.sortied.push({ pos:35 + i * 4,
+                         hp:(armed ? 6 : 4) + (prot ? 2 + REALM.alevel : 0),
+                         armed:armed, prot:prot, slot:unitSeq++ });
       }
       log(n + ' guardian' + (n > 1 ? 's ride' : ' rides') + ' out through the Portal.');
     } else if (a === 'fortify' && S.items > 0) {

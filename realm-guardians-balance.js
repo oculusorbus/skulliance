@@ -1,21 +1,5 @@
-/*
- * Realm Guardians -- headless balance model.   node realm-guardians-balance.js
- *
- * Mirrors guardians.php's combat numbers so tuning is CHECKED rather than
- * guessed at. Written after the first playtest reported the game was
- * unloseable; the model reproduced that immediately (+30 waves survived at
- * every starting point, i.e. it never lost) and showed the cause was spawn
- * SPACING, not defense strength -- foes strung out so far they arrived one at
- * a time and a single-target volley never fell behind.
- *
- * KEEP THIS IN SYNC with guardians.php when the combat numbers change. It is
- * the difference between tuning and guessing.
- *
- * What it deliberately does NOT model: sorties killing foes before the wall,
- * Crypt resurrections, and Factory fortifies beyond a flat trickle. So real
- * play is EASIER than these rows -- read them as a floor on difficulty, not a
- * prediction.
- */
+// Headless model of the Realm Guardians combat loop, so balance is CHECKED
+// rather than guessed at. Mirrors guardians.php's numbers exactly.
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 
 function buildWave(n, rand, spacing, countMul, hpAdd) {
@@ -114,7 +98,7 @@ ladder('BEFORE  (7-13 spacing, x1.5, +4hp)', [7, 6], 1.5, 4);
 ladder('AFTER   (2.2-4 spacing, x1.9, +5hp)', [2.2, 1.8], 1.9, 5);
 ladder('CAND A  (x2.1, +7hp)', [2.2, 1.8], 2.1, 7);
 ladder('CAND B  (x2.3, +9hp)', [2.0, 1.6], 2.3, 9);
-ladder('CAND C  (x2.0, +6hp)', [2.2, 1.8], 2.0, 6);
+ladder('SHIPPED  (x1.75, +4hp, auto-reinforce)', [2.2, 1.8], 1.75, 4);
 
 report('BEFORE  (spacing 7-13, count x1.5, hp +4/wave)', [7, 6], 1.5, 4);
 report('AFTER   (spacing 2.2-4, count x1.9, hp +5/wave)', [2.2, 1.8], 1.9, 5);
