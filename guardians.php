@@ -884,22 +884,29 @@ $rg_theme_img = $rg_theme > 0
 			</div>
 		</details>
 
-		<!-- The last stand. Fires once, the first time anything reaches the
-		     wall, and holds the siege while it is read. -->
-		<div id="rg-nuke" hidden role="dialog" aria-modal="true" aria-labelledby="rg-nuke-title">
-			<div class="rg-nuke-card">
-				<div class="rg-nuke-emoji" aria-hidden="true">&#9762;&#65039;</div>
-				<h3 id="rg-nuke-title">The wall has fallen</h3>
-				<p>Your realm was about to be overrun. The last stand detonates &mdash;
-				<strong><span id="rg-nuke-count">0</span></strong> swept from the field, and
-				<strong><span id="rg-nuke-hp">25</span></strong> of the wall shored back up.</p>
-				<p class="rg-nuke-sub">There is only one. Whatever is still beyond the edge is
-				still coming, and the next time the wall falls it stays fallen.</p>
-				<button type="button" id="rg-nuke-ok">Hold the line</button>
-			</div>
-		</div>
-
 		<div id="rg-log"></div>
+	</div>
+
+	<!--
+		THE LAST STAND, and it lives OUTSIDE #rg-game on purpose.
+
+		It is a full-screen overlay, and `#rg-game > *` gives every child
+		max-width:720px with auto margins to centre the board. That rule applied
+		to the overlay itself, and an element's own max-width clamps it even when
+		it is position:fixed -- so the "full screen" backdrop was a 720px column
+		floating in the middle of the page. Measured before the fix: x=641,
+		width=720 in a 2017px viewport.
+	-->
+	<div id="rg-nuke" hidden role="dialog" aria-modal="true" aria-labelledby="rg-nuke-title">
+		<div class="rg-nuke-card">
+			<div class="rg-nuke-emoji" aria-hidden="true">&#9762;&#65039;</div>
+			<h3 id="rg-nuke-title">Nuke Detonated</h3>
+			<p>The wall was breached and your realm has detonated a nuclear bomb,
+			sweeping <strong><span id="rg-nuke-count">0</span></strong> from the field.</p>
+			<p class="rg-nuke-sub">Your realm is safe for now, but whatever is beyond the
+			edge of the blast is still coming.</p>
+			<button type="button" id="rg-nuke-ok">Hold the line</button>
+		</div>
 	</div>
 
   </div>
@@ -1178,15 +1185,26 @@ $rg_theme_img = $rg_theme > 0
    scrolled. [hidden] guard is REQUIRED, because the rule below sets display and
    an id selector outranks the browser's own [hidden]. */
 #rg-nuke { position:fixed; inset:0; z-index:50; display:flex; align-items:center;
-           justify-content:center; padding:20px; background:rgba(4,10,18,.82); }
+           justify-content:center; padding:20px; background:rgba(4,10,18,.82);
+           /* Belt and braces. The markup now sits OUTSIDE #rg-game so the
+              board's centring rule cannot reach it, but an element's own
+              max-width clamps it even when position:fixed -- which is exactly
+              how this shipped as a 720px column in the middle of the page.
+              Stated here so a future container rule cannot quietly redo it. */
+           max-width:none; margin:0; }
 #rg-nuke[hidden] { display:none; }
 .rg-nuke-card { max-width:340px; text-align:center; background:#12263a;
                 border:1px solid rgba(255,204,68,.55); border-radius:12px;
                 padding:20px 22px; box-shadow:0 0 40px rgba(255,204,68,.28); }
 .rg-nuke-emoji { font-size:2.6rem; line-height:1; margin-bottom:8px; }
+/* text-align is stated on the children, not just inherited from the card: the
+   platform stylesheet aligns headings left, which beats inheritance and left
+   the title hanging off to one side of a centred card. Measured: card computed
+   `center`, the h3 inside it computed `left`. */
 .rg-nuke-card h3 { margin:0 0 8px; font-size:1rem; color:#ffcc44; letter-spacing:.04em;
-                   text-transform:uppercase; }
-.rg-nuke-card p { margin:0 0 8px; font-size:.82rem; color:rgba(255,255,255,.8); line-height:1.5; }
+                   text-transform:uppercase; text-align:center; }
+.rg-nuke-card p { margin:0 0 8px; font-size:.82rem; color:rgba(255,255,255,.8); line-height:1.5;
+                  text-align:center; }
 .rg-nuke-card p.rg-nuke-sub { font-size:.74rem; color:rgba(255,255,255,.45); margin-bottom:14px; }
 .rg-nuke-card strong { color:#fff; }
 #rg-nuke-ok { background:#ffcc44; color:#1a1200; font-weight:bold; border:0;
@@ -2774,8 +2792,6 @@ $rg_theme_img = $rg_theme > 0
     if (nukeEl) {
       var n = document.getElementById('rg-nuke-count');
       if (n) n.textContent = caught;
-      var h = document.getElementById('rg-nuke-hp');
-      if (h) h.textContent = LAST_STAND_HP;
       nukeEl.hidden = false;
       setPaused(true, true);
       if (nukeOk) nukeOk.focus();
