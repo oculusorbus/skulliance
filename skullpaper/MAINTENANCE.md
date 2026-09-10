@@ -1522,11 +1522,14 @@ would let a ~15-second unit outweigh every other game by volume.
 
 ### Realm Guardians (tower defense) - PROTOTYPE, NOT DOCUMENTED YET
 
-`guardians.php`, linked from the main menu under Realms as "Guardians". **No
-Skull Paper page yet, and that is deliberate** - it has no leaderboard, no CARBON
-payout and no weekly period, so there is nothing durable for a player to read
-about. Write `games-guardians.md` when it launches, not before; the rules are
-still moving between playtests.
+`guardians.php`, linked from the main menu under Realms as "Guardians" and
+tiled on the Launchpad directly after Realms (that page mirrors the nav's
+grouping deliberately - don't reorder it independently). **No Skull Paper page
+yet, and that is deliberate** - it has no leaderboard, no CARBON payout and no
+weekly period, so there is nothing durable for a player to read about. Write
+`games-guardians.md` when it launches, not before; the rules are still moving
+between playtests. The Launchpad tile says "(prototype)" for the same reason
+the heading does.
 
 What a doc page will have to get right, because none of it is guessable:
 

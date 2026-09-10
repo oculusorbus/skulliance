@@ -65,6 +65,7 @@ $lp_sections = array(
 		'items'  => array(
 			array('missions.php',        '🗺️', 'Missions',        'Send NFTs on timed runs for points'),
 			array('realms.php',          '🏰', 'Realms',          'Build a realm, raid your rivals'),
+			array('guardians.php',       '🛡️', 'Realm Guardians', 'Hold your realm against the horde (prototype)'),
 			array('gauntlets.php',       '🥊', 'Gauntlets',       'NFT roguelike run'),
 			array('cryptcrawl.php',      '💀', 'Crypt Crawl',     'Solo dungeon card game'),
 			array('cryptconquest.php',   '👑', 'Crypt Conquest',  'Regicide-style card game'),
