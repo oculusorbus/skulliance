@@ -677,13 +677,14 @@ $rg_theme_img = $rg_theme > 0
  * as a full-width row beneath them.
  */
 /*
- * ONLY THE HUD AND THE FIELD GO FULL WIDTH. Everything else stays a tight,
- * centred column: the field benefits from room to watch the horde come, and the
- * bar above it should match, but spreading the controls, log and help across a
- * wide monitor turns every decision into a mouse journey.
+ * ONLY THE FIELD GOES FULL WIDTH. Everything else -- HUD included -- stays a
+ * tight centred column. The strip is the one thing that gains from the room,
+ * because it is the approach the horde crosses; spreading the controls, HUD,
+ * log and help across a wide monitor just turns every decision into a mouse
+ * journey.
  */
 #rg-game > *, .rg-intro { max-width:720px; margin-left:auto; margin-right:auto; }
-.rg-hud, #rg-field { max-width:none !important; }
+#rg-field { max-width:none !important; }
 
 #rg-locations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 .rg-loc { background:#0d1e30; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 10px; }
