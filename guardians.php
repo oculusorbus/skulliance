@@ -35,8 +35,39 @@
  */
 include 'db.php';
 include 'message.php';
-include 'verify.php';
-include 'skulliance.php';
+
+/*
+ * PUBLIC, deliberately. It does NOT include skulliance.php (which redirects
+ * anonymous visitors to error.php) or the heavy verify.php -- the same pattern
+ * skullpaper.php and profile.php use. db.php gives a session and $conn.
+ *
+ * A logged-out visitor plays the conscript baseline: every realm query below is
+ * already inside `if ($rg_me > 0)`, so no realm simply means no head start.
+ * Nothing is saved and nothing is scored for them, which is stated on the board
+ * rather than discovered when the run ends.
+ *
+ * The horde is other members' avatars and usernames, and that is no new
+ * exposure: profile.php is itself public and shows both. It gates NFTs on
+ * visibility == 2, not identity.
+ *
+ * array_merge, never a raw assign -- a raw assign here can wipe another page's
+ * session state. See skulliance.php's own fix for the incident that established
+ * that rule.
+ */
+if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
+	$cookie = json_decode($_COOKIE['SessionCookie'], true);
+	if (is_array($cookie)) { $_SESSION = array_merge((array)$_SESSION, $cookie); }
+}
+// Lights up the personalised navbar for a logged-in visitor; anonymous
+// visitors get header.php's default logged-out state.
+if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
+	$name = $_SESSION['userData']['name'] ?? null;
+	$rg_did = $_SESSION['userData']['discord_id'] ?? null;
+	$rg_av  = $_SESSION['userData']['avatar'] ?? null;
+	if ($name !== null && $rg_did && $rg_av) {
+		$avatar_url = "https://cdn.discordapp.com/avatars/$rg_did/$rg_av.jpg";
+	}
+}
 include 'header.php';
 // Persistence only. The realm snapshot below stays SELECT-only; every write
 // this game makes is to its own two tables and happens in guardians-lib.php,
@@ -656,9 +687,15 @@ $rg_theme_img = $rg_theme > 0
 			<span id="rg-blurb-scratch" hidden>Holding the wall with <strong>conscripts</strong> &mdash;
 			no enlisted guardians, every location at level 1, 2 weapons and 1 armour in the
 			cache. Starting at wave 1, the same place a player with no realm starts.</span>
-		<?php else: ?>
+		<?php elseif ($rg_me > 0): ?>
 			You have no realm, so you hold the wall with conscripts. Build a realm and you
 			start further up the same ladder.
+		<?php else: ?>
+			<!-- Said BEFORE the run, not after it. Discovering at the end of an hour
+			     that none of it counted is the worst possible moment to find out. -->
+			You are playing as a guest, so you hold the wall with conscripts &mdash; and
+			nothing is saved or scored. <a href="index.php">Log in</a> to defend your own
+			realm, keep a run across sessions, and play for the monthly board.
 		<?php endif; ?>
 		<br><em>Nothing here is saved and nothing is spent. Your realm is untouched no matter how this goes.</em>
 	</div>
@@ -975,7 +1012,13 @@ $rg_theme_img = $rg_theme > 0
 			     that put me", and one more click to find out is one too many.
 			     ?filterby= is read from GET (skulliance.php:848), so a plain
 			     link works and needs no form. -->
+			<?php if ($rg_me > 0): ?>
 			<a class="rg-defeat-board" href="leaderboards.php?filterby=monthly-guardians">See the monthly board</a>
+			<?php else: ?>
+			<!-- The board is behind the login gate, so sending a guest there would be
+			     a door in their face at the worst moment. Point at the door itself. -->
+			<a class="rg-defeat-board" href="index.php">Log in to play for the monthly board</a>
+			<?php endif; ?>
 			<button type="button" id="rg-defeat-ok">Again</button>
 		</div>
 	</div>
@@ -1573,6 +1616,14 @@ $rg_theme_img = $rg_theme > 0
    * place to resume from. Null when there is nothing to go back to.
    */
   var SAVED = <?php echo $rg_saved ? $rg_saved['state'] : 'null'; ?>;
+
+  /*
+   * Anonymous visitors play the whole game and keep none of it. Every call in
+   * post() is skipped rather than fired and rejected -- the endpoint would
+   * answer not_logged_in, but a run should not spend a request per ten seconds
+   * finding that out.
+   */
+  var LOGGED_IN = <?php echo $rg_me > 0 ? 'true' : 'false'; ?>;
 
   var SCRATCH = <?php echo json_encode($rg_scratch); ?>;
   SCRATCH.wcat = SNAPSHOT.wcat;
@@ -2998,7 +3049,8 @@ $rg_theme_img = $rg_theme > 0
                      breacher: S.breacher || '', breacher_id: S.breacherId || '' }).then(function (res) {
       var el2 = document.getElementById('rg-defeat-scored');
       if (!el2) return;
-      if (res && res.scored) el2.textContent = 'Recorded on this month’s board.';
+      if (!LOGGED_IN)        el2.textContent = 'Played as a guest, so this one is not recorded.';
+      else if (res && res.scored) el2.textContent = 'Recorded on this month’s board.';
       else if (res)          el2.textContent = 'Not recorded — this run had no server-side start.';
       else                   el2.textContent = '';
     });
@@ -3380,6 +3432,9 @@ $rg_theme_img = $rg_theme > 0
    */
   var SAVE_EVERY = 100;                 // ticks -- 10s, cheap next to a run
   function post(action, extra) {
+    // Nothing to save to, so do not ask. Resolves null, which every caller
+    // already handles -- that is the same shape a failed request takes.
+    if (!LOGGED_IN) return Promise.resolve(null);
     var body = 'action=' + encodeURIComponent(action);
     for (var k in extra) body += '&' + k + '=' + encodeURIComponent(extra[k]);
     return fetch('ajax/guardians-save.php', {

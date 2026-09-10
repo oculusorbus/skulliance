@@ -1642,6 +1642,15 @@ What a doc page will have to get right, because none of it is guessable:
   where the "start from scratch" toggle lives, so restarting from scratch falls
   out of the existing controls. Not scored: paying out for abandoning would make
   quitting a losing siege the correct play.
+- **The page is PUBLIC** (2026-09-10). It does not include `skulliance.php` or
+  `verify.php` - same pattern as `skullpaper.php` and `profile.php` - and
+  restores the session from `SessionCookie` with `array_merge`, never a raw
+  assign. A guest plays the conscript baseline (every realm query already sat
+  behind `if ($rg_me > 0)`), and `post()` returns early rather than firing
+  requests the endpoint would refuse. Nothing is saved and nothing is scored for
+  them, said in the blurb BEFORE the run and again on the send-off. The horde is
+  no new exposure: `profile.php` is public and already shows username and avatar;
+  `visibility == 2` gates NFTs, not identity.
 - Every realm still eventually falls to the horde. There is no win condition.
   That is exactly why the siege can be **paused** - a run reaches an hour, so
   losing it to a phone call is the one failure a player learns nothing from.
