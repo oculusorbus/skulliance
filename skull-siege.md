@@ -215,7 +215,49 @@ usage, and Crypt resurrection priority. **This is the thing the prototype exists
 to prove.** If placing and spending isn't fun in a hardcoded scenario, no amount
 of realm integration will save it.
 
-### The problem the user spotted, and the fix
+### A REALM IS FAST-FORWARD, not a power level
+
+The user's framing, 2026-09-09, and it supersedes the wave-scaling fix below:
+
+> "Having a realm is like hitting fast forward on the game. You can grind from
+> the bottom, or jump to higher levels from your realm curation."
+
+Realm power becomes a **starting position** rather than a power multiplier.
+Everyone plays the same ladder; a realm lets you skip ahead on it. This is better
+than scaling waves to realm strength because there is one shared ladder, one
+comparable set of numbers, and nobody is locked out.
+
+The mechanic that falls out of it:
+
+> **Starting wave = the higher of (your best wave ever reached) or (your
+> realm-derived tier).**
+
+Two roads to the same place. Grinders climb by playing; realm-builders climb by
+investing; someone doing both moves fastest. Neither path is a wall. It also
+answers the realm-less floor problem noted above without a special case: a new
+player starts at wave 1 and it is a real game, just a longer road.
+
+**Decide before building the board: what does it rank?**
+
+- *Furthest wave reached* makes the head start a permanent advantage, so realm
+  holders top the board by construction. That is a legitimate choice — it is the
+  incentive the whole integration is for — but the board then measures investment
+  rather than play.
+- *Waves gained this run* means a grinder pushing twelve waves past their start
+  beats a whale pushing eight past theirs. The whale still reaches a deeper
+  absolute wave, still earns more from depth, still gets "I'm at wave 60" — so
+  realm investment pays exactly as intended. It simply is not what wins.
+
+**Recommendation: show both numbers, rank on waves gained.** One comparable
+leaderboard, realms strongly incentivised, and a new player can top it in their
+first month — which is the difference between a game that recruits and one that
+only rewards the people already here.
+
+It also makes the weekly reset coherent: a player's start is stable week to week,
+so each week is "how far can I push from where I stand" — a fresh race for
+everyone regardless of realm size.
+
+### Superseded: scaling waves to realm power
 
 "Those with the strongest realms would dominate." Correct, and it decides whether
 this works at all: if realm power determines the outcome, the board ranks who
@@ -227,6 +269,11 @@ their realm, and the board ranks how far you got *relative to your means*: wave
 14 on a level-30 realm beats wave 14 on a level-90 realm. A strong realm buys a
 harder and more interesting siege, not a guaranteed win. An absolute board can
 run alongside the handicapped one if the whales want a trophy.
+
+**Kept only as background.** The fast-forward model above is better and replaces
+this: handicap maths is invisible and hard to explain, and players distrust a
+board whose ranking they cannot compute in their head. "You start further up the
+same ladder" needs no explanation at all.
 
 Precedent worth reusing: `realms-locations.md` notes realms already self-limit at
 the top — the ±3 defense-level attack range means transcendent realms stall for
@@ -320,7 +367,8 @@ Rough order:
    holds up.
 5. Action log + server replay, so a result can be trusted. Nothing pays out
    before this exists.
-6. Read real realm levels (read-only), and scale waves to total realm power.
+6. Read real realm levels (read-only) to derive a starting wave — max of that and
+   the player's best wave ever reached.
 7. Weekly seed, leaderboard, CARBON, hub, nav, Skull Paper page.
 
 Note: this file sits in the repo, which is pulled to the webroot — it is
