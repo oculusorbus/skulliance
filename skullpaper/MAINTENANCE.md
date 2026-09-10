@@ -1614,7 +1614,36 @@ What a doc page will have to get right, because none of it is guessable:
   **Strike** in the UI while the action id, state and CSS ids stay `sortie`
   (the replay action log is written in the id). Factory items are **implicit** -
   one button, always "Fortify"; the log says what it did after it lands.
-- **No saved progress, by design.** Every realm eventually falls to the horde.
+- **Progress IS saved now** (reversed 2026-09-10; it was deliberately not, on
+  the reasoning that every realm eventually falls). What changed is run length:
+  a siege is half an hour and the long ones an hour, so a closed tab costing one
+  is the same failure the pause button exists to prevent, one step further out.
+  `guardians_runs` holds one snapshot row per player; `guardians_scores` holds
+  one row per fallen siege. **Both migrations are documented in
+  `guardians-lib.php`'s header, not in `guardians.php`.**
+- **The trust boundary is real and is bounded, not assumed.** Guardians cannot
+  be server-authoritative the way Crypt Conquest is - it is a 10 Hz client
+  simulation, not a turn per AJAX call. So: a saved *snapshot* is convenience
+  and is **never scored**; a submitted *score* is checked against wall-clock
+  time, with `started_at` stamped server-side at Begin and
+  `GUARDIANS_MIN_WAVE_SECONDS = 15` as the floor (the modelled minimum is ~28s
+  for wave 1 and ~47s at wave 50+, so it rejects nothing real). Full replay
+  verification is possible later without touching the client - the sim is
+  deterministic and `actionLog` already records `[tick, action]` - and that is a
+  port of the combat loop, which is why the cheap bound is what shipped.
+- **Monthly board, 100,000 CARBON**, ranked by waves **held past your own
+  starting wave** rather than the raw wave reached: the wave you start on is
+  handed to you by realm power, so ranking on it would rank realms rather than
+  play. Monthly rather than weekly because an hour-long run would otherwise make
+  the board about who had a free evening. Needs its own crontab entry hitting
+  `rewards.php?guardians=1`; nothing here schedules it.
+- **Retreat** (with a confirmation dialog) is how you leave a siege you no
+  longer want - persistence created the need for it, since closing the tab used
+  to be how you abandoned one. It returns you to the pre-run board, which is
+  where the "start from scratch" toggle lives, so restarting from scratch falls
+  out of the existing controls. Not scored: paying out for abandoning would make
+  quitting a losing siege the correct play.
+- Every realm still eventually falls to the horde. There is no win condition.
   That is exactly why the siege can be **paused** - a run reaches an hour, so
   losing it to a phone call is the one failure a player learns nothing from.
   Pause is gated inside `step()` (not by clearing the interval, so resuming

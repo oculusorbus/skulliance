@@ -90,6 +90,17 @@ if(isset($_GET['obscura'])){
 	checkObscuraLeaderboard($conn, false, true);
 	resetObscuraRuns($conn);
 }
+if(isset($_GET['guardians'])){
+	// Monthly -- needs its OWN crontab entry hitting rewards.php?guardians=1
+	// once a month, separate from every other schedule here. Nothing in this
+	// codebase schedules it; see skullpaper/MAINTENANCE.md.
+	//
+	// checkGuardiansLeaderboard() pays out reward=0 rows and calls
+	// resetGuardians() itself at the end, which is what flips them to
+	// reward=1 -- so there is no second call to make here, unlike Obscura
+	// where the run reset is a separate concern from the score reset.
+	checkGuardiansLeaderboard($conn, false, true);
+}
 if(isset($_GET['cryptconquest'])){
 	// Monthly, not weekly -- needs its OWN crontab entry hitting
 	// rewards.php?cryptconquest=1 once a month (e.g. midnight on the 1st),

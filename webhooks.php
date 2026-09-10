@@ -71,6 +71,13 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 			// Expected in credentials/webhooks_credentials.php as:
 			//   function getObscuraWebhook(){ return "https://discord.com/api/webhooks/..."; }
 			$webhook = function_exists('getObscuraWebhook') ? getObscuraWebhook() : "";
+		}else if($channel == "guardians"){
+			// Same guard as the neighbours: the credential is being added
+			// separately, and a player losing an hour-long siege must not see
+			// an error because the webhook is not wired up yet.
+			// Expected in credentials/webhooks_credentials.php as:
+			//   function getGuardiansWebhook(){ return "https://discord.com/api/webhooks/..."; }
+			$webhook = function_exists('getGuardiansWebhook') ? getGuardiansWebhook() : "";
 		}else if($channel == "skullracer"){
 			// Same not-yet-configured situation as cryptconquest above --
 			// getSkullRacerWebhook() doesn't exist in

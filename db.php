@@ -6229,6 +6229,14 @@ $SKULLIANCE_BOARDS = array(
 	'obscura'           => array('label'=>'Obscura',           'icon'=>'🔍', 'group'=>'Games',
 		'blurb'=>'Longest art-recognition streak',
 		'periods'=>array('All-Time'=>'obscura','Weekly'=>'weekly-obscura')),
+	// MONTHLY, not weekly, and that follows from the game: a siege runs half an
+	// hour and the long ones an hour, so a weekly board would be decided by who
+	// had a free evening. Ranked by waves HELD past your own starting wave, not
+	// the raw wave number -- the number you start on is handed to you by your
+	// realm, so ranking on it would rank realms rather than play.
+	'guardians'         => array('label'=>'Realm Guardians',   'icon'=>'🛡️', 'group'=>'Games',
+		'blurb'=>'Waves held against the horde',
+		'periods'=>array('All-Time'=>'guardians','Monthly'=>'monthly-guardians')),
 	// Their own group, which is what puts them on a row of their own rather
 	// than flowing into the tail of Games. Also honest: they run on a
 	// separate sub-system with its own database. NOT "External": they used to
@@ -6319,6 +6327,7 @@ function refreshLeaderboardSnapshots($conn) {
 		'skullracer'        => function($c) { checkSkullRacerLeaderboard($c, false, false, 'race'); },
 		'skullracer-laps'   => function($c) { checkSkullRacerLeaderboard($c, false, false, 'lap'); },
 		'obscura'           => function($c) { checkObscuraLeaderboard($c); },
+		'guardians'         => function($c) { checkGuardiansLeaderboard($c); },
 		'swaps'             => function($c) { checkSkullSwapsLeaderboard($c); },
 		'monstrocity'       => function($c) { checkMonstrocityLeaderboard($c); },
 		'bosses'            => function($c) { checkBossBattlesLeaderboard($c); },
@@ -6670,7 +6679,7 @@ function skullswapShareText($score, $is_high = false) {
 function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 	// Which sources count as "a game". Everything else -- daily claims,
 	// missions, raids -- is platform activity but not playing a game.
-	$game_sources = array('skullswap','gauntlet','crawl','conquest','racer','boss','monstrocity','obscura');
+	$game_sources = array('skullswap','gauntlet','crawl','conquest','racer','boss','monstrocity','obscura','guardians');
 	// MIGRATIONS DONE -- this block used to say cryptcrawls and cryptconquests
 	// each still needed a date_created column added before 'crawl' and
 	// 'conquest' could work for monthly/weekly. Both were run; verified
@@ -6718,6 +6727,7 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 		// migration before monthly/weekly work.
 		$w_sr = "AND created_at     >= '$dt'";
 		$w_ob = "AND date_created  >= '$dt'";
+		$w_gd = "AND date_created  >= '$dt'";
 	} elseif ($period === 'weekly') {
 		$ws   = $conn->real_escape_string(gauntletGetWeekStart());
 		$w_t  = "AND date_created  >= '$ws'";
@@ -6731,8 +6741,9 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 		$w_cq = "AND date_created  >= '$ws'";
 		$w_sr = "AND created_at     >= '$ws'";
 		$w_ob = "AND date_created  >= '$ws'";
+		$w_gd = "AND date_created  >= '$ws'";
 	} else {
-		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = $w_cc = $w_cq = $w_sr = $w_ob = '';
+		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = $w_cc = $w_cq = $w_sr = $w_ob = $w_gd = '';
 	}
 
 	// Run each source as its own fast GROUP BY query, then merge in PHP.
@@ -6768,6 +6779,11 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 		// sheer volume. A run is the same class of single session as a delve or
 		// a race, so it carries the same weight.
 		'obscura'     => ["SELECT user_id, COUNT(*) AS cnt FROM obscura_scores WHERE active = 0 $w_ob GROUP BY user_id",                                                                           5],
+		// One row per FALLEN siege, which is the only way a Guardians run ends
+		// -- there is no win condition, every realm eventually falls. Weighted
+		// with crawl/conquest/racer/obscura: a siege is that same class of
+		// single completed session, and a long one at that.
+		'guardians'   => ["SELECT user_id, COUNT(*) AS cnt FROM guardians_scores WHERE 1=1 $w_gd GROUP BY user_id",                                                                                5],
 		'raid'        => ["SELECT re.user_id, COUNT(*) AS cnt FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $w_r GROUP BY re.user_id",                      15],
 		'boss'        => ["SELECT user_id, COUNT(*) AS cnt FROM encounters WHERE 1=1 $w_e GROUP BY user_id",                                                                                     25],
 		'monstrocity' => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id",                                                                        50],
@@ -6897,6 +6913,7 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 		$stats['M3RPG']   = number_format($data['monstrocity']);
 		// Last, matching where Obscura sits in the Games group on the hub.
 		$stats['Obscura'] = number_format($data['obscura']);
+		$stats['Sieges']  = number_format($data['guardians']);
 		$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => ''];
 		$last_score = $score;
 	}
@@ -14259,5 +14276,156 @@ function resetObscuraRuns($conn) {
 
 /* ============================================================
    END OBSCURA
+   ============================================================ */
+
+/* ============================================================
+   REALM GUARDIANS
+
+   Only the leaderboard lives here, because the boards registry does.
+   Persistence, scoring and the Discord post are in guardians-lib.php,
+   which is deliberately NOT included here -- see its header.
+   ============================================================ */
+
+define('GUARDIANS_CARBON', 100000);
+
+/*
+ * MONTHLY, not weekly, and that follows from the game rather than taste: a
+ * single siege runs about half an hour and the long ones an hour, so a weekly
+ * board would be decided by who had a free evening rather than by who played
+ * well. Crypt Conquest is monthly for the same reason and uses the same
+ * 100,000 CARBON pool.
+ *
+ * $monthly filters to runs not yet counted toward a payout (reward = 0, reset
+ * by resetGuardians() below); $rewards actually pays out and is only ever
+ * called from rewards.php's cron-triggered endpoint -- an EXTERNAL crontab
+ * hitting rewards.php?guardians=1 once a month is what triggers it. Nothing in
+ * this codebase schedules that itself; see MAINTENANCE.md.
+ *
+ * Ranked by WAVES HELD -- how far past your own starting wave you got -- and
+ * not by the wave number reached. The wave you start on is handed to you by
+ * your realm (power/5), so ranking on the raw number would rank realms rather
+ * than play, and a brand-new player could never place regardless of how well
+ * they held. Ties break on the raw wave, then on fewest guardians lost.
+ */
+function checkGuardiansLeaderboard($conn, $monthly=false, $rewards=false) {
+	$carbon = GUARDIANS_CARBON;
+	$where  = ($monthly || $rewards) ? "AND g.reward = 0" : "";
+
+	$sql = "
+		SELECT
+			u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
+			MAX(g.held)  AS best_held,
+			MAX(g.wave)  AS best_wave,
+			MIN(g.lost)  AS fewest_lost,
+			COUNT(*)     AS sieges
+		FROM guardians_scores g
+		INNER JOIN users u ON u.id = g.user_id
+		WHERE 1 $where
+		GROUP BY u.id
+		ORDER BY best_held DESC, best_wave DESC, fewest_lost ASC
+	";
+	$result = $conn->query($sql);
+
+	if ($result && $result->num_rows > 0) {
+		$fireworks          = false;
+		$leaderboardCounter = 0;
+		$last_score         = null;
+		$third_score        = null;
+		$description        = "";
+		$counter            = 0;
+		$lb_rows            = [];
+
+		while ($row = $result->fetch_assoc()) {
+			$leaderboardCounter++;
+			$counter++;
+			$score = [intval($row['best_held']), intval($row['best_wave']), intval($row['fewest_lost'])];
+
+			if ($leaderboardCounter <= 3) {
+				global $leaderboard_top3;
+				$leaderboard_top3[] = [
+					'username'   => $row['username'],
+					'discord_id' => $row['discord_id'],
+					'avatar'     => $row['avatar'],
+					'visibility' => $row['visibility'],
+					'score'      => number_format($row['best_held']) . ' waves held',
+				];
+			}
+
+			$trophy = "";
+			if ($leaderboardCounter == 1) {
+				$trophy = "first";
+			} elseif ($leaderboardCounter == 2) {
+				$trophy = ($last_score != $score) ? "second" : "first";
+				if ($last_score == $score) $leaderboardCounter--;
+			} elseif ($leaderboardCounter == 3) {
+				if ($last_score != $score) { $trophy = "third"; $third_score = $score; }
+				else { $trophy = "second"; $leaderboardCounter--; }
+			} elseif ($leaderboardCounter > 3 && $third_score == $score) {
+				$trophy = "third"; $leaderboardCounter--;
+			} elseif ($leaderboardCounter > 3 && $last_score == $score) {
+				$leaderboardCounter--;
+			}
+
+			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
+
+			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
+			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
+			$reward_col = ($monthly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
+			$stats      = [
+				'Waves Held'   => number_format($row['best_held']),
+				'Reached Wave' => number_format($row['best_wave']),
+				'Sieges'       => number_format($row['sieges']),
+			];
+			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url, 'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => $reward_col];
+			$last_score = $score;
+
+			if ($rewards) {
+				updateBalance($conn, $row['user_id'], 15, round($carbon / $leaderboardCounter));
+				logCredit($conn, $row['user_id'], round($carbon / $leaderboardCounter), 15);
+				if ($counter <= 45) {
+					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Waves Held: " . $row['best_held'] . ", Reached Wave: " . $row['best_wave'] . "\r\n";
+					$description .= "        " . number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND\r\n";
+				}
+			}
+		}
+
+		if ($rewards) {
+			resetGuardians($conn);
+			// Notifications/default webhook, not the "guardians" channel -- that
+			// one is for individual sieges falling as people play. Same split
+			// Crypt Crawl and Crypt Conquest use.
+			discordmsg("🛡️ Monthly Realm Guardians Leaderboard Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
+		}
+		renderLeaderboardList($lb_rows);
+		if ($fireworks) fireworks();
+	} else {
+		$scope = ($monthly || $rewards) ? "for the month" : "";
+		echo "<p>No sieges have been fought yet $scope.</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="guardians"><input type="submit" class="small-button" value="View All Realm Guardians Leaderboard"></form><br><br>';
+		echo '<img style="width:100%;" src="images/todolist.png"/>';
+	}
+}
+
+/*
+ * No status filter is needed here, unlike resetCryptConquests() -- and that is
+ * worth stating, because the bug it fixed is the one this shape invites.
+ *
+ * A guardians_scores row is only ever written by guardiansRecordDefeat(), at
+ * the moment a run is already over. There is no such thing as an in-progress
+ * score row, so there is nothing here that could be stamped reward = 1 without
+ * having been counted. The live run lives in guardians_runs and is deleted, not
+ * flagged. If a row is ever written before a run resolves, this needs the same
+ * filter Conquest has.
+ */
+function resetGuardians($conn) {
+	$sql = "UPDATE guardians_scores SET reward = 1 WHERE reward = 0";
+	if ($conn->query($sql) !== TRUE) {
+		echo "Error: " . $sql . "<br>" . $conn->error;
+	}
+}
+
+/* ============================================================
+   END REALM GUARDIANS
    ============================================================ */
 ?>

@@ -18,10 +18,14 @@
  * location level. Play it a hundred times and your realm is exactly as you left
  * it. That guarantee is the whole reason this can ship next to raids.
  *
- * Nothing links here: no nav, no hub card, no leaderboard, no cron, no rewards.
+ * Nothing UNSCOPED links here any more: it is in the nav, tiled on the
+ * Launchpad, and it has a monthly leaderboard. Persistence, scoring and the
+ * Discord post live in guardians-lib.php -- including the migrations, which
+ * are NOT in this file. See that file's header for the trust boundary a
+ * client-simulated game creates the moment CARBON is on the board.
  *
  * ---------------------------------------------------------------------------
- * WHY THE SIMULATION IS DETERMINISTIC WHEN NOTHING IS SUBMITTED YET
+ * WHY THE SIMULATION IS DETERMINISTIC
  * ---------------------------------------------------------------------------
  * Fixed timestep, seeded PRNG, no Math.random, actions recorded with their tick.
  * The real version has to accept a result on a board that pays CARBON, and the
@@ -34,8 +38,16 @@ include 'message.php';
 include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
+// Persistence only. The realm snapshot below stays SELECT-only; every write
+// this game makes is to its own two tables and happens in guardians-lib.php,
+// reached through ajax/guardians-save.php.
+include_once 'guardians-lib.php';
 
 $rg_me = intval($_SESSION['userData']['user_id'] ?? 0);
+
+// A siege already in progress, if there is one. Never scored -- it only puts
+// the player back where they were.
+$rg_saved = function_exists('guardiansLoadRun') ? guardiansLoadRun($conn, $rg_me) : null;
 
 /*
  * `soldiers.location` IS A STATE, NOT A `locations.id`.
@@ -656,6 +668,10 @@ $rg_theme_img = $rg_theme > 0
 			<!-- A run can last an hour and nothing is saved. Being interrupted must
 			     not cost that, so the siege can be put down and picked up. -->
 			<button type="button" id="rg-pause" title="Pause the siege" aria-pressed="false" hidden>&#9208;&#65039;</button>
+			<!-- Withdraw from this siege and go back to the pre-run board, where the
+			     baseline can be changed before starting again. Confirmed, because it
+			     throws away up to an hour. -->
+			<button type="button" id="rg-retreat" title="Sound the retreat and set up a new siege" hidden>&#8635;</button>
 			<button type="button" id="rg-sound" title="Mute effects" aria-pressed="true">&#128266;</button>
 			<?php if (!empty($rg_tracks)): ?>
 				<!-- Music gets its own switch and its own volume: the point of
@@ -795,7 +811,12 @@ $rg_theme_img = $rg_theme > 0
 					<button type="button" class="rg-act rg-up" data-act="up-mine">Upgrade</button>
 				</div>
 				<div class="rg-mine-start">
-					<button type="button" id="rg-begin">Begin the Siege</button>
+					<!-- Only rendered when there is actually a siege to go back to, so
+					     the common case is still one unambiguous button. -->
+					<?php if ($rg_saved): ?>
+					<button type="button" id="rg-resume">Resume &mdash; wave <?php echo intval($rg_saved['wave']); ?></button>
+					<?php endif; ?>
+					<button type="button" id="rg-begin"><?php echo $rg_saved ? 'Start over' : 'Begin the Siege'; ?></button>
 					<?php if ($rg_has_realm): ?>
 					<!-- Only shown to someone who HAS a realm to switch off. Without one
 					     the game is already the scratch baseline, and a toggle that does
@@ -909,6 +930,21 @@ $rg_theme_img = $rg_theme > 0
 		</div>
 	</div>
 
+	<!-- Retreat confirmation. Outside #rg-game for the same reason the nuke
+	     modal is: the board's centring rule would clamp a full-screen overlay
+	     to 720px. -->
+	<div id="rg-confirm" hidden role="dialog" aria-modal="true" aria-labelledby="rg-confirm-title">
+		<div class="rg-nuke-card">
+			<div class="rg-nuke-emoji" aria-hidden="true">&#9888;&#65039;</div>
+			<h3 id="rg-confirm-title">Sound the retreat?</h3>
+			<p>You withdraw, the siege ends, and nothing is scored. You will be able to
+			set up a new one &mdash; from your realm, or from scratch.</p>
+			<p class="rg-nuke-sub">The siege is held until you choose.</p>
+			<button type="button" id="rg-confirm-yes">Retreat</button>
+			<button type="button" id="rg-confirm-no">Keep fighting</button>
+		</div>
+	</div>
+
   </div>
 </div>
 
@@ -970,8 +1006,8 @@ $rg_theme_img = $rg_theme > 0
   flex:1 1 auto; min-width:0; text-align:right; color:#ffcc44;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-#rg-sound, #rg-music, #rg-pause { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
-#rg-pause[hidden] { display:none; }
+#rg-sound, #rg-music, #rg-pause, #rg-retreat { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
+#rg-pause[hidden], #rg-retreat[hidden] { display:none; }
 /* A <select> sizes itself to its WIDEST option, and "Guardians of the Realm" is
    wide. Capped, or it dictates the width of the whole bar. */
 #rg-track { background:#0d1e30; color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.15);
@@ -1134,6 +1170,17 @@ $rg_theme_img = $rg_theme > 0
 #rg-scratch-wrap input { vertical-align:middle; margin-right:4px; cursor:pointer; }
 #rg-scratch-wrap:has(input:disabled) { opacity:.35; cursor:default; }
 #rg-begin[hidden] { display:none; }
+/* Resume leads when there is a siege to go back to, so it gets the green and
+   Begin drops to the quiet treatment -- the common case for someone returning
+   to this page is that they meant to carry on, not start again.
+   [hidden] guard for the same reason every other one here has it: the id
+   selector sets display and outranks the browser's own [hidden]. */
+#rg-resume { display:block; margin:8px auto 2px; background:#00c8a0; color:#04121d;
+             font-weight:bold; border:0; border-radius:6px; padding:9px 22px;
+             font-size:.84rem; cursor:pointer; }
+#rg-resume[hidden] { display:none; }
+#rg-resume + #rg-begin { background:rgba(255,255,255,.12); color:rgba(255,255,255,.75);
+                         padding:6px 14px; font-size:.74rem; }
 
 /* ---- THE FACTORY SHELF ----------------------------------------------------
    Seven buttons, always in the same order, whether or not you hold any. A menu
@@ -1184,7 +1231,7 @@ $rg_theme_img = $rg_theme > 0
    it to the page would put the announcement wherever you happened to be
    scrolled. [hidden] guard is REQUIRED, because the rule below sets display and
    an id selector outranks the browser's own [hidden]. */
-#rg-nuke { position:fixed; inset:0; z-index:50; display:flex; align-items:center;
+#rg-nuke, #rg-confirm { position:fixed; inset:0; z-index:50; display:flex; align-items:center;
            justify-content:center; padding:20px; background:rgba(4,10,18,.82);
            /* Belt and braces. The markup now sits OUTSIDE #rg-game so the
               board's centring rule cannot reach it, but an element's own
@@ -1192,7 +1239,7 @@ $rg_theme_img = $rg_theme > 0
               how this shipped as a 720px column in the middle of the page.
               Stated here so a future container rule cannot quietly redo it. */
            max-width:none; margin:0; }
-#rg-nuke[hidden] { display:none; }
+#rg-nuke[hidden], #rg-confirm[hidden] { display:none; }
 .rg-nuke-card { max-width:340px; text-align:center; background:#12263a;
                 border:1px solid rgba(255,204,68,.55); border-radius:12px;
                 padding:20px 22px; box-shadow:0 0 40px rgba(255,204,68,.28); }
@@ -1207,8 +1254,15 @@ $rg_theme_img = $rg_theme > 0
                   text-align:center; }
 .rg-nuke-card p.rg-nuke-sub { font-size:.74rem; color:rgba(255,255,255,.45); margin-bottom:14px; }
 .rg-nuke-card strong { color:#fff; }
-#rg-nuke-ok { background:#ffcc44; color:#1a1200; font-weight:bold; border:0;
+#rg-nuke-ok, #rg-confirm-yes { background:#ffcc44; color:#1a1200; font-weight:bold; border:0;
               border-radius:6px; padding:9px 20px; font-size:.82rem; cursor:pointer; }
+/* Cancel is the quiet one and gets focus, so the safe choice is both the
+   default and the less eye-catching -- the loud button should not be the
+   one that throws an hour away. */
+#rg-confirm-no { background:rgba(255,255,255,.14); color:rgba(255,255,255,.85);
+                 border:0; border-radius:6px; padding:9px 16px; font-size:.82rem;
+                 cursor:pointer; margin-left:8px; }
+#rg-retreat { font-size:1.05rem; }
 
 /* ---- PAUSED ---------------------------------------------------------------
    Unmistakable at a glance. Someone coming back to their phone after twenty
@@ -1357,6 +1411,13 @@ $rg_theme_img = $rg_theme > 0
    * reads it exactly the same way. The catalogues are shared because they are
    * the platform's reference data, not the player's.
    */
+  /*
+   * A siege already in progress, handed over from the server. Convenience
+   * only: it is never scored, so a tampered snapshot buys nothing but a nicer
+   * place to resume from. Null when there is nothing to go back to.
+   */
+  var SAVED = <?php echo $rg_saved ? $rg_saved['state'] : 'null'; ?>;
+
   var SCRATCH = <?php echo json_encode($rg_scratch); ?>;
   SCRATCH.wcat = SNAPSHOT.wcat;
   SCRATCH.acat = SNAPSHOT.acat;
@@ -1994,6 +2055,9 @@ $rg_theme_img = $rg_theme > 0
      */
     if (S.paused) return;
     S.tick++;
+    // Snapshot on a tick count rather than a wall clock, so a paused or
+    // backgrounded siege is not writing rows while nothing is happening.
+    if (S.tick % SAVE_EVERY === 0) saveRun();
     if (S.boostFor > 0) S.boostFor--;
 
     /*
@@ -2516,6 +2580,7 @@ $rg_theme_img = $rg_theme > 0
 
 
     paintPause();
+    paintRetreat();
     paintShelf();
 
     // Locked mid-siege: swapping baselines would rebuild the state under the
@@ -2640,6 +2705,15 @@ $rg_theme_img = $rg_theme > 0
     musicStop();
     tracersClear();
     paintPause();
+    /*
+     * The only moment a score is written. The wave is claimed by the client and
+     * the elapsed time is measured by the server against the started_at it
+     * stamped at Begin, so neither can be forged without the other -- see
+     * guardians-lib.php. Recording also clears the saved run, so a fallen siege
+     * cannot be resumed.
+     */
+    SAVED = null;
+    post('defeat', { wave: S.wave, lost: S.dead });
     el.status.textContent = 'The wall is breached';
     log('The realm falls at wave ' + S.wave + '. Guardians lost: ' + S.dead + '.', true);
     beginBtn.textContent = 'Hold again';
@@ -2799,6 +2873,72 @@ $rg_theme_img = $rg_theme > 0
     render();
   }
   if (pauseBtn) pauseBtn.addEventListener('click', function () { setPaused(!S.paused); });
+
+  /* ---- RETREAT ----------------------------------------------------------
+   * Persistence created the need for this: before it, closing the tab was how
+   * you abandoned a siege. Now a run follows you back, so there has to be a
+   * deliberate way out of one.
+   *
+   * It does NOT start a new siege directly -- it puts the board back to its
+   * pre-run state, which is where the "start from scratch" toggle lives. That
+   * is one extra click and it makes "restart from scratch" fall out of the
+   * existing controls rather than needing a second variant of Begin.
+   *
+   * Two clicks, because it throws away up to an hour, and the arm expires so a
+   * stray first click cannot sit waiting to be completed by an unrelated one.
+   * Not scored: abandoning is not defeat, and paying out for it would make
+   * quitting a losing siege the correct play.
+   */
+  var retreatBtn = document.getElementById('rg-retreat');
+  var confirmEl  = document.getElementById('rg-confirm');
+  var confirmYes = document.getElementById('rg-confirm-yes');
+  var confirmNo  = document.getElementById('rg-confirm-no');
+  function paintRetreat() {
+    if (retreatBtn) retreatBtn.hidden = !S.running || S.over;
+  }
+  /*
+   * A real dialog, not a two-click arm. This throws away up to an hour, and a
+   * quiet second click on an icon is not a confirmation anyone would remember
+   * making. The siege is held while it is up -- quietly, and only if it was not
+   * already paused, so cancelling puts the player back exactly as they were
+   * rather than silently un-pausing a siege they had paused themselves.
+   */
+  var confirmPaused = false;
+  function askRetreat() {
+    if (!confirmEl || !S.running || S.over) return;
+    confirmPaused = !S.paused;
+    if (confirmPaused) setPaused(true, true);
+    confirmEl.hidden = false;
+    if (confirmNo) confirmNo.focus();
+  }
+  function closeRetreat(resume) {
+    if (confirmEl) confirmEl.hidden = true;
+    if (resume && confirmPaused) setPaused(false, true);
+    confirmPaused = false;
+  }
+  if (retreatBtn) retreatBtn.addEventListener('click', askRetreat);
+  if (confirmNo) confirmNo.addEventListener('click', function () { closeRetreat(true); });
+  if (confirmYes) {
+    confirmYes.addEventListener('click', function () {
+      closeRetreat(false);
+      clearInterval(S.timer);
+      post('abandon', {});
+      SAVED = null;
+      musicStop();
+      tracersClear();
+      if (nukeEl) nukeEl.hidden = true;
+      // Back to the pre-run board, which is where the "start from scratch"
+      // toggle lives -- so restarting from scratch falls out of the controls
+      // that already exist rather than needing a second variant of Begin.
+      applyBaseline();
+      beginBtn.hidden = false;
+      beginBtn.textContent = 'Begin the Siege';
+      if (resumeBtn) resumeBtn.hidden = true;
+      paintPause();
+      paintRetreat();
+      log('The retreat is sounded. Nothing was scored.');
+    });
+  }
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) setPaused(true);
   });
@@ -2864,22 +3004,108 @@ $rg_theme_img = $rg_theme > 0
     paintMusic();
   }
 
-  beginBtn.addEventListener('click', function () {
+  /* ---- PERSISTENCE ------------------------------------------------------
+   * A siege runs half an hour and the long ones an hour. Losing that to a
+   * closed tab is the same failure the pause button exists to prevent, one
+   * step further out, so the run is snapshotted and can be picked up again.
+   *
+   * The server stores what it is told and never scores a snapshot -- the trust
+   * boundary and the wall-clock bound on submitted scores are written out in
+   * guardians-lib.php. Nothing here is load-bearing for the leaderboard.
+   *
+   * Every call is fire-and-forget with a swallowed rejection: a save that fails
+   * must never interrupt a siege, and a player with a flaky connection should
+   * lose the resume, not the game.
+   */
+  var SAVE_EVERY = 100;                 // ticks -- 10s, cheap next to a run
+  function post(action, extra) {
+    var body = 'action=' + encodeURIComponent(action);
+    for (var k in extra) body += '&' + k + '=' + encodeURIComponent(extra[k]);
+    return fetch('ajax/guardians-save.php', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body
+    }).then(function (r) { return r.json(); }).catch(function () { return null; });
+  }
+  /*
+   * S.timer is an interval id, not state -- serialising it would restore a
+   * number that means nothing in a new page and, worse, read as a live timer.
+   * Everything else in S is plain data by construction.
+   */
+  function snapshot() {
+    var out = {};
+    for (var k in S) if (k !== 'timer') out[k] = S[k];
+    return JSON.stringify({ s: out, seed: SEED, scratch: scratchOn, unitSeq: unitSeq });
+  }
+  function saveRun() {
+    if (!S.running || S.over) return;
+    post('save', { state: snapshot(), wave: S.wave });
+  }
+  // The two moments a run is most likely to be abandoned: the tab going away,
+  // and the player pausing to deal with something else.
+  window.addEventListener('pagehide', saveRun);
+  document.addEventListener('visibilitychange', function () { if (document.hidden) saveRun(); });
+
+  function beginSiege(resumeState) {
     rand = mulberry32(SEED);
     actionLog = [];
     HORDE = VERIFIED.slice();   // frozen for the run: no reshuffling faces
     reset();
 
+    if (resumeState) {
+      /*
+       * Restore over a freshly reset S rather than replacing it, so a snapshot
+       * written by an older build cannot leave a key missing that this build
+       * expects -- anything the save does not carry keeps the value reset()
+       * just gave it.
+       */
+      for (var k in resumeState.s) S[k] = resumeState.s[k];
+      if (typeof resumeState.unitSeq === 'number') unitSeq = resumeState.unitSeq;
+      S.timer = 0;
+    }
+
     S.running = true;
     S.paused = false;        // a fresh siege never opens paused
+    S.over = false;
     logEl.innerHTML = '';
     tracersClear();          // no shots left over from the run that just fell
     beginBtn.hidden = true;
+    if (resumeBtn) resumeBtn.hidden = true;
     paintPause();            // reveals the pause control, hidden until now
-    startWave();
+    if (resumeState) {
+      log('The siege resumes at wave ' + S.wave + '.');
+    } else {
+      post('begin', { start_wave: REALM.start, scratch: scratchOn ? 1 : 0 });
+      startWave();
+    }
     musicStart();
     S.timer = setInterval(step, TICK);
+  }
+
+  beginBtn.addEventListener('click', function () {
+    // Pressing Begin on a board with a saved run abandons it. Not scored:
+    // abandoning is not defeat, and paying for it would make quitting a losing
+    // siege the correct play.
+    if (SAVED) { post('abandon', {}); SAVED = null; }
+    beginSiege(null);
   });
+
+  var resumeBtn = document.getElementById('rg-resume');
+  if (resumeBtn) {
+    resumeBtn.addEventListener('click', function () {
+      var st = SAVED;
+      SAVED = null;
+      resumeBtn.hidden = true;
+      // The saved run keeps its own scratch flag: resuming must rebuild the
+      // baseline it was PLAYED on, not whatever the toggle happens to say now.
+      if (st && typeof st.scratch === 'boolean' && st.scratch !== scratchOn) {
+        scratchOn = st.scratch;
+        if (scratchBox) scratchBox.checked = scratchOn;
+        REALM = (scratchOn && HAS_REALM) ? SCRATCH : SNAPSHOT;
+      }
+      beginSiege(st);
+    });
+  }
 
   // applyBaseline, not a bare reset: a remembered "from scratch" choice has to
   // be in force on the first paint, not only after the box is touched again.
