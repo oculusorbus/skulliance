@@ -90,6 +90,9 @@ if ($rg_r) {
 			<span>Tower <strong id="rg-hp">100</strong></span>
 			<span>CARBON <strong id="rg-carbon">0</strong></span>
 			<span id="rg-status">Press Begin</span>
+			<!-- Always reachable, never buried in a menu. A game that makes noise
+			     must let you stop it in one tap. -->
+			<button type="button" id="rg-sound" title="Mute" aria-pressed="true">&#128266;</button>
 		</div>
 
 		<!-- The approach. Enemies march right to left toward the wall. -->
@@ -138,6 +141,7 @@ if ($rg_r) {
 .rg-hud { display:flex; gap:16px; font-size:.78rem; color:rgba(255,255,255,.55); margin-bottom:10px; flex-wrap:wrap; align-items:center; }
 .rg-hud strong { color:#00c8a0; font-size:1rem; }
 #rg-status { margin-left:auto; color:#ffcc44; }
+#rg-sound { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
 
 /* The approach. Enemies are absolutely positioned by percentage of the run, so
    the field scales to any width without the simulation knowing about pixels. */
@@ -230,6 +234,59 @@ if ($rg_r) {
   function upgradeCost(k){ return 20 * S.lvl[k]; }
   function towerDamage() { return S.armed * 3 + (S.garrison - S.armed) * 1; }
 
+  /* ------------------------------------------------------------------
+   * THE CACOPHONY.
+   *
+   * Reuses Crypt Crawl's weapon sounds (audio/sounds/, all verified 200 on the
+   * live server). Free assets, and they carry INFORMATION rather than just
+   * decorating: armed defenders fire guns, unarmed ones swing fists. Run the
+   * Armory dry and you HEAR the wall drop from gunfire to bare hands before you
+   * notice the counter. That is the Armory mattering through a channel the eye
+   * isn't watching during a wave.
+   *
+   * Density scales with the garrison, so a full Tower genuinely roars and a
+   * thinned one goes quiet. Capped, because "cacophony" and "unlistenable" are
+   * a volume knob apart.
+   *
+   * Cosmetic only, like the avatars -- never read by step(), so it cannot
+   * affect the deterministic result.
+   * ------------------------------------------------------------------ */
+  var ARMED_SFX   = ['machinegun','pistol','sniperrifle','rocketlauncher','artillery','grenade','flamethrower','demolition'];
+  var UNARMED_SFX = ['fist','melee','tacticalkatana'];
+  var sfxOn = true, sfxPool = {}, sfxCursor = 0;
+
+  function sfxLoad(name) {
+    // Three of each so overlapping shots don't cut each other off.
+    if (sfxPool[name]) return sfxPool[name];
+    var pool = [];
+    for (var i = 0; i < 3; i++) {
+      var a = new Audio('audio/sounds/' + name + '.mp3');
+      a.preload = 'auto'; a.volume = 0.3;
+      pool.push(a);
+    }
+    sfxPool[name] = { list: pool, i: 0 };
+    return sfxPool[name];
+  }
+  function sfxPlay(name, vol) {
+    if (!sfxOn) return;
+    var p = sfxLoad(name);
+    var a = p.list[p.i]; p.i = (p.i + 1) % p.list.length;
+    try { a.currentTime = 0; a.volume = vol === undefined ? 0.3 : vol; a.play().catch(function () {}); } catch (e) {}
+  }
+  // A volley's worth of fire. More defenders, more noise -- to a limit.
+  function sfxVolley() {
+    if (!sfxOn) return;
+    var shots = Math.min(3, Math.max(1, Math.ceil(S.garrison / 2)));
+    for (var i = 0; i < shots; i++) {
+      // Armed first: the guns you can hear are the weapons you actually issued.
+      var armedShot = i < S.armed;
+      var bank = armedShot ? ARMED_SFX : UNARMED_SFX;
+      var name = bank[(sfxCursor++) % bank.length];
+      // Stagger slightly so it reads as a firefight, not one stacked thud.
+      (function (n, d) { setTimeout(function () { sfxPlay(n, 0.26); }, d); })(name, i * 70);
+    }
+  }
+
   var el = {};
   ['wave','hp','carbon','reserve','weapons','dead','garrison','garrison-cap','status',
    'lvl-tower','lvl-barracks','lvl-armory','lvl-crypt','bar-barracks','bar-armory']
@@ -306,9 +363,11 @@ if ($rg_r) {
       var target = S.foes[0];
       for (var i = 1; i < S.foes.length; i++) if (S.foes[i].pos < target.pos) target = S.foes[i];
       target.hp -= towerDamage();
+      sfxVolley();
       if (target.hp <= 0) {
         S.foes.splice(S.foes.indexOf(target), 1);
         S.carbon += target.tough ? 6 : 2;   // economy comes from killing, not a mine
+        sfxPlay('kill', 0.22);
       }
     }
 
@@ -327,6 +386,7 @@ if ($rg_r) {
           // breached by someone from your own Discord is a story, "a defender
           // fell" is not.
           log(escAttr(foeIdentity(f).name) + ' breaches the wall. A guardian falls.', true);
+          sfxPlay('death', 0.4);
         }
         if (S.hp <= 0) return end(false);
       }
@@ -410,6 +470,21 @@ if ($rg_r) {
     var b = e.target.closest('.rg-act');
     if (b && !b.disabled) act(b.dataset.act);
   });
+
+  var soundBtn = document.getElementById('rg-sound');
+  // Remembered per browser, so nobody has to mute this twice.
+  try { if (localStorage.getItem('rg-sound') === 'off') sfxOn = false; } catch (e) {}
+  function paintSound() {
+    soundBtn.innerHTML = sfxOn ? '&#128266;' : '&#128263;';
+    soundBtn.title = sfxOn ? 'Mute' : 'Unmute';
+    soundBtn.setAttribute('aria-pressed', sfxOn ? 'true' : 'false');
+  }
+  soundBtn.addEventListener('click', function () {
+    sfxOn = !sfxOn;
+    try { localStorage.setItem('rg-sound', sfxOn ? 'on' : 'off'); } catch (e) {}
+    paintSound();
+  });
+  paintSound();
 
   beginBtn.addEventListener('click', function () {
     rand = mulberry32(SEED);

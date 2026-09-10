@@ -5,6 +5,13 @@ links to it — type the URL. It has no database writes at all, hardcoded locati
 levels, and no rewards. Its only job is answering *is this fun*; see "If you build
 this" for what comes after, and only if the answer is yes.
 
+**The wall is loud, and the noise means something.** Crypt Crawl's weapon sounds
+are reused from `audio/sounds/` (free — they already ship, and every file was
+curl-verified 200 before being referenced). Armed defenders fire guns, unarmed
+ones swing fists, so an empty Armory is **audible** before the counter is
+noticed. Volley density follows garrison size and is capped; there is a mute in
+the HUD that remembers itself. Cosmetic only — never read by the simulation.
+
 **The horde wears real member avatars** (the user's idea, and it lands): each
 attacker is a staker from the `users` table, so you watch people from your own
 Discord come over the wall, and the log names whoever breaches it. Read-only,
