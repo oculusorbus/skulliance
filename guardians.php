@@ -1450,10 +1450,30 @@ $rg_theme_img = $rg_theme > 0
      deciding?" carries the full explanation and the tooltip carries the short
      one. */
   .rg-item-blurb { display:none; }
-  .rg-shelf-grid { grid-template-columns:repeat(auto-fit, minmax(112px, 1fr)); gap:4px; }
-  .rg-item { padding:6px 7px; grid-template-columns:18px 1fr; gap:0 6px; }
-  .rg-item img { grid-row:1; width:18px; height:18px; }
-  .rg-item-name { font-size:.7rem; }
+  /*
+   * FOUR VOLLEYS ON ONE ROW, THREE ON THE OTHER -- the same shape as the
+   * desktop shelf, and for the same reason: the row split is a MEANING (four
+   * strengths of one item, then three different ones). auto-fit was overriding
+   * the fixed counts here, so at a phone's width it fitted three per row and
+   * left the fourth volley orphaned on a line of its own, which read as a
+   * different kind of item.
+   *
+   * gap:4px only -- the counts are inherited from the rules above rather than
+   * restated, so there is one definition of the split.
+   */
+  .rg-shelf-grid { gap:4px; }
+  /*
+   * Stacked instead of side by side, because a quarter of a phone is about
+   * 90px and an icon beside a label does not fit in it. The button grows
+   * DOWNWARD to hold the same content, which is the trade: taller buttons,
+   * but the four stay together and stay comparable at a glance.
+   */
+  .rg-item { padding:6px 3px; grid-template-columns:1fr; grid-template-rows:auto auto;
+             gap:2px; justify-items:center; text-align:center; }
+  .rg-item img { grid-row:1; grid-column:1; width:18px; height:18px; }
+  .rg-item-name { font-size:.62rem; line-height:1.15; text-align:center; }
+  /* The count drops to its own line rather than being squeezed onto the name. */
+  .rg-item-name b { display:block; }
 
   /* The BLURB goes, not the title. Most people reaching this from the nav are
      on a phone, and a page that opens with no heading at all reads as broken;
