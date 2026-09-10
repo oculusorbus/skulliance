@@ -184,18 +184,41 @@ $rg_want = array(
 	'standyourground'      => 'Stand Your Ground',
 	'guardiansoftherealm'  => 'Guardians of the Realm',
 );
+$rg_named = array();
 foreach ((array)glob(__DIR__ . '/audio/tracks/*.[mM][pP]3') as $rg_f) {
 	$rg_base = pathinfo($rg_f, PATHINFO_FILENAME);
 	$rg_key  = strtolower(preg_replace('/[^a-zA-Z]/', '', $rg_base));
-	if (isset($rg_want[$rg_key])) {
-		$rg_tracks[] = array(
-			'name' => $rg_want[$rg_key],
-			// rawurlencode the FILENAME only -- the directory separators must
-			// survive, and spaces in the name must not.
-			'url'  => 'audio/tracks/' . rawurlencode($rg_base . '.' . pathinfo($rg_f, PATHINFO_EXTENSION)),
-		);
+	// rawurlencode the FILENAME only -- directory separators must survive,
+	// spaces in the name must not.
+	$rg_url  = 'audio/tracks/' . rawurlencode($rg_base . '.' . pathinfo($rg_f, PATHINFO_EXTENSION));
+
+	/*
+	 * SUBSTRING, not equality. An exact match required the file to reduce to
+	 * precisely "standyourground", so anything decorated -- "RG - Stand Your
+	 * Ground", "Stand Your Ground (final)", a version number -- silently
+	 * matched nothing, which is exactly how this failed the first time.
+	 */
+	$rg_hit = '';
+	foreach ($rg_want as $rg_k => $rg_label) {
+		if (strpos($rg_key, $rg_k) !== false) { $rg_hit = $rg_label; break; }
+	}
+	if ($rg_hit !== '') {
+		$rg_named[] = array('name' => $rg_hit, 'url' => $rg_url);
+		continue;
+	}
+
+	/*
+	 * Anything else in the folder that isn't Crypt Crawl's score. Belt and
+	 * braces: if the two titles were saved under names nothing here predicts,
+	 * they still turn up in the picker rather than leaving an empty control.
+	 * Better a track labelled by its filename than no player at all.
+	 */
+	if (strpos($rg_key, 'cryptcrawl') === false) {
+		$rg_tracks[] = array('name' => $rg_base, 'url' => $rg_url);
 	}
 }
+// The two we were asked for lead the list; discoveries follow.
+$rg_tracks = array_merge($rg_named, $rg_tracks);
 
 // The horde wears real member avatars. Public everywhere already (podiums,
 // profiles), so this exposes nothing new -- and being overrun by names from
