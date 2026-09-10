@@ -1,9 +1,14 @@
 # Realm Guardians — design notes
 
-**Status: PROTOTYPE PLAYABLE at `/staking/guardians.php`** (2026-09-09). Nothing
-links to it — type the URL. It has no database writes at all, hardcoded location
-levels, and no rewards. Its only job is answering *is this fun*; see "If you build
-this" for what comes after, and only if the answer is yes.
+**Status: PROTOTYPE, IN THE NAV** at `/staking/guardians.php` — listed under
+Realms as "Guardians" since 2026-09-10, so the community can play it and report
+back. It reads a read-only snapshot of the player's real realm and has **no
+database writes at all**, no leaderboard, no rewards and no hub card. The
+"prototype" chip sits in the HUD rather than only the page heading, because the
+heading is hidden under 560px and most arrivals from the nav will be on a phone.
+
+Its only job is still answering *is this fun*; see "If you build this" for what
+comes after, and only if the answer is yes.
 
 **The wall is loud, and the noise means something.** Crypt Crawl's weapon sounds
 are reused from `audio/sounds/` (free — they already ship, and every file was

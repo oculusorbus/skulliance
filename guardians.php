@@ -283,6 +283,11 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 	<div id="rg-game">
 
 		<div class="rg-hud">
+			<!-- The prototype marker lives HERE, not only in the heading, because
+			     the heading is hidden under 560px for space -- and now that this
+			     is in the nav, most of the people seeing it will be on a phone
+			     and should know what they are playing. -->
+			<span class="rg-tag rg-tag-hud">prototype</span>
 			<span>Wave <strong id="rg-wave">0</strong></span>
 			<span>Wall <strong id="rg-hp">100</strong></span>
 			<span>CARBON <strong id="rg-carbon">0</strong></span>
@@ -416,6 +421,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 .rg-hud { display:flex; gap:16px; font-size:.78rem; color:rgba(255,255,255,.55); margin-bottom:10px; flex-wrap:wrap; align-items:center; }
 .rg-hud strong { color:#00c8a0; font-size:1rem; }
 #rg-status { margin-left:auto; color:#ffcc44; }
+.rg-tag-hud { font-size:.55rem; padding:2px 6px; }
 #rg-sound, #rg-music { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
 #rg-track { background:#0d1e30; color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.15); border-radius:5px; font-size:.72rem; padding:3px 5px; }
 #rg-vol { width:70px; accent-color:#00c8a0; vertical-align:middle; }

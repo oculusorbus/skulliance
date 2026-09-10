@@ -172,6 +172,9 @@
 		    <div class="nav-dropdown-menu">
 		      <a href="missions.php">Missions</a>
 		      <a href="realms.php">Realms</a>
+		      <!-- Prototype, deliberately listed under Realms: it reads that realm's
+		           locations, soldiers and gear to build its starting position. -->
+		      <a href="guardians.php">Guardians</a>
 		      <a href="gauntlets.php">Gauntlets</a>
 		      <a href="cryptcrawlgame.php">Crypt Crawl</a>
 		      <a href="cryptconquestgame.php">Crypt Conquest</a>
