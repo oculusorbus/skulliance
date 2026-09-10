@@ -580,7 +580,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       running:false, over:false, tick:0, wave:REALM.start - 1,
       hp:100, maxhp:100, carbon:0,
       reserve:REALM.army, weapons:REALM.cache, armor:REALM.acache, dead:0,
-      garrison:0, armed:0, armored:0, items:0, sortied:[],
+      garrison:0, armed:0, armored:0, items:0, sortied:[], emerging:[],
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
       prod:{ barracks:0, armory:0, forge:0, factory:0, mine:0, portal:0, reinforce:0 },
       bought:{ tower:0, barracks:0, armory:0, crypt:0, portal:0, factory:0, mine:0 },
@@ -847,6 +847,19 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       if (target.hp <= 0) { kill(target); }
     }
 
+    /*
+     * One guardian steps through the Portal at a time. Four ticks apart is
+     * enough for the one ahead to have started moving, so a sortie arrives as a
+     * file of individuals rather than a single stacked marker.
+     */
+    if (S.emerging.length) {
+      S.portalOut = (S.portalOut || 0) + 1;
+      if (S.portalOut >= 4) {
+        S.portalOut = 0;
+        S.sortied.push(S.emerging.shift());
+      }
+    }
+
     // Sortied guardians meet the horde in the open -- no tower behind them.
     for (var s = S.sortied.length - 1; s >= 0; s--) {
       var u = S.sortied[s];
@@ -940,7 +953,8 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     el.armed.textContent = S.armed;
     el.armored.textContent = S.armored;
     el.items.textContent = S.items;
-    el.sortied.textContent = S.sortied.length;
+    // Counts those still stepping through, or the number dips as they queue.
+    el.sortied.textContent = S.sortied.length + S.emerging.length;
     el['garrison-cap'].textContent = garrisonCap();
     el['mine-rate'].textContent = '+' + L('mine') + ' per ' + (mineRate() / 10).toFixed(1) + 's';
     ['tower','barracks','armory','crypt','portal','factory','mine'].forEach(function (k) {
@@ -1080,6 +1094,15 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       // Meet them in the open: they die before reaching the wall, but your
       // guardians fight with no tower behind them. The whole risk/reward beat.
       S.prod.portal = 0;
+      /*
+       * They QUEUE at the Portal rather than appearing as a stack.
+       *
+       * Spawning the whole sortie at PORTAL_X put every guardian on the same
+       * pixel, so a group of five read as one. They now step through one at a
+       * time (see the portal release in step()), and because each moves off
+       * toward the nearest foe as soon as it lands, the group spreads itself
+       * out -- which is what the old arbitrary offsets were faking.
+       */
       var n = Math.min(sortieSize(), S.reserve);
       for (var i = 0; i < n; i++) {
         S.reserve--;
@@ -1091,7 +1114,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
         if (prot) S.armor--;
         // slot picks which enlisted NFT this guardian is, and stays fixed for
         // its life so the face on the field doesn't change between renders.
-        S.sortied.push({ pos:PORTAL_X,
+        S.emerging.push({ pos:PORTAL_X,
                          hp:(armed ? 6 : 4) + (prot ? 2 + REALM.alevel : 0),
                          armed:armed, prot:prot, slot:unitSeq++ });
       }
