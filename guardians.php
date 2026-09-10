@@ -179,6 +179,32 @@ if ($rg_me > 0) {
 		}
 
 		/*
+		 * BREAK UP THE GEAR GRADIENT ON THE RAID LINE.
+		 *
+		 * The ORDER BY above exists for one reason: if a realm has more than 400
+		 * soldiers, LIMIT has to keep the best rather than an arbitrary 400. But
+		 * it also hands the raid bucket over sorted by weapon level, with armour
+		 * as the tiebreaker -- so the raiders spread across the field were the
+		 * top weapon tier to a man (identically armed) while their armour, the
+		 * secondary key, still varied. It read as a bug in the weapon lookup and
+		 * was really the sort order showing through.
+		 *
+		 * Stride through the sorted list instead of reading it front to back, so
+		 * the line is a representative mix. Deterministic -- no rand() -- so the
+		 * snapshot a replay reconstructs is byte-identical to this one. Only the
+		 * raid bucket needs this: the Tower wants the best soldiers first (they
+		 * man the wall up to the cap) and the reserve is never all on screen.
+		 */
+		if (count($rg_kit_raid) > 2) {
+			$stride = max(2, (int)round(sqrt(count($rg_kit_raid))));
+			$mixed = array();
+			for ($off = 0; $off < $stride; $off++) {
+				for ($i = $off; $i < count($rg_kit_raid); $i += $stride) $mixed[] = $rg_kit_raid[$i];
+			}
+			$rg_kit_raid = $mixed;
+		}
+
+		/*
 		 * SOLDIERS ON RAIDS ARE ALREADY IN THE FIELD.
 		 *
 		 * They are out attacking somebody right now, which is exactly what a
@@ -626,6 +652,11 @@ $rg_theme_img = $rg_theme > 0
 				<div class="rg-bar" title="Time until the Mine yields more CARBON"><i id="rg-bar-mine"></i></div>
 					<div class="rg-cap">next CARBON payout</div>
 				<button type="button" class="rg-act rg-up" data-act="up-mine">Upgrade</button>
+				<!-- Begin sits on the Mine row, not under the log. It used to live
+				     below the help disclosure, which put the one button that starts
+				     the game furthest from the board -- you had to scroll past
+				     everything to start, and again to restart after a loss. -->
+				<button type="button" id="rg-begin">Begin the siege</button>
 			</div>
 		</div>
 
@@ -671,7 +702,6 @@ $rg_theme_img = $rg_theme > 0
 		</details>
 
 		<div id="rg-log"></div>
-		<button type="button" id="rg-begin">Begin the siege</button>
 	</div>
 
   </div>
@@ -849,6 +879,11 @@ $rg_theme_img = $rg_theme > 0
 .rg-act { background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:5px; padding:7px 9px; font-size:.74rem; cursor:pointer; margin:0 3px 3px 0; }
 .rg-act.rg-up { background:rgba(255,255,255,.12); color:rgba(255,255,255,.75); }
 .rg-act:disabled { opacity:.32; cursor:default; }
+/* The Factory button renames itself to whatever item is next, and those names
+   are different lengths ("Double Rewards" against "100% Success"). Pinned to
+   the widest so the card does not resize under the cursor every time the
+   Factory finishes something -- the same reason the HUD readouts are pinned. */
+.rg-act[data-act="fortify"] { min-width:118px; text-align:center; }
 /* Bar captions. A progress bar with no label is a mystery, and there are five
    of them on this board. */
 .rg-cap { font-size:.6rem; color:rgba(255,255,255,.35); margin:-4px 0 6px; letter-spacing:.02em; }
@@ -860,7 +895,10 @@ $rg_theme_img = $rg_theme > 0
 #rg-help strong { color:rgba(255,255,255,.85); }
 #rg-log { margin-top:12px; font-size:.78rem; color:rgba(255,255,255,.45); min-height:3.2em; line-height:1.5; }
 #rg-log b { color:#ff6b6b; }
-#rg-begin { display:block; margin:14px auto 0; background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:6px; padding:11px 26px; font-size:.9rem; cursor:pointer; }
+/* On the Mine row now, so it reads as one of the row's controls rather than a
+   banner under the log -- sized to stand out from Upgrade without breaking the
+   row's rhythm. */
+#rg-begin { display:inline-block; margin:0 0 3px 0; background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:5px; padding:7px 14px; font-size:.78rem; cursor:pointer; }
 #rg-begin[hidden] { display:none; }
 
 /* The lessons Obscura paid for: fits a phone, nothing pinned over the board. */
@@ -1019,10 +1057,19 @@ $rg_theme_img = $rg_theme > 0
       S.reserve.push({ w: REALM.kitReserve[v].w, wn: REALM.kitReserve[v].wn,
                        a: REALM.kitReserve[v].a, an: REALM.kitReserve[v].an });
     }
-    for (var r = 0; r < REALM.kitRaid.length; r++) {
+    /*
+     * Spread the raid line across the ground it actually has. A fixed 3% step
+     * clamped to 96 piled every raider past the twenty-fourth onto the same
+     * pixel, so a big raid party showed as a short line and a clump at the
+     * edge. Step down as the party grows instead: 3% apart when there is room,
+     * tighter when there is not, never stacked.
+     */
+    var rn = REALM.kitRaid.length, rspan = 96 - (PORTAL_X + 2);
+    var rstep = rn > 1 ? Math.min(3, rspan / (rn - 1)) : 0;
+    for (var r = 0; r < rn; r++) {
       var kr = REALM.kitRaid[r];
       S.sortied.push({
-        pos:   Math.min(96, PORTAL_X + 2 + r * 3),
+        pos:   PORTAL_X + 2 + r * rstep,
         w: kr.w, wn: kr.wn, a: kr.a, an: kr.an,
         hp:    unitHp(kr),
         slot:  unitSeq++
@@ -1059,6 +1106,26 @@ $rg_theme_img = $rg_theme > 0
     }
     return REALM.items[REALM.items.length - 1];
   }
+  /*
+   * What each does HERE, in the words of what it does in Realms.
+   *
+   * This is why the button names the item rather than saying "Fortify". The
+   * original generic Fortify always did one thing -- patch the wall and boost
+   * the Tower -- and that behaviour still exists, but it is now only the
+   * %-Success branch below: four of the seven items. The other three do
+   * something else entirely, so a player told only "Fortify" cannot tell
+   * whether they are about to repair the wall or bank a shield. Those are
+   * spent at completely different moments, which makes the name load-bearing.
+   */
+  var RG_ITEM_HELP = {
+    1: 'Random Reward: a free level to a random location.',
+    2: '25% Success: repairs the wall and the Tower hits 25% harder for six seconds.',
+    3: 'Fast Forward: every production line completes immediately.',
+    4: '50% Success: repairs the wall and the Tower hits 50% harder for six seconds.',
+    5: '75% Success: repairs the wall and the Tower hits 75% harder for six seconds.',
+    6: 'Double Rewards: a shield that absorbs the next hit entirely.',
+    7: '100% Success: repairs the wall and the Tower hits twice as hard for six seconds.'
+  };
   var UPGRADABLE = ['tower','barracks','armory','crypt','portal','factory','mine'];
   function useItem(it) {
     if (!it) return;
@@ -1694,12 +1761,18 @@ $rg_theme_img = $rg_theme > 0
         // THEIR weapon and THEIR armour -- not the cache's best applied to
         // everyone, which is why the initial raiders were wearing gear they do
         // not carry.
+        /*
+         * `this.parentNode`, NOT the badge variable. These are declared with
+         * var inside the render loop, so every handler closed over the SAME
+         * binding -- one icon failing to load hid whichever guardian's badge
+         * happened to be created last, not its own.
+         */
         var wsrc = un2.w > 0 ? gearIcon(un2.wn) : '';
         if (wsrc) {
           var wb = document.createElement('b');
           var wi = document.createElement('img');
           wi.alt = ''; wi.title = un2.wn;
-          wi.onerror = function () { wb.style.display = 'none'; };
+          wi.onerror = function () { if (this.parentNode) this.parentNode.style.display = 'none'; };
           wi.src = wsrc;
           wb.appendChild(wi); unode.appendChild(wb);
         }
@@ -1708,7 +1781,7 @@ $rg_theme_img = $rg_theme > 0
           var ab = document.createElement('u');
           var ai = document.createElement('img');
           ai.alt = ''; ai.title = un2.an;
-          ai.onerror = function () { ab.style.display = 'none'; };
+          ai.onerror = function () { if (this.parentNode) this.parentNode.style.display = 'none'; };
           ai.src = asrc;
           ab.appendChild(ai); unode.appendChild(ab);
         }
@@ -1728,11 +1801,15 @@ $rg_theme_img = $rg_theme > 0
       else if (a === 'raise')   b.disabled = !(S.dead > 0 && S.carbon >= raiseCost());
       else if (a === 'sortie')  b.disabled = !(S.reserve.length && S.prod.portal >= portalRate() && S.running);
       else if (a === 'fortify') {
-        // The action stays "Fortify" and the item behind it stays IMPLICIT.
-        // Naming the next item turned one button into seven and asked the
-        // player to learn a table mid-siege; the log says what it did the
-        // moment it lands, which is when the information is actually useful.
+        // The button says WHICH item is next, because the seven are not
+        // interchangeable -- see RG_ITEM_HELP. A shield and a Fast Forward are
+        // spent at completely different moments, and only four of the seven
+        // repair the wall at all, so "Fortify" would hide the actual decision.
         b.disabled = !S.items.length;
+        b.textContent = S.items.length ? S.items[0].name : 'Fortify';
+        b.title = S.items.length
+          ? RG_ITEM_HELP[S.items[0].id] || 'Spend this item'
+          : 'The Factory builds these over time. What you get decides what it does.';
       }
       else {
         var k = a.slice(3);
