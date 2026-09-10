@@ -1570,6 +1570,14 @@ What a doc page will have to get right, because none of it is guessable:
   half of it theatre. A held bar is also a signal: the caption turns into the
   reason and points at the Upgrade button below it. The Mine (uncapped) and the
   Portal (a cooldown) cannot stall and are not marked blockable.
+  **It only says "upgrade for room" when the NEXT level actually adds room**
+  (`heldText()` compares against `weaponCap(lvl+1)` etc). A big realm arrives
+  holding far more than the in-game caps - 159 weapons and 114 armour against
+  caps of 76 and 14 - and clearing those by upgrading would take 28 and 199
+  Armory levels. Note also that `armorCap` and `itemCap` only rise every *other*
+  level, so an upgrade there often adds nothing; the check catches that too.
+  When upgrading cannot help, the caption names what does: issuing gear
+  (Deploy/Strike draw from the pool) or spending an item.
 - **Issuing gear uses that same roll** (`drawFor()`), not the top of the cache.
   Taking the front of a best-first pool meant a Strike of five drew five
   consecutive entries from a sorted list - i.e. the same item - so every

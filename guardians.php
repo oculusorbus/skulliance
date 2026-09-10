@@ -1574,15 +1574,20 @@ $rg_theme_img = $rg_theme > 0
      point of mapping realm locations onto a siege. */
   function L(k) { return Math.max(1, S.lvl[k] || 1); }
   function garrisonCap()  { return 3 + L('tower'); }
-  function reserveCap()   { return 6 + L('barracks') * 3; }
-  function weaponCap()    { return 4 + L('armory') * 3; }
-  function itemCap()      { return 1 + Math.ceil(L('factory') / 2); }
+  function reserveCap(l)  { return 6 + (l === undefined ? L('barracks') : l) * 3; }
+  /*
+   * Caps take an explicit level so the HUD can ask "would the NEXT upgrade
+   * actually create room?" -- see paintBar. Telling a player to upgrade when
+   * upgrading cannot help is worse than saying nothing.
+   */
+  function weaponCap(l)   { return 4 + (l === undefined ? L('armory') : l) * 3; }
+  function itemCap(l)     { return 1 + Math.ceil((l === undefined ? L('factory') : l) / 2); }
   function barracksRate() { return Math.max(12, 62 - L('barracks') * 5); }
   function armoryRate()   { return Math.max(16, 72 - L('armory') * 5); }
   // Armour comes slower than weapons and is capped lower: it is the resource
   // that turns a breach into a scratch, so it should never be abundant.
   function forgeRate()    { return Math.max(34, 150 - L('armory') * 9); }
-  function armorCap()     { return 2 + Math.ceil(L('armory') / 2); }
+  function armorCap(l)    { return 2 + Math.ceil((l === undefined ? L('armory') : l) / 2); }
   function factoryRate()  { return Math.max(60, 240 - L('factory') * 16); }
   function mineRate()     { return Math.max(6, 26 - L('mine') * 2); }
   function portalRate()   { return Math.max(40, 170 - L('portal') * 12); }
@@ -2112,14 +2117,37 @@ $rg_theme_img = $rg_theme > 0
       var cap = el['cap-' + key];
       if (cap) cap.textContent = blocked ? blockedText : idleText;
     }
+    /*
+     * "Upgrade for room" ONLY when an upgrade would actually make room.
+     *
+     * A realm is a head start, and a big one arrives holding far more gear than
+     * the in-game caps: 159 weapons and 114 armour against caps of 76 and 14.
+     * Clearing those by upgrading would take 28 and 199 Armory levels. The bar
+     * was right that nothing was being forged, and the caption was sending the
+     * player to spend CARBON on the one thing that could not fix it.
+     *
+     * What DOES draw the cache down is issuing gear -- Deploy and Strike equip
+     * guardians out of the pool -- so an over-full cache says that instead.
+     * Held is still held either way; only the advice changes.
+     */
+    function heldText(len, capNow, capNext, what, drain) {
+      return capNext > len
+        ? what + ' full — upgrade for room'
+        : what + ' full — ' + drain;
+    }
+    var aLvl = L('armory'), bLvl = L('barracks'), fLvl = L('factory');
     paintBar('barracks', S.prod.barracks, barracksRate(),
-      S.reserve.length >= reserveCap(), 'training next guardian', 'barracks full — upgrade for room');
+      S.reserve.length >= reserveCap(), 'training next guardian',
+      heldText(S.reserve.length, reserveCap(), reserveCap(bLvl + 1), 'barracks', 'deploy some to the Tower'));
     paintBar('armory', S.prod.armory, armoryRate(),
-      S.wpool.length >= weaponCap(), 'forging next weapon', 'weapon cache full — upgrade for room');
+      S.wpool.length >= weaponCap(), 'forging next weapon',
+      heldText(S.wpool.length, weaponCap(), weaponCap(aLvl + 1), 'weapon cache', 'issue them by deploying or striking'));
     paintBar('forge', S.prod.forge, forgeRate(),
-      S.apool.length >= armorCap(), 'forging next armour', 'armour cache full — upgrade for room');
+      S.apool.length >= armorCap(), 'forging next armour',
+      heldText(S.apool.length, armorCap(), armorCap(aLvl + 1), 'armour cache', 'issue them by deploying or striking'));
     paintBar('factory', S.prod.factory, factoryRate(),
-      S.items.length >= itemCap(), 'building next item', 'shelf full — spend one to restart it');
+      S.items.length >= itemCap(), 'building next item',
+      heldText(S.items.length, itemCap(), itemCap(fLvl + 1), 'shelf', 'spend one to restart it'));
     // No cap on CARBON, and the Portal is a cooldown: neither can stall.
     paintBar('mine', S.prod.mine, mineRate(), false, 'next CARBON payout', '');
     paintBar('portal', S.prod.portal, portalRate(), false, 'strike ready when full', '');
