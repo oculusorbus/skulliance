@@ -93,7 +93,7 @@ $rg_short     = 'A free browser tower defense built on the realm you already own
         { "@type": "Question", "name": "Is Realm Guardians free to play?",
           "acceptedAnswer": { "@type": "Answer", "text": "Yes. It runs in your browser with no download and no signup. You can play as a guest without an account, though runs are only saved and scored for logged-in members." } },
         { "@type": "Question", "name": "Do I need NFTs to play?",
-          "acceptedAnswer": { "@type": "Answer", "text": "No. Without a realm you hold the wall with conscripts. If you do have a Skulliance realm, your enlisted NFTs become the guardians on your wall, carrying the exact weapons and armour you equipped them with." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Without a realm you hold the wall with conscripts. If you do have a Skulliance realm, your enlisted NFTs become the guardians on your wall, carrying the exact weapons and armor you equipped them with." } },
         { "@type": "Question", "name": "Can playing damage my realm?",
           "acceptedAnswer": { "@type": "Answer", "text": "No. The game reads your realm and never writes to it. Guardians that fall in a siege are numbers in the browser - your soldiers, gear and location levels are untouched no matter how the run goes." } },
         { "@type": "Question", "name": "How does the leaderboard work?",
@@ -206,7 +206,7 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 			     width="741" height="931">
 		</a>
 		<h1><span class="rg-title-land"><img src="/staking/pwa/skulliance-logo-icon.png" alt="">Realm Guardians<img src="/staking/pwa/skulliance-logo-icon.png" alt=""></span><span class="rg-subtitle-land">Free Browser Tower Defense</span></h1>
-		<p class="rg-lead">Your realm has to hold. Waves cross the field toward your wall, and the guardians standing on it are your own NFTs &mdash; carrying the exact weapons and armour you gave them. Every realm falls eventually; the only question is how long you held.</p>
+		<p class="rg-lead">Your realm has to hold. Waves cross the field toward your wall, and the guardians standing on it are your own NFTs &mdash; carrying the exact weapons and armor you gave them. Every realm falls eventually; the only question is how long you held.</p>
 		<a class="rg-cta" href="guardians.php">🛡️ Defend Your Realm</a>
 		<a class="rg-cta rg-secondary" href="#rg-how-it-works">How It Works</a>
 		<div class="rg-badges" aria-label="Game highlights">
@@ -225,7 +225,7 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 			<div class="rg-features">
 				<div class="rg-feat-card">
 					<h3>Deploy</h3>
-					<p>Send guardians from the Barracks to the Tower, armed and armoured from your cache.</p>
+					<p>Send guardians from the Barracks to the Tower, armed and armored from your cache.</p>
 				</div>
 				<div class="rg-feat-card">
 					<h3>Strike</h3>
@@ -248,7 +248,7 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 			<h2>How a Siege Works</h2>
 			<ul class="rg-mechanics">
 				<li><span class="rg-mech-emoji" aria-hidden="true">🏰</span><span><strong>Your realm is your starting line</strong> - power decides which wave you open on, so an established realm starts you deep into the siege rather than at wave one. No realm and you hold the wall with conscripts, from the beginning.</span></li>
-				<li><span class="rg-mech-emoji" aria-hidden="true">🗡️</span><span><strong>Your NFTs man the Tower</strong> - carrying the actual weapons and armour you equipped them with. Weapons decide how hard they hit; armour is what lets a guardian walk away from a breach. Soldiers away on raids start already out in the field.</span></li>
+				<li><span class="rg-mech-emoji" aria-hidden="true">🗡️</span><span><strong>Your NFTs man the Tower</strong> - carrying the actual weapons and armor you equipped them with. Weapons decide how hard they hit; armor is what lets a guardian walk away from a breach. Soldiers away on raids start already out in the field.</span></li>
 				<li><span class="rg-mech-emoji" aria-hidden="true">💀</span><span><strong>The horde is other players</strong> - every attacker walking at your wall wears another member's avatar, and when the wall finally comes down, the one who broke it gets named.</span></li>
 				<li><span class="rg-mech-emoji" aria-hidden="true">⚙️</span><span><strong>Seven locations run themselves</strong> - the Barracks trains, the Armory forges, the Factory builds, the Mine pays and the Crypt prepares your dead to return. You never click to keep the wall manned; you decide where the effort goes.</span></li>
 				<li><span class="rg-mech-emoji" aria-hidden="true">☢️</span><span><strong>One last stand</strong> - the first time your wall falls, a charge goes off and everything on the field goes with it. Once. Whatever is still beyond the edge keeps coming.</span></li>

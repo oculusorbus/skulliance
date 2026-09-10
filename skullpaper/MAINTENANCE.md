@@ -1540,9 +1540,9 @@ What a doc page will have to get right, because none of it is guessable:
 - **`soldiers.location` is a STATE, not a `locations.id`**: 1 = reserve,
   2 = Tower garrison, 3 = on raid (see `RG_LOC_*` in the file). Misreading it
   as a location id is what once put 20 soldiers on a wall holding 10.
-- Every guardian carries their **actual** weapon and armour (level *and* name),
+- Every guardian carries their **actual** weapon and armor (level *and* name),
   not a count plus the best item owned. Both feed combat: weapon level sets
-  damage, armour level decides how much of a breach is absorbed.
+  damage, armor level decides how much of a breach is absorbed.
 - Forged gear rolls on the **realm's own tables**: the Armory tier odds are the
   ones in `ajax/get-armory.php:151-163`, and Factory items *call*
   `getFactoryOdds()` rather than copying it, so a balance change there reaches
@@ -1587,7 +1587,7 @@ What a doc page will have to get right, because none of it is guessable:
   Portal (a cooldown) cannot stall and are not marked blockable.
   **It only says "upgrade for room" when the NEXT level actually adds room**
   (`heldText()` compares against `weaponCap(lvl+1)` etc). A big realm arrives
-  holding far more than the in-game caps - 159 weapons and 114 armour against
+  holding far more than the in-game caps - 159 weapons and 114 armor against
   caps of 76 and 14 - and clearing those by upgrading would take 28 and 199
   Armory levels. Note also that `armorCap` and `itemCap` only rise every *other*
   level, so an upgrade there often adds nothing; the check catches that too.

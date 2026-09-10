@@ -110,11 +110,11 @@ $rg_army = 0; $rg_armed = 0; $rg_cache = 0; $rg_wlevel = 1; $rg_realm_name = '';
 $rg_has_realm = false;
 $rg_units = array();   // the player's own soldiers, as NFT art
 $rg_acache = 0;        // unissued armor pieces
-// Each guardian's ACTUAL kit: {w: weapon level, a: armour level}, 0 for neither.
+// Each guardian's ACTUAL kit: {w: weapon level, a: armor level}, 0 for neither.
 $rg_kit_tower = array(); $rg_kit_raid = array(); $rg_kit_reserve = array();
 // The unissued cache, expanded by quantity into a pool of levels.
 $rg_wpool = array(); $rg_apool = array();
-// The weapon and armour catalogues, so a forged tier becomes a real item.
+// The weapon and armor catalogues, so a forged tier becomes a real item.
 $rg_wcat = array(); $rg_acat = array();
 $rg_crypt = 0;         // enlisted NFTs currently dead -- they start in the Crypt
 /*
@@ -191,7 +191,7 @@ if ($rg_me > 0) {
 		 *
 		 * Their gear comes with them: a soldier's weapon_id and armor_id are
 		 * their OWN equipment, distinct from the unissued cache in `gear`, so
-		 * seeding them armed and armoured costs the cache nothing.
+		 * seeding them armed and armored costs the cache nothing.
 		 */
 		/*
 		 * EVERY SOLDIER'S ACTUAL KIT, not a headcount and a single MAX level.
@@ -202,7 +202,7 @@ if ($rg_me > 0) {
 		 * item flattered every soldier who had anything at all.
 		 *
 		 * Each row is one guardian's real equipment: w = their weapon's level,
-		 * a = their armour's level, 0 for neither. Damage and survival are
+		 * a = their armor's level, 0 for neither. Damage and survival are
 		 * computed per guardian from these, so a well-kitted army genuinely
 		 * outfights a nominally-armed one.
 		 *
@@ -237,9 +237,9 @@ if ($rg_me > 0) {
 		 *
 		 * The ORDER BY above exists for one reason: if a realm has more than 400
 		 * soldiers, LIMIT has to keep the best rather than an arbitrary 400. But
-		 * it also hands each bucket over sorted by weapon level, with armour as
+		 * it also hands each bucket over sorted by weapon level, with armor as
 		 * the tiebreaker -- so any batch read off the FRONT is the top weapon
-		 * tier to a man (identically armed) while their armour, the secondary
+		 * tier to a man (identically armed) while their armor, the secondary
 		 * key, still varies. It reads as a bug in the weapon lookup and is
 		 * really the sort order showing through.
 		 *
@@ -405,7 +405,7 @@ if ($rg_me > 0) {
 
 /*
  * The catalogues, so gear FORGED in-game gets a real item rather than a bare
- * tier number. A rolled tier looks up the weapon or armour of that level, so
+ * tier number. A rolled tier looks up the weapon or armor of that level, so
  * the icon it wears and the sound it makes are the platform's own.
  *
  * OUTSIDE the realm gate: this is the platform's reference data, not anything
@@ -690,13 +690,13 @@ $rg_theme_img = $rg_theme > 0
 			<?php echo $rg_roster; ?> guardians<?php
 				if (!empty($rg_where)) echo ' (' . implode(', ', $rg_where) . ')';
 			?>,
-			<?php echo $rg_cache; ?> weapons and <?php echo $rg_acache; ?> armour in the cache,
+			<?php echo $rg_cache; ?> weapons and <?php echo $rg_acache; ?> armor in the cache,
 			<?php echo $rg_total; ?> total location levels.
 			Power <?php echo $rg_power; ?> starts you at wave <?php echo $rg_start_wave; ?>.</span>
 			<!-- Swapped in by the "start from scratch" toggle. The blurb has to
 			     follow the baseline or it describes a realm this run is not using. -->
 			<span id="rg-blurb-scratch" hidden>Holding the wall with <strong>conscripts</strong> &mdash;
-			no enlisted guardians, every location at level 1, 2 weapons and 1 armour in the
+			no enlisted guardians, every location at level 1, 2 weapons and 1 armor in the
 			cache. Starting at wave 1, the same place a player with no realm starts.</span>
 		<?php elseif ($rg_me > 0): ?>
 			You have no realm, so you hold the wall with conscripts. Build a realm and you
@@ -767,8 +767,8 @@ $rg_theme_img = $rg_theme > 0
 		<div id="rg-locations">
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/tower.png" alt="" onerror="this.style.display='none'">Tower <span class="rg-lvl" id="rg-lvl-tower">1</span></div>
-				<div class="rg-loc-stat"><strong id="rg-garrison">0</strong>/<span id="rg-garrison-cap">4</span> garrison &middot; <span id="rg-armed">0</span> armed &middot; <span id="rg-armored">0</span> armoured</div>
-				<button type="button" class="rg-act" data-act="deploy" title="Send every spare guardian from the Barracks to the Tower now, arming and armouring them from the cache">Deploy</button>
+				<div class="rg-loc-stat"><strong id="rg-garrison">0</strong>/<span id="rg-garrison-cap">4</span> garrison &middot; <span id="rg-armed">0</span> armed &middot; <span id="rg-armored">0</span> armored</div>
+				<button type="button" class="rg-act" data-act="deploy" title="Send every spare guardian from the Barracks to the Tower now, arming and armoring them from the cache">Deploy</button>
 				<button type="button" class="rg-act rg-up" data-act="up-tower">Upgrade</button>
 			</div>
 			<div class="rg-loc">
@@ -780,11 +780,11 @@ $rg_theme_img = $rg_theme > 0
 			</div>
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/armory.png" alt="" onerror="this.style.display='none'">Armory <span class="rg-lvl" id="rg-lvl-armory">1</span></div>
-				<div class="rg-loc-stat"><strong id="rg-weapons">0</strong> weapons &middot; <span id="rg-armor">0</span> armour</div>
+				<div class="rg-loc-stat"><strong id="rg-weapons">0</strong> weapons &middot; <span id="rg-armor">0</span> armor</div>
 				<div class="rg-bar" title="Time until the Armory forges the next weapon"><i id="rg-bar-armory"></i></div>
 					<div class="rg-cap" id="rg-cap-armory">forging next weapon</div>
-					<div class="rg-bar" title="Time until the Armory forges the next piece of armour"><i id="rg-bar-forge"></i></div>
-					<div class="rg-cap" id="rg-cap-forge">forging next armour</div>
+					<div class="rg-bar" title="Time until the Armory forges the next piece of armor"><i id="rg-bar-forge"></i></div>
+					<div class="rg-cap" id="rg-cap-forge">forging next armor</div>
 				<button type="button" class="rg-act rg-up" data-act="up-armory">Upgrade</button>
 			</div>
 			<div class="rg-loc">
@@ -946,7 +946,7 @@ $rg_theme_img = $rg_theme > 0
 					hold when the wall is about to be hit</em>, and worth most against the big
 					attackers, who hit for 12 where the rest hit for 5.</li>
 					<li><strong>Rush Lines</strong> &mdash; every production line that has room
-					finishes at once: a recruit, a weapon, a piece of armour, another item, and
+					finishes at once: a recruit, a weapon, a piece of armor, another item, and
 					both cooldowns refilled. A line that is already capped out delivers nothing,
 					so the cards that actually produced are the ones that flash. The Mine is the
 					exception that always pays: its bar measures the next Mine level rather than
@@ -1166,7 +1166,7 @@ $rg_theme_img = $rg_theme > 0
 #rg-wall.rg-fortified { background:linear-gradient(180deg,#ffcc44,#c79a1e) !important; box-shadow:0 0 14px rgba(255,204,68,.8); }
 /* ---- THE WALL TAKING A HIT ------------------------------------------------
    Fires only when the wall NET loses health -- a shield refunds the hit in full
-   and armour absorbs part of it, and flashing for those would cry wolf for the
+   and armor absorbs part of it, and flashing for those would cry wolf for the
    two outcomes that are the system working.
    !important beats .rg-fortified above, which is otherwise !important itself
    and would swallow the flash exactly when a shield is up. */
@@ -1247,13 +1247,13 @@ $rg_theme_img = $rg_theme > 0
 .rg-unit.rg-armed { border-color:rgba(255,204,68,.95); box-shadow:0 0 6px rgba(255,204,68,.55); }
 /* The weapon they carry, badged clear of the face. */
 .rg-unit b { position:absolute; right:var(--rg-off); bottom:var(--rg-off); width:var(--rg-badge); height:var(--rg-badge); background:#07111d; border-radius:50%; display:block; padding:1px; }
-/* Armour on the other shoulder, so a guardian can visibly carry both. */
+/* Armor on the other shoulder, so a guardian can visibly carry both. */
 .rg-unit u { position:absolute; left:var(--rg-off); bottom:var(--rg-off); width:var(--rg-badge); height:var(--rg-badge); background:#07111d; border-radius:50%; display:block; padding:1px; }
 .rg-unit b img, .rg-unit u img { width:100%; height:100%; object-fit:contain; border-radius:0; }
 /* Life bar, mirroring the horde's -- theirs red, yours the platform green, so
    the two lines of bars read as two sides rather than one crowd. */
 .rg-unit i { position:absolute; left:0; bottom:var(--rg-off); height:var(--rg-barh); background:#00c8a0; }
-/* Armoured guardians get a steel halo. Drawn OUTSIDE the circle, so it reads
+/* Armored guardians get a steel halo. Drawn OUTSIDE the circle, so it reads
    as "fully kitted" next to the gold border without stealing another pixel of
    the artwork. */
 .rg-unit.rg-prot { box-shadow:0 0 0 1px rgba(190,200,215,.85), 0 0 7px rgba(190,200,215,.45); }
@@ -1782,7 +1782,7 @@ $rg_theme_img = $rg_theme > 0
      *
      * Both keep their own kit: soldiers.weapon_id / armor_id is that soldier's
      * equipment, distinct from the unissued cache in `gear`, so seating them
-     * armed and armoured costs the cache nothing.
+     * armed and armored costs the cache nothing.
      */
     // Each guardian arrives with the kit they actually carry in the realm.
     var cap = garrisonCap();
@@ -1816,7 +1816,7 @@ $rg_theme_img = $rg_theme > 0
   }
 
   /* ---- Kit, and what it is worth ---------------------------------------
-   * A guardian's weapon LEVEL decides how hard they hit and their armour LEVEL
+   * A guardian's weapon LEVEL decides how hard they hit and their armor LEVEL
    * how much they can absorb -- not a yes/no flag with the cache's best level
    * applied to everyone, which made a level-1 pistol worth a level-10 launcher.
    * --------------------------------------------------------------------- */
@@ -2078,7 +2078,7 @@ $rg_theme_img = $rg_theme > 0
   function itemCap(l)     { return 1 + Math.ceil((l === undefined ? L('factory') : l) / 2); }
   function barracksRate() { return Math.max(12, 62 - L('barracks') * 5); }
   function armoryRate()   { return Math.max(16, 72 - L('armory') * 5); }
-  // Armour comes slower than weapons and is capped lower: it is the resource
+  // Armor comes slower than weapons and is capped lower: it is the resource
   // that turns a breach into a scratch, so it should never be abundant.
   function forgeRate()    { return Math.max(34, 150 - L('armory') * 9); }
   function armorCap(l)    { return 2 + Math.ceil((l === undefined ? L('armory') : l) / 2); }
@@ -2446,10 +2446,10 @@ $rg_theme_img = $rg_theme > 0
       return true;
     });
     /*
-     * The Armory forges BOTH. It was producing weapons only, so armour was
+     * The Armory forges BOTH. It was producing weapons only, so armor was
      * whatever the cache started with and then gone for good -- reported as
      * "the armory doesn't seem to be generating armor, only weapons".
-     * Armour comes slower than weapons, which is what keeps it a resource worth
+     * Armor comes slower than weapons, which is what keeps it a resource worth
      * spending carefully rather than a permanent second health bar.
      */
     // Forged gear rolls its tier from the realm's own drop table.
@@ -2508,15 +2508,15 @@ $rg_theme_img = $rg_theme > 0
       /*
        * THE QUARTERMASTER. The cache's missing consumer.
        *
-       * Armour DEGRADES on every breach (S.garrison[best].a--) and nothing ever
+       * Armor DEGRADES on every breach (S.garrison[best].a--) and nothing ever
        * replaced it, so a wall wore down to bare while the cache watched. On a
        * realm that arrives fully equipped this was the whole problem: equip()
        * only fills EMPTY slots, every soldier already had kit, and so a cache of
-       * 159 weapons and 114 armour had literally nobody to go to -- the Armory
+       * 159 weapons and 114 armor had literally nobody to go to -- the Armory
        * sat capped-out and idle for the entire run, and issuing gear could never
        * drain it because there were more pieces than there were soldiers.
        *
-       * So the wall is re-kitted from the cache as it wears: worn armour is
+       * So the wall is re-kitted from the cache as it wears: worn armor is
        * replaced, and a guardian carrying worse than the cache holds trades up.
        * One piece per pass, on the reinforcement tick, so it is a steady draw
        * rather than a lump -- and it only ever fires when the cache genuinely
@@ -2600,12 +2600,12 @@ $rg_theme_img = $rg_theme > 0
          * ARMOR IS WHAT A GUARDIAN WALKS AWAY IN.
          *
          * A breach used to kill a defender outright. Now, if anyone on the wall
-         * is armoured, the armour takes it instead -- the piece is destroyed,
+         * is armored, the armor takes it instead -- the piece is destroyed,
          * the guardian lives, and the Crypt stays empty. Weapons decide how hard
-         * you hit; armour decides whether you survive being hit, which is
+         * you hit; armor decides whether you survive being hit, which is
          * exactly the split Realms already makes between weapon_id and armor_id.
          *
-         * Better armour absorbs more of the wall damage too, so a good cache is
+         * Better armor absorbs more of the wall damage too, so a good cache is
          * felt twice.
          */
         /*
@@ -2618,7 +2618,7 @@ $rg_theme_img = $rg_theme > 0
           log('The shield takes it. ' + escAttr(foeIdentity(f).name) + ' is thrown back.');
           sfxPlay('melee', 0.14);
         } else {
-          // The best-armoured guardian takes it, and their armour degrades a
+          // The best-armored guardian takes it, and their armor degrades a
           // level rather than the guardian dying. Higher tiers absorb more.
           var best = -1, bestA = 0;
           for (var q = 0; q < S.garrison.length; q++) {
@@ -2626,8 +2626,8 @@ $rg_theme_img = $rg_theme > 0
           }
           if (best >= 0) {
             S.garrison[best].a--;
-            S.hp += Math.min(f.tough ? 12 : 5, 1 + bestA);   // better armour, more absorbed
-            log(escAttr(foeIdentity(f).name) + ' breaks against the armour.');
+            S.hp += Math.min(f.tough ? 12 : 5, 1 + bestA);   // better armor, more absorbed
+            log(escAttr(foeIdentity(f).name) + ' breaks against the armor.');
             sfxPlay('melee', 0.14);
           } else if (S.garrison.length) {
             S.garrison.shift();
@@ -2655,7 +2655,7 @@ $rg_theme_img = $rg_theme > 0
          */
         /*
          * Flash only when the wall NET lost health. A shield refunds the hit in
-         * full and armour absorbs part of it, and flashing for those would cry
+         * full and armor absorbs part of it, and flashing for those would cry
          * wolf for the two outcomes that are the system working.
          */
         if (S.hp < hpBefore) wallHit();
@@ -2754,7 +2754,7 @@ $rg_theme_img = $rg_theme > 0
      * "Upgrade for room" ONLY when an upgrade would actually make room.
      *
      * A realm is a head start, and a big one arrives holding far more gear than
-     * the in-game caps: 159 weapons and 114 armour against caps of 76 and 14.
+     * the in-game caps: 159 weapons and 114 armor against caps of 76 and 14.
      * Clearing those by upgrading would take 28 and 199 Armory levels. The bar
      * was right that nothing was being forged, and the caption was sending the
      * player to spend CARBON on the one thing that could not fix it.
@@ -2779,7 +2779,7 @@ $rg_theme_img = $rg_theme > 0
      * upgrade. Saying "issue them" there sends the player after a fix that does
      * not exist -- the same mistake as "upgrade for room", one layer down.
      *
-     * Armour still drains, because armour WEARS: a breach degrades it a level,
+     * Armor still drains, because armor WEARS: a breach degrades it a level,
      * and once a guardian drops below what the cache holds the quartermaster
      * re-kits them. So the honest caption depends on whether the cache holds
      * anything better than what is actually being worn right now.
@@ -2803,8 +2803,8 @@ $rg_theme_img = $rg_theme > 0
       S.wpool.length >= weaponCap(), 'forging next weapon',
       gearHeld('weapon cache', S.wpool.length, weaponCap(aLvl + 1), S.wpool, 'w'));
     paintBar('forge', S.prod.forge, forgeRate(),
-      S.apool.length >= armorCap(), 'forging next armour',
-      gearHeld('armour cache', S.apool.length, armorCap(aLvl + 1), S.apool, 'a'));
+      S.apool.length >= armorCap(), 'forging next armor',
+      gearHeld('armor cache', S.apool.length, armorCap(aLvl + 1), S.apool, 'a'));
     paintBar('factory', S.prod.factory, factoryRate(),
       S.items.length >= itemCap(), 'building next item',
       heldText(S.items.length, itemCap(), itemCap(fLvl + 1), 'shelf', 'spend one to restart it'));
@@ -2931,7 +2931,7 @@ $rg_theme_img = $rg_theme > 0
         };
         uimg.src = art2 && art2.img ? art2.img : UNIT_FALLBACK;
         unode.appendChild(uimg);
-        // THEIR weapon and THEIR armour -- not the cache's best applied to
+        // THEIR weapon and THEIR armor -- not the cache's best applied to
         // everyone, which is why the initial raiders were wearing gear they do
         // not carry.
         /*
@@ -2961,12 +2961,12 @@ $rg_theme_img = $rg_theme > 0
         /*
          * A life bar, the same as the horde's. Guardians in the open already
          * took damage and died -- nothing showed it, so a Strike looked like
-         * units vanishing at random. It is also where armour becomes legible:
-         * unitHp() is (weapon ? 6 : 4) + (armour ? 2 + level : 0), so a
-         * well-armoured guardian visibly outlasts a bare one.
+         * units vanishing at random. It is also where armor becomes legible:
+         * unitHp() is (weapon ? 6 : 4) + (armor ? 2 + level : 0), so a
+         * well-armored guardian visibly outlasts a bare one.
          *
          * Held on the node rather than found with lastChild, because the badges
-         * above are conditional -- lastChild is the weapon, the armour or the
+         * above are conditional -- lastChild is the weapon, the armor or the
          * bar depending on what this guardian happens to be carrying.
          */
         var ubar = document.createElement('i');
@@ -3079,7 +3079,7 @@ $rg_theme_img = $rg_theme > 0
       var n = Math.min(sortieSize(), S.reserve.length);
       for (var i = 0; i < n; i++) {
         // They take their OWN kit, topped up from the cache if short. A sortie
-        // has no tower behind it, so armour is felt most sharply here.
+        // has no tower behind it, so armor is felt most sharply here.
         var u = equip(S.reserve.shift());
         // slot picks which enlisted NFT this guardian is, and stays fixed for
         // its life so the face on the field doesn't change between renders.
