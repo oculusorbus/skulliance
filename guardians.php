@@ -367,7 +367,25 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 }
 ?>
 
-<div class="row" id="row1">
+<?php
+/*
+ * The theme spans the ROW -- the same width as the main menu header -- rather
+ * than the game column inside it. On the game panel it was only as wide as the
+ * board (820px) and read as a card floating on the page; across the row it
+ * reads as the backdrop the whole page is standing in.
+ *
+ * Art on a ::before so it can never paint over content, gradient baked into the
+ * same value so the wash travels with the image, and everything real layered
+ * above it. Same construction Crypt Crawl uses (.cc-theme-bg,
+ * cryptcrawl.php:188), just anchored to the wider container.
+ */
+$rg_theme_img = $rg_theme > 0
+	? "linear-gradient(180deg, rgba(7,17,26,.72), rgba(7,17,26,.90)), url('/staking/images/themes/" . $rg_theme . ".jpg')"
+	: '';
+?>
+<div class="row<?php echo $rg_theme_img !== '' ? ' rg-themed' : ''; ?>" id="row1"<?php
+	if ($rg_theme_img !== '') echo ' style="--rg-theme-img:' . htmlspecialchars($rg_theme_img) . '"';
+?>>
   <div class="col1of3" style="max-width:820px;margin:0 auto;flex:1 1 100%;">
 
 	<h2 class="rg-intro">Realm Guardians <span class="rg-tag">prototype</span></h2>
@@ -403,21 +421,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 		<br><em>Nothing here is saved and nothing is spent. Your realm is untouched no matter how this goes.</em>
 	</div>
 
-	<?php
-	/*
-	 * The realm's theme sits BEHIND THE BOARD, not behind the viewport.
-	 *
-	 * Same shape Crypt Crawl uses (.cc-theme-bg in cryptcrawl.php:188): a panel
-	 * the width of the content column, with the art on a ::before so nothing
-	 * paints over the real content, and a gradient baked into the same value so
-	 * the wash travels with the image. Full-bleed looked like a different site;
-	 * this reads as your realm behind your wall.
-	 */
-	$rg_theme_img = $rg_theme > 0
-		? "linear-gradient(180deg, rgba(7,17,26,.72), rgba(7,17,26,.90)), url('/staking/images/themes/" . $rg_theme . ".jpg')"
-		: '';
-	?>
-	<div id="rg-game"<?php if ($rg_theme_img !== ''): ?> class="rg-themed" style="--rg-theme-img:<?php echo htmlspecialchars($rg_theme_img); ?>"<?php endif; ?>>
+	<div id="rg-game">
 
 		<div class="rg-hud">
 			<!-- The prototype marker lives HERE, not only in the heading, because
@@ -564,20 +568,21 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 </div>
 
 <style>
-/* The themed panel. Art on a ::before so it can never paint over the content,
-   inset:-4% so it has room to sit under the rounded corners without exposing an
-   edge, and overflow:hidden to clip it. Everything real is z-index:1 above it. */
-#rg-game.rg-themed { position:relative; overflow:hidden; border-radius:14px; padding:16px; }
-#rg-game.rg-themed::before {
-  content:''; position:absolute; inset:-4%;
+/* The themed band, on the ROW so it spans the same width as the main menu
+   header rather than only the board. Art on a ::before so it can never paint
+   over the content, inset slightly so it fills the rounded corners without
+   exposing an edge, overflow clipped. Everything real sits above it. */
+#row1.rg-themed { position:relative; overflow:hidden; border-radius:14px; padding:18px 0; }
+#row1.rg-themed::before {
+  content:''; position:absolute; inset:-3%;
   background-image:var(--rg-theme-img);
   background-size:cover; background-position:center;
   z-index:0;
 }
-#rg-game.rg-themed > * { position:relative; z-index:1; }
+#row1.rg-themed > * { position:relative; z-index:1; }
 /* The panels need to stay legible on top of artwork. */
-#rg-game.rg-themed .rg-loc { background:rgba(13,30,48,.93); }
-#rg-game.rg-themed #rg-field { background:rgba(10,25,41,.93); }
+#row1.rg-themed .rg-loc { background:rgba(13,30,48,.93); }
+#row1.rg-themed #rg-field { background:rgba(10,25,41,.93); }
 .rg-blurb { font-size:.82rem; color:rgba(255,255,255,.5); margin:-6px 0 16px; line-height:1.5; }
 .rg-blurb strong { color:#00c8a0; }
 .rg-tag { font-size:.6rem; text-transform:uppercase; letter-spacing:.12em; color:#ffcc44; border:1px solid rgba(255,204,68,.4); border-radius:10px; padding:2px 8px; vertical-align:middle; }
