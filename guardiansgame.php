@@ -18,17 +18,12 @@
 // clicked into.
 $rg_canonical = 'https://www.skulliance.io/staking/guardiansgame.php';
 /*
- * THE HERO IMAGE IS A PLACEHOLDER AND SHOULD BE SWAPPED.
- *
- * Its siblings point at a real screenshot (images/cryptcrawl.png,
- * racing/images/screenshot.png). There is no guardians screenshot on the server
- * yet -- images deploy by FTP, outside this repo -- and a 404 here would break
- * the social and search preview, not just the page. So this points at a live
- * realm theme, which is at least the right subject, until a screenshot exists
- * at images/guardians.png. One variable, used by the hero, OpenGraph, Twitter
- * and the schema block: change it here and every one of them follows.
+ * The real screenshot, matching its siblings (images/cryptcrawl.png,
+ * racing/images/screenshot.png). One variable, used by the hero, OpenGraph,
+ * Twitter and the schema block, so all four can never disagree about what this
+ * game looks like. Verified live before pointing at it: 200, 741x931 PNG.
  */
-$rg_og_image  = 'https://www.skulliance.io/staking/images/themes/7.jpg';
+$rg_og_image  = 'https://www.skulliance.io/staking/images/guardians.png';
 $rg_title     = 'Realm Guardians - Free Tower Defense Game Built on Your NFT Realm | Play in Your Browser';
 $rg_desc      = 'Play Realm Guardians free - a browser tower defense where your own Cardano NFT realm is the battlefield. Your enlisted NFTs man the wall carrying the gear you gave them, the horde is made of other players, and a monthly CARBON leaderboard ranks how long you held. Works on mobile, tablet and desktop. No download, no signup.';
 $rg_short     = 'A free browser tower defense built on the realm you already own. Your NFTs hold the wall, the horde is other players, and a monthly CARBON leaderboard ranks how long you lasted. Play on any device - no download.';
@@ -202,10 +197,13 @@ a:hover { color: #34e3bb; text-decoration: underline; }
 
 	<header class="rg-hero-land">
 		<a class="rg-shot-link" href="guardians.php" aria-label="Play Realm Guardians now">
+			<!-- width/height are the file's real 741x931. Not decoration: without
+			     them the hero has no height until it decodes, and everything below
+			     it jumps down the page when it arrives. -->
 			<img class="rg-shot-land" src="/staking/images/guardians.png"
-			     onerror="this.onerror=null;this.src='/staking/images/themes/7.jpg';"
 			     alt="Realm Guardians - guardians holding a wall as the horde crosses the field"
-			     loading="eager" fetchpriority="high" decoding="async">
+			     loading="eager" fetchpriority="high" decoding="async"
+			     width="741" height="931">
 		</a>
 		<h1><span class="rg-title-land"><img src="/staking/pwa/skulliance-logo-icon.png" alt="">Realm Guardians<img src="/staking/pwa/skulliance-logo-icon.png" alt=""></span><span class="rg-subtitle-land">Free Browser Tower Defense</span></h1>
 		<p class="rg-lead">Your realm has to hold. Waves cross the field toward your wall, and the guardians standing on it are your own NFTs &mdash; carrying the exact weapons and armour you gave them. Every realm falls eventually; the only question is how long you held.</p>

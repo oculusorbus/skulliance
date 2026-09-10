@@ -1659,13 +1659,14 @@ What a doc page will have to get right, because none of it is guessable:
   host-only and an absolute one would log a visitor out of the game they just
   clicked into. `homepage.php` carries it in three places: the ItemList schema,
   the games grid and the screenshot strip.
-- **OUTSTANDING: there is no Guardians screenshot on the server.**
-  `images/guardians.png` 404s, and images deploy by FTP outside this repo. The
-  landing page, its OpenGraph/Twitter tags and all three homepage references
-  currently point at `images/themes/7.jpg` as a stand-in; the hero `<img>` tries
-  `images/guardians.png` first and falls back. Upload a real screenshot to that
-  path and change the single `$rg_og_image` variable plus the three homepage
-  URLs.
+- The screenshot is `images/guardians.png` (741x931, uploaded 2026-09-10). One
+  `$rg_og_image` variable on the landing feeds the hero, OpenGraph, Twitter and
+  the schema; `homepage.php` references it three times. **The homepage's
+  screenshot grid now has 19 cards**, which is six full 3-column rows and one
+  left over - so the `:last-child { grid-column: 2 }` straggler rule is back,
+  and Realm Guardians is the card it centres. That grid pins `minmax` to 260px
+  precisely so a 4th column can never fit (4x260+3x18 = 1094 against 1060px of
+  content); at `.hp-grid`'s 250px a 4th *would* fit and the rule would misfire.
 - The nav points Guardians at the GAME while the other three point at their
   landing pages. Deliberate for now, not an oversight - members using the nav
   want to play. Change it if consistency matters more.

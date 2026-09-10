@@ -193,7 +193,7 @@
               "@type": "VideoGame",
               "name": "Realm Guardians",
               "url": "https://www.skulliance.io/staking/guardiansgame.php",
-              "image": "https://www.skulliance.io/staking/images/themes/7.jpg",
+              "image": "https://www.skulliance.io/staking/images/guardians.png",
               "genre": ["Strategy", "Tower Defense"],
               "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
               "isAccessibleForFree": true,
@@ -456,11 +456,23 @@
 
     /* Platform screenshots */
     .hp-shots { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
-    /* 15 $hp_shots cards + the two standalone cards below the loop (Crypt
-       Crawl, Crypt Conquest) = 17, filling five 3-column rows plus two in
-       a sixth -- no lone straggler to center, so no :last-child override
-       is needed here. If $hp_shots count ever lands back on a single
-       leftover in the last row, a rule like the old one belongs here again. */
+    /* 15 $hp_shots cards + the four standalone cards below the loop (Crypt
+       Crawl, Crypt Conquest, Skull Racer, Realm Guardians) = 19, which is six
+       full 3-column rows and ONE left over -- so the straggler rule this
+       comment predicted is needed again, and Realm Guardians is the card
+       sitting alone.
+
+       Centres it in the middle column once the grid genuinely lands on 3
+       columns. .wrap's 1100px max-width (minus 40px padding = 1060px content)
+       never reaches a 4th column -- 4 x 250 + 3 x 18 = 1054... which now DOES
+       fit -- which is why the .hp-shots rule ABOVE pins this grid's minmax to
+       260px instead of inheriting .hp-grid's 250px. 3 columns first fit at roughly an 856px
+       viewport, so 900px is comfortably "wide enough for 3, never enough for
+       4". If the count stops leaving a single card in the last row, drop this
+       rule with it. */
+    @media (min-width: 900px) {
+      .hp-shots .hp-shot-card:last-child { grid-column: 2; }
+    }
     .hp-shot-card {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -664,12 +676,10 @@
             <p>Three laps of a night desert highway at 180 mph - boost pads, jump ramps, traffic to thread, and ghost cars of the current record holders running the line beside you.</p>
             <a class="hp-cta" href="https://www.skulliance.io/staking/skullracergame.php">Play Skull Racer</a>
           </div>
-          <!-- Realm Guardians. The art is a realm theme until a real screenshot
-               exists at images/guardians.png -- images deploy by FTP, outside
-               this repo, and a 404 here is a broken card on the front page. -->
+          <!-- Realm Guardians. -->
           <div class="hp-game">
             <a class="hp-game-art" href="https://www.skulliance.io/staking/guardiansgame.php" aria-label="Play Realm Guardians, the free browser tower defense game built on your NFT realm">
-              <img src="https://www.skulliance.io/staking/images/themes/7.jpg" alt="Realm Guardians tower defense - a realm wall facing an oncoming horde" loading="lazy" decoding="async">
+              <img src="https://www.skulliance.io/staking/images/guardians.png" alt="Realm Guardians tower defense - a realm wall facing an oncoming horde" loading="lazy" decoding="async">
             </a>
             <h3>Realm Guardians - Tower Defense</h3>
             <p>Your realm has to hold. Your NFTs man the wall carrying the gear you gave them, the horde is made of other players, and a monthly leaderboard ranks how long you lasted - not how big your realm is.</p>
@@ -810,7 +820,7 @@
           </div>
           <div class="hp-shot-card">
             <h3>Realm Guardians</h3>
-            <a href="https://www.skulliance.io/staking/guardiansgame.php"><img src="https://www.skulliance.io/staking/images/themes/7.jpg" alt="Realm Guardians screenshot" loading="lazy" decoding="async"></a>
+            <a href="https://www.skulliance.io/staking/guardiansgame.php"><img src="https://www.skulliance.io/staking/images/guardians.png" alt="Realm Guardians screenshot" loading="lazy" decoding="async"></a>
           </div>
         </div>
         <p class="hp-center" style="margin-top: 28px;"><a class="hp-cta" href="https://www.skulliance.io/staking">Start Staking</a></p>
