@@ -1769,7 +1769,10 @@ $rg_theme_img = $rg_theme > 0
       // it stopped being a fight.
       if (S.betweenWaves <= 0) {
         S.betweenWaves = Math.max(14, 45 - S.wave);
-        el.status.textContent = 'Wave held &mdash; regroup';
+        // A LITERAL dash, not an entity: this is textContent, which does not
+        // decode HTML -- "&mdash;" was being displayed verbatim in the HUD.
+        // The log() line below can keep its entity, because log writes innerHTML.
+        el.status.textContent = 'Wave held — regroup';
       }
       S.betweenWaves--;
       if (S.betweenWaves <= 0) startWave();
