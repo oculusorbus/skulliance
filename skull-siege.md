@@ -229,13 +229,51 @@ comparable set of numbers, and nobody is locked out.
 
 The mechanic that falls out of it:
 
-> **Starting wave = the higher of (your best wave ever reached) or (your
-> realm-derived tier).**
+> **Starting wave = the higher of (your earned position) or (your realm-derived
+> tier).** See "The ratchet" below — the earned half moves in both directions.
 
 Two roads to the same place. Grinders climb by playing; realm-builders climb by
 investing; someone doing both moves fastest. Neither path is a wall. It also
 answers the realm-less floor problem noted above without a special case: a new
 player starts at wave 1 and it is a real game, just a longer road.
+
+### The ratchet: a tug of war with a floor
+
+The user's refinement, and it is the core loop:
+
+> "A game you pick up and play and either make progress or get knocked back...
+> If you're slipping at the game, you can't go below your realm baseline. And if
+> your realm baseline outpaces the game status, you move the needle forward to
+> your new baseline."
+
+> **Ladder position = max(what you have earned, your realm baseline).**
+> Earned position drifts UP with good runs and DOWN with bad ones. The realm
+> baseline only ever pushes it up.
+
+Why this is better than a one-time head start: realm investment keeps mattering.
+Upgrading a location **moves the needle immediately** rather than helping only on
+some future run, so realm curation and siege play feed each other continuously.
+
+**PROBLEM: the floor removes stakes at the floor.** A player parked exactly on
+their realm baseline cannot lose anything — failure costs nothing, so the game
+goes weightless precisely where many players will sit.
+
+*Fix, already implied by the design:* tie **rewards to waves gained**, never to
+position. Sitting at the floor is then safe but earns nothing, and the pressure
+comes from wanting to climb rather than fear of falling. Stakes without
+punishment, which suits a platform people play in the gaps of a day.
+
+**Slipping must be slower than climbing.** If a bad run costs what a good run
+gains, one distracted week erases a month and people stop opening the game.
+Something like: clear a wave, gain a wave; fail, lose one only after two
+failures. The numbers are tuning; the asymmetry is not.
+
+**The ladder stalling is a feature.** Eventually everyone meets a wave they
+cannot beat and progress flattens. That is the same shape realms already have —
+`realms-locations.md` notes transcendent realms stall because the ±3 attack range
+leaves them no worthy challengers. Here you stall at your skill ceiling, and the
+only ways on are getting better or raising your baseline. Both are exactly the
+behaviours the design wants.
 
 **Decide before building the board: what does it rank?**
 
@@ -367,8 +405,8 @@ Rough order:
    holds up.
 5. Action log + server replay, so a result can be trusted. Nothing pays out
    before this exists.
-6. Read real realm levels (read-only) to derive a starting wave — max of that and
-   the player's best wave ever reached.
+6. Read real realm levels (read-only) to derive the baseline, and persist the
+   earned position — max of the two, ratcheting per "The ratchet" above.
 7. Weekly seed, leaderboard, CARBON, hub, nav, Skull Paper page.
 
 Note: this file sits in the repo, which is pulled to the webroot — it is
