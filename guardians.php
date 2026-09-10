@@ -676,10 +676,16 @@ $rg_theme_img = $rg_theme > 0
  * the six locations stay a compact 3x2 block under a wide field, with the Mine
  * as a full-width row beneath them.
  */
-#rg-locations {
-  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;
-  max-width:720px; margin:0 auto;
-}
+/*
+ * ONLY THE HUD AND THE FIELD GO FULL WIDTH. Everything else stays a tight,
+ * centred column: the field benefits from room to watch the horde come, and the
+ * bar above it should match, but spreading the controls, log and help across a
+ * wide monitor turns every decision into a mouse journey.
+ */
+#rg-game > *, .rg-intro { max-width:720px; margin-left:auto; margin-right:auto; }
+.rg-hud, #rg-field { max-width:none !important; }
+
+#rg-locations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 .rg-loc { background:#0d1e30; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 10px; }
 .rg-loc.rg-wide { grid-column:1 / -1; }
 .rg-loc-name { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:6px; }
