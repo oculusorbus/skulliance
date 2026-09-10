@@ -185,6 +185,20 @@
               "isAccessibleForFree": true,
               "publisher": { "@id": "https://www.skulliance.io/#organization" }
             }
+          },
+          {
+            "@type": "ListItem",
+            "position": 6,
+            "item": {
+              "@type": "VideoGame",
+              "name": "Realm Guardians",
+              "url": "https://www.skulliance.io/staking/guardiansgame.php",
+              "image": "https://www.skulliance.io/staking/images/themes/7.jpg",
+              "genre": ["Strategy", "Tower Defense"],
+              "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+              "isAccessibleForFree": true,
+              "publisher": { "@id": "https://www.skulliance.io/#organization" }
+            }
           }
         ]
       }
@@ -650,6 +664,17 @@
             <p>Three laps of a night desert highway at 180 mph - boost pads, jump ramps, traffic to thread, and ghost cars of the current record holders running the line beside you.</p>
             <a class="hp-cta" href="https://www.skulliance.io/staking/skullracergame.php">Play Skull Racer</a>
           </div>
+          <!-- Realm Guardians. The art is a realm theme until a real screenshot
+               exists at images/guardians.png -- images deploy by FTP, outside
+               this repo, and a 404 here is a broken card on the front page. -->
+          <div class="hp-game">
+            <a class="hp-game-art" href="https://www.skulliance.io/staking/guardiansgame.php" aria-label="Play Realm Guardians, the free browser tower defense game built on your NFT realm">
+              <img src="https://www.skulliance.io/staking/images/themes/7.jpg" alt="Realm Guardians tower defense - a realm wall facing an oncoming horde" loading="lazy" decoding="async">
+            </a>
+            <h3>Realm Guardians - Tower Defense</h3>
+            <p>Your realm has to hold. Your NFTs man the wall carrying the gear you gave them, the horde is made of other players, and a monthly leaderboard ranks how long you lasted - not how big your realm is.</p>
+            <a class="hp-cta" href="https://www.skulliance.io/staking/guardiansgame.php">Play Realm Guardians</a>
+          </div>
         </div>
       </div>
     </section>
@@ -782,6 +807,10 @@
           <div class="hp-shot-card">
             <h3>Skull Racer</h3>
             <a href="https://www.skulliance.io/staking/skullracergame.php"><img src="https://www.skulliance.io/staking/racing/images/screenshot.png" alt="Skull Racer screenshot" loading="lazy" decoding="async"></a>
+          </div>
+          <div class="hp-shot-card">
+            <h3>Realm Guardians</h3>
+            <a href="https://www.skulliance.io/staking/guardiansgame.php"><img src="https://www.skulliance.io/staking/images/themes/7.jpg" alt="Realm Guardians screenshot" loading="lazy" decoding="async"></a>
           </div>
         </div>
         <p class="hp-center" style="margin-top: 28px;"><a class="hp-cta" href="https://www.skulliance.io/staking">Start Staking</a></p>

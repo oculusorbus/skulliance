@@ -1651,6 +1651,24 @@ What a doc page will have to get right, because none of it is guessable:
   them, said in the blurb BEFORE the run and again on the send-off. The horde is
   no new exposure: `profile.php` is public and already shows username and avatar;
   `visibility == 2` gates NFTs, not identity.
+- **`guardiansgame.php` is the public front door**, the same split the other
+  three games use (`cryptcrawlgame.php` etc): the `*game.php` file is the
+  marketing page, the bare name is the thing you play. It includes NOTHING, not
+  even `db.php`, so no visitor's session can affect it and a database outage
+  cannot break it. Its CTA is a RELATIVE link, because the login cookie is
+  host-only and an absolute one would log a visitor out of the game they just
+  clicked into. `homepage.php` carries it in three places: the ItemList schema,
+  the games grid and the screenshot strip.
+- **OUTSTANDING: there is no Guardians screenshot on the server.**
+  `images/guardians.png` 404s, and images deploy by FTP outside this repo. The
+  landing page, its OpenGraph/Twitter tags and all three homepage references
+  currently point at `images/themes/7.jpg` as a stand-in; the hero `<img>` tries
+  `images/guardians.png` first and falls back. Upload a real screenshot to that
+  path and change the single `$rg_og_image` variable plus the three homepage
+  URLs.
+- The nav points Guardians at the GAME while the other three point at their
+  landing pages. Deliberate for now, not an oversight - members using the nav
+  want to play. Change it if consistency matters more.
 - Every realm still eventually falls to the horde. There is no win condition.
   That is exactly why the siege can be **paused** - a run reaches an hour, so
   losing it to a phone call is the one failure a player learns nothing from.
