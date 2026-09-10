@@ -47,6 +47,7 @@ $rg_units = array();   // the player's own soldiers, as NFT art
 $rg_wicon = '';        // the best weapon in the cache, worn by armed guardians
 $rg_aicon = '';        // the best armor in the cache, worn by protected guardians
 $rg_acache = 0;        // unissued armor pieces
+$rg_crypt = 0;         // enlisted NFTs currently dead -- they start in the Crypt
 $rg_alevel = 1;        // best armor level, decides how much a breach is absorbed
 
 if ($rg_me > 0) {
@@ -77,6 +78,24 @@ if ($rg_me > 0) {
 		                    WHERE realm_id = $rg_realm_id AND dead IS NULL AND active = 1
 		                    AND weapon_id > 0");
 		if ($ar && $ar->num_rows) $rg_armed = intval($ar->fetch_assoc()['cnt']);
+
+		/*
+		 * THE DEAD COUNT TOO -- they start in the Crypt.
+		 *
+		 * The roster query above filters on `dead IS NULL`, so a realm with 100
+		 * enlisted NFTs but seven in the crypt reported 93 and the player was
+		 * right to notice the shortfall. Those seven are not gone; they are
+		 * exactly what the Crypt is for. They now seed the in-game Crypt, so the
+		 * Raise button has something to work with from the first wave.
+		 *
+		 * Soldiers away on raids need no special handling: they are alive and
+		 * active, so the roster query already counts them. Nothing here filters
+		 * on raid_id or location, deliberately -- a guardian on a raid is still
+		 * one of yours.
+		 */
+		$cr = $conn->query("SELECT COUNT(*) AS cnt FROM soldiers
+		                    WHERE realm_id = $rg_realm_id AND dead IS NOT NULL AND active = 1");
+		if ($cr && $cr->num_rows) $rg_crypt = intval($cr->fetch_assoc()['cnt']);
 
 		/*
 		 * THE GUARDIANS THEMSELVES. Soldiers are enlisted NFTs, so the units
@@ -190,6 +209,15 @@ if (!$rg_has_realm) {
  * multiplicative rather than additive.
  */
 $rg_total = array_sum($rg_levels);
+/*
+ * Power counts the READY army, not the crypt.
+ *
+ * The dead are real guardians and they do prepopulate the in-game Crypt -- but
+ * they sit behind a CARBON gate, so they are a resource you may spend into
+ * rather than strength you start holding. Counting them would raise the starting
+ * wave for a player whose army is largely in the ground, which is backwards.
+ * Deliberate, and it also leaves the balance the last playtest approved intact.
+ */
 $rg_power = $rg_total + $rg_army + ($rg_wlevel * 4);
 $rg_start_wave = $rg_has_realm ? max(1, intval(floor($rg_power / 5))) : 1;
 
@@ -270,9 +298,22 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 	<h2 class="rg-intro">Realm Guardians <span class="rg-tag">prototype</span></h2>
 	<div class="rg-blurb rg-intro">
 		<?php if ($rg_has_realm): ?>
+			<?php
+			/*
+			 * The full roster, not just the ready half. A realm with 100 enlisted
+			 * NFTs and seven in the crypt used to read "93 guardians", which looks
+			 * like the game losing track of them. The dead are shown, and they
+			 * start in the Crypt rather than being omitted.
+			 */
+			$rg_roster = $rg_army + $rg_crypt;
+			?>
 			Defending <strong><?php echo htmlspecialchars($rg_realm_name); ?></strong> &mdash;
-			<?php echo $rg_army; ?> guardians, <?php echo $rg_cache; ?> weapons in the cache,
-			<?php echo $rg_total; ?> total location levels. Power <?php echo $rg_power; ?> starts you at wave <?php echo $rg_start_wave; ?>.
+			<?php echo $rg_roster; ?> guardians<?php
+				if ($rg_crypt > 0) echo ' (' . $rg_army . ' ready, ' . $rg_crypt . ' in the Crypt)';
+			?>,
+			<?php echo $rg_cache; ?> weapons and <?php echo $rg_acache; ?> armour in the cache,
+			<?php echo $rg_total; ?> total location levels.
+			Power <?php echo $rg_power; ?> starts you at wave <?php echo $rg_start_wave; ?>.
 		<?php else: ?>
 			You have no realm, so you hold the wall with conscripts. Build a realm and you
 			start further up the same ladder.
@@ -549,6 +590,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     wlevel: <?php echo intval($rg_wlevel); ?>,
     start:  <?php echo intval($rg_start_wave); ?>,
     acache: <?php echo intval($rg_acache); ?>,
+    crypt:  <?php echo intval($rg_crypt); ?>,
     alevel: <?php echo intval($rg_alevel); ?>
   };
   // CANDIDATES, not the horde. A Discord avatar url 404s whenever someone has
@@ -582,7 +624,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     S = {
       running:false, over:false, tick:0, wave:REALM.start - 1,
       hp:100, maxhp:100, carbon:0,
-      reserve:REALM.army, weapons:REALM.cache, armor:REALM.acache, dead:0,
+      reserve:REALM.army, weapons:REALM.cache, armor:REALM.acache, dead:REALM.crypt,
       garrison:0, armed:0, armored:0, items:0, sortied:[], emerging:[],
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
       prod:{ barracks:0, armory:0, forge:0, factory:0, mine:0, portal:0, reinforce:0 },
