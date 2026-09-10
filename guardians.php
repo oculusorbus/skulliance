@@ -463,7 +463,10 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
    Both are markers, not obstacles -- pointer-events off so they never eat a tap
    meant for a foe, and behind the units so guardians walk in front of them. */
 #rg-tower-icon, #rg-portal-icon { position:absolute; pointer-events:none; opacity:.9; z-index:0; }
-#rg-tower-icon  { left:12px; bottom:2px; width:26px; height:26px; object-fit:contain; }
+/* Vertically centred, level with the Portal -- the two are the same kind of
+   thing (a place on the field), so they should sit on the same line rather than
+   one hugging the floor. */
+#rg-tower-icon  { left:14px; top:50%; transform:translateY(-50%); width:26px; height:26px; object-fit:contain; }
 #rg-portal-icon { left:38%; top:50%; transform:translate(-50%,-50%); width:30px; height:30px;
                   object-fit:contain; opacity:.55; filter:drop-shadow(0 0 6px rgba(0,200,160,.7)); }
 #rg-sortie, #rg-enemies { z-index:1; }
