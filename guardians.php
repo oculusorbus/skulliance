@@ -450,6 +450,16 @@ $rg_con_ui = array(
 	3 => array('Rush Lines',   'Every line completes now'),
 	1 => array('Free Level',   'One random location +1'),
 );
+/*
+ * Two fixed rows, not one grid that wraps wherever the width happens to put it.
+ * The four Volleys are ONE item at four strengths -- they are read as a set and
+ * compared against each other, so they belong on a line together. The other
+ * three do genuinely different things and get a line of three.
+ */
+$rg_con_rows = array(
+	'volleys' => array(7, 5, 4, 2),
+	'rest'    => array(6, 3, 1),
+);
 $rg_build_items = function ($odds) use ($rg_con_names, $rg_con_ui) {
 	$out = array();
 	foreach ($odds as $cid => $pct) {
@@ -682,35 +692,6 @@ $rg_theme_img = $rg_theme > 0
 			<div id="rg-tracers"></div>
 		</div>
 
-		<!--
-			THE FACTORY SHELF.
-
-			Items used to be a QUEUE spent by one "Fortify" button: you got
-			whatever the Factory happened to build next, which made the one
-			action in the game you could not choose. Playtest: "I find myself
-			with the hordes all up on my wall and I'm mashing items hoping for a
-			miracle." Hoping is the giveaway -- that is a slot machine, not a
-			decision, and everything else in this game is a decision.
-
-			Each item is its own button now, always in the same place, showing
-			how many you hold. Nothing about the items changed; being able to
-			pick the right one is the whole upgrade.
-		-->
-		<div id="rg-shelf">
-			<div class="rg-shelf-head">Factory items &mdash; <span id="rg-shelf-count">0</span> held</div>
-			<div class="rg-shelf-grid">
-				<?php foreach ($rg_con_ui as $rg_cid => $rg_cu): ?>
-					<button type="button" class="rg-item" data-act="item-<?php echo intval($rg_cid); ?>" disabled
-					        title="<?php echo htmlspecialchars($rg_con_names[$rg_cid] . ' — ' . $rg_cu[1]); ?>">
-						<img src="icons/<?php echo strtolower(str_replace(array('%', ' '), array('', '-'), $rg_con_names[$rg_cid])); ?>.png"
-						     alt="" onerror="this.style.display='none'">
-						<span class="rg-item-name"><?php echo htmlspecialchars($rg_cu[0]); ?>
-							<b data-count="<?php echo intval($rg_cid); ?>">(0)</b></span>
-						<span class="rg-item-blurb"><?php echo htmlspecialchars($rg_cu[1]); ?></span>
-					</button>
-				<?php endforeach; ?>
-			</div>
-
 		<div id="rg-locations">
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/tower.png" alt="" onerror="this.style.display='none'">Tower <span class="rg-lvl" id="rg-lvl-tower">1</span></div>
@@ -755,16 +736,22 @@ $rg_theme_img = $rg_theme > 0
 					<div class="rg-cap">building next item</div>
 				<button type="button" class="rg-act rg-up" data-act="up-factory">Upgrade</button>
 			</div>
-			<div class="rg-loc rg-wide">
+			<!-- The Mine is a NORMAL cell now, not its own full-width row. It
+			     carries the least of any card -- one stat and a bar -- so it is
+			     the one that can share, and a whole row for it was the cheapest
+			     vertical space on the board to buy back. -->
+			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/mine.png" alt="" onerror="this.style.display='none'">Mine <span class="rg-lvl" id="rg-lvl-mine">1</span></div>
-				<div class="rg-loc-stat">CARBON flowing &middot; <span id="rg-mine-rate">+0/s</span></div>
+				<div class="rg-loc-stat">CARBON &middot; <span id="rg-mine-rate">+0/s</span></div>
 				<div class="rg-bar" title="Time until the Mine yields more CARBON"><i id="rg-bar-mine"></i></div>
 					<div class="rg-cap">next CARBON payout</div>
 				<button type="button" class="rg-act rg-up" data-act="up-mine">Upgrade</button>
-				<!-- Begin sits on the Mine row, not under the log. It used to live
-				     below the help disclosure, which put the one button that starts
-				     the game furthest from the board -- you had to scroll past
-				     everything to start, and again to restart after a loss. -->
+			</div>
+			<!-- Begin fills the two slots the Mine left. It only matters before a
+			     run and after one, so it should not hold prime space during the
+			     siege -- but it must not be below the fold either, or you scroll
+			     to start and scroll again to restart. -->
+			<div class="rg-loc rg-start">
 				<button type="button" id="rg-begin">Begin the Siege</button>
 				<?php if ($rg_has_realm): ?>
 				<!-- Only shown to someone who HAS a realm to switch off. Without one
@@ -777,6 +764,39 @@ $rg_theme_img = $rg_theme > 0
 			</div>
 		</div>
 
+		<!--
+			THE FACTORY SHELF.
+
+			Items used to be a QUEUE spent by one "Fortify" button: you got
+			whatever the Factory happened to build next, which made the one
+			action in the game you could not choose. Playtest: "I find myself
+			with the hordes all up on my wall and I'm mashing items hoping for a
+			miracle." Hoping is the giveaway -- that is a slot machine, not a
+			decision, and everything else in this game is a decision.
+
+			TWO ROWS, and deliberately not one auto-flowing grid. The four
+			Volleys are the same item at four strengths, so they read as a set
+			and belong on a line of their own; the other three do genuinely
+			different things and spread across a line of three. An auto-fit grid
+			put four on one row and three on the next by accident of width,
+			which looked the same at 720px and fell apart everywhere else.
+		-->
+		<div id="rg-shelf">
+			<div class="rg-shelf-head">Factory items &mdash; <span id="rg-shelf-count">0</span> held</div>
+			<?php foreach ($rg_con_rows as $rg_rowname => $rg_rowids): ?>
+				<div class="rg-shelf-grid rg-shelf-<?php echo $rg_rowname; ?>">
+					<?php foreach ($rg_rowids as $rg_cid): $rg_cu = $rg_con_ui[$rg_cid]; ?>
+						<button type="button" class="rg-item" data-act="item-<?php echo intval($rg_cid); ?>" disabled
+						        title="<?php echo htmlspecialchars($rg_con_names[$rg_cid] . ' — ' . $rg_cu[1]); ?>">
+							<img src="icons/<?php echo strtolower(str_replace(array('%', ' '), array('', '-'), $rg_con_names[$rg_cid])); ?>.png"
+							     alt="" onerror="this.style.display='none'">
+							<span class="rg-item-name"><?php echo htmlspecialchars($rg_cu[0]); ?>
+								<b data-count="<?php echo intval($rg_cid); ?>">(0)</b></span>
+							<span class="rg-item-blurb"><?php echo htmlspecialchars($rg_cu[1]); ?></span>
+						</button>
+					<?php endforeach; ?>
+				</div>
+			<?php endforeach; ?>
 		</div>
 
 		<!--
@@ -1014,6 +1034,12 @@ $rg_theme_img = $rg_theme > 0
 #rg-locations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 .rg-loc { background:#0d1e30; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 10px; }
 .rg-loc.rg-wide { grid-column:1 / -1; }
+/* The Mine leaves two slots on the last row; Begin takes both, centred in them,
+   so the row is full rather than a card and a hole. */
+.rg-loc.rg-start { grid-column:span 2; display:flex; flex-direction:column;
+                   align-items:center; justify-content:center; gap:4px; }
+.rg-loc.rg-start #rg-begin { margin:0; }
+.rg-loc.rg-start #rg-scratch-wrap { margin:0; }
 .rg-loc-name { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:6px; }
 /* The realm's own location art (icons/locations/<name>.png -- the same files
    realms.php:106 uses, all verified 200). Hidden rather than broken if one is
@@ -1071,7 +1097,12 @@ $rg_theme_img = $rg_theme > 0
 #rg-shelf[hidden] { display:none; }
 .rg-shelf-head { font-size:.7rem; text-transform:uppercase; letter-spacing:.06em;
                  color:rgba(255,255,255,.45); margin:0 0 6px; }
-.rg-shelf-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(148px, 1fr)); gap:6px; }
+/* Fixed counts, not auto-fit: the row split is a MEANING (four strengths of one
+   item, then three different ones), so it must not depend on the width. */
+.rg-shelf-grid { display:grid; gap:6px; }
+.rg-shelf-grid + .rg-shelf-grid { margin-top:6px; }
+.rg-shelf-volleys { grid-template-columns:repeat(4, 1fr); }
+.rg-shelf-rest    { grid-template-columns:repeat(3, 1fr); }
 .rg-item { display:grid; grid-template-columns:22px 1fr; grid-template-rows:auto auto;
            gap:1px 8px; align-items:center; text-align:left;
            background:#0d1e30; border:1px solid rgba(255,255,255,.1); border-radius:7px;
@@ -1159,11 +1190,32 @@ $rg_theme_img = $rg_theme > 0
      they are playing. The title alone is one compact line. */
   .rg-blurb.rg-intro { display:none; }
   h2.rg-intro { font-size:1.05rem; margin:0 0 8px; }
-  #rg-field { height:64px; }
-  #rg-locations { gap:6px; }
-  .rg-loc { padding:7px 8px; }
-  .rg-loc-stat { font-size:.74rem; }
-  .rg-act { padding:8px 8px; font-size:.72rem; }
+  /* ---- TIGHT. Seven location cards, a two-row item shelf and a HUD do not
+     fit a phone at desktop spacing, and this game is played by REACTING -- a
+     control you have to scroll to find is a control you do not use. Everything
+     below is space bought back: the gaps between sections, the padding inside
+     the cards, the bar captions, and the item descriptions.
+     The captions ("training next guardian") go because the bar directly above
+     each one already says it, and there are five of them. ---- */
+  #rg-field { height:56px; margin-bottom:6px; }
+  #rg-locations { gap:4px; }
+  .rg-loc { padding:5px 6px; border-radius:6px; }
+  .rg-loc-name { font-size:.62rem; gap:4px; }
+  .rg-loc-name .rg-icon { width:12px; height:12px; }
+  .rg-loc-stat { font-size:.7rem; margin:2px 0 4px; }
+  .rg-loc-stat strong { font-size:.88rem; }
+  .rg-cap { display:none; }
+  .rg-bar { margin-bottom:4px; }
+  .rg-act { padding:6px 7px; font-size:.7rem; margin:0 2px 2px 0; }
+  /* No space between sections -- the board reads as one block on a phone. */
+  #rg-shelf { margin:6px auto 6px; }
+  .rg-shelf-head { font-size:.6rem; margin-bottom:3px; }
+  .rg-shelf-grid { gap:3px; }
+  .rg-shelf-grid + .rg-shelf-grid { margin-top:3px; }
+  #rg-begin { padding:7px 16px; font-size:.78rem; }
+  #rg-scratch-wrap { font-size:.64rem; }
+  #rg-help { font-size:.78rem; margin-top:2px; }
+  #rg-log { font-size:.68rem; }
   body::after { content:none !important; display:none !important; }
   #quick-menu { display:none !important; }
   #back-to-top-button { display:none !important; }
