@@ -267,15 +267,48 @@ comparable set of numbers, and nobody is locked out.
 
 The mechanic that falls out of it:
 
-> **Starting wave = the higher of (your earned position) or (your realm-derived
-> tier).** See "The ratchet" below — the earned half moves in both directions.
+> **Starting wave = your realm-derived tier.** Nothing is saved between runs; see
+> "no saved progress" below, which supersedes the earned-position half of this.
 
 Two roads to the same place. Grinders climb by playing; realm-builders climb by
 investing; someone doing both moves fastest. Neither path is a wall. It also
 answers the realm-less floor problem noted above without a special case: a new
 player starts at wave 1 and it is a real game, just a longer road.
 
-### The ratchet: a tug of war with a floor
+### DECIDED: no saved progress. Every run is its own run.
+
+The user's call, 2026-09-10, and it supersedes the ratchet below:
+
+> "Since every realm eventually falls to the horde, I don't think we should be
+> saving progress. I think each run should be a separate thing with different
+> starting points depending on realm."
+
+**Starting wave comes from realm power and nothing else.** No earned position is
+stored, nothing carries between runs, and every siege begins where your realm
+says it begins.
+
+Why this is better than the ratchet:
+
+- **Every realm falls eventually**, so a position that only ever ratchets up
+  climbs until everyone sits at their ceiling and then stops moving. The ladder
+  would stop being a ladder and become a stored number.
+- **Every run stays meaningful.** With nothing banked there is no "I already got
+  to 60, why replay" -- the only way to have a good run is to have it now.
+- **The realm stays the whole progression.** Wanting a deeper start means
+  building the realm, which is exactly the incentive the integration exists for.
+  A second, in-game progression track would compete with it.
+- **It deletes a pile of tuning.** The climb/slip asymmetry, the stakes-at-the-
+  floor problem and its rewards-for-progress fix all evaporate; none of them
+  exist without a stored position.
+
+Consequence for the board: rank on **waves survived past your starting wave**.
+That is comparable across realm sizes without a handicap, and a small realm
+pushing twelve waves past its start still beats a large one pushing eight.
+
+The prototype already behaves this way -- it persists nothing at all -- so this
+decision required no code change, only the removal of a plan.
+
+### Superseded: the ratchet, a tug of war with a floor
 
 The user's refinement, and it is the core loop:
 
@@ -468,8 +501,8 @@ Rough order:
    holds up.
 5. Action log + server replay, so a result can be trusted. Nothing pays out
    before this exists.
-6. Read real realm levels (read-only) to derive the baseline, and persist the
-   earned position — max of the two, ratcheting per "The ratchet" above.
+6. Read real realm levels (read-only) to derive the starting wave. Nothing is
+   persisted between runs — see "no saved progress" above. DONE in the prototype.
 7. Weekly seed, leaderboard, CARBON, hub, nav, Skull Paper page.
 
 Note: this file sits in the repo, which is pulled to the webroot — it is
