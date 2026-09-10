@@ -37,6 +37,28 @@ include 'header.php';
 
 $rg_me = intval($_SESSION['userData']['user_id'] ?? 0);
 
+/*
+ * `soldiers.location` IS A STATE, NOT A `locations.id`.
+ *
+ * This cost a bug worth recording. Reading the Tower's row out of
+ * realms_locations gives a locations.id, and matching soldiers against it looks
+ * entirely reasonable -- but the column means something else, so the garrison
+ * came back wrong (reported as 20 against 10 actually stationed).
+ *
+ * The real values, from db.php:
+ *   1  reserve / barracks   -- createSoldier() inserts with location 1
+ *   2  Tower garrison       -- deploy sets 2 (db.php:10238), the raid defence
+ *                              garrison reads 2 (db.php:10730)
+ *   3  out on a raid        -- commit sets 3 (db.php:10667), and it is reset to
+ *                              1 when the raid resolves (db.php:7922)
+ *
+ * `soldiers.raid_id` is NOT the signal for "raiding" either -- raid membership
+ * lives in raids_soldiers, and location 3 is what the platform itself checks.
+ */
+define('RG_LOC_RESERVE', 1);
+define('RG_LOC_TOWER',   2);
+define('RG_LOC_RAID',    3);
+
 /* ---------------------------------------------------------------------------
  * THE SNAPSHOT. Read-only, and the only reason this file touches the database.
  * --------------------------------------------------------------------------- */
@@ -48,31 +70,28 @@ $rg_wicon = '';        // the best weapon in the cache, worn by armed guardians
 $rg_aicon = '';        // the best armor in the cache, worn by protected guardians
 $rg_acache = 0;        // unissued armor pieces
 $rg_crypt = 0;         // enlisted NFTs currently dead -- they start in the Crypt
-$rg_tower_loc = 0;     // the Tower's location id, resolved by name
+$rg_theme = 0;         // the realm's theme, used as the page backdrop
 $rg_garrison = 0; $rg_g_armed = 0; $rg_g_armored = 0;   // already on the wall
 $rg_raiders  = 0; $rg_r_armed = 0; $rg_r_armored = 0;   // already in the field
 $rg_alevel = 1;        // best armor level, decides how much a breach is absorbed
 
 if ($rg_me > 0) {
-	$rr = $conn->query("SELECT id, name FROM realms WHERE user_id = $rg_me AND active = 1 LIMIT 1");
+	$rr = $conn->query("SELECT id, name, theme_id FROM realms WHERE user_id = $rg_me AND active = 1 LIMIT 1");
 	if ($rr && $rr->num_rows > 0) {
 		$rrow = $rr->fetch_assoc();
 		$rg_realm_id = intval($rrow['id']);
 		$rg_realm_name = (string)$rrow['name'];
 		$rg_has_realm = true;
+		$rg_theme = intval($rrow['theme_id'] ?? 0);
 
 		// Levels by NAME, not by hardcoded location id -- ids are data, and a
 		// reordered locations table should not silently rewire the game.
-		$lr = $conn->query("SELECT l.name, rl.level, rl.location_id FROM realms_locations rl
+		$lr = $conn->query("SELECT l.name, rl.level FROM realms_locations rl
 		                    INNER JOIN locations l ON l.id = rl.location_id
 		                    WHERE rl.realm_id = $rg_realm_id");
 		if ($lr) while ($l = $lr->fetch_assoc()) {
 			$k = strtolower(trim($l['name']));
 			if (array_key_exists($k, $rg_levels)) $rg_levels[$k] = intval($l['level']);
-			// Captured by NAME for the same reason the levels are: db.php checks
-			// `location IN(2,3)` with literal ids, and guessing which of those is
-			// the Tower would be a silent wrong answer.
-			if ($k === 'tower') $rg_tower_loc = intval($l['location_id']);
 		}
 
 		// The army: enlisted NFTs still alive. Same conditions the realm itself
@@ -129,7 +148,7 @@ if ($rg_me > 0) {
 		                            COALESCE(SUM(CASE WHEN weapon_id > 0 THEN 1 ELSE 0 END),0) AS armed,
 		                            COALESCE(SUM(CASE WHEN armor_id  > 0 THEN 1 ELSE 0 END),0) AS armored
 		                     FROM soldiers
-		                     WHERE realm_id = $rg_realm_id AND raid_id > 0
+		                     WHERE realm_id = $rg_realm_id AND location = " . RG_LOC_RAID . "
 		                       AND dead IS NULL AND active = 1");
 		if ($rr3 && $rr3->num_rows) {
 			$r3 = $rr3->fetch_assoc();
@@ -138,12 +157,12 @@ if ($rg_me > 0) {
 			$rg_r_armored = intval($r3['armored']);
 		}
 
-		if ($rg_tower_loc > 0) {
+		{
 			$tr = $conn->query("SELECT COUNT(*) AS cnt,
 			                           COALESCE(SUM(CASE WHEN weapon_id > 0 THEN 1 ELSE 0 END),0) AS armed,
 			                           COALESCE(SUM(CASE WHEN armor_id  > 0 THEN 1 ELSE 0 END),0) AS armored
 			                    FROM soldiers
-			                    WHERE realm_id = $rg_realm_id AND location = $rg_tower_loc
+			                    WHERE realm_id = $rg_realm_id AND location = " . RG_LOC_TOWER . "
 			                      AND dead IS NULL AND active = 1");
 			if ($tr && $tr->num_rows) {
 				$t = $tr->fetch_assoc();
@@ -348,6 +367,20 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 }
 ?>
 
+<?php if ($rg_theme > 0): ?>
+	<!--
+		The realm's own theme as the backdrop. A fixed layer BEHIND the content
+		rather than a background on <body>: body already carries the platform's
+		styling and a PWA strip on ::after, and painting over it risks the rest
+		of the page. This can only ever sit behind things.
+
+		The dark wash is not decoration -- the themes are busy artwork and the
+		HUD is small text over it. Same approach .podium-section.has-theme takes
+		in leaderboards.php.
+	-->
+	<div id="rg-bg" style="background-image:url('images/themes/<?php echo $rg_theme; ?>.jpg')"></div>
+<?php endif; ?>
+
 <div class="row" id="row1">
   <div class="col1of3" style="max-width:820px;margin:0 auto;flex:1 1 100%;">
 
@@ -531,6 +564,17 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 </div>
 
 <style>
+#rg-bg {
+  position:fixed; inset:0; z-index:-1;
+  background-size:cover; background-position:center;
+  /* fixed so the field doesn't parallax while the page scrolls */
+  background-attachment:fixed;
+}
+#rg-bg::after { content:''; position:absolute; inset:0; background:rgba(7,17,29,.86); }
+/* The panels need to stay legible on top of artwork, so they get a little more
+   opacity than they had over flat background. */
+#rg-game .rg-loc { background:rgba(13,30,48,.92); }
+#rg-field { background:rgba(10,25,41,.92) !important; }
 .rg-blurb { font-size:.82rem; color:rgba(255,255,255,.5); margin:-6px 0 16px; line-height:1.5; }
 .rg-blurb strong { color:#00c8a0; }
 .rg-tag { font-size:.6rem; text-transform:uppercase; letter-spacing:.12em; color:#ffcc44; border:1px solid rgba(255,204,68,.4); border-radius:10px; padding:2px 8px; vertical-align:middle; }
@@ -553,11 +597,23 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 }
 .rg-tag-hud { font-size:.55rem; padding:2px 6px; }
 #rg-sound, #rg-music { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
-#rg-track { background:#0d1e30; color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.15); border-radius:5px; font-size:.72rem; padding:3px 5px; }
+/* A <select> sizes itself to its WIDEST option, and "Guardians of the Realm" is
+   wide. Capped, or it dictates the width of the whole bar. */
+#rg-track { background:#0d1e30; color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.15);
+            border-radius:5px; font-size:.72rem; padding:3px 5px; max-width:130px; }
 #rg-vol { width:70px; accent-color:#00c8a0; vertical-align:middle; }
 /* On a phone the HUD is already tight; the volume slider is the first thing
    that can go, since the mute button covers the urgent case. */
-@media (max-width:560px) { #rg-vol { display:none; } }
+/* The HUD cannot wrap any more (that was shifting the board), so on a phone it
+   must FIT instead. The track picker is the widest item -- a <select> sizes to
+   its longest option -- and the volume slider is the least urgent, so both go;
+   the mute buttons cover everything that matters. Without this the bar forced
+   the page wider than the screen. */
+@media (max-width:560px) {
+  #rg-vol, #rg-track { display:none; }
+  .rg-hud { gap:9px; font-size:.72rem; }
+  .rg-hud strong { font-size:.88rem; }
+}
 
 #rg-field { position:relative; height:80px; background:#0a1929; border:1px solid rgba(255,255,255,.08); border-radius:8px; overflow:hidden; margin-bottom:12px; }
 #rg-wall.rg-fortified { background:linear-gradient(180deg,#ffcc44,#c79a1e) !important; box-shadow:0 0 14px rgba(255,204,68,.8); }
@@ -571,17 +627,19 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
    thing (a place on the field), so they should sit on the same line rather than
    one hugging the floor. */
 #rg-tower-icon  { left:14px; top:50%; transform:translateY(-50%); width:26px; height:26px; object-fit:contain; }
-#rg-portal-icon { left:38%; top:50%; transform:translate(-50%,-50%); width:30px; height:30px;
+#rg-portal-icon { left:25%; top:50%; transform:translate(-50%,-50%); width:30px; height:30px;
                   object-fit:contain; opacity:.55; filter:drop-shadow(0 0 6px rgba(0,200,160,.7)); }
 #rg-sortie, #rg-enemies { z-index:1; }
-.rg-foe { position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; border-radius:50%; background:#c0392b; border:2px solid #c0392b; transition:left .1s linear; }
+.rg-foe { position:absolute; top:50%; transform:translateY(-50%); box-sizing:border-box; width:26px; height:26px; border-radius:50%; background:#c0392b; border:2px solid #c0392b; transition:left .1s linear; }
 .rg-foe img { width:100%; height:100%; border-radius:50%; display:block; object-fit:cover; }
-.rg-foe.rg-tough { width:30px; height:30px; border-color:#c39bd3; box-shadow:0 0 8px rgba(195,155,211,.6); }
+.rg-foe.rg-tough { width:34px; height:34px; border-color:#c39bd3; box-shadow:0 0 8px rgba(195,155,211,.6); }
 .rg-foe i { position:absolute; left:0; bottom:-6px; height:2px; background:#ff6b6b; }
 /* Sortied guardians sit above the line so they read as yours, not theirs. */
 /* Your guardians: their own NFT art, ringed in the platform green so they read
    as yours at a glance against the red horde. */
-.rg-unit { position:absolute; top:16%; width:22px; height:22px; border-radius:50%; background:#0a1929; border:2px solid #00c8a0; box-shadow:0 0 6px rgba(0,200,160,.5); transition:left .1s linear; }
+/* Identical footprint to a foe -- border-box so the border sits INSIDE, or a
+   2px border silently makes one 4px bigger than the other. */
+.rg-unit { position:absolute; top:16%; box-sizing:border-box; width:26px; height:26px; border-radius:50%; background:#0a1929; border:2px solid #00c8a0; box-shadow:0 0 6px rgba(0,200,160,.5); transition:left .1s linear; }
 .rg-unit img { width:100%; height:100%; border-radius:50%; display:block; object-fit:cover; }
 .rg-unit.rg-armed { border-color:#ffcc44; box-shadow:0 0 8px rgba(255,204,68,.6); }
 /* The weapon they carry, badged on the shoulder. */
@@ -636,6 +694,9 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   #quick-menu { display:none !important; }
   #back-to-top-button { display:none !important; }
   #rg-game { padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 12px); }
+  /* Belt and braces: nothing in here may make the page scroll sideways. */
+  #rg-game, #rg-locations, #rg-field { max-width:100%; }
+  #rg-game { overflow-x:hidden; }
 }
 </style>
 
@@ -684,7 +745,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   var rand = mulberry32(SEED);
   // Where the Portal stands on the field, in percent. The icon is positioned at
   // the same figure in CSS, so guardians step out of it rather than near it.
-  var PORTAL_X = 38;
+  var PORTAL_X = 25;
   var TICK = 100;
   var actionLog = [];
 
@@ -704,6 +765,40 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       bought:{ tower:0, barracks:0, armory:0, crypt:0, portal:0, factory:0, mine:0 },
       foes:[], nextAttack:0, betweenWaves:0, fortifyFor:0
     };
+
+    /*
+     * OPEN WHERE THE REALM ACTUALLY STANDS -- and do it in reset(), so it shows
+     * on page load rather than only once Begin is pressed. The board should
+     * describe your realm the moment you arrive.
+     *
+     * Tower soldiers (location 2) man the wall. They are already standing there,
+     * so starting with an empty wall asked the player to deploy them twice.
+     * Anything over the garrison cap falls back to the reserve rather than
+     * vanishing.
+     *
+     * Soldiers on raids (location 3) are ALREADY OUT, so they stand in the field
+     * beyond the Portal rather than queueing to emerge -- they left before you
+     * got here. Spread outward from the Portal so a group reads as a group.
+     *
+     * Both keep their own kit: soldiers.weapon_id / armor_id is that soldier's
+     * equipment, distinct from the unissued cache in `gear`, so seating them
+     * armed and armoured costs the cache nothing.
+     */
+    var seat = Math.min(REALM.garrison, garrisonCap());
+    S.garrison = seat;
+    S.armed    = Math.min(REALM.garmed, seat);
+    S.armored  = Math.min(REALM.garmored, seat);
+    S.reserve += Math.max(0, REALM.garrison - seat);
+
+    for (var r = 0; r < REALM.raiders; r++) {
+      S.sortied.push({
+        pos:   Math.min(96, PORTAL_X + 2 + r * 3),
+        hp:    (r < REALM.ramed ? 6 : 4) + (r < REALM.rarmored ? 2 + REALM.alevel : 0),
+        armed: r < REALM.ramed,
+        prot:  r < REALM.rarmored,
+        slot:  unitSeq++
+      });
+    }
   }
 
   /* Every level is a RATE or a CAP -- never one power number. That is the whole
@@ -1328,37 +1423,6 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     actionLog = [];
     HORDE = VERIFIED.slice();   // frozen for the run: no reshuffling faces
     reset();
-
-    /*
-     * Open the siege where the realm actually stands.
-     *
-     * Tower soldiers man the wall from tick zero -- they are already standing
-     * there in the realm, so opening with an empty wall and asking the player to
-     * deploy them was asking them to do something twice. Anything over the
-     * garrison cap falls back to the reserve rather than being lost.
-     *
-     * Raiders start out in the field, streaming through the Portal one by one
-     * (the same queue a manual sortie uses), because that is what they are
-     * already doing.
-     *
-     * Both keep their own weapons and armour -- soldiers.weapon_id/armor_id is
-     * their kit, not the unissued cache.
-     */
-    var seat = Math.min(REALM.garrison, garrisonCap());
-    S.garrison = seat;
-    S.armed    = Math.min(REALM.garmed, seat);
-    S.armored  = Math.min(REALM.garmored, seat);
-    S.reserve += Math.max(0, REALM.garrison - seat);
-
-    for (var r = 0; r < REALM.raiders; r++) {
-      S.emerging.push({
-        pos: PORTAL_X,
-        hp: (r < REALM.ramed ? 6 : 4) + (r < REALM.rarmored ? 2 + REALM.alevel : 0),
-        armed: r < REALM.ramed,
-        prot:  r < REALM.rarmored,
-        slot:  unitSeq++
-      });
-    }
 
     S.running = true;
     logEl.innerHTML = '';
