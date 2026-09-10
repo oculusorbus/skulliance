@@ -736,32 +736,6 @@ $rg_theme_img = $rg_theme > 0
 					<div class="rg-cap">building next item</div>
 				<button type="button" class="rg-act rg-up" data-act="up-factory">Upgrade</button>
 			</div>
-			<!-- The Mine is a NORMAL cell now, not its own full-width row. It
-			     carries the least of any card -- one stat and a bar -- so it is
-			     the one that can share, and a whole row for it was the cheapest
-			     vertical space on the board to buy back. -->
-			<div class="rg-loc">
-				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/mine.png" alt="" onerror="this.style.display='none'">Mine <span class="rg-lvl" id="rg-lvl-mine">1</span></div>
-				<div class="rg-loc-stat">CARBON &middot; <span id="rg-mine-rate">+0/s</span></div>
-				<div class="rg-bar" title="Time until the Mine yields more CARBON"><i id="rg-bar-mine"></i></div>
-					<div class="rg-cap">next CARBON payout</div>
-				<button type="button" class="rg-act rg-up" data-act="up-mine">Upgrade</button>
-			</div>
-			<!-- Begin fills the two slots the Mine left. It only matters before a
-			     run and after one, so it should not hold prime space during the
-			     siege -- but it must not be below the fold either, or you scroll
-			     to start and scroll again to restart. -->
-			<div class="rg-loc rg-start">
-				<button type="button" id="rg-begin">Begin the Siege</button>
-				<?php if ($rg_has_realm): ?>
-				<!-- Only shown to someone who HAS a realm to switch off. Without one
-				     the game is already the scratch baseline, and a toggle that does
-				     nothing is worse than no toggle. -->
-				<label id="rg-scratch-wrap" title="Ignore your realm and hold the wall with conscripts: every location at level 1, no enlisted guardians, a level-1 cache. Your realm is untouched either way.">
-					<input type="checkbox" id="rg-scratch"> Start from scratch
-				</label>
-				<?php endif; ?>
-			</div>
 		</div>
 
 		<!--
@@ -797,6 +771,39 @@ $rg_theme_img = $rg_theme > 0
 					<?php endforeach; ?>
 				</div>
 			<?php endforeach; ?>
+		</div>
+
+		<!--
+			THE MINE, and the button that starts a run, in ONE panel.
+
+			Begin had a cell of its own for a while. It is pressed twice a run --
+			once at the start, once after a loss -- so a whole panel of its own
+			was space bought at the wrong price, especially on a phone where
+			every row costs a scroll. The Mine is the natural host: it is the
+			shortest card, it is the one nothing is decided on mid-siege, and it
+			is already the bottom of the board.
+		-->
+		<div id="rg-mine-row" class="rg-loc">
+			<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/mine.png" alt="" onerror="this.style.display='none'">Mine <span class="rg-lvl" id="rg-lvl-mine">1</span></div>
+			<div class="rg-mine-body">
+				<div class="rg-mine-stats">
+					<div class="rg-loc-stat">CARBON &middot; <span id="rg-mine-rate">+0/s</span></div>
+					<div class="rg-bar" title="Time until the Mine yields more CARBON"><i id="rg-bar-mine"></i></div>
+						<div class="rg-cap">next CARBON payout</div>
+					<button type="button" class="rg-act rg-up" data-act="up-mine">Upgrade</button>
+				</div>
+				<div class="rg-mine-start">
+					<button type="button" id="rg-begin">Begin the Siege</button>
+					<?php if ($rg_has_realm): ?>
+					<!-- Only shown to someone who HAS a realm to switch off. Without one
+					     the game is already the scratch baseline, and a toggle that does
+					     nothing is worse than no toggle. -->
+					<label id="rg-scratch-wrap" title="Ignore your realm and hold the wall with conscripts: every location at level 1, no enlisted guardians, a level-1 cache. Your realm is untouched either way.">
+						<input type="checkbox" id="rg-scratch"> Start from scratch
+					</label>
+					<?php endif; ?>
+				</div>
+			</div>
 		</div>
 
 		<!--
@@ -1034,12 +1041,16 @@ $rg_theme_img = $rg_theme > 0
 #rg-locations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 .rg-loc { background:#0d1e30; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 10px; }
 .rg-loc.rg-wide { grid-column:1 / -1; }
-/* The Mine leaves two slots on the last row; Begin takes both, centred in them,
-   so the row is full rather than a card and a hole. */
-.rg-loc.rg-start { grid-column:span 2; display:flex; flex-direction:column;
-                   align-items:center; justify-content:center; gap:4px; }
-.rg-loc.rg-start #rg-begin { margin:0; }
-.rg-loc.rg-start #rg-scratch-wrap { margin:0; }
+/* The Mine panel carries Begin. Stats on the left, the start control on the
+   right, so the panel is one row deep instead of two stacked blocks -- the
+   whole reason Begin lives here rather than in a cell of its own. */
+#rg-mine-row .rg-mine-body { display:flex; align-items:center; gap:14px; }
+#rg-mine-row .rg-mine-stats { flex:1 1 auto; min-width:0; }
+#rg-mine-row .rg-mine-stats .rg-act { margin-bottom:0; }
+#rg-mine-row .rg-mine-start { flex:0 0 auto; display:flex; flex-direction:column;
+                              align-items:center; gap:3px; }
+#rg-mine-row .rg-mine-start #rg-begin { margin:0; }
+#rg-mine-row .rg-mine-start #rg-scratch-wrap { margin:0; }
 .rg-loc-name { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:6px; }
 /* The realm's own location art (icons/locations/<name>.png -- the same files
    realms.php:106 uses, all verified 200). Hidden rather than broken if one is
@@ -1212,8 +1223,12 @@ $rg_theme_img = $rg_theme > 0
   .rg-shelf-head { font-size:.6rem; margin-bottom:3px; }
   .rg-shelf-grid { gap:3px; }
   .rg-shelf-grid + .rg-shelf-grid { margin-top:3px; }
-  #rg-begin { padding:7px 16px; font-size:.78rem; }
-  #rg-scratch-wrap { font-size:.64rem; }
+  #rg-begin { padding:7px 14px; font-size:.76rem; }
+  #rg-scratch-wrap { font-size:.62rem; }
+  /* Stays side by side on a phone too -- stacking it is the extra row this
+     whole arrangement exists to avoid. */
+  #rg-mine-row { margin-top:4px; }
+  #rg-mine-row .rg-mine-body { gap:8px; }
   #rg-help { font-size:.78rem; margin-top:2px; }
   #rg-log { font-size:.68rem; }
   body::after { content:none !important; display:none !important; }
