@@ -889,11 +889,12 @@ $rg_theme_img = $rg_theme > 0
 		<div id="rg-nuke" hidden role="dialog" aria-modal="true" aria-labelledby="rg-nuke-title">
 			<div class="rg-nuke-card">
 				<div class="rg-nuke-emoji" aria-hidden="true">&#9762;&#65039;</div>
-				<h3 id="rg-nuke-title">The wall is breached</h3>
-				<p>They reached it. The last stand detonates &mdash;
-				<strong><span id="rg-nuke-count">0</span></strong> swept from the field.</p>
-				<p class="rg-nuke-sub">There is only one. Whatever is still beyond the
-				edge is still coming.</p>
+				<h3 id="rg-nuke-title">The wall has fallen</h3>
+				<p>Your realm was about to be overrun. The last stand detonates &mdash;
+				<strong><span id="rg-nuke-count">0</span></strong> swept from the field, and
+				<strong><span id="rg-nuke-hp">25</span></strong> of the wall shored back up.</p>
+				<p class="rg-nuke-sub">There is only one. Whatever is still beyond the edge is
+				still coming, and the next time the wall falls it stays fallen.</p>
 				<button type="button" id="rg-nuke-ok">Hold the line</button>
 			</div>
 		</div>
@@ -2200,22 +2201,29 @@ $rg_theme_img = $rg_theme > 0
             sfxPlay('death', 0.16);
           }
         }
-        if (S.hp <= 0) return end();
         /*
-         * THE LAST STAND. The first attacker ever to reach the wall triggers
-         * one nuke, and everything already on the field goes with it.
+         * THE LAST STAND. It fires when the wall FALLS, in place of the run
+         * ending -- once, and only once.
          *
-         * Once a run, and it fires on the FIRST body to touch the wall whether
-         * or not a shield or armour swallowed the hit -- what matters is that
-         * they got there at all. Anything still off screen is untouched, so it
-         * buys a breath rather than the wave: the horde beyond the edge keeps
-         * walking.
+         * This is the whole point of it: a straggler touching the wall is not a
+         * last stand, it is a scratch. The moment worth spending a nuke on is
+         * the moment you were about to lose, so it stands exactly where end()
+         * would otherwise be called and takes its place.
+         *
+         * Anything still off screen is untouched, so it buys you the wall back
+         * and a clear field, not the wave -- the horde beyond the edge is still
+         * walking, and the second time the wall falls the run is over.
          *
          * Deterministic, which matters because it changes the simulation rather
-         * than just decorating it: no rand(), and the trigger is a position
-         * check, so a server replaying the same inputs nukes on the same tick.
+         * than just decorating it: no rand(), and the trigger is a wall-health
+         * check, so a server replaying the same inputs fires it on the same tick.
          */
-        if (!S.nuked) { S.nuked = true; lastStand(); return; }
+        if (S.hp <= 0) {
+          if (S.nuked) return end();
+          S.nuked = true;
+          lastStand();
+          return;
+        }
       }
     }
 
@@ -2743,21 +2751,31 @@ $rg_theme_img = $rg_theme > 0
       setPaused(false, true);
     });
   }
+  /*
+   * A QUARTER OF THE WALL BACK. The sweep alone would not be a reprieve: the
+   * wall is at zero by the time this runs, so the very next attacker to arrive
+   * would end the run anyway and the nuke would have bought a few seconds.
+   * A quarter is enough to fight on and nowhere near enough to be safe --
+   * and the horde that was off screen is still coming.
+   */
+  var LAST_STAND_HP = 25;
   function lastStand() {
     // Only what is ON the field. The horde still off screen keeps walking, so
-    // this buys a breath, not the wave.
+    // this buys the wall back and a clear field, not the wave.
     var caught = 0;
     for (var i = S.foes.length - 1; i >= 0; i--) {
       if (S.foes[i].pos <= 100) { S.foes.splice(i, 1); caught++; }
     }
-    // No CARBON: this is a desperation weapon, not a payday, and paying for it
-    // would make letting a breach through worth doing on purpose.
+    S.hp = LAST_STAND_HP;
+    // No CARBON: this is a desperation weapon, not a payday.
     sfxPlay('demolition', 0.34);
-    log('THE WALL IS BREACHED. The last stand detonates &mdash; ' + caught +
-        ' swept from the field.', true);
+    log('THE WALL FALLS &mdash; and the last stand detonates. ' + caught +
+        ' swept from the field, ' + LAST_STAND_HP + ' wall shored up.', true);
     if (nukeEl) {
       var n = document.getElementById('rg-nuke-count');
       if (n) n.textContent = caught;
+      var h = document.getElementById('rg-nuke-hp');
+      if (h) h.textContent = LAST_STAND_HP;
       nukeEl.hidden = false;
       setPaused(true, true);
       if (nukeOk) nukeOk.focus();
