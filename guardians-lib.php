@@ -70,6 +70,15 @@
 
 define('GUARDIANS_MIN_WAVE_SECONDS', 15);
 
+/*
+ * Whether the staker whose avatar broke the wall gets an actual Discord PING,
+ * or just a highlighted name in the embed. See guardiansAnnounceDefeat() --
+ * the horde is drawn at random, so a ping notifies someone for something they
+ * had no part in, once per fallen siege across the whole membership. One
+ * constant, so turning the noise off is a one-line change and not a rewrite.
+ */
+define('GUARDIANS_PING_BREACHER', true);
+
 /* ---------------------------------------------------------------------------
  * THE LIVE RUN
  * ------------------------------------------------------------------------- */
@@ -214,11 +223,46 @@ function guardiansAnnounceDefeat($conn, $user_id, $result) {
 	         "\n" . $result['lost'] . ' guardian' . ($result['lost'] === 1 ? '' : 's') .
 	         ' lost over ' . ($mins > 0 ? $mins . ' minute' . ($mins === 1 ? '' : 's') : 'under a minute') . '.';
 
+	/*
+	 * WHO BROKE THE WALL. The horde is other stakers' avatars, so the attacker
+	 * that landed the killing blow is a real member, and naming them is the
+	 * whole charm of the horde being real people.
+	 *
+	 * Both fields are re-filtered here even though the endpoint already
+	 * sanitised them, because this is the function that BUILDS the message and
+	 * it should not depend on a caller having been careful. A mention string
+	 * assembled from unfiltered input is how "@everyone" ends up in a webhook.
+	 */
+	$breacher    = preg_replace('/[^A-Za-z0-9 _.\-]/', '', (string)($result['breacher'] ?? ''));
+	$breacher_id = preg_replace('/[^0-9]/', '', (string)($result['breacher_id'] ?? ''));
+	$content     = '';
+	if ($breacher_id !== '') {
+		$desc .= "\nThe wall was broken by <@" . $breacher_id . ">.";
+		/*
+		 * GUARDIANS_PING_BREACHER decides whether that is an actual
+		 * notification or just a highlighted name. Discord only pings for a
+		 * mention in the top-level content field, never one inside an embed.
+		 *
+		 * It is ON because it was asked for, but it is one constant because
+		 * the case against is real: the horde is drawn at RANDOM from the
+		 * membership, so this pings somebody for something they did not do,
+		 * and it fires once per fallen siege across every player. Flip it to
+		 * false and the name still renders and still links -- it just stops
+		 * buzzing someone's phone.
+		 */
+		if (defined('GUARDIANS_PING_BREACHER') && GUARDIANS_PING_BREACHER) {
+			$content = '<@' . $breacher_id . '> broke through.';
+		}
+	} elseif ($breacher !== '') {
+		$desc .= "\nThe wall was broken by " . $breacher . '.';
+	}
+
 	discordmsg(
 		$title, $desc, $image,
 		'https://skulliance.io/staking/guardians.php',
 		'guardians',
 		'https://skulliance.io/staking/icons/locations/tower.png',
-		'c0392b'
+		'c0392b',
+		null, null, $content
 	);
 }

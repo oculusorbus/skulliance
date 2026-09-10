@@ -584,6 +584,11 @@ $hr = $conn->query("SELECT username, discord_id, avatar FROM users
 if ($hr) while ($h = $hr->fetch_assoc()) {
 	$rg_horde[] = array(
 		'name' => $h['username'],
+		// Carried so the defeat post can name the staker whose avatar actually
+		// broke the wall. Digits only by construction here, and re-filtered
+		// server-side before it is ever put in a Discord message -- a mention
+		// string built from client input is an injection vector otherwise.
+		'did'  => preg_replace('/[^0-9]/', '', (string)$h['discord_id']),
 		'img'  => 'https://cdn.discordapp.com/avatars/' . $h['discord_id'] . '/' . $h['avatar'] . '.png',
 	);
 }
@@ -930,6 +935,33 @@ $rg_theme_img = $rg_theme > 0
 		</div>
 	</div>
 
+	<!--
+		THE SEND-OFF.
+
+		Every realm falls -- that is the design, not a failure state -- so the
+		end of a run is the one moment the game gets to say what was achieved
+		rather than what went wrong. It led with the Begin button reappearing,
+		which reads as "again?" when the honest reading is "you held 37 waves".
+
+		WAVES HELD is the headline, not the wave reached, for the same reason
+		the leaderboard ranks on it: the wave you started on was handed to you
+		by your realm, and what you did is the distance past it.
+	-->
+	<div id="rg-defeat" hidden role="dialog" aria-modal="true" aria-labelledby="rg-defeat-title">
+		<div class="rg-nuke-card">
+			<div class="rg-nuke-emoji" aria-hidden="true">&#127993;</div>
+			<h3 id="rg-defeat-title">The realm has fallen</h3>
+			<p class="rg-defeat-hero"><strong id="rg-defeat-held">0</strong>
+				<span>waves held</span></p>
+			<p>You began at wave <strong id="rg-defeat-start">1</strong> and the wall
+			came down at wave <strong id="rg-defeat-wave">1</strong>.</p>
+			<p class="rg-nuke-sub"><span id="rg-defeat-lost">0</span> guardians lost
+			over <span id="rg-defeat-time">0m</span>.
+			<span id="rg-defeat-scored"></span></p>
+			<button type="button" id="rg-defeat-ok">Again</button>
+		</div>
+	</div>
+
 	<!-- Retreat confirmation. Outside #rg-game for the same reason the nuke
 	     modal is: the board's centring rule would clamp a full-screen overlay
 	     to 720px. -->
@@ -1241,7 +1273,7 @@ $rg_theme_img = $rg_theme > 0
    it to the page would put the announcement wherever you happened to be
    scrolled. [hidden] guard is REQUIRED, because the rule below sets display and
    an id selector outranks the browser's own [hidden]. */
-#rg-nuke, #rg-confirm { position:fixed; inset:0; z-index:50; display:flex; align-items:center;
+#rg-nuke, #rg-confirm, #rg-defeat { position:fixed; inset:0; z-index:50; display:flex; align-items:center;
            justify-content:center; padding:20px; background:rgba(4,10,18,.82);
            /* Belt and braces. The markup now sits OUTSIDE #rg-game so the
               board's centring rule cannot reach it, but an element's own
@@ -1249,7 +1281,7 @@ $rg_theme_img = $rg_theme > 0
               how this shipped as a 720px column in the middle of the page.
               Stated here so a future container rule cannot quietly redo it. */
            max-width:none; margin:0; }
-#rg-nuke[hidden], #rg-confirm[hidden] { display:none; }
+#rg-nuke[hidden], #rg-confirm[hidden], #rg-defeat[hidden] { display:none; }
 .rg-nuke-card { max-width:340px; text-align:center; background:#12263a;
                 border:1px solid rgba(255,204,68,.55); border-radius:12px;
                 padding:20px 22px; box-shadow:0 0 40px rgba(255,204,68,.28); }
@@ -1264,7 +1296,7 @@ $rg_theme_img = $rg_theme > 0
                   text-align:center; }
 .rg-nuke-card p.rg-nuke-sub { font-size:.74rem; color:rgba(255,255,255,.45); margin-bottom:14px; }
 .rg-nuke-card strong { color:#fff; }
-#rg-nuke-ok, #rg-confirm-yes { background:#ffcc44; color:#1a1200; font-weight:bold; border:0;
+#rg-nuke-ok, #rg-confirm-yes, #rg-defeat-ok { background:#ffcc44; color:#1a1200; font-weight:bold; border:0;
               border-radius:6px; padding:9px 20px; font-size:.82rem; cursor:pointer; }
 /* Cancel is the quiet one and gets focus, so the safe choice is both the
    default and the less eye-catching -- the loud button should not be the
@@ -1273,6 +1305,17 @@ $rg_theme_img = $rg_theme > 0
                  border:0; border-radius:6px; padding:9px 16px; font-size:.82rem;
                  cursor:pointer; margin-left:8px; }
 #rg-retreat { font-size:1.05rem; }
+
+
+/* The send-off wears the horde's colour, not the Tower's -- this is their
+   moment. The card is otherwise the one every modal here uses. */
+#rg-defeat .rg-nuke-card { border-color:rgba(192,57,43,.6); box-shadow:0 0 40px rgba(192,57,43,.3); }
+#rg-defeat h3 { color:#e8705f; }
+/* The number IS the message, so it gets the room. */
+.rg-defeat-hero { margin:2px 0 12px !important; line-height:1; }
+.rg-defeat-hero strong { display:block; font-size:2.8rem; color:#fff; letter-spacing:-.02em; }
+.rg-defeat-hero span { display:block; font-size:.68rem; text-transform:uppercase;
+                       letter-spacing:.18em; color:rgba(255,255,255,.45); margin-top:4px; }
 
 /* ---- PAUSED ---------------------------------------------------------------
    Unmistakable at a glance. Someone coming back to their phone after twenty
@@ -2326,6 +2369,11 @@ $rg_theme_img = $rg_theme > 0
          * check, so a server replaying the same inputs fires it on the same tick.
          */
         if (S.hp <= 0) {
+          // Who actually broke it. The horde is other stakers, so this is a
+          // real person and the defeat post names them.
+          var who = foeIdentity(f);
+          S.breacher = who && who.name ? who.name : '';
+          S.breacherId = who && who.did ? who.did : '';
           if (S.nuked) return end();
           S.nuked = true;
           lastStand();
@@ -2740,11 +2788,54 @@ $rg_theme_img = $rg_theme > 0
      * cannot be resumed.
      */
     SAVED = null;
-    post('defeat', { wave: S.wave, lost: S.dead });
     el.status.textContent = 'The wall is breached';
     log('The realm falls at wave ' + S.wave + '. Guardians lost: ' + S.dead + '.', true);
     beginBtn.textContent = 'Hold again';
     beginBtn.hidden = false;
+    showDefeat();
+    /*
+     * The only moment a score is written. The wave is claimed by the client and
+     * the elapsed time is measured by the server against the started_at it
+     * stamped at Begin, so neither can be forged without the other -- see
+     * guardians-lib.php. Recording also clears the saved run, so a fallen siege
+     * cannot be resumed.
+     *
+     * The modal is up BEFORE this resolves, so a slow round trip never delays
+     * the send-off; whether it counted is filled in when the answer arrives.
+     */
+    post('defeat', { wave: S.wave, lost: S.dead,
+                     breacher: S.breacher || '', breacher_id: S.breacherId || '' }).then(function (res) {
+      var el2 = document.getElementById('rg-defeat-scored');
+      if (!el2) return;
+      if (res && res.scored) el2.textContent = 'Recorded on this month’s board.';
+      else if (res)          el2.textContent = 'Not recorded — this run had no server-side start.';
+      else                   el2.textContent = '';
+    });
+  }
+
+  /*
+   * WAVES HELD is the headline, not the wave reached. The wave you started on
+   * was handed to you by your realm; the distance past it is the part you did,
+   * which is also what the board ranks on -- the two should not tell different
+   * stories about the same run.
+   */
+  function showDefeat() {
+    var d = document.getElementById('rg-defeat');
+    if (!d) return;
+    var held = Math.max(0, S.wave - REALM.start);
+    function put(id, v) { var e = document.getElementById(id); if (e) e.textContent = v; }
+    put('rg-defeat-held',  held);
+    put('rg-defeat-start', REALM.start);
+    put('rg-defeat-wave',  S.wave);
+    put('rg-defeat-lost',  S.dead);
+    // S.tick does not advance while paused, so this is time actually played
+    // rather than time the tab was open.
+    var secs = Math.round(S.tick / 10), mins = Math.floor(secs / 60);
+    put('rg-defeat-time', mins > 0 ? mins + 'm ' + (secs % 60) + 's' : secs + 's');
+    put('rg-defeat-scored', '');
+    d.hidden = false;
+    var ok = document.getElementById('rg-defeat-ok');
+    if (ok) ok.focus();
   }
 
   document.addEventListener('click', function (e) {
@@ -2943,6 +3034,17 @@ $rg_theme_img = $rg_theme > 0
     if (resume && confirmPaused) setPaused(false, true);
     confirmPaused = false;
   }
+  // Dismissing the send-off just closes it: Begin is already back on the board
+  // underneath, so this does not need to start anything itself.
+  var defeatOk = document.getElementById('rg-defeat-ok');
+  if (defeatOk) {
+    defeatOk.addEventListener('click', function () {
+      var d = document.getElementById('rg-defeat');
+      if (d) d.hidden = true;
+      if (beginBtn) beginBtn.focus();
+    });
+  }
+
   if (retreatBtn) retreatBtn.addEventListener('click', askRetreat);
   if (confirmNo) confirmNo.addEventListener('click', function () { closeRetreat(true); });
   if (confirmYes) {

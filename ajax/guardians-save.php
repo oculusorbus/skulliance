@@ -39,6 +39,17 @@ if ($action === 'save') {
 
 if ($action === 'defeat') {
 	$result = guardiansRecordDefeat($conn, $uid, intval($_POST['wave'] ?? 0), intval($_POST['lost'] ?? 0));
+	/*
+	 * Who broke the wall, for the Discord post. Sanitised HARD before it goes
+	 * anywhere near a message: the id becomes digits only and the name is
+	 * stripped of everything that could turn a mention into something else.
+	 * A mention string assembled from client input is an injection vector --
+	 * "@everyone" in a username field would otherwise ping a whole server.
+	 */
+	if ($result !== null) {
+		$result['breacher']    = substr(preg_replace('/[^A-Za-z0-9 _.\-]/', '', (string)($_POST['breacher'] ?? '')), 0, 40);
+		$result['breacher_id'] = substr(preg_replace('/[^0-9]/', '', (string)($_POST['breacher_id'] ?? '')), 0, 25);
+	}
 	// A rejected or unbacked claim still clears the run, so the player is not
 	// left with a stale snapshot they can never resume past.
 	if ($result === null) { echo json_encode(array('ok' => false, 'scored' => false)); exit; }
