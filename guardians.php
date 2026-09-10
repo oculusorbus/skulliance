@@ -619,6 +619,9 @@ $rg_theme_img = $rg_theme > 0
 			<span>Wall <strong id="rg-hp">100</strong></span>
 			<span>CARBON <strong id="rg-carbon">0</strong></span>
 			<span id="rg-status">Press Begin</span>
+			<!-- A run can last an hour and nothing is saved. Being interrupted must
+			     not cost that, so the siege can be put down and picked up. -->
+			<button type="button" id="rg-pause" title="Pause the siege" aria-pressed="false" hidden>&#9208;&#65039;</button>
 			<button type="button" id="rg-sound" title="Mute effects" aria-pressed="true">&#128266;</button>
 			<?php if (!empty($rg_tracks)): ?>
 				<!-- Music gets its own switch and its own volume: the point of
@@ -827,7 +830,8 @@ $rg_theme_img = $rg_theme > 0
   flex:1 1 auto; min-width:0; text-align:right; color:#ffcc44;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-#rg-sound, #rg-music { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
+#rg-sound, #rg-music, #rg-pause { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
+#rg-pause[hidden] { display:none; }
 /* A <select> sizes itself to its WIDEST option, and "Guardians of the Realm" is
    wide. Capped, or it dictates the width of the whole bar. */
 #rg-track { background:#0d1e30; color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.15);
@@ -971,6 +975,27 @@ $rg_theme_img = $rg_theme > 0
 #rg-scratch-wrap input { vertical-align:middle; margin-right:4px; cursor:pointer; }
 #rg-scratch-wrap:has(input:disabled) { opacity:.35; cursor:default; }
 #rg-begin[hidden] { display:none; }
+
+/* ---- PAUSED ---------------------------------------------------------------
+   Unmistakable at a glance. Someone coming back to their phone after twenty
+   minutes needs to see instantly that the game is held and nothing was lost --
+   a small icon change in the HUD is not enough to carry that. The field dims
+   and the horde stops mid-approach, so the state reads as "held", not "over". */
+#rg-game.rg-paused #rg-field { filter:grayscale(.7) brightness(.55); }
+#rg-game.rg-paused #rg-field::after {
+  content:'PAUSED'; position:absolute; inset:0; display:flex;
+  align-items:center; justify-content:center;
+  font-size:.9rem; font-weight:bold; letter-spacing:.28em;
+  color:rgba(255,255,255,.92); text-shadow:0 2px 6px rgba(0,0,0,.9);
+  pointer-events:none; z-index:3;
+}
+/* Only while held: a steady pulse on the resume control, so the way back into
+   the game is the thing that draws the eye. */
+#rg-game.rg-paused #rg-pause { animation:rg-pulse 1.4s ease-in-out infinite; }
+@keyframes rg-pulse { 0%,100% { opacity:1; } 50% { opacity:.45; } }
+@media (prefers-reduced-motion: reduce) {
+  #rg-game.rg-paused #rg-pause { animation:none; }
+}
 
 /* ---- DOUBLE-TAP ZOOM ------------------------------------------------------
    This game is tapped FAST -- deploy, raise, strike, fortify, upgrade -- and a
@@ -1131,7 +1156,7 @@ $rg_theme_img = $rg_theme > 0
   var S = {};
   function reset() {
     S = {
-      running:false, over:false, tick:0, wave:REALM.start - 1,
+      running:false, over:false, paused:false, tick:0, wave:REALM.start - 1,
       hp:100, maxhp:100, carbon:0,
       // The reserve is what is LEFT: everyone alive who is not already on the
       // wall or out on a raid. Without this the same guardian would be counted
@@ -1632,6 +1657,17 @@ $rg_theme_img = $rg_theme > 0
   }
 
   function step() {
+    /*
+     * PAUSED. Gated here rather than by clearing the interval, so there is
+     * exactly one timer for the life of a run and no way to start a second by
+     * resuming twice. A no-op every 100ms costs nothing next to the running
+     * game, and a hidden tab is throttled by the browser anyway.
+     *
+     * S.tick does not advance while paused, so the action log -- which is
+     * [tick, action] pairs -- replays identically whether the player paused or
+     * not. Pause is invisible to a server verifying the run.
+     */
+    if (S.paused) return;
     S.tick++;
     if (S.boostFor > 0) S.boostFor--;
 
@@ -1960,6 +1996,8 @@ $rg_theme_img = $rg_theme > 0
     }
 
 
+    paintPause();
+
     // Locked mid-siege: swapping baselines would rebuild the state under the
     // wave already walking at you.
     if (scratchBox) {
@@ -1991,11 +2029,21 @@ $rg_theme_img = $rg_theme > 0
         b.disabled = S.carbon < upgradeCost(k);
         b.textContent = 'Upgrade (' + upgradeCost(k) + ')';
       }
+      // Greyed as well as inert while paused: act() already refuses, but a
+      // button that looks live and does nothing reads as a broken game.
+      if (S.paused) b.disabled = true;
     });
+    if (S.paused) el.status.textContent = 'Paused — the horde waits';
   }
 
   function act(a) {
-    if (!S.running || S.over) return;
+    /*
+     * Nothing may be spent while paused. Pause is for putting the game DOWN,
+     * not for an untimed planning window -- deciding under pressure is most of
+     * the game, and a pause you can act inside would remove it. It also keeps
+     * the action log honest: every entry lands on a tick the clock actually ran.
+     */
+    if (!S.running || S.over || S.paused) return;
     actionLog.push([S.tick, a]);   // what a server would replay
     /*
      * Deploy and Raise fill in ONE click rather than one guardian per click.
@@ -2053,9 +2101,11 @@ $rg_theme_img = $rg_theme > 0
 
   function end() {
     S.over = true; S.running = false;
+    S.paused = false;        // or the next run's board opens wearing the wash
     clearInterval(S.timer);
     musicStop();
     tracersClear();
+    paintPause();
     el.status.textContent = 'The wall is breached';
     log('The realm falls at wave ' + S.wave + '. Guardians lost: ' + S.dead + '.', true);
     beginBtn.textContent = 'Hold again';
@@ -2096,6 +2146,42 @@ $rg_theme_img = $rg_theme > 0
     paintSound();
   });
   paintSound();
+
+  /* ---- PAUSE ------------------------------------------------------------
+   * A run reaches an hour and NOTHING is saved. Losing that to a phone call is
+   * the worst failure this game has, and it is not a failure of play -- there
+   * is nothing to learn from it, only an hour gone.
+   *
+   * Auto-pauses when the tab is hidden, which is the interruption that actually
+   * happens: a call, an app switch, a locked screen. That case has to be handled
+   * for a second reason too -- a backgrounded tab has its timers throttled hard,
+   * so without this the game does not keep running so much as lurch, and the
+   * player returns to a wall that fell while the page was frozen.
+   *
+   * Resuming is always manual. Coming back to a siege already in progress, with
+   * a wave part-way across the field, is exactly the ambush being avoided.
+   */
+  var pauseBtn = document.getElementById('rg-pause');
+  function paintPause() {
+    if (!pauseBtn) return;
+    pauseBtn.hidden = !S.running || S.over;
+    pauseBtn.innerHTML = S.paused ? '&#9654;&#65039;' : '&#9208;&#65039;';
+    pauseBtn.title = S.paused ? 'Resume the siege' : 'Pause the siege';
+    pauseBtn.setAttribute('aria-pressed', S.paused ? 'true' : 'false');
+    game.classList.toggle('rg-paused', !!S.paused);
+  }
+  function setPaused(p) {
+    if (!S.running || S.over || S.paused === p) return;
+    S.paused = p;
+    if (p) { musicStop(); log('Siege paused. The horde waits.'); }
+    else   { if (musicOn) musicStart(); log('Siege resumed.'); }
+    paintPause();
+    render();
+  }
+  if (pauseBtn) pauseBtn.addEventListener('click', function () { setPaused(!S.paused); });
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) setPaused(true);
+  });
 
   /*
    * THE SCRATCH TOGGLE. Swaps which baseline REALM points at and rebuilds the
@@ -2164,9 +2250,11 @@ $rg_theme_img = $rg_theme > 0
     reset();
 
     S.running = true;
+    S.paused = false;        // a fresh siege never opens paused
     logEl.innerHTML = '';
     tracersClear();          // no shots left over from the run that just fell
     beginBtn.hidden = true;
+    paintPause();            // reveals the pause control, hidden until now
     startWave();
     musicStart();
     S.timer = setInterval(step, TICK);

@@ -1569,6 +1569,17 @@ What a doc page will have to get right, because none of it is guessable:
   (the replay action log is written in the id). Factory items are **implicit** -
   one button, always "Fortify"; the log says what it did after it lands.
 - **No saved progress, by design.** Every realm eventually falls to the horde.
+  That is exactly why the siege can be **paused** - a run reaches an hour, so
+  losing it to a phone call is the one failure a player learns nothing from.
+  Pause is gated inside `step()` (not by clearing the interval, so resuming
+  twice cannot start a second timer), it freezes `S.tick` so the `[tick, action]`
+  log replays identically either way, and it refuses every action, because a
+  pause you can act inside is an untimed planning window and deciding under
+  pressure is most of the game. It **auto-pauses on `visibilitychange`** - that
+  is the interruption that actually happens, and a backgrounded tab has its
+  timers throttled so hard the game lurches rather than runs. Resuming is always
+  manual: returning to a wave already half-way across the field is the ambush
+  being avoided.
 - **Horde spacing is the breath, not a tuning knob.** Attackers spawn off-screen
   in a column (`pos: 100 + i * (2.2 + rand() * 1.8)`) and walk in. In the user's
   words: *"the spacing is the breath that allows a player to focus on their mine
