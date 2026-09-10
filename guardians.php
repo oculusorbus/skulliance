@@ -2,37 +2,32 @@
 /*
  * REALM GUARDIANS -- prototype.
  *
- * This build exists to answer ONE question: is keeping locations stocked under a
- * wave clock actually fun? Everything else in realm-guardians.md is cheap to add
- * afterwards and expensive to tune blind. Obscura was built the same way and it
- * was the right call.
+ * Answers one question: is keeping locations stocked under a wave clock fun?
+ * All seven locations are live now, and the baseline comes from the player's
+ * REAL realm. See realm-guardians.md for the full design.
  *
  * ---------------------------------------------------------------------------
- * IT CANNOT AFFECT REALMS OR RAIDS. THAT IS STRUCTURAL, NOT A PROMISE.
+ * IT CANNOT DAMAGE REALMS OR RAIDS. THAT IS STRUCTURAL, NOT A PROMISE.
  * ---------------------------------------------------------------------------
- *   - NO WRITES ANYWHERE. Not one INSERT, UPDATE or DELETE, and no migration.
- *     Location levels and army size are hardcoded below.
- *   - The only query is a READ of public avatars from `users` (see the horde
- *     below). It touches none of realms, realms_locations, locations, soldiers,
- *     weapons or raids*.
- *   - db.php is not edited. Nothing in the realms/raids code path is touched.
- *   - Nothing links here. No nav entry, no hub card, no leaderboard.
- *   - No CARBON, no rewards, no writes of any kind anywhere.
+ * Every query below is a SELECT. There is no INSERT, UPDATE, DELETE, REPLACE,
+ * TRUNCATE, ALTER or DROP anywhere in this file, and no migration.
  *
- * When this DOES read a real realm (build order step 6), it reads a SNAPSHOT and
- * plays with copies -- a soldier dying here must never kill the real one. See
- * realm-guardians.md.
+ * It takes a SNAPSHOT and plays with copies. A guardian dying in a siege is a
+ * number decrementing in a JS object -- it does not touch `soldiers`, does not
+ * set `dead`, does not consume a weapon from `gear`, and does not change a
+ * location level. Play it a hundred times and your realm is exactly as you left
+ * it. That guarantee is the whole reason this can ship next to raids.
+ *
+ * Nothing links here: no nav, no hub card, no leaderboard, no cron, no rewards.
  *
  * ---------------------------------------------------------------------------
- * WHY THE SIMULATION IS DETERMINISTIC EVEN THOUGH NOTHING IS SUBMITTED YET
+ * WHY THE SIMULATION IS DETERMINISTIC WHEN NOTHING IS SUBMITTED YET
  * ---------------------------------------------------------------------------
- * Fixed timestep, seeded PRNG, no Math.random anywhere. Nothing here needs that
- * today. But the real version has to accept a result on a board that pays
- * CARBON, and the only honest way to do that is to replay the player's inputs
- * server-side and derive the outcome rather than trusting a reported one. That
- * requires the same simulation to produce the same result from the same seed.
- * Building it non-deterministically now would mean throwing it away later --
- * this is the Skull Racer ghost-trace lesson, applied before it bites.
+ * Fixed timestep, seeded PRNG, no Math.random, actions recorded with their tick.
+ * The real version has to accept a result on a board that pays CARBON, and the
+ * only honest way is replaying the player's inputs server-side rather than
+ * trusting a reported score. Building it any other way now means throwing it
+ * away later -- the Skull Racer ghost-trace lesson, applied before it bites.
  */
 include 'db.php';
 include 'message.php';
@@ -40,91 +35,216 @@ include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
 
-/*
- * THE HORDE IS OTHER STAKERS.
- *
- * Each attacker wears a real member's avatar. It costs nothing -- avatars are
- * already public on every leaderboard podium and profile, so this exposes
- * nothing new -- and it turns an anonymous wave into people you know. Being
- * overrun by names from your own Discord is a far better story than being
- * overrun by red squares, and raids already cast members as each other's
- * attackers, so the fiction is consistent with what Realms does today.
- *
- * READ ONLY, and only the `users` table. Same construction and same
- * icons/skull.png fallback as renderPodium() in leaderboards.php:302-304.
- *
- * The current player is excluded -- you are defending, you should not be in the
- * horde attacking yourself.
- *
- * Purely COSMETIC: avatars are assigned at render time by foe index and never
- * enter the simulation, so the seeded run stays reproducible regardless of who
- * happens to be drawn.
- */
 $rg_me = intval($_SESSION['userData']['user_id'] ?? 0);
-$rg_horde = array();
-$rg_r = $conn->query("SELECT username, discord_id, avatar FROM users
-                      WHERE discord_id != '' AND avatar != '' AND id != " . $rg_me . "
-                      ORDER BY RAND() LIMIT 40");
-if ($rg_r) {
-	while ($rg_u = $rg_r->fetch_assoc()) {
-		$rg_horde[] = array(
-			'name' => $rg_u['username'],
-			'img'  => 'https://cdn.discordapp.com/avatars/' . $rg_u['discord_id'] . '/' . $rg_u['avatar'] . '.png',
-		);
+
+/* ---------------------------------------------------------------------------
+ * THE SNAPSHOT. Read-only, and the only reason this file touches the database.
+ * --------------------------------------------------------------------------- */
+$rg_levels = array('tower'=>0,'barracks'=>0,'armory'=>0,'crypt'=>0,'portal'=>0,'factory'=>0,'mine'=>0);
+$rg_army = 0; $rg_armed = 0; $rg_cache = 0; $rg_wlevel = 1; $rg_realm_name = '';
+$rg_has_realm = false;
+$rg_units = array();   // the player's own soldiers, as NFT art
+$rg_wicon = '';        // the best weapon in the cache, worn by armed guardians
+
+if ($rg_me > 0) {
+	$rr = $conn->query("SELECT id, name FROM realms WHERE user_id = $rg_me AND active = 1 LIMIT 1");
+	if ($rr && $rr->num_rows > 0) {
+		$rrow = $rr->fetch_assoc();
+		$rg_realm_id = intval($rrow['id']);
+		$rg_realm_name = (string)$rrow['name'];
+		$rg_has_realm = true;
+
+		// Levels by NAME, not by hardcoded location id -- ids are data, and a
+		// reordered locations table should not silently rewire the game.
+		$lr = $conn->query("SELECT l.name, rl.level FROM realms_locations rl
+		                    INNER JOIN locations l ON l.id = rl.location_id
+		                    WHERE rl.realm_id = $rg_realm_id");
+		if ($lr) while ($l = $lr->fetch_assoc()) {
+			$k = strtolower(trim($l['name']));
+			if (array_key_exists($k, $rg_levels)) $rg_levels[$k] = intval($l['level']);
+		}
+
+		// The army: enlisted NFTs still alive. Same conditions the realm itself
+		// uses everywhere -- dead IS NULL AND active = 1.
+		$sr = $conn->query("SELECT COUNT(*) AS cnt FROM soldiers
+		                    WHERE realm_id = $rg_realm_id AND dead IS NULL AND active = 1");
+		if ($sr && $sr->num_rows) $rg_army = intval($sr->fetch_assoc()['cnt']);
+
+		$ar = $conn->query("SELECT COUNT(*) AS cnt FROM soldiers
+		                    WHERE realm_id = $rg_realm_id AND dead IS NULL AND active = 1
+		                    AND weapon_id > 0");
+		if ($ar && $ar->num_rows) $rg_armed = intval($ar->fetch_assoc()['cnt']);
+
+		/*
+		 * THE GUARDIANS THEMSELVES. Soldiers are enlisted NFTs, so the units
+		 * riding out of the Portal wear their real artwork -- your skulls going
+		 * out against their faces. Symmetry with the avatar horde, and it costs
+		 * nothing: the art is already cached on this server.
+		 *
+		 * LOCAL CACHE ONLY, the same rule Obscura settled on: getIPFS() falls
+		 * back to a public gateway that is slow and often fails outright, and a
+		 * unit that never renders is worse than a plain marker. Files under 1KB
+		 * are treated as truncated. No art simply means plain markers.
+		 */
+		$ur = $conn->query("SELECT nfts.ipfs, nfts.name, nfts.collection_id, collections.project_id
+		                    FROM soldiers
+		                    INNER JOIN nfts ON nfts.id = soldiers.nft_id
+		                    INNER JOIN collections ON collections.id = nfts.collection_id
+		                    WHERE soldiers.realm_id = $rg_realm_id
+		                      AND soldiers.dead IS NULL AND soldiers.active = 1
+		                    LIMIT 40");
+		if ($ur) while ($u = $ur->fetch_assoc()) {
+			$ipfs = (string)$u['ipfs'];
+			if ($ipfs === '' || strpos($ipfs, 'data:image/svg+xml;base64') === 0) continue;
+			$pid = intval($u['project_id']); $cid = intval($u['collection_id']);
+			$hit = glob(__DIR__ . '/images/nfts/' . $pid . '/' . $cid . '/' . md5($ipfs) . '.*');
+			if (empty($hit) || @filesize($hit[0]) < 1024) continue;
+			$rg_units[] = array(
+				'name' => (string)($u['name'] ?? ''),
+				'img'  => '/staking/images/nfts/' . $pid . '/' . $cid . '/' . md5($ipfs) . '.'
+				          . pathinfo($hit[0], PATHINFO_EXTENSION),
+			);
+		}
 	}
+
+	// The weapon cache is per USER, not per realm -- gear is inventory.
+	$gr = $conn->query("SELECT COALESCE(SUM(g.quantity),0) AS qty,
+	                           COALESCE(MAX(w.level),1) AS lvl
+	                    FROM gear g
+	                    INNER JOIN weapons w ON w.id = g.item_id
+	                    WHERE g.user_id = $rg_me AND g.type = 'weapon' AND g.quantity > 0");
+	if ($gr && $gr->num_rows) {
+		$g = $gr->fetch_assoc();
+		$rg_cache  = intval($g['qty']);
+		$rg_wlevel = max(1, intval($g['lvl']));
+	}
+
+	/*
+	 * The best weapon in the cache, worn by armed guardians on the field.
+	 *
+	 * Icon path is built exactly as cryptcrawl-render.php:379 builds it --
+	 * icons/<lowercase name, spaces to dashes>.png -- which is also what the
+	 * Armory modal in Realms uses. All ten verified 200 before shipping; note
+	 * the dashes matter ("Machine Gun" is machine-gun.png, and machinegun.png
+	 * is a 404).
+	 */
+	$wr = $conn->query("SELECT w.name FROM gear g
+	                    INNER JOIN weapons w ON w.id = g.item_id
+	                    WHERE g.user_id = $rg_me AND g.type = 'weapon' AND g.quantity > 0
+	                    ORDER BY w.level DESC LIMIT 1");
+	if ($wr && $wr->num_rows > 0) {
+		$wn = (string)$wr->fetch_assoc()['name'];
+		if ($wn !== '') $rg_wicon = 'icons/' . strtolower(str_replace(array('%', ' '), array('', '-'), $wn)) . '.png';
+	}
+}
+
+/*
+ * THE CONSCRIPT FLOOR. No realm means no enlisted soldiers and nothing to
+ * deploy -- not a weak position, an empty one. Without this the entry-level
+ * siege is unplayable rather than merely hard, and the game recruits nobody.
+ */
+if (!$rg_has_realm) {
+	$rg_levels = array('tower'=>1,'barracks'=>1,'armory'=>1,'crypt'=>1,'portal'=>1,'factory'=>1,'mine'=>1);
+	$rg_army   = 4;
+	$rg_armed  = 1;
+	$rg_cache  = 2;
+}
+
+// A realm is fast-forward: total investment sets where on the ladder you begin.
+$rg_total = array_sum($rg_levels);
+$rg_start_wave = $rg_has_realm ? max(1, intval(floor($rg_total / 4))) : 1;
+
+// The horde wears real member avatars. Public everywhere already (podiums,
+// profiles), so this exposes nothing new -- and being overrun by names from
+// your own Discord is a story. The player is excluded from their own horde.
+$rg_horde = array();
+$hr = $conn->query("SELECT username, discord_id, avatar FROM users
+                    WHERE discord_id != '' AND avatar != '' AND id != $rg_me
+                    ORDER BY RAND() LIMIT 40");
+if ($hr) while ($h = $hr->fetch_assoc()) {
+	$rg_horde[] = array(
+		'name' => $h['username'],
+		'img'  => 'https://cdn.discordapp.com/avatars/' . $h['discord_id'] . '/' . $h['avatar'] . '.png',
+	);
 }
 ?>
 
 <div class="row" id="row1">
-  <div class="col1of3" style="max-width:760px;margin:0 auto;flex:1 1 100%;">
+  <div class="col1of3" style="max-width:820px;margin:0 auto;flex:1 1 100%;">
 
 	<h2 class="rg-intro">Realm Guardians <span class="rg-tag">prototype</span></h2>
-	<div class="rg-blurb rg-intro">Hold the wall. Keep the Tower manned, the Armory
-		stocked and the dead moving back out of the Crypt &mdash; the horde does not wait.
-		<br><em>Hardcoded levels, nothing saved, nothing rewarded. This is here to find out if it's fun.</em></div>
+	<div class="rg-blurb rg-intro">
+		<?php if ($rg_has_realm): ?>
+			Defending <strong><?php echo htmlspecialchars($rg_realm_name); ?></strong> &mdash;
+			<?php echo $rg_army; ?> guardians, <?php echo $rg_cache; ?> weapons in the cache,
+			<?php echo $rg_total; ?> total location levels. Your realm starts you at wave <?php echo $rg_start_wave; ?>.
+		<?php else: ?>
+			You have no realm, so you hold the wall with conscripts. Build a realm and you
+			start further up the same ladder.
+		<?php endif; ?>
+		<br><em>Nothing here is saved and nothing is spent. Your realm is untouched no matter how this goes.</em>
+	</div>
 
 	<div id="rg-game">
 
 		<div class="rg-hud">
 			<span>Wave <strong id="rg-wave">0</strong></span>
-			<span>Tower <strong id="rg-hp">100</strong></span>
+			<span>Wall <strong id="rg-hp">100</strong></span>
 			<span>CARBON <strong id="rg-carbon">0</strong></span>
 			<span id="rg-status">Press Begin</span>
-			<!-- Always reachable, never buried in a menu. A game that makes noise
-			     must let you stop it in one tap. -->
 			<button type="button" id="rg-sound" title="Mute" aria-pressed="true">&#128266;</button>
 		</div>
 
-		<!-- The approach. Enemies march right to left toward the wall. -->
 		<div id="rg-field">
 			<div id="rg-wall"></div>
+			<div id="rg-sortie"></div>
 			<div id="rg-enemies"></div>
 		</div>
 
 		<div id="rg-locations">
-			<div class="rg-loc" data-loc="tower">
-				<div class="rg-loc-name">Tower <span class="rg-lvl" id="rg-lvl-tower">1</span></div>
-				<div class="rg-loc-stat"><strong id="rg-garrison">0</strong> / <span id="rg-garrison-cap">4</span> garrison</div>
+			<div class="rg-loc">
+				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/tower.png" alt="" onerror="this.style.display='none'">Tower <span class="rg-lvl" id="rg-lvl-tower">1</span></div>
+				<div class="rg-loc-stat"><strong id="rg-garrison">0</strong>/<span id="rg-garrison-cap">4</span> garrison &middot; <span id="rg-armed">0</span> armed</div>
 				<button type="button" class="rg-act" data-act="deploy">Deploy</button>
 				<button type="button" class="rg-act rg-up" data-act="up-tower">Upgrade</button>
 			</div>
-			<div class="rg-loc" data-loc="barracks">
-				<div class="rg-loc-name">Barracks <span class="rg-lvl" id="rg-lvl-barracks">1</span></div>
-				<div class="rg-loc-stat"><strong id="rg-reserve">3</strong> in reserve</div>
+			<div class="rg-loc">
+				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/barracks.png" alt="" onerror="this.style.display='none'">Barracks <span class="rg-lvl" id="rg-lvl-barracks">1</span></div>
+				<div class="rg-loc-stat"><strong id="rg-reserve">0</strong> in reserve</div>
 				<div class="rg-bar"><i id="rg-bar-barracks"></i></div>
 				<button type="button" class="rg-act rg-up" data-act="up-barracks">Upgrade</button>
 			</div>
-			<div class="rg-loc" data-loc="armory">
-				<div class="rg-loc-name">Armory <span class="rg-lvl" id="rg-lvl-armory">1</span></div>
-				<div class="rg-loc-stat"><strong id="rg-weapons">2</strong> weapons</div>
+			<div class="rg-loc">
+				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/armory.png" alt="" onerror="this.style.display='none'">Armory <span class="rg-lvl" id="rg-lvl-armory">1</span></div>
+				<div class="rg-loc-stat"><strong id="rg-weapons">0</strong> weapons</div>
 				<div class="rg-bar"><i id="rg-bar-armory"></i></div>
 				<button type="button" class="rg-act rg-up" data-act="up-armory">Upgrade</button>
 			</div>
-			<div class="rg-loc" data-loc="crypt">
-				<div class="rg-loc-name">Crypt <span class="rg-lvl" id="rg-lvl-crypt">1</span></div>
+			<div class="rg-loc">
+				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/crypt.png" alt="" onerror="this.style.display='none'">Crypt <span class="rg-lvl" id="rg-lvl-crypt">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-dead">0</strong> dead</div>
 				<button type="button" class="rg-act" data-act="raise">Raise</button>
 				<button type="button" class="rg-act rg-up" data-act="up-crypt">Upgrade</button>
+			</div>
+			<div class="rg-loc">
+				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/portal.png" alt="" onerror="this.style.display='none'">Portal <span class="rg-lvl" id="rg-lvl-portal">1</span></div>
+				<div class="rg-loc-stat"><strong id="rg-sortied">0</strong> in the field</div>
+				<div class="rg-bar"><i id="rg-bar-portal"></i></div>
+				<button type="button" class="rg-act" data-act="sortie">Sortie</button>
+				<button type="button" class="rg-act rg-up" data-act="up-portal">Upgrade</button>
+			</div>
+			<div class="rg-loc">
+				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/factory.png" alt="" onerror="this.style.display='none'">Factory <span class="rg-lvl" id="rg-lvl-factory">1</span></div>
+				<div class="rg-loc-stat"><strong id="rg-items">0</strong> items</div>
+				<div class="rg-bar"><i id="rg-bar-factory"></i></div>
+				<button type="button" class="rg-act" data-act="fortify">Fortify</button>
+				<button type="button" class="rg-act rg-up" data-act="up-factory">Upgrade</button>
+			</div>
+			<div class="rg-loc rg-wide">
+				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/mine.png" alt="" onerror="this.style.display='none'">Mine <span class="rg-lvl" id="rg-lvl-mine">1</span></div>
+				<div class="rg-loc-stat">CARBON flowing &middot; <span id="rg-mine-rate">+0/s</span></div>
+				<div class="rg-bar"><i id="rg-bar-mine"></i></div>
+				<button type="button" class="rg-act rg-up" data-act="up-mine">Upgrade</button>
 			</div>
 		</div>
 
@@ -137,33 +257,44 @@ if ($rg_r) {
 
 <style>
 .rg-blurb { font-size:.82rem; color:rgba(255,255,255,.5); margin:-6px 0 16px; line-height:1.5; }
+.rg-blurb strong { color:#00c8a0; }
 .rg-tag { font-size:.6rem; text-transform:uppercase; letter-spacing:.12em; color:#ffcc44; border:1px solid rgba(255,204,68,.4); border-radius:10px; padding:2px 8px; vertical-align:middle; }
 .rg-hud { display:flex; gap:16px; font-size:.78rem; color:rgba(255,255,255,.55); margin-bottom:10px; flex-wrap:wrap; align-items:center; }
 .rg-hud strong { color:#00c8a0; font-size:1rem; }
 #rg-status { margin-left:auto; color:#ffcc44; }
 #rg-sound { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
 
-/* The approach. Enemies are absolutely positioned by percentage of the run, so
-   the field scales to any width without the simulation knowing about pixels. */
-#rg-field { position:relative; height:74px; background:#0a1929; border:1px solid rgba(255,255,255,.08); border-radius:8px; overflow:hidden; margin-bottom:12px; }
+#rg-field { position:relative; height:80px; background:#0a1929; border:1px solid rgba(255,255,255,.08); border-radius:8px; overflow:hidden; margin-bottom:12px; }
 #rg-wall { position:absolute; left:0; top:0; bottom:0; width:10px; background:linear-gradient(180deg,#00c8a0,#007a61); }
-#rg-enemies { position:absolute; inset:0; }
+#rg-enemies, #rg-sortie { position:absolute; inset:0; }
 .rg-foe { position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; border-radius:50%; background:#c0392b; border:2px solid #c0392b; transition:left .1s linear; }
 .rg-foe img { width:100%; height:100%; border-radius:50%; display:block; object-fit:cover; }
-/* Tougher attackers are bigger and ringed, so a dangerous one reads at a glance
-   without needing a label. */
 .rg-foe.rg-tough { width:30px; height:30px; border-color:#c39bd3; box-shadow:0 0 8px rgba(195,155,211,.6); }
 .rg-foe i { position:absolute; left:0; bottom:-6px; height:2px; background:#ff6b6b; }
+/* Sortied guardians sit above the line so they read as yours, not theirs. */
+/* Your guardians: their own NFT art, ringed in the platform green so they read
+   as yours at a glance against the red horde. */
+.rg-unit { position:absolute; top:16%; width:22px; height:22px; border-radius:50%; background:#0a1929; border:2px solid #00c8a0; box-shadow:0 0 6px rgba(0,200,160,.5); transition:left .1s linear; }
+.rg-unit img { width:100%; height:100%; border-radius:50%; display:block; object-fit:cover; }
+.rg-unit.rg-armed { border-color:#ffcc44; box-shadow:0 0 8px rgba(255,204,68,.6); }
+/* The weapon they carry, badged on the shoulder. */
+.rg-unit b { position:absolute; right:-5px; bottom:-5px; width:14px; height:14px; background:#07111d; border-radius:50%; display:block; padding:1px; }
+.rg-unit b img { width:100%; height:100%; object-fit:contain; border-radius:0; }
 
-#rg-locations { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+#rg-locations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 .rg-loc { background:#0d1e30; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 10px; }
-.rg-loc-name { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.5); }
+.rg-loc.rg-wide { grid-column:1 / -1; }
+.rg-loc-name { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:6px; }
+/* The realm's own location art (icons/locations/<name>.png -- the same files
+   realms.php:106 uses, all verified 200). Hidden rather than broken if one is
+   ever missing, since assets ship by FTP and a 404 must not leave a torn icon. */
+.rg-icon { width:20px; height:20px; object-fit:contain; opacity:.85; flex:0 0 auto; }
 .rg-lvl { color:#ffcc44; }
-.rg-loc-stat { font-size:.82rem; margin:3px 0 7px; }
+.rg-loc-stat { font-size:.8rem; margin:3px 0 7px; }
 .rg-loc-stat strong { color:#fff; font-size:1rem; }
 .rg-bar { height:3px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; margin-bottom:7px; }
 .rg-bar i { display:block; height:100%; width:0; background:#00c8a0; }
-.rg-act { background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:5px; padding:7px 10px; font-size:.76rem; cursor:pointer; margin-right:4px; }
+.rg-act { background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:5px; padding:7px 9px; font-size:.74rem; cursor:pointer; margin:0 3px 3px 0; }
 .rg-act.rg-up { background:rgba(255,255,255,.12); color:rgba(255,255,255,.75); }
 .rg-act:disabled { opacity:.32; cursor:default; }
 #rg-log { margin-top:12px; font-size:.78rem; color:rgba(255,255,255,.45); min-height:3.2em; line-height:1.5; }
@@ -171,14 +302,15 @@ if ($rg_r) {
 #rg-begin { display:block; margin:14px auto 0; background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:6px; padding:11px 26px; font-size:.9rem; cursor:pointer; }
 #rg-begin[hidden] { display:none; }
 
-/* Same lesson Obscura learned the hard way: the board has to fit a phone with
-   no scrolling, and nothing may sit under a fixed bottom strip. */
+/* The lessons Obscura paid for: fits a phone, nothing pinned over the board. */
+@media (max-width:760px) { #rg-locations { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:560px) {
   .rg-intro { display:none; }
-  #rg-field { height:60px; }
+  #rg-field { height:64px; }
   #rg-locations { gap:6px; }
   .rg-loc { padding:7px 8px; }
-  .rg-act { padding:8px 9px; font-size:.74rem; }
+  .rg-loc-stat { font-size:.74rem; }
+  .rg-act { padding:8px 8px; font-size:.72rem; }
   body::after { content:none !important; display:none !important; }
   #quick-menu { display:none !important; }
   #back-to-top-button { display:none !important; }
@@ -191,14 +323,20 @@ if ($rg_r) {
   var game = document.getElementById('rg-game');
   if (!game) return;
 
-  /* ------------------------------------------------------------------
-   * Deterministic core. Seeded PRNG + fixed timestep, no Math.random.
-   * Same seed + same actions at the same ticks == same outcome, which is
-   * what lets a server replay a run later instead of trusting a score.
-   * ------------------------------------------------------------------ */
-  /* The horde, from PHP. Cosmetic only -- never read by the simulation. */
+  /* The snapshot, handed over from PHP. COPIES -- nothing written back. */
+  var REALM = {
+    levels: <?php echo json_encode($rg_levels); ?>,
+    army:   <?php echo intval($rg_army); ?>,
+    armed:  <?php echo intval($rg_armed); ?>,
+    cache:  <?php echo intval($rg_cache); ?>,
+    wlevel: <?php echo intval($rg_wlevel); ?>,
+    start:  <?php echo intval($rg_start_wave); ?>
+  };
   var HORDE = <?php echo json_encode($rg_horde); ?>;
+  var UNITS = <?php echo json_encode($rg_units); ?>;   // your soldiers, as NFT art
+  var WICON = <?php echo json_encode($rg_wicon); ?>;   // best weapon in the cache
 
+  /* Deterministic core: seeded PRNG, fixed timestep, no Math.random. */
   var SEED = 20260909;
   function mulberry32(a) {
     return function () {
@@ -209,96 +347,87 @@ if ($rg_r) {
     };
   }
   var rand = mulberry32(SEED);
+  var TICK = 100;
+  var actionLog = [];
 
-  var TICK = 100;                 // ms per simulation step, fixed
-  var actionLog = [];             // what a server would replay
+  var S = {};
+  function reset() {
+    S = {
+      running:false, over:false, tick:0, wave:REALM.start - 1,
+      hp:100, maxhp:100, carbon:0,
+      reserve:REALM.army, weapons:REALM.cache, dead:0,
+      garrison:0, armed:0, items:0, sortied:[],
+      lvl:JSON.parse(JSON.stringify(REALM.levels)),
+      prod:{ barracks:0, armory:0, factory:0, mine:0, portal:0 },
+      foes:[], nextAttack:0, betweenWaves:0, fortifyFor:0
+    };
+  }
 
-  /* Hardcoded stand-ins for realm state. Step 6 replaces these with a
-     read-only snapshot of the player's actual locations. */
-  var S = {
-    running:false, over:false, tick:0, wave:0,
-    hp:100, carbon:0, reserve:3, weapons:2, dead:0, garrison:0, armed:0,
-    lvl:{ tower:1, barracks:1, armory:1, crypt:1 },
-    prod:{ barracks:0, armory:0 },
-    foes:[], spawnQueue:[], nextAttack:0, betweenWaves:0
-  };
+  /* Every level is a RATE or a CAP -- never one power number. That is the whole
+     point of mapping realm locations onto a siege. */
+  function L(k) { return Math.max(1, S.lvl[k] || 1); }
+  function garrisonCap()  { return 3 + L('tower'); }
+  function reserveCap()   { return 6 + L('barracks') * 3; }
+  function weaponCap()    { return 4 + L('armory') * 3; }
+  function itemCap()      { return 1 + Math.ceil(L('factory') / 2); }
+  function barracksRate() { return Math.max(12, 62 - L('barracks') * 5); }
+  function armoryRate()   { return Math.max(16, 72 - L('armory') * 5); }
+  function factoryRate()  { return Math.max(60, 240 - L('factory') * 16); }
+  function mineRate()     { return Math.max(6, 26 - L('mine') * 2); }
+  function portalRate()   { return Math.max(40, 170 - L('portal') * 12); }
+  function sortieSize()   { return Math.max(1, Math.ceil(L('portal') / 2)); }
+  function raiseCost()    { return Math.max(3, 12 - L('crypt') * 2); }
+  function upgradeCost(k) { return 18 * L(k); }
+  // Weapon LEVEL matters, not just count -- a better cache hits harder.
+  function towerDamage()  {
+    var d = S.armed * (2 + REALM.wlevel) + (S.garrison - S.armed) * 1;
+    return S.fortifyFor > 0 ? Math.round(d * 1.5) : d;
+  }
 
-  /* Levels are RATES AND CAPS, not a power number -- the whole point of
-     mapping realm locations onto a siege. */
-  function garrisonCap() { return 3 + S.lvl.tower; }
-  function reserveCap()  { return 4 + S.lvl.barracks * 2; }
-  function weaponCap()   { return 3 + S.lvl.armory * 2; }
-  function barracksRate(){ return Math.max(14, 60 - S.lvl.barracks * 6); }  // ticks per soldier
-  function armoryRate()  { return Math.max(18, 70 - S.lvl.armory * 6); }
-  function raiseCost()   { return Math.max(4, 12 - S.lvl.crypt * 2); }
-  function upgradeCost(k){ return 20 * S.lvl[k]; }
-  function towerDamage() { return S.armed * 3 + (S.garrison - S.armed) * 1; }
+  var el = {};
+  ['wave','hp','carbon','reserve','weapons','dead','garrison','garrison-cap','armed','status',
+   'sortied','items','mine-rate',
+   'lvl-tower','lvl-barracks','lvl-armory','lvl-crypt','lvl-portal','lvl-factory','lvl-mine',
+   'bar-barracks','bar-armory','bar-factory','bar-mine','bar-portal']
+    .forEach(function (k) { el[k] = document.getElementById('rg-' + k); });
+  var foesEl = document.getElementById('rg-enemies');
+  var sortieEl = document.getElementById('rg-sortie');
+  var logEl = document.getElementById('rg-log');
+  var beginBtn = document.getElementById('rg-begin');
 
-  /* ------------------------------------------------------------------
-   * THE CACOPHONY.
-   *
-   * Reuses Crypt Crawl's weapon sounds (audio/sounds/, all verified 200 on the
-   * live server). Free assets, and they carry INFORMATION rather than just
-   * decorating: armed defenders fire guns, unarmed ones swing fists. Run the
-   * Armory dry and you HEAR the wall drop from gunfire to bare hands before you
-   * notice the counter. That is the Armory mattering through a channel the eye
-   * isn't watching during a wave.
-   *
-   * Density scales with the garrison, so a full Tower genuinely roars and a
-   * thinned one goes quiet. Capped, because "cacophony" and "unlistenable" are
-   * a volume knob apart.
-   *
-   * Cosmetic only, like the avatars -- never read by step(), so it cannot
-   * affect the deterministic result.
-   * ------------------------------------------------------------------ */
+  /* ---- The cacophony. Crypt Crawl's weapon sounds, reused from audio/sounds/.
+     Armed defenders fire guns, unarmed swing fists, so an empty Armory is
+     AUDIBLE before the counter is read. Cosmetic: never touches the sim. ---- */
   var ARMED_SFX   = ['machinegun','pistol','sniperrifle','rocketlauncher','artillery','grenade','flamethrower','demolition'];
   var UNARMED_SFX = ['fist','melee','tacticalkatana'];
   var sfxOn = true, sfxPool = {}, sfxCursor = 0;
-
   function sfxLoad(name) {
-    // Three of each so overlapping shots don't cut each other off.
     if (sfxPool[name]) return sfxPool[name];
     var pool = [];
     for (var i = 0; i < 3; i++) {
       var a = new Audio('audio/sounds/' + name + '.mp3');
-      a.preload = 'auto'; a.volume = 0.3;
-      pool.push(a);
+      a.preload = 'auto'; a.volume = 0.3; pool.push(a);
     }
     sfxPool[name] = { list: pool, i: 0 };
     return sfxPool[name];
   }
   function sfxPlay(name, vol) {
     if (!sfxOn) return;
-    var p = sfxLoad(name);
-    var a = p.list[p.i]; p.i = (p.i + 1) % p.list.length;
+    var p = sfxLoad(name), a = p.list[p.i];
+    p.i = (p.i + 1) % p.list.length;
     try { a.currentTime = 0; a.volume = vol === undefined ? 0.3 : vol; a.play().catch(function () {}); } catch (e) {}
   }
-  // A volley's worth of fire. More defenders, more noise -- to a limit.
   function sfxVolley() {
     if (!sfxOn) return;
     var shots = Math.min(3, Math.max(1, Math.ceil(S.garrison / 2)));
     for (var i = 0; i < shots; i++) {
-      // Armed first: the guns you can hear are the weapons you actually issued.
-      var armedShot = i < S.armed;
-      var bank = armedShot ? ARMED_SFX : UNARMED_SFX;
+      var bank = (i < S.armed) ? ARMED_SFX : UNARMED_SFX;
       var name = bank[(sfxCursor++) % bank.length];
-      // Stagger slightly so it reads as a firefight, not one stacked thud.
       (function (n, d) { setTimeout(function () { sfxPlay(n, 0.26); }, d); })(name, i * 70);
     }
   }
 
-  var el = {};
-  ['wave','hp','carbon','reserve','weapons','dead','garrison','garrison-cap','status',
-   'lvl-tower','lvl-barracks','lvl-armory','lvl-crypt','bar-barracks','bar-armory']
-    .forEach(function (k) { el[k] = document.getElementById('rg-' + k); });
-  var foesEl = document.getElementById('rg-enemies');
-  var logEl  = document.getElementById('rg-log');
-  var beginBtn = document.getElementById('rg-begin');
-
-  /* Each foe carries a stable id, so the same attacker keeps the same face for
-     its whole life on the field rather than flickering between members every
-     render. Falls back to a nameless raider when nobody could be loaded. */
-  var foeSeq = 0;
+  var foeSeq = 0, unitSeq = 0;
   function foeIdentity(f) {
     if (!HORDE.length) return { name:'A raider', img:'' };
     return HORDE[f.id % HORDE.length];
@@ -307,56 +436,46 @@ if ($rg_r) {
     return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;')
                     .replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
-
   function log(msg, bad) {
     logEl.innerHTML = (bad ? '<b>' + msg + '</b>' : msg) + '<br>' +
       logEl.innerHTML.split('<br>').slice(0, 2).join('<br>');
   }
 
-  /* Waves escalate in count and toughness. Drawn from the seeded PRNG so the
-     whole siege is reproducible from SEED alone. */
   function buildWave(n) {
-    var q = [], count = 3 + Math.floor(n * 1.6);
+    var q = [], count = 3 + Math.floor(n * 1.5);
     for (var i = 0; i < count; i++) {
-      var tough = n >= 3 && rand() < 0.18 + n * 0.02;
-      q.push({
-        id: foeSeq++,
-        hp: (tough ? 26 : 10) + n * 3,
-        max:(tough ? 26 : 10) + n * 3,
-        speed:(tough ? 0.22 : 0.34) + n * 0.006,
-        pos:100 + i * (7 + rand() * 6),
-        tough:tough
-      });
+      var tough = n >= 3 && rand() < 0.16 + n * 0.015;
+      var hp = (tough ? 26 : 10) + n * 4;
+      q.push({ id:foeSeq++, hp:hp, max:hp,
+               speed:(tough ? 0.20 : 0.32) + n * 0.005,
+               pos:100 + i * (7 + rand() * 6), tough:tough });
     }
     return q;
   }
 
   function startWave() {
     S.wave++;
-    S.spawnQueue = buildWave(S.wave);
-    S.foes = S.spawnQueue;
-    S.spawnQueue = [];
+    S.foes = buildWave(S.wave);
     el.status.textContent = 'Wave ' + S.wave + ' incoming';
     log('Wave ' + S.wave + ' approaches &mdash; ' + S.foes.length + ' of them.');
   }
 
   function step() {
     S.tick++;
+    if (S.fortifyFor > 0) S.fortifyFor--;
 
-    // Production. Barracks trains soldiers, Armory forges weapons, both capped.
+    // Production. Every location earns its keep on a timer.
     S.prod.barracks++;
-    if (S.prod.barracks >= barracksRate()) {
-      S.prod.barracks = 0;
-      if (S.reserve < reserveCap()) S.reserve++;
-    }
+    if (S.prod.barracks >= barracksRate()) { S.prod.barracks = 0; if (S.reserve < reserveCap()) S.reserve++; }
     S.prod.armory++;
-    if (S.prod.armory >= armoryRate()) {
-      S.prod.armory = 0;
-      if (S.weapons < weaponCap()) S.weapons++;
-    }
+    if (S.prod.armory >= armoryRate()) { S.prod.armory = 0; if (S.weapons < weaponCap()) S.weapons++; }
+    S.prod.factory++;
+    if (S.prod.factory >= factoryRate()) { S.prod.factory = 0; if (S.items < itemCap()) S.items++; }
+    S.prod.mine++;
+    if (S.prod.mine >= mineRate()) { S.prod.mine = 0; S.carbon += L('mine'); }
+    if (S.prod.portal < portalRate()) S.prod.portal++;
 
-    // The Tower fires on the closest foe. Armed soldiers hit far harder, which
-    // is what makes keeping the Armory stocked matter.
+    // The Tower fires on the closest foe still short of the wall.
     S.nextAttack--;
     if (S.nextAttack <= 0 && S.foes.length && S.garrison > 0) {
       S.nextAttack = 6;
@@ -364,41 +483,62 @@ if ($rg_r) {
       for (var i = 1; i < S.foes.length; i++) if (S.foes[i].pos < target.pos) target = S.foes[i];
       target.hp -= towerDamage();
       sfxVolley();
-      if (target.hp <= 0) {
-        S.foes.splice(S.foes.indexOf(target), 1);
-        S.carbon += target.tough ? 6 : 2;   // economy comes from killing, not a mine
-        sfxPlay('kill', 0.22);
+      if (target.hp <= 0) { kill(target); }
+    }
+
+    // Sortied guardians meet the horde in the open -- no tower behind them.
+    for (var s = S.sortied.length - 1; s >= 0; s--) {
+      var u = S.sortied[s];
+      var near = null, bestd = 999;
+      for (var k = 0; k < S.foes.length; k++) {
+        var d = Math.abs(S.foes[k].pos - u.pos);
+        if (d < bestd) { bestd = d; near = S.foes[k]; }
+      }
+      if (!near) { u.pos = Math.max(u.pos - 0.4, 2); continue; }
+      if (bestd < 4) {
+        near.hp -= u.armed ? (2 + REALM.wlevel) : 1;
+        u.hp -= near.tough ? 2 : 1;
+        if (near.hp <= 0) kill(near);
+        if (u.hp <= 0) {
+          S.sortied.splice(s, 1); S.dead++;
+          log('A guardian falls in the open.', true);
+          sfxPlay('death', 0.35);
+        }
+      } else {
+        u.pos += (near.pos > u.pos) ? 0.5 : -0.5;
       }
     }
 
-    // Advance, and resolve anything that reaches the wall.
+    // Advance, and resolve anything reaching the wall.
     for (var j = S.foes.length - 1; j >= 0; j--) {
       var f = S.foes[j];
       f.pos -= f.speed;
       if (f.pos <= 0) {
         S.foes.splice(j, 1);
         S.hp -= f.tough ? 12 : 5;
-        // A breach kills a defender. The dead go to the Crypt, not away.
         if (S.garrison > 0) {
           S.garrison--; if (S.armed > 0) S.armed--;
           S.dead++;
-          // Naming the attacker is most of the point of the avatar horde -- being
-          // breached by someone from your own Discord is a story, "a defender
-          // fell" is not.
           log(escAttr(foeIdentity(f).name) + ' breaches the wall. A guardian falls.', true);
           sfxPlay('death', 0.4);
         }
-        if (S.hp <= 0) return end(false);
+        if (S.hp <= 0) return end();
       }
     }
 
-    // Wave cleared -- brief respite, then the next one.
     if (!S.foes.length) {
-      if (S.betweenWaves <= 0) { S.betweenWaves = 45; el.status.textContent = 'Wave cleared &mdash; regroup'; }
+      if (S.betweenWaves <= 0) { S.betweenWaves = 45; el.status.textContent = 'Wave held &mdash; regroup'; }
       S.betweenWaves--;
       if (S.betweenWaves <= 0) startWave();
     }
     render();
+  }
+
+  function kill(f) {
+    var i = S.foes.indexOf(f);
+    if (i >= 0) S.foes.splice(i, 1);
+    S.carbon += f.tough ? 6 : 2;
+    sfxPlay('kill', 0.22);
   }
 
   function render() {
@@ -409,14 +549,20 @@ if ($rg_r) {
     el.weapons.textContent = S.weapons;
     el.dead.textContent = S.dead;
     el.garrison.textContent = S.garrison;
+    el.armed.textContent = S.armed;
+    el.items.textContent = S.items;
+    el.sortied.textContent = S.sortied.length;
     el['garrison-cap'].textContent = garrisonCap();
-    ['tower','barracks','armory','crypt'].forEach(function (k) { el['lvl-' + k].textContent = S.lvl[k]; });
+    el['mine-rate'].textContent = '+' + L('mine') + ' per ' + (mineRate() / 10).toFixed(1) + 's';
+    ['tower','barracks','armory','crypt','portal','factory','mine'].forEach(function (k) {
+      el['lvl-' + k].textContent = S.lvl[k];
+    });
     el['bar-barracks'].style.width = Math.round(S.prod.barracks / barracksRate() * 100) + '%';
     el['bar-armory'].style.width   = Math.round(S.prod.armory / armoryRate() * 100) + '%';
+    el['bar-factory'].style.width  = Math.round(S.prod.factory / factoryRate() * 100) + '%';
+    el['bar-mine'].style.width     = Math.round(S.prod.mine / mineRate() * 100) + '%';
+    el['bar-portal'].style.width   = Math.round(S.prod.portal / portalRate() * 100) + '%';
 
-    // Foes are rendered by percentage, so the field scales with the screen.
-    // Avatars are attached HERE, at render time, and never touch S -- keeping
-    // who happens to be drawn out of the deterministic simulation.
     var html = '';
     for (var i = 0; i < S.foes.length; i++) {
       var f = S.foes[i];
@@ -429,10 +575,27 @@ if ($rg_r) {
     }
     foesEl.innerHTML = html;
 
+    // Your guardians wear their own NFT art, with the weapon they carry badged
+    // on top -- so the field reads as your skulls against their faces, and an
+    // armed guardian is visibly armed.
+    var shtml = '';
+    for (var u = 0; u < S.sortied.length; u++) {
+      var un = S.sortied[u];
+      var art = UNITS.length ? UNITS[un.slot % UNITS.length] : null;
+      shtml += '<div class="rg-unit' + (un.armed ? ' rg-armed' : '') + '" style="left:' + un.pos + '%"'
+             + (art ? ' title="' + escAttr(art.name) + '"' : '') + '>'
+             + (art ? '<img src="' + escAttr(art.img) + '" alt="" onerror="this.style.display=\'none\'">' : '')
+             + (un.armed && WICON ? '<b><img src="' + escAttr(WICON) + '" alt="" onerror="this.parentNode.style.display=\'none\'"></b>' : '')
+             + '</div>';
+    }
+    sortieEl.innerHTML = shtml;
+
     document.querySelectorAll('.rg-act').forEach(function (b) {
       var a = b.dataset.act;
-      if (a === 'deploy')     b.disabled = !(S.reserve > 0 && S.garrison < garrisonCap());
-      else if (a === 'raise') b.disabled = !(S.dead > 0 && S.carbon >= raiseCost());
+      if (a === 'deploy')       b.disabled = !(S.reserve > 0 && S.garrison < garrisonCap());
+      else if (a === 'raise')   b.disabled = !(S.dead > 0 && S.carbon >= raiseCost());
+      else if (a === 'sortie')  b.disabled = !(S.reserve > 0 && S.prod.portal >= portalRate() && S.running);
+      else if (a === 'fortify') b.disabled = !(S.items > 0);
       else {
         var k = a.slice(3);
         b.disabled = S.carbon < upgradeCost(k);
@@ -446,10 +609,29 @@ if ($rg_r) {
     actionLog.push([S.tick, a]);   // what a server would replay
     if (a === 'deploy' && S.reserve > 0 && S.garrison < garrisonCap()) {
       S.reserve--; S.garrison++;
-      if (S.weapons > 0) { S.weapons--; S.armed++; }   // armed if the Armory can supply
+      if (S.weapons > 0) { S.weapons--; S.armed++; }
     } else if (a === 'raise' && S.dead > 0 && S.carbon >= raiseCost()) {
       S.carbon -= raiseCost(); S.dead--; S.reserve++;
       log('The Crypt gives one back.');
+    } else if (a === 'sortie' && S.reserve > 0 && S.prod.portal >= portalRate()) {
+      // Meet them in the open: they die before reaching the wall, but your
+      // guardians fight with no tower behind them. The whole risk/reward beat.
+      S.prod.portal = 0;
+      var n = Math.min(sortieSize(), S.reserve);
+      for (var i = 0; i < n; i++) {
+        S.reserve--;
+        var armed = S.weapons > 0;
+        if (armed) S.weapons--;
+        // slot picks which enlisted NFT this guardian is, and stays fixed for
+        // its life so the face on the field doesn't change between renders.
+        S.sortied.push({ pos:35 + i * 4, hp:armed ? 6 : 4, armed:armed, slot:unitSeq++ });
+      }
+      log(n + ' guardian' + (n > 1 ? 's ride' : ' rides') + ' out through the Portal.');
+    } else if (a === 'fortify' && S.items > 0) {
+      S.items--;
+      S.hp = Math.min(S.maxhp, S.hp + 12 + L('factory') * 2);
+      S.fortifyFor = 60;   // six seconds of heavier fire
+      log('The Factory shores up the wall. The guns bite harder.');
     } else if (a.indexOf('up-') === 0) {
       var k = a.slice(3);
       if (S.carbon >= upgradeCost(k)) { S.carbon -= upgradeCost(k); S.lvl[k]++; log(k + ' raised to ' + S.lvl[k] + '.'); }
@@ -457,12 +639,12 @@ if ($rg_r) {
     render();
   }
 
-  function end(won) {
+  function end() {
     S.over = true; S.running = false;
     clearInterval(S.timer);
     el.status.textContent = 'The wall is breached';
     log('The realm falls at wave ' + S.wave + '. Guardians lost: ' + S.dead + '.', true);
-    beginBtn.textContent = 'Try again';
+    beginBtn.textContent = 'Hold again';
     beginBtn.hidden = false;
   }
 
@@ -472,7 +654,6 @@ if ($rg_r) {
   });
 
   var soundBtn = document.getElementById('rg-sound');
-  // Remembered per browser, so nobody has to mute this twice.
   try { if (localStorage.getItem('rg-sound') === 'off') sfxOn = false; } catch (e) {}
   function paintSound() {
     soundBtn.innerHTML = sfxOn ? '&#128266;' : '&#128263;';
@@ -489,18 +670,15 @@ if ($rg_r) {
   beginBtn.addEventListener('click', function () {
     rand = mulberry32(SEED);
     actionLog = [];
-    S.running = true; S.over = false; S.tick = 0; S.wave = 0;
-    S.hp = 100; S.carbon = 0; S.reserve = 3; S.weapons = 2; S.dead = 0;
-    S.garrison = 0; S.armed = 0; S.betweenWaves = 0; S.nextAttack = 0;
-    S.lvl = { tower:1, barracks:1, armory:1, crypt:1 };
-    S.prod = { barracks:0, armory:0 };
-    S.foes = [];
+    reset();
+    S.running = true;
     logEl.innerHTML = '';
     beginBtn.hidden = true;
     startWave();
     S.timer = setInterval(step, TICK);
   });
 
+  reset();
   render();
 })();
 </script>
@@ -508,8 +686,6 @@ if ($rg_r) {
 </body>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <?php
-// No $conn->close() dance beyond the platform default -- this page runs no
-// queries of its own. See the header comment.
 $conn->close();
 ?>
 </html>
