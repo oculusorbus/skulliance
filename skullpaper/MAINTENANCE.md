@@ -1569,6 +1569,20 @@ What a doc page will have to get right, because none of it is guessable:
   (the replay action log is written in the id). Factory items are **implicit** -
   one button, always "Fortify"; the log says what it did after it lands.
 - **No saved progress, by design.** Every realm eventually falls to the horde.
+- **Horde spacing is the breath, not a tuning knob.** Attackers spawn off-screen
+  in a column (`pos: 100 + i * (2.2 + rand() * 1.8)`) and walk in. In the user's
+  words: *"the spacing is the breath that allows a player to focus on their mine
+  upgrades without getting pummeled."* Do not tighten it to shorten runs -
+  measured at wave 83 with identical firepower, going to 1.2-2.4 took leaks from
+  19 to 58 and peak on-screen foes from 37 to 63.
+- Related, and counter-intuitive: **a wave's length is set by the spawn tail, not
+  by the fight.** The wave cannot end until the last attacker has crossed, so
+  sweeping the garrison's volley damage across a 2x range moves total run time by
+  zero. Upgrading makes you safer, never faster. ~1 minute per wave at waves
+  50-83 is expected and is not a bug. A ~30-minute run is the intended shape.
+- If difficulty is ever reopened, change **count, not per-foe HP**: the Tower is
+  single-target (one volley per 0.6s), so HP is hypersensitive - at wave 83,
+  +1 hp/wave swung total wall damage to 461%.
 - A **"Start from scratch" toggle** lets a realm-holder play the conscript
   baseline (`$rg_scratch`) - every location at level 1, no enlisted guardians,
   a level-1 cache. It is a whole baseline object, not a flag: `REALM` points at
