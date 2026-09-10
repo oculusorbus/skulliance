@@ -455,10 +455,10 @@ $rg_con_names = array(
  */
 $rg_con_ui = array(
 	6 => array('Wall Shield',  'Absorbs one breach, whole'),
-	7 => array('Volley +100%', '+8 wall, +100% for 10s'),
-	5 => array('Volley +75%',  '+8 wall, +75% for 7.5s'),
-	4 => array('Volley +50%',  '+8 wall, +50% for 5s'),
-	2 => array('Volley +25%',  '+8 wall, +25% for 2.5s'),
+	7 => array('Volley +100%', '+10 wall, +100% for 10s'),
+	5 => array('Volley +75%',  '+7.5 wall, +75% for 7.5s'),
+	4 => array('Volley +50%',  '+5 wall, +50% for 5s'),
+	2 => array('Volley +25%',  '+2.5 wall, +25% for 2.5s'),
 	3 => array('Rush Lines',   'Every line with room finishes'),
 	1 => array('Free Level',   'One random location +1'),
 );
@@ -905,9 +905,10 @@ $rg_theme_img = $rg_theme > 0
 					blocked, so this always buys you an immediate Strike and a ready rite. Best
 					used the moment you want guardians out and the cooldown says no.</li>
 					<li><strong>Volley +100% / +75% / +50% / +25%</strong> &mdash; each patches
-					8 onto the wall and makes the Tower hit that much harder. The duration
-					scales with the magnitude &mdash; the number on the tin is the number of
-					tenths of a second, so +100% runs for 10s and +25% for 2.5s. Two things
+					the wall and makes the Tower hit that much harder. Both the patch and the
+					duration scale with the magnitude, on the same rule: the number on the tin
+					over ten. So +100% is 10 wall and ten seconds; +25% is 2.5 wall and 2.5
+					seconds. Two things
 					worth knowing: the patch is capped at a full wall, so spending one at 100
 					wastes it &mdash; and the Tower fires one shot at one attacker every 0.6s,
 					so once your guardians already kill an attacker per shot, hitting harder
@@ -1803,7 +1804,18 @@ $rg_theme_img = $rg_theme > 0
        */
       S.boostFor = Math.round(pct * 100);
       S.boostMax = S.boostFor;   // what the countdown on the shelf divides by
-      S.hp = Math.min(S.maxhp, S.hp + 8);
+      /*
+       * The patch scales too, on the same rule as the duration: the number on
+       * the tin over ten. So +100% is 10 wall and +25% is 2.5. A flat 8 made
+       * the low ones a BETTER deal than the high ones per item -- identical
+       * healing, and a boost that at most power levels converts to no extra
+       * kills at all -- which is backwards for the rarer drop.
+       *
+       * Deliberately not rounded: 7.5 is what the button promises, and the HUD
+       * rounds for display rather than the model quietly losing half a point
+       * every time.
+       */
+      S.hp = Math.min(S.maxhp, S.hp + pct * 10);
       log(it.name + ': the guns bite ' + Math.round(pct * 100) + '% harder.');
     }
   }
@@ -2568,7 +2580,9 @@ $rg_theme_img = $rg_theme > 0
     }
     if (fieldEl) fieldEl.classList.toggle('rg-breached', inside && S.running && !S.over);
     el.wave.textContent = S.wave;
-    el.hp.textContent = Math.max(0, S.hp);
+    // Rounded HERE, not in the model: a +75% patch is 7.5 and truncating it
+    // would quietly shave half a point off every use.
+    el.hp.textContent = Math.max(0, Math.round(S.hp));
     el.carbon.textContent = S.carbon;
     el.reserve.textContent = S.reserve.length;
     el.weapons.textContent = S.wpool.length;
