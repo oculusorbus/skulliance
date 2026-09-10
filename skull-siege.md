@@ -58,7 +58,61 @@ Three things fall out of that, and all three are the reason to do it this way:
    synchronisation, no reconciliation. A deterministic simulation is a loop over
    a data structure.
 
-### What the player actually DOES — resolved: phases
+### WHAT THE GAME ACTUALLY IS: Realms at speed
+
+The user's framing, 2026-09-09, and it names the game better than anything above:
+
+> "Pretty much the entire realms gameplay loop but in real time with accelerated
+> timers like Kingdom Rush while the enemy is coming in waves."
+
+Replacing items on locations as they take damage. Initiating upgrades as levels
+drop. Resurrecting from the Crypt when the timer fires. Equipping weapons from the
+Armory. Deploying to Portal and Tower. Replenishing the garrison when the Tower is
+overwhelmed. Pulling items from the Factory to assign to locations. Spending Mine
+output on upgrades.
+
+**Realms is already this game, played in slow motion.** Compressing it and putting
+a horde on a timer does not add a system — it changes the tempo of one that
+exists and is already tuned. Which also means the tutorial is "you already know
+how to play", and every hour a player has put into their realm is hours of
+learning they get to reuse.
+
+### Real time AND server-authoritative: replay the inputs
+
+Real time collides with the payout constraint. The resolution, and it works only
+because the engine is deterministic:
+
+Do **not** send every action to the server (per-action round trips on mobile make
+a real-time game feel terrible), and do **not** trust a client-reported outcome.
+Instead the client simulates in real time from the seeded wave schedule while
+recording an **action log** — `t=43.2s equip weapon from armory`, `t=51.8s
+resurrect 3 from crypt`. It submits the log at the end. The server replays that
+log against the same seed through the same deterministic engine and derives the
+result itself. Divergence is rejection.
+
+This is the Skull Racer lesson done properly: **do not validate the outcome,
+replay the inputs.**
+
+Cost, stated up front: the simulation engine must be deterministic AND shared
+between client and server. That is the single biggest piece of work in the build,
+and everything else depends on it. It is also why the deterministic core is
+non-negotiable — a client-authoritative engine has to be thrown away before any
+of this is possible.
+
+### Two risks to hold on record
+
+**UI density.** Kingdom Rush juggles roughly four tower types on one screen. Seven
+locations, each with several actions, on a phone, under time pressure, is how
+"engaging" becomes "frantic and unreadable". Start the prototype with three or
+four active locations and add the rest only once it still reads clearly.
+
+**The floor for realm-less players.** They start from scratch, which is correct —
+but scratch has to be *playable*, not hopeless. If a new player's first siege is
+unwinnable the game recruits nobody. A starter realm, or early waves scaled low
+enough that a bare realm clears them, is the difference between "something to
+build toward" and "not for me".
+
+### Superseded: the phase structure
 
 The first draft of this document said: choose your setup, press go, watch. Fixed
 build nodes along the path (the Kingdom Rush idiom, not free placement on an open
@@ -83,10 +137,12 @@ owns every outcome, and it needs **no netcode at all** — each decision point i
 an ordinary request. It is the deliberation of a TD without the reflexes, which
 suits a platform people play on a phone between other things.
 
-Lockstep replay (client sends tick-stamped actions, server replays them against
-the seed) stays available if real-time is ever wanted, and the deterministic core
-is what keeps that door open. But it is no longer the goal — phases are probably
-the better game for this audience, not a compromise.
+Kept as the **fallback**, not the plan. The user wants real time (see above), and
+the action-log replay makes that achievable without giving up server authority.
+Phases remain the right answer if the real-time UI proves unreadable on a phone,
+or if the shared deterministic engine turns out to be more than the build can
+carry — both are live risks, and this is a working design to retreat to rather
+than a dead end.
 
 ---
 
@@ -256,13 +312,16 @@ Rough order:
 2. A single hardcoded scenario with **hardcoded location levels** — no realm
    reading yet. Barracks/Armory/Crypt/Tower only; skip Factory, Mine and Portal.
    Ugly is fine.
-3. The between-waves decision phase and a result animation. **Play it. Stop here
-   and decide.** The question is only ever: is spending finite supply against
-   escalating waves fun? If not, stop — realm integration cannot rescue it.
+3. Real-time management of those few locations against a wave clock, client-side
+   only, no submission yet. **Play it. Stop here and decide.** The question is
+   only ever: is keeping locations stocked under time pressure fun? If not, stop
+   — realm integration cannot rescue it.
 4. Portal sorties and Factory items, the two live decisions, once the base loop
    holds up.
-5. Read real realm levels (read-only), and scale waves to total realm power.
-6. Weekly seed, leaderboard, CARBON, hub, nav, Skull Paper page.
+5. Action log + server replay, so a result can be trusted. Nothing pays out
+   before this exists.
+6. Read real realm levels (read-only), and scale waves to total realm power.
+7. Weekly seed, leaderboard, CARBON, hub, nav, Skull Paper page.
 
 Note: this file sits in the repo, which is pulled to the webroot — it is
 technically fetchable at `/staking/skull-siege.md`. Nothing sensitive here, but
