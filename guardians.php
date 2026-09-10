@@ -703,16 +703,16 @@ $rg_theme_img = $rg_theme > 0
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/barracks.png" alt="" onerror="this.style.display='none'">Barracks <span class="rg-lvl" id="rg-lvl-barracks">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-reserve">0</strong> in reserve</div>
 				<div class="rg-bar" title="Time until the Barracks trains the next guardian"><i id="rg-bar-barracks"></i></div>
-					<div class="rg-cap">training next guardian</div>
+					<div class="rg-cap" id="rg-cap-barracks">training next guardian</div>
 				<button type="button" class="rg-act rg-up" data-act="up-barracks">Upgrade</button>
 			</div>
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/armory.png" alt="" onerror="this.style.display='none'">Armory <span class="rg-lvl" id="rg-lvl-armory">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-weapons">0</strong> weapons &middot; <span id="rg-armor">0</span> armour</div>
 				<div class="rg-bar" title="Time until the Armory forges the next weapon"><i id="rg-bar-armory"></i></div>
-					<div class="rg-cap">forging next weapon</div>
+					<div class="rg-cap" id="rg-cap-armory">forging next weapon</div>
 					<div class="rg-bar" title="Time until the Armory forges the next piece of armour"><i id="rg-bar-forge"></i></div>
-					<div class="rg-cap">forging next armour</div>
+					<div class="rg-cap" id="rg-cap-forge">forging next armour</div>
 				<button type="button" class="rg-act rg-up" data-act="up-armory">Upgrade</button>
 			</div>
 			<div class="rg-loc">
@@ -725,7 +725,7 @@ $rg_theme_img = $rg_theme > 0
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/portal.png" alt="" onerror="this.style.display='none'">Portal <span class="rg-lvl" id="rg-lvl-portal">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-sortied">0</strong> in the field</div>
 				<div class="rg-bar" title="Portal cooldown -- Strike is ready when full"><i id="rg-bar-portal"></i></div>
-					<div class="rg-cap">strike ready when full</div>
+					<div class="rg-cap" id="rg-cap-portal">strike ready when full</div>
 				<button type="button" class="rg-act" data-act="sortie" title="Send guardians out through the Portal to meet the horde in the open, before it reaches your wall. They fight with no Tower behind them.">Strike</button>
 				<button type="button" class="rg-act rg-up" data-act="up-portal">Upgrade</button>
 			</div>
@@ -733,7 +733,7 @@ $rg_theme_img = $rg_theme > 0
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/factory.png" alt="" onerror="this.style.display='none'">Factory <span class="rg-lvl" id="rg-lvl-factory">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-items">0</strong> items</div>
 				<div class="rg-bar" title="Time until the Factory builds the next item"><i id="rg-bar-factory"></i></div>
-					<div class="rg-cap">building next item</div>
+					<div class="rg-cap" id="rg-cap-factory">building next item</div>
 				<button type="button" class="rg-act rg-up" data-act="up-factory">Upgrade</button>
 			</div>
 		</div>
@@ -789,7 +789,7 @@ $rg_theme_img = $rg_theme > 0
 				<div class="rg-mine-stats">
 					<div class="rg-loc-stat">CARBON &middot; <span id="rg-mine-rate">+0/s</span></div>
 					<div class="rg-bar" title="Time until the Mine yields more CARBON"><i id="rg-bar-mine"></i></div>
-						<div class="rg-cap">next CARBON payout</div>
+						<div class="rg-cap" id="rg-cap-mine">next CARBON payout</div>
 					<button type="button" class="rg-act rg-up" data-act="up-mine">Upgrade</button>
 				</div>
 				<div class="rg-mine-start">
@@ -1061,6 +1061,10 @@ $rg_theme_img = $rg_theme > 0
 .rg-loc-stat strong { color:#fff; font-size:1rem; }
 .rg-bar { height:3px; background:rgba(255,255,255,.08); border-radius:2px; overflow:hidden; margin-bottom:7px; }
 .rg-bar i { display:block; height:100%; width:0; background:#00c8a0; }
+/* A HELD line: full, and going nowhere until something makes room. Amber, not
+   green, so "waiting on me" is distinguishable at a glance from "working" --
+   a full green bar and a stalled green bar looked identical. */
+.rg-bar i.rg-bar-full { background:#ffcc44; }
 .rg-act { background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:5px; padding:7px 9px; font-size:.74rem; cursor:pointer; margin:0 3px 3px 0; }
 .rg-act.rg-up { background:rgba(255,255,255,.12); color:rgba(255,255,255,.75); }
 .rg-act:disabled { opacity:.32; cursor:default; }
@@ -1623,7 +1627,8 @@ $rg_theme_img = $rg_theme > 0
   ['wave','hp','carbon','reserve','weapons','dead','garrison','garrison-cap','armed','status',
    'sortied','items','mine-rate','armor','armored',
    'lvl-tower','lvl-barracks','lvl-armory','lvl-crypt','lvl-portal','lvl-factory','lvl-mine',
-   'bar-barracks','bar-armory','bar-forge','bar-factory','bar-mine','bar-portal']
+   'bar-barracks','bar-armory','bar-forge','bar-factory','bar-mine','bar-portal',
+   'cap-barracks','cap-armory','cap-forge','cap-factory','cap-mine','cap-portal']
     .forEach(function (k) { el[k] = document.getElementById('rg-' + k); });
   var foesEl = document.getElementById('rg-enemies');
   var sortieEl = document.getElementById('rg-sortie');
@@ -1853,10 +1858,41 @@ $rg_theme_img = $rg_theme > 0
     S.tick++;
     if (S.boostFor > 0) S.boostFor--;
 
-    // Production. Every location earns its keep on a timer.
-    S.prod.barracks++;
+    /*
+     * PRODUCTION, AND THE BARS THAT REPORT IT.
+     *
+     * A bar completes when something ARRIVES, and not before. Every one of
+     * these lines used to reset its timer whether or not it had produced
+     * anything, so a full cache still showed a bar sweeping to 100% over and
+     * over -- animation standing in for activity, and the one place a player
+     * looks to answer "is this location doing anything for me?" was answering
+     * yes while the answer was no.
+     *
+     * Blocked lines now HOLD at full instead of cycling. That is honest twice
+     * over: the bar is not lying about output, and a stalled bar is a visible
+     * signal that a cap is the thing limiting you -- which is exactly when the
+     * Upgrade button underneath it is worth pressing. Holding at the threshold
+     * also means production resumes the instant room appears, with no partial
+     * timer lost.
+     *
+     * `produce()` takes the line's timer, its rate, and a function that returns
+     * true when it actually delivered. One rule, six lines, no chance of a
+     * seventh being added that quietly cycles on empty.
+     */
+    function produce(key, rate, deliver) {
+      if (S.prod[key] < rate) S.prod[key]++;
+      if (S.prod[key] >= rate) {
+        if (deliver()) S.prod[key] = 0;
+        else S.prod[key] = rate;   // held: full, and waiting on space
+      }
+    }
+
     // A raw recruit: no kit until the Armory can issue some.
-    if (S.prod.barracks >= barracksRate()) { S.prod.barracks = 0; if (S.reserve.length < reserveCap()) S.reserve.push({ w:0, wn:'', a:0, an:'' }); }
+    produce('barracks', barracksRate(), function () {
+      if (S.reserve.length >= reserveCap()) return false;
+      S.reserve.push({ w:0, wn:'', a:0, an:'' });
+      return true;
+    });
     /*
      * The Armory forges BOTH. It was producing weapons only, so armour was
      * whatever the cache started with and then gone for good -- reported as
@@ -1864,15 +1900,28 @@ $rg_theme_img = $rg_theme > 0
      * Armour comes slower than weapons, which is what keeps it a resource worth
      * spending carefully rather than a permanent second health bar.
      */
-    S.prod.armory++;
     // Forged gear rolls its tier from the realm's own drop table.
-    if (S.prod.armory >= armoryRate()) { S.prod.armory = 0; poolIn(S.wpool, catPick(REALM.wcat, rollTier()), weaponCap()); }
-    S.prod.forge++;
-    if (S.prod.forge >= forgeRate()) { S.prod.forge = 0; poolIn(S.apool, catPick(REALM.acat, rollTier()), armorCap()); }
-    S.prod.factory++;
-    if (S.prod.factory >= factoryRate()) { S.prod.factory = 0; if (S.items.length < itemCap()) { var ni = rollItem(); if (ni) S.items.push(ni); } }
-    S.prod.mine++;
-    if (S.prod.mine >= mineRate()) { S.prod.mine = 0; S.carbon += L('mine'); }
+    produce('armory', armoryRate(), function () {
+      if (S.wpool.length >= weaponCap()) return false;
+      poolIn(S.wpool, catPick(REALM.wcat, rollTier()), weaponCap());
+      return true;
+    });
+    produce('forge', forgeRate(), function () {
+      if (S.apool.length >= armorCap()) return false;
+      poolIn(S.apool, catPick(REALM.acat, rollTier()), armorCap());
+      return true;
+    });
+    produce('factory', factoryRate(), function () {
+      if (S.items.length >= itemCap()) return false;
+      var ni = rollItem();
+      if (!ni) return false;
+      S.items.push(ni);
+      return true;
+    });
+    // The Mine has no cap, so its bar was always honest and stays a plain timer.
+    produce('mine', mineRate(), function () { S.carbon += L('mine'); return true; });
+    // The Portal is a COOLDOWN, not a production line: full means Strike is
+    // ready, and it already held there rather than cycling.
     if (S.prod.portal < portalRate()) S.prod.portal++;
 
     /*
@@ -2051,12 +2100,29 @@ $rg_theme_img = $rg_theme > 0
     ['tower','barracks','armory','crypt','portal','factory','mine'].forEach(function (k) {
       el['lvl-' + k].textContent = S.lvl[k];
     });
-    el['bar-barracks'].style.width = Math.round(S.prod.barracks / barracksRate() * 100) + '%';
-    el['bar-armory'].style.width   = Math.round(S.prod.armory / armoryRate() * 100) + '%';
-    el['bar-forge'].style.width    = Math.round(S.prod.forge / forgeRate() * 100) + '%';
-    el['bar-factory'].style.width  = Math.round(S.prod.factory / factoryRate() * 100) + '%';
-    el['bar-mine'].style.width     = Math.round(S.prod.mine / mineRate() * 100) + '%';
-    el['bar-portal'].style.width   = Math.round(S.prod.portal / portalRate() * 100) + '%';
+    /*
+     * A stalled bar says WHY. A bar sitting at full is only useful if the
+     * caption underneath turns into the reason -- otherwise it reads as a
+     * frozen game rather than a full cache, and the fix (the Upgrade button
+     * directly below it) is not obvious.
+     */
+    function paintBar(key, cur, rate, blocked, idleText, blockedText) {
+      el['bar-' + key].style.width = Math.round(Math.min(1, cur / rate) * 100) + '%';
+      el['bar-' + key].className = blocked ? 'rg-bar-full' : '';
+      var cap = el['cap-' + key];
+      if (cap) cap.textContent = blocked ? blockedText : idleText;
+    }
+    paintBar('barracks', S.prod.barracks, barracksRate(),
+      S.reserve.length >= reserveCap(), 'training next guardian', 'barracks full — upgrade for room');
+    paintBar('armory', S.prod.armory, armoryRate(),
+      S.wpool.length >= weaponCap(), 'forging next weapon', 'weapon cache full — upgrade for room');
+    paintBar('forge', S.prod.forge, forgeRate(),
+      S.apool.length >= armorCap(), 'forging next armour', 'armour cache full — upgrade for room');
+    paintBar('factory', S.prod.factory, factoryRate(),
+      S.items.length >= itemCap(), 'building next item', 'shelf full — spend one to restart it');
+    // No cap on CARBON, and the Portal is a cooldown: neither can stall.
+    paintBar('mine', S.prod.mine, mineRate(), false, 'next CARBON payout', '');
+    paintBar('portal', S.prod.portal, portalRate(), false, 'strike ready when full', '');
 
     /*
      * REUSE THE NODES. Do not rebuild innerHTML.
