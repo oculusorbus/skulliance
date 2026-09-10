@@ -367,20 +367,6 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 }
 ?>
 
-<?php if ($rg_theme > 0): ?>
-	<!--
-		The realm's own theme as the backdrop. A fixed layer BEHIND the content
-		rather than a background on <body>: body already carries the platform's
-		styling and a PWA strip on ::after, and painting over it risks the rest
-		of the page. This can only ever sit behind things.
-
-		The dark wash is not decoration -- the themes are busy artwork and the
-		HUD is small text over it. Same approach .podium-section.has-theme takes
-		in leaderboards.php.
-	-->
-	<div id="rg-bg" style="background-image:url('images/themes/<?php echo $rg_theme; ?>.jpg')"></div>
-<?php endif; ?>
-
 <div class="row" id="row1">
   <div class="col1of3" style="max-width:820px;margin:0 auto;flex:1 1 100%;">
 
@@ -397,7 +383,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 			$rg_roster = $rg_army + $rg_crypt;
 			// Where they actually are, since they no longer all start in one pile.
 			$rg_where = array();
-			if ($rg_garrison > 0) $rg_where[] = $rg_garrison . ' on the wall';
+			if ($rg_garrison > 0) $rg_where[] = $rg_garrison . ' on the Tower';
 			if ($rg_raiders  > 0) $rg_where[] = $rg_raiders . ' out raiding';
 			$rg_ready = max(0, $rg_army - $rg_garrison - $rg_raiders);
 			if ($rg_ready > 0)    $rg_where[] = $rg_ready . ' in reserve';
@@ -417,7 +403,21 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 		<br><em>Nothing here is saved and nothing is spent. Your realm is untouched no matter how this goes.</em>
 	</div>
 
-	<div id="rg-game">
+	<?php
+	/*
+	 * The realm's theme sits BEHIND THE BOARD, not behind the viewport.
+	 *
+	 * Same shape Crypt Crawl uses (.cc-theme-bg in cryptcrawl.php:188): a panel
+	 * the width of the content column, with the art on a ::before so nothing
+	 * paints over the real content, and a gradient baked into the same value so
+	 * the wash travels with the image. Full-bleed looked like a different site;
+	 * this reads as your realm behind your wall.
+	 */
+	$rg_theme_img = $rg_theme > 0
+		? "linear-gradient(180deg, rgba(7,17,26,.72), rgba(7,17,26,.90)), url('/staking/images/themes/" . $rg_theme . ".jpg')"
+		: '';
+	?>
+	<div id="rg-game"<?php if ($rg_theme_img !== ''): ?> class="rg-themed" style="--rg-theme-img:<?php echo htmlspecialchars($rg_theme_img); ?>"<?php endif; ?>>
 
 		<div class="rg-hud">
 			<!-- The prototype marker lives HERE, not only in the heading, because
@@ -564,17 +564,20 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 </div>
 
 <style>
-#rg-bg {
-  position:fixed; inset:0; z-index:-1;
+/* The themed panel. Art on a ::before so it can never paint over the content,
+   inset:-4% so it has room to sit under the rounded corners without exposing an
+   edge, and overflow:hidden to clip it. Everything real is z-index:1 above it. */
+#rg-game.rg-themed { position:relative; overflow:hidden; border-radius:14px; padding:16px; }
+#rg-game.rg-themed::before {
+  content:''; position:absolute; inset:-4%;
+  background-image:var(--rg-theme-img);
   background-size:cover; background-position:center;
-  /* fixed so the field doesn't parallax while the page scrolls */
-  background-attachment:fixed;
+  z-index:0;
 }
-#rg-bg::after { content:''; position:absolute; inset:0; background:rgba(7,17,29,.86); }
-/* The panels need to stay legible on top of artwork, so they get a little more
-   opacity than they had over flat background. */
-#rg-game .rg-loc { background:rgba(13,30,48,.92); }
-#rg-field { background:rgba(10,25,41,.92) !important; }
+#rg-game.rg-themed > * { position:relative; z-index:1; }
+/* The panels need to stay legible on top of artwork. */
+#rg-game.rg-themed .rg-loc { background:rgba(13,30,48,.93); }
+#rg-game.rg-themed #rg-field { background:rgba(10,25,41,.93); }
 .rg-blurb { font-size:.82rem; color:rgba(255,255,255,.5); margin:-6px 0 16px; line-height:1.5; }
 .rg-blurb strong { color:#00c8a0; }
 .rg-tag { font-size:.6rem; text-transform:uppercase; letter-spacing:.12em; color:#ffcc44; border:1px solid rgba(255,204,68,.4); border-radius:10px; padding:2px 8px; vertical-align:middle; }
