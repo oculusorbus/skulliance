@@ -1026,7 +1026,17 @@ $rg_theme_img = $rg_theme > 0
   .rg-hud strong { font-size:.88rem; }
 }
 
-#rg-field { position:relative; height:80px; background:#0a1929; border:1px solid rgba(255,255,255,.08); border-radius:8px; overflow:hidden; margin-bottom:12px; }
+/* ---- FIELD SCALE ----------------------------------------------------------
+   The field is the one part of the board worth looking AT -- it carries the
+   NFT art, the avatars and the gear badges, and at 26px none of that reads.
+   Doubled for a browser, and left exactly as it was on a phone, where the
+   screen is the constraint rather than the pixels.
+   Kept as variables rather than a dozen duplicated rules so the mobile block
+   overrides ONE set of numbers instead of re-stating every selector. */
+#rg-game { --rg-u:52px; --rg-tough:68px; --rg-badge:24px; --rg-off:-12px;
+           --rg-barh:4px; --rg-tower:52px; --rg-portal:60px;
+           --rg-tracer-w:24px; --rg-tracer-h:4px; --rg-field-h:160px; }
+#rg-field { position:relative; height:var(--rg-field-h); background:#0a1929; border:1px solid rgba(255,255,255,.08); border-radius:8px; overflow:hidden; margin-bottom:12px; }
 #rg-wall.rg-fortified { background:linear-gradient(180deg,#ffcc44,#c79a1e) !important; box-shadow:0 0 14px rgba(255,204,68,.8); }
 #rg-wall { position:absolute; left:0; top:0; bottom:0; width:10px; background:linear-gradient(180deg,#00c8a0,#007a61); }
 #rg-enemies, #rg-sortie { position:absolute; inset:0; }
@@ -1037,8 +1047,8 @@ $rg_theme_img = $rg_theme > 0
 /* Vertically centred, level with the Portal -- the two are the same kind of
    thing (a place on the field), so they should sit on the same line rather than
    one hugging the floor. */
-#rg-tower-icon  { left:14px; top:50%; transform:translateY(-50%); width:26px; height:26px; object-fit:contain; }
-#rg-portal-icon { left:25%; top:50%; transform:translate(-50%,-50%); width:30px; height:30px;
+#rg-tower-icon  { left:14px; top:50%; transform:translateY(-50%); width:var(--rg-tower); height:var(--rg-tower); object-fit:contain; }
+#rg-portal-icon { left:25%; top:50%; transform:translate(-50%,-50%); width:var(--rg-portal); height:var(--rg-portal);
                   object-fit:contain; opacity:.55; filter:drop-shadow(0 0 6px rgba(0,200,160,.7)); }
 #rg-sortie, #rg-enemies { z-index:1; }
 /* ---- Tower fire ----------------------------------------------------------
@@ -1048,7 +1058,7 @@ $rg_theme_img = $rg_theme > 0
    and is never populated at all on phones (see TRACERS in the script). Animated
    on transform/opacity only -- both composited, so no layout runs per shot. */
 #rg-tracers { position:absolute; inset:0; pointer-events:none; z-index:2; }
-.rg-tracer { position:absolute; top:50%; margin-top:-1px; width:12px; height:2px; border-radius:1px;
+.rg-tracer { position:absolute; top:50%; margin-top:calc(var(--rg-tracer-h) / -2); width:var(--rg-tracer-w); height:var(--rg-tracer-h); border-radius:1px;
              background:linear-gradient(90deg, rgba(255,214,102,0), #ffd666);
              animation:rg-tracer .26s linear forwards; will-change:transform, opacity; }
 @keyframes rg-tracer {
@@ -1057,10 +1067,10 @@ $rg_theme_img = $rg_theme > 0
 }
 /* The muzzle end, so the shot reads as coming FROM the Tower. */
 #rg-tower-icon.rg-firing { filter:drop-shadow(0 0 6px rgba(255,214,102,.95)); }
-.rg-foe { position:absolute; top:50%; transform:translateY(-50%); box-sizing:border-box; width:26px; height:26px; border-radius:50%; background:#c0392b; border:2px solid #c0392b; transition:left .1s linear; }
+.rg-foe { position:absolute; top:50%; transform:translateY(-50%); box-sizing:border-box; width:var(--rg-u); height:var(--rg-u); border-radius:50%; background:#c0392b; border:2px solid #c0392b; transition:left .1s linear; }
 .rg-foe img { width:100%; height:100%; border-radius:50%; display:block; object-fit:cover; }
-.rg-foe.rg-tough { width:34px; height:34px; border-color:#c39bd3; box-shadow:0 0 8px rgba(195,155,211,.6); }
-.rg-foe i { position:absolute; left:0; bottom:-6px; height:2px; background:#ff6b6b; }
+.rg-foe.rg-tough { width:var(--rg-tough); height:var(--rg-tough); border-color:#c39bd3; box-shadow:0 0 8px rgba(195,155,211,.6); }
+.rg-foe i { position:absolute; left:0; bottom:var(--rg-off); height:var(--rg-barh); background:#ff6b6b; }
 /* Sortied guardians sit above the line so they read as yours, not theirs. */
 /* Your guardians: their own NFT art, ringed in the platform green so they read
    as yours at a glance against the red horde. */
@@ -1073,17 +1083,17 @@ $rg_theme_img = $rg_theme > 0
    second inner ring, and the badges pushed off the circle so they clip a
    corner rather than sitting on the face. Four heavy rings on 26px left about
    twenty usable pixels of artwork. */
-.rg-unit { position:absolute; top:16%; box-sizing:border-box; width:26px; height:26px; border-radius:50%; background:#0a1929; border:1px solid rgba(0,200,160,.9); box-shadow:0 0 5px rgba(0,200,160,.45); transition:left .1s linear; }
+.rg-unit { position:absolute; top:16%; box-sizing:border-box; width:var(--rg-u); height:var(--rg-u); border-radius:50%; background:#0a1929; border:1px solid rgba(0,200,160,.9); box-shadow:0 0 5px rgba(0,200,160,.45); transition:left .1s linear; }
 .rg-unit img { width:100%; height:100%; border-radius:50%; display:block; object-fit:cover; }
 .rg-unit.rg-armed { border-color:rgba(255,204,68,.95); box-shadow:0 0 6px rgba(255,204,68,.55); }
 /* The weapon they carry, badged clear of the face. */
-.rg-unit b { position:absolute; right:-6px; bottom:-6px; width:12px; height:12px; background:#07111d; border-radius:50%; display:block; padding:1px; }
+.rg-unit b { position:absolute; right:var(--rg-off); bottom:var(--rg-off); width:var(--rg-badge); height:var(--rg-badge); background:#07111d; border-radius:50%; display:block; padding:1px; }
 /* Armour on the other shoulder, so a guardian can visibly carry both. */
-.rg-unit u { position:absolute; left:-6px; bottom:-6px; width:12px; height:12px; background:#07111d; border-radius:50%; display:block; padding:1px; }
+.rg-unit u { position:absolute; left:var(--rg-off); bottom:var(--rg-off); width:var(--rg-badge); height:var(--rg-badge); background:#07111d; border-radius:50%; display:block; padding:1px; }
 .rg-unit b img, .rg-unit u img { width:100%; height:100%; object-fit:contain; border-radius:0; }
 /* Life bar, mirroring the horde's -- theirs red, yours the platform green, so
    the two lines of bars read as two sides rather than one crowd. */
-.rg-unit i { position:absolute; left:0; bottom:-6px; height:2px; background:#00c8a0; }
+.rg-unit i { position:absolute; left:0; bottom:var(--rg-off); height:var(--rg-barh); background:#00c8a0; }
 /* Armoured guardians get a steel halo. Drawn OUTSIDE the circle, so it reads
    as "fully kitted" next to the gold border without stealing another pixel of
    the artwork. */
@@ -1336,7 +1346,12 @@ $rg_theme_img = $rg_theme > 0
      the cards, the bar captions, and the item descriptions.
      The captions ("training next guardian") go because the bar directly above
      each one already says it, and there are five of them. ---- */
-  #rg-field { height:56px; margin-bottom:6px; }
+  /* The field goes back to its phone size: one set of numbers, not a
+     re-statement of every selector above. */
+  #rg-game { --rg-u:26px; --rg-tough:34px; --rg-badge:12px; --rg-off:-6px;
+             --rg-barh:2px; --rg-tower:26px; --rg-portal:30px;
+             --rg-tracer-w:12px; --rg-tracer-h:2px; --rg-field-h:56px; }
+  #rg-field { margin-bottom:6px; }
   #rg-locations { gap:4px; }
   .rg-loc { padding:5px 6px; border-radius:6px; }
   .rg-loc-name { font-size:.62rem; gap:4px; }
@@ -1843,19 +1858,29 @@ $rg_theme_img = $rg_theme > 0
     if (window.matchMedia('(pointer: coarse)').matches) return false;
     return true;
   })();
-  // The Tower icon is 26px wide at left:14px, so its muzzle is at 40px.
-  var MUZZLE_X = 40, liveTracers = 0, flashTimer = 0;
+  /*
+   * Where the shot leaves the Tower. Measured off the icon rather than hard
+   * coded: it was 40px because the icon was 26px wide at left:14px, and the
+   * icon is twice that on a browser now -- a constant would have tracers
+   * starting in the middle of the tower.
+   */
+  var liveTracers = 0, flashTimer = 0;
+  function muzzleX() {
+    if (!towerEl || !fieldEl) return 40;
+    return towerEl.getBoundingClientRect().right - fieldEl.getBoundingClientRect().left;
+  }
   function tracer(posPct) {
     // Capped: past a certain density they stop reading as individual shots and
     // only cost paint, so a heavy wave draws a burst, not one per attacker.
     if (!TRACERS || liveTracers >= 10) return;
     var w = fieldEl.clientWidth;
     if (!w) return;
-    var dx = (w * posPct / 100) - MUZZLE_X;
+    var mx = muzzleX();
+    var dx = (w * posPct / 100) - mx;
     if (dx <= 0) return;              // already past the muzzle; nothing to draw
     var t = document.createElement('i');
     t.className = 'rg-tracer';
-    t.style.left = MUZZLE_X + 'px';
+    t.style.left = mx + 'px';
     t.style.setProperty('--rg-dx', dx + 'px');
     liveTracers++;
     t.addEventListener('animationend', function () {
@@ -2497,7 +2522,9 @@ $rg_theme_img = $rg_theme > 0
         foesEl.appendChild(node);
       }
       node.style.left = f.pos + '%';
-      node.lastChild.style.width = Math.max(0, Math.round(f.hp / f.max * 20)) + 'px';
+      // Percent of the circle, not pixels: the circle's size is a CSS variable
+      // that doubles on a browser, and a hard-coded 20px would not follow it.
+      node.lastChild.style.width = Math.max(0, Math.round(f.hp / f.max * 100)) + '%';
     }
     for (var id in foeNodes) {
       if (!seen[id]) { foesEl.removeChild(foeNodes[id]); delete foeNodes[id]; }
@@ -2571,7 +2598,7 @@ $rg_theme_img = $rg_theme > 0
       }
       unode.style.left = un2.pos + '%';
       if (unode._bar) {
-        unode._bar.style.width = Math.max(0, Math.round(un2.hp / (un2.max || un2.hp || 1) * 20)) + 'px';
+        unode._bar.style.width = Math.max(0, Math.round(un2.hp / (un2.max || un2.hp || 1) * 100)) + '%';
       }
     }
     for (var uid in unitNodes) {
