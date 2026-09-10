@@ -117,7 +117,16 @@ $rg_wpool = array(); $rg_apool = array();
 // The weapon and armour catalogues, so a forged tier becomes a real item.
 $rg_wcat = array(); $rg_acat = array();
 $rg_crypt = 0;         // enlisted NFTs currently dead -- they start in the Crypt
-$rg_theme = 0;         // the realm's theme, used as the page backdrop
+/*
+ * The realm's theme, used as the page backdrop. Defaults to 7 rather than to
+ * nothing: a player with no realm -- a guest, or a member who has not built one
+ * -- otherwise got a flat page while everyone else got artwork, which made the
+ * public game look like a stripped-down version rather than the same game
+ * without a head start. It is only ever a backdrop, so borrowing one costs
+ * nothing and claims nothing.
+ */
+define('RG_DEFAULT_THEME', 7);
+$rg_theme = RG_DEFAULT_THEME;
 $rg_garrison = 0; $rg_g_armed = 0; $rg_g_armored = 0;   // already on the wall
 $rg_raiders  = 0; $rg_r_armed = 0; $rg_r_armored = 0;   // already in the field
 $rg_alevel = 1;        // best armor level, decides how much a breach is absorbed
@@ -129,7 +138,9 @@ if ($rg_me > 0) {
 		$rg_realm_id = intval($rrow['id']);
 		$rg_realm_name = (string)$rrow['name'];
 		$rg_has_realm = true;
-		$rg_theme = intval($rrow['theme_id'] ?? 0);
+		// A realm's own theme wins. theme_id 0 means it has not chosen one, so
+		// the default stands rather than blanking the page.
+		$rg_theme = intval($rrow['theme_id'] ?? 0) ?: RG_DEFAULT_THEME;
 
 		// Levels by NAME, not by hardcoded location id -- ids are data, and a
 		// reordered locations table should not silently rewire the game.
