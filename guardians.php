@@ -459,7 +459,7 @@ $rg_con_ui = array(
 	5 => array('Volley +75%',  '+8 wall, +75% for 7.5s'),
 	4 => array('Volley +50%',  '+8 wall, +50% for 5s'),
 	2 => array('Volley +25%',  '+8 wall, +25% for 2.5s'),
-	3 => array('Rush Lines',   'Every line completes now'),
+	3 => array('Rush Lines',   'Every line with room finishes'),
 	1 => array('Free Level',   'One random location +1'),
 );
 /*
@@ -897,11 +897,13 @@ $rg_theme_img = $rg_theme > 0
 					three of them is three breaches cancelled. <em>The strongest thing you can
 					hold when the wall is about to be hit</em>, and worth most against the big
 					attackers, who hit for 12 where the rest hit for 5.</li>
-					<li><strong>Rush Lines</strong> &mdash; every production line completes at
-					once: a recruit, a weapon, a piece of armour, another item, CARBON, and the
-					Portal refilled. <em>The Portal is the point</em> &mdash; it means you can
-					Strike immediately. Best used the moment you want guardians out in the field
-					and the cooldown says no.</li>
+					<li><strong>Rush Lines</strong> &mdash; every production line that has room
+					finishes at once: a recruit, a weapon, a piece of armour, another item,
+					CARBON, and both cooldowns refilled. A line that is already capped out
+					delivers nothing, so the cards that actually produced are the ones that
+					flash. <em>The Portal and the Crypt are the point</em> &mdash; neither can be
+					blocked, so this always buys you an immediate Strike and a ready rite. Best
+					used the moment you want guardians out and the cooldown says no.</li>
 					<li><strong>Volley +100% / +75% / +50% / +25%</strong> &mdash; each patches
 					8 onto the wall and makes the Tower hit that much harder. The duration
 					scales with the magnitude &mdash; the number on the tin is the number of
@@ -1637,7 +1639,7 @@ $rg_theme_img = $rg_theme > 0
        * lostTotal only ever increments, and starts at zero: the realm's
        * pre-existing dead fell in Realms, not in this siege.
        */
-      lostTotal:0,
+      lostTotal:0, rushPending:false,
       garrison:[], items:[], shield:0, boost:0, boostFor:0, boostMax:0, sortied:[], emerging:[],
       wpool:REALM.wpool.slice(), apool:REALM.apool.slice(),
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
@@ -1730,6 +1732,25 @@ $rg_theme_img = $rg_theme > 0
    * shelf buttons -- so the text a player reads and the text this file carries
    * cannot drift apart, because there is only one of them.
    */
+  /*
+   * Flash the card a location lives on. The Armory owns two lines -- weapons
+   * and the forge -- so 'forge' points at the same card as 'armory'; anything
+   * else is its own key.
+   */
+  var LOC_CARD = { barracks:'barracks', armory:'armory', forge:'armory',
+                   factory:'factory', mine:'mine', portal:'portal',
+                   crypt:'crypt', tower:'tower' };
+  function flashLoc(key) {
+    var id = LOC_CARD[key] || key;
+    var lvlEl = document.getElementById('rg-lvl-' + id);
+    var card  = lvlEl && lvlEl.closest ? lvlEl.closest('.rg-loc') : null;
+    if (!card) return;
+    card.classList.remove('rg-boon');
+    void card.offsetWidth;            // restart the animation if it re-fires
+    card.classList.add('rg-boon');
+    setTimeout(function () { card.classList.remove('rg-boon'); }, 2000);
+  }
+
   var UPGRADABLE = ['tower','barracks','armory','crypt','portal','factory','mine'];
   function useItem(it) {
     if (!it) return;
@@ -1746,14 +1767,7 @@ $rg_theme_img = $rg_theme > 0
        * this fires mid-fight, so it was routinely missed. The card that gained
        * it flashes, which is where the player is already looking.
        */
-      var lvlEl = document.getElementById('rg-lvl-' + k);
-      var card  = lvlEl && lvlEl.closest ? lvlEl.closest('.rg-loc') : null;
-      if (card) {
-        card.classList.remove('rg-boon');
-        void card.offsetWidth;            // restart the animation if it re-fires
-        card.classList.add('rg-boon');
-        setTimeout(function () { card.classList.remove('rg-boon'); }, 2000);
-      }
+      flashLoc(k);
     } else if (it.id === 3) {                // Fast Forward -- halve the wait
       S.prod.barracks = barracksRate();
       S.prod.armory   = armoryRate();
@@ -1762,7 +1776,17 @@ $rg_theme_img = $rg_theme > 0
       S.prod.mine     = mineRate();
       S.prod.portal   = portalRate();
       S.prod.crypt    = cryptRate();   // a resurrection readied too
-      log('Fast Forward: every line finishes at once.');
+      /*
+       * Armed for the NEXT tick, because "rushed" is not the same as "told to
+       * hurry". A line that is capped out holds at full and delivers nothing,
+       * so which lines actually produced is only known once produce() has run.
+       * The Portal and the Crypt are cooldowns rather than production, so they
+       * are always genuinely readied and can be flashed immediately.
+       */
+      S.rushPending = true;
+      flashLoc('portal');
+      flashLoc('crypt');
+      log('Fast Forward: every line that had room finishes at once.');
     } else {                                 // 25/50/75/100% Success
       var pct = { 2:0.25, 4:0.50, 5:0.75, 7:1.00 }[it.id] || 0.25;
       S.boost = pct;
@@ -2252,8 +2276,15 @@ $rg_theme_img = $rg_theme > 0
     function produce(key, rate, deliver) {
       if (S.prod[key] < rate) S.prod[key]++;
       if (S.prod[key] >= rate) {
-        if (deliver()) S.prod[key] = 0;
-        else S.prod[key] = rate;   // held: full, and waiting on space
+        if (deliver()) {
+          S.prod[key] = 0;
+          // Only on the tick a Rush armed, and only for a line that actually
+          // DELIVERED -- a capped line was told to hurry and produced nothing,
+          // and lighting it up would be the same lie the old bars told.
+          if (S.rushPending) flashLoc(key);
+        } else {
+          S.prod[key] = rate;   // held: full, and waiting on space
+        }
       }
     }
 
@@ -2297,6 +2328,8 @@ $rg_theme_img = $rg_theme > 0
     // asked. It fills whether or not anyone is dead, so a loss late in a run
     // is not also a wait -- the Crypt has been standing ready.
     if (S.prod.crypt < cryptRate()) S.prod.crypt++;
+    // One tick only. Every line has now had its chance to deliver.
+    S.rushPending = false;
 
     /*
      * THE BARRACKS FEEDS THE TOWER BY ITSELF.
