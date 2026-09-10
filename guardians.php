@@ -150,9 +150,19 @@ if (!$rg_has_realm) {
 	$rg_cache  = 2;
 }
 
-// A realm is fast-forward: total investment sets where on the ladder you begin.
+/*
+ * A realm is fast-forward: investment sets where on the ladder you begin.
+ *
+ * Location levels ALONE were not enough. Weapon level multiplies every armed
+ * guardian's damage (see towerDamage), and army size decides how many you can
+ * field at once -- so a player with a modest realm and a good cache was landing
+ * far below their real strength and steamrolling the early waves. All three now
+ * feed the score, with weapons weighted heavily because their effect is
+ * multiplicative rather than additive.
+ */
 $rg_total = array_sum($rg_levels);
-$rg_start_wave = $rg_has_realm ? max(1, intval(floor($rg_total / 4))) : 1;
+$rg_power = $rg_total + $rg_army + ($rg_wlevel * 4);
+$rg_start_wave = $rg_has_realm ? max(1, intval(floor($rg_power / 5))) : 1;
 
 // The horde wears real member avatars. Public everywhere already (podiums,
 // profiles), so this exposes nothing new -- and being overrun by names from
@@ -177,7 +187,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 		<?php if ($rg_has_realm): ?>
 			Defending <strong><?php echo htmlspecialchars($rg_realm_name); ?></strong> &mdash;
 			<?php echo $rg_army; ?> guardians, <?php echo $rg_cache; ?> weapons in the cache,
-			<?php echo $rg_total; ?> total location levels. Your realm starts you at wave <?php echo $rg_start_wave; ?>.
+			<?php echo $rg_total; ?> total location levels. Power <?php echo $rg_power; ?> starts you at wave <?php echo $rg_start_wave; ?>.
 		<?php else: ?>
 			You have no realm, so you hold the wall with conscripts. Build a realm and you
 			start further up the same ladder.
@@ -377,7 +387,14 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   function portalRate()   { return Math.max(40, 170 - L('portal') * 12); }
   function sortieSize()   { return Math.max(1, Math.ceil(L('portal') / 2)); }
   function raiseCost()    { return Math.max(3, 12 - L('crypt') * 2); }
-  function upgradeCost(k) { return 18 * L(k); }
+  /*
+   * Quadratic, not linear. At 18*level a wave's kills paid for two or three
+   * upgrades, so defense compounded faster than the ladder climbed and the run
+   * became unloseable by wave four. Now each level costs meaningfully more than
+   * the last, so upgrading is a choice against raising the dead rather than
+   * something you do with spare change.
+   */
+  function upgradeCost(k) { return 16 * L(k) + 8 * L(k) * L(k); }
   // Weapon LEVEL matters, not just count -- a better cache hits harder.
   function towerDamage()  {
     var d = S.armed * (2 + REALM.wlevel) + (S.garrison - S.armed) * 1;
@@ -441,14 +458,31 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       logEl.innerHTML.split('<br>').slice(0, 2).join('<br>');
   }
 
+  /*
+   * TUNING NOTE, from the first real playtest.
+   *
+   * The complaint was "I upgrade a little and the wave disappears -- I'm not
+   * inclined to deploy more." The cause was not that the defense was too
+   * strong. It was SPACING: foes were spawned 7-13 apart, so a 25-strong wave
+   * strung out over 340 units of approach and arrived roughly one every two and
+   * a half seconds. A single-target volley kills one in well under a second, so
+   * the Tower never once fell behind. No mass, no leaks, nothing to react to.
+   *
+   * They now arrive as a COLUMN. Spacing is a third of what it was, so the wave
+   * reaches the wall faster than one gun can chew through it, and the pressure
+   * comes from being outnumbered rather than from any single attacker being
+   * tough. That is where the frenetic part of a tower defense actually lives.
+   */
   function buildWave(n) {
-    var q = [], count = 3 + Math.floor(n * 1.5);
+    var q = [], count = 4 + Math.floor(n * 1.9);
     for (var i = 0; i < count; i++) {
       var tough = n >= 3 && rand() < 0.16 + n * 0.015;
-      var hp = (tough ? 26 : 10) + n * 4;
+      var hp = (tough ? 24 : 10) + n * 5;
       q.push({ id:foeSeq++, hp:hp, max:hp,
-               speed:(tough ? 0.20 : 0.32) + n * 0.005,
-               pos:100 + i * (7 + rand() * 6), tough:tough });
+               speed:(tough ? 0.24 : 0.38) + n * 0.006,
+               // Tight. This one number is the difference between a siege and
+               // a queue.
+               pos:100 + i * (2.2 + rand() * 1.8), tough:tough });
     }
     return q;
   }
@@ -527,7 +561,13 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     }
 
     if (!S.foes.length) {
-      if (S.betweenWaves <= 0) { S.betweenWaves = 45; el.status.textContent = 'Wave held &mdash; regroup'; }
+      // The respite shrinks as the siege wears on. A fixed gap meant a strong
+      // realm always had time to fully restock, which is the other half of why
+      // it stopped being a fight.
+      if (S.betweenWaves <= 0) {
+        S.betweenWaves = Math.max(14, 45 - S.wave);
+        el.status.textContent = 'Wave held &mdash; regroup';
+      }
       S.betweenWaves--;
       if (S.betweenWaves <= 0) startWave();
     }
@@ -537,7 +577,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   function kill(f) {
     var i = S.foes.indexOf(f);
     if (i >= 0) S.foes.splice(i, 1);
-    S.carbon += f.tough ? 6 : 2;
+    S.carbon += f.tough ? 4 : 1;   // tighter than it was; the economy was flooding
     sfxPlay('kill', 0.22);
   }
 
