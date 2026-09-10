@@ -66,13 +66,13 @@ $rg_levels = array('tower'=>0,'barracks'=>0,'armory'=>0,'crypt'=>0,'portal'=>0,'
 $rg_army = 0; $rg_armed = 0; $rg_cache = 0; $rg_wlevel = 1; $rg_realm_name = '';
 $rg_has_realm = false;
 $rg_units = array();   // the player's own soldiers, as NFT art
-$rg_wicon = '';        // the best weapon in the cache, worn by armed guardians
-$rg_aicon = '';        // the best armor in the cache, worn by protected guardians
 $rg_acache = 0;        // unissued armor pieces
 // Each guardian's ACTUAL kit: {w: weapon level, a: armour level}, 0 for neither.
 $rg_kit_tower = array(); $rg_kit_raid = array(); $rg_kit_reserve = array();
 // The unissued cache, expanded by quantity into a pool of levels.
 $rg_wpool = array(); $rg_apool = array();
+// The weapon and armour catalogues, so a forged tier becomes a real item.
+$rg_wcat = array(); $rg_acat = array();
 $rg_crypt = 0;         // enlisted NFTs currently dead -- they start in the Crypt
 $rg_theme = 0;         // the realm's theme, used as the page backdrop
 $rg_garrison = 0; $rg_g_armed = 0; $rg_g_armored = 0;   // already on the wall
@@ -156,7 +156,8 @@ if ($rg_me > 0) {
 		 * INNER JOIN would silently drop exactly the soldiers being counted.
 		 */
 		$rg_kit_sql = "SELECT soldiers.location AS loc,
-		                      COALESCE(w.level,0) AS wl, COALESCE(a.level,0) AS al
+		                      COALESCE(w.level,0) AS wl, COALESCE(w.name,'') AS wn,
+		                      COALESCE(a.level,0) AS al, COALESCE(a.name,'') AS an
 		               FROM soldiers
 		               LEFT JOIN weapons w ON w.id = soldiers.weapon_id
 		               LEFT JOIN armor   a ON a.id = soldiers.armor_id
@@ -166,7 +167,11 @@ if ($rg_me > 0) {
 		               LIMIT 400";
 		$kr = $conn->query($rg_kit_sql);
 		if ($kr) while ($k2 = $kr->fetch_assoc()) {
-			$kit = array('w' => intval($k2['wl']), 'a' => intval($k2['al']));
+			// The NAME travels with the level. It is what picks both the icon a
+			// guardian wears and the sound their weapon makes -- without it every
+			// guardian wore the cache's best weapon and fired a random noise.
+			$kit = array('w' => intval($k2['wl']), 'wn' => (string)$k2['wn'],
+			             'a' => intval($k2['al']), 'an' => (string)$k2['an']);
 			$loc = intval($k2['loc']);
 			if     ($loc === RG_LOC_TOWER) $rg_kit_tower[]   = $kit;
 			elseif ($loc === RG_LOC_RAID)  $rg_kit_raid[]    = $kit;
@@ -272,32 +277,39 @@ if ($rg_me > 0) {
 	 * weapons really is five draws at level 2, and capped so a large inventory
 	 * cannot bloat the page.
 	 */
-	$pr = $conn->query("SELECT g.type, COALESCE(w.level, a.level, 1) AS lvl, g.quantity
+	$pr = $conn->query("SELECT g.type, COALESCE(w.level, a.level, 1) AS lvl,
+	                           COALESCE(w.name, a.name, '') AS nm, g.quantity
 	                    FROM gear g
 	                    LEFT JOIN weapons w ON g.type = 'weapon' AND w.id = g.item_id
 	                    LEFT JOIN armor   a ON g.type = 'armor'  AND a.id = g.item_id
 	                    WHERE g.user_id = $rg_me AND g.quantity > 0
 	                      AND g.type IN ('weapon','armor')");
 	if ($pr) while ($pw = $pr->fetch_assoc()) {
-		$lvl = max(1, intval($pw['lvl']));
+		$piece = array('lvl' => max(1, intval($pw['lvl'])), 'name' => (string)$pw['nm']);
 		$qty = min(200, intval($pw['quantity']));
 		for ($i = 0; $i < $qty; $i++) {
-			if ($pw['type'] === 'weapon') { if (count($rg_wpool) < 300) $rg_wpool[] = $lvl; }
-			else                          { if (count($rg_apool) < 300) $rg_apool[] = $lvl; }
+			if ($pw['type'] === 'weapon') { if (count($rg_wpool) < 300) $rg_wpool[] = $piece; }
+			else                          { if (count($rg_apool) < 300) $rg_apool[] = $piece; }
 		}
 	}
 	// Best first, so issuing draws the good stuff before the dregs -- which is
 	// what a quartermaster would do and keeps the early waves feeling equipped.
-	rsort($rg_wpool);
-	rsort($rg_apool);
+	$rg_bylvl = function ($x, $y) { return $y['lvl'] - $x['lvl']; };
+	usort($rg_wpool, $rg_bylvl);
+	usort($rg_apool, $rg_bylvl);
 
-	$wr = $conn->query("SELECT w.name FROM gear g
-	                    INNER JOIN weapons w ON w.id = g.item_id
-	                    WHERE g.user_id = $rg_me AND g.type = 'weapon' AND g.quantity > 0
-	                    ORDER BY w.level DESC LIMIT 1");
-	if ($wr && $wr->num_rows > 0) {
-		$wn = (string)$wr->fetch_assoc()['name'];
-		if ($wn !== '') $rg_wicon = 'icons/' . strtolower(str_replace(array('%', ' '), array('', '-'), $wn)) . '.png';
+	/*
+	 * The catalogues, so gear FORGED in-game gets a real item rather than a bare
+	 * tier number. A rolled tier looks up the weapon or armour of that level, so
+	 * the icon it wears and the sound it makes are the platform's own.
+	 */
+	$cwr = $conn->query("SELECT name, level FROM weapons ORDER BY level ASC");
+	if ($cwr) while ($cw = $cwr->fetch_assoc()) {
+		$rg_wcat[] = array('name' => (string)$cw['name'], 'lvl' => intval($cw['level']));
+	}
+	$car = $conn->query("SELECT name, level FROM armor ORDER BY level ASC");
+	if ($car) while ($ca = $car->fetch_assoc()) {
+		$rg_acat[] = array('name' => (string)$ca['name'], 'lvl' => intval($ca['level']));
 	}
 
 	/*
@@ -315,14 +327,6 @@ if ($rg_me > 0) {
 		$r2 = $rr2->fetch_assoc();
 		$rg_acache = intval($r2['qty']);
 		$rg_alevel = max(1, intval($r2['lvl']));
-	}
-	$ar2 = $conn->query("SELECT a.name FROM gear g
-	                     INNER JOIN armor a ON a.id = g.item_id
-	                     WHERE g.user_id = $rg_me AND g.type = 'armor' AND g.quantity > 0
-	                     ORDER BY a.level DESC LIMIT 1");
-	if ($ar2 && $ar2->num_rows > 0) {
-		$an = (string)$ar2->fetch_assoc()['name'];
-		if ($an !== '') $rg_aicon = 'icons/' . strtolower(str_replace(array('%', ' '), array('', '-'), $an)) . '.png';
 	}
 }
 
@@ -563,9 +567,12 @@ $rg_theme_img = $rg_theme > 0
 			<img id="rg-tower-icon" src="icons/locations/tower.png" alt="Tower"
 			     title="The Tower. Its garrison fires from here." onerror="this.style.display='none'">
 			<img id="rg-portal-icon" src="icons/locations/portal.png" alt="Portal"
-			     title="The Portal. Sortied guardians step through here." onerror="this.style.display='none'">
+			     title="The Portal. Striking guardians step through here." onerror="this.style.display='none'">
 			<div id="rg-sortie"></div>
 			<div id="rg-enemies"></div>
+			<!-- Tower fire. Purely decorative, desktop only, and empty on mobile
+			     and for anyone who asked for reduced motion. -->
+			<div id="rg-tracers"></div>
 		</div>
 
 		<div id="rg-locations">
@@ -600,9 +607,9 @@ $rg_theme_img = $rg_theme > 0
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/portal.png" alt="" onerror="this.style.display='none'">Portal <span class="rg-lvl" id="rg-lvl-portal">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-sortied">0</strong> in the field</div>
-				<div class="rg-bar" title="Portal cooldown -- Sortie is ready when full"><i id="rg-bar-portal"></i></div>
-					<div class="rg-cap">sortie ready when full</div>
-				<button type="button" class="rg-act" data-act="sortie" title="Send guardians out through the Portal to meet the horde in the open, before it reaches your wall. They fight with no Tower behind them.">Sortie</button>
+				<div class="rg-bar" title="Portal cooldown -- Strike is ready when full"><i id="rg-bar-portal"></i></div>
+					<div class="rg-cap">strike ready when full</div>
+				<button type="button" class="rg-act" data-act="sortie" title="Send guardians out through the Portal to meet the horde in the open, before it reaches your wall. They fight with no Tower behind them.">Strike</button>
 				<button type="button" class="rg-act rg-up" data-act="up-portal">Upgrade</button>
 			</div>
 			<div class="rg-loc">
@@ -610,7 +617,7 @@ $rg_theme_img = $rg_theme > 0
 				<div class="rg-loc-stat"><strong id="rg-items">0</strong> items</div>
 				<div class="rg-bar" title="Time until the Factory builds the next item"><i id="rg-bar-factory"></i></div>
 					<div class="rg-cap">building next item</div>
-				<button type="button" class="rg-act" data-act="fortify" title="Spend a Factory item: repairs the wall and makes the Tower hit 50% harder for six seconds">Fortify</button>
+				<button type="button" class="rg-act" data-act="fortify" title="Spend the next Factory item. What it does depends on what the Factory built &mdash; the log says so the moment it lands">Fortify</button>
 				<button type="button" class="rg-act rg-up" data-act="up-factory">Upgrade</button>
 			</div>
 			<div class="rg-loc rg-wide">
@@ -648,12 +655,13 @@ $rg_theme_img = $rg_theme > 0
 					with a high Crypt. Best when the Barracks can't replace losses fast enough.</li>
 					<li><strong>Upgrade</strong> &mdash; permanently improve a rate or cap for the
 					rest of this run. Compounds, so early upgrades are worth more than late ones.</li>
-					<li><strong>Sortie</strong> (free, but costs guardians and gear) &mdash; kill
+					<li><strong>Strike</strong> (free, but costs guardians and gear) &mdash; kill
 					attackers in the open before they reach the wall. Trades bodies for wall
 					damage you never take.</li>
-					<li><strong>Fortify</strong> (costs a Factory item) &mdash; repairs the wall
-					<em>and</em> makes the Tower hit 50% harder for six seconds. Save it for the
-					moment a wave is about to break through.</li>
+					<li><strong>Fortify</strong> (costs a Factory item) &mdash; spends whatever
+					the Factory built: a shield, a free level, a rush on every production line,
+					or a burst of Tower damage. Save it for the moment a wave is about to break
+					through.</li>
 				</ul>
 				<p><strong>The strategy:</strong> spend early on upgrades while they still have
 				time to compound, then switch to raising and fortifying once waves outpace
@@ -703,7 +711,9 @@ $rg_theme_img = $rg_theme > 0
   padding:10px 14px;
   backdrop-filter:blur(2px);
 }
-#row1.rg-themed h2.rg-intro { display:inline-block; margin-bottom:10px; }
+/* Block, not inline-block: shrink-wrapping made the title a small left-hugging
+   box while everything below it sat in the 720px column. */
+#row1.rg-themed h2.rg-intro { margin-bottom:10px; }
 #row1.rg-themed .rg-blurb { margin-top:0; }
 .rg-blurb { font-size:.82rem; color:rgba(255,255,255,.5); margin:-6px 0 16px; line-height:1.5; }
 .rg-blurb strong { color:#00c8a0; }
@@ -760,6 +770,22 @@ $rg_theme_img = $rg_theme > 0
 #rg-portal-icon { left:25%; top:50%; transform:translate(-50%,-50%); width:30px; height:30px;
                   object-fit:contain; opacity:.55; filter:drop-shadow(0 0 6px rgba(0,200,160,.7)); }
 #rg-sortie, #rg-enemies { z-index:1; }
+/* ---- Tower fire ----------------------------------------------------------
+   A tracer leaves the Tower whenever an attacker crosses the Portal, so the
+   garrison visibly does something instead of the wall just losing height.
+   Decorative: the layer takes no pointer events, holds nothing the sim reads,
+   and is never populated at all on phones (see TRACERS in the script). Animated
+   on transform/opacity only -- both composited, so no layout runs per shot. */
+#rg-tracers { position:absolute; inset:0; pointer-events:none; z-index:2; }
+.rg-tracer { position:absolute; top:50%; margin-top:-1px; width:12px; height:2px; border-radius:1px;
+             background:linear-gradient(90deg, rgba(255,214,102,0), #ffd666);
+             animation:rg-tracer .26s linear forwards; will-change:transform, opacity; }
+@keyframes rg-tracer {
+  from { transform:translateX(0);              opacity:1; }
+  to   { transform:translateX(var(--rg-dx,0)); opacity:0; }
+}
+/* The muzzle end, so the shot reads as coming FROM the Tower. */
+#rg-tower-icon.rg-firing { filter:drop-shadow(0 0 6px rgba(255,214,102,.95)); }
 .rg-foe { position:absolute; top:50%; transform:translateY(-50%); box-sizing:border-box; width:26px; height:26px; border-radius:50%; background:#c0392b; border:2px solid #c0392b; transition:left .1s linear; }
 .rg-foe img { width:100%; height:100%; border-radius:50%; display:block; object-fit:cover; }
 .rg-foe.rg-tough { width:34px; height:34px; border-color:#c39bd3; box-shadow:0 0 8px rgba(195,155,211,.6); }
@@ -768,18 +794,27 @@ $rg_theme_img = $rg_theme > 0
 /* Your guardians: their own NFT art, ringed in the platform green so they read
    as yours at a glance against the red horde. */
 /* Identical footprint to a foe -- border-box so the border sits INSIDE, or a
-   2px border silently makes one 4px bigger than the other. */
-.rg-unit { position:absolute; top:16%; box-sizing:border-box; width:26px; height:26px; border-radius:50%; background:#0a1929; border:2px solid #00c8a0; box-shadow:0 0 6px rgba(0,200,160,.5); transition:left .1s linear; }
+   2px border silently makes one 4px bigger than the other.
+   THE ART IS THE POINT. These are 26px circles carrying somebody's NFT, and the
+   status ring is only worth anything if you can still tell whose face it is
+   round. Everything decorative is therefore drawn at the EDGE or OUTSIDE it:
+   a 1px border rather than 2px, the kit ring as an outset shadow instead of a
+   second inner ring, and the badges pushed off the circle so they clip a
+   corner rather than sitting on the face. Four heavy rings on 26px left about
+   twenty usable pixels of artwork. */
+.rg-unit { position:absolute; top:16%; box-sizing:border-box; width:26px; height:26px; border-radius:50%; background:#0a1929; border:1px solid rgba(0,200,160,.9); box-shadow:0 0 5px rgba(0,200,160,.45); transition:left .1s linear; }
 .rg-unit img { width:100%; height:100%; border-radius:50%; display:block; object-fit:cover; }
-.rg-unit.rg-armed { border-color:#ffcc44; box-shadow:0 0 8px rgba(255,204,68,.6); }
-/* The weapon they carry, badged on the shoulder. */
-.rg-unit b { position:absolute; right:-5px; bottom:-5px; width:14px; height:14px; background:#07111d; border-radius:50%; display:block; padding:1px; }
+.rg-unit.rg-armed { border-color:rgba(255,204,68,.95); box-shadow:0 0 6px rgba(255,204,68,.55); }
+/* The weapon they carry, badged clear of the face. */
+.rg-unit b { position:absolute; right:-6px; bottom:-6px; width:12px; height:12px; background:#07111d; border-radius:50%; display:block; padding:1px; }
 /* Armour on the other shoulder, so a guardian can visibly carry both. */
-.rg-unit u { position:absolute; left:-5px; bottom:-5px; width:14px; height:14px; background:#07111d; border-radius:50%; display:block; padding:1px; }
+.rg-unit u { position:absolute; left:-6px; bottom:-6px; width:12px; height:12px; background:#07111d; border-radius:50%; display:block; padding:1px; }
 .rg-unit b img, .rg-unit u img { width:100%; height:100%; object-fit:contain; border-radius:0; }
-/* Armoured guardians get a steel ring; armed ones gold. Both shows as gold with
-   a steel inner edge, which reads as "fully kitted" at a glance. */
-.rg-unit.rg-prot { box-shadow:0 0 0 2px rgba(190,200,215,.8), 0 0 8px rgba(190,200,215,.5); }
+/* Armoured guardians get a steel halo. Drawn OUTSIDE the circle, so it reads
+   as "fully kitted" next to the gold border without stealing another pixel of
+   the artwork. */
+.rg-unit.rg-prot { box-shadow:0 0 0 1px rgba(190,200,215,.85), 0 0 7px rgba(190,200,215,.45); }
+.rg-unit.rg-armed.rg-prot { box-shadow:0 0 0 1px rgba(190,200,215,.85), 0 0 6px rgba(255,204,68,.55); }
 
 /*
  * THREE ACROSS, AND TIGHT. The field wants the full width -- more room to watch
@@ -867,6 +902,8 @@ $rg_theme_img = $rg_theme > 0
     wpool:  <?php echo json_encode($rg_wpool); ?>,
     items:  <?php echo json_encode($rg_items); ?>,
     apool:  <?php echo json_encode($rg_apool); ?>,
+    wcat:   <?php echo json_encode($rg_wcat); ?>,
+    acat:   <?php echo json_encode($rg_acat); ?>,
     crypt:  <?php echo intval($rg_crypt); ?>,
     garrison:<?php echo intval($rg_garrison); ?>,
     garmed: <?php echo intval($rg_g_armed); ?>,
@@ -882,8 +919,6 @@ $rg_theme_img = $rg_theme > 0
   var CANDIDATES = <?php echo json_encode($rg_horde); ?>;
   var VERIFIED = [], HORDE = [];
   var UNITS = <?php echo json_encode($rg_units); ?>;   // your soldiers, as NFT art
-  var WICON = <?php echo json_encode($rg_wicon); ?>;   // best weapon in the cache
-  var AICON = <?php echo json_encode($rg_aicon); ?>;   // best armor in the cache
 
   /* Deterministic core: seeded PRNG, fixed timestep, no Math.random. */
   var SEED = 20260909;
@@ -952,7 +987,7 @@ $rg_theme_img = $rg_theme > 0
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
       prod:{ barracks:0, armory:0, forge:0, factory:0, mine:0, portal:0, reinforce:0 },
       bought:{ tower:0, barracks:0, armory:0, crypt:0, portal:0, factory:0, mine:0 },
-      foes:[], nextAttack:0, betweenWaves:0
+      foes:[], nextAttack:0, betweenWaves:0, fireIdx:0
     };
 
     /*
@@ -976,18 +1011,19 @@ $rg_theme_img = $rg_theme > 0
     // Each guardian arrives with the kit they actually carry in the realm.
     var cap = garrisonCap();
     for (var g = 0; g < REALM.kitTower.length; g++) {
-      var kt = { w: REALM.kitTower[g].w, a: REALM.kitTower[g].a };
+      var kt = { w: REALM.kitTower[g].w, wn: REALM.kitTower[g].wn,
+                 a: REALM.kitTower[g].a, an: REALM.kitTower[g].an };
       if (S.garrison.length < cap) S.garrison.push(kt); else S.reserve.push(kt);
     }
     for (var v = 0; v < REALM.kitReserve.length; v++) {
-      S.reserve.push({ w: REALM.kitReserve[v].w, a: REALM.kitReserve[v].a });
+      S.reserve.push({ w: REALM.kitReserve[v].w, wn: REALM.kitReserve[v].wn,
+                       a: REALM.kitReserve[v].a, an: REALM.kitReserve[v].an });
     }
     for (var r = 0; r < REALM.kitRaid.length; r++) {
       var kr = REALM.kitRaid[r];
       S.sortied.push({
         pos:   Math.min(96, PORTAL_X + 2 + r * 3),
-        w:     kr.w,
-        a:     kr.a,
+        w: kr.w, wn: kr.wn, a: kr.a, an: kr.an,
         hp:    unitHp(kr),
         slot:  unitSeq++
       });
@@ -1023,16 +1059,6 @@ $rg_theme_img = $rg_theme > 0
     }
     return REALM.items[REALM.items.length - 1];
   }
-  // What each does here, in the words of what it does in Realms.
-  var RG_ITEM_HELP = {
-    1: 'Random Reward: a free level to a random location.',
-    2: '25% Success: the Tower hits 25% harder for six seconds.',
-    3: 'Fast Forward: every production line completes immediately.',
-    4: '50% Success: the Tower hits 50% harder for six seconds.',
-    5: '75% Success: the Tower hits 75% harder for six seconds.',
-    6: 'Double Rewards: a shield that absorbs the next hit entirely.',
-    7: '100% Success: the Tower hits twice as hard for six seconds.'
-  };
   var UPGRADABLE = ['tower','barracks','armory','crypt','portal','factory','mine'];
   function useItem(it) {
     if (!it) return;
@@ -1060,6 +1086,50 @@ $rg_theme_img = $rg_theme > 0
     }
   }
 
+  /*
+   * A gear NAME decides two things, and the two use different spellings:
+   *
+   *   icon   icons/<lowercase, spaces to DASHES>.png   "machine-gun.png"
+   *   sound  audio/sounds/<lowercase, spaces REMOVED>.mp3  "machinegun.mp3"
+   *
+   * Both were verified against the live server. machinegun.png is a 404 and
+   * machine-gun.mp3 is a 404 -- they are genuinely different conventions, so
+   * deriving one from the other with a single rule silently produces nothing.
+   */
+  function gearIcon(name) {
+    if (!name) return '';
+    return 'icons/' + String(name).toLowerCase().replace(/%/g, '').replace(/\s+/g, '-') + '.png';
+  }
+  /*
+   * The SAME whitelist cryptcrawlWeaponSfxName() keeps (cryptcrawl-render.php:21).
+   * Deriving the basename works for every weapon that has a sound today, but a
+   * weapon added to the table tomorrow would derive a name with no file behind
+   * it and fire a 404 on every shot. Crypt Crawl answers a miss with null and
+   * skips the weapon layer; here a miss falls back to the unarmed bank, so a
+   * guardian holding something unrecognised still makes a sound.
+   */
+  var WEAPON_SFX = {
+    'melee': 'melee', 'tactical-katana': 'tacticalkatana', 'pistol': 'pistol',
+    'grenade': 'grenade', 'sniper-rifle': 'sniperrifle', 'machine-gun': 'machinegun',
+    'demolition': 'demolition', 'flamethrower': 'flamethrower',
+    'rocket-launcher': 'rocketlauncher', 'artillery': 'artillery'
+  };
+  function gearSfx(name) {
+    if (!name) return '';
+    var slug = String(name).toLowerCase().replace(/%/g, '').replace(/\s+/g, '-');
+    return WEAPON_SFX[slug] || '';
+  }
+  // Forged gear becomes a real item of that tier, so it wears and sounds like
+  // something rather than being an anonymous level.
+  function catPick(cat, tier) {
+    if (!cat || !cat.length) return null;
+    var best = cat[0];
+    for (var i = 0; i < cat.length; i++) {
+      if (Math.abs(cat[i].lvl - tier) < Math.abs(best.lvl - tier)) best = cat[i];
+    }
+    return { lvl: best.lvl, name: best.name };
+  }
+
   function soldierDamage(s) { return s.w > 0 ? 2 + s.w : 1; }
   function unitHp(s)        { return (s.w > 0 ? 6 : 4) + (s.a > 0 ? 2 + s.a : 0); }
   function armedCount()     { var n = 0; for (var i = 0; i < S.garrison.length; i++) if (S.garrison[i].w > 0) n++; return n; }
@@ -1067,14 +1137,14 @@ $rg_theme_img = $rg_theme > 0
   // Issue from the cache to anyone short of kit. Best first: a quartermaster
   // hands out the good stuff, and it keeps early waves feeling equipped.
   function equip(s) {
-    if (s.w === 0 && S.wpool.length) s.w = S.wpool.shift();
-    if (s.a === 0 && S.apool.length) s.a = S.apool.shift();
+    if (s.w === 0 && S.wpool.length) { var pw = S.wpool.shift(); s.w = pw.lvl; s.wn = pw.name; }
+    if (s.a === 0 && S.apool.length) { var pa = S.apool.shift(); s.a = pa.lvl; s.an = pa.name; }
     return s;
   }
-  function poolIn(pool, lvl, cap) {
-    if (pool.length >= cap) return;
-    pool.push(lvl);
-    pool.sort(function (x, y) { return y - x; });   // best first
+  function poolIn(pool, piece, cap) {
+    if (!piece || pool.length >= cap) return;
+    pool.push(piece);
+    pool.sort(function (x, y) { return y.lvl - x.lvl; });   // best first
   }
 
   /* Every level is a RATE or a CAP -- never one power number. That is the whole
@@ -1141,10 +1211,65 @@ $rg_theme_img = $rg_theme > 0
   var logEl = document.getElementById('rg-log');
   var beginBtn = document.getElementById('rg-begin');
 
+  /* ---- Tower fire ------------------------------------------------------
+   * DESKTOP ONLY, on purpose. A late wave puts dozens of attackers across the
+   * Portal within a second or two, and that is exactly the moment a phone is
+   * already animating a screen full of avatars -- adding a burst of elements
+   * there costs frames on the device least able to spare them. The whole
+   * feature is therefore switched off below the mobile breakpoint rather than
+   * merely made cheaper, and off again for anyone who asked for reduced
+   * motion. Nothing downstream depends on it: tracers live outside S, so a
+   * run plays and replays identically whether or not a single one is drawn.
+   */
+  var tracersEl = document.getElementById('rg-tracers');
+  var fieldEl   = document.getElementById('rg-field');
+  var towerEl   = document.getElementById('rg-tower-icon');
+  var TRACERS = (function () {
+    if (!tracersEl || !fieldEl || !window.matchMedia) return false;
+    if (window.matchMedia('(max-width:560px)').matches) return false;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+    // A coarse pointer is a touch device however wide the viewport claims to be.
+    if (window.matchMedia('(pointer: coarse)').matches) return false;
+    return true;
+  })();
+  // The Tower icon is 26px wide at left:14px, so its muzzle is at 40px.
+  var MUZZLE_X = 40, liveTracers = 0, flashTimer = 0;
+  function tracer(posPct) {
+    // Capped: past a certain density they stop reading as individual shots and
+    // only cost paint, so a heavy wave draws a burst, not one per attacker.
+    if (!TRACERS || liveTracers >= 10) return;
+    var w = fieldEl.clientWidth;
+    if (!w) return;
+    var dx = (w * posPct / 100) - MUZZLE_X;
+    if (dx <= 0) return;              // already past the muzzle; nothing to draw
+    var t = document.createElement('i');
+    t.className = 'rg-tracer';
+    t.style.left = MUZZLE_X + 'px';
+    t.style.setProperty('--rg-dx', dx + 'px');
+    liveTracers++;
+    t.addEventListener('animationend', function () {
+      if (t.parentNode) t.parentNode.removeChild(t);
+      liveTracers--;
+    });
+    tracersEl.appendChild(t);
+    if (towerEl) {
+      towerEl.classList.add('rg-firing');
+      clearTimeout(flashTimer);
+      flashTimer = setTimeout(function () { towerEl.classList.remove('rg-firing'); }, 90);
+    }
+  }
+  // A finished run leaves nothing hanging in the air.
+  function tracersClear() {
+    if (!tracersEl) return;
+    while (tracersEl.firstChild) tracersEl.removeChild(tracersEl.firstChild);
+    liveTracers = 0;
+    if (towerEl) towerEl.classList.remove('rg-firing');
+  }
+
   /* ---- The cacophony. Crypt Crawl's weapon sounds, reused from audio/sounds/.
-     Armed defenders fire guns, unarmed swing fists, so an empty Armory is
-     AUDIBLE before the counter is read. Cosmetic: never touches the sim. ---- */
-  var ARMED_SFX   = ['machinegun','pistol','sniperrifle','rocketlauncher','artillery','grenade','flamethrower','demolition'];
+     Each guardian fires THEIR OWN weapon -- a wall of pistols sounds different
+     from a wall of launchers -- and the unarmed swing fists, so an empty Armory
+     is AUDIBLE before the counter is read. Cosmetic: never touches the sim. ---- */
   var UNARMED_SFX = ['fist','melee','tacticalkatana'];
   var sfxOn = true, sfxPool = {}, sfxCursor = 0;
   function sfxLoad(name) {
@@ -1163,14 +1288,29 @@ $rg_theme_img = $rg_theme > 0
     p.i = (p.i + 1) % p.list.length;
     try { a.currentTime = 0; a.volume = vol === undefined ? 0.10 : vol; a.play().catch(function () {}); } catch (e) {}
   }
+  /*
+   * THE SOUND IS THE GUARDIAN'S OWN WEAPON, and only fires when they do.
+   *
+   * It used to draw at random from a bank of every weapon in the game, so the
+   * wall made noises for guns nobody was carrying. Now each shot is the actual
+   * weapon of the guardian taking it -- a Machine Gun sounds like a machine gun
+   * and a bare-handed guardian sounds like fists -- which also means the
+   * cacophony tells you what your army is actually holding.
+   *
+   * Shooters rotate through the garrison so the volley is not always the same
+   * two guardians, and the count is still capped: enough to read as a firefight
+   * without being unlistenable.
+   */
   function sfxVolley() {
-    if (!sfxOn) return;
+    if (!sfxOn || !S.garrison.length) return;
     var shots = Math.min(2, Math.max(1, Math.ceil(S.garrison.length / 3)));
     for (var i = 0; i < shots; i++) {
-      var bank = (i < armedCount()) ? ARMED_SFX : UNARMED_SFX;
-      var name = bank[(sfxCursor++) % bank.length];
+      var g = S.garrison[(S.fireIdx + i) % S.garrison.length];
+      var name = g.w > 0 ? gearSfx(g.wn) : UNARMED_SFX[(sfxCursor++) % UNARMED_SFX.length];
+      if (!name) name = UNARMED_SFX[0];
       (function (n, d) { setTimeout(function () { sfxPlay(n, 0.10); }, d); })(name, i * 70);
     }
+    S.fireIdx = (S.fireIdx + shots) % S.garrison.length;
   }
 
   /* ---- Music. Separate channel from the weapon effects, deliberately: the
@@ -1286,7 +1426,7 @@ $rg_theme_img = $rg_theme > 0
     // Production. Every location earns its keep on a timer.
     S.prod.barracks++;
     // A raw recruit: no kit until the Armory can issue some.
-    if (S.prod.barracks >= barracksRate()) { S.prod.barracks = 0; if (S.reserve.length < reserveCap()) S.reserve.push({ w:0, a:0 }); }
+    if (S.prod.barracks >= barracksRate()) { S.prod.barracks = 0; if (S.reserve.length < reserveCap()) S.reserve.push({ w:0, wn:'', a:0, an:'' }); }
     /*
      * The Armory forges BOTH. It was producing weapons only, so armour was
      * whatever the cache started with and then gone for good -- reported as
@@ -1296,9 +1436,9 @@ $rg_theme_img = $rg_theme > 0
      */
     S.prod.armory++;
     // Forged gear rolls its tier from the realm's own drop table.
-    if (S.prod.armory >= armoryRate()) { S.prod.armory = 0; poolIn(S.wpool, rollTier(), weaponCap()); }
+    if (S.prod.armory >= armoryRate()) { S.prod.armory = 0; poolIn(S.wpool, catPick(REALM.wcat, rollTier()), weaponCap()); }
     S.prod.forge++;
-    if (S.prod.forge >= forgeRate()) { S.prod.forge = 0; poolIn(S.apool, rollTier(), armorCap()); }
+    if (S.prod.forge >= forgeRate()) { S.prod.forge = 0; poolIn(S.apool, catPick(REALM.acat, rollTier()), armorCap()); }
     S.prod.factory++;
     if (S.prod.factory >= factoryRate()) { S.prod.factory = 0; if (S.items.length < itemCap()) { var ni = rollItem(); if (ni) S.items.push(ni); } }
     S.prod.mine++;
@@ -1365,6 +1505,8 @@ $rg_theme_img = $rg_theme > 0
       if (!near) { u.pos = Math.max(u.pos - 0.4, 2); continue; }
       if (bestd < 4) {
         near.hp -= soldierDamage(u);
+        // A sortied guardian's own weapon, heard only when it connects.
+        if (bestd < 4) sfxPlay(u.w > 0 ? (gearSfx(u.wn) || UNARMED_SFX[0]) : UNARMED_SFX[0], 0.09);
         u.hp -= near.tough ? 2 : 1;
         if (near.hp <= 0) kill(near);
         if (u.hp <= 0) {
@@ -1380,7 +1522,12 @@ $rg_theme_img = $rg_theme > 0
     // Advance, and resolve anything reaching the wall.
     for (var j = S.foes.length - 1; j >= 0; j--) {
       var f = S.foes[j];
+      var wasBeyondPortal = f.pos > PORTAL_X;
       f.pos -= f.speed;
+      // Crossing the Portal is the moment the Tower has a clear shot. Cosmetic
+      // only, and deliberately edge-triggered: one tracer per attacker per run,
+      // not one per frame while it is inside the line.
+      if (wasBeyondPortal && f.pos <= PORTAL_X) tracer(f.pos);
       if (f.pos <= 0) {
         S.foes.splice(j, 1);
         S.hp -= f.tough ? 12 : 5;
@@ -1544,16 +1691,25 @@ $rg_theme_img = $rg_theme > 0
           uimg.src = art2.img;
           unode.appendChild(uimg);
         }
-        if (un2.w > 0 && WICON) {
+        // THEIR weapon and THEIR armour -- not the cache's best applied to
+        // everyone, which is why the initial raiders were wearing gear they do
+        // not carry.
+        var wsrc = un2.w > 0 ? gearIcon(un2.wn) : '';
+        if (wsrc) {
           var wb = document.createElement('b');
           var wi = document.createElement('img');
-          wi.alt = ''; wi.onerror = function () { wb.style.display = 'none'; }; wi.src = WICON;
+          wi.alt = ''; wi.title = un2.wn;
+          wi.onerror = function () { wb.style.display = 'none'; };
+          wi.src = wsrc;
           wb.appendChild(wi); unode.appendChild(wb);
         }
-        if (un2.a > 0 && AICON) {
+        var asrc = un2.a > 0 ? gearIcon(un2.an) : '';
+        if (asrc) {
           var ab = document.createElement('u');
           var ai = document.createElement('img');
-          ai.alt = ''; ai.onerror = function () { ab.style.display = 'none'; }; ai.src = AICON;
+          ai.alt = ''; ai.title = un2.an;
+          ai.onerror = function () { ab.style.display = 'none'; };
+          ai.src = asrc;
           ab.appendChild(ai); unode.appendChild(ab);
         }
         unitNodes[un2.slot] = unode;
@@ -1572,14 +1728,11 @@ $rg_theme_img = $rg_theme > 0
       else if (a === 'raise')   b.disabled = !(S.dead > 0 && S.carbon >= raiseCost());
       else if (a === 'sortie')  b.disabled = !(S.reserve.length && S.prod.portal >= portalRate() && S.running);
       else if (a === 'fortify') {
-        // Items vary now, so the button has to say WHICH one is next -- "use
-        // the thing" is not a decision, and a Double Rewards shield and a
-        // Fast Forward are spent at completely different moments.
+        // The action stays "Fortify" and the item behind it stays IMPLICIT.
+        // Naming the next item turned one button into seven and asked the
+        // player to learn a table mid-siege; the log says what it did the
+        // moment it lands, which is when the information is actually useful.
         b.disabled = !S.items.length;
-        b.textContent = S.items.length ? S.items[0].name : 'No items';
-        b.title = S.items.length
-          ? RG_ITEM_HELP[S.items[0].id] || 'Spend this item'
-          : 'The Factory builds these over time';
       }
       else {
         var k = a.slice(3);
@@ -1608,8 +1761,12 @@ $rg_theme_img = $rg_theme > 0
     } else if (a === 'raise' && S.dead > 0 && S.carbon >= raiseCost()) {
       var raised = 0;
       // They come back without their kit -- it stayed where they fell.
-      while (S.dead > 0 && S.carbon >= raiseCost()) { S.carbon -= raiseCost(); S.dead--; S.reserve.push({ w:0, a:0 }); raised++; }
+      while (S.dead > 0 && S.carbon >= raiseCost()) { S.carbon -= raiseCost(); S.dead--; S.reserve.push({ w:0, wn:'', a:0, an:'' }); raised++; }
       log('The Crypt gives ' + raised + ' back.');
+    // Called STRIKE in the UI. The internal action id, the state and the CSS
+    // ids stay 'sortie' -- renaming those would touch the field markup, the
+    // stylesheet and the replay action log for a wording change, and the log
+    // is the thing a server has to keep reading. One name, two spellings.
     } else if (a === 'sortie' && S.reserve.length && S.prod.portal >= portalRate()) {
       // Meet them in the open: they die before reaching the wall, but your
       // guardians fight with no tower behind them. The whole risk/reward beat.
@@ -1630,7 +1787,7 @@ $rg_theme_img = $rg_theme > 0
         var u = equip(S.reserve.shift());
         // slot picks which enlisted NFT this guardian is, and stays fixed for
         // its life so the face on the field doesn't change between renders.
-        S.emerging.push({ pos:PORTAL_X, w:u.w, a:u.a, hp:unitHp(u), slot:unitSeq++ });
+        S.emerging.push({ pos:PORTAL_X, w:u.w, wn:u.wn, a:u.a, an:u.an, hp:unitHp(u), slot:unitSeq++ });
       }
       log(n + ' guardian' + (n > 1 ? 's ride' : ' rides') + ' out through the Portal.');
     } else if (a === 'fortify' && S.items.length) {
@@ -1646,6 +1803,7 @@ $rg_theme_img = $rg_theme > 0
     S.over = true; S.running = false;
     clearInterval(S.timer);
     musicStop();
+    tracersClear();
     el.status.textContent = 'The wall is breached';
     log('The realm falls at wave ' + S.wave + '. Guardians lost: ' + S.dead + '.', true);
     beginBtn.textContent = 'Hold again';
@@ -1724,6 +1882,7 @@ $rg_theme_img = $rg_theme > 0
 
     S.running = true;
     logEl.innerHTML = '';
+    tracersClear();          // no shots left over from the run that just fell
     beginBtn.hidden = true;
     startWave();
     musicStart();

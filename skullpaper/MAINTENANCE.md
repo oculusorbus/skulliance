@@ -1520,6 +1520,41 @@ as the `obscura` source, counting **completed runs** (`active = 0`), weight 5 -
 the same class of single session as a delve or a race. Counting solves instead
 would let a ~15-second unit outweigh every other game by volume.
 
+### Realm Guardians (tower defense) - PROTOTYPE, NOT DOCUMENTED YET
+
+`guardians.php`, linked from the main menu under Realms as "Guardians". **No
+Skull Paper page yet, and that is deliberate** - it has no leaderboard, no CARBON
+payout and no weekly period, so there is nothing durable for a player to read
+about. Write `games-guardians.md` when it launches, not before; the rules are
+still moving between playtests.
+
+What a doc page will have to get right, because none of it is guessable:
+
+- It **reads the player's real realm and never writes to it.** The snapshot is
+  the only reason the file touches the database, and the test suite asserts no
+  `INSERT/UPDATE/DELETE` against any `realms*`, `soldiers`, `weapons`, `armor`
+  or `raids*` table. That quarantine is the load-bearing property - a bug here
+  must not be able to cost someone their raid army.
+- **`soldiers.location` is a STATE, not a `locations.id`**: 1 = reserve,
+  2 = Tower garrison, 3 = on raid (see `RG_LOC_*` in the file). Misreading it
+  as a location id is what once put 20 soldiers on a wall holding 10.
+- Every guardian carries their **actual** weapon and armour (level *and* name),
+  not a count plus the best item owned. Both feed combat: weapon level sets
+  damage, armour level decides how much of a breach is absorbed.
+- Forged gear rolls on the **realm's own tables**: the Armory tier odds are the
+  ones in `ajax/get-armory.php:151-163`, and Factory items *call*
+  `getFactoryOdds()` rather than copying it, so a balance change there reaches
+  the game for free.
+- Naming trap, verified live: icons use dashes and sounds omit separators -
+  `icons/machine-gun.png` and `audio/sounds/machinegun.mp3`. Deriving one from
+  the other with a single rule silently 404s. The sound whitelist mirrors
+  `cryptcrawlWeaponSfxName()` in `cryptcrawl-render.php`.
+- Player-facing wording drifts from the code on purpose: the Portal action is
+  **Strike** in the UI while the action id, state and CSS ids stay `sortie`
+  (the replay action log is written in the id). Factory items are **implicit** -
+  one button, always "Fortify"; the log says what it did after it lands.
+- **No saved progress, by design.** Every realm eventually falls to the horde.
+
 ---
 
 ## Build Status
