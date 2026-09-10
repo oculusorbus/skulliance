@@ -307,8 +307,20 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 			<?php endif; ?>
 		</div>
 
+		<!--
+			The field reads as a place now, not an abstract track. The Tower
+			stands ON the wall at the left, which is where its fire comes from,
+			and the Portal sits out in the field where guardians actually step
+			through it -- sorties spawn at exactly that mark rather than at an
+			arbitrary offset, so "ride out through the Portal" is something you
+			watch rather than something the log claims.
+		-->
 		<div id="rg-field">
 			<div id="rg-wall"></div>
+			<img id="rg-tower-icon" src="icons/locations/tower.png" alt="Tower"
+			     title="The Tower. Its garrison fires from here." onerror="this.style.display='none'">
+			<img id="rg-portal-icon" src="icons/locations/portal.png" alt="Portal"
+			     title="The Portal. Sortied guardians step through here." onerror="this.style.display='none'">
 			<div id="rg-sortie"></div>
 			<div id="rg-enemies"></div>
 		</div>
@@ -418,9 +430,23 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 .rg-blurb { font-size:.82rem; color:rgba(255,255,255,.5); margin:-6px 0 16px; line-height:1.5; }
 .rg-blurb strong { color:#00c8a0; }
 .rg-tag { font-size:.6rem; text-transform:uppercase; letter-spacing:.12em; color:#ffcc44; border:1px solid rgba(255,204,68,.4); border-radius:10px; padding:2px 8px; vertical-align:middle; }
-.rg-hud { display:flex; gap:16px; font-size:.78rem; color:rgba(255,255,255,.55); margin-bottom:10px; flex-wrap:wrap; align-items:center; }
+/* NOWRAP, and a fixed height. The status message changes length constantly
+   ("Wave 41 incoming" / "Wave held -- regroup"), and with wrapping enabled that
+   pushed the volume slider onto a second row, which shifted the whole board down
+   mid-fight. The message now truncates instead of reflowing, and the bar's
+   height is reserved so nothing below it can move. */
+.rg-hud {
+  display:flex; gap:14px; font-size:.78rem; color:rgba(255,255,255,.55);
+  margin-bottom:10px; flex-wrap:nowrap; align-items:center;
+  min-height:28px; overflow:hidden;
+}
 .rg-hud strong { color:#00c8a0; font-size:1rem; }
-#rg-status { margin-left:auto; color:#ffcc44; }
+/* Fixed-size items keep their place; only the message flexes and clips. */
+.rg-hud > span:not(#rg-status), .rg-hud > button, .rg-hud > select, .rg-hud > input { flex:0 0 auto; }
+#rg-status {
+  flex:1 1 auto; min-width:0; text-align:right; color:#ffcc44;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
 .rg-tag-hud { font-size:.55rem; padding:2px 6px; }
 #rg-sound, #rg-music { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
 #rg-track { background:#0d1e30; color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.15); border-radius:5px; font-size:.72rem; padding:3px 5px; }
@@ -433,6 +459,14 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 #rg-wall.rg-fortified { background:linear-gradient(180deg,#ffcc44,#c79a1e) !important; box-shadow:0 0 14px rgba(255,204,68,.8); }
 #rg-wall { position:absolute; left:0; top:0; bottom:0; width:10px; background:linear-gradient(180deg,#00c8a0,#007a61); }
 #rg-enemies, #rg-sortie { position:absolute; inset:0; }
+/* The Tower sits on the wall; the Portal stands out in the field at PORTAL_X.
+   Both are markers, not obstacles -- pointer-events off so they never eat a tap
+   meant for a foe, and behind the units so guardians walk in front of them. */
+#rg-tower-icon, #rg-portal-icon { position:absolute; pointer-events:none; opacity:.9; z-index:0; }
+#rg-tower-icon  { left:12px; bottom:2px; width:26px; height:26px; object-fit:contain; }
+#rg-portal-icon { left:38%; top:50%; transform:translate(-50%,-50%); width:30px; height:30px;
+                  object-fit:contain; opacity:.55; filter:drop-shadow(0 0 6px rgba(0,200,160,.7)); }
+#rg-sortie, #rg-enemies { z-index:1; }
 .rg-foe { position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; border-radius:50%; background:#c0392b; border:2px solid #c0392b; transition:left .1s linear; }
 .rg-foe img { width:100%; height:100%; border-radius:50%; display:block; object-fit:cover; }
 .rg-foe.rg-tough { width:30px; height:30px; border-color:#c39bd3; box-shadow:0 0 8px rgba(195,155,211,.6); }
@@ -534,6 +568,9 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     };
   }
   var rand = mulberry32(SEED);
+  // Where the Portal stands on the field, in percent. The icon is positioned at
+  // the same figure in CSS, so guardians step out of it rather than near it.
+  var PORTAL_X = 38;
   var TICK = 100;
   var actionLog = [];
 
@@ -667,6 +704,9 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     // A missing or unplayable track must not take the game with it.
     a.addEventListener('error', function () { if (music === a) music = null; });
     music = a;
+    // Keep the picker showing what is actually playing -- the playlist advances
+    // on its own, so the dropdown was lying about the current track.
+    if (trackSel) trackSel.value = String(trackIdx);
     if (was && musicOn) music.play().catch(function () {});
   }
   function musicStart() {
@@ -1051,7 +1091,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
         if (prot) S.armor--;
         // slot picks which enlisted NFT this guardian is, and stays fixed for
         // its life so the face on the field doesn't change between renders.
-        S.sortied.push({ pos:35 + i * 4,
+        S.sortied.push({ pos:PORTAL_X,
                          hp:(armed ? 6 : 4) + (prot ? 2 + REALM.alevel : 0),
                          armed:armed, prot:prot, slot:unitSeq++ });
       }
@@ -1084,7 +1124,23 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   });
 
   var soundBtn = document.getElementById('rg-sound');
-  try { if (localStorage.getItem('rg-sound') === 'off') sfxOn = false; } catch (e) {}
+  /*
+   * Effects OFF by default on a phone.
+   *
+   * Reported: they slow the game down on mobile. Decoding and mixing several
+   * overlapping clips per volley is real work on a handset, and a siege that
+   * stutters is worse than a silent one. Music is untouched -- it is a single
+   * stream and costs almost nothing.
+   *
+   * An explicit choice always wins: this only applies when nothing is stored, so
+   * turning them on once on a phone sticks.
+   */
+  try {
+    var stored = localStorage.getItem('rg-sound');
+    if (stored === 'off') sfxOn = false;
+    else if (stored === null && window.matchMedia &&
+             window.matchMedia('(max-width:560px)').matches) sfxOn = false;
+  } catch (e) {}
   function paintSound() {
     soundBtn.innerHTML = sfxOn ? '&#128266;' : '&#128263;';
     soundBtn.title = sfxOn ? 'Mute' : 'Unmute';
