@@ -1,8 +1,15 @@
 # Realm Guardians — design notes
 
-**Status: unbuilt idea.** Nothing here exists in code. Written down 2026-09-09 so
-it isn't lost; see the "If you build this" section at the bottom for the order I'd
-tackle it in.
+**Status: PROTOTYPE PLAYABLE at `/staking/guardians.php`** (2026-09-09). Nothing
+links to it — type the URL. It has no database writes at all, hardcoded location
+levels, and no rewards. Its only job is answering *is this fun*; see "If you build
+this" for what comes after, and only if the answer is yes.
+
+**The horde wears real member avatars** (the user's idea, and it lands): each
+attacker is a staker from the `users` table, so you watch people from your own
+Discord come over the wall, and the log names whoever breaches it. Read-only,
+excludes the current player, and deliberately kept OUT of the simulation — who is
+drawn varies per load, so feeding it into the sim would break reproducibility.
 
 **The current design, in one paragraph:** the Realms management loop played in
 real time under wave pressure. Your seven realm locations supply the defense —
