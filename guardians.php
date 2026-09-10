@@ -669,10 +669,17 @@ $rg_theme_img = $rg_theme > 0
    a steel inner edge, which reads as "fully kitted" at a glance. */
 .rg-unit.rg-prot { box-shadow:0 0 0 2px rgba(190,200,215,.8), 0 0 8px rgba(190,200,215,.5); }
 
-/* auto-fit rather than a fixed three: now that the board is the full header
-   width, a wide screen fits four or five locations across instead of three
-   very wide ones, and it still collapses sensibly as the window narrows. */
-#rg-locations { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:8px; }
+/*
+ * THREE ACROSS, AND TIGHT. The field wants the full width -- more room to watch
+ * the horde come -- but the controls do not: spreading seven panels across a
+ * wide monitor turns every decision into a mouse journey. Capped and centred so
+ * the six locations stay a compact 3x2 block under a wide field, with the Mine
+ * as a full-width row beneath them.
+ */
+#rg-locations {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;
+  max-width:720px; margin:0 auto;
+}
 .rg-loc { background:#0d1e30; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 10px; }
 .rg-loc.rg-wide { grid-column:1 / -1; }
 .rg-loc-name { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:6px; }
