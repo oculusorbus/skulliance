@@ -337,11 +337,24 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 		           $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
 				              $filterby != "obscura" && $filterby != "weekly-obscura" &&
+				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
+				        /*
+				         * This branch means "not a known board, so treat it as a
+				         * project id". getProjectInfo() returns NULL when it is
+				         * not one either, and reading ["name"] off that warned:
+				         *
+				         *   Trying to access array offset on value of type null
+				         *
+				         * Hit live when a board was added to the registry before
+				         * it was added to this switch, so the hub linked to a
+				         * filter that fell through to here. Guarding it costs
+				         * nothing and covers every future typo'd ?filterby= too.
+				         */
 				        $project = getProjectInfo($conn, $filterby);
-				        $title = $project["name"];
+				        $title = is_array($project) && isset($project["name"]) ? $project["name"] : "Leaderboards";
 				        break;
 				    case ($filterby === "" || $filterby === null):
 				    case ($filterby === "hub"):
@@ -460,6 +473,17 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				        $title = "Weekly Obscura Streaks";
 				        $filterby = "weekly-obscura";
 				        break;
+				    case ($filterby == "guardians"):
+				        $title = "All Realm Guardians Sieges";
+				        $filterby = "guardians";
+				        break;
+				    // MONTHLY, not weekly -- a siege runs half an hour and the
+				    // long ones an hour, so a weekly board would be about who
+				    // had a free evening. See checkGuardiansLeaderboard().
+				    case ($filterby == "monthly-guardians"):
+				        $title = "Monthly Realm Guardians";
+				        $filterby = "monthly-guardians";
+				        break;
 				    case ($filterby == "missions-unlocked"):
 				        $title = "Missions Unlocked";
 				        $filterby = "missions-unlocked";
@@ -547,6 +571,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "skullracer-laps" && $filterby != "weekly-skullracer-laps" &&
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
 				              $filterby != "obscura" && $filterby != "weekly-obscura" &&
+				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
@@ -633,6 +658,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				            break;
 				        case ($filterby == "weekly-obscura"):
 				            checkObscuraLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "guardians"):
+				            checkGuardiansLeaderboard($conn, false);
+				            break;
+				        case ($filterby == "monthly-guardians"):
+				            checkGuardiansLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "hub"):
 				            // Card grid. Leaves $leaderboard_top3 empty, so the

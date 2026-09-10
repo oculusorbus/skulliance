@@ -1,6 +1,6 @@
 <?php
 /*
- * REALM GUARDIANS -- prototype.
+ * REALM GUARDIANS -- tower defense built on the player's own realm.
  *
  * Answers one question: is keeping locations stocked under a wave clock fun?
  * All seven locations are live now, and the baseline comes from the player's
@@ -625,7 +625,7 @@ $rg_theme_img = $rg_theme > 0
   -->
   <div class="col1of3" style="margin:0 auto;flex:1 1 100%;max-width:none;">
 
-	<h2 class="rg-intro">Realm Guardians <span class="rg-tag">prototype</span></h2>
+	<h2 class="rg-intro">Realm Guardians</h2>
 	<div class="rg-blurb rg-intro">
 		<?php if ($rg_has_realm): ?>
 			<?php
@@ -958,6 +958,12 @@ $rg_theme_img = $rg_theme > 0
 			<p class="rg-nuke-sub"><span id="rg-defeat-lost">0</span> guardians lost
 			over <span id="rg-defeat-time">0m</span>.
 			<span id="rg-defeat-scored"></span></p>
+			<!-- Straight to the board this run just went on, not the hub: the
+			     question in the player's head at this exact moment is "where did
+			     that put me", and one more click to find out is one too many.
+			     ?filterby= is read from GET (skulliance.php:848), so a plain
+			     link works and needs no form. -->
+			<a class="rg-defeat-board" href="leaderboards.php?filterby=monthly-guardians">See the monthly board</a>
 			<button type="button" id="rg-defeat-ok">Again</button>
 		</div>
 	</div>
@@ -1020,7 +1026,6 @@ $rg_theme_img = $rg_theme > 0
 #row1.rg-themed .rg-blurb { margin-top:0; }
 .rg-blurb { font-size:.82rem; color:rgba(255,255,255,.5); margin:-6px 0 16px; line-height:1.5; }
 .rg-blurb strong { color:#00c8a0; }
-.rg-tag { font-size:.6rem; text-transform:uppercase; letter-spacing:.12em; color:#ffcc44; border:1px solid rgba(255,204,68,.4); border-radius:10px; padding:2px 8px; vertical-align:middle; }
 /* NOWRAP, and a fixed height. The status message changes length constantly
    ("Wave 41 incoming" / "Wave held -- regroup"), and with wrapping enabled that
    pushed the volume slider onto a second row, which shifted the whole board down
@@ -1316,6 +1321,10 @@ $rg_theme_img = $rg_theme > 0
 .rg-defeat-hero strong { display:block; font-size:2.8rem; color:#fff; letter-spacing:-.02em; }
 .rg-defeat-hero span { display:block; font-size:.68rem; text-transform:uppercase;
                        letter-spacing:.18em; color:rgba(255,255,255,.45); margin-top:4px; }
+/* Its own line above the button, and quieter than it: leaving the page is the
+   secondary action here, playing again is the primary one. */
+.rg-defeat-board { display:block; margin:0 0 12px; font-size:.76rem; color:#00c8a0;
+                   text-decoration:underline; }
 
 /* ---- PAUSED ---------------------------------------------------------------
    Unmistakable at a glance. Someone coming back to their phone after twenty
@@ -1376,10 +1385,9 @@ $rg_theme_img = $rg_theme > 0
   .rg-item img { grid-row:1; width:18px; height:18px; }
   .rg-item-name { font-size:.7rem; }
 
-  /* The BLURB goes, not the title. The prototype marker lives in the heading
-     now, and most people reaching this from the nav are on a phone -- hiding
-     the whole intro would take the label with it and leave nothing saying what
-     they are playing. The title alone is one compact line. */
+  /* The BLURB goes, not the title. Most people reaching this from the nav are
+     on a phone, and a page that opens with no heading at all reads as broken;
+     the title alone is one compact line. */
   .rg-blurb.rg-intro { display:none; }
   h2.rg-intro { font-size:1.05rem; margin:0 0 8px; }
   /* ---- TIGHT. Seven location cards, a two-row item shelf and a HUD do not
