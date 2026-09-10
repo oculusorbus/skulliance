@@ -1639,6 +1639,8 @@ $rg_theme_img = $rg_theme > 0
   var CANDIDATES = <?php echo json_encode($rg_horde); ?>;
   var VERIFIED = [], HORDE = [];
   var UNITS = <?php echo json_encode($rg_units); ?>;   // your soldiers, as NFT art
+  // The platform's own placeholder, used wherever a face is missing.
+  var UNIT_FALLBACK = 'icons/skull.png';
 
   /* Deterministic core: seeded PRNG, fixed timestep, no Math.random. */
   var SEED = 20260909;
@@ -2834,14 +2836,35 @@ $rg_theme_img = $rg_theme > 0
         var art2 = UNITS.length ? UNITS[un2.slot % UNITS.length] : null;
         unode = document.createElement('div');
         unode.className = 'rg-unit' + (un2.w > 0 ? ' rg-armed' : '') + (un2.a > 0 ? ' rg-prot' : '');
-        if (art2) {
-          unode.title = art2.name;
-          var uimg = document.createElement('img');
-          uimg.alt = '';
-          uimg.onerror = function () { this.style.display = 'none'; };
-          uimg.src = art2.img;
-          unode.appendChild(uimg);
-        }
+        /*
+         * A GUARDIAN ALWAYS HAS A FACE. A guest has no enlisted NFTs, and so did
+         * a member who has not enlisted any -- their guardians rendered as bare
+         * coloured rings, which reads as the art failing to load rather than as
+         * a conscript with no NFT behind them.
+         *
+         * icons/skull.png is the platform's own placeholder -- match3rpg,
+         * skullswap and gallery all fall back to it -- rather than a new asset
+         * invented here.
+         *
+         * NOT the same call as the horde, which deliberately shows nothing when
+         * an avatar 404s: that one is a wall of OTHER people's faces where a
+         * repeated placeholder would read as a bug, and it can pre-verify them.
+         * This is your own side, where the placeholder IS the identity.
+         */
+        unode.title = art2 ? art2.name : 'A conscript';
+        var uimg = document.createElement('img');
+        uimg.alt = '';
+        /*
+         * One step down, then give up -- and never a loop: if the src that just
+         * failed IS the fallback, there is nothing further to try.
+         */
+        uimg.onerror = function () {
+          if (this.src.indexOf(UNIT_FALLBACK) === -1) { this.src = UNIT_FALLBACK; return; }
+          this.onerror = null;
+          this.style.display = 'none';
+        };
+        uimg.src = art2 && art2.img ? art2.img : UNIT_FALLBACK;
+        unode.appendChild(uimg);
         // THEIR weapon and THEIR armour -- not the cache's best applied to
         // everyone, which is why the initial raiders were wearing gear they do
         // not carry.
