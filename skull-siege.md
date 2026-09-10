@@ -92,6 +92,56 @@ resolves as an invisible comparison of two ratings. In a TD engine the
 defender's realm IS the map and the attacker's raid IS the wave — same numbers,
 same outcomes, but watchable. Skull Siege could be *what a raid looks like*.
 
+### It is an ATTRITION SIEGE, not a placement game
+
+The user's mapping of the seven real locations, 2026-09-09, and it changes the
+genre. **Only one of the seven is actually a tower.** The rest are supply lines.
+So the core question is not *where* you put things — it is *when* you spend
+finite resources. That is a better game for this platform because it is native to
+what already exists rather than bolted onto it.
+
+Levels become **rates and caps**, not a single defense number:
+
+| Location | What it governs during a siege |
+|----------|--------------------------------|
+| Barracks | Soldier pool size, and how fast replacements arrive |
+| Armory   | Weapon stock — armed soldiers hit harder, and it runs dry |
+| Crypt    | Resurrection: what fraction of your dead return, and how fast |
+| Tower    | The one true tower. Ranged damage from above, drawing its garrison from Barracks |
+| Factory  | Consumables usable DURING the siege |
+| Mine     | In-run income, spent on reinforcements mid-fight |
+| Portal   | Sortie range — how far forward you can meet them, and how many times |
+
+Why this is worth more than a rating: realm power stops being one number and
+becomes a **shape**. A Barracks-heavy realm grinds waves down with bodies. An
+Armory/Tower realm kills fewer things but kills them harder. A Crypt-heavy realm
+loses constantly and keeps standing anyway. Those are genuinely different ways to
+play, and they emerge from upgrade choices players already make for raid reasons.
+
+**The Portal is the best part of the design.** Meeting invaders in the field
+before they reach the walls is a real risk/reward decision — sortie early and you
+spare your locations but expose soldiers with no tower support behind them. That
+one choice does more work than the whole placement layer proposed further up.
+
+**The Crypt finally gets a job.** Resurrection-as-recycling is a classic attrition
+pressure valve, and it turns "where the dead are stored" from flavour into the
+mechanic deciding whether a long siege is survivable at all.
+
+The economic chain the user described — Mine produces CARBON, CARBON burns to
+DIAMOND, DIAMOND shatters to core project points, points upgrade locations — is
+the *between-sieges* loop and already exists on the platform. Inside a siege the
+Mine is simply income. Do not wire the in-run currency to real balances; see the
+read-only constraint below, which the user arrived at independently ("all this
+activity wouldn't actually affect the location levels, soldiers, weapons, items").
+
+**THE RISK THIS DESIGN CARRIES:** if everything is supply-driven, the player may
+have nothing to *do* — press deploy, watch numbers resolve. It becomes a
+spreadsheet with animation. There must be at least one live decision axis.
+Candidates, and probably enough between them: Portal sortie timing, Factory item
+usage, and Crypt resurrection priority. **This is the thing the prototype exists
+to prove.** If placing and spending isn't fun in a hardcoded scenario, no amount
+of realm integration will save it.
+
 ### The problem the user spotted, and the fix
 
 "Those with the strongest realms would dominate." Correct, and it decides whether
@@ -185,11 +235,17 @@ add afterwards and would have been expensive to tune blind.
 Rough order:
 
 1. Deterministic wave/simulation engine, server-side, seeded. No UI. Verify the
-   same seed plus the same placements always produces the same result.
-2. A single hardcoded map and three tower types. Ugly is fine.
-3. Placement UI + result animation. **Play it.** Stop here and decide.
-4. NFT → tower mapping, once the core is known to be fun.
-5. Weekly seed, leaderboard, CARBON, hub, nav, Skull Paper page.
+   same seed plus the same inputs always produces the same result.
+2. A single hardcoded scenario with **hardcoded location levels** — no realm
+   reading yet. Barracks/Armory/Crypt/Tower only; skip Factory, Mine and Portal.
+   Ugly is fine.
+3. The decision layer and a result animation. **Play it. Stop here and decide.**
+   The question is only ever: is spending finite supply against escalating waves
+   fun? If not, stop — realm integration cannot rescue it.
+4. Portal sorties and Factory items, the two live decisions, once the base loop
+   holds up.
+5. Read real realm levels (read-only), and scale waves to total realm power.
+6. Weekly seed, leaderboard, CARBON, hub, nav, Skull Paper page.
 
 Note: this file sits in the repo, which is pulled to the webroot — it is
 technically fetchable at `/staking/skull-siege.md`. Nothing sensitive here, but
