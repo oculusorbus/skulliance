@@ -69,6 +69,10 @@ $rg_units = array();   // the player's own soldiers, as NFT art
 $rg_wicon = '';        // the best weapon in the cache, worn by armed guardians
 $rg_aicon = '';        // the best armor in the cache, worn by protected guardians
 $rg_acache = 0;        // unissued armor pieces
+// Each guardian's ACTUAL kit: {w: weapon level, a: armour level}, 0 for neither.
+$rg_kit_tower = array(); $rg_kit_raid = array(); $rg_kit_reserve = array();
+// The unissued cache, expanded by quantity into a pool of levels.
+$rg_wpool = array(); $rg_apool = array();
 $rg_crypt = 0;         // enlisted NFTs currently dead -- they start in the Crypt
 $rg_theme = 0;         // the realm's theme, used as the page backdrop
 $rg_garrison = 0; $rg_g_armed = 0; $rg_g_armored = 0;   // already on the wall
@@ -135,6 +139,40 @@ if ($rg_me > 0) {
 		 * their OWN equipment, distinct from the unissued cache in `gear`, so
 		 * seeding them armed and armoured costs the cache nothing.
 		 */
+		/*
+		 * EVERY SOLDIER'S ACTUAL KIT, not a headcount and a single MAX level.
+		 *
+		 * The first pass counted "how many carry something" and then applied the
+		 * best level in the CACHE to all of them, so a level-1 pistol and a
+		 * level-10 launcher were worth exactly the same and the cache's best
+		 * item flattered every soldier who had anything at all.
+		 *
+		 * Each row is one guardian's real equipment: w = their weapon's level,
+		 * a = their armour's level, 0 for neither. Damage and survival are
+		 * computed per guardian from these, so a well-kitted army genuinely
+		 * outfights a nominally-armed one.
+		 *
+		 * LEFT JOINs because weapon_id/armor_id are 0 for the unequipped, and an
+		 * INNER JOIN would silently drop exactly the soldiers being counted.
+		 */
+		$rg_kit_sql = "SELECT soldiers.location AS loc,
+		                      COALESCE(w.level,0) AS wl, COALESCE(a.level,0) AS al
+		               FROM soldiers
+		               LEFT JOIN weapons w ON w.id = soldiers.weapon_id
+		               LEFT JOIN armor   a ON a.id = soldiers.armor_id
+		               WHERE soldiers.realm_id = $rg_realm_id
+		                 AND soldiers.dead IS NULL AND soldiers.active = 1
+		               ORDER BY COALESCE(w.level,0) DESC, COALESCE(a.level,0) DESC
+		               LIMIT 400";
+		$kr = $conn->query($rg_kit_sql);
+		if ($kr) while ($k2 = $kr->fetch_assoc()) {
+			$kit = array('w' => intval($k2['wl']), 'a' => intval($k2['al']));
+			$loc = intval($k2['loc']);
+			if     ($loc === RG_LOC_TOWER) $rg_kit_tower[]   = $kit;
+			elseif ($loc === RG_LOC_RAID)  $rg_kit_raid[]    = $kit;
+			else                           $rg_kit_reserve[] = $kit;
+		}
+
 		/*
 		 * SOLDIERS ON RAIDS ARE ALREADY IN THE FIELD.
 		 *
@@ -225,6 +263,34 @@ if ($rg_me > 0) {
 	 * the dashes matter ("Machine Gun" is machine-gun.png, and machinegun.png
 	 * is a 404).
 	 */
+	/*
+	 * THE CACHE IS A POOL OF VARIED GEAR, not a quantity and a best level.
+	 *
+	 * Unissued gear has its own spread of levels, and issuing it should hand out
+	 * what is actually in there -- a mix -- rather than pretending every piece
+	 * is the best one owned. Expanded by quantity so a stack of five level-2
+	 * weapons really is five draws at level 2, and capped so a large inventory
+	 * cannot bloat the page.
+	 */
+	$pr = $conn->query("SELECT g.type, COALESCE(w.level, a.level, 1) AS lvl, g.quantity
+	                    FROM gear g
+	                    LEFT JOIN weapons w ON g.type = 'weapon' AND w.id = g.item_id
+	                    LEFT JOIN armor   a ON g.type = 'armor'  AND a.id = g.item_id
+	                    WHERE g.user_id = $rg_me AND g.quantity > 0
+	                      AND g.type IN ('weapon','armor')");
+	if ($pr) while ($pw = $pr->fetch_assoc()) {
+		$lvl = max(1, intval($pw['lvl']));
+		$qty = min(200, intval($pw['quantity']));
+		for ($i = 0; $i < $qty; $i++) {
+			if ($pw['type'] === 'weapon') { if (count($rg_wpool) < 300) $rg_wpool[] = $lvl; }
+			else                          { if (count($rg_apool) < 300) $rg_apool[] = $lvl; }
+		}
+	}
+	// Best first, so issuing draws the good stuff before the dregs -- which is
+	// what a quartermaster would do and keeps the early waves feeling equipped.
+	rsort($rg_wpool);
+	rsort($rg_apool);
+
 	$wr = $conn->query("SELECT w.name FROM gear g
 	                    INNER JOIN weapons w ON w.id = g.item_id
 	                    WHERE g.user_id = $rg_me AND g.type = 'weapon' AND g.quantity > 0
@@ -271,6 +337,32 @@ if (!$rg_has_realm) {
 	$rg_armed  = 1;
 	$rg_cache  = 2;
 	$rg_acache = 1;
+}
+
+/*
+ * THE FACTORY ROLLS REAL CONSUMABLES, using the platform's OWN odds.
+ *
+ * getFactoryOdds() lives in db.php:10499 and is what the Realms factory modal
+ * shows players, so this CALLS it rather than copying the table -- one source,
+ * and a balance change there reaches the game for free.
+ */
+$rg_fodds = function_exists('getFactoryOdds')
+	? getFactoryOdds(max(1, $rg_levels['factory']))
+	: array(1 => 100);
+$rg_con_names = array(
+	1 => 'Random Reward', 2 => '25% Success', 3 => 'Fast Forward', 4 => '50% Success',
+	5 => '75% Success',   6 => 'Double Rewards', 7 => '100% Success',
+);
+$rg_items = array();
+foreach ($rg_fodds as $rg_cid => $rg_pct) {
+	if (!isset($rg_con_names[$rg_cid])) continue;
+	$rg_items[] = array(
+		'id'   => intval($rg_cid),
+		'pct'  => intval($rg_pct),
+		'name' => $rg_con_names[$rg_cid],
+		// Same icon construction the factory modal uses (ajax/get-factory.php:38).
+		'icon' => 'icons/' . strtolower(str_replace(array('%', ' '), array('', '-'), $rg_con_names[$rg_cid])) . '.png',
+	);
 }
 
 /*
@@ -398,7 +490,7 @@ $rg_theme_img = $rg_theme > 0
   -->
   <div class="col1of3" style="margin:0 auto;flex:1 1 100%;max-width:none;">
 
-	<h2 class="rg-intro">Realm Guardians <span class="rg-tag">prototype</span></h2>
+	<h2 class="rg-intro">Realm Guardians</h2>
 	<div class="rg-blurb rg-intro">
 		<?php if ($rg_has_realm): ?>
 			<?php
@@ -769,6 +861,12 @@ $rg_theme_img = $rg_theme > 0
     wlevel: <?php echo intval($rg_wlevel); ?>,
     start:  <?php echo intval($rg_start_wave); ?>,
     acache: <?php echo intval($rg_acache); ?>,
+    kitTower:  <?php echo json_encode($rg_kit_tower); ?>,
+    kitRaid:   <?php echo json_encode($rg_kit_raid); ?>,
+    kitReserve:<?php echo json_encode($rg_kit_reserve); ?>,
+    wpool:  <?php echo json_encode($rg_wpool); ?>,
+    items:  <?php echo json_encode($rg_items); ?>,
+    apool:  <?php echo json_encode($rg_apool); ?>,
     crypt:  <?php echo intval($rg_crypt); ?>,
     garrison:<?php echo intval($rg_garrison); ?>,
     garmed: <?php echo intval($rg_g_armed); ?>,
@@ -800,6 +898,40 @@ $rg_theme_img = $rg_theme > 0
   var rand = mulberry32(SEED);
   // Where the Portal stands on the field, in percent. The icon is positioned at
   // the same figure in CSS, so guardians step out of it rather than near it.
+  /*
+   * REALMS' OWN GEAR DROP TABLE, keyed off Armory level.
+   *
+   * Copied from ajax/get-armory.php:151-163, which is what the Armory modal
+   * shows players -- so a drop in here behaves like a drop out there rather
+   * than like a number this game invented. Levels 9+ share the top curve.
+   *
+   * It also gives the Armory upgrade a real payoff: raising it mid-siege shifts
+   * the whole distribution up, so later gear is genuinely better rather than
+   * merely more frequent.
+   */
+  var TIER_ODDS = {
+    1: {1:55, 2:30, 3:15},
+    2: {1:55, 2:30, 3:15},
+    3: {1:35, 2:30, 3:20, 4:10, 5:5},
+    4: {1:35, 2:30, 3:20, 4:10, 5:5},
+    5: {1:15, 2:18, 3:20, 4:18, 5:15, 6:8, 7:5, 8:1},
+    6: {1:15, 2:18, 3:20, 4:18, 5:15, 6:8, 7:5, 8:1},
+    7: {1:8, 2:10, 3:14, 4:16, 5:18, 6:16, 7:10, 8:5, 9:2, 10:1},
+    8: {1:8, 2:10, 3:14, 4:16, 5:18, 6:16, 7:10, 8:5, 9:2, 10:1},
+    9: {1:5, 2:8, 3:12, 4:15, 5:20, 6:18, 7:12, 8:6, 9:3, 10:1}
+  };
+  // Seeded, so a forged item is part of the reproducible run like everything
+  // else -- a server replaying the inputs must roll the same gear.
+  function rollTier() {
+    var lvl = Math.max(1, L('armory'));
+    var odds = TIER_ODDS[lvl >= 9 ? 9 : lvl] || {1:100};
+    var total = 0, t;
+    for (t in odds) total += odds[t];
+    var pick = rand() * total, acc = 0;
+    for (t in odds) { acc += odds[t]; if (pick <= acc) return parseInt(t, 10); }
+    return 1;
+  }
+
   var PORTAL_X = 25;
   var TICK = 100;
   var actionLog = [];
@@ -812,13 +944,15 @@ $rg_theme_img = $rg_theme > 0
       // The reserve is what is LEFT: everyone alive who is not already on the
       // wall or out on a raid. Without this the same guardian would be counted
       // twice and the army would appear to grow at the whistle.
-      reserve:Math.max(0, REALM.army - REALM.garrison - REALM.raiders),
+      // reserve/garrison hold GUARDIANS ({w,a}), not counts -- see equip().
+      reserve:[],
       weapons:REALM.cache, armor:REALM.acache, dead:REALM.crypt,
-      garrison:0, armed:0, armored:0, items:0, sortied:[], emerging:[],
+      garrison:[], items:[], shield:0, boost:0, boostFor:0, sortied:[], emerging:[],
+      wpool:REALM.wpool.slice(), apool:REALM.apool.slice(),
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
       prod:{ barracks:0, armory:0, forge:0, factory:0, mine:0, portal:0, reinforce:0 },
       bought:{ tower:0, barracks:0, armory:0, crypt:0, portal:0, factory:0, mine:0 },
-      foes:[], nextAttack:0, betweenWaves:0, fortifyFor:0
+      foes:[], nextAttack:0, betweenWaves:0
     };
 
     /*
@@ -839,21 +973,108 @@ $rg_theme_img = $rg_theme > 0
      * equipment, distinct from the unissued cache in `gear`, so seating them
      * armed and armoured costs the cache nothing.
      */
-    var seat = Math.min(REALM.garrison, garrisonCap());
-    S.garrison = seat;
-    S.armed    = Math.min(REALM.garmed, seat);
-    S.armored  = Math.min(REALM.garmored, seat);
-    S.reserve += Math.max(0, REALM.garrison - seat);
-
-    for (var r = 0; r < REALM.raiders; r++) {
+    // Each guardian arrives with the kit they actually carry in the realm.
+    var cap = garrisonCap();
+    for (var g = 0; g < REALM.kitTower.length; g++) {
+      var kt = { w: REALM.kitTower[g].w, a: REALM.kitTower[g].a };
+      if (S.garrison.length < cap) S.garrison.push(kt); else S.reserve.push(kt);
+    }
+    for (var v = 0; v < REALM.kitReserve.length; v++) {
+      S.reserve.push({ w: REALM.kitReserve[v].w, a: REALM.kitReserve[v].a });
+    }
+    for (var r = 0; r < REALM.kitRaid.length; r++) {
+      var kr = REALM.kitRaid[r];
       S.sortied.push({
         pos:   Math.min(96, PORTAL_X + 2 + r * 3),
-        hp:    (r < REALM.ramed ? 6 : 4) + (r < REALM.rarmored ? 2 + REALM.alevel : 0),
-        armed: r < REALM.ramed,
-        prot:  r < REALM.rarmored,
+        w:     kr.w,
+        a:     kr.a,
+        hp:    unitHp(kr),
         slot:  unitSeq++
       });
     }
+  }
+
+  /* ---- Kit, and what it is worth ---------------------------------------
+   * A guardian's weapon LEVEL decides how hard they hit and their armour LEVEL
+   * how much they can absorb -- not a yes/no flag with the cache's best level
+   * applied to everyone, which made a level-1 pistol worth a level-10 launcher.
+   * --------------------------------------------------------------------- */
+  /* ---- Factory consumables ---------------------------------------------
+   * The Factory rolls the SAME seven items Realms uses, at the odds
+   * getFactoryOdds() gives for its level, and each does here what it does
+   * there rather than being a generic "fortify":
+   *
+   *   Double Rewards  a damage shield -- absorbs the next hit, consumed doing it
+   *   Random Reward   a free level to a random location
+   *   Fast Forward    halves the wait: every production timer completes now
+   *   N% Success      effectiveness for a spell, at the magnitude it names
+   *
+   * Rolled with the seeded PRNG so a run stays reproducible.
+   * -------------------------------------------------------------------- */
+  function rollItem() {
+    if (!REALM.items.length) return null;
+    var total = 0, i;
+    for (i = 0; i < REALM.items.length; i++) total += REALM.items[i].pct;
+    if (total <= 0) return REALM.items[0];
+    var pick = rand() * total, acc = 0;
+    for (i = 0; i < REALM.items.length; i++) {
+      acc += REALM.items[i].pct;
+      if (pick <= acc) return REALM.items[i];
+    }
+    return REALM.items[REALM.items.length - 1];
+  }
+  // What each does here, in the words of what it does in Realms.
+  var RG_ITEM_HELP = {
+    1: 'Random Reward: a free level to a random location.',
+    2: '25% Success: the Tower hits 25% harder for six seconds.',
+    3: 'Fast Forward: every production line completes immediately.',
+    4: '50% Success: the Tower hits 50% harder for six seconds.',
+    5: '75% Success: the Tower hits 75% harder for six seconds.',
+    6: 'Double Rewards: a shield that absorbs the next hit entirely.',
+    7: '100% Success: the Tower hits twice as hard for six seconds.'
+  };
+  var UPGRADABLE = ['tower','barracks','armory','crypt','portal','factory','mine'];
+  function useItem(it) {
+    if (!it) return;
+    if (it.id === 6) {                       // Double Rewards -- damage shield
+      S.shield++;
+      log('A shield goes up over the wall.');
+    } else if (it.id === 1) {                // Random Reward -- free level
+      var k = UPGRADABLE[Math.floor(rand() * UPGRADABLE.length)];
+      S.lvl[k]++;
+      log('Random Reward: ' + k + ' rises to ' + S.lvl[k] + ' for nothing.');
+    } else if (it.id === 3) {                // Fast Forward -- halve the wait
+      S.prod.barracks = barracksRate();
+      S.prod.armory   = armoryRate();
+      S.prod.forge    = forgeRate();
+      S.prod.factory  = factoryRate();
+      S.prod.mine     = mineRate();
+      S.prod.portal   = portalRate();
+      log('Fast Forward: every line finishes at once.');
+    } else {                                 // 25/50/75/100% Success
+      var pct = { 2:0.25, 4:0.50, 5:0.75, 7:1.00 }[it.id] || 0.25;
+      S.boost = pct;
+      S.boostFor = 60;                       // six seconds
+      S.hp = Math.min(S.maxhp, S.hp + 8);
+      log(it.name + ': the guns bite ' + Math.round(pct * 100) + '% harder.');
+    }
+  }
+
+  function soldierDamage(s) { return s.w > 0 ? 2 + s.w : 1; }
+  function unitHp(s)        { return (s.w > 0 ? 6 : 4) + (s.a > 0 ? 2 + s.a : 0); }
+  function armedCount()     { var n = 0; for (var i = 0; i < S.garrison.length; i++) if (S.garrison[i].w > 0) n++; return n; }
+  function armoredCount()   { var n = 0; for (var i = 0; i < S.garrison.length; i++) if (S.garrison[i].a > 0) n++; return n; }
+  // Issue from the cache to anyone short of kit. Best first: a quartermaster
+  // hands out the good stuff, and it keeps early waves feeling equipped.
+  function equip(s) {
+    if (s.w === 0 && S.wpool.length) s.w = S.wpool.shift();
+    if (s.a === 0 && S.apool.length) s.a = S.apool.shift();
+    return s;
+  }
+  function poolIn(pool, lvl, cap) {
+    if (pool.length >= cap) return;
+    pool.push(lvl);
+    pool.sort(function (x, y) { return y - x; });   // best first
   }
 
   /* Every level is a RATE or a CAP -- never one power number. That is the whole
@@ -900,8 +1121,13 @@ $rg_theme_img = $rg_theme > 0
   function upgradeCost(k) { return 45 + 55 * (S.bought[k] || 0); }
   // Weapon LEVEL matters, not just count -- a better cache hits harder.
   function towerDamage()  {
-    var d = S.armed * (2 + REALM.wlevel) + (S.garrison - S.armed) * 1;
-    return S.fortifyFor > 0 ? Math.round(d * 1.5) : d;
+    // Summed per guardian from their OWN weapon level.
+    var d = 0;
+    for (var i = 0; i < S.garrison.length; i++) d += soldierDamage(S.garrison[i]);
+    // Success-family consumables read as combat effectiveness here, at the
+    // magnitude their name promises (25/50/75/100%).
+    if (S.boostFor > 0) d = Math.round(d * (1 + S.boost));
+    return d;
   }
 
   var el = {};
@@ -939,9 +1165,9 @@ $rg_theme_img = $rg_theme > 0
   }
   function sfxVolley() {
     if (!sfxOn) return;
-    var shots = Math.min(2, Math.max(1, Math.ceil(S.garrison / 3)));
+    var shots = Math.min(2, Math.max(1, Math.ceil(S.garrison.length / 3)));
     for (var i = 0; i < shots; i++) {
-      var bank = (i < S.armed) ? ARMED_SFX : UNARMED_SFX;
+      var bank = (i < armedCount()) ? ARMED_SFX : UNARMED_SFX;
       var name = bank[(sfxCursor++) % bank.length];
       (function (n, d) { setTimeout(function () { sfxPlay(n, 0.10); }, d); })(name, i * 70);
     }
@@ -1055,11 +1281,12 @@ $rg_theme_img = $rg_theme > 0
 
   function step() {
     S.tick++;
-    if (S.fortifyFor > 0) S.fortifyFor--;
+    if (S.boostFor > 0) S.boostFor--;
 
     // Production. Every location earns its keep on a timer.
     S.prod.barracks++;
-    if (S.prod.barracks >= barracksRate()) { S.prod.barracks = 0; if (S.reserve < reserveCap()) S.reserve++; }
+    // A raw recruit: no kit until the Armory can issue some.
+    if (S.prod.barracks >= barracksRate()) { S.prod.barracks = 0; if (S.reserve.length < reserveCap()) S.reserve.push({ w:0, a:0 }); }
     /*
      * The Armory forges BOTH. It was producing weapons only, so armour was
      * whatever the cache started with and then gone for good -- reported as
@@ -1068,11 +1295,12 @@ $rg_theme_img = $rg_theme > 0
      * spending carefully rather than a permanent second health bar.
      */
     S.prod.armory++;
-    if (S.prod.armory >= armoryRate()) { S.prod.armory = 0; if (S.weapons < weaponCap()) S.weapons++; }
+    // Forged gear rolls its tier from the realm's own drop table.
+    if (S.prod.armory >= armoryRate()) { S.prod.armory = 0; poolIn(S.wpool, rollTier(), weaponCap()); }
     S.prod.forge++;
-    if (S.prod.forge >= forgeRate()) { S.prod.forge = 0; if (S.armor < armorCap()) S.armor++; }
+    if (S.prod.forge >= forgeRate()) { S.prod.forge = 0; poolIn(S.apool, rollTier(), armorCap()); }
     S.prod.factory++;
-    if (S.prod.factory >= factoryRate()) { S.prod.factory = 0; if (S.items < itemCap()) S.items++; }
+    if (S.prod.factory >= factoryRate()) { S.prod.factory = 0; if (S.items.length < itemCap()) { var ni = rollItem(); if (ni) S.items.push(ni); } }
     S.prod.mine++;
     if (S.prod.mine >= mineRate()) { S.prod.mine = 0; S.carbon += L('mine'); }
     if (S.prod.portal < portalRate()) S.prod.portal++;
@@ -1097,16 +1325,14 @@ $rg_theme_img = $rg_theme > 0
     S.prod.reinforce++;
     if (S.prod.reinforce >= reinforceRate()) {
       S.prod.reinforce = 0;
-      if (S.reserve > 0 && S.garrison < garrisonCap()) {
-        S.reserve--; S.garrison++;
-        if (S.weapons > 0) { S.weapons--; S.armed++; }
-        if (S.armor > 0)   { S.armor--;   S.armored++; }
+      if (S.reserve.length && S.garrison.length < garrisonCap()) {
+        S.garrison.push(equip(S.reserve.shift()));
       }
     }
 
     // The Tower fires on the closest foe still short of the wall.
     S.nextAttack--;
-    if (S.nextAttack <= 0 && S.foes.length && S.garrison > 0) {
+    if (S.nextAttack <= 0 && S.foes.length && S.garrison.length) {
       S.nextAttack = 6;
       var target = S.foes[0];
       for (var i = 1; i < S.foes.length; i++) if (S.foes[i].pos < target.pos) target = S.foes[i];
@@ -1138,7 +1364,7 @@ $rg_theme_img = $rg_theme > 0
       }
       if (!near) { u.pos = Math.max(u.pos - 0.4, 2); continue; }
       if (bestd < 4) {
-        near.hp -= u.armed ? (2 + REALM.wlevel) : 1;
+        near.hp -= soldierDamage(u);
         u.hp -= near.tough ? 2 : 1;
         if (near.hp <= 0) kill(near);
         if (u.hp <= 0) {
@@ -1170,16 +1396,33 @@ $rg_theme_img = $rg_theme > 0
          * Better armour absorbs more of the wall damage too, so a good cache is
          * felt twice.
          */
-        if (S.armored > 0) {
-          S.armored--;
-          S.hp += Math.min(f.tough ? 12 : 5, 1 + REALM.alevel);   // partly absorbed
-          log(escAttr(foeIdentity(f).name) + ' breaks against the armour.');
+        /*
+         * Double Rewards behaves here exactly as it does on a realm location:
+         * a damage shield that absorbs the hit and is consumed doing it.
+         */
+        if (S.shield > 0) {
+          S.shield--;
+          S.hp += (f.tough ? 12 : 5);   // fully absorbed
+          log('The shield takes it. ' + escAttr(foeIdentity(f).name) + ' is thrown back.');
           sfxPlay('melee', 0.14);
-        } else if (S.garrison > 0) {
-          S.garrison--; if (S.armed > 0) S.armed--;
-          S.dead++;
-          log(escAttr(foeIdentity(f).name) + ' breaches the wall. A guardian falls.', true);
-          sfxPlay('death', 0.16);
+        } else {
+          // The best-armoured guardian takes it, and their armour degrades a
+          // level rather than the guardian dying. Higher tiers absorb more.
+          var best = -1, bestA = 0;
+          for (var q = 0; q < S.garrison.length; q++) {
+            if (S.garrison[q].a > bestA) { bestA = S.garrison[q].a; best = q; }
+          }
+          if (best >= 0) {
+            S.garrison[best].a--;
+            S.hp += Math.min(f.tough ? 12 : 5, 1 + bestA);   // better armour, more absorbed
+            log(escAttr(foeIdentity(f).name) + ' breaks against the armour.');
+            sfxPlay('melee', 0.14);
+          } else if (S.garrison.length) {
+            S.garrison.shift();
+            S.dead++;
+            log(escAttr(foeIdentity(f).name) + ' breaches the wall. A guardian falls.', true);
+            sfxPlay('death', 0.16);
+          }
         }
         if (S.hp <= 0) return end();
       }
@@ -1209,18 +1452,18 @@ $rg_theme_img = $rg_theme > 0
   function render() {
     // Fortify is otherwise invisible -- the wall glows and the HUD says so while
     // it is up, or the player has no way to know the item did anything.
-    document.getElementById('rg-wall').className = S.fortifyFor > 0 ? 'rg-fortified' : '';
+    document.getElementById('rg-wall').className = (S.boostFor > 0 || S.shield > 0) ? 'rg-fortified' : '';
     el.wave.textContent = S.wave;
     el.hp.textContent = Math.max(0, S.hp);
     el.carbon.textContent = S.carbon;
-    el.reserve.textContent = S.reserve;
-    el.weapons.textContent = S.weapons;
-    el.armor.textContent = S.armor;
+    el.reserve.textContent = S.reserve.length;
+    el.weapons.textContent = S.wpool.length;
+    el.armor.textContent = S.apool.length;
     el.dead.textContent = S.dead;
-    el.garrison.textContent = S.garrison;
-    el.armed.textContent = S.armed;
-    el.armored.textContent = S.armored;
-    el.items.textContent = S.items;
+    el.garrison.textContent = S.garrison.length;
+    el.armed.textContent = armedCount();
+    el.armored.textContent = armoredCount();
+    el.items.textContent = S.items.length;
     // Counts those still stepping through, or the number dips as they queue.
     el.sortied.textContent = S.sortied.length + S.emerging.length;
     el['garrison-cap'].textContent = garrisonCap();
@@ -1292,7 +1535,7 @@ $rg_theme_img = $rg_theme > 0
       if (!unode) {
         var art2 = UNITS.length ? UNITS[un2.slot % UNITS.length] : null;
         unode = document.createElement('div');
-        unode.className = 'rg-unit' + (un2.armed ? ' rg-armed' : '') + (un2.prot ? ' rg-prot' : '');
+        unode.className = 'rg-unit' + (un2.w > 0 ? ' rg-armed' : '') + (un2.a > 0 ? ' rg-prot' : '');
         if (art2) {
           unode.title = art2.name;
           var uimg = document.createElement('img');
@@ -1301,13 +1544,13 @@ $rg_theme_img = $rg_theme > 0
           uimg.src = art2.img;
           unode.appendChild(uimg);
         }
-        if (un2.armed && WICON) {
+        if (un2.w > 0 && WICON) {
           var wb = document.createElement('b');
           var wi = document.createElement('img');
           wi.alt = ''; wi.onerror = function () { wb.style.display = 'none'; }; wi.src = WICON;
           wb.appendChild(wi); unode.appendChild(wb);
         }
-        if (un2.prot && AICON) {
+        if (un2.a > 0 && AICON) {
           var ab = document.createElement('u');
           var ai = document.createElement('img');
           ai.alt = ''; ai.onerror = function () { ab.style.display = 'none'; }; ai.src = AICON;
@@ -1325,10 +1568,19 @@ $rg_theme_img = $rg_theme > 0
 
     document.querySelectorAll('.rg-act').forEach(function (b) {
       var a = b.dataset.act;
-      if (a === 'deploy')       b.disabled = !(S.reserve > 0 && S.garrison < garrisonCap());
+      if (a === 'deploy')       b.disabled = !(S.reserve.length && S.garrison.length < garrisonCap());
       else if (a === 'raise')   b.disabled = !(S.dead > 0 && S.carbon >= raiseCost());
-      else if (a === 'sortie')  b.disabled = !(S.reserve > 0 && S.prod.portal >= portalRate() && S.running);
-      else if (a === 'fortify') b.disabled = !(S.items > 0);
+      else if (a === 'sortie')  b.disabled = !(S.reserve.length && S.prod.portal >= portalRate() && S.running);
+      else if (a === 'fortify') {
+        // Items vary now, so the button has to say WHICH one is next -- "use
+        // the thing" is not a decision, and a Double Rewards shield and a
+        // Fast Forward are spent at completely different moments.
+        b.disabled = !S.items.length;
+        b.textContent = S.items.length ? S.items[0].name : 'No items';
+        b.title = S.items.length
+          ? RG_ITEM_HELP[S.items[0].id] || 'Spend this item'
+          : 'The Factory builds these over time';
+      }
       else {
         var k = a.slice(3);
         b.disabled = S.carbon < upgradeCost(k);
@@ -1347,18 +1599,18 @@ $rg_theme_img = $rg_theme > 0
      * higher waves. The choice worth making is "reinforce now or spend the
      * CARBON on an upgrade", and that survives batching intact.
      */
-    if (a === 'deploy' && S.reserve > 0 && S.garrison < garrisonCap()) {
-      var room = garrisonCap() - S.garrison, sent = 0;
-      while (room-- > 0 && S.reserve > 0) {
-        S.reserve--; S.garrison++; sent++;
-        if (S.weapons > 0) { S.weapons--; S.armed++; }
+    if (a === 'deploy' && S.reserve.length && S.garrison.length < garrisonCap()) {
+      var room = garrisonCap() - S.garrison.length, sent = 0;
+      while (room-- > 0 && S.reserve.length) {
+        S.garrison.push(equip(S.reserve.shift())); sent++;
       }
-      log(sent + ' to the wall.');
+      log(sent + ' to the Tower.');
     } else if (a === 'raise' && S.dead > 0 && S.carbon >= raiseCost()) {
       var raised = 0;
-      while (S.dead > 0 && S.carbon >= raiseCost()) { S.carbon -= raiseCost(); S.dead--; S.reserve++; raised++; }
+      // They come back without their kit -- it stayed where they fell.
+      while (S.dead > 0 && S.carbon >= raiseCost()) { S.carbon -= raiseCost(); S.dead--; S.reserve.push({ w:0, a:0 }); raised++; }
       log('The Crypt gives ' + raised + ' back.');
-    } else if (a === 'sortie' && S.reserve > 0 && S.prod.portal >= portalRate()) {
+    } else if (a === 'sortie' && S.reserve.length && S.prod.portal >= portalRate()) {
       // Meet them in the open: they die before reaching the wall, but your
       // guardians fight with no tower behind them. The whole risk/reward beat.
       S.prod.portal = 0;
@@ -1371,27 +1623,18 @@ $rg_theme_img = $rg_theme > 0
        * toward the nearest foe as soon as it lands, the group spreads itself
        * out -- which is what the old arbitrary offsets were faking.
        */
-      var n = Math.min(sortieSize(), S.reserve);
+      var n = Math.min(sortieSize(), S.reserve.length);
       for (var i = 0; i < n; i++) {
-        S.reserve--;
-        var armed = S.weapons > 0;
-        if (armed) S.weapons--;
-        // Armour goes out with them. A sortie has no tower behind it, so this
-        // is where protection is felt most sharply.
-        var prot = S.armor > 0;
-        if (prot) S.armor--;
+        // They take their OWN kit, topped up from the cache if short. A sortie
+        // has no tower behind it, so armour is felt most sharply here.
+        var u = equip(S.reserve.shift());
         // slot picks which enlisted NFT this guardian is, and stays fixed for
         // its life so the face on the field doesn't change between renders.
-        S.emerging.push({ pos:PORTAL_X,
-                         hp:(armed ? 6 : 4) + (prot ? 2 + REALM.alevel : 0),
-                         armed:armed, prot:prot, slot:unitSeq++ });
+        S.emerging.push({ pos:PORTAL_X, w:u.w, a:u.a, hp:unitHp(u), slot:unitSeq++ });
       }
       log(n + ' guardian' + (n > 1 ? 's ride' : ' rides') + ' out through the Portal.');
-    } else if (a === 'fortify' && S.items > 0) {
-      S.items--;
-      S.hp = Math.min(S.maxhp, S.hp + 12 + L('factory') * 2);
-      S.fortifyFor = 60;   // six seconds of heavier fire
-      log('The Factory shores up the wall. The guns bite harder.');
+    } else if (a === 'fortify' && S.items.length) {
+      useItem(S.items.shift());
     } else if (a.indexOf('up-') === 0) {
       var k = a.slice(3);
       if (S.carbon >= upgradeCost(k)) { S.carbon -= upgradeCost(k); S.lvl[k]++; S.bought[k]++; log(k + ' raised to ' + S.lvl[k] + '.'); }
