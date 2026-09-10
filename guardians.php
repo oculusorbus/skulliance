@@ -526,13 +526,19 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   function musicLoad(i) {
     if (!TRACKS.length) return;
     var was = music && !music.paused;
-    if (music) { music.pause(); music.src = ''; }
+    // Pause the outgoing track but do NOT blank its src: clearing src fires an
+    // 'error' on the old element, and its handler used to null the shared
+    // `music` reference -- which by then pointed at the NEW track. Switching
+    // tracks silently killed playback. The handler below now checks identity,
+    // so a late event from a discarded element cannot touch the current one.
+    if (music) music.pause();
     trackIdx = i % TRACKS.length;
-    music = new Audio(TRACKS[trackIdx].url);
-    music.loop = true;
-    music.volume = musicVol;
+    var a = new Audio(TRACKS[trackIdx].url);
+    a.loop = true;
+    a.volume = musicVol;
     // A missing or unplayable track must not take the game with it.
-    music.addEventListener('error', function () { music = null; });
+    a.addEventListener('error', function () { if (music === a) music = null; });
+    music = a;
     if (was && musicOn) music.play().catch(function () {});
   }
   function musicStart() {
