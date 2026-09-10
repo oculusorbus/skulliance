@@ -164,6 +164,39 @@ $rg_total = array_sum($rg_levels);
 $rg_power = $rg_total + $rg_army + ($rg_wlevel * 4);
 $rg_start_wave = $rg_has_realm ? max(1, intval(floor($rg_power / 5))) : 1;
 
+/*
+ * MUSIC. Discovered, not hardcoded.
+ *
+ * The tracks live in audio/tracks/ alongside Crypt Crawl's, and they ship by
+ * FTP rather than through the repo -- so the exact filename (spaces? dashes?
+ * capitalisation?) is not knowable from here, and guessing it wrong fails
+ * silently, which is the worst way for this to break.
+ *
+ * This runs ON the server where the files are, so it just looks. Names are
+ * normalised to letters only before matching, which makes it indifferent to
+ * "Stand Your Ground.mp3", "stand-your-ground.mp3" or "Stand_Your_Ground.mp3",
+ * and it keeps working if the files are renamed later.
+ *
+ * Anything not matched is simply absent -- no player renders, nothing breaks.
+ */
+$rg_tracks = array();
+$rg_want = array(
+	'standyourground'      => 'Stand Your Ground',
+	'guardiansoftherealm'  => 'Guardians of the Realm',
+);
+foreach ((array)glob(__DIR__ . '/audio/tracks/*.[mM][pP]3') as $rg_f) {
+	$rg_base = pathinfo($rg_f, PATHINFO_FILENAME);
+	$rg_key  = strtolower(preg_replace('/[^a-zA-Z]/', '', $rg_base));
+	if (isset($rg_want[$rg_key])) {
+		$rg_tracks[] = array(
+			'name' => $rg_want[$rg_key],
+			// rawurlencode the FILENAME only -- the directory separators must
+			// survive, and spaces in the name must not.
+			'url'  => 'audio/tracks/' . rawurlencode($rg_base . '.' . pathinfo($rg_f, PATHINFO_EXTENSION)),
+		);
+	}
+}
+
 // The horde wears real member avatars. Public everywhere already (podiums,
 // profiles), so this exposes nothing new -- and being overrun by names from
 // your own Discord is a story. The player is excluded from their own horde.
@@ -202,7 +235,19 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 			<span>Wall <strong id="rg-hp">100</strong></span>
 			<span>CARBON <strong id="rg-carbon">0</strong></span>
 			<span id="rg-status">Press Begin</span>
-			<button type="button" id="rg-sound" title="Mute" aria-pressed="true">&#128266;</button>
+			<button type="button" id="rg-sound" title="Mute effects" aria-pressed="true">&#128266;</button>
+			<?php if (!empty($rg_tracks)): ?>
+				<!-- Music gets its own switch and its own volume: the point of
+				     having it here is judging it AGAINST the gunfire, which is
+				     impossible if one control kills both. -->
+				<button type="button" id="rg-music" title="Mute music" aria-pressed="true">&#127925;</button>
+				<select id="rg-track" title="Track">
+					<?php foreach ($rg_tracks as $i => $t): ?>
+						<option value="<?php echo $i; ?>"><?php echo htmlspecialchars($t['name']); ?></option>
+					<?php endforeach; ?>
+				</select>
+				<input type="range" id="rg-vol" min="0" max="100" value="45" title="Music volume">
+			<?php endif; ?>
 		</div>
 
 		<div id="rg-field">
@@ -272,7 +317,12 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 .rg-hud { display:flex; gap:16px; font-size:.78rem; color:rgba(255,255,255,.55); margin-bottom:10px; flex-wrap:wrap; align-items:center; }
 .rg-hud strong { color:#00c8a0; font-size:1rem; }
 #rg-status { margin-left:auto; color:#ffcc44; }
-#rg-sound { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
+#rg-sound, #rg-music { background:none; border:0; font-size:1rem; cursor:pointer; padding:0 2px; line-height:1; }
+#rg-track { background:#0d1e30; color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.15); border-radius:5px; font-size:.72rem; padding:3px 5px; }
+#rg-vol { width:70px; accent-color:#00c8a0; vertical-align:middle; }
+/* On a phone the HUD is already tight; the volume slider is the first thing
+   that can go, since the mute button covers the urgent case. */
+@media (max-width:560px) { #rg-vol { display:none; } }
 
 #rg-field { position:relative; height:80px; background:#0a1929; border:1px solid rgba(255,255,255,.08); border-radius:8px; overflow:hidden; margin-bottom:12px; }
 #rg-wall { position:absolute; left:0; top:0; bottom:0; width:10px; background:linear-gradient(180deg,#00c8a0,#007a61); }
@@ -443,6 +493,31 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       (function (n, d) { setTimeout(function () { sfxPlay(n, 0.26); }, d); })(name, i * 70);
     }
   }
+
+  /* ---- Music. Separate channel from the weapon effects, deliberately: the
+     whole reason it is here is to hear one against the other. Autoplay policy
+     is satisfied because nothing starts before the Begin button. ---- */
+  var TRACKS = <?php echo json_encode($rg_tracks); ?>;
+  var music = null, musicOn = true, trackIdx = 0, musicVol = 0.45;
+
+  function musicLoad(i) {
+    if (!TRACKS.length) return;
+    var was = music && !music.paused;
+    if (music) { music.pause(); music.src = ''; }
+    trackIdx = i % TRACKS.length;
+    music = new Audio(TRACKS[trackIdx].url);
+    music.loop = true;
+    music.volume = musicVol;
+    // A missing or unplayable track must not take the game with it.
+    music.addEventListener('error', function () { music = null; });
+    if (was && musicOn) music.play().catch(function () {});
+  }
+  function musicStart() {
+    if (!TRACKS.length || !musicOn) return;
+    if (!music) musicLoad(trackIdx);
+    if (music) music.play().catch(function () {});
+  }
+  function musicStop() { if (music) music.pause(); }
 
   var foeSeq = 0, unitSeq = 0;
   function foeIdentity(f) {
@@ -682,6 +757,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   function end() {
     S.over = true; S.running = false;
     clearInterval(S.timer);
+    musicStop();
     el.status.textContent = 'The wall is breached';
     log('The realm falls at wave ' + S.wave + '. Guardians lost: ' + S.dead + '.', true);
     beginBtn.textContent = 'Hold again';
@@ -707,6 +783,35 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   });
   paintSound();
 
+  var musicBtn = document.getElementById('rg-music');
+  var trackSel = document.getElementById('rg-track');
+  var volSlider = document.getElementById('rg-vol');
+  if (musicBtn) {
+    try {
+      if (localStorage.getItem('rg-music') === 'off') musicOn = false;
+      var sv = parseInt(localStorage.getItem('rg-musicvol'), 10);
+      if (!isNaN(sv)) { musicVol = Math.max(0, Math.min(1, sv / 100)); volSlider.value = sv; }
+    } catch (e) {}
+    function paintMusic() {
+      musicBtn.innerHTML = musicOn ? '&#127925;' : '&#128263;';
+      musicBtn.title = musicOn ? 'Mute music' : 'Unmute music';
+      musicBtn.setAttribute('aria-pressed', musicOn ? 'true' : 'false');
+    }
+    musicBtn.addEventListener('click', function () {
+      musicOn = !musicOn;
+      try { localStorage.setItem('rg-music', musicOn ? 'on' : 'off'); } catch (e) {}
+      if (musicOn) { if (S.running) musicStart(); } else { musicStop(); }
+      paintMusic();
+    });
+    trackSel.addEventListener('change', function () { musicLoad(parseInt(this.value, 10) || 0); });
+    volSlider.addEventListener('input', function () {
+      musicVol = Math.max(0, Math.min(1, parseInt(this.value, 10) / 100));
+      if (music) music.volume = musicVol;
+      try { localStorage.setItem('rg-musicvol', String(this.value)); } catch (e) {}
+    });
+    paintMusic();
+  }
+
   beginBtn.addEventListener('click', function () {
     rand = mulberry32(SEED);
     actionLog = [];
@@ -715,6 +820,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     logEl.innerHTML = '';
     beginBtn.hidden = true;
     startWave();
+    musicStart();
     S.timer = setInterval(step, TICK);
   });
 
