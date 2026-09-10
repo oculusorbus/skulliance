@@ -682,6 +682,35 @@ $rg_theme_img = $rg_theme > 0
 			<div id="rg-tracers"></div>
 		</div>
 
+		<!--
+			THE FACTORY SHELF.
+
+			Items used to be a QUEUE spent by one "Fortify" button: you got
+			whatever the Factory happened to build next, which made the one
+			action in the game you could not choose. Playtest: "I find myself
+			with the hordes all up on my wall and I'm mashing items hoping for a
+			miracle." Hoping is the giveaway -- that is a slot machine, not a
+			decision, and everything else in this game is a decision.
+
+			Each item is its own button now, always in the same place, showing
+			how many you hold. Nothing about the items changed; being able to
+			pick the right one is the whole upgrade.
+		-->
+		<div id="rg-shelf">
+			<div class="rg-shelf-head">Factory items &mdash; <span id="rg-shelf-count">0</span> held</div>
+			<div class="rg-shelf-grid">
+				<?php foreach ($rg_con_ui as $rg_cid => $rg_cu): ?>
+					<button type="button" class="rg-item" data-act="item-<?php echo intval($rg_cid); ?>" disabled
+					        title="<?php echo htmlspecialchars($rg_con_names[$rg_cid] . ' — ' . $rg_cu[1]); ?>">
+						<img src="icons/<?php echo strtolower(str_replace(array('%', ' '), array('', '-'), $rg_con_names[$rg_cid])); ?>.png"
+						     alt="" onerror="this.style.display='none'">
+						<span class="rg-item-name"><?php echo htmlspecialchars($rg_cu[0]); ?>
+							<b data-count="<?php echo intval($rg_cid); ?>">(0)</b></span>
+						<span class="rg-item-blurb"><?php echo htmlspecialchars($rg_cu[1]); ?></span>
+					</button>
+				<?php endforeach; ?>
+			</div>
+
 		<div id="rg-locations">
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/tower.png" alt="" onerror="this.style.display='none'">Tower <span class="rg-lvl" id="rg-lvl-tower">1</span></div>
@@ -748,34 +777,6 @@ $rg_theme_img = $rg_theme > 0
 			</div>
 		</div>
 
-		<!--
-			THE FACTORY SHELF.
-
-			Items used to be a QUEUE spent by one "Fortify" button: you got
-			whatever the Factory happened to build next, which made the one
-			action in the game you could not choose. Playtest: "I find myself
-			with the hordes all up on my wall and I'm mashing items hoping for a
-			miracle." Hoping is the giveaway -- that is a slot machine, not a
-			decision, and everything else in this game is a decision.
-
-			Each item is its own button now, always in the same place, showing
-			how many you hold. Nothing about the items changed; being able to
-			pick the right one is the whole upgrade.
-		-->
-		<div id="rg-shelf">
-			<div class="rg-shelf-head">Factory items &mdash; <span id="rg-shelf-count">0</span> held</div>
-			<div class="rg-shelf-grid">
-				<?php foreach ($rg_con_ui as $rg_cid => $rg_cu): ?>
-					<button type="button" class="rg-item" data-act="item-<?php echo intval($rg_cid); ?>" disabled
-					        title="<?php echo htmlspecialchars($rg_con_names[$rg_cid] . ' — ' . $rg_cu[1]); ?>">
-						<img src="icons/<?php echo strtolower(str_replace(array('%', ' '), array('', '-'), $rg_con_names[$rg_cid])); ?>.png"
-						     alt="" onerror="this.style.display='none'">
-						<span class="rg-item-name"><?php echo htmlspecialchars($rg_cu[0]); ?>
-							<b data-count="<?php echo intval($rg_cid); ?>">(0)</b></span>
-						<span class="rg-item-blurb"><?php echo htmlspecialchars($rg_cu[1]); ?></span>
-					</button>
-				<?php endforeach; ?>
-			</div>
 		</div>
 
 		<!--
@@ -1061,7 +1062,12 @@ $rg_theme_img = $rg_theme > 0
    reach for the right item without reading is the entire point of the change.
    Auto-fit rather than a fixed column count, so it is a comfortable grid on a
    monitor and two columns on a phone without a second breakpoint. */
-#rg-shelf { margin:0 0 12px; }
+/* `margin:0 auto 12px`, and the auto is LOAD-BEARING. `#rg-game > *` centres
+   every child with margin-left/right:auto, and a `margin` SHORTHAND here resets
+   both to 0 -- which pinned the whole shelf to the left edge of the page while
+   everything else stayed in the centred column. Verified in the live page:
+   shelf left 21px against the locations grid's 641px, both 720px wide. */
+#rg-shelf { margin:0 auto 12px; }
 #rg-shelf[hidden] { display:none; }
 .rg-shelf-head { font-size:.7rem; text-transform:uppercase; letter-spacing:.06em;
                  color:rgba(255,255,255,.45); margin:0 0 6px; }
@@ -1077,8 +1083,16 @@ $rg_theme_img = $rg_theme > 0
 /* Holding one lights it up: at a glance the shelf shows what is available
    without reading a single count. */
 .rg-item.rg-item-have { border-color:rgba(0,200,160,.55); background:#0e2637; }
-.rg-item:disabled { opacity:.34; cursor:default; }
-.rg-item:disabled .rg-item-name b { color:rgba(255,255,255,.5); }
+/* Dimmed by COLOUR, not by opacity on the whole button. The shelf sits over the
+   realm's theme art, and fading the button faded its background too -- the
+   artwork came through the card and the text stopped being readable. It is a
+   reference you read before you need it, so an unheld item still has to be
+   legible. */
+.rg-item:disabled { cursor:default; background:rgba(13,30,48,.85); border-color:rgba(255,255,255,.08); }
+.rg-item:disabled .rg-item-name  { color:rgba(255,255,255,.55); }
+.rg-item:disabled .rg-item-blurb { color:rgba(255,255,255,.32); }
+.rg-item:disabled .rg-item-name b { color:rgba(255,255,255,.45); }
+.rg-item:disabled img { opacity:.4; }
 
 /* ---- PAUSED ---------------------------------------------------------------
    Unmistakable at a glance. Someone coming back to their phone after twenty
@@ -1128,6 +1142,17 @@ $rg_theme_img = $rg_theme > 0
 /* The lessons Obscura paid for: fits a phone, nothing pinned over the board. */
 @media (max-width:760px) { #rg-locations { grid-template-columns:repeat(2,minmax(0,1fr)); } }
 @media (max-width:560px) {
+  /* The shelf sits between the field and the controls, so on a phone its
+     one-line descriptions are seven lines pushing the game off the screen. The
+     names and counts stay; the descriptions go, because "What am I actually
+     deciding?" carries the full explanation and the tooltip carries the short
+     one. */
+  .rg-item-blurb { display:none; }
+  .rg-shelf-grid { grid-template-columns:repeat(auto-fit, minmax(112px, 1fr)); gap:4px; }
+  .rg-item { padding:6px 7px; grid-template-columns:18px 1fr; gap:0 6px; }
+  .rg-item img { grid-row:1; width:18px; height:18px; }
+  .rg-item-name { font-size:.7rem; }
+
   /* The BLURB goes, not the title. The prototype marker lives in the heading
      now, and most people reaching this from the nav are on a phone -- hiding
      the whole intro would take the label with it and leave nothing saying what
