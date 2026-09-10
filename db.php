@@ -6198,15 +6198,25 @@ $SKULLIANCE_BOARDS = array(
 	'gamemaster'        => array('label'=>'Game Master',       'icon'=>'🎮', 'group'=>'Games',
 		'blurb'=>'Every game, weighted',
 		'periods'=>array('All-Time'=>'gamemaster-ath','Monthly'=>'gamemaster-monthly','Weekly'=>'gamemaster-weekly')),
-	'gauntlets'         => array('label'=>'Gauntlets',         'icon'=>'🥊', 'group'=>'Games',
-		'blurb'=>'NFT gauntlet runs',
-		'periods'=>array('All-Time'=>'gauntlets','Weekly'=>'weekly-gauntlets')),
 	'cryptcrawl'        => array('label'=>'Crypt Crawl',       'icon'=>'💀', 'group'=>'Games',
 		'blurb'=>'Solo dungeon card game',
 		'periods'=>array('All-Time'=>'cryptcrawl','Weekly'=>'weekly-cryptcrawl')),
 	'cryptconquest'     => array('label'=>'Crypt Conquest',    'icon'=>'👑', 'group'=>'Games',
 		'blurb'=>'Regicide-style card game',
 		'periods'=>array('All-Time'=>'cryptconquest','Monthly'=>'monthly-cryptconquest')),
+	// Sits with Crypt Crawl and Crypt Conquest, behind the aggregate: the three
+	// of them are the same shape -- one long solo run, played to a loss, on its
+	// own board. Gauntlets moved to the tail beside Obscura for the opposite
+	// reason.
+	//
+	// MONTHLY, not weekly, and that follows from the game: a siege runs half an
+	// hour and the long ones an hour, so a weekly board would be decided by who
+	// had a free evening. Ranked by waves HELD past your own starting wave, not
+	// the raw wave number -- the number you start on is handed to you by your
+	// realm, so ranking on it would rank realms rather than play.
+	'guardians'         => array('label'=>'Realm Guardians',   'icon'=>'🛡️', 'group'=>'Games',
+		'blurb'=>'Waves held against the horde',
+		'periods'=>array('All-Time'=>'guardians','Monthly'=>'monthly-guardians')),
 	'skullracer'        => array('label'=>'Skull Racer Races', 'icon'=>'🏁', 'group'=>'Games',
 		'blurb'=>'Fastest 3-lap total',
 		'periods'=>array('All-Time'=>'skullracer','Weekly'=>'weekly-skullracer')),
@@ -6222,6 +6232,9 @@ $SKULLIANCE_BOARDS = array(
 	'bosses'            => array('label'=>'Boss Battles',      'icon'=>'🐉', 'group'=>'Games',
 		'blurb'=>'Community boss fights',
 		'periods'=>array('All-Time'=>'bosses','Weekly'=>'weekly-bosses')),
+	'gauntlets'         => array('label'=>'Gauntlets',         'icon'=>'🥊', 'group'=>'Games',
+		'blurb'=>'NFT gauntlet runs',
+		'periods'=>array('All-Time'=>'gauntlets','Weekly'=>'weekly-gauntlets')),
 	// LAST in Games deliberately. Obscura is the oddball of the set -- it is not
 	// a run, a race or a match-3, it is an art-recognition quiz -- so it reads
 	// better as the tail of the section than wedged between two arcade games.
@@ -6229,14 +6242,6 @@ $SKULLIANCE_BOARDS = array(
 	'obscura'           => array('label'=>'Obscura',           'icon'=>'🔍', 'group'=>'Games',
 		'blurb'=>'Longest art-recognition streak',
 		'periods'=>array('All-Time'=>'obscura','Weekly'=>'weekly-obscura')),
-	// MONTHLY, not weekly, and that follows from the game: a siege runs half an
-	// hour and the long ones an hour, so a weekly board would be decided by who
-	// had a free evening. Ranked by waves HELD past your own starting wave, not
-	// the raw wave number -- the number you start on is handed to you by your
-	// realm, so ranking on it would rank realms rather than play.
-	'guardians'         => array('label'=>'Realm Guardians',   'icon'=>'🛡️', 'group'=>'Games',
-		'blurb'=>'Waves held against the horde',
-		'periods'=>array('All-Time'=>'guardians','Monthly'=>'monthly-guardians')),
 	// Their own group, which is what puts them on a row of their own rather
 	// than flowing into the tail of Games. Also honest: they run on a
 	// separate sub-system with its own database. NOT "External": they used to
