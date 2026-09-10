@@ -255,7 +255,7 @@ $rg_tracks = array_merge($rg_named, $rg_tracks);
 $rg_horde = array();
 $hr = $conn->query("SELECT username, discord_id, avatar FROM users
                     WHERE discord_id != '' AND avatar != '' AND id != $rg_me
-                    ORDER BY RAND() LIMIT 40");
+                    ORDER BY RAND() LIMIT 80");
 if ($hr) while ($h = $hr->fetch_assoc()) {
 	$rg_horde[] = array(
 		'name' => $h['username'],
@@ -506,7 +506,11 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     acache: <?php echo intval($rg_acache); ?>,
     alevel: <?php echo intval($rg_alevel); ?>
   };
-  var HORDE = <?php echo json_encode($rg_horde); ?>;
+  // CANDIDATES, not the horde. A Discord avatar url 404s whenever someone has
+  // changed their picture since we cached the hash, and the fallback turned the
+  // field into a wall of identical skulls. Only verified faces get used.
+  var CANDIDATES = <?php echo json_encode($rg_horde); ?>;
+  var VERIFIED = [], HORDE = [];
   var UNITS = <?php echo json_encode($rg_units); ?>;   // your soldiers, as NFT art
   var WICON = <?php echo json_encode($rg_wicon); ?>;   // best weapon in the cache
   var AICON = <?php echo json_encode($rg_aicon); ?>;   // best armor in the cache
@@ -657,9 +661,26 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   }
   function musicStop() { if (music) music.pause(); }
 
+  /*
+   * Pre-flight the avatars. Each candidate is loaded once at page open; only
+   * the ones that actually decode make it into VERIFIED. Doing it here rather
+   * than server-side keeps the page free of eighty HEAD requests, and it warms
+   * the browser cache as a side effect, so verified faces appear instantly.
+   *
+   * The horde is frozen from VERIFIED when a siege begins, so faces cannot
+   * reshuffle mid-run as stragglers resolve. If nothing verifies, foes render
+   * as plain markers -- an anonymous attacker beats a row of identical skulls.
+   */
+  CANDIDATES.forEach(function (c) {
+    var im = new Image();
+    im.onload  = function () { if (im.naturalWidth > 0) VERIFIED.push(c); };
+    im.onerror = function () {};   // silently dropped
+    im.src = c.img;
+  });
+
   var foeSeq = 0, unitSeq = 0;
   function foeIdentity(f) {
-    if (!HORDE.length) return { name:'A raider', img:'' };
+    if (!HORDE.length) return { name:'A raider', img:'' };   // plain marker, never a skull
     return HORDE[f.id % HORDE.length];
   }
   function escAttr(s) {
@@ -872,7 +893,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       var who = foeIdentity(f);
       html += '<div class="rg-foe' + (f.tough ? ' rg-tough' : '') + '" style="left:' + f.pos + '%"'
             + ' title="' + escAttr(who.name) + '">'
-            + (who.img ? '<img src="' + escAttr(who.img) + '" alt="" onerror="this.onerror=null;this.src=\'icons/skull.png\'">' : '')
+            + (who.img ? '<img src="' + escAttr(who.img) + '" alt="" onerror="this.style.display=\'none\'">' : '')
             + '<i style="width:' + Math.max(0, Math.round(f.hp / f.max * 20)) + 'px"></i></div>';
     }
     foesEl.innerHTML = html;
@@ -1021,6 +1042,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   beginBtn.addEventListener('click', function () {
     rand = mulberry32(SEED);
     actionLog = [];
+    HORDE = VERIFIED.slice();   // frozen for the run: no reshuffling faces
     reset();
     S.running = true;
     logEl.innerHTML = '';
