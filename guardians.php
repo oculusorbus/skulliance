@@ -327,6 +327,8 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 				<div class="rg-loc-stat"><strong id="rg-weapons">0</strong> weapons &middot; <span id="rg-armor">0</span> armour</div>
 				<div class="rg-bar" title="Time until the Armory forges the next weapon"><i id="rg-bar-armory"></i></div>
 					<div class="rg-cap">forging next weapon</div>
+					<div class="rg-bar" title="Time until the Armory forges the next piece of armour"><i id="rg-bar-forge"></i></div>
+					<div class="rg-cap">forging next armour</div>
 				<button type="button" class="rg-act rg-up" data-act="up-armory">Upgrade</button>
 			</div>
 			<div class="rg-loc">
@@ -537,7 +539,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       reserve:REALM.army, weapons:REALM.cache, armor:REALM.acache, dead:0,
       garrison:0, armed:0, armored:0, items:0, sortied:[],
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
-      prod:{ barracks:0, armory:0, factory:0, mine:0, portal:0, reinforce:0 },
+      prod:{ barracks:0, armory:0, forge:0, factory:0, mine:0, portal:0, reinforce:0 },
       bought:{ tower:0, barracks:0, armory:0, crypt:0, portal:0, factory:0, mine:0 },
       foes:[], nextAttack:0, betweenWaves:0, fortifyFor:0
     };
@@ -552,6 +554,10 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   function itemCap()      { return 1 + Math.ceil(L('factory') / 2); }
   function barracksRate() { return Math.max(12, 62 - L('barracks') * 5); }
   function armoryRate()   { return Math.max(16, 72 - L('armory') * 5); }
+  // Armour comes slower than weapons and is capped lower: it is the resource
+  // that turns a breach into a scratch, so it should never be abundant.
+  function forgeRate()    { return Math.max(34, 150 - L('armory') * 9); }
+  function armorCap()     { return 2 + Math.ceil(L('armory') / 2); }
   function factoryRate()  { return Math.max(60, 240 - L('factory') * 16); }
   function mineRate()     { return Math.max(6, 26 - L('mine') * 2); }
   function portalRate()   { return Math.max(40, 170 - L('portal') * 12); }
@@ -591,7 +597,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   ['wave','hp','carbon','reserve','weapons','dead','garrison','garrison-cap','armed','status',
    'sortied','items','mine-rate','armor','armored',
    'lvl-tower','lvl-barracks','lvl-armory','lvl-crypt','lvl-portal','lvl-factory','lvl-mine',
-   'bar-barracks','bar-armory','bar-factory','bar-mine','bar-portal']
+   'bar-barracks','bar-armory','bar-forge','bar-factory','bar-mine','bar-portal']
     .forEach(function (k) { el[k] = document.getElementById('rg-' + k); });
   var foesEl = document.getElementById('rg-enemies');
   var sortieEl = document.getElementById('rg-sortie');
@@ -647,7 +653,10 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     if (music) music.pause();
     trackIdx = i % TRACKS.length;
     var a = new Audio(TRACKS[trackIdx].url);
-    a.loop = true;
+    // NOT loop: one track on repeat meant only ever hearing one of the two.
+    // Playing to the end and advancing turns them into a playlist.
+    a.loop = false;
+    a.addEventListener('ended', function () { if (music === a) { musicLoad(trackIdx + 1); if (music) music.play().catch(function () {}); } });
     a.volume = musicVol;
     // A missing or unplayable track must not take the game with it.
     a.addEventListener('error', function () { if (music === a) music = null; });
@@ -679,6 +688,8 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   });
 
   var foeSeq = 0, unitSeq = 0;
+  // One element per foe/unit, kept for its lifetime -- see render().
+  var foeNodes = {}, unitNodes = {};
   function foeIdentity(f) {
     if (!HORDE.length) return { name:'A raider', img:'' };   // plain marker, never a skull
     return HORDE[f.id % HORDE.length];
@@ -735,8 +746,17 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     // Production. Every location earns its keep on a timer.
     S.prod.barracks++;
     if (S.prod.barracks >= barracksRate()) { S.prod.barracks = 0; if (S.reserve < reserveCap()) S.reserve++; }
+    /*
+     * The Armory forges BOTH. It was producing weapons only, so armour was
+     * whatever the cache started with and then gone for good -- reported as
+     * "the armory doesn't seem to be generating armor, only weapons".
+     * Armour comes slower than weapons, which is what keeps it a resource worth
+     * spending carefully rather than a permanent second health bar.
+     */
     S.prod.armory++;
     if (S.prod.armory >= armoryRate()) { S.prod.armory = 0; if (S.weapons < weaponCap()) S.weapons++; }
+    S.prod.forge++;
+    if (S.prod.forge >= forgeRate()) { S.prod.forge = 0; if (S.armor < armorCap()) S.armor++; }
     S.prod.factory++;
     if (S.prod.factory >= factoryRate()) { S.prod.factory = 0; if (S.items < itemCap()) S.items++; }
     S.prod.mine++;
@@ -882,37 +902,98 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     });
     el['bar-barracks'].style.width = Math.round(S.prod.barracks / barracksRate() * 100) + '%';
     el['bar-armory'].style.width   = Math.round(S.prod.armory / armoryRate() * 100) + '%';
+    el['bar-forge'].style.width    = Math.round(S.prod.forge / forgeRate() * 100) + '%';
     el['bar-factory'].style.width  = Math.round(S.prod.factory / factoryRate() * 100) + '%';
     el['bar-mine'].style.width     = Math.round(S.prod.mine / mineRate() * 100) + '%';
     el['bar-portal'].style.width   = Math.round(S.prod.portal / portalRate() * 100) + '%';
 
-    var html = '';
+    /*
+     * REUSE THE NODES. Do not rebuild innerHTML.
+     *
+     * This ran ten times a second and threw away every <img> each time. The
+     * browser re-decoded them on every frame, and in the gap before each one
+     * painted you saw the div's own red background -- which reads exactly as
+     * "placeholder icons, always flashing red". The avatars were fine; the DOM
+     * was being destroyed under them.
+     *
+     * Now each foe owns one element for its whole life: created once, moved by
+     * updating `left`, removed when it dies. No re-decode, no flicker, and far
+     * less work per tick.
+     */
+    var seen = {};
     for (var i = 0; i < S.foes.length; i++) {
       var f = S.foes[i];
       if (f.pos > 100) continue;
-      var who = foeIdentity(f);
-      html += '<div class="rg-foe' + (f.tough ? ' rg-tough' : '') + '" style="left:' + f.pos + '%"'
-            + ' title="' + escAttr(who.name) + '">'
-            + (who.img ? '<img src="' + escAttr(who.img) + '" alt="" onerror="this.style.display=\'none\'">' : '')
-            + '<i style="width:' + Math.max(0, Math.round(f.hp / f.max * 20)) + 'px"></i></div>';
+      seen[f.id] = 1;
+      var node = foeNodes[f.id];
+      if (!node) {
+        var who = foeIdentity(f);
+        node = document.createElement('div');
+        node.className = 'rg-foe' + (f.tough ? ' rg-tough' : '');
+        node.title = who.name;
+        if (who.img) {
+          var fimg = document.createElement('img');
+          fimg.alt = '';
+          // Pre-verified, so this should never fire -- but hide rather than
+          // show a placeholder if it somehow does.
+          fimg.onerror = function () { this.style.display = 'none'; };
+          fimg.src = who.img;
+          node.appendChild(fimg);
+        }
+        node.appendChild(document.createElement('i'));
+        foeNodes[f.id] = node;
+        foesEl.appendChild(node);
+      }
+      node.style.left = f.pos + '%';
+      node.lastChild.style.width = Math.max(0, Math.round(f.hp / f.max * 20)) + 'px';
     }
-    foesEl.innerHTML = html;
+    for (var id in foeNodes) {
+      if (!seen[id]) { foesEl.removeChild(foeNodes[id]); delete foeNodes[id]; }
+    }
 
     // Your guardians wear their own NFT art, with the weapon they carry badged
     // on top -- so the field reads as your skulls against their faces, and an
     // armed guardian is visibly armed.
-    var shtml = '';
+    // Same node reuse as the horde: rebuilding these every tick re-decoded the NFT
+    // art and made your own guardians strobe too.
+    var useen = {};
     for (var u = 0; u < S.sortied.length; u++) {
-      var un = S.sortied[u];
-      var art = UNITS.length ? UNITS[un.slot % UNITS.length] : null;
-      shtml += '<div class="rg-unit' + (un.armed ? ' rg-armed' : '') + (un.prot ? ' rg-prot' : '') + '" style="left:' + un.pos + '%"'
-             + (art ? ' title="' + escAttr(art.name) + '"' : '') + '>'
-             + (art ? '<img src="' + escAttr(art.img) + '" alt="" onerror="this.style.display=\'none\'">' : '')
-             + (un.armed && WICON ? '<b><img src="' + escAttr(WICON) + '" alt="" onerror="this.parentNode.style.display=\'none\'"></b>' : '')
-             + (un.prot && AICON ? '<u><img src="' + escAttr(AICON) + '" alt="" onerror="this.parentNode.style.display=\'none\'"></u>' : '')
-             + '</div>';
+      var un2 = S.sortied[u];
+      useen[un2.slot] = 1;
+      var unode = unitNodes[un2.slot];
+      if (!unode) {
+        var art2 = UNITS.length ? UNITS[un2.slot % UNITS.length] : null;
+        unode = document.createElement('div');
+        unode.className = 'rg-unit' + (un2.armed ? ' rg-armed' : '') + (un2.prot ? ' rg-prot' : '');
+        if (art2) {
+          unode.title = art2.name;
+          var uimg = document.createElement('img');
+          uimg.alt = '';
+          uimg.onerror = function () { this.style.display = 'none'; };
+          uimg.src = art2.img;
+          unode.appendChild(uimg);
+        }
+        if (un2.armed && WICON) {
+          var wb = document.createElement('b');
+          var wi = document.createElement('img');
+          wi.alt = ''; wi.onerror = function () { wb.style.display = 'none'; }; wi.src = WICON;
+          wb.appendChild(wi); unode.appendChild(wb);
+        }
+        if (un2.prot && AICON) {
+          var ab = document.createElement('u');
+          var ai = document.createElement('img');
+          ai.alt = ''; ai.onerror = function () { ab.style.display = 'none'; }; ai.src = AICON;
+          ab.appendChild(ai); unode.appendChild(ab);
+        }
+        unitNodes[un2.slot] = unode;
+        sortieEl.appendChild(unode);
+      }
+      unode.style.left = un2.pos + '%';
     }
-    sortieEl.innerHTML = shtml;
+    for (var uid in unitNodes) {
+      if (!useen[uid]) { sortieEl.removeChild(unitNodes[uid]); delete unitNodes[uid]; }
+    }
+
 
     document.querySelectorAll('.rg-act').forEach(function (b) {
       var a = b.dataset.act;
