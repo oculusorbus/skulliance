@@ -1900,6 +1900,18 @@ $rg_theme_img = $rg_theme > 0
     S.foes = buildWave(S.wave);
     el.status.textContent = 'Wave ' + S.wave + ' incoming';
     log('Wave ' + S.wave + ' approaches &mdash; ' + S.foes.length + ' of them.');
+    /*
+     * Crypt Crawl's last-stand cue, announcing the wave. It is the one moment
+     * in a run that deserves a sound of its own: the wall has held, the field
+     * is briefly empty, and the next lot are coming. Louder than the weapon
+     * chatter (0.20 against 0.09-0.16) because it fires roughly once a minute
+     * rather than several times a second, and it has to carry over a wall
+     * already firing.
+     *
+     * Cosmetic, like every other cue -- sfxPlay is a no-op when effects are
+     * muted, and nothing here touches the simulation.
+     */
+    sfxPlay('laststand', 0.20);
   }
 
   function step() {
