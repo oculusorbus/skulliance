@@ -1667,9 +1667,12 @@ What a doc page will have to get right, because none of it is guessable:
   and Realm Guardians is the card it centres. That grid pins `minmax` to 260px
   precisely so a 4th column can never fit (4x260+3x18 = 1094 against 1060px of
   content); at `.hp-grid`'s 250px a 4th *would* fit and the rule would misfire.
-- The nav points Guardians at the GAME while the other three point at their
-  landing pages. Deliberate for now, not an oversight - members using the nav
-  want to play. Change it if consistency matters more.
+- The nav points Guardians at **`guardiansgame.php`**, the marketing page, not
+  straight at the game - the same route Crypt Crawl, Crypt Conquest and Skull
+  Racer take, so a staker clicking any of the four gets the same thing. Obscura
+  is the deliberate exception (no public page; its nav comment says so). The
+  **Launchpad** still links straight to `guardians.php`, which is also what it
+  does for the others: someone on the Launchpad has already chosen to play.
 - Every realm still eventually falls to the horde. There is no win condition.
   That is exactly why the siege can be **paused** - a run reaches an hour, so
   losing it to a phone call is the one failure a player learns nothing from.

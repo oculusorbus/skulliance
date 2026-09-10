@@ -172,9 +172,12 @@
 		    <div class="nav-dropdown-menu">
 		      <a href="missions.php">Missions</a>
 		      <a href="realms.php">Realms</a>
-		      <!-- Prototype, deliberately listed under Realms: it reads that realm's
-		           locations, soldiers and gear to build its starting position. -->
-		      <a href="guardians.php">Guardians</a>
+		      <!-- Listed under Realms deliberately: it reads that realm's locations,
+		           soldiers and gear to build its starting position.
+		           Points at the MARKETING page, not straight at the game, matching
+		           Crypt Crawl / Crypt Conquest / Skull Racer below. Obscura is the
+		           one exception and says so in its own comment. -->
+		      <a href="guardiansgame.php">Guardians</a>
 		      <a href="gauntlets.php">Gauntlets</a>
 		      <a href="cryptcrawlgame.php">Crypt Crawl</a>
 		      <a href="cryptconquestgame.php">Crypt Conquest</a>
