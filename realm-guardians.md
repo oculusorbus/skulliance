@@ -1,17 +1,37 @@
-# Skull Siege — design notes
+# Realm Guardians — design notes
 
 **Status: unbuilt idea.** Nothing here exists in code. Written down 2026-09-09 so
 it isn't lost; see the "If you build this" section at the bottom for the order I'd
 tackle it in.
 
-A Kingdom Rush-style tower defense where **your staked NFTs are the towers**.
+**The current design, in one paragraph:** the Realms management loop played in
+real time under wave pressure. Your seven realm locations supply the defense —
+Barracks feeding soldiers, Armory weapons, Crypt resurrections, Tower its
+garrison, Factory items, Mine income, Portal your sorties — and you keep them
+stocked while a horde escalates. Your realm sets a baseline position on a shared
+ladder; skill pushes you above it, bad runs knock you back, and you never fall
+below what your realm has earned you. Defensive by nature: you are guarding the
+realm from intruders, which is where the name comes from.
 
 Proposed because the user named tower defense — specifically Kingdom Rush — as a
 genre they enjoy, and it is the one genre named that the platform doesn't have.
 
+**Read this document in order.** It is a record of the design being worked out,
+so later sections supersede earlier ones and say so. The section immediately
+below is the FIRST draft — NFTs as towers, placement-based — kept because the
+reasoning in it (especially the case for a deterministic server-side engine) still
+holds and is load-bearing for everything after. The design proper starts at
+"STRONGER IDEA: build it on Realms".
+
 ---
 
-## The core
+## First draft (superseded): NFTs as towers
+
+A Kingdom Rush-style tower defense where **your staked NFTs are the towers**.
+
+---
+
+### The core (of that first draft)
 
 Enemies march a fixed path. You place towers at fixed nodes along it. Waves
 escalate. You survive as long as you can.
@@ -163,7 +183,7 @@ So the tower economy above doesn't need designing. It exists.
 **And the sharpest version goes further than sharing a loadout.** A raid today
 resolves as an invisible comparison of two ratings. In a TD engine the
 defender's realm IS the map and the attacker's raid IS the wave — same numbers,
-same outcomes, but watchable. Skull Siege could be *what a raid looks like*.
+same outcomes, but watchable. Realm Guardians could be *what a raid looks like*.
 
 ### It is an ATTRITION SIEGE, not a placement game
 
@@ -320,7 +340,7 @@ PvE.
 
 ### Two constraints to hold firm
 
-1. **Skull Siege READS realm state and never writes it.** Raids already own those
+1. **Realm Guardians READS realm state and never writes it.** Raids already own those
    levels. Two systems writing the same numbers will fight, and the bug will
    present as "my realm randomly changed" — which is unfalsifiable from a bug
    report and miserable to chase.
@@ -376,7 +396,7 @@ hour. A fraction of the work — reuses `ajax/obscura-crop.php` as-is — and wo
 produce daily channel chatter immediately.
 
 It's the safer play and worth doing regardless. But it's an extension of a game
-that just shipped rather than a new one, which is why Skull Siege is the
+that just shipped rather than a new one, which is why Realm Guardians is the
 recommendation when there's appetite for a real build.
 
 ---
@@ -410,5 +430,5 @@ Rough order:
 7. Weekly seed, leaderboard, CARBON, hub, nav, Skull Paper page.
 
 Note: this file sits in the repo, which is pulled to the webroot — it is
-technically fetchable at `/staking/skull-siege.md`. Nothing sensitive here, but
+technically fetchable at `/staking/realm-guardians.md`. Nothing sensitive here, but
 worth knowing before anything commercially sensitive goes in it.
