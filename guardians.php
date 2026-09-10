@@ -1564,6 +1564,24 @@ $rg_theme_img = $rg_theme > 0
     if (s.a === 0) { var pa = drawFor(S.apool); if (pa) { s.a = pa.lvl; s.an = pa.name; } }
     return s;
   }
+  /*
+   * Trade a guardian up, and only up. Takes the best piece in the cache that
+   * beats what they carry; the worn one is left behind rather than returned,
+   * because a cache that never shrinks is a cache the Armory can never forge
+   * into. Returns true when something was actually issued.
+   */
+  function upgradeFrom(unit, lvlKey, nameKey, pool) {
+    if (!unit || !pool.length) return false;
+    var bi = -1;
+    for (var i = 0; i < pool.length; i++) {
+      if (pool[i].lvl > unit[lvlKey] && (bi < 0 || pool[i].lvl > pool[bi].lvl)) bi = i;
+    }
+    if (bi < 0) return false;
+    var piece = pool.splice(bi, 1)[0];
+    unit[lvlKey] = piece.lvl;
+    unit[nameKey] = piece.name;
+    return true;
+  }
   function poolIn(pool, piece, cap) {
     if (!piece || pool.length >= cap) return;
     pool.push(piece);
@@ -1952,6 +1970,33 @@ $rg_theme_img = $rg_theme > 0
       if (S.reserve.length && S.garrison.length < garrisonCap()) {
         S.garrison.push(equip(S.reserve.shift()));
       }
+      /*
+       * THE QUARTERMASTER. The cache's missing consumer.
+       *
+       * Armour DEGRADES on every breach (S.garrison[best].a--) and nothing ever
+       * replaced it, so a wall wore down to bare while the cache watched. On a
+       * realm that arrives fully equipped this was the whole problem: equip()
+       * only fills EMPTY slots, every soldier already had kit, and so a cache of
+       * 159 weapons and 114 armour had literally nobody to go to -- the Armory
+       * sat capped-out and idle for the entire run, and issuing gear could never
+       * drain it because there were more pieces than there were soldiers.
+       *
+       * So the wall is re-kitted from the cache as it wears: worn armour is
+       * replaced, and a guardian carrying worse than the cache holds trades up.
+       * One piece per pass, on the reinforcement tick, so it is a steady draw
+       * rather than a lump -- and it only ever fires when the cache genuinely
+       * holds something better than what is being worn.
+       */
+      var worst = -1, worstA = Infinity;
+      for (var g2 = 0; g2 < S.garrison.length; g2++) {
+        if (S.garrison[g2].a < worstA) { worstA = S.garrison[g2].a; worst = g2; }
+      }
+      if (worst >= 0) upgradeFrom(S.garrison[worst], 'a', 'an', S.apool);
+      var worstW = -1, worstWl = Infinity;
+      for (var g3 = 0; g3 < S.garrison.length; g3++) {
+        if (S.garrison[g3].w < worstWl) { worstWl = S.garrison[g3].w; worstW = g3; }
+      }
+      if (worstW >= 0) upgradeFrom(S.garrison[worstW], 'w', 'wn', S.wpool);
     }
 
     // The Tower fires on the closest foe still short of the wall.
@@ -2135,16 +2180,43 @@ $rg_theme_img = $rg_theme > 0
         ? what + ' full — upgrade for room'
         : what + ' full — ' + drain;
     }
+    /*
+     * A third state, and for a well-supplied realm it is the true one:
+     * the cache is full of gear WORSE than what the wall is already wearing.
+     *
+     * Measured on the realm that reported this: 159 weapons topping out at
+     * level 6 against guardians carrying 5 to 10, and every one of 93 living
+     * soldiers already equipped. No amount of issuing drains that, because
+     * there are more pieces than there are soldiers and none of them is an
+     * upgrade. Saying "issue them" there sends the player after a fix that does
+     * not exist -- the same mistake as "upgrade for room", one layer down.
+     *
+     * Armour still drains, because armour WEARS: a breach degrades it a level,
+     * and once a guardian drops below what the cache holds the quartermaster
+     * re-kits them. So the honest caption depends on whether the cache holds
+     * anything better than what is actually being worn right now.
+     */
+    function gearHeld(what, len, capNext, pool, key) {
+      if (capNext > len) return what + ' full — upgrade for room';
+      var worn = Infinity;
+      for (var i = 0; i < S.garrison.length; i++) {
+        if (S.garrison[i][key] < worn) worn = S.garrison[i][key];
+      }
+      var best = 0;
+      for (var j = 0; j < pool.length; j++) if (pool[j].lvl > best) best = pool[j].lvl;
+      if (S.garrison.length && best > worn) return what + ' full — re-kitting the wall from it';
+      return what + ' surplus — nothing in it beats what your guardians carry';
+    }
     var aLvl = L('armory'), bLvl = L('barracks'), fLvl = L('factory');
     paintBar('barracks', S.prod.barracks, barracksRate(),
       S.reserve.length >= reserveCap(), 'training next guardian',
       heldText(S.reserve.length, reserveCap(), reserveCap(bLvl + 1), 'barracks', 'deploy some to the Tower'));
     paintBar('armory', S.prod.armory, armoryRate(),
       S.wpool.length >= weaponCap(), 'forging next weapon',
-      heldText(S.wpool.length, weaponCap(), weaponCap(aLvl + 1), 'weapon cache', 'issue them by deploying or striking'));
+      gearHeld('weapon cache', S.wpool.length, weaponCap(aLvl + 1), S.wpool, 'w'));
     paintBar('forge', S.prod.forge, forgeRate(),
       S.apool.length >= armorCap(), 'forging next armour',
-      heldText(S.apool.length, armorCap(), armorCap(aLvl + 1), 'armour cache', 'issue them by deploying or striking'));
+      gearHeld('armour cache', S.apool.length, armorCap(aLvl + 1), S.apool, 'a'));
     paintBar('factory', S.prod.factory, factoryRate(),
       S.items.length >= itemCap(), 'building next item',
       heldText(S.items.length, itemCap(), itemCap(fLvl + 1), 'shelf', 'spend one to restart it'));
