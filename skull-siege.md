@@ -73,6 +73,63 @@ have to be thrown away first. Build the deterministic core either way.
 
 ---
 
+## STRONGER IDEA: build it on Realms
+
+Raised by the user 2026-09-09, and it is better than the NFTs-as-towers version
+above. Realms is **already a tower defense system that doesn't render**:
+
+- Seven locations per realm — one per core project, plus the Diamond Mine.
+  Exactly the tower archetypes the section above proposed inventing.
+- Each is upgraded independently with core project points, purchased cap L10,
+  pushed past it by successful defense. A tuned upgrade economy, already live.
+- They combine into **offense and defense ratings**, and defense is literally
+  what a TD scores.
+
+So the tower economy above doesn't need designing. It exists.
+
+**And the sharpest version goes further than sharing a loadout.** A raid today
+resolves as an invisible comparison of two ratings. In a TD engine the
+defender's realm IS the map and the attacker's raid IS the wave — same numbers,
+same outcomes, but watchable. Skull Siege could be *what a raid looks like*.
+
+### The problem the user spotted, and the fix
+
+"Those with the strongest realms would dominate." Correct, and it decides whether
+this works at all: if realm power determines the outcome, the board ranks who
+bought the most upgrades rather than who played well. Same failure mode as
+linking collections in Obscura — the board stops measuring what it claims to.
+
+**Scale the waves to realm power.** Everyone gets a challenge proportionate to
+their realm, and the board ranks how far you got *relative to your means*: wave
+14 on a level-30 realm beats wave 14 on a level-90 realm. A strong realm buys a
+harder and more interesting siege, not a guaranteed win. An absolute board can
+run alongside the handicapped one if the whales want a trophy.
+
+Precedent worth reusing: `realms-locations.md` notes realms already self-limit at
+the top — the ±3 defense-level attack range means transcendent realms stall for
+want of challengers. Wave scaling is that same anti-runaway instinct applied to
+PvE.
+
+### Two constraints to hold firm
+
+1. **Skull Siege READS realm state and never writes it.** Raids already own those
+   levels. Two systems writing the same numbers will fight, and the bug will
+   present as "my realm randomly changed" — which is unfalsifiable from a bug
+   report and miserable to chase.
+2. **A player with no realm must still be able to play.** A baseline map, or some
+   starter garrison. A game nobody new can start does not recruit anyone.
+
+### Order of work
+
+Standalone and PvE first, reading realms read-only. If the siege is fun,
+converting raids to run on the same engine is the natural second act. Doing it
+the other way round means changing a live, tuned, player-facing system before
+knowing whether the core loop is any good.
+
+Open question left deliberately unanswered: whether NFTs still matter here once
+locations are the towers. Options are NFTs as garrison capacity, as consumable
+one-shot abilities, or not at all. Decide it after the prototype, not before.
+
 ## Leaderboard shape
 
 Ranked on **waves survived**, with something like towers-lost or gold-unspent as
