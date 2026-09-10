@@ -443,7 +443,7 @@ $rg_con_names = array(
  */
 $rg_con_ui = array(
 	6 => array('Wall Shield',  'Absorbs one breach, whole'),
-	7 => array('Volley x2',    '+8 wall, guns x2 for 6s'),
+	7 => array('Volley +100%', '+8 wall, +100% for 6s'),
 	5 => array('Volley +75%',  '+8 wall, +75% for 6s'),
 	4 => array('Volley +50%',  '+8 wall, +50% for 6s'),
 	2 => array('Volley +25%',  '+8 wall, +25% for 6s'),
@@ -864,7 +864,7 @@ $rg_theme_img = $rg_theme > 0
 					Portal refilled. <em>The Portal is the point</em> &mdash; it means you can
 					Strike immediately. Best used the moment you want guardians out in the field
 					and the cooldown says no.</li>
-					<li><strong>Volley &times;2 / +75% / +50% / +25%</strong> &mdash; each patches
+					<li><strong>Volley +100% / +75% / +50% / +25%</strong> &mdash; each patches
 					8 onto the wall and makes the Tower hit that much harder for six seconds.
 					Two things worth knowing: the patch is capped at a full wall, so spending one
 					at 100 wastes it &mdash; and the Tower fires one shot at one attacker every
