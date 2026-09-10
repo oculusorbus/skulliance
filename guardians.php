@@ -1082,13 +1082,33 @@ $rg_theme_img = $rg_theme > 0
 /* The intro is small grey text and the themes are busy artwork, so it needs its
    own ground to sit on rather than relying on the wash alone. Only when themed;
    over the flat background it would be a box around nothing. */
+/* The HUD, the help panel, the log and the shelf headings need the same ground
+   for the same reason: all four are small, low-contrast text -- and in the
+   HUD's case small icons -- sitting DIRECTLY on the artwork, while everything
+   around them (locations, field, shelf items) already carries a solid card of
+   its own. They were the only unreadable things left on a themed board.
+   box-sizing, or `max-width:720px` plus padding renders these 28px wider than
+   the locations grid they are stacked with and breaks the column edge. */
 #row1.rg-themed h2.rg-intro,
-#row1.rg-themed .rg-blurb {
+#row1.rg-themed .rg-blurb,
+#row1.rg-themed .rg-hud,
+#row1.rg-themed #rg-help,
+#row1.rg-themed #rg-log,
+#row1.rg-themed .rg-shelf-head {
+  box-sizing:border-box;
   background:rgba(7,17,29,.78);
   border-radius:10px;
   padding:10px 14px;
   backdrop-filter:blur(2px);
 }
+/* The HUD is a fixed-height strip rather than prose, so it takes a tighter pad;
+   a shelf heading is one uppercase word and shrink-wraps to it. */
+#row1.rg-themed .rg-hud { padding:6px 12px; }
+#row1.rg-themed .rg-shelf-head { display:inline-block; padding:3px 9px; border-radius:7px; }
+/* Before the first line is logged there is nothing in here, and the log already
+   reserves 3.2em of height -- so without this the board opens with an empty
+   panel floating under it. A box around nothing, again. */
+#row1.rg-themed #rg-log:empty { background:none; backdrop-filter:none; padding:0; }
 /* Block, not inline-block: shrink-wrapping made the title a small left-hugging
    box while everything below it sat in the 720px column. */
 #row1.rg-themed h2.rg-intro { margin-bottom:10px; }
@@ -1572,6 +1592,16 @@ $rg_theme_img = $rg_theme > 0
   #rg-mine-row .rg-mine-body { gap:8px; }
   #rg-help { font-size:.78rem; margin-top:2px; }
   #rg-log { font-size:.68rem; }
+  /* The themed grounds keep their backing but not their desktop padding. The
+     HUD matters most: it is nowrap and already has to FIT, so every pixel it
+     spends on padding is one its contents do not get. Prefixed with
+     `#row1.rg-themed` because that is what the rules above are -- a bare
+     `.rg-hud` in here loses to two ids and a class however late it appears. */
+  #row1.rg-themed .rg-hud { padding:4px 8px; }
+  #row1.rg-themed #rg-help,
+  #row1.rg-themed #rg-log { padding:7px 10px; }
+  #row1.rg-themed h2.rg-intro { padding:6px 10px; }
+  #row1.rg-themed .rg-shelf-head { padding:2px 7px; }
   body::after { content:none !important; display:none !important; }
   #quick-menu { display:none !important; }
   #back-to-top-button { display:none !important; }
