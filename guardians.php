@@ -718,7 +718,9 @@ $rg_theme_img = $rg_theme > 0
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/crypt.png" alt="" onerror="this.style.display='none'">Crypt <span class="rg-lvl" id="rg-lvl-crypt">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-dead">0</strong> dead</div>
-				<button type="button" class="rg-act" data-act="raise" title="Spend CARBON to bring your dead back to the Barracks as fresh guardians">Raise</button>
+				<div class="rg-bar" title="Time until the Crypt can return another guardian"><i id="rg-bar-crypt"></i></div>
+					<div class="rg-cap" id="rg-cap-crypt">preparing next resurrection</div>
+				<button type="button" class="rg-act" data-act="raise" title="Bring a guardian back from the Crypt. Free — the Crypt just needs time, and a higher Crypt needs less of it.">Raise</button>
 				<button type="button" class="rg-act rg-up" data-act="up-crypt">Upgrade</button>
 			</div>
 			<div class="rg-loc">
@@ -825,22 +827,26 @@ $rg_theme_img = $rg_theme > 0
 				the Tower reinforces itself from the Barracks and fires on its own. Every
 				progress bar is one of those timers filling. You never have to click to keep
 				the wall manned.</p>
-				<p><strong>Your job is spending.</strong> CARBON is the one thing in short
-				supply, and it has four competing uses:</p>
+				<p><strong>Your job is choosing where the effort goes.</strong> Three of the
+				four actions are free &mdash; what they cost is time, bodies, or a thing you
+				only have one of:</p>
 				<ul>
-					<li><strong>Raise</strong> &mdash; buy your dead back as guardians. Cheapest
-					with a high Crypt. Best when the Barracks can't replace losses fast enough.</li>
-					<li><strong>Upgrade</strong> &mdash; permanently improve a rate or cap for the
-					rest of this run. Compounds, so early upgrades are worth more than late ones.</li>
-					<li><strong>Strike</strong> (free, but costs guardians and gear) &mdash; kill
+					<li><strong>Upgrade</strong> (costs CARBON) &mdash; permanently improve a rate
+					or a cap for the rest of this run. This is the only thing CARBON buys, and it
+					compounds, so an early level is worth several late ones.</li>
+					<li><strong>Raise</strong> (free, costs time) &mdash; bring a guardian back
+					from the Crypt. The Crypt prepares one at a time and a higher Crypt prepares
+					them faster; it holds your dead indefinitely, so none are ever lost. Take
+					them when the Barracks can't replace losses quickly enough.</li>
+					<li><strong>Strike</strong> (free, costs guardians and gear) &mdash; kill
 					attackers in the open before they reach the wall. Trades bodies for wall
 					damage you never take.</li>
 					<li><strong>Factory items</strong> (free, but each is spent for good)
 					&mdash; the shelf under the board. Which one you pick is the decision;
 					see below.</li>
 				</ul>
-				<p><strong>The strategy:</strong> spend early on upgrades while they still have
-				time to compound, then switch to raising and spending items once waves outpace
+				<p><strong>The strategy:</strong> spend CARBON early, while a level still has a
+				whole run to pay you back, and lean on the free actions once waves outpace
 				production. Holding CARBON does nothing &mdash; unspent CARBON is a wave you
 				didn't survive.</p>
 
@@ -1367,7 +1373,7 @@ $rg_theme_img = $rg_theme > 0
       garrison:[], items:[], shield:0, boost:0, boostFor:0, sortied:[], emerging:[],
       wpool:REALM.wpool.slice(), apool:REALM.apool.slice(),
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
-      prod:{ barracks:0, armory:0, forge:0, factory:0, mine:0, portal:0, reinforce:0 },
+      prod:{ barracks:0, armory:0, forge:0, factory:0, mine:0, portal:0, reinforce:0, crypt:0 },
       bought:{ tower:0, barracks:0, armory:0, crypt:0, portal:0, factory:0, mine:0 },
       foes:[], nextAttack:0, betweenWaves:0, fireIdx:0
     };
@@ -1473,6 +1479,7 @@ $rg_theme_img = $rg_theme > 0
       S.prod.factory  = factoryRate();
       S.prod.mine     = mineRate();
       S.prod.portal   = portalRate();
+      S.prod.crypt    = cryptRate();   // a resurrection readied too
       log('Fast Forward: every line finishes at once.');
     } else {                                 // 25/50/75/100% Success
       var pct = { 2:0.25, 4:0.50, 5:0.75, 7:1.00 }[it.id] || 0.25;
@@ -1613,7 +1620,19 @@ $rg_theme_img = $rg_theme > 0
   // level, so investing there is felt as resilience rather than a bigger number.
   function reinforceRate()  { return Math.max(4, 20 - L('barracks') * 1.5); }
   function sortieSize()   { return Math.max(1, Math.ceil(L('portal') / 2)); }
-  function raiseCost()    { return Math.max(3, 12 - L('crypt') * 2); }
+  /*
+   * THE CRYPT COSTS TIME, NOT CARBON.
+   *
+   * Raising used to be bought with CARBON, priced down by Crypt level. It reads
+   * better as a production line like every other location: the Crypt prepares a
+   * guardian, the bar shows how far along it is, and the Crypt LEVEL is what
+   * shortens the wait. Nothing is bought; you either have someone ready or you
+   * do not.
+   *
+   * The Crypt holds unlimited dead, so this line can never be blocked by
+   * capacity -- only by having nobody left to bring back.
+   */
+  function cryptRate()    { return Math.max(25, 180 - L('crypt') * 10); }
   /*
    * Quadratic, not linear. At 18*level a wave's kills paid for two or three
    * upgrades, so defense compounded faster than the ladder climbed and the run
@@ -1650,8 +1669,8 @@ $rg_theme_img = $rg_theme > 0
   ['wave','hp','carbon','reserve','weapons','dead','garrison','garrison-cap','armed','status',
    'sortied','items','mine-rate','armor','armored',
    'lvl-tower','lvl-barracks','lvl-armory','lvl-crypt','lvl-portal','lvl-factory','lvl-mine',
-   'bar-barracks','bar-armory','bar-forge','bar-factory','bar-mine','bar-portal',
-   'cap-barracks','cap-armory','cap-forge','cap-factory','cap-mine','cap-portal']
+   'bar-barracks','bar-armory','bar-forge','bar-factory','bar-mine','bar-portal','bar-crypt',
+   'cap-barracks','cap-armory','cap-forge','cap-factory','cap-mine','cap-portal','cap-crypt']
     .forEach(function (k) { el[k] = document.getElementById('rg-' + k); });
   var foesEl = document.getElementById('rg-enemies');
   var sortieEl = document.getElementById('rg-sortie');
@@ -1946,6 +1965,10 @@ $rg_theme_img = $rg_theme > 0
     // The Portal is a COOLDOWN, not a production line: full means Strike is
     // ready, and it already held there rather than cycling.
     if (S.prod.portal < portalRate()) S.prod.portal++;
+    // The Crypt is the same shape: it prepares a guardian and waits to be
+    // asked. It fills whether or not anyone is dead, so a loss late in a run
+    // is not also a wait -- the Crypt has been standing ready.
+    if (S.prod.crypt < cryptRate()) S.prod.crypt++;
 
     /*
      * THE BARRACKS FEEDS THE TOWER BY ITSELF.
@@ -2223,6 +2246,14 @@ $rg_theme_img = $rg_theme > 0
     // No cap on CARBON, and the Portal is a cooldown: neither can stall.
     paintBar('mine', S.prod.mine, mineRate(), false, 'next CARBON payout', '');
     paintBar('portal', S.prod.portal, portalRate(), false, 'strike ready when full', '');
+    /*
+     * The Crypt holds unlimited dead, so it is never blocked by capacity. The
+     * one thing that stops it is having nobody to bring back -- which is good
+     * news, and the caption says it that way rather than as a fault.
+     */
+    paintBar('crypt', S.prod.crypt, cryptRate(), S.prod.crypt >= cryptRate() && S.dead === 0,
+      S.dead > 0 ? 'preparing next resurrection' : 'no one to raise',
+      'ready — no one to raise');
 
     /*
      * REUSE THE NODES. Do not rebuild innerHTML.
@@ -2360,7 +2391,7 @@ $rg_theme_img = $rg_theme > 0
     document.querySelectorAll('.rg-act').forEach(function (b) {
       var a = b.dataset.act;
       if (a === 'deploy')       b.disabled = !(S.reserve.length && S.garrison.length < garrisonCap());
-      else if (a === 'raise')   b.disabled = !(S.dead > 0 && S.carbon >= raiseCost());
+      else if (a === 'raise')   b.disabled = !(S.dead > 0 && S.prod.crypt >= cryptRate());
       else if (a === 'sortie')  b.disabled = !(S.reserve.length && S.prod.portal >= portalRate() && S.running);
       // No 'fortify' branch any more -- the items moved to their own shelf,
       // where each has a button of its own and paintShelf() maintains it.
@@ -2398,11 +2429,17 @@ $rg_theme_img = $rg_theme > 0
         S.garrison.push(equip(S.reserve.shift())); sent++;
       }
       log(sent + ' to the Tower.');
-    } else if (a === 'raise' && S.dead > 0 && S.carbon >= raiseCost()) {
-      var raised = 0;
+    } else if (a === 'raise' && S.dead > 0 && S.prod.crypt >= cryptRate()) {
+      /*
+       * One per cycle, and free. The Crypt spends TIME, so the batching that
+       * Deploy needs would be wrong here -- there is exactly one guardian
+       * prepared, and taking them resets the wait. Nothing to click faster for.
+       */
+      S.prod.crypt = 0;
+      S.dead--;
       // They come back without their kit -- it stayed where they fell.
-      while (S.dead > 0 && S.carbon >= raiseCost()) { S.carbon -= raiseCost(); S.dead--; S.reserve.push({ w:0, wn:'', a:0, an:'' }); raised++; }
-      log('The Crypt gives ' + raised + ' back.');
+      S.reserve.push({ w:0, wn:'', a:0, an:'' });
+      log('The Crypt gives one back.');
     // Called STRIKE in the UI. The internal action id, the state and the CSS
     // ids stay 'sortie' -- renaming those would touch the field markup, the
     // stylesheet and the replay action log for a wording change, and the log

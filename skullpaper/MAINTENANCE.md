@@ -1562,6 +1562,16 @@ What a doc page will have to get right, because none of it is guessable:
   ~11x nerf to the panic button that was not intended. Left as-is deliberately:
   the user did not want a stronger Fortify lengthening runs, and preferred the
   agency of choosing over restored numbers.
+- **The Crypt costs TIME, not CARBON.** Raising used to be bought
+  (`raiseCost()`, priced down by Crypt level); it is now a production line like
+  every other location - `cryptRate()` = `max(25, 180 - level*10)` ticks, a bar
+  fills, and Raise takes the one prepared guardian for free and resets it.
+  17s at Crypt 1 down to a 2.5s floor at Crypt 16. Deliberately **not batched**
+  like Deploy: exactly one guardian is ever prepared, so there is nothing to
+  click faster for. The Crypt has **unlimited capacity**, so the line can never
+  stall on being full - only on having nobody left to raise, which the caption
+  says as good news rather than a fault. Consequence worth knowing: CARBON now
+  has exactly **one** sink, Upgrade.
 - **A progress bar completes only when something ARRIVES.** All production goes
   through one `produce(key, rate, deliver)` helper; the timer resets only if
   `deliver()` returns true, and a capped-out line holds at full (amber) instead
