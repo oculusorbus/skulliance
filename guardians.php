@@ -48,6 +48,9 @@ $rg_wicon = '';        // the best weapon in the cache, worn by armed guardians
 $rg_aicon = '';        // the best armor in the cache, worn by protected guardians
 $rg_acache = 0;        // unissued armor pieces
 $rg_crypt = 0;         // enlisted NFTs currently dead -- they start in the Crypt
+$rg_tower_loc = 0;     // the Tower's location id, resolved by name
+$rg_garrison = 0; $rg_g_armed = 0; $rg_g_armored = 0;   // already on the wall
+$rg_raiders  = 0; $rg_r_armed = 0; $rg_r_armored = 0;   // already in the field
 $rg_alevel = 1;        // best armor level, decides how much a breach is absorbed
 
 if ($rg_me > 0) {
@@ -60,12 +63,16 @@ if ($rg_me > 0) {
 
 		// Levels by NAME, not by hardcoded location id -- ids are data, and a
 		// reordered locations table should not silently rewire the game.
-		$lr = $conn->query("SELECT l.name, rl.level FROM realms_locations rl
+		$lr = $conn->query("SELECT l.name, rl.level, rl.location_id FROM realms_locations rl
 		                    INNER JOIN locations l ON l.id = rl.location_id
 		                    WHERE rl.realm_id = $rg_realm_id");
 		if ($lr) while ($l = $lr->fetch_assoc()) {
 			$k = strtolower(trim($l['name']));
 			if (array_key_exists($k, $rg_levels)) $rg_levels[$k] = intval($l['level']);
+			// Captured by NAME for the same reason the levels are: db.php checks
+			// `location IN(2,3)` with literal ids, and guessing which of those is
+			// the Tower would be a silent wrong answer.
+			if ($k === 'tower') $rg_tower_loc = intval($l['location_id']);
 		}
 
 		// The army: enlisted NFTs still alive. Same conditions the realm itself
@@ -96,6 +103,55 @@ if ($rg_me > 0) {
 		$cr = $conn->query("SELECT COUNT(*) AS cnt FROM soldiers
 		                    WHERE realm_id = $rg_realm_id AND dead IS NOT NULL AND active = 1");
 		if ($cr && $cr->num_rows) $rg_crypt = intval($cr->fetch_assoc()['cnt']);
+
+		/*
+		 * THE GARRISON IS ALREADY ON THE WALL.
+		 *
+		 * Soldiers stationed at the realm's Tower were being counted as reserve,
+		 * so a siege opened with an empty wall and the player had to deploy
+		 * troops that were, in their realm, already standing there. They now
+		 * start in the garrison.
+		 *
+		 * Their gear comes with them: a soldier's weapon_id and armor_id are
+		 * their OWN equipment, distinct from the unissued cache in `gear`, so
+		 * seeding them armed and armoured costs the cache nothing.
+		 */
+		/*
+		 * SOLDIERS ON RAIDS ARE ALREADY IN THE FIELD.
+		 *
+		 * They are out attacking somebody right now, which is exactly what a
+		 * sortie is -- so they open the siege having already stepped through the
+		 * Portal rather than waiting in the barracks. raid_id is the explicit
+		 * signal; `location IN(2,3)` in db.php conflates deployment states and
+		 * would be a guess.
+		 */
+		$rr3 = $conn->query("SELECT COUNT(*) AS cnt,
+		                            COALESCE(SUM(CASE WHEN weapon_id > 0 THEN 1 ELSE 0 END),0) AS armed,
+		                            COALESCE(SUM(CASE WHEN armor_id  > 0 THEN 1 ELSE 0 END),0) AS armored
+		                     FROM soldiers
+		                     WHERE realm_id = $rg_realm_id AND raid_id > 0
+		                       AND dead IS NULL AND active = 1");
+		if ($rr3 && $rr3->num_rows) {
+			$r3 = $rr3->fetch_assoc();
+			$rg_raiders   = intval($r3['cnt']);
+			$rg_r_armed   = intval($r3['armed']);
+			$rg_r_armored = intval($r3['armored']);
+		}
+
+		if ($rg_tower_loc > 0) {
+			$tr = $conn->query("SELECT COUNT(*) AS cnt,
+			                           COALESCE(SUM(CASE WHEN weapon_id > 0 THEN 1 ELSE 0 END),0) AS armed,
+			                           COALESCE(SUM(CASE WHEN armor_id  > 0 THEN 1 ELSE 0 END),0) AS armored
+			                    FROM soldiers
+			                    WHERE realm_id = $rg_realm_id AND location = $rg_tower_loc
+			                      AND dead IS NULL AND active = 1");
+			if ($tr && $tr->num_rows) {
+				$t = $tr->fetch_assoc();
+				$rg_garrison  = intval($t['cnt']);
+				$rg_g_armed   = intval($t['armed']);
+				$rg_g_armored = intval($t['armored']);
+			}
+		}
 
 		/*
 		 * THE GUARDIANS THEMSELVES. Soldiers are enlisted NFTs, so the units
@@ -306,10 +362,17 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 			 * start in the Crypt rather than being omitted.
 			 */
 			$rg_roster = $rg_army + $rg_crypt;
+			// Where they actually are, since they no longer all start in one pile.
+			$rg_where = array();
+			if ($rg_garrison > 0) $rg_where[] = $rg_garrison . ' on the wall';
+			if ($rg_raiders  > 0) $rg_where[] = $rg_raiders . ' out raiding';
+			$rg_ready = max(0, $rg_army - $rg_garrison - $rg_raiders);
+			if ($rg_ready > 0)    $rg_where[] = $rg_ready . ' in reserve';
+			if ($rg_crypt > 0)    $rg_where[] = $rg_crypt . ' in the Crypt';
 			?>
 			Defending <strong><?php echo htmlspecialchars($rg_realm_name); ?></strong> &mdash;
 			<?php echo $rg_roster; ?> guardians<?php
-				if ($rg_crypt > 0) echo ' (' . $rg_army . ' ready, ' . $rg_crypt . ' in the Crypt)';
+				if (!empty($rg_where)) echo ' (' . implode(', ', $rg_where) . ')';
 			?>,
 			<?php echo $rg_cache; ?> weapons and <?php echo $rg_acache; ?> armour in the cache,
 			<?php echo $rg_total; ?> total location levels.
@@ -591,6 +654,12 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     start:  <?php echo intval($rg_start_wave); ?>,
     acache: <?php echo intval($rg_acache); ?>,
     crypt:  <?php echo intval($rg_crypt); ?>,
+    garrison:<?php echo intval($rg_garrison); ?>,
+    garmed: <?php echo intval($rg_g_armed); ?>,
+    garmored:<?php echo intval($rg_g_armored); ?>,
+    raiders:<?php echo intval($rg_raiders); ?>,
+    ramed:  <?php echo intval($rg_r_armed); ?>,
+    rarmored:<?php echo intval($rg_r_armored); ?>,
     alevel: <?php echo intval($rg_alevel); ?>
   };
   // CANDIDATES, not the horde. A Discord avatar url 404s whenever someone has
@@ -624,7 +693,11 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     S = {
       running:false, over:false, tick:0, wave:REALM.start - 1,
       hp:100, maxhp:100, carbon:0,
-      reserve:REALM.army, weapons:REALM.cache, armor:REALM.acache, dead:REALM.crypt,
+      // The reserve is what is LEFT: everyone alive who is not already on the
+      // wall or out on a raid. Without this the same guardian would be counted
+      // twice and the army would appear to grow at the whistle.
+      reserve:Math.max(0, REALM.army - REALM.garrison - REALM.raiders),
+      weapons:REALM.cache, armor:REALM.acache, dead:REALM.crypt,
       garrison:0, armed:0, armored:0, items:0, sortied:[], emerging:[],
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
       prod:{ barracks:0, armory:0, forge:0, factory:0, mine:0, portal:0, reinforce:0 },
@@ -1255,6 +1328,38 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
     actionLog = [];
     HORDE = VERIFIED.slice();   // frozen for the run: no reshuffling faces
     reset();
+
+    /*
+     * Open the siege where the realm actually stands.
+     *
+     * Tower soldiers man the wall from tick zero -- they are already standing
+     * there in the realm, so opening with an empty wall and asking the player to
+     * deploy them was asking them to do something twice. Anything over the
+     * garrison cap falls back to the reserve rather than being lost.
+     *
+     * Raiders start out in the field, streaming through the Portal one by one
+     * (the same queue a manual sortie uses), because that is what they are
+     * already doing.
+     *
+     * Both keep their own weapons and armour -- soldiers.weapon_id/armor_id is
+     * their kit, not the unissued cache.
+     */
+    var seat = Math.min(REALM.garrison, garrisonCap());
+    S.garrison = seat;
+    S.armed    = Math.min(REALM.garmed, seat);
+    S.armored  = Math.min(REALM.garmored, seat);
+    S.reserve += Math.max(0, REALM.garrison - seat);
+
+    for (var r = 0; r < REALM.raiders; r++) {
+      S.emerging.push({
+        pos: PORTAL_X,
+        hp: (r < REALM.ramed ? 6 : 4) + (r < REALM.rarmored ? 2 + REALM.alevel : 0),
+        armed: r < REALM.ramed,
+        prot:  r < REALM.rarmored,
+        slot:  unitSeq++
+      });
+    }
+
     S.running = true;
     logEl.innerHTML = '';
     beginBtn.hidden = true;
