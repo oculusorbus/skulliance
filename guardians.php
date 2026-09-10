@@ -1628,6 +1628,16 @@ $rg_theme_img = $rg_theme > 0
       // reserve/garrison hold GUARDIANS ({w,a}), not counts -- see equip().
       reserve:[],
       weapons:REALM.cache, armor:REALM.acache, dead:REALM.crypt,
+      /*
+       * S.dead is CRYPT OCCUPANCY -- it starts at the realm's existing dead and
+       * the rite empties it, so it answers "who is waiting to come back", not
+       * "how many did I lose". Reporting it as losses undercounted a 43-minute
+       * run to 30, because every Raise reset the number.
+       *
+       * lostTotal only ever increments, and starts at zero: the realm's
+       * pre-existing dead fell in Realms, not in this siege.
+       */
+      lostTotal:0,
       garrison:[], items:[], shield:0, boost:0, boostFor:0, boostMax:0, sortied:[], emerging:[],
       wpool:REALM.wpool.slice(), apool:REALM.apool.slice(),
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
@@ -2380,7 +2390,7 @@ $rg_theme_img = $rg_theme > 0
         u.hp -= near.tough ? 2 : 1;
         if (near.hp <= 0) kill(near);
         if (u.hp <= 0) {
-          S.sortied.splice(s, 1); S.dead++;
+          S.sortied.splice(s, 1); S.dead++; S.lostTotal++;
           log('A guardian falls in the open.', true);
           sfxPlay('death', 0.14);
         }
@@ -2437,7 +2447,7 @@ $rg_theme_img = $rg_theme > 0
             sfxPlay('melee', 0.14);
           } else if (S.garrison.length) {
             S.garrison.shift();
-            S.dead++;
+            S.dead++; S.lostTotal++;
             log(escAttr(foeIdentity(f).name) + ' breaches the wall. A guardian falls.', true);
             sfxPlay('death', 0.16);
           }
@@ -2903,7 +2913,7 @@ $rg_theme_img = $rg_theme > 0
      */
     SAVED = null;
     el.status.textContent = 'The wall is breached';
-    log('The realm falls at wave ' + S.wave + '. Guardians lost: ' + S.dead + '.', true);
+    log('The realm falls at wave ' + S.wave + '. Guardians lost: ' + S.lostTotal + '.', true);
     beginBtn.textContent = 'Hold again';
     beginBtn.hidden = false;
     showDefeat();
@@ -2917,7 +2927,7 @@ $rg_theme_img = $rg_theme > 0
      * The modal is up BEFORE this resolves, so a slow round trip never delays
      * the send-off; whether it counted is filled in when the answer arrives.
      */
-    post('defeat', { wave: S.wave, lost: S.dead,
+    post('defeat', { wave: S.wave, lost: S.lostTotal,
                      breacher: S.breacher || '', breacher_id: S.breacherId || '' }).then(function (res) {
       var el2 = document.getElementById('rg-defeat-scored');
       if (!el2) return;
@@ -2941,7 +2951,7 @@ $rg_theme_img = $rg_theme > 0
     put('rg-defeat-held',  held);
     put('rg-defeat-start', REALM.start);
     put('rg-defeat-wave',  S.wave);
-    put('rg-defeat-lost',  S.dead);
+    put('rg-defeat-lost',  S.lostTotal);
     // S.tick does not advance while paused, so this is time actually played
     // rather than time the tab was open.
     var secs = Math.round(S.tick / 10), mins = Math.floor(secs / 60);
