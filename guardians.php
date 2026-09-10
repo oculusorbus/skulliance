@@ -1084,6 +1084,39 @@ $rg_theme_img = $rg_theme > 0
            --rg-tracer-w:24px; --rg-tracer-h:4px; --rg-field-h:160px; }
 #rg-field { position:relative; height:var(--rg-field-h); background:#0a1929; border:1px solid rgba(255,255,255,.08); border-radius:8px; overflow:hidden; margin-bottom:12px; }
 #rg-wall.rg-fortified { background:linear-gradient(180deg,#ffcc44,#c79a1e) !important; box-shadow:0 0 14px rgba(255,204,68,.8); }
+/* ---- THE WALL TAKING A HIT ------------------------------------------------
+   Fires only when the wall NET loses health -- a shield refunds the hit in full
+   and armour absorbs part of it, and flashing for those would cry wolf for the
+   two outcomes that are the system working.
+   !important beats .rg-fortified above, which is otherwise !important itself
+   and would swallow the flash exactly when a shield is up. */
+/* The colour is on the RULE, not in the keyframe: !important inside @keyframes
+   is ignored per spec, so declaring it there would have lost to .rg-fortified's
+   own !important background -- exactly while a volley was up and damage was
+   landing. Same specificity, later in the file, so this wins. */
+@keyframes rg-hit {
+  0%   { box-shadow:0 0 18px rgba(255,77,77,.95); }
+  100% { box-shadow:0 0 0 rgba(255,77,77,0); }
+}
+#rg-wall.rg-hit { background:#ff4d4d !important; animation:rg-hit .4s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  #rg-wall.rg-hit { animation:none; }
+}
+
+/* ---- PAST THE PORTAL ------------------------------------------------------
+   Nothing stands between them and the wall once they are inside this line, and
+   the field said nothing about it -- the only warning was counting dots. The
+   whole strip breathes red while any attacker is in there. inset, so it reads
+   as the ground being threatened rather than a border being drawn. */
+@keyframes rg-breached {
+  0%, 100% { box-shadow:inset 0 0 22px rgba(192,57,43,.30); }
+  50%      { box-shadow:inset 0 0 42px rgba(192,57,43,.72); }
+}
+#rg-field.rg-breached { animation:rg-breached 1.1s ease-in-out infinite;
+                        border-color:rgba(192,57,43,.55); }
+@media (prefers-reduced-motion: reduce) {
+  #rg-field.rg-breached { animation:none; box-shadow:inset 0 0 30px rgba(192,57,43,.5); }
+}
 #rg-wall { position:absolute; left:0; top:0; bottom:0; width:10px; background:linear-gradient(180deg,#00c8a0,#007a61); }
 #rg-enemies, #rg-sortie { position:absolute; inset:0; }
 /* The Tower sits on the wall; the Portal stands out in the field at PORTAL_X.
@@ -2367,6 +2400,7 @@ $rg_theme_img = $rg_theme > 0
       if (wasBeyondPortal && f.pos <= PORTAL_X) tracer(f.pos);
       if (f.pos <= 0) {
         S.foes.splice(j, 1);
+        var hpBefore = S.hp;
         S.hp -= f.tough ? 12 : 5;
         /*
          * ARMOR IS WHAT A GUARDIAN WALKS AWAY IN.
@@ -2425,6 +2459,12 @@ $rg_theme_img = $rg_theme > 0
          * than just decorating it: no rand(), and the trigger is a wall-health
          * check, so a server replaying the same inputs fires it on the same tick.
          */
+        /*
+         * Flash only when the wall NET lost health. A shield refunds the hit in
+         * full and armour absorbs part of it, and flashing for those would cry
+         * wolf for the two outcomes that are the system working.
+         */
+        if (S.hp < hpBefore) wallHit();
         if (S.hp <= 0) {
           // Who actually broke it. The horde is other stakers, so this is a
           // real person and the defeat post names them.
@@ -2466,7 +2506,24 @@ $rg_theme_img = $rg_theme > 0
   function render() {
     // Fortify is otherwise invisible -- the wall glows and the HUD says so while
     // it is up, or the player has no way to know the item did anything.
-    document.getElementById('rg-wall').className = (S.boostFor > 0 || S.shield > 0) ? 'rg-fortified' : '';
+    /*
+     * toggle, not className =. This ran ten times a second and assigned the
+     * whole attribute, so any transient class -- the damage flash below -- was
+     * wiped within 100ms of being added. Toggling touches only the one class
+     * it owns.
+     */
+    if (wallEl) wallEl.classList.toggle('rg-fortified', S.boostFor > 0 || S.shield > 0);
+    /*
+     * THE APPROACH. Past the Portal there is nothing between them and the wall,
+     * and until now the field said nothing about it -- the only warning was
+     * counting dots. The whole strip pulses while any attacker is inside that
+     * line, so the danger is visible without reading anything.
+     */
+    var inside = false;
+    for (var q2 = 0; q2 < S.foes.length; q2++) {
+      if (S.foes[q2].pos <= PORTAL_X) { inside = true; break; }
+    }
+    if (fieldEl) fieldEl.classList.toggle('rg-breached', inside && S.running && !S.over);
     el.wave.textContent = S.wave;
     el.hp.textContent = Math.max(0, S.hp);
     el.carbon.textContent = S.carbon;
@@ -3036,6 +3093,21 @@ $rg_theme_img = $rg_theme > 0
    * assignment and quietly wipe it -- var initialisers execute where they are
    * written, however far the declaration hoists.
    */
+  /*
+   * One flash per hit, restarted if hits land back to back -- removing and
+   * re-adding a class in the same frame does nothing without forcing a reflow
+   * between, so a burst of breaches would show a single flash.
+   */
+  var wallEl = document.getElementById('rg-wall'), wallHitTimer = 0;
+  function wallHit() {
+    if (!wallEl) return;
+    wallEl.classList.remove('rg-hit');
+    void wallEl.offsetWidth;
+    wallEl.classList.add('rg-hit');
+    clearTimeout(wallHitTimer);
+    wallHitTimer = setTimeout(function () { wallEl.classList.remove('rg-hit'); }, 400);
+  }
+
   var nukeEl = document.getElementById('rg-nuke');
   var nukeOk = document.getElementById('rg-nuke-ok');
   if (nukeOk) {
