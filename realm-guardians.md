@@ -8,7 +8,9 @@ tackle it in.
 real time under wave pressure. Your seven realm locations supply the defense —
 Barracks feeding soldiers, Armory weapons, Crypt resurrections, Tower its
 garrison, Factory items, Mine income, Portal your sorties — and you keep them
-stocked while a horde escalates. Your realm sets a baseline position on a shared
+stocked while a horde escalates. The soldiers are your NFTs: Realms already
+enlists, trains, deploys, kills and resurrects them, so the army is not something
+this game has to invent. Your realm sets a baseline position on a shared
 ladder; skill pushes you above it, bad runs knock you back, and you never fall
 below what your realm has earned you. Defensive by nature: you are guarding the
 realm from intruders, which is where the name comes from.
@@ -130,7 +132,9 @@ four active locations and add the rest only once it still reads clearly.
 but scratch has to be *playable*, not hopeless. If a new player's first siege is
 unwinnable the game recruits nobody. A starter realm, or early waves scaled low
 enough that a bare realm clears them, is the difference between "something to
-build toward" and "not for me".
+build toward" and "not for me". **Sharper than it first looked:** no realm means
+no enlisted soldiers, so there is nothing to deploy at all — a conscript force is
+needed, not just gentler waves. See "the NFTs are the soldiers" below.
 
 ### Superseded: the phase structure
 
@@ -354,9 +358,34 @@ converting raids to run on the same engine is the natural second act. Doing it
 the other way round means changing a live, tuned, player-facing system before
 knowing whether the core loop is any good.
 
-Open question left deliberately unanswered: whether NFTs still matter here once
-locations are the towers. Options are NFTs as garrison capacity, as consumable
-one-shot abilities, or not at all. Decide it after the prototype, not before.
+### ANSWERED: the NFTs are the soldiers, and Realms already did it
+
+This was left open as "do NFTs still matter once locations are the towers".
+They matter more than in the first draft, and no design work is needed —
+`realms-soldiers.md:3` already says it:
+
+> "Soldiers are the NFTs you enlist into your Realm. They train in the Barracks,
+> defend from the Tower, fight on raids, and can die and be resurrected."
+
+That is the siege loop described verbatim. Enlist, train, deploy to the Tower,
+die, resurrect from the Crypt. **Realms already did the NFT integration the first
+draft proposed inventing**, and did it better: army composition already carries an
+economy, with core project NFTs costing 1 slot and partner NFTs 2.
+
+Two consequences:
+
+**The read-only rule gets sharper.** A soldier dying in a siege must NOT kill the
+real one or touch its trained state. The siege takes a **snapshot** of the roster
+and plays with copies. Get this wrong and a bad run costs someone their raid army
+— the two games fighting over the same NFTs is exactly the failure the read-only
+constraint exists to prevent, and soldiers are where it would bite hardest
+because they are the part that dies.
+
+**The new-player floor is narrower than first assessed.** No realm means no
+enlisted soldiers, so a fresh player does not merely start at wave 1 — they start
+with nothing to deploy at all. The baseline needs a conscript force (a few
+loaner soldiers, weak and untrained) or the entry-level siege is unplayable
+rather than just hard. Same risk as noted above, now with a specific fix.
 
 ## Leaderboard shape
 
