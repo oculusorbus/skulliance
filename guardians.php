@@ -386,7 +386,11 @@ $rg_theme_img = $rg_theme > 0
 <div class="row<?php echo $rg_theme_img !== '' ? ' rg-themed' : ''; ?>" id="row1"<?php
 	if ($rg_theme_img !== '') echo ' style="--rg-theme-img:' . htmlspecialchars($rg_theme_img) . '"';
 ?>>
-  <div class="col1of3" style="max-width:820px;margin:0 auto;flex:1 1 100%;">
+  <!-- No max-width: the board fills the row, which is the main menu header's
+       width. At 820px it was a narrow column with the theme spread wide behind
+       it; full width gives the field room and lets the locations spread out on
+       a large screen instead of stacking. -->
+  <div class="col1of3" style="margin:0 auto;flex:1 1 100%;">
 
 	<h2 class="rg-intro">Realm Guardians <span class="rg-tag">prototype</span></h2>
 	<div class="rg-blurb rg-intro">
@@ -659,7 +663,10 @@ $rg_theme_img = $rg_theme > 0
    a steel inner edge, which reads as "fully kitted" at a glance. */
 .rg-unit.rg-prot { box-shadow:0 0 0 2px rgba(190,200,215,.8), 0 0 8px rgba(190,200,215,.5); }
 
-#rg-locations { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+/* auto-fit rather than a fixed three: now that the board is the full header
+   width, a wide screen fits four or five locations across instead of three
+   very wide ones, and it still collapses sensibly as the window narrows. */
+#rg-locations { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:8px; }
 .rg-loc { background:#0d1e30; border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 10px; }
 .rg-loc.rg-wide { grid-column:1 / -1; }
 .rg-loc-name { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:rgba(255,255,255,.5); display:flex; align-items:center; gap:6px; }
