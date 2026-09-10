@@ -312,48 +312,93 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/tower.png" alt="" onerror="this.style.display='none'">Tower <span class="rg-lvl" id="rg-lvl-tower">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-garrison">0</strong>/<span id="rg-garrison-cap">4</span> garrison &middot; <span id="rg-armed">0</span> armed &middot; <span id="rg-armored">0</span> armoured</div>
-				<button type="button" class="rg-act" data-act="deploy">Deploy</button>
+				<button type="button" class="rg-act" data-act="deploy" title="Send every spare guardian from the Barracks to the Tower now, arming and armouring them from the cache">Deploy</button>
 				<button type="button" class="rg-act rg-up" data-act="up-tower">Upgrade</button>
 			</div>
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/barracks.png" alt="" onerror="this.style.display='none'">Barracks <span class="rg-lvl" id="rg-lvl-barracks">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-reserve">0</strong> in reserve</div>
-				<div class="rg-bar"><i id="rg-bar-barracks"></i></div>
+				<div class="rg-bar" title="Time until the Barracks trains the next guardian"><i id="rg-bar-barracks"></i></div>
+					<div class="rg-cap">training next guardian</div>
 				<button type="button" class="rg-act rg-up" data-act="up-barracks">Upgrade</button>
 			</div>
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/armory.png" alt="" onerror="this.style.display='none'">Armory <span class="rg-lvl" id="rg-lvl-armory">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-weapons">0</strong> weapons &middot; <span id="rg-armor">0</span> armour</div>
-				<div class="rg-bar"><i id="rg-bar-armory"></i></div>
+				<div class="rg-bar" title="Time until the Armory forges the next weapon"><i id="rg-bar-armory"></i></div>
+					<div class="rg-cap">forging next weapon</div>
 				<button type="button" class="rg-act rg-up" data-act="up-armory">Upgrade</button>
 			</div>
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/crypt.png" alt="" onerror="this.style.display='none'">Crypt <span class="rg-lvl" id="rg-lvl-crypt">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-dead">0</strong> dead</div>
-				<button type="button" class="rg-act" data-act="raise">Raise</button>
+				<button type="button" class="rg-act" data-act="raise" title="Spend CARBON to bring your dead back to the Barracks as fresh guardians">Raise</button>
 				<button type="button" class="rg-act rg-up" data-act="up-crypt">Upgrade</button>
 			</div>
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/portal.png" alt="" onerror="this.style.display='none'">Portal <span class="rg-lvl" id="rg-lvl-portal">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-sortied">0</strong> in the field</div>
-				<div class="rg-bar"><i id="rg-bar-portal"></i></div>
-				<button type="button" class="rg-act" data-act="sortie">Sortie</button>
+				<div class="rg-bar" title="Portal cooldown -- Sortie is ready when full"><i id="rg-bar-portal"></i></div>
+					<div class="rg-cap">sortie ready when full</div>
+				<button type="button" class="rg-act" data-act="sortie" title="Send guardians out through the Portal to meet the horde in the open, before it reaches your wall. They fight with no Tower behind them.">Sortie</button>
 				<button type="button" class="rg-act rg-up" data-act="up-portal">Upgrade</button>
 			</div>
 			<div class="rg-loc">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/factory.png" alt="" onerror="this.style.display='none'">Factory <span class="rg-lvl" id="rg-lvl-factory">1</span></div>
 				<div class="rg-loc-stat"><strong id="rg-items">0</strong> items</div>
-				<div class="rg-bar"><i id="rg-bar-factory"></i></div>
-				<button type="button" class="rg-act" data-act="fortify">Fortify</button>
+				<div class="rg-bar" title="Time until the Factory builds the next item"><i id="rg-bar-factory"></i></div>
+					<div class="rg-cap">building next item</div>
+				<button type="button" class="rg-act" data-act="fortify" title="Spend a Factory item: repairs the wall and makes the Tower hit 50% harder for six seconds">Fortify</button>
 				<button type="button" class="rg-act rg-up" data-act="up-factory">Upgrade</button>
 			</div>
 			<div class="rg-loc rg-wide">
 				<div class="rg-loc-name"><img class="rg-icon" src="icons/locations/mine.png" alt="" onerror="this.style.display='none'">Mine <span class="rg-lvl" id="rg-lvl-mine">1</span></div>
 				<div class="rg-loc-stat">CARBON flowing &middot; <span id="rg-mine-rate">+0/s</span></div>
-				<div class="rg-bar"><i id="rg-bar-mine"></i></div>
+				<div class="rg-bar" title="Time until the Mine yields more CARBON"><i id="rg-bar-mine"></i></div>
+					<div class="rg-cap">next CARBON payout</div>
 				<button type="button" class="rg-act rg-up" data-act="up-mine">Upgrade</button>
 			</div>
 		</div>
+
+		<!--
+			WHAT THE PLAYER IS FOR.
+
+			Playtest: "I'm trying to understand what my role is and what the
+			strategy is. Otherwise I'm just button mashing the second things
+			activate." That is a fair description of a game that never says what
+			it wants. The locations run themselves; the player is an allocator,
+			and the tension is one finite pool of CARBON against four uses.
+			Saying so out loud costs nothing and is the difference between
+			mashing and playing.
+		-->
+		<details id="rg-help">
+			<summary>What am I actually deciding?</summary>
+			<div>
+				<p><strong>The locations run themselves.</strong> The Barracks trains guardians,
+				the Armory forges weapons, the Factory builds items, the Mine pays CARBON, and
+				the Tower reinforces itself from the Barracks and fires on its own. Every
+				progress bar is one of those timers filling. You never have to click to keep
+				the wall manned.</p>
+				<p><strong>Your job is spending.</strong> CARBON is the one thing in short
+				supply, and it has four competing uses:</p>
+				<ul>
+					<li><strong>Raise</strong> &mdash; buy your dead back as guardians. Cheapest
+					with a high Crypt. Best when the Barracks can't replace losses fast enough.</li>
+					<li><strong>Upgrade</strong> &mdash; permanently improve a rate or cap for the
+					rest of this run. Compounds, so early upgrades are worth more than late ones.</li>
+					<li><strong>Sortie</strong> (free, but costs guardians and gear) &mdash; kill
+					attackers in the open before they reach the wall. Trades bodies for wall
+					damage you never take.</li>
+					<li><strong>Fortify</strong> (costs a Factory item) &mdash; repairs the wall
+					<em>and</em> makes the Tower hit 50% harder for six seconds. Save it for the
+					moment a wave is about to break through.</li>
+				</ul>
+				<p><strong>The strategy:</strong> spend early on upgrades while they still have
+				time to compound, then switch to raising and fortifying once waves outpace
+				production. Holding CARBON does nothing &mdash; unspent CARBON is a wave you
+				didn't survive.</p>
+			</div>
+		</details>
 
 		<div id="rg-log"></div>
 		<button type="button" id="rg-begin">Begin the siege</button>
@@ -377,6 +422,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 @media (max-width:560px) { #rg-vol { display:none; } }
 
 #rg-field { position:relative; height:80px; background:#0a1929; border:1px solid rgba(255,255,255,.08); border-radius:8px; overflow:hidden; margin-bottom:12px; }
+#rg-wall.rg-fortified { background:linear-gradient(180deg,#ffcc44,#c79a1e) !important; box-shadow:0 0 14px rgba(255,204,68,.8); }
 #rg-wall { position:absolute; left:0; top:0; bottom:0; width:10px; background:linear-gradient(180deg,#00c8a0,#007a61); }
 #rg-enemies, #rg-sortie { position:absolute; inset:0; }
 .rg-foe { position:absolute; top:50%; transform:translateY(-50%); width:22px; height:22px; border-radius:50%; background:#c0392b; border:2px solid #c0392b; transition:left .1s linear; }
@@ -414,6 +460,15 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 .rg-act { background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:5px; padding:7px 9px; font-size:.74rem; cursor:pointer; margin:0 3px 3px 0; }
 .rg-act.rg-up { background:rgba(255,255,255,.12); color:rgba(255,255,255,.75); }
 .rg-act:disabled { opacity:.32; cursor:default; }
+/* Bar captions. A progress bar with no label is a mystery, and there are five
+   of them on this board. */
+.rg-cap { font-size:.6rem; color:rgba(255,255,255,.35); margin:-4px 0 6px; letter-spacing:.02em; }
+#rg-help { margin-top:14px; font-size:.8rem; color:rgba(255,255,255,.6); }
+#rg-help summary { cursor:pointer; color:#00c8a0; font-weight:bold; font-size:.82rem; }
+#rg-help div { padding:8px 0 0; line-height:1.6; }
+#rg-help ul { margin:6px 0; padding-left:18px; }
+#rg-help li { margin-bottom:5px; }
+#rg-help strong { color:rgba(255,255,255,.85); }
 #rg-log { margin-top:12px; font-size:.78rem; color:rgba(255,255,255,.45); min-height:3.2em; line-height:1.5; }
 #rg-log b { color:#ff6b6b; }
 #rg-begin { display:block; margin:14px auto 0; background:#00c8a0; color:#04121d; font-weight:bold; border:0; border-radius:6px; padding:11px 26px; font-size:.9rem; cursor:pointer; }
@@ -479,6 +534,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       garrison:0, armed:0, armored:0, items:0, sortied:[],
       lvl:JSON.parse(JSON.stringify(REALM.levels)),
       prod:{ barracks:0, armory:0, factory:0, mine:0, portal:0, reinforce:0 },
+      bought:{ tower:0, barracks:0, armory:0, crypt:0, portal:0, factory:0, mine:0 },
       foes:[], nextAttack:0, betweenWaves:0, fortifyFor:0
     };
   }
@@ -507,7 +563,20 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
    * the last, so upgrading is a choice against raising the dead rather than
    * something you do with spare change.
    */
-  function upgradeCost(k) { return 16 * L(k) + 8 * L(k) * L(k); }
+  /*
+   * Priced on what you have bought THIS RUN, not on the absolute level.
+   *
+   * Keying off absolute level meant a realm-fed player started every location
+   * at level 10+, so an upgrade cost over a thousand from wave one -- while
+   * whichever locations their realm had neglected stayed cheap. Reported
+   * exactly that way: "upgrade buttons rarely appear and it's usually only
+   * crypt or factory", ending a run on 1781 unspent CARBON.
+   *
+   * Now the first upgrade of a run is affordable whatever your realm looks
+   * like, and each one after costs more. Spending is a live decision again
+   * instead of a lottery.
+   */
+  function upgradeCost(k) { return 45 + 55 * (S.bought[k] || 0); }
   // Weapon LEVEL matters, not just count -- a better cache hits harder.
   function towerDamage()  {
     var d = S.armed * (2 + REALM.wlevel) + (S.garrison - S.armed) * 1;
@@ -770,6 +839,9 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
   }
 
   function render() {
+    // Fortify is otherwise invisible -- the wall glows and the HUD says so while
+    // it is up, or the player has no way to know the item did anything.
+    document.getElementById('rg-wall').className = S.fortifyFor > 0 ? 'rg-fortified' : '';
     el.wave.textContent = S.wave;
     el.hp.textContent = Math.max(0, S.hp);
     el.carbon.textContent = S.carbon;
@@ -883,7 +955,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
       log('The Factory shores up the wall. The guns bite harder.');
     } else if (a.indexOf('up-') === 0) {
       var k = a.slice(3);
-      if (S.carbon >= upgradeCost(k)) { S.carbon -= upgradeCost(k); S.lvl[k]++; log(k + ' raised to ' + S.lvl[k] + '.'); }
+      if (S.carbon >= upgradeCost(k)) { S.carbon -= upgradeCost(k); S.lvl[k]++; S.bought[k]++; log(k + ' raised to ' + S.lvl[k] + '.'); }
     }
     render();
   }
