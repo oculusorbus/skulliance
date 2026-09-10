@@ -501,7 +501,7 @@ $rg_con_ui = array(
 	5 => array('Volley +75%',  '+7.5 wall, +75% for 7.5s'),
 	4 => array('Volley +50%',  '+5 wall, +50% for 5s'),
 	2 => array('Volley +25%',  '+2.5 wall, +25% for 2.5s'),
-	3 => array('Rush Lines',   'Every line with room finishes'),
+	3 => array('Rush Lines',   'Finishes every line, funds the Mine'),
 	1 => array('Free Level',   'One random location +1'),
 );
 /*
@@ -946,12 +946,15 @@ $rg_theme_img = $rg_theme > 0
 					hold when the wall is about to be hit</em>, and worth most against the big
 					attackers, who hit for 12 where the rest hit for 5.</li>
 					<li><strong>Rush Lines</strong> &mdash; every production line that has room
-					finishes at once: a recruit, a weapon, a piece of armour, another item,
-					CARBON, and both cooldowns refilled. A line that is already capped out
-					delivers nothing, so the cards that actually produced are the ones that
-					flash. <em>The Portal and the Crypt are the point</em> &mdash; neither can be
-					blocked, so this always buys you an immediate Strike and a ready rite. Best
-					used the moment you want guardians out and the cooldown says no.</li>
+					finishes at once: a recruit, a weapon, a piece of armour, another item, and
+					both cooldowns refilled. A line that is already capped out delivers nothing,
+					so the cards that actually produced are the ones that flash. The Mine is the
+					exception that always pays: its bar measures the next Mine level rather than
+					the next coin, so a rush hands you the CARBON that level costs &mdash; yours
+					to spend there or anywhere else. <em>The Portal and the Crypt cannot be
+					blocked either</em>, so this always buys an immediate Strike and a ready
+					rite. Best used the moment you want guardians out and the cooldown says
+					no.</li>
 					<li><strong>Volley +100% / +75% / +50% / +25%</strong> &mdash; each patches
 					the wall and makes the Tower hit that much harder. Both the patch and the
 					duration scale with the magnitude, on the same rule: the number on the tin
@@ -1862,6 +1865,28 @@ $rg_theme_img = $rg_theme > 0
       S.prod.portal   = portalRate();
       S.prod.crypt    = cryptRate();   // a resurrection readied too
       /*
+       * THE MINE'S LINE IS ITS NEXT LEVEL, so rushing it has to move THAT.
+       *
+       * Every other line hands you the thing its bar was filling toward -- a
+       * recruit, a weapon, an item. The Mine's bar stopped measuring the next
+       * coin when it started measuring the next upgrade, so setting its timer
+       * paid one tick's CARBON and moved the bar by a sliver. The item claimed
+       * to expedite a line and visibly did nothing to it.
+       *
+       * It now tops CARBON up to whatever the Mine's next level costs, which is
+       * exactly "the thing that line was filling toward", and the bar goes all
+       * the way across. Deliberately NOT an automatic upgrade: the CARBON is
+       * yours to spend, and spending it on the Tower instead is a real choice
+       * that buying the level for you would take away.
+       *
+       * Self-scaling, which is why it does not need a balance number of its
+       * own: upgradeCost is 45 + 55 per level already bought, so this is worth
+       * one upgrade whatever stage you are at -- about 1.4s of income from a
+       * developed Mine early, about 10s by the sixth level.
+       */
+      var mineNeed = upgradeCost('mine');
+      if (S.carbon < mineNeed) S.carbon = mineNeed;
+      /*
        * Armed for the NEXT tick, because "rushed" is not the same as "told to
        * hurry". A line that is capped out holds at full and delivers nothing,
        * so which lines actually produced is only known once produce() has run.
@@ -1871,7 +1896,7 @@ $rg_theme_img = $rg_theme > 0
       S.rushPending = true;
       flashLoc('portal');
       flashLoc('crypt');
-      log('Fast Forward: every line that had room finishes at once.');
+      log('Fast Forward: every line that had room finishes at once, and the Mine funds its next level.');
     } else {                                 // 25/50/75/100% Success
       var pct = { 2:0.25, 4:0.50, 5:0.75, 7:1.00 }[it.id] || 0.25;
       S.boost = pct;
