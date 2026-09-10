@@ -1102,6 +1102,11 @@ $rg_theme_img = $rg_theme > 0
 /* Under Begin and centred with it -- it is a choice ABOUT the run you are
    about to start, so it belongs next to the button that starts it. */
 #rg-scratch-wrap { display:block; text-align:center; font-size:.72rem; color:rgba(255,255,255,.5); cursor:pointer; user-select:none; }
+/* REQUIRED, not decoration: the id selector above outranks the browser's own
+   [hidden] rule, so without this the element stays on screen with hidden set --
+   which is the exact bug this pairing exists to fix. Same reason #rg-begin and
+   #rg-pause each carry one. */
+#rg-scratch-wrap[hidden] { display:none; }
 #rg-scratch-wrap input { vertical-align:middle; margin-right:4px; cursor:pointer; }
 #rg-scratch-wrap:has(input:disabled) { opacity:.35; cursor:default; }
 #rg-begin[hidden] { display:none; }
@@ -2395,11 +2400,17 @@ $rg_theme_img = $rg_theme > 0
     // Locked mid-siege: swapping baselines would rebuild the state under the
     // wave already walking at you.
     if (scratchBox) {
-      scratchBox.disabled = S.running;
-      var sw = document.getElementById('rg-scratch-wrap');
-      if (sw) sw.title = S.running
-        ? 'Finish or lose this siege before switching baseline'
-        : 'Ignore your realm and hold the wall with conscripts: every location at level 1, no enlisted guardians, a level-1 cache. Your realm is untouched either way.';
+      /*
+       * The toggle lives and dies WITH the Begin button. It is a choice about
+       * the run you are about to start, so once a siege is under way it is not
+       * merely unusable, it is irrelevant -- and hiding the button while
+       * leaving its checkbox behind left an orphaned control floating in the
+       * Mine panel. Mirroring beginBtn.hidden rather than re-deriving the
+       * condition means the two cannot drift apart again, including when Begin
+       * comes back as "Hold again" after a loss.
+       */
+      if (scratchWrap) scratchWrap.hidden = beginBtn.hidden;
+      scratchBox.disabled = S.running;   // belt and braces if it is ever shown
     }
 
     document.querySelectorAll('.rg-act').forEach(function (b) {
@@ -2630,6 +2641,7 @@ $rg_theme_img = $rg_theme > 0
    * it again next time.
    */
   var scratchBox = document.getElementById('rg-scratch');
+  var scratchWrap = document.getElementById('rg-scratch-wrap');
   var blurbRealm = document.getElementById('rg-blurb-realm');
   var blurbScratch = document.getElementById('rg-blurb-scratch');
   function applyBaseline() {
