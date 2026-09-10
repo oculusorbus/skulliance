@@ -386,11 +386,17 @@ $rg_theme_img = $rg_theme > 0
 <div class="row<?php echo $rg_theme_img !== '' ? ' rg-themed' : ''; ?>" id="row1"<?php
 	if ($rg_theme_img !== '') echo ' style="--rg-theme-img:' . htmlspecialchars($rg_theme_img) . '"';
 ?>>
-  <!-- No max-width: the board fills the row, which is the main menu header's
-       width. At 820px it was a narrow column with the theme spread wide behind
-       it; full width gives the field room and lets the locations spread out on
-       a large screen instead of stacking. -->
-  <div class="col1of3" style="margin:0 auto;flex:1 1 100%;">
+  <!--
+    max-width:none is the load-bearing part. Removing this page's own 820px cap
+    was not enough: dist/flexbox.css:2388 caps EVERY .col1of3 at 900px
+    platform-wide, so the board stayed boxed. That rule is shared by every page
+    on the site and must not be edited, so it is overridden inline here and
+    nowhere else.
+
+    The navbar carries no max-width of its own, so full width IS the header's
+    width -- which is what makes the board and the theme behind it line up.
+  -->
+  <div class="col1of3" style="margin:0 auto;flex:1 1 100%;max-width:none;">
 
 	<h2 class="rg-intro">Realm Guardians <span class="rg-tag">prototype</span></h2>
 	<div class="rg-blurb rg-intro">
