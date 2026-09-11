@@ -1639,6 +1639,20 @@ What a doc page will have to get right, because none of it is guessable:
   also the default kit on pre-populated raid soldiers). Fixing that properly
   needs per-sample compensation, not a global trim. Measure with
   `ffmpeg -i <f> -af volumedetect -f null -` before changing anything here.
+- **`#rg-status` is hidden on phones with `font-size:0`, never `display:none`.**
+  Reported 2026-09-11: the yellow status line pushed the board off the side of a
+  phone depending on the message. It is the only item in the HUD whose width
+  tracks its content (everything else is `flex:0 0 auto`), AND it is the
+  `flex:1 1 auto` item that absorbs the bar's slack -- which is what pins the
+  mute/pause cluster to the right edge. Measured in a 390px harness built from
+  the real rules: `display:none` moved the controls from x=390 to x=293, while
+  `font-size:0` keeps them at 390 and makes the bar's width constant no matter
+  how long the message is. An auto margin on the first button is NOT a
+  substitute: pause and retreat are `hidden` until a run starts, so no button is
+  reliably first, and putting it on two splits the gap. Note the harness did NOT
+  reproduce the overflow in isolation (ellipsis clipped it correctly there), so
+  the trigger on the real device is unconfirmed -- likely larger text settings or
+  a narrower screen. The fix removes the message as a width variable regardless.
 - Naming trap, verified live: icons use dashes and sounds omit separators -
   `icons/machine-gun.png` and `audio/sounds/machinegun.mp3`. Deriving one from
   the other with a single rule silently 404s. The sound whitelist mirrors

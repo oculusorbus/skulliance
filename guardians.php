@@ -1192,6 +1192,37 @@ $rg_theme_img = $rg_theme > 0
   #rg-vol, #rg-track { display:none; }
   .rg-hud { gap:9px; font-size:.72rem; }
   .rg-hud strong { font-size:.88rem; }
+  /*
+   * THE STATUS MESSAGE GOES ON A PHONE -- reported live as pushing the board
+   * off the side of the screen depending on what it said.
+   *
+   * font-size:0, NOT display:none, and the difference is load-bearing. This is
+   * the flex item that absorbs the bar's slack (`flex:1 1 auto`), so it is also
+   * what holds the mute and pause controls against the right edge. Take it out
+   * of the layout and the whole control cluster slides left into the middle of
+   * the bar -- measured at 390px wide: controls ended at x=293 instead of 390.
+   * At font-size:0 it keeps that job while its CONTENT contributes no width at
+   * all, which is the actual goal: the bar's width stops depending on the
+   * message. Every other item is `flex:0 0 auto`, so this was the only variable
+   * left in it.
+   *
+   * The alternative of pinning `margin-left:auto` to the first button does not
+   * work here: pause and retreat are `hidden` until a run starts, so no single
+   * button is reliably first, and putting it on two of them splits the free
+   * space between the autos and separates the cluster.
+   *
+   * It still renders for screen readers and JS keeps writing to it, so nothing
+   * downstream needs to know.
+   *
+   * Nothing is actually lost. All four messages are covered elsewhere on the
+   * same screen: "Wave N incoming" is the Wave counter two items to the left
+   * and the log line written on the same tick; "Wave held -- regroup" is that
+   * counter having stopped climbing; "Paused" greys the whole field out; and
+   * "The wall is breached" is immediately followed by the defeat modal. It
+   * still renders for screen readers and JS keeps writing to it, so nothing
+   * downstream has to know it is hidden.
+   */
+  #rg-status { font-size:0; }
 }
 
 /* ---- FIELD SCALE ----------------------------------------------------------
