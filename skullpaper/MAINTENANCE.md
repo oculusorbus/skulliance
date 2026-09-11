@@ -1608,6 +1608,19 @@ What a doc page will have to get right, because none of it is guessable:
   it also means reading off the front hands you one gear tier. The raid line
   and the reserve both need it; the Tower bucket deliberately does not, because
   the best soldiers should man the wall.
+- **Music: $rg_want's declaration order IS the picker order, and entry one is
+  the default track.** Three tracks as of 2026-09-10: Guardians of the Realm,
+  Stand Your Ground, Mechanical Pulse, all committed under `audio/tracks/`
+  alongside Crypt Crawl's six (unlike images, audio does live in the repo).
+  Files are DISCOVERED by glob + a letters-only substring match, not hardcoded,
+  because the filenames vary in spacing and capitalisation; anything unmatched
+  and not Crypt Crawl's still shows up labelled by its filename rather than
+  leaving an empty control. The order used to come from glob(), i.e. alphabetical
+  by FILENAME, so `$rg_want`'s own order was silently ignored and adding a file
+  named early in the alphabet would have changed which music a player hears
+  first. Matches are now keyed by want-key and emitted by walking `$rg_want`.
+  URLs `rawurlencode()` the FILENAME ONLY -- the directory separator must
+  survive, the spaces must not.
 - Naming trap, verified live: icons use dashes and sounds omit separators -
   `icons/machine-gun.png` and `audio/sounds/machinegun.mp3`. Deriving one from
   the other with a single rule silently 404s. The sound whitelist mirrors

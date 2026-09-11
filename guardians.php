@@ -563,10 +563,10 @@ $rg_start_wave = $rg_has_realm ? max(1, intval(floor($rg_power / 5))) : 1;
 /*
  * MUSIC. Discovered, not hardcoded.
  *
- * The tracks live in audio/tracks/ alongside Crypt Crawl's, and they ship by
- * FTP rather than through the repo -- so the exact filename (spaces? dashes?
- * capitalisation?) is not knowable from here, and guessing it wrong fails
- * silently, which is the worst way for this to break.
+ * The tracks live in audio/tracks/ alongside Crypt Crawl's. Unlike images they
+ * ARE committed, but the exact filename is still not something to hardcode --
+ * spaces, dashes and capitalisation all vary between them, and guessing one
+ * wrong fails silently, which is the worst way for this to break.
  *
  * This runs ON the server where the files are, so it just looks. Names are
  * normalised to letters only before matching, which makes it indifferent to
@@ -576,9 +576,24 @@ $rg_start_wave = $rg_has_realm ? max(1, intval(floor($rg_power / 5))) : 1;
  * Anything not matched is simply absent -- no player renders, nothing breaks.
  */
 $rg_tracks = array();
+/*
+ * DECLARATION ORDER IS THE PICKER ORDER, and the first entry is the track that
+ * plays by default -- so this list is a decision, not a lookup table.
+ *
+ * It used to be neither: the loop below emitted matches in glob() order, which
+ * is alphabetical by FILENAME, so "Guardians of the Realm" led only because G
+ * sorts before S and this array's own order was silently ignored. Mechanical
+ * Pulse landed third for the same accidental reason (G < M < S) via the
+ * catch-all branch further down, labelled from its filename. Adding a track
+ * called anything earlier in the alphabet would have quietly changed which
+ * music a player hears first.
+ *
+ * Guardians of the Realm stays first because that is what plays today.
+ */
 $rg_want = array(
-	'standyourground'      => 'Stand Your Ground',
 	'guardiansoftherealm'  => 'Guardians of the Realm',
+	'standyourground'      => 'Stand Your Ground',
+	'mechanicalpulse'      => 'Mechanical Pulse',
 );
 $rg_named = array();
 foreach ((array)glob(__DIR__ . '/audio/tracks/*.[mM][pP]3') as $rg_f) {
@@ -596,25 +611,38 @@ foreach ((array)glob(__DIR__ . '/audio/tracks/*.[mM][pP]3') as $rg_f) {
 	 */
 	$rg_hit = '';
 	foreach ($rg_want as $rg_k => $rg_label) {
-		if (strpos($rg_key, $rg_k) !== false) { $rg_hit = $rg_label; break; }
+		if (strpos($rg_key, $rg_k) !== false) { $rg_hit = $rg_k; break; }
 	}
 	if ($rg_hit !== '') {
-		$rg_named[] = array('name' => $rg_hit, 'url' => $rg_url);
+		// Keyed by the WANT key rather than appended, so $rg_want's declaration
+		// order decides the display order below instead of glob()'s alphabet.
+		$rg_named[$rg_hit] = array('name' => $rg_want[$rg_hit], 'url' => $rg_url);
 		continue;
 	}
 
 	/*
 	 * Anything else in the folder that isn't Crypt Crawl's score. Belt and
-	 * braces: if the two titles were saved under names nothing here predicts,
-	 * they still turn up in the picker rather than leaving an empty control.
-	 * Better a track labelled by its filename than no player at all.
+	 * braces: if a title were saved under a name nothing above predicts, it
+	 * still turns up in the picker rather than leaving an empty control.
+	 * Better a track labelled by its filename than no player at all. These sort
+	 * after the named ones, which is fine -- anything landing here is unplanned
+	 * by definition.
 	 */
 	if (strpos($rg_key, 'cryptcrawl') === false) {
 		$rg_tracks[] = array('name' => $rg_base, 'url' => $rg_url);
 	}
 }
-// The two we were asked for lead the list; discoveries follow.
-$rg_tracks = array_merge($rg_named, $rg_tracks);
+/*
+ * Emitted in $rg_want's order -- see the note on that array. A title that isn't
+ * in the folder is simply skipped, so a missing file shifts the rest up rather
+ * than leaving a gap or a dead option in the picker. Unplanned discoveries
+ * follow the named ones.
+ */
+$rg_ordered = array();
+foreach ($rg_want as $rg_k => $rg_label) {
+	if (isset($rg_named[$rg_k])) $rg_ordered[] = $rg_named[$rg_k];
+}
+$rg_tracks = array_merge($rg_ordered, $rg_tracks);
 
 // The horde wears real member avatars. Public everywhere already (podiums,
 // profiles), so this exposes nothing new -- and being overrun by names from
