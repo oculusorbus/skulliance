@@ -149,10 +149,11 @@ function guardiansClearRun($conn, $user_id) {
  * begun before this shipped) is simply not scored -- refusing to record is
  * always safer than recording something unbounded.
  */
-function guardiansRecordDefeat($conn, $user_id, $wave, $lost) {
+function guardiansRecordDefeat($conn, $user_id, $wave, $lost, $played = 0) {
 	$user_id = intval($user_id);
 	$wave    = max(0, intval($wave));
 	$lost    = max(0, intval($lost));
+	$played  = max(0, intval($played));
 	if ($user_id <= 0) return null;
 
 	$r = $conn->query("SELECT start_wave, scratch, TIMESTAMPDIFF(SECOND, started_at, NOW()) AS secs
@@ -164,20 +165,46 @@ function guardiansRecordDefeat($conn, $user_id, $wave, $lost) {
 	$secs       = max(0, intval($run['secs']));
 
 	$held = max(0, $wave - $start_wave);
-	// The bound. Generous on purpose: see GUARDIANS_MIN_WAVE_SECONDS.
+	// The bound, measured against WALL CLOCK. This must keep using $secs and
+	// never the client's figure: a forged play time could otherwise buy back
+	// exactly the seconds the check demands.
 	if ($held > 0 && $secs < $held * GUARDIANS_MIN_WAVE_SECONDS) {
 		guardiansClearRun($conn, $user_id);
 		error_log("guardians: rejected implausible score user=$user_id held=$held secs=$secs");
 		return null;
 	}
 
+	/*
+	 * TWO DIFFERENT TIMES, and `seconds` stores the one a human would recognise.
+	 *
+	 * $secs is wall clock since started_at. It is the right number for the
+	 * bound above -- it cannot be forged -- but it is the WRONG number to show
+	 * anyone, because a run can now be paused and resumed across sessions, so
+	 * it counts hours the player was not at the keyboard. Reported: a modal
+	 * reading "45m 49s" against a Discord post reading "264 minutes" for the
+	 * same siege.
+	 *
+	 * $played is the client's own S.tick/10, which is exactly what the defeat
+	 * modal printed and stops while paused. It is untrusted, so it is CLAMPED
+	 * to the wall clock: you cannot have played longer than the run existed.
+	 * That makes it unforgeable upward, which is all that matters for a number
+	 * that is displayed and never scored. A run from before this shipped sends
+	 * nothing, and falls back to the old wall-clock figure.
+	 *
+	 * NOTE rows written before this change hold wall clock in this column.
+	 * The leaderboard does not read it -- checkGuardiansLeaderboard() ranks on
+	 * held/wave/lost -- so the mixed history only ever affected these posts.
+	 */
+	$shown = ($played > 0) ? min($played, $secs) : $secs;
+
 	$conn->query("
 		INSERT INTO guardians_scores (user_id, wave, start_wave, held, lost, seconds, scratch, reward)
-		VALUES ($user_id, $wave, $start_wave, $held, $lost, $secs, $scratch, 0)
+		VALUES ($user_id, $wave, $start_wave, $held, $lost, $shown, $scratch, 0)
 	");
 	guardiansClearRun($conn, $user_id);
 	return array('wave' => $wave, 'start_wave' => $start_wave, 'held' => $held,
-	             'lost' => $lost, 'seconds' => $secs, 'scratch' => $scratch);
+	             'lost' => $lost, 'seconds' => $shown, 'elapsed' => $secs,
+	             'scratch' => $scratch);
 }
 
 /* ---------------------------------------------------------------------------
@@ -194,9 +221,29 @@ function guardiansAnnounceDefeat($conn, $user_id, $result) {
 	if (!$result || !function_exists('discordmsg')) return;
 	$user_id = intval($user_id);
 
-	$name = 'A guardian';
-	$ur = $conn->query("SELECT username FROM users WHERE id = $user_id LIMIT 1");
-	if ($ur && $ur->num_rows) $name = (string)$ur->fetch_assoc()['username'];
+	/*
+	 * THE THUMBNAIL IS THE PLAYER'S OWN AVATAR, not the Tower icon.
+	 *
+	 * Every siege posted the same tower, so a channel of these was a wall of
+	 * identical icons and you had to read the text to see whose run it was. The
+	 * avatar makes the player identifiable at a glance, which is the whole job
+	 * of that corner of the embed. Same cdn.discordapp.com URL shape the rest
+	 * of the platform builds (obscura-lib.php, realms.php, launchpad.php).
+	 *
+	 * Falls back to the Tower when a player has no Discord avatar -- the field
+	 * must not be empty, or the embed renders with a hole where the icon was.
+	 */
+	$name   = 'A guardian';
+	$avatar = '';
+	$ur = $conn->query("SELECT username, discord_id, avatar FROM users WHERE id = $user_id LIMIT 1");
+	if ($ur && $ur->num_rows) {
+		$u    = $ur->fetch_assoc();
+		$name = (string)($u['username'] ?? 'A guardian');
+		if (!empty($u['discord_id']) && !empty($u['avatar'])) {
+			$avatar = 'https://cdn.discordapp.com/avatars/' . $u['discord_id'] . '/' . $u['avatar'] . '.png';
+		}
+	}
+	$thumb = $avatar !== '' ? $avatar : 'https://skulliance.io/staking/icons/locations/tower.png';
 
 	$realm_name = '';
 	$theme_id   = 0;
@@ -215,13 +262,20 @@ function guardiansAnnounceDefeat($conn, $user_id, $result) {
 		? 'held the wall with conscripts'
 		: ($realm_name !== '' ? 'defended ' . $realm_name : 'held the wall');
 
-	$mins  = intval(floor($result['seconds'] / 60));
+	/*
+	 * Same shape as the defeat modal -- "45m 49s", not "45 minutes" -- because
+	 * the two describe the same run and a player comparing them should not have
+	 * to do arithmetic to see that they agree.
+	 */
+	$tsecs = max(0, intval($result['seconds']));
+	$mins  = intval(floor($tsecs / 60));
+	$held_for = $mins > 0 ? $mins . 'm ' . ($tsecs % 60) . 's' : $tsecs . 's';
 	$title = 'The realm falls at wave ' . $result['wave'];
 	$desc  = '**' . $name . '** ' . $where . ' and survived **' . $result['held'] .
 	         '** wave' . ($result['held'] === 1 ? '' : 's') .
 	         ' past where they began (wave ' . $result['start_wave'] . ').' .
 	         "\n" . $result['lost'] . ' guardian' . ($result['lost'] === 1 ? '' : 's') .
-	         ' lost over ' . ($mins > 0 ? $mins . ' minute' . ($mins === 1 ? '' : 's') : 'under a minute') . '.';
+	         ' lost over ' . $held_for . '.';
 
 	/*
 	 * WHO BROKE THE WALL. The horde is other stakers' avatars, so the attacker
@@ -261,7 +315,7 @@ function guardiansAnnounceDefeat($conn, $user_id, $result) {
 		$title, $desc, $image,
 		'https://skulliance.io/staking/guardians.php',
 		'guardians',
-		'https://skulliance.io/staking/icons/locations/tower.png',
+		$thumb,
 		'c0392b',
 		null, null, $content
 	);

@@ -38,7 +38,10 @@ if ($action === 'save') {
 }
 
 if ($action === 'defeat') {
-	$result = guardiansRecordDefeat($conn, $uid, intval($_POST['wave'] ?? 0), intval($_POST['lost'] ?? 0));
+	// played seconds from the client -- displayed only, and clamped server-side
+	// against the real elapsed time inside guardiansRecordDefeat().
+	$result = guardiansRecordDefeat($conn, $uid, intval($_POST['wave'] ?? 0), intval($_POST['lost'] ?? 0),
+	                                intval($_POST['secs'] ?? 0));
 	/*
 	 * Who broke the wall, for the Discord post. Sanitised HARD before it goes
 	 * anywhere near a message: the id becomes digits only and the name is

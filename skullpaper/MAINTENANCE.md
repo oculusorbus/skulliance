@@ -1653,6 +1653,23 @@ What a doc page will have to get right, because none of it is guessable:
   reproduce the overflow in isolation (ellipsis clipped it correctly there), so
   the trigger on the real device is unconfirmed -- likely larger text settings or
   a narrower screen. The fix removes the message as a width variable regardless.
+- **Guardians has TWO clocks and they are not interchangeable.** Reported
+  2026-09-11: the defeat modal said "45m 49s" and the Discord post said "264
+  minutes" for the same siege. The modal prints `S.tick/10` (PLAYED time, stops
+  while paused); the post printed `TIMESTAMPDIFF(SECOND, started_at, NOW())`
+  (WALL CLOCK, counts the hours a saved run sat closed). Now that runs persist
+  and can be paused, those diverge by hours. `guardians_scores.seconds` stores
+  the PLAYED time, clamped server-side with `min($played, $secs)` so an
+  untrusted client can only under-report. **The anti-cheat bound must keep using
+  the wall-clock `$secs`** -- moving it onto the client figure would let a
+  forged play time buy exactly the seconds `GUARDIANS_MIN_WAVE_SECONDS` demands.
+  Rows written before this hold wall clock in that column; harmless, because
+  `checkGuardiansLeaderboard()` ranks on held/wave/lost and never reads it.
+- Guardians defeat posts use the **player's Discord avatar** as the embed
+  thumbnail (`cdn.discordapp.com/avatars/<discord_id>/<avatar>.png`), falling
+  back to `icons/locations/tower.png` when they have none -- the field must not
+  be empty or the embed renders with a hole. Was the Tower on every post, which
+  made a channel of sieges a wall of identical icons.
 - Naming trap, verified live: icons use dashes and sounds omit separators -
   `icons/machine-gun.png` and `audio/sounds/machinegun.mp3`. Deriving one from
   the other with a single rule silently 404s. The sound whitelist mirrors

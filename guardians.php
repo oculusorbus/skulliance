@@ -3250,7 +3250,16 @@ $rg_theme_img = $rg_theme > 0
      * The modal is up BEFORE this resolves, so a slow round trip never delays
      * the send-off; whether it counted is filled in when the answer arrives.
      */
-    post('defeat', { wave: S.wave, lost: S.lostTotal,
+    /*
+     * `secs` is the PLAYED time -- the same S.tick/10 the modal just printed,
+     * which does not advance while paused. The server measures wall clock from
+     * the started_at it stamped at Begin, and the two diverge badly now that a
+     * run can be paused and resumed across sessions: a 46 minute siege left
+     * open overnight reads as four hours. The server keeps its own number for
+     * the anti-cheat bound and clamps this one against it, so this can only
+     * ever report LESS time than really elapsed, never more.
+     */
+    post('defeat', { wave: S.wave, lost: S.lostTotal, secs: Math.round(S.tick / 10),
                      breacher: S.breacher || '', breacher_id: S.breacherId || '' }).then(function (res) {
       var el2 = document.getElementById('rg-defeat-scored');
       if (!el2) return;
