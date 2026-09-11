@@ -993,7 +993,9 @@ $rg_theme_img = $rg_theme > 0
 					worth knowing: the patch is capped at a full wall, so spending one at 100
 					wastes it &mdash; and the Tower fires one shot at one attacker every 0.6s,
 					so once your guardians already kill an attacker per shot, hitting harder
-					kills no faster. <em>Late in a run these are mostly the +8.</em></li>
+					kills no faster. <em>Late in a run these are mostly a wall repair</em>
+					&mdash; and because the patch scales too, a +100% is worth four +25%s
+					once the extra damage has stopped mattering.</li>
 					<li><strong>Free Level</strong> &mdash; one random location gains a level for
 					nothing. It is the only item that compounds, and the only one with no effect
 					on the fight in front of you. <em>Spend these early</em>, while a level still
