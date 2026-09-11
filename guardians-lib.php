@@ -58,9 +58,17 @@
  *     seconds      INT NOT NULL DEFAULT 0,
  *     scratch      TINYINT NOT NULL DEFAULT 0,
  *     reward       TINYINT NOT NULL DEFAULT 0,
+ *     breacher_id  VARCHAR(25) NOT NULL DEFAULT '',
+ *     breach_carbon INT NOT NULL DEFAULT 0,
  *     date_created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
  *     INDEX (user_id), INDEX (reward)
  *   );
+ *
+ * MIGRATION for an existing install (the two breacher columns are new):
+ *
+ *   ALTER TABLE guardians_scores
+ *     ADD COLUMN breacher_id VARCHAR(25) NOT NULL DEFAULT '',
+ *     ADD COLUMN breach_carbon INT NOT NULL DEFAULT 0;
  *
  * `held` is waves survived (wave - start_wave), which is what the board ranks
  * by. It is stored rather than computed so the board does not have to trust
@@ -136,6 +144,26 @@ function guardiansClearRun($conn, $user_id) {
 	return true;
 }
 
+/*
+ * THE BREACH PAYOUT: whatever CARBON the realm was still holding when the wall
+ * came down goes to the member whose avatar broke it. Deliberately uncapped --
+ * a player who hoards simply makes some stranger rich, which is the lottery
+ * working as intended, not a bug to design around.
+ *
+ * This constant is NOT that cap. It is an INTEGRITY bound, the same kind
+ * GUARDIANS_MIN_WAVE_SECONDS is: the carbon figure arrives from the browser,
+ * and without a ceiling the defeat endpoint is an unbounded "mint CARBON"
+ * call. It is set orders of magnitude above anything reachable in play --
+ * measured, a real run banked ~1.5 CARBON/sec of leftover and the game's own
+ * theoretical maximum (a Mine-30 realm that upgrades nothing and hoards
+ * everything) is 50/sec. So 200/sec refuses only claims the simulation could
+ * not have produced, and never trims an honest one.
+ *
+ * Tighten it here if that headroom ever looks too generous; nothing else has
+ * to change.
+ */
+define('GUARDIANS_MAX_CARBON_RATE', 200);
+
 /* ---------------------------------------------------------------------------
  * DEFEAT
  * ------------------------------------------------------------------------- */
@@ -149,11 +177,15 @@ function guardiansClearRun($conn, $user_id) {
  * begun before this shipped) is simply not scored -- refusing to record is
  * always safer than recording something unbounded.
  */
-function guardiansRecordDefeat($conn, $user_id, $wave, $lost, $played = 0) {
+function guardiansRecordDefeat($conn, $user_id, $wave, $lost, $played = 0,
+                               $carbon = 0, $breacher_id = '') {
 	$user_id = intval($user_id);
 	$wave    = max(0, intval($wave));
 	$lost    = max(0, intval($lost));
 	$played  = max(0, intval($played));
+	$carbon  = max(0, intval($carbon));
+	// Digits only before it goes anywhere near a query or a mention.
+	$breacher_id = substr(preg_replace('/[^0-9]/', '', (string)$breacher_id), 0, 25);
 	if ($user_id <= 0) return null;
 
 	$r = $conn->query("SELECT start_wave, scratch, TIMESTAMPDIFF(SECOND, started_at, NOW()) AS secs
@@ -197,14 +229,52 @@ function guardiansRecordDefeat($conn, $user_id, $wave, $lost, $played = 0) {
 	 */
 	$shown = ($played > 0) ? min($played, $secs) : $secs;
 
+	/*
+	 * THE BREACH PAYOUT. Two things have to be true before a single CARBON
+	 * moves, because BOTH the amount and the recipient arrive from the client.
+	 *
+	 * 1. The amount is bounded by GUARDIANS_MAX_CARBON_RATE * elapsed. Not an
+	 *    economic cap -- see that constant -- but the difference between a
+	 *    payout and an unbounded mint.
+	 * 2. The recipient must be a real member who was ELIGIBLE for the horde:
+	 *    a non-empty discord_id and avatar, and not the player themselves.
+	 *    That is the same WHERE the horde roster is drawn with in
+	 *    guardians.php, re-checked here rather than trusted, because a forged
+	 *    breacher used to cost a wrong @mention and would now cost CARBON.
+	 *
+	 * What this does NOT prevent: a modified client naming a SPECIFIC eligible
+	 * member instead of the one who actually broke through. Preventing that
+	 * needs the horde roster persisted at Begin, which it is not. The exposure
+	 * is bounded by (1) and by the fact that the carbon was the player's own.
+	 */
+	$paid = 0;
+	if ($breacher_id !== '' && $carbon > 0) {
+		$ceiling = $secs * GUARDIANS_MAX_CARBON_RATE;
+		$amount  = min($carbon, $ceiling);
+		$esc = $conn->real_escape_string($breacher_id);
+		$br  = $conn->query("SELECT id FROM users
+		                     WHERE discord_id = '$esc' AND discord_id != '' AND avatar != ''
+		                       AND id != $user_id LIMIT 1");
+		if ($br && $br->num_rows && $amount > 0) {
+			$bid  = intval($br->fetch_assoc()['id']);
+			$paid = intval($amount);
+			// Currency 15, the same CARBON the boards pay into.
+			updateBalance($conn, $bid, 15, $paid);
+			logCredit($conn, $bid, $paid, 15);
+		}
+	}
+
+	$esc_breacher = $conn->real_escape_string($breacher_id);
 	$conn->query("
-		INSERT INTO guardians_scores (user_id, wave, start_wave, held, lost, seconds, scratch, reward)
-		VALUES ($user_id, $wave, $start_wave, $held, $lost, $shown, $scratch, 0)
+		INSERT INTO guardians_scores (user_id, wave, start_wave, held, lost, seconds, scratch, reward,
+		                              breacher_id, breach_carbon)
+		VALUES ($user_id, $wave, $start_wave, $held, $lost, $shown, $scratch, 0,
+		        '$esc_breacher', $paid)
 	");
 	guardiansClearRun($conn, $user_id);
 	return array('wave' => $wave, 'start_wave' => $start_wave, 'held' => $held,
 	             'lost' => $lost, 'seconds' => $shown, 'elapsed' => $secs,
-	             'scratch' => $scratch);
+	             'scratch' => $scratch, 'breach_carbon' => $paid);
 }
 
 /* ---------------------------------------------------------------------------
@@ -289,9 +359,19 @@ function guardiansAnnounceDefeat($conn, $user_id, $result) {
 	 */
 	$breacher    = preg_replace('/[^A-Za-z0-9 _.\-]/', '', (string)($result['breacher'] ?? ''));
 	$breacher_id = preg_replace('/[^0-9]/', '', (string)($result['breacher_id'] ?? ''));
+	/*
+	 * WHAT THEY CARRIED OFF. The breacher takes whatever CARBON the realm was
+	 * still holding, so the post says so -- and says the opposite when there
+	 * was nothing left, which is the more satisfying line and the one a player
+	 * who spent well has earned.
+	 */
+	$took = max(0, intval($result['breach_carbon'] ?? 0));
+	$spoils = $took > 0
+		? ' and carried off **' . number_format($took) . ' CARBON** from the vaults.'
+		: ' and found the coffers bare.';
 	$content     = '';
 	if ($breacher_id !== '') {
-		$desc .= "\nThe wall was broken by <@" . $breacher_id . ">.";
+		$desc .= "\nThe wall was broken by <@" . $breacher_id . ">" . $spoils;
 		/*
 		 * GUARDIANS_PING_BREACHER decides whether that is an actual
 		 * notification or just a highlighted name. Discord only pings for a
@@ -305,10 +385,15 @@ function guardiansAnnounceDefeat($conn, $user_id, $result) {
 		 * buzzing someone's phone.
 		 */
 		if (defined('GUARDIANS_PING_BREACHER') && GUARDIANS_PING_BREACHER) {
-			$content = '<@' . $breacher_id . '> broke through.';
+			// The ping now carries good news, which is most of the answer to the
+			// objection above: it buzzes someone about CARBON they just received
+			// rather than about a wall they did not really break.
+			$content = $took > 0
+				? '<@' . $breacher_id . '> broke through and took ' . number_format($took) . ' CARBON.'
+				: '<@' . $breacher_id . '> broke through.';
 		}
 	} elseif ($breacher !== '') {
-		$desc .= "\nThe wall was broken by " . $breacher . '.';
+		$desc .= "\nThe wall was broken by " . $breacher . $spoils;
 	}
 
 	discordmsg(

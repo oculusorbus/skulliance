@@ -3259,7 +3259,14 @@ $rg_theme_img = $rg_theme > 0
      * the anti-cheat bound and clamps this one against it, so this can only
      * ever report LESS time than really elapsed, never more.
      */
+    /*
+     * `carbon` is whatever the realm was still holding when the wall fell. It
+     * goes to the member whose avatar broke through -- they take what is left.
+     * Spend it all and they get nothing, which is the good ending for you and
+     * the funnier line in the post.
+     */
     post('defeat', { wave: S.wave, lost: S.lostTotal, secs: Math.round(S.tick / 10),
+                     carbon: Math.max(0, Math.floor(S.carbon)),
                      breacher: S.breacher || '', breacher_id: S.breacherId || '' }).then(function (res) {
       var el2 = document.getElementById('rg-defeat-scored');
       if (!el2) return;

@@ -1680,6 +1680,22 @@ What a doc page will have to get right, because none of it is guessable:
   decide "logged in" itself: `dropship/db.php` owns the session restore,
   including the SessionCookie fallback for Mobile Safari/PWA, and gates to
   error.php. Anything new linking to Drop Ship should point at dashboard.php.
+- **The breach payout**: whoever's avatar breaks the wall receives whatever
+  CARBON the realm was still holding, paid immediately at defeat (currency 15,
+  the same pot the boards use), and 0 when the player spent it all -- the post
+  then says the coffers were bare. **Deliberately uncapped**: a player who
+  hoards makes a stranger rich, which is the lottery working, not a bug.
+  `GUARDIANS_MAX_CARBON_RATE` (200/sec) is NOT that cap -- it is an integrity
+  bound like `GUARDIANS_MIN_WAVE_SECONDS`, because the amount AND the recipient
+  both arrive from the browser. Measured: honest leftover accrues at ~1.5/sec
+  and the game's theoretical maximum is 50/sec, so the bound refuses only what
+  the simulation could not have produced. The breacher is re-validated against
+  `users` (non-empty discord_id and avatar, not the player) because a forged
+  breacher used to cost a wrong @mention and now costs CARBON. **Known residual
+  risk:** a modified client can still name a specific ELIGIBLE member rather
+  than the one who actually broke through; closing that needs the horde roster
+  persisted at Begin, which it is not. Needs the two-column migration in
+  guardians-lib.php's header.
 - Naming trap, verified live: icons use dashes and sounds omit separators -
   `icons/machine-gun.png` and `audio/sounds/machinegun.mp3`. Deriving one from
   the other with a single rule silently 404s. The sound whitelist mirrors

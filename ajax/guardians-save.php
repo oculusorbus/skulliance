@@ -40,8 +40,13 @@ if ($action === 'save') {
 if ($action === 'defeat') {
 	// played seconds from the client -- displayed only, and clamped server-side
 	// against the real elapsed time inside guardiansRecordDefeat().
+	// carbon + breacher_id are passed in because the payout happens INSIDE
+	// guardiansRecordDefeat -- it is the function that already has the elapsed
+	// time the amount is bounded against, and it must not pay out for a claim
+	// it then rejects.
 	$result = guardiansRecordDefeat($conn, $uid, intval($_POST['wave'] ?? 0), intval($_POST['lost'] ?? 0),
-	                                intval($_POST['secs'] ?? 0));
+	                                intval($_POST['secs'] ?? 0), intval($_POST['carbon'] ?? 0),
+	                                (string)($_POST['breacher_id'] ?? ''));
 	/*
 	 * Who broke the wall, for the Discord post. Sanitised HARD before it goes
 	 * anywhere near a message: the id becomes digits only and the name is
