@@ -594,6 +594,7 @@ $rg_want = array(
 	'guardiansoftherealm'  => 'Guardians of the Realm',
 	'standyourground'      => 'Stand Your Ground',
 	'mechanicalpulse'      => 'Mechanical Pulse',
+	'frontlineassault'     => 'Frontline Assault',
 );
 $rg_named = array();
 foreach ((array)glob(__DIR__ . '/audio/tracks/*.[mM][pP]3') as $rg_f) {

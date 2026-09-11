@@ -1609,9 +1609,10 @@ What a doc page will have to get right, because none of it is guessable:
   and the reserve both need it; the Tower bucket deliberately does not, because
   the best soldiers should man the wall.
 - **Music: $rg_want's declaration order IS the picker order, and entry one is
-  the default track.** Three tracks as of 2026-09-10: Guardians of the Realm,
-  Stand Your Ground, Mechanical Pulse, all committed under `audio/tracks/`
-  alongside Crypt Crawl's six (unlike images, audio does live in the repo).
+  the default track.** Four tracks as of 2026-09-10: Guardians of the Realm,
+  Stand Your Ground, Mechanical Pulse, Frontline Assault, all committed under
+  `audio/tracks/` alongside Crypt Crawl's six (unlike images, audio DOES live in
+  the repo -- both new tracks arrived untracked and would never have deployed).
   Files are DISCOVERED by glob + a letters-only substring match, not hardcoded,
   because the filenames vary in spacing and capitalisation; anything unmatched
   and not Crypt Crawl's still shows up labelled by its filename rather than
@@ -1619,6 +1620,8 @@ What a doc page will have to get right, because none of it is guessable:
   by FILENAME, so `$rg_want`'s own order was silently ignored and adding a file
   named early in the alphabet would have changed which music a player hears
   first. Matches are now keyed by want-key and emitted by walking `$rg_want`.
+  **Frontline Assault is the proof that mattered**: F sorts before G, so under
+  the old code it would have become track one and replaced the default music.
   URLs `rawurlencode()` the FILENAME ONLY -- the directory separator must
   survive, the spaces must not.
 - Naming trap, verified live: icons use dashes and sounds omit separators -
