@@ -1670,6 +1670,16 @@ What a doc page will have to get right, because none of it is guessable:
   back to `icons/locations/tower.png` when they have none -- the field must not
   be empty or the embed renders with a hole. Was the Tower on every post, which
   made a channel of sieges a wall of identical icons.
+- **Drop Ship's real entry point is `dropship/dashboard.php`, never the bare
+  `dropship/` directory.** The directory serves `index.php`, which is a redirect,
+  not a page. It used to send everyone to the Skulliance login, so the launchpad
+  tile (which linked to `dropship/`) bounced already-signed-in players to a login
+  screen while the nav link (straight to dashboard.php) worked -- reported
+  2026-09-11. index.php now routes a visitor carrying ANY session cookie to
+  dashboard.php and only a cookieless one to the login. It deliberately does not
+  decide "logged in" itself: `dropship/db.php` owns the session restore,
+  including the SessionCookie fallback for Mobile Safari/PWA, and gates to
+  error.php. Anything new linking to Drop Ship should point at dashboard.php.
 - Naming trap, verified live: icons use dashes and sounds omit separators -
   `icons/machine-gun.png` and `audio/sounds/machinegun.mp3`. Deriving one from
   the other with a single rule silently 404s. The sound whitelist mirrors

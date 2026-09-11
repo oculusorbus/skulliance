@@ -74,7 +74,12 @@ $lp_sections = array(
 			array('skullswap.php',       '🔄', 'Skull Swap',      'Match 3 score chase'),
 			array('skullracer.php',      '🏁', 'Skull Racer',     'Pseudo-3D arcade racer'),
 			array('obscura.php',         '🔍', 'Obscura',         'Name the collection from a sliver'),
-			array('dropship/',           '🪖', 'Drop Ship',       'NFT battler'),
+			// dashboard.php, NOT the bare directory. `dropship/` serves index.php,
+			// which is an unconditional redirect to the Skulliance login -- so a
+			// player who was ALREADY logged in got bounced to a login page. The
+			// nav link in header.php has always pointed at dashboard.php, which is
+			// why that one worked and this one did not.
+			array('dropship/dashboard.php', '🪖', 'Drop Ship',    'NFT battler'),
 		),
 	),
 	'Collect' => array(
