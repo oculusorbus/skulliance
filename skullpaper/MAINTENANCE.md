@@ -1609,10 +1609,11 @@ What a doc page will have to get right, because none of it is guessable:
   and the reserve both need it; the Tower bucket deliberately does not, because
   the best soldiers should man the wall.
 - **Music: $rg_want's declaration order IS the picker order, and entry one is
-  the default track.** Four tracks as of 2026-09-10: Guardians of the Realm,
-  Stand Your Ground, Mechanical Pulse, Frontline Assault, all committed under
-  `audio/tracks/` alongside Crypt Crawl's six (unlike images, audio DOES live in
-  the repo -- both new tracks arrived untracked and would never have deployed).
+  the default track.** Five tracks as of 2026-09-10: Guardians of the Realm,
+  Stand Your Ground, Mechanical Pulse, Frontline Assault, War Machine Awakens,
+  all committed under `audio/tracks/` alongside Crypt Crawl's six (unlike
+  images, audio DOES live in the repo, and a newly dropped file arrives
+  untracked -- commit it WITH the code change or the picker gets a 404).
   Files are DISCOVERED by glob + a letters-only substring match, not hardcoded,
   because the filenames vary in spacing and capitalisation; anything unmatched
   and not Crypt Crawl's still shows up labelled by its filename rather than
