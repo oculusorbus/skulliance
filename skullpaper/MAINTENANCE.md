@@ -1625,6 +1625,20 @@ What a doc page will have to get right, because none of it is guessable:
   the old code it would have become track one and replaced the default music.
   URLs `rawurlencode()` the FILENAME ONLY -- the directory separator must
   survive, the spaces must not.
+- **Effects volume: one multiplier, `SFX_GAIN` (0.75), applied inside
+  `sfxPlay()`.** Reported 2026-09-10 as effects overpowering the music. The
+  per-sound volumes at the call sites (0.09 fire, 0.14/0.16 death, 0.20 wave
+  cue, 0.34 nuke) are a balance tuned BY EAR and must stay relative -- trim the
+  bank with the multiplier, never by rewriting those numbers one at a time.
+  Music is a separate channel (`musicVol`, own mute + slider) and must never be
+  scaled by it; the whole point is judging one against the other.
+  **The source files are NOT level matched**: measured mean volume runs from
+  `machinegun.mp3` at -5.0 dB to `fist.mp3` at -22.0 dB -- a 17 dB spread -- while
+  both play at gain 0.09. So perceived loudness depends on what the garrison is
+  holding, and a wall of machine guns is the loudest case in the game (which is
+  also the default kit on pre-populated raid soldiers). Fixing that properly
+  needs per-sample compensation, not a global trim. Measure with
+  `ffmpeg -i <f> -af volumedetect -f null -` before changing anything here.
 - Naming trap, verified live: icons use dashes and sounds omit separators -
   `icons/machine-gun.png` and `audio/sounds/machinegun.mp3`. Deriving one from
   the other with a single rule silently 404s. The sound whitelist mirrors

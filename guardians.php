@@ -2280,12 +2280,38 @@ $rg_theme_img = $rg_theme > 0
      is AUDIBLE before the counter is read. Cosmetic: never touches the sim. ---- */
   var UNARMED_SFX = ['fist','melee','tacticalkatana'];
   var sfxOn = true, sfxPool = {}, sfxCursor = 0;
+  /*
+   * ONE MULTIPLIER OVER THE WHOLE BANK -- effects were overpowering the music.
+   *
+   * Applied here at playback rather than by editing the eleven per-sound
+   * numbers at the call sites, and rather than re-mastering the mp3s. Those
+   * numbers are a balance tuned by ear -- machine-gun fire against a death cry
+   * against the wave cue -- and rewriting them by hand would lose that
+   * relationship the first time one got rounded differently. Scaling at the
+   * single point they all pass through keeps every sound in exactly the same
+   * place relative to the others and moves the bank as a unit, so this is one
+   * number to turn if it is still not right.
+   *
+   * EFFECTS ONLY. Music is a separate channel with its own mute and its own
+   * slider, precisely so the two can be judged against each other, and nothing
+   * here may touch it.
+   *
+   * Worth knowing if this gets revisited: the source files are NOT level
+   * matched -- measured mean volume runs from machinegun at -5.0 dB to fist at
+   * -22.0 dB, a 17 dB spread, while both play at gain 0.09. So how loud the
+   * wall sounds still depends on what the garrison is holding, and a wall of
+   * machine guns is the loudest case in the game. Fixing THAT means per-sample
+   * compensation, not a global trim like this one.
+   */
+  var SFX_GAIN = 0.75;
   function sfxLoad(name) {
     if (sfxPool[name]) return sfxPool[name];
     var pool = [];
     for (var i = 0; i < 3; i++) {
       var a = new Audio('audio/sounds/' + name + '.mp3');
-      a.preload = 'auto'; a.volume = 0.10; pool.push(a);
+      // Cosmetic -- sfxPlay() sets the real volume on every play. Scaled anyway
+      // so a preloaded element is never briefly louder than the bank.
+      a.preload = 'auto'; a.volume = 0.10 * SFX_GAIN; pool.push(a);
     }
     sfxPool[name] = { list: pool, i: 0 };
     return sfxPool[name];
@@ -2294,7 +2320,10 @@ $rg_theme_img = $rg_theme > 0
     if (!sfxOn) return;
     var p = sfxLoad(name), a = p.list[p.i];
     p.i = (p.i + 1) % p.list.length;
-    try { a.currentTime = 0; a.volume = vol === undefined ? 0.10 : vol; a.play().catch(function () {}); } catch (e) {}
+    // Clamped: volume outside 0..1 throws, and a future call site passing
+    // something bolder than 0.34 should quietly cap rather than kill the sound.
+    var v = Math.max(0, Math.min(1, (vol === undefined ? 0.10 : vol) * SFX_GAIN));
+    try { a.currentTime = 0; a.volume = v; a.play().catch(function () {}); } catch (e) {}
   }
   /*
    * THE SOUND IS THE GUARDIAN'S OWN WEAPON, and only fires when they do.
