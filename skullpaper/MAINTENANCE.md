@@ -93,14 +93,14 @@ records verified constants, and tracks what still needs to be written.
 - Gauntlets weekly LB: 25,000 CARBON (db.php:5264).
 - Boss Battles weekly LB: CLAW/CARBON split by damage (db.php:5139-5258).
 - Share on X (db.php `shareOnXUrl()` / `shareOnXButton()` + per-game `*ShareText()` builders,
-  defined just above `checkActivityLeaderboard()`): finish-screen share buttons on all 5 games.
+  defined just above `checkActivityLeaderboard()`): finish-screen share buttons on all 6 games.
   Uses X's PUBLIC Web Intent endpoint (`x.com/intent/post`) -- NOT the paid API. No developer
   account, no OAuth, no tokens, no per-post charge. If anyone later proposes "upgrading" this to
   the API, note that as of 2026 post creation costs $0.015, or **$0.20 if the post contains a
   link** -- a 13x surcharge this design avoids entirely.
   Imagery is free too: `url=` points at each game's PUBLIC page, which must carry BOTH `og:image`
   AND `twitter:card=summary_large_image` or X degrades to a small thumbnail. skullswap.php had
-  og:image but no twitter:card and was fixed here. Targets: cryptcrawlgame.php,
+  og:image but no twitter:card and was fixed here. Targets: guardiansgame.php, cryptcrawlgame.php,
   **monstrocity.php DOES NOT INCLUDE db.php.** It is standalone -- its own `session_start()`, no
   header.php, no db.php -- so NO helper defined in db.php can be called from it. Calling
   `guestSignupPrompt()` there shipped a fatal on an undefined function that truncated the page
@@ -112,9 +112,12 @@ records verified constants, and tracks what still needs to be written.
   monstrocity.php), skullswap.php. **These must stay outside skulliance.php's login gate** -- X
   would follow a redirect to error.php and the card would silently collapse to a bare link.
   Two implementations by necessity: PHP (`shareOnXButton`) for the server-rendered finish modals
-  in cryptcrawl-render.php and cryptconquest-render.php, and inline JS `updateShareLink()` for
-  the client-side ones (monstrocity.php, skullswap.php, racing/index.html) where the result isn't
-  known server-side. Both append @skulliance and budget 24 chars for the t.co-wrapped URL against
+  in cryptcrawl-render.php and cryptconquest-render.php, and inline JS for the client-side
+  ones (monstrocity.php, skullswap.php, racing/index.html, and guardians.php's `showDefeat()`)
+  where the result isn't known server-side. Realm Guardians shares WAVES HELD, not the wave
+  reached, because that is what its board ranks on -- the post and the leaderboard must not tell
+  different stories about the same run. Its mid-run nuke modal deliberately has NO share button;
+  only the defeat modal does. Both append @skulliance and budget 24 chars for the t.co-wrapped URL against
   the 280 limit. Verified by a harness (31 assertions) covering URL shape, every target page
   having the card tag AND no login gate, per-game text, the 280 budget, and button markup.
 - Drop Ship / Oculus Lounge boards (db.php `checkDropShipLeaderboard()` + `dropShipDbConnection()`):

@@ -1033,7 +1033,19 @@ $rg_theme_img = $rg_theme > 0
 			     a door in their face at the worst moment. Point at the door itself. -->
 			<a class="rg-defeat-board" href="index.php">Log in to play for the monthly board</a>
 			<?php endif; ?>
-			<button type="button" id="rg-defeat-ok">Again</button>
+			<div class="rg-defeat-actions">
+				<button type="button" id="rg-defeat-ok">Again</button>
+				<!-- SHARE ON X. The href here is a real fallback, not a placeholder:
+				     showDefeat() overwrites it with this run's numbers, but if that
+				     ever fails the link still goes somewhere useful rather than
+				     nowhere. Shown to guests too -- a guest run is not scored, but
+				     sharing it is the one thing they can still do that helps, and
+				     the target page works logged out.
+				     &#120143; is the entity, not a literal glyph, matching how every
+				     other icon in this file's markup is written. -->
+				<a id="rg-share-x" href="https://skulliance.io/staking/guardiansgame.php"
+				   target="_blank" rel="noopener">&#120143; Share</a>
+			</div>
 		</div>
 	</div>
 
@@ -1472,6 +1484,18 @@ $rg_theme_img = $rg_theme > 0
    secondary action here, playing again is the primary one. */
 .rg-defeat-board { display:block; margin:0 0 12px; font-size:.76rem; color:#00c8a0;
                    text-decoration:underline; }
+/* Flex with wrap rather than a margin between them: on a narrow phone the two
+   drop onto separate lines and stay centred, where inline-block plus
+   margin-left would leave the second one hanging off-centre. */
+.rg-defeat-actions { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+/* Quiet, like #rg-confirm-no: playing again is the primary action and should
+   stay the loud one. colour and text-decoration are stated rather than
+   inherited because the platform stylesheet styles bare <a> and would
+   otherwise underline this and repaint it mid-card. */
+#rg-share-x { display:inline-block; background:rgba(255,255,255,.14);
+              color:rgba(255,255,255,.85); border-radius:6px; padding:9px 16px;
+              font-size:.82rem; text-decoration:none; line-height:1.2; }
+#rg-share-x:hover { background:rgba(255,255,255,.22); color:#fff; text-decoration:none; }
 
 /* ---- PAUSED ---------------------------------------------------------------
    Unmistakable at a glance. Someone coming back to their phone after twenty
@@ -3163,8 +3187,51 @@ $rg_theme_img = $rg_theme > 0
     // S.tick does not advance while paused, so this is time actually played
     // rather than time the tab was open.
     var secs = Math.round(S.tick / 10), mins = Math.floor(secs / 60);
-    put('rg-defeat-time', mins > 0 ? mins + 'm ' + (secs % 60) + 's' : secs + 's');
+    var heldFor = mins > 0 ? mins + 'm ' + (secs % 60) + 's' : secs + 's';
+    put('rg-defeat-time', heldFor);
     put('rg-defeat-scored', '');
+    /*
+     * SHARE ON X, built here rather than through db.php's shareOnXButton()
+     * because the result only exists on the client -- the same reason Skull
+     * Swap, Monstrocity and the racer build theirs in JS. This is X's PUBLIC
+     * Web Intent endpoint, NOT the paid API: no developer account, no OAuth, no
+     * tokens, no per-post charge. (As of 2026 the API charges $0.015 a post, or
+     * $0.20 when it contains a link -- see MAINTENANCE.md before anyone
+     * "upgrades" this.)
+     *
+     * url= points at guardiansgame.php, the PUBLIC landing page, which carries
+     * og:image AND twitter:card=summary_large_image -- so X fetches it and
+     * renders the screenshot as a full-width card with nothing uploaded and no
+     * image generated per run. It must stay outside skulliance.php's login
+     * gate: X would follow the redirect to error.php and the card would
+     * silently collapse to a bare link.
+     *
+     * WAVES HELD leads the stats because that is what the board ranks on, and
+     * the wave it fell at is the headline because that is the story. @skulliance
+     * is tagged so the main account can repost -- the whole point is reach that
+     * isn't the official account talking to itself.
+     *
+     * No truncation, unlike shareOnXUrl(): every value is bounded (waves and
+     * losses run to four digits at the absolute worst), so even counting the
+     * t.co-wrapped URL as X's flat 24 and every emoji as 2, this lands near 170
+     * of the 280 limit.
+     *
+     * Emoji are literal glyphs here, unlike the &#...; entities this file uses
+     * in MARKUP -- an entity inside a JS string would post the characters
+     * "&#127993;" rather than a shield. The file is already UTF-8, which is why
+     * that is safe.
+     */
+    var share = document.getElementById('rg-share-x');
+    if (share) {
+      var body = 'The wall came down at wave ' + S.wave + ' in Realm Guardians '
+          + '🛡️'                             // shield
+        + '\n\n🌊 Waves Held: ' + held             // water wave
+        + '\n💀 Guardians Lost: ' + S.lostTotal     // skull
+        + '\n⏱️ Held For: ' + heldFor              // stopwatch
+        + '\n\n@skulliance';
+      share.href = 'https://x.com/intent/post?text=' + encodeURIComponent(body)
+        + '&url=' + encodeURIComponent('https://skulliance.io/staking/guardiansgame.php');
+    }
     d.hidden = false;
     var ok = document.getElementById('rg-defeat-ok');
     if (ok) ok.focus();
