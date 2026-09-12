@@ -597,7 +597,7 @@ var Render = {
         Render.polygon(ctx, lanex1 - l1/2, y1, lanex1 + l1/2, y1, lanex2 + l2/2, y2, lanex2 - l2/2, y2, color.lane);
     }
 
-    Render.fog(ctx, 0, y1, width, y2-y1, fog);
+    Render.fog(ctx, 0, y1, width, y2-y1, fog, COLORS_REALISTIC.FOG);
   },
 
   /*
@@ -699,10 +699,17 @@ var Render = {
 
   //---------------------------------------------------------------------------
 
-  fog: function(ctx, x, y, width, height, fog) {
+  fog: function(ctx, x, y, width, height, fog, color) {
     if (fog < 1) {
       ctx.globalAlpha = (1-fog)
-      ctx.fillStyle = COLORS.FOG;
+      /*
+       * Optional colour, defaulting to the retro palette. This used to read
+       * COLORS.FOG unconditionally, which meant the realistic palette's own FOG
+       * was never applied -- distant grass faded to the retro warm brown
+       * (#241a10) and then met a near-black treeline, leaving a hard step at the
+       * horizon. Reported from a screenshot.
+       */
+      ctx.fillStyle = color || COLORS.FOG;
       ctx.fillRect(x, y, width, height);
       ctx.globalAlpha = 1;
     }
@@ -779,7 +786,18 @@ var COLORS = {
 var COLORS_REALISTIC = {
   SKY:  '#8fa4b0',
   TREE: '#1e1a16',
-  FOG:  '#20211f',
+  /*
+   * MEASURED, not chosen: this is the average colour of the bottom edge of
+   * background-realistic/trees.png (#0a0907), which is what the fogged grass
+   * meets at the horizon. Anything lighter leaves a visible step where the
+   * terrain stops and the treeline starts -- at #20211f it was 3.6x brighter
+   * than the treeline base and the seam was obvious.
+   *
+   * If the tree art is re-cut, re-sample it:
+   *   ffmpeg -i trees.png -vf "crop=iw:ih*0.04:0:ih*0.96,scale=1:1" \
+   *          -f rawvideo -pix_fmt rgb24 -
+   */
+  FOG:  '#0b0a08',
   LIGHT:  { road: '#43413e', grass: '#272b1f', rumble: '#8e877b', lane: '#c8c2b2' },
   DARK:   { road: '#3f3d3a', grass: '#22261a', rumble: '#2b2a27'                  },
   START:  { road: 'white',   grass: 'white',   rumble: 'white'                    },
