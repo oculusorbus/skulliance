@@ -847,6 +847,7 @@
      * there is one definition of "how wide is this thing, really".
      */
     function spriteLayoutW(s) { return (s.dw || s.w); }
+    function spriteLayoutH(s) { return (s.dh || s.h); }
 
     /*
      * One parallax band. Realistic layers live in their own single-copy files and
@@ -890,7 +891,30 @@
       // called CARS. 800x1260 against the sheet's 200x315: an exact 4x with the
       // aspect ratio preserved to the decimal, so it drops in without the
       // silhouette drift the semi and truck have.
-      { key: 'COLUMN', file: 'sprites-realistic/column', dw: 200 }
+      { key: 'COLUMN', file: 'sprites-realistic/column', dw: 200 },
+      /*
+       * THE PLAYER, and this is a STOPGAP worth understanding.
+       *
+       * Only the straight-on view has been re-rendered. The left/right and uphill
+       * views are genuine re-draws -- measured, they differ from straight by 30%
+       * of their pixels, and the uphill set is a different canvas (80x45 vs
+       * 80x41) -- so they cannot be derived from it.
+       *
+       * Rather than let the car flicker between a realistic straight and pixel-art
+       * leans, every player key points at the straight render for now. The cost is
+       * the lean animation: the car no longer banks into corners. That is a real
+       * feel loss and it is temporary -- as each variant is drawn, give it its own
+       * file here and the animation comes back one pose at a time.
+       *
+       * Brake keys get the generated _brake file, whose tail lights were lit by
+       * the colour shift measured off the original pixel-art pair.
+       */
+      { key: ['PLAYER_STRAIGHT','PLAYER_LEFT','PLAYER_RIGHT',
+              'PLAYER_UPHILL_STRAIGHT','PLAYER_UPHILL_LEFT','PLAYER_UPHILL_RIGHT'],
+        file: 'sprites-realistic/player_straight', dw: 80 },
+      { key: ['PLAYER_STRAIGHT_BRAKE','PLAYER_LEFT_BRAKE','PLAYER_RIGHT_BRAKE',
+              'PLAYER_UPHILL_STRAIGHT_BRAKE','PLAYER_UPHILL_LEFT_BRAKE','PLAYER_UPHILL_RIGHT_BRAKE'],
+        file: 'sprites-realistic/player_straight_brake', dw: 80 }
     ];
 
     /*
@@ -1982,7 +2006,11 @@
       var n, car, carW, sprite, spriteW;
       var crashed       = false; // set true by either collision check below -- ends an active boost
       var playerSegment = findSegment(position+playerZ);
-      var playerW       = SPRITES.PLAYER_STRAIGHT.w * SPRITES.SCALE;
+      // Layout width, not source width. Same trap as the traffic cars: a realistic
+      // player sprite sets .w to the full 804px image, which would make the
+      // player's own collision box ~10x too wide. SPRITES.SCALE is unaffected --
+      // it is computed once at script load, before any override.
+      var playerW       = spriteLayoutW(SPRITES.PLAYER_STRAIGHT) * SPRITES.SCALE;
       var speedPercent  = speed/maxSpeed;
       var dx            = dt * 2 * speedPercent; // at top speed, should be able to cross from left to right (-1 to 1) in 1 second
       var startPosition = position;
@@ -2712,8 +2740,8 @@
           // uses internally, replicated here so the avatar decal and
           // fallback icon below can both find the sprite's own edges at
           // any distance/scale instead of a fixed pixel offset.
-          var ghostDestW = (SPRITES.PLAYER_STRAIGHT.w * spriteScale * width/2) * (SPRITES.SCALE * roadWidth);
-          var ghostDestH = (SPRITES.PLAYER_STRAIGHT.h * spriteScale * width/2) * (SPRITES.SCALE * roadWidth);
+          var ghostDestW = (spriteLayoutW(SPRITES.PLAYER_STRAIGHT) * spriteScale * width/2) * (SPRITES.SCALE * roadWidth);
+          var ghostDestH = (spriteLayoutH(SPRITES.PLAYER_STRAIGHT) * spriteScale * width/2) * (SPRITES.SCALE * roadWidth);
           var ghostTopY  = spriteY - ghostDestH;
           var ghostLeftX = spriteX - ghostDestW/2;
 
@@ -3119,8 +3147,12 @@
          */
         if (REALISTIC_PREVIEW) {
           REALISTIC_SPRITES.forEach(function (c, i) {
-            var img = images[2 + i], e = SPRITES[c.key];
-            if (!img || !img.width || !e) return;        // missing art: keep the sheet version
+            var img = images[2 + i];
+            if (!img || !img.width) return;              // missing art: keep the sheet version
+            // One file can stand in for several poses -- see the player entries.
+            (Array.isArray(c.key) ? c.key : [c.key]).forEach(function (k) {
+            var e = SPRITES[k];
+            if (!e) return;
             /*
              * MUTATED IN PLACE, not reassigned -- and that is load-bearing.
              * common.js:666 builds SPRITES.CARS from these objects by REFERENCE
@@ -3135,6 +3167,7 @@
             e.w = img.width; e.h = img.height;
             e.dw = c.dw;
             e.dh = Math.round(c.dw * img.height / img.width);
+            });
           });
           /*
            * The parallax bands follow the sprites in the images array, so their
