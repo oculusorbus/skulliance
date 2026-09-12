@@ -218,6 +218,33 @@
     }
     #mute:hover { opacity: 1; }
     #mute.on { background-position: -32px 0px; }
+    /* Graphics toggle. A text pill rather than a sprite: images on this site
+       deploy by FTP outside the repo, so a new icon would be a second thing to
+       ship and a 404 risk. Sized to 32px to sit level with #mute. */
+    #gfx {
+      position: absolute;
+      top: 8px;
+      right: 50px;
+      z-index: 2;
+      height: 32px;
+      line-height: 30px;
+      padding: 0 9px;
+      box-sizing: border-box;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 12px;
+      font-weight: bold;
+      letter-spacing: 0.06em;
+      color: rgba(255,255,255,0.85);
+      background: rgba(0,0,0,0.45);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 6px;
+      cursor: pointer;
+      opacity: 0.85;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    #gfx:hover { opacity: 1; }
+    #gfx.on { color: #00c8a0; border-color: #00c8a0; }
     #finish-overlay {
       display: none;
       position: absolute;
@@ -425,6 +452,9 @@
          unreachable, can't tap through it. Move it to the opposite corner
          on mobile only. */
       #mute { left: 10px; right: auto; }
+      /* Follows #mute across, and sits to its right so neither lands under the
+         site's hamburger menu. */
+      #gfx  { left: 50px; right: auto; }
       .desktop-hint { display: none; }
       .mobile-hint { display: inline; }
       /* Overlaid on the canvas (like on desktop) it covered the right lane
@@ -720,6 +750,10 @@
              ("below the HUD row + mute icon"), just not actually the case
              until now. -->
         <span id="mute"></span>
+        <!-- Switches the whole realistic set: sprites, road, parallax bands.
+             Needs a reload, because images load once at init and
+             REALISTIC_PREVIEW is read before Game.run -- see its handler. -->
+        <span id="gfx" title="Switch between retro and realistic graphics">HD</span>
         <!-- Lives here in markup (before the canvas) so on mobile it can
              become a plain in-flow block above the canvas via CSS alone --
              on desktop it's still just an absolute overlay in the corner,
@@ -3270,6 +3304,32 @@
         Dom.on('mute', 'click', function() {
           engineMuted = (Dom.storage.muted === "true");
         });
+
+        /*
+         * GRAPHICS TOGGLE.
+         *
+         * Reloads rather than swapping live, and that is not laziness: the image
+         * set is chosen in Game.run's `images:` list and fetched once, the
+         * SPRITES overrides are applied in ready(), and PALETTE/ROAD_RENDERER/
+         * fieldOfView/rumbleLength are all resolved at parse time from
+         * REALISTIC_PREVIEW. Swapping any of that mid-race would mean re-running
+         * reset() with new art while the player is moving. A reload is one frame
+         * of black and everything downstream stays simple.
+         *
+         * The URL parameter is STRIPPED on toggle. REALISTIC_PREVIEW reads the
+         * url first and storage second, so leaving ?realistic=1 in place would
+         * out-vote the preference the player just set and the button would look
+         * broken.
+         */
+        Dom.on('gfx', 'click', function() {
+          try { Dom.storage.realistic = REALISTIC_PREVIEW ? 'false' : 'true'; } catch (e) {}
+          var url = window.location.href
+                      .replace(/([?&])realistic=[01]/, '$1')
+                      .replace(/[?&]+$/, '')
+                      .replace(/([?&])&+/, '$1');
+          window.location.href = url;
+        });
+        Dom.toggleClassName('gfx', 'on', REALISTIC_PREVIEW);
         // Same deferred-start reasoning as Game.playMusic() in common.js --
         // starting audio here directly gets silently blocked by the
         // browser's autoplay policy since no real gesture has happened
