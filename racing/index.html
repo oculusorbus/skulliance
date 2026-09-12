@@ -848,6 +848,18 @@
      */
     function spriteLayoutW(s) { return (s.dw || s.w); }
 
+    /*
+     * The realistic road rides the SAME flag as the sprites. PALETTE and
+     * ROAD_RENDERER are resolved once here so the render loop and resetRoad()
+     * never branch -- there is exactly one place that knows which look is on.
+     *
+     * rumbleLength goes 3 -> 6 in realistic mode: the curb stripe alternates
+     * every N segments, and at 3 it flickers fast enough to read as dazzle
+     * rather than as painted kerbing.
+     */
+    var PALETTE        = REALISTIC_PREVIEW ? COLORS_REALISTIC : COLORS;
+    var ROAD_RENDERER  = REALISTIC_PREVIEW ? Render.segmentRealistic : Render.segment;
+
     var REALISTIC_CARS = [
       { key: 'CAR01', file: 'sprites-realistic/car01', dw: 80 },
       { key: 'CAR02', file: 'sprites-realistic/car02', dw: 80 },
@@ -881,7 +893,7 @@
     var resolution     = null;                    // scaling factor to provide resolution independence (computed)
     var roadWidth      = 2000;                    // actually half the roads width, easier math if the road spans from -roadWidth to +roadWidth
     var segmentLength  = 200;                     // length of a single segment
-    var rumbleLength   = 3;                       // number of segments per red/white rumble strip
+    var rumbleLength   = REALISTIC_PREVIEW ? 6 : 3; // number of segments per red/white rumble strip
     var trackLength    = null;                    // z length of entire track (computed)
     var lanes          = 3;                       // number of lanes
     var fieldOfView    = 100;                     // angle (degrees) for field of view
@@ -1771,7 +1783,7 @@
 
       // Start/finish marker -- a short tick perpendicular to the track's
       // direction at the start point, same idea as the white line across
-      // the actual road (see COLORS.START in resetRoad()).
+      // the actual road (see PALETTE.START in resetRoad()).
       var p0 = minimapPoints[0], p1 = minimapPoints[1];
       var tx = p1.mx - p0.mx, ty = p1.my - p0.my;
       var tlen = Math.sqrt(tx*tx + ty*ty) || 1;
@@ -2547,7 +2559,7 @@
             (segment.p2.screen.y >= maxy))                  // clip by (already rendered) hill
           continue;
 
-        Render.segment(ctx, width, lanes,
+        ROAD_RENDERER(ctx, width, lanes,
                        segment.p1.screen.x,
                        segment.p1.screen.y,
                        segment.p1.screen.w,
@@ -2737,7 +2749,7 @@
           curve: curve,
         sprites: [],
            cars: [],
-          color: Math.floor(n/rumbleLength)%2 ? COLORS.DARK : COLORS.LIGHT
+          color: Math.floor(n/rumbleLength)%2 ? PALETTE.DARK : PALETTE.LIGHT
       });
     }
 
@@ -2858,10 +2870,10 @@
       resetBoostPads();
       resetJumpRamps();
 
-      segments[findSegment(playerZ).index + 2].color = COLORS.START;
-      segments[findSegment(playerZ).index + 3].color = COLORS.START;
+      segments[findSegment(playerZ).index + 2].color = PALETTE.START;
+      segments[findSegment(playerZ).index + 3].color = PALETTE.START;
       for(var n = 0 ; n < rumbleLength ; n++)
-        segments[segments.length-1-n].color = COLORS.FINISH;
+        segments[segments.length-1-n].color = PALETTE.FINISH;
 
       trackLength = segments.length * segmentLength;
     }

@@ -468,6 +468,83 @@ var Render = {
 
   //---------------------------------------------------------------------------
 
+  /*
+   * REALISTIC ROAD. A drop-in sibling of segment() above -- same arguments, same
+   * one call site in index.html -- so the retro renderer stays byte-identical and
+   * cannot regress when this is switched on.
+   *
+   * Two changes from flat shading:
+   *
+   * 1. VERTICAL GRADIENTS instead of solid fills. A flat quad per band is what
+   *    makes the surface read as painted cardboard; grading each band from
+   *    slightly darker at its far edge to slightly lighter at its near edge
+   *    gives the asphalt a sheen and, because adjacent bands meet at matching
+   *    tones, hides the seam between them.
+   *
+   * 2. The LIP on the rumble strip. Flat curbs look like coloured tape; a curb
+   *    has a top face and a shadowed side. Drawing the outer half a shade darker
+   *    is two extra polygons and reads as depth.
+   *
+   * Deliberately no texture sampling here: that is a per-scanline drawImage per
+   * band, ~768 calls a frame, and it needs its own performance decision. This is
+   * the cheap 80% -- pure canvas, no new assets, no measurable cost.
+   */
+  segmentRealistic: function(ctx, width, lanes, x1, y1, w1, x2, y2, w2, fog, color) {
+
+    var r1 = Render.rumbleWidth(w1, lanes),
+        r2 = Render.rumbleWidth(w2, lanes),
+        l1 = Render.laneMarkerWidth(w1, lanes),
+        l2 = Render.laneMarkerWidth(w2, lanes),
+        lanew1, lanew2, lanex1, lanex2, lane;
+
+    // y2 is the FAR edge, y1 the near one -- the band is drawn upward.
+    var grassG = ctx.createLinearGradient(0, y2, 0, y1);
+    grassG.addColorStop(0, Render.shade(color.grass, -0.14));
+    grassG.addColorStop(1, Render.shade(color.grass,  0.06));
+    ctx.fillStyle = grassG;
+    ctx.fillRect(0, y2, width, y1 - y2);
+
+    var roadG = ctx.createLinearGradient(0, y2, 0, y1);
+    roadG.addColorStop(0, Render.shade(color.road, -0.16));
+    roadG.addColorStop(1, Render.shade(color.road,  0.08));
+
+    // Curb: outer half shaded down so it reads as a raised edge, not tape.
+    Render.polygon(ctx, x1-w1-r1, y1, x1-w1, y1, x2-w2, y2, x2-w2-r2, y2, Render.shade(color.rumble, -0.28));
+    Render.polygon(ctx, x1+w1+r1, y1, x1+w1, y1, x2+w2, y2, x2+w2+r2, y2, Render.shade(color.rumble, -0.28));
+    Render.polygon(ctx, x1-w1-r1/2, y1, x1-w1, y1, x2-w2, y2, x2-w2-r2/2, y2, color.rumble);
+    Render.polygon(ctx, x1+w1+r1/2, y1, x1+w1, y1, x2+w2, y2, x2+w2+r2/2, y2, color.rumble);
+
+    Render.polygon(ctx, x1-w1, y1, x1+w1, y1, x2+w2, y2, x2-w2, y2, roadG);
+
+    if (color.lane) {
+      lanew1 = w1*2/lanes;
+      lanew2 = w2*2/lanes;
+      lanex1 = x1 - w1 + lanew1;
+      lanex2 = x2 - w2 + lanew2;
+      for(lane = 1 ; lane < lanes ; lanex1 += lanew1, lanex2 += lanew2, lane++)
+        Render.polygon(ctx, lanex1 - l1/2, y1, lanex1 + l1/2, y1, lanex2 + l2/2, y2, lanex2 - l2/2, y2, color.lane);
+    }
+
+    Render.fog(ctx, 0, y1, width, y2-y1, fog);
+  },
+
+  /*
+   * Lighten (amt > 0) or darken (amt < 0) a #rrggbb by a fraction. Named colours
+   * are returned untouched -- COLORS_REALISTIC.START/FINISH are 'white'/'black'
+   * and must pass through, and a start line that silently turned grey would be a
+   * confusing thing to debug.
+   */
+  shade: function(hex, amt) {
+    if (typeof hex !== 'string' || hex.charAt(0) !== '#' || hex.length !== 7) return hex;
+    var n = parseInt(hex.slice(1), 16);
+    var r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    function adj(c) { return Math.max(0, Math.min(255, Math.round(amt < 0 ? c * (1 + amt) : c + (255 - c) * amt))); }
+    r = adj(r); g = adj(g); b = adj(b);
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+  },
+
+  //---------------------------------------------------------------------------
+
   sprite: function(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY, offsetX, offsetY, clipY, flip) {
 
     /*
@@ -600,6 +677,33 @@ var COLORS = {
   DARK:   { road: '#453825', grass: '#170f06', rumble: '#9c8a68'                   },
   START:  { road: 'white',   grass: 'white',   rumble: 'white'                     },
   FINISH: { road: 'black',   grass: 'black',   rumble: 'black'                     }
+};
+
+/*
+ * REALISTIC PALETTE. Paired with Render.segmentRealistic below and selected by
+ * index.html's REALISTIC_PREVIEW flag; COLORS above is untouched.
+ *
+ * THE RETRO LOOK IS THE ALTERNATION, not the resolution. Consecutive segments
+ * flip between LIGHT and DARK, and for road and grass that banding is the single
+ * loudest "16-bit" signal in the scene -- grass especially, jumping #201808 to
+ * #170f06. So here road and grass are IDENTICAL in both states: the surface
+ * stops striping and reads as continuous.
+ *
+ * Rumble and lane markers still alternate, and must -- that is a painted curb
+ * and a dashed centre line, which stripe in reality too. Killing those as well
+ * would not look realistic, it would look like the road had no markings.
+ *
+ * Desaturated relative to COLORS because the originals are quite warm/saturated
+ * for asphalt; real tarmac sits near neutral grey-brown.
+ */
+var COLORS_REALISTIC = {
+  SKY:  '#8fa4b0',
+  TREE: '#1e1a16',
+  FOG:  '#20211f',
+  LIGHT:  { road: '#3f3d3a', grass: '#22261a', rumble: '#8e877b', lane: '#c8c2b2' },
+  DARK:   { road: '#3f3d3a', grass: '#22261a', rumble: '#2b2a27'                  },
+  START:  { road: 'white',   grass: 'white',   rumble: 'white'                    },
+  FINISH: { road: 'black',   grass: 'black',   rumble: 'black'                    }
 };
 
 var BACKGROUND = {
