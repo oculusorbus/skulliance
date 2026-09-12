@@ -836,11 +836,30 @@
         return Dom.storage.realistic === 'true';
       } catch (e) { return false; }
     })();
+    /*
+     * COLLISION AND DRAFTING MEASURE THE FOOTPRINT, NOT THE SOURCE PIXELS.
+     *
+     * `sprite.w` is the region sampled out of the sheet, which for a realistic
+     * override is the full high-res image (841px, not 80px). Feeding that to
+     * Util.overlap() made the collision box ~10.5x too wide -- you would crash
+     * into a car from across the road, and drafting would engage from absurd
+     * distances. Every gameplay read of a sprite's width goes through here so
+     * there is one definition of "how wide is this thing, really".
+     */
+    function spriteLayoutW(s) { return (s.dw || s.w); }
+
     var REALISTIC_CARS = [
       { key: 'CAR01', file: 'sprites-realistic/car01', dw: 80 },
       { key: 'CAR02', file: 'sprites-realistic/car02', dw: 80 },
       { key: 'CAR03', file: 'sprites-realistic/car03', dw: 88 },
-      { key: 'CAR04', file: 'sprites-realistic/car04', dw: 80 }
+      { key: 'CAR04', file: 'sprites-realistic/car04', dw: 80 },
+      // Also reworked. Their silhouettes changed a LOT more than the cars did
+      // -- semi 0.847 -> 0.615 and truck 1.282 -> 0.820 aspect -- so matching
+      // width means they stand noticeably taller than the sprites they replace
+      // (semi 144 -> 198, truck 78 -> 122). Width is matched rather than height
+      // because width is the road footprint, and it is what collision reads.
+      { key: 'SEMI',  file: 'sprites-realistic/semi',  dw: 122 },
+      { key: 'TRUCK', file: 'sprites-realistic/truck', dw: 100 }
     ];
 
     var width          = 1024;                    // logical canvas width
@@ -1986,7 +2005,7 @@
 
         for(n = 0 ; n < playerSegment.sprites.length ; n++) {
           sprite  = playerSegment.sprites[n];
-          spriteW = sprite.source.w * SPRITES.SCALE;
+          spriteW = spriteLayoutW(sprite.source) * SPRITES.SCALE;
           if (Util.overlap(playerX, playerW, sprite.offset + spriteW/2 * (sprite.offset > 0 ? 1 : -1), spriteW)) {
             speed = maxSpeed/5;
             position = Util.increase(playerSegment.p1.world.z, -playerZ, trackLength); // stop in front of sprite (at front of segment)
@@ -2010,7 +2029,7 @@
       if (!jumping) {
         for(n = 0 ; n < playerSegment.cars.length ; n++) {
           car  = playerSegment.cars[n];
-          carW = car.sprite.w * SPRITES.SCALE;
+          carW = spriteLayoutW(car.sprite) * SPRITES.SCALE;
           if (speed > car.speed) {
             if (Util.overlap(playerX, playerW, car.offset, carW, 0.8)) {
               // The player's recoil is UNCHANGED by all this: it reads the
@@ -2072,7 +2091,7 @@
         var draftSeg = segments[(playerSegment.index + dk) % segments.length];
         for (var dn = 0 ; dn < draftSeg.cars.length ; dn++) {
           var draftCar = draftSeg.cars[dn];
-          if (Util.overlap(playerX, playerW, draftCar.offset, draftCar.sprite.w * SPRITES.SCALE, DRAFT_LANE_OVERLAP)) {
+          if (Util.overlap(playerX, playerW, draftCar.offset, spriteLayoutW(draftCar.sprite) * SPRITES.SCALE, DRAFT_LANE_OVERLAP)) {
             draftedThisFrame = true;
             break;
           }
@@ -2387,7 +2406,10 @@
         return 0;
 
 
-      var i, j, dir, segment, otherCar, otherCarW, lookahead = 20, carW = car.sprite.w * SPRITES.SCALE;
+      // Layout width, not source width -- the traffic AI steers around other
+      // cars with this, so a realistic override reading 841px instead of 80px
+      // made every car swerve to avoid vehicles a third of the road away.
+      var i, j, dir, segment, otherCar, otherCarW, lookahead = 20, carW = spriteLayoutW(car.sprite) * SPRITES.SCALE;
 
       // optimization, dont bother steering around other cars when 'out of sight' of the player
       if ((carSegment.index - playerSegment.index) > drawDistance)
@@ -2408,7 +2430,7 @@
 
         for(j = 0 ; j < segment.cars.length ; j++) {
           otherCar  = segment.cars[j];
-          otherCarW = otherCar.sprite.w * SPRITES.SCALE;
+          otherCarW = spriteLayoutW(otherCar.sprite) * SPRITES.SCALE;
           if ((car.speed > otherCar.speed) && Util.overlap(car.offset, carW, otherCar.offset, otherCarW, 1.2)) {
             if (otherCar.offset > 0.5)
               dir = -1;
