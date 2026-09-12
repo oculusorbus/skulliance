@@ -849,6 +849,19 @@
     function spriteLayoutW(s) { return (s.dw || s.w); }
 
     /*
+     * One parallax band. Realistic layers live in their own single-copy files and
+     * need backgroundSingle(); the packed sheet needs background() with its
+     * two-copies-side-by-side coordinates. Resolved per band rather than per
+     * frame-flag so a half-finished set works -- realistic hills over a retro sky
+     * is a perfectly testable state.
+     */
+    function drawBgLayer(ctx, which, rotation, offset) {
+      var img = REALISTIC_BG[which];
+      if (img) Render.backgroundSingle(ctx, img, width, height, rotation, offset);
+      else     Render.background(ctx, background, width, height, BACKGROUND[which], rotation, offset);
+    }
+
+    /*
      * The realistic road rides the SAME flag as the sprites. PALETTE and
      * ROAD_RENDERER are resolved once here so the render loop and resetRoad()
      * never branch -- there is exactly one place that knows which look is on.
@@ -860,7 +873,7 @@
     var PALETTE        = REALISTIC_PREVIEW ? COLORS_REALISTIC : COLORS;
     var ROAD_RENDERER  = REALISTIC_PREVIEW ? Render.segmentRealistic : Render.segment;
 
-    var REALISTIC_CARS = [
+    var REALISTIC_SPRITES = [
       { key: 'CAR01', file: 'sprites-realistic/car01', dw: 80 },
       { key: 'CAR02', file: 'sprites-realistic/car02', dw: 80 },
       { key: 'CAR03', file: 'sprites-realistic/car03', dw: 88 },
@@ -871,8 +884,23 @@
       // (semi 144 -> 198, truck 78 -> 122). Width is matched rather than height
       // because width is the road footprint, and it is what collision reads.
       { key: 'SEMI',  file: 'sprites-realistic/semi',  dw: 122 },
-      { key: 'TRUCK', file: 'sprites-realistic/truck', dw: 100 }
+      { key: 'TRUCK', file: 'sprites-realistic/truck', dw: 100 },
+      // Roadside prop, not a vehicle -- which is why this list is no longer
+      // called CARS. 800x1260 against the sheet's 200x315: an exact 4x with the
+      // aspect ratio preserved to the decimal, so it drops in without the
+      // silhouette drift the semi and truck have.
+      { key: 'COLUMN', file: 'sprites-realistic/column', dw: 200 }
     ];
+
+    /*
+     * The three parallax bands, each its own file rather than a band in
+     * background.png. Keyed by the BACKGROUND.* name they stand in for, so a
+     * missing entry simply falls through to the packed sheet.
+     */
+    var REALISTIC_BG_FILES = ['background-realistic/sky',
+                              'background-realistic/hills',
+                              'background-realistic/trees'];
+    var REALISTIC_BG = {};   // filled in ready(), keyed SKY / HILLS / TREES
 
     var width          = 1024;                    // logical canvas width
     var height         = 768;                     // logical canvas height
@@ -2535,9 +2563,9 @@
       ctx.save();
       ctx.translate(crashShakeX, crashShakeY);
 
-      Render.background(ctx, background, width, height, BACKGROUND.SKY,   skyOffset,  resolution * skySpeed  * playerY);
-      Render.background(ctx, background, width, height, BACKGROUND.HILLS, hillOffset, resolution * hillSpeed * playerY);
-      Render.background(ctx, background, width, height, BACKGROUND.TREES, treeOffset, resolution * treeSpeed * playerY);
+      drawBgLayer(ctx, 'SKY',   skyOffset,  resolution * skySpeed  * playerY);
+      drawBgLayer(ctx, 'HILLS', hillOffset, resolution * hillSpeed * playerY);
+      drawBgLayer(ctx, 'TREES', treeOffset, resolution * treeSpeed * playerY);
 
       var n, i, gi, segment, car, sprite, spriteScale, spriteX, spriteY, ghost;
 
@@ -3026,7 +3054,9 @@
     Game.run({
       canvas: canvas, render: render, update: update, stats: null, step: step,
       images: REALISTIC_PREVIEW
-               ? ["background", "sprites"].concat(REALISTIC_CARS.map(function (c) { return c.file; }))
+               ? ["background", "sprites"]
+                   .concat(REALISTIC_SPRITES.map(function (c) { return c.file; }))
+                   .concat(REALISTIC_BG_FILES)
                : ["background", "sprites"],
       keys: [
         { keys: [KEY.LEFT,  KEY.A], mode: 'down', action: function() { keyLeft   = true;  } },
@@ -3060,7 +3090,7 @@
          * these images is even requested.
          */
         if (REALISTIC_PREVIEW) {
-          REALISTIC_CARS.forEach(function (c, i) {
+          REALISTIC_SPRITES.forEach(function (c, i) {
             var img = images[2 + i], e = SPRITES[c.key];
             if (!img || !img.width || !e) return;        // missing art: keep the sheet version
             /*
@@ -3077,6 +3107,17 @@
             e.w = img.width; e.h = img.height;
             e.dw = c.dw;
             e.dh = Math.round(c.dw * img.height / img.width);
+          });
+          /*
+           * The parallax bands follow the sprites in the images array, so their
+           * indices start after them. Each is stored under the BACKGROUND.* name
+           * it replaces; anything that failed to load is simply absent and
+           * drawBgLayer() falls back to the packed sheet for that band alone.
+           */
+          var bgBase = 2 + REALISTIC_SPRITES.length;
+          ['SKY','HILLS','TREES'].forEach(function (k, i) {
+            var img = images[bgBase + i];
+            if (img && img.width) REALISTIC_BG[k] = img;
           });
         }
         reset();

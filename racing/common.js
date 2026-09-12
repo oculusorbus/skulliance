@@ -469,6 +469,49 @@ var Render = {
   //---------------------------------------------------------------------------
 
   /*
+   * REALISTIC BACKGROUND. Sibling of background() above, for a layer that lives
+   * in its OWN file as a single copy rather than as a band in the packed sheet.
+   *
+   * background() takes `imageW = layer.w/2` because each band in background.png
+   * holds the panorama TWICE side by side -- the duplicate exists purely so a
+   * scroll window can straddle the seam without a second lookup. Point that
+   * math at a single-copy file and you get two bugs at once: it shows only half
+   * the image (zoomed 2x), and the wrap draw reads past the right edge into
+   * nothing.
+   *
+   * Here the whole file is one copy, so the full width spans the canvas and the
+   * wrap is an explicit second draw from x=0. No sheet, no coordinates, no
+   * duplicated art to keep seamless in two places -- the file just has to tile
+   * against ITSELF left-to-right, which is the constraint the art brief already
+   * states.
+   *
+   * destH is the canvas height, exactly as background() does it, so a layer is
+   * stretched vertically to fill regardless of its source height. That is why
+   * the realistic bands can be 750-784px tall against the sheet's 480 and still
+   * line up.
+   */
+  backgroundSingle: function(ctx, img, width, height, rotation, offset) {
+
+    if (!img || !img.width) return;
+
+    rotation = rotation || 0;
+    offset   = offset   || 0;
+
+    var iw = img.width, ih = img.height;
+    // rotation can arrive negative or >1; fold it into [0,1) before scaling.
+    var frac = rotation - Math.floor(rotation);
+    var sx   = Math.floor(iw * frac);
+    var sw   = iw - sx;                        // pixels left before the right edge
+    var dw   = Math.floor(width * (sw / iw));
+
+    ctx.drawImage(img, sx, 0, sw, ih, 0, offset, dw, height);
+    if (sw < iw)
+      ctx.drawImage(img, 0, 0, iw - sw, ih, dw - 1, offset, width - dw, height);
+  },
+
+  //---------------------------------------------------------------------------
+
+  /*
    * REALISTIC ROAD. A drop-in sibling of segment() above -- same arguments, same
    * one call site in index.html -- so the retro renderer stays byte-identical and
    * cannot regress when this is switched on.
