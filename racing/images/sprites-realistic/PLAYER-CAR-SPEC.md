@@ -70,3 +70,24 @@ the stopgap entries in `REALISTIC_SPRITES` so the lean animation comes back.
 
 Until then every player pose points at the straight render, so the car looks
 right but does not bank into corners.
+
+## Which pose is which — use the roof-vs-body offset
+
+Getting this backwards is easy and I did. Silhouette overlap against the
+pixel-art originals was NOT reliable: it scored 0.759 vs 0.746, a 0.013 margin,
+and it picked wrong.
+
+The signal that actually works, measured on the realistic art: the horizontal
+centre of the **greenhouse** (top 35% of the car) relative to the centre of the
+**widest body row**.
+
+```
+  correct player_left    roof-body  -0.087   (roof sits LEFT of the body)
+  correct player_right   roof-body  +0.087
+```
+
+Magnitude ~0.087 and unambiguous. Do not calibrate this from the 80x41
+originals — there the same measure reads ±0.012, which is a few pixels and
+indistinguishable from noise, and that is why it misled.
+
+Apply the same test to the uphill poses when they arrive.
