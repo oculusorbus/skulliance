@@ -580,11 +580,24 @@ var Render = {
     ctx.fillStyle = color.grass;
     ctx.fillRect(0, y2, width, y1 - y2);
 
-    // Kerb: outer half shaded down so it reads as a raised edge, not tape.
-    Render.polygon(ctx, x1-w1-r1, y1, x1-w1, y1, x2-w2, y2, x2-w2-r2, y2, Render.shade(color.rumble, -0.28));
-    Render.polygon(ctx, x1+w1+r1, y1, x1+w1, y1, x2+w2, y2, x2+w2+r2, y2, Render.shade(color.rumble, -0.28));
-    Render.polygon(ctx, x1-w1-r1/2, y1, x1-w1, y1, x2-w2, y2, x2-w2-r2/2, y2, color.rumble);
-    Render.polygon(ctx, x1+w1+r1/2, y1, x1+w1, y1, x2+w2, y2, x2+w2+r2/2, y2, color.rumble);
+    /*
+     * SHOULDER, then a painted EDGE LINE -- not a striped kerb.
+     *
+     * The full rumble width is laid down as one solid shoulder tone (it does not
+     * alternate, see the palette), and a thin continuous line is painted on its
+     * inner boundary where the shoulder meets the road. That is what a highway
+     * edge looks like, and it keeps the road's limit legible, which matters
+     * because leaving it costs speed.
+     *
+     * The line is laneMarkerWidth, the same width as the centre dashes, so both
+     * markings read as the same paint at the same distance.
+     */
+    Render.polygon(ctx, x1-w1-r1, y1, x1-w1, y1, x2-w2, y2, x2-w2-r2, y2, color.rumble);
+    Render.polygon(ctx, x1+w1+r1, y1, x1+w1, y1, x2+w2, y2, x2+w2+r2, y2, color.rumble);
+    if (color.edge) {
+      Render.polygon(ctx, x1-w1-l1, y1, x1-w1, y1, x2-w2, y2, x2-w2-l2, y2, color.edge);
+      Render.polygon(ctx, x1+w1+l1, y1, x1+w1, y1, x2+w2, y2, x2+w2+l2, y2, color.edge);
+    }
 
     Render.polygon(ctx, x1-w1, y1, x1+w1, y1, x2+w2, y2, x2-w2, y2, color.road);
 
@@ -777,8 +790,16 @@ var COLORS = {
  * Quiet enough to stop reading as 16-bit striping, loud enough that the road
  * still moves under you. Zero is not the target; subtle is.
  *
- * Rumble and lane markers keep their full contrast -- that is a painted kerb and
- * a dashed centre line, which stripe in reality too.
+ * The KERB DOES NOT ALTERNATE here, unlike the retro palette. Striped kerbing is
+ * a racetrack thing; a road has a shoulder and a continuous painted edge line,
+ * and the alternating version read as an out-of-place checkered border. So
+ * `rumble` is one solid shoulder tone in both states and a new `edge` key draws
+ * the painted line -- also identical in both states, because real edge lines are
+ * continuous. The CENTRE line still dashes: `lane` is only defined on LIGHT, so
+ * it appears every other block, which is correct and is a motion cue.
+ *
+ * Losing the kerb's flicker costs nothing in readability: the road and grass
+ * still alternate (deltas 4.0 and 5.0) and the dashed centre line still runs.
  *
  * Desaturated relative to COLORS because the originals are quite warm/saturated
  * for asphalt; real tarmac sits near neutral grey-brown.
@@ -798,8 +819,8 @@ var COLORS_REALISTIC = {
    *          -f rawvideo -pix_fmt rgb24 -
    */
   FOG:  '#0b0a08',
-  LIGHT:  { road: '#43413e', grass: '#272b1f', rumble: '#8e877b', lane: '#c8c2b2' },
-  DARK:   { road: '#3f3d3a', grass: '#22261a', rumble: '#2b2a27'                  },
+  LIGHT:  { road: '#43413e', grass: '#272b1f', rumble: '#36342f', edge: '#a8a294', lane: '#c8c2b2' },
+  DARK:   { road: '#3f3d3a', grass: '#22261a', rumble: '#36342f', edge: '#a8a294'                    },
   START:  { road: 'white',   grass: 'white',   rumble: 'white'                    },
   FINISH: { road: 'black',   grass: 'black',   rumble: 'black'                    }
 };
