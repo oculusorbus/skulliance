@@ -809,6 +809,25 @@
        one -- neither is an <audio>/<video> element left in the page
        anymore for iOS to build a media session around. -->
 
+  <!--
+       CACHE BUSTER FOR THE ART PREVIEW.
+
+       loadImages() appends ?v=RACER_ASSET_V when the page defines it, and
+       skullracer.php sets that from the root VERSION file. This standalone page
+       deliberately does NOT -- see common.js's comment -- so it loads plain URLs.
+       That is fine for the shipped retro art, which never changes, and actively
+       wrong while iterating on sprites: everything under racing/ is served with a
+       seven-day max-age and NO revalidation, so a re-exported player_straight.png
+       at the same filename keeps being read from cache. Reported exactly that way
+       -- a new car pushed, the old one still on screen.
+
+       So in ?realistic=1 only, stamp a per-load value. Preview art is always
+       fresh; the normal page is untouched and still caches for a week.
+  -->
+  <script>
+    if (/[?&]realistic=1/.test(window.location.search) && typeof RACER_ASSET_V === 'undefined')
+      var RACER_ASSET_V = 'preview-' + Date.now();
+  </script>
   <script src="/staking/racing/common.js"></script>
   <script src="/staking/racing/sounds/engine-data.js"></script>
   <script src="/staking/racing/sounds/collision-data.js"></script>
