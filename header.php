@@ -178,15 +178,15 @@
 		           Crypt Crawl / Crypt Conquest / Skull Racer below. Obscura is the
 		           one exception and says so in its own comment. -->
 		      <a href="guardiansgame.php">Guardians</a>
-		      <a href="gauntlets.php">Gauntlets</a>
 		      <a href="cryptcrawlgame.php">Crypt Crawl</a>
 		      <a href="cryptconquestgame.php">Crypt Conquest</a>
 		      <a href="match3rpg.php">Monstrocity</a>
 		      <a href="monstrocity.php#boss">Boss Battles</a>
 		      <a href="skullswap.php">Skull Swap</a>
 		      <a href="skullracergame.php">Skull Racer</a>
+              <a href="gauntlets.php">Gauntlets</a>		
 		      <!-- Straight to the game, not a *game.php marketing landing:
-		           Obscura deliberately has no public page, it's an internal one. -->
+		           Obscura deliberately has no public page, it's an internal one. -->		  
 		      <a href="obscura.php">Obscura</a>
 		      <a href="dropship/dashboard.php">Drop Ship</a>
 		    </div>
