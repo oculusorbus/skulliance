@@ -91,3 +91,26 @@ originals — there the same measure reads ±0.012, which is a few pixels and
 indistinguishable from noise, and that is why it misled.
 
 Apply the same test to the uphill poses when they arrive.
+
+## Sizing a new pose — match car HEIGHT, not canvas width
+
+`dw` scales the canvas, and renders of different poses do not frame the car
+identically. The banked renders came in at content aspect 1.863 against the
+straight pose's 1.699, so at a shared `dw: 80` the car rendered 43.6px tall
+straight and 39.7px banked — it visibly shrank every time you steered.
+
+The invariant is the car's height: a car does not get shorter when it turns, it
+gets wider as more of its flank comes into view.
+
+**So pick `dw` per pose such that `contentHeight * (dw / canvasWidth) = 43.6`.**
+
+```
+  player_straight   804x460, content 744x438   ->  dw 80   (43.6px tall)
+  player_left/right 677x353, content 626x336   ->  dw 88   (43.7px tall)
+```
+
+This never affects the hitbox: `playerW` reads
+`spriteLayoutW(SPRITES.PLAYER_STRAIGHT)` specifically, not the current pose.
+
+Better still, frame new renders at the straight pose's own content aspect
+(1.699) and `dw: 80` works directly.

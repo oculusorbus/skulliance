@@ -938,10 +938,31 @@
        * dimensionally identical, which is what the originals are too -- measured,
        * they are a 1.8% mirror match.
        */
-      { key: 'PLAYER_LEFT',        file: 'sprites-realistic/player_left',        dw: 80 },
-      { key: 'PLAYER_RIGHT',       file: 'sprites-realistic/player_right',       dw: 80 },
-      { key: 'PLAYER_LEFT_BRAKE',  file: 'sprites-realistic/player_left_brake',  dw: 80 },
-      { key: 'PLAYER_RIGHT_BRAKE', file: 'sprites-realistic/player_right_brake', dw: 80 },
+      /*
+       * dw 88, NOT 80, and that difference is the whole reason steering looks
+       * fluid rather than jumpy.
+       *
+       * dw sizes the CANVAS, and these renders frame the car differently from
+       * the straight one -- content aspect 1.863 against 1.699. At a shared
+       * dw=80 the car rendered 43.6px tall straight and 39.7px banked, so it
+       * visibly SHRANK every time you turned. Reported exactly that way.
+       *
+       * The invariant to match is the car's HEIGHT: a car does not get shorter
+       * when it turns, it gets wider as more of its flank comes into view. At
+       * dw=88 all three poses put the car at 43.6-43.7px tall, and the banked
+       * ones are correctly a little wider.
+       *
+       * This does NOT widen the player's hitbox: playerW reads
+       * spriteLayoutW(SPRITES.PLAYER_STRAIGHT) specifically, never the current
+       * pose, so collision stays pinned to the straight car's 0.30 road units.
+       *
+       * Any future pose gets the same treatment -- pick dw so that
+       * contentHeight * (dw / canvasWidth) lands on 43.6.
+       */
+      { key: 'PLAYER_LEFT',        file: 'sprites-realistic/player_left',        dw: 88 },
+      { key: 'PLAYER_RIGHT',       file: 'sprites-realistic/player_right',       dw: 88 },
+      { key: 'PLAYER_LEFT_BRAKE',  file: 'sprites-realistic/player_left_brake',  dw: 88 },
+      { key: 'PLAYER_RIGHT_BRAKE', file: 'sprites-realistic/player_right_brake', dw: 88 },
       /*
        * Uphill still falls back to the sheet -- those are a taller canvas
        * (80x45) and a genuinely different render, so they cannot be derived
