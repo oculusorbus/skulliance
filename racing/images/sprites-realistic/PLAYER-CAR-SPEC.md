@@ -6,19 +6,33 @@ They are genuine re-draws, not transforms — measured against the pixel-art
 originals, a turned car differs from the straight one by 30% of its pixels, and
 the uphill set is a taller canvas (80x45 vs 80x41), so neither can be derived.
 
-## What to draw
+## Status
 
-| file to produce | pose | derive from |
-|---|---|---|
-| `player_left.png` | front 3/4, car banked LEFT | draw |
-| `player_right.png` | mirror of left | **free — I can flip it** |
-| `player_uphill_straight.png` | straight, seen cresting a rise | draw |
-| `player_uphill_left.png` | uphill + banked left | draw |
-| `player_uphill_right.png` | mirror of uphill_left | **free — I can flip it** |
+| file | state |
+|---|---|
+| `player_straight.png` | ✅ done |
+| `player_left.png` | ✅ done — **windows still checkered** |
+| `player_right.png` | ✅ mirrored from left |
+| `player_uphill_straight.png` | ❌ still needed |
+| `player_uphill_left.png` | ❌ still needed |
+| `player_uphill_right.png` | free — mirror of uphill_left |
 
-So **three** actual drawings: one left-banked, one uphill-straight, one
-uphill-left. I mirror the two right-hand poses, and generate all six brake
-variants by the measured colour shift.
+All six brake variants are generated automatically.
+
+**One outstanding defect: the baked transparency checkerboard in the left/right
+windows.** It cannot be removed from the flattened PNG. Measured brightness
+percentiles (10th/50th/90th):
+
+```
+  checkerboard      29    50    60
+  the skull         29    87   155
+  car paint         54    82   106
+```
+
+The checker sits inside both the skull's shadow range and the paint's range, so
+no threshold takes it without eating one of the other two — attempting it
+chewed holes in the skull. It has to be fixed where the layers still exist, in
+the generator or an editor, exactly as the straight pose was.
 
 ## Hard requirements
 

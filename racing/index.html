@@ -928,11 +928,29 @@
        * Brake keys get the generated _brake file, whose tail lights were lit by
        * the colour shift measured off the original pixel-art pair.
        */
-      { key: ['PLAYER_STRAIGHT','PLAYER_LEFT','PLAYER_RIGHT',
-              'PLAYER_UPHILL_STRAIGHT','PLAYER_UPHILL_LEFT','PLAYER_UPHILL_RIGHT'],
+      { key: 'PLAYER_STRAIGHT',       file: 'sprites-realistic/player_straight',       dw: 80 },
+      { key: 'PLAYER_STRAIGHT_BRAKE', file: 'sprites-realistic/player_straight_brake', dw: 80 },
+      /*
+       * The banked poses. player_right is an exact MIRROR of player_left rather
+       * than the second render that was supplied: the two came out 677x353 and
+       * 655x351, and since dh is derived from each file's own aspect the car
+       * would have changed height as it steered. Mirroring makes the pair
+       * dimensionally identical, which is what the originals are too -- measured,
+       * they are a 1.8% mirror match.
+       */
+      { key: 'PLAYER_LEFT',        file: 'sprites-realistic/player_left',        dw: 80 },
+      { key: 'PLAYER_RIGHT',       file: 'sprites-realistic/player_right',       dw: 80 },
+      { key: 'PLAYER_LEFT_BRAKE',  file: 'sprites-realistic/player_left_brake',  dw: 80 },
+      { key: 'PLAYER_RIGHT_BRAKE', file: 'sprites-realistic/player_right_brake', dw: 80 },
+      /*
+       * Uphill still falls back to the sheet -- those are a taller canvas
+       * (80x45) and a genuinely different render, so they cannot be derived
+       * from the flat poses. Until they exist the car keeps its pixel-art look
+       * when cresting a rise.
+       */
+      { key: ['PLAYER_UPHILL_STRAIGHT','PLAYER_UPHILL_LEFT','PLAYER_UPHILL_RIGHT'],
         file: 'sprites-realistic/player_straight', dw: 80 },
-      { key: ['PLAYER_STRAIGHT_BRAKE','PLAYER_LEFT_BRAKE','PLAYER_RIGHT_BRAKE',
-              'PLAYER_UPHILL_STRAIGHT_BRAKE','PLAYER_UPHILL_LEFT_BRAKE','PLAYER_UPHILL_RIGHT_BRAKE'],
+      { key: ['PLAYER_UPHILL_STRAIGHT_BRAKE','PLAYER_UPHILL_LEFT_BRAKE','PLAYER_UPHILL_RIGHT_BRAKE'],
         file: 'sprites-realistic/player_straight_brake', dw: 80 }
     ];
 
