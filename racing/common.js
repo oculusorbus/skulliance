@@ -516,21 +516,27 @@ var Render = {
    * one call site in index.html -- so the retro renderer stays byte-identical and
    * cannot regress when this is switched on.
    *
-   * Two changes from flat shading:
+   * ONE change from flat shading: the LIP on the kerb. A flat kerb looks like
+   * coloured tape; a real one has a top face and a shadowed outer side. Drawing
+   * the outer half a shade darker is two extra polygons and reads as depth. It
+   * is a split across the kerb's WIDTH, so it travels with the road.
    *
-   * 1. VERTICAL GRADIENTS instead of solid fills. A flat quad per band is what
-   *    makes the surface read as painted cardboard; grading each band from
-   *    slightly darker at its far edge to slightly lighter at its near edge
-   *    gives the asphalt a sheen and, because adjacent bands meet at matching
-   *    tones, hides the seam between them.
+   * NO VERTICAL GRADIENTS. This function used to grade each band from darker at
+   * its far edge to lighter at its near edge, and it was a mistake: the gradient
+   * was built from createLinearGradient(0, y2, 0, y1) -- SCREEN coordinates.
+   * Perspective puts each band at roughly the same screen y on every frame, so
+   * the ramp stayed pinned to the display while the road slid underneath it.
+   * Near the horizon the bands are 1-2px tall and it did nothing; near the camera
+   * they are tall, so it painted a fixed light-to-dark wash across the bottom of
+   * the screen that never moved. Reported as looking "like a broken gradient
+   * image", and correctly so.
    *
-   * 2. The LIP on the rumble strip. Flat curbs look like coloured tape; a curb
-   *    has a top face and a shadowed side. Drawing the outer half a shade darker
-   *    is two extra polygons and reads as depth.
+   * Anything shaded by DISTANCE has to key off the segment index (which scrolls)
+   * or the existing fog term, never off y. The fog() call below already does the
+   * distance job properly.
    *
-   * Deliberately no texture sampling here: that is a per-scanline drawImage per
-   * band, ~768 calls a frame, and it needs its own performance decision. This is
-   * the cheap 80% -- pure canvas, no new assets, no measurable cost.
+   * Deliberately no texture sampling either: that is a per-scanline drawImage,
+   * ~768 calls a frame, and it needs its own performance decision.
    */
   segmentRealistic: function(ctx, width, lanes, x1, y1, w1, x2, y2, w2, fog, color) {
 
@@ -540,24 +546,16 @@ var Render = {
         l2 = Render.laneMarkerWidth(w2, lanes),
         lanew1, lanew2, lanex1, lanex2, lane;
 
-    // y2 is the FAR edge, y1 the near one -- the band is drawn upward.
-    var grassG = ctx.createLinearGradient(0, y2, 0, y1);
-    grassG.addColorStop(0, Render.shade(color.grass, -0.14));
-    grassG.addColorStop(1, Render.shade(color.grass,  0.06));
-    ctx.fillStyle = grassG;
+    ctx.fillStyle = color.grass;
     ctx.fillRect(0, y2, width, y1 - y2);
 
-    var roadG = ctx.createLinearGradient(0, y2, 0, y1);
-    roadG.addColorStop(0, Render.shade(color.road, -0.16));
-    roadG.addColorStop(1, Render.shade(color.road,  0.08));
-
-    // Curb: outer half shaded down so it reads as a raised edge, not tape.
+    // Kerb: outer half shaded down so it reads as a raised edge, not tape.
     Render.polygon(ctx, x1-w1-r1, y1, x1-w1, y1, x2-w2, y2, x2-w2-r2, y2, Render.shade(color.rumble, -0.28));
     Render.polygon(ctx, x1+w1+r1, y1, x1+w1, y1, x2+w2, y2, x2+w2+r2, y2, Render.shade(color.rumble, -0.28));
     Render.polygon(ctx, x1-w1-r1/2, y1, x1-w1, y1, x2-w2, y2, x2-w2-r2/2, y2, color.rumble);
     Render.polygon(ctx, x1+w1+r1/2, y1, x1+w1, y1, x2+w2, y2, x2+w2+r2/2, y2, color.rumble);
 
-    Render.polygon(ctx, x1-w1, y1, x1+w1, y1, x2+w2, y2, x2-w2, y2, roadG);
+    Render.polygon(ctx, x1-w1, y1, x1+w1, y1, x2+w2, y2, x2-w2, y2, color.road);
 
     if (color.lane) {
       lanew1 = w1*2/lanes;
@@ -726,15 +724,23 @@ var COLORS = {
  * REALISTIC PALETTE. Paired with Render.segmentRealistic below and selected by
  * index.html's REALISTIC_PREVIEW flag; COLORS above is untouched.
  *
- * THE RETRO LOOK IS THE ALTERNATION, not the resolution. Consecutive segments
- * flip between LIGHT and DARK, and for road and grass that banding is the single
- * loudest "16-bit" signal in the scene -- grass especially, jumping #201808 to
- * #170f06. So here road and grass are IDENTICAL in both states: the surface
- * stops striping and reads as continuous.
+ * THE ALTERNATION IS THE MOTION CUE, not decoration. Consecutive segments flip
+ * between LIGHT and DARK, and those scrolling bands are how the eye reads speed
+ * on a road with no other moving reference. An earlier version of this palette
+ * set road and grass IDENTICAL in both states to kill the banding -- which did
+ * remove the stripes, and removed all sense of movement with them. Reported from
+ * play: "it appears like a flat image underneath that doesn't move."
  *
- * Rumble and lane markers still alternate, and must -- that is a painted curb
- * and a dashed centre line, which stripe in reality too. Killing those as well
- * would not look realistic, it would look like the road had no markings.
+ * So the alternation stays and is TUNED instead. Measured luminance deltas:
+ *
+ *   original   road 5.1   grass 8.5   (grass was the loud one)
+ *   here       road 4.0   grass 5.0   kerb unchanged at ~110
+ *
+ * Quiet enough to stop reading as 16-bit striping, loud enough that the road
+ * still moves under you. Zero is not the target; subtle is.
+ *
+ * Rumble and lane markers keep their full contrast -- that is a painted kerb and
+ * a dashed centre line, which stripe in reality too.
  *
  * Desaturated relative to COLORS because the originals are quite warm/saturated
  * for asphalt; real tarmac sits near neutral grey-brown.
@@ -743,7 +749,7 @@ var COLORS_REALISTIC = {
   SKY:  '#8fa4b0',
   TREE: '#1e1a16',
   FOG:  '#20211f',
-  LIGHT:  { road: '#3f3d3a', grass: '#22261a', rumble: '#8e877b', lane: '#c8c2b2' },
+  LIGHT:  { road: '#43413e', grass: '#272b1f', rumble: '#8e877b', lane: '#c8c2b2' },
   DARK:   { road: '#3f3d3a', grass: '#22261a', rumble: '#2b2a27'                  },
   START:  { road: 'white',   grass: 'white',   rumble: 'white'                    },
   FINISH: { road: 'black',   grass: 'black',   rumble: 'black'                    }
