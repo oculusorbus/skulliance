@@ -470,9 +470,29 @@ var Render = {
 
   sprite: function(ctx, width, height, resolution, roadWidth, sprites, sprite, scale, destX, destY, offsetX, offsetY, clipY, flip) {
 
-                    //  scale for projection AND relative to roadWidth (for tweakUI)
-    var destW  = (sprite.w * scale * width/2) * (SPRITES.SCALE * roadWidth);
-    var destH  = (sprite.h * scale * width/2) * (SPRITES.SCALE * roadWidth);
+    /*
+     * SOURCE SIZE AND LAYOUT SIZE ARE NOT THE SAME THING, once art exists at a
+     * higher resolution than the sheet it replaces.
+     *
+     * SPRITES.SCALE is 0.3/PLAYER_STRAIGHT.w, so on-screen size is measured in
+     * units of the PLAYER sprite's pixel width. That is fine while every sprite
+     * shares one resolution -- scale them all and nothing moves. It breaks the
+     * moment one sprite is re-rendered on its own: a realistic car at 841px
+     * against an 80px player would draw ~10.5x too large and fill the screen.
+     *
+     * So `w`/`h` stay the SOURCE region to sample, and optional `dw`/`dh` give
+     * the footprint to lay it out at. Both default to w/h, so every existing
+     * sprite is byte-for-byte unaffected and the retro sheet cannot regress.
+     *
+     * `sprite.img` likewise lets one entry come from its own image instead of
+     * the shared sheet -- which is what makes a partial art pass previewable
+     * without repacking sprites.png first.
+     */
+    var sheet  = sprite.img || sprites;
+    var layoutW = (sprite.dw || sprite.w);
+    var layoutH = (sprite.dh || sprite.h);
+    var destW  = (layoutW * scale * width/2) * (SPRITES.SCALE * roadWidth);
+    var destH  = (layoutH * scale * width/2) * (SPRITES.SCALE * roadWidth);
 
     destX = destX + (destW * (offsetX || 0));
     destY = destY + (destH * (offsetY || 0));
@@ -491,10 +511,10 @@ var Render = {
         ctx.save();
         ctx.translate(destX + destW, destY);
         ctx.scale(-1, 1);
-        ctx.drawImage(sprites, sprite.x, sprite.y, sprite.w, sprite.h - (sprite.h*clipH/destH), 0, 0, destW, drawH);
+        ctx.drawImage(sheet, sprite.x, sprite.y, sprite.w, sprite.h - (sprite.h*clipH/destH), 0, 0, destW, drawH);
         ctx.restore();
       } else {
-        ctx.drawImage(sprites, sprite.x, sprite.y, sprite.w, sprite.h - (sprite.h*clipH/destH), destX, destY, destW, drawH);
+        ctx.drawImage(sheet, sprite.x, sprite.y, sprite.w, sprite.h - (sprite.h*clipH/destH), destX, destY, destW, drawH);
       }
     }
 

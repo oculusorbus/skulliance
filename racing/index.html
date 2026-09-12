@@ -817,6 +817,32 @@
 
     var fps            = 60;                      // how many 'update' frames per second
     var step           = 1/fps;                   // how long is each frame (in seconds)
+    /*
+     * REALISTIC ART PREVIEW SWITCH. Temporary scaffolding while the art pass is
+     * in progress -- `?realistic=1` on the url, or `Dom.storage.realistic` for a
+     * sticky preview. Default OFF, so the shipped game is the retro one until
+     * this is deliberately turned on.
+     *
+     * dw is the on-road footprint, matched to the width of the sprite it
+     * replaces so the preview is a like-for-like comparison; dh is computed from
+     * the new art's own aspect ratio at load time. Drop entries in here as more
+     * sprites are finished, and when the whole set is done this collapses into a
+     * second packed sheet plus a SPRITES_HD table.
+     */
+    var REALISTIC_PREVIEW = (function () {
+      try {
+        if (/[?&]realistic=1/.test(window.location.search)) return true;
+        if (/[?&]realistic=0/.test(window.location.search)) return false;
+        return Dom.storage.realistic === 'true';
+      } catch (e) { return false; }
+    })();
+    var REALISTIC_CARS = [
+      { key: 'CAR01', file: 'sprites-realistic/car01', dw: 80 },
+      { key: 'CAR02', file: 'sprites-realistic/car02', dw: 80 },
+      { key: 'CAR03', file: 'sprites-realistic/car03', dw: 88 },
+      { key: 'CAR04', file: 'sprites-realistic/car04', dw: 80 }
+    ];
+
     var width          = 1024;                    // logical canvas width
     var height         = 768;                     // logical canvas height
     var centrifugal    = 0.3;                     // centrifugal force multiplier when going around curves
@@ -2965,7 +2991,9 @@
 
     Game.run({
       canvas: canvas, render: render, update: update, stats: null, step: step,
-      images: ["background", "sprites"],
+      images: REALISTIC_PREVIEW
+               ? ["background", "sprites"].concat(REALISTIC_CARS.map(function (c) { return c.file; }))
+               : ["background", "sprites"],
       keys: [
         { keys: [KEY.LEFT,  KEY.A], mode: 'down', action: function() { keyLeft   = true;  } },
         { keys: [KEY.RIGHT, KEY.D], mode: 'down', action: function() { keyRight  = true;  } },
@@ -2979,6 +3007,44 @@
       ready: function(images) {
         background = images[0];
         sprites    = images[1];
+        /*
+         * REALISTIC ART PREVIEW -- temporary, and deliberately additive.
+         *
+         * Only the four traffic cars are re-rendered so far, at ~841x590
+         * against the sheet's ~80x56. Repacking sprites.png would mean either
+         * downscaling that detail away or rescaling every other sprite to
+         * match, so instead each finished car is loaded as its OWN image and
+         * its SPRITES entry is pointed at it: `img` for the pixels, `dw`/`dh`
+         * for the footprint it occupies on the road.
+         *
+         * dh is derived from the SOURCE aspect ratio rather than copied from
+         * the old sprite, because the new renders drifted (car04 is 1.58 wide
+         * against the original 1.40). Keeping the source ratio shows the art as
+         * actually drawn instead of squashing it back into the old silhouette.
+         *
+         * Nothing here touches the retro path: with the flag off, not one of
+         * these images is even requested.
+         */
+        if (REALISTIC_PREVIEW) {
+          REALISTIC_CARS.forEach(function (c, i) {
+            var img = images[2 + i], e = SPRITES[c.key];
+            if (!img || !img.width || !e) return;        // missing art: keep the sheet version
+            /*
+             * MUTATED IN PLACE, not reassigned -- and that is load-bearing.
+             * common.js:666 builds SPRITES.CARS from these objects by REFERENCE
+             * (`[SPRITES.CAR01, ...]`), and index.html:2900 picks traffic out of
+             * that array. `SPRITES.CAR01 = {...}` would rebind the property and
+             * leave SPRITES.CARS still holding the old object, so every traffic
+             * car on the road would silently keep the retro art while looking
+             * like the override had worked.
+             */
+            e.img = img;
+            e.x = 0; e.y = 0;
+            e.w = img.width; e.h = img.height;
+            e.dw = c.dw;
+            e.dh = Math.round(c.dw * img.height / img.width);
+          });
+        }
         reset();
         updateLandscapeCanvasSize(); // applies widescreen sizing immediately if the game happens to load already sideways, instead of waiting for a resize/rotation event that may never come
         Dom.storage.fast_lap_time = Dom.storage.fast_lap_time || 180;
