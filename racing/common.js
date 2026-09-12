@@ -472,25 +472,33 @@ var Render = {
    * REALISTIC BACKGROUND. Sibling of background() above, for a layer that lives
    * in its OWN file as a single copy rather than as a band in the packed sheet.
    *
-   * background() takes `imageW = layer.w/2` because each band in background.png
+   * background() takes `imageW = layer.w/2` because every band in background.png
    * holds the panorama TWICE side by side -- the duplicate exists purely so a
-   * scroll window can straddle the seam without a second lookup. Point that
-   * math at a single-copy file and you get two bugs at once: it shows only half
-   * the image (zoomed 2x), and the wrap draw reads past the right edge into
-   * nothing.
+   * scroll window can straddle the seam. Point that at a single-copy file and it
+   * shows half the image, zoomed 2x, and reads past the right edge into nothing.
    *
-   * Here the whole file is one copy, so the full width spans the canvas and the
-   * wrap is an explicit second draw from x=0. No sheet, no coordinates, no
-   * duplicated art to keep seamless in two places -- the file just has to tile
-   * against ITSELF left-to-right, which is the constraint the art brief already
-   * states.
+   * ASPECT IS PRESERVED, which the first version of this got wrong. It mapped the
+   * full image width to the full canvas width AND the full height to the full
+   * height, so any art whose aspect differed from the canvas was distorted --
+   * hills at 2.67 into a 1.33 canvas came out squeezed to exactly half width
+   * ("narrow mountaintops"), and an 11% squeeze on the sky turned a round moon
+   * into an oval. The retro bands escaped it only by being authored at 4:3.
    *
-   * destH is the canvas height, exactly as background() does it, so a layer is
-   * stretched vertically to fill regardless of its source height. That is why
-   * the realistic bands can be 750-784px tall against the sheet's 480 and still
-   * line up.
+   * So the scale comes from the VERTICAL -- the band fills the canvas height,
+   * matching background()'s convention -- and the horizontal scale is then forced
+   * to match it. One copy of the image therefore occupies iw*scale canvas pixels,
+   * which may be wider OR narrower than the canvas, so it tiles in a loop rather
+   * than in a fixed pair of draws. That also removes the old assumption that the
+   * image is at least as wide as the viewport: a 1168px sky on a 1800px canvas
+   * now repeats instead of running out.
+   *
+   * `lift` raises the band by a fraction of the canvas height. The parallax art
+   * is framed with its content at different heights -- measured, the realistic
+   * treeline starts 62% down its frame against the retro band's 31% -- and
+   * anything below the horizon is painted over by the road, which draws after the
+   * background. lift is the per-layer correction for that; 0 means "as framed".
    */
-  backgroundSingle: function(ctx, img, width, height, rotation, offset) {
+  backgroundSingle: function(ctx, img, width, height, rotation, offset, lift) {
 
     if (!img || !img.width) return;
 
@@ -498,15 +506,19 @@ var Render = {
     offset   = offset   || 0;
 
     var iw = img.width, ih = img.height;
-    // rotation can arrive negative or >1; fold it into [0,1) before scaling.
-    var frac = rotation - Math.floor(rotation);
-    var sx   = Math.floor(iw * frac);
-    var sw   = iw - sx;                        // pixels left before the right edge
-    var dw   = Math.floor(width * (sw / iw));
+    var scale = height / ih;               // vertical drives it; horizontal follows
+    var dwPer = iw * scale;                // canvas px one full copy spans
+    if (!(dwPer > 0)) return;
 
-    ctx.drawImage(img, sx, 0, sw, ih, 0, offset, dw, height);
-    if (sw < iw)
-      ctx.drawImage(img, 0, 0, iw - sw, ih, dw - 1, offset, width - dw, height);
+    var destY = offset - (lift || 0) * height;
+    // rotation can arrive negative or >1; fold it into [0,1) before scaling.
+    var frac  = rotation - Math.floor(rotation);
+    var x     = -frac * dwPer;
+
+    // Tile until the canvas is covered. One extra copy at the left edge keeps a
+    // sub-pixel gap from showing when x lands just past 0.
+    for (; x < width; x += dwPer)
+      ctx.drawImage(img, 0, 0, iw, ih, Math.floor(x), destY, Math.ceil(dwPer) + 1, height);
   },
 
   //---------------------------------------------------------------------------

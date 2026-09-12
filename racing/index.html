@@ -857,7 +857,8 @@
      */
     function drawBgLayer(ctx, which, rotation, offset) {
       var img = REALISTIC_BG[which];
-      if (img) Render.backgroundSingle(ctx, img, width, height, rotation, offset);
+      if (img) Render.backgroundSingle(ctx, img, width, height, rotation, offset,
+                                       REALISTIC_BG_LIFT[which] || 0);
       else     Render.background(ctx, background, width, height, BACKGROUND[which], rotation, offset);
     }
 
@@ -900,6 +901,19 @@
     var REALISTIC_BG_FILES = ['background-realistic/sky',
                               'background-realistic/hills',
                               'background-realistic/trees'];
+    /*
+     * Per-layer vertical lift, as a fraction of canvas height. The parallax art
+     * is framed with its content at different heights: measured from the alpha
+     * channel, the realistic treeline's opaque content starts 62% down its frame
+     * against the retro band's 31%, so as framed it lands below the horizon and
+     * the road -- which draws after the background -- paints straight over it.
+     *
+     * 0.30 lifts the treeline back to roughly where the retro band puts it. This
+     * is a STOPGAP for art framing, not a feature: the clean fix is to move the
+     * treeline up in trees.png and set this back to 0. Hills and sky are framed
+     * high enough already.
+     */
+    var REALISTIC_BG_LIFT = { SKY: 0, HILLS: 0, TREES: 0.30 };
     var REALISTIC_BG = {};   // filled in ready(), keyed SKY / HILLS / TREES
 
     var width          = 1024;                    // logical canvas width
