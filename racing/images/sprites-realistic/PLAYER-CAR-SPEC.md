@@ -114,3 +114,19 @@ This never affects the hitbox: `playerW` reads
 
 Better still, frame new renders at the straight pose's own content aspect
 (1.699) and `dw: 80` works directly.
+
+## Why the uphill poses matter more than they look
+
+`Render.player` (common.js:687) picks the pose from steer AND gradient:
+
+```js
+if (steer < 0) name = (updown > 0) ? 'PLAYER_UPHILL_LEFT' : 'PLAYER_LEFT';
+```
+
+So steering while climbing asks for the UPHILL pose, not the flat one. While
+those pointed at the straight render, the car banked on level road and went
+rigid on every rise — which read as the lean animation working only sometimes.
+
+As a stopgap the uphill keys now borrow the BANKED flat poses, so steering
+always leans; the only thing missing is the ~10% backward pitch on a climb.
+When the real uphill art lands, point these at it and the pitch returns.

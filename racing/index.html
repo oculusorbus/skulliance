@@ -964,15 +964,28 @@
       { key: 'PLAYER_LEFT_BRAKE',  file: 'sprites-realistic/player_left_brake',  dw: 88 },
       { key: 'PLAYER_RIGHT_BRAKE', file: 'sprites-realistic/player_right_brake', dw: 88 },
       /*
-       * Uphill still falls back to the sheet -- those are a taller canvas
-       * (80x45) and a genuinely different render, so they cannot be derived
-       * from the flat poses. Until they exist the car keeps its pixel-art look
-       * when cresting a rise.
+       * UPHILL borrows the FLAT poses, and which flat pose matters.
+       *
+       * Render.player picks on steer AND gradient: steering while climbing asks
+       * for PLAYER_UPHILL_LEFT/RIGHT, not PLAYER_LEFT/RIGHT. These pointed at
+       * the straight render, so the car banked on the flat and went rigid on
+       * every rise -- reported as the lean animation working "sometimes".
+       *
+       * No uphill art exists yet (taller canvas, genuinely different render), so
+       * the choice is which flat pose to borrow. Borrowing the BANKED ones means
+       * steering always leans and the only thing lost is the ~10% backward pitch
+       * on a climb. Borrowing straight meant losing the lean, which is far more
+       * noticeable -- a car that stops responding to steering reads as broken,
+       * a car that doesn't pitch on a hill reads as nothing at all.
+       *
+       * dw follows the pose it borrows: 88 for the banked, 80 for straight.
        */
-      { key: ['PLAYER_UPHILL_STRAIGHT','PLAYER_UPHILL_LEFT','PLAYER_UPHILL_RIGHT'],
-        file: 'sprites-realistic/player_straight', dw: 80 },
-      { key: ['PLAYER_UPHILL_STRAIGHT_BRAKE','PLAYER_UPHILL_LEFT_BRAKE','PLAYER_UPHILL_RIGHT_BRAKE'],
-        file: 'sprites-realistic/player_straight_brake', dw: 80 }
+      { key: 'PLAYER_UPHILL_STRAIGHT',       file: 'sprites-realistic/player_straight',       dw: 80 },
+      { key: 'PLAYER_UPHILL_STRAIGHT_BRAKE', file: 'sprites-realistic/player_straight_brake', dw: 80 },
+      { key: 'PLAYER_UPHILL_LEFT',           file: 'sprites-realistic/player_left',           dw: 88 },
+      { key: 'PLAYER_UPHILL_RIGHT',          file: 'sprites-realistic/player_right',          dw: 88 },
+      { key: 'PLAYER_UPHILL_LEFT_BRAKE',     file: 'sprites-realistic/player_left_brake',     dw: 88 },
+      { key: 'PLAYER_UPHILL_RIGHT_BRAKE',    file: 'sprites-realistic/player_right_brake',    dw: 88 }
     ];
 
     /*
