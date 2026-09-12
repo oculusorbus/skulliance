@@ -908,12 +908,14 @@
      * against the retro band's 31%, so as framed it lands below the horizon and
      * the road -- which draws after the background -- paints straight over it.
      *
-     * 0.30 lifts the treeline back to roughly where the retro band puts it. This
-     * is a STOPGAP for art framing, not a feature: the clean fix is to move the
-     * treeline up in trees.png and set this back to 0. Hills and sky are framed
-     * high enough already.
+     * Back to 0 now that backgroundSingle fits the WIDTH rather than filling the
+     * height: at that scale the band is shorter than the canvas and the treeline
+     * lands at y=238 on a 768px canvas, which is exactly where the retro band
+     * puts it. The lift stays as the tuning knob -- the horizon sits slightly
+     * differently on a very wide canvas, so nudge TREES here (positive raises)
+     * rather than re-cutting the art if it is off by a little.
      */
-    var REALISTIC_BG_LIFT = { SKY: 0, HILLS: 0, TREES: 0.30 };
+    var REALISTIC_BG_LIFT = { SKY: 0, HILLS: 0, TREES: 0 };
     var REALISTIC_BG = {};   // filled in ready(), keyed SKY / HILLS / TREES
 
     var width          = 1024;                    // logical canvas width
@@ -938,7 +940,19 @@
     var rumbleLength   = REALISTIC_PREVIEW ? 6 : 3; // number of segments per red/white rumble strip
     var trackLength    = null;                    // z length of entire track (computed)
     var lanes          = 3;                       // number of lanes
-    var fieldOfView    = 100;                     // angle (degrees) for field of view
+    /*
+     * 100 degrees is a very wide lens, and it is the "fisheye" -- roadside sprites
+     * balloon as they approach because their projected scale changes so fast near
+     * the camera, which reads as trees flaring in and out and gives the whole
+     * scene a swimmy, vertigo quality. It suits the retro look; it fights a
+     * realistic one, where the eye expects something closer to a real camera.
+     *
+     * 80 in realistic mode. It is a FEEL number, not a correctness one -- lower
+     * calms the flare and flattens the sense of speed, higher does the reverse --
+     * so it is here to be tuned rather than treated as solved. The retro value is
+     * untouched.
+     */
+    var fieldOfView    = REALISTIC_PREVIEW ? 80 : 100;  // angle (degrees) for field of view
     var cameraHeight   = 1000;                    // z height of camera
     var cameraDepth    = null;                    // z distance camera is from screen (computed)
     var drawDistance   = 300;                     // number of segments to draw

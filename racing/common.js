@@ -505,10 +505,29 @@ var Render = {
     rotation = rotation || 0;
     offset   = offset   || 0;
 
+    /*
+     * ONE COPY SPANS ONE SCREEN WIDTH. That is the retro convention -- a band in
+     * background.png is 640 logical px mapped across the whole canvas -- and the
+     * realistic art was drawn for it, so it is the scale the art expects.
+     *
+     * An earlier attempt drove the scale off the HEIGHT instead (fill the canvas
+     * vertically, let width follow). That is aspect-correct but it is the wrong
+     * zoom: a 2000x750 band then spans two screen widths, so you see half the
+     * panorama at ~1:1 and the trees come out as redwoods. Reported exactly that
+     * way.
+     *
+     * So: fit the WIDTH, and let the height fall out of the same factor. The band
+     * ends up SHORTER than the canvas rather than filling it, which is what a
+     * parallax strip should be -- sky and ridgeline above the horizon, nothing
+     * below it. It also happens to put the art back where the retro band had it:
+     * the realistic treeline's content starts 62% into a band 384px tall, which
+     * is y=238 on a 768px canvas, and the retro band's 31% of 768 is also 238.
+     */
     var iw = img.width, ih = img.height;
-    var scale = height / ih;               // vertical drives it; horizontal follows
-    var dwPer = iw * scale;                // canvas px one full copy spans
-    if (!(dwPer > 0)) return;
+    var scale = width / iw;                // horizontal drives it; vertical follows
+    var dwPer = width;                     // one copy spans exactly one screen
+    var destH = ih * scale;
+    if (!(dwPer > 0) || !(destH > 0)) return;
 
     var destY = offset - (lift || 0) * height;
     // rotation can arrive negative or >1; fold it into [0,1) before scaling.
@@ -518,7 +537,7 @@ var Render = {
     // Tile until the canvas is covered. One extra copy at the left edge keeps a
     // sub-pixel gap from showing when x lands just past 0.
     for (; x < width; x += dwPer)
-      ctx.drawImage(img, 0, 0, iw, ih, Math.floor(x), destY, Math.ceil(dwPer) + 1, height);
+      ctx.drawImage(img, 0, 0, iw, ih, Math.floor(x), destY, Math.ceil(dwPer) + 1, Math.ceil(destH));
   },
 
   //---------------------------------------------------------------------------
