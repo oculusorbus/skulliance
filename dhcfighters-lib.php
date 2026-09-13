@@ -1,0 +1,357 @@
+<?php
+/**
+ * DHC FIGHTERS -- core library
+ *
+ * The "game" is: earn traits by playing everything else on the platform,
+ * assemble them into Fighters, save them, and compete on how rare your best
+ * one is. This file owns the rules that decide what drops, what it is worth,
+ * and what a Fighter is called.
+ *
+ * Include AFTER db.php (needs $conn) and skulliance.php (needs the session).
+ * Pure logic and queries only -- no output, so AJAX endpoints and pages can
+ * both use it.
+ */
+
+require_once __DIR__ . '/dhcfighters-config.php';
+
+/* ------------------------------------------------------------------ *
+ * RARITY AND SCORING
+ * ------------------------------------------------------------------ */
+
+/** The rarity table, keyed category => slug => [tier, worn, rate]. */
+function dhcf_rarity() {
+	static $r = null;
+	if ($r === null) {
+		$r = is_file(__DIR__ . '/dhcrarity.php') ? (require __DIR__ . '/dhcrarity.php') : array();
+	}
+	return $r;
+}
+
+function dhcf_trait_info($category, $slug) {
+	$r = dhcf_rarity();
+	return isset($r[$category][$slug]) ? $r[$category][$slug] : null;
+}
+
+/**
+ * POINTS FOR ONE TRAIT.
+ *
+ * Logarithmic, deliberately. A linear 1/rate would let a single 0.14% mythic
+ * outweigh nine other traits combined, so every Fighter would be "one jackpot
+ * plus filler". On a log curve the rarest trait is worth about 2.5x the most
+ * common one instead of 300x, which means filling a slot always helps and
+ * chasing rarity still pays -- both axes matter.
+ *
+ *   0.14% mythic   -> 285      2.80% uncommon -> 155
+ *   1.00% mythic   -> 200      4.89% common   -> 131
+ *   1.29% legendary-> 189      7.33% common   -> 113
+ *   1.70% epic     -> 177
+ */
+function dhcf_trait_points($rate) {
+	$rate = (float)$rate;
+	if ($rate <= 0) $rate = 0.01;           // never divide by zero on missing data
+	return (int)round(100 * log10(100 / $rate));
+}
+
+/**
+ * A Fighter's rarity score: the sum of its filled slots.
+ *
+ * Recomputable from the traits alone, which is the point -- rarity is a VIEW,
+ * not a stored fact. When the maths changes, rescore; nothing in the ledger
+ * moves. The stored column is a cache for leaderboard sorting.
+ */
+function dhcf_score($traits) {
+	$total = 0;
+	foreach ($traits as $slot => $slug) {
+		if ($slug === '' || $slug === null) continue;
+		$cat  = dhcf_slot_category($slot);
+		$info = dhcf_trait_info($cat, $slug);
+		if ($info) $total += dhcf_trait_points($info[2]);
+	}
+	return $total;
+}
+
+/* ------------------------------------------------------------------ *
+ * NAMING
+ * ------------------------------------------------------------------ */
+
+/**
+ * Next serial number, continuing the collection's own numbering.
+ *
+ * The minted collection runs DHC2F001..DHC2F420 (226 actually minted, so the
+ * range has gaps, and the unminted numbers inside it are NOT reused -- they
+ * belong to the collection if it ever completes). Assemblies therefore start
+ * after the top of the range, at DHCF_SERIAL_START.
+ */
+function dhcf_next_serial($conn) {
+	$start = DHCF_SERIAL_START;
+	$res = $conn->query("SELECT MAX(serial) AS m FROM dhc_fighters");
+	if ($res && $row = $res->fetch_assoc()) {
+		if ($row['m'] !== null && (int)$row['m'] >= $start) return ((int)$row['m']) + 1;
+	}
+	return $start;
+}
+
+/** The default name for a serial, e.g. 'DHC2A421'. */
+function dhcf_default_name($serial) {
+	return DHCF_SERIAL_PREFIX . str_pad((string)$serial, DHCF_SERIAL_PAD, '0', STR_PAD_LEFT);
+}
+
+/** What a Fighter is actually called -- the override if set, else the serial. */
+function dhcf_display_name($row) {
+	$n = isset($row['name']) ? trim((string)$row['name']) : '';
+	return $n !== '' ? $n : dhcf_default_name((int)$row['serial']);
+}
+
+/* ------------------------------------------------------------------ *
+ * AWARDING A TRAIT
+ * ------------------------------------------------------------------ */
+
+/**
+ * Draw one trait from a category, weighted by tier.
+ *
+ * Two stages, because the two things are tuned separately: the TIER comes from
+ * the table the trigger earned (topping a board rolls on a better one than a
+ * routine run), and only then is a trait picked from within that tier. Picking
+ * straight from the flat per-trait rates would make placement barely matter,
+ * since common traits dominate the pool by count.
+ *
+ * $category  one of the trait directories, or 'wildcard' for any category
+ * $tiers     tier => weight, e.g. DHCF_TIERS['placement_1']
+ */
+function dhcf_draw($category, $tiers) {
+	$r = dhcf_rarity();
+
+	// wildcard: pool every category together
+	$pool = array();
+	if ($category === 'wildcard') {
+		foreach ($r as $cat => $traits) {
+			foreach ($traits as $slug => $info) $pool[] = array($cat, $slug, $info);
+		}
+	} elseif (isset($r[$category])) {
+		foreach ($r[$category] as $slug => $info) $pool[] = array($category, $slug, $info);
+	}
+	if (!$pool) return null;
+
+	// bucket by tier, then weight the buckets that actually have traits in them
+	$byTier = array();
+	foreach ($pool as $p) $byTier[$p[2][0]][] = $p;
+
+	$total = 0; $avail = array();
+	foreach ($tiers as $tier => $w) {
+		if (!empty($byTier[$tier]) && $w > 0) { $avail[$tier] = $w; $total += $w; }
+	}
+	if ($total <= 0) return null;
+
+	$roll = mt_rand(1, 100000) / 100000 * $total;
+	$pickedTier = null;
+	foreach ($avail as $tier => $w) { $roll -= $w; if ($roll <= 0) { $pickedTier = $tier; break; } }
+	if ($pickedTier === null) $pickedTier = array_key_last($avail);
+
+	$bucket = $byTier[$pickedTier];
+	return $bucket[mt_rand(0, count($bucket) - 1)];   // [category, slug, info]
+}
+
+/**
+ * Award a trait and write it to the ledger. Returns the awarded row, or null.
+ *
+ * $source        game key, see DHCF_GAMES
+ * $source_detail free text for the audit trail ('won', 'wave 41', boss name)
+ * $tierTable     which tier weights to roll on
+ */
+function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $tierTable = null) {
+	$user_id = (int)$user_id;
+	if ($user_id <= 0) return null;
+	if ($tierTable === null) $tierTable = DHCF_TIERS['run'];
+
+	$drawn = dhcf_draw($category, $tierTable);
+	if (!$drawn) return null;
+	list($cat, $slug, $info) = $drawn;
+
+	$sql = sprintf(
+		"INSERT INTO dhc_trait_drops (user_id, category, slug, tier, drop_rate, source, source_detail, awarded_at)
+		 VALUES (%d, '%s', '%s', '%s', %.3f, '%s', '%s', NOW())",
+		$user_id,
+		$conn->real_escape_string($cat),
+		$conn->real_escape_string($slug),
+		$conn->real_escape_string($info[0]),
+		(float)$info[2],
+		$conn->real_escape_string($source),
+		$conn->real_escape_string(substr($source_detail, 0, 120))
+	);
+	if (!$conn->query($sql)) {
+		error_log('dhcf_award: ' . $conn->error);
+		return null;
+	}
+
+	return array(
+		'category' => $cat,
+		'slug'     => $slug,
+		'tier'     => $info[0],
+		'worn'     => $info[1],
+		'rate'     => $info[2],
+		'points'   => dhcf_trait_points($info[2]),
+		'name'     => dhcf_trait_name($cat, $slug),
+		'is_new'   => dhcf_count_owned($conn, $user_id, $slug) <= 1,
+	);
+}
+
+/** How many copies of a slug a player holds (duplicates are separate rows). */
+function dhcf_count_owned($conn, $user_id, $slug) {
+	$sql = sprintf("SELECT COUNT(*) AS c FROM dhc_trait_drops WHERE user_id = %d AND slug = '%s'",
+		(int)$user_id, $conn->real_escape_string($slug));
+	$res = $conn->query($sql);
+	if ($res && $row = $res->fetch_assoc()) return (int)$row['c'];
+	return 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * INVENTORY AND FIGHTERS
+ * ------------------------------------------------------------------ */
+
+/** Distinct traits a player owns: category => slug => ['copies'=>n, 'first'=>date]. */
+function dhcf_inventory($conn, $user_id) {
+	$out = array();
+	$sql = sprintf("SELECT category, slug, COUNT(*) AS copies, MIN(awarded_at) AS first_at
+	                FROM dhc_trait_drops WHERE user_id = %d GROUP BY category, slug", (int)$user_id);
+	$res = $conn->query($sql);
+	if ($res) {
+		while ($row = $res->fetch_assoc()) {
+			$out[$row['category']][$row['slug']] = array(
+				'copies' => (int)$row['copies'],
+				'first'  => $row['first_at'],
+			);
+		}
+	}
+	return $out;
+}
+
+/** True if the player owns every trait in the layout. */
+function dhcf_owns_all($inventory, $traits) {
+	foreach ($traits as $slot => $slug) {
+		if ($slug === '' || $slug === null) continue;
+		$cat = dhcf_slot_category($slot);
+		if (empty($inventory[$cat][$slug])) return false;
+	}
+	return true;
+}
+
+/** Saved fighters for a player, newest first. */
+function dhcf_fighters($conn, $user_id) {
+	$out = array();
+	$sql = sprintf("SELECT * FROM dhc_fighters WHERE user_id = %d ORDER BY created_at DESC", (int)$user_id);
+	$res = $conn->query($sql);
+	if ($res) {
+		while ($row = $res->fetch_assoc()) {
+			$row['traits']  = json_decode($row['traits'], true) ?: array();
+			$row['display'] = dhcf_display_name($row);
+			$out[] = $row;
+		}
+	}
+	return $out;
+}
+
+/**
+ * Save a new Fighter. Returns [ok, message, row].
+ *
+ * The serial is allocated inside the insert attempt rather than read and then
+ * used, because two players saving at the same moment would otherwise take the
+ * same number. The UNIQUE key on serial is the real guard; a collision just
+ * retries with the next one.
+ */
+function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
+	$user_id = (int)$user_id;
+	if ($user_id <= 0) return array(false, 'Not signed in.', null);
+
+	$clean = array();
+	foreach (dhcf_slots() as $slot) {
+		if (!empty($traits[$slot])) $clean[$slot] = (string)$traits[$slot];
+	}
+	if (!$clean) return array(false, 'Nothing to save.', null);
+
+	$inv = dhcf_inventory($conn, $user_id);
+	if (!dhcf_owns_all($inv, $clean)) return array(false, 'That build uses traits you do not own.', null);
+
+	$name  = trim(mb_substr((string)$name, 0, 48));
+	$score = dhcf_score($clean);
+	$json  = json_encode($clean);
+
+	for ($try = 0; $try < 5; $try++) {
+		$serial = dhcf_next_serial($conn);
+		$sql = sprintf(
+			"INSERT INTO dhc_fighters (user_id, serial, name, traits, rarity_score, rules_version, created_at, updated_at)
+			 VALUES (%d, %d, %s, '%s', %d, '%s', NOW(), NOW())",
+			$user_id, $serial,
+			$name === '' ? 'NULL' : "'" . $conn->real_escape_string($name) . "'",
+			$conn->real_escape_string($json), $score,
+			$conn->real_escape_string(DHCF_RULES_VERSION)
+		);
+		if ($conn->query($sql)) {
+			return array(true, 'Saved.', array(
+				'id'      => $conn->insert_id,
+				'serial'  => $serial,
+				'name'    => $name,
+				'display' => $name !== '' ? $name : dhcf_default_name($serial),
+				'score'   => $score,
+				'traits'  => $clean,
+			));
+		}
+		if ($conn->errno !== 1062) {          // 1062 = duplicate serial, race -- retry
+			error_log('dhcf_save_fighter: ' . $conn->error);
+			return array(false, 'Could not save.', null);
+		}
+	}
+	return array(false, 'Could not allocate a number, try again.', null);
+}
+
+/** Rename, or clear the override by passing ''. */
+function dhcf_rename_fighter($conn, $user_id, $fighter_id, $name) {
+	$name = trim(mb_substr((string)$name, 0, 48));
+	$sql = sprintf("UPDATE dhc_fighters SET name = %s, updated_at = NOW() WHERE id = %d AND user_id = %d",
+		$name === '' ? 'NULL' : "'" . $conn->real_escape_string($name) . "'",
+		(int)$fighter_id, (int)$user_id);
+	return $conn->query($sql) && $conn->affected_rows >= 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * LEADERBOARD
+ * ------------------------------------------------------------------ */
+
+/**
+ * Top fighters. $period 'ath' or 'monthly'.
+ *
+ * Ranked on the single best Fighter a player has, with total fighters saved as
+ * the tie-break -- so the board rewards one exceptional build, and volume only
+ * separates players who already match on quality.
+ */
+function dhcf_leaderboard($conn, $period = 'ath', $limit = 25) {
+	$where = ($period === 'monthly')
+		? "WHERE f.created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+		: "";
+	$sql = "SELECT f.user_id,
+	               MAX(f.rarity_score) AS best_score,
+	               COUNT(*)            AS fighters
+	        FROM dhc_fighters f
+	        $where
+	        GROUP BY f.user_id
+	        ORDER BY best_score DESC, fighters DESC
+	        LIMIT " . (int)$limit;
+	$rows = array();
+	$res = $conn->query($sql);
+	if ($res) while ($row = $res->fetch_assoc()) $rows[] = $row;
+	return $rows;
+}
+
+/** Recompute every stored score. For after the rarity maths changes. */
+function dhcf_rescore_all($conn) {
+	$n = 0;
+	$res = $conn->query("SELECT id, traits FROM dhc_fighters");
+	if ($res) {
+		while ($row = $res->fetch_assoc()) {
+			$t = json_decode($row['traits'], true) ?: array();
+			$conn->query(sprintf("UPDATE dhc_fighters SET rarity_score = %d WHERE id = %d",
+				dhcf_score($t), (int)$row['id']));
+			$n++;
+		}
+	}
+	return $n;
+}
