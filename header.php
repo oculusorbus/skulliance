@@ -188,6 +188,7 @@
 		      <!-- Straight to the game, not a *game.php marketing landing:
 		           Obscura deliberately has no public page, it's an internal one. -->		  
 		      <a href="obscura.php">Obscura</a>
+		      <a href="dhcfighters.php">DHC Fighters</a>
 		      <a href="dropship/dashboard.php">Drop Ship</a>
 		    </div>
 		  </div>

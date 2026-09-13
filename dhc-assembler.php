@@ -1027,6 +1027,16 @@ a{color:var(--ochre)}
 
   buildTabs();
   if (!readHash()) randomise(false); else { buildTabs(); paint(); }
+
+  /* The one thing the outside world can ask for: what is currently on the
+     canvas. Returned as a copy so a caller cannot mutate the live selection,
+     and read from `sel` rather than the DOM so a save stores exactly what was
+     drawn. */
+  window.DHC_SELECTION = function () {
+    var out = {};
+    SLOTS.forEach(function (s) { if (sel[s.key]) out[s.key] = sel[s.key]; });
+    return out;
+  };
   buildGrid();
 })();
 </script>
