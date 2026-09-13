@@ -48,22 +48,20 @@ $dhc_slots = array(
 	'companion'  => array('Companion',       'companion',  true),
 );
 
-// WEAPONS THAT MAY ONLY APPEAR IN FRONT.
+// WHICH WEAPONS BELONG IN WHICH SLOT.
 //
-// Not every weapon can sit behind the body. A belt, a chest rig or a blaster held
-// across the torso is worn or carried in front -- put it in the back slot and it
-// disappears behind the Fighter, which is never what the art intends.
+// A PARTITION, not a preference: each weapon belongs to exactly one slot. The
+// seven below are drawn in front of the body; every other weapon is drawn behind
+// it. Neither list offers the other's art, so a weapon can only ever be placed
+// where it actually works.
 //
-// This also resolves the three composite weapons. Each pair has exactly one half
-// listed here, so the other half is the one that goes behind:
+// It also resolves the three two-part weapons -- one half of each pair is in
+// front, the other necessarily behind:
 //
-//   DH Spike Blaster 1  (front)   <->  DH Spike Blaster   (back)
-//   Lil Fren            (front)   <->  Lil Fren 1         (back)
-//   Mega Taser Cannon 1 (front)   <->  Mega Taser Cannon  (back)
-//
-// What remains eligible for the back slot is the long-handled set -- Axe, Scythe,
-// Skull Krusher, Bioweapon -- plus those three companion halves.
-$dhc_front_only = array(
+//   DH Spike Blaster 1  front   <->  DH Spike Blaster   back
+//   Lil Fren            front   <->  Lil Fren 1         back
+//   Mega Taser Cannon 1 front   <->  Mega Taser Cannon  back
+$dhc_weapon_front = array(
 	'annihilation-belt', 'dh-raider-equipment', 'dh-spike-blaster-1',
 	'electric-morning-star', 'lil-fren', 'mega-taser-cannon-1', 'plastic-blaster',
 );
@@ -88,9 +86,9 @@ foreach ($dhc_slots as $key => $s) {
 	if ($dhc_base !== '') {
 		foreach ((array)glob(__DIR__ . '/' . $dhc_base . '/250/' . $dir . '/*.png') as $f) {
 			$slug = basename($f, '.png');
-			// Filtered at the source, so a front-only weapon is not merely
-			// discouraged in the back slot -- it is not offered at all.
-			if ($key === 'weaponBack' && in_array($slug, $dhc_front_only, true)) continue;
+			// Filtered at the source: each weapon appears in one slot only.
+			if ($key === 'weapon'     && !in_array($slug, $dhc_weapon_front, true)) continue;
+			if ($key === 'weaponBack' &&  in_array($slug, $dhc_weapon_front, true)) continue;
 			$name = isset($dhc_index[$dir][$slug]['name']) ? $dhc_index[$dir][$slug]['name'] : dhc_title($slug);
 			$out[] = array('slug' => $slug, 'name' => $name);
 		}
@@ -272,12 +270,12 @@ a{color:var(--ochre)}
     <div class="tabs" id="tabs" role="tablist"></div>
     <div class="grid" id="grid" role="tabpanel"></div>
     <div class="hint">
-      <b>Weapon (behind)</b> draws before the torso, so anything in it is partly hidden by the body.
-      Only weapons that can plausibly sit behind are offered here &mdash; belts, chest rigs and
-      held blasters are front-only.<br><br>
-      The three two-part weapons pair up across the slots: put <b>DH Spike Blaster</b> behind and
-      <b>DH Spike Blaster 1</b> in front, and the same for <b>Lil Fren 1</b> / <b>Lil Fren</b> and
-      <b>Mega Taser Cannon</b> / <b>Mega Taser Cannon 1</b>.
+      Each weapon belongs to one slot only. <b>Weapon</b> holds the seven that sit in front of the
+      body; <b>Weapon (behind)</b> holds the rest, drawn before the torso so the body covers part
+      of them.<br><br>
+      The three two-part weapons pair across the two slots &mdash; <b>DH Spike Blaster</b> behind
+      with <b>DH Spike Blaster 1</b> in front, <b>Lil Fren 1</b> behind with <b>Lil Fren</b> in
+      front, <b>Mega Taser Cannon</b> behind with <b>Mega Taser Cannon 1</b> in front.
     </div>
   </div>
 </div>
