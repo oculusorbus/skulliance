@@ -227,6 +227,17 @@ a{color:var(--ochre)}
 .stack li.over{box-shadow:inset 0 2px 0 var(--ochre)}
 .stack li .grip{color:var(--line);letter-spacing:-2px}
 .stack li[draggable]:hover .grip{color:var(--ochre)}
+/* visibility toggle: pushed to the right edge of its row */
+.stack li{align-items:center}
+.stack li span:nth-of-type(3){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stack li .eye{background:none;border:0;color:var(--line);font:inherit;font-size:12px;
+  line-height:1;padding:2px 3px;cursor:pointer;border-radius:2px;flex:none}
+.stack li .eye:hover{color:var(--ochre)}
+.stack li .eye:focus-visible{outline:1px solid var(--ochre);outline-offset:1px}
+.stack li .eye[aria-pressed="true"]{color:var(--blood)}
+/* Hidden reads differently from empty: struck through, not just faded, so a
+   hidden layer is never mistaken for a slot with nothing in it. */
+.stack li.hid b,.stack li.hid span:nth-of-type(3){text-decoration:line-through;opacity:.5}
 .stack h3{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .stack h3 button{background:none;border:1px solid var(--line);color:var(--dim);
   font:inherit;font-size:9px;letter-spacing:.1em;padding:3px 7px;cursor:pointer;border-radius:2px}
@@ -264,6 +275,14 @@ a{color:var(--ochre)}
 .cell.none img{background:var(--panel2);position:relative}
 .cell.none{border-style:dashed}
 .cell.none[aria-pressed="true"]{border-style:solid}
+/* A trait the current build rules out. Dimmed and unclickable rather than
+   hidden -- it still has to be findable, or its absence reads as a bug. */
+.cell.blocked{opacity:.32;cursor:not-allowed;filter:grayscale(1)}
+.cell.blocked:hover{border-color:var(--line)}
+.cell.blocked img{background:var(--panel2)}
+.conflict{margin:0 0 8px;padding:7px 9px;font-size:10.5px;line-height:1.5;
+  border:1px solid var(--blood);background:rgba(208,70,58,.09);color:var(--bone);
+  border-radius:2px;grid-column:1/-1}
 .hint{padding:10px 12px;font-size:11px;color:var(--dim);border-top:1px solid var(--line);line-height:1.6}
 .warn{margin:22px;padding:18px;border:1px solid var(--blood);background:rgba(208,70,58,.09);
   font-size:12.5px;line-height:1.7;border-radius:2px}
@@ -313,13 +332,17 @@ a{color:var(--ochre)}
     <div class="hint">
       <b>Drag the draw order</b> to try arrangements the rules do not produce &mdash; the canvas
       updates as you go, and a rearranged stack is carried in the link, so you can send a finding
-      rather than describe it.<br><br>
+      rather than describe it. The <b>&#9679;</b> on each row hides that layer without clearing it,
+      so you can check what something is covering and put it straight back.<br><br>
       Each weapon belongs to one slot only. <b>Weapon</b> holds the seven that sit in front of the
       body; <b>Weapon (behind)</b> holds the rest, drawn before the torso so the body covers part
       of them.<br><br>
       The three two-part weapons pair across the two slots &mdash; <b>DH Spike Blaster</b> behind
       with <b>DH Spike Blaster 1</b> in front, <b>Lil Fren 1</b> behind with <b>Lil Fren</b> in
-      front, <b>Mega Taser Cannon</b> behind with <b>Mega Taser Cannon 1</b> in front.
+      front, <b>Mega Taser Cannon</b> behind with <b>Mega Taser Cannon 1</b> in front.<br><br>
+      <b>Plastic Blaster</b> and <b>DH Raider Equipment</b> are held in the torso&rsquo;s own arms,
+      so they cannot be combined with an <b>Arms</b> trait &mdash; picking either one greys the
+      other out, both ways round.
     </div>
   </div>
 </div>
@@ -346,6 +369,44 @@ a{color:var(--ochre)}
    */
   var COMPANION_UNDER = ['dh-vision-shoulder-cam'];
 
+  /* Exception, reported from testing: Plastic Blaster and DH Raider Equipment
+     are drawn with the torso's own arms holding them. An Arms trait replaces
+     those arms with a different pose, so the weapon ends up floating with
+     nothing gripping it. The two are mutually exclusive -- this is a rule about
+     the art, not about draw order, so no amount of reordering fixes it and it
+     is enforced on selection instead.
+
+     Enforced both ways. Whichever slot is filled first blocks the other, and
+     the way out is always the None tile, so no build can become unescapable. */
+  var ARMS_EXCLUSIVE = ['plastic-blaster', 'dh-raider-equipment'];
+
+  function armsExclusive(slug) { return ARMS_EXCLUSIVE.indexOf(slug) !== -1; }
+
+  /* Why this trait cannot be picked right now, or null if it can. One function
+     so the greyed-out cells, the tooltip and the banner can never disagree. */
+  function blockedReason(key, slug) {
+    if (key === 'weapon' && armsExclusive(slug) && sel.arms)
+      return nameOf('weapon', slug) + ' is held in the torso’s own arms, so it cannot be '
+           + 'combined with an Arms trait. Set Arms to None first.';
+    if (key === 'arms' && sel.weapon && armsExclusive(sel.weapon))
+      return 'Arms traits repose the torso’s arms, which are what hold '
+           + nameOf('weapon', sel.weapon) + '. Set Weapon to None first.';
+    return null;
+  }
+
+  function nameOf(key, slug) {
+    var l = TRAITS[key] || [];
+    for (var i = 0; i < l.length; i++) if (l[i].slug === slug) return l[i].name;
+    return slug;
+  }
+
+  /* Last line of defence for selections that did not come from a click --
+     Randomise and a hand-edited or older shared link. The weapon yields,
+     because Arms is the slot with more to look at. */
+  function dropConflicts() {
+    if (sel.arms && sel.weapon && armsExclusive(sel.weapon)) delete sel.weapon;
+  }
+
   var customOrder = null;   // array of slot keys once the user has dragged
 
   function layerOrder() {
@@ -369,7 +430,7 @@ a{color:var(--ochre)}
     return order;
   }
 
-  var sel = {}, active = SLOTS[0].key, dragKey = null;
+  var sel = {}, hidden = {}, active = SLOTS[0].key, dragKey = null;
   var frame = document.getElementById('frame');
   var empty = document.getElementById('empty');
   var tabsEl = document.getElementById('tabs');
@@ -384,7 +445,9 @@ a{color:var(--ochre)}
   function paint() {
     SLOTS.forEach(function (s) {
       var id = 'L-' + s.key, el = document.getElementById(id);
-      if (!sel[s.key]) { if (el) el.remove(); return; }
+      // A hidden layer keeps its selection but is not drawn at all -- removing
+      // the <img> rather than setting opacity, so nothing can be half-visible.
+      if (!sel[s.key] || hidden[s.key]) { if (el) el.remove(); return; }
       if (!el) {
         el = document.createElement('img');
         el.id = id; el.alt = '';
@@ -392,7 +455,10 @@ a{color:var(--ochre)}
       }
       // Swap in the armless torso when arms are on and a variant exists for it.
       var dir = s.dir;
-      if (s.key === 'torso' && sel.arms && NOARMS.indexOf(sel[s.key]) !== -1) dir = 'torso-noarms';
+      // Hidden arms must bring the torso's own arms back, or hiding the arms
+      // layer would leave an armless torso and nothing to explain it.
+      if (s.key === 'torso' && sel.arms && !hidden.arms && NOARMS.indexOf(sel[s.key]) !== -1)
+        dir = 'torso-noarms';
       var want = url(dir, sel[s.key], 1000);
       if (el.getAttribute('src') !== want) el.setAttribute('src', want);
     });
@@ -401,7 +467,13 @@ a{color:var(--ochre)}
       var el = document.getElementById('L-' + s.key);
       if (el) frame.appendChild(el);
     });
-    empty.style.display = Object.keys(sel).length ? 'none' : 'flex';
+    // "Nothing picked" and "everything hidden" both leave a blank canvas, and
+    // they are not the same problem -- say which one you are looking at.
+    var picked = Object.keys(sel).length;
+    var drawn  = Object.keys(sel).filter(function (k) { return !hidden[k]; }).length;
+    empty.style.display = drawn ? 'none' : 'flex';
+    empty.textContent = !picked ? 'Pick traits to build a Fighter'
+                                : 'Every layer is hidden — use the ● toggles to bring them back';
     paintStack();
     writeHash();
   }
@@ -424,8 +496,31 @@ a{color:var(--ochre)}
         tag = NOARMS.indexOf(chosen) !== -1
             ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
             : ' <em style="color:var(--ochre);font-style:normal">arms underneath</em>';
+      if (hidden[s.key]) li.classList.add('hid');
       li.innerHTML = '<span class="grip">&#8942;&#8942;</span><span class="n">' + (i+1) +
                      '</span><b>' + s.label + '</b><span>' + name + tag + '</span>';
+      /*
+       * Per-layer visibility. Distinct from None: None empties the slot, this
+       * keeps the trait selected and simply stops drawing it, so you can look
+       * at what a layer is covering and put it straight back. That is the whole
+       * question with the arms-over-torso and weapon-over-body cases -- how much
+       * of the thing underneath is actually hidden -- and toggling was the only
+       * way to answer it without losing the build you were testing.
+       */
+      var eye = document.createElement('button');
+      eye.type = 'button'; eye.className = 'eye';
+      eye.setAttribute('aria-pressed', hidden[s.key] ? 'true' : 'false');
+      eye.title = (hidden[s.key] ? 'Show ' : 'Hide ') + s.label;
+      eye.innerHTML = hidden[s.key] ? '&#9676;' : '&#9679;';
+      eye.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (hidden[s.key]) delete hidden[s.key]; else hidden[s.key] = true;
+        paint();
+      });
+      // Dragging must start from the row, never from the button underneath it.
+      eye.draggable = false;
+      eye.addEventListener('dragstart', function (e) { e.preventDefault(); e.stopPropagation(); });
+      li.appendChild(eye);
       /*
        * DRAGGABLE, because finding the exceptions is the job. The rules we have
        * were all discovered by looking at a wrong composite -- weapons over arms,
@@ -515,9 +610,15 @@ a{color:var(--ochre)}
     none.innerHTML = '<img alt=""><span>None</span>';
     none.addEventListener('click', function () { delete sel[active]; buildTabs(); paint(); buildGrid(); });
     gridEl.appendChild(none);
+    // If anything in this category is ruled out, say so once at the top rather
+    // than leaving the reader to hover a greyed tile to find out why.
+    var banner = null;
     list.forEach(function (t) {
+      var why = blockedReason(active, t.slug);
       var b = document.createElement('button');
-      b.className = 'cell'; b.type = 'button'; b.title = t.name;
+      b.className = 'cell' + (why ? ' blocked' : ''); b.type = 'button';
+      b.title = why || t.name;
+      if (why) { b.disabled = true; if (!banner) banner = why; }
       b.setAttribute('aria-pressed', sel[active] === t.slug ? 'true' : 'false');
       var i = document.createElement('img');
       i.loading = 'lazy'; i.alt = t.name; i.src = url(s.dir, t.slug, 250);
@@ -528,6 +629,11 @@ a{color:var(--ochre)}
       });
       gridEl.appendChild(b);
     });
+    if (banner) {
+      var n = document.createElement('p');
+      n.className = 'conflict'; n.textContent = banner;
+      gridEl.insertBefore(n, gridEl.firstChild);
+    }
   }
 
   /* ---- shuffle ---- */
@@ -537,6 +643,7 @@ a{color:var(--ochre)}
   }
   function randomise(all) {
     sel = {};
+    hidden = {};   // a fresh shuffle starts fully visible
     SLOTS.forEach(function (s) {
       if (s.key === 'weaponBack') return;                 // opt-in only, it is the thing under test
       // `optional` no longer gates the None tile -- every slot has one -- but it
@@ -547,6 +654,7 @@ a{color:var(--ochre)}
       var odds = (s.key === 'effects2') ? 0.15 : (s.key === 'companion' ? 0.2 : 0.45);
       if (all || Math.random() < odds) { var x = pick(s.key); if (x) sel[s.key] = x; }
     });
+    dropConflicts();
     buildTabs(); paint(); buildGrid();
   }
 
@@ -557,6 +665,8 @@ a{color:var(--ochre)}
     // A rearranged stack travels in the link too, so a finding can be sent as a
     // url rather than described in prose.
     if (customOrder) parts.push('order=' + customOrder.join(','));
+    var hid = Object.keys(hidden).filter(function (k) { return hidden[k]; });
+    if (hid.length) parts.push('hide=' + hid.join(','));
     history.replaceState(null, '', parts.length ? '#' + parts.join('&') : location.pathname);
   }
   function readHash() {
@@ -566,11 +676,16 @@ a{color:var(--ochre)}
     h.split('&').forEach(function (p) {
       var kv = p.split('=');
       if (kv[0] === 'order' && kv[1]) { customOrder = kv[1].split(','); got = true; return; }
+      if (kv[0] === 'hide' && kv[1]) {
+        kv[1].split(',').forEach(function (k) { if (slotByKey(k)) hidden[k] = true; });
+        got = true; return;
+      }
       var s = slotByKey(kv[0]);
       if (!s || !kv[1]) return;
       var list = TRAITS[kv[0]] || [];
       for (var i=0;i<list.length;i++) if (list[i].slug === kv[1]) { sel[kv[0]] = kv[1]; got = true; }
     });
+    dropConflicts();   // links shared before the rule existed still open cleanly
     return got;
   }
 
@@ -580,7 +695,7 @@ a{color:var(--ochre)}
     customOrder = null; paint();
   });
   document.getElementById('clear').addEventListener('click', function () {
-    sel = {}; buildTabs(); paint(); buildGrid();
+    sel = {}; hidden = {}; buildTabs(); paint(); buildGrid();
   });
   document.getElementById('share').addEventListener('click', function () {
     var btn = this, was = btn.textContent;
