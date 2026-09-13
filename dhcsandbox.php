@@ -428,9 +428,11 @@ a{color:var(--ochre)}
    *
    * Thumbnails are left alone; this is about how pieces meet in a build.
    */
-  // The sash moves with its weapon -- they are two halves of one piece, so a
-  // shift applied to only one of them would pull them apart.
-  var NUDGE = { 'skull-krusher': 23, 'skull-krusher-sash': 23, 'axe': 13 };
+  // The sash is tuned separately from its weapon. They are halves of one piece
+  // but they meet the body at different points -- the sash lies on the chest,
+  // the weapon hangs behind -- so the later correction that dropped the weapons
+  // another 10px does not apply to it.
+  var NUDGE = { 'skull-krusher': 23, 'skull-krusher-sash': 13, 'axe': 13 };
 
   /*
    * COMPANIONS NORMALLY DRAW LAST -- a pet or drone floats in front of the
