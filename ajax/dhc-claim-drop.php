@@ -17,8 +17,8 @@ require_once __DIR__ . '/../dhcfighters-lib.php';
 
 header('Content-Type: application/json');
 
-function dhcf_drop_out($awarded, $why = '') {
-	echo json_encode(array('ok' => (bool)$awarded, 'drop' => $awarded, 'why' => $why));
+function dhcf_drop_out($awarded, $why = '', $extra = array()) {
+	echo json_encode(array_merge(array('ok' => (bool)$awarded, 'drop' => $awarded, 'why' => $why), $extra));
 	exit;
 }
 
@@ -34,7 +34,14 @@ $placement = isset($_POST['placement']) ? (int)$_POST['placement'] : null;
 
 // Did the run earn a roll? Floors are progress-based, never win/loss --
 // losing is the normal outcome in most of these games.
-if ($value < dhcf_floor($key)) dhcf_drop_out(null, 'below the threshold');
+//
+// A near miss returns the floor so the game can say "7 of 10 waves held"
+// instead of nothing. Silence after a thirty-minute Guardians run reads as a
+// bug, and a stated threshold is a goal for the next attempt.
+$floor = dhcf_floor($key);
+if ($value < $floor) {
+	dhcf_drop_out(null, 'below the threshold', array('floor' => $floor, 'value' => $value));
+}
 
 // Anti-abuse ceiling. Generous enough that no honest player meets it.
 $sql = sprintf("SELECT COUNT(*) AS c FROM dhc_trait_drops
@@ -48,9 +55,16 @@ if ($res && ($row = $res->fetch_assoc()) && (int)$row['c'] >= DHCF_DAILY_CAP) {
 	dhcf_drop_out(null, 'daily limit reached');
 }
 
-$detail = $key . ' ' . $value . ($placement ? ' (#' . $placement . ')' : '');
-$drop = dhcf_award($conn, $user_id, $game['category'], $key, $detail, dhcf_tier_table($placement));
+// Quality comes from the best of the game's base table, its performance bands
+// and any leaderboard placement -- so going deeper always pays, and there is
+// no advantage in dying the moment you clear the floor.
+$table = dhcf_table_for($key, $value, $placement);
+$band  = dhcf_band_label($key, $value, $placement);
+
+$detail = $key . ' ' . $value . ($placement ? ' (#' . $placement . ')' : '') . ' [' . $band . ']';
+$drop = dhcf_award($conn, $user_id, $game['category'], $key, $detail, $table);
 $conn->close();
 
 if (!$drop) dhcf_drop_out(null, 'nothing to award');
+$drop['band'] = $band;
 dhcf_drop_out($drop);

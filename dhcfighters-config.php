@@ -80,15 +80,34 @@ function dhcf_trait_name($category, $slug) {
  *                   never a slot anyone needs
  * ------------------------------------------------------------------ */
 $GLOBALS['DHCF_GAMES'] = array(
-	'skullswap'      => array('label' => 'Skull Swap',      'category' => 'torso',      'trigger' => 'score threshold'),
-	'skullracer'     => array('label' => 'Skull Racer',     'category' => 'head',       'trigger' => 'finish the race'),
-	'obscura'        => array('label' => 'Obscura',         'category' => 'background', 'trigger' => 'finish a run of 10+ solves'),
-	'cryptcrawl'     => array('label' => 'Crypt Crawl',     'category' => 'weapon',     'trigger' => 'win'),
-	'cryptconquest'  => array('label' => 'Crypt Conquest',  'category' => 'headgear',   'trigger' => 'win'),
-	'gauntlets'      => array('label' => 'Gauntlets',       'category' => 'effects',    'trigger' => 'win'),
-	'guardians'      => array('label' => 'Realm Guardians', 'category' => 'companion',  'trigger' => 'waves held'),
-	'monstrocity'    => array('label' => 'Monstrocity',     'category' => 'arms',       'trigger' => 'complete all 28 levels'),
-	'bosses'         => array('label' => 'Boss Battles',    'category' => 'wildcard',   'trigger' => 'every boss defeat', 'gated' => true),
+	// 'base'  the tier table a qualifying result rolls on before any bonus.
+	//         Win-gated games start higher: on the live boards a Crypt Crawl
+	//         week is typically 0-1 wins against 2 losses, so a win is already
+	//         an achievement and should not roll the same table as a routine run.
+	// 'bands' value => better table, for games where doing MORE should pay more.
+	//         Without these a drop is binary, and publishing the floor teaches
+	//         players to stop at it -- hold 10 waves, die, restart, which turns
+	//         a 30-minute game into a 5-minute farm.
+	// 'lower' set when a smaller value is better (race times).
+	'skullswap'      => array('label' => 'Skull Swap',      'category' => 'torso',      'trigger' => 'score threshold',
+	                          'base' => 'run',          'bands' => array(9000 => 'placement_10', 12000 => 'placement_3', 15000 => 'placement_1')),
+	'skullracer'     => array('label' => 'Skull Racer',     'category' => 'head',       'trigger' => 'finish the race',
+	                          'base' => 'run',          'lower' => true,
+	                          'bands' => array(400 => 'placement_10', 345 => 'placement_3', 330 => 'placement_1')),
+	'obscura'        => array('label' => 'Obscura',         'category' => 'background', 'trigger' => 'finish a run of 10+ solves',
+	                          'base' => 'run',          'bands' => array(15 => 'placement_10', 25 => 'placement_3', 40 => 'placement_1')),
+	'cryptcrawl'     => array('label' => 'Crypt Crawl',     'category' => 'weapon',     'trigger' => 'win',
+	                          'base' => 'placement_3'),
+	'cryptconquest'  => array('label' => 'Crypt Conquest',  'category' => 'headgear',   'trigger' => 'win',
+	                          'base' => 'placement_10'),
+	'gauntlets'      => array('label' => 'Gauntlets',       'category' => 'effects',    'trigger' => 'win',
+	                          'base' => 'placement_10'),
+	'guardians'      => array('label' => 'Realm Guardians', 'category' => 'companion',  'trigger' => 'waves held',
+	                          'base' => 'run',          'bands' => array(20 => 'placement_10', 40 => 'placement_3', 70 => 'placement_1')),
+	'monstrocity'    => array('label' => 'Monstrocity',     'category' => 'arms',       'trigger' => 'complete all 28 levels',
+	                          'base' => 'placement_1'),
+	'bosses'         => array('label' => 'Boss Battles',    'category' => 'wildcard',   'trigger' => 'every boss defeat', 'gated' => true,
+	                          'base' => 'run',          'bands' => array(250 => 'placement_10', 500 => 'placement_3', 1000 => 'placement_1')),
 );
 
 function dhcf_game($key) {
@@ -139,13 +158,62 @@ define('DHCF_TIERS', array(
 	'placement_1' => array('common' => 15, 'uncommon' => 25, 'epic' => 30, 'legendary' => 22,  'mythic' => 8),
 ));
 
-/** Tier table for a leaderboard position (1-based); null for a routine run. */
-function dhcf_tier_table($placement = null) {
-	if ($placement === null || $placement < 1) return DHCF_TIERS['run'];
-	if ($placement == 1)  return DHCF_TIERS['placement_1'];
-	if ($placement <= 3)  return DHCF_TIERS['placement_3'];
-	if ($placement <= 10) return DHCF_TIERS['placement_10'];
-	return DHCF_TIERS['run'];
+/** Rank the tables so "whichever is better" is a comparison, not a guess. */
+function dhcf_table_rank($name) {
+	$order = array('run' => 0, 'placement_10' => 1, 'placement_3' => 2, 'placement_1' => 3);
+	return isset($order[$name]) ? $order[$name] : 0;
+}
+
+/** Table name earned by a leaderboard position (1-based), or 'run'. */
+function dhcf_placement_table($placement = null) {
+	if ($placement === null || $placement < 1) return 'run';
+	if ($placement == 1)  return 'placement_1';
+	if ($placement <= 3)  return 'placement_3';
+	if ($placement <= 10) return 'placement_10';
+	return 'run';
+}
+
+/**
+ * Which tier table a result has earned: the BEST of the game's base table,
+ * what its performance bands award, and what its leaderboard placement awards.
+ *
+ * Best-of rather than additive, so a player is never worse off for having done
+ * well on two axes at once, and the ceiling stays the first-place table.
+ */
+function dhcf_table_for($key, $value = 0, $placement = null) {
+	$g    = dhcf_game($key);
+	$name = ($g && !empty($g['base'])) ? $g['base'] : 'run';
+
+	if ($g && !empty($g['bands'])) {
+		$lower = !empty($g['lower']);
+		foreach ($g['bands'] as $threshold => $table) {
+			$hit = $lower ? ($value > 0 && $value <= $threshold) : ($value >= $threshold);
+			if ($hit && dhcf_table_rank($table) > dhcf_table_rank($name)) $name = $table;
+		}
+	}
+
+	$p = dhcf_placement_table($placement);
+	if (dhcf_table_rank($p) > dhcf_table_rank($name)) $name = $p;
+
+	return DHCF_TIERS[$name];
+}
+
+/** The band a value has reached, for telling the player what they rolled on. */
+function dhcf_band_label($key, $value = 0, $placement = null) {
+	$g = dhcf_game($key);
+	$name = ($g && !empty($g['base'])) ? $g['base'] : 'run';
+	if ($g && !empty($g['bands'])) {
+		$lower = !empty($g['lower']);
+		foreach ($g['bands'] as $threshold => $table) {
+			$hit = $lower ? ($value > 0 && $value <= $threshold) : ($value >= $threshold);
+			if ($hit && dhcf_table_rank($table) > dhcf_table_rank($name)) $name = $table;
+		}
+	}
+	$p = dhcf_placement_table($placement);
+	if (dhcf_table_rank($p) > dhcf_table_rank($name)) $name = $p;
+	$labels = array('run' => 'standard odds', 'placement_10' => 'improved odds',
+	                'placement_3' => 'strong odds', 'placement_1' => 'best odds');
+	return isset($labels[$name]) ? $labels[$name] : 'standard odds';
 }
 
 /* ------------------------------------------------------------------ *

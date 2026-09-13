@@ -39,6 +39,9 @@
   border:1px solid #4f9d84;color:#4f9d84;border-radius:999px;padding:3px 9px}
 #dhcdrop-dupe{display:inline-block;margin:8px 0 0;font-size:9px;letter-spacing:.16em;text-transform:uppercase;
   border:1px solid #6a5f57;color:#8b8178;border-radius:999px;padding:3px 9px}
+#dhcdrop-veil.miss #dhcdrop-art,#dhcdrop-veil.miss #dhcdrop-new,#dhcdrop-veil.miss #dhcdrop-dupe{display:none}
+#dhcdrop-bar{height:5px;background:#241d1b;border-radius:3px;margin:12px 22px 0;overflow:hidden}
+#dhcdrop-bar i{display:block;height:100%;background:#c8913c}
 #dhcdrop-actions{display:flex;gap:8px;padding:14px}
 #dhcdrop-actions a,#dhcdrop-actions button{flex:1;font:inherit;font-size:10px;letter-spacing:.1em;
   text-transform:uppercase;padding:9px 0;cursor:pointer;border-radius:2px;text-decoration:none;
@@ -83,6 +86,8 @@
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
 
   function show(d) {
+    veil.classList.remove('miss');
+    document.getElementById('dhcdrop-kicker').textContent = 'Trait acquired';
     document.getElementById('dhcdrop-img').src = base + '/250/' + d.category + '/' + d.slug + '.png';
     document.getElementById('dhcdrop-name').textContent = d.name;
     var t = document.getElementById('dhcdrop-tier');
@@ -95,8 +100,22 @@
       : 'No minted Fighter wears this';
     document.getElementById('dhcdrop-meta').innerHTML =
       worn + '<br>' + d.rate + '% drop &middot; ' + d.points + ' pts' +
+      (d.band ? ' &middot; ' + d.band : '') +
       (d.is_new ? '<br><span id="dhcdrop-new">New to you</span>'
                 : '<br><span id="dhcdrop-dupe">Duplicate &mdash; lets you build a second</span>');
+    veil.classList.add('on');
+  }
+
+  function showMiss(d, opts) {
+    veil.classList.add('miss');
+    document.getElementById('dhcdrop-kicker').textContent = 'No trait this run';
+    document.getElementById('dhcdrop-name').textContent =
+      d.value + ' of ' + d.floor + ' ' + opts.unit;
+    document.getElementById('dhcdrop-tier').textContent = '';
+    var pct = Math.max(4, Math.min(100, Math.round(d.value / d.floor * 100)));
+    document.getElementById('dhcdrop-meta').innerHTML =
+      'Reach <b>' + d.floor + ' ' + opts.unit + '</b> to earn a trait.' +
+      '<div id="dhcdrop-bar"><i style="width:' + pct + '%"></i></div>';
     veil.classList.add('on');
   }
 
@@ -112,7 +131,13 @@
       method: 'POST', credentials: 'same-origin',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: body
     }).then(function (r) { return r.json(); })
-      .then(function (d) { if (d && d.ok && d.drop) show(d.drop); return d; })
+      .then(function (d) {
+        if (d && d.ok && d.drop) { show(d.drop); return d; }
+        // A near miss is worth saying out loud: after a long run, silence reads
+        // as a bug, and the threshold is a target for the next attempt.
+        if (d && d.why === 'below the threshold' && opts.unit) showMiss(d, opts);
+        return d;
+      })
       .catch(function () { /* a missed drop must never break a game's end screen */ });
   };
 })();

@@ -65,11 +65,18 @@ is worth roughly two and a half times the commonest, not three hundred times.
 That keeps both things worth doing — filling every slot on a Fighter matters as
 much as chasing a single spectacular trait.
 
-**Placement improves what you get, not how often.** Topping a leaderboard rolls
-on a much better tier table than a routine run — a first place is roughly
-sixteen times likelier to pull a mythic. But every table keeps a real chance at
-something rare, so the lottery is alive for everyone playing, not just the
-people at the top.
+**How well you do improves what you get, not how often.** A drop's quality comes
+from the best of three things: the game itself (winning Crypt Crawl is hard, so
+a win starts on a strong table), how far you got, and where you placed on the
+leaderboard. A first place or a deep run is roughly sixteen times likelier to
+pull a mythic than a bare qualifying attempt.
+
+That means going further always pays. In Realm Guardians, holding 41 waves rolls
+far better than scraping the 10 you need, and 70+ rolls the best table in the
+game — so there is never a reason to stop the moment you qualify.
+
+Every table keeps a real chance at something rare, so the lottery is alive for
+everyone playing, not just the people at the top.
 
 ---
 
