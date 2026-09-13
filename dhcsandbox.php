@@ -342,7 +342,10 @@ a{color:var(--ochre)}
       front, <b>Mega Taser Cannon</b> behind with <b>Mega Taser Cannon 1</b> in front.<br><br>
       <b>Plastic Blaster</b>, <b>DH Raider Equipment</b> and <b>Electric Morning Star</b> are drawn
       against the torso&rsquo;s own arms, so they cannot be combined with an <b>Arms</b> trait
-      &mdash; picking either side greys the other out, both ways round.
+      &mdash; picking either side greys the other out, both ways round.<br><br>
+      Effects sit behind the character, except the three <b>DHC2 Comic Cover</b> effects, which are
+      cover framing &mdash; they draw just below <b>Head</b> so they cross the body but leave the
+      face readable.
     </div>
   </div>
 </div>
@@ -398,6 +401,21 @@ a{color:var(--ochre)}
    * one in and the workaround is simply never reached again.
    */
   var ARMS_BEHIND_TORSO = ['perforator-arm-replacement'];
+
+  /*
+   * EFFECTS NORMALLY DRAW FIRST -- just above the background, behind the whole
+   * character, which is what "effects should layer on top of the background,
+   * not the character traits" settled. The three DHC2 comic covers are the
+   * exception: they are cover framing meant to sit OVER the body but UNDER the
+   * face, so they land immediately below Head and the face stays readable.
+   *
+   * Applied per effects slot, so a cover works in either Effects 1 or Effects 2
+   * and an ordinary effect in the other slot stays down at the back where it
+   * belongs. With a cover in both, their relative order is preserved.
+   */
+  var COMIC_COVERS = ['dhc2-comic-cover-1', 'dhc2-comic-cover-2', 'dhc2-comic-cover-3'];
+
+  function isComicCover(slug) { return COMIC_COVERS.indexOf(slug) !== -1; }
 
   function armsBehindTorso() {
     if (!sel.arms || ARMS_BEHIND_TORSO.indexOf(sel.arms) === -1) return false;
@@ -456,6 +474,13 @@ a{color:var(--ochre)}
       // a > t, so pulling arms out does not shift the torso index
       if (a > -1 && t > -1 && a > t) order.splice(t, 0, order.splice(a, 1)[0]);
     }
+    ['effects1', 'effects2'].forEach(function (key) {
+      if (!sel[key] || !isComicCover(sel[key])) return;
+      var k = order.map(function (s) { return s.key; });
+      var e = k.indexOf(key), h = k.indexOf('head');
+      // e < h, so removing it shifts head down one -- h-1 is then "just below head"
+      if (e > -1 && h > -1 && e < h) order.splice(h - 1, 0, order.splice(e, 1)[0]);
+    });
     return order;
   }
 
@@ -521,6 +546,8 @@ a{color:var(--ochre)}
       var tag = '';
       if (s.key === 'companion' && chosen && COMPANION_UNDER.indexOf(chosen) !== -1)
         tag = ' <em style="color:var(--teal);font-style:normal">behind arms</em>';
+      if ((s.key === 'effects1' || s.key === 'effects2') && chosen && isComicCover(chosen))
+        tag = ' <em style="color:var(--teal);font-style:normal">below head</em>';
       if (s.key === 'arms' && chosen && armsBehindTorso())
         tag = ' <em style="color:var(--ochre);font-style:normal">behind torso &mdash; temporary</em>';
       if (s.key === 'torso' && chosen && sel.arms)
