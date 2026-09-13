@@ -32,10 +32,13 @@ $dhc_slots = array(
 	'background' => array('Background',      'background', false),
 	'weaponBack' => array('Weapon (behind)', 'weapon',     true),
 	'torso'      => array('Torso',           'torso',      false),
+	// WEAPON BEFORE ARMS. A weapon is gripped, so the hand and forearm belong in
+	// front of it -- drawing arms first put the grip over the knuckles. Reported
+	// from the sandbox; the guessed order in LAYER-MANIFEST.json had it backwards.
+	'weapon'     => array('Weapon',          'weapon',     true),
 	'arms'       => array('Arms',            'arms',       true),
 	'head'       => array('Head',            'head',       false),
 	'headgear'   => array('Headgear',        'headgear',   true),
-	'weapon'     => array('Weapon',          'weapon',     true),
 	'companion'  => array('Companion',       'companion',  true),
 	'effects1'   => array('Effects 1',       'effects',    true),
 	'effects2'   => array('Effects 2',       'effects',    true),
