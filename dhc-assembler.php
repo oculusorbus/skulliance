@@ -201,13 +201,26 @@ if ($dhca_owned !== null) {
   --bone:#ece7dc; --dim:#9b9086; --blood:#d0463a; --ochre:#e0a13c; --teal:#4fa39c;
 }
 *{box-sizing:border-box}
+<?php if ($dhca_mode === 'sandbox'): ?>
+/* STANDALONE ONLY. The sandbox owns its whole page, so it takes the viewport
+   and lays the shell out against it. Embedded in the platform these same rules
+   force a viewport-tall block in the middle of a normal page -- which is where
+   the dead gap on DHC Fighters came from. */
 html,body{margin:0;height:100%}
 body{
   background:var(--ink); color:var(--bone);
   font:14px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
   -webkit-font-smoothing:antialiased;
 }
+<?php else: ?>
+/* EMBEDDED. Typography only -- no page-level background, height or margin, so
+   the assembler sits in the host page's flow like any other block. */
+.shell,.dhcf-wrap{color:var(--bone);
+  font:14px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
+  -webkit-font-smoothing:antialiased}
+<?php endif; ?>
 h1,h2,h3,.btn,.tab{font-family:"Archivo Black",Impact,sans-serif;font-weight:400}
+.dhcf-wrap h1,.dhcf-wrap h2,.dhcf-wrap button{font-family:"Archivo Black",Impact,sans-serif;font-weight:400}
 a{color:var(--ochre)}
 
 .top{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
@@ -218,8 +231,31 @@ a{color:var(--ochre)}
 .badge{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);
   background:var(--ochre);padding:3px 8px;border-radius:2px}
 
-.shell{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:0;height:calc(100% - 52px)}
+.shell{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:0;<?php
+  // Only the standalone page has a viewport to fill. Embedded, the shell is
+  // sized by what is in it, and the picker scrolls inside its own column.
+  echo $dhca_mode === 'sandbox' ? 'height:calc(100% - 52px)' : 'height:auto;max-height:none'; ?>}
 @media (max-width:900px){.shell{grid-template-columns:1fr;height:auto}}
+<?php if ($dhca_mode !== 'sandbox'): ?>
+/* Embedded, the shell gets a DEFINITE height and both columns fill it.
+   Content-sizing it cannot work: let the stage decide and the picker ends
+   partway down with dead space beside the draw order; let the picker decide
+   and 42 background thumbnails stretch the stage to two and a half screens.
+   A fixed block bounded by the viewport gives neither column slack, and each
+   scrolls its own overflow. */
+.shell{border:1px solid var(--line);border-radius:3px;overflow:hidden;
+  align-items:stretch;height:min(1040px,86vh)}
+.stage{overflow:auto;min-height:0}
+.picker{height:100%;min-height:0;display:flex;flex-direction:column}
+.grid{flex:1;min-height:0;overflow:auto}
+@media (max-width:900px){
+  /* Single column: nothing to match, so let it flow and cap the picker rather
+     than trapping the canvas in a short scroller. */
+  .shell{height:auto}
+  .stage{overflow:visible}
+  .picker{height:auto;max-height:min(78vh,720px)}
+}
+<?php endif; ?>
 
 /* ---- stage ---- */
 .stage{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
