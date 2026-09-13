@@ -15,15 +15,14 @@
  * collection if it ever completes, and reusing them would create a saved
  * assembly whose number later collides with a real mint.
  *
- * The prefix is deliberately NOT 'DHC2F'. Assemblies are not NFTs, cannot be
- * minted, and are not part of the official collection -- a name that reads as
- * an official asset would blur exactly the line we have to keep clear. 'A' for
- * Assembly keeps the family resemblance and the continuous numbering without
- * ever being mistaken for a mint.
+ * Assemblies continue the collection's own naming, starting after the top of
+ * the minted range. They are NOT NFTs and cannot be minted -- the restriction
+ * is carried by the interface wording rather than by the serial, which keeps
+ * the numbering unbroken.
  * ------------------------------------------------------------------ */
-define('DHCF_SERIAL_PREFIX', 'DHC2A');
+define('DHCF_SERIAL_PREFIX', 'DHC2F');
 define('DHCF_SERIAL_START',  421);          // first number after the collection's range
-define('DHCF_SERIAL_PAD',    3);            // DHC2A421, DHC2A1000 when it gets there
+define('DHCF_SERIAL_PAD',    3);            // DHC2F421, DHC2F1000 when it gets there
 
 /** Bumped when a layering or exclusion rule changes; stamped on each save. */
 define('DHCF_RULES_VERSION', '1');
@@ -89,7 +88,7 @@ $GLOBALS['DHCF_GAMES'] = array(
 	'gauntlets'      => array('label' => 'Gauntlets',       'category' => 'effects',    'trigger' => 'win'),
 	'guardians'      => array('label' => 'Realm Guardians', 'category' => 'companion',  'trigger' => 'waves held'),
 	'monstrocity'    => array('label' => 'Monstrocity',     'category' => 'arms',       'trigger' => 'complete all 28 levels'),
-	'bosses'         => array('label' => 'Boss Battles',    'category' => 'wildcard',   'trigger' => 'boss defeated', 'gated' => true),
+	'bosses'         => array('label' => 'Boss Battles',    'category' => 'wildcard',   'trigger' => 'every boss defeat', 'gated' => true),
 );
 
 function dhcf_game($key) {

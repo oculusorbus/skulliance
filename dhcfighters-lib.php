@@ -91,7 +91,7 @@ function dhcf_next_serial($conn) {
 	return $start;
 }
 
-/** The default name for a serial, e.g. 'DHC2A421'. */
+/** The default name for a serial, e.g. 'DHC2F421'. */
 function dhcf_default_name($serial) {
 	return DHCF_SERIAL_PREFIX . str_pad((string)$serial, DHCF_SERIAL_PAD, '0', STR_PAD_LEFT);
 }
@@ -208,8 +208,24 @@ function dhcf_count_owned($conn, $user_id, $slug) {
  * INVENTORY AND FIGHTERS
  * ------------------------------------------------------------------ */
 
-/** Distinct traits a player owns: category => slug => ['copies'=>n, 'first'=>date]. */
-function dhcf_inventory($conn, $user_id) {
+/**
+ * TRAITS ARE CONSUMABLE.
+ *
+ * Owning a trait is not the same as having one free. Committing an Axe to a
+ * Fighter spends it; building a second Fighter with an Axe needs a second Axe.
+ * Disassembling or swapping a trait out returns it to the pool.
+ *
+ * That makes duplicates the point rather than dead weight -- a second copy of
+ * a common is what lets you keep the first Fighter and still build another --
+ * so the collection never stops being worth drawing from.
+ *
+ * Availability is DERIVED, never stored: owned (ledger rows) minus committed
+ * (traits inside saved Fighters). Nothing can drift out of sync because there
+ * is only one number, computed from two immutable-ish sources.
+ */
+
+/** Copies awarded, category => slug => count. */
+function dhcf_owned($conn, $user_id) {
 	$out = array();
 	$sql = sprintf("SELECT category, slug, COUNT(*) AS copies, MIN(awarded_at) AS first_at
 	                FROM dhc_trait_drops WHERE user_id = %d GROUP BY category, slug", (int)$user_id);
@@ -225,14 +241,65 @@ function dhcf_inventory($conn, $user_id) {
 	return $out;
 }
 
-/** True if the player owns every trait in the layout. */
-function dhcf_owns_all($inventory, $traits) {
+/**
+ * Copies currently locked inside saved Fighters, slug => count.
+ *
+ * $ignore_id skips one Fighter, which is how editing works: the build being
+ * changed must not count itself as competition for its own traits.
+ */
+function dhcf_committed($conn, $user_id, $ignore_id = 0) {
+	$counts = array();
+	$sql = sprintf("SELECT id, traits FROM dhc_fighters WHERE user_id = %d%s",
+		(int)$user_id, $ignore_id ? ' AND id <> ' . (int)$ignore_id : '');
+	$res = $conn->query($sql);
+	if ($res) {
+		while ($row = $res->fetch_assoc()) {
+			$t = json_decode($row['traits'], true) ?: array();
+			// counted per occurrence: the same effect in both effects slots
+			// legitimately spends two copies
+			foreach ($t as $slot => $slug) {
+				if ($slug === '' || $slug === null) continue;
+				$counts[$slug] = (isset($counts[$slug]) ? $counts[$slug] : 0) + 1;
+			}
+		}
+	}
+	return $counts;
+}
+
+/** What the player can still place: category => slug => free copies. */
+function dhcf_available($conn, $user_id, $ignore_id = 0) {
+	$owned     = dhcf_owned($conn, $user_id);
+	$committed = dhcf_committed($conn, $user_id, $ignore_id);
+	$out = array();
+	foreach ($owned as $cat => $traits) {
+		foreach ($traits as $slug => $info) {
+			$free = $info['copies'] - (isset($committed[$slug]) ? $committed[$slug] : 0);
+			$out[$cat][$slug] = array(
+				'copies' => $info['copies'],
+				'free'   => $free > 0 ? $free : 0,
+				'first'  => $info['first'],
+			);
+		}
+	}
+	return $out;
+}
+
+/** Which traits in a layout the player cannot currently afford. Empty = fine. */
+function dhcf_shortfall($available, $traits) {
+	$need = array();
 	foreach ($traits as $slot => $slug) {
 		if ($slug === '' || $slug === null) continue;
-		$cat = dhcf_slot_category($slot);
-		if (empty($inventory[$cat][$slug])) return false;
+		$need[$slug] = (isset($need[$slug]) ? $need[$slug] : 0) + 1;
 	}
-	return true;
+	$short = array();
+	foreach ($need as $slug => $n) {
+		$free = 0;
+		foreach ($available as $cat => $traits2) {
+			if (isset($traits2[$slug])) { $free = $traits2[$slug]['free']; break; }
+		}
+		if ($free < $n) $short[$slug] = array('need' => $n, 'free' => $free);
+	}
+	return $short;
 }
 
 /** Saved fighters for a player, newest first. */
@@ -250,57 +317,123 @@ function dhcf_fighters($conn, $user_id) {
 	return $out;
 }
 
+function dhcf_clean_traits($traits) {
+	$clean = array();
+	foreach (dhcf_slots() as $slot) {
+		if (!empty($traits[$slot])) $clean[$slot] = (string)$traits[$slot];
+	}
+	return $clean;
+}
+
 /**
- * Save a new Fighter. Returns [ok, message, row].
+ * Save a new Fighter, spending its traits. Returns [ok, message, row].
  *
- * The serial is allocated inside the insert attempt rather than read and then
- * used, because two players saving at the same moment would otherwise take the
- * same number. The UNIQUE key on serial is the real guard; a collision just
- * retries with the next one.
+ * Wrapped in a transaction because availability is derived from the very table
+ * being written: two saves racing each other would both read the same free
+ * copies and both commit them. The UNIQUE key on serial covers the numbering
+ * race separately -- a collision just retries with the next number.
  */
 function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 	$user_id = (int)$user_id;
 	if ($user_id <= 0) return array(false, 'Not signed in.', null);
 
-	$clean = array();
-	foreach (dhcf_slots() as $slot) {
-		if (!empty($traits[$slot])) $clean[$slot] = (string)$traits[$slot];
-	}
+	$clean = dhcf_clean_traits($traits);
 	if (!$clean) return array(false, 'Nothing to save.', null);
-
-	$inv = dhcf_inventory($conn, $user_id);
-	if (!dhcf_owns_all($inv, $clean)) return array(false, 'That build uses traits you do not own.', null);
 
 	$name  = trim(mb_substr((string)$name, 0, 48));
 	$score = dhcf_score($clean);
 	$json  = json_encode($clean);
 
-	for ($try = 0; $try < 5; $try++) {
-		$serial = dhcf_next_serial($conn);
-		$sql = sprintf(
-			"INSERT INTO dhc_fighters (user_id, serial, name, traits, rarity_score, rules_version, created_at, updated_at)
-			 VALUES (%d, %d, %s, '%s', %d, '%s', NOW(), NOW())",
-			$user_id, $serial,
-			$name === '' ? 'NULL' : "'" . $conn->real_escape_string($name) . "'",
-			$conn->real_escape_string($json), $score,
-			$conn->real_escape_string(DHCF_RULES_VERSION)
-		);
-		if ($conn->query($sql)) {
-			return array(true, 'Saved.', array(
-				'id'      => $conn->insert_id,
-				'serial'  => $serial,
-				'name'    => $name,
-				'display' => $name !== '' ? $name : dhcf_default_name($serial),
-				'score'   => $score,
-				'traits'  => $clean,
-			));
+	$conn->begin_transaction();
+	try {
+		$short = dhcf_shortfall(dhcf_available($conn, $user_id), $clean);
+		if ($short) {
+			$conn->rollback();
+			$names = array();
+			foreach ($short as $slug => $s) $names[] = dhcf_trait_name(dhcf_category_of($slug), $slug);
+			return array(false, 'You have already used: ' . implode(', ', $names), null);
 		}
-		if ($conn->errno !== 1062) {          // 1062 = duplicate serial, race -- retry
-			error_log('dhcf_save_fighter: ' . $conn->error);
-			return array(false, 'Could not save.', null);
+
+		for ($try = 0; $try < 5; $try++) {
+			$serial = dhcf_next_serial($conn);
+			$sql = sprintf(
+				"INSERT INTO dhc_fighters (user_id, serial, name, traits, rarity_score, rules_version, created_at, updated_at)
+				 VALUES (%d, %d, %s, '%s', %d, '%s', NOW(), NOW())",
+				$user_id, $serial,
+				$name === '' ? 'NULL' : "'" . $conn->real_escape_string($name) . "'",
+				$conn->real_escape_string($json), $score,
+				$conn->real_escape_string(DHCF_RULES_VERSION)
+			);
+			if ($conn->query($sql)) {
+				$id = $conn->insert_id;
+				$conn->commit();
+				return array(true, 'Saved.', array(
+					'id'      => $id,
+					'serial'  => $serial,
+					'name'    => $name,
+					'display' => $name !== '' ? $name : dhcf_default_name($serial),
+					'score'   => $score,
+					'traits'  => $clean,
+				));
+			}
+			if ($conn->errno !== 1062) break;   // 1062 = serial taken, retry
 		}
+		$conn->rollback();
+		error_log('dhcf_save_fighter: ' . $conn->error);
+		return array(false, 'Could not save.', null);
+	} catch (Exception $e) {
+		$conn->rollback();
+		error_log('dhcf_save_fighter: ' . $e->getMessage());
+		return array(false, 'Could not save.', null);
 	}
-	return array(false, 'Could not allocate a number, try again.', null);
+}
+
+/** Which category a slug belongs to, by searching the rarity table. */
+function dhcf_category_of($slug) {
+	foreach (dhcf_rarity() as $cat => $traits) if (isset($traits[$slug])) return $cat;
+	return '';
+}
+
+/** Change a Fighter's traits, releasing the old set and spending the new. */
+function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
+	$user_id = (int)$user_id; $fighter_id = (int)$fighter_id;
+	$clean = dhcf_clean_traits($traits);
+	if (!$clean) return array(false, 'Nothing to save.', null);
+
+	$conn->begin_transaction();
+	try {
+		// ignore this fighter's own commitments -- it is being replaced, so the
+		// traits it currently holds are available to it
+		$short = dhcf_shortfall(dhcf_available($conn, $user_id, $fighter_id), $clean);
+		if ($short) {
+			$conn->rollback();
+			$names = array();
+			foreach ($short as $slug => $s) $names[] = dhcf_trait_name(dhcf_category_of($slug), $slug);
+			return array(false, 'You have already used: ' . implode(', ', $names), null);
+		}
+		$sql = sprintf("UPDATE dhc_fighters SET traits = '%s', rarity_score = %d, rules_version = '%s', updated_at = NOW()
+		                WHERE id = %d AND user_id = %d",
+			$conn->real_escape_string(json_encode($clean)), dhcf_score($clean),
+			$conn->real_escape_string(DHCF_RULES_VERSION), $fighter_id, $user_id);
+		if (!$conn->query($sql)) { $conn->rollback(); return array(false, 'Could not save.', null); }
+		$conn->commit();
+		return array(true, 'Saved.', array('id' => $fighter_id, 'score' => dhcf_score($clean), 'traits' => $clean));
+	} catch (Exception $e) {
+		$conn->rollback();
+		return array(false, 'Could not save.', null);
+	}
+}
+
+/**
+ * Disassemble: delete the Fighter and return every trait it held.
+ *
+ * The traits come back automatically because availability is derived -- with
+ * the row gone, nothing counts those copies as committed. No inventory write,
+ * so no way for the two to disagree. The serial is retired rather than reused.
+ */
+function dhcf_delete_fighter($conn, $user_id, $fighter_id) {
+	$sql = sprintf("DELETE FROM dhc_fighters WHERE id = %d AND user_id = %d", (int)$fighter_id, (int)$user_id);
+	return $conn->query($sql) && $conn->affected_rows > 0;
 }
 
 /** Rename, or clear the override by passing ''. */
@@ -309,7 +442,7 @@ function dhcf_rename_fighter($conn, $user_id, $fighter_id, $name) {
 	$sql = sprintf("UPDATE dhc_fighters SET name = %s, updated_at = NOW() WHERE id = %d AND user_id = %d",
 		$name === '' ? 'NULL' : "'" . $conn->real_escape_string($name) . "'",
 		(int)$fighter_id, (int)$user_id);
-	return $conn->query($sql) && $conn->affected_rows >= 0;
+	return $conn->query($sql);
 }
 
 /* ------------------------------------------------------------------ *
