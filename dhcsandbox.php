@@ -829,19 +829,69 @@ a{color:var(--ochre)}
     for (i = 0; i < l.length; i++) { r -= (l[i].rate || 0); if (r <= 0) return l[i].slug; }
     return l[l.length-1].slug;
   }
+  /*
+   * HOW OFTEN A SLOT IS ACTUALLY FILLED, measured across the 226 minted
+   * Fighters rather than guessed. The guessed numbers this replaces had every
+   * optional slot at 45%, which dressed each shuffle in one of everything --
+   * real Fighters are much sparer than that. Weapons in particular appear in
+   * only a quarter of them.
+   *
+   * Background, Torso and Head are always filled and are not listed. On chain
+   * Torso and Head are 97.8% and Background 66.8%, but all three are the body
+   * of the character here, and a shuffle that hands you a headless torso on no
+   * background is not a useful starting point.
+   */
+  var FILL = { arms: 0.296, headgear: 0.447, companion: 0.177, effects1: 0.522,
+  // Effects 2 is CONDITIONAL on Effects 1, so this is 13.3/52.2 rather than the
+  // 13.3% it works out to overall. Using the flat figure here would multiply by
+  // the Effects 1 roll and land at 7%.
+               effects2: 0.255 };
+  var WEAPON_FILL = 0.248;
+
+  /* The other half of a two-part weapon, or null. Derived from the "-1" suffix
+     rather than a hardcoded pair list, so a new split weapon works untouched. */
+  function weaponPartner(slug, intoKey) {
+    var other = /-1$/.test(slug) ? slug.replace(/-1$/, '') : slug + '-1';
+    var list = TRAITS[intoKey] || [];
+    for (var i = 0; i < list.length; i++) if (list[i].slug === other) return other;
+    return null;
+  }
+
   function randomise(all) {
     sel = {};
     hidden = {};   // a fresh shuffle starts fully visible
     SLOTS.forEach(function (s) {
-      if (s.key === 'weaponBack') return;                 // opt-in only, it is the thing under test
-      // `optional` no longer gates the None tile -- every slot has one -- but it
-      // still decides what Randomise fills, so a shuffle produces a whole Fighter
-      // rather than a background with one arm floating on it.
+      if (s.key === 'weapon' || s.key === 'weaponBack') return;   // handled together below
       if (!s.optional) { var v = pick(s.key); if (v) sel[s.key] = v; return; }
-      // roughly mirror the real collection: optional slots are absent more often than present
-      var odds = (s.key === 'effects2') ? 0.15 : (s.key === 'companion' ? 0.2 : 0.45);
-      if (all || Math.random() < odds) { var x = pick(s.key); if (x) sel[s.key] = x; }
+      // Effects 2 never appears without Effects 1 in the collection -- not once
+      // in 226 -- so it is a second effect on top of a first, not a slot of its own.
+      if (s.key === 'effects2' && !all && !sel.effects1) return;
+      if (all || Math.random() < (FILL[s.key] || 0.3)) { var x = pick(s.key); if (x) sel[s.key] = x; }
     });
+    /*
+     * ONE weapon, from both slots' pools together. Rolling each slot separately
+     * gave a Fighter a front weapon and an unrelated back weapon at the same
+     * time, and skipping the back slot entirely -- the old behaviour -- meant
+     * the seven back-only weapons never turned up at all.
+     */
+    if (all || Math.random() < WEAPON_FILL) {
+      var pool = ['weapon', 'weaponBack'][Math.random() < 0.5 ? 0 : 1];
+      // Arms repose the torso's arms, so the weapons that rely on them are out
+      // of the running once arms are on rather than picked and then discarded.
+      var cands = (TRAITS[pool] || []).filter(function (t) {
+        return !(sel.arms && armsExclusive(t.slug));
+      });
+      if (cands.length) {
+        var total = 0, i;
+        for (i = 0; i < cands.length; i++) total += (cands[i].rate || 1);
+        var r = Math.random() * total, chosen = cands[cands.length - 1].slug;
+        for (i = 0; i < cands.length; i++) { r -= (cands[i].rate || 1); if (r <= 0) { chosen = cands[i].slug; break; } }
+        sel[pool] = chosen;
+        var otherKey = pool === 'weapon' ? 'weaponBack' : 'weapon';
+        var mate = weaponPartner(chosen, otherKey);
+        if (mate) sel[otherKey] = mate;   // a split weapon needs both halves to read
+      }
+    }
     dropConflicts();
     buildTabs(); paint(); buildGrid();
   }
