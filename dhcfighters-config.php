@@ -82,7 +82,7 @@ function dhcf_trait_name($category, $slug) {
 $GLOBALS['DHCF_GAMES'] = array(
 	'skullswap'      => array('label' => 'Skull Swap',      'category' => 'torso',      'trigger' => 'score threshold'),
 	'skullracer'     => array('label' => 'Skull Racer',     'category' => 'head',       'trigger' => 'finish the race'),
-	'obscura'        => array('label' => 'Obscura',         'category' => 'background', 'trigger' => 'every 10 solves'),
+	'obscura'        => array('label' => 'Obscura',         'category' => 'background', 'trigger' => 'finish a run of 10+ solves'),
 	'cryptcrawl'     => array('label' => 'Crypt Crawl',     'category' => 'weapon',     'trigger' => 'win'),
 	'cryptconquest'  => array('label' => 'Crypt Conquest',  'category' => 'headgear',   'trigger' => 'win'),
 	'gauntlets'      => array('label' => 'Gauntlets',       'category' => 'effects',    'trigger' => 'win'),
@@ -108,7 +108,7 @@ function dhcf_game($key) {
 $GLOBALS['DHCF_FLOORS'] = array(
 	'skullswap'     => 5000,   // board shows 11,870-14,400
 	'skullracer'    => 0,      // finishing at all qualifies
-	'obscura'       => 10,     // one drop per 10 solves; board shows streaks of 11-33
+	'obscura'       => 10,     // solves in a completed run; board shows streaks of 11-33
 	'cryptcrawl'    => 0,      // win only
 	'cryptconquest' => 0,      // win only
 	'gauntlets'     => 0,      // win only

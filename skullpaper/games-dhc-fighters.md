@@ -26,7 +26,7 @@ background at minimum, so no single game can dress one on its own.
 |---|---|---|
 | Skull Swap | Torso | a qualifying score |
 | Skull Racer | Head | finishing a race |
-| Obscura | Background | every 10 solves |
+| Obscura | Background | finishing a run with 10 or more solves |
 | Crypt Crawl | Weapon | winning |
 | Crypt Conquest | Headgear | winning |
 | Gauntlets | Effects | winning |
