@@ -5,3 +5,10 @@
 # cardano.org submission assets (belong in the cardano-org fork, not here)
 match3rpg.png
 skulliance.webp
+
+# Digital Hell Citizens 2: Fighters -- raw trait art from Maxingo, provided for
+# the trait-assembly feature. Source art we were given, not something this repo
+# should redistribute: it is large, it is another artist's unreleased work, and
+# nothing here is deployment-ready yet. Keep it local until we know what shape
+# the shipped assets take.
+dhc/
