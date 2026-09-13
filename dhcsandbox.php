@@ -109,7 +109,6 @@ function dhc_title($slug) {
 $dhc_rarity = is_file(__DIR__ . '/dhcrarity.php') ? (require __DIR__ . '/dhcrarity.php') : array();
 
 $dhc_traits = array();
-$dhc_ver = array();   // dir => slug => version token, see the filemtime note below
 foreach ($dhc_slots as $key => $s) {
 	$dir = $s[1];
 	$out = array();
@@ -127,22 +126,6 @@ foreach ($dhc_slots as $key => $s) {
 			// effects slots share one table -- a trait's tier does not depend on
 			// which slot it happens to be offered in.
 			$r = isset($dhc_rarity[$dir][$slug]) ? $dhc_rarity[$dir][$slug] : null;
-			/*
-			 * CACHE BUSTING, from the file's own timestamp.
-			 *
-			 * Re-uploaded art kept showing the old image -- the filename does not
-			 * change when a trait is redrawn, so every browser that had seen it
-			 * kept serving its copy. Rather than a hand-kept list of "files that
-			 * changed", which is one more thing to remember and gets forgotten,
-			 * the 1000px master's mtime becomes a version token on the URL. Both
-			 * sizes use the master's token because the 250 is derived from it and
-			 * they are always regenerated together.
-			 *
-			 * Costs one stat per trait per request. This page is a handful of
-			 * views a day, and a wrong image is far more expensive than a stat.
-			 */
-			$mt = @filemtime(__DIR__ . '/' . $dhc_base . '/1000/' . $dir . '/' . $slug . '.png');
-			if ($mt) $dhc_ver[$dir][$slug] = substr((string)$mt, -6);
 			$out[] = array(
 				'slug' => $slug,
 				'name' => $name,
@@ -171,10 +154,7 @@ foreach ($dhc_slots as $key => $s) {
 $dhc_noarms = array();
 if ($dhc_base !== '') {
 	foreach ((array)glob(__DIR__ . '/' . $dhc_base . '/1000/torso-noarms/*.png') as $f) {
-		$slug = basename($f, '.png');
-		$dhc_noarms[] = $slug;
-		$mt = @filemtime($f);
-		if ($mt) $dhc_ver['torso-noarms'][$slug] = substr((string)$mt, -6);
+		$dhc_noarms[] = basename($f, '.png');
 	}
 }
 
@@ -430,7 +410,6 @@ a{color:var(--ochre)}
   }, array_keys($dhc_slots), $dhc_slots)); ?>;
   var TRAITS = <?php echo json_encode($dhc_traits); ?>;
   var NOARMS = <?php echo json_encode($dhc_noarms); ?>;   // torsos with a hand-made armless variant
-  var VER    = <?php echo json_encode($dhc_ver); ?>;      // dir => slug => art mtime, for cache busting
 
   /*
    * COMPANIONS NORMALLY DRAW LAST -- a pet or drone floats in front of the
@@ -458,6 +437,81 @@ a{color:var(--ochre)}
   var ARMS_EXCLUSIVE = ['plastic-blaster', 'dh-raider-equipment', 'electric-morning-star'];
 
   function armsExclusive(slug) { return ARMS_EXCLUSIVE.indexOf(slug) !== -1; }
+
+  /*
+   * COUPLED WEAPONS. Three relationships, and they are NOT the same one:
+   *
+   *   Axe      -> Electric Morning Star   one-way. The axe always brings the
+   *                                       morning star, but the morning star is
+   *                                       a weapon in its own right and stands
+   *                                       alone perfectly well.
+   *   Scythe  <-> Scythe Sash             tethered. Two halves of one weapon;
+   *   Krusher <-> Skull Krusher Sash      neither reads on its own, and a sash
+   *                                       with nothing hanging from it is not a
+   *                                       trait, so picking either brings both
+   *                                       and dropping either drops both.
+   *
+   * `mutual` is the whole difference: it decides both whether the partner is
+   * pulled in when you pick the second piece, and whether removing one removes
+   * the other. For the one-way link the morning star is only cleared if the axe
+   * put it there -- if you chose it yourself first, it is yours to keep.
+   */
+  var COUPLE = [
+    { back: 'axe',           front: 'electric-morning-star', mutual: false },
+    { back: 'scythe',        front: 'scythe-sash',           mutual: true  },
+    { back: 'skull-krusher', front: 'skull-krusher-sash',    mutual: true  },
+  ];
+  var coupledIn = {};   // slot => true when a coupling, not the user, filled it
+
+  function coupleFor(key, slug) {
+    for (var i = 0; i < COUPLE.length; i++) {
+      var c = COUPLE[i];
+      if (key === 'weaponBack' && slug === c.back)  return c;
+      if (key === 'weapon'     && slug === c.front) return c;
+    }
+    return null;
+  }
+
+  /* Pull in the partner when one half is chosen. */
+  function applyCouple(key, slug) {
+    var c = coupleFor(key, slug);
+    if (!c) return;
+    if (key === 'weaponBack') {
+      // The axe stands on its own when arms rule its partner out, rather than
+      // the arms ruling out the axe. The coupling is what the axe prefers, not
+      // a condition of wearing it.
+      if (!c.mutual && sel.arms && armsExclusive(c.front)) return;
+      // Already wearing it by choice? Then it stays yours, and removing the axe
+      // later leaves it be. Only a partner the coupling actually put there is
+      // the coupling's to take away.
+      if (sel.weapon !== c.front) { sel.weapon = c.front; coupledIn.weapon = true; }
+    } else if (c.mutual) {
+      sel.weaponBack = c.back; coupledIn.weaponBack = true;
+    }
+  }
+
+  /* Drop the partner when a half is cleared or replaced. `was` is the outgoing
+     slug, which is what decides whether a coupling was in force at all. */
+  function releaseCouple(key, was) {
+    var c = coupleFor(key, was);
+    if (!c) return;
+    if (key === 'weaponBack' && sel.weapon === c.front) {
+      // tethered halves always go together; the morning star only if the axe brought it
+      if (c.mutual || coupledIn.weapon) { delete sel.weapon; delete coupledIn.weapon; }
+    } else if (key === 'weapon' && c.mutual && sel.weaponBack === c.back) {
+      delete sel.weaponBack; delete coupledIn.weaponBack;
+    }
+  }
+
+  /* One place both the grid and the None tile go through, so a selection can
+     never be made without its coupling being considered. */
+  function choose(key, slug) {
+    var was = sel[key];
+    if (was === slug) return;
+    if (was) releaseCouple(key, was);
+    if (slug) { sel[key] = slug; delete coupledIn[key]; applyCouple(key, slug); }
+    else delete sel[key];
+  }
 
   /*
    * TEMPORARY -- remove once the armless torsos are in.
@@ -522,7 +576,18 @@ a{color:var(--ochre)}
      Randomise and a hand-edited or older shared link. The weapon yields,
      because Arms is the slot with more to look at. */
   function dropConflicts() {
-    if (sel.arms && sel.weapon && armsExclusive(sel.weapon)) delete sel.weapon;
+    // The weapon yields to the arms; anything that brought it stays. An axe with
+    // no morning star is a fine Fighter, so only the blocked half is dropped.
+    if (sel.arms && sel.weapon && armsExclusive(sel.weapon)) {
+      delete sel.weapon; delete coupledIn.weapon;
+    }
+    // A sash is never a trait on its own, and neither half of a tethered pair
+    // survives without the other -- a hand-edited link could have arrived that way.
+    COUPLE.forEach(function (c) {
+      if (!c.mutual) return;
+      if (sel.weapon === c.front && sel.weaponBack !== c.back) sel.weaponBack = c.back;
+      if (sel.weaponBack === c.back && sel.weapon !== c.front) sel.weapon = c.front;
+    });
   }
 
   var customOrder = null;   // array of slot keys once the user has dragged
@@ -568,13 +633,7 @@ a{color:var(--ochre)}
   var gridEl = document.getElementById('grid');
   var stackEl = document.getElementById('stackList');
 
-  /* ?v= is the art's own mtime, so a redrawn trait gets a new URL and every
-     browser that cached the old one fetches again. Unchanged files keep their
-     token and stay cached. */
-  function url(dir, slug, size) {
-    var v = (VER[dir] || {})[slug];
-    return BASE + '/' + size + '/' + dir + '/' + slug + '.png' + (v ? '?v=' + v : '');
-  }
+  function url(dir, slug, size) { return BASE + '/' + size + '/' + dir + '/' + slug + '.png'; }
   function slotByKey(k) { for (var i=0;i<SLOTS.length;i++) if (SLOTS[i].key===k) return SLOTS[i]; }
 
   /* ---- render the composite. One <img> per slot, kept in DOM order so the
@@ -804,7 +863,7 @@ a{color:var(--ochre)}
     none.className = 'cell none'; none.type = 'button'; none.title = 'Remove from canvas';
     none.setAttribute('aria-pressed', !sel[active] ? 'true' : 'false');
     none.innerHTML = '<img alt=""><span>None</span>';
-    none.addEventListener('click', function () { delete sel[active]; buildTabs(); paint(); buildGrid(); });
+    none.addEventListener('click', function () { choose(active, null); buildTabs(); paint(); buildGrid(); });
     gridEl.appendChild(none);
     // If anything in this category is ruled out, say so once at the top rather
     // than leaving the reader to hover a greyed tile to find out why.
@@ -833,7 +892,7 @@ a{color:var(--ochre)}
         b.appendChild(r);
       }
       b.addEventListener('click', function () {
-        sel[active] = t.slug; buildTabs(); paint(); buildGrid();
+        choose(active, t.slug); buildTabs(); paint(); buildGrid();
       });
       gridEl.appendChild(b);
     });
@@ -928,9 +987,14 @@ a{color:var(--ochre)}
         var r = Math.random() * total, chosen = cands[cands.length - 1].slug;
         for (i = 0; i < cands.length; i++) { r -= (cands[i].rate || 1); if (r <= 0) { chosen = cands[i].slug; break; } }
         sel[pool] = chosen;
+        // Couplings first -- a sash must never be rolled on its own, and the axe
+        // brings the morning star unless arms have ruled it out.
+        applyCouple(pool, chosen);
         var otherKey = pool === 'weapon' ? 'weaponBack' : 'weapon';
-        var mate = weaponPartner(chosen, otherKey);
-        if (mate) sel[otherKey] = mate;   // a split weapon needs both halves to read
+        if (!sel[otherKey]) {
+          var mate = weaponPartner(chosen, otherKey);
+          if (mate) sel[otherKey] = mate;   // the "-1" halves Maxingo delivered split
+        }
       }
     }
     dropConflicts();
