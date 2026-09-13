@@ -383,6 +383,28 @@ a{color:var(--ochre)}
 
   function armsExclusive(slug) { return ARMS_EXCLUSIVE.indexOf(slug) !== -1; }
 
+  /*
+   * TEMPORARY -- remove once the armless torsos are in.
+   *
+   * Perforator Arm Replacement reads better drawn BEHIND the torso than over
+   * it, because the torso's own arms are still there underneath and drawing
+   * the replacement on top leaves two sets of arms. Behind the torso is not
+   * correct either, it just hides the seam better while we wait.
+   *
+   * So it retires itself. The moment a torso has a hand-made armless variant,
+   * that variant is the real fix and this exception stops applying FOR THAT
+   * TORSO -- the arms go back to drawing in their proper place over an armless
+   * body. Nothing needs deleting as the armless set fills in; drop the last
+   * one in and the workaround is simply never reached again.
+   */
+  var ARMS_BEHIND_TORSO = ['perforator-arm-replacement'];
+
+  function armsBehindTorso() {
+    if (!sel.arms || ARMS_BEHIND_TORSO.indexOf(sel.arms) === -1) return false;
+    if (sel.torso && NOARMS.indexOf(sel.torso) !== -1) return false;   // real fix available
+    return true;
+  }
+
   /* Why this trait cannot be picked right now, or null if it can. One function
      so the greyed-out cells, the tooltip and the banner can never disagree. */
   function blockedReason(key, slug) {
@@ -427,6 +449,12 @@ a{color:var(--ochre)}
       var ci = order.map(function (s) { return s.key; }).indexOf('companion');
       var ai = order.map(function (s) { return s.key; }).indexOf('arms');
       if (ci > -1 && ai > -1) order.splice(ai, 0, order.splice(ci, 1)[0]);
+    }
+    if (armsBehindTorso()) {
+      var k = order.map(function (s) { return s.key; });
+      var a = k.indexOf('arms'), t = k.indexOf('torso');
+      // a > t, so pulling arms out does not shift the torso index
+      if (a > -1 && t > -1 && a > t) order.splice(t, 0, order.splice(a, 1)[0]);
     }
     return order;
   }
@@ -493,6 +521,8 @@ a{color:var(--ochre)}
       var tag = '';
       if (s.key === 'companion' && chosen && COMPANION_UNDER.indexOf(chosen) !== -1)
         tag = ' <em style="color:var(--teal);font-style:normal">behind arms</em>';
+      if (s.key === 'arms' && chosen && armsBehindTorso())
+        tag = ' <em style="color:var(--ochre);font-style:normal">behind torso &mdash; temporary</em>';
       if (s.key === 'torso' && chosen && sel.arms)
         tag = NOARMS.indexOf(chosen) !== -1
             ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
