@@ -48,6 +48,26 @@ $dhc_slots = array(
 	'companion'  => array('Companion',       'companion',  true),
 );
 
+// WEAPONS THAT MAY ONLY APPEAR IN FRONT.
+//
+// Not every weapon can sit behind the body. A belt, a chest rig or a blaster held
+// across the torso is worn or carried in front -- put it in the back slot and it
+// disappears behind the Fighter, which is never what the art intends.
+//
+// This also resolves the three composite weapons. Each pair has exactly one half
+// listed here, so the other half is the one that goes behind:
+//
+//   DH Spike Blaster 1  (front)   <->  DH Spike Blaster   (back)
+//   Lil Fren            (front)   <->  Lil Fren 1         (back)
+//   Mega Taser Cannon 1 (front)   <->  Mega Taser Cannon  (back)
+//
+// What remains eligible for the back slot is the long-handled set -- Axe, Scythe,
+// Skull Krusher, Bioweapon -- plus those three companion halves.
+$dhc_front_only = array(
+	'annihilation-belt', 'dh-raider-equipment', 'dh-spike-blaster-1',
+	'electric-morning-star', 'lil-fren', 'mega-taser-cannon-1', 'plastic-blaster',
+);
+
 // Display names come from trait-index.json when it is uploaded alongside the
 // art; otherwise they are derived from the slug, so the page still reads well
 // with nothing but the images present.
@@ -68,6 +88,9 @@ foreach ($dhc_slots as $key => $s) {
 	if ($dhc_base !== '') {
 		foreach ((array)glob(__DIR__ . '/' . $dhc_base . '/250/' . $dir . '/*.png') as $f) {
 			$slug = basename($f, '.png');
+			// Filtered at the source, so a front-only weapon is not merely
+			// discouraged in the back slot -- it is not offered at all.
+			if ($key === 'weaponBack' && in_array($slug, $dhc_front_only, true)) continue;
 			$name = isset($dhc_index[$dir][$slug]['name']) ? $dhc_index[$dir][$slug]['name'] : dhc_title($slug);
 			$out[] = array('slug' => $slug, 'name' => $name);
 		}
@@ -249,9 +272,12 @@ a{color:var(--ochre)}
     <div class="tabs" id="tabs" role="tablist"></div>
     <div class="grid" id="grid" role="tabpanel"></div>
     <div class="hint">
-      <b>Weapon (behind)</b> draws before the torso, so anything you put there is partly hidden by
-      the body. That is the slot for testing wrap-around weapons &mdash; try
-      <b>DH Spike Blaster</b> in it with <b>DH Spike Blaster 1</b> in the normal Weapon slot.
+      <b>Weapon (behind)</b> draws before the torso, so anything in it is partly hidden by the body.
+      Only weapons that can plausibly sit behind are offered here &mdash; belts, chest rigs and
+      held blasters are front-only.<br><br>
+      The three two-part weapons pair up across the slots: put <b>DH Spike Blaster</b> behind and
+      <b>DH Spike Blaster 1</b> in front, and the same for <b>Lil Fren 1</b> / <b>Lil Fren</b> and
+      <b>Mega Taser Cannon</b> / <b>Mega Taser Cannon 1</b>.
     </div>
   </div>
 </div>
