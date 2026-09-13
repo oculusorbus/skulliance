@@ -123,8 +123,13 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'base' => 'run',          'bands' => array(20 => 'placement_10', 40 => 'placement_3', 70 => 'placement_1')),
 	'monstrocity'    => array('label' => 'Monstrocity',     'category' => 'arms',       'trigger' => 'complete all 28 levels',
 	                          'base' => 'placement_1'),
+	// No bands and no floor: killing a boss IS the achievement, and there is no
+	// "how well" to grade it on. The bands here used to read damage contributed,
+	// from when the trigger was a damage milestone -- against the match-3 score
+	// actually passed now, they graded nothing and the old floor of 100 silently
+	// refused low-scoring kills.
 	'bosses'         => array('label' => 'Boss Battles',    'category' => 'wildcard',   'trigger' => 'every boss defeat', 'gated' => true,
-	                          'base' => 'run',          'bands' => array(250 => 'placement_10', 500 => 'placement_3', 1000 => 'placement_1')),
+	                          'base' => 'placement_10'),
 );
 
 function dhcf_game($key) {
@@ -150,7 +155,7 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'gauntlets'     => 0,      // win only
 	'guardians'     => 10,     // waves held; board shows 12-81
 	'monstrocity'   => 28,     // campaign completion
-	'bosses'        => 100,    // damage contributed to the defeated boss
+	'bosses'        => 0,      // the defeat itself qualifies; nothing to grade
 );
 
 function dhcf_floor($game) {

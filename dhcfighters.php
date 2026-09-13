@@ -80,16 +80,18 @@ $dhca_owned = $dhcf_avail;
 .dhcf-stat{border:1px solid rgba(255,255,255,.14);border-radius:3px;padding:7px 12px;min-width:96px}
 .dhcf-stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
 .dhcf-stat span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
-.dhcf-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);gap:18px;
-  align-items:start;margin:0 0 16px}
-@media (max-width:820px){.dhcf-top{grid-template-columns:1fr}}
-.dhcf-games{border:1px solid rgba(255,255,255,.14);border-radius:3px;overflow:hidden}
+/* Reference block, below everything you actually operate. It answers "what
+   should I play next", which is worth having on the page but never worth
+   pushing the assembler down the screen for. */
+.dhcf-games{border:1px solid rgba(255,255,255,.14);border-radius:3px;overflow:hidden;margin-top:14px}
+.dhcf-games ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.dhcf-games li+li{border-top:0}
 .dhcf-games h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
   opacity:.7;border-bottom:1px solid rgba(255,255,255,.12);display:flex;justify-content:space-between;gap:8px}
 .dhcf-games h2 span{opacity:.6;letter-spacing:0;font-variant-numeric:tabular-nums}
 .dhcf-games ul{list-style:none;margin:0;padding:4px 0}
 .dhcf-games li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 12px;position:relative}
-.dhcf-games li+li{border-top:1px solid rgba(255,255,255,.06)}
+.dhcf-games li{border-top:1px solid rgba(255,255,255,.06)}
 .dhcf-games .g{font-size:12px}
 .dhcf-games .c{grid-column:1;font-size:9.5px;opacity:.55;text-transform:uppercase;letter-spacing:.08em}
 .dhcf-games .c em{font-style:normal;opacity:.75;text-transform:none;letter-spacing:0;display:block}
@@ -136,9 +138,7 @@ $dhca_owned = $dhcf_avail;
     <h1>DHC Fighters</h1>
     <span class="sub">Digital Hell Citizens 2 &middot; art by Maxingo</span>
   </div>
-  <div class="dhcf-top">
-    <div>
-      <p class="dhcf-note">
+  <p class="dhcf-note">
         Earn traits by playing across the platform, then assemble and save Fighters. Your best
         Fighter's rarity score sets your place on the board.
         <br>
@@ -155,37 +155,6 @@ $dhca_owned = $dhcf_avail;
       </div>
     </div>
 
-    <?php
-      /*
-       * WHERE TRAITS COME FROM -- shown always, not just to an empty account.
-       * It is the answer to "what should I play next", which is a question a
-       * player with 40 traits asks more often than one with none, and the
-       * counts turn it from a legend into a progress list.
-       */
-    ?>
-    <div class="dhcf-games">
-      <h2>Where traits drop
-        <span><?php echo (int)$dhcf_distinct; ?>/<?php echo (int)$dhcf_all; ?></span>
-      </h2>
-      <ul>
-        <?php foreach ($GLOBALS['DHCF_GAMES'] as $gkey => $g):
-          $cat   = $g['category'];
-          $wild  = ($cat === 'wildcard');
-          $held  = $wild ? $dhcf_distinct : (isset($dhcf_cat_held[$cat])  ? $dhcf_cat_held[$cat]  : 0);
-          $tot   = $wild ? $dhcf_all      : (isset($dhcf_cat_total[$cat]) ? $dhcf_cat_total[$cat] : 0);
-          $pct   = $tot ? round($held / $tot * 100) : 0;
-          $done  = ($tot && $held >= $tot);
-        ?>
-        <li<?php echo $done ? ' class="done"' : ''; ?>>
-          <span class="g"><?php echo htmlspecialchars($g['label']); ?></span>
-          <span class="c"><?php echo $wild ? 'any trait' : htmlspecialchars($cat); ?>
-            <em><?php echo htmlspecialchars($g['trigger']); ?></em></span>
-          <span class="n"><?php echo (int)$held; ?><i>/<?php echo (int)$tot; ?></i></span>
-          <span class="bar"><i style="width:<?php echo (int)$pct; ?>%"></i></span>
-        </li>
-        <?php endforeach; ?>
-      </ul>
-    </div>
   </div>
 
   <?php include __DIR__ . '/dhc-assembler.php'; ?>
@@ -248,6 +217,38 @@ $dhca_owned = $dhcf_avail;
     </div>
 
   </div>
+
+  <?php
+      /*
+       * WHERE TRAITS COME FROM -- shown always, not just to an empty account.
+       * It is the answer to "what should I play next", which is a question a
+       * player with 40 traits asks more often than one with none, and the
+       * counts turn it from a legend into a progress list.
+       */
+    ?>
+  <div class="dhcf-games">
+      <h2>Where traits drop
+        <span><?php echo (int)$dhcf_distinct; ?>/<?php echo (int)$dhcf_all; ?></span>
+      </h2>
+      <ul>
+      <?php foreach ($GLOBALS['DHCF_GAMES'] as $gkey => $g):
+          $cat   = $g['category'];
+          $wild  = ($cat === 'wildcard');
+          $held  = $wild ? $dhcf_distinct : (isset($dhcf_cat_held[$cat])  ? $dhcf_cat_held[$cat]  : 0);
+          $tot   = $wild ? $dhcf_all      : (isset($dhcf_cat_total[$cat]) ? $dhcf_cat_total[$cat] : 0);
+          $pct   = $tot ? round($held / $tot * 100) : 0;
+          $done  = ($tot && $held >= $tot);
+        ?>
+        <li<?php echo $done ? ' class="done"' : ''; ?>>
+          <span class="g"><?php echo htmlspecialchars($g['label']); ?></span>
+          <span class="c"><?php echo $wild ? 'any trait' : htmlspecialchars($cat); ?>
+            <em><?php echo htmlspecialchars($g['trigger']); ?></em></span>
+          <span class="n"><?php echo (int)$held; ?><i>/<?php echo (int)$tot; ?></i></span>
+          <span class="bar"><i style="width:<?php echo (int)$pct; ?>%"></i></span>
+        </li>
+      <?php endforeach; ?>
+      </ul>
+    </div>
 </div>
 
 <?php

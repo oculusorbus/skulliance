@@ -5496,6 +5496,18 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          // incremented yet here, so it's the level just completed.
 	          if (this.selectedBoss) {
 	              turnIndicator.textContent = "Boss Defeated!";
+	              /*
+	               * TRAIT DROP -- the wildcard, on every boss defeated.
+	               *
+	               * Fired HERE, not from saveScoreToDatabase(): that function is
+	               * only reached from inside an `if (!this.selectedBoss)` branch,
+	               * so a boss win never calls it and the drop hooked there was
+	               * dead code. "Boss Defeated!" is the one line that only runs on
+	               * an actual boss kill.
+	               */
+	              if (window.DHC_DROP) {
+	                  DHC_DROP({ game: 'bosses', value: Math.round(this.grandTotalScore) || 1, delay: 1400 });
+	              }
 	          } else if (this.currentLevel === opponentsConfig.length) {
 	              turnIndicator.textContent = "Campaign Complete!";
 	          } else {
@@ -5691,12 +5703,10 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	     * this.selectedBoss is what the loss path already uses to tell the two
 	     * apart, so the same test decides it here.
 	     */
-	    if (window.DHC_DROP) {
-	      if (this.selectedBoss) {
-	        DHC_DROP({ game: 'bosses', value: Math.round(this.grandTotalScore) || 1, delay: 1200 });
-	      } else if (completedLevel >= 28) {
-	        DHC_DROP({ game: 'monstrocity', value: completedLevel, delay: 1200 });
-	      }
+	    // Campaign completion only. Boss defeats are handled where the boss
+	    // actually dies -- this function is unreachable from a boss win.
+	    if (window.DHC_DROP && completedLevel >= 28) {
+	      DHC_DROP({ game: 'monstrocity', value: completedLevel, delay: 1200 });
 	    }
 
 	    try {
