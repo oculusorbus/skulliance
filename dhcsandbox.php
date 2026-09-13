@@ -414,9 +414,11 @@ a{color:var(--ochre)}
   /*
    * PER-TRAIT VERTICAL NUDGE, in pixels of the 1000px master, positive = down.
    *
-   * A couple of weapons do not quite meet the body: the skull krusher floats
-   * thirteen pixels clear of an unmodified torso, the axe three. Measured by eye
-   * against a typical torso by Oculus Orbus, in two passes.
+   * A couple of weapons sit too high to meet the body. Tuned by eye by Oculus
+   * Orbus over several passes, and against more than one torso -- the numbers
+   * grew once torsos other than the usual one were checked, so they are not
+   * "what looks right on a C-4589 Mechanic" but what clears the awkward ones
+   * too.
    *
    * Applied at ASSEMBLY time rather than baked into the art, so the source files
    * stay as Maxingo drew them and the number is visible and adjustable here. It
@@ -428,7 +430,7 @@ a{color:var(--ochre)}
    */
   // The sash moves with its weapon -- they are two halves of one piece, so a
   // shift applied to only one of them would pull them apart.
-  var NUDGE = { 'skull-krusher': 13, 'skull-krusher-sash': 13, 'axe': 3 };
+  var NUDGE = { 'skull-krusher': 23, 'skull-krusher-sash': 23, 'axe': 13 };
 
   /*
    * COMPANIONS NORMALLY DRAW LAST -- a pet or drone floats in front of the
