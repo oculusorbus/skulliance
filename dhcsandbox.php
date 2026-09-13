@@ -343,7 +343,6 @@ a{color:var(--ochre)}
 .conflict{margin:0 0 8px;padding:7px 9px;font-size:10.5px;line-height:1.5;
   border:1px solid var(--blood);background:rgba(208,70,58,.09);color:var(--bone);
   border-radius:2px;grid-column:1/-1}
-.hint{padding:10px 12px;font-size:11px;color:var(--dim);border-top:1px solid var(--line);line-height:1.6}
 .warn{margin:22px;padding:18px;border:1px solid var(--blood);background:rgba(208,70,58,.09);
   font-size:12.5px;line-height:1.7;border-radius:2px}
 .warn code{color:var(--ochre)}
@@ -390,33 +389,6 @@ a{color:var(--ochre)}
     <div class="tabs" id="tabs" role="tablist"></div>
     <div class="rarbar" id="rarbar"></div>
     <div class="grid" id="grid" role="tabpanel"></div>
-    <div class="hint">
-      <b>Drag the draw order</b> to try arrangements the rules do not produce &mdash; the canvas
-      updates as you go, and a rearranged stack is carried in the link, so you can send a finding
-      rather than describe it. The <b>&#9679;</b> on each row hides that layer without clearing it,
-      so you can check what something is covering and put it straight back.<br><br>
-      <b>Rarity</b> is read from chain, not invented: the tier is how many of the <b>226 minted
-      DHC2 Fighters</b> actually wore that trait &mdash; 10+ common, 6&ndash;9 uncommon, 3&ndash;5
-      epic, 1&ndash;2 legendary. <b>Mythic</b> means the art exists but no minted Fighter uses it.
-      The percentage is the drop chance within its own category, so each category totals 100%, and
-      <b>Randomise</b> rolls against it.<br><br>
-      Each weapon belongs to one slot only. <b>Weapon</b> holds the seven that sit in front of the
-      body; <b>Weapon (behind)</b> holds the rest, drawn before the torso so the body covers part
-      of them.<br><br>
-      The three two-part weapons pair across the two slots &mdash; <b>DH Spike Blaster</b> behind
-      with <b>DH Spike Blaster 1</b> in front, <b>Lil Fren 1</b> behind with <b>Lil Fren</b> in
-      front, <b>Mega Taser Cannon</b> behind with <b>Mega Taser Cannon 1</b> in front.<br><br>
-      <b>Plastic Blaster</b>, <b>DH Raider Equipment</b> and <b>Electric Morning Star</b> are drawn
-      against the torso&rsquo;s own arms, so they cannot be combined with an <b>Arms</b> trait
-      &mdash; picking either side greys the other out, both ways round.<br><br>
-      Effects draw just below <b>Head</b>, so they cross the Fighter but leave the face readable.
-      <b>Effects 2</b> sits over <b>Effects 1</b> &mdash; the two are a bottom and a top, not
-      interchangeable slots. <b>Xlon&rsquo;s Black Fire Attack</b> is the exception, dropping behind
-      the torso so the Fighter stands in it.<br><br>
-      The three <b>DHC2 Comic Cover</b> effects are offered in <b>Effects 2</b> only. A cover is a
-      full-frame treatment, so nothing should draw over it and two at once is meaningless &mdash;
-      keeping them in the upper slot makes both impossible rather than merely discouraged.
-    </div>
   </div>
 </div>
 
