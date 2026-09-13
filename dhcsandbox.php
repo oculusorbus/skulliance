@@ -109,6 +109,7 @@ function dhc_title($slug) {
 $dhc_rarity = is_file(__DIR__ . '/dhcrarity.php') ? (require __DIR__ . '/dhcrarity.php') : array();
 
 $dhc_traits = array();
+$dhc_ver = array();   // dir => slug => version token, see the filemtime note below
 foreach ($dhc_slots as $key => $s) {
 	$dir = $s[1];
 	$out = array();
@@ -126,6 +127,22 @@ foreach ($dhc_slots as $key => $s) {
 			// effects slots share one table -- a trait's tier does not depend on
 			// which slot it happens to be offered in.
 			$r = isset($dhc_rarity[$dir][$slug]) ? $dhc_rarity[$dir][$slug] : null;
+			/*
+			 * CACHE BUSTING, from the file's own timestamp.
+			 *
+			 * Re-uploaded art kept showing the old image -- the filename does not
+			 * change when a trait is redrawn, so every browser that had seen it
+			 * kept serving its copy. Rather than a hand-kept list of "files that
+			 * changed", which is one more thing to remember and gets forgotten,
+			 * the 1000px master's mtime becomes a version token on the URL. Both
+			 * sizes use the master's token because the 250 is derived from it and
+			 * they are always regenerated together.
+			 *
+			 * Costs one stat per trait per request. This page is a handful of
+			 * views a day, and a wrong image is far more expensive than a stat.
+			 */
+			$mt = @filemtime(__DIR__ . '/' . $dhc_base . '/1000/' . $dir . '/' . $slug . '.png');
+			if ($mt) $dhc_ver[$dir][$slug] = substr((string)$mt, -6);
 			$out[] = array(
 				'slug' => $slug,
 				'name' => $name,
@@ -154,7 +171,10 @@ foreach ($dhc_slots as $key => $s) {
 $dhc_noarms = array();
 if ($dhc_base !== '') {
 	foreach ((array)glob(__DIR__ . '/' . $dhc_base . '/1000/torso-noarms/*.png') as $f) {
-		$dhc_noarms[] = basename($f, '.png');
+		$slug = basename($f, '.png');
+		$dhc_noarms[] = $slug;
+		$mt = @filemtime($f);
+		if ($mt) $dhc_ver['torso-noarms'][$slug] = substr((string)$mt, -6);
 	}
 }
 
@@ -410,6 +430,7 @@ a{color:var(--ochre)}
   }, array_keys($dhc_slots), $dhc_slots)); ?>;
   var TRAITS = <?php echo json_encode($dhc_traits); ?>;
   var NOARMS = <?php echo json_encode($dhc_noarms); ?>;   // torsos with a hand-made armless variant
+  var VER    = <?php echo json_encode($dhc_ver); ?>;      // dir => slug => art mtime, for cache busting
 
   /*
    * COMPANIONS NORMALLY DRAW LAST -- a pet or drone floats in front of the
@@ -547,7 +568,13 @@ a{color:var(--ochre)}
   var gridEl = document.getElementById('grid');
   var stackEl = document.getElementById('stackList');
 
-  function url(dir, slug, size) { return BASE + '/' + size + '/' + dir + '/' + slug + '.png'; }
+  /* ?v= is the art's own mtime, so a redrawn trait gets a new URL and every
+     browser that cached the old one fetches again. Unchanged files keep their
+     token and stay cached. */
+  function url(dir, slug, size) {
+    var v = (VER[dir] || {})[slug];
+    return BASE + '/' + size + '/' + dir + '/' + slug + '.png' + (v ? '?v=' + v : '');
+  }
   function slotByKey(k) { for (var i=0;i<SLOTS.length;i++) if (SLOTS[i].key===k) return SLOTS[i]; }
 
   /* ---- render the composite. One <img> per slot, kept in DOM order so the
