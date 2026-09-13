@@ -340,9 +340,9 @@ a{color:var(--ochre)}
       The three two-part weapons pair across the two slots &mdash; <b>DH Spike Blaster</b> behind
       with <b>DH Spike Blaster 1</b> in front, <b>Lil Fren 1</b> behind with <b>Lil Fren</b> in
       front, <b>Mega Taser Cannon</b> behind with <b>Mega Taser Cannon 1</b> in front.<br><br>
-      <b>Plastic Blaster</b> and <b>DH Raider Equipment</b> are held in the torso&rsquo;s own arms,
-      so they cannot be combined with an <b>Arms</b> trait &mdash; picking either one greys the
-      other out, both ways round.
+      <b>Plastic Blaster</b>, <b>DH Raider Equipment</b> and <b>Electric Morning Star</b> are drawn
+      against the torso&rsquo;s own arms, so they cannot be combined with an <b>Arms</b> trait
+      &mdash; picking either side greys the other out, both ways round.
     </div>
   </div>
 </div>
@@ -369,16 +369,16 @@ a{color:var(--ochre)}
    */
   var COMPANION_UNDER = ['dh-vision-shoulder-cam'];
 
-  /* Exception, reported from testing: Plastic Blaster and DH Raider Equipment
-     are drawn with the torso's own arms holding them. An Arms trait replaces
-     those arms with a different pose, so the weapon ends up floating with
-     nothing gripping it. The two are mutually exclusive -- this is a rule about
-     the art, not about draw order, so no amount of reordering fixes it and it
-     is enforced on selection instead.
+  /* Exceptions, reported from testing: these weapons are drawn against the
+     torso's own arms -- held in them, or posed to rest on them. An Arms trait
+     replaces those arms with a different pose, so the weapon ends up floating
+     with nothing supporting it. They are mutually exclusive with Arms. This is
+     a rule about the art, not about draw order, so no amount of reordering
+     fixes it and it is enforced on selection instead.
 
      Enforced both ways. Whichever slot is filled first blocks the other, and
      the way out is always the None tile, so no build can become unescapable. */
-  var ARMS_EXCLUSIVE = ['plastic-blaster', 'dh-raider-equipment'];
+  var ARMS_EXCLUSIVE = ['plastic-blaster', 'dh-raider-equipment', 'electric-morning-star'];
 
   function armsExclusive(slug) { return ARMS_EXCLUSIVE.indexOf(slug) !== -1; }
 
@@ -386,10 +386,10 @@ a{color:var(--ochre)}
      so the greyed-out cells, the tooltip and the banner can never disagree. */
   function blockedReason(key, slug) {
     if (key === 'weapon' && armsExclusive(slug) && sel.arms)
-      return nameOf('weapon', slug) + ' is held in the torso’s own arms, so it cannot be '
+      return nameOf('weapon', slug) + ' is drawn against the torso’s own arms, so it cannot be '
            + 'combined with an Arms trait. Set Arms to None first.';
     if (key === 'arms' && sel.weapon && armsExclusive(sel.weapon))
-      return 'Arms traits repose the torso’s arms, which are what hold '
+      return 'Arms traits repose the torso’s arms, which are what support '
            + nameOf('weapon', sel.weapon) + '. Set Weapon to None first.';
     return null;
   }
