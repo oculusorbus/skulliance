@@ -221,6 +221,17 @@ a{color:var(--ochre)}
 .stack li b{color:var(--bone);font-weight:400;min-width:112px}
 .stack li.off{opacity:.34}
 .stack li .n{color:var(--teal)}
+.stack li[draggable]{cursor:grab;user-select:none}
+.stack li[draggable]:hover{background:var(--panel2)}
+.stack li.dragging{opacity:.4;cursor:grabbing}
+.stack li.over{box-shadow:inset 0 2px 0 var(--ochre)}
+.stack li .grip{color:var(--line);letter-spacing:-2px}
+.stack li[draggable]:hover .grip{color:var(--ochre)}
+.stack h3{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.stack h3 button{background:none;border:1px solid var(--line);color:var(--dim);
+  font:inherit;font-size:9px;letter-spacing:.1em;padding:3px 7px;cursor:pointer;border-radius:2px}
+.stack h3 button:hover{border-color:var(--ochre);color:var(--ochre)}
+.stack h3 .custom{color:var(--ochre)}
 
 /* ---- picker ---- */
 .picker{border-left:1px solid var(--line);background:var(--panel);display:flex;
@@ -290,7 +301,8 @@ a{color:var(--ochre)}
       <button class="btn" id="share">Copy link to this build</button>
     </div>
     <div class="stack">
-      <h3>Draw order &mdash; back to front</h3>
+      <h3><span id="stackTitle">Draw order &mdash; back to front</span>
+          <button type="button" id="resetOrder" hidden>Reset order</button></h3>
       <ol id="stackList"></ol>
     </div>
   </div>
@@ -299,6 +311,9 @@ a{color:var(--ochre)}
     <div class="tabs" id="tabs" role="tablist"></div>
     <div class="grid" id="grid" role="tabpanel"></div>
     <div class="hint">
+      <b>Drag the draw order</b> to try arrangements the rules do not produce &mdash; the canvas
+      updates as you go, and a rearranged stack is carried in the link, so you can send a finding
+      rather than describe it.<br><br>
       Each weapon belongs to one slot only. <b>Weapon</b> holds the seven that sit in front of the
       body; <b>Weapon (behind)</b> holds the rest, drawn before the torso so the body covers part
       of them.<br><br>
@@ -331,7 +346,20 @@ a{color:var(--ochre)}
    */
   var COMPANION_UNDER = ['dh-vision-shoulder-cam'];
 
+  var customOrder = null;   // array of slot keys once the user has dragged
+
   function layerOrder() {
+    if (customOrder) {
+      // Dragged order wins outright, including over the shoulder-cam rule. The
+      // point of dragging is to test arrangements the rules do not produce, so
+      // silently re-applying an exception on top would defeat it.
+      var byKey = {};
+      SLOTS.forEach(function (s) { byKey[s.key] = s; });
+      var out = [];
+      customOrder.forEach(function (k) { if (byKey[k]) out.push(byKey[k]); });
+      SLOTS.forEach(function (s) { if (out.indexOf(s) === -1) out.push(s); });
+      return out;
+    }
     var order = SLOTS.slice();
     if (sel.companion && COMPANION_UNDER.indexOf(sel.companion) !== -1) {
       var ci = order.map(function (s) { return s.key; }).indexOf('companion');
@@ -341,7 +369,7 @@ a{color:var(--ochre)}
     return order;
   }
 
-  var sel = {}, active = SLOTS[0].key;
+  var sel = {}, active = SLOTS[0].key, dragKey = null;
   var frame = document.getElementById('frame');
   var empty = document.getElementById('empty');
   var tabsEl = document.getElementById('tabs');
@@ -396,9 +424,65 @@ a{color:var(--ochre)}
         tag = NOARMS.indexOf(chosen) !== -1
             ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
             : ' <em style="color:var(--ochre);font-style:normal">arms underneath</em>';
-      li.innerHTML = '<span class="n">' + (i+1) + '</span><b>' + s.label + '</b><span>' + name + tag + '</span>';
+      li.innerHTML = '<span class="grip">&#8942;&#8942;</span><span class="n">' + (i+1) +
+                     '</span><b>' + s.label + '</b><span>' + name + tag + '</span>';
+      /*
+       * DRAGGABLE, because finding the exceptions is the job. The rules we have
+       * were all discovered by looking at a wrong composite -- weapons over arms,
+       * effects over faces, the shoulder cam floating -- so the fastest way to
+       * find the next one is to let a person rearrange the stack directly and
+       * watch the canvas update.
+       */
+      li.draggable = true;
+      li.dataset.key = s.key;
+      li.tabIndex = 0;
+      li.title = 'Drag to reorder, or focus and press Alt + up/down';
+      li.addEventListener('dragstart', function (e) {
+        dragKey = s.key; li.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        try { e.dataTransfer.setData('text/plain', s.key); } catch (err) {}
+      });
+      li.addEventListener('dragend', function () {
+        dragKey = null; li.classList.remove('dragging');
+        [].forEach.call(stackEl.children, function (c) { c.classList.remove('over'); });
+      });
+      li.addEventListener('dragover', function (e) {
+        if (!dragKey || dragKey === s.key) return;
+        e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+        li.classList.add('over');
+      });
+      li.addEventListener('dragleave', function () { li.classList.remove('over'); });
+      li.addEventListener('drop', function (e) {
+        e.preventDefault(); li.classList.remove('over');
+        if (dragKey && dragKey !== s.key) moveLayer(dragKey, s.key);
+      });
+      li.addEventListener('keydown', function (e) {
+        if (!e.altKey || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+        e.preventDefault();
+        var keys = layerOrder().map(function (x) { return x.key; });
+        var at = keys.indexOf(s.key), to = at + (e.key === 'ArrowUp' ? -1 : 1);
+        if (to < 0 || to >= keys.length) return;
+        moveLayer(s.key, keys[to]);
+        var el = stackEl.querySelector('[data-key="' + s.key + '"]');
+        if (el) el.focus();
+      });
       stackEl.appendChild(li);
     });
+    var custom = !!customOrder;
+    document.getElementById('resetOrder').hidden = !custom;
+    document.getElementById('stackTitle').innerHTML = custom
+      ? 'Draw order &mdash; <span class="custom">rearranged</span>'
+      : 'Draw order &mdash; back to front';
+  }
+
+  /* Move `key` to where `target` currently sits, then repaint from the new order. */
+  function moveLayer(key, target) {
+    var keys = layerOrder().map(function (s) { return s.key; });
+    var from = keys.indexOf(key), to = keys.indexOf(target);
+    if (from < 0 || to < 0) return;
+    keys.splice(to, 0, keys.splice(from, 1)[0]);
+    customOrder = keys;
+    paint();
   }
 
   /* ---- picker ---- */
@@ -470,6 +554,9 @@ a{color:var(--ochre)}
   function writeHash() {
     var parts = [];
     SLOTS.forEach(function (s) { if (sel[s.key]) parts.push(s.key + '=' + sel[s.key]); });
+    // A rearranged stack travels in the link too, so a finding can be sent as a
+    // url rather than described in prose.
+    if (customOrder) parts.push('order=' + customOrder.join(','));
     history.replaceState(null, '', parts.length ? '#' + parts.join('&') : location.pathname);
   }
   function readHash() {
@@ -477,7 +564,9 @@ a{color:var(--ochre)}
     if (!h) return false;
     var got = false;
     h.split('&').forEach(function (p) {
-      var kv = p.split('='), s = slotByKey(kv[0]);
+      var kv = p.split('=');
+      if (kv[0] === 'order' && kv[1]) { customOrder = kv[1].split(','); got = true; return; }
+      var s = slotByKey(kv[0]);
       if (!s || !kv[1]) return;
       var list = TRAITS[kv[0]] || [];
       for (var i=0;i<list.length;i++) if (list[i].slug === kv[1]) { sel[kv[0]] = kv[1]; got = true; }
@@ -487,6 +576,9 @@ a{color:var(--ochre)}
 
   document.getElementById('rand').addEventListener('click', function () { randomise(false); });
   document.getElementById('randFull').addEventListener('click', function () { randomise(true); });
+  document.getElementById('resetOrder').addEventListener('click', function () {
+    customOrder = null; paint();
+  });
   document.getElementById('clear').addEventListener('click', function () {
     sel = {}; buildTabs(); paint(); buildGrid();
   });
