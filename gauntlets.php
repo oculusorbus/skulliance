@@ -951,9 +951,9 @@ function submitFF(encId, newNftId) {
 <?php include 'dhc-dropmodal.php'; ?>
 <?php if (!empty($_SESSION['dhcf_gauntlet_win'])): unset($_SESSION['dhcf_gauntlet_win']); ?>
 <script>
-/* Gauntlets pays Effects on an encounter win. Claimed once per win: the flag
-   is cleared as it is read, so refreshing the result page cannot farm it.
-   The server enforces the daily cap regardless. */
+/* Gauntlets pays Effects for SWEEPING a gauntlet -- all three encounters, no
+   loss. Claimed once: the flag is cleared as it is read, so refreshing the
+   victory page cannot farm it. The server enforces the daily cap regardless. */
 if (window.DHC_DROP) DHC_DROP({ game: 'gauntlets', value: 1, delay: 900 });
 </script>
 <?php endif; ?>
