@@ -30,6 +30,12 @@ foreach (array('web', 'dhc', 'dhc/web', 'traits') as $c) {
 // slot key => [label, directory under <base>/<size>/, optional]
 $dhc_slots = array(
 	'background' => array('Background',      'background', false),
+	// EFFECTS SIT ON THE BACKGROUND, not over the character. They are scene
+	// atmosphere -- flames, sparks, attack bursts -- and drawing them last put
+	// them across the Fighter's face. Behind the body they read as the
+	// environment the character is standing in, which is what they are.
+	'effects1'   => array('Effects 1',       'effects',    true),
+	'effects2'   => array('Effects 2',       'effects',    true),
 	'weaponBack' => array('Weapon (behind)', 'weapon',     true),
 	'torso'      => array('Torso',           'torso',      false),
 	// WEAPON BEFORE ARMS. A weapon is gripped, so the hand and forearm belong in
@@ -40,8 +46,6 @@ $dhc_slots = array(
 	'head'       => array('Head',            'head',       false),
 	'headgear'   => array('Headgear',        'headgear',   true),
 	'companion'  => array('Companion',       'companion',  true),
-	'effects1'   => array('Effects 1',       'effects',    true),
-	'effects2'   => array('Effects 2',       'effects',    true),
 );
 
 // Display names come from trait-index.json when it is uploaded alongside the
