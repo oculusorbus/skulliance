@@ -358,16 +358,17 @@ a{color:var(--ochre)}
 
   /*
    * COMPANIONS NORMALLY DRAW LAST -- a pet or drone floats in front of the
-   * Fighter. The DH Vision Shoulder Cam is the exception: it mounts ON the
-   * shoulder, so the arms and headgear have to sit over it or it looks stuck to
-   * the outside of the character.
+   * Fighter. These are the exceptions, which belong against the body rather
+   * than in front of it: the DH Vision Shoulder Cam mounts ON the shoulder, and
+   * Code Sea Predator wraps the body. Drawn over, either one looks stuck to the
+   * outside of the character, so the arms and headgear have to sit above them.
    *
    * Handled by reordering the draw sequence rather than adding an eleventh slot
-   * for a single trait. layerOrder() is the one definition of what draws when,
-   * and both the canvas and the draw-order readout use it, so the readout can
+   * for two traits. layerOrder() is the one definition of what draws when, and
+   * both the canvas and the draw-order readout use it, so the readout can
    * never disagree with what you are looking at.
    */
-  var COMPANION_UNDER = ['dh-vision-shoulder-cam'];
+  var COMPANION_UNDER = ['dh-vision-shoulder-cam', 'code-sea-predator'];
 
   /* Exceptions, reported from testing: these weapons are drawn against the
      torso's own arms -- held in them, or posed to rest on them. An Arms trait
@@ -491,7 +492,7 @@ a{color:var(--ochre)}
       }
       var tag = '';
       if (s.key === 'companion' && chosen && COMPANION_UNDER.indexOf(chosen) !== -1)
-        tag = ' <em style="color:var(--teal);font-style:normal">shoulder-mounted</em>';
+        tag = ' <em style="color:var(--teal);font-style:normal">behind arms</em>';
       if (s.key === 'torso' && chosen && sel.arms)
         tag = NOARMS.indexOf(chosen) !== -1
             ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
