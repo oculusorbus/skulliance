@@ -270,7 +270,12 @@ a{color:var(--ochre)}
   }
 
   /* ---- picker ---- */
+  /* Clears first: this is called again on every selection to repaint the
+     dot markers, and an append-only version stacked a fresh set of ten tabs
+     on each click. Idempotent here rather than relying on callers to reach
+     for a separate refresh helper -- there is now only one function to call. */
   function buildTabs() {
+    tabsEl.innerHTML = '';
     SLOTS.forEach(function (s) {
       var b = document.createElement('button');
       b.className = 'tab'; b.type = 'button'; b.setAttribute('role','tab');
@@ -281,7 +286,6 @@ a{color:var(--ochre)}
       tabsEl.appendChild(b);
     });
   }
-  function refreshTabs() { tabsEl.innerHTML = ''; buildTabs(); }
 
   function buildGrid() {
     var s = slotByKey(active), list = TRAITS[active] || [];
@@ -291,7 +295,7 @@ a{color:var(--ochre)}
       none.className = 'cell none'; none.type = 'button';
       none.setAttribute('aria-pressed', !sel[active] ? 'true' : 'false');
       none.innerHTML = '<img alt=""><span>None</span>';
-      none.addEventListener('click', function () { delete sel[active]; refreshTabs(); paint(); buildGrid(); });
+      none.addEventListener('click', function () { delete sel[active]; buildTabs(); paint(); buildGrid(); });
       gridEl.appendChild(none);
     }
     list.forEach(function (t) {
@@ -303,7 +307,7 @@ a{color:var(--ochre)}
       var sp = document.createElement('span'); sp.textContent = t.name;
       b.appendChild(i); b.appendChild(sp);
       b.addEventListener('click', function () {
-        sel[active] = t.slug; refreshTabs(); paint(); buildGrid();
+        sel[active] = t.slug; buildTabs(); paint(); buildGrid();
       });
       gridEl.appendChild(b);
     });
@@ -323,7 +327,7 @@ a{color:var(--ochre)}
       var odds = (s.key === 'effects2') ? 0.15 : (s.key === 'companion' ? 0.2 : 0.45);
       if (all || Math.random() < odds) { var x = pick(s.key); if (x) sel[s.key] = x; }
     });
-    refreshTabs(); paint(); buildGrid();
+    buildTabs(); paint(); buildGrid();
   }
 
   /* ---- share a build in the url, so a combination can be sent to someone ---- */
@@ -348,7 +352,7 @@ a{color:var(--ochre)}
   document.getElementById('rand').addEventListener('click', function () { randomise(false); });
   document.getElementById('randFull').addEventListener('click', function () { randomise(true); });
   document.getElementById('clear').addEventListener('click', function () {
-    sel = {}; refreshTabs(); paint(); buildGrid();
+    sel = {}; buildTabs(); paint(); buildGrid();
   });
   document.getElementById('share').addEventListener('click', function () {
     var btn = this, was = btn.textContent;
@@ -358,7 +362,7 @@ a{color:var(--ochre)}
   });
 
   buildTabs();
-  if (!readHash()) randomise(false); else { refreshTabs(); paint(); }
+  if (!readHash()) randomise(false); else { buildTabs(); paint(); }
   buildGrid();
 })();
 </script>
