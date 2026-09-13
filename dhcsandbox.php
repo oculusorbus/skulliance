@@ -365,7 +365,8 @@ a{color:var(--ochre)}
       &mdash; picking either side greys the other out, both ways round.<br><br>
       Effects draw just below <b>Head</b>, so they cross the Fighter but leave the face readable.
       <b>Effects 2</b> sits over <b>Effects 1</b> &mdash; the two are a bottom and a top, not
-      interchangeable slots.<br><br>
+      interchangeable slots. <b>Xlon&rsquo;s Black Fire Attack</b> is the exception, dropping behind
+      the torso so the Fighter stands in it.<br><br>
       The three <b>DHC2 Comic Cover</b> effects are offered in <b>Effects 2</b> only. A cover is a
       full-frame treatment, so nothing should draw over it and two at once is meaningless &mdash;
       keeping them in the upper slot makes both impossible rather than merely discouraged.
@@ -426,6 +427,24 @@ a{color:var(--ochre)}
   var ARMS_BEHIND_TORSO = ['perforator-arm-replacement'];
 
 
+  /*
+   * EFFECTS THAT BELONG BEHIND THE BODY.
+   *
+   * Effects normally draw just under the head, crossing the Fighter. These are
+   * the ones that read as something the character is standing in rather than
+   * something happening in front of them, so they drop to just behind the
+   * torso -- still over the background and the rear weapon, but under the body.
+   *
+   * Per effects slot, so the trait behaves the same in Effects 1 or Effects 2,
+   * and an ordinary effect in the other slot stays up under the head. With one
+   * in both slots their relative order is preserved.
+   */
+  var EFFECTS_BEHIND_TORSO = ['xlon-s-black-fire-attack'];
+
+  function effectBehindTorso(key) {
+    return !!sel[key] && EFFECTS_BEHIND_TORSO.indexOf(sel[key]) !== -1;
+  }
+
   function armsBehindTorso() {
     if (!sel.arms || ARMS_BEHIND_TORSO.indexOf(sel.arms) === -1) return false;
     if (sel.torso && NOARMS.indexOf(sel.torso) !== -1) return false;   // real fix available
@@ -483,6 +502,13 @@ a{color:var(--ochre)}
       // a > t, so pulling arms out does not shift the torso index
       if (a > -1 && t > -1 && a > t) order.splice(t, 0, order.splice(a, 1)[0]);
     }
+    ['effects1', 'effects2'].forEach(function (key) {
+      if (!effectBehindTorso(key)) return;
+      var k = order.map(function (s) { return s.key; });
+      var e = k.indexOf(key), t = k.indexOf('torso');
+      // e > t, so pulling the effect out does not shift the torso index
+      if (e > -1 && t > -1 && e > t) order.splice(t, 0, order.splice(e, 1)[0]);
+    });
     return order;
   }
 
@@ -548,6 +574,8 @@ a{color:var(--ochre)}
       var tag = '';
       if (s.key === 'companion' && chosen && COMPANION_UNDER.indexOf(chosen) !== -1)
         tag = ' <em style="color:var(--teal);font-style:normal">behind arms</em>';
+      if ((s.key === 'effects1' || s.key === 'effects2') && chosen && effectBehindTorso(s.key))
+        tag = ' <em style="color:var(--teal);font-style:normal">behind torso</em>';
       if (s.key === 'arms' && chosen && armsBehindTorso())
         tag = ' <em style="color:var(--ochre);font-style:normal">behind torso &mdash; temporary</em>';
       if (s.key === 'torso' && chosen && sel.arms)
