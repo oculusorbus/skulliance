@@ -153,9 +153,6 @@ $dhca_owned = $dhcf_avail;
         <div class="dhcf-stat"><b><?php echo number_format($dhcf_best); ?></b><span>Best score</span></div>
         <div class="dhcf-stat"><b><?php echo htmlspecialchars($dhcf_next); ?></b><span>Next number</span></div>
       </div>
-    </div>
-
-  </div>
 
   <?php include __DIR__ . '/dhc-assembler.php'; ?>
 
