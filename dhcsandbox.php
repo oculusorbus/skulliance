@@ -95,6 +95,27 @@ foreach ($dhc_slots as $key => $s) {
 	}
 	$dhc_traits[$key] = $out;
 }
+/*
+ * ARMLESS TORSO VARIANTS, optional and per-torso.
+ *
+ * Every torso is drawn WITH arms, so an Augmented Arms trait overlays a limb that
+ * is already there and the original shows around it. There is no way to separate
+ * them automatically -- the arms are as thick as the body, so neither a lateral
+ * mask nor a morphological opening isolates them, and the union of the arm traits
+ * swallows 94% of the chest. It needs hand-editing against the layered source.
+ *
+ * So: if web/<size>/torso-noarms/<slug>.png exists, it is used INSTEAD of the
+ * normal torso whenever an arms trait is selected. Checked per torso rather than
+ * all-or-nothing, so the set can be filled in one at a time and each one starts
+ * working the moment it lands. Nothing breaks while they are missing.
+ */
+$dhc_noarms = array();
+if ($dhc_base !== '') {
+	foreach ((array)glob(__DIR__ . '/' . $dhc_base . '/1000/torso-noarms/*.png') as $f) {
+		$dhc_noarms[] = basename($f, '.png');
+	}
+}
+
 $dhc_total = 0;
 foreach (array('background','torso','arms','head','headgear','weapon','companion','effects1') as $k) {
 	$dhc_total += count($dhc_traits[$k]);
@@ -287,6 +308,7 @@ a{color:var(--ochre)}
       return array('key'=>$k,'label'=>$s[0],'dir'=>$s[1],'optional'=>$s[2]);
   }, array_keys($dhc_slots), $dhc_slots)); ?>;
   var TRAITS = <?php echo json_encode($dhc_traits); ?>;
+  var NOARMS = <?php echo json_encode($dhc_noarms); ?>;   // torsos with a hand-made armless variant
 
   var sel = {}, active = SLOTS[0].key;
   var frame = document.getElementById('frame');
@@ -309,7 +331,10 @@ a{color:var(--ochre)}
         el.id = id; el.alt = '';
         frame.appendChild(el);
       }
-      var want = url(s.dir, sel[s.key], 1000);
+      // Swap in the armless torso when arms are on and a variant exists for it.
+      var dir = s.dir;
+      if (s.key === 'torso' && sel.arms && NOARMS.indexOf(sel[s.key]) !== -1) dir = 'torso-noarms';
+      var want = url(dir, sel[s.key], 1000);
       if (el.getAttribute('src') !== want) el.setAttribute('src', want);
     });
     // keep DOM order == layer order, regardless of the order things were picked
@@ -333,7 +358,12 @@ a{color:var(--ochre)}
         var list = TRAITS[s.key] || [];
         for (var j=0;j<list.length;j++) if (list[j].slug===chosen) name = list[j].name;
       }
-      li.innerHTML = '<span class="n">' + (i+1) + '</span><b>' + s.label + '</b><span>' + name + '</span>';
+      var tag = '';
+      if (s.key === 'torso' && chosen && sel.arms)
+        tag = NOARMS.indexOf(chosen) !== -1
+            ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
+            : ' <em style="color:var(--ochre);font-style:normal">arms underneath</em>';
+      li.innerHTML = '<span class="n">' + (i+1) + '</span><b>' + s.label + '</b><span>' + name + tag + '</span>';
       stackEl.appendChild(li);
     });
   }
