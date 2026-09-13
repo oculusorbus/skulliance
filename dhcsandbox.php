@@ -64,9 +64,17 @@ $dhc_slots = array(
 //   DH Spike Blaster 1  front   <->  DH Spike Blaster   back
 //   Lil Fren            front   <->  Lil Fren 1         back
 //   Mega Taser Cannon 1 front   <->  Mega Taser Cannon  back
+//   Scythe Sash         front   <->  Scythe             back
+//   Skull Krusher Sash  front   <->  Skull Krusher      back
+//
+// The two sashes were separated out of their weapons by hand: the scythe and
+// the skull krusher are now the weapon alone, behind the body, with the sash
+// that carried them a front piece in its own right. The axe lost its torso
+// chains in the same pass -- another weapon already supplies those.
 $dhc_weapon_front = array(
 	'annihilation-belt', 'dh-raider-equipment', 'dh-spike-blaster-1',
 	'electric-morning-star', 'lil-fren', 'mega-taser-cannon-1', 'plastic-blaster',
+	'scythe-sash', 'skull-krusher-sash',
 );
 
 // THE COMIC COVERS ARE EFFECTS 2 ONLY.
@@ -848,12 +856,18 @@ a{color:var(--ochre)}
                effects2: 0.255 };
   var WEAPON_FILL = 0.248;
 
-  /* The other half of a two-part weapon, or null. Derived from the "-1" suffix
-     rather than a hardcoded pair list, so a new split weapon works untouched. */
+  /* The other half of a two-part weapon, or null. Derived from the suffix the
+     halves are named with -- "-1" for the three Maxingo delivered split, "-sash"
+     for the scythe and skull krusher -- so a new split weapon following either
+     convention pairs up without code changes. */
   function weaponPartner(slug, intoKey) {
-    var other = /-1$/.test(slug) ? slug.replace(/-1$/, '') : slug + '-1';
+    var tries = [];
+    ['-1', '-sash'].forEach(function (suf) {
+      tries.push(slug.slice(-suf.length) === suf ? slug.slice(0, -suf.length) : slug + suf);
+    });
     var list = TRAITS[intoKey] || [];
-    for (var i = 0; i < list.length; i++) if (list[i].slug === other) return other;
+    for (var i = 0; i < list.length; i++)
+      if (tries.indexOf(list[i].slug) !== -1) return list[i].slug;
     return null;
   }
 
