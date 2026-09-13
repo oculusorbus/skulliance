@@ -426,7 +426,9 @@ a{color:var(--ochre)}
    *
    * Thumbnails are left alone; this is about how pieces meet in a build.
    */
-  var NUDGE = { 'skull-krusher': 13, 'axe': 3 };
+  // The sash moves with its weapon -- they are two halves of one piece, so a
+  // shift applied to only one of them would pull them apart.
+  var NUDGE = { 'skull-krusher': 13, 'skull-krusher-sash': 13, 'axe': 3 };
 
   /*
    * COMPANIONS NORMALLY DRAW LAST -- a pet or drone floats in front of the
