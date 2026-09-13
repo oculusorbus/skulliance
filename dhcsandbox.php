@@ -84,8 +84,46 @@ foreach (array('background','torso','arms','head','headgear','weapon','companion
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DHC2 Trait Sandbox &mdash; Skulliance</title>
-<meta name="robots" content="noindex">
-<meta name="description" content="A sandbox for assembling Digital Hell Citizens 2 Fighters from individual traits.">
+<meta name="description" content="Assemble a Digital Hell Citizens 2 Fighter from 194 individual traits.">
+<?php
+/*
+ * SOCIAL CARD. Both og:image AND twitter:card=summary_large_image are required
+ * -- with only og:image, X renders a small square thumbnail instead of the wide
+ * card, which is the failure mode already documented in skullpaper/MAINTENANCE.md
+ * for the game share buttons.
+ *
+ * ABSOLUTE urls, because a crawler has no page context to resolve a relative one
+ * against. That is the one place on this platform where a relative link is wrong;
+ * everywhere else it is required, since the login cookie is host-only.
+ *
+ * The card art is a pre-rendered composite that ships with the trait upload, not
+ * something generated per request -- no GD dependency, nothing to fail on a
+ * shared host, and a crawler gets a fast static file.
+ *
+ * NOT noindex any more: a noindex page can still be shared, but leaving it
+ * crawlable means the card is validated and cached by X the first time anyone
+ * posts it rather than on the visitor's own fetch.
+ */
+$dhc_url = 'https://skulliance.io/staking/dhcsandbox.php';
+$dhc_card = $dhc_base !== ''
+    ? 'https://skulliance.io/staking/' . $dhc_base . '/card.png'
+    : 'https://skulliance.io/staking/images/skulliance.png';
+?>
+<link rel="canonical" href="<?php echo $dhc_url; ?>">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Skulliance">
+<meta property="og:url" content="<?php echo $dhc_url; ?>">
+<meta property="og:title" content="DHC2 Trait Sandbox">
+<meta property="og:description" content="Assemble a Digital Hell Citizens 2 Fighter from 194 individual traits. Art by Maxingo.">
+<meta property="og:image" content="<?php echo $dhc_card; ?>">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A Digital Hell Citizens 2 Fighter assembled from layered traits.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DHC2 Trait Sandbox">
+<meta name="twitter:description" content="Assemble a Digital Hell Citizens 2 Fighter from 194 individual traits. Art by Maxingo.">
+<meta name="twitter:image" content="<?php echo $dhc_card; ?>">
+<meta name="twitter:image:alt" content="A Digital Hell Citizens 2 Fighter assembled from layered traits.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;600&display=swap">
