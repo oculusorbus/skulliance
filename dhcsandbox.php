@@ -318,6 +318,29 @@ a{color:var(--ochre)}
   var TRAITS = <?php echo json_encode($dhc_traits); ?>;
   var NOARMS = <?php echo json_encode($dhc_noarms); ?>;   // torsos with a hand-made armless variant
 
+  /*
+   * COMPANIONS NORMALLY DRAW LAST -- a pet or drone floats in front of the
+   * Fighter. The DH Vision Shoulder Cam is the exception: it mounts ON the
+   * shoulder, so the arms and headgear have to sit over it or it looks stuck to
+   * the outside of the character.
+   *
+   * Handled by reordering the draw sequence rather than adding an eleventh slot
+   * for a single trait. layerOrder() is the one definition of what draws when,
+   * and both the canvas and the draw-order readout use it, so the readout can
+   * never disagree with what you are looking at.
+   */
+  var COMPANION_UNDER = ['dh-vision-shoulder-cam'];
+
+  function layerOrder() {
+    var order = SLOTS.slice();
+    if (sel.companion && COMPANION_UNDER.indexOf(sel.companion) !== -1) {
+      var ci = order.map(function (s) { return s.key; }).indexOf('companion');
+      var ai = order.map(function (s) { return s.key; }).indexOf('arms');
+      if (ci > -1 && ai > -1) order.splice(ai, 0, order.splice(ci, 1)[0]);
+    }
+    return order;
+  }
+
   var sel = {}, active = SLOTS[0].key;
   var frame = document.getElementById('frame');
   var empty = document.getElementById('empty');
@@ -346,7 +369,7 @@ a{color:var(--ochre)}
       if (el.getAttribute('src') !== want) el.setAttribute('src', want);
     });
     // keep DOM order == layer order, regardless of the order things were picked
-    SLOTS.forEach(function (s) {
+    layerOrder().forEach(function (s) {
       var el = document.getElementById('L-' + s.key);
       if (el) frame.appendChild(el);
     });
@@ -357,7 +380,7 @@ a{color:var(--ochre)}
 
   function paintStack() {
     stackEl.innerHTML = '';
-    SLOTS.forEach(function (s, i) {
+    layerOrder().forEach(function (s, i) {
       var li = document.createElement('li');
       var chosen = sel[s.key];
       if (!chosen) li.className = 'off';
@@ -367,6 +390,8 @@ a{color:var(--ochre)}
         for (var j=0;j<list.length;j++) if (list[j].slug===chosen) name = list[j].name;
       }
       var tag = '';
+      if (s.key === 'companion' && chosen && COMPANION_UNDER.indexOf(chosen) !== -1)
+        tag = ' <em style="color:var(--teal);font-style:normal">shoulder-mounted</em>';
       if (s.key === 'torso' && chosen && sel.arms)
         tag = NOARMS.indexOf(chosen) !== -1
             ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
