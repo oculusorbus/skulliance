@@ -412,6 +412,23 @@ a{color:var(--ochre)}
   var NOARMS = <?php echo json_encode($dhc_noarms); ?>;   // torsos with a hand-made armless variant
 
   /*
+   * PER-TRAIT VERTICAL NUDGE, in pixels of the 1000px master, positive = down.
+   *
+   * A couple of weapons do not quite meet the body: the skull krusher floats
+   * about ten pixels clear of an unmodified torso, the axe two. Measured by eye
+   * against a typical torso by Oculus Orbus.
+   *
+   * Applied at ASSEMBLY time rather than baked into the art, so the source files
+   * stay as Maxingo drew them and the number is visible and adjustable here. It
+   * is a percentage of the rendered height rather than a pixel count, so it
+   * holds at whatever size the canvas happens to be -- a hardcoded 10px would
+   * drift the moment the canvas was not exactly 1000 wide.
+   *
+   * Thumbnails are left alone; this is about how pieces meet in a build.
+   */
+  var NUDGE = { 'skull-krusher': 10, 'axe': 2 };
+
+  /*
    * COMPANIONS NORMALLY DRAW LAST -- a pet or drone floats in front of the
    * Fighter. These are the exceptions, which belong against the body rather
    * than in front of it: the DH Vision Shoulder Cam mounts ON the shoulder, and
@@ -657,6 +674,8 @@ a{color:var(--ochre)}
         dir = 'torso-noarms';
       var want = url(dir, sel[s.key], 1000);
       if (el.getAttribute('src') !== want) el.setAttribute('src', want);
+      var n = NUDGE[sel[s.key]] || 0;
+      el.style.transform = n ? 'translateY(' + (n / 10) + '%)' : '';
     });
     // keep DOM order == layer order, regardless of the order things were picked
     layerOrder().forEach(function (s) {
