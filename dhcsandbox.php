@@ -96,6 +96,10 @@ function dhc_title($slug) {
 	return preg_replace('/\b(Dh|Xlon|Mk|Ue|Zx|Vr|Dhc)\b/', '\\1', $s);
 }
 
+// Rarity lives in the repo rather than in the art folder, so it is versioned
+// with the code and needs no upload. Absent, the page simply shows no tiers.
+$dhc_rarity = is_file(__DIR__ . '/dhcrarity.php') ? (require __DIR__ . '/dhcrarity.php') : array();
+
 $dhc_traits = array();
 foreach ($dhc_slots as $key => $s) {
 	$dir = $s[1];
@@ -110,7 +114,17 @@ foreach ($dhc_slots as $key => $s) {
 			// draw over one and a second cover cannot be selected at all.
 			if ($key === 'effects1'   &&  in_array($slug, $dhc_comic_covers, true)) continue;
 			$name = isset($dhc_index[$dir][$slug]['name']) ? $dhc_index[$dir][$slug]['name'] : dhc_title($slug);
-			$out[] = array('slug' => $slug, 'name' => $name);
+			// Rarity is keyed by art directory, so the two weapon slots and the two
+			// effects slots share one table -- a trait's tier does not depend on
+			// which slot it happens to be offered in.
+			$r = isset($dhc_rarity[$dir][$slug]) ? $dhc_rarity[$dir][$slug] : null;
+			$out[] = array(
+				'slug' => $slug,
+				'name' => $name,
+				'tier' => $r ? $r[0] : '',
+				'worn' => $r ? $r[1] : 0,     // how many of the 226 fighters wore it
+				'rate' => $r ? $r[2] : 0,
+			);
 		}
 	}
 	$dhc_traits[$key] = $out;
@@ -297,6 +311,32 @@ a{color:var(--ochre)}
 .cell.none[aria-pressed="true"]{border-style:solid}
 /* A trait the current build rules out. Dimmed and unclickable rather than
    hidden -- it still has to be findable, or its absence reads as a bug. */
+/* ---- rarity ----
+   One hue per tier, used for the cell badge, the filter pills and the swatch
+   in the legend, so a colour always means the same thing wherever it appears. */
+.t-common{--tier:#8b8178}
+.t-uncommon{--tier:#4f9d84}
+.t-epic{--tier:#7d6bb0}
+.t-legendary{--tier:#c8913c}
+.t-mythic{--tier:#c2445c}
+.cell .rar{display:flex;align-items:center;gap:4px;padding:0 6px 5px;font-size:8.5px;
+  line-height:1.2;color:var(--tier,var(--dim));letter-spacing:.04em;
+  text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.cell .rar i{width:5px;height:5px;border-radius:50%;background:var(--tier,var(--line));
+  flex:none;font-style:normal}
+.cell .rar b{font-weight:400;color:var(--dim);margin-left:auto;letter-spacing:0;
+  text-transform:none;font-variant-numeric:tabular-nums}
+/* filter row */
+.rarbar{display:flex;flex-wrap:wrap;gap:5px;padding:8px 10px 0}
+.rarbar button{background:none;border:1px solid var(--line);color:var(--dim);font:inherit;
+  font-size:9px;letter-spacing:.09em;text-transform:uppercase;padding:3px 8px;cursor:pointer;
+  border-radius:999px;display:flex;align-items:center;gap:5px}
+.rarbar button:hover{border-color:var(--tier,var(--ochre));color:var(--tier,var(--ochre))}
+.rarbar button[aria-pressed="true"]{border-color:var(--tier,var(--ochre));
+  color:var(--tier,var(--bone));background:rgba(255,255,255,.04)}
+.rarbar button i{width:5px;height:5px;border-radius:50%;background:var(--tier,var(--dim));
+  flex:none;font-style:normal}
+.rarbar button .c{color:var(--dim);font-size:8.5px;letter-spacing:0}
 .cell.blocked{opacity:.32;cursor:not-allowed;filter:grayscale(1)}
 .cell.blocked:hover{border-color:var(--line)}
 .cell.blocked img{background:var(--panel2)}
@@ -348,12 +388,18 @@ a{color:var(--ochre)}
 
   <div class="picker">
     <div class="tabs" id="tabs" role="tablist"></div>
+    <div class="rarbar" id="rarbar"></div>
     <div class="grid" id="grid" role="tabpanel"></div>
     <div class="hint">
       <b>Drag the draw order</b> to try arrangements the rules do not produce &mdash; the canvas
       updates as you go, and a rearranged stack is carried in the link, so you can send a finding
       rather than describe it. The <b>&#9679;</b> on each row hides that layer without clearing it,
       so you can check what something is covering and put it straight back.<br><br>
+      <b>Rarity</b> is read from chain, not invented: the tier is how many of the <b>226 minted
+      DHC2 Fighters</b> actually wore that trait &mdash; 10+ common, 6&ndash;9 uncommon, 3&ndash;5
+      epic, 1&ndash;2 legendary. <b>Mythic</b> means the art exists but no minted Fighter uses it.
+      The percentage is the drop chance within its own category, so each category totals 100%, and
+      <b>Randomise</b> rolls against it.<br><br>
       Each weapon belongs to one slot only. <b>Weapon</b> holds the seven that sit in front of the
       body; <b>Weapon (behind)</b> holds the rest, drawn before the torso so the body covers part
       of them.<br><br>
@@ -684,8 +730,40 @@ a{color:var(--ochre)}
     });
   }
 
+  /* ---- rarity filter, applied on top of whichever category tab is open ---- */
+  var TIERS = ['common', 'uncommon', 'epic', 'legendary', 'mythic'];
+  var rarityFilter = null;
+  var rarbarEl = document.getElementById('rarbar');
+
+  function buildRarBar() {
+    rarbarEl.innerHTML = '';
+    var list = TRAITS[active] || [];
+    if (!list.length || !list[0].tier) return;    // no rarity data loaded
+    var all = document.createElement('button');
+    all.type = 'button'; all.textContent = 'All';
+    all.setAttribute('aria-pressed', rarityFilter ? 'false' : 'true');
+    all.addEventListener('click', function () { rarityFilter = null; buildGrid(); });
+    rarbarEl.appendChild(all);
+    TIERS.forEach(function (tier) {
+      // Count within THIS category, so the number tells you what the filter will
+      // actually show rather than how many exist collection-wide.
+      var n = list.filter(function (t) { return t.tier === tier; }).length;
+      if (!n) return;
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 't-' + tier;
+      b.innerHTML = '<i></i>' + tier + ' <span class="c">' + n + '</span>';
+      b.setAttribute('aria-pressed', rarityFilter === tier ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        rarityFilter = (rarityFilter === tier) ? null : tier;
+        buildGrid();
+      });
+      rarbarEl.appendChild(b);
+    });
+  }
+
   function buildGrid() {
     var s = slotByKey(active), list = TRAITS[active] || [];
+    buildRarBar();          // safe: the bar's handlers call back into buildGrid, not vice versa
     gridEl.innerHTML = '';
     // Every category gets None, including Background, Torso and Head. This is a
     // sandbox for inspecting layers -- being able to drop the torso and see what
@@ -699,22 +777,40 @@ a{color:var(--ochre)}
     // If anything in this category is ruled out, say so once at the top rather
     // than leaving the reader to hover a greyed tile to find out why.
     var banner = null;
+    var shown = 0;
     list.forEach(function (t) {
+      if (rarityFilter && t.tier !== rarityFilter) return;   // secondary filter
+      shown++;
       var why = blockedReason(active, t.slug);
       var b = document.createElement('button');
-      b.className = 'cell' + (why ? ' blocked' : ''); b.type = 'button';
-      b.title = why || t.name;
+      b.className = 'cell' + (why ? ' blocked' : '') + (t.tier ? ' t-' + t.tier : '');
+      b.type = 'button';
+      b.title = why || (t.name + (t.tier ? ' — ' + t.tier + ', ' + t.rate + '% drop'
+              + (t.worn ? ' (' + t.worn + ' of the 226 original fighters)'
+                        : ' (in no original fighter)') : ''));
       if (why) { b.disabled = true; if (!banner) banner = why; }
       b.setAttribute('aria-pressed', sel[active] === t.slug ? 'true' : 'false');
       var i = document.createElement('img');
       i.loading = 'lazy'; i.alt = t.name; i.src = url(s.dir, t.slug, 250);
       var sp = document.createElement('span'); sp.textContent = t.name;
       b.appendChild(i); b.appendChild(sp);
+      if (t.tier) {
+        var r = document.createElement('span');
+        r.className = 'rar';
+        r.innerHTML = '<i></i>' + t.tier + '<b>' + t.rate + '%</b>';
+        b.appendChild(r);
+      }
       b.addEventListener('click', function () {
         sel[active] = t.slug; buildTabs(); paint(); buildGrid();
       });
       gridEl.appendChild(b);
     });
+    if (rarityFilter && !shown) {
+      var none2 = document.createElement('p');
+      none2.className = 'conflict';
+      none2.textContent = 'No ' + rarityFilter + ' traits in ' + s.label + '.';
+      gridEl.appendChild(none2);
+    }
     if (banner) {
       var n = document.createElement('p');
       n.className = 'conflict'; n.textContent = banner;
@@ -723,9 +819,18 @@ a{color:var(--ochre)}
   }
 
   /* ---- shuffle ---- */
+  /* Weighted by drop rate, so Randomise actually demonstrates the rarity curve
+     instead of showing a mythic as often as a common. Falls back to a flat pick
+     when no rarity data is loaded. */
   function pick(k) {
     var l = TRAITS[k] || [];
-    return l.length ? l[Math.floor(Math.random()*l.length)].slug : null;
+    if (!l.length) return null;
+    var total = 0, i;
+    for (i = 0; i < l.length; i++) total += (l[i].rate || 0);
+    if (total <= 0) return l[Math.floor(Math.random()*l.length)].slug;
+    var r = Math.random() * total;
+    for (i = 0; i < l.length; i++) { r -= (l[i].rate || 0); if (r <= 0) return l[i].slug; }
+    return l[l.length-1].slug;
   }
   function randomise(all) {
     sel = {};
