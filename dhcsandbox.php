@@ -79,9 +79,6 @@ $dhc_card = $dhc_base !== ''
 <meta name="twitter:description" content="Assemble a Digital Hell Citizens 2 Fighter from 194 individual traits. Art by Maxingo.">
 <meta name="twitter:image" content="<?php echo $dhc_card; ?>">
 <meta name="twitter:image:alt" content="A Digital Hell Citizens 2 Fighter assembled from layered traits.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;600&display=swap">
 </head>
 <body>
 

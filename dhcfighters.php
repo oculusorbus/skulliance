@@ -32,6 +32,21 @@ foreach ($dhcf_avail as $cat => $traits) {
 $dhcf_best = 0;
 foreach ($dhcf_roster as $f) if ((int)$f['rarity_score'] > $dhcf_best) $dhcf_best = (int)$f['rarity_score'];
 
+/*
+ * PER-CATEGORY PROGRESS, for the games column.
+ *
+ * "held" counts DISTINCT traits, not copies: the column answers "how much of
+ * this category have I seen", which is what tells a player which game to go
+ * play. Copies matter for building a second Fighter, and the stats strip above
+ * already carries that number.
+ */
+$dhcf_cat_total = array();
+foreach (dhcf_rarity() as $cat => $traits) $dhcf_cat_total[$cat] = count($traits);
+$dhcf_cat_held = array();
+foreach ($dhcf_avail as $cat => $traits) $dhcf_cat_held[$cat] = count($traits);
+$dhcf_distinct = array_sum($dhcf_cat_held);
+$dhcf_all      = array_sum($dhcf_cat_total);
+
 // Usernames for the leaderboards, resolved in one pass rather than per row.
 $dhcf_names = array();
 $dhcf_ids = array();
@@ -65,9 +80,25 @@ $dhca_owned = $dhcf_avail;
 .dhcf-stat{border:1px solid rgba(255,255,255,.14);border-radius:3px;padding:7px 12px;min-width:96px}
 .dhcf-stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
 .dhcf-stat span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
-.dhcf-empty{border:1px dashed rgba(255,255,255,.2);border-radius:3px;padding:22px;
-  font-size:13px;line-height:1.75;margin:0 0 16px}
-.dhcf-empty b{font-size:15px}
+.dhcf-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,340px);gap:18px;
+  align-items:start;margin:0 0 16px}
+@media (max-width:820px){.dhcf-top{grid-template-columns:1fr}}
+.dhcf-games{border:1px solid rgba(255,255,255,.14);border-radius:3px;overflow:hidden}
+.dhcf-games h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  opacity:.7;border-bottom:1px solid rgba(255,255,255,.12);display:flex;justify-content:space-between;gap:8px}
+.dhcf-games h2 span{opacity:.6;letter-spacing:0;font-variant-numeric:tabular-nums}
+.dhcf-games ul{list-style:none;margin:0;padding:4px 0}
+.dhcf-games li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 12px;position:relative}
+.dhcf-games li+li{border-top:1px solid rgba(255,255,255,.06)}
+.dhcf-games .g{font-size:12px}
+.dhcf-games .c{grid-column:1;font-size:9.5px;opacity:.55;text-transform:uppercase;letter-spacing:.08em}
+.dhcf-games .c em{font-style:normal;opacity:.75;text-transform:none;letter-spacing:0;display:block}
+.dhcf-games .n{grid-row:1/3;align-self:center;font-size:14px;font-variant-numeric:tabular-nums}
+.dhcf-games .n i{font-style:normal;font-size:10px;opacity:.45}
+.dhcf-games .bar{grid-column:1/-1;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
+.dhcf-games .bar i{display:block;height:100%;background:#c8913c}
+.dhcf-games li.done .bar i{background:#4f9d84}
+.dhcf-games li.done .n{color:#4f9d84}
 .dhcf-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:18px}
 .dhcf-panel{border:1px solid rgba(255,255,255,.14);border-radius:3px;overflow:hidden}
 .dhcf-panel h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
@@ -94,6 +125,8 @@ $dhca_owned = $dhcf_avail;
 .dhcf-save button{font:inherit;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;
   cursor:pointer;border-radius:2px;background:#8f2f27;border:1px solid #b8433a;color:#f2e9df}
 .dhcf-save button:hover{background:#a8372d}
+.dhcf-save button:disabled{background:#2a2220;border-color:#3a2e29;color:#7d726b;cursor:not-allowed}
+.dhcf-save button:disabled:hover{background:#2a2220}
 .dhcf-say{font-size:11.5px;min-height:16px;opacity:.85}
 </style>
 
@@ -103,39 +136,57 @@ $dhca_owned = $dhcf_avail;
     <h1>DHC Fighters</h1>
     <span class="sub">Digital Hell Citizens 2 &middot; art by Maxingo</span>
   </div>
-  <p class="dhcf-note">
-    Earn traits by playing across the platform, then assemble and save Fighters. Your best Fighter's
-    rarity score sets your place on the board.
-    <br>
-    Assembled Fighters are a platform feature only &mdash; they are not NFTs, cannot be minted, and are
-    not part of the official Digital Hell Citizens collection.
-  </p>
+  <div class="dhcf-top">
+    <div>
+      <p class="dhcf-note">
+        Earn traits by playing across the platform, then assemble and save Fighters. Your best
+        Fighter's rarity score sets your place on the board.
+        <br>
+        Assembled Fighters are a platform feature only &mdash; they are not NFTs, cannot be minted,
+        and are not part of the official Digital Hell Citizens collection.
+      </p>
 
-  <div class="dhcf-stats">
-    <div class="dhcf-stat"><b><?php echo (int)$dhcf_owned_n; ?></b><span>Traits held</span></div>
-    <div class="dhcf-stat"><b><?php echo (int)$dhcf_free_n; ?></b><span>Unused</span></div>
-    <div class="dhcf-stat"><b><?php echo count($dhcf_roster); ?></b><span>Fighters</span></div>
-    <div class="dhcf-stat"><b><?php echo number_format($dhcf_best); ?></b><span>Best score</span></div>
-    <div class="dhcf-stat"><b><?php echo htmlspecialchars($dhcf_next); ?></b><span>Next number</span></div>
-  </div>
+      <div class="dhcf-stats">
+        <div class="dhcf-stat"><b><?php echo (int)$dhcf_owned_n; ?></b><span>Traits held</span></div>
+        <div class="dhcf-stat"><b><?php echo (int)$dhcf_free_n; ?></b><span>Unused</span></div>
+        <div class="dhcf-stat"><b><?php echo count($dhcf_roster); ?></b><span>Fighters</span></div>
+        <div class="dhcf-stat"><b><?php echo number_format($dhcf_best); ?></b><span>Best score</span></div>
+        <div class="dhcf-stat"><b><?php echo htmlspecialchars($dhcf_next); ?></b><span>Next number</span></div>
+      </div>
+    </div>
 
-<?php if ($dhcf_owned_n === 0): ?>
-  <div class="dhcf-empty">
-    <b>You have no traits yet.</b><br>
-    Traits drop while you play. Each game pays a different part of a Fighter, so a complete
-    character takes a spread of them:
-    <br><br>
     <?php
-      $bits = array();
-      foreach ($GLOBALS['DHCF_GAMES'] as $k => $g) {
-          $cat = $g['category'] === 'wildcard' ? 'any trait' : $g['category'];
-          $bits[] = '<b>' . htmlspecialchars($g['label']) . '</b> &rarr; ' . htmlspecialchars($cat)
-                  . ' <span style="opacity:.6">(' . htmlspecialchars($g['trigger']) . ')</span>';
-      }
-      echo implode('<br>', $bits);
+      /*
+       * WHERE TRAITS COME FROM -- shown always, not just to an empty account.
+       * It is the answer to "what should I play next", which is a question a
+       * player with 40 traits asks more often than one with none, and the
+       * counts turn it from a legend into a progress list.
+       */
     ?>
+    <div class="dhcf-games">
+      <h2>Where traits drop
+        <span><?php echo (int)$dhcf_distinct; ?>/<?php echo (int)$dhcf_all; ?></span>
+      </h2>
+      <ul>
+        <?php foreach ($GLOBALS['DHCF_GAMES'] as $gkey => $g):
+          $cat   = $g['category'];
+          $wild  = ($cat === 'wildcard');
+          $held  = $wild ? $dhcf_distinct : (isset($dhcf_cat_held[$cat])  ? $dhcf_cat_held[$cat]  : 0);
+          $tot   = $wild ? $dhcf_all      : (isset($dhcf_cat_total[$cat]) ? $dhcf_cat_total[$cat] : 0);
+          $pct   = $tot ? round($held / $tot * 100) : 0;
+          $done  = ($tot && $held >= $tot);
+        ?>
+        <li<?php echo $done ? ' class="done"' : ''; ?>>
+          <span class="g"><?php echo htmlspecialchars($g['label']); ?></span>
+          <span class="c"><?php echo $wild ? 'any trait' : htmlspecialchars($cat); ?>
+            <em><?php echo htmlspecialchars($g['trigger']); ?></em></span>
+          <span class="n"><?php echo (int)$held; ?><i>/<?php echo (int)$tot; ?></i></span>
+          <span class="bar"><i style="width:<?php echo (int)$pct; ?>%"></i></span>
+        </li>
+        <?php endforeach; ?>
+      </ul>
+    </div>
   </div>
-<?php endif; ?>
 
   <?php include __DIR__ . '/dhc-assembler.php'; ?>
 
@@ -222,10 +273,40 @@ function dhcf_board_html($rows) {
   /* The assembler exposes its current selection on window.DHC_SELECTION -- the
      save button reads it rather than the DOM, so what gets stored is exactly
      what the renderer was told to draw. */
-  document.getElementById('dhcfSave').addEventListener('click', function () {
+  /* Mirrors DHCF_REQUIRED server-side. The server is the authority; this exists
+     so the button can say what is missing instead of letting you click into a
+     rejection. */
+  var REQUIRED = <?php echo json_encode(DHCF_REQUIRED); ?>;
+  var saveBtn  = document.getElementById('dhcfSave');
+
+  function missingRequired() {
+    var sel = (window.DHC_SELECTION && window.DHC_SELECTION()) || {};
+    return REQUIRED.filter(function (slot) { return !sel[slot]; });
+  }
+
+  /* Kept in step with the canvas: every paint re-checks, so the button state
+     always describes the Fighter actually on screen. */
+  function syncSave() {
+    var missing = missingRequired();
+    saveBtn.disabled = missing.length > 0;
+    saveBtn.title = missing.length ? 'Needs a ' + missing.join(', ') : 'Save this Fighter';
+    if (missing.length) {
+      say.textContent = 'Needs a ' + missing.join(', ') + ' to save.';
+      say.style.color = '';
+      say.style.opacity = '.6';
+    } else if (say.style.opacity === '.6') {
+      say.textContent = ''; say.style.opacity = '';
+    }
+  }
+  syncSave();
+  document.addEventListener('click', function () { setTimeout(syncSave, 0); });
+
+  saveBtn.addEventListener('click', function () {
     var sel = (window.DHC_SELECTION && window.DHC_SELECTION()) || {};
     if (!Object.keys(sel).length) { msg('Pick some traits first.', false); return; }
-    var btn = this; btn.disabled = true; msg('Saving...', true);
+    var missing = missingRequired();
+    if (missing.length) { msg('A Fighter needs a ' + missing.join(', ') + '.', false); return; }
+    var btn = saveBtn; btn.disabled = true; msg('Saving...', true);
     var body = 'name=' + encodeURIComponent(document.getElementById('dhcfName').value) +
                '&traits=' + encodeURIComponent(JSON.stringify(sel));
     fetch('ajax/dhc-save-fighter.php', {
@@ -235,7 +316,7 @@ function dhcf_board_html($rows) {
       .then(function (d) {
         btn.disabled = false;
         if (d.ok) { msg('Saved as ' + d.display + ' — ' + d.score + ' pts', true); setTimeout(function(){location.reload();}, 900); }
-        else msg(d.message || 'Could not save.', false);
+        else { msg(d.message || 'Could not save.', false); syncSave(); }
       })
       .catch(function () { btn.disabled = false; msg('Network error.', false); });
   });

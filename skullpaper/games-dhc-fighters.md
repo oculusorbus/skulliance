@@ -94,6 +94,18 @@ Fighter's number is retired and not reused.
 
 ---
 
+## What a Fighter needs
+
+Every Fighter needs a **background, a torso and a head**. Everything else —
+arms, weapons, headgear, effects, a companion — is optional, and the assembler
+will not let you save without those three.
+
+That is why those exact categories drop from Skull Swap, Skull Racer and
+Obscura, the three games you cannot lose. A required part behind a win could
+leave a player unable to save anything at all.
+
+---
+
 ## Naming
 
 Fighters continue the collection's numbering, starting after the top of the

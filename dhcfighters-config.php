@@ -47,6 +47,23 @@ function dhcf_slot_category($slot) {
 	}
 }
 
+/*
+ * A FIGHTER NEEDS A BODY. Background, torso and head are mandatory; everything
+ * else is decoration. This is also why those three categories only drop from
+ * games that cannot be lost -- gating a required part behind a win could leave
+ * a player permanently unable to save anything.
+ */
+define('DHCF_REQUIRED', array('background', 'torso', 'head'));
+
+/** Required slots the layout is missing, by category name. Empty means valid. */
+function dhcf_missing_required($traits) {
+	$missing = array();
+	foreach (DHCF_REQUIRED as $slot) {
+		if (empty($traits[$slot])) $missing[] = $slot;
+	}
+	return $missing;
+}
+
 function dhcf_categories() {
 	return array('background', 'torso', 'head', 'headgear', 'effects', 'arms', 'weapon', 'companion');
 }

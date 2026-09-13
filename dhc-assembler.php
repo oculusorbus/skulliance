@@ -14,7 +14,17 @@
  *   $dhca_owned  null for everything, or category => slug => ['copies'=>n,'free'=>n]
  *                to restrict the picker to a player's holdings
  *
- * Emits its own <style>, markup and <script>. The CSS sits in the body for the
+ * Emits its own <!--
+  Typefaces travel with the assembler, not with one page's <head>. They used to
+  live only in dhcsandbox.php, so dhcfighters.php fell back to Impact for every
+  heading and button -- condensed and heavy, and unreadable at 11px uppercase
+  with letter-spacing. Anything that includes the assembler now gets the faces
+  its CSS asks for.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>, markup and <script>. The CSS sits in the body for the
  * fighters page, where header.php has already closed <head> -- valid, and
  * cheaper than teaching the platform header about a second stylesheet.
  */

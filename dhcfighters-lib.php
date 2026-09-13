@@ -340,6 +340,12 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 	$clean = dhcf_clean_traits($traits);
 	if (!$clean) return array(false, 'Nothing to save.', null);
 
+	// Enforced here, not only in the browser: the page is a suggestion.
+	$missing = dhcf_missing_required($clean);
+	if ($missing) {
+		return array(false, 'A Fighter needs a ' . implode(', ', $missing) . '.', null);
+	}
+
 	$name  = trim(mb_substr((string)$name, 0, 48));
 	$score = dhcf_score($clean);
 	$json  = json_encode($clean);
@@ -399,6 +405,10 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
 	$user_id = (int)$user_id; $fighter_id = (int)$fighter_id;
 	$clean = dhcf_clean_traits($traits);
 	if (!$clean) return array(false, 'Nothing to save.', null);
+	$missing = dhcf_missing_required($clean);
+	if ($missing) {
+		return array(false, 'A Fighter needs a ' . implode(', ', $missing) . '.', null);
+	}
 
 	$conn->begin_transaction();
 	try {
