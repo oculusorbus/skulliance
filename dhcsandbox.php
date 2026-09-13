@@ -337,6 +337,8 @@ a{color:var(--ochre)}
 .rarbar button i{width:5px;height:5px;border-radius:50%;background:var(--tier,var(--dim));
   flex:none;font-style:normal}
 .rarbar button .c{color:var(--dim);font-size:8.5px;letter-spacing:0}
+.rarbar .sort{margin-left:auto;border-style:dashed}
+.rarbar .sort:hover{border-color:var(--ochre);color:var(--ochre)}
 .cell.blocked{opacity:.32;cursor:not-allowed;filter:grayscale(1)}
 .cell.blocked:hover{border-color:var(--line)}
 .cell.blocked img{background:var(--panel2)}
@@ -707,6 +709,23 @@ a{color:var(--ochre)}
   var rarityFilter = null;
   var rarbarEl = document.getElementById('rarbar');
 
+  /* Rarest first by default -- the interesting traits are the ones you rarely
+     see, and alphabetical buried them. TIERS is ordered commonest-first, so its
+     index reversed gives the rank; rate breaks ties inside a tier, name breaks
+     ties inside that. Untiered traits sort last either way, so a missing rarity
+     table degrades to alphabetical rather than to something arbitrary. */
+  var sortRarest = true;
+
+  function sortByRarity(list) {
+    return list.slice().sort(function (a, b) {
+      var ai = TIERS.indexOf(a.tier), bi = TIERS.indexOf(b.tier);
+      if (ai < 0 || bi < 0) return ai === bi ? a.name.localeCompare(b.name) : (ai < 0 ? 1 : -1);
+      if (ai !== bi)           return sortRarest ? bi - ai : ai - bi;
+      if (a.rate !== b.rate)   return sortRarest ? a.rate - b.rate : b.rate - a.rate;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
   function buildRarBar() {
     rarbarEl.innerHTML = '';
     var list = TRAITS[active] || [];
@@ -731,6 +750,12 @@ a{color:var(--ochre)}
       });
       rarbarEl.appendChild(b);
     });
+    var sort = document.createElement('button');
+    sort.type = 'button'; sort.className = 'sort';
+    sort.innerHTML = sortRarest ? 'Rarest first &#9650;' : 'Commonest first &#9660;';
+    sort.title = 'Sort by ' + (sortRarest ? 'commonest' : 'rarest') + ' first';
+    sort.addEventListener('click', function () { sortRarest = !sortRarest; buildGrid(); });
+    rarbarEl.appendChild(sort);
   }
 
   function buildGrid() {
@@ -750,7 +775,7 @@ a{color:var(--ochre)}
     // than leaving the reader to hover a greyed tile to find out why.
     var banner = null;
     var shown = 0;
-    list.forEach(function (t) {
+    sortByRarity(list).forEach(function (t) {
       if (rarityFilter && t.tier !== rarityFilter) return;   // secondary filter
       shown++;
       var why = blockedReason(active, t.slug);
