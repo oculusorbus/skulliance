@@ -45,10 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if ($enc_id > 0) {
 			$outcome = gauntletResolveEncounter($conn, $user_id, $enc_id, $consumable_ids, $weapon_id, $armor_id);
 			if ($outcome === 'win') {
-				// TRAIT DROP flag. This page is post-redirect-get, so the win is
-				// remembered in the session and claimed on the next render --
-				// a drop fired here would be lost in the redirect.
-				$_SESSION['dhcf_gauntlet_win'] = 1;
 				$run  = gauntletGetActiveRun($conn, $user_id);
 				$rw_r = $conn->query("
 					SELECT ge.run_id, op.currency AS opponent_currency
@@ -75,8 +71,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 						'win_number' => $wnum2,
 					];
 				}
-				if (!$run) gauntletFlash('Victory! You swept the gauntlet!', 'win');
-				else       gauntletFlash('Win! Pick your next card.', 'win');
+				if (!$run) {
+					gauntletFlash('Victory! You swept the gauntlet!', 'win');
+					/*
+					 * TRAIT DROP -- for SURVIVING THE GAUNTLET, not for winning a
+					 * single encounter. A run is three fights; winning the first
+					 * one is not the achievement, and hooking the per-encounter
+					 * outcome paid out three times a run.
+					 *
+					 * No active run left is the game's own test for a sweep --
+					 * the same condition the victory message uses, so the drop
+					 * and the message can never disagree.
+					 *
+					 * Flagged rather than fired: this page is post-redirect-get,
+					 * so a drop claimed here would be lost in the redirect.
+					 */
+					$_SESSION['dhcf_gauntlet_win'] = 1;
+				} else {
+					gauntletFlash('Win! Pick your next card.', 'win');
+				}
 			} elseif ($outcome === 'loss') {
 				$_SESSION['gauntlet_last_result'] = ['outcome' => 'loss'];
 				gauntletFlash('Defeat. Your run ends here.', 'loss');

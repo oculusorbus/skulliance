@@ -100,7 +100,7 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'base' => 'placement_3'),
 	'cryptconquest'  => array('label' => 'Crypt Conquest',  'category' => 'headgear',   'trigger' => 'win',
 	                          'base' => 'placement_10'),
-	'gauntlets'      => array('label' => 'Gauntlets',       'category' => 'effects',    'trigger' => 'win',
+	'gauntlets'      => array('label' => 'Gauntlets',       'category' => 'effects',    'trigger' => 'sweep the gauntlet',
 	                          'base' => 'placement_10'),
 	'guardians'      => array('label' => 'Realm Guardians', 'category' => 'companion',  'trigger' => 'waves held',
 	                          'base' => 'run',          'bands' => array(20 => 'placement_10', 40 => 'placement_3', 70 => 'placement_1')),

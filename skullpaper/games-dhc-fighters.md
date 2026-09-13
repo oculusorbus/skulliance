@@ -29,7 +29,7 @@ background at minimum, so no single game can dress one on its own.
 | Obscura | Background | finishing a run with 10 or more solves |
 | Crypt Crawl | Weapon | winning |
 | Crypt Conquest | Headgear | winning |
-| Gauntlets | Effects | winning |
+| Gauntlets | Effects | sweeping a whole gauntlet |
 | Realm Guardians | Companion | waves held |
 | Monstrocity | Arms | completing all 28 levels |
 | Boss Battles | **any trait** | every boss defeat |
