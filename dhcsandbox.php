@@ -232,8 +232,14 @@ a{color:var(--ochre)}
 .tab:hover{color:var(--bone)}
 .tab[aria-selected="true"]{background:var(--blood);color:#fff}
 .tab .dot{color:var(--ochre)}
+/* grid-auto-rows:max-content is load-bearing, not tidying. Without it the
+   implicit rows were sized shorter than the cells' own content -- 61px against a
+   112px thumbnail -- so the name underneath fell outside the cell and
+   overflow:hidden clipped it away entirely. Every category had names; none of
+   them were visible. */
 .grid{flex:1;overflow:auto;padding:10px;display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;align-content:start}
+  grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;
+  align-content:start;grid-auto-rows:max-content}
 .cell{background:var(--panel2);border:1px solid var(--line);cursor:pointer;padding:0;
   display:flex;flex-direction:column;border-radius:2px;overflow:hidden}
 .cell:hover{border-color:var(--ochre)}
@@ -244,7 +250,9 @@ a{color:var(--ochre)}
 .cell span{font-size:9.5px;line-height:1.3;padding:5px 6px;color:var(--dim);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cell[aria-pressed="true"] span{color:var(--bone)}
-.cell.none img{background:var(--panel);display:flex}
+.cell.none img{background:var(--panel2);position:relative}
+.cell.none{border-style:dashed}
+.cell.none[aria-pressed="true"]{border-style:solid}
 .hint{padding:10px 12px;font-size:11px;color:var(--dim);border-top:1px solid var(--line);line-height:1.6}
 .warn{margin:22px;padding:18px;border:1px solid var(--blood);background:rgba(208,70,58,.09);
   font-size:12.5px;line-height:1.7;border-radius:2px}
@@ -389,14 +397,15 @@ a{color:var(--ochre)}
   function buildGrid() {
     var s = slotByKey(active), list = TRAITS[active] || [];
     gridEl.innerHTML = '';
-    if (s.optional) {
-      var none = document.createElement('button');
-      none.className = 'cell none'; none.type = 'button';
-      none.setAttribute('aria-pressed', !sel[active] ? 'true' : 'false');
-      none.innerHTML = '<img alt=""><span>None</span>';
-      none.addEventListener('click', function () { delete sel[active]; buildTabs(); paint(); buildGrid(); });
-      gridEl.appendChild(none);
-    }
+    // Every category gets None, including Background, Torso and Head. This is a
+    // sandbox for inspecting layers -- being able to drop the torso and see what
+    // sits behind it is the point, so nothing is mandatory.
+    var none = document.createElement('button');
+    none.className = 'cell none'; none.type = 'button'; none.title = 'Remove from canvas';
+    none.setAttribute('aria-pressed', !sel[active] ? 'true' : 'false');
+    none.innerHTML = '<img alt=""><span>None</span>';
+    none.addEventListener('click', function () { delete sel[active]; buildTabs(); paint(); buildGrid(); });
+    gridEl.appendChild(none);
     list.forEach(function (t) {
       var b = document.createElement('button');
       b.className = 'cell'; b.type = 'button'; b.title = t.name;
@@ -421,6 +430,9 @@ a{color:var(--ochre)}
     sel = {};
     SLOTS.forEach(function (s) {
       if (s.key === 'weaponBack') return;                 // opt-in only, it is the thing under test
+      // `optional` no longer gates the None tile -- every slot has one -- but it
+      // still decides what Randomise fills, so a shuffle produces a whole Fighter
+      // rather than a background with one arm floating on it.
       if (!s.optional) { var v = pick(s.key); if (v) sel[s.key] = v; return; }
       // roughly mirror the real collection: optional slots are absent more often than present
       var odds = (s.key === 'effects2') ? 0.15 : (s.key === 'companion' ? 0.2 : 0.45);
