@@ -30,12 +30,6 @@ foreach (array('web', 'dhc', 'dhc/web', 'traits') as $c) {
 // slot key => [label, directory under <base>/<size>/, optional]
 $dhc_slots = array(
 	'background' => array('Background',      'background', false),
-	// EFFECTS SIT ON THE BACKGROUND, not over the character. They are scene
-	// atmosphere -- flames, sparks, attack bursts -- and drawing them last put
-	// them across the Fighter's face. Behind the body they read as the
-	// environment the character is standing in, which is what they are.
-	'effects1'   => array('Effects 1',       'effects',    true),
-	'effects2'   => array('Effects 2',       'effects',    true),
 	'weaponBack' => array('Weapon (behind)', 'weapon',     true),
 	'torso'      => array('Torso',           'torso',      false),
 	// WEAPON BEFORE ARMS. A weapon is gripped, so the hand and forearm belong in
@@ -43,6 +37,15 @@ $dhc_slots = array(
 	// from the sandbox; the guessed order in LAYER-MANIFEST.json had it backwards.
 	'weapon'     => array('Weapon',          'weapon',     true),
 	'arms'       => array('Arms',            'arms',       true),
+	// EFFECTS SIT JUST UNDER THE HEAD. They were behind the whole character for a
+	// while, which kept them off the face but also buried them behind the body.
+	// Here they cross the Fighter and stop short of the face, which is what an
+	// attack burst or a comic cover is supposed to do.
+	//
+	// Effects 2 draws over Effects 1 -- the pair is a bottom/top sandwich, not two
+	// interchangeable slots, so which one a trait goes in decides what covers what.
+	'effects1'   => array('Effects 1',       'effects',    true),
+	'effects2'   => array('Effects 2',       'effects',    true),
 	'head'       => array('Head',            'head',       false),
 	'headgear'   => array('Headgear',        'headgear',   true),
 	'companion'  => array('Companion',       'companion',  true),
@@ -64,6 +67,20 @@ $dhc_slots = array(
 $dhc_weapon_front = array(
 	'annihilation-belt', 'dh-raider-equipment', 'dh-spike-blaster-1',
 	'electric-morning-star', 'lil-fren', 'mega-taser-cannon-1', 'plastic-blaster',
+);
+
+// THE COMIC COVERS ARE EFFECTS 2 ONLY.
+//
+// A cover is a full-frame treatment over the whole Fighter, so nothing else
+// should ever be drawn on top of one -- and two covers at once is meaningless.
+// Effects 2 is the upper of the two effects slots and holds exactly one trait,
+// so confining the covers to it makes both guarantees structural: there is no
+// slot left that could draw above a cover, and no way to select a second one.
+//
+// Enforced by leaving them out of the Effects 1 list entirely rather than by a
+// rule in the renderer. A trait that is never offered cannot be combined wrongly.
+$dhc_comic_covers = array(
+	'dhc2-comic-cover-1', 'dhc2-comic-cover-2', 'dhc2-comic-cover-3',
 );
 
 // Display names come from trait-index.json when it is uploaded alongside the
@@ -89,6 +106,9 @@ foreach ($dhc_slots as $key => $s) {
 			// Filtered at the source: each weapon appears in one slot only.
 			if ($key === 'weapon'     && !in_array($slug, $dhc_weapon_front, true)) continue;
 			if ($key === 'weaponBack' &&  in_array($slug, $dhc_weapon_front, true)) continue;
+			// Covers are offered in the upper effects slot only, so nothing can
+			// draw over one and a second cover cannot be selected at all.
+			if ($key === 'effects1'   &&  in_array($slug, $dhc_comic_covers, true)) continue;
 			$name = isset($dhc_index[$dir][$slug]['name']) ? $dhc_index[$dir][$slug]['name'] : dhc_title($slug);
 			$out[] = array('slug' => $slug, 'name' => $name);
 		}
@@ -343,9 +363,12 @@ a{color:var(--ochre)}
       <b>Plastic Blaster</b>, <b>DH Raider Equipment</b> and <b>Electric Morning Star</b> are drawn
       against the torso&rsquo;s own arms, so they cannot be combined with an <b>Arms</b> trait
       &mdash; picking either side greys the other out, both ways round.<br><br>
-      Effects sit behind the character, except the three <b>DHC2 Comic Cover</b> effects, which are
-      cover framing &mdash; they draw just below <b>Head</b> so they cross the body but leave the
-      face readable.
+      Effects draw just below <b>Head</b>, so they cross the Fighter but leave the face readable.
+      <b>Effects 2</b> sits over <b>Effects 1</b> &mdash; the two are a bottom and a top, not
+      interchangeable slots.<br><br>
+      The three <b>DHC2 Comic Cover</b> effects are offered in <b>Effects 2</b> only. A cover is a
+      full-frame treatment, so nothing should draw over it and two at once is meaningless &mdash;
+      keeping them in the upper slot makes both impossible rather than merely discouraged.
     </div>
   </div>
 </div>
@@ -402,20 +425,6 @@ a{color:var(--ochre)}
    */
   var ARMS_BEHIND_TORSO = ['perforator-arm-replacement'];
 
-  /*
-   * EFFECTS NORMALLY DRAW FIRST -- just above the background, behind the whole
-   * character, which is what "effects should layer on top of the background,
-   * not the character traits" settled. The three DHC2 comic covers are the
-   * exception: they are cover framing meant to sit OVER the body but UNDER the
-   * face, so they land immediately below Head and the face stays readable.
-   *
-   * Applied per effects slot, so a cover works in either Effects 1 or Effects 2
-   * and an ordinary effect in the other slot stays down at the back where it
-   * belongs. With a cover in both, their relative order is preserved.
-   */
-  var COMIC_COVERS = ['dhc2-comic-cover-1', 'dhc2-comic-cover-2', 'dhc2-comic-cover-3'];
-
-  function isComicCover(slug) { return COMIC_COVERS.indexOf(slug) !== -1; }
 
   function armsBehindTorso() {
     if (!sel.arms || ARMS_BEHIND_TORSO.indexOf(sel.arms) === -1) return false;
@@ -474,13 +483,6 @@ a{color:var(--ochre)}
       // a > t, so pulling arms out does not shift the torso index
       if (a > -1 && t > -1 && a > t) order.splice(t, 0, order.splice(a, 1)[0]);
     }
-    ['effects1', 'effects2'].forEach(function (key) {
-      if (!sel[key] || !isComicCover(sel[key])) return;
-      var k = order.map(function (s) { return s.key; });
-      var e = k.indexOf(key), h = k.indexOf('head');
-      // e < h, so removing it shifts head down one -- h-1 is then "just below head"
-      if (e > -1 && h > -1 && e < h) order.splice(h - 1, 0, order.splice(e, 1)[0]);
-    });
     return order;
   }
 
@@ -546,8 +548,6 @@ a{color:var(--ochre)}
       var tag = '';
       if (s.key === 'companion' && chosen && COMPANION_UNDER.indexOf(chosen) !== -1)
         tag = ' <em style="color:var(--teal);font-style:normal">behind arms</em>';
-      if ((s.key === 'effects1' || s.key === 'effects2') && chosen && isComicCover(chosen))
-        tag = ' <em style="color:var(--teal);font-style:normal">below head</em>';
       if (s.key === 'arms' && chosen && armsBehindTorso())
         tag = ' <em style="color:var(--ochre);font-style:normal">behind torso &mdash; temporary</em>';
       if (s.key === 'torso' && chosen && sel.arms)
