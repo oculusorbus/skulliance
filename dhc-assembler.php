@@ -196,10 +196,26 @@ if ($dhca_owned !== null) {
 ?>
 
 <style>
+<?php if ($dhca_mode === 'sandbox'): ?>
+/* THE SANDBOX KEEPS ITS OWN SKIN. It is a public, DHC-branded tool handed to
+   an artist outside the platform, so it wears the collection's colours -- hot
+   ash and ochre -- rather than Skulliance navy. */
 :root{
   --ink:#100d0d; --panel:#191414; --panel2:#221b1b; --line:#312727;
   --bone:#ece7dc; --dim:#9b9086; --blood:#d0463a; --ochre:#e0a13c; --teal:#4fa39c;
 }
+<?php else: ?>
+/* EMBEDDED: SKULLIANCE PALETTE, sampled from the platform's own stylesheet
+   rather than approximated -- #07111d ground, #00c8a0 accent (its most-used
+   colour by a distance), #7a9eb0 muted text. The brown-and-ochre set the
+   sandbox uses reads as a foreign object bolted onto a navy interface.
+   --ochre keeps its name because the assembler's CSS refers to it throughout;
+   only the value changes, so there is one place to edit rather than fifty. */
+:root{
+  --ink:#07111d; --panel:#0a1929; --panel2:#0d1e2e; --line:#1b3346;
+  --bone:#e8eaed; --dim:#7a9eb0; --blood:#00c8a0; --ochre:#00c8a0; --teal:#00a882;
+}
+<?php endif; ?>
 *{box-sizing:border-box}
 <?php if ($dhca_mode === 'sandbox'): ?>
 /* STANDALONE ONLY. The sandbox owns its whole page, so it takes the viewport
@@ -271,8 +287,8 @@ a{color:var(--ochre)}
   padding:9px 15px;font-size:12px;cursor:pointer;border-radius:2px;letter-spacing:.03em}
 .btn:hover{border-color:var(--ochre);color:var(--ochre)}
 .btn:focus-visible{outline:2px solid var(--ochre);outline-offset:2px}
-.btn.primary{background:var(--blood);border-color:var(--blood);color:#fff}
-.btn.primary:hover{background:#e0554a;border-color:#e0554a;color:#fff}
+.btn.primary{background:var(--blood);border-color:var(--blood);color:var(--ink)}
+.btn.primary:hover{filter:brightness(1.12)}
 
 /* ---- stack readout ---- */
 .stack{width:min(66vh,100%);border:1px solid var(--line);background:var(--panel)}
@@ -342,11 +358,23 @@ a{color:var(--ochre)}
 /* ---- rarity ----
    One hue per tier, used for the cell badge, the filter pills and the swatch
    in the legend, so a colour always means the same thing wherever it appears. */
+<?php if ($dhca_mode === 'sandbox'): ?>
 .t-common{--tier:#8b8178}
 .t-uncommon{--tier:#4f9d84}
 .t-epic{--tier:#7d6bb0}
 .t-legendary{--tier:#c8913c}
 .t-mythic{--tier:#c2445c}
+<?php else: ?>
+/* Tier ramp re-pitched for a navy ground. Common borrows the platform's own
+   muted blue-grey so it recedes; uncommon is the brand mint; epic, legendary
+   and mythic climb violet, amber and magenta. Five hues that stay separable
+   at badge size and none of which fight the interface. */
+.t-common{--tier:#7a9eb0}
+.t-uncommon{--tier:#00c8a0}
+.t-epic{--tier:#8b7bd8}
+.t-legendary{--tier:#f5a623}
+.t-mythic{--tier:#ff4f8b}
+<?php endif; ?>
 .cell .rar{display:flex;align-items:center;gap:4px;padding:0 6px 5px;font-size:8.5px;
   line-height:1.2;color:var(--tier,var(--dim));letter-spacing:.04em;
   text-transform:uppercase;white-space:nowrap;overflow:hidden}

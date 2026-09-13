@@ -27,18 +27,18 @@
 ?>
 <style>
 #dhcdrop-veil{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;
-  background:rgba(8,6,6,.86);backdrop-filter:blur(3px);padding:20px}
+  background:rgba(4,12,22,.88);backdrop-filter:blur(3px);padding:20px}
 #dhcdrop-veil.on{display:flex}
-#dhcdrop-box{width:min(348px,100%);background:#16110f;border:1px solid #3a2e29;border-radius:4px;
-  box-shadow:0 24px 70px rgba(0,0,0,.75);overflow:hidden;text-align:center;position:relative;
-  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e8e2d8;
+#dhcdrop-box{width:min(348px,100%);background:#0a1929;border:1px solid #1b3346;border-radius:4px;
+  box-shadow:0 24px 70px rgba(0,0,0,.6);overflow:hidden;text-align:center;position:relative;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#e8eaed;
   animation:dhcdrop-in .3s cubic-bezier(.2,.9,.3,1.2)}
 @keyframes dhcdrop-in{from{transform:scale(.88) translateY(14px);opacity:0}to{transform:none;opacity:1}}
 
 /* tier colour drives everything downstream: rays, glow, badge, shimmer */
-#dhcdrop-box{--dt:#8b8178;--glow:0}
+#dhcdrop-box{--dt:#7a9eb0;--glow:0}
 
-#dhcdrop-kicker{font-size:9px;letter-spacing:.24em;text-transform:uppercase;padding:13px 0 0;color:#8b8178}
+#dhcdrop-kicker{font-size:9px;letter-spacing:.24em;text-transform:uppercase;padding:13px 0 0;color:#7a9eb0}
 
 /* ---- the stage ---- */
 #dhcdrop-stage{width:196px;height:196px;margin:10px auto 0;position:relative}
@@ -60,16 +60,16 @@
   100%{opacity:0;transform:scale(1.9)}}
 
 /* the shutter: what sits there while the drop is "deciding" */
-#dhcdrop-shut{position:absolute;inset:0;border-radius:3px;border:1px solid #3a2e29;
-  background:repeating-linear-gradient(135deg,#1d1715 0 9px,#231c19 9px 18px);
-  display:flex;align-items:center;justify-content:center;font-size:40px;color:#4a3d37;
+#dhcdrop-shut{position:absolute;inset:0;border-radius:3px;border:1px solid #1b3346;
+  background:repeating-linear-gradient(135deg,#0d1e2e 0 9px,#0f2436 9px 18px);
+  display:flex;align-items:center;justify-content:center;font-size:40px;color:#3d5b73;
   animation:dhcdrop-throb .62s ease-in-out infinite}
 @keyframes dhcdrop-throb{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.045);opacity:.82}}
 .revealed #dhcdrop-shut{opacity:0;transform:scale(1.25);transition:opacity .28s,transform .28s;animation:none}
 
 /* the art itself */
 #dhcdrop-art{position:absolute;inset:0;border-radius:3px;overflow:hidden;opacity:0;transform:scale(.62);
-  background:repeating-conic-gradient(#1b1616 0% 25%,#221b1b 0% 50%) 50%/14px 14px}
+  background:repeating-conic-gradient(#0d1e2e 0% 25%,#0a1929 0% 50%) 50%/14px 14px}
 #dhcdrop-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .revealed #dhcdrop-art{opacity:1;transform:none;
   transition:opacity .34s ease-out,transform .52s cubic-bezier(.18,1.5,.4,1);
@@ -92,26 +92,26 @@
 #dhcdrop-name{font-size:16px;padding:13px 14px 2px;line-height:1.3}
 #dhcdrop-tier{font-size:10px;letter-spacing:.22em;text-transform:uppercase;padding:2px 0 0;color:var(--dt);
   text-shadow:0 0 calc(var(--glow) * 16px) var(--dt)}
-#dhcdrop-meta{font-size:10.5px;color:#8b8178;padding:7px 14px 0;line-height:1.6}
+#dhcdrop-meta{font-size:10.5px;color:#7a9eb0;padding:7px 14px 0;line-height:1.6}
 #dhcdrop-new,#dhcdrop-dupe{display:inline-block;margin:9px 0 0;font-size:9px;letter-spacing:.16em;
   text-transform:uppercase;border-radius:999px;padding:3px 9px}
-#dhcdrop-new{border:1px solid #4f9d84;color:#4f9d84}
-#dhcdrop-dupe{border:1px solid #6a5f57;color:#8b8178}
+#dhcdrop-new{border:1px solid #00c8a0;color:#00c8a0}
+#dhcdrop-dupe{border:1px solid #2a4a63;color:#7a9eb0}
 
 /* near miss: no art, no fanfare, just the target */
 #dhcdrop-veil.miss #dhcdrop-stage,#dhcdrop-veil.miss #dhcdrop-new,#dhcdrop-veil.miss #dhcdrop-dupe{display:none}
 #dhcdrop-veil.miss #dhcdrop-name,#dhcdrop-veil.miss #dhcdrop-tier,#dhcdrop-veil.miss #dhcdrop-meta{
   opacity:1;transform:none}
-#dhcdrop-bar{height:5px;background:#241d1b;border-radius:3px;margin:13px 24px 0;overflow:hidden}
-#dhcdrop-bar i{display:block;height:100%;background:#c8913c;width:0;transition:width .7s .1s cubic-bezier(.2,.8,.3,1)}
+#dhcdrop-bar{height:5px;background:#0d1e2e;border-radius:3px;margin:13px 24px 0;overflow:hidden}
+#dhcdrop-bar i{display:block;height:100%;background:#00c8a0;width:0;transition:width .7s .1s cubic-bezier(.2,.8,.3,1)}
 
 #dhcdrop-actions{display:flex;gap:8px;padding:15px}
 #dhcdrop-actions a,#dhcdrop-actions button{flex:1;font:inherit;font-size:10px;letter-spacing:.1em;
   text-transform:uppercase;padding:9px 0;cursor:pointer;border-radius:2px;text-decoration:none;
-  border:1px solid #3a2e29;background:none;color:#e8e2d8;text-align:center}
-#dhcdrop-actions .go{background:#8f2f27;border-color:#b8433a}
-#dhcdrop-actions a:hover,#dhcdrop-actions button:hover{border-color:#c8913c;color:#c8913c}
-#dhcdrop-actions .go:hover{background:#a8372d;color:#f2e9df;border-color:#b8433a}
+  border:1px solid #1b3346;background:none;color:#e8eaed;text-align:center}
+#dhcdrop-actions .go{background:#00c8a0;border-color:#00c8a0;color:#07111d}
+#dhcdrop-actions a:hover,#dhcdrop-actions button:hover{border-color:#00c8a0;color:#00c8a0}
+#dhcdrop-actions .go:hover{filter:brightness(1.12);color:#07111d}
 
 /* Someone who asked for less motion still gets the drop, just immediately. */
 @media (prefers-reduced-motion:reduce){
@@ -142,11 +142,11 @@
 <script>
 (function () {
   var TIER = {
-    common:    {color:'#8b8178', glow:0,    build:420,  rare:false},
-    uncommon:  {color:'#4f9d84', glow:.18,  build:560,  rare:false},
-    epic:      {color:'#7d6bb0', glow:.42,  build:780,  rare:true },
-    legendary: {color:'#c8913c', glow:.72,  build:1050, rare:true },
-    mythic:    {color:'#c2445c', glow:1,    build:1400, rare:true }
+    common:    {color:'#7a9eb0', glow:0,    build:420,  rare:false},
+    uncommon:  {color:'#00c8a0', glow:.18,  build:560,  rare:false},
+    epic:      {color:'#8b7bd8', glow:.42,  build:780,  rare:true },
+    legendary: {color:'#f5a623', glow:.72,  build:1050, rare:true },
+    mythic:    {color:'#ff4f8b', glow:1,    build:1400, rare:true }
   };
 
   var veil = document.getElementById('dhcdrop-veil');

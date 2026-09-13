@@ -77,58 +77,57 @@ $dhca_owned = $dhcf_avail;
 .dhcf-head .sub{font-size:12px;opacity:.7}
 .dhcf-note{font-size:11.5px;opacity:.65;line-height:1.6;margin:0 0 14px;max-width:70ch}
 .dhcf-stats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
-.dhcf-stat{border:1px solid rgba(255,255,255,.14);border-radius:3px;padding:7px 12px;min-width:96px}
+.dhcf-stat{border:1px solid var(--line);border-radius:3px;padding:7px 12px;min-width:96px}
 .dhcf-stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
 .dhcf-stat span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
 /* Reference block, below everything you actually operate. It answers "what
    should I play next", which is worth having on the page but never worth
    pushing the assembler down the screen for. */
-.dhcf-games{border:1px solid rgba(255,255,255,.14);border-radius:3px;overflow:hidden;margin-top:14px}
+.dhcf-games{border:1px solid var(--line);border-radius:3px;overflow:hidden;margin-top:14px}
 .dhcf-games ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
 .dhcf-games li+li{border-top:0}
 .dhcf-games h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-  opacity:.7;border-bottom:1px solid rgba(255,255,255,.12);display:flex;justify-content:space-between;gap:8px}
+  opacity:.7;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
 .dhcf-games h2 span{opacity:.6;letter-spacing:0;font-variant-numeric:tabular-nums}
 .dhcf-games ul{list-style:none;margin:0;padding:4px 0}
 .dhcf-games li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 12px;position:relative}
-.dhcf-games li{border-top:1px solid rgba(255,255,255,.06)}
+.dhcf-games li{border-top:1px solid var(--line)}
 .dhcf-games .g{font-size:12px}
 .dhcf-games .c{grid-column:1;font-size:9.5px;opacity:.55;text-transform:uppercase;letter-spacing:.08em}
 .dhcf-games .c em{font-style:normal;opacity:.75;text-transform:none;letter-spacing:0;display:block}
 .dhcf-games .n{grid-row:1/3;align-self:center;font-size:14px;font-variant-numeric:tabular-nums}
 .dhcf-games .n i{font-style:normal;font-size:10px;opacity:.45}
-.dhcf-games .bar{grid-column:1/-1;height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden}
-.dhcf-games .bar i{display:block;height:100%;background:#c8913c}
-.dhcf-games li.done .bar i{background:#4f9d84}
-.dhcf-games li.done .n{color:#4f9d84}
+.dhcf-games .bar{grid-column:1/-1;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
+.dhcf-games .bar i{display:block;height:100%;background:var(--ochre)}
+.dhcf-games li.done .bar i{background:var(--teal)}
+.dhcf-games li.done .n{color:var(--teal)}
 .dhcf-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:18px}
-.dhcf-panel{border:1px solid rgba(255,255,255,.14);border-radius:3px;overflow:hidden}
+.dhcf-panel{border:1px solid var(--line);border-radius:3px;overflow:hidden}
 .dhcf-panel h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-  opacity:.65;border-bottom:1px solid rgba(255,255,255,.12)}
+  opacity:.65;border-bottom:1px solid var(--line)}
 .dhcf-panel .body{padding:10px 12px}
 .dhcf-roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-.dhcf-card{border:1px solid rgba(255,255,255,.14);border-radius:3px;overflow:hidden;position:relative}
-.dhcf-card .art{position:relative;aspect-ratio:1;background:#16110f;overflow:hidden}
+.dhcf-card{border:1px solid var(--line);border-radius:3px;overflow:hidden;position:relative}
+.dhcf-card .art{position:relative;aspect-ratio:1;background:var(--panel2);overflow:hidden}
 .dhcf-card .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .dhcf-card .meta{padding:6px 8px}
 .dhcf-card .nm{font-size:11.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dhcf-card .sc{font-size:10px;opacity:.6;font-variant-numeric:tabular-nums}
 .dhcf-card .acts{display:flex;gap:5px;padding:0 8px 8px}
 .dhcf-card .acts button{flex:1;font:inherit;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
-  padding:4px;cursor:pointer;background:none;border:1px solid rgba(255,255,255,.18);border-radius:2px;color:inherit}
-.dhcf-card .acts button:hover{border-color:#c8913c;color:#c8913c}
+  padding:4px;cursor:pointer;background:none;border:1px solid var(--line);border-radius:2px;color:inherit}
+.dhcf-card .acts button:hover{border-color:var(--ochre);color:var(--ochre)}
 .dhcf-lb{width:100%;border-collapse:collapse;font-size:12px}
 .dhcf-lb th{text-align:left;font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:.55;padding:4px 6px}
-.dhcf-lb td{padding:5px 6px;border-top:1px solid rgba(255,255,255,.08);font-variant-numeric:tabular-nums}
+.dhcf-lb td{padding:5px 6px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 .dhcf-lb .r{width:26px;opacity:.6}
 .dhcf-save{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 0}
 .dhcf-save input{flex:1;min-width:170px;font:inherit;font-size:12px;padding:7px 9px;border-radius:2px;
-  background:rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.18);color:inherit}
+  background:var(--ink);border:1px solid var(--line);color:inherit}
 .dhcf-save button{font:inherit;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;
-  cursor:pointer;border-radius:2px;background:#8f2f27;border:1px solid #b8433a;color:#f2e9df}
-.dhcf-save button:hover{background:#a8372d}
-.dhcf-save button:disabled{background:#2a2220;border-color:#3a2e29;color:#7d726b;cursor:not-allowed}
-.dhcf-save button:disabled:hover{background:#2a2220}
+  cursor:pointer;border-radius:2px;background:var(--ochre);border:1px solid var(--ochre);color:var(--ink)}
+.dhcf-save button:hover{filter:brightness(1.12)}
+.dhcf-save button:disabled{background:transparent;border-color:var(--line);color:var(--dim);cursor:not-allowed;filter:none}
 .dhcf-say{font-size:11.5px;min-height:16px;opacity:.85}
 </style>
 
@@ -266,7 +265,7 @@ function dhcf_board_html($rows) {
 <script>
 (function () {
   var say = document.getElementById('dhcfSay');
-  function msg(t, good) { say.textContent = t; say.style.color = good ? '#4f9d84' : '#d0463a'; }
+  function msg(t, good) { say.textContent = t; say.style.color = good ? 'var(--ochre)' : '#ff5c5c'; }
 
   /* The assembler exposes its current selection on window.DHC_SELECTION -- the
      save button reads it rather than the DOM, so what gets stored is exactly
