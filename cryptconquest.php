@@ -1586,6 +1586,18 @@ include 'header.php';
 					resultOverlay.style.display = '';
 					initGameArea();
 					playFlashSfx(resultOverlay); // no server sound ends a run today, but keep the paths symmetric
+					/*
+					 * TRAIT DROP, wins only. Conquest pays Headgear, and the
+					 * category sits on a winnable game precisely because the win
+					 * is the achievement. The server renders .cq-result with
+					 * 'lost' on a defeat, so the absence of that class is the
+					 * win -- read from the DOM rather than re-derived, so this
+					 * cannot disagree with what the player is looking at.
+					 */
+					var cqRes = resultOverlay.querySelector('.cq-result');
+					if (cqRes && !cqRes.classList.contains('lost') && window.DHC_DROP) {
+						DHC_DROP({ game: 'cryptconquest', value: 1, delay: 1200 });
+					}
 					busy = false;
 					return;
 				}
@@ -1614,3 +1626,5 @@ include 'header.php';
 	});
 })();
 </script>
+
+<?php include 'dhc-dropmodal.php'; ?>

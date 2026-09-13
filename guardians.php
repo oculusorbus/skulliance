@@ -3343,6 +3343,17 @@ $rg_theme_img = $rg_theme > 0
     d.hidden = false;
     var ok = document.getElementById('rg-defeat-ok');
     if (ok) ok.focus();
+
+    /*
+     * TRAIT DROP. Delayed so the defeat modal lands first -- a trait reveal on
+     * top of the result steals the moment instead of adding to it.
+     *
+     * Waves held is both the qualifying value and the quality band, so a deep
+     * hold rolls a far better table than one that scrapes the floor. Nothing
+     * here decides whether a drop is owed; the server does, and a refusal
+     * shows nothing.
+     */
+    if (window.DHC_DROP) DHC_DROP({ game: 'guardians', value: held, unit: 'waves held', delay: 1100 });
   }
 
   document.addEventListener('click', function (e) {
@@ -3795,6 +3806,7 @@ $rg_theme_img = $rg_theme > 0
 
 </body>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<?php include 'dhc-dropmodal.php'; ?>
 <?php
 $conn->close();
 ?>

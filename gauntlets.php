@@ -45,6 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		if ($enc_id > 0) {
 			$outcome = gauntletResolveEncounter($conn, $user_id, $enc_id, $consumable_ids, $weapon_id, $armor_id);
 			if ($outcome === 'win') {
+				// TRAIT DROP flag. This page is post-redirect-get, so the win is
+				// remembered in the session and claimed on the next render --
+				// a drop fired here would be lost in the redirect.
+				$_SESSION['dhcf_gauntlet_win'] = 1;
 				$run  = gauntletGetActiveRun($conn, $user_id);
 				$rw_r = $conn->query("
 					SELECT ge.run_id, op.currency AS opponent_currency
@@ -930,4 +934,14 @@ function submitFF(encId, newNftId) {
 	document.getElementById('ff-form').submit();
 }
 </script>
+
+<?php include 'dhc-dropmodal.php'; ?>
+<?php if (!empty($_SESSION['dhcf_gauntlet_win'])): unset($_SESSION['dhcf_gauntlet_win']); ?>
+<script>
+/* Gauntlets pays Effects on an encounter win. Claimed once per win: the flag
+   is cleared as it is read, so refreshing the result page cannot farm it.
+   The server enforces the daily cap regardless. */
+if (window.DHC_DROP) DHC_DROP({ game: 'gauntlets', value: 1, delay: 900 });
+</script>
+<?php endif; ?>
 </html>

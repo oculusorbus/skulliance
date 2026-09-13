@@ -5678,6 +5678,27 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      opponentImageUrl: this.player2?.imageUrl || ''
 	    };
 	    console.log(`Saving score: level=${data.level}, score=${data.score}`);
+
+	    /*
+	     * TRAIT DROPS. Two different games share this file and pay differently:
+	     *
+	     *   campaign    -> Arms, on COMPLETING the 28-level campaign. Monstrocity
+	     *                  has no fail state, so a level threshold would only be a
+	     *                  time tax that could be farmed by quitting and
+	     *                  restarting; finishing it is the one un-farmable marker.
+	     *   boss battle -> the wildcard, on every boss defeated.
+	     *
+	     * this.selectedBoss is what the loss path already uses to tell the two
+	     * apart, so the same test decides it here.
+	     */
+	    if (window.DHC_DROP) {
+	      if (this.selectedBoss) {
+	        DHC_DROP({ game: 'bosses', value: Math.round(this.grandTotalScore) || 1, delay: 1200 });
+	      } else if (completedLevel >= 28) {
+	        DHC_DROP({ game: 'monstrocity', value: completedLevel, delay: 1200 });
+	      }
+	    }
+
 	    try {
 	      const response = await fetch('ajax/save-monstrocity-score.php', {
 	        method: 'POST',
@@ -5954,4 +5975,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	});
   </script>
 </body>
+
+<?php include 'dhc-dropmodal.php'; ?>
 </html>

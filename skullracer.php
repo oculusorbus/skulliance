@@ -176,3 +176,5 @@ $racing_body = str_replace(
 <div id="skullracer-embed">
 <?php echo $racing_body; ?>
 </div>
+
+<?php include 'dhc-dropmodal.php'; ?>

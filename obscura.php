@@ -295,6 +295,7 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 
 <script>
 (function () {
+  var runSolves = 0;   // solves in the current run, for the trait drop
   var game = document.getElementById('ob-game');
   if (!game) return;
   var view = document.getElementById('ob-view');
@@ -486,6 +487,10 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
       }
 
       if (d.result === 'correct') {
+        // Solves in THIS run, counted locally. d.streak is the persisting
+        // streak, which is a different number -- a player mid-streak would
+        // otherwise qualify on solves they made days ago.
+        runSolves++;
         btn.classList.add('ob-correct');
         showReveal(d.reveal);   // pull back to the whole artwork
         // Name it back to them: on a solve the only clue they had was a sliver,
@@ -504,6 +509,16 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
         msg.innerHTML = '<span class="ob-lose">It was ' + d.answer_name + '.</span> '
           + 'Run over. Best streak: ' + d.best + '.';
         resolve('Start a new run', d.next);
+        /*
+         * TRAIT DROP. Obscura pays Background on a finished run of 10+ solves
+         * -- one trait for the run, not one per ten solves. Delayed so the
+         * reveal of the artwork they missed lands first; that reveal is the
+         * point of the loss screen.
+         */
+        if (window.DHC_DROP) {
+          DHC_DROP({ game: 'obscura', value: runSolves, unit: 'solves', delay: 1800 });
+        }
+        runSolves = 0;
       }
     });
   });
@@ -517,4 +532,6 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
 <?php
 $conn->close();
 ?>
+
+<?php include 'dhc-dropmodal.php'; ?>
 </html>

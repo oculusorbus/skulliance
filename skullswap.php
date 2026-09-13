@@ -1754,6 +1754,16 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
 
 	 saveSwapScore(score) {
 	     if (!IS_LOGGED_IN) return;
+	     /*
+	      * TRAIT DROP. Skull Swap pays Torso -- a mandatory category, which is
+	      * why it sits on a game that cannot be lost: every run ends with a
+	      * score, so the path to a complete Fighter is never blocked by luck.
+	      *
+	      * Fired here rather than inside the save callback because the two are
+	      * independent: a trait is owed for the run itself, not for the score
+	      * being a personal best. Delayed past the game-over sounds above.
+	      */
+	     if (window.DHC_DROP) DHC_DROP({ game: 'skullswap', value: score, unit: 'points', delay: 1600 });
 	     var xhttp = new XMLHttpRequest();
 	     xhttp.open('GET', 'ajax/save-swap-score.php?score=' + score + '&token=' + encodeURIComponent(this.gameToken || ''), true);
 	     xhttp.send();
@@ -2199,3 +2209,5 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
 
  const game = new Match3Game();
      </script>
+
+<?php include 'dhc-dropmodal.php'; ?>

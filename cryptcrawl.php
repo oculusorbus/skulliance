@@ -1293,6 +1293,21 @@ try {
 						// in-flight fetch on page unload.
 						fetch('ajax/cryptcrawl-finalize.php', { method: 'POST', body: new URLSearchParams({ run_id: runId }), keepalive: true }).catch(function() {});
 					}
+					/*
+					 * TRAIT DROP, wins only -- Crypt Crawl pays a Weapon and the
+					 * whole point of putting an optional category on a winnable
+					 * game is that the win is the achievement. A loss is the
+					 * normal outcome here (the weekly board is typically 0-1
+					 * wins against 2 losses) and stays silent: no unit is passed,
+					 * so the modal shows nothing rather than a near-miss bar on
+					 * a game with no partial credit.
+					 *
+					 * Delayed past the 700ms pointer-events guard above so the
+					 * result screen is unmistakably the player's first read.
+					 */
+					if (resultEl && resultEl.classList.contains('won') && window.DHC_DROP) {
+						DHC_DROP({ game: 'cryptcrawl', value: 1, delay: 1200 });
+					}
 					initGameArea();
 					busy = false;
 					return;
@@ -1849,3 +1864,5 @@ try {
 	})();
 })();
 </script>
+
+<?php include 'dhc-dropmodal.php'; ?>

@@ -2526,6 +2526,22 @@
               '&ghost_lap_time=' + encodeURIComponent(raceFastestLapTime || 0) +
               '&ghost_trace=' + encodeURIComponent(JSON.stringify(raceFastestLapTrace || []))
       }).catch(function() {});
+
+      /*
+       * TRAIT DROP. The game runs in an iframe, so the modal -- which lives on
+       * the parent page with the rest of the platform chrome -- has to be
+       * reached through window.parent. Same origin, so this is a direct call
+       * rather than postMessage.
+       *
+       * raceElapsed is seconds, and Skull Racer bands INVERTED: a faster race
+       * is a better roll. Finishing at all clears the floor, so a slow first
+       * race still pays.
+       */
+      try {
+        if (window.parent && window.parent !== window && window.parent.DHC_DROP) {
+          window.parent.DHC_DROP({ game: 'skullracer', value: Math.round(raceElapsed), delay: 1400 });
+        }
+      } catch (e) { /* cross-origin or no parent: the race result stands regardless */ }
     }
 
     //-------------------------------------------------------------------------
