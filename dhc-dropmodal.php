@@ -112,13 +112,54 @@ define('DHC_DROPMODAL_LOADED', true);
 #dhcdrop-bar{height:5px;background:#0d1e2e;border-radius:3px;margin:13px 24px 0;overflow:hidden}
 #dhcdrop-bar i{display:block;height:100%;background:#00c8a0;width:0;transition:width .7s .1s cubic-bezier(.2,.8,.3,1)}
 
-#dhcdrop-actions{display:flex;gap:8px;padding:15px}
-#dhcdrop-actions a,#dhcdrop-actions button{flex:1;font:inherit;font-size:10px;letter-spacing:.1em;
-  text-transform:uppercase;padding:9px 0;cursor:pointer;border-radius:2px;text-decoration:none;
-  border:1px solid #1b3346;background:none;color:#e8eaed;text-align:center}
-#dhcdrop-actions .go{background:#00c8a0;border-color:#00c8a0;color:#07111d}
-#dhcdrop-actions a:hover,#dhcdrop-actions button:hover{border-color:#00c8a0;color:#00c8a0}
-#dhcdrop-actions .go:hover{filter:brightness(1.12);color:#07111d}
+/*
+ * THE CONTROLS DEFEND THEMSELVES.
+ *
+ * This modal is dropped onto nine game pages, each with its own button and
+ * link styling, and it cannot know what any of them do. On Monstrocity the
+ * host's own button rules repainted Close as a filled mint button and
+ * recoloured the link, so the secondary action looked like the primary one
+ * and the pair read as a mistake.
+ *
+ * !important is the right tool here rather than a smell: these are a widget's
+ * own controls, scoped under its id, and the alternative is losing a
+ * specificity race against nine stylesheets that will keep changing.
+ */
+#dhcdrop-actions{display:flex;gap:8px;padding:15px;margin:0}
+#dhcdrop-actions a,#dhcdrop-actions button{
+  flex:1 1 0 !important;
+  display:block !important;
+  width:auto !important;
+  min-width:0 !important;
+  margin:0 !important;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace !important;
+  font-size:10px !important;
+  font-weight:400 !important;
+  line-height:1.2 !important;
+  letter-spacing:.1em !important;
+  text-transform:uppercase !important;
+  text-decoration:none !important;
+  text-align:center !important;
+  padding:10px 6px !important;
+  cursor:pointer !important;
+  border-radius:2px !important;
+  box-shadow:none !important;
+  /* SECONDARY by default: outline only. Close must never look like the
+     primary action, which is the whole point of having two. */
+  background:transparent !important;
+  border:1px solid #2a4a63 !important;
+  color:#c7d3dc !important;
+}
+#dhcdrop-actions a.go{
+  background:#00c8a0 !important;
+  border-color:#00c8a0 !important;
+  color:#07111d !important;
+  font-weight:700 !important;
+}
+#dhcdrop-actions button:hover{border-color:#00c8a0 !important;color:#00c8a0 !important}
+#dhcdrop-actions a.go:hover{filter:brightness(1.12)}
+#dhcdrop-actions a:focus-visible,#dhcdrop-actions button:focus-visible{
+  outline:2px solid #00c8a0 !important;outline-offset:2px !important}
 
 /* Someone who asked for less motion still gets the drop, just immediately. */
 @media (prefers-reduced-motion:reduce){
