@@ -606,9 +606,41 @@ a{color:var(--ochre)}
     return true;
   }
 
+  function traitBySlug(key, slug) {
+    var l = TRAITS[key] || [];
+    for (var i = 0; i < l.length; i++) if (l[i].slug === slug) return l[i];
+    return null;
+  }
+
   /* Why this trait cannot be picked right now, or null if it can. One function
      so the greyed-out cells, the tooltip and the banner can never disagree. */
   function blockedReason(key, slug) {
+    /*
+     * NO FREE COPIES. Traits are consumable: a copy committed to a saved
+     * Fighter is spent until that Fighter is disassembled. The picker used to
+     * offer anything the player OWNED, so a trait already wearing on a saved
+     * Fighter still looked available -- it could be placed, and only the save
+     * would refuse it, with a message about traits "already used" for a build
+     * the player had just assembled.
+     *
+     * Copies placed in OTHER slots of the build in progress count too: the
+     * same effect in both effects slots legitimately spends two.
+     */
+    var t = traitBySlug(key, slug);
+    if (t && typeof t.free === 'number') {
+      var elsewhere = 0;
+      SLOTS.forEach(function (s) { if (s.key !== key && sel[s.key] === slug) elsewhere++; });
+      if (t.free - elsewhere <= 0) {
+        if (t.free <= 0) {
+          return t.copies > 1
+            ? 'All ' + t.copies + ' of your copies are in saved Fighters. Disassemble one to free a copy.'
+            : 'Your only copy is in a saved Fighter. Disassemble it to free this trait.';
+        }
+        return 'Your ' + (t.copies > 1 ? t.copies + ' copies are' : 'only copy is')
+             + ' already placed on this Fighter.';
+      }
+    }
+
     if (key === 'weapon' && armsExclusive(slug) && sel.arms)
       return nameOf('weapon', slug) + ' is drawn against the torso’s own arms, so it cannot be '
            + 'combined with an Arms trait. Set Arms to None first.';
@@ -942,7 +974,12 @@ a{color:var(--ochre)}
       if (t.tier) {
         var r = document.createElement('span');
         r.className = 'rar';
-        r.innerHTML = '<i></i>' + t.tier + '<b>' + t.rate + '%</b>';
+        // In fighters mode the copy count matters more than the drop rate --
+        // it is what decides whether you can build a second Fighter with it.
+        var right = (typeof t.free === 'number')
+          ? (t.free + (t.copies > 1 ? '/' + t.copies : '') + ' free')
+          : t.rate + '%';
+        r.innerHTML = '<i></i>' + t.tier + '<b>' + right + '</b>';
         b.appendChild(r);
       }
       b.addEventListener('click', function () {
