@@ -94,6 +94,16 @@ it shows, it is held and revealed on the next page you open.
 
 ---
 
+## Arms are paused
+
+Six Arms traits are temporarily out of the drop pool while the armless torso
+art is made: every torso is drawn with arms, and these six do not cover the
+ones underneath. Anyone who already holds one keeps it and can still use it —
+they are simply not being handed out for now, and will return once the art
+lands.
+
+---
+
 ## Daily limits
 
 Each source pays a maximum of **three traits per day**, resetting at midnight.

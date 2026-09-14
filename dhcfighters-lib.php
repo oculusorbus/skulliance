@@ -183,6 +183,16 @@ function dhcf_draw($category, $tiers) {
 	} elseif (isset($r[$category])) {
 		foreach ($r[$category] as $slug => $info) $pool[] = array($category, $slug, $info);
 	}
+
+	// Suspended traits leave the DRAW, never ownership. Filtered here rather
+	// than at each call site so no source can hand one out -- including the
+	// wildcard, which pools every category and would route straight past a
+	// per-category guard.
+	if (DHCF_SUSPENDED) {
+		$pool = array_values(array_filter($pool, function ($p) {
+			return !in_array($p[1], DHCF_SUSPENDED, true);
+		}));
+	}
 	if (!$pool) return null;
 
 	// bucket by tier, then weight the buckets that actually have traits in them

@@ -25,6 +25,32 @@ define('DHCF_SERIAL_START',  421);          // first number after the collection
 define('DHCF_SERIAL_PAD',    3);            // DHC2F421, DHC2F1000 when it gets there
 
 /**
+ * TEMPORARILY NOT DROPPING.
+ *
+ * Every torso is drawn with arms, so an Arms trait overlays limbs that are
+ * already there. Most arms sit close enough to cover what is beneath; these
+ * six do not, and read as two sets of arms until the hand-made armless torso
+ * variants exist.
+ *
+ * Suspended from the DRAW only -- not removed. A player already holding one
+ * keeps it, can still place it and still scores for it: taking back an awarded
+ * trait would be far worse than an imperfect render. They simply stop being
+ * handed out.
+ *
+ * Empty this list once torso-noarms/ is populated. Nothing else needs
+ * changing -- the assembler already swaps in an armless torso per torso, the
+ * moment one exists for it.
+ */
+define('DHCF_SUSPENDED', array(
+	'deteriorated-mk100-blaster-arms',
+	'dh-pilot',
+	'head-chopper',
+	'influenza-blaster-3k',
+	'mk100-blaster-arms',
+	'perforator-arm-replacement',
+));
+
+/**
  * ORIGINALITY BONUS -- what the first staker to build a configuration earns.
  *
  * A bonus for discovery, never a penalty for duplication. If a copied Fighter
