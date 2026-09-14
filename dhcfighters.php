@@ -177,13 +177,13 @@ $dhca_owned = $dhcf_avail;
                unambiguous, and to point somewhere. */ ?>
       <p class="dhcf-note">
         Earn traits by playing across the platform, then assemble and save Fighters &mdash; your
-        best one's rarity score sets your place on the board. Rarity comes from the real
+        best fighter's rarity score sets your place on the leaderboard. Rarity comes from the real
         collection: how many of the 226 minted Fighters actually wear that trait. Maxingo shared
         the art so this could be built, and what you assemble here is <b>not an NFT</b> &mdash; it
         cannot be minted, and earning a trait gives you no ownership of the artwork. The genuine,
-        ownable Fighters are the
+        ownable Fighters are from the
         <a href="https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5"
-           target="_blank" rel="noopener">Digital Hell Citizens 2 collection on wayup</a>.
+           target="_blank" rel="noopener">Digital Hell Citizens 2 collection</a>.
       </p>
     </div>
 
