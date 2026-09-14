@@ -2314,31 +2314,17 @@ function completeMission($conn, $mission_id, $quest_id){
 			if (intval($project_id) === DHCF_MAXINGO_PROJECT
 			    && $quest_level >= dhcf_floor('maxingo')) {
 				/*
-				 * ONCE PER QUEST, EVER. Ten missions, ten traits.
+				 * Every successful Maxingo mission pays, at every level -- most
+				 * stakers have already unlocked all ten, and paying only first
+				 * clears would have shut them out entirely.
 				 *
-				 * A daily cap is not enough here. A 100% success consumable makes
-				 * completion certain and returns the NFTs immediately, so a staker
-				 * with MAXI to spend could run the level 10 mission on repeat --
-				 * buying a guaranteed stream of best-table wildcards while everyone
-				 * else earns theirs by placing on a leaderboard. That is an income
-				 * stream, not a reward.
-				 *
-				 * Paying only the FIRST completion of each quest matches what these
-				 * missions are: a ladder to unlock. No amount of MAXI buys an
-				 * eleventh trait, and buying certainty only means reaching the one
-				 * trait sooner -- which is a fair thing to spend on.
+				 * What stops the farm is the daily cap inside dhcf_award(): three
+				 * traits a day from missions however many are claimed, so running
+				 * ten across every level and timeframe still yields three.
 				 */
-				$mid  = intval($mission_id);
-				$uid  = intval($_SESSION['userData']['user_id']);
-				$qid  = intval($quest_id);
-				$prev = $conn->query("SELECT id FROM missions
-				                      WHERE user_id = $uid AND quest_id = $qid
-				                        AND status = '1' AND id <> $mid LIMIT 1");
-				if (!$prev || !$prev->num_rows) {
-					dhcf_award($conn, $uid, 'wildcard', 'maxingo',
-						'mission level ' . $quest_level . ' (first clear)',
-						dhcf_table_for('maxingo', $quest_level));
-				}
+				dhcf_award($conn, intval($_SESSION['userData']['user_id']), 'wildcard', 'maxingo',
+					'mission level ' . $quest_level,
+					dhcf_table_for('maxingo', $quest_level));
 			}
 			ob_end_clean();
 		}

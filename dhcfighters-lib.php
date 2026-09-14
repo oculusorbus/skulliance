@@ -226,6 +226,29 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 	if ($user_id <= 0) return null;
 	if ($tierTable === null) $tierTable = DHCF_TIERS['run'];
 
+	/*
+	 * THE DAILY CAP LIVES HERE, not only in the claim endpoint.
+	 *
+	 * It used to be enforced solely in ajax/dhc-claim-drop.php, which the games
+	 * go through -- but missions and the reward streak call this function
+	 * directly from db.php and were bounded by nothing at all. A staker with
+	 * MAXI could clear ten missions across every level in a day and take ten
+	 * traits, while a player topping a leaderboard was held to three.
+	 *
+	 * Enforcing it at the single point where a trait is actually created means
+	 * no source can be added later that quietly skips it. The endpoint keeps
+	 * its own check so it can return a message the modal can explain; this is
+	 * the guarantee underneath it.
+	 */
+	$cap = dhcf_cap($source);
+	if ($cap > 0) {
+		$sql = sprintf("SELECT COUNT(*) AS c FROM dhc_trait_drops
+		                WHERE user_id = %d AND source = '%s' AND awarded_at >= CURDATE()",
+			$user_id, $conn->real_escape_string($source));
+		$res = $conn->query($sql);
+		if ($res && ($row = $res->fetch_assoc()) && (int)$row['c'] >= $cap) return null;
+	}
+
 	$drawn = dhcf_draw($category, $tierTable);
 	if (!$drawn) return null;
 	list($cat, $slug, $info) = $drawn;
