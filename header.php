@@ -188,8 +188,11 @@
 		      <!-- Straight to the game, not a *game.php marketing landing:
 		           Obscura deliberately has no public page, it's an internal one. -->		  
 		      <a href="obscura.php">Obscura</a>
+		      <!-- DHC Fighters only. The Fighter Collection is deliberately NOT
+		           listed here: Play is a list of things to play, and the gallery
+		           is reached from inside DHC Fighters, where a player already has
+		           a Fighter worth going to look at. -->
 		      <a href="dhcfighters.php">DHC Fighters</a>
-		      <a href="dhcgallery.php">Fighter Collection</a>
 		      <a href="dropship/dashboard.php">Drop Ship</a>
 		    </div>
 		  </div>
