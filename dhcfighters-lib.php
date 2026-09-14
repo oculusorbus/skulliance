@@ -84,6 +84,10 @@ function dhcf_score($traits) {
  */
 function dhcf_next_serial($conn) {
 	$start = DHCF_SERIAL_START;
+	// Deliberately NOT filtered by disassembled_at: a retired number must never
+	// be handed out again, so disassembled Fighters still hold their serials.
+	// This is also why disassembly marks rather than deletes -- a MAX() over
+	// rows that can vanish would quietly start reissuing numbers.
 	$res = $conn->query("SELECT MAX(serial) AS m FROM dhc_fighters");
 	if ($res && $row = $res->fetch_assoc()) {
 		if ($row['m'] !== null && (int)$row['m'] >= $start) return ((int)$row['m']) + 1;
@@ -265,7 +269,11 @@ function dhcf_owned($conn, $user_id) {
  */
 function dhcf_committed($conn, $user_id, $ignore_id = 0) {
 	$counts = array();
-	$sql = sprintf("SELECT id, traits FROM dhc_fighters WHERE user_id = %d%s",
+	// disassembled_at IS NULL: a disassembled Fighter holds nothing. Its row
+	// survives so its history cannot be rebuilt as if new, but its traits are
+	// free again and must not read as committed.
+	$sql = sprintf("SELECT id, traits FROM dhc_fighters
+	                WHERE user_id = %d AND disassembled_at IS NULL%s",
 		(int)$user_id, $ignore_id ? ' AND id <> ' . (int)$ignore_id : '');
 	$res = $conn->query($sql);
 	if ($res) {
@@ -321,7 +329,9 @@ function dhcf_shortfall($available, $traits) {
 /** Saved fighters for a player, newest first. */
 function dhcf_fighters($conn, $user_id) {
 	$out = array();
-	$sql = sprintf("SELECT * FROM dhc_fighters WHERE user_id = %d ORDER BY created_at DESC", (int)$user_id);
+	$sql = sprintf("SELECT * FROM dhc_fighters
+	                WHERE user_id = %d AND disassembled_at IS NULL
+	                ORDER BY created_at DESC", (int)$user_id);
 	$res = $conn->query($sql);
 	if ($res) {
 		while ($row = $res->fetch_assoc()) {
@@ -378,13 +388,15 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 
 		for ($try = 0; $try < 5; $try++) {
 			$serial = dhcf_next_serial($conn);
+			$newest = dhcf_newest_trait_at($conn, $user_id, $clean);
 			$sql = sprintf(
-				"INSERT INTO dhc_fighters (user_id, serial, name, traits, rarity_score, rules_version, created_at, updated_at)
-				 VALUES (%d, %d, %s, '%s', %d, '%s', NOW(), NOW())",
+				"INSERT INTO dhc_fighters (user_id, serial, name, traits, rarity_score, rules_version, newest_trait_at, created_at, updated_at)
+				 VALUES (%d, %d, %s, '%s', %d, '%s', %s, NOW(), NOW())",
 				$user_id, $serial,
 				$name === '' ? 'NULL' : "'" . $conn->real_escape_string($name) . "'",
 				$conn->real_escape_string($json), $score,
-				$conn->real_escape_string(DHCF_RULES_VERSION)
+				$conn->real_escape_string(DHCF_RULES_VERSION),
+				$newest === null ? 'NOW()' : "'" . $conn->real_escape_string($newest) . "'"
 			);
 			if ($conn->query($sql)) {
 				$id = $conn->insert_id;
@@ -420,6 +432,32 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 	}
 }
 
+/**
+ * The most recent award date among the traits a layout uses.
+ *
+ * This is what the monthly board ranks on, NOT when the Fighter was saved.
+ * Saving keys the wrong thing: disassemble in September, rebuild the identical
+ * Fighter on the 1st, and a created_at window hands it the new month for no
+ * new play. Trait recency cannot be laundered that way -- to place in a month
+ * you must have earned something in it.
+ *
+ * MAX over the awards of each slug, so holding several copies dates the
+ * Fighter by the newest one.
+ */
+function dhcf_newest_trait_at($conn, $user_id, $traits) {
+	$slugs = array();
+	foreach ($traits as $slot => $slug) {
+		if ($slug === '' || $slug === null) continue;
+		$slugs[] = "'" . $conn->real_escape_string($slug) . "'";
+	}
+	if (!$slugs) return null;
+	$sql = sprintf("SELECT MAX(awarded_at) AS m FROM dhc_trait_drops
+	                WHERE user_id = %d AND slug IN (%s)", (int)$user_id, implode(',', $slugs));
+	$res = $conn->query($sql);
+	if ($res && $row = $res->fetch_assoc()) return $row['m'];
+	return null;
+}
+
 /** Which category a slug belongs to, by searching the rarity table. */
 function dhcf_category_of($slug) {
 	foreach (dhcf_rarity() as $cat => $traits) if (isset($traits[$slug])) return $cat;
@@ -447,10 +485,14 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
 			foreach ($short as $slug => $s) $names[] = dhcf_trait_name(dhcf_category_of($slug), $slug);
 			return array(false, 'You have already used: ' . implode(', ', $names), null);
 		}
-		$sql = sprintf("UPDATE dhc_fighters SET traits = '%s', rarity_score = %d, rules_version = '%s', updated_at = NOW()
+		$newest = dhcf_newest_trait_at($conn, $user_id, $clean);
+		$sql = sprintf("UPDATE dhc_fighters SET traits = '%s', rarity_score = %d, rules_version = '%s',
+		                newest_trait_at = %s, updated_at = NOW()
 		                WHERE id = %d AND user_id = %d",
 			$conn->real_escape_string(json_encode($clean)), dhcf_score($clean),
-			$conn->real_escape_string(DHCF_RULES_VERSION), $fighter_id, $user_id);
+			$conn->real_escape_string(DHCF_RULES_VERSION),
+			$newest === null ? 'NOW()' : "'" . $conn->real_escape_string($newest) . "'",
+			$fighter_id, $user_id);
 		if (!$conn->query($sql)) { $conn->rollback(); return array(false, 'Could not save.', null); }
 		$conn->commit();
 		return array(true, 'Saved.', array('id' => $fighter_id, 'score' => dhcf_score($clean), 'traits' => $clean));
@@ -468,7 +510,13 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
  * so no way for the two to disagree. The serial is retired rather than reused.
  */
 function dhcf_delete_fighter($conn, $user_id, $fighter_id) {
-	$sql = sprintf("DELETE FROM dhc_fighters WHERE id = %d AND user_id = %d", (int)$fighter_id, (int)$user_id);
+	// Marked, not deleted. A deleted row takes its history with it, which is
+	// what allowed a Fighter to be disassembled and rebuilt as though newly
+	// made. The row staying also means serials are genuinely retired rather
+	// than merely un-reissued by a MAX() over rows that might vanish.
+	$sql = sprintf("UPDATE dhc_fighters SET disassembled_at = NOW(), updated_at = NOW()
+	                WHERE id = %d AND user_id = %d AND disassembled_at IS NULL",
+		(int)$fighter_id, (int)$user_id);
 	return $conn->query($sql) && $conn->affected_rows > 0;
 }
 
@@ -509,9 +557,12 @@ function dhcf_drops_today($conn, $user_id) {
  * separates players who already match on quality.
  */
 function dhcf_leaderboard($conn, $period = 'ath', $limit = 25) {
+	// Monthly ranks on TRAIT RECENCY, not on when the Fighter was saved --
+	// see dhcf_newest_trait_at(). Disassembled Fighters are excluded from both
+	// periods: their traits are free, so they no longer exist as Fighters.
 	$where = ($period === 'monthly')
-		? "WHERE f.created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
-		: "";
+		? "WHERE f.disassembled_at IS NULL AND f.newest_trait_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+		: "WHERE f.disassembled_at IS NULL";
 	$sql = "SELECT f.user_id,
 	               MAX(f.rarity_score) AS best_score,
 	               COUNT(*)            AS fighters
@@ -526,7 +577,13 @@ function dhcf_leaderboard($conn, $period = 'ath', $limit = 25) {
 	return $rows;
 }
 
-/** Recompute every stored score. For after the rarity maths changes. */
+/**
+ * Recompute every stored score. For after the rarity maths changes.
+ *
+ * Includes disassembled Fighters on purpose: their scores are unused today,
+ * but leaving a stale number on a row that history can still be read from
+ * would make the record disagree with the rules that produced it.
+ */
 function dhcf_rescore_all($conn) {
 	$n = 0;
 	$res = $conn->query("SELECT id, traits FROM dhc_fighters");

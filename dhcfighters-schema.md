@@ -57,3 +57,38 @@ CREATE TABLE IF NOT EXISTS dhc_fighters (
 	INDEX idx_created (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
+
+---
+
+## Migration — anti-replay on the monthly board
+
+Run once on an existing install. New installs get these from the CREATE above
+once it is amended; both are additive and safe to re-run guarded.
+
+```sql
+ALTER TABLE dhc_fighters
+  ADD COLUMN disassembled_at DATETIME NULL DEFAULT NULL AFTER invalid,
+  ADD COLUMN newest_trait_at DATETIME NULL DEFAULT NULL AFTER disassembled_at,
+  ADD INDEX idx_live (user_id, disassembled_at),
+  ADD INDEX idx_newest (newest_trait_at);
+```
+
+**`disassembled_at`** — disassembly stops deleting the row and stamps this
+instead. A deleted row took its history with it, which is what let a Fighter be
+rebuilt as if new. Rows with this set are excluded from availability, the
+roster and both boards: its traits are free again, so counting it would be
+counting a Fighter that no longer exists. Serials are still never reused, and
+now that is enforced by the row surviving rather than by a MAX() that would
+drift if rows vanished.
+
+**`newest_trait_at`** — the most recent award date among the traits a Fighter
+uses, stamped at save. The monthly board filters on THIS rather than
+`created_at`, so re-saving a Fighter built entirely from last month's traits
+does not re-enter it. Competing in a month requires having earned something in
+that month, which is what the board is meant to measure.
+
+Backfill for rows that predate the columns:
+
+```sql
+UPDATE dhc_fighters SET newest_trait_at = created_at WHERE newest_trait_at IS NULL;
+```

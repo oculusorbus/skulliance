@@ -14299,7 +14299,14 @@ function checkObscuraLeaderboard($conn, $weekly=false, $rewards=false) {
  * 200 Fighters on every page view.
  */
 function checkDHCFightersLeaderboard($conn, $monthly = false) {
-	$where = $monthly ? "WHERE f.created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')" : "";
+	// Monthly ranks on TRAIT RECENCY (newest_trait_at), not on when the Fighter
+	// was saved. A created_at window could be reset by disassembling and
+	// rebuilding the same Fighter on the 1st, handing a player the new month
+	// for no new play. Disassembled Fighters are excluded from both periods --
+	// their traits are free again, so they are not Fighters any more.
+	$where = $monthly
+		? "WHERE f.disassembled_at IS NULL AND f.newest_trait_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+		: "WHERE f.disassembled_at IS NULL";
 	$sql = "
 		SELECT u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
 		       MAX(f.rarity_score) AS best_score,
