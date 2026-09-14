@@ -191,8 +191,12 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// "where traits drop" table -- should see it without special-casing.
 	// Aimed at the members who claim dailies and run missions but never open a
 	// game; a wildcard is the right lure because it can be any trait at all.
+	// 'limit_note' replaces the "N of N left today" line where a daily count
+	// does not describe the real limit. The streak pays once per seven days by
+	// definition, so quoting a daily cap implies three are available today.
 	'dailystreak'    => array('label' => 'Daily Reward Streak', 'url' => 'launchpad.php', 'category' => 'wildcard',
-	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3'),
+	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3',
+	                          'cap' => 1, 'limit_note' => 'once per 7-day streak'),
 );
 
 function dhcf_game($key) {

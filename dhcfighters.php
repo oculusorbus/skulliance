@@ -293,9 +293,14 @@ $dhca_owned = $dhcf_avail;
             $cap  = dhcf_cap($gkey);
             $used = isset($dhcf_today[$gkey]) ? $dhcf_today[$gkey] : 0;
             $left = max(0, $cap - $used);
+            // A source whose real limit is not a daily count says so instead --
+            // quoting "3 left today" for the 7-day streak promises three today.
+            $note = isset($g['limit_note']) ? $g['limit_note'] : '';
           ?>
-          <span class="left<?php echo $left ? '' : ' out'; ?>"><?php
-            echo $left ? $left . ' of ' . $cap . ' left today' : 'none left today';
+          <span class="left<?php echo ($note || $left) ? '' : ' out'; ?>"><?php
+            if ($note)      echo htmlspecialchars($note);
+            elseif ($left)  echo $left . ' of ' . $cap . ' left today';
+            else            echo 'none left today';
           ?></span>
           <span class="bar"><i style="width:<?php echo (int)$pct; ?>%"></i></span>
         </li>
