@@ -87,10 +87,8 @@ $dhca_owned = $dhcf_avail;
 .dhcf-head h1{margin:0;font-size:22px;letter-spacing:.02em}
 .dhcf-head .sub{font-size:12px;opacity:.7}
 .dhcf-note{font-size:11.5px;opacity:.65;line-height:1.6;margin:0;max-width:82ch}
-/* The rights notice reads slightly stronger than the blurb above it -- it is
-   the part that must not be skimmed past. */
-.dhcf-rights{margin-top:8px;opacity:.8;border-left:2px solid var(--ochre);padding-left:10px}
-.dhcf-rights a{color:var(--ochre)}
+.dhcf-note b{opacity:.95}
+.dhcf-note a{color:var(--ochre)}
 /* flex:0 1 auto + min-width:0, NOT 0 0 auto. A flex item that cannot shrink
    keeps its single-line max-content width, so wrap never engages and five
    tiles push the page sideways on a phone. Allowing it to shrink is what lets
@@ -173,19 +171,17 @@ $dhca_owned = $dhcf_avail;
         <h1>DHC Fighters</h1>
         <span class="sub">Digital Hell Citizens 2 &middot; art by Maxingo</span>
       </div>
+      <?php /* ONE paragraph. The subtitle above already says "art by Maxingo", so a
+               second sentence establishing that was repeating itself, and the rights
+               notice does not need its own block to be read -- it needs to be short,
+               unambiguous, and to point somewhere. */ ?>
       <p class="dhcf-note">
-        Earn traits by playing across the platform, then assemble and save Fighters. Your best
-        Fighter's rarity score sets your place on the board, and every trait's rarity comes from
-        the real collection &mdash; how many of the 226 minted Fighters actually wear it.
-      </p>
-      <?php /* The restriction reads as respect for the artist rather than as a disclaimer,
-               and points at the real collection instead of just saying what this is not.
-               Absolute and external, unlike every internal link on the platform. */ ?>
-      <p class="dhcf-note dhcf-rights">
-        <b>The trait art is Maxingo's</b>, shared with us so this could be built. What you
-        assemble here is a platform feature and nothing more: <b>not an NFT</b>, it cannot be
-        minted, and earning a trait gives you no ownership of the artwork.
-        The genuine, ownable Fighters are the
+        Earn traits by playing across the platform, then assemble and save Fighters &mdash; your
+        best one's rarity score sets your place on the board. Rarity comes from the real
+        collection: how many of the 226 minted Fighters actually wear that trait. Maxingo shared
+        the art so this could be built, and what you assemble here is <b>not an NFT</b> &mdash; it
+        cannot be minted, and earning a trait gives you no ownership of the artwork. The genuine,
+        ownable Fighters are the
         <a href="https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5"
            target="_blank" rel="noopener">Digital Hell Citizens 2 collection on wayup</a>.
       </p>
