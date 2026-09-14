@@ -679,6 +679,20 @@ a{color:var(--ochre)}
     });
   }
 
+  /*
+   * REORDERING IS A SANDBOX TOOL, NOT A PLAYER FEATURE.
+   *
+   * Dragging exists to hunt layering exceptions -- every rule we have was
+   * found by rearranging the stack and watching the canvas. A saved Fighter
+   * stores WHICH traits, never their order, precisely so the layering rules
+   * can keep improving and apply retroactively to everything already saved.
+   *
+   * So on the Fighters page dragging is off. Left on, a player could arrange
+   * a stack, save it, and get back something ordered differently -- the
+   * canvas promising something the save never kept.
+   */
+  var ALLOW_REORDER = <?php echo $dhca_mode === 'sandbox' ? 'true' : 'false'; ?>;
+
   var customOrder = null;   // array of slot keys once the user has dragged
 
   function layerOrder() {
@@ -788,7 +802,8 @@ a{color:var(--ochre)}
             ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
             : ' <em style="color:var(--ochre);font-style:normal">arms underneath</em>';
       if (hidden[s.key]) li.classList.add('hid');
-      li.innerHTML = '<span class="grip">&#8942;&#8942;</span><span class="n">' + (i+1) +
+      li.innerHTML = (ALLOW_REORDER ? '<span class="grip">&#8942;&#8942;</span>' : '') +
+                     '<span class="n">' + (i+1) +
                      '</span><b>' + s.label + '</b><span>' + name + tag + '</span>';
       /*
        * Per-layer visibility. Distinct from None: None empties the slot, this
@@ -819,10 +834,12 @@ a{color:var(--ochre)}
        * find the next one is to let a person rearrange the stack directly and
        * watch the canvas update.
        */
-      li.draggable = true;
       li.dataset.key = s.key;
-      li.tabIndex = 0;
-      li.title = 'Drag to reorder, or focus and press Alt + up/down';
+      if (ALLOW_REORDER) {
+        li.draggable = true;
+        li.tabIndex = 0;
+        li.title = 'Drag to reorder, or focus and press Alt + up/down';
+      }
       li.addEventListener('dragstart', function (e) {
         dragKey = s.key; li.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
@@ -1128,7 +1145,13 @@ a{color:var(--ochre)}
     var got = false;
     h.split('&').forEach(function (p) {
       var kv = p.split('=');
-      if (kv[0] === 'order' && kv[1]) { customOrder = kv[1].split(','); got = true; return; }
+      if (kv[0] === 'order' && kv[1]) {
+        // Ignored off the sandbox: a link carrying a rearranged stack would
+        // otherwise reintroduce exactly the divergence dragging was disabled
+        // to prevent.
+        if (ALLOW_REORDER) { customOrder = kv[1].split(','); got = true; }
+        return;
+      }
       if (kv[0] === 'hide' && kv[1]) {
         kv[1].split(',').forEach(function (k) { if (slotByKey(k)) hidden[k] = true; });
         got = true; return;
@@ -1144,7 +1167,7 @@ a{color:var(--ochre)}
 
   document.getElementById('rand').addEventListener('click', function () { randomise(false); });
   document.getElementById('randFull').addEventListener('click', function () { randomise(true); });
-  document.getElementById('resetOrder').addEventListener('click', function () {
+  if (ALLOW_REORDER) document.getElementById('resetOrder').addEventListener('click', function () {
     customOrder = null; paint();
   });
   document.getElementById('clear').addEventListener('click', function () {

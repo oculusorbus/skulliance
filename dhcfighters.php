@@ -187,11 +187,19 @@ $dhca_owned = $dhcf_avail;
             <div class="dhcf-card" data-id="<?php echo (int)$f['id']; ?>">
               <div class="art">
                 <?php
-                  // Same draw order the assembler uses, rendered small.
-                  foreach (dhcf_slots() as $slot) {
+                  /* dhcf_layer_order(), not dhcf_slots(): the raw slot order
+                     ignores every exception, so a Fighter wearing Code Sea
+                     Predator or Xlon's Black Fire rendered one way here, another
+                     on the canvas, and a third in Discord. One function decides
+                     draw order everywhere. */
+                  foreach (dhcf_layer_order($f['traits']) as $slot) {
                       if (empty($f['traits'][$slot])) continue;
                       $dir = dhcf_slot_category($slot);
-                      echo '<img loading="lazy" alt="" src="' . htmlspecialchars($dhc_base . '/250/' . $dir . '/' . $f['traits'][$slot] . '.png') . '">';
+                      $slug  = $f['traits'][$slot];
+                      $nudge = isset(DHCF_NUDGE[$slug]) ? (float)DHCF_NUDGE[$slug] / 10 : 0;
+                      echo '<img loading="lazy" alt=""'
+                         . ($nudge ? ' style="transform:translateY(' . $nudge . '%)"' : '')
+                         . ' src="' . htmlspecialchars($dhc_base . '/250/' . $dir . '/' . $slug . '.png') . '">';
                   }
                 ?>
               </div>
