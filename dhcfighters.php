@@ -140,7 +140,10 @@ $dhca_owned = $dhcf_avail;
 .dhcf-panel .body{padding:10px 12px}
 .dhcf-roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .dhcf-card{border:1px solid var(--line);border-radius:3px;overflow:hidden;position:relative}
-.dhcf-card .art{position:relative;aspect-ratio:1;background:var(--panel2);overflow:hidden}
+.dhcf-card .art{position:relative;aspect-ratio:1;background:var(--panel2);overflow:hidden;
+  display:block;width:100%;padding:0;border:0;cursor:pointer}
+.dhcf-card .art:hover{outline:1px solid var(--ochre);outline-offset:-1px}
+.dhcf-card .art:focus-visible{outline:2px solid var(--ochre);outline-offset:-2px}
 .dhcf-card .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .dhcf-card .meta{padding:6px 8px}
 .dhcf-card .nm{font-size:11.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -214,8 +217,11 @@ $dhca_owned = $dhcf_avail;
         <?php else: ?>
         <div class="dhcf-roster">
           <?php foreach ($dhcf_roster as $f): ?>
-            <div class="dhcf-card" data-id="<?php echo (int)$f['id']; ?>">
-              <div class="art">
+            <div class="dhcf-card" data-id="<?php echo (int)$f['id']; ?>"
+                 data-traits="<?php echo htmlspecialchars(json_encode($f['traits']), ENT_QUOTES); ?>">
+              <?php /* A button, not a div with a click handler: this is a real
+                       control and should be reachable by keyboard like one. */ ?>
+              <button type="button" class="art" title="View <?php echo htmlspecialchars($f['display']); ?> on the canvas">
                 <?php
                   /* dhcf_layer_order(), not dhcf_slots(): the raw slot order
                      ignores every exception, so a Fighter wearing Code Sea
@@ -232,7 +238,7 @@ $dhca_owned = $dhcf_avail;
                          . ' src="' . htmlspecialchars($dhc_base . '/250/' . $dir . '/' . $slug . '.png') . '">';
                   }
                 ?>
-              </div>
+              </button>
               <div class="meta">
                 <span class="nm"><?php echo htmlspecialchars($f['display']); ?></span>
                 <span class="sc"><?php echo number_format((int)$f['rarity_score']); ?> pts</span>
@@ -400,6 +406,24 @@ function dhcf_board_html($rows) {
         else { msg(d.message || 'Could not save.', false); syncSave(); }
       })
       .catch(function () { btn.disabled = false; msg('Network error.', false); });
+  });
+
+  /* Click a saved Fighter to put it on the canvas. Its own traits are
+     committed to it, so the picker greys them and Save refuses -- that is the
+     point: this is viewing, not rebuilding. */
+  document.querySelectorAll('.dhcf-card .art').forEach(function (art) {
+    art.addEventListener('click', function () {
+      var card = art.closest('.dhcf-card');
+      var traits;
+      try { traits = JSON.parse(card.dataset.traits); } catch (e) { return; }
+      if (!window.DHC_LOAD) return;
+      DHC_LOAD(traits);
+      syncSave();
+      var frame = document.getElementById('frame');
+      if (frame) frame.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      msg('Viewing ' + card.querySelector('.nm').textContent
+          + ' — disassemble it to free these traits.', true);
+    });
   });
 
   document.querySelectorAll('.dhcf-rename').forEach(function (b) {

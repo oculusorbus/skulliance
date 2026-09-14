@@ -111,6 +111,10 @@ This is why duplicates are worth having. A second copy of a common trait is what
 lets you keep the Fighter you already built and still build another — so drops
 never stop being useful, however much of the collection you've seen.
 
+**Click a saved Fighter to see it on the canvas.** Its own traits will show as
+unavailable in the picker and it cannot be saved again — you are viewing it,
+not rebuilding it. Disassemble it and those traits become placeable.
+
 **Disassembling a Fighter returns every trait it held** to your unused pile. The
 Fighter's number is retired and not reused.
 

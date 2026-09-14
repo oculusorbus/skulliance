@@ -1208,6 +1208,31 @@ a{color:var(--ochre)}
     return out;
   };
 
+  /**
+   * Load a saved Fighter onto the canvas.
+   *
+   * The canvas is already the best view of a Fighter, so viewing one needs no
+   * second interface -- just put it there. Traits committed to that Fighter
+   * will read as unavailable in the picker and the Save button will refuse,
+   * which is correct: you are looking at it, not rebuilding it. Disassemble it
+   * and the same traits become placeable again.
+   *
+   * Unknown slugs are skipped rather than trusted, so a Fighter naming art the
+   * player no longer holds loads the parts that still exist instead of
+   * breaking.
+   */
+  window.DHC_LOAD = function (traits) {
+    if (!traits) return;
+    sel = {};
+    hidden = {};
+    customOrder = null;
+    SLOTS.forEach(function (s) {
+      var slug = traits[s.key];
+      if (slug && traitBySlug(s.key, slug)) sel[s.key] = slug;
+    });
+    buildTabs(); paint(); buildGrid();
+  };
+
   window.DHC_SELECTION = function () {
     var out = {};
     SLOTS.forEach(function (s) { if (sel[s.key]) out[s.key] = sel[s.key]; });
