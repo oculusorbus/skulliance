@@ -86,6 +86,14 @@ everyone playing, not just the people at the top.
 
 ---
 
+## You cannot miss a drop
+
+The trait is awarded the moment the run qualifies, not when the reveal appears
+— so clicking away from a win screen never costs you one. If you leave before
+it shows, it is held and revealed on the next page you open.
+
+---
+
 ## Daily limits
 
 Each source pays a maximum of **three traits per day**, resetting at midnight.

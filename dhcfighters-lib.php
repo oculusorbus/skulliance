@@ -198,6 +198,22 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 		'is_new'   => dhcf_count_owned($conn, $user_id, $slug) <= 1,
 	);
 
+	/*
+	 * HELD FOR REVEAL. A trait is awarded by this function, not by the modal --
+	 * so a player who clicks away from a win screen still gets it, but may
+	 * never SEE it. The reveal is most of the point, so the drop is parked in
+	 * the session and shown on whatever page they land on next. The browser
+	 * clears it once it has actually been displayed.
+	 */
+	if (session_status() === PHP_SESSION_ACTIVE) {
+		if (!isset($_SESSION['dhcf_unseen']) || !is_array($_SESSION['dhcf_unseen'])) {
+			$_SESSION['dhcf_unseen'] = array();
+		}
+		// Bounded: a reveal queue is a nicety, not a ledger. The ledger is the
+		// database, and it already has every one of these.
+		if (count($_SESSION['dhcf_unseen']) < 5) $_SESSION['dhcf_unseen'][] = $drop;
+	}
+
 	// Announced from here rather than from the endpoint, so every award posts
 	// no matter which caller made it. The ledger row is already written; the
 	// notifier swallows its own failures and never reaches back into this.

@@ -211,6 +211,18 @@ define('DHC_DROPMODAL_LOADED', true);
   var timers = [];
 
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  /*
+   * Drops awarded but never shown -- because the player left the game page
+   * before the reveal fired. Emitted by whichever page they land on next,
+   * since header.php carries this modal everywhere.
+   */
+  var pending = <?php
+      echo json_encode(
+        (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['dhcf_unseen']))
+          ? array_values($_SESSION['dhcf_unseen']) : array()
+      );
+  ?>;
+
   function close() { clearTimers(); veil.classList.remove('on'); }
   document.getElementById('dhcdrop-close').addEventListener('click', close);
   veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
@@ -301,17 +313,54 @@ define('DHC_DROPMODAL_LOADED', true);
   window.DHC_SHOW_DROP = show;
   window.__show = show; window.__miss = showMiss;   // harness hooks
 
+  /* Reveal anything that was waiting, then tell the server it has been seen --
+     only then, so a reveal that never happened is still owed. */
+  function flushPending() {
+    if (!pending.length) return;
+    var queue = pending.slice(); pending = [];
+    var i = 0;
+    (function next() {
+      if (i >= queue.length) return;
+      show(queue[i++]);
+      // Subsequent ones wait for the veil to close, so two drops are two
+      // moments rather than one overwriting the other.
+      var poll = setInterval(function () {
+        if (!veil.classList.contains('on')) { clearInterval(poll); next(); }
+      }, 400);
+    })();
+    fetch('ajax/dhc-seen-drop.php', { method: 'POST', credentials: 'same-origin', keepalive: true })
+      .catch(function () {});
+  }
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(flushPending, 600); });
+  else setTimeout(flushPending, 600);
+
   window.DHC_DROP = function (opts) {
     if (!opts || !opts.game) return;
     var body = 'game=' + encodeURIComponent(opts.game) + '&value=' + encodeURIComponent(opts.value || 0);
     if (opts.placement) body += '&placement=' + encodeURIComponent(opts.placement);
+    /*
+     * keepalive: the claim must survive the player navigating away.
+     *
+     * A win screen invites a click, and the drop is decided by this request --
+     * not by the modal. Without keepalive, clicking a nav link in the moment
+     * between the game ending and this reaching the server cancels it, and the
+     * trait is never awarded at all. Same reason cryptcrawl.php uses it for its
+     * finalize call. The window is small but it lands on exactly the players
+     * who move fastest.
+     */
     return fetch('ajax/dhc-claim-drop.php', {
-      method: 'POST', credentials: 'same-origin',
+      method: 'POST', credentials: 'same-origin', keepalive: true,
       headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: body
     }).then(function (r) { return r.json(); })
       .then(function (d) {
         var wait = opts.delay || 0;
-        if (d && d.ok && d.drop) setTimeout(function () { show(d.drop); }, wait);
+        if (d && d.ok && d.drop) {
+          pending = [];   // shown here; nothing owed on the next page
+          fetch('ajax/dhc-seen-drop.php', { method: 'POST', credentials: 'same-origin', keepalive: true })
+            .catch(function () {});
+          setTimeout(function () { show(d.drop); }, wait);
+        }
         else if (d && d.why === 'below the threshold' && opts.unit)
           setTimeout(function () { showMiss(d, opts); }, wait);
         // The cap is worth saying out loud. A player who just won and saw
