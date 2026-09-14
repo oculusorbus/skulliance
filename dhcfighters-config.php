@@ -232,12 +232,16 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// refused low-scoring kills.
 	'bosses'         => array('label' => 'Boss Battles', 'url' => 'monstrocity.php#boss',    'category' => 'wildcard',   'trigger' => 'every boss defeat', 'gated' => true,
 	                          'base' => 'placement_10'),
-	// Ten Maxingo missions, and the level they are on decides the odds: the
-	// deeper ones are genuinely harder to unlock, so they should pay better.
-	// A wildcard, because a mission is not tied to any one part of a Fighter.
+	// Ten Maxingo missions, each paying ONCE -- on first completion. The level
+	// decides the odds, since the deeper ones are harder to unlock. A wildcard,
+	// because a mission is not tied to any one part of a Fighter.
+	//
+	// Once-per-quest rather than per-day: a 100% success consumable makes
+	// completion certain and hands the NFTs straight back, so a repeatable
+	// drop here would let MAXI buy an endless supply of best-table traits.
 	'maxingo'        => array('label' => 'Maxingo Missions', 'url' => 'missions.php',
-	                          'category' => 'wildcard', 'trigger' => 'complete a Maxingo mission',
-	                          'base' => 'run',
+	                          'category' => 'wildcard', 'trigger' => 'first clear of each mission',
+	                          'limit_note' => 'once per mission', 'base' => 'run',
 	                          'bands' => array(4 => 'placement_10', 7 => 'placement_3', 9 => 'placement_1')),
 
 	// NOT A GAME, deliberately in this list anyway: it is a drop source, and

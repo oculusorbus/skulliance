@@ -2313,9 +2313,32 @@ function completeMission($conn, $mission_id, $quest_id){
 			require_once __DIR__ . '/dhcfighters-lib.php';
 			if (intval($project_id) === DHCF_MAXINGO_PROJECT
 			    && $quest_level >= dhcf_floor('maxingo')) {
-				dhcf_award($conn, $_SESSION['userData']['user_id'], 'wildcard', 'maxingo',
-					'mission level ' . $quest_level,
-					dhcf_table_for('maxingo', $quest_level));
+				/*
+				 * ONCE PER QUEST, EVER. Ten missions, ten traits.
+				 *
+				 * A daily cap is not enough here. A 100% success consumable makes
+				 * completion certain and returns the NFTs immediately, so a staker
+				 * with MAXI to spend could run the level 10 mission on repeat --
+				 * buying a guaranteed stream of best-table wildcards while everyone
+				 * else earns theirs by placing on a leaderboard. That is an income
+				 * stream, not a reward.
+				 *
+				 * Paying only the FIRST completion of each quest matches what these
+				 * missions are: a ladder to unlock. No amount of MAXI buys an
+				 * eleventh trait, and buying certainty only means reaching the one
+				 * trait sooner -- which is a fair thing to spend on.
+				 */
+				$mid  = intval($mission_id);
+				$uid  = intval($_SESSION['userData']['user_id']);
+				$qid  = intval($quest_id);
+				$prev = $conn->query("SELECT id FROM missions
+				                      WHERE user_id = $uid AND quest_id = $qid
+				                        AND status = '1' AND id <> $mid LIMIT 1");
+				if (!$prev || !$prev->num_rows) {
+					dhcf_award($conn, $uid, 'wildcard', 'maxingo',
+						'mission level ' . $quest_level . ' (first clear)',
+						dhcf_table_for('maxingo', $quest_level));
+				}
 			}
 			ob_end_clean();
 		}
