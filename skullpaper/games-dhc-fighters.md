@@ -128,6 +128,19 @@ claim in between.
 
 ---
 
+## The Collection
+
+**Play → Fighter Collection** browses every Fighter assembled on the platform,
+with the owner shown on each. Sort by rarest, newest or number; filter to a
+rarity tier, to originals, or to one staker's Fighters. Click any of them for
+the full breakdown — every trait, its tier, how many of the 226 minted Fighters
+wear it, and what it contributes to the score.
+
+Filters are carried in the link, so a particular view is something you can send
+to someone.
+
+---
+
 ## Originality
 
 The **first staker to build a configuration keeps a bonus** on it — 15% on top
