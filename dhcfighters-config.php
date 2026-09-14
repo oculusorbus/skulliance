@@ -310,3 +310,17 @@ function dhcf_band_label($key, $value = 0, $placement = null) {
  * will ever reach it.
  * ------------------------------------------------------------------ */
 define('DHCF_DAILY_CAP', 3);
+
+/**
+ * Daily cap for one source. Override per game by adding 'cap' to its
+ * DHCF_GAMES entry; everything else falls back to the constant.
+ *
+ * The cap only binds on the short games -- a Guardians siege runs half an
+ * hour, a Monstrocity campaign completes about once a month, and the daily
+ * streak pays once a week by definition. It is an anti-abuse ceiling on the
+ * few sources that could be ground, not a balancing dial for the rest.
+ */
+function dhcf_cap($key) {
+	$g = dhcf_game($key);
+	return ($g && isset($g['cap'])) ? (int)$g['cap'] : DHCF_DAILY_CAP;
+}

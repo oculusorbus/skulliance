@@ -45,6 +45,9 @@ foreach (dhcf_rarity() as $cat => $traits) $dhcf_cat_total[$cat] = count($traits
 $dhcf_cat_held = array();
 foreach ($dhcf_avail as $cat => $traits) $dhcf_cat_held[$cat] = count($traits);
 $dhcf_distinct = array_sum($dhcf_cat_held);
+// What is still claimable today, so the table can say so before a player
+// grinds a game that has nothing left to give them.
+$dhcf_today = $dhcf_user ? dhcf_drops_today($conn, $dhcf_user) : array();
 $dhcf_all      = array_sum($dhcf_cat_total);
 
 // Usernames for the leaderboards, resolved in one pass rather than per row.
@@ -121,6 +124,9 @@ $dhca_owned = $dhcf_avail;
 .dhcf-games .c em{font-style:normal;opacity:.75;text-transform:none;letter-spacing:0;display:block}
 .dhcf-games .n{grid-row:1/3;align-self:center;font-size:14px;font-variant-numeric:tabular-nums}
 .dhcf-games .n i{font-style:normal;font-size:10px;opacity:.45}
+.dhcf-games .left{grid-column:1;font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--teal);opacity:.85}
+.dhcf-games .left.out{color:#ff5c5c;opacity:.9}
 .dhcf-games .bar{grid-column:1/-1;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
 .dhcf-games .bar i{display:block;height:100%;background:var(--ochre)}
 .dhcf-games li.done .bar i{background:var(--teal)}
@@ -278,6 +284,19 @@ $dhca_owned = $dhcf_avail;
           <span class="c"><?php echo $wild ? 'any trait' : htmlspecialchars($cat); ?>
             <em><?php echo htmlspecialchars($g['trigger']); ?></em></span>
           <span class="n"><?php echo (int)$held; ?><i>/<?php echo (int)$tot; ?></i></span>
+          <?php
+            /* Drops left today. A trait hunter grinding a game that has nothing
+               left to give is the frustration this whole table exists to
+               prevent, so it says so rather than letting them find out by
+               getting nothing. Counted off the same CURDATE() boundary the
+               claim endpoint enforces. */
+            $cap  = dhcf_cap($gkey);
+            $used = isset($dhcf_today[$gkey]) ? $dhcf_today[$gkey] : 0;
+            $left = max(0, $cap - $used);
+          ?>
+          <span class="left<?php echo $left ? '' : ' out'; ?>"><?php
+            echo $left ? $left . ' of ' . $cap . ' left today' : 'none left today';
+          ?></span>
           <span class="bar"><i style="width:<?php echo (int)$pct; ?>%"></i></span>
         </li>
       <?php endforeach; ?>

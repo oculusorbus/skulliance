@@ -84,6 +84,20 @@ everyone playing, not just the people at the top.
 
 ---
 
+## Daily limits
+
+Each source pays a maximum of **three traits per day**, resetting at midnight.
+It is an anti-abuse ceiling rather than a balancing dial, and on most of these
+the trigger runs out long before the cap does — a Guardians siege takes half an
+hour, a Monstrocity campaign completes about once a month, and the reward
+streak pays once a week by definition.
+
+The **Where traits drop** list on DHC Fighters shows how many you have left
+today for each one, so there is never a reason to grind a game that has
+nothing further to give you.
+
+---
+
 ## Traits are consumable
 
 Putting an Axe on a Fighter **uses** that Axe. Building a second Fighter with an

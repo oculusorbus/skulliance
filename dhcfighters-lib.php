@@ -481,6 +481,22 @@ function dhcf_rename_fighter($conn, $user_id, $fighter_id, $name) {
 	return $conn->query($sql);
 }
 
+/**
+ * Drops awarded today, source => count. One query rather than ten.
+ *
+ * CURDATE() is server midnight, which is the same boundary the claim endpoint
+ * counts against -- so what the interface promises and what the server allows
+ * cannot drift apart.
+ */
+function dhcf_drops_today($conn, $user_id) {
+	$out = array();
+	$sql = sprintf("SELECT source, COUNT(*) AS c FROM dhc_trait_drops
+	                WHERE user_id = %d AND awarded_at >= CURDATE() GROUP BY source", (int)$user_id);
+	$res = $conn->query($sql);
+	if ($res) while ($row = $res->fetch_assoc()) $out[$row['source']] = (int)$row['c'];
+	return $out;
+}
+
 /* ------------------------------------------------------------------ *
  * LEADERBOARD
  * ------------------------------------------------------------------ */

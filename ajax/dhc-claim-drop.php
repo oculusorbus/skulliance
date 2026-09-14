@@ -50,8 +50,11 @@ $sql = sprintf("SELECT COUNT(*) AS c FROM dhc_trait_drops
 // `if ($res && $row = $res->fetch_assoc() && ...)` assigns the comparison to
 // $row and the check never fires.
 $res = $conn->query($sql);
-if ($res && ($row = $res->fetch_assoc()) && (int)$row['c'] >= DHCF_DAILY_CAP) {
-	dhcf_drop_out(null, 'daily limit reached');
+if ($res && ($row = $res->fetch_assoc()) && (int)$row['c'] >= dhcf_cap($key)) {
+	// Tell the client what the limit was, so the modal can explain rather than
+	// leaving a player who just won wondering why nothing happened.
+	dhcf_drop_out(null, 'daily limit reached',
+		array('cap' => dhcf_cap($key), 'game' => $game['label']));
 }
 
 // Quality comes from the best of the game's base table, its performance bands

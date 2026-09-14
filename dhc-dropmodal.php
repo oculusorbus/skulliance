@@ -253,6 +253,20 @@ define('DHC_DROPMODAL_LOADED', true);
     timers.push(setTimeout(function () { box.classList.add('revealed'); }, t.build + 90));
   }
 
+  /** Out of drops for today on this game. States when it resets. */
+  function showCapped(d) {
+    clearTimers();
+    veil.className = 'on miss';
+    box.classList.remove('revealed', 'cracking', 'rare');
+    document.getElementById('dhcdrop-kicker').textContent = 'No trait this run';
+    document.getElementById('dhcdrop-name').textContent =
+      'Daily limit reached' + (d.game ? ' for ' + d.game : '');
+    document.getElementById('dhcdrop-tier').textContent = '';
+    document.getElementById('dhcdrop-meta').innerHTML =
+      'You have taken all <b>' + (d.cap || '') + '</b> of today\'s traits from this game.' +
+      '<br>It resets at midnight — other games still have theirs.';
+  }
+
   /** A near miss: the target, and how close they got. No fanfare. */
   function showMiss(d, opts) {
     clearTimers();
@@ -300,6 +314,11 @@ define('DHC_DROPMODAL_LOADED', true);
         if (d && d.ok && d.drop) setTimeout(function () { show(d.drop); }, wait);
         else if (d && d.why === 'below the threshold' && opts.unit)
           setTimeout(function () { showMiss(d, opts); }, wait);
+        // The cap is worth saying out loud. A player who just won and saw
+        // nothing assumes it is broken -- which is exactly what the earlier
+        // bugs looked like, so silence here is expensive.
+        else if (d && d.why === 'daily limit reached')
+          setTimeout(function () { showCapped(d); }, wait);
         return d;
       })
       .catch(function () { /* a missed drop must never break a game's end screen */ });
