@@ -246,7 +246,17 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 		                WHERE user_id = %d AND source = '%s' AND awarded_at >= CURDATE()",
 			$user_id, $conn->real_escape_string($source));
 		$res = $conn->query($sql);
-		if ($res && ($row = $res->fetch_assoc()) && (int)$row['c'] >= $cap) return null;
+		// FAIL CLOSED. Written as `if ($res && ... >= $cap) return null` this
+		// awards anyway when the count cannot be read -- a failed query would
+		// silently lift the cap for as long as it kept failing, which is the
+		// opposite of what a limit is for. A missed trait is recoverable; an
+		// uncapped one is already in the ledger.
+		if (!$res) {
+			error_log('dhcf_award: cap check failed for ' . $source . ' -- ' . $conn->error);
+			return null;
+		}
+		$row = $res->fetch_assoc();
+		if (!$row || (int)$row['c'] >= $cap) return null;
 	}
 
 	$drawn = dhcf_draw($category, $tierTable);
