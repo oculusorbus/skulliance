@@ -182,7 +182,7 @@ $dhca_owned = $dhcf_avail;
         collection: how many of the 226 minted Fighters actually wear that trait. Maxingo shared
         the art so this could be built, and what you assemble here is <b>not an NFT</b> &mdash; it
         cannot be minted, and earning a trait gives you no ownership of the artwork. The genuine,
-        ownable Fighters are from the official NFT collection on Cardano.
+        ownable Fighters are from the official NFT collection.
       </p>
     </div>
 
