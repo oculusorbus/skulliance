@@ -2199,13 +2199,16 @@ function renderStartAutoMissionsButton($conn) {
 
 function completeMission($conn, $mission_id, $quest_id){
 	if(isset($_SESSION['userData']['user_id'])){
-		$sql = "SELECT title, reward, project_id, currency FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
+		// level comes along for the ride: a Maxingo mission's level decides how
+		// good the trait drop below is, and this is the one query that has it.
+		$sql = "SELECT title, reward, project_id, currency, level FROM quests INNER JOIN projects ON projects.id = quests.project_id WHERE quests.id ='".$quest_id."';";
 		$result = $conn->query($sql);
 		
 		$title = "";
 		$reward = 0;
 		$project_id = 0;
 		$currency = "";
+		$quest_level = 0;
 		if ($result->num_rows > 0) {
 		  // output data of each row
 		  while($row = $result->fetch_assoc()) {
@@ -2213,6 +2216,7 @@ function completeMission($conn, $mission_id, $quest_id){
 			  $reward = $row["reward"];
 			  $project_id = $row["project_id"];
 			  $currency = $row["currency"];
+			  $quest_level = intval($row["level"]);
 		  }
 	    }
 		
@@ -2282,6 +2286,38 @@ function completeMission($conn, $mission_id, $quest_id){
 		  //echo "New record created successfully";
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		}
+
+		/*
+		 * DHC FIGHTERS TRAIT, on a successful Maxingo mission.
+		 *
+		 * His own missions paying his own trait art, and the level decides the
+		 * odds -- the deeper ones are harder to unlock, so they should be worth
+		 * more. A wildcard, since a mission is not tied to any one part of a
+		 * Fighter.
+		 *
+		 * Success only ($success === 1): a failed mission has already cost the
+		 * player their consumables.
+		 *
+		 * Buffered, because this runs inside AJAX endpoints that emit JSON and
+		 * display_errors is on platform-wide. The reveal happens on whatever
+		 * page they load next -- dhcf_award() parks unseen drops in the session
+		 * and header.php carries the modal everywhere.
+		 */
+		// The require comes BEFORE any reference to DHCF_MAXINGO_PROJECT: PHP 8
+		// throws on an undefined constant, so testing it in the same condition
+		// that loads its definition would fatal every successful mission on the
+		// platform, not only Maxingo's.
+		if ($success == 1 && is_file(__DIR__ . '/dhcfighters-lib.php')) {
+			ob_start();
+			require_once __DIR__ . '/dhcfighters-lib.php';
+			if (intval($project_id) === DHCF_MAXINGO_PROJECT
+			    && $quest_level >= dhcf_floor('maxingo')) {
+				dhcf_award($conn, $_SESSION['userData']['user_id'], 'wildcard', 'maxingo',
+					'mission level ' . $quest_level,
+					dhcf_table_for('maxingo', $quest_level));
+			}
+			ob_end_clean();
 		}
 		
 		/* Still deciding on whether this is the best approach. Considering archiving mission nft and consumable data in a separate table for reference.

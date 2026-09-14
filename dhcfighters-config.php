@@ -41,6 +41,13 @@ define('DHCF_SERIAL_PAD',    3);            // DHC2F421, DHC2F1000 when it gets 
  * changing -- the assembler already swaps in an armless torso per torso, the
  * moment one exists for it.
  */
+/**
+ * Maxingo's project id. His own missions pay his own trait art, which is the
+ * neatest fit on the platform -- and unlike the games, missions are something
+ * the mission-and-dailies players already do.
+ */
+define('DHCF_MAXINGO_PROJECT', 9);
+
 define('DHCF_SUSPENDED', array(
 	'deteriorated-mk100-blaster-arms',
 	'dh-pilot',
@@ -225,6 +232,14 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// refused low-scoring kills.
 	'bosses'         => array('label' => 'Boss Battles', 'url' => 'monstrocity.php#boss',    'category' => 'wildcard',   'trigger' => 'every boss defeat', 'gated' => true,
 	                          'base' => 'placement_10'),
+	// Ten Maxingo missions, and the level they are on decides the odds: the
+	// deeper ones are genuinely harder to unlock, so they should pay better.
+	// A wildcard, because a mission is not tied to any one part of a Fighter.
+	'maxingo'        => array('label' => 'Maxingo Missions', 'url' => 'missions.php',
+	                          'category' => 'wildcard', 'trigger' => 'complete a Maxingo mission',
+	                          'base' => 'run',
+	                          'bands' => array(4 => 'placement_10', 7 => 'placement_3', 9 => 'placement_1')),
+
 	// NOT A GAME, deliberately in this list anyway: it is a drop source, and
 	// everything that reads DHCF_GAMES -- the claim endpoint, the notifier, the
 	// "where traits drop" table -- should see it without special-casing.
@@ -263,6 +278,7 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'monstrocity'   => 28,     // campaign completion
 	'bosses'        => 0,      // the defeat itself qualifies; nothing to grade
 	'dailystreak'   => 7,      // day 7 of 7, nothing earlier
+	'maxingo'       => 1,      // any completed Maxingo mission; level sets the odds
 );
 
 function dhcf_floor($game) {

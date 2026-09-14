@@ -35,10 +35,14 @@ background at minimum, so no single game can dress one on its own.
 | Realm Guardians | Companion | waves held |
 | Monstrocity | Arms | completing all 28 levels |
 | Boss Battles | **any trait** | every boss defeat |
+| Maxingo Missions | **any trait** | completing one — deeper levels roll better |
 | Daily Reward Streak | **any trait** | claiming day 7 of 7 |
 
-You do not have to play a game at all: completing a full seven-day daily
-reward streak pays a wildcard on the day you claim it.
+You do not have to play a game at all. Completing a full seven-day daily
+reward streak pays a wildcard on the day you claim it, and so does completing
+one of **Maxingo's own missions** — fittingly, since it is his art. The
+mission's level sets the odds: the deeper ones are harder to unlock, so they
+roll on a better table, and level 9 or 10 rolls the best in the game.
 
 **The three categories every Fighter needs — Torso, Head and Background — come
 only from games you cannot lose.** Losing is the normal outcome in the card
