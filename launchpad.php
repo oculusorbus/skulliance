@@ -74,6 +74,9 @@ $lp_sections = array(
 			array('skullracer.php',      '🏁', 'Skull Racer',     'Pseudo-3D arcade racer'),
 			array('gauntlets.php',       '🥊', 'Gauntlets',       'NFT roguelike run'),			
 			array('obscura.php',         '🔍', 'Obscura',         'Name the collection from a sliver'),
+			// Listed with the games because it is the reason to play them: every
+			// game on this list pays a different part of a Fighter.
+			array('dhcfighters.php',     '🧬', 'DHC Fighters',    'Earn traits, assemble Fighters, top the board'),
 			// dashboard.php, NOT the bare directory. `dropship/` serves index.php,
 			// which is an unconditional redirect to the Skulliance login -- so a
 			// player who was ALREADY logged in got bounced to a login page. The

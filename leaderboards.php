@@ -338,6 +338,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				           $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
 				              $filterby != "obscura" && $filterby != "weekly-obscura" &&
 				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
+				              $filterby != "dhcfighters" && $filterby != "monthly-dhcfighters" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
@@ -472,6 +473,14 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				    case ($filterby == "weekly-obscura"):
 				        $title = "Weekly Obscura Streaks";
 				        $filterby = "weekly-obscura";
+				        break;
+				    case ($filterby == "dhcfighters"):
+				        $title = "All DHC Fighters";
+				        $filterby = "dhcfighters";
+				        break;
+				    case ($filterby == "monthly-dhcfighters"):
+				        $title = date("F") . " DHC Fighters";
+				        $filterby = "monthly-dhcfighters";
 				        break;
 				    case ($filterby == "guardians"):
 				        $title = "All Realm Guardians Sieges";
@@ -658,6 +667,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				            break;
 				        case ($filterby == "weekly-obscura"):
 				            checkObscuraLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "dhcfighters"):
+				            checkDHCFightersLeaderboard($conn, false);
+				            break;
+				        case ($filterby == "monthly-dhcfighters"):
+				            checkDHCFightersLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "guardians"):
 				            checkGuardiansLeaderboard($conn, false);

@@ -6256,6 +6256,9 @@ $SKULLIANCE_BOARDS = array(
 	'monstrocity'       => array('label'=>'Monstrocity',       'icon'=>'👾', 'group'=>'Games',
 		'blurb'=>'Match 3 RPG campaign',
 		'periods'=>array('All-Time'=>'monstrocity','Monthly'=>'monthly-monstrocity')),
+	'dhcfighters'       => array('label'=>'DHC Fighters',      'icon'=>'🧬', 'group'=>'Games',
+		'blurb'=>'Rarest assembled Fighter',
+		'periods'=>array('All-Time'=>'dhcfighters','Monthly'=>'monthly-dhcfighters')),
 	'bosses'            => array('label'=>'Boss Battles',      'icon'=>'🐉', 'group'=>'Games',
 		'blurb'=>'Community boss fights',
 		'periods'=>array('All-Time'=>'bosses','Weekly'=>'weekly-bosses')),
@@ -14277,6 +14280,95 @@ function checkObscuraLeaderboard($conn, $weekly=false, $rewards=false) {
 		echo "<p>No Obscura streaks have been set yet $scope.</p>";
 		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="obscura"><input type="submit" class="small-button" value="View All Obscura Streaks"></form><br><br>';
 		echo '<img style="width:100%;" src="images/todolist.png"/>';
+	}
+}
+
+/**
+ * DHC Fighters leaderboard.
+ *
+ * Ranked on a player's SINGLE BEST Fighter, with the number saved as the
+ * tie-break. The game is to build one exceptional character, not to hoard, so
+ * volume only separates players who already match on quality.
+ *
+ * The monthly board filters on when a Fighter was SAVED, which is why a great
+ * combination held back and saved after the turn counts for the new month.
+ *
+ * Scores are recomputed from the traits whenever the rarity maths changes
+ * (dhcf_rescore_all), so this reads the cached column rather than recomputing
+ * 200 Fighters on every page view.
+ */
+function checkDHCFightersLeaderboard($conn, $monthly = false) {
+	$where = $monthly ? "WHERE f.created_at >= DATE_FORMAT(NOW(), '%Y-%m-01')" : "";
+	$sql = "
+		SELECT u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
+		       MAX(f.rarity_score) AS best_score,
+		       COUNT(*)            AS fighters,
+		       SUM(f.rarity_score) AS total_score
+		FROM dhc_fighters f
+		INNER JOIN users u ON u.id = f.user_id
+		$where
+		GROUP BY u.id
+		ORDER BY best_score DESC, fighters DESC
+	";
+	$result = $conn->query($sql);
+
+	if ($result && $result->num_rows > 0) {
+		$fireworks = false; $leaderboardCounter = 0; $last_score = null; $third_score = null;
+		$lb_rows = [];
+
+		while ($row = $result->fetch_assoc()) {
+			$leaderboardCounter++;
+			// Tuple ordered to match ORDER BY, so the podium cannot disagree
+			// with the row order.
+			$score = [intval($row['best_score']), intval($row['fighters'])];
+
+			if ($leaderboardCounter <= 3) {
+				global $leaderboard_top3;
+				$leaderboard_top3[] = [
+					'username'   => $row['username'],
+					'discord_id' => $row['discord_id'],
+					'avatar'     => $row['avatar'],
+					'visibility' => $row['visibility'],
+					'score'      => number_format($row['best_score']) . ' pts',
+				];
+			}
+
+			$trophy = "";
+			if ($leaderboardCounter == 1) {
+				$trophy = "first";
+			} elseif ($leaderboardCounter == 2) {
+				$trophy = ($last_score != $score) ? "second" : "first";
+				if ($last_score == $score) $leaderboardCounter--;
+			} elseif ($leaderboardCounter == 3) {
+				if ($last_score != $score) { $trophy = "third"; $third_score = $score; }
+				else { $trophy = "second"; $leaderboardCounter--; }
+			} elseif ($leaderboardCounter > 3 && $third_score == $score) {
+				$trophy = "third"; $leaderboardCounter--;
+			} elseif ($leaderboardCounter > 3 && $last_score == $score) {
+				$leaderboardCounter--;
+			}
+
+			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
+
+			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
+			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
+			$stats      = [
+				'Best Fighter' => number_format($row['best_score']) . ' pts',
+				'Fighters'     => number_format($row['fighters']),
+				'Total'        => number_format($row['total_score']) . ' pts',
+			];
+			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url,
+			              'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => ''];
+			$last_score = $score;
+		}
+
+		renderLeaderboardList($lb_rows);
+		if ($fireworks) fireworks();
+	} else {
+		$scope = $monthly ? "this month" : "";
+		echo "<p>No Fighters have been assembled yet $scope.</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="dhcfighters"><input type="submit" class="small-button" value="View All DHC Fighters"></form><br><br>';
 	}
 }
 
