@@ -12,11 +12,10 @@ include '../db.php';
 include '../skulliance.php';
 require_once __DIR__ . '/../dhcfighters-lib.php';
 
-header('Content-Type: application/json');
+require_once __DIR__ . '/../dhc-json.php';
 
 function dhcf_out($ok, $message, $extra = array()) {
-	echo json_encode(array_merge(array('ok' => $ok, 'message' => $message), $extra));
-	exit;
+	dhc_json(array_merge(array('ok' => $ok, 'message' => $message), $extra));
 }
 
 if (empty($_SESSION['userData']['user_id'])) dhcf_out(false, 'Not signed in.');

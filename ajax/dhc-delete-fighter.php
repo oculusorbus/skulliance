@@ -14,11 +14,11 @@ include '../db.php';
 include '../skulliance.php';
 require_once __DIR__ . '/../dhcfighters-lib.php';
 
-header('Content-Type: application/json');
+require_once __DIR__ . '/../dhc-json.php';
 
-if (empty($_SESSION['userData']['user_id'])) { echo json_encode(array('ok' => false)); exit; }
+if (empty($_SESSION['userData']['user_id'])) { dhc_json(array('ok' => false)); exit; }
 
 $ok = dhcf_delete_fighter($conn, (int)$_SESSION['userData']['user_id'], (int)($_POST['id'] ?? 0));
 $conn->close();
 
-echo json_encode(array('ok' => $ok));
+dhc_json(array('ok' => $ok));

@@ -15,11 +15,10 @@ include '../db.php';
 include '../skulliance.php';
 require_once __DIR__ . '/../dhcfighters-lib.php';
 
-header('Content-Type: application/json');
+require_once __DIR__ . '/../dhc-json.php';
 
 function dhcf_drop_out($awarded, $why = '', $extra = array()) {
-	echo json_encode(array_merge(array('ok' => (bool)$awarded, 'drop' => $awarded, 'why' => $why), $extra));
-	exit;
+	dhc_json(array_merge(array('ok' => (bool)$awarded, 'drop' => $awarded, 'why' => $why), $extra));
 }
 
 if (empty($_SESSION['userData']['user_id'])) dhcf_drop_out(null, 'not signed in');
