@@ -1007,8 +1007,22 @@ a{color:var(--ochre)}
   /* Weighted by drop rate, so Randomise actually demonstrates the rarity curve
      instead of showing a mythic as often as a common. Falls back to a flat pick
      when no rarity data is loaded. */
+  /* Only what is actually placeable. In fighters mode a trait whose copies are
+     all committed to saved Fighters must never be drawn -- Randomise used to
+     put them on the canvas at load, which looked like a build the player could
+     save and the server would then refuse. Copies already placed in this build
+     count against the total, so a single copy cannot fill two slots. */
+  function placeable(k) {
+    return (TRAITS[k] || []).filter(function (t) {
+      if (typeof t.free !== 'number') return true;      // sandbox: unrestricted
+      var used = 0;
+      SLOTS.forEach(function (s) { if (sel[s.key] === t.slug) used++; });
+      return (t.free - used) > 0;
+    });
+  }
+
   function pick(k) {
-    var l = TRAITS[k] || [];
+    var l = placeable(k);
     if (!l.length) return null;
     var total = 0, i;
     for (i = 0; i < l.length; i++) total += (l[i].rate || 0);
@@ -1072,7 +1086,7 @@ a{color:var(--ochre)}
       var pool = ['weapon', 'weaponBack'][Math.random() < 0.5 ? 0 : 1];
       // Arms repose the torso's arms, so the weapons that rely on them are out
       // of the running once arms are on rather than picked and then discarded.
-      var cands = (TRAITS[pool] || []).filter(function (t) {
+      var cands = placeable(pool).filter(function (t) {
         return !(sel.arms && armsExclusive(t.slug));
       });
       if (cands.length) {
@@ -1148,6 +1162,22 @@ a{color:var(--ochre)}
      canvas. Returned as a copy so a caller cannot mutate the live selection,
      and read from `sel` rather than the DOM so a save stores exactly what was
      drawn. */
+  /**
+   * Anything in the current build that cannot legally be placed, as
+   * [{slot, slug, why}]. Runs the SAME blockedReason() the greyed cells use,
+   * so the Save button and the picker can never disagree about what is
+   * allowed -- and the server re-checks regardless.
+   */
+  window.DHC_SELECTION_ISSUES = function () {
+    var out = [];
+    SLOTS.forEach(function (s) {
+      if (!sel[s.key]) return;
+      var why = blockedReason(s.key, sel[s.key]);
+      if (why) out.push({ slot: s.key, slug: sel[s.key], why: why });
+    });
+    return out;
+  };
+
   window.DHC_SELECTION = function () {
     var out = {};
     SLOTS.forEach(function (s) { if (sel[s.key]) out[s.key] = sel[s.key]; });

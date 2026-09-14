@@ -295,10 +295,20 @@ function dhcf_board_html($rows) {
      always describes the Fighter actually on screen. */
   function syncSave() {
     var missing = missingRequired();
-    saveBtn.disabled = missing.length > 0;
-    saveBtn.title = missing.length ? 'Needs a ' + missing.join(', ') : 'Save this Fighter';
-    if (missing.length) {
-      say.textContent = 'Needs a ' + missing.join(', ') + ' to save.';
+    // Unaffordable traits block a save too, not just missing slots. Randomise
+    // could otherwise leave a build on the canvas that looked saveable and was
+    // refused by the server -- the button has to reflect what will happen.
+    var issues = (window.DHC_SELECTION_ISSUES && window.DHC_SELECTION_ISSUES()) || [];
+
+    saveBtn.disabled = missing.length > 0 || issues.length > 0;
+
+    var note = '';
+    if (missing.length) note = 'Needs a ' + missing.join(', ') + ' to save.';
+    else if (issues.length) note = issues[0].why;
+
+    saveBtn.title = note || 'Save this Fighter';
+    if (note) {
+      say.textContent = note;
       say.style.color = '';
       say.style.opacity = '.6';
     } else if (say.style.opacity === '.6') {
@@ -313,6 +323,8 @@ function dhcf_board_html($rows) {
     if (!Object.keys(sel).length) { msg('Pick some traits first.', false); return; }
     var missing = missingRequired();
     if (missing.length) { msg('A Fighter needs a ' + missing.join(', ') + '.', false); return; }
+    var issues = (window.DHC_SELECTION_ISSUES && window.DHC_SELECTION_ISSUES()) || [];
+    if (issues.length) { msg(issues[0].why, false); return; }
     var btn = saveBtn; btn.disabled = true; msg('Saving...', true);
     var body = 'name=' + encodeURIComponent(document.getElementById('dhcfName').value) +
                '&traits=' + encodeURIComponent(JSON.stringify(sel));
