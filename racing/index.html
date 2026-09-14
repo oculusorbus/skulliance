@@ -2528,20 +2528,30 @@
       }).catch(function() {});
 
       /*
-       * TRAIT DROP. The game runs in an iframe, so the modal -- which lives on
-       * the parent page with the rest of the platform chrome -- has to be
-       * reached through window.parent. Same origin, so this is a direct call
-       * rather than postMessage.
+       * TRAIT DROP.
+       *
+       * skullracer.php re-serves this file INLINE -- it deliberately stopped
+       * using an iframe (see its header comment). So the modal is in this very
+       * document and DHC_DROP is simply here. An earlier version only looked at
+       * window.parent, guarded on parent !== window, which is false without a
+       * frame: the call never fired and a finished race dropped nothing.
+       *
+       * Still falls back to the parent, so the game keeps working if it is ever
+       * embedded again or opened directly at racing/index.html inside a wrapper.
        *
        * raceElapsed is seconds, and Skull Racer bands INVERTED: a faster race
-       * is a better roll. Finishing at all clears the floor, so a slow first
-       * race still pays.
+       * is a better roll. Finishing at all clears the floor, so a slow race
+       * still pays.
        */
       try {
-        if (window.parent && window.parent !== window && window.parent.DHC_DROP) {
-          window.parent.DHC_DROP({ game: 'skullracer', value: Math.round(raceElapsed), delay: 1400 });
+        var dropHost = (typeof DHC_DROP === 'function') ? window
+                     : (window.parent && window.parent !== window && window.parent.DHC_DROP)
+                       ? window.parent : null;
+        if (dropHost) {
+          dropHost.DHC_DROP({ game: 'skullracer', value: Math.round(raceElapsed),
+                              unit: 'seconds', delay: 1400 });
         }
-      } catch (e) { /* cross-origin or no parent: the race result stands regardless */ }
+      } catch (e) { /* the race result stands regardless */ }
     }
 
     //-------------------------------------------------------------------------
