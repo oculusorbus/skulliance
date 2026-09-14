@@ -581,6 +581,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "activity-ath" && $filterby != "activity-monthly" && $filterby != "activity-weekly" &&
 				              $filterby != "obscura" && $filterby != "weekly-obscura" &&
 				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
+				              $filterby != "dhcfighters" && $filterby != "monthly-dhcfighters" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
