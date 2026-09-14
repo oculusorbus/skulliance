@@ -110,6 +110,22 @@ claim in between.
 
 ---
 
+## Originality
+
+The **first staker to build a configuration keeps a bonus** on it — 15% on top
+of what its traits are worth. Build something nobody has assembled before and
+it scores higher than the same pieces arranged the way everyone else does.
+
+Nobody is ever blocked from building a Fighter someone else already has. A
+player holding one background, one torso and one head has exactly one possible
+character, and being told it was taken would lock them out of the game
+entirely. Later builders simply do not earn the bonus.
+
+It is a bonus for discovery, never a penalty for being copied: if somebody
+rebuilds your Fighter tomorrow, your score does not move.
+
+---
+
 ## Traits are consumable
 
 Putting an Axe on a Fighter **uses** that Axe. Building a second Fighter with an

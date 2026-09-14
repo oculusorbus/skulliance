@@ -28,4 +28,7 @@ list($ok, $message, $row) = dhcf_save_fighter($conn, $user_id, $traits, (string)
 $conn->close();
 
 if (!$ok) dhcf_out(false, $message);
-dhcf_out(true, $message, array('display' => $row['display'], 'score' => $row['score'], 'serial' => $row['serial']));
+dhcf_out(true, $message, array(
+	'display' => $row['display'], 'score' => $row['score'], 'serial' => $row['serial'],
+	'base'    => $row['base'],    'bonus' => $row['bonus'], 'first'  => $row['first'],
+));

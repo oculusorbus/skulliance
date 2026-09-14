@@ -24,6 +24,19 @@ define('DHCF_SERIAL_PREFIX', 'DHC2F');
 define('DHCF_SERIAL_START',  421);          // first number after the collection's range
 define('DHCF_SERIAL_PAD',    3);            // DHC2F421, DHC2F1000 when it gets there
 
+/**
+ * ORIGINALITY BONUS -- what the first staker to build a configuration earns.
+ *
+ * A bonus for discovery, never a penalty for duplication. If a copied Fighter
+ * lost points, the original builder would be marked down by somebody else's
+ * action, which is the same unfairness that made blocking duplicate builds the
+ * wrong answer: it punishes draw order rather than effort.
+ *
+ * 15% is enough to matter against scores in the hundreds without letting a
+ * plain-but-unique build beat a genuinely rare one.
+ */
+define('DHCF_ORIGINALITY_BONUS', 0.15);
+
 /** Bumped when a layering or exclusion rule changes; stamped on each save. */
 define('DHCF_RULES_VERSION', '1');
 

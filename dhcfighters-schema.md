@@ -92,3 +92,33 @@ Backfill for rows that predate the columns:
 ```sql
 UPDATE dhc_fighters SET newest_trait_at = created_at WHERE newest_trait_at IS NULL;
 ```
+
+---
+
+## Migration — originality bonus
+
+```sql
+ALTER TABLE dhc_fighters
+  ADD COLUMN traits_hash CHAR(40) NULL DEFAULT NULL AFTER traits,
+  ADD INDEX idx_hash (traits_hash);
+```
+
+**`traits_hash`** — a canonical fingerprint of the trait set, so two Fighters
+wearing exactly the same pieces are recognisable as the same configuration.
+
+The **first staker to build a configuration keeps a bonus on it**; later
+builders of the same set do not get one. Deliberately a bonus for discovery
+rather than a penalty for duplication: a player must never lose score because
+somebody else copied them afterwards, which is the same "punishes draw order"
+unfairness that made blocking duplicates the wrong call.
+
+Backfill so existing Fighters are credited:
+
+```sql
+UPDATE dhc_fighters SET traits_hash = SHA1(traits) WHERE traits_hash IS NULL;
+```
+
+That is approximate — PHP writes a canonical hash with slots sorted, while
+`SHA1(traits)` hashes the stored JSON as-is. Re-saving or rescoring corrects
+it. Running `dhcf_rescore_all()` after the migration rewrites every hash
+properly.

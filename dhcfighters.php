@@ -148,6 +148,8 @@ $dhca_owned = $dhcf_avail;
 .dhcf-card .meta{padding:6px 8px}
 .dhcf-card .nm{font-size:11.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dhcf-card .sc{font-size:10px;opacity:.6;font-variant-numeric:tabular-nums}
+.dhcf-card .firstb{color:var(--ochre);opacity:1;font-size:8.5px;letter-spacing:.12em;
+  border:1px solid var(--ochre);border-radius:999px;padding:1px 5px;margin-left:4px}
 .dhcf-card .acts{display:flex;gap:5px;padding:0 8px 8px}
 .dhcf-card .acts button{flex:1;font:inherit;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
   padding:4px;cursor:pointer;background:none;border:1px solid var(--line);border-radius:2px;color:inherit}
@@ -241,7 +243,14 @@ $dhca_owned = $dhcf_avail;
               </button>
               <div class="meta">
                 <span class="nm"><?php echo htmlspecialchars($f['display']); ?></span>
-                <span class="sc"><?php echo number_format((int)$f['rarity_score']); ?> pts</span>
+                <span class="sc"><?php echo number_format((int)$f['rarity_score']); ?> pts<?php
+                  /* Only shown while they still hold the claim -- recomputed
+                     rather than stored, so it reflects the table as it is now. */
+                  if (!empty($f['traits_hash'])
+                      && dhcf_is_first_build($conn, $dhcf_user, $f['traits_hash'], (int)$f['id'])) {
+                      echo ' <b class="firstb" title="No one else has built this configuration">FIRST</b>';
+                  }
+                ?></span>
               </div>
               <div class="acts">
                 <button type="button" class="dhcf-rename">Rename</button>
@@ -402,7 +411,14 @@ function dhcf_board_html($rows) {
     }).then(function (r) { return r.json(); })
       .then(function (d) {
         btn.disabled = false;
-        if (d.ok) { msg('Saved as ' + d.display + ' — ' + d.score + ' pts', true); setTimeout(function(){location.reload();}, 900); }
+        if (d.ok) {
+          // The originality bonus is worth naming, or it just looks like the
+          // score came out higher than the traits explain.
+          var line = 'Saved as ' + d.display + ' — ' + d.score + ' pts';
+          if (d.bonus > 0) line += ' (first to build this: +' + d.bonus + ')';
+          msg(line, true);
+          setTimeout(function(){location.reload();}, 900);
+        }
         else { msg(d.message || 'Could not save.', false); syncSave(); }
       })
       .catch(function () { btn.disabled = false; msg('Network error.', false); });

@@ -70,6 +70,55 @@ function dhcf_score($traits) {
 	return $total;
 }
 
+/**
+ * Canonical fingerprint of a trait set.
+ *
+ * Sorted by slot before hashing, so the same pieces always produce the same
+ * hash no matter what order they were picked in -- two players who assembled
+ * an identical Fighter by different routes must be recognisable as having
+ * built the same thing.
+ */
+function dhcf_traits_hash($traits) {
+	$pairs = array();
+	foreach ($traits as $slot => $slug) {
+		if ($slug === '' || $slug === null) continue;
+		$pairs[] = $slot . ':' . $slug;
+	}
+	sort($pairs);
+	return sha1(implode('|', $pairs));
+}
+
+/**
+ * Is this player the first to have built this configuration?
+ *
+ * Earliest live Fighter with the hash wins it, and keeps it -- a later copy
+ * never takes it away. Disassembled Fighters do not hold a claim: if you took
+ * it apart, the configuration is available to be discovered again.
+ *
+ * $exclude_id skips the row being rescored or edited, so a Fighter is never
+ * compared against itself.
+ */
+function dhcf_is_first_build($conn, $user_id, $hash, $exclude_id = 0) {
+	$sql = sprintf("SELECT user_id FROM dhc_fighters
+	                WHERE traits_hash = '%s' AND disassembled_at IS NULL%s
+	                ORDER BY created_at ASC, id ASC LIMIT 1",
+		$conn->real_escape_string($hash),
+		$exclude_id ? ' AND id <> ' . (int)$exclude_id : '');
+	$res = $conn->query($sql);
+	if (!$res || !$res->num_rows) return true;            // nobody holds it
+	return (int)$res->fetch_assoc()['user_id'] === (int)$user_id;
+}
+
+/** Score with the originality bonus applied, and the parts that made it. */
+function dhcf_score_with_bonus($conn, $user_id, $traits, $exclude_id = 0) {
+	$base  = dhcf_score($traits);
+	$hash  = dhcf_traits_hash($traits);
+	$first = dhcf_is_first_build($conn, $user_id, $hash, $exclude_id);
+	$bonus = $first ? (int)round($base * DHCF_ORIGINALITY_BONUS) : 0;
+	return array('hash' => $hash, 'base' => $base, 'first' => $first,
+	             'bonus' => $bonus, 'total' => $base + $bonus);
+}
+
 /* ------------------------------------------------------------------ *
  * NAMING
  * ------------------------------------------------------------------ */
@@ -389,7 +438,6 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 	}
 
 	$name  = trim(mb_substr((string)$name, 0, 48));
-	$score = dhcf_score($clean);
 	$json  = json_encode($clean);
 
 	$conn->begin_transaction();
@@ -405,12 +453,17 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 		for ($try = 0; $try < 5; $try++) {
 			$serial = dhcf_next_serial($conn);
 			$newest = dhcf_newest_trait_at($conn, $user_id, $clean);
+			// Inside the transaction: two players saving the same configuration at
+			// once must not both be told they were first.
+			$sc     = dhcf_score_with_bonus($conn, $user_id, $clean);
+			$score  = $sc['total'];
 			$sql = sprintf(
-				"INSERT INTO dhc_fighters (user_id, serial, name, traits, rarity_score, rules_version, newest_trait_at, created_at, updated_at)
-				 VALUES (%d, %d, %s, '%s', %d, '%s', %s, NOW(), NOW())",
+				"INSERT INTO dhc_fighters (user_id, serial, name, traits, traits_hash, rarity_score, rules_version, newest_trait_at, created_at, updated_at)
+				 VALUES (%d, %d, %s, '%s', '%s', %d, '%s', %s, NOW(), NOW())",
 				$user_id, $serial,
 				$name === '' ? 'NULL' : "'" . $conn->real_escape_string($name) . "'",
-				$conn->real_escape_string($json), $score,
+				$conn->real_escape_string($json),
+				$conn->real_escape_string($sc['hash']), $score,
 				$conn->real_escape_string(DHCF_RULES_VERSION),
 				$newest === null ? 'NOW()' : "'" . $conn->real_escape_string($newest) . "'"
 			);
@@ -423,6 +476,9 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 					'name'    => $name,
 					'display' => $name !== '' ? $name : dhcf_default_name($serial),
 					'score'   => $score,
+					'base'    => $sc['base'],
+					'bonus'   => $sc['bonus'],
+					'first'   => $sc['first'],
 					'traits'  => $clean,
 				);
 				// After the commit, never before: an announcement for a save
@@ -502,16 +558,18 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
 			return array(false, 'You have already used: ' . implode(', ', $names), null);
 		}
 		$newest = dhcf_newest_trait_at($conn, $user_id, $clean);
-		$sql = sprintf("UPDATE dhc_fighters SET traits = '%s', rarity_score = %d, rules_version = '%s',
-		                newest_trait_at = %s, updated_at = NOW()
+		$sc     = dhcf_score_with_bonus($conn, $user_id, $clean, $fighter_id);
+		$sql = sprintf("UPDATE dhc_fighters SET traits = '%s', traits_hash = '%s', rarity_score = %d,
+		                rules_version = '%s', newest_trait_at = %s, updated_at = NOW()
 		                WHERE id = %d AND user_id = %d",
-			$conn->real_escape_string(json_encode($clean)), dhcf_score($clean),
+			$conn->real_escape_string(json_encode($clean)),
+			$conn->real_escape_string($sc['hash']), $sc['total'],
 			$conn->real_escape_string(DHCF_RULES_VERSION),
 			$newest === null ? 'NOW()' : "'" . $conn->real_escape_string($newest) . "'",
 			$fighter_id, $user_id);
 		if (!$conn->query($sql)) { $conn->rollback(); return array(false, 'Could not save.', null); }
 		$conn->commit();
-		return array(true, 'Saved.', array('id' => $fighter_id, 'score' => dhcf_score($clean), 'traits' => $clean));
+		return array(true, 'Saved.', array('id' => $fighter_id, 'score' => $sc['total'], 'traits' => $clean));
 	} catch (Exception $e) {
 		$conn->rollback();
 		return array(false, 'Could not save.', null);
@@ -602,12 +660,24 @@ function dhcf_leaderboard($conn, $period = 'ath', $limit = 25) {
  */
 function dhcf_rescore_all($conn) {
 	$n = 0;
+	// Hashes first, so the originality pass below compares against a table
+	// where every row's fingerprint is already canonical -- rescoring against
+	// half-written hashes would hand the bonus to the wrong builder.
 	$res = $conn->query("SELECT id, traits FROM dhc_fighters");
+	$rows = array();
+	if ($res) while ($row = $res->fetch_assoc()) $rows[] = $row;
+	foreach ($rows as $row) {
+		$t = json_decode($row['traits'], true) ?: array();
+		$conn->query(sprintf("UPDATE dhc_fighters SET traits_hash = '%s' WHERE id = %d",
+			$conn->real_escape_string(dhcf_traits_hash($t)), (int)$row['id']));
+	}
+	$res = $conn->query("SELECT id, user_id, traits FROM dhc_fighters");
 	if ($res) {
 		while ($row = $res->fetch_assoc()) {
-			$t = json_decode($row['traits'], true) ?: array();
+			$t  = json_decode($row['traits'], true) ?: array();
+			$sc = dhcf_score_with_bonus($conn, (int)$row['user_id'], $t, (int)$row['id']);
 			$conn->query(sprintf("UPDATE dhc_fighters SET rarity_score = %d WHERE id = %d",
-				dhcf_score($t), (int)$row['id']));
+				$sc['total'], (int)$row['id']));
 			$n++;
 		}
 	}
