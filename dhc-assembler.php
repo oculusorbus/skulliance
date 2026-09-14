@@ -28,6 +28,8 @@
  * fighters page, where header.php has already closed <head> -- valid, and
  * cheaper than teaching the platform header about a second stylesheet.
  */
+require_once __DIR__ . '/dhcfighters-config.php';   // the layering rules live here
+
 if (!isset($dhca_mode))  $dhca_mode  = 'sandbox';
 if (!isset($dhca_owned)) $dhca_owned = null;
 
@@ -459,7 +461,7 @@ a{color:var(--ochre)}
   // but they meet the body at different points -- the sash lies on the chest,
   // the weapon hangs behind -- so the later correction that dropped the weapons
   // another 10px does not apply to it.
-  var NUDGE = { 'skull-krusher': 23, 'skull-krusher-sash': 13, 'axe': 13 };
+  var NUDGE = <?php echo json_encode(DHCF_NUDGE); ?>;
 
   /*
    * COMPANIONS NORMALLY DRAW LAST -- a pet or drone floats in front of the
@@ -473,7 +475,7 @@ a{color:var(--ochre)}
    * both the canvas and the draw-order readout use it, so the readout can
    * never disagree with what you are looking at.
    */
-  var COMPANION_UNDER = ['dh-vision-shoulder-cam', 'code-sea-predator'];
+  var COMPANION_UNDER = <?php echo json_encode(DHCF_COMPANION_UNDER); ?>;
 
   /* Exceptions, reported from testing: these weapons are drawn against the
      torso's own arms -- held in them, or posed to rest on them. An Arms trait
@@ -484,7 +486,7 @@ a{color:var(--ochre)}
 
      Enforced both ways. Whichever slot is filled first blocks the other, and
      the way out is always the None tile, so no build can become unescapable. */
-  var ARMS_EXCLUSIVE = ['plastic-blaster', 'dh-raider-equipment', 'electric-morning-star'];
+  var ARMS_EXCLUSIVE = <?php echo json_encode(DHCF_ARMS_EXCLUSIVE); ?>;
 
   function armsExclusive(slug) { return ARMS_EXCLUSIVE.indexOf(slug) !== -1; }
 
@@ -577,7 +579,7 @@ a{color:var(--ochre)}
    * body. Nothing needs deleting as the armless set fills in; drop the last
    * one in and the workaround is simply never reached again.
    */
-  var ARMS_BEHIND_TORSO = ['perforator-arm-replacement'];
+  var ARMS_BEHIND_TORSO = <?php echo json_encode(DHCF_ARMS_BEHIND_TORSO); ?>;
 
 
   /*
@@ -592,7 +594,7 @@ a{color:var(--ochre)}
    * and an ordinary effect in the other slot stays up under the head. With one
    * in both slots their relative order is preserved.
    */
-  var EFFECTS_BEHIND_TORSO = ['xlon-s-black-fire-attack'];
+  var EFFECTS_BEHIND_TORSO = <?php echo json_encode(DHCF_EFFECTS_BEHIND_TORSO); ?>;
 
   function effectBehindTorso(key) {
     return !!sel[key] && EFFECTS_BEHIND_TORSO.indexOf(sel[key]) !== -1;

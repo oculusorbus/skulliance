@@ -12,3 +12,6 @@ skulliance.webp
 # nothing here is deployment-ready yet. Keep it local until we know what shape
 # the shipped assets take.
 dhc/
+
+# Generated Fighter composites -- rebuilt on demand, never source.
+dhcrenders/

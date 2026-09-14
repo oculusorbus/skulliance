@@ -183,7 +183,7 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 		return null;
 	}
 
-	return array(
+	$drop = array(
 		'category' => $cat,
 		'slug'     => $slug,
 		'tier'     => $info[0],
@@ -193,6 +193,19 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 		'name'     => dhcf_trait_name($cat, $slug),
 		'is_new'   => dhcf_count_owned($conn, $user_id, $slug) <= 1,
 	);
+
+	// Announced from here rather than from the endpoint, so every award posts
+	// no matter which caller made it. The ledger row is already written; the
+	// notifier swallows its own failures and never reaches back into this.
+	if (is_file(__DIR__ . '/dhcfighters-notify.php')) {
+		require_once __DIR__ . '/dhcfighters-notify.php';
+		// Buffered: these run inside AJAX endpoints that emit JSON, and
+		// display_errors is on platform-wide. Anything the notifier or a
+		// GD deprecation prints is swallowed rather than corrupting the reply.
+		ob_start(); dhcf_notify_drop($conn, $user_id, $drop, $source); ob_end_clean();
+	}
+
+	return $drop;
 }
 
 /** How many copies of a slug a player holds (duplicates are separate rows). */
@@ -373,14 +386,22 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 			if ($conn->query($sql)) {
 				$id = $conn->insert_id;
 				$conn->commit();
-				return array(true, 'Saved.', array(
+				$saved = array(
 					'id'      => $id,
 					'serial'  => $serial,
 					'name'    => $name,
 					'display' => $name !== '' ? $name : dhcf_default_name($serial),
 					'score'   => $score,
 					'traits'  => $clean,
-				));
+				);
+				// After the commit, never before: an announcement for a save
+				// that then rolled back would be a lie, and the render is slow
+				// enough to be worth keeping outside the transaction.
+				if (is_file(__DIR__ . '/dhcfighters-notify.php')) {
+					require_once __DIR__ . '/dhcfighters-notify.php';
+					ob_start(); dhcf_notify_fighter($conn, $user_id, $saved); ob_end_clean();
+				}
+				return array(true, 'Saved.', $saved);
 			}
 			if ($conn->errno !== 1062) break;   // 1062 = serial taken, retry
 		}

@@ -83,6 +83,62 @@ function dhcf_trait_name($category, $slug) {
 }
 
 /* ------------------------------------------------------------------ *
+ * LAYERING RULES -- the single source.
+ *
+ * The assembler emits these into its JS and the server-side compositor reads
+ * them directly, so the picture Discord shows is drawn by the same rules as
+ * the picture the player assembled. Two copies of this would drift, and every
+ * one of these exceptions was expensive to find.
+ * ------------------------------------------------------------------ */
+
+/** Companions that belong against the body, drawn below Arms rather than last. */
+define('DHCF_COMPANION_UNDER', array('dh-vision-shoulder-cam', 'code-sea-predator'));
+
+/** Effects that read as environment: dropped to just behind the torso. */
+define('DHCF_EFFECTS_BEHIND_TORSO', array('xlon-s-black-fire-attack'));
+
+/** TEMPORARY, retires per torso as armless variants land. See the assembler. */
+define('DHCF_ARMS_BEHIND_TORSO', array('perforator-arm-replacement'));
+
+/** Vertical nudge in pixels of the 1000px master, positive = down. */
+define('DHCF_NUDGE', array('skull-krusher' => 23, 'skull-krusher-sash' => 13, 'axe' => 13));
+
+/** Weapons drawn against the torso's own arms; cannot coexist with Arms. */
+define('DHCF_ARMS_EXCLUSIVE', array('plastic-blaster', 'dh-raider-equipment', 'electric-morning-star'));
+
+/**
+ * Draw order for a saved layout, exceptions applied. Mirrors layerOrder() in
+ * the assembler's JS -- same inputs, same output, minus the drag handling the
+ * server has no use for.
+ */
+function dhcf_layer_order($traits) {
+	$order = dhcf_slots();
+
+	if (!empty($traits['companion']) && in_array($traits['companion'], DHCF_COMPANION_UNDER, true)) {
+		$order = dhcf_move_before($order, 'companion', 'arms');
+	}
+	if (!empty($traits['arms']) && in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {
+		$order = dhcf_move_before($order, 'arms', 'torso');
+	}
+	foreach (array('effects1', 'effects2') as $k) {
+		if (!empty($traits[$k]) && in_array($traits[$k], DHCF_EFFECTS_BEHIND_TORSO, true)) {
+			$order = dhcf_move_before($order, $k, 'torso');
+		}
+	}
+	return $order;
+}
+
+/** Move $what immediately before $before, preserving everything else. */
+function dhcf_move_before($order, $what, $before) {
+	$out = array();
+	foreach ($order as $k) { if ($k !== $what) $out[] = $k; }
+	$at = array_search($before, $out, true);
+	if ($at === false) return $order;
+	array_splice($out, $at, 0, array($what));
+	return $out;
+}
+
+/* ------------------------------------------------------------------ *
  * WHICH GAME PAYS WHICH CATEGORY
  *
  * The organising rule: a MANDATORY trait may only come from a game that cannot
