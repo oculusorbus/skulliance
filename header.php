@@ -916,3 +916,14 @@
 		})();
 		</script>
 		<?php endif; ?>
+
+<?php
+/*
+ * DHC FIGHTERS DROP MODAL, platform-wide.
+ *
+ * A daily-reward claim can happen from any page, so the reveal has to be
+ * available everywhere rather than only on the nine game pages. The include
+ * guards itself, so those pages including it directly stays harmless.
+ */
+if (is_file(__DIR__ . '/dhc-dropmodal.php')) include __DIR__ . '/dhc-dropmodal.php';
+?>

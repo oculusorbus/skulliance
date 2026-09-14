@@ -24,6 +24,13 @@
  * names, animation on transform/opacity only. It has to sit on top of nine
  * different game interfaces without any of them accommodating it.
  */
+
+// Idempotent: header.php includes this for every page so a drop can surface
+// wherever it happens (a daily-reward claim fires from anywhere), while the
+// nine game pages still include it directly. Without this guard the second
+// include would duplicate every id and the modal would stop working.
+if (defined('DHC_DROPMODAL_LOADED')) return;
+define('DHC_DROPMODAL_LOADED', true);
 ?>
 <style>
 #dhcdrop-veil{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;
@@ -230,9 +237,14 @@
    * opts.delay lets a game let its own end screen land first -- a trait modal
    * that covers the victory banner steals the moment instead of adding to it.
    */
-  // test hooks -- harmless in production, and the only way to exercise a
-  // mythic reveal without waiting for a 0.33% roll to actually happen
-  window.__show = show; window.__miss = showMiss;
+  /**
+   * Show a drop that was ALREADY awarded server-side, rather than claiming one.
+   * The seven-day reward streak pays out inside its own claim, so by the time
+   * the browser hears about it the ledger row exists and there is nothing left
+   * to ask for -- only something to reveal.
+   */
+  window.DHC_SHOW_DROP = show;
+  window.__show = show; window.__miss = showMiss;   // harness hooks
 
   window.DHC_DROP = function (opts) {
     if (!opts || !opts.game) return;

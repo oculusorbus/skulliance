@@ -893,6 +893,14 @@ function dailyReward(){
 			document.getElementById('claimed').style.display = "flex";
 			document.getElementById('progress_bar').style.display = "flex";
 			document.getElementById('progress_bar').innerHTML = obj.progress_bar;
+
+			/* Seventh day of the streak pays a DHC Fighters trait. It is already
+			   awarded by the time this reply arrives -- the claim did it -- so
+			   this only reveals it. Delayed so the reward line and the streak
+			   bar land first; the trait is the bonus, not the headline. */
+			if (obj.dhc_drop && window.DHC_SHOW_DROP) {
+				setTimeout(function () { DHC_SHOW_DROP(obj.dhc_drop); }, 900);
+			}
 			document.getElementById('remaining').style.display = "flex";
 			document.getElementById('remaining').innerHTML = obj.remaining;
 	  	  }

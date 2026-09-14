@@ -821,6 +821,33 @@ function getRandomReward($conn){
 		$dr_desc .= "🏆 **Total Claims:** ".$total_claims;
 		$dr_author = array("name" => $dr_username." · Day ".$current_streak." of 7", "icon_url" => $dr_avatar_url, "url" => $dr_profile);
 		discordmsg("🌟 Daily Reward Claimed", $dr_desc, $currency_icon, "https://skulliance.io/staking", "dailyrewards", $dr_avatar_url, "FFD700", $dr_author);
+
+		/*
+		 * SEVENTH DAY PAYS A TRAIT.
+		 *
+		 * Completing the full streak is the one thing on this platform a
+		 * player can achieve without ever opening a game, so it is the way in
+		 * for the members who only claim dailies and run missions. A wildcard,
+		 * because it should be able to be anything.
+		 *
+		 * Awarded here, inside the claim that earns it, so it cannot be
+		 * replayed by re-requesting anything. Buffered and guarded like every
+		 * other drop: this function's JSON reply must survive a Discord
+		 * outage, a missing webhook or a notice from the notifier.
+		 */
+		if ((int)$current_streak === 7 && is_file(__DIR__ . '/dhcfighters-lib.php')) {
+			require_once __DIR__ . '/dhcfighters-lib.php';
+			ob_start();
+			$dhc_streak_drop = dhcf_award(
+				$conn, $_SESSION['userData']['user_id'], 'wildcard', 'dailystreak',
+				'7-day streak', dhcf_table_for('dailystreak', 7)
+			);
+			ob_end_clean();
+			// Handed back in the claim's own response so the reveal can fire the
+			// moment the streak completes, rather than on some later page load.
+			if ($dhc_streak_drop) $project['dhc_drop'] = $dhc_streak_drop;
+		}
+
 		return $project;
 	}
 }
