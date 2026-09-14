@@ -143,11 +143,10 @@ include 'header.php';
 .dhcg-card:focus-visible{outline:2px solid var(--ochre,#00c8a0);outline-offset:1px}
 .dhcg-art{position:relative;aspect-ratio:1;background:var(--panel2,#0d1e2e);overflow:hidden}
 .dhcg-art img.layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.dhcg-owner{position:absolute;left:6px;bottom:6px;display:flex;align-items:center;gap:5px;
-  background:rgba(4,12,22,.82);border-radius:999px;padding:2px 8px 2px 2px;max-width:calc(100% - 12px)}
-.dhcg-owner img{width:18px;height:18px;border-radius:50%;flex:none}
+.dhcg-owner{display:flex;align-items:center;gap:6px;padding:0 9px 8px;opacity:.72}
+.dhcg-owner img{width:16px;height:16px;border-radius:50%;flex:none}
 .dhcg-owner span{font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.dhcg-meta{padding:7px 9px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.dhcg-meta{padding:8px 9px 3px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .dhcg-nm{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dhcg-pts{font-size:10px;opacity:.65;font-variant-numeric:tabular-nums;white-space:nowrap}
 .dhcg-flag{position:absolute;right:6px;top:6px;display:flex;gap:4px}
@@ -161,10 +160,15 @@ include 'header.php';
 #dhcg-veil{position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;
   background:rgba(4,12,22,.86);padding:20px}
 #dhcg-veil.on{display:flex}
-#dhcg-panel{width:min(860px,100%);max-height:88vh;overflow:auto;background:var(--panel,#0a1929);
-  border:1px solid var(--line,#1b3346);border-radius:4px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+/* Wider than the metadata needs, because the art is the point: the grid shows
+   Fighters at 250px and this is the only place one is seen large. The art
+   column takes the larger share and is capped to the panel height so a short
+   window scrolls the trait list rather than the character. */
+#dhcg-panel{width:min(1180px,100%);max-height:90vh;overflow:auto;background:var(--panel,#0a1929);
+  border:1px solid var(--line,#1b3346);border-radius:4px;display:grid;
+  grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
 @media (max-width:760px){#dhcg-panel{grid-template-columns:1fr}}
-#dhcg-panel .big{position:relative;aspect-ratio:1;background:var(--panel2,#0d1e2e)}
+#dhcg-panel .big{position:relative;aspect-ratio:1;max-height:90vh;background:var(--panel2,#0d1e2e)}
 #dhcg-panel .big img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 #dhcg-info{padding:18px 20px}
 #dhcg-info h2{margin:0 0 2px;font-size:20px}
@@ -261,9 +265,12 @@ include 'header.php';
       foreach (dhcf_layer_order($f['traits']) as $slot) {
         if (empty($f['traits'][$slot])) continue;
         $slug = $f['traits'][$slot];
+        // Category and slug rather than a path: the card wants 250px and the
+        // detail view wants the 1000px master, and the size is the only
+        // difference between them.
         $card['layers'][] = array(
-          'src'   => $dhc_base . '/250/' . dhcf_slot_category($slot) . '/' . $slug . '.png',
-          'nudge' => isset(DHCF_NUDGE[$slug]) ? (float)DHCF_NUDGE[$slug] / 10 : 0,
+          'c' => dhcf_slot_category($slot), 's' => $slug,
+          'n' => isset(DHCF_NUDGE[$slug]) ? (float)DHCF_NUDGE[$slug] / 10 : 0,
         );
       }
     ?>
@@ -271,21 +278,24 @@ include 'header.php';
       <div class="dhcg-art">
         <?php foreach ($card['layers'] as $l): ?>
           <img class="layer" loading="lazy" alt=""
-               <?php if ($l['nudge']): ?>style="transform:translateY(<?php echo $l['nudge']; ?>%)"<?php endif; ?>
-               src="<?php echo htmlspecialchars($l['src']); ?>">
+               <?php if ($l['n']): ?>style="transform:translateY(<?php echo $l['n']; ?>%)"<?php endif; ?>
+               src="<?php echo htmlspecialchars($dhc_base . '/250/' . $l['c'] . '/' . $l['s'] . '.png'); ?>">
         <?php endforeach; ?>
         <span class="dhcg-flag">
           <b class="t-<?php echo $f['best']; ?>"><?php echo strtoupper($f['best']); ?></b>
           <?php if ($f['first']): ?><b class="t-legendary">FIRST</b><?php endif; ?>
         </span>
-        <span class="dhcg-owner">
-          <img loading="lazy" alt="" src="<?php echo htmlspecialchars($av); ?>">
-          <span><?php echo htmlspecialchars($f['username']); ?></span>
-        </span>
       </div>
       <div class="dhcg-meta">
         <span class="dhcg-nm"><?php echo htmlspecialchars($f['display']); ?></span>
         <span class="dhcg-pts"><?php echo number_format((int)$f['rarity_score']); ?></span>
+      </div>
+      <?php /* Below the art, never over it -- the whole point of the grid is
+               seeing Maxingo's work, and a badge sat on the character's feet
+               was covering the thing it was captioning. */ ?>
+      <div class="dhcg-owner">
+        <img loading="lazy" alt="" src="<?php echo htmlspecialchars($av); ?>">
+        <span><?php echo htmlspecialchars($f['username']); ?></span>
       </div>
     </button>
     <?php endforeach; ?>
@@ -308,18 +318,20 @@ include 'header.php';
 
 <script>
 (function () {
-  var veil  = document.getElementById('dhcg-veil');
-  var big   = document.getElementById('dhcg-big');
-  var TIERS = ['common','uncommon','epic','legendary','mythic'];
+  var veil = document.getElementById('dhcg-veil');
+  var big  = document.getElementById('dhcg-big');
+  var BASE = <?php echo json_encode($dhc_base); ?>;
 
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
 
   function open(f) {
-    // Rebuilt from the same layer list the card used, so the detail view is the
-    // card at a larger size rather than a second opinion about draw order.
+    // The same layer list the card used, so this is the card at a larger size
+    // rather than a second opinion about draw order -- but pointed at the
+    // 1000px masters. This is the only place a Fighter is shown big enough for
+    // the detail in Maxingo's art to be worth the bytes.
     big.innerHTML = f.layers.map(function (l) {
-      return '<img alt="" src="' + esc(l.src) + '"' +
-             (l.nudge ? ' style="transform:translateY(' + l.nudge + '%)"' : '') + '>';
+      return '<img alt="" src="' + esc(BASE + '/1000/' + l.c + '/' + l.s + '.png') + '"' +
+             (l.n ? ' style="transform:translateY(' + l.n + '%)"' : '') + '>';
     }).join('');
 
     document.getElementById('dhcg-name').textContent = f.name;
