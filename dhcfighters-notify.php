@@ -17,6 +17,25 @@
  * -- a no-op since PHP 8.0, deprecated in 8.5 -- is deliberately not used.
  */
 
+/*
+ * LOAD THE WEBHOOKS OURSELVES.
+ *
+ * This file guards on function_exists('discordmsg') so a missing credential
+ * degrades to silence -- but that same guard silently swallowed every
+ * notification when the caller simply had not included webhooks.php.
+ * ajax/dhc-claim-drop.php did not, so a real Obscura drop posted nothing and
+ * looked exactly like a misconfigured webhook.
+ *
+ * Depending on nine game pages and three endpoints to each remember an include
+ * is a rule that will be broken again by the next caller. The notifier needs
+ * discordmsg(), so the notifier fetches it. webhooks.php is function
+ * definitions plus an include_once of its credentials -- no side effects, and
+ * include_once here makes a double load harmless.
+ */
+if (!function_exists('discordmsg') && is_file(__DIR__ . '/webhooks.php')) {
+	include_once __DIR__ . '/webhooks.php';
+}
+
 /* Embed accent per tier -- the same ramp the drop modal and the assembler use,
    as the integer Discord wants rather than a hex string. */
 function dhcf_tier_color($tier) {

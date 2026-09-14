@@ -836,8 +836,8 @@ function getRandomReward($conn){
 		 * outage, a missing webhook or a notice from the notifier.
 		 */
 		if ((int)$current_streak === 7 && is_file(__DIR__ . '/dhcfighters-lib.php')) {
-			require_once __DIR__ . '/dhcfighters-lib.php';
 			ob_start();
+			require_once __DIR__ . '/dhcfighters-lib.php';
 			$dhc_streak_drop = dhcf_award(
 				$conn, $_SESSION['userData']['user_id'], 'wildcard', 'dailystreak',
 				'7-day streak', dhcf_table_for('dailystreak', 7)

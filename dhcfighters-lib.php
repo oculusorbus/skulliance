@@ -198,11 +198,14 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 	// no matter which caller made it. The ledger row is already written; the
 	// notifier swallows its own failures and never reaches back into this.
 	if (is_file(__DIR__ . '/dhcfighters-notify.php')) {
+		// Buffered around the REQUIRE as well as the call: loading the notifier
+		// pulls in webhooks.php, which pulls in its credentials file, and any
+		// warning from that chain would land in the middle of an AJAX endpoint's
+		// JSON. display_errors is on platform-wide, so this is not theoretical.
+		ob_start();
 		require_once __DIR__ . '/dhcfighters-notify.php';
-		// Buffered: these run inside AJAX endpoints that emit JSON, and
-		// display_errors is on platform-wide. Anything the notifier or a
-		// GD deprecation prints is swallowed rather than corrupting the reply.
-		ob_start(); dhcf_notify_drop($conn, $user_id, $drop, $source); ob_end_clean();
+		dhcf_notify_drop($conn, $user_id, $drop, $source);
+		ob_end_clean();
 	}
 
 	return $drop;
@@ -398,8 +401,10 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 				// that then rolled back would be a lie, and the render is slow
 				// enough to be worth keeping outside the transaction.
 				if (is_file(__DIR__ . '/dhcfighters-notify.php')) {
+					ob_start();
 					require_once __DIR__ . '/dhcfighters-notify.php';
-					ob_start(); dhcf_notify_fighter($conn, $user_id, $saved); ob_end_clean();
+					dhcf_notify_fighter($conn, $user_id, $saved);
+					ob_end_clean();
 				}
 				return array(true, 'Saved.', $saved);
 			}
