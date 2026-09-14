@@ -339,6 +339,11 @@ a{color:var(--ochre)}
    where --blood is a deep red and white is correct. */
 .tab[aria-selected="true"]{background:var(--blood);color:<?php echo $dhca_mode === 'sandbox' ? '#fff' : 'var(--ink)'; ?>}
 .tab .dot{color:var(--ochre)}
+/* On the SELECTED tab the accent is the background, so an accent-coloured dot
+   vanishes into it -- mint on mint in fighters mode. Inheriting the tab's own
+   text colour keeps it visible in both skins: dark ink on the mint accent,
+   white on the sandbox's red. */
+.tab[aria-selected="true"] .dot{color:inherit;opacity:.75}
 /* grid-auto-rows:max-content is load-bearing, not tidying. Without it the
    implicit rows were sized shorter than the cells' own content -- 61px against a
    112px thumbnail -- so the name underneath fell outside the cell and
