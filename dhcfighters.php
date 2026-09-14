@@ -100,7 +100,9 @@ $dhca_owned = $dhcf_avail;
 .dhcf-games ul{list-style:none;margin:0;padding:4px 0}
 .dhcf-games li{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 12px;position:relative}
 .dhcf-games li{border-top:1px solid var(--line)}
-.dhcf-games .g{font-size:12px}
+.dhcf-games .g{font-size:12px;color:inherit;text-decoration:none}
+.dhcf-games .g:hover{color:var(--ochre);text-decoration:underline}
+.dhcf-games li:hover{background:rgba(0,200,160,.05)}
 .dhcf-games .c{grid-column:1;font-size:9.5px;opacity:.55;text-transform:uppercase;letter-spacing:.08em}
 .dhcf-games .c em{font-style:normal;opacity:.75;text-transform:none;letter-spacing:0;display:block}
 .dhcf-games .n{grid-row:1/3;align-self:center;font-size:14px;font-variant-numeric:tabular-nums}
@@ -246,7 +248,11 @@ $dhca_owned = $dhcf_avail;
           $done  = ($tot && $held >= $tot);
         ?>
         <li<?php echo $done ? ' class="done"' : ''; ?>>
-          <span class="g"><?php echo htmlspecialchars($g['label']); ?></span>
+          <?php /* One click to the game that pays this category -- relative, because
+                   the login cookie is host-only and an absolute link would drop the
+                   session for anyone on the other hostname. */ ?>
+          <a class="g" href="<?php echo htmlspecialchars($g['url']); ?>"><?php
+             echo htmlspecialchars($g['label']); ?></a>
           <span class="c"><?php echo $wild ? 'any trait' : htmlspecialchars($cat); ?>
             <em><?php echo htmlspecialchars($g['trigger']); ?></em></span>
           <span class="n"><?php echo (int)$held; ?><i>/<?php echo (int)$tot; ?></i></span>

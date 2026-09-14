@@ -162,22 +162,22 @@ $GLOBALS['DHCF_GAMES'] = array(
 	//         players to stop at it -- hold 10 waves, die, restart, which turns
 	//         a 30-minute game into a 5-minute farm.
 	// 'lower' set when a smaller value is better (race times).
-	'skullswap'      => array('label' => 'Skull Swap',      'category' => 'torso',      'trigger' => 'score threshold',
+	'skullswap'      => array('label' => 'Skull Swap', 'url' => 'skullswap.php',      'category' => 'torso',      'trigger' => 'score threshold',
 	                          'base' => 'run',          'bands' => array(9000 => 'placement_10', 12000 => 'placement_3', 15000 => 'placement_1')),
-	'skullracer'     => array('label' => 'Skull Racer',     'category' => 'head',       'trigger' => 'finish the race',
+	'skullracer'     => array('label' => 'Skull Racer', 'url' => 'skullracergame.php',     'category' => 'head',       'trigger' => 'finish the race',
 	                          'base' => 'run',          'lower' => true,
 	                          'bands' => array(400 => 'placement_10', 345 => 'placement_3', 330 => 'placement_1')),
-	'obscura'        => array('label' => 'Obscura',         'category' => 'background', 'trigger' => 'finish a run of 10+ solves',
+	'obscura'        => array('label' => 'Obscura', 'url' => 'obscura.php',         'category' => 'background', 'trigger' => 'finish a run of 10+ solves',
 	                          'base' => 'run',          'bands' => array(15 => 'placement_10', 25 => 'placement_3', 40 => 'placement_1')),
-	'cryptcrawl'     => array('label' => 'Crypt Crawl',     'category' => 'weapon',     'trigger' => 'win',
+	'cryptcrawl'     => array('label' => 'Crypt Crawl', 'url' => 'cryptcrawlgame.php',     'category' => 'weapon',     'trigger' => 'win',
 	                          'base' => 'placement_3'),
-	'cryptconquest'  => array('label' => 'Crypt Conquest',  'category' => 'headgear',   'trigger' => 'win',
+	'cryptconquest'  => array('label' => 'Crypt Conquest', 'url' => 'cryptconquestgame.php',  'category' => 'headgear',   'trigger' => 'win',
 	                          'base' => 'placement_10'),
-	'gauntlets'      => array('label' => 'Gauntlets',       'category' => 'effects',    'trigger' => 'sweep the gauntlet',
+	'gauntlets'      => array('label' => 'Gauntlets', 'url' => 'gauntlets.php',       'category' => 'effects',    'trigger' => 'sweep the gauntlet',
 	                          'base' => 'placement_10'),
-	'guardians'      => array('label' => 'Realm Guardians', 'category' => 'companion',  'trigger' => 'waves held',
+	'guardians'      => array('label' => 'Realm Guardians', 'url' => 'guardiansgame.php', 'category' => 'companion',  'trigger' => 'waves held',
 	                          'base' => 'run',          'bands' => array(20 => 'placement_10', 40 => 'placement_3', 70 => 'placement_1')),
-	'monstrocity'    => array('label' => 'Monstrocity',     'category' => 'arms',       'trigger' => 'complete all 28 levels',
+	'monstrocity'    => array('label' => 'Monstrocity', 'url' => 'match3rpg.php',     'category' => 'arms',       'trigger' => 'complete all 28 levels',
 	                          'base' => 'placement_1'),
 	// No bands and no floor: killing a boss IS the achievement, and there is no
 	// "how well" to grade it on. The bands here used to read damage contributed,
@@ -189,9 +189,9 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// "where traits drop" table -- should see it without special-casing.
 	// Aimed at the members who claim dailies and run missions but never open a
 	// game; a wildcard is the right lure because it can be any trait at all.
-	'dailystreak'    => array('label' => 'Daily Reward Streak', 'category' => 'wildcard',
+	'dailystreak'    => array('label' => 'Daily Reward Streak', 'url' => 'launchpad.php', 'category' => 'wildcard',
 	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3'),
-	'bosses'         => array('label' => 'Boss Battles',    'category' => 'wildcard',   'trigger' => 'every boss defeat', 'gated' => true,
+	'bosses'         => array('label' => 'Boss Battles', 'url' => 'monstrocity.php#boss',    'category' => 'wildcard',   'trigger' => 'every boss defeat', 'gated' => true,
 	                          'base' => 'placement_10'),
 );
 
