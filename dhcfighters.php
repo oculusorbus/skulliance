@@ -74,7 +74,7 @@ $dhca_owned = $dhcf_avail;
 /* No max-width of its own: the platform's .container already caps at 2000px
    and centres, so clamping again just made this page narrower than the header
    above it. */
-.dhcf-wrap{padding:14px}
+.dhcf-wrap{padding:14px;max-width:100%;overflow-x:clip}
 /* One row across the full width. The intro takes what it needs and the counts
    sit hard right, so the band is used rather than leaving two thirds empty. */
 .dhcf-masthead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
@@ -84,8 +84,22 @@ $dhca_owned = $dhcf_avail;
 .dhcf-head h1{margin:0;font-size:22px;letter-spacing:.02em}
 .dhcf-head .sub{font-size:12px;opacity:.7}
 .dhcf-note{font-size:11.5px;opacity:.65;line-height:1.6;margin:0;max-width:82ch}
-.dhcf-stats{display:flex;flex-wrap:wrap;gap:8px;margin:0;flex:0 0 auto}
-.dhcf-stat{border:1px solid var(--line);border-radius:3px;padding:7px 12px;min-width:96px}
+/* flex:0 1 auto + min-width:0, NOT 0 0 auto. A flex item that cannot shrink
+   keeps its single-line max-content width, so wrap never engages and five
+   tiles push the page sideways on a phone. Allowing it to shrink is what lets
+   its own flex-wrap do its job. */
+.dhcf-stats{display:flex;flex-wrap:wrap;gap:8px;margin:0;flex:0 1 auto;min-width:0}
+/* Sized by content rather than a fixed floor, so tiles pack tighter as the
+   screen narrows instead of forcing a scroll. */
+.dhcf-stat{border:1px solid var(--line);border-radius:3px;padding:7px 12px;
+  min-width:0;flex:0 1 auto}
+.dhcf-stat b,.dhcf-stat span{white-space:nowrap}
+@media (max-width:520px){
+  /* Two clean rows on a phone rather than a ragged three. */
+  .dhcf-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%}
+  .dhcf-stat{padding:6px 8px}
+  .dhcf-stat b{font-size:15px}
+}
 .dhcf-stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
 .dhcf-stat span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
 /* Reference block, below everything you actually operate. It answers "what
