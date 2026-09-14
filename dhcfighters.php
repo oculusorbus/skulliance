@@ -323,7 +323,7 @@ function dhcf_board_html($rows) {
      always describes the Fighter actually on screen. */
   function syncSave() {
     var missing = missingRequired();
-    // Unaffordable traits block a save too, not just missing slots. Randomise
+    // Unaffordable traits block a save too, not just missing slots. Randomize
     // could otherwise leave a build on the canvas that looked saveable and was
     // refused by the server -- the button has to reflect what will happen.
     var issues = (window.DHC_SELECTION_ISSUES && window.DHC_SELECTION_ISSUES()) || [];

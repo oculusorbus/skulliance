@@ -6363,6 +6363,7 @@ function refreshLeaderboardSnapshots($conn) {
 		'skullracer-laps'   => function($c) { checkSkullRacerLeaderboard($c, false, false, 'lap'); },
 		'obscura'           => function($c) { checkObscuraLeaderboard($c); },
 		'guardians'         => function($c) { checkGuardiansLeaderboard($c); },
+		'dhcfighters'       => function($c) { checkDHCFightersLeaderboard($c); },
 		'swaps'             => function($c) { checkSkullSwapsLeaderboard($c); },
 		'monstrocity'       => function($c) { checkMonstrocityLeaderboard($c); },
 		'bosses'            => function($c) { checkBossBattlesLeaderboard($c); },

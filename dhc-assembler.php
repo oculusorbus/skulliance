@@ -420,11 +420,11 @@ a{color:var(--ochre)}
 <div class="shell">
   <div class="stage">
     <div class="frame" id="frame">
-      <div class="empty" id="empty">Pick a background and a torso to begin &mdash;<br>or hit Randomise.</div>
+      <div class="empty" id="empty">Pick a background and a torso to begin &mdash;<br>or hit Randomize.</div>
     </div>
     <div class="bar">
-      <button class="btn primary" id="rand">Randomise</button>
-      <button class="btn" id="randFull">Randomise (everything)</button>
+      <button class="btn primary" id="rand">Randomize</button>
+      <button class="btn" id="randFull">Randomize (everything)</button>
       <button class="btn" id="clear">Clear</button>
       <button class="btn" id="share">Copy link to this build</button>
     </div>
@@ -667,7 +667,7 @@ a{color:var(--ochre)}
   }
 
   /* Last line of defence for selections that did not come from a click --
-     Randomise and a hand-edited or older shared link. The weapon yields,
+     Randomize and a hand-edited or older shared link. The weapon yields,
      because Arms is the slot with more to look at. */
   function dropConflicts() {
     // The weapon yields to the arms; anything that brought it stays. An axe with
@@ -1028,11 +1028,11 @@ a{color:var(--ochre)}
   }
 
   /* ---- shuffle ---- */
-  /* Weighted by drop rate, so Randomise actually demonstrates the rarity curve
+  /* Weighted by drop rate, so Randomize actually demonstrates the rarity curve
      instead of showing a mythic as often as a common. Falls back to a flat pick
      when no rarity data is loaded. */
   /* Only what is actually placeable. In fighters mode a trait whose copies are
-     all committed to saved Fighters must never be drawn -- Randomise used to
+     all committed to saved Fighters must never be drawn -- Randomize used to
      put them on the canvas at load, which looked like a build the player could
      save and the server would then refuse. Copies already placed in this build
      count against the total, so a single copy cannot fill two slots. */
@@ -1089,7 +1089,7 @@ a{color:var(--ochre)}
     return null;
   }
 
-  function randomise(all) {
+  function randomize(all) {
     sel = {};
     hidden = {};   // a fresh shuffle starts fully visible
     SLOTS.forEach(function (s) {
@@ -1170,8 +1170,8 @@ a{color:var(--ochre)}
     return got;
   }
 
-  document.getElementById('rand').addEventListener('click', function () { randomise(false); });
-  document.getElementById('randFull').addEventListener('click', function () { randomise(true); });
+  document.getElementById('rand').addEventListener('click', function () { randomize(false); });
+  document.getElementById('randFull').addEventListener('click', function () { randomize(true); });
   if (ALLOW_REORDER) document.getElementById('resetOrder').addEventListener('click', function () {
     customOrder = null; paint();
   });
@@ -1186,7 +1186,7 @@ a{color:var(--ochre)}
   });
 
   buildTabs();
-  if (!readHash()) randomise(false); else { buildTabs(); paint(); }
+  if (!readHash()) randomize(false); else { buildTabs(); paint(); }
 
   /* The one thing the outside world can ask for: what is currently on the
      canvas. Returned as a copy so a caller cannot mutate the live selection,
