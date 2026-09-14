@@ -184,6 +184,8 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// from when the trigger was a damage milestone -- against the match-3 score
 	// actually passed now, they graded nothing and the old floor of 100 silently
 	// refused low-scoring kills.
+	'bosses'         => array('label' => 'Boss Battles', 'url' => 'monstrocity.php#boss',    'category' => 'wildcard',   'trigger' => 'every boss defeat', 'gated' => true,
+	                          'base' => 'placement_10'),
 	// NOT A GAME, deliberately in this list anyway: it is a drop source, and
 	// everything that reads DHCF_GAMES -- the claim endpoint, the notifier, the
 	// "where traits drop" table -- should see it without special-casing.
@@ -191,8 +193,6 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// game; a wildcard is the right lure because it can be any trait at all.
 	'dailystreak'    => array('label' => 'Daily Reward Streak', 'url' => 'launchpad.php', 'category' => 'wildcard',
 	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3'),
-	'bosses'         => array('label' => 'Boss Battles', 'url' => 'monstrocity.php#boss',    'category' => 'wildcard',   'trigger' => 'every boss defeat', 'gated' => true,
-	                          'base' => 'placement_10'),
 );
 
 function dhcf_game($key) {
