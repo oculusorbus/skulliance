@@ -11,9 +11,13 @@ place on the board.
 The art is by **Maxingo**, from the *Digital Hell Citizens 2: Fighters*
 collection.
 
-> **Assembled Fighters are a platform feature only.** They are not NFTs, they
-> cannot be minted, and they are not part of the official Digital Hell Citizens
-> collection. Earning a trait does not give you any ownership of the artwork.
+> **The trait art is Maxingo's**, shared with us so this could be built.
+>
+> What you assemble here is a platform feature and nothing more: **not an NFT**,
+> it cannot be minted, and earning a trait gives you no ownership of the
+> artwork. The genuine, ownable Fighters are the
+> [Digital Hell Citizens 2 collection on wayup](https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5)
+> — if this gets you excited about the art, that is where to go.
 
 ---
 
