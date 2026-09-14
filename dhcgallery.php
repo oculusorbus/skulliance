@@ -143,15 +143,18 @@ include 'header.php';
 .dhcg-card:focus-visible{outline:2px solid var(--ochre,#00c8a0);outline-offset:1px}
 .dhcg-art{position:relative;aspect-ratio:1;background:var(--panel2,#0d1e2e);overflow:hidden}
 .dhcg-art img.layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.dhcg-owner{display:flex;align-items:center;gap:6px;padding:0 9px 8px;opacity:.72}
-.dhcg-owner img{width:16px;height:16px;border-radius:50%;flex:none}
-.dhcg-owner span{font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dhcg-meta{padding:8px 9px 3px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .dhcg-nm{font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dhcg-pts{font-size:10px;opacity:.65;font-variant-numeric:tabular-nums;white-space:nowrap}
-.dhcg-flag{position:absolute;right:6px;top:6px;display:flex;gap:4px}
+/* Everything that is not the artwork lives in this footer row: the owner on
+   the left, the tier on the right. Nothing is allowed back over the art. */
+.dhcg-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 9px 8px}
+.dhcg-owner{display:flex;align-items:center;gap:6px;min-width:0;opacity:.72}
+.dhcg-owner img{width:16px;height:16px;border-radius:50%;flex:none}
+.dhcg-owner span{font-size:9.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dhcg-flag{display:flex;gap:4px;flex:none}
 .dhcg-flag b{font-size:8px;letter-spacing:.1em;padding:2px 6px;border-radius:999px;
-  background:rgba(4,12,22,.82);border:1px solid currentColor}
+  border:1px solid currentColor}
 .t-common{color:#7a9eb0}.t-uncommon{color:#00c8a0}.t-epic{color:#8b7bd8}
 .t-legendary{color:#f5a623}.t-mythic{color:#ff4f8b}
 .dhcg-empty{border:1px dashed var(--line,#1b3346);border-radius:3px;padding:26px;font-size:13px;opacity:.7}
@@ -281,21 +284,23 @@ include 'header.php';
                <?php if ($l['n']): ?>style="transform:translateY(<?php echo $l['n']; ?>%)"<?php endif; ?>
                src="<?php echo htmlspecialchars($dhc_base . '/250/' . $l['c'] . '/' . $l['s'] . '.png'); ?>">
         <?php endforeach; ?>
-        <span class="dhcg-flag">
-          <b class="t-<?php echo $f['best']; ?>"><?php echo strtoupper($f['best']); ?></b>
-          <?php if ($f['first']): ?><b class="t-legendary">FIRST</b><?php endif; ?>
-        </span>
       </div>
       <div class="dhcg-meta">
         <span class="dhcg-nm"><?php echo htmlspecialchars($f['display']); ?></span>
         <span class="dhcg-pts"><?php echo number_format((int)$f['rarity_score']); ?></span>
       </div>
       <?php /* Below the art, never over it -- the whole point of the grid is
-               seeing Maxingo's work, and a badge sat on the character's feet
-               was covering the thing it was captioning. */ ?>
-      <div class="dhcg-owner">
-        <img loading="lazy" alt="" src="<?php echo htmlspecialchars($av); ?>">
-        <span><?php echo htmlspecialchars($f['username']); ?></span>
+               seeing Maxingo's work, and a badge sat on the character was
+               covering the thing it was captioning. */ ?>
+      <div class="dhcg-foot">
+        <span class="dhcg-owner">
+          <img loading="lazy" alt="" src="<?php echo htmlspecialchars($av); ?>">
+          <span><?php echo htmlspecialchars($f['username']); ?></span>
+        </span>
+        <span class="dhcg-flag">
+          <b class="t-<?php echo $f['best']; ?>"><?php echo strtoupper($f['best']); ?></b>
+          <?php if ($f['first']): ?><b class="t-legendary">FIRST</b><?php endif; ?>
+        </span>
       </div>
     </button>
     <?php endforeach; ?>

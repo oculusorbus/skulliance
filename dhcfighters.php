@@ -33,6 +33,20 @@ $dhcf_best = 0;
 foreach ($dhcf_roster as $f) if ((int)$f['rarity_score'] > $dhcf_best) $dhcf_best = (int)$f['rarity_score'];
 
 /*
+ * The collection, platform-wide. dhcgallery.php is where assembled Fighters
+ * actually get seen, which is most of the reason to build a distinctive one --
+ * but nothing on this page pointed at it. A link carrying a real count is a
+ * reason to follow it; "Collection" on its own is not.
+ */
+$dhcf_coll_n = 0; $dhcf_coll_u = 0;
+$dhcf_cres = $conn->query(
+	"SELECT COUNT(*) n, COUNT(DISTINCT user_id) u FROM dhc_fighters WHERE disassembled_at IS NULL");
+if ($dhcf_cres && ($dhcf_crow = $dhcf_cres->fetch_assoc())) {
+	$dhcf_coll_n = (int)$dhcf_crow['n'];
+	$dhcf_coll_u = (int)$dhcf_crow['u'];
+}
+
+/*
  * PER-CATEGORY PROGRESS, for the games column.
  *
  * "held" counts DISTINCT traits, not copies: the column answers "how much of
@@ -105,6 +119,13 @@ $dhca_owned = $dhcf_avail;
   .dhcf-stat{padding:6px 8px}
   .dhcf-stat b{font-size:15px}
 }
+/* The only tile in the row that is a destination rather than a statistic, so
+   it is the only one wearing the accent -- that is what separates a link from
+   the counts sitting beside it. */
+a.dhcf-stat{text-decoration:none;color:inherit;border-color:var(--ochre)}
+a.dhcf-stat:hover{background:rgba(0,200,160,.09)}
+a.dhcf-stat b{color:var(--ochre)}
+a.dhcf-stat span{opacity:.85}
 .dhcf-stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
 .dhcf-stat span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
 /* Reference block, below everything you actually operate. It answers "what
@@ -136,7 +157,10 @@ $dhca_owned = $dhcf_avail;
 .dhcf-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:18px}
 .dhcf-panel{border:1px solid var(--line);border-radius:3px;overflow:hidden}
 .dhcf-panel h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-  opacity:.65;border-bottom:1px solid var(--line)}
+  opacity:.65;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;
+  justify-content:space-between;gap:2px 10px}
+.dhcf-panel h2 a{color:var(--ochre);text-decoration:none;opacity:.9;letter-spacing:.08em;white-space:nowrap}
+.dhcf-panel h2 a:hover{text-decoration:underline}
 .dhcf-panel .body{padding:10px 12px}
 .dhcf-roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
 .dhcf-card{border:1px solid var(--line);border-radius:3px;overflow:hidden;position:relative}
@@ -183,8 +207,10 @@ $dhca_owned = $dhcf_avail;
                unambiguous, and to point somewhere. */ ?>
       <p class="dhcf-note">
         Earn traits by playing across the platform, then assemble and save Fighters &mdash; your
-        best fighter's rarity score sets your place on the leaderboard. Rarity comes from the real
-        collection: how many of the 226 minted Fighters actually wear that trait. Maxingo shared
+        best fighter's rarity score sets your place on the leaderboard, and everything you save
+        joins the <a href="dhcgallery.php">Fighter Collection</a> for every staker to browse.
+        Rarity comes from the original NFT collection: how many of the 226 minted Fighters
+        actually wear that trait. Maxingo shared
         the art so this could be built, and what you assemble here is <b>not an NFT</b> &mdash; it
         cannot be minted, and earning a trait gives you no ownership of the artwork. The genuine,
         ownable Fighters are from the official NFT collection.
@@ -197,6 +223,10 @@ $dhca_owned = $dhcf_avail;
       <div class="dhcf-stat"><b><?php echo count($dhcf_roster); ?></b><span>Fighters</span></div>
       <div class="dhcf-stat"><b><?php echo number_format($dhcf_best); ?></b><span>Best score</span></div>
       <div class="dhcf-stat"><b><?php echo htmlspecialchars($dhcf_next); ?></b><span>Next number</span></div>
+      <a class="dhcf-stat" href="dhcgallery.php"
+         title="Every Fighter assembled on the platform &mdash; <?php
+           echo number_format($dhcf_coll_n) . ' built by ' . number_format($dhcf_coll_u)
+              . ' staker' . ($dhcf_coll_u === 1 ? '' : 's'); ?>"><b><?php echo number_format($dhcf_coll_n); ?></b><span>Collection &rsaquo;</span></a>
     </div>
   </div>
 
@@ -212,7 +242,7 @@ $dhca_owned = $dhcf_avail;
   <div class="dhcf-panels">
 
     <div class="dhcf-panel">
-      <h2>Your Fighters</h2>
+      <h2>Your Fighters<a href="dhcgallery.php?mine=1">In the collection &rsaquo;</a></h2>
       <div class="body">
         <?php if (!$dhcf_roster): ?>
           <p style="font-size:12px;opacity:.6;margin:2px 0">Nothing saved yet.</p>
