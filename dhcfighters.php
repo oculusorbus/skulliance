@@ -71,12 +71,20 @@ $dhca_owned = $dhcf_avail;
 
 <style>
 /* Page chrome only -- the assembler brings its own styles. */
-.dhcf-wrap{max-width:1500px;margin:0 auto;padding:14px}
+/* No max-width of its own: the platform's .container already caps at 2000px
+   and centres, so clamping again just made this page narrower than the header
+   above it. */
+.dhcf-wrap{padding:14px}
+/* One row across the full width. The intro takes what it needs and the counts
+   sit hard right, so the band is used rather than leaving two thirds empty. */
+.dhcf-masthead{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;
+  gap:18px 32px;margin:0 0 16px}
+.dhcf-intro{flex:1 1 420px;min-width:0}
 .dhcf-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin:0 0 4px}
 .dhcf-head h1{margin:0;font-size:22px;letter-spacing:.02em}
 .dhcf-head .sub{font-size:12px;opacity:.7}
-.dhcf-note{font-size:11.5px;opacity:.65;line-height:1.6;margin:0 0 14px;max-width:70ch}
-.dhcf-stats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.dhcf-note{font-size:11.5px;opacity:.65;line-height:1.6;margin:0;max-width:82ch}
+.dhcf-stats{display:flex;flex-wrap:wrap;gap:8px;margin:0;flex:0 0 auto}
 .dhcf-stat{border:1px solid var(--line);border-radius:3px;padding:7px 12px;min-width:96px}
 .dhcf-stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
 .dhcf-stat span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
@@ -133,25 +141,27 @@ $dhca_owned = $dhcf_avail;
 
 <div class="dhcf-wrap">
 
-  <div class="dhcf-head">
-    <h1>DHC Fighters</h1>
-    <span class="sub">Digital Hell Citizens 2 &middot; art by Maxingo</span>
-  </div>
-  <p class="dhcf-note">
-        Earn traits by playing across the platform, then assemble and save Fighters. Your best
-        Fighter's rarity score sets your place on the board.
-        <br>
-        Assembled Fighters are a platform feature only &mdash; they are not NFTs, cannot be minted,
-        and are not part of the official Digital Hell Citizens collection.
-      </p>
-
-      <div class="dhcf-stats">
-        <div class="dhcf-stat"><b><?php echo (int)$dhcf_owned_n; ?></b><span>Traits held</span></div>
-        <div class="dhcf-stat"><b><?php echo (int)$dhcf_free_n; ?></b><span>Unused</span></div>
-        <div class="dhcf-stat"><b><?php echo count($dhcf_roster); ?></b><span>Fighters</span></div>
-        <div class="dhcf-stat"><b><?php echo number_format($dhcf_best); ?></b><span>Best score</span></div>
-        <div class="dhcf-stat"><b><?php echo htmlspecialchars($dhcf_next); ?></b><span>Next number</span></div>
+  <div class="dhcf-masthead">
+    <div class="dhcf-intro">
+      <div class="dhcf-head">
+        <h1>DHC Fighters</h1>
+        <span class="sub">Digital Hell Citizens 2 &middot; art by Maxingo</span>
       </div>
+      <p class="dhcf-note">
+        Earn traits by playing across the platform, then assemble and save Fighters. Your best
+        Fighter's rarity score sets your place on the board. Assembled Fighters are a platform
+        feature only &mdash; not NFTs, cannot be minted, and not part of the official collection.
+      </p>
+    </div>
+
+    <div class="dhcf-stats">
+      <div class="dhcf-stat"><b><?php echo (int)$dhcf_owned_n; ?></b><span>Traits held</span></div>
+      <div class="dhcf-stat"><b><?php echo (int)$dhcf_free_n; ?></b><span>Unused</span></div>
+      <div class="dhcf-stat"><b><?php echo count($dhcf_roster); ?></b><span>Fighters</span></div>
+      <div class="dhcf-stat"><b><?php echo number_format($dhcf_best); ?></b><span>Best score</span></div>
+      <div class="dhcf-stat"><b><?php echo htmlspecialchars($dhcf_next); ?></b><span>Next number</span></div>
+    </div>
+  </div>
 
   <?php include __DIR__ . '/dhc-assembler.php'; ?>
 

@@ -255,23 +255,26 @@ a{color:var(--ochre)}
   echo $dhca_mode === 'sandbox' ? 'height:calc(100% - 52px)' : 'height:auto;max-height:none'; ?>}
 @media (max-width:900px){.shell{grid-template-columns:1fr;height:auto}}
 <?php if ($dhca_mode !== 'sandbox'): ?>
-/* Embedded, the shell gets a DEFINITE height and both columns fill it.
-   Content-sizing it cannot work: let the stage decide and the picker ends
-   partway down with dead space beside the draw order; let the picker decide
-   and 42 background thumbnails stretch the stage to two and a half screens.
-   A fixed block bounded by the viewport gives neither column slack, and each
-   scrolls its own overflow. */
-.shell{border:1px solid var(--line);border-radius:3px;overflow:hidden;
-  align-items:stretch;height:min(1040px,86vh)}
-.stage{overflow:auto;min-height:0}
-.picker{height:100%;min-height:0;display:flex;flex-direction:column}
+/* Embedded, THE STAGE SETS THE HEIGHT and the picker is taken out of row
+   sizing altogether by being absolutely positioned.
+ *
+ * Every in-flow arrangement fails one way or the other: size the row to
+ * content and 42 thumbnails stretch it to two and a half screens; give it a
+ * fixed height and the canvas is trapped in a scroller. Out of flow, the
+ * picker contributes nothing to the row, so the shell is exactly as tall as
+ * the canvas plus its buttons and draw order -- nothing to scroll past, no
+ * dead space -- and the picker fills that height with its grid scrolling
+ * inside.
+ */
+.shell{border:1px solid var(--line);border-radius:3px;position:relative;align-items:stretch}
+.stage{overflow:visible;min-height:0}
+.picker{position:absolute;top:0;right:0;bottom:0;width:380px;
+  display:flex;flex-direction:column;min-height:0}
 .grid{flex:1;min-height:0;overflow:auto}
 @media (max-width:900px){
-  /* Single column: nothing to match, so let it flow and cap the picker rather
-     than trapping the canvas in a short scroller. */
-  .shell{height:auto}
-  .stage{overflow:visible}
-  .picker{height:auto;max-height:min(78vh,720px)}
+  /* Single column: back into flow, and cap the picker rather than trapping
+     the canvas in a short scroller on a phone. */
+  .picker{position:static;width:auto;max-height:min(78vh,720px)}
 }
 <?php endif; ?>
 
