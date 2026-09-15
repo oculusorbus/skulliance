@@ -558,8 +558,14 @@ function dhcf_board_html($rows) {
   document.querySelectorAll('.dhcf-scrap').forEach(function (b) {
     b.addEventListener('click', function () {
       var card = b.closest('.dhcf-card');
+      /* Names Edit explicitly. Until it existed, disassembly was the only way
+         to change a Fighter at all, so reaching for it to tweak one is the
+         habit players arrive with -- and this is the point where it costs them
+         the number permanently. */
       if (!confirm('Disassemble ' + card.querySelector('.nm').textContent +
-                   '? Its traits return to your unused pile. The number is retired.')) return;
+                   '?\n\nThis removes the character for good and retires its number. ' +
+                   'Its traits return to your unused pile.\n\n' +
+                   'To change it instead, use Edit — that keeps the number and name.')) return;
       fetch('ajax/dhc-delete-fighter.php', {
         method: 'POST', credentials: 'same-origin',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
