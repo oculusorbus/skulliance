@@ -37,8 +37,19 @@ require_once __DIR__ . '/dhcfighters-lib.php';
 
 $confirm = in_array('--confirm', $argv, true);
 
-$res = $conn->query("SELECT id, user_id, traits, rarity_score, traits_hash FROM dhc_fighters
-                     WHERE disassembled_at IS NULL ORDER BY id");
+/*
+ * Every row, matching dhcf_rescore_all() exactly -- it does not filter either,
+ * and a preview that counts different rows than the thing it is previewing is
+ * worse than no preview. The first run reported "2 Fighters" then "Rescored 4".
+ *
+ * Disassembled rows are rescored but inert: they are hidden from the gallery
+ * and the boards, and dhcf_is_first_build() filters them out, so neither their
+ * score nor their hash is ever read. They are counted separately below rather
+ * than silently inflating the number.
+ */
+$res = $conn->query("SELECT id, user_id, traits, rarity_score, traits_hash,
+                            disassembled_at
+                     FROM dhc_fighters ORDER BY id");
 if (!$res) {
 	fwrite(STDERR, "query failed: " . $conn->error . "\n");
 	exit(1);
@@ -50,8 +61,9 @@ if (!$rows) { echo "No saved Fighters. Nothing to do.\n"; exit(0); }
 
 // Work out the deltas BEFORE writing anything, so a dry run and the real run
 // report the same thing and the operator sees the damage first.
-$changed = array(); $hashfix = 0;
+$changed = array(); $hashfix = 0; $gone = 0;
 foreach ($rows as $r) {
+	if ($r['disassembled_at'] !== null) $gone++;
 	$t   = json_decode($r['traits'], true) ?: array();
 	$sc  = dhcf_score_with_bonus($conn, (int)$r['user_id'], $t, (int)$r['id']);
 	$new = (int)$sc['total'];
@@ -60,8 +72,8 @@ foreach ($rows as $r) {
 	if (dhcf_traits_hash($t) !== $r['traits_hash']) $hashfix++;
 }
 
-printf("%d Fighters · %d scores change · %d hashes need rewriting\n\n",
-	count($rows), count($changed), $hashfix);
+printf("%d rows (%d live, %d disassembled) · %d scores change · %d hashes need rewriting\n\n",
+	count($rows), count($rows) - $gone, $gone, count($changed), $hashfix);
 
 if ($changed) {
 	usort($changed, function ($a, $b) { return abs($b[3]-$b[2]) <=> abs($a[3]-$a[2]); });
