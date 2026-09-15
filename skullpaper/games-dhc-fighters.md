@@ -102,13 +102,23 @@ it shows, it is held and revealed on the next page you open.
 
 ---
 
-## Arms are paused
+## Arms and the torso underneath
 
-Six Arms traits are temporarily out of the drop pool while the armless torso
-art is made: every torso is drawn with arms, and these six do not cover the
-ones underneath. Anyone who already holds one keeps it and can still use it —
-they are simply not being handed out for now, and will return once the art
-lands.
+Every torso is drawn with its own arms, so an Arms trait has to deal with what
+is already there. Each of the 25 torsos now has a hand-made armless version,
+and which one gets used depends on the trait:
+
+- Most Arms **replace both limbs**, so the armless torso is swapped in and the
+  trait becomes the character's arms.
+- **Head Chopper** replaces only one. It gets the armless torso plus the
+  original's far arm put back, so the other side is not left bare.
+- **Infested Robo Limb** covers what it sits on cleanly, so the torso keeps
+  both of its own arms and the trait simply overlays one.
+- **Perforator Arm Accent** is drawn *behind* the body — an accent flanking the
+  torso rather than a replacement, which is where it reads best.
+
+All Arms traits are in the drop pool. The six that were paused while the
+armless art was made returned on 15 September 2026.
 
 ---
 

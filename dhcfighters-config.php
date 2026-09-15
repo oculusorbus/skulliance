@@ -37,9 +37,14 @@ define('DHCF_SERIAL_PAD',    3);            // DHC2F421, DHC2F1000 when it gets 
  * trait would be far worse than an imperfect render. They simply stop being
  * handed out.
  *
- * Empty this list once torso-noarms/ is populated. Nothing else needs
- * changing -- the assembler already swaps in an armless torso per torso, the
- * moment one exists for it.
+ * EMPTIED 2026-09-15. All 25 armless torsos are hand-made and live, and each
+ * of the six was checked against them before being let go: the four that
+ * replace both limbs cover 78-100% of what is beneath, Head Chopper replaces
+ * one and routes through the hybrid torso, and the Perforator covers neither
+ * because it is drawn behind as an accent. See dhcf_armless_mode().
+ *
+ * Kept as the mechanism, not deleted. Add a slug here to pull a trait from the
+ * drop pool without taking it away from anyone who already holds one.
  */
 /**
  * Maxingo's project id. His own missions pay his own trait art, which is the
@@ -48,14 +53,7 @@ define('DHCF_SERIAL_PAD',    3);            // DHC2F421, DHC2F1000 when it gets 
  */
 define('DHCF_MAXINGO_PROJECT', 9);
 
-define('DHCF_SUSPENDED', array(
-	'deteriorated-mk100-blaster-arms',
-	'dh-pilot',
-	'head-chopper',
-	'influenza-blaster-3k',
-	'mk100-blaster-arms',
-	'perforator-arm-replacement',
-));
+define('DHCF_SUSPENDED', array());
 
 /**
  * ORIGINALITY BONUS -- what the first staker to build a configuration earns.
