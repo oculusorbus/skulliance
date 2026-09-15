@@ -143,7 +143,12 @@ define('DHCF_COMPANION_UNDER', array('dh-vision-shoulder-cam', 'code-sea-predato
 /** Effects that read as environment: dropped to just behind the torso. */
 define('DHCF_EFFECTS_BEHIND_TORSO', array('xlon-s-black-fire-attack'));
 
-/** TEMPORARY, retires per torso as armless variants land. See the assembler. */
+/**
+ * Arms drawn BEHIND the torso: accents flanking the body, not replacements for
+ * its arms. Permanent -- the Perforator's cutoffs are not clean enough to sit
+ * over an armless torso, and it reads better as an accent anyway. Members are
+ * exempt from the armless-torso swap; see dhc-assembler.php.
+ */
 define('DHCF_ARMS_BEHIND_TORSO', array('perforator-arm-replacement'));
 
 /** Vertical nudge in pixels of the 1000px master, positive = down. */

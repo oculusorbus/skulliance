@@ -164,8 +164,12 @@ function dhcf_render_fighter($traits, $serial) {
 			$slug = $traits[$slot];
 
 			// Armless torso variant, exactly as the assembler chooses it
+			// Arms listed in DHCF_ARMS_BEHIND_TORSO are accents drawn behind
+			// the body, so the torso keeps its own arms -- same rule the
+			// assembler applies, and the render has to agree with the canvas.
 			$catDir = $cat;
 			if ($slot === 'torso' && !empty($traits['arms'])
+			    && !in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)
 			    && is_file(__DIR__ . '/' . $base . '/1000/torso-noarms/' . $slug . '.png')) {
 				$catDir = 'torso-noarms';
 			}

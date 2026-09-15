@@ -576,18 +576,18 @@ a{color:var(--ochre)}
   }
 
   /*
-   * TEMPORARY -- remove once the armless torsos are in.
+   * PERMANENT, and no longer a workaround.
    *
-   * Perforator Arm Replacement reads better drawn BEHIND the torso than over
-   * it, because the torso's own arms are still there underneath and drawing
-   * the replacement on top leaves two sets of arms. Behind the torso is not
-   * correct either, it just hides the seam better while we wait.
+   * This started as a stopgap for the missing armless torsos. With those now
+   * hand-made, the Perforator was tried over an armless body and the arm
+   * cutoffs are not clean enough to carry it -- so it stays BEHIND the torso,
+   * where it reads as an accent flanking the body rather than a replacement
+   * for its arms. That is a design decision about how the piece looks, not a
+   * gap waiting to be filled, which is why it no longer retires itself.
    *
-   * So it retires itself. The moment a torso has a hand-made armless variant,
-   * that variant is the real fix and this exception stops applying FOR THAT
-   * TORSO -- the arms go back to drawing in their proper place over an armless
-   * body. Nothing needs deleting as the armless set fills in; drop the last
-   * one in and the workaround is simply never reached again.
+   * It follows that a behind-torso arm must NOT trigger the armless swap: the
+   * torso needs to keep its own arms for the accent to sit behind. See where
+   * NOARMS is applied.
    */
   var ARMS_BEHIND_TORSO = <?php echo json_encode(DHCF_ARMS_BEHIND_TORSO); ?>;
 
@@ -610,10 +610,14 @@ a{color:var(--ochre)}
     return !!sel[key] && EFFECTS_BEHIND_TORSO.indexOf(sel[key]) !== -1;
   }
 
+  // No armless-variant escape hatch any more. It used to retire itself the
+  // moment a torso had an armless variant -- but every torso has one now, so
+  // that clause would make this permanently false and draw the Perforator in
+  // front, which is the look being avoided. It also disagreed with PHP:
+  // dhcf_layer_order() has no such condition, so the canvas and the Discord
+  // render would have drawn the same Fighter two different ways.
   function armsBehindTorso() {
-    if (!sel.arms || ARMS_BEHIND_TORSO.indexOf(sel.arms) === -1) return false;
-    if (sel.torso && NOARMS.indexOf(sel.torso) !== -1) return false;   // real fix available
-    return true;
+    return !!sel.arms && ARMS_BEHIND_TORSO.indexOf(sel.arms) !== -1;
   }
 
   function traitBySlug(key, slug) {
@@ -761,7 +765,12 @@ a{color:var(--ochre)}
       var dir = s.dir;
       // Hidden arms must bring the torso's own arms back, or hiding the arms
       // layer would leave an armless torso and nothing to explain it.
-      if (s.key === 'torso' && sel.arms && !hidden.arms && NOARMS.indexOf(sel[s.key]) !== -1)
+      // armsBehindTorso() excluded: those arms are an accent drawn behind the
+      // body, so the torso must keep its own arms. Swapping in the armless
+      // variant would strip them and leave the accent reading as the arms --
+      // exactly the full-replacement look it is drawn behind to avoid.
+      if (s.key === 'torso' && sel.arms && !hidden.arms && !armsBehindTorso()
+          && NOARMS.indexOf(sel[s.key]) !== -1)
         dir = 'torso-noarms';
       var want = url(dir, sel[s.key], 1000);
       if (el.getAttribute('src') !== want) el.setAttribute('src', want);
@@ -801,8 +810,8 @@ a{color:var(--ochre)}
       if ((s.key === 'effects1' || s.key === 'effects2') && chosen && effectBehindTorso(s.key))
         tag = ' <em style="color:var(--teal);font-style:normal">behind torso</em>';
       if (s.key === 'arms' && chosen && armsBehindTorso())
-        tag = ' <em style="color:var(--ochre);font-style:normal">behind torso &mdash; temporary</em>';
-      if (s.key === 'torso' && chosen && sel.arms)
+        tag = ' <em style="color:var(--teal);font-style:normal">behind torso &mdash; accent</em>';
+      if (s.key === 'torso' && chosen && sel.arms && !armsBehindTorso())
         tag = NOARMS.indexOf(chosen) !== -1
             ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
             : ' <em style="color:var(--ochre);font-style:normal">arms underneath</em>';
