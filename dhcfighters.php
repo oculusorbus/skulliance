@@ -18,7 +18,35 @@ require_once __DIR__ . '/dhcfighters-lib.php';
 
 $dhcf_user = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
 
-$dhcf_avail    = $dhcf_user ? dhcf_available($conn, $dhcf_user) : array();
+/*
+ * EDIT MODE. ?edit=<id> re-opens a saved Fighter for changes instead of
+ * building a new one, so tweaking a trait no longer costs the Fighter its
+ * number and name -- disassembly is for dumping a character, not editing one.
+ *
+ * It is a page load rather than a client-side toggle because the trait picker
+ * is filtered server-side: the Fighter's own traits are committed to it, and
+ * only dhcf_available()'s $ignore_id makes them selectable again. Doing this
+ * in JS would mean a second, parallel idea of what is available -- the exact
+ * split that let a saved Fighter's traits look placeable once already.
+ */
+$dhcf_edit = isset($_GET['edit']) ? (int)$_GET['edit'] : 0;
+$dhcf_editing = null;
+if ($dhcf_edit > 0 && $dhcf_user) {
+	$r = $conn->query(sprintf(
+		"SELECT id, serial, name, traits, rarity_score FROM dhc_fighters
+		 WHERE id = %d AND user_id = %d AND disassembled_at IS NULL LIMIT 1",
+		$dhcf_edit, $dhcf_user));
+	if ($r && $r->num_rows) {
+		$dhcf_editing = $r->fetch_assoc();
+		$dhcf_editing['traits']  = json_decode($dhcf_editing['traits'], true) ?: array();
+		$dhcf_editing['display'] = dhcf_display_name($dhcf_editing);
+	} else {
+		$dhcf_edit = 0;   // gone, disassembled, or not theirs -- fall back to building
+	}
+}
+
+// With a Fighter open for editing, its own traits count as available to it.
+$dhcf_avail    = $dhcf_user ? dhcf_available($conn, $dhcf_user, $dhcf_edit) : array();
 $dhcf_roster   = $dhcf_user ? dhcf_fighters($conn, $dhcf_user)  : array();
 $dhcf_next     = dhcf_default_name(dhcf_next_serial($conn));
 $dhcf_lb_ath   = dhcf_leaderboard($conn, 'ath', 10);
@@ -82,8 +110,9 @@ include 'header.php';
 
 // Hand the assembler the player's holdings. Everything the picker offers is
 // something they actually hold a free copy of.
-$dhca_mode  = 'fighters';
-$dhca_owned = $dhcf_avail;
+$dhca_mode    = 'fighters';
+$dhca_owned   = $dhcf_avail;
+$dhca_preload = $dhcf_editing ? $dhcf_editing['traits'] : null;
 ?>
 
 <style>
@@ -126,6 +155,14 @@ a.dhcf-stat{text-decoration:none;color:inherit;border-color:var(--ochre)}
 a.dhcf-stat:hover{background:rgba(0,200,160,.09)}
 a.dhcf-stat b{color:var(--ochre)}
 a.dhcf-stat span{opacity:.85}
+/* Edit mode: the bar is doing something different from a normal save, and it
+   should look like it before the player clicks. */
+.dhcf-save.editing{border-color:var(--ochre)}
+.dhcf-editing{font-size:12px;opacity:.8}
+.dhcf-editing b{opacity:1}
+.dhcf-cancel{font-size:11px;color:var(--dim);text-decoration:none;border-bottom:1px solid transparent}
+.dhcf-cancel:hover{color:var(--ochre);border-bottom-color:currentColor}
+.dhcf-card .acts .dhcf-edit{text-decoration:none;display:inline-flex;align-items:center}
 .dhcf-stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
 .dhcf-stat span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
 /* Reference block, below everything you actually operate. It answers "what
@@ -232,10 +269,20 @@ a.dhcf-stat span{opacity:.85}
 
   <?php include __DIR__ . '/dhc-assembler.php'; ?>
 
-  <div class="dhcf-save">
-    <input type="text" id="dhcfName" maxlength="48"
-           placeholder="Name this Fighter (optional &mdash; defaults to <?php echo htmlspecialchars($dhcf_next); ?>)">
-    <button type="button" id="dhcfSave">Save Fighter</button>
+  <div class="dhcf-save<?php echo $dhcf_editing ? ' editing' : ''; ?>">
+    <?php if ($dhcf_editing): ?>
+      <?php /* No name field: an edit keeps the Fighter's name, which is most of
+               the reason to edit rather than rebuild. Rename is its own button
+               on the card. */ ?>
+      <span class="dhcf-editing">Editing <b><?php echo htmlspecialchars($dhcf_editing['display']); ?></b>
+        &middot; keeps its number and name</span>
+      <button type="button" id="dhcfSave" data-edit="<?php echo (int)$dhcf_editing['id']; ?>">Update Fighter</button>
+      <a class="dhcf-cancel" href="dhcfighters.php">Cancel</a>
+    <?php else: ?>
+      <input type="text" id="dhcfName" maxlength="48"
+             placeholder="Name this Fighter (optional &mdash; defaults to <?php echo htmlspecialchars($dhcf_next); ?>)">
+      <button type="button" id="dhcfSave">Save Fighter</button>
+    <?php endif; ?>
     <span class="dhcf-say" id="dhcfSay"></span>
   </div>
 
@@ -281,6 +328,7 @@ a.dhcf-stat span{opacity:.85}
                 ?></span>
               </div>
               <div class="acts">
+                <a class="dhcf-edit" href="dhcfighters.php?edit=<?php echo (int)$f['id']; ?>">Edit</a>
                 <button type="button" class="dhcf-rename">Rename</button>
                 <button type="button" class="dhcf-scrap">Disassemble</button>
               </div>
@@ -430,10 +478,20 @@ function dhcf_board_html($rows) {
     if (missing.length) { msg('A Fighter needs a ' + missing.join(', ') + '.', false); return; }
     var issues = (window.DHC_SELECTION_ISSUES && window.DHC_SELECTION_ISSUES()) || [];
     if (issues.length) { msg(issues[0].why, false); return; }
-    var btn = saveBtn; btn.disabled = true; msg('Saving...', true);
-    var body = 'name=' + encodeURIComponent(document.getElementById('dhcfName').value) +
-               '&traits=' + encodeURIComponent(JSON.stringify(sel));
-    fetch('ajax/dhc-save-fighter.php', {
+    var btn = saveBtn; btn.disabled = true;
+
+    /* Editing an existing Fighter or creating a new one -- same canvas, same
+       validation, different endpoint. The id on the button is the whole
+       difference, and it is only there in edit mode. */
+    var editId = saveBtn.getAttribute('data-edit');
+    var url    = editId ? 'ajax/dhc-update-fighter.php' : 'ajax/dhc-save-fighter.php';
+    var nameEl = document.getElementById('dhcfName');
+    var body   = 'traits=' + encodeURIComponent(JSON.stringify(sel)) +
+                 (editId ? '&id=' + encodeURIComponent(editId)
+                         : '&name=' + encodeURIComponent(nameEl ? nameEl.value : ''));
+    msg(editId ? 'Updating...' : 'Saving...', true);
+
+    fetch(url, {
       method: 'POST', credentials: 'same-origin',
       headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: body
     }).then(function (r) { return r.json(); })
@@ -442,19 +500,31 @@ function dhcf_board_html($rows) {
         if (d.ok) {
           // The originality bonus is worth naming, or it just looks like the
           // score came out higher than the traits explain.
-          var line = 'Saved as ' + d.display + ' — ' + d.score + ' pts';
-          if (d.bonus > 0) line += ' (first to build this: +' + d.bonus + ')';
+          var line;
+          if (editId) {
+            line = d.display + ' updated — ' + d.score + ' pts';
+            if (d.first) line += ' (first to build this)';
+          } else {
+            line = 'Saved as ' + d.display + ' — ' + d.score + ' pts';
+            if (d.bonus > 0) line += ' (first to build this: +' + d.bonus + ')';
+          }
           msg(line, true);
-          setTimeout(function(){location.reload();}, 900);
+          // Back to the build page after an edit, so the roster shows the
+          // result rather than leaving ?edit= in the URL.
+          setTimeout(function () {
+            // Leaving ?edit= in the URL would re-open the editor on reload.
+            if (editId) location.href = 'dhcfighters.php';
+            else location.reload();
+          }, 900);
         }
         else { msg(d.message || 'Could not save.', false); syncSave(); }
       })
       .catch(function () { btn.disabled = false; msg('Network error.', false); });
   });
 
-  /* Click a saved Fighter to put it on the canvas. Its own traits are
-     committed to it, so the picker greys them and Save refuses -- that is the
-     point: this is viewing, not rebuilding. */
+  /* Click a saved Fighter to put it on the canvas. This is still VIEWING --
+     its traits are committed to it, so the picker greys them out. Changing it
+     is the Edit button, which reloads with those traits freed. */
   document.querySelectorAll('.dhcf-card .art').forEach(function (art) {
     art.addEventListener('click', function () {
       var card = art.closest('.dhcf-card');
@@ -466,7 +536,7 @@ function dhcf_board_html($rows) {
       var frame = document.getElementById('frame');
       if (frame) frame.scrollIntoView({ behavior: 'smooth', block: 'center' });
       msg('Viewing ' + card.querySelector('.nm').textContent
-          + ' — disassemble it to free these traits.', true);
+          + ' — use Edit to change it, or Disassemble to free its traits.', true);
     });
   });
 

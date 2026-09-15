@@ -111,6 +111,13 @@ function dhc_title($slug) {
 // with the code and needs no upload. Absent, the page simply shows no tiers.
 $dhc_rarity = is_file(__DIR__ . '/dhcrarity.php') ? (require __DIR__ . '/dhcrarity.php') : array();
 
+/*
+ * $dhca_preload -- put a specific Fighter on the canvas instead of a random
+ * one. Set by dhcfighters.php when editing an existing Fighter, where opening
+ * on a random build would throw away the thing being edited.
+ */
+$dhca_preload = isset($dhca_preload) && is_array($dhca_preload) ? $dhca_preload : null;
+
 $dhc_traits = array();
 foreach ($dhc_slots as $key => $s) {
 	$dir = $s[1];
@@ -1255,7 +1262,16 @@ a{color:var(--ochre)}
   });
 
   buildTabs();
-  if (!readHash()) randomize(false); else { buildTabs(); paint(); }
+  var PRELOAD = <?php echo json_encode($dhca_preload); ?>;
+  if (PRELOAD) {
+    // Editing: the saved Fighter IS the starting point. A share link in the
+    // URL does not override it -- you asked for this Fighter by id.
+    loadTraits(PRELOAD);
+  } else if (!readHash()) {
+    randomize(false);
+  } else {
+    buildTabs(); paint();
+  }
 
   /* The one thing the outside world can ask for: what is currently on the
      canvas. Returned as a copy so a caller cannot mutate the live selection,
@@ -1290,7 +1306,10 @@ a{color:var(--ochre)}
    * player no longer holds loads the parts that still exist instead of
    * breaking.
    */
-  window.DHC_LOAD = function (traits) {
+  /* A function DECLARATION, not an expression assigned to window: the init
+     below runs before that assignment would have happened, and preloading an
+     edit needs exactly this. */
+  function loadTraits(traits) {
     if (!traits) return;
     sel = {};
     hidden = {};
@@ -1300,7 +1319,9 @@ a{color:var(--ochre)}
       if (slug && traitBySlug(s.key, slug)) sel[s.key] = slug;
     });
     buildTabs(); paint(); buildGrid();
-  };
+  }
+
+  window.DHC_LOAD = loadTraits;
 
   window.DHC_SELECTION = function () {
     var out = {};

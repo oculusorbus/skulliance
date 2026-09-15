@@ -177,12 +177,20 @@ This is why duplicates are worth having. A second copy of a common trait is what
 lets you keep the Fighter you already built and still build another — so drops
 never stop being useful, however much of the collection you've seen.
 
-**Click a saved Fighter to see it on the canvas.** Its own traits will show as
-unavailable in the picker and it cannot be saved again — you are viewing it,
-not rebuilding it. Disassemble it and those traits become placeable.
+**Click a saved Fighter to see it on the canvas.** Its own traits show as
+unavailable in the picker — you are viewing it, not rebuilding it.
 
-**Disassembling a Fighter returns every trait it held** to your unused pile. The
-Fighter's number is retired and not reused.
+**Edit changes a Fighter without losing it.** Its traits are freed back to you
+for as long as the editor is open, so you can swap one out, add a piece to an
+empty slot, or strip it back. The Fighter keeps its **number, its name and its
+original build date** — only the traits, the score and the originality claim are
+recalculated, because those belong to the combination rather than to the
+character. Cancel and nothing changes.
+
+**Disassembling a Fighter returns every trait it held** to your unused pile and
+removes the character for good. Its number is retired, not reused. Disassembly
+is for dumping a Fighter you no longer want — if you only mean to change one,
+use Edit and keep everything else.
 
 ---
 
