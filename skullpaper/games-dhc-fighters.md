@@ -188,9 +188,10 @@ recalculated, because those belong to the combination rather than to the
 character. Cancel and nothing changes.
 
 **Disassembling a Fighter returns every trait it held** to your unused pile and
-removes the character for good. Its number is retired, not reused. Disassembly
-is for dumping a Fighter you no longer want — if you only mean to change one,
-use Edit and keep everything else.
+removes the character for good. Its number goes back into the pool and is given
+to the next Fighter built, so numbering stays contiguous — nothing is burned by
+changing your mind. Disassembly is for dumping a Fighter you no longer want; if
+you only mean to change one, use Edit and keep everything else.
 
 ---
 

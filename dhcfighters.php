@@ -563,8 +563,8 @@ function dhcf_board_html($rows) {
          habit players arrive with -- and this is the point where it costs them
          the number permanently. */
       if (!confirm('Disassemble ' + card.querySelector('.nm').textContent +
-                   '?\n\nThis removes the character for good and retires its number. ' +
-                   'Its traits return to your unused pile.\n\n' +
+                   '?\n\nThis removes the character for good. Its traits return to your ' +
+                   'unused pile and its number goes back in the pool.\n\n' +
                    'To change it instead, use Edit — that keeps the number and name.')) return;
       fetch('ajax/dhc-delete-fighter.php', {
         method: 'POST', credentials: 'same-origin',

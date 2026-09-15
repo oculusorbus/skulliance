@@ -7,8 +7,11 @@
  * with the row gone nothing counts those copies as in use. There is no
  * inventory write to get wrong, and no way for the two to disagree.
  *
- * The serial is retired rather than reused -- dhcf_next_serial() takes MAX+1,
- * so a disassembled DHC2F421 does not come back on someone else's Fighter.
+ * The serial is RELEASED, not retired: the row keeps its history but drops its
+ * number, and dhcf_next_serial() hands out the lowest unused one. Disassembly
+ * used to burn a number permanently, which mattered when it was also the only
+ * way to change a Fighter -- editing covers that now, so deleting a character
+ * no longer costs the collection a number.
  */
 include '../db.php';
 include '../skulliance.php';

@@ -131,17 +131,31 @@ function dhcf_score_with_bonus($conn, $user_id, $traits, $exclude_id = 0) {
  * belong to the collection if it ever completes). Assemblies therefore start
  * after the top of the range, at DHCF_SERIAL_START.
  */
+/**
+ * The lowest number not currently in use, from DHCF_SERIAL_START up.
+ *
+ * Was MAX(serial)+1, which retired a number permanently the moment its Fighter
+ * was disassembled -- 422 and 423 were burned that way inside the first week,
+ * by one player disassembling and reassembling before editing existed. Now
+ * that a Fighter can be edited in place, disassembly means deleting a
+ * character outright, and a character that no longer exists has no claim on a
+ * number.
+ *
+ * Disassembly releases the serial (see dhcf_delete_fighter), so the gap it
+ * leaves is the next number handed out. Numbering stays dense and the
+ * collection's count means what it looks like it means.
+ *
+ * Reading every serial rather than asking SQL for the first gap: the set is a
+ * few hundred at most, and the loop is obvious where the SQL for it is not.
+ */
 function dhcf_next_serial($conn) {
 	$start = DHCF_SERIAL_START;
-	// Deliberately NOT filtered by disassembled_at: a retired number must never
-	// be handed out again, so disassembled Fighters still hold their serials.
-	// This is also why disassembly marks rather than deletes -- a MAX() over
-	// rows that can vanish would quietly start reissuing numbers.
-	$res = $conn->query("SELECT MAX(serial) AS m FROM dhc_fighters");
-	if ($res && $row = $res->fetch_assoc()) {
-		if ($row['m'] !== null && (int)$row['m'] >= $start) return ((int)$row['m']) + 1;
-	}
-	return $start;
+	$used  = array();
+	$res = $conn->query("SELECT serial FROM dhc_fighters WHERE serial IS NOT NULL");
+	if ($res) while ($row = $res->fetch_assoc()) $used[(int)$row['serial']] = true;
+	$n = $start;
+	while (isset($used[$n])) $n++;
+	return $n;
 }
 
 /** The default name for a serial, e.g. 'DHC2F421'. */
@@ -152,7 +166,12 @@ function dhcf_default_name($serial) {
 /** What a Fighter is actually called -- the override if set, else the serial. */
 function dhcf_display_name($row) {
 	$n = isset($row['name']) ? trim((string)$row['name']) : '';
-	return $n !== '' ? $n : dhcf_default_name((int)$row['serial']);
+	if ($n !== '') return $n;
+	// A disassembled Fighter has released its serial, so there is no number to
+	// fall back to. Nothing displays those rows, but a bare 'DHC2F000' leaking
+	// into a log or an error is worse than saying what it is.
+	if (!isset($row['serial']) || $row['serial'] === null) return 'a disassembled Fighter';
+	return dhcf_default_name((int)$row['serial']);
 }
 
 /* ------------------------------------------------------------------ *
@@ -624,14 +643,18 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
  *
  * The traits come back automatically because availability is derived -- with
  * the row gone, nothing counts those copies as committed. No inventory write,
- * so no way for the two to disagree. The serial is retired rather than reused.
+ * so no way for the two to disagree. The serial goes back into the pool.
  */
 function dhcf_delete_fighter($conn, $user_id, $fighter_id) {
-	// Marked, not deleted. A deleted row takes its history with it, which is
-	// what allowed a Fighter to be disassembled and rebuilt as though newly
-	// made. The row staying also means serials are genuinely retired rather
-	// than merely un-reissued by a MAX() over rows that might vanish.
-	$sql = sprintf("UPDATE dhc_fighters SET disassembled_at = NOW(), updated_at = NOW()
+	// Marked, not deleted: the row carries the history, and keeping it is what
+	// stops a Fighter being disassembled and rebuilt as though newly made.
+	//
+	// The SERIAL is released, though. Holding it would retire the number for a
+	// character that no longer exists -- and with editing available, nobody
+	// needs to disassemble merely to change a Fighter, so the number should
+	// outlive the deletion rather than the other way round. NULL rather than 0
+	// because a unique index permits many NULLs and exactly one 0.
+	$sql = sprintf("UPDATE dhc_fighters SET disassembled_at = NOW(), serial = NULL, updated_at = NOW()
 	                WHERE id = %d AND user_id = %d AND disassembled_at IS NULL",
 		(int)$fighter_id, (int)$user_id);
 	return $conn->query($sql) && $conn->affected_rows > 0;

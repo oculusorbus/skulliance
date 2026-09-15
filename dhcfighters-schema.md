@@ -122,3 +122,33 @@ That is approximate — PHP writes a canonical hash with slots sorted, while
 `SHA1(traits)` hashes the stored JSON as-is. Re-saving or rescoring corrects
 it. Running `dhcf_rescore_all()` after the migration rewrites every hash
 properly.
+
+
+---
+
+## Migration — release serials on disassembly
+
+Run once on an existing install. Until editing existed, changing a Fighter
+meant disassembling and rebuilding, and disassembly retired the number for
+good — 422 and 423 were burned that way in the first week. `dhcf_delete_fighter()`
+now sets `serial = NULL` instead, and `dhcf_next_serial()` hands out the lowest
+unused number rather than `MAX+1`.
+
+`serial` has to be nullable for that. A MySQL unique index permits any number of
+NULLs and exactly one of any real value, so `uniq_serial` still guarantees no two
+Fighters share a number.
+
+```sql
+ALTER TABLE dhc_fighters MODIFY serial INT NULL;
+```
+
+Then free the numbers already retired, and optionally close the existing gaps:
+
+```
+php dhcf-renumber.php --release            # preview
+php dhcf-renumber.php --release --confirm  # apply
+```
+
+`--compact` additionally renumbers live Fighters contiguously in build order.
+That changes the displayed name of any Fighter without a custom name, so it is
+reasonable at a handful of Fighters and not once people have shared links.
