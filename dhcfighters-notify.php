@@ -61,11 +61,18 @@ function dhcf_art_base() {
 	return 'https://skulliance.io/staking/' . $b;
 }
 
-/** Author block for an embed: display name plus their Discord avatar. */
+/**
+ * Author block for an embed: display name plus their Discord avatar.
+ *
+ * Returns the mention string as a third value. A trait can arrive from a game
+ * a player has already navigated away from, so the announcement is often the
+ * first they hear of it -- and an embed nobody is tagged in scrolls past
+ * unnoticed. The mention is their receipt.
+ */
 function dhcf_author_block($conn, $user_id) {
 	$res = $conn->query(sprintf(
 		"SELECT username, discord_id, avatar FROM users WHERE id = %d LIMIT 1", (int)$user_id));
-	if (!$res || !$res->num_rows) return array(null, 'a player');
+	if (!$res || !$res->num_rows) return array(null, 'a player', '');
 	$u = $res->fetch_assoc();
 	$name = $u['username'] !== '' ? $u['username'] : 'a player';
 	$author = array('name' => $name);
@@ -73,7 +80,16 @@ function dhcf_author_block($conn, $user_id) {
 		$author['icon_url'] = 'https://cdn.discordapp.com/avatars/'
 		                    . $u['discord_id'] . '/' . $u['avatar'] . '.jpg';
 	}
-	return array($author, $name);
+	/*
+	 * A mention only notifies from discordmsg()'s top-level $content field --
+	 * one written into the embed renders as a link and pings nobody. See the
+	 * note on that parameter in webhooks.php.
+	 *
+	 * Not every staker has linked Discord, so this is empty as often as not;
+	 * every caller has to treat that as normal and post without it.
+	 */
+	$mention = !empty($u['discord_id']) ? '<@' . $u['discord_id'] . '>' : '';
+	return array($author, $name, $mention);
 }
 
 /* ------------------------------------------------------------------ *
@@ -91,7 +107,7 @@ function dhcf_notify_drop($conn, $user_id, $drop, $game_key) {
 	try {
 		if (!function_exists('discordmsg') || empty($drop)) return;
 
-		list($author, $name) = dhcf_author_block($conn, $user_id);
+		list($author, $name, $mention) = dhcf_author_block($conn, $user_id);
 		$game  = dhcf_game($game_key);
 		$label = $game ? $game['label'] : $game_key;
 
@@ -113,7 +129,8 @@ function dhcf_notify_drop($conn, $user_id, $drop, $game_key) {
 			'',                                  // thumbnail: leave the default
 			dhcf_tier_color($drop['tier']),
 			$author,
-			array('text' => 'Dropped from ' . $label)
+			array('text' => 'Dropped from ' . $label),
+			$mention
 		);
 	} catch (Throwable $e) {
 		error_log('dhcf_notify_drop: ' . $e->getMessage());
@@ -224,7 +241,7 @@ function dhcf_notify_fighter($conn, $user_id, $row) {
 	try {
 		if (!function_exists('discordmsg') || empty($row)) return;
 
-		list($author, $name) = dhcf_author_block($conn, $user_id);
+		list($author, $name, $mention) = dhcf_author_block($conn, $user_id);
 		$traits = isset($row['traits']) ? $row['traits'] : array();
 
 		// Rarest trait first: it is the reason the score is what it is.
@@ -253,7 +270,8 @@ function dhcf_notify_fighter($conn, $user_id, $row) {
 			'',
 			'00C8A0',
 			$author,
-			array('text' => 'DHC Fighters — not an NFT, cannot be minted')
+			array('text' => 'DHC Fighters — not an NFT, cannot be minted'),
+			$mention
 		);
 	} catch (Throwable $e) {
 		error_log('dhcf_notify_fighter: ' . $e->getMessage());
