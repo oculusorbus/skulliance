@@ -702,11 +702,34 @@ function dhcf_drops_today($conn, $user_id) {
  * separates players who already match on quality.
  */
 function dhcf_leaderboard($conn, $period = 'ath', $limit = 25) {
-	// Monthly ranks on TRAIT RECENCY, not on when the Fighter was saved --
-	// see dhcf_newest_trait_at(). Disassembled Fighters are excluded from both
-	// periods: their traits are free, so they no longer exist as Fighters.
+	/*
+	 * MONTHLY = a Fighter BUILT this month that carries a trait EARNED this
+	 * month. Both, not either, because each condition alone has a hole and
+	 * they are different holes:
+	 *
+	 *   created_at alone     -- disassemble September's winner on the 1st,
+	 *                           rebuild it identically, get a fresh date and
+	 *                           the new month for no new play.
+	 *   newest_trait_at alone-- keep September's winner, slot in any trait
+	 *                           earned in October, and it is back on the board
+	 *                           without being a new character at all.
+	 *
+	 * Requiring both closes each with the other. Re-entering with last month's
+	 * champion now costs a disassembly AND a fresh drop -- the same price as
+	 * building a new character, which is the point: the monthly board resets so
+	 * newer players get a shot, and last month's winner should not re-enter on
+	 * an edit.
+	 *
+	 * Editing an old Fighter still improves it for ALL-TIME. That board has no
+	 * window and never needed one.
+	 *
+	 * Disassembled Fighters are gone from the table entirely, so no period has
+	 * to exclude them any more.
+	 */
 	$where = ($period === 'monthly')
-		? "WHERE f.disassembled_at IS NULL AND f.newest_trait_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+		? "WHERE f.disassembled_at IS NULL
+		     AND f.created_at      >= DATE_FORMAT(NOW(), '%Y-%m-01')
+		     AND f.newest_trait_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
 		: "WHERE f.disassembled_at IS NULL";
 	$sql = "SELECT f.user_id,
 	               MAX(f.rarity_score) AS best_score,

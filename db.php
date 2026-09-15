@@ -14344,13 +14344,34 @@ function checkObscuraLeaderboard($conn, $weekly=false, $rewards=false) {
  * 200 Fighters on every page view.
  */
 function checkDHCFightersLeaderboard($conn, $monthly = false) {
-	// Monthly ranks on TRAIT RECENCY (newest_trait_at), not on when the Fighter
-	// was saved. A created_at window could be reset by disassembling and
-	// rebuilding the same Fighter on the 1st, handing a player the new month
-	// for no new play. Disassembled Fighters are excluded from both periods --
-	// their traits are free again, so they are not Fighters any more.
+	/*
+	 * MONTHLY = a Fighter BUILT this month that carries a trait EARNED this
+	 * month. Both, not either, because each condition alone has a hole and
+	 * they are different holes:
+	 *
+	 *   created_at alone     -- disassemble September's winner on the 1st,
+	 *                           rebuild it identically, get a fresh date and
+	 *                           the new month for no new play.
+	 *   newest_trait_at alone-- keep September's winner, slot in any trait
+	 *                           earned in October, and it is back on the board
+	 *                           without being a new character at all.
+	 *
+	 * Requiring both closes each with the other. Re-entering with last month's
+	 * champion now costs a disassembly AND a fresh drop -- the same price as
+	 * building a new character, which is the point: the monthly board resets so
+	 * newer players get a shot, and last month's winner should not re-enter on
+	 * an edit.
+	 *
+	 * Editing an old Fighter still improves it for ALL-TIME. That board has no
+	 * window and never needed one.
+	 *
+	 * Disassembled Fighters are gone from the table entirely, so no period has
+	 * to exclude them any more.
+	 */
 	$where = $monthly
-		? "WHERE f.disassembled_at IS NULL AND f.newest_trait_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
+		? "WHERE f.disassembled_at IS NULL
+		     AND f.created_at      >= DATE_FORMAT(NOW(), '%Y-%m-01')
+		     AND f.newest_trait_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
 		: "WHERE f.disassembled_at IS NULL";
 	$sql = "
 		SELECT u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,

@@ -221,11 +221,17 @@ want. Clearing the name puts the number back.
 Two boards, both ranked on **your single best Fighter**, with the number of
 Fighters you've saved as the tie-break.
 
-- **All-time** — every Fighter you have ever saved.
-- **Monthly** — Fighters saved since the start of the current month.
+- **All-time** — every Fighter you have saved.
+- **Monthly** — Fighters **built this month** that carry a trait **earned this
+  month**.
 
-Because the monthly board looks at when a Fighter was *saved*, a great
-combination held back and saved in a new month counts for that month.
+The monthly board wants new characters, so it asks for both. Editing a Fighter
+from a previous month raises its all-time score but does not put it on this
+month's board — it is not a new character. Nor does disassembling one and
+rebuilding it, because the traits it is made of were still earned earlier.
+
+To compete in a new month, build something new with what you have earned in it.
+All-time has no window: a Fighter you keep improving keeps climbing there.
 
 Ranking on your best rather than your total is deliberate: the game is to build
 one exceptional character, not to hoard. Volume only separates players who
