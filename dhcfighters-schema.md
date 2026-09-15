@@ -152,3 +152,34 @@ php dhcf-renumber.php --release --confirm  # apply
 `--compact` additionally renumbers live Fighters contiguously in build order.
 That changes the displayed name of any Fighter without a custom name, so it is
 reasonable at a handful of Fighters and not once people have shared links.
+
+
+---
+
+## Disassembly hard-deletes (15 September 2026)
+
+`dhcf_delete_fighter()` now runs a real `DELETE`. It used to set
+`disassembled_at` and keep the row.
+
+The soft delete was justified as stopping a Fighter being "disassembled and
+rebuilt as though newly made" — but that protection never lived in this table.
+The monthly board ranks on `newest_trait_at`, which `dhcf_newest_trait_at()`
+computes from `dhc_trait_drops.awarded_at` — when the *traits* were awarded, not
+when the Fighter was saved. Rebuilding the same Fighter reproduces the same
+timestamp, and the drops ledger is append-only and never deleted. The
+originality check already ignored disassembled rows. So the row carried history
+and nothing else.
+
+`dhc_trait_drops` still records everything ever earned, so a player's holdings
+stay reconstructible even though the Fighters they scrapped are not.
+
+**The `disassembled_at` column and every `IS NULL` filter stay in place.** They
+are no-ops once nothing sets the column, and they cost nothing — but they keep
+any legacy marked row correctly hidden, on this install or any other. Do not
+remove them without purging those rows first.
+
+To clear legacy marked rows:
+
+```sql
+DELETE FROM dhc_fighters WHERE disassembled_at IS NOT NULL;
+```

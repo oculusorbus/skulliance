@@ -643,19 +643,24 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
  *
  * The traits come back automatically because availability is derived -- with
  * the row gone, nothing counts those copies as committed. No inventory write,
- * so no way for the two to disagree. The serial goes back into the pool.
+ * so no way for the two to disagree. The serial goes back into the pool for
+ * the same reason: nothing holds it any more.
+ *
+ * A REAL delete. It used to mark the row instead, on the grounds that keeping
+ * it stopped a Fighter being disassembled and rebuilt as though newly made --
+ * but that protection never lived here. The monthly board ranks on
+ * newest_trait_at, which dhcf_newest_trait_at() reads from dhc_trait_drops,
+ * the append-only ledger of when each trait was AWARDED. Rebuilding the same
+ * Fighter reproduces the same timestamp, and the ledger is never deleted. The
+ * originality check ignores disassembled rows too. So the row was carrying
+ * history and nothing else, and the table reads better holding only Fighters
+ * that exist.
+ *
+ * dhc_trait_drops still records everything that was ever earned, so what a
+ * player holds is always reconstructible even though what they built is not.
  */
 function dhcf_delete_fighter($conn, $user_id, $fighter_id) {
-	// Marked, not deleted: the row carries the history, and keeping it is what
-	// stops a Fighter being disassembled and rebuilt as though newly made.
-	//
-	// The SERIAL is released, though. Holding it would retire the number for a
-	// character that no longer exists -- and with editing available, nobody
-	// needs to disassemble merely to change a Fighter, so the number should
-	// outlive the deletion rather than the other way round. NULL rather than 0
-	// because a unique index permits many NULLs and exactly one 0.
-	$sql = sprintf("UPDATE dhc_fighters SET disassembled_at = NOW(), serial = NULL, updated_at = NOW()
-	                WHERE id = %d AND user_id = %d AND disassembled_at IS NULL",
+	$sql = sprintf("DELETE FROM dhc_fighters WHERE id = %d AND user_id = %d",
 		(int)$fighter_id, (int)$user_id);
 	return $conn->query($sql) && $conn->affected_rows > 0;
 }
