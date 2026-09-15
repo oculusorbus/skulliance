@@ -151,6 +151,61 @@ define('DHCF_EFFECTS_BEHIND_TORSO', array('xlon-s-black-fire-attack'));
  */
 define('DHCF_ARMS_BEHIND_TORSO', array('perforator-arm-replacement'));
 
+/**
+ * SINGLE-SIDED ARMS -- arms that replace one limb, not both.
+ *
+ * Head Chopper only covers the image-LEFT arm. Swapping in the armless torso
+ * for it therefore deletes the other arm and leaves a stump, but drawing it
+ * over the normal torso does not work either: measured against the armless
+ * variants it covers only 80-88% of the arm beneath it, so the original shows
+ * around the edge.
+ *
+ * So the torso is drawn as TWO layers: the armless variant, then the NORMAL
+ * torso clipped to the half this trait does not cover, which puts that one arm
+ * back. No new art -- the body is pixel-identical in both files, so the join is
+ * invisible provided it falls between the arms rather than through one.
+ *
+ * The value is which half of the normal torso to keep.
+ */
+define('DHCF_ONE_ARM', array('head-chopper' => 'right'));
+
+/**
+ * Where that join sits, as a percentage of width. The centre: across all 25
+ * torsos the left arm always ends by x=299 and the right never starts before
+ * x=723 (of 1000), so 50% clears both by ~200px. Any value in that window
+ * works; there is nothing to tune per torso.
+ */
+define('DHCF_ONE_ARM_SPLIT', 50);
+
+/**
+ * Arms that sit cleanly OVER a normal torso, so the armless variant is not
+ * used at all. Infested Robo Limb is one: it replaces a single limb and covers
+ * what is under it well enough that the torso's own arms can stay.
+ *
+ * The difference from DHCF_ONE_ARM is what happens to the OTHER arm. Head
+ * Chopper needs the armless torso because its own silhouette does not hide the
+ * limb beneath, so that limb is deleted and the far one restored; these keep
+ * both of the torso's arms and simply cover one.
+ */
+define('DHCF_ARMS_OVER_TORSO', array('infested-robo-limb'));
+
+/**
+ * HOW AN ARMS TRAIT TREATS THE TORSO BENEATH IT. One answer for every renderer
+ * -- the canvas, the Discord render and the card grids all have to agree, and
+ * they were each growing their own copy of these conditions.
+ *
+ *   'full'    swap in the armless torso: the arm replaces both limbs
+ *   'hybrid'  armless torso, plus the normal torso's other half put back
+ *   'none'    leave the torso alone; it keeps its own arms
+ */
+function dhcf_armless_mode($arms) {
+	if (empty($arms))                                        return 'none';
+	if (in_array($arms, DHCF_ARMS_BEHIND_TORSO, true))       return 'none';
+	if (in_array($arms, DHCF_ARMS_OVER_TORSO, true))         return 'none';
+	if (isset(DHCF_ONE_ARM[$arms]))                          return 'hybrid';
+	return 'full';
+}
+
 /** Vertical nudge in pixels of the 1000px master, positive = down. */
 define('DHCF_NUDGE', array('skull-krusher' => 23, 'skull-krusher-sash' => 13, 'axe' => 13));
 

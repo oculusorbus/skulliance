@@ -260,14 +260,12 @@ a.dhcf-stat span{opacity:.85}
                      Predator or Xlon's Black Fire rendered one way here, another
                      on the canvas, and a third in Discord. One function decides
                      draw order everywhere. */
-                  foreach (dhcf_layer_order($f['traits']) as $slot) {
-                      if (empty($f['traits'][$slot])) continue;
-                      $dir = dhcf_slot_category($slot);
-                      $slug  = $f['traits'][$slot];
-                      $nudge = isset(DHCF_NUDGE[$slug]) ? (float)DHCF_NUDGE[$slug] / 10 : 0;
+                  foreach (dhcf_layers($f['traits'], __DIR__ . '/' . $dhc_base) as $L) {
+                      $st = trim(($L['nudge'] ? 'transform:translateY(' . $L['nudge'] . '%);' : '')
+                                 . dhcf_layer_clip_css($L['clip']));
                       echo '<img loading="lazy" alt=""'
-                         . ($nudge ? ' style="transform:translateY(' . $nudge . '%)"' : '')
-                         . ' src="' . htmlspecialchars($dhc_base . '/250/' . $dir . '/' . $slug . '.png') . '">';
+                         . ($st ? ' style="' . $st . '"' : '')
+                         . ' src="' . htmlspecialchars($dhc_base . '/250/' . $L['cat'] . '/' . $L['slug'] . '.png') . '">';
                   }
                 ?>
               </button>

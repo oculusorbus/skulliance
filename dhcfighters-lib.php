@@ -701,6 +701,56 @@ function dhcf_leaderboard($conn, $period = 'ath', $limit = 25) {
  * but leaving a stale number on a row that history can still be read from
  * would make the record disagree with the rules that produced it.
  */
+/**
+ * THE IMAGE LAYERS FOR A FIGHTER, in draw order -- one answer for every still
+ * renderer (the gallery grid, the roster cards, anything else that draws a
+ * saved Fighter from PHP).
+ *
+ * The live canvas has its own copy in JS because it redraws on every click,
+ * and the Discord render composites with GD rather than <img> tags; all three
+ * ask dhcf_armless_mode() the same question, so they agree.
+ *
+ * Each entry: cat, slug, nudge (percent, for translateY) and clip ('' | 'left'
+ * | 'right'), where clip marks the single-sided-arm restore layer -- the normal
+ * torso showing through on the side the arm does not cover.
+ *
+ * $webroot is the filesystem path to the art root (the folder holding 1000/),
+ * needed only to see whether a torso has an armless variant. Pass '' to skip
+ * that test and always use the plain torso.
+ */
+function dhcf_layers($traits, $webroot = '') {
+	$arms = isset($traits['arms']) ? $traits['arms'] : '';
+	$mode = dhcf_armless_mode($arms);
+	$out  = array();
+
+	foreach (dhcf_layer_order($traits) as $slot) {
+		if (empty($traits[$slot])) continue;
+		$slug  = $traits[$slot];
+		$cat   = dhcf_slot_category($slot);
+		$nudge = isset(DHCF_NUDGE[$slug]) ? (float)DHCF_NUDGE[$slug] / 10 : 0;
+
+		$armless = ($slot === 'torso' && $mode !== 'none' && $webroot !== ''
+		            && is_file($webroot . '/1000/torso-noarms/' . $slug . '.png'));
+
+		$out[] = array('cat' => $armless ? 'torso-noarms' : $cat,
+		               'slug' => $slug, 'nudge' => $nudge, 'clip' => '');
+
+		// put back the arm a single-sided trait does not cover
+		if ($armless && $mode === 'hybrid') {
+			$out[] = array('cat' => 'torso', 'slug' => $slug, 'nudge' => $nudge,
+			               'clip' => DHCF_ONE_ARM[$arms]);
+		}
+	}
+	return $out;
+}
+
+/** CSS for a layer's clip, '' when it is not clipped. */
+function dhcf_layer_clip_css($clip) {
+	if ($clip === 'right') return 'clip-path:inset(0 0 0 ' . DHCF_ONE_ARM_SPLIT . '%)';
+	if ($clip === 'left')  return 'clip-path:inset(0 ' . (100 - DHCF_ONE_ARM_SPLIT) . '% 0 0)';
+	return '';
+}
+
 function dhcf_rescore_all($conn) {
 	$n = 0;
 	// Hashes first, so the originality pass below compares against a table

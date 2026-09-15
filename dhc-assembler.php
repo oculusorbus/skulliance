@@ -591,6 +591,35 @@ a{color:var(--ochre)}
    */
   var ARMS_BEHIND_TORSO = <?php echo json_encode(DHCF_ARMS_BEHIND_TORSO); ?>;
 
+  /*
+   * SINGLE-SIDED ARMS. Head Chopper replaces one arm, so the armless torso
+   * would delete the other. The torso is drawn twice instead: the armless
+   * variant, then the normal torso clipped to the half this arm does not
+   * cover, restoring that limb. See DHCF_ONE_ARM in dhcfighters-config.php.
+   */
+  var ONE_ARM = <?php echo json_encode(DHCF_ONE_ARM); ?>;
+  var ONE_ARM_SPLIT = <?php echo (int)DHCF_ONE_ARM_SPLIT; ?>;
+  var ARMS_OVER_TORSO = <?php echo json_encode(DHCF_ARMS_OVER_TORSO); ?>;
+
+  /*
+   * Mirror of dhcf_armless_mode(). 'full' | 'hybrid' | 'none' -- see the PHP,
+   * which is the definition; this exists because the canvas cannot call it.
+   */
+  function armlessMode() {
+    if (!sel.arms || hidden.arms) return 'none';
+    if (ARMS_BEHIND_TORSO.indexOf(sel.arms) !== -1) return 'none';
+    if (ARMS_OVER_TORSO.indexOf(sel.arms) !== -1) return 'none';
+    if (ONE_ARM[sel.arms]) return 'hybrid';
+    return 'full';
+  }
+
+  /** Which half of the normal torso to put back, or '' when not applicable. */
+  function oneArmKeep() {
+    if (armlessMode() !== 'hybrid') return '';
+    if (!sel.torso || NOARMS.indexOf(sel.torso) === -1) return '';   // no armless variant: nothing was removed
+    return ONE_ARM[sel.arms] || '';
+  }
+
 
   /*
    * EFFECTS THAT BELONG BEHIND THE BODY.
@@ -769,7 +798,7 @@ a{color:var(--ochre)}
       // body, so the torso must keep its own arms. Swapping in the armless
       // variant would strip them and leave the accent reading as the arms --
       // exactly the full-replacement look it is drawn behind to avoid.
-      if (s.key === 'torso' && sel.arms && !hidden.arms && !armsBehindTorso()
+      if (s.key === 'torso' && armlessMode() !== 'none'
           && NOARMS.indexOf(sel[s.key]) !== -1)
         dir = 'torso-noarms';
       var want = url(dir, sel[s.key], 1000);
@@ -777,10 +806,41 @@ a{color:var(--ochre)}
       var n = NUDGE[sel[s.key]] || 0;
       el.style.transform = n ? 'translateY(' + (n / 10) + '%)' : '';
     });
+
+    /*
+     * The single-sided-arm restore layer: the NORMAL torso, clipped to the half
+     * the arm does not cover, sitting directly on top of the armless one. Its
+     * own element rather than a second pass over the torso slot, because it has
+     * to be inserted into the layer order at the torso's position and removed
+     * cleanly the moment the selection stops needing it.
+     */
+    var keep = oneArmKeep();
+    var rest = document.getElementById('L-torsokeep');
+    if (!keep) {
+      if (rest) rest.remove();
+    } else {
+      if (!rest) {
+        rest = document.createElement('img');
+        rest.id = 'L-torsokeep'; rest.alt = '';
+        frame.appendChild(rest);
+      }
+      var rwant = url('torso', sel.torso, 1000);
+      if (rest.getAttribute('src') !== rwant) rest.setAttribute('src', rwant);
+      rest.style.clipPath = keep === 'right'
+        ? 'inset(0 0 0 ' + ONE_ARM_SPLIT + '%)'
+        : 'inset(0 ' + (100 - ONE_ARM_SPLIT) + '% 0 0)';
+      var rn = NUDGE[sel.torso] || 0;
+      rest.style.transform = rn ? 'translateY(' + (rn / 10) + '%)' : '';
+    }
     // keep DOM order == layer order, regardless of the order things were picked
     layerOrder().forEach(function (s) {
       var el = document.getElementById('L-' + s.key);
       if (el) frame.appendChild(el);
+      // the restore layer rides with the torso, directly above it
+      if (s.key === 'torso') {
+        var r = document.getElementById('L-torsokeep');
+        if (r) frame.appendChild(r);
+      }
     });
     // "Nothing picked" and "everything hidden" both leave a blank canvas, and
     // they are not the same problem -- say which one you are looking at.
@@ -811,7 +871,7 @@ a{color:var(--ochre)}
         tag = ' <em style="color:var(--teal);font-style:normal">behind torso</em>';
       if (s.key === 'arms' && chosen && armsBehindTorso())
         tag = ' <em style="color:var(--teal);font-style:normal">behind torso &mdash; accent</em>';
-      if (s.key === 'torso' && chosen && sel.arms && !armsBehindTorso())
+      if (s.key === 'torso' && chosen && sel.arms && armlessMode() !== 'none')
         tag = NOARMS.indexOf(chosen) !== -1
             ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
             : ' <em style="color:var(--ochre);font-style:normal">arms underneath</em>';

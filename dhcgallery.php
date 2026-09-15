@@ -265,23 +265,24 @@ include 'header.php';
       );
       // same draw order everything else uses, so a card cannot disagree with
       // the canvas or the Discord render
-      foreach (dhcf_layer_order($f['traits']) as $slot) {
-        if (empty($f['traits'][$slot])) continue;
-        $slug = $f['traits'][$slot];
-        // Category and slug rather than a path: the card wants 250px and the
-        // detail view wants the 1000px master, and the size is the only
-        // difference between them.
+      // dhcf_layers() decides the armless-torso swap and the single-sided-arm
+      // restore layer, so a card agrees with the canvas and the Discord render.
+      // Category and slug rather than a finished path: the card wants 250px and
+      // the detail view the 1000px master, and size is the only difference.
+      foreach (dhcf_layers($f['traits'], __DIR__ . '/' . $dhc_base) as $L) {
         $card['layers'][] = array(
-          'c' => dhcf_slot_category($slot), 's' => $slug,
-          'n' => isset(DHCF_NUDGE[$slug]) ? (float)DHCF_NUDGE[$slug] / 10 : 0,
+          'c' => $L['cat'], 's' => $L['slug'], 'n' => $L['nudge'],
+          'k' => $L['clip'],
         );
       }
     ?>
     <button type="button" class="dhcg-card" data-f="<?php echo htmlspecialchars(json_encode($card), ENT_QUOTES); ?>">
       <div class="dhcg-art">
-        <?php foreach ($card['layers'] as $l): ?>
+        <?php foreach ($card['layers'] as $l):
+                $st = trim(($l['n'] ? 'transform:translateY(' . $l['n'] . '%);' : '')
+                           . dhcf_layer_clip_css($l['k'])); ?>
           <img class="layer" loading="lazy" alt=""
-               <?php if ($l['n']): ?>style="transform:translateY(<?php echo $l['n']; ?>%)"<?php endif; ?>
+               <?php if ($st): ?>style="<?php echo $st; ?>"<?php endif; ?>
                src="<?php echo htmlspecialchars($dhc_base . '/250/' . $l['c'] . '/' . $l['s'] . '.png'); ?>">
         <?php endforeach; ?>
       </div>
@@ -335,8 +336,11 @@ include 'header.php';
     // 1000px masters. This is the only place a Fighter is shown big enough for
     // the detail in Maxingo's art to be worth the bytes.
     big.innerHTML = f.layers.map(function (l) {
+      var st = (l.n ? 'transform:translateY(' + l.n + '%);' : '') +
+               (l.k === 'right' ? 'clip-path:inset(0 0 0 <?php echo (int)DHCF_ONE_ARM_SPLIT; ?>%)'
+                : l.k === 'left' ? 'clip-path:inset(0 <?php echo 100 - (int)DHCF_ONE_ARM_SPLIT; ?>% 0 0)' : '');
       return '<img alt="" src="' + esc(BASE + '/1000/' + l.c + '/' + l.s + '.png') + '"' +
-             (l.n ? ' style="transform:translateY(' + l.n + '%)"' : '') + '>';
+             (st ? ' style="' + st + '"' : '') + '>';
     }).join('');
 
     document.getElementById('dhcg-name').textContent = f.name;

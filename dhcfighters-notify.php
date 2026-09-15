@@ -164,12 +164,10 @@ function dhcf_render_fighter($traits, $serial) {
 			$slug = $traits[$slot];
 
 			// Armless torso variant, exactly as the assembler chooses it
-			// Arms listed in DHCF_ARMS_BEHIND_TORSO are accents drawn behind
-			// the body, so the torso keeps its own arms -- same rule the
-			// assembler applies, and the render has to agree with the canvas.
+			// dhcf_armless_mode() decides this for every renderer at once.
+			$armMode = dhcf_armless_mode(isset($traits['arms']) ? $traits['arms'] : '');
 			$catDir = $cat;
-			if ($slot === 'torso' && !empty($traits['arms'])
-			    && !in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)
+			if ($slot === 'torso' && $armMode !== 'none'
 			    && is_file(__DIR__ . '/' . $base . '/1000/torso-noarms/' . $slug . '.png')) {
 				$catDir = 'torso-noarms';
 			}
@@ -185,6 +183,28 @@ function dhcf_render_fighter($traits, $serial) {
 			imagecopyresampled($out, $layer, 0, $nudge, 0, 0, $size, $size,
 			                   imagesx($layer), imagesy($layer));
 			$drew++;
+
+			/*
+			 * SINGLE-SIDED ARM: put back the arm it does not cover, by drawing
+			 * the NORMAL torso over the armless one, clipped to that half. Same
+			 * rule as the canvas -- see DHCF_ONE_ARM.
+			 */
+			if ($slot === 'torso' && $catDir === 'torso-noarms' && $armMode === 'hybrid') {
+				$keep = DHCF_ONE_ARM[$traits['arms']];
+				$full = __DIR__ . '/' . $base . '/1000/torso/' . $slug . '.png';
+				$src  = is_file($full) ? @imagecreatefrompng($full) : null;
+				if ($src) {
+					$cut = (int)round($size * DHCF_ONE_ARM_SPLIT / 100);
+					$dx  = $keep === 'right' ? $cut : 0;
+					$w   = $keep === 'right' ? $size - $cut : $cut;
+					// source window must track the destination window, or the
+					// wrong half of the torso lands in the kept side
+					$sx  = (int)round(imagesx($src) * $dx / $size);
+					$sw  = (int)round(imagesx($src) * $w  / $size);
+					imagecopyresampled($out, $src, $dx, $nudge, $sx, 0, $w, $size,
+					                   $sw, imagesy($src));
+				}
+			}
 		}
 		if (!$drew) return '';
 
