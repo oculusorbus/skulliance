@@ -315,8 +315,19 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 	 * never SEE it. The reveal is most of the point, so the drop is parked in
 	 * the session and shown on whatever page they land on next. The browser
 	 * clears it once it has actually been displayed.
+	 *
+	 * ONLY FOR THE PLAYER WHO EARNED IT. Every caller used to be awarding to
+	 * the session user, so parking unconditionally was harmless -- raids are
+	 * not: endRaid() resolves lazily on whoever opens the raids list first,
+	 * which is routinely the OTHER player. Without this check the defender
+	 * would get a reveal modal for a trait the attacker had just won, and
+	 * would never see their own. The ledger row is already written either way;
+	 * what is session-scoped is the reveal, so it is scoped to the right
+	 * session or skipped.
 	 */
-	if (session_status() === PHP_SESSION_ACTIVE) {
+	if (session_status() === PHP_SESSION_ACTIVE
+	    && isset($_SESSION['userData']['user_id'])
+	    && (int)$_SESSION['userData']['user_id'] === $user_id) {
 		if (!isset($_SESSION['dhcf_unseen']) || !is_array($_SESSION['dhcf_unseen'])) {
 			$_SESSION['dhcf_unseen'] = array();
 		}

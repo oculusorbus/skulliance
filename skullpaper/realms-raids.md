@@ -35,6 +35,27 @@ If the attacker fails during the raid, a random location from their offense is d
 
 Claiming daily rewards increases the amount of project balances for the defender. By having multiple balances, there is less likelihood that an attacker will loot their highest points balance. Acquiring at least 1 NFT from a new project and staking it helps to also diversify points balances and insulate from attackers looting a high value points balance.
 
+## Trait Drops
+
+A decided raid can pay a **DHC Fighters trait**, and both sides are eligible:
+the attacker on a successful raid, the defender on one they repel. The trait is
+a **wildcard** — it can be any part of a Fighter, not a fixed category — because
+raiding needs a Realm, an army and a Portal, so it is never allowed to hold a
+piece a Fighter cannot be finished without.
+
+Attacking and defending share **one daily limit of three traits** across all of
+Realms, not three each way.
+
+The quality of the roll is set by **how far up you punched** — the gap between
+the rating of the realm you beat and your own. Beating a stronger realm rolls on
+a better table; beating a weaker one still pays, on the standard table. This is
+the same principle as looting, where a weaker attacker can take a larger
+percentage than a stronger one: the risk you took is what is being rewarded.
+
+Since the traits are drawn when the raid resolves rather than when you are
+looking at it, the drop is announced in Discord and appears in your collection
+on [[games-dhc-fighters]].
+
 ## Raid Stats
 
 Raid stats highlight both monthly and all time statistics regarding raid performance. It also lists the total number of raids, number of raids in progress, successful raids, raid failures, and a calculated score of raid performance. It also contains links to the monthly and all time raids leaderboards.

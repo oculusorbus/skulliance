@@ -9340,15 +9340,17 @@ function endRaid($conn, $raid_id){
 			consumeRandomRewards($conn, $defense_id, 'defense', $raid_id);
 		}
 	}
-	$off_info_res = $conn->query("SELECT r.name, r.theme_id, u.username, u.discord_id, u.avatar FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$offense_id."'");
+	$off_info_res = $conn->query("SELECT r.name, r.theme_id, u.id AS user_id, u.username, u.discord_id, u.avatar FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$offense_id."'");
 	$off_info     = $off_info_res ? $off_info_res->fetch_assoc() : null;
+	$off_user_id  = $off_info ? intval($off_info['user_id']) : 0;
 	$off_name     = $off_info ? $off_info['name']       : 'Unknown Realm';
 	$off_username = $off_info ? $off_info['username']   : 'Unknown';
 	$off_discord  = $off_info ? $off_info['discord_id'] : '';
 	$off_avatar   = $off_info ? $off_info['avatar']     : '';
 	$off_theme_id = $off_info ? $off_info['theme_id']   : '';
-	$def_info_res = $conn->query("SELECT r.name, r.theme_id, u.username, u.discord_id, u.avatar FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$defense_id."'");
+	$def_info_res = $conn->query("SELECT r.name, r.theme_id, u.id AS user_id, u.username, u.discord_id, u.avatar FROM realms r INNER JOIN users u ON u.id = r.user_id WHERE r.id='".$defense_id."'");
 	$def_info     = $def_info_res ? $def_info_res->fetch_assoc() : null;
+	$def_user_id  = $def_info ? intval($def_info['user_id']) : 0;
 	$def_name     = $def_info ? $def_info['name']       : 'Unknown Realm';
 	$def_username = $def_info ? $def_info['username']   : 'Unknown';
 	$def_discord  = $def_info ? $def_info['discord_id'] : '';
@@ -9391,6 +9393,50 @@ function endRaid($conn, $raid_id){
 		$author = array("name" => $def_username." · ".$def_name, "icon_url" => $def_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($def_username));
 		discordmsg("🛡️ Defense Holds", $raid_desc, $def_image_url, "https://skulliance.io/staking/realms.php", "raids", $def_avatar_url, "4A90D9", $author);
 	}
+	/*
+	 * DHC FIGHTERS -- a decided raid pays the winner a wildcard trait.
+	 *
+	 * BOTH SIDES. Paying only attackers would make Realms the one place on the
+	 * platform where your drop is another staker's loss. Repelling a raid is
+	 * the same "you won the engagement" event, and it is the least grindable
+	 * trigger on the platform -- nobody chooses when they are attacked.
+	 *
+	 * One source key for both, so the cap inside dhcf_award() is three a day
+	 * from Realms in total rather than three each way.
+	 *
+	 * $offense and $defense are the ratings from the top of this function, i.e.
+	 * BEFORE this raid's own location damage -- the matchup as it was fought.
+	 * The gap is the loser's rating minus the winner's, so beating a stronger
+	 * realm rolls a better table and beating a weaker one still pays, on the
+	 * routine table.
+	 *
+	 * Awarded by user_id, never by session: this function resolves lazily from
+	 * whoever opens the raids list first, which is routinely the other player.
+	 * dhcf_award() scopes the reveal modal to the earning session for that
+	 * reason; the winner is told by Discord regardless.
+	 *
+	 * Buffered like every other dhcf_award() caller in this file -- display_errors
+	 * is on platform-wide and this runs inside AJAX endpoints that emit JSON.
+	 */
+	if (is_file(__DIR__ . '/dhcfighters-lib.php')) {
+		ob_start();
+		require_once __DIR__ . '/dhcfighters-lib.php';
+		if ($outcome == 1) {
+			$dhcf_winner = $off_user_id;
+			$dhcf_gap    = $defense - $offense;
+			$dhcf_detail = 'raid won vs ' . $def_name;
+		} else {
+			$dhcf_winner = $def_user_id;
+			$dhcf_gap    = $offense - $defense;
+			$dhcf_detail = 'raid repelled vs ' . $off_name;
+		}
+		if ($dhcf_winner > 0) {
+			dhcf_award($conn, $dhcf_winner, 'wildcard', 'raids', $dhcf_detail,
+				dhcf_table_for('raids', $dhcf_gap));
+		}
+		ob_end_clean();
+	}
+
 	// Soldier death rolls — always record both sides for the raid log
 	rollTowerSoldierDeaths($conn, $raid_id, $defense_id, 3, $outcome == 1);
 	if ($outcome != 1) rollRaidSoldierDeaths($conn, $raid_id);

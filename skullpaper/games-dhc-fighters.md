@@ -37,6 +37,7 @@ background at minimum, so no single game can dress one on its own.
 | Boss Battles | **any trait** | every boss defeat |
 | Maxingo Missions | **any trait** | completing one — deeper levels roll better |
 | Daily Reward Streak | **any trait** | claiming day 7 of 7 |
+| Realm Raids | **any trait** | winning a raid, or repelling one |
 
 You do not have to play a game at all. Completing a full seven-day daily
 reward streak pays a wildcard on the day you claim it, and so does completing
@@ -56,7 +57,32 @@ months and still be unable to finish a character.
 Boss Battles is the exception in the other direction: it pays a **wildcard**,
 which can be any trait at all. Boss Battles requires an NFT to play, so it
 deliberately holds nothing you need — being unable to play it costs you a bonus,
-never a slot.
+never a slot. **Realm Raids** works the same way, for the same reason: raiding
+needs a Realm, a trained army and a Portal, so it pays a wildcard rather than
+anything a Fighter cannot be finished without.
+
+### Raids pay both sides
+
+Raids are the only drop source that is not a solo game — the trait comes out of
+a contest with another staker. So **both sides of a decided raid can draw one**:
+the attacker on a successful raid, and the defender on one they repel. Repelling
+a raid is the same achievement seen from the other end, and it is the one
+trigger on the platform nobody can grind, because nobody chooses when they are
+attacked.
+
+Attacking and defending **share a single daily limit**. Three traits a day from
+Realms in total, not three each way, however many raids resolve.
+
+How good the roll is depends on **how far up you punched** — the gap between the
+realm you beat and your own rating. Beating a stronger realm rolls a better
+table; beating a weaker one still pays, on the standard one. This matches how
+looting already works, where a weaker attacker can take a larger share than a
+stronger one, and it means hunting the softest target you are allowed to attack
+is not the best way to collect traits.
+
+Because an attacker cannot select a target more than three defense levels below
+themselves, the widest gaps — and so the best tables — are reached by attacking
+upward. See [[realms-raids]].
 
 ---
 

@@ -315,6 +315,35 @@ $GLOBALS['DHCF_GAMES'] = array(
 	'dailystreak'    => array('label' => 'Daily Reward Streak', 'url' => 'launchpad.php', 'category' => 'wildcard',
 	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3',
 	                          'cap' => 1, 'limit_note' => 'once per 7-day streak'),
+
+	// REALMS RAIDS -- the first source that is not a solo game: the trait comes
+	// out of a contest with another staker rather than a board. BOTH SIDES of a
+	// decided raid pay, and they share ONE key deliberately, so the per-source
+	// cap means three a day from Realms in total -- not three attacking plus
+	// three defending.
+	//
+	// Gated: raiding needs a Realm, a trained army and a Portal, so a staker
+	// without one is shut out completely. That is precisely the case the
+	// wildcard exists for -- being locked out costs a bonus, never a slot.
+	//
+	// 'base' is the ROUTINE table, not a win-gated one. A raid win is nothing
+	// like a Crypt Crawl win: evenly matched realms sit near 50%, and the
+	// attacker chooses the target, so the floor here is a coin flip you picked.
+	//
+	// The bands read HOW FAR UP THE WINNER PUNCHED -- the loser's rating minus
+	// their own -- which asks both sides the same question: how much stronger
+	// was the realm you beat. It mirrors the loot rule (a weaker attacker takes
+	// up to 9%, a stronger one is capped at 3%) and it stops "farm the softest
+	// eligible realm" from being the optimal way to collect traits.
+	//
+	// Attackers reach the top band and defenders essentially cannot: startRaid()
+	// refuses a target more than 3 defense levels below you, so a defender's gap
+	// caps at +3 outside a revenge raid. That asymmetry is intended. Punching up
+	// five levels is a deliberate long-odds choice; nobody chooses to be raided.
+	'raids'          => array('label' => 'Realm Raids', 'url' => 'raids.php',
+	                          'category' => 'wildcard', 'trigger' => 'win a raid, or repel one',
+	                          'gated' => true, 'base' => 'run',
+	                          'bands' => array(1 => 'placement_10', 3 => 'placement_3', 5 => 'placement_1')),
 );
 
 function dhcf_game($key) {
@@ -343,6 +372,7 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'bosses'        => 0,      // the defeat itself qualifies; nothing to grade
 	'dailystreak'   => 7,      // day 7 of 7, nothing earlier
 	'maxingo'       => 1,      // any completed Maxingo mission; level sets the odds
+	'raids'         => 0,      // the decided raid itself qualifies, won or repelled
 );
 
 function dhcf_floor($game) {
