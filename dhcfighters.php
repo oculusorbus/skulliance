@@ -191,6 +191,25 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-games .bar i{display:block;height:100%;background:var(--ochre)}
 .dhcf-games li.done .bar i{background:var(--teal)}
 .dhcf-games li.done .n{color:var(--teal)}
+/* SIX UP ON A BIG SCREEN. The twelve sources fall into two clean rows of six
+   instead of the three ragged rows auto-fill gives at a 240px minimum, which
+   is what pushes the panels below it off the fold on a desktop.
+
+   Fixed count rather than a smaller auto-fill minimum, because "six" is the
+   point -- auto-fill would give five or seven depending on the window and the
+   rows would go ragged again. minmax(0,1fr) rather than 1fr so a long trigger
+   line wraps inside its track instead of widening it and breaking the six.
+
+   1400px is where .main (flex:70% of the row, less its 20px padding and the
+   wrapper's 14px) leaves each of six tracks enough width for the count and the
+   "n of n left today" line. Below it the auto-fill above still applies.
+
+   Two rows is a property of there being twelve sources, not of this rule --
+   add a thirteenth and it becomes three. */
+@media (min-width:1400px){
+  .dhcf-games ul{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .dhcf-games li{padding:7px 9px}
+}
 .dhcf-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:18px}
 .dhcf-panel{border:1px solid var(--line);border-radius:3px;overflow:hidden}
 .dhcf-panel h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
