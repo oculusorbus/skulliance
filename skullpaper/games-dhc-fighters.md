@@ -118,6 +118,11 @@ game — so there is never a reason to stop the moment you qualify.
 Every table keeps a real chance at something rare, so the lottery is alive for
 everyone playing, not just the people at the top.
 
+Tiers are colour-coded wherever they appear — the trait picker, the rarity
+filter, and the **draw order list** beside the canvas, which shows the tier of
+every piece a Fighter is currently wearing. On a phone the draw order drops the
+tier so the trait names stay readable at a glance.
+
 ---
 
 ## You cannot miss a drop

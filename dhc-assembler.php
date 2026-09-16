@@ -322,6 +322,24 @@ a{color:var(--ochre)}
   line-height:1;padding:2px 3px;cursor:pointer;border-radius:2px;flex:none}
 .stack li .eye:hover{color:var(--ochre)}
 .stack li .eye:focus-visible{outline:1px solid var(--ochre);outline-offset:1px}
+/* Tier on the draw order, so what a Fighter is actually made of reads off the
+   same list you arrange it in -- until now that meant clicking back through
+   every category tab to check. Right-aligned against the eye so the column of
+   dots scans vertically; the name keeps flex:1 and ellipsises into it.
+
+   Hidden below 520px. The stack is width:min(66vh,100%), so on a phone it is
+   the container's ~360px and the badge costs about 70px of that -- the names
+   are what you are reading at a glance there, and they truncate first. */
+.stack li .rar{display:flex;align-items:center;gap:4px;flex:none;font-style:normal;
+  font-size:8.5px;line-height:1;letter-spacing:.04em;text-transform:uppercase;
+  white-space:nowrap;color:var(--tier,var(--dim))}
+.stack li .rar i{width:5px;height:5px;border-radius:50%;flex:none;
+  background:var(--tier,var(--line))}
+/* A hidden layer still has a trait in it, so it still has a tier -- muted and
+   struck through with the rest of the row rather than lighting up a colour for
+   something that is not being drawn. (An empty slot renders no badge at all.) */
+.stack li.hid .rar{color:var(--dim);text-decoration:line-through}
+@media (max-width:520px){.stack li .rar{display:none}}
 .stack li .eye[aria-pressed="true"]{color:var(--blood)}
 /* Hidden reads differently from empty: struck through, not just faded, so a
    hidden layer is never mistaken for a slot with nothing in it. */
@@ -866,11 +884,16 @@ a{color:var(--ochre)}
       var li = document.createElement('li');
       var chosen = sel[s.key];
       if (!chosen) li.className = 'off';
-      var name = '—';
+      var name = '—', tier = '';
       if (chosen) {
         var list = TRAITS[s.key] || [];
-        for (var j=0;j<list.length;j++) if (list[j].slug===chosen) name = list[j].name;
+        for (var j=0;j<list.length;j++) if (list[j].slug===chosen) {
+          name = list[j].name; tier = list[j].tier || '';
+        }
       }
+      // Same t-<tier> hook the picker cells use, so the row's dot reads from
+      // the one hue table rather than a second copy of it.
+      if (tier) li.classList.add('t-' + tier);
       var tag = '';
       if (s.key === 'companion' && chosen && COMPANION_UNDER.indexOf(chosen) !== -1)
         tag = ' <em style="color:var(--teal);font-style:normal">behind arms</em>';
@@ -883,9 +906,16 @@ a{color:var(--ochre)}
             ? ' <em style="color:var(--teal);font-style:normal">armless</em>'
             : ' <em style="color:var(--ochre);font-style:normal">arms underneath</em>';
       if (hidden[s.key]) li.classList.add('hid');
+      /*
+       * The tier rides as an <em>, deliberately not a <span>: the name cell is
+       * selected as span:nth-of-type(3), so adding a fourth span here would
+       * renumber the row the moment ALLOW_REORDER drops the grip and hand the
+       * name's flex:1 and ellipsis to the badge instead.
+       */
       li.innerHTML = (ALLOW_REORDER ? '<span class="grip">&#8942;&#8942;</span>' : '') +
                      '<span class="n">' + (i+1) +
-                     '</span><b>' + s.label + '</b><span>' + name + tag + '</span>';
+                     '</span><b>' + s.label + '</b><span>' + name + tag + '</span>' +
+                     (tier ? '<em class="rar"><i></i>' + tier + '</em>' : '');
       /*
        * Per-layer visibility. Distinct from None: None empties the slot, this
        * keeps the trait selected and simply stops drawing it, so you can look
