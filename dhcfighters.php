@@ -129,7 +129,21 @@ $dhca_preload = $dhcf_editing ? $dhcf_editing['traits'] : null;
 .dhcf-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px;margin:0 0 4px}
 .dhcf-head h1{margin:0;font-size:22px;letter-spacing:.02em}
 .dhcf-head .sub{font-size:12px;opacity:.7}
-.dhcf-note{font-size:11.5px;opacity:.65;line-height:1.6;margin:0;max-width:82ch}
+/* COLUMNS RATHER THAN A WIDER MEASURE. .dhcf-intro already grows to meet the
+   stats, so the empty band on a wide screen was inside it -- max-width:82ch
+   held the text to a readable line and left the rest of the box blank, seven
+   lines tall. Flowing into columns spends that width instead of the height.
+
+   No media query: `columns: 38ch 2` is self-adjusting. The browser fits as many
+   38ch columns as the box allows, up to two, so a narrow intro stays the single
+   column it is today and only a wide one splits. The single-column case tops
+   out around 80ch -- just under two columns' worth -- which is the same measure
+   the old cap gave.
+
+   max-width is what stops two columns from each being half of a very wide box:
+   164ch caps a column at the 82ch this has always used. */
+.dhcf-note{font-size:11.5px;opacity:.65;line-height:1.6;margin:0;
+  columns:38ch 2;column-gap:32px;max-width:164ch}
 .dhcf-note b{opacity:.95}
 .dhcf-note a{color:var(--ochre)}
 /* flex:0 1 auto + min-width:0, NOT 0 0 auto. A flex item that cannot shrink
