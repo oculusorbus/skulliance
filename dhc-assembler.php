@@ -254,7 +254,19 @@ a{color:var(--ochre)}
 .badge{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink);
   background:var(--ochre);padding:3px 8px;border-radius:2px}
 
-.shell{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:0;<?php
+/* THE STAGE TAKES WHAT THE CANVAS NEEDS, THE PICKER TAKES THE REST.
+   The canvas is width:min(66vh,100%), so on a wide screen it stops at 66vh and
+   a 1fr stage left the surplus as dead margin either side of it while the
+   picker stayed pinned at 380px. Sizing the stage track to the canvas instead
+   hands that surplus to the picker, which spends it on more thumbnail columns.
+
+   --stage is 66vh (the cap on .frame and .stack) plus .stage's 22px padding
+   either side; change either and this follows. minmax(0,...) rather than a
+   flat width so a tall narrow window can still shrink the stage below the
+   canvas cap, and minmax(380px,1fr) keeps the picker usable when it does --
+   that is the case this used to handle by never growing at all. */
+.shell{--stage:calc(66vh + 44px);
+  display:grid;grid-template-columns:minmax(0,var(--stage)) minmax(380px,1fr);gap:0;<?php
   // Only the standalone page has a viewport to fill. Embedded, the shell is
   // sized by what is in it, and the picker scrolls inside its own column.
   echo $dhca_mode === 'sandbox' ? 'height:calc(100% - 52px)' : 'height:auto;max-height:none'; ?>}
@@ -273,7 +285,13 @@ a{color:var(--ochre)}
  */
 .shell{border:1px solid var(--line);border-radius:3px;position:relative;align-items:stretch}
 .stage{overflow:visible;min-height:0}
-.picker{position:absolute;top:0;right:0;bottom:0;width:380px;
+/* Out of flow, so the width has to be computed rather than inherited from the
+   track. This is the second track's own sizing written out: the grid gives it
+   the remainder above a 380px floor, and so does this. The plain 380px first
+   is the fallback for anything without max(). */
+.picker{position:absolute;top:0;right:0;bottom:0;
+  width:380px;
+  width:max(380px, 100% - var(--stage));
   display:flex;flex-direction:column;min-height:0}
 .grid{flex:1;min-height:0;overflow:auto}
 @media (max-width:900px){
