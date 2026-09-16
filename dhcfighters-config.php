@@ -304,18 +304,6 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'base' => 'run',
 	                          'bands' => array(4 => 'placement_10', 7 => 'placement_3', 9 => 'placement_1')),
 
-	// NOT A GAME, deliberately in this list anyway: it is a drop source, and
-	// everything that reads DHCF_GAMES -- the claim endpoint, the notifier, the
-	// "where traits drop" table -- should see it without special-casing.
-	// Aimed at the members who claim dailies and run missions but never open a
-	// game; a wildcard is the right lure because it can be any trait at all.
-	// 'limit_note' replaces the "N of N left today" line where a daily count
-	// does not describe the real limit. The streak pays once per seven days by
-	// definition, so quoting a daily cap implies three are available today.
-	'dailystreak'    => array('label' => 'Daily Reward Streak', 'url' => 'launchpad.php', 'category' => 'wildcard',
-	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3',
-	                          'cap' => 1, 'limit_note' => 'once per 7-day streak'),
-
 	// REALMS RAIDS -- the first source that is not a solo game: the trait comes
 	// out of a contest with another staker rather than a board. BOTH SIDES of a
 	// decided raid pay, and they share ONE key deliberately, so the per-source
@@ -344,6 +332,18 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'category' => 'wildcard', 'trigger' => 'win a raid, or repel one',
 	                          'gated' => true, 'base' => 'run',
 	                          'bands' => array(1 => 'placement_10', 3 => 'placement_3', 5 => 'placement_1')),
+
+	// NOT A GAME, deliberately in this list anyway: it is a drop source, and
+	// everything that reads DHCF_GAMES -- the claim endpoint, the notifier, the
+	// "where traits drop" table -- should see it without special-casing.
+	// Aimed at the members who claim dailies and run missions but never open a
+	// game; a wildcard is the right lure because it can be any trait at all.
+	// 'limit_note' replaces the "N of N left today" line where a daily count
+	// does not describe the real limit. The streak pays once per seven days by
+	// definition, so quoting a daily cap implies three are available today.
+	'dailystreak'    => array('label' => 'Daily Reward Streak', 'url' => 'launchpad.php', 'category' => 'wildcard',
+	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3',
+	                          'cap' => 1, 'limit_note' => 'once per 7-day streak'),
 );
 
 function dhcf_game($key) {

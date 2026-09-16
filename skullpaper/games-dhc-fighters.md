@@ -36,8 +36,8 @@ background at minimum, so no single game can dress one on its own.
 | Monstrocity | Arms | completing all 28 levels |
 | Boss Battles | **any trait** | every boss defeat |
 | Maxingo Missions | **any trait** | completing one — deeper levels roll better |
-| Daily Reward Streak | **any trait** | claiming day 7 of 7 |
 | Realm Raids | **any trait** | winning a raid, or repelling one |
+| Daily Reward Streak | **any trait** | claiming day 7 of 7 |
 
 You do not have to play a game at all. Completing a full seven-day daily
 reward streak pays a wildcard on the day you claim it, and so does completing
