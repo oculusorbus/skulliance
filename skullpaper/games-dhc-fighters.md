@@ -49,6 +49,11 @@ Every successful mission pays, at any level — but the daily cap applies, so
 three traits a day is the most missions will ever give you however many you
 claim. Running ten across every level still yields three.
 
+Maxingo holders have a **Max Maxi** button that launches two missions on every
+unlocked level at once, timed so a pair comes due almost every day rather than
+all at once. It is the steady way to farm traits from missions; see
+[[missions]].
+
 **The three categories every Fighter needs — Torso, Head and Background — come
 only from games you cannot lose.** A mandatory trait behind a result you can
 fail would let a player grind for months and still be unable to finish a

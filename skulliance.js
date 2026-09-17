@@ -1653,7 +1653,28 @@ function startAutoMissionsAjax(btn) {
 	btn.disabled = true;
 	var freeBtn = document.querySelector('#startFreeMissionsForm button');
 	if (freeBtn) freeBtn.disabled = true;
+	var maxiBtn = document.querySelector('#startMaxMaxiMissionsForm button');
+	if (maxiBtn) maxiBtn.disabled = true;
 	$.get('ajax/start-auto-missions.php', function() {
+		window.currentMissionsLoaded = false;
+		loadCurrentMissions();
+	});
+}
+
+/*
+ * Max Maxi launches up to twenty missions in one request, so the other two
+ * launchers are locked out for the duration: all three draw on the same NFTs,
+ * points balance and item stock, and a second click landing mid-run would be
+ * deciding what to spend from a page that is already out of date.
+ */
+function startMaxMaxiMissionsAjax(btn) {
+	btn.innerHTML = '<span class="btn-spinner"></span> Working&hellip;';
+	btn.disabled = true;
+	['#startFreeMissionsForm button', '#startAutoMissionsForm button'].forEach(function (sel) {
+		var b = document.querySelector(sel);
+		if (b) b.disabled = true;
+	});
+	$.get('ajax/start-maxmaxi-missions.php', function() {
 		window.currentMissionsLoaded = false;
 		loadCurrentMissions();
 	});

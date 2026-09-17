@@ -40,6 +40,51 @@ The current missions pane tracks your progress and displays how much time you ha
 
 To make missions easier to claim, there is a "Claim All Completed Missions" button that claims all completed missions in one fell swoop.
 
+## Launching Missions in Bulk
+
+Three buttons above the current missions pane launch in bulk, so a full day's
+deployment is a click rather than twenty forms:
+
+* **Start All Free** sends every free level-1 mission your idle NFTs can fill.
+  This is the steady base most stakers run daily.
+* **Start All Auto** builds the best load-out it can across *all* your projects,
+  picking the highest-reward mission your NFTs and points can support and
+  spending success-rate, Fast Forward and Double Rewards items where they help.
+* **Max Maxi** is for Maxingo holders and appears only when you hold Maxingo
+  NFTs that are not already deployed — so it has to be used *before* either
+  Start All. See below.
+
+### Max Maxi
+
+Max Maxi launches **two missions on every Maxingo level you have unlocked** —
+twenty missions when all ten are open. Each one carries a **100% Success** item,
+which guarantees the completion on its own, plus **Fast Forward** and **Double
+Rewards** when you have them in stock.
+
+**Press it before the Start All buttons.** A 100% Success item can only be
+applied while your Maxingo NFTs are home and available — but using it does *not*
+send them on the mission. They stay available, which is how twenty missions go
+out on a single roster, and it is the whole reason this farms. Start All Free
+and Start All Auto *do* send those NFTs out, so once you have used either one
+there is nothing left for the item to be applied against and the button
+disappears until your NFTs come home.
+
+If you are short on Fast Forward or Double Rewards the mission still launches
+without them. If you run out of **100% Success** items it stops there — without
+one the mission would be a gamble, which is the opposite of what this is for.
+Levels you cannot currently afford are skipped, and deeper levels go out first
+so that a short supply is spent where it is worth most.
+
+**Why two and not three.** Every level runs a different length, so each pair
+comes due on its own day rather than all at once. Two traits landing on a due
+day, plus one from your steady Start All Free, is three — which is exactly the
+[[games-dhc-fighters]] daily cap.
+
+**Run it once a day.** That cadence keeps a pair coming due almost every day for
+as long as your MAXI points last. Running it twice in one day is wasted: the
+second pair comes due alongside the first, and anything past three traits that
+day is gone.
+
 ## Goal of Missions
 
 The goal with the missions platform was to make it as easy as possible to embark on all your missions so that it's not a chore to login daily and participate.

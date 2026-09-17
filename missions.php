@@ -43,6 +43,9 @@ if(isset($_POST["start_all"])){
 if(isset($_POST["auto_start"])){
 	startAutoMissions($conn);
 }
+if(isset($_POST["max_maxi"])){
+	startMaxMaxiMissions($conn);
+}
 if(isset($_POST["reset_mission"])){
 	unset($_SESSION['userData']['mission']);
 	if(isset($_POST['nft_project_id']) && (int)$_POST['nft_project_id'] > 0){

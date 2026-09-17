@@ -1281,6 +1281,9 @@ function getCurrentMissions($conn){
 	if ($result->num_rows > 0) {
    	  $projects = renderStartAllFreeEligibleMissionsButton($conn);
 	  renderStartAutoMissionsButton($conn);
+	  // Maxingo holders only, and it hides itself when the roster is fully
+	  // deployed -- see renderMaxMaxiMissionsButton().
+	  renderMaxMaxiMissionsButton($conn);
 	  echo "<div class='mc-list'>";
 	  // output data of each row
 	  $rows = array();
@@ -2194,6 +2197,207 @@ function renderStartAutoMissionsButton($conn) {
 
 	echo "<span style='display:$display' id='startAutoMissionsForm'>
 	<button type='button' class='button' data-tooltip='Automatically builds the best mission load-outs across all your projects, picking the highest-reward missions your NFTs and points balance can support. Systematically deploys Random Reward and 25-75% Success Rate items on completed campaigns, plus Fast Forward and Double Rewards on top of those for uncompleted ones. Ideal for maximizing point returns and guaranteeing item drops in one click.' onclick='startAutoMissionsAjax(this)'>Start All Auto</button>
+	</span><br>";
+}
+
+/* ------------------------------------------------------------------ *
+ * MAX MAXI -- two missions on every unlocked Maxingo level, in one click.
+ *
+ * A trait farm, deliberately. Maxingo missions are the platform's one drop
+ * source that is not a game, and the DHC daily cap is three traits a day from
+ * missions however many are claimed -- so the value here is not volume, it is
+ * SPREAD. Each level has its own duration, so a pair launched on the same day
+ * comes due on a different day from every other level's pair. Two coming due
+ * together, plus one from the steady Start All Free stream, is three: the cap,
+ * exactly, on each of those days rather than all at once.
+ *
+ * That is also why it is two and not three. The third slot belongs to the
+ * routine free run, which the player is doing anyway.
+ *
+ * Every mission goes out with a 100% Success item (id 1), which guarantees the
+ * completion and sends no NFTs -- the item is the whole loadout. The NFTs still
+ * have to be HOME for it to be applied, though, so this must run before Start
+ * All Free or Start All Auto deploys them. See maxMaxiAvailableNfts(). Fast
+ * Forward (5) and Double Rewards (6) ride along when they are in stock and are
+ * simply skipped when they are not: running short of those costs speed and
+ * points, not the trait. Running out of 100% items stops the run, because
+ * without one the mission is a gamble and the point of this button is that it
+ * is not.
+ *
+ * Highest level first. If the 100% items run out part way, the ones that got
+ * launched should be the ones worth the most -- deeper Maxingo levels both pay
+ * better and roll the trait on a better table (see DHCF_GAMES['maxingo']).
+ * ------------------------------------------------------------------ */
+
+/** The Maxingo project id, or 0 if the DHC config is not installed. */
+function maxMaxiProjectId() {
+	// Required BEFORE the constant is named: PHP 8 throws on an undefined
+	// constant, so testing it in the same expression that loads its definition
+	// would fatal rather than degrade. Same reason the Maxingo trait award in
+	// completeMission() orders its require this way.
+	if (!is_file(__DIR__ . '/dhcfighters-config.php')) return 0;
+	require_once __DIR__ . '/dhcfighters-config.php';
+	return defined('DHCF_MAXINGO_PROJECT') ? (int)DHCF_MAXINGO_PROJECT : 0;
+}
+
+/**
+ * How many Maxingo NFTs the player holds that are not already out on a mission.
+ *
+ * NOT merely an entitlement check -- this is a hard requirement of the 100%
+ * Success item. The item can only be applied while the project's NFTs are home
+ * and available, but applying it does NOT send them on the mission: they stay
+ * available, which is the whole reason twenty missions can go out on one
+ * roster. That is the farm.
+ *
+ * It is also why ORDER MATTERS. Start All Free and Start All Auto deploy those
+ * same NFTs, and once they are out there is nothing left for the 100% item to
+ * be applied against. Max Maxi has to run first. The button hiding itself the
+ * moment the roster is fully deployed is what enforces that in practice --
+ * after a Start All there is nothing to click.
+ *
+ * Checked once per run rather than per mission, correctly: nothing in this run
+ * deploys an NFT, so a roster that is available at the start stays available.
+ */
+function maxMaxiAvailableNfts($conn, $project_id) {
+	if (!isset($_SESSION['userData']['user_id']) || $project_id <= 0) return 0;
+	$user_id = (int)$_SESSION['userData']['user_id'];
+	$sql = "SELECT COUNT(*) AS cnt
+	        FROM nfts
+	        INNER JOIN collections ON collections.id = nfts.collection_id
+	        WHERE collections.project_id = '$project_id'
+	          AND nfts.user_id = '$user_id'
+	          AND nfts.asset_id NOT IN (
+	              SELECT n2.asset_id
+	              FROM missions_nfts
+	              INNER JOIN nfts n2 ON n2.id = missions_nfts.nft_id
+	              INNER JOIN missions m ON m.id = missions_nfts.mission_id
+	              WHERE m.status = '0' AND m.user_id = '$user_id'
+	          )";
+	$result = $conn->query($sql);
+	if (!$result) return 0;
+	$row = $result->fetch_assoc();
+	return $row ? (int)$row['cnt'] : 0;
+}
+
+function startMaxMaxiMissions($conn) {
+	if (!isset($_SESSION['userData']['user_id'])) return;
+	$user_id    = (int)$_SESSION['userData']['user_id'];
+	$project_id = maxMaxiProjectId();
+	if ($project_id <= 0) return;
+
+	// Server-side entitlement. The button being hidden is not a boundary --
+	// a stale page or a direct hit on the endpoint bypasses it entirely.
+	if (maxMaxiAvailableNfts($conn, $project_id) <= 0) return;
+
+	// Unlocked levels: one past the deepest cleared, capped at what exists.
+	$max_quest_level = 0;
+	$mlr = $conn->query("SELECT MAX(level) AS max_level FROM quests WHERE project_id = '$project_id'");
+	if ($mlr && $mlr->num_rows > 0) $max_quest_level = (int)$mlr->fetch_assoc()['max_level'];
+	if ($max_quest_level <= 0) return;
+
+	$completed_levels = getMissionLevels($conn);
+	$max_completed    = isset($completed_levels[$project_id]) ? (int)$completed_levels[$project_id] : 0;
+	$max_unlocked     = min($max_completed + 1, $max_quest_level);
+
+	// Highest first -- see the block comment.
+	$quests = array();
+	$qr = $conn->query("SELECT id, level, cost, title FROM quests
+	                    WHERE project_id = '$project_id' AND level <= '$max_unlocked'
+	                    ORDER BY level DESC");
+	if ($qr) while ($q = $qr->fetch_assoc()) $quests[] = $q;
+	if (empty($quests)) return;
+
+	/*
+	 * Stock is tracked locally as it is spent. getCurrentAmounts() is a
+	 * snapshot and _launchAutoMission() decrements through updateAmount(), so
+	 * re-reading per mission would be twenty extra round trips -- and trusting
+	 * the stale snapshot would let the run spend items it no longer has.
+	 */
+	$amounts = getCurrentAmounts($conn);
+	$stock = array();
+	foreach (array(1, 5, 6) as $cid) {
+		$stock[$cid] = isset($amounts[$cid]) ? (int)$amounts[$cid]['amount'] : 0;
+	}
+
+	$launched   = array();
+	$short_cash = false;
+
+	foreach ($quests as $quest) {
+		for ($i = 0; $i < 2; $i++) {
+			// No 100% item, no mission. This is the one item the button cannot
+			// substitute for: without it the mission is a gamble, and a farm
+			// that sometimes fails is not what this promises.
+			if ($stock[1] <= 0) break 2;
+
+			$cost = (int)$quest['cost'];
+			if ($cost > 0 && (int)getBalance($conn, $project_id) < $cost) {
+				// Skip rather than stop: costs climb with level, so a balance
+				// that cannot reach this one may still cover a shallower level
+				// further down the loop.
+				$short_cash = true;
+				continue 2;
+			}
+
+			$extra_items = array();
+			if ($stock[5] > 0) $extra_items[] = 5;   // Fast Forward
+			if ($stock[6] > 0) $extra_items[] = 6;   // Double Rewards
+
+			// The 100% item IS the loadout -- no NFTs, by design.
+			$loadout = array('nfts' => array(), 'items' => array(1), 'rate' => 100, 'nft_count' => 0);
+
+			$mission_id = _launchAutoMission($conn, $user_id, (int)$quest['id'], $cost, $project_id, $loadout, $extra_items);
+			if (!$mission_id) break 2;
+
+			$stock[1]--;
+			foreach ($extra_items as $cid) $stock[$cid]--;
+			$launched[] = 'L' . (int)$quest['level'] . ' ' . $quest['title'];
+		}
+	}
+
+	if (empty($launched)) return;
+
+	$mm_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+	$mm_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
+	$mm_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
+	$mm_avatar_url = ($mm_discord && $mm_avatar) ? "https://cdn.discordapp.com/avatars/".$mm_discord."/".$mm_avatar.".png" : "";
+	$mm_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($mm_username);
+	$mm_mention    = $mm_discord ? "<@".$mm_discord.">" : $mm_username;
+	$mm_count      = count($launched);
+	$mm_desc       = $mm_mention." used **Max Maxi** and launched **".$mm_count."** mission".($mm_count != 1 ? "s" : "")."!\n\n";
+	$mm_budget     = 1800 - strlen($mm_desc);
+	$mm_truncated  = false;
+	foreach (array_count_values($launched) as $mm_t => $mm_n) {
+		$mm_line = "• ".$mm_t.($mm_n > 1 ? " x".$mm_n : "")."\n";
+		if (strlen($mm_line) > $mm_budget) { $mm_truncated = true; break; }
+		$mm_desc .= $mm_line; $mm_budget -= strlen($mm_line);
+	}
+	if ($mm_truncated) $mm_desc .= "*(and more...)*";
+	if ($short_cash) $mm_desc .= "\n*Some levels were skipped -- not enough points.*";
+	$mm_author = array("name" => $mm_username, "icon_url" => $mm_avatar_url, "url" => $mm_profile);
+	discordmsg("⚡ Max Maxi", $mm_desc, "", "https://skulliance.io/staking/missions.php", "missions", $mm_avatar_url, "F5A623", $mm_author);
+}
+
+function renderMaxMaxiMissionsButton($conn) {
+	if (!isset($_SESSION['userData']['user_id'])) return;
+	$project_id = maxMaxiProjectId();
+	if ($project_id <= 0) return;
+
+	// Maxingo holders only, and only while some of the roster is still home.
+	if (maxMaxiAvailableNfts($conn, $project_id) <= 0) return;
+
+	$tip = 'Launches TWO missions on every Maxingo level you have unlocked, each with a 100% Success item '
+	     . '(no NFTs needed -- the item is the whole load-out), plus Fast Forward and Double Rewards when you have them. '
+	     . 'Short on Fast Forward or Double Rewards and it still goes; out of 100% Success items and it stops there. '
+	     . 'Every level runs a different length, so each pair comes due on its own day. Two traits landing on a due day '
+	     . 'plus one from your steady Start All Free is three -- the daily cap, hit exactly, day after day. '
+	     . 'ONCE A DAY IS THE CADENCE: run it every day your MAXI points last and the traits keep coming. '
+	     . 'Running it twice in one day wastes them -- the second pair comes due alongside the first, and anything past three traits that day is gone. '
+	     . 'PRESS THIS FIRST, before Start All Free or Start All Auto. The 100% Success item can only be applied while your Maxingo NFTs are home '
+	     . 'and available -- it does not send them out, which is how twenty missions go out on one roster -- but the Start All buttons DO send them, '
+	     . 'and once they are gone this button has nothing to work with and disappears.';
+
+	echo "<span id='startMaxMaxiMissionsForm'>
+	<button type='button' class='button' data-tooltip='" . htmlspecialchars($tip, ENT_QUOTES) . "' onclick='startMaxMaxiMissionsAjax(this)'>Max Maxi</button>
 	</span><br>";
 }
 
