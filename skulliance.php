@@ -30,6 +30,36 @@ if(!isset($_SESSION['logged_in'])){
 	}
 }
 
+/*
+ * A REVEAL QUEUE CANNOT OUTLIVE THE MOMENT IT BELONGS TO.
+ *
+ * dhcf_unseen holds DHC trait drops awarded but not yet shown, so the next page
+ * a player opens can pay the debt. It is ephemeral UI state -- but the tail of
+ * this file serialises the whole of $_SESSION into a SIX-MONTH cookie, and on
+ * any session without a live PHPSESSID (iOS Safari ITP, PWA standalone) that
+ * cookie is restored as the session on every request. So anything left in this
+ * key is not pending for a page or two, it is pending for half a year.
+ *
+ * That is exactly what happened: the clear endpoint ran after this file's
+ * cookie write, so it could never remove the queue from the cookie, and a
+ * PWA replayed the same drop on every launch until the player signed in from a
+ * regular browser -- from inside the PWA there was nothing they could do. That
+ * endpoint now rewrites the cookie itself, which fixes the cause; this is the
+ * backstop, so any future clear that goes missing costs a few minutes of
+ * repeats instead of being unrecoverable without a second device.
+ *
+ * Fifteen minutes is far longer than the hop from a game page to the next page,
+ * which is all the queue is for.
+ */
+if (!empty($_SESSION['dhcf_unseen'])) {
+	$dhcf_q_at = isset($_SESSION['dhcf_unseen_at']) ? (int)$_SESSION['dhcf_unseen_at'] : 0;
+	// A queue with no stamp predates it, so it is at least as old as this deploy.
+	if ($dhcf_q_at <= 0 || $dhcf_q_at < time() - 900) {
+		unset($_SESSION['dhcf_unseen'], $_SESSION['dhcf_unseen_at']);
+	}
+	unset($dhcf_q_at);
+}
+
 extract($_SESSION['userData'] ?? []);
 //print_r($_SESSION['userData']);
 //print_r($_POST);

@@ -330,6 +330,11 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 	    && (int)$_SESSION['userData']['user_id'] === $user_id) {
 		if (!isset($_SESSION['dhcf_unseen']) || !is_array($_SESSION['dhcf_unseen'])) {
 			$_SESSION['dhcf_unseen'] = array();
+			// When the queue was opened. A reveal owed from minutes ago is worth
+			// showing; one owed from last week is a clear that went missing, and
+			// skulliance.php drops it rather than replaying it forever. See the
+			// prune there for why that failure mode is not hypothetical.
+			$_SESSION['dhcf_unseen_at'] = time();
 		}
 		// Bounded: a reveal queue is a nicety, not a ledger. The ledger is the
 		// database, and it already has every one of these.
