@@ -2201,7 +2201,8 @@ function renderStartAutoMissionsButton($conn) {
 }
 
 /* ------------------------------------------------------------------ *
- * MAX MAXI -- two missions on every unlocked Maxingo level, in one click.
+ * MAX MAXI -- two missions on every unlocked Maxingo level from 2 up, in one
+ * click. Eighteen missions with all ten levels open.
  *
  * A trait farm, deliberately. Maxingo missions are the platform's one drop
  * source that is not a game, and the DHC daily cap is three traits a day from
@@ -2210,6 +2211,8 @@ function renderStartAutoMissionsButton($conn) {
  * comes due on a different day from every other level's pair. Two coming due
  * together, plus one from the steady Start All Free stream, is three: the cap,
  * exactly, on each of those days rather than all at once.
+ *
+ * Level 1 is left out for that same reason -- see MAX_MAXI_MIN_LEVEL.
  *
  * That is also why it is two and not three. The third slot belongs to the
  * routine free run, which the player is doing anyway.
@@ -2228,6 +2231,13 @@ function renderStartAutoMissionsButton($conn) {
  * launched should be the ones worth the most -- deeper Maxingo levels both pay
  * better and roll the trait on a better table (see DHCF_GAMES['maxingo']).
  * ------------------------------------------------------------------ */
+
+/*
+ * Level 1 is excluded: it is an instant claim, so its pair would come due the
+ * moment it launched and take two of the day's three trait slots immediately --
+ * the slots the deeper levels are being launched to fill on their own due days.
+ */
+define('MAX_MAXI_MIN_LEVEL', 2);
 
 /** The Maxingo project id, or 0 if the DHC config is not installed. */
 function maxMaxiProjectId() {
@@ -2279,6 +2289,23 @@ function maxMaxiAvailableNfts($conn, $project_id) {
 	return $row ? (int)$row['cnt'] : 0;
 }
 
+/**
+ * Deepest Maxingo level currently open: one past the deepest cleared, capped at
+ * what exists. Shared by the launcher and the button so the two cannot drift --
+ * a button that offers a run the launcher will refuse is worse than no button.
+ */
+function maxMaxiUnlockedLevel($conn, $project_id) {
+	if (!isset($_SESSION['userData']['user_id']) || $project_id <= 0) return 0;
+	$max_quest_level = 0;
+	$mlr = $conn->query("SELECT MAX(level) AS max_level FROM quests WHERE project_id = '$project_id'");
+	if ($mlr && $mlr->num_rows > 0) $max_quest_level = (int)$mlr->fetch_assoc()['max_level'];
+	if ($max_quest_level <= 0) return 0;
+
+	$completed_levels = getMissionLevels($conn);
+	$max_completed    = isset($completed_levels[$project_id]) ? (int)$completed_levels[$project_id] : 0;
+	return min($max_completed + 1, $max_quest_level);
+}
+
 function startMaxMaxiMissions($conn) {
 	if (!isset($_SESSION['userData']['user_id'])) return;
 	$user_id    = (int)$_SESSION['userData']['user_id'];
@@ -2289,20 +2316,20 @@ function startMaxMaxiMissions($conn) {
 	// a stale page or a direct hit on the endpoint bypasses it entirely.
 	if (maxMaxiAvailableNfts($conn, $project_id) <= 0) return;
 
-	// Unlocked levels: one past the deepest cleared, capped at what exists.
-	$max_quest_level = 0;
-	$mlr = $conn->query("SELECT MAX(level) AS max_level FROM quests WHERE project_id = '$project_id'");
-	if ($mlr && $mlr->num_rows > 0) $max_quest_level = (int)$mlr->fetch_assoc()['max_level'];
-	if ($max_quest_level <= 0) return;
+	$max_unlocked = maxMaxiUnlockedLevel($conn, $project_id);
+	if ($max_unlocked < MAX_MAXI_MIN_LEVEL) return;
 
-	$completed_levels = getMissionLevels($conn);
-	$max_completed    = isset($completed_levels[$project_id]) ? (int)$completed_levels[$project_id] : 0;
-	$max_unlocked     = min($max_completed + 1, $max_quest_level);
-
+	// LEVEL 2 UP. Level 1 is an instant claim -- it comes due the moment it is
+	// launched, so its pair would take two of the day's three trait slots
+	// straight away instead of on a due day of its own. That is the opposite of
+	// what the staggering is for, and it would eat the slots the deeper levels
+	// are being launched to fill.
+	//
 	// Highest first -- see the block comment.
 	$quests = array();
 	$qr = $conn->query("SELECT id, level, cost, title FROM quests
-	                    WHERE project_id = '$project_id' AND level <= '$max_unlocked'
+	                    WHERE project_id = '$project_id'
+	                      AND level >= '" . MAX_MAXI_MIN_LEVEL . "' AND level <= '$max_unlocked'
 	                    ORDER BY level DESC");
 	if ($qr) while ($q = $qr->fetch_assoc()) $quests[] = $q;
 	if (empty($quests)) return;
@@ -2384,10 +2411,14 @@ function renderMaxMaxiMissionsButton($conn) {
 
 	// Maxingo holders only, and only while some of the roster is still home.
 	if (maxMaxiAvailableNfts($conn, $project_id) <= 0) return;
+	// Nothing to launch until level 2 is open, and a button that does nothing
+	// when clicked is worse than one that is not there.
+	if (maxMaxiUnlockedLevel($conn, $project_id) < MAX_MAXI_MIN_LEVEL) return;
 
-	$tip = 'Launches TWO missions on every Maxingo level you have unlocked, each with a 100% Success item '
+	$tip = 'Launches TWO missions on every Maxingo level you have unlocked from level 2 up -- eighteen with all ten open. Each carries a 100% Success item '
 	     . '(no NFTs needed -- the item is the whole load-out), plus Fast Forward and Double Rewards when you have them. '
 	     . 'Short on Fast Forward or Double Rewards and it still goes; out of 100% Success items and it stops there. '
+	     . 'Level 1 is skipped on purpose: it claims instantly, so its pair would spend two of the day\'s three trait slots the moment you pressed this. '
 	     . 'Every level runs a different length, so each pair comes due on its own day. Two traits landing on a due day '
 	     . 'plus one from your steady Start All Free is three -- the daily cap, hit exactly, day after day. '
 	     . 'ONCE A DAY IS THE CADENCE: run it every day your MAXI points last and the traits keep coming. '

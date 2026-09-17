@@ -50,16 +50,21 @@ deployment is a click rather than twenty forms:
 * **Start All Auto** builds the best load-out it can across *all* your projects,
   picking the highest-reward mission your NFTs and points can support and
   spending success-rate, Fast Forward and Double Rewards items where they help.
-* **Max Maxi** is for Maxingo holders and appears only when you hold Maxingo
-  NFTs that are not already deployed — so it has to be used *before* either
-  Start All. See below.
+* **Max Maxi** is for Maxingo holders and appears only once you have Maxingo
+  level 2 unlocked and hold Maxingo NFTs that are not already deployed — so it
+  has to be used *before* either Start All. See below.
 
 ### Max Maxi
 
-Max Maxi launches **two missions on every Maxingo level you have unlocked** —
-twenty missions when all ten are open. Each one carries a **100% Success** item,
-which guarantees the completion on its own, plus **Fast Forward** and **Double
-Rewards** when you have them in stock.
+Max Maxi launches **two missions on every Maxingo level you have unlocked from
+level 2 up** — eighteen missions when all ten are open. Each one carries a **100%
+Success** item, which guarantees the completion on its own, plus **Fast Forward**
+and **Double Rewards** when you have them in stock.
+
+**Level 1 is deliberately skipped.** It claims instantly, so its pair would spend
+two of the day's three trait slots the moment you pressed the button — the slots
+the deeper levels are being launched to fill on their own due days. The button
+does not appear until you have level 2 open.
 
 **Press it before the Start All buttons.** A 100% Success item can only be
 applied while your Maxingo NFTs are home and available — but using it does *not*
