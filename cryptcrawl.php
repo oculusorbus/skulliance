@@ -1294,7 +1294,7 @@ try {
 						fetch('ajax/cryptcrawl-finalize.php', { method: 'POST', body: new URLSearchParams({ run_id: runId }), keepalive: true }).catch(function() {});
 					}
 					/*
-					 * TRAIT DROP, ON DEPTH RATHER THAN THE WIN. Clearing 10 of
+					 * TRAIT DROP, ON DEPTH RATHER THAN THE WIN. Clearing 12 of
 					 * the 15 crypts qualifies, win or die.
 					 *
 					 * A win was too rare a trigger to be the only one: the
@@ -1302,8 +1302,12 @@ try {
 					 * Weapon category was effectively closed to most players
 					 * however much they played. Depth is the same thing the
 					 * leaderboard already ranks on, and the bands still pay a
-					 * full escape best -- reaching 10 earns a roll, it does not
+					 * full escape best -- reaching 12 earns a roll, it does not
 					 * make the win worth less.
+					 *
+					 * The threshold lives in DHCF_FLOORS, not here; this number
+					 * is only in the comment. Client-side it would be a number
+					 * a player can edit.
 					 *
 					 * Fired on every finished run now, not just a victory, and
 					 * a unit is passed so a run that falls short shows the

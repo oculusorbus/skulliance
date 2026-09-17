@@ -278,11 +278,15 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// Weapon and Headgear were shut to most players however much they played,
 	// which is the one thing the category map is supposed to prevent.
 	//
-	// Ten is the qualifying depth on both, and the bands still pay a full clear
-	// exactly what the win paid before: reaching 10 adds a roll, it does not
-	// take anything off the win. Depth is also what both leaderboards already
-	// rank on, so this grades the same thing the game already measures.
-	'cryptcrawl'     => array('label' => 'Crypt Crawl', 'url' => 'cryptcrawlgame.php',     'category' => 'weapon',     'trigger' => 'clear 10 of the 15 crypts',
+	// The qualifying depth is the last stretch of each game rather than a flat
+	// number: 12 of Crawl's 15, 10 of Conquest's 12. Conquest is the shorter
+	// game, so the same count would have been a much softer bar there -- these
+	// are both four fifths of the way in, which is the thing being asked for.
+	//
+	// The bands still pay a full clear exactly what the win paid before, so
+	// qualifying adds a roll and takes nothing off the win. Depth is also what
+	// both leaderboards already rank on, so this grades what the games measure.
+	'cryptcrawl'     => array('label' => 'Crypt Crawl', 'url' => 'cryptcrawlgame.php',     'category' => 'weapon',     'trigger' => 'clear 12 of the 15 crypts',
 	                          'base' => 'run',          'bands' => array(13 => 'placement_10', 15 => 'placement_3')),
 	'cryptconquest'  => array('label' => 'Crypt Conquest', 'url' => 'cryptconquestgame.php',  'category' => 'headgear',   'trigger' => 'defeat 10 of the 12 court cards',
 	                          'base' => 'run',          'bands' => array(12 => 'placement_10')),
@@ -373,7 +377,7 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'skullswap'     => 5000,   // board shows 11,870-14,400
 	'skullracer'    => 0,      // finishing at all qualifies
 	'obscura'       => 10,     // solves in a completed run; board shows streaks of 11-33
-	'cryptcrawl'    => 10,     // crypts cleared, of 15; a win is 15
+	'cryptcrawl'    => 12,     // crypts cleared, of 15; a win is 15
 	'cryptconquest' => 10,     // court cards defeated, of 12; a win is 12
 	'gauntlets'     => 0,      // win only
 	'guardians'     => 10,     // waves held; board shows 12-81

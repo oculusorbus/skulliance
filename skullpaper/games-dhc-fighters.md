@@ -29,7 +29,7 @@ background at minimum, so no single game can dress one on its own.
 | Skull Swap | Torso | a qualifying score |
 | Skull Racer | Head | finishing a race |
 | Obscura | Background | finishing a run with 10 or more solves |
-| Crypt Crawl | Weapon | clearing 10 of the 15 crypts |
+| Crypt Crawl | Weapon | clearing 12 of the 15 crypts |
 | Crypt Conquest | Headgear | defeating 10 of the 12 court cards |
 | Gauntlets | Effects | sweeping a whole gauntlet |
 | Realm Guardians | Companion | waves held |
@@ -54,9 +54,10 @@ only from games you cannot lose.** A mandatory trait behind a result you can
 fail would let a player grind for months and still be unable to finish a
 character.
 
-**The card games pay on depth, not on the win.** Crypt Crawl pays a Weapon at 10
+**The card games pay on depth, not on the win.** Crypt Crawl pays a Weapon at 12
 of its 15 crypts and Crypt Conquest pays Headgear at 10 of its 12 court cards —
-reached or beaten, win or die. Both used to require a full clear, and on the
+reached or beaten, win or die. Both are four fifths of the way in; Conquest is
+the shorter game, so the same count would have been a softer bar there. Both used to require a full clear, and on the
 live boards that is about one win against two losses in a week, which shut those
 two categories to most players however much they played. Going the whole way
 still rolls the best table either game offers, so getting to 10 adds a chance
@@ -116,7 +117,7 @@ much as chasing a single spectacular trait.
 **How well you do improves what you get, not how often.** A drop's quality comes
 from the best of three things: the game itself, how far you got, and where you
 placed on the leaderboard. Escaping all 15 crypts in Crypt Crawl rolls the
-strongest table that game offers; stopping at the 10 that qualify rolls the
+strongest table that game offers; stopping at the 12 that qualify rolls the
 standard one. A first place or a deep run is roughly sixteen times likelier to
 pull a mythic than a bare qualifying attempt.
 
