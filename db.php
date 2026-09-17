@@ -2415,20 +2415,20 @@ function renderMaxMaxiMissionsButton($conn) {
 	// when clicked is worse than one that is not there.
 	if (maxMaxiUnlockedLevel($conn, $project_id) < MAX_MAXI_MIN_LEVEL) return;
 
-	$tip = 'Launches TWO missions on every Maxingo level you have unlocked from level 2 up -- eighteen with all ten open. Each carries a 100% Success item '
-	     . '(no NFTs needed -- the item is the whole load-out), plus Fast Forward and Double Rewards when you have them. '
-	     . 'Short on Fast Forward or Double Rewards and it still goes; out of 100% Success items and it stops there. '
-	     . 'Level 1 is skipped on purpose: it claims instantly, so its pair would spend two of the day\'s three trait slots the moment you pressed this. '
-	     . 'Every level runs a different length, so each pair comes due on its own day. Two traits landing on a due day '
-	     . 'plus one from your steady Start All Free is three -- the daily cap, hit exactly, day after day. '
-	     . 'ONCE A DAY IS THE CADENCE: run it every day your MAXI points last and the traits keep coming. '
-	     . 'Running it twice in one day wastes them -- the second pair comes due alongside the first, and anything past three traits that day is gone. '
-	     . 'PRESS THIS FIRST, before Start All Free or Start All Auto. The 100% Success item can only be applied while your Maxingo NFTs are home '
-	     . 'and available -- it does not send them out, which is how twenty missions go out on one roster -- but the Start All buttons DO send them, '
-	     . 'and once they are gone this button has nothing to work with and disappears.';
+	/*
+	 * SHORT ON PURPOSE. The tooltip is a fixed-width ::after pinned above the
+	 * button, so every extra sentence grows it upward -- the first version of
+	 * this ran off the top of the window and under the browser chrome, where
+	 * none of it could be read. The full explanation lives in the Skull Paper;
+	 * this says what the button does, the one thing you can get wrong, and the
+	 * cadence.
+	 */
+	$tip = 'Two missions on every unlocked Maxingo level from 2 up, each with a 100% Success item, plus Fast Forward '
+	     . 'and Double Rewards when you have them. Use it BEFORE the Start All buttons -- those send out the NFTs the '
+	     . '100% item needs. Once a day is the cadence; twice in a day wastes traits. Full details in the Skull Paper.';
 
 	echo "<span id='startMaxMaxiMissionsForm'>
-	<button type='button' class='button' data-tooltip='" . htmlspecialchars($tip, ENT_QUOTES) . "' onclick='startMaxMaxiMissionsAjax(this)'>Start Max Maxi</button>
+	<button type='button' class='button tooltip-below' data-tooltip='" . htmlspecialchars($tip, ENT_QUOTES) . "' onclick='startMaxMaxiMissionsAjax(this)'>Start Max Maxi</button>
 	</span><br>";
 }
 

@@ -750,6 +750,14 @@ input {
 [data-tooltip]:hover::after {
     opacity: 1;
 }
+/* Tooltips open upward, which has nowhere to go on a control sitting near the
+   top of the page -- a tall one runs off the viewport and under the browser
+   chrome, unreadable. This flips one underneath its control instead. Opt-in
+   per element rather than a change to the default, so nothing else moves. */
+[data-tooltip].tooltip-below::after {
+    bottom: auto;
+    top: calc(100% + 8px);
+}
 
 .small-button {
   background-color: #00c8a0;
