@@ -210,6 +210,48 @@ define('DHCF_NUDGE', array('skull-krusher' => 23, 'skull-krusher-sash' => 13, 'a
 /** Weapons drawn against the torso's own arms; cannot coexist with Arms. */
 define('DHCF_ARMS_EXCLUSIVE', array('plastic-blaster', 'dh-raider-equipment', 'electric-morning-star'));
 
+/*
+ * HEADGEAR A GIVEN HEAD CANNOT WEAR.
+ *
+ * Keyed by head slug, listing the headgear that will not sit on it. Beheaded
+ * Cyborg is the case that created this: there is no skull under the headgear to
+ * carry these pieces, so they read as floating rather than worn. Not every piece
+ * fails -- most of the 32 still work -- so this is an explicit list per head
+ * rather than a blanket "headless heads wear nothing" rule.
+ *
+ * Enforced in three places, which is why it lives here rather than in any one of
+ * them: dhcf_layers() for every PHP renderer, the canvas's own paint() in
+ * dhc-assembler.php, and blockedReason() in the picker so the pairing cannot be
+ * made in the first place. A Fighter saved BEFORE a rule lands still holds the
+ * pairing -- the ledger is the record and its traits are not at risk -- so the
+ * renderers have to drop the layer rather than assume it can never occur.
+ */
+define('DHCF_HEADGEAR_EXCLUDED_BY_HEAD', array(
+	'beheaded-cyborg' => array(
+		'merged',
+		'steel-viking-helmet',
+		'666-demon-headgear',
+		'dh-fire-goggles',
+		'killer-phantom-mask',
+		'ww2-helmet',
+		'arachno-neural-implant',
+		'code-prisoner-helmet',
+		'dm-mask',
+		'golden-cyber-plague-detecting-mask',
+		'mk200-cyber-plague-vr-mask',
+		'trojan-detection-mask',
+		'xlon-implant',
+		'malware-detecting-mask',
+	),
+));
+
+/** Whether $headgear is refused by $head. Empty either side is never blocked. */
+function dhcf_headgear_blocked($head, $headgear) {
+	if (empty($head) || empty($headgear)) return false;
+	$excluded = DHCF_HEADGEAR_EXCLUDED_BY_HEAD;
+	return isset($excluded[$head]) && in_array($headgear, $excluded[$head], true);
+}
+
 /**
  * Draw order for a saved layout, exceptions applied. Mirrors layerOrder() in
  * the assembler's JS -- same inputs, same output, minus the drag handling the

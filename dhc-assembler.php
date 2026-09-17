@@ -540,6 +540,13 @@ a{color:var(--ochre)}
      Enforced both ways. Whichever slot is filled first blocks the other, and
      the way out is always the None tile, so no build can become unescapable. */
   var ARMS_EXCLUSIVE = <?php echo json_encode(DHCF_ARMS_EXCLUSIVE); ?>;
+  // head slug -> headgear it will not carry. See DHCF_HEADGEAR_EXCLUDED_BY_HEAD.
+  var HEADGEAR_BLOCKED = <?php echo json_encode(DHCF_HEADGEAR_EXCLUDED_BY_HEAD); ?>;
+  function headgearBlocked(head, gear) {
+    if (!head || !gear) return false;
+    var list = HEADGEAR_BLOCKED[head];
+    return !!list && list.indexOf(gear) !== -1;
+  }
 
   function armsExclusive(slug) { return ARMS_EXCLUSIVE.indexOf(slug) !== -1; }
 
@@ -727,6 +734,13 @@ a{color:var(--ochre)}
       }
     }
 
+    if (key === 'headgear' && headgearBlocked(sel.head, slug))
+      return nameOf('headgear', slug) + ' has no head to sit on with '
+           + nameOf('head', sel.head) + ' selected. Change the Head first.';
+    if (key === 'head' && headgearBlocked(slug, sel.headgear))
+      return nameOf('head', slug) + ' cannot carry '
+           + nameOf('headgear', sel.headgear) + '. Set Headgear to None first.';
+
     if (key === 'weapon' && armsExclusive(slug) && sel.arms)
       return nameOf('weapon', slug) + ' is drawn against the torso’s own arms, so it cannot be '
            + 'combined with an Arms trait. Set Arms to None first.';
@@ -828,6 +842,13 @@ a{color:var(--ochre)}
       // A hidden layer keeps its selection but is not drawn at all -- removing
       // the <img> rather than setting opacity, so nothing can be half-visible.
       if (!sel[s.key] || hidden[s.key]) { if (el) el.remove(); return; }
+      // Same for headgear this head will not carry: there is no skull under it
+      // to sit on, so it would float. Reachable on a Fighter saved before the
+      // rule existed, which is why the canvas drops it rather than trusting the
+      // picker to have prevented it.
+      if (s.key === 'headgear' && headgearBlocked(sel.head, sel.headgear)) {
+        if (el) el.remove(); return;
+      }
       if (!el) {
         el = document.createElement('img');
         el.id = id; el.alt = '';
@@ -913,6 +934,8 @@ a{color:var(--ochre)}
       // the one hue table rather than a second copy of it.
       if (tier) li.classList.add('t-' + tier);
       var tag = '';
+      if (s.key === 'headgear' && chosen && headgearBlocked(sel.head, chosen))
+        tag = ' <em style="color:var(--ochre);font-style:normal">not drawn &mdash; no head</em>';
       if (s.key === 'companion' && chosen && COMPANION_UNDER.indexOf(chosen) !== -1)
         tag = ' <em style="color:var(--teal);font-style:normal">behind arms</em>';
       if ((s.key === 'effects1' || s.key === 'effects2') && chosen && effectBehindTorso(s.key))

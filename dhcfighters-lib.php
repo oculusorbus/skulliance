@@ -510,6 +510,15 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 	if (!$clean) return array(false, 'Nothing to save.', null);
 
 	// Enforced here, not only in the browser: the page is a suggestion.
+	// Same boundary as the missing-parts check: the page is a suggestion. A
+	// stale tab, or one opened before this rule landed, must not commit a
+	// pairing the renderers will then refuse to draw.
+	if (!empty($clean['head']) && !empty($clean['headgear'])
+	    && dhcf_headgear_blocked($clean['head'], $clean['headgear'])) {
+		return array(false, dhcf_trait_name('headgear', $clean['headgear']) . ' cannot be worn with '
+			. dhcf_trait_name('head', $clean['head']) . '.', null);
+	}
+
 	$missing = dhcf_missing_required($clean);
 	if ($missing) {
 		return array(false, 'A Fighter needs a ' . implode(', ', $missing) . '.', null);
@@ -619,6 +628,15 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
 	$user_id = (int)$user_id; $fighter_id = (int)$fighter_id;
 	$clean = dhcf_clean_traits($traits);
 	if (!$clean) return array(false, 'Nothing to save.', null);
+	// Same boundary as the missing-parts check: the page is a suggestion. A
+	// stale tab, or one opened before this rule landed, must not commit a
+	// pairing the renderers will then refuse to draw.
+	if (!empty($clean['head']) && !empty($clean['headgear'])
+	    && dhcf_headgear_blocked($clean['head'], $clean['headgear'])) {
+		return array(false, dhcf_trait_name('headgear', $clean['headgear']) . ' cannot be worn with '
+			. dhcf_trait_name('head', $clean['head']) . '.', null);
+	}
+
 	$missing = dhcf_missing_required($clean);
 	if ($missing) {
 		return array(false, 'A Fighter needs a ' . implode(', ', $missing) . '.', null);
@@ -790,8 +808,14 @@ function dhcf_layers($traits, $webroot = '') {
 	$mode = dhcf_armless_mode($arms);
 	$out  = array();
 
+	$head = isset($traits['head']) ? $traits['head'] : '';
+
 	foreach (dhcf_layer_order($traits) as $slot) {
 		if (empty($traits[$slot])) continue;
+		// Headgear this head refuses is dropped rather than drawn. A Fighter
+		// saved before the rule existed still carries the pairing, and the
+		// traits stay the player's either way -- what changes is the picture.
+		if ($slot === 'headgear' && dhcf_headgear_blocked($head, $traits[$slot])) continue;
 		$slug  = $traits[$slot];
 		$cat   = dhcf_slot_category($slot);
 		$nudge = isset(DHCF_NUDGE[$slug]) ? (float)DHCF_NUDGE[$slug] / 10 : 0;

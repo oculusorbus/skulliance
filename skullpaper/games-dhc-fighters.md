@@ -299,6 +299,9 @@ letting you build something that renders wrongly. Some of what it handles:
   the torso's own arms, which an Arms trait replaces.
 - **Effects sit under the head**, so they cross the Fighter without covering the
   face. The comic covers are full-frame treatments and only ever draw on top.
+- **Some headgear needs a head to sit on.** Beheaded Cyborg has no skull under
+  the headgear, so the pieces that would rest on one are not offered with it —
+  most headgear still works, and the assembler tells you which does not.
 
 These rules keep improving, and because a saved Fighter stores *which traits*
 rather than a finished picture, every improvement applies to Fighters that were
