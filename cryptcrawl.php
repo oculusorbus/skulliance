@@ -1294,19 +1294,29 @@ try {
 						fetch('ajax/cryptcrawl-finalize.php', { method: 'POST', body: new URLSearchParams({ run_id: runId }), keepalive: true }).catch(function() {});
 					}
 					/*
-					 * TRAIT DROP, wins only -- Crypt Crawl pays a Weapon and the
-					 * whole point of putting an optional category on a winnable
-					 * game is that the win is the achievement. A loss is the
-					 * normal outcome here (the weekly board is typically 0-1
-					 * wins against 2 losses) and stays silent: no unit is passed,
-					 * so the modal shows nothing rather than a near-miss bar on
-					 * a game with no partial credit.
+					 * TRAIT DROP, ON DEPTH RATHER THAN THE WIN. Clearing 10 of
+					 * the 15 crypts qualifies, win or die.
+					 *
+					 * A win was too rare a trigger to be the only one: the
+					 * weekly board runs about 0-1 wins against 2 losses, so the
+					 * Weapon category was effectively closed to most players
+					 * however much they played. Depth is the same thing the
+					 * leaderboard already ranks on, and the bands still pay a
+					 * full escape best -- reaching 10 earns a roll, it does not
+					 * make the win worth less.
+					 *
+					 * Fired on every finished run now, not just a victory, and
+					 * a unit is passed so a run that falls short shows the
+					 * near-miss bar instead of nothing. The server decides
+					 * whether the depth qualifies; this only reports it.
 					 *
 					 * Delayed past the 700ms pointer-events guard above so the
 					 * result screen is unmistakably the player's first read.
 					 */
-					if (resultEl && resultEl.classList.contains('won') && window.DHC_DROP) {
-						DHC_DROP({ game: 'cryptcrawl', value: 1, delay: 1200 });
+					if (resultEl && window.DHC_DROP) {
+						DHC_DROP({ game: 'cryptcrawl',
+						           value: parseInt(resultEl.getAttribute('data-depth'), 10) || 0,
+						           unit: 'crypts cleared', delay: 1200 });
 					}
 					initGameArea();
 					busy = false;

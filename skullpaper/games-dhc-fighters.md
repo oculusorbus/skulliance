@@ -29,8 +29,8 @@ background at minimum, so no single game can dress one on its own.
 | Skull Swap | Torso | a qualifying score |
 | Skull Racer | Head | finishing a race |
 | Obscura | Background | finishing a run with 10 or more solves |
-| Crypt Crawl | Weapon | winning |
-| Crypt Conquest | Headgear | winning |
+| Crypt Crawl | Weapon | clearing 10 of the 15 crypts |
+| Crypt Conquest | Headgear | defeating 10 of the 12 court cards |
 | Gauntlets | Effects | sweeping a whole gauntlet |
 | Realm Guardians | Companion | waves held |
 | Monstrocity | Arms | completing all 28 levels |
@@ -50,9 +50,17 @@ three traits a day is the most missions will ever give you however many you
 claim. Running ten across every level still yields three.
 
 **The three categories every Fighter needs — Torso, Head and Background — come
-only from games you cannot lose.** Losing is the normal outcome in the card
-games, so gating a mandatory trait behind a win would let a player grind for
-months and still be unable to finish a character.
+only from games you cannot lose.** A mandatory trait behind a result you can
+fail would let a player grind for months and still be unable to finish a
+character.
+
+**The card games pay on depth, not on the win.** Crypt Crawl pays a Weapon at 10
+of its 15 crypts and Crypt Conquest pays Headgear at 10 of its 12 court cards —
+reached or beaten, win or die. Both used to require a full clear, and on the
+live boards that is about one win against two losses in a week, which shut those
+two categories to most players however much they played. Going the whole way
+still rolls the best table either game offers, so getting to 10 adds a chance
+rather than taking anything off the win.
 
 Boss Battles is the exception in the other direction: it pays a **wildcard**,
 which can be any trait at all. Boss Battles requires an NFT to play, so it
@@ -106,9 +114,10 @@ That keeps both things worth doing — filling every slot on a Fighter matters a
 much as chasing a single spectacular trait.
 
 **How well you do improves what you get, not how often.** A drop's quality comes
-from the best of three things: the game itself (winning Crypt Crawl is hard, so
-a win starts on a strong table), how far you got, and where you placed on the
-leaderboard. A first place or a deep run is roughly sixteen times likelier to
+from the best of three things: the game itself, how far you got, and where you
+placed on the leaderboard. Escaping all 15 crypts in Crypt Crawl rolls the
+strongest table that game offers; stopping at the 10 that qualify rolls the
+standard one. A first place or a deep run is roughly sixteen times likelier to
 pull a mythic than a bare qualifying attempt.
 
 That means going further always pays. In Realm Guardians, holding 41 waves rolls
@@ -233,8 +242,8 @@ arms, weapons, headgear, effects, a companion — is optional, and the assembler
 will not let you save without those three.
 
 That is why those exact categories drop from Skull Swap, Skull Racer and
-Obscura, the three games you cannot lose. A required part behind a win could
-leave a player unable to save anything at all.
+Obscura, the three games you cannot lose. A required part behind a result you
+can fail could leave a player unable to save anything at all.
 
 ---
 

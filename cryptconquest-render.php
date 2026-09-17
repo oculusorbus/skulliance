@@ -167,7 +167,7 @@ function cryptconquestMinimalGameOverHtml($run, $user_id) {
 		data-sfx="<?php echo $won ? 'victory' : 'death'; ?>"
 		style="display:none;"></div>
 	<div class="cq-inner">
-		<div class="cq-result <?php echo $won ? 'won' : 'lost'; ?>">
+		<div class="cq-result <?php echo $won ? 'won' : 'lost'; ?>" data-depth="<?php echo intval($defeated); ?>">
 			<div class="cq-result-icon"><?php echo $won ? '👑' : '<img src="/staking/pwa/skulliance-logo-icon.png" alt="">'; ?></div>
 			<div class="cq-result-title"><?php echo $won ? cryptconquestTier($run) : 'The Necropolis Prevails'; ?></div>
 			<?php if (!$won): ?>
@@ -422,7 +422,7 @@ function cryptconquestRenderGameArea($conn, $user_id) {
 			$won = ($recent_run['status'] === 'won');
 			$defeated = intval($recent_run['enemies_defeated']);
 		?>
-		<div class="cq-result <?php echo $won ? 'won' : 'lost'; ?>">
+		<div class="cq-result <?php echo $won ? 'won' : 'lost'; ?>" data-depth="<?php echo intval($defeated); ?>">
 			<div class="cq-result-icon"><?php echo $won ? '👑' : '<img src="/staking/pwa/skulliance-logo-icon.png" alt="">'; ?></div>
 			<div class="cq-result-title"><?php echo $won ? cryptconquestTier($recent_run) : 'The Necropolis Prevails'; ?></div>
 			<?php if (!$won): ?>

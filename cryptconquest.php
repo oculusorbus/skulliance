@@ -1587,16 +1587,25 @@ include 'header.php';
 					initGameArea();
 					playFlashSfx(resultOverlay); // no server sound ends a run today, but keep the paths symmetric
 					/*
-					 * TRAIT DROP, wins only. Conquest pays Headgear, and the
-					 * category sits on a winnable game precisely because the win
-					 * is the achievement. The server renders .cq-result with
-					 * 'lost' on a defeat, so the absence of that class is the
-					 * win -- read from the DOM rather than re-derived, so this
-					 * cannot disagree with what the player is looking at.
+					 * TRAIT DROP, ON DEPTH RATHER THAN THE WIN. Defeating 10 of
+					 * the 12 court cards qualifies, win or lose.
+					 *
+					 * Same reasoning as Crypt Crawl: gating Headgear behind a
+					 * full clear left the category shut to most players however
+					 * much they played, and depth is what the leaderboard
+					 * already ranks on. The bands still pay a full conquest
+					 * best, so reaching 10 adds a roll rather than devaluing
+					 * the win.
+					 *
+					 * Read from the DOM, like the win class it replaces, so this
+					 * cannot disagree with the screen the player is looking at.
+					 * The server decides whether the depth qualifies.
 					 */
 					var cqRes = resultOverlay.querySelector('.cq-result');
-					if (cqRes && !cqRes.classList.contains('lost') && window.DHC_DROP) {
-						DHC_DROP({ game: 'cryptconquest', value: 1, delay: 1200 });
+					if (cqRes && window.DHC_DROP) {
+						DHC_DROP({ game: 'cryptconquest',
+						           value: parseInt(cqRes.getAttribute('data-depth'), 10) || 0,
+						           unit: 'court cards defeated', delay: 1200 });
 					}
 					busy = false;
 					return;

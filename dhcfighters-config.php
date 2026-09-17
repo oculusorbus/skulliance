@@ -273,10 +273,19 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'bands' => array(400 => 'placement_10', 345 => 'placement_3', 330 => 'placement_1')),
 	'obscura'        => array('label' => 'Obscura', 'url' => 'obscura.php',         'category' => 'background', 'trigger' => 'finish a run of 10+ solves',
 	                          'base' => 'run',          'bands' => array(15 => 'placement_10', 25 => 'placement_3', 40 => 'placement_1')),
-	'cryptcrawl'     => array('label' => 'Crypt Crawl', 'url' => 'cryptcrawlgame.php',     'category' => 'weapon',     'trigger' => 'win',
-	                          'base' => 'placement_3'),
-	'cryptconquest'  => array('label' => 'Crypt Conquest', 'url' => 'cryptconquestgame.php',  'category' => 'headgear',   'trigger' => 'win',
-	                          'base' => 'placement_10'),
+	// DEPTH, NOT THE WIN. Both card games used to pay only on a full clear, and
+	// on the live boards that is roughly 0-1 wins against 2 losses a week -- so
+	// Weapon and Headgear were shut to most players however much they played,
+	// which is the one thing the category map is supposed to prevent.
+	//
+	// Ten is the qualifying depth on both, and the bands still pay a full clear
+	// exactly what the win paid before: reaching 10 adds a roll, it does not
+	// take anything off the win. Depth is also what both leaderboards already
+	// rank on, so this grades the same thing the game already measures.
+	'cryptcrawl'     => array('label' => 'Crypt Crawl', 'url' => 'cryptcrawlgame.php',     'category' => 'weapon',     'trigger' => 'clear 10 of the 15 crypts',
+	                          'base' => 'run',          'bands' => array(13 => 'placement_10', 15 => 'placement_3')),
+	'cryptconquest'  => array('label' => 'Crypt Conquest', 'url' => 'cryptconquestgame.php',  'category' => 'headgear',   'trigger' => 'defeat 10 of the 12 court cards',
+	                          'base' => 'run',          'bands' => array(12 => 'placement_10')),
 	'gauntlets'      => array('label' => 'Gauntlets', 'url' => 'gauntlets.php',       'category' => 'effects',    'trigger' => 'sweep the gauntlet',
 	                          'base' => 'placement_10'),
 	'guardians'      => array('label' => 'Realm Guardians', 'url' => 'guardiansgame.php', 'category' => 'companion',  'trigger' => 'waves held',
@@ -364,8 +373,8 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'skullswap'     => 5000,   // board shows 11,870-14,400
 	'skullracer'    => 0,      // finishing at all qualifies
 	'obscura'       => 10,     // solves in a completed run; board shows streaks of 11-33
-	'cryptcrawl'    => 0,      // win only
-	'cryptconquest' => 0,      // win only
+	'cryptcrawl'    => 10,     // crypts cleared, of 15; a win is 15
+	'cryptconquest' => 10,     // court cards defeated, of 12; a win is 12
 	'gauntlets'     => 0,      // win only
 	'guardians'     => 10,     // waves held; board shows 12-81
 	'monstrocity'   => 28,     // campaign completion
