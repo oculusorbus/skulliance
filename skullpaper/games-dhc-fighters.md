@@ -49,7 +49,7 @@ Every successful mission pays, at any level — but the daily cap applies, so
 three traits a day is the most missions will ever give you however many you
 claim. Running ten across every level still yields three.
 
-Maxingo holders have a **Max Maxi** button that launches two missions on every
+Maxingo holders have a **Start Max Maxi** button that launches two missions on every
 unlocked level from 2 up, timed so a pair comes due almost every day rather than
 all at once. It is the steady way to farm traits from missions; see
 [[missions]].

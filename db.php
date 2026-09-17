@@ -2390,7 +2390,7 @@ function startMaxMaxiMissions($conn) {
 	$mm_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($mm_username);
 	$mm_mention    = $mm_discord ? "<@".$mm_discord.">" : $mm_username;
 	$mm_count      = count($launched);
-	$mm_desc       = $mm_mention." used **Max Maxi** and launched **".$mm_count."** mission".($mm_count != 1 ? "s" : "")."!\n\n";
+	$mm_desc       = $mm_mention." used **Start Max Maxi** and launched **".$mm_count."** mission".($mm_count != 1 ? "s" : "")."!\n\n";
 	$mm_budget     = 1800 - strlen($mm_desc);
 	$mm_truncated  = false;
 	foreach (array_count_values($launched) as $mm_t => $mm_n) {
@@ -2401,7 +2401,7 @@ function startMaxMaxiMissions($conn) {
 	if ($mm_truncated) $mm_desc .= "*(and more...)*";
 	if ($short_cash) $mm_desc .= "\n*Some levels were skipped -- not enough points.*";
 	$mm_author = array("name" => $mm_username, "icon_url" => $mm_avatar_url, "url" => $mm_profile);
-	discordmsg("⚡ Max Maxi", $mm_desc, "", "https://skulliance.io/staking/missions.php", "missions", $mm_avatar_url, "F5A623", $mm_author);
+	discordmsg("⚡ Start Max Maxi", $mm_desc, "", "https://skulliance.io/staking/missions.php", "missions", $mm_avatar_url, "F5A623", $mm_author);
 }
 
 function renderMaxMaxiMissionsButton($conn) {
@@ -2428,7 +2428,7 @@ function renderMaxMaxiMissionsButton($conn) {
 	     . 'and once they are gone this button has nothing to work with and disappears.';
 
 	echo "<span id='startMaxMaxiMissionsForm'>
-	<button type='button' class='button' data-tooltip='" . htmlspecialchars($tip, ENT_QUOTES) . "' onclick='startMaxMaxiMissionsAjax(this)'>Max Maxi</button>
+	<button type='button' class='button' data-tooltip='" . htmlspecialchars($tip, ENT_QUOTES) . "' onclick='startMaxMaxiMissionsAjax(this)'>Start Max Maxi</button>
 	</span><br>";
 }
 
