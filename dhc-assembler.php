@@ -570,8 +570,21 @@ a{color:var(--ochre)}
    */
   var COUPLE = [
     { back: 'axe',           front: 'electric-morning-star', mutual: false },
-    { back: 'scythe',        front: 'scythe-sash',           mutual: true  },
-    { back: 'skull-krusher', front: 'skull-krusher-sash',    mutual: true  },
+<?php
+    /*
+     * The mutual pairs come from DHCF_TETHERED rather than a second hand-kept
+     * list. The drop has to award both halves together for the same reason the
+     * assembler places both together, so the two must name the same pairs --
+     * and DHCF_TETHERED is keyed both ways, so take the back half's entries
+     * only (the sash is the front) to emit each pair once.
+     */
+    foreach (DHCF_TETHERED as $back => $front) {
+        if (substr($back, -5) === '-sash') continue;
+        printf("    { back: %s, front: %s, mutual: true  },
+",
+            json_encode($back), json_encode($front));
+    }
+?>
   ];
   var coupledIn = {};   // slot => true when a coupling, not the user, filled it
 

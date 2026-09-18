@@ -294,7 +294,8 @@ letting you build something that renders wrongly. Some of what it handles:
   offered in exactly one slot.
 - **Some weapons are two pieces.** The scythe and the skull krusher each hang
   from a sash; both halves always appear together, and a sash is never a trait
-  on its own.
+  on its own. **Drawing either half awards both**, as a single drop — it counts
+  once against your daily limit, and you can build with it immediately.
 - **Some weapons cannot be combined with Arms traits** — they are drawn against
   the torso's own arms, which an Arms trait replaces.
 - **Effects sit under the head**, so they cross the Fighter without covering the

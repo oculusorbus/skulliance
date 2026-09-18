@@ -204,6 +204,48 @@ function dhcf_armless_mode($arms) {
 	return 'full';
 }
 
+/*
+ * TETHERED WEAPON HALVES -- two art files that are one weapon.
+ *
+ * The scythe and the skull krusher were separated by hand into the weapon
+ * itself (behind the body) and the sash it hangs from (in front of it). Neither
+ * half reads on its own: a sash with nothing hanging from it is not a trait,
+ * and the weapon floats without one. The assembler therefore treats them as one
+ * pick -- choosing either brings the other, dropping either drops both.
+ *
+ * Which is why the DROP has to hand out both as well. The rarity table is keyed
+ * by art directory, so both halves sit in the weapon pool as separate entries
+ * and a draw could land a lone sash -- a trait the player owns and cannot build
+ * with until its partner happens to drop too, refused at save with a shortfall
+ * message about a trait they never had.
+ *
+ * Mutual pairs ONLY. The axe pulls in the electric morning star in the
+ * assembler, but the morning star is a weapon in its own right and stands alone
+ * perfectly well, so it is a UI convenience rather than a tether and is not
+ * listed here. That distinction is `mutual` in the assembler's COUPLE table,
+ * which reads its mutual pairs from this constant so the two cannot drift.
+ */
+define('DHCF_TETHERED', array(
+	'scythe'             => 'scythe-sash',
+	'scythe-sash'        => 'scythe',
+	'skull-krusher'      => 'skull-krusher-sash',
+	'skull-krusher-sash' => 'skull-krusher',
+));
+
+/** The other half of a tethered weapon, or '' when a trait stands alone. */
+function dhcf_tethered_partner($slug) {
+	$t = DHCF_TETHERED;
+	return isset($t[$slug]) ? $t[$slug] : '';
+}
+
+/*
+ * Marks a ledger row as the second half of a tethered pair rather than a drop
+ * in its own right. Written into source_detail, and excluded from the daily cap
+ * count -- one draw that happens to be two pieces must not cost two of the
+ * three traits a day a source is allowed to give.
+ */
+define('DHCF_PAIRED_MARK', 'paired:');
+
 /** Vertical nudge in pixels of the 1000px master, positive = down. */
 define('DHCF_NUDGE', array('skull-krusher' => 23, 'skull-krusher-sash' => 13, 'axe' => 13));
 

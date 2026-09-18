@@ -43,9 +43,13 @@ if ($value < $floor) {
 }
 
 // Anti-abuse ceiling. Generous enough that no honest player meets it.
+// Tethered second halves excluded, matching dhcf_award()'s own cap. If this
+// counted them it would refuse a claim the award function would have allowed,
+// and the modal would explain a limit the player had not actually reached.
 $sql = sprintf("SELECT COUNT(*) AS c FROM dhc_trait_drops
-                WHERE user_id = %d AND source = '%s' AND awarded_at >= CURDATE()",
-	$user_id, $conn->real_escape_string($key));
+                WHERE user_id = %d AND source = '%s' AND awarded_at >= CURDATE()
+                  AND (source_detail IS NULL OR source_detail NOT LIKE '%s%%')",
+	$user_id, $conn->real_escape_string($key), $conn->real_escape_string(DHCF_PAIRED_MARK));
 // Parenthesised deliberately: && binds tighter than =, so the obvious
 // `if ($res && $row = $res->fetch_assoc() && ...)` assigns the comparison to
 // $row and the check never fires.

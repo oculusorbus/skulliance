@@ -261,9 +261,17 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 	 */
 	$cap = dhcf_cap($source);
 	if ($cap > 0) {
+		/*
+		 * Counts DRAWS, not rows. A tethered weapon writes two rows for one
+		 * draw (see DHCF_TETHERED), and counting those would quietly halve the
+		 * cap for anyone whose luck ran to scythes. The second half carries
+		 * DHCF_PAIRED_MARK in source_detail and is excluded here.
+		 */
 		$sql = sprintf("SELECT COUNT(*) AS c FROM dhc_trait_drops
-		                WHERE user_id = %d AND source = '%s' AND awarded_at >= CURDATE()",
-			$user_id, $conn->real_escape_string($source));
+		                WHERE user_id = %d AND source = '%s' AND awarded_at >= CURDATE()
+		                  AND (source_detail IS NULL OR source_detail NOT LIKE '%s%%')",
+			$user_id, $conn->real_escape_string($source),
+			$conn->real_escape_string(DHCF_PAIRED_MARK));
 		$res = $conn->query($sql);
 		// FAIL CLOSED. Written as `if ($res && ... >= $cap) return null` this
 		// awards anyway when the count cannot be read -- a failed query would
@@ -282,6 +290,49 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
 	if (!$drawn) return null;
 	list($cat, $slug, $info) = $drawn;
 
+	$drop = dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_detail);
+	if (!$drop) return null;
+
+	/*
+	 * BOTH HALVES OR NEITHER. A tethered weapon is one weapon in two art files,
+	 * and the assembler will not place either without the other -- so handing
+	 * out a lone sash hands out something the player owns and cannot build
+	 * with, refused at save with a shortfall message naming a trait they have
+	 * never held. One draw, both pieces.
+	 *
+	 * Awarded even when they already hold the partner: duplicates are ordinary
+	 * here (the ledger is append-only and a second copy lets them build a
+	 * second Fighter), and a rule that sometimes pays the partner would be
+	 * harder to explain than one that always does.
+	 *
+	 * Deliberately AFTER the primary row and outside the cap: the cap has
+	 * already been paid for this draw, and dhcf_cap_count() skips rows marked
+	 * this way. A failure here costs the partner, never the drop.
+	 */
+	$partner = dhcf_tethered_partner($slug);
+	if ($partner !== '') {
+		// Same category by definition -- both halves are weapon art, and the
+		// rarity table is keyed by art directory.
+		$pinfo = dhcf_trait_info($cat, $partner);
+		if ($pinfo) {
+			dhcf_commit_drop($conn, $user_id, $cat, $partner, $pinfo,
+				$source, DHCF_PAIRED_MARK . $slug);
+		}
+	}
+
+	return $drop;
+}
+
+/**
+ * Write one ledger row and deliver its moment: park the reveal for the player
+ * who earned it, and announce it.
+ *
+ * Split out of dhcf_award() so a tethered partner gets exactly the same
+ * treatment as the trait that pulled it in -- its own row, its own reveal, its
+ * own announcement -- without going back through the draw or the daily cap,
+ * neither of which it should pay twice.
+ */
+function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_detail = '') {
 	$sql = sprintf(
 		"INSERT INTO dhc_trait_drops (user_id, category, slug, tier, drop_rate, source, source_detail, awarded_at)
 		 VALUES (%d, '%s', '%s', '%s', %.3f, '%s', '%s', NOW())",
@@ -717,8 +768,14 @@ function dhcf_rename_fighter($conn, $user_id, $fighter_id, $name) {
  */
 function dhcf_drops_today($conn, $user_id) {
 	$out = array();
+	// Excludes tethered second halves, exactly as the cap in dhcf_award() does.
+	// This is what draws the "N of N left today" line, so counting a paired row
+	// here would tell a player they had spent a drop they still have.
 	$sql = sprintf("SELECT source, COUNT(*) AS c FROM dhc_trait_drops
-	                WHERE user_id = %d AND awarded_at >= CURDATE() GROUP BY source", (int)$user_id);
+	                WHERE user_id = %d AND awarded_at >= CURDATE()
+	                  AND (source_detail IS NULL OR source_detail NOT LIKE '%s%%')
+	                GROUP BY source",
+		(int)$user_id, $conn->real_escape_string(DHCF_PAIRED_MARK));
 	$res = $conn->query($sql);
 	if ($res) while ($row = $res->fetch_assoc()) $out[$row['source']] = (int)$row['c'];
 	return $out;
