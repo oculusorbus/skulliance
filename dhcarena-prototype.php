@@ -131,12 +131,19 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .cell.settle{animation:stl .16s}
 @keyframes stl{0%{transform:scale(1.06)}100%{transform:scale(1)}}
 @keyframes drp{0%{transform:translateY(-16px);opacity:.4}100%{transform:translateY(0);opacity:1}}
-.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:9px;color:var(--dim);
-  position:relative;z-index:2}
-.legend span{display:flex;align-items:center;gap:4px}
-.legend span.gone{opacity:.35;text-decoration:line-through}
-.legend b{color:var(--bone);font-weight:400}
-.legend i{width:9px;height:9px;border-radius:50%;background:var(--lc);display:inline-block}
+.legend{margin-top:9px;position:relative;z-index:2}
+.lhead{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+.lrow{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:7px;
+  padding:3px 6px;border-radius:3px;border-left:3px solid var(--lc);background:#10131a;margin-bottom:3px}
+.lrow.gone{opacity:.35}
+.lrow.gone .ldoes{text-decoration:line-through}
+.lgem{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
+  border-radius:50%;background:var(--lc);font-size:12px;
+  box-shadow:inset 0 -2px 4px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.12)}
+.ldoes{font-size:11px;color:var(--bone)}
+.lname{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.lwho{font-size:9px;color:var(--dim);grid-column:2/4;margin-top:-2px}
+@media (max-width:420px){.lname{display:none}}
 .reach{font-size:9.5px;color:var(--dim);margin-top:5px;position:relative;z-index:2}
 .reach b{color:var(--ochre)}
 
@@ -593,7 +600,8 @@ function tokHtml(f,showGem){
                :'<span>'+(f.shield>0?'sh '+f.shield:'')+'</span>')+'</div>'
     + '<div class="art">'+layers+'</div>'
     + '<div class="nm">'+f.name+'</div>'
-    + '<div class="kitn">'+(showGem?f.kit.emoji+' ':'')+f.kit.name+'</div>'
+    + '<div class="kitn" title="'+f.kit.name+' — '+f.kit.note+'">'
+    +   (showGem?f.kit.emoji+' ':'')+f.kit.note+'</div>'
     + '<div class="hpwrap"><div class="hp '+cls+'" style="transform:scaleX('+pct+')"></div>'
     +   '<div class="sh" style="width:'+Math.min(100,(f.shield/f.maxHp)*100)+'%"></div></div>'
     + '<div class="hpn"><span>'+f.hp+'/'+f.maxHp+'</span><span>'
@@ -622,18 +630,25 @@ function renderBoard(dropAnim,settle){
 function renderAll(){
   renderTeams(); renderBoard();
   document.getElementById('terrain').style.backgroundImage='url("'+artUrl('background',S.terrainBg,1000)+'")';
+  /* The description is the point. An earlier version read "Cleave — Bone",
+     which pairs an action with a Fighter's name and never says what it does,
+     so the legend answered the wrong question. Effect first, always. */
+  function row(colour, emoji, name, does, who, dead){
+    return '<div class="lrow'+(dead?' gone':'')+'" style="--lc:'+colour+'">'
+      + '<span class="lgem">'+emoji+'</span>'
+      + '<span class="ldoes">'+does+'</span>'
+      + '<span class="lname">'+name+'</span>'
+      + '<span class="lwho">'+(who||'')+(dead?' · down':'')+'</span></div>';
+  }
   var lg=[0,1,2].map(function(i){
     var f=fighterForGem('mine',i);
     if(!f) return '';
-    return '<span style="--lc:var(--g'+i+')"'+(f.ko?' class="gone"':'')+'><i></i>'
-      + f.kit.emoji+' <b>'+f.kit.name+'</b> — '+f.name.split(' ')[0]
-      + (f.ko?' (down)':'')+'</span>';
+    return row('var(--g'+i+')', f.kit.emoji, f.kit.name, f.kit.note, f.name.split(' ')[0], f.ko);
   }).join('')
-  + '<span style="--lc:var(--g3)"><i></i>🛡️ <b>Shield</b> — your team</span>'
-  + '<span style="--lc:var(--g4)"><i></i>⚡ <b>Charge</b> — erupts at 10</span>';
+  + row('var(--g3)','🛡️','Shield','shields your whole team','')
+  + row('var(--g4)','⚡','Charge','builds up, erupts at 10','');
   document.getElementById('legend').innerHTML=
-      '<span style="width:100%;color:var(--bone);opacity:.8;margin-bottom:2px">'
-    + 'Five gems this battle — your three Fighters, plus Shield and Charge:</span>' + lg;
+      '<div class="lhead">Five gems this battle — your three Fighters, plus Shield and Charge</div>' + lg;
   document.getElementById('reach').innerHTML=
       'Match size is <b>reach</b> — <b>3</b> hits their front · <b>4</b> reaches mid · <b>5+</b> reaches their back rank. '
     + 'Cascades multiply. Terrain: <b>'+S.terrain.name+'</b> — '+S.terrain.note+'.'
