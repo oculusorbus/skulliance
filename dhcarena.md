@@ -389,6 +389,45 @@ trustworthy, a bug reproducible, and the balance harness meaningful.
 
 ---
 
+## 8a. Collusion, and why the cap contains it
+
+Arena lets you choose your opponent, which means a player can build an alt, give
+it three deliberately terrible Fighters, and farm it. Worth writing down plainly,
+because it looks alarming and is in fact bounded.
+
+**It is not introduced by live battles.** Async is the easier version of the same
+attack: the alt never has to be online, the AI defends it around the clock, and
+no accomplice has to stay willing. Any rule written here has to cover async
+first; live is the harder case for an attacker, not the softer one.
+
+**The daily cap is the ceiling.** `DHCF_DAILY_CAP` is 3 per source per day and
+Arena uses it unmodified. So collusion cannot produce more traits than honest
+play — it can only make the same three reliable rather than earned. That is the
+entire prize, and it reframes the problem from "economy exploit" to "someone
+skipped the queue."
+
+**Setup is not free.** A Fighter needs three mandatory traits (`DHCF_REQUIRED`),
+so a minimum Stable is nine — three days of the alt actually playing the games at
+the cap, and repeated every time one is banned.
+
+Three defences, two of which are in this document already for other reasons:
+
+1. **Reward banding on relative strength (§7).** Beating a much weaker Stable
+   pays little. Written to stop the rich-get-richer runaway; it happens to be the
+   exact counter to farming a target built to lose.
+2. **Diminishing returns on a repeat opponent.** The raid system already does
+   this — `getRecentRaidedRealms()` blocks re-hitting a realm just successfully
+   looted. Second and third wins against the same Stable pay less, then nothing.
+   Proven pattern, same codebase.
+3. **Live battles carry no stake (§8d).** No ladder, no traits, so the question
+   does not arise for them at all.
+
+Net: three days building an alt to slightly improve the odds of hitting a cap you
+would probably hit anyway. Not worth doing, which is the correct place for an
+exploit to land — deterred by economics rather than by policing.
+
+---
+
 ## 8b. Seasons
 
 **LOCKED: monthly, full reset.** Matches the cadence every other board already
@@ -431,6 +470,49 @@ on recovery. Cosmetic, but it changes how a bad streak feels.
 
 ---
 
+## 8d. Live battles — phase two
+
+Two players who are both online, or who arrange a time, fight each other directly
+with no AI on either side. Deliberately **not** in the first release, but the
+engine must not close the door on it.
+
+**Polling, not sockets.** Turn-based synchronous needs each player to act and
+then wait, which ordinary AJAX polling covers — the platform already polls
+elsewhere. None of this needs infrastructure the stack does not have.
+
+**Invited, not matchmade.** The live boards run three or four players logging a
+handful of runs a week (see the note on `DHCF_DAILY_CAP`), so a matchmaking queue
+would essentially never fire. A challenge the other player accepts inside a
+window works at any population, including two — and players already coordinate
+in Discord, which is the lobby.
+
+That framing is also what live *is*: grudge matches and organised tournaments,
+announced to Discord. A community event, not a daily mode.
+
+**Unranked and reward-free by default.** No ladder points, no traits. It removes
+the collusion surface entirely (§8a) and keeps live as the thing it is good at —
+a human opponent — without letting it touch the economy. Ranked live can exist
+inside event brackets that an owner runs deliberately.
+
+Two things it needs before shipping:
+
+- **A turn clock**, so nobody can stall. On expiry, hand that turn to the AI —
+  which already exists for async, so it costs almost nothing.
+- **Disconnect handling**, answered the same way: the AI takes that side over and
+  the battle finishes. Nobody should lose a Fighter to a dropped connection.
+
+### The one requirement this places on phase one
+
+**The engine must take a turn from a caller, not fetch one itself.** If
+`dhcarena-engine.php` calls the AI internally, live means unpicking the core
+later. If the turn is a parameter, the only difference between the modes is who
+supplies the defender's move — the AI function, or the other player's request.
+Same engine, same state, same validation.
+
+Costs nothing to build this way now. Expensive to retrofit.
+
+---
+
 ## 9. Schema sketch
 
 Nothing here creates tables; like the rest of DHC this is a documented migration
@@ -457,6 +539,8 @@ layering rules already do for the art.
 
 1. `dhcarena-engine.php` — pure turn engine, plus a CLI harness that runs
    battles with no DB. Everything below depends on being able to simulate.
+   **The engine takes each turn as a parameter and never fetches one itself**,
+   so live battles (§8d) stay possible without a rewrite.
 2. Stat derivation from tier + category for the five stat slots.
 3. The 46 abilities. Design each against the "can a simple AI play this?" test
    in §3b as it is written, not afterwards.
@@ -501,5 +585,7 @@ These are tuning and detail, not direction — none of them block starting §10.
   counterpicking a skill; hidden builds make it a gamble. Leaning full.
 - Whether the defending AI's difficulty is fixed, or reads its owner's ladder
   rank. Fixed is honest; scaled hides a bad AI.
+- The repeat-opponent decay curve (§8a): how fast a rematch stops paying.
+- Whether live battles (§8d) ever earn anything inside an owner-run event.
 - Whether fielded-Fighters-per-season should be capped to flatten the top (§7).
 - Whether a loss shows on a Fighter's record immediately or on recovery (§8c).
