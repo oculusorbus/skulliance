@@ -254,8 +254,9 @@ button{font:inherit;cursor:pointer;border-radius:3px}
      <b>There are always five gems.</b> Three of them are <b>ranks</b> — red front, amber mid, violet back —
      and matching one makes that rank's Fighter act, for whichever side matched it. The gem on the board
      shows <i>your</i> weapon in that rank; their token shows what the same gem does for <i>them</i>.
-     The other two are 🛡️ Shield and ⚡ Charge. A <b>4-match leaves a ✳️ bomb</b> (clears its row and
-     column) and a <b>5-match leaves a 💣</b> (clears the board) — they sit there keeping their colour, and
+     The other two are 🛡️ Shield and ⚡ Charge. A <b>4-match leaves a ✛ bomb</b> (clears its row and
+     column) and a <b>5-match leaves a 💣</b> (clears the board) — an <b>L, T or plus counts too</b>,
+     since that is five gems as well — they sit there keeping their colour, and
      <b>either side can set one off</b> by matching it, so a bomb you leave lying around can be turned on you.
      Match size is reach:
      <b>3</b> hits their front, <b>4</b> reaches mid, <b>5+</b> reaches back. Match 4+ and you go again.
@@ -471,15 +472,42 @@ function allCells(){ var o=[],k; for(k=0;k<N*N;k++) o.push(k); return o; }
 function idx(r,c){return r*N+c;}
 function inb(r,c){return r>=0&&r<N&&c>=0&&c<N;}
 function findMatches(b){
-  b=b||S.board; var out=[],r,c,i;
+  b=b||S.board; var raw=[],r,c,i;
   for(r=0;r<N;r++){ c=0; while(c<N){ var run=1;
       while(c+run<N && b[idx(r,c+run)]===b[idx(r,c)] && b[idx(r,c)]!==-1) run++;
-      if(run>=3){var g=[];for(i=0;i<run;i++)g.push(idx(r,c+i));out.push({cells:g,type:b[idx(r,c)],len:run});}
+      if(run>=3){var g=[];for(i=0;i<run;i++)g.push(idx(r,c+i));raw.push({cells:g,type:b[idx(r,c)]});}
       c+=run; } }
   for(c=0;c<N;c++){ r=0; while(r<N){ var run2=1;
       while(r+run2<N && b[idx(r+run2,c)]===b[idx(r,c)] && b[idx(r,c)]!==-1) run2++;
-      if(run2>=3){var g2=[];for(i=0;i<run2;i++)g2.push(idx(r+i,c));out.push({cells:g2,type:b[idx(r,c)],len:run2});}
+      if(run2>=3){var g2=[];for(i=0;i<run2;i++)g2.push(idx(r+i,c));raw.push({cells:g2,type:b[idx(r,c)]});}
       r+=run2; } }
+
+  /* AN L, T OR PLUS IS ONE MATCH, NOT TWO.
+     The scan above walks rows and columns separately, so a cross of five gems
+     came back as two runs of three -- neither of them four, so it left no bomb
+     and paid two small hits instead of one big one. Five gems is five gems
+     whatever shape you made it in.
+     Runs that share a cell are flooded together here; sharing a cell means
+     sharing a colour, so no type check is needed beyond the obvious one. */
+  var used=[], out=[], j;
+  for(i=0;i<raw.length;i++) used.push(false);
+  for(i=0;i<raw.length;i++){
+    if(used[i]) continue;
+    used[i]=true;
+    var cells={}, type=raw[i].type, stack=[raw[i]], grew=true;
+    while(stack.length){
+      var g3=stack.pop();
+      for(j=0;j<g3.cells.length;j++) cells[g3.cells[j]]=1;
+      for(j=0;j<raw.length;j++){
+        if(used[j] || raw[j].type!==type) continue;
+        var touches=false;
+        for(var k=0;k<raw[j].cells.length;k++) if(cells[raw[j].cells[k]]){ touches=true; break; }
+        if(touches){ used[j]=true; stack.push(raw[j]); }
+      }
+    }
+    var list=Object.keys(cells).map(Number);
+    out.push({cells:list, type:type, len:list.length});
+  }
   return out;
 }
 /* THE MOVE IS A SLIDE, NOT A SWAP.
