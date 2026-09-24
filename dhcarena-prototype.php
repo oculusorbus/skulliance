@@ -170,7 +170,12 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .cell.shield .g .em{transform:translateY(-8%)}
 .cell.hex .g{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)}
 .cell .em{font-size:clamp(11px,2.4vw,19px);line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));
-  pointer-events:none}
+  pointer-events:none;
+  /* A BOX, not a bare inline span. .cross sizes itself as a percentage, and a
+     percentage of an inline span with no dimensions is zero -- the drawn cross
+     was rendering at no size at all, which is why bombs went from hard to see
+     to invisible. */
+  display:flex;align-items:center;justify-content:center;width:100%;height:100%}
 /* the rotated diamond must not rotate its emoji with it */
 .cell.di .g .em{transform:rotate(-45deg)}
 /* A bomb keeps its colour -- you detonate it by matching that colour -- but it
@@ -639,6 +644,10 @@ function applySlide(a,z,side,done){
 function cascade(side,chain,done){
   var ms=findMatches();
   if(!ms.length){
+    // the move is over: everything armed during it goes live for both sides
+    var armed=0;
+    for(var q=0;q<S.bomb.length;q++) if(S.bomb[q]<0){ S.bomb[q]=-S.bomb[q]; armed++; }
+    if(armed) renderBoard();
     if(!hasMove()){ makeBoard(); logLine('sys','No moves left — board reshuffled.'); renderBoard(); }
     busy=false; done&&done(chain-1); return;
   }
@@ -650,7 +659,7 @@ function cascade(side,chain,done){
   /* DETONATE anything caught in the clear, chaining through bombs the blast
      reaches. Queue rather than recursion so a chain cannot blow the stack. */
   var extra={}, boom=0, boomKind=0, blasts=[];
-  var queue=Object.keys(cleared).filter(function(i){return S.bomb[i];});
+  var queue=Object.keys(cleared).filter(function(i){return S.bomb[i]>0;});   // >0: live, not armed-this-move
   while(queue.length){
     var at=+queue.shift(), kind=S.bomb[at];
     if(!kind) continue;
@@ -659,7 +668,7 @@ function cascade(side,chain,done){
     var hit=(kind===BOMB_BOARD?allCells():rowColCells(at));
     var own=0;
     hit.forEach(function(j){
-      if(S.bomb[j]) queue.push(j);
+      if(S.bomb[j]>0) queue.push(j);
       if(S.board[j]===colour) own++;
       if(!cleared[j]){ cleared[j]=1; extra[j]=1; }
     });
@@ -717,7 +726,17 @@ function cascade(side,chain,done){
     var at=(S.lastTo!==undefined && g.cells.indexOf(S.lastTo)!==-1)
              ? S.lastTo : g.cells[Math.floor(g.cells.length/2)];
     var big=(g.len>=5);
-    S.bomb[at]=(big?BOMB_BOARD:BOMB_CROSS);
+    /* ARMED, BUT NOT LIVE UNTIL THE MOVE ENDS. Stored negative so this cascade
+       cannot set it off.
+       Without this a bomb was routinely created and detonated inside the same
+       move: the cascade collapses and refills immediately, a fresh match forms
+       over the new bomb, and it goes off before anybody saw it. That is why
+       bombs appeared never to be created while explosions kept happening --
+       they were being made and spent in the same breath, and the risk of
+       leaving one lying around for the opponent never existed.
+       Negative survives collapse() untouched, which index-tracking would not:
+       gems fall, so a cell number means nothing a moment later. */
+    S.bomb[at]=-(big?BOMB_BOARD:BOMB_CROSS);
     delete cleared[at];
     logLine(side==='mine'?'you':'foe',
       (big?'💣 BOARD BOMB':'✳️ Bomb')+' armed — match its colour to set it off. Either side can.');
@@ -892,7 +911,7 @@ function renderBoard(dropAnim,settle){
   var h='';
   for(var i=0;i<N*N;i++){
     var v=S.board[i];
-    var gi=gemInfo('mine',v), bm=S.bomb?S.bomb[i]:0;
+    var gi=gemInfo('mine',v), bm=S.bomb?Math.abs(S.bomb[i]):0;
     /* No emoji reads as "row and column". ✳️ is a thin glyph that disappears on
        a coloured gem -- 4-match bombs were being made and going unnoticed. The
        cross is drawn instead, two bars across the gem, which is literally the
