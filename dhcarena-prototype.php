@@ -113,12 +113,17 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .cell:hover{border-color:var(--line)}
 .cell.sel{border-color:var(--bone);transform:scale(.9)}
 .cell .g{width:72%;height:72%;border-radius:50%;background:var(--gc);
+  display:flex;align-items:center;justify-content:center;
   box-shadow:inset 0 -3px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08);
   transition:transform .18s,opacity .18s}
 .cell.sq .g{border-radius:4px}
 .cell.di .g{border-radius:3px;transform:rotate(45deg) scale(.82)}
 .cell.tri .g{border-radius:2px;clip-path:polygon(50% 8%,96% 92%,4% 92%)}
 .cell.hex .g{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)}
+.cell .em{font-size:clamp(11px,2.4vw,19px);line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));
+  pointer-events:none}
+/* the rotated diamond must not rotate its emoji with it */
+.cell.di .g .em{transform:rotate(-45deg)}
 .cell.clear .g{transform:scale(0);opacity:0}
 .cell.drop{animation:drp .22s}
 .cell.settle{animation:stl .16s}
@@ -127,6 +132,8 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:9px;color:var(--dim);
   position:relative;z-index:2}
 .legend span{display:flex;align-items:center;gap:4px}
+.legend span.gone{opacity:.35;text-decoration:line-through}
+.legend b{color:var(--bone);font-weight:400}
 .legend i{width:9px;height:9px;border-radius:50%;background:var(--lc);display:inline-block}
 .reach{font-size:9.5px;color:var(--dim);margin-top:5px;position:relative;z-index:2}
 .reach b{color:var(--ochre)}
@@ -190,7 +197,6 @@ var HG_EXCL= <?php echo json_encode($excl); ?>;
 var N = 7;                    // board is N x N
 var GEMS = 5;                 // 0,1,2 = your three Fighters. 3 = guard. 4 = surge.
 var SHAPE = ['','sq','di','tri','hex'];
-var GEMNAME = ['front','mid','back','guard','surge'];
 
 var TIER_MULT = {common:1.00, uncommon:1.08, epic:1.16, legendary:1.24, mythic:1.32};
 function hash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
@@ -202,16 +208,34 @@ function artUrl(d,s,z){return ART+'/'+z+'/'+d+'/'+s+'.png';}
 
 /* Weapon kits. What YOUR gem colour does when it matches -- which is the
    trait economy reaching into the puzzle. dhcarena.md §3. */
+/* Every kit carries an emoji and a name that says what the match DOES, because
+   colour alone made the board unreadable -- you cannot play a puzzle whose
+   pieces need a legend lookup each turn. The emoji is the same on the gem, on
+   the Fighter's token and in the legend, so the three are one glance apart.
+
+   Names are plain verbs on purpose. "Heavy Swing" tells you nothing at a
+   glance; "Smash" does. */
 var KITS = [
-  {id:'heavy',  name:'Heavy Swing',   dmg:1.55, note:'big single hit'},
-  {id:'cleave', name:'Cleave',        dmg:0.80, cleave:true, note:'hits the whole rank reached'},
-  {id:'drain',  name:'Siphon',        dmg:1.05, drain:.45,   note:'heals itself for 45%'},
-  {id:'sunder', name:'Sunder',        dmg:0.95, sunder:true, note:'strips shields first'},
-  {id:'precise',name:'Precision',     dmg:1.15, crit:.28,    note:'high crit'},
-  {id:'volley', name:'Volley',        dmg:0.62, all:true,    note:'chips every enemy'},
-  {id:'brutal', name:'Brutal Cut',    dmg:1.30, bleed:true,  note:'leaves a bleed'},
-  {id:'quick',  name:'Quick Jab',     dmg:0.85, echo:true,   note:'strikes twice'}
+  {id:'heavy',  emoji:'🔨', name:'Smash',  dmg:1.55, note:'one big hit'},
+  {id:'cleave', emoji:'🪓', name:'Cleave', dmg:0.80, cleave:true, note:'hits the whole rank'},
+  {id:'drain',  emoji:'🩸', name:'Drain',  dmg:1.05, drain:.45,   note:'heals itself'},
+  {id:'sunder', emoji:'⛏️', name:'Break',  dmg:0.95, sunder:true, note:'smashes shields'},
+  {id:'precise',emoji:'🎯', name:'Snipe',  dmg:1.15, crit:.28,    note:'crits often'},
+  {id:'volley', emoji:'🏹', name:'Volley', dmg:0.62, all:true,    note:'chips everyone'},
+  {id:'brutal', emoji:'🗡️', name:'Bleed',  dmg:1.30, bleed:true,  note:'leaves a bleed'},
+  {id:'quick',  emoji:'⚔️', name:'Double', dmg:0.85, echo:true,   note:'strikes twice'}
 ];
+/* The two shared gems. Named for the effect, not the mechanic. */
+var SHARED = {
+  3:{emoji:'🛡️', name:'Shield', note:'shields your whole team'},
+  4:{emoji:'⚡', name:'Charge',  note:'charges up — erupts at 10'}
+};
+/** What a gem shows and means, for a given side. */
+function gemInfo(side,g){
+  if(SHARED[g]) return SHARED[g];
+  var f=fighterForGem(side,g);
+  return f ? {emoji:f.kit.emoji, name:f.kit.name, note:f.kit.note, fighter:f} : {emoji:'·',name:'—',note:''};
+}
 var TERRAIN = [
   {id:'crit',  name:'Fractured Signal', note:'+12% crit'},
   {id:'dmg',   name:'Overclocked',      note:'+10% damage'},
@@ -257,7 +281,16 @@ var S=null, sel=null, busy=false;
 
 function newBattle(){
   var rnd=mulberry(Date.now()&0x7fffffff);
-  var mine=[0,1,2].map(function(){return buildFighter(randomTraits(rnd),fname(rnd));});
+  /* Your three get DISTINCT kits, so no two of your gems wear the same emoji.
+     An ambiguous icon is worse than no icon -- the whole point is that a glance
+     resolves it. Their side may repeat; their gems are not on your board. */
+  var mine=[], usedKits={}, guard=0;
+  while(mine.length<3 && guard++<300){
+    var f=buildFighter(randomTraits(rnd),fname(rnd));
+    if(usedKits[f.kit.id]) continue;
+    usedKits[f.kit.id]=1; mine.push(f);
+  }
+  while(mine.length<3) mine.push(buildFighter(randomTraits(rnd),fname(rnd)));
   var foes=[0,1,2].map(function(){return buildFighter(randomTraits(rnd),fname(rnd));});
   mine.forEach(function(f,i){f.rank=i;f.side='mine';});
   foes.forEach(function(f,i){f.rank=i;f.side='foes';});
@@ -373,7 +406,7 @@ function resolveGroup(side,grp,chain){
   if(grp.type===3){                                  // GUARD — shield your team
     var amt=Math.round((6+grp.len*4)*mult*(S.terrain.id==='guard'?1.5:1));
     alive(side).forEach(function(f){f.shield+=amt;});
-    logLine(side==='mine'?'you':'foe','Guard x'+grp.len+' — +'+amt+' shield to the team.');
+    logLine(side==='mine'?'you':'foe','🛡️ Shield x'+grp.len+' — +'+amt+' to the whole team.');
     return;
   }
   if(grp.type===4){                                  // SURGE — charge, then erupt
@@ -381,13 +414,13 @@ function resolveGroup(side,grp,chain){
     var living=alive(side);
     if(!living.length) return;          // whole team down mid-cascade
     living.forEach(function(f){f.surge=Math.min(10,f.surge+add);});
-    logLine(side==='mine'?'you':'foe','Surge x'+grp.len+' — team charge '+living[0].surge+'/10.');
+    logLine(side==='mine'?'you':'foe','⚡ Charge x'+grp.len+' — now '+living[0].surge+'/10.');
     alive(side).forEach(function(f){
       if(f.surge>=10){ f.surge=0;
         var ts=alive(foeSide);
         ts.forEach(function(t){hurt(t,Math.round(f.power*0.9*mult),'big');});
         act(f); pop(f,'SURGE!','big');
-        logLine(side==='mine'?'you':'foe',f.name+' erupts — hits everything.');
+        logLine(side==='mine'?'you':'foe','⚡ '+f.name+' ERUPTS — hits everything.');
       }});
     return;
   }
@@ -555,7 +588,7 @@ function tokHtml(f,showGem){
     +   (showGem?'<span class="gemdot"></span>':'<span>'+(f.shield>0?'sh '+f.shield:'')+'</span>')+'</div>'
     + '<div class="art">'+layers+'</div>'
     + '<div class="nm">'+f.name+'</div>'
-    + '<div class="kitn">'+f.kit.name+'</div>'
+    + '<div class="kitn">'+(showGem?f.kit.emoji+' ':'')+f.kit.name+'</div>'
     + '<div class="hpwrap"><div class="hp '+cls+'" style="transform:scaleX('+pct+')"></div>'
     +   '<div class="sh" style="width:'+Math.min(100,(f.shield/f.maxHp)*100)+'%"></div></div>'
     + '<div class="hpn"><span>'+f.hp+'/'+f.maxHp+'</span><span>'
@@ -574,23 +607,31 @@ function renderBoard(dropAnim,settle){
   var h='';
   for(var i=0;i<N*N;i++){
     var v=S.board[i];
-    h+='<div class="cell '+SHAPE[v]+(dropAnim?' drop':'')+(settle?' settle':'')+'" data-i="'+i+'" style="--gc:var(--g'+v+')">'
-      +'<div class="g"></div></div>';
+    var gi=gemInfo('mine',v);
+    h+='<div class="cell '+SHAPE[v]+(dropAnim?' drop':'')+(settle?' settle':'')+'" data-i="'+i+'"'
+      +' style="--gc:var(--g'+v+')" title="'+gi.name+' — '+gi.note+'">'
+      +'<div class="g"><span class="em">'+gi.emoji+'</span></div></div>';
   }
   g.innerHTML=h;
 }
 function renderAll(){
   renderTeams(); renderBoard();
   document.getElementById('terrain').style.backgroundImage='url("'+artUrl('background',S.terrainBg,1000)+'")';
-  var lg=['front','mid','back'].map(function(n,i){
+  var lg=[0,1,2].map(function(i){
     var f=fighterForGem('mine',i);
-    return '<span style="--lc:var(--g'+i+')"><i></i>'+(f?f.name.split(' ')[0]+' · '+f.kit.name:n)+'</span>';
+    if(!f) return '';
+    return '<span style="--lc:var(--g'+i+')"'+(f.ko?' class="gone"':'')+'><i></i>'
+      + f.kit.emoji+' <b>'+f.kit.name+'</b> — '+f.name.split(' ')[0]
+      + (f.ko?' (down)':'')+'</span>';
   }).join('')
-  + '<span style="--lc:var(--g3)"><i></i>Guard — team shield</span>'
-  + '<span style="--lc:var(--g4)"><i></i>Surge — charge, erupts at 10</span>';
+  + '<span style="--lc:var(--g3)"><i></i>🛡️ <b>Shield</b> — your team</span>'
+  + '<span style="--lc:var(--g4)"><i></i>⚡ <b>Charge</b> — erupts at 10</span>';
   document.getElementById('legend').innerHTML=lg;
-  document.getElementById('reach').innerHTML='Reach — <b>3</b> their front · <b>4</b> their mid · <b>5+</b> their back. '
-    + 'Cascades multiply. Terrain: '+S.terrain.name+'.';
+  document.getElementById('reach').innerHTML=
+      'Match size is <b>reach</b> — <b>3</b> hits their front · <b>4</b> reaches mid · <b>5+</b> reaches their back rank. '
+    + 'Cascades multiply. Terrain: <b>'+S.terrain.name+'</b> — '+S.terrain.note+'.'
+    + '<br><span style="opacity:.75">The board is shared. The emoji show what each gem does <b>for you</b>; '
+    + 'when they match the same gem, their Fighter in that rank acts instead.</span>';
   var fl=document.getElementById('flag');
   fl.className='turnflag '+(S.over?'':(S.turn==='mine'?'you':'foe'));
   fl.textContent=S.over?(S.over==='win'?'victory':'defeat'):(S.turn==='mine'?'your move':'their move');
