@@ -193,6 +193,12 @@
 		           is reached from inside DHC Fighters, where a player already has
 		           a Fighter worth going to look at. -->
 		      <a href="dhcfighters.php">DHC Fighters</a>
+		      <!-- PROTOTYPE, and labelled as one. Listed so the community can
+		           play it and say what is wrong with it, which is the only way
+		           the next pass gets better than the last. It touches nothing:
+		           no db.php, no session, no saved state, no rewards. Anyone can
+		           open it, break it, and reload. See dhcarena.md. -->
+		      <a href="dhcarena-prototype.php">DHC Arena <span class="nav-tag">prototype</span></a>
 		      <a href="dropship/dashboard.php">Drop Ship</a>
 		    </div>
 		  </div>

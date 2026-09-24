@@ -566,10 +566,13 @@ function newBattle(){
   document.getElementById('log').innerHTML='';
   document.getElementById('resultPanel').style.display='none';
   document.getElementById('endcard').hidden=true;
+  buildTeams();          // once; renderTeams() only patches from here on
   logLine('sys','Terrain — '+S.terrain.name+': '+S.terrain.note+'. Set by their front rank.');
   renderAll();
 }
 function team(s){return s==='mine'?S.mine:S.foes;}
+/** Both sides, for the passes that do not care whose Fighter it is. */
+function everyone(){ return S.mine.concat(S.foes); }
 function alive(s){return team(s).filter(function(f){return !f.ko;});}
 function fighterForGem(side,g){ return team(side).filter(function(f){return f.rank===g;})[0]; }
 
@@ -1112,11 +1115,38 @@ function tokHtml(f,showGem){
     +   (f.surge>0?'surge '+f.surge+'/10':'')+(f.bleed>0?' bleed':'')+'</span></div>'
     + '</div>';
 }
-function renderTeams(){
+/* BUILD ONCE PER BATTLE. This used to rewrite both teams' innerHTML on every
+   render, which throws away every <img> and builds new ones -- so all fourteen
+   art layers were re-created on every move. On a phone that is a visible flash
+   of the whole Crew each time you touch the board, and it was quietly killing
+   the hit and lunge animations too, since the element being animated was
+   replaced mid-animation. */
+function buildTeams(){
+  var byRank=function(a,b){return a.rank-b.rank;};
   document.getElementById('foeTeam').innerHTML =
-    S.foes.slice().sort(function(a,b){return a.rank-b.rank;}).map(function(f){return tokHtml(f,false);}).join('');
+    S.foes.slice().sort(byRank).map(function(f){return tokHtml(f,false);}).join('');
   document.getElementById('myTeam').innerHTML =
-    S.mine.slice().sort(function(a,b){return a.rank-b.rank;}).map(function(f){return tokHtml(f,true);}).join('');
+    S.mine.slice().sort(byRank).map(function(f){return tokHtml(f,true);}).join('');
+}
+/* Patch only what moves: health, shield, surge, bleed, knocked-out. The art,
+   the name, the rank and the gem never change during a battle. */
+function renderTeams(){
+  everyone().forEach(function(f){
+    var e=elFor(f); if(!e) return;
+    if(f.ko) e.classList.add('ko'); else e.classList.remove('ko');
+    var pct=f.hp/f.maxHp;
+    var bar=e.querySelector('.hp');
+    if(bar){
+      bar.style.transform='scaleX('+pct+')';
+      bar.className='hp'+(pct<=.25?' crit':pct<=.55?' low':'');
+    }
+    var sh=e.querySelector('.sh');
+    if(sh) sh.style.width=Math.min(100,(f.shield/f.maxHp)*100)+'%';
+    var n=e.querySelector('.hpn');
+    if(n) n.innerHTML='<span>'+f.hp+'/'+f.maxHp+'</span><span>'
+      + (f.shield>0?'sh '+f.shield+'  ':'')
+      + (f.surge>0?'surge '+f.surge+'/10':'')+(f.bleed>0?' bleed':'')+'</span>';
+  });
 }
 function renderBoard(dropAnim,settle){
   var g=document.getElementById('grid');

@@ -223,6 +223,20 @@ a:hover { color: #00a882; }
   background-color: rgba(0,200,160,0.15);
   color: #00c8a0;
 }
+/* Marks a menu entry as unfinished. Worth its own style rather than putting
+   "(prototype)" in the link text: the tag stays legible as a tag, and a player
+   knows before clicking that what they find is meant to be argued with. */
+.nav-tag {
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  color: #f5a623;
+  border: 1px solid rgba(245,166,35,0.45);
+}
 @media screen and (min-width: 701px) {
   .nav-dropdown:hover > .nav-dropdown-menu { display: flex; }
 }

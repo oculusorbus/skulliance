@@ -807,6 +807,35 @@ layering rules already do for the art.
 
 ---
 
+## 9b. The prototype
+
+`dhcarena-prototype.php` is a playable throwaway, linked from the Play menu
+under DHC Fighters and tagged **prototype** so nobody mistakes it for a
+finished feature. It exists to be argued with.
+
+It touches nothing: no `db.php`, no `skulliance.php`, no session, no saved
+state, no rewards. Real traits from `dhcrarity.php` and real art from
+`dhc/web`; the rules are JavaScript and port to `dhcarena-engine.php` when the
+feel is settled.
+
+What it already proves, and what the design doc above should be read against:
+
+- **Menu combat was not fun.** v1 was the turn-based RPG in §3b and the
+  playtest verdict was boredom — all the skill lived in the build. §3a records
+  the pivot.
+- **The puzzle carries it.** Slides, reach by match size, bombs either side can
+  detonate, gems bound to ranks.
+- **Numbers are simulated, not guessed.** Battle length, the commons-vs-
+  legendaries balance test, bomb frequency and blast strength were all tuned
+  against a headless harness that drives whole battles with a stubbed DOM.
+
+What the harness cannot see is anything visual: it never computes a style. Two
+bugs shipped that way — a drawn element sized to zero, and an overlay covering
+the board because `hidden` loses to any author `display` rule. Layout needs
+looking at, not simulating.
+
+---
+
 ## 10. Build order
 
 1. `dhcarena-engine.php` — pure turn engine, plus a CLI harness that runs
