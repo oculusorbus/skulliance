@@ -55,7 +55,7 @@ body{margin:0;background:var(--ink);color:var(--bone);
   font:13px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
   padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
   -webkit-user-select:none;user-select:none}
-.wrap{max-width:1080px;margin:0 auto;padding:12px}
+.wrap{max-width:1500px;margin:0 auto;padding:12px}
 h1{font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 2px}
 .sub{color:var(--dim);font-size:10.5px;margin:0 0 10px}
 button{font:inherit;cursor:pointer;border-radius:3px}
@@ -68,8 +68,12 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .turnflag.you{border-color:var(--teal);color:var(--teal)}
 .turnflag.foe{border-color:var(--blood);color:var(--blood)}
 
-.arena{display:grid;grid-template-columns:minmax(0,172px) minmax(0,1fr) minmax(0,172px);
-  gap:10px;align-items:start}
+.arena{display:grid;grid-template-columns:minmax(0,270px) minmax(0,1fr) minmax(0,270px);
+  gap:14px;align-items:start}
+/* The board must not simply eat the extra width -- a 1000px square does not fit
+   a laptop viewport. Cap it against viewport HEIGHT and centre it, and the
+   width freed up goes to the Fighters, which is the point. */
+.boardcol .boardwrap{max-width:min(74vh,760px);margin:0 auto}
 .teamcol{display:grid;gap:6px}
 .boardcol{min-width:0}
 @media (max-width:1000px){
@@ -116,8 +120,21 @@ button{font:inherit;cursor:pointer;border-radius:3px}
    the board, so the art gets a fixed height there and letterboxes inside it --
    object-fit:contain already centres it. */
 @media (min-width:1001px){
-  .teamcol .tok .art{aspect-ratio:auto;height:104px}
-  .teamcol .tok{padding:6px 7px}
+  /* A BUST CROP, not a letterboxed full body. The art is square, so fitting it
+     into a wide column left big empty bars and a tiny Fighter. Cropping to the
+     top of the frame fills the column and shows the head and torso -- the part
+     you actually recognise a Fighter by -- several times larger than before.
+     Every layer is the same size and gets the same object-position, so the
+     composite stays aligned. */
+  .teamcol .tok .art{aspect-ratio:auto;height:188px}
+  .teamcol .tok .art img{object-fit:cover;object-position:top center}
+  .teamcol .tok{padding:8px}
+  .teamcol .tok .nm{font-size:12px}
+  .teamcol .tok .kitn{font-size:10px}
+  .teamcol .tok .rk{font-size:9px}
+  .teamcol .tok .hpn{font-size:9.5px}
+  .teamcol .tok .hpwrap{height:8px}
+  .teamcol{gap:10px}
 }
 
 /* ---- board ---- */
