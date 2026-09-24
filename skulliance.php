@@ -25,6 +25,13 @@ if(!isset($_SESSION['logged_in'])){
 		// guaranteed to be on every code path that reaches here.
 		$_SESSION = array_merge((array)$_SESSION, $cookie);
 	}else{
+		/* Clear it on the way out. A cookie that will not decode -- truncated,
+		   oversized, tampered with -- is sent again on every subsequent
+		   request, so without this the visitor is pinned to the error page
+		   with no way back short of clearing site data by hand. */
+		if (isset($_COOKIE['SessionCookie'])) {
+			setcookie('SessionCookie', '', time() - 3600);
+		}
   		header('Location: error.php');
   		exit();
 	}
@@ -1136,7 +1143,65 @@ function filterItems($page){
 	</div>';
 }
 
-// Update session cookie
-$value = json_encode($_SESSION);
-setcookie("SessionCookie", $value, time()+(6*30*24*3600));
+/* ------------------------------------------------------------------ *
+ * SESSION COOKIE -- BUDGETED.
+ *
+ * This used to be json_encode($_SESSION) with no limit, and $_SESSION is not
+ * small: userData carries roles, addresses and whatever a page has added, and
+ * missions.php writes userData['mission']['nfts'] -- an array of every NFT
+ * picked for a mission. Every game adds its own flash and run state on top.
+ *
+ * A cookie has hard ceilings that a session does not. Browsers reject one over
+ * about 4KB outright, and the browser then keeps sending the LAST good one; if
+ * it is accepted but the request header grows past Apache's
+ * LimitRequestFieldSize (8190 by default) the server answers 400 before PHP
+ * runs at all. That second case is unrecoverable from inside the app -- no
+ * request succeeds, so nothing can shrink the cookie, and closing or
+ * refreshing changes nothing because the browser resends it every time.
+ * Reported as exactly that: unable to navigate anywhere after visiting
+ * missions, with refreshes and restarts making no difference.
+ *
+ * So: never write one that can get there.
+ * ------------------------------------------------------------------ */
+$sc_budget = 3600;                       // well inside every limit
+$sc        = (array)$_SESSION;
+
+/* Tier 1 -- purely transient. None of this needs to survive a lost PHPSESSID:
+   it is flash messages, per-run game state and the drop reveal queue, all of
+   which are rebuilt or simply expire. */
+foreach (array('dhcf_unseen','dhcf_unseen_at','cryptcrawl_flash','cryptconquest_flash',
+               'merch_flash','gauntlet_flash','gauntlet_last_result',
+               'cryptconquest_drawn','cryptcrawl_finalized_runs',
+               'skullracer_finalized_tokens') as $sc_k) {
+	unset($sc[$sc_k]);
+}
+$sc_value = json_encode($sc);
+
+/* Tier 2 -- heavy and rebuildable, shed only if still over budget. Ordered so
+   the most disposable goes first; userData['mission'] is last because losing it
+   mid-build costs a player their selections. */
+if (strlen($sc_value) > $sc_budget) {
+	foreach (array('cryptcrawl_guest_run','cryptconquest_guest_run') as $sc_k) unset($sc[$sc_k]);
+	foreach (array('nfts','guilds','transaction','current_missions','mission') as $sc_k) {
+		if (strlen($sc_value) <= $sc_budget) break;
+		unset($sc['userData'][$sc_k]);
+		$sc_value = json_encode($sc);
+	}
+}
+
+/* Tier 3 -- give up on everything but the login itself. A session that can only
+   prove who you are still works; one the browser refuses does not. */
+if (strlen($sc_value) > $sc_budget) {
+	error_log('SessionCookie over budget (' . strlen($sc_value) . 'B) for user '
+		. (isset($_SESSION['userData']['user_id']) ? $_SESSION['userData']['user_id'] : '?')
+		. ' -- falling back to identity only');
+	$sc_ud = isset($_SESSION['userData']) ? (array)$_SESSION['userData'] : array();
+	$sc_min = array('logged_in' => true, 'userData' => array());
+	foreach (array('user_id','discord_id','username','name','avatar','roles','VIP') as $sc_k) {
+		if (isset($sc_ud[$sc_k])) $sc_min['userData'][$sc_k] = $sc_ud[$sc_k];
+	}
+	$sc_value = json_encode($sc_min);
+}
+
+setcookie("SessionCookie", $sc_value, time()+(6*30*24*3600));
 ?>
