@@ -210,6 +210,21 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .cell.settle{animation:stl .16s}
 @keyframes stl{0%{transform:scale(1.06)}100%{transform:scale(1)}}
 @keyframes drp{0%{transform:translateY(-16px);opacity:.4}100%{transform:translateY(0);opacity:1}}
+/* Sits over the settled board rather than in a side panel, because the end of
+   a battle should land where you were looking. Fades in only once the last
+   cascade has come to rest. */
+.endcard{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:9px;text-align:center;
+  background:rgba(13,15,19,.86);backdrop-filter:blur(3px);animation:ecIn .45s ease-out}
+@keyframes ecIn{0%{opacity:0}100%{opacity:1}}
+.ec-title{font-size:30px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.endcard.win .ec-title{color:var(--teal);text-shadow:0 0 26px rgba(0,200,160,.45)}
+.endcard.lose .ec-title{color:var(--blood);text-shadow:0 0 26px rgba(224,70,107,.4)}
+.ec-sub{font-size:12px;color:var(--bone);opacity:.85;max-width:74%}
+.ec-stats{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
+  font-size:10px;color:var(--dim);letter-spacing:.06em;text-transform:uppercase}
+.ec-stats b{display:block;font-size:17px;color:var(--bone);letter-spacing:0;
+  font-variant-numeric:tabular-nums}
 .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .lchip{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--bone);
   padding:4px 9px 4px 4px;border-radius:999px;background:#10131a;
@@ -278,6 +293,12 @@ button{font:inherit;cursor:pointer;border-radius:3px}
         <div class="terrain" id="terrain"></div>
         <div class="combo" id="combo"></div>
         <div class="grid" id="grid"></div>
+        <div class="endcard" id="endcard" hidden>
+          <div class="ec-title" id="ecTitle"></div>
+          <div class="ec-sub" id="ecSub"></div>
+          <div class="ec-stats" id="ecStats"></div>
+          <button class="btn go" id="ecAgain">Battle again</button>
+        </div>
       </div>
       <div class="reach" id="reach"></div>
       <div class="legend" id="legend"></div>
@@ -416,11 +437,13 @@ function newBattle(){
   mine.forEach(function(f,i){f.rank=i;f.side='mine';});
   foes.forEach(function(f,i){f.rank=i;f.side='foes';});
   S={mine:mine,foes:foes,board:[],bomb:null,turn:'mine',round:1,over:null,
+     settling:false, stats:{bombs:0,blasts:0,best:1},
      terrain:pick(TERRAIN,hash(foes[0].traits.background)),terrainBg:foes[0].traits.background};
   if(S.terrain.id==='frail') S.mine.concat(S.foes).forEach(function(f){f.maxHp=Math.round(f.maxHp*.92);f.hp=f.maxHp;});
   makeBoard();
   document.getElementById('log').innerHTML='';
   document.getElementById('resultPanel').style.display='none';
+  document.getElementById('endcard').hidden=true;
   logLine('sys','Terrain — '+S.terrain.name+': '+S.terrain.note+'. Set by their front rank.');
   renderAll();
 }
@@ -672,6 +695,13 @@ function applySlide(a,z,side,done){
 function cascade(side,chain,done){
   var ms=findMatches();
   if(!ms.length){
+    if(S.settling){
+      // board is at rest and nothing is owed -- set off whatever is left, then
+      // show the result. busy stays true until the fireworks finish.
+      renderBoard(); renderTeams();
+      finalHurrah(function(){ busy=false; showEnd(); });
+      return;
+    }
     // the move is over: everything armed during it goes live for both sides
     var armed=0;
     for(var q=0;q<S.bomb.length;q++) if(S.bomb[q]<0){ S.bomb[q]=-S.bomb[q]; armed++; }
@@ -679,6 +709,7 @@ function cascade(side,chain,done){
     if(!hasMove()){ makeBoard(); logLine('sys','No moves left — board reshuffled.'); renderBoard(); }
     busy=false; done&&done(chain-1); return;
   }
+  if(chain>S.stats.best) S.stats.best=chain;
   if(chain>1){ var c=document.getElementById('combo'); c.textContent='CHAIN x'+chain;
     c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); }
   var cleared={};
@@ -692,7 +723,7 @@ function cascade(side,chain,done){
     var at=+queue.shift(), kind=S.bomb[at];
     if(!kind) continue;
     var colour=S.board[at];
-    S.bomb[at]=0; boom++; boomKind=Math.max(boomKind,kind);
+    S.bomb[at]=0; boom++; boomKind=Math.max(boomKind,kind); S.stats.blasts++;
     var hit=(kind===BOMB_BOARD?allCells():rowColCells(at));
     var own=0;
     hit.forEach(function(j){
@@ -711,6 +742,7 @@ function cascade(side,chain,done){
      until a Fighter actually went down mid-battle. One bad group should cost
      one group's effect, never the game. */
   ms.forEach(function(g){
+    if(S.settling) return;          // decided already; this is animation now
     try { resolveGroup(side,g,chain); }
     catch(err){ logLine('sys','(effect error — skipped)');
                 if(window.console) console.error('resolveGroup', err); }
@@ -720,6 +752,7 @@ function cascade(side,chain,done){
      WHOEVER SET IT OFF -- which is the whole risk. Length is capped at 6 so a
      board bomb is a huge turn rather than an instant win: 49 gems resolving at
      full scale would simply end the battle on the spot. */
+  if(boom && S.settling){ boom=0; blasts=[]; }   // blasts stop paying once decided
   if(boom){
     /* A BOMB PAYS ITS OWN COLOUR, NOT ALL FIVE.
        The first version resolved every colour the blast touched, so one board
@@ -750,7 +783,7 @@ function cascade(side,chain,done){
   /* CREATE from this turn's own matches. The bomb cell survives the clear --
      that is what leaves it sitting on the board for either side to take. */
   ms.forEach(function(g){
-    if(g.len<4) return;
+    if(g.len<4 || S.settling) return;
     var at=(S.lastTo!==undefined && g.cells.indexOf(S.lastTo)!==-1)
              ? S.lastTo : g.cells[Math.floor(g.cells.length/2)];
     var big=(g.len>=5);
@@ -765,6 +798,7 @@ function cascade(side,chain,done){
        Negative survives collapse() untouched, which index-tracking would not:
        gems fall, so a cell number means nothing a moment later. */
     S.bomb[at]=-(big?BOMB_BOARD:BOMB_CROSS);
+    S.stats.bombs++;
     delete cleared[at];
     logLine(side==='mine'?'you':'foe',
       (big?'💣 BOARD BOMB':'✳️ Bomb')+' armed — match its colour to set it off. Either side can.');
@@ -785,7 +819,17 @@ function cascade(side,chain,done){
     if(bw){ bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); }
   }
   renderTeams();
-  if(checkOver()){busy=false;return;}
+  /* THE BOARD FINISHES FALLING EVEN AFTER THE BATTLE IS DECIDED.
+     Returning here left the last clear half-applied -- gems scaled to nothing,
+     holes never collapsed, the board frozen mid-explosion looking broken. The
+     cascade now keeps running purely as animation: S.settling stops every
+     effect, so nothing further is resolved against a team that has already
+     lost, but the gems fall, the chains play out and the board comes to rest
+     before the result is shown. */
+  if(checkOver() && !S.settling){
+    S.settling=true;
+    logLine('big', S.over==='win' ? '— their Stable is down —' : '— your Stable is down —');
+  }
   // hold longer when something exploded, so the blast is seen rather than
   // skipped past on the way to the collapse
   var hold = boom ? 460 : 190;
@@ -990,13 +1034,67 @@ function renderAll(){
   fl.className='turnflag '+(S.over?'':(S.turn==='mine'?'you':'foe'));
   fl.textContent=S.over?(S.over==='win'?'victory':'defeat'):(S.turn==='mine'?'your move':'their move');
   document.getElementById('round').textContent=S.over?'':'Round '+S.round;
-  if(S.over){
-    var p=document.getElementById('resultPanel');p.style.display='';
-    p.innerHTML='<div class="over"><h2>'+(S.over==='win'?'Victory':'Defeat')+'</h2>'
-      +'<p class="sub">'+(S.over==='win'?'In the real game this is where traits and ladder points land.'
-                                        :'In the real game these Fighters would now be benched.')+'</p></div>';
-  }
+  // the result lives on the end card over the board now, not in a side panel
 }
+/* LAST HURRAH. Every bomb still sitting on the board goes off once the battle
+   is decided and the gems have come to rest. Pure spectacle -- S.settling has
+   already switched every effect off, so nothing is resolved against a team that
+   has lost. It is the payoff for a board that ends up littered with bombs
+   nobody dared spend, and it gives the end of a battle a beat of its own
+   instead of the board simply stopping. */
+function finalHurrah(cb){
+  var live=[], i;
+  for(i=0;i<S.bomb.length;i++) if(S.bomb[i]) live.push(i);
+  if(!live.length){ cb(); return; }
+
+  var cleared={}, kind=0, n=0, queue=live.slice();
+  while(queue.length){
+    var at=queue.shift(), k=Math.abs(S.bomb[at]||0);
+    if(!k) continue;
+    S.bomb[at]=0; kind=Math.max(kind,k); n++;
+    (k===BOMB_BOARD?allCells():rowColCells(at)).forEach(function(j){
+      if(S.bomb[j]) queue.push(j);
+      cleared[j]=1;
+    });
+  }
+  logLine('big','💥 Last hurrah — '+n+' bomb'+(n!==1?'s':'')+' still on the board go off.');
+  var cb2=document.getElementById('combo');
+  if(cb2){ cb2.textContent='💥 LAST HURRAH'; cb2.classList.remove('on');
+           void cb2.offsetWidth; cb2.classList.add('on'); }
+  Object.keys(cleared).forEach(function(j){
+    var el=cellEl(j); if(el) el.classList.add(kind===BOMB_BOARD?'blast2':'blast');
+  });
+  var bw=document.querySelector('.boardwrap');
+  if(bw){ bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); }
+  setTimeout(function(){
+    Object.keys(cleared).forEach(function(j){ S.board[j]=-1; });
+    collapse(); renderBoard(true);
+    setTimeout(cb, 300);
+  }, 560);
+}
+
+function showEnd(){
+  var won=S.over==='win';
+  var card=document.getElementById('endcard');
+  var standing=alive(won?'mine':'foes');
+  card.className='endcard '+(won?'win':'lose');
+  document.getElementById('ecTitle').textContent = won?'Victory':'Defeat';
+  document.getElementById('ecSub').textContent = won
+    ? (standing.length===3
+        ? 'Their Stable is down and yours did not lose a Fighter.'
+        : standing.length+' of your Fighters still standing — '
+          + standing.map(function(f){return f.name.split(' ')[0];}).join(' and ') + '.')
+    : 'Your Stable is down. In the real game these Fighters would now be benched, '
+      + 'and you would send the rest.';
+  document.getElementById('ecStats').innerHTML =
+      '<span><b>'+S.round+'</b>rounds</span>'
+    + '<span><b>'+S.stats.bombs+'</b>bombs armed</span>'
+    + '<span><b>'+S.stats.blasts+'</b>detonated</span>'
+    + '<span><b>x'+S.stats.best+'</b>best chain</span>';
+  card.hidden=false;
+  logLine('big', won?'VICTORY — their Stable is down.':'DEFEAT — your Stable is down.');
+}
+
 function logLine(kind,text){
   var l=document.getElementById('log');var d=document.createElement('div');
   d.className='log-'+kind;d.textContent=text;l.appendChild(d);l.scrollTop=l.scrollHeight;
@@ -1087,6 +1185,7 @@ gridEl.addEventListener('pointercancel',function(){ if(drag){clearOffsets();drag
 window.addEventListener('pointerup',function(e){ if(drag) release(e); });
 
 document.getElementById('reroll').onclick=newBattle;
+document.getElementById('ecAgain').onclick=newBattle;
 newBattle();
 </script>
 </body>
