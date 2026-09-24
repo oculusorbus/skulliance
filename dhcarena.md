@@ -5,9 +5,9 @@ for handoff to whichever session picks up the build. Numbers below were read out
 of `dhcrarity.php` and `dhcfighters-config.php`, not estimated — anything still
 undecided is marked **OPEN** rather than guessed.
 
-**One-line pitch:** a squad-based asynchronous auto-battler where a Fighter's
-traits *are* its combat kit, so the assembler becomes a deckbuilder and every
-other game on the platform becomes a supply line.
+**One-line pitch:** a turn-based 3v3 party RPG where a Fighter's traits *are* its
+abilities and stats, so the assembler becomes a deckbuilder, the battle is played
+rather than watched, and every other game on the platform becomes a supply line.
 
 ---
 
@@ -44,120 +44,138 @@ Three rather than one is the first and cheapest lever on "build more Fighters":
 it triples the cost of entry, in an economy where traits are capped at 3/day per
 source. See §5 for the second and much stronger lever.
 
-**LOCKED: best-of-three sequential 1v1s.** Your three face theirs in order, first
-to two wins takes the battle. Chosen over a six-Fighter team battle because the
-resolver is far simpler, the log reads as a story rather than a soup, and
-counterpicking stays legible — a player can see which of their builds answered
-which of the opponent's, which is the feedback that teaches the game.
+**LOCKED: 3v3 team battle, all six Fighters on the field at once.**
 
-```
-ROUND 1  Bone Harvester   vs  Xlon Prime        -> WIN
-ROUND 2  Ash Revenant     vs  Data Tunnel       -> LOSS
-ROUND 3  Grim Conductor   vs  Hellscape Widow   -> WIN
+An earlier revision specified best-of-three sequential 1v1s. That was the right
+call *for an auto-resolver* — three small fights produce a log a human can read,
+where a six-body simultaneous brawl produces soup. The premise is what changed,
+not the reasoning: once the player is making decisions every turn (§3b), the
+sequential format collapses into three shallow duels, while the team format is
+where all the interesting decisions live.
 
-RESULT   2-1 challenger
-KO       Ash Revenant (benched 6h)
-```
+Team battle is what creates:
 
-**OPEN:** whether the defender's running order is fixed at Stable level or
-shuffled per battle. Fixed rewards scouting; shuffled prevents a hard counter.
+- **Target selection.** Focus the dangerous one, or the weak one?
+- **Protection.** A Fighter built to absorb hits is only meaningful if there is
+  someone behind them worth shielding.
+- **Cross-Fighter combos.** One Fighter sets up, another capitalises. Nothing in
+  a 1v1 can express that.
+- **A reason for Stable composition to be a puzzle** rather than three
+  independently-optimised Fighters.
 
----
+That last point matters most for the brief: 1v1 rewards building the same good
+Fighter three times. 3v3 rewards building three Fighters that need each other,
+which is more traits and more distinct builds.
 
-## 3. Traits are the stats
+## 3. Traits are the abilities and the stats
 
 Ten slots, of which three are mandatory (`DHCF_REQUIRED`: background, torso,
-head). The mapping has to cover all ten or some slots become dead weight:
+head). The split that makes this authorable: **the small pools grant abilities,
+the large pools grant stats.**
 
-| Slot | Contributes | Pool |
+### Ability slots — 46 traits to author
+
+| Slot | Pool | Grants |
 |---|---|---|
-| `torso` | HP and armour — the body is what takes the hits | 25 |
-| `head` | resistance, and the save against control effects | 35 |
-| `background` | **arena terrain** — a global modifier on the whole fight | 42 |
-| `weapon` | primary damage and damage *type* | 16 shared |
-| `weaponBack` | secondary damage, or an opener that fires once | ↑ |
-| `arms` | attack speed / actions per round | 17 |
-| `headgear` | crit chance and crit damage | 32 |
-| `companion` | an independent actor that takes its own turns | 9 |
-| `effects1` | passive proc | 21 shared |
-| `effects2` | second passive proc | ↑ |
+| `weapon` | 16 shared | The Fighter's primary active. What you spend most turns doing. |
+| `weaponBack` | ↑ | A second active, or a once-per-battle opener |
+| `companion` | 9 | An independent actor that takes its own turns |
+| `effects1` / `effects2` | 21 shared | One passive and one activatable, or two passives |
 
-Two things fall out of the real pool sizes that the mapping has to respect:
+Forty-six abilities is a real authoring job but a finite one, and it is the part
+worth hand-designing. Note this inverts an earlier concern in this doc: companion
+being the smallest pool at 9 traits was a problem when companions were a stat
+multiplier, because the meta would collapse onto the two best. As **nine distinct
+summons**, a small pool is a feature — each one can be genuinely characterful.
 
-- **Companion is the scarcest slot at 9 traits, and has no commons and no
-  mythics** — every companion is uncommon-to-legendary. A slot that narrow
-  cannot carry a build-defining mechanic or the meta collapses onto the two or
-  three good ones. Companions should be *additive* (an extra actor) rather than
-  multiplicative.
-- **Background is the largest pool at 42 and is mandatory.** That makes it the
-  best home for terrain: every Fighter has one, and there is enough variety that
-  terrain stays varied without anyone being locked out.
+### Stat slots — generated, not authored
 
-**OPEN:** the per-trait stat tables themselves. That is a large authoring job
-(197 traits) and should be generated from tier + category as a baseline, then
-hand-tuned for the traits that deserve identity. Do not hand-author 197 entries
-up front.
+| Slot | Pool | Contributes |
+|---|---|---|
+| `torso` | 25 | HP and armour — the body takes the hits |
+| `head` | 35 | Resistance, and the save against control effects |
+| `headgear` | 32 | Crit chance and crit damage |
+| `arms` | 17 | Speed, which sets turn order and actions per round |
+| `background` | 42 | **Arena terrain** — a global modifier on the whole battle |
+
+These derive from tier and category with a hand-tune pass over the standouts.
+151 traits is too many to author individually and they do not need it — a stat
+line does not need personality, it needs to be a number the player can reason
+about.
+
+Background is mandatory and the largest pool at 42, which makes it the right home
+for terrain: every Fighter brings one, so terrain always varies. **OPEN:** whose
+background sets the terrain in a 3v3 — the attacker's lead Fighter, a roll among
+the six, or each side's own Fighters carrying their own.
 
 ---
 
-## 3b. Where the player's agency actually is
+## 3b. The battle is played, not watched
 
-"Auto-battler" is an overloaded word and it is worth being blunt about what it
-does and does not mean here, because the failure mode — send three Fighters, hope
-— would be a slot machine, not a game.
+**LOCKED: turn-based, player-controlled.** Each round you choose what every
+Fighter in your team does — which ability, on which target. Speed (from `arms`)
+sets the turn order across all six bodies, so a fast Fighter may act twice before
+a slow one moves.
 
-**The battle itself runs without input. Everything that decides it does not.**
+This is the decision that separates Arena from a result screen. A player who
+loses should be able to point at the turn where they chose wrong, and that is
+what makes a win feel earned and a loss worth talking about.
 
-| Decision | When | Depth |
-|---|---|---|
-| What each Fighter *is* — ten slots from 197 traits | Assembler | The main layer. This is deckbuilding. |
-| Which three make up the Stable | Before challenging | Covering matchups rather than stacking one archetype |
-| Who to challenge, having scouted them | Before challenging | Reading an opponent's build for a weakness |
-| Running order against a known Stable | Per battle | Only real if order is fixed — see §2 |
-| Who to field given who is benched | Per battle | Resource management under §5 |
+### The async problem, and the standard answer
 
-That is the same shape as a card game: you do not act during the shuffle, you act
-when you build the deck and choose the matchup. Crypt Crawl and Crypt Conquest
-put the decisions *inside* the run; Arena puts them *around* it. Both are real,
-but they are different games, and a player arriving from the card games will
-notice the difference.
+Turn-based play and asynchronous PvP are in direct tension: if both players act
+every round, both have to be online, which means real-time infrastructure this
+platform does not have and should not grow. Apache/mod_php with no websockets is
+the right stack for everything else here; it is the wrong stack for live PvP.
 
-### The two things that decide whether this feels like strategy or gambling
+**The answer: the attacker plays, the defender's Stable is run by the AI.**
 
-**1. Variance has to be low.** If a battle is a coin flip weighted by build, then
-scouting is pointless and the correct play is to challenge constantly and let the
-maths average out — which is gambling with extra steps. Resolution should be
-close to deterministic given two builds: same matchup, same result, near enough
-every time. Randomness belongs in *which* traits you draw, not in whether your
-build works. The platform already has lottery in the drop tables; Arena should be
-the part that rewards playing well with what you drew.
+You challenge another player's Stable and fight it yourself, turn by turn, at
+whatever hour suits you. Their Fighters defend under AI control, with the stats
+and abilities their owner built. When they challenge you, the positions reverse.
+Nobody ever waits for anybody, and defence happens while you sleep — which is the
+same rhythm raids already have.
 
-**2. The log has to teach.** A player who loses must be able to read the log and
-see *why* — "their resistance rolled over my damage type", "my companion never
-got to act because the fight ended in three rounds". That is the loop that turns
-a loss into a build change instead of a shrug. An opaque result is
-indistinguishable from a random one even when it is not.
+### The constraint this creates, which shapes every ability
 
-### If that is still too passive: banked orders
+**Every ability has to be something an AI can play competently.** Half of all
+Arena battles are your Stable piloted by a machine. If an ability needs a human's
+read of the board to be worth anything, then a build using it is strong on
+offence and useless on defence, and the meta collapses into "build what the AI
+cannot misplay."
 
-If pre-battle agency alone reads as thin, the cheapest way to add genuine
-in-battle decisions without breaking async is a small **orders** layer: each
-Fighter carries one or two conditional instructions, set when you field them.
+Practical rules that follow:
+
+- Prefer abilities with a clear best target — "hit the lowest HP enemy", "shield
+  the ally about to be focused" — over ones needing multi-turn setup.
+- An ability whose value depends on *timing* needs an obvious trigger condition
+  the AI can also read.
+- Test every ability by asking: would a simple priority-based AI use this
+  correctly? If not, it belongs in a PvE mode, not here.
+
+This is a real design tax and worth accepting deliberately rather than
+discovering during balance.
+
+### What a turn looks like
 
 ```
-IF hp < 30%      THEN  use companion
-IF enemy armour  THEN  lead with weaponBack
+ROUND 3            terrain: Data Tunnel (+15% crit, all combatants)
+
+  Bone Harvester   [HP 62/90]   speed 14   -> your move
+  Ash Revenant     [HP 88/88]   speed  9
+  Grim Conductor   [KO]
+
+  vs
+
+  Xlon Prime       [HP 31/95]   focused
+  Hellscape Widow  [HP 77/77]   shielded 2 rounds
+  Null Sentinel    [HP 95/95]
+
+  > Skull Krusher        heavy, slow, ignores armour
+  > Krusher Sash         once per battle, opener spent
+  > Call companion       U-Vigilance Device
+  > Defend
 ```
-
-Programmed rather than live — the player writes the tactics, the sim executes
-them. It keeps everything asynchronous and server-resolved, it makes two
-identical Stables play differently, and it gives a skilled player something to be
-better at beyond collection depth. It also gives the log more to narrate.
-
-**NEEDS A CALL.** Ship without orders and add them if Arena reads as passive, or
-build them in from the start? Adding later is harder than it sounds — the combat
-resolver has to be written with hook points for it either way, so the decision
-should be made before §10 step 3, even if the feature ships later.
 
 ---
 
@@ -323,25 +341,51 @@ Countermeasures against the rich-get-richer loop in §6:
 
 ---
 
-## 8. Resolution, and why it is asynchronous
+## 8. Architecture
 
-Battles resolve **server-side from a seed**, producing a deterministic
-round-by-round log. No real-time component, no matchmaking queue, no scheduling.
+A live turn-based battle with server-authoritative state is **already a solved
+pattern on this platform**, twice. Do not invent a third.
 
-`endRaid()` in `db.php` is the working precedent for the whole shape: the server
-decides the outcome, writes the result, and posts a Discord embed. Two lessons to
-carry over rather than rediscover:
+`cryptconquest-engine.php` is the model to copy, and its own header says why:
 
-- **Resolve on a real trigger, not lazily on page render.** `endRaid()` resolves
-  when somebody happens to load the raids list, which is what produced the
-  session bug fixed in `621f5f31`. Arena should resolve on the challenger's
-  action.
-- **Award by `user_id`, never by session.** Both players' rewards are written
-  from one request, and only one of them is at the keyboard. `dhcf_award()`
-  already scopes its reveal modal correctly for this case.
+> Deliberately isolated from the DB/session layer: every function here takes
+> and/or returns a plain `$run` array, no `$conn`, no `$_SESSION`. […] lets the
+> whole ruleset be exercised by a standalone PHP test harness with zero setup.
 
-The log is the shareable artefact. Fighters already have names and serials, so a
-log reads as a story: *DHC2F424 "Bone Harvester" opened on Xlon Implant…*
+That split is worth more here than it was there, because Arena's combat has to be
+balanced, and balance means running ten thousand simulated battles without a
+browser or a database in the loop. The §4 all-commons-vs-all-legendaries test is
+not optional and it is only cheap if the engine is pure.
+
+Four files, mirroring Conquest:
+
+- `dhcarena-engine.php` — pure rules. Takes a `$battle` array, returns one.
+  No `$conn`, no `$_SESSION`. Both the player's moves and the defending AI's
+  choices go through it.
+- `dhcarena-actions.php` — persistence wrapper, turn validation.
+- `dhcarena-render.php` — the battle view.
+- `ajax/dhcarena-action.php` — one turn per request.
+
+### Two lessons to carry over rather than rediscover
+
+**Keep the slow work out of the turn request.** `ajax/cryptcrawl-action.php` does
+nothing but game logic, save and render — CARBON payout and the Discord announce
+were moved to a separate fire-and-forget `cryptcrawl-finalize.php` because
+anything slow in the turn request delays or breaks the confirmation reaching the
+browser. That was the actual fix for a recurring "loss screen doesn't show" bug
+after three failed same-request attempts. Arena's end-of-battle rewards and
+announcement belong in the same shape from day one.
+
+**Award by `user_id`, never by session.** A battle writes results for two
+players and only one is at the keyboard. `dhcf_award()` already scopes its reveal
+modal correctly for this; see the session bug fixed in `621f5f31` for what
+happens when out-of-band awards assume the session is the recipient.
+
+### Determinism
+
+Seed the battle and store the seed. Given the same seed and the same sequence of
+player choices, the battle must replay identically — that is what makes a log
+trustworthy, a bug reproducible, and the balance harness meaningful.
 
 ---
 
@@ -411,20 +455,30 @@ layering rules already do for the art.
 
 ## 10. Build order
 
-1. Trait → stat derivation, generated from tier + category, with a simulator.
-2. Run the all-commons vs all-legendaries test in §4. Tune before anything else.
-3. Battle resolution + log format.
-4. Stable, knockouts, entry requirement.
-5. Challenge flow and Discord announce.
-6. Trait rewards (`DHCF_GAMES['arena']`) — last, so the economy only opens once
+1. `dhcarena-engine.php` — pure turn engine, plus a CLI harness that runs
+   battles with no DB. Everything below depends on being able to simulate.
+2. Stat derivation from tier + category for the five stat slots.
+3. The 46 abilities. Design each against the "can a simple AI play this?" test
+   in §3b as it is written, not afterwards.
+4. The defending AI. Build it early — it is half of every battle, and an ability
+   the AI cannot use is an ability that is not finished.
+5. Run the all-commons vs all-legendaries test in §4. Tune before any UI.
+6. Persistence, battle view, one-turn-per-request AJAX.
+7. Stable, fatigue, entry requirement.
+8. Challenge flow, end-of-battle rewards and Discord announce — in a separate
+   fire-and-forget request, per §8.
+9. Trait rewards (`DHCF_GAMES['arena']`) — last, so the economy only opens once
    the combat maths is settled.
-7. Skull Paper page, `$skullpaper_nav` entry, and a `MAINTENANCE.md` row.
+10. Skull Paper page, `$skullpaper_nav` entry, and a `MAINTENANCE.md` row.
 
 ---
 
 ## Decisions locked (2026-09-23)
 
-1. **Best-of-three sequential 1v1s**, not a team battle. §2
+1. **Turn-based 3v3 team battle, played not watched.** The attacker plays every
+   turn; the defending Stable is run by the AI with its owner's builds, so
+   nothing is real-time and nobody waits. Supersedes the earlier auto-resolved
+   best-of-three. §2, §3b
 2. **Knockouts on every fight, longer on a loss.** Reverted from loss-only after
    a merits re-check — see §5 for why loss-only is anti-correlated with the
    brief. Stable-size scaling needs a fresh call as a result. §5
@@ -437,12 +491,15 @@ layering rules already do for the art.
 
 These are tuning and detail, not direction — none of them block starting §10.
 
-- The per-trait stat tables (§3). Generate from tier + category, hand-tune after.
+- The 46 abilities (§3). Hand-authored, each tested against "can a simple AI
+  play this correctly?" — see §3b.
+- The stat tables for the other 151 traits (§3). Generate from tier + category,
+  hand-tune the standouts only.
+- Whose `background` sets the terrain in a 3v3 (§3).
 - The knockout curve: floor, ceiling, and how it scales (§5).
-- Defender running order: fixed at Stable level, or shuffled per battle? (§2)
-  This one is load-bearing for §3b — fixed order is what makes scouting and
-  counterpicking a skill; shuffled converts that skill back into luck.
-- Banked orders: in from the start, or later? The resolver needs hooks either
-  way (§3b).
+- How much the attacker can scout before committing. Full Stable visibility makes
+  counterpicking a skill; hidden builds make it a gamble. Leaning full.
+- Whether the defending AI's difficulty is fixed, or reads its owner's ladder
+  rank. Fixed is honest; scaled hides a bad AI.
 - Whether fielded-Fighters-per-season should be capped to flatten the top (§7).
 - Whether a loss shows on a Fighter's record immediately or on recovery (§8c).
