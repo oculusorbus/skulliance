@@ -149,7 +149,8 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 /* ---- board ---- */
 .boardwrap{position:relative;border:1px solid var(--line);border-radius:4px;background:var(--panel);
   padding:8px;overflow:hidden}
-.terrain{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.13}
+.terrain{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.13;
+  pointer-events:none}   /* decorative: never let the backdrop take a click */
 .grid{position:relative;z-index:2;display:grid;gap:3px;touch-action:none}
 .cell{position:relative;aspect-ratio:1;border-radius:4px;display:flex;align-items:center;
   justify-content:center;cursor:pointer;background:#10131a;border:1px solid transparent;
@@ -213,6 +214,13 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 /* Sits over the settled board rather than in a side panel, because the end of
    a battle should land where you were looking. Fades in only once the last
    cascade has come to rest. */
+/* MUST COME FIRST AND MUST EXIST. `hidden` gets display:none from the browser's
+   own stylesheet, which is the weakest source there is -- the .endcard rule
+   below sets display:flex and silently beat it, so this overlay sat over the
+   board from page load, covering every gem and swallowing every click. The page
+   looked dead and a refresh could not help, because it was never alive.
+   The attribute selector outranks the bare class, so it wins. */
+.endcard[hidden]{display:none}
 .endcard{position:absolute;inset:0;z-index:8;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:9px;text-align:center;
   background:rgba(13,15,19,.86);backdrop-filter:blur(3px);animation:ecIn .45s ease-out}
