@@ -63,6 +63,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .btn:hover{border-color:var(--ochre);color:var(--ochre)}
 .btn.go{background:var(--blood);border-color:var(--blood);color:#fff}
 .top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+#howto{display:none;padding:6px 11px}
 .turnflag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;
   border-radius:999px;border:1px solid var(--line);color:var(--dim)}
 .turnflag.you{border-color:var(--teal);color:var(--teal)}
@@ -82,12 +83,34 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   padding-bottom:4px;border-bottom:1px solid var(--line)}
 .coltag.you{color:var(--teal)} .coltag.foe{color:var(--blood)}
 .boardcol{min-width:0}
+.legend.mobonly{display:none}
 @media (max-width:1000px){
   /* Stack, and put the enemies above the board where they read as the opposition */
   .arena{grid-template-columns:1fr}
   .teamcol{grid-template-columns:repeat(3,minmax(0,1fr))}
   .teamwrap.foes{order:-1}
   .teamwrap.mine{order:1}
+  /* Enemies, board and your Crew have to fit one screen together, so the
+     legend goes below all three rather than wedging between the board and
+     your own Fighters. */
+  .legend.deskonly{display:none}
+  .legend.mobonly{display:flex;margin-top:10px}
+  /* Squat tokens. Three-up at phone width the art would be square at ~128px,
+     and two rows of that plus the board came to about 794px -- over the fold on
+     most phones even after the legend moved. 96px brings the core play area
+     near 730px, which fits. The whole figure still shows; it is letterboxed
+     into a shorter frame rather than cropped. */
+  .teamcol .tok .art{aspect-ratio:auto;height:96px}
+  .teamcol .tok{padding:4px}
+  .teamcol .tok .nm{font-size:9px}
+  .teamcol .tok .kitn{font-size:7.5px}
+  .coltag{margin-bottom:3px;padding-bottom:3px}
+  /* The intro is a wall of rules that costs a screen of height on a phone.
+     Hidden, with a button in the top bar to bring it back -- saving the space
+     without deleting how the game works. */
+  .sub{display:none}
+  .sub.open{display:block}
+  #howto{display:inline-block}
 }
 
 /* ---- teams ---- */
@@ -302,6 +325,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
      A slide with no match costs nothing.</p>
   <div class="top">
     <button class="btn go" id="reroll">New battle</button>
+    <button class="btn" id="howto" title="How to play">?</button>
     <button class="btn" id="mute" title="Mute sound">🔊</button>
     <span class="turnflag" id="flag">—</span>
     <span class="sub" style="margin:0" id="round"></span>
@@ -329,11 +353,15 @@ button{font:inherit;cursor:pointer;border-radius:3px}
         </div>
       </div>
       <div class="reach" id="reach"></div>
-      <div class="legend" id="legend"></div>
+      <!-- Two slots, one shown per breakpoint. CSS order cannot move the legend
+           past .teamwrap.mine because they have different parents, so the
+           mobile copy lives outside the arena where it can sit last. -->
+      <div class="legend deskonly" id="legend"></div>
     </div>
     <div class="teamwrap foes"><div class="coltag foe">Enemy Crew</div>
       <div class="teamcol foes" id="foeTeam"></div></div>
   </div>
+  <div class="legend mobonly" id="legendM"></div>
   <div class="panel" id="resultPanel" style="display:none;margin-top:10px"></div>
   <details class="logbox" open>
     <summary>Battle log</summary>
@@ -1122,6 +1150,7 @@ function renderAll(){
   + chip('var(--g3)','🛡️','shields your team')
   + chip('var(--g4)','⚡','erupts at 10');
   document.getElementById('legend').innerHTML = lg;
+  document.getElementById('legendM').innerHTML = lg;   // mobile slot, see markup
   // Everything else about reach is in the header; this is the at-a-glance
   // reminder plus the one thing that changes per battle, the terrain.
   document.getElementById('reach').innerHTML=
@@ -1284,6 +1313,9 @@ gridEl.addEventListener('pointerup',release);
 gridEl.addEventListener('pointercancel',function(){ if(drag){clearOffsets();drag=null;} });
 window.addEventListener('pointerup',function(e){ if(drag) release(e); });
 
+document.getElementById('howto').onclick=function(){
+  document.querySelector('.sub').classList.toggle('open');
+};
 var muteBtn=document.getElementById('mute');
 function paintMute(){ muteBtn.textContent = sfxOn?'🔊':'🔇';
   muteBtn.title = sfxOn?'Mute sound':'Unmute sound'; }
