@@ -68,7 +68,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .turnflag.you{border-color:var(--teal);color:var(--teal)}
 .turnflag.foe{border-color:var(--blood);color:var(--blood)}
 
-.arena{display:grid;grid-template-columns:minmax(0,270px) minmax(0,1fr) minmax(0,270px);
+.arena{position:relative;display:grid;grid-template-columns:minmax(0,270px) minmax(0,1fr) minmax(0,270px);
   gap:14px;align-items:start}
 /* The board must not simply eat the extra width -- a 1000px square does not fit
    a laptop viewport. Cap it against viewport HEIGHT and centre it, and the
@@ -102,6 +102,10 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .tok .art{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:2px;
   background:repeating-conic-gradient(#191419 0% 25%,#201b20 0% 50%) 50%/9px 9px;margin:2px 0}
 .tok .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+/* the Fighter's own background fills the frame and sits well back */
+.tok .art img.bg{object-fit:cover;filter:brightness(.42) saturate(.6) contrast(.9)}
+.tok .art .scrim{position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(13,15,19,.10),rgba(13,15,19,.58))}
 .tok .nm{font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tok .kitn{font-size:8px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hpwrap{position:relative;height:6px;background:#0b0d11;border-radius:2px;overflow:hidden;margin-top:3px}
@@ -151,10 +155,18 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 }
 
 /* ---- board ---- */
-.boardwrap{position:relative;border:1px solid var(--line);border-radius:4px;background:var(--panel);
+.boardwrap{position:relative;border:1px solid var(--line);border-radius:4px;
+  background:rgba(21,25,34,.80);
   padding:8px;overflow:hidden}
-.terrain{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.13;
-  pointer-events:none}   /* decorative: never let the backdrop take a click */
+/* Was inset in the board at 13% opacity behind an opaque grid, which meant the
+   terrain -- a real mechanic, drawn from a real trait -- was invisible. It now
+   backs the entire arena, with a scrim so nothing over it loses contrast. */
+.arenabg{position:absolute;inset:-14px;z-index:0;border-radius:6px;overflow:hidden;
+  background-size:cover;background-position:center;opacity:.30;
+  filter:saturate(.75) contrast(.95);pointer-events:none}
+.arenabg:after{content:'';position:absolute;inset:0;
+  background:radial-gradient(120% 90% at 50% 40%,rgba(13,15,19,.35),rgba(13,15,19,.88))}
+.arena > .teamwrap, .arena > .boardcol{position:relative;z-index:1}
 .grid{position:relative;z-index:2;display:grid;gap:3px;touch-action:none}
 .cell{position:relative;aspect-ratio:1;border-radius:4px;display:flex;align-items:center;
   justify-content:center;cursor:pointer;background:#10131a;border:1px solid transparent;
@@ -300,11 +312,13 @@ button{font:inherit;cursor:pointer;border-radius:3px}
        The legend sits under the board and the log under that -- it is a
        reference for a curious player, not something read mid-turn. -->
   <div class="arena">
+    <!-- The defender's front-rank background IS the arena (see §3 terrain), so
+         it belongs behind the whole fight rather than hidden behind the board. -->
+    <div class="arenabg" id="terrain"></div>
     <div class="teamwrap mine"><div class="coltag you">Your Crew</div>
       <div class="teamcol mine" id="myTeam"></div></div>
     <div class="boardcol">
       <div class="boardwrap">
-        <div class="terrain" id="terrain"></div>
         <div class="combo" id="combo"></div>
         <div class="grid" id="grid"></div>
         <div class="endcard" id="endcard" hidden>
@@ -1014,9 +1028,19 @@ function pop(f,txt,kind){var e=elFor(f);if(!e)return;var p=document.createElemen
 function tokHtml(f,showGem){
   var pct=f.hp/f.maxHp, cls=pct<=.25?'crit':pct<=.55?'low':'';
   var t=f.traits;
-  var layers=['torso','weapon','arms','effects','head','headgear','companion']
+  /* The background goes in. It is one of the three MANDATORY slots and the
+     largest pool on the platform at 42 traits -- leaving it out meant every
+     token showed an incomplete Fighter against a transparency checkerboard,
+     and a trait the player chose was invisible. Dimmed hard behind a scrim so
+     the figure still reads; the assembler shows it at full strength because
+     there it is the subject, and here the subject is the fight. */
+  var layers=(t.background
+      ? '<img class="bg" loading="lazy" alt="" src="'+artUrl('background',t.background,250)+'" onerror="this.remove()">'
+      : '')
+    + ['torso','weapon','arms','effects','head','headgear','companion']
     .filter(function(k){return t[k];})
-    .map(function(k){return '<img loading="lazy" alt="" src="'+artUrl(k,t[k],250)+'" onerror="this.remove()">';}).join('');
+    .map(function(k){return '<img loading="lazy" alt="" src="'+artUrl(k,t[k],250)+'" onerror="this.remove()">';}).join('')
+    + '<span class="scrim"></span>';
   return '<div class="tok'+(showGem?' mine':' foe')+(f.ko?' ko':'')+'" data-id="'+f.uid+'"'
     + ' style="--gem:var(--g'+f.rank+')">'
     + '<div class="flash"></div>'
