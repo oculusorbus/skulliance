@@ -77,7 +77,7 @@ the large pools grant stats.**
 
 | Slot | Pool | Grants |
 |---|---|---|
-| `weapon` | 16 shared | The Fighter's primary active. What you spend most turns doing. |
+| `weapon` | 16 shared | The Fighter's primary active. What you spend most turns doing. Carries a *usable from* and a *reaches* per §3bb. |
 | `weaponBack` | ↑ | A second active, or a once-per-battle opener |
 | `companion` | 9 | An independent actor that takes its own turns |
 | `effects1` / `effects2` | 21 shared | One passive and one activatable, or two passives |
@@ -159,23 +159,72 @@ discovering during balance.
 ### What a turn looks like
 
 ```
-ROUND 3            terrain: Data Tunnel (+15% crit, all combatants)
+ROUND 3                                  terrain: Data Tunnel  (+15% crit, all)
 
-  Bone Harvester   [HP 62/90]   speed 14   -> your move
-  Ash Revenant     [HP 88/88]   speed  9
-  Grim Conductor   [KO]
+  ENEMY          BACK  Null Sentinel    [####################] 95/95
+                  MID  Hellscape Widow  [####################] 77/77  shield 2
+                FRONT  Xlon Prime       [######··············] 31/95  focused
+                                          ^ intends: Strike -> Bone Harvester
+  ─────────────────────────────────────────────────────────────────────────
+  YOURS         FRONT  Bone Harvester   [#############·······] 62/90  << acting
+                  MID  Ash Revenant     [####################] 88/88
+                 BACK  Grim Conductor   [ K.O. ]
 
-  vs
+  TURN ORDER   Bone Harvester > Xlon Prime > Ash Revenant > Hellscape Widow
 
-  Xlon Prime       [HP 31/95]   focused
-  Hellscape Widow  [HP 77/77]   shielded 2 rounds
-  Null Sentinel    [HP 95/95]
-
-  > Skull Krusher        heavy, slow, ignores armour
-  > Krusher Sash         once per battle, opener spent
-  > Call companion       U-Vigilance Device
+  > Skull Krusher     heavy · front only · reaches front      ~34 dmg, kills
+  > Krusher Sash      opener · spent
+  > Call companion    U-Vigilance Device · reaches back
+  > Swap forward      pull Ash Revenant to front
   > Defend
 ```
+
+Everything a player needs to decide is on that screen: what each side can still
+do, who is about to hit whom, whether this ability kills, and what the formation
+lets them reach.
+
+---
+
+## 3bb. Formation — position is a mechanic
+
+**Each side's three Fighters stand in a rank line: front, middle, back.** Two
+lines facing each other, six bodies, and where a Fighter stands changes what it
+can do and what can reach it.
+
+This closes a gap in §2. Team battle was argued for partly because it lets you
+protect the Fighter worth protecting — but nothing in the design actually
+provided a way to protect anyone. Position is that mechanism, and it is the
+cheapest one that produces real decisions.
+
+### What it buys
+
+- **Abilities get a second design axis.** Each of the 46 gains a *usable from*
+  and a *can reach* — a heavy weapon that only swings from the front, a companion
+  that reaches the enemy back line, a support ability usable only from rank 3.
+  That multiplies the depth of the ability set without authoring more abilities.
+- **Stable composition becomes a positional puzzle.** A high-armour torso belongs
+  at the front; a Fighter built around an effects proc belongs behind it. Three
+  Fighters that need each other, rather than the same good Fighter three times —
+  which was the stated goal and now has teeth.
+- **Non-damage abilities matter.** Knockback, pull and swap become real plays:
+  dragging their back-line support to the front is as good as damage, and it
+  reads instantly to a spectator.
+- **The AI gets easier, not harder.** Position gives a simple priority AI clean
+  heuristics — reach what you can, focus the exposed. That matters given the
+  §3b constraint that every ability must be AI-playable.
+
+### Why a rank line rather than a full tactics grid
+
+A 2D grid with movement, facing and range is a much bigger game — the biggest
+thing on the platform by some distance — and most of that complexity buys
+positioning decisions a three-rank line already provides. Three Fighters map onto
+three ranks exactly. Start there; a wider board is an expansion, not a
+prerequisite.
+
+**OPEN:** whether a Fighter's starting rank is chosen when the Stable is set, or
+per battle after scouting. Per battle is the better game and makes scouting
+matter more; it also means the defending Stable needs a stored default for when
+its owner is offline.
 
 ---
 
@@ -226,16 +275,38 @@ background your Fighter wears beyond its stat line.
 Six full-body square images side by side does not work — not on a desktop, and
 certainly not at the ~400px the PWA has to survive. The layout that does:
 
-- **Roster strips**, top and bottom: six small tokens at 250px, showing HP,
-  status and whose turn is next.
+- **The two rank lines**, top and bottom: six tokens at 250px in formation order
+  (§3bb), so the tactical state of the battle is the layout. Enemy front rank
+  faces your front rank; the board explains itself without a legend.
 - **A spotlight centre stage** where the acting Fighter and its target are drawn
   large at 1000px, for the two or three seconds the action takes.
+
+The formation carries the information; the spotlight carries the art. Neither
+does both well alone.
 
 That shows the art at a size where the detail is worth looking at, instead of six
 thumbnails where none of it reads. It also fixes the performance problem: six
 Fighters at ten layers is sixty images, and sixty 1000px PNGs is not a page the
 PWA should load. **Budget: 250 everywhere, 1000 only for the two Fighters in the
 spotlight.**
+
+### Bars and readouts
+
+Every token carries its state on its face — a player should never have to open
+anything to know where the battle stands:
+
+| Readout | Shows |
+|---|---|
+| **HP bar** | the primary one, always visible, with the number on hover |
+| **Armour** | an overlaid segment on the front of the HP bar, so a buffer is visibly a buffer rather than a hidden number |
+| **Cooldown pips** | one per active ability, filling as it recharges — tells you at a glance what a Fighter can still do |
+| **Status icons** | with a round counter, so "shielded 2" is legible without a tooltip |
+| **Turn-order track** | along one edge, who acts next and how far out |
+| **KO state** | the whole token desaturates and drops out of the rank line |
+
+Animate the bars rather than snapping them. A health bar draining over half a
+second is most of what makes a hit *land* emotionally, and it costs a CSS
+transition.
 
 ### Interaction
 
@@ -628,8 +699,9 @@ layering rules already do for the art.
    **The engine takes each turn as a parameter and never fetches one itself**,
    so live battles (§8d) stay possible without a rewrite.
 2. Stat derivation from tier + category for the five stat slots.
-3. The 46 abilities. Design each against the "can a simple AI play this?" test
-   in §3b as it is written, not afterwards.
+3. The 46 abilities, each carrying its *usable from* and *reaches* (§3bb).
+   Design each against the "can a simple AI play this?" test in §3b as it is
+   written, not afterwards.
 4. The defending AI. Build it early — it is half of every battle, and an ability
    the AI cannot use is an ability that is not finished.
 5. Run the all-commons vs all-legendaries test in §4. Tune before any UI.
@@ -647,7 +719,9 @@ layering rules already do for the art.
 
 ## Decisions locked (2026-09-23)
 
-1. **Turn-based 3v3 team battle, played not watched.** The attacker plays every
+1. **Turn-based 3v3 team battle in a front/mid/back rank line, played not
+   watched.** Position decides what a Fighter can reach and what can reach it.
+   §3bb The attacker plays every
    turn; the defending Stable is run by the AI with its owner's builds, so
    nothing is real-time and nobody waits. Supersedes the earlier auto-resolved
    best-of-three. §2, §3b
@@ -668,6 +742,9 @@ These are tuning and detail, not direction — none of them block starting §10.
 - The stat tables for the other 151 traits (§3). Generate from tier + category,
   hand-tune the standouts only.
 - Whose `background` sets the terrain in a 3v3 (§3).
+- Whether starting rank is fixed at Stable level or chosen per battle after
+  scouting (§3bb). Per battle is the better game; the defending Stable then
+  needs a stored default for when its owner is offline.
 - The knockout curve: floor, ceiling, and how it scales (§5).
 - How much the attacker can scout before committing. Full Stable visibility makes
   counterpicking a skill; hidden builds make it a gamble. Leaning full.
