@@ -374,6 +374,30 @@ A useful test to run before launch: simulate an all-common stable against an
 all-legendary stable. If the commons do not win at least ~35% of the time, the
 spread is too wide.
 
+### Result of running it (2026-09-24, prototype)
+
+The test was run against the prototype's first set of numbers and **failed
+badly**: commons took 0.3% against the 35% target, and 25% of battles stalled
+out undecided. Two causes, both worth recording because they will recur:
+
+1. **A flat armour subtraction deadlocks low-damage builds.** Armour 8 against
+   78 HP meant some matchups could not out-pace mitigation at all. Dropping
+   armour to 3 and raising damage removed every stall.
+2. **A per-stat tier multiplier compounds.** A 1.24x legendary edge applied
+   *simultaneously* to HP, armour, crit, speed and power is not a 1.24x
+   advantage — it decides the battle before the first turn. The headline spread
+   being inside the house band is not sufficient if it lands on every axis at
+   once.
+
+**The fix generalises, and it is §4 made literal: variance between traits must
+be wider than the gap between tiers.** At ±30% per trait against a 1.32x spread
+across all five tiers, *which* trait you picked matters more than what colour it
+is — so a well-chosen common beats a poorly-chosen legendary, which is the whole
+intent. Measured after: commons 37.6%, no stalls, mirror match ~8 rounds.
+
+Re-run this harness after any change to the stat derivation. It is the cheapest
+guard the design has, and the first numbers looked entirely reasonable on paper.
+
 ---
 
 ## 5. Knockouts — the real engine
