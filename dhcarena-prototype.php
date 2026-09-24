@@ -68,11 +68,19 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .turnflag.you{border-color:var(--teal);color:var(--teal)}
 .turnflag.foe{border-color:var(--blood);color:var(--blood)}
 
-.game{display:grid;grid-template-columns:1fr 340px;gap:12px}
-@media (max-width:900px){.game{grid-template-columns:1fr}}
+.arena{display:grid;grid-template-columns:minmax(0,172px) minmax(0,1fr) minmax(0,172px);
+  gap:10px;align-items:start}
+.teamcol{display:grid;gap:6px}
+.boardcol{min-width:0}
+@media (max-width:1000px){
+  /* Stack, and put the enemies above the board where they read as the opposition */
+  .arena{grid-template-columns:1fr}
+  .teamcol{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .teamcol.foes{order:-1}
+  .teamcol.mine{order:1}
+}
 
 /* ---- teams ---- */
-.teamrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
 .tok{background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:5px;
   position:relative;transition:transform .16s,opacity .3s,border-color .15s}
 .tok.mine{border-left:3px solid var(--gem)}
@@ -103,6 +111,14 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   pointer-events:none;opacity:0;text-shadow:0 2px 6px #000;z-index:5;white-space:nowrap}
 .pop.on{animation:pp .9s}.pop.heal{color:var(--teal)}.pop.big{font-size:19px;color:var(--ochre)}
 @keyframes pp{0%{opacity:0;transform:translate(-50%,6px)}18%{opacity:1}100%{opacity:0;transform:translate(-50%,-26px)}}
+
+/* In the side-column layout three stacked tokens would stand far taller than
+   the board, so the art gets a fixed height there and letterboxes inside it --
+   object-fit:contain already centres it. */
+@media (min-width:1001px){
+  .teamcol .tok .art{aspect-ratio:auto;height:104px}
+  .teamcol .tok{padding:6px 7px}
+}
 
 /* ---- board ---- */
 .boardwrap{position:relative;border:1px solid var(--line);border-radius:4px;background:var(--panel);
@@ -150,7 +166,14 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 /* ---- side ---- */
 .panel{border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:9px;margin-bottom:10px}
 .panel h2{margin:0 0 6px;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
-#log{height:190px;overflow:auto;font-size:10px;line-height:1.55}
+.logbox{border:1px solid var(--line);border-radius:4px;background:var(--panel);
+  margin-top:10px;padding:8px 10px}
+.logbox summary{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);
+  cursor:pointer;list-style:none}
+.logbox summary::-webkit-details-marker{display:none}
+.logbox summary:before{content:'▸ ';}
+.logbox[open] summary:before{content:'▾ ';}
+#log{height:150px;overflow:auto;font-size:10px;line-height:1.55;margin-top:6px}
 #log div{padding:1px 0;border-bottom:1px solid rgba(255,255,255,.04)}
 .log-you{color:var(--teal)}.log-foe{color:var(--blood)}.log-sys{color:var(--dim)}
 .log-big{color:var(--ochre)}
@@ -178,23 +201,28 @@ button{font:inherit;cursor:pointer;border-radius:3px}
     <span class="sub" style="margin:0" id="round"></span>
   </div>
 
-  <div class="game">
-    <div>
-      <div class="teamrow" id="foeTeam"></div>
+  <!-- Wide: your Stable down the left, the board in the middle, theirs down the
+       right, so both teams hug the board. Narrow: they stack, enemies on top.
+       The legend sits under the board and the log under that -- it is a
+       reference for a curious player, not something read mid-turn. -->
+  <div class="arena">
+    <div class="teamcol mine" id="myTeam"></div>
+    <div class="boardcol">
       <div class="boardwrap">
         <div class="terrain" id="terrain"></div>
         <div class="combo" id="combo"></div>
         <div class="grid" id="grid"></div>
-        <div class="legend" id="legend"></div>
-        <div class="reach" id="reach"></div>
       </div>
-      <div class="teamrow" id="myTeam" style="margin-top:8px"></div>
+      <div class="reach" id="reach"></div>
+      <div class="legend" id="legend"></div>
     </div>
-    <div>
-      <div class="panel"><h2>Battle log</h2><div id="log"></div></div>
-      <div class="panel" id="resultPanel" style="display:none"></div>
-    </div>
+    <div class="teamcol foes" id="foeTeam"></div>
   </div>
+  <div class="panel" id="resultPanel" style="display:none;margin-top:10px"></div>
+  <details class="logbox" open>
+    <summary>Battle log</summary>
+    <div id="log"></div>
+  </details>
 </div>
 <script>
 /* =====================================================================
