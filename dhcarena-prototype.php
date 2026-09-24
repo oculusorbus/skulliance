@@ -286,6 +286,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
      A slide with no match costs nothing.</p>
   <div class="top">
     <button class="btn go" id="reroll">New battle</button>
+    <button class="btn" id="mute" title="Mute sound">🔊</button>
     <span class="turnflag" id="flag">—</span>
     <span class="sub" style="margin:0" id="round"></span>
   </div>
@@ -425,6 +426,63 @@ function fname(rnd,used){
   return n+' '+LAST[Math.floor(rnd()*LAST.length)];
 }
 
+/* ---------------- sound ----------------
+   Borrowed wholesale rather than sourced: the board sounds come from Skull Swap
+   and Monstrocity (/staking/sounds, verified 200), and the weapon sounds from
+   Crypt Crawl (audio/sounds, in the repo). Players already associate these with
+   matching and with hitting things on this platform, which is most of the work
+   a sound effect has to do.
+
+   ONE SOUND PER KIT is the part worth keeping. Each Fighter's gem has its own
+   report -- a sniper rifle for Snipe, a machine gun for Volley, demolition for
+   Smash -- so a Stable sounds like itself, and you learn to hear which of your
+   three just went off without looking away from the board. */
+var SFX = {
+  pick:   ['sounds/select.ogg',                 .40],
+  bad:    ['sounds/badmove.ogg',                .45],
+  clear:  ['sounds/gem_shatters.ogg',           .38],
+  land:   ['sounds/hyperspace_gem_land_1.ogg',  .22],
+  chain:  ['sounds/speedmatch1.ogg',            .55],
+  great:  ['sounds/voice_excellent.ogg',        .60],
+  armX:   ['sounds/powergem_created.ogg',       .70],
+  armB:   ['sounds/hypercube_create.ogg',       .80],
+  boom:   ['sounds/bomb_explode.ogg',           .75],
+  start:  ['sounds/voice_go.ogg',               .55],
+  win:    ['sounds/voice_levelcomplete.ogg',    .75],
+  lose:   ['sounds/voice_gameover.ogg',         .75],
+  // one per weapon kit, keyed by kit id
+  heavy:  ['audio/sounds/demolition.mp3',       .50],
+  cleave: ['audio/sounds/tacticalkatana.mp3',   .50],
+  drain:  ['audio/sounds/heal.mp3',             .50],
+  sunder: ['audio/sounds/artillery.mp3',        .42],
+  precise:['audio/sounds/sniperrifle.mp3',      .50],
+  volley: ['audio/sounds/machinegun.mp3',       .36],
+  brutal: ['audio/sounds/melee.mp3',            .52],
+  quick:  ['audio/sounds/pistol.mp3',           .46],
+  ko:     ['audio/sounds/kill.mp3',             .60],
+  erupt:  ['audio/sounds/grenade.mp3',          .65],
+  shield: ['audio/sounds/equip.mp3',            .45]
+};
+var sfxOn=true;
+try{ sfxOn = localStorage.getItem('dhcarena_sfx') !== '0'; }catch(e){}
+var _sfxSrc={}, _sfxAt={};
+function sfx(name){
+  if(!sfxOn) return;
+  var def=SFX[name]; if(!def) return;
+  var now=Date.now();
+  /* A cascade can resolve a dozen groups in a breath. Without this the same
+     report fires on top of itself and the whole thing turns to mush. */
+  if(_sfxAt[name] && now-_sfxAt[name] < 70) return;
+  _sfxAt[name]=now;
+  try{
+    var base=_sfxSrc[name] || (_sfxSrc[name]=new Audio(def[0]));
+    var a=base.cloneNode();          // clone so rapid repeats overlap cleanly
+    a.volume=def[1];
+    var pr=a.play();
+    if(pr && pr.catch) pr.catch(function(){});   // autoplay policy: ignore
+  }catch(e){}
+}
+
 /* ---------------- state ---------------- */
 var S=null, sel=null, busy=false;
 
@@ -461,7 +519,7 @@ function fighterForGem(side,g){ return team(side).filter(function(f){return f.ra
 
 /* ---------------- board ---------------- */
 /* BOMBS -- same rules as Skull Swap, which is the reference players have.
-   A 4-match leaves a ✳️ that wipes its row AND column. A 5-or-more leaves a 💣
+   A 4-match leaves a ✛ that wipes its row AND column. A 5-or-more leaves a 💣
    that wipes the whole board. Both sit on the board as ordinary gems keeping
    their colour, and you set one off by matching that colour. Explosions that
    catch another bomb chain-detonate it.
@@ -629,7 +687,7 @@ function hurt(t,amt,tag){
   if(t.shield>0){var a=Math.min(t.shield,amt);t.shield-=a;amt-=a;if(a>0)pop(t,'-'+a+' shield','heal');}
   if(amt<=0)return 0;
   t.hp=Math.max(0,t.hp-amt); pop(t,'-'+amt,tag); shake(t);
-  if(t.hp===0){t.ko=true;logLine(t.side==='mine'?'foe':'you',t.name+' is knocked out.');}
+  if(t.hp===0){t.ko=true;sfx('ko');logLine(t.side==='mine'?'foe':'you',t.name+' is knocked out.');}
   return amt;
 }
 function healF(f,a){var b=f.hp;f.hp=Math.min(f.maxHp,f.hp+a);if(f.hp>b)pop(f,'+'+(f.hp-b),'heal');}
@@ -641,6 +699,7 @@ function resolveGroup(side,grp,chain,scale){
   if(grp.type===3){                                  // GUARD — shield your team
     var amt=Math.round((6+grp.len*4)*mult*(S.terrain.id==='guard'?1.5:1));
     alive(side).forEach(function(f){f.shield+=amt;});
+    sfx('shield');
     logLine(side==='mine'?'you':'foe','🛡️ Shield x'+grp.len+' — +'+amt+' to the whole team.');
     return;
   }
@@ -654,7 +713,7 @@ function resolveGroup(side,grp,chain,scale){
       if(f.surge>=10){ f.surge=0;
         var ts=alive(foeSide);
         ts.forEach(function(t){hurt(t,Math.round(f.power*0.9*mult),'big');});
-        act(f); pop(f,'SURGE!','big');
+        act(f); pop(f,'SURGE!','big'); sfx('erupt');
         logLine(side==='mine'?'you':'foe','⚡ '+f.name+' ERUPTS — hits everything.');
       }});
     return;
@@ -666,6 +725,7 @@ function resolveGroup(side,grp,chain,scale){
   if(!ts.length)return;
   act(f);
   var k=f.kit;
+  sfx(k.id);          // each kit has its own report -- see the SFX table
   var hitList = k.all ? alive(foeSide) : (k.cleave ? ts : [ts[ts.length-1]]);
   var times = k.echo?2:1;
   for(var n=0;n<times;n++){
@@ -718,7 +778,8 @@ function cascade(side,chain,done){
     busy=false; done&&done(chain-1); return;
   }
   if(chain>S.stats.best) S.stats.best=chain;
-  if(chain>1){ var c=document.getElementById('combo'); c.textContent='CHAIN x'+chain;
+  sfx('clear');
+  if(chain>1){ sfx('chain'); var c=document.getElementById('combo'); c.textContent='CHAIN x'+chain;
     c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); }
   var cleared={};
   ms.forEach(function(g){ g.cells.forEach(function(i){cleared[i]=1;}); });
@@ -772,7 +833,7 @@ function cascade(side,chain,done){
        because the blast counts as a huge match. Same drama, one axis to tune,
        and it reads far better in the log. */
     logLine(side==='mine'?'you':'foe',
-      (boomKind===BOMB_BOARD?'💣 BOARD BOMB':'✳️ BOMB')+(boom>1?' ×'+boom+' (chain)':'')
+      (boomKind===BOMB_BOARD?'💣 BOARD BOMB':'✛ BOMB')+(boom>1?' ×'+boom+' (chain)':'')
       + ' — ' + Object.keys(extra).length + ' gems caught by '
       + (side==='mine'?'you':'them') + '.');
     blasts.forEach(function(bl){
@@ -784,7 +845,7 @@ function cascade(side,chain,done){
       catch(err){ if(window.console) console.error('blast', err); }
     });
     var cb=document.getElementById('combo');
-    cb.textContent = boomKind===BOMB_BOARD?'💣 BOARD BOMB':'✳️ BOMB';
+    cb.textContent = boomKind===BOMB_BOARD?'💣 BOARD BOMB':'✛ BOMB';
     cb.classList.remove('on'); void cb.offsetWidth; cb.classList.add('on');
   }
 
@@ -792,6 +853,7 @@ function cascade(side,chain,done){
      that is what leaves it sitting on the board for either side to take. */
   ms.forEach(function(g){
     if(g.len<4 || S.settling) return;
+    if(g.len>=5) sfx('great');
     var at=(S.lastTo!==undefined && g.cells.indexOf(S.lastTo)!==-1)
              ? S.lastTo : g.cells[Math.floor(g.cells.length/2)];
     var big=(g.len>=5);
@@ -808,13 +870,14 @@ function cascade(side,chain,done){
     S.bomb[at]=-(big?BOMB_BOARD:BOMB_CROSS);
     S.stats.bombs++;
     delete cleared[at];
+    sfx(big?'armB':'armX');
     logLine(side==='mine'?'you':'foe',
-      (big?'💣 BOARD BOMB':'✳️ Bomb')+' armed — match its colour to set it off. Either side can.');
+      (big?'💣 BOARD BOMB':'✛ Bomb')+' armed — match its colour to set it off. Either side can.');
     /* Announced on the board, not just in the log. A bomb being CREATED looks
        like nothing happening -- the match resolves as usual and one gem quietly
        changes -- so it says so. */
     var cb=document.getElementById('combo');
-    if(cb){ cb.textContent=(big?'💣 BOARD BOMB ARMED':'✳️ BOMB ARMED');
+    if(cb){ cb.textContent=(big?'💣 BOARD BOMB ARMED':'✛ BOMB ARMED');
       cb.classList.remove('on'); void cb.offsetWidth; cb.classList.add('on'); }
   });
   Object.keys(cleared).forEach(function(i){
@@ -823,6 +886,7 @@ function cascade(side,chain,done){
     el.classList.add(extra[i] ? (boomKind===BOMB_BOARD?'blast2':'blast') : 'clear');
   });
   if(boom){
+    sfx('boom');
     var bw=document.querySelector('.boardwrap');
     if(bw){ bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); }
   }
@@ -843,7 +907,7 @@ function cascade(side,chain,done){
   var hold = boom ? 460 : 190;
   setTimeout(function(){
     Object.keys(cleared).forEach(function(i){S.board[i]=-1;});
-    collapse(); renderBoard(true);
+    collapse(); renderBoard(true); sfx('land');
     setTimeout(function(){ cascade(side,chain+1,done); },170);
   },hold);
 }
@@ -1065,6 +1129,7 @@ function finalHurrah(cb){
       cleared[j]=1;
     });
   }
+  sfx('boom');
   logLine('big','💥 Last hurrah — '+n+' bomb'+(n!==1?'s':'')+' still on the board go off.');
   var cb2=document.getElementById('combo');
   if(cb2){ cb2.textContent='💥 LAST HURRAH'; cb2.classList.remove('on');
@@ -1100,6 +1165,7 @@ function showEnd(){
     + '<span><b>'+S.stats.blasts+'</b>detonated</span>'
     + '<span><b>x'+S.stats.best+'</b>best chain</span>';
   card.hidden=false;
+  sfx(won?'win':'lose');
   logLine('big', won?'VICTORY — their Stable is down.':'DEFEAT — your Stable is down.');
 }
 
@@ -1162,7 +1228,7 @@ function endDrag(commit){
   var nb=slid(S.board,from,to);
   if(!nb) return;
   var ms=findMatches(nb);
-  if(!ms.length){ logLine('sys','No match on that slide — free, try another.'); return; }
+  if(!ms.length){ sfx('bad'); logLine('sys','No match on that slide — free, try another.'); return; }
   S.lastLen=ms.reduce(function(p,g){return Math.max(p,g.len);},0);
   applySlide(from,to,'mine',function(){ endTurn(1); });
 }
@@ -1174,6 +1240,7 @@ gridEl.addEventListener('pointerdown',function(e){
   gridEl.setPointerCapture&&gridEl.setPointerCapture(e.pointerId);
   drag={from:+c.getAttribute('data-i'),x0:e.clientX,y0:e.clientY,dx:0,dy:0,
         axis:null,size:cellSize(),to:undefined};
+  sfx('pick');
   c.classList.add('sel');
 });
 gridEl.addEventListener('pointermove',function(e){
@@ -1192,8 +1259,25 @@ gridEl.addEventListener('pointerup',release);
 gridEl.addEventListener('pointercancel',function(){ if(drag){clearOffsets();drag=null;} });
 window.addEventListener('pointerup',function(e){ if(drag) release(e); });
 
-document.getElementById('reroll').onclick=newBattle;
-document.getElementById('ecAgain').onclick=newBattle;
+var muteBtn=document.getElementById('mute');
+function paintMute(){ muteBtn.textContent = sfxOn?'🔊':'🔇';
+  muteBtn.title = sfxOn?'Mute sound':'Unmute sound'; }
+muteBtn.onclick=function(){
+  sfxOn=!sfxOn;
+  try{ localStorage.setItem('dhcarena_sfx', sfxOn?'1':'0'); }catch(e){}
+  paintMute(); if(sfxOn) sfx('pick');
+};
+paintMute();
+
+/* Browsers refuse audio until the page has been interacted with, so the opening
+   call plays on the first gesture rather than at load, where it would be
+   swallowed. Once only -- it greets a battle, it is not a click sound. */
+var greeted=false;
+function greet(){ if(greeted) return; greeted=true; sfx('start'); }
+document.addEventListener('pointerdown', greet, {once:true});
+
+document.getElementById('reroll').onclick=function(){ greeted=true; newBattle(); sfx('start'); };
+document.getElementById('ecAgain').onclick=function(){ newBattle(); sfx('start'); };
 newBattle();
 </script>
 </body>
