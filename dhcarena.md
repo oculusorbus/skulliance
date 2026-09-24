@@ -100,6 +100,67 @@ up front.
 
 ---
 
+## 3b. Where the player's agency actually is
+
+"Auto-battler" is an overloaded word and it is worth being blunt about what it
+does and does not mean here, because the failure mode — send three Fighters, hope
+— would be a slot machine, not a game.
+
+**The battle itself runs without input. Everything that decides it does not.**
+
+| Decision | When | Depth |
+|---|---|---|
+| What each Fighter *is* — ten slots from 197 traits | Assembler | The main layer. This is deckbuilding. |
+| Which three make up the Stable | Before challenging | Covering matchups rather than stacking one archetype |
+| Who to challenge, having scouted them | Before challenging | Reading an opponent's build for a weakness |
+| Running order against a known Stable | Per battle | Only real if order is fixed — see §2 |
+| Who to field given who is benched | Per battle | Resource management under §5 |
+
+That is the same shape as a card game: you do not act during the shuffle, you act
+when you build the deck and choose the matchup. Crypt Crawl and Crypt Conquest
+put the decisions *inside* the run; Arena puts them *around* it. Both are real,
+but they are different games, and a player arriving from the card games will
+notice the difference.
+
+### The two things that decide whether this feels like strategy or gambling
+
+**1. Variance has to be low.** If a battle is a coin flip weighted by build, then
+scouting is pointless and the correct play is to challenge constantly and let the
+maths average out — which is gambling with extra steps. Resolution should be
+close to deterministic given two builds: same matchup, same result, near enough
+every time. Randomness belongs in *which* traits you draw, not in whether your
+build works. The platform already has lottery in the drop tables; Arena should be
+the part that rewards playing well with what you drew.
+
+**2. The log has to teach.** A player who loses must be able to read the log and
+see *why* — "their resistance rolled over my damage type", "my companion never
+got to act because the fight ended in three rounds". That is the loop that turns
+a loss into a build change instead of a shrug. An opaque result is
+indistinguishable from a random one even when it is not.
+
+### If that is still too passive: banked orders
+
+If pre-battle agency alone reads as thin, the cheapest way to add genuine
+in-battle decisions without breaking async is a small **orders** layer: each
+Fighter carries one or two conditional instructions, set when you field them.
+
+```
+IF hp < 30%      THEN  use companion
+IF enemy armour  THEN  lead with weaponBack
+```
+
+Programmed rather than live — the player writes the tactics, the sim executes
+them. It keeps everything asynchronous and server-resolved, it makes two
+identical Stables play differently, and it gives a skilled player something to be
+better at beyond collection depth. It also gives the log more to narrate.
+
+**NEEDS A CALL.** Ship without orders and add them if Arena reads as passive, or
+build them in from the start? Adding later is harder than it sounds — the combat
+resolver has to be written with hook points for it either way, so the decision
+should be made before §10 step 3, even if the feature ships later.
+
+---
+
 ## 4. Rarity must not decide the fight
 
 This is the single most important constraint in the document.
@@ -135,46 +196,77 @@ spread is too wide.
 
 ## 5. Knockouts — the real engine
 
-**A Fighter that loses a battle is knocked out and unavailable for a period.
-A Fighter that wins is not.**
+**Every Fighter who fights is benched afterwards. A Fighter who *loses* is
+benched considerably longer.**
 
-This is the mechanic that does the work, and it is better than fatigue-on-any-
-fight for three reasons:
+### Why not loss-only
 
-1. **Winning keeps you playing.** A hot streak is uninterrupted, which is exactly
-   when you want someone at the keyboard.
-2. **Losing costs bench depth, not progress.** You never go backwards; you just
-   need someone else to send in. That is the good kind of pressure.
-3. **It converts "I want a better Fighter" into "I want more Fighters,"** which
-   is the brief. Depth is what lets you keep playing tonight.
+An earlier revision of this section had knockouts apply on a loss only, on the
+reasoning that winning should keep you at the keyboard. That is a genuine UX
+virtue and it is why the rule is appealing, but it fails the brief, and the
+failure is structural rather than a matter of tuning:
 
-Because entry requires 3 available Fighters, a player with exactly 3 is locked
-out of Arena the moment one of them loses. That is the moment the game asks them
-to go build a fourth — and the answer is to go play the other eight games.
+**Under loss-only, the strongest player needs the fewest Fighters.** A dominant
+build never loses, so it is never benched, so it can run the entire ladder on its
+own. The pressure to build more Fighters lands hardest on the players who are
+losing — the ones least able to afford more traits — and lifts entirely off the
+players who could most easily build them. It is anti-correlated with the thing
+Arena is for.
+
+It compounds with two other decisions. The ladder ranks on cumulative wins
+(§8c), so the optimal line becomes "field one hyper-optimised Fighter forever,"
+which is precisely the single-Fighter endgame Arena exists to prevent. And the
+3-available entry requirement only ever bites after a loss, so a winning player
+can sit on exactly three indefinitely.
+
+### Why fatigue-on-any-fight, with a loss penalty
+
+Benching on every fight makes the cost of *playing* proportional to how much you
+play. The most engaged players fight most, so they need the deepest Stables —
+which is the brief stated precisely, the ultimate experience for the most
+engaged. Depth converts directly into battles per day.
+
+Keeping a longer bench for a loss preserves what was attractive about the
+loss-only rule: winning is still materially better than losing, a good run still
+extends your evening, and a bad one still stings. It just no longer hands the
+best player an exemption from the economy.
+
+Rough shape, to be tuned: a base bench on any result, roughly doubled on a loss.
+
+### The floor still has to be protected
+
+Entry requires 3 available Fighters, so a 3-Fighter player fights three battles
+and then waits. That is a legible rhythm — a session length — rather than a
+punishment for failing, which is what made the loss-only lockout feel harsh.
 
 **Hard rule: knockouts are temporary. Never destroy a Fighter.** Against a
 3-traits-per-day cap, losing a Fighter permanently is losing weeks of play. A
 permadeath mode could exist later as an opt-in high-stakes bracket; it must never
 be the default.
 
-**LOCKED: knockout duration scales with Stable size — shorter for small Stables,
-longer for large ones.**
+### Knock-on: Stable-size scaling now needs revisiting
 
-An earlier draft of this section had it backwards, and the error is worth
-recording because it is easy to make again: scaling the duration *down as the
-Stable grows* rewards depth twice, once with more bodies on the bench and again
-with faster recovery. The small Stable it was meant to protect gets nothing. The
-rule has to run the other way.
+Scaling bench duration *up* with Stable size was locked while the rule was
+loss-only, where it was the right answer — it stopped a deep Stable from
+compounding into immunity.
 
-A 3-Fighter player is back in the game quickly; a 12-Fighter player eats the full
-penalty and leans on the bench they built. Depth still wins — it just buys
-resilience rather than compounding into immunity, which is the §7 runaway
-problem answered at its source.
+Under fatigue-on-any-fight it cuts the wrong way. Throughput is already
+`StableSize / benchDuration`; if duration rises with size, throughput flattens
+toward a constant and there is no reason to build past the point where it levels
+off. That deletes the incentive this whole section exists to create.
 
-**OPEN:** the actual curve. Start with something like 3h at the 3-Fighter floor
-rising to 8h for deep Stables, and tune from live data. The floor matters more
-than the ceiling: a new player locked out overnight by their first loss is a new
-player who does not come back.
+**NEEDS A CALL.** Three options:
+
+1. **Drop the scaling.** Flat bench for everyone. Depth converts cleanly into
+   battles per day, simplest to explain, and §7's runaway is handled by reward
+   banding instead.
+2. **Scale the loss penalty only.** Base bench flat, the extra for a loss grows
+   with Stable size. Keeps a brake on the top without capping throughput.
+3. **Keep it as locked.** Accept a throughput ceiling as a deliberate cap on how
+   much anyone can farm in a day.
+
+Leaning 2 — it keeps the counterweight where the runaway actually is, without
+taxing the thing we are trying to encourage.
 
 ---
 
@@ -333,7 +425,9 @@ layering rules already do for the art.
 ## Decisions locked (2026-09-23)
 
 1. **Best-of-three sequential 1v1s**, not a team battle. §2
-2. **Knockouts scale with Stable size** — shorter for small Stables. §5
+2. **Knockouts on every fight, longer on a loss.** Reverted from loss-only after
+   a merits re-check — see §5 for why loss-only is anti-correlated with the
+   brief. Stable-size scaling needs a fresh call as a result. §5
 3. **Monthly seasons, full reset.** §8b
 4. **Traits per win, CARBON on the season board.** §6
 5. **Public per-Fighter W/L record** — with the ladder ranking on *wins*, not win
@@ -346,5 +440,9 @@ These are tuning and detail, not direction — none of them block starting §10.
 - The per-trait stat tables (§3). Generate from tier + category, hand-tune after.
 - The knockout curve: floor, ceiling, and how it scales (§5).
 - Defender running order: fixed at Stable level, or shuffled per battle? (§2)
+  This one is load-bearing for §3b — fixed order is what makes scouting and
+  counterpicking a skill; shuffled converts that skill back into luck.
+- Banked orders: in from the start, or later? The resolver needs hooks either
+  way (§3b).
 - Whether fielded-Fighters-per-season should be capped to flatten the top (§7).
 - Whether a loss shows on a Fighter's record immediately or on recovery (§8c).
