@@ -103,9 +103,9 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   background:repeating-conic-gradient(#191419 0% 25%,#201b20 0% 50%) 50%/9px 9px;margin:2px 0}
 .tok .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 /* the Fighter's own background fills the frame and sits well back */
-.tok .art img.bg{object-fit:cover;filter:brightness(.42) saturate(.6) contrast(.9)}
+.tok .art img.bg{object-fit:cover;filter:brightness(.50) saturate(.65)}
 .tok .art .scrim{position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(13,15,19,.10),rgba(13,15,19,.58))}
+  background:linear-gradient(180deg,rgba(13,15,19,.22),rgba(13,15,19,.62))}
 .tok .nm{font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tok .kitn{font-size:8px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hpwrap{position:relative;height:6px;background:#0b0d11;border-radius:2px;overflow:hidden;margin-top:3px}
@@ -1036,11 +1036,15 @@ function tokHtml(f,showGem){
      there it is the subject, and here the subject is the fight. */
   var layers=(t.background
       ? '<img class="bg" loading="lazy" alt="" src="'+artUrl('background',t.background,250)+'" onerror="this.remove()">'
+        /* SCRIM GOES HERE -- between the background and the figure, never over
+           it. Appended last it sat on top of the Fighter and put a 58% black
+           gradient across the character, which is what made the art look washed
+           out. Layers paint in DOM order, so this is the whole fix. */
+        + '<span class="scrim"></span>'
       : '')
     + ['torso','weapon','arms','effects','head','headgear','companion']
     .filter(function(k){return t[k];})
-    .map(function(k){return '<img loading="lazy" alt="" src="'+artUrl(k,t[k],250)+'" onerror="this.remove()">';}).join('')
-    + '<span class="scrim"></span>';
+    .map(function(k){return '<img loading="lazy" alt="" src="'+artUrl(k,t[k],250)+'" onerror="this.remove()">';}).join('');
   return '<div class="tok'+(showGem?' mine':' foe')+(f.ko?' ko':'')+'" data-id="'+f.uid+'"'
     + ' style="--gem:var(--g'+f.rank+')">'
     + '<div class="flash"></div>'
