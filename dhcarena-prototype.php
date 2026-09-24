@@ -83,7 +83,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   padding-bottom:4px;border-bottom:1px solid var(--line)}
 .coltag.you{color:var(--teal)} .coltag.foe{color:var(--blood)}
 .boardcol{min-width:0}
-.legend.mobonly{display:none}
+.legend.mobonly,.reach.mobonly{display:none}
 @media (max-width:1000px){
   /* Stack, and put the enemies above the board where they read as the opposition */
   .arena{grid-template-columns:1fr}
@@ -93,8 +93,20 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   /* Enemies, board and your Crew have to fit one screen together, so the
      legend goes below all three rather than wedging between the board and
      your own Fighters. */
-  .legend.deskonly{display:none}
-  .legend.mobonly{display:flex;margin-top:10px}
+  .legend.deskonly,.reach.deskonly{display:none}
+  .legend.mobonly{display:flex;margin-top:8px}
+  .reach.mobonly{display:flex;margin-top:10px}
+  /* PACKED TIGHT. Every gap between your Crew, the board and theirs is space
+     the board could be using, and on a phone the three have to share one
+     screen. The title hides with the intro rather than being deleted -- both
+     come back together behind the ? button, so nothing is lost, it is just not
+     paying rent on a 750px screen. */
+  .wrap{padding:8px}
+  .arena{gap:5px}
+  .boardwrap{padding:5px}
+  .coltag{font-size:8px;margin-bottom:2px;padding-bottom:2px}
+  .top{margin-bottom:6px;gap:6px}
+  .teamcol{gap:4px}
   /* Squat tokens. Three-up at phone width the art would be square at ~128px,
      and two rows of that plus the board came to about 794px -- over the fold on
      most phones even after the legend moved. 96px brings the core play area
@@ -105,11 +117,12 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   .teamcol .tok .nm{font-size:9px}
   .teamcol .tok .kitn{font-size:7.5px}
   .coltag{margin-bottom:3px;padding-bottom:3px}
-  /* The intro is a wall of rules that costs a screen of height on a phone.
-     Hidden, with a button in the top bar to bring it back -- saving the space
-     without deleting how the game works. */
-  .sub{display:none}
-  .sub.open{display:block}
+  /* Title and intro are one unit behind the ? -- a wall of rules plus a
+     heading costs most of a screen on a phone, and neither is needed while
+     you are playing. One tap brings both back. */
+  h1,.sub{display:none}
+  body.showintro h1{display:block}
+  body.showintro .sub{display:block}
   #howto{display:inline-block}
 }
 
@@ -352,7 +365,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
           <button class="btn go" id="ecAgain">Battle again</button>
         </div>
       </div>
-      <div class="reach" id="reach"></div>
+      <div class="reach deskonly" id="reach"></div>
       <!-- Two slots, one shown per breakpoint. CSS order cannot move the legend
            past .teamwrap.mine because they have different parents, so the
            mobile copy lives outside the arena where it can sit last. -->
@@ -361,6 +374,9 @@ button{font:inherit;cursor:pointer;border-radius:3px}
     <div class="teamwrap foes"><div class="coltag foe">Enemy Crew</div>
       <div class="teamcol foes" id="foeTeam"></div></div>
   </div>
+  <!-- On a phone the board is followed straight by your Crew; every line of
+       reference text moves below both. -->
+  <div class="reach mobonly" id="reachM"></div>
   <div class="legend mobonly" id="legendM"></div>
   <div class="panel" id="resultPanel" style="display:none;margin-top:10px"></div>
   <details class="logbox" open>
@@ -1153,9 +1169,12 @@ function renderAll(){
   document.getElementById('legendM').innerHTML = lg;   // mobile slot, see markup
   // Everything else about reach is in the header; this is the at-a-glance
   // reminder plus the one thing that changes per battle, the terrain.
-  document.getElementById('reach').innerHTML=
+  var reachHtml=
       '<b>3</b> front · <b>4</b> mid · <b>5+</b> back · cascades multiply'
     + '<span class="terr">'+S.terrain.name+' — '+S.terrain.note+'</span>';
+  document.getElementById('reach').innerHTML  = reachHtml;
+  document.getElementById('reachM').innerHTML = reachHtml;
+
   var fl=document.getElementById('flag');
   fl.className='turnflag '+(S.over?'':(S.turn==='mine'?'you':'foe'));
   fl.textContent=S.over?(S.over==='win'?'victory':'defeat'):(S.turn==='mine'?'your move':'their move');
@@ -1314,7 +1333,8 @@ gridEl.addEventListener('pointercancel',function(){ if(drag){clearOffsets();drag
 window.addEventListener('pointerup',function(e){ if(drag) release(e); });
 
 document.getElementById('howto').onclick=function(){
-  document.querySelector('.sub').classList.toggle('open');
+  // title and intro together -- see the mobile block in the stylesheet
+  document.body.classList.toggle('showintro');
 };
 var muteBtn=document.getElementById('mute');
 function paintMute(){ muteBtn.textContent = sfxOn?'🔊':'🔇';
