@@ -179,6 +179,92 @@ ROUND 3            terrain: Data Tunnel (+15% crit, all combatants)
 
 ---
 
+## 3c. Presentation — what the fight looks like
+
+### What the art actually is
+
+Worth stating plainly, because it constrains everything: trait art is **static,
+square, full-body display art**. Two sizes on disk, 250 and 1000. No sprite
+sheets, no frames, no poses, no facing. And per the platform's deploy model the
+repo carries no images at all — art reaches the server by FTP — so **the answer
+cannot be "draw more art."** Everything below is CSS, JS and existing PNGs.
+
+### Animate the layers, not the Fighter
+
+This is the distinctive move, and it is available because of how the assembler
+already works. A Fighter is not one image — it is up to ten `<img>` elements
+stacked in DOM order, one per slot, and `paint()` already applies per-layer
+transforms (`translateY` for nudge, `clip-path` for the single-arm restore).
+
+So the weapon layer can swing independently of the body. The companion can bob on
+its own cycle. An effects layer can flash when its proc fires. The head can
+recoil while the torso holds. **Nothing else on the platform can do this, and
+nothing else needs new art to do it** — the separation already exists at render
+time because the layering rules demanded it.
+
+A short list that would carry a whole battle, all CSS transforms on existing
+layers:
+
+| Beat | Treatment |
+|---|---|
+| Attack | attacker lunges toward target; weapon layer rotates ahead of the body |
+| Hit | target recoils, flashes, screen-shakes briefly |
+| Crit | harder shake, heavier flash, bigger number |
+| Companion acts | companion layer detaches and moves independently of its owner |
+| Effect proc | that effects layer pulses on its own |
+| Knocked out | whole stack desaturates and drops |
+
+### The background is the arena
+
+`background` is mandatory, is the largest pool at 42, and is already a full-frame
+image. It is the terrain (§3), so the battlefield *is* a real trait someone
+earned. Free environment art, forty-two variants, and a reason to care which
+background your Fighter wears beyond its stat line.
+
+### Spotlight, not six-up
+
+Six full-body square images side by side does not work — not on a desktop, and
+certainly not at the ~400px the PWA has to survive. The layout that does:
+
+- **Roster strips**, top and bottom: six small tokens at 250px, showing HP,
+  status and whose turn is next.
+- **A spotlight centre stage** where the acting Fighter and its target are drawn
+  large at 1000px, for the two or three seconds the action takes.
+
+That shows the art at a size where the detail is worth looking at, instead of six
+thumbnails where none of it reads. It also fixes the performance problem: six
+Fighters at ten layers is sixty images, and sixty 1000px PNGs is not a page the
+PWA should load. **Budget: 250 everywhere, 1000 only for the two Fighters in the
+spotlight.**
+
+### Interaction
+
+The half of the question that matters more than the animation:
+
+- **Enemy intent is telegraphed.** The defending AI picks its action, so show it:
+  *Xlon Prime will strike Bone Harvester.* This single feature is the difference
+  between a turn-based game that feels strategic and one that feels reactive —
+  it is what Into the Breach and Slay the Spire are built on, and it costs
+  nothing because the AI has already decided.
+- **A turn-order track** along one edge, showing who acts next and how far ahead.
+  It makes `arms` and speed legible, and turns "act now or set up" into a real
+  decision instead of a guess.
+- **Damage preview on hover/tap** before committing a target. Being able to see
+  that this ability kills and that one does not is most of what feeling in
+  control means.
+- **Select Fighter → select ability → select target**, with the whole chain
+  cancellable. Never commit on a single tap; a misfire on a phone should not cost
+  a battle.
+
+### Keep it skippable
+
+A player grinding their daily battles will watch the same lunge a hundred times.
+Animations need a speed control and a skip, and the battle must be fully
+playable with them off. The Skull Racer note about the user judging feel applies
+here too: build it, then tune it by playing it.
+
+---
+
 ## 4. Rarity must not decide the fight
 
 This is the single most important constraint in the document.
@@ -547,7 +633,9 @@ layering rules already do for the art.
 4. The defending AI. Build it early — it is half of every battle, and an ability
    the AI cannot use is an ability that is not finished.
 5. Run the all-commons vs all-legendaries test in §4. Tune before any UI.
-6. Persistence, battle view, one-turn-per-request AJAX.
+6. Persistence, battle view, one-turn-per-request AJAX. Build the view at the
+   §3c presentation budget from the start — 250px roster, 1000px spotlight only;
+   sixty full-size layers is not a page the PWA can carry.
 7. Stable, fatigue, entry requirement.
 8. Challenge flow, end-of-battle rewards and Discord announce — in a separate
    fire-and-forget request, per §8.
@@ -587,5 +675,7 @@ These are tuning and detail, not direction — none of them block starting §10.
   rank. Fixed is honest; scaled hides a bad AI.
 - The repeat-opponent decay curve (§8a): how fast a rematch stops paying.
 - Whether live battles (§8d) ever earn anything inside an owner-run event.
+- How much of §3c's layer animation is worth building before playtesting. The
+  telegraphed intent and the turn-order track matter more than the lunge.
 - Whether fielded-Fighters-per-season should be capped to flatten the top (§7).
 - Whether a loss shows on a Fighter's record immediately or on recovery (§8c).
