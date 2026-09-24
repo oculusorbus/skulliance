@@ -78,7 +78,9 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .tok.mine{border-left:3px solid var(--gem)}
 .tok .rk{font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);
   display:flex;justify-content:space-between;gap:4px}
-.tok .gemdot{width:7px;height:7px;border-radius:50%;background:var(--gem);display:inline-block}
+.tok .mygem{display:inline-flex;align-items:center;justify-content:center;
+  width:19px;height:19px;border-radius:50%;background:var(--gem);font-size:11px;
+  box-shadow:inset 0 -2px 4px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.12);flex:none}
 .tok .art{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:2px;
   background:repeating-conic-gradient(#191419 0% 25%,#201b20 0% 50%) 50%/9px 9px;margin:2px 0}
 .tok .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
@@ -158,7 +160,9 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 <div class="wrap">
   <h1>DHC Arena <span style="color:var(--ochre)">prototype v2 — puzzle battler</span></h1>
   <p class="sub"><b>Drag a gem along its row or column, any distance</b> — the gems it passes shift back one.
-     Each of your Fighters owns a gem; matching it makes them act. Match size is reach:
+     <b>There are always five gems.</b> Three of them <b>are</b> your Fighters — each shows that
+     Fighter's weapon, so a different Stable gives you a different board. The other two are
+     🛡️ Shield and ⚡ Charge. Match size is reach:
      <b>3</b> hits their front, <b>4</b> reaches mid, <b>5+</b> reaches back. Match 4+ and you go again.
      A slide with no match costs nothing.</p>
   <div class="top">
@@ -585,7 +589,8 @@ function tokHtml(f,showGem){
     + (showGem?' style="--gem:var(--g'+f.rank+')"':'')+'>'
     + '<div class="flash"></div>'
     + '<div class="rk"><span>'+['front','mid','back'][f.rank]+'</span>'
-    +   (showGem?'<span class="gemdot"></span>':'<span>'+(f.shield>0?'sh '+f.shield:'')+'</span>')+'</div>'
+    +   (showGem?'<span class="mygem" title="this Fighter\'s gem">'+f.kit.emoji+'</span>'
+               :'<span>'+(f.shield>0?'sh '+f.shield:'')+'</span>')+'</div>'
     + '<div class="art">'+layers+'</div>'
     + '<div class="nm">'+f.name+'</div>'
     + '<div class="kitn">'+(showGem?f.kit.emoji+' ':'')+f.kit.name+'</div>'
@@ -626,7 +631,9 @@ function renderAll(){
   }).join('')
   + '<span style="--lc:var(--g3)"><i></i>🛡️ <b>Shield</b> — your team</span>'
   + '<span style="--lc:var(--g4)"><i></i>⚡ <b>Charge</b> — erupts at 10</span>';
-  document.getElementById('legend').innerHTML=lg;
+  document.getElementById('legend').innerHTML=
+      '<span style="width:100%;color:var(--bone);opacity:.8;margin-bottom:2px">'
+    + 'Five gems this battle — your three Fighters, plus Shield and Charge:</span>' + lg;
   document.getElementById('reach').innerHTML=
       'Match size is <b>reach</b> — <b>3</b> hits their front · <b>4</b> reaches mid · <b>5+</b> reaches their back rank. '
     + 'Cascades multiply. Terrain: <b>'+S.terrain.name+'</b> — '+S.terrain.note+'.'
