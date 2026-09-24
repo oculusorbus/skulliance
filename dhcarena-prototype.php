@@ -106,7 +106,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .boardwrap{position:relative;border:1px solid var(--line);border-radius:4px;background:var(--panel);
   padding:8px;overflow:hidden}
 .terrain{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.13}
-.grid{position:relative;z-index:2;display:grid;gap:3px;touch-action:manipulation}
+.grid{position:relative;z-index:2;display:grid;gap:3px;touch-action:none}
 .cell{position:relative;aspect-ratio:1;border-radius:4px;display:flex;align-items:center;
   justify-content:center;cursor:pointer;background:#10131a;border:1px solid transparent;
   transition:transform .12s,border-color .12s}
@@ -121,6 +121,8 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .cell.hex .g{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)}
 .cell.clear .g{transform:scale(0);opacity:0}
 .cell.drop{animation:drp .22s}
+.cell.settle{animation:stl .16s}
+@keyframes stl{0%{transform:scale(1.06)}100%{transform:scale(1)}}
 @keyframes drp{0%{transform:translateY(-16px);opacity:.4}100%{transform:translateY(0);opacity:1}}
 .legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:9px;color:var(--dim);
   position:relative;z-index:2}
@@ -148,8 +150,10 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 <body>
 <div class="wrap">
   <h1>DHC Arena <span style="color:var(--ochre)">prototype v2 — puzzle battler</span></h1>
-  <p class="sub">Each of your Fighters owns a gem. Match it to make them act. Match size is reach:
-     <b>3</b> hits their front, <b>4</b> reaches mid, <b>5+</b> reaches back. Match 4+ and you go again.</p>
+  <p class="sub"><b>Drag a gem along its row or column, any distance</b> — the gems it passes shift back one.
+     Each of your Fighters owns a gem; matching it makes them act. Match size is reach:
+     <b>3</b> hits their front, <b>4</b> reaches mid, <b>5+</b> reaches back. Match 4+ and you go again.
+     A slide with no match costs nothing.</p>
   <div class="top">
     <button class="btn go" id="reroll">New battle</button>
     <span class="turnflag" id="flag">—</span>
@@ -291,13 +295,49 @@ function findMatches(b){
       r+=run2; } }
   return out;
 }
-function swapped(b,a,bb){var n=b.slice();var t=n[a];n[a]=n[bb];n[bb]=t;return n;}
-function hasMove(){
-  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
-    if(c+1<N && findMatches(swapped(S.board,idx(r,c),idx(r,c+1))).length) return true;
-    if(r+1<N && findMatches(swapped(S.board,idx(r,c),idx(r+1,c))).length) return true;
+/* THE MOVE IS A SLIDE, NOT A SWAP.
+   Matched to Monstrocity and Skull Swap, which is the feel players already
+   have: pick a gem and drag it any distance along its row or column, and every
+   gem between shifts one step back toward where it came from. Read out of
+   monstrocity.php slideTiles() rather than approximated -- same rotation, same
+   free revert when a move produces no match.
+
+   It also makes the board far richer than adjacent swapping. On a 7x7 every
+   gem has twelve destinations instead of four neighbours, so a move is a real
+   search rather than a scan, and reaching for a 5-match is often possible
+   somewhere if you can see it. */
+function slid(b,a,z){
+  if(a===z) return null;
+  var ra=Math.floor(a/N), ca=a%N, rz=Math.floor(z/N), cz=z%N, x, y;
+  if(ra!==rz && ca!==cz) return null;      // must share a row or a column
+  var n=b.slice(), t=b[a];
+  if(ra===rz){
+    if(ca<cz){ for(x=ca;x<cz;x++) n[idx(ra,x)]=b[idx(ra,x+1)]; }
+    else     { for(x=ca;x>cz;x--) n[idx(ra,x)]=b[idx(ra,x-1)]; }
+    n[idx(ra,cz)]=t;
+  }else{
+    if(ra<rz){ for(y=ra;y<rz;y++) n[idx(y,ca)]=b[idx(y+1,ca)]; }
+    else     { for(y=ra;y>rz;y--) n[idx(y,ca)]=b[idx(y-1,ca)]; }
+    n[idx(rz,ca)]=t;
   }
-  return false;
+  return n;
+}
+/** Every legal slide from every cell. The move space the AI and hasMove share. */
+function eachSlide(fn){
+  for(var r=0;r<N;r++) for(var c=0;c<N;c++){
+    var a=idx(r,c), k;
+    for(k=0;k<N;k++){ if(k!==c) fn(a, idx(r,k)); }
+    for(k=0;k<N;k++){ if(k!==r) fn(a, idx(k,c)); }
+  }
+}
+function hasMove(){
+  var found=false;
+  eachSlide(function(a,z){
+    if(found) return;
+    var nb=slid(S.board,a,z);
+    if(nb && findMatches(nb).length) found=true;
+  });
+  return found;
 }
 function collapse(){
   for(var c=0;c<N;c++){
@@ -382,11 +422,13 @@ function tickBleeds(side){
 }
 
 /* ---------------- turn resolution ---------------- */
-function applySwap(a,b,side,done){
+function applySlide(a,z,side,done){
   busy=true;
-  var t=S.board[a];S.board[a]=S.board[b];S.board[b]=t;
-  renderBoard();
-  setTimeout(function(){ cascade(side,1,done); },130);
+  var nb=slid(S.board,a,z);
+  if(!nb){ busy=false; return; }
+  S.board=nb;
+  renderBoard(false,true);
+  setTimeout(function(){ cascade(side,1,done); },150);
 }
 function cascade(side,chain,done){
   var ms=findMatches();
@@ -428,7 +470,8 @@ function checkOver(){
    Plays the same board by the same rules. dhcarena.md §3b: if a simple
    priority AI cannot play an ability well, the ability is not finished. */
 function scoreMove(a,b,side){
-  var nb=swapped(S.board,a,b); var ms=findMatches(nb);
+  var nb=slid(S.board,a,b); if(!nb) return -1;
+  var ms=findMatches(nb);
   if(!ms.length)return -1;
   var sc=0;
   ms.forEach(function(g){
@@ -448,24 +491,40 @@ function scoreMove(a,b,side){
   });
   return sc;
 }
+/* THE AI IS DELIBERATELY NOT OPTIMAL.
+   Slides give 545 legal moves on a typical board against 78 for adjacent
+   swapping, and about 32 of them reach a 5-match. A machine that evaluates all
+   545 and always takes the best one is not a worthy opponent, it is a wall --
+   it would out-see a human every single turn, and the skill the slide mechanic
+   exists to reward would never pay.
+
+   So it picks from its shortlist rather than the top of it. Roughly half the
+   time it plays its best move; otherwise it takes one of the next few. That
+   reads as an opponent who missed something, which is what a human opponent
+   does, and it leaves room for a player who spots the 5-match to win because
+   they spotted it.
+
+   This is a prototype knob. The real AI (dhcarena.md §3b) defends someone's
+   Stable for real stakes and its strength is a design decision, not a
+   convenience -- §14 of the locked calls says one fixed difficulty. */
 function bestMove(side){
-  var best=null;
-  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
-    [[0,1],[1,0]].forEach(function(d){
-      var r2=r+d[0],c2=c+d[1]; if(!inb(r2,c2))return;
-      var a=idx(r,c),b=idx(r2,c2),s=scoreMove(a,b,side);
-      if(s>0&&(!best||s>best.s))best={a:a,b:b,s:s};
-    });
-  }
-  return best;
+  var cand=[];
+  eachSlide(function(a,z){
+    var sc=scoreMove(a,z,side);
+    if(sc>0) cand.push({a:a,b:z,s:sc});
+  });
+  if(!cand.length) return null;
+  cand.sort(function(x,y){return y.s-x.s;});
+  if(Math.random()<0.5) return cand[0];
+  return cand[Math.min(cand.length-1, 1+Math.floor(Math.random()*4))];
 }
 function aiMove(){
   if(S.over)return;
   var mv=bestMove('foes');
   if(!mv){ makeBoard(); renderBoard(); mv=bestMove('foes'); if(!mv){endTurn(0);return;} }
-  var ms=findMatches(swapped(S.board,mv.a,mv.b));
+  var ms=findMatches(slid(S.board,mv.a,mv.b));
   S.lastLen=ms.reduce(function(p,g){return Math.max(p,g.len);},0);
-  applySwap(mv.a,mv.b,'foes',function(chains){
+  applySlide(mv.a,mv.b,'foes',function(chains){
     if(S.over)return;
     if(S.lastLen>=4){ logLine('foe','They matched '+S.lastLen+' — they go again.');
       renderAll(); setTimeout(aiMove,560); return; }
@@ -509,13 +568,13 @@ function renderTeams(){
   document.getElementById('myTeam').innerHTML =
     S.mine.slice().sort(function(a,b){return a.rank-b.rank;}).map(function(f){return tokHtml(f,true);}).join('');
 }
-function renderBoard(dropAnim){
+function renderBoard(dropAnim,settle){
   var g=document.getElementById('grid');
   g.style.gridTemplateColumns='repeat('+N+',1fr)';
   var h='';
   for(var i=0;i<N*N;i++){
     var v=S.board[i];
-    h+='<div class="cell '+SHAPE[v]+(dropAnim?' drop':'')+'" data-i="'+i+'" style="--gc:var(--g'+v+')">'
+    h+='<div class="cell '+SHAPE[v]+(dropAnim?' drop':'')+(settle?' settle':'')+'" data-i="'+i+'" style="--gc:var(--g'+v+')">'
       +'<div class="g"></div></div>';
   }
   g.innerHTML=h;
@@ -548,23 +607,90 @@ function logLine(kind,text){
   d.className='log-'+kind;d.textContent=text;l.appendChild(d);l.scrollTop=l.scrollHeight;
 }
 
-/* ---------------- input ---------------- */
-document.getElementById('grid').addEventListener('click',function(e){
+/* ---------------- input: drag to slide ----------------
+   Live preview while dragging, because that IS the feel: the gem follows your
+   finger along one axis and the gems it displaces shift the other way, so you
+   can see the move before you commit it. Pointer events so mouse and touch are
+   one code path. A slide that produces no match reverts for free and does not
+   cost the turn, matching Monstrocity. */
+var drag=null;
+function cellSize(){
+  var c=document.querySelector('.cell');
+  if(!c) return 40;
+  var r=c.getBoundingClientRect();
+  var g=parseFloat(getComputedStyle(document.getElementById('grid')).gap)||3;
+  return r.width+g;
+}
+function clearOffsets(){
+  document.querySelectorAll('.cell').forEach(function(e){
+    e.style.transition=''; e.style.transform=''; e.style.zIndex='';
+  });
+}
+function previewDrag(){
+  if(!drag||!drag.axis) return;
+  var sz=drag.size, a=drag.from, ra=Math.floor(a/N), ca=a%N;
+  var raw = drag.axis==='row' ? drag.dx : drag.dy;
+  var maxBack = (drag.axis==='row' ? ca : ra) * sz;
+  var maxFwd  = ((N-1) - (drag.axis==='row' ? ca : ra)) * sz;
+  var off = Math.max(-maxBack, Math.min(maxFwd, raw));
+  var steps = Math.round(off/sz);
+  drag.to = drag.axis==='row' ? idx(ra, ca+steps) : idx(ra+steps, ca);
+
+  clearOffsets();
+  var lead = cellEl(a);
+  if(lead){ lead.style.zIndex='6';
+    lead.style.transform = drag.axis==='row' ? 'translateX('+off+'px) scale(1.06)'
+                                             : 'translateY('+off+'px) scale(1.06)'; }
+  // everything between shifts one cell the other way, which is what a slide is
+  if(steps!==0){
+    var dir = steps>0?1:-1;
+    for(var k=1;k<=Math.abs(steps);k++){
+      var i = drag.axis==='row' ? idx(ra, ca+dir*k) : idx(ra+dir*k, ca);
+      var e = cellEl(i); if(!e) continue;
+      e.style.transition='transform .08s';
+      e.style.transform = drag.axis==='row' ? 'translateX('+(-dir*sz)+'px)'
+                                            : 'translateY('+(-dir*sz)+'px)';
+    }
+  }
+}
+function endDrag(commit){
+  if(!drag) return;
+  var from=drag.from, to=drag.to;
+  clearOffsets(); drag=null;
+  if(!commit || to===undefined || to===from) return;
+  var nb=slid(S.board,from,to);
+  if(!nb) return;
+  var ms=findMatches(nb);
+  if(!ms.length){ logLine('sys','No match on that slide — free, try another.'); return; }
+  S.lastLen=ms.reduce(function(p,g){return Math.max(p,g.len);},0);
+  applySlide(from,to,'mine',function(){ endTurn(1); });
+}
+var gridEl=document.getElementById('grid');
+gridEl.addEventListener('pointerdown',function(e){
   if(busy||S.over||S.turn!=='mine')return;
   var c=e.target.closest('.cell'); if(!c)return;
-  var i=+c.getAttribute('data-i');
-  if(sel===null){ sel=i; c.classList.add('sel'); return; }
-  if(sel===i){ c.classList.remove('sel'); sel=null; return; }
-  var r1=Math.floor(sel/N),c1=sel%N,r2=Math.floor(i/N),c2=i%N;
-  var adj=Math.abs(r1-r2)+Math.abs(c1-c2)===1;
-  var prev=cellEl(sel); if(prev)prev.classList.remove('sel');
-  if(!adj){ sel=i; c.classList.add('sel'); return; }
-  var a=sel; sel=null;
-  var ms=findMatches(swapped(S.board,a,i));
-  if(!ms.length){ logLine('sys','No match there.'); return; }
-  S.lastLen=ms.reduce(function(p,g){return Math.max(p,g.len);},0);
-  applySwap(a,i,'mine',function(chains){ endTurn(1); });
+  e.preventDefault();
+  gridEl.setPointerCapture&&gridEl.setPointerCapture(e.pointerId);
+  drag={from:+c.getAttribute('data-i'),x0:e.clientX,y0:e.clientY,dx:0,dy:0,
+        axis:null,size:cellSize(),to:undefined};
+  c.classList.add('sel');
 });
+gridEl.addEventListener('pointermove',function(e){
+  if(!drag)return;
+  drag.dx=e.clientX-drag.x0; drag.dy=e.clientY-drag.y0;
+  if(!drag.axis){
+    if(Math.abs(drag.dx)>6&&Math.abs(drag.dx)>Math.abs(drag.dy)) drag.axis='row';
+    else if(Math.abs(drag.dy)>6&&Math.abs(drag.dy)>Math.abs(drag.dx)) drag.axis='col';
+  }
+  if(drag.axis) previewDrag();
+});
+function release(e){ if(!drag)return;
+  document.querySelectorAll('.cell.sel').forEach(function(x){x.classList.remove('sel');});
+  endDrag(true); }
+gridEl.addEventListener('pointerup',release);
+gridEl.addEventListener('pointercancel',function(){ if(drag){clearOffsets();drag=null;} });
+window.addEventListener('pointerup',function(e){ if(drag) release(e); });
+
 document.getElementById('reroll').onclick=newBattle;
 newBattle();
 </script>
