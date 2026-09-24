@@ -173,6 +173,14 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   pointer-events:none}
 /* the rotated diamond must not rotate its emoji with it */
 .cell.di .g .em{transform:rotate(-45deg)}
+/* A bomb keeps its colour -- you detonate it by matching that colour -- but it
+   has to be unmistakable on a busy board, so it pulses and wears a ring. */
+.cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px var(--bone),0 0 12px var(--gc);
+  animation:bmb 1.5s ease-in-out infinite}
+.cell.bomb2 .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px var(--ochre),0 0 18px var(--ochre);
+  animation:bmb .9s ease-in-out infinite}
+@keyframes bmb{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.cell.di.bomb .g{animation:none}
 .cell.clear .g{transform:scale(0);opacity:0}
 .cell.drop{animation:drp .22s}
 .cell.settle{animation:stl .16s}
@@ -222,7 +230,10 @@ button{font:inherit;cursor:pointer;border-radius:3px}
      <b>There are always five gems.</b> Three of them are <b>ranks</b> — red front, amber mid, violet back —
      and matching one makes that rank's Fighter act, for whichever side matched it. The gem on the board
      shows <i>your</i> weapon in that rank; their token shows what the same gem does for <i>them</i>.
-     The other two are 🛡️ Shield and ⚡ Charge. Match size is reach:
+     The other two are 🛡️ Shield and ⚡ Charge. A <b>4-match leaves a ✳️ bomb</b> (clears its row and
+     column) and a <b>5-match leaves a 💣</b> (clears the board) — they sit there keeping their colour, and
+     <b>either side can set one off</b> by matching it, so a bomb you leave lying around can be turned on you.
+     Match size is reach:
      <b>3</b> hits their front, <b>4</b> reaches mid, <b>5+</b> reaches back. Match 4+ and you go again.
      A slide with no match costs nothing.</p>
   <div class="top">
@@ -321,7 +332,11 @@ function buildFighter(t,name){
   var m=function(c,s){return TIER_MULT[tierOf(c,s)]||1;};
   var v=function(s,sp){return 1+((hash(s)%1000)/1000-.5)*sp;};
   var V=.6;   // §4: variance between traits must be wider than the gap between tiers
-  var hp=Math.round(150*m('torso',t.torso)*v(t.torso,V));
+  /* 150 gave 8.4-move battles with one in eight ending in three moves or less;
+     380 gave 18.3 and no blowouts at all. 320 sits between, and the harness
+     player plays optimally where a human will not, so live battles run longer
+     than the number here. */
+  var hp=Math.round(320*m('torso',t.torso)*v(t.torso,V));
   return {uid:'f'+(++UID), name:name, traits:t,
     kit:pick(KITS,hash(t.weapon)),
     maxHp:hp, hp:hp, shield:0, bleed:0,
@@ -389,12 +404,42 @@ function alive(s){return team(s).filter(function(f){return !f.ko;});}
 function fighterForGem(side,g){ return team(side).filter(function(f){return f.rank===g;})[0]; }
 
 /* ---------------- board ---------------- */
+/* BOMBS -- same rules as Skull Swap, which is the reference players have.
+   A 4-match leaves a ✳️ that wipes its row AND column. A 5-or-more leaves a 💣
+   that wipes the whole board. Both sit on the board as ordinary gems keeping
+   their colour, and you set one off by matching that colour. Explosions that
+   catch another bomb chain-detonate it.
+
+   THE ARENA TWIST, and the reason this is worth having: whoever DETONATES a
+   bomb gets its payload. A bomb you built and did not spend is a loaded gun
+   lying on a shared table -- leave it and they can match its colour and turn it
+   on you. It is the first mechanic here where doing something good is also
+   taking on risk.
+
+   Stored as a parallel layer rather than extra gem values, so matching, the
+   slide and the AI's search all keep working on plain colours. */
+var BOMB_CROSS=1, BOMB_BOARD=2;
+var BLAST_CAP=4, BLAST_SCALE=0.45;   // see the blast block in cascade()
+/* Pacing knobs, all found by simulation rather than taste -- see the tuning
+   note above buildFighter(). Charge in particular was gaining +len per match,
+   so it reached ten in about three matches and a single move could set off
+   three eruptions. It is meant to be the thing you build toward across a
+   battle, not a side effect of playing one. */
+var SURGE_GAIN=1;        // per Charge match, flat -- NOT the match length
+var EXTRA_TURN_MIN=5;    // a 4 still leaves a bomb; that is reward enough
 function makeBoard(){
   do{
     S.board=[];
     for(var i=0;i<N*N;i++) S.board.push(Math.floor(Math.random()*GEMS));
   } while(findMatches().length || !hasMove());
+  S.bomb=[]; for(var k=0;k<N*N;k++) S.bomb.push(0);
 }
+function rowColCells(i){
+  var r=Math.floor(i/N), c=i%N, out=[], k;
+  for(k=0;k<N;k++){ out.push(idx(r,k)); if(k!==r) out.push(idx(k,c)); }
+  return out;
+}
+function allCells(){ var o=[],k; for(k=0;k<N*N;k++) o.push(k); return o; }
 function idx(r,c){return r*N+c;}
 function inb(r,c){return r>=0&&r<N&&c>=0&&c<N;}
 function findMatches(b){
@@ -436,6 +481,20 @@ function slid(b,a,z){
   }
   return n;
 }
+/** The same rotation applied to the bomb layer, so a bomb travels with its gem. */
+function slideBombs(a,z){
+  var ra=Math.floor(a/N), ca=a%N, rz=Math.floor(z/N), cz=z%N, x, y;
+  var b=S.bomb.slice(), t=b[a];
+  if(ra===rz){
+    if(ca<cz){ for(x=ca;x<cz;x++) S.bomb[idx(ra,x)]=b[idx(ra,x+1)]; }
+    else     { for(x=ca;x>cz;x--) S.bomb[idx(ra,x)]=b[idx(ra,x-1)]; }
+    S.bomb[idx(ra,cz)]=t;
+  }else{
+    if(ra<rz){ for(y=ra;y<rz;y++) S.bomb[idx(y,ca)]=b[idx(y+1,ca)]; }
+    else     { for(y=ra;y>rz;y--) S.bomb[idx(y,ca)]=b[idx(y-1,ca)]; }
+    S.bomb[idx(rz,ca)]=t;
+  }
+}
 /** Every legal slide from every cell. The move space the AI and hasMove share. */
 function eachSlide(fn){
   for(var r=0;r<N;r++) for(var c=0;c<N;c++){
@@ -454,11 +513,19 @@ function hasMove(){
   return found;
 }
 function collapse(){
+  // The bomb layer falls with its gem. Collapsing the colours alone would leave
+  // bombs hanging in mid-air attached to whatever dropped into their cell.
   for(var c=0;c<N;c++){
-    var col=[];
-    for(var r=N-1;r>=0;r--){var v=S.board[idx(r,c)];if(v!==-1)col.push(v);}
-    for(var r2=N-1,k=0;r2>=0;r2--,k++)
-      S.board[idx(r2,c)] = k<col.length ? col[k] : Math.floor(Math.random()*GEMS);
+    var col=[], bmb=[];
+    for(var r=N-1;r>=0;r--){
+      var v=S.board[idx(r,c)];
+      if(v!==-1){ col.push(v); bmb.push(S.bomb[idx(r,c)]); }
+    }
+    for(var r2=N-1,k=0;r2>=0;r2--,k++){
+      var at=idx(r2,c);
+      S.board[at] = k<col.length ? col[k] : Math.floor(Math.random()*GEMS);
+      S.bomb[at]  = k<col.length ? bmb[k] : 0;
+    }
   }
 }
 
@@ -480,9 +547,9 @@ function hurt(t,amt,tag){
 }
 function healF(f,a){var b=f.hp;f.hp=Math.min(f.maxHp,f.hp+a);if(f.hp>b)pop(f,'+'+(f.hp-b),'heal');}
 
-function resolveGroup(side,grp,chain){
+function resolveGroup(side,grp,chain,scale){
   var foeSide=side==='mine'?'foes':'mine';
-  var mult=1+(chain-1)*0.35;                        // cascades hit harder
+  var mult=(1+(chain-1)*0.35)*(scale===undefined?1:scale);                        // cascades hit harder
   if(S.terrain.id==='dmg')mult*=1.10;
   if(grp.type===3){                                  // GUARD — shield your team
     var amt=Math.round((6+grp.len*4)*mult*(S.terrain.id==='guard'?1.5:1));
@@ -491,7 +558,7 @@ function resolveGroup(side,grp,chain){
     return;
   }
   if(grp.type===4){                                  // SURGE — charge, then erupt
-    var add=grp.len*(S.terrain.id==='surge'?2:1);
+    var add=SURGE_GAIN*(S.terrain.id==='surge'?2:1);
     var living=alive(side);
     if(!living.length) return;          // whole team down mid-cascade
     living.forEach(function(f){f.surge=Math.min(10,f.surge+add);});
@@ -540,7 +607,9 @@ function applySlide(a,z,side,done){
   busy=true;
   var nb=slid(S.board,a,z);
   if(!nb){ busy=false; return; }
+  slideBombs(a,z);          // bombs travel with their gems
   S.board=nb;
+  S.lastTo=z;               // a new bomb forms under the gem you actually moved
   renderBoard(false,true);
   setTimeout(function(){ cascade(side,1,done); },150);
 }
@@ -553,6 +622,27 @@ function cascade(side,chain,done){
   if(chain>1){ var c=document.getElementById('combo'); c.textContent='CHAIN x'+chain;
     c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); }
   var cleared={};
+  ms.forEach(function(g){ g.cells.forEach(function(i){cleared[i]=1;}); });
+
+  /* DETONATE anything caught in the clear, chaining through bombs the blast
+     reaches. Queue rather than recursion so a chain cannot blow the stack. */
+  var extra={}, boom=0, boomKind=0, blasts=[];
+  var queue=Object.keys(cleared).filter(function(i){return S.bomb[i];});
+  while(queue.length){
+    var at=+queue.shift(), kind=S.bomb[at];
+    if(!kind) continue;
+    var colour=S.board[at];
+    S.bomb[at]=0; boom++; boomKind=Math.max(boomKind,kind);
+    var hit=(kind===BOMB_BOARD?allCells():rowColCells(at));
+    var own=0;
+    hit.forEach(function(j){
+      if(S.bomb[j]) queue.push(j);
+      if(S.board[j]===colour) own++;
+      if(!cleared[j]){ cleared[j]=1; extra[j]=1; }
+    });
+    blasts.push({colour:colour,kind:kind,own:own,size:hit.length});
+  }
+
   /* Guarded because a throw in here is unrecoverable, not cosmetic: the
      exception escapes cascade(), so busy stays true and done() is never called,
      and the board sits disabled with the turn never handed back. That is
@@ -564,7 +654,49 @@ function cascade(side,chain,done){
     try { resolveGroup(side,g,chain); }
     catch(err){ logLine('sys','(effect error — skipped)');
                 if(window.console) console.error('resolveGroup', err); }
-    g.cells.forEach(function(i){cleared[i]=1;});
+  });
+
+  /* Blast payload. Everything the explosion took, grouped by colour and paid to
+     WHOEVER SET IT OFF -- which is the whole risk. Length is capped at 6 so a
+     board bomb is a huge turn rather than an instant win: 49 gems resolving at
+     full scale would simply end the battle on the spot. */
+  if(boom){
+    /* A BOMB PAYS ITS OWN COLOUR, NOT ALL FIVE.
+       The first version resolved every colour the blast touched, so one board
+       bomb was five big matches at once -- battles averaged four moves and some
+       ended on the first. Scaling the damage down barely helped, because the
+       problem was the breadth, not the size.
+       Paying only the bomb's own colour makes it that RANK's big strike: the
+       Fighter whose gem you blew up swings hard, reaching their back rank
+       because the blast counts as a huge match. Same drama, one axis to tune,
+       and it reads far better in the log. */
+    logLine(side==='mine'?'you':'foe',
+      (boomKind===BOMB_BOARD?'💣 BOARD BOMB':'✳️ BOMB')+(boom>1?' ×'+boom+' (chain)':'')
+      + ' — ' + Object.keys(extra).length + ' gems caught by '
+      + (side==='mine'?'you':'them') + '.');
+    blasts.forEach(function(bl){
+      try { resolveGroup(side,
+              {type:bl.colour,
+               len:Math.min(BLAST_CAP,Math.max(3,bl.own)),
+               cells:[]},
+              chain, bl.kind===BOMB_BOARD?BLAST_SCALE*1.6:BLAST_SCALE); }
+      catch(err){ if(window.console) console.error('blast', err); }
+    });
+    var cb=document.getElementById('combo');
+    cb.textContent = boomKind===BOMB_BOARD?'💣 BOARD BOMB':'✳️ BOMB';
+    cb.classList.remove('on'); void cb.offsetWidth; cb.classList.add('on');
+  }
+
+  /* CREATE from this turn's own matches. The bomb cell survives the clear --
+     that is what leaves it sitting on the board for either side to take. */
+  ms.forEach(function(g){
+    if(g.len<4) return;
+    var at=(S.lastTo!==undefined && g.cells.indexOf(S.lastTo)!==-1)
+             ? S.lastTo : g.cells[Math.floor(g.cells.length/2)];
+    S.bomb[at]=(g.len>=5?BOMB_BOARD:BOMB_CROSS);
+    delete cleared[at];
+    logLine(side==='mine'?'you':'foe',
+      (g.len>=5?'💣 Board bomb':'✳️ Bomb')+' left on the board — either side can set it off.');
   });
   Object.keys(cleared).forEach(function(i){ var el=cellEl(i); if(el) el.classList.add('clear'); });
   renderTeams();
@@ -577,7 +709,7 @@ function cascade(side,chain,done){
 }
 function endTurn(best){
   if(S.over)return;
-  var extra = best>=1 && S.lastLen>=4;
+  var extra = best>=1 && S.lastLen>=EXTRA_TURN_MIN;
   if(extra){ logLine('big','Match of '+S.lastLen+' — you go again.'); renderAll(); return; }
   tickBleeds(S.turn==='mine'?'foes':'mine');
   if(checkOver())return;
@@ -612,8 +744,18 @@ function scoreMove(a,b,side){
       var ts=targetsAt(side==='mine'?'foes':'mine',depth);
       // finishing something is worth a lot
       ts.forEach(function(t){ if(f.power*f.kit.dmg*(1+(len-3)*.3) >= t.hp) sc+=28; });
-      if(len>=4) sc+=14;        // extra turn
+      if(len>=EXTRA_TURN_MIN) sc+=14;   // extra turn
     }
+    /* IT HAS TO WANT YOUR BOMBS. Without this the AI never touches one, the
+       board silts up with live bombs, and the risk the mechanic exists to
+       create never actually lands on the player. A bomb it can reach is the
+       best move on the board and it should take it. */
+    g.cells.forEach(function(i){
+      if(S.bomb[i]===BOMB_BOARD) sc += 120;
+      else if(S.bomb[i]===BOMB_CROSS) sc += 45;
+    });
+    if(len>=5) sc += 30;        // leaves a board bomb
+    else if(len===4) sc += 12;  // leaves a cross bomb
   });
   return sc;
 }
@@ -652,7 +794,7 @@ function aiMove(){
   S.lastLen=ms.reduce(function(p,g){return Math.max(p,g.len);},0);
   applySlide(mv.a,mv.b,'foes',function(chains){
     if(S.over)return;
-    if(S.lastLen>=4){ logLine('foe','They matched '+S.lastLen+' — they go again.');
+    if(S.lastLen>=EXTRA_TURN_MIN){ logLine('foe','They matched '+S.lastLen+' — they go again.');
       renderAll(); setTimeout(aiMove,560); return; }
     tickBleeds('mine'); if(checkOver())return;
     S.turn='mine'; S.round++; renderAll();
@@ -709,10 +851,15 @@ function renderBoard(dropAnim,settle){
   var h='';
   for(var i=0;i<N*N;i++){
     var v=S.board[i];
-    var gi=gemInfo('mine',v);
-    h+='<div class="cell '+SHAPE[v]+(dropAnim?' drop':'')+(settle?' settle':'')+'" data-i="'+i+'"'
-      +' style="--gc:var(--g'+v+')" title="'+gi.name+' — '+gi.note+'">'
-      +'<div class="g"><span class="em">'+gi.emoji+'</span></div></div>';
+    var gi=gemInfo('mine',v), bm=S.bomb?S.bomb[i]:0;
+    var face = bm===BOMB_BOARD ? '💣' : bm===BOMB_CROSS ? '✳️' : gi.emoji;
+    var tip  = bm===BOMB_BOARD ? 'Board bomb — clears everything. Match its colour to set it off.'
+             : bm===BOMB_CROSS ? 'Bomb — clears its row and column. Match its colour to set it off.'
+             : gi.name+' — '+gi.note;
+    h+='<div class="cell '+SHAPE[v]+(bm?' bomb'+(bm===BOMB_BOARD?' bomb2':''):'')
+      +(dropAnim?' drop':'')+(settle?' settle':'')+'" data-i="'+i+'"'
+      +' style="--gc:var(--g'+v+')" title="'+tip+'">'
+      +'<div class="g"><span class="em">'+face+'</span></div></div>';
   }
   g.innerHTML=h;
 }
