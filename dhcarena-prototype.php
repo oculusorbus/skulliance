@@ -169,20 +169,18 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .cell.settle{animation:stl .16s}
 @keyframes stl{0%{transform:scale(1.06)}100%{transform:scale(1)}}
 @keyframes drp{0%{transform:translateY(-16px);opacity:.4}100%{transform:translateY(0);opacity:1}}
-.legend{margin-top:9px;position:relative;z-index:2}
-.lhead{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
-.lrow{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:7px;
-  padding:3px 6px;border-radius:3px;border-left:3px solid var(--lc);background:#10131a;margin-bottom:3px}
-.lrow.gone{opacity:.35}
-.lrow.gone .ldoes{text-decoration:line-through}
-.lgem{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;
-  border-radius:50%;background:var(--lc);font-size:12px;
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.lchip{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--bone);
+  padding:4px 9px 4px 4px;border-radius:999px;background:#10131a;
+  border:1px solid var(--line);border-left:3px solid var(--lc);white-space:nowrap}
+.lchip b{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;
+  border-radius:50%;background:var(--lc);font-size:12px;font-weight:400;
   box-shadow:inset 0 -2px 4px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.12)}
-.ldoes{font-size:11px;color:var(--bone)}
-.lname{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
-.lwho{font-size:9px;color:var(--dim);grid-column:2/4;margin-top:-2px}
-@media (max-width:420px){.lname{display:none}}
-.reach{font-size:9.5px;color:var(--dim);margin-top:5px;position:relative;z-index:2}
+.lchip.gone{opacity:.32;text-decoration:line-through}
+.reach{font-size:10px;color:var(--dim);margin-top:7px;display:flex;flex-wrap:wrap;gap:4px 14px;
+  align-items:baseline}
+.reach b{color:var(--ochre)}
+.reach .terr{color:var(--teal);margin-left:auto}
 .reach b{color:var(--ochre)}
 
 /* ---- side ---- */
@@ -214,7 +212,8 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   <p class="sub"><b>Drag a gem along its row or column, any distance</b> — the gems it passes shift back one.
      <b>There are always five gems.</b> Three of them <b>are</b> your Fighters — each shows that
      Fighter's weapon, so a different Stable gives you a different board. The other two are
-     🛡️ Shield and ⚡ Charge. Match size is reach:
+     🛡️ Shield and ⚡ Charge — and the board is shared, so when <i>they</i> match one of those
+     three, their Fighter in that rank acts instead. Match size is reach:
      <b>3</b> hits their front, <b>4</b> reaches mid, <b>5+</b> reaches back. Match 4+ and you go again.
      A slide with no match costs nothing.</p>
   <div class="top">
@@ -339,7 +338,14 @@ function randomTraits(rnd){
 }
 var FIRST=['Bone','Ash','Grim','Null','Vex','Rust','Pale','Iron','Hex','Dread','Cinder','Wraith'];
 var LAST=['Harvester','Revenant','Conductor','Sentinel','Warden','Prowler','Herald','Butcher','Cipher','Widow'];
-function fname(rnd){return FIRST[Math.floor(rnd()*FIRST.length)]+' '+LAST[Math.floor(rnd()*LAST.length)];}
+/* Distinct first names per battle: the log and the legend both refer to a
+   Fighter by its first name, and a battle with two Ashes in it is unreadable. */
+function fname(rnd,used){
+  var g=0,n;
+  do{ n=FIRST[Math.floor(rnd()*FIRST.length)]; }while(used&&used[n]&&g++<60);
+  if(used)used[n]=1;
+  return n+' '+LAST[Math.floor(rnd()*LAST.length)];
+}
 
 /* ---------------- state ---------------- */
 var S=null, sel=null, busy=false;
@@ -349,14 +355,15 @@ function newBattle(){
   /* Your three get DISTINCT kits, so no two of your gems wear the same emoji.
      An ambiguous icon is worse than no icon -- the whole point is that a glance
      resolves it. Their side may repeat; their gems are not on your board. */
-  var mine=[], usedKits={}, guard=0;
+  var mine=[], usedKits={}, usedNames={}, guard=0;
   while(mine.length<3 && guard++<300){
-    var f=buildFighter(randomTraits(rnd),fname(rnd));
+    var f=buildFighter(randomTraits(rnd),fname(rnd,usedNames));
     if(usedKits[f.kit.id]) continue;
     usedKits[f.kit.id]=1; mine.push(f);
   }
-  while(mine.length<3) mine.push(buildFighter(randomTraits(rnd),fname(rnd)));
-  var foes=[0,1,2].map(function(){return buildFighter(randomTraits(rnd),fname(rnd));});
+  while(mine.length<3) mine.push(buildFighter(randomTraits(rnd),fname(rnd,usedNames)));
+  var foeNames={};
+  var foes=[0,1,2].map(function(){return buildFighter(randomTraits(rnd),fname(rnd,foeNames));});
   mine.forEach(function(f,i){f.rank=i;f.side='mine';});
   foes.forEach(function(f,i){f.rank=i;f.side='foes';});
   S={mine:mine,foes:foes,board:[],turn:'mine',round:1,over:null,
@@ -687,27 +694,28 @@ function renderAll(){
   /* The description is the point. An earlier version read "Cleave — Bone",
      which pairs an action with a Fighter's name and never says what it does,
      so the legend answered the wrong question. Effect first, always. */
-  function row(colour, emoji, name, does, who, dead){
-    return '<div class="lrow'+(dead?' gone':'')+'" style="--lc:'+colour+'">'
-      + '<span class="lgem">'+emoji+'</span>'
-      + '<span class="ldoes">'+does+'</span>'
-      + '<span class="lname">'+name+'</span>'
-      + '<span class="lwho">'+(who||'')+(dead?' · down':'')+'</span></div>';
+  /* ONE STRIP, NOT FIVE BANDS. The row version stranded the description on the
+     left, threw the kit name at the right edge and orphaned the Fighter's name
+     on a second line -- five of those cost ~290px under the board for five
+     short phrases. The kit name is gone entirely: it was never the answer to
+     "what does this do", which is the only question a legend is for. The
+     Fighter's name is gone too, because its token already wears the gem. */
+  function chip(colour, emoji, does, dead){
+    return '<span class="lchip'+(dead?' gone':'')+'" style="--lc:'+colour+'">'
+      + '<b>'+emoji+'</b>'+does+'</span>';
   }
   var lg=[0,1,2].map(function(i){
     var f=fighterForGem('mine',i);
-    if(!f) return '';
-    return row('var(--g'+i+')', f.kit.emoji, f.kit.name, f.kit.note, f.name.split(' ')[0], f.ko);
+    return f ? chip('var(--g'+i+')', f.kit.emoji, f.kit.note, f.ko) : '';
   }).join('')
-  + row('var(--g3)','🛡️','Shield','shields your whole team','')
-  + row('var(--g4)','⚡','Charge','builds up, erupts at 10','');
-  document.getElementById('legend').innerHTML=
-      '<div class="lhead">Five gems this battle — your three Fighters, plus Shield and Charge</div>' + lg;
+  + chip('var(--g3)','🛡️','shields your team')
+  + chip('var(--g4)','⚡','erupts at 10');
+  document.getElementById('legend').innerHTML = lg;
+  // Everything else about reach is in the header; this is the at-a-glance
+  // reminder plus the one thing that changes per battle, the terrain.
   document.getElementById('reach').innerHTML=
-      'Match size is <b>reach</b> — <b>3</b> hits their front · <b>4</b> reaches mid · <b>5+</b> reaches their back rank. '
-    + 'Cascades multiply. Terrain: <b>'+S.terrain.name+'</b> — '+S.terrain.note+'.'
-    + '<br><span style="opacity:.75">The board is shared. The emoji show what each gem does <b>for you</b>; '
-    + 'when they match the same gem, their Fighter in that rank acts instead.</span>';
+      '<b>3</b> front · <b>4</b> mid · <b>5+</b> back · cascades multiply'
+    + '<span class="terr">'+S.terrain.name+' — '+S.terrain.note+'</span>';
   var fl=document.getElementById('flag');
   fl.className='turnflag '+(S.over?'':(S.turn==='mine'?'you':'foe'));
   fl.textContent=S.over?(S.over==='win'?'victory':'defeat'):(S.turn==='mine'?'your move':'their move');
