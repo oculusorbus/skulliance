@@ -55,7 +55,10 @@ body{margin:0;background:var(--ink);color:var(--bone);
   font:13px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
   padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
   -webkit-user-select:none;user-select:none}
-.wrap{max-width:1500px;margin:0 auto;padding:12px}
+.wrap{max-width:1500px;margin:0 auto;padding:12px;overflow-x:clip}
+/* Nothing may scroll the page sideways. A phone has no spare width and a
+   horizontal scrollbar makes a board feel broken to drag on. */
+html,body{max-width:100%;overflow-x:hidden}
 h1{font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 2px}
 .sub{color:var(--dim);font-size:10.5px;margin:0 0 10px}
 button{font:inherit;cursor:pointer;border-radius:3px}
@@ -103,6 +106,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
      paying rent on a 750px screen. */
   .wrap{padding:8px}
   .arena{gap:5px}
+  .arenabg{inset:0}          /* no bleed: it was pushing 6px past the viewport */
   .boardwrap{padding:5px}
   .coltag{font-size:8px;margin-bottom:2px;padding-bottom:2px}
   .top{margin-bottom:6px;gap:6px}
@@ -198,6 +202,9 @@ button{font:inherit;cursor:pointer;border-radius:3px}
    terrain -- a real mechanic, drawn from a real trait -- was invisible. It now
    backs the entire arena, with a scrim so nothing over it loses contrast. */
 .arenabg{position:absolute;inset:-14px;z-index:0;border-radius:6px;overflow:hidden;
+  /* The negative inset is a deliberate bleed so the backdrop reaches past the
+     columns, but it is also 14px of width the page does not have on a phone --
+     see the mobile block, where it is pulled back to the arena's own edges. */
   background-size:cover;background-position:center;opacity:.30;
   filter:saturate(.75) contrast(.95);pointer-events:none}
 .arenabg:after{content:'';position:absolute;inset:0;
@@ -288,7 +295,8 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .lchip{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--bone);
   padding:4px 9px 4px 4px;border-radius:999px;background:#10131a;
-  border:1px solid var(--line);border-left:3px solid var(--lc);white-space:nowrap}
+  border:1px solid var(--line);border-left:3px solid var(--lc);white-space:nowrap;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .lchip b{display:inline-flex;align-items:center;justify-content:center;width:21px;height:21px;
   border-radius:50%;background:var(--lc);font-size:12px;font-weight:400;
   box-shadow:inset 0 -2px 4px rgba(0,0,0,.45),0 0 0 1px rgba(255,255,255,.12)}
