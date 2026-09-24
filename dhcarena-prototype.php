@@ -73,7 +73,10 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 /* The board must not simply eat the extra width -- a 1000px square does not fit
    a laptop viewport. Cap it against viewport HEIGHT and centre it, and the
    width freed up goes to the Fighters, which is the point. */
-.boardcol .boardwrap{max-width:min(74vh,760px);margin:0 auto}
+/* The cap belongs to the whole column, not just the board. Applied only to the
+   boardwrap it left the reach line and the legend stretching the full column
+   width, so they ran wider than the thing they describe. */
+.boardcol > *{max-width:min(74vh,760px);margin-left:auto;margin-right:auto}
 .teamcol{display:grid;gap:6px}
 .boardcol{min-width:0}
 @media (max-width:1000px){
@@ -128,6 +131,12 @@ button{font:inherit;cursor:pointer;border-radius:3px}
      composite stays aligned. */
   .teamcol .tok .art{aspect-ratio:auto;height:188px}
   .teamcol .tok .art img{object-fit:cover;object-position:top center}
+  /* Enemies face the player. The art is all drawn facing one way, so the right
+     column mirrors and the two Stables look at each other across the board
+     instead of everyone staring the same direction. Only in the side-column
+     layout -- stacked on a phone they are above you, not opposite you, and a
+     mirrored row there just looks like different art. */
+  .teamcol.foes .tok .art img{transform:scaleX(-1)}
   .teamcol .tok{padding:8px}
   .teamcol .tok .nm{font-size:12px}
   .teamcol .tok .kitn{font-size:10px}
@@ -497,7 +506,7 @@ function resolveGroup(side,grp,chain){
     return;
   }
   var f=fighterForGem(side,grp.type);
-  if(!f||f.ko){ logLine('sys','Matched '+GEMNAME[grp.type]+' but that Fighter is down — wasted.'); return; }
+  if(!f||f.ko){ logLine('sys','Matched '+gemInfo(side,grp.type).emoji+' — that Fighter is down, the match is wasted.'); return; }
   var depth=reachFor(grp.len);
   var ts=targetsAt(foeSide,depth);
   if(!ts.length)return;
@@ -544,7 +553,19 @@ function cascade(side,chain,done){
   if(chain>1){ var c=document.getElementById('combo'); c.textContent='CHAIN x'+chain;
     c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); }
   var cleared={};
-  ms.forEach(function(g){ resolveGroup(side,g,chain); g.cells.forEach(function(i){cleared[i]=1;}); });
+  /* Guarded because a throw in here is unrecoverable, not cosmetic: the
+     exception escapes cascade(), so busy stays true and done() is never called,
+     and the board sits disabled with the turn never handed back. That is
+     exactly what a dangling GEMNAME reference did -- and only when a gem
+     belonging to a knocked-out Fighter was matched, so it survived every test
+     until a Fighter actually went down mid-battle. One bad group should cost
+     one group's effect, never the game. */
+  ms.forEach(function(g){
+    try { resolveGroup(side,g,chain); }
+    catch(err){ logLine('sys','(effect error — skipped)');
+                if(window.console) console.error('resolveGroup', err); }
+    g.cells.forEach(function(i){cleared[i]=1;});
+  });
   Object.keys(cleared).forEach(function(i){ var el=cellEl(i); if(el) el.classList.add('clear'); });
   renderTeams();
   if(checkOver()){busy=false;return;}
