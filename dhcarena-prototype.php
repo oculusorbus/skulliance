@@ -126,14 +126,15 @@ button{font:inherit;cursor:pointer;border-radius:3px}
    the board, so the art gets a fixed height there and letterboxes inside it --
    object-fit:contain already centres it. */
 @media (min-width:1001px){
-  /* A BUST CROP, not a letterboxed full body. The art is square, so fitting it
-     into a wide column left big empty bars and a tiny Fighter. Cropping to the
-     top of the frame fills the column and shows the head and torso -- the part
-     you actually recognise a Fighter by -- several times larger than before.
-     Every layer is the same size and gets the same object-position, so the
-     composite stays aligned. */
-  .teamcol .tok .art{aspect-ratio:auto;height:188px}
-  .teamcol .tok .art img{object-fit:cover;object-position:top center}
+  /* THE WHOLE FIGHTER, not a bust crop. The crop showed the head and torso
+     larger, but it cut the legs, the weapon and half of any companion off --
+     and the art is the reason to care about a Fighter at all.
+     210px is the size that fits: three tokens then stand about 890px against
+     the board column's ~820, so the columns finish near level instead of
+     running far past it. The square art letterboxes into the 270px width with
+     small bars either side, over the checkerboard, which reads as a frame. */
+  .teamcol .tok .art{aspect-ratio:auto;height:210px}
+  .teamcol .tok .art img{object-fit:contain}
   /* Enemies face the player. The art is all drawn facing one way, so the right
      column mirrors and the two Crews look at each other across the board
      instead of everyone staring the same direction. Only in the side-column
@@ -442,31 +443,41 @@ function fname(rnd,used){
    report -- a sniper rifle for Snipe, a machine gun for Volley, demolition for
    Smash -- so a Crew sounds like itself, and you learn to hear which of your
    three just went off without looking away from the board. */
+/* [file, volume, capMs]. The cap is the important column.
+   Measured, not eyeballed: demolition runs 8.2s and artillery 9.1s, and
+   gem_shatters -- which fires on EVERY clear -- is 2.1s. A match needs a
+   report, not a performance, and a cascade firing a dozen 2-second samples is
+   a wall of noise.
+   Capping keeps each sound's attack, which is the part that carries the
+   character, and drops the tail. A machine gun cut to 340ms is a burst, which
+   is what Volley wanted in the first place; uncut it was a sustained rattle
+   still going while three more matches resolved. Voice lines are left whole or
+   nearly so -- clipping a word sounds broken rather than tight. */
 var SFX = {
-  pick:   ['sounds/select.ogg',                 .40],
-  bad:    ['sounds/badmove.ogg',                .45],
-  clear:  ['sounds/gem_shatters.ogg',           .38],
-  land:   ['sounds/hyperspace_gem_land_1.ogg',  .22],
-  chain:  ['sounds/speedmatch1.ogg',            .55],
-  great:  ['sounds/voice_excellent.ogg',        .60],
-  armX:   ['sounds/powergem_created.ogg',       .70],
-  armB:   ['sounds/hypercube_create.ogg',       .80],
-  boom:   ['sounds/bomb_explode.ogg',           .75],
-  start:  ['sounds/voice_go.ogg',               .55],
-  win:    ['sounds/voice_levelcomplete.ogg',    .75],
-  lose:   ['sounds/voice_gameover.ogg',         .75],
-  // one per weapon kit, keyed by kit id
-  heavy:  ['audio/sounds/demolition.mp3',       .50],
-  cleave: ['audio/sounds/tacticalkatana.mp3',   .50],
-  drain:  ['audio/sounds/heal.mp3',             .50],
-  sunder: ['audio/sounds/artillery.mp3',        .42],
-  precise:['audio/sounds/sniperrifle.mp3',      .50],
-  volley: ['audio/sounds/machinegun.mp3',       .36],
-  brutal: ['audio/sounds/melee.mp3',            .52],
-  quick:  ['audio/sounds/pistol.mp3',           .46],
-  ko:     ['audio/sounds/kill.mp3',             .60],
-  erupt:  ['audio/sounds/grenade.mp3',          .65],
-  shield: ['audio/sounds/equip.mp3',            .45]
+  pick:   ['sounds/select.ogg',                 .40,    0],   // 0.02s already
+  bad:    ['sounds/badmove.ogg',                .45,    0],   // 0.63s
+  clear:  ['sounds/gem_shatters.ogg',           .38,  320],   // 2.10s -> crisp
+  land:   ['sounds/hyperspace_gem_land_1.ogg',  .22,    0],   // 0.36s
+  chain:  ['sounds/speedmatch1.ogg',            .55,  700],   // 1.48s
+  great:  ['sounds/voice_excellent.ogg',        .60,    0],   // a voice line
+  armX:   ['sounds/powergem_created.ogg',       .70,  900],   // 2.94s
+  armB:   ['sounds/hypercube_create.ogg',       .80, 1200],   // 3.26s
+  boom:   ['sounds/bomb_explode.ogg',           .75, 1100],   // 1.98s
+  start:  ['sounds/voice_go.ogg',               .55,    0],
+  win:    ['sounds/voice_levelcomplete.ogg',    .75,    0],
+  lose:   ['sounds/voice_gameover.ogg',         .75,    0],
+  // one per weapon kit -- all cut to a hit
+  heavy:  ['audio/sounds/demolition.mp3',       .50,  420],   // 8.20s
+  cleave: ['audio/sounds/tacticalkatana.mp3',   .50,    0],   // 0.57s
+  drain:  ['audio/sounds/heal.mp3',             .50,  520],   // 0.99s
+  sunder: ['audio/sounds/artillery.mp3',        .42,  420],   // 9.06s
+  precise:['audio/sounds/sniperrifle.mp3',      .50,  380],   // 2.04s
+  volley: ['audio/sounds/machinegun.mp3',       .36,  340],   // 1.80s
+  brutal: ['audio/sounds/melee.mp3',            .52,    0],   // 0.37s
+  quick:  ['audio/sounds/pistol.mp3',           .46,  420],   // 2.01s
+  ko:     ['audio/sounds/kill.mp3',             .60,    0],   // 0.57s
+  erupt:  ['audio/sounds/grenade.mp3',          .65,  900],   // 4.47s
+  shield: ['audio/sounds/equip.mp3',            .45,    0]    // 0.84s
 };
 var sfxOn=true;
 try{ sfxOn = localStorage.getItem('dhcarena_sfx') !== '0'; }catch(e){}
@@ -485,6 +496,18 @@ function sfx(name){
     a.volume=def[1];
     var pr=a.play();
     if(pr && pr.catch) pr.catch(function(){});   // autoplay policy: ignore
+    var cap=def[2];
+    if(cap){
+      /* Faded, not cut. Pausing a waveform mid-cycle clicks, and a click on
+         every match is worse than the long tail this exists to remove. */
+      setTimeout(function(){
+        var v=a.volume, i=0, steps=6;
+        var t=setInterval(function(){
+          i++; a.volume=Math.max(0, v*(1-i/steps));
+          if(i>=steps){ clearInterval(t); try{ a.pause(); }catch(e){} }
+        },14);
+      }, cap);
+    }
   }catch(e){}
 }
 
