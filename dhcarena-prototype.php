@@ -90,7 +90,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 /* ---- teams ---- */
 .tok{background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:5px;
   position:relative;transition:transform .16s,opacity .3s,border-color .15s}
-.tok.mine{border-left:3px solid var(--gem)}
+.tok{border-left:3px solid var(--gem)}
 .tok .rk{font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);
   display:flex;justify-content:space-between;gap:4px}
 .tok .mygem{display:inline-flex;align-items:center;justify-content:center;
@@ -219,10 +219,10 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 <div class="wrap">
   <h1>DHC Arena <span style="color:var(--ochre)">prototype v2 — puzzle battler</span></h1>
   <p class="sub"><b>Drag a gem along its row or column, any distance</b> — the gems it passes shift back one.
-     <b>There are always five gems.</b> Three of them <b>are</b> your Fighters — each shows that
-     Fighter's weapon, so a different Stable gives you a different board. The other two are
-     🛡️ Shield and ⚡ Charge — and the board is shared, so when <i>they</i> match one of those
-     three, their Fighter in that rank acts instead. Match size is reach:
+     <b>There are always five gems.</b> Three of them are <b>ranks</b> — red front, amber mid, violet back —
+     and matching one makes that rank's Fighter act, for whichever side matched it. The gem on the board
+     shows <i>your</i> weapon in that rank; their token shows what the same gem does for <i>them</i>.
+     The other two are 🛡️ Shield and ⚡ Charge. Match size is reach:
      <b>3</b> hits their front, <b>4</b> reaches mid, <b>5+</b> reaches back. Match 4+ and you go again.
      A slide with no match costs nothing.</p>
   <div class="top">
@@ -674,12 +674,18 @@ function tokHtml(f,showGem){
   var layers=['torso','weapon','arms','effects','head','headgear','companion']
     .filter(function(k){return t[k];})
     .map(function(k){return '<img loading="lazy" alt="" src="'+artUrl(k,t[k],250)+'" onerror="this.remove()">';}).join('');
-  return '<div class="tok'+(showGem?' mine':'')+(f.ko?' ko':'')+'" data-id="'+f.uid+'"'
-    + (showGem?' style="--gem:var(--g'+f.rank+')"':'')+'>'
+  return '<div class="tok'+(showGem?' mine':' foe')+(f.ko?' ko':'')+'" data-id="'+f.uid+'"'
+    + ' style="--gem:var(--g'+f.rank+')">'
     + '<div class="flash"></div>'
+    /* BOTH sides wear their gem. The colour is the RANK -- red is front, amber
+       is mid, violet is back -- and it drives whichever side matched it. So the
+       same gem shows your weapon on the board and theirs on their token, which
+       is the information that was missing: leave violet matches lying around
+       and their back-rank Fighter is the one who gets to use them. */
     + '<div class="rk"><span>'+['front','mid','back'][f.rank]+'</span>'
-    +   (showGem?'<span class="mygem" title="this Fighter\'s gem">'+f.kit.emoji+'</span>'
-               :'<span>'+(f.shield>0?'sh '+f.shield:'')+'</span>')+'</div>'
+    +   '<span class="mygem" title="'+(showGem?'your':'their')+' '
+    +     ['front','mid','back'][f.rank]+' — '+f.kit.name+', '+f.kit.note+'">'
+    +     f.kit.emoji+'</span></div>'
     + '<div class="art">'+layers+'</div>'
     + '<div class="nm">'+f.name+'</div>'
     + '<div class="kitn" title="'+f.kit.name+' — '+f.kit.note+'">'
@@ -687,6 +693,7 @@ function tokHtml(f,showGem){
     + '<div class="hpwrap"><div class="hp '+cls+'" style="transform:scaleX('+pct+')"></div>'
     +   '<div class="sh" style="width:'+Math.min(100,(f.shield/f.maxHp)*100)+'%"></div></div>'
     + '<div class="hpn"><span>'+f.hp+'/'+f.maxHp+'</span><span>'
+    +   (f.shield>0?'sh '+f.shield+'  ':'')
     +   (f.surge>0?'surge '+f.surge+'/10':'')+(f.bleed>0?' bleed':'')+'</span></div>'
     + '</div>';
 }
