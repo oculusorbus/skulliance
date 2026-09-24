@@ -104,9 +104,14 @@ line does not need personality, it needs to be a number the player can reason
 about.
 
 Background is mandatory and the largest pool at 42, which makes it the right home
-for terrain: every Fighter brings one, so terrain always varies. **OPEN:** whose
-background sets the terrain in a 3v3 — the attacker's lead Fighter, a roll among
-the six, or each side's own Fighters carrying their own.
+for terrain: every Fighter brings one, so terrain always varies.
+
+**LOCKED: the defender's front-rank Fighter sets the terrain.** You are invading
+their arena, which is intuitive without explanation, and it hands the defender —
+otherwise entirely passive under AI control — one real expression of their own
+build. It also deepens scouting: you see the battlefield before you commit, so
+picking a target is also picking a terrain, and a defensive Fighter's background
+becomes a deliberate choice rather than whatever was spare.
 
 ---
 
@@ -221,10 +226,12 @@ positioning decisions a three-rank line already provides. Three Fighters map ont
 three ranks exactly. Start there; a wider board is an expansion, not a
 prerequisite.
 
-**OPEN:** whether a Fighter's starting rank is chosen when the Stable is set, or
-per battle after scouting. Per battle is the better game and makes scouting
-matter more; it also means the defending Stable needs a stored default for when
-its owner is offline.
+**LOCKED: the attacker sets formation per battle, after scouting. The defender
+keeps a stored default.** The attacker adapting to what they can see, against a
+defence arranged in advance, is the standard shape for asynchronous RPG combat
+and it is standard because it works — it is what converts scouting from flavour
+into the primary skill. The defender's stored formation is one more persistent
+build decision rather than a chore.
 
 ---
 
@@ -419,29 +426,44 @@ punishment for failing, which is what made the loss-only lockout feel harsh.
 permadeath mode could exist later as an opt-in high-stakes bracket; it must never
 be the default.
 
-### Knock-on: Stable-size scaling now needs revisiting
+### LOCKED: flat base bench, scaled loss penalty, and a daily allowance
 
-Scaling bench duration *up* with Stable size was locked while the rule was
-loss-only, where it was the right answer — it stopped a deep Stable from
-compounding into immunity.
+Three numbers, and one of them fixes a flaw in an earlier decision.
 
-Under fatigue-on-any-fight it cuts the wrong way. Throughput is already
-`StableSize / benchDuration`; if duration rises with size, throughput flattens
-toward a constant and there is no reason to build past the point where it levels
-off. That deletes the incentive this whole section exists to create.
+**Base bench is flat: 4 hours after any battle, win or lose.** Scaling the base
+with Stable size was right while knockouts were loss-only, and is wrong now —
+throughput is `StableSize / benchDuration`, so raising duration with size
+flattens throughput into a ceiling and deletes the reason to build deep.
 
-**NEEDS A CALL.** Three options:
+**The loss penalty scales with Stable size**, adding roughly 4 further hours at
+the 3-Fighter floor rising to about 12 at a deep Stable. That keeps a brake on
+the top without taxing the thing we want to encourage, and it puts the brake
+where the runaway actually is.
 
-1. **Drop the scaling.** Flat bench for everyone. Depth converts cleanly into
-   battles per day, simplest to explain, and §7's runaway is handled by reward
-   banding instead.
-2. **Scale the loss penalty only.** Base bench flat, the extra for a loss grows
-   with Stable size. Keeps a brake on the top without capping throughput.
-3. **Keep it as locked.** Accept a throughput ceiling as a deliberate cap on how
-   much anyone can farm in a day.
+**And a daily battle allowance: 6 battles per day, the same for everyone.**
 
-Leaning 2 — it keeps the counterweight where the runaway actually is, without
-taxing the thing we are trying to encourage.
+### Why the allowance, and the flaw it fixes
+
+§8c ranks the ladder on cumulative *wins* rather than win rate, to stop players
+protecting a good record by benching their best Fighter. That is right on its own
+but it has a hole: with unlimited battles, ranking on total wins means the
+grindiest player wins rather than the best one, and a deep Stable grinds more
+simply by having bodies available.
+
+An equal daily allowance closes it. Everyone gets the same number of attempts, so
+ranking on wins inside a fixed budget *is* ranking on win rate — but expressed in
+a way that still punishes hiding your best Fighter, because an unspent attempt is
+a wasted one.
+
+It also gives depth the right job. The allowance says how many battles you may
+fight; knockouts decide whether you have anyone available to fight them with. A
+3-Fighter Stable on a bad run cannot spend its six; a deep Stable always can.
+**Depth buys the ability to use your allowance, not a bigger one** — which is
+exactly the distinction between resilience and runaway.
+
+Six is a starting number, to be tuned against how long a battle actually takes.
+It wants to be enough for a satisfying session and few enough that missing a day
+is not catastrophic.
 
 ---
 
@@ -492,9 +514,11 @@ Countermeasures against the rich-get-richer loop in §6:
   less than holding off a stronger one.
 - **Knockout scaling (§5) is the main counterweight** and is now locked: a deep
   Stable serves longer benchings, so depth buys resilience rather than immunity.
-- **OPEN:** whether to also cap how many Fighters from a Stable may be *fielded*
-  per season. Preserves the "build more" motivation while flattening the top, but
-  it may be unnecessary once knockout scaling is tuned — hold it in reserve.
+- **The daily battle allowance (§5) is the strongest counterweight** and is now
+  locked: everyone fights the same number of battles a day, so no amount of depth
+  buys more chances at the ladder. A cap on how many Fighters may be fielded per
+  season is therefore unnecessary — dropped rather than held in reserve, because
+  the allowance already does its job more simply.
 
 ---
 
@@ -572,10 +596,13 @@ Three defences, two of which are in this document already for other reasons:
 1. **Reward banding on relative strength (§7).** Beating a much weaker Stable
    pays little. Written to stop the rich-get-richer runaway; it happens to be the
    exact counter to farming a target built to lose.
-2. **Diminishing returns on a repeat opponent.** The raid system already does
-   this — `getRecentRaidedRealms()` blocks re-hitting a realm just successfully
-   looted. Second and third wins against the same Stable pay less, then nothing.
-   Proven pattern, same codebase.
+2. **LOCKED: one rewarded battle per opponent per day.** Beat the same Stable
+   twice and the second win pays no traits and no ladder points. Chosen over a
+   decay curve because it is a rule a player can hold in their head, and because
+   it makes farming a single target worthless rather than merely inefficient.
+   Same principle as `getRecentRaidedRealms()` blocking a re-loot, and it also
+   pushes players to range across the ladder, which makes the whole population
+   feel more alive.
 3. **Live battles carry no stake (§8d).** No ladder, no traits, so the question
    does not arise for them at all.
 
@@ -622,8 +649,9 @@ Combined with loss-knockouts this is self-correcting: you cannot field one
 Fighter repeatedly anyway, because losing benches it and entry needs three
 available.
 
-**OPEN:** whether a knocked-out Fighter's record shows the loss immediately or
-on recovery. Cosmetic, but it changes how a bad streak feels.
+**LOCKED: a loss lands on the record immediately.** Deferring it to recovery is
+a small dishonesty, and a record people cannot trust is worth less than no record
+at all.
 
 ---
 
@@ -646,10 +674,11 @@ in Discord, which is the lobby.
 That framing is also what live *is*: grudge matches and organised tournaments,
 announced to Discord. A community event, not a daily mode.
 
-**Unranked and reward-free by default.** No ladder points, no traits. It removes
-the collusion surface entirely (§8a) and keeps live as the thing it is good at —
-a human opponent — without letting it touch the economy. Ranked live can exist
-inside event brackets that an owner runs deliberately.
+**LOCKED: live battles never touch the economy.** No ladder points, no traits,
+not even inside an owner-run event. An absolute rule cannot be accidentally
+broken by a later feature, where "unless it is an official tournament" is exactly
+the exception someone eventually builds a hole through. Events can award prizes
+by hand; the code never pays out for a battle two players arranged themselves.
 
 Two things it needs before shipping:
 
@@ -679,6 +708,9 @@ run once. Roughly:
   Append-only, the same way `dhc_trait_drops` is: the record of what happened
   must survive later rule changes.
 - `dhc_arena_status` — per Fighter: knocked_out_until, season W/L, career W/L.
+- Per player: battles spent today (the §5 allowance) and the stored default
+  formation (§3bb). Counted off the same CURDATE() boundary the trait cap uses,
+  so the two limits reset together and a player has one daily rhythm, not two.
   Career totals are stored rather than derived because the battle log is
   append-only and seasons reset; recomputing a career from every battle ever
   fought gets slower forever.
@@ -733,26 +765,41 @@ layering rules already do for the art.
 5. **Public per-Fighter W/L record** — with the ladder ranking on *wins*, not win
    rate, so protecting a record costs you the season. §8c
 
+## Design calls made on the owner's delegation (2026-09-23)
+
+The owner does not play RPGs and asked for these to be decided from genre
+practice rather than put back to them. Reasoning is in each section; recorded
+here so a later reader knows they were decided, not overlooked.
+
+6. **Defender's front-rank Fighter sets the terrain.** §3
+7. **Attacker picks formation per battle after scouting; defender stores a
+   default.** §3bb
+8. **Full scouting** — the attacker sees the defending Stable's builds and
+   formation before committing. With the AI piloting defence, hiding the build
+   converts the game's main skill into a guess. §3bb
+9. **Flat 4h bench on any battle; the loss penalty scales with Stable size.** §5
+10. **A daily allowance of 6 battles, equal for everyone** — which also closes a
+    hole in ranking on cumulative wins, where unlimited battles would have meant
+    the grindiest player wins rather than the best. §5
+11. **One rewarded battle per opponent per day.** §8a
+12. **Losses appear on a Fighter's record immediately.** §8c
+13. **Live battles never pay anything, events included.** §8d
+14. **The defending AI has one fixed difficulty.** Scaling it to the owner's rank
+    hides a weak AI and makes two players' results incomparable. Build one AI
+    properly instead. §3b
+15. **Ship the readouts before the animation.** Telegraphed intent, the
+    turn-order track and honest bars are the game; the layer animation in §3c is
+    polish, and polish is tuned by playing. §3c
+
 ## Still open
 
-These are tuning and detail, not direction — none of them block starting §10.
+Work and tuning, not direction. None of it blocks starting §10.
 
-- The 46 abilities (§3). Hand-authored, each tested against "can a simple AI
-  play this correctly?" — see §3b.
-- The stat tables for the other 151 traits (§3). Generate from tier + category,
-  hand-tune the standouts only.
-- Whose `background` sets the terrain in a 3v3 (§3).
-- Whether starting rank is fixed at Stable level or chosen per battle after
-  scouting (§3bb). Per battle is the better game; the defending Stable then
-  needs a stored default for when its owner is offline.
-- The knockout curve: floor, ceiling, and how it scales (§5).
-- How much the attacker can scout before committing. Full Stable visibility makes
-  counterpicking a skill; hidden builds make it a gamble. Leaning full.
-- Whether the defending AI's difficulty is fixed, or reads its owner's ladder
-  rank. Fixed is honest; scaled hides a bad AI.
-- The repeat-opponent decay curve (§8a): how fast a rematch stops paying.
-- Whether live battles (§8d) ever earn anything inside an owner-run event.
-- How much of §3c's layer animation is worth building before playtesting. The
-  telegraphed intent and the turn-order track matter more than the lunge.
-- Whether fielded-Fighters-per-season should be capped to flatten the top (§7).
-- Whether a loss shows on a Fighter's record immediately or on recovery (§8c).
+- **The 46 abilities** (§3). Hand-authored, each carrying its *usable from* and
+  *reaches*, each tested against "can a simple AI play this correctly?" (§3b).
+- **Stat generation** for the other 151 traits from tier and category, with a
+  hand-tune pass over the standouts only (§3).
+- **Every number above is a starting point**, including the 4h bench, the 6-battle
+  allowance and the loss-penalty curve. They are written down so the first build
+  has something concrete to be wrong about; tune them against live data and the
+  §4 balance harness, not against argument.
