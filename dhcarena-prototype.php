@@ -14,7 +14,7 @@
  *
  *   1. EACH OF YOUR THREE FIGHTERS OWNS A GEM COLOUR. Matching that colour is
  *      how that Fighter acts. The board therefore means something different
- *      depending on who is in your Stable — your team composition literally
+ *      depending on who is in your Crew — your team composition literally
  *      rewrites what a good move is. Monstrocity's five tile types mean the
  *      same thing in every battle.
  *   2. MATCH SIZE IS REACH. Three hits their front rank, four reaches their
@@ -23,7 +23,7 @@
  *      3-match cannot touch it.
  *
  * Together those make the trait economy the game. Your weapon decides what
- * your colour DOES; your Stable decides which colours you have at all.
+ * your colour DOES; your Crew decides which colours you have at all.
  *
  * Still deliberately not the real build: no db.php, no skulliance.php, no
  * session, no login, nothing saved. Rules are JS; they port to
@@ -78,13 +78,16 @@ button{font:inherit;cursor:pointer;border-radius:3px}
    width, so they ran wider than the thing they describe. */
 .boardcol > *{max-width:min(74vh,760px);margin-left:auto;margin-right:auto}
 .teamcol{display:grid;gap:6px}
+.coltag{font-size:9px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px;
+  padding-bottom:4px;border-bottom:1px solid var(--line)}
+.coltag.you{color:var(--teal)} .coltag.foe{color:var(--blood)}
 .boardcol{min-width:0}
 @media (max-width:1000px){
   /* Stack, and put the enemies above the board where they read as the opposition */
   .arena{grid-template-columns:1fr}
   .teamcol{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .teamcol.foes{order:-1}
-  .teamcol.mine{order:1}
+  .teamwrap.foes{order:-1}
+  .teamwrap.mine{order:1}
 }
 
 /* ---- teams ---- */
@@ -132,7 +135,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   .teamcol .tok .art{aspect-ratio:auto;height:188px}
   .teamcol .tok .art img{object-fit:cover;object-position:top center}
   /* Enemies face the player. The art is all drawn facing one way, so the right
-     column mirrors and the two Stables look at each other across the board
+     column mirrors and the two Crews look at each other across the board
      instead of everyone staring the same direction. Only in the side-column
      layout -- stacked on a phone they are above you, not opposite you, and a
      mirrored row there just looks like different art. */
@@ -291,12 +294,13 @@ button{font:inherit;cursor:pointer;border-radius:3px}
     <span class="sub" style="margin:0" id="round"></span>
   </div>
 
-  <!-- Wide: your Stable down the left, the board in the middle, theirs down the
+  <!-- Wide: your Crew down the left, the board in the middle, theirs down the
        right, so both teams hug the board. Narrow: they stack, enemies on top.
        The legend sits under the board and the log under that -- it is a
        reference for a curious player, not something read mid-turn. -->
   <div class="arena">
-    <div class="teamcol mine" id="myTeam"></div>
+    <div class="teamwrap mine"><div class="coltag you">Your Crew</div>
+      <div class="teamcol mine" id="myTeam"></div></div>
     <div class="boardcol">
       <div class="boardwrap">
         <div class="terrain" id="terrain"></div>
@@ -312,7 +316,8 @@ button{font:inherit;cursor:pointer;border-radius:3px}
       <div class="reach" id="reach"></div>
       <div class="legend" id="legend"></div>
     </div>
-    <div class="teamcol foes" id="foeTeam"></div>
+    <div class="teamwrap foes"><div class="coltag foe">Enemy Crew</div>
+      <div class="teamcol foes" id="foeTeam"></div></div>
   </div>
   <div class="panel" id="resultPanel" style="display:none;margin-top:10px"></div>
   <details class="logbox" open>
@@ -435,7 +440,7 @@ function fname(rnd,used){
 
    ONE SOUND PER KIT is the part worth keeping. Each Fighter's gem has its own
    report -- a sniper rifle for Snipe, a machine gun for Volley, demolition for
-   Smash -- so a Stable sounds like itself, and you learn to hear which of your
+   Smash -- so a Crew sounds like itself, and you learn to hear which of your
    three just went off without looking away from the board. */
 var SFX = {
   pick:   ['sounds/select.ogg',                 .40],
@@ -900,7 +905,7 @@ function cascade(side,chain,done){
      before the result is shown. */
   if(checkOver() && !S.settling){
     S.settling=true;
-    logLine('big', S.over==='win' ? '— their Stable is down —' : '— your Stable is down —');
+    logLine('big', S.over==='win' ? '— their Crew is down —' : '— your Crew is down —');
   }
   // hold longer when something exploded, so the blast is seen rather than
   // skipped past on the way to the collapse
@@ -977,7 +982,7 @@ function scoreMove(a,b,side){
    they spotted it.
 
    This is a prototype knob. The real AI (dhcarena.md §3b) defends someone's
-   Stable for real stakes and its strength is a design decision, not a
+   Crew for real stakes and its strength is a design decision, not a
    convenience -- §14 of the locked calls says one fixed difficulty. */
 function bestMove(side){
   var cand=[];
@@ -1154,10 +1159,10 @@ function showEnd(){
   document.getElementById('ecTitle').textContent = won?'Victory':'Defeat';
   document.getElementById('ecSub').textContent = won
     ? (standing.length===3
-        ? 'Their Stable is down and yours did not lose a Fighter.'
+        ? 'Their Crew is down and yours did not lose a Fighter.'
         : standing.length+' of your Fighters still standing — '
           + standing.map(function(f){return f.name.split(' ')[0];}).join(' and ') + '.')
-    : 'Your Stable is down. In the real game these Fighters would now be benched, '
+    : 'Your Crew is down. In the real game these Fighters would now be benched, '
       + 'and you would send the rest.';
   document.getElementById('ecStats').innerHTML =
       '<span><b>'+S.round+'</b>rounds</span>'
@@ -1166,7 +1171,7 @@ function showEnd(){
     + '<span><b>x'+S.stats.best+'</b>best chain</span>';
   card.hidden=false;
   sfx(won?'win':'lose');
-  logLine('big', won?'VICTORY — their Stable is down.':'DEFEAT — your Stable is down.');
+  logLine('big', won?'VICTORY — their Crew is down.':'DEFEAT — your Crew is down.');
 }
 
 function logLine(kind,text){

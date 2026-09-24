@@ -35,9 +35,9 @@ because its content is already in the database.
 
 ---
 
-## 2. The Stable
+## 2. The Crew
 
-A player fields a **Stable** of Fighters. Entry to Arena requires **3 available
+A player fields a **Crew** of Fighters. Entry to Arena requires **3 available
 Fighters**; there is no upper bound on how many you may own.
 
 Three rather than one is the first and cheapest lever on "build more Fighters":
@@ -60,7 +60,7 @@ Team battle is what creates:
   someone behind them worth shielding.
 - **Cross-Fighter combos.** One Fighter sets up, another capitalises. Nothing in
   a 1v1 can express that.
-- **A reason for Stable composition to be a puzzle** rather than three
+- **A reason for Crew composition to be a puzzle** rather than three
   independently-optimised Fighters.
 
 That last point matters most for the brief: 1v1 rewards building the same good
@@ -143,7 +143,7 @@ here:
 1. **Each of your three Fighters owns a gem colour.** Matching that colour is
    how that Fighter acts, and its weapon decides what the match *does* — cleave
    hits a whole rank, siphon heals, volley chips everyone. So the board means
-   something different depending on who is in your Stable. **Your team
+   something different depending on who is in your Crew. **Your team
    composition rewrites what a good move is.** Monstrocity's five tile types
    mean the same thing in every battle it has ever run.
 2. **Match size is reach.** Three hits their front rank, four reaches mid, five
@@ -155,13 +155,13 @@ Two shared colours carry the rest: **guard** shields your team, **surge**
 charges a meter that erupts across the whole enemy line at ten.
 
 Together these make the trait economy *the game*. Your weapon decides what your
-colour does; your Stable decides which colours you have at all; a Fighter going
+colour does; your Crew decides which colours you have at all; a Fighter going
 down means its colour is dead weight on the board for the rest of the battle.
 
 ### What this preserves and what it costs
 
-Preserved: the Stable, ranks and formation, traits-as-abilities, the build being
-the strategic layer, async play, an AI that plays the defending Stable, and every
+Preserved: the Crew, ranks and formation, traits-as-abilities, the build being
+the strategic layer, async play, an AI that plays the defending Crew, and every
 economic decision in §5 through §8d. None of that depended on the combat being
 menu-driven.
 
@@ -192,9 +192,9 @@ every round, both have to be online, which means real-time infrastructure this
 platform does not have and should not grow. Apache/mod_php with no websockets is
 the right stack for everything else here; it is the wrong stack for live PvP.
 
-**The answer: the attacker plays, the defender's Stable is run by the AI.**
+**The answer: the attacker plays, the defender's Crew is run by the AI.**
 
-You challenge another player's Stable and fight it yourself, turn by turn, at
+You challenge another player's Crew and fight it yourself, turn by turn, at
 whatever hour suits you. Their Fighters defend under AI control, with the stats
 and abilities their owner built. When they challenge you, the positions reverse.
 Nobody ever waits for anybody, and defence happens while you sleep — which is the
@@ -203,7 +203,7 @@ same rhythm raids already have.
 ### The constraint this creates, which shapes every ability
 
 **Every ability has to be something an AI can play competently.** Half of all
-Arena battles are your Stable piloted by a machine. If an ability needs a human's
+Arena battles are your Crew piloted by a machine. If an ability needs a human's
 read of the board to be worth anything, then a build using it is strong on
 offence and useless on defence, and the meta collapses into "build what the AI
 cannot misplay."
@@ -266,7 +266,7 @@ cheapest one that produces real decisions.
   and a *can reach* — a heavy weapon that only swings from the front, a companion
   that reaches the enemy back line, a support ability usable only from rank 3.
   That multiplies the depth of the ability set without authoring more abilities.
-- **Stable composition becomes a positional puzzle.** A high-armour torso belongs
+- **Crew composition becomes a positional puzzle.** A high-armour torso belongs
   at the front; a Fighter built around an effects proc belongs behind it. Three
   Fighters that need each other, rather than the same good Fighter three times —
   which was the stated goal and now has teeth.
@@ -429,8 +429,8 @@ whether its pieces work *together*, and that has to be reachable with common
 traits. If a player cannot build a top-quartile Fighter out of commons and
 uncommons, the tuning is wrong.
 
-A useful test to run before launch: simulate an all-common stable against an
-all-legendary stable. If the commons do not win at least ~35% of the time, the
+A useful test to run before launch: simulate an all-common crew against an
+all-legendary crew. If the commons do not win at least ~35% of the time, the
 spread is too wide.
 
 ### Result of running it (2026-09-24, prototype)
@@ -487,7 +487,7 @@ can sit on exactly three indefinitely.
 ### Why fatigue-on-any-fight, with a loss penalty
 
 Benching on every fight makes the cost of *playing* proportional to how much you
-play. The most engaged players fight most, so they need the deepest Stables —
+play. The most engaged players fight most, so they need the deepest Crews —
 which is the brief stated precisely, the ultimate experience for the most
 engaged. Depth converts directly into battles per day.
 
@@ -514,12 +514,12 @@ be the default.
 Three numbers, and one of them fixes a flaw in an earlier decision.
 
 **Base bench is flat: 4 hours after any battle, win or lose.** Scaling the base
-with Stable size was right while knockouts were loss-only, and is wrong now —
-throughput is `StableSize / benchDuration`, so raising duration with size
+with Crew size was right while knockouts were loss-only, and is wrong now —
+throughput is `CrewSize / benchDuration`, so raising duration with size
 flattens throughput into a ceiling and deletes the reason to build deep.
 
-**The loss penalty scales with Stable size**, adding roughly 4 further hours at
-the 3-Fighter floor rising to about 12 at a deep Stable. That keeps a brake on
+**The loss penalty scales with Crew size**, adding roughly 4 further hours at
+the 3-Fighter floor rising to about 12 at a deep Crew. That keeps a brake on
 the top without taxing the thing we want to encourage, and it puts the brake
 where the runaway actually is.
 
@@ -530,7 +530,7 @@ where the runaway actually is.
 §8c ranks the ladder on cumulative *wins* rather than win rate, to stop players
 protecting a good record by benching their best Fighter. That is right on its own
 but it has a hole: with unlimited battles, ranking on total wins means the
-grindiest player wins rather than the best one, and a deep Stable grinds more
+grindiest player wins rather than the best one, and a deep Crew grinds more
 simply by having bodies available.
 
 An equal daily allowance closes it. Everyone gets the same number of attempts, so
@@ -540,7 +540,7 @@ a wasted one.
 
 It also gives depth the right job. The allowance says how many battles you may
 fight; knockouts decide whether you have anyone available to fight them with. A
-3-Fighter Stable on a bad run cannot spend its six; a deep Stable always can.
+3-Fighter Crew on a bad run cannot spend its six; a deep Crew always can.
 **Depth buys the ability to use your allowance, not a bigger one** — which is
 exactly the distinction between resilience and runaway.
 
@@ -561,7 +561,7 @@ in the shape stakers already understand rather than inventing a third pattern.
 
 This closes the loop and is the whole reason Arena is self-sustaining:
 
-> play Arena → earn traits → build a deeper Stable → survive more knockouts →
+> play Arena → earn traits → build a deeper Crew → survive more knockouts →
 > play more Arena
 
 **Implementation:** add `arena` to `$GLOBALS['DHCF_GAMES']` in
@@ -574,29 +574,29 @@ This closes the loop and is the whole reason Arena is self-sustaining:
   treatment as Boss Battles and Realm Raids.
 - **`'gated' => true`**, for the same reason.
 - **`'base' => 'run'`**, with `bands` on something that measures how well you
-  did. A win against a deeper or higher-rated Stable should band better, the way
+  did. A win against a deeper or higher-rated Crew should band better, the way
   Raids band on how far up you punched.
 - Capped at the default 3/day via `DHCF_DAILY_CAP` — no override.
 
 Note this makes Arena the **first source whose reward feeds its own entry
 requirement**. Watch for a runaway: the best players earn the most traits, field
-the deepest Stables, and take fewer knockouts. §7 is the counterweight.
+the deepest Crews, and take fewer knockouts. §7 is the counterweight.
 
 ---
 
 ## 7. Matchmaking, brackets and the runaway problem
 
-**Bracket by Stable depth, not only by rating.** A new staker can build roughly
+**Bracket by Crew depth, not only by rating.** A new staker can build roughly
 one Fighter a fortnight. If their first three meet a veteran's optimised twelve,
 they quit, and the brief was to bring people *in*.
 
 Countermeasures against the rich-get-richer loop in §6:
 
 - Fighting far below your bracket pays little or nothing.
-- Band the trait reward on relative strength, so beating a weaker Stable is worth
+- Band the trait reward on relative strength, so beating a weaker Crew is worth
   less than holding off a stronger one.
 - **Knockout scaling (§5) is the main counterweight** and is now locked: a deep
-  Stable serves longer benchings, so depth buys resilience rather than immunity.
+  Crew serves longer benchings, so depth buys resilience rather than immunity.
 - **The daily battle allowance (§5) is the strongest counterweight** and is now
   locked: everyone fights the same number of battles a day, so no amount of depth
   buys more chances at the ladder. A cap on how many Fighters may be fielded per
@@ -671,15 +671,15 @@ entire prize, and it reframes the problem from "economy exploit" to "someone
 skipped the queue."
 
 **Setup is not free.** A Fighter needs three mandatory traits (`DHCF_REQUIRED`),
-so a minimum Stable is nine — three days of the alt actually playing the games at
+so a minimum Crew is nine — three days of the alt actually playing the games at
 the cap, and repeated every time one is banned.
 
 Three defences, two of which are in this document already for other reasons:
 
-1. **Reward banding on relative strength (§7).** Beating a much weaker Stable
+1. **Reward banding on relative strength (§7).** Beating a much weaker Crew
    pays little. Written to stop the rich-get-richer runaway; it happens to be the
    exact counter to farming a target built to lose.
-2. **LOCKED: one rewarded battle per opponent per day.** Beat the same Stable
+2. **LOCKED: one rewarded battle per opponent per day.** Beat the same Crew
    twice and the second win pays no traits and no ladder points. Chosen over a
    decay curve because it is a rule a player can hold in their head, and because
    it makes farming a single target worthless rather than merely inefficient.
@@ -823,7 +823,7 @@ layering rules already do for the art.
 6. Persistence, battle view, one-turn-per-request AJAX. Build the view at the
    §3c presentation budget from the start — 250px roster, 1000px spotlight only;
    sixty full-size layers is not a page the PWA can carry.
-7. Stable, fatigue, entry requirement.
+7. Crew, fatigue, entry requirement.
 8. Challenge flow, end-of-battle rewards and Discord announce — in a separate
    fire-and-forget request, per §8.
 9. Trait rewards (`DHCF_GAMES['arena']`) — last, so the economy only opens once
@@ -837,12 +837,12 @@ layering rules already do for the art.
 1. **Turn-based 3v3 team battle in a front/mid/back rank line, played not
    watched.** Position decides what a Fighter can reach and what can reach it.
    §3bb The attacker plays every
-   turn; the defending Stable is run by the AI with its owner's builds, so
+   turn; the defending Crew is run by the AI with its owner's builds, so
    nothing is real-time and nobody waits. Supersedes the earlier auto-resolved
    best-of-three. §2, §3b
 2. **Knockouts on every fight, longer on a loss.** Reverted from loss-only after
    a merits re-check — see §5 for why loss-only is anti-correlated with the
-   brief. Stable-size scaling needs a fresh call as a result. §5
+   brief. Crew-size scaling needs a fresh call as a result. §5
 3. **Monthly seasons, full reset.** §8b
 4. **Traits per win, CARBON on the season board.** §6
 5. **Public per-Fighter W/L record** — with the ladder ranking on *wins*, not win
@@ -857,10 +857,10 @@ here so a later reader knows they were decided, not overlooked.
 6. **Defender's front-rank Fighter sets the terrain.** §3
 7. **Attacker picks formation per battle after scouting; defender stores a
    default.** §3bb
-8. **Full scouting** — the attacker sees the defending Stable's builds and
+8. **Full scouting** — the attacker sees the defending Crew's builds and
    formation before committing. With the AI piloting defence, hiding the build
    converts the game's main skill into a guess. §3bb
-9. **Flat 4h bench on any battle; the loss penalty scales with Stable size.** §5
+9. **Flat 4h bench on any battle; the loss penalty scales with Crew size.** §5
 10. **A daily allowance of 6 battles, equal for everyone** — which also closes a
     hole in ranking on cumulative wins, where unlimited battles would have meant
     the grindiest player wins rather than the best. §5
