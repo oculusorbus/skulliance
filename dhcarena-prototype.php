@@ -2,33 +2,38 @@
 /**
  * dhcarena-prototype.php — THROWAWAY feel prototype for DHC Arena.
  *
- * See dhcarena.md for the design this is testing. The point of this file is to
- * answer "is the battle fun to play" before anything is committed to, so it is
- * deliberately NOT the real build:
+ * REBUILT as a puzzle-battler after the first prototype played as a menu.
+ * Playtest verdict on v1, verbatim: "found myself getting bored and
+ * unengaged... selecting the best option out of 4 each time and hoping for the
+ * best roll." Correct. v1 had no execution layer — all the skill lived in the
+ * build, and nothing you did during a battle was done WELL or badly.
  *
- *   - No db.php, no skulliance.php, no session, no login. It touches nothing.
- *     You can open it, break it, and reload it with no consequence anywhere.
- *   - The rules engine is JavaScript, not the pure PHP engine dhcarena.md §8
- *     specifies. A turn that costs a server round-trip cannot be judged for
- *     feel. When the feel is right the rules port to dhcarena-engine.php, which
- *     is where they have to live to be authoritative.
- *   - No Stable, no fatigue, no allowance, no ladder, no rewards. Those are
- *     economy, and economy cannot be judged before combat is.
+ * WHAT MAKES THIS NOT MONSTROCITY. Monstrocity is already a shared-board,
+ * alternating-turn match-3, so that shape cannot be the difference. Two rules
+ * make Arena its own game, and both come straight out of dhcarena.md:
  *
- * What IS real: the 197 traits and their tiers, read from dhcrarity.php, and
- * the art, served from the same dhc/web tree the assembler uses.
+ *   1. EACH OF YOUR THREE FIGHTERS OWNS A GEM COLOUR. Matching that colour is
+ *      how that Fighter acts. The board therefore means something different
+ *      depending on who is in your Stable — your team composition literally
+ *      rewrites what a good move is. Monstrocity's five tile types mean the
+ *      same thing in every battle.
+ *   2. MATCH SIZE IS REACH. Three hits their front rank, four reaches their
+ *      mid, five or more reaches their back. §3bb's formation becomes the
+ *      thing the puzzle is about: their healer is hiding at the back and a
+ *      3-match cannot touch it.
+ *
+ * Together those make the trait economy the game. Your weapon decides what
+ * your colour DOES; your Stable decides which colours you have at all.
+ *
+ * Still deliberately not the real build: no db.php, no skulliance.php, no
+ * session, no login, nothing saved. Rules are JS; they port to
+ * dhcarena-engine.php once the feel is right. Real traits from dhcrarity.php,
+ * real art from the dhc/web tree.
  */
 $dhc_rarity = is_file(__DIR__ . '/dhcrarity.php') ? (require __DIR__ . '/dhcrarity.php') : array();
 if (!$dhc_rarity) { http_response_code(500); exit('dhcrarity.php missing — nothing to build Fighters from.'); }
 
-// Relative, deliberately: the login cookie on this platform is host-only, and an
-// absolute www link is a different origin from the bare domain. Relative also
-// means this works from any host the repo is served on.
 $ART = 'dhc/web';
-
-// The real layering rules, so a randomly rolled Fighter cannot be built in a
-// combination the assembler would refuse. Loaded defensively -- the prototype
-// must still run if the config is not there.
 $excl = array();
 if (is_file(__DIR__ . '/dhcfighters-config.php')) {
 	require_once __DIR__ . '/dhcfighters-config.php';
@@ -42,635 +47,526 @@ if (is_file(__DIR__ . '/dhcfighters-config.php')) {
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>DHC Arena — Prototype</title>
 <style>
-:root{
-  --ink:#0d0f13; --panel:#151922; --panel2:#1d2230; --line:#2b3345;
-  --bone:#e8e6e1; --dim:#8b93a7; --teal:#00c8a0; --ochre:#f5a623;
-  --blood:#e0466b; --shield:#5aa9ff;
-  --t-common:#7a9eb0; --t-uncommon:#00c8a0; --t-epic:#8b7bd8;
-  --t-legendary:#f5a623; --t-mythic:#ff4f8b;
-}
+:root{--ink:#0d0f13;--panel:#151922;--panel2:#1d2230;--line:#2b3345;--bone:#e8e6e1;
+  --dim:#8b93a7;--teal:#00c8a0;--ochre:#f5a623;--blood:#e0466b;--shield:#5aa9ff;
+  --g0:#e0466b;--g1:#f5a623;--g2:#8b7bd8;--g3:#5aa9ff;--g4:#00c8a0;}
 *{box-sizing:border-box}
 body{margin:0;background:var(--ink);color:var(--bone);
   font:13px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
-  padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
-.wrap{max-width:1180px;margin:0 auto;padding:14px}
-h1{font-size:16px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 2px}
-.sub{color:var(--dim);font-size:11px;margin:0 0 14px}
-.bar-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
+  -webkit-user-select:none;user-select:none}
+.wrap{max-width:1080px;margin:0 auto;padding:12px}
+h1{font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 2px}
+.sub{color:var(--dim);font-size:10.5px;margin:0 0 10px}
 button{font:inherit;cursor:pointer;border-radius:3px}
-.btn{background:var(--panel2);color:var(--bone);border:1px solid var(--line);padding:7px 13px}
-.btn:hover:not(:disabled){border-color:var(--ochre);color:var(--ochre)}
-.btn:disabled{opacity:.4;cursor:default}
+.btn{background:var(--panel2);color:var(--bone);border:1px solid var(--line);padding:6px 12px}
+.btn:hover{border-color:var(--ochre);color:var(--ochre)}
 .btn.go{background:var(--blood);border-color:var(--blood);color:#fff}
-.btn.go:hover{filter:brightness(1.12)}
+.top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.turnflag{font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;
+  border-radius:999px;border:1px solid var(--line);color:var(--dim)}
+.turnflag.you{border-color:var(--teal);color:var(--teal)}
+.turnflag.foe{border-color:var(--blood);color:var(--blood)}
+
+.game{display:grid;grid-template-columns:1fr 340px;gap:12px}
+@media (max-width:900px){.game{grid-template-columns:1fr}}
+
+/* ---- teams ---- */
+.teamrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.tok{background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:5px;
+  position:relative;transition:transform .16s,opacity .3s,border-color .15s}
+.tok.mine{border-left:3px solid var(--gem)}
+.tok .rk{font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);
+  display:flex;justify-content:space-between;gap:4px}
+.tok .gemdot{width:7px;height:7px;border-radius:50%;background:var(--gem);display:inline-block}
+.tok .art{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:2px;
+  background:repeating-conic-gradient(#191419 0% 25%,#201b20 0% 50%) 50%/9px 9px;margin:2px 0}
+.tok .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.tok .nm{font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tok .kitn{font-size:8px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hpwrap{position:relative;height:6px;background:#0b0d11;border-radius:2px;overflow:hidden;margin-top:3px}
+.hp{position:absolute;inset:0;background:var(--teal);transform-origin:left;
+  transition:transform .4s cubic-bezier(.2,.7,.3,1)}
+.hp.low{background:var(--ochre)}.hp.crit{background:var(--blood)}
+.sh{position:absolute;top:0;left:0;height:100%;background:var(--shield);opacity:.8;transition:width .4s}
+.hpn{font-size:8px;color:var(--dim);font-variant-numeric:tabular-nums;display:flex;justify-content:space-between}
+.tok.ko{opacity:.3;filter:grayscale(1)}
+.tok.hit{animation:hit .3s}
+@keyframes hit{0%{transform:translateX(0)}30%{transform:translateX(-5px)}60%{transform:translateX(4px)}100%{transform:translateX(0)}}
+.tok.act{animation:act .34s}
+@keyframes act{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;border-radius:3px}
+.flash.on{animation:fl .28s}@keyframes fl{0%{opacity:.5}100%{opacity:0}}
+.pop{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-size:14px;font-weight:700;
+  pointer-events:none;opacity:0;text-shadow:0 2px 6px #000;z-index:5;white-space:nowrap}
+.pop.on{animation:pp .9s}.pop.heal{color:var(--teal)}.pop.big{font-size:19px;color:var(--ochre)}
+@keyframes pp{0%{opacity:0;transform:translate(-50%,6px)}18%{opacity:1}100%{opacity:0;transform:translate(-50%,-26px)}}
 
 /* ---- board ---- */
-.board{border:1px solid var(--line);border-radius:4px;background:var(--panel);
-  position:relative;overflow:hidden}
-.terrain{position:absolute;inset:0;background-size:cover;background-position:center;
-  opacity:.16;filter:saturate(.8)}
-.terrain-label{position:absolute;top:8px;right:10px;font-size:9.5px;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--dim);z-index:3;text-align:right}
-.side{position:relative;z-index:2;padding:10px 12px}
-.side-tag{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
-.ranks{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.mid-rule{position:relative;z-index:2;height:1px;background:var(--line);margin:4px 12px}
+.boardwrap{position:relative;border:1px solid var(--line);border-radius:4px;background:var(--panel);
+  padding:8px;overflow:hidden}
+.terrain{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.13}
+.grid{position:relative;z-index:2;display:grid;gap:3px;touch-action:manipulation}
+.cell{position:relative;aspect-ratio:1;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;background:#10131a;border:1px solid transparent;
+  transition:transform .12s,border-color .12s}
+.cell:hover{border-color:var(--line)}
+.cell.sel{border-color:var(--bone);transform:scale(.9)}
+.cell .g{width:72%;height:72%;border-radius:50%;background:var(--gc);
+  box-shadow:inset 0 -3px 6px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.08);
+  transition:transform .18s,opacity .18s}
+.cell.sq .g{border-radius:4px}
+.cell.di .g{border-radius:3px;transform:rotate(45deg) scale(.82)}
+.cell.tri .g{border-radius:2px;clip-path:polygon(50% 8%,96% 92%,4% 92%)}
+.cell.hex .g{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)}
+.cell.clear .g{transform:scale(0);opacity:0}
+.cell.drop{animation:drp .22s}
+@keyframes drp{0%{transform:translateY(-16px);opacity:.4}100%{transform:translateY(0);opacity:1}}
+.legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:9px;color:var(--dim);
+  position:relative;z-index:2}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend i{width:9px;height:9px;border-radius:50%;background:var(--lc);display:inline-block}
+.reach{font-size:9.5px;color:var(--dim);margin-top:5px;position:relative;z-index:2}
+.reach b{color:var(--ochre)}
 
-/* ---- fighter token ---- */
-.tok{background:var(--panel2);border:1px solid var(--line);border-radius:3px;
-  padding:6px;position:relative;transition:transform .18s,border-color .15s,opacity .3s}
-.tok .rank{font-size:8px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-.tok .art{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:2px;
-  background:repeating-conic-gradient(#191419 0% 25%,#201b20 0% 50%) 50%/10px 10px;margin:3px 0}
-.tok .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.tok .nm{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tok .tier{font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--tier,var(--dim))}
-.hpwrap{position:relative;height:7px;background:#0b0d11;border-radius:2px;overflow:hidden;margin-top:4px}
-.hp{position:absolute;inset:0;width:100%;background:var(--teal);transform-origin:left;
-  transition:transform .45s cubic-bezier(.2,.7,.3,1)}
-.hp.low{background:var(--ochre)} .hp.crit{background:var(--blood)}
-.armour{position:absolute;top:0;left:0;height:100%;background:var(--shield);opacity:.85;
-  transition:width .45s}
-.hpnum{font-size:8.5px;color:var(--dim);font-variant-numeric:tabular-nums;margin-top:2px;
-  display:flex;justify-content:space-between;gap:4px}
-.pips{display:flex;gap:2px;margin-top:3px;flex-wrap:wrap}
-.pip{width:100%;max-width:26px;height:3px;border-radius:2px;background:#0b0d11;flex:1}
-.pip.ready{background:var(--ochre)}
-.status{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px;min-height:12px}
-.st{font-size:8px;padding:0 3px;border-radius:2px;background:#0b0d11;color:var(--dim);
-  border:1px solid var(--line)}
-.st.buff{color:var(--teal);border-color:var(--teal)}
-.st.debuff{color:var(--blood);border-color:var(--blood)}
-.st.shield{color:var(--shield);border-color:var(--shield)}
-.tok.acting{border-color:var(--ochre);transform:translateY(-4px)}
-.tok.targetable{border-color:var(--blood);cursor:pointer}
-.tok.targetable:hover{background:#2a1d25}
-.tok.ko{opacity:.32;filter:grayscale(1)}
-.tok.hit{animation:hit .34s}
-.tok.lunge-up{animation:lungeUp .34s}
-.tok.lunge-down{animation:lungeDown .34s}
-@keyframes hit{0%{transform:translateX(0)}25%{transform:translateX(-6px)}
-  55%{transform:translateX(5px)}100%{transform:translateX(0)}}
-@keyframes lungeUp{0%{transform:translateY(0)}45%{transform:translateY(-14px)}100%{transform:translateY(0)}}
-@keyframes lungeDown{0%{transform:translateY(0)}45%{transform:translateY(14px)}100%{transform:translateY(0)}}
-.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;border-radius:3px}
-.flash.on{animation:fl .3s}
-@keyframes fl{0%{opacity:.55}100%{opacity:0}}
-.pop{position:absolute;left:50%;top:26%;transform:translateX(-50%);font-size:15px;
-  font-weight:700;pointer-events:none;opacity:0;text-shadow:0 2px 6px #000;z-index:5}
-.pop.on{animation:pop .85s}
-.pop.crit{font-size:20px;color:var(--ochre)}
-.pop.heal{color:var(--teal)}
-@keyframes pop{0%{opacity:0;transform:translate(-50%,6px)}
-  18%{opacity:1}100%{opacity:0;transform:translate(-50%,-24px)}}
-.intent{font-size:8.5px;color:var(--blood);margin-top:3px;min-height:11px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-/* ---- controls ---- */
-.ctl{display:grid;grid-template-columns:1.6fr 1fr;gap:10px;margin-top:12px}
-@media (max-width:760px){.ctl{grid-template-columns:1fr}}
-.panel{border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:10px}
-.panel h2{margin:0 0 7px;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
-.abil{display:block;width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);
-  color:var(--bone);padding:7px 9px;margin-bottom:5px}
-.abil:hover:not(:disabled){border-color:var(--ochre)}
-.abil:disabled{opacity:.35;cursor:default}
-.abil .an{font-size:11.5px}
-.abil .ad{font-size:9px;color:var(--dim);display:flex;gap:8px;flex-wrap:wrap;margin-top:2px}
-.abil .kill{color:var(--blood)}
-.order{display:flex;gap:5px;flex-wrap:wrap}
-.ord{font-size:9px;padding:2px 6px;border:1px solid var(--line);border-radius:999px;color:var(--dim)}
-.ord.now{border-color:var(--ochre);color:var(--ochre)}
-.ord.foe{border-style:dashed}
-#log{height:150px;overflow:auto;font-size:10.5px;line-height:1.6}
+/* ---- side ---- */
+.panel{border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:9px;margin-bottom:10px}
+.panel h2{margin:0 0 6px;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+#log{height:190px;overflow:auto;font-size:10px;line-height:1.55}
 #log div{padding:1px 0;border-bottom:1px solid rgba(255,255,255,.04)}
-.log-you{color:var(--teal)} .log-foe{color:var(--blood)} .log-sys{color:var(--dim)}
-.hint{font-size:10px;color:var(--dim);margin-top:6px}
-.over{text-align:center;padding:16px}
-.over h2{font-size:15px;letter-spacing:.1em;margin:0 0 6px;color:var(--ochre)}
-label.spd{font-size:10px;color:var(--dim);display:flex;align-items:center;gap:5px}
+.log-you{color:var(--teal)}.log-foe{color:var(--blood)}.log-sys{color:var(--dim)}
+.log-big{color:var(--ochre)}
+.combo{position:absolute;left:50%;top:38%;transform:translateX(-50%);z-index:9;
+  font-size:26px;font-weight:700;color:var(--ochre);text-shadow:0 3px 14px #000;opacity:0;pointer-events:none}
+.combo.on{animation:cb 1s}
+@keyframes cb{0%{opacity:0;transform:translate(-50%,10px) scale(.8)}
+  20%{opacity:1;transform:translate(-50%,0) scale(1.1)}
+  70%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
+.over{text-align:center;padding:14px}.over h2{font-size:15px;color:var(--ochre);margin:0 0 4px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>DHC Arena <span style="color:var(--ochre)">prototype</span></h1>
-  <p class="sub">Throwaway feel test — no database, no login, nothing saved. Real traits, real art.
-     Rules are JS here; they port to a pure PHP engine once the feel is right.</p>
-
-  <div class="bar-top">
+  <h1>DHC Arena <span style="color:var(--ochre)">prototype v2 — puzzle battler</span></h1>
+  <p class="sub">Each of your Fighters owns a gem. Match it to make them act. Match size is reach:
+     <b>3</b> hits their front, <b>4</b> reaches mid, <b>5+</b> reaches back. Match 4+ and you go again.</p>
+  <div class="top">
     <button class="btn go" id="reroll">New battle</button>
-    <button class="btn" id="rerollMine">Reroll my team</button>
-    <label class="spd"><input type="checkbox" id="fast"> fast mode (skip animation)</label>
-    <span class="hint" id="round"></span>
+    <span class="turnflag" id="flag">—</span>
+    <span class="sub" style="margin:0" id="round"></span>
   </div>
 
-  <div class="board" id="board">
-    <div class="terrain" id="terrain"></div>
-    <div class="terrain-label" id="terrainLabel"></div>
-    <div class="side">
-      <div class="side-tag">Enemy Stable</div>
-      <div class="ranks" id="foeRanks"></div>
+  <div class="game">
+    <div>
+      <div class="teamrow" id="foeTeam"></div>
+      <div class="boardwrap">
+        <div class="terrain" id="terrain"></div>
+        <div class="combo" id="combo"></div>
+        <div class="grid" id="grid"></div>
+        <div class="legend" id="legend"></div>
+        <div class="reach" id="reach"></div>
+      </div>
+      <div class="teamrow" id="myTeam" style="margin-top:8px"></div>
     </div>
-    <div class="mid-rule"></div>
-    <div class="side">
-      <div class="side-tag">Your Stable</div>
-      <div class="ranks" id="myRanks"></div>
-    </div>
-  </div>
-
-  <div class="ctl">
-    <div class="panel">
-      <h2 id="ctlHead">Actions</h2>
-      <div id="actions"></div>
-      <div class="hint" id="hint"></div>
-    </div>
-    <div class="panel">
-      <h2>Turn order</h2>
-      <div class="order" id="order"></div>
-      <h2 style="margin-top:10px">Log</h2>
-      <div id="log"></div>
+    <div>
+      <div class="panel"><h2>Battle log</h2><div id="log"></div></div>
+      <div class="panel" id="resultPanel" style="display:none"></div>
     </div>
   </div>
 </div>
-
 <script>
 /* =====================================================================
-   DHC ARENA — PROTOTYPE ENGINE (JavaScript, throwaway)
-
-   Ported to dhcarena-engine.php once the feel is settled. Kept as pure
-   functions over a plain state object here for exactly that reason: the
-   shape should survive the port even though the language will not.
+   DHC ARENA — PROTOTYPE v2, PUZZLE BATTLER (JavaScript, throwaway)
+   Ported to dhcarena-engine.php once the feel is settled.
    ===================================================================== */
 var RARITY = <?php echo json_encode($dhc_rarity); ?>;
 var ART    = <?php echo json_encode($ART); ?>;
 var HG_EXCL= <?php echo json_encode($excl); ?>;
 
-var TIERS = ['common','uncommon','epic','legendary','mythic'];
-/* dhcarena.md §4: the whole point is that rarity must NOT decide the fight.
-   dhcf_trait_points() spreads best-to-worst by 1.37x-3.17x depending on the
-   category, so combat power lives in the same band. 1.0 -> 1.32 across five
-   tiers is inside it, deliberately near the bottom. */
+var N = 7;                    // board is N x N
+var GEMS = 5;                 // 0,1,2 = your three Fighters. 3 = guard. 4 = surge.
+var SHAPE = ['','sq','di','tri','hex'];
+var GEMNAME = ['front','mid','back','guard','surge'];
+
 var TIER_MULT = {common:1.00, uncommon:1.08, epic:1.16, legendary:1.24, mythic:1.32};
+function hash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function pick(a,n){return a[n%a.length];}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function slugsOf(c){return Object.keys(RARITY[c]||{});}
+function tierOf(c,s){var r=(RARITY[c]||{})[s];return r?r[0]:'common';}
+function artUrl(d,s,z){return ART+'/'+z+'/'+d+'/'+s+'.png';}
 
-function hash(s){ var h=2166136261; for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);} return (h>>>0); }
-function pick(arr, n){ return arr[n % arr.length]; }
-function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
-function niceName(slug){ return slug.split('-').map(cap).join(' '); }
-function slugsOf(cat){ return Object.keys(RARITY[cat]||{}); }
-function tierOf(cat, slug){ var r=(RARITY[cat]||{})[slug]; return r? r[0] : 'common'; }
-function artUrl(dir, slug, size){ return ART+'/'+size+'/'+dir+'/'+slug+'.png'; }
-
-/* ---------- abilities -------------------------------------------------
-   dhcarena.md §3: the small pools carry actives. 16 weapons, 9 companions,
-   21 effects = 46 to hand-author for real. Here they are assigned to real
-   slugs by hash, so every weapon HAS an ability and they vary -- enough to
-   test whether the decisions are interesting, not a final ability set.
-
-   Each carries `from` (ranks it can be used from) and `hits` (ranks it can
-   reach), which is §3bb's whole reason for existing.                      */
-var WEAPON_KITS = [
-  {id:'heavy',   name:'Heavy Swing',  dmg:1.45, from:[0],     hits:[0],       cd:2, note:'front only'},
-  {id:'reach',   name:'Reaching Jab', dmg:0.85, from:[0,1,2], hits:[0,1,2],   cd:0, note:'any rank'},
-  {id:'cleave',  name:'Cleave',       dmg:0.70, from:[0,1],   hits:[0,1], aoe:true, cd:2, note:'hits front + mid'},
-  {id:'precise', name:'Precision Shot',dmg:0.95,from:[1,2],   hits:[0,1,2],   cd:1, crit:0.30, note:'back-line, high crit'},
-  {id:'drain',   name:'Siphon',       dmg:0.80, from:[0,1],   hits:[0,1],     cd:2, drain:0.5, note:'heals for half'},
-  {id:'sunder',  name:'Sunder',       dmg:0.65, from:[0],     hits:[0],       cd:1, sunder:6, note:'strips armour'},
-  {id:'hook',    name:'Hook',         dmg:0.45, from:[0,1],   hits:[1,2],     cd:2, pull:true, note:'drags them forward'},
-  {id:'volley',  name:'Volley',       dmg:0.50, from:[2],     hits:[0,1,2], aoe:true, cd:3, note:'back only, hits all'}
+/* Weapon kits. What YOUR gem colour does when it matches -- which is the
+   trait economy reaching into the puzzle. dhcarena.md §3. */
+var KITS = [
+  {id:'heavy',  name:'Heavy Swing',   dmg:1.55, note:'big single hit'},
+  {id:'cleave', name:'Cleave',        dmg:0.80, cleave:true, note:'hits the whole rank reached'},
+  {id:'drain',  name:'Siphon',        dmg:1.05, drain:.45,   note:'heals itself for 45%'},
+  {id:'sunder', name:'Sunder',        dmg:0.95, sunder:true, note:'strips shields first'},
+  {id:'precise',name:'Precision',     dmg:1.15, crit:.28,    note:'high crit'},
+  {id:'volley', name:'Volley',        dmg:0.62, all:true,    note:'chips every enemy'},
+  {id:'brutal', name:'Brutal Cut',    dmg:1.30, bleed:true,  note:'leaves a bleed'},
+  {id:'quick',  name:'Quick Jab',     dmg:0.85, echo:true,   note:'strikes twice'}
 ];
-var COMPANION_KITS = [
-  {id:'striker', name:'Strike',  kind:'dmg',    v:0.55, note:'companion attacks'},
-  {id:'mender',  name:'Mend',    kind:'heal',   v:0.30, note:'companion heals an ally'},
-  {id:'warder',  name:'Ward',    kind:'shield', v:12,   note:'companion shields an ally'}
-];
-var EFFECT_KITS = [
-  {id:'thorns', name:'Thorns',    note:'returns 20% of melee damage'},
-  {id:'regen',  name:'Regrowth',  note:'heals 4% max HP each round'},
-  {id:'edge',   name:'Keen Edge', note:'+10% crit'},
-  {id:'plate',  name:'Plating',   note:'+6 armour'},
-  {id:'bulwark',name:'Bulwark',   note:'shields 10 on the first hit taken'}
-];
-var TERRAIN_KITS = [
-  {id:'crit',  name:'Fractured Signal', note:'+15% crit for everyone'},
-  {id:'dmg',   name:'Overclocked',      note:'+10% damage for everyone'},
-  {id:'armour',name:'Dense Cover',      note:'+5 armour for everyone'},
-  {id:'speed', name:'Low Gravity',      note:'+2 speed for everyone'},
+var TERRAIN = [
+  {id:'crit',  name:'Fractured Signal', note:'+12% crit'},
+  {id:'dmg',   name:'Overclocked',      note:'+10% damage'},
+  {id:'guard', name:'Dense Cover',      note:'guard gems give +50%'},
+  {id:'surge', name:'Low Gravity',      note:'surge gems charge faster'},
   {id:'frail', name:'Corrosive Haze',   note:'-8% max HP for everyone'}
 ];
 
-/* ---------- a Fighter, derived entirely from its traits ---------------- */
-var UID = 0;
-function buildFighter(traits, name){
-  var h = hash(traits.torso+traits.head+traits.headgear+traits.arms+traits.weapon);
-  var m = function(cat,slug){ return TIER_MULT[tierOf(cat,slug)] || 1; };
-  // per-trait variance from the slug, so two legendaries are not identical
-  var v = function(slug,spread){ return 1 + ((hash(slug)%1000)/1000 - .5) * spread; };
-
-  /* TUNED AGAINST THE §4 HARNESS, not guessed. The first numbers here failed
-     badly: all-commons beat all-legendaries 0.3% of the time against a 35%
-     target, and a quarter of battles stalled out undecided.
-
-     Two causes, both instructive. Armour was a flat subtraction at 8 against
-     78 HP, so low-damage builds could not out-pace it and fights deadlocked.
-     And per-trait variance was narrow (±11%) while the tier multiplier applied
-     to every stat at once, so a legendary team carried 1.24x on HP AND armour
-     AND crit AND speed AND power simultaneously -- small edges compounding into
-     a decided result before the first turn.
-
-     The fix is the §4 principle made literal: VARIANCE BETWEEN TRAITS IS WIDER
-     THAN THE GAP BETWEEN TIERS. ±30% per trait against a 1.32x spread across
-     all five tiers, so which trait you picked matters more than what colour it
-     is. A well-chosen common beats a poorly-chosen legendary, which is the
-     whole design intent.
-
-     Measured at these values: commons take 37.6% against legendaries, no
-     stalls, mirror match resolves in ~8 rounds. */
-  var V = .6;
-  var hp     = Math.round(78 * m('torso',  traits.torso)  * v(traits.torso, V));
-  var armour = Math.round(3  * m('torso',  traits.torso)  * v(traits.torso+'a', V));
-  var res    = Math.round(10 * m('head',   traits.head)   * v(traits.head, V));
-  var critC  = 0.06 * m('headgear', traits.headgear) * v(traits.headgear, V);
-  var critD  = 1.5  * m('headgear', traits.headgear);
-  var speed  = Math.round(10 * m('arms',   traits.arms)   * v(traits.arms, V));
-  var power  = Math.round(38 * m('weapon', traits.weapon) * v(traits.weapon, V));
-
-  var kit = pick(WEAPON_KITS, hash(traits.weapon));
-  var comp = traits.companion ? pick(COMPANION_KITS, hash(traits.companion)) : null;
-  var eff  = traits.effects   ? pick(EFFECT_KITS,    hash(traits.effects))   : null;
-
-  if (eff && eff.id==='plate') armour += 6;   // triples a base-3 armour: deliberate
-  if (eff && eff.id==='edge')  critC += 0.10;
-
-  return {
-    uid:'f'+(++UID), name:name, traits:traits, kit:kit, comp:comp, eff:eff,
-    maxHp:hp, hp:hp, armour:armour, armourMax:armour, res:res,
-    critC:critC, critD:critD, speed:speed, power:power,
-    cd:0, compCd:0, shield:0, bulwarkUsed:false, rank:0, side:null, ko:false
-  };
+function buildFighter(t,name){
+  var m=function(c,s){return TIER_MULT[tierOf(c,s)]||1;};
+  var v=function(s,sp){return 1+((hash(s)%1000)/1000-.5)*sp;};
+  var V=.6;   // §4: variance between traits must be wider than the gap between tiers
+  var hp=Math.round(150*m('torso',t.torso)*v(t.torso,V));
+  return {uid:'f'+(++UID), name:name, traits:t,
+    kit:pick(KITS,hash(t.weapon)),
+    maxHp:hp, hp:hp, shield:0, bleed:0,
+    /* Tuned by simulating 140 full battles per setting rather than guessed.
+       At power 15 a battle ran 17.6 of your moves -- a real tug of war but
+       long enough to risk the tedium the v1 playtest already found. At 25 it
+       collapsed to 9.6, too quick for the lead to change hands. 20 lands
+       around 13, which is long enough to swing and short enough to stay
+       sharp. Revisit against a 6-battle daily allowance. */
+    power:Math.round(20*m('weapon',t.weapon)*v(t.weapon,V)),
+    critC:0.06*m('headgear',t.headgear)*v(t.headgear,V),
+    surge:0, rank:0, side:null, ko:false};
 }
-
+var UID=0;
+function mulberry(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function randomTraits(rnd){
-  var t = {};
-  ['torso','head','headgear','arms','weapon','background','companion','effects'].forEach(function(c){
-    var list = slugsOf(c); t[c] = list[Math.floor(rnd()*list.length)];
-  });
-  // Respect the real head/headgear rule rather than rendering a pairing the
-  // assembler forbids -- a Beheaded Cyborg has nothing to hang a helmet on.
-  var banned = HG_EXCL[t.head] || [];
-  var guard = 0;
-  while (banned.indexOf(t.headgear) !== -1 && guard++ < 40){
-    var hl = slugsOf('headgear'); t.headgear = hl[Math.floor(rnd()*hl.length)];
-  }
+  var t={};['torso','head','headgear','arms','weapon','background','companion','effects'].forEach(function(c){
+    var l=slugsOf(c);t[c]=l[Math.floor(rnd()*l.length)];});
+  var b=HG_EXCL[t.head]||[],g=0;
+  while(b.indexOf(t.headgear)!==-1&&g++<40){var h=slugsOf('headgear');t.headgear=h[Math.floor(rnd()*h.length)];}
   return t;
 }
-function mulberry(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0;
-  var t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t;
-  return ((t^t>>>14)>>>0)/4294967296; }; }
+var FIRST=['Bone','Ash','Grim','Null','Vex','Rust','Pale','Iron','Hex','Dread','Cinder','Wraith'];
+var LAST=['Harvester','Revenant','Conductor','Sentinel','Warden','Prowler','Herald','Butcher','Cipher','Widow'];
+function fname(rnd){return FIRST[Math.floor(rnd()*FIRST.length)]+' '+LAST[Math.floor(rnd()*LAST.length)];}
 
-var FIRST = ['Bone','Ash','Grim','Null','Vex','Rust','Pale','Iron','Hex','Dread','Cinder','Wraith'];
-var LAST  = ['Harvester','Revenant','Conductor','Sentinel','Warden','Prowler','Herald','Butcher','Cipher','Widow'];
-function fighterName(rnd){ return FIRST[Math.floor(rnd()*FIRST.length)]+' '+LAST[Math.floor(rnd()*LAST.length)]; }
+/* ---------------- state ---------------- */
+var S=null, sel=null, busy=false;
 
-/* ---------- state ------------------------------------------------------ */
-var S = null, sel = null, busy = false, animOff = false;
-
-function newBattle(keepMine){
-  var seed = Date.now() & 0x7fffffff;
-  var rnd = mulberry(seed);
-  var mine = (keepMine && S) ? S.mine.map(function(f){ return buildFighter(f.traits, f.name); })
-                             : [0,1,2].map(function(){ return buildFighter(randomTraits(rnd), fighterName(rnd)); });
-  var foes = [0,1,2].map(function(){ return buildFighter(randomTraits(rnd), fighterName(rnd)); });
-  mine.forEach(function(f,i){ f.rank=i; f.side='mine'; });
-  foes.forEach(function(f,i){ f.rank=i; f.side='foes'; });
-
-  // dhcarena.md §3: the DEFENDER's front-rank Fighter sets the terrain.
-  var terrain = pick(TERRAIN_KITS, hash(foes[0].traits.background));
-  var tbg = foes[0].traits.background;
-
-  S = { mine:mine, foes:foes, terrain:terrain, terrainBg:tbg, round:0, order:[], turn:0, log:[], over:null };
-  applyTerrain();
-  newRound();
-  render();
-  maybeAi();   // the fastest Fighter may be theirs; without this the board sits idle
-  logLine('sys', 'Terrain — '+terrain.name+': '+terrain.note+'.');
-  logLine('sys', 'Set by the defending front rank, '+foes[0].name+'.');
+function newBattle(){
+  var rnd=mulberry(Date.now()&0x7fffffff);
+  var mine=[0,1,2].map(function(){return buildFighter(randomTraits(rnd),fname(rnd));});
+  var foes=[0,1,2].map(function(){return buildFighter(randomTraits(rnd),fname(rnd));});
+  mine.forEach(function(f,i){f.rank=i;f.side='mine';});
+  foes.forEach(function(f,i){f.rank=i;f.side='foes';});
+  S={mine:mine,foes:foes,board:[],turn:'mine',round:1,over:null,
+     terrain:pick(TERRAIN,hash(foes[0].traits.background)),terrainBg:foes[0].traits.background};
+  if(S.terrain.id==='frail') S.mine.concat(S.foes).forEach(function(f){f.maxHp=Math.round(f.maxHp*.92);f.hp=f.maxHp;});
+  makeBoard();
+  document.getElementById('log').innerHTML='';
+  document.getElementById('resultPanel').style.display='none';
+  logLine('sys','Terrain — '+S.terrain.name+': '+S.terrain.note+'. Set by their front rank.');
+  renderAll();
 }
+function team(s){return s==='mine'?S.mine:S.foes;}
+function alive(s){return team(s).filter(function(f){return !f.ko;});}
+function fighterForGem(side,g){ return team(side).filter(function(f){return f.rank===g;})[0]; }
 
-function applyTerrain(){
-  all().forEach(function(f){
-    if (S.terrain.id==='armour') { f.armour += 5; f.armourMax += 5; }
-    if (S.terrain.id==='speed')  f.speed += 2;
-    if (S.terrain.id==='frail')  { f.maxHp = Math.round(f.maxHp*0.92); f.hp = f.maxHp; }
-  });
+/* ---------------- board ---------------- */
+function makeBoard(){
+  do{
+    S.board=[];
+    for(var i=0;i<N*N;i++) S.board.push(Math.floor(Math.random()*GEMS));
+  } while(findMatches().length || !hasMove());
 }
-function all(){ return S.mine.concat(S.foes); }
-function team(side){ return side==='mine' ? S.mine : S.foes; }
-function alive(side){ return team(side).filter(function(f){ return !f.ko; }); }
-function frontmost(side){ var a = alive(side); return a.length ? a.reduce(function(p,c){ return c.rank<p.rank?c:p; }) : null; }
-
-function newRound(){
-  S.round++;
-  S.order = all().filter(function(f){ return !f.ko; })
-                 .sort(function(a,b){ return b.speed-a.speed || a.name.localeCompare(b.name); });
-  S.turn = 0;
-  all().forEach(function(f){
-    if (f.cd>0) f.cd--;
-    if (f.compCd>0) f.compCd--;
-    if (f.eff && f.eff.id==='regen' && !f.ko) heal(f, Math.round(f.maxHp*0.04), true);
-  });
-  planIntents();
+function idx(r,c){return r*N+c;}
+function inb(r,c){return r>=0&&r<N&&c>=0&&c<N;}
+function findMatches(b){
+  b=b||S.board; var out=[],r,c,i;
+  for(r=0;r<N;r++){ c=0; while(c<N){ var run=1;
+      while(c+run<N && b[idx(r,c+run)]===b[idx(r,c)] && b[idx(r,c)]!==-1) run++;
+      if(run>=3){var g=[];for(i=0;i<run;i++)g.push(idx(r,c+i));out.push({cells:g,type:b[idx(r,c)],len:run});}
+      c+=run; } }
+  for(c=0;c<N;c++){ r=0; while(r<N){ var run2=1;
+      while(r+run2<N && b[idx(r+run2,c)]===b[idx(r,c)] && b[idx(r,c)]!==-1) run2++;
+      if(run2>=3){var g2=[];for(i=0;i<run2;i++)g2.push(idx(r+i,c));out.push({cells:g2,type:b[idx(r,c)],len:run2});}
+      r+=run2; } }
+  return out;
 }
-
-/* ---------- combat maths ---------------------------------------------- */
-function critChance(f){ return f.critC + (S.terrain.id==='crit' ? 0.15 : 0); }
-function dmgMult(){ return S.terrain.id==='dmg' ? 1.10 : 1; }
-
-function canUse(f, kit){ return kit.from.indexOf(f.rank) !== -1; }
-function targetsFor(f, kit){
-  var foes = alive(f.side==='mine'?'foes':'mine');
-  return foes.filter(function(t){ return kit.hits.indexOf(t.rank) !== -1; });
-}
-function estimate(f, kit, t){
-  var base = f.power * kit.dmg * dmgMult();
-  var after = Math.max(1, Math.round(base) - t.armour);
-  return after;
-}
-function applyDamage(src, t, amount, isCrit){
-  if (t.shield > 0){
-    var absorbed = Math.min(t.shield, amount);
-    t.shield -= absorbed; amount -= absorbed;
-    if (absorbed>0) popup(t, '-'+absorbed+' shield', 'heal');
+function swapped(b,a,bb){var n=b.slice();var t=n[a];n[a]=n[bb];n[bb]=t;return n;}
+function hasMove(){
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    if(c+1<N && findMatches(swapped(S.board,idx(r,c),idx(r,c+1))).length) return true;
+    if(r+1<N && findMatches(swapped(S.board,idx(r,c),idx(r+1,c))).length) return true;
   }
-  if (t.eff && t.eff.id==='bulwark' && !t.bulwarkUsed){
-    t.bulwarkUsed = true;
-    var b = Math.min(10, amount); amount -= b;
-    popup(t, 'bulwark', 'heal');
-  }
-  if (amount<=0) return 0;
-  t.hp = Math.max(0, t.hp - amount);
-  popup(t, '-'+amount, isCrit?'crit':'');
-  shake(t);
-  if (t.hp===0){ t.ko = true; logLine(t.side==='mine'?'foe':'you', t.name+' is knocked out.'); }
-  return amount;
-}
-function heal(f, amt, quiet){
-  var before = f.hp; f.hp = Math.min(f.maxHp, f.hp+amt);
-  if (f.hp>before && !quiet) popup(f, '+'+(f.hp-before), 'heal');
-}
-
-function doAttack(f, kit, target){
-  var hits = kit.aoe ? targetsFor(f, kit) : [target];
-  lunge(f);
-  hits.forEach(function(t){
-    var isCrit = Math.random() < critChance(f);
-    var base = f.power * kit.dmg * dmgMult() * (isCrit ? f.critD : 1);
-    var amount = Math.max(1, Math.round(base) - t.armour);
-    var dealt = applyDamage(f, t, amount, isCrit);
-    logLine(f.side==='mine'?'you':'foe',
-      f.name+' — '+kit.name+' → '+t.name+' for '+dealt+(isCrit?' (CRIT)':''));
-    if (kit.sunder){ t.armour = Math.max(0, t.armour-kit.sunder); logLine('sys', t.name+'’s armour sundered.'); }
-    if (kit.drain) heal(f, Math.round(dealt*kit.drain));
-    if (kit.pull && t.rank>0){ swapRank(t, t.rank-1); logLine('sys', t.name+' is dragged forward.'); }
-    if (t.eff && t.eff.id==='thorns' && !t.ko && kit.hits.indexOf(0)!==-1){
-      var back = Math.round(dealt*0.20);
-      if (back>0){ applyDamage(t, f, back, false); logLine('sys', 'Thorns bites back for '+back+'.'); }
-    }
-  });
-  f.cd = kit.cd;
-}
-function swapRank(f, toRank){
-  var other = team(f.side).filter(function(x){ return x.rank===toRank; })[0];
-  if (other){ other.rank = f.rank; }
-  f.rank = toRank;
-}
-function doCompanion(f){
-  var c = f.comp; lunge(f);
-  if (c.kind==='dmg'){
-    var foes = alive(f.side==='mine'?'foes':'mine');
-    if (!foes.length) return;
-    var t = foes.reduce(function(p,x){ return x.hp<p.hp?x:p; });
-    var amount = Math.max(1, Math.round(f.power*c.v) - t.armour);
-    applyDamage(f, t, amount, false);
-    logLine(f.side==='mine'?'you':'foe', f.name+'’s companion strikes '+t.name+' for '+amount+'.');
-  } else if (c.kind==='heal'){
-    var team_ = alive(f.side).reduce(function(p,x){ return (x.hp/x.maxHp)<(p.hp/p.maxHp)?x:p; });
-    heal(team_, Math.round(team_.maxHp*c.v));
-    logLine(f.side==='mine'?'you':'foe', f.name+'’s companion mends '+team_.name+'.');
-  } else {
-    var ally = alive(f.side).reduce(function(p,x){ return x.shield<p.shield?x:p; });
-    ally.shield += c.v;
-    logLine(f.side==='mine'?'you':'foe', f.name+'’s companion shields '+ally.name+' for '+c.v+'.');
-  }
-  f.compCd = 3;
-}
-function doDefend(f){ f.shield += Math.round(6 + f.armour*0.5); logLine(f.side==='mine'?'you':'foe', f.name+' braces.'); }
-
-/* ---------- the AI ----------------------------------------------------
-   dhcarena.md §3b: every ability must be something a simple priority AI can
-   play competently, because half of all battles are your Stable piloted by
-   a machine. This IS that AI -- if it cannot use an ability sensibly, the
-   ability is not finished.                                                */
-function aiChoose(f){
-  if (f.comp && f.compCd===0){
-    var wounded = alive(f.side).filter(function(x){ return x.hp/x.maxHp < 0.55; });
-    if (f.comp.kind!=='dmg' && wounded.length) return {type:'comp'};
-    if (f.comp.kind==='dmg') return {type:'comp'};
-  }
-  if (f.cd===0 && canUse(f, f.kit)){
-    var ts = targetsFor(f, f.kit);
-    if (ts.length){
-      // finish something if you can, else hit the softest reachable target
-      var killable = ts.filter(function(t){ return estimate(f, f.kit, t) >= t.hp && t.shield===0; });
-      var t = killable.length ? killable[0]
-            : ts.reduce(function(p,x){ return (x.hp - x.armour) < (p.hp - p.armour) ? x : p; });
-      return {type:'atk', target:t};
-    }
-  }
-  return {type:'def'};
-}
-function planIntents(){
-  S.foes.forEach(function(f){
-    if (f.ko){ f.intent=null; return; }
-    var c = aiChoose(f);
-    f.intent = c.type==='atk' ? (f.kit.name+' → '+c.target.name)
-             : c.type==='comp' ? (f.comp.name+' (companion)') : 'Brace';
-    f.intentPlan = c;
-  });
-}
-
-/* ---------- turn loop -------------------------------------------------- */
-function current(){ return S.order[S.turn]; }
-function advance(){
-  S.turn++;
-  while (S.turn < S.order.length && S.order[S.turn].ko) S.turn++;
-  if (checkOver()) return;
-  if (S.turn >= S.order.length){ newRound(); }
-  render();
-  maybeAi();
-}
-function checkOver(){
-  if (!alive('foes').length){ S.over='win';  render(); return true; }
-  if (!alive('mine').length){ S.over='lose'; render(); return true; }
   return false;
 }
-function maybeAi(){
-  var f = current();
-  if (!f || S.over) return;
-  if (f.side==='foes'){
-    busy = true;
-    setTimeout(function(){
-      var c = f.intentPlan || aiChoose(f);
-      if (c.type==='atk' && !c.target.ko) doAttack(f, f.kit, c.target);
-      else if (c.type==='comp') doCompanion(f);
-      else doDefend(f);
-      busy = false;
-      if (!checkOver()) { planIntents(); advance(); }
-    }, animOff ? 60 : 620);
+function collapse(){
+  for(var c=0;c<N;c++){
+    var col=[];
+    for(var r=N-1;r>=0;r--){var v=S.board[idx(r,c)];if(v!==-1)col.push(v);}
+    for(var r2=N-1,k=0;r2>=0;r2--,k++)
+      S.board[idx(r2,c)] = k<col.length ? col[k] : Math.floor(Math.random()*GEMS);
   }
 }
 
-/* ---------- animation helpers ----------------------------------------- */
-function elFor(f){ return document.querySelector('[data-id="'+f.uid+'"]'); }
-function shake(f){ if(animOff) return; var e=elFor(f); if(!e) return;
-  e.classList.remove('hit'); void e.offsetWidth; e.classList.add('hit');
-  var fl=e.querySelector('.flash'); if(fl){ fl.classList.remove('on'); void fl.offsetWidth; fl.classList.add('on'); } }
-function lunge(f){ if(animOff) return; var e=elFor(f); if(!e) return;
-  var c = f.side==='mine' ? 'lunge-up' : 'lunge-down';
-  e.classList.remove(c); void e.offsetWidth; e.classList.add(c); }
-function popup(f, text, kind){ if(animOff) return; var e=elFor(f); if(!e) return;
-  var p=document.createElement('div'); p.className='pop on '+(kind||''); p.textContent=text;
-  e.appendChild(p); setTimeout(function(){ p.remove(); }, 900); }
-
-/* ---------- rendering -------------------------------------------------- */
-function tokHtml(f){
-  var pct = (f.hp/f.maxHp)*100;
-  var cls = pct<=25 ? 'crit' : pct<=55 ? 'low' : '';
-  var isCur = current()===f && !S.over;
-  var t = f.traits;
-  // Back-to-front, matching dhcf_slots(): torso, weapon, arms, effects, head,
-  // headgear, companion. background is the terrain here, so it is not a layer.
-  var layers = ['torso','weapon','arms','effects','head','headgear','companion']
-    .filter(function(k){ return t[k]; })
-    .map(function(k){
-      var dir = (k==='effects') ? 'effects' : k;
-      return '<img loading="lazy" alt="" src="'+artUrl(dir, t[k], 250)+'" onerror="this.remove()">';
-    }).join('');
-  var sts = [];
-  if (f.shield>0) sts.push('<span class="st shield">shield '+f.shield+'</span>');
-  if (f.eff)      sts.push('<span class="st buff">'+f.eff.name+'</span>');
-  if (f.armour<f.armourMax) sts.push('<span class="st debuff">armour '+f.armour+'</span>');
-  return '<div class="tok'+(f.ko?' ko':'')+(isCur?' acting':'')+'" data-id="'+f.uid+'" data-rank="'+f.rank+'">'
-    + '<div class="flash"></div>'
-    + '<div class="rank">'+['front','mid','back'][f.rank]+(isCur?' · acting':'')+'</div>'
-    + '<div class="art">'+layers+'</div>'
-    + '<div class="nm">'+f.name+'</div>'
-    + '<div class="tier">'+f.kit.name+'</div>'
-    + '<div class="hpwrap"><div class="hp '+cls+'" style="transform:scaleX('+(f.hp/f.maxHp)+')"></div>'
-    +   '<div class="armour" style="width:'+Math.min(100,(f.armour/f.maxHp)*100)+'%"></div></div>'
-    + '<div class="hpnum"><span>'+f.hp+'/'+f.maxHp+'</span><span>spd '+f.speed+' · arm '+f.armour+'</span></div>'
-    + '<div class="pips"><span class="pip'+(f.cd===0?' ready':'')+'"></span>'
-    +   (f.comp?'<span class="pip'+(f.compCd===0?' ready':'')+'"></span>':'')+'</div>'
-    + '<div class="status">'+sts.join('')+'</div>'
-    + (f.side==='foes' ? '<div class="intent">'+(f.ko?'':(f.intent?'▸ '+f.intent:''))+'</div>' : '<div class="intent"></div>')
-    + '</div>';
+/* ---------------- combat ---------------- */
+function reachFor(len){ return len>=5?2:len===4?1:0; }
+function targetsAt(side,depth){
+  var foes=alive(side); if(!foes.length) return [];
+  var byRank=foes.slice().sort(function(a,b){return a.rank-b.rank;});
+  // reach is a ceiling: you can always hit anything shallower
+  var elig=byRank.filter(function(f){return f.rank<=depth;});
+  return elig.length?elig:[byRank[0]];
 }
-function render(){
-  document.getElementById('round').textContent = S.over ? '' : 'Round '+S.round;
-  document.getElementById('terrainLabel').innerHTML = S.terrain.name+'<br><span style="opacity:.7">'+S.terrain.note+'</span>';
-  document.getElementById('terrain').style.backgroundImage = 'url("'+artUrl('background', S.terrainBg, 1000)+'")';
-  var order = function(side){ return team(side).slice().sort(function(a,b){return a.rank-b.rank;}); };
-  document.getElementById('foeRanks').innerHTML = order('foes').slice().reverse().map(tokHtml).join('');
-  document.getElementById('myRanks').innerHTML  = order('mine').map(tokHtml).join('');
-
-  var ot = document.getElementById('order');
-  ot.innerHTML = S.over ? '' : S.order.filter(function(f){return !f.ko;}).map(function(f,i){
-    var isNow = f===current();
-    return '<span class="ord'+(isNow?' now':'')+(f.side==='foes'?' foe':'')+'">'+f.name.split(' ')[0]+'</span>';
-  }).join('');
-
-  renderActions();
+function hurt(t,amt,tag){
+  if(t.shield>0){var a=Math.min(t.shield,amt);t.shield-=a;amt-=a;if(a>0)pop(t,'-'+a+' shield','heal');}
+  if(amt<=0)return 0;
+  t.hp=Math.max(0,t.hp-amt); pop(t,'-'+amt,tag); shake(t);
+  if(t.hp===0){t.ko=true;logLine(t.side==='mine'?'foe':'you',t.name+' is knocked out.');}
+  return amt;
 }
-function renderActions(){
-  var box = document.getElementById('actions'), hint = document.getElementById('hint');
-  var head = document.getElementById('ctlHead');
-  box.innerHTML = ''; hint.textContent = '';
-  if (S.over){
-    head.textContent = 'Result';
-    box.innerHTML = '<div class="over"><h2>'+(S.over==='win'?'Victory':'Defeat')+'</h2>'
-      + '<p class="sub">'+(S.over==='win'
-          ? 'Their Stable is down. In the real game this is where traits and ladder points land.'
-          : 'Your Stable is down. In the real game these Fighters would now be benched.')+'</p></div>';
+function healF(f,a){var b=f.hp;f.hp=Math.min(f.maxHp,f.hp+a);if(f.hp>b)pop(f,'+'+(f.hp-b),'heal');}
+
+function resolveGroup(side,grp,chain){
+  var foeSide=side==='mine'?'foes':'mine';
+  var mult=1+(chain-1)*0.35;                        // cascades hit harder
+  if(S.terrain.id==='dmg')mult*=1.10;
+  if(grp.type===3){                                  // GUARD — shield your team
+    var amt=Math.round((6+grp.len*4)*mult*(S.terrain.id==='guard'?1.5:1));
+    alive(side).forEach(function(f){f.shield+=amt;});
+    logLine(side==='mine'?'you':'foe','Guard x'+grp.len+' — +'+amt+' shield to the team.');
     return;
   }
-  var f = current();
-  if (!f){ return; }
-  if (f.side==='foes'){ head.textContent = 'Enemy turn'; hint.textContent = f.name+' is acting…'; return; }
-  head.textContent = f.name+' — '+['front','mid','back'][f.rank]+' rank';
-
-  var kit = f.kit, usable = canUse(f, kit), ready = f.cd===0, ts = targetsFor(f, kit);
-  var b1 = document.createElement('button');
-  b1.className = 'abil';
-  b1.disabled = !(usable && ready && ts.length);
-  var why = !usable ? 'needs '+kit.from.map(function(r){return ['front','mid','back'][r];}).join('/')+' rank'
-          : !ready ? 'recharging ('+f.cd+')'
-          : !ts.length ? 'nothing in reach' : kit.note;
-  b1.innerHTML = '<div class="an">'+kit.name+'</div><div class="ad"><span>'+why+'</span>'
-    + '<span>reaches '+kit.hits.map(function(r){return ['front','mid','back'][r];}).join('/')+'</span></div>';
-  b1.onclick = function(){ beginTarget(f, kit); };
-  box.appendChild(b1);
-
-  if (f.comp){
-    var b2 = document.createElement('button');
-    b2.className='abil'; b2.disabled = f.compCd>0;
-    b2.innerHTML = '<div class="an">'+f.comp.name+' <span style="color:var(--dim)">· companion</span></div>'
-      + '<div class="ad"><span>'+(f.compCd>0?'recharging ('+f.compCd+')':f.comp.note)+'</span></div>';
-    b2.onclick = function(){ act(function(){ doCompanion(f); }); };
-    box.appendChild(b2);
+  if(grp.type===4){                                  // SURGE — charge, then erupt
+    var add=grp.len*(S.terrain.id==='surge'?2:1);
+    var living=alive(side);
+    if(!living.length) return;          // whole team down mid-cascade
+    living.forEach(function(f){f.surge=Math.min(10,f.surge+add);});
+    logLine(side==='mine'?'you':'foe','Surge x'+grp.len+' — team charge '+living[0].surge+'/10.');
+    alive(side).forEach(function(f){
+      if(f.surge>=10){ f.surge=0;
+        var ts=alive(foeSide);
+        ts.forEach(function(t){hurt(t,Math.round(f.power*0.9*mult),'big');});
+        act(f); pop(f,'SURGE!','big');
+        logLine(side==='mine'?'you':'foe',f.name+' erupts — hits everything.');
+      }});
+    return;
   }
-  var b3 = document.createElement('button');
-  b3.className='abil';
-  b3.innerHTML = '<div class="an">Brace</div><div class="ad"><span>gain shield, end turn</span></div>';
-  b3.onclick = function(){ act(function(){ doDefend(f); }); };
-  box.appendChild(b3);
-
-  if (f.rank>0){
-    var b4 = document.createElement('button');
-    b4.className='abil';
-    b4.innerHTML = '<div class="an">Advance</div><div class="ad"><span>swap forward one rank, end turn</span></div>';
-    b4.onclick = function(){ act(function(){ swapRank(f, f.rank-1); logLine('you', f.name+' advances.'); }); };
-    box.appendChild(b4);
+  var f=fighterForGem(side,grp.type);
+  if(!f||f.ko){ logLine('sys','Matched '+GEMNAME[grp.type]+' but that Fighter is down — wasted.'); return; }
+  var depth=reachFor(grp.len);
+  var ts=targetsAt(foeSide,depth);
+  if(!ts.length)return;
+  act(f);
+  var k=f.kit;
+  var hitList = k.all ? alive(foeSide) : (k.cleave ? ts : [ts[ts.length-1]]);
+  var times = k.echo?2:1;
+  for(var n=0;n<times;n++){
+    hitList.forEach(function(t){
+      if(t.ko)return;
+      var crit=Math.random()<(f.critC+(k.crit||0)+(S.terrain.id==='crit'?.12:0));
+      var base=f.power*k.dmg*mult*(crit?1.6:1)*(1+(grp.len-3)*0.30);
+      if(k.sunder&&t.shield>0){t.shield=Math.max(0,t.shield-Math.round(base*0.5));}
+      var dealt=hurt(t,Math.max(1,Math.round(base)),crit?'big':'');
+      if(k.drain)healF(f,Math.round(dealt*k.drain));
+      if(k.bleed&&!t.ko)t.bleed=3;
+    });
   }
-  hint.textContent = 'Speed sets the order. Position decides what you can reach.';
+  logLine(side==='mine'?'you':'foe',
+    f.name+' — '+k.name+' x'+grp.len+(chain>1?' (chain '+chain+')':'')+
+    ' → '+['front','mid','back'][depth]+' rank');
 }
-function beginTarget(f, kit){
-  var ts = targetsFor(f, kit);
-  if (kit.aoe){ act(function(){ doAttack(f, kit, ts[0]); }); return; }
-  sel = {f:f, kit:kit};
-  document.getElementById('hint').textContent = 'Choose a target — '+ts.map(function(t){
-    var e = estimate(f,kit,t); return t.name+' ('+e+(e>=t.hp?', KILLS':'')+')'; }).join(' · ');
-  ts.forEach(function(t){ var e = elFor(t); if (e){ e.classList.add('targetable');
-    e.onclick = function(){ act(function(){ doAttack(f, kit, t); }); }; } });
-}
-function act(fn){
-  if (busy || S.over) return;
-  document.querySelectorAll('.targetable').forEach(function(e){ e.classList.remove('targetable'); e.onclick=null; });
-  sel = null;
-  fn();
-  if (checkOver()) return;
-  planIntents();
-  advance();
-}
-function logLine(kind, text){
-  S.log.push({kind:kind, text:text});
-  var l = document.getElementById('log');
-  var d = document.createElement('div'); d.className='log-'+kind; d.textContent=text;
-  l.appendChild(d); l.scrollTop = l.scrollHeight;
+function tickBleeds(side){
+  alive(side).forEach(function(f){
+    if(f.bleed>0){f.bleed--;var d=Math.round(f.maxHp*0.04);hurt(f,d,'');
+      logLine('sys',f.name+' bleeds for '+d+'.');}});
 }
 
-document.getElementById('reroll').onclick = function(){ document.getElementById('log').innerHTML=''; newBattle(false); };
-document.getElementById('rerollMine').onclick = function(){ document.getElementById('log').innerHTML=''; newBattle(false); };
-document.getElementById('fast').onchange = function(){ animOff = this.checked; };
-newBattle(false);
+/* ---------------- turn resolution ---------------- */
+function applySwap(a,b,side,done){
+  busy=true;
+  var t=S.board[a];S.board[a]=S.board[b];S.board[b]=t;
+  renderBoard();
+  setTimeout(function(){ cascade(side,1,done); },130);
+}
+function cascade(side,chain,done){
+  var ms=findMatches();
+  if(!ms.length){
+    if(!hasMove()){ makeBoard(); logLine('sys','No moves left — board reshuffled.'); renderBoard(); }
+    busy=false; done&&done(chain-1); return;
+  }
+  if(chain>1){ var c=document.getElementById('combo'); c.textContent='CHAIN x'+chain;
+    c.classList.remove('on'); void c.offsetWidth; c.classList.add('on'); }
+  var cleared={};
+  ms.forEach(function(g){ resolveGroup(side,g,chain); g.cells.forEach(function(i){cleared[i]=1;}); });
+  Object.keys(cleared).forEach(function(i){ var el=cellEl(i); if(el) el.classList.add('clear'); });
+  renderTeams();
+  if(checkOver()){busy=false;return;}
+  setTimeout(function(){
+    Object.keys(cleared).forEach(function(i){S.board[i]=-1;});
+    collapse(); renderBoard(true);
+    setTimeout(function(){ cascade(side,chain+1,done); },170);
+  },190);
+}
+function endTurn(best){
+  if(S.over)return;
+  var extra = best>=1 && S.lastLen>=4;
+  if(extra){ logLine('big','Match of '+S.lastLen+' — you go again.'); renderAll(); return; }
+  tickBleeds(S.turn==='mine'?'foes':'mine');
+  if(checkOver())return;
+  S.turn = S.turn==='mine'?'foes':'mine';
+  if(S.turn==='mine')S.round++;
+  renderAll();
+  if(S.turn==='foes') setTimeout(aiMove,520);
+}
+function checkOver(){
+  if(!alive('foes').length){S.over='win';renderAll();return true;}
+  if(!alive('mine').length){S.over='lose';renderAll();return true;}
+  return false;
+}
+
+/* ---------------- the AI ----------------
+   Plays the same board by the same rules. dhcarena.md §3b: if a simple
+   priority AI cannot play an ability well, the ability is not finished. */
+function scoreMove(a,b,side){
+  var nb=swapped(S.board,a,b); var ms=findMatches(nb);
+  if(!ms.length)return -1;
+  var sc=0;
+  ms.forEach(function(g){
+    var len=g.len;
+    if(g.type===3) sc += len*4;
+    else if(g.type===4) sc += len*5;
+    else {
+      var f=fighterForGem(side,g.type);
+      if(!f||f.ko){ sc -= 2; return; }
+      sc += len*10 + f.power*0.4;
+      var depth=reachFor(len);
+      var ts=targetsAt(side==='mine'?'foes':'mine',depth);
+      // finishing something is worth a lot
+      ts.forEach(function(t){ if(f.power*f.kit.dmg*(1+(len-3)*.3) >= t.hp) sc+=28; });
+      if(len>=4) sc+=14;        // extra turn
+    }
+  });
+  return sc;
+}
+function bestMove(side){
+  var best=null;
+  for(var r=0;r<N;r++)for(var c=0;c<N;c++){
+    [[0,1],[1,0]].forEach(function(d){
+      var r2=r+d[0],c2=c+d[1]; if(!inb(r2,c2))return;
+      var a=idx(r,c),b=idx(r2,c2),s=scoreMove(a,b,side);
+      if(s>0&&(!best||s>best.s))best={a:a,b:b,s:s};
+    });
+  }
+  return best;
+}
+function aiMove(){
+  if(S.over)return;
+  var mv=bestMove('foes');
+  if(!mv){ makeBoard(); renderBoard(); mv=bestMove('foes'); if(!mv){endTurn(0);return;} }
+  var ms=findMatches(swapped(S.board,mv.a,mv.b));
+  S.lastLen=ms.reduce(function(p,g){return Math.max(p,g.len);},0);
+  applySwap(mv.a,mv.b,'foes',function(chains){
+    if(S.over)return;
+    if(S.lastLen>=4){ logLine('foe','They matched '+S.lastLen+' — they go again.');
+      renderAll(); setTimeout(aiMove,560); return; }
+    tickBleeds('mine'); if(checkOver())return;
+    S.turn='mine'; S.round++; renderAll();
+  });
+}
+
+/* ---------------- rendering ---------------- */
+function cellEl(i){return document.querySelector('[data-i="'+i+'"]');}
+function elFor(f){return document.querySelector('[data-id="'+f.uid+'"]');}
+function shake(f){var e=elFor(f);if(!e)return;e.classList.remove('hit');void e.offsetWidth;e.classList.add('hit');
+  var fl=e.querySelector('.flash');if(fl){fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on');}}
+function act(f){var e=elFor(f);if(!e)return;e.classList.remove('act');void e.offsetWidth;e.classList.add('act');}
+function pop(f,txt,kind){var e=elFor(f);if(!e)return;var p=document.createElement('div');
+  p.className='pop on '+(kind||'');p.textContent=txt;e.appendChild(p);setTimeout(function(){p.remove();},950);}
+
+function tokHtml(f,showGem){
+  var pct=f.hp/f.maxHp, cls=pct<=.25?'crit':pct<=.55?'low':'';
+  var t=f.traits;
+  var layers=['torso','weapon','arms','effects','head','headgear','companion']
+    .filter(function(k){return t[k];})
+    .map(function(k){return '<img loading="lazy" alt="" src="'+artUrl(k,t[k],250)+'" onerror="this.remove()">';}).join('');
+  return '<div class="tok'+(showGem?' mine':'')+(f.ko?' ko':'')+'" data-id="'+f.uid+'"'
+    + (showGem?' style="--gem:var(--g'+f.rank+')"':'')+'>'
+    + '<div class="flash"></div>'
+    + '<div class="rk"><span>'+['front','mid','back'][f.rank]+'</span>'
+    +   (showGem?'<span class="gemdot"></span>':'<span>'+(f.shield>0?'sh '+f.shield:'')+'</span>')+'</div>'
+    + '<div class="art">'+layers+'</div>'
+    + '<div class="nm">'+f.name+'</div>'
+    + '<div class="kitn">'+f.kit.name+'</div>'
+    + '<div class="hpwrap"><div class="hp '+cls+'" style="transform:scaleX('+pct+')"></div>'
+    +   '<div class="sh" style="width:'+Math.min(100,(f.shield/f.maxHp)*100)+'%"></div></div>'
+    + '<div class="hpn"><span>'+f.hp+'/'+f.maxHp+'</span><span>'
+    +   (f.surge>0?'surge '+f.surge+'/10':'')+(f.bleed>0?' bleed':'')+'</span></div>'
+    + '</div>';
+}
+function renderTeams(){
+  document.getElementById('foeTeam').innerHTML =
+    S.foes.slice().sort(function(a,b){return a.rank-b.rank;}).map(function(f){return tokHtml(f,false);}).join('');
+  document.getElementById('myTeam').innerHTML =
+    S.mine.slice().sort(function(a,b){return a.rank-b.rank;}).map(function(f){return tokHtml(f,true);}).join('');
+}
+function renderBoard(dropAnim){
+  var g=document.getElementById('grid');
+  g.style.gridTemplateColumns='repeat('+N+',1fr)';
+  var h='';
+  for(var i=0;i<N*N;i++){
+    var v=S.board[i];
+    h+='<div class="cell '+SHAPE[v]+(dropAnim?' drop':'')+'" data-i="'+i+'" style="--gc:var(--g'+v+')">'
+      +'<div class="g"></div></div>';
+  }
+  g.innerHTML=h;
+}
+function renderAll(){
+  renderTeams(); renderBoard();
+  document.getElementById('terrain').style.backgroundImage='url("'+artUrl('background',S.terrainBg,1000)+'")';
+  var lg=['front','mid','back'].map(function(n,i){
+    var f=fighterForGem('mine',i);
+    return '<span style="--lc:var(--g'+i+')"><i></i>'+(f?f.name.split(' ')[0]+' · '+f.kit.name:n)+'</span>';
+  }).join('')
+  + '<span style="--lc:var(--g3)"><i></i>Guard — team shield</span>'
+  + '<span style="--lc:var(--g4)"><i></i>Surge — charge, erupts at 10</span>';
+  document.getElementById('legend').innerHTML=lg;
+  document.getElementById('reach').innerHTML='Reach — <b>3</b> their front · <b>4</b> their mid · <b>5+</b> their back. '
+    + 'Cascades multiply. Terrain: '+S.terrain.name+'.';
+  var fl=document.getElementById('flag');
+  fl.className='turnflag '+(S.over?'':(S.turn==='mine'?'you':'foe'));
+  fl.textContent=S.over?(S.over==='win'?'victory':'defeat'):(S.turn==='mine'?'your move':'their move');
+  document.getElementById('round').textContent=S.over?'':'Round '+S.round;
+  if(S.over){
+    var p=document.getElementById('resultPanel');p.style.display='';
+    p.innerHTML='<div class="over"><h2>'+(S.over==='win'?'Victory':'Defeat')+'</h2>'
+      +'<p class="sub">'+(S.over==='win'?'In the real game this is where traits and ladder points land.'
+                                        :'In the real game these Fighters would now be benched.')+'</p></div>';
+  }
+}
+function logLine(kind,text){
+  var l=document.getElementById('log');var d=document.createElement('div');
+  d.className='log-'+kind;d.textContent=text;l.appendChild(d);l.scrollTop=l.scrollHeight;
+}
+
+/* ---------------- input ---------------- */
+document.getElementById('grid').addEventListener('click',function(e){
+  if(busy||S.over||S.turn!=='mine')return;
+  var c=e.target.closest('.cell'); if(!c)return;
+  var i=+c.getAttribute('data-i');
+  if(sel===null){ sel=i; c.classList.add('sel'); return; }
+  if(sel===i){ c.classList.remove('sel'); sel=null; return; }
+  var r1=Math.floor(sel/N),c1=sel%N,r2=Math.floor(i/N),c2=i%N;
+  var adj=Math.abs(r1-r2)+Math.abs(c1-c2)===1;
+  var prev=cellEl(sel); if(prev)prev.classList.remove('sel');
+  if(!adj){ sel=i; c.classList.add('sel'); return; }
+  var a=sel; sel=null;
+  var ms=findMatches(swapped(S.board,a,i));
+  if(!ms.length){ logLine('sys','No match there.'); return; }
+  S.lastLen=ms.reduce(function(p,g){return Math.max(p,g.len);},0);
+  applySwap(a,i,'mine',function(chains){ endTurn(1); });
+});
+document.getElementById('reroll').onclick=newBattle;
+newBattle();
 </script>
 </body>
 </html>

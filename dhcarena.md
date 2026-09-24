@@ -115,6 +115,65 @@ becomes a deliberate choice rather than whatever was spare.
 
 ---
 
+## 3a. The skill layer — a puzzle drives the combat
+
+**LOCKED after a failed playtest.** The first prototype was a turn-based RPG
+where you chose an ability from a menu each turn. Owner verdict, verbatim:
+
+> found myself getting bored and unengaged … selecting the best option out of 4
+> each time and hoping for the best roll
+
+That is the correct read and it is worth recording as a design lesson rather
+than a bug. **All of v1's skill lived in the build.** Nothing done during a
+battle was done *well* or *badly* — the player selected the obviously-best
+option and watched a number resolve. A menu is not an execution layer, and
+without one there is no moment where the player authored the outcome.
+
+The comparison that made it concrete was Monstrocity's boss battles: input
+quality varies continuously, a great match is visibly better than a mediocre
+one, and the impact is immediate and proportional. That is the missing thing.
+
+### Arena is a puzzle-battler
+
+A shared match-3 board, alternating turns. But Monstrocity is *already* a
+shared-board alternating-turn match-3, so that shape cannot be the difference.
+Two rules make Arena its own game, and both come out of decisions already made
+here:
+
+1. **Each of your three Fighters owns a gem colour.** Matching that colour is
+   how that Fighter acts, and its weapon decides what the match *does* — cleave
+   hits a whole rank, siphon heals, volley chips everyone. So the board means
+   something different depending on who is in your Stable. **Your team
+   composition rewrites what a good move is.** Monstrocity's five tile types
+   mean the same thing in every battle it has ever run.
+2. **Match size is reach.** Three hits their front rank, four reaches mid, five
+   or more reaches back. §3bb's formation stops being an abstraction and becomes
+   the thing the puzzle is about — their healer is behind two bodies and a
+   3-match cannot touch it.
+
+Two shared colours carry the rest: **guard** shields your team, **surge**
+charges a meter that erupts across the whole enemy line at ten.
+
+Together these make the trait economy *the game*. Your weapon decides what your
+colour does; your Stable decides which colours you have at all; a Fighter going
+down means its colour is dead weight on the board for the rest of the battle.
+
+### What this preserves and what it costs
+
+Preserved: the Stable, ranks and formation, traits-as-abilities, the build being
+the strategic layer, async play, an AI that plays the defending Stable, and every
+economic decision in §5 through §8d. None of that depended on the combat being
+menu-driven.
+
+Cost: §3b's telegraphed intent and turn-order track no longer apply in the same
+form — there is no per-turn ability selection to telegraph. What replaces them is
+the board itself, which is perfect information already: both sides can see every
+move available. Retained from §3b is the constraint that matters most, that
+**every ability must be something a simple AI can play well**, because the AI is
+choosing swaps on the same board.
+
+---
+
 ## 3b. The battle is played, not watched
 
 **LOCKED: turn-based, player-controlled.** Each round you choose what every
