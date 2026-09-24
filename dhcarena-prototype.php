@@ -437,63 +437,47 @@ function fname(rnd,used){
    Monstrocity (/staking/sounds, every file verified 200 before it was
    referenced). Players already know what a match sounds like here, and a board
    that sounds like the ones they play needs no learning at all. */
-/* [file, volume, capMs]. EVERY SOUND COMES FROM SKULL SWAP OR MONSTROCITY.
-   An earlier pass gave each weapon kit its own report from Crypt Crawl -- a
-   sniper rifle for Snipe, a machine gun for Volley. It was a nice idea and the
-   wrong one: those are combat samples written for a card game where one hit
-   happens at a time, and a match-3 board fires a dozen in a breath. More to the
-   point, players already know what this platform's match-3 games sound like,
-   and a board that sounds like Skull Swap needs no learning at all.
+/* [file, volume] -- no caps, played whole, the way the source games play them.
+   An earlier pass trimmed every sample with a fade, which was solving the wrong
+   problem. Skull Swap's playSound() is three lines:
 
-   So one shatter for every match, whoever made it, exactly as the other two
-   games do it. Caps still apply -- gem_shatters is 2.1s at source and fires on
-   every clear, which no amount of familiarity would save. */
+       sound.currentTime = 0;
+       sound.play();
+
+   ONE shared Audio per sound, restarted on each trigger, so a sample can never
+   overlap ITSELF -- a rapid second match cuts the first short naturally and the
+   2.1s shatter never piles up. This version was cloning on every trigger, which
+   stacked copies and turned a cascade to mush; the caps were papering over a
+   playback model the original games never had. */
 var SFX = {
-  pick:   ['sounds/select.ogg',                 .40,    0],   // 0.02s
-  bad:    ['sounds/badmove.ogg',                .45,    0],   // 0.63s
-  clear:  ['sounds/gem_shatters.ogg',           .42,  320],   // 2.10s
-  land:   ['sounds/hyperspace_gem_land_1.ogg',  .22,    0],   // 0.36s
-  chain:  ['sounds/speedmatch1.ogg',            .55,  700],   // 1.48s
-  great:  ['sounds/voice_excellent.ogg',        .60,    0],   // 1.24s
-  shield: ['sounds/hyperspace_gem_land_2.ogg',  .45,    0],   // 0.35s
-  erupt:  ['sounds/badgeawarded.ogg',           .60,  900],   // 4.73s
-  ko:     ['sounds/skullcoinlose.ogg',          .55,  700],   // 2.58s
-  armX:   ['sounds/powergem_created.ogg',       .70,  900],   // 2.94s
-  armB:   ['sounds/hypercube_create.ogg',       .80, 1200],   // 3.26s
-  boom:   ['sounds/bomb_explode.ogg',           .75, 1100],   // 1.98s
-  start:  ['sounds/voice_go.ogg',               .55,    0],   // 1.07s
-  win:    ['sounds/voice_levelcomplete.ogg',    .75,    0],   // 1.67s
-  lose:   ['sounds/voice_gameover.ogg',         .75,    0]    // 2.34s
+  pick:   ['sounds/select.ogg',                 .40],
+  bad:    ['sounds/badmove.ogg',                .45],
+  clear:  ['sounds/gem_shatters.ogg',           .42],
+  land:   ['sounds/hyperspace_gem_land_1.ogg',  .22],
+  chain:  ['sounds/speedmatch1.ogg',            .55],
+  great:  ['sounds/voice_excellent.ogg',        .60],
+  shield: ['sounds/hyperspace_gem_land_2.ogg',  .45],
+  erupt:  ['sounds/badgeawarded.ogg',           .60],
+  ko:     ['sounds/skullcoinlose.ogg',          .55],
+  armX:   ['sounds/powergem_created.ogg',       .70],
+  armB:   ['sounds/hypercube_create.ogg',       .80],
+  boom:   ['sounds/bomb_explode.ogg',           .75],
+  start:  ['sounds/voice_go.ogg',               .55],
+  win:    ['sounds/voice_levelcomplete.ogg',    .75],
+  lose:   ['sounds/voice_gameover.ogg',         .75]
 };
 var sfxOn=true;
 try{ sfxOn = localStorage.getItem('dhcarena_sfx') !== '0'; }catch(e){}
-var _sfxSrc={}, _sfxAt={};
+var _sfxSrc={};
 function sfx(name){
   if(!sfxOn) return;
   var def=SFX[name]; if(!def) return;
-  var now=Date.now();
-  /* A cascade can resolve a dozen groups in a breath. Without this the same
-     report fires on top of itself and the whole thing turns to mush. */
-  if(_sfxAt[name] && now-_sfxAt[name] < 70) return;
-  _sfxAt[name]=now;
   try{
-    var base=_sfxSrc[name] || (_sfxSrc[name]=new Audio(def[0]));
-    var a=base.cloneNode();          // clone so rapid repeats overlap cleanly
-    a.volume=def[1];
+    var a=_sfxSrc[name];
+    if(!a){ a=_sfxSrc[name]=new Audio(def[0]); a.volume=def[1]; }
+    a.currentTime=0;                 // restart, exactly as skullswap.php does
     var pr=a.play();
     if(pr && pr.catch) pr.catch(function(){});   // autoplay policy: ignore
-    var cap=def[2];
-    if(cap){
-      /* Faded, not cut. Pausing a waveform mid-cycle clicks, and a click on
-         every match is worse than the long tail this exists to remove. */
-      setTimeout(function(){
-        var v=a.volume, i=0, steps=6;
-        var t=setInterval(function(){
-          i++; a.volume=Math.max(0, v*(1-i/steps));
-          if(i>=steps){ clearInterval(t); try{ a.pause(); }catch(e){} }
-        },14);
-      }, cap);
-    }
   }catch(e){}
 }
 
