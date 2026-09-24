@@ -136,7 +136,12 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   transition:transform .18s,opacity .18s}
 .cell.sq .g{border-radius:4px}
 .cell.di .g{border-radius:3px;transform:rotate(45deg) scale(.82)}
-.cell.tri .g{border-radius:2px;clip-path:polygon(50% 8%,96% 92%,4% 92%)}
+/* Flat shoulders, straight flanks, tapering to a point at the bottom -- the
+   same silhouette as the emoji sitting on it. */
+.cell.shield .g{border-radius:3px 3px 0 0;
+  clip-path:polygon(0% 0%,100% 0%,100% 48%,86% 78%,50% 100%,14% 78%,0% 48%)}
+/* the point steals height from the bottom, so the emoji rides a little high */
+.cell.shield .g .em{transform:translateY(-8%)}
 .cell.hex .g{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)}
 .cell .em{font-size:clamp(11px,2.4vw,19px);line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));
   pointer-events:none}
@@ -235,7 +240,11 @@ var HG_EXCL= <?php echo json_encode($excl); ?>;
 
 var N = 7;                    // board is N x N
 var GEMS = 5;                 // 0,1,2 = your three Fighters. 3 = guard. 4 = surge.
-var SHAPE = ['','sq','di','tri','hex'];
+/* Shape reinforces meaning where meaning is fixed. Gems 0-2 belong to whichever
+   Fighters you brought, so their shapes are just distinguishers -- circle,
+   square, diamond. Gem 3 is always Shield and gem 4 is always Charge, so those
+   two get silhouettes that say so. */
+var SHAPE = ['','sq','di','shield','hex'];
 
 var TIER_MULT = {common:1.00, uncommon:1.08, epic:1.16, legendary:1.24, mythic:1.32};
 function hash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
