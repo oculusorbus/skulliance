@@ -433,51 +433,37 @@ function fname(rnd,used){
 }
 
 /* ---------------- sound ----------------
-   Borrowed wholesale rather than sourced: the board sounds come from Skull Swap
-   and Monstrocity (/staking/sounds, verified 200), and the weapon sounds from
-   Crypt Crawl (audio/sounds, in the repo). Players already associate these with
-   matching and with hitting things on this platform, which is most of the work
-   a sound effect has to do.
+   All of it from the two match-3 games on this platform, Skull Swap and
+   Monstrocity (/staking/sounds, every file verified 200 before it was
+   referenced). Players already know what a match sounds like here, and a board
+   that sounds like the ones they play needs no learning at all. */
+/* [file, volume, capMs]. EVERY SOUND COMES FROM SKULL SWAP OR MONSTROCITY.
+   An earlier pass gave each weapon kit its own report from Crypt Crawl -- a
+   sniper rifle for Snipe, a machine gun for Volley. It was a nice idea and the
+   wrong one: those are combat samples written for a card game where one hit
+   happens at a time, and a match-3 board fires a dozen in a breath. More to the
+   point, players already know what this platform's match-3 games sound like,
+   and a board that sounds like Skull Swap needs no learning at all.
 
-   ONE SOUND PER KIT is the part worth keeping. Each Fighter's gem has its own
-   report -- a sniper rifle for Snipe, a machine gun for Volley, demolition for
-   Smash -- so a Crew sounds like itself, and you learn to hear which of your
-   three just went off without looking away from the board. */
-/* [file, volume, capMs]. The cap is the important column.
-   Measured, not eyeballed: demolition runs 8.2s and artillery 9.1s, and
-   gem_shatters -- which fires on EVERY clear -- is 2.1s. A match needs a
-   report, not a performance, and a cascade firing a dozen 2-second samples is
-   a wall of noise.
-   Capping keeps each sound's attack, which is the part that carries the
-   character, and drops the tail. A machine gun cut to 340ms is a burst, which
-   is what Volley wanted in the first place; uncut it was a sustained rattle
-   still going while three more matches resolved. Voice lines are left whole or
-   nearly so -- clipping a word sounds broken rather than tight. */
+   So one shatter for every match, whoever made it, exactly as the other two
+   games do it. Caps still apply -- gem_shatters is 2.1s at source and fires on
+   every clear, which no amount of familiarity would save. */
 var SFX = {
-  pick:   ['sounds/select.ogg',                 .40,    0],   // 0.02s already
+  pick:   ['sounds/select.ogg',                 .40,    0],   // 0.02s
   bad:    ['sounds/badmove.ogg',                .45,    0],   // 0.63s
-  clear:  ['sounds/gem_shatters.ogg',           .38,  320],   // 2.10s -> crisp
+  clear:  ['sounds/gem_shatters.ogg',           .42,  320],   // 2.10s
   land:   ['sounds/hyperspace_gem_land_1.ogg',  .22,    0],   // 0.36s
   chain:  ['sounds/speedmatch1.ogg',            .55,  700],   // 1.48s
-  great:  ['sounds/voice_excellent.ogg',        .60,    0],   // a voice line
+  great:  ['sounds/voice_excellent.ogg',        .60,    0],   // 1.24s
+  shield: ['sounds/hyperspace_gem_land_2.ogg',  .45,    0],   // 0.35s
+  erupt:  ['sounds/badgeawarded.ogg',           .60,  900],   // 4.73s
+  ko:     ['sounds/skullcoinlose.ogg',          .55,  700],   // 2.58s
   armX:   ['sounds/powergem_created.ogg',       .70,  900],   // 2.94s
   armB:   ['sounds/hypercube_create.ogg',       .80, 1200],   // 3.26s
   boom:   ['sounds/bomb_explode.ogg',           .75, 1100],   // 1.98s
-  start:  ['sounds/voice_go.ogg',               .55,    0],
-  win:    ['sounds/voice_levelcomplete.ogg',    .75,    0],
-  lose:   ['sounds/voice_gameover.ogg',         .75,    0],
-  // one per weapon kit -- all cut to a hit
-  heavy:  ['audio/sounds/demolition.mp3',       .50,  420],   // 8.20s
-  cleave: ['audio/sounds/tacticalkatana.mp3',   .50,    0],   // 0.57s
-  drain:  ['audio/sounds/heal.mp3',             .50,  520],   // 0.99s
-  sunder: ['audio/sounds/artillery.mp3',        .42,  420],   // 9.06s
-  precise:['audio/sounds/sniperrifle.mp3',      .50,  380],   // 2.04s
-  volley: ['audio/sounds/machinegun.mp3',       .36,  340],   // 1.80s
-  brutal: ['audio/sounds/melee.mp3',            .52,    0],   // 0.37s
-  quick:  ['audio/sounds/pistol.mp3',           .46,  420],   // 2.01s
-  ko:     ['audio/sounds/kill.mp3',             .60,    0],   // 0.57s
-  erupt:  ['audio/sounds/grenade.mp3',          .65,  900],   // 4.47s
-  shield: ['audio/sounds/equip.mp3',            .45,    0]    // 0.84s
+  start:  ['sounds/voice_go.ogg',               .55,    0],   // 1.07s
+  win:    ['sounds/voice_levelcomplete.ogg',    .75,    0],   // 1.67s
+  lose:   ['sounds/voice_gameover.ogg',         .75,    0]    // 2.34s
 };
 var sfxOn=true;
 try{ sfxOn = localStorage.getItem('dhcarena_sfx') !== '0'; }catch(e){}
@@ -753,7 +739,6 @@ function resolveGroup(side,grp,chain,scale){
   if(!ts.length)return;
   act(f);
   var k=f.kit;
-  sfx(k.id);          // each kit has its own report -- see the SFX table
   var hitList = k.all ? alive(foeSide) : (k.cleave ? ts : [ts[ts.length-1]]);
   var times = k.echo?2:1;
   for(var n=0;n<times;n++){
