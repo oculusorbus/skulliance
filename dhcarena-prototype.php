@@ -180,6 +180,25 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .cell.bomb2 .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px var(--ochre),0 0 18px var(--ochre);
   animation:bmb .9s ease-in-out infinite}
 @keyframes bmb{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+/* The cross bomb's blast shape, drawn on the gem: a bar across and a bar down. */
+.cross{position:relative;display:block;width:76%;height:76%}
+.cross:before,.cross:after{content:'';position:absolute;background:#fff;border-radius:1px;
+  box-shadow:0 0 4px rgba(0,0,0,.55)}
+.cross:before{left:0;right:0;top:calc(50% - 2px);height:4px}
+.cross:after{top:0;bottom:0;left:calc(50% - 2px);width:4px}
+/* Detonation: everything the blast takes lights up before it goes. */
+.cell.blast .g{animation:blastPop .42s ease-out}
+.cell.blast2 .g{animation:blastPop2 .5s ease-out}
+@keyframes blastPop{0%{transform:scale(1);filter:brightness(1)}
+  35%{transform:scale(1.35);filter:brightness(3.2)}
+  100%{transform:scale(.2);filter:brightness(1);opacity:0}}
+@keyframes blastPop2{0%{transform:scale(1) rotate(0);filter:brightness(1)}
+  30%{transform:scale(1.5) rotate(8deg);filter:brightness(4)}
+  100%{transform:scale(.15) rotate(-6deg);opacity:0}}
+.boardwrap.shake{animation:bshake .38s}
+@keyframes bshake{0%,100%{transform:translate(0,0)}
+  20%{transform:translate(-5px,3px)}45%{transform:translate(4px,-3px)}
+  70%{transform:translate(-3px,-2px)}}
 .cell.di.bomb .g{animation:none}
 .cell.clear .g{transform:scale(0);opacity:0}
 .cell.drop{animation:drp .22s}
@@ -390,7 +409,7 @@ function newBattle(){
   var foes=[0,1,2].map(function(){return buildFighter(randomTraits(rnd),fname(rnd,foeNames));});
   mine.forEach(function(f,i){f.rank=i;f.side='mine';});
   foes.forEach(function(f,i){f.rank=i;f.side='foes';});
-  S={mine:mine,foes:foes,board:[],turn:'mine',round:1,over:null,
+  S={mine:mine,foes:foes,board:[],bomb:null,turn:'mine',round:1,over:null,
      terrain:pick(TERRAIN,hash(foes[0].traits.background)),terrainBg:foes[0].traits.background};
   if(S.terrain.id==='frail') S.mine.concat(S.foes).forEach(function(f){f.maxHp=Math.round(f.maxHp*.92);f.hp=f.maxHp;});
   makeBoard();
@@ -432,7 +451,11 @@ function makeBoard(){
     S.board=[];
     for(var i=0;i<N*N;i++) S.board.push(Math.floor(Math.random()*GEMS));
   } while(findMatches().length || !hasMove());
-  S.bomb=[]; for(var k=0;k<N*N;k++) S.bomb.push(0);
+  /* Only seed the bomb layer if there isn't one. makeBoard() also runs on a
+     mid-battle reshuffle, and zeroing here wiped every live bomb without a
+     word -- you made one, the board reshuffled, and it was simply gone. A bomb
+     keeps its cell and takes whatever colour lands there. */
+  if(!S.bomb){ S.bomb=[]; for(var k=0;k<N*N;k++) S.bomb.push(0); }
 }
 function rowColCells(i){
   var r=Math.floor(i/N), c=i%N, out=[], k;
@@ -693,19 +716,37 @@ function cascade(side,chain,done){
     if(g.len<4) return;
     var at=(S.lastTo!==undefined && g.cells.indexOf(S.lastTo)!==-1)
              ? S.lastTo : g.cells[Math.floor(g.cells.length/2)];
-    S.bomb[at]=(g.len>=5?BOMB_BOARD:BOMB_CROSS);
+    var big=(g.len>=5);
+    S.bomb[at]=(big?BOMB_BOARD:BOMB_CROSS);
     delete cleared[at];
     logLine(side==='mine'?'you':'foe',
-      (g.len>=5?'💣 Board bomb':'✳️ Bomb')+' left on the board — either side can set it off.');
+      (big?'💣 BOARD BOMB':'✳️ Bomb')+' armed — match its colour to set it off. Either side can.');
+    /* Announced on the board, not just in the log. A bomb being CREATED looks
+       like nothing happening -- the match resolves as usual and one gem quietly
+       changes -- so it says so. */
+    var cb=document.getElementById('combo');
+    if(cb){ cb.textContent=(big?'💣 BOARD BOMB ARMED':'✳️ BOMB ARMED');
+      cb.classList.remove('on'); void cb.offsetWidth; cb.classList.add('on'); }
   });
-  Object.keys(cleared).forEach(function(i){ var el=cellEl(i); if(el) el.classList.add('clear'); });
+  Object.keys(cleared).forEach(function(i){
+    var el=cellEl(i); if(!el) return;
+    // cells taken by a blast get the explosion, the rest just clear
+    el.classList.add(extra[i] ? (boomKind===BOMB_BOARD?'blast2':'blast') : 'clear');
+  });
+  if(boom){
+    var bw=document.querySelector('.boardwrap');
+    if(bw){ bw.classList.remove('shake'); void bw.offsetWidth; bw.classList.add('shake'); }
+  }
   renderTeams();
   if(checkOver()){busy=false;return;}
+  // hold longer when something exploded, so the blast is seen rather than
+  // skipped past on the way to the collapse
+  var hold = boom ? 460 : 190;
   setTimeout(function(){
     Object.keys(cleared).forEach(function(i){S.board[i]=-1;});
     collapse(); renderBoard(true);
     setTimeout(function(){ cascade(side,chain+1,done); },170);
-  },190);
+  },hold);
 }
 function endTurn(best){
   if(S.over)return;
@@ -852,7 +893,14 @@ function renderBoard(dropAnim,settle){
   for(var i=0;i<N*N;i++){
     var v=S.board[i];
     var gi=gemInfo('mine',v), bm=S.bomb?S.bomb[i]:0;
-    var face = bm===BOMB_BOARD ? '💣' : bm===BOMB_CROSS ? '✳️' : gi.emoji;
+    /* No emoji reads as "row and column". ✳️ is a thin glyph that disappears on
+       a coloured gem -- 4-match bombs were being made and going unnoticed. The
+       cross is drawn instead, two bars across the gem, which is literally the
+       shape of the blast. 💣 is kept for the board bomb: it is chunky, it is
+       unambiguous, and it does not need to describe a direction. */
+    var face = bm===BOMB_BOARD ? '💣'
+             : bm===BOMB_CROSS ? '<i class="cross"></i>'
+             : gi.emoji;
     var tip  = bm===BOMB_BOARD ? 'Board bomb — clears everything. Match its colour to set it off.'
              : bm===BOMB_CROSS ? 'Bomb — clears its row and column. Match its colour to set it off.'
              : gi.name+' — '+gi.note;
