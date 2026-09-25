@@ -14,6 +14,11 @@ require_once __DIR__ . '/dhcfighters-lib.php';      // pulls dhcfighters-config.
 
 define('DHCA_CREW_SIZE',      3);     // Fighters needed to enter
 define('DHCA_DAILY_BATTLES',  6);     // equal for everyone -- see dhcarena.md §5
+/* VOCABULARY. The code says bench -- DHCA_BENCH_*, dhca_bench(), benched_until
+   -- and every word a player reads says RECOVERING. Benching is a sports term
+   for being left out of a game; what is happening to a Fighter here is that it
+   is hurt. The internal names are not worth a column rename, but nothing new
+   that a player will read should use them. */
 define('DHCA_BENCH_BASE_H',   4);     // flat, after any battle
 define('DHCA_BENCH_LOSS_MIN', 4);     // extra hours on a loss at the 3-Fighter floor
 define('DHCA_BENCH_LOSS_MAX', 12);    // ...rising to this for a deep Crew
@@ -144,8 +149,9 @@ function dhca_sweep_stale($conn, $user_id) {
 		              WHERE id = ".$open['battle_id']." AND outcome = 0");
 		return true;
 	}
-	$b['over'] = 'foes';
-	$b['log'][] = 'Abandoned — forfeited after '.DHCA_STALE_H.' hours.';
+	$b['over']    = 'foes';
+	$b['forfeit'] = true;          // no Discord post: see dhca_finish()
+	$b['log'][]   = 'Abandoned — forfeited after '.DHCA_STALE_H.' hours.';
 	dhca_finish($conn, $b);
 	return true;
 }
@@ -202,7 +208,7 @@ function dhca_start($conn, $user_id, $defender_id, $fighter_ids) {
 	foreach ($fighter_ids as $fid) {
 		$fid = (int)$fid;
 		if (!isset($byId[$fid]))            return array(false, 'That is not your Fighter.', null);
-		if (!$byId[$fid]['available'])      return array(false, $byId[$fid]['display'].' is still benched.', null);
+		if (!$byId[$fid]['available'])      return array(false, $byId[$fid]['display'].' is still recovering.', null);
 		$mine[] = $byId[$fid];
 	}
 	if (count($mine) !== DHCA_CREW_SIZE) return array(false, 'Pick '.DHCA_CREW_SIZE.' Fighters.', null);
@@ -361,7 +367,20 @@ function dhca_finish($conn, &$b) {
 
 	$conn->query("DELETE FROM dhc_arena_state WHERE battle_id = $bid");
 	$b['rewarded'] = $rewarded;
-	dhca_announce($conn, $b, $won, $rewarded);
+	/*
+	 * A FORFEIT IS NOT ANNOUNCED, and this is about latency, not tact.
+	 *
+	 * dhca_announce() makes a blocking HTTP call to Discord. dhca_finish() is
+	 * normally reached on the move that ends a battle, where that cost is paid
+	 * once and expected -- but dhca_sweep_stale() also calls it, and the sweep
+	 * runs from dhca_entry_block(), which runs on every page load and on every
+	 * attempt to ENTER the Arena. That put a third-party network call on the
+	 * critical path of the button a player presses to start playing.
+	 *
+	 * Nobody played the battle being closed here, so there is nothing to
+	 * report. The ledger still records the defeat.
+	 */
+	if (empty($b['forfeit'])) dhca_announce($conn, $b, $won, $rewarded);
 }
 
 /** Longer bench for a deeper Crew, so depth buys resilience and not immunity. */

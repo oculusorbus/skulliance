@@ -22,25 +22,25 @@ on the board are your saved assemblies, layer for layer.
 |---|---|
 | **Crew size** | 3 Fighters |
 | **Battles a day** | 6 |
-| **Bench after any battle** | 4 hours |
-| **Extra bench for a Fighter who fell** | 4 to 12 hours, depending on how deep your roster is |
+| **Recovery after any battle** | 4 hours |
+| **Extra recovery for a Fighter who fell** | 4 to 12 hours, depending on how deep your roster is |
 | **Trait drops** | 1 per win, sharing DHC Fighters' cap of 3 a day |
 
 You need **three Fighters standing** to enter. A Fighter who has just fought is
-benched for four hours whatever the result, and one who was knocked out is
-benched longer — from four extra hours if you only own three Fighters, up to
-twelve if you own plenty. A deep roster is rested harder because it has
-somewhere else to turn; a player with exactly three is not locked out of the
-game for a day.
+**recovering** for four hours whatever the result, and one who was knocked out
+recovers longer — from four extra hours if you only own three Fighters, up to
+twelve if you own plenty. A deep roster rests harder because it has somewhere
+else to turn; a player with exactly three is not locked out of the game for a
+day.
 
 **One battle at a time.** You cannot start another while one is still going —
-walking away from a battle you were losing would otherwise skip the bench
+walking away from a battle you were losing would otherwise skip recovery
 entirely, which is the only real cost in the game. A battle nobody has touched
-for **six hours** is forfeited: it resolves as a defeat, with the bench and the
-record a defeat carries, so a dropped connection can never lock you out of the
-Arena for good.
+for **six hours** is forfeited: it resolves as a defeat, with the recovery and
+the record a defeat carries, so a dropped connection can never lock you out of
+the Arena for good.
 
-**Only the attacker's Fighters are benched.** Your Crew defends around the clock
+**Only the attacker's Fighters need to recover.** Your Crew defends around the clock
 whether you are logged in or not, and defending costs them nothing — a defender
 never chose to be there, so being popular must never be something you can be
 punished for.

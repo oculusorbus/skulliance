@@ -214,6 +214,26 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    something rather than only as damage. */
 .arena-wrap .flash.heal{background:var(--teal)}
 .arena-wrap .flash.shield{background:var(--shield)}
+/* AT RISK. A Fighter whose bar has gone red pulses, because the bar is 8px of a
+   270px token and on a phone it is 8px of a three-across row -- the one piece
+   of information you most need mid-move was the smallest thing on screen.
+   Same threshold as .hp.crit, deliberately: the glow and the red bar must never
+   disagree about who is about to die.
+
+   ITS OWN ELEMENT, not an animation on .tok. The token already animates on
+   .act, .hit and .hit.big, and `animation` is one property -- a pulse declared
+   there would be cancelled by the next hit and would cancel the lunge in turn.
+   A separate layer pulses continuously underneath all of that. Under .flash
+   (z-index 4) so an incoming hit still reads over the warning. */
+.arena-wrap .danger{position:absolute;inset:0;opacity:0;pointer-events:none;border-radius:3px;
+  z-index:3;box-shadow:inset 0 0 0 2px var(--blood),inset 0 0 14px rgba(224,70,107,.55)}
+.arena-wrap .tok.crit .danger{animation:danger 1.15s ease-in-out infinite}
+@keyframes danger{0%,100%{opacity:.30}50%{opacity:1}}
+/* The bar breathes with it, so the two read as one signal rather than two. */
+.arena-wrap .tok.crit .hp.crit{animation:dangerBar 1.15s ease-in-out infinite}
+@keyframes dangerBar{0%,100%{opacity:1}50%{opacity:.55}}
+/* A Fighter who is already down is not at risk of anything. */
+.arena-wrap .tok.ko .danger{animation:none;opacity:0}
 .arena-wrap .tok.hit.big{animation:hitBig .40s}
 @keyframes hitBig{0%{transform:translateX(0)}20%{transform:translateX(-5%)}45%{transform:translateX(4%)}70%{transform:translateX(-2%)}100%{transform:translateX(0)}}
 .arena-wrap .pop{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-size:14px;font-weight:700;
@@ -404,8 +424,18 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-card .pk{position:absolute;top:4px;left:4px;z-index:2;font-size:8px;
   letter-spacing:.1em;text-transform:uppercase;padding:2px 5px;border-radius:2px;
   background:var(--ink);border:1px solid var(--teal);color:var(--teal)}
-.arena-wrap .a-card .bench{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  background:rgba(13,15,19,.72);font-size:9px;color:var(--blood);border-radius:3px}
+/* READABLE, which the first version was not: 9px of --blood (#e0466b) on a
+   dark scrim over busy artwork is red-on-dark at the smallest size on the page,
+   and red is the one hue that loses most contrast against a near-black ground.
+   The word is bone, the clock is ochre -- and ochre is the right colour for it
+   anyway, because a recovering Fighter is a wait, not an error. */
+.arena-wrap .a-card .recover{position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:3px;border-radius:3px;text-align:center;
+  padding:4px;background:rgba(8,10,14,.85);
+  font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--bone);
+  text-shadow:0 1px 3px #000}
+.arena-wrap .a-card .recover b{font-weight:400;font-size:12px;letter-spacing:0;
+  text-transform:none;color:var(--ochre);font-variant-numeric:tabular-nums}
 .arena-wrap .a-foes{display:flex;flex-direction:column;gap:5px;max-height:330px;overflow:auto}
 .arena-wrap .a-foe{display:flex;align-items:center;gap:9px;padding:6px 8px;border:1px solid var(--line);
   border-radius:3px;background:var(--panel2);cursor:pointer}
@@ -471,7 +501,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
               if (empty($t[$k])) continue; ?>
               <img loading="lazy" alt="" src="<?php echo $ART; ?>/250/<?php echo $k; ?>/<?php echo htmlspecialchars($t[$k]); ?>.png" onerror="this.remove()">
             <?php endforeach; ?>
-            <?php if (!$ok): ?><div class="bench">benched<br><?php echo dhca_hms($f['bench_left']); ?></div><?php endif; ?>
+            <?php if (!$ok): ?><div class="recover">recovering<b><?php echo dhca_hms($f['bench_left']); ?></b></div><?php endif; ?>
           </div>
           <div class="nm"><?php echo htmlspecialchars($f['display']); ?></div>
           <div class="sc"><?php echo number_format((int)$f['rarity_score']); ?> pts</div>
@@ -718,6 +748,7 @@ function tokHtml(f, mine){
   return '<div class="tok'+(mine?' mine':' foe')+(f.ko?' ko':'')+'" data-id="'+f.uid+'"'
     + ' style="--gem:var(--g'+f.rank+')">'
     + '<div class="flash"></div>'
+    + '<div class="danger"></div>'
     + '<div class="rk"><span>'+rank+'</span>'
     +   '<span class="mygem" title="'+(mine?'your':'their')+' '+rank+' — '+f.kit.name+', '+f.kit.note+'">'
     +   f.kit.emoji+'</span></div>'
@@ -742,6 +773,8 @@ function paintTeams(){
       var pct = f.hp / f.maxHp, bar = e.querySelector('.hp');
       if (bar) { bar.style.transform = 'scaleX('+pct+')';
                  bar.className = 'hp'+(pct<=.25?' crit':pct<=.55?' low':''); }
+      // same threshold the bar uses, so the pulse and the red never disagree
+      e.classList.toggle('crit', !f.ko && pct <= .25);
       var sh = e.querySelector('.sh');
       if (sh) sh.style.width = Math.min(100, (f.shield/f.maxHp)*100)+'%';
       var n = e.querySelector('.hpn');
@@ -1003,19 +1036,55 @@ function lineKind(line){
 }
 
 /* --------------------------------------------------------------- moving ---- */
-function post(body, cb){
+/**
+ * One request. `fail` is not optional decoration: without it every failure ended
+ * up in #log, which lives INSIDE the hidden battle view, so a start that went
+ * wrong printed its explanation somewhere the player could not see and left the
+ * button disabled with no way back but a refresh.
+ *
+ * A throw inside `cb` is treated as a failure too. It lands in the same promise
+ * chain as a network error, and swallowing it silently is what turns a small
+ * rendering bug into "the Arena stalls".
+ */
+function post(body, cb, fail){
   var fd = new FormData();
   Object.keys(body).forEach(function(k){
     if (Array.isArray(body[k])) body[k].forEach(function(v){ fd.append(k+'[]', v); });
     else fd.append(k, body[k]);
   });
+  var done = false;
+  // A fetch that never settles would leave the page waiting for ever. Twenty
+  // seconds is far beyond a normal turn and still short enough to act on.
+  var timer = setTimeout(function(){
+    if (done) return;
+    done = true;
+    oops(new Error('timed out'));
+  }, 20000);
+  function oops(err){
+    if (window.console) console.error('arena', body['do'], err);
+    if (fail) fail(err); else logLine('sys','Lost contact with the Arena — your move was not played.');
+    busy = false;
+  }
   fetch('ajax/dhcarena-action.php', {method:'POST', body:fd, credentials:'same-origin'})
-    .then(function(r){ return r.json(); })
-    .then(cb)
+    .then(function(r){
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(function(txt){
+      // .json() would throw a parse error that says nothing about WHAT came
+      // back. A PHP warning printed ahead of the payload is the likeliest
+      // cause, and the first hundred characters of it name the file and line.
+      var res;
+      try { res = JSON.parse(txt); }
+      catch (e) { throw new Error('bad reply: ' + txt.slice(0, 160)); }
+      if (done) return;
+      done = true; clearTimeout(timer);
+      cb(res);
+    })
     .catch(function(err){
-      busy = false;
-      logLine('sys','Lost contact with the Arena — your move was not played.');
-      if (window.console) console.error(err);
+      if (done) return;
+      done = true; clearTimeout(timer);
+      oops(err);
     });
 }
 function sendMove(a, z){
@@ -1028,10 +1097,20 @@ function sendMove(a, z){
       sfx('bad');
       return;
     }
-    playTimeline(res.state.fx || [], res.state, function(){
+    try {
+      playTimeline(res.state.fx || [], res.state, function(){
+        busy = false;
+        if (res.over) showEnd(res);
+      });
+    } catch (e) {
+      // The exchange happened on the server whatever the browser managed to
+      // draw, so take the state and let play continue rather than freezing.
       busy = false;
+      S = res.state; paintBoard(); paintTeams(); paintChrome();
+      logLine('sys','(the animation was skipped)');
+      if (window.console) console.error('arena timeline', e);
       if (res.over) showEnd(res);
-    });
+    }
   });
 }
 
@@ -1051,7 +1130,7 @@ function showEnd(res){
     if (res.drop) sub += ' A trait dropped — check your collection.';
     else if (res.rewarded === false) sub += ' No trait this time: the daily cap is spent.';
   } else {
-    sub = 'Your Crew is down. The Fighters you sent are benched while they recover.';
+    sub = 'Your Crew is down. The Fighters you sent need longer to recover.';
   }
   $('ecSub').textContent = sub;
   $('ecStats').innerHTML =
@@ -1172,7 +1251,7 @@ function paintPicker(){
 }
 document.querySelectorAll('.a-card').forEach(function(c){
   c.addEventListener('click', function(){
-    if (c.getAttribute('data-ok') !== '1') return;      // benched
+    if (c.getAttribute('data-ok') !== '1') return;      // still recovering
     var id = +c.getAttribute('data-fid'), at = picked.indexOf(id);
     if (at !== -1) picked.splice(at,1);
     else if (picked.length < CREW_SIZE) picked.push(id);
@@ -1200,15 +1279,43 @@ function openBattle(res){
   battle.scrollIntoView({behavior:'smooth', block:'start'});
 }
 var startBtn = $('aStart');
+function startFailed(msg){
+  busy = false;
+  paintPicker();                 // re-enables the button if a Crew is still picked
+  startBtn.disabled = false;
+  $('aMsg').textContent = msg;
+  /*
+   * THE BATTLE MAY EXIST ANYWAY. dhca_start() inserts the row and saves the
+   * board before the reply is written, so a request that fails on the way back
+   * -- or a reply this page cannot render -- still leaves a real battle on the
+   * server. That is exactly the state where every further click was refused
+   * with "you are in the middle of a battle" and only a refresh recovered,
+   * because a refresh is the one thing that runs resume.
+   *
+   * So run resume here instead of making the player discover that.
+   */
+  post({do:'resume'}, function(res){
+    if (!res || !res.ok) return;
+    $('aMsg').textContent = '';
+    openBattle(res);
+    logLine('sys','Recovered a battle that had already started.');
+  }, function(){});
+}
 if (startBtn) startBtn.addEventListener('click', function(){
   if (busy) return;
+  if (battle.classList.contains('on')) return;   // already in one
   busy = true; startBtn.disabled = true;
   $('aMsg').textContent = 'Entering…';
   post({do:'start', defender:rival, fighters:picked}, function(res){
+    if (!res || !res.ok) { startFailed((res && res.message) || 'Could not start.'); return; }
     busy = false; startBtn.disabled = false;
-    if (!res || !res.ok) { $('aMsg').textContent = (res && res.message) || 'Could not start.'; return; }
     $('aMsg').textContent = '';
-    openBattle(res);
+    /* A throw in here used to vanish into the promise chain, leaving the setup
+       screen up, the battle live on the server and no explanation anywhere. */
+    try { openBattle(res); }
+    catch (e) { startFailed('Could not draw the battle. Reopening it…'); }
+  }, function(err){
+    startFailed('The Arena did not answer. Checking whether the battle started…');
   });
 });
 $('aLeave').addEventListener('click', function(){
@@ -1236,11 +1343,18 @@ paintPicker();
 /* A battle left open in another tab, or on a phone that went to sleep, is still
    the one you owe a move to — the server will refuse a new one until it ends. */
 post({do:'resume'}, function(res){
-  if (res && res.ok) {
+  if (!res || !res.ok) return;
+  // The player can press Enter before this lands; whoever opened a battle first
+  // owns the screen.
+  if (battle.classList.contains('on')) return;
+  try {
     openBattle(res);
     logLine('sys','Picked up where you left off.');
+  } catch (e) {
+    $('aMsg').textContent = 'A battle is in progress but could not be drawn. Try reloading.';
+    if (window.console) console.error('arena resume', e);
   }
-});
+}, function(){ /* nothing in progress is the normal case; stay quiet */ });
 })();
 </script>
 
