@@ -33,8 +33,11 @@ twelve if you own plenty. A deep roster rests harder because it has somewhere
 else to turn; a player with exactly three is not locked out of the game for a
 day.
 
-Your Crew list pages once you have more than twelve Fighters, and **picks
-survive paging** — the three you have chosen stay listed above the grid in
+The Crew list can be sorted by **Deadliest**, **Toughest** or **Hardest
+hitting** and filtered by **Fights like**, and every card shows the health,
+power and fighting style the Arena will actually give that Fighter — so a Crew
+is chosen on what it can do rather than on what it cost. It pages once you have
+more than twelve Fighters, and **picks survive both paging and filtering** — the three you have chosen stay listed above the grid in
 formation order, and clicking one there drops it.
 
 **One battle at a time.** You cannot start another while one is still going —

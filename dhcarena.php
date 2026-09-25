@@ -31,6 +31,27 @@ $spent     = $user_id ? dhca_battles_today($conn, $user_id) : 0;
 $foesList  = $user_id ? dhca_opponents($conn, $user_id) : array();
 $ladder    = dhca_ladder($conn, null, 10);
 
+/*
+ * WHAT EACH FIGHTER WILL ACTUALLY BE, derived here so the picker can sort and
+ * filter on it. Same function the battle uses, so a card cannot promise
+ * something the Arena then disagrees with. Rarity score stays on the card too,
+ * but it is no longer the only thing a Crew can be chosen on -- which it was,
+ * and which is the one number §4 refuses to let decide a fight.
+ */
+$rarity   = dhcf_rarity();
+$kitCount = array();
+foreach ($crew as $i => $f) {
+	$built = dhca_build_fighter(is_array($f['traits']) ? $f['traits'] : array(),
+	                            '', 'p'.$f['id'], $rarity);
+	$crew[$i]['hp']   = (int)$built['maxHp'];
+	$crew[$i]['pow']  = (int)$built['power'];
+	$crew[$i]['crit'] = round($built['critC'] * 100);
+	$crew[$i]['kit']  = $built['kit'];
+	$kitCount[$built['kit']['id']] = (isset($kitCount[$built['kit']['id']]) ? $kitCount[$built['kit']['id']] : 0) + 1;
+}
+$allKits = array();
+foreach (dhca_kits() as $k) if (!empty($kitCount[$k['id']])) $allKits[] = $k;
+
 /* Art root, resolved the same way the assembler resolves it. */
 $ART = '';
 foreach (array('dhc/web','web','dhc','traits') as $c) {
@@ -615,6 +636,18 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px}
 .arena-wrap .a-panel h2 span{opacity:.75;letter-spacing:.08em;white-space:nowrap}
 .arena-wrap .a-panel .body{padding:10px 12px}
+.arena-wrap .a-tools{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 9px;
+  font-size:11px}
+.arena-wrap .a-tools .lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.5}
+.arena-wrap .a-tools .sep{width:1px;height:14px;background:var(--line);margin:0 4px}
+.arena-wrap .a-tools button{font:inherit;font-size:11px;background:none;color:inherit;
+  border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer;opacity:.75}
+.arena-wrap .a-tools button:hover{border-color:var(--ochre);opacity:1}
+.arena-wrap .a-tools button.on{border-color:var(--ochre);color:var(--ochre);
+  background:rgba(0,200,160,.08);opacity:1}
+.arena-wrap .a-card .st{display:flex;align-items:center;gap:6px;font-size:9.5px;opacity:.75;
+  font-variant-numeric:tabular-nums;margin-top:2px}
+.arena-wrap .a-card .st em{font-style:normal;margin-left:auto}
 .arena-wrap .a-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:7px}
 .arena-wrap .a-card{border:1px solid var(--line);border-radius:3px;padding:5px;
   cursor:pointer;position:relative;text-align:left}
@@ -747,12 +780,36 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <?php if (!$crew): ?>
         <p class="a-sub" style="margin:0">No Fighters yet.</p>
       <?php else: ?>
+      <?php /* Sorting and filtering happen in the browser, not through a
+               reload: a reload would throw away the Fighters already picked,
+               and picking is the whole reason this list exists. */ ?>
+      <div class="a-tools">
+        <span class="lbl">Sort</span>
+        <button type="button" class="on" data-sort="might">Deadliest</button>
+        <button type="button" data-sort="hp">Toughest</button>
+        <button type="button" data-sort="pow">Hardest hitting</button>
+        <button type="button" data-sort="score">Rarest</button>
+        <?php if (count($allKits) > 1): ?>
+          <span class="sep"></span>
+          <span class="lbl">Fights like</span>
+          <button type="button" class="on" data-kit="">Any</button>
+          <?php foreach ($allKits as $k): ?>
+            <button type="button" data-kit="<?php echo htmlspecialchars($k['id']); ?>"
+              title="<?php echo htmlspecialchars($k['note']); ?>"><?php
+              echo $k['emoji'].' '.htmlspecialchars($k['name']).' '.$kitCount[$k['id']]; ?></button>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
       <div class="a-picked" id="aPicked"></div>
       <div class="a-pick">
       <?php foreach ($crew as $f):
         $t = $f['traits']; $ok = $f['available']; ?>
         <div class="a-card<?php echo $ok?'':' out'; ?>" data-fid="<?php echo (int)$f['id']; ?>"
-             data-ok="<?php echo $ok?1:0; ?>">
+             data-ok="<?php echo $ok?1:0; ?>" data-hp="<?php echo (int)$f['hp']; ?>"
+             data-pow="<?php echo (int)$f['pow']; ?>" data-kit="<?php echo htmlspecialchars($f['kit']['id']); ?>"
+             data-score="<?php echo (int)$f['rarity_score']; ?>"
+             title="<?php echo htmlspecialchars($f['display'].' — '.$f['kit']['name'].', '.$f['kit']['note']
+                     .' · '.$f['hp'].' health, '.$f['pow'].' power, '.$f['crit'].'% crit'); ?>">
           <div class="art">
             <?php if (!empty($t['background'])): ?>
               <img class="bg" loading="lazy" alt="" src="<?php echo $ART; ?>/250/background/<?php echo htmlspecialchars($t['background']); ?>.png" onerror="this.remove()">
@@ -771,8 +828,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
             <?php endif; ?>
           </div>
           <div class="nm"><?php echo htmlspecialchars($f['display']); ?></div>
-          <div class="sc"><?php echo number_format((int)$f['rarity_score']); ?> pts</div>
-          <div class="wl"><?php echo (int)$f['wins']; ?>W · <?php echo (int)$f['losses']; ?>L</div>
+          <div class="st"><span>♥ <?php echo (int)$f['hp']; ?></span><span>⚔ <?php echo (int)$f['pow']; ?></span>
+            <em><?php echo $f['kit']['emoji']; ?></em></div>
+          <div class="wl"><?php echo number_format((int)$f['rarity_score']); ?> pts ·
+            <?php echo (int)$f['wins']; ?>W/<?php echo (int)$f['losses']; ?>L</div>
         </div>
       <?php endforeach; ?>
       </div>
@@ -1650,25 +1709,70 @@ var picked = [], rival = 0;
    Cards are hidden, never removed: a pick made on page 1 has to survive a walk
    to page 4, and rebuilding the grid would throw away the selected elements
    along with eight <img> layers apiece. */
-var PER_PAGE = 12, page = 0;
+var PER_PAGE = 12, page = 0, sortBy = 'might', kitFilter = '';
 var allCards = [].slice.call(document.querySelectorAll('.a-card'));
-function pageCount(){ return Math.max(1, Math.ceil(allCards.length / PER_PAGE)); }
+var viewCards = allCards.slice();      // what the filter and sort left, in order
+var pickGrid = document.querySelector('.a-pick');
+
+function cardNum(c, k){ return +(c.getAttribute('data-'+k) || 0); }
+/**
+ * Apply the sort and the filter, then re-lay the grid.
+ *
+ * The cards are MOVED, never rebuilt. Rebuilding would drop the selection, and
+ * selection is the entire point of this list -- a player who sorts by Toughest
+ * to reconsider their back rank must not lose the two they had already chosen.
+ * It also keeps the eight art layers per card out of the browser's way.
+ */
+function applyView(){
+  viewCards = allCards.filter(function(c){
+    return !kitFilter || c.getAttribute('data-kit') === kitFilter;
+  });
+  viewCards.sort(function(a, b){
+    if (sortBy === 'might') return (cardNum(b,'hp')*cardNum(b,'pow')) - (cardNum(a,'hp')*cardNum(a,'pow'));
+    return cardNum(b, sortBy) - cardNum(a, sortBy);
+  });
+  // a card the filter removed is hidden, not detached, so its pick survives
+  allCards.forEach(function(c){ c.classList.add('off'); });
+  viewCards.forEach(function(c){ pickGrid.appendChild(c); });
+  page = 0;
+  paintPage();
+}
+function pageCount(){ return Math.max(1, Math.ceil(viewCards.length / PER_PAGE)); }
 function paintPage(){
   var n = pageCount();
   if (page >= n) page = n - 1;
   if (page < 0) page = 0;
-  allCards.forEach(function(c, i){
-    c.classList.toggle('off', Math.floor(i / PER_PAGE) !== page);
+  allCards.forEach(function(c){ c.classList.add('off'); });
+  viewCards.forEach(function(c, i){
+    if (Math.floor(i / PER_PAGE) === page) c.classList.remove('off');
   });
   var pg = $('aPager');
   if (pg) {
     pg.style.display = n > 1 ? 'flex' : 'none';
-    $('aPageLbl').textContent = 'Page ' + (page+1) + ' of ' + n
-      + ' · ' + allCards.length + ' Fighters';
+    $('aPageLbl').textContent = 'Page ' + (page+1) + ' of ' + n + ' · ' + viewCards.length
+      + (viewCards.length === allCards.length ? ' Fighters' : ' of ' + allCards.length);
     $('aPrev').disabled = (page === 0);
     $('aNext').disabled = (page === n - 1);
   }
 }
+document.querySelectorAll('.a-tools button[data-sort]').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    sortBy = btn.getAttribute('data-sort');
+    document.querySelectorAll('.a-tools button[data-sort]').forEach(function(b){
+      b.classList.toggle('on', b === btn);
+    });
+    applyView();
+  });
+});
+document.querySelectorAll('.a-tools button[data-kit]').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    kitFilter = btn.getAttribute('data-kit');
+    document.querySelectorAll('.a-tools button[data-kit]').forEach(function(b){
+      b.classList.toggle('on', b === btn);
+    });
+    applyView();
+  });
+});
 /** The picks, as chips, always on screen. Click one to drop it. */
 function paintPicked(){
   var box = $('aPicked'); if (!box) return;
@@ -2087,7 +2191,7 @@ muteBtn.addEventListener('click', function(){
   paintMute(); if (sfxOn) { sfxInit(); sfx('pick'); }
 });
 paintMute();
-paintPage();
+applyView();
 paintPicker();
 
 /* A battle left open in another tab, or on a phone that went to sleep, is still
