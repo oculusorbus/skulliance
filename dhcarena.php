@@ -453,8 +453,6 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap{max-width:100%;margin:0 auto;padding:12px;overflow-x:clip;text-align:left}
 .arena-wrap .a-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:4px}
 .arena-wrap .a-head h1{font-size:17px;letter-spacing:.14em;text-transform:uppercase;margin:0}
-.arena-wrap .a-head .tag{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ochre);
-  border:1px solid rgba(245,166,35,.45);border-radius:999px;padding:2px 7px}
 .arena-wrap .a-sub{color:var(--dim);font-size:11px;margin:0 0 12px}
 .arena-wrap .a-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 .arena-wrap .a-stat{border:1px solid var(--line);border-radius:3px;padding:6px 11px;min-width:0}
@@ -540,7 +538,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 </style>
 
   <div class="a-head">
-    <h1>DHC Arena</h1><span class="tag">new</span>
+    <h1>DHC Arena</h1>
   </div>
   <p class="a-sub">Three of your Fighters against three of theirs, on a shared board.
      Each of your Crew owns a gem — matching it makes them act, and match size is reach.

@@ -199,7 +199,7 @@
 		           dhcarena-prototype.php, deliberately unlisted -- it keeps no
 		           state and pays nothing, so a player finding it would only be
 		           confused about which one counts. See dhcarena.md. -->
-		      <a href="dhcarena.php">DHC Arena <span class="nav-tag">new</span></a>
+		      <a href="dhcarena.php">DHC Arena</a>
 		      <a href="dropship/dashboard.php">Drop Ship</a>
 		    </div>
 		  </div>
