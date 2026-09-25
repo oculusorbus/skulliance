@@ -85,6 +85,16 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 			// webhook is not wired up yet -- the drop is already in the ledger
 			// by the time this runs.
 			$webhook = function_exists('getDHCFightersWebhook') ? getDHCFightersWebhook() : "";
+		}else if($channel == "dhcarena"){
+			// Arena battle results. Same guard as its neighbours, and it earns
+			// it twice over: this fires from inside dhca_finish(), AFTER the
+			// bench is written, the record is stored and the trait is in the
+			// ledger. A fatal here would take down the request carrying the
+			// player's own result back to them, for a battle that has already
+			// been paid for. dhca_announce() also wraps the call in try/catch
+			// for the same reason.
+			//   function getDHCArenaWebhook(){ return "https://discord.com/api/webhooks/..."; }
+			$webhook = function_exists('getDHCArenaWebhook') ? getDHCArenaWebhook() : "";
 		}else if($channel == "skullracer"){
 			// Same not-yet-configured situation as cryptconquest above --
 			// getSkullRacerWebhook() doesn't exist in

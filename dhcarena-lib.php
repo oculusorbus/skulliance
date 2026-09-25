@@ -472,7 +472,7 @@ function dhca_announce($conn, $b, $won, $rewarded) {
 
 		ob_start();
 		discordmsg($won ? '⚔️ Arena — Challenger Wins' : '🛡️ Arena — Defence Holds',
-			$desc, '', 'https://skulliance.io/staking/dhcarena.php', 'missions', '',
+			$desc, '', 'https://skulliance.io/staking/dhcarena.php', 'dhcarena', '',
 			$won ? '00C8A0' : 'E0466B');
 		ob_end_clean();
 	} catch (Throwable $e) {
