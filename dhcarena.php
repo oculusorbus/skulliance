@@ -479,8 +479,6 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   font-size:26px;font-weight:700;color:var(--ochre);text-shadow:0 3px 14px #000;opacity:0;pointer-events:none}
 .arena-wrap .combo.on{animation:cb 1s}
 @keyframes cb{0%{opacity:0;transform:translate(-50%,10px) scale(.8)}20%{opacity:1;transform:translate(-50%,0) scale(1.1)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
-.arena-wrap .ec-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-.arena-wrap .ec-acts .btn{text-decoration:none;display:inline-flex;align-items:center}
 .arena-wrap .over{text-align:center;padding:14px}
 .arena-wrap .over h2{font-size:15px;color:var(--ochre);margin:0 0 4px}
 /* ---- Arena shell ------------------------------------------------------------
@@ -785,14 +783,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <div class="ec-title" id="ecTitle"></div>
       <div class="ec-sub" id="ecSub"></div>
       <div class="ec-stats" id="ecStats"></div>
-      <div class="ec-acts">
-        <button class="btn go" id="ecAgain">Back to the Arena</button>
-        <?php /* Same shape as Skull Swap, Monstrocity and the card games: the
-                 composer opens in a new tab so it never replaces the game the
-                 player is still sitting in, and @skulliance is tagged so the
-                 main account can repost. */ ?>
-        <a class="btn" id="ecShare" href="#" target="_blank" rel="noopener">𝕏 Share Result</a>
-      </div>
+      <?php /* NO SHARE BUTTON YET, deliberately. dhcarena.php is behind
+               skulliance.php, so the link in a post is a login prompt for
+               everyone who is not already a member and X cannot scrape a card
+               off it either -- the share would cost reach rather than earn it.
+               It comes back pointed at the public page, once there is one. */ ?>
+      <button class="btn go" id="ecAgain">Back to the Arena</button>
     </div>
     <details class="logbox" open><summary>Battle log</summary><div id="log"></div></details>
   </div>
@@ -830,9 +826,6 @@ var S = null, battleId = 0, busy = false, drag = null, sfxOn = true;
    anywhere: the battle lives in this spec, which is posted back with each move
    and rebuilt server-side. See dhcarena-practice.php. */
 var PRACTICE_URL = 'ajax/dhcarena-practice.php';
-/* Absolute, because it is going into a post that leaves the site -- and the
-   www host specifically, since that is what the canonical tag points at. */
-var SHARE_URL = 'https://skulliance.io/staking/dhcarena.php';
 var practice = null;      // the spec while a practice battle is running, else null
 try { sfxOn = localStorage.getItem('dhcarena_sfx') !== '0'; } catch (e) {}
 
@@ -1374,41 +1367,11 @@ function showEnd(res){
     + '<span><b>'+S.stats.blasts+'</b>detonated</span>'
     + '<span><b>x'+S.stats.best+'</b>best chain</span>';
   $('ecAgain').textContent = practice ? 'Practice again' : 'Back to the Arena';
-  paintShare(won, standing.length);
   card.hidden = false;
   sfx(won ? 'win' : 'lose');
   logLine('big', won ? 'VICTORY — their Crew is down.' : 'DEFEAT — your Crew is down.');
 }
 
-/**
- * The share link, written fresh for the result that just happened.
- *
- * Same shape as Skull Swap and Monstrocity: the composer opens in a new tab,
- * the page URL rides along so X renders the artwork as a card, and @skulliance
- * is tagged so the main account sees it and can repost -- the point being reach
- * that is not just the official account talking to itself.
- *
- * A DEFEAT IS STILL WORTH SHARING and gets its own line rather than no button.
- * Half of these battles are losses by construction, and a share button that
- * appears only on a win posts a version of the game where nobody ever loses.
- */
-function paintShare(won, standing){
-  var a = $('ecShare'); if (!a) return;
-  var chain = S.stats.best, bombs = S.stats.bombs;
-  var body;
-  if (won) {
-    body = standing === 3
-      ? 'Took the DHC Arena without losing a Fighter.'
-      : 'Took the DHC Arena with ' + standing + ' of 3 still standing.';
-  } else {
-    body = 'My Crew went down in the DHC Arena after ' + S.round + ' rounds.';
-  }
-  if (chain > 2) body += ' Best chain x' + chain + '.';
-  else if (bombs > 0) body += ' ' + bombs + ' bombs armed.';
-  body += '\n\nDHC Arena on Skulliance\n\n@skulliance';
-  a.href = 'https://x.com/intent/post?text=' + encodeURIComponent(body)
-         + '&url=' + encodeURIComponent(SHARE_URL);
-}
 
 /* ------------------------------------------------------- input: dragging ---
    Live preview while dragging, because that IS the feel: the gem follows your

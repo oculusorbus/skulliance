@@ -213,18 +213,6 @@ being popular.
 
 ---
 
-## Sharing your result
-
-The end of a battle has an **𝕏 Share** button, like Crypt Crawl, Crypt Conquest,
-Monstrocity, Skull Swap and Skull Racer. One click opens X with the result
-already written — how many of your Crew were left standing, your best chain —
-along with a link to the Arena, which brings the artwork with it. Defeats get
-their own line rather than no button: half of these battles are losses, and a
-share button that only appears on a win posts a version of the game where nobody
-ever loses.
-
-Nothing is posted without you reading it first and pressing Post yourself.
-
 ## Why it looks like it does
 
 Battles are announced in Discord when they finish, and **the defender is tagged**
