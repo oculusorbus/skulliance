@@ -143,9 +143,13 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   background:repeating-conic-gradient(#191419 0% 25%,#201b20 0% 50%) 50%/9px 9px;margin:2px 0}
 .tok .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 /* the Fighter's own background fills the frame and sits well back */
-.tok .art img.bg{object-fit:cover;filter:brightness(.50) saturate(.65)}
-.tok .art .scrim{position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(13,15,19,.22),rgba(13,15,19,.62))}
+/* NO TREATMENT. The background is drawn as it is, same as the assembler and
+   the gallery draw it. It had a brightness filter, a saturate filter and a
+   dark scrim stacked on it to keep the figure readable, and the result was
+   art that looked broken rather than art that sat back. If a busy background
+   ever does swallow a figure, that is a reason to say so about that trait --
+   not to dim all 42 of them. */
+.tok .art img.bg{object-fit:cover}
 .tok .nm{font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tok .kitn{font-size:8px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hpwrap{position:relative;height:6px;background:#0b0d11;border-radius:2px;overflow:hidden;margin-top:3px}
@@ -1144,19 +1148,13 @@ function pop(f,txt,kind){var e=elFor(f);if(!e)return;var p=document.createElemen
 function tokHtml(f,showGem){
   var pct=f.hp/f.maxHp, cls=pct<=.25?'crit':pct<=.55?'low':'';
   var t=f.traits;
-  /* The background goes in. It is one of the three MANDATORY slots and the
-     largest pool on the platform at 42 traits -- leaving it out meant every
-     token showed an incomplete Fighter against a transparency checkerboard,
-     and a trait the player chose was invisible. Dimmed hard behind a scrim so
-     the figure still reads; the assembler shows it at full strength because
-     there it is the subject, and here the subject is the fight. */
+  /* The background goes in, at full strength. It is one of the three MANDATORY
+     slots and the largest pool on the platform at 42 traits -- leaving it out
+     meant every token showed an incomplete Fighter against a transparency
+     checkerboard, and a trait the player chose was invisible. Drawn exactly as
+     the assembler and the gallery draw it: no filter, no scrim. */
   var layers=(t.background
       ? '<img class="bg" loading="lazy" alt="" src="'+artUrl('background',t.background,250)+'" onerror="this.remove()">'
-        /* SCRIM GOES HERE -- between the background and the figure, never over
-           it. Appended last it sat on top of the Fighter and put a 58% black
-           gradient across the character, which is what made the art look washed
-           out. Layers paint in DOM order, so this is the whole fix. */
-        + '<span class="scrim"></span>'
       : '')
     + ['torso','weapon','arms','effects','head','headgear','companion']
     .filter(function(k){return t[k];})
