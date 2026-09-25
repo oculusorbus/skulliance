@@ -486,6 +486,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   font-size:26px;font-weight:700;color:var(--ochre);text-shadow:0 3px 14px #000;opacity:0;pointer-events:none}
 .arena-wrap .combo.on{animation:cb 1s}
 @keyframes cb{0%{opacity:0;transform:translate(-50%,10px) scale(.8)}20%{opacity:1;transform:translate(-50%,0) scale(1.1)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
+.arena-wrap .ec-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.arena-wrap .ec-acts .btn[hidden]{display:none}
 .arena-wrap .over{text-align:center;padding:14px}
 .arena-wrap .over h2{font-size:15px;color:var(--ochre);margin:0 0 4px}
 /* ---- Arena shell ------------------------------------------------------------
@@ -795,7 +797,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                everyone who is not already a member and X cannot scrape a card
                off it either -- the share would cost reach rather than earn it.
                It comes back pointed at the public page, once there is one. */ ?>
-      <button class="btn go" id="ecAgain">Back to the Arena</button>
+      <div class="ec-acts">
+        <button class="btn go" id="ecAgain">Back to the Arena</button>
+        <?php /* Practice only. A ranked battle's "Back to the Arena" already
+                 leaves, but in practice that button starts the next battle --
+                 which left the player with no way out of practice at all except
+                 the Leave button up in the toolbar, above the card they are
+                 looking at and easy to miss. */ ?>
+        <button class="btn" id="ecLeave" hidden>Leave practice</button>
+      </div>
     </div>
     <details class="logbox" open><summary>Battle log</summary><div id="log"></div></details>
   </div>
@@ -1404,6 +1414,7 @@ function showEnd(res){
     + '<span><b>'+S.stats.blasts+'</b>detonated</span>'
     + '<span><b>x'+S.stats.best+'</b>best chain</span>';
   $('ecAgain').textContent = practice ? 'Practice again' : 'Back to the Arena';
+  $('ecLeave').hidden = !practice;
   card.hidden = false;
   sfx(won ? 'win' : 'lose');
   logLine('big', won ? 'VICTORY — their Crew is down.' : 'DEFEAT — your Crew is down.');
@@ -1789,12 +1800,17 @@ if (startBtn) startBtn.addEventListener('click', function(){
     startFailed('The Arena did not answer. Checking whether the battle started…');
   });
 });
-$('aLeave').addEventListener('click', function(){
-  /* Leaving does not abandon anything: the battle is on the server and resume
-     picks it up exactly where it was. */
+/* Leaving does not abandon anything: a ranked battle is on the server and
+   resume picks it up exactly where it was, and a practice battle was never
+   worth keeping. */
+function leaveBattle(){
   cineStop(); practice = null;
+  $('endcard').hidden = true;
   battle.classList.remove('on'); wrap.classList.remove('playing'); setup.style.display = '';
-});
+  setup.scrollIntoView({behavior:'smooth', block:'start'});
+}
+$('ecLeave').addEventListener('click', leaveBattle);
+$('aLeave').addEventListener('click', leaveBattle);
 $('ecAgain').addEventListener('click', function(){
   if (!practice) { location.reload(); return; }
   // Practice costs nothing, so going again should cost nothing either -- not a

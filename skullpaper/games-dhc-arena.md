@@ -67,7 +67,9 @@ many as you like, whenever you like, including when you are out of battles for
 the day or waiting on Fighters to come back.
 
 It is the same engine that decides a ranked battle, not a simplified version, so
-what you learn in practice is true of the real thing. The two Crews are drawn at
+what you learn in practice is true of the real thing. When a practice battle
+ends you can go straight into another or leave, and leaving costs nothing
+because nothing was at stake. The two Crews are drawn at
 random from the whole trait set, which also makes it the fastest way to see kits
 you do not own yet.
 
