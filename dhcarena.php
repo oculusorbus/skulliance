@@ -276,7 +276,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 /* In the side-column layout three stacked tokens would stand far taller than
    the board, so the art gets a fixed height there and letterboxes inside it --
    object-fit:contain already centres it. */
-.arena-wrap @media (min-width:1001px){/* THE WHOLE FIGHTER, not a bust crop. The crop showed the head and torso
+/* NOT ".arena-wrap @media". A prefixed at-rule is invalid and the browser
+   throws the WHOLE block away -- which is what happened here: every desktop
+   refinement below, the full-figure art, the taller frame, the larger type and
+   the enemy mirroring, was dead from the moment the prototype's stylesheet was
+   scoped to .arena-wrap. The scoping pass moved a prefix past a comment and
+   landed it in front of the @media. The rules inside are already scoped
+   individually, which is why they read correctly and still did nothing. */
+@media (min-width:1001px){/* THE WHOLE FIGHTER, not a bust crop. The crop showed the head and torso
      larger, but it cut the legs, the weapon and half of any companion off --
      and the art is the reason to care about a Fighter at all.
      210px is the size that fits: three tokens then stand about 890px against

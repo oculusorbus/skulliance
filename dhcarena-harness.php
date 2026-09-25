@@ -34,6 +34,25 @@ function play(&$b) {
 	return $guard;
 }
 
+/* 0. THE STYLESHEET STILL PARSES.
+   Not a rules test, but it lives here because it is the one check that would
+   have caught an entire block of desktop CSS being silently discarded: the
+   scoping pass once left ".arena-wrap @media", and a prefixed at-rule is
+   invalid, so every rule inside it was dropped by the browser and by nothing
+   else -- php -l passes, the harness passes, the page renders, and the enemies
+   simply stop facing you. */
+$page = @file_get_contents(__DIR__ . '/dhcarena.php');
+if ($page !== false && strpos($page, '<style>') !== false) {
+	$css = substr($page, strpos($page, '<style>') + 7);
+	$css = substr($css, 0, strpos($css, '</style>'));
+	$css = preg_replace('#/\*.*?\*/#s', '', $css);
+	$bad = preg_match_all('/[^\s{}][^{}\n]*@(?:media|keyframes|supports)/', $css, $m);
+	$open = substr_count($css, '{'); $close = substr_count($css, '}');
+	printf("stylesheet: %d prefixed at-rules (want 0), braces %s\n",
+		$bad, $open === $close ? 'balanced' : "UNBALANCED $open/$close");
+	if ($bad) foreach (array_slice($m[0], 0, 3) as $x) echo "   " . trim($x) . "\n";
+}
+
 /* 1. does a battle finish, and how long does it take */
 $seed = 20260924; $turns = array(); $bombs = 0; $blasts = 0; $stuck = 0;
 for ($i = 0; $i < $N; $i++) {
