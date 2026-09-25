@@ -1604,7 +1604,9 @@ function startFailed(msg){
   post({do:'resume'}, function(res){
     if (!res || !res.ok) return;
     $('aMsg').textContent = '';
-    openBattle(res);
+    // A battle nobody has moved in yet is a battle that is only just starting,
+    // whatever went wrong on the way here, so it still gets its entrance.
+    openBattle(res, !res.state.moves);
     logLine('sys','Recovered a battle that had already started.');
   }, function(){});
 }
@@ -1657,8 +1659,9 @@ post({do:'resume'}, function(res){
   // owns the screen.
   if (battle.classList.contains('on')) return;
   try {
-    openBattle(res);
-    logLine('sys','Picked up where you left off.');
+    openBattle(res, !res.state.moves);
+    logLine('sys', res.state.moves ? 'Picked up where you left off.'
+                                   : 'A battle was waiting for you.');
   } catch (e) {
     $('aMsg').textContent = 'A battle is in progress but could not be drawn. Try reloading.';
     if (window.console) console.error('arena resume', e);

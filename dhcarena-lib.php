@@ -35,6 +35,19 @@ function dhca_season() { return date('Y-m'); }
 function dhca_crew($conn, $user_id) {
 	$user_id = (int)$user_id;
 	$rows = array();
+	/*
+	 * THE `ko` COLUMN IS OPTIONAL AT RUNTIME, and that is deliberate.
+	 *
+	 * It was added after release, and this platform is updated by pulling the
+	 * code and then running the migration by hand -- so there is always a
+	 * window, however short, in which the code is ahead of the database.
+	 * Naming a column that does not exist does not degrade this query, it FAILS
+	 * it, and a failed crew query returns nobody: the Arena then tells a player
+	 * with twelve Fighters that they have none and cannot enter, and the only
+	 * way back into a battle is resume, which deliberately skips the entrance.
+	 *
+	 * A missing label is worth a retry. A missing Arena is not.
+	 */
 	$sql = "SELECT f.id, f.serial, f.name, f.traits, f.rarity_score,
 	               a.benched_until, a.ko, a.wins, a.losses, a.season_wins, a.season_losses
 	        FROM dhc_fighters f
@@ -42,6 +55,7 @@ function dhca_crew($conn, $user_id) {
 	        WHERE f.user_id = $user_id
 	        ORDER BY f.rarity_score DESC, f.id DESC";
 	$res = $conn->query($sql);
+	if (!$res) $res = $conn->query(str_replace('a.ko, ', '', $sql));
 	if (!$res) return $rows;
 	$now = time();
 	while ($r = $res->fetch_assoc()) {
@@ -410,6 +424,24 @@ function dhca_bench($conn, $user_id, $fighter_id, $hours, $won) {
 		   season=VALUES(season)",
 		(int)$fighter_id, (int)$user_id, (int)round($hours*60),
 		$won?0:1,                                  // ko: $won is "this Fighter survived"
+		$won?1:0, $won?0:1, $won?1:0, $won?0:1,
+		$conn->real_escape_string(dhca_season()),
+		$won?1:0, $won?0:1, $won?1:0, $won?1:0, $won?0:1, $won?0:1));
+	if ($ok) return;
+	/* Same reason as dhca_crew(): before the ALTER has run, a battle must still
+	   be able to END. Losing the ko flag costs a label; losing this write costs
+	   the whole result -- the Fighters would never be marked unavailable. */
+	$conn->query(sprintf(
+		"INSERT INTO dhc_arena_fighters
+		   (fighter_id,user_id,benched_until,wins,losses,season_wins,season_losses,season)
+		 VALUES (%d,%d,DATE_ADD(NOW(), INTERVAL %d MINUTE),%d,%d,%d,%d,'%s')
+		 ON DUPLICATE KEY UPDATE
+		   benched_until=VALUES(benched_until),
+		   wins=wins+%d, losses=losses+%d,
+		   season_wins  = IF(season=VALUES(season), season_wins+%d,  %d),
+		   season_losses= IF(season=VALUES(season), season_losses+%d,%d),
+		   season=VALUES(season)",
+		(int)$fighter_id, (int)$user_id, (int)round($hours*60),
 		$won?1:0, $won?0:1, $won?1:0, $won?0:1,
 		$conn->real_escape_string(dhca_season()),
 		$won?1:0, $won?0:1, $won?1:0, $won?1:0, $won?0:1, $won?0:1));

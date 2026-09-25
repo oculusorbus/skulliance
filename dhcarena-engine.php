@@ -695,6 +695,10 @@ function dhca_public(&$b) {
 		'terrain'=>$b['terrain'], 'terrainBg'=>$b['terrainBg'],
 		'terrainName'=>$tn, 'terrainNote'=>$tnote,
 		'stats'=>$b['stats'], 'fx'=>$b['fx'], 'log'=>$b['log'],
+		// How many slides have been played. The client uses it to tell a battle
+		// that has not started from one being picked back up -- the first gets
+		// an entrance, the second must not.
+		'moves'=>isset($b['meta']['moves']) ? count($b['meta']['moves']) : 0,
 	);
 }
 
