@@ -6539,7 +6539,7 @@ $SKULLIANCE_BOARDS = array(
 	'dhcfighters'       => array('label'=>'DHC Fighters',      'icon'=>'🧬', 'group'=>'Games',
 		'blurb'=>'Rarest assembled Fighter',
 		'periods'=>array('All-Time'=>'dhcfighters','Monthly'=>'monthly-dhcfighters')),
-	'dhcarena'          => array('label'=>'DHC Arena',         'icon'=>'⚔️', 'group'=>'Games',
+	'dhcarena'          => array('label'=>'DHC Arena',         'icon'=>'🏟️', 'group'=>'Games',
 		'blurb'=>'Crew battles won',
 		'periods'=>array('All-Time'=>'dhcarena','Monthly'=>'monthly-dhcarena')),
 	'bosses'            => array('label'=>'Boss Battles',      'icon'=>'🐉', 'group'=>'Games',

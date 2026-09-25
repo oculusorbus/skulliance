@@ -77,6 +77,9 @@ $lp_sections = array(
 			// Listed with the games because it is the reason to play them: every
 			// game on this list pays a different part of a Fighter.
 			array('dhcfighters.php',     '🧬', 'DHC Fighters',    'Earn traits, assemble Fighters, top the board'),
+			// Straight after DHC Fighters, because it is the only thing on this
+			// list you cannot reach without one: entering costs a Crew of three.
+			array('dhcarena.php',        '🏟️', 'DHC Arena',       'Send a Crew of three against a rival'),
 			// dashboard.php, NOT the bare directory. `dropship/` serves index.php,
 			// which is an unconditional redirect to the Skulliance login -- so a
 			// player who was ALREADY logged in got bounced to a login page. The
