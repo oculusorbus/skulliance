@@ -449,9 +449,15 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'gated' => true, 'base' => 'run',
 	                          'bands' => array(1 => 'placement_10', 3 => 'placement_3', 6 => 'placement_1')),
 
-	// NOT A GAME, deliberately in this list anyway: it is a drop source, and
-	// everything that reads DHCF_GAMES -- the claim endpoint, the notifier, the
-	// "where traits drop" table -- should see it without special-casing.
+	// NOT A GAME, and 'unlisted' is what that now costs it. It stays in
+	// DHCF_GAMES because everything functional reads this array -- dhcf_award(),
+	// the daily cap, the claim endpoint, the notifier -- and taking it out would
+	// stop the streak paying at all. It is only kept OFF the "where traits drop"
+	// table on dhcfighters.php, which is a list of games you can go and play:
+	// every other row links to a game and names a thing to do, and a row whose
+	// link is the Launchpad and whose trigger is "wait seven days" broke the
+	// symmetry of the set.
+	//
 	// Aimed at the members who claim dailies and run missions but never open a
 	// game; a wildcard is the right lure because it can be any trait at all.
 	// 'limit_note' replaces the "N of N left today" line where a daily count
@@ -459,7 +465,8 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// definition, so quoting a daily cap implies three are available today.
 	'dailystreak'    => array('label' => 'Daily Reward Streak', 'url' => 'launchpad.php', 'category' => 'wildcard',
 	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3',
-	                          'cap' => 1, 'limit_note' => 'once per 7-day streak'),
+	                          'cap' => 1, 'limit_note' => 'once per 7-day streak',
+	                          'unlisted' => true),
 );
 
 function dhcf_game($key) {

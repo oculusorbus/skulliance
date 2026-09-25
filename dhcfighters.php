@@ -396,6 +396,10 @@ a.dhcf-stat span{opacity:.85}
       </h2>
       <ul>
       <?php foreach ($GLOBALS['DHCF_GAMES'] as $gkey => $g):
+          // A source flagged 'unlisted' still pays, and is still counted and
+          // capped like any other -- it just does not belong in a list of games
+          // to go and play. See DHCF_GAMES['dailystreak'].
+          if (!empty($g['unlisted'])) continue;
           $cat   = $g['category'];
           $wild  = ($cat === 'wildcard');
           $held  = $wild ? $dhcf_distinct : (isset($dhcf_cat_held[$cat])  ? $dhcf_cat_held[$cat]  : 0);

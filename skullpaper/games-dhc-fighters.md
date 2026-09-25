@@ -184,9 +184,12 @@ streak pays once a week by definition.
 
 The **Where traits drop** list on DHC Fighters shows how many you have left
 today for each one, so there is never a reason to grind a game that has
-nothing further to give you. Sources whose real limit is not a daily count say
-so instead — the reward streak pays once per seven days, however many times you
-claim in between.
+nothing further to give you.
+
+That list is games you can go and play, so the **daily reward streak is not on
+it** — its link would be the Launchpad and its trigger is waiting seven days,
+which is not a thing you can go and do. It still pays exactly as described
+above; it is simply not a row in a table of games.
 
 ---
 
