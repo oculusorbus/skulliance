@@ -899,7 +899,8 @@ function hurt(t,amt,tag){
   if(t.shield>0){var a=Math.min(t.shield,amt);t.shield-=a;amt-=a;if(a>0)pop(t,'-'+a+' shield','heal');}
   if(amt<=0)return 0;
   t.hp=Math.max(0,t.hp-amt); pop(t,'-'+amt,tag); shake(t,tag==='big');
-  layerAnim(t,'head','jolt');          // the head snaps back, inside the shake
+  layerAnim(t,['head','headgear'],'jolt');   // head and helmet together, or the
+                                             // skull slides out from under it
   if(t.hp===0){t.ko=true;sfx('ko');logLine(t.side==='mine'?'foe':'you',t.name+' is knocked out.');}
   return amt;
 }
@@ -1273,12 +1274,22 @@ function act(f){
   layerAnim(f,'weapon','swing');      // the weapon that did it actually swings
   layerAnim(f,'companion','bob');     // and the companion reacts alongside it
 }
-/** Animate ONE trait layer of a Fighter. Silently does nothing if the Fighter
-    has no trait in that slot, which is most of them most of the time. */
-function layerAnim(f,slot,cls){
+/** Animate one or more trait layers of a Fighter, together and in step.
+ *
+ *  TAKES A LIST because some layers are rigidly attached to each other in the
+ *  art and cannot move apart: headgear sits ON the head, so jolting the head
+ *  alone slid the skull out from under its own helmet. They are one object as
+ *  far as motion is concerned, even though the layering rules keep them
+ *  separate for drawing.
+ *
+ *  Slots with no trait are skipped, which is most of them most of the time. */
+function layerAnim(f,slots,cls){
   var e=elFor(f); if(!e) return;
-  var img=e.querySelector('.art img[data-l="'+slot+'"]'); if(!img) return;
-  img.classList.remove(cls); void img.offsetWidth; img.classList.add(cls);
+  if(typeof slots==='string') slots=[slots];
+  slots.forEach(function(slot){
+    var img=e.querySelector('.art img[data-l="'+slot+'"]'); if(!img) return;
+    img.classList.remove(cls); void img.offsetWidth; img.classList.add(cls);
+  });
 }
 function pop(f,txt,kind){var e=elFor(f);if(!e)return;var p=document.createElement('div');
   p.className='pop on '+(kind||'');p.textContent=txt;e.appendChild(p);setTimeout(function(){p.remove();},950);}
