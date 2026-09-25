@@ -69,7 +69,12 @@ the day or waiting on Fighters to come back.
 It is the same engine that decides a ranked battle, not a simplified version, so
 what you learn in practice is true of the real thing. When a practice battle
 ends you can go straight into another or leave, and leaving costs nothing
-because nothing was at stake. The two Crews are drawn at
+because nothing was at stake.
+
+**New battle** deals two fresh Crews at any point, without finishing the one you
+are in. The Crews are dealt at random, so the first thing you often want is a
+different hand — a matchup you fancy, or a kit you have never seen — and it is
+also the quickest way to meet the weapons you do not own yet. The two Crews are drawn at
 random from the whole trait set, which also makes it the fastest way to see kits
 you do not own yet.
 

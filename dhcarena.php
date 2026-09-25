@@ -488,6 +488,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 @keyframes cb{0%{opacity:0;transform:translate(-50%,10px) scale(.8)}20%{opacity:1;transform:translate(-50%,0) scale(1.1)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
 .arena-wrap .ec-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .arena-wrap .ec-acts .btn[hidden]{display:none}
+.arena-wrap .top .btn[hidden]{display:none}
 .arena-wrap .over{text-align:center;padding:14px}
 .arena-wrap .over h2{font-size:15px;color:var(--ochre);margin:0 0 4px}
 /* ---- Arena shell ------------------------------------------------------------
@@ -761,6 +762,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   <div id="arenaBattle">
     <div class="top">
       <button class="btn" id="aLeave">Leave</button>
+      <?php /* Practice only -- a ranked opponent is chosen, not dealt. */ ?>
+      <button class="btn" id="aReroll" hidden title="Deal two new Crews">New battle</button>
       <button class="btn" id="mute" title="Mute sound">🔊</button>
       <!-- Phone only. The title and the blurb cost most of a screen while you
            are playing and neither is needed then, so they hide together and
@@ -1723,6 +1726,7 @@ function openBattle(res, fresh){
      the grid is never in a visible state at any point before its beat. */
   var arEl = document.querySelector('.arena');
   if (arEl && fresh && !res.state.over) arEl.classList.add('cine');
+  $('aReroll').hidden = !practice;
   buildTeams(); paintBoard(); paintTeams(); paintChrome();
   (S.log||[]).forEach(function(l){ logLine('sys', l); });
   sfxInit();
@@ -1735,27 +1739,58 @@ function openBattle(res, fresh){
     if (window.console) console.error('arena entrance', e);
   }
 }
-var practiceBtn = $('aPractice');
-if (practiceBtn) practiceBtn.addEventListener('click', function(){
-  if (busy || battle.classList.contains('on')) return;
-  busy = true; practiceBtn.disabled = true;
-  $('aMsg').textContent = 'Drawing two Crews…';
+/**
+ * Draw two fresh Crews and open the battle. Every route into practice goes
+ * through here -- the Practice button on the setup screen, New battle in the
+ * toolbar, and Practice again on the end card -- so all three behave the same
+ * and there is one place where "start a practice battle" is defined.
+ *
+ * @param onFail  what to do if it does not come back; the setup screen can say
+ *                so in its message line, the in-battle button cannot.
+ */
+function startPractice(onFail){
+  if (busy) return;
+  busy = true;
+  cineStop();
+  $('endcard').hidden = true;
   post({do:'new'}, function(res){
-    busy = false; practiceBtn.disabled = false;
-    if (!res || !res.ok) { $('aMsg').textContent = 'Could not start practice.'; return; }
-    $('aMsg').textContent = '';
+    busy = false;
+    if (!res || !res.ok) { onFail && onFail('Could not start practice.'); return; }
     practice = res.spec;
     battleId = 0;
     try { openBattle(res, true); }
     catch (e) {
       practice = null;
-      $('aMsg').textContent = 'Could not draw the battle.';
       if (window.console) console.error('arena practice', e);
+      onFail && onFail('Could not draw the battle.');
     }
   }, function(){
-    busy = false; practiceBtn.disabled = false;
-    $('aMsg').textContent = 'The Arena did not answer.';
+    busy = false;
+    onFail && onFail('The Arena did not answer.');
   }, PRACTICE_URL);
+}
+
+var practiceBtn = $('aPractice');
+if (practiceBtn) practiceBtn.addEventListener('click', function(){
+  if (busy || battle.classList.contains('on')) return;
+  practiceBtn.disabled = true;
+  $('aMsg').textContent = 'Drawing two Crews…';
+  startPractice(function(msg){ $('aMsg').textContent = msg; });
+  // re-enabled either way: openBattle() hides the setup screen on success
+  setTimeout(function(){ practiceBtn.disabled = false; }, 400);
+});
+
+/* NEW BATTLE, mid-practice. Practice Crews are dealt at random, so the first
+   thing a player wants is often a different hand -- a matchup they fancy, or a
+   kit they have never seen. Making them finish or leave to get one is the
+   difference between a sandbox and a queue.
+   Practice only: a ranked opponent is chosen, not dealt. */
+var rerollBtn = $('aReroll');
+if (rerollBtn) rerollBtn.addEventListener('click', function(){
+  if (!practice || busy) return;
+  rerollBtn.disabled = true;
+  startPractice(function(){ logLine('sys','Could not draw a new battle.'); });
+  setTimeout(function(){ rerollBtn.disabled = false; }, 400);
 });
 
 var startBtn = $('aStart');
@@ -1806,23 +1841,19 @@ if (startBtn) startBtn.addEventListener('click', function(){
 function leaveBattle(){
   cineStop(); practice = null;
   $('endcard').hidden = true;
+  // hidden by #arenaBattle going away regardless, but leaving it set would be a
+  // stale flag waiting to be believed
+  $('aReroll').hidden = true;
   battle.classList.remove('on'); wrap.classList.remove('playing'); setup.style.display = '';
   setup.scrollIntoView({behavior:'smooth', block:'start'});
 }
 $('ecLeave').addEventListener('click', leaveBattle);
 $('aLeave').addEventListener('click', leaveBattle);
 $('ecAgain').addEventListener('click', function(){
-  if (!practice) { location.reload(); return; }
   // Practice costs nothing, so going again should cost nothing either -- not a
-  // page load and not the Crew picker.
-  $('endcard').hidden = true;
-  busy = true;
-  post({do:'new'}, function(res){
-    busy = false;
-    if (!res || !res.ok) { location.reload(); return; }
-    practice = res.spec;
-    try { openBattle(res, true); } catch (e) { location.reload(); }
-  }, function(){ busy = false; location.reload(); }, PRACTICE_URL);
+  // page load and not a trip through the Crew picker.
+  if (practice) startPractice(function(){ location.reload(); });
+  else location.reload();
 });
 
 $('howto').addEventListener('click', function(){ wrap.classList.toggle('showintro'); });
