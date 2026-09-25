@@ -439,9 +439,14 @@ var KITS = [
      old note said "heals itself", which read like a medkit. */
   {id:'drain',  emoji:'🩸', name:'Drain',  dmg:1.05, drain:.45,   note:'hits and steals health'},
   {id:'sunder', emoji:'⛏️', name:'Break',  dmg:0.95, sunder:true, note:'smashes shields'},
-  {id:'precise',emoji:'🎯', name:'Snipe',  dmg:1.15, crit:.28,    note:'crits often'},
-  {id:'volley', emoji:'🏹', name:'Volley', dmg:0.62, all:true,    note:'chips everyone'},
-  {id:'brutal', emoji:'🗡️', name:'Bleed',  dmg:1.30, bleed:true,  note:'leaves a bleed'},
+  /* PLAIN WORDS. "crits often" and "chips everyone" are both gamer shorthand,
+     and a legend exists so nobody has to already know the vocabulary. A crit
+     here is a 1.6x hit and Snipe adds 28 points of chance to it; Volley's 0.62
+     multiplier against every living enemy is a weak hit to all of them. Say
+     that instead. */
+  {id:'precise',emoji:'🎯', name:'Snipe',  dmg:1.15, crit:.28,    note:'often hits far harder'},
+  {id:'volley', emoji:'🏹', name:'Volley', dmg:0.62, all:true,    note:'a weak hit to every enemy'},
+  {id:'brutal', emoji:'🗡️', name:'Bleed',  dmg:1.30, bleed:true,  note:'keeps hurting for 3 rounds'},
   {id:'quick',  emoji:'⚔️', name:'Double', dmg:0.85, echo:true,   note:'strikes twice'}
 ];
 /* The two shared gems. Named for the effect, not the mechanic. */
@@ -455,12 +460,15 @@ function gemInfo(side,g){
   var f=fighterForGem(side,g);
   return f ? {emoji:f.kit.emoji, name:f.kit.name, note:f.kit.note, fighter:f} : {emoji:'·',name:'—',note:''};
 }
+/* These still said "guard gems" and "surge gems" -- the names those two were
+   called before they became Shield and Charge, so the terrain was describing
+   pieces that are not on the board any more. Plain words here too. */
 var TERRAIN = [
-  {id:'crit',  name:'Fractured Signal', note:'+12% crit'},
-  {id:'dmg',   name:'Overclocked',      note:'+10% damage'},
-  {id:'guard', name:'Dense Cover',      note:'guard gems give +50%'},
-  {id:'surge', name:'Low Gravity',      note:'surge gems charge faster'},
-  {id:'frail', name:'Corrosive Haze',   note:'-8% max HP for everyone'}
+  {id:'crit',  name:'Fractured Signal', note:'everyone lands big hits more often'},
+  {id:'dmg',   name:'Overclocked',      note:'everyone deals 10% more damage'},
+  {id:'guard', name:'Dense Cover',      note:'🛡️ Shield gives 50% more'},
+  {id:'surge', name:'Low Gravity',      note:'⚡ Charge builds twice as fast'},
+  {id:'frail', name:'Corrosive Haze',   note:'everyone has 8% less health'}
 ];
 
 function buildFighter(t,name){
@@ -1179,7 +1187,7 @@ function tokHtml(f,showGem){
     +   '<div class="sh" style="width:'+Math.min(100,(f.shield/f.maxHp)*100)+'%"></div></div>'
     + '<div class="hpn"><span>'+f.hp+'/'+f.maxHp+'</span><span>'
     +   (f.shield>0?'sh '+f.shield+'  ':'')
-    +   (f.surge>0?'surge '+f.surge+'/10':'')+(f.bleed>0?' bleed':'')+'</span></div>'
+    +   (f.surge>0?'charge '+f.surge+'/10':'')+(f.bleed>0?' bleed':'')+'</span></div>'
     + '</div>';
 }
 /* BUILD ONCE PER BATTLE. This used to rewrite both teams' innerHTML on every
@@ -1212,7 +1220,7 @@ function renderTeams(){
     var n=e.querySelector('.hpn');
     if(n) n.innerHTML='<span>'+f.hp+'/'+f.maxHp+'</span><span>'
       + (f.shield>0?'sh '+f.shield+'  ':'')
-      + (f.surge>0?'surge '+f.surge+'/10':'')+(f.bleed>0?' bleed':'')+'</span>';
+      + (f.surge>0?'charge '+f.surge+'/10':'')+(f.bleed>0?' bleed':'')+'</span>';
   });
 }
 function renderBoard(dropAnim,settle){
