@@ -159,6 +159,25 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .tok .art{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:2px;
   background:repeating-conic-gradient(#191419 0% 25%,#201b20 0% 50%) 50%/9px 9px;margin:2px 0}
 .tok .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+/* PER-LAYER MOTION. Only possible because a Fighter is still separate images at
+   render time -- the same separation the layering rules needed.
+   Kept SMALL on purpose. Each layer is a full 250px frame that is mostly
+   transparent, so it rotates about the frame's centre rather than the weapon's
+   grip, and .art clips at the edge. A few degrees reads as a swing; twenty
+   would read as the picture coming apart.
+   Transform only, no filters: transforms are composited on the GPU, so this
+   costs nothing per frame, which matters after the audio lesson. */
+.tok .art img[data-l="weapon"]{transform-origin:50% 65%}
+.tok .art img.swing{animation:swing .34s ease-out}
+@keyframes swing{0%{transform:rotate(0) translateX(0)}
+  30%{transform:rotate(-7deg) translateX(-2%)}
+  55%{transform:rotate(4deg) translateX(1%)}
+  100%{transform:rotate(0) translateX(0)}}
+.tok .art img.bob{animation:bob .42s ease-in-out}
+@keyframes bob{0%{transform:translateY(0)}40%{transform:translateY(-5%)}100%{transform:translateY(0)}}
+.tok .art img.jolt{animation:jolt .30s ease-out}
+@keyframes jolt{0%{transform:translateX(0)}35%{transform:translateX(3%) rotate(2deg)}
+  100%{transform:translateX(0)}}
 /* the Fighter's own background fills the frame and sits well back */
 /* NO TREATMENT. The background is drawn as it is, same as the assembler and
    the gallery draw it. It had a brightness filter, a saturate filter and a
@@ -234,7 +253,10 @@ button{font:inherit;cursor:pointer;border-radius:3px}
      instead of everyone staring the same direction. Only in the side-column
      layout -- stacked on a phone they are above you, not opposite you, and a
      mirrored row there just looks like different art. */
-  .teamcol.foes .tok .art img{transform:scaleX(-1)}
+  /* On the container, not the images. A transform on the img would be
+     overwritten the moment a layer animates, flipping enemies back mid-swing.
+     Mirroring the frame instead leaves every layer's own transform free. */
+  .teamcol.foes .tok .art{transform:scaleX(-1)}
   .teamcol .tok{padding:8px}
   .teamcol .tok .nm{font-size:12px}
   .teamcol .tok .kitn{font-size:10px}
@@ -877,6 +899,7 @@ function hurt(t,amt,tag){
   if(t.shield>0){var a=Math.min(t.shield,amt);t.shield-=a;amt-=a;if(a>0)pop(t,'-'+a+' shield','heal');}
   if(amt<=0)return 0;
   t.hp=Math.max(0,t.hp-amt); pop(t,'-'+amt,tag); shake(t,tag==='big');
+  layerAnim(t,'head','jolt');          // the head snaps back, inside the shake
   if(t.hp===0){t.ko=true;sfx('ko');logLine(t.side==='mine'?'foe':'you',t.name+' is knocked out.');}
   return amt;
 }
@@ -1244,7 +1267,19 @@ function shake(f,big){
   e.classList.add('hit'); if(big) e.classList.add('big');
   flashTok(f,big?'big':'');
 }
-function act(f){var e=elFor(f);if(!e)return;e.classList.remove('act');void e.offsetWidth;e.classList.add('act');}
+function act(f){
+  var e=elFor(f); if(!e) return;
+  e.classList.remove('act'); void e.offsetWidth; e.classList.add('act');
+  layerAnim(f,'weapon','swing');      // the weapon that did it actually swings
+  layerAnim(f,'companion','bob');     // and the companion reacts alongside it
+}
+/** Animate ONE trait layer of a Fighter. Silently does nothing if the Fighter
+    has no trait in that slot, which is most of them most of the time. */
+function layerAnim(f,slot,cls){
+  var e=elFor(f); if(!e) return;
+  var img=e.querySelector('.art img[data-l="'+slot+'"]'); if(!img) return;
+  img.classList.remove(cls); void img.offsetWidth; img.classList.add(cls);
+}
 function pop(f,txt,kind){var e=elFor(f);if(!e)return;var p=document.createElement('div');
   p.className='pop on '+(kind||'');p.textContent=txt;e.appendChild(p);setTimeout(function(){p.remove();},950);}
 
@@ -1261,7 +1296,8 @@ function tokHtml(f,showGem){
       : '')
     + ['torso','weapon','arms','effects','head','headgear','companion']
     .filter(function(k){return t[k];})
-    .map(function(k){return '<img loading="lazy" alt="" src="'+artUrl(k,t[k],250)+'" onerror="this.remove()">';}).join('');
+    .map(function(k){return '<img data-l="'+k+'" loading="lazy" alt="" src="'
+        +artUrl(k,t[k],250)+'" onerror="this.remove()">';}).join('');
   return '<div class="tok'+(showGem?' mine':' foe')+(f.ko?' ko':'')+'" data-id="'+f.uid+'"'
     + ' style="--gem:var(--g'+f.rank+')">'
     + '<div class="flash"></div>'
