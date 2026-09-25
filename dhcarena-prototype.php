@@ -199,7 +199,9 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 }
 
 /* ---- board ---- */
+.boardwrap.foeturn{border-color:rgba(224,70,107,.55);box-shadow:0 0 0 1px rgba(224,70,107,.25)}
 .boardwrap{position:relative;border:1px solid var(--line);border-radius:4px;
+  transition:border-color .2s,box-shadow .2s;
   background:rgba(21,25,34,.80);
   padding:8px;overflow:hidden}
 /* Was inset in the board at 13% opacity behind an opaque grid, which meant the
@@ -1059,7 +1061,7 @@ function endTurn(best){
   S.turn = S.turn==='mine'?'foes':'mine';
   if(S.turn==='mine')S.round++;
   renderAll();
-  if(S.turn==='foes') setTimeout(aiMove,520);
+  if(S.turn==='foes') setTimeout(aiMove,300);
 }
 function checkOver(){
   if(!alive('foes').length){S.over='win';renderAll();return true;}
@@ -1129,18 +1131,51 @@ function bestMove(side){
   if(Math.random()<0.5) return cand[0];
   return cand[Math.min(cand.length-1, 1+Math.floor(Math.random()*4))];
 }
+/* WATCH THE OPPONENT MOVE.
+   The board used to jump straight to its new state on the enemy's turn, so
+   there was nothing to see and no way to tell an enemy move from a cascade --
+   both just appeared. Monstrocity animates its AI's slide with the same
+   transition the player gets, and that is what makes it read as somebody doing
+   something rather than the board changing by itself.
+   Reuses the geometry from previewDrag(): the chosen gem travels, the gems it
+   passes shift back one, then the move commits. */
+function animateSlide(a,z,cb){
+  var lead=cellEl(a);
+  var ra=Math.floor(a/N), ca=a%N, rz=Math.floor(z/N), cz=z%N;
+  var row=(ra===rz), steps=row?(cz-ca):(rz-ra);
+  if(!lead || !steps){ cb(); return; }
+  var sz=cellSize(), dir=steps>0?1:-1, off=steps*sz;
+  lead.classList.add('sel');                 // a beat on the gem it picked
+  setTimeout(function(){
+    lead.style.transition='transform .26s ease'; lead.style.zIndex='6';
+    lead.style.transform = row ? 'translateX('+off+'px) scale(1.06)'
+                               : 'translateY('+off+'px) scale(1.06)';
+    for(var k=1;k<=Math.abs(steps);k++){
+      var e=cellEl(row ? idx(ra,ca+dir*k) : idx(ra+dir*k,ca));
+      if(!e) continue;
+      e.style.transition='transform .26s ease';
+      e.style.transform = row ? 'translateX('+(-dir*sz)+'px)'
+                              : 'translateY('+(-dir*sz)+'px)';
+    }
+    setTimeout(function(){ lead.classList.remove('sel'); clearOffsets(); cb(); }, 290);
+  }, 240);
+}
+
 function aiMove(){
   if(S.over)return;
   var mv=bestMove('foes');
   if(!mv){ makeBoard(); renderBoard(); mv=bestMove('foes'); if(!mv){endTurn(0);return;} }
   var ms=findMatches(slid(S.board,mv.a,mv.b));
   S.lastLen=ms.reduce(function(p,g){return Math.max(p,g.len);},0);
+  busy=true;                                  // locked while they move
+  animateSlide(mv.a,mv.b,function(){
   applySlide(mv.a,mv.b,'foes',function(chains){
     if(S.over)return;
     if(S.lastLen>=EXTRA_TURN_MIN){ logLine('foe','They matched '+S.lastLen+' — they go again.');
-      renderAll(); setTimeout(aiMove,560); return; }
+      renderAll(); setTimeout(aiMove,340); return; }
     tickBleeds('mine'); if(checkOver())return;
     S.turn='mine'; S.round++; renderAll();
+  });
   });
 }
 
@@ -1280,6 +1315,9 @@ function renderAll(){
   document.getElementById('reach').innerHTML  = reachHtml;
   document.getElementById('reachM').innerHTML = reachHtml;
 
+  var bw=document.querySelector('.boardwrap');
+  if(bw){ if(!S.over && S.turn==='foes') bw.classList.add('foeturn');
+          else bw.classList.remove('foeturn'); }
   var fl=document.getElementById('flag');
   fl.className='turnflag '+(S.over?'':(S.turn==='mine'?'you':'foe'));
   fl.textContent=S.over?(S.over==='win'?'victory':'defeat'):(S.turn==='mine'?'your move':'their move');
