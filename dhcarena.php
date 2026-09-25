@@ -47,7 +47,13 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   font:13px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
   padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
   -webkit-user-select:none;user-select:none}
-.arena-wrap{max-width:1500px;margin:0 auto;padding:12px;overflow-x:clip}
+/* NO MAX-WIDTH OF ITS OWN. The platform's .container already caps at 2000px and
+   centres, so capping again here just made the Arena 500px narrower than the
+   header sitting above it. The prototype was a standalone page and needed its
+   own cap; this is not, and dhcfighters.php learned the same lesson already --
+   see the note on .dhcf-wrap. The board is still capped separately, against
+   viewport HEIGHT, which is a different question and still the right one. */
+.arena-wrap{max-width:100%;margin:0 auto;padding:12px;overflow-x:clip}
 /* Nothing may scroll the page sideways. A phone has no spare width and a
    horizontal scrollbar makes a board feel broken to drag on. */
 .arena-wrap{max-width:100%;overflow-x:clip}
@@ -444,7 +450,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .over{text-align:center;padding:14px}
 .arena-wrap .over h2{font-size:15px;color:var(--ochre);margin:0 0 4px}
 /* ---- Arena shell: the parts the prototype had no need for ---- */
-.arena-wrap{max-width:1500px;margin:0 auto;padding:12px;overflow-x:clip;text-align:left}
+.arena-wrap{max-width:100%;margin:0 auto;padding:12px;overflow-x:clip;text-align:left}
 .arena-wrap .a-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:4px}
 .arena-wrap .a-head h1{font-size:17px;letter-spacing:.14em;text-transform:uppercase;margin:0}
 .arena-wrap .a-head .tag{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ochre);
