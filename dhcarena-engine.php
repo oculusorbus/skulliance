@@ -254,10 +254,22 @@ function dhca_build_fighter($traits, $name, $uid, $rarity) {
 	// rarity decides the fight. Deterministic per slug, so a trait is itself.
 	$v = function($slug) { return 1 + ((dhca_hash($slug) % 1000)/1000 - 0.5) * DHCA_VARIANCE; };
 
+	/* WHICH TRAIT DID WHAT. Carried on the Fighter so the battle screen can say
+	   it out loud: only torso, weapon and headgear touch the numbers, and
+	   background matters only for whichever Fighter is the defender's front
+	   rank, because that one sets the arena. Arms, effects and companion are
+	   pure art. Nothing in the UI should have to rediscover that by reading
+	   this function. */
+	$tier = function($cat, $slug) use ($rarity) {
+		return isset($rarity[$cat][$slug][0]) ? $rarity[$cat][$slug][0] : 'common';
+	};
+	$tiers = array();
+	foreach ($traits as $cat => $slug) if ($slug !== '' && $slug !== null) $tiers[$cat] = $tier($cat, $slug);
+
 	$kits = dhca_kits();
 	$hp = (int)round(DHCA_HP_BASE * $m('torso',$traits['torso']) * $v($traits['torso']));
 	return array(
-		'uid'=>$uid, 'name'=>$name, 'traits'=>$traits,
+		'uid'=>$uid, 'name'=>$name, 'traits'=>$traits, 'tiers'=>$tiers,
 		'kit'=>$kits[dhca_hash($traits['weapon']) % count($kits)],
 		'maxHp'=>$hp, 'hp'=>$hp, 'shield'=>0, 'bleed'=>0, 'surge'=>0, 'ko'=>false,
 		'power'=>(int)round(DHCA_POWER_BASE * $m('weapon',$traits['weapon']) * $v($traits['weapon'])),
@@ -686,7 +698,12 @@ function dhca_public(&$b) {
 			             'name'=>$f['kit']['name'],'note'=>$f['kit']['note']),
 			'rank'=>$f['rank'],'hp'=>$f['hp'],'maxHp'=>$f['maxHp'],
 			'shield'=>$f['shield'],'surge'=>$f['surge'],'bleed'=>$f['bleed'],'ko'=>$f['ko'],
-			'dealt'=>isset($f['dealt']) ? (int)$f['dealt'] : 0);
+			'dealt'=>isset($f['dealt']) ? (int)$f['dealt'] : 0,
+			// for the Fighter card: what this one hits for, how often it lands
+			// big, and which tier each of its traits came from
+			'power'=>(int)$f['power'],
+			'crit'=>round($f['critC'], 4),
+			'tiers'=>isset($f['tiers']) ? $f['tiers'] : array());
 	};
 	return array(
 		'board'=>$b['board'], 'bomb'=>$b['bomb'],

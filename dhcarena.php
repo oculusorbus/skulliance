@@ -430,6 +430,60 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 @keyframes tokIn{0%{opacity:0;transform:translateY(14px) scale(.94)}
   100%{opacity:1;transform:translateY(0) scale(1)}}
 
+/* =========================== THE FIGHTER CARD ===============================
+   Tap any Fighter, yours or theirs, and it opens.
+
+   It exists because the game's central rule is invisible. A Fighter's weapon
+   decides HOW it fights, its torso how long it lasts and its headgear how often
+   it lands big -- and arms, effects and companion do nothing at all except look
+   like something. Nobody can deduce that from a board, and a player who does
+   not know it is choosing a Crew on rarity score, which is the one number the
+   Arena deliberately refuses to let decide a fight.
+   ========================================================================== */
+.arena-wrap .fcard{position:fixed;inset:0;z-index:60;display:flex;align-items:center;
+  justify-content:center;padding:16px;background:rgba(5,7,10,.78)}
+.arena-wrap .fcard[hidden]{display:none}
+.arena-wrap .fc-box{background:var(--panel);border:1px solid var(--line);border-radius:5px;
+  width:min(560px,100%);max-height:calc(100vh - 32px);overflow:auto;position:relative;
+  box-shadow:0 18px 60px rgba(0,0,0,.6)}
+.arena-wrap .fc-x{position:absolute;top:6px;right:8px;z-index:2;background:none;border:0;
+  color:var(--dim);font-size:20px;line-height:1;padding:4px 8px;cursor:pointer}
+.arena-wrap .fc-x:hover{color:var(--ochre)}
+.arena-wrap .fc-top{display:flex;gap:12px;padding:12px;border-bottom:1px solid var(--line)}
+.arena-wrap .fc-art{position:relative;width:118px;flex:none;aspect-ratio:1;border-radius:3px;
+  overflow:hidden;background:var(--panel2)}
+.arena-wrap .fc-art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.arena-wrap .fc-art img.bg{object-fit:cover}
+.arena-wrap .fc-id{min-width:0;flex:1}
+.arena-wrap .fc-id h3{margin:0 0 3px;font-size:16px;letter-spacing:.01em}
+.arena-wrap .fc-who{font-size:10px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
+.arena-wrap .fc-gem{display:inline-flex;align-items:center;gap:6px;margin-top:7px;
+  padding:3px 9px;border-radius:999px;border:1px solid var(--gemc);font-size:11px}
+.arena-wrap .fc-gem b{display:inline-flex;align-items:center;justify-content:center;
+  width:19px;height:19px;border-radius:50%;background:var(--gemc);font-size:11px}
+.arena-wrap .fc-kit{margin-top:8px;font-size:12px}
+.arena-wrap .fc-kit b{color:var(--ochre);font-weight:400}
+.arena-wrap .fc-body{padding:11px 12px}
+.arena-wrap .fc-h{font-size:9px;letter-spacing:.16em;text-transform:uppercase;opacity:.55;
+  margin:0 0 6px}
+.arena-wrap .fc-rows{display:grid;gap:5px;margin:0 0 12px}
+.arena-wrap .fc-row{display:grid;grid-template-columns:78px 62px 1fr;gap:9px;align-items:baseline;
+  font-size:11.5px}
+.arena-wrap .fc-row .k{opacity:.6;font-size:10px;letter-spacing:.1em;text-transform:uppercase}
+.arena-wrap .fc-row .v{font-variant-numeric:tabular-nums;color:var(--ochre)}
+.arena-wrap .fc-row .src{opacity:.7;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.arena-wrap .fc-row .src em{font-style:normal;opacity:.55;font-size:10px}
+.arena-wrap .fc-cos{font-size:11px;opacity:.55;line-height:1.7}
+.arena-wrap .fc-cos b{opacity:.85;font-weight:400}
+.arena-wrap .fc-note{margin:10px 0 0;font-size:11px;opacity:.6;line-height:1.6;
+  border-top:1px solid var(--line);padding-top:9px}
+.arena-wrap .tok{cursor:pointer}
+@media (max-width:520px){
+  .arena-wrap .fc-top{flex-direction:column;align-items:center;text-align:center}
+  .arena-wrap .fc-art{width:150px}
+  .arena-wrap .fc-row{grid-template-columns:70px 56px 1fr;gap:7px;font-size:11px}
+}
+
 /* Sits over the settled board rather than in a side panel, because the end of
    a battle should land where you were looking. Fades in only once the last
    cascade has come to rest. */
@@ -811,6 +865,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       </div>
     </div>
     <details class="logbox" open><summary>Battle log</summary><div id="log"></div></details>
+    <div class="fcard" id="fcard" hidden>
+      <div class="fc-box" id="fcBox"></div>
+    </div>
   </div>
 
 </div>
@@ -1182,6 +1239,13 @@ function playTimeline(fx, state, done){
       return 150;
 
     case 'wave':
+      /* A wave is a new beat, so the hold starts over. Without this the window
+         spans waves: one multi-match on the first link of a cascade outranked
+         every CHAIN announcement that followed it, and chains stopped appearing
+         at all -- a fix for one hidden announcement that hid a different one.
+         Priority is for resolving a collision INSIDE a wave; across waves the
+         newer event simply wins. */
+      bannerAt = 0;
       sfx('clear');
       // a deep chain is worth more than a shallow one, and outranks a bomb
       if (e.chain > 1) { sfx('chain'); banner('CHAIN x'+e.chain, e.chain >= 3 ? 4 : 3); }
@@ -1640,6 +1704,112 @@ document.querySelectorAll('.a-foe').forEach(function(r){
   });
 });
 var wrap = document.querySelector('.arena-wrap');
+/* --------------------------------------------------------- Fighter card ----
+   What the board cannot say. Three traits decide a Fighter and five do not,
+   and there is nowhere else in the game that tells you which is which.
+   ---------------------------------------------------------------------- */
+var SLOT_LABEL = {background:'Background', torso:'Torso', head:'Head', headgear:'Headgear',
+                  arms:'Arms', weapon:'Weapon', effects:'Effects', effects1:'Effects',
+                  effects2:'Effects 2', companion:'Companion', weaponBack:'Weapon (behind)'};
+function prettySlug(sl){
+  return String(sl||'').replace(/-/g,' ').replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+}
+function traitOf(f, cat){
+  var t = f.traits || {};
+  if (t[cat]) return t[cat];
+  // saved Fighters store effects1/effects2; a practice Crew stores effects
+  if (cat === 'effects') return t.effects1 || t.effects2 || '';
+  return '';
+}
+function tierOf(f, cat){
+  var ti = f.tiers || {};
+  return ti[cat] || (cat === 'effects' ? (ti.effects1 || ti.effects2 || '') : '');
+}
+function srcCell(f, cat){
+  var sl = traitOf(f, cat);
+  if (!sl) return '<span class="src">—</span>';
+  var tier = tierOf(f, cat);
+  return '<span class="src">' + prettySlug(sl)
+       + (tier ? ' <em>' + tier + '</em>' : '') + '</span>';
+}
+function openCard(f, mine){
+  var box = $('fcBox'); if (!box) return;
+  var t = f.traits || {};
+  var rank = ['front','mid','back'][f.rank];
+  var layers = (t.background
+      ? '<img class="bg" alt="" src="'+artUrl('background',t.background,250)+'" onerror="this.remove()">' : '')
+    + ['torso','weapon','arms','effects','effects1','effects2','head','headgear','companion']
+      .filter(function(k){ return t[k]; })
+      .map(function(k){ return '<img alt="" src="'+artUrl(k.replace(/[12]$/,''),t[k],250)+'" onerror="this.remove()">'; })
+      .join('');
+
+  var pct = Math.round(f.hp / f.maxHp * 100);
+  box.innerHTML =
+      '<button class="fc-x" id="fcX" title="Close">&times;</button>'
+    + '<div class="fc-top">'
+    +   '<div class="fc-art">'+layers+'</div>'
+    +   '<div class="fc-id">'
+    +     '<h3>'+f.name+'</h3>'
+    +     '<div class="fc-who">'+(mine?'your':'enemy')+' '+rank+' rank</div>'
+    +     '<div class="fc-gem" style="--gemc:var(--g'+f.rank+')"><b>'+f.kit.emoji+'</b>'
+    +       'matching this gem makes them act</div>'
+    +     '<div class="fc-kit"><b>'+f.kit.name+'</b> — '+f.kit.note+'</div>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="fc-body">'
+    +   '<p class="fc-h">What decides this Fighter</p>'
+    +   '<div class="fc-rows">'
+    +     row('Health', f.hp+' / '+f.maxHp+' <i style="opacity:.5">('+pct+'%)</i>', srcCell(f,'torso'))
+    +     row('Power',  f.power, srcCell(f,'weapon'))
+    +     row('Style',  f.kit.name, srcCell(f,'weapon'))
+    +     row('Crit',   Math.round((f.crit||0)*100)+'%', srcCell(f,'headgear'))
+    +   '</div>'
+    +   '<p class="fc-h">Right now</p>'
+    +   '<div class="fc-rows">'
+    +     row('Shield', f.shield || 0, '<span class="src">absorbs damage before health</span>')
+    +     row('Charge', (f.surge||0)+' / 10', '<span class="src">erupts on the Crew\u2019s next '+SHARED[4].emoji+'</span>')
+    +     row('Damage', f.dealt || 0, '<span class="src">dealt so far this battle</span>')
+    +     (f.bleed > 0 ? row('Bleeding', f.bleed+' rounds', '<span class="src">loses health at the end of each</span>') : '')
+    +   '</div>'
+    +   '<p class="fc-h">Art only</p>'
+    +   '<div class="fc-cos">'
+    +     ['arms','effects','companion','head'].map(function(c){
+          var sl = traitOf(f,c); return sl ? '<b>'+SLOT_LABEL[c]+':</b> '+prettySlug(sl) : '';
+        }).filter(Boolean).join(' · ')
+    +   '</div>'
+    +   '<p class="fc-note">Reach is match size, not this Fighter: a match of <b>3</b> can only'
+    +     ' touch the enemy front rank, <b>4</b> reaches mid, <b>5 or more</b> reaches the back.'
+    +     ' The background matters for one Fighter only — the defender\u2019s front rank, whose'
+    +     ' background is the arena you are fighting in.</p>'
+    + '</div>';
+  function row(k, v, src){
+    return '<div class="fc-row"><span class="k">'+k+'</span><span class="v">'+v+'</span>'+src+'</div>';
+  }
+  $('fcard').hidden = false;
+  var x = $('fcX'); if (x) x.addEventListener('click', closeCard);
+}
+function closeCard(){ var c = $('fcard'); if (c) c.hidden = true; }
+var fcardEl = $('fcard');
+if (fcardEl) {
+  fcardEl.addEventListener('click', function(e){
+    if (e.target === fcardEl) closeCard();       // the backdrop, not the card
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !fcardEl.hidden) closeCard();
+  });
+}
+/* Delegated, because the tokens are rebuilt at the start of every battle. */
+['myTeam','foeTeam'].forEach(function(id){
+  var host = $(id); if (!host) return;
+  host.addEventListener('click', function(e){
+    var tok = e.target.closest('.tok'); if (!tok || !S) return;
+    var uid = tok.getAttribute('data-id');
+    var side = id === 'myTeam' ? 'mine' : 'foes', f = null;
+    S[side].forEach(function(x){ if (x.uid === uid) f = x; });
+    if (f) openCard(f, side === 'mine');
+  });
+});
+
 /* ------------------------------------------------------------- entrance ----
    Three beats: the arena and what it does, the board falling in, the two Crews
    walking on. Under three seconds, skippable with a tap, and it never runs on
