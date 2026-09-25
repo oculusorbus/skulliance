@@ -334,6 +334,57 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .cell.settle{animation:stl .16s}
 @keyframes stl{0%{transform:scale(1.06)}100%{transform:scale(1)}}
 @keyframes drp{0%{transform:translateY(-16px);opacity:.4}100%{transform:translateY(0);opacity:1}}
+/* ============================ THE ENTRANCE ==================================
+   A battle used to appear all at once, fully drawn, which gave the biggest
+   moment in the game no moment at all. It arrives in three beats now: the
+   arena and what it does to the fight, then the board falling in, then the two
+   Crews walking on.
+
+   IT IS SKIPPABLE AND IT IS SHORT. Six battles a day means seeing this six
+   times a day, so the whole sequence is under three seconds and a tap anywhere
+   ends it immediately. It also never plays on RESUME -- picking a battle back
+   up mid-move is not an entrance, and replaying a moment that already happened
+   is the exact mistake the drop-reveal queue made.
+   ========================================================================== */
+.arena-wrap .a-intro{position:absolute;inset:-14px;z-index:30;border-radius:6px;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:7px;text-align:center;padding:18px;cursor:pointer;
+  background-size:cover;background-position:center}
+.arena-wrap .a-intro:after{content:'';position:absolute;inset:0;
+  background:radial-gradient(120% 90% at 50% 45%,rgba(13,15,19,.55),rgba(13,15,19,.95))}
+.arena-wrap .a-intro > *{position:relative;z-index:1}
+.arena-wrap .a-intro.go{animation:introIn .45s ease-out}
+.arena-wrap .a-intro.out{animation:introOut .40s ease-in forwards;pointer-events:none}
+@keyframes introIn{0%{opacity:0}100%{opacity:1}}
+@keyframes introOut{0%{opacity:1}100%{opacity:0}}
+.arena-wrap .ti-k{font-size:9px;letter-spacing:.28em;text-transform:uppercase;color:var(--dim);
+  animation:tiUp .5s .05s both}
+.arena-wrap .ti-n{font-size:clamp(19px,4.4vw,34px);letter-spacing:.06em;text-transform:uppercase;
+  color:var(--bone);text-shadow:0 3px 18px #000;animation:tiName .7s .12s both}
+.arena-wrap .ti-e{font-size:11.5px;color:var(--ochre);max-width:34ch;animation:tiUp .5s .38s both}
+.arena-wrap .ti-v{margin-top:6px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dim);animation:tiUp .5s .55s both}
+.arena-wrap .ti-v b{color:var(--bone);font-weight:400}
+.arena-wrap .ti-s{position:absolute;bottom:9px;right:12px;z-index:1;font-size:8.5px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--dim);opacity:.7}
+@keyframes tiUp{0%{opacity:0;transform:translateY(7px)}100%{opacity:1;transform:translateY(0)}}
+@keyframes tiName{0%{opacity:0;transform:scale(1.14);letter-spacing:.22em}
+  100%{opacity:1;transform:scale(1);letter-spacing:.06em}}
+/* Beat two and three. The gems fall in on a per-cell delay set in JS, and the
+   Crews walk on from their own side of the board. Both start invisible so the
+   first frame of the battle is never the finished picture. */
+.arena-wrap .cine .cell{animation:gemIn .34s both}
+@keyframes gemIn{0%{opacity:0;transform:translateY(-26px) scale(.55)}
+  60%{opacity:1;transform:translateY(2px) scale(1.04)}100%{transform:translateY(0) scale(1)}}
+.arena-wrap .cine .teamwrap{opacity:0}
+.arena-wrap .cine.crew .teamwrap.foes{animation:crewIn .5s both}
+.arena-wrap .cine.crew .teamwrap.mine{animation:crewIn .5s .12s both}
+.arena-wrap .cine.crew .teamwrap.foes .tok{animation:tokIn .42s both}
+.arena-wrap .cine.crew .teamwrap.mine .tok{animation:tokIn .42s both}
+@keyframes crewIn{0%{opacity:0}100%{opacity:1}}
+@keyframes tokIn{0%{opacity:0;transform:translateY(14px) scale(.94)}
+  100%{opacity:1;transform:translateY(0) scale(1)}}
+
 /* Sits over the settled board rather than in a side panel, because the end of
    a battle should land where you were looking. Fades in only once the last
    cascade has come to rest. */
@@ -1348,7 +1399,76 @@ document.querySelectorAll('.a-foe').forEach(function(r){
   });
 });
 var wrap = document.querySelector('.arena-wrap');
-function openBattle(res){
+/* ------------------------------------------------------------- entrance ----
+   Three beats: the arena and what it does, the board falling in, the two Crews
+   walking on. Under three seconds, skippable with a tap, and it never runs on
+   resume -- see the note in the stylesheet.
+
+   EVERY STEP IS OPTIONAL. The battle is already loaded and playable before this
+   starts; the sequence only holds input for its own duration. If anything in
+   here throws, finish() still runs and the board is live. A cinematic must
+   never be able to cost somebody their turn. */
+var cineTimers = [], cineDone = null;
+function cineStop(){
+  cineTimers.forEach(function(t){ clearTimeout(t); });
+  cineTimers = [];
+  var el = document.querySelector('.a-intro');
+  if (el) el.remove();
+  var ar = document.querySelector('.arena');
+  if (ar) ar.classList.remove('cine', 'crew');
+  gridEl.querySelectorAll('.cell').forEach(function(c){ c.style.animationDelay = ''; });
+  if (cineDone) { var d = cineDone; cineDone = null; d(); }
+}
+function cineAt(ms, fn){ cineTimers.push(setTimeout(fn, ms)); }
+
+function playEntrance(done){
+  var ar = document.querySelector('.arena');
+  if (!ar) { done(); return; }
+  cineDone = done;
+  busy = true;                       // no moves until the Crews are on
+
+  var terr = S.terrainBg ? artUrl('background', S.terrainBg, 1000) : '';
+  var intro = document.createElement('div');
+  intro.className = 'a-intro go';
+  if (terr) intro.style.backgroundImage = 'url("' + terr + '")';
+  intro.innerHTML =
+      '<div class="ti-k">The arena</div>'
+    + '<div class="ti-n">' + (S.terrainName || 'Unknown Ground') + '</div>'
+    + '<div class="ti-e">' + (S.terrainNote || '') + '</div>'
+    + '<div class="ti-v">' + (S.mine[0] ? '<b>Your Crew</b>' : '') + ' versus <b>'
+    +   (S.foes[0] ? S.foes[0].name.split(' ')[0] + "'s Crew" : 'the defenders') + '</b></div>'
+    + '<div class="ti-s">tap to skip</div>';
+  intro.addEventListener('click', cineStop);
+  ar.appendChild(intro);
+  ar.classList.add('cine');
+
+  // beat two: the board falls in, a diagonal sweep rather than all at once
+  cineAt(1450, function(){
+    intro.classList.add('out');
+    gridEl.querySelectorAll('.cell').forEach(function(c, i){
+      var r = Math.floor(i / N), col = i % N;
+      c.style.animationDelay = ((r + col) * 26) + 'ms';
+    });
+    sfx('land');
+  });
+  // beat three: the Crews walk on
+  cineAt(2050, function(){
+    if (intro.parentNode) intro.remove();
+    ar.classList.add('crew');
+    var toks = document.querySelectorAll('.teamcol .tok');
+    toks.forEach(function(t, i){ t.style.animationDelay = ((i % 3) * 90) + 'ms'; });
+    sfx('start');
+  });
+  cineAt(2750, cineStop);
+}
+
+/**
+ * @param res    the start/resume reply
+ * @param fresh  true for a battle that begins now. A resumed battle is drawn
+ *               immediately: it is not an entrance, and replaying the fanfare
+ *               for a fight already in progress is the drop-reveal mistake.
+ */
+function openBattle(res, fresh){
   battleId = res.battle_id; S = res.state;
   setup.style.display = 'none';
   battle.classList.add('on');
@@ -1357,8 +1477,15 @@ function openBattle(res){
   $('log').innerHTML = '';
   buildTeams(); paintBoard(); paintTeams(); paintChrome();
   (S.log||[]).forEach(function(l){ logLine('sys', l); });
-  sfxInit(); sfx('start');
+  sfxInit();
   battle.scrollIntoView({behavior:'smooth', block:'start'});
+  if (!fresh || S.over) { sfx('start'); return; }
+  try { playEntrance(function(){ busy = false; }); }
+  catch (e) {
+    // the battle is already drawn and live; the sequence was the optional part
+    busy = false; sfx('start');
+    if (window.console) console.error('arena entrance', e);
+  }
 }
 var startBtn = $('aStart');
 function startFailed(msg){
@@ -1394,7 +1521,7 @@ if (startBtn) startBtn.addEventListener('click', function(){
     $('aMsg').textContent = '';
     /* A throw in here used to vanish into the promise chain, leaving the setup
        screen up, the battle live on the server and no explanation anywhere. */
-    try { openBattle(res); }
+    try { openBattle(res, true); }
     catch (e) { startFailed('Could not draw the battle. Reopening it…'); }
   }, function(err){
     startFailed('The Arena did not answer. Checking whether the battle started…');
@@ -1403,6 +1530,7 @@ if (startBtn) startBtn.addEventListener('click', function(){
 $('aLeave').addEventListener('click', function(){
   /* Leaving does not abandon anything: the battle is on the server and resume
      picks it up exactly where it was. */
+  cineStop();
   battle.classList.remove('on'); wrap.classList.remove('playing'); setup.style.display = '';
 });
 $('ecAgain').addEventListener('click', function(){ location.reload(); });

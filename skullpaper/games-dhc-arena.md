@@ -51,6 +51,14 @@ punished for.
 
 ---
 
+## The entrance
+
+A battle opens in three beats: the **arena** and what it does to the fight, then
+the **board** falling in, then the two **Crews** walking on. It runs under three
+seconds and a tap anywhere skips it — six battles a day means seeing it six
+times a day. Picking up a battle you left in progress goes straight to the
+board; that is not an entrance.
+
 ## The board
 
 Five kinds of gem on a 7x7 board:
