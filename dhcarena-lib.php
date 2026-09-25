@@ -236,9 +236,13 @@ function dhca_move($conn, $user_id, $battle_id, $a, $z) {
 		$mv = dhca_ai_move($b);
 		if (!$mv) { dhca_fill_board($b); $mv = dhca_ai_move($b); }
 		if (!$mv) { $b['turn'] = 'mine'; break; }
-		$before = $b['fx'];
+		$before = $b['fx']; $beforeLog = $b['log'];
 		if (!dhca_play($b, 'foes', $mv[0], $mv[1])) { $b['turn'] = 'mine'; break; }
-		$b['fx'] = array_merge($before, $b['fx']);      // one timeline for the whole exchange
+		// one timeline AND one log for the whole exchange: dhca_play() clears both
+		// at the top of every move, so without this the player only ever saw the
+		// last defending reply and never their own turn.
+		$b['fx']  = array_merge($before, $b['fx']);
+		$b['log'] = array_merge($beforeLog, $b['log']);
 		$b['meta']['moves'][] = array($mv[0], $mv[1]);
 	}
 

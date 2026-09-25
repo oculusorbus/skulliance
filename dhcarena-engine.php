@@ -413,7 +413,7 @@ function dhca_play(&$b, $side, $a, $z) {
 	if (!$nb || !dhca_matches($nb)) return false;     // no match = not a move
 
 	$b['fx'] = array(); $b['log'] = array();
-	$b['fx'][] = array('k'=>'slide','a'=>$a,'z'=>$z);
+	$b['fx'][] = array('k'=>'slide','side'=>$side,'a'=>$a,'z'=>$z);
 
 	// the bomb layer travels with its gems
 	$b['bomb'] = dhca_slid_bombs($b['bomb'], $a, $z);
@@ -469,6 +469,13 @@ function dhca_slid_bombs($bomb, $a, $z) {
 function dhca_resolve_wave(&$b, $side, $ms, $chain) {
 	$cleared = array();
 	foreach ($ms as $g) foreach ($g['cells'] as $i) $cleared[$i] = 1;
+
+	// The wave opens the beat for the client: these are the gems going, and this
+	// is which link of the chain it is. Everything below appends to the same
+	// timeline, so the browser can play the move back in the order it happened
+	// without knowing a single rule.
+	$b['fx'][] = array('k'=>'wave','chain'=>$chain,'cells'=>array_keys($cleared),
+	                   'len'=>dhca_longest($ms),'groups'=>count($ms));
 
 	// detonate live bombs caught in the clear, chaining through what they reach
 	$extra = array(); $blasts = array(); $boom = 0;
@@ -665,6 +672,9 @@ function dhca_score_move($b, $side, $a, $z) {
 
 /** What the client needs to draw, with nothing it could cheat with. */
 function dhca_public(&$b) {
+	$tn = ''; $tnote = '';
+	foreach (dhca_terrains() as $t)
+		if ($t['id'] === $b['terrain']) { $tn = $t['name']; $tnote = $t['note']; }
 	$slim = function($f) {
 		return array('uid'=>$f['uid'],'name'=>$f['name'],'traits'=>$f['traits'],
 			'kit'=>array('id'=>$f['kit']['id'],'emoji'=>$f['kit']['emoji'],
@@ -677,6 +687,7 @@ function dhca_public(&$b) {
 		'mine'=>array_map($slim, $b['mine']), 'foes'=>array_map($slim, $b['foes']),
 		'turn'=>$b['turn'], 'round'=>$b['round'], 'over'=>$b['over'],
 		'terrain'=>$b['terrain'], 'terrainBg'=>$b['terrainBg'],
+		'terrainName'=>$tn, 'terrainNote'=>$tnote,
 		'stats'=>$b['stats'], 'fx'=>$b['fx'], 'log'=>$b['log'],
 	);
 }
