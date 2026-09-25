@@ -244,7 +244,25 @@ function dhca_fill_board(&$b) {
 
 /** Everything a Fighter is, derived from its traits. Nothing is stored. */
 function dhca_build_fighter($traits, $name, $uid, $rarity) {
+	/*
+	 * A FIGHTER IS ONLY REQUIRED TO HAVE A BACKGROUND, A TORSO AND A HEAD.
+	 * DHCF_REQUIRED says so, and the assembler will happily save one with no
+	 * weapon and no headgear -- so those two arrive missing, and every read of
+	 * them below was an undefined-key warning. On a page that is merely bad; on
+	 * ajax/dhcarena-action.php the warnings print ahead of the JSON and the
+	 * reply cannot be parsed, which is the same failure that makes a battle
+	 * look like it stalled.
+	 *
+	 * Absent is not the same as common, either. A Fighter with no weapon should
+	 * not quietly score as though it had a common one, so an empty slug falls
+	 * through to the baseline everywhere: no multiplier, no variance, and the
+	 * first kit rather than a hash of nothing.
+	 */
+	foreach (array('background','torso','head','headgear','arms','weapon','effects','companion') as $slot)
+		if (!isset($traits[$slot]) || $traits[$slot] === null) $traits[$slot] = '';
+
 	$m = function($cat,$slug) use ($rarity) {
+		if ($slug === '') return 1.0;
 		static $mult = array('common'=>1.00,'uncommon'=>1.08,'epic'=>1.16,
 		                     'legendary'=>1.24,'mythic'=>1.32);
 		$t = isset($rarity[$cat][$slug][0]) ? $rarity[$cat][$slug][0] : 'common';
@@ -252,7 +270,10 @@ function dhca_build_fighter($traits, $name, $uid, $rarity) {
 	};
 	// §4: variance BETWEEN traits must be wider than the gap between tiers, or
 	// rarity decides the fight. Deterministic per slug, so a trait is itself.
-	$v = function($slug) { return 1 + ((dhca_hash($slug) % 1000)/1000 - 0.5) * DHCA_VARIANCE; };
+	$v = function($slug) {
+		if ($slug === '') return 1.0;
+		return 1 + ((dhca_hash($slug) % 1000)/1000 - 0.5) * DHCA_VARIANCE;
+	};
 
 	/* WHICH TRAIT DID WHAT. Carried on the Fighter so the battle screen can say
 	   it out loud: only torso, weapon and headgear touch the numbers, and
@@ -264,13 +285,13 @@ function dhca_build_fighter($traits, $name, $uid, $rarity) {
 		return isset($rarity[$cat][$slug][0]) ? $rarity[$cat][$slug][0] : 'common';
 	};
 	$tiers = array();
-	foreach ($traits as $cat => $slug) if ($slug !== '' && $slug !== null) $tiers[$cat] = $tier($cat, $slug);
+	foreach ($traits as $cat => $slug) if ($slug !== '') $tiers[$cat] = $tier($cat, $slug);
 
 	$kits = dhca_kits();
 	$hp = (int)round(DHCA_HP_BASE * $m('torso',$traits['torso']) * $v($traits['torso']));
 	return array(
 		'uid'=>$uid, 'name'=>$name, 'traits'=>$traits, 'tiers'=>$tiers,
-		'kit'=>$kits[dhca_hash($traits['weapon']) % count($kits)],
+		'kit'=>$kits[$traits['weapon'] === '' ? 0 : dhca_hash($traits['weapon']) % count($kits)],
 		'maxHp'=>$hp, 'hp'=>$hp, 'shield'=>0, 'bleed'=>0, 'surge'=>0, 'ko'=>false,
 		'power'=>(int)round(DHCA_POWER_BASE * $m('weapon',$traits['weapon']) * $v($traits['weapon'])),
 		'critC'=>0.06 * $m('headgear',$traits['headgear']) * $v($traits['headgear']),

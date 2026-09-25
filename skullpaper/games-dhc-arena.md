@@ -44,6 +44,12 @@ for **six hours** is forfeited: it resolves as a defeat, with the recovery and
 the record a defeat carries, so a dropped connection can never lock you out of
 the Arena for good.
 
+**Your defence is your three strongest, arranged for you.** Not your three
+rarest — rarity score is close to unrelated to how a Fighter actually performs,
+which is deliberate. The game fields the best three by the health and power the
+engine derives from their traits, puts the toughest at the front where every
+match of 3 lands, and the hardest hitter at the back where only a 5 reaches.
+
 **Only the attacker's Fighters need to recover.** Your Crew defends around the clock
 whether you are logged in or not, and defending costs them nothing — a defender
 never chose to be there, so being popular must never be something you can be
