@@ -534,16 +534,73 @@ var SFX = {
 };
 var sfxOn=true;
 try{ sfxOn = localStorage.getItem('dhcarena_sfx') !== '0'; }catch(e){}
-var _sfxSrc={};
+
+/* WEB AUDIO, NOT <audio> ELEMENTS.
+ *
+ * Two reports, one cause: sounds cutting each other off, and tile animation
+ * going slow and laggy on mobile whenever sound is on.
+ *
+ * An HTMLAudioElement is a heavyweight object. Every play() does work on the
+ * main thread -- the same thread running the board animation -- and mobile
+ * browsers cap how many can sound at once, so a new one starting can stop one
+ * already playing. Both symptoms fall straight out of that, and no amount of
+ * throttling or trimming fixes either, because the cost is in the mechanism.
+ *
+ * Web Audio decodes each file ONCE into memory at startup. Playing is then a
+ * BufferSourceNode -- a throwaway object with no decode, no fetch and no main
+ * thread work -- and any number can sound together and mix properly instead of
+ * competing. It is the difference between opening a file and reading from RAM.
+ *
+ * Falls back to the old element-based path if AudioContext is missing or a
+ * file will not decode (Safari and Ogg have a history), so sound degrades
+ * rather than disappearing. */
+var actx=null, sfxBuf={}, sfxEl={}, sfxVoices=0;
+var SFX_MAX_VOICES=10;        // a ceiling, never reached in normal play
+
+function sfxInit(){
+  if(actx) return;
+  var AC=window.AudioContext||window.webkitAudioContext;
+  if(!AC) return;                       // no Web Audio: fallback path handles it
+  try{ actx=new AC(); }catch(e){ return; }
+  // Decode everything in the background, once. ~600KB total, after the first
+  // gesture, so it never sits in front of the first frame.
+  Object.keys(SFX).forEach(function(k){
+    try{
+      fetch(SFX[k][0]).then(function(r){ return r.arrayBuffer(); })
+        .then(function(b){
+          return new Promise(function(res,rej){ actx.decodeAudioData(b,res,rej); });
+        })
+        .then(function(buf){ sfxBuf[k]=buf; })
+        .catch(function(){});           // leaves this one on the fallback
+    }catch(e){}
+  });
+}
+
 function sfx(name){
   if(!sfxOn) return;
   var def=SFX[name]; if(!def) return;
+
+  if(actx && sfxBuf[name]){
+    if(sfxVoices>=SFX_MAX_VOICES) return;
+    try{
+      if(actx.state==='suspended') actx.resume();
+      var src=actx.createBufferSource(); src.buffer=sfxBuf[name];
+      var g=actx.createGain(); g.gain.value=def[1];
+      src.connect(g); g.connect(actx.destination);
+      sfxVoices++;
+      src.onended=function(){ sfxVoices--; };
+      src.start(0);
+      return;
+    }catch(e){ sfxVoices=Math.max(0,sfxVoices-1); }
+  }
+
+  /* Fallback: one element per sound, restarted -- skullswap.php's model. */
   try{
-    var a=_sfxSrc[name];
-    if(!a){ a=_sfxSrc[name]=new Audio(def[0]); a.volume=def[1]; }
-    a.currentTime=0;                 // restart, exactly as skullswap.php does
+    var a=sfxEl[name];
+    if(!a){ a=sfxEl[name]=new Audio(def[0]); a.volume=def[1]; }
+    a.currentTime=0;
     var pr=a.play();
-    if(pr && pr.catch) pr.catch(function(){});   // autoplay policy: ignore
+    if(pr && pr.catch) pr.catch(function(){});
   }catch(e){}
 }
 
@@ -1380,7 +1437,7 @@ function paintMute(){ muteBtn.textContent = sfxOn?'🔊':'🔇';
 muteBtn.onclick=function(){
   sfxOn=!sfxOn;
   try{ localStorage.setItem('dhcarena_sfx', sfxOn?'1':'0'); }catch(e){}
-  paintMute(); if(sfxOn) sfx('pick');
+  paintMute(); if(sfxOn){ sfxInit(); sfx('pick'); }
 };
 paintMute();
 
@@ -1388,10 +1445,10 @@ paintMute();
    call plays on the first gesture rather than at load, where it would be
    swallowed. Once only -- it greets a battle, it is not a click sound. */
 var greeted=false;
-function greet(){ if(greeted) return; greeted=true; sfx('start'); }
+function greet(){ if(greeted) return; greeted=true; sfxInit(); sfx('start'); }
 document.addEventListener('pointerdown', greet, {once:true});
 
-document.getElementById('reroll').onclick=function(){ greeted=true; newBattle(); sfx('start'); };
+document.getElementById('reroll').onclick=function(){ greeted=true; sfxInit(); newBattle(); sfx('start'); };
 document.getElementById('ecAgain').onclick=function(){ newBattle(); sfx('start'); };
 newBattle();
 </script>
