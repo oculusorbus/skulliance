@@ -472,6 +472,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   font-size:26px;font-weight:700;color:var(--ochre);text-shadow:0 3px 14px #000;opacity:0;pointer-events:none}
 .arena-wrap .combo.on{animation:cb 1s}
 @keyframes cb{0%{opacity:0;transform:translate(-50%,10px) scale(.8)}20%{opacity:1;transform:translate(-50%,0) scale(1.1)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
+.arena-wrap .ec-acts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.arena-wrap .ec-acts .btn{text-decoration:none;display:inline-flex;align-items:center}
 .arena-wrap .over{text-align:center;padding:14px}
 .arena-wrap .over h2{font-size:15px;color:var(--ochre);margin:0 0 4px}
 /* ---- Arena shell ------------------------------------------------------------
@@ -705,8 +707,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <?php endif; ?>
       <div class="a-go">
         <button class="btn go" id="aStart" <?php echo $block?'disabled':''; ?>>Enter the Arena</button>
+        <?php /* Never disabled, whatever the allowance says -- that is the point
+                 of it. A player out of battles, short of a Crew, or waiting on
+                 three Fighters to come back can still play. */ ?>
+        <button class="btn" id="aPractice">Practice</button>
         <span class="a-sub" style="margin:0" id="aMsg"></span>
       </div>
+      <p class="a-sub" style="margin:8px 0 0">Practice pits two random Crews against
+         each other with the real rules and nothing at stake — no allowance, no
+         recovery, no traits, no ladder. Play as many as you like.</p>
       </div>
     </div>
 
@@ -769,7 +778,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <div class="ec-title" id="ecTitle"></div>
       <div class="ec-sub" id="ecSub"></div>
       <div class="ec-stats" id="ecStats"></div>
-      <button class="btn go" id="ecAgain">Back to the Arena</button>
+      <div class="ec-acts">
+        <button class="btn go" id="ecAgain">Back to the Arena</button>
+        <?php /* Same shape as Skull Swap, Monstrocity and the card games: the
+                 composer opens in a new tab so it never replaces the game the
+                 player is still sitting in, and @skulliance is tagged so the
+                 main account can repost. */ ?>
+        <a class="btn" id="ecShare" href="#" target="_blank" rel="noopener">𝕏 Share Result</a>
+      </div>
     </div>
     <details class="logbox" open><summary>Battle log</summary><div id="log"></div></details>
   </div>
@@ -803,6 +819,14 @@ var CREW_SIZE = <?php echo DHCA_CREW_SIZE; ?>;
 var BLOCKED = <?php echo json_encode($block); ?>;
 
 var S = null, battleId = 0, busy = false, drag = null, sfxOn = true;
+/* PRACTICE. The same board, the same engine, nothing at stake -- and no row
+   anywhere: the battle lives in this spec, which is posted back with each move
+   and rebuilt server-side. See dhcarena-practice.php. */
+var PRACTICE_URL = 'ajax/dhcarena-practice.php';
+/* Absolute, because it is going into a post that leaves the site -- and the
+   www host specifically, since that is what the canonical tag points at. */
+var SHARE_URL = 'https://skulliance.io/staking/dhcarena.php';
+var practice = null;      // the spec while a practice battle is running, else null
 try { sfxOn = localStorage.getItem('dhcarena_sfx') !== '0'; } catch (e) {}
 
 var $ = function(id){ return document.getElementById(id); };
@@ -1231,7 +1255,7 @@ function lineKind(line){
  * chain as a network error, and swallowing it silently is what turns a small
  * rendering bug into "the Arena stalls".
  */
-function post(body, cb, fail){
+function post(body, cb, fail, url){
   var fd = new FormData();
   Object.keys(body).forEach(function(k){
     if (Array.isArray(body[k])) body[k].forEach(function(v){ fd.append(k+'[]', v); });
@@ -1250,7 +1274,7 @@ function post(body, cb, fail){
     if (fail) fail(err); else logLine('sys','Lost contact with the Arena — your move was not played.');
     busy = false;
   }
-  fetch('ajax/dhcarena-action.php', {method:'POST', body:fd, credentials:'same-origin'})
+  fetch(url || 'ajax/dhcarena-action.php', {method:'POST', body:fd, credentials:'same-origin'})
     .then(function(r){
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.text();
@@ -1274,7 +1298,11 @@ function post(body, cb, fail){
 }
 function sendMove(a, z){
   busy = true;
-  post({do:'move', battle_id:battleId, a:a, z:z}, function(res){
+  var body = practice
+    ? {do:'move', spec:JSON.stringify(practice), a:a, z:z}
+    : {do:'move', battle_id:battleId, a:a, z:z};
+  post(body, function(res){
+    if (res && res.ok && res.spec) practice = res.spec;
     if (!res || !res.ok) {
       busy = false;
       logLine('sys', (res && res.message) || 'That move was refused.');
@@ -1306,7 +1334,7 @@ function sendMove(a, z){
     // real one back rather than leaving a slide that did not happen on screen.
     paintBoard();
     logLine('sys','Lost contact with the Arena — that move was not played.');
-  });
+  }, practice ? PRACTICE_URL : null);
 }
 
 /* ------------------------------------------------------------ the end ------ */
@@ -1322,10 +1350,15 @@ function showEnd(res){
       ? 'Their Crew is down and yours did not lose a Fighter.'
       : standing.length+' of your Fighters still standing — '
         + standing.map(function(f){ return f.name.split(' ')[0]; }).join(' and ') + '.';
-    if (res.drop) sub += ' A trait dropped — check your collection.';
+    /* Practice pays nothing and says so, rather than staying quiet and letting
+       a player wonder where their trait went. */
+    if (practice)                   sub += ' Practice — nothing was at stake.';
+    else if (res.drop)              sub += ' A trait dropped — check your collection.';
     else if (res.rewarded === false) sub += ' No trait this time: the daily cap is spent.';
   } else {
-    sub = 'Your Crew is down. The Fighters you sent are resurrecting — they will be back.';
+    sub = practice
+      ? 'Your Crew is down. Practice — nothing was at stake, so go again.'
+      : 'Your Crew is down. The Fighters you sent are resurrecting — they will be back.';
   }
   $('ecSub').textContent = sub;
   $('ecStats').innerHTML =
@@ -1333,9 +1366,41 @@ function showEnd(res){
     + '<span><b>'+S.stats.bombs+'</b>bombs armed</span>'
     + '<span><b>'+S.stats.blasts+'</b>detonated</span>'
     + '<span><b>x'+S.stats.best+'</b>best chain</span>';
+  $('ecAgain').textContent = practice ? 'Practice again' : 'Back to the Arena';
+  paintShare(won, standing.length);
   card.hidden = false;
   sfx(won ? 'win' : 'lose');
   logLine('big', won ? 'VICTORY — their Crew is down.' : 'DEFEAT — your Crew is down.');
+}
+
+/**
+ * The share link, written fresh for the result that just happened.
+ *
+ * Same shape as Skull Swap and Monstrocity: the composer opens in a new tab,
+ * the page URL rides along so X renders the artwork as a card, and @skulliance
+ * is tagged so the main account sees it and can repost -- the point being reach
+ * that is not just the official account talking to itself.
+ *
+ * A DEFEAT IS STILL WORTH SHARING and gets its own line rather than no button.
+ * Half of these battles are losses by construction, and a share button that
+ * appears only on a win posts a version of the game where nobody ever loses.
+ */
+function paintShare(won, standing){
+  var a = $('ecShare'); if (!a) return;
+  var chain = S.stats.best, bombs = S.stats.bombs;
+  var body;
+  if (won) {
+    body = standing === 3
+      ? 'Took the DHC Arena without losing a Fighter.'
+      : 'Took the DHC Arena with ' + standing + ' of 3 still standing.';
+  } else {
+    body = 'My Crew went down in the DHC Arena after ' + S.round + ' rounds.';
+  }
+  if (chain > 2) body += ' Best chain x' + chain + '.';
+  else if (bombs > 0) body += ' ' + bombs + ' bombs armed.';
+  body += '\n\nDHC Arena on Skulliance\n\n@skulliance';
+  a.href = 'https://x.com/intent/post?text=' + encodeURIComponent(body)
+         + '&url=' + encodeURIComponent(SHARE_URL);
 }
 
 /* ------------------------------------------------------- input: dragging ---
@@ -1642,6 +1707,29 @@ function openBattle(res, fresh){
     if (window.console) console.error('arena entrance', e);
   }
 }
+var practiceBtn = $('aPractice');
+if (practiceBtn) practiceBtn.addEventListener('click', function(){
+  if (busy || battle.classList.contains('on')) return;
+  busy = true; practiceBtn.disabled = true;
+  $('aMsg').textContent = 'Drawing two Crews…';
+  post({do:'new'}, function(res){
+    busy = false; practiceBtn.disabled = false;
+    if (!res || !res.ok) { $('aMsg').textContent = 'Could not start practice.'; return; }
+    $('aMsg').textContent = '';
+    practice = res.spec;
+    battleId = 0;
+    try { openBattle(res, true); }
+    catch (e) {
+      practice = null;
+      $('aMsg').textContent = 'Could not draw the battle.';
+      if (window.console) console.error('arena practice', e);
+    }
+  }, function(){
+    busy = false; practiceBtn.disabled = false;
+    $('aMsg').textContent = 'The Arena did not answer.';
+  }, PRACTICE_URL);
+});
+
 var startBtn = $('aStart');
 function startFailed(msg){
   busy = false;
@@ -1670,7 +1758,7 @@ function startFailed(msg){
 if (startBtn) startBtn.addEventListener('click', function(){
   if (busy) return;
   if (battle.classList.contains('on')) return;   // already in one
-  busy = true; startBtn.disabled = true;
+  busy = true; startBtn.disabled = true; practice = null;
   $('aMsg').textContent = 'Entering…';
   post({do:'start', defender:rival, fighters:picked}, function(res){
     if (!res || !res.ok) { startFailed((res && res.message) || 'Could not start.'); return; }
@@ -1687,10 +1775,22 @@ if (startBtn) startBtn.addEventListener('click', function(){
 $('aLeave').addEventListener('click', function(){
   /* Leaving does not abandon anything: the battle is on the server and resume
      picks it up exactly where it was. */
-  cineStop();
+  cineStop(); practice = null;
   battle.classList.remove('on'); wrap.classList.remove('playing'); setup.style.display = '';
 });
-$('ecAgain').addEventListener('click', function(){ location.reload(); });
+$('ecAgain').addEventListener('click', function(){
+  if (!practice) { location.reload(); return; }
+  // Practice costs nothing, so going again should cost nothing either -- not a
+  // page load and not the Crew picker.
+  $('endcard').hidden = true;
+  busy = true;
+  post({do:'new'}, function(res){
+    busy = false;
+    if (!res || !res.ok) { location.reload(); return; }
+    practice = res.spec;
+    try { openBattle(res, true); } catch (e) { location.reload(); }
+  }, function(){ busy = false; location.reload(); }, PRACTICE_URL);
+});
 
 $('howto').addEventListener('click', function(){ wrap.classList.toggle('showintro'); });
 
@@ -1714,7 +1814,7 @@ post({do:'resume'}, function(res){
   if (!res || !res.ok) return;
   // The player can press Enter before this lands; whoever opened a battle first
   // owns the screen.
-  if (battle.classList.contains('on')) return;
+  if (battle.classList.contains('on') || practice) return;
   try {
     openBattle(res, !res.state.moves);
     logLine('sys', res.state.moves ? 'Picked up where you left off.'

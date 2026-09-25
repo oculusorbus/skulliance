@@ -59,6 +59,18 @@ seconds and a tap anywhere skips it — six battles a day means seeing it six
 times a day. Picking up a battle you left in progress goes straight to the
 board; that is not an entrance.
 
+## Practice
+
+**Practice pits two random Crews against each other with the real rules and
+nothing at stake** — no allowance, no recovery, no traits, no ladder. Play as
+many as you like, whenever you like, including when you are out of battles for
+the day or waiting on Fighters to come back.
+
+It is the same engine that decides a ranked battle, not a simplified version, so
+what you learn in practice is true of the real thing. The two Crews are drawn at
+random from the whole trait set, which also makes it the fastest way to see kits
+you do not own yet.
+
 ## The board
 
 Five kinds of gem on a 7x7 board:
@@ -200,6 +212,18 @@ are there or not, and a board that paid for defensive results would pay for
 being popular.
 
 ---
+
+## Sharing your result
+
+The end of a battle has an **𝕏 Share** button, like Crypt Crawl, Crypt Conquest,
+Monstrocity, Skull Swap and Skull Racer. One click opens X with the result
+already written — how many of your Crew were left standing, your best chain —
+along with a link to the Arena, which brings the artwork with it. Defeats get
+their own line rather than no button: half of these battles are losses, and a
+share button that only appears on a win posts a version of the game where nobody
+ever loses.
+
+Nothing is posted without you reading it first and pressing Post yourself.
 
 ## Why it looks like it does
 
