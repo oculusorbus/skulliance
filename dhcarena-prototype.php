@@ -202,7 +202,38 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   justify-content:space-between;gap:4px;white-space:nowrap;overflow:hidden;
   height:12px;line-height:12px}
 .hpn span{overflow:hidden;text-overflow:ellipsis}
-.tok.ko{opacity:.3;filter:grayscale(1)}
+/* The layers now carry the fade themselves, so the token only desaturates.
+   Stacking the old opacity:.3 on top of layers that already end near .2 left
+   the art at about 6% -- a fallen Fighter should read as a wreck you can still
+   name, not an empty box. The text stays legible for the same reason: whose
+   Fighter died, and on what HP, is information. */
+.tok.ko{opacity:.8;filter:grayscale(1);transition:opacity .5s,filter .5s}
+.tok.ko .nm{text-decoration:line-through}
+/* While a Fighter is coming apart it must not already be greyed out -- the
+   whole point is watching it happen. Three classes beats two, so this wins
+   over .tok.ko until the sequence finishes. */
+.tok.ko.dying{opacity:1;filter:none}
+.tok.dying{animation:deathShake .55s}
+@keyframes deathShake{0%{transform:translateX(0)}
+  12%{transform:translateX(-4%) rotate(-1.5deg)}
+  30%{transform:translateX(3.5%) rotate(1.2deg)}
+  52%{transform:translateX(-2.5%) rotate(-.8deg)}
+  74%{transform:translateX(1.5%)}100%{transform:translateX(0)}}
+/* TRAIT BY TRAIT. Each layer falls out of the composite on its own, staggered
+   from the top of the stack down, so a Fighter comes apart in the order it was
+   assembled rather than simply fading. Two variants so pieces do not all spin
+   the same way -- alternating by index reads as debris, one direction reads as
+   a single object rotating.
+   Ends at .22 rather than 0 and stays there (forwards): the fallen Fighter
+   should be a scattered wreck you can still recognise, not an empty frame. */
+.tok .art img.dis{animation:disA .62s cubic-bezier(.3,0,.7,1) forwards}
+.tok .art img.dis.alt{animation-name:disB}
+@keyframes disA{0%{transform:none;opacity:1}
+  16%{transform:translateY(-4%) scale(1.04);opacity:1}
+  100%{transform:translateY(28%) rotate(9deg) scale(.84);opacity:.22}}
+@keyframes disB{0%{transform:none;opacity:1}
+  16%{transform:translateY(-5%) scale(1.05);opacity:1}
+  100%{transform:translateY(24%) rotate(-11deg) scale(.86);opacity:.22}}
 .tok.hit{animation:hit .3s}
 @keyframes hit{0%{transform:translateX(0)}30%{transform:translateX(-3%)}
   60%{transform:translateX(2.4%)}100%{transform:translateX(0)}}
@@ -901,7 +932,10 @@ function hurt(t,amt,tag){
   t.hp=Math.max(0,t.hp-amt); pop(t,'-'+amt,tag); shake(t,tag==='big');
   layerAnim(t,['head','headgear'],'jolt');   // head and helmet together, or the
                                              // skull slides out from under it
-  if(t.hp===0){t.ko=true;sfx('ko');logLine(t.side==='mine'?'foe':'you',t.name+' is knocked out.');}
+  if(t.hp===0){
+    t.ko=true; sfx('ko'); killAnim(t);
+    logLine(t.side==='mine'?'foe':'you','☠ '+t.name+' falls.');
+  }
   return amt;
 }
 function healF(f,a){var b=f.hp;f.hp=Math.min(f.maxHp,f.hp+a);
@@ -1262,6 +1296,24 @@ function flashTok(f,kind){
   fl.className='flash'+(kind?' '+kind:'');
   void fl.offsetWidth; fl.classList.add('on');
 }
+/* Top of the stack downward -- companion first, torso last -- so the Fighter
+   comes apart in the reverse of the order it was built. The background is left
+   alone: it is the ground the pieces fall against, not part of the body. */
+var DEATH_ORDER=['companion','headgear','head','effects','arms','weapon','torso'];
+function killAnim(f){
+  var e=elFor(f); if(!e) return;
+  e.classList.add('dying');
+  flashTok(f,'big');
+  var step=80, n=0;
+  DEATH_ORDER.forEach(function(slot){
+    var img=e.querySelector('.art img[data-l="'+slot+'"]'); if(!img) return;
+    img.style.animationDelay=(n*step)+'ms';
+    img.className='dis'+(n%2?' alt':'');   // alternate the spin: debris, not a rotation
+    n++;
+  });
+  setTimeout(function(){ e.classList.remove('dying'); }, n*step+640);
+}
+
 function shake(f,big){
   var e=elFor(f); if(!e) return;
   e.classList.remove('hit','big'); void e.offsetWidth;
