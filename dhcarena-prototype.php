@@ -446,6 +446,8 @@ button{font:inherit;cursor:pointer;border-radius:3px}
      column) and a <b>5-match leaves a 💣</b> (clears the board) — an <b>L, T or plus counts too</b>,
      since that is five gems as well — they sit there keeping their colour, and
      <b>either side can set one off</b> by matching it, so a bomb you leave lying around can be turned on you.
+     One slide that makes <b>two matches at once</b> pays a bonus — 6 gems or more
+     across them for <b>Multi-Match</b>, 9 or more for <b>Mega</b>. Cascades do not count.
      Match size is reach:
      <b>3</b> hits their front, <b>4</b> reaches mid, <b>5+</b> reaches back. Match 4+ and you go again.
      A slide with no match costs nothing.</p>
@@ -782,6 +784,16 @@ var BLAST_CAP=4, BLAST_SCALE=0.45;   // see the blast block in cascade()
    so it reached ten in about three matches and a single move could set off
    three eruptions. It is meant to be the thing you build toward across a
    battle, not a side effect of playing one. */
+/* MULTI-MATCH. One slide that forms TWO separate matches at once is a thing
+   players coming from Monstrocity already expect to be rewarded, and here it
+   was silently worth nothing -- a real blind spot, and worse with slides, which
+   make double matches far easier to set up than swapping ever did.
+   Monstrocity's own rule, from its scoring guide: 6-8 tiles across multiple
+   matches in a single move is a bonus, 9+ a much bigger one, and cascades do
+   NOT count. Ported with the same thresholds. The multipliers are damage here
+   rather than score, so they are tuned separately -- see the sweep note. */
+var MULTI_MIN=6, MULTI_MEGA_MIN=9;
+var MULTI_BONUS=1.30, MULTI_MEGA=1.90;
 var SURGE_GAIN=1;        // per Charge match, flat -- NOT the match length
 var EXTRA_TURN_MIN=5;    // a 4 still leaves a bomb; that is reward enough
 function makeBoard(){
@@ -1058,9 +1070,29 @@ function cascade(side,chain,done){
      belonging to a knocked-out Fighter was matched, so it survived every test
      until a Fighter actually went down mid-battle. One bad group should cost
      one group's effect, never the game. */
+  /* Only on the move itself. A cascade is luck; two matches from one slide is
+     something you found. */
+  var multi=1;
+  if(chain===1 && ms.length>=2){
+    var tiles=0;
+    ms.forEach(function(g){ tiles+=g.len; });
+    if(tiles>=MULTI_MEGA_MIN)      multi=MULTI_MEGA;
+    else if(tiles>=MULTI_MIN)      multi=MULTI_BONUS;
+    if(multi>1 && !S.settling){
+      var mega=(multi===MULTI_MEGA);
+      logLine(side==='mine'?'you':'foe',
+        (mega?'✦✦ MEGA MULTI-MATCH':'✦ MULTI-MATCH')+' — '+ms.length+' matches, '
+        +tiles+' gems, +'+Math.round((multi-1)*100)+'% damage.');
+      var mc=document.getElementById('combo');
+      if(mc){ mc.textContent=(mega?'✦✦ MEGA MULTI-MATCH':'✦ MULTI-MATCH');
+        mc.classList.remove('on'); void mc.offsetWidth; mc.classList.add('on'); }
+      sfx('chain');
+    }
+  }
+
   ms.forEach(function(g){
     if(S.settling) return;          // decided already; this is animation now
-    try { resolveGroup(side,g,chain); }
+    try { resolveGroup(side,g,chain,multi); }
     catch(err){ logLine('sys','(effect error — skipped)');
                 if(window.console) console.error('resolveGroup', err); }
   });
@@ -1209,6 +1241,14 @@ function scoreMove(a,b,side){
     if(len>=5) sc += 30;        // leaves a board bomb
     else if(len===4) sc += 12;  // leaves a cross bomb
   });
+  /* Chase multi-matches as well. Without this the AI only ever stumbles into
+     one, so the player would never have the rule demonstrated against them --
+     and a bonus the opponent never uses teaches nobody it exists. */
+  if(ms.length>=2){
+    var mt=0; ms.forEach(function(g){ mt+=g.len; });
+    if(mt>=MULTI_MEGA_MIN) sc+=40;
+    else if(mt>=MULTI_MIN) sc+=18;
+  }
   return sc;
 }
 /* THE AI IS DELIBERATELY NOT OPTIMAL.
