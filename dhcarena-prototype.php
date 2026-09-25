@@ -83,7 +83,21 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .boardcol > *{max-width:min(74vh,760px);margin-left:auto;margin-right:auto}
 .teamcol{display:grid;gap:6px}
 .coltag{font-size:9px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px;
-  padding-bottom:4px;border-bottom:1px solid var(--line)}
+  padding-bottom:4px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;gap:8px}
+/* CHARGE IS A TEAM METER. Every living Fighter gains it together, so showing it
+   three times in three token corners was repetition -- and once the text was
+   shortened to "⚡ 7" it stopped saying what it was counting towards, which is
+   the only thing you actually want to know. One bar per Crew, beside the name. */
+.chg{display:flex;align-items:center;gap:5px;letter-spacing:0;text-transform:none;
+  font-size:9px;color:var(--dim);white-space:nowrap}
+.chg i{display:block;width:46px;height:5px;border-radius:3px;background:#0b0d11;
+  overflow:hidden;flex:none}
+.chg i b{display:block;height:100%;width:0;background:var(--g4);
+  transition:width .35s cubic-bezier(.2,.7,.3,1)}
+.chg.full{color:var(--g4);animation:chgPulse 1s ease-in-out infinite}
+.chg.full i b{box-shadow:0 0 8px var(--g4)}
+@keyframes chgPulse{0%,100%{opacity:1}50%{opacity:.55}}
 .coltag.you{color:var(--teal)} .coltag.foe{color:var(--blood)}
 .boardcol{min-width:0}
 .legend.mobonly,.reach.mobonly{display:none}
@@ -398,7 +412,8 @@ button{font:inherit;cursor:pointer;border-radius:3px}
     <!-- The defender's front-rank background IS the arena (see §3 terrain), so
          it belongs behind the whole fight rather than hidden behind the board. -->
     <div class="arenabg" id="terrain"></div>
-    <div class="teamwrap mine"><div class="coltag you">Your Crew</div>
+    <div class="teamwrap mine"><div class="coltag you"><span>Your Crew</span>
+        <span class="chg" id="chgMine"></span></div>
       <div class="teamcol mine" id="myTeam"></div></div>
     <div class="boardcol">
       <div class="boardwrap">
@@ -417,7 +432,8 @@ button{font:inherit;cursor:pointer;border-radius:3px}
            mobile copy lives outside the arena where it can sit last. -->
       <div class="legend deskonly" id="legend"></div>
     </div>
-    <div class="teamwrap foes"><div class="coltag foe">Enemy Crew</div>
+    <div class="teamwrap foes"><div class="coltag foe"><span>Enemy Crew</span>
+        <span class="chg" id="chgFoes"></span></div>
       <div class="teamcol foes" id="foeTeam"></div></div>
   </div>
   <!-- On a phone the board is followed straight by your Crew; every line of
@@ -1266,7 +1282,7 @@ function tokHtml(f,showGem){
     +   '<div class="sh" style="width:'+Math.min(100,(f.shield/f.maxHp)*100)+'%"></div></div>'
     + '<div class="hpn"><span>'+f.hp+'/'+f.maxHp+'</span><span>'
     +   (f.shield>0?'🛡 '+f.shield+' ':'')
-    +   (f.surge>0?'⚡ '+f.surge+' ':'')+(f.bleed>0?'🗡':'')+'</span></div>'
+    +   (f.bleed>0?'🗡':'')+'</span></div>'
     + '</div>';
 }
 /* BUILD ONCE PER BATTLE. This used to rewrite both teams' innerHTML on every
@@ -1299,7 +1315,7 @@ function renderTeams(){
     var n=e.querySelector('.hpn');
     if(n) n.innerHTML='<span>'+f.hp+'/'+f.maxHp+'</span><span>'
       + (f.shield>0?'🛡 '+f.shield+' ':'')
-      + (f.surge>0?'⚡ '+f.surge+' ':'')+(f.bleed>0?'🗡':'')+'</span>';
+      + (f.bleed>0?'🗡':'')+'</span>';
   });
 }
 function renderBoard(dropAnim,settle){
@@ -1359,6 +1375,15 @@ function renderAll(){
   document.getElementById('reach').innerHTML  = reachHtml;
   document.getElementById('reachM').innerHTML = reachHtml;
 
+  ['mine','foes'].forEach(function(sd){
+    var live=alive(sd);
+    var v=live.length?Math.max.apply(null,live.map(function(f){return f.surge;})):0;
+    var el=document.getElementById(sd==='mine'?'chgMine':'chgFoes');
+    if(!el) return;
+    el.className='chg'+(v>=10?' full':'');
+    el.innerHTML='⚡ <i><b style="width:'+(v/10*100)+'%"></b></i>'+v+'/10';
+    el.title = v>=10 ? 'Charged — the next Charge match erupts' : 'Charge: '+v+' of 10';
+  });
   var bw=document.querySelector('.boardwrap');
   if(bw){ if(!S.over && S.turn==='foes') bw.classList.add('foeturn');
           else bw.classList.remove('foeturn'); }
