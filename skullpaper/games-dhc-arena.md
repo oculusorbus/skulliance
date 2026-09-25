@@ -33,6 +33,10 @@ twelve if you own plenty. A deep roster rests harder because it has somewhere
 else to turn; a player with exactly three is not locked out of the game for a
 day.
 
+Your Crew list pages once you have more than twelve Fighters, and **picks
+survive paging** — the three you have chosen stay listed above the grid in
+formation order, and clicking one there drops it.
+
 **One battle at a time.** You cannot start another while one is still going —
 walking away from a battle you were losing would otherwise skip recovery
 entirely, which is the only real cost in the game. A battle nobody has touched

@@ -436,6 +436,32 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   text-shadow:0 1px 3px #000}
 .arena-wrap .a-card .recover b{font-weight:400;font-size:12px;letter-spacing:0;
   text-transform:none;color:var(--ochre);font-variant-numeric:tabular-nums}
+/* ---- paging. A staker with two hundred Fighters should not be handed two
+   hundred cards, and the cards are the expensive part: eight <img> layers each.
+   Off-page cards are display:none rather than removed, which is what makes the
+   picks survive a page change -- and a browser does not fetch images inside a
+   display:none subtree, so the pages you are not looking at cost nothing. */
+.arena-wrap .a-card.off{display:none}
+.arena-wrap .a-pager{display:flex;align-items:center;justify-content:center;gap:10px;
+  margin-top:9px;font-size:10px;color:var(--dim)}
+.arena-wrap .a-pager button{background:var(--panel2);color:var(--bone);border:1px solid var(--line);
+  padding:3px 10px;font-size:11px;line-height:1.4}
+.arena-wrap .a-pager button:disabled{opacity:.35;cursor:default}
+.arena-wrap .a-pager button:not(:disabled):hover{border-color:var(--ochre);color:var(--ochre)}
+/* THE PICKS STAY ON SCREEN. Choosing three Fighters and then paging away from
+   them left the formation invisible at the moment you most need it -- the
+   order IS the formation. */
+.arena-wrap .a-picked{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 8px;min-height:22px;
+  align-items:center;font-size:10px;color:var(--dim)}
+.arena-wrap .a-picked .chip{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;
+  border:1px solid var(--teal);border-radius:999px;color:var(--bone);background:var(--panel2);
+  cursor:pointer;max-width:170px}
+.arena-wrap .a-picked .chip b{font-weight:400;color:var(--teal);font-size:8.5px;
+  letter-spacing:.1em;text-transform:uppercase;flex:none}
+.arena-wrap .a-picked .chip s{text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arena-wrap .a-picked .chip i{font-style:normal;color:var(--dim);flex:none}
+.arena-wrap .a-picked .chip:hover{border-color:var(--blood)}
+.arena-wrap .a-picked .chip:hover i{color:var(--blood)}
 .arena-wrap .a-foes{display:flex;flex-direction:column;gap:5px;max-height:330px;overflow:auto}
 .arena-wrap .a-foe{display:flex;align-items:center;gap:9px;padding:6px 8px;border:1px solid var(--line);
   border-radius:3px;background:var(--panel2);cursor:pointer}
@@ -488,6 +514,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <?php if (!$crew): ?>
         <p class="a-sub" style="margin:0">No Fighters yet.</p>
       <?php else: ?>
+      <div class="a-picked" id="aPicked"></div>
       <div class="a-pick">
       <?php foreach ($crew as $f):
         $t = $f['traits']; $ok = $f['available']; ?>
@@ -508,6 +535,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <div class="wl"><?php echo (int)$f['wins']; ?>W · <?php echo (int)$f['losses']; ?>L</div>
         </div>
       <?php endforeach; ?>
+      </div>
+      <div class="a-pager" id="aPager" style="display:none">
+        <button type="button" id="aPrev">&lsaquo; Prev</button>
+        <span id="aPageLbl"></span>
+        <button type="button" id="aNext">Next &rsaquo;</button>
       </div>
       <?php endif; ?>
     </div>
@@ -1227,8 +1259,54 @@ window.addEventListener('pointerup', function(){ if (drag) release(); });
 
 /* ------------------------------------------------------------- the shell --- */
 var picked = [], rival = 0;
+
+/* ---------------------------------------------------------------- paging ----
+   Cards are hidden, never removed: a pick made on page 1 has to survive a walk
+   to page 4, and rebuilding the grid would throw away the selected elements
+   along with eight <img> layers apiece. */
+var PER_PAGE = 12, page = 0;
+var allCards = [].slice.call(document.querySelectorAll('.a-card'));
+function pageCount(){ return Math.max(1, Math.ceil(allCards.length / PER_PAGE)); }
+function paintPage(){
+  var n = pageCount();
+  if (page >= n) page = n - 1;
+  if (page < 0) page = 0;
+  allCards.forEach(function(c, i){
+    c.classList.toggle('off', Math.floor(i / PER_PAGE) !== page);
+  });
+  var pg = $('aPager');
+  if (pg) {
+    pg.style.display = n > 1 ? 'flex' : 'none';
+    $('aPageLbl').textContent = 'Page ' + (page+1) + ' of ' + n
+      + ' · ' + allCards.length + ' Fighters';
+    $('aPrev').disabled = (page === 0);
+    $('aNext').disabled = (page === n - 1);
+  }
+}
+/** The picks, as chips, always on screen. Click one to drop it. */
+function paintPicked(){
+  var box = $('aPicked'); if (!box) return;
+  if (!picked.length) {
+    box.innerHTML = '<span>Nobody picked yet — the order you pick is the formation.</span>';
+    return;
+  }
+  var byId = {};
+  allCards.forEach(function(c){ byId[+c.getAttribute('data-fid')] = c; });
+  box.innerHTML = picked.map(function(id, i){
+    var c = byId[id], nm = c ? c.querySelector('.nm').textContent : ('#'+id);
+    return '<span class="chip" data-drop="'+id+'" title="Click to remove">'
+         + '<b>'+['front','mid','back'][i]+'</b><s>'+nm+'</s><i>&times;</i></span>';
+  }).join('');
+  box.querySelectorAll('.chip').forEach(function(ch){
+    ch.addEventListener('click', function(){
+      var at = picked.indexOf(+ch.getAttribute('data-drop'));
+      if (at !== -1) { picked.splice(at, 1); paintPicker(); }
+    });
+  });
+}
+
 function paintPicker(){
-  document.querySelectorAll('.a-card').forEach(function(c){
+  allCards.forEach(function(c){
     var at = picked.indexOf(+c.getAttribute('data-fid'));
     c.classList.toggle('sel', at !== -1);
     /* The badge is the whole reason the picker is ordered. Without it the
@@ -1241,6 +1319,7 @@ function paintPicker(){
       b.textContent = ['front','mid','back'][at] || (at+1);
     }
   });
+  paintPicked();
   var go = $('aStart');
   if (go) go.disabled = !!BLOCKED || !(picked.length === CREW_SIZE && rival > 0);
   var msg = $('aMsg');
@@ -1249,7 +1328,7 @@ function paintPicker(){
   else if (picked.length !== CREW_SIZE) msg.textContent = 'Pick '+(CREW_SIZE - picked.length)+' more.';
   else                              msg.textContent = rival ? '' : 'Now pick a rival.';
 }
-document.querySelectorAll('.a-card').forEach(function(c){
+allCards.forEach(function(c){
   c.addEventListener('click', function(){
     if (c.getAttribute('data-ok') !== '1') return;      // still recovering
     var id = +c.getAttribute('data-fid'), at = picked.indexOf(id);
@@ -1258,6 +1337,9 @@ document.querySelectorAll('.a-card').forEach(function(c){
     paintPicker();
   });
 });
+if ($('aPrev')) $('aPrev').addEventListener('click', function(){ page--; paintPage(); });
+if ($('aNext')) $('aNext').addEventListener('click', function(){ page++; paintPage(); });
+
 document.querySelectorAll('.a-foe').forEach(function(r){
   r.addEventListener('click', function(){
     document.querySelectorAll('.a-foe').forEach(function(x){ x.classList.remove('sel'); });
@@ -1338,6 +1420,7 @@ muteBtn.addEventListener('click', function(){
   paintMute(); if (sfxOn) { sfxInit(); sfx('pick'); }
 });
 paintMute();
+paintPage();
 paintPicker();
 
 /* A battle left open in another tab, or on a phone that went to sleep, is still

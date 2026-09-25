@@ -227,6 +227,18 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-panel h2 a:hover{text-decoration:underline}
 .dhcf-panel .body{padding:10px 12px}
 .dhcf-roster{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+/* PAGING. A card is eight <img> layers, so a staker with two hundred Fighters
+   was being handed sixteen hundred images in one panel. Off-page cards are
+   display:none rather than removed -- a browser does not fetch images inside a
+   display:none subtree, so the pages you are not looking at cost nothing, and
+   nothing has to be rebuilt to page back to them. */
+.dhcf-card.off{display:none}
+.dhcf-pager{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;
+  font-size:11px;opacity:.7}
+.dhcf-pager button{background:var(--panel2);color:var(--bone);border:1px solid var(--line);
+  border-radius:3px;padding:3px 10px;font:inherit;cursor:pointer}
+.dhcf-pager button:disabled{opacity:.35;cursor:default}
+.dhcf-pager button:not(:disabled):hover{border-color:var(--ochre);color:var(--ochre)}
 .dhcf-card{border:1px solid var(--line);border-radius:3px;overflow:hidden;position:relative}
 .dhcf-card .art{position:relative;aspect-ratio:1;background:var(--panel2);overflow:hidden;
   display:block;width:100%;padding:0;border:0;cursor:pointer}
@@ -362,6 +374,11 @@ a.dhcf-stat span{opacity:.85}
             </div>
           <?php endforeach; ?>
         </div>
+        <div class="dhcf-pager" id="dhcfPager" style="display:none">
+          <button type="button" id="dhcfPrev">&lsaquo; Prev</button>
+          <span id="dhcfPageLbl"></span>
+          <button type="button" id="dhcfNext">Next &rsaquo;</button>
+        </div>
         <?php endif; ?>
       </div>
     </div>
@@ -458,6 +475,33 @@ function dhcf_board_html($rows) {
 
 <script>
 (function () {
+  /* ---- roster paging ----------------------------------------------------
+     Hidden, not removed: every card carries its traits in a data attribute and
+     its own Edit / Rename / Disassemble wiring, and rebuilding the grid per
+     page would mean re-attaching all of it for no gain. */
+  var PER_PAGE = 12, rpage = 0;
+  var rcards = [].slice.call(document.querySelectorAll('.dhcf-card'));
+  var rpager = document.getElementById('dhcfPager');
+  function rpaint() {
+    var n = Math.max(1, Math.ceil(rcards.length / PER_PAGE));
+    if (rpage >= n) rpage = n - 1;
+    if (rpage < 0) rpage = 0;
+    rcards.forEach(function (c, i) {
+      c.classList.toggle('off', Math.floor(i / PER_PAGE) !== rpage);
+    });
+    if (!rpager) return;
+    rpager.style.display = n > 1 ? 'flex' : 'none';
+    document.getElementById('dhcfPageLbl').textContent =
+      'Page ' + (rpage + 1) + ' of ' + n + ' · ' + rcards.length + ' Fighters';
+    document.getElementById('dhcfPrev').disabled = (rpage === 0);
+    document.getElementById('dhcfNext').disabled = (rpage === n - 1);
+  }
+  if (rpager) {
+    document.getElementById('dhcfPrev').addEventListener('click', function () { rpage--; rpaint(); });
+    document.getElementById('dhcfNext').addEventListener('click', function () { rpage++; rpaint(); });
+  }
+  rpaint();
+
   var say = document.getElementById('dhcfSay');
   function msg(t, good) { say.textContent = t; say.style.color = good ? 'var(--ochre)' : '#ff5c5c'; }
 
