@@ -46,6 +46,14 @@ if(isset($_GET['gauntlets'])){
 if(isset($_GET['cryptcrawl'])){
 	checkCryptCrawlLeaderboard($conn, false, true);
 }
+if(isset($_GET['dhcarena'])){
+	// MONTHLY, on the 1st. checkDHCArenaLeaderboard() settles the season that
+	// just closed by NAME, not by a date range, so it is safe to run late --
+	// but it is NOT safe to run twice for the same month, because the ledger
+	// carries no rewarded flag to close. Once, on the 1st, like every other
+	// monthly board.
+	checkDHCArenaLeaderboard($conn, false, true);
+}
 if(isset($_GET['leaderboardsnapshot'])){
 	// Refreshes the hub's champion cards. READ-ONLY as far as players are
 	// concerned: it calls only display variants of each board, so nothing

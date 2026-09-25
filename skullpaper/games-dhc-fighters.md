@@ -37,6 +37,7 @@ background at minimum, so no single game can dress one on its own.
 | Boss Battles | **any trait** | every boss defeat |
 | Maxingo Missions | **any trait** | completing one — deeper levels roll better |
 | Realm Raids | **any trait** | winning a raid, or repelling one |
+| DHC Arena | **any trait** | winning a battle with a Crew of Fighters |
 | Daily Reward Streak | **any trait** | claiming day 7 of 7 |
 
 You do not have to play a game at all. Completing a full seven-day daily
@@ -74,6 +75,11 @@ deliberately holds nothing you need — being unable to play it costs you a bonu
 never a slot. **Realm Raids** works the same way, for the same reason: raiding
 needs a Realm, a trained army and a Portal, so it pays a wildcard rather than
 anything a Fighter cannot be finished without.
+
+**[[games-dhc-arena]]** is the third, and the most obvious case of all: entering
+it costs three assembled Fighters, so a category it held hostage would be a
+category you needed Fighters to earn and Fighters to spend. It pays a wildcard,
+banded by how much stronger the Crew you beat was.
 
 ### Raids pay both sides
 

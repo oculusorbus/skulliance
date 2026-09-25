@@ -809,9 +809,13 @@ layering rules already do for the art.
 
 ## 9b. The prototype
 
-`dhcarena-prototype.php` is a playable throwaway, linked from the Play menu
-under DHC Fighters and tagged **prototype** so nobody mistakes it for a
-finished feature. It exists to be argued with.
+> **Shipped 2026-09-24.** The real game is `dhcarena.php` and the Play menu
+> points at it. The prototype stays in the repo, deliberately unlisted: it keeps
+> no state and pays nothing, so a player finding it would only be confused about
+> which one counts. It is still the fastest way to try a rules change without a
+> database.
+
+`dhcarena-prototype.php` is a playable throwaway. It exists to be argued with.
 
 It touches nothing: no `db.php`, no `skulliance.php`, no session, no saved
 state, no rewards. Real traits from `dhcrarity.php` and real art from
@@ -837,6 +841,34 @@ looking at, not simulating.
 ---
 
 ## 10. Build order
+
+> **Done, 2026-09-24.** Everything below shipped, in this order, with two
+> departures worth recording:
+>
+> - **Steps 2 and 3 were not built as written.** The 46 hand-authored abilities
+>   and the five-slot stat derivation belonged to the menu-combat design that
+>   §3a pivoted away from. The puzzle version needs one kit per Fighter, chosen
+>   deterministically from its weapon (`dhca_kits()`, eight of them), and three
+>   numbers off three traits: health from torso, power from weapon, crit from
+>   headgear. Forty-six abilities on top of a match-3 board would be forty-six
+>   things the player cannot see coming.
+> - **Step 6's "one turn per request" is one EXCHANGE per request.** The engine
+>   resolves the player's move and every defending reply it earns, and answers
+>   with the result plus an fx timeline. A per-turn request would have put the
+>   defending AI's move on a second round trip, and the board would have sat
+>   dead in between.
+>
+> What the client is allowed to know is now a rule, not a preference: it sends
+> "slide A to B" and animates what it is told. The one duplicated rule is "does
+> this slide match", to refuse a free move without a round trip. A second would
+> put a number on the board the server never agreed to.
+>
+> Verified before shipping by a harness that runs the real client against real
+> engine output under a stub DOM: 74 exchanges from 8 battles, every fx kind
+> exercised, no exceptions, and the board the client draws matches the board the
+> server reports on every one. This is the third harness on this feature and it
+> catches the third distinct bug class — rules (§4), then nothing, then
+> client/server divergence. Visual bugs still need eyes; see §9b.
 
 1. `dhcarena-engine.php` — pure turn engine, plus a CLI harness that runs
    battles with no DB. Everything below depends on being able to simulate.

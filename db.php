@@ -6539,6 +6539,9 @@ $SKULLIANCE_BOARDS = array(
 	'dhcfighters'       => array('label'=>'DHC Fighters',      'icon'=>'🧬', 'group'=>'Games',
 		'blurb'=>'Rarest assembled Fighter',
 		'periods'=>array('All-Time'=>'dhcfighters','Monthly'=>'monthly-dhcfighters')),
+	'dhcarena'          => array('label'=>'DHC Arena',         'icon'=>'⚔️', 'group'=>'Games',
+		'blurb'=>'Crew battles won',
+		'periods'=>array('All-Time'=>'dhcarena','Monthly'=>'monthly-dhcarena')),
 	'bosses'            => array('label'=>'Boss Battles',      'icon'=>'🐉', 'group'=>'Games',
 		'blurb'=>'Community boss fights',
 		'periods'=>array('All-Time'=>'bosses','Weekly'=>'weekly-bosses')),
@@ -6644,6 +6647,7 @@ function refreshLeaderboardSnapshots($conn) {
 		'obscura'           => function($c) { checkObscuraLeaderboard($c); },
 		'guardians'         => function($c) { checkGuardiansLeaderboard($c); },
 		'dhcfighters'       => function($c) { checkDHCFightersLeaderboard($c); },
+		'dhcarena'          => function($c) { checkDHCArenaLeaderboard($c); },
 		'swaps'             => function($c) { checkSkullSwapsLeaderboard($c); },
 		'monstrocity'       => function($c) { checkMonstrocityLeaderboard($c); },
 		'bosses'            => function($c) { checkBossBattlesLeaderboard($c); },
@@ -14724,6 +14728,141 @@ function checkDHCFightersLeaderboard($conn, $monthly = false) {
 		$scope = $monthly ? "this month" : "";
 		echo "<p>No Fighters have been assembled yet $scope.</p>";
 		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="dhcfighters"><input type="submit" class="small-button" value="View All DHC Fighters"></form><br><br>';
+	}
+}
+
+/*
+ * DHC ARENA -- the monthly ladder and its payout.
+ *
+ * Derived from the battle ledger, never stored: dhc_arena_battles is
+ * append-only, so standings can be recomputed at any time and a scoring change
+ * applies retroactively instead of stranding a stored number nobody can audit.
+ *
+ * RANKED ON WINS, not win rate -- dhcarena.md §8c. Everyone has the same daily
+ * allowance of battles, so with an equal number of attempts ranking on wins IS
+ * ranking on win rate, and an unspent battle stays a wasted one. Win rate alone
+ * would crown whoever fought twice and got lucky.
+ *
+ * ATTACKERS ONLY. A defending Crew is played by the AI against an opponent its
+ * owner never chose and cannot decline; paying for defensive results would pay
+ * for being popular, and it would make losing to a raid something you could be
+ * farmed for. Defending is free and costs nothing -- see dhca_finish().
+ *
+ * The season column is the ladder's window, so unlike the other monthly boards
+ * this one does not date-filter: a battle already knows which season it belongs
+ * to, and a reward run settles LAST month by name rather than by a date range
+ * that has to be got right twice.
+ */
+function checkDHCArenaLeaderboard($conn, $monthly = false, $rewards = false) {
+	$carbon = 250000;
+	// Display defaults to the season in progress; a reward run always settles
+	// the one that just closed.
+	$season = $rewards ? date('Y-m', strtotime('first day of last month')) : date('Y-m');
+	$where  = ($monthly || $rewards)
+	        ? "AND b.season = '" . $conn->real_escape_string($season) . "'" : "";
+
+	$sql = "
+		SELECT
+			u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
+			SUM(b.outcome = 1) AS wins,
+			SUM(b.outcome = 2) AS losses,
+			MAX(b.best_chain)  AS best_chain,
+			SUM(b.bombs)       AS bombs
+		FROM dhc_arena_battles b
+		INNER JOIN users u ON u.id = b.attacker_id
+		WHERE b.outcome <> 0 $where
+		GROUP BY u.id
+		ORDER BY wins DESC, losses ASC, best_chain DESC
+	";
+	$result = $conn->query($sql);
+
+	if ($result && $result->num_rows > 0) {
+		$fireworks          = false;
+		$leaderboardCounter = 0;
+		$last_score         = null;
+		$third_score        = null;
+		$description        = "";
+		$counter            = 0;
+		$lb_rows            = [];
+
+		while ($row = $result->fetch_assoc()) {
+			$leaderboardCounter++;
+			$counter++;
+			$score = [intval($row['wins']), -intval($row['losses']), intval($row['best_chain'])];
+
+			if ($leaderboardCounter <= 3) {
+				global $leaderboard_top3;
+				$leaderboard_top3[] = [
+					'username'   => $row['username'],
+					'discord_id' => $row['discord_id'],
+					'avatar'     => $row['avatar'],
+					'visibility' => $row['visibility'],
+					'score'      => number_format($row['wins']) . 'W · chain x' . intval($row['best_chain']),
+				];
+			}
+
+			$trophy = "";
+			if ($leaderboardCounter == 1) {
+				$trophy = "first";
+			} elseif ($leaderboardCounter == 2) {
+				$trophy = ($last_score != $score) ? "second" : "first";
+				if ($last_score == $score) $leaderboardCounter--;
+			} elseif ($leaderboardCounter == 3) {
+				if ($last_score != $score) { $trophy = "third"; $third_score = $score; }
+				else { $trophy = "second"; $leaderboardCounter--; }
+			} elseif ($leaderboardCounter > 3 && $third_score == $score) {
+				$trophy = "third"; $leaderboardCounter--;
+			} elseif ($leaderboardCounter > 3 && $last_score == $score) {
+				$leaderboardCounter--;
+			}
+
+			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
+
+			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
+			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
+			$reward_col = ($monthly || $rewards)
+			            ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND"
+			            : '';
+			$stats      = [
+				'Wins'       => number_format($row['wins']),
+				'Losses'     => number_format($row['losses']),
+				'Best Chain' => 'x' . intval($row['best_chain']),
+				'Bombs'      => number_format($row['bombs']),
+			];
+			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url,
+			              'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => $reward_col];
+			$last_score = $score;
+
+			if ($rewards) {
+				updateBalance($conn, $row['user_id'], 15, round($carbon / $leaderboardCounter));
+				logCredit($conn, $row['user_id'], round($carbon / $leaderboardCounter), 15);
+				if ($counter <= 45) {
+					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Wins: " . $row['wins'] . ", Losses: " . $row['losses'] . ", Best Chain: x" . intval($row['best_chain']) . "\r\n";
+					$description .= "        " . number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND\r\n";
+				}
+			}
+		}
+
+		if ($rewards) {
+			/*
+			 * NOTHING IS RESET. There is no reward flag to set and no rows to
+			 * close: the season column already partitions the ledger, so last
+			 * month's battles can never be counted into this month's board no
+			 * matter how often the payout runs. The one thing to be careful of
+			 * is running it twice for the SAME month, which would pay twice --
+			 * the cron fires once on the 1st, the same as every other monthly
+			 * board.
+			 */
+			$last_month = date('F', strtotime('first day of last month'));
+			discordmsg("⚔️ " . $last_month . " DHC Arena Ladder Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
+		}
+		renderLeaderboardList($lb_rows);
+		if ($fireworks) fireworks();
+	} else {
+		$scope = ($monthly || $rewards) ? "this season" : "";
+		echo "<p>No Arena battles have been fought yet $scope.</p>";
+		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="dhcarena"><input type="submit" class="small-button" value="View All DHC Arena"></form><br><br>';
 	}
 }
 

@@ -62,6 +62,7 @@ $skullpaper_nav = [
 	]],
 	['slug' => 'games', 'title' => 'Games', 'emoji' => '🎮', 'children' => [
 		['slug' => 'games-dhc-fighters',  'title' => 'DHC Fighters',  'emoji' => '🧬'],
+		['slug' => 'games-dhc-arena',     'title' => 'DHC Arena',     'emoji' => '⚔️'],
 		['slug' => 'games-monstrocity',   'title' => 'Monstrocity',   'emoji' => '👾'],
 		['slug' => 'games-boss-battles',  'title' => 'Boss Battles',  'emoji' => '👹'],
 		['slug' => 'games-skull-swap',    'title' => 'Skull Swap',    'emoji' => '🔄'],

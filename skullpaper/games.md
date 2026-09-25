@@ -6,6 +6,7 @@ Skulliance is home to a growing suite of games that turn your NFT collections in
 
 | Game | Type | Leaderboard | Top rewards |
 |------|------|-------------|-------------|
+| [[games-dhc-arena]] | Crew vs Crew puzzle battler | Monthly | CARBON + traits |
 | [[games-monstrocity]] | Match 3 RPG campaign | Monthly | CLAW + CARBON |
 | [[games-boss-battles]] | Co-op boss encounters | Weekly | CLAW + CARBON |
 | [[games-skull-swap]] | Match-3 score chase | Weekly | CARBON |

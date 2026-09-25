@@ -339,6 +339,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "obscura" && $filterby != "weekly-obscura" &&
 				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
 				              $filterby != "dhcfighters" && $filterby != "monthly-dhcfighters" &&
+				              $filterby != "dhcarena" && $filterby != "monthly-dhcarena" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
@@ -482,6 +483,14 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				        $title = date("F") . " DHC Fighters";
 				        $filterby = "monthly-dhcfighters";
 				        break;
+				    case ($filterby == "dhcarena"):
+				        $title = "All DHC Arena Battles";
+				        $filterby = "dhcarena";
+				        break;
+				    case ($filterby == "monthly-dhcarena"):
+				        $title = date("F") . " DHC Arena Ladder";
+				        $filterby = "monthly-dhcarena";
+				        break;
 				    case ($filterby == "guardians"):
 				        $title = "All Realm Guardians Sieges";
 				        $filterby = "guardians";
@@ -582,6 +591,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "obscura" && $filterby != "weekly-obscura" &&
 				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
 				              $filterby != "dhcfighters" && $filterby != "monthly-dhcfighters" &&
+				              $filterby != "dhcarena" && $filterby != "monthly-dhcarena" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
@@ -674,6 +684,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				            break;
 				        case ($filterby == "monthly-dhcfighters"):
 				            checkDHCFightersLeaderboard($conn, true);
+				            break;
+				        case ($filterby == "dhcarena"):
+				            checkDHCArenaLeaderboard($conn, false);
+				            break;
+				        case ($filterby == "monthly-dhcarena"):
+				            checkDHCArenaLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "guardians"):
 				            checkGuardiansLeaderboard($conn, false);

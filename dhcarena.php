@@ -400,6 +400,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-card .nm{font-size:9.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .arena-wrap .a-card .sc{font-size:8.5px;color:var(--dim);font-variant-numeric:tabular-nums}
 .arena-wrap .a-card .wl{font-size:8px;color:var(--dim)}
+.arena-wrap .a-card .pk{position:absolute;top:4px;left:4px;z-index:2;font-size:8px;
+  letter-spacing:.1em;text-transform:uppercase;padding:2px 5px;border-radius:2px;
+  background:var(--ink);border:1px solid var(--teal);color:var(--teal)}
 .arena-wrap .a-card .bench{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   background:rgba(13,15,19,.72);font-size:9px;color:var(--blood);border-radius:3px}
 .arena-wrap .a-foes{display:flex;flex-direction:column;gap:5px;max-height:330px;overflow:auto}
@@ -446,7 +449,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 
   <div class="a-panels" id="arenaSetup">
     <div class="a-panel">
-      <h2>Your Crew — pick <?php echo DHCA_CREW_SIZE; ?></h2>
+      <h2>Your Crew — pick <?php echo DHCA_CREW_SIZE; ?>, in order</h2>
+      <p class="a-sub" style="margin:0 0 8px">The order you pick sets the formation:
+         first is <b>front</b>, then <b>mid</b>, then <b>back</b>. A match of 3 only
+         reaches their front rank, 4 reaches mid, 5 or more reaches the back — so put
+         the Fighter you most want protected last.</p>
       <?php if (!$crew): ?>
         <p class="a-sub" style="margin:0">No Fighters yet.</p>
       <?php else: ?>
@@ -1138,8 +1145,17 @@ window.addEventListener('pointerup', function(){ if (drag) release(); });
 var picked = [], rival = 0;
 function paintPicker(){
   document.querySelectorAll('.a-card').forEach(function(c){
-    var on = picked.indexOf(+c.getAttribute('data-fid')) !== -1;
-    c.classList.toggle('sel', on);
+    var at = picked.indexOf(+c.getAttribute('data-fid'));
+    c.classList.toggle('sel', at !== -1);
+    /* The badge is the whole reason the picker is ordered. Without it the
+       formation is decided by click order and never says so, which is a real
+       decision taken away from the player by silence. */
+    var b = c.querySelector('.pk');
+    if (at === -1) { if (b) b.remove(); }
+    else {
+      if (!b) { b = document.createElement('div'); b.className = 'pk'; c.appendChild(b); }
+      b.textContent = ['front','mid','back'][at] || (at+1);
+    }
   });
   var go = $('aStart');
   if (go) go.disabled = !!BLOCKED || !(picked.length === CREW_SIZE && rival > 0);
