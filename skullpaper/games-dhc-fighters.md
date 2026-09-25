@@ -193,6 +193,30 @@ above; it is simply not a row in a table of games.
 
 ---
 
+## What a Fighter can do
+
+Rarity score is what a Fighter is **worth**. It is not what it can **do**, and
+in [[games-dhc-arena]] the two are close to unrelated on purpose — the spread
+between two traits of the same tier is deliberately wider than the gap between
+the tiers themselves, so a legendary Crew cannot buy a win.
+
+Three traits decide a fight, and the Collection now shows what they add up to:
+
+| Trait | Decides |
+|---|---|
+| **Torso** | Health — how much punishment it absorbs |
+| **Weapon** | Power, and the **fighting style**: one big hit, a whole rank, stealing health, smashing shields, and four more |
+| **Headgear** | Crit chance — how often a hit lands big |
+
+Arms, effects and companion are art. Background matters in the Arena for one
+Fighter only: whoever stands at the defender's front, whose background is the
+arena everyone fights in.
+
+Every card in the Collection carries its health, power and fighting style, and
+you can sort by **Deadliest**, **Toughest** or **Hardest hitting** and filter by
+**Fights like** — which is how you find the three of yours that make a Crew
+rather than the three that cost the most.
+
 ## The Collection
 
 The **Fighter Collection**, linked from the DHC Fighters page, browses every

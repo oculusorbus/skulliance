@@ -17,6 +17,14 @@
 include 'db.php';
 include 'skulliance.php';
 require_once __DIR__ . '/dhcfighters-lib.php';
+/*
+ * The Arena engine, for its numbers only -- it is pure, so reading a Fighter's
+ * health and power costs nothing and needs no battle. Rarity score says what a
+ * Fighter is WORTH; these say what it can DO, and until now the collection only
+ * showed the first, which is why a player had no way to tell a beast from an
+ * expensive ornament.
+ */
+require_once __DIR__ . '/dhcarena-engine.php';
 
 $dhcg_user = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
 
@@ -26,6 +34,7 @@ $dhcg_tier  = isset($_GET['tier'])  ? preg_replace('/[^a-z]/', '', $_GET['tier']
 $dhcg_owner = isset($_GET['owner']) ? (int)$_GET['owner'] : 0;
 $dhcg_first = !empty($_GET['first']);
 $dhcg_mine  = !empty($_GET['mine']);
+$dhcg_kit   = isset($_GET['kit']) ? preg_replace('/[^a-z]/', '', $_GET['kit']) : '';
 
 $order = 'f.rarity_score DESC, f.created_at DESC';
 if ($dhcg_sort === 'newest')  $order = 'f.created_at DESC';
@@ -52,6 +61,10 @@ $res = $conn->query($sql);
 $dhcg_all = array();
 $dhcg_owners = array();
 $dhcg_tier_counts = array('mythic'=>0,'legendary'=>0,'epic'=>0,'uncommon'=>0,'common'=>0);
+$dhcg_rarity   = dhcf_rarity();
+$dhcg_kits     = array();      // kit id => label, for the filter bar
+foreach (dhca_kits() as $k) $dhcg_kits[$k['id']] = $k;
+$dhcg_kit_counts = array();
 $first_by_hash = array();      // hash => the id that holds the original claim
 
 if ($res) {
@@ -78,6 +91,16 @@ if ($res) {
 		$row['parts'] = $parts;
 		$row['best']  = $parts ? $best : 'common';
 
+		/* What the Arena will make of it. Torso sets health, weapon sets power
+		   and fighting style, headgear sets how often a hit lands big -- so
+		   these three numbers, and not the score, are what a Crew is picked on. */
+		$built        = dhca_build_fighter($row['traits'], '', 'g'.$row['id'], $dhcg_rarity);
+		$row['hp']    = (int)$built['maxHp'];
+		$row['pow']   = (int)$built['power'];
+		$row['crit']  = (float)$built['critC'];
+		$row['kit']   = $built['kit'];
+		$row['might'] = $row['hp'] * $row['pow'];
+
 		$dhcg_owners[(int)$row['user_id']] = $row['username'];
 		if (!empty($row['traits_hash']) && !isset($first_by_hash[$row['traits_hash']])) {
 			$first_by_hash[$row['traits_hash']] = (int)$row['id'];
@@ -92,17 +115,24 @@ foreach ($dhcg_all as $i => $row) {
 	                          && isset($first_by_hash[$row['traits_hash']])
 	                          && $first_by_hash[$row['traits_hash']] === (int)$row['id']);
 	$dhcg_tier_counts[$dhcg_all[$i]['best']]++;
+	$kid = $dhcg_all[$i]['kit']['id'];
+	$dhcg_kit_counts[$kid] = (isset($dhcg_kit_counts[$kid]) ? $dhcg_kit_counts[$kid] : 0) + 1;
 }
 
 $dhcg_total = count($dhcg_all);
-$dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier, $dhcg_first) {
+$dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier, $dhcg_first, $dhcg_kit) {
 	if ($dhcg_tier !== '' && $r['best'] !== $dhcg_tier) return false;
 	if ($dhcg_first && empty($r['first'])) return false;
+	if ($dhcg_kit !== '' && $r['kit']['id'] !== $dhcg_kit) return false;
 	return true;
 }));
 if ($dhcg_sort === 'traits') {
 	usort($dhcg_rows, function ($a, $b) { return count($b['parts']) <=> count($a['parts']); });
 }
+/* Sorted in PHP like the others: these come out of the engine, not the table. */
+if ($dhcg_sort === 'tough')  usort($dhcg_rows, function($a,$b){ return $b['hp']    <=> $a['hp']; });
+if ($dhcg_sort === 'power')  usort($dhcg_rows, function($a,$b){ return $b['pow']   <=> $a['pow']; });
+if ($dhcg_sort === 'might')  usort($dhcg_rows, function($a,$b){ return $b['might'] <=> $a['might']; });
 
 $dhc_base = '';
 foreach (array('web', 'dhc', 'dhc/web', 'traits') as $c) {
@@ -140,6 +170,10 @@ include 'header.php';
 .dhcg-card{border:1px solid var(--line,#1b3346);border-radius:3px;overflow:hidden;background:var(--panel,#0a1929);
   padding:0;cursor:pointer;color:inherit;font:inherit;text-align:left;display:block;width:100%}
 .dhcg-card:hover{border-color:var(--ochre,#00c8a0)}
+.dhcg-stats{display:flex;gap:7px;align-items:center;padding:0 7px 5px;font-size:10px;
+  opacity:.72;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.dhcg-stats .s-kit{opacity:.8;margin-left:auto;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;min-width:0}
 .dhcg-card:focus-visible{outline:2px solid var(--ochre,#00c8a0);outline-offset:1px}
 .dhcg-art{position:relative;aspect-ratio:1;background:var(--panel2,#0d1e2e);overflow:hidden}
 .dhcg-art img.layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
@@ -208,7 +242,8 @@ include 'header.php';
   <?php
     $tiers = array('mythic'=>'Mythic','legendary'=>'Legendary','epic'=>'Epic',
                    'uncommon'=>'Uncommon','common'=>'Common');
-    $sorts = array('rarest'=>'Rarest','newest'=>'Newest','oldest'=>'Oldest',
+    $sorts = array('rarest'=>'Rarest','might'=>'Deadliest','tough'=>'Toughest',
+                   'power'=>'Hardest hitting','newest'=>'Newest','oldest'=>'Oldest',
                    'serial'=>'By number','traits'=>'Most traits');
   ?>
   <div class="dhcg-bar">
@@ -226,6 +261,22 @@ include 'header.php';
       <a class="t-<?php echo $k; ?> <?php echo $dhcg_tier === $k ? 'on' : ''; ?>"
          href="<?php echo htmlspecialchars(dhcg_url(array('tier' => $k))); ?>"><i></i><?php
          echo $label; ?> <?php echo $dhcg_tier_counts[$k]; ?></a>
+    <?php endforeach; ?>
+
+    <span class="sep"></span>
+    <?php /* The weapon is the only trait that changes HOW a Fighter fights, so
+             it is the one worth filtering on -- "show me every Fighter of mine
+             that hits a whole rank" is a question the collection could not
+             answer before. */ ?>
+    <span class="lbl">Fights like</span>
+    <a class="<?php echo $dhcg_kit === '' ? 'on' : ''; ?>"
+       href="<?php echo htmlspecialchars(dhcg_url(array('kit' => ''))); ?>">Any</a>
+    <?php foreach ($dhcg_kits as $kid => $kit):
+            if (empty($dhcg_kit_counts[$kid])) continue; ?>
+      <a class="<?php echo $dhcg_kit === $kid ? 'on' : ''; ?>"
+         title="<?php echo htmlspecialchars($kit['note']); ?>"
+         href="<?php echo htmlspecialchars(dhcg_url(array('kit' => $kid))); ?>"><?php
+         echo $kit['emoji'] . ' ' . htmlspecialchars($kit['name']) . ' ' . $dhcg_kit_counts[$kid]; ?></a>
     <?php endforeach; ?>
 
     <span class="sep"></span>
@@ -258,6 +309,10 @@ include 'header.php';
         'ownerId' => (int)$f['user_id'],
         'avatar'  => $av,
         'score'   => (int)$f['rarity_score'],
+        'hp'      => (int)$f['hp'],
+        'pow'     => (int)$f['pow'],
+        'crit'    => round($f['crit'] * 100),
+        'kit'     => $f['kit']['emoji'] . ' ' . $f['kit']['name'] . ' — ' . $f['kit']['note'],
         'first'   => (bool)$f['first'],
         'created' => $f['created_at'],
         'parts'   => $f['parts'],
@@ -289,6 +344,16 @@ include 'header.php';
       <div class="dhcg-meta">
         <span class="dhcg-nm"><?php echo htmlspecialchars($f['display']); ?></span>
         <span class="dhcg-pts"><?php echo number_format((int)$f['rarity_score']); ?></span>
+      </div>
+      <?php /* What it can DO, beside what it is worth. A collection that only
+               showed rarity score was answering the wrong question for anybody
+               picking a Crew. */ ?>
+      <div class="dhcg-stats" title="<?php echo htmlspecialchars(
+             $f['kit']['name'] . ' — ' . $f['kit']['note']
+             . ' · ' . $f['hp'] . ' health, ' . $f['pow'] . ' power'); ?>">
+        <span class="s-hp">♥ <?php echo (int)$f['hp']; ?></span>
+        <span class="s-pw">⚔ <?php echo (int)$f['pow']; ?></span>
+        <span class="s-kit"><?php echo $f['kit']['emoji']; ?> <?php echo htmlspecialchars($f['kit']['name']); ?></span>
       </div>
       <?php /* Below the art, never over it -- the whole point of the grid is
                seeing Maxingo's work, and a badge sat on the character was
@@ -349,8 +414,16 @@ include 'header.php';
       ' · <a href="dhcgallery.php?owner=' + f.ownerId + '" style="color:var(--ochre,#00c8a0)">see their Fighters</a>';
 
     var made = (f.created || '').replace(' ', ' · ').slice(0, 16);
+    /* Rarity score first because it is what the board ranks on, then what the
+       Arena will actually get: health from the torso, power from the weapon,
+       and the fighting style the weapon decides. The two answer different
+       questions and a collection should not imply they are the same one. */
     document.getElementById('dhcg-stat').innerHTML =
       '<div><b>' + f.score.toLocaleString() + '</b><span>Rarity score</span></div>' +
+      '<div><b>' + f.hp + '</b><span>Health</span></div>' +
+      '<div><b>' + f.pow + '</b><span>Power</span></div>' +
+      '<div><b>' + f.crit + '%</b><span>Crit chance</span></div>' +
+      '<div><b style="font-size:11px">' + esc(f.kit.split(' — ')[0]) + '</b><span>In the Arena</span></div>' +
       '<div><b>' + f.parts.length + '</b><span>Traits</span></div>' +
       '<div><b>DHC2F' + f.serial + '</b><span>Number</span></div>' +
       (f.first ? '<div><b style="color:#f5a623">First</b><span>To build this</span></div>' : '') +
