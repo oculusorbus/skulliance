@@ -831,7 +831,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 var ART = <?php echo json_encode($ART); ?>;
 var N = 7, BOMB_CROSS = 1, BOMB_BOARD = 2;
 var SHAPE = ['','sq','di','shield','hex'];
-var SHARED = {3:{emoji:'🛡️',name:'Shield',note:'shields team'},
+var SHARED = {3:{emoji:'🛡️',name:'Shield',note:'shields crew'},
               4:{emoji:'⚡',name:'Charge',note:'erupts at 10'}};
 var CREW_SIZE = <?php echo DHCA_CREW_SIZE; ?>;
 /* Why the player cannot enter, if they cannot. The server decides this again on
@@ -1067,7 +1067,7 @@ function paintChrome(){
     S.mine.forEach(function(x){ if (x.rank === i) f = x; });
     return f ? chip('var(--g'+i+')', f.kit.emoji, f.kit.note, f.ko) : '';
   }).join('')
-  + chip('var(--g3)','🛡️','shields your team')
+  + chip('var(--g3)','🛡️','shields crew')
   + chip('var(--g4)','⚡','erupts at 10');
   $('legend').innerHTML = lg; $('legendM').innerHTML = lg;
   var reach = '<b>3</b> front · <b>4</b> mid · <b>5+</b> back · cascades multiply'
