@@ -409,9 +409,16 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 @keyframes tiName{0%{opacity:0;transform:scale(1.14);letter-spacing:.22em}
   100%{opacity:1;transform:scale(1);letter-spacing:.06em}}
 /* Beat two and three. The gems fall in on a per-cell delay set in JS, and the
-   Crews walk on from their own side of the board. Both start invisible so the
-   first frame of the battle is never the finished picture. */
-.arena-wrap .cine .cell{animation:gemIn .34s both}
+   Crews walk on from their own side of the board.
+
+   THE BOARD IS HIDDEN, NOT MERELY ANIMATED, until its beat arrives. The panel
+   fades in over 450ms, and a board that is only animating is a board you can
+   watch through the fade -- which is exactly backwards: the first thing you saw
+   was the finished picture, and the cinematic then covered it up. Hiding the
+   grid outright means there is nothing behind the panel to see. */
+.arena-wrap .cine .grid{visibility:hidden}
+.arena-wrap .cine.board .grid{visibility:visible}
+.arena-wrap .cine.board .cell{animation:gemIn .34s both}
 @keyframes gemIn{0%{opacity:0;transform:translateY(-26px) scale(.55)}
   60%{opacity:1;transform:translateY(2px) scale(1.04)}100%{transform:translateY(0) scale(1)}}
 .arena-wrap .cine .teamwrap{opacity:0}
@@ -1635,7 +1642,7 @@ function cineStop(){
   var el = document.querySelector('.a-intro');
   if (el) el.remove();
   var ar = document.querySelector('.arena');
-  if (ar) ar.classList.remove('cine', 'crew');
+  if (ar) ar.classList.remove('cine', 'board', 'crew');
   gridEl.querySelectorAll('.cell').forEach(function(c){ c.style.animationDelay = ''; });
   if (cineDone) { var d = cineDone; cineDone = null; d(); }
 }
@@ -1645,6 +1652,7 @@ function playEntrance(done){
   var ar = document.querySelector('.arena');
   if (!ar) { done(); return; }
   cineDone = done;
+  ar.classList.add('cine');          // already set by openBattle(); harmless twice
   busy = true;                       // no moves until the Crews are on
 
   var terr = S.terrainBg ? artUrl('background', S.terrainBg, 1000) : '';
@@ -1660,15 +1668,17 @@ function playEntrance(done){
     + '<div class="ti-s">tap to skip</div>';
   intro.addEventListener('click', cineStop);
   ar.appendChild(intro);
-  ar.classList.add('cine');
 
-  // beat two: the board falls in, a diagonal sweep rather than all at once
+  // beat two: the board falls in, a diagonal sweep rather than all at once.
+  // The delays are set BEFORE the grid is revealed, so `both` holds every cell
+  // at its opening frame until its own turn comes round.
   cineAt(1450, function(){
     intro.classList.add('out');
     gridEl.querySelectorAll('.cell').forEach(function(c, i){
       var r = Math.floor(i / N), col = i % N;
       c.style.animationDelay = ((r + col) * 26) + 'ms';
     });
+    ar.classList.add('board');
     sfx('land');
   });
   // beat three: the Crews walk on
@@ -1695,6 +1705,13 @@ function openBattle(res, fresh){
   wrap.classList.add('playing');
   $('endcard').hidden = true;
   $('log').innerHTML = '';
+  /* BEFORE anything is drawn, not after. playEntrance() used to add this at the
+     end of openBattle(), which left a window -- one synchronous task today, but
+     one await away from being a visible frame of the finished board -- in which
+     the board existed on screen with nothing over it. Setting it first means
+     the grid is never in a visible state at any point before its beat. */
+  var arEl = document.querySelector('.arena');
+  if (arEl && fresh && !res.state.over) arEl.classList.add('cine');
   buildTeams(); paintBoard(); paintTeams(); paintChrome();
   (S.log||[]).forEach(function(l){ logLine('sys', l); });
   sfxInit();
