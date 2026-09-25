@@ -269,8 +269,14 @@ function dhca_defending_crew($conn, $user_id) {
 	foreach ($crew as $i => $f) {
 		$built = dhca_build_fighter(is_array($f['traits']) ? $f['traits'] : array(),
 		                            '', 'd'.$i, $rarity);
-		$crew[$i]['_hp']  = (int)$built['maxHp'];
-		$crew[$i]['_pow'] = (int)$built['power'];
+		/* EFFECTIVE health and EFFECTIVE damage, not the raw numbers. Armour is
+		   health you do not lose, and crit and a companion's assist are damage
+		   you do not have to roll for -- ignoring them would field a Crew chosen
+		   on half of what the engine is about to use. */
+		$crew[$i]['_hp']  = (int)round($built['maxHp'] / max(0.5, 1 - $built['resist']));
+		$crew[$i]['_pow'] = (int)round($built['power']
+			* (1 + $built['critC'] * (DHCA_CRIT_MULT - 1))
+			* (1 + $built['assist'] * DHCA_ASSIST_SHARE));
 	}
 	usort($crew, function($a, $b) {
 		return ($b['_hp'] * $b['_pow']) <=> ($a['_hp'] * $a['_pow']);

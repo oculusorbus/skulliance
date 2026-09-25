@@ -1866,6 +1866,33 @@ function srcCell(f, cat){
   return '<span class="src">' + prettySlug(sl)
        + (tier ? ' <em>' + tier + '</em>' : '') + '</span>';
 }
+/* Which worn pieces gave a Fighter this, named. A stat with no source says so
+   rather than showing an empty cell -- "no optics" is the actionable version of
+   a 6% crit chance. */
+var ROLE_WORD = {optic:'optics', armour:'armour', weapon:'weapon',
+                 energy:'energy', beast:'companion', plain:'no effect'};
+function roleSrc(f, role, none){
+  var r = f.roles || {}, hits = [];
+  Object.keys(r).forEach(function(slot){
+    if (r[slot] === role && traitOf(f, slot)) hits.push(prettySlug(traitOf(f, slot)));
+  });
+  if (!hits.length) return '<span class="src">' + (none || '—') + '</span>';
+  return '<span class="src">' + hits.join(', ') + '</span>';
+}
+/* THE WHOLE POINT OF THE CARD. A trait does what it IS, not what slot it hangs
+   on -- a blaster arm adds damage and a protector arm adds armour, from the same
+   hook. Nothing else in the game says so, so this lists every piece and names
+   the job it is doing. */
+function pieceRows(f){
+  var r = f.roles || {}, out = '';
+  ['head','headgear','arms','effects','effects1','effects2','companion'].forEach(function(slot){
+    var sl = traitOf(f, slot); if (!sl || !r[slot]) return;
+    out += '<div class="fc-row"><span class="k">' + (SLOT_LABEL[slot] || slot) + '</span>'
+         + '<span class="v" style="font-size:10px">' + (ROLE_WORD[r[slot]] || r[slot]) + '</span>'
+         + srcCell(f, slot) + '</div>';
+  });
+  return out || '<div class="fc-row"><span class="src">Nothing but a torso, a head and a weapon.</span></div>';
+}
 function openCard(f, mine){
   var box = $('fcBox'); if (!box) return;
   var t = f.traits || {};
@@ -1896,8 +1923,16 @@ function openCard(f, mine){
     +     row('Health', f.hp+' / '+f.maxHp+' <i style="opacity:.5">('+pct+'%)</i>', srcCell(f,'torso'))
     +     row('Power',  f.power, srcCell(f,'weapon'))
     +     row('Style',  f.kit.name, srcCell(f,'weapon'))
-    +     row('Crit',   Math.round((f.crit||0)*100)+'%', srcCell(f,'headgear'))
+    +     row('Crit',   Math.round((f.crit||0)*100)+'%', roleSrc(f,'optic','no optics'))
+    +     (f.resist > 0 ? row('Armour', Math.round(f.resist*100)+'% less',
+                             roleSrc(f,'armour','')) : '')
+    +     (f.assist > 0 ? row('Assist', Math.round(f.assist*100)+'% extra hit',
+                             roleSrc(f,'beast','')) : '')
+    +     (f.charge > 1 ? row('Charge', '&times;'+f.charge.toFixed(2)+' rate',
+                             roleSrc(f,'energy','')) : '')
     +   '</div>'
+    +   '<p class="fc-h">Every piece, and what it does</p>'
+    +   '<div class="fc-rows">' + pieceRows(f) + '</div>'
     +   '<p class="fc-h">Right now</p>'
     +   '<div class="fc-rows">'
     +     row('Shield', f.shield || 0, '<span class="src">absorbs damage before health</span>')
@@ -1905,16 +1940,12 @@ function openCard(f, mine){
     +     row('Damage', f.dealt || 0, '<span class="src">dealt so far this battle</span>')
     +     (f.bleed > 0 ? row('Bleeding', f.bleed+' rounds', '<span class="src">loses health at the end of each</span>') : '')
     +   '</div>'
-    +   '<p class="fc-h">Art only</p>'
-    +   '<div class="fc-cos">'
-    +     ['arms','effects','companion','head'].map(function(c){
-          var sl = traitOf(f,c); return sl ? '<b>'+SLOT_LABEL[c]+':</b> '+prettySlug(sl) : '';
-        }).filter(Boolean).join(' · ')
-    +   '</div>'
-    +   '<p class="fc-note">Reach is match size, not this Fighter: a match of <b>3</b> can only'
-    +     ' touch the enemy front rank, <b>4</b> reaches mid, <b>5 or more</b> reaches the back.'
-    +     ' The background matters for one Fighter only — the defender\u2019s front rank, whose'
-    +     ' background is the arena you are fighting in.</p>'
+    +   '<p class="fc-note">Every piece does something, and what it does comes from'
+    +     ' what it <b>is</b> rather than the slot it sits in — a blaster arm adds damage,'
+    +     ' a protector arm adds armour. Reach is match size, not this Fighter: <b>3</b>'
+    +     ' touches their front rank, <b>4</b> reaches mid, <b>5 or more</b> reaches the back.'
+    +     ' The background matters for one Fighter only — the defender\u2019s front rank,'
+    +     ' whose background is the arena.</p>'
     + '</div>';
   function row(k, v, src){
     return '<div class="fc-row"><span class="k">'+k+'</span><span class="v">'+v+'</span>'+src+'</div>';

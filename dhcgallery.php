@@ -96,6 +96,10 @@ if ($res) {
 		$row['hp']    = (int)$built['maxHp'];
 		$row['pow']   = (int)$built['power'];
 		$row['crit']  = (float)$built['critC'];
+		$row['resist']= (float)$built['resist'];
+		$row['assist']= (float)$built['assist'];
+		$row['charge']= (float)$built['charge'];
+		$row['roles'] = isset($built['roles']) ? $built['roles'] : array();
 		$row['kit']   = $built['kit'];
 		$row['might'] = $row['hp'] * $row['pow'];
 
@@ -303,6 +307,10 @@ include 'header.php';
         'hp'      => (int)$f['hp'],
         'pow'     => (int)$f['pow'],
         'crit'    => round($f['crit'] * 100),
+        'resist'  => round($f['resist'] * 100),
+        'assist'  => round($f['assist'] * 100),
+        'charge'  => round($f['charge'], 2),
+        'roles'   => $f['roles'],
         'kit'     => $f['kit']['emoji'] . ' ' . $f['kit']['name'] . ' — ' . $f['kit']['note'],
         'created' => $f['created_at'],
         'parts'   => $f['parts'],
@@ -412,6 +420,9 @@ include 'header.php';
       '<div><b>' + f.hp + '</b><span>Health</span></div>' +
       '<div><b>' + f.pow + '</b><span>Power</span></div>' +
       '<div><b>' + f.crit + '%</b><span>Crit chance</span></div>' +
+      (f.resist > 0 ? '<div><b>' + f.resist + '%</b><span>Damage resisted</span></div>' : '') +
+      (f.assist > 0 ? '<div><b>' + f.assist + '%</b><span>Companion assist</span></div>' : '') +
+      (f.charge > 1 ? '<div><b>&times;' + f.charge + '</b><span>Charge rate</span></div>' : '') +
       '<div><b style="font-size:11px">' + esc(f.kit.split(' — ')[0]) + '</b><span>In the Arena</span></div>' +
       '<div><b>' + f.parts.length + '</b><span>Traits</span></div>' +
       '<div><b>DHC2F' + f.serial + '</b><span>Number</span></div>' +

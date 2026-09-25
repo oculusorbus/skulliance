@@ -41,6 +41,10 @@
 
 if (!defined('DHCA_N')) {
 
+/* What each individual trait DOES, read from its own label. Kept in its own
+   file because it is a table to be argued with, not a rule to be derived. */
+require_once __DIR__ . '/dhcarena-roles.php';
+
 define('DHCA_N', 7);            // board is 7x7
 define('DHCA_GEMS', 5);         // 0,1,2 = the three ranks; 3 Shield; 4 Charge
 
@@ -59,6 +63,31 @@ define('DHCA_MULTI_MEGA',   9);
 define('DHCA_MULTI_BONUS',  1.30);
 define('DHCA_MULTI_BIG',    1.90);
 define('DHCA_CRIT_MULT',    1.6);
+
+/* ---------- what a trait's ROLE is worth ------------------------------------
+   Every piece a Fighter wears contributes something, decided by what the piece
+   IS rather than by which hook it hangs on -- see dhcarena-roles.php. Six slots
+   contribute (head, headgear, arms, both effects, companion); torso and weapon
+   keep their existing jobs of setting base health and base power plus the gem's
+   fighting style, and the background is the arena.
+
+   Each contribution is scaled by the piece's own rarity tier and its
+   deterministic variance, exactly as the base stats are, so two epics still
+   differ and §4 still holds.
+
+   CAPPED, because six slots pulling the same way is a real build and must not
+   be an unanswerable one. Resistance especially: uncapped it turns a battle
+   into a stalemate, which is a worse outcome than a Fighter being too strong. */
+define('DHCA_ROLE_CRIT',    0.055);   // an optic, per piece
+define('DHCA_ROLE_RESIST',  0.045);   // armour, per piece
+define('DHCA_ROLE_POWER',   0.070);   // a weapon, per piece, on base power
+define('DHCA_ROLE_CHARGE',  0.220);   // energy, per piece, on Charge gain
+define('DHCA_ROLE_ASSIST',  0.110);   // a beast, per piece: chance of a extra hit
+define('DHCA_ROLE_PLAINHP', 0.030);   // anything unplaced, per piece, on health
+define('DHCA_RESIST_CAP',   0.34);
+define('DHCA_CRIT_CAP',     0.45);
+define('DHCA_ASSIST_CAP',   0.40);
+define('DHCA_ASSIST_SHARE', 0.45);    // an assist hits for this much of a strike
 define('DHCA_BOMB_CROSS',   1);
 define('DHCA_BOMB_BOARD',   2);
 
@@ -287,14 +316,44 @@ function dhca_build_fighter($traits, $name, $uid, $rarity) {
 	$tiers = array();
 	foreach ($traits as $cat => $slug) if ($slug !== '') $tiers[$cat] = $tier($cat, $slug);
 
+	/* EVERY PIECE PULLS ITS WEIGHT. Torso and weapon keep their jobs below; the
+	   other six are read for what they are and add accordingly. */
+	$roleAdd = array('crit'=>0.0, 'resist'=>0.0, 'power'=>0.0,
+	                 'charge'=>0.0, 'assist'=>0.0, 'hp'=>0.0);
+	$roleOf  = array();
+	if (function_exists('dhca_trait_role')) {
+		foreach (array('head','headgear','arms','effects','effects1','effects2','companion') as $slot) {
+			if (empty($traits[$slot])) continue;
+			$slug  = $traits[$slot];
+			$cat   = ($slot === 'effects1' || $slot === 'effects2') ? 'effects' : $slot;
+			$role  = dhca_trait_role($slug, $cat);
+			$scale = $m($cat, $slug) * $v($slug);
+			$roleOf[$slot] = $role;
+			switch ($role) {
+				case DHCA_ROLE_OPTIC:  $roleAdd['crit']   += DHCA_ROLE_CRIT    * $scale; break;
+				case DHCA_ROLE_ARMOUR: $roleAdd['resist'] += DHCA_ROLE_RESIST  * $scale; break;
+				case DHCA_ROLE_WEAPON: $roleAdd['power']  += DHCA_ROLE_POWER   * $scale; break;
+				case DHCA_ROLE_ENERGY: $roleAdd['charge'] += DHCA_ROLE_CHARGE  * $scale; break;
+				case DHCA_ROLE_BEAST:  $roleAdd['assist'] += DHCA_ROLE_ASSIST  * $scale; break;
+				default:               $roleAdd['hp']     += DHCA_ROLE_PLAINHP * $scale; break;
+			}
+		}
+	}
+
 	$kits = dhca_kits();
-	$hp = (int)round(DHCA_HP_BASE * $m('torso',$traits['torso']) * $v($traits['torso']));
+	$hp = (int)round(DHCA_HP_BASE * $m('torso',$traits['torso']) * $v($traits['torso'])
+	                 * (1 + $roleAdd['hp']));
 	return array(
 		'uid'=>$uid, 'name'=>$name, 'traits'=>$traits, 'tiers'=>$tiers,
 		'kit'=>$kits[$traits['weapon'] === '' ? 0 : dhca_hash($traits['weapon']) % count($kits)],
 		'maxHp'=>$hp, 'hp'=>$hp, 'shield'=>0, 'bleed'=>0, 'surge'=>0, 'ko'=>false,
-		'power'=>(int)round(DHCA_POWER_BASE * $m('weapon',$traits['weapon']) * $v($traits['weapon'])),
-		'critC'=>0.06 * $m('headgear',$traits['headgear']) * $v($traits['headgear']),
+		'power'=>(int)round(DHCA_POWER_BASE * $m('weapon',$traits['weapon']) * $v($traits['weapon'])
+		                    * (1 + $roleAdd['power'])),
+		'critC'=>min(DHCA_CRIT_CAP, 0.06 + $roleAdd['crit']),
+		'resist'=>min(DHCA_RESIST_CAP, $roleAdd['resist']),
+		'assist'=>min(DHCA_ASSIST_CAP, $roleAdd['assist']),
+		'charge'=>1 + $roleAdd['charge'],
+		'roles'=>$roleOf,
 		'rank'=>0, 'side'=>'',
 		// Damage this Fighter has dealt, all battle. Kept so the winning Crew
 		// has a FIERCEST -- the one that actually did the work, rather than the
@@ -335,6 +394,13 @@ function dhca_targets(&$b, $side, $depth) {
 
 function dhca_hurt(&$b, $side, $i, $amt, $crit) {
 	$t =& $b[$side][$i];
+	/* ARMOUR FIRST, before the shield and before health. Resistance comes from
+	   the armoured pieces a Fighter is wearing -- a helmet, plating, a deflektor
+	   arm -- and it is a percentage rather than a flat subtraction so it stays
+	   meaningful against a big hit instead of only blunting small ones. Capped
+	   at DHCA_RESIST_CAP: six armour pieces is a real build and should be a
+	   tough one, not an unkillable one. A hit never drops below 1. */
+	if (!empty($t['resist'])) $amt = max(1, (int)round($amt * (1 - $t['resist'])));
 	if ($t['shield'] > 0) {
 		$a = min($t['shield'], $amt); $t['shield'] -= $a; $amt -= $a;
 		if ($a > 0) $b['fx'][] = array('k'=>'shielded','side'=>$side,'i'=>$i,'v'=>$a);
@@ -374,8 +440,14 @@ function dhca_resolve_group(&$b, $side, $grp, $chain, $scale) {
 		$add = DHCA_SURGE_GAIN * ($b['terrain'] === 'surge' ? 2 : 1);
 		$live = dhca_alive($b, $side);
 		if (!$live) return;
+		/* Each Fighter charges at its OWN rate now: energy pieces -- flames,
+		   lava, sparks, an inferno limb -- build it faster, so a Fighter built
+		   around them erupts before the rest of the Crew rather than everybody
+		   arriving together. The Crew meter shows whoever is closest, which is
+		   the one about to go off and therefore the one worth watching. */
 		foreach ($live as $i => $f) {
-			$b[$side][$i]['surge'] = min(DHCA_SURGE_MAX, $b[$side][$i]['surge'] + $add);
+			$rate = isset($f['charge']) ? $f['charge'] : 1;
+			$b[$side][$i]['surge'] = min(DHCA_SURGE_MAX, $b[$side][$i]['surge'] + $add * $rate);
 		}
 		$liveNow = dhca_alive($b, $side); $any = reset($liveNow);
 		$b['log'][] = '⚡ Charge x'.$grp['len'].' — now '.$any['surge'].'/'.DHCA_SURGE_MAX.'.';
@@ -420,6 +492,17 @@ function dhca_resolve_group(&$b, $side, $grp, $chain, $scale) {
 			}
 			$dealt = dhca_hurt($b, $foe, $ti, max(1, (int)round($base)), $crit);
 			$b[$side][$fi]['dealt'] += $dealt;
+			/* THE THING FIGHTING BESIDE YOU JOINS IN. A companion creature, or
+			   an arm that is itself alive, gets a chance to add a smaller second
+			   hit on the same target -- which is what having one should feel
+			   like, and it is the only role that does something the player can
+			   SEE happen rather than quietly shifting a number. */
+			if (!empty($f['assist']) && !$b[$foe][$ti]['ko'] && dhca_rand($b) < $f['assist']) {
+				$extra = dhca_hurt($b, $foe, $ti,
+					max(1, (int)round($base * DHCA_ASSIST_SHARE)), false);
+				$b[$side][$fi]['dealt'] += $extra;
+				$b['fx'][] = array('k'=>'assist','side'=>$side,'i'=>$fi,'t'=>$ti);
+			}
 			if (!empty($k['drain'])) dhca_heal($b, $side, $fi, (int)round($dealt * $k['drain']));
 			if (!empty($k['bleed']) && !$b[$foe][$ti]['ko']) $b[$foe][$ti]['bleed'] = 3;
 		}
@@ -772,12 +855,17 @@ function dhca_public(&$b) {
 			'kit'=>array('id'=>$f['kit']['id'],'emoji'=>$f['kit']['emoji'],
 			             'name'=>$f['kit']['name'],'note'=>$f['kit']['note']),
 			'rank'=>$f['rank'],'hp'=>$f['hp'],'maxHp'=>$f['maxHp'],
-			'shield'=>$f['shield'],'surge'=>$f['surge'],'bleed'=>$f['bleed'],'ko'=>$f['ko'],
+			'shield'=>$f['shield'],'surge'=>round($f['surge'], 1),
+			'bleed'=>$f['bleed'],'ko'=>$f['ko'],
 			'dealt'=>isset($f['dealt']) ? (int)$f['dealt'] : 0,
 			// for the Fighter card: what this one hits for, how often it lands
 			// big, and which tier each of its traits came from
 			'power'=>(int)$f['power'],
 			'crit'=>round($f['critC'], 4),
+			'resist'=>round(isset($f['resist']) ? $f['resist'] : 0, 4),
+			'assist'=>round(isset($f['assist']) ? $f['assist'] : 0, 4),
+			'charge'=>round(isset($f['charge']) ? $f['charge'] : 1, 3),
+			'roles'=>isset($f['roles']) ? $f['roles'] : array(),
 			'tiers'=>isset($f['tiers']) ? $f['tiers'] : array());
 	};
 	return array(

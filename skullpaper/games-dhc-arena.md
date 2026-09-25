@@ -151,6 +151,25 @@ bombs nobody dared spend.
 
 ---
 
+## Every piece does something
+
+**What a trait does comes from what it is, not from the slot it sits in.** A
+blaster arm adds damage; a protector arm adds armour. Both are arms.
+
+| The piece is | It gives you |
+|---|---|
+| **Optics** — masks, goggles, VR, detection gear, a threat-seeker antenna | **Crit** — how often a hit lands big |
+| **Armour** — helmets, plating, a deflektor limb | **Resistance** — a percentage off every hit you take |
+| **A weapon** — blasters, turrets, choppers, a laser cannon | **Power** — on top of what your weapon slot gives |
+| **Energy** — flames, lava, sparks, an inferno limb | **Charge** — you erupt sooner than the rest of your Crew |
+| **A creature** — isopunks, insekts, an infested limb | **An assist** — a chance it piles on an extra hit |
+
+Your **torso** still sets base health and your **weapon** still sets base power
+and your fighting style. Everything else — head, headgear, arms, both effects
+slots and your companion — is read for what it is.
+
+Tap any Fighter mid-battle to see exactly which of its pieces is doing what.
+
 ## Fighters
 
 Every Fighter's numbers come out of the traits you gave it, and a **weapon
