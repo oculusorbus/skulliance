@@ -490,6 +490,20 @@ function dhca_fiercest($conn, $b, $won) {
 	             'dealt' => max(0, $best));
 }
 
+/** Username, Discord avatar URL and mention for one staker. */
+function dhca_identity($conn, $user_id) {
+	$out = array('name' => 'a rival Crew', 'avatar' => '', 'mention' => '');
+	$r = $conn->query("SELECT username, discord_id, avatar FROM users WHERE id = "
+	                  .(int)$user_id." LIMIT 1");
+	if (!$r || !$r->num_rows) return $out;
+	$u = $r->fetch_assoc();
+	if ($u['username'] !== '') $out['name'] = $u['username'];
+	if (!empty($u['discord_id']) && !empty($u['avatar']))
+		$out['avatar'] = 'https://cdn.discordapp.com/avatars/'.$u['discord_id'].'/'.$u['avatar'].'.jpg';
+	if (!empty($u['discord_id'])) $out['mention'] = '<@'.$u['discord_id'].'>';
+	return $out;
+}
+
 /**
  * Fire and forget, like every other announcement on the platform. Buffered and
  * caught: a Discord outage must never cost somebody their battle result.
@@ -507,8 +521,13 @@ function dhca_announce($conn, $b, $won, $rewarded) {
 		if (!function_exists('discordmsg')) return;
 	}
 	try {
-		$att = dhca_username($conn, (int)$b['meta']['attacker']);
-		$def = dhca_username($conn, (int)$b['meta']['defender']);
+		$attId = (int)$b['meta']['attacker'];
+		$defId = (int)$b['meta']['defender'];
+		$attU  = dhca_identity($conn, $attId);
+		$defU  = dhca_identity($conn, $defId);
+		$att   = $attU['name'];
+		$def   = $defU['name'];
+		$winU  = $won ? $attU : $defU;
 		$standing = 0;
 		foreach ($b[$won ? 'mine' : 'foes'] as $f) if (empty($f['ko'])) $standing++;
 
@@ -532,6 +551,11 @@ function dhca_announce($conn, $b, $won, $rewarded) {
 				$img = dhcf_render_fighter($hero['traits'], $hero['serial']);
 				ob_end_clean();
 			}
+			// It returns '' for a missing art directory or an unwritable
+			// dhcrenders/ and says nothing, which is indistinguishable from
+			// "the feature was never deployed" when you are looking at Discord.
+			if ($img === '') error_log('dhca_announce: no render for fighter serial '
+			                           . (int)$hero['serial']);
 			$desc .= "🔥 **Fiercest:** ".$hero['f']['name']
 			       . ($hero['dealt'] > 0 ? " — ".number_format($hero['dealt'])." damage" : "")
 			       . " · ".$hero['f']['kit']['name']."\n";
@@ -547,20 +571,27 @@ function dhca_announce($conn, $b, $won, $rewarded) {
 
 		// Not every staker has linked Discord, so this is empty as often as not
 		// and the post simply goes out without a ping.
-		$ping = '';
-		$r = $conn->query("SELECT discord_id FROM users WHERE id = ".(int)$b['meta']['defender']." LIMIT 1");
-		if ($r && $r->num_rows) {
-			$u = $r->fetch_assoc();
-			if (!empty($u['discord_id'])) {
-				$ping = '<@'.$u['discord_id'].'> '
-				      . ($won ? 'your Crew was beaten in the Arena.' : 'your Crew held the Arena.');
-			}
-		}
+		$ping = $defU['mention']
+		      ? $defU['mention'].' '.($won ? 'your Crew was beaten in the Arena.'
+		                                   : 'your Crew held the Arena.')
+		      : '';
+
+		/*
+		 * THE THUMBNAIL IS NOT THE PLATFORM SKULL. discordmsg() substitutes it
+		 * for any empty $thumbnail, so passing '' was the reason these posts
+		 * still carried the generic mark next to a battle between two named
+		 * Crews. The winner's own Discord avatar goes there instead, and the
+		 * Fighter render only stands in when they have not linked Discord --
+		 * using it for both slots would print the same art twice.
+		 */
+		$thumb = $winU['avatar'] !== '' ? $winU['avatar'] : $img;
+		$author = array('name' => $won ? $att.' takes the Arena' : $def.' holds the Arena');
+		if ($winU['avatar'] !== '') $author['icon_url'] = $winU['avatar'];
 
 		ob_start();
 		discordmsg($won ? '⚔️ Arena — Challenger Wins' : '🛡️ Arena — Defence Holds',
-			$desc, $img, 'https://skulliance.io/staking/dhcarena.php', 'dhcarena', '',
-			$won ? '00C8A0' : 'E0466B', null, null, $ping);
+			$desc, $img, 'https://skulliance.io/staking/dhcarena.php', 'dhcarena', $thumb,
+			$won ? '00C8A0' : 'E0466B', $author, null, $ping);
 		ob_end_clean();
 	} catch (Throwable $e) {
 		// never reaches the player
