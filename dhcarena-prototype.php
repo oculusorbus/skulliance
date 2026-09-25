@@ -117,6 +117,9 @@ button{font:inherit;cursor:pointer;border-radius:3px}
      near 730px, which fits. The whole figure still shows; it is letterboxed
      into a shorter frame rather than cropped. */
   .teamcol .tok .art{aspect-ratio:auto;height:96px}
+  /* Three tokens shoulder to shoulder with a 4px gap: an 8% pop-out overlaps
+     its neighbours. Smaller on a phone, full size in the desktop columns. */
+  .tok.act{animation:actSmall .34s}
   .teamcol .tok{padding:4px}
   .teamcol .tok .nm{font-size:9px}
   .teamcol .tok .kitn{font-size:7.5px}
@@ -157,12 +160,22 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   transition:transform .4s cubic-bezier(.2,.7,.3,1)}
 .hp.low{background:var(--ochre)}.hp.crit{background:var(--blood)}
 .sh{position:absolute;top:0;left:0;height:100%;background:var(--shield);opacity:.8;transition:width .4s}
-.hpn{font-size:8px;color:var(--dim);font-variant-numeric:tabular-nums;display:flex;justify-content:space-between}
+/* Fixed height and no wrapping. This line gains "sh 24" and "charge 7/10" the
+   moment Shield or Charge match, and on a phone-width token that wrapped to a
+   second line -- so the token grew, the row shoved, and the Crew jolted. On
+   desktop there was room, so it never wrapped and nothing moved: the same
+   report from both ends. */
+.hpn{font-size:8px;color:var(--dim);font-variant-numeric:tabular-nums;display:flex;
+  justify-content:space-between;gap:4px;white-space:nowrap;overflow:hidden;
+  height:12px;line-height:12px}
+.hpn span{overflow:hidden;text-overflow:ellipsis}
 .tok.ko{opacity:.3;filter:grayscale(1)}
 .tok.hit{animation:hit .3s}
-@keyframes hit{0%{transform:translateX(0)}30%{transform:translateX(-5px)}60%{transform:translateX(4px)}100%{transform:translateX(0)}}
+@keyframes hit{0%{transform:translateX(0)}30%{transform:translateX(-3%)}
+  60%{transform:translateX(2.4%)}100%{transform:translateX(0)}}
 .tok.act{animation:act .34s}
 @keyframes act{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes actSmall{0%{transform:scale(1)}40%{transform:scale(1.035)}100%{transform:scale(1)}}
 .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;border-radius:3px}
 .flash.on{animation:fl .28s}@keyframes fl{0%{opacity:.5}100%{opacity:0}}
 .pop{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-size:14px;font-weight:700;
@@ -193,7 +206,7 @@ button{font:inherit;cursor:pointer;border-radius:3px}
   .teamcol .tok .nm{font-size:12px}
   .teamcol .tok .kitn{font-size:10px}
   .teamcol .tok .rk{font-size:9px}
-  .teamcol .tok .hpn{font-size:9.5px}
+  .teamcol .tok .hpn{font-size:9.5px;height:14px;line-height:14px}
   .teamcol .tok .hpwrap{height:8px}
   .teamcol{gap:10px}
 }
@@ -1221,8 +1234,8 @@ function tokHtml(f,showGem){
     + '<div class="hpwrap"><div class="hp '+cls+'" style="transform:scaleX('+pct+')"></div>'
     +   '<div class="sh" style="width:'+Math.min(100,(f.shield/f.maxHp)*100)+'%"></div></div>'
     + '<div class="hpn"><span>'+f.hp+'/'+f.maxHp+'</span><span>'
-    +   (f.shield>0?'sh '+f.shield+'  ':'')
-    +   (f.surge>0?'charge '+f.surge+'/10':'')+(f.bleed>0?' bleed':'')+'</span></div>'
+    +   (f.shield>0?'🛡 '+f.shield+' ':'')
+    +   (f.surge>0?'⚡ '+f.surge+' ':'')+(f.bleed>0?'🗡':'')+'</span></div>'
     + '</div>';
 }
 /* BUILD ONCE PER BATTLE. This used to rewrite both teams' innerHTML on every
@@ -1254,8 +1267,8 @@ function renderTeams(){
     if(sh) sh.style.width=Math.min(100,(f.shield/f.maxHp)*100)+'%';
     var n=e.querySelector('.hpn');
     if(n) n.innerHTML='<span>'+f.hp+'/'+f.maxHp+'</span><span>'
-      + (f.shield>0?'sh '+f.shield+'  ':'')
-      + (f.surge>0?'charge '+f.surge+'/10':'')+(f.bleed>0?' bleed':'')+'</span>';
+      + (f.shield>0?'🛡 '+f.shield+' ':'')
+      + (f.surge>0?'⚡ '+f.surge+' ':'')+(f.bleed>0?'🗡':'')+'</span>';
   });
 }
 function renderBoard(dropAnim,settle){
