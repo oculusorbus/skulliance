@@ -191,8 +191,13 @@ being popular.
 
 ## Why it looks like it does
 
-Battles are announced in Discord when they finish, and a battle is never
-resolved in your browser: your move is sent as "slide this gem there", the
+Battles are announced in Discord when they finish, and **the defender is tagged**
+— an attack happens to a Crew whose owner did not choose the fight and was not
+watching it, so they are the one who needs telling. The announcement is
+illustrated with the **fiercest Fighter of the winning Crew**: the one that
+actually dealt the most damage, not the one with the best stat line.
+
+A battle is never resolved in your browser: your move is sent as "slide this gem there", the
 server works out the whole exchange including the defending Crew's replies, and
 what comes back is the result plus a list of what happened for the page to
 animate. Nothing the browser says can change a number.

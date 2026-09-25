@@ -462,9 +462,44 @@ function dhca_username($conn, $user_id) {
 
 /* ---------- announcing ------------------------------------------------------- */
 
+/** The Fighter on the winning side that actually did the work, with the row
+ *  from dhc_fighters it came from -- the announce needs its traits and serial
+ *  to draw it. Falls back to the strongest on paper if nothing landed a hit,
+ *  which only happens to a Crew that won without swinging. */
+function dhca_fiercest($conn, $b, $won) {
+	$side = $won ? 'mine' : 'foes';
+	$ids  = $won ? $b['meta']['mineIds'] : $b['meta']['foeIds'];
+	$best = -1; $bestAt = -1;
+	foreach ($b[$side] as $i => $f) {
+		$score = isset($f['dealt']) ? (int)$f['dealt'] : 0;
+		if ($score > $best) { $best = $score; $bestAt = $i; }
+	}
+	if ($bestAt < 0) return null;
+	if ($best <= 0) {
+		$bestAt = 0; $bp = -1;
+		foreach ($b[$side] as $i => $f) if ((int)$f['power'] > $bp) { $bp = (int)$f['power']; $bestAt = $i; }
+	}
+	$fid = isset($ids[$bestAt]) ? (int)$ids[$bestAt] : 0;
+	$row = null;
+	if ($fid) {
+		$r = $conn->query("SELECT serial, traits FROM dhc_fighters WHERE id = $fid LIMIT 1");
+		if ($r && $r->num_rows) $row = $r->fetch_assoc();
+	}
+	return array('f' => $b[$side][$bestAt], 'serial' => $row ? (int)$row['serial'] : 0,
+	             'traits' => $row ? (json_decode($row['traits'], true) ?: array()) : array(),
+	             'dealt' => max(0, $best));
+}
+
 /**
  * Fire and forget, like every other announcement on the platform. Buffered and
  * caught: a Discord outage must never cost somebody their battle result.
+ *
+ * THE DEFENDER IS PINGED, not the attacker. An attack happens to a Crew whose
+ * owner did not choose the fight and was not at the keyboard for it; the
+ * attacker watched the whole thing and needs no telling. The mention goes in
+ * discordmsg()'s top-level $content, because a mention written into an embed
+ * renders as a link and notifies nobody -- see the note on that parameter in
+ * webhooks.php.
  */
 function dhca_announce($conn, $b, $won, $rewarded) {
 	if (!function_exists('discordmsg')) {
@@ -481,6 +516,27 @@ function dhca_announce($conn, $b, $won, $rewarded) {
 		$desc .= "⚔️ **Challenger:** $att\n🛡️ **Defender:** $def\n";
 		$desc .= "🏁 **Result:** ".($won ? 'challenger wins' : 'defender holds')
 		       . " · ".$standing." still standing after ".(int)$b['round']." rounds\n";
+
+		/* The image is the winning Crew's fiercest Fighter rather than the
+		   Skulliance icon. Every one of these is a different character, built
+		   by the person being announced, so the generic mark was the least
+		   informative thing that could have gone there. */
+		$hero = dhca_fiercest($conn, $b, $won);
+		$img  = '';
+		if ($hero && $hero['traits']) {
+			if (!function_exists('dhcf_render_fighter') && is_file(__DIR__ . '/dhcfighters-notify.php')) {
+				ob_start(); include_once __DIR__ . '/dhcfighters-notify.php'; ob_end_clean();
+			}
+			if (function_exists('dhcf_render_fighter')) {
+				ob_start();
+				$img = dhcf_render_fighter($hero['traits'], $hero['serial']);
+				ob_end_clean();
+			}
+			$desc .= "🔥 **Fiercest:** ".$hero['f']['name']
+			       . ($hero['dealt'] > 0 ? " — ".number_format($hero['dealt'])." damage" : "")
+			       . " · ".$hero['f']['kit']['name']."\n";
+		}
+
 		if ((int)$b['stats']['bombs'] > 0)
 			$desc .= "💣 **Bombs:** ".(int)$b['stats']['bombs']." armed, "
 			       . (int)$b['stats']['blasts']." detonated\n";
@@ -489,10 +545,22 @@ function dhca_announce($conn, $b, $won, $rewarded) {
 		if ($rewarded && !empty($b['drop']))
 			$desc .= "🎁 **Trait:** ".$b['drop']['name']." (".$b['drop']['tier'].")\n";
 
+		// Not every staker has linked Discord, so this is empty as often as not
+		// and the post simply goes out without a ping.
+		$ping = '';
+		$r = $conn->query("SELECT discord_id FROM users WHERE id = ".(int)$b['meta']['defender']." LIMIT 1");
+		if ($r && $r->num_rows) {
+			$u = $r->fetch_assoc();
+			if (!empty($u['discord_id'])) {
+				$ping = '<@'.$u['discord_id'].'> '
+				      . ($won ? 'your Crew was beaten in the Arena.' : 'your Crew held the Arena.');
+			}
+		}
+
 		ob_start();
 		discordmsg($won ? '⚔️ Arena — Challenger Wins' : '🛡️ Arena — Defence Holds',
-			$desc, '', 'https://skulliance.io/staking/dhcarena.php', 'dhcarena', '',
-			$won ? '00C8A0' : 'E0466B');
+			$desc, $img, 'https://skulliance.io/staking/dhcarena.php', 'dhcarena', '',
+			$won ? '00C8A0' : 'E0466B', null, null, $ping);
 		ob_end_clean();
 	} catch (Throwable $e) {
 		// never reaches the player

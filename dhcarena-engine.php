@@ -263,6 +263,10 @@ function dhca_build_fighter($traits, $name, $uid, $rarity) {
 		'power'=>(int)round(DHCA_POWER_BASE * $m('weapon',$traits['weapon']) * $v($traits['weapon'])),
 		'critC'=>0.06 * $m('headgear',$traits['headgear']) * $v($traits['headgear']),
 		'rank'=>0, 'side'=>'',
+		// Damage this Fighter has dealt, all battle. Kept so the winning Crew
+		// has a FIERCEST -- the one that actually did the work, rather than the
+		// one with the best stat line, which is a different question.
+		'dealt'=>0,
 	);
 }
 
@@ -347,7 +351,7 @@ function dhca_resolve_group(&$b, $side, $grp, $chain, $scale) {
 			$b[$side][$i]['surge'] = 0;
 			$b['fx'][] = array('k'=>'erupt','side'=>$side,'i'=>$i);
 			foreach (array_keys(dhca_alive($b, $foe)) as $ti)
-				dhca_hurt($b, $foe, $ti, (int)round($f['power'] * 0.9 * $mult), false);
+				$b[$side][$i]['dealt'] += dhca_hurt($b, $foe, $ti, (int)round($f['power'] * 0.9 * $mult), false);
 			$b['log'][] = '⚡ '.$f['name'].' ERUPTS — hits everything.';
 		}
 		return;
@@ -382,6 +386,7 @@ function dhca_resolve_group(&$b, $side, $grp, $chain, $scale) {
 				$b[$foe][$ti]['shield'] = max(0, $b[$foe][$ti]['shield'] - (int)round($base * 0.5));
 			}
 			$dealt = dhca_hurt($b, $foe, $ti, max(1, (int)round($base)), $crit);
+			$b[$side][$fi]['dealt'] += $dealt;
 			if (!empty($k['drain'])) dhca_heal($b, $side, $fi, (int)round($dealt * $k['drain']));
 			if (!empty($k['bleed']) && !$b[$foe][$ti]['ko']) $b[$foe][$ti]['bleed'] = 3;
 		}
@@ -680,7 +685,8 @@ function dhca_public(&$b) {
 			'kit'=>array('id'=>$f['kit']['id'],'emoji'=>$f['kit']['emoji'],
 			             'name'=>$f['kit']['name'],'note'=>$f['kit']['note']),
 			'rank'=>$f['rank'],'hp'=>$f['hp'],'maxHp'=>$f['maxHp'],
-			'shield'=>$f['shield'],'surge'=>$f['surge'],'bleed'=>$f['bleed'],'ko'=>$f['ko']);
+			'shield'=>$f['shield'],'surge'=>$f['surge'],'bleed'=>$f['bleed'],'ko'=>$f['ko'],
+			'dealt'=>isset($f['dealt']) ? (int)$f['dealt'] : 0);
 	};
 	return array(
 		'board'=>$b['board'], 'bomb'=>$b['bomb'],
