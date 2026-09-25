@@ -456,7 +456,15 @@ function dhcf_owned($conn, $user_id) {
 }
 
 /**
- * Copies currently locked inside saved Fighters, slug => count.
+ * Copies currently locked inside saved Fighters, "category|slug" => count.
+ *
+ * KEYED BY CATEGORY AND SLUG, because a slug is only unique WITHIN a category.
+ * Nine slugs exist as both a head and a torso -- dh-alien-punk, golden-cyborg,
+ * silver-cyborg, mk100, mk200, c73, dh-cop-2, inferno-wasp-guardian and
+ * planet-8tz-specter -- and they are different traits with different art,
+ * different rarity and separate ledger rows. Counting them by slug alone made
+ * the alien punk HEAD spend the alien punk TORSO: own one of each, wear the
+ * head, and the body reported zero copies free and could not be placed.
  *
  * $ignore_id skips one Fighter, which is how editing works: the build being
  * changed must not count itself as competition for its own traits.
@@ -477,7 +485,8 @@ function dhcf_committed($conn, $user_id, $ignore_id = 0) {
 			// legitimately spends two copies
 			foreach ($t as $slot => $slug) {
 				if ($slug === '' || $slug === null) continue;
-				$counts[$slug] = (isset($counts[$slug]) ? $counts[$slug] : 0) + 1;
+				$k = dhcf_slot_category($slot) . '|' . $slug;
+				$counts[$k] = (isset($counts[$k]) ? $counts[$k] : 0) + 1;
 			}
 		}
 	}
@@ -491,7 +500,8 @@ function dhcf_available($conn, $user_id, $ignore_id = 0) {
 	$out = array();
 	foreach ($owned as $cat => $traits) {
 		foreach ($traits as $slug => $info) {
-			$free = $info['copies'] - (isset($committed[$slug]) ? $committed[$slug] : 0);
+			$k    = $cat . '|' . $slug;
+			$free = $info['copies'] - (isset($committed[$k]) ? $committed[$k] : 0);
 			$out[$cat][$slug] = array(
 				'copies' => $info['copies'],
 				'free'   => $free > 0 ? $free : 0,
@@ -502,20 +512,31 @@ function dhcf_available($conn, $user_id, $ignore_id = 0) {
 	return $out;
 }
 
-/** Which traits in a layout the player cannot currently afford. Empty = fine. */
+/**
+ * Which traits in a layout the player cannot currently afford. Empty = fine.
+ * Returned keyed by "category|slug", carrying both so the caller can name the
+ * trait without having to guess its category back.
+ *
+ * PER CATEGORY, for the reason in dhcf_committed(). Summing by slug counted an
+ * alien punk head and an alien punk torso as two copies of one trait, and then
+ * measured that against whichever category happened to be found first.
+ */
 function dhcf_shortfall($available, $traits) {
 	$need = array();
 	foreach ($traits as $slot => $slug) {
 		if ($slug === '' || $slug === null) continue;
-		$need[$slug] = (isset($need[$slug]) ? $need[$slug] : 0) + 1;
+		$cat = dhcf_slot_category($slot);
+		$k   = $cat . '|' . $slug;
+		if (!isset($need[$k])) $need[$k] = array('cat' => $cat, 'slug' => $slug, 'n' => 0);
+		$need[$k]['n']++;
 	}
 	$short = array();
-	foreach ($need as $slug => $n) {
-		$free = 0;
-		foreach ($available as $cat => $traits2) {
-			if (isset($traits2[$slug])) { $free = $traits2[$slug]['free']; break; }
-		}
-		if ($free < $n) $short[$slug] = array('need' => $n, 'free' => $free);
+	foreach ($need as $k => $w) {
+		$free = isset($available[$w['cat']][$w['slug']]['free'])
+		      ? (int)$available[$w['cat']][$w['slug']]['free'] : 0;
+		if ($free < $w['n'])
+			$short[$k] = array('cat' => $w['cat'], 'slug' => $w['slug'],
+			                   'need' => $w['n'], 'free' => $free);
 	}
 	return $short;
 }
@@ -584,7 +605,7 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 		if ($short) {
 			$conn->rollback();
 			$names = array();
-			foreach ($short as $slug => $s) $names[] = dhcf_trait_name(dhcf_category_of($slug), $slug);
+			foreach ($short as $s) $names[] = dhcf_trait_name($s['cat'], $s['slug']);
 			return array(false, 'You have already used: ' . implode(', ', $names), null);
 		}
 
@@ -669,6 +690,12 @@ function dhcf_newest_trait_at($conn, $user_id, $traits) {
 }
 
 /** Which category a slug belongs to, by searching the rarity table. */
+/**
+ * FIRST category holding this slug -- which is a guess, and wrong for the nine
+ * slugs that are both a head and a torso (see dhcf_committed()). Use the
+ * category you already have wherever there is one; this remains only for
+ * callers that genuinely have nothing but a slug.
+ */
 function dhcf_category_of($slug) {
 	foreach (dhcf_rarity() as $cat => $traits) if (isset($traits[$slug])) return $cat;
 	return '';
@@ -701,7 +728,7 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
 		if ($short) {
 			$conn->rollback();
 			$names = array();
-			foreach ($short as $slug => $s) $names[] = dhcf_trait_name(dhcf_category_of($slug), $slug);
+			foreach ($short as $s) $names[] = dhcf_trait_name($s['cat'], $s['slug']);
 			return array(false, 'You have already used: ' . implode(', ', $names), null);
 		}
 		$newest = dhcf_newest_trait_at($conn, $user_id, $clean);

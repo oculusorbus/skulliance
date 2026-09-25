@@ -734,8 +734,25 @@ a{color:var(--ochre)}
      */
     var t = traitBySlug(key, slug);
     if (t && typeof t.free === 'number') {
+      /*
+       * A COPY SOMEWHERE ELSE ONLY COUNTS IF IT IS THE SAME TRAIT, and a slug
+       * is only unique within a category. Nine slugs are both a head and a
+       * torso -- dh-alien-punk, golden-cyborg, silver-cyborg, mk100, mk200,
+       * c73, dh-cop-2, inferno-wasp-guardian, planet-8tz-specter -- and they
+       * are different traits with different art and separate ledger rows.
+       * Matching on slug alone meant placing the alien punk head greyed out
+       * the alien punk torso with "your only copy is already placed".
+       *
+       * s.dir IS the category: weapon and weaponBack share 'weapon', effects1
+       * and effects2 share 'effects', which is also exactly when a second copy
+       * SHOULD be counted.
+       */
+      var cat = null;
+      SLOTS.forEach(function (s) { if (s.key === key) cat = s.dir; });
       var elsewhere = 0;
-      SLOTS.forEach(function (s) { if (s.key !== key && sel[s.key] === slug) elsewhere++; });
+      SLOTS.forEach(function (s) {
+        if (s.key !== key && s.dir === cat && sel[s.key] === slug) elsewhere++;
+      });
       if (t.free - elsewhere <= 0) {
         if (t.free <= 0) {
           return t.copies > 1
