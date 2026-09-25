@@ -1850,13 +1850,27 @@ if (fcardEl) {
    here throws, finish() still runs and the board is live. A cinematic must
    never be able to cost somebody their turn. */
 var cineTimers = [], cineDone = null;
-function cineStop(){
+/**
+ * End the sequence.
+ *
+ * @param keepCover  leave the board hidden instead of revealing it. Used when
+ *   the reason we are stopping is that ANOTHER battle is on its way: dealing a
+ *   new practice battle, or going again from the end card, both stop the
+ *   current sequence and then wait on a request. Revealing the old board for
+ *   the length of that round trip is a flash of exactly the thing the entrance
+ *   exists to build up to -- and it reads as the board appearing before the
+ *   cinematic, which is what it looked like the first time this went wrong.
+ */
+function cineStop(keepCover){
   cineTimers.forEach(function(t){ clearTimeout(t); });
   cineTimers = [];
   var el = document.querySelector('.a-intro');
   if (el) el.remove();
   var ar = document.querySelector('.arena');
-  if (ar) ar.classList.remove('cine', 'board', 'crew');
+  if (ar) {
+    ar.classList.remove('board', 'crew');
+    if (keepCover) ar.classList.add('cine'); else ar.classList.remove('cine');
+  }
   gridEl.querySelectorAll('.cell').forEach(function(c){ c.style.animationDelay = ''; });
   if (cineDone) { var d = cineDone; cineDone = null; d(); }
 }
@@ -1950,12 +1964,15 @@ function openBattle(res, fresh){
  */
 function startPractice(onFail){
   if (busy) return;
+  // cineStop() runs the pending done-callback, which clears busy -- so claim it
+  // afterwards or this claims nothing. keepCover: the board stays hidden until
+  // the battle we are fetching is ready to show it.
+  cineStop(true);
   busy = true;
-  cineStop();
   $('endcard').hidden = true;
   post({do:'new'}, function(res){
     busy = false;
-    if (!res || !res.ok) { onFail && onFail('Could not start practice.'); return; }
+    if (!res || !res.ok) { cineStop(); onFail && onFail('Could not start practice.'); return; }
     practice = res.spec;
     battleId = 0;
     try { openBattle(res, true); }
@@ -1966,6 +1983,7 @@ function startPractice(onFail){
     }
   }, function(){
     busy = false;
+    cineStop();          // uncover whatever is there; nothing new is coming
     onFail && onFail('The Arena did not answer.');
   }, PRACTICE_URL);
 }
