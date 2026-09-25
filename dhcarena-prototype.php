@@ -429,7 +429,11 @@ function artUrl(d,s,z){return ART+'/'+z+'/'+d+'/'+s+'.png';}
 var KITS = [
   {id:'heavy',  emoji:'🔨', name:'Smash',  dmg:1.55, note:'one big hit'},
   {id:'cleave', emoji:'🪓', name:'Cleave', dmg:0.80, cleave:true, note:'hits the whole rank'},
-  {id:'drain',  emoji:'🩸', name:'Drain',  dmg:1.05, drain:.45,   note:'heals itself'},
+  /* A true drain, not a heal: healF() is fed the damage ACTUALLY dealt, so it
+     takes health off the target and puts 45% of it back on the attacker --
+     and hitting through a shield heals less, because less got through. The
+     old note said "heals itself", which read like a medkit. */
+  {id:'drain',  emoji:'🩸', name:'Drain',  dmg:1.05, drain:.45,   note:'hits and steals health'},
   {id:'sunder', emoji:'⛏️', name:'Break',  dmg:0.95, sunder:true, note:'smashes shields'},
   {id:'precise',emoji:'🎯', name:'Snipe',  dmg:1.15, crit:.28,    note:'crits often'},
   {id:'volley', emoji:'🏹', name:'Volley', dmg:0.62, all:true,    note:'chips everyone'},
