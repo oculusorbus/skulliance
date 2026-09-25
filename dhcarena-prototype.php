@@ -176,8 +176,27 @@ button{font:inherit;cursor:pointer;border-radius:3px}
 .tok.act{animation:act .34s}
 @keyframes act{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}
 @keyframes actSmall{0%{transform:scale(1)}40%{transform:scale(1.035)}100%{transform:scale(1)}}
-.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;border-radius:3px}
-.flash.on{animation:fl .28s}@keyframes fl{0%{opacity:.5}100%{opacity:0}}
+/* z-index matters here and was missing. .flash is the token's FIRST child with
+   no z-index, and .tok .art is position:relative and comes after it -- so with
+   both at auto they paint in DOM order and the ART COVERED THE FLASH. Damage
+   has been flashing behind the character all along, which is most of why a hit
+   did not read. Above the art now, below the damage number. */
+.flash{position:absolute;inset:0;opacity:0;pointer-events:none;border-radius:3px;z-index:4;
+  background:var(--blood)}
+.flash.on{animation:fl .30s}
+@keyframes fl{0%{opacity:.50}100%{opacity:0}}
+/* A crit is white and lingers -- it should look different from a normal hit,
+   not merely bigger. */
+.flash.big{background:#fff}
+.flash.big.on{animation:flBig .40s}
+@keyframes flBig{0%{opacity:.80}35%{opacity:.35}100%{opacity:0}}
+/* Healing and shielding get their own colours, so Drain reads as taking
+   something rather than only as damage. */
+.flash.heal{background:var(--teal)}
+.flash.shield{background:var(--shield)}
+.tok.hit.big{animation:hitBig .40s}
+@keyframes hitBig{0%{transform:translateX(0)}20%{transform:translateX(-5%)}
+  45%{transform:translateX(4%)}70%{transform:translateX(-2%)}100%{transform:translateX(0)}}
 .pop{position:absolute;left:50%;top:22%;transform:translateX(-50%);font-size:14px;font-weight:700;
   pointer-events:none;opacity:0;text-shadow:0 2px 6px #000;z-index:5;white-space:nowrap}
 .pop.on{animation:pp .9s}.pop.heal{color:var(--teal)}.pop.big{font-size:19px;color:var(--ochre)}
@@ -841,11 +860,12 @@ function targetsAt(side,depth){
 function hurt(t,amt,tag){
   if(t.shield>0){var a=Math.min(t.shield,amt);t.shield-=a;amt-=a;if(a>0)pop(t,'-'+a+' shield','heal');}
   if(amt<=0)return 0;
-  t.hp=Math.max(0,t.hp-amt); pop(t,'-'+amt,tag); shake(t);
+  t.hp=Math.max(0,t.hp-amt); pop(t,'-'+amt,tag); shake(t,tag==='big');
   if(t.hp===0){t.ko=true;sfx('ko');logLine(t.side==='mine'?'foe':'you',t.name+' is knocked out.');}
   return amt;
 }
-function healF(f,a){var b=f.hp;f.hp=Math.min(f.maxHp,f.hp+a);if(f.hp>b)pop(f,'+'+(f.hp-b),'heal');}
+function healF(f,a){var b=f.hp;f.hp=Math.min(f.maxHp,f.hp+a);
+  if(f.hp>b){ pop(f,'+'+(f.hp-b),'heal'); flashTok(f,'heal'); }}
 
 function resolveGroup(side,grp,chain,scale){
   var foeSide=side==='mine'?'foes':'mine';
@@ -853,7 +873,7 @@ function resolveGroup(side,grp,chain,scale){
   if(S.terrain.id==='dmg')mult*=1.10;
   if(grp.type===3){                                  // GUARD — shield your team
     var amt=Math.round((6+grp.len*4)*mult*(S.terrain.id==='guard'?1.5:1));
-    alive(side).forEach(function(f){f.shield+=amt;});
+    alive(side).forEach(function(f){ f.shield+=amt; flashTok(f,'shield'); });
     sfx('shield');
     logLine(side==='mine'?'you':'foe','🛡️ Shield x'+grp.len+' — +'+amt+' to the whole team.');
     return;
@@ -1195,8 +1215,19 @@ function aiMove(){
 /* ---------------- rendering ---------------- */
 function cellEl(i){return document.querySelector('[data-i="'+i+'"]');}
 function elFor(f){return document.querySelector('[data-id="'+f.uid+'"]');}
-function shake(f){var e=elFor(f);if(!e)return;e.classList.remove('hit');void e.offsetWidth;e.classList.add('hit');
-  var fl=e.querySelector('.flash');if(fl){fl.classList.remove('on');void fl.offsetWidth;fl.classList.add('on');}}
+/** kind: '' a hit, 'big' a crit, 'heal' or 'shield' for the good ones. */
+function flashTok(f,kind){
+  var e=elFor(f); if(!e) return;
+  var fl=e.querySelector('.flash'); if(!fl) return;
+  fl.className='flash'+(kind?' '+kind:'');
+  void fl.offsetWidth; fl.classList.add('on');
+}
+function shake(f,big){
+  var e=elFor(f); if(!e) return;
+  e.classList.remove('hit','big'); void e.offsetWidth;
+  e.classList.add('hit'); if(big) e.classList.add('big');
+  flashTok(f,big?'big':'');
+}
 function act(f){var e=elFor(f);if(!e)return;e.classList.remove('act');void e.offsetWidth;e.classList.add('act');}
 function pop(f,txt,kind){var e=elFor(f);if(!e)return;var p=document.createElement('div');
   p.className='pop on '+(kind||'');p.textContent=txt;e.appendChild(p);setTimeout(function(){p.remove();},950);}
