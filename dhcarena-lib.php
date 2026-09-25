@@ -36,7 +36,7 @@ function dhca_crew($conn, $user_id) {
 	$user_id = (int)$user_id;
 	$rows = array();
 	$sql = "SELECT f.id, f.serial, f.name, f.traits, f.rarity_score,
-	               a.benched_until, a.wins, a.losses, a.season_wins, a.season_losses
+	               a.benched_until, a.ko, a.wins, a.losses, a.season_wins, a.season_losses
 	        FROM dhc_fighters f
 	        LEFT JOIN dhc_arena_fighters a ON a.fighter_id = f.id
 	        WHERE f.user_id = $user_id
@@ -49,6 +49,12 @@ function dhca_crew($conn, $user_id) {
 		$r['traits']    = json_decode($r['traits'], true) ?: array();
 		$r['available'] = ($until <= $now);
 		$r['bench_left']= max(0, $until - $now);
+		/* FELL, not merely fought. A Fighter that was knocked out is being
+		   brought back; one that walked off the board is only catching its
+		   breath. The player sees two different words for it, so the two states
+		   have to be distinguishable and cannot be inferred from the clock --
+		   the remaining time depends on roster depth as well. */
+		$r['fell']      = !empty($r['ko']);
 		$r['display']   = ($r['name'] !== null && $r['name'] !== '')
 		                  ? $r['name'] : dhcf_default_name($r['serial']);
 		$rows[] = $r;
@@ -208,7 +214,8 @@ function dhca_start($conn, $user_id, $defender_id, $fighter_ids) {
 	foreach ($fighter_ids as $fid) {
 		$fid = (int)$fid;
 		if (!isset($byId[$fid]))            return array(false, 'That is not your Fighter.', null);
-		if (!$byId[$fid]['available'])      return array(false, $byId[$fid]['display'].' is still recovering.', null);
+		if (!$byId[$fid]['available'])      return array(false, $byId[$fid]['display'].' is still '
+				.(!empty($byId[$fid]['fell']) ? 'resurrecting' : 'recovering').'.', null);
 		$mine[] = $byId[$fid];
 	}
 	if (count($mine) !== DHCA_CREW_SIZE) return array(false, 'Pick '.DHCA_CREW_SIZE.' Fighters.', null);
@@ -393,15 +400,16 @@ function dhca_bench_loss_hours($depth) {
 function dhca_bench($conn, $user_id, $fighter_id, $hours, $won) {
 	$conn->query(sprintf(
 		"INSERT INTO dhc_arena_fighters
-		   (fighter_id,user_id,benched_until,wins,losses,season_wins,season_losses,season)
-		 VALUES (%d,%d,DATE_ADD(NOW(), INTERVAL %d MINUTE),%d,%d,%d,%d,'%s')
+		   (fighter_id,user_id,benched_until,ko,wins,losses,season_wins,season_losses,season)
+		 VALUES (%d,%d,DATE_ADD(NOW(), INTERVAL %d MINUTE),%d,%d,%d,%d,%d,'%s')
 		 ON DUPLICATE KEY UPDATE
-		   benched_until=VALUES(benched_until),
+		   benched_until=VALUES(benched_until), ko=VALUES(ko),
 		   wins=wins+%d, losses=losses+%d,
 		   season_wins  = IF(season=VALUES(season), season_wins+%d,  %d),
 		   season_losses= IF(season=VALUES(season), season_losses+%d,%d),
 		   season=VALUES(season)",
 		(int)$fighter_id, (int)$user_id, (int)round($hours*60),
+		$won?0:1,                                  // ko: $won is "this Fighter survived"
 		$won?1:0, $won?0:1, $won?1:0, $won?0:1,
 		$conn->real_escape_string(dhca_season()),
 		$won?1:0, $won?0:1, $won?1:0, $won?1:0, $won?0:1, $won?0:1));

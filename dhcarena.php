@@ -39,13 +39,38 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 ?>
 <div class="arena-wrap">
 <style>
-.arena-wrap{--ink:#0d0f13;--panel:#151922;--panel2:#1d2230;--line:#2b3345;--bone:#e8e6e1;
-  --dim:#8b93a7;--teal:#00c8a0;--ochre:#f5a623;--blood:#e0466b;--shield:#5aa9ff;
-  --g0:#e0466b;--g1:#f5a623;--g2:#8b7bd8;--g3:#5aa9ff;--g4:#00c8a0;}
+/* ================== TWO SKINS, AND THE SEAM BETWEEN THEM ====================
+   THE SELECTION SCREEN IS A PLATFORM PAGE. It sits in the platform header, next
+   to platform navigation, and it should look like everything else on
+   Skulliance -- same ground, same accent, same typeface. It had been wearing
+   the prototype's own dark monospace skin, which was written for a standalone
+   page with nothing above it, and next to the real header it read as a foreign
+   object bolted onto a navy interface.
+
+   THE BATTLE IS A GAME WORLD and keeps its own. That is the same call
+   dhc-assembler.php makes about the sandbox, and for the same reason: a board
+   with five gem colours, damage reds and shield blues cannot be recoloured to
+   a UI palette without losing what the colours are for.
+
+   So the palette below is Skulliance, sampled from the platform's own
+   stylesheet exactly as the assembler samples it -- #07111d ground, #00c8a0
+   accent, #7a9eb0 muted -- and #arenaBattle further down overrides the whole
+   set with the game's.
+   ========================================================================== */
+.arena-wrap{--ink:#07111d;--panel:#0a1929;--panel2:#0d1e2e;--line:#1b3346;
+  --bone:#e8eaed;--dim:#7a9eb0;--teal:#00a882;--ochre:#00c8a0;--blood:#00c8a0;
+  --shield:#5aa9ff;--warn:#d0463a;}
 .arena-wrap,.arena-wrap *{box-sizing:border-box}
-.arena-wrap{margin:0;background:var(--ink);color:var(--bone);
-  font:13px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
-  padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
+/* No background and no font of its own: the page ground and Arial come from
+   the platform, which is the whole point. */
+.arena-wrap{margin:0}
+/* The board's own world. Everything the game draws lives in here. */
+.arena-wrap #arenaBattle{--ink:#0d0f13;--panel:#151922;--panel2:#1d2230;--line:#2b3345;
+  --bone:#e8e6e1;--dim:#8b93a7;--teal:#00c8a0;--ochre:#f5a623;--blood:#e0466b;
+  --shield:#5aa9ff;--warn:#e0466b;
+  --g0:#e0466b;--g1:#f5a623;--g2:#8b7bd8;--g3:#5aa9ff;--g4:#00c8a0;
+  background:var(--ink);color:var(--bone);border:1px solid var(--line);border-radius:4px;
+  padding:10px;font:13px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
   -webkit-user-select:none;user-select:none}
 /* NO MAX-WIDTH OF ITS OWN. The platform's .container already caps at 2000px and
    centres, so capping again here just made the Arena 500px narrower than the
@@ -449,36 +474,64 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 @keyframes cb{0%{opacity:0;transform:translate(-50%,10px) scale(.8)}20%{opacity:1;transform:translate(-50%,0) scale(1.1)}70%{opacity:1}100%{opacity:0;transform:translate(-50%,-14px)}}
 .arena-wrap .over{text-align:center;padding:14px}
 .arena-wrap .over h2{font-size:15px;color:var(--ochre);margin:0 0 4px}
-/* ---- Arena shell: the parts the prototype had no need for ---- */
-.arena-wrap{max-width:100%;margin:0 auto;padding:12px;overflow-x:clip;text-align:left}
-.arena-wrap .a-head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:4px}
-.arena-wrap .a-head h1{font-size:17px;letter-spacing:.14em;text-transform:uppercase;margin:0}
-.arena-wrap .a-sub{color:var(--dim);font-size:11px;margin:0 0 12px}
-.arena-wrap .a-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.arena-wrap .a-stat{border:1px solid var(--line);border-radius:3px;padding:6px 11px;min-width:0}
-.arena-wrap .a-stat b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
-.arena-wrap .a-stat span{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
-.arena-wrap .a-block{border:1px solid rgba(245,166,35,.4);background:rgba(245,166,35,.07);
-  border-radius:3px;padding:9px 12px;font-size:11.5px;margin-bottom:12px}
-.arena-wrap .a-panels{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
-@media (max-width:900px){.arena-wrap .a-panels{grid-template-columns:1fr}}
-.arena-wrap .a-panel{border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:10px}
-.arena-wrap .a-panel h2{margin:0 0 8px;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+/* ---- Arena shell ------------------------------------------------------------
+   Written against dhcfighters.php's idioms rather than invented again: the same
+   masthead, the same stat tiles, the same bordered panel with an uppercase
+   caption bar and a padded body. Two sibling pages in the same feature should
+   not each have their own idea of what a panel is.
+   -------------------------------------------------------------------------- */
+.arena-wrap{max-width:100%;margin:0 auto;padding:14px;overflow-x:clip;text-align:left}
+/* One row across the full width -- blurb takes what it needs, counts sit hard
+   right -- the way the Fighters masthead does it. */
+.arena-wrap .a-masthead{display:flex;flex-wrap:wrap;align-items:center;
+  justify-content:space-between;gap:18px 32px;margin:0 0 16px}
+.arena-wrap .a-intro-txt{flex:1 1 420px;min-width:0}
+.arena-wrap .a-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 4px}
+.arena-wrap .a-head h1{font-size:22px;letter-spacing:.02em;margin:0}
+.arena-wrap .a-sub{font-size:11.5px;opacity:.65;line-height:1.6;margin:0}
+.arena-wrap .a-sub b{opacity:.95}
+.arena-wrap .a-sub a{color:var(--ochre)}
+/* flex:0 1 auto + min-width:0 so the tiles can shrink and wrap instead of
+   pushing the page sideways on a phone -- the same trap .dhcf-stats documents. */
+.arena-wrap .a-stats{display:flex;gap:8px;flex-wrap:wrap;margin:0;flex:0 1 auto;min-width:0}
+.arena-wrap .a-stat{border:1px solid var(--line);border-radius:3px;padding:7px 12px;
+  min-width:0;flex:0 1 auto}
+.arena-wrap .a-stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.arena-wrap .a-stat span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+  opacity:.6;white-space:nowrap}
+@media (max-width:520px){
+  .arena-wrap .a-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));width:100%}
+  .arena-wrap .a-stat{padding:6px 8px}
+  .arena-wrap .a-stat b{font-size:15px}
+}
+.arena-wrap .a-block{border:1px solid var(--ochre);background:rgba(0,200,160,.07);
+  border-radius:3px;padding:9px 12px;font-size:12px;margin-bottom:14px}
+.arena-wrap .a-block a{color:var(--ochre)}
+.arena-wrap .a-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+  gap:14px;align-items:start}
+.arena-wrap .a-panel{border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.arena-wrap .a-panel h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;opacity:.65;border-bottom:1px solid var(--line);
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px}
+.arena-wrap .a-panel h2 span{opacity:.75;letter-spacing:.08em;white-space:nowrap}
+.arena-wrap .a-panel .body{padding:10px 12px}
 .arena-wrap .a-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:7px}
-.arena-wrap .a-card{background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:5px;
+.arena-wrap .a-card{border:1px solid var(--line);border-radius:3px;padding:5px;
   cursor:pointer;position:relative;text-align:left}
-.arena-wrap .a-card.sel{border-color:var(--teal);box-shadow:inset 0 0 0 1px var(--teal)}
+.arena-wrap .a-card:hover{background:rgba(0,200,160,.05);border-color:var(--ochre)}
+.arena-wrap .a-card.sel{border-color:var(--ochre);box-shadow:inset 0 0 0 1px var(--ochre);
+  background:rgba(0,200,160,.08)}
 .arena-wrap .a-card.out{opacity:.4;cursor:not-allowed}
 .arena-wrap .a-card .art{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:2px;
-  background:repeating-conic-gradient(#191419 0% 25%,#201b20 0% 50%) 50%/9px 9px}
+  background:var(--panel2)}
 .arena-wrap .a-card .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .arena-wrap .a-card .art img.bg{object-fit:cover}
 .arena-wrap .a-card .nm{font-size:9.5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.arena-wrap .a-card .sc{font-size:8.5px;color:var(--dim);font-variant-numeric:tabular-nums}
-.arena-wrap .a-card .wl{font-size:8px;color:var(--dim)}
+.arena-wrap .a-card .sc{font-size:9px;opacity:.6;font-variant-numeric:tabular-nums}
+.arena-wrap .a-card .wl{font-size:8.5px;opacity:.5}
 .arena-wrap .a-card .pk{position:absolute;top:4px;left:4px;z-index:2;font-size:8px;
   letter-spacing:.1em;text-transform:uppercase;padding:2px 5px;border-radius:2px;
-  background:var(--ink);border:1px solid var(--teal);color:var(--teal)}
+  background:var(--ink);border:1px solid var(--ochre);color:var(--ochre)}
 /* READABLE, which the first version was not: 9px of --blood (#e0466b) on a
    dark scrim over busy artwork is red-on-dark at the smallest size on the page,
    and red is the one hue that loses most contrast against a near-black ground.
@@ -491,6 +544,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   text-shadow:0 1px 3px #000}
 .arena-wrap .a-card .recover b{font-weight:400;font-size:12px;letter-spacing:0;
   text-transform:none;color:var(--ochre);font-variant-numeric:tabular-nums}
+/* A Fighter being brought back reads differently from one catching its breath.
+   The word is longer, so it gets room to wrap rather than being squeezed. */
+.arena-wrap .a-card .recover.fell{letter-spacing:.06em}
+.arena-wrap .a-card .recover.fell b{color:var(--warn)}
+.arena-wrap .a-card.out:hover{background:none;border-color:var(--line)}
 /* ---- paging. A staker with two hundred Fighters should not be handed two
    hundred cards, and the cards are the expensive part: eight <img> layers each.
    Off-page cards are display:none rather than removed, which is what makes the
@@ -498,63 +556,82 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    display:none subtree, so the pages you are not looking at cost nothing. */
 .arena-wrap .a-card.off{display:none}
 .arena-wrap .a-pager{display:flex;align-items:center;justify-content:center;gap:10px;
-  margin-top:9px;font-size:10px;color:var(--dim)}
+  margin-top:10px;font-size:11px;opacity:.7}
 .arena-wrap .a-pager button{background:var(--panel2);color:var(--bone);border:1px solid var(--line);
-  padding:3px 10px;font-size:11px;line-height:1.4}
+  border-radius:3px;padding:3px 10px;font:inherit;cursor:pointer}
 .arena-wrap .a-pager button:disabled{opacity:.35;cursor:default}
 .arena-wrap .a-pager button:not(:disabled):hover{border-color:var(--ochre);color:var(--ochre)}
 /* THE PICKS STAY ON SCREEN. Choosing three Fighters and then paging away from
    them left the formation invisible at the moment you most need it -- the
    order IS the formation. */
-.arena-wrap .a-picked{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 8px;min-height:22px;
-  align-items:center;font-size:10px;color:var(--dim)}
-.arena-wrap .a-picked .chip{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;
-  border:1px solid var(--teal);border-radius:999px;color:var(--bone);background:var(--panel2);
-  cursor:pointer;max-width:170px}
-.arena-wrap .a-picked .chip b{font-weight:400;color:var(--teal);font-size:8.5px;
+.arena-wrap .a-picked{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 9px;min-height:23px;
+  align-items:center;font-size:11px;opacity:.85}
+.arena-wrap .a-picked .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;
+  border:1px solid var(--ochre);border-radius:999px;color:var(--bone);background:rgba(0,200,160,.08);
+  cursor:pointer;max-width:180px}
+.arena-wrap .a-picked .chip b{font-weight:400;color:var(--ochre);font-size:8.5px;
   letter-spacing:.1em;text-transform:uppercase;flex:none}
 .arena-wrap .a-picked .chip s{text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.arena-wrap .a-picked .chip i{font-style:normal;color:var(--dim);flex:none}
-.arena-wrap .a-picked .chip:hover{border-color:var(--blood)}
-.arena-wrap .a-picked .chip:hover i{color:var(--blood)}
+.arena-wrap .a-picked .chip i{font-style:normal;opacity:.55;flex:none}
+/* Removing is the one destructive affordance on this screen, and --blood is
+   the platform's own accent here, so it needs a colour of its own to read as
+   "this takes something away". */
+.arena-wrap .a-picked .chip:hover{border-color:var(--warn);background:rgba(208,70,58,.10)}
+.arena-wrap .a-picked .chip:hover i{color:var(--warn);opacity:1}
 .arena-wrap .a-foes{display:flex;flex-direction:column;gap:5px;max-height:330px;overflow:auto}
-.arena-wrap .a-foe{display:flex;align-items:center;gap:9px;padding:6px 8px;border:1px solid var(--line);
-  border-radius:3px;background:var(--panel2);cursor:pointer}
-.arena-wrap .a-foe:hover{border-color:var(--ochre)}
-.arena-wrap .a-foe.sel{border-color:var(--blood);box-shadow:inset 0 0 0 1px var(--blood)}
-.arena-wrap .a-foe img{width:26px;height:26px;border-radius:50%;flex:none;background:#0b0d11}
-.arena-wrap .a-foe .n{flex:1;min-width:0;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.arena-wrap .a-foe .m{font-size:9px;color:var(--dim);white-space:nowrap}
-.arena-wrap .a-go{margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.arena-wrap .a-lad{width:100%;border-collapse:collapse;font-size:10.5px}
-.arena-wrap .a-lad th{text-align:left;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
-  color:var(--dim);font-weight:400;padding:3px 6px;border-bottom:1px solid var(--line)}
-.arena-wrap .a-lad td{padding:4px 6px;border-bottom:1px solid rgba(255,255,255,.04)}
-.arena-wrap .a-lad .r{color:var(--dim);font-variant-numeric:tabular-nums}
-.arena-wrap .a-lad .me{color:var(--teal)}
+.arena-wrap .a-foe{display:flex;align-items:center;gap:10px;padding:7px 9px;border:1px solid var(--line);
+  border-radius:3px;cursor:pointer}
+.arena-wrap .a-foe:hover{border-color:var(--ochre);background:rgba(0,200,160,.05)}
+.arena-wrap .a-foe.sel{border-color:var(--ochre);box-shadow:inset 0 0 0 1px var(--ochre);
+  background:rgba(0,200,160,.08)}
+.arena-wrap .a-foe img{width:28px;height:28px;border-radius:50%;flex:none;background:var(--panel2)}
+.arena-wrap .a-foe .n{flex:1;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arena-wrap .a-foe .m{font-size:10px;opacity:.6;white-space:nowrap}
+.arena-wrap .a-go{margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* The platform's buttons, not the game's. .btn inside #arenaBattle keeps the
+   monospace board styling; out here it should look like every other control on
+   Skulliance. */
+.arena-wrap .a-go .btn{font:inherit;border-radius:3px;padding:7px 14px;
+  background:var(--panel2);color:var(--bone);border:1px solid var(--line);cursor:pointer}
+.arena-wrap .a-go .btn.go{background:rgba(0,200,160,.12);border-color:var(--ochre);color:var(--ochre)}
+.arena-wrap .a-go .btn.go:hover:not(:disabled){background:rgba(0,200,160,.2)}
+.arena-wrap .a-go .btn:disabled{opacity:.4;cursor:default}
+.arena-wrap .a-lad{width:100%;border-collapse:collapse;font-size:12px}
+.arena-wrap .a-lad th{text-align:left;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+  opacity:.6;font-weight:400;padding:5px 7px;border-bottom:1px solid var(--line)}
+.arena-wrap .a-lad td{padding:6px 7px;border-bottom:1px solid var(--line)}
+.arena-wrap .a-lad tr:last-child td{border-bottom:0}
+.arena-wrap .a-lad tbody tr:hover{background:rgba(0,200,160,.05)}
+.arena-wrap .a-lad .r{opacity:.65;font-variant-numeric:tabular-nums}
+.arena-wrap .a-lad .me{color:var(--ochre)}
+.arena-wrap .a-lad .me .r{opacity:1}
 .arena-wrap #arenaBattle{display:none;margin-top:12px}
 .arena-wrap #arenaBattle.on{display:block}
 .arena-wrap .a-busy{opacity:.55;pointer-events:none}
 </style>
 
-  <div class="a-head">
-    <h1>DHC Arena</h1>
-  </div>
-  <p class="a-sub">Three of your Fighters against three of theirs, on a shared board.
-     Each of your Crew owns a gem — matching it makes them act, and match size is reach.
-     Win and a trait lands in your collection.</p>
-
-  <div class="a-stats">
-    <div class="a-stat"><b><?php echo count($crew); ?></b><span>Fighters</span></div>
-    <div class="a-stat"><b><?php echo count($available); ?></b><span>Standing</span></div>
-    <div class="a-stat"><b><?php echo max(0, DHCA_DAILY_BATTLES - $spent); ?>/<?php echo DHCA_DAILY_BATTLES; ?></b><span>Battles left</span></div>
-    <div class="a-stat"><b><?php echo count($foesList); ?></b><span>Rivals</span></div>
+  <!-- One masthead row: the blurb takes what it needs and the counts sit hard
+       right, the same shape DHC Fighters uses. Two sibling pages in one feature
+       should not introduce themselves differently. -->
+  <div class="a-masthead">
+    <div class="a-intro-txt">
+      <div class="a-head"><h1>DHC Arena</h1></div>
+      <p class="a-sub">Three of your Fighters against three of theirs, on a shared board.
+         Each of your Crew owns a gem — matching it makes them act, and <b>match size is
+         reach</b>. Win and a trait lands in your collection.</p>
+    </div>
+    <div class="a-stats">
+      <div class="a-stat"><b><?php echo count($crew); ?></b><span>Fighters</span></div>
+      <div class="a-stat"><b><?php echo count($available); ?></b><span>Standing</span></div>
+      <div class="a-stat"><b><?php echo max(0, DHCA_DAILY_BATTLES - $spent); ?>/<?php echo DHCA_DAILY_BATTLES; ?></b><span>Battles left</span></div>
+      <div class="a-stat"><b><?php echo count($foesList); ?></b><span>Rivals</span></div>
+    </div>
   </div>
 
 <?php if ($block): ?>
   <div class="a-block"><?php echo htmlspecialchars($block); ?>
     <?php if (count($crew) < DHCA_CREW_SIZE): ?>
-      Build them in <a href="dhcfighters.php" style="color:var(--ochre)">DHC Fighters</a>.
+      Build them in <a href="dhcfighters.php">DHC Fighters</a>.
     <?php endif; ?>
   </div>
 <?php endif; ?>
@@ -562,7 +639,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   <div class="a-panels" id="arenaSetup">
     <div class="a-panel">
       <h2>Your Crew — pick <?php echo DHCA_CREW_SIZE; ?>, in order</h2>
-      <p class="a-sub" style="margin:0 0 8px">The order you pick sets the formation:
+      <div class="body">
+      <p class="a-sub" style="margin:0 0 9px">The order you pick sets the formation:
          first is <b>front</b>, then <b>mid</b>, then <b>back</b>. A match of 3 only
          reaches their front rank, 4 reaches mid, 5 or more reaches the back — so put
          the Fighter you most want protected last.</p>
@@ -583,7 +661,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
               if (empty($t[$k])) continue; ?>
               <img loading="lazy" alt="" src="<?php echo $ART; ?>/250/<?php echo $k; ?>/<?php echo htmlspecialchars($t[$k]); ?>.png" onerror="this.remove()">
             <?php endforeach; ?>
-            <?php if (!$ok): ?><div class="recover">recovering<b><?php echo dhca_hms($f['bench_left']); ?></b></div><?php endif; ?>
+            <?php if (!$ok): ?>
+              <?php /* Two different things are happening and they deserve two
+                       different words: a Fighter that fell is being brought
+                       back, one that merely fought is catching its breath. */ ?>
+              <div class="recover<?php echo !empty($f['fell']) ? ' fell' : ''; ?>"><?php
+                echo !empty($f['fell']) ? 'resurrecting' : 'recovering'; ?><b><?php
+                echo dhca_hms($f['bench_left']); ?></b></div>
+            <?php endif; ?>
           </div>
           <div class="nm"><?php echo htmlspecialchars($f['display']); ?></div>
           <div class="sc"><?php echo number_format((int)$f['rarity_score']); ?> pts</div>
@@ -597,10 +682,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <button type="button" id="aNext">Next &rsaquo;</button>
       </div>
       <?php endif; ?>
+      </div>
     </div>
 
     <div class="a-panel">
       <h2>Choose a rival</h2>
+      <div class="body">
       <?php if (!$foesList): ?>
         <p class="a-sub" style="margin:0">Nobody else has a Crew yet. Check back once more stakers have built three Fighters.</p>
       <?php else: ?>
@@ -620,12 +707,18 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <button class="btn go" id="aStart" <?php echo $block?'disabled':''; ?>>Enter the Arena</button>
         <span class="a-sub" style="margin:0" id="aMsg"></span>
       </div>
+      </div>
+    </div>
 
-      <h2 style="margin-top:14px">Ladder — <?php echo htmlspecialchars(dhca_season()); ?></h2>
+    <div class="a-panel">
+      <h2>Ladder <span><?php echo htmlspecialchars(dhca_season()); ?></span></h2>
+      <div class="body">
       <?php if (!$ladder): ?>
         <p class="a-sub" style="margin:0">No battles fought this season yet. Be first.</p>
       <?php else: ?>
-      <table class="a-lad"><tr><th>#</th><th>Staker</th><th>W</th><th>L</th><th>Best chain</th></tr>
+      <table class="a-lad">
+      <thead><tr><th>#</th><th>Staker</th><th>W</th><th>L</th><th>Best chain</th></tr></thead>
+      <tbody>
       <?php foreach ($ladder as $i => $l): ?>
         <tr<?php echo ((int)$l['user_id'] === $user_id) ? ' class="me"' : ''; ?>>
           <td class="r"><?php echo $i+1; ?></td>
@@ -635,8 +728,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <td class="r">x<?php echo (int)$l['best_chain']; ?></td>
         </tr>
       <?php endforeach; ?>
-      </table>
+      </tbody></table>
       <?php endif; ?>
+      </div>
     </div>
   </div>
 
@@ -1217,7 +1311,7 @@ function showEnd(res){
     if (res.drop) sub += ' A trait dropped — check your collection.';
     else if (res.rewarded === false) sub += ' No trait this time: the daily cap is spent.';
   } else {
-    sub = 'Your Crew is down. The Fighters you sent need longer to recover.';
+    sub = 'Your Crew is down. The Fighters you sent are resurrecting — they will be back.';
   }
   $('ecSub').textContent = sub;
   $('ecStats').innerHTML =

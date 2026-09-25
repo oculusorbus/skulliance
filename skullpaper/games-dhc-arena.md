@@ -22,13 +22,13 @@ on the board are your saved assemblies, layer for layer.
 |---|---|
 | **Crew size** | 3 Fighters |
 | **Battles a day** | 6 |
-| **Recovery after any battle** | 4 hours |
-| **Extra recovery for a Fighter who fell** | 4 to 12 hours, depending on how deep your roster is |
+| **Recovering, after any battle** | 4 hours |
+| **Resurrecting, for a Fighter who fell** | 4 to 12 hours on top, depending on how deep your roster is |
 | **Trait drops** | 1 per win, sharing DHC Fighters' cap of 3 a day |
 
 You need **three Fighters standing** to enter. A Fighter who has just fought is
-**recovering** for four hours whatever the result, and one who was knocked out
-recovers longer — from four extra hours if you only own three Fighters, up to
+**recovering** for four hours whatever the result. One who was knocked out is
+**resurrecting** instead, and takes longer — from four extra hours if you only own three Fighters, up to
 twelve if you own plenty. A deep roster rests harder because it has somewhere
 else to turn; a player with exactly three is not locked out of the game for a
 day.

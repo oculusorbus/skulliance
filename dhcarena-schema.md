@@ -14,7 +14,23 @@ Three tables, and the split matters:
   per unfinished battle, deleted or marked resolved when it ends. Separate from
   the ledger because it churns on every move and the ledger must not.
 - **`dhc_arena_fighters`** — per-Fighter Arena state: when it is available again
-  after a knockout, and its record. Keyed to `dhc_fighters.id`.
+  after a battle, whether it fell in that battle, and its record. Keyed to
+  `dhc_fighters.id`. `ko` exists because the player is shown two different words
+  — a Fighter that fell is **resurrecting**, one that merely fought is
+  **recovering** — and the two cannot be told apart from the clock, since the
+  remaining time depends on roster depth as well.
+
+## Already created the tables?
+
+`ko` was added after the first release. Run this once; everything else below is
+unchanged and `CREATE TABLE IF NOT EXISTS` makes re-running it harmless.
+
+```sql
+ALTER TABLE dhc_arena_fighters
+  ADD COLUMN ko TINYINT(1) NOT NULL DEFAULT 0 AFTER benched_until;
+```
+
+## Full schema
 
 ```sql
 CREATE TABLE IF NOT EXISTS dhc_arena_battles (
@@ -49,7 +65,8 @@ CREATE TABLE IF NOT EXISTS dhc_arena_state (
 CREATE TABLE IF NOT EXISTS dhc_arena_fighters (
 	fighter_id    INT          NOT NULL PRIMARY KEY,   -- dhc_fighters.id
 	user_id       INT          NOT NULL,
-	benched_until DATETIME     DEFAULT NULL,       -- knocked out until this time
+	benched_until DATETIME     DEFAULT NULL,       -- unavailable until this time
+	ko            TINYINT(1)   NOT NULL DEFAULT 0, -- did it FALL, or only fight?
 	wins          INT          NOT NULL DEFAULT 0, -- career, public (see §8c)
 	losses        INT          NOT NULL DEFAULT 0,
 	season_wins   INT          NOT NULL DEFAULT 0,
