@@ -430,6 +430,25 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'gated' => true, 'base' => 'run',
 	                          'bands' => array(1 => 'placement_10', 3 => 'placement_3', 5 => 'placement_1')),
 
+	// DHC ARENA. Gated hard -- it needs a Crew of three saved Fighters, so a
+	// staker without one is shut out entirely, which is exactly the case the
+	// wildcard exists for: being locked out costs a bonus and never a slot.
+	//
+	// 'base' is the routine table. Winning a battle is the normal outcome of
+	// playing one, not an achievement in itself; what deserves paying more is
+	// beating a Crew better than yours. The bands read the gap between the two
+	// Crews' best rarity scores in hundreds, so punching up pays and farming
+	// somebody weaker does not -- the same shape as the Raids bands, and the
+	// same reason.
+	//
+	// Capped at the default 3/day, and Arena additionally allows only one
+	// REWARDED battle per opponent per day, so a willing pair cannot trade
+	// wins. See dhca_already_rewarded().
+	'arena'          => array('label' => 'DHC Arena', 'url' => 'dhcarena.php',
+	                          'category' => 'wildcard', 'trigger' => 'win a battle',
+	                          'gated' => true, 'base' => 'run',
+	                          'bands' => array(1 => 'placement_10', 3 => 'placement_3', 6 => 'placement_1')),
+
 	// NOT A GAME, deliberately in this list anyway: it is a drop source, and
 	// everything that reads DHCF_GAMES -- the claim endpoint, the notifier, the
 	// "where traits drop" table -- should see it without special-casing.
@@ -470,6 +489,7 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'dailystreak'   => 7,      // day 7 of 7, nothing earlier
 	'maxingo'       => 1,      // any completed Maxingo mission; level sets the odds
 	'raids'         => 0,      // the decided raid itself qualifies, won or repelled
+	'arena'         => 0,      // the win itself qualifies; the bands grade the gap
 );
 
 function dhcf_floor($game) {

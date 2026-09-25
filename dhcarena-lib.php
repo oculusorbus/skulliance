@@ -1,0 +1,449 @@
+<?php
+/* ============================================================================
+   dhcarena-lib.php — persistence and economy for DHC Arena.
+
+   The engine (dhcarena-engine.php) knows the rules and nothing else. This knows
+   the database, the Crew, the allowance, the bench and the rewards. Keeping the
+   two apart is what lets the rules be tested without either.
+
+   Schema: dhcarena-schema.md. Design: dhcarena.md.
+   ============================================================================ */
+
+require_once __DIR__ . '/dhcarena-engine.php';
+require_once __DIR__ . '/dhcfighters-lib.php';      // pulls dhcfighters-config.php
+
+define('DHCA_CREW_SIZE',      3);     // Fighters needed to enter
+define('DHCA_DAILY_BATTLES',  6);     // equal for everyone -- see dhcarena.md §5
+define('DHCA_BENCH_BASE_H',   4);     // flat, after any battle
+define('DHCA_BENCH_LOSS_MIN', 4);     // extra hours on a loss at the 3-Fighter floor
+define('DHCA_BENCH_LOSS_MAX', 12);    // ...rising to this for a deep Crew
+
+function dhca_season() { return date('Y-m'); }
+
+/* ---------- the Crew -------------------------------------------------------- */
+
+/**
+ * A player's Fighters with their Arena state attached, newest first.
+ * `available` is the whole entry condition: not benched, right now.
+ */
+function dhca_crew($conn, $user_id) {
+	$user_id = (int)$user_id;
+	$rows = array();
+	$sql = "SELECT f.id, f.serial, f.name, f.traits, f.rarity_score,
+	               a.benched_until, a.wins, a.losses, a.season_wins, a.season_losses
+	        FROM dhc_fighters f
+	        LEFT JOIN dhc_arena_fighters a ON a.fighter_id = f.id
+	        WHERE f.user_id = $user_id
+	        ORDER BY f.rarity_score DESC, f.id DESC";
+	$res = $conn->query($sql);
+	if (!$res) return $rows;
+	$now = time();
+	while ($r = $res->fetch_assoc()) {
+		$until = $r['benched_until'] ? strtotime($r['benched_until']) : 0;
+		$r['traits']    = json_decode($r['traits'], true) ?: array();
+		$r['available'] = ($until <= $now);
+		$r['bench_left']= max(0, $until - $now);
+		$r['display']   = ($r['name'] !== null && $r['name'] !== '')
+		                  ? $r['name'] : dhcf_default_name($r['serial']);
+		$rows[] = $r;
+	}
+	return $rows;
+}
+
+function dhca_available(&$crew) {
+	$out = array();
+	foreach ($crew as $f) if ($f['available']) $out[] = $f;
+	return $out;
+}
+
+/** Battles started today. The allowance is counted, never stored. */
+function dhca_battles_today($conn, $user_id) {
+	$res = $conn->query("SELECT COUNT(*) AS c FROM dhc_arena_battles
+	                     WHERE attacker_id = ".(int)$user_id."
+	                       AND DATE(started_at) = CURDATE()");
+	if (!$res) return DHCA_DAILY_BATTLES;      // fail closed
+	$r = $res->fetch_assoc();
+	return $r ? (int)$r['c'] : 0;
+}
+
+/** Has this pairing already paid out today? One rewarded battle per opponent. */
+function dhca_already_rewarded($conn, $attacker, $defender) {
+	$res = $conn->query("SELECT COUNT(*) AS c FROM dhc_arena_battles
+	                     WHERE attacker_id = ".(int)$attacker."
+	                       AND defender_id = ".(int)$defender."
+	                       AND DATE(started_at) = CURDATE() AND rewarded = 1");
+	if (!$res) return true;                     // fail closed
+	$r = $res->fetch_assoc();
+	return $r && (int)$r['c'] > 0;
+}
+
+/** Why this player cannot start a battle right now, or '' if they can. */
+function dhca_entry_block($conn, $user_id) {
+	$crew = dhca_crew($conn, $user_id);
+	if (count($crew) < DHCA_CREW_SIZE)
+		return 'Arena needs a Crew of '.DHCA_CREW_SIZE.' Fighters. You have '.count($crew).'.';
+	if (count(dhca_available($crew)) < DHCA_CREW_SIZE) {
+		$soon = null;
+		foreach ($crew as $f) if (!$f['available'])
+			if ($soon === null || $f['bench_left'] < $soon) $soon = $f['bench_left'];
+		return 'Not enough Fighters standing — '.count(dhca_available($crew)).' of '
+		     . DHCA_CREW_SIZE.' available. Next one back in '.dhca_hms($soon).'.';
+	}
+	if (dhca_battles_today($conn, $user_id) >= DHCA_DAILY_BATTLES)
+		return 'That is all '.DHCA_DAILY_BATTLES.' battles for today. Back tomorrow.';
+	return '';
+}
+
+function dhca_hms($secs) {
+	$secs = max(0, (int)$secs);
+	$h = intdiv($secs, 3600); $m = intdiv($secs % 3600, 60);
+	if ($h > 0) return $h.'h '.$m.'m';
+	return max(1, $m).'m';
+}
+
+/* ---------- opponents ------------------------------------------------------- */
+
+/**
+ * Who can be challenged: anyone else with at least a full Crew saved. Their
+ * Fighters are NOT checked for availability -- a defender is never benched by
+ * someone else's attack, and defending costs them nothing.
+ */
+function dhca_opponents($conn, $user_id, $limit = 24) {
+	$user_id = (int)$user_id; $limit = (int)$limit;
+	$out = array();
+	$sql = "SELECT u.id AS user_id, u.username, u.discord_id, u.avatar,
+	               COUNT(f.id) AS fighters, MAX(f.rarity_score) AS best
+	        FROM users u
+	        INNER JOIN dhc_fighters f ON f.user_id = u.id
+	        WHERE u.id <> $user_id
+	        GROUP BY u.id
+	        HAVING fighters >= ".DHCA_CREW_SIZE."
+	        ORDER BY best DESC
+	        LIMIT $limit";
+	$res = $conn->query($sql);
+	if (!$res) return $out;
+	while ($r = $res->fetch_assoc()) $out[] = $r;
+	return $out;
+}
+
+/** The three a defender fields: their best available, by rarity score. */
+function dhca_defending_crew($conn, $user_id) {
+	$crew = dhca_crew($conn, $user_id);
+	return array_slice($crew, 0, DHCA_CREW_SIZE);
+}
+
+/* ---------- starting, saving, loading --------------------------------------- */
+
+function dhca_start($conn, $user_id, $defender_id, $fighter_ids) {
+	$user_id = (int)$user_id; $defender_id = (int)$defender_id;
+	$block = dhca_entry_block($conn, $user_id);
+	if ($block) return array(false, $block, null);
+	if ($defender_id === $user_id) return array(false, 'Pick somebody else.', null);
+
+	$crew = dhca_crew($conn, $user_id);
+	$byId = array(); foreach ($crew as $f) $byId[(int)$f['id']] = $f;
+	$mine = array();
+	foreach ($fighter_ids as $fid) {
+		$fid = (int)$fid;
+		if (!isset($byId[$fid]))            return array(false, 'That is not your Fighter.', null);
+		if (!$byId[$fid]['available'])      return array(false, $byId[$fid]['display'].' is still benched.', null);
+		$mine[] = $byId[$fid];
+	}
+	if (count($mine) !== DHCA_CREW_SIZE) return array(false, 'Pick '.DHCA_CREW_SIZE.' Fighters.', null);
+
+	$foes = dhca_defending_crew($conn, $defender_id);
+	if (count($foes) < DHCA_CREW_SIZE) return array(false, 'They have no Crew to field.', null);
+
+	$rarity = dhcf_rarity();
+	$seed   = random_int(1, 0x7FFFFFFE);
+	$names  = array(
+		'mine' => array_map(function($f){ return $f['display']; }, $mine),
+		'foes' => array_map(function($f){ return $f['display']; }, $foes),
+	);
+	$b = dhca_new_battle(
+		array_map(function($f){ return $f['traits']; }, $mine),
+		array_map(function($f){ return $f['traits']; }, $foes),
+		$names, $rarity, $seed);
+
+	$b['meta'] = array(
+		'attacker'=>$user_id, 'defender'=>$defender_id,
+		'mineIds'=>array_map(function($f){ return (int)$f['id']; }, $mine),
+		'foeIds' =>array_map(function($f){ return (int)$f['id']; }, $foes),
+		'moves'=>array(),
+	);
+
+	$conn->query(sprintf(
+		"INSERT INTO dhc_arena_battles (attacker_id,defender_id,seed,season,started_at)
+		 VALUES (%d,%d,%d,'%s',NOW())",
+		$user_id, $defender_id, $seed, $conn->real_escape_string(dhca_season())));
+	$bid = (int)$conn->insert_id;
+	if (!$bid) return array(false, 'Could not start the battle.', null);
+	$b['meta']['battle_id'] = $bid;
+	dhca_save($conn, $bid, $user_id, $b);
+	return array(true, '', $b);
+}
+
+function dhca_save($conn, $battle_id, $user_id, $b) {
+	$json = $conn->real_escape_string(json_encode($b));
+	$conn->query("INSERT INTO dhc_arena_state (battle_id,user_id,state,updated_at)
+	              VALUES (".(int)$battle_id.",".(int)$user_id.",'$json',NOW())
+	              ON DUPLICATE KEY UPDATE state=VALUES(state), updated_at=NOW()");
+}
+
+function dhca_load($conn, $battle_id, $user_id) {
+	$res = $conn->query("SELECT state FROM dhc_arena_state
+	                     WHERE battle_id = ".(int)$battle_id."
+	                       AND user_id = ".(int)$user_id." LIMIT 1");
+	if (!$res || !$res->num_rows) return null;
+	$r = $res->fetch_assoc();
+	$b = json_decode($r['state'], true);
+	return is_array($b) ? $b : null;
+}
+
+/** The battle this player is in the middle of, if any. */
+function dhca_active($conn, $user_id) {
+	$res = $conn->query("SELECT s.battle_id FROM dhc_arena_state s
+	                     INNER JOIN dhc_arena_battles b ON b.id = s.battle_id
+	                     WHERE s.user_id = ".(int)$user_id." AND b.outcome = 0
+	                     ORDER BY s.battle_id DESC LIMIT 1");
+	if (!$res || !$res->num_rows) return null;
+	$r = $res->fetch_assoc();
+	return dhca_load($conn, (int)$r['battle_id'], $user_id);
+}
+
+/* ---------- taking a turn ---------------------------------------------------- */
+
+/**
+ * One player move, then the AI's replies until it is the player's turn again.
+ * Everything is decided here; the client only says which gem it slid.
+ *
+ * Returns array(ok, message, battle). A refusal is never explained in detail --
+ * an illegal move is either a stale page or somebody poking the endpoint.
+ */
+function dhca_move($conn, $user_id, $battle_id, $a, $z) {
+	$b = dhca_load($conn, $battle_id, $user_id);
+	if (!$b)                  return array(false, 'No battle in progress.', null);
+	if ($b['over'] !== null)  return array(false, 'That battle is over.', $b);
+	if ($b['turn'] !== 'mine')return array(false, 'Not your turn.', $b);
+
+	if (!dhca_play($b, 'mine', (int)$a, (int)$z))
+		return array(false, 'That slide makes no match.', $b);
+	$b['meta']['moves'][] = array((int)$a, (int)$z);
+
+	// the defending Crew answers, and keeps answering while it earns extra turns
+	$guard = 0;
+	while ($b['over'] === null && $b['turn'] === 'foes' && $guard++ < 12) {
+		$mv = dhca_ai_move($b);
+		if (!$mv) { dhca_fill_board($b); $mv = dhca_ai_move($b); }
+		if (!$mv) { $b['turn'] = 'mine'; break; }
+		$before = $b['fx'];
+		if (!dhca_play($b, 'foes', $mv[0], $mv[1])) { $b['turn'] = 'mine'; break; }
+		$b['fx'] = array_merge($before, $b['fx']);      // one timeline for the whole exchange
+		$b['meta']['moves'][] = array($mv[0], $mv[1]);
+	}
+
+	if ($b['over'] !== null) dhca_finish($conn, $b);
+	else                     dhca_save($conn, $battle_id, $user_id, $b);
+	return array(true, '', $b);
+}
+
+/* ---------- the end of a battle ---------------------------------------------- */
+
+/**
+ * Bench the fallen, write the record, and pay out -- once, and only for a
+ * battle that earned it. Idempotent: a second call finds outcome already set
+ * and does nothing, because a retried request must not pay twice.
+ */
+function dhca_finish($conn, &$b) {
+	$m   = $b['meta'];
+	$bid = (int)$m['battle_id'];
+
+	$res = $conn->query("SELECT outcome FROM dhc_arena_battles WHERE id = $bid LIMIT 1");
+	if (!$res || !$res->num_rows) return;
+	$row = $res->fetch_assoc();
+	if ((int)$row['outcome'] !== 0) return;          // already settled
+
+	$won     = ($b['over'] === 'mine');
+	$outcome = $won ? 1 : 2;
+	$att     = (int)$m['attacker'];
+	$def     = (int)$m['defender'];
+
+	// Bench only the ATTACKER's Fighters. A defender is played by the AI and
+	// never chose to be here; benching them would let anyone lock a rival out.
+	$crew     = dhca_crew($conn, $att);
+	$depth    = count($crew);
+	$lossHrs  = dhca_bench_loss_hours($depth);
+	foreach ($m['mineIds'] as $i => $fid) {
+		$fell  = isset($b['mine'][$i]) ? !empty($b['mine'][$i]['ko']) : false;
+		$hours = DHCA_BENCH_BASE_H + ($fell ? $lossHrs : 0);
+		dhca_bench($conn, $att, (int)$fid, $hours, $fell ? false : true);
+	}
+	// the defender's Fighters get a record, but never a bench
+	foreach ($m['foeIds'] as $i => $fid) {
+		$fell = isset($b['foes'][$i]) ? !empty($b['foes'][$i]['ko']) : false;
+		dhca_record($conn, $def, (int)$fid, !$fell);
+	}
+
+	$rewarded = 0;
+	if ($won && !dhca_already_rewarded($conn, $att, $def)) {
+		$rewarded = 1;
+		dhca_pay($conn, $att, $b);
+	}
+
+	$conn->query(sprintf(
+		"UPDATE dhc_arena_battles
+		 SET outcome=%d, rounds=%d, bombs=%d, blasts=%d, best_chain=%d,
+		     rewarded=%d, moves='%s', ended_at=NOW()
+		 WHERE id=%d AND outcome=0",
+		$outcome, (int)$b['round'], (int)$b['stats']['bombs'], (int)$b['stats']['blasts'],
+		(int)$b['stats']['best'], $rewarded,
+		$conn->real_escape_string(json_encode($m['moves'])), $bid));
+
+	$conn->query("DELETE FROM dhc_arena_state WHERE battle_id = $bid");
+	$b['rewarded'] = $rewarded;
+	dhca_announce($conn, $b, $won, $rewarded);
+}
+
+/** Longer bench for a deeper Crew, so depth buys resilience and not immunity. */
+function dhca_bench_loss_hours($depth) {
+	$span = DHCA_BENCH_LOSS_MAX - DHCA_BENCH_LOSS_MIN;
+	$t    = max(0, min(1, ($depth - DHCA_CREW_SIZE) / 9));   // 3 Fighters -> 0, 12+ -> 1
+	return DHCA_BENCH_LOSS_MIN + $span * $t;
+}
+
+function dhca_bench($conn, $user_id, $fighter_id, $hours, $won) {
+	$conn->query(sprintf(
+		"INSERT INTO dhc_arena_fighters
+		   (fighter_id,user_id,benched_until,wins,losses,season_wins,season_losses,season)
+		 VALUES (%d,%d,DATE_ADD(NOW(), INTERVAL %d MINUTE),%d,%d,%d,%d,'%s')
+		 ON DUPLICATE KEY UPDATE
+		   benched_until=VALUES(benched_until),
+		   wins=wins+%d, losses=losses+%d,
+		   season_wins  = IF(season=VALUES(season), season_wins+%d,  %d),
+		   season_losses= IF(season=VALUES(season), season_losses+%d,%d),
+		   season=VALUES(season)",
+		(int)$fighter_id, (int)$user_id, (int)round($hours*60),
+		$won?1:0, $won?0:1, $won?1:0, $won?0:1,
+		$conn->real_escape_string(dhca_season()),
+		$won?1:0, $won?0:1, $won?1:0, $won?1:0, $won?0:1, $won?0:1));
+}
+/** A record with no bench -- what a defender gets. */
+function dhca_record($conn, $user_id, $fighter_id, $won) {
+	$conn->query(sprintf(
+		"INSERT INTO dhc_arena_fighters
+		   (fighter_id,user_id,wins,losses,season_wins,season_losses,season)
+		 VALUES (%d,%d,%d,%d,%d,%d,'%s')
+		 ON DUPLICATE KEY UPDATE
+		   wins=wins+%d, losses=losses+%d,
+		   season_wins  = IF(season=VALUES(season), season_wins+%d,  %d),
+		   season_losses= IF(season=VALUES(season), season_losses+%d,%d),
+		   season=VALUES(season)",
+		(int)$fighter_id, (int)$user_id, $won?1:0, $won?0:1, $won?1:0, $won?0:1,
+		$conn->real_escape_string(dhca_season()),
+		$won?1:0, $won?0:1, $won?1:0, $won?1:0, $won?0:1, $won?0:1));
+}
+
+/**
+ * The trait. Gated wildcard through the one function every source goes through,
+ * so the 3/day cap and the ledger apply here exactly as everywhere else.
+ * Banded on how far UP the winner punched, using the Crews' best rarity scores.
+ */
+function dhca_pay($conn, $user_id, &$b) {
+	if (!function_exists('dhcf_award')) return;
+	$gap = dhca_rating_gap($conn, $b);
+	ob_start();
+	$drop = dhcf_award($conn, $user_id, 'wildcard', 'arena',
+		'beat '.dhca_username($conn, (int)$b['meta']['defender']),
+		dhcf_table_for('arena', $gap));
+	ob_end_clean();
+	$b['drop'] = $drop;
+}
+
+/** Defender's best score minus the attacker's, in rough 100-point steps. */
+function dhca_rating_gap($conn, $b) {
+	$best = function($ids) use ($conn) {
+		if (!$ids) return 0;
+		$in = implode(',', array_map('intval', $ids));
+		$r = $conn->query("SELECT MAX(rarity_score) AS m FROM dhc_fighters WHERE id IN ($in)");
+		if (!$r) return 0;
+		$x = $r->fetch_assoc();
+		return $x ? (int)$x['m'] : 0;
+	};
+	$mine = $best($b['meta']['mineIds']);
+	$foes = $best($b['meta']['foeIds']);
+	return (int)round(($foes - $mine) / 100);
+}
+
+function dhca_username($conn, $user_id) {
+	$r = $conn->query("SELECT username FROM users WHERE id = ".(int)$user_id." LIMIT 1");
+	if (!$r || !$r->num_rows) return 'a rival Crew';
+	$x = $r->fetch_assoc();
+	return $x['username'] !== '' ? $x['username'] : 'a rival Crew';
+}
+
+/* ---------- announcing ------------------------------------------------------- */
+
+/**
+ * Fire and forget, like every other announcement on the platform. Buffered and
+ * caught: a Discord outage must never cost somebody their battle result.
+ */
+function dhca_announce($conn, $b, $won, $rewarded) {
+	if (!function_exists('discordmsg')) {
+		if (is_file(__DIR__ . '/webhooks.php')) { ob_start(); include_once __DIR__ . '/webhooks.php'; ob_end_clean(); }
+		if (!function_exists('discordmsg')) return;
+	}
+	try {
+		$att = dhca_username($conn, (int)$b['meta']['attacker']);
+		$def = dhca_username($conn, (int)$b['meta']['defender']);
+		$standing = 0;
+		foreach ($b[$won ? 'mine' : 'foes'] as $f) if (empty($f['ko'])) $standing++;
+
+		$desc  = $won ? "**$att** takes the Arena.\n\n" : "**$def**'s Crew holds the Arena.\n\n";
+		$desc .= "⚔️ **Challenger:** $att\n🛡️ **Defender:** $def\n";
+		$desc .= "🏁 **Result:** ".($won ? 'challenger wins' : 'defender holds')
+		       . " · ".$standing." still standing after ".(int)$b['round']." rounds\n";
+		if ((int)$b['stats']['bombs'] > 0)
+			$desc .= "💣 **Bombs:** ".(int)$b['stats']['bombs']." armed, "
+			       . (int)$b['stats']['blasts']." detonated\n";
+		if ((int)$b['stats']['best'] > 2)
+			$desc .= "✦ **Best chain:** x".(int)$b['stats']['best']."\n";
+		if ($rewarded && !empty($b['drop']))
+			$desc .= "🎁 **Trait:** ".$b['drop']['name']." (".$b['drop']['tier'].")\n";
+
+		ob_start();
+		discordmsg($won ? '⚔️ Arena — Challenger Wins' : '🛡️ Arena — Defence Holds',
+			$desc, '', 'https://skulliance.io/staking/dhcarena.php', 'missions', '',
+			$won ? '00C8A0' : 'E0466B');
+		ob_end_clean();
+	} catch (Throwable $e) {
+		// never reaches the player
+	}
+}
+
+/* ---------- the ladder -------------------------------------------------------- */
+
+/**
+ * Standings for a season, derived from the battle ledger rather than stored.
+ * RANKED ON WINS, not win rate -- see dhcarena.md §8c. With an equal daily
+ * allowance for everyone, ranking on total wins IS ranking on win rate, while
+ * still making an unspent battle a wasted one.
+ */
+function dhca_ladder($conn, $season = null, $limit = 25) {
+	$season = $season ?: dhca_season();
+	$limit  = (int)$limit;
+	$out = array();
+	$sql = "SELECT u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
+	               SUM(b.outcome = 1) AS wins,
+	               SUM(b.outcome = 2) AS losses,
+	               MAX(b.best_chain)  AS best_chain
+	        FROM dhc_arena_battles b
+	        INNER JOIN users u ON u.id = b.attacker_id
+	        WHERE b.season = '".$conn->real_escape_string($season)."' AND b.outcome <> 0
+	        GROUP BY u.id
+	        ORDER BY wins DESC, losses ASC, best_chain DESC
+	        LIMIT $limit";
+	$res = $conn->query($sql);
+	if (!$res) return $out;
+	while ($r = $res->fetch_assoc()) $out[] = $r;
+	return $out;
+}
