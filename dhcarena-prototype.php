@@ -675,16 +675,13 @@ try{ sfxOn = localStorage.getItem('dhcarena_sfx') !== '0'; }catch(e){}
  * Falls back to the old element-based path if AudioContext is missing or a
  * file will not decode (Safari and Ogg have a history), so sound degrades
  * rather than disappearing. */
-var actx=null, sfxBuf={}, sfxEl={}, sfxVoices=0;
-var SFX_MAX_VOICES=10;        // a ceiling, never reached in normal play
+var actx=null, sfxBuf={}, sfxEl={}, sfxCur={};
 
 function sfxInit(){
   if(actx) return;
   var AC=window.AudioContext||window.webkitAudioContext;
   if(!AC) return;                       // no Web Audio: fallback path handles it
   try{ actx=new AC(); }catch(e){ return; }
-  // Decode everything in the background, once. ~600KB total, after the first
-  // gesture, so it never sits in front of the first frame.
   Object.keys(SFX).forEach(function(k){
     try{
       fetch(SFX[k][0]).then(function(r){ return r.arrayBuffer(); })
@@ -692,30 +689,53 @@ function sfxInit(){
           return new Promise(function(res,rej){ actx.decodeAudioData(b,res,rej); });
         })
         .then(function(buf){ sfxBuf[k]=buf; })
-        .catch(function(){});           // leaves this one on the fallback
+        .catch(function(){});
     }catch(e){}
   });
 }
 
+/* ONE VOICE PER SOUND, which is what the source games do and what a flat
+ * ceiling got wrong.
+ *
+ * There was a cap of ten concurrent voices, commented "never reached in normal
+ * play" -- then measurement showed a single move can fire 33 sounds. Clears and
+ * landings saturated it, and anything arriving late was dropped silently. A
+ * death nearly always lands mid-cascade, so the knockout sound was the one
+ * being starved: it stopped playing entirely and nothing said why.
+ *
+ * skullswap.php has no such problem because it holds ONE Audio per sound and
+ * sets currentTime = 0, so retriggering a sound restarts it and a sound can
+ * never stack on itself. Same rule here: a new shatter stops the previous
+ * shatter, and nothing else. Total voices cap themselves at the number of
+ * distinct sounds, so a knockout can always be heard over a cascade of clears.
+ *
+ * The 15ms ramp before stopping is the one addition -- cutting a buffer
+ * mid-cycle clicks, where seeking an element does not. */
 function sfx(name){
   if(!sfxOn) return;
   var def=SFX[name]; if(!def) return;
 
   if(actx && sfxBuf[name]){
-    if(sfxVoices>=SFX_MAX_VOICES) return;
     try{
       if(actx.state==='suspended') actx.resume();
+      var prev=sfxCur[name];
+      if(prev){
+        try{
+          prev.gain.gain.setTargetAtTime(0, actx.currentTime, 0.005);
+          prev.src.stop(actx.currentTime+0.015);
+        }catch(e){}
+      }
       var src=actx.createBufferSource(); src.buffer=sfxBuf[name];
       var g=actx.createGain(); g.gain.value=def[1];
       src.connect(g); g.connect(actx.destination);
-      sfxVoices++;
-      src.onended=function(){ sfxVoices--; };
+      sfxCur[name]={src:src,gain:g};
+      src.onended=function(){ if(sfxCur[name] && sfxCur[name].src===src) sfxCur[name]=null; };
       src.start(0);
       return;
-    }catch(e){ sfxVoices=Math.max(0,sfxVoices-1); }
+    }catch(e){}
   }
 
-  /* Fallback: one element per sound, restarted -- skullswap.php's model. */
+  /* Fallback: one element per sound, restarted -- skullswap.php's own model. */
   try{
     var a=sfxEl[name];
     if(!a){ a=sfxEl[name]=new Audio(def[0]); a.volume=def[1]; }
