@@ -56,8 +56,21 @@ define('DHCA_VARIANCE',     0.6);   // §4: variance between traits must exceed 
 define('DHCA_SURGE_GAIN',   1);     // flat, NOT match length
 define('DHCA_SURGE_MAX',    10);
 define('DHCA_EXTRA_TURN',   5);     // a 4 already leaves a bomb
-define('DHCA_BLAST_CAP',    4);
+/* A LONE BOMB IS A BIG MATCH. A CHAIN IS AN EVENT.
+   Bombs already chained -- a blast that reaches another live bomb sets it off --
+   and half of all detonations were multi-bomb. What was missing was any
+   consequence: blasts were 7.7% of all damage in a battle, and a blast resolved
+   as a match of at most 4, which reaches the MID rank at best. So you could
+   hoard four bombs, clear the whole board, and the enemy back Fighter would not
+   be touched by it.
+   The single bomb is left where it was, because it was balanced. What escalates
+   is the chain: every extra bomb raises the damage, and enough of them punch
+   all the way to the back rank -- because you did not clear that board with one
+   bomb, you cleared it with bombs you had been sitting on. */
+define('DHCA_BLAST_CAP',    4);      // reach of a lone blast: the mid rank
+define('DHCA_BLAST_CAP_MAX',6);      // reach of a big chain: the back rank
 define('DHCA_BLAST_SCALE',  0.45);
+define('DHCA_BLAST_CHAIN',  0.40);   // extra damage per additional bomb
 define('DHCA_MULTI_MIN',    6);
 define('DHCA_MULTI_MEGA',   9);
 define('DHCA_MULTI_BONUS',  1.30);
@@ -636,12 +649,21 @@ function dhca_resolve_wave(&$b, $side, $ms, $chain) {
 
 	if ($boom) {
 		$b['fx'][] = array('k'=>'boom','cells'=>array_keys($extra),
-		                   'kind'=>max(array_map(function($x){return $x['kind'];}, $blasts)));
-		$b['log'][] = 'Bomb — '.count($extra).' gems caught.';
+		                   'kind'=>max(array_map(function($x){return $x['kind'];}, $blasts)),
+		                   'n'=>$boom);
+		$b['log'][] = ($boom > 1 ? '💥 '.$boom.' BOMBS CHAIN — ' : 'Bomb — ')
+		            . count($extra).' gems caught'
+		            . ($boom > 2 ? ', reaching their back rank.' : '.');
+		/* The chain is the thing being rewarded, not the individual bomb: the
+		   whole detonation escalates with how many went off, and the reach
+		   climbs with it -- two bombs still stop at the mid rank, three or more
+		   carry to the back. */
+		$chainMult = 1 + ($boom - 1) * DHCA_BLAST_CHAIN;
+		$cap       = min(DHCA_BLAST_CAP_MAX, DHCA_BLAST_CAP + max(0, $boom - 2));
 		foreach ($blasts as $bl) {
-			$scale = DHCA_BLAST_SCALE * ($bl['kind'] === DHCA_BOMB_BOARD ? 1.6 : 1);
+			$scale = DHCA_BLAST_SCALE * $chainMult * ($bl['kind'] === DHCA_BOMB_BOARD ? 1.6 : 1);
 			dhca_resolve_group($b, $side,
-				array('type'=>$bl['colour'],'len'=>min(DHCA_BLAST_CAP, max(3,$bl['own'])),'cells'=>array()),
+				array('type'=>$bl['colour'],'len'=>min($cap, max(3,$bl['own'])),'cells'=>array()),
 				$chain, $scale);
 		}
 	}

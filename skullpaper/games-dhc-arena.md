@@ -145,6 +145,13 @@ matching that colour. It is not yours because you made it. Anything you arm goes
 live at the end of your move, never inside your own cascade — so a bomb is
 always a risk you are leaving on the table, not a free extra hit.
 
+**Bombs set off bombs.** A blast that reaches another live bomb detonates it
+too, and that one reaches further still. The chain is what pays: two bombs hit
+about three times as hard as one, five hit about twelve times as hard, and
+**three or more punch all the way to their back rank** — which a single bomb can
+never do. You did not clear that board with one bomb; you cleared it with the
+bombs you had been sitting on.
+
 When a battle is decided, **every bomb still on the board goes off** as a last
 hurrah. Nothing is resolved by it; it is the payoff for a board littered with
 bombs nobody dared spend.

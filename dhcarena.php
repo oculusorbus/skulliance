@@ -1374,7 +1374,15 @@ function playTimeline(fx, state, done){
       (e.cells||[]).forEach(function(j){
         var el = cellEl(j); if (el) el.classList.add(e.kind === BOMB_BOARD ? 'blast2' : 'blast');
       });
-      banner(e.kind === BOMB_BOARD ? '💣 BOARD BOMB' : '✛ BOMB', e.kind === BOMB_BOARD ? 5 : 3);
+      /* A CHAIN SAYS SO. Half of all detonations set off more than one bomb,
+         and the damage climbs steeply with each -- five of them hit twelve
+         times as hard as one. Announcing every detonation as "BOMB" hid the
+         difference between a tidy clear and the thing you had been hoarding
+         for. It outranks almost everything when it is big, because it IS. */
+      var n = e.n || 1;
+      banner(n > 1 ? '💥 ' + n + ' BOMBS CHAIN'
+                   : (e.kind === BOMB_BOARD ? '💣 BOARD BOMB' : '✛ BOMB'),
+             n >= 3 ? 8 : (n > 1 ? 6 : (e.kind === BOMB_BOARD ? 5 : 3)));
       sfx('boom'); shakeBoard();
       hold = 460;         // the blast is held longer, or it is skipped past
       return 0;
