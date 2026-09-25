@@ -357,14 +357,10 @@ a.dhcf-stat span{opacity:.85}
               </button>
               <div class="meta">
                 <span class="nm"><?php echo htmlspecialchars($f['display']); ?></span>
-                <span class="sc"><?php echo number_format((int)$f['rarity_score']); ?> pts<?php
-                  /* Only shown while they still hold the claim -- recomputed
-                     rather than stored, so it reflects the table as it is now. */
-                  if (!empty($f['traits_hash'])
-                      && dhcf_is_first_build($conn, $dhcf_user, $f['traits_hash'], (int)$f['id'])) {
-                      echo ' <b class="firstb" title="No one else has built this configuration">FIRST</b>';
-                  }
-                ?></span>
+                <?php /* No FIRST badge: a trait set can only exist once now, so
+                         every Fighter would wear one and a badge everything has
+                         says nothing. See dhcf_save_fighter(). */ ?>
+                <span class="sc"><?php echo number_format((int)$f['rarity_score']); ?> pts</span>
               </div>
               <div class="acts">
                 <a class="dhcf-edit" href="dhcfighters.php?edit=<?php echo (int)$f['id']; ?>">Edit</a>
@@ -578,10 +574,10 @@ function dhcf_board_html($rows) {
           var line;
           if (editId) {
             line = d.display + ' updated — ' + d.score + ' pts';
-            if (d.first) line += ' (first to build this)';
           } else {
+            /* No "first to build this" any more: a trait set can only exist
+               once, so saying it of every save says nothing. */
             line = 'Saved as ' + d.display + ' — ' + d.score + ' pts';
-            if (d.bonus > 0) line += ' (first to build this: +' + d.bonus + ')';
           }
           msg(line, true);
           // Back to the build page after an edit, so the roster shows the

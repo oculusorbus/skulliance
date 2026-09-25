@@ -32,7 +32,6 @@ $dhcg_user = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData'
 $dhcg_sort  = isset($_GET['sort'])  ? preg_replace('/[^a-z]/', '', $_GET['sort'])  : 'rarest';
 $dhcg_tier  = isset($_GET['tier'])  ? preg_replace('/[^a-z]/', '', $_GET['tier'])  : '';
 $dhcg_owner = isset($_GET['owner']) ? (int)$_GET['owner'] : 0;
-$dhcg_first = !empty($_GET['first']);
 $dhcg_mine  = !empty($_GET['mine']);
 $dhcg_kit   = isset($_GET['kit']) ? preg_replace('/[^a-z]/', '', $_GET['kit']) : '';
 
@@ -65,7 +64,6 @@ $dhcg_rarity   = dhcf_rarity();
 $dhcg_kits     = array();      // kit id => label, for the filter bar
 foreach (dhca_kits() as $k) $dhcg_kits[$k['id']] = $k;
 $dhcg_kit_counts = array();
-$first_by_hash = array();      // hash => the id that holds the original claim
 
 if ($res) {
 	while ($row = $res->fetch_assoc()) {
@@ -102,27 +100,22 @@ if ($res) {
 		$row['might'] = $row['hp'] * $row['pow'];
 
 		$dhcg_owners[(int)$row['user_id']] = $row['username'];
-		if (!empty($row['traits_hash']) && !isset($first_by_hash[$row['traits_hash']])) {
-			$first_by_hash[$row['traits_hash']] = (int)$row['id'];
-		}
 		$dhcg_all[] = $row;
 	}
 }
 
-// originality resolved after the whole set is read: earliest row per hash wins
+/* No originality pass any more: a trait set can only exist once, enforced when
+   a Fighter is saved, so every Fighter here is the only one of its kind and a
+   badge saying so would be on all of them. */
 foreach ($dhcg_all as $i => $row) {
-	$dhcg_all[$i]['first'] = (!empty($row['traits_hash'])
-	                          && isset($first_by_hash[$row['traits_hash']])
-	                          && $first_by_hash[$row['traits_hash']] === (int)$row['id']);
 	$dhcg_tier_counts[$dhcg_all[$i]['best']]++;
 	$kid = $dhcg_all[$i]['kit']['id'];
 	$dhcg_kit_counts[$kid] = (isset($dhcg_kit_counts[$kid]) ? $dhcg_kit_counts[$kid] : 0) + 1;
 }
 
 $dhcg_total = count($dhcg_all);
-$dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier, $dhcg_first, $dhcg_kit) {
+$dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier, $dhcg_kit) {
 	if ($dhcg_tier !== '' && $r['best'] !== $dhcg_tier) return false;
-	if ($dhcg_first && empty($r['first'])) return false;
 	if ($dhcg_kit !== '' && $r['kit']['id'] !== $dhcg_kit) return false;
 	return true;
 }));
@@ -280,8 +273,6 @@ include 'header.php';
     <?php endforeach; ?>
 
     <span class="sep"></span>
-    <a class="<?php echo $dhcg_first ? 'on' : ''; ?>"
-       href="<?php echo htmlspecialchars(dhcg_url(array('first' => $dhcg_first ? '' : 1))); ?>">Originals</a>
     <?php if ($dhcg_user): ?>
       <a class="<?php echo $dhcg_mine ? 'on' : ''; ?>"
          href="<?php echo htmlspecialchars(dhcg_url(array('mine' => $dhcg_mine ? '' : 1, 'owner' => ''))); ?>">Mine</a>
@@ -313,7 +304,6 @@ include 'header.php';
         'pow'     => (int)$f['pow'],
         'crit'    => round($f['crit'] * 100),
         'kit'     => $f['kit']['emoji'] . ' ' . $f['kit']['name'] . ' — ' . $f['kit']['note'],
-        'first'   => (bool)$f['first'],
         'created' => $f['created_at'],
         'parts'   => $f['parts'],
         'layers'  => array(),
@@ -365,7 +355,6 @@ include 'header.php';
         </span>
         <span class="dhcg-flag">
           <b class="t-<?php echo $f['best']; ?>"><?php echo strtoupper($f['best']); ?></b>
-          <?php if ($f['first']): ?><b class="t-legendary">FIRST</b><?php endif; ?>
         </span>
       </div>
     </button>
@@ -426,7 +415,6 @@ include 'header.php';
       '<div><b style="font-size:11px">' + esc(f.kit.split(' — ')[0]) + '</b><span>In the Arena</span></div>' +
       '<div><b>' + f.parts.length + '</b><span>Traits</span></div>' +
       '<div><b>DHC2F' + f.serial + '</b><span>Number</span></div>' +
-      (f.first ? '<div><b style="color:#f5a623">First</b><span>To build this</span></div>' : '') +
       '<div><b style="font-size:11px">' + esc(made) + '</b><span>Assembled</span></div>';
 
     document.getElementById('dhcg-traits').innerHTML = f.parts.map(function (p) {

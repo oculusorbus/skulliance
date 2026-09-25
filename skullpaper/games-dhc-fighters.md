@@ -193,6 +193,21 @@ above; it is simply not a row in a table of games.
 
 ---
 
+## One of a kind
+
+**A trait set can only exist once.** If somebody has already assembled a Fighter
+from exactly the pieces you have laid out, the save is refused and names the
+Fighter holding it — change any single piece and the build is yours alone.
+
+It almost never gets in the way. A fully dressed Fighter is one of about **89
+billion** combinations, so nobody arrives at a clash by accident; what this
+actually prevents is rebuilding a Fighter you saw and liked. The exception worth
+knowing is the bare minimum build — background, torso and head and nothing else
+— which is one of only **36,750**, so if you own very little, adding any fourth
+piece makes a collision essentially impossible.
+
+Disassembling a Fighter releases its combination for anyone to build again.
+
 ## What a Fighter can do
 
 Rarity score is what a Fighter is **worth**. It is not what it can **do**, and
@@ -233,17 +248,11 @@ to someone.
 
 ## Originality
 
-The **first staker to build a configuration keeps a bonus** on it — 15% on top
-of what its traits are worth. Build something nobody has assembled before and
-it scores higher than the same pieces arranged the way everyone else does.
-
-Nobody is ever blocked from building a Fighter someone else already has. A
-player holding one background, one torso and one head has exactly one possible
-character, and being told it was taken would lock them out of the game
-entirely. Later builders simply do not earn the bonus.
-
-It is a bonus for discovery, never a penalty for being copied: if somebody
-rebuilds your Fighter tomorrow, your score does not move.
+Every Fighter is one of a kind — see [[games-dhc-fighters#one-of-a-kind]] above.
+Because a combination can only be held once, the **15% originality bonus** now
+applies to every Fighter rather than only to the first to find a build, so it no
+longer separates one Fighter from another; it is simply part of what a trait set
+is worth.
 
 ---
 
@@ -262,8 +271,7 @@ unavailable in the picker — you are viewing it, not rebuilding it.
 **Edit changes a Fighter without losing it.** Its traits are freed back to you
 for as long as the editor is open, so you can swap one out, add a piece to an
 empty slot, or strip it back. The Fighter keeps its **number, its name and its
-original build date** — only the traits, the score and the originality claim are
-recalculated, because those belong to the combination rather than to the
+original build date** — only the traits and the score are recalculated, because those belong to the combination rather than to the
 character. Cancel and nothing changes.
 
 **Disassembling a Fighter returns every trait it held** to your unused pile and

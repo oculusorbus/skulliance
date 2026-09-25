@@ -89,33 +89,69 @@ function dhcf_traits_hash($traits) {
 }
 
 /**
- * Is this player the first to have built this configuration?
+ * Does anybody already hold this exact configuration?
  *
- * Earliest live Fighter with the hash wins it, and keeps it -- a later copy
- * never takes it away. Disassembled Fighters do not hold a claim: if you took
- * it apart, the configuration is available to be discovered again.
+ * A TRAIT SET CAN ONLY EXIST ONCE. Two Fighters wearing identical pieces are
+ * the same character twice, and the whole point of assembling one is that it is
+ * yours -- so the second one is refused rather than recorded as a copy.
  *
- * $exclude_id skips the row being rescored or edited, so a Fighter is never
- * compared against itself.
+ * It costs almost nothing in practice. A fully dressed Fighter is one of about
+ * 89 billion combinations, so an accidental clash is not a real event; the only
+ * thing this actually stops is somebody deliberately rebuilding a Fighter they
+ * saw and liked. Where it CAN bite is the minimum legal Fighter -- background,
+ * torso and head and nothing else -- which is one of only 36,750, and which is
+ * what a player with almost no traits is forced to build. Hence the message
+ * below naming the clash and what to do about it, rather than a flat refusal.
+ *
+ * Disassembly frees the combination: the row keeps its history but stops
+ * holding the claim, exactly as it already stops holding the traits.
+ *
+ * @return int  the id of the Fighter holding it, or 0 if it is free
  */
-function dhcf_is_first_build($conn, $user_id, $hash, $exclude_id = 0) {
-	$sql = sprintf("SELECT user_id FROM dhc_fighters
+function dhcf_hash_taken($conn, $hash, $exclude_id = 0) {
+	$sql = sprintf("SELECT id FROM dhc_fighters
 	                WHERE traits_hash = '%s' AND disassembled_at IS NULL%s
-	                ORDER BY created_at ASC, id ASC LIMIT 1",
+	                LIMIT 1",
 		$conn->real_escape_string($hash),
 		$exclude_id ? ' AND id <> ' . (int)$exclude_id : '');
 	$res = $conn->query($sql);
-	if (!$res || !$res->num_rows) return true;            // nobody holds it
-	return (int)$res->fetch_assoc()['user_id'] === (int)$user_id;
+	if (!$res || !$res->num_rows) return 0;
+	return (int)$res->fetch_assoc()['id'];
 }
 
-/** Score with the originality bonus applied, and the parts that made it. */
+/** Who holds it, for a refusal that can say so. */
+function dhcf_hash_holder($conn, $hash, $exclude_id = 0) {
+	$sql = sprintf("SELECT f.serial, u.username FROM dhc_fighters f
+	                INNER JOIN users u ON u.id = f.user_id
+	                WHERE f.traits_hash = '%s' AND f.disassembled_at IS NULL%s
+	                LIMIT 1",
+		$conn->real_escape_string($hash),
+		$exclude_id ? ' AND f.id <> ' . (int)$exclude_id : '');
+	$res = $conn->query($sql);
+	if (!$res || !$res->num_rows) return null;
+	return $res->fetch_assoc();
+}
+
+
+/**
+ * Score with the originality bonus applied.
+ *
+ * EVERY FIGHTER GETS IT NOW, because every Fighter is original: a trait set can
+ * only exist once, enforced in dhcf_save_fighter() and dhcf_update_fighter().
+ * There was a dhcf_is_first_build() here that asked whether anybody had beaten
+ * this player to the configuration; with duplicates refused outright the answer
+ * is always yes, and a question with one answer is not a question.
+ *
+ * The bonus is KEPT rather than folded away, even though it is now a flat scale
+ * on every score. Removing it would lower every stored rarity_score by the same
+ * proportion -- no change in ranking, but every row in dhc_fighters would be
+ * stale until dhcf-rescore.php had run over the lot, and that is real risk for
+ * a cosmetic tidy.
+ */
 function dhcf_score_with_bonus($conn, $user_id, $traits, $exclude_id = 0) {
 	$base  = dhcf_score($traits);
-	$hash  = dhcf_traits_hash($traits);
-	$first = dhcf_is_first_build($conn, $user_id, $hash, $exclude_id);
-	$bonus = $first ? (int)round($base * DHCF_ORIGINALITY_BONUS) : 0;
-	return array('hash' => $hash, 'base' => $base, 'first' => $first,
+	$bonus = (int)round($base * DHCF_ORIGINALITY_BONUS);
+	return array('hash' => dhcf_traits_hash($traits), 'base' => $base,
 	             'bonus' => $bonus, 'total' => $base + $bonus);
 }
 
@@ -609,6 +645,22 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 			return array(false, 'You have already used: ' . implode(', ', $names), null);
 		}
 
+		/*
+		 * UNIQUE, and checked INSIDE the transaction for the same reason the
+		 * originality bonus is: two players saving the same configuration at the
+		 * same moment must not both succeed. A read outside the transaction is a
+		 * race with a friendly-looking outcome -- both told yes, one of them
+		 * wrong.
+		 */
+		$taken = dhcf_hash_holder($conn, dhcf_traits_hash($clean));
+		if ($taken) {
+			$conn->rollback();
+			return array(false, 'That exact combination already exists — '
+				. DHCF_SERIAL_PREFIX . str_pad((string)(int)$taken['serial'], DHCF_SERIAL_PAD, '0', STR_PAD_LEFT)
+				. ', built by ' . $taken['username']
+				. '. Change any one piece and this Fighter is yours alone.', null);
+		}
+
 		for ($try = 0; $try < 5; $try++) {
 			$serial = dhcf_next_serial($conn);
 			$newest = dhcf_newest_trait_at($conn, $user_id, $clean);
@@ -637,7 +689,6 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 					'score'   => $score,
 					'base'    => $sc['base'],
 					'bonus'   => $sc['bonus'],
-					'first'   => $sc['first'],
 					'traits'  => $clean,
 				);
 				// After the commit, never before: an announcement for a save
@@ -731,6 +782,17 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
 			foreach ($short as $s) $names[] = dhcf_trait_name($s['cat'], $s['slug']);
 			return array(false, 'You have already used: ' . implode(', ', $names), null);
 		}
+		/* Same uniqueness rule as a new save, excluding this Fighter -- editing
+		   one into the shape it already has must not refuse itself. */
+		$taken = dhcf_hash_holder($conn, dhcf_traits_hash($clean), $fighter_id);
+		if ($taken) {
+			$conn->rollback();
+			return array(false, 'That exact combination already exists — '
+				. DHCF_SERIAL_PREFIX . str_pad((string)(int)$taken['serial'], DHCF_SERIAL_PAD, '0', STR_PAD_LEFT)
+				. ', built by ' . $taken['username']
+				. '. Change any one piece and this Fighter is yours alone.', null);
+		}
+
 		$newest = dhcf_newest_trait_at($conn, $user_id, $clean);
 		$sc     = dhcf_score_with_bonus($conn, $user_id, $clean, $fighter_id);
 		$sql = sprintf("UPDATE dhc_fighters SET traits = '%s', traits_hash = '%s', rarity_score = %d,

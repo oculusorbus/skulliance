@@ -57,7 +57,6 @@ list($ok, $message, $row) = dhcf_update_fighter($conn, $user_id, $fighter_id, $t
 // Recomputed after the write so the reply carries the name the Fighter keeps,
 // which is the reassurance the player wants from an edit.
 $display = dhcf_display_name($existing);
-$first   = $ok ? dhcf_is_first_build($conn, $user_id, dhcf_traits_hash(dhcf_clean_traits($traits)), $fighter_id) : false;
 $conn->close();
 
 if (!$ok) dhcf_out(false, $message);
@@ -65,5 +64,4 @@ dhcf_out(true, $message, array(
 	'display' => $display,
 	'serial'  => (int)$existing['serial'],
 	'score'   => (int)$row['score'],
-	'first'   => (bool)$first,
 ));
