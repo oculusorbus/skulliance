@@ -70,7 +70,11 @@ define('DHCA_EXTRA_TURN',   5);     // a 4 already leaves a bomb
 define('DHCA_BLAST_CAP',    4);      // reach of a lone blast: the mid rank
 define('DHCA_BLAST_CAP_MAX',6);      // reach of a big chain: the back rank
 define('DHCA_BLAST_SCALE',  0.45);
-define('DHCA_BLAST_CHAIN',  0.40);   // extra damage per additional bomb
+/* 0.30, down from 0.40 after play. At 0.40 a chain was carrying whole battles
+   -- the reported experience was losing badly and surviving on bombs alone,
+   which is a mechanic outrunning the game it sits in. The reach change is the
+   part that mattered and is untouched; this only softens the damage curve. */
+define('DHCA_BLAST_CHAIN',  0.30);   // extra damage per additional bomb
 define('DHCA_MULTI_MIN',    6);
 define('DHCA_MULTI_MEGA',   9);
 define('DHCA_MULTI_BONUS',  1.30);
