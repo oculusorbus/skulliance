@@ -94,15 +94,39 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   border-radius:999px;border:1px solid var(--line);color:var(--dim)}
 .arena-wrap .turnflag.you{border-color:var(--teal);color:var(--teal)}
 .arena-wrap .turnflag.foe{border-color:var(--blood);color:var(--blood)}
-.arena-wrap .arena{position:relative;display:grid;grid-template-columns:minmax(0,270px) minmax(0,1fr) minmax(0,270px);
-  gap:14px;align-items:start}
+/* The Fighter columns SCALE rather than sitting at a fixed width. A flat 320px
+   looked right on a 2000px screen and quietly stole the board's width on a
+   1440px laptop, where the board is limited by what is left over rather than by
+   height -- so widening the sides made the board smaller on exactly the screens
+   that had least to spare. Scaling by viewport keeps the height cap in charge
+   on every normal desktop and still lets the Fighters grow on a big monitor. */
+.arena-wrap .arena{position:relative;display:grid;
+  grid-template-columns:minmax(0,clamp(230px,19vw,340px)) minmax(0,1fr)
+                        minmax(0,clamp(230px,19vw,340px));
+  gap:16px;align-items:start}
 /* The board must not simply eat the extra width -- a 1000px square does not fit
-   a laptop viewport. Cap it against viewport HEIGHT and centre it, and the
-   width freed up goes to the Fighters, which is the point. */
-/* The cap belongs to the whole column, not just the board. Applied only to the
+   a laptop viewport -- so it is capped against viewport HEIGHT and centred, and
+   the width that frees up goes to the Fighters, which is the point.
+   The cap belongs to the whole column, not just the board: applied only to the
    boardwrap it left the reach line and the legend stretching the full column
-   width, so they ran wider than the thing they describe. */
-.arena-wrap .boardcol > *{max-width:min(74vh,760px);margin-left:auto;margin-right:auto}
+   width, so they ran wider than the thing they describe.
+
+   THE SECOND NUMBER IS A CEILING, NOT THE ANSWER. It was 760px, which on any
+   screen taller than about 1030px is SMALLER than the height cap -- so the
+   board stopped growing at 760 and left the rest of the screen empty, which is
+   not what a height cap is for.
+
+   The target is not the viewport, it is the COLUMN BESIDE IT. Three Fighters at
+   210px of art each, plus their names, kits and health bars, come to about
+   940px, and the grid row is as tall as its tallest column -- so a 760px board
+   sat in a 940px row with a couple of hundred pixels of nothing beside it.
+   82vh lands the board column within a few pixels of both the Fighters beside
+   it and the bottom of a 1069px window, which is what makes the three columns
+   read as one thing and keeps the battle log in view.
+
+   The pixel ceiling only catches what the height cap cannot: a short, very wide
+   window, where 84vh of WIDTH would run past the Fighters. */
+.arena-wrap .boardcol > *{max-width:min(82vh,1180px);margin-left:auto;margin-right:auto}
 .arena-wrap .teamcol{display:grid;gap:6px}
 .arena-wrap .coltag{font-size:9px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:5px;
   padding-bottom:4px;border-bottom:1px solid var(--line);
@@ -290,7 +314,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
      the board column's ~820, so the columns finish near level instead of
      running far past it. The square art letterboxes into the 270px width with
      small bars either side, over the checkerboard, which reads as a frame. */
-  .arena-wrap .teamcol .tok .art{aspect-ratio:auto;height:210px}.arena-wrap .teamcol .tok .art img{object-fit:contain}/* Enemies face the player. The art is all drawn facing one way, so the right
+  /* Scaled to the viewport, not fixed. At a flat 210px a Fighter column comes
+     to about 940px whatever screen it is on, so on a 1366x768 laptop the Crew
+     alone was taller than the window and the whole battle had to be scrolled
+     through. Tied to height it tracks the board, which is capped the same way,
+     and the two columns stay roughly level instead of one dictating the row. */
+  .arena-wrap .teamcol .tok .art{aspect-ratio:auto;height:clamp(120px,19vh,230px)}.arena-wrap .teamcol .tok .art img{object-fit:contain}/* Enemies face the player. The art is all drawn facing one way, so the right
      column mirrors and the two Crews look at each other across the board
      instead of everyone staring the same direction. Only in the side-column
      layout -- stacked on a phone they are above you, not opposite you, and a

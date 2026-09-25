@@ -21,7 +21,7 @@ on the board are your saved assemblies, layer for layer.
 | | |
 |---|---|
 | **Crew size** | 3 Fighters |
-| **Battles a day** | 6 |
+| **Battles a day** | 6, resetting at midnight |
 | **Recovering, after any battle** | 4 hours |
 | **Resurrecting, for a Fighter who fell** | 4 to 12 hours on top, depending on how deep your roster is |
 | **Trait drops** | 1 per win, sharing DHC Fighters' cap of 3 a day |

@@ -117,7 +117,8 @@ function dhca_entry_block($conn, $user_id) {
 		     . DHCA_CREW_SIZE.' available. Next one back in '.dhca_hms($soon).'.';
 	}
 	if (dhca_battles_today($conn, $user_id) >= DHCA_DAILY_BATTLES)
-		return 'That is all '.DHCA_DAILY_BATTLES.' battles for today. Back tomorrow.';
+		return 'That is all '.DHCA_DAILY_BATTLES.' battles for today. The Arena reopens in '
+		     . dhca_hms(dhca_day_resets_in($conn)) . '.';
 	/*
 	 * ONE BATTLE AT A TIME, and this is not tidiness.
 	 *
@@ -174,6 +175,28 @@ function dhca_sweep_stale($conn, $user_id) {
 	$b['log'][]   = 'Abandoned — forfeited after '.DHCA_STALE_H.' hours.';
 	dhca_finish($conn, $b);
 	return true;
+}
+
+/**
+ * Seconds until the daily allowance resets.
+ *
+ * ASKED OF THE DATABASE, not of PHP. The allowance is counted with
+ * DATE(started_at) = CURDATE(), so the boundary that matters is MySQL's
+ * midnight -- and the two clocks agree only as long as nothing moves one of
+ * their timezones. A countdown that disagrees with the rule it is describing is
+ * worse than no countdown, because a player watches it reach zero and finds the
+ * Arena still shut.
+ *
+ * PHP's own midnight is the fallback, for the case where the query fails and
+ * an approximate answer beats none.
+ */
+function dhca_day_resets_in($conn) {
+	$res = $conn->query("SELECT TIMESTAMPDIFF(SECOND, NOW(), CURDATE() + INTERVAL 1 DAY) AS s");
+	if ($res && $res->num_rows) {
+		$r = $res->fetch_assoc();
+		if ($r && (int)$r['s'] > 0) return (int)$r['s'];
+	}
+	return max(60, strtotime('tomorrow') - time());
 }
 
 function dhca_hms($secs) {
