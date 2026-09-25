@@ -37,7 +37,6 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 	if (is_dir(__DIR__ . '/' . $c . '/1000')) { $ART = $c; break; }
 }
 ?>
-<div class="row"><div class="main">
 <div class="arena-wrap">
 <style>
 .arena-wrap{--ink:#0d0f13;--panel:#151922;--panel2:#1d2230;--line:#2b3345;--bone:#e8e6e1;
@@ -113,7 +112,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   .arena-wrap .tok.act{animation:actSmall .34s}.arena-wrap .teamcol .tok{padding:4px}.arena-wrap .teamcol .tok .nm{font-size:9px}.arena-wrap .teamcol .tok .kitn{font-size:7.5px}.arena-wrap .coltag{margin-bottom:3px;padding-bottom:3px}/* Title and intro are one unit behind the ? -- a wall of rules plus a
      heading costs most of a screen on a phone, and neither is needed while
      you are playing. One tap brings both back. */
-  .arena-wrap h1, .arena-wrap .sub{display:none}.arena-wrap .showintro h1{display:block}.arena-wrap .showintro .sub{display:block}.arena-wrap #howto{display:inline-block}
+  .arena-wrap.playing h1, .arena-wrap.playing .a-sub, .arena-wrap.playing .a-stats{display:none}
+  .arena-wrap.playing.showintro h1, .arena-wrap.playing.showintro .a-sub{display:block}
+  .arena-wrap #howto{display:inline-block}
 }
 /* ---- teams ---- */
 .arena-wrap .tok{background:var(--panel2);border:1px solid var(--line);border-radius:3px;padding:5px;
@@ -527,6 +528,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
     <div class="top">
       <button class="btn" id="aLeave">Leave</button>
       <button class="btn" id="mute" title="Mute sound">🔊</button>
+      <!-- Phone only. The title and the blurb cost most of a screen while you
+           are playing and neither is needed then, so they hide together and
+           come back together. Nothing is deleted. -->
+      <button class="btn" id="howto" title="Show the title and how it works">?</button>
       <span class="turnflag" id="flag">—</span>
       <span class="sub" style="margin:0" id="round"></span>
     </div>
@@ -558,7 +563,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
     <details class="logbox" open><summary>Battle log</summary><div id="log"></div></details>
   </div>
 
-</div></div></div>
+</div>
 
 <script>
 /* ============================================================================
@@ -1181,10 +1186,12 @@ document.querySelectorAll('.a-foe').forEach(function(r){
     paintPicker();
   });
 });
+var wrap = document.querySelector('.arena-wrap');
 function openBattle(res){
   battleId = res.battle_id; S = res.state;
   setup.style.display = 'none';
   battle.classList.add('on');
+  wrap.classList.add('playing');
   $('endcard').hidden = true;
   $('log').innerHTML = '';
   buildTeams(); paintBoard(); paintTeams(); paintChrome();
@@ -1207,9 +1214,11 @@ if (startBtn) startBtn.addEventListener('click', function(){
 $('aLeave').addEventListener('click', function(){
   /* Leaving does not abandon anything: the battle is on the server and resume
      picks it up exactly where it was. */
-  battle.classList.remove('on'); setup.style.display = '';
+  battle.classList.remove('on'); wrap.classList.remove('playing'); setup.style.display = '';
 });
 $('ecAgain').addEventListener('click', function(){ location.reload(); });
+
+$('howto').addEventListener('click', function(){ wrap.classList.toggle('showintro'); });
 
 var muteBtn = $('mute');
 function paintMute(){
@@ -1234,3 +1243,12 @@ post({do:'resume'}, function(res){
 });
 })();
 </script>
+
+<?php
+/*
+ * dhc-dropmodal.php is already pulled in by header.php platform-wide, so a win
+ * that drops a trait reveals it here without this page doing anything.
+ */
+$conn->close();
+?>
+</html>

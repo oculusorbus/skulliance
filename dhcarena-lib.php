@@ -17,6 +17,7 @@ define('DHCA_DAILY_BATTLES',  6);     // equal for everyone -- see dhcarena.md Â
 define('DHCA_BENCH_BASE_H',   4);     // flat, after any battle
 define('DHCA_BENCH_LOSS_MIN', 4);     // extra hours on a loss at the 3-Fighter floor
 define('DHCA_BENCH_LOSS_MAX', 12);    // ...rising to this for a deep Crew
+define('DHCA_STALE_H',        6);     // an untouched battle is forfeited after this
 
 function dhca_season() { return date('Y-m'); }
 
@@ -79,6 +80,7 @@ function dhca_already_rewarded($conn, $attacker, $defender) {
 
 /** Why this player cannot start a battle right now, or '' if they can. */
 function dhca_entry_block($conn, $user_id) {
+	dhca_sweep_stale($conn, $user_id);
 	$crew = dhca_crew($conn, $user_id);
 	if (count($crew) < DHCA_CREW_SIZE)
 		return 'Arena needs a Crew of '.DHCA_CREW_SIZE.' Fighters. You have '.count($crew).'.';
@@ -91,7 +93,61 @@ function dhca_entry_block($conn, $user_id) {
 	}
 	if (dhca_battles_today($conn, $user_id) >= DHCA_DAILY_BATTLES)
 		return 'That is all '.DHCA_DAILY_BATTLES.' battles for today. Back tomorrow.';
+	/*
+	 * ONE BATTLE AT A TIME, and this is not tidiness.
+	 *
+	 * Without it, a player losing a battle simply starts another: the one they
+	 * walked away from never reaches dhca_finish(), so nobody is benched, no
+	 * loss is recorded and the Fighters who were about to be knocked out are
+	 * back on the board immediately. Abandoning would be strictly better than
+	 * losing, which makes the bench -- the only real cost in the game --
+	 * optional.
+	 *
+	 * dhca_sweep_stale() above has already forfeited anything genuinely stuck,
+	 * so this can never lock somebody out of the Arena for good.
+	 */
+	if (dhca_open_battle($conn, $user_id))
+		return 'You are in the middle of a battle. Finish it and the Arena reopens.';
 	return '';
+}
+
+/** The open battle this player owns, as array(battle_id, age in seconds). */
+function dhca_open_battle($conn, $user_id) {
+	$res = $conn->query("SELECT s.battle_id, TIMESTAMPDIFF(SECOND, s.updated_at, NOW()) AS age
+	                     FROM dhc_arena_state s
+	                     INNER JOIN dhc_arena_battles b ON b.id = s.battle_id
+	                     WHERE s.user_id = ".(int)$user_id." AND b.outcome = 0
+	                     ORDER BY s.battle_id DESC LIMIT 1");
+	if (!$res || !$res->num_rows) return null;
+	$r = $res->fetch_assoc();
+	return array('battle_id' => (int)$r['battle_id'], 'age' => (int)$r['age']);
+}
+
+/**
+ * A battle nobody has touched in DHCA_STALE_H hours is FORFEITED -- resolved as
+ * a defeat, with the bench and the record that a defeat carries.
+ *
+ * Not deleted, and not left open. Deleting it would hand back the free
+ * abandonment that dhca_entry_block() exists to prevent; leaving it open would
+ * mean one dropped connection locks a player out of the Arena permanently. A
+ * forfeit is what actually happened: they walked away from a battle, so they
+ * lost it -- and they waited six hours to find that out, which is worse than
+ * simply losing and strictly better than being stuck.
+ */
+function dhca_sweep_stale($conn, $user_id) {
+	$open = dhca_open_battle($conn, $user_id);
+	if (!$open || $open['age'] < DHCA_STALE_H * 3600) return false;
+	$b = dhca_load($conn, $open['battle_id'], $user_id);
+	if (!$b) {
+		// state gone but the ledger row still open: close it without a payout
+		$conn->query("UPDATE dhc_arena_battles SET outcome = 2, ended_at = NOW()
+		              WHERE id = ".$open['battle_id']." AND outcome = 0");
+		return true;
+	}
+	$b['over'] = 'foes';
+	$b['log'][] = 'Abandoned â€” forfeited after '.DHCA_STALE_H.' hours.';
+	dhca_finish($conn, $b);
+	return true;
 }
 
 function dhca_hms($secs) {

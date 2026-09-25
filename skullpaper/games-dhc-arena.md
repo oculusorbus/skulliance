@@ -33,6 +33,13 @@ twelve if you own plenty. A deep roster is rested harder because it has
 somewhere else to turn; a player with exactly three is not locked out of the
 game for a day.
 
+**One battle at a time.** You cannot start another while one is still going —
+walking away from a battle you were losing would otherwise skip the bench
+entirely, which is the only real cost in the game. A battle nobody has touched
+for **six hours** is forfeited: it resolves as a defeat, with the bench and the
+record a defeat carries, so a dropped connection can never lock you out of the
+Arena for good.
+
 **Only the attacker's Fighters are benched.** Your Crew defends around the clock
 whether you are logged in or not, and defending costs them nothing — a defender
 never chose to be there, so being popular must never be something you can be
