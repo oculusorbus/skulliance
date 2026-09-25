@@ -1295,7 +1295,8 @@ function playTimeline(fx, state, done){
       sfx(e.big ? 'armB' : 'armX');
       // armed, not detonated: a promise rather than an event, so it yields to
       // anything that actually happened this wave
-      banner(e.big ? '💣 BOARD BOMB ARMED' : '✛ BOMB ARMED', e.big ? 3 : 2);
+      banner(e.up ? (e.big ? '💣 BOMB UPGRADED' : '✛ BOMB UPGRADED')
+                  : (e.big ? '💣 BOARD BOMB ARMED' : '✛ BOMB ARMED'), e.big ? 3 : 2);
       return 0;
 
     case 'drop': {

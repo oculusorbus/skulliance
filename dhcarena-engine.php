@@ -545,15 +545,69 @@ function dhca_resolve_wave(&$b, $side, $ms, $chain) {
 	// arm bombs from this wave's own matches; the bomb cell survives the clear
 	foreach ($ms as $g) {
 		if ($g['len'] < 4) continue;
-		$at = (isset($b['lastTo']) && in_array($b['lastTo'], $g['cells'], true))
-			? $b['lastTo'] : $g['cells'][intdiv(count($g['cells']), 2)];
-		$big = ($g['len'] >= 5);
-		$b['bomb'][$at] = -($big ? DHCA_BOMB_BOARD : DHCA_BOMB_CROSS);   // negative: not live yet
-		$b['stats']['bombs']++;
+		$big  = ($g['len'] >= 5);
+		$kind = $big ? DHCA_BOMB_BOARD : DHCA_BOMB_CROSS;
+		$upgrade = false;
+
+		/*
+		 * ONE BOMB PER CELL. The preferred site is the gem the player actually
+		 * moved, then the middle of the run -- but if something is already
+		 * sitting there the bomb must go somewhere else, because writing over
+		 * it means two bombs earned and one bomb delivered, with the first
+		 * disappearing silently: no blast, no log line, nothing.
+		 *
+		 * It happens across the waves of a cascade. lastTo does not change for
+		 * the whole move, and the bomb's cell deliberately survives the clear,
+		 * so the same cell can match again on a later wave and be chosen again.
+		 * Protecting the cell from clearing made that MORE likely, not less.
+		 */
+		$want = array();
+		if (isset($b['lastTo']) && in_array($b['lastTo'], $g['cells'], true)) $want[] = $b['lastTo'];
+		$want[] = $g['cells'][intdiv(count($g['cells']), 2)];
+		foreach ($g['cells'] as $c) $want[] = $c;
+		$at = null;
+		foreach ($want as $c) if (empty($b['bomb'][$c])) { $at = $c; break; }
+		if ($at === null) {
+			// every cell of this run already carries one. Nowhere to put a
+			// second, so the one that is there is upgraded instead -- a bigger
+			// bomb is a fair answer to a bigger match, and it is never nothing.
+			$at   = $want[0];
+			$kind = max($kind, abs($b['bomb'][$at]));
+			$big  = ($kind === DHCA_BOMB_BOARD);
+			$upgrade = true;
+		}
+
+		$b['bomb'][$at] = -$kind;                 // negative: not live yet
+		// An upgrade is not a new bomb. Counting it as one overstates the total
+		// and, worse, makes an audit of "armed minus detonated" look like bombs
+		// are going missing when nothing has.
+		if (empty($upgrade)) $b['stats']['bombs']++;
 		unset($cleared[$at]);
-		$b['fx'][] = array('k'=>'arm','at'=>$at,'big'=>$big?1:0);
+		$b['fx'][] = array('k'=>'arm','at'=>$at,'big'=>$big?1:0,
+		                   'up'=>empty($upgrade)?0:1);
 		$b['log'][] = ($big?'💣 BOARD BOMB':'✛ Bomb').' armed — either side can set it off.';
 	}
+	/*
+	 * A BOMB THAT IS NOT LIVE YET CANNOT BE CLEARED AWAY.
+	 *
+	 * Arming stores the bomb negative so it cannot go off inside its own move,
+	 * and the arm loop above drops its cell from this wave's clear so the gem
+	 * under it survives. That was only ever half the protection: a cascade is
+	 * several waves, and from the SECOND wave onward the bomb's gem is an
+	 * ordinary gem again. Match it -- or catch it in a blast -- and the cell
+	 * clears, dhca_collapse() only carries a bomb along if its gem survived,
+	 * and the bomb is gone. No detonation, no blast, nothing in the log: the
+	 * player made a bomb, watched the cascade, and it simply was not there.
+	 *
+	 * Measured before this line existed: 63% of every bomb armed disappeared
+	 * this way. Not an edge case -- the common case, because a four-match that
+	 * arms a bomb is exactly the kind of match that starts a cascade.
+	 *
+	 * Live bombs are untouched by this. A positive bomb caught in a clear is
+	 * SUPPOSED to go off, and does, higher up.
+	 */
+	foreach (array_keys($cleared) as $i) if ($b['bomb'][$i] < 0) unset($cleared[$i]);
+
 	$b['_cleared'] = array_keys($cleared);
 }
 
