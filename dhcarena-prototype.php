@@ -434,27 +434,27 @@ function artUrl(d,s,z){return ART+'/'+z+'/'+d+'/'+s+'.png';}
    glance; "Smash" does. */
 var KITS = [
   {id:'heavy',  emoji:'🔨', name:'Smash',  dmg:1.55, note:'one big hit'},
-  {id:'cleave', emoji:'🪓', name:'Cleave', dmg:0.80, cleave:true, note:'hits the whole rank'},
+  {id:'cleave', emoji:'🪓', name:'Cleave', dmg:0.80, cleave:true, note:'hits whole rank'},
   /* A true drain, not a heal: healF() is fed the damage ACTUALLY dealt, so it
      takes health off the target and puts 45% of it back on the attacker --
      and hitting through a shield heals less, because less got through. The
      old note said "heals itself", which read like a medkit. */
-  {id:'drain',  emoji:'🩸', name:'Drain',  dmg:1.05, drain:.45,   note:'hits and steals health'},
+  {id:'drain',  emoji:'🩸', name:'Drain',  dmg:1.05, drain:.45,   note:'hits/steals health'},
   {id:'sunder', emoji:'⛏️', name:'Break',  dmg:0.95, sunder:true, note:'smashes shields'},
   /* PLAIN WORDS. "crits often" and "chips everyone" are both gamer shorthand,
      and a legend exists so nobody has to already know the vocabulary. A crit
      here is a 1.6x hit and Snipe adds 28 points of chance to it; Volley's 0.62
      multiplier against every living enemy is a weak hit to all of them. Say
      that instead. */
-  {id:'precise',emoji:'🎯', name:'Snipe',  dmg:1.15, crit:.28,    note:'often hits far harder'},
-  {id:'volley', emoji:'🏹', name:'Volley', dmg:0.62, all:true,    note:'a weak hit to every enemy'},
-  {id:'brutal', emoji:'🗡️', name:'Bleed',  dmg:1.30, bleed:true,  note:'keeps hurting for 3 rounds'},
+  {id:'precise',emoji:'🎯', name:'Snipe',  dmg:1.15, crit:.28,    note:'often hits harder'},
+  {id:'volley', emoji:'🏹', name:'Volley', dmg:0.62, all:true,    note:'weak hit to all'},
+  {id:'brutal', emoji:'🗡️', name:'Bleed',  dmg:1.30, bleed:true,  note:'hurts for 3 rounds'},
   {id:'quick',  emoji:'⚔️', name:'Double', dmg:0.85, echo:true,   note:'strikes twice'}
 ];
 /* The two shared gems. Named for the effect, not the mechanic. */
 var SHARED = {
-  3:{emoji:'🛡️', name:'Shield', note:'shields your whole team'},
-  4:{emoji:'⚡', name:'Charge',  note:'charges up — erupts at 10'}
+  3:{emoji:'🛡️', name:'Shield', note:'shields team'},
+  4:{emoji:'⚡', name:'Charge',  note:'erupts at 10'}
 };
 /** What a gem shows and means, for a given side. */
 function gemInfo(side,g){
