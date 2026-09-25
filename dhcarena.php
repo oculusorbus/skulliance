@@ -1197,7 +1197,11 @@ function playTimeline(fx, state, done){
   function doSlide(e){
     var nb = slid(S.board, e.a, e.z);
     if (nb) { S.bomb = slid(S.bomb, e.a, e.z) || S.bomb; S.board = nb; }
-    paintBoard(false, true);
+    /* The settle pulse is for a board that has just moved on screen, which is
+       true of a defending slide and no longer true of your own -- the preview
+       has been showing the result since you let go, so pulsing it here is a
+       double-take on a move you already made. */
+    paintBoard(false, e.side === 'foes');
   }
 
   function finish(){
@@ -1274,7 +1278,11 @@ function sendMove(a, z){
     if (!res || !res.ok) {
       busy = false;
       logLine('sys', (res && res.message) || 'That move was refused.');
-      if (res && res.state) { S = res.state; paintBoard(); paintTeams(); paintChrome(); }
+      if (res && res.state) S = res.state;
+      // Repaint either way: the board is still holding the dropped gem where
+      // snapPreview() left it, and a refused move must not be left looking
+      // like it was made.
+      paintBoard(); paintTeams(); paintChrome();
       sfx('bad');
       return;
     }
@@ -1292,6 +1300,12 @@ function sendMove(a, z){
       if (window.console) console.error('arena timeline', e);
       if (res.over) showEnd(res);
     }
+  }, function(){
+    // Same reason, for a request that never came back at all: the preview is
+    // standing in for a board state the server never confirmed, so put the
+    // real one back rather than leaving a slide that did not happen on screen.
+    paintBoard();
+    logLine('sys','Lost contact with the Arena — that move was not played.');
   });
 }
 
@@ -1366,17 +1380,60 @@ function previewDrag(){
     }
   }
 }
+/**
+ * A COMMITTED SLIDE DOES NOT SPRING BACK.
+ *
+ * clearOffsets() used to run before this even knew whether the move was being
+ * committed, so every accepted slide played out as: gem snaps home, pause,
+ * board jumps to the match. On a phone that pause is the network round trip
+ * and it is long enough to read as a bug -- it looks like the move was
+ * rejected and then reconsidered.
+ *
+ * It only looks that way because of WHERE the rules live now. In the prototype
+ * the board updated in the same frame as the release, so wiping the drag
+ * preview and redrawing were one step. Here the authoritative board is a
+ * request away, and the preview is the only thing standing in for it until the
+ * answer lands -- so it has to stay standing.
+ *
+ * The gem is snapped to the cell it was dropped on and LEFT there. When the
+ * reply arrives the board is repainted into the arrangement it is already
+ * showing, so there is nothing to see. A move that makes no match still
+ * springs back, which is correct: that one really was refused.
+ */
+function snapPreview(from, to, axis, sz){
+  var ra = Math.floor(from / N), ca = from % N;
+  var steps = (axis === 'row') ? ((to % N) - ca) : (Math.floor(to / N) - ra);
+  if (!steps) return;
+  var dir = steps > 0 ? 1 : -1, off = steps * sz, k, i, e;
+  var lead = cellEl(from);
+  if (lead) {
+    lead.style.transition = 'transform .09s ease-out';
+    lead.style.zIndex = '6';
+    // the 1.06 lift goes: the gem is landing now, not being carried
+    lead.style.transform = (axis === 'row') ? 'translateX(' + off + 'px)'
+                                            : 'translateY(' + off + 'px)';
+  }
+  for (k = 1; k <= Math.abs(steps); k++) {
+    i = (axis === 'row') ? idx(ra, ca + dir * k) : idx(ra + dir * k, ca);
+    e = cellEl(i); if (!e) continue;
+    e.style.transition = 'transform .09s ease-out';
+    e.style.transform = (axis === 'row') ? 'translateX(' + (-dir * sz) + 'px)'
+                                         : 'translateY(' + (-dir * sz) + 'px)';
+  }
+}
 function endDrag(commit){
   if (!drag) return;
-  var from = drag.from, to = drag.to;
-  clearOffsets(); drag = null;
-  if (!commit || to === undefined || to === from) return;
+  var from = drag.from, to = drag.to, axis = drag.axis, sz = drag.size;
+  drag = null;
+  if (!commit || to === undefined || to === from) { clearOffsets(); return; }
   var nb = slid(S.board, from, to);
-  if (!nb) return;
+  if (!nb) { clearOffsets(); return; }
   if (!findMatches(nb).length) {
+    clearOffsets();          // a free revert, and it SHOULD look like one
     sfx('bad'); logLine('sys','No match on that slide — free, try another.');
     return;
   }
+  snapPreview(from, to, axis, sz);
   sendMove(from, to);
 }
 gridEl.addEventListener('pointerdown', function(e){
