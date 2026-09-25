@@ -932,8 +932,35 @@ function logLine(kind, text){
   var d = document.createElement('div'); d.className = 'log-'+kind; d.textContent = text;
   l.appendChild(d); l.scrollTop = l.scrollHeight;
 }
-function banner(text){
+/**
+ * The one banner over the board, and the reason it takes a priority.
+ *
+ * A single wave announces itself several times in the SAME TICK. The engine
+ * emits, in order: the wave (a chain number), then a multi-match, then every
+ * hit, then a detonation, then any bomb armed -- and each of those handlers
+ * returns a zero delay, because they are one simultaneous event. With a plain
+ * last-writer-wins banner the final call was the only one ever seen, and the
+ * final call is `arm`.
+ *
+ * So the biggest moment in the game was the one most reliably hidden: a MEGA
+ * MULTI-MATCH is nine or more gems across two or more matches, which nearly
+ * always contains a run of four, which arms a bomb, whose banner replaced it
+ * in the same frame. Players saw "BOMB ARMED" and concluded multi-matches were
+ * not implemented.
+ *
+ * Ranking them fixes it without holding the action back: a louder event still
+ * interrupts immediately, a quieter one within the hold window is dropped
+ * rather than queued, and anything arriving after the window shows normally.
+ * Queueing was the other option and it is worse -- the banners would trail the
+ * board they are describing.
+ */
+var BANNER_HOLD = 620, bannerAt = 0, bannerPri = 0;
+function banner(text, pri){
   var c = $('combo'); if (!c) return;
+  pri = pri || 1;
+  var now = Date.now();
+  if (now - bannerAt < BANNER_HOLD && pri <= bannerPri) return;
+  bannerAt = now; bannerPri = pri;
   c.textContent = text; c.classList.remove('on'); void c.offsetWidth; c.classList.add('on');
 }
 
@@ -1136,14 +1163,15 @@ function playTimeline(fx, state, done){
 
     case 'wave':
       sfx('clear');
-      if (e.chain > 1) { sfx('chain'); banner('CHAIN x'+e.chain); }
+      // a deep chain is worth more than a shallow one, and outranks a bomb
+      if (e.chain > 1) { sfx('chain'); banner('CHAIN x'+e.chain, e.chain >= 3 ? 4 : 3); }
       (e.cells||[]).forEach(function(j){ var el = cellEl(j); if (el) el.classList.add('clear'); });
       if (e.len >= 5) sfx('great');
       hold = 190;
       return 0;
 
     case 'multi':
-      banner(e.mega ? '✦✦ MEGA MULTI-MATCH' : '✦ MULTI-MATCH');
+      banner(e.mega ? '✦✦ MEGA MULTI-MATCH' : '✦ MULTI-MATCH', e.mega ? 6 : 5);
       sfx('chain');
       return 0;
 
@@ -1174,14 +1202,16 @@ function playTimeline(fx, state, done){
       (e.cells||[]).forEach(function(j){
         var el = cellEl(j); if (el) el.classList.add(e.kind === BOMB_BOARD ? 'blast2' : 'blast');
       });
-      banner(e.kind === BOMB_BOARD ? '💣 BOARD BOMB' : '✛ BOMB');
+      banner(e.kind === BOMB_BOARD ? '💣 BOARD BOMB' : '✛ BOMB', e.kind === BOMB_BOARD ? 5 : 3);
       sfx('boom'); shakeBoard();
       hold = 460;         // the blast is held longer, or it is skipped past
       return 0;
 
     case 'arm':
       sfx(e.big ? 'armB' : 'armX');
-      banner(e.big ? '💣 BOARD BOMB ARMED' : '✛ BOMB ARMED');
+      // armed, not detonated: a promise rather than an event, so it yields to
+      // anything that actually happened this wave
+      banner(e.big ? '💣 BOARD BOMB ARMED' : '✛ BOMB ARMED', e.big ? 3 : 2);
       return 0;
 
     case 'drop': {
@@ -1197,17 +1227,17 @@ function playTimeline(fx, state, done){
 
     case 'reshuffle':
       logLine('sys','No moves left — board reshuffled.');
-      banner('RESHUFFLE');
+      banner('RESHUFFLE', 4);
       return 260;
 
     case 'again':
-      banner('AGAIN');
+      banner('AGAIN', 6);
       return 320;
 
     case 'hurrah':
       /* Every bomb left on the board goes off once the battle is decided. Pure
          spectacle — the result is already settled, nothing is resolved by it. */
-      banner('💥 LAST HURRAH');
+      banner('💥 LAST HURRAH', 9);
       (e.cells||[]).forEach(function(j){
         var el = cellEl(j); if (el) el.classList.add(e.kind === BOMB_BOARD ? 'blast2' : 'blast');
       });
