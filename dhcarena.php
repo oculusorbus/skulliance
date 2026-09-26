@@ -444,7 +444,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    the grenade clears a line. */
 .arena-wrap .cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px var(--bone);
   animation:bmb 1.5s ease-in-out infinite}
-.arena-wrap .cell.bomb{box-shadow:0 0 12px var(--gc)}
+/* The grenade's glow pulses too, gently. It used to be static, which was fine
+   everywhere the GEM could pulse -- but .cell.di.bomb .g turns the gem pulse
+   off on diamonds, because a 45-degree rotation and a scale cannot share one
+   transform. So on a violet tile a grenade had nothing moving at all. Every
+   bomb now pulses at the cell, which no gem shape can switch off. */
+.arena-wrap .cell.bomb{animation:bmbGlow 1.5s ease-in-out infinite}
+@keyframes bmbGlow{
+  0%,100%{box-shadow:0 0 8px var(--gc)}
+  50%    {box-shadow:0 0 20px var(--gc)}}
 .arena-wrap .cell.bomb2 .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px #fff;
   animation:bmb .9s ease-in-out infinite}
 .arena-wrap .cell.bomb2{box-shadow:0 0 10px rgba(255,255,255,.85),0 0 30px var(--ochre);
@@ -476,6 +484,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    where the drop never reaches and the detonator's sits on .cell where it
    does. Composed rather than overridden: the cell can fall in AND go on
    pulsing. */
+.arena-wrap .cell.drop.bomb{animation:drp .22s, bmbGlow 1.5s ease-in-out infinite}
+.arena-wrap .cell.settle.bomb{animation:stl .16s, bmbGlow 1.5s ease-in-out infinite}
+/* bomb2 AFTER bomb: a board bomb carries both classes, equal specificity, so
+   document order is the only thing deciding which pulse it gets. */
 .arena-wrap .cell.drop.bomb2{animation:drp .22s, bmb2glow .9s ease-in-out infinite}
 .arena-wrap .cell.settle.bomb2{animation:stl .16s, bmb2glow .9s ease-in-out infinite}
 @keyframes stl{0%{transform:scale(1.06)}100%{transform:scale(1)}}
