@@ -1078,7 +1078,6 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
     </div>
     <div class="reach mobonly" id="reachM"></div>
     <div class="legend mobonly" id="legendM"></div>
-    </div>
     <details class="logbox" open><summary>Battle log</summary><div id="log"></div></details>
     <div class="fcard" id="fcard" hidden>
       <div class="fc-box" id="fcBox"></div>

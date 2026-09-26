@@ -89,6 +89,20 @@ if (!empty($page)) {
 		'boardwrap'       => 'boardcol',
 		'endcard#endcard' => 'boardwrap',
 		'grid#grid'       => 'boardwrap',
+		/* And the battle view's own children, because the check above only ever
+		   looked INSIDE .arena -- so when a stray close ended #arenaBattle early,
+		   the battle log and the Fighter card fell out into .arena-wrap, which is
+		   not hidden, and both turned up on the Crew select screen. Everything
+		   here is display:none until #arenaBattle wears .on; out here it is just
+		   visible. */
+		'top'                    => '#arenaBattle',
+		'arena'                  => '#arenaBattle',
+		'reach mobonly#reachM'   => '#arenaBattle',
+		'legend mobonly#legendM' => '#arenaBattle',
+		'logbox'                 => '#arenaBattle',
+		'fcard#fcard'            => '#arenaBattle',
+		'#arenaBattle'           => 'arena-wrap',
+		'a-panels#arenaSetup'    => 'arena-wrap',
 	);
 	$bad = array();
 	foreach ($want as $child => $mother) {
