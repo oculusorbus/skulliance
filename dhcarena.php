@@ -254,6 +254,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 /* While a Fighter is coming apart it must not already be greyed out -- the
    whole point is watching it happen. Three classes beats two, so this wins
    over .tok.ko until the sequence finishes. */
+/* Full colour WHILE it comes apart -- you should watch a Fighter fall in the
+   art it was built from -- and then the grey settles over what is left. The
+   pieces are gone by then; what greys out is the background it fell on, its
+   name and its empty health bar. */
 .arena-wrap .tok.ko.dying{opacity:1;filter:none}
 .arena-wrap .tok.dying{animation:deathShake .55s}
 @keyframes deathShake{0%{transform:translateX(0)}12%{transform:translateX(-4%) rotate(-1.5deg)}30%{transform:translateX(3.5%) rotate(1.2deg)}52%{transform:translateX(-2.5%) rotate(-.8deg)}74%{transform:translateX(1.5%)}100%{transform:translateX(0)}}
@@ -264,10 +268,20 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    a single object rotating.
    Ends at .22 rather than 0 and stays there (forwards): the fallen Fighter
    should be a scattered wreck you can still recognise, not an empty frame. */
+/* An aura goes out. It is the one layer that SHOULD fade, because that is what
+   fire stopping looks like. */
+.arena-wrap .tok .art img.snuff{animation:snuff .34s ease-out forwards}
+@keyframes snuff{0%{opacity:1;transform:none}100%{opacity:0;transform:scale(1.12)}}
 .arena-wrap .tok .art img.dis{animation:disA .62s cubic-bezier(.3,0,.7,1) forwards}
 .arena-wrap .tok .art img.dis.alt{animation-name:disB}
-@keyframes disA{0%{transform:none;opacity:1}16%{transform:translateY(-4%) scale(1.04);opacity:1}100%{transform:translateY(28%) rotate(9deg) scale(.84);opacity:.22}}
-@keyframes disB{0%{transform:none;opacity:1}16%{transform:translateY(-5%) scale(1.05);opacity:1}100%{transform:translateY(24%) rotate(-11deg) scale(.86);opacity:.22}}
+/* NO FADE. The pieces drop out of frame, they do not dissolve -- a Fighter
+   coming apart should look like it fell to bits, and half-transparent artwork
+   just looks like a rendering fault. They travel far enough to leave the frame
+   instead, which .art already clips. */
+@keyframes disA{0%{transform:none}16%{transform:translateY(-4%) scale(1.04)}
+  100%{transform:translateY(105%) rotate(14deg) scale(.88)}}
+@keyframes disB{0%{transform:none}16%{transform:translateY(-5%) scale(1.05)}
+  100%{transform:translateY(100%) rotate(-17deg) scale(.9)}}
 .arena-wrap .tok.hit{animation:hit .3s}
 @keyframes hit{0%{transform:translateX(0)}30%{transform:translateX(-3%)}60%{transform:translateX(2.4%)}100%{transform:translateX(0)}}
 .arena-wrap .tok.act{animation:act .34s}
@@ -1284,10 +1298,19 @@ function flashTok(f, kind){
 /* Top of the stack downward — companion first, torso last — so a Fighter comes
    apart in the reverse of the order it was built. The background stays: it is
    the ground the pieces fall against, not part of the body. */
-var DEATH_ORDER = ['companion','headgear','head','effects','arms','weapon','torso'];
+/* EFFECTS ARE NOT PART OF THE BODY. Flames, sparks and smoke are drawn AROUND
+   a Fighter rather than worn by it, so tumbling them out of frame with the
+   limbs read as broken -- a burst of fire does not fall over. They are cut
+   instead, which is what happens to an aura when the thing making it dies. */
+var DEATH_ORDER = ['companion','headgear','head','arms','weapon','torso'];
+var DEATH_CUT   = ['effects','effects1','effects2'];
 function killAnim(f){
   var e = elFor(f); if (!e) return;
   e.classList.add('dying'); flashTok(f,'big');
+  DEATH_CUT.forEach(function(slot){
+    var img = e.querySelector('.art img[data-l="'+slot+'"]');
+    if (img) img.className = 'snuff';
+  });
   var step = 80, n = 0;
   DEATH_ORDER.forEach(function(slot){
     var img = e.querySelector('.art img[data-l="'+slot+'"]'); if (!img) return;
