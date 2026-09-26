@@ -962,6 +962,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
               <button class="btn" id="ecLeave" hidden>Leave practice</button>
             </div>
           </div>
+        </div><!-- /.boardwrap -->
         <div class="reach deskonly" id="reach"></div>
         <div class="legend deskonly" id="legend"></div>
       </div>

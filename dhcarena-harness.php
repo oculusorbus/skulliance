@@ -53,6 +53,51 @@ if ($page !== false && strpos($page, '<style>') !== false) {
 	if ($bad) foreach (array_slice($m[0], 0, 3) as $x) echo "   " . trim($x) . "\n";
 }
 
+/* 0b. THE BATTLE MARKUP IS NESTED THE WAY THE GRID NEEDS IT.
+   Tag BALANCE is not structure, and trusting balance is what let a broken
+   layout ship: .boardwrap lost its closing tag, every following element became
+   its child, and .teamwrap.foes fell out of the .arena grid entirely -- while
+   the open and close counts still matched perfectly, because a close that
+   belonged to one element was silently consumed by another.
+   So this asserts PARENTAGE. .arena must hold all three grid children, and the
+   end card must sit inside the board rather than beside it. */
+if (!empty($page)) {
+	// The PHP goes first: a <div> written inside a comment or one branch of a
+	// conditional is not markup, and counting it is how a checker lies to you.
+	$body = preg_replace('#<\?php[\s\S]*?\?>#', '', $page);
+	$body = preg_replace('#<script[\s\S]*?</script>#', '', $body);
+	$body = preg_replace('#<style[\s\S]*?</style>#', '', $body);
+	$body = preg_replace('#<!--[\s\S]*?-->#', '', $body);
+	$void = array('br'=>1,'img'=>1,'input'=>1,'meta'=>1,'link'=>1,'hr'=>1,'source'=>1,'col'=>1);
+	$stack = array(); $parent = array();
+	preg_match_all('#<(/?)([a-zA-Z][\w-]*)([^>]*?)(/?)>#', $body, $ms, PREG_SET_ORDER);
+	foreach ($ms as $m) {
+		$close = $m[1] !== ''; $tag = strtolower($m[2]);
+		if (isset($void[$tag]) || $m[4] !== '') continue;
+		if (!$close) {
+			$name = '';
+			if (preg_match('/class="([^"]*)"/', $m[3], $c)) $name = $c[1];
+			if (preg_match('/id="([^"]*)"/', $m[3], $i2)) $name .= '#'.$i2[1];
+			if ($name !== '') $parent[$name] = end($stack);
+			$stack[] = $name !== '' ? $name : $tag;
+		} elseif ($stack) { array_pop($stack); }
+	}
+	$want = array(
+		'teamwrap mine'   => 'arena',
+		'boardcol'        => 'arena',
+		'teamwrap foes'   => 'arena',
+		'boardwrap'       => 'boardcol',
+		'endcard#endcard' => 'boardwrap',
+		'grid#grid'       => 'boardwrap',
+	);
+	$bad = array();
+	foreach ($want as $child => $mother) {
+		$got = isset($parent[$child]) ? $parent[$child] : '(absent)';
+		if ($got !== $mother) $bad[] = "$child is in $got, wanted $mother";
+	}
+	printf("battle markup: %s\n", $bad ? 'BROKEN -- '.implode('; ', $bad) : 'nesting correct');
+}
+
 /* 1. does a battle finish, and how long does it take */
 $seed = 20260924; $turns = array(); $bombs = 0; $blasts = 0; $stuck = 0;
 for ($i = 0; $i < $N; $i++) {
