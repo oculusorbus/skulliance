@@ -281,6 +281,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    arrives over the top of them a moment later. */
 @keyframes disA{0%{transform:none}16%{transform:translateY(-4%) scale(1.04)}100%{transform:translateY(28%) rotate(9deg) scale(.84)}}
 @keyframes disB{0%{transform:none}16%{transform:translateY(-5%) scale(1.05)}100%{transform:translateY(24%) rotate(-11deg) scale(.86)}}
+/* The companion goes all the way out. Declared after .alt so it wins whichever
+   half of the stagger it lands on. */
+.arena-wrap .tok .art img.dis.gone{animation-name:disGone}
+@keyframes disGone{0%{transform:none}16%{transform:translateY(-6%) scale(1.04)}100%{transform:translateY(120%) rotate(15deg) scale(.82)}}
 .arena-wrap .tok.hit{animation:hit .3s}
 @keyframes hit{0%{transform:translateX(0)}30%{transform:translateX(-3%)}60%{transform:translateX(2.4%)}100%{transform:translateX(0)}}
 .arena-wrap .tok.act{animation:act .34s}
@@ -1301,8 +1305,19 @@ function flashTok(f, kind){
    a Fighter rather than worn by it, so tumbling them out of frame with the
    limbs read as broken -- a burst of fire does not fall over. They are cut
    instead, which is what happens to an aura when the thing making it dies. */
-var DEATH_ORDER = ['companion','headgear','head','arms','weapon','torso'];
+/* GROUPS, NOT SLOTS, for the same reason layerAnim() takes a list: headgear
+   sits ON the head and the two are one object as far as motion goes. Given
+   separate delays and opposite spins they came apart from each other -- the
+   helmet cocked off the skull and hung across its face, which is not a
+   collapse, it is two objects behaving independently.
+   Top of the stack downward, so a Fighter comes apart in the reverse of the
+   order it was built. */
+var DEATH_ORDER = [['companion'], ['headgear','head'], ['arms'], ['weapon'], ['torso']];
 var DEATH_CUT   = ['effects','effects1','effects2'];
+/* The companion leaves entirely rather than settling in the frame. It is drawn
+   beside the Fighter and usually cropped by the top edge already, so a partial
+   slump just looks like it is stuck. */
+var DEATH_GONE  = {companion: 1};
 function killAnim(f){
   var e = elFor(f); if (!e) return;
   e.classList.add('dying'); flashTok(f,'big');
@@ -1311,11 +1326,17 @@ function killAnim(f){
     if (img) img.className = 'snuff';
   });
   var step = 80, n = 0;
-  DEATH_ORDER.forEach(function(slot){
-    var img = e.querySelector('.art img[data-l="'+slot+'"]'); if (!img) return;
-    img.style.animationDelay = (n*step)+'ms';
-    img.className = 'dis'+(n%2?' alt':'');     // alternate the spin: debris, not a rotation
-    n++;
+  DEATH_ORDER.forEach(function(group){
+    var found = false;
+    group.forEach(function(slot){
+      var img = e.querySelector('.art img[data-l="'+slot+'"]'); if (!img) return;
+      found = true;
+      // one delay and one spin for the whole group, so its pieces stay together
+      img.style.animationDelay = (n*step)+'ms';
+      img.className = 'dis' + (n%2 ? ' alt' : '')   // alternate: debris, not a rotation
+                    + (DEATH_GONE[slot] ? ' gone' : '');
+    });
+    if (found) n++;      // keep the stagger contiguous when a slot is empty
   });
   setTimeout(function(){ e.classList.remove('dying'); }, n*step + 640);
 }
