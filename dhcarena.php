@@ -1312,12 +1312,22 @@ function flashTok(f, kind){
    collapse, it is two objects behaving independently.
    Top of the stack downward, so a Fighter comes apart in the reverse of the
    order it was built. */
-var DEATH_ORDER = [['companion'], ['headgear','head'], ['arms'], ['weapon'], ['torso']];
+/* Each group PINS its spin rather than taking whichever the running index
+   happens to land on. Grouping the head with its headgear shifted every index
+   below it by one, which quietly swapped the spin on half the body -- and gave
+   the HEAD the headgear's tumble instead of the headgear taking the head's, so
+   the skull went one way and left a gap at the neck.
+   `alt` is the variant each slot had before any of this, with headgear changed
+   to follow the head. */
+var DEATH_ORDER = [
+  {slots:['companion'],        alt:false, gone:true},
+  {slots:['headgear','head'],  alt:false},   // headgear follows the HEAD, not the reverse
+  {slots:['arms'],             alt:true},
+  {slots:['weapon'],           alt:false},
+  {slots:['torso'],            alt:true},
+];
 var DEATH_CUT   = ['effects','effects1','effects2'];
-/* The companion leaves entirely rather than settling in the frame. It is drawn
-   beside the Fighter and usually cropped by the top edge already, so a partial
-   slump just looks like it is stuck. */
-var DEATH_GONE  = {companion: 1};
+
 function killAnim(f){
   var e = elFor(f); if (!e) return;
   e.classList.add('dying'); flashTok(f,'big');
@@ -1333,8 +1343,7 @@ function killAnim(f){
       found = true;
       // one delay and one spin for the whole group, so its pieces stay together
       img.style.animationDelay = (n*step)+'ms';
-      img.className = 'dis' + (n%2 ? ' alt' : '')   // alternate: debris, not a rotation
-                    + (DEATH_GONE[slot] ? ' gone' : '');
+      img.className = 'dis' + (group.alt ? ' alt' : '') + (group.gone ? ' gone' : '');
     });
     if (found) n++;      // keep the stagger contiguous when a slot is empty
   });
