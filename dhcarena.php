@@ -432,10 +432,26 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .fc-gem b .ico{width:13px;height:13px;vertical-align:-2px}
 /* A bomb keeps its colour -- you detonate it by matching that colour -- but it
    has to be unmistakable on a busy board, so it pulses and wears a ring. */
-.arena-wrap .cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px var(--bone),0 0 12px var(--gc);
+/* THE RING IS ON THE GEM, THE GLOW IS ON THE CELL.
+   Both used to be one box-shadow on .g -- and .g is clip-path'd into a hexagon
+   for Charge and a shield for Shield, which clips a box-shadow dead. So on two
+   of the five gem colours a bomb had no glow whatsoever. The cell is never
+   clipped, so the glow lives there and survives every gem shape.
+   The board bomb's glow was also var(--ochre), which is #f5a623 -- byte for
+   byte the amber gem colour -- so on amber it was lighting the tile in the
+   tile's own colour. It is white-cored now, which collides with none of the
+   five, and it has to be the louder of the two anyway: it clears the board,
+   the grenade clears a line. */
+.arena-wrap .cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px var(--bone);
   animation:bmb 1.5s ease-in-out infinite}
-.arena-wrap .cell.bomb2 .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px var(--ochre),0 0 18px var(--ochre);
+.arena-wrap .cell.bomb{box-shadow:0 0 12px var(--gc)}
+.arena-wrap .cell.bomb2 .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px #fff;
   animation:bmb .9s ease-in-out infinite}
+.arena-wrap .cell.bomb2{box-shadow:0 0 10px rgba(255,255,255,.85),0 0 30px var(--ochre);
+  animation:bmb2glow .9s ease-in-out infinite}
+@keyframes bmb2glow{
+  0%,100%{box-shadow:0 0 8px rgba(255,255,255,.7),0 0 22px var(--ochre)}
+  50%    {box-shadow:0 0 16px rgba(255,255,255,1),0 0 40px var(--ochre)}}
 @keyframes bmb{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 /* The cross bomb's blast shape, drawn on the gem: a bar across and a bar down. */
 /* The hand-drawn cross is gone. It existed because no emoji read as "row and
