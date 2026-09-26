@@ -448,7 +448,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .cell .bglow{position:absolute;inset:0;display:flex;
   align-items:center;justify-content:center;pointer-events:none}
 .arena-wrap .cell.bomb .bglow{filter:drop-shadow(0 0 1.5px #fff)}
-.arena-wrap .cell.bomb2 .bglow{animation:bombHalo2 .9s ease-in-out infinite}
+.arena-wrap .cell.bomb2 .bglow{filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)
+  drop-shadow(0 0 1px #fff)}
 .arena-wrap .cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45);
   animation:bmb 1.5s ease-in-out infinite}
 /* THE GLOW HUGS THE GEM, NOT THE TILE.
@@ -461,13 +462,13 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    box-shadow, hex and shield are clip-paths which clip it away, and a diamond
    is a rotate, which does not. So the ring and the halo are both drop-shadows
    now and both appear on every shape. */
-/* ONLY THE DETONATOR GLOWS. A grenade gets the white edge and the pulse and
-   nothing else -- two bombs both haloed made the board noisy and, worse, made
-   them look equally dangerous when one clears a line and the other clears
-   everything. The glow is now the thing that means "this one is the big one". */
-@keyframes bombHalo2{
-  0%,100%{filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 9px var(--ochre))}
-  50%    {filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 22px var(--ochre))}}
+/* NO GLOW ON EITHER, JUST A THICKER LINE.
+   The detonator had a pulsing white-and-ochre halo and it was blinding -- a
+   gem lit that brightly stops being a gem you read and becomes a lamp on the
+   board. Both bombs wear a white outline now and the detonator's is simply
+   heavier, which is enough: it also pulses half again as fast.
+   Stacked tight drop-shadows rather than one blurred one, because stacking
+   thickens the edge while a wider blur just spreads it into a glow again. */
 .arena-wrap .cell.bomb2 .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45);
   animation:bmb .9s ease-in-out infinite}
 @keyframes bmb{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
