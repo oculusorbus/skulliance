@@ -217,7 +217,8 @@ something — decided by what the background actually is:
 
 The arena is announced by **the background's own name** — Hellscape, Wormhole
 Passage, Aracnyd Web — so what you are told always matches what you are looking
-at. It is shown at the start of a battle and again under the board.
+at. It is shown at the start of a battle and again under the board — **hover or tap
+the arena's name** there and it tells you what it is doing to the fight.
 
 ---
 

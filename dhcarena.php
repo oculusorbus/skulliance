@@ -578,7 +578,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .reach{font-size:10px;color:var(--dim);margin-top:7px;display:flex;flex-wrap:wrap;gap:4px 14px;
   align-items:baseline}
 .arena-wrap .reach b{color:var(--ochre)}
-.arena-wrap .reach .terr{color:var(--teal);margin-left:auto}
+.arena-wrap .reach .terr{color:var(--teal);margin-left:auto;cursor:help;
+  border-bottom:1px dotted currentColor;white-space:nowrap}
+/* The effect rides along hidden and opens on hover, or on a tap where there is
+   no hover to have. nowrap comes off when it opens, or a long note shoves the
+   reach line sideways on a phone. */
+.arena-wrap .reach .terr .tnote{display:none;font-style:normal;opacity:.85}
+.arena-wrap .reach .terr:hover, .arena-wrap .reach .terr.on{white-space:normal}
+.arena-wrap .reach .terr:hover .tnote, .arena-wrap .reach .terr.on .tnote{display:inline}
 .arena-wrap .reach b{color:var(--ochre)}
 /* ---- side ---- */
 .arena-wrap .panel{border:1px solid var(--line);border-radius:4px;background:var(--panel);padding:9px;margin-bottom:10px}
@@ -1240,8 +1247,23 @@ function paintChrome(){
   + chip('var(--g4)','⚡','erupts at 10');
   $('legend').innerHTML = lg; $('legendM').innerHTML = lg;
   var reach = '<b>3</b> front · <b>4</b> mid · <b>5+</b> back · cascades multiply'
-            + (S.terrainName ? '<span class="terr">'+S.terrainName+'</span>' : '');
+    /* The arena's name sits under the board all battle, and until now it was
+       the only thing there that did not say what it meant -- you are told you
+       are fighting in an Aracnyd Web and left to work out what a web does.
+       Hover says so on a desktop; TAP says so on a phone, where hover does not
+       exist and a title attribute is decoration. */
+    + (S.terrainName
+        ? '<span class="terr" id="terrTip" title="' + (S.terrainNote || '') + '">'
+          + S.terrainName
+          + (S.terrainNote ? '<i class="tnote"> — ' + S.terrainNote + '</i>' : '')
+          + '</span>'
+        : '');
   $('reach').innerHTML = reach; $('reachM').innerHTML = reach;
+  /* Both copies of the reach line exist at once -- one for the side-column
+     layout, one for the stacked one -- so wire whichever is on screen. */
+  document.querySelectorAll('.reach .terr').forEach(function(el){
+    el.addEventListener('click', function(){ el.classList.toggle('on'); });
+  });
   var bw = document.querySelector('.boardwrap');
   if (bw) { if (!S.over && S.turn === 'foes') bw.classList.add('foeturn'); else bw.classList.remove('foeturn'); }
   var fl = $('flag');
