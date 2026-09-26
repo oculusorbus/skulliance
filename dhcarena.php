@@ -18,9 +18,87 @@
  */
 include_once 'db.php';
 include 'message.php';
-include 'verify.php';
-include 'skulliance.php';
+
+/*
+ * THIS PAGE IS PUBLIC, and deliberately so: practice is the whole game with
+ * nothing at stake, it touches no table and needs no account, so a visitor who
+ * has never heard of Skulliance can play it from a shared link. That is the
+ * only version of this game anyone can be shown without asking them to sign up
+ * first, which makes it the one worth promoting.
+ *
+ * So skulliance.php cannot be included unconditionally -- it redirects an
+ * anonymous visitor to error.php, which is exactly the wall this removes. It
+ * still runs in full for members, because everything ranked depends on what it
+ * does: verify.php defines checkUser(), skulliance.php calls it to resolve
+ * user_id into the session, and without that a signed-in player looks like a
+ * guest and loses their Crew.
+ *
+ * The cookie restore is lifted from skulliance.php rather than delegated to it,
+ * because the decision has to be made BEFORE including the file that redirects.
+ * Merge, never assign -- see skulliance.php's own note on what a raw assign
+ * here once did to every other page's session.
+ */
+if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
+	$dhca_ck = json_decode($_COOKIE['SessionCookie'], true);
+	if (is_array($dhca_ck)) {
+		$_SESSION = array_merge((array)$_SESSION, $dhca_ck);
+	} else {
+		/* Undecodable, so it will be sent again on every request. skulliance.php
+		   clears it on the way to error.php; here there is no error page to go
+		   to, so clear it and carry on as a guest. */
+		setcookie('SessionCookie', '', time() - 3600);
+	}
+	unset($dhca_ck);
+}
+$dhca_guest = empty($_SESSION['logged_in']);
+if (!$dhca_guest) { include 'verify.php'; include 'skulliance.php'; }
+
 require_once __DIR__ . '/dhcarena-lib.php';
+
+/*
+ * SHAREABLE, which is the point of being public. Without these a link to the
+ * Arena posted anywhere renders as a bare URL, and the reason the end-card
+ * share button was pulled was precisely that nothing could scrape a card off a
+ * page behind the login gate. Absolute URLs are correct HERE and only here --
+ * canonical and OG are not clickable navigation, so they cannot bounce a
+ * visitor between www and the bare host and drop a host-only session cookie.
+ *
+ * No chain or token wording: this is the public face of the site and the funnel
+ * deliberately keeps it about the game.
+ *
+ * $dhca_og_image is the platform's generic card, verified 200, because there is
+ * no Arena screenshot on the server yet -- images ship by FTP, not in the repo.
+ * Drop one at images/dhcarena.png and change this one line.
+ */
+$dhca_canonical = 'https://www.skulliance.io/staking/dhcarena.php';
+$dhca_og_image  = 'https://www.skulliance.io/staking/images/og.jpg';
+$dhca_title     = 'DHC Arena — free Crew vs Crew puzzle battler | Skulliance';
+$dhca_desc      = 'Three Fighters against three on one shared board. Match a Fighter\'s '
+                . 'gem to make them act, and match size is reach: three touches their '
+                . 'front rank, five or more reaches the back. Free to play in your '
+                . 'browser, no account and no download.';
+$dhca_short     = 'Three Fighters against three on one shared board. Match a gem to make '
+                . 'that Fighter act. Free, instant, no account.';
+$page_title_override = $dhca_title;
+$extra_head = '
+<meta name="description" content="'.htmlspecialchars($dhca_desc).'">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<link rel="canonical" href="'.$dhca_canonical.'">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Skulliance">
+<meta property="og:url" content="'.$dhca_canonical.'">
+<meta property="og:title" content="'.htmlspecialchars($dhca_title).'">
+<meta property="og:description" content="'.htmlspecialchars($dhca_desc).'">
+<meta property="og:image" content="'.$dhca_og_image.'">
+<meta property="og:image:alt" content="DHC Arena - a Crew of three Fighters facing three more across a gem board">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="'.htmlspecialchars($dhca_title).'">
+<meta name="twitter:description" content="'.htmlspecialchars($dhca_short).'">
+<meta name="twitter:image" content="'.$dhca_og_image.'">
+<meta name="twitter:image:alt" content="DHC Arena - a Crew of three Fighters facing three more across a gem board">
+';
+
 include 'header.php';
 
 $user_id   = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
@@ -106,6 +184,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap h1{font-size:15px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 2px}
 .arena-wrap .sub{color:var(--dim);font-size:10.5px;margin:0 0 10px}
 .arena-wrap button{font:inherit;cursor:pointer;border-radius:3px}
+/* The share is an <a>, not a <button>, because it opens a composer in a new tab
+   and that is a link's job. It still has to sit in the row looking like the
+   buttons beside it, so it borrows what the button reset gives them. */
+.arena-wrap a.btn{border-radius:3px;text-decoration:none;cursor:pointer;
+  display:inline-flex;align-items:center;line-height:1.35}
 .arena-wrap .btn{background:var(--panel2);color:var(--bone);border:1px solid var(--line);padding:6px 12px}
 .arena-wrap .btn:hover{border-color:var(--ochre);color:var(--ochre)}
 .arena-wrap .btn.go{background:var(--blood);border-color:var(--blood);color:#fff}
@@ -868,19 +951,45 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   <div class="a-masthead">
     <div class="a-intro-txt">
       <div class="a-head"><h1>DHC Arena</h1></div>
+      <?php if ($dhca_guest): ?>
+      <p class="a-sub">Three Fighters against three, on a shared board. Each of your
+         Crew owns a gem — matching it makes them act, and <b>match size is reach</b>:
+         a match of 3 only touches their front rank, 5 or more reaches the back.
+         <b>You are playing a practice battle with two random Crews.</b> Nothing is at
+         stake and there is no limit.</p>
+      <?php else: ?>
       <p class="a-sub">Three of your Fighters against three of theirs, on a shared board.
          Each of your Crew owns a gem — matching it makes them act, and <b>match size is
          reach</b>. Win and a trait lands in your collection.</p>
+      <?php endif; ?>
     </div>
+    <?php /* Four tiles either way. The count is not decoration -- the phone
+             breakpoint lays .a-stats out as repeat(4,...), so a guest variant
+             with a different number of tiles would collapse it. */ ?>
     <div class="a-stats">
+      <?php if ($dhca_guest): ?>
+      <div class="a-stat"><b><?php echo DHCA_CREW_SIZE; ?></b><span>Per Crew</span></div>
+      <div class="a-stat"><b><?php echo count(dhca_kits()); ?></b><span>Fighting styles</span></div>
+      <div class="a-stat"><b>∞</b><span>Practice</span></div>
+      <div class="a-stat"><b><?php echo DHCA_DAILY_BATTLES; ?></b><span>Daily, signed in</span></div>
+      <?php else: ?>
       <div class="a-stat"><b><?php echo count($crew); ?></b><span>Fighters</span></div>
       <div class="a-stat"><b><?php echo count($available); ?></b><span>Standing</span></div>
       <div class="a-stat"><b><?php echo max(0, DHCA_DAILY_BATTLES - $spent); ?>/<?php echo DHCA_DAILY_BATTLES; ?></b><span>Battles left</span></div>
       <div class="a-stat"><b><?php echo count($foesList); ?></b><span>Rivals</span></div>
+      <?php endif; ?>
     </div>
   </div>
 
-<?php if ($block): ?>
+<?php if ($dhca_guest): ?>
+  <?php /* A guest is not blocked from anything they came here for, so this is an
+           invitation rather than dhca_entry_block()'s refusal. No "build a Crew"
+           link: dhcfighters.php is behind the gate this page just stepped around,
+           and sending a curious visitor into error.php is the whole problem. */ ?>
+  <div class="a-block">Practice is the whole game — the same rules, the same engine,
+    nothing simplified. <a href="index.php">Sign in</a> to build your own Fighters,
+    field a Crew, and fight other players for traits and a place on the ladder.</div>
+<?php elseif ($block): ?>
   <div class="a-block"><?php echo htmlspecialchars($block); ?>
     <?php if (count($crew) < DHCA_CREW_SIZE): ?>
       Build them in <a href="dhcfighters.php">DHC Fighters</a>.
@@ -890,6 +999,33 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 
   <div class="a-panels" id="arenaSetup">
     <div class="a-panel">
+      <?php if ($dhca_guest): ?>
+      <?php /* A guest has no Crew to pick, and an empty picker is a dead panel
+               on the one screen a newcomer sees. They are about to be dropped
+               straight into a battle, so this is the panel that tells them how
+               to play it -- the same rules the battle uses, not a pitch. */ ?>
+      <h2>How a battle works</h2>
+      <div class="body">
+        <p class="a-sub" style="margin:0 0 9px">Each Fighter in a Crew owns one gem
+           colour. <b>Slide a row or column</b> to line up three or more of a colour and
+           that Fighter attacks — so you are not matching gems, you are choosing who
+           swings.</p>
+        <p class="a-sub" style="margin:0 0 9px"><b>Match size is reach.</b> A match of 3
+           only touches their front rank, 4 reaches mid, and 5 or more reaches the back
+           <em>and</em> hands you another turn. The Fighter you most want protected
+           stands at the back.</p>
+        <p class="a-sub" style="margin:0 0 9px"><b>Shield</b> gems armour the whole Crew.
+           <b>Charge</b> builds for everyone and erupts at 10, hitting all three of them
+           at once.</p>
+        <p class="a-sub" style="margin:0 0 9px"><b>Bombs.</b> A match of 4 arms a grenade,
+           5 or more a detonator. It sits on the board wearing a colour and
+           <b>either side can set it off</b>, so leaving one lying around is a real risk.
+           Chain several and they hit far harder than one.</p>
+        <p class="a-sub" style="margin:0">A Fighter's traits are its build: its torso sets
+           health, its weapon sets how it fights and how hard, its headgear sets how often
+           it lands a big one. Tap any Fighter mid-battle to see exactly which trait is
+           doing what.</p>
+      <?php else: ?>
       <h2>Your Crew — pick <?php echo DHCA_CREW_SIZE; ?>, in order</h2>
       <div class="body">
       <p class="a-sub" style="margin:0 0 9px">The order you pick sets the formation:
@@ -960,14 +1096,22 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <span id="aPageLbl"></span>
         <button type="button" id="aNext">Next &rsaquo;</button>
       </div>
-      <?php endif; ?>
+      <?php endif; /* $crew */ ?>
+      <?php endif; /* $dhca_guest */ ?>
       </div>
     </div>
 
     <div class="a-panel">
-      <h2>Choose a rival</h2>
+      <h2><?php echo $dhca_guest ? 'Play' : 'Choose a rival'; ?></h2>
       <div class="body">
-      <?php if (!$foesList): ?>
+      <?php if ($dhca_guest): ?>
+        <?php /* $foesList is empty for a guest because there is no user_id to
+                 find rivals for -- NOT because nobody has a Crew. Printing the
+                 "nobody else has a Crew yet" line here would be a flat lie about
+                 how busy the Arena is, on the one page built to promote it. */ ?>
+        <p class="a-sub" style="margin:0 0 9px">Two random Crews, the real rules, nothing
+           at stake. Play as many as you like — no account, no limit, nothing to lose.</p>
+      <?php elseif (!$foesList): ?>
         <p class="a-sub" style="margin:0">Nobody else has a Crew yet. Check back once more stakers have built three Fighters.</p>
       <?php else: ?>
       <div class="a-foes">
@@ -983,16 +1127,31 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       </div>
       <?php endif; ?>
       <div class="a-go">
-        <button class="btn go" id="aStart" <?php echo $block?'disabled':''; ?>>Enter the Arena</button>
+        <?php /* Kept in the DOM for a guest rather than dropped: startFailed()
+                 reaches for it without a guard, and a hidden button is cheaper
+                 than making every caller defensive for a case that cannot fire. */ ?>
+        <button class="btn go" id="aStart" <?php echo $block?'disabled':''; ?>
+          <?php echo $dhca_guest ? 'hidden' : ''; ?>>Enter the Arena</button>
         <?php /* Never disabled, whatever the allowance says -- that is the point
                  of it. A player out of battles, short of a Crew, or waiting on
                  three Fighters to come back can still play. */ ?>
-        <button class="btn" id="aPractice">Practice</button>
+        <button class="btn<?php echo $dhca_guest ? ' go' : ''; ?>" id="aPractice"><?php
+          echo $dhca_guest ? 'New battle' : 'Practice'; ?></button>
         <span class="a-sub" style="margin:0" id="aMsg"></span>
       </div>
+      <?php if ($dhca_guest): ?>
+      <?php /* No crypto or chain wording on the public face of the site -- see the
+               funnel note in skullpaper. "Players", not "stakers", and DHC is named
+               as a collection rather than explained. */ ?>
+      <p class="a-sub" style="margin:8px 0 0">Signed in, the same Arena plays for keeps:
+         build Fighters from your own DHC traits, field a Crew of <?php echo DHCA_CREW_SIZE; ?>,
+         and fight other players <?php echo DHCA_DAILY_BATTLES; ?> times a day for traits
+         and a place on the ladder. <a href="index.php">Sign in</a>.</p>
+      <?php else: ?>
       <p class="a-sub" style="margin:8px 0 0">Practice pits two random Crews against
          each other with the real rules and nothing at stake — no allowance, no
          recovery, no traits, no ladder. Play as many as you like.</p>
+      <?php endif; ?>
       </div>
     </div>
 
@@ -1003,7 +1162,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <p class="a-sub" style="margin:0">No battles fought this season yet. Be first.</p>
       <?php else: ?>
       <table class="a-lad">
-      <thead><tr><th>#</th><th>Staker</th><th>W</th><th>L</th><th>Best chain</th></tr></thead>
+      <thead><tr><th>#</th><th><?php echo $dhca_guest ? 'Player' : 'Staker'; ?></th><th>W</th><th>L</th><th>Best chain</th></tr></thead>
       <tbody>
       <?php foreach ($ladder as $i => $l): ?>
         <tr<?php echo ((int)$l['user_id'] === $user_id) ? ' class="me"' : ''; ?>>
@@ -1057,12 +1216,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
             <div class="ec-title" id="ecTitle"></div>
             <div class="ec-sub" id="ecSub"></div>
             <div class="ec-stats" id="ecStats"></div>
-            <?php /* NO SHARE BUTTON YET, deliberately. dhcarena.php is behind
-                     skulliance.php, so the link in a post is a login prompt for
-                     everyone who is not already a member and X cannot scrape a card
-                     off it either -- the share would cost reach rather than earn it.
-                     It comes back pointed at the public page, once there is one. */ ?>
+            <?php /* The share is back. It was pulled because this page sat behind
+                     skulliance.php, so the link in a post was a login prompt for
+                     everyone who was not already a member and X could not scrape a
+                     card off it -- the share cost reach rather than earning it.
+                     Both halves of that are now fixed: the page is public and it
+                     carries OpenGraph, so the link opens a playable game for anyone
+                     who taps it. Same shape as the other five games' share buttons. */ ?>
             <div class="ec-acts">
+              <a class="btn" id="ecShare" target="_blank" rel="noopener" href="#">𝕏 Share</a>
               <button class="btn go" id="ecAgain">Back to the Arena</button>
               <?php /* Practice only. A ranked battle's "Back to the Arena" already
                        leaves, but in practice that button starts the next battle --
@@ -1125,6 +1287,10 @@ var CREW_SIZE = <?php echo DHCA_CREW_SIZE; ?>;
 /* Why the player cannot enter, if they cannot. The server decides this again on
    every start -- this only keeps the button honest. */
 var BLOCKED = <?php echo json_encode($block); ?>;
+/* Nobody is signed in. Everything ranked is unreachable for this visitor -- the
+   Crew picker, the rival list, resume, the ladder position -- and practice is
+   the whole page. */
+var GUEST = <?php echo $dhca_guest ? 'true' : 'false'; ?>;
 
 var S = null, battleId = 0, busy = false, drag = null, sfxOn = true;
 /* PRACTICE. The same board, the same engine, nothing at stake -- and no row
@@ -1809,6 +1975,34 @@ function sendMove(a, z){
 }
 
 /* ------------------------------------------------------------ the end ------ */
+/**
+ * The post X will open with. Written from what actually happened rather than a
+ * fixed line, because a result nobody can tell apart from anyone else's is not
+ * worth posting -- and the url is the public Arena, which now opens a playable
+ * battle for whoever taps it instead of a login prompt.
+ *
+ * No score to quote: this game ends in a Crew standing or not, so the boast is
+ * the margin and the chain. X wraps every url as 23 characters no matter its
+ * length, so the body is budgeted against that the way shareOnXUrl() does.
+ */
+function shareLink(won, standing){
+  var el = $('ecShare'); if (!el) return;
+  var body;
+  if (won) {
+    body = standing === 3
+      ? 'Swept the DHC Arena — took their whole Crew down without losing a Fighter.'
+      : 'Won in the DHC Arena with ' + standing + ' Fighter' + (standing===1?'':'s') + ' still standing.';
+  } else {
+    body = 'My Crew went down in the DHC Arena. Going again.';
+  }
+  if (S && S.stats && S.stats.best > 1) body += ' Best chain x' + S.stats.best + '.';
+  if (practice) body += ' (Practice)';
+  var tail = '\n\n@skulliance';
+  var limit = 280 - 24 - tail.length;
+  if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '…';
+  el.href = 'https://x.com/intent/post?text=' + encodeURIComponent(body + tail)
+          + '&url=' + encodeURIComponent('https://skulliance.io/staking/dhcarena.php');
+}
 function showEnd(res){
   var won = res.over === 'mine';
   var card = $('endcard');
@@ -1839,6 +2033,7 @@ function showEnd(res){
     + '<span><b>x'+S.stats.best+'</b>best chain</span>';
   $('ecAgain').textContent = practice ? 'Practice again' : 'Back to the Arena';
   $('ecLeave').hidden = !practice;
+  shareLink(won, standing.length);
   card.hidden = false;
   sfx(won ? 'win' : 'lose');
   logLine('big', won ? 'VICTORY — their Crew is down.' : 'DEFEAT — your Crew is down.');
@@ -2522,6 +2717,16 @@ paintMute();
 applyView();
 paintPicker();
 
+if (GUEST) {
+  /* STRAIGHT INTO A BATTLE. A visitor arriving from a shared link should be
+     playing, not reading a setup screen about a Crew they cannot pick -- so the
+     page opens the way the Practice button would, cinematic and all. The setup
+     screen is still behind it, and Leave goes back to it.
+     No resume: that endpoint is behind the login gate, and a guest has nothing
+     to resume by definition. */
+  $('aMsg').textContent = 'Drawing two Crews…';
+  startPractice(function(msg){ $('aMsg').textContent = msg; });
+} else {
 /* A battle left open in another tab, or on a phone that went to sleep, is still
    the one you owe a move to — the server will refuse a new one until it ends. */
 post({do:'resume'}, function(res){
@@ -2538,6 +2743,7 @@ post({do:'resume'}, function(res){
     if (window.console) console.error('arena resume', e);
   }
 }, function(){ /* nothing in progress is the normal case; stay quiet */ });
+}
 })();
 </script>
 

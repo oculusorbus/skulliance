@@ -33,6 +33,8 @@ Many games share the same **consumable items** used in Missions and Realms (succ
 
 ## Sharing Your Results
 
-Crypt Crawl, Crypt Conquest, Monstrocity, Skull Swap and Skull Racer all put a **Share** button on the end-of-game screen, next to the leaderboard link. One click opens X with your actual result already written - your crypt depth, your level, your score, your lap time - along with a link to that game's page, which brings its artwork along as a full-size image. The post tags **@skulliance**, so the main account sees it and can repost.
+Crypt Crawl, Crypt Conquest, Monstrocity, Skull Swap, Skull Racer and DHC Arena all put a **Share** button on the end-of-game screen, next to the leaderboard link. One click opens X with your actual result already written - your crypt depth, your level, your score, your lap time, how much of your Crew was left standing - along with a link to that game's page, which brings its artwork along as a full-size image. The post tags **@skulliance**, so the main account sees it and can repost.
+
+DHC Arena's link is worth a word of its own: it opens a **playable practice battle** for whoever taps it, signed in or not, rather than a sign-in prompt. See [[games-dhc-arena]].
 
 It's entirely optional, and nothing is posted without you reading it first and pressing Post yourself.

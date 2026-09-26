@@ -62,9 +62,33 @@ if ($page !== false && strpos($page, '<style>') !== false) {
    So this asserts PARENTAGE. .arena must hold all three grid children, and the
    end card must sit inside the board rather than beside it. */
 if (!empty($page)) {
-	// The PHP goes first: a <div> written inside a comment or one branch of a
-	// conditional is not markup, and counting it is how a checker lies to you.
-	$body = preg_replace('#<\?php[\s\S]*?\?>#', '', $page);
+	/* The PHP goes first: a <div> written inside a comment or one branch of a
+	   conditional is not markup, and counting it is how a checker lies to you.
+	   Stripping the TAGS alone is not enough once a template branches, because
+	   both halves of an if/else are left behind and concatenated -- two opening
+	   <div class="body"> against one close, which reads as broken nesting on
+	   markup that renders perfectly either way. So walk the conditionals and
+	   keep only the first branch of each: whichever branch is chosen, a template
+	   whose every branch is individually balanced stays balanced. */
+	$parts = preg_split('#(<\?php[\s\S]*?\?>)#', $page, -1, PREG_SPLIT_DELIM_CAPTURE);
+	$body = ''; $frames = array();
+	foreach ($parts as $part) {
+		if (strncmp($part, '<?php', 5) !== 0) {
+			$live = true;
+			foreach ($frames as $f) if (!$f) { $live = false; break; }
+			if ($live) $body .= $part;
+			continue;
+		}
+		$code = trim(substr($part, 5, -2));
+		if (preg_match('/^if\s*\(/', $code) && preg_match('/:\s*$/', $code)) {
+			$frames[] = true;                       // take the first branch
+		} elseif (preg_match('/^(else\s*:|elseif\s*\()/', $code)) {
+			if ($frames) $frames[count($frames)-1] = false;   // ...and drop the rest
+		} elseif (preg_match('/^endif\s*;/', $code)) {
+			array_pop($frames);
+		}
+	}
+	if ($frames) echo "   note: ".count($frames)." unclosed if() in the template\n";
 	$body = preg_replace('#<script[\s\S]*?</script>#', '', $body);
 	$body = preg_replace('#<style[\s\S]*?</style>#', '', $body);
 	$body = preg_replace('#<!--[\s\S]*?-->#', '', $body);

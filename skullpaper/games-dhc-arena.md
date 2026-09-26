@@ -14,6 +14,12 @@ Fighters into the Arena, and win more traits.
 The art is Maxingo's, the same trait set the assembler draws from. The Fighters
 on the board are your saved assemblies, layer for layer.
 
+**You do not need an account to play it.** Opened logged out, DHC Arena deals
+two random Crews and drops you straight into a practice battle — the real rules,
+the real engine, nothing simplified and nothing at stake. Signing in is what
+adds your own Fighters, a Crew you choose, rivals, traits and the ladder. The
+**Practice** section below has the detail.
+
 ---
 
 ## Getting in
@@ -80,6 +86,13 @@ It is the same engine that decides a ranked battle, not a simplified version, so
 what you learn in practice is true of the real thing. When a practice battle
 ends you can go straight into another or leave, and leaving costs nothing
 because nothing was at stake.
+
+**Practice is also the whole game to anyone who is not signed in.** A visitor
+arriving from a shared link lands in a battle rather than on a sign-in prompt:
+the page deals two Crews immediately, and the panels behind it explain how a
+battle works instead of showing a Crew picker there is nothing to put in. It
+touches no table, so there is nothing to store and no limit on how much of it
+anybody plays.
 
 **New battle** deals two fresh Crews at any point, without finishing the one you
 are in. The Crews are dealt at random, so the first thing you often want is a
