@@ -445,8 +445,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 /* The edge is static and tight: it marks the gem as armed without lighting
    anything up. A drop-shadow rather than a box-shadow so it follows the
    hexagon and the shield, which are clip-paths. */
+.arena-wrap .cell .bglow{position:absolute;inset:0;display:flex;
+  align-items:center;justify-content:center;pointer-events:none}
+.arena-wrap .cell.bomb .bglow{filter:drop-shadow(0 0 1.5px #fff)}
+.arena-wrap .cell.bomb2 .bglow{animation:bombHalo2 .9s ease-in-out infinite}
 .arena-wrap .cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45);
-  filter:drop-shadow(0 0 1.5px #fff);
   animation:bmb 1.5s ease-in-out infinite}
 /* THE GLOW HUGS THE GEM, NOT THE TILE.
    It lived on .cell for a while, which is a square whatever shape the gem is
@@ -466,7 +469,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   0%,100%{filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 9px var(--ochre))}
   50%    {filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 22px var(--ochre))}}
 .arena-wrap .cell.bomb2 .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45);
-  animation:bmb .9s ease-in-out infinite, bombHalo2 .9s ease-in-out infinite}
+  animation:bmb .9s ease-in-out infinite}
 @keyframes bmb{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 /* The cross bomb's blast shape, drawn on the gem: a bar across and a bar down. */
 /* The hand-drawn cross is gone. It existed because no emoji read as "row and
@@ -488,7 +491,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 @keyframes bmbDi{0%,100%{transform:rotate(45deg) scale(.82)}
   50%{transform:rotate(45deg) scale(.89)}}
 .arena-wrap .cell.di.bomb .g{animation:bmbDi 1.5s ease-in-out infinite}
-.arena-wrap .cell.di.bomb2 .g{animation:bmbDi .9s ease-in-out infinite, bombHalo2 .9s ease-in-out infinite}
+.arena-wrap .cell.di.bomb2 .g{animation:bmbDi .9s ease-in-out infinite}
 /* GOING OFF BEATS SITTING THERE. These come last and are written specific
    enough to outrank every idle bomb pulse above, including the diamond's,
    which carries an extra class and therefore outranked a plain .blast rule.
@@ -1342,7 +1345,19 @@ function paintBoard(dropAnim, settle){
     h += '<div class="cell '+SHAPE[v]+(bm?' bomb'+(bm===BOMB_BOARD?' bomb2':''):'')
        + (dropAnim?' drop':'')+(settle?' settle':'')+'" data-i="'+i+'"'
        + ' style="--gc:var(--g'+v+')" title="'+tip+'">'
-       + '<div class="g"><span class="em">'+face+'</span></div></div>';
+       /* A BOMB'S GEM GETS AN UNCLIPPED WRAPPER, and only a bomb's.
+          clip-path is applied AFTER filter on the same element, so a
+          drop-shadow on .g is clipped away by .g's own hexagon or shield --
+          which is why those two shapes never glowed however the glow was
+          written. The shadow has to be cast by an ancestor that is not
+          clipped, and it cannot be .cell, because .cell paints an opaque
+          square and the shadow would trace that instead of the gem.
+          Added per bomb rather than per cell: there are rarely more than a
+          handful, and the other forty-odd keep the markup they had. */
+       + (bm ? '<span class="bglow">' : '')
+       + '<div class="g"><span class="em">'+face+'</span></div>'
+       + (bm ? '</span>' : '')
+       + '</div>';
   }
   gridEl.innerHTML = h;
 }
