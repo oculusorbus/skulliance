@@ -468,6 +468,16 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .cell.clear .g{transform:scale(0);opacity:0}
 .arena-wrap .cell.drop{animation:drp .22s}
 .arena-wrap .cell.settle{animation:stl .16s}
+/* ...AND THE BOMB KEEPS PULSING THROUGH BOTH.
+   `animation` is one property, so .cell.drop simply replaced the board bomb's
+   glow pulse -- same specificity, declared later -- and .drop lands on every
+   cell on every repaint. The result was that the louder of the two bombs was
+   the only one that stopped moving, because the grenade's pulse sits on .g
+   where the drop never reaches and the detonator's sits on .cell where it
+   does. Composed rather than overridden: the cell can fall in AND go on
+   pulsing. */
+.arena-wrap .cell.drop.bomb2{animation:drp .22s, bmb2glow .9s ease-in-out infinite}
+.arena-wrap .cell.settle.bomb2{animation:stl .16s, bmb2glow .9s ease-in-out infinite}
 @keyframes stl{0%{transform:scale(1.06)}100%{transform:scale(1)}}
 @keyframes drp{0%{transform:translateY(-16px);opacity:.4}100%{transform:translateY(0);opacity:1}}
 /* ============================ THE ENTRANCE ==================================
