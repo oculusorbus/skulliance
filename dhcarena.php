@@ -1338,7 +1338,7 @@ function killAnim(f){
   var step = 80, n = 0;
   DEATH_ORDER.forEach(function(group){
     var found = false;
-    group.forEach(function(slot){
+    group.slots.forEach(function(slot){
       var img = e.querySelector('.art img[data-l="'+slot+'"]'); if (!img) return;
       found = true;
       // one delay and one spin for the whole group, so its pieces stay together
