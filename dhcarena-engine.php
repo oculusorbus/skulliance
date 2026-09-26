@@ -482,6 +482,13 @@ function dhca_resolve_group(&$b, $side, $grp, $chain, $scale) {
 			$rate = isset($f['charge']) ? $f['charge'] : 1;
 			$b[$side][$i]['surge'] = min(DHCA_SURGE_MAX, $b[$side][$i]['surge'] + $add * $rate);
 		}
+		/* The new meter, per Fighter, for the same reason: charge is what tells
+		   you a SURGE is coming, and it used to arrive a whole turn after the
+		   match that built it. Sent as values rather than a delta because each
+		   Fighter charges at its own rate and clamps at its own ceiling. */
+		$surges = array();
+		foreach (dhca_alive($b, $side) as $i => $f) $surges[$i] = $f['surge'];
+		$b['fx'][] = array('k'=>'charge','side'=>$side,'s'=>$surges);
 		$liveNow = dhca_alive($b, $side); $any = reset($liveNow);
 		$b['log'][] = '⚡ Charge x'.$grp['len'].' — now '.$any['surge'].'/'.DHCA_SURGE_MAX.'.';
 		foreach (dhca_alive($b, $side) as $i => $f) {
@@ -521,7 +528,12 @@ function dhca_resolve_group(&$b, $side, $grp, $chain, $scale) {
 			$base = $f['power'] * $k['dmg'] * $mult * ($crit ? DHCA_CRIT_MULT : 1)
 			      * (1 + ($grp['len'] - 3) * 0.30);
 			if (!empty($k['sunder']) && $tgt['shield'] > 0) {
-				$b[$foe][$ti]['shield'] = max(0, $b[$foe][$ti]['shield'] - (int)round($base * 0.5));
+				/* Announced, because the client mirrors these deltas to move the
+				   bars as the wave plays. Stripping shield silently left the one
+				   thing Break exists to do invisible until the end of the turn. */
+				$gone = min($tgt['shield'], (int)round($base * 0.5));
+				$b[$foe][$ti]['shield'] -= $gone;
+				if ($gone > 0) $b['fx'][] = array('k'=>'sunder','side'=>$foe,'i'=>$ti,'v'=>$gone);
 			}
 			$dealt = dhca_hurt($b, $foe, $ti, max(1, (int)round($base)), $crit);
 			$b[$side][$fi]['dealt'] += $dealt;

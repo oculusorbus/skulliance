@@ -141,6 +141,53 @@ printf("\n§4 balance: all-commons beat all-legendaries %.1f%% of %d  (target >=
 	$w/$M*100, $M, ($w/$M >= 0.35 ? "  PASS" : "  FAIL"));
 printf("  undecided: %d\n", $d);
 
+/* 2b. EVERY BAR-MOVING CHANGE ANNOUNCES ITSELF IN THE fx STREAM.
+   The client mirrors these deltas so health drops on the hit that causes it
+   rather than in one lump at the end of the turn, and then finish() hard-assigns
+   the server's state over the top. So a change to hp, shield, surge or ko with
+   NO fx event is not a missing effect -- it is a visible snap at the end of the
+   turn, exactly the lag this replaced. Two already existed when this was
+   written: Break stripping shield, and Charge accruing.
+   Replays the stream against a pre-turn snapshot and demands it land on the
+   post-turn truth, which is also what proves finish() never jumps. */
+$div = 0; $checked = 0;
+for ($g = 0; $g < 12; $g++) {
+	$sd = $g * 7 + 3;
+	$b = dhca_new_battle(crew($rarity,null,$sd), crew($rarity,null,$sd), $names, $rarity, 900+$g);
+	$guard = 0;
+	while ($b['over'] === null && $guard++ < 400) {
+		$pre = array();
+		foreach (array('mine','foes') as $sX) foreach ($b[$sX] as $i => $f)
+			$pre[$sX][$i] = array($f['hp'], $f['shield'], $f['surge'], $f['ko']?1:0);
+		$mv = dhca_ai_move($b);
+		if (!$mv) { dhca_fill_board($b); $mv = dhca_ai_move($b); if (!$mv) break; }
+		if (!dhca_play($b, $b['turn'], $mv[0], $mv[1])) break;
+		$sim = $pre;
+		foreach ($b['fx'] as $e) {
+			$k = $e['k'];
+			if ($k==='hit')      $sim[$e['side']][$e['i']][0] = max(0, $sim[$e['side']][$e['i']][0] - $e['v']);
+			elseif ($k==='heal') $sim[$e['side']][$e['i']][0] += $e['v'];
+			elseif ($k==='shielded'||$k==='sunder')
+			                     $sim[$e['side']][$e['i']][1] = max(0, $sim[$e['side']][$e['i']][1] - $e['v']);
+			elseif ($k==='shield') $sim[$e['side']][$e['i']][1] += $e['v'];
+			elseif ($k==='charge') foreach ($e['s'] as $ci => $cv) $sim[$e['side']][$ci][2] = $cv;
+			elseif ($k==='erupt')  $sim[$e['side']][$e['i']][2] = 0;
+			elseif ($k==='ko')     $sim[$e['side']][$e['i']][3] = 1;
+		}
+		foreach (array('mine','foes') as $sX) foreach ($b[$sX] as $i => $f) {
+			$checked++;
+			if ($sim[$sX][$i][0] != $f['hp'] || $sim[$sX][$i][1] != $f['shield']
+			 || $sim[$sX][$i][2] != $f['surge'] || $sim[$sX][$i][3] != ($f['ko']?1:0)) {
+				if ($div < 3) printf("   %s#%d hp %d/%d shield %d/%d surge %d/%d ko %d/%d\n",
+					$sX, $i, $sim[$sX][$i][0], $f['hp'], $sim[$sX][$i][1], $f['shield'],
+					$sim[$sX][$i][2], $f['surge'], $sim[$sX][$i][3], $f['ko']?1:0);
+				$div++;
+			}
+		}
+	}
+}
+printf("fx covers every bar: %d divergences over %d fighter-turns (want 0)\n", $div, $checked);
+
 /* 3. determinism -- the same seed and the same moves must give the same result */
 $seed = 4242;
 $mt = crew($rarity,null,$seed); $ft = crew($rarity,null,$seed);

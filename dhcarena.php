@@ -230,11 +230,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .tok .nm{font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .arena-wrap .tok .kitn{font-size:8px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .arena-wrap .hpwrap{position:relative;height:6px;background:#0b0d11;border-radius:2px;overflow:hidden;margin-top:3px}
+/* .18s, not .4s. The bar now moves on the hit itself, and a wave's hold is
+   190ms -- at .4s it was still travelling when the next link of the cascade
+   cleared, so every chunk blurred into the one after it and the health read as
+   one slow slide arriving late. Short enough to land inside its own beat. */
 .arena-wrap .hp{position:absolute;inset:0;background:var(--teal);transform-origin:left;
-  transition:transform .4s cubic-bezier(.2,.7,.3,1)}
+  transition:transform .18s cubic-bezier(.2,.7,.3,1)}
 .arena-wrap .hp.low{background:var(--ochre)}
 .arena-wrap .hp.crit{background:var(--blood)}
-.arena-wrap .sh{position:absolute;top:0;left:0;height:100%;background:var(--shield);opacity:.8;transition:width .4s}
+.arena-wrap .sh{position:absolute;top:0;left:0;height:100%;background:var(--shield);opacity:.8;transition:width .18s}
 /* Fixed height and no wrapping. This line gains "sh 24" and "charge 7/10" the
    moment Shield or Charge match, and on a phone-width token that wrapped to a
    second line -- so the token grew, the row shoved, and the Crew jolted. On
@@ -1298,29 +1302,37 @@ function buildTeams(){
   $('foeTeam').innerHTML = S.foes.slice().sort(byRank).map(function(f){ return tokHtml(f,false); }).join('');
   $('myTeam').innerHTML  = S.mine.slice().sort(byRank).map(function(f){ return tokHtml(f,true);  }).join('');
 }
-/* Patch only what moves. Art, name, rank and gem never change mid-battle. */
+/* Patch only what moves. Art, name, rank and gem never change mid-battle.
+   Split per Fighter so the timeline can repaint ONE of them the instant its own
+   hit plays, rather than every bar waiting for the end of the turn. */
+function paintTok(f){
+  var e = elFor(f); if (!e) return;
+  if (f.ko) e.classList.add('ko'); else e.classList.remove('ko');
+  var pct = f.hp / f.maxHp, bar = e.querySelector('.hp');
+  if (bar) { bar.style.transform = 'scaleX('+pct+')';
+             bar.className = 'hp'+(pct<=.25?' crit':pct<=.55?' low':''); }
+  /* Same threshold the bar uses, so the pulse and the red never disagree --
+     and never at zero, or the killing blow flashes "at risk" for a frame on the
+     way down, now that the bar empties on the hit rather than at the end. */
+  e.classList.toggle('crit', !f.ko && pct > 0 && pct <= .25);
+  var sh = e.querySelector('.sh');
+  if (sh) sh.style.width = Math.min(100, (f.shield/f.maxHp)*100)+'%';
+  var n = e.querySelector('.hpn');
+  if (n) n.innerHTML = '<span>'+f.hp+'/'+f.maxHp+'</span><span>'
+    + (f.shield>0 ? '🛡 '+f.shield+' ' : '') + (f.bleed>0 ? '🗡' : '') + '</span>';
+}
+function paintCharge(sd){
+  var live = S[sd].filter(function(f){ return !f.ko; });
+  var v = live.length ? Math.max.apply(null, live.map(function(f){ return f.surge; })) : 0;
+  var el = $(sd === 'mine' ? 'chgMine' : 'chgFoes'); if (!el) return;
+  el.className = 'chg'+(v>=10?' full':'');
+  el.innerHTML = '⚡ <i><b style="width:'+(v/10*100)+'%"></b></i>'+v+'/10';
+  el.title = v>=10 ? 'Charged — the next Charge match erupts' : 'Charge: '+v+' of 10';
+}
 function paintTeams(){
   ['mine','foes'].forEach(function(sd){
-    S[sd].forEach(function(f){
-      var e = elFor(f); if (!e) return;
-      if (f.ko) e.classList.add('ko'); else e.classList.remove('ko');
-      var pct = f.hp / f.maxHp, bar = e.querySelector('.hp');
-      if (bar) { bar.style.transform = 'scaleX('+pct+')';
-                 bar.className = 'hp'+(pct<=.25?' crit':pct<=.55?' low':''); }
-      // same threshold the bar uses, so the pulse and the red never disagree
-      e.classList.toggle('crit', !f.ko && pct <= .25);
-      var sh = e.querySelector('.sh');
-      if (sh) sh.style.width = Math.min(100, (f.shield/f.maxHp)*100)+'%';
-      var n = e.querySelector('.hpn');
-      if (n) n.innerHTML = '<span>'+f.hp+'/'+f.maxHp+'</span><span>'
-        + (f.shield>0 ? '🛡 '+f.shield+' ' : '') + (f.bleed>0 ? '🗡' : '') + '</span>';
-    });
-    var live = S[sd].filter(function(f){ return !f.ko; });
-    var v = live.length ? Math.max.apply(null, live.map(function(f){ return f.surge; })) : 0;
-    var el = $(sd === 'mine' ? 'chgMine' : 'chgFoes'); if (!el) return;
-    el.className = 'chg'+(v>=10?' full':'');
-    el.innerHTML = '⚡ <i><b style="width:'+(v/10*100)+'%"></b></i>'+v+'/10';
-    el.title = v>=10 ? 'Charged — the next Charge match erupts' : 'Charge: '+v+' of 10';
+    S[sd].forEach(paintTok);
+    paintCharge(sd);
   });
 }
 function paintBoard(dropAnim, settle){
@@ -1564,21 +1576,59 @@ function playTimeline(fx, state, done){
       pop(t, '-'+e.v, e.crit ? 'big' : '');
       shakeTok(t, !!e.crit);
       layerAnim(t, ['head','headgear'], 'jolt');   // together, or the skull slides out
+      if (t) { t.hp = Math.max(0, t.hp - e.v); paintTok(t); }
       return 0;
     }
-    case 'shielded': pop(fighterAt(e.side, e.i), '-'+e.v+' shield', 'heal'); return 0;
-    case 'heal':     pop(fighterAt(e.side, e.i), '+'+e.v, 'heal');
-                     flashTok(fighterAt(e.side, e.i), 'heal'); return 0;
-    case 'shield':   flashTok(fighterAt(e.side, e.i), 'shield');
-                     if (e.i === 0) sfx('shield'); return 0;
+    case 'shielded': {
+      var t2 = fighterAt(e.side, e.i);
+      pop(t2, '-'+e.v+' shield', 'heal');
+      if (t2) { t2.shield = Math.max(0, t2.shield - e.v); paintTok(t2); }
+      return 0;
+    }
+    case 'sunder': {
+      /* Break shattering shield. Its own event rather than a 'shielded', because
+         nothing was absorbed -- the shield was taken off before the hit lands. */
+      var t3 = fighterAt(e.side, e.i);
+      pop(t3, '\u2715 '+e.v+' shield', '');
+      if (t3) { t3.shield = Math.max(0, t3.shield - e.v); paintTok(t3); }
+      return 0;
+    }
+    case 'heal': {
+      var t4 = fighterAt(e.side, e.i);
+      pop(t4, '+'+e.v, 'heal'); flashTok(t4, 'heal');
+      if (t4) { t4.hp = Math.min(t4.maxHp, t4.hp + e.v); paintTok(t4); }
+      return 0;
+    }
+    case 'shield': {
+      var t5 = fighterAt(e.side, e.i);
+      flashTok(t5, 'shield');
+      if (t5) { t5.shield += e.v; paintTok(t5); }
+      if (e.i === 0) sfx('shield');
+      return 0;
+    }
+    case 'charge':
+      /* Values, not a delta: each Fighter charges at its own rate. */
+      for (var ci in (e.s||{})) {
+        var cf = fighterAt(e.side, +ci); if (cf) cf.surge = e.s[ci];
+      }
+      paintCharge(e.side);
+      return 0;
+
     case 'erupt': {
       var f = fighterAt(e.side, e.i);
       actTok(f); pop(f, 'SURGE!', 'big'); sfx('erupt');
+      if (f) { f.surge = 0; paintCharge(e.side); }   // spent, and the meter says so
       return 0;
     }
-    case 'ko':
-      sfx('ko'); killAnim(fighterAt(e.side, e.i));
+    case 'ko': {
+      sfx('ko');
+      var kf = fighterAt(e.side, e.i);
+      killAnim(kf);
+      // .ko while .dying is a case the stylesheet already handles, so the
+      // collapse plays at full opacity and the grey only lands after it
+      if (kf) { kf.ko = true; paintTok(kf); paintCharge(e.side); }
       return 0;
+    }
 
     case 'boom':
       (e.cells||[]).forEach(function(j){
