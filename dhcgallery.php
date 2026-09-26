@@ -171,6 +171,11 @@ include 'header.php';
   opacity:.72;flex-wrap:wrap;font-variant-numeric:tabular-nums}
 .dhcg-stats .s-kit{opacity:.8;margin-left:auto;white-space:nowrap;overflow:hidden;
   text-overflow:ellipsis;min-width:0}
+/* Masked, not an <img>, so it takes the colour of whatever it sits in -- the
+   filter chip when active, the card label when muted. */
+.dhcg-ico{display:inline-block;width:12px;height:12px;vertical-align:-2px;
+  background-color:currentColor;
+  -webkit-mask:var(--ico) center/contain no-repeat; mask:var(--ico) center/contain no-repeat}
 .dhcg-card:focus-visible{outline:2px solid var(--ochre,#00c8a0);outline-offset:1px}
 .dhcg-art{position:relative;aspect-ratio:1;background:var(--panel2,#0d1e2e);overflow:hidden}
 .dhcg-art img.layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
@@ -272,8 +277,9 @@ include 'header.php';
             if (empty($dhcg_kit_counts[$kid])) continue; ?>
       <a class="<?php echo $dhcg_kit === $kid ? 'on' : ''; ?>"
          title="<?php echo htmlspecialchars($kit['note']); ?>"
-         href="<?php echo htmlspecialchars(dhcg_url(array('kit' => $kid))); ?>"><?php
-         echo $kit['emoji'] . ' ' . htmlspecialchars($kit['name']) . ' ' . $dhcg_kit_counts[$kid]; ?></a>
+         href="<?php echo htmlspecialchars(dhcg_url(array('kit' => $kid))); ?>"><i
+         class="dhcg-ico" style="--ico:url(icons/<?php echo htmlspecialchars($kit['icon']); ?>.png)"></i> <?php
+         echo htmlspecialchars($kit['name']) . ' ' . $dhcg_kit_counts[$kid]; ?></a>
     <?php endforeach; ?>
 
     <span class="sep"></span>
@@ -351,7 +357,9 @@ include 'header.php';
              . ' · ' . $f['hp'] . ' health, ' . $f['pow'] . ' power'); ?>">
         <span class="s-hp">♥ <?php echo (int)$f['hp']; ?></span>
         <span class="s-pw">⚔ <?php echo (int)$f['pow']; ?></span>
-        <span class="s-kit"><?php echo $f['kit']['emoji']; ?> <?php echo htmlspecialchars($f['kit']['name']); ?></span>
+        <span class="s-kit"><i class="dhcg-ico" style="--ico:url(icons/<?php
+          echo htmlspecialchars($f['kit']['icon']); ?>.png)"></i> <?php
+          echo htmlspecialchars($f['kit']['name']); ?></span>
       </div>
       <?php /* Below the art, never over it -- the whole point of the grid is
                seeing Maxingo's work, and a badge sat on the character was

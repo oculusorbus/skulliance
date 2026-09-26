@@ -110,16 +110,29 @@ define('DHCA_BOMB_BOARD',   2);
 
 /* The eight weapon kits. A Fighter's weapon decides what its gem DOES, which is
    the trait economy reaching into the puzzle. */
+/**
+ * The eight fighting styles.
+ *
+ * EACH CARRIES AN ICON as well as an emoji. The board draws the icon -- the
+ * platform's own white line set, the one Monstrocity and Crypt Crawl already
+ * use -- because emoji are the one thing on this page that renders differently
+ * on every device. The cross bomb is already a hand-drawn CSS shape for exactly
+ * that reason: no emoji read as "row and column" at gem size on all three
+ * platforms.
+ *
+ * The emoji stays as the fallback and as the thing written into log lines and
+ * Discord posts, where an image cannot go.
+ */
 function dhca_kits() {
 	return array(
-		array('id'=>'heavy',  'emoji'=>'🔨','name'=>'Smash', 'dmg'=>1.55,'note'=>'one big hit'),
-		array('id'=>'cleave', 'emoji'=>'🪓','name'=>'Cleave','dmg'=>0.80,'cleave'=>1,'note'=>'hits whole rank'),
-		array('id'=>'drain',  'emoji'=>'🩸','name'=>'Drain', 'dmg'=>1.05,'drain'=>0.45,'note'=>'hits/steals health'),
-		array('id'=>'sunder', 'emoji'=>'⛏️','name'=>'Break', 'dmg'=>0.95,'sunder'=>1,'note'=>'smashes shields'),
-		array('id'=>'precise','emoji'=>'🎯','name'=>'Snipe', 'dmg'=>1.15,'crit'=>0.28,'note'=>'often hits harder'),
-		array('id'=>'volley', 'emoji'=>'🏹','name'=>'Volley','dmg'=>0.62,'all'=>1,'note'=>'weak hit to all'),
-		array('id'=>'brutal', 'emoji'=>'🗡️','name'=>'Bleed', 'dmg'=>1.30,'bleed'=>1,'note'=>'hurts for 3 rounds'),
-		array('id'=>'quick',  'emoji'=>'⚔️','name'=>'Double','dmg'=>0.85,'echo'=>1,'note'=>'strikes twice'),
+		array('id'=>'heavy',  'emoji'=>'🔨','icon'=>'fist',            'name'=>'Smash', 'dmg'=>1.55,'note'=>'one big hit'),
+		array('id'=>'cleave', 'emoji'=>'🪓','icon'=>'tactical-katana', 'name'=>'Cleave','dmg'=>0.80,'cleave'=>1,'note'=>'hits whole rank'),
+		array('id'=>'drain',  'emoji'=>'🩸','icon'=>'blood',           'name'=>'Drain', 'dmg'=>1.05,'drain'=>0.45,'note'=>'hits/steals health'),
+		array('id'=>'sunder', 'emoji'=>'⛏️','icon'=>'bone',            'name'=>'Break', 'dmg'=>0.95,'sunder'=>1,'note'=>'smashes shields'),
+		array('id'=>'precise','emoji'=>'🎯','icon'=>'sniper-rifle',    'name'=>'Snipe', 'dmg'=>1.15,'crit'=>0.28,'note'=>'often hits harder'),
+		array('id'=>'volley', 'emoji'=>'🏹','icon'=>'machine-gun',     'name'=>'Volley','dmg'=>0.62,'all'=>1,'note'=>'weak hit to all'),
+		array('id'=>'brutal', 'emoji'=>'🗡️','icon'=>'melee',           'name'=>'Bleed', 'dmg'=>1.30,'bleed'=>1,'note'=>'hurts for 3 rounds'),
+		array('id'=>'quick',  'emoji'=>'⚔️','icon'=>'first-attack',    'name'=>'Double','dmg'=>0.85,'echo'=>1,'note'=>'strikes twice'),
 	);
 }
 function dhca_terrains() {
@@ -890,6 +903,7 @@ function dhca_public(&$b) {
 	$slim = function($f) {
 		return array('uid'=>$f['uid'],'name'=>$f['name'],'traits'=>$f['traits'],
 			'kit'=>array('id'=>$f['kit']['id'],'emoji'=>$f['kit']['emoji'],
+			             'icon'=>isset($f['kit']['icon']) ? $f['kit']['icon'] : '',
 			             'name'=>$f['kit']['name'],'note'=>$f['kit']['note']),
 			'rank'=>$f['rank'],'hp'=>$f['hp'],'maxHp'=>$f['maxHp'],
 			'shield'=>$f['shield'],'surge'=>round($f['surge'], 1),

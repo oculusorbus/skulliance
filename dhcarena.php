@@ -413,6 +413,23 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   display:flex;align-items:center;justify-content:center;width:100%;height:100%}
 /* the rotated diamond must not rotate its emoji with it */
 .arena-wrap .cell.di .g .em{transform:rotate(-45deg)}
+/* ONE RULE FOR EVERY ICON. A mask rather than an <img> src, so the artwork is
+   tinted by currentColor and inherits whatever the thing around it is doing --
+   a legend chip greys out with .gone, a Fighter's gem takes the rank colour,
+   and a knocked-out token desaturates -- none of which an <img> would follow.
+   The set is white on alpha, so masking loses nothing. */
+.arena-wrap .ico{display:inline-block;width:1.15em;height:1.15em;vertical-align:-.2em;
+  background-color:currentColor;
+  -webkit-mask:var(--ico) center/contain no-repeat;
+          mask:var(--ico) center/contain no-repeat}
+/* On the board the glyph is the whole cell's face, so it fills the gem rather
+   than sitting on a text baseline. */
+.arena-wrap .cell .g .ico{width:58%;height:58%;vertical-align:0;color:#fff;
+  filter:drop-shadow(0 1px 2px rgba(0,0,0,.55))}
+.arena-wrap .cell.bomb .g .ico{width:64%;height:64%}
+.arena-wrap .lchip b .ico{width:15px;height:15px;vertical-align:-3px}
+.arena-wrap .mygem .ico{width:12px;height:12px;vertical-align:-1px}
+.arena-wrap .fc-gem b .ico{width:13px;height:13px;vertical-align:-2px}
 /* A bomb keeps its colour -- you detonate it by matching that colour -- but it
    has to be unmistakable on a busy board, so it pulses and wears a ring. */
 .arena-wrap .cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px var(--bone),0 0 12px var(--gc);
@@ -689,7 +706,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   background:rgba(0,200,160,.08);opacity:1}
 .arena-wrap .a-card .st{display:flex;align-items:center;gap:6px;font-size:9.5px;opacity:.75;
   font-variant-numeric:tabular-nums;margin-top:2px}
-.arena-wrap .a-card .st em{font-style:normal;margin-left:auto}
+.arena-wrap .a-card .st em{font-style:normal;margin-left:auto;width:13px;height:13px}
+.arena-wrap .a-tools button .ico{width:13px;height:13px;vertical-align:-2px}
 .arena-wrap .a-pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:7px}
 .arena-wrap .a-card{border:1px solid var(--line);border-radius:3px;padding:5px;
   cursor:pointer;position:relative;text-align:left}
@@ -838,7 +856,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <?php foreach ($allKits as $k): ?>
             <button type="button" data-kit="<?php echo htmlspecialchars($k['id']); ?>"
               title="<?php echo htmlspecialchars($k['note']); ?>"><?php
-              echo $k['emoji'].' '.htmlspecialchars($k['name']).' '.$kitCount[$k['id']]; ?></button>
+              echo '<i class="ico" style="--ico:url(icons/'.htmlspecialchars($k['icon']).'.png)"></i> '
+                 . htmlspecialchars($k['name']).' '.$kitCount[$k['id']]; ?></button>
           <?php endforeach; ?>
         <?php endif; ?>
       </div>
@@ -871,7 +890,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           </div>
           <div class="nm"><?php echo htmlspecialchars($f['display']); ?></div>
           <div class="st"><span>♥ <?php echo (int)$f['hp']; ?></span><span>⚔ <?php echo (int)$f['pow']; ?></span>
-            <em><?php echo $f['kit']['emoji']; ?></em></div>
+            <em class="ico" style="--ico:url(icons/<?php echo htmlspecialchars($f['kit']['icon']); ?>.png)"></em></div>
           <div class="wl"><?php echo number_format((int)$f['rarity_score']); ?> pts ·
             <?php echo (int)$f['wins']; ?>W/<?php echo (int)$f['losses']; ?>L</div>
         </div>
@@ -1032,8 +1051,18 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 var ART = <?php echo json_encode($ART); ?>;
 var N = 7, BOMB_CROSS = 1, BOMB_BOARD = 2;
 var SHAPE = ['','sq','di','shield','hex'];
-var SHARED = {3:{emoji:'🛡️',name:'Shield',note:'shields crew'},
-              4:{emoji:'⚡',name:'Charge',note:'erupts at 10'}};
+var SHARED = {3:{emoji:'🛡️',icon:'titanium-armor',name:'Shield',note:'shields crew'},
+              4:{emoji:'⚡',icon:'special-attack', name:'Charge',note:'erupts at 10'}};
+/* THE PLATFORM'S OWN ICONS, not emoji. Every one is white line art on alpha --
+   the same set Monstrocity and Crypt Crawl draw from -- so the board reads as
+   one thing instead of as eight vendors' emoji fonts. Emoji were also the one
+   element here that looked different on every device; the cross bomb has been
+   a hand-drawn CSS shape from the start for exactly that reason.
+   Drawn as a BACKGROUND on the glyph span that already exists, never as an
+   <img>: the board rewrites all 49 cells on every drop, and adding an element
+   per cell would put 49 new nodes through that on every cascade. */
+var ICON_BASE = 'icons/';
+function iconUrl(name){ return ICON_BASE + name + '.png'; }
 var CREW_SIZE = <?php echo DHCA_CREW_SIZE; ?>;
 /* Why the player cannot enter, if they cannot. The server decides this again on
    every start -- this only keeps the button honest. */
@@ -1201,10 +1230,11 @@ function tokHtml(f, mine){
     + '<div class="danger"></div>'
     + '<div class="rk"><span>'+rank+'</span>'
     +   '<span class="mygem" title="'+(mine?'your':'their')+' '+rank+' — '+f.kit.name+', '+f.kit.note+'">'
-    +   f.kit.emoji+'</span></div>'
+    +   (f.kit.icon ? '<i class="ico" style="--ico:url('+iconUrl(f.kit.icon)+')"></i>' : f.kit.emoji)
+    +   '</span></div>'
     + '<div class="art">'+layers+'</div>'
     + '<div class="nm">'+f.name+'</div>'
-    + '<div class="kitn" title="'+f.kit.name+' — '+f.kit.note+'">'+(mine?f.kit.emoji+' ':'')+f.kit.note+'</div>'
+    + '<div class="kitn" title="'+f.kit.name+' — '+f.kit.note+'">'+f.kit.note+'</div>'
     + '<div class="hpwrap"><div class="hp"></div><div class="sh"></div></div>'
     + '<div class="hpn"><span></span><span></span></div>'
     + '</div>';
@@ -1244,7 +1274,10 @@ function paintBoard(dropAnim, settle){
   var h = '', i;
   for (i=0; i<N*N; i++) {
     var v = S.board[i], bm = S.bomb ? Math.abs(S.bomb[i]||0) : 0, gi = gemInfo('mine', v);
-    var face = bm === BOMB_BOARD ? '💣' : bm === BOMB_CROSS ? '<i class="cross"></i>' : gi.emoji;
+    var face = bm === BOMB_BOARD
+             ? '<span class="ico" style="--ico:url(' + iconUrl('grenade') + ')"></span>'
+             : bm === BOMB_CROSS ? '<i class="cross"></i>'
+             : (gi.icon ? '<span class="ico" style="--ico:url(' + iconUrl(gi.icon) + ')"></span>' : gi.emoji);
     var tip  = bm === BOMB_BOARD ? 'Board bomb — clears everything. Match its colour to set it off.'
              : bm === BOMB_CROSS ? 'Bomb — clears its row and column. Match its colour to set it off.'
              : gi.name+' — '+gi.note;
@@ -1260,16 +1293,17 @@ function paintChrome(){
   if (tb && S.terrainBg) tb.style.backgroundImage = 'url("'+artUrl('background', S.terrainBg, 1000)+'")';
   /* Effect first, always: the legend answers "what does this gem do", and it is
      the only place that answer lives once the board is full. */
-  function chip(colour, emoji, does, dead){
-    return '<span class="lchip'+(dead?' gone':'')+'" style="--lc:'+colour+'"><b>'+emoji+'</b>'+does+'</span>';
+  function chip(colour, icon, emoji, does, dead){
+    var face = icon ? '<i class="ico" style="--ico:url('+iconUrl(icon)+')"></i>' : emoji;
+    return '<span class="lchip'+(dead?' gone':'')+'" style="--lc:'+colour+'"><b>'+face+'</b>'+does+'</span>';
   }
   var lg = [0,1,2].map(function(i){
     var f = null;
     S.mine.forEach(function(x){ if (x.rank === i) f = x; });
-    return f ? chip('var(--g'+i+')', f.kit.emoji, f.kit.note, f.ko) : '';
+    return f ? chip('var(--g'+i+')', f.kit.icon, f.kit.emoji, f.kit.note, f.ko) : '';
   }).join('')
-  + chip('var(--g3)','🛡️','shields crew')
-  + chip('var(--g4)','⚡','erupts at 10');
+  + chip('var(--g3)', SHARED[3].icon, SHARED[3].emoji, 'shields crew')
+  + chip('var(--g4)', SHARED[4].icon, SHARED[4].emoji, 'erupts at 10');
   $('legend').innerHTML = lg; $('legendM').innerHTML = lg;
   var reach = '<b>3</b> front · <b>4</b> mid · <b>5+</b> back · cascades multiply'
     /* The arena's name sits under the board all battle, and until now it was
@@ -2023,7 +2057,9 @@ function openCard(f, mine){
     +   '<div class="fc-id">'
     +     '<h3>'+f.name+'</h3>'
     +     '<div class="fc-who">'+(mine?'your':'enemy')+' '+rank+' rank</div>'
-    +     '<div class="fc-gem" style="--gemc:var(--g'+f.rank+')"><b>'+f.kit.emoji+'</b>'
+    +     '<div class="fc-gem" style="--gemc:var(--g'+f.rank+')"><b>'
+    +       (f.kit.icon ? '<i class="ico" style="--ico:url('+iconUrl(f.kit.icon)+')"></i>' : f.kit.emoji)
+    +     '</b>'
     +       'matching this gem makes them act</div>'
     +     '<div class="fc-kit"><b>'+f.kit.name+'</b> — '+f.kit.note+'</div>'
     +   '</div>'
