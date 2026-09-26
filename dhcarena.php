@@ -548,7 +548,17 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   align-items:center;justify-content:center;gap:9px;text-align:center;
   background:rgba(13,15,19,.86);backdrop-filter:blur(3px);animation:ecIn .45s ease-out}
 @keyframes ecIn{0%{opacity:0}100%{opacity:1}}
-.arena-wrap .ec-title{font-size:30px;letter-spacing:.14em;text-transform:uppercase;font-weight:700}
+.arena-wrap .ec-title{font-size:clamp(20px,5vw,30px);letter-spacing:.14em;
+  text-transform:uppercase;font-weight:700}
+/* The card is the board's size now rather than the page's, so on a phone it has
+   a couple of hundred pixels less to work with and the text has to give. */
+.arena-wrap .endcard{padding:10px}
+@media (max-width:1000px){
+  .arena-wrap .ec-sub{font-size:11px;max-width:92%}
+  .arena-wrap .ec-stats{gap:10px;font-size:9px}
+  .arena-wrap .ec-stats b{font-size:14px}
+  .arena-wrap .endcard{gap:7px}
+}
 .arena-wrap .endcard.win .ec-title{color:var(--teal);text-shadow:0 0 26px rgba(0,200,160,.45)}
 .arena-wrap .endcard.lose .ec-title{color:var(--blood);text-shadow:0 0 26px rgba(224,70,107,.4)}
 .arena-wrap .ec-sub{font-size:12px;color:var(--bone);opacity:.85;max-width:74%}
@@ -923,7 +933,35 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <div class="boardwrap">
           <div class="combo" id="combo"></div>
           <div class="grid" id="grid"></div>
-        </div>
+          <?php /* INSIDE the board, not beside it. The card is
+                   position:absolute;inset:0, and as a sibling of .arena it had
+                   no positioned ancestor at all -- so it anchored to the top of
+                   the DOCUMENT and covered the first screenful of it. On a
+                   desktop the battle happens to be about one screen tall so it
+                   looked deliberate; on a phone the layout stacks, and the
+                   first screenful is the enemy Crew and the board, which is
+                   exactly what you want to look at when a battle ends.
+                   .boardwrap is already position:relative for the combo banner,
+                   so the card now covers the board and nothing else. */ ?>
+          <div class="endcard" id="endcard" hidden>
+            <div class="ec-title" id="ecTitle"></div>
+            <div class="ec-sub" id="ecSub"></div>
+            <div class="ec-stats" id="ecStats"></div>
+            <?php /* NO SHARE BUTTON YET, deliberately. dhcarena.php is behind
+                     skulliance.php, so the link in a post is a login prompt for
+                     everyone who is not already a member and X cannot scrape a card
+                     off it either -- the share would cost reach rather than earn it.
+                     It comes back pointed at the public page, once there is one. */ ?>
+            <div class="ec-acts">
+              <button class="btn go" id="ecAgain">Back to the Arena</button>
+              <?php /* Practice only. A ranked battle's "Back to the Arena" already
+                       leaves, but in practice that button starts the next battle --
+                       which left the player with no way out of practice at all except
+                       the Leave button up in the toolbar, above the card they are
+                       looking at and easy to miss. */ ?>
+              <button class="btn" id="ecLeave" hidden>Leave practice</button>
+            </div>
+          </div>
         <div class="reach deskonly" id="reach"></div>
         <div class="legend deskonly" id="legend"></div>
       </div>
@@ -933,24 +971,6 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
     </div>
     <div class="reach mobonly" id="reachM"></div>
     <div class="legend mobonly" id="legendM"></div>
-    <div class="endcard" id="endcard" hidden>
-      <div class="ec-title" id="ecTitle"></div>
-      <div class="ec-sub" id="ecSub"></div>
-      <div class="ec-stats" id="ecStats"></div>
-      <?php /* NO SHARE BUTTON YET, deliberately. dhcarena.php is behind
-               skulliance.php, so the link in a post is a login prompt for
-               everyone who is not already a member and X cannot scrape a card
-               off it either -- the share would cost reach rather than earn it.
-               It comes back pointed at the public page, once there is one. */ ?>
-      <div class="ec-acts">
-        <button class="btn go" id="ecAgain">Back to the Arena</button>
-        <?php /* Practice only. A ranked battle's "Back to the Arena" already
-                 leaves, but in practice that button starts the next battle --
-                 which left the player with no way out of practice at all except
-                 the Leave button up in the toolbar, above the card they are
-                 looking at and easy to miss. */ ?>
-        <button class="btn" id="ecLeave" hidden>Leave practice</button>
-      </div>
     </div>
     <details class="logbox" open><summary>Battle log</summary><div id="log"></div></details>
     <div class="fcard" id="fcard" hidden>
