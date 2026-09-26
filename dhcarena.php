@@ -255,9 +255,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    whole point is watching it happen. Three classes beats two, so this wins
    over .tok.ko until the sequence finishes. */
 /* Full colour WHILE it comes apart -- you should watch a Fighter fall in the
-   art it was built from -- and then the grey settles over what is left. The
-   pieces are gone by then; what greys out is the background it fell on, its
-   name and its empty health bar. */
+   art it was built from -- and then the grey settles over the pieces where
+   they landed. */
 .arena-wrap .tok.ko.dying{opacity:1;filter:none}
 .arena-wrap .tok.dying{animation:deathShake .55s}
 @keyframes deathShake{0%{transform:translateX(0)}12%{transform:translateX(-4%) rotate(-1.5deg)}30%{transform:translateX(3.5%) rotate(1.2deg)}52%{transform:translateX(-2.5%) rotate(-.8deg)}74%{transform:translateX(1.5%)}100%{transform:translateX(0)}}
@@ -274,14 +273,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 @keyframes snuff{0%{opacity:1;transform:none}100%{opacity:0;transform:scale(1.12)}}
 .arena-wrap .tok .art img.dis{animation:disA .62s cubic-bezier(.3,0,.7,1) forwards}
 .arena-wrap .tok .art img.dis.alt{animation-name:disB}
-/* NO FADE. The pieces drop out of frame, they do not dissolve -- a Fighter
-   coming apart should look like it fell to bits, and half-transparent artwork
-   just looks like a rendering fault. They travel far enough to leave the frame
-   instead, which .art already clips. */
-@keyframes disA{0%{transform:none}16%{transform:translateY(-4%) scale(1.04)}
-  100%{transform:translateY(105%) rotate(14deg) scale(.88)}}
-@keyframes disB{0%{transform:none}16%{transform:translateY(-5%) scale(1.05)}
-  100%{transform:translateY(100%) rotate(-17deg) scale(.9)}}
+/* NO FADE, and NOTHING ELSE CHANGED. The motion is exactly what it was -- same
+   distance, same rotation, same scale -- with the opacity taken out. The pieces
+   used to finish at 22% opacity, so a Fighter came apart and then dissolved
+   where it stood, and half-transparent artwork reads as a rendering fault
+   rather than a death. They come to rest in full colour now, and the greyscale
+   arrives over the top of them a moment later. */
+@keyframes disA{0%{transform:none}16%{transform:translateY(-4%) scale(1.04)}100%{transform:translateY(28%) rotate(9deg) scale(.84)}}
+@keyframes disB{0%{transform:none}16%{transform:translateY(-5%) scale(1.05)}100%{transform:translateY(24%) rotate(-11deg) scale(.86)}}
 .arena-wrap .tok.hit{animation:hit .3s}
 @keyframes hit{0%{transform:translateX(0)}30%{transform:translateX(-3%)}60%{transform:translateX(2.4%)}100%{transform:translateX(0)}}
 .arena-wrap .tok.act{animation:act .34s}
