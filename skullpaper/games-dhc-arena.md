@@ -138,8 +138,8 @@ sets front, mid and back**, so the Fighter you least want reached goes last.
 
 ### Bombs
 
-- A match of **4** arms a ✛ bomb, which clears its whole row and column.
-- A match of **5 or more** arms a 💣 board bomb, which clears everything.
+- A match of **4** arms a **grenade**, which clears its whole row and column.
+- A match of **5 or more** arms a **detonator**, which clears everything.
 
 A bomb sits on the board wearing a colour, and **either side can set it off** by
 matching that colour. It is not yours because you made it. Anything you arm goes

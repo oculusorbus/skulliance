@@ -406,12 +406,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .cell.hex .g{clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)}
 .arena-wrap .cell .em{font-size:clamp(11px,2.4vw,19px);line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6));
   pointer-events:none;
-  /* A BOX, not a bare inline span. .cross sizes itself as a percentage, and a
-     percentage of an inline span with no dimensions is zero -- the drawn cross
-     was rendering at no size at all, which is why bombs went from hard to see
-     to invisible. */
+  /* A BOX, not a bare inline span. Everything inside sizes itself as a
+     percentage, and a percentage of an inline span with no dimensions is zero
+     -- that is how a bomb once rendered at no size at all. Still true for the
+     masked icons, which are also sized in percent. */
   display:flex;align-items:center;justify-content:center;width:100%;height:100%}
-/* the rotated diamond must not rotate its emoji with it */
+/* the rotated diamond must not rotate its icon with it */
 .arena-wrap .cell.di .g .em{transform:rotate(-45deg)}
 /* ONE RULE FOR EVERY ICON. A mask rather than an <img> src, so the artwork is
    tinted by currentColor and inherits whatever the thing around it is doing --
@@ -438,11 +438,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   animation:bmb .9s ease-in-out infinite}
 @keyframes bmb{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 /* The cross bomb's blast shape, drawn on the gem: a bar across and a bar down. */
-.arena-wrap .cross{position:relative;display:block;width:76%;height:76%}
-.arena-wrap .cross:before, .arena-wrap .cross:after{content:'';position:absolute;background:#fff;border-radius:1px;
-  box-shadow:0 0 4px rgba(0,0,0,.55)}
-.arena-wrap .cross:before{left:0;right:0;top:calc(50% - 2px);height:4px}
-.arena-wrap .cross:after{top:0;bottom:0;left:calc(50% - 2px);width:4px}
+/* The hand-drawn cross is gone. It existed because no emoji read as "row and
+   column" at gem size across platforms -- a real problem, solved better by an
+   icon from the platform's own set than by two CSS bars. */
 /* Detonation: everything the blast takes lights up before it goes. */
 .arena-wrap .cell.blast .g{animation:blastPop .42s ease-out}
 .arena-wrap .cell.blast2 .g{animation:blastPop2 .5s ease-out}
@@ -1274,9 +1272,16 @@ function paintBoard(dropAnim, settle){
   var h = '', i;
   for (i=0; i<N*N; i++) {
     var v = S.board[i], bm = S.bomb ? Math.abs(S.bomb[i]||0) : 0, gi = gemInfo('mine', v);
+    /* TWO BOMBS, TWO ICONS. A cross bomb clears its row and column; a board
+       bomb clears everything, and telling them apart by ring colour alone is
+       far too thin a signal for that difference in consequence. The grenade
+       goes on the cross bomb because that is the one you see constantly, and
+       the plunger detonator on the board bomb because it reads as levelling
+       the place rather than throwing something. */
     var face = bm === BOMB_BOARD
+             ? '<span class="ico" style="--ico:url(' + iconUrl('demolition') + ')"></span>'
+             : bm === BOMB_CROSS
              ? '<span class="ico" style="--ico:url(' + iconUrl('grenade') + ')"></span>'
-             : bm === BOMB_CROSS ? '<i class="cross"></i>'
              : (gi.icon ? '<span class="ico" style="--ico:url(' + iconUrl(gi.icon) + ')"></span>' : gi.emoji);
     var tip  = bm === BOMB_BOARD ? 'Board bomb — clears everything. Match its colour to set it off.'
              : bm === BOMB_CROSS ? 'Bomb — clears its row and column. Match its colour to set it off.'
