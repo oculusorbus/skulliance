@@ -442,32 +442,33 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    tile's own colour. It is white-cored now, which collides with none of the
    five, and it has to be the louder of the two anyway: it clears the board,
    the grenade clears a line. */
-.arena-wrap .cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px var(--bone);
-  animation:bmb 1.5s ease-in-out infinite}
-/* The grenade's glow pulses too, gently. It used to be static, which was fine
-   everywhere the GEM could pulse -- but .cell.di.bomb .g turns the gem pulse
-   off on diamonds, because a 45-degree rotation and a scale cannot share one
-   transform. So on a violet tile a grenade had nothing moving at all. Every
-   bomb now pulses at the cell, which no gem shape can switch off. */
-.arena-wrap .cell.bomb{animation:bmbGlow 1.5s ease-in-out infinite}
-@keyframes bmbGlow{
-  0%,100%{box-shadow:0 0 8px var(--gc)}
-  50%    {box-shadow:0 0 20px var(--gc)}}
-.arena-wrap .cell.bomb2 .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45),0 0 0 2px #fff;
-  animation:bmb .9s ease-in-out infinite}
-.arena-wrap .cell.bomb2{box-shadow:0 0 10px rgba(255,255,255,.85),0 0 30px var(--ochre);
-  animation:bmb2glow .9s ease-in-out infinite}
-@keyframes bmb2glow{
-  0%,100%{box-shadow:0 0 8px rgba(255,255,255,.7),0 0 22px var(--ochre)}
-  50%    {box-shadow:0 0 16px rgba(255,255,255,1),0 0 40px var(--ochre)}}
+.arena-wrap .cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45);
+  animation:bmb 1.5s ease-in-out infinite, bombHalo 1.5s ease-in-out infinite}
+/* THE GLOW HUGS THE GEM, NOT THE TILE.
+   It lived on .cell for a while, which is a square whatever shape the gem is
+   -- so a hexagon sat inside a square halo, and the halo read as the thing
+   that was lit rather than the bomb.
+   filter: drop-shadow() follows the element's actual alpha, clip-path and all,
+   where box-shadow follows its border box. That is also why the white ring was
+   missing on hexagons and shields and present on diamonds: the ring was a
+   box-shadow, hex and shield are clip-paths which clip it away, and a diamond
+   is a rotate, which does not. So the ring and the halo are both drop-shadows
+   now and both appear on every shape. */
+@keyframes bombHalo{
+  0%,100%{filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 4px var(--gc))}
+  50%    {filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 13px var(--gc))}}
+@keyframes bombHalo2{
+  0%,100%{filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 9px var(--ochre))}
+  50%    {filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 22px var(--ochre))}}
+.arena-wrap .cell.bomb2 .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45);
+  animation:bmb .9s ease-in-out infinite, bombHalo2 .9s ease-in-out infinite}
 @keyframes bmb{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 /* The cross bomb's blast shape, drawn on the gem: a bar across and a bar down. */
 /* The hand-drawn cross is gone. It existed because no emoji read as "row and
    column" at gem size across platforms -- a real problem, solved better by an
    icon from the platform's own set than by two CSS bars. */
 /* Detonation: everything the blast takes lights up before it goes. */
-.arena-wrap .cell.blast .g{animation:blastPop .42s ease-out}
-.arena-wrap .cell.blast2 .g{animation:blastPop2 .5s ease-out}
+
 @keyframes blastPop{0%{transform:scale(1);filter:brightness(1)}35%{transform:scale(1.35);filter:brightness(3.2)}100%{transform:scale(.2);filter:brightness(1);opacity:0}}
 @keyframes blastPop2{0%{transform:scale(1) rotate(0);filter:brightness(1)}30%{transform:scale(1.5) rotate(8deg);filter:brightness(4)}100%{transform:scale(.15) rotate(-6deg);opacity:0}}
 .arena-wrap .boardwrap.shake{animation:bshake .38s}
@@ -481,25 +482,24 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    8% swell as every other shape, still a diamond throughout. */
 @keyframes bmbDi{0%,100%{transform:rotate(45deg) scale(.82)}
   50%{transform:rotate(45deg) scale(.89)}}
-.arena-wrap .cell.di.bomb .g{animation:bmbDi 1.5s ease-in-out infinite}
-.arena-wrap .cell.di.bomb2 .g{animation:bmbDi .9s ease-in-out infinite}
+.arena-wrap .cell.di.bomb .g{animation:bmbDi 1.5s ease-in-out infinite, bombHalo 1.5s ease-in-out infinite}
+.arena-wrap .cell.di.bomb2 .g{animation:bmbDi .9s ease-in-out infinite, bombHalo2 .9s ease-in-out infinite}
+/* GOING OFF BEATS SITTING THERE. These come last and are written specific
+   enough to outrank every idle bomb pulse above, including the diamond's,
+   which carries an extra class and therefore outranked a plain .blast rule.
+   A bomb that detonated on a violet tile was playing its idle pulse through
+   its own explosion. */
+.arena-wrap .cell.blast .g,
+.arena-wrap .cell.blast.bomb .g,
+.arena-wrap .cell.blast.bomb.di .g{animation:blastPop .42s ease-out}
+.arena-wrap .cell.blast2 .g,
+.arena-wrap .cell.blast2.bomb .g,
+.arena-wrap .cell.blast2.bomb.di .g{animation:blastPop2 .5s ease-out}
 .arena-wrap .cell.clear .g{transform:scale(0);opacity:0}
 .arena-wrap .cell.drop{animation:drp .22s}
 .arena-wrap .cell.settle{animation:stl .16s}
-/* ...AND THE BOMB KEEPS PULSING THROUGH BOTH.
-   `animation` is one property, so .cell.drop simply replaced the board bomb's
-   glow pulse -- same specificity, declared later -- and .drop lands on every
-   cell on every repaint. The result was that the louder of the two bombs was
-   the only one that stopped moving, because the grenade's pulse sits on .g
-   where the drop never reaches and the detonator's sits on .cell where it
-   does. Composed rather than overridden: the cell can fall in AND go on
-   pulsing. */
-.arena-wrap .cell.drop.bomb{animation:drp .22s, bmbGlow 1.5s ease-in-out infinite}
-.arena-wrap .cell.settle.bomb{animation:stl .16s, bmbGlow 1.5s ease-in-out infinite}
-/* bomb2 AFTER bomb: a board bomb carries both classes, equal specificity, so
-   document order is the only thing deciding which pulse it gets. */
-.arena-wrap .cell.drop.bomb2{animation:drp .22s, bmb2glow .9s ease-in-out infinite}
-.arena-wrap .cell.settle.bomb2{animation:stl .16s, bmb2glow .9s ease-in-out infinite}
+/* No bomb animation on .cell any more -- it all lives on .g, which .drop and
+   .settle never touch -- so the two no longer collide and need no composing. */
 @keyframes stl{0%{transform:scale(1.06)}100%{transform:scale(1)}}
 @keyframes drp{0%{transform:translateY(-16px);opacity:.4}100%{transform:translateY(0);opacity:1}}
 /* ============================ THE ENTRANCE ==================================
