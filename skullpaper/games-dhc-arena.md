@@ -63,9 +63,10 @@ punished for.
 ## The entrance
 
 A battle opens in three beats: the **arena** and what it does to the fight, then
-the **board** falling in, then the two **Crews** walking on. It runs under three
-seconds and a tap anywhere skips it — six battles a day means seeing it six
-times a day. Picking up a battle you left in progress goes straight to the
+the **board** falling in, then the two **Crews** walking on. The arena holds long enough to take the place in and read what it
+does to the fight; **a tap moves it along** if you would rather not wait, and
+plays the board and the Crews at full length rather than cutting to a finished
+board. Picking up a battle you left in progress goes straight to the
 board; that is not an entrance.
 
 ## Practice

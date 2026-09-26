@@ -471,7 +471,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   color:var(--dim);animation:tiUp .5s .55s both}
 .arena-wrap .ti-v b{color:var(--bone);font-weight:400}
 .arena-wrap .ti-s{position:absolute;bottom:9px;right:12px;z-index:1;font-size:8.5px;
-  letter-spacing:.14em;text-transform:uppercase;color:var(--dim);opacity:.7}
+  letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+  /* Held back until the text has arrived. Offering a way out of a panel before
+     the panel has finished appearing reads as "this is going to take a while". */
+  animation:tiUp .5s 1.5s both;opacity:.6}
 @keyframes tiUp{0%{opacity:0;transform:translateY(7px)}100%{opacity:1;transform:translateY(0)}}
 @keyframes tiName{0%{opacity:0;transform:scale(1.14);letter-spacing:.22em}
   100%{opacity:1;transform:scale(1);letter-spacing:.06em}}
@@ -2131,14 +2134,13 @@ function playEntrance(done){
     + '<div class="ti-e">' + (S.terrainNote || '') + '</div>'
     + '<div class="ti-v">' + (S.mine[0] ? '<b>Your Crew</b>' : '') + ' versus <b>'
     +   (S.foes[0] ? S.foes[0].name.split(' ')[0] + "'s Crew" : 'the defenders') + '</b></div>'
-    + '<div class="ti-s">tap to skip</div>';
-  intro.addEventListener('click', cineStop);
+    + '<div class="ti-s">tap to continue</div>';
   ar.appendChild(intro);
 
-  // beat two: the board falls in, a diagonal sweep rather than all at once.
-  // The delays are set BEFORE the grid is revealed, so `both` holds every cell
-  // at its opening frame until its own turn comes round.
-  cineAt(1450, function(){
+  /* BEAT TWO: the board falls in, a diagonal sweep rather than all at once.
+     The delays are set BEFORE the grid is revealed, so `both` holds every cell
+     at its opening frame until its own turn comes round. */
+  function boardIn(){
     intro.classList.add('out');
     gridEl.querySelectorAll('.cell').forEach(function(c, i){
       var r = Math.floor(i / N), col = i % N;
@@ -2146,17 +2148,42 @@ function playEntrance(done){
     });
     ar.classList.add('board');
     sfx('land');
-  });
-  // beat three: the Crews walk on
-  cineAt(2050, function(){
+  }
+  /* BEAT THREE: the Crews walk on. */
+  function crewIn(){
     if (intro.parentNode) intro.remove();
     ar.classList.add('crew');
-    var toks = document.querySelectorAll('.teamcol .tok');
-    toks.forEach(function(t, i){ t.style.animationDelay = ((i % 3) * 90) + 'ms'; });
+    document.querySelectorAll('.teamcol .tok').forEach(function(t, i){
+      t.style.animationDelay = ((i % 3) * 90) + 'ms';
+    });
     sfx('start');
-  });
-  cineAt(2750, cineStop);
+  }
+
+  /* A TAP SKIPS THE HOLD, NOT THE SEQUENCE.
+     It used to call cineStop(), which threw the whole thing away and cut
+     straight to a finished board -- so the only way past a panel you had
+     already read was to lose the board falling in and the Crews walking on,
+     which are the good bits. Now it drops the reading pause and plays the rest
+     at full length. */
+  var started = false;
+  function goOn(){
+    if (started) return;
+    started = true;
+    cineTimers.forEach(function(t){ clearTimeout(t); });
+    cineTimers = [];
+    boardIn();
+    cineAt(BOARD_MS, crewIn);
+    cineAt(BOARD_MS + CREW_MS, cineStop);
+  }
+  intro.addEventListener('click', goOn);
+
+  cineAt(READ_MS, goOn);
 }
+/* Long enough to take the place in and read what it does to the fight. The
+   text finishes arriving at about 1.1s, so this leaves nearly two seconds of
+   actually looking at it -- and a tap moves it along for anyone who would
+   rather not. */
+var READ_MS = 3000, BOARD_MS = 620, CREW_MS = 700;
 
 /**
  * @param res    the start/resume reply
