@@ -445,7 +445,10 @@ function dhca_resolve_group(&$b, $side, $grp, $chain, $scale) {
 	if ($b['terrain'] === 'dmg') $mult *= 1.10;
 
 	if ($grp['type'] === 3) {                       // Shield
-		$amt = (int)round((6 + $grp['len'] * 4) * $mult * ($b['terrain'] === 'guard' ? 1.5 : 1));
+		// 1.3, not 1.5: at 1.5 a Dense Cover battle ran 28 turns against 16 to 18
+		// in every other arena, and the outliers reached 113. Cover should make
+		// a fight grindier, not a different length of game.
+		$amt = (int)round((6 + $grp['len'] * 4) * $mult * ($b['terrain'] === 'guard' ? 1.3 : 1));
 		foreach (dhca_alive($b, $side) as $i => $f) {
 			$b[$side][$i]['shield'] += $amt;
 			$b['fx'][] = array('k'=>'shield','side'=>$side,'i'=>$i,'v'=>$amt);
@@ -800,10 +803,13 @@ function dhca_new_battle($mineTraits, $foeTraits, $names, $rarity, $seed) {
 			$b[$side][] = $f;
 		}
 	}
-	// the DEFENDER's front-rank background is the arena
-	$terr = dhca_terrains();
-	$b['terrain'] = $terr[dhca_hash($foeTraits[0]['background']) % count($terr)]['id'];
-	$b['terrainBg'] = $foeTraits[0]['background'];
+	/* The DEFENDER's front-rank background is the arena, and what it does is
+	   read from what it IS -- see dhca_terrain_for(). It used to be a hash
+	   against the slug: stable, and otherwise arbitrary, so a screen of fire
+	   could be announced as cover. */
+	$bg = isset($foeTraits[0]['background']) ? $foeTraits[0]['background'] : '';
+	$b['terrain']   = dhca_terrain_for($bg);
+	$b['terrainBg'] = $bg;
 	if ($b['terrain'] === 'frail') {
 		foreach (array('mine','foes') as $side) foreach ($b[$side] as $i => $f) {
 			$b[$side][$i]['maxHp'] = (int)round($f['maxHp'] * 0.92);
@@ -873,9 +879,13 @@ function dhca_score_move($b, $side, $a, $z) {
 
 /** What the client needs to draw, with nothing it could cheat with. */
 function dhca_public(&$b) {
-	$tn = ''; $tnote = '';
-	foreach (dhca_terrains() as $t)
-		if ($t['id'] === $b['terrain']) { $tn = $t['name']; $tnote = $t['note']; }
+	/* The arena is announced by the NAME OF THE BACKGROUND, not by one of five
+	   invented labels -- five names could never describe 42 pieces of art, and
+	   a caption cannot contradict the picture if it is the picture's name. Only
+	   the effect line comes from the terrain table. */
+	$tn = dhca_terrain_name($b['terrainBg']);
+	$tnote = '';
+	foreach (dhca_terrains() as $t) if ($t['id'] === $b['terrain']) $tnote = $t['note'];
 	$slim = function($f) {
 		return array('uid'=>$f['uid'],'name'=>$f['name'],'traits'=>$f['traits'],
 			'kit'=>array('id'=>$f['kit']['id'],'emoji'=>$f['kit']['emoji'],

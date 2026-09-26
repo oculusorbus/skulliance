@@ -127,3 +127,65 @@ function dhca_trait_role($slug, $slot = '') {
 	}
 	return $role;
 }
+
+/* ============================ THE ARENA ITSELF ==============================
+   Which background you fight on is the defender's front-rank Fighter's, and
+   that is deliberate. WHAT IT DOES used to be dhca_hash($slug) % 5 -- stable
+   for a given background, and otherwise arbitrary. So a screen of fire could
+   be captioned "Dense Cover, Shield gives 50% more", which is the same mistake
+   as a helmet deciding how often you land a critical hit.
+
+   The label decides now, exactly as it does for traits. Fire and explosions
+   make a fight hotter; nebulae and wormholes lighten it; traps, webs and
+   interiors give cover; circuits and signal attacks scramble aim; an empty
+   colour field leaves nowhere to hide.
+
+   AND THE NAME IS THE BACKGROUND'S OWN. Five invented labels could never match
+   42 pieces of art, so the arena is announced by the name of the thing you are
+   looking at -- Hellscape, Wormhole Passage, Advanced Circuit -- and only the
+   EFFECT is inferred. A caption cannot contradict the picture if it is the
+   picture's name.
+   ========================================================================== */
+function dhca_terrain_rules() {
+	return array(
+		// hotter
+		'flame' => 'dmg', 'fire' => 'dmg', 'hellscape' => 'dmg', 'explosion' => 'dmg',
+		'thunder' => 'dmg', 'sun' => 'dmg', 'quasar' => 'dmg', 'bright-red' => 'dmg',
+		// lighter: space, and the long fall
+		'nebula' => 'surge', 'wormhole' => 'surge', 'abyss' => 'surge',
+		'exoplanet' => 'surge', 'spacecraft' => 'surge', 'black' => 'surge',
+		// cover: something to actually get BEHIND. Kept deliberately small --
+		// guard battles run 28 turns against 16 to 18 everywhere else, so the
+		// arena that slows the game down should be the rare one, not the
+		// commonest. Webs, traps, bubbles and smoke qualify; a building does
+		// not, it just means the fight is indoors.
+		'trap' => 'guard', 'web' => 'guard', 'bubble' => 'guard', 'smoke' => 'guard',
+		// enclosed, not covered: nowhere to back away to, so everything lands
+		'complex' => 'dmg', 'building' => 'dmg', 'interior' => 'dmg',
+		'facility' => 'dmg', 'entrance' => 'dmg',
+		// scrambled: signal, noise, interference
+		'circuit' => 'crit', 'data' => 'crit', 'ddos' => 'crit', 'optical' => 'crit',
+		'psi' => 'crit', 'tunnel' => 'crit', 'attack' => 'crit', 'digital' => 'crit',
+		// exposed: an empty field, nothing to use
+		'landscape' => 'frail', 'light-' => 'frail', 'white' => 'frail', 'red' => 'frail',
+	);
+}
+
+/** What fighting on this background does. */
+function dhca_terrain_for($slug) {
+	$slug = strtolower((string)$slug);
+	foreach (dhca_terrain_rules() as $needle => $id) {
+		if (strpos($slug, $needle) !== false) return $id;
+	}
+	return 'frail';   // an unrecognised field is a bare one
+}
+
+/** The arena's name IS the background's name, tidied for reading. */
+function dhca_terrain_name($slug) {
+	$s = preg_replace('/[-_]+/', ' ', strtolower((string)$slug));
+	$s = preg_replace('/\b(dh|dhc2|xlon s|xlons s|xlons|xlon)\b\s*/', '', $s);
+	$s = preg_replace('/\s+\d+$/', '', $s);          // trailing variant numbers
+	$s = trim(preg_replace('/\s+/', ' ', $s));
+	if ($s === '') $s = 'Unknown Ground';
+	return ucwords($s);
+}

@@ -205,10 +205,19 @@ about how you play, not what you were lucky enough to draw.
 Crew's name, so you can always see how close it is.
 
 **The arena itself is the defender's front-rank background**, and it does
-something: Fractured Signal means everyone lands big hits more often,
-Overclocked is 10% more damage all round, Dense Cover makes Shield 50% stronger,
-Low Gravity builds Charge twice as fast, Corrosive Haze gives everyone 8% less
-health. It is shown under the board every battle.
+something — decided by what the background actually is:
+
+| Fighting in | What happens |
+|---|---|
+| Fire, explosions, thunder, a sun — or anywhere enclosed | Everyone deals 10% more damage |
+| Nebulae, wormholes, the abyss, open space | ⚡ Charge builds twice as fast |
+| Webs, traps, bubbles, smoke | 🛡️ Shield gives 30% more |
+| Circuits, data tunnels, signal attacks | Everyone lands big hits more often |
+| A bare colour field, an empty landscape | Everyone has 8% less health |
+
+The arena is announced by **the background's own name** — Hellscape, Wormhole
+Passage, Aracnyd Web — so what you are told always matches what you are looking
+at. It is shown at the start of a battle and again under the board.
 
 ---
 
