@@ -180,12 +180,79 @@ function dhca_terrain_for($slug) {
 	return 'frail';   // an unrecognised field is a bare one
 }
 
-/** The arena's name IS the background's name, tidied for reading. */
+/** The arena's name: a written one where the slug does not carry itself. */
 function dhca_terrain_name($slug) {
-	$s = preg_replace('/[-_]+/', ' ', strtolower((string)$slug));
+	$slug = strtolower((string)$slug);
+	$named = dhca_terrain_names();
+	if (isset($named[$slug])) return $named[$slug];
+	$s = preg_replace('/[-_]+/', ' ', $slug);
 	$s = preg_replace('/\b(dh|dhc2|xlon s|xlons s|xlons|xlon)\b\s*/', '', $s);
 	$s = preg_replace('/\s+\d+$/', '', $s);          // trailing variant numbers
 	$s = trim(preg_replace('/\s+/', ' ', $s));
 	if ($s === '') $s = 'Unknown Ground';
 	return ucwords($s);
+}
+
+/**
+ * Arenas that need a name rather than a tidied slug.
+ *
+ * Some backgrounds already read as a place -- Hellscape, Wormhole Passage,
+ * Aracnyd Web, Digital Abyss -- and those are left alone, because the art's own
+ * name is always the safest caption. The rest are descriptions of a picture
+ * ("Light Yellow", "Complex", "Xlon S Optical Attack") and announcing a battle
+ * in Light Yellow is not atmosphere, it is a filename.
+ *
+ * Every name below is built from what the piece actually shows, and is checked
+ * against the effect it carries: a Whiteout leaves you exposed and that arena
+ * costs health; the Void is deep space and that one builds Charge; the Firewall
+ * is digital flame and that one burns.
+ */
+function dhca_terrain_names() {
+	return array(
+		// Already a place, so left alone -- the art's own name is always the
+		// safest caption: hellscape, digital-abyss, wormhole-passage,
+		// dh-aracnyd-web, data-tunnel, quasar-tf-39-sun.
+		//
+		// EVERY NAME BELOW KEEPS A WORD FROM THE ORIGINAL. These are Maxingo's
+		// pieces and a player may well recognise one by name; renaming Light
+		// Yellow to something unrecognisable would trade a filename for a
+		// disguise. So the slug's own word stays and the rest does the work of
+		// making it somewhere you could stand.
+		'advanced-circuit-1'               => 'Advanced Circuitry',
+		'advanced-circuit-2'               => 'Deep Circuitry',
+		'black'                            => 'The Black',
+		'bright-red'                       => 'The Red Glare',
+		'dark-explosion'                   => 'The Dark Blast',
+		'dh-killer-bubbles'                => 'Killer Bubble Field',
+		'dh-landscape'                     => 'The Open Landscape',
+		'dh-nebula-1'                      => 'The Nebula',
+		'dh-nebula-02'                     => 'The Nebula',
+		'dh-nebula-3'                      => 'The Nebula',
+		'dh-thunder'                       => 'Thunderhead',
+		'digital-flames-1'                 => 'Digital Firewall',
+		'digital-flames-2'                 => 'Digital Firewall',
+		'digital-trap-01'                  => 'Digital Snare',
+		'digital-trap-2'                   => 'Digital Snare',
+		'digital-trap-03'                  => 'Digital Snare',
+		'digital-trap-04'                  => 'Digital Snare',
+		'eon-raider-spacecraft-window'     => 'Eon Raider Viewport',
+		'exoplanet-landscape'              => 'Exoplanet Surface',
+		'experimentation-facility-entrance'=> 'The Facility Gate',
+		'light-blue'                       => 'Pale Blue Expanse',
+		'light-green'                      => 'Pale Green Expanse',
+		'light-purple'                     => 'Pale Violet Expanse',
+		'light-yellow'                     => 'Pale Amber Expanse',
+		'red'                              => 'The Red Expanse',
+		'white'                            => 'Whiteout',
+		'xlon-ddos-attack'                 => 'DDoS Flood',
+		'xlon-s-2yk-attack-01'             => '2YK Breach',
+		'xlon-s-2yk-attack-02'             => '2YK Breach',
+		'xlon-s-building-trap'             => 'The Rigged Building',
+		'xlon-s-digital-smoke-attack'      => 'Digital Smokescreen',
+		'xlon-s-disintegrating-bubbles'    => 'Disintegration Field',
+		'xlon-s-optical-attack'            => 'Optical Glare',
+		'xlon-s-psi-attack'                => 'Psi Storm',
+		'xlons-building-interior'          => 'Xlon Interior',
+		'xlons-s-complex'                  => 'The Xlon Complex',
+	);
 }

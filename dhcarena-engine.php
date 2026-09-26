@@ -126,7 +126,7 @@ function dhca_terrains() {
 	return array(
 		array('id'=>'crit',  'name'=>'Fractured Signal','note'=>'everyone lands big hits more often'),
 		array('id'=>'dmg',   'name'=>'Overclocked',     'note'=>'everyone deals 10% more damage'),
-		array('id'=>'guard', 'name'=>'Dense Cover',     'note'=>'🛡️ Shield gives 50% more'),
+		array('id'=>'guard', 'name'=>'Dense Cover',     'note'=>'🛡️ Shield gives 30% more'),
 		array('id'=>'surge', 'name'=>'Low Gravity',     'note'=>'⚡ Charge builds twice as fast'),
 		array('id'=>'frail', 'name'=>'Corrosive Haze',  'note'=>'everyone has 8% less health'),
 	);

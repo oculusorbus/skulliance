@@ -215,9 +215,10 @@ something — decided by what the background actually is:
 | Circuits, data tunnels, signal attacks | Everyone lands big hits more often |
 | A bare colour field, an empty landscape | Everyone has 8% less health |
 
-The arena is announced by **the background's own name** — Hellscape, Wormhole
-Passage, Aracnyd Web — so what you are told always matches what you are looking
-at. It is shown at the start of a battle and again under the board — **hover or tap
+Every background is a named place — Hellscape, Wormhole Passage, Thunderhead,
+Whiteout, The Xlon Complex — and where a background's own title already reads as
+somewhere you could stand, it keeps it. The rest are named from what they show,
+always keeping a word of the original so the piece is still recognisable. It is shown at the start of a battle and again under the board — **hover or tap
 the arena's name** there and it tells you what it is doing to the fight.
 
 ---
