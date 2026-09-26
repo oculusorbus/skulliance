@@ -254,5 +254,89 @@ function dhca_terrain_names() {
 		'xlon-s-psi-attack'                => 'Psi Storm',
 		'xlons-building-interior'          => 'Xlon Interior',
 		'xlons-s-complex'                  => 'The Xlon Complex',
+		'quasar-tf-39-sun'                 => 'Quasar TF-39',
 	);
+}
+
+/**
+ * One line of atmosphere per arena.
+ *
+ * Written to do two jobs at once: say what the place feels like, and hint at
+ * what it is about to do to the fight. The Whiteout line is about exposure and
+ * that arena costs health; the Snare line is about putting your back to
+ * something and that one strengthens Shield. A player who never reads the
+ * effect underneath should still come away with the right expectation.
+ *
+ * Written in the collection's OWN vocabulary wherever it fits -- cyborgs,
+ * raiders, insekts, specters, cops, Xlon, arachno silk, plague-detecting masks.
+ * Generic sci-fi would read as stock text bolted onto Maxingo's art; the words
+ * the pieces are already named with make the arena part of the same world.
+ *
+ * Short on purpose. This sits between a name and a rule on a panel that holds
+ * for three seconds, and a paragraph would turn an entrance into a loading
+ * screen.
+ */
+function dhca_terrain_lines() {
+	return array(
+		'advanced-circuit-1'               => 'Every trace is a sightline. The cyborgs built this board to be read.',
+		'advanced-circuit-2'               => 'Deep in the traces. Everything is exposed down here, including them.',
+		'black'                            => 'No floor, no ceiling, nothing to earth the charge you are building.',
+		'bright-red'                       => 'Red light over everything. Blows land heavier in it.',
+		'dark-explosion'                   => 'You arrive in the half-second after the charge went off.',
+		'data-tunnel'                      => 'Packets scream past at head height. Read the gaps and strike through them.',
+		'dh-aracnyd-web'                   => 'Arachno silk, thick enough to lean on and thick enough to hide behind.',
+		'dh-killer-bubbles'                => 'They drift and they burst, and they take the worst of what is thrown.',
+		'dh-landscape'                     => 'Flat to the horizon. Nothing between you and the raiders.',
+		'dh-nebula-1'                      => 'Gas thick enough to taste, and it holds a charge.',
+		'dh-nebula-02'                     => 'Gas thick enough to taste, and it holds a charge.',
+		'dh-nebula-3'                      => 'Gas thick enough to taste, and it holds a charge.',
+		'dh-thunder'                       => 'Every strike lands with the storm behind it.',
+		'digital-abyss'                    => 'It goes down further than the eye follows. Nothing here to earth a charge.',
+		'digital-flames-1'                 => 'Code burning hotter than whatever it was written to protect.',
+		'digital-flames-2'                 => 'Code burning hotter than whatever it was written to protect.',
+		'digital-trap-01'                  => 'The floor is rigged. Put your back to it and let it work.',
+		'digital-trap-2'                   => 'The floor is rigged. Put your back to it and let it work.',
+		'digital-trap-03'                  => 'The floor is rigged. Put your back to it and let it work.',
+		'digital-trap-04'                  => 'The floor is rigged. Put your back to it and let it work.',
+		'eon-raider-spacecraft-window'     => "Fighting on the raider's glass, the long dark on the other side.",
+		'exoplanet-landscape'              => 'Low gravity. Everything you throw carries further than it should.',
+		'experimentation-facility-entrance'=> 'Past these doors there is nowhere to back away to.',
+		'hellscape'                        => 'It was already burning when the citizens got here.',
+		'light-blue'                       => 'An empty field of light. No cover, no corners, nothing to use.',
+		'light-green'                      => 'Nothing to stand behind. The insekts see you coming.',
+		'light-purple'                     => 'Open ground in every direction. Everyone is easier to reach.',
+		'light-yellow'                     => 'Bright, bare, and completely exposed.',
+		'quasar-tf-39-sun'                 => 'A dying star, close enough to feel. Everything hits harder for it.',
+		'red'                              => 'Red to the edges. Nowhere to put your back.',
+		'white'                            => 'No edges and no shadow. Nowhere for anyone to hide.',
+		'wormhole-passage'                 => 'The passage pulls at everything. Charge builds faster in it.',
+		'xlon-ddos-attack'                 => 'Xlon traffic hammers past in waves. Find the gap, put something through it.',
+		'xlon-s-2yk-attack-01'             => 'A gap in the system nobody ever patched. Aim for it and it opens.',
+		'xlon-s-2yk-attack-02'             => 'A gap in the system nobody ever patched. Aim for it and it opens.',
+		'xlon-s-building-trap'             => 'Rigged floor to roof, and every charge is between you and them.',
+		'xlon-s-digital-smoke-attack'      => 'You cannot see much. Neither can the cops.',
+		'xlon-s-disintegrating-bubbles'    => 'Everything comes apart slowly here. Long enough to get behind something.',
+		'xlon-s-optical-attack'            => "The glare finds every seam in a cyborg's plate.",
+		'xlon-s-psi-attack'                => 'Something in the air is reading the fight before it happens.',
+		'xlons-building-interior'          => 'Close walls. Nothing lands softly inside an Xlon building.',
+		'xlons-s-complex'                  => 'Corridors and blind corners, and no room to give ground.',
+	);
+}
+
+/** The line for this arena, or one that fits its effect if it has none yet. */
+function dhca_terrain_line($slug) {
+	$lines = dhca_terrain_lines();
+	$slug  = strtolower((string)$slug);
+	if (isset($lines[$slug])) return $lines[$slug];
+	// A background added after this table was written still gets something
+	// true, because the effect is known even when the place is not.
+	$byEffect = array(
+		'dmg'   => 'Something about this place makes every blow land harder.',
+		'surge' => 'The air holds a charge, and it is building.',
+		'guard' => 'There is cover here, for anyone quick enough to use it.',
+		'crit'  => 'The noise cuts both ways. Aim well and it will tell.',
+		'frail' => 'Open ground. Nothing to hide behind and nowhere to rest.',
+	);
+	$t = dhca_terrain_for($slug);
+	return isset($byEffect[$t]) ? $byEffect[$t] : '';
 }

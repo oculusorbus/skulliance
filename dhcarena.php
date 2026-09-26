@@ -466,9 +466,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   animation:tiUp .5s .05s both}
 .arena-wrap .ti-n{font-size:clamp(19px,4.4vw,34px);letter-spacing:.06em;text-transform:uppercase;
   color:var(--bone);text-shadow:0 3px 18px #000;animation:tiName .7s .12s both}
-.arena-wrap .ti-e{font-size:11.5px;color:var(--ochre);max-width:34ch;animation:tiUp .5s .38s both}
+/* The atmosphere line: quieter than the name, warmer than the rule, and given
+   a measure so it breaks where a sentence should rather than running the width
+   of a monitor. */
+.arena-wrap .ti-l{font-size:13px;line-height:1.5;color:var(--bone);opacity:.78;
+  max-width:40ch;font-style:italic;animation:tiUp .6s .34s both}
+.arena-wrap .ti-e{font-size:11.5px;color:var(--ochre);max-width:34ch;animation:tiUp .5s .62s both}
 .arena-wrap .ti-v{margin-top:6px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--dim);animation:tiUp .5s .55s both}
+  color:var(--dim);animation:tiUp .5s .82s both}
 .arena-wrap .ti-v b{color:var(--bone);font-weight:400}
 .arena-wrap .ti-s{position:absolute;bottom:9px;right:12px;z-index:1;font-size:8.5px;
   letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
@@ -2131,6 +2136,9 @@ function playEntrance(done){
   intro.innerHTML =
       '<div class="ti-k">The arena</div>'
     + '<div class="ti-n">' + (S.terrainName || 'Unknown Ground') + '</div>'
+    /* The vibe first, then the rule. A line about the place earns the three
+       seconds the panel holds for; the effect underneath is what you act on. */
+    + (S.terrainLine ? '<div class="ti-l">' + S.terrainLine + '</div>' : '')
     + '<div class="ti-e">' + (S.terrainNote || '') + '</div>'
     + '<div class="ti-v">' + (S.mine[0] ? '<b>Your Crew</b>' : '') + ' versus <b>'
     +   (S.foes[0] ? S.foes[0].name.split(' ')[0] + "'s Crew" : 'the defenders') + '</b></div>'

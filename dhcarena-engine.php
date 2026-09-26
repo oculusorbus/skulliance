@@ -884,6 +884,7 @@ function dhca_public(&$b) {
 	   a caption cannot contradict the picture if it is the picture's name. Only
 	   the effect line comes from the terrain table. */
 	$tn = dhca_terrain_name($b['terrainBg']);
+	$tline = dhca_terrain_line($b['terrainBg']);
 	$tnote = '';
 	foreach (dhca_terrains() as $t) if ($t['id'] === $b['terrain']) $tnote = $t['note'];
 	$slim = function($f) {
@@ -909,7 +910,7 @@ function dhca_public(&$b) {
 		'mine'=>array_map($slim, $b['mine']), 'foes'=>array_map($slim, $b['foes']),
 		'turn'=>$b['turn'], 'round'=>$b['round'], 'over'=>$b['over'],
 		'terrain'=>$b['terrain'], 'terrainBg'=>$b['terrainBg'],
-		'terrainName'=>$tn, 'terrainNote'=>$tnote,
+		'terrainName'=>$tn, 'terrainNote'=>$tnote, 'terrainLine'=>$tline,
 		'stats'=>$b['stats'], 'fx'=>$b['fx'], 'log'=>$b['log'],
 		// How many slides have been played. The client uses it to tell a battle
 		// that has not started from one being picked back up -- the first gets
