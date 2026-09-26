@@ -472,7 +472,17 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 @keyframes blastPop2{0%{transform:scale(1) rotate(0);filter:brightness(1)}30%{transform:scale(1.5) rotate(8deg);filter:brightness(4)}100%{transform:scale(.15) rotate(-6deg);opacity:0}}
 .arena-wrap .boardwrap.shake{animation:bshake .38s}
 @keyframes bshake{0%,100%{transform:translate(0,0)}20%{transform:translate(-5px,3px)}45%{transform:translate(4px,-3px)}70%{transform:translate(-3px,-2px)}}
-.arena-wrap .cell.di.bomb .g{animation:none}
+/* THE DIAMOND PULSES TOO, it just has to carry its own rotation while it does.
+   This was animation:none, because @keyframes bmb animates `transform` and a
+   diamond IS a transform -- rotate(45deg) scale(.82) -- so the shared pulse
+   flattened the gem back into a square. Switching the pulse off was the quick
+   answer and it left violet the one shape on the board that never moved when
+   it held a bomb. A keyframe that keeps the rotation fixes it properly: same
+   8% swell as every other shape, still a diamond throughout. */
+@keyframes bmbDi{0%,100%{transform:rotate(45deg) scale(.82)}
+  50%{transform:rotate(45deg) scale(.89)}}
+.arena-wrap .cell.di.bomb .g{animation:bmbDi 1.5s ease-in-out infinite}
+.arena-wrap .cell.di.bomb2 .g{animation:bmbDi .9s ease-in-out infinite}
 .arena-wrap .cell.clear .g{transform:scale(0);opacity:0}
 .arena-wrap .cell.drop{animation:drp .22s}
 .arena-wrap .cell.settle{animation:stl .16s}
