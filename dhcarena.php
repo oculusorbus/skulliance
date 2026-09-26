@@ -442,8 +442,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    tile's own colour. It is white-cored now, which collides with none of the
    five, and it has to be the louder of the two anyway: it clears the board,
    the grenade clears a line. */
+/* The edge is static and tight: it marks the gem as armed without lighting
+   anything up. A drop-shadow rather than a box-shadow so it follows the
+   hexagon and the shield, which are clip-paths. */
 .arena-wrap .cell.bomb .g{box-shadow:inset 0 -3px 6px rgba(0,0,0,.45);
-  animation:bmb 1.5s ease-in-out infinite, bombHalo 1.5s ease-in-out infinite}
+  filter:drop-shadow(0 0 1.5px #fff);
+  animation:bmb 1.5s ease-in-out infinite}
 /* THE GLOW HUGS THE GEM, NOT THE TILE.
    It lived on .cell for a while, which is a square whatever shape the gem is
    -- so a hexagon sat inside a square halo, and the halo read as the thing
@@ -454,9 +458,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    box-shadow, hex and shield are clip-paths which clip it away, and a diamond
    is a rotate, which does not. So the ring and the halo are both drop-shadows
    now and both appear on every shape. */
-@keyframes bombHalo{
-  0%,100%{filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 4px var(--gc))}
-  50%    {filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 13px var(--gc))}}
+/* ONLY THE DETONATOR GLOWS. A grenade gets the white edge and the pulse and
+   nothing else -- two bombs both haloed made the board noisy and, worse, made
+   them look equally dangerous when one clears a line and the other clears
+   everything. The glow is now the thing that means "this one is the big one". */
 @keyframes bombHalo2{
   0%,100%{filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 9px var(--ochre))}
   50%    {filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 22px var(--ochre))}}
@@ -482,7 +487,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    8% swell as every other shape, still a diamond throughout. */
 @keyframes bmbDi{0%,100%{transform:rotate(45deg) scale(.82)}
   50%{transform:rotate(45deg) scale(.89)}}
-.arena-wrap .cell.di.bomb .g{animation:bmbDi 1.5s ease-in-out infinite, bombHalo 1.5s ease-in-out infinite}
+.arena-wrap .cell.di.bomb .g{animation:bmbDi 1.5s ease-in-out infinite}
 .arena-wrap .cell.di.bomb2 .g{animation:bmbDi .9s ease-in-out infinite, bombHalo2 .9s ease-in-out infinite}
 /* GOING OFF BEATS SITTING THERE. These come last and are written specific
    enough to outrank every idle bomb pulse above, including the diamond's,
