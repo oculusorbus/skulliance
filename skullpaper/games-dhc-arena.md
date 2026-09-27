@@ -118,6 +118,11 @@ Because nothing is at stake, nothing is protected either: **Fighters still
 recovering or resurrecting can play a live match.** Being out of battles for the
 day does not stop you.
 
+They are pickable in the ordinary Crew list — a Fighter that is resting is
+still dimmed, and still shows what it is waiting on, but you can select it. It
+is the **Enter the Arena** button that goes dark, telling you which of your
+Crew cannot take a ranked battle; **Challenge live** stays lit.
+
 ### How it runs
 
 Pick your Crew and a rival the same way you would for a ranked battle, then

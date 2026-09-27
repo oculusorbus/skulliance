@@ -876,7 +876,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-card:hover{background:rgba(0,200,160,.05);border-color:var(--ochre)}
 .arena-wrap .a-card.sel{border-color:var(--ochre);box-shadow:inset 0 0 0 1px var(--ochre);
   background:rgba(0,200,160,.08)}
-.arena-wrap .a-card.out{opacity:.4;cursor:not-allowed}
+/* Dimmed because it cannot take a RANKED battle, not because it cannot be
+   chosen -- a live match will have it. So no cursor:not-allowed, and a picked
+   one comes back to full strength so the Crew reads as three, not two and a
+   ghost. */
+.arena-wrap .a-card.out{opacity:.45}
+.arena-wrap .a-card.out.sel{opacity:1}
 .arena-wrap .a-card .art{position:relative;width:100%;aspect-ratio:1;overflow:hidden;border-radius:2px;
   background:var(--panel2)}
 .arena-wrap .a-card .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
@@ -2347,22 +2352,45 @@ function paintPicker(){
     }
   });
   paintPicked();
+  var ready = (picked.length === CREW_SIZE && rival > 0);
+  /* How many of the chosen Crew cannot fight a RANKED battle. The server
+     decides this again on both paths -- dhca_start() refuses them and
+     dhcal_challenge() does not -- this only keeps the two buttons honest. */
+  var resting = picked.filter(function(id){
+    var c = byFid(id); return c && c.getAttribute('data-ok') !== '1';
+  }).length;
   var go = $('aStart');
-  if (go) go.disabled = !!BLOCKED || !(picked.length === CREW_SIZE && rival > 0);
-  /* Live needs the same Crew and rival, but NOT the allowance -- BLOCKED is
-     about the daily six and a live match does not spend one. A player out of
-     battles, or with a Crew still recovering, can still challenge somebody. */
+  if (go) go.disabled = !!BLOCKED || !ready || resting > 0;
+  /* Live needs the same Crew and rival, but NOT the allowance and NOT a rested
+     Crew -- BLOCKED is about the daily six, and the bench prices ranked
+     battles. A live match has no price, so neither applies. */
   var ch = $('aChallenge');
-  if (ch) ch.disabled = !(picked.length === CREW_SIZE && rival > 0);
+  if (ch) ch.disabled = !ready;
   var msg = $('aMsg');
   if (!msg) return;
-  if (BLOCKED)                      msg.textContent = '';
-  else if (picked.length !== CREW_SIZE) msg.textContent = 'Pick '+(CREW_SIZE - picked.length)+' more.';
-  else                              msg.textContent = rival ? '' : 'Now pick a rival.';
+  if (picked.length !== CREW_SIZE) msg.textContent = 'Pick '+(CREW_SIZE - picked.length)+' more.';
+  else if (!rival)                 msg.textContent = 'Now pick a rival.';
+  else if (resting > 0)            msg.textContent = resting === 1
+      ? 'One of them is still recovering — live only.'
+      : resting + ' of them are still recovering — live only.';
+  else if (BLOCKED)                msg.textContent = '';
+  else                             msg.textContent = '';
+}
+/* The card for a Fighter id. allCards is rebuilt by paging, so this is looked
+   up rather than cached. */
+function byFid(id){
+  for (var i = 0; i < allCards.length; i++)
+    if (+allCards[i].getAttribute('data-fid') === id) return allCards[i];
+  return null;
 }
 allCards.forEach(function(c){
   c.addEventListener('click', function(){
-    if (c.getAttribute('data-ok') !== '1') return;      // still recovering
+    /* A recovering Fighter IS selectable, because a LIVE match allows it --
+       nothing is at stake there, so the bench has nothing to protect. Refusing
+       the click made that impossible to discover and contradicted the server,
+       which accepts them. What the Fighter's state gates is the ACTION, not
+       the selection: Enter the Arena goes dark and says why, Challenge live
+       does not. */
     var id = +c.getAttribute('data-fid'), at = picked.indexOf(id);
     if (at !== -1) picked.splice(at,1);
     else if (picked.length < CREW_SIZE) picked.push(id);
