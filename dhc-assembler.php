@@ -169,14 +169,21 @@ foreach ($dhc_slots as $key => $s) {
 			// Covers are offered in the upper effects slot only, so nothing can
 			// draw over one and a second cover cannot be selected at all.
 			if ($key === 'effects1'   &&  in_array($slug, $dhc_comic_covers, true)) continue;
-			$name = isset($dhc_index[$dir][$slug]['name']) ? $dhc_index[$dir][$slug]['name'] : dhc_title($slug);
+			/* NOT $name. This file is included at GLOBAL scope, so a bare $name
+			   survives the include and header.php prints whatever is left in it
+			   as the signed-in player's username -- which is exactly what a page
+			   including the assembler BEFORE the header got: a trait called
+			   "U. Vigilance Device #2" sitting where a name belongs. Any new
+			   variable here is a global; keep them prefixed. */
+			$dhc_trait_name = isset($dhc_index[$dir][$slug]['name'])
+			                ? $dhc_index[$dir][$slug]['name'] : dhc_title($slug);
 			// Rarity is keyed by art directory, so the two weapon slots and the two
 			// effects slots share one table -- a trait's tier does not depend on
 			// which slot it happens to be offered in.
 			$r = isset($dhc_rarity[$dir][$slug]) ? $dhc_rarity[$dir][$slug] : null;
 			$out[] = array(
 				'slug' => $slug,
-				'name' => $name,
+				'name' => $dhc_trait_name,
 				'tier' => $r ? $r[0] : '',
 				'worn' => $r ? $r[1] : 0,     // how many of the 226 fighters wore it
 				'rate' => $r ? $r[2] : 0,

@@ -56,6 +56,25 @@ include __DIR__ . '/dhc-assembler.php';
 $dhc_assembler = ob_get_clean();
 
 /*
+ * AND PUT THE HEADER'S VARIABLES BACK. The assembler is included at global
+ * scope, so anything it leaves behind is a global by the time header.php runs
+ * -- and header.php prints $name as the signed-in player's username. It leaked
+ * exactly one ($name, a trait's display name) and that was enough to put
+ * "U. Vigilance Device #2" where a person's name belongs. The leak is fixed in
+ * the assembler, but this page is the only one that includes it BEFORE the
+ * header, so it re-derives from the session rather than trusting a big shared
+ * file to stay clean.
+ */
+unset($name, $avatar_url);
+if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
+	$name = $_SESSION['userData']['name'] ?? null;
+	$dhcs_did = $_SESSION['userData']['discord_id'] ?? null;
+	$dhcs_av  = $_SESSION['userData']['avatar'] ?? null;
+	if ($name !== null && $dhcs_did && $dhcs_av)
+		$avatar_url = "https://cdn.discordapp.com/avatars/$dhcs_did/$dhcs_av.jpg";
+}
+
+/*
  * SOCIAL CARD. Both og:image AND twitter:card=summary_large_image, or X renders
  * a small square thumbnail instead of the wide one -- the failure mode already
  * documented in skullpaper/MAINTENANCE.md for the game share buttons.
