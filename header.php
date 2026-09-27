@@ -178,6 +178,14 @@
 		           Crypt Crawl / Crypt Conquest / Skull Racer below. Obscura is the
 		           one exception and says so in its own comment. -->
 		      <a href="guardiansgame.php">Guardians</a>
+		      <a href="dhcfighters.php">DHC Fighters</a>
+		      <!-- The real Arena, wired to the platform: real Fighters, a real
+		           opponent, a server that owns every rule, real trait drops. The
+		           throwaway it grew out of is still in the repo as
+		           dhcarena-prototype.php, deliberately unlisted -- it keeps no
+		           state and pays nothing, so a player finding it would only be
+		           confused about which one counts. See dhcarena.md. -->
+		      <a href="dhcarena.php">DHC Arena</a>
 		      <a href="cryptcrawlgame.php">Crypt Crawl</a>
 		      <a href="cryptconquestgame.php">Crypt Conquest</a>
 		      <a href="match3rpg.php">Monstrocity</a>
@@ -192,14 +200,6 @@
 		           listed here: Play is a list of things to play, and the gallery
 		           is reached from inside DHC Fighters, where a player already has
 		           a Fighter worth going to look at. -->
-		      <a href="dhcfighters.php">DHC Fighters</a>
-		      <!-- The real Arena, wired to the platform: real Fighters, a real
-		           opponent, a server that owns every rule, real trait drops. The
-		           throwaway it grew out of is still in the repo as
-		           dhcarena-prototype.php, deliberately unlisted -- it keeps no
-		           state and pays nothing, so a player finding it would only be
-		           confused about which one counts. See dhcarena.md. -->
-		      <a href="dhcarena.php">DHC Arena</a>
 		      <a href="dropship/dashboard.php">Drop Ship</a>
 		    </div>
 		  </div>
