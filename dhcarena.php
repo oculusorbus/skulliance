@@ -137,6 +137,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 }
 ?>
 <div class="arena-wrap">
+
+<?php /* Build, browse, fight -- one activity across three pages. A guest gets
+         the other two pointed at sign-in rather than at error.php. */ ?>
+<?php $dhcnav_at = 'arena'; $dhcnav_guest = $dhca_guest; include 'dhc-nav.php'; ?>
 <style>
 /* ================== TWO SKINS, AND THE SEAM BETWEEN THEM ====================
    THE SELECTION SCREEN IS A PLATFORM PAGE. It sits in the platform header, next
@@ -272,6 +276,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
      heading costs most of a screen on a phone, and neither is needed while
      you are playing. One tap brings both back. */
   .arena-wrap.playing h1, .arena-wrap.playing .a-sub, .arena-wrap.playing .a-stats{display:none}
+  /* and the DHC strip: mid-battle there is nowhere else to be, and a link out
+     of a live turn is a link somebody will regret taking */
+  .arena-wrap.playing .dhcnav{display:none}
   .arena-wrap.playing.showintro h1, .arena-wrap.playing.showintro .a-sub{display:block}
   .arena-wrap #howto{display:inline-block}
 }

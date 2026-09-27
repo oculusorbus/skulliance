@@ -54,6 +54,25 @@ $dhc_slots = array(
 	'companion'  => array('Companion',       'companion',  true),
 );
 
+/*
+ * TAB ORDER IS NOT DRAW ORDER, and conflating the two is a trap worth naming.
+ * $dhc_slots above is the Z-ORDER: background first because everything sits on
+ * it, companion last because it sits over everything. layerOrder() in the JS
+ * starts from exactly that sequence, so reordering it to suit the picker would
+ * silently change how every Fighter composites.
+ *
+ * This is the order the CATEGORY TABS are offered in, which is a different
+ * question: it follows how a Fighter actually gets built. You start with a body
+ * -- torso, head -- pick the scene it stands in, then dress it. Background is
+ * third rather than first because choosing a backdrop before there is anything
+ * to stand on it tells you nothing.
+ *
+ * Every key in $dhc_slots must appear here exactly once; the JS falls back to
+ * draw order for anything missing rather than dropping a tab.
+ */
+$dhc_tab_order = array('torso', 'head', 'background', 'effects1', 'effects2',
+                       'arms', 'weapon', 'weaponBack', 'headgear', 'companion');
+
 // WHICH WEAPONS BELONG IN WHICH SLOT.
 //
 // A PARTITION, not a preference: each weapon belongs to exactly one slot. The
@@ -490,6 +509,9 @@ a{color:var(--ochre)}
   var SLOTS  = <?php echo json_encode(array_map(function ($k, $s) {
       return array('key'=>$k,'label'=>$s[0],'dir'=>$s[1],'optional'=>$s[2]);
   }, array_keys($dhc_slots), $dhc_slots)); ?>;
+  /* The picker's order. SLOTS stays in draw order -- layerOrder() depends on
+     it -- so the tabs get their own sequence rather than a reshuffled SLOTS. */
+  var TAB_ORDER = <?php echo json_encode($dhc_tab_order); ?>;
   var TRAITS = <?php echo json_encode($dhc_traits); ?>;
   var NOARMS = <?php echo json_encode($dhc_noarms); ?>;   // torsos with a hand-made armless variant
 
@@ -854,7 +876,9 @@ a{color:var(--ochre)}
     return order;
   }
 
-  var sel = {}, hidden = {}, active = SLOTS[0].key, dragKey = null;
+  /* The first TAB, not the first layer: SLOTS[0] is 'background' because that
+     is what draws first, which is not where anybody starts building. */
+  var sel = {}, hidden = {}, active = (TAB_ORDER[0] || SLOTS[0].key), dragKey = null;
   var frame = document.getElementById('frame');
   var empty = document.getElementById('empty');
   var tabsEl = document.getElementById('tabs');
@@ -1075,9 +1099,19 @@ a{color:var(--ochre)}
      dot markers, and an append-only version stacked a fresh set of ten tabs
      on each click. Idempotent here rather than relying on callers to reach
      for a separate refresh helper -- there is now only one function to call. */
+  /* SLOTS in tab order. Anything TAB_ORDER forgets is appended in draw order,
+     so a slot added to $dhc_slots and not to $dhc_tab_order still gets a tab
+     instead of becoming unreachable. */
+  function tabSlots() {
+    var byKey = {}; SLOTS.forEach(function (s) { byKey[s.key] = s; });
+    var out = [];
+    TAB_ORDER.forEach(function (k) { if (byKey[k]) out.push(byKey[k]); });
+    SLOTS.forEach(function (s) { if (out.indexOf(s) === -1) out.push(s); });
+    return out;
+  }
   function buildTabs() {
     tabsEl.innerHTML = '';
-    SLOTS.forEach(function (s) {
+    tabSlots().forEach(function (s) {
       var b = document.createElement('button');
       b.className = 'tab'; b.type = 'button'; b.setAttribute('role','tab');
       b.dataset.key = s.key;

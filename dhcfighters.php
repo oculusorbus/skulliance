@@ -270,6 +270,8 @@ a.dhcf-stat span{opacity:.85}
 
 <div class="dhcf-wrap">
 
+<?php $dhcnav_at = 'fighters'; include 'dhc-nav.php'; ?>
+
   <div class="dhcf-masthead">
     <div class="dhcf-intro">
       <div class="dhcf-head">

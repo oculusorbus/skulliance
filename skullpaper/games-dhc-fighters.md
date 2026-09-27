@@ -19,6 +19,15 @@ collection.
 
 ---
 
+## Building a Fighter
+
+The category tabs are ordered the way a Fighter actually gets built: **Torso,
+Head, Background, Effects 1, Effects 2, Arms, Weapon, Weapon (behind),
+Headgear, Companion**, and it opens on Torso. That is deliberately not the
+order the layers are *drawn* in — a background draws first because everything
+sits on it, but picking a backdrop before there is anything to stand on it
+tells you nothing.
+
 ## Where traits come from
 
 Each game pays a different category. A Fighter needs a torso, a head and a
@@ -231,6 +240,14 @@ Every card in the Collection carries its health, power and fighting style, and
 you can sort by **Deadliest**, **Toughest** or **Hardest hitting** and filter by
 **Fights like** — which is how you find the three of yours that make a Crew
 rather than the three that cost the most.
+
+## Getting between the three
+
+**DHC Fighters, the Collection and the Arena now carry a strip across the top
+of all three**, so building a Fighter, seeing what everyone else has built and
+fighting with it are one click apart instead of a trip through the menu. The
+page you are on is marked. Signed out, the Arena still shows it — the other two
+point at sign-in rather than dropping you on an error page.
 
 ## The Collection
 

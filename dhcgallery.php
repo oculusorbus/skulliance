@@ -231,6 +231,8 @@ include 'header.php';
 
 <div class="dhcg-wrap">
 
+<?php $dhcnav_at = 'collection'; include 'dhc-nav.php'; ?>
+
   <div class="dhcg-head">
     <h1>The Collection</h1>
     <span class="sub">Every Fighter assembled on Skulliance &middot; art by Maxingo</span>
