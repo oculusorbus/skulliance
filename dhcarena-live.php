@@ -204,7 +204,7 @@ function dhcal_challenge($conn, $host_id, $guest_id, $fighter_ids) {
 	   two people talking in Discord, and this is the thing that gets them from
 	   there to the board. Checked BEFORE the insert so the row just written
 	   does not count as the recent one. */
-	if (!$spammy) dhcal_announce_challenge($conn, $row);
+	if (!$spammy) dhcal_announce_challenge($conn, $row, $mine);
 	return array(true, '', $row);
 }
 
@@ -216,7 +216,7 @@ function dhcal_challenge($conn, $host_id, $guest_id, $fighter_ids) {
  * Posted publicly rather than DM'd on purpose: half the value of a grudge match
  * is other people knowing it is happening.
  */
-function dhcal_announce_challenge($conn, $row) {
+function dhcal_announce_challenge($conn, $row, $crew = array()) {
 	if (!function_exists('discordmsg')) {
 		if (is_file(__DIR__ . '/webhooks.php')) { ob_start(); include_once __DIR__ . '/webhooks.php'; ob_end_clean(); }
 		if (!function_exists('discordmsg')) return;
@@ -232,6 +232,34 @@ function dhcal_announce_challenge($conn, $row) {
 		$desc .= "⏳ The challenge stands for about ".$mins." minutes\n";
 		$desc .= "🏅 Nothing at stake — no traits, no ladder, no recovery. "
 		       . "Fighters still recovering can play.\n\n";
+		/* THE BACK FIGHTER IS THE THREAT, so it is the one shown. Formation
+		   order is pick order -- front, mid, back -- and the back rank is the
+		   one only a match of 5 reaches, which is where anybody who has thought
+		   about it puts their hardest hitter. Showing the front Fighter would
+		   advertise the one you are meant to get through; showing this one
+		   tells the invitee what is waiting behind it. */
+		$img = ''; $back = $crew ? end($crew) : null;
+		/* dhca_crew() selects f.serial so this is always set in practice, but a
+		   warning here would print ahead of the JSON this endpoint returns and
+		   break the parse on the client -- the caller is mid-request, not a
+		   cron. try/catch does not cover a warning. */
+		$serial = ($back && isset($back['serial'])) ? (int)$back['serial'] : 0;
+		$disp   = ($back && isset($back['display'])) ? $back['display'] : 'their back rank';
+		if ($back && !empty($back['traits'])) {
+			if (!function_exists('dhcf_render_fighter') && is_file(__DIR__ . '/dhcfighters-notify.php')) {
+				ob_start(); include_once __DIR__ . '/dhcfighters-notify.php'; ob_end_clean();
+			}
+			if (function_exists('dhcf_render_fighter')) {
+				ob_start(); $img = dhcf_render_fighter($back['traits'], $serial); ob_end_clean();
+			}
+			if ($img === '') error_log('dhcal_announce_challenge: no render for fighter serial '.$serial);
+			$built = function_exists('dhca_build_fighter')
+			       ? dhca_build_fighter($back['traits'], '', 'c'.$row['id'], dhcf_rarity()) : null;
+			$desc .= "🎯 **Back rank:** ".$disp
+			       . ($built ? " — ".$built['kit']['name'].", "
+			                 . (int)$built['maxHp']." health, ".(int)$built['power']." power" : "")
+			       . "\n\n";
+		}
 		$desc .= "*Open the Arena, pick a Crew of ".DHCA_CREW_SIZE.", and accept.*";
 
 		// The mention goes in $content, never the embed: a mention inside an
@@ -243,10 +271,13 @@ function dhcal_announce_challenge($conn, $row) {
 		$author = array('name' => $hostU['name'].' wants a live match');
 		if ($hostU['avatar'] !== '') $author['icon_url'] = $hostU['avatar'];
 
+		/* The challenger's avatar stays the thumbnail and the Fighter takes the
+		   big slot -- the same split dhca_announce() uses, so a person and a
+		   character never compete for the same corner. */
 		ob_start();
-		discordmsg('⚔️ Arena — Live Challenge', $desc, '',
+		discordmsg('⚔️ Arena — Live Challenge', $desc, $img,
 			'https://skulliance.io/staking/dhcarena.php', 'dhcarena',
-			$hostU['avatar'], 'F5A623', $author, null, $ping);
+			$hostU['avatar'] !== '' ? $hostU['avatar'] : $img, 'F5A623', $author, null, $ping);
 		ob_end_clean();
 	} catch (Throwable $e) {
 		// a Discord outage must never cost somebody their challenge

@@ -813,6 +813,14 @@ grudge match is other people knowing it is happening, and the mention goes in
 `discordmsg()`'s top-level `$content`: a mention written into an embed renders
 as a link and notifies no one.
 
+**It features the challenger's BACK Fighter**, rendered the same way
+`dhca_announce()` renders the fiercest. Formation order is pick order, so the
+back rank is `end($crew)` — and it is the one only a match of 5 reaches, which
+is where anybody who has thought about it puts their hardest hitter. Showing
+the front Fighter would advertise the one the invitee is meant to get *through*;
+this shows them what is waiting behind it. The challenger's avatar stays the
+thumbnail so a person and a character never compete for the same corner.
+
 **Rate limited at `DHCAL_ANNOUNCE_GAP_S`.** One open match per player already
 caps a player at one live invite at a time, but it does not stop
 challenge-cancel-challenge in a loop, and this post goes somewhere other people

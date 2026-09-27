@@ -125,7 +125,10 @@ Pick your Crew and a rival the same way you would for a ranked battle, then
 
 **The challenge is posted to the Arena channel and pings them**, so it reaches
 somebody who is in Discord rather than sitting on the Arena page — which is the
-whole point, since that is where the "go on then" happened. It also shows up on
+whole point, since that is where the "go on then" happened. It shows **your back
+Fighter**, named, with its health, power and fighting style: the back rank is
+the one only a match of 5 reaches, so it is what they will have the most trouble
+getting to, and they deserve to see what they are walking into. It also shows up on
 their own Arena page within a few seconds if they already have it open. They
 pick their own Crew of three, accept, and the board is dealt to both of you at
 once. The challenge stands for about ten minutes and either of you can call it
