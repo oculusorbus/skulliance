@@ -2919,7 +2919,13 @@ function livePollOnce(){
         finish();
       }
     }
-  }, function(){ /* a dropped poll is not an error; the next one covers it */ });
+  /* LIVE_URL. Without it post() falls back to the RANKED endpoint, which has
+     no 'poll' action -- it answers ok:false, this handler returns quietly, and
+     the waiting player sits on "their move" for ever while the other one has
+     already gone. Every live call has to name the endpoint; there is no
+     default that is right. */
+  }, function(){ /* a dropped poll is not an error; the next one covers it */ },
+     LIVE_URL);
 }
 
 function liveClosed(msg){
