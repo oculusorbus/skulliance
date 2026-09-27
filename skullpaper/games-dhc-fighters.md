@@ -243,12 +243,23 @@ rather than the three that cost the most.
 
 ## Getting between the three
 
-**DHC Fighters, the Collection and the Arena now carry a strip across the top
-of all three**, so building a Fighter, seeing what everyone else has built and
-fighting with it are one click apart instead of a trip through the menu. The
-page you are on is marked. Signed out, the Arena and the Collection both still
-work; only the assembler asks you to sign in, and the strip says so rather than
-dropping you on an error page.
+**DHC Fighters, the Collection, the Arena and the Sandbox all carry a strip
+across the top**, so building a Fighter, seeing what everyone else has built,
+fighting with it and experimenting are one click apart instead of a trip
+through the menu. The page you are on is marked. Signed out, everything except
+the assembler still works, and the strip says which one asks you to sign in
+rather than dropping you on an error page.
+
+### The Sandbox
+
+**Every trait unlocked, whether you own it or not, and the layers can be
+dragged into any order.** Nothing is saved and nothing counts — it is for
+seeing what a combination looks like before you go and build it, and it is the
+only place the layer order itself can be rearranged by hand.
+
+It is public, so a link to it works for anyone. It began as a tool for checking
+combinations before the real assembler existed, and it now wears the platform's
+own colours instead of its old standalone skin.
 
 ## The Collection
 

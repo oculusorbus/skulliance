@@ -7,10 +7,10 @@
  * not in the platform nav at all, and getting from the Arena back to the
  * assembler meant opening a menu or knowing a link was buried in a paragraph.
  *
- * ONE FILE, INCLUDED THREE TIMES, so the strip cannot drift into three
+ * ONE FILE, INCLUDED ON EVERY DHC PAGE, so the strip cannot drift into four
  * slightly different strips. Set $dhcnav_at before including:
  *
- *     $dhcnav_at = 'fighters' | 'collection' | 'arena';
+ *     $dhcnav_at = 'fighters' | 'collection' | 'arena' | 'sandbox';
  *     include 'dhc-nav.php';
  *
  * SIGNED OUT, ONE OF THE THREE IS A TRAP. The Arena and the Collection are
@@ -31,6 +31,7 @@ $dhcnav_items = array(
 	'fighters'   => array('dhcfighters.php', 'Fighters',   'build',  1),   // gated
 	'collection' => array('dhcgallery.php',  'Collection', 'browse', 0),   // public
 	'arena'      => array('dhcarena.php',    'Arena',      'fight',  0),   // public
+	'sandbox'    => array('dhcsandbox.php',  'Sandbox',    'experiment', 0), // public
 );
 ?>
 <style>

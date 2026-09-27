@@ -186,6 +186,14 @@
 		           state and pays nothing, so a player finding it would only be
 		           confused about which one counts. See dhcarena.md. -->
 		      <a href="dhcarena.php">DHC Arena</a>
+		      <!-- The other two DHC pages. Both are PUBLIC, and neither was
+		           reachable from anywhere on the platform: the Collection could
+		           only be found through a link inside a paragraph on DHC
+		           Fighters, and the Sandbox only if you knew the URL. They sit
+		           with their siblings rather than in a submenu, because the four
+		           of them are one activity -- build, browse, fight, experiment. -->
+		      <a href="dhcgallery.php">DHC Collection</a>
+		      <a href="dhcsandbox.php">Sandbox Experiment</a>
 		      <a href="cryptcrawlgame.php">Crypt Crawl</a>
 		      <a href="cryptconquestgame.php">Crypt Conquest</a>
 		      <a href="match3rpg.php">Monstrocity</a>

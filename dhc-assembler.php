@@ -10,7 +10,8 @@
  * was expensive to find.
  *
  * Set before including:
- *   $dhca_mode   'sandbox' (default) or 'fighters'
+ *   $dhca_mode        'sandbox' (default) or 'fighters' -- what it can do
+ *   $dhca_standalone  owns the page, or embedded in platform chrome
  *   $dhca_owned  null for everything, or category => slug => ['copies'=>n,'free'=>n]
  *                to restrict the picker to a player's holdings
  *
@@ -22,6 +23,24 @@ require_once __DIR__ . '/dhcfighters-config.php';   // the layering rules live h
 
 if (!isset($dhca_mode))  $dhca_mode  = 'sandbox';
 if (!isset($dhca_owned)) $dhca_owned = null;
+/*
+ * MODE IS WHAT IT DOES; STANDALONE IS WHERE IT LIVES. These were one flag, and
+ * conflating them meant the sandbox's capabilities -- every trait unlocked,
+ * layers draggable -- could only be had together with its own skin and its own
+ * full-page layout. Putting the sandbox inside the platform needed exactly one
+ * of those halves, so they are two:
+ *
+ *   $dhca_mode        'sandbox'  = every trait, layers reorderable
+ *                     'fighters' = only what you own, fixed order
+ *   $dhca_standalone  true  = owns the page: DHC ash-and-ochre, fills the
+ *                             viewport, brings its own <body>
+ *                     false = embedded in Skulliance chrome: navy palette,
+ *                             sized by what is in it
+ *
+ * Defaults to the old coupling, so anything setting only $dhca_mode is
+ * unchanged.
+ */
+if (!isset($dhca_standalone)) $dhca_standalone = ($dhca_mode === 'sandbox');
 
 // Where the art landed. Checked in order so a different upload path needs one
 // edit here, not a hunt through the file.
@@ -222,7 +241,7 @@ if ($dhca_owned !== null) {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-<?php if ($dhca_mode === 'sandbox'): ?>
+<?php if ($dhca_standalone): ?>
 /* THE SANDBOX KEEPS ITS OWN SKIN. It is a public, DHC-branded tool handed to
    an artist outside the platform, so it wears the collection's colours -- hot
    ash and ochre -- rather than Skulliance navy. */
@@ -243,7 +262,7 @@ if ($dhca_owned !== null) {
 }
 <?php endif; ?>
 *{box-sizing:border-box}
-<?php if ($dhca_mode === 'sandbox'): ?>
+<?php if ($dhca_standalone): ?>
 /* STANDALONE ONLY. The sandbox owns its whole page, so it takes the viewport
    and lays the shell out against it. Embedded in the platform these same rules
    force a viewport-tall block in the middle of a normal page -- which is where
@@ -288,9 +307,9 @@ a{color:var(--ochre)}
   display:grid;grid-template-columns:minmax(0,var(--stage)) minmax(380px,1fr);gap:0;<?php
   // Only the standalone page has a viewport to fill. Embedded, the shell is
   // sized by what is in it, and the picker scrolls inside its own column.
-  echo $dhca_mode === 'sandbox' ? 'height:calc(100% - 52px)' : 'height:auto;max-height:none'; ?>}
+  echo $dhca_standalone ? 'height:calc(100% - 52px)' : 'height:auto;max-height:none'; ?>}
 @media (max-width:900px){.shell{grid-template-columns:1fr;height:auto}}
-<?php if ($dhca_mode !== 'sandbox'): ?>
+<?php if (!$dhca_standalone): ?>
 /* Embedded, THE STAGE SETS THE HEIGHT and the picker is taken out of row
    sizing altogether by being absolutely positioned.
  *
@@ -399,7 +418,7 @@ a{color:var(--ochre)}
    is the worst contrast pairing in the interface, and the platform's own
    buttons already put dark text on this colour. The sandbox keeps white,
    where --blood is a deep red and white is correct. */
-.tab[aria-selected="true"]{background:var(--blood);color:<?php echo $dhca_mode === 'sandbox' ? '#fff' : 'var(--ink)'; ?>}
+.tab[aria-selected="true"]{background:var(--blood);color:<?php echo $dhca_standalone ? '#fff' : 'var(--ink)'; ?>}
 .tab .dot{color:var(--ochre)}
 /* On the SELECTED tab the accent is the background, so an accent-coloured dot
    vanishes into it -- mint on mint in fighters mode. Inheriting the tab's own
@@ -432,7 +451,7 @@ a{color:var(--ochre)}
 /* ---- rarity ----
    One hue per tier, used for the cell badge, the filter pills and the swatch
    in the legend, so a colour always means the same thing wherever it appears. */
-<?php if ($dhca_mode === 'sandbox'): ?>
+<?php if ($dhca_standalone): ?>
 .t-common{--tier:#8b8178}
 .t-uncommon{--tier:#4f9d84}
 .t-epic{--tier:#7d6bb0}
