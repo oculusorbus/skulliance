@@ -22,13 +22,19 @@ Three tables, and the split matters:
 
 ## Already created the tables?
 
-`ko` was added after the first release. Run this once; everything else below is
-unchanged and `CREATE TABLE IF NOT EXISTS` makes re-running it harmless.
+Two things arrived after the first release. Run both once; everything else below
+is unchanged and `CREATE TABLE IF NOT EXISTS` makes re-running it harmless.
+
+**1. `ko` on `dhc_arena_fighters`:**
 
 ```sql
 ALTER TABLE dhc_arena_fighters
   ADD COLUMN ko TINYINT(1) NOT NULL DEFAULT 0 AFTER benched_until;
 ```
+
+**2. `dhc_arena_live`**, for human-vs-human matches — the `CREATE TABLE` is at
+the bottom of this file under *Live battles*. Live play is inert until it
+exists: the Challenge button will simply report that it could not send.
 
 ## Full schema
 
@@ -91,3 +97,53 @@ with the ledger; a counter can drift from it.
 
 `'YYYY-MM'`, stamped at battle start so a battle belongs to the month it was
 fought in even if it resolves after midnight on the last day.
+
+## Live battles — `dhc_arena_live`
+
+Added after the first release, with §8d. **Run this once; it is independent of
+everything above and nothing else changes.**
+
+A fourth table rather than a flag on `dhc_arena_battles`, and the separation is
+the design. A live battle is a sport: no ladder, no traits, no Fighter record,
+no bench, no allowance. Keeping it in its own table means there is no code path
+from a live battle to the economy at all — "live never pays" cannot be softened
+later by an `unless`, because there is nothing to add the exception to.
+
+It also has to stay clear of two ranked rules that key on
+`dhc_arena_state.user_id` with `outcome = 0`: `dhca_open_battle()` would let a
+live match block the player's real battle, and `dhca_sweep_stale()` would
+forfeit it as a DEFEAT after six hours and bench Fighters over a match that
+carried no stake.
+
+One row is the whole match — the invite, the board and the result — because a
+live battle is short, is never replayed for a dispute (nothing was at stake) and
+is not a ledger anything is derived from. `moves` is kept anyway: it costs
+nothing and makes a reported bug reproducible.
+
+```sql
+CREATE TABLE IF NOT EXISTS dhc_arena_live (
+	id            INT AUTO_INCREMENT PRIMARY KEY,
+	host_id       INT          NOT NULL,          -- users.id, who challenged
+	guest_id      INT          NOT NULL,          -- who was challenged
+	status        TINYINT(1)   NOT NULL DEFAULT 0,-- 0 invited, 1 playing, 2 finished, 3 closed
+	seed          INT UNSIGNED NOT NULL,
+	host_crew     VARCHAR(128) DEFAULT NULL,      -- JSON [dhc_fighters.id,...]
+	guest_crew    VARCHAR(128) DEFAULT NULL,
+	state         MEDIUMTEXT   DEFAULT NULL,      -- the engine battle, host as 'mine'
+	moves         MEDIUMTEXT   DEFAULT NULL,      -- JSON [[from,to],...], both sides
+	winner        TINYINT(1)   NOT NULL DEFAULT 0,-- 0 none, 1 host, 2 guest
+	turn_at       DATETIME     DEFAULT NULL,      -- when the current turn began: the clock
+	created_at    DATETIME     NOT NULL,
+	updated_at    DATETIME     NOT NULL,
+	ended_at      DATETIME     DEFAULT NULL,
+	INDEX idx_host  (host_id, status),
+	INDEX idx_guest (guest_id, status),
+	INDEX idx_open  (status, updated_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+`state` stores the battle with the **host as `mine`**, always. Both players are
+`mine` to themselves, so `dhcal_view()` swaps `mine`/`foes`, `turn`, `over` and
+every `fx` event's `side` on the way out to the guest. The board itself needs no
+transformation — `dhca_fighter_for_gem()` resolves a gem to a rank within the
+asking side, so the 7x7 is symmetric.

@@ -738,11 +738,81 @@ at all.
 
 ---
 
-## 8d. Live battles — phase two
+## 8d. Live battles — SHIPPED
 
-Two players who are both online, or who arrange a time, fight each other directly
-with no AI on either side. Deliberately **not** in the first release, but the
-engine must not close the door on it.
+Two players who are both online fight each other directly with no AI on either
+side. Built after first release; the notes below record what was decided and
+what the shape of it is now, not a plan.
+
+**It is a sport, and nothing else.** No ladder points, no traits, no CARBON, no
+effect on any Fighter's win/loss record, no bench, and it does not touch the
+daily allowance in either direction. You cannot win anything and you cannot lose
+anything. The reason to play is that the other person is real and they are in
+Discord watching.
+
+**That is enforced structurally, not by a rule.** Live battles live in their own
+table, `dhc_arena_live`, and go through `dhcarena-live.php`. They never write
+`dhc_arena_battles`, `dhc_arena_state` or `dhc_arena_fighters`, and never call
+`dhca_finish()`, `dhca_bench()`, `dhca_record()` or `dhca_pay()`. "Live never
+pays" is therefore not a condition anyone can later add an exception to — there
+is no code path from a live battle to the economy at all. This is the whole
+reason for a separate table rather than a flag on the existing one: a flag is an
+`if` somebody eventually writes an `unless` into.
+
+**It also has to stay out of the way of the ranked rules.** `dhca_open_battle()`
+and `dhca_sweep_stale()` key on `dhc_arena_state.user_id` with `outcome = 0`, so
+a live battle stored there would both block the player's ranked battle and be
+force-forfeited AS A DEFEAT after six hours, benching Fighters for a match that
+carries no stake. Its own table sidesteps both.
+
+**Perspective is flipped on the way out, not in the client.** The engine has
+exactly one `mine` and one `foes`, but both players are `mine` to themselves.
+The battle is stored host-as-mine and `dhcal_view()` swaps `mine`/`foes`,
+`turn`, `over` and every `fx` event's `side` for the guest. The board needs no
+transformation: `dhca_fighter_for_gem()` resolves a gem to a RANK within the
+asking side, so the 7x7 is genuinely symmetric. The client is unchanged and does
+not know which seat it is in, which keeps §2's rule intact — it still decides
+nothing, and now it does not even know its own perspective.
+
+### What it needs, and why
+
+**Polling, not sockets.** Turn-based synchronous needs each player to act and
+then wait, which ordinary AJAX polling covers. Nothing here needs infrastructure
+the stack does not have.
+
+**Invited, not matchmade.** A challenge the other player accepts inside a window
+works at any population, including two. Players already coordinate in Discord,
+which is the lobby — a matchmaking queue at this population would never fire.
+
+**A turn clock, because a live game can be stalled and an async one cannot.**
+`DHCAL_TURN_S` seconds; on expiry the turn is handed to the AI, which already
+exists. Disconnects are answered the same way, so a dropped connection costs a
+turn rather than a battle. Nobody should lose to their wifi, and with no stake
+there is nothing to lose to it anyway.
+
+**Both players pick a Crew.** This is the one genuinely new screen. In a ranked
+battle only the attacker picks; the defender's Crew is whatever
+`dhca_defending_crew()` says they have standing, played by the AI. Live needs
+the invitee to pick too, so the challenge is accepted THROUGH a picker.
+
+**Recovering Fighters can play.** Nothing is at stake, so nothing is protected:
+the bench exists to price ranked battles and a live battle has no price. Barring
+a recovering Fighter would mean the sport is gated by the economy it is
+deliberately outside of.
+
+**The winner is announced to Discord.** Bragging rights are the entire payout,
+so the announcement is not decoration — it is the feature. Same
+`getDHCArenaWebhook()` channel, visibly marked as a live match so nobody reads
+it as a ladder result.
+
+### The one requirement this placed on phase one
+
+**The engine must take a turn from a caller, not fetch one itself.** It does:
+`dhca_play($b, $side, $a, $z)` validates whose turn it is and plays the move it
+is handed, and `dhca_ai_move()` — though defined in the engine — is only ever
+called by `dhca_move()` in the lib. Live substitutes the other player's request
+for that one call. The core needed no change, which is what this requirement
+was for.
 
 **Polling, not sockets.** Turn-based synchronous needs each player to act and
 then wait, which ordinary AJAX polling covers — the platform already polls
@@ -769,16 +839,6 @@ Two things it needs before shipping:
   which already exists for async, so it costs almost nothing.
 - **Disconnect handling**, answered the same way: the AI takes that side over and
   the battle finishes. Nobody should lose a Fighter to a dropped connection.
-
-### The one requirement this places on phase one
-
-**The engine must take a turn from a caller, not fetch one itself.** If
-`dhcarena-engine.php` calls the AI internally, live means unpicking the core
-later. If the turn is a parameter, the only difference between the modes is who
-supplies the defender's move — the AI function, or the other player's request.
-Same engine, same state, same validation.
-
-Costs nothing to build this way now. Expensive to retrofit.
 
 ---
 

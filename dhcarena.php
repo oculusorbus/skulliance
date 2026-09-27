@@ -826,6 +826,19 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   .arena-wrap .a-stat{padding:6px 8px}
   .arena-wrap .a-stat b{font-size:15px}
 }
+/* The live-match box. Lives under the rival list and is empty most of the
+   time, so it is hidden rather than styled to look deliberate when idle. */
+.arena-wrap .a-live{margin-top:10px;border:1px solid var(--ochre);border-radius:3px;
+  padding:10px 12px;font-size:12px;background:rgba(245,166,35,.06)}
+.arena-wrap .a-live b{color:var(--ochre)}
+.arena-wrap .a-live .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.arena-wrap .a-live .note{display:block;margin-top:6px;font-size:11px;opacity:.65;line-height:1.5}
+/* The turn clock, in the battle toolbar beside the turn flag. Tabular so the
+   digits do not jitter the row every second. */
+.arena-wrap .lclock{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--dim);
+  font-variant-numeric:tabular-nums}
+.arena-wrap .lclock.low{border-color:var(--blood);color:var(--blood)}
 .arena-wrap .a-block{border:1px solid var(--ochre);background:rgba(0,200,160,.07);
   border-radius:3px;padding:9px 12px;font-size:12px;margin-bottom:14px}
 .arena-wrap .a-block a{color:var(--ochre)}
@@ -1137,8 +1150,18 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                  three Fighters to come back can still play. */ ?>
         <button class="btn<?php echo $dhca_guest ? ' go' : ''; ?>" id="aPractice"><?php
           echo $dhca_guest ? 'New battle' : 'Practice'; ?></button>
+        <?php if (!$dhca_guest): ?>
+        <?php /* LIVE. Needs the same Crew and rival the ranked button needs, so
+                 it sits beside it rather than in a mode of its own. Not shown to
+                 a guest: a live match is between two named players and is
+                 announced with their names on it. */ ?>
+        <button class="btn" id="aChallenge" disabled>Challenge live</button>
+        <?php endif; ?>
         <span class="a-sub" style="margin:0" id="aMsg"></span>
       </div>
+      <?php if (!$dhca_guest): ?>
+      <div class="a-live" id="aLive" hidden></div>
+      <?php endif; ?>
       <?php if ($dhca_guest): ?>
       <?php /* No crypto or chain wording on the public face of the site -- see the
                funnel note in skullpaper. "Players", not "stakers", and DHC is named
@@ -1191,6 +1214,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
            come back together. Nothing is deleted. -->
       <button class="btn" id="howto" title="Show the title and how it works">?</button>
       <span class="turnflag" id="flag">—</span>
+      <span class="lclock" id="lclock" hidden></span>
       <span class="sub" style="margin:0" id="round"></span>
     </div>
     <div class="arena">
@@ -1298,6 +1322,12 @@ var S = null, battleId = 0, busy = false, drag = null, sfxOn = true;
    and rebuilt server-side. See dhcarena-practice.php. */
 var PRACTICE_URL = 'ajax/dhcarena-practice.php';
 var practice = null;      // the spec while a practice battle is running, else null
+/* LIVE. Human against human, no AI on either side unless somebody stalls.
+   {id, seat, seq, yours} while a live match is running, else null. The server
+   flips the board's perspective before sending it, so this client never learns
+   which seat it is in -- 'mine' is always whoever is looking. See §8d. */
+var LIVE_URL = 'ajax/dhcarena-live.php';
+var live = null, livePoll = null, liveTick = null, liveClock = 0;
 try { sfxOn = localStorage.getItem('dhcarena_sfx') !== '0'; } catch (e) {}
 
 var $ = function(id){ return document.getElementById(id); };
@@ -1935,11 +1965,14 @@ function post(body, cb, fail, url){
 }
 function sendMove(a, z){
   busy = true;
-  var body = practice
+  var body = live
+    ? {do:'move', live:live.id, a:a, z:z}
+    : practice
     ? {do:'move', spec:JSON.stringify(practice), a:a, z:z}
     : {do:'move', battle_id:battleId, a:a, z:z};
   post(body, function(res){
     if (res && res.ok && res.spec) practice = res.spec;
+    if (live && res) liveTook(res);
     if (!res || !res.ok) {
       busy = false;
       logLine('sys', (res && res.message) || 'That move was refused.');
@@ -1971,7 +2004,7 @@ function sendMove(a, z){
     // real one back rather than leaving a slide that did not happen on screen.
     paintBoard();
     logLine('sys','Lost contact with the Arena — that move was not played.');
-  }, practice ? PRACTICE_URL : null);
+  }, live ? LIVE_URL : practice ? PRACTICE_URL : null);
 }
 
 /* ------------------------------------------------------------ the end ------ */
@@ -2275,6 +2308,11 @@ function paintPicker(){
   paintPicked();
   var go = $('aStart');
   if (go) go.disabled = !!BLOCKED || !(picked.length === CREW_SIZE && rival > 0);
+  /* Live needs the same Crew and rival, but NOT the allowance -- BLOCKED is
+     about the daily six and a live match does not spend one. A player out of
+     battles, or with a Crew still recovering, can still challenge somebody. */
+  var ch = $('aChallenge');
+  if (ch) ch.disabled = !(picked.length === CREW_SIZE && rival > 0);
   var msg = $('aMsg');
   if (!msg) return;
   if (BLOCKED)                      msg.textContent = '';
@@ -2684,6 +2722,15 @@ if (startBtn) startBtn.addEventListener('click', function(){
    resume picks it up exactly where it was, and a practice battle was never
    worth keeping. */
 function leaveBattle(){
+  /* Walking out of a live match ends it for both players. There is nothing to
+     forfeit and no record to write -- with no stake, "somebody left" is just
+     the end of the game, and leaving the other player polling an abandoned
+     board would be worse than saying so. */
+  if (live) {
+    post({do:'quit', live:live.id}, function(){}, function(){}, LIVE_URL);
+    liveStopPoll(); liveTickStop(); live = null;
+    $('lclock').hidden = true;
+  }
   cineStop(); practice = null;
   $('endcard').hidden = true;
   // hidden by #arenaBattle going away regardless, but leaving it set would be a
@@ -2717,6 +2764,191 @@ paintMute();
 applyView();
 paintPicker();
 
+/* ============================================================================
+   LIVE MATCHES — human against human (§8d)
+
+   The only mode where the other side is a person. Everything about it is a
+   sport: no ladder, no traits, no Fighter record, no bench, no allowance. The
+   server enforces that by isolation, not by a rule -- see dhcarena-live.php.
+
+   The client does no more here than it does anywhere else. The server flips the
+   board's perspective before sending it, so 'mine' is always whoever is
+   looking and every existing guard -- the drag's `S.turn !== 'mine'`, the turn
+   flag, the enemy mirroring -- works untouched.
+   ============================================================================ */
+
+/* A username reaches the lobby box through innerHTML, and a username is the
+   one string on this page somebody else chose. */
+function esc(t){
+  return String(t == null ? '' : t).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+/** Take what a live reply says about whose turn it is and how long is left. */
+function liveTook(res){
+  if (!live || !res) return;
+  if (typeof res.seq === 'number')   live.seq = res.seq;
+  if (typeof res.yours === 'boolean') live.yours = res.yours;
+  if (typeof res.clock === 'number') liveClock = res.clock;
+  paintClock();
+  // Poll only while waiting on them; a client that polls on its own turn is
+  // asking the server to repeat what it already knows.
+  if (live.yours || (S && S.over)) liveStopPoll(); else liveStartPoll();
+}
+
+function paintClock(){
+  var el = $('lclock'); if (!el) return;
+  if (!live || !S || S.over) { el.hidden = true; return; }
+  el.hidden = false;
+  var n = Math.max(0, Math.round(liveClock));
+  el.textContent = (live.yours ? 'you ' : 'them ') + n + 's';
+  el.className = 'lclock' + (n <= 15 ? ' low' : '');
+}
+
+/* One second of the displayed clock. Cosmetic only -- the server decides when a
+   turn has actually run out, and every reply resets this from its answer. */
+function liveTickStart(){
+  if (liveTick) return;
+  liveTick = setInterval(function(){
+    if (!live) { liveTickStop(); return; }
+    if (liveClock > 0) liveClock--;
+    paintClock();
+  }, 1000);
+}
+function liveTickStop(){ if (liveTick) { clearInterval(liveTick); liveTick = null; } }
+
+function liveStartPoll(){
+  if (livePoll || !live) return;
+  livePoll = setInterval(livePollOnce, 1500);
+}
+function liveStopPoll(){ if (livePoll) { clearInterval(livePoll); livePoll = null; } }
+
+function livePollOnce(){
+  if (!live || busy) return;
+  post({do:'poll', live:live.id, since:live.seq}, function(res){
+    if (!live) return;
+    if (!res || !res.ok) return;                 // a blip; the next tick retries
+    if (res.status === 3) { liveClosed('The match was closed.'); return; }
+    if (typeof res.seq !== 'number' || res.seq <= live.seq) { liveTook(res); return; }
+
+    /* They moved. Same path a ranked defending reply takes -- the timeline is
+       animated and the server's state is taken at the end of it. A resync
+       (this tab was asleep longer than the server keeps timelines) skips the
+       animation rather than inventing one. */
+    var st = res.state;
+    live.seq = res.seq;
+    busy = true;
+    var finish = function(){
+      busy = false;
+      liveTook(res);
+      if (res.over) showEnd(res);
+    };
+    if (res.resync || !st.fx || !st.fx.length) {
+      S = st; paintBoard(); paintTeams(); paintChrome();
+      if (res.resync) logLine('sys','Caught up.');
+      finish();
+    } else {
+      try { playTimeline(st.fx, st, finish); }
+      catch (e) {
+        S = st; paintBoard(); paintTeams(); paintChrome();
+        if (window.console) console.error('arena live timeline', e);
+        finish();
+      }
+    }
+  }, function(){ /* a dropped poll is not an error; the next one covers it */ });
+}
+
+function liveClosed(msg){
+  liveStopPoll(); liveTickStop();
+  live = null;
+  $('lclock').hidden = true;
+  logLine('sys', msg);
+}
+
+/** Open a live battle from a payload, for whichever side got there first. */
+function liveOpen(res){
+  live = {id:res.live, seat:res.seat, seq:res.seq || 0, yours:!!res.yours};
+  liveClock = typeof res.clock === 'number' ? res.clock : 0;
+  practice = null;
+  openBattle({battle_id:0, state:res.state}, true);
+  liveTickStart();
+  liveTook(res);
+  logLine('sys','Live match against ' + (res.them || 'a rival') + '. No stakes — just the win.');
+}
+
+/* ---------- the lobby, on the setup screen --------------------------------- */
+
+function liveLobbyPaint(res){
+  var box = $('aLive'); if (!box) return;
+  if (!res || !res.live) { box.hidden = true; box.innerHTML = ''; return; }
+  box.hidden = false;
+  if (res.status === 0 && res.seat === 'guest') {
+    box.innerHTML = '<b>' + esc(res.them) + '</b> has challenged you to a live match.'
+      + '<span class="note">Pick ' + CREW_SIZE + ' Fighters above, then accept. Nothing is at '
+      + 'stake — no traits, no ladder, no recovery. Fighters still recovering can play.</span>'
+      + '<div class="row"><button class="btn go" id="aAccept">Accept</button>'
+      + '<button class="btn" id="aDecline">Decline</button>'
+      + '<span class="a-sub" style="margin:0" id="aLiveMsg"></span></div>';
+    $('aAccept').addEventListener('click', function(){ liveAccept(res.live); });
+    $('aDecline').addEventListener('click', function(){
+      post({do:'decline', live:res.live}, function(){ liveLobbyPaint(null); }, function(){}, LIVE_URL);
+    });
+  } else if (res.status === 0) {
+    box.innerHTML = 'Waiting for <b>' + esc(res.them) + '</b> to accept…'
+      + '<span class="note">They need to open the Arena and pick a Crew. The challenge '
+      + 'stands for a few minutes.</span>'
+      + '<div class="row"><button class="btn" id="aCancel">Cancel</button></div>';
+    $('aCancel').addEventListener('click', function(){
+      post({do:'decline', live:res.live}, function(){ liveLobbyPaint(null); }, function(){}, LIVE_URL);
+    });
+  } else if (res.status === 1) {
+    box.innerHTML = 'Live match against <b>' + esc(res.them) + '</b> is running.';
+  }
+}
+
+function liveLobbyPoll(){
+  // nothing to ask about while a battle is on screen
+  if (live || busy || battle.classList.contains('on')) return;
+  post({do:'lobby'}, function(res){
+    if (!res || !res.ok) return;
+    if (res.live && res.status === 1 && res.state) { liveOpen(res); return; }
+    liveLobbyPaint(res.live ? res : null);
+  }, function(){}, LIVE_URL);
+}
+
+function liveAccept(id){
+  var msg = $('aLiveMsg');
+  if (picked.length !== CREW_SIZE) {
+    if (msg) msg.textContent = 'Pick ' + CREW_SIZE + ' Fighters first.';
+    return;
+  }
+  if (msg) msg.textContent = 'Dealing…';
+  post({do:'accept', live:id, fighters:picked}, function(res){
+    if (!res || !res.ok) { if (msg) msg.textContent = (res && res.message) || 'Could not accept.'; return; }
+    liveOpen(res);
+  }, function(){ if (msg) msg.textContent = 'The Arena did not answer.'; }, LIVE_URL);
+}
+
+var chalBtn = $('aChallenge');
+if (chalBtn) chalBtn.addEventListener('click', function(){
+  if (busy || live) return;
+  if (picked.length !== CREW_SIZE || !rival) {
+    $('aMsg').textContent = 'Pick ' + CREW_SIZE + ' Fighters and a rival first.';
+    return;
+  }
+  chalBtn.disabled = true;
+  $('aMsg').textContent = 'Challenging…';
+  post({do:'challenge', guest:rival, fighters:picked}, function(res){
+    chalBtn.disabled = false;
+    if (!res || !res.ok) { $('aMsg').textContent = (res && res.message) || 'Could not challenge.'; return; }
+    $('aMsg').textContent = '';
+    liveLobbyPaint(res);
+  }, function(){
+    chalBtn.disabled = false;
+    $('aMsg').textContent = 'The Arena did not answer.';
+  }, LIVE_URL);
+});
+
 if (GUEST) {
   /* STRAIGHT INTO A BATTLE. A visitor arriving from a shared link should be
      playing, not reading a setup screen about a Crew they cannot pick -- so the
@@ -2727,6 +2959,11 @@ if (GUEST) {
   $('aMsg').textContent = 'Drawing two Crews…';
   startPractice(function(msg){ $('aMsg').textContent = msg; });
 } else {
+/* Is somebody waiting to fight you? Cheap, and it is the only way a challenge
+   issued in Discord thirty seconds ago reaches the page you just opened. */
+liveLobbyPoll();
+setInterval(liveLobbyPoll, 4000);
+
 /* A battle left open in another tab, or on a phone that went to sleep, is still
    the one you owe a move to — the server will refuse a new one until it ends. */
 post({do:'resume'}, function(res){

@@ -101,6 +101,45 @@ also the quickest way to meet the weapons you do not own yet. The two Crews are 
 random from the whole trait set, which also makes it the fastest way to see kits
 you do not own yet.
 
+## Live matches
+
+**Two people, both online, playing each other directly — no AI on either
+side.** This is the first thing on Skulliance where the opponent is a person
+taking their turn while you watch, and it exists for one reason: somebody in
+Discord says *"go on then"* and you break away and settle it.
+
+**It is a sport and nothing else.** No ladder points, no traits, no CARBON, no
+change to any Fighter's win/loss record, no recovery afterwards, and it does not
+spend a battle from your daily six. You cannot win anything and you cannot lose
+anything. What you get is the result, said out loud in Discord with both your
+names on it.
+
+Because nothing is at stake, nothing is protected either: **Fighters still
+recovering or resurrecting can play a live match.** Being out of battles for the
+day does not stop you.
+
+### How it runs
+
+Pick your Crew and a rival the same way you would for a ranked battle, then
+**Challenge live** instead of Enter the Arena. They get the challenge on their
+own Arena page, pick their own Crew of three, and accept — and the board is
+dealt to both of you at once. The challenge stands for a few minutes and either
+of you can call it off.
+
+From there it is the ordinary game, turn about. You slide, they watch it happen,
+they slide back. Everything works the way it does anywhere else: reach, bombs,
+shield, charge, the arena's own effect.
+
+**There is a turn clock**, and it is the only thing live adds to the rules. If
+somebody sits there too long the Arena plays that turn for them and the game
+moves on. That covers a dropped connection as well as a stall — nobody loses a
+match to their wifi, and with nothing at stake there was nothing to lose to it
+anyway. Leaving ends the match for both of you, with no forfeit and no record.
+
+**The winner is announced in the Arena channel**, marked as a live match so it
+is never mistaken for a ladder result. Bragging rights are the whole prize,
+which is exactly why the announcement is the point rather than a footnote.
+
 ## The board
 
 Five kinds of gem on a 7x7 board:
