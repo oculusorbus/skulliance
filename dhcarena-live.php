@@ -45,6 +45,10 @@ if (!defined('DHCAL_IDLE_S'))   define('DHCAL_IDLE_S', 1800);
    A client further behind than this resyncs without animation instead, which is
    bounded rather than letting the state JSON grow with the battle. */
 if (!defined('DHCAL_TL_KEEP'))  define('DHCAL_TL_KEEP', 8);
+/* Announce at most one challenge per player per this long. The match still
+   goes ahead -- only the Discord post is skipped -- so a cancel-and-retry
+   costs nothing but does not get to post twice. */
+if (!defined('DHCAL_ANNOUNCE_GAP_S')) define('DHCAL_ANNOUNCE_GAP_S', 180);
 
 /* ---------- reading ---------------------------------------------------------- */
 
@@ -160,6 +164,16 @@ function dhcal_pick($conn, $user_id, $fighter_ids) {
 	return array($out, '');
 }
 
+/* Has this player issued a challenge very recently? The one-open-match rule
+   already caps a player at one live invite at a time, but it does not stop
+   challenge-cancel-challenge in a loop, and the announcement goes to a channel
+   other people are reading. Cheap insurance on the same table. */
+function dhcal_recent_challenge($conn, $host_id, $within) {
+	$r = $conn->query("SELECT id FROM dhc_arena_live WHERE host_id = ".(int)$host_id."
+	                   AND created_at > (NOW() - INTERVAL ".(int)$within." SECOND) LIMIT 1");
+	return ($r && $r->num_rows) ? true : false;
+}
+
 function dhcal_challenge($conn, $host_id, $guest_id, $fighter_ids) {
 	$host_id = (int)$host_id; $guest_id = (int)$guest_id;
 	if ($guest_id === $host_id) return array(false, 'Pick somebody else.', null);
@@ -173,6 +187,9 @@ function dhcal_challenge($conn, $host_id, $guest_id, $fighter_ids) {
 	list($mine, $err) = dhcal_pick($conn, $host_id, $fighter_ids);
 	if (!$mine) return array(false, $err, null);
 
+	// read it now: after the INSERT the new row is itself "recent"
+	$spammy = dhcal_recent_challenge($conn, $host_id, DHCAL_ANNOUNCE_GAP_S);
+
 	$ids = array_map(function($f){ return (int)$f['id']; }, $mine);
 	$conn->query(sprintf(
 		"INSERT INTO dhc_arena_live (host_id,guest_id,status,seed,host_crew,created_at,updated_at)
@@ -181,7 +198,59 @@ function dhcal_challenge($conn, $host_id, $guest_id, $fighter_ids) {
 		$conn->real_escape_string(json_encode($ids))));
 	$id = (int)$conn->insert_id;
 	if (!$id) return array(false, 'Could not send the challenge.', null);
-	return array(true, '', dhcal_row($conn, $id));
+	$row = dhcal_row($conn, $id);
+	/* THE PING IS THE INVITATION. Without it a challenge only reaches somebody
+	   who already has the Arena open, which is nobody -- the whole premise is
+	   two people talking in Discord, and this is the thing that gets them from
+	   there to the board. Checked BEFORE the insert so the row just written
+	   does not count as the recent one. */
+	if (!$spammy) dhcal_announce_challenge($conn, $row);
+	return array(true, '', $row);
+}
+
+/**
+ * "Come and have a go." Goes to the Arena channel with the invitee mentioned,
+ * because a mention is what actually notifies them -- see the note in
+ * webhooks.php on why a mention written into an embed reaches nobody.
+ *
+ * Posted publicly rather than DM'd on purpose: half the value of a grudge match
+ * is other people knowing it is happening.
+ */
+function dhcal_announce_challenge($conn, $row) {
+	if (!function_exists('discordmsg')) {
+		if (is_file(__DIR__ . '/webhooks.php')) { ob_start(); include_once __DIR__ . '/webhooks.php'; ob_end_clean(); }
+		if (!function_exists('discordmsg')) return;
+	}
+	try {
+		$hostU  = dhca_identity($conn, (int)$row['host_id']);
+		$guestU = dhca_identity($conn, (int)$row['guest_id']);
+		$mins   = max(1, (int)round(DHCAL_INVITE_S / 60));
+
+		$desc  = "**".$hostU['name']."** has challenged **".$guestU['name']."** "
+		       . "to a live match.\n\n";
+		$desc .= "🎮 Both Crews played by their owners, in real time\n";
+		$desc .= "⏳ The challenge stands for about ".$mins." minutes\n";
+		$desc .= "🏅 Nothing at stake — no traits, no ladder, no recovery. "
+		       . "Fighters still recovering can play.\n\n";
+		$desc .= "*Open the Arena, pick a Crew of ".DHCA_CREW_SIZE.", and accept.*";
+
+		// The mention goes in $content, never the embed: a mention inside an
+		// embed renders as a link and notifies nobody.
+		$ping = $guestU['mention']
+		      ? $guestU['mention'].' you have been challenged to a live match.'
+		      : '';
+
+		$author = array('name' => $hostU['name'].' wants a live match');
+		if ($hostU['avatar'] !== '') $author['icon_url'] = $hostU['avatar'];
+
+		ob_start();
+		discordmsg('⚔️ Arena — Live Challenge', $desc, '',
+			'https://skulliance.io/staking/dhcarena.php', 'dhcarena',
+			$hostU['avatar'], 'F5A623', $author, null, $ping);
+		ob_end_clean();
+	} catch (Throwable $e) {
+		// a Discord outage must never cost somebody their challenge
+	}
 }
 
 function dhcal_decline($conn, $user_id, $id) {

@@ -121,10 +121,15 @@ day does not stop you.
 ### How it runs
 
 Pick your Crew and a rival the same way you would for a ranked battle, then
-**Challenge live** instead of Enter the Arena. They get the challenge on their
-own Arena page, pick their own Crew of three, and accept — and the board is
-dealt to both of you at once. The challenge stands for a few minutes and either
-of you can call it off.
+**Challenge live** instead of Enter the Arena.
+
+**The challenge is posted to the Arena channel and pings them**, so it reaches
+somebody who is in Discord rather than sitting on the Arena page — which is the
+whole point, since that is where the "go on then" happened. It also shows up on
+their own Arena page within a few seconds if they already have it open. They
+pick their own Crew of three, accept, and the board is dealt to both of you at
+once. The challenge stands for about ten minutes and either of you can call it
+off.
 
 From there it is the ordinary game, turn about. You slide, they watch it happen,
 they slide back. Everything works the way it does anywhere else: reach, bombs,

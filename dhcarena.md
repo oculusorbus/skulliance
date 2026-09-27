@@ -805,6 +805,20 @@ so the announcement is not decoration — it is the feature. Same
 `getDHCArenaWebhook()` channel, visibly marked as a live match so nobody reads
 it as a ladder result.
 
+**So is the challenge, and it pings the invitee.** Without it a challenge only
+ever reaches somebody who already has the Arena page open — which is nobody,
+because the premise is two people talking in Discord. The ping IS the
+invitation. Posted to the channel rather than DM'd, because half the value of a
+grudge match is other people knowing it is happening, and the mention goes in
+`discordmsg()`'s top-level `$content`: a mention written into an embed renders
+as a link and notifies no one.
+
+**Rate limited at `DHCAL_ANNOUNCE_GAP_S`.** One open match per player already
+caps a player at one live invite at a time, but it does not stop
+challenge-cancel-challenge in a loop, and this post goes somewhere other people
+are reading. Only the announcement is skipped — the match itself still goes
+ahead, so the limit can never stop two people playing.
+
 ### The one requirement this placed on phase one
 
 **The engine must take a turn from a caller, not fetch one itself.** It does:
