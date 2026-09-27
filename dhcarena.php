@@ -2971,11 +2971,27 @@ function liveLobbyPaint(res){
 }
 
 function liveLobbyPoll(){
-  // nothing to ask about while a battle is on screen
-  if (live || busy || battle.classList.contains('on')) return;
+  /* NOT `battle.classList.contains('on')`. That was any battle at all, which
+     included the ranked one resume() opens on page load -- so a host who had an
+     unfinished battle somewhere never learned their challenge was accepted, and
+     sat looking at a different board while the other player waited. The poll
+     keeps asking; what changes is whether the answer takes over the screen. */
+  if (live || busy) return;
   post({do:'lobby'}, function(res){
     if (!res || !res.ok) return;
-    if (res.live && res.status === 1 && res.state) { liveOpen(res); return; }
+    if (res.live && res.status === 1 && res.state) {
+      /* IT TAKES THE SCREEN, whatever is on it. The player asked for this match
+         and the other one is sitting in front of it with a clock running, so
+         deferring is the wrong answer -- and there is nowhere to tell them it
+         is waiting, because the setup screen they would read it on is the one
+         thing that is not showing. Nothing is lost either way: a ranked battle
+         is saved server-side after every move and resume picks it up, and
+         practice was never worth keeping. */
+      var interrupted = !practice && battle.classList.contains('on');
+      liveOpen(res);
+      if (interrupted) logLine('sys','Your other battle is saved — it will be waiting.');
+      return;
+    }
     liveLobbyPaint(res.live ? res : null);
   }, function(){}, LIVE_URL);
 }
@@ -3034,7 +3050,10 @@ post({do:'resume'}, function(res){
   if (!res || !res.ok) return;
   // The player can press Enter before this lands; whoever opened a battle first
   // owns the screen.
-  if (battle.classList.contains('on') || practice) return;
+  /* ...or a LIVE match. The lobby poll and this fire together on load, and
+     whichever answers last used to win -- so a resumed ranked battle could
+     land on top of a live one that had already opened. */
+  if (battle.classList.contains('on') || practice || live) return;
   try {
     openBattle(res, !res.state.moves);
     logLine('sys', res.state.moves ? 'Picked up where you left off.'
