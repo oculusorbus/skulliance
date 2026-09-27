@@ -750,6 +750,28 @@ daily allowance in either direction. You cannot win anything and you cannot lose
 anything. The reason to play is that the other person is real and they are in
 Discord watching.
 
+**Asked for on day one, and declined.** Within hours of live shipping, players
+asked for a trait to drop for the winner, up to three a day, to give live play
+a reason. The arithmetic is what settles it. `dhcf_drops_today()` groups by
+source, so the cap is three PER SOURCE — live paying three would not share a
+budget with anything, it would be a new faucet worth as much as the whole
+ranked Arena. And ranked's four anti-farm rules are all absent here by design:
+the six-battle allowance, the bench, `dhca_already_rewarded()`, and the rarity
+bands that pay little for punching down.
+
+The one that cannot be engineered around is consent. A ranked defender never
+agreed to the fight; a live opponent did. Two players alternating thrown
+matches need six games to max both their caps, with no allowance spent, no
+Fighters benched and recovering Fighters allowed — strictly cheaper than
+earning them. A per-opponent limit only raises it to three willing partners a
+day, which at this population is everybody, by arrangement.
+
+It would also cost the thing that makes live good: the moment it pays, the
+bench and the allowance and the per-opponent rule all have to come back, and
+then it is ranked with extra steps. If live needs a draw, it is prestige — a
+win/loss record and a live leaderboard, which collusion can inflate into a
+number everyone can see and nothing else.
+
 **That is enforced structurally, not by a rule.** Live battles live in their own
 table, `dhc_arena_live`, and go through `dhcarena-live.php`. They never write
 `dhc_arena_battles`, `dhc_arena_state` or `dhc_arena_fighters`, and never call
