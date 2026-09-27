@@ -462,7 +462,19 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   .arena-wrap .teamcol.foes .tok .art{transform:scaleX(-1)}.arena-wrap .teamcol .tok{padding:8px}.arena-wrap .teamcol .tok .nm{font-size:12px}.arena-wrap .teamcol .tok .kitn{font-size:10px}.arena-wrap .teamcol .tok .rk{font-size:9px}.arena-wrap .teamcol .tok .hpn{font-size:9.5px;height:14px;line-height:14px}.arena-wrap .teamcol .tok .hpwrap{height:8px}.arena-wrap .teamcol{gap:10px}
 }
 /* ---- board ---- */
-.arena-wrap .boardwrap.foeturn{border-color:rgba(224,70,107,.55);box-shadow:0 0 0 1px rgba(224,70,107,.25)}
+/* WHOSE BOARD IT IS, at a glance. This was a 55%-opacity border and a 1px
+   ring, which is invisible if you are watching the gems -- which is the only
+   thing anybody watches. It is the standing state for the whole of their
+   exchange, so it earns being seen, and it pulses slowly rather than sitting
+   still so that a glance anywhere near the board catches it. */
+.arena-wrap .boardwrap.foeturn{border-color:rgba(224,70,107,.9);
+  box-shadow:0 0 0 2px rgba(224,70,107,.3), 0 0 18px rgba(224,70,107,.22);
+  animation:foeTurn 2.2s ease-in-out infinite}
+@keyframes foeTurn{
+  0%,100%{box-shadow:0 0 0 2px rgba(224,70,107,.3), 0 0 18px rgba(224,70,107,.18)}
+  50%    {box-shadow:0 0 0 2px rgba(224,70,107,.45), 0 0 26px rgba(224,70,107,.34)}}
+@media (prefers-reduced-motion:reduce){
+  .arena-wrap .boardwrap.foeturn{animation:none}}
 .arena-wrap .boardwrap{position:relative;border:1px solid var(--line);border-radius:4px;
   transition:border-color .2s,box-shadow .2s;
   background:rgba(21,25,34,.80);
@@ -1761,8 +1773,18 @@ function shakeBoard(){
    would leave busy true and the board dead with the turn never handed back,
    which is exactly what one dangling reference did to the prototype.
    ============================================================================ */
+/* How long the board sits still, with THEIR MOVE up and the cell they are
+   about to slide lit, before a defending move actually happens. 640ms was not
+   enough for players to register the handover; a second reads as "something
+   else is taking a turn now" rather than as lag. The second and later slides
+   of the same exchange are quicker -- by then you know who is acting. */
+var FOE_LEAD = 1000, FOE_LEAD_AGAIN = 700;
+
 function playTimeline(fx, state, done){
   var i = 0, hold = 190;      // how long the current clear sits before it falls
+  /* Reset per exchange, not per event: the announcement belongs to the first
+     defending slide in THIS timeline. */
+  var foeAnnounced = false;
 
   function step(){
     if (i >= fx.length) { finish(); return; }
@@ -1778,14 +1800,29 @@ function playTimeline(fx, state, done){
     switch (e.k) {
 
     case 'slide':
-      /* A defending move gets a beat of its own before it happens. Without it
-         their slide lands inside the tail of your own cascade and reads as more
-         of your turn — the single most confusing thing in the prototype. */
+      /* A DEFENDING MOVE IS ANNOUNCED, not merely preceded by a pause.
+         The pause existed and was not enough: players reported mistaking the
+         defending Crew's move for their own, or for a glitch damaging them out
+         of nowhere. A quiet beat and a faint red border are both easy to miss
+         while you are watching the gems -- so the handover now says so, in the
+         same place the game already shouts CHAIN and BOMB, and holds long
+         enough to be read before anything moves.
+         Only the FIRST slide of their exchange announces it; an extra turn is
+         already announced by 'again', and "THEIR MOVE" three times in a row
+         would be noise rather than information. */
       if (e.side === 'foes') {
         S.turn = 'foes'; paintChrome();
         var c = cellEl(e.a); if (c) c.classList.add('sel');
-        setTimeout(function(){ doSlide(e); }, 420);
-        return 640;
+        var lead = FOE_LEAD;
+        if (!foeAnnounced) {
+          foeAnnounced = true;
+          banner('THEIR MOVE', 10);   // outranks everything: it is the context
+          sfx('pick');
+        } else {
+          lead = FOE_LEAD_AGAIN;      // they are already established as acting
+        }
+        setTimeout(function(){ doSlide(e); }, lead - 220);
+        return lead;
       }
       doSlide(e);
       return 150;
@@ -1914,8 +1951,10 @@ function playTimeline(fx, state, done){
       return 260;
 
     case 'again':
-      banner('AGAIN', 6);
-      return 320;
+      /* WHOSE extra turn. A bare "AGAIN" during a defending chain read as the
+         player's own board misbehaving. */
+      banner(e.side === 'foes' ? 'THEY GO AGAIN' : 'YOU GO AGAIN', e.side === 'foes' ? 9 : 6);
+      return e.side === 'foes' ? 460 : 320;
 
     case 'hurrah':
       /* Every bomb left on the board goes off once the battle is decided. Pure

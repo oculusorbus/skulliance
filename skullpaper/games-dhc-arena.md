@@ -153,6 +153,18 @@ anyway. Leaving ends the match for both of you, with no forfeit and no record.
 is never mistaken for a ladder result. Bragging rights are the whole prize,
 which is exactly why the announcement is the point rather than a footnote.
 
+## Whose move it is
+
+**When the defending Crew acts, the board says so.** Their move is announced —
+*THEIR MOVE* across the board — the cell they are about to slide lights up, and
+everything holds still for a beat before it happens. An extra turn says whose
+as well: *THEY GO AGAIN* or *YOU GO AGAIN*, never just "again".
+
+This is deliberately slower than it needs to be. Without it a defending move
+lands in the tail of your own cascade and reads as your board doing something
+inexplicable to you — several players took the Crew's reply for a glitch that
+was damaging them.
+
 ## The board
 
 Five kinds of gem on a 7x7 board:

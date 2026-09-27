@@ -611,7 +611,10 @@ function dhca_play(&$b, $side, $a, $z) {
 
 	// a five or more goes again; anything less hands the turn over
 	if ($best >= DHCA_EXTRA_TURN) {
-		$b['fx'][] = array('k'=>'again','len'=>$best);
+		/* WHOSE extra turn. Without a side the client announced a bare "AGAIN"
+		   for both, so a defender chaining three moves in a row read as the
+		   player's own board doing something inexplicable. */
+		$b['fx'][] = array('k'=>'again','len'=>$best,'side'=>$side);
 		$b['log'][] = 'Match of '.$best.' — '.($side==='mine'?'you go':'they go').' again.';
 		return true;
 	}
