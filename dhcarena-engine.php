@@ -913,7 +913,19 @@ function dhca_public(&$b) {
 	$tnote = '';
 	foreach (dhca_terrains() as $t) if ($t['id'] === $b['terrain']) $tnote = $t['note'];
 	$slim = function($f) {
+		/* THE DRAW ORDER COMES FROM THE ASSEMBLER, not from a list in the client.
+		   A saved Fighter stores effects1/effects2 and weaponBack; a practice
+		   Fighter stores effects. A hand-written list in the client got the
+		   practice shape right and silently dropped every effect a real player
+		   had equipped -- which is why it survived so long, since practice is
+		   what gets played. dhcf_layer_order() also applies the exceptions (a
+		   companion under the arms, arms or an effect behind the torso).
+		   function_exists, because the engine must stay runnable headless: the
+		   rules harness loads this file and nothing else, and falls back to the
+		   client's own list. */
+		$layers = function_exists('dhcf_layer_order') ? dhcf_layer_order($f['traits']) : null;
 		return array('uid'=>$f['uid'],'name'=>$f['name'],'traits'=>$f['traits'],
+			'layers'=>$layers,
 			'kit'=>array('id'=>$f['kit']['id'],'emoji'=>$f['kit']['emoji'],
 			             'icon'=>isset($f['kit']['icon']) ? $f['kit']['icon'] : '',
 			             'name'=>$f['kit']['name'],'note'=>$f['kit']['note']),

@@ -1083,9 +1083,20 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
             <?php if (!empty($t['background'])): ?>
               <img class="bg" loading="lazy" alt="" src="<?php echo $ART; ?>/250/background/<?php echo htmlspecialchars($t['background']); ?>.png" onerror="this.remove()">
             <?php endif; ?>
-            <?php foreach (array('torso','weapon','arms','effects','head','headgear','companion') as $k):
-              if (empty($t[$k])) continue; ?>
-              <img loading="lazy" alt="" src="<?php echo $ART; ?>/250/<?php echo $k; ?>/<?php echo htmlspecialchars($t[$k]); ?>.png" onerror="this.remove()">
+            <?php /* dhcf_layer_order(), not a hand-written list -- the same call the
+                     assembler, the gallery and the Discord render all use. The list
+                     that was here named 'effects', and a SAVED Fighter has no such
+                     slot: it stores effects1 and effects2, so every effect a player
+                     had equipped was silently missing from their own Crew cards. It
+                     also had no weaponBack, and it ignored the exceptions
+                     dhcf_layer_order() applies -- a companion that belongs under the
+                     arms, arms that go behind the torso, an effect that sits behind
+                     it. The SLOT names the layer, the CATEGORY names the art folder,
+                     and for effects1/weaponBack those differ. */ ?>
+            <?php foreach (dhcf_layer_order($t) as $k):
+              if ($k === 'background' || empty($t[$k])) continue;
+              $kc = dhcf_slot_category($k); ?>
+              <img loading="lazy" alt="" src="<?php echo $ART; ?>/250/<?php echo $kc; ?>/<?php echo htmlspecialchars($t[$k]); ?>.png" onerror="this.remove()">
             <?php endforeach; ?>
             <?php if (!$ok): ?>
               <?php /* Two different things are happening and they deserve two
@@ -1469,14 +1480,37 @@ function banner(text, pri){
    Built ONCE per battle. Rewriting innerHTML per move re-creates all fourteen
    <img> layers, which flashes the whole Crew on a phone and kills any animation
    mid-flight by replacing the element running it. */
+/* SLOT vs CATEGORY. The slot names the layer -- and data-l, which the death
+   animation groups on -- while the category names the art FOLDER. The two
+   differ for the two effects slots and the back weapon, and treating a slot as
+   a folder asks the server for /250/effects1/ which does not exist. */
+var SLOT_CAT = {effects1:'effects', effects2:'effects', weaponBack:'weapon'};
+/* Only for a state saved before the server began sending an order. Lists BOTH
+   shapes -- a saved Fighter's effects1/effects2 and a practice Fighter's
+   effects -- because naming only one is the bug this replaces. */
+var LAYERS_FALLBACK = ['weaponBack','torso','weapon','arms','effects','effects1','effects2',
+                       'head','headgear','companion'];
+/**
+ * One Fighter's art, in the order the assembler would draw it. The order comes
+ * from the server (dhcf_layer_order), so the Arena cannot disagree with the
+ * gallery, the assembler or the Discord render about what a Fighter looks
+ * like -- and the per-trait exceptions (a companion under the arms, arms or an
+ * effect behind the torso) come along for free.
+ */
+function layerImgs(f, tagged){
+  var t = f.traits || {};
+  var order = (f.layers && f.layers.length) ? f.layers : LAYERS_FALLBACK;
+  return (t.background
+      ? '<img class="bg" loading="lazy" alt="" src="'+artUrl('background',t.background,250)+'" onerror="this.remove()">' : '')
+    + order.filter(function(k){ return k !== 'background' && t[k]; })
+      .map(function(k){
+        return '<img'+(tagged ? ' data-l="'+k+'"' : '')+' loading="lazy" alt="" src="'
+             + artUrl(SLOT_CAT[k] || k, t[k], 250) + '" onerror="this.remove()">';
+      }).join('');
+}
 function tokHtml(f, mine){
   var t = f.traits || {};
-  var layers = (t.background
-      ? '<img class="bg" loading="lazy" alt="" src="'+artUrl('background',t.background,250)+'" onerror="this.remove()">' : '')
-    + ['torso','weapon','arms','effects','head','headgear','companion']
-      .filter(function(k){ return t[k]; })
-      .map(function(k){ return '<img data-l="'+k+'" loading="lazy" alt="" src="'+artUrl(k,t[k],250)+'" onerror="this.remove()">'; })
-      .join('');
+  var layers = layerImgs(f, true);
   var rank = ['front','mid','back'][f.rank];
   return '<div class="tok'+(mine?' mine':' foe')+(f.ko?' ko':'')+'" data-id="'+f.uid+'"'
     + ' style="--gem:var(--g'+f.rank+')">'
@@ -1646,7 +1680,7 @@ var DEATH_ORDER = [
   {slots:['companion'],        alt:false, gone:true},
   {slots:['headgear','head'],  alt:false},   // headgear follows the HEAD, not the reverse
   {slots:['arms'],             alt:true},
-  {slots:['weapon'],           alt:false},
+  {slots:['weapon','weaponBack'], alt:false},  // the back weapon goes with the weapon
   {slots:['torso'],            alt:true},
 ];
 var DEATH_CUT   = ['effects','effects1','effects2'];
@@ -2398,12 +2432,7 @@ function openCard(f, mine){
   var box = $('fcBox'); if (!box) return;
   var t = f.traits || {};
   var rank = ['front','mid','back'][f.rank];
-  var layers = (t.background
-      ? '<img class="bg" alt="" src="'+artUrl('background',t.background,250)+'" onerror="this.remove()">' : '')
-    + ['torso','weapon','arms','effects','effects1','effects2','head','headgear','companion']
-      .filter(function(k){ return t[k]; })
-      .map(function(k){ return '<img alt="" src="'+artUrl(k.replace(/[12]$/,''),t[k],250)+'" onerror="this.remove()">'; })
-      .join('');
+  var layers = layerImgs(f, false);
 
   var pct = Math.round(f.hp / f.maxHp * 100);
   box.innerHTML =
