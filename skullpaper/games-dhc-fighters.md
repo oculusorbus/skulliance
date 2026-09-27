@@ -246,12 +246,18 @@ rather than the three that cost the most.
 **DHC Fighters, the Collection and the Arena now carry a strip across the top
 of all three**, so building a Fighter, seeing what everyone else has built and
 fighting with it are one click apart instead of a trip through the menu. The
-page you are on is marked. Signed out, the Arena still shows it — the other two
-point at sign-in rather than dropping you on an error page.
+page you are on is marked. Signed out, the Arena and the Collection both still
+work; only the assembler asks you to sign in, and the strip says so rather than
+dropping you on an error page.
 
 ## The Collection
 
-The **Fighter Collection**, linked from the DHC Fighters page, browses every
+**The Collection is public** — anyone can browse it, with or without an
+account. It is where the collection actually gets seen, and that could not be
+true of a page only the people who built them could open. Nobody owns these
+Fighters, so showing them to the world costs nobody anything.
+
+The **Fighter Collection** browses every
 Fighter assembled on the platform, with the owner shown beneath each. Sort by
 rarest, newest or number; filter to a rarity tier, to originals, or to one
 staker's Fighters. Click any of them for the full breakdown at full size —
@@ -259,7 +265,8 @@ every trait, its tier, how many of the 226 minted Fighters wear it, and what it
 contributes to the score.
 
 Filters are carried in the link, so a particular view is something you can send
-to someone.
+to someone — and now to anyone, not only to another staker. A shared link
+carries its own title and preview: *"Mythic Fighters"* posts as exactly that.
 
 ---
 

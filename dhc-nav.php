@@ -13,12 +13,13 @@
  *     $dhcnav_at = 'fighters' | 'collection' | 'arena';
  *     include 'dhc-nav.php';
  *
- * SIGNED OUT, THE OTHER TWO ARE A TRAP. dhcarena.php is public; dhcfighters.php
- * and dhcgallery.php both include skulliance.php, which redirects an anonymous
- * visitor to error.php. Linking a guest straight into that is the exact wall
- * the public Arena removed, so for a guest those two point at the sign-in page
- * and say why. Set $dhcnav_guest = true to get that (only the Arena ever needs
- * to -- the other two cannot be reached signed out).
+ * SIGNED OUT, ONE OF THE THREE IS A TRAP. The Arena and the Collection are
+ * public; dhcfighters.php still includes skulliance.php, which redirects an
+ * anonymous visitor to error.php. Linking a guest straight into that is the
+ * exact wall the public Arena removed, so for a guest that one points at the
+ * sign-in page and says why. Set $dhcnav_guest = true on any page a guest can
+ * reach -- the flag on each item below is what decides, not the caller, so
+ * opening another page to the public is one 1 changed to a 0 here.
  *
  * Relative hrefs, never absolute: the login cookie is host-only, so an
  * absolute www link can hop hosts and silently sign the player out.
@@ -27,9 +28,9 @@ $dhcnav_at    = isset($dhcnav_at) ? $dhcnav_at : '';
 $dhcnav_guest = !empty($dhcnav_guest);
 
 $dhcnav_items = array(
-	'fighters'   => array('dhcfighters.php', 'Fighters',   'build',  1),
-	'collection' => array('dhcgallery.php',  'Collection', 'browse', 1),
-	'arena'      => array('dhcarena.php',    'Arena',      'fight',  0),
+	'fighters'   => array('dhcfighters.php', 'Fighters',   'build',  1),   // gated
+	'collection' => array('dhcgallery.php',  'Collection', 'browse', 0),   // public
+	'arena'      => array('dhcarena.php',    'Arena',      'fight',  0),   // public
 );
 ?>
 <style>

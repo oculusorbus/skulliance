@@ -6,16 +6,38 @@
  * workshop; this is where the collection actually gets seen, which is what
  * makes building a distinctive one worth doing.
  *
- * A STAKER page, not a public one -- it takes the session like every other
- * platform page. Owners are shown on every Fighter regardless of their profile
- * visibility setting: that flag governs a staker's own holdings, and an
- * assembled Fighter is not a holding. Nobody owns these.
+ * A PUBLIC page. It was staker-only, which made the sentence above false in
+ * practice: "where the collection actually gets seen" cannot be true of a page
+ * only the people who built them can open. Filters live in the query string so
+ * a view can be linked to -- "every mythic Fighter" is a URL worth sending
+ * someone, and until now sending it to anyone outside the platform produced an
+ * error page.
  *
- * Filters live in the query string so a view can be linked to -- "every mythic
- * Fighter" is a URL worth sending someone.
+ * Owners are shown on every Fighter regardless of their profile visibility
+ * setting: that flag governs a staker's own holdings, and an assembled Fighter
+ * is not a holding. Nobody owns these -- which is also why showing them to the
+ * world costs nobody anything.
+ *
+ * The gate is conditional, exactly as dhcarena.php does it: skulliance.php
+ * redirects an anonymous visitor to error.php, but verify.php defines
+ * checkUser() and skulliance.php calls it to resolve user_id, so the pair has
+ * to run in full for a member or a signed-in staker loses their "Mine" filter.
+ * Merge the cookie, never assign -- see skulliance.php's own note.
  */
 include 'db.php';
-include 'skulliance.php';
+
+if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
+	$dhcg_ck = json_decode($_COOKIE['SessionCookie'], true);
+	if (is_array($dhcg_ck)) {
+		$_SESSION = array_merge((array)$_SESSION, $dhcg_ck);
+	} else {
+		// undecodable, so it is resent on every request; clear it and carry on
+		setcookie('SessionCookie', '', time() - 3600);
+	}
+	unset($dhcg_ck);
+}
+$dhcg_guest = empty($_SESSION['logged_in']);
+if (!$dhcg_guest) { include 'verify.php'; include 'skulliance.php'; }
 require_once __DIR__ . '/dhcfighters-lib.php';
 /*
  * The Arena engine, for its numbers only -- it is pure, so reading a Fighter's
@@ -143,6 +165,45 @@ function dhcg_url($changes) {
 	return 'dhcgallery.php' . ($q ? '?' . http_build_query($q) : '');
 }
 
+/*
+ * SHAREABLE, which is most of the point of opening it up. A filtered view is
+ * the unit people actually send -- "every mythic Fighter" -- so the description
+ * follows the filter rather than being one fixed sentence for every URL.
+ * Canonical points at the bare page: the filters are views of one collection,
+ * not separate pages, and letting every permutation claim to be its own is how
+ * a gallery turns into a thousand near-duplicates.
+ *
+ * Absolute URLs are correct in SEO markup and nowhere else -- the login cookie
+ * is host-only, so an absolute link somebody can CLICK can hop hosts and sign
+ * them out. No chain or token wording: this is the public face of the site.
+ */
+$dhcg_canonical = 'https://www.skulliance.io/staking/dhcgallery.php';
+$dhcg_what = $dhcg_tier ? ucfirst($dhcg_tier).' Fighters' : 'Every Fighter';
+$dhcg_title = ($dhcg_tier ? ucfirst($dhcg_tier).' Fighters' : 'The Fighter Collection')
+            . ' — DHC Fighters | Skulliance';
+$dhcg_desc  = $dhcg_what.' assembled on Skulliance, browsable by anyone. '
+            . number_format($dhcg_total).' built so far, each one put together piece by '
+            . 'piece from a shared set of parts — and no two the same. See what every '
+            . 'trait is worth, what it does in a fight, and who built it.';
+$page_title_override = $dhcg_title;
+$extra_head = '
+<meta name="description" content="'.htmlspecialchars($dhcg_desc).'">
+<meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
+<link rel="canonical" href="'.$dhcg_canonical.'">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Skulliance">
+<meta property="og:url" content="'.$dhcg_canonical.'">
+<meta property="og:title" content="'.htmlspecialchars($dhcg_title).'">
+<meta property="og:description" content="'.htmlspecialchars($dhcg_desc).'">
+<meta property="og:image" content="https://www.skulliance.io/staking/images/og.jpg">
+<meta property="og:image:alt" content="The DHC Fighter Collection - characters assembled from a shared set of traits">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="'.htmlspecialchars($dhcg_title).'">
+<meta name="twitter:description" content="'.htmlspecialchars($dhcg_desc).'">
+<meta name="twitter:image" content="https://www.skulliance.io/staking/images/og.jpg">
+';
+
 include 'header.php';
 ?>
 
@@ -231,7 +292,7 @@ include 'header.php';
 
 <div class="dhcg-wrap">
 
-<?php $dhcnav_at = 'collection'; include 'dhc-nav.php'; ?>
+<?php $dhcnav_at = 'collection'; $dhcnav_guest = $dhcg_guest; include 'dhc-nav.php'; ?>
 
   <div class="dhcg-head">
     <h1>The Collection</h1>
@@ -240,7 +301,16 @@ include 'header.php';
   <p class="dhcg-note">
     <?php echo number_format($dhcg_total); ?> assembled so far.
     These are platform features, <b>not NFTs</b> &mdash; they cannot be minted and nobody owns the
-    artwork. Build your own in <a href="dhcfighters.php" style="color:var(--ochre,#00c8a0)">DHC Fighters</a>.
+    artwork.
+    <?php /* dhcfighters.php is behind the gate this page just stepped around, so
+             for a visitor that link is an error page, not an invitation. */ ?>
+    <?php if ($dhcg_guest): ?>
+      <a href="index.php" style="color:var(--ochre,#00c8a0)">Sign in</a> to build your own,
+      or <a href="dhcarena.php" style="color:var(--ochre,#00c8a0)">play the Arena</a> right now
+      &mdash; no account needed.
+    <?php else: ?>
+      Build your own in <a href="dhcfighters.php" style="color:var(--ochre,#00c8a0)">DHC Fighters</a>.
+    <?php endif; ?>
   </p>
 
   <?php
