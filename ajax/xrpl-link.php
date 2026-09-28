@@ -47,7 +47,7 @@ if (!xaman_valid_account($account))
 /* Whitelisted, not trusted: `via` is written to the row that records how this
    address was proved, so a client must not be able to label itself 'xaman'
    and look server-verified when it is not. */
-$allowed = array('crossmark' => 1, 'gemwallet' => 1);
+$allowed = array('crossmark' => 1, 'gemwallet' => 1, 'ledger' => 1);
 $via = isset($_POST['via']) ? strtolower(trim((string)$_POST['via'])) : '';
 if (!isset($allowed[$via])) $via = 'extension';
 

@@ -47,10 +47,10 @@ is **not** registered — which is the check that matters, because an
 issuer:taxon off by a digit matches nothing, raises nothing, and looks exactly
 like a correct run against an empty wallet.
 
-**5. Link a wallet** through the Connect modal. **Xaman** (QR, phone) plus
-**Crossmark** and **GemWallet**, each shown only if that extension is actually
-installed. For a Ledger-held account use Crossmark; GemWallet is what xrp.cafe
-uses, so it may already be the one you have. Any of them verifies
+**5. Link a wallet** through the Connect modal. Four paths: **Xaman** (QR,
+phone), **Crossmark** and **GemWallet** (shown only if installed), and
+**Ledger direct** (§4g) — which needs no wallet app or extension at all and is
+the one to use for a hardware-held account. Any of them verifies
 **immediately** —
 the same way a Cardano connect does — so the confirmation says how many NFTs
 are now staking. Nothing to run afterwards.
@@ -388,6 +388,44 @@ asking every holder to link again.
 **Worth noting separately:** the Cardano endpoint accepting a POSTed stake
 address is a pre-existing platform-wide weakness, not something this work
 introduced. It is out of scope here, but it is now written down.
+
+### 4g. Ledger, direct — no wallet provider at all
+
+Crossmark and GemWallet both make you **create a software wallet before they
+will talk to a hardware one**. For somebody who already owns a Ledger and an
+XRP account that is a real barrier, and a common complaint about wallet
+onboarding generally. It is also unnecessary: the browser can speak to the
+device itself.
+
+`@ledgerhq/hw-transport-webhid` plus `@ledgerhq/hw-app-xrp`, both loaded on
+click from pinned CDN versions, ask the device for its address and nothing
+else. **No new wallet, no extension, no seed phrase, no signature** — the
+device is asked what address it derives, and that is the whole interaction.
+
+**Scan several paths, do not assume index 0.** Ledger Live and XRP Toolkit
+both number accounts at the account level, so a collector's NFT is very often
+not at `44'/144'/0'/0/0`. Five paths are read and the addresses shown so the
+owner picks the one they recognise. Getting this wrong would not error — it
+would confidently link the wrong wallet.
+
+**WebHID is Chrome, Edge and Opera only.** Not Firefox, not Safari. Feature
+detected via `navigator.hid` rather than sniffed, and the button simply does
+not appear where it cannot work.
+
+Reads are sequential, because there is one HID pipe and the device answers one
+request at a time. An index that has never been used throws, which is not an
+error — it is an unused index, and it is skipped.
+
+**Proof is the same bar as the extensions** (§4f): the browser reports an
+address, the server takes its word, and `link_method` records `ledger`. It is
+arguably the most trustworthy of the three in practice, since the value is
+read off hardware rather than from software holding a key — but that is not a
+distinction the server can verify, so it is not one the code claims.
+
+*Needs testing against a real device before launch.* The libraries are
+node-oriented and reach the browser through esm.sh, which usually handles that
+cleanly but is the one part of this that cannot be proven without a Ledger in
+hand.
 
 ### 4e. Cost — settled, it is free
 
