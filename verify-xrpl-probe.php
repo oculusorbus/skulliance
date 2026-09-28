@@ -33,10 +33,12 @@ $arg = isset($argv[1]) ? trim($argv[1]) : '';
 $api = isset($argv[2]) ? trim($argv[2]) : 'https://xrplcluster.com';
 
 if ($arg === '') {
-	echo "usage: php verify-xrpl-probe.php <r-address | NFTokenID> [node-url]\n\n";
-	echo "  r-address   lists every collection that wallet holds\n";
-	echo "  NFTokenID   decodes ONE NFT to its collection -- no wallet needed,\n";
-	echo "              nothing has to be delivered, works from any NFT's id\n";
+	echo "usage: php verify-xrpl-probe.php <slug | NFTokenID | r-address> [node-url]\n\n";
+	echo "  slug        an xrp.cafe collection, e.g. 'bootlegs' -- the easiest ask,\n";
+	echo "              since an artist will send a marketplace link anyway\n";
+	echo "  NFTokenID   decodes ONE NFT to its collection, entirely offline\n";
+	echo "  r-address   lists every collection a wallet holds, marking which are\n";
+	echo "              self-issued (only those belong to that artist)\n";
 	exit(1);
 }
 
@@ -83,9 +85,52 @@ if (preg_match('/^[0-9A-Fa-f]{64}$/', $arg)) {
 	exit(0);
 }
 
+/*
+ * AN xrp.cafe SLUG IS THE EASIEST ASK OF ALL.
+ *
+ * Artists send a marketplace link, not an NFTokenID -- "here's my collection:
+ * xrp.cafe/collection/bootlegs". The slug at the end of that URL is enough:
+ * xrp.cafe's own API returns the issuer, the taxon and the name the artist
+ * chose, which is every field a collections row needs.
+ *
+ * Authoritative, too: it is the same record the marketplace groups by, so a
+ * collection registered from it cannot disagree with what the artist sees.
+ */
+if (preg_match('/^[a-z0-9][a-z0-9._-]{1,63}$/i', $arg) && strpos($arg, 'r') !== 0) {
+	$slug = $arg;
+} elseif (preg_match('#xrp\.cafe/collection/([a-z0-9._-]+)#i', $arg, $m)) {
+	$slug = $m[1];
+}
+if (isset($slug)) {
+	$raw = @file_get_contents('https://api.xrp.cafe/api/collection/' . rawurlencode($slug));
+	$j   = $raw ? json_decode($raw, true) : null;
+	$c   = (is_array($j) && isset($j[0])) ? $j[0] : null;
+	if (!$c || empty($c['issuer'])) {
+		echo "No xrp.cafe collection called '" . $slug . "'.\n";
+		echo "Pass an r-address or an NFTokenID instead, or check the slug in the URL.\n";
+		exit(1);
+	}
+	$policy = xrpl_collection_key($c['issuer'], isset($c['token_taxon']) ? $c['token_taxon'] : 0);
+	printf("xrp.cafe collection: %s\n\n", $slug);
+	printf("  name    %s\n", $c['collection_name']);
+	printf("  issuer  %s\n", $c['issuer']);
+	printf("  taxon   %s\n", $c['token_taxon']);
+	if (isset($c['nft_count'])) printf("  size    %s NFTs held by %s wallets\n",
+		$c['nft_count'], isset($c['holders']) ? $c['holders'] : '?');
+	if (!empty($c['verified'])) echo "  verified on xrp.cafe\n";
+	printf("\n  collection key: %s\n\n", $policy);
+	echo "  to register it:\n";
+	printf("    INSERT INTO collections (blockchain_id, project_id, name, policy, rate)\n");
+	printf("    VALUES (%d, <project_id>, '%s', '%s', <rate>);\n\n",
+		XRPL_CHAIN_ID, addslashes($c['collection_name']), addslashes($policy));
+	echo "  project_id is the ARTIST'S EXISTING project, so their XRPL and Cardano\n";
+	echo "  collections sit under one artist. See multichain.md §3d.\n";
+	exit(0);
+}
+
 $account = $arg;
 if (!preg_match('/^r[rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz]{24,34}$/', $account)) {
-	echo "That is neither an XRPL address (starts with r) nor a 64-hex NFTokenID.\n";
+	echo "That is not an XRPL address, an NFTokenID, or an xrp.cafe collection slug.\n";
 	exit(1);
 }
 

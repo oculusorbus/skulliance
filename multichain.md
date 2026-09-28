@@ -30,15 +30,15 @@ $xaman_api_key    = "...";   // from https://apps.xaman.dev — free
 $xaman_api_secret = "...";
 ```
 
-**3. Find the collection.** Ask the artist for a link to **any one NFT** in
-it — that is the whole ask, and it needs no wallet, no transfer and nothing
-delivered:
+**3. Find the collection.** An artist will send a marketplace link, so the
+slug from it is the whole ask:
 ```
-php verify-xrpl-probe.php <NFTokenID>
+php verify-xrpl-probe.php bootlegs
 ```
-Or pass an r-address instead to list every collection a wallet holds. Either
-prints the `INSERT`. Run it with the **artist's existing `project_id`** — an
-XRPL collection belongs to the same project as their Cardano ones (§3d).
+It also takes an NFTokenID (offline) or an r-address (lists a wallet's
+collections, marking which are self-issued). Any of the three prints the
+`INSERT`. Run it with the **artist's existing `project_id`** — an XRPL
+collection belongs to the same project as their Cardano ones (§3d).
 
 §6d covers why the artist never needs to know what a taxon is.
 
@@ -852,6 +852,36 @@ an artist's collections all come back `:0`, ask. Otherwise proceed.
 "Own collections seen" is only what each still holds — both have minted far
 more than they hold, so treat it as a floor rather than a list. Ask each artist
 which collections they want listed and get one NFT id per collection.
+
+## 6d2. First collection: Maxi's Bootlegs
+
+The one to start with, and the numbers are the reason:
+
+| | |
+|---|---|
+| name | DIGI-HELL CORPS! (Bootlegs) |
+| issuer | `rhnNSggjJfXXM4AE5g87uLGoUH72GAsnVw` |
+| taxon | `3000` |
+| key | `rhnNSggjJfXXM4AE5g87uLGoUH72GAsnVw:3000` |
+| size | 125 NFTs across **36 holders** |
+| xrp.cafe | verified, slug `bootlegs` |
+
+**36 holders is the whole point of the exercise** — potentially 36 people who
+have never had an account here. One collection also keeps the first run
+small: one rarity shape, one metadata format, one thing to debug on the first
+nightly pass.
+
+```sql
+INSERT INTO collections (blockchain_id, project_id, name, policy, rate) VALUES
+  (2, <maxi's project_id>, 'DIGI-HELL CORPS! (Bootlegs)',
+   'rhnNSggjJfXXM4AE5g87uLGoUH72GAsnVw:3000', <rate>);
+```
+
+`project_id` is Maxi's **existing** Cardano project (§3d). Find it with:
+
+```sql
+SELECT id, name FROM projects WHERE name LIKE '%axi%';
+```
 
 ## 6e. IPFS gateways — one is not enough
 
