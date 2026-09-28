@@ -135,31 +135,105 @@ abstraction has failed somewhere upstream.
 
 ---
 
-## 4. Wallet connection
+## 4. Wallet connection — Xaman
 
-The largest single piece of work, and it is a **different shape**, not a
-different library.
+The largest single piece of work, and a **different shape** rather than a
+different library. Scoped from the current docs rather than from memory;
+sources at the end of this section.
 
-Cardano uses CIP-30: a browser extension injects a provider and `wallet.js`
-reads the stake address out of it. The wallet most XRPL collectors actually use
-is **Xaman** (formerly XUMM), which is mobile-first: the server creates a
-sign-in payload, the page shows a QR code or deeplink, the user approves in the
-app, and the server polls for the result. That is a new authentication flow
-with a server-side component, not a new adapter behind the existing one.
+### 4a. What Xaman actually is
 
-Browser extensions do exist on XRPL — GemWallet and Crossmark — and sit much
-closer to the CIP-30 model. They are the cheaper build. They are also the
-minority of XRPL users, so building only those would reach fewer of the people
-this whole exercise is for.
+Cardano's CIP-30 is a browser extension injecting a provider, and `wallet.js`
+reads the stake address straight out of it. Xaman is a phone app with a
+**backend API**: the server creates a sign request, the user approves it in the
+app, and the server reads the result. The browser only ever shows a QR code or
+a deeplink.
 
-**One thing in our favour.** There is no signature verification today.
-`wallet.js` reads the stake address via CIP-30 and that is the entire binding —
-no `signData`, no COSE, nothing to port. A Xaman sign-in payload is genuinely
-signed, so the XRPL path would be *stronger* than the Cardano one rather than
-weaker. Worth knowing before anyone argues the reverse.
+So this adds a server-side component the Cardano path does not have. It also
+adds a **third-party dependency on the login path** — CIP-30 is local, Xaman is
+a service, and if it is down those users cannot connect. Worth knowing before
+it happens rather than during.
 
-*Verify the current Xaman API shape when building — these details move, and
-this document is written from general knowledge rather than from their docs.*
+### 4b. The SignIn pseudo-transaction
+
+`SignIn` is a Xaman-specific pseudo transaction type. It is **signature-only
+and is never submitted to the ledger** — it exists purely to prove control of
+an account. That is exactly what we need and nothing more: no fee, no ledger
+write, no XRP required in the account.
+
+### 4c. The flow, concretely
+
+```
+1. POST https://xumm.app/api/v1/platform/payload
+     headers: x-api-key, x-api-secret, Content-Type: application/json
+     body:    {"txjson": {"TransactionType": "SignIn"}}
+
+   ->  uuid
+       next.always            the URL to send the user to
+       refs.qr_png            a QR image for desktop
+       refs.websocket_status  wss://xumm.app/sign/<uuid>
+       pushed                 whether a push reached an existing user
+
+2. Desktop: show refs.qr_png.   Mobile: deeplink to next.always.
+
+3. Wait for resolution — webhook, websocket, or poll the GET.
+
+4. Fetch the payload result. It carries the signed blob and the ACCOUNT
+   ADDRESS, which is the thing we actually want.
+
+5. Bind that address to the user and write it to wallets with blockchain_id=2.
+```
+
+**Credentials** are an API key and secret from `apps.xumm.dev`, sent as
+`x-api-key` and `x-api-secret` headers. The secret is **backend only** — anyone
+holding it can create sign requests impersonating Skulliance. It belongs
+wherever `$blockfrost_project_id` already lives, never in `wallet.js`.
+
+### 4d. How it fits this codebase
+
+**Use raw curl, not an SDK.** The official SDKs are TypeScript/JS, .NET and
+Python — there is no PHP one. That is fine: `verify.php` already talks to Koios
+with plain curl, so this is the same pattern with different headers and no new
+dependency.
+
+**Poll, do not websocket.** Xaman offers webhooks, a websocket
+(`refs.websocket_status`) and polling. A websocket is awkward to hold open from
+PHP on shared hosting, and a webhook means an unauthenticated public endpoint
+plus the problem of matching a callback to a browser session. Polling is the
+boring option and it is the one the platform already uses everywhere — the
+Arena's live match polls an ajax endpoint every 1.5s on exactly this shape:
+
+```
+  browser  --2s-->  ajax/xaman-status.php  --> GET the payload  --> resolved?
+```
+
+**Bind the uuid to the session when it is created.** Store the payload uuid in
+`$_SESSION` at step 1 and refuse any status call for a uuid that session did
+not start. Without it, knowing a uuid is enough to claim somebody else's
+sign-in.
+
+**Timeouts.** The websocket keepalive reports `expires_in_seconds` and
+eventually `{"expired": true}`, and the docs are explicit that this is a **scan
+deadline, not a resolution deadline** — a payload the user has already opened
+does not die when the timer runs out. The UI should say "QR expired, get
+another" rather than "sign-in failed", and it must not delete the pending row
+the moment the timer hits zero.
+
+### 4e. Unknowns to close before building
+
+- **Cost.** Pricing and free-tier terms are not in the public docs. Historically
+  the developer API has been usable without charge, but that is not something
+  to assume on the strength of memory — confirm in the dashboard at
+  `apps.xumm.dev` before this is scheduled. This is the one open item that
+  could change the plan rather than the implementation.
+- **Rate limit.** The docs mention roughly **30 payload POSTs per minute** but
+  do not document limits fully. Thirty sign-ins a minute is far beyond anything
+  this platform will see, so it is a note rather than a constraint.
+
+Sources: [SignIn](https://docs.xaman.dev/concepts/special-transaction-types/signin) ·
+[Authorization](https://docs.xaman.dev/concepts/authorization) ·
+[Lifecycle](https://docs.xaman.dev/concepts/payloads-sign-requests/lifecycle) ·
+[POST /payload](https://xumm.readme.io/reference/post-payload)
 
 ---
 
@@ -186,14 +260,30 @@ So the XRPL work is a sibling of `verifyNFTs()`, not a rewrite of the pipeline:
 
 ```php
 function verifyNFTsXRPL($conn, $addresses, $issuers, $asset_ids, ...) {
-    // POST account_nfts to the chain's api_base, per address
-    // for each NFToken:
-    //   policy_id  <- issuer:taxon      (the XRPL equivalent of a policy)
-    //   asset_name <- NFTokenID         (64 hex, unique across the ledger)
-    //   image/name <- resolve the URI   (hex-decoded, usually ipfs://)
+    // JSON-RPC account_nfts against the chain's api_base, per address.
+    // Paginates by `marker`; limit is 20-400, default 100 — a collector with
+    // more than that WILL be truncated if the marker loop is skipped, and the
+    // failure is silent (they just appear to own fewer NFTs).
+    //
+    // Each NFToken returns:
+    //   NFTokenID      64 hex, unique across the whole ledger
+    //   Issuer         the minting account
+    //   NFTokenTaxon   the collection number within that issuer
+    //   URI            hex-encoded, usually decodes to ipfs://...
+    //   nft_serial     position within the taxon
+    //
+    // Mapping onto what processNFT() already expects:
+    //   policy_id  <- Issuer + ':' + NFTokenTaxon   (an XRPL "collection")
+    //   asset_name <- NFTokenID
+    //   image/name <- hex-decode URI, then resolve the JSON behind it
     //   → processNFT(...) with blockchain_id = 2
 }
 ```
+
+A collection on XRPL is **issuer + taxon**, not one identifier, so
+`collections.policy` holds the pair joined rather than a single hash. Storing
+them as one column keeps `getPolicies()` and the collection lookup unchanged;
+splitting them into two columns would buy nothing and touch more code.
 
 A happy accident makes this work: Cardano's stake address means one query
 returns everything a user holds, and XRPL's `account_nfts` has exactly the same
@@ -344,11 +434,14 @@ points. Its only success metric is whether XRPL holders connect and play.
    original six projects and has no XRPL dimension — not deferred, just not
    related.
 
-## 12. Still open
+## 12. Resolved since
 
-- Whether XRPL holdings earn points at the same `collections.rate` mechanics as
-  Cardano, or start at zero and are tuned once there is data. A phase-two
-  question, but worth deciding before rates are set rather than after.
-- Whether the nightly cron runs both chains in one pass or as two scheduled
-  jobs. Two jobs isolate failure more cleanly (§5b); one pass is simpler to
-  reason about. Leaning two.
+- **Points use `collections.rate` exactly as every other collection does.** No
+  XRPL-specific mechanics, no separate tuning path — a rate is assigned to the
+  collection for its project and accrual is the existing code. This is the
+  whole payoff of §2: the points system never learns a second chain exists.
+- **Two cron passes, not one.** Cardano and XRPL verify as separate scheduled
+  jobs so a failure on one cannot disrupt the other. This makes §5a's scoping
+  mandatory rather than merely advisable: each pass zeroes and restores only
+  its own chain's rows, and a chain whose verifier did not run must not have
+  had its ownership cleared.
