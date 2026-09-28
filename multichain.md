@@ -794,10 +794,27 @@ what a taxon is, have never set one, and should not have to. Asking them for
 to list their own art.
 
 They do not need to, because **the minting tool assigns a taxon per
-collection** and it can be read back off any NFT. Checked against a real
-artist: 14 distinct taxons across 62 NFTs still held (0, 1, 2, 3, 4, 6, 10,
-11, 12, 300, 420, 1234, 2015, 3999). The grouping they see on xrp.cafe **is**
-the taxon; they simply never see the number.
+collection** and it can be read back off any NFT. The grouping they see on
+xrp.cafe **is** the taxon; they simply never see the number.
+
+### Two traps, both found on real artist accounts
+
+**`account_nfts` returns what an account HOLDS, not what it CREATED.** For an
+active artist most of that is other people's work they bought. Maxi holds 18
+NFTs of which only **3** are his own; Darkula holds 62 of which **28** are.
+Filter on `Issuer == the artist's address` or you will register somebody
+else's collection under their project. xrp.cafe makes the same distinction —
+its profile URLs carry `?sort=my_creations`.
+
+**A sold-out collection is invisible.** Maxi minted **261** and holds 3;
+Darkula minted **3,569** and holds 62. The NFT Darkula tried to send was from
+taxon 0, which does not appear in his held self-issued list at all, because
+that collection is fully distributed.
+
+There is **no way to enumerate an issuer's collections from core rippled** —
+that needs an indexer. Which is why the NFTokenID form of the probe is the
+onboarding path and the address form is only a convenience: one NFT works
+whether the collection sold out or not.
 
 So the workflow is:
 
@@ -819,13 +836,22 @@ confirmed independently through `account_nfts`.
 ### The taxon-0 caveat, in proportion
 
 An earlier draft warned that an artist using taxon 0 for everything would make
-`issuer:0` mean their entire output. That is possible in principle and worth a
-glance, but it was not true of the artist checked — taxon 0 was simply one of
-their fourteen collections.
+`issuer:0` mean their entire output. Possible in principle, and not what
+either artist does — both spread across many taxons.
 
-The probe shows the taxon before anything is registered, so the check is: if
-the artist has several collections and they all come back `:0`, ask. Otherwise
-proceed.
+The probe prints the taxon before anything is registered, so the check is: if
+an artist's collections all come back `:0`, ask. Otherwise proceed.
+
+### The two Skulliance artists on XRPL
+
+| | address | minted | own collections seen |
+|---|---|---|---|
+| Maxi | `rhnNSggjJfXXM4AE5g87uLGoUH72GAsnVw` | 261 | `:2000` |
+| Darkula | `rBbUQ5vutUQEDj911fQxGNWzxwzah8urLJ` | 3,569 | `:2` `:4` `:10` `:11` `:12` (and `:0`, sold out) |
+
+"Own collections seen" is only what each still holds — both have minted far
+more than they hold, so treat it as a floor rather than a list. Ask each artist
+which collections they want listed and get one NFT id per collection.
 
 ## 7. Rarity and traits
 

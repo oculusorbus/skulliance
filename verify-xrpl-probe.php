@@ -92,11 +92,36 @@ foreach ($got['list'] as $n) {
 	$by[$n['policy']][] = $n;
 }
 
-printf("%d NFToken(s) in %d collection(s)\n\n", count($got['list']), count($by));
+/*
+ * HELD IS NOT THE SAME AS CREATED, and conflating them is how you end up
+ * registering another artist's collection under this artist's project.
+ * account_nfts returns what an account HOLDS -- which for any active artist
+ * is mostly other people's work that they bought. Only NFTs whose Issuer is
+ * this account are theirs.
+ */
+$own = 0; $bought = 0;
+foreach ($got['list'] as $n) { if ($n['issuer'] === $account) $own++; else $bought++; }
+printf("%d NFToken(s) in %d collection(s) — %d self-issued, %d bought from others\n\n",
+	count($got['list']), count($by), $own, $bought);
+
+if ($bought) {
+	echo "  Collections below are marked SELF-ISSUED or HELD. Only register the\n";
+	echo "  self-issued ones under this artist's project.\n\n";
+}
+
+/*
+ * AND THIS ONLY SEES WHAT IS STILL HELD. An artist who sold out a collection
+ * holds none of it, so it does not appear here at all -- checked against two
+ * real artists, one of whom had minted 3,569 and held 62. There is no way to
+ * enumerate an issuer's collections from core rippled; that needs an indexer.
+ *
+ * Which is why the NFTokenID form of this command is the one to use for
+ * onboarding: it works from any single NFT, sold out or not.
+ */
 
 foreach ($by as $policy => $nfts) {
 	list($issuer, $taxon) = explode(':', $policy, 2);
-	printf("── %s\n", $policy);
+	printf("── %s   %s\n", $policy, $issuer === $account ? '[SELF-ISSUED]' : '[held, not theirs]');
 	printf("   issuer %s   taxon %s   holding %d\n", $issuer, $taxon, count($nfts));
 
 	/* Resolve one, so the name and image can be eyeballed before a collection
@@ -121,3 +146,6 @@ foreach ($by as $policy => $nfts) {
 echo "project_id is the ARTIST'S EXISTING project — an XRPL collection sits under\n";
 echo "the same project as their Cardano ones, which is what keeps one artist from\n";
 echo "becoming two. See multichain.md §3d.\n";
+echo "\nNOTE: this lists only what the wallet still HOLDS. A sold-out collection\n";
+echo "does not appear. To register one regardless, use any NFT's id:\n";
+echo "  php verify-xrpl-probe.php <NFTokenID>\n";
