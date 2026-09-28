@@ -731,6 +731,55 @@ to change.
 
 ---
 
+## 6c. Fungible tokens — invisible, not broken
+
+The platform stakes fungible tokens as well as NFTs: `processNFT()` detects
+several holders of one `asset_id` and creates a row each, which is where the
+legitimate duplicates in `nfts` come from. XRPL has fungible tokens too, so
+the question is whether that logic misfires.
+
+**It cannot, because the verifier never sees them.**
+
+XRPL keeps the two in completely separate places:
+
+| | XRPL concept | how you read it |
+|---|---|---|
+| NFT | NFToken (XLS-20) | `account_nfts` |
+| fungible | issued currency on a trustline | `account_lines` |
+
+`verifyNFTsXRPL()` calls **only `account_nfts`**, so a trustline balance is
+never returned, never reaches `processNFT()`, and cannot create a row. XRPL
+fungible tokens are therefore **unsupported, not mishandled** — which is the
+safe failure of the two.
+
+**Editioned art is fine and is the common case.** An edition of 100 on XRPL is
+100 NFTokens, each with its own globally unique NFTokenID and exactly one
+holder. Each gets its own row with one owner, and the RFT branch never fires —
+which is correct, because they are not fungible in the ledger's eyes even
+though the picture is the same.
+
+So the duplicate-row path stays a Cardano behaviour. That also makes the
+unscoped `checkAvailableNFT()` and `updateNFT()` safe: they key on `asset_id`
+alone, and a bech32 `asset1...` fingerprint cannot collide with a 64-hex
+NFTokenID (§3c).
+
+### What XRPL fungible support would need
+
+Not planned, and worth knowing the shape before anybody assumes it is a small
+addition:
+
+- A second read per address, `account_lines`, returning currency + issuer +
+  balance
+- A collection identity that is **issuer + currency code**, not issuer + taxon
+- **A quantity concept the schema does not have.** A trustline holds a
+  *balance*, not a set of tokens. Cardano's model works because one row is one
+  unit held by one person; a balance of 1,500.25 has no natural representation
+  in that shape, and inventing one would touch every staking query rather
+  than just the verifier.
+
+That last point is the real work. It is a schema question, not a chain
+question.
+
 ## 7. Rarity and traits
 
 Rarity tables are per-collection and derived from on-chain frequency (see

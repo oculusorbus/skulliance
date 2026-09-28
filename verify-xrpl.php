@@ -23,6 +23,15 @@
  * Nothing here talks to Xaman. Xaman is sign-in only, twice per wallet link;
  * the nightly pass reads the ledger directly from a public cluster and is free
  * at any volume this platform will reach (multichain.md §4e).
+ *
+ * NFTokens ONLY. XRPL keeps fungible tokens on trustlines, read with
+ * account_lines, and this calls only account_nfts -- so a fungible balance is
+ * never returned and can never reach processNFT(). That matters because
+ * processNFT() treats several holders of one asset_id as a fungible token and
+ * creates a row each; XRPL editions are many NFTokens with unique ids and one
+ * holder apiece, so that branch correctly never fires here. See §6c for what
+ * fungible support would actually require -- the hard part is that a
+ * trustline holds a BALANCE and this schema has no quantity.
  */
 
 if (!defined('XRPL_CHAIN_ID')) define('XRPL_CHAIN_ID', 2);
