@@ -22,8 +22,12 @@
    collection's NFTs, and run the `INSERT` it prints.
 4. Link a wallet through the modal and confirm a row lands in `wallets` with
    `blockchain_id = 2`.
-5. `php verify.php verify=xrpl` by hand and read what it prints.
-6. Only then schedule it — **before** the Cardano job (§5c).
+5. `php verify.php verify=xrpl dry=1` — reads the ledger, writes nothing, and
+   prints what it would stake next to anything it found that is **not**
+   registered. That second list is the point: an issuer:taxon off by a digit
+   matches nothing and raises nothing, which is indistinguishable from a
+   correct run against an empty wallet.
+6. Schedule it — **before** the Cardano job (§5c).
 
 ---
 

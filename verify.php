@@ -47,6 +47,44 @@ if(isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
 		exit;
 	}
 
+	/*
+	 * DRY RUN: php verify.php verify=xrpl dry=1
+	 *
+	 * Reads the ledger and reports, writing nothing. Worth having because the
+	 * likeliest first-run mistake is SILENT -- an issuer:taxon that is off by a
+	 * digit matches nothing, writes nothing and raises nothing, which looks
+	 * exactly like a correct run against wallets that happen to hold nothing.
+	 * This tells the two apart by printing what is on the ledger next to what
+	 * is registered.
+	 */
+	if(!empty($_GET['dry'])){
+		$seen = array(); $unmatched = array(); $bad = array();
+		foreach($xrpl_addresses AS $addr){
+			$got = xrpl_account_nfts(
+				getChainSetting($conn, XRPL_CHAIN_ID, 'api_base', 'https://xrplcluster.com'),
+				$addr, 'xrpl_http');
+			if(!$got['ok']){ $bad[] = $addr; continue; }
+			foreach($got['list'] AS $n){
+				if(isset($xrpl_collections[$n['policy']])) $seen[$n['policy']] = (isset($seen[$n['policy']]) ? $seen[$n['policy']] : 0) + 1;
+				else $unmatched[$n['policy']] = (isset($unmatched[$n['policy']]) ? $unmatched[$n['policy']] : 0) + 1;
+			}
+		}
+		echo "DRY RUN — nothing was written\n\n";
+		printf("  %d address(es), %d registered collection(s)\n", count($xrpl_addresses), count($xrpl_collections));
+		if($bad) printf("  UNREADABLE: %s\n", implode(', ', $bad));
+		echo "\n  would stake:\n";
+		if($seen) foreach($seen AS $k => $c) printf("    %-46s %d\n", $k, $c);
+		else      echo "    (nothing)\n";
+		if($unmatched){
+			echo "\n  on the ledger but NOT registered:\n";
+			foreach($unmatched AS $k => $c) printf("    %-46s %d\n", $k, $c);
+			echo "\n  If one of those is the collection you meant to add, its policy in\n";
+			echo "  the collections table does not match what the ledger says. That is\n";
+			echo "  the failure this mode exists to show.\n";
+		}
+		exit(($bad || !$seen) ? 1 : 0);
+	}
+
 	removeUsers($conn, XRPL_CHAIN_ID);
 	$xrpl_asset_ids = getNFTAssetIDs($conn, XRPL_CHAIN_ID);
 
