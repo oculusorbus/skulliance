@@ -1028,8 +1028,14 @@ SELECT id, name FROM projects WHERE name LIKE '%axi%';
 ## 6d3. When a holder sees nothing
 
 ```
-php verify-xrpl-doctor.php <r-address | user_id>
+php verify-xrpl-doctor.php                       # who has linked one
+php verify-xrpl-doctor.php <r-address | user_id> # why theirs is empty
 ```
+
+Run it with no argument first. You almost never have the address when you
+need this — the report arrives as "I connected and nothing showed up", and
+asking a tester to go find their r-address is another round trip while they
+are still willing to help. Whoever just linked is the last row.
 
 **Six things can break here and five of them fail silently** — a collection
 registered on the wrong chain, a taxon off by one, a wallet row written with

@@ -2,6 +2,7 @@
 /* verify-xrpl-doctor.php — CLI only. "A holder connected their wallet and
  * nothing showed up." This says why.
  *
+ *     php verify-xrpl-doctor.php                 # list XRPL wallets
  *     php verify-xrpl-doctor.php <r-address | user_id>
  *
  * WHY A DEDICATED TOOL. There are six places this can break and five of them
@@ -21,9 +22,42 @@ include __DIR__ . '/db.php';
 require_once __DIR__ . '/verify-xrpl.php';
 
 $arg = isset($argv[1]) ? trim($argv[1]) : '';
+
+/*
+ * NO ARGUMENT LISTS THE XRPL WALLETS. You almost never have the address when
+ * you need this -- the report arrives as "I connected and nothing showed up",
+ * and asking a tester to find their r-address is another round trip while
+ * they are still in the mood to help. Whoever just linked is the last row
+ * here, so this is usually the whole lookup.
+ */
 if ($arg === '') {
-	echo "usage: php verify-xrpl-doctor.php <r-address | user_id>\n";
-	exit(1);
+	echo "Recently linked XRPL wallets\n";
+	echo "----------------------------\n";
+	$q = $conn->query("SELECT w.id, w.user_id, w.blockchain_id, w.link_method,
+	                          w.stake_address, u.username
+	                   FROM wallets w LEFT JOIN users u ON u.id = w.user_id
+	                   WHERE w.blockchain_id = " . XRPL_CHAIN_ID . "
+	                      OR w.stake_address LIKE 'r%'
+	                   ORDER BY w.id DESC LIMIT 15");
+	$n = 0;
+	while ($q && $r = $q->fetch_assoc()) {
+		printf("  %-34s  user %-5s %-16s chain %s %s  via %s\n",
+			$r['stake_address'], $r['user_id'],
+			$r['username'] !== null ? substr($r['username'], 0, 16) : '-',
+			$r['blockchain_id'],
+			(int)$r['blockchain_id'] === XRPL_CHAIN_ID ? ' ' : '<< WRONG',
+			$r['link_method'] !== null ? $r['link_method'] : '-');
+		$n++;
+	}
+	if (!$n) {
+		echo "  NONE. Nobody has linked an XRPL wallet -- so whatever the tester\n";
+		echo "  saw in the browser, the server never wrote a row. The link call\n";
+		echo "  itself failed; check the PHP error log around when they tried.\n";
+	} else {
+		echo "\nThen: php verify-xrpl-doctor.php <one of those addresses>\n";
+	}
+	echo "\n";
+	exit(0);
 }
 
 function hr($t){ echo "\n" . $t . "\n" . str_repeat('-', strlen($t)) . "\n"; }
