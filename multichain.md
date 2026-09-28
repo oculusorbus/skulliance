@@ -272,7 +272,6 @@ No staking, no points, no rewards.
 - Xaman sign-in (§4, §11.1)
 - `verifyNFTsXRPL()` writing rows through `processNFT()` (§5), Maxingo's
   collections only (§11.2)
-- The delegation guard (§11a) — added with the schema, not after
 - `removeUsers()` and friends scoped by chain (§5a)
 - The existing **staker role** granted off XRPL holdings (§11.3)
 - Access to what is already public and free: the Arena's practice mode, the
@@ -341,46 +340,9 @@ points. Its only success metric is whether XRPL holders connect and play.
 3. **XRPL stakers get the existing staker role.** Not a new parallel role and
    not membership — the same role a Cardano staker gets, so nothing about the
    Discord hierarchy changes and there is no second concept to maintain.
-4. **No Diamond Skull delegation.** Delegation is for the original six Cardano
-   projects and stays that way. See §11a — this one needs a guard rather than
-   just an absence.
-
-### 11a. Delegation needs an explicit guard, not an assumption
-
-Delegation is meant to be the OG six Cardano projects only. **I could not find
-that enforced anywhere in the code**, and the distinction matters.
-
-`project_id IN(1,2,3,4,5,6)` does appear three times in `db.php`, but those are
-the "core" **display filter** for listings — not an eligibility gate. The
-actual path (`checkNFTDelegationStatus()`, `checkDiamondSkullProjectAvailability()`,
-the `INSERT INTO diamond_skulls`) checks only whether an NFT is already
-delegated and how many delegations that Diamond Skull already holds for the
-project. Nothing restricts *which* projects may be delegated to.
-
-That interacts badly with §3d, and it is worth being clear that the two
-decisions pull against each other here. Keeping chain on the collection is what
-lets Maxingo stay one artist across both chains — and it is exactly what would
-let an XRPL collection inherit his project's delegation eligibility, silently,
-because delegation reasons in projects and would never see the chain.
-
-So the guard has to be added on purpose:
-
-```sql
--- every delegation path, not just the listing filters
-... INNER JOIN collections ON nfts.collection_id = collections.id
-    AND collections.blockchain_id = 1
-```
-
-Three call sites minimum: `checkDiamondSkullProjectAvailability()`, the query
-behind the delegation picker, and the insert itself. Fail closed — an NFT whose
-chain cannot be determined is not delegatable.
-
-*Worth confirming against the live data whether the OG six are enforced
-somewhere I have not found, or whether today it is convention plus a UI that
-only ever offers the right NFTs. If it is the latter, this guard is the first
-time the rule becomes real, which is a small improvement in its own right.*
-
----
+4. **Diamond Skull delegation does not apply.** It is a Cardano feature for the
+   original six projects and has no XRPL dimension — not deferred, just not
+   related.
 
 ## 12. Still open
 
