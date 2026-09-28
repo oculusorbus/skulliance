@@ -35,7 +35,7 @@ if(isset($_POST['wallet_id'])){
 									}else{
 										echo "Primary Address: ";
 									}
-									echo "&nbsp;<a href='https://pool.pm/".$wallet["address"]."' target='_blank'>".substr($wallet["address"], -20)."</a>&nbsp;";
+									echo "&nbsp;<a href='".accountExplorerUrl($wallet["address"], isset($wallet["blockchain_id"]) ? $wallet["blockchain_id"] : 1)."' target='_blank' rel='noopener'>".substr($wallet["address"], -20)."</a>&nbsp;";
 									?>
 								</li>
 							<?php 

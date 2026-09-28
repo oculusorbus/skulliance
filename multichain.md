@@ -1146,6 +1146,52 @@ coalesces, resizes every frame and rebuilds the animation, under a 256MB
 Imagick limit with a catch. Checked against the real files — 8MB and 12MB
 GIFs at 2500×2500.
 
+## 6d7. Two things that were Cardano-shaped in the UI
+
+The NFTs loaded and the showcase was still wrong in two ways, both of them
+invisible on Cardano because Cardano has been the only chain for years.
+
+**Every image was broken.** `getIPFS()` falls back to a public gateway when
+there is no cached file, and that fallback was hardcoded to `ipfs.io` —
+which answers **429** for this server's IP, as does `dweb.link` (same
+operator). So the fallback was a *guaranteed* broken image. It never showed
+because Cardano's images were all cached years ago; a new XRPL holder hits
+nothing but uncached images. Measured against the first holder's twenty:
+
+| gateway | result |
+|---|---|
+| ipfs.io | 429 |
+| dweb.link | 429 |
+| cloudflare-ipfs.com | dead |
+| nftstorage.link | 302 |
+| gateway.pinata.cloud | **200, every one** |
+
+Now `IPFS_FALLBACK_GATEWAY`, defaulting to Pinata and overridable in
+`credentials/`. It is still only a stopgap — `image-cache.php` storing the
+file locally is what the browser should be hitting, and **it must be run
+after a new holder verifies** or they wait until the nightly pass.
+
+**Every NFT linked to pool.pm**, a Cardano explorer that has never heard of
+an NFTokenID. `nftExplorerUrl()` reads `blockchains.explorer_nft` — the
+template column that existed for exactly this and was not yet used — once
+per request and caches it, because this is called inside a render loop and a
+query per tile is how a gallery page gets slow. `accountExplorerUrl()` does
+the same for the wallets page, in code rather than a column, since there is
+no `explorer_account` and adding one is not a migration to run mid-incident.
+
+To point XRPL at the marketplace rather than Bithomp:
+
+```sql
+UPDATE blockchains SET explorer_nft = 'https://xrp.cafe/nft/%s' WHERE id = 2;
+```
+
+The code defaults to that anyway if the column is empty, so it never returns
+a broken href.
+
+`ajax/get-nft-assets.php` needed nothing: it already rejects an `asset_id`
+that does not start with `asset`, so the Cardano-only gallery pipeline
+excludes XRPL by construction.
+
 ## 6e. IPFS gateways — one is not enough
 
 A sample of Maxi's art first resolved with no name and no image, which looked

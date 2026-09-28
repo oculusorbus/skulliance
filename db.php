@@ -88,6 +88,12 @@ if (!defined('MERCH_ENCRYPT_KEY')) {
 }
 define('MERCH_ENCRYPT_CIPHER', 'AES-256-CBC');
 
+// Gateway used for an NFT image that is not cached locally yet. See getIPFS().
+// Overridable in credentials/db_credentials.php.
+if (!defined('IPFS_FALLBACK_GATEWAY')) {
+    define('IPFS_FALLBACK_GATEWAY', 'https://gateway.pinata.cloud/ipfs/');
+}
+
 // ── Printful OAuth credentials ──────────────────────────────
 // Define these in credentials/db_credentials.php with your real values.
 if (!defined('PRINTFUL_CLIENT_ID')) {
@@ -593,7 +599,7 @@ function getAddress($conn){
 
 // Get all wallets for user
 function getWallets($conn){
-	$sql = "SELECT id, stake_address, address, main FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'";
+	$sql = "SELECT id, stake_address, address, main, blockchain_id FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'";
 	$result = $conn->query($sql);
 	
     $wallets = array();
@@ -604,6 +610,9 @@ function getWallets($conn){
 	    $wallet = array();
 	    $wallet["address"] = $row["address"];
 		$wallet["main"] = $row["main"];
+		/* So the page can link the address at the right explorer. An XRPL
+		   r-address on pool.pm is a dead link. */
+		$wallet["blockchain_id"] = isset($row["blockchain_id"]) ? (int)$row["blockchain_id"] : 1;
     	$wallets[$row["id"]] = $wallet;
 	  }
 	} else {
@@ -3358,6 +3367,50 @@ function ensureNFTImageCached($ipfs, $collection_id, $project_id) {
     return false;
 }
 
+/*
+ * WHERE TO SEND SOMEBODY TO LOOK AT THEIR NFT.
+ *
+ * pool.pm was hardcoded everywhere, which is right for Cardano and a dead
+ * link for an XRPL NFTokenID -- the first XRPL holder's whole showcase
+ * pointed at a Cardano explorer that has never heard of any of it.
+ *
+ * The blockchains table already has explorer_nft as a printf template for
+ * exactly this, so it is read from there and cached for the request. One
+ * query per page rather than one per NFT: this is called inside a render
+ * loop, and a query per tile is how a gallery page gets slow.
+ *
+ * The hardcoded defaults are the answer when the column is empty, so this
+ * never returns a broken href even on a database that predates the column.
+ */
+function nftExplorerUrl($conn, $asset_id, $blockchain_id = 1) {
+	static $tpl = null;
+	if ($tpl === null) {
+		$tpl = array(1 => 'https://pool.pm/%s', 2 => 'https://xrp.cafe/nft/%s');
+		$r = @$conn->query("SELECT id, explorer_nft FROM blockchains WHERE explorer_nft <> ''");
+		while ($r && $row = $r->fetch_assoc()) {
+			if (strpos($row['explorer_nft'], '%s') !== false)
+				$tpl[(int)$row['id']] = $row['explorer_nft'];
+		}
+	}
+	$bid = (int)$blockchain_id;
+	$t = isset($tpl[$bid]) ? $tpl[$bid] : $tpl[1];
+	/* str_replace, not sprintf: the template comes from a database column, and
+	   a stray '%' in one is a ValueError in PHP 8 -- a broken page instead of
+	   a broken link. */
+	return str_replace('%s', rawurlencode($asset_id), $t);
+}
+
+/*
+ * And where to send them to look at the WALLET. Not a template column,
+ * because there is no explorer_account and adding one would be a migration
+ * to run in the middle of an incident -- these are the two we support.
+ */
+function accountExplorerUrl($address, $blockchain_id = 1) {
+	return ((int)$blockchain_id === 2)
+		? 'https://bithomp.com/en/explorer/' . rawurlencode($address)
+		: 'https://pool.pm/' . rawurlencode($address);
+}
+
 function getIPFS($ipfs, $collection_id, $project_id = 0){
 	if(str_contains($ipfs, "data:image/svg+xml;base64")){
 		return $ipfs;
@@ -3374,9 +3427,23 @@ function getIPFS($ipfs, $collection_id, $project_id = 0){
 			return '/staking/images/nfts/' . $project_id . '/' . $collection_id . '/' . md5($ipfs) . '.' . $ext . $bust;
 		}
 	}
-	// Fall back to a public IPFS gateway
+	/*
+	 * Fall back to a public IPFS gateway.
+	 *
+	 * NOT ipfs.io. It answers 429 for this server's IP, and so does
+	 * dweb.link -- same operator -- so the fallback was a GUARANTEED broken
+	 * image for anything not yet cached. That is invisible for Cardano,
+	 * where everything was cached years ago, and it is the entire first
+	 * impression for a new XRPL holder: measured on the first one's twenty
+	 * NFTs, ipfs.io and dweb.link 429, cloudflare-ipfs is dead, and Pinata
+	 * served every one.
+	 *
+	 * This is a STOPGAP until image-cache.php stores the file locally, which
+	 * is what the browser should be hitting. The constant is overridable in
+	 * credentials/ so a gateway going bad is a config change, not a deploy.
+	 */
 	$ipfs = str_replace("ipfs/", "", $ipfs);
-	return "https://ipfs.io/ipfs/".$ipfs;
+	return IPFS_FALLBACK_GATEWAY . $ipfs;
 }
 
 // Render IPFS
@@ -3846,7 +3913,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 			$offset = ($page - 1) * $per_page;
 			$limit = " LIMIT " . $per_page . " OFFSET " . $offset;
 		}
-		$sql = "SELECT asset_id, asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter.$core_where." ORDER BY FIELD(project_id,6,5,4,3,2,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50), collection_id".$limit;
+		$sql = "SELECT asset_id, asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.blockchain_id AS blockchain_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$diamond_skull_filter.$core_where." ORDER BY FIELD(project_id,6,5,4,3,2,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50), collection_id".$limit;
 		$result = $conn->query($sql);
 
 		if ($result->num_rows > 0) {
@@ -3858,7 +3925,7 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 		    	echo "<div class='nft'><div class='nft-data'>";
 			}
 			echo "<span class='nft-name'>".$row["nfts_name"]."</span>";
-			echo "<a href='https://pool.pm/".$row["asset_id"]."' target='_blank'>".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $row["project_id"]), false, $row["nfts_id"])."</a>";
+			echo "<a href='".nftExplorerUrl($conn, $row["asset_id"], isset($row["blockchain_id"]) ? $row["blockchain_id"] : 1)."' target='_blank' rel='noopener'>".renderIPFS($row["ipfs"], $row["collection_id"], getIPFS($row["ipfs"], $row["collection_id"], $row["project_id"]), false, $row["nfts_id"])."</a>";
 			if($diamond_skull == false){
 				echo "<span class='nft-level'><strong>Project</strong><br>".$row["project_name"]."</span>";
 				echo "<span class='nft-level'><strong>Collection</strong><br>".$row["collection_name"]."</span>";
