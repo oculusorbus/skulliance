@@ -96,8 +96,22 @@ ALTER TABLE nfts MODIFY asset_id   VARCHAR(64) NOT NULL;
 ALTER TABLE nfts MODIFY asset_name VARCHAR(64) NOT NULL;
 ```
 
-Match `NOT NULL` to what `SHOW COLUMNS` reports in its Null column — a
-`MODIFY` restates the whole definition, so a mismatch quietly changes it.
+Confirmed on live: both were `varchar(50) NOT NULL`, so the `NOT NULL` above
+is correct as written. Match it to what `SHOW COLUMNS` reports — a `MODIFY`
+restates the whole definition, so a mismatch quietly changes it.
+
+**`nfts.name` is also `varchar(50)`**, and that one is only cosmetic — a
+long title is clipped in the display and nothing else. Bootlegs names are
+`DHCB126`, so it does not bite here. Worth widening before a collection with
+longer titles arrives, since widening never loses data:
+
+```sql
+ALTER TABLE nfts MODIFY name VARCHAR(128) NOT NULL;   -- optional
+```
+
+Not part of the required change, and deliberately separate: `asset_id` and
+`asset_name` are **keys**, so truncating them corrupts matching. `name` is a
+label.
 
 `nfts.asset_id` was `VARCHAR(50)`, sized for a **CIP-14 fingerprint** —
 `asset1...`, about 44 characters. An **XRPL NFTokenID is 64 hex
