@@ -349,21 +349,27 @@ gets its own try/catch and its own "did this run succeed" flag, and
 
 ---
 
-## 6. Metadata — the nuisance
+## 6. Metadata — not a phase-one problem
+
+This was going to be the awkward part, and it turns out not to apply.
 
 `ajax/get-monstrocity-assets.php` parses CIP-25 metadata out of a minting
-transaction (the `721` label). XRPL has no equivalent concept: an NFToken
-carries a hex-encoded URI, usually pointing at IPFS-hosted JSON.
+transaction (the `721` label), and XRPL has no equivalent — an NFToken carries
+a hex URI pointing at JSON. Same idea, different fetch, per game.
 
-Same idea, different fetch, and it is per-game rather than central. This is
-where the "many other nuances" live. It is bounded work but it is the part most
-likely to be underestimated, because each game that reads traits off-chain
-needs its own equivalent.
+**But Monstrocity themes are collection-specific, so XRPL collections are not
+in Monstrocity.** Nothing else reads trait metadata off a staked NFT: staking
+points come from `collections.rate` keyed on `collection_id`, and missions,
+realms and raids all key the same way. A stakeable collection needs a name, an
+image and a rate — no metadata pipeline at all.
 
-Mitigation: resolve the URI **once, at verification time**, and store the
-result in `nfts.ipfs` and the rarity tables the way Cardano metadata already
-is. Then the games read the database, not the chain, and most of them need no
-change at all.
+So for phase one this section is empty. The `nfts.ipfs` column still wants
+filling, and that is one hex-decode of the NFToken URI at verification time
+(§5), not a per-game parser.
+
+It comes back only if an XRPL collection is ever given a Monstrocity theme, or
+if some future game reads traits off staked assets. Worth keeping written down
+for that day, and worth not building for today.
 
 ---
 
@@ -396,8 +402,12 @@ No staking, no points, no rewards.
 - Access to what is already public and free: the Arena's practice mode, the
   Collection, the Sandbox
 
-This is a fraction of the total and it answers the question that decides
-everything else: **do those fifty people actually turn up?** If they do, phase
+Smaller than it first looked, because §6 turned out not to apply: no metadata
+pipeline, no per-game parser, no rarity run. A stakeable collection needs a
+name, an image and a rate.
+
+It answers the question that decides everything else: **do those fifty people
+actually turn up?** If they do, phase
 two is obviously worth it. If they do not, the platform has learned that
 cheaply and nothing downstream was disturbed.
 
@@ -406,7 +416,8 @@ cheaply and nothing downstream was disturbed.
 - `collections.rate` per XRPL collection, which already exists and needs nothing
 - Points accrual, which keys on `collection_id` and therefore already works
 - Missions, realms, raids — all `collection_id`-keyed, so they come along
-- Per-game metadata resolution (§6) for anything that reads traits
+- Per-game metadata resolution (§6) — only if an XRPL collection is ever given
+  a Monstrocity theme, which is not planned
 
 The ordering is deliberate: phase one is the part that is hard to reverse
 (schema, identity), phase two is the part that is merely laborious.
