@@ -41,11 +41,6 @@ echo "Verifying vendored wallet code against npm..."
 check "@crossmarkio/sdk" 0.4.0 "package/pack/umd/index.js"    vendor/xrpl/crossmark-sdk-0.4.0.umd.js
 check "@gemwallet/api"   3.8.0 "package/umd/gemwallet-api.js" vendor/xrpl/gemwallet-api-3.8.0.umd.js
 
-echo
-echo "NOT VERIFIED: vendor/ledger/"
-echo "  Those files came from esm.sh, which TRANSPILES the source and rewrites"
-echo "  its imports, so they cannot match an npm tarball by construction."
-echo "  See vendor/ledger/UNVERIFIED.md."
 
 [ $fail -eq 0 ] && echo "\nall verifiable files match npm" || echo "\nFAILURES ABOVE"
 exit $fail

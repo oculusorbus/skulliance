@@ -14,8 +14,10 @@ CDN. Copies here remove the CDN from the runtime trust path entirely.
 2.8MB — it pulls the whole of `xrpl.js`, and 49 of those fetches fail. Its UMD
 bundle is one self-contained 57KB file. GemWallet's is one 64KB file.
 
-The Ledger libraries are a separate tree in `vendor/ledger/` because they have
-no UMD build; see `vendor/ledger/refresh.py`.
+A direct-Ledger path was built and removed: those libraries ship no UMD build,
+so the only browser-ready form came from esm.sh, which transpiles rather than
+serving npm files and therefore cannot be verified this way. See multichain.md
+§4g.
 
 ## Refreshing
 

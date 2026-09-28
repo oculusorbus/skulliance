@@ -341,19 +341,6 @@
 					<span class="wallet-xrpl-mark">XRP</span>
 					<span>Connect with GemWallet<small>Browser extension — used by xrp.cafe</small></span>
 				</button>
-				<?php /* LEDGER, DIRECT. No wallet provider in the middle.
-				         Crossmark and GemWallet both make you create a software
-				         wallet before they will talk to a hardware one, which
-				         is a real barrier for somebody who already owns a
-				         Ledger and an XRP account and wants neither. The
-				         browser can speak to the device itself over WebHID, so
-				         this asks the Ledger for its address and nothing else
-				         -- no new wallet, no extension, no seed phrase. */ ?>
-				<button type="button" class="wallet-xrpl-btn" id="ledger-btn" hidden
-				        onclick="ledgerConnect()" style="margin-top:6px">
-					<span class="wallet-xrpl-mark">XRP</span>
-					<span>Connect a Ledger directly<small>No wallet app, no extension — just the device</small></span>
-				</button>
 				<div id="ledger-pick" hidden></div>
 				<div id="xaman-panel" hidden>
 					<div id="xaman-msg">Creating a sign-in request&hellip;</div>
@@ -468,110 +455,24 @@
 				}, 250);
 			})();
 
-			/* WEBHID IS CHROME, EDGE AND OPERA ONLY -- not Firefox, not
-			   Safari. Feature-detected rather than sniffed, and the button
-			   simply does not appear where it cannot work. */
-			if (navigator.hid) {
-				var lb = document.getElementById('ledger-btn');
-				if (lb) lb.hidden = false;
-			}
+			/* A DIRECT-LEDGER PATH WAS BUILT AND THEN REMOVED. The browser can
+			   talk to a Ledger over WebHID with no wallet provider in the way,
+			   which answers a real complaint: Crossmark and GemWallet both make
+			   you create a software wallet before they will touch a hardware
+			   one.
 
-			/* Ledger Live and XRP Toolkit both number accounts at the ACCOUNT
-			   level, so somebody's NFT is very often not at index 0. Scanning a
-			   handful and letting them pick the address they recognise is the
-			   difference between this working and it confidently showing the
-			   wrong wallet. */
-			var LEDGER_PATHS = ["44'/144'/0'/0/0", "44'/144'/1'/0/0", "44'/144'/2'/0/0",
-			                    "44'/144'/3'/0/0", "44'/144'/4'/0/0"];
+			   It was pulled because the libraries could not be VERIFIED. They
+			   ship no UMD build, so the only browser-ready form came from
+			   esm.sh, which transpiles and rewrites rather than serving npm's
+			   files -- meaning the vendored copy could never be checked against
+			   npm's published hashes the way vendor/xrpl/ is. Asking anybody to
+			   plug a hardware wallet into unverified third-party code is not a
+			   liability worth carrying for convenience.
 
-			function ledgerSay(t){
-				var p = document.getElementById('xaman-panel');
-				var q = document.getElementById('xaman-qr'), l = document.getElementById('xaman-link');
-				if (p) p.hidden = false;
-				if (q) q.hidden = true;
-				if (l) l.hidden = true;
-				xamanSay(t);
-			}
-
-			function ledgerConnect(){
-				var pick = document.getElementById('ledger-pick');
-				pick.hidden = true; pick.innerHTML = '';
-				xamanCancel();
-				ledgerSay('Unlock your Ledger and open the XRP app\u2026');
-
-				var transport;
-				/* VENDORED, NOT CDN'd. This code gets WebHID access to a
-				   hardware wallet, so it is served from our own origin rather
-				   than fetched from a third party at runtime. Pinning a
-				   version stops a bad new release; it does not stop a
-				   compromised CDN, and import() cannot carry Subresource
-				   Integrity. The graph lives in vendor/ledger/ -- 17 files,
-				   108KB, refreshed by vendor/ledger/refresh.py. */
-				Promise.all([
-					import('vendor/ledger/entry-webhid.mjs'),
-					import('vendor/ledger/entry-hw-app-xrp.mjs')
-				]).then(function(m){
-					var TransportWebHID = m[0].default || m[0];
-					var Xrp = m[1].default || m[1];
-					/* .request() prompts the browser's device picker and must be
-					   called from a user gesture, which this is. */
-					return TransportWebHID.request().then(function(t){
-						transport = t;
-						var xrp = new Xrp(t);
-						ledgerSay('Reading addresses from the device\u2026');
-						/* Sequential, not parallel: one HID pipe, and the device
-						   answers one request at a time. */
-						var out = [];
-						return LEDGER_PATHS.reduce(function(chain, path){
-							return chain.then(function(){
-								return xrp.getAddress(path).then(function(r){
-									if (r && r.address) out.push({path:path, address:r.address});
-								}).catch(function(){ /* an unused index is not an error */ });
-							});
-						}, Promise.resolve()).then(function(){ return out; });
-					});
-				}).then(function(found){
-					if (transport) { try { transport.close(); } catch(e){} }
-					if (!found.length) { ledgerSay('No XRP addresses came back. Is the XRP app open?'); return; }
-					ledgerSay('Pick the address holding your NFTs:');
-					pick.hidden = false;
-					pick.innerHTML = found.map(function(f, i){
-						return '<button type="button" class="wallet-xrpl-cancel" data-addr="'
-						     + f.address + '" style="display:block;width:100%;margin:4px 0;text-align:left">'
-						     + '<code style="font-size:10px">' + f.address + '</code>'
-						     + '<small style="display:block;opacity:.5">' + f.path + '</small></button>';
-					}).join('');
-					pick.querySelectorAll('button').forEach(function(b){
-						b.addEventListener('click', function(){
-							pick.hidden = true;
-							ledgerLink(b.getAttribute('data-addr'));
-						});
-					});
-				}).catch(function(e){
-					if (transport) { try { transport.close(); } catch(err){} }
-					/* Declining the browser's device picker throws, and that is
-					   not a failure worth shouting about. */
-					var m = (e && e.message) ? e.message : '';
-					ledgerSay(/denied|cancel|No device selected/i.test(m)
-						? 'No device was selected.'
-						: (m || 'Could not talk to the Ledger.'));
-				});
-			}
-
-			function ledgerLink(addr){
-				ledgerSay('Linking\u2026');
-				var fd = new FormData();
-				fd.append('address', addr); fd.append('via', 'ledger');
-				fetch('ajax/xrpl-link.php', {method:'POST', body:fd, credentials:'same-origin'})
-					.then(function(r){ return r.text(); })
-					.then(function(t){
-						var res; try { res = JSON.parse(t); } catch(e){ throw new Error(t.slice(0,120)); }
-						if (!res.ok) { ledgerSay(res.message || 'Could not link.'); return; }
-						ledgerSay(res.message || 'Wallet linked.');
-						setTimeout(function(){ location.reload(); }, 1400);
-					})
-					.catch(function(e){ ledgerSay((e && e.message) || 'Could not link.'); });
-			}
+			   Recoverable: multichain.md §4g records what a verified vendoring
+			   needs. Until then hardware holders add their Ledger inside
+			   Crossmark or GemWallet, whose SDKs ARE verified against npm.
+			   Removed 2026-09-28; the implementation is in git history. */
 
 			function xrplExtConnect(which){
 				var ext = XRPL_EXT[which]; if (!ext) return;
