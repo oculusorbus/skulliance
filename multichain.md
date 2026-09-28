@@ -15,28 +15,52 @@
 
 **To go live, in order:**
 
-1. Run `multichain-schema.md` (check the duplicate-`asset_id` query before the
-   unique key).
-2. Add `$xaman_api_key` / `$xaman_api_secret` to `credentials/`.
-3. `php verify-xrpl-probe.php <your r-address>` while holding one of the
-   collection's NFTs, and run the `INSERT` it prints.
-4. Link a wallet through the modal and confirm a row lands in `wallets` with
-   `blockchain_id = 2`.
-5. `php verify.php verify=xrpl dry=1 addr=<your r-address>` — reads the ledger,
-   writes nothing, and prints what it would stake next to anything it found
-   that is **not** registered. That second list is the point: an issuer:taxon
-   off by a digit matches nothing and raises nothing, which is
-   indistinguishable from a correct run against an empty wallet.
+**0.** `git pull` on the server. Nothing below works until the code is there.
 
-   `addr=` bypasses the wallets table, so this works **before** anyone has
-   linked a wallet — which is the only way step 5 is worth running before step
-   4. It is refused for a real pass: staking an address nobody has proved they
-   hold is the one thing this subsystem exists to prevent.
-6. Schedule it — **before** the Cardano job (§5c).
+**1. Run the migration** — `multichain-schema.md`. Safe mid-day: every column
+is `DEFAULT 1`, so existing rows become correct the instant it lands and every
+existing query keeps returning what it returned before.
+**Run the duplicate-`asset_id` check before the unique key** — RFTs share an
+`asset_id` by design, so it can legitimately fail. Do not force it.
 
-Steps 1 and 3 can also be checked in isolation: the probe needs no migration,
-no credentials and no linked wallet, so `php verify-xrpl-probe.php <r-address>`
-is runnable today and exercises the whole ledger-read and metadata path.
+**2. Add the credentials** to `credentials/db_credentials.php`, beside
+`$blockfrost_project_id`:
+```php
+$xaman_api_key    = "...";   // from https://apps.xaman.dev — free
+$xaman_api_secret = "...";
+```
+
+**3. Find the collection.** Holding one of its NFTs:
+```
+php verify-xrpl-probe.php <your r-address>
+```
+It prints the issuer, taxon, a sample name and image, and the `INSERT`. Run
+that INSERT, using the **artist's existing `project_id`** — an XRPL collection
+belongs to the same project as their Cardano ones (§3d).
+
+**4. Dry run, before linking anything:**
+```
+php verify.php verify=xrpl dry=1 addr=<your r-address>
+```
+Writes nothing. Prints what it would stake next to anything on the ledger that
+is **not** registered — which is the check that matters, because an
+issuer:taxon off by a digit matches nothing, raises nothing, and looks exactly
+like a correct run against an empty wallet.
+
+**5. Link a wallet** through the Connect modal and confirm a `wallets` row with
+`blockchain_id = 2`. This is the first test of Xaman end to end.
+
+**6. Run it for real once:**
+```
+php verify.php verify=xrpl
+```
+Then check `nfts` for rows with `blockchain_id = 2` and your `user_id`.
+
+**That is all.** There is no new cron: the XRPL phase runs inside the existing
+nightly job, before the payouts (§5c). Your crontab does not change.
+
+Steps 3 and 4 need no migration, no credentials and no linked wallet, so the
+whole ledger-read path can be proven before anything else is touched.
 
 ---
 
