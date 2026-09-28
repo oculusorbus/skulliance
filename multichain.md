@@ -465,6 +465,37 @@ CDN: these run in a page that can reach a wallet, and `import()` cannot carry
 Subresource Integrity, so a pinned CDN version protects against a bad release
 but not against a compromised CDN.
 
+**The two are not detected the same way, and assuming they were was a bug.**
+Crossmark sets `window.xrpl.isCrossmark` as soon as its content script runs,
+so a synchronous check finds it. **GemWallet injects nothing.** Reading its
+own SDK: `window.gemWallet` is assigned *by* `isInstalled()`, inside the
+page, only after a `postMessage` handshake with the content script comes
+back. A `typeof window.gemWallet !== 'undefined'` check can therefore never
+be true, and the GemWallet tile never appeared for anybody who had it.
+
+Loading the SDK just to ask would be 63KB on every page view for a question
+most visitors never ask, so `gemwalletProbe()` does the handshake directly:
+
+```
+-> {source:'GEM_WALLET_MSG_REQUEST', messageId, app:'gem-wallet',
+    type:'REQUEST_IS_INSTALLED/V3'}
+<- {source:'GEM_WALLET_MSG_RESPONSE', messagedId, isInstalled:true}
+```
+
+`messagedId` in the reply is GemWallet's spelling, not a typo here — match
+on `messageId` and the promise never resolves. Silence is the normal
+negative (nothing answers when the extension is absent), so it times out at
+1s and is retried up to three times, because a content script can land after
+the page script does.
+
+It also repairs the **connect** path: the SDK rejects every request other
+than the install check while `window.gemWallet` is falsy, so setting that
+flag is what lets `getAddress()` through at all.
+
+Measured against a real installed GemWallet: reply in **1ms**, the old check
+returning **false** on the same page, and a swallowed request resolving
+false at 1.3s with no flag set.
+
 **UMD rather than ESM, and the numbers decided it.** Crossmark's ESM graph is
 **713 files and 2.8MB** — it pulls the whole of `xrpl.js`, and 49 of those
 fetches fail outright. Its UMD bundle is one self-contained 57KB file.

@@ -491,7 +491,8 @@
 				},
 				gemwallet: {
 					el: 'gemwallet-btn',
-					has: function(){ return typeof window.gemWallet !== 'undefined'; },
+					/* Set by gemwalletProbe() below, never by the extension. */
+					has: function(){ return !!window.gemWallet; },
 					address: function(){
 						return loadVendor('vendor/xrpl/gemwallet-api-3.8.0.umd.js', function(){
 							return window.GemWalletApi || null;
@@ -506,6 +507,76 @@
 					}
 				}
 			};
+			/* GEMWALLET DOES NOT INJECT ANYTHING, and this cost a bug report.
+			   Crossmark sets window.xrpl.isCrossmark the moment its content
+			   script runs, so a synchronous check finds it. GemWallet sets
+			   NOTHING -- read its own SDK and window.gemWallet is assigned by
+			   isInstalled(), inside the page, only after a postMessage
+			   handshake with the content script answers. So `typeof
+			   window.gemWallet !== 'undefined'` could never be true, and the
+			   tile never appeared for anyone who had the extension.
+
+			   The obvious fix -- load the SDK and call isInstalled() -- means
+			   63KB on every page view to answer a question most visitors never
+			   ask. The handshake itself is four fields, so this does it
+			   directly and the SDK still loads only on click.
+
+			   It also repairs the CONNECT path: the SDK refuses every request
+			   other than the install check while window.gemWallet is falsy, so
+			   setting it here is what lets getAddress() through at all.
+
+			   Protocol read out of vendor/xrpl/gemwallet-api-3.8.0.umd.js.
+			   Note `messagedId` in the reply -- that spelling is GemWallet's,
+			   not a typo here, and matching on `messageId` silently never
+			   resolves. */
+			function gemwalletProbe(){
+				return new Promise(function(resolve){
+					if (window.gemWallet) return resolve(true);
+					var id = Date.now() + Math.random(), done = false, timer;
+					function finish(ok){
+						if (done) return;
+						done = true;
+						clearTimeout(timer);
+						window.removeEventListener('message', onMsg);
+						/* The SDK gates every later call on this flag. */
+						if (ok) window.gemWallet = true;
+						resolve(ok);
+					}
+					function onMsg(ev){
+						if (ev.source !== window || !ev.data) return;
+						if (ev.data.source !== 'GEM_WALLET_MSG_RESPONSE') return;
+						if (ev.data.messagedId !== id) return;
+						finish(!!ev.data.isInstalled);
+					}
+					window.addEventListener('message', onMsg, false);
+					/* No answer means not installed. Silence is the normal
+					   negative here -- nothing replies when the extension is
+					   absent -- so this must time out rather than hang. */
+					timer = setTimeout(function(){ finish(false); }, 1000);
+					try {
+						window.postMessage({
+							source:    'GEM_WALLET_MSG_REQUEST',
+							messageId: id,
+							app:       'gem-wallet',
+							type:      'REQUEST_IS_INSTALLED/V3'
+						}, window.location.origin);
+					} catch(e) { finish(false); }
+				});
+			}
+
+			/* Retried, not asked once: a content script can land after this
+			   script does, and a single probe at load tells somebody who has
+			   GemWallet installed that they do not. */
+			(function(){
+				var asked = 0;
+				(function ask(){
+					if (window.gemWallet) return;
+					gemwalletProbe().then(function(ok){
+						if (!ok && ++asked < 3) setTimeout(ask, 800);
+					});
+				})();
+			})();
+
 			(function(){
 				var tries = 0;
 				var t = setInterval(function(){
@@ -519,7 +590,10 @@
 						if (e.style.display === 'none' && XRPL_EXT[k].has()) e.style.display = '';
 						if (e.style.display === 'none') left++;
 					}
-					if (!left || ++tries > 20) clearInterval(t);   // ~5s, then quietly stop
+					/* ~10s. Must outlast the GemWallet probes, which can answer
+					   as late as ~5.4s -- a 5s loop would stop before the last
+					   one came back and hide a wallet that IS installed. */
+					if (!left || ++tries > 40) clearInterval(t);
 				}, 250);
 			})();
 
