@@ -161,7 +161,8 @@ report_out('Synced in the platform DB: ' . count($db_rows) . ' NFT(s).');
 // directly instead of assuming it.
 $wallet_only = []; // policy:asset_name_hex -> ['user_id'=>.., 'asset_name_hex'=>.., 'fingerprint'=>..]
 foreach ($user_ids as $uid => $label) {
-	$addr_res = $conn->query("SELECT DISTINCT stake_address FROM wallets WHERE user_id = $uid AND stake_address != ''");
+	/* Cardano only: these go to Koios, which 500s on an r-address. */
+	$addr_res = $conn->query("SELECT DISTINCT stake_address FROM wallets WHERE user_id = $uid AND blockchain_id = 1 AND stake_address != ''");
 	$stakes = [];
 	if ($addr_res) { while ($r = $addr_res->fetch_assoc()) $stakes[] = $r['stake_address']; }
 	if (!$stakes) {

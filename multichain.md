@@ -1205,11 +1205,39 @@ https://pool.pm/rLRRH3TvxPRtjuPsU3RfxcgfkXpiTfYNiY
 Ripple's base58 alphabet contains `i`; bech32 does not. That is an XRPL
 account sitting in `wallets` with `blockchain_id = 1`.
 
-**`getAllAddresses()` was not at fault** — it filters on `blockchain_id`
-correctly. The row itself is mislabelled, and the way in is
-`checkAddress()`: it calls `createAddress()` without a chain, which defaults
-to 1, and it validated nothing. Anything POSTed to the Cardano connect
-endpoint became a Cardano wallet.
+**The row was not mislabelled at all** — `UPDATE ... WHERE stake_address
+LIKE 'r%' AND blockchain_id = 1` matched zero. `getAllAddresses()` filters
+correctly and the nightly cron was never the source. The alert arrived at
+11:36 in the morning, which was the clue: it is the **interactive** path.
+
+`getAddresses()` — one user's addresses, called by `verifyNFTs()` from
+`wallet-ajax.php` and `skulliance.php` — had **no chain filter at all**. So
+any user with an XRPL wallet had their r-address handed to Koios every time
+they connected or refreshed a wallet.
+
+Fixed, and then swept for the same shape, because a `wallets` read with no
+`blockchain_id` is now a bug by default:
+
+| | was | risk |
+|---|---|---|
+| `getAddresses()` | unscoped | **the reported alert** |
+| `getAddress()` | unscoped | a **purchase delivery address** could be an r-address |
+| `getCreatorStakeAddress()` | unscoped | same, for creator payouts |
+| `getWinnerAddress()` | unscoped | same, for raffle/auction prizes |
+| raffle + auction winner subqueries | unscoped | same |
+| both Crypties rarity reports | unscoped | Koios 500s |
+| `getAddressesDiscord()` | unscoped | **left alone on purpose** |
+
+The last one is the exception worth stating: its only caller asks "does this
+person have a wallet at all", and an XRPL-only holder does. Scoping it would
+bounce them off the pages they just linked a wallet to reach.
+
+The delivery-address ones never fired only because no XRPL holder has won
+anything yet. They were the more dangerous half.
+
+`checkAddress()` also now validates: it calls `createAddress()` without a
+chain, which defaults to 1, so anything POSTed to the Cardano connect
+endpoint would have become a Cardano wallet.
 
 Two fixes, because one of them is not enough:
 

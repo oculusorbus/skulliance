@@ -582,8 +582,14 @@ function getUserIdFromDiscordId($conn, $discord_id){
 }
 
 // Get first user wallet address to send purchases to
-function getAddress($conn){
-	$sql = "SELECT address, main FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."' ORDER BY main DESC";
+/*
+ * CARDANO ONLY. This is a DELIVERY ADDRESS -- unscoped, a user whose primary
+ * wallet is XRPL would have purchases addressed to an r-address. Same gap as
+ * getAddresses(), and the consequence is not a failed API call.
+ */
+function getAddress($conn, $blockchain_id = 1){
+	$sql = "SELECT address, main FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'"
+	     . " AND blockchain_id = ".(int)$blockchain_id." ORDER BY main DESC";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -2990,8 +2996,24 @@ function checkAddress($conn, $stake_address, $address) {
 }
 
 // Get user wallet addresses
-function getAddresses($conn) {
-	$sql = "SELECT stake_address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'";
+/*
+ * ONE USER'S ADDRESSES ON ONE CHAIN.
+ *
+ * This was unscoped, and every caller is the CARDANO verifier -- so a user
+ * with an XRPL wallet had their r-address handed to Koios, which answered
+ *
+ *   Failed to decode Bech32 string: Parse(Char(InvalidChar('i')))
+ *
+ * four times with a Discord alert each. Not the nightly cron: this is the
+ * INTERACTIVE path, so it fired whenever that user connected or refreshed a
+ * wallet, which is why the alert arrived in the middle of the day.
+ *
+ * Defaults to 1 so every existing caller keeps the behaviour it wanted --
+ * they were all asking for Cardano, they just had no way to say so.
+ */
+function getAddresses($conn, $blockchain_id = 1) {
+	$sql = "SELECT stake_address FROM wallets WHERE user_id='".$_SESSION['userData']['user_id']."'"
+	     . " AND blockchain_id = ".(int)$blockchain_id;
 	$result = $conn->query($sql);
 	
     $addresses = array();
@@ -3009,6 +3031,10 @@ function getAddresses($conn) {
 
 // Get user wallet addresses based on discord ID
 function getAddressesDiscord($conn) {
+	/* DELIBERATELY NOT chain-scoped, unlike its neighbours. Its only caller
+	   asks "does this person have a wallet at all", and an XRPL-only holder
+	   does. Scoping it to Cardano would bounce them off the pages they just
+	   linked a wallet to reach. */
 	$sql = "SELECT stake_address FROM wallets INNER JOIN users ON wallets.user_id = users.id WHERE users.discord_id='".$_SESSION['userData']['discord_id']."'";
 	$result = $conn->query($sql);
 	
@@ -11393,7 +11419,7 @@ function getActiveAuctions($conn) {
 	               b.user_id AS current_bidder_id,
 	               p.name AS current_bid_project_name, p.currency AS current_bid_currency,
 	               wu.username AS winner_name,
-	               (SELECT w.address FROM wallets w WHERE w.user_id = a.winner_id AND w.address != '' ORDER BY w.main DESC, w.id ASC LIMIT 1) AS winner_address
+	               (SELECT w.address FROM wallets w WHERE w.user_id = a.winner_id AND w.blockchain_id = 1 AND w.address != '' ORDER BY w.main DESC, w.id ASC LIMIT 1) AS winner_address
 	        FROM auctions a
 	        INNER JOIN users u ON u.id = a.user_id
 	        LEFT JOIN bids b ON b.auction_id = a.id AND b.status = 1
@@ -11614,7 +11640,7 @@ function getActiveRaffles($conn) {
 	$sql = "SELECT r.*, u.username AS creator_name, u.discord_id AS creator_discord, u.avatar AS creator_avatar,
 	               (SELECT COALESCE(SUM(t.quantity),0) FROM tickets t WHERE t.raffle_id = r.id AND t.status = 1) AS total_tickets_sold,
 	               wu.username AS winner_name,
-	               (SELECT w.address FROM wallets w WHERE w.user_id = r.winner_id AND w.address != '' ORDER BY w.main DESC, w.id ASC LIMIT 1) AS winner_address
+	               (SELECT w.address FROM wallets w WHERE w.user_id = r.winner_id AND w.blockchain_id = 1 AND w.address != '' ORDER BY w.main DESC, w.id ASC LIMIT 1) AS winner_address
 	        FROM raffles r
 	        INNER JOIN users u ON u.id = r.user_id
 	        LEFT JOIN users wu ON wu.id = r.winner_id
@@ -11827,25 +11853,34 @@ function cancelRaffle($conn, $raffle_id, $user_id) {
 }
 
 // Return the main stake address for a user (falls back to lowest-id wallet).
-function getCreatorStakeAddress($conn, $user_id) {
+/*
+ * CARDANO ONLY, and the fallback is why it matters. "Lowest-id wallet with a
+ * stake_address" would happily return an XRPL r-address for a user whose
+ * only other wallet is XRPL -- as a payout destination for a Cardano NFT.
+ * Same gap getAddresses() had, with worse consequences than a failed API
+ * call.
+ */
+function getCreatorStakeAddress($conn, $user_id, $blockchain_id = 1) {
 	$uid = intval($user_id);
-	$res = $conn->query("SELECT stake_address FROM wallets WHERE user_id='$uid' AND main='1' AND stake_address != '' LIMIT 1");
+	$bc  = (int)$blockchain_id;
+	$res = $conn->query("SELECT stake_address FROM wallets WHERE user_id='$uid' AND blockchain_id = $bc AND main='1' AND stake_address != '' LIMIT 1");
 	if ($res && $res->num_rows) {
 		$row = $res->fetch_assoc();
 		if (!empty($row['stake_address'])) return $row['stake_address'];
 	}
-	$res = $conn->query("SELECT stake_address FROM wallets WHERE user_id='$uid' AND stake_address != '' ORDER BY id ASC LIMIT 1");
+	$res = $conn->query("SELECT stake_address FROM wallets WHERE user_id='$uid' AND blockchain_id = $bc AND stake_address != '' ORDER BY id ASC LIMIT 1");
 	if ($res && $res->num_rows) { $row = $res->fetch_assoc(); return $row['stake_address'] ?: null; }
 	return null;
 }
 
 // Return the main receiving address (addr1...) for a user — for NFT delivery instructions.
 // Falls back to oldest wallet if no main is set.
-function getWinnerAddress($conn, $user_id) {
+function getWinnerAddress($conn, $user_id, $blockchain_id = 1) {
 	$uid = intval($user_id);
-	$res = $conn->query("SELECT address FROM wallets WHERE user_id='$uid' AND main='1' AND address != '' LIMIT 1");
+	$bc  = (int)$blockchain_id;
+	$res = $conn->query("SELECT address FROM wallets WHERE user_id='$uid' AND blockchain_id = $bc AND main='1' AND address != '' LIMIT 1");
 	if ($res && $res->num_rows) { $row = $res->fetch_assoc(); if (!empty($row['address'])) return $row['address']; }
-	$res = $conn->query("SELECT address FROM wallets WHERE user_id='$uid' AND address != '' ORDER BY id ASC LIMIT 1");
+	$res = $conn->query("SELECT address FROM wallets WHERE user_id='$uid' AND blockchain_id = $bc AND address != '' ORDER BY id ASC LIMIT 1");
 	if ($res && $res->num_rows) { $row = $res->fetch_assoc(); return $row['address'] ?: null; }
 	return null;
 }

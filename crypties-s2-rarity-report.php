@@ -135,7 +135,8 @@ report_out('Synced in the platform DB: ' . count($db_rows) . ' NFT(s).');
 // Step 2: the full on-chain picture for this wallet -- every stake address
 // on file, every S2-policy asset in each, via Koios account_assets.
 $wallet_only = [];
-$addr_res = $conn->query("SELECT DISTINCT stake_address FROM wallets WHERE user_id = $user_id AND stake_address != ''");
+/* Cardano only: these go to Koios, which 500s on an r-address. */
+$addr_res = $conn->query("SELECT DISTINCT stake_address FROM wallets WHERE user_id = $user_id AND blockchain_id = 1 AND stake_address != ''");
 $stakes = [];
 if ($addr_res) { while ($r = $addr_res->fetch_assoc()) $stakes[] = $r['stake_address']; }
 if (!$stakes) {
