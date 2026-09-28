@@ -3289,8 +3289,19 @@ function removeUsers($conn, $blockchain_id = 1){
 }
 
 // Remove specific user from their NFTs
-function removeUser($conn, $user_id){
-	$sql = "UPDATE nfts set	user_id = 0 WHERE user_id = '".$user_id."'";
+/*
+ * Clear one user's NFT ownership before re-verifying THEM, which is what a
+ * wallet connect does.
+ *
+ * SCOPED TO ONE CHAIN, for the same reason removeUsers() is -- and this one is
+ * worse, because it fires interactively rather than nightly. Unscoped, somebody
+ * connecting a Cardano wallet would have their XRPL NFTs zeroed by a pass that
+ * only re-verifies Cardano, and nothing would put them back until the next
+ * night. Defaults to 1 so existing callers are unchanged.
+ */
+function removeUser($conn, $user_id, $blockchain_id = 1){
+	$sql = "UPDATE nfts set	user_id = 0 WHERE user_id = '".$user_id."'
+	        AND blockchain_id = '".(int)$blockchain_id."'";
 	
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";

@@ -264,6 +264,64 @@ function xrpl_account_nfts($api_base, $account, $fetch) {
 /* ---------- the pass ------------------------------------------------------- */
 
 /**
+ * Verify ONE user's XRPL wallets, right now.
+ *
+ * A wallet connect verifies immediately on the Cardano side -- link, clear
+ * that user, re-verify -- and it has to here too, or somebody links Xaman,
+ * sees nothing, and concludes it did not work. "It will appear tomorrow" is
+ * not a thing to tell somebody who just proved they own something.
+ *
+ * Same read-then-write order as the nightly pass and for the same reason: if
+ * the ledger cannot be read, this user's existing rows are left exactly as
+ * they were rather than cleared and half-rebuilt.
+ *
+ * Returns array(ok, staked, message).
+ */
+function xrpl_verify_user($conn, $user_id, $budget = 45) {
+	try {
+		$user_id = (int)$user_id;
+		if ($user_id <= 0) return array('ok' => false, 'staked' => 0, 'message' => '');
+
+		$collections = getCollectionIDs($conn, XRPL_CHAIN_ID);
+		if (!$collections)
+			return array('ok' => true, 'staked' => 0,
+				'message' => 'No XRPL collections are registered yet.');
+
+		/* This user's XRPL addresses only. getAddresses() is Cardano-shaped and
+		   unscoped, so it is not reused here. */
+		$addresses = array();
+		$res = $conn->query("SELECT stake_address FROM wallets
+		                     WHERE user_id = $user_id AND blockchain_id = " . XRPL_CHAIN_ID);
+		if ($res) while ($r = $res->fetch_assoc()) $addresses[] = $r['stake_address'];
+		if (!$addresses) return array('ok' => true, 'staked' => 0, 'message' => '');
+
+		$out = verifyNFTsXRPL($conn, $addresses, $collections,
+			getNFTAssetIDs($conn, XRPL_CHAIN_ID), array(), array(
+				'api_base' => getChainSetting($conn, XRPL_CHAIN_ID, 'api_base', 'https://xrplcluster.com'),
+				'gateway'  => getChainSetting($conn, XRPL_CHAIN_ID, 'ipfs_gateway', 'https://ipfs.io/ipfs/'),
+				/* Short: somebody is watching a spinner. If the ledger is slow the
+				   nightly pass will pick it up, which is a far better outcome than
+				   a request that hangs. */
+				'deadline' => time() + (int)$budget,
+				'clear'    => function() use ($conn, $user_id) {
+					removeUser($conn, $user_id, XRPL_CHAIN_ID);
+				},
+			));
+
+		if (!$out['ok'])
+			return array('ok' => false, 'staked' => 0,
+				'message' => 'Could not read the ledger just now — your NFTs will be '
+				           . 'picked up tonight.');
+
+		return array('ok' => true, 'staked' => $out['wrote'], 'message' => '');
+	} catch (Throwable $e) {
+		error_log('xrpl_verify_user: ' . $e->getMessage());
+		return array('ok' => false, 'staked' => 0,
+			'message' => 'Wallet linked. Your NFTs will be counted tonight.');
+	}
+}
+
+/**
  * The XRPL phase, as the nightly job runs it. One function so the scheduled
  * path and the manual path cannot drift.
  *

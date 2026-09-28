@@ -47,14 +47,12 @@ is **not** registered — which is the check that matters, because an
 issuer:taxon off by a digit matches nothing, raises nothing, and looks exactly
 like a correct run against an empty wallet.
 
-**5. Link a wallet** through the Connect modal and confirm a `wallets` row with
-`blockchain_id = 2`. This is the first test of Xaman end to end.
+**5. Link a wallet** through the Connect modal. It verifies **immediately** —
+the same way a Cardano connect does — so the confirmation says how many NFTs
+are now staking. Nothing to run afterwards.
 
-**6. Run it for real once:**
-```
-php verify.php verify=xrpl
-```
-Then check `nfts` for rows with `blockchain_id = 2` and your `user_id`.
+Then check `wallets` for a row with `blockchain_id = 2` and `nfts` for rows
+with `blockchain_id = 2` and your `user_id`.
 
 **That is all.** There is no new cron: the XRPL phase runs inside the existing
 nightly job, before the payouts (§5c). Your crontab does not change.
@@ -421,6 +419,24 @@ everybody else nothing — which is all the isolation was ever for.
 
 `verify=xrpl` still exists, for running it by hand and for dry runs. It is not
 scheduled.
+
+### 5e. Connecting a wallet verifies it there and then
+
+A Cardano connect links and re-verifies in one request
+(`skulliance.php` → `checkAddress()` → `removeUser()` → `verifyNFTs()`), so
+XRPL does the same through `xrpl_verify_user()`. Somebody who has just proved
+they own something should not be told to come back tomorrow to see it.
+
+Bounded to 45 seconds and caught: if the ledger is slow the wallet stays
+linked and the nightly pass picks it up, which is a better answer than a
+request that hangs.
+
+**`removeUser()` had the same hazard as `removeUsers()`, and worse.** It
+cleared one user's NFTs across *every* chain, and it fires interactively. So
+connecting a **Cardano** wallet would zero that user's XRPL rows, and the
+Cardano verification that follows would never restore them — they would look
+sold until the next night. It is chain-scoped now, and all four call sites
+pass 1 explicitly.
 
 ### 5d. Read everything, then write — or write nothing
 

@@ -12,6 +12,7 @@
 include '../db.php';
 include '../skulliance.php';
 require_once __DIR__ . '/../xaman.php';
+require_once __DIR__ . '/../verify-xrpl.php';
 require_once __DIR__ . '/../dhc-json.php';
 
 $user_id = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
@@ -57,5 +58,20 @@ if ($own && $own->num_rows) {
 createAddress($conn, $account, $account, XRPL_CHAIN_ID);
 xaman_forget();
 
+/*
+ * VERIFY NOW, not tonight. A Cardano connect links and re-verifies in the same
+ * request, and somebody who has just proved they own something should not be
+ * told to come back tomorrow to see it. Bounded and caught: if the ledger is
+ * slow or unreachable the wallet stays linked and the nightly pass picks it
+ * up, which is the right answer to give rather than a spinner that hangs.
+ */
+$v = xrpl_verify_user($conn, $user_id);
+
+if (!empty($v['message'])) $msg = 'Wallet linked. ' . $v['message'];
+elseif ($v['staked'] > 0)  $msg = 'Wallet linked — ' . (int)$v['staked'] . ' NFT'
+                                . ($v['staked'] === 1 ? '' : 's') . ' now staking.';
+else                       $msg = 'Wallet linked. Nothing from a registered collection '
+                                . 'in it yet.';
+
 dhc_json(array('ok' => true, 'account' => $account,
-	'message' => 'Wallet linked. Your XRPL holdings are counted on the next verification.'));
+	'staked' => (int)$v['staked'], 'message' => $msg));

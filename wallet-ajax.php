@@ -59,7 +59,7 @@ if (isset($_POST['stakeaddress'])) {
 	$addresses = getAddresses($conn);
 	$policies = getPolicies($conn);
 	$asset_ids = getNFTAssetIDs($conn);
-	removeUser($conn, $_SESSION['userData']['user_id']);
+	removeUser($conn, $_SESSION['userData']['user_id'], 1);   // Cardano: verifyNFTs() below restores only this chain
 	verifyNFTs($conn, $addresses, $policies, $asset_ids);
 	assignRole($_SESSION['userData']['discord_id'], "1119732763956871199");
 	$completed = true;
@@ -79,7 +79,7 @@ if (isset($_POST['stakeaddress'])) {
 
 if (isset($_POST['refresh'])) {
 	$asset_ids = getNFTAssetIDs($conn);
-	removeUser($conn, $_SESSION['userData']['user_id']);
+	removeUser($conn, $_SESSION['userData']['user_id'], 1);   // Cardano: verifyNFTs() below restores only this chain
 	verifyNFTs($conn, getAddresses($conn), getPolicies($conn), $asset_ids);
 	$completed = true;
 	ob_end_clean();
