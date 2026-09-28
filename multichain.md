@@ -1171,6 +1171,21 @@ Now `IPFS_FALLBACK_GATEWAY`, defaulting to Pinata and overridable in
 file locally is what the browser should be hitting, and **it must be run
 after a new holder verifies** or they wait until the nightly pass.
 
+**Run it scoped after adding a chain:**
+
+```
+php image-cache.php --chain=2
+```
+
+A full run walks every NFT of every active user and retries the Cardano
+stragglers — the handful whose gateways have never answered — on every pass.
+A newly registered chain's NFTs are the newest rows, so they sit at the
+*back* of that queue: after an XRPL launch you would wait out the entire
+Cardano base before caching the images anybody is about to look at.
+`--collection=N` and `--project=N` narrow it the same way. The filter only
+changes which rows are considered, so a targeted run and a full run cannot
+disagree.
+
 **Every NFT linked to pool.pm**, a Cardano explorer that has never heard of
 an NFTokenID. `nftExplorerUrl()` reads `blockchains.explorer_nft` — the
 template column that existed for exactly this and was not yet used — once

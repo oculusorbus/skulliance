@@ -27,12 +27,55 @@ if ($stale_cleaned > 0) {
     echo "Cleaned $stale_cleaned stale lock file(s) from prior runs.\n";
 }
 
+/*
+ * ─── Optional filters ───────────────────────────────────────────────────────
+ *
+ *   php image-cache.php                 everything, as always
+ *   php image-cache.php --chain=2       one blockchain
+ *   php image-cache.php --collection=289
+ *   php image-cache.php --project=9
+ *
+ * WHY. A full run walks every NFT of every active user and retries the
+ * Cardano stragglers -- the handful whose gateways have never answered --
+ * on every pass. A newly registered chain's NFTs are the newest rows, so
+ * they sit at the BACK of that queue: after an XRPL launch you would wait
+ * out the entire Cardano base before the images anybody is about to look at
+ * get cached.
+ *
+ * Nothing about the filter changes what caching does, only which rows are
+ * considered, so a targeted run and a full run cannot disagree.
+ */
+$filter_sql = '';
+$filter_desc = 'all active users';
+/* $argv exists only under the CLI SAPI. This script has no CLI guard and may
+   be reachable over HTTP or driven by a URL cron, where array_slice($argv, 1)
+   would be a fatal -- so read arguments only where there are arguments. */
+$cli_args = (PHP_SAPI === 'cli' && isset($argv) && is_array($argv))
+          ? array_slice($argv, 1) : array();
+foreach ($cli_args as $arg) {
+    if (preg_match('/^--chain=(\d+)$/', $arg, $m)) {
+        $filter_sql .= ' AND n.blockchain_id = ' . (int)$m[1];
+        $filter_desc = 'blockchain_id ' . (int)$m[1];
+    } elseif (preg_match('/^--collection=(\d+)$/', $arg, $m)) {
+        $filter_sql .= ' AND n.collection_id = ' . (int)$m[1];
+        $filter_desc = 'collection ' . (int)$m[1];
+    } elseif (preg_match('/^--project=(\d+)$/', $arg, $m)) {
+        $filter_sql .= ' AND c.project_id = ' . (int)$m[1];
+        $filter_desc = 'project ' . (int)$m[1];
+    } else {
+        echo "Unknown argument: $arg\n";
+        echo "usage: php image-cache.php [--chain=N] [--collection=N] [--project=N]\n";
+        exit(1);
+    }
+}
+echo "Scope: $filter_desc\n";
+
 // ─── Fetch all NFTs belonging to active users, Diamond Skull owners, and delegators ───
 $sql = "
     SELECT DISTINCT n.id, n.ipfs, n.collection_id, c.project_id
     FROM nfts n
     JOIN collections c ON c.id = n.collection_id
-    WHERE n.user_id > 0
+    WHERE n.user_id > 0" . $filter_sql . "
     AND n.user_id IN (
         SELECT id FROM (
             SELECT id FROM users
