@@ -853,6 +853,46 @@ an artist's collections all come back `:0`, ask. Otherwise proceed.
 more than they hold, so treat it as a floor rather than a list. Ask each artist
 which collections they want listed and get one NFT id per collection.
 
+## 6e. IPFS gateways — one is not enough
+
+A sample of Maxi's art first resolved with no name and no image, which looked
+like an artist whose metadata was missing. It was not. The metadata is rich:
+
+```json
+"name": "DH_Landfill_1 #5",
+"image": "ipfs://QmR9gMnXUm93e7D2n2257WfpJwAUwrs9esEcagGzpEWMZt",
+"collection": { "name": "404s" },
+"attributes": [{ "trait_type": "Artist", "value": "MadMaxi (404)" }]
+```
+
+**`ipfs.io` returns 429 Too Many Requests** under any real load, and
+`dweb.link` — same operator — returns it in the same breath. The resolver was
+pointed at `ipfs.io` alone, so it failed in bursts, and the failure presented
+as *"this artist has no metadata"* rather than *"the gateway is busy"*.
+
+That is not cosmetic. `processNFT()` skips an NFT with no name, and an NFT
+with no picture is one nobody wants to stake — seeing the art is the entire
+point.
+
+`xrpl_resolve_metadata()` now falls back across the **same six gateways
+`lib/image-cache-lib.php` already races**, proven against this platform's
+traffic for longer than the XRPL code has existed. Pinata answered in 4.4s
+while ipfs.io and dweb.link both 429'd; the others redirect to subdomain form,
+which is fine because `CURLOPT_FOLLOWLOCATION` is set.
+
+### The metadata names the collection
+
+XRPL art metadata carries `collection.name` — "404s" for that sample. The
+probe reads it and pre-fills the `INSERT`:
+
+```
+INSERT INTO collections (blockchain_id, project_id, name, policy, rate)
+VALUES (2, <project_id>, '404s', 'rhnNSggjJfXXM4AE5g87uLGoUH72GAsnVw:2000', <rate>);
+```
+
+So the collection is listed under **the name the artist gave it**, rather than
+whatever somebody types at the point of running the query.
+
 ## 7. Rarity and traits
 
 Rarity tables are per-collection and derived from on-chain frequency (see

@@ -45,6 +45,36 @@ if (!defined('XRPL_PAGE_SIZE'))  define('XRPL_PAGE_SIZE', 400);
 if (!defined('XRPL_MAX_PAGES'))  define('XRPL_MAX_PAGES', 40);
 if (!defined('XRPL_HTTP_TIMEOUT')) define('XRPL_HTTP_TIMEOUT', 20);
 
+/**
+ * IPFS gateways, tried in order until one answers.
+ *
+ * ONE GATEWAY IS NOT ENOUGH, and this was found the hard way: ipfs.io returns
+ * 429 Too Many Requests under any real load, and dweb.link -- same operator --
+ * returns it at the same moment. A resolver pointed at a single gateway
+ * therefore fails in bursts, and the failure looks like "this artist has no
+ * metadata" rather than "the gateway is busy".
+ *
+ * The consequence is not cosmetic. processNFT() skips an NFT with no name, and
+ * an NFT with no image is an NFT nobody wants to stake -- the whole point of
+ * staking art is seeing it.
+ *
+ * Same list lib/image-cache-lib.php races, for the same reason; it has been
+ * proven against this platform's traffic for longer than this file has
+ * existed. Order matters only in that the first is tried first, and the ones
+ * that redirect to subdomain form are fine because CURLOPT_FOLLOWLOCATION is
+ * set.
+ */
+function xrpl_gateways() {
+	return array(
+		'https://gateway.pinata.cloud/ipfs/',
+		'https://ipfs.io/ipfs/',
+		'https://nftstorage.link/ipfs/',
+		'https://w3s.link/ipfs/',
+		'https://dweb.link/ipfs/',
+		'https://4everland.io/ipfs/',
+	);
+}
+
 /* ---------- pure helpers: no network, no database ------------------------- */
 
 /**
@@ -137,22 +167,32 @@ function xrpl_parse_page($json) {
  */
 function xrpl_resolve_metadata($nft, $gateway, $fetch) {
 	$fallback = array(
-		'name'  => 'XRPL #' . $nft['serial'],
-		'image' => '',
+		'name'       => 'XRPL #' . $nft['serial'],
+		'image'      => '',
+		'collection' => '',
 	);
 	if (empty($nft['uri'])) return $fallback;
 
-	$url = xrpl_gateway_url(xrpl_normalise_image($nft['uri']), $gateway);
-	if ($url === '' || !preg_match('#^https?://#i', $url)) return $fallback;
+	$norm = xrpl_normalise_image($nft['uri']);
 
-	$body = call_user_func($fetch, $url, null);
+	/* Try the preferred gateway first, then the rest. A 429 from one is not a
+	   missing NFT, and treating it as one loses the artwork. */
+	$tries = array_merge(array($gateway), xrpl_gateways());
+	$body  = '';
+	foreach ($tries as $g) {
+		$url = xrpl_gateway_url($norm, $g);
+		if ($url === '' || !preg_match('#^https?://#i', $url)) continue;
+		$body = call_user_func($fetch, $url, null);
+		if (is_string($body) && $body !== '') break;
+	}
 	if (!is_string($body) || $body === '') return $fallback;
 
 	$meta = json_decode($body, true);
 	if (!is_array($meta)) {
 		/* Not JSON. Plenty of collections point the URI straight at the image,
 		   in which case the URI itself is the picture and there is no name. */
-		return array('name' => $fallback['name'], 'image' => xrpl_storable_image($nft['uri']));
+		return array('name' => $fallback['name'], 'image' => xrpl_storable_image($nft['uri']),
+		             'collection' => '');
 	}
 	$name = '';
 	foreach (array('name', 'title') as $k) {
@@ -162,9 +202,18 @@ function xrpl_resolve_metadata($nft, $gateway, $fetch) {
 	foreach (array('image', 'image_url', 'imageUrl', 'animation_url') as $k) {
 		if (!empty($meta[$k]) && is_string($meta[$k])) { $img = $meta[$k]; break; }
 	}
+	/* The metadata carries the artist's own collection name -- "404s" on the
+	   sample checked -- which is exactly the `name` a collections row wants.
+	   Reading it means nobody has to type it, or guess it wrong. */
+	$coll = '';
+	if (!empty($meta['collection']) && is_array($meta['collection'])
+	    && !empty($meta['collection']['name']) && is_string($meta['collection']['name']))
+		$coll = $meta['collection']['name'];
+
 	return array(
-		'name'  => $name !== '' ? $name : $fallback['name'],
-		'image' => xrpl_storable_image($img),
+		'name'       => $name !== '' ? $name : $fallback['name'],
+		'image'      => xrpl_storable_image($img),
+		'collection' => $coll,
 	);
 }
 

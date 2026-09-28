@@ -55,10 +55,29 @@ if (preg_match('/^[0-9A-Fa-f]{64}$/', $arg)) {
 	printf("NFTokenID %s\n\n", strtoupper($arg));
 	printf("  issuer %s\n  taxon  %d\n  serial %d\n\n", $d['issuer'], $d['taxon'], $d['serial']);
 	printf("  collection key: %s\n\n", $d['policy']);
+
+	/* Decoding is offline, but the collection NAME lives in the metadata, so
+	   fetch it -- typing a name by hand is how a collection ends up listed as
+	   something the artist does not call it. */
+	$probe = array('id' => strtoupper($arg), 'uri' => '', 'serial' => $d['serial'],
+	               'policy' => $d['policy'], 'issuer' => $d['issuer'], 'taxon' => $d['taxon']);
+	$one = xrpl_account_nfts($api, $d['issuer'], 'xrpl_http');
+	$name = '';
+	if ($one['ok']) {
+		foreach ($one['list'] as $x) {
+			if ($x['policy'] !== $d['policy']) continue;
+			$m = xrpl_resolve_metadata($x, 'https://gateway.pinata.cloud/ipfs/', 'xrpl_http');
+			if ($m['collection'] !== '') { $name = $m['collection']; break; }
+		}
+	}
+	if ($name !== '') printf("  collection name: %s  (from the artist's own metadata)\n\n", $name);
+	else              echo "  collection name: not resolved — the issuer holds none of this\n"
+	                     . "                   collection, so ask the artist what to call it\n\n";
+
 	echo "  to register it:\n";
 	printf("    INSERT INTO collections (blockchain_id, project_id, name, policy, rate)\n");
-	printf("    VALUES (%d, <project_id>, '<name>', '%s', <rate>);\n\n",
-		XRPL_CHAIN_ID, addslashes($d['policy']));
+	printf("    VALUES (%d, <project_id>, '%s', '%s', <rate>);\n\n",
+		XRPL_CHAIN_ID, $name !== '' ? addslashes($name) : '<name>', addslashes($d['policy']));
 	echo "  project_id is the ARTIST'S EXISTING project, so their XRPL and Cardano\n";
 	echo "  collections sit under one artist. See multichain.md §3d.\n";
 	exit(0);
@@ -127,10 +146,12 @@ foreach ($by as $policy => $nfts) {
 	/* Resolve one, so the name and image can be eyeballed before a collection
 	   is registered on the strength of them. This is the same resolver the
 	   verifier uses, including its fallbacks. */
-	$meta = xrpl_resolve_metadata($nfts[0], 'https://ipfs.io/ipfs/', 'xrpl_http');
+	$meta = xrpl_resolve_metadata($nfts[0], 'https://gateway.pinata.cloud/ipfs/', 'xrpl_http');
 	printf("   sample %s\n", $nfts[0]['id']);
-	printf("     name  %s\n", $meta['name'] !== '' ? $meta['name'] : '(none)');
-	printf("     image %s\n", $meta['image'] !== '' ? $meta['image'] : '(none)');
+	printf("     name       %s\n", $meta['name'] !== '' ? $meta['name'] : '(none)');
+	printf("     image      %s\n", $meta['image'] !== '' ? $meta['image'] : '(none)');
+	if ($meta['collection'] !== '')
+		printf("     collection %s   <- use this as the collections.name\n", $meta['collection']);
 	if ($nfts[0]['uri'] === '')       echo "     note  this NFToken has no URI; names will be synthesised\n";
 	elseif ($meta['image'] === '')    echo "     note  metadata resolved but carried no image\n";
 	if (strpos($meta['name'], 'XRPL #') === 0)
@@ -139,8 +160,10 @@ foreach ($by as $policy => $nfts) {
 
 	echo "\n   to register this collection:\n";
 	printf("     INSERT INTO collections (blockchain_id, project_id, name, policy, rate)\n");
-	printf("     VALUES (%d, <project_id>, '<name>', '%s', <rate>);\n\n",
-		XRPL_CHAIN_ID, addslashes($policy));
+	printf("     VALUES (%d, <project_id>, '%s', '%s', <rate>);\n\n",
+		XRPL_CHAIN_ID,
+		$meta['collection'] !== '' ? addslashes($meta['collection']) : '<name>',
+		addslashes($policy));
 }
 
 echo "project_id is the ARTIST'S EXISTING project — an XRPL collection sits under\n";
