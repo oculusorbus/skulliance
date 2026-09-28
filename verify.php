@@ -14,15 +14,16 @@ if(isset($argv)){
  *
  *     php verify.php verify=xrpl
  *
- * Verification only. It deliberately does NOT run updateBalances(),
- * deployDiamondSkullRewards(), cleanupOrphanedProtectedNFTs() or
- * verifyRealmSoldiers():
+ * VERIFICATION ONLY. It stops after writing ownership and runs none of the
+ * tail of the Cardano block.
  *
- *   - The first two PAY OUT. Running them in both passes pays everybody twice.
- *     They are platform-wide, they belong to exactly one job, and that job is
- *     the Cardano one.
- *   - The other two are Cardano concepts (Diamond Skulls, realm soldiers) and
- *     have nothing to look at here.
+ * The payout steps there are PLATFORM-WIDE, not per-chain: they read whatever
+ * is staked and pay once. Running them in a second pass pays everybody twice.
+ * They belong to exactly one job and that job is the Cardano one, which runs
+ * last precisely so it sees fresh rows from both chains.
+ *
+ * The rest of that tail reads Cardano-only structures and would find nothing
+ * here anyway.
  *
  * ORDER MATTERS: this runs first so XRPL rows are fresh when the Cardano pass
  * computes balances off them. And if this job fails outright, the Cardano job

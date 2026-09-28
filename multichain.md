@@ -362,13 +362,14 @@ to see and did not" must be scoped to the chain that was actually queried.
 
 ### 5c. The two passes, and which one pays
 
-`verify=xrpl` is verification ONLY. It deliberately does not call
-`updateBalances()`, `deployDiamondSkullRewards()`,
-`cleanupOrphanedProtectedNFTs()` or `verifyRealmSoldiers()`.
+`verify=xrpl` is **verification only**. It writes ownership and stops.
 
-The first two **pay out**, are platform-wide, and belong to exactly one job —
-running them in both passes pays everybody twice. The other two are Cardano
-concepts with nothing to look at here.
+The payout steps at the end of the Cardano block are **platform-wide, not
+per-chain**: they read whatever is staked and pay once. Running them in a
+second pass pays everybody twice. They belong to exactly one job, and that job
+is the Cardano one — which runs last so it sees fresh rows from both chains.
+The rest of that tail reads Cardano-only structures and would find nothing on
+another ledger regardless.
 
 **Order:** XRPL runs first, so its rows are fresh when the Cardano pass
 computes balances off them. If the XRPL job fails outright the Cardano job
