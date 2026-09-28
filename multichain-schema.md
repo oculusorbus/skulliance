@@ -54,31 +54,33 @@ Every existing row is Cardano and becomes correct the instant the column lands.
 Every existing query keeps returning exactly what it returned before. The chain
 filters get added call site by call site afterwards, not in one sweep.
 
-### The unique key, and why it comes later
+### No unique key on (blockchain_id, asset_id) — checked, and do not add one
 
-```sql
--- Run this only AFTER the columns are populated and you have checked for
--- duplicates. It will fail loudly if two rows already share an asset_id.
-ALTER TABLE nfts ADD UNIQUE KEY uniq_chain_asset (blockchain_id, asset_id);
-```
+An earlier draft proposed one. **It was wrong twice**, and the reasoning is
+kept because the mistake is an easy one to repeat.
 
-There are four bare `WHERE asset_id = '...'` lookups in `db.php` that are not
-scoped by collection. A Cardano `asset_id` is a 56-character policy plus a hex
-name, so a four-byte name is exactly 64 characters — the same length as an XRPL
-NFTokenID. A real collision is vanishingly unlikely but not impossible by
-construction, and the failure is silent: the wrong NFT comes back.
+The premise was that a Cardano `asset_id` is a 56-character policy plus a hex
+name, making a four-byte name exactly 64 characters — the same length as an
+XRPL NFTokenID, so a silent collision was conceivable.
 
-This key makes it impossible instead of improbable. It is separated from the
-block above because **it can fail on existing data** — RFTs deliberately create
-multiple rows sharing an `asset_id` (see `processNFT()`), so check first:
+**`nfts.asset_id` does not hold policy+name. It holds a CIP-14 asset
+fingerprint** — bech32, `asset1...`, around 44 characters (`processNFT()`
+receives `$fingerprint` and `createNFT()` writes it). An XRPL NFTokenID is 64
+hex characters. Different alphabet, different length, different prefix: they
+**cannot** collide, by construction, with no key required. The four bare
+`WHERE asset_id = '...'` lookups in `db.php` are therefore safe unscoped.
+
+And the key would have failed anyway. Run against live data:
 
 ```sql
 SELECT asset_id, COUNT(*) c FROM nfts GROUP BY asset_id HAVING c > 1 LIMIT 20;
 ```
 
-If that returns rows, the unique key is wrong for this schema and the four
-lookups should be scoped by `blockchain_id` in code instead. **Check before
-running it; do not force it.**
+it returns many rows at counts of 2 and 4 — legitimate duplicates, as
+`processNFT()` intends for RFTs where several holders share one asset. A
+unique key on that column is simply wrong for this schema.
+
+**Do not add it.** Nothing in the multi-chain code depends on it.
 
 ## 2b. How a wallet was proved
 

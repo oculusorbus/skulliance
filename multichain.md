@@ -160,18 +160,19 @@ one frightening sweep.
 ### 3c. Why `nfts` carries it too, even though it is derivable
 
 `nfts.collection_id` already implies the chain, so the column is strictly
-redundant. Add it anyway, for one specific reason.
+redundant. It is added anyway to spare a join to `collections` on a hot path
+purely to learn which chain a row belongs to, and so a verifier pass can be
+scoped with a plain `WHERE`.
 
-There are **4 bare `WHERE asset_id = '...'` lookups in `db.php`** that are not
-scoped by collection. A Cardano `asset_id` is a 56-character policy plus a hex
-asset name, so a four-byte name produces exactly 64 characters — the same
-length as an XRPL NFTokenID. An actual value collision is astronomically
-unlikely, but it is not impossible *by construction*, and the failure mode is
-silent: the wrong NFT is returned and nothing errors.
-
-`UNIQUE(blockchain_id, asset_id)` makes it impossible by construction instead
-of improbable, and it needs the column. It also spares a join to `collections`
-on a hot path purely to learn the chain.
+**An earlier draft justified it differently and was wrong.** It claimed a
+collision was possible between a Cardano `asset_id` and an XRPL NFTokenID,
+because a policy plus a short hex name is 64 characters and so is an
+NFTokenID. But `nfts.asset_id` does not hold policy+name — it holds a **CIP-14
+asset fingerprint**, bech32, `asset1...`, around 44 characters
+(`processNFT()` takes `$fingerprint`). Against 64 hex characters that cannot
+collide by construction, so the four bare `WHERE asset_id = '...'` lookups in
+`db.php` are safe unscoped and **no unique key is wanted** — see
+`multichain-schema.md`, where live data also shows legitimate duplicates.
 
 ### 3d. Where chain must NOT go
 
