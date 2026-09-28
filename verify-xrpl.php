@@ -143,7 +143,7 @@ function xrpl_resolve_metadata($nft, $gateway, $fetch) {
 	if (!is_array($meta)) {
 		/* Not JSON. Plenty of collections point the URI straight at the image,
 		   in which case the URI itself is the picture and there is no name. */
-		return array('name' => $fallback['name'], 'image' => xrpl_normalise_image($nft['uri']));
+		return array('name' => $fallback['name'], 'image' => xrpl_storable_image($nft['uri']));
 	}
 	$name = '';
 	foreach (array('name', 'title') as $k) {
@@ -155,8 +155,43 @@ function xrpl_resolve_metadata($nft, $gateway, $fetch) {
 	}
 	return array(
 		'name'  => $name !== '' ? $name : $fallback['name'],
-		'image' => $img !== '' ? xrpl_normalise_image($img) : '',
+		'image' => xrpl_storable_image($img),
 	);
+}
+
+/**
+ * IPFS OR NOTHING.
+ *
+ * nfts.ipfs must hold a BARE CID, because the image cache builds its URL as
+ * gateway . value (_fetchRace in lib/image-cache-lib.php). processNFT() gets
+ * there by chopping exactly seven characters off the front, which is right for
+ * "ipfs://" and wrong for everything else -- "https://host/a.png" would be
+ * stored as "/host/a.png" and then fetched as "https://ipfs.io/ipfs//host/a.png".
+ *
+ * So an image that is not IPFS is dropped rather than mangled. The NFT still
+ * stakes; it just has no cached picture, which is recoverable. A poisoned
+ * nfts.ipfs is not: it looks like data, it fails silently in a nightly worker,
+ * and nothing points at why.
+ *
+ * The alternative was loosening processNFT()'s substr(7) for both chains. Not
+ * worth it for a case Maxingo's collections will not hit -- and if a future
+ * collection does host off IPFS, THIS is the one function to change.
+ */
+function xrpl_storable_image($img) {
+	if ($img === '' || $img === null) return '';
+	$norm = xrpl_normalise_image($img);
+	if (strpos($norm, 'ipfs://') !== 0) {
+		error_log('verify-xrpl: dropping non-IPFS image ' . substr((string)$img, 0, 120));
+		return '';
+	}
+	/* The cache skips anything under 46 characters as a malformed CID, so a
+	   truncated one would be silently dropped there instead of here. Catch it
+	   where the log line can say which NFT it came from. */
+	if (strlen(substr($norm, 7)) < 46) {
+		error_log('verify-xrpl: dropping short CID ' . substr($norm, 0, 80));
+		return '';
+	}
+	return $norm;
 }
 
 /* ---------- the network ---------------------------------------------------- */

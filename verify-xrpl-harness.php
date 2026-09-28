@@ -50,12 +50,16 @@ ok(xrpl_normalise_image('https://example.com/a.png') === 'https://example.com/a.
 echo "image normalisation: ok (the substr(7) contract holds)\n";
 
 /* ---------- 2. paging: the silent-truncation trap -------------------------- */
+/* A CIDv0 is exactly 46 characters and the image cache skips anything shorter,
+   so fixtures use real-length ones. Short fakes pass through code that would
+   reject them in production, which is a test that proves nothing. */
+function fakecid($n) { return 'Qm' . substr(str_repeat(md5((string)$n), 2), 0, 44); }
 function page($ids, $marker = null, $issuer = 'rISS', $taxon = 1) {
 	$nfts = array();
 	foreach ($ids as $i) {
 		$nfts[] = array('NFTokenID' => str_pad((string)$i, 64, '0', STR_PAD_LEFT),
 			'Issuer' => $issuer, 'NFTokenTaxon' => $taxon, 'nft_serial' => $i,
-			'URI' => bin2hex('ipfs://meta' . $i));
+			'URI' => bin2hex('ipfs://' . fakecid($i)));
 	}
 	$r = array('account_nfts' => $nfts);
 	if ($marker !== null) $r['marker'] = $marker;
@@ -64,7 +68,7 @@ function page($ids, $marker = null, $issuer = 'rISS', $taxon = 1) {
 
 $calls = 0;
 $paged = function($url, $post) use (&$calls) {
-	if ($post === null) return json_encode(array('name' => 'Meta', 'image' => 'ipfs://img'));
+	if ($post === null) return json_encode(array('name' => 'Meta', 'image' => 'ipfs://'.fakecid(0)));
 	$calls++;
 	$req = json_decode($post, true);
 	$m = isset($req['params'][0]['marker']) ? $req['params'][0]['marker'] : null;
@@ -108,7 +112,7 @@ ok($got3['ok'] === true && count($got3['list']) === 0, 'an unfunded account read
 /* ---------- 4. only our collections, and what gets written ----------------- */
 $WROTE = array();
 $mixed = function($url, $post) {
-	if ($post === null) return json_encode(array('name' => 'Maxi One', 'image' => 'ipfs://'.'QmPIC'));
+	if ($post === null) return json_encode(array('name' => 'Maxi One', 'image' => 'ipfs://'.fakecid(1)));
 	$nfts = array(
 		array('NFTokenID' => str_pad('A', 64, '0'), 'Issuer' => 'rMAXI', 'NFTokenTaxon' => 1,
 		      'nft_serial' => 11, 'URI' => bin2hex('ipfs://meta')),
@@ -129,6 +133,37 @@ if ($WROTE) {
 	ok(strpos($w['image'], 'ipfs://') === 0, 'the image carries the scheme processNFT strips');
 	printf("write: policy=%s name=%s image=%s\n", $w['policy_id'], $w['name'], $w['image']);
 }
+
+/* ---------- 4b. nfts.ipfs must be a bare CID, or the cache is poisoned ----- */
+/* lib/image-cache-lib.php builds its fetch as gateway . value, and processNFT()
+   gets the value by chopping exactly 7 characters. Anything that is not
+   ipfs://<cid> must be dropped here rather than stored mangled. */
+$realCid = 'QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG';
+ok(xrpl_storable_image('ipfs://'.$realCid) === 'ipfs://'.$realCid, 'an ipfs CID is stored');
+ok(xrpl_storable_image('https://ipfs.io/ipfs/'.$realCid) === 'ipfs://'.$realCid,
+   'a gateway URL is folded to ipfs://, not stored as a URL');
+ok(xrpl_storable_image('https://example.com/a.png') === '',
+   'a non-IPFS http image is DROPPED, not mangled into /example.com/a.png');
+ok(xrpl_storable_image('https://arweave.net/abc123') === '', 'arweave is dropped too');
+ok(xrpl_storable_image('ipfs://short') === '', 'a truncated CID is dropped');
+ok(xrpl_storable_image('') === '', 'no image stays no image');
+/* the contract that makes it all work */
+ok(substr(xrpl_storable_image('ipfs://'.$realCid), 7) === $realCid,
+   'after processNFT strips 7 chars the result is a BARE CID the cache can use');
+ok(strlen(substr(xrpl_storable_image('ipfs://'.$realCid), 7)) >= 46,
+   'and it clears the cache\'s 46-character malformed-CID guard');
+echo "image storage: ipfs-or-nothing (the cache prepends a gateway, so a URL would poison it)\n";
+
+$WROTE = array();
+$httpImg = function($url, $post) {
+	if ($post === null) return json_encode(array('name' => 'Hosted', 'image' => 'https://example.com/a.png'));
+	return page(array(9), null, 'rMAXI', 1);
+};
+verifyNFTsXRPL(null, array('rHOLDER'), array('rMAXI:1' => 42), array(),
+	array(), array('fetch' => $httpImg));
+ok(count($WROTE) === 1, 'an NFT with a non-IPFS image is still staked');
+ok($WROTE[0]['image'] === '', 'but its image is empty rather than mangled');
+ok($WROTE[0]['name'] === 'Hosted', 'and it keeps its real name');
 
 /* ---------- 5. a broken gateway must not stop somebody staking ------------- */
 $WROTE = array();

@@ -378,6 +378,45 @@ for that day, and worth not building for today.
 
 ---
 
+## 6b. Images — already handled, by accident of good design
+
+The local image cache needs **no changes at all**, which is worth writing down
+because it is the part that looked like it would need the most.
+
+`lib/image-cache-lib.php` keys everything on
+`images/nfts/{project_id}/{collection_id}/{md5(ipfs)}.{ext}` and its query
+joins `nfts → collections` for `n.ipfs, n.collection_id, c.project_id`. There
+is no chain, no policy and no Cardano concept anywhere in it. It already races
+six IPFS gateways, which is exactly what an XRPL image needs, because XRPL
+images are IPFS too.
+
+**The one contract that makes it work: `nfts.ipfs` holds a BARE CID.**
+`_fetchRace()` builds its URL as `gateway . value`, and `processNFT()` produces
+that value by chopping exactly seven characters off the front of the image —
+right for `ipfs://`, wrong for everything else. `https://host/a.png` would be
+stored as `/host/a.png` and then fetched as
+`https://ipfs.io/ipfs//host/a.png`.
+
+So `xrpl_storable_image()` enforces ipfs-or-nothing on the way in:
+
+- `ipfs://<cid>` — stored
+- `https://any-gateway/ipfs/<cid>` — folded back to `ipfs://<cid>`
+- a bare CID — given the scheme
+- anything else (a plain web host, Arweave) — **dropped**, with a log line
+- shorter than 46 characters — dropped, because the cache would skip it later
+  and further from the cause
+
+Dropping is deliberate. The NFT still stakes and simply has no cached picture,
+which is recoverable. A poisoned `nfts.ipfs` is not: it looks like data, it
+fails inside a nightly worker, and nothing points at why.
+
+The alternative was loosening `processNFT()`'s `substr(7)` for both chains.
+Not worth it for a case Maxingo's collections will not hit — and if a future
+collection does host off IPFS, `xrpl_storable_image()` is the single function
+to change.
+
+---
+
 ## 7. Rarity and traits
 
 Rarity tables are per-collection and derived from on-chain frequency (see
