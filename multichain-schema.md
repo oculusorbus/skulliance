@@ -80,6 +80,34 @@ If that returns rows, the unique key is wrong for this schema and the four
 lookups should be scoped by `blockchain_id` in code instead. **Check before
 running it; do not force it.**
 
+## 2b. How a wallet was proved
+
+```sql
+ALTER TABLE wallets ADD COLUMN link_method VARCHAR(16) DEFAULT NULL AFTER blockchain_id;
+```
+
+Nullable, because every existing row predates the question.
+
+**The three link paths do not prove the same thing, and the column records
+which one was used.**
+
+| value | path | proof |
+|---|---|---|
+| `xaman` | Xaman SignIn | the SERVER reads the result from Xaman's API |
+| `crossmark` | Crossmark extension | the BROWSER reports an address |
+| `cip30` | Cardano extension | the BROWSER reports an address |
+
+Only the first is cryptographically verified server-side. The other two are
+assertions: the endpoint receives an address in a POST and takes it, exactly
+as `checkAddress()` has always done for Cardano.
+
+That is a pre-existing platform-wide property, not something Crossmark
+introduces — `skulliance.php` passes `$_POST['stakeaddress']` straight to
+`checkAddress()` today. But it is worth being able to TELL THE PATHS APART
+after the fact, and impossible to reconstruct later if it is not written down
+at the time. One column now means a future policy ("only server-verified
+addresses count for X") is a query rather than asking everybody to re-link.
+
 ## 3. XRPL collections
 
 A collection on XRPL is **issuer + taxon**, stored joined so `getPolicies()`

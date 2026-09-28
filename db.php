@@ -2905,11 +2905,16 @@ function updateUser($conn) {
  * on XRPL there is no separate payment address to distinguish it from -- the
  * account IS the address.
  */
-function createAddress($conn, $stake_address, $address, $blockchain_id = 1) {
+function createAddress($conn, $stake_address, $address, $blockchain_id = 1, $method = null) {
 	$stake_address = $conn->real_escape_string($stake_address);
 	$address       = $conn->real_escape_string($address);
-	$sql = "INSERT INTO wallets (stake_address, address, user_id, blockchain_id)
-	VALUES ('".$stake_address."', '".$address."', '".$_SESSION['userData']['user_id']."', '".(int)$blockchain_id."')";
+	/* HOW it was proved, because the paths differ: a Xaman link is read from
+	   Xaman's API server-side, while a browser extension simply reports an
+	   address. Recording it costs a column and makes the distinction
+	   answerable later; not recording it makes it unrecoverable. */
+	$m = ($method === null) ? "NULL" : "'".$conn->real_escape_string($method)."'";
+	$sql = "INSERT INTO wallets (stake_address, address, user_id, blockchain_id, link_method)
+	VALUES ('".$stake_address."', '".$address."', '".$_SESSION['userData']['user_id']."', '".(int)$blockchain_id."', ".$m.")";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {

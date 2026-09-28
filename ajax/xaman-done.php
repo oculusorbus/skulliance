@@ -55,7 +55,7 @@ if ($own && $own->num_rows) {
 		: array('ok' => false, 'message' => 'That wallet is linked to another account.'));
 }
 
-createAddress($conn, $account, $account, XRPL_CHAIN_ID);
+createAddress($conn, $account, $account, XRPL_CHAIN_ID, 'xaman');
 xaman_forget();
 
 /*

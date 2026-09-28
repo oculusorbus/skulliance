@@ -325,6 +325,17 @@
 					<span class="wallet-xrpl-mark">XRP</span>
 					<span>Connect an XRP Ledger wallet<small>Scan with Xaman</small></span>
 				</button>
+				<?php /* CROSSMARK. The second XRPL path, and the reason it exists:
+				         Xaman imports a HARDWARE WALLET account read-only, and
+				         read-only cannot sign -- so Ledger holders, who are
+				         exactly the people with something worth holding, could
+				         not link at all. Only offered when the extension is
+				         actually present. */ ?>
+				<button type="button" class="wallet-xrpl-btn" id="crossmark-btn" hidden
+				        onclick="crossmarkConnect()" style="margin-top:6px">
+					<span class="wallet-xrpl-mark">XRP</span>
+					<span>Connect with Crossmark<small>Browser extension — works with Ledger</small></span>
+				</button>
 				<div id="xaman-panel" hidden>
 					<div id="xaman-msg">Creating a sign-in request&hellip;</div>
 					<img id="xaman-qr" alt="Scan this with Xaman" hidden>
@@ -355,6 +366,55 @@
 			   exactly when that happens. refs.websocket_status is addressed by the
 			   payload uuid alone and needs no API secret, so this listens directly
 			   and the server makes exactly two calls per link. */
+			/* Crossmark injects window.xrpl.isCrossmark. Checked on a short
+			   timer because an extension's content script can land after this
+			   runs -- a one-shot check at load reports "not installed" to
+			   people who have it. */
+			(function(){
+				var tries = 0;
+				var t = setInterval(function(){
+					if (typeof window.xrpl !== 'undefined' && window.xrpl.isCrossmark) {
+						var b = document.getElementById('crossmark-btn');
+						if (b) b.hidden = false;
+						clearInterval(t);
+					}
+					if (++tries > 20) clearInterval(t);   // ~5s, then give up quietly
+				}, 250);
+			})();
+
+			function crossmarkConnect(){
+				var p = document.getElementById('xaman-panel');
+				var qr = document.getElementById('xaman-qr'), lk = document.getElementById('xaman-link');
+				xamanCancel(); p.hidden = false; qr.hidden = true; lk.hidden = true;
+				xamanSay('Approve the sign-in in Crossmark\u2026');
+				/* ESM off a pinned CDN version. This codebase has no build step
+				   and wallet.js is already type="module", so a dynamic import is
+				   the path of least resistance -- and loading it only on click
+				   keeps 57KB off every page view. */
+				import('https://esm.sh/@crossmarkio/sdk@0.4.0').then(function(m){
+					var sdk = m.default || m;
+					return sdk.methods.signInAndWait();
+				}).then(function(res){
+					var addr = res && res.response && res.response.data
+					         && res.response.data.address;
+					if (!addr) throw new Error('Crossmark did not return an address.');
+					xamanSay('Linking\u2026');
+					var fd = new FormData(); fd.append('address', addr);
+					return fetch('ajax/crossmark-link.php',
+						{method:'POST', body:fd, credentials:'same-origin'});
+				}).then(function(r){ return r.text(); })
+				.then(function(t){
+					var res; try { res = JSON.parse(t); } catch(e){ throw new Error(t.slice(0,120)); }
+					if (!res.ok) { xamanSay(res.message || 'Could not link.'); return; }
+					xamanSay(res.message || 'Wallet linked.');
+					setTimeout(function(){ location.reload(); }, 1400);
+				}).catch(function(e){
+					/* A rejected sign-in lands here too, and "you cancelled" is
+					   not an error worth shouting about. */
+					xamanSay((e && e.message) ? e.message : 'Crossmark sign-in was not completed.');
+				});
+			}
+
 			var xamanSock = null, xamanUuid = null, xamanPoll = null;
 			function xamanSay(t){ var e=document.getElementById('xaman-msg'); if(e) e.textContent=t; }
 			function xamanCancel(){

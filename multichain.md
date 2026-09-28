@@ -47,7 +47,9 @@ is **not** registered — which is the check that matters, because an
 issuer:taxon off by a digit matches nothing, raises nothing, and looks exactly
 like a correct run against an empty wallet.
 
-**5. Link a wallet** through the Connect modal. It verifies **immediately** —
+**5. Link a wallet** through the Connect modal. Two XRPL buttons: **Xaman**
+(QR, phone) and **Crossmark** (browser extension, shown only if installed —
+this is the one that works with your Ledger). Either verifies **immediately** —
 the same way a Cardano connect does — so the confirmation says how many NFTs
 are now staking. Nothing to run afterwards.
 
@@ -321,6 +323,54 @@ that is the signal to build it. If nobody complains, it was not needed.
 on the command line and need no signature at all, so the whole read and verify
 path can be proven against a hardware-wallet address today. Only the link step
 needs an account Xaman can sign for.
+
+### 4f. Crossmark — the hardware-wallet path
+
+Built because §4d2 is not a theoretical gap: the first person to try linking a
+real XRPL NFT held it on a Ledger, and Xaman could not sign for it.
+
+**Detection is a flag, not a probe.** Crossmark injects
+`window.xrpl.isCrossmark`, so the button only appears for people who have it.
+Checked on a short timer rather than once at load — an extension's content
+script can land after the page script runs, and a one-shot check tells people
+who have it installed that they do not.
+
+**The SDK loads on click, from a pinned CDN.** `@crossmarkio/sdk@0.4.0` has an
+ESM build, `wallet.js` is already `type="module"`, and this codebase has no
+build step — so a dynamic `import()` is the path of least resistance, and
+importing on click keeps 57KB off every page view.
+
+`sdk.methods.signInAndWait()` signs the same `SignIn` pseudo-transaction Xaman
+uses: signature-only, never submitted, no fee, works on an account holding no
+XRP.
+
+#### What it does NOT do, and why that is written down
+
+Xaman's result is fetched **by the server** from Xaman's API. Crossmark's is
+reported **by the browser**. We take the browser's word for the address.
+
+That is the bar the Cardano path has always used — `skulliance.php` passes
+`$_POST['stakeaddress']` straight to `checkAddress()` — so Crossmark adds no
+new *class* of risk. It is still the weaker of the two XRPL paths.
+
+Verifying properly would mean checking an XRPL signature in PHP. Keys are
+secp256k1 or ed25519, **this server has no `ext/sodium` on any of its PHP
+builds**, and a CLI probe cannot answer what the web SAPI has. So it is left
+undone deliberately rather than half-done, and `wallets.link_method` records
+which path proved each address so the distinction survives:
+
+| `link_method` | proof |
+|---|---|
+| `xaman` | server-verified |
+| `crossmark` | browser-asserted |
+| `cip30` | browser-asserted |
+
+If that ever needs tightening, the column means it is a query rather than
+asking every holder to link again.
+
+**Worth noting separately:** the Cardano endpoint accepting a POSTed stake
+address is a pre-existing platform-wide weakness, not something this work
+introduced. It is out of scope here, but it is now written down.
 
 ### 4e. Cost — settled, it is free
 
