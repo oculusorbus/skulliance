@@ -1126,6 +1126,26 @@ Both link endpoints also `@set_time_limit(90)`. The real limit is
 and degrades to synthesised names rather than dying; the PHP ceiling just
 must not pull the rug out from under it first.
 
+## 6d6. `animation` is where an animated piece lives
+
+XLS-24 metadata has separate slots — `image`, `animation`, `video`, `audio`,
+`3d_model` — and an artist minting an animated GIF fills `animation` and
+leaves **`image` an empty string**, not absent. Reading only `image`
+therefore returned nothing for exactly the pieces somebody put the most work
+into, with no error anywhere: the NFT staked, the tile was blank. Three of
+the first holder's twenty Bootlegs are built that way. With `animation`
+read, it is 20 of 20.
+
+Only `animation` was added. `video`, `audio` and `3d_model` are deliberately
+**not** read — the image cache's mime whitelist is jpeg/png/gif/svg/webp and
+would skip them, so storing one would be a CID that can only ever fail,
+which is worse than no CID because it looks like data.
+
+Animated GIFs need nothing further: `lib/image-cache-lib.php` already
+coalesces, resizes every frame and rebuilds the animation, under a 256MB
+Imagick limit with a catch. Checked against the real files — 8MB and 12MB
+GIFs at 2500×2500.
+
 ## 6e. IPFS gateways — one is not enough
 
 A sample of Maxi's art first resolved with no name and no image, which looked

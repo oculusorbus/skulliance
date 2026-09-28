@@ -211,8 +211,24 @@ function xrpl_parse_metadata($nft, $body) {
 	foreach (array('name', 'title') as $k) {
 		if (!empty($meta[$k]) && is_string($meta[$k])) { $name = $meta[$k]; break; }
 	}
+	/*
+	 * `animation` IS WHERE AN ANIMATED PIECE LIVES, and leaving it out cost
+	 * three of the first holder's twenty their artwork.
+	 *
+	 * XLS-24 metadata has separate slots -- image, animation, video, audio,
+	 * 3d_model -- and an artist minting an animated GIF fills `animation` and
+	 * leaves `image` an empty string. Reading only `image` therefore returned
+	 * nothing for exactly the pieces somebody put the most work into, with no
+	 * error: the NFT staked, the tile was blank.
+	 *
+	 * Only `animation` is added. `video`, `audio` and `3d_model` are
+	 * deliberately NOT read: the cache's mime whitelist is jpeg/png/gif/svg/
+	 * webp and would skip them anyway, so reading them would store a CID that
+	 * can only ever fail. Animated GIFs the cache handles properly already --
+	 * it coalesces, resizes every frame and rebuilds the animation.
+	 */
 	$img = '';
-	foreach (array('image', 'image_url', 'imageUrl', 'animation_url') as $k) {
+	foreach (array('image', 'image_url', 'imageUrl', 'animation', 'animation_url') as $k) {
 		if (!empty($meta[$k]) && is_string($meta[$k])) { $img = $meta[$k]; break; }
 	}
 	/* The metadata carries the artist's own collection name -- "404s" on the

@@ -81,6 +81,24 @@ $R2 = xrpl_resolve_many($NFTS, 'https://ipfs.io/ipfs/', null, $gw, time() - 1);
 ok($R2[0]['name'] === 'XRPL #1' && !$ASKED,
    'a blown deadline returns fallbacks and asks nothing, rather than hanging');
 
+/* XLS-24 puts an animated piece in `animation` and leaves `image` an EMPTY
+   STRING -- not absent, empty. Three of the first holder's twenty were built
+   that way and came back with no artwork at all. */
+$anim = array('id'=>'D','serial'=>9,'uri'=>'ipfs://cidD','policy'=>'r:1','issuer'=>'r','taxon'=>1);
+$xls24 = '{"schema":"ipfs://s","nftType":"art.v0","name":"Animated",'
+       . '"image":"","animation":"ipfs://QmVK7rC6GCatxbEsrePzT1tKkQZS6qkbNh9CYqR9hvb2r7",'
+       . '"video":"","audio":"","3d_model":""}';
+$m = xrpl_parse_metadata($anim, $xls24);
+ok($m['name'] === 'Animated', 'an XLS-24 document still yields its name');
+ok(strpos($m['image'], 'QmVK7rC6GC') !== false,
+   'an empty `image` falls through to `animation` (got "' . $m['image'] . '")');
+
+/* And the slots the image cache cannot use must NOT be stored: a CID that can
+   only ever fail is worse than no CID, because it looks like data. */
+$vid = xrpl_parse_metadata($anim,
+	'{"name":"Clip","image":"","animation":"","video":"ipfs://QmVK7rC6GCatxbEsrePzT1tKkQZS6qkbNh9CYqR9hvb2r7"}');
+ok($vid['image'] === '', 'a video-only NFT stores no image rather than an unusable one');
+
 /* ---------- 1. the pure mappings ------------------------------------------ */
 ok(xrpl_collection_key('rABC', 7) === 'rABC:7', 'issuer+taxon makes a collection key');
 ok(xrpl_collection_key('rABC', '007') === 'rABC:7', 'a taxon is normalised to an int');
