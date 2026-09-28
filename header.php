@@ -332,9 +332,14 @@
 				         not link at all. Only offered when the extension is
 				         actually present. */ ?>
 				<button type="button" class="wallet-xrpl-btn" id="crossmark-btn" hidden
-				        onclick="crossmarkConnect()" style="margin-top:6px">
+				        onclick="xrplExtConnect('crossmark')" style="margin-top:6px">
 					<span class="wallet-xrpl-mark">XRP</span>
 					<span>Connect with Crossmark<small>Browser extension — works with Ledger</small></span>
+				</button>
+				<button type="button" class="wallet-xrpl-btn" id="gemwallet-btn" hidden
+				        onclick="xrplExtConnect('gemwallet')" style="margin-top:6px">
+					<span class="wallet-xrpl-mark">XRP</span>
+					<span>Connect with GemWallet<small>Browser extension — used by xrp.cafe</small></span>
 				</button>
 				<div id="xaman-panel" hidden>
 					<div id="xaman-msg">Creating a sign-in request&hellip;</div>
@@ -366,41 +371,73 @@
 			   exactly when that happens. refs.websocket_status is addressed by the
 			   payload uuid alone and needs no API secret, so this listens directly
 			   and the server makes exactly two calls per link. */
-			/* Crossmark injects window.xrpl.isCrossmark. Checked on a short
-			   timer because an extension's content script can land after this
-			   runs -- a one-shot check at load reports "not installed" to
-			   people who have it. */
+			/* XRPL BROWSER EXTENSIONS. Two of them, differing only in how the
+			   page asks for an address, so they share everything after that.
+
+			   Each is DETECTED rather than offered blind -- Crossmark sets
+			   window.xrpl.isCrossmark, GemWallet sets window.gemWallet -- and
+			   detection runs on a short timer rather than once at load,
+			   because an extension's content script can land after the page
+			   script does and a one-shot check tells somebody who has it
+			   installed that they do not. */
+			var XRPL_EXT = {
+				crossmark: {
+					el: 'crossmark-btn',
+					has: function(){ return typeof window.xrpl !== 'undefined' && !!window.xrpl.isCrossmark; },
+					/* Signs the same SignIn pseudo-transaction Xaman uses:
+					   signature only, never submitted, no fee. */
+					address: function(){
+						return import('https://esm.sh/@crossmarkio/sdk@0.4.0').then(function(m){
+							return (m.default || m).methods.signInAndWait();
+						}).then(function(r){
+							return r && r.response && r.response.data && r.response.data.address;
+						});
+					}
+				},
+				gemwallet: {
+					el: 'gemwallet-btn',
+					has: function(){ return typeof window.gemWallet !== 'undefined'; },
+					address: function(){
+						return import('https://esm.sh/@gemwallet/api@3.8.0').then(function(m){
+							return m.getAddress();
+						}).then(function(r){
+							/* type is "response" or "reject" -- a decline is not
+							   an error, it is an answer. */
+							if (!r || r.type === 'reject') return null;
+							return r.result && r.result.address;
+						});
+					}
+				}
+			};
 			(function(){
 				var tries = 0;
 				var t = setInterval(function(){
-					if (typeof window.xrpl !== 'undefined' && window.xrpl.isCrossmark) {
-						var b = document.getElementById('crossmark-btn');
-						if (b) b.hidden = false;
-						clearInterval(t);
+					var left = 0;
+					for (var k in XRPL_EXT) {
+						var e = document.getElementById(XRPL_EXT[k].el);
+						if (!e) continue;
+						if (e.hidden && XRPL_EXT[k].has()) e.hidden = false;
+						if (e.hidden) left++;
 					}
-					if (++tries > 20) clearInterval(t);   // ~5s, then give up quietly
+					if (!left || ++tries > 20) clearInterval(t);   // ~5s, then quietly stop
 				}, 250);
 			})();
 
-			function crossmarkConnect(){
+			function xrplExtConnect(which){
+				var ext = XRPL_EXT[which]; if (!ext) return;
 				var p = document.getElementById('xaman-panel');
 				var qr = document.getElementById('xaman-qr'), lk = document.getElementById('xaman-link');
 				xamanCancel(); p.hidden = false; qr.hidden = true; lk.hidden = true;
-				xamanSay('Approve the sign-in in Crossmark\u2026');
-				/* ESM off a pinned CDN version. This codebase has no build step
-				   and wallet.js is already type="module", so a dynamic import is
-				   the path of least resistance -- and loading it only on click
-				   keeps 57KB off every page view. */
-				import('https://esm.sh/@crossmarkio/sdk@0.4.0').then(function(m){
-					var sdk = m.default || m;
-					return sdk.methods.signInAndWait();
-				}).then(function(res){
-					var addr = res && res.response && res.response.data
-					         && res.response.data.address;
-					if (!addr) throw new Error('Crossmark did not return an address.');
+				xamanSay('Approve the sign-in in your wallet\u2026');
+				/* Loaded on click, off a pinned CDN. No build step in this
+				   codebase, and importing on click keeps ~60KB per SDK off
+				   every page view for the many people who use neither. */
+				ext.address().then(function(addr){
+					if (!addr) throw new Error('Sign-in was not completed.');
 					xamanSay('Linking\u2026');
-					var fd = new FormData(); fd.append('address', addr);
-					return fetch('ajax/crossmark-link.php',
+					var fd = new FormData();
+					fd.append('address', addr); fd.append('via', which);
+					return fetch('ajax/xrpl-link.php',
 						{method:'POST', body:fd, credentials:'same-origin'});
 				}).then(function(r){ return r.text(); })
 				.then(function(t){
@@ -409,9 +446,7 @@
 					xamanSay(res.message || 'Wallet linked.');
 					setTimeout(function(){ location.reload(); }, 1400);
 				}).catch(function(e){
-					/* A rejected sign-in lands here too, and "you cancelled" is
-					   not an error worth shouting about. */
-					xamanSay((e && e.message) ? e.message : 'Crossmark sign-in was not completed.');
+					xamanSay((e && e.message) ? e.message : 'Sign-in was not completed.');
 				});
 			}
 

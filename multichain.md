@@ -47,9 +47,11 @@ is **not** registered — which is the check that matters, because an
 issuer:taxon off by a digit matches nothing, raises nothing, and looks exactly
 like a correct run against an empty wallet.
 
-**5. Link a wallet** through the Connect modal. Two XRPL buttons: **Xaman**
-(QR, phone) and **Crossmark** (browser extension, shown only if installed —
-this is the one that works with your Ledger). Either verifies **immediately** —
+**5. Link a wallet** through the Connect modal. **Xaman** (QR, phone) plus
+**Crossmark** and **GemWallet**, each shown only if that extension is actually
+installed. For a Ledger-held account use Crossmark; GemWallet is what xrp.cafe
+uses, so it may already be the one you have. Any of them verifies
+**immediately** —
 the same way a Cardano connect does — so the confirmation says how many NFTs
 are now staking. Nothing to run afterwards.
 
@@ -324,25 +326,39 @@ on the command line and need no signature at all, so the whole read and verify
 path can be proven against a hardware-wallet address today. Only the link step
 needs an account Xaman can sign for.
 
-### 4f. Crossmark — the hardware-wallet path
+### 4f. Browser extensions — Crossmark and GemWallet
 
 Built because §4d2 is not a theoretical gap: the first person to try linking a
-real XRPL NFT held it on a Ledger, and Xaman could not sign for it.
+real XRPL NFT held it on a Ledger, and Xaman could not sign for it. **GemWallet
+is also what xrp.cafe offers**, which makes it what a good share of these NFTs
+were bought with — so it is at least as likely to be what a collector already
+has as Crossmark is.
 
-**Detection is a flag, not a probe.** Crossmark injects
-`window.xrpl.isCrossmark`, so the button only appears for people who have it.
-Checked on a short timer rather than once at load — an extension's content
-script can land after the page script runs, and a one-shot check tells people
-who have it installed that they do not.
+| | detect | get the address |
+|---|---|---|
+| Crossmark | `window.xrpl.isCrossmark` | `sdk.methods.signInAndWait()` |
+| GemWallet | `window.gemWallet` | `getAddress()` |
 
-**The SDK loads on click, from a pinned CDN.** `@crossmarkio/sdk@0.4.0` has an
-ESM build, `wallet.js` is already `type="module"`, and this codebase has no
-build step — so a dynamic `import()` is the path of least resistance, and
-importing on click keeps 57KB off every page view.
+**Detection is a flag, not a probe**, and it runs on a short timer rather than
+once at load — an extension's content script can land after the page script
+does, and a one-shot check tells somebody who has it installed that they do
+not. A button only appears for a wallet actually present.
 
-`sdk.methods.signInAndWait()` signs the same `SignIn` pseudo-transaction Xaman
-uses: signature-only, never submitted, no fee, works on an account holding no
-XRP.
+**The SDKs load on click, from pinned CDN versions.** Both ship ESM,
+`wallet.js` is already `type="module"`, and this codebase has no build step, so
+a dynamic `import()` is the least-resistance path — and importing on click
+keeps ~60KB per SDK off every page view for the many people who use neither.
+
+Crossmark signs the same `SignIn` pseudo-transaction Xaman uses:
+signature-only, never submitted, no fee, works on an empty account. GemWallet
+simply returns the address, and answers a decline with `type: "reject"` rather
+than an error — a decline is an answer, not a failure.
+
+**One endpoint, not one per wallet.** `ajax/xrpl-link.php` takes a whitelisted
+`via`, because the two differ only in which button was pressed and a file each
+would be three copies of the same twenty lines drifting apart. `via` is
+whitelisted rather than trusted: it lands in `wallets.link_method`, so a client
+must not be able to label itself `xaman` and look server-verified.
 
 #### What it does NOT do, and why that is written down
 
@@ -363,6 +379,7 @@ which path proved each address so the distinction survives:
 |---|---|
 | `xaman` | server-verified |
 | `crossmark` | browser-asserted |
+| `gemwallet` | browser-asserted |
 | `cip30` | browser-asserted |
 
 If that ever needs tightening, the column means it is a query rather than

@@ -1,25 +1,30 @@
 <?php
 /**
- * ajax/crossmark-link.php — link an XRPL wallet through the Crossmark extension.
+ * ajax/xrpl-link.php — link an XRPL wallet reported by a browser extension.
  *
- * The second XRPL path, and it exists for one reason: Xaman cannot sign for a
- * HARDWARE WALLET. A Ledger-held XRPL account imports into Xaman read-only,
- * and read-only cannot sign a SignIn -- so the collectors most likely to hold
- * something valuable were the ones who could not link it. Crossmark is a
- * browser extension that talks to a Ledger directly.
+ * ONE ENDPOINT FOR EVERY EXTENSION, because they differ only in which button
+ * was pressed. Crossmark and GemWallet both hand the page an r-address and
+ * nothing this endpoint can check differently, so a file each would be three
+ * copies of the same twenty lines drifting apart. `via` records which, and is
+ * whitelisted rather than trusted.
+ *
+ * These paths exist because Xaman cannot sign for a HARDWARE WALLET: a
+ * Ledger-held XRPL account imports into Xaman read-only, and read-only cannot
+ * sign a SignIn -- so the collectors most likely to hold something valuable
+ * were the ones who could not link it. GemWallet is also what xrp.cafe offers,
+ * which makes it what a lot of these NFTs were bought with.
  *
  * HOW THIS DIFFERS FROM XAMAN, AND IT MATTERS:
  *
- *   Xaman     the SERVER fetches the signed result from Xaman's API. The
- *             address is proved to us and the browser is not trusted.
- *   Crossmark the BROWSER reports an address. We take its word.
+ *   Xaman      the SERVER fetches the signed result from Xaman's API. The
+ *              address is proved to us and the browser is not trusted.
+ *   extensions the BROWSER reports an address. We take its word.
  *
  * That is the same bar the Cardano path has always used -- skulliance.php
  * hands $_POST['stakeaddress'] straight to checkAddress() -- so this adds no
- * new CLASS of risk to the platform. It is still the weaker of the two XRPL
- * paths, which is why wallets.link_method records which was used: a policy
- * that later wants to treat them differently can, without asking anybody to
- * re-link.
+ * new CLASS of risk to the platform. It is still weaker than the Xaman path,
+ * which is why wallets.link_method records which was used: a policy that later
+ * wants to treat them differently can, without asking anybody to re-link.
  *
  * Verifying server-side would mean checking an XRPL signature in PHP. The
  * keys are secp256k1 or ed25519, this server has no ext/sodium on any of its
@@ -39,6 +44,13 @@ $account = isset($_POST['address']) ? trim((string)$_POST['address']) : '';
 if (!xaman_valid_account($account))
 	dhc_json(array('ok' => false, 'message' => 'That is not an XRP Ledger address.'));
 
+/* Whitelisted, not trusted: `via` is written to the row that records how this
+   address was proved, so a client must not be able to label itself 'xaman'
+   and look server-verified when it is not. */
+$allowed = array('crossmark' => 1, 'gemwallet' => 1);
+$via = isset($_POST['via']) ? strtolower(trim((string)$_POST['via'])) : '';
+if (!isset($allowed[$via])) $via = 'extension';
+
 /* One wallet, one owner -- checked before the insert so the message can say
    what actually happened rather than surfacing a duplicate-key error. */
 $esc = $conn->real_escape_string($account);
@@ -50,7 +62,7 @@ if ($own && $own->num_rows) {
 	/* Already ours: fall through to verification rather than refusing. Someone
 	   re-linking is usually someone wondering why their NFTs are not showing. */
 } else {
-	createAddress($conn, $account, $account, XRPL_CHAIN_ID, 'crossmark');
+	createAddress($conn, $account, $account, XRPL_CHAIN_ID, $via);
 }
 
 /* Verify now, exactly as the Xaman path does. Nobody who has just connected a

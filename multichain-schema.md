@@ -95,6 +95,7 @@ which one was used.**
 |---|---|---|
 | `xaman` | Xaman SignIn | the SERVER reads the result from Xaman's API |
 | `crossmark` | Crossmark extension | the BROWSER reports an address |
+| `gemwallet` | GemWallet extension | the BROWSER reports an address |
 | `cip30` | Cardano extension | the BROWSER reports an address |
 
 Only the first is cryptographically verified server-side. The other two are
