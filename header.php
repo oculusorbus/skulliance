@@ -325,21 +325,25 @@
 					<span class="wallet-xrpl-mark">XRP</span>
 					<span>Connect an XRP Ledger wallet<small>Scan with Xaman</small></span>
 				</button>
-				<?php /* CROSSMARK. The second XRPL path, and the reason it exists:
-				         Xaman imports a HARDWARE WALLET account read-only, and
-				         read-only cannot sign -- so Ledger holders, who are
-				         exactly the people with something worth holding, could
-				         not link at all. Only offered when the extension is
-				         actually present. */ ?>
+				<?php /* CROSSMARK and GEMWALLET. Desktop paths for people who do
+				         not keep their XRPL account on a phone. Only offered when
+				         the extension is actually present.
+
+				         NEITHER ONE CONNECTS A HARDWARE WALLET, and this file
+				         said otherwise for a while -- "works with Ledger" under
+				         the Crossmark button, which was simply false and sends a
+				         hardware holder to install an extension that cannot help
+				         them. No XRPL browser extension supports one; that is
+				         what the Ledger button below is for. multichain.md §4g. */ ?>
 				<button type="button" class="wallet-xrpl-btn" id="crossmark-btn" hidden
 				        onclick="xrplExtConnect('crossmark')" style="margin-top:6px">
 					<span class="wallet-xrpl-mark">XRP</span>
-					<span>Connect with Crossmark<small>Browser extension — works with Ledger</small></span>
+					<span>Connect with Crossmark<small>Browser extension — software accounts only</small></span>
 				</button>
 				<button type="button" class="wallet-xrpl-btn" id="gemwallet-btn" hidden
 				        onclick="xrplExtConnect('gemwallet')" style="margin-top:6px">
 					<span class="wallet-xrpl-mark">XRP</span>
-					<span>Connect with GemWallet<small>Browser extension — used by xrp.cafe</small></span>
+					<span>Connect with GemWallet<small>Browser extension — software accounts only</small></span>
 				</button>
 				<div id="ledger-pick" hidden></div>
 				<?php /* LEDGER. Via xrpl-connect's LedgerAdapter -- one npm package
@@ -351,7 +355,7 @@
 				<button type="button" class="wallet-xrpl-btn" id="ledger-btn" hidden
 				        onclick="ledgerConnect()" style="margin-top:6px">
 					<span class="wallet-xrpl-mark">XRP</span>
-					<span>Connect a Ledger<small>Plug in and open the XRP app — no wallet account needed</small></span>
+					<span>Connect a Ledger<small>The only hardware-wallet path — plug in and open the XRP app</small></span>
 				</button>
 				<div id="xaman-panel" hidden>
 					<div id="xaman-msg">Creating a sign-in request&hellip;</div>
