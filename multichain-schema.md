@@ -82,6 +82,45 @@ unique key on that column is simply wrong for this schema.
 
 **Do not add it.** Nothing in the multi-chain code depends on it.
 
+## 2c. An NFTokenID does not fit — widen two columns
+
+**Run this. It is not optional, and skipping it corrupts silently.**
+
+```sql
+-- Check what you have first; match the NULL/collation to SHOW CREATE TABLE nfts.
+SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE
+  FROM information_schema.COLUMNS
+ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'nfts'
+   AND COLUMN_NAME IN ('asset_id','asset_name');
+
+ALTER TABLE nfts MODIFY asset_id   VARCHAR(64) NOT NULL;
+ALTER TABLE nfts MODIFY asset_name VARCHAR(64) NOT NULL;
+```
+
+`nfts.asset_id` was `VARCHAR(50)`, sized for a **CIP-14 fingerprint** —
+`asset1...`, about 44 characters. An **XRPL NFTokenID is 64 hex
+characters**, and MySQL outside strict mode truncates rather than errors.
+
+The first holder's NFTs were therefore stored 50 characters long. Nothing
+complained: the rows existed, the images rendered, and every marketplace
+link pointed at an NFT that does not exist.
+
+**The second pass is where it turns expensive.** `processNFT()` decides an
+NFT is already known with `in_array($fingerprint, $asset_ids)` — comparing a
+full 64-character id against a truncated 50-character one, which never
+matches — so the next run inserts the entire collection again. And again.
+
+`xrpl_check_schema()` now refuses to write until the columns are wide
+enough, in both the interactive and nightly paths, and
+`verify-xrpl-doctor.php` §0 reports it along with any truncation already on
+disk. A truncated id cannot be repaired, only re-fetched:
+
+```sql
+DELETE n FROM nfts n JOIN collections c ON c.id = n.collection_id
+ WHERE c.blockchain_id = 2;
+```
+then `php verify.php verify=xrpl`.
+
 ## 2b. How a wallet was proved
 
 ```sql

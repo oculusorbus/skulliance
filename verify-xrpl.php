@@ -525,6 +525,49 @@ function xrpl_account_nfts($api_base, $account, $fetch) {
 /* ---------- the pass ------------------------------------------------------- */
 
 /**
+ * CAN THIS SCHEMA EVEN HOLD AN NFTokenID?
+ *
+ * A Cardano asset_id is a CIP-14 fingerprint, `asset1...`, about 44
+ * characters, and the column was sized for it. An XRPL NFTokenID is 64 hex
+ * characters. MySQL outside strict mode TRUNCATES rather than errors, so the
+ * first holder's NFTs were stored 50 characters long: the row looked fine,
+ * the image rendered, and the link went to an NFT that does not exist.
+ *
+ * It gets worse on the second pass. processNFT() decides an NFT is already
+ * known with in_array($fingerprint, $asset_ids) -- comparing a full 64-char
+ * id against a truncated 50-char one, which never matches -- so every run
+ * would insert the whole collection again.
+ *
+ * So the pass refuses to write until the column can hold what it is given.
+ * One query per run, and it turns silent corruption into a loud stop.
+ *
+ * Returns '' when fine, or a message naming the column and the fix.
+ */
+function xrpl_check_schema($conn) {
+	$need = array('asset_id' => 64, 'asset_name' => 64);
+	$bad  = array();
+	$res = @$conn->query(
+		"SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH len
+		   FROM information_schema.COLUMNS
+		  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'nfts'
+		    AND COLUMN_NAME IN ('asset_id','asset_name')");
+	/* No answer is not a failure. Some hosts restrict information_schema, and
+	   refusing to stake everybody because a metadata table is unreadable
+	   would be a worse bug than the one this guards against. */
+	if (!$res) return '';
+	while ($row = $res->fetch_assoc()) {
+		$col = $row['COLUMN_NAME'];
+		$len = $row['len'];
+		if ($len !== null && (int)$len < $need[$col])
+			$bad[] = sprintf("nfts.%s holds %d chars, needs %d", $col, (int)$len, $need[$col]);
+	}
+	if (!$bad) return '';
+	return 'XRPL writing is blocked: ' . implode('; ', $bad)
+	     . '. An NFTokenID is 64 hex characters and MySQL would truncate it'
+	     . ' silently. See multichain-schema.md §2c.';
+}
+
+/**
  * Verify ONE user's XRPL wallets, right now.
  *
  * A wallet connect verifies immediately on the Cardano side -- link, clear
@@ -542,6 +585,14 @@ function xrpl_verify_user($conn, $user_id, $budget = 45) {
 	try {
 		$user_id = (int)$user_id;
 		if ($user_id <= 0) return array('ok' => false, 'staked' => 0, 'message' => '');
+
+		$schema = xrpl_check_schema($conn);
+		if ($schema !== '') {
+			error_log($schema);
+			return array('ok' => false, 'staked' => 0,
+				'message' => 'Wallet linked. Staking is not switched on for this '
+				           . 'chain yet — nothing to do on your end.');
+		}
 
 		$collections = getCollectionIDs($conn, XRPL_CHAIN_ID);
 		if (!$collections)
@@ -598,6 +649,11 @@ function xrpl_nightly($conn, $budget = 600) {
 	try {
 		if (!function_exists('getCollectionIDs') || !function_exists('getAllAddresses'))
 			return 'xrpl: skipped (platform functions unavailable)';
+
+		/* Refuse rather than truncate. This runs inside the job that pays
+		   everybody, so it returns a line instead of throwing. */
+		$schema = xrpl_check_schema($conn);
+		if ($schema !== '') return 'xrpl: ' . $schema;
 
 		$collections = getCollectionIDs($conn, XRPL_CHAIN_ID);
 		$addresses   = getAllAddresses($conn, XRPL_CHAIN_ID);

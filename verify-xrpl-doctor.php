@@ -63,6 +63,34 @@ if ($arg === '') {
 function hr($t){ echo "\n" . $t . "\n" . str_repeat('-', strlen($t)) . "\n"; }
 $problems = array();
 
+/* ---- 0. can the schema hold an NFTokenID? ------------------------------ */
+hr('0. Schema');
+$schema = xrpl_check_schema($conn);
+if ($schema === '') {
+	echo "  nfts.asset_id / asset_name are wide enough for a 64-char NFTokenID.\n";
+} else {
+	echo "  [!!] " . $schema . "\n";
+	echo "       ALTER TABLE nfts MODIFY asset_id   VARCHAR(64) NOT NULL;\n";
+	echo "       ALTER TABLE nfts MODIFY asset_name VARCHAR(64) NOT NULL;\n";
+	$problems[] = 'the nfts table cannot hold a full NFTokenID';
+}
+
+/* Truncation that ALREADY happened. A stored id shorter than 64 is not a
+   valid NFTokenID, and every one of them is a dead marketplace link plus a
+   duplicate row on the next pass. */
+$tr = $conn->query("SELECT COUNT(*) c FROM nfts n JOIN collections c2 ON c2.id = n.collection_id
+                    WHERE c2.blockchain_id = " . XRPL_CHAIN_ID . " AND CHAR_LENGTH(n.asset_id) <> 64");
+$ntr = $tr ? (int)$tr->fetch_assoc()['c'] : 0;
+if ($ntr) {
+	printf("  [!!] %d XRPL row(s) have a truncated asset_id.\n", $ntr);
+	echo "       Widen the columns first, then delete and re-verify -- the full\n";
+	echo "       id cannot be recovered from a truncated one:\n";
+	printf("         DELETE n FROM nfts n JOIN collections c2 ON c2.id = n.collection_id\n");
+	printf("          WHERE c2.blockchain_id = %d;\n", XRPL_CHAIN_ID);
+	echo "         php verify.php verify=xrpl\n";
+	$problems[] = "$ntr truncated asset_id(s)";
+}
+
 /* ---- 1. collections ---------------------------------------------------- */
 hr('1. Registered XRPL collections');
 $rows = array();
