@@ -269,10 +269,12 @@ only becomes a question if chain leaks into game code.
 No staking, no points, no rewards.
 
 - `blockchains` table and the three FK columns (§3)
-- Xaman sign-in, or an extension connector to start (§4)
-- `verifyNFTsXRPL()` writing rows through `processNFT()` (§5)
+- Xaman sign-in (§4, §11.1)
+- `verifyNFTsXRPL()` writing rows through `processNFT()` (§5), Maxingo's
+  collections only (§11.2)
+- The delegation guard (§11a) — added with the schema, not after
 - `removeUsers()` and friends scoped by chain (§5a)
-- Discord roles granted off XRPL holdings
+- The existing **staker role** granted off XRPL holdings (§11.3)
 - Access to what is already public and free: the Arena's practice mode, the
   Collection, the Sandbox
 
@@ -327,14 +329,64 @@ points. Its only success metric is whether XRPL holders connect and play.
 
 ---
 
-## 11. Open decisions
+## 11. Decisions taken
 
-1. **Xaman first, or extensions first?** Xaman reaches most XRPL users and is a
-   bigger build; GemWallet/Crossmark are quick and reach fewer.
-2. **Which collections launch with it?** Maxingo's are the obvious first, since
-   his collectors are the reason for the exercise.
-3. **Do XRPL holders get membership roles**, or only collection roles? This is
-   a community decision, not a technical one.
-4. **Does an XRPL asset count toward Diamond Skull delegation?** Probably not
-   at first — delegation has its own protected-NFT handling and mixing chains
-   into it early adds risk for no benefit.
+1. **Xaman first.** It reaches most XRPL collectors, and reaching Maxingo's
+   fifty is the entire point — building the cheap extension connector first
+   would serve the minority and prove little. GemWallet/Crossmark remain a
+   later addition, not a prerequisite.
+2. **Maxingo's collections only at launch.** His collectors are the reason for
+   the exercise, and one collection means one rarity run, one metadata shape
+   and one thing to debug on the first nightly cron.
+3. **XRPL stakers get the existing staker role.** Not a new parallel role and
+   not membership — the same role a Cardano staker gets, so nothing about the
+   Discord hierarchy changes and there is no second concept to maintain.
+4. **No Diamond Skull delegation.** Delegation is for the original six Cardano
+   projects and stays that way. See §11a — this one needs a guard rather than
+   just an absence.
+
+### 11a. Delegation needs an explicit guard, not an assumption
+
+Delegation is meant to be the OG six Cardano projects only. **I could not find
+that enforced anywhere in the code**, and the distinction matters.
+
+`project_id IN(1,2,3,4,5,6)` does appear three times in `db.php`, but those are
+the "core" **display filter** for listings — not an eligibility gate. The
+actual path (`checkNFTDelegationStatus()`, `checkDiamondSkullProjectAvailability()`,
+the `INSERT INTO diamond_skulls`) checks only whether an NFT is already
+delegated and how many delegations that Diamond Skull already holds for the
+project. Nothing restricts *which* projects may be delegated to.
+
+That interacts badly with §3d, and it is worth being clear that the two
+decisions pull against each other here. Keeping chain on the collection is what
+lets Maxingo stay one artist across both chains — and it is exactly what would
+let an XRPL collection inherit his project's delegation eligibility, silently,
+because delegation reasons in projects and would never see the chain.
+
+So the guard has to be added on purpose:
+
+```sql
+-- every delegation path, not just the listing filters
+... INNER JOIN collections ON nfts.collection_id = collections.id
+    AND collections.blockchain_id = 1
+```
+
+Three call sites minimum: `checkDiamondSkullProjectAvailability()`, the query
+behind the delegation picker, and the insert itself. Fail closed — an NFT whose
+chain cannot be determined is not delegatable.
+
+*Worth confirming against the live data whether the OG six are enforced
+somewhere I have not found, or whether today it is convention plus a UI that
+only ever offers the right NFTs. If it is the latter, this guard is the first
+time the rule becomes real, which is a small improvement in its own right.*
+
+---
+
+## 12. Still open
+
+- Whether XRPL holdings earn points at the same `collections.rate` mechanics as
+  Cardano, or start at zero and are tuned once there is data. A phase-two
+  question, but worth deciding before rates are set rather than after.
+- Whether the nightly cron runs both chains in one pass or as two scheduled
+  jobs. Two jobs isolate failure more cleanly (§5b); one pass is simpler to
+  reason about. Leaning two.
