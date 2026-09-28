@@ -342,6 +342,17 @@
 					<span>Connect with GemWallet<small>Browser extension — used by xrp.cafe</small></span>
 				</button>
 				<div id="ledger-pick" hidden></div>
+				<?php /* LEDGER. Via xrpl-connect's LedgerAdapter -- one npm package
+				         with ZERO dependencies whose tarball is verified against
+				         the registry integrity hash, which is what the raw
+				         @ledgerhq libraries could never offer (they ship no UMD,
+				         so the only browser form came from a transpiling CDN).
+				         Shown only where WebHID exists. */ ?>
+				<button type="button" class="wallet-xrpl-btn" id="ledger-btn" hidden
+				        onclick="ledgerConnect()" style="margin-top:6px">
+					<span class="wallet-xrpl-mark">XRP</span>
+					<span>Connect a Ledger<small>Plug in and open the XRP app — no wallet account needed</small></span>
+				</button>
 				<div id="xaman-panel" hidden>
 					<div id="xaman-msg">Creating a sign-in request&hellip;</div>
 					<img id="xaman-qr" alt="Scan this with Xaman" hidden>
@@ -473,6 +484,69 @@
 			   needs. Until then hardware holders add their Ledger inside
 			   Crossmark or GemWallet, whose SDKs ARE verified against npm.
 			   Removed 2026-09-28; the implementation is in git history. */
+
+			/* WEBHID IS CHROME, EDGE AND OPERA ONLY -- not Firefox, not Safari.
+			   Feature-detected, so the button does not appear where it cannot
+			   work. */
+			if (navigator.hid) {
+				var lb = document.getElementById('ledger-btn');
+				if (lb) lb.hidden = false;
+			}
+
+			function ledgerConnect(){
+				xamanCancel();
+				var p = document.getElementById('xaman-panel');
+				var qr = document.getElementById('xaman-qr'), lk = document.getElementById('xaman-link');
+				p.hidden = false; qr.hidden = true; lk.hidden = true;
+				xamanSay('Unlock your Ledger and open the XRP app\u2026');
+
+				/* NAME COLLISION, AND IT WOULD BE A NASTY ONE. xrpl-connect's UMD
+				   wrapper reads window.xrpl expecting the xrpl.js LIBRARY, while
+				   Crossmark injects window.xrpl as its own marker object. Loading
+				   the bundle with Crossmark installed would hand it Crossmark's
+				   marker and call it a library. Stash it, load, put it back. */
+				var stashed = window.xrpl, hadStash = ('xrpl' in window);
+				try { delete window.xrpl; } catch(e) { window.xrpl = undefined; }
+
+				var restore = function(){
+					if (hadStash) window.xrpl = stashed; else { try { delete window.xrpl; } catch(e){} }
+				};
+
+				loadVendor('vendor/xrpl/xrpl-connect-0.8.2.umd.js', function(){
+					return (window.XRPLConnect && window.XRPLConnect.LedgerAdapter)
+					     ? window.XRPLConnect : null;
+				}).then(function(XC){
+					restore();
+					var adapter = new XC.LedgerAdapter();
+					return adapter.connect().then(function(){
+						/* Adapters expose the account differently across versions;
+						   take whichever of these is actually populated rather
+						   than guessing one and failing silently. */
+						return adapter.address || adapter.account
+						     || (adapter.getAddress && adapter.getAddress());
+					});
+				}).then(function(addr){
+					if (addr && typeof addr === 'object') addr = addr.address || addr.account;
+					if (!addr) throw new Error('The Ledger did not return an address.');
+					xamanSay('Linking\u2026');
+					var fd = new FormData();
+					fd.append('address', addr); fd.append('via', 'ledger');
+					return fetch('ajax/xrpl-link.php',
+						{method:'POST', body:fd, credentials:'same-origin'});
+				}).then(function(r){ return r.text(); })
+				.then(function(t){
+					var res; try { res = JSON.parse(t); } catch(e){ throw new Error(t.slice(0,120)); }
+					if (!res.ok) { xamanSay(res.message || 'Could not link.'); return; }
+					xamanSay(res.message || 'Wallet linked.');
+					setTimeout(function(){ location.reload(); }, 1400);
+				}).catch(function(e){
+					restore();
+					var m = (e && e.message) ? e.message : '';
+					xamanSay(/denied|cancel|no device|not selected/i.test(m)
+						? 'No device was selected.'
+						: (m || 'Could not talk to the Ledger.'));
+				});
+			}
 
 			function xrplExtConnect(which){
 				var ext = XRPL_EXT[which]; if (!ext) return;

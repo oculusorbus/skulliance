@@ -40,6 +40,7 @@ print('sha512-'+base64.b64encode(hashlib.sha512(open('$TMP/pkg.tgz','rb').read()
 echo "Verifying vendored wallet code against npm..."
 check "@crossmarkio/sdk" 0.4.0 "package/pack/umd/index.js"    vendor/xrpl/crossmark-sdk-0.4.0.umd.js
 check "@gemwallet/api"   3.8.0 "package/umd/gemwallet-api.js" vendor/xrpl/gemwallet-api-3.8.0.umd.js
+check "xrpl-connect"     0.8.2 "package/xrpl-connect.umd.js"  vendor/xrpl/xrpl-connect-0.8.2.umd.js
 
 
 [ $fail -eq 0 ] && echo "\nall verifiable files match npm" || echo "\nFAILURES ABOVE"

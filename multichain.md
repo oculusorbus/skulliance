@@ -47,10 +47,11 @@ is **not** registered — which is the check that matters, because an
 issuer:taxon off by a digit matches nothing, raises nothing, and looks exactly
 like a correct run against an empty wallet.
 
-**5. Link a wallet** through the Connect modal: **Xaman** (QR, phone), or
-**Crossmark** / **GemWallet** (shown only if installed). A hardware wallet is
-added inside one of the extensions — §4g explains why there is no direct path.
-Any of them verifies **immediately** —
+**5. Link a wallet** through the Connect modal: **Xaman** (QR, phone),
+**Crossmark** / **GemWallet** (shown only if installed), or **Ledger** (shown
+where WebHID works — Chrome, Edge, Opera). For a hardware-held account use the
+Ledger button; no extension supports hardware wallets (§4g). Any of them
+verifies **immediately** —
 the same way a Cardano connect does — so the confirmation says how many NFTs
 are now staking. Nothing to run afterwards.
 
@@ -400,44 +401,60 @@ asking every holder to link again.
 address is a pre-existing platform-wide weakness, not something this work
 introduced. It is out of scope here, but it is now written down.
 
-### 4g. Ledger direct — built, then removed, and why
+### 4g. Ledger — via xrpl-connect, verified
 
-The browser can talk to a Ledger over WebHID with no wallet provider in the
-way, which answers a real complaint: Crossmark and GemWallet both make you
-create a software wallet before they will touch a hardware one. It was built,
-it scanned five derivation paths, and it worked in principle.
+**No XRPL browser extension supports a hardware wallet.** Not Crossmark, not
+GemWallet — checked both, and neither advertises it or has a single issue
+mentioning it. A hardware holder cannot add a Ledger "inside" an extension,
+which is what I wrongly suggested and what cost an evening of setup that led
+nowhere.
 
-**It was removed because the libraries could not be verified.**
-`@ledgerhq/hw-app-xrp` and `@ledgerhq/hw-transport-webhid` ship no UMD build,
-so the only browser-ready form came from esm.sh — which transpiles the source
-and rewrites its imports rather than serving npm's files. The vendored copy
-could therefore never be checked against npm's published hashes the way
-`vendor/xrpl/` is (§4h).
+What does support Ledger: **XRP Toolkit** and **Sologenic** — web apps that
+drive the device over WebUSB/WebHID. They can manage the account but cannot
+link it here, because there is no provider for a third-party page to call.
 
-Asking somebody to plug a hardware wallet into unverified third-party code is
-not a liability worth carrying for a convenience, and that judgement came from
-the owner rather than from me: *"I'm not comfortable connecting my ledger or
-having others connect their ledger to unverified code to extract the address."*
+And **`xrpl-connect`**, which is the answer.
 
-**Hardware holders use Crossmark or GemWallet**, adding the Ledger inside the
-extension. That means creating a software wallet first — the very annoyance
-that prompted the direct path — but those SDKs are verified against npm, and
-the extension mediates the device rather than this page touching it.
+#### Why this one and not the raw libraries
 
-#### What a verified version would need
+A direct WebHID path was built first against `@ledgerhq/hw-app-xrp` and
+`hw-transport-webhid`, and removed — those ship no UMD build, so the only
+browser-ready form came from esm.sh, which transpiles and rewrites rather than
+serving npm's files. That copy could never be checked against npm's published
+hashes, and *"I'm not comfortable connecting my ledger or having others
+connect their ledger to unverified code"* is the right call.
 
-Both packages ship real ESM in `lib-es/` inside their npm tarballs, so it is
-achievable:
+`xrpl-connect` (XRPL Commons) solves exactly that:
 
-1. Fetch each `@ledgerhq/*` tarball and verify it against the registry
-   integrity hash
-2. Extract `lib-es/`
-3. Rewrite the bare imports to local paths, or ship an import map
-4. Supply a `Buffer` polyfill — the awkward part, and one that must itself
-   come from a verified source rather than be hand-written
+- **Zero dependencies.** Nothing transitive to chase.
+- **Self-contained UMD** in the npm tarball — no CDN transformation involved.
+- **Tarball verified** against the registry integrity hash by
+  `vendor/verify.sh`, same as the other two.
+- Bundles `LedgerAdapter` alongside Xaman, Crossmark, GemWallet,
+  WalletConnect, Otsu and Xyra.
 
-A few hours, and it closes the loop. The removed implementation is in git
-history (2026-09-28); `vendor/verify.sh` is the harness it would have to pass.
+So the chain of custody is the same one the extension SDKs already have.
+
+#### Two things to know
+
+**It is ~1MB**, against 57KB and 64KB for the extension SDKs. It therefore
+loads **only when the Ledger button is clicked**, and the lean paths keep
+their lean bundles rather than being consolidated onto it. Consolidation is
+available later if maintaining three integrations stops being worth it.
+
+**`window.xrpl` is a name collision, and a nasty one.** xrpl-connect's UMD
+wrapper reads `window.xrpl` expecting the **xrpl.js library**; Crossmark
+injects `window.xrpl` as its own marker object. Loading the bundle on a
+machine with Crossmark installed would hand it Crossmark's marker and treat it
+as a library. The loader stashes `window.xrpl`, loads, and puts it back.
+
+*Still needs a real device to confirm.* The package is verified and the
+adapter is present in the bundle, but nothing here can prove a Ledger answers
+until one is plugged in — and the adapter's address accessor differs across
+versions, so the code takes whichever of `address` / `account` /
+`getAddress()` is actually populated rather than guessing one and failing
+quietly.
+
 
 ### 4h. Vendoring alone does not prove authenticity
 
@@ -453,19 +470,22 @@ SHA-512 integrity hash per package version, so `vendor/verify.sh` walks:
 registry integrity  ->  tarball  ->  the file we serve
 ```
 
-Both extension SDKs pass: byte-identical to the contents of tarballs whose
-hashes match what the registry published. jsDelivr is not in that chain at
-all — those files could have come from anywhere.
+All three vendored bundles pass: byte-identical to the contents of tarballs
+whose hashes match what the registry published. jsDelivr is not in that chain
+at all — those files could have come from anywhere.
 
-The Ledger tree could not pass it and was removed rather than shipped with an
-exception (§4g). **Every remaining path is either verified or has no client
-library at all:**
+**Every path is either verified or has no client library at all**, which is
+the property worth keeping:
 
 | path | client library | verified against npm |
 |---|---|---|
 | Xaman | none | n/a |
-| Crossmark | `vendor/xrpl/` | yes |
-| GemWallet | `vendor/xrpl/` | yes |
+| Crossmark | `vendor/xrpl/crossmark-sdk-0.4.0.umd.js` | yes |
+| GemWallet | `vendor/xrpl/gemwallet-api-3.8.0.umd.js` | yes |
+| Ledger | `vendor/xrpl/xrpl-connect-0.8.2.umd.js` | yes |
+
+The raw `@ledgerhq` libraries could not meet that bar, which is why the Ledger
+path goes through xrpl-connect instead (§4g).
 
 
 ### 4e. Cost — settled, it is free
