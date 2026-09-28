@@ -305,13 +305,46 @@
 		</script>
 
 		<!-- Wallet Connect Modal -->
+		<?php /* One flag, read by the markup below AND handed to the JS, so the
+		         two can never disagree about whether there is a chain step. */
+		      $wallet_multichain = isset($_SESSION['userData']['user_id']); ?>
 		<div id="wallet-modal-overlay" onclick="closeWalletModal()" style="display:none"></div>
 		<div id="wallet-modal" role="dialog" aria-modal="true" style="display:none">
 			<div class="wallet-modal-header">
-				<span>Connect Wallet</span>
+				<button type="button" class="wallet-modal-back" id="wallet-back"
+				        onclick="walletStep('chain')" style="display:none"
+				        aria-label="Back to chains">&#8592;</button>
+				<span id="wallet-modal-title">Connect Wallet</span>
 				<button class="wallet-modal-close" onclick="closeWalletModal()">&times;</button>
 			</div>
-			<div id="wallet-grid" class="wallet-grid">
+
+			<?php /* STEP 1: WHICH CHAIN. Both are always offered, never gated on
+			         what is installed -- XRPL's main wallet is Xaman, a PHONE
+			         APP, so "detect then show" would hide the chain from
+			         everybody on a desktop with no extension, which is most
+			         people. Detection belongs on step two, where it is about
+			         wallets rather than chains.
+
+			         SIGNED-IN ONLY. For a logged-out visitor this modal IS the
+			         login, and login is Cardano -- ajax/xrpl-link.php needs a
+			         user_id to link to. Showing them a chain they cannot use
+			         would add a click to every sign-in to reach a dead end. */ ?>
+			<?php if($wallet_multichain): ?>
+			<div id="wallet-chain" class="wallet-grid">
+				<div class="wallet-panel" onclick="walletStep('cardano')" title="Cardano wallets">
+					<img class="wallet-panel-icon" src="icons/cardano.png" alt=""
+					     onerror="walletMark(this,'ADA')">
+					<span class="wallet-panel-name">Cardano<small>Lace, Eternl, Vespr&hellip;</small></span>
+				</div>
+				<div class="wallet-panel" onclick="walletStep('xrpl')" title="XRPL wallets">
+					<img class="wallet-panel-icon" src="icons/xrp.png" alt=""
+					     onerror="walletMark(this,'XRP')">
+					<span class="wallet-panel-name">XRPL<small>Xaman, Crossmark&hellip;</small></span>
+				</div>
+			</div>
+			<?php endif; ?>
+
+			<div id="wallet-grid" class="wallet-grid"<?php if($wallet_multichain) echo ' style="display:none"'; ?>>
 				<div class="wallet-panel-empty">Detecting wallets&hellip;</div>
 			</div>
 			<div id="wallet-status" style="display:none"></div>
@@ -326,43 +359,61 @@
 			         offering both "an XRP Ledger wallet" and "a Ledger" reads as
 			         two ways to do the same thing. The chain's abbreviation
 			         carries no such collision. */ ?>
-			<div class="wallet-xrpl">
-				<button type="button" class="wallet-xrpl-btn" onclick="xamanConnect()">
-					<span class="wallet-xrpl-mark">XRP</span>
-					<span>Connect an XRPL wallet<small>Scan with Xaman</small></span>
-				</button>
-				<?php /* CROSSMARK and GEMWALLET. Desktop paths for people who do
-				         not keep their XRPL account on a phone. Only offered when
-				         the extension is actually present.
+			<?php /* STEP 2b: XRPL WALLETS. Same tiles as the Cardano grid, on
+			         purpose -- the Cardano flow already teaches "pick your
+			         wallet by its logo", and a second chain that behaved
+			         differently would make the platform feel like two sites.
 
-				         NEITHER ONE CONNECTS A HARDWARE WALLET, and this file
-				         said otherwise for a while -- "works with Ledger" under
-				         the Crossmark button, which was simply false and sends a
-				         hardware holder to install an extension that cannot help
-				         them. No XRPL browser extension supports one; that is
-				         what the Ledger button below is for. multichain.md §4g. */ ?>
-				<button type="button" class="wallet-xrpl-btn" id="crossmark-btn" hidden
-				        onclick="xrplExtConnect('crossmark')" style="margin-top:6px">
-					<span class="wallet-xrpl-mark">XRP</span>
-					<span>Connect with Crossmark<small>Browser extension — software accounts only</small></span>
-				</button>
-				<button type="button" class="wallet-xrpl-btn" id="gemwallet-btn" hidden
-				        onclick="xrplExtConnect('gemwallet')" style="margin-top:6px">
-					<span class="wallet-xrpl-mark">XRP</span>
-					<span>Connect with GemWallet<small>Browser extension — software accounts only</small></span>
-				</button>
-				<div id="ledger-pick" hidden></div>
+			         VISIBILITY IS NOT UNIFORM HERE, and cannot be. Xaman is a
+			         phone app, so it is always offered and works from any
+			         browser. Crossmark and GemWallet are extensions, revealed
+			         only once actually detected. Ledger needs WebHID, which is
+			         Chrome/Edge/Opera only.
+
+			         display:none RATHER THAN THE hidden ATTRIBUTE. `hidden` is
+			         a UA-stylesheet `display:none`, which .wallet-panel's
+			         `display:flex` outranks -- every tile would show, detected
+			         or not. The old list markup got away with it; a grid of
+			         .wallet-panel does not. */ ?>
+			<div id="wallet-xrpl-list" class="wallet-grid" style="display:none">
+				<div class="wallet-panel" onclick="xamanConnect()" title="Connect with Xaman">
+					<img class="wallet-panel-icon" src="icons/xaman.png" alt=""
+					     onerror="walletMark(this,'XA')">
+					<span class="wallet-panel-name">Xaman<small>Scan with your phone</small></span>
+				</div>
+				<div class="wallet-panel" id="crossmark-btn" style="display:none"
+				     onclick="xrplExtConnect('crossmark')" title="Connect with Crossmark">
+					<img class="wallet-panel-icon" src="icons/crossmark.png" alt=""
+					     onerror="walletMark(this,'CM')">
+					<span class="wallet-panel-name">Crossmark<small>Browser extension</small></span>
+				</div>
+				<div class="wallet-panel" id="gemwallet-btn" style="display:none"
+				     onclick="xrplExtConnect('gemwallet')" title="Connect with GemWallet">
+					<img class="wallet-panel-icon" src="icons/gemwallet.png" alt=""
+					     onerror="walletMark(this,'GW')">
+					<span class="wallet-panel-name">GemWallet<small>Browser extension</small></span>
+				</div>
 				<?php /* LEDGER. Via xrpl-connect's LedgerAdapter -- one npm package
 				         with ZERO dependencies whose tarball is verified against
 				         the registry integrity hash, which is what the raw
 				         @ledgerhq libraries could never offer (they ship no UMD,
-				         so the only browser form came from a transpiling CDN).
-				         Shown only where WebHID exists. */ ?>
-				<button type="button" class="wallet-xrpl-btn" id="ledger-btn" hidden
-				        onclick="ledgerConnect()" style="margin-top:6px">
-					<span class="wallet-xrpl-mark">XRP</span>
-					<span>Connect a Ledger<small>The only hardware-wallet path — plug in and open the XRP app</small></span>
-				</button>
+				         so the only browser form came from a transpiling CDN). */ ?>
+				<div class="wallet-panel" id="ledger-btn" style="display:none"
+				     onclick="ledgerConnect()" title="Connect a Ledger">
+					<img class="wallet-panel-icon" src="icons/ledger.png" alt=""
+					     onerror="walletMark(this,'L')">
+					<span class="wallet-panel-name">Ledger<small>Hardware wallet</small></span>
+				</div>
+				<?php /* The one thing a tile grid cannot say by itself. Neither
+				         extension connects a hardware wallet -- this file claimed
+				         Crossmark did for a while, which is how an evening got
+				         spent installing one that could not help. §4g. */ ?>
+				<div class="wallet-panel-empty" id="xrpl-note">
+					Holding on a hardware wallet? Use <strong>Ledger</strong> &mdash;
+					the extensions connect software accounts only.
+				</div>
+			</div>
+			<div class="wallet-xrpl">
 				<div id="xaman-panel" hidden>
 					<div id="xaman-msg">Creating a sign-in request&hellip;</div>
 					<img id="xaman-qr" alt="Scan this with Xaman" hidden>
@@ -371,14 +422,7 @@
 				</div>
 			</div>
 			<style>
-			.wallet-xrpl{margin:10px 12px 0;padding-top:10px;border-top:1px solid rgba(255,255,255,.12)}
-			.wallet-xrpl-btn{display:flex;align-items:center;gap:10px;width:100%;
-			  background:#0d1e2e;border:1px solid #1b3346;color:#e8eaed;border-radius:4px;
-			  padding:9px 12px;cursor:pointer;font:inherit;text-align:left}
-			.wallet-xrpl-btn:hover{border-color:#00c8a0;color:#00c8a0}
-			.wallet-xrpl-btn small{display:block;font-size:10px;opacity:.6}
-			.wallet-xrpl-mark{font-size:10px;font-weight:700;letter-spacing:.08em;
-			  background:#1b3346;border-radius:3px;padding:4px 6px}
+			.wallet-xrpl{margin:0 12px}
 			#xaman-panel{margin-top:10px;text-align:center;font-size:12px}
 			#xaman-qr{width:190px;height:190px;margin:8px auto;display:block;background:#fff;border-radius:4px}
 			#xaman-link{display:inline-block;margin:4px 0 8px;color:#00c8a0;font-size:12px}
@@ -469,8 +513,11 @@
 					for (var k in XRPL_EXT) {
 						var e = document.getElementById(XRPL_EXT[k].el);
 						if (!e) continue;
-						if (e.hidden && XRPL_EXT[k].has()) e.hidden = false;
-						if (e.hidden) left++;
+						/* Reveal by CLEARING the inline display, so the tile falls
+						   back to .wallet-panel's flex. Assigning 'flex' here would
+						   work too and would rot the moment the class changes. */
+						if (e.style.display === 'none' && XRPL_EXT[k].has()) e.style.display = '';
+						if (e.style.display === 'none') left++;
 					}
 					if (!left || ++tries > 20) clearInterval(t);   // ~5s, then quietly stop
 				}, 250);
@@ -500,7 +547,7 @@
 			   work. */
 			if (navigator.hid) {
 				var lb = document.getElementById('ledger-btn');
-				if (lb) lb.hidden = false;
+				if (lb) lb.style.display = '';
 			}
 
 			function ledgerConnect(){
@@ -646,6 +693,78 @@
 			}
 			</script>
 			<?php endif; ?>
+
+			<?php /* THE STEP MACHINE, defined for everybody -- wallet.js calls it
+			         on every connect, success and failure, and a logged-out page
+			         has no XRPL block to define it in. When there is no chain
+			         step it collapses to "show the Cardano grid", which is
+			         exactly what that page did before any of this existed. */ ?>
+			<script>
+			var WALLET_MULTICHAIN = <?php echo $wallet_multichain ? 'true' : 'false'; ?>;
+			var WALLET_STEPS = {chain:'wallet-chain', cardano:'wallet-grid', xrpl:'wallet-xrpl-list'};
+			var walletStepCur = WALLET_MULTICHAIN ? 'chain' : 'cardano';
+
+			/* An icon slot with no file yet. The XRPL logos are not in the repo
+			   -- images ship by FTP -- so rather than let four broken-image
+			   glyphs represent the wallets, a missing one becomes a lettermark
+			   in the same 52px square. Drop the real PNG in and it takes over
+			   with no code change. */
+			function walletMark(img, txt){
+				if (!img || !img.parentNode) return;
+				var s = document.createElement('span');
+				s.className = 'wallet-panel-icon wallet-panel-mark';
+				s.textContent = txt;
+				img.parentNode.replaceChild(s, img);
+			}
+
+			window.walletStep = function(step){
+				if (!WALLET_MULTICHAIN) step = 'cardano';
+				if (!WALLET_STEPS[step]) step = 'chain';
+				walletStepCur = step;
+				for (var k in WALLET_STEPS) {
+					var el = document.getElementById(WALLET_STEPS[k]);
+					if (el) el.style.display = (k === step) ? '' : 'none';
+				}
+				var back = document.getElementById('wallet-back');
+				if (back) back.style.display = (WALLET_MULTICHAIN && step !== 'chain') ? '' : 'none';
+				var ttl = document.getElementById('wallet-modal-title');
+				if (ttl) ttl.textContent = step === 'cardano' ? 'Cardano Wallets'
+				                         : step === 'xrpl'    ? 'XRPL Wallets'
+				                         :                      'Connect Wallet';
+				var st = document.getElementById('wallet-status');
+				if (st) { st.style.display = 'none'; st.innerHTML = ''; }
+				var rf = document.querySelector('.wallet-modal-refresh');
+				if (rf) rf.style.display = '';
+				/* Leaving the XRPL step must tear down a live sign-in. Otherwise
+				   a websocket stays open and a scan completed minutes later
+				   reloads the page out from under whatever the user is doing. */
+				if (step !== 'xrpl' && typeof xamanCancel === 'function') xamanCancel();
+			};
+
+			/* Used by wallet.js while a connect is in flight: every step hidden,
+			   status panel owns the modal. */
+			window.walletHideSteps = function(){
+				for (var k in WALLET_STEPS) {
+					var el = document.getElementById(WALLET_STEPS[k]);
+					if (el) el.style.display = 'none';
+				}
+				var back = document.getElementById('wallet-back');
+				if (back) back.style.display = 'none';
+			};
+			</script>
+			<style>
+			.wallet-modal-back{background:none;border:none;color:#5a7888;font-size:1.1rem;
+			  cursor:pointer;line-height:1;padding:0 8px 0 0;transition:color .2s}
+			.wallet-modal-back:hover{color:#00c8a0}
+			.wallet-panel-name small{display:block;margin-top:3px;font-weight:normal;
+			  font-size:.82em;color:#5a7888}
+			.wallet-panel-mark{display:flex;align-items:center;justify-content:center;
+			  background:#123049;color:#00c8a0;font-weight:700;font-size:.85rem;
+			  letter-spacing:.04em}
+			#xrpl-note{font-size:.72rem;padding:4px 0 0;line-height:1.5}
+			#xrpl-note strong{color:#c8d8e8}
+			</style>
+
 			<?php if(isset($_SESSION['userData']['user_id'])): ?>
 			<div class="wallet-modal-refresh">
 				<form id="refreshWallet" action="<?php echo basename($_SERVER['PHP_SELF']); ?>" method="post">

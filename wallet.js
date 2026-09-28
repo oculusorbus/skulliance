@@ -121,11 +121,27 @@ window.openWalletModal = function() {
 window.closeWalletModal = function() {
 	document.getElementById('wallet-modal-overlay').style.display = 'none';
 	document.getElementById('wallet-modal').style.display = 'none';
+	/* Closing resets to the top. Reopening into the XRPL grid because that is
+	   where you were last week is disorienting, and it is also the only place
+	   a stale Xaman panel could survive a close. */
+	if (typeof WALLET_MULTICHAIN !== 'undefined' && WALLET_MULTICHAIN) walletStepCur = 'chain';
 	resetWalletModal();
 };
 
+/*
+ * THE MODAL HAS STEPS NOW -- chain picker, Cardano grid, XRPL grid -- so
+ * hiding #wallet-grid is no longer the same as clearing the modal. Hiding only
+ * that one would leave the chain picker sitting above the spinner. walletStep
+ * and walletHideSteps are defined in header.php and exist on every page,
+ * including logged-out ones where there is no chain step at all.
+ */
+function walletClearSteps() {
+	if (typeof walletHideSteps === 'function') walletHideSteps();
+	else document.getElementById('wallet-grid').style.display = 'none';
+}
+
 function showWalletLoading() {
-	document.getElementById('wallet-grid').style.display = 'none';
+	walletClearSteps();
 	const refresh = document.querySelector('.wallet-modal-refresh');
 	if (refresh) refresh.style.display = 'none';
 	const status = document.getElementById('wallet-status');
@@ -140,7 +156,7 @@ function showWalletLoading() {
  * one we are waiting on is the whole diagnosis.
  */
 function showWalletConnecting(wallet) {
-	document.getElementById('wallet-grid').style.display = 'none';
+	walletClearSteps();
 	const refresh = document.querySelector('.wallet-modal-refresh');
 	if (refresh) refresh.style.display = 'none';
 	const status = document.getElementById('wallet-status');
@@ -169,7 +185,11 @@ window.resetWalletModal = function() {
 	// Without this, a failed attempt would leave the guard latched and every
 	// later click would be swallowed -- reintroducing the exact bug this fixes.
 	walletBusy = false;
-	document.getElementById('wallet-grid').style.display = '';
+	/* Back to the step the user was on, not to the top. "Try Again" after a
+	   failed Eternl connect should return to the Cardano grid -- sending them
+	   to the chain picker would make them re-pick a chain they never left. */
+	if (typeof walletStep === 'function') walletStep(walletStepCur);
+	else document.getElementById('wallet-grid').style.display = '';
 	const refresh = document.querySelector('.wallet-modal-refresh');
 	if (refresh) refresh.style.display = '';
 	const status = document.getElementById('wallet-status');

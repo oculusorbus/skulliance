@@ -382,6 +382,51 @@ on the command line and need no signature at all, so the whole read and verify
 path can be proven against a hardware-wallet address today. Only the link step
 needs an account Xaman can sign for.
 
+### 4e2. The Connect modal is two steps
+
+One chain meant one flat list. Two chains in one list would mean a Cardano
+holder scrolling past Xaman, Crossmark, GemWallet and Ledger to reach Eternl.
+So the modal asks **which chain** first, then shows that chain's wallets as
+the same logo tiles the Cardano grid already uses.
+
+**Both chains are always offered — never gated on what is installed.** The
+Cardano grid detects extensions because that is all Cardano has. XRPL's main
+wallet is **Xaman, a phone app**, so detecting at the chain level would hide
+XRPL from every desktop visitor without an extension, which is nearly all of
+them. Detection belongs on step two, where it is a statement about wallets
+rather than about a chain.
+
+**Signed-in only.** For a logged-out visitor this modal *is* the login, and
+login is Cardano — `ajax/xrpl-link.php` needs a `user_id` to link to. Those
+pages get the flat Cardano grid exactly as before, with no chain step and no
+back button, because adding a click to every sign-in to reach a chain they
+cannot use is a cost paid by everyone for nobody.
+
+| step | element | shown |
+|---|---|---|
+| chain | `#wallet-chain` | signed in |
+| Cardano | `#wallet-grid` | always (default when logged out) |
+| XRPL | `#wallet-xrpl-list` | signed in |
+
+`walletStep()` in `header.php` owns all three and the header's title and back
+button; `wallet.js` calls it rather than touching `#wallet-grid` directly, so
+a connect in flight hides every step instead of leaving the chain picker
+stacked above the spinner. **"Try Again" returns to the step you were on**,
+not to the top.
+
+Two traps worth keeping written down:
+
+- **`hidden` does not hide a `.wallet-panel`.** The attribute is a
+  UA-stylesheet `display:none`, which the class's `display:flex` outranks, so
+  every undetected tile would show. The tiles use inline `display:none`, and
+  detection clears it rather than assigning `flex`.
+- **The XRPL logos are not in the repo** — images ship by FTP. Each tile's
+  `<img>` has an `onerror` that swaps in a lettermark in the same 52px
+  square, so the grid reads correctly today and upgrades the moment the files
+  land. Needed, all in `icons/`:
+  `xrp.png`, `xaman.png`, `crossmark.png`, `gemwallet.png`, `ledger.png`
+  (`cardano.png` is already there).
+
 ### 4f. Browser extensions — Crossmark and GemWallet
 
 Built because §4d2 is not a theoretical gap: the first person to try linking a
