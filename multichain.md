@@ -289,6 +289,39 @@ does not die when the timer runs out. The UI should say "QR expired, get
 another" rather than "sign-in failed", and it must not delete the pending row
 the moment the timer hits zero.
 
+### 4d2. Xaman cannot sign for a hardware wallet — a real gap
+
+Found while testing, and it qualifies §11.1 rather than overturning it.
+
+Xaman is **mobile only** — iOS and Android, no browser extension and no
+desktop app, whatever the impersonation sites that dominate a search for
+"Xaman extension" claim. The flow is built for that and is unaffected.
+
+What is affected: **an XRPL account held on a hardware wallet can only be
+imported into Xaman read-only.** Read-only cannot sign, so such a holder
+cannot complete a SignIn. The documented workaround is to set a **regular
+key** — create a second account, configure it as a signer for the hardware
+account, and let Xaman manage that one. It works, and it is far more than a
+collector should have to do to link a wallet.
+
+The same applies to anyone whose account lives in Crossmark, GemWallet or
+Sologenic rather than Xaman.
+
+**This is the argument for the extension connector sooner rather than later.**
+§11.1 chose Xaman first because it reaches the most people, which is still
+right — but "the most" is not "all", and the ones it misses skew towards
+serious collectors. GemWallet and Crossmark use an injected-provider model
+close to CIP-30, so they are a much smaller build than Xaman was, and they
+would be additive rather than a replacement.
+
+Worth measuring before deciding: if a real fraction of the fifty cannot link,
+that is the signal to build it. If nobody complains, it was not needed.
+
+**Testing is not blocked by this.** The probe and the dry run take an address
+on the command line and need no signature at all, so the whole read and verify
+path can be proven against a hardware-wallet address today. Only the link step
+needs an account Xaman can sign for.
+
 ### 4e. Cost — settled, it is free
 
 **The Xaman platform API costs nothing**, and this was checked properly because
