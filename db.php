@@ -3485,6 +3485,41 @@ function nftExplorerUrl($conn, $asset_id, $blockchain_id = 1) {
  * because there is no explorer_account and adding one would be a migration
  * to run in the middle of an incident -- these are the two we support.
  */
+/*
+ * MARKETPLACE LINK FOR A COLLECTION ROW, so somebody who likes a reward rate
+ * can go and buy into it.
+ *
+ * Cardano keys on the policy id, which IS the marketplace's identifier.
+ * XRPL does not work that way: xrp.cafe addresses a collection by a SLUG the
+ * artist chose ("bootlegs"), which cannot be derived from issuer:taxon --
+ * there is no lookup for it in their API either way round. So the slug is
+ * stored on the row, and when it is absent this falls back to the artist's
+ * xrp.cafe profile, which is a real page listing their work rather than a
+ * guess at a URL.
+ *
+ * Returns '' when there is nothing safe to link to, and the caller renders
+ * plain text -- the same choice the Cardano path already made for a
+ * malformed policy, because a dead link reads as a broken platform while
+ * plain text reads as missing data.
+ */
+function collectionMarketUrl($policy, $blockchain_id = 1, $slug = null) {
+	$policy = trim((string)$policy);
+	if ((int)$blockchain_id === XRPL_CHAIN_ID) {
+		$slug = trim((string)$slug);
+		if ($slug !== '' && preg_match('/^[a-z0-9][a-z0-9._-]{0,63}$/i', $slug))
+			return 'https://xrp.cafe/collection/' . rawurlencode($slug);
+		/* No slug: not every collection on the ledger has a marketplace page.
+		   Two of the first twenty-one did not. */
+		$issuer = strpos($policy, ':') !== false ? strstr($policy, ':', true) : '';
+		if (preg_match('/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/', $issuer))
+			return 'https://xrp.cafe/profile/' . rawurlencode($issuer);
+		return '';
+	}
+	/* Cardano: 56 hex characters, or nothing. */
+	return preg_match('/^[0-9a-f]{56}$/i', $policy)
+		? 'https://www.wayup.io/collection/' . $policy : '';
+}
+
 function accountExplorerUrl($address, $blockchain_id = 1) {
 	return ((int)$blockchain_id === 2)
 		? 'https://bithomp.com/en/explorer/' . rawurlencode($address)
@@ -7701,7 +7736,7 @@ function getPoliciesListing($conn, $project_id=0) {
 	if($project_id != 0){
 		$where = "WHERE collections.project_id = '".$project_id."'";
 	}
-	$sql = "SELECT collections.name AS collection_name, policy, rate, projects.name AS project_name, currency, COUNT(nfts.id) AS total FROM collections INNER JOIN nfts ON nfts.collection_id = collections.id INNER JOIN users ON users.id = nfts.user_id INNER JOIN projects ON projects.id = collections.project_id ".$where." AND users.id != '0' GROUP BY collections.id ORDER BY projects.id, collections.name ASC";
+	$sql = "SELECT collections.name AS collection_name, policy, collections.blockchain_id AS blockchain_id, collections.marketplace_slug AS marketplace_slug, rate, projects.name AS project_name, currency, COUNT(nfts.id) AS total FROM collections INNER JOIN nfts ON nfts.collection_id = collections.id INNER JOIN users ON users.id = nfts.user_id INNER JOIN projects ON projects.id = collections.project_id ".$where." AND users.id != '0' GROUP BY collections.id ORDER BY projects.id, collections.name ASC";
 	$result = $conn->query($sql);
 	
 	echo "<table cellspacing='0' id='transactions'>";
@@ -7709,20 +7744,23 @@ function getPoliciesListing($conn, $project_id=0) {
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  	while($row = $result->fetch_assoc()) {
-			// Collection name links to the collection on Wayup, so a staker
-			// who sees a reward rate they like can go and buy into it without
-			// hunting for the policy themselves. The query already selected
-			// `policy`, so this costs no extra work.
+			// Collection name links to the collection on its marketplace, so a
+			// staker who sees a reward rate they like can go and buy into it
+			// without hunting for the policy themselves.
 			//
-			// Linked ONLY when the policy is a well-formed Cardano policy id
-			// (56 hex characters). A blank or malformed value would otherwise
-			// produce a link to wayup.io/collection/ -- a dead end that looks
-			// like the platform is broken rather than like missing data. Those
-			// rows render as plain text exactly as before.
-			$gpl_policy = trim((string)($row["policy"] ?? ''));
-			$gpl_name   = htmlspecialchars($row["collection_name"]);
-			$gpl_cell   = preg_match('/^[0-9a-f]{56}$/i', $gpl_policy)
-				? "<a href='https://www.wayup.io/collection/" . $gpl_policy . "' target='_blank' rel='noopener' title='Buy " . $gpl_name . " on Wayup'>" . $gpl_name . "</a>"
+			// PER CHAIN, because the identifier is not the same thing: Cardano
+			// keys on the policy id, XRPL on an artist-chosen slug that cannot
+			// be derived from issuer:taxon. collectionMarketUrl() owns that and
+			// returns '' when there is nothing safe to link to -- a dead link
+			// reads as a broken platform, plain text reads as missing data.
+			$gpl_name = htmlspecialchars($row["collection_name"]);
+			$gpl_url  = collectionMarketUrl(
+				$row["policy"] ?? '',
+				$row["blockchain_id"] ?? 1,
+				$row["marketplace_slug"] ?? null);
+			$gpl_cell = $gpl_url !== ''
+				? "<a href='" . htmlspecialchars($gpl_url) . "' target='_blank' rel='noopener'"
+				  . " title='View " . $gpl_name . " on its marketplace'>" . $gpl_name . "</a>"
 				: $gpl_name;
 
 		  	echo "<tr>";

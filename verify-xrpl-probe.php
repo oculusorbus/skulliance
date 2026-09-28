@@ -120,9 +120,16 @@ if (isset($slug)) {
 	if (!empty($c['verified'])) echo "  verified on xrp.cafe\n";
 	printf("\n  collection key: %s\n\n", $policy);
 	echo "  to register it:\n";
-	printf("    INSERT INTO collections (blockchain_id, project_id, name, policy, rate)\n");
-	printf("    VALUES (%d, <project_id>, '%s', '%s', <rate>);\n\n",
-		XRPL_CHAIN_ID, addslashes($c['collection_name']), addslashes($policy));
+	/* THE SLUG GOES IN THE ROW. It is the only way back to the xrp.cafe
+	   collection page: there is no lookup between issuer:taxon and the slug
+	   in their API in either direction, so a slug not captured at
+	   registration has to be hunted by hand later -- which is exactly what
+	   happened for the first twenty-one collections. */
+	$vanity = !empty($c['vanity_url_fragment']) ? $c['vanity_url_fragment'] : $slug;
+	printf("    INSERT INTO collections (blockchain_id, project_id, name, policy, marketplace_slug, rate)\n");
+	printf("    VALUES (%d, <project_id>, '%s', '%s', '%s', <rate>);\n\n",
+		XRPL_CHAIN_ID, addslashes($c['collection_name']), addslashes($policy),
+		addslashes($vanity));
 	echo "  project_id is the ARTIST'S EXISTING project, so their XRPL and Cardano\n";
 	echo "  collections sit under one artist. See multichain.md §3d.\n";
 	exit(0);

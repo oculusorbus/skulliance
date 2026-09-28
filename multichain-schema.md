@@ -167,6 +167,27 @@ after the fact, and impossible to reconstruct later if it is not written down
 at the time. One column now means a future policy ("only server-verified
 addresses count for X") is a query rather than asking everybody to re-link.
 
+## 2d. The marketplace slug
+
+```sql
+ALTER TABLE collections ADD COLUMN marketplace_slug VARCHAR(64) DEFAULT NULL;
+```
+
+Nullable, because Cardano does not need it and not every XRPL collection has
+one.
+
+**Cardano's policy id IS its marketplace identifier** — `wayup.io/collection/<policy>`
+works from the row as stored. **XRPL's is not.** xrp.cafe addresses a
+collection by a slug the artist chose (`bootlegs`), and there is no lookup
+between that and `issuer:taxon` in either direction in their API. So the
+slug has to be recorded when the collection is registered;
+`verify-xrpl-probe.php <slug>` now prints it as part of the `INSERT`.
+
+Where it is absent, `collectionMarketUrl()` falls back to the artist's
+xrp.cafe profile rather than guessing at a URL. Two of the first twenty-one
+collections needed that: MERRY KRAMPUS and NOTHING exist on the ledger but
+were never given a marketplace page.
+
 ## 3. XRPL collections
 
 A collection on XRPL is **issuer + taxon**, stored joined so `getPolicies()`
