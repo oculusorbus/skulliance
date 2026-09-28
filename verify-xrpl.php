@@ -264,37 +264,116 @@ function xrpl_account_nfts($api_base, $account, $fetch) {
 /* ---------- the pass ------------------------------------------------------- */
 
 /**
- * One XRPL verification pass. Mirrors verifyNFTs()'s contract so the cron can
- * call either the same way.
+ * The XRPL phase, as the nightly job runs it. One function so the scheduled
+ * path and the manual path cannot drift.
  *
- * $collections maps collections.policy -> collections.id, exactly as
- * getCollectionIDs() returns it. An NFToken whose issuer:taxon is not in there
- * is somebody's unrelated art and is skipped -- we verify what we stake, not
- * everything a wallet happens to hold.
+ * Returns a one-line report, and NEVER throws: this runs inside the job that
+ * pays everybody, so an XRPL problem must cost XRPL holders a night and cost
+ * nobody else anything.
  *
- * Returns array(asset_ids, nft_owners, ok, failed). `ok` false means at least
- * one address could not be read and the caller must not treat absence as loss.
+ * $budget bounds it for the same reason. A hanging node must not hold up the
+ * payout, and because the pass reads before it writes, running out of time
+ * aborts cleanly with yesterday's rows intact.
+ */
+function xrpl_nightly($conn, $budget = 600) {
+	try {
+		if (!function_exists('getCollectionIDs') || !function_exists('getAllAddresses'))
+			return 'xrpl: skipped (platform functions unavailable)';
+
+		$collections = getCollectionIDs($conn, XRPL_CHAIN_ID);
+		$addresses   = getAllAddresses($conn, XRPL_CHAIN_ID);
+		if (!$collections || !$addresses)
+			return sprintf('xrpl: nothing to do (%d addresses, %d collections)',
+				count($addresses), count($collections));
+
+		$res = verifyNFTsXRPL($conn, $addresses, $collections,
+			getNFTAssetIDs($conn, XRPL_CHAIN_ID), array(), array(
+				'api_base' => getChainSetting($conn, XRPL_CHAIN_ID, 'api_base', 'https://xrplcluster.com'),
+				'gateway'  => getChainSetting($conn, XRPL_CHAIN_ID, 'ipfs_gateway', 'https://ipfs.io/ipfs/'),
+				'deadline' => time() + (int)$budget,
+				'clear'    => function() use ($conn) { removeUsers($conn, XRPL_CHAIN_ID); },
+			));
+
+		if (!$res['ok']) {
+			$msg = 'xrpl: SKIPPED WRITE — could not read ' . implode(', ', $res['failed'])
+			     . '. Yesterday\'s rows stand.';
+			error_log($msg);
+			return $msg;
+		}
+		return sprintf('xrpl: %d addresses read, %d NFTs staked across %d collections',
+			$res['read'], $res['wrote'], count($collections));
+	} catch (Throwable $e) {
+		/* Never let this reach the payout step. */
+		$msg = 'xrpl: FAILED — ' . $e->getMessage();
+		error_log($msg);
+		return $msg;
+	}
+}
+
+
+/**
+ * One XRPL verification pass, READ FIRST AND WRITE SECOND.
+ *
+ * THE ORDER IS THE SAFETY. The Cardano pattern clears ownership up front and
+ * trusts the verifier to put it all back, which is fine when nothing can
+ * interrupt it. Here it cannot be: if a node is slow, or one address in fifty
+ * is unreadable, a cleared-then-partially-rebuilt table is not a smaller
+ * truth, it is a wrong one -- and the payout step reads it.
+ *
+ * So the whole ledger is read before a single row is touched. If ANY address
+ * fails, nothing is cleared and nothing is written: yesterday's rows stand,
+ * which are correct for everybody who has not traded since. A missed night is
+ * recoverable. A night where half the holders read as having sold everything
+ * is paid out and gone.
+ *
+ * $clear is the caller's chain-scoped removeUsers(), injected so this function
+ * owns the ordering rather than hoping the caller gets it right -- the clear
+ * has to happen between the two phases, and that is not a thing to leave to a
+ * comment.
+ *
+ * Returns array(asset_ids, nft_owners, ok, failed, read, wrote).
  */
 function verifyNFTsXRPL($conn, $addresses, $collections, $asset_ids,
                         $nft_owners = array(), $opt = array()) {
 	$api     = isset($opt['api_base']) ? $opt['api_base'] : 'https://xrplcluster.com';
 	$gateway = isset($opt['gateway'])  ? $opt['gateway']  : 'https://ipfs.io/ipfs/';
 	$fetch   = isset($opt['fetch'])    ? $opt['fetch']    : 'xrpl_http';
-	$failed  = array();
+	$clear   = isset($opt['clear'])    ? $opt['clear']    : null;
+	$deadline = isset($opt['deadline']) ? (int)$opt['deadline'] : 0;
 
+	/* ---- phase one: read everything, write nothing ---- */
+	$held = array(); $failed = array(); $read = 0;
 	foreach ($addresses as $address) {
 		$address = trim((string)$address);
 		if ($address === '') continue;
 
-		$got = xrpl_account_nfts($api, $address, $fetch);
-		if (!$got['ok']) {
-			/* Skip the WHOLE address rather than process what did arrive. A
-			   partial read is indistinguishable from a sale. */
-			$failed[] = $address;
+		/* A budget, because this can run inside the job that pays people and
+		   must not be able to delay it indefinitely. Running out of time is a
+		   failure like any other: it aborts the write rather than writing
+		   what it managed. */
+		if ($deadline && time() > $deadline) {
+			$failed[] = $address . ' (out of time)';
 			continue;
 		}
 
-		foreach ($got['list'] as $nft) {
+		$got = xrpl_account_nfts($api, $address, $fetch);
+		if (!$got['ok']) { $failed[] = $address; continue; }
+		$held[$address] = $got['list'];
+		$read++;
+	}
+
+	/* ---- the gate ---- */
+	if ($failed) {
+		return array('asset_ids' => $asset_ids, 'nft_owners' => $nft_owners,
+			'ok' => false, 'failed' => $failed, 'read' => $read, 'wrote' => 0);
+	}
+
+	/* ---- phase two: now it is safe to clear and rebuild ---- */
+	if ($clear !== null) call_user_func($clear);
+
+	$wrote = 0;
+	foreach ($held as $address => $list) {
+		foreach ($list as $nft) {
 			if (!isset($collections[$nft['policy']])) continue;   // not ours
 
 			$meta = xrpl_resolve_metadata($nft, $gateway, $fetch);
@@ -312,13 +391,10 @@ function verifyNFTsXRPL($conn, $addresses, $collections, $asset_ids,
 				$asset_ids  = $payload['asset_ids'];
 				$nft_owners = $payload['nft_owners'];
 			}
+			$wrote++;
 		}
 	}
 
-	return array(
-		'asset_ids'  => $asset_ids,
-		'nft_owners' => $nft_owners,
-		'ok'         => empty($failed),
-		'failed'     => $failed,
-	);
+	return array('asset_ids' => $asset_ids, 'nft_owners' => $nft_owners,
+		'ok' => true, 'failed' => array(), 'read' => $read, 'wrote' => $wrote);
 }

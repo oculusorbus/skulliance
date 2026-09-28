@@ -10,26 +10,13 @@ if(isset($argv)){
 	parse_str(implode('&', array_slice($argv, 1)), $_GET);
 }
 /*
- * THE XRPL PASS — a separate cron job, scheduled BEFORE the Cardano one.
+ * THE XRPL PASS, BY HAND. Not a scheduled job -- see the note in the main
+ * verify block below for why it runs inside that one instead.
  *
- *     php verify.php verify=xrpl
- *
- * VERIFICATION ONLY. It stops after writing ownership and runs none of the
- * tail of the Cardano block.
- *
- * The payout steps there are PLATFORM-WIDE, not per-chain: they read whatever
- * is staked and pay once. Running them in a second pass pays everybody twice.
- * They belong to exactly one job and that job is the Cardano one, which runs
- * last precisely so it sees fresh rows from both chains.
- *
- * The rest of that tail reads Cardano-only structures and would find nothing
- * here anyway.
- *
- * ORDER MATTERS: this runs first so XRPL rows are fresh when the Cardano pass
- * computes balances off them. And if this job fails outright, the Cardano job
- * still runs and still pays -- XRPL holders keep yesterday's rows, because
- * removeUsers() is chain-scoped and the Cardano pass never touches them. That
- * is the whole point of two passes (multichain.md §5b).
+ *   php verify.php verify=xrpl              run it now
+ *   php verify.php verify=xrpl dry=1        read and report, write nothing
+ *   php verify.php verify=xrpl dry=1 addr=r...   ...using one address, before
+ *                                                anybody has linked a wallet
  */
 if(isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
 	set_time_limit(0);
@@ -39,12 +26,10 @@ if(isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
 
 	/*
 	 * addr=r... uses ONE address instead of the wallets table, so the whole
-	 * pass can be checked before anybody has linked a wallet. Without it the
-	 * empty guard below exits first and a dry run proves only that the
-	 * migration landed -- which is the question this was really being asked to
-	 * answer. Dry runs only: the guard underneath refuses it for a real pass,
-	 * because staking an address nobody has proved they own is the one thing
-	 * this whole subsystem exists to prevent.
+	 * pass can be checked before anybody has linked a wallet. Dry runs only:
+	 * staking an address nobody has proved they hold is the one thing this
+	 * subsystem exists to prevent, and a convenience flag is exactly how that
+	 * kind of hole gets opened.
 	 */
 	if(!empty($_GET['addr'])){
 		if(empty($_GET['dry'])){
@@ -58,9 +43,6 @@ if(isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
 	}
 
 	if(!$xrpl_addresses || !$xrpl_collections){
-		/* Nothing linked yet, or no XRPL collection registered. Do NOT clear
-		   ownership: with no addresses to verify, a clear would zero every
-		   XRPL row and restore none of them. */
 		printf("xrpl: nothing to do — %d linked address(es), %d registered collection(s)\n",
 			count($xrpl_addresses), count($xrpl_collections));
 		if(!$xrpl_collections)
@@ -73,14 +55,11 @@ if(isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
 	}
 
 	/*
-	 * DRY RUN: php verify.php verify=xrpl dry=1
-	 *
-	 * Reads the ledger and reports, writing nothing. Worth having because the
-	 * likeliest first-run mistake is SILENT -- an issuer:taxon that is off by a
-	 * digit matches nothing, writes nothing and raises nothing, which looks
-	 * exactly like a correct run against wallets that happen to hold nothing.
-	 * This tells the two apart by printing what is on the ledger next to what
-	 * is registered.
+	 * DRY RUN. Worth having because the likeliest first-run mistake is SILENT:
+	 * an issuer:taxon off by a digit matches nothing, writes nothing and
+	 * raises nothing, which looks exactly like a correct run against wallets
+	 * that hold nothing. This prints what is on the ledger next to what is
+	 * registered, so the two can be told apart.
 	 */
 	if(!empty($_GET['dry'])){
 		$seen = array(); $unmatched = array(); $bad = array();
@@ -110,29 +89,36 @@ if(isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
 		exit(($bad || !$seen) ? 1 : 0);
 	}
 
-	removeUsers($conn, XRPL_CHAIN_ID);
-	$xrpl_asset_ids = getNFTAssetIDs($conn, XRPL_CHAIN_ID);
-
-	$xrpl = verifyNFTsXRPL($conn, $xrpl_addresses, $xrpl_collections, $xrpl_asset_ids,
-		array(), array(
-			'api_base' => getChainSetting($conn, XRPL_CHAIN_ID, 'api_base', 'https://xrplcluster.com'),
-			'gateway'  => getChainSetting($conn, XRPL_CHAIN_ID, 'ipfs_gateway', 'https://ipfs.io/ipfs/'),
-		));
-
-	printf("xrpl: %d addresses, %d collections, %d owned, %s%s\n",
-		count($xrpl_addresses), count($xrpl_collections), count($xrpl['nft_owners']),
-		$xrpl['ok'] ? 'ok' : 'PARTIAL',
-		$xrpl['failed'] ? ' (unreadable: '.implode(', ', $xrpl['failed']).')' : '');
-
-	/* A partial pass is reported loudly and exits non-zero so cron mail carries
-	   it. The rows for the addresses that DID read are correct; the ones that
-	   did not were skipped entirely rather than half-written. */
-	exit($xrpl['ok'] ? 0 : 1);
+	echo xrpl_nightly($conn) . "\n";
+	exit;
 }
 
 // Distinguish between a logged in user and verification cron job
 if(isset($_GET['verify'])){
 	set_time_limit(0);
+
+	/*
+	 * XRPL FIRST, IN THIS SAME JOB, AND NOT AS A SEPARATE CRON.
+	 *
+	 * The payout steps at the end of this block are platform-wide: they read
+	 * whatever is staked, on either chain, and pay once. Scheduling XRPL as
+	 * its own cron put a race between them -- the XRPL pass clears ownership
+	 * before rebuilding it, so a payout landing mid-pass reads a half-rebuilt
+	 * table, or an empty one, and underpays. Silently, and in money.
+	 *
+	 * Two crons with a generous gap only makes that unlikely, not impossible,
+	 * and "unlikely" is the wrong guarantee for a payout. Running it here
+	 * makes the ordering structural: the payouts below cannot start until this
+	 * has finished.
+	 *
+	 * ISOLATION IS NOT THE SAME THING AS A SEPARATE JOB, which is what the
+	 * earlier design confused. xrpl_nightly() never throws and is bounded by a
+	 * wall-clock budget, so an XRPL problem costs XRPL holders a night and
+	 * costs everybody else nothing -- which is all the isolation was ever for.
+	 */
+	require_once __DIR__ . '/verify-xrpl.php';
+	echo xrpl_nightly($conn) . "\n";
+
 	$addresses = array();
 	$addresses = getAllAddresses($conn);
 	$policies = array();

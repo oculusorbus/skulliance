@@ -373,28 +373,52 @@ The same reasoning applies to `getNFTAssetIDs()` and
 `cleanupOrphanedProtectedNFTs()`: anything that reasons about "NFTs we expected
 to see and did not" must be scoped to the chain that was actually queried.
 
-### 5c. The two passes, and which one pays
+### 5c. One job, two phases — not two crons
 
-`verify=xrpl` is **verification only**. It writes ownership and stops.
+The first design scheduled XRPL as its own cron running before the Cardano
+one. **That was wrong, and wrong in money.**
 
-The payout steps at the end of the Cardano block are **platform-wide, not
-per-chain**: they read whatever is staked and pay once. Running them in a
-second pass pays everybody twice. They belong to exactly one job, and that job
-is the Cardano one — which runs last so it sees fresh rows from both chains.
-The rest of that tail reads Cardano-only structures and would find nothing on
-another ledger regardless.
+The payout steps at the end of the Cardano block are platform-wide: they read
+whatever is staked, on either chain, and pay once. The XRPL pass clears
+ownership before rebuilding it. Two separate jobs put a race between those: a
+payout landing mid-pass reads a half-rebuilt table — or an empty one, if it
+catches the moment after the clear — and underpays. Silently.
 
-**Order:** XRPL runs first, so its rows are fresh when the Cardano pass
-computes balances off them. If the XRPL job fails outright the Cardano job
-still runs and still pays, and XRPL holders keep yesterday's rows because
-`removeUsers()` is chain-scoped and the Cardano pass never touches them.
+A generous gap between crons makes that unlikely, not impossible, and
+"unlikely" is the wrong guarantee for a payout.
 
-**The empty guard.** With no linked addresses or no registered collection the
-pass exits before `removeUsers()`. A clear with nothing to restore afterwards
-would zero every XRPL row and leave them zeroed — the precise failure §5a
-exists to prevent, arrived at from the other direction.
+So the XRPL phase runs **inside** the nightly job, first, before anything that
+pays. The ordering is then structural rather than scheduled.
 
-### 5b. Failure isolation
+**Isolation is not the same thing as a separate job**, which is what the
+earlier design confused. `xrpl_nightly()` never throws and is bounded by a
+wall-clock budget, so an XRPL problem costs XRPL holders a night and costs
+everybody else nothing — which is all the isolation was ever for.
+
+`verify=xrpl` still exists, for running it by hand and for dry runs. It is not
+scheduled.
+
+### 5d. Read everything, then write — or write nothing
+
+The Cardano pattern clears ownership up front and trusts the verifier to put
+it back. That is safe only when nothing can interrupt it.
+
+Here it can be: a slow node, one unreadable address in fifty, a budget
+running out. A cleared-then-partially-rebuilt table is not a smaller truth, it
+is a **wrong** one, and the payout step reads it.
+
+So the pass reads the whole ledger before touching a row. If **any** address
+fails, nothing is cleared and nothing is written — yesterday's rows stand, and
+they are correct for everybody who has not traded since. A missed night is
+recoverable. A night where half the holders read as having sold everything is
+paid out and gone.
+
+`removeUsers()` is injected into the pass rather than called before it, so the
+function owns the ordering instead of a comment asking the caller to get it
+right. The harness asserts it: a failed read never clears, a clean pass clears
+exactly once, and it clears **before** writing rather than after.
+
+### 5b. Failure isolation### 5b. Failure isolation
 
 The chains must fail independently. If XRPL's cluster is unreachable, the
 Cardano run must still complete and vice versa — one chain being down must

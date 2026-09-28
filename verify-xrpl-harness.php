@@ -100,6 +100,53 @@ $res = verifyNFTsXRPL(null, array('rA', 'rB'), array('rISS:1' => 9), array(),
 ok($res['ok'] === false, 'a pass with unreachable addresses is not ok');
 ok(count($res['failed']) === 2, 'both addresses are reported failed');
 ok(empty($WROTE), 'and NOTHING was written -- a half-read account must not look like a sale');
+
+/* READ BEFORE WRITE, AND DO NOT CLEAR ON A FAILED READ. The payout step reads
+   this table. A cleared-then-partially-rebuilt set is not a smaller truth, it
+   is a wrong one, and it is wrong in money. */
+$WROTE = array(); $cleared = 0;
+$oneBad = function($url, $post) use (&$calls) {
+	static $n = 0;
+	if ($post === null) return json_encode(array('name' => 'X', 'image' => ''));
+	$req = json_decode($post, true);
+	// the second address is unreadable; the first is fine
+	return $req['params'][0]['account'] === 'rGOOD' ? page(array(1)) : '';
+};
+$res9 = verifyNFTsXRPL(null, array('rGOOD', 'rBAD'), array('rISS:1' => 9), array(),
+	array(), array('fetch' => $oneBad, 'clear' => function() use (&$cleared) { $cleared++; }));
+ok($res9['ok'] === false, 'one unreadable address fails the whole pass');
+ok($cleared === 0, 'and the table was NEVER CLEARED -- yesterday\'s rows stand');
+ok(empty($WROTE), 'and the readable address was not written either');
+ok($res9['read'] === 1, 'the report still says how much was read ('.$res9['read'].')');
+
+/* the happy path still clears, in the right order */
+$WROTE = array(); $cleared = 0; $orderOk = true;
+$good = function($url, $post) {
+	if ($post === null) return json_encode(array('name' => 'X', 'image' => ''));
+	return page(array(1, 2), null, 'rISS', 1);
+};
+$res10 = verifyNFTsXRPL(null, array('rGOOD'), array('rISS:1' => 9), array(),
+	array(), array('fetch' => $good, 'clear' => function() use (&$cleared, &$WROTE, &$orderOk) {
+		if (!empty($WROTE)) $orderOk = false;   // clearing AFTER writing would be catastrophic
+		$cleared++;
+	}));
+ok($res10['ok'] === true, 'a clean pass succeeds');
+ok($cleared === 1, 'it cleared exactly once');
+ok($orderOk, 'and it cleared BEFORE writing, not after');
+ok(count($WROTE) === 2, 'both NFTs were written ('.count($WROTE).')');
+
+/* the budget is a failure, not a partial write */
+$WROTE = array(); $cleared = 0;
+$slow = function($url, $post) {
+	if ($post === null) return json_encode(array('name' => 'X', 'image' => ''));
+	return page(array(1));
+};
+$res11 = verifyNFTsXRPL(null, array('rA'), array('rISS:1' => 9), array(),
+	array(), array('fetch' => $slow, 'deadline' => time() - 1,
+	                'clear' => function() use (&$cleared) { $cleared++; }));
+ok($res11['ok'] === false, 'an exhausted time budget fails the pass');
+ok($cleared === 0, 'and still does not clear');
+echo "atomicity: ok (read all, then clear, then write — or do none of it)\n";
 echo "failure isolation: ok (partial reads are refused, not processed)\n";
 
 /* actNotFound is an unfunded account: empty, not broken. */
