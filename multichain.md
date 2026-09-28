@@ -9,6 +9,7 @@
 | `verify-xrpl-harness.php` | its tests: no network, no database |
 | `verify-xrpl-probe.php` | finds a collection's issuer and taxon from a wallet |
 | `xaman.php` + `ajax/xaman-{start,done}.php` | sign-in |
+| `xaman-probe.php` | CLI: are the Xaman credentials good? |
 | `header.php` | the Connect button, QR, and the websocket the browser holds |
 | `verify.php` | `verify=xrpl`, a second cron pass |
 | `db.php` | `removeUsers()`, `getAllAddresses()`, `getNFTAssetIDs()`, `getCollectionIDs()` chain-scoped; `createNFT()` and `createAddress()` record a chain; `getChainSetting()` |
@@ -29,6 +30,9 @@ existing query keeps returning what it returned before.
 $xaman_api_key    = "...";   // from https://apps.xaman.dev — free
 $xaman_api_secret = "...";
 ```
+Both are UUIDs, and the console at apps.xaman.dev is signed into **with the
+Xaman phone app**, so install it first. Step-by-step in §4a2. Confirm them
+with `php xaman-probe.php` before touching the UI.
 
 **3. Find the collection.** An artist will send a marketplace link, so the
 slug from it is the whole ask:
@@ -218,6 +222,52 @@ So this adds a server-side component the Cardano path does not have. It also
 adds a **third-party dependency on the login path** — CIP-30 is local, Xaman is
 a service, and if it is down those users cannot connect. Worth knowing before
 it happens rather than during.
+
+### 4a2. Getting the API credentials
+
+Free, and the whole thing takes about five minutes. The one thing worth
+knowing up front: **the developer console is itself signed into with Xaman**,
+so the app has to be on your phone before you can get a key for it.
+
+1. Install **Xaman** (iOS or Android) and create or import an account in it.
+2. Go to **https://apps.xaman.dev** and sign in — it shows a QR you scan with
+   that app. There is no password login.
+3. Create an application. Name and icon are what a user sees on their phone
+   when they approve the sign-in, so use Skulliance's.
+4. Open it and copy the **API Key** and **API Secret**. Both are UUIDs.
+
+Leave the webhook field empty. Webhooks are for being *told* a payload
+resolved; this design reads the result on demand instead, because the browser
+is already holding the websocket (§4d) and a webhook would be a second public
+endpoint to secure for no gain.
+
+Then, in `credentials/db_credentials.php` beside `$blockfrost_project_id`:
+
+```php
+$xaman_api_key    = "1a2b3c4d-5e6f-7081-92a3-b4c5d6e7f809";
+$xaman_api_secret = "9f8e7d6c-5b4a-4392-8170-6f5e4d3c2b1a";
+```
+
+Plain globals, not constants, matching `$blockfrost_project_id` — `xaman.php`
+picks them up with `global`. **The secret never reaches the browser**: anyone
+holding it can create sign requests that look like they came from Skulliance.
+
+Check them without touching the UI:
+
+```
+php xaman-probe.php
+```
+
+It creates one real SignIn payload and prints the QR. Scan it to test the
+round trip; ignore it and it expires by itself.
+
+**Why a probe rather than reading the modal's error.** The Connect modal can
+only ever say "Could not reach Xaman" — a stranger clicking Connect must not
+be told whether the platform's API secret is missing, malformed or revoked.
+That is right for the modal and useless during setup, so the specific answer
+lives in a CLI tool only the key's owner runs. It names which of the two is
+missing, rejects a non-UUID before spending a call, and catches the likeliest
+paste error of all: the same value in both slots.
 
 ### 4b. The SignIn pseudo-transaction
 
