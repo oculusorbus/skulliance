@@ -546,20 +546,24 @@ function xrpl_account_nfts($api_base, $account, $fetch) {
 function xrpl_check_schema($conn) {
 	$need = array('asset_id' => 64, 'asset_name' => 64);
 	$bad  = array();
-	$res = @$conn->query(
-		"SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH len
-		   FROM information_schema.COLUMNS
-		  WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'nfts'
-		    AND COLUMN_NAME IN ('asset_id','asset_name')");
-	/* No answer is not a failure. Some hosts restrict information_schema, and
-	   refusing to stake everybody because a metadata table is unreadable
-	   would be a worse bug than the one this guards against. */
+
+	/* SHOW COLUMNS, NOT information_schema.
+	   This database runs under a cPanel MySQL user with NO access to
+	   information_schema -- "#1044 Access denied" -- so the first version of
+	   this check could never have fired on the one server it exists to
+	   protect. A guard that silently passes is worse than no guard, because
+	   it reads as evidence. SHOW COLUMNS needs only the table privileges the
+	   app already has. */
+	$res = @$conn->query("SHOW COLUMNS FROM nfts");
 	if (!$res) return '';
 	while ($row = $res->fetch_assoc()) {
-		$col = $row['COLUMN_NAME'];
-		$len = $row['len'];
-		if ($len !== null && (int)$len < $need[$col])
-			$bad[] = sprintf("nfts.%s holds %d chars, needs %d", $col, (int)$len, $need[$col]);
+		$col = isset($row['Field']) ? $row['Field'] : '';
+		if (!isset($need[$col])) continue;
+		/* "varchar(50)". A TEXT column reports no length and is plenty. */
+		if (!preg_match('/^\s*(?:var)?char\s*\(\s*(\d+)\s*\)/i',
+		                isset($row['Type']) ? $row['Type'] : '', $m)) continue;
+		if ((int)$m[1] < $need[$col])
+			$bad[] = sprintf("nfts.%s holds %d chars, needs %d", $col, (int)$m[1], $need[$col]);
 	}
 	if (!$bad) return '';
 	return 'XRPL writing is blocked: ' . implode('; ', $bad)

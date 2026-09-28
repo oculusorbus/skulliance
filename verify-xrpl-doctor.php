@@ -70,6 +70,7 @@ if ($schema === '') {
 	echo "  nfts.asset_id / asset_name are wide enough for a 64-char NFTokenID.\n";
 } else {
 	echo "  [!!] " . $schema . "\n";
+	echo "       SHOW COLUMNS FROM nfts;          -- match NOT NULL to what it says\n";
 	echo "       ALTER TABLE nfts MODIFY asset_id   VARCHAR(64) NOT NULL;\n";
 	echo "       ALTER TABLE nfts MODIFY asset_name VARCHAR(64) NOT NULL;\n";
 	$problems[] = 'the nfts table cannot hold a full NFTokenID';

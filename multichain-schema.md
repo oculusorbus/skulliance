@@ -87,15 +87,17 @@ unique key on that column is simply wrong for this schema.
 **Run this. It is not optional, and skipping it corrupts silently.**
 
 ```sql
--- Check what you have first; match the NULL/collation to SHOW CREATE TABLE nfts.
-SELECT COLUMN_NAME, CHARACTER_MAXIMUM_LENGTH, IS_NULLABLE
-  FROM information_schema.COLUMNS
- WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'nfts'
-   AND COLUMN_NAME IN ('asset_id','asset_name');
+-- Check what you have first. NOT information_schema: the cPanel MySQL user
+-- has no access to it (#1044), which is also why xrpl_check_schema() reads
+-- SHOW COLUMNS instead.
+SHOW COLUMNS FROM nfts;
 
 ALTER TABLE nfts MODIFY asset_id   VARCHAR(64) NOT NULL;
 ALTER TABLE nfts MODIFY asset_name VARCHAR(64) NOT NULL;
 ```
+
+Match `NOT NULL` to what `SHOW COLUMNS` reports in its Null column — a
+`MODIFY` restates the whole definition, so a mismatch quietly changes it.
 
 `nfts.asset_id` was `VARCHAR(50)`, sized for a **CIP-14 fingerprint** —
 `asset1...`, about 44 characters. An **XRPL NFTokenID is 64 hex
