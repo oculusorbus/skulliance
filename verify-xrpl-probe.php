@@ -29,15 +29,44 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
 require __DIR__ . '/verify-xrpl.php';
 
-$account = isset($argv[1]) ? trim($argv[1]) : '';
-$api     = isset($argv[2]) ? trim($argv[2]) : 'https://xrplcluster.com';
+$arg = isset($argv[1]) ? trim($argv[1]) : '';
+$api = isset($argv[2]) ? trim($argv[2]) : 'https://xrplcluster.com';
 
-if ($account === '') {
-	echo "usage: php verify-xrpl-probe.php <r-address> [node-url]\n";
+if ($arg === '') {
+	echo "usage: php verify-xrpl-probe.php <r-address | NFTokenID> [node-url]\n\n";
+	echo "  r-address   lists every collection that wallet holds\n";
+	echo "  NFTokenID   decodes ONE NFT to its collection -- no wallet needed,\n";
+	echo "              nothing has to be delivered, works from any NFT's id\n";
 	exit(1);
 }
+
+/*
+ * AN NFTokenID IS ENOUGH, and this is the path to use in practice.
+ *
+ * Artists mint through xrp.cafe and think in COLLECTIONS. They do not know
+ * what a taxon is and should not need to -- the minting tool assigns one per
+ * collection and they never see it. So the only thing to ask an artist for is
+ * a link to any NFT in the collection; its id carries the issuer and taxon,
+ * and nothing has to be sent anywhere.
+ */
+if (preg_match('/^[0-9A-Fa-f]{64}$/', $arg)) {
+	$d = xrpl_decode_nftoken_id($arg);
+	if (!$d) { echo "That is 64 hex characters but did not decode as an NFTokenID.\n"; exit(1); }
+	printf("NFTokenID %s\n\n", strtoupper($arg));
+	printf("  issuer %s\n  taxon  %d\n  serial %d\n\n", $d['issuer'], $d['taxon'], $d['serial']);
+	printf("  collection key: %s\n\n", $d['policy']);
+	echo "  to register it:\n";
+	printf("    INSERT INTO collections (blockchain_id, project_id, name, policy, rate)\n");
+	printf("    VALUES (%d, <project_id>, '<name>', '%s', <rate>);\n\n",
+		XRPL_CHAIN_ID, addslashes($d['policy']));
+	echo "  project_id is the ARTIST'S EXISTING project, so their XRPL and Cardano\n";
+	echo "  collections sit under one artist. See multichain.md §3d.\n";
+	exit(0);
+}
+
+$account = $arg;
 if (!preg_match('/^r[rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz]{24,34}$/', $account)) {
-	echo "That does not look like an XRPL classic address (should start with r).\n";
+	echo "That is neither an XRPL address (starts with r) nor a 64-hex NFTokenID.\n";
 	exit(1);
 }
 

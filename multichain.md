@@ -780,6 +780,49 @@ addition:
 That last point is the real work. It is a schema question, not a chain
 question.
 
+## 6d. Onboarding a collection — what to ask an artist for
+
+**An NFTokenID. That is the whole ask.**
+
+Artists mint through xrp.cafe and think in **collections**. They do not know
+what a taxon is, have never set one, and should not have to. Asking them for
+"your issuer address and taxon" is asking them to learn the ledger's internals
+to list their own art.
+
+They do not need to, because **the minting tool assigns a taxon per
+collection** and it can be read back off any NFT. Checked against a real
+artist: 14 distinct taxons across 62 NFTs still held (0, 1, 2, 3, 4, 6, 10,
+11, 12, 300, 420, 1234, 2015, 3999). The grouping they see on xrp.cafe **is**
+the taxon; they simply never see the number.
+
+So the workflow is:
+
+1. Artist sends a link to **any one NFT** in the collection
+2. `php verify-xrpl-probe.php <NFTokenID>`
+3. Run the `INSERT` it prints
+
+No wallet, no transfer, nothing delivered, no technical vocabulary. An
+NFTokenID is 64 hex characters packing flags, transfer fee, issuer, taxon and
+sequence — `xrpl_decode_nftoken_id()` unpacks it offline.
+
+**The taxon is scrambled inside the id.** XLS-20 mixes it with the sequence so
+sequential mints do not produce adjacent ids; `account_nfts` returns it
+already unscrambled, which is why the arithmetic lives in exactly one
+function. Get it wrong and you get a plausible-looking wrong number rather
+than an error — so the decoder is checked against ids whose taxons were
+confirmed independently through `account_nfts`.
+
+### The taxon-0 caveat, in proportion
+
+An earlier draft warned that an artist using taxon 0 for everything would make
+`issuer:0` mean their entire output. That is possible in principle and worth a
+glance, but it was not true of the artist checked — taxon 0 was simply one of
+their fourteen collections.
+
+The probe shows the taxon before anything is registered, so the check is: if
+the artist has several collections and they all come back `:0`, ask. Otherwise
+proceed.
+
 ## 7. Rarity and traits
 
 Rarity tables are per-collection and derived from on-chain frequency (see

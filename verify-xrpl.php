@@ -203,6 +203,71 @@ function xrpl_storable_image($img) {
 	return $norm;
 }
 
+/**
+ * Decode an NFTokenID into the collection it belongs to.
+ *
+ * WHY THIS EXISTS: artists mint through xrp.cafe and think in COLLECTIONS.
+ * They do not know what a taxon is and should not have to -- the minting tool
+ * assigns one per collection and the artist never sees it. So the only thing
+ * anybody needs to hand over is one NFT from the collection, and this reads
+ * the rest off it.
+ *
+ * An NFTokenID is 64 hex characters packing:
+ *   flags(4) transferFee(4) issuer(40) taxon(8) sequence(8)
+ *
+ * THE TAXON IS SCRAMBLED in the id -- XLS-20 mixes it with the sequence so
+ * that sequential mints do not produce adjacent ids. account_nfts returns it
+ * already unscrambled, which is why this is the only place the arithmetic
+ * appears. Getting it wrong yields a plausible-looking wrong number rather
+ * than an error.
+ *
+ * Returns array(issuer, taxon, serial, policy) or null.
+ */
+function xrpl_decode_nftoken_id($id) {
+	$id = strtoupper(trim((string)$id));
+	if (!preg_match('/^[0-9A-F]{64}$/', $id)) return null;
+
+	$issuer_hex = substr($id, 8, 40);
+	$scrambled  = hexdec(substr($id, 48, 8));
+	$sequence   = hexdec(substr($id, 56, 8));
+	/* Unscramble: XOR with (384160001 * sequence + 2459) mod 2^32. */
+	$mask  = (384160001 * $sequence + 2459) % 4294967296;
+	$taxon = ($scrambled ^ $mask) & 0xFFFFFFFF;
+
+	$issuer = xrpl_account_id_to_address($issuer_hex);
+	if ($issuer === '') return null;
+	return array(
+		'issuer' => $issuer,
+		'taxon'  => $taxon,
+		'serial' => $sequence,
+		'policy' => xrpl_collection_key($issuer, $taxon),
+	);
+}
+
+/** A 20-byte account id as a classic r-address: base58check, XRPL alphabet. */
+function xrpl_account_id_to_address($hex) {
+	$raw = @hex2bin($hex);
+	if ($raw === false || strlen($raw) !== 20) return '';
+	$payload = "\x00" . $raw;
+	$check   = substr(hash('sha256', hash('sha256', $payload, true), true), 0, 4);
+	return xrpl_base58($payload . $check);
+}
+
+function xrpl_base58($bytes) {
+	$ab = 'rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz';
+	$num = '0';
+	for ($i = 0; $i < strlen($bytes); $i++) {
+		$num = bcadd(bcmul($num, '256'), (string)ord($bytes[$i]));
+	}
+	$out = '';
+	while (bccomp($num, '0') > 0) {
+		$out = $ab[(int)bcmod($num, '58')] . $out;
+		$num = bcdiv($num, '58', 0);
+	}
+	for ($i = 0; $i < strlen($bytes) && $bytes[$i] === "\x00"; $i++) $out = $ab[0] . $out;
+	return $out;
+}
+
 /* ---------- the network ---------------------------------------------------- */
 
 /** The default fetcher. Replaced wholesale by the harness. */
