@@ -344,10 +344,21 @@ once at load — an extension's content script can land after the page script
 does, and a one-shot check tells somebody who has it installed that they do
 not. A button only appears for a wallet actually present.
 
-**The SDKs load on click, from pinned CDN versions.** Both ship ESM,
-`wallet.js` is already `type="module"`, and this codebase has no build step, so
-a dynamic `import()` is the least-resistance path — and importing on click
-keeps ~60KB per SDK off every page view for the many people who use neither.
+**The SDKs are vendored and load on click.** Served from our own origin, not a
+CDN: these run in a page that can reach a wallet, and `import()` cannot carry
+Subresource Integrity, so a pinned CDN version protects against a bad release
+but not against a compromised CDN.
+
+**UMD rather than ESM, and the numbers decided it.** Crossmark's ESM graph is
+**713 files and 2.8MB** — it pulls the whole of `xrpl.js`, and 49 of those
+fetches fail outright. Its UMD bundle is one self-contained 57KB file.
+GemWallet's is one 64KB file. Loading on click still keeps both off every page
+view for the many people who use neither.
+
+The trade is one ugly global: Crossmark's UMD spreads its exports onto
+`window`, so the SDK arrives as `window.default`. That is the price of a
+single file over a 713-file graph, and it is written down rather than left to
+surprise somebody.
 
 Crossmark signs the same `SignIn` pseudo-transaction Xaman uses:
 signature-only, never submitted, no fee, works on an empty account. GemWallet

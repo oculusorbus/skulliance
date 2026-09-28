@@ -394,6 +394,30 @@
 			   because an extension's content script can land after the page
 			   script does and a one-shot check tells somebody who has it
 			   installed that they do not. */
+			/* Load a vendored UMD bundle once, by script tag, and resolve the
+			   global it defines. Served from our own origin: these SDKs run in
+			   a page that can reach a wallet, and import() cannot carry
+			   Subresource Integrity, so a pinned CDN version protects against a
+			   bad release but not a compromised CDN. See vendor/xrpl/README.md. */
+			var vendorLoaded = {};
+			function loadVendor(src, pick){
+				var got = pick();
+				if (got) return Promise.resolve(got);
+				if (!vendorLoaded[src]) {
+					vendorLoaded[src] = new Promise(function(resolve, reject){
+						var el = document.createElement('script');
+						el.src = src;
+						el.onload = function(){
+							var v = pick();
+							v ? resolve(v) : reject(new Error('Wallet library loaded but exposed nothing.'));
+						};
+						el.onerror = function(){ reject(new Error('Could not load the wallet library.')); };
+						document.head.appendChild(el);
+					});
+				}
+				return vendorLoaded[src];
+			}
+
 			var XRPL_EXT = {
 				crossmark: {
 					el: 'crossmark-btn',
@@ -401,8 +425,13 @@
 					/* Signs the same SignIn pseudo-transaction Xaman uses:
 					   signature only, never submitted, no fee. */
 					address: function(){
-						return import('https://esm.sh/@crossmarkio/sdk@0.4.0').then(function(m){
-							return (m.default || m).methods.signInAndWait();
+						return loadVendor('vendor/xrpl/crossmark-sdk-0.4.0.umd.js', function(){
+							/* The UMD spreads its exports onto window, so the SDK
+							   arrives as window.default. Ugly, and the price of a
+							   single self-contained file over a 713-file graph. */
+							return window.default && window.default.methods ? window.default : null;
+						}).then(function(sdk){
+							return sdk.methods.signInAndWait();
 						}).then(function(r){
 							return r && r.response && r.response.data && r.response.data.address;
 						});
@@ -412,8 +441,10 @@
 					el: 'gemwallet-btn',
 					has: function(){ return typeof window.gemWallet !== 'undefined'; },
 					address: function(){
-						return import('https://esm.sh/@gemwallet/api@3.8.0').then(function(m){
-							return m.getAddress();
+						return loadVendor('vendor/xrpl/gemwallet-api-3.8.0.umd.js', function(){
+							return window.GemWalletApi || null;
+						}).then(function(api){
+							return api.getAddress();
 						}).then(function(r){
 							/* type is "response" or "reject" -- a decline is not
 							   an error, it is an answer. */
