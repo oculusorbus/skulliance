@@ -332,12 +332,12 @@
 			<?php if($wallet_multichain): ?>
 			<div id="wallet-chain" class="wallet-grid">
 				<div class="wallet-panel" onclick="walletStep('cardano')" title="Cardano wallets">
-					<img class="wallet-panel-icon" src="icons/cardano.png" alt=""
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/cardano.png" alt=""
 					     onerror="walletMark(this,'ADA')">
 					<span class="wallet-panel-name">Cardano<small>Lace, Eternl, Vespr&hellip;</small></span>
 				</div>
 				<div class="wallet-panel" onclick="walletStep('xrpl')" title="XRPL wallets">
-					<img class="wallet-panel-icon" src="icons/xrp.png" alt=""
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/xrp.png" alt=""
 					     onerror="walletMark(this,'XRP')">
 					<span class="wallet-panel-name">XRPL<small>Xaman, Crossmark&hellip;</small></span>
 				</div>
@@ -377,19 +377,19 @@
 			         .wallet-panel does not. */ ?>
 			<div id="wallet-xrpl-list" class="wallet-grid" style="display:none">
 				<div class="wallet-panel" onclick="xamanConnect()" title="Connect with Xaman">
-					<img class="wallet-panel-icon" src="icons/xaman.png" alt=""
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/xaman.png" alt=""
 					     onerror="walletMark(this,'XA')">
 					<span class="wallet-panel-name">Xaman<small>Scan with your phone</small></span>
 				</div>
 				<div class="wallet-panel" id="crossmark-btn" style="display:none"
 				     onclick="xrplExtConnect('crossmark')" title="Connect with Crossmark">
-					<img class="wallet-panel-icon" src="icons/crossmark.png" alt=""
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/crossmark.png" alt=""
 					     onerror="walletMark(this,'CM')">
 					<span class="wallet-panel-name">Crossmark<small>Browser extension</small></span>
 				</div>
 				<div class="wallet-panel" id="gemwallet-btn" style="display:none"
 				     onclick="xrplExtConnect('gemwallet')" title="Connect with GemWallet">
-					<img class="wallet-panel-icon" src="icons/gemwallet.png" alt=""
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/gemwallet.png" alt=""
 					     onerror="walletMark(this,'GW')">
 					<span class="wallet-panel-name">GemWallet<small>Browser extension</small></span>
 				</div>
@@ -400,7 +400,7 @@
 				         so the only browser form came from a transpiling CDN). */ ?>
 				<div class="wallet-panel" id="ledger-btn" style="display:none"
 				     onclick="ledgerConnect()" title="Connect a Ledger">
-					<img class="wallet-panel-icon" src="icons/ledger.png" alt=""
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/ledger.png" alt=""
 					     onerror="walletMark(this,'L')">
 					<span class="wallet-panel-name">Ledger<small>Hardware wallet</small></span>
 				</div>
@@ -704,11 +704,13 @@
 			var WALLET_STEPS = {chain:'wallet-chain', cardano:'wallet-grid', xrpl:'wallet-xrpl-list'};
 			var walletStepCur = WALLET_MULTICHAIN ? 'chain' : 'cardano';
 
-			/* An icon slot with no file yet. The XRPL logos are not in the repo
-			   -- images ship by FTP -- so rather than let four broken-image
-			   glyphs represent the wallets, a missing one becomes a lettermark
-			   in the same 52px square. Drop the real PNG in and it takes over
-			   with no code change. */
+			/* SAFETY NET, NOT THE EXPECTED STATE. All six logos are on the
+			   server (verified 200) -- but they live there and not in the
+			   repo, because images ship by FTP. So a fresh deploy to a host
+			   that has not had them uploaded, or one bad path, would
+			   otherwise put four broken-image glyphs where the wallet logos
+			   go. A missing one becomes a lettermark in the same 52px square
+			   instead, and the real file takes over with no code change. */
 			function walletMark(img, txt){
 				if (!img || !img.parentNode) return;
 				var s = document.createElement('span');

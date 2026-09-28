@@ -420,12 +420,27 @@ Two traps worth keeping written down:
   UA-stylesheet `display:none`, which the class's `display:flex` outranks, so
   every undetected tile would show. The tiles use inline `display:none`, and
   detection clears it rather than assigning `flex`.
-- **The XRPL logos are not in the repo** — images ship by FTP. Each tile's
-  `<img>` has an `onerror` that swaps in a lettermark in the same 52px
-  square, so the grid reads correctly today and upgrades the moment the files
-  land. Needed, all in `icons/`:
-  `xrp.png`, `xaman.png`, `crossmark.png`, `gemwallet.png`, `ledger.png`
-  (`cardano.png` is already there).
+- **The logos live on the server, not in the repo** — images ship by FTP.
+  All six are uploaded and verified 200, but a host that has not had them
+  uploaded would show four broken-image glyphs where the wallet logos go, so
+  each `<img>` keeps an `onerror` that swaps in a lettermark in the same 52px
+  square. They are also `loading="lazy"`: ~100KB of logos should not ride on
+  every page view when most visitors never open the modal.
+
+  | `icons/` | source | prep |
+  |---|---|---|
+  | `cardano.png` | pre-existing | — |
+  | `xrp.png` | xrpl.org symbol SVG | recoloured white; it ships `#141414` |
+  | `xaman.png` | xaman.app | as-is |
+  | `crossmark.png` | crossmark.io (1600²) | downscaled |
+  | `gemwallet.png` | gemwallet.app SVG | rasterised |
+  | `ledger.png` | ledger.com | **inverted** — black-on-white became white-on-transparent |
+
+  All 256×256 PNG. Square app icons (Xaman, Crossmark) are full-bleed since
+  they carry their own rounded corners; bare marks (XRP, GemWallet, Ledger)
+  got 10–14% padding so they do not touch the tile edge. **Two would have
+  been invisible or wrong if dropped in unmodified** — worth knowing before
+  adding a seventh.
 
 ### 4f. Browser extensions — Crossmark and GemWallet
 
