@@ -455,6 +455,34 @@ defence up against code from a CDN.
 `vendor/ledger/refresh.py` regenerates the tree and rewrites the imports, so
 updating is one command rather than an afternoon.
 
+#### But vendoring alone does not prove authenticity
+
+Serving our own copy removes the CDN from the **runtime** trust path. It does
+not prove that what was fetched **at vendoring time** was genuine — a
+compromised CDN at that moment is simply baked in permanently, which is
+arguably worse, because it then never changes again.
+
+The chain has to reach something the CDN does not control. npm publishes a
+SHA-512 integrity hash per package version, so `vendor/verify.sh` walks:
+
+```
+registry integrity  ->  tarball  ->  the file we serve
+```
+
+Both extension SDKs pass: byte-identical to the npm-verified tarballs.
+
+**`vendor/ledger/` does not, and cannot as it stands.** Those files came from
+esm.sh, which transpiles the source and rewrites its imports — the output is a
+transformation, so it can never match a tarball. The chain of custody stops at
+esm.sh.
+
+That is the weakest link in this feature and it is on the path with a hardware
+wallet at the end of it. `vendor/ledger/UNVERIFIED.md` says so plainly and
+records the fix: both packages ship real ESM in `lib-es/`, so a verified
+vendoring is possible — extract from verified tarballs, rewrite the bare
+imports, and supply a `Buffer` polyfill from a verified source. A few hours,
+and it closes the loop.
+
 *Still needs testing against a real device before launch.* The libraries are
 node-oriented and the browser shims are esm.sh's; they parse and the graph is
 complete, but nothing here can prove a Ledger answers until one is plugged
