@@ -174,7 +174,10 @@ function xrpl_http($url, $post) {
 	}
 	$body = curl_exec($ch);
 	$code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-	curl_close($ch);
+	/* No curl_close(): it has had no effect since PHP 8.0 and is deprecated
+	   from 8.5, and the notice would print AHEAD of this endpoint's JSON and
+	   break the client's parse. The handle is freed when it goes out of
+	   scope. Same trap dhc-json.php already documents. */
 	if ($body === false || $code >= 400) return '';
 	return $body;
 }

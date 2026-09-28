@@ -2896,12 +2896,20 @@ function updateUser($conn) {
 	}
 }
 
-// Create address for user
-function createAddress($conn, $stake_address, $address) {
+/*
+ * Create address for user.
+ *
+ * $blockchain_id is last and defaults to 1 (Cardano), so every existing caller
+ * is unchanged. An XRPL account goes in BOTH columns: stake_address because
+ * getAllAddresses() reads that one and the verifier needs it, address because
+ * on XRPL there is no separate payment address to distinguish it from -- the
+ * account IS the address.
+ */
+function createAddress($conn, $stake_address, $address, $blockchain_id = 1) {
 	$stake_address = $conn->real_escape_string($stake_address);
 	$address       = $conn->real_escape_string($address);
-	$sql = "INSERT INTO wallets (stake_address, address, user_id)
-	VALUES ('".$stake_address."', '".$address."', '".$_SESSION['userData']['user_id']."')";
+	$sql = "INSERT INTO wallets (stake_address, address, user_id, blockchain_id)
+	VALUES ('".$stake_address."', '".$address."', '".$_SESSION['userData']['user_id']."', '".(int)$blockchain_id."')";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {
