@@ -566,7 +566,10 @@ function verifyNFTsXRPL($conn, $addresses, $collections, $asset_ids,
 				$meta['image'],        // image       -> ipfs:// , stripped by processNFT
 				$nft['id'],            // fingerprint -> nfts.asset_id
 				$address,
-				$asset_ids, $nft_owners, $collections
+				$asset_ids, $nft_owners, $collections,
+				/* Without this the row lands as Cardano and the Cardano pass
+				   zeroes it the same night. See processNFT()'s header. */
+				XRPL_CHAIN_ID
 			);
 			if (is_array($payload)) {
 				$asset_ids  = $payload['asset_ids'];

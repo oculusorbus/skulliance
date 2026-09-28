@@ -59,6 +59,37 @@ foreach ($misfiled as $r) {
 	$problems[] = "collection #{$r['id']} is on the wrong chain";
 }
 
+/* ---- 1b. rows on the wrong chain --------------------------------------- */
+hr('1b. NFTs filed under the wrong chain');
+/* processNFT() omitted the chain id until this was found, so every XRPL row
+   written before that fix claims to be Cardano. It is invisible from the
+   XRPL side and, worse, the CARDANO pass zeroes it and cannot put it back.
+   An nfts row whose collection is XRPL must be XRPL too -- the collection is
+   the authority, so the repair is unambiguous. */
+$bad = $conn->query("SELECT n.id, n.asset_id, n.blockchain_id, c.name
+                     FROM nfts n JOIN collections c ON c.id = n.collection_id
+                     WHERE c.blockchain_id = " . XRPL_CHAIN_ID . "
+                       AND n.blockchain_id <> " . XRPL_CHAIN_ID . " LIMIT 10");
+$nbad = 0;
+while ($bad && $r = $bad->fetch_assoc()) {
+	printf("  [!!] nft #%s  chain %s  %s  %s\n",
+		$r['id'], $r['blockchain_id'], $r['name'], substr($r['asset_id'], 0, 20) . '…');
+	$nbad++;
+}
+if (!$nbad) echo "  none.\n";
+else {
+	$cnt = $conn->query("SELECT COUNT(*) c FROM nfts n JOIN collections c ON c.id = n.collection_id
+	                     WHERE c.blockchain_id = " . XRPL_CHAIN_ID . "
+	                       AND n.blockchain_id <> " . XRPL_CHAIN_ID);
+	$tot = $cnt ? (int)$cnt->fetch_assoc()['c'] : $nbad;
+	printf("\n  %d row(s) total. Repair (the collection is the authority):\n", $tot);
+	printf("    UPDATE nfts n JOIN collections c ON c.id = n.collection_id\n");
+	printf("       SET n.blockchain_id = c.blockchain_id\n");
+	printf("     WHERE c.blockchain_id = %d AND n.blockchain_id <> %d;\n",
+		XRPL_CHAIN_ID, XRPL_CHAIN_ID);
+	$problems[] = "$tot NFT row(s) filed under the wrong chain";
+}
+
 /* ---- 2. the wallet ----------------------------------------------------- */
 hr('2. The wallet');
 if (preg_match('/^\d+$/', $arg)) {

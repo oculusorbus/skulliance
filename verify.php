@@ -606,7 +606,25 @@ function processNFTMetadata($conn, $tokenresponsedata, $address, $asset_ids, $nf
 	return $payload;
 }
 
-function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids, $nft_owners, $collections){
+/*
+ * $blockchain_id is LAST and defaults to 1 so every Cardano caller is
+ * untouched -- but it has to exist. createNFT() also defaults it to 1, so
+ * omitting it here wrote every XRPL NFT as Cardano: a row that looks perfect,
+ * errors nowhere, and is wrong in three compounding ways.
+ *
+ *   1. getNFTAssetIDs($conn, 2) never sees it, so the next XRPL pass thinks
+ *      the NFT is new and creates ANOTHER row. Every run. Forever.
+ *   2. removeUser($conn, $user, 2) never clears it, so ownership never resets
+ *      when the holder sells.
+ *   3. removeUsers($conn, 1) DOES zero it -- the Cardano pass clears it and
+ *      the Cardano pass cannot put it back, because Koios has never heard of
+ *      it. The holder's NFTs disappear on the first nightly run after linking.
+ *
+ * Found reading the code after the first XRPL tester reported nothing showed
+ * up. It is not that bug -- nothing had been written for them at all -- but
+ * it would have been the next one, and #3 is silent and total.
+ */
+function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint, $address, $asset_ids, $nft_owners, $collections, $blockchain_id = 1){
 	if(isset($image)){
 		// Dank Bit Fix
 		if(is_array($image)){
@@ -648,14 +666,14 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 					$nft_owners[] = $user_id."-".$fingerprint;
 				}else{
 					//$collection_id = getCollectionId($conn, $policy_id);
-					$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collections[$policy_id], $user_id);
+					$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collections[$policy_id], $user_id, $blockchain_id);
 					$asset_ids[$last_id] = $fingerprint;
 					$nft_owners[] = $user_id."-".$fingerprint;
 				}
 			}
 		}else{
 			//$collection_id = getCollectionId($conn, $policy_id);
-			$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collections[$policy_id], $user_id);
+			$last_id = createNFT($conn, $fingerprint, $asset_name, $name, $ipfs, $collections[$policy_id], $user_id, $blockchain_id);
 			$asset_ids[$last_id] = $fingerprint;
 			$nft_owners[] = $user_id."-".$fingerprint;
 		}

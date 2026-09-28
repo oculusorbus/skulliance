@@ -1050,6 +1050,41 @@ also means any row added without naming the column looks perfect and is
 invisible to the XRPL pass. The doctor flags an `issuer:taxon` policy or an
 r-address filed under chain 1 specifically.
 
+## 6d4. The chain id has to reach the INSERT
+
+`createNFT()` takes `$blockchain_id` last and defaults it to 1, which is what
+keeps every Cardano caller unchanged. `processNFT()` sat in between and did
+not pass it, so **every XRPL NFT was written as Cardano** — a row that looks
+perfect and errors nowhere, wrong in three compounding ways:
+
+1. `getNFTAssetIDs($conn, 2)` never sees it, so the next XRPL pass thinks the
+   NFT is new and creates **another** row. Every run.
+2. `removeUser($conn, $user, 2)` never clears it, so ownership never resets
+   when the holder sells.
+3. `removeUsers($conn, 1)` **does** zero it. The Cardano pass clears it and
+   cannot put it back, because Koios has never heard of it. The holder's NFTs
+   disappear on the first nightly run after linking.
+
+Fixed by threading `$blockchain_id` through `processNFT()`, same shape as
+`createNFT()`: last parameter, default 1.
+
+**The harness passed the whole time**, and that is the lesson worth keeping.
+PHP silently discards extra arguments to a user-defined function, so the
+ten-parameter stub swallowed an eleventh without a word. The stub now takes
+`$blockchain_id`, records it, and asserts every row carries 2 — verified by
+removing the argument again and watching it fail.
+
+Rows written before the fix are repaired from their collection, which is the
+authority:
+
+```sql
+UPDATE nfts n JOIN collections c ON c.id = n.collection_id
+   SET n.blockchain_id = c.blockchain_id
+ WHERE c.blockchain_id = 2 AND n.blockchain_id <> 2;
+```
+
+`verify-xrpl-doctor.php` §1b finds them and prints this.
+
 ## 6e. IPFS gateways — one is not enough
 
 A sample of Maxi's art first resolved with no name and no image, which looked

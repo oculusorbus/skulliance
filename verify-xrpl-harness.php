@@ -16,9 +16,15 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
    testing is what the XRPL side HANDS to it. */
 $WROTE = array();
 function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
-                    $address, $asset_ids, $nft_owners, $collections) {
+                    $address, $asset_ids, $nft_owners, $collections, $blockchain_id = 1) {
 	global $WROTE;
-	$WROTE[] = compact('policy_id', 'asset_name', 'name', 'image', 'fingerprint', 'address');
+	/* $blockchain_id is captured because PHP SILENTLY DISCARDS extra arguments
+	   to a user-defined function. The old stub took ten parameters, so when
+	   the caller passed a chain id as an eleventh it vanished and every test
+	   here still passed -- which is exactly how XRPL rows were written as
+	   Cardano with a green harness. */
+	$WROTE[] = compact('policy_id', 'asset_name', 'name', 'image', 'fingerprint',
+	                   'address', 'blockchain_id');
 	$asset_ids[] = $fingerprint;
 	$nft_owners[] = '1-' . $fingerprint;
 	return array('asset_ids' => $asset_ids, 'nft_owners' => $nft_owners);
@@ -222,6 +228,15 @@ verifyNFTsXRPL(null, array('rHOLDER'), array('rMAXI:1' => 42), array(),
 	array(), array('fetch' => $noGateway));
 ok(count($WROTE) === 1, 'the NFT is still written when metadata cannot be fetched');
 ok(!empty($WROTE[0]['name']), 'and it has a name, or processNFT would skip it entirely');
+
+/* THE CHAIN ID MUST REACH THE INSERT. createNFT() defaults it to 1, so an
+   XRPL row that does not carry a 2 claims to be Cardano -- and the Cardano
+   pass then zeroes it on its next run and cannot put it back. */
+$chains = array();
+foreach ($WROTE as $w) $chains[(string)$w['blockchain_id']] = 1;
+ok(count($chains) === 1 && isset($chains[(string)XRPL_CHAIN_ID]),
+   'every row is handed processNFT with blockchain_id ' . XRPL_CHAIN_ID
+   . ' (got: ' . implode(',', array_keys($chains)) . ')');
 printf("degraded metadata: still staked, named %s\n", json_encode($WROTE[0]['name']));
 
 /* Metadata that is an image rather than JSON. */
