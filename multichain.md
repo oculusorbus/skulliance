@@ -422,10 +422,32 @@ arguably the most trustworthy of the three in practice, since the value is
 read off hardware rather than from software holding a key — but that is not a
 distinction the server can verify, so it is not one the code claims.
 
-*Needs testing against a real device before launch.* The libraries are
-node-oriented and reach the browser through esm.sh, which usually handles that
-cleanly but is the one part of this that cannot be proven without a Ledger in
-hand.
+#### The library is vendored, and that is not fussiness
+
+**This code gets WebHID access to a hardware wallet.** Loading it from a
+third-party CDN at runtime was the wrong call and is fixed: the whole graph —
+17 files, 108KB — is mirrored into `vendor/ledger/` and served from our own
+origin.
+
+Pinning a version stops a bad *new* release. It does not stop a compromised
+CDN, and `import()` cannot carry Subresource Integrity, so there is no
+checksum to fall back on either. With a hardware wallet on the other end of
+the pipe that is not a risk to accept for convenience.
+
+What the risk actually was, stated plainly: malicious JS could not extract the
+key — that is what the device is for — but it could ask the device to sign
+something, and somebody midway through "connecting my wallet" might approve a
+prompt without reading the screen. Ledger's design makes that the only attack,
+and the screen is the last line of defence. Do not put the last line of
+defence up against code from a CDN.
+
+`vendor/ledger/refresh.py` regenerates the tree and rewrites the imports, so
+updating is one command rather than an afternoon.
+
+*Still needs testing against a real device before launch.* The libraries are
+node-oriented and the browser shims are esm.sh's; they parse and the graph is
+complete, but nothing here can prove a Ledger answers until one is plugged
+in.
 
 ### 4e. Cost — settled, it is free
 

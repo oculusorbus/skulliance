@@ -469,9 +469,16 @@
 				ledgerSay('Unlock your Ledger and open the XRP app\u2026');
 
 				var transport;
+				/* VENDORED, NOT CDN'd. This code gets WebHID access to a
+				   hardware wallet, so it is served from our own origin rather
+				   than fetched from a third party at runtime. Pinning a
+				   version stops a bad new release; it does not stop a
+				   compromised CDN, and import() cannot carry Subresource
+				   Integrity. The graph lives in vendor/ledger/ -- 17 files,
+				   108KB, refreshed by vendor/ledger/refresh.py. */
 				Promise.all([
-					import('https://esm.sh/@ledgerhq/hw-transport-webhid@6.36.0'),
-					import('https://esm.sh/@ledgerhq/hw-app-xrp@6.38.0')
+					import('vendor/ledger/entry-webhid.mjs'),
+					import('vendor/ledger/entry-hw-app-xrp.mjs')
 				]).then(function(m){
 					var TransportWebHID = m[0].default || m[0];
 					var Xrp = m[1].default || m[1];
