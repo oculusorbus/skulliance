@@ -1186,6 +1186,20 @@ Cardano base before caching the images anybody is about to look at.
 changes which rows are considered, so a targeted run and a full run cannot
 disagree.
 
+**Small runs need small worker pools.** The first scoped run spawned 16
+processes for 33 NFTs — three each — and hit the host's process limit:
+`pcntl_fork()` returned EAGAIN, *"Error 11"*. Forking is not free under
+CloudLinux, where the LVE caps concurrent processes per account, and
+targeted runs make small jobs normal. Workers now scale to the job at 25
+rows apiece, so 33 NFTs get 2 workers and 3,400 still get 16.
+
+**And a failed fork is no longer fatal**, which was the more expensive half.
+`die()` left the already-forked children running as orphans, printed no
+summary, and silently dropped every chunk after the failure — that 33-NFT
+run left roughly a third uncached with nothing saying so. The parent now
+processes the orphaned chunk itself and counts it into the summary: slower
+than a worker, and correct.
+
 **Every NFT linked to pool.pm**, a Cardano explorer that has never heard of
 an NFTokenID. `nftExplorerUrl()` reads `blockchains.explorer_nft` — the
 template column that existed for exactly this and was not yet used — once

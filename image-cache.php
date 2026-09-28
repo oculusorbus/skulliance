@@ -129,7 +129,19 @@ if (!function_exists('pcntl_fork') || $total === 0) {
 }
 
 // ─── Multi-process: split rows into chunks and fork workers ──────────────────
-$actual_workers = min($num_workers, $total);
+/*
+ * WORKERS SCALE TO THE JOB, not to the maximum.
+ *
+ * min($num_workers, $total) spawned 16 processes for a 33-NFT run -- three
+ * NFTs each -- and hit the host's process limit: pcntl_fork() returned
+ * EAGAIN ("Error 11"). Forking is not free on CloudLinux, where the LVE
+ * caps concurrent processes per account, and a targeted run is now a normal
+ * thing to do (--chain, --collection, --project) so small jobs are common.
+ *
+ * At least this many rows before another worker is worth its own process.
+ */
+$min_per_worker = 25;
+$actual_workers = max(1, min($num_workers, (int) ceil($total / $min_per_worker)));
 $chunks         = array_chunk($rows, (int) ceil($total / $actual_workers));
 unset($rows); // free master memory before forking
 
@@ -137,6 +149,10 @@ echo "Found $total NFTs — spawning $actual_workers workers.\n\n";
 
 $children  = [];
 $tmp_dir   = sys_get_temp_dir();
+/* Counted into the final summary alongside the workers', so a run that fell
+   back to the parent still adds up to $total. */
+$total_forked = 0;
+$p_cached = $p_skipped = $p_errors = $p_existing = 0;
 
 foreach ($chunks as $wid => $chunk) {
     $stats_file = "$tmp_dir/image_cache_w{$wid}.json";
@@ -144,9 +160,27 @@ foreach ($chunks as $wid => $chunk) {
 
     $pid = pcntl_fork();
 
+    /*
+     * A FAILED FORK IS NOT FATAL, and treating it as one was the worse bug.
+     * die() here left the already-forked children running as orphans, wrote
+     * no summary, and -- the part that actually costs something -- silently
+     * dropped every chunk after this one. A 33-NFT run reported nothing and
+     * left a third of the images uncached.
+     *
+     * The rows still need doing, so the parent does them itself. Slower than
+     * a worker and entirely correct, which is the right trade for a fallback.
+     */
     if ($pid === -1) {
-        die("Failed to fork worker $wid\n");
+        echo "[W" . ($wid + 1) . "] could not fork (" . $total_forked . " workers running)"
+           . " — processing its " . count($chunk) . " row(s) in the parent\n";
+        foreach ($chunk as $row) {
+            $outcome = safeCache($row, $base_path, '[P]', 0);
+            tally($outcome, $p_cached, $p_skipped, $p_errors, $p_existing);
+            gc_collect_cycles();
+        }
+        continue;
     }
+    $total_forked++;
 
     if ($pid === 0) {
         // ── Child worker ──────────────────────────────────────────────────────
@@ -181,6 +215,9 @@ foreach ($children as $child) {
 
 // ─── Aggregate stats ─────────────────────────────────────────────────────────
 $cached = $skipped = $errors = $existing = 0;
+
+$existing += $p_existing; $cached += $p_cached;
+$skipped  += $p_skipped;  $errors += $p_errors;
 
 foreach ($children as $wid => $child) {
     if (!file_exists($child['stats'])) {
