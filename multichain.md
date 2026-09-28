@@ -30,13 +30,17 @@ $xaman_api_key    = "...";   // from https://apps.xaman.dev — free
 $xaman_api_secret = "...";
 ```
 
-**3. Find the collection.** Holding one of its NFTs:
+**3. Find the collection.** Ask the artist for a link to **any one NFT** in
+it — that is the whole ask, and it needs no wallet, no transfer and nothing
+delivered:
 ```
-php verify-xrpl-probe.php <your r-address>
+php verify-xrpl-probe.php <NFTokenID>
 ```
-It prints the issuer, taxon, a sample name and image, and the `INSERT`. Run
-that INSERT, using the **artist's existing `project_id`** — an XRPL collection
-belongs to the same project as their Cardano ones (§3d).
+Or pass an r-address instead to list every collection a wallet holds. Either
+prints the `INSERT`. Run it with the **artist's existing `project_id`** — an
+XRPL collection belongs to the same project as their Cardano ones (§3d).
+
+§6d covers why the artist never needs to know what a taxon is.
 
 **4. Dry run, before linking anything:**
 ```
