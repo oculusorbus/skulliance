@@ -35,15 +35,40 @@ if(isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
 	set_time_limit(0);
 	require_once __DIR__ . '/verify-xrpl.php';
 
-	$xrpl_addresses  = getAllAddresses($conn, XRPL_CHAIN_ID);
 	$xrpl_collections = getCollectionIDs($conn, XRPL_CHAIN_ID);
+
+	/*
+	 * addr=r... uses ONE address instead of the wallets table, so the whole
+	 * pass can be checked before anybody has linked a wallet. Without it the
+	 * empty guard below exits first and a dry run proves only that the
+	 * migration landed -- which is the question this was really being asked to
+	 * answer. Dry runs only: the guard underneath refuses it for a real pass,
+	 * because staking an address nobody has proved they own is the one thing
+	 * this whole subsystem exists to prevent.
+	 */
+	if(!empty($_GET['addr'])){
+		if(empty($_GET['dry'])){
+			echo "addr= is for dry runs only. A real pass reads the wallets table,\n";
+			echo "because an address only counts once somebody has proved they hold it.\n";
+			exit(1);
+		}
+		$xrpl_addresses = array(trim($_GET['addr']));
+	}else{
+		$xrpl_addresses = getAllAddresses($conn, XRPL_CHAIN_ID);
+	}
 
 	if(!$xrpl_addresses || !$xrpl_collections){
 		/* Nothing linked yet, or no XRPL collection registered. Do NOT clear
 		   ownership: with no addresses to verify, a clear would zero every
 		   XRPL row and restore none of them. */
-		echo "xrpl: nothing to do (".count($xrpl_addresses)." addresses, "
-		   . count($xrpl_collections)." collections)\n";
+		printf("xrpl: nothing to do — %d linked address(es), %d registered collection(s)\n",
+			count($xrpl_addresses), count($xrpl_collections));
+		if(!$xrpl_collections)
+			echo "  No XRPL collection registered yet. See multichain-schema.md §3,\n"
+			   . "  and verify-xrpl-probe.php to find a collection's issuer:taxon.\n";
+		if(!$xrpl_addresses)
+			echo "  No XRPL wallet linked yet. To check the pass before anybody links one:\n"
+			   . "    php verify.php verify=xrpl dry=1 addr=rYourAddress\n";
 		exit;
 	}
 

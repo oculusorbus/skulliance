@@ -22,12 +22,21 @@
    collection's NFTs, and run the `INSERT` it prints.
 4. Link a wallet through the modal and confirm a row lands in `wallets` with
    `blockchain_id = 2`.
-5. `php verify.php verify=xrpl dry=1` — reads the ledger, writes nothing, and
-   prints what it would stake next to anything it found that is **not**
-   registered. That second list is the point: an issuer:taxon off by a digit
-   matches nothing and raises nothing, which is indistinguishable from a
-   correct run against an empty wallet.
+5. `php verify.php verify=xrpl dry=1 addr=<your r-address>` — reads the ledger,
+   writes nothing, and prints what it would stake next to anything it found
+   that is **not** registered. That second list is the point: an issuer:taxon
+   off by a digit matches nothing and raises nothing, which is
+   indistinguishable from a correct run against an empty wallet.
+
+   `addr=` bypasses the wallets table, so this works **before** anyone has
+   linked a wallet — which is the only way step 5 is worth running before step
+   4. It is refused for a real pass: staking an address nobody has proved they
+   hold is the one thing this subsystem exists to prevent.
 6. Schedule it — **before** the Cardano job (§5c).
+
+Steps 1 and 3 can also be checked in isolation: the probe needs no migration,
+no credentials and no linked wallet, so `php verify-xrpl-probe.php <r-address>`
+is runnable today and exercises the whole ledger-read and metadata path.
 
 ---
 
