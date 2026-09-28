@@ -1,8 +1,13 @@
 # Multi-chain staking — XRPL
 
-**Status: a plan, not a description.** Nothing here is built. It records the
-shape the work should take and the decisions already made, the way
-`dhcarena.md` did before the Arena existed.
+**Status: partly built.** The schema is written (`multichain-schema.md`, run
+by hand, not yet run), the XRPL verifier exists and is tested headless
+(`verify-xrpl.php`, `verify-xrpl-harness.php`), and `createNFT()` can record a
+chain. Nothing is wired into the cron and no migration has been applied.
+
+Still blocked on two things that are not code: a Xaman API key from
+`apps.xaman.dev`, and the issuer addresses and taxons for the collections that
+launch first.
 
 ---
 

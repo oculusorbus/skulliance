@@ -3069,9 +3069,16 @@ function getCollectionIDs($conn){
 }
 
 // Create NFT
-function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id, $user_id){
-	$sql = "INSERT INTO nfts (asset_id, asset_name, name, ipfs, collection_id, user_id)
-	VALUES ('".$asset_id."', '".mysqli_real_escape_string($conn, $asset_name)."', '".mysqli_real_escape_string($conn, $name)."', '".$ipfs."', '".$collection_id."', '".$user_id."')";
+/*
+ * $blockchain_id is last and defaults to 1 (Cardano) so every existing caller
+ * is untouched -- but it has to exist, because nfts.blockchain_id has DEFAULT 1
+ * and an XRPL row inserted without it would quietly claim to be Cardano. That
+ * is the kind of wrong that never errors and is found months later by a query
+ * that returns the wrong chain's assets.
+ */
+function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id, $user_id, $blockchain_id = 1){
+	$sql = "INSERT INTO nfts (asset_id, asset_name, name, ipfs, collection_id, user_id, blockchain_id)
+	VALUES ('".$asset_id."', '".mysqli_real_escape_string($conn, $asset_name)."', '".mysqli_real_escape_string($conn, $name)."', '".$ipfs."', '".$collection_id."', '".$user_id."', '".(int)$blockchain_id."')";
 	if ($conn->query($sql) === TRUE) {
   	  $last_id = $conn->insert_id;
   	  return $last_id;
