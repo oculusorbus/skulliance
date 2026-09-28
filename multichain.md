@@ -10,6 +10,7 @@
 | `verify-xrpl-probe.php` | finds a collection's issuer and taxon from a wallet |
 | `xaman.php` + `ajax/xaman-{start,done}.php` | sign-in |
 | `xaman-probe.php` | CLI: are the Xaman credentials good? |
+| `verify-xrpl-doctor.php` | CLI: why did this holder's NFTs not show up? |
 | `header.php` | the Connect button, QR, and the websocket the browser holds |
 | `verify.php` | `verify=xrpl`, a second cron pass |
 | `db.php` | `removeUsers()`, `getAllAddresses()`, `getNFTAssetIDs()`, `getCollectionIDs()` chain-scoped; `createNFT()` and `createAddress()` record a chain; `getChainSetting()` |
@@ -1023,6 +1024,31 @@ INSERT INTO collections (blockchain_id, project_id, name, policy, rate) VALUES
 ```sql
 SELECT id, name FROM projects WHERE name LIKE '%axi%';
 ```
+
+## 6d3. When a holder sees nothing
+
+```
+php verify-xrpl-doctor.php <r-address | user_id>
+```
+
+**Six things can break here and five of them fail silently** — a collection
+registered on the wrong chain, a taxon off by one, a wallet row written with
+`blockchain_id` 1, a holder looking at a different address than the one they
+linked, an NFT still sitting in an unaccepted sell offer, a node that would
+not answer. Every one produces the identical symptom: zero NFTs, no error,
+nothing in a log. Checking them one query at a time is how an evening goes.
+
+The doctor walks all four layers in order — registered collections, the
+wallet row, the live ledger, the stored rows — and prints a verdict with the
+`UPDATE` to run. It writes nothing, so it is safe while somebody is waiting
+on the other end of a chat.
+
+**The first suspect is almost always `blockchain_id`.** Both
+`collections.blockchain_id` and `wallets.blockchain_id` DEFAULT to 1, which
+is what makes the migration safe to run mid-day (§2 of the schema) — and
+also means any row added without naming the column looks perfect and is
+invisible to the XRPL pass. The doctor flags an `issuer:taxon` policy or an
+r-address filed under chain 1 specifically.
 
 ## 6e. IPFS gateways — one is not enough
 
