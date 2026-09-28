@@ -2947,6 +2947,27 @@ function checkAddress($conn, $stake_address, $address) {
 	if(!isset($_SESSION['userData']['user_id'])) return 'no_session';
 
 	$me = intval($_SESSION['userData']['user_id']);
+	/*
+	 * CARDANO ONLY, and this is not a theoretical guard.
+	 *
+	 * An XRPL r-address reached this function and was stored with
+	 * blockchain_id 1, because createAddress() below is called without one
+	 * and defaults to Cardano. The Cardano verifier then handed it to Koios
+	 * every night, which answered
+	 *
+	 *   Failed to decode Bech32 string: Parse(Char(InvalidChar('i')))
+	 *
+	 * -- Ripple's base58 alphabet contains 'i' and bech32 does not -- four
+	 * times, with a Discord alert each time. The row is not Cardano and can
+	 * never become Cardano, so the place to stop it is where it arrives.
+	 *
+	 * A Cardano stake address is bech32 and begins stake1/addr1 (stake_test1
+	 * and addr_test1 on testnet, allowed so a test wallet is not rejected
+	 * with a confusing message).
+	 */
+	if (!preg_match('/^(stake|addr)(_test)?1[0-9a-z]{10,}$/i', trim((string)$stake_address)))
+		return 'invalid';
+
 	$stake_address = $conn->real_escape_string($stake_address);
 	$sql = "SELECT id, user_id FROM wallets WHERE stake_address='".$stake_address."' LIMIT 1";
 	$result = $conn->query($sql);

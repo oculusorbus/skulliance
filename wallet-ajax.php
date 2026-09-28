@@ -43,6 +43,20 @@ if (isset($_POST['stakeaddress'])) {
 	checkUser($conn);
 	$wallet_status = checkAddress($conn, $_POST['stakeaddress'], $_POST['address']);
 
+	// Not a Cardano address at all. Says which chain's button to use rather
+	// than "invalid address", because the likeliest way to get here is
+	// reaching the Cardano path with an XRPL account in hand.
+	if ($wallet_status === 'invalid') {
+		$completed = true;
+		ob_end_clean();
+		echo json_encode([
+			'success' => false,
+			'message' => 'That is not a Cardano address. If it is an XRPL account, '
+			           . 'use the XRPL option in the Connect Wallet window.'
+		]);
+		exit;
+	}
+
 	// A wallet already held by another account was silently reported as
 	// connected: it never joined this user's list, and nothing said why.
 	if ($wallet_status === 'exists_other') {

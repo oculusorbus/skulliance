@@ -121,6 +121,40 @@ if(isset($_GET['verify'])){
 
 	$addresses = array();
 	$addresses = getAllAddresses($conn);
+
+	/*
+	 * BELT AND BRACES ON THE CHAIN SCOPE.
+	 *
+	 * getAllAddresses() already filters to blockchain_id 1, so anything
+	 * non-Cardano here means a row is MISLABELLED -- which happened: an XRPL
+	 * r-address stored as Cardano, handed to Koios every night, answered with
+	 *
+	 *   Failed to decode Bech32 string: Parse(Char(InvalidChar('i')))
+	 *
+	 * four times and a Discord alert each time. checkAddress() now refuses
+	 * those at the door, but rows written before that fix still exist and a
+	 * future mislabelling must not cost the payout job four retries and the
+	 * operator a false alarm.
+	 *
+	 * Logged rather than silently dropped: a skipped address is somebody not
+	 * being paid, which is exactly the kind of thing that should be visible.
+	 */
+	$wrong_chain = array();
+	foreach($addresses AS $i => $a){
+		if(!preg_match('/^(stake|addr)(_test)?1[0-9a-z]{10,}$/i', trim((string)$a))){
+			$wrong_chain[] = $a;
+			unset($addresses[$i]);
+		}
+	}
+	if($wrong_chain){
+		$addresses = array_values($addresses);
+		$note = "verify: skipped ".count($wrong_chain)." non-Cardano address(es) filed as Cardano: "
+		      . implode(', ', array_slice($wrong_chain, 0, 5))
+		      . ". Fix with: UPDATE wallets SET blockchain_id = 2 WHERE stake_address IN (...);";
+		echo $note."\n";
+		error_log($note);
+	}
+
 	$policies = array();
 	$policies = getPolicies($conn);
 	// Remove all user ids from NFTs before running cron job verification

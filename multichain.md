@@ -1192,6 +1192,49 @@ a broken href.
 that does not start with `asset`, so the Cardano-only gallery pipeline
 excludes XRPL by construction.
 
+## 6d8. An r-address filed as Cardano
+
+Hours after the XRPL pass ran, the Cardano cron started alerting:
+
+```
+Failed to decode Bech32 string: Parse(Char(InvalidChar('i')))
+There was no response after 4 attempts for stake address:
+https://pool.pm/rLRRH3TvxPRtjuPsU3RfxcgfkXpiTfYNiY
+```
+
+Ripple's base58 alphabet contains `i`; bech32 does not. That is an XRPL
+account sitting in `wallets` with `blockchain_id = 1`.
+
+**`getAllAddresses()` was not at fault** — it filters on `blockchain_id`
+correctly. The row itself is mislabelled, and the way in is
+`checkAddress()`: it calls `createAddress()` without a chain, which defaults
+to 1, and it validated nothing. Anything POSTed to the Cardano connect
+endpoint became a Cardano wallet.
+
+Two fixes, because one of them is not enough:
+
+1. **`checkAddress()` now returns `'invalid'`** for anything that is not
+   bech32 `stake1`/`addr1` (with the `_test1` forms allowed, so a testnet
+   wallet is not rejected confusingly). `wallet-ajax.php` turns that into
+   *"That is not a Cardano address. If it is an XRPL account, use the XRPL
+   option"* — which names the fix, since reaching that path with an XRPL
+   account in hand is the likeliest way to get there.
+2. **The Cardano pass skips non-Cardano-shaped addresses** before calling
+   Koios, and says so. Rows written before fix 1 still exist, and a
+   mislabelled row must not cost the job that pays everybody four retries
+   and the operator a false alarm. Logged rather than dropped silently: a
+   skipped address is somebody not being paid.
+
+Repair the row itself:
+
+```sql
+UPDATE wallets SET blockchain_id = 2
+ WHERE stake_address LIKE 'r%' AND blockchain_id = 1;
+```
+
+`verify-xrpl-doctor.php` with no argument lists r-addresses and flags any on
+the wrong chain.
+
 ## 6e. IPFS gateways — one is not enough
 
 A sample of Maxi's art first resolved with no name and no image, which looked
