@@ -196,16 +196,30 @@ Python — there is no PHP one. That is fine: `verify.php` already talks to Koio
 with plain curl, so this is the same pattern with different headers and no new
 dependency.
 
-**Poll, do not websocket.** Xaman offers webhooks, a websocket
-(`refs.websocket_status`) and polling. A websocket is awkward to hold open from
-PHP on shared hosting, and a webhook means an unauthenticated public endpoint
-plus the problem of matching a callback to a browser session. Polling is the
-boring option and it is the one the platform already uses everywhere — the
-Arena's live match polls an ajax endpoint every 1.5s on exactly this shape:
+**The BROWSER holds the websocket; PHP never does.** This is the one place the
+obvious answer is wrong, and the rate limit is why.
+
+Polling looks natural here — it is what the Arena's live match does — but the
+arithmetic kills it. A QR sits on screen for around a minute, so polling every
+two seconds is ~30 Xaman calls **per sign-in**. Against a limit of 60–200 a
+minute (§4e), that is two to six people signing in at once before the whole
+integration starts getting throttled. The day this launches is precisely the
+day fifty people try it at once.
+
+`refs.websocket_status` is `wss://xumm.app/sign/<uuid>` and needs **no API
+secret** — it is addressed by the payload uuid alone, so the browser can hold
+it directly. PHP never opens a socket:
 
 ```
-  browser  --2s-->  ajax/xaman-status.php  --> GET the payload  --> resolved?
+  1. browser asks ajax/xaman-start.php   -> server POSTs the payload  (1 call)
+  2. browser opens wss://xumm.app/sign/<uuid> itself                  (0 calls)
+  3. socket says signed -> browser calls ajax/xaman-done.php
+                        -> server GETs the result, binds the wallet  (1 call)
 ```
+
+**Two Xaman calls per sign-in instead of thirty**, and the rate limit stops
+being a launch-day risk at all. Keep a slow poll (every 5s) purely as a
+fallback for a blocked websocket; at that rate even the fallback is cheap.
 
 **Bind the uuid to the session when it is created.** Store the payload uuid in
 `$_SESSION` at step 1 and refuse any status call for a uuid that session did
@@ -219,16 +233,31 @@ does not die when the timer runs out. The UI should say "QR expired, get
 another" rather than "sign-in failed", and it must not delete the pending row
 the moment the timer hits zero.
 
-### 4e. Unknowns to close before building
+### 4e. Cost — settled, it is free
 
-- **Cost.** Pricing and free-tier terms are not in the public docs. Historically
-  the developer API has been usable without charge, but that is not something
-  to assume on the strength of memory — confirm in the dashboard at
-  `apps.xumm.dev` before this is scheduled. This is the one open item that
-  could change the plan rather than the implementation.
-- **Rate limit.** The docs mention roughly **30 payload POSTs per minute** but
-  do not document limits fully. Thirty sign-ins a minute is far beyond anything
-  this platform will see, so it is a note rather than a constraint.
+**The Xaman platform API costs nothing**, and this was checked properly because
+the whole plan depended on it.
+
+- **60–200 calls per minute**, free, no account tier and no card. The docs are
+  explicit that the figure is an average the platform adjusts on the fly based
+  on call behaviour. Higher limits are available by asking support with a
+  reason, not by paying.
+- **The one paid thing is not this.** XRPL Labs partnered with Dhali to
+  monetize **XRPL node/ledger RPC access** — not payloads, not SignIn. Their
+  announcement states existing users see "no immediate change" and keep "the
+  same robust infrastructure limits"; the paid key only buys unlimited RPC for
+  people who exceed the free tier.
+- **And we do not need that either.** The rate-limits page itself says to fetch
+  ledger data over a native XRPL connection rather than through their platform.
+  Verification talks to a public XRPL cluster for `account_nfts` (§5) and never
+  touches Xaman, so the Dhali path is irrelevant to this design.
+
+Net: Xaman is touched **twice per wallet link** and never again. Nothing in the
+nightly cron goes near it. There is no plausible volume at which this platform
+pays Xaman anything.
+
+Sources: [Rate limits](https://docs.xaman.dev/concepts/limitations/rate-limits) ·
+[Dhali announcement](https://xaman.app/blog/xaman-partners-with-dhali-to-monetize-xrpl-infrastucture-offering-unlimited-paid-api-access)
 
 Sources: [SignIn](https://docs.xaman.dev/concepts/special-transaction-types/signin) ·
 [Authorization](https://docs.xaman.dev/concepts/authorization) ·
@@ -411,7 +440,9 @@ collection, never of a player and never of a game.
 
 **Xaman is a third-party dependency** on the login path in a way CIP-30 is not.
 CIP-30 is a local extension; Xaman is a service. If it is down, those users
-cannot connect. Worth knowing before it happens rather than during.
+cannot connect. Worth knowing before it happens rather than during — it is the
+remaining risk in §4 now that cost is settled (§4e), and it is a real one
+because it has no mitigation short of also shipping an extension connector.
 
 **Phase one has no revenue and no staking**, so it must not be judged on
 points. Its only success metric is whether XRPL holders connect and play.
