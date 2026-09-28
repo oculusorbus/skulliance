@@ -315,6 +315,107 @@
 				<div class="wallet-panel-empty">Detecting wallets&hellip;</div>
 			</div>
 			<div id="wallet-status" style="display:none"></div>
+
+			<?php if(isset($_SESSION['userData']['user_id'])): ?>
+			<?php /* XRP LEDGER. Not a wallet the CIP-30 grid can detect, because
+			         Xaman is a phone app rather than a browser extension -- so
+			         it is offered explicitly rather than "detected". */ ?>
+			<div class="wallet-xrpl">
+				<button type="button" class="wallet-xrpl-btn" onclick="xamanConnect()">
+					<span class="wallet-xrpl-mark">XRP</span>
+					<span>Connect an XRP Ledger wallet<small>Scan with Xaman</small></span>
+				</button>
+				<div id="xaman-panel" hidden>
+					<div id="xaman-msg">Creating a sign-in request&hellip;</div>
+					<img id="xaman-qr" alt="Scan this with Xaman" hidden>
+					<a id="xaman-link" href="#" target="_blank" rel="noopener" hidden>Open Xaman on this device</a>
+					<button type="button" class="wallet-xrpl-cancel" onclick="xamanCancel()">Cancel</button>
+				</div>
+			</div>
+			<style>
+			.wallet-xrpl{margin:10px 12px 0;padding-top:10px;border-top:1px solid rgba(255,255,255,.12)}
+			.wallet-xrpl-btn{display:flex;align-items:center;gap:10px;width:100%;
+			  background:#0d1e2e;border:1px solid #1b3346;color:#e8eaed;border-radius:4px;
+			  padding:9px 12px;cursor:pointer;font:inherit;text-align:left}
+			.wallet-xrpl-btn:hover{border-color:#00c8a0;color:#00c8a0}
+			.wallet-xrpl-btn small{display:block;font-size:10px;opacity:.6}
+			.wallet-xrpl-mark{font-size:10px;font-weight:700;letter-spacing:.08em;
+			  background:#1b3346;border-radius:3px;padding:4px 6px}
+			#xaman-panel{margin-top:10px;text-align:center;font-size:12px}
+			#xaman-qr{width:190px;height:190px;margin:8px auto;display:block;background:#fff;border-radius:4px}
+			#xaman-link{display:inline-block;margin:4px 0 8px;color:#00c8a0;font-size:12px}
+			.wallet-xrpl-cancel{background:none;border:1px solid #1b3346;color:#7a9eb0;
+			  border-radius:3px;padding:4px 10px;cursor:pointer;font:inherit;font-size:11px}
+			</style>
+			<script>
+			/* THE BROWSER HOLDS THE WEBSOCKET, not the server.
+			   Xaman allows ~60-200 calls a minute. Polling a pending sign-in every
+			   couple of seconds is ~30 calls each, so a handful of simultaneous
+			   sign-ins would throttle the whole platform -- and launch day is
+			   exactly when that happens. refs.websocket_status is addressed by the
+			   payload uuid alone and needs no API secret, so this listens directly
+			   and the server makes exactly two calls per link. */
+			var xamanSock = null, xamanUuid = null, xamanPoll = null;
+			function xamanSay(t){ var e=document.getElementById('xaman-msg'); if(e) e.textContent=t; }
+			function xamanCancel(){
+				if(xamanSock){ try{ xamanSock.close(); }catch(e){} xamanSock=null; }
+				if(xamanPoll){ clearInterval(xamanPoll); xamanPoll=null; }
+				xamanUuid=null;
+				var p=document.getElementById('xaman-panel'); if(p) p.hidden=true;
+			}
+			function xamanConnect(){
+				var p=document.getElementById('xaman-panel');
+				var qr=document.getElementById('xaman-qr'), lk=document.getElementById('xaman-link');
+				xamanCancel(); p.hidden=false; qr.hidden=true; lk.hidden=true;
+				xamanSay('Creating a sign-in request\u2026');
+				var fd=new FormData(); fd.append('do','start');
+				fetch('ajax/xaman-start.php',{method:'POST',body:fd,credentials:'same-origin'})
+					.then(function(r){ return r.text(); })
+					.then(function(t){
+						var res; try{ res=JSON.parse(t); }catch(e){ throw new Error(t.slice(0,120)); }
+						if(!res.ok) throw new Error(res.message||'Could not start.');
+						xamanUuid=res.uuid;
+						if(res.qr){ qr.src=res.qr; qr.hidden=false; }
+						if(res.link){ lk.href=res.link; lk.hidden=false; }
+						xamanSay('Scan with Xaman, or open it on this device.');
+						xamanListen(res.websocket);
+					})
+					.catch(function(e){ xamanSay(e.message||'Could not reach Xaman.'); });
+			}
+			function xamanListen(url){
+				/* A slow 5s poll runs alongside as a fallback -- some networks block
+				   wss entirely, and at that rate even the fallback is cheap. */
+				xamanPoll = setInterval(function(){ xamanFinish(true); }, 5000);
+				if(!url || typeof WebSocket==='undefined') return;
+				try{ xamanSock = new WebSocket(url); }catch(e){ return; }
+				xamanSock.onmessage = function(ev){
+					var m; try{ m=JSON.parse(ev.data); }catch(e){ return; }
+					/* Keepalives carry expires_in_seconds. Expiry here is a SCAN
+					   deadline, not a resolution deadline -- somebody who already
+					   opened the prompt can still finish -- so this offers a fresh
+					   code rather than declaring failure. */
+					if(m.expired){ xamanSay('That code expired. Tap Connect again for a new one.'); return; }
+					if(typeof m.signed !== 'undefined' || m.payload_uuidv4) xamanFinish(false);
+				};
+			}
+			function xamanFinish(quiet){
+				if(!xamanUuid) return;
+				if(!quiet) xamanSay('Confirming\u2026');
+				var fd=new FormData(); fd.append('uuid',xamanUuid);
+				fetch('ajax/xaman-done.php',{method:'POST',body:fd,credentials:'same-origin'})
+					.then(function(r){ return r.text(); })
+					.then(function(t){
+						var res; try{ res=JSON.parse(t); }catch(e){ return; }
+						if(res.retry) return;               // still pending; the poll or socket retries
+						if(!res.ok){ xamanSay(res.message||'Sign-in failed.'); xamanCancel(); return; }
+						xamanSay(res.message||'Wallet linked.');
+						xamanCancel();
+						setTimeout(function(){ location.reload(); }, 1200);
+					})
+					.catch(function(){ /* a dropped confirm is covered by the next tick */ });
+			}
+			</script>
+			<?php endif; ?>
 			<?php if(isset($_SESSION['userData']['user_id'])): ?>
 			<div class="wallet-modal-refresh">
 				<form id="refreshWallet" action="<?php echo basename($_SERVER['PHP_SELF']); ?>" method="post">

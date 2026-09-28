@@ -2991,26 +2991,40 @@ function getAddressesDiscord($conn) {
 }
 
 // Get all addresses 
-function getAllAddresses($conn){
+/*
+ * Addresses to verify, for one chain.
+ *
+ * A Cardano stake address and an XRPL account live in the same column and are
+ * told apart by wallets.blockchain_id -- handing either verifier the other
+ * chain's addresses would produce a pass where every lookup fails, which
+ * reads as "everybody sold everything".
+ *
+ * Defaults to 1 so the existing cron is unchanged.
+ */
+function getAllAddresses($conn, $blockchain_id = 1){
+	$bc = (int)$blockchain_id;
 	$sql = "
 		-- Active users: logged in within the last month
 		SELECT DISTINCT w.stake_address FROM wallets w
 		JOIN users u ON u.id = w.user_id
-		WHERE u.last_login >= NOW() - INTERVAL 1 MONTH
+		WHERE w.blockchain_id = $bc AND u.last_login >= NOW() - INTERVAL 1 MONTH
 
 		UNION
 
 		-- Always include Diamond Skull owners (collection_id = 16) regardless of last login
 		SELECT DISTINCT w.stake_address FROM wallets w
 		JOIN nfts n ON n.user_id = w.user_id
-		WHERE n.collection_id = 16
+		WHERE w.blockchain_id = $bc AND n.collection_id = 16
 
 		UNION
 
 		-- Always include owners of NFTs delegated to any Diamond Skull regardless of last login
+		-- (Diamond Skulls are Cardano; these legs simply find nobody on another chain,
+		--  which is correct rather than something to special-case.)
 		SELECT DISTINCT w.stake_address FROM wallets w
 		JOIN nfts n ON n.user_id = w.user_id
 		JOIN diamond_skulls ds ON ds.nft_id = n.id
+		WHERE w.blockchain_id = $bc
 	";
 	$result = $conn->query($sql);
 
@@ -3059,8 +3073,29 @@ function getCollectionId($conn, $policy){
 }
 
 // Get all collection policies and ids
-function getCollectionIDs($conn){
-	$sql = "SELECT id, policy FROM collections";
+/*
+ * One setting off the blockchains row, with a fallback.
+ *
+ * The node and the IPFS gateway live in the database rather than in code so a
+ * flaky endpoint can be swapped without a deploy -- point api_base at another
+ * cluster and the next cron pass uses it. Falls back if the table does not
+ * exist yet, so code deployed ahead of the migration still runs.
+ */
+function getChainSetting($conn, $blockchain_id, $field, $default = '') {
+	$ok = array('api_base' => 1, 'explorer_nft' => 1, 'ipfs_gateway' => 1);
+	if (!isset($ok[$field])) return $default;
+	$res = @$conn->query("SELECT `$field` FROM blockchains WHERE id = ".(int)$blockchain_id." LIMIT 1");
+	if (!$res || !$res->num_rows) return $default;
+	$row = $res->fetch_assoc();
+	return ($row[$field] === null || $row[$field] === '') ? $default : $row[$field];
+}
+
+/* Collection lookup for one chain. An XRPL pass matching a Cardano policy is
+   impossible in practice but the scope costs nothing and makes it impossible
+   by construction. 0 means every chain, for callers that want the lot. */
+function getCollectionIDs($conn, $blockchain_id = 0){
+	$where = $blockchain_id ? " WHERE blockchain_id = ".(int)$blockchain_id : "";
+	$sql = "SELECT id, policy FROM collections".$where;
 	$result = $conn->query($sql);
 	
 	$collections = array();
@@ -3205,15 +3240,28 @@ function checkAvailableNFT($conn, $asset_id){
 	}
 }
 
-// Remove all NFT user ids in preparation for cron job verification
-function removeUsers($conn){
+/*
+ * Remove NFT user ids in preparation for a cron verification pass.
+ *
+ * SCOPED TO ONE CHAIN, and that is not optional. This clears ownership for
+ * everyone about to be re-verified and relies on the verifier putting it all
+ * back. With two chains verifying in separate passes, an unscoped clear means
+ * the Cardano run zeroes every XRPL row and nothing ever restores them: every
+ * XRPL holder silently loses their staking overnight, with no error anywhere.
+ *
+ * Defaults to 1 so the existing Cardano cron is unchanged by this parameter
+ * existing. See multichain.md §5a.
+ */
+function removeUsers($conn, $blockchain_id = 1){
 	// Only clear NFT ownership for users who are about to be re-verified:
 	// active users (logged in within last month), Diamond Skull owners, and delegators.
 	// Inactive users retain their NFT associations for leaderboard history.
 	// Derived table wrapper required because legs 2+3 reference nfts, the table being updated.
+	$bc = (int)$blockchain_id;
 	$sql = "
 		UPDATE nfts SET user_id = 0
-		WHERE collection_id != 16
+		WHERE blockchain_id = $bc
+		AND collection_id != 16
 		AND id NOT IN (SELECT nft_id FROM diamond_skulls)
 		AND user_id IN (
 			SELECT user_id FROM (
@@ -3704,8 +3752,17 @@ function getDelegatedDiamondSkulls($conn){
 }
 
 // Get NFT asset ids
-function getNFTAssetIDs($conn){
-	$sql = "SELECT id, asset_id FROM nfts";
+/*
+ * The "assets we already have rows for" map, used by processNFT() to decide
+ * between updating an owner and creating a row.
+ *
+ * Scoped for the same reason as removeUsers(): an XRPL pass handed the Cardano
+ * asset ids would compare against the wrong ledger. Defaults to every chain so
+ * any existing caller behaves exactly as before.
+ */
+function getNFTAssetIDs($conn, $blockchain_id = 0){
+	$where = $blockchain_id ? " WHERE blockchain_id = ".(int)$blockchain_id : "";
+	$sql = "SELECT id, asset_id FROM nfts".$where;
 	$result = $conn->query($sql);
 	
 	$asset_ids = array();

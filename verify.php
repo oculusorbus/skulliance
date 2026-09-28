@@ -9,6 +9,63 @@ use CardanoPhp\Bech32\Bech32;
 if(isset($argv)){
 	parse_str(implode('&', array_slice($argv, 1)), $_GET);
 }
+/*
+ * THE XRPL PASS — a separate cron job, scheduled BEFORE the Cardano one.
+ *
+ *     php verify.php verify=xrpl
+ *
+ * Verification only. It deliberately does NOT run updateBalances(),
+ * deployDiamondSkullRewards(), cleanupOrphanedProtectedNFTs() or
+ * verifyRealmSoldiers():
+ *
+ *   - The first two PAY OUT. Running them in both passes pays everybody twice.
+ *     They are platform-wide, they belong to exactly one job, and that job is
+ *     the Cardano one.
+ *   - The other two are Cardano concepts (Diamond Skulls, realm soldiers) and
+ *     have nothing to look at here.
+ *
+ * ORDER MATTERS: this runs first so XRPL rows are fresh when the Cardano pass
+ * computes balances off them. And if this job fails outright, the Cardano job
+ * still runs and still pays -- XRPL holders keep yesterday's rows, because
+ * removeUsers() is chain-scoped and the Cardano pass never touches them. That
+ * is the whole point of two passes (multichain.md §5b).
+ */
+if(isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
+	set_time_limit(0);
+	require_once __DIR__ . '/verify-xrpl.php';
+
+	$xrpl_addresses  = getAllAddresses($conn, XRPL_CHAIN_ID);
+	$xrpl_collections = getCollectionIDs($conn, XRPL_CHAIN_ID);
+
+	if(!$xrpl_addresses || !$xrpl_collections){
+		/* Nothing linked yet, or no XRPL collection registered. Do NOT clear
+		   ownership: with no addresses to verify, a clear would zero every
+		   XRPL row and restore none of them. */
+		echo "xrpl: nothing to do (".count($xrpl_addresses)." addresses, "
+		   . count($xrpl_collections)." collections)\n";
+		exit;
+	}
+
+	removeUsers($conn, XRPL_CHAIN_ID);
+	$xrpl_asset_ids = getNFTAssetIDs($conn, XRPL_CHAIN_ID);
+
+	$xrpl = verifyNFTsXRPL($conn, $xrpl_addresses, $xrpl_collections, $xrpl_asset_ids,
+		array(), array(
+			'api_base' => getChainSetting($conn, XRPL_CHAIN_ID, 'api_base', 'https://xrplcluster.com'),
+			'gateway'  => getChainSetting($conn, XRPL_CHAIN_ID, 'ipfs_gateway', 'https://ipfs.io/ipfs/'),
+		));
+
+	printf("xrpl: %d addresses, %d collections, %d owned, %s%s\n",
+		count($xrpl_addresses), count($xrpl_collections), count($xrpl['nft_owners']),
+		$xrpl['ok'] ? 'ok' : 'PARTIAL',
+		$xrpl['failed'] ? ' (unreadable: '.implode(', ', $xrpl['failed']).')' : '');
+
+	/* A partial pass is reported loudly and exits non-zero so cron mail carries
+	   it. The rows for the addresses that DID read are correct; the ones that
+	   did not were skipped entirely rather than half-written. */
+	exit($xrpl['ok'] ? 0 : 1);
+}
+
 // Distinguish between a logged in user and verification cron job
 if(isset($_GET['verify'])){
 	set_time_limit(0);

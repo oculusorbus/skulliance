@@ -1,13 +1,29 @@
 # Multi-chain staking — XRPL
 
-**Status: partly built.** The schema is written (`multichain-schema.md`, run
-by hand, not yet run), the XRPL verifier exists and is tested headless
-(`verify-xrpl.php`, `verify-xrpl-harness.php`), and `createNFT()` can record a
-chain. Nothing is wired into the cron and no migration has been applied.
+**Status: built, not yet live.** Phase one is wired end to end:
 
-Still blocked on two things that are not code: a Xaman API key from
-`apps.xaman.dev`, and the issuer addresses and taxons for the collections that
-launch first.
+| | |
+|---|---|
+| `multichain-schema.md` | the migration, run by hand — **not yet run** |
+| `verify-xrpl.php` | the XRPL verifier, feeding the existing `processNFT()` |
+| `verify-xrpl-harness.php` | its tests: no network, no database |
+| `verify-xrpl-probe.php` | finds a collection's issuer and taxon from a wallet |
+| `xaman.php` + `ajax/xaman-{start,done}.php` | sign-in |
+| `header.php` | the Connect button, QR, and the websocket the browser holds |
+| `verify.php` | `verify=xrpl`, a second cron pass |
+| `db.php` | `removeUsers()`, `getAllAddresses()`, `getNFTAssetIDs()`, `getCollectionIDs()` chain-scoped; `createNFT()` and `createAddress()` record a chain; `getChainSetting()` |
+
+**To go live, in order:**
+
+1. Run `multichain-schema.md` (check the duplicate-`asset_id` query before the
+   unique key).
+2. Add `$xaman_api_key` / `$xaman_api_secret` to `credentials/`.
+3. `php verify-xrpl-probe.php <your r-address>` while holding one of the
+   collection's NFTs, and run the `INSERT` it prints.
+4. Link a wallet through the modal and confirm a row lands in `wallets` with
+   `blockchain_id = 2`.
+5. `php verify.php verify=xrpl` by hand and read what it prints.
+6. Only then schedule it — **before** the Cardano job (§5c).
 
 ---
 
@@ -343,6 +359,26 @@ UPDATE nfts SET user_id = 0 WHERE blockchain_id = ? AND ...
 The same reasoning applies to `getNFTAssetIDs()` and
 `cleanupOrphanedProtectedNFTs()`: anything that reasons about "NFTs we expected
 to see and did not" must be scoped to the chain that was actually queried.
+
+### 5c. The two passes, and which one pays
+
+`verify=xrpl` is verification ONLY. It deliberately does not call
+`updateBalances()`, `deployDiamondSkullRewards()`,
+`cleanupOrphanedProtectedNFTs()` or `verifyRealmSoldiers()`.
+
+The first two **pay out**, are platform-wide, and belong to exactly one job —
+running them in both passes pays everybody twice. The other two are Cardano
+concepts with nothing to look at here.
+
+**Order:** XRPL runs first, so its rows are fresh when the Cardano pass
+computes balances off them. If the XRPL job fails outright the Cardano job
+still runs and still pays, and XRPL holders keep yesterday's rows because
+`removeUsers()` is chain-scoped and the Cardano pass never touches them.
+
+**The empty guard.** With no linked addresses or no registered collection the
+pass exits before `removeUsers()`. A clear with nothing to restore afterwards
+would zero every XRPL row and leave them zeroed — the precise failure §5a
+exists to prevent, arrived at from the other direction.
 
 ### 5b. Failure isolation
 
