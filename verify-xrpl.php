@@ -44,6 +44,9 @@ if (!defined('XRPL_PAGE_SIZE'))  define('XRPL_PAGE_SIZE', 400);
    400 is 16,000 NFTs for one account, far past anything real. */
 if (!defined('XRPL_MAX_PAGES'))  define('XRPL_MAX_PAGES', 40);
 if (!defined('XRPL_HTTP_TIMEOUT')) define('XRPL_HTTP_TIMEOUT', 20);
+/* How many gateway fetches are in flight at once. High enough that a normal
+   holder resolves in one round, low enough not to look like an attack. */
+if (!defined('XRPL_FETCH_CONCURRENCY')) define('XRPL_FETCH_CONCURRENCY', 12);
 
 /**
  * IPFS gateways, tried in order until one answers.
@@ -185,6 +188,16 @@ function xrpl_resolve_metadata($nft, $gateway, $fetch) {
 		$body = call_user_func($fetch, $url, null);
 		if (is_string($body) && $body !== '') break;
 	}
+	return xrpl_parse_metadata($nft, $body);
+}
+
+/**
+ * The JSON half of the above, split out so the PARALLEL resolver can share it
+ * -- the difference between the two is only how the bytes were fetched, and
+ * two copies of this parsing would drift.
+ */
+function xrpl_parse_metadata($nft, $body) {
+	$fallback = array('name' => 'XRPL #' . $nft['serial'], 'image' => '', 'collection' => '');
 	if (!is_string($body) || $body === '') return $fallback;
 
 	$meta = json_decode($body, true);
@@ -338,6 +351,115 @@ function xrpl_http($url, $post) {
 	   scope. Same trap dhc-json.php already documents. */
 	if ($body === false || $code >= 400) return '';
 	return $body;
+}
+
+/**
+ * MANY URLs AT ONCE.
+ *
+ * Resolving metadata one NFT at a time is what broke the first real holder.
+ * Their 20 Bootlegs took 111 SECONDS to resolve -- about 5.5s each, serial --
+ * against a PHP max_execution_time of 30, so the request was killed partway
+ * and they saw nothing. IPFS gateways are slow individually and perfectly
+ * happy in parallel, so the sum was never the number that mattered.
+ *
+ * Returns the same keys it was given, each mapped to a body or ''.
+ */
+function xrpl_http_many($urls, $timeout = null) {
+	$out = array();
+	if (!$urls) return $out;
+	if ($timeout === null) $timeout = XRPL_HTTP_TIMEOUT;
+
+	$mh = curl_multi_init();
+	$handles = array();
+	/* Capped. A holder with 400 NFTs must not open 400 sockets at once and
+	   get the server's IP rate-limited by every gateway simultaneously --
+	   which is the failure this is supposed to avoid, not cause. */
+	$chunks = array_chunk($urls, XRPL_FETCH_CONCURRENCY, true);
+
+	foreach ($chunks as $chunk) {
+		$handles = array();
+		foreach ($chunk as $key => $url) {
+			$ch = curl_init($url);
+			curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+			curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+			curl_setopt($ch, CURLOPT_TIMEOUT, $timeout);
+			curl_multi_add_handle($mh, $ch);
+			$handles[$key] = $ch;
+		}
+		$running = null;
+		do {
+			curl_multi_exec($mh, $running);
+			/* Blocks until something happens rather than spinning the CPU. */
+			if ($running) curl_multi_select($mh, 1.0);
+		} while ($running > 0);
+
+		foreach ($handles as $key => $ch) {
+			$body = curl_multi_getcontent($ch);
+			$code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+			$out[$key] = (!is_string($body) || $body === '' || $code >= 400) ? '' : $body;
+			curl_multi_remove_handle($mh, $ch);
+		}
+	}
+	curl_multi_close($mh);
+	return $out;
+}
+
+/**
+ * Fetch many, honouring an injected fetcher.
+ *
+ * The harness replaces $fetch with a deterministic stub and knows nothing
+ * about curl. So a custom fetcher is looped serially -- same answers, same
+ * order, no network -- and only the real one gets the parallel path. That
+ * keeps the tests exactly as they were while production stops being serial.
+ */
+function xrpl_fetch_many($urls, $fetch, $fetch_many = null) {
+	if (!$urls) return array();
+	if ($fetch_many !== null)  return call_user_func($fetch_many, $urls);
+	if ($fetch === 'xrpl_http') return xrpl_http_many($urls);
+	$out = array();
+	foreach ($urls as $k => $u) $out[$k] = call_user_func($fetch, $u, null);
+	return $out;
+}
+
+/**
+ * Metadata for a whole list of NFTs, one gateway round at a time.
+ *
+ * Round one asks the preferred gateway for everything still unresolved; round
+ * two asks the next gateway for whatever round one could not answer, and so
+ * on. So a gateway that is 429-ing costs ONE round trip for the batch instead
+ * of one per NFT, and the wall clock is the slowest fetch rather than the sum
+ * of all of them.
+ *
+ * Keyed by position in $nfts, so the caller can zip it back together.
+ */
+function xrpl_resolve_many($nfts, $gateway, $fetch, $fetch_many = null, $deadline = 0) {
+	$out = array(); $pending = array();
+	foreach ($nfts as $i => $n) {
+		$out[$i] = array('name' => 'XRPL #' . $n['serial'], 'image' => '', 'collection' => '');
+		if (!empty($n['uri'])) $pending[$i] = xrpl_normalise_image($n['uri']);
+	}
+	if (!$pending) return $out;
+
+	$tries = array_merge(array($gateway), xrpl_gateways());
+	foreach ($tries as $g) {
+		if (!$pending) break;
+		if ($deadline && time() > $deadline) break;   // keep the fallbacks, stop asking
+
+		$urls = array();
+		foreach ($pending as $i => $norm) {
+			$u = xrpl_gateway_url($norm, $g);
+			if ($u !== '' && preg_match('#^https?://#i', $u)) $urls[$i] = $u;
+		}
+		if (!$urls) break;
+
+		$bodies = xrpl_fetch_many($urls, $fetch, $fetch_many);
+		foreach ($bodies as $i => $body) {
+			if (!is_string($body) || $body === '') continue;
+			$out[$i] = xrpl_parse_metadata($nfts[$i], $body);
+			unset($pending[$i]);
+		}
+	}
+	return $out;
 }
 
 /**
@@ -552,12 +674,28 @@ function verifyNFTsXRPL($conn, $addresses, $collections, $asset_ids,
 	/* ---- phase two: now it is safe to clear and rebuild ---- */
 	if ($clear !== null) call_user_func($clear);
 
-	$wrote = 0;
+	/* ONE BATCH FOR EVERY ADDRESS. Metadata was resolved one NFT at a time
+	   here, which is what killed the first real link: 20 NFTs x ~5.5s of
+	   IPFS = 111s against a 30s max_execution_time, so the request died
+	   after the clear and before the writes. Gathering the whole job first
+	   turns the wall clock from the SUM of the fetches into the slowest one. */
+	$queue = array();
 	foreach ($held as $address => $list) {
 		foreach ($list as $nft) {
 			if (!isset($collections[$nft['policy']])) continue;   // not ours
+			$queue[] = array('nft' => $nft, 'address' => $address);
+		}
+	}
+	$metas = xrpl_resolve_many(
+		array_map(function($q){ return $q['nft']; }, $queue),
+		$gateway, $fetch, isset($opt['fetch_many']) ? $opt['fetch_many'] : null, $deadline);
 
-			$meta = xrpl_resolve_metadata($nft, $gateway, $fetch);
+	$wrote = 0;
+	foreach ($queue as $i => $q) {
+		{
+			$nft = $q['nft']; $address = $q['address'];
+			$meta = isset($metas[$i]) ? $metas[$i]
+			      : array('name' => 'XRPL #' . $nft['serial'], 'image' => '', 'collection' => '');
 			$payload = processNFT(
 				$conn,
 				$nft['policy'],        // policy_id   -> collections lookup

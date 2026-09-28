@@ -15,6 +15,17 @@ require_once __DIR__ . '/../xaman.php';
 require_once __DIR__ . '/../verify-xrpl.php';
 require_once __DIR__ . '/../dhc-json.php';
 
+/* THIS REQUEST TALKS TO IPFS AND CANNOT BE FAST.
+   A holder's metadata is fetched once, when they link, and gateways answer in
+   seconds rather than milliseconds -- the first real link needed ~16s for 20
+   NFTs even with the fetches running in parallel. PHP's default 30s ceiling
+   killed the SERIAL version outright (111s), after the ownership reset and
+   before the writes, so the holder saw nothing and the log said nothing.
+   xrpl_verify_user()'s own 45s budget is the real limit and degrades to
+   fallback names rather than dying; this just keeps PHP from pulling the rug
+   out from under it first. */
+@set_time_limit(90);
+
 $user_id = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
 if ($user_id <= 0) dhc_json(array('ok' => false, 'message' => 'Not signed in.'));
 

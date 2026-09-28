@@ -34,6 +34,53 @@ require __DIR__ . '/verify-xrpl.php';
 $fail = 0;
 function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $what\n"; } }
 
+/* ---------- 0. the parallel resolver -------------------------------------- */
+/*
+ * NEW AND WORTH TESTING PROPERLY. Resolving one NFT at a time is what killed
+ * the first real link -- 111s of serial IPFS against a 30s ceiling -- so the
+ * batch version has to keep every property the serial one had: one answer per
+ * NFT, in order, a fallback name for anything unresolved, and a second
+ * gateway actually consulted for whatever the first could not answer.
+ */
+$NFTS = array(
+	array('id'=>'A','serial'=>1,'uri'=>'ipfs://cidA','policy'=>'r:1','issuer'=>'r','taxon'=>1),
+	array('id'=>'B','serial'=>2,'uri'=>'ipfs://cidB','policy'=>'r:1','issuer'=>'r','taxon'=>1),
+	array('id'=>'C','serial'=>3,'uri'=>'',          'policy'=>'r:1','issuer'=>'r','taxon'=>1),
+);
+$ASKED = array();
+/* cidA answers on the FIRST gateway, cidB only on a later one. */
+$gw = function($urls) {
+	global $ASKED;
+	$out = array();
+	foreach ($urls as $k => $u) {
+		$ASKED[] = $u;
+		if (strpos($u, 'cidA') !== false) { $out[$k] = '{"name":"Alpha","image":"ipfs://imgA"}'; continue; }
+		if (strpos($u, 'cidB') !== false && strpos($u, 'ipfs.io') === false) {
+			$out[$k] = '{"name":"Bravo","image":"ipfs://imgB"}'; continue;
+		}
+		$out[$k] = '';
+	}
+	return $out;
+};
+$R = xrpl_resolve_many($NFTS, 'https://ipfs.io/ipfs/', null, $gw);
+ok(count($R) === 3, 'one metadata entry per NFT');
+ok($R[0]['name'] === 'Alpha', 'the first gateway resolves what it can');
+ok($R[1]['name'] === 'Bravo', 'a LATER gateway resolves what the first could not');
+ok($R[2]['name'] === 'XRPL #3', 'an NFT with no URI gets the synthesised name, not an error');
+ok($R[2]['image'] === '', 'and no image');
+/* Order matters: verifyNFTsXRPL zips these back onto its queue by index. */
+ok(array_keys($R) === array(0,1,2), 'keys are positions, in order, with no gaps');
+/* The expensive property. cidA must be asked for ONCE -- if a resolved NFT
+   were re-sent to every gateway, the batch would cost as much as the serial
+   version it replaced. */
+$a_hits = 0; foreach ($ASKED as $u) if (strpos($u, 'cidA') !== false) $a_hits++;
+ok($a_hits === 1, 'a resolved NFT is not asked again on later gateways (got ' . $a_hits . ')');
+
+$ASKED = array();
+$R2 = xrpl_resolve_many($NFTS, 'https://ipfs.io/ipfs/', null, $gw, time() - 1);
+ok($R2[0]['name'] === 'XRPL #1' && !$ASKED,
+   'a blown deadline returns fallbacks and asks nothing, rather than hanging');
+
 /* ---------- 1. the pure mappings ------------------------------------------ */
 ok(xrpl_collection_key('rABC', 7) === 'rABC:7', 'issuer+taxon makes a collection key');
 ok(xrpl_collection_key('rABC', '007') === 'rABC:7', 'a taxon is normalised to an int');

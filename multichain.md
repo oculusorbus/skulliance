@@ -1091,6 +1091,41 @@ UPDATE nfts n JOIN collections c ON c.id = n.collection_id
 
 `verify-xrpl-doctor.php` §1b finds them and prints this.
 
+## 6d5. Metadata must be fetched in parallel
+
+The first real holder linked, matched 20 Bootlegs, and got nothing. Measured
+against their actual wallet:
+
+| | serial | parallel |
+|---|---|---|
+| read 498 NFTs from the ledger | 1.5s | 1.5s |
+| resolve 20 metadata documents | **111s** | **14s** |
+| whole request | **113s** | **16s** |
+
+PHP's default `max_execution_time` is **30s**. The request was killed partway
+— *after* `removeUser()` and *before* the writes — so the holder saw nothing,
+the row count stayed zero, and nothing was logged. Every individual piece was
+correct: right collection, right key, right wallet row, 20 matches on the
+ledger. It was only ever the wall clock.
+
+**IPFS gateways are slow individually and perfectly happy in parallel**, so
+the sum was never the number that mattered. `xrpl_resolve_many()` asks the
+preferred gateway for the whole batch, then asks the next gateway only for
+what the first could not answer — one round trip per gateway for the batch
+instead of one per NFT. `XRPL_FETCH_CONCURRENCY` caps it at 12 in flight so a
+large holder does not get the server rate-limited by every gateway at once,
+which is the problem this is meant to avoid rather than cause.
+
+**The harness keeps its serial path.** A custom `$fetch` is looped one URL at
+a time — same answers, same order, no network — and only the real fetcher
+takes the `curl_multi` route. The tests did not change; production stopped
+being serial.
+
+Both link endpoints also `@set_time_limit(90)`. The real limit is
+`xrpl_verify_user()`'s 45s budget, which now covers the metadata rounds too
+and degrades to synthesised names rather than dying; the PHP ceiling just
+must not pull the rug out from under it first.
+
 ## 6e. IPFS gateways — one is not enough
 
 A sample of Maxi's art first resolved with no name and no image, which looked
