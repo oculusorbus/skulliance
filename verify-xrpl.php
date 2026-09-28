@@ -755,23 +755,83 @@ function verifyNFTsXRPL($conn, $addresses, $collections, $asset_ids,
 	   IPFS = 111s against a 30s max_execution_time, so the request died
 	   after the clear and before the writes. Gathering the whole job first
 	   turns the wall clock from the SUM of the fetches into the slowest one. */
+	/*
+	 * METADATA IS FOR NEW NFTs ONLY, and this was resolving it for ALL of
+	 * them on every run. processNFT() uses the name and image ONLY when it
+	 * reaches createNFT(); for an asset it already knows it calls
+	 * updateNFT(), which sets user_id and touches nothing else. So every
+	 * night was spending an IPFS fetch per staked NFT to produce values that
+	 * were then discarded.
+	 *
+	 * Nobody noticed with one holder and twenty NFTs. At the scale now
+	 * registered -- 21 collections, 3,400 NFTs, holders with 120 apiece --
+	 * it is the difference between a pass that finishes and one that does
+	 * not: ~14s per 20 NFTs means 3,400 would need about 40 minutes against
+	 * a 600s budget, and blowing the budget does not just delay things, it
+	 * writes PERMANENTLY degraded rows (see below).
+	 */
+	$known = array_flip($asset_ids);
+
+	/*
+	 * EXCEPT WHEN A PREVIOUS RUN FAILED TO RESOLVE IT.
+	 *
+	 * xrpl_resolve_metadata() falls back to "XRPL #<serial>" with no image
+	 * when it cannot read the document, and says the row "can be corrected
+	 * later" -- but nothing corrected it, because processNFT() only ever
+	 * writes name and image once. A gateway having a bad minute meant an NFT
+	 * was named XRPL #95440433 with no artwork forever, and the image cache
+	 * could not help: it caches a CID, and there is no CID stored.
+	 *
+	 * That fallback name is OUR string and nothing else produces it, so it
+	 * is a reliable marker for "never actually read". Those get re-resolved
+	 * and written back, which makes degradation temporary rather than
+	 * permanent and lets both budgets be generous with what they skip.
+	 */
+	$repair = array();
+	if (is_object($conn)) {
+		$r = @$conn->query("SELECT asset_id FROM nfts
+		                     WHERE blockchain_id = " . XRPL_CHAIN_ID . "
+		                       AND name REGEXP '^XRPL #[0-9]+$'
+		                     LIMIT 500");
+		while ($r && $row = $r->fetch_assoc()) $repair[$row['asset_id']] = 1;
+	}
+
 	$queue = array();
 	foreach ($held as $address => $list) {
 		foreach ($list as $nft) {
 			if (!isset($collections[$nft['policy']])) continue;   // not ours
-			$queue[] = array('nft' => $nft, 'address' => $address);
+			$queue[] = array(
+				'nft'     => $nft,
+				'address' => $address,
+				/* Fetch the document only if it will be used for something. */
+				'need'    => !isset($known[$nft['id']]) || isset($repair[$nft['id']]),
+				'fix'     => isset($repair[$nft['id']]),
+			);
 		}
 	}
-	$metas = xrpl_resolve_many(
-		array_map(function($q){ return $q['nft']; }, $queue),
-		$gateway, $fetch, isset($opt['fetch_many']) ? $opt['fetch_many'] : null, $deadline);
 
-	$wrote = 0;
+	$wanted = array();
+	foreach ($queue as $i => $q) if ($q['need']) $wanted[$i] = $q['nft'];
+	$metas = $wanted ? xrpl_resolve_many(
+		$wanted,
+		$gateway, $fetch, isset($opt['fetch_many']) ? $opt['fetch_many'] : null, $deadline)
+		: array();
+
+	$wrote = 0; $repaired = 0;
 	foreach ($queue as $i => $q) {
 		{
 			$nft = $q['nft']; $address = $q['address'];
 			$meta = isset($metas[$i]) ? $metas[$i]
 			      : array('name' => 'XRPL #' . $nft['serial'], 'image' => '', 'collection' => '');
+
+			/* A repair: the row exists, so processNFT() below will only touch
+			   ownership. Write the recovered name and image here, and only if
+			   this attempt actually got somewhere -- otherwise a second bad
+			   night would overwrite a good row with a fallback. */
+			if ($q['fix'] && is_object($conn) && strpos($meta['name'], 'XRPL #') !== 0) {
+				updateNFTMetadata($conn, $nft['id'], $meta['name'], $meta['image']);
+				$repaired++;
+			}
 			$payload = processNFT(
 				$conn,
 				$nft['policy'],        // policy_id   -> collections lookup
@@ -794,5 +854,6 @@ function verifyNFTsXRPL($conn, $addresses, $collections, $asset_ids,
 	}
 
 	return array('asset_ids' => $asset_ids, 'nft_owners' => $nft_owners,
-		'ok' => true, 'failed' => array(), 'read' => $read, 'wrote' => $wrote);
+		'ok' => true, 'failed' => array(), 'read' => $read, 'wrote' => $wrote,
+		'resolved' => count($wanted), 'repaired' => $repaired);
 }

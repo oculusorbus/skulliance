@@ -1263,6 +1263,46 @@ UPDATE wallets SET blockchain_id = 2
 `verify-xrpl-doctor.php` with no argument lists r-addresses and flags any on
 the wrong chain.
 
+## 6d9. Metadata is for new NFTs only, and failures must be repairable
+
+Registering 21 collections turned a rounding error into the thing that
+decides whether the pass finishes.
+
+**It was resolving metadata for every staked NFT, every run.** `processNFT()`
+uses the name and image *only* when it reaches `createNFT()`; for an asset it
+already knows it calls `updateNFT()`, which sets `user_id` and touches
+nothing else. So every night spent an IPFS fetch per NFT to produce values
+that were then discarded. Invisible with one holder and twenty NFTs. At
+3,400 NFTs it is ~40 minutes against a 600s budget — the comment on
+`xrpl_resolve_metadata()` claiming it "runs once per NFT ever" was
+aspirational, not true.
+
+Now only NFTs not already in `$asset_ids` are fetched.
+
+**And a failed resolution was permanent.** The resolver falls back to
+`XRPL #<serial>` with no image and says the row "can be corrected later" —
+but nothing corrected it, because name and image are written exactly once.
+A gateway having a bad minute meant an NFT was called `XRPL #95440433`
+forever, with no artwork, and **the image cache could not help**: it caches
+a CID and there was no CID stored. That is the link between the two
+problems — bad metadata silently becomes a permanently missing image.
+
+That fallback name is our own string, so it is a reliable marker for "never
+actually read". Those rows are re-resolved and written back via
+`updateNFTMetadata()`, which:
+
+- moves the name only when the new attempt produced a real one, so a second
+  bad night cannot overwrite a good row with a fallback;
+- strips `ipfs://` exactly as `processNFT()` does, since storing the scheme
+  would make the cache build `gateway."ipfs://..."` and fail forever;
+- leaves an empty image alone, because plenty of NFTs legitimately have none.
+
+**Why this matters more than the budget numbers.** Darkula's top holders
+have 120, 119, 100, 99 and 83 NFTs. At ~14s per 20, a 120-NFT wallet needs
+~85s on its first link against `xrpl_verify_user()`'s 45s budget. Those
+holders would have hit the deadline and been given permanent fallback names.
+With repair in place, a blown deadline costs a night, not the artwork.
+
 ## 6e. IPFS gateways — one is not enough
 
 A sample of Maxi's art first resolved with no name and no image, which looked

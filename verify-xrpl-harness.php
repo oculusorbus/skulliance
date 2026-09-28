@@ -205,6 +205,39 @@ ok($res10['ok'] === true, 'a clean pass succeeds');
 ok($cleared === 1, 'it cleared exactly once');
 ok($orderOk, 'and it cleared BEFORE writing, not after');
 ok(count($WROTE) === 2, 'both NFTs were written ('.count($WROTE).')');
+ok($res10['resolved'] === 2, 'and both needed metadata, being new');
+
+/*
+ * METADATA ONLY FOR NEW NFTs.
+ *
+ * processNFT() uses the name and image only when it reaches createNFT(); for
+ * an asset it already knows it calls updateNFT(), which sets user_id and
+ * nothing else. Resolving anyway meant an IPFS fetch per staked NFT per
+ * night to produce values that were thrown away -- invisible with one holder
+ * and twenty NFTs, and the difference between finishing and not at 3,400.
+ */
+$WROTE = array();
+$fetched = 0;
+$counting = function($url, $post) use (&$fetched) {
+	if ($post === null) { $fetched++; return json_encode(array('name' => 'X', 'image' => '')); }
+	return page(array(1, 2), null, 'rISS', 1);
+};
+/* Both ids already known: $asset_ids is what getNFTAssetIDs() returns. */
+$ids = array(11 => str_pad('1', 64, '0', STR_PAD_LEFT),
+             12 => str_pad('2', 64, '0', STR_PAD_LEFT));
+$res12 = verifyNFTsXRPL(null, array('rGOOD'), array('rISS:1' => 9), $ids,
+	array(), array('fetch' => $counting));
+ok($res12['ok'] === true, 'a pass over NFTs already on file succeeds');
+ok($res12['resolved'] === 0, 'and resolves NO metadata for them (got '.$res12['resolved'].')');
+ok($fetched === 0, 'so it makes zero gateway calls (made '.$fetched.')');
+ok(count($WROTE) === 2, 'while still handing both to processNFT for ownership');
+
+/* One known, one new: only the new one costs a fetch. */
+$WROTE = array(); $fetched = 0;
+$res13 = verifyNFTsXRPL(null, array('rGOOD'), array('rISS:1' => 9),
+	array(11 => str_pad('1', 64, '0', STR_PAD_LEFT)), array(), array('fetch' => $counting));
+ok($res13['resolved'] === 1, 'a mixed pass resolves only the new NFT (got '.$res13['resolved'].')');
+ok(count($WROTE) === 2, 'and still processes both');
 
 /* the budget is a failure, not a partial write */
 $WROTE = array(); $cleared = 0;

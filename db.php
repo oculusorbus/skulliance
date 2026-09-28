@@ -88,6 +88,11 @@ if (!defined('MERCH_ENCRYPT_KEY')) {
 }
 define('MERCH_ENCRYPT_CIPHER', 'AES-256-CBC');
 
+/* Guarded here as well as in verify-xrpl.php and xaman.php: db.php is included
+   by every page, most of which never load the XRPL files, and an undefined
+   constant is a fatal in PHP 8. All three guards, so any include order works. */
+if (!defined('XRPL_CHAIN_ID')) define('XRPL_CHAIN_ID', 2);
+
 // Gateway used for an NFT image that is not cached locally yet. See getIPFS().
 // Overridable in credentials/db_credentials.php.
 if (!defined('IPFS_FALLBACK_GATEWAY')) {
@@ -3190,6 +3195,34 @@ function createNFT($conn, $asset_id, $asset_name, $name, $ipfs, $collection_id, 
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	  return false;
 	}
+}
+
+/*
+ * Repair a row whose metadata never resolved.
+ *
+ * processNFT() writes name and ipfs exactly once, at createNFT(). When the
+ * gateways were having a bad minute the row was created with the synthesised
+ * "XRPL #<serial>" name and no image, and nothing ever went back for it --
+ * the image cache could not help either, because it caches a CID and there
+ * was no CID to cache. This is what goes back for it.
+ *
+ * Name only moves when there is something better to write; the caller
+ * already refuses to call this with a fallback. The image is allowed to stay
+ * empty, because plenty of NFTs legitimately have none.
+ */
+function updateNFTMetadata($conn, $asset_id, $name, $ipfs) {
+	$asset_id = $conn->real_escape_string($asset_id);
+	$name     = $conn->real_escape_string($name);
+	/* Same 7-character strip processNFT() does, so a repaired row stores the
+	   bare CID the cache expects and not "ipfs://..." -- storing the scheme
+	   would make the cache build gateway."ipfs://..." and fail forever. */
+	$cid = ($ipfs !== '' && strpos($ipfs, 'ipfs://') === 0) ? substr($ipfs, 7) : '';
+	$cid = $conn->real_escape_string($cid);
+	$set = "name = '".$name."'";
+	if ($cid !== '') $set .= ", ipfs = '".$cid."'";
+	$conn->query("UPDATE nfts SET ".$set."
+	               WHERE asset_id = '".$asset_id."'
+	                 AND blockchain_id = ".XRPL_CHAIN_ID);
 }
 
 // Update NFT for user
