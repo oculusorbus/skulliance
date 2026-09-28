@@ -42,7 +42,7 @@ if ($user_id <= 0) dhc_json(array('ok' => false, 'message' => 'Not signed in.'))
 
 $account = isset($_POST['address']) ? trim((string)$_POST['address']) : '';
 if (!xaman_valid_account($account))
-	dhc_json(array('ok' => false, 'message' => 'That is not an XRP Ledger address.'));
+	dhc_json(array('ok' => false, 'message' => 'That is not an XRPL address.'));
 
 /* Whitelisted, not trusted: `via` is written to the row that records how this
    address was proved, so a client must not be able to label itself 'xaman'

@@ -1,6 +1,6 @@
 <?php
 /**
- * xaman.php — Xaman (formerly XUMM) sign-in for XRP Ledger wallets.
+ * xaman.php — Xaman (formerly XUMM) sign-in for XRPL wallets.
  *
  * Proves somebody controls an XRPL account, and nothing else. See
  * multichain.md §4.

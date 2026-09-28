@@ -317,13 +317,19 @@
 			<div id="wallet-status" style="display:none"></div>
 
 			<?php if(isset($_SESSION['userData']['user_id'])): ?>
-			<?php /* XRP LEDGER. Not a wallet the CIP-30 grid can detect, because
-			         Xaman is a phone app rather than a browser extension -- so
-			         it is offered explicitly rather than "detected". */ ?>
+			<?php /* XRPL. Not a wallet the CIP-30 grid can detect, because Xaman
+			         is a phone app rather than a browser extension -- so it is
+			         offered explicitly rather than "detected".
+
+			         SAY "XRPL", NOT "XRP LEDGER", in anything a user reads here.
+			         The hardware-wallet button below is a LEDGER, and a panel
+			         offering both "an XRP Ledger wallet" and "a Ledger" reads as
+			         two ways to do the same thing. The chain's abbreviation
+			         carries no such collision. */ ?>
 			<div class="wallet-xrpl">
 				<button type="button" class="wallet-xrpl-btn" onclick="xamanConnect()">
 					<span class="wallet-xrpl-mark">XRP</span>
-					<span>Connect an XRP Ledger wallet<small>Scan with Xaman</small></span>
+					<span>Connect an XRPL wallet<small>Scan with Xaman</small></span>
 				</button>
 				<?php /* CROSSMARK and GEMWALLET. Desktop paths for people who do
 				         not keep their XRPL account on a phone. Only offered when
