@@ -3,26 +3,17 @@
  * dhcgame.php — public landing page for the DHC ecosystem:
  * build a Fighter, browse the Collection, fight in the Arena.
  *
- * SESSION HANDLING IS COPIED FROM match3rpg.php ON PURPOSE. Bare
- * session_start(), then restore from the 6-month SessionCookie if PHPSESSID
- * has lapsed, merging rather than assigning. NO db.php: that include was
- * what kicked stakers out of the other landing pages, and this one does not
- * need it -- the Fighter art comes through homepage-data.php, which opens
- * its own connection and touches no session.
+ * NO SESSION AT ALL, unlike match3rpg.php and the other landings. They call
+ * session_start() to decide whether to show a "back to Dashboard" button;
+ * this page does not have one, and session_start() is not free on a page
+ * built for strangers -- it writes a session file for every cookieless
+ * visitor, which is every crawler. db.php's own comment documents that
+ * exact cost. Nothing here reads $_SESSION, so there is nothing to start.
+ *
+ * NO db.php either: that include is what kicked stakers out of the other
+ * landing pages. The Fighter art comes through homepage-data.php, which
+ * opens its own short-timeout connection and touches no session.
  */
-session_start();
-
-if (!isset($_SESSION['logged_in'])) {
-    if (isset($_COOKIE['SessionCookie'])) {
-        $cookieData = json_decode($_COOKIE['SessionCookie'], true);
-        if (is_array($cookieData)) {
-            // Merge, not replace -- see skulliance.php's own fix for why.
-            $_SESSION = array_merge((array)$_SESSION, $cookieData);
-        }
-    }
-}
-$is_logged_in = !empty($_SESSION['logged_in']);
-
 require_once __DIR__ . '/homepage-data.php';
 
 /*
@@ -205,22 +196,6 @@ $href_gallery   = 'dhcgallery.php';
     .center { text-align: center; }
     .lede { font-size: 1.05rem; color: #b9c7d4; max-width: 720px; margin: 0 auto 1.2em; }
 
-    /* Exit for logged-in arrivals, same pattern as match3rpg.php */
-    #dhc-exit {
-      position: fixed; top: calc(env(safe-area-inset-top, 0px) + 8px);
-      left: calc(env(safe-area-inset-left, 0px) + 8px); z-index: 99990;
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 12px; min-height: 36px;
-      background: rgba(18,18,18,.85); color: #e8eaed;
-      border: 1px solid rgba(0,200,160,.45); border-radius: 999px;
-      font-size: .82rem; font-weight: 600;
-      box-shadow: 0 2px 10px rgba(0,0,0,.4);
-      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-    }
-    #dhc-exit:hover { background: rgba(0,200,160,.18); border-color: #00c8a0; text-decoration: none; color: #e8eaed; }
-    #dhc-exit .mx-arrow { font-size: 1.05rem; line-height: 1; color: #00c8a0; }
-    @media (max-width: 480px) { #dhc-exit .mx-label { display: none; } }
-
     .hero {
       text-align: center; padding: 56px 20px 40px;
       background:
@@ -330,15 +305,11 @@ $href_gallery   = 'dhcgallery.php';
 </head>
 <body>
 
-<?php if ($is_logged_in): ?>
-<a id="dhc-exit" href="dashboard.php"><span class="mx-arrow">&larr;</span><span class="mx-label">Dashboard</span></a>
-<?php endif; ?>
-
 <header class="hero">
   <div class="wrap">
     <span class="kicker">Digi-Hell Corps</span>
-    <h1>Build a Fighter. Then find out if it was any good.</h1>
-    <p class="lede">Digi-Hell Corps is a character system you assemble from real NFT traits, a collection you can browse in full, and an Arena where the squad you built has to actually hold up. Playable free in your browser.</p>
+    <h1>Build a Fighter. Then break theirs.</h1>
+    <p class="lede">Ten trait slots, three Fighters to a Crew, and a board between you and the other Crew's back rank. Assemble from real NFT art, browse the whole collection, and fight — free, in your browser, no download.</p>
     <div class="cta-row">
       <a class="btn" href="<?php echo $href_arena; ?>">Fight in the Arena</a>
       <a class="btn ghost" href="<?php echo $href_gallery; ?>">Browse the Collection</a>
