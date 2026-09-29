@@ -3977,6 +3977,55 @@ function getNFTAssetIDs($conn, $blockchain_id = 0){
 }
 
 // Get NFTs
+/*
+ * THE SAME ROWS getNFTs() RENDERS, RETURNED INSTEAD OF ECHOED.
+ *
+ * getNFTs() builds a query and then echoes markup for it, which is why a
+ * page like my-nfts.php is 120 lines that shows almost nothing you can
+ * edit -- the design lives in the data layer. Three pages call it in three
+ * different display modes, so rewriting it is not worth the risk.
+ *
+ * This is additive: same filters, same ORDER BY, same columns, no output.
+ * A page that wants to own its own markup calls this; getNFTs() is
+ * untouched and showcase.php / diamond-skulls.php keep working exactly as
+ * they did. Each page migrated this way is one fewer caller, and when the
+ * last one goes getNFTs() can follow it.
+ *
+ * Signature mirrors getNFTs()'s leading arguments on purpose -- a caller
+ * swapping one for the other should not have to re-read the parameters.
+ */
+function getNFTsData($conn, $filterby = "", $advanced_filter = "", $page = 1, $per_page = 0) {
+	if (!isset($_SESSION['userData']['user_id'])) return array();
+
+	if ($filterby != "None" && $filterby != "" && $filterby != "core") {
+		$filterby = "project_id = '".$filterby."' ";
+	} else if ($filterby == "core") {
+		$filterby = "project_id IN(1,2,3,4,5,6) ";
+	} else {
+		$filterby = "";
+	}
+	$user_filter = "";
+	if ($advanced_filter == "all") {
+		$user_filter = "";
+	} else if ($advanced_filter == "my" || $advanced_filter == "") {
+		$user_filter = "user_id = '".$_SESSION['userData']['user_id']."'";
+	} else if ($advanced_filter != "") {
+		$user_filter = "username = '".$conn->real_escape_string($advanced_filter)."'";
+	}
+	$and = (($filterby != "None" && $filterby != "") && $user_filter != "") ? " AND " : "";
+
+	$limit = "";
+	if ($per_page > 0) {
+		$offset = (max(1, (int)$page) - 1) * (int)$per_page;
+		$limit = " LIMIT " . (int)$per_page . " OFFSET " . (int)$offset;
+	}
+	$sql = "SELECT asset_id, asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.blockchain_id AS blockchain_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby." ORDER BY FIELD(project_id,6,5,4,3,2,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50), collection_id".$limit;
+	$res = $conn->query($sql);
+	$out = array();
+	if ($res) while ($row = $res->fetch_assoc()) $out[] = $row;
+	return $out;
+}
+
 function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false, $diamond_skull_id="", $core_projects=false, $diamond_skull_totals="", $page=1, $per_page=0){
 	global $projects, $project_names;
 	if(isset($_SESSION['userData']['user_id'])){
