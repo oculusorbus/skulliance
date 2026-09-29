@@ -4232,6 +4232,50 @@ function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $proj
 }
 
 /*
+ * WHO MAY EDIT WHICH LISTING -- asked in ONE place, by both the page that
+ * draws the button and the endpoint that does the write.
+ *
+ * Two answers, because there are two kinds of editor:
+ *
+ *   'super'    user 1. Every listing, every field.
+ *   'projects' a partner creator. The listings credited to a project THEY
+ *              own, and only the fields they could have submitted.
+ *
+ * OWNERSHIP IS BY PROJECT, because there is nothing else to go on: `items`
+ * records no submitter, so the only link between a listing and a person is
+ * projects.discord_id -- which is exactly the link renderItemSubmissionForm()
+ * already uses to decide who may submit at all. A creator can own more than
+ * one project, so this returns a set rather than an id.
+ *
+ * Returning the SAME ANSWER to both callers is the point. A page that
+ * decides for itself which buttons to draw, and an endpoint that decides
+ * for itself which writes to accept, are two rules that will disagree
+ * eventually -- and the one that matters is the endpoint's, so the other
+ * would drift into drawing buttons that fail.
+ */
+function storeItemEditRights($conn){
+	$out = array('super' => false, 'projects' => array());
+
+	$user_id = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
+	if ($user_id <= 0) return $out;
+
+	if ($user_id === 1) { $out['super'] = true; }
+
+	$discord = isset($_SESSION['userData']['discord_id']) ? (string)$_SESSION['userData']['discord_id'] : '';
+	if ($discord === '') return $out;
+
+	$projects = getProjects($conn);
+	if (!is_array($projects)) return $out;
+	foreach ($projects as $id => $p) {
+		/* Loose compare on purpose: discord ids are 18-digit strings that
+		   have been stored as both string and int across this codebase. */
+		if (isset($p['discord_id']) && $p['discord_id'] != '' && $p['discord_id'] == $discord)
+			$out['projects'][(int)$id] = true;
+	}
+	return $out;
+}
+
+/*
  * ADMIN EDIT, and the only writer that can change an item after listing.
  *
  * updateItem() above is dead code -- nothing calls it -- and it covers

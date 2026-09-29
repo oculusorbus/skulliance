@@ -7,14 +7,23 @@
  * image URL, a price agreed after the fact -- every one of those has meant
  * opening phpMyAdmin and writing the UPDATE by hand.
  *
- * WHO CAN USE IT: user_id 1, and nobody else. That is checked HERE, against
- * the session, and not at the page: store.php only decides whether to draw
- * the button, and a button that is not drawn is not a permission. Anyone
- * can POST to this file, so this file is the gate.
+ * WHO CAN USE IT, and this is the whole security model:
  *
- * It deliberately does NOT take a user_id, a role, or an "admin" flag from
- * the request. There is exactly one authority on who is asking, and it is
- * the session.
+ *   user 1            every listing, every field.
+ *   partner creator   listings credited to a project THEY own, and only
+ *                     the fields the submission form would have let them
+ *                     fill in. Ownership is projects.discord_id, the same
+ *                     link renderItemSubmissionForm() uses to decide who
+ *                     may submit -- see storeItemEditRights() in db.php.
+ *
+ * That is checked HERE, against the session, and not at the page:
+ * store.php only decides whether to draw a button, and a button that is
+ * not drawn is not a permission. Anyone can POST to this file, so this
+ * file is the gate.
+ *
+ * It deliberately does NOT take a user_id, a role, a project list, or an
+ * "admin" flag from the request. There is exactly one authority on who is
+ * asking, and it is the session.
  */
 ob_start();
 header('Content-Type: application/json');
@@ -37,16 +46,26 @@ if (session_status() === PHP_SESSION_ACTIVE
 	if (is_array($cookieData)) $_SESSION = array_merge((array)$_SESSION, $cookieData);
 }
 
-/* THE GATE. Not a helper, not a constant somewhere else -- the check that
-   matters is in the file that does the writing. */
-$user_id = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
-if ($user_id !== 1) { json_exit(array('success' => false, 'message' => 'Not authorized.')); }
+/* THE GATE. Not a helper the page also trusts to be enough -- the check
+   that matters is in the file that does the writing. */
+$rights = storeItemEditRights($conn);
+$super  = !empty($rights['super']);
+$mine   = $rights['projects'];
+if (!$super && !$mine) { json_exit(array('success' => false, 'message' => 'Not authorized.')); }
 
 $item_id = (int)($_POST['item_id'] ?? 0);
 if ($item_id <= 0) { json_exit(array('success' => false, 'message' => 'Invalid item.')); }
 
-$exists = $conn->query("SELECT id FROM items WHERE id = '$item_id' LIMIT 1");
-if (!$exists || !$exists->num_rows) { json_exit(array('success' => false, 'message' => 'No such item.')); }
+/* The CURRENT project is read from the database, never from the request.
+   A partner may only touch a listing that is already theirs, and the only
+   trustworthy answer to "whose is it" is the stored row. */
+$cur = $conn->query("SELECT id, project_id FROM items WHERE id = '$item_id' LIMIT 1");
+if (!$cur || !$cur->num_rows) { json_exit(array('success' => false, 'message' => 'No such item.')); }
+$cur_row = $cur->fetch_assoc();
+$cur_project = (int)$cur_row['project_id'];
+
+if (!$super && !isset($mine[$cur_project]))
+	json_exit(array('success' => false, 'message' => 'That listing belongs to another project.'));
 
 $name      = trim((string)($_POST['name'] ?? ''));
 $image_url = trim((string)($_POST['image_url'] ?? ''));
@@ -83,25 +102,49 @@ $project_id = (int)($_POST['project_id'] ?? 0);
 $valid = $conn->query("SELECT id FROM projects WHERE id = '$project_id' LIMIT 1");
 if (!$valid || !$valid->num_rows) { json_exit(array('success' => false, 'message' => 'Unknown project.')); }
 
-$secondary = (int)($_POST['secondary_project_id'] ?? 0);
-if ($secondary !== 0) {
-	if ($secondary === $project_id)
-		json_exit(array('success' => false, 'message' => 'Second currency must differ from the first.'));
-	$vs = $conn->query("SELECT id FROM projects WHERE id = '$secondary' LIMIT 1");
-	if (!$vs || !$vs->num_rows) { json_exit(array('success' => false, 'message' => 'Unknown second project.')); }
+/* BOTH ENDS OF A MOVE ARE CHECKED. Owning the listing today does not
+   entitle anyone to push it onto somebody else's shelf tomorrow -- the
+   project a listing is credited to is what pays for it in that project's
+   points and what shows under that project's filter. */
+if (!$super && !isset($mine[$project_id]))
+	json_exit(array('success' => false, 'message' => 'You can only credit a listing to your own project.'));
+
+$fields = array(
+	'name'       => $name,
+	'image_url'  => $image_url,
+	'price'      => $price,
+	'quantity'   => $quantity,
+	'project_id' => $project_id,
+);
+
+/*
+ * TWO FIELDS ARE ADMIN-ONLY, and they are OMITTED rather than rejected.
+ *
+ *   featured              flags a listing Exclusive: it sorts first and
+ *                         gets its own filter. That is merchandising, not
+ *                         authorship, and is not a lever to self-grant.
+ *   secondary_project_id  makes a listing cost ANOTHER project's points.
+ *                         Spending someone else's currency is their call.
+ *
+ * Neither is on the submission form, so a partner never set them in the
+ * first place. They are left OUT of the update entirely -- the partner
+ * form does not post them, and reading `$_POST['featured'] ?? 0` here
+ * would silently clear an Exclusive flag every time its owner fixed a
+ * typo. Omitted means untouched; adminUpdateItem() only SETs what it gets.
+ */
+if ($super) {
+	$secondary = (int)($_POST['secondary_project_id'] ?? 0);
+	if ($secondary !== 0) {
+		if ($secondary === $project_id)
+			json_exit(array('success' => false, 'message' => 'Second currency must differ from the first.'));
+		$vs = $conn->query("SELECT id FROM projects WHERE id = '$secondary' LIMIT 1");
+		if (!$vs || !$vs->num_rows) { json_exit(array('success' => false, 'message' => 'Unknown second project.')); }
+	}
+	$fields['secondary_project_id'] = $secondary;
+	$fields['featured']             = !empty($_POST['featured']) ? 1 : 0;
 }
 
-$featured = !empty($_POST['featured']) ? 1 : 0;
-
-$result = adminUpdateItem($conn, $item_id, array(
-	'name'                 => $name,
-	'image_url'            => $image_url,
-	'price'                => $price,
-	'quantity'             => $quantity,
-	'project_id'           => $project_id,
-	'secondary_project_id' => $secondary,
-	'featured'             => $featured,
-));
+$result = adminUpdateItem($conn, $item_id, $fields);
 
 $conn->close();
 json_exit($result);

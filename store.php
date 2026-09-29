@@ -41,18 +41,35 @@ foreach ($st_items as $it) {
 }
 
 /*
- * ADMIN EDIT, user 1 only.
+ * EDITING A LISTING AFTER IT IS SUBMITTED.
  *
- * A listing has been unchangeable once submitted: a typo, a dead image URL
- * or a price agreed afterwards all meant opening phpMyAdmin. This draws an
- * Edit control on each card and hands it to ajax/item-edit.php.
+ * A listing used to be frozen the moment it was created: a typo, a dead
+ * image URL or a price agreed afterwards all meant opening phpMyAdmin.
+ * This draws an Edit control on the cards the viewer may change and hands
+ * it to ajax/item-edit.php.
  *
- * THIS FLAG DECIDES NOTHING BUT WHETHER A BUTTON IS DRAWN. The endpoint
- * re-checks the session itself, because a button nobody can see is not a
- * permission -- anyone can POST to the endpoint directly.
+ * WHO SEES IT is storeItemEditRights()' answer, not this page's opinion --
+ * user 1 on everything, a partner creator on the listings credited to a
+ * project they own. Asking the same function the endpoint asks is what
+ * stops the page drawing buttons the endpoint would refuse.
+ *
+ * NONE OF THIS DECIDES ANYTHING. It decides whether a button is drawn. The
+ * endpoint re-checks the session itself, because a button nobody can see
+ * is not a permission -- anyone can POST to the endpoint directly.
  */
-$st_admin    = isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] === 1;
-$st_projects = $st_admin ? getProjects($conn) : array();
+$st_rights  = storeItemEditRights($conn);
+$st_admin   = !empty($st_rights['super']);   // may edit every field
+$st_mine    = $st_rights['projects'];        // project ids this viewer owns
+$st_canedit = $st_admin || (bool)$st_mine;
+
+/* A partner picks from THEIR projects only; user 1 picks from all. The
+   endpoint enforces the same list -- this just keeps the form honest. */
+$st_projects = array();
+if ($st_canedit) {
+	$st_projects = getProjects($conn);
+	if (!is_array($st_projects)) $st_projects = array();
+	if (!$st_admin) $st_projects = array_intersect_key($st_projects, $st_mine);
+}
 ?>
 		<a name="store" id="store"></a>
 		<div class="row" id="row1">
@@ -105,7 +122,11 @@ $st_projects = $st_admin ? getProjects($conn) : array();
 						$pid = (int)$row['project_id']; ?>
 						<div class="nft store-item<?php echo !empty($row['owned']) ? ' st-owned' : ''; ?>">
 							<div class="nft-data">
-								<?php if ($st_admin): ?>
+								<?php /* User 1 on anything; a partner only on their own project's
+								         listings. Same test the endpoint applies to the STORED
+								         project_id, so no drawn button can fail authorisation. */
+								$st_editable = $st_canedit && ($st_admin || isset($st_mine[$pid])); ?>
+								<?php if ($st_editable): ?>
 								<?php /* Every value the form needs is already in $row, so the
 								         card carries it and the modal opens with no round
 								         trip. The raw name is stored -- including the literal
@@ -184,8 +205,8 @@ $st_projects = $st_admin ? getProjects($conn) : array();
 				<?php if(isset($_SESSION['userData']['user_id'])){ renderItemSubmissionForm($creators, "store"); } ?>
 			</div>
 		</div>
-<?php if ($st_admin): ?>
-		<!-- Admin listing editor. Rendered for user 1 only; the endpoint checks again. -->
+<?php if ($st_canedit): ?>
+		<!-- Listing editor. Rendered only for someone with something to edit; the endpoint checks again. -->
 		<div id="st-edit-modal" class="st-modal" style="display:none;">
 			<?php /* A REAL FORM, pointed at the endpoint rather than at this page.
 			         store.php's own handler creates an item whenever it sees a
@@ -217,6 +238,13 @@ $st_projects = $st_admin ? getProjects($conn) : array();
 								echo htmlspecialchars($pr['name'] . ' (' . $pr['currency'] . ')'); ?></option>
 							<?php endforeach; ?>
 						</select></label>
+					<?php if ($st_admin): ?>
+					<?php /* ADMIN ONLY, and not rendered rather than disabled. A second
+					         currency makes a listing cost ANOTHER project's points, and
+					         Featured is merchandising -- neither is on the submission
+					         form, so a partner never set them. The endpoint OMITS both
+					         from the UPDATE for a partner, so they survive untouched
+					         when their owner fixes a typo. */ ?>
 					<label>Second currency
 						<select name="secondary_project_id" id="st-e-secondary">
 							<option value="0">None</option>
@@ -225,9 +253,12 @@ $st_projects = $st_admin ? getProjects($conn) : array();
 								echo htmlspecialchars($pr['name'] . ' (' . $pr['currency'] . ')'); ?></option>
 							<?php endforeach; ?>
 						</select></label>
+					<?php endif; ?>
 				</div>
+				<?php if ($st_admin): ?>
 				<label class="st-e-check"><input type="checkbox" name="featured" id="st-e-featured" value="1">
 					Featured <i>shows under the Exclusive filter and sorts first</i></label>
+				<?php endif; ?>
 				<p class="st-e-msg" id="st-e-msg"></p>
 				<div class="st-e-actions">
 					<button type="button" class="small-button" onclick="closeItemEdit()">Cancel</button>
@@ -438,9 +469,9 @@ function closeStoreImageModal(){
 document.addEventListener('keydown', function(e){ if(e.key !== 'Escape') return;
 	closeStoreImageModal(); if (typeof closeItemEdit === 'function') closeItemEdit(); });
 </script>
-<?php if ($st_admin): ?>
+<?php if ($st_canedit): ?>
 <script type="text/javascript">
-/* Admin listing editor. Every value comes off the card's own data-* set,
+/* Listing editor. Every value comes off the card's own data-* set,
    so opening the form costs nothing and works with the page already
    rendered. The endpoint is the authority on whether any of it is allowed. */
 function openItemEdit(btn){
@@ -452,8 +483,13 @@ function openItemEdit(btn){
 	document.getElementById('st-e-price').value    = d.price;
 	document.getElementById('st-e-qty').value      = d.quantity;
 	document.getElementById('st-e-project').value  = d.project;
-	document.getElementById('st-e-secondary').value = d.secondary;
-	document.getElementById('st-e-featured').checked = d.featured === '1';
+	/* Admin-only fields are not rendered for a partner, so guard rather than
+	   assume. The endpoint leaves those columns alone for a partner, so
+	   there is nothing here to populate and nothing to send. */
+	var sec = document.getElementById('st-e-secondary');
+	if (sec) sec.value = d.secondary;
+	var feat = document.getElementById('st-e-featured');
+	if (feat) feat.checked = d.featured === '1';
 	setItemEditMsg('', false);
 	document.getElementById('st-e-save').disabled = false;
 	document.getElementById('st-edit-modal').style.display = 'flex';
