@@ -168,6 +168,20 @@ function dhcf_render_fighter($traits, $serial) {
 		if (!is_writable($dir)) return '';
 
 		$size = 500;                       // plenty for a Discord embed, quick to build
+
+		/*
+		 * ALREADY BUILT? The filename is the serial plus a hash of the exact
+		 * traits, so an existing file IS this Fighter -- and an edited one
+		 * hashes differently and composes fresh. Rendering anyway was
+		 * affordable when the only caller was one Discord post per save; the
+		 * public landing page asks for a wall of them at once, where
+		 * recomposing 28 thousand-pixel stacks per page view is not.
+		 */
+		$name = 'f' . (int)$serial . '-' . substr(md5(json_encode($traits)), 0, 8) . '.png';
+		if (is_file($dir . '/' . $name)) {
+			return 'https://skulliance.io/staking/dhcrenders/' . $name;
+		}
+
 		$out  = imagecreatetruecolor($size, $size);
 		imagealphablending($out, false);
 		imagesavealpha($out, true);
@@ -225,7 +239,6 @@ function dhcf_render_fighter($traits, $serial) {
 		}
 		if (!$drew) return '';
 
-		$name = 'f' . (int)$serial . '-' . substr(md5(json_encode($traits)), 0, 8) . '.png';
 		$ok   = @imagepng($out, $dir . '/' . $name, 6);
 		if (!$ok) return '';
 

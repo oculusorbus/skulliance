@@ -173,6 +173,70 @@ function hp_stat_wallets($fallback = 0) {
 	}, $fallback);
 }
 
+/* ---- DHC Fighters, for the public game page --------------------------- */
+
+/**
+ * Real player-built Fighters, newest first, for the scrolling strips on
+ * dhcfighters-landing.php.
+ *
+ * REAL ONES, NOT MOCKUPS. The page's claim is that people build these, so
+ * showing invented combinations would be both a lie and worse art -- players
+ * make stranger and better Fighters than a random generator does.
+ *
+ * Returns a list of ['name' => string, 'traits' => array, 'layers' => array],
+ * already ordered for drawing by dhcf_layer_order() when that is available.
+ * Empty list on any failure, and the caller renders the section only when it
+ * has something -- a marketing page with empty frames is worse than one
+ * section shorter.
+ *
+ * Disassembled Fighters are excluded: their row survives so the build cannot
+ * be replayed as new, but the Fighter no longer exists and showing it would
+ * advertise something nobody can go and look at.
+ */
+function hp_dhc_fighters($limit = 24) {
+	$limit = max(1, min(60, (int)$limit));
+	$raw = hp_cached('dhc_fighters_' . $limit, function ($c) use ($limit) {
+		$sql = "SELECT name, serial, traits FROM dhc_fighters
+		         WHERE disassembled_at IS NULL AND invalid = 0 AND traits <> ''
+		         ORDER BY id DESC LIMIT " . $limit;
+		$r = @$c->query($sql);
+		if (!$r) return null;
+		$out = array();
+		while ($row = $r->fetch_assoc()) {
+			$t = json_decode($row['traits'], true);
+			if (!is_array($t) || !$t) continue;
+			$out[] = array(
+				'name'   => ($row['name'] !== null && $row['name'] !== '')
+				          ? $row['name'] : ('#' . $row['serial']),
+				/* The canonical renderer names its file by serial + a hash of
+				   the traits, so the serial has to travel with the Fighter. */
+				'serial' => (int)$row['serial'],
+				'traits' => $t,
+			);
+		}
+		/* Cached as JSON because hp_cached() stores a scalar. */
+		return json_encode($out);
+	}, '');
+
+	$list = $raw !== '' ? json_decode($raw, true) : array();
+	if (!is_array($list)) return array();
+
+	/* The draw order has per-trait exceptions -- a companion under the arms,
+	   arms behind the torso -- so it comes from dhcf_layer_order() when the
+	   config is loadable, and never from a hardcoded list here. Two lists
+	   that can disagree about what a Fighter looks like is the bug that
+	   already cost the Arena its effects. */
+	$have_order = function_exists('dhcf_layer_order');
+	if (!$have_order) {
+		$cfg = __DIR__ . '/dhcfighters-config.php';
+		if (is_readable($cfg)) { @include_once $cfg; $have_order = function_exists('dhcf_layer_order'); }
+	}
+	foreach ($list as $i => $f) {
+		$list[$i]['layers'] = $have_order ? dhcf_layer_order($f['traits']) : array_keys($f['traits']);
+	}
+	return $list;
+}
+
 /** Blockchains actually carrying a collection, so this says 2 only once XRPL
  *  really has one rather than because a row exists in `blockchains`. */
 function hp_stat_chains($fallback = 1) {

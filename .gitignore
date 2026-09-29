@@ -15,3 +15,5 @@ dhc/
 
 # Generated Fighter composites -- rebuilt on demand, never source.
 dhcrenders/
+# Marquee-sized derivatives of those, for digihellcorps.php. Same rule.
+images/dhc-fighters/
