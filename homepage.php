@@ -429,6 +429,25 @@
     .hp-mini b { display: block; margin-top: 10px; color: #e8eaed; font-size: .94rem; }
     .hp-mini span { display: block; color: #7a9eb0; font-size: .82rem; margin-top: 2px; }
 
+    /* A thin layer, for a pointer rather than a pitch. Giving the Skull
+       Paper or the team the same height as Games would claim they matter
+       as much. */
+    .hp-layer.hp-thin { padding: 54px 0; }
+    .hp-split { display: grid; grid-template-columns: 1.6fr auto; gap: 30px; align-items: center; }
+    @media (max-width: 760px) { .hp-split { grid-template-columns: 1fr; } }
+    .hp-split-act { text-align: left; }
+
+    /* The close. Centred on purpose -- it is the one layer that should feel
+       like an ending rather than another band of content. */
+    .hp-close { text-align: center; padding: 96px 0; }
+    .hp-close h2.hp-close-h {
+      text-align: center; font-size: clamp(2rem, 5vw, 3.4rem);
+      background: linear-gradient(135deg,#00c8a0,#0596c4);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hp-close .hp-close-p { margin: 0 auto 26px; text-align: center; }
+    .hp-close .hp-final-art { max-width: 240px; margin: 0 auto 18px; }
+
     /* ---- Platform: say what you DO, then show the wall ---- */
     .hp-does { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 30px; }
     @media (max-width: 860px) { .hp-does { grid-template-columns: 1fr; } }
@@ -888,10 +907,17 @@
     </section>
 
     <!-- Founding Artists -->
-    <section id="artists">
+    <?php /* ARTISTS. "Founding Artists" is a label; a visitor who does not
+             already know these names learns nothing from it. The heading
+             now states the fact that makes them worth looking at -- six
+             people started this, and holding any of their work pays. */ ?>
+    <section id="artists" class="hp-layer">
       <div class="wrap">
-        <h2>Founding Artists</h2>
-        <p class="hp-intro hp-center">These artists specialize in skull art on Cardano and came together to form Skulliance. Holders of their NFTs can stake them on the Skulliance platform and earn nightly off-chain points redeemable for exclusive incentives.</p>
+        <span class="hp-kick">Founding artists</span>
+        <h2>Six artists started this.</h2>
+        <p class="hp-say">They specialise in skull art on Cardano and came together to build somewhere
+           their collectors would want to stay. Hold any of their work and it earns from the first
+           night, whether or not you ever play anything.</p>
         <ul class="hp-logos hp-founding">
           <li><a href="https://x.com/SinderSkullz" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/sinderskullz.png" alt="Sinder Skullz" loading="lazy" decoding="async"><span class="hp-logo-name">Sinder Skullz</span></a></li>
           <li><a href="https://x.com/Nft4R" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/kimosabe.png" alt="Kimosabe Art" loading="lazy" decoding="async"><span class="hp-logo-name">Kimosabe Art</span></a></li>
@@ -904,10 +930,18 @@
     </section>
 
     <!-- Staking Partners -->
-    <section id="partners">
+    <?php /* PARTNERS. The count IS the argument -- twenty-seven projects
+             chose to be here -- and it was buried in a sentence. The
+             marquee below stays: it is already the most alive thing on the
+             page, and its images are lazy and below the fold, which is
+             what the hero strip could not be. */ ?>
+    <section id="partners" class="hp-layer alt">
       <div class="wrap">
-        <h2>Partner Artists &amp; Projects</h2>
-        <p class="hp-intro hp-center">With the platform success, Skulliance invited other high-quality Cardano artists/projects to participate in partner staking - their holders earn points, redeem incentives, and climb the leaderboards too.</p>
+        <span class="hp-kick">Partner projects</span>
+        <h2>Twenty-seven more projects stake here.</h2>
+        <p class="hp-say">Skulliance opened partner staking to other Cardano artists and projects, and
+           now to the XRP Ledger. Their holders earn points, redeem the same incentives and climb
+           the same leaderboards.</p>
         <?php
         // Partner flyers, split half/half across two counter-scrolling
         // marquee rows so the majority of artists register at a glance.
@@ -1052,23 +1086,38 @@
     </section>
 
     <!-- Skull Paper callout -->
-    <section id="skull-paper">
-      <div class="wrap">
-        <div class="hp-paper">
-          <img class="hp-paper-icon" src="https://www.skulliance.io/staking/pwa/skulliance-logo-icon.png" alt="Skull Paper" loading="lazy" decoding="async">
-          <h2>Dive Deeper: The Skull Paper</h2>
-          <p>Every feature above - staking rewards, missions, Realms, Diamond Skulls, the games, and the marketplace - is documented in depth in the Skull Paper, our living platform guide. Mechanics, rates, points, and formulas, kept in sync with the platform itself.</p>
+    <?php /* SKULL PAPER. A thin band on purpose -- it is a pointer, not a
+             pitch, and giving it the same weight as Games would say it
+             matters as much. The claim worth making is the unusual one:
+             the numbers are real and they are kept honest. */ ?>
+    <section id="skull-paper" class="hp-layer alt hp-thin">
+      <div class="wrap hp-split">
+        <div>
+          <span class="hp-kick">The Skull Paper</span>
+          <h2>Every rate, written down.</h2>
+          <p class="hp-say">Mechanics, rates, points and formulas for all of it - staking, missions,
+             Realms, Diamond Skulls, every game, the marketplace. A living guide kept in sync with
+             the platform rather than a whitepaper written once.</p>
+        </div>
+        <div class="hp-split-act">
           <a class="hp-cta" href="https://www.skulliance.io/staking/skullpaper.php">Read the Skull Paper</a>
         </div>
       </div>
     </section>
 
-    <!-- Membership -->
-    <section id="membership">
+    <?php /* MEMBERSHIP. Three tiers, 806 characters, and NOT ONE LINK --
+             the most conversion-shaped section on the page had nowhere to
+             go from it. The heading also led with "Tiers", which is a
+             structure, not a reason. It now leads with the thing that
+             stops a newcomer bouncing: none of this is required to
+             start. */ ?>
+    <section id="membership" class="hp-layer">
       <div class="wrap">
-        <img class="hp-member-art" src="https://www.skulliance.io/staking/images/skulliance.jpg" alt="Skulliance membership artwork" loading="lazy" decoding="async">
-        <h2>Membership Tiers</h2>
-        <p class="hp-intro hp-center">Staking is open to everyone - membership unlocks more of the store and deeper rewards as your collection grows.</p>
+        <span class="hp-kick">Membership</span>
+        <h2>Staking needs nothing.<br>Membership gets you further.</h2>
+        <p class="hp-say">Anyone can stake from day one. The tiers are what unlock the store, the
+           premium currency and the deepest reward loop as your collection grows - not a gate on
+           getting started.</p>
         <div class="hp-tiers">
           <div class="hp-tier">
             <p class="hp-tier-rank">Tier 1</p>
@@ -1086,14 +1135,19 @@
             <p>Elite members who also hold a Diamond Skull NFT. The Inner Circle earns CARBON delegation rewards plus DIAMOND from nightly emissions and crafting - the deepest reward loop on the platform.</p>
           </div>
         </div>
+        <p style="margin-top:26px;"><a class="hp-cta hp-secondary" href="https://www.skulliance.io/staking/">Start at tier zero</a></p>
       </div>
     </section>
 
-    <!-- Team -->
-    <section id="team">
+    <?php /* TEAM. Thin, like the Skull Paper -- four faces do not need a
+             full band, and giving them one would say the team matters
+             more than the games. */ ?>
+    <section id="team" class="hp-layer alt hp-thin">
       <div class="wrap">
-        <h2>Team</h2>
-        <p class="hp-intro hp-center">Dedicated to elevating skull artists on Cardano and bringing real value and utility to the Skulliance family of artists and loyal collectors.</p>
+        <span class="hp-kick">Who builds it</span>
+        <h2>A small team, in public.</h2>
+        <p class="hp-say">Dedicated to elevating skull artists and bringing real utility to the
+           collectors who back them. Everyone here is reachable.</p>
         <div class="hp-team">
           <div class="hp-member">
             <a href="https://www.x.com/oculusorbus" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/team/oculusorbus.jpg" alt="Oculus Orbus" loading="lazy" decoding="async"></a>
@@ -1120,17 +1174,21 @@
     </section>
 
     <!-- Final CTA -->
-    <section>
-      <div class="wrap">
-        <div class="hp-final">
-          <img class="hp-final-art" src="https://www.skulliance.io/staking/images/skulliance-cardano-logo.png" alt="Skulliance on Cardano" width="1500" height="1674" loading="lazy" decoding="async">
-          <h2>Join our Community</h2>
-          <p>Play the games, meet the artists, grab some merch, and start earning nightly rewards for the skull NFTs you already love collecting. Cardano is our home - come make it yours.</p>
-          <div class="hp-ctas">
-            <a class="hp-cta" href="https://discord.gg/JqqBZBrph2">Join the Discord</a>
-            <a class="hp-cta hp-secondary" href="#games">Play Free Games</a>
-            <a class="hp-cta hp-secondary" href="https://www.skulliance.io/shop">Shop Merch</a>
-          </div>
+    <?php /* THE CLOSE. It asked for three things at once -- Discord, games,
+             merch -- which is the same mistake the hero made and the same
+             answer: a page that ends by offering a choice ends without an
+             action. It closes on the one thing that costs a visitor
+             nothing, and repeats the headline's promise so the page ends
+             where it began. */ ?>
+    <section class="hp-layer hp-close">
+      <div class="wrap hp-center">
+        <img class="hp-final-art" src="https://www.skulliance.io/staking/images/skulliance-cardano-logo.png" alt="" width="1500" height="1674" loading="lazy" decoding="async">
+        <h2 class="hp-close-h">Still just sitting there?</h2>
+        <p class="hp-say hp-close-p">Play something first - it costs nothing and needs no wallet. The
+           staking, the artists and the rest of it will still be here when you want them.</p>
+        <div class="hp-ctas" style="justify-content:center;">
+          <a class="hp-cta" href="#games">Play a game, free</a>
+          <a class="hp-cta hp-secondary" href="https://discord.gg/JqqBZBrph2">Join the Discord</a>
         </div>
       </div>
     </section>
