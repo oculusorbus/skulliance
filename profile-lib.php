@@ -47,10 +47,16 @@ function profile_game_record($conn, $user_id) {
 		'stat' => $n($r['fighters']), 'label' => (int)$r['fighters'] === 1 ? 'Fighter' : 'Fighters',
 		'sub' => array('Best ' . $n($r['best']), $n($r['total']) . ' total'));
 
-	/* ---- DHC Arena ---- */
+	/* ---- DHC Arena ----
+	   attacker_id, NOT user_id: dhc_arena_battles records two sides and the
+	   leaderboard counts the attacker's, so this counts the same battles the
+	   board does. Getting that wrong is what made this tile vanish -- the
+	   query failed, the guard below dropped the row, and a game with a real
+	   record looked like one never played. `outcome <> 0` excludes battles
+	   still in progress, same as checkDHCArenaLeaderboard(). */
 	$r = $one("SELECT SUM(outcome = 1) AS wins, SUM(outcome = 2) AS losses,
 	                  MAX(best_chain) AS chain
-	           FROM dhc_arena_battles WHERE user_id = '$uid'");
+	           FROM dhc_arena_battles WHERE attacker_id = '$uid' AND outcome <> 0");
 	if ($r && ((int)$r['wins'] + (int)$r['losses']) > 0) $out[] = array(
 		'key' => 'dhcarena', 'name' => 'DHC Arena', 'url' => 'dhcarena.php',
 		'stat' => $n($r['wins']), 'label' => 'Wins',
@@ -82,11 +88,17 @@ function profile_game_record($conn, $user_id) {
 		'stat' => $n($r['wins']), 'label' => 'Runs won',
 		'sub' => array($n($r['losses']) . ' lost', $n($r['best']) . ' best clear'));
 
-	/* ---- Gauntlets: wins and losses live on the encounters ---- */
+	/* ---- Gauntlets: wins and losses live on the encounters ----
+	   run_id, not gauntlet_id, and outcome is a STRING -- 'win' / 'loss' /
+	   'pending' -- not the integer the other games use. Both taken from
+	   checkGauntletsLeaderboard(); both were wrong here first time and the
+	   tile silently disappeared. */
 	$r = $one("SELECT COUNT(DISTINCT g.id) AS runs,
-	                  SUM(ge.outcome = 1) AS wins, SUM(ge.outcome = 2) AS losses
+	                  SUM(ge.outcome = 'win')  AS wins,
+	                  SUM(ge.outcome = 'loss') AS losses
 	           FROM gauntlets g
-	           LEFT JOIN gauntlets_encounters ge ON ge.gauntlet_id = g.id
+	           LEFT JOIN gauntlets_encounters ge
+	                  ON ge.run_id = g.id AND ge.outcome != 'pending'
 	           WHERE g.user_id = '$uid'");
 	if ($r && (int)$r['runs'] > 0) $out[] = array(
 		'key' => 'gauntlets', 'name' => 'Gauntlets', 'url' => 'gauntlets.php',

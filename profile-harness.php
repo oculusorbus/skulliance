@@ -40,9 +40,11 @@ $c = new PConn();
 $r = profile_game_record($c, 42);
 ok($r === array(), 'no games played means no tiles, not nine zeroes');
 ok(count($c->seen) === 8, 'one query per game, and no more');
-ok(!preg_grep('/user_id = .42./', $c->seen) === false, 'every query is scoped to the user');
-$unscoped = array_filter($c->seen, function ($q) { return strpos($q, "user_id = '42'") === false; });
-ok(!$unscoped, 'no query reads another player');
+/* Scoped to the USER, not to a particular column name -- arena keys on
+   attacker_id and gauntlets on g.user_id, so asserting the literal string
+   "user_id = '42'" tested the spelling rather than the intent. */
+$unscoped = array_filter($c->seen, function ($q) { return strpos($q, "= '42'") === false; });
+ok(!$unscoped, 'every query is scoped to this user and no other');
 
 echo "\nzero plays is not the same as a row of zeroes\n";
 $ROWS = array('FROM cryptcrawls' => array('wins' => '0', 'losses' => '0', 'depth' => null));
@@ -90,6 +92,49 @@ $ROWS['FROM dhc_fighters'] = array('fighters' => '1', 'best' => '880', 'total' =
 $r = profile_game_record(new PConn(), 42);
 $by = array(); foreach ($r as $g) $by[$g['key']] = $g;
 ok($by['dhcfighters']['label'] === 'Fighter', 'one fighter is singular too');
+
+echo "\nthe queries join the way the working leaderboards join\n";
+
+/*
+ * THIS IS THE CHECK THAT WOULD HAVE CAUGHT THE BUG. Two of these tiles
+ * silently disappeared in production because the query named a column
+ * that does not exist: dhc_arena_battles keys on attacker_id, not
+ * user_id, and gauntlets_encounters joins on run_id with a STRING
+ * outcome, not gauntlet_id with an integer. The query failed, the guard
+ * dropped the row, and a game with a real record looked like one that
+ * had never been played.
+ *
+ * A stubbed connection can never know the live schema -- but it CAN
+ * check that these queries agree with the leaderboard queries that are
+ * known to work against it, which is where the columns were supposed to
+ * come from in the first place.
+ */
+$c = new PConn();
+$ROWS = array();
+profile_game_record($c, 42);
+$sql = implode(' || ', $c->seen);
+
+ok(strpos($sql, "dhc_arena_battles WHERE attacker_id") !== false,
+   'arena keys on attacker_id, as checkDHCArenaLeaderboard() does');
+ok(strpos($sql, "user_id = '42' AND outcome") === false,
+   'and never on a user_id column dhc_arena_battles does not have');
+ok(strpos($sql, 'outcome <> 0') !== false, 'arena excludes battles still in progress');
+
+ok(strpos($sql, 'ge.run_id = g.id') !== false,
+   'gauntlet encounters join on run_id, as checkGauntletsLeaderboard() does');
+ok(strpos($sql, 'gauntlet_id') === false, 'and not on a gauntlet_id column that does not exist');
+ok(strpos($sql, "ge.outcome = 'win'") !== false, "gauntlet outcome is the string 'win'");
+ok(strpos($sql, 'ge.outcome = 1') === false, 'not an integer');
+
+/* Every other table really does key on user_id -- assert it so a future
+   edit cannot quietly swap one of these the other way either. */
+foreach (array('dhc_fighters', 'guardians_scores', 'cryptcrawls', 'cryptconquests',
+               'obscura_scores', 'skull_racer_runs') as $t) {
+	ok(preg_match('/FROM ' . $t . " WHERE user_id = '42'/", $sql) === 1,
+	   $t . ' keys on user_id');
+}
+ok(strpos($sql, "FROM gauntlets g") !== false && strpos($sql, "g.user_id = '42'") !== false,
+   'gauntlets itself keys on user_id, even though its encounters do not');
 
 echo "\nthousands separators\n";
 $ROWS = array('FROM dhc_fighters' => array('fighters' => '1250', 'best' => '9900', 'total' => '1234567'));
