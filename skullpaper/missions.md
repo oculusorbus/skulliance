@@ -35,16 +35,16 @@ So the missions page now says so. A band near the top lists **every mission that
 * A mission counts as never run if there is no record of you launching it at all - not cleared, not failed, never sent.
 * A project where you have cleared **nothing** is left out. Level 1 being available is the starting position, not a discovery, and listing every project's would bury the one rung that actually just opened.
 
-Two different things can put a mission on that list, and the ladder labels them apart:
+Two different things can put a mission on that list, and they are kept apart:
 
-* **New** - the rung directly above your highest cleared level. This is the one that just opened.
-* **Never run** - a rung further down that you passed over. That happens when a mission is added to a ladder *below* where you already are, so it appears unlocked without ever having been new to you.
-
-Only the first is actually news, which is why only it gets the solid badge.
+* **Just opened** - the rung directly above your highest cleared level. This is the one you would otherwise miss, so it gets the alert.
+* **Never run** - a rung further down that you passed over. That happens when a mission is added to a ladder *below* where you already are, so it appears unlocked without ever having been new to you. It gets a quiet row of chips instead, and when nothing has just opened the whole notice goes quiet with it - a rung you skipped on purpose should not raise an alarm every visit for the rest of time.
 
 ## Inventory
 
-Choosing a mission opens its **load-out**: the artwork and description, what it costs and pays, your balance, and every NFT you own for that project that is not already out on a mission. A crew is picked for you to start with - deselect or add as you like, and the success meter moves as you do.
+**Any mission you have unlocked can be opened**, whether or not you can staff it today - the artwork and the description are worth seeing on their own, and the load-out tells you what is missing. Locked missions stay hidden behind a padlock until you clear the level below them.
+
+Choosing a mission opens its **load-out**: the artwork at full size and uncropped, the description, what it costs and pays, your balance, and every NFT you own for that project that is not already out on a mission. A crew is picked for you to start with - deselect or add as you like, and the success meter moves as you do.
 
 There is also a very interesting feature for whales. If you have enough NFTs to garner over 100% success rate, the system automatically balances your crew across multiple mission runs rather than spending it all on one.
 
@@ -54,7 +54,16 @@ Three controls sit above the crew:
 * **Balance** goes back to the shared-out default, so the roster covers several runs.
 * **Clear** empties the selection.
 
-The meter also tells you when a crew is **over** 100%, since anything past it is wasted on that mission.
+### Items and your crew
+
+An NFT on a mission is **locked for its duration** - it cannot staff anything else until that mission lands. So success past 100% is not a safety margin, it is NFTs thrown away: the same skulls could have been running a second mission.
+
+Success items and your crew are therefore fitted together automatically:
+
+* Pick a success item that does not fit and the crew **makes room for it**, dropping the lowest-rated NFTs until the rest fits under what the item does not already cover. Put the item away and they come back.
+* The **100% Success** item guarantees the mission on its own, so it clears the crew entirely and any other percentage item with it. That is the whole reason [[missions]]' Start Max Maxi can send twenty missions off one roster.
+* **Fast Forward** and **Double Rewards** are not success items and are never cleared.
+* The meter says how many NFTs you have **left free for other missions**, and warns you when a selection is over 100% and being wasted.
 
 ## Daily reward
 

@@ -39,21 +39,44 @@ if (!isset($ms_new_ids)) {
 		   Pick another project on the left.</p>
 	</div>
 <?php else: foreach ($ms_quests as $q):
-	$open  = empty($q['locked']);
-	$can   = $open && $q['affordable'] && $q['has_squad'];
+	$open = empty($q['locked']);
+	/*
+	 * UNLOCKED MEANS OPENABLE, full stop.
+	 *
+	 * This used to require a crew and the points as well, so a mission you
+	 * had earned but could not staff right now was dead to the touch -- you
+	 * could not read its description or look at the art the artist made for
+	 * it. Whether you can LAUNCH is a separate question, answered inside.
+	 */
+	$can  = $open;
+	$ready = $open && $q['affordable'] && $q['has_squad'];
 	/* WHY it cannot be launched, in the order a player would fix it. */
 	$block = '';
 	if (!$open)                  $block = 'Clear level ' . (int)$q['unlock_at'] . ' to open this';
 	else if (!$q['has_squad'])   $block = 'No idle NFTs for this project';
 	else if (!$q['affordable'])  $block = ms_n($q['shortfall']) . ' more ' . $q['currency'] . ' needed';
 ?>
-	<div class="ms-quest<?php echo $open ? '' : ' locked'; echo $can ? ' can' : ''; ?>"
+	<div class="ms-quest<?php echo $open ? '' : ' locked'; echo $can ? ' can' : ''; echo $ready ? ' ready' : ''; ?>"
 		<?php if ($can): ?>role="button" tabindex="0"
 		onclick="msOpenDrawer(<?php echo (int)$q['quest_id']; ?>)"
 		onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();msOpenDrawer(<?php
 			echo (int)$q['quest_id']; ?>);}"<?php endif; ?>>
+		<?php
+		/*
+		 * A LOCKED RUNG IS HIDDEN AGAIN, deliberately. I had shown the real
+		 * title and art dimmed, on the reasoning that you cannot want what
+		 * you cannot see -- but a ladder you can read to the top spoils
+		 * every reveal the artists built, and the whole point of a level
+		 * gate is that the next one is unknown. The requirement line below
+		 * still says exactly what to do, so it is a locked door with a sign
+		 * on it rather than a mystery.
+		 */
+		$q_title = $open ? $q['title']
+		         : preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $q['title']));
+		$q_image = $open ? $q['image'] : 'icons/padlock.png';
+		?>
 		<div class="ms-quest-art">
-			<img src="<?php echo ms_e($q['image']); ?>" alt="" loading="lazy"
+			<img src="<?php echo ms_e($q_image); ?>" alt="" loading="lazy"
 				onerror="this.src='/staking/icons/skull.png';">
 			<span class="ms-quest-lvl">Lv <?php echo (int)$q['level']; ?></span>
 			<?php /* ONLY THE SHORT ONE GOES ON THE ART. The box is 84px wide and
@@ -69,7 +92,7 @@ if (!isset($ms_new_ids)) {
 			<?php endif; ?>
 		</div>
 		<div class="ms-quest-body">
-			<span class="ms-quest-title"><?php echo ms_e($q['title']); ?></span>
+			<span class="ms-quest-title<?php echo $open ? '' : ' hidden'; ?>"><?php echo ms_e($q_title); ?></span>
 			<span class="ms-quest-pay">
 				<?php if ((float)$q['cost'] > 0): ?>
 				<em><?php echo ms_n($q['cost']); ?></em> &rarr;
@@ -88,7 +111,11 @@ if (!isset($ms_new_ids)) {
 			if ($open && isset($ms_new_ids[(int)$q['quest_id']]))
 				$tag = $ms_new_ids[(int)$q['quest_id']] ? 'New' : 'Never run';
 			?>
-			<?php if ($block): ?>
+			<?php if ($block && !$open): ?>
+			<span class="ms-quest-block"><?php echo ms_e($block); ?></span>
+			<?php elseif ($block): ?>
+			<?php /* Unlocked but not launchable: still opens, so say what is
+			         missing AND that you can look. */ ?>
 			<span class="ms-quest-block"><?php if ($tag): ?><i><?php echo $tag; ?></i> &middot;
 				<?php endif; ?><?php echo ms_e($block); ?></span>
 			<?php else: ?>

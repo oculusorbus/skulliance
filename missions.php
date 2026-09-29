@@ -43,6 +43,10 @@ include 'header.php';
  */
 
 $ms_user = mission_user_id();
+
+/* How many in-flight missions the first paint draws. Everything ready is
+   always drawn on top of this. */
+define('MS_FIELD_CAP', 24);
 ?>
 <?php /*
  * THE STYLESHEET GOES FIRST, before a single element of the page.
@@ -215,6 +219,19 @@ $ms_user = mission_user_id();
   letter-spacing: .1em; text-transform: uppercase; background: #f5a623; color: #07111d;
   padding: 2px 6px; font-weight: bold; }
 .ms-news-more { margin: 9px 0 0; font-size: .76rem; color: #7a9eb0; }
+/* No alarm when nothing is actually new -- see missions-skipped.php. */
+.ms-news.quiet { background: #0a1929; border-color: rgba(0,200,160,.12);
+  border-left-color: rgba(122,158,176,.45); padding: 10px 14px; }
+.ms-skipped { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.ms-news .ms-skipped { margin-top: 11px; padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,.07); }
+.ms-skipped-label { font-size: .72rem; color: #7a9eb0; }
+.ms-skip { display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+  background: #07111d; border: 1px solid rgba(255,255,255,.09); color: #b9c7d4;
+  font-size: .72rem; padding: 4px 9px 4px 4px; border-radius: 0; max-width: 220px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-skip:hover { border-color: rgba(0,200,160,.45); color: #e8eaed; }
+.ms-skip img { width: 20px; height: 20px; object-fit: contain; flex: 0 0 20px; }
 .ms-fig-new { border-color: rgba(245,166,35,.5); }
 .ms-fig-new b { color: #f5a623; }
 /* Two badges, because they mean two different things. Solid amber = the
@@ -340,12 +357,20 @@ $ms_user = mission_user_id();
   overflow: hidden; transition: border-color .12s, transform .12s; }
 .ms-quest.can { cursor: pointer; }
 .ms-quest.can:hover, .ms-quest.can:focus-visible { border-color: #00c8a0; outline: none; }
-.ms-quest.locked { opacity: .62; }
+/* Open and staffable reads brightest; open-but-blocked is still clickable
+   and still says so, just quieter; locked is a door. */
+.ms-quest.ready { border-color: rgba(0,200,160,.3); }
+.ms-quest.locked { opacity: .62; cursor: default; }
+/* CONTAIN, NOT COVER. These are commissioned pieces and half of them are
+   not square -- cover was quietly cropping the artist's work to fill a box.
+   Same call as my-nfts: the grid stays even because the BOX is fixed, and
+   the picture sits whole inside it. */
 .ms-quest-art { position: relative; width: 84px; flex: 0 0 84px; background: #07111d; }
-.ms-quest-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-/* A locked rung is dimmed and desaturated, not scrambled. The old renderer
-   replaced the title with "?????? ####" and the art with a padlock. */
-.ms-quest.locked .ms-quest-art img { filter: grayscale(1) brightness(.6); }
+.ms-quest-art img { width: 100%; height: 100%; object-fit: contain; display: block; }
+/* The padlock is an icon, not artwork -- give it room rather than letting
+   it fill the whole tile. */
+.ms-quest.locked .ms-quest-art img { padding: 22px; box-sizing: border-box; opacity: .5; }
+.ms-quest-title.hidden { color: #4f7488; letter-spacing: .08em; }
 .ms-quest-lvl { position: absolute; top: 4px; left: 4px; font-size: .58rem; letter-spacing: .06em;
   text-transform: uppercase; background: rgba(7,17,29,.85); color: #7a9eb0; padding: 2px 5px; }
 .ms-quest-run { position: absolute; bottom: 4px; left: 4px; font-size: .58rem;
@@ -379,8 +404,10 @@ $ms_user = mission_user_id();
 .ms-drawer-x { position: absolute; top: 6px; right: 8px; z-index: 2; background: transparent;
   border: 0; color: #7a9eb0; font-size: 1.6rem; line-height: 1; cursor: pointer; padding: 2px 8px; }
 .ms-drawer-x:hover { color: #e8eaed; }
-.ms-d-art { height: 170px; flex: 0 0 auto; background: #07111d; }
-.ms-d-art img, .ms-d-art video { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* THE DRAWER IS WHERE YOU GO TO LOOK AT IT, so nothing is cropped here at
+   all. Taller than the card thumbnail and contained, on a dark ground. */
+.ms-d-art { height: 260px; flex: 0 0 auto; background: #07111d; }
+.ms-d-art img, .ms-d-art video { width: 100%; height: 100%; object-fit: contain; display: block; }
 .ms-d-main { padding: 16px 18px; text-align: left; }
 .ms-d-main h3 { margin: 0; color: #e8eaed; font-size: 1.15rem; text-transform: none; }
 .ms-d-sub { font-size: .74rem; color: #7a9eb0; margin: 2px 0 10px; }
@@ -454,7 +481,7 @@ $ms_user = mission_user_id();
   .ms-head { align-items: flex-start; }
   .ms-cards { grid-template-columns: 1fr; }
   .ms-deploy { flex-direction: column; align-items: flex-start; }
-  .ms-d-art { height: 130px; }
+  .ms-d-art { height: 200px; }
 }
 </style>
 
@@ -497,7 +524,15 @@ $ms_user = mission_user_id();
 <?php
 /* --------------------------------------------------------------- staker -- */
 $ms_over     = mission_overview($conn);
-$ms_active   = mission_active($conn);
+/*
+ * CAPPED ON FIRST PAINT. A real account had 179 missions in the field.
+ * 179 cards is not a list, it is a wall -- and it is ~270KB of markup and
+ * 179 images before anything else on the page can render. Everything READY
+ * is kept whatever the cap, because that is what people came for; the rest
+ * is offered behind a button.
+ */
+$ms_active   = mission_active($conn, MS_FIELD_CAP);
+$ms_total    = mission_active_total($conn);
 $ms_projects = mission_projects($conn);
 
 $ms_ready = 0;
@@ -738,6 +773,26 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	var LO = null;               // the open mission's load-out
 	var picked = {};             // nft_id -> rate
 	var items  = {};             // consumable_id -> boost
+	/*
+	 * THE TARGET SUCCESS RATE, and why it is a variable.
+	 *
+	 * An NFT sent on a mission is LOCKED for its duration -- it cannot
+	 * staff anything else until that mission lands. So success past 100%
+	 * is not a safety margin, it is NFTs thrown away: the same skulls
+	 * could have been running a second mission.
+	 *
+	 * The old inventory enforced that bluntly -- picking the 100% Success
+	 * item ran clearSuccessRate(), which deselected every NFT, and going
+	 * over 100 raised an alert telling you to remove some. The first cut
+	 * of this drawer lost it: it capped the number it DISPLAYED at 100 and
+	 * then sent the whole crew anyway.
+	 *
+	 * So the crew is re-fitted to whatever the items do not already cover.
+	 * `target` remembers which fit was asked for -- 100 for Maximise, the
+	 * server's balanced share by default -- and the NFT budget is that
+	 * target minus the boost, floored at zero.
+	 */
+	var target = 100;
 
 	function n(v) { return Number(v || 0).toLocaleString(); }
 	function esc(s) {
@@ -849,15 +904,16 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 				if (!j || !j.ok) { drawerBody.innerHTML = '<div class="ms-d-scroll"><div class="ms-d-main"><p class="ms-d-desc">'
 					+ esc((j && j.message) || 'Could not load that mission.') + '</p></div></div>'; return; }
 				LO = j.loadout;
+				target = LO.threshold;          // the default the old page pre-selected
 				renderDrawer();
-				applyThreshold(LO.threshold);   // the default the old page pre-selected
+				refit();
 			})
 			.catch(function () {
 				drawerBody.innerHTML = '<div class="ms-d-scroll"><div class="ms-d-main"><p class="ms-d-desc">'
 					+ 'Could not reach the server.</p></div></div>';
 			});
 	};
-	window.msCloseDrawer = function () { drawer.hidden = true; LO = null; picked = {}; items = {}; };
+	window.msCloseDrawer = function () { drawer.hidden = true; LO = null; picked = {}; items = {}; target = 100; };
 	drawer.addEventListener('click', function (e) { if (e.target === drawer) msCloseDrawer(); });
 	document.addEventListener('keydown', function (e) {
 		if (e.key === 'Escape' && !drawer.hidden) msCloseDrawer();
@@ -922,6 +978,20 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			+   '</div>'
 			+ '</div>';
 
+		/*
+		 * A MISSION YOU CANNOT STAFF STILL OPENS -- you came to read it and
+		 * look at the art. So the blocker is stated here, up front, instead
+		 * of the button working right up until the server says no.
+		 */
+		var stop = '';
+		if (!LO.affordable) stop = 'You need ' + n(LO.cost - LO.balance) + ' more ' + LO.currency;
+		else if (!LO.squad.length && !LO.items.length) stop = 'Nothing available to send yet';
+		if (stop) {
+			var go = document.getElementById('ms-d-go');
+			go.disabled = true;
+			go.textContent = stop;
+		}
+
 		drawerBody.querySelectorAll('.ms-d-nft').forEach(function (b) {
 			b.addEventListener('click', function () { toggleNft(b); });
 		});
@@ -931,12 +1001,18 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		drawerBody.querySelectorAll('.ms-d-tool').forEach(function (b) {
 			b.addEventListener('click', function () {
 				var a = b.getAttribute('data-act');
-				applyThreshold(a === 'max' ? 100 : (a === 'balance' ? LO.threshold : 0));
+				/* Clear drops the crew AND the target, so a later item
+				   toggle does not quietly resurrect it. */
+				if (a === 'none') { target = 0; applyThreshold(0); return; }
+				target = (a === 'max') ? 100 : LO.threshold;
+				refit();
 			});
 		});
 		document.getElementById('ms-d-go').addEventListener('click', launch);
 	}
 
+	/* Hand-picking is never blocked -- the note says when a selection is
+	   wasteful and by how much, which is more use than a refusal. */
 	function toggleNft(b) {
 		var id = b.getAttribute('data-nft');
 		if (picked[id] !== undefined) { delete picked[id]; b.classList.remove('on'); }
@@ -945,10 +1021,82 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	}
 	function toggleItem(b) {
 		var id = b.getAttribute('data-item');
-		if (items[id] !== undefined) { delete items[id]; b.classList.remove('on'); }
-		else { items[id] = parseFloat(b.getAttribute('data-boost')); b.classList.add('on'); }
+		var adding = (items[id] === undefined);
+		if (adding) { items[id] = parseFloat(b.getAttribute('data-boost')); b.classList.add('on'); }
+		else        { delete items[id]; b.classList.remove('on'); }
+		/* An item that does not fit MAKES ITSELF FIT, rather than being
+		   refused. Put it away again and the crew comes back. */
+		/* A 100% item GUARANTEES the mission on its own, so it makes every
+		   other success item and the whole crew redundant -- and spending
+		   them alongside it is spending them for nothing. This is what the
+		   old inventory's clearSuccessRate() did when you picked it. */
+		if (adding && items[id] >= 100) clearOtherBoosts(id);
+		if (adding) shedToFit(); else fillToFit();
 		paintRate();
 	}
+
+	function itemEl(id) { return drawerBody.querySelector('.ms-d-item[data-item="' + id + '"]'); }
+	function clearOtherBoosts(keep) {
+		Object.keys(items).forEach(function (id) {
+			if (id === keep || items[id] <= 0) return;   // Fast Forward and
+			delete items[id];                            // Double Rewards
+			var el = itemEl(id);                         // are not boosts
+			if (el) el.classList.remove('on');
+		});
+	}
+
+	function budget() {
+		var boost = 0;
+		for (var i in items) boost += items[i];
+		return Math.max(0, target - boost);
+	}
+	function crewRate() { var t = 0; for (var k in picked) t += picked[k]; return t; }
+	function nftEl(id)  { return drawerBody.querySelector('.ms-d-nft[data-nft="' + id + '"]'); }
+
+	/*
+	 * SHED ONLY WHAT IS IN THE WAY.
+	 *
+	 * An earlier version re-picked the whole crew from scratch whenever an
+	 * item changed, which is tidy but throws away any NFT the player chose
+	 * by hand. This drops the LOWEST-rated picks until the rest fits under
+	 * what the items leave uncovered -- so your best skulls stay on the
+	 * mission, everything you chose deliberately survives if it can, and
+	 * the maximum NUMBER of NFTs comes free for other missions. Freeing
+	 * count rather than rate is the point: the rate given up is the same
+	 * either way, but more bodies means more missions can be staffed.
+	 *
+	 * A 100% item leaves a budget of zero, so it clears the crew outright
+	 * -- which is what the old inventory's clearSuccessRate() did, and the
+	 * whole reason Max Maxi can send twenty missions off one roster.
+	 */
+	function shedToFit() {
+		var cap = budget();
+		var ids = Object.keys(picked).sort(function (a, b) { return picked[a] - picked[b]; });
+		var total = crewRate(), i = 0;
+		while (total > cap && i < ids.length) {
+			var id = ids[i++];
+			total -= picked[id];
+			delete picked[id];
+			var el = nftEl(id); if (el) el.classList.remove('on');
+		}
+	}
+
+	/* Putting an item away gives the budget back, so refill from the
+	   highest rates down -- the same order Maximise and Balance use. */
+	function fillToFit() {
+		var cap = budget(), total = crewRate();
+		drawerBody.querySelectorAll('.ms-d-nft').forEach(function (b) {
+			var id = b.getAttribute('data-nft');
+			if (picked[id] !== undefined) return;
+			var rate = parseFloat(b.getAttribute('data-rate'));
+			if (total + rate > cap) return;
+			total += rate; picked[id] = rate; b.classList.add('on');
+		});
+	}
+
+	/* Used on open and by the tool buttons, where a clean re-pick IS what
+	   was asked for. */
+	function refit() { applyThreshold(budget()); }
 
 	/*
 	 * MAXIMISE AND BALANCE, in the browser.
@@ -988,10 +1136,21 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		m.classList.toggle('sure', p.total >= 100);
 		var bits = [c + (c === 1 ? ' NFT' : ' NFTs') + ' (' + Math.round(p.crew) + '%)'];
 		if (p.boost > 0) bits.push('items (+' + Math.round(p.boost) + '%)');
+		var note = bits.join(' + ');
+		/* Over 100 is not a margin, it is NFTs locked here for days for
+		   nothing. Say that, rather than capping the number and letting
+		   them go anyway. */
+		var over = p.crew + p.boost - 100;
+		if (over > 0)
+			note += ' - ' + Math.round(over) + '% over. '
+			      + (c > 0 ? 'Some of these NFTs are locked here for nothing.'
+			               : 'An item is being spent for nothing.');
+		else if (p.boost > 0 && LO.squad.length > c)
+			note += ' - ' + (LO.squad.length - c) + ' left free for other missions';
+		document.getElementById('ms-d-note').textContent = note;
 		/* Say it plainly rather than making them work it out: over 100 is
 		   waste, and the old page only told you by refusing at the alert. */
-		if (p.crew + p.boost > 100) bits.push('capped at 100% — ' + Math.round(p.crew + p.boost - 100) + '% is going spare');
-		document.getElementById('ms-d-note').textContent = bits.join(' + ').replace(' + capped', ' — capped');
+
 		document.getElementById('ms-d-summary').textContent =
 			(LO.cost > 0 ? 'Costs ' + n(LO.cost) + ' ' + LO.currency : 'Free to run')
 			+ ' · back in ' + LO.duration + (LO.duration === 1 ? ' day' : ' days');

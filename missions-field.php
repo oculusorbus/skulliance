@@ -14,7 +14,8 @@
  * and it worked; this card is built to fit it rather than the other way
  * round. Renaming any of these silently breaks the claim reveal.
  */
-if (!isset($ms_active)) $ms_active = mission_active($conn);
+if (!isset($ms_active)) $ms_active = mission_active($conn, defined('MS_FIELD_CAP') ? MS_FIELD_CAP : 0);
+if (!isset($ms_total))  $ms_total  = mission_active_total($conn);
 if (!function_exists('ms_n')) { function ms_n($v) { return number_format((float)$v); } }
 if (!function_exists('ms_e')) { function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); } }
 
@@ -102,4 +103,14 @@ foreach ($ms_active as $a) if (!empty($a['ready'])) {
 		</div>
 	<?php endforeach; ?>
 	</div>
+	<?php if ($ms_total > count($ms_active)): ?>
+	<?php /* Everything ready is already above, so what is hidden is only
+	         still-running -- say that, rather than implying something
+	         claimable is out of sight. */ ?>
+	<div class="ms-more">
+		<span><?php echo number_format($ms_total - count($ms_active)); ?> more still out</span>
+		<button type="button" class="ms-more-btn" onclick="msShowAllField(this)">Show all <?php
+			echo number_format($ms_total); ?></button>
+	</div>
+	<?php endif; ?>
 <?php endif; ?>
