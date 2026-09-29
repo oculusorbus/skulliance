@@ -213,6 +213,18 @@ $href_gallery   = 'dhcgallery.php';
         linear-gradient(180deg, #07111d 0%, #0b1a2b 100%);
       border-bottom: 1px solid rgba(255,255,255,.08);
     }
+    /* The reel. aspect-ratio plus width/height means the hero does not
+       jump when a 1-3MB file finally arrives. Capped at 300px: the source
+       is 480 square, so it stays crisp on a dense display. */
+    .hero-reel {
+      display: block; width: 100%; max-width: 300px; height: auto;
+      aspect-ratio: 1 / 1; margin: 0 auto 22px;
+      border-radius: 16px; background: #0a1929;
+      border: 1px solid rgba(0,200,160,.18);
+      box-shadow: 0 14px 40px rgba(0,0,0,.45);
+    }
+    @media (max-width: 480px) { .hero-reel { max-width: 220px; } }
+
     .hero .kicker {
       display: inline-block; font-size: .75rem; letter-spacing: .18em;
       text-transform: uppercase; color: #7a9eb0; margin-bottom: 14px;
@@ -343,9 +355,64 @@ $href_gallery   = 'dhcgallery.php';
 
 <header class="hero">
   <div class="wrap">
+    <?php
+    /* THE REEL, above the wording, as the first thing on the page. Silent,
+       so it can autoplay; looping, because it is 11 seconds and the point
+       is atmosphere rather than something to sit through.
+       muted + playsinline are what make autoplay legal at all: every
+       browser blocks an unmuted autoplay, and without playsinline iOS takes
+       the video fullscreen the moment it starts.
+
+       ONLY SOURCES THAT EXIST ARE EMITTED, and that is not tidiness.
+       A <source> is supposed to be skipped when it fails, so listing a
+       not-yet-uploaded file should have been harmless. IT IS NOT, HERE:
+       a missing file under /staking/ is picked up by WordPress, which
+       301-redirects it (www -> bare host) and answers with HTML. The
+       browser follows the redirect, gets a document instead of media, and
+       sits in NETWORK_LOADING forever rather than erroring and moving to
+       the next source. Measured against the live server: the element stuck
+       on the absent .webm at readyState 0 and never reached the .mov that
+       was right there.
+
+       So PHP checks the disk. Preference order is smallest first; the .mov
+       is last because it is a QUICKTIME container -- Safari and Chrome play
+       it, Firefox does not reliably -- and 3.0MB for 11s at 480x480, about
+       2.2 Mbps, which is very high for a small square. Upload the mp4 and
+       webm and they are used automatically; nothing here changes. */
+    /* NO type ON THE .mov, and this is the whole reason it plays.
+       A <source> with a type the browser does not claim is skipped WITHOUT
+       BEING FETCHED, and Chrome's canPlayType('video/quicktime') returns
+       "" -- so declaring the honest MIME made Chrome refuse the only file
+       that exists, leaving networkState 3, NO_SOURCE. Typeless, Chrome
+       fetches it, sniffs the H.264 inside and reaches readyState 4 at
+       480x480. Both measured.
+       The other two keep their types: there the attribute does its job,
+       letting a browser skip a format it cannot decode without a download. */
+    $reel = array(
+        array('dhcfighters.webm', 'video/webm'),
+        array('dhcfighters.mp4',  'video/mp4'),
+        array('dhcfighters.mov',  ''),
+    );
+    $reel_have = array();
+    foreach ($reel as $r) {
+        if (is_file(__DIR__ . '/images/' . $r[0])) $reel_have[] = $r;
+    }
+    $reel_poster = is_file(__DIR__ . '/images/dhcfighters-poster.jpg')
+                 ? 'images/dhcfighters-poster.jpg' : '';
+    if ($reel_have):
+    ?>
+    <video class="hero-reel" autoplay muted loop playsinline
+           width="480" height="480" preload="metadata"
+           <?php if ($reel_poster !== '') echo 'poster="' . htmlspecialchars($reel_poster) . '"'; ?>
+           aria-label="DHC Fighters promo reel">
+      <?php foreach ($reel_have as $r): ?>
+      <source src="<?php echo htmlspecialchars('images/' . $r[0]); ?>"<?php if ($r[1] !== '') echo ' type="' . $r[1] . '"'; ?>>
+      <?php endforeach; ?>
+    </video>
+    <?php endif; ?>
     <span class="kicker">DHC Fighters</span>
     <h1>Build a Fighter. Then break theirs.</h1>
-    <p class="lede">Ten trait slots, three Fighters to a Crew, and a board between you and the other Crew's back rank. Assemble from real NFT art, browse the whole collection, and fight — free, in your browser, no download.</p>
+    <p class="lede">Ten trait slots, three Fighters to a Crew, and a board between you and the other Crew's back rank. Assemble from real NFT art, browse the whole collection, and fight - free, in your browser, no download.</p>
     <div class="cta-row">
       <a class="btn" href="<?php echo $href_arena; ?>">Fight in the Arena</a>
       <a class="btn ghost" href="<?php echo $href_gallery; ?>">Browse the Collection</a>
@@ -404,22 +471,22 @@ if ($dhc_fighters && $ART !== ''):
 <?php endif; ?>
 
 <section class="wrap">
-  <h2 class="center">Three things, one character</h2>
+  <h2 class="center">Assemble, Browse, Battle</h2>
   <div class="cards">
     <div class="card">
-      <h3>Fighters — the assembler</h3>
-      <p>Ten trait slots: torso, head, background, two effects, arms, weapons, weapons behind, headgear and a companion. Layers draw in a fixed order with real exceptions — a companion can sit under the arms, some arms sit behind the torso — so a build looks the same everywhere it appears.</p>
+      <h3>Fighters - the assembler</h3>
+      <p>Ten trait slots: torso, head, background, two effects, arms, weapons, weapons behind, headgear and a companion. Layers draw in a fixed order with real exceptions - a companion can sit under the arms, some arms sit behind the torso - so a build looks the same everywhere it appears.</p>
       <p>Traits are committed. A trait spent on one Fighter is not available to another until you disassemble it, which is what makes a build a decision rather than a preview.</p>
       <a class="more" href="<?php echo $href_fighters; ?>">Open the assembler &rarr;</a>
     </div>
     <div class="card">
-      <h3>Collection — browse it all</h3>
+      <h3>Collection - browse it all</h3>
       <p>The full DHC collection, open to everyone. Filter by trait, see what is rare and what only looks rare, and find the pieces a build needs before you commit to it.</p>
       <p>No account required to look.</p>
       <a class="more" href="<?php echo $href_gallery; ?>">Browse the collection &rarr;</a>
     </div>
     <div class="card">
-      <h3>Arena — the match-3 battler</h3>
+      <h3>Arena - the match-3 battler</h3>
       <p>Your squad of three fights on a match-3 board. Matching charges your Fighters; chains and explosions chunk health down as they land, not after the board settles. Rank decides who takes the hit, so the order you field them matters.</p>
       <p>Rarity does not decide a fight. A common build played well beats a rare one played badly.</p>
       <a class="more" href="<?php echo $href_arena; ?>">Play the Arena &rarr;</a>
@@ -455,22 +522,22 @@ if ($dhc_fighters && $ART !== ''):
          send people to the work. Both links open away from the page, which
          is the point of them. */ ?>
 <section class="wrap">
-  <h2 class="center">The art is Maxingo's</h2>
+  <h2 class="center">Art by Maxi</h2>
   <div class="credit">
     <a class="credit-face" href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">
       <img src="https://www.skulliance.io/staking/images/projects/maxingo.png"
-           alt="Maxingo" width="96" height="96" loading="lazy" decoding="async">
+           alt="Maxi" width="96" height="96" loading="lazy" decoding="async">
     </a>
     <div class="credit-body">
-      <p>Every trait in the assembler — every torso, head, weapon and companion — is
-         drawn by <a href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">Maxingo</a>.
+      <p>Every trait in the assembler - every torso, head, weapon and companion - is
+         drawn by <a href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">Maxi</a>.
          DHC Fighters is a game built on top of that work, not a replacement for it.</p>
       <p>It all started with <strong>Digital Hell Citizens 2</strong>, 226 characters minted
          on Cardano. Those are the real assets; what you assemble here is built from the
          same art.</p>
       <p class="credit-links">
         <a class="btn ghost" href="<?php echo $collection_url; ?>" target="_blank" rel="noopener">View the collection on Wayup</a>
-        <a class="btn ghost" href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">Follow Maxingo</a>
+        <a class="btn ghost" href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">Follow Maxi</a>
       </p>
     </div>
   </div>
@@ -481,7 +548,7 @@ if ($dhc_fighters && $ART !== ''):
 <section class="wrap">
   <h2>Start without owning anything</h2>
   <ol class="steps">
-    <li><strong>Play a practice match.</strong> The Arena opens straight into practice mode with a pre-built crew. No account, no wallet, no download — it just starts.</li>
+    <li><strong>Play a practice match.</strong> The Arena opens straight into practice mode with a pre-built crew. No account, no wallet, no download - it just starts.</li>
     <li><strong>Browse the collection.</strong> See the traits and work out what you would build.</li>
     <li><strong>Sign in with Discord</strong> to save Fighters of your own and keep them between sessions.</li>
     <li><strong>Hold DHC traits</strong> to assemble Fighters from the real thing and take them into ranked matches.</li>
@@ -496,22 +563,42 @@ if ($dhc_fighters && $ART !== ''):
     <details><summary>Do I need an NFT to play?</summary>
       <p>No. The Arena defaults to practice mode for anyone, with a pre-built crew, and the collection is public. Holding traits is what lets you assemble and save your own Fighters.</p></details>
     <details><summary>Is it pay-to-win?</summary>
-      <p>No, and the rules are built to keep it that way — rarity does not decide a fight. A rare trait changes how a Fighter looks and what it is worth, not whether it wins.</p></details>
+      <p>No, and the rules are built to keep it that way - rarity does not decide a fight. A rare trait changes how a Fighter looks and what it is worth, not whether it wins.</p></details>
     <details><summary>Can I play against other people?</summary>
       <p>Yes. Live matches are for the sport of it: no rewards, no rankings at stake, no way to farm them. Just a match against someone who also wanted one.</p></details>
     <details><summary>What happens to a trait I use?</summary>
       <p>It is committed to that Fighter and unavailable to another until you disassemble it. Disassembling frees the traits; the Fighter's record survives so an old build cannot be replayed as if it were new.</p></details>
     <details><summary>Does it work on a phone?</summary>
-      <p>Yes — the board and the assembler are both built for touch, and the site installs as a home-screen app if you want it to.</p></details>
+      <p>Yes - the board and the assembler are both built for touch, and the site installs as a home-screen app if you want it to.</p></details>
   </div>
 </section>
 
 </main>
 
+<script>
+/* prefers-reduced-motion is precisely about looping autoplay. Honour it by
+   pausing and handing over the controls rather than by hiding the video --
+   somebody who asked for less motion still gets to watch it if they want. */
+(function () {
+  var v = document.querySelector('.hero-reel');
+  if (!v || !window.matchMedia) return;
+  var m = window.matchMedia('(prefers-reduced-motion: reduce)');
+  function apply() {
+    if (!m.matches) return;
+    v.autoplay = false;
+    v.loop = false;
+    v.controls = true;
+    v.pause();
+  }
+  apply();
+  if (m.addEventListener) m.addEventListener('change', apply);
+})();
+</script>
+
 <footer>
   <div class="wrap">
-    <p>DHC Fighters is part of <a href="https://www.skulliance.io/">Skulliance</a> — NFT staking, games and a marketplace.<br>
-       Art by <a href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">Maxingo</a>.</p>
+    <p>DHC Fighters is part of <a href="https://www.skulliance.io/">Skulliance</a> - NFT staking, games and a marketplace.<br>
+       Art by <a href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">Maxi</a>.</p>
   </div>
 </footer>
 
