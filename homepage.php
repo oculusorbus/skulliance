@@ -16,14 +16,17 @@
 // DEPLOYED BY INCLUDE, NOT BY COPY-PASTE. The WordPress theme file is a
 // stub that includes THIS file from the staking directory, so a push and a
 // pull deploys the homepage -- no copying, and no chance of the two copies
-// disagreeing. The stub keeps the "Template name:" header, because that is
-// what makes the template selectable in WordPress; everything else lives
-// here:
+// disagreeing. The stub is wp-homepage-template.php in this repo; copy that
+// into the theme. It keeps the "Template name:" header, because that is
+// what makes the template selectable in WordPress.
 //
-//     <?php
-//     /** Template name: Homepage */
-//     $hp = '/home/jeremiah/skulliance.io/staking/homepage.php';
-//     if (is_readable($hp)) { include $hp; } else { get_header(); get_footer(); }
+// IT RESOLVES THE PATH WITH ABSPATH, which WordPress defines as its own
+// install directory with a trailing slash. A hardcoded absolute path is
+// what produced a WHITE SCREEN on the first attempt: a template whose only
+// statement is an include that fails outputs nothing at all, and with
+// display_errors off in production that is a blank page carrying no clue.
+// The stub therefore also renders a real fallback page rather than
+// nothing, and names the path it tried -- to an administrator only.
 //
 // THIS FILE MUST STAY SAFE TO INCLUDE FROM ANOTHER APPLICATION. It has no
 // includes, reads no $_SESSION, and depends on no current working
