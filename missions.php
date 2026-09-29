@@ -119,6 +119,28 @@ define('MS_FIELD_CAP', 24);
    .main's text-align:center, .content's border-radius:10px, and
    .nfts' min-height:1000px -- which reserved a thousand pixels of empty
    page under the old mission grid whether or not anything was in it. */
+/*
+ * EVERY .button ON THIS PAGE, in one place.
+ *
+ * flexbox.css's .button is width:100%, font-size:2rem, padding 15px 32px
+ * and a 6px drop shadow -- a full-width slab. That is fine where the
+ * platform uses it as the single action on a narrow panel, and absurd
+ * here: "Collect all" spanned the entire content width at 32px type.
+ * Resetting the radius and margin, which is all the scoped rules did,
+ * left the three properties that actually made it enormous.
+ *
+ * The shadow goes with the width: it pairs with a translateY(3px) on
+ * :active, and a button that visibly drops 3px with no shadow under it
+ * just looks broken.
+ */
+.ms-daily .button, .ms-deploy-buttons .button, .ms-claimbar .button, .ms-d-launch .button {
+  width: auto; margin: 0; border-radius: 0; box-shadow: none;
+  font-size: .78rem; font-weight: bold; letter-spacing: .06em; text-transform: uppercase;
+  padding: 11px 20px; line-height: 1;
+}
+.ms-daily .button:active, .ms-deploy-buttons .button:active,
+.ms-claimbar .button:active, .ms-d-launch .button:active { box-shadow: none; transform: none; }
+
 .ms-head, .ms-head *, .ms-section, .ms-section *,
 .ms-primer, .ms-primer *, .ms-deploy, .ms-deploy *, .ms-guest, .ms-guest *,
 .ms-news, .ms-news *, .ms-drawer, .ms-drawer *,
@@ -225,7 +247,6 @@ define('MS_FIELD_CAP', 24);
 .ms-daily-done strong { color: #00c8a0; }
 .ms-daily-next { color: #7a9eb0; font-size: .78rem; }
 .ms-daily-bar { width: 140px; }
-.ms-daily .button { border-radius: 0; margin: 0; }
 .ms-daily-foot { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
   border-top: 1px solid rgba(255,255,255,.06); padding-top: 9px; font-size: .74rem; color: #7a9eb0; }
 .ms-daily-foot form { margin: 0; }
@@ -303,7 +324,6 @@ define('MS_FIELD_CAP', 24);
 /* db.php's three renderers each emit <span ...><button></span><br>. The
    break is theirs and would stack the buttons vertically in here. */
 .ms-deploy-buttons br { display: none; }
-.ms-deploy-buttons .button { border-radius: 0; margin: 0; }
 /* Holds the row's height while the launchers are fetched, so the sections
    below it do not jump when they land. */
 .ms-deploy-buttons { min-height: 38px; }
@@ -337,7 +357,6 @@ define('MS_FIELD_CAP', 24);
   padding: 12px 16px; margin-bottom: 12px; }
 .ms-claimbar b { color: #00c8a0; display: block; }
 .ms-claimbar span { font-size: .8rem; color: #8fa8b8; }
-.ms-claimbar .button { border-radius: 0; margin: 0; }
 
 .ms-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
 .ms-mcard { display: flex; background: #0a1929; border: 1px solid rgba(0,200,160,.14);
@@ -524,7 +543,6 @@ define('MS_FIELD_CAP', 24);
 .ms-d-msg.ok { color: #00c8a0; }
 .ms-d-launch { display: flex; align-items: center; justify-content: space-between;
   gap: 12px; flex-wrap: wrap; }
-.ms-d-launch .button { border-radius: 0; margin: 0; }
 .ms-d-cost { font-size: .78rem; color: #7a9eb0; }
 
 @media (max-width: 900px) {
