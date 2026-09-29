@@ -85,7 +85,12 @@ if (!isset($ms_new_ids)) {
 		$q_image = $show ? $q['image'] : 'icons/padlock.png';
 		?>
 		<div class="ms-quest-art">
-			<img src="<?php echo ms_e($q_image); ?>" alt="" loading="lazy"
+			<?php /* The padlock is an icon and wants room around it; real
+			         artwork is not and does not. An admin looking at a locked
+			         rung sees the real piece, so the icon treatment has to key
+			         off WHAT IS BEING SHOWN, not off the lock. */ ?>
+			<img class="<?php echo $show ? 'ms-quest-pic' : 'ms-quest-lock'; ?>"
+				src="<?php echo ms_e($q_image); ?>" alt="" loading="lazy"
 				onerror="this.src='/staking/icons/skull.png';">
 			<span class="ms-quest-lvl">Lv <?php echo (int)$q['level']; ?></span>
 			<?php /* ONLY THE SHORT ONE GOES ON THE ART. The box is 84px wide and

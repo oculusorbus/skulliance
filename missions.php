@@ -425,8 +425,10 @@ define('MS_FIELD_CAP', 24);
 .ms-quest-art { position: relative; width: 84px; flex: 0 0 84px; background: #07111d; }
 .ms-quest-art img { width: 100%; height: 100%; object-fit: contain; display: block; }
 /* The padlock is an icon, not artwork -- give it room rather than letting
-   it fill the whole tile. */
-.ms-quest.locked .ms-quest-art img { padding: 22px; box-sizing: border-box; opacity: .5; }
+   it fill the whole tile. Keyed to the LOCK IMAGE, not to .locked: an admin
+   inspecting a locked rung sees the real piece, which wants the full box. */
+.ms-quest-art .ms-quest-lock { padding: 22px; box-sizing: border-box; opacity: .5; }
+.ms-quest.locked .ms-quest-art .ms-quest-pic { opacity: .75; }
 .ms-quest-title.hidden { color: #4f7488; letter-spacing: .08em; }
 .ms-quest-lvl { position: absolute; top: 4px; left: 4px; font-size: .58rem; letter-spacing: .06em;
   text-transform: uppercase; background: rgba(7,17,29,.85); color: #7a9eb0; padding: 2px 5px; }
