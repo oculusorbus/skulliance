@@ -38,7 +38,7 @@ So the missions page now says so. A band near the top lists **every mission that
 Two different things can put a mission on that list, and they are kept apart:
 
 * **Just opened** - the rung directly above your highest cleared level. This is the one you would otherwise miss, so it gets the alert.
-* **Never run** - a rung further down that you passed over. That happens when a mission is added to a ladder *below* where you already are, so it appears unlocked without ever having been new to you. It gets a quiet row of chips instead, and when nothing has just opened the whole notice goes quiet with it - a rung you skipped on purpose should not raise an alarm every visit for the rest of time.
+* **Never run** - a rung further down that is open but was never launched. Usually that means the mission was added to the ladder *below* where you already were, so it appeared unlocked without ever having been new to you. It gets a quiet row of chips instead, and when nothing has just opened the whole notice goes quiet with it - a rung you skipped on purpose should not raise an alarm every visit for the rest of time.
 
 ## Inventory
 
