@@ -38,6 +38,34 @@ $SLOT_CAT = array('effects1' => 'effects', 'effects2' => 'effects', 'weaponBack'
 require_once __DIR__ . '/dhc-compose.php';
 
 /**
+ * A screenshot under a callout card.
+ *
+ * PREFERS A -sm.jpg IF ONE HAS BEEN UPLOADED. The originals are ~2000px
+ * PNGs totalling 5.3MB for three pictures that render about 340px wide --
+ * roughly ten times the pixels the card can show. A smaller JPEG beside
+ * each is used automatically the moment it exists, with no code change:
+ * the same arrangement the hero reel uses for its mp4 and webm.
+ *
+ * Returns array() when neither file is there, and the caller renders no
+ * figure at all rather than a broken frame.
+ *
+ * Real dimensions come from the file rather than being hardcoded, so
+ * width/height stay correct when the -sm version lands and the browser can
+ * still reserve the right box before the image arrives.
+ */
+function dhc_shot_src($base) {
+	foreach (array($base . '-sm.jpg', $base . '.png') as $f) {
+		$abs = __DIR__ . '/images/' . $f;
+		if (is_file($abs)) {
+			$d = @getimagesize($abs);
+			return array('src' => 'images/' . $f,
+			             'w' => $d ? $d[0] : 0, 'h' => $d ? $d[1] : 0);
+		}
+	}
+	return array();
+}
+
+/**
  * One Fighter's picture.
  *
  * Prefers a single small image derived from the CANONICAL render -- the
@@ -291,6 +319,24 @@ $href_gallery   = 'dhcgallery.php';
     .card h3 { margin-top: 0; }
     .card p { color: #b9c7d4; font-size: .93rem; margin-bottom: .8em; }
     .card .more { font-size: .86rem; font-weight: 600; }
+    /*
+     * CONTAIN, NOT COVER. The three shots are 2.06:1, 1.56:1 and 1.59:1 --
+     * the assembler is much wider than the other two because it puts the
+     * canvas and the trait picker side by side, and cropping it to a shared
+     * box would cut the picker off, which is the half that shows what
+     * "assemble" means. A fixed 16:10 frame with contain keeps the three
+     * cards the same height and loses nothing from any of them.
+     */
+    .card-shot {
+      display: block; margin: 4px 0 16px;
+      border-radius: 10px; overflow: hidden;
+      background: #07111d; border: 1px solid rgba(0,200,160,.12);
+    }
+    .card-shot img {
+      display: block; width: 100%; height: auto;
+      aspect-ratio: 16 / 10; object-fit: contain;
+    }
+    .card-shot:hover { border-color: rgba(0,200,160,.4); }
     .steps { counter-reset: step; list-style: none; padding: 0; margin: 24px 0 0; }
     .steps li {
       counter-increment: step; position: relative; padding-left: 46px; margin-bottom: 18px; color: #b9c7d4;
@@ -477,18 +523,44 @@ if ($dhc_fighters && $ART !== ''):
       <h3>Fighters - the assembler</h3>
       <p>Ten trait slots: torso, head, background, two effects, arms, weapons, weapons behind, headgear and a companion. Layers draw in a fixed order with real exceptions - a companion can sit under the arms, some arms sit behind the torso - so a build looks the same everywhere it appears.</p>
       <p>Traits are committed. A trait spent on one Fighter is not available to another until you disassemble it, which is what makes a build a decision rather than a preview.</p>
+      <?php $sh = dhc_shot_src('dhcassemble'); if ($sh): ?>
+      <?php /* aria-hidden + tabindex -1 + alt="": this link goes exactly
+               where the text link below it goes, so to a screen reader it is
+               a duplicate, and a hidden image must not carry alt text nobody
+               will hear. All three decisions have to agree or it is worse
+               than either choice alone. */ ?>
+      <a class="card-shot" href="<?php echo $href_fighters; ?>" tabindex="-1" aria-hidden="true">
+        <img src="<?php echo htmlspecialchars($sh['src']); ?>"
+             <?php if ($sh['w']) printf('width="%d" height="%d"', $sh['w'], $sh['h']); ?>
+             alt="" loading="lazy" decoding="async">
+      </a>
+      <?php endif; ?>
       <a class="more" href="<?php echo $href_fighters; ?>">Open the assembler &rarr;</a>
     </div>
     <div class="card">
       <h3>Collection - browse it all</h3>
       <p>The full DHC collection, open to everyone. Filter by trait, see what is rare and what only looks rare, and find the pieces a build needs before you commit to it.</p>
       <p>No account required to look.</p>
+      <?php $sh = dhc_shot_src('dhcbrowse'); if ($sh): ?>
+      <a class="card-shot" href="<?php echo $href_gallery; ?>" tabindex="-1" aria-hidden="true">
+        <img src="<?php echo htmlspecialchars($sh['src']); ?>"
+             <?php if ($sh['w']) printf('width="%d" height="%d"', $sh['w'], $sh['h']); ?>
+             alt="" loading="lazy" decoding="async">
+      </a>
+      <?php endif; ?>
       <a class="more" href="<?php echo $href_gallery; ?>">Browse the collection &rarr;</a>
     </div>
     <div class="card">
       <h3>Arena - the match-3 battler</h3>
       <p>Your squad of three fights on a match-3 board. Matching charges your Fighters; chains and explosions chunk health down as they land, not after the board settles. Rank decides who takes the hit, so the order you field them matters.</p>
       <p>Rarity does not decide a fight. A common build played well beats a rare one played badly.</p>
+      <?php $sh = dhc_shot_src('dhcbattle'); if ($sh): ?>
+      <a class="card-shot" href="<?php echo $href_arena; ?>" tabindex="-1" aria-hidden="true">
+        <img src="<?php echo htmlspecialchars($sh['src']); ?>"
+             <?php if ($sh['w']) printf('width="%d" height="%d"', $sh['w'], $sh['h']); ?>
+             alt="" loading="lazy" decoding="async">
+      </a>
+      <?php endif; ?>
       <a class="more" href="<?php echo $href_arena; ?>">Play the Arena &rarr;</a>
     </div>
   </div>
