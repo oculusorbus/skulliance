@@ -237,6 +237,21 @@ function hp_dhc_fighters($limit = 24) {
 	return $list;
 }
 
+/**
+ * PEOPLE currently staking, not NFTs.
+ *
+ * Distinct owners of a staked NFT. It is the stronger number of the two on
+ * a homepage: a pile of assets says the platform is big, a count of people
+ * says somebody else already decided this was worth doing. It also cannot
+ * be inflated by one whale with a thousand pieces, which is exactly why it
+ * is the honest one to show.
+ */
+function hp_stat_stakers($fallback = 0) {
+	return (int)hp_cached('stakers', function ($c) {
+		return hp_scalar($c, "SELECT COUNT(DISTINCT user_id) FROM nfts WHERE user_id > 0");
+	}, $fallback);
+}
+
 /** Blockchains actually carrying a collection, so this says 2 only once XRPL
  *  really has one rather than because a row exists in `blockchains`. */
 function hp_stat_chains($fallback = 1) {

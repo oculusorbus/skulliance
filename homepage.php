@@ -285,12 +285,59 @@
       margin: 0 auto 8px;
       filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.7));
     }
+    /* The h1 is now the HEADLINE, not a quiet keyword line. The keywords
+       moved to .hp-lede below it, which is where a feature list belongs --
+       so nothing was lost for search, it just stopped being the first
+       thing a human reads. */
     .hp-hero h1 {
-      /* Visually quiet but real for SEO/screen readers - the logo carries
-         the brand; the h1 carries the keywords. */
-      font-size: clamp(1.05rem, 2.2vw, 1.4rem);
-      font-weight: 600; color: #c7d0d9;
-      max-width: 720px; margin: 0 auto 26px;
+      font-size: clamp(1.9rem, 5vw, 3.6rem);
+      font-weight: 800; line-height: 1.06; letter-spacing: -.02em;
+      color: #e8eaed; max-width: 900px; margin: 6px auto 16px;
+    }
+    .hp-hero h1 .hp-turn {
+      display: block;
+      background: linear-gradient(135deg, #00c8a0, #0596c4);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hp-lede {
+      max-width: 700px; margin: 0 auto 24px;
+      font-size: 1.02rem; color: #b9c7d4;
+    }
+    .hp-nosignup { margin: 14px 0 0; font-size: .82rem; color: #5a7888; }
+
+    /* Four live numbers. A badge is a claim; a number is evidence. */
+    /* Tiles keep a sane width whatever the count. With plain 1fr columns a
+       single surviving tile stretches the whole 860px and looks like a
+       mistake rather than a deliberate row -- and one surviving tile is
+       exactly what a database blip produces. */
+    .hp-stats {
+      display: grid; gap: 14px; max-width: 860px; margin: 30px auto 0;
+      justify-content: center;
+    }
+    @media (max-width: 620px) { .hp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+    .hp-stat {
+      background: rgba(10,25,41,.7); border: 1px solid rgba(0,200,160,.14);
+      border-radius: 12px; padding: 16px 10px;
+    }
+    .hp-stat b { display: block; font-size: 1.6rem; color: #00c8a0; line-height: 1.1; }
+    .hp-stat span { font-size: .72rem; color: #7a9eb0; letter-spacing: .04em; text-transform: uppercase; }
+
+    /* The art, on the first screen. */
+    .hp-artstrip {
+      width: 100vw; margin: 34px calc(50% - 50vw) 0; overflow: hidden;
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+              mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+    }
+    .hp-artstrip-track {
+      display: flex; gap: 16px; width: max-content;
+      animation: hp-artscroll 55s linear infinite;
+    }
+    .hp-artstrip-track:hover { animation-play-state: paused; }
+    @keyframes hp-artscroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    @media (prefers-reduced-motion: reduce) { .hp-artstrip-track { animation: none; } }
+    .hp-artstrip img {
+      width: 132px; height: 132px; object-fit: cover; border-radius: 12px;
+      border: 1px solid rgba(0,200,160,.14); flex: 0 0 auto;
     }
     .hp-cta {
       display: inline-block;
@@ -311,14 +358,6 @@
     }
     .hp-cta.hp-secondary:hover { background: rgba(0, 200, 160, 0.08); }
     .hp-hero .hp-ctas { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .hp-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 24px; }
-    .hp-badge {
-      font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase;
-      padding: 6px 12px; border-radius: 999px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #c7d0d9;
-    }
 
     /* ---------- Sections ---------- */
     section { padding: 48px 0; }
@@ -607,20 +646,85 @@
   ?>
 
   <!-- Hero -->
+  <?php
+  /*
+   * THE FIRST SCREEN. Rewritten after comparing the page with omenati.com:
+   *
+   *                     omenati.com     this page, before
+   *   visible text      1,345 chars     7,072 chars
+   *   headings          ~4              40
+   *   hero asked you to do one thing    choose between three
+   *
+   * The depth below is not the problem -- it is why the game pages rank.
+   * The problem was that the first screen did none of the work. The old H1
+   * was 128 characters describing a CATEGORY: what Skulliance IS, never
+   * what a visitor gets or does. It is now the sub-line, which is where a
+   * feature list belongs.
+   *
+   * WHAT WENT, and it can come back in one block from git history:
+   *   - the three CTAs, down to one primary and one secondary. Three CTAs
+   *     is zero CTAs; a stranger cannot pick. Play is the lowest-friction
+   *     door and the one nothing else on Cardano has.
+   *   - the five badges, replaced by four LIVE numbers. "Free Browser
+   *     Games" as a badge is a claim; "7" next to "12,000 NFTs staked" is
+   *     evidence, and it costs one query each, cached five minutes.
+   * The logo stays.
+   */
+  require_once __DIR__ . '/homepage-data.php';
+  $stat_staked  = hp_stat_nfts_staked();
+  $stat_stakers = hp_stat_stakers();
+  $stat_artists = hp_stat_artists();
+
+  /* A ZERO IS WORSE THAN A GAP. These fall back to 0 when the database is
+     unreachable, and a homepage announcing "0 NFTs staked" argues against
+     itself -- it is the one number a sceptic believes instantly. A stat
+     that cannot be proven is dropped and the row relays out. */
+  $hp_tiles = array();
+  if ($stat_staked  > 0) $hp_tiles[] = array(number_format($stat_staked),  'NFTs staked');
+  if ($stat_stakers > 0) $hp_tiles[] = array(number_format($stat_stakers), 'Stakers');
+  if ($stat_artists > 0) $hp_tiles[] = array(number_format($stat_artists), 'Artists & projects');
+  $hp_tiles[] = array('7', 'Free games');
+
+  /* Already on the server and used further down this page. */
+  $hp_hero_art = array('sinderskullz.png','kimosabe.png','crypties.png','galactico.png',
+                       'ohhmeed.png','hype.png','maxingo.png','darkula.jpg','skowl.jpg');
+  ?>
   <header class="hp-hero" id="top">
     <img class="hp-logo" src="https://www.skulliance.io/staking/images/skulliancelogo.png" alt="Skulliance logo" fetchpriority="high" decoding="async">
-    <h1>The premier skull NFT collective on Cardano - artists, staking rewards, free browser games, and exclusive merch in one community.</h1>
+
+    <?php /* Two beats: name the problem, then the turn. That shape is what
+             makes a line repeatable, and it leads on the one thing that is
+             actually different here rather than on the category. */ ?>
+    <h1>Most NFTs just sit there. <span class="hp-turn">Yours don't have to.</span></h1>
+
+    <p class="hp-lede">Skulliance is a collective of NFT artists/projects on
+       <strong>Cardano and the XRP Ledger</strong>. Stake your NFTs for daily rewards,
+       send them on missions, or take them into seven free browser games. No signup to play.</p>
+
     <div class="hp-ctas">
-      <a class="hp-cta" href="#games">Play Free Games</a>
-      <a class="hp-cta hp-secondary" href="https://www.skulliance.io/shop">Shop Merch</a>
-      <a class="hp-cta hp-secondary" href="https://discord.gg/JqqBZBrph2">Join the Discord</a>
+      <a class="hp-cta" href="#games">Play a game, free</a>
+      <a class="hp-cta hp-secondary" href="https://www.skulliance.io/staking">Stake your NFTs</a>
     </div>
-    <div class="hp-badges" aria-label="Highlights">
-      <span class="hp-badge">Built on Cardano</span>
-      <span class="hp-badge">35+ Featured Artists</span>
-      <span class="hp-badge">NFT Staking Rewards</span>
-      <span class="hp-badge">Free Browser Games</span>
-      <span class="hp-badge">Exclusive Merch</span>
+    <p class="hp-nosignup">No wallet needed to play. No download. Works on your phone.</p>
+
+    <div class="hp-stats" style="grid-template-columns: repeat(<?php echo min(4, count($hp_tiles)); ?>, minmax(140px, 200px))">
+      <?php foreach ($hp_tiles as $t): ?>
+      <div class="hp-stat"><b><?php echo $t[0]; ?></b><span><?php echo htmlspecialchars($t[1]); ?></span></div>
+      <?php endforeach; ?>
+    </div>
+
+    <?php /* The art, on the first screen instead of thousands of pixels
+             down. Repeat until a HALF-track exceeds any viewport and keep
+             the count EVEN, or the -50% loop gaps at the turn -- nine tiles
+             is 1332px a half against a 2560px desktop. */ ?>
+    <div class="hp-artstrip">
+      <div class="hp-artstrip-track">
+        <?php $hp_ap = max(2, 2 * (int)ceil(20 / count($hp_hero_art)));
+              for ($i = 0; $i < $hp_ap; $i++): foreach ($hp_hero_art as $f): ?>
+        <img src="https://www.skulliance.io/staking/images/projects/<?php echo htmlspecialchars($f); ?>"
+             alt="" loading="lazy" decoding="async">
+        <?php endforeach; endfor; ?>
+      </div>
     </div>
   </header>
 
