@@ -361,6 +361,21 @@ define('MS_FIELD_CAP', 24);
 /* Holds the row's height while the launchers are fetched, so the sections
    below it do not jump when they land. */
 .ms-deploy-buttons { min-height: 38px; }
+/* Busy: the label is still laid out, so the box cannot change size -- it is
+   simply not painted, and a spinner sits over it. btn-spin is the platform's
+   own keyframe (flexbox.css), so this is the same spinner every other
+   intensive action uses. */
+.ms-deploy-buttons .button.ms-busy { position: relative; color: transparent; pointer-events: none; }
+.ms-deploy-buttons .button.ms-busy::after {
+  content: ''; position: absolute; inset: 0; margin: auto;
+  width: 14px; height: 14px; box-sizing: border-box;
+  border: 2px solid rgba(7,17,29,.3); border-top-color: #07111d; border-radius: 50%;
+  animation: btn-spin .7s linear infinite;
+}
+/* The other two are locked out for the duration -- all three draw on the same
+   NFTs, points and item stock -- so they should look it rather than silently
+   ignoring a press. */
+.ms-deploy-buttons .button:disabled { opacity: .45; cursor: default; }
 .ms-deploy-wait { font-size: .78rem; color: #4f7488; align-self: center; }
 
 /* ---- sections --------------------------------------------------------- */
@@ -1096,7 +1111,20 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	function bulkLaunch(btn, url) {
 		var all = ['#startFreeMissionsForm button', '#startAutoMissionsForm button',
 		           '#startMaxMaxiMissionsForm button'];
-		btn.innerHTML = '<span class="btn-spinner"></span> Working&hellip;';
+		/*
+		 * THE BUTTON KEEPS ITS SIZE.
+		 *
+		 * Swapping the label for "Working..." changes the button's width,
+		 * and on a phone the row is wrapped -- so the two buttons beside it
+		 * jump to new positions, sometimes onto a different line, directly
+		 * under the finger that just pressed one. A control that moves
+		 * because you touched it reads as a misfire.
+		 *
+		 * So the label stays in the layout and is only made invisible; the
+		 * spinner is painted over it. Nothing reflows, and the row holds
+		 * still until the launchers are re-fetched.
+		 */
+		btn.classList.add('ms-busy');
 		/* All three draw on the same NFTs, points and item stock, so a second
 		   click landing mid-run would be deciding what to spend from a page
 		   that is already out of date. */
