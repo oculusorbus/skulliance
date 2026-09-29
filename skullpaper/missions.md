@@ -22,28 +22,45 @@ Having zero cost missions allows those with few NFTs to test their luck with mis
 
 In the future, we will be adding missions with higher costs/rewards and longer durations. This will allow those with larger collections to be strategic about what missions they opt to embark on.
 
-Each project's missions form a ladder - completing one level unlocks the next. A **thin progress bar sits under each project icon** in the missions filter so you can see at a glance which projects still have levels left to unlock and which you've taken all the way. The bar is **gold** while levels remain and turns **teal** once every mission for that project is open to you; hovering the icon gives the exact count.
+Each project's missions form a ladder - completing one level unlocks the next. The project list on the missions page names every project and prints how far up its ladder you are ("3/8 open"), how many of your NFTs are idle and available for it, and a **thin progress bar** that is **gold** while levels remain and turns **teal** once every mission for that project is open to you.
 
 There's a **Missions Unlocked** leaderboard for this - it ranks players by how far through the ladders they've got across every project, so it rewards going deep rather than running the same easy mission over and over. It shows how many levels you have open out of every level in the game, and how many projects you've taken all the way. See [[platform-leaderboards]]. It's only shown when you're logged in, since it reflects your own progress.
 
+## Missions you have never run
+
+A long mission that lands while you are away clears its level and opens a brand new one - and it is easy to never notice. The next visit gets spent pressing **Start All Free**, the whole idle roster goes out on level 1s, and the rung that just opened stays unopened because there is nobody left to send. Do that a few times and a project sits half-unlocked indefinitely.
+
+So the missions page now says so. A band near the top lists **every mission that is open to you and that you have never launched**, deepest first, with the ones you can send right now at the front. Each one goes straight to its load-out. It sits **above** the bulk launchers deliberately, because pressing those is what takes the crew.
+
+* A mission counts as never run if there is no record of you launching it at all - not cleared, not failed, never sent.
+* A project where you have cleared **nothing** is left out. Level 1 being available is the starting position, not a discovery, and listing every project's would bury the one rung that actually just opened.
+* Missions in that state are also flagged **New** in the project's ladder.
+
 ## Inventory
 
-All of your NFTs for each mission are preselected under the inventory section. This saves you the trouble on clicking on a bunch of NFTs to start your mission. If you want to adjust your inventory, you can deselect as you wish.
+Choosing a mission opens its **load-out**: the artwork and description, what it costs and pays, your balance, and every NFT you own for that project that is not already out on a mission. A crew is picked for you to start with - deselect or add as you like, and the success meter moves as you do.
 
-There is also a very interesting feature for whales. If you have enough NFTs to garner over 100% success rate, the system automatically balances your inventory for multiple mission runs.
+There is also a very interesting feature for whales. If you have enough NFTs to garner over 100% success rate, the system automatically balances your crew across multiple mission runs rather than spending it all on one.
 
-If you want to blow your load at 100% for one mission, you have the option to do that with the Maximize button too. Or, you can go with the default setting and do multiple runs with balanced, but lower success rates.
+Three controls sit above the crew:
+
+* **Maximise** fills toward 100% for a single mission.
+* **Balance** goes back to the shared-out default, so the roster covers several runs.
+* **Clear** empties the selection.
+
+The meter also tells you when a crew is **over** 100%, since anything past it is wasted on that mission.
 
 ## Missions Status
 
-The current missions pane tracks your progress and displays how much time you have left. Once any of your missions are completed, you'll be able to claim them and review which missions were successful and which failed.
+The **In the field** list tracks everything you have out, closest to landing first, with a live countdown, the crew size, the reward and the success rate you sent it at. Once any of your missions are completed, you'll be able to claim them and review which missions were successful and which failed.
 
-To make missions easier to claim, there is a "Claim All Completed Missions" button that claims all completed missions in one fell swoop.
+To make missions easier to claim, a **Collect all** banner appears above the list whenever anything has landed, and claims every completed mission in one press. Each card then reveals in place whether it succeeded or failed, and what it dropped.
 
 ## Launching Missions in Bulk
 
-Three buttons above the current missions pane launch in bulk, so a full day's
-deployment is a click rather than twenty forms:
+Three buttons in the **Daily deployment** bar near the top of the page launch in
+bulk, so a full day's deployment is a click rather than twenty forms. Check the
+newly-unlocked band above it first - these send the crew those rungs would need:
 
 * **Start All Free** sends every free level-1 mission your idle NFTs can fill.
   This is the steady base most stakers run daily.

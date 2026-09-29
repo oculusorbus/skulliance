@@ -215,6 +215,98 @@ function mission_quests($conn, $project_id) {
 }
 
 /*
+ * NEWLY UNLOCKED, AND STILL NOT TAKEN.
+ *
+ * THE PROBLEM THIS SOLVES, in the holder's own words: a long mission sent
+ * a week ago comes back, clears its level and opens a brand new rung --
+ * and nothing anywhere says so. The next visit is spent pressing Start All
+ * Free, which sends the whole idle roster out on level 1s, and the new rung
+ * stays unopened because there is nobody left to send. The only way to
+ * catch it was to review every completed mission looking for the one that
+ * moved a ladder. That is how projects end up permanently half-unlocked.
+ *
+ * A rung counts as NEW here when it is open to you and you have never
+ * launched it -- not cleared it, not failed it, never sent anybody. Any
+ * missions row for that quest, in any state, means you have seen it.
+ *
+ * ONE EXCEPTION, and without it this list would be useless on day one: a
+ * project where you have cleared NOTHING is skipped. Level 1 being
+ * available is not a discovery, it is the starting position, and listing
+ * forty of them would bury the one rung that actually just opened.
+ */
+function mission_frontier($conn) {
+	$uid = mission_user_id();
+	$out = array();
+	if ($uid <= 0) return $out;
+
+	$cleared = getMissionLevels($conn);
+	if (!$cleared) return $out;      /* nothing cleared anywhere: nothing is new */
+
+	$res = $conn->query(
+		"SELECT q.id, q.title, q.level, q.cost, q.reward, q.duration, q.extension,
+		        q.project_id, p.name AS project_name, p.currency
+		 FROM quests q INNER JOIN projects p ON p.id = q.project_id
+		 WHERE q.id NOT IN (SELECT quest_id FROM missions WHERE user_id = '$uid')
+		 ORDER BY q.project_id ASC, q.level ASC");
+	if (!$res) return $out;
+
+	/* Idle crew and balance per project, two queries rather than two per row. */
+	$idle = array(); $bal = array();
+	$ir = $conn->query(
+		"SELECT c.project_id, COUNT(*) AS n FROM nfts n
+		 INNER JOIN collections c ON c.id = n.collection_id
+		 WHERE n.user_id = '$uid' AND n.id NOT IN (
+		   SELECT mn.nft_id FROM missions_nfts mn
+		   INNER JOIN missions m ON m.id = mn.mission_id
+		   WHERE m.status = '0' AND m.user_id = '$uid')
+		 GROUP BY c.project_id");
+	if ($ir) while ($r = $ir->fetch_assoc()) $idle[(int)$r['project_id']] = (int)$r['n'];
+	$br = $conn->query("SELECT project_id, balance FROM balances WHERE user_id = '$uid'");
+	if ($br) while ($r = $br->fetch_assoc()) $bal[(int)$r['project_id']] = (float)$r['balance'];
+
+	while ($row = $res->fetch_assoc()) {
+		$pid = (int)$row['project_id'];
+		/* Never cleared anything here -- level 1 is the start line, not news. */
+		if (empty($cleared[$pid])) continue;
+		$done = (int)$cleared[$pid];
+		if ((int)$row['level'] > $done + 1) continue;      /* still locked */
+
+		$cost    = (float)$row['cost'];
+		$balance = isset($bal[$pid]) ? $bal[$pid] : 0;
+		$slug    = mission_art_slug($row['title']);
+		$out[] = array(
+			'quest_id'   => (int)$row['id'],
+			'title'      => $row['title'],
+			'project_id' => $pid,
+			'project'    => $row['project_name'],
+			'currency'   => $row['currency'],
+			'level'      => (int)$row['level'],
+			'cost'       => $cost,
+			'reward'     => (float)$row['reward'],
+			'duration'   => (int)$row['duration'],
+			'image'      => 'images/missions/' . $slug . '.'
+			                . (($row['extension'] === 'mp4') ? 'gif' : $row['extension']),
+			'affordable' => ($cost <= 0 || $balance >= $cost),
+			'shortfall'  => ($cost > $balance) ? $cost - $balance : 0,
+			'has_squad'  => (isset($idle[$pid]) && $idle[$pid] > 0),
+			/* The rung you just earned is the deepest one. Everything below
+			   it you could have run any time. */
+			'frontier'   => ((int)$row['level'] === $done + 1),
+		);
+	}
+
+	/* Ready to go first, then deepest -- a rung you can launch right now is
+	   the one about to be lost to the next Start All Free. */
+	usort($out, function($a, $b) {
+		$ga = ($a['affordable'] && $a['has_squad']) ? 0 : 1;
+		$gb = ($b['affordable'] && $b['has_squad']) ? 0 : 1;
+		if ($ga !== $gb) return $ga - $gb;
+		return $b['level'] - $a['level'];
+	});
+	return $out;
+}
+
+/*
  * EVERYTHING THE LAUNCH DRAWER NEEDS, IN ONE CALL.
  *
  * The old flow needed a full page POST to get here -- each mission card was
