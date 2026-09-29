@@ -221,6 +221,10 @@ if ($mn_rows) {
    and the 10px on .nft-data are the old platform's. Hard edges here, in
    one place, so the two halves of the site stop disagreeing. */
 
+/* .main sets `text-align: center` for the whole column, which is why the
+   kicker floated centred over a left-aligned title -- the h2 overrode it
+   and the span did not. Alignment is stated here rather than inherited. */
+.mn-head, .mn-head * { text-align: left; }
 .mn-head {
   display: flex; align-items: flex-end; justify-content: space-between;
   gap: 24px; flex-wrap: wrap; margin: 0 0 20px;
@@ -263,7 +267,12 @@ if ($mn_rows) {
  * depends on the header being exactly one line tall will break silently
  * and only at certain widths.
  */
-#filtered-content { position: static; top: 0; }
+/* .content carries border-radius:10px, which is the rounded panel still
+   showing around the whole thing. Squared with everything else. */
+#filtered-content { position: static; top: 0; border-radius: 0; }
+/* Anything left over inside the page tree -- selects, the pagination, the
+   platform's own panels. Scoped to this page, so nothing else moves. */
+.main .content, .main .content *, .mn-head * { border-radius: 0; }
 #filter-nfts { position: static; top: 0; text-align: left; font-size: 1rem; margin: 0; }
 #filter-nfts label { display: block; font-size: .64rem; letter-spacing: .05em;
   text-transform: uppercase; color: #7a9eb0; margin-bottom: 4px; }
@@ -292,11 +301,32 @@ if ($mn_rows) {
 }
 #filtered-content .nft-data:hover { border-color: rgba(0,200,160,.5); }
 
-/* THE ART IS THE PRODUCT, so it leads and it fills the card's width
-   edge to edge -- it was a thumbnail under five lines of text. */
+/*
+ * THE ART IS THE PRODUCT, so it leads and fills the card edge to edge --
+ * it was a thumbnail under five lines of text.
+ *
+ * AND NOTHING IS CROPPED. The platform wraps every image in
+ * `.nft-image { min-height:170px; max-height:170px; overflow-y:hidden }`
+ * with `.nft img { max-height:165px }` -- a fixed 170px window that hard
+ * -clips anything taller. Square art survived it; a tall piece lost its
+ * top and bottom, and once the art became the point of the card that went
+ * from a quirk to the whole problem.
+ *
+ * A SQUARE BOX WITH object-fit: contain, not natural heights. At 1,483
+ * NFTs a ragged grid of mismatched card heights is hard to scan, and
+ * `cover` would crop exactly what we are trying to stop cropping. contain
+ * letterboxes a tall piece against the card and shows ALL of it. Same
+ * call, for the same reason, as the callout screenshots on dhcgame.php.
+ */
 #filtered-content .nft-art { display: block; line-height: 0; }
+#filtered-content .nft-image {
+  display: block; float: none; margin: 0;
+  min-height: 0; max-height: none; overflow: visible;
+  aspect-ratio: 1 / 1; background: #07111d;
+}
 #filtered-content .nft-data img {
-  width: 100%; height: auto; display: block; border-radius: 0;
+  width: 100%; height: 100%; max-width: none; max-height: none;
+  object-fit: contain; display: block; border-radius: 0;
 }
 #filtered-content .nft-name {
   padding: 10px 12px 0; font-size: .82rem; color: #e8eaed;
