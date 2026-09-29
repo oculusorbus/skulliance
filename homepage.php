@@ -265,46 +265,13 @@
     .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
 
     /* ---------- Navigation ---------- */
-    .hp-nav {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 9990;
-      display: flex; align-items: center; gap: 22px;
-      padding: 10px 18px;
-      background: rgba(7, 17, 29, 0.88);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-    }
-    .hp-nav .hp-mark { display: inline-flex; align-items: center; }
-    .hp-nav .hp-mark img { height: 30px; width: auto; }
-    .hp-nav a.hp-link {
-      color: #c7d0d9; font-size: 0.92rem; font-weight: 600;
-      letter-spacing: 0.02em;
-    }
-    .hp-nav a.hp-link:hover { color: #34e3bb; text-decoration: none; }
-    .hp-nav .hp-spacer { flex: 1; }
-    .hp-nav a.hp-social img { height: 18px; width: auto; }
-    .hp-nav a.hp-social:hover img { filter: invert(64%) sepia(67%) saturate(437%) hue-rotate(112deg) brightness(95%) contrast(92%); }
-    #hp-burger { display: none; background: none; border: none; padding: 4px; cursor: pointer; margin-left: auto; }
-    #hp-burger img { height: 30px; width: auto; }
-    @media (max-width: 860px) {
-      #hp-burger { display: block; }
-      .hp-nav { flex-wrap: wrap; }
-      .hp-nav .hp-links {
-        display: none;
-        flex-direction: column; align-items: flex-start; gap: 14px;
-        width: 100%; padding: 14px 4px 8px;
-      }
-      .hp-nav .hp-links.open { display: flex; }
-      .hp-nav a.hp-link { font-size: 1.05rem; }
-    }
-    @media (min-width: 861px) {
-      .hp-nav .hp-links { display: flex; align-items: center; gap: 22px; flex: 1; }
-    }
-
     /* ---------- Hero ---------- */
     .hp-hero {
       text-align: center;
-      padding: 120px 20px 56px;
+      /* 56px, not 120px. The nav was FIXED -- out of the layout -- so the
+         hero had to reserve its height by hand. site-header.php is STICKY
+         and occupies its own space, so that reservation is now a gap. */
+      padding: 56px 20px 56px;
       background:
         radial-gradient(circle at 50% 0%, rgba(0, 200, 160, 0.18), transparent 60%),
         url('https://www.skulliance.io/staking/images/skulliancebackground.png') center/cover no-repeat,
@@ -607,7 +574,7 @@
     footer .hp-foot-links { margin-bottom: 10px; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
 
     @media (max-width: 480px) {
-      .hp-hero { padding-top: 96px; }
+      .hp-hero { padding-top: 40px; }   /* was 96: see the note above */
       .hp-hero .hp-ctas .hp-cta { width: 100%; text-align: center; }
       .hp-final .hp-ctas .hp-cta { width: 100%; text-align: center; }
     }
@@ -615,29 +582,29 @@
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav class="hp-nav" aria-label="Main">
-    <a class="hp-mark" href="#top" aria-label="Skulliance home">
-      <img src="https://www.skulliance.io/staking/images/skull.png" alt="Skulliance skull mark" width="30" height="30">
-    </a>
-    <button id="hp-burger" type="button" aria-label="Toggle menu" aria-expanded="false" onclick="hpToggleMenu()">
-      <img id="hp-burger-icon" src="https://www.skulliance.io/staking/images/menu.png" alt="" width="30" height="30">
-    </button>
-    <div class="hp-links" id="hp-links">
-      <a class="hp-link" href="#mission">Mission</a>
-      <a class="hp-link" href="#games">Games</a>
-      <a class="hp-link" href="#artists">Artists</a>
-      <a class="hp-link" href="#partners">Partners</a>
-      <a class="hp-link" href="#platform">Platform</a>
-      <a class="hp-link" href="#team">Team</a>
-      <a class="hp-link" href="https://www.skulliance.io/staking">Staking</a>
-      <a class="hp-link" href="https://www.skulliance.io/shop">Merch</a>
-      <a class="hp-link" href="https://www.skulliance.io/staking/skullpaper.php">Skull Paper</a>
-      <span class="hp-spacer"></span>
-      <a class="hp-social" href="https://discord.gg/JqqBZBrph2" aria-label="Skulliance Discord"><img src="https://www.skulliance.io/staking/images/discord.png" alt="Discord" width="18" height="18"></a>
-      <a class="hp-social" href="https://www.x.com/skulliance" aria-label="Skulliance on X"><img src="https://www.skulliance.io/staking/images/x.png" alt="X" width="18" height="18"></a>
-    </div>
-  </nav>
+  <?php
+  /* Navigation now lives in site-header.php, shared with every public game
+     landing page -- a visitor who arrives on one of those was previously at
+     a dead end. This page keeps its full section list; the include's
+     default is the shorter set a game page wants.
+
+     __DIR__ matters: this file is included by the WordPress theme, where
+     the working directory is the WP root and a relative include would miss.
+     $sh_on_home keeps these as in-page anchors instead of reloading. */
+  $sh_on_home = true;
+  $sh_links = array(
+      array('Mission',     '/#mission'),
+      array('Games',       '/#games'),
+      array('Artists',     '/#artists'),
+      array('Partners',    '/#partners'),
+      array('Platform',    '/#platform'),
+      array('Team',        '/#team'),
+      array('Staking',     '/staking/'),
+      array('Merch',       '/shop'),
+      array('Skull Paper', '/staking/skullpaper.php'),
+  );
+  include __DIR__ . '/site-header.php';
+  ?>
 
   <!-- Hero -->
   <header class="hp-hero" id="top">
@@ -982,24 +949,6 @@
   <script>
     document.getElementById('hp-year').textContent = new Date().getFullYear();
 
-    function hpToggleMenu() {
-      var links = document.getElementById('hp-links');
-      var icon = document.getElementById('hp-burger-icon');
-      var burger = document.getElementById('hp-burger');
-      var open = links.classList.toggle('open');
-      icon.src = open
-        ? 'https://www.skulliance.io/staking/images/close.png'
-        : 'https://www.skulliance.io/staking/images/menu.png';
-      burger.setAttribute('aria-expanded', open ? 'true' : 'false');
-    }
-
-    // Close the mobile menu after tapping an anchor link
-    document.querySelectorAll('#hp-links a').forEach(function (a) {
-      a.addEventListener('click', function () {
-        var links = document.getElementById('hp-links');
-        if (links.classList.contains('open')) hpToggleMenu();
-      });
-    });
   </script>
 </body>
 </html>

@@ -335,6 +335,11 @@ $href_gallery   = 'dhcgallery.php';
   </style>
 </head>
 <body>
+<?php /* Shared public navigation. Sticky, so it needs no top padding
+         from this page, and self-contained, so it needs nothing from
+         this page's stylesheet either. site-header.php. */ ?>
+<?php include __DIR__ . '/site-header.php'; ?>
+
 
 <header class="hero">
   <div class="wrap">

@@ -150,7 +150,11 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
        interaction feels consistent across the two standalone pages. */
     #m3-exit {
       position: fixed;
-      top: calc(env(safe-area-inset-top, 0px) + 8px);
+      /* Below the shared nav, not on top of it. site-header.php is sticky
+         and ~51px tall; this button is z-index 99990 against the nav's
+         9990, so at the old 8px it covered the skull mark rather than
+         losing to it. */
+      top: calc(env(safe-area-inset-top, 0px) + 62px);
       left: calc(env(safe-area-inset-left, 0px) + 8px);
       z-index: 99990;
       display: inline-flex;
@@ -615,6 +619,11 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
   </style>
 </head>
 <body>
+<?php /* Shared public navigation. Sticky, so it needs no top padding
+         from this page, and self-contained, so it needs nothing from
+         this page's stylesheet either. site-header.php. */ ?>
+<?php include __DIR__ . '/site-header.php'; ?>
+
 
   <?php if ($is_logged_in): ?>
   <a id="m3-exit" href="launchpad.php" aria-label="Back to the Skulliance Launchpad">

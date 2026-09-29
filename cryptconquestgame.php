@@ -237,6 +237,11 @@ a:hover { color: #ffe08a; text-decoration: underline; }
 </style>
 </head>
 <body>
+<?php /* Shared public navigation. Sticky, so it needs no top padding
+         from this page, and self-contained, so it needs nothing from
+         this page's stylesheet either. site-header.php. */ ?>
+<?php include __DIR__ . '/site-header.php'; ?>
+
 <div class="cq-wrap">
 <div class="cq-landing">
 	<header class="cq-hero-land">
