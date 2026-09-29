@@ -107,6 +107,13 @@ $short_desc = 'Build a Fighter from NFT traits, browse the collection, and battl
 /* Relative hrefs throughout. Session cookies are host-only -- no domain= on
    SessionCookie or PHPSESSID -- so an absolute www. link logs out anybody
    sessioned on the bare domain. Absolute URLs appear ONLY in SEO markup. */
+/* Maxingo drew every trait; Digital Hell Citizens 2 is the minted Cardano
+   collection the art comes from. The Wayup URL is the one the Skull Paper
+   already uses, so the two cannot drift. External, so absolute is correct
+   here -- the host-only cookie rule is about links back into Skulliance. */
+$artist_x       = 'https://x.com/MMAXI404';
+$collection_url = 'https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5';
+
 $href_arena     = 'dhcarena.php';
 $href_fighters  = 'dhcfighters.php';
 $href_gallery   = 'dhcgallery.php';
@@ -303,6 +310,27 @@ $href_gallery   = 'dhcgallery.php';
     }
     .shot img { width: 100%; height: auto; aspect-ratio: 1996 / 1255; }
     .shot:hover { border-color: rgba(0,200,160,.5); }
+    .credit {
+      display: flex; gap: 22px; align-items: flex-start; margin-top: 24px;
+      background: #0a1929; border: 1px solid rgba(0,200,160,.14);
+      border-radius: 14px; padding: 24px;
+    }
+    .credit-face { flex: 0 0 auto; }
+    /* contain, not cover: this is a LOGO with a wordmark in it, and cover
+       crops whatever does not fit the square. The file is 1500x1226. */
+    .credit-face img {
+      width: 96px; height: 96px; border-radius: 12px;
+      object-fit: contain; background: #07111d;
+    }
+    .credit-body { flex: 1 1 auto; }
+    .credit-body p { color: #b9c7d4; font-size: .95rem; }
+    .credit-body p:last-child { margin-bottom: 0; }
+    .credit-links { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    .credit-links .btn { font-size: .88rem; padding: 10px 18px; }
+    @media (max-width: 560px) {
+      .credit { flex-direction: column; align-items: center; text-align: center; }
+      .credit-links { justify-content: center; }
+    }
     footer { border-top: 1px solid rgba(255,255,255,.08); padding: 28px 20px; text-align: center; color: #5a7888; font-size: .85rem; }
   </style>
 </head>
@@ -415,6 +443,36 @@ if ($dhc_fighters && $ART !== ''):
 
 <hr class="rule">
 
+<?php /* THE CREDIT, and it is placed here on purpose -- mid-page, straight
+         after the screenshot, where it gets read. The traits every Fighter
+         is built from are Maxingo's art, and the minted collection they
+         come from is on Cardano; a game built on somebody's work should
+         send people to the work. Both links open away from the page, which
+         is the point of them. */ ?>
+<section class="wrap">
+  <h2 class="center">The art is Maxingo's</h2>
+  <div class="credit">
+    <a class="credit-face" href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">
+      <img src="https://www.skulliance.io/staking/images/projects/maxingo.png"
+           alt="Maxingo" width="96" height="96" loading="lazy" decoding="async">
+    </a>
+    <div class="credit-body">
+      <p>Every trait in the assembler — every torso, head, weapon and companion — is
+         drawn by <a href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">Maxingo</a>.
+         DHC Fighters is a game built on top of that work, not a replacement for it.</p>
+      <p>It all started with <strong>Digital Hell Citizens 2</strong>, 226 characters minted
+         on Cardano. Those are the real assets; what you assemble here is built from the
+         same art.</p>
+      <p class="credit-links">
+        <a class="btn ghost" href="<?php echo $collection_url; ?>" target="_blank" rel="noopener">View the collection on Wayup</a>
+        <a class="btn ghost" href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">Follow Maxingo</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<hr class="rule">
+
 <section class="wrap">
   <h2>Start without owning anything</h2>
   <ol class="steps">
@@ -447,7 +505,8 @@ if ($dhc_fighters && $ART !== ''):
 
 <footer>
   <div class="wrap">
-    <p>DHC Fighters is part of <a href="https://www.skulliance.io/">Skulliance</a> — NFT staking, games and a marketplace.</p>
+    <p>DHC Fighters is part of <a href="https://www.skulliance.io/">Skulliance</a> — NFT staking, games and a marketplace.<br>
+       Art by <a href="<?php echo $artist_x; ?>" target="_blank" rel="noopener">Maxingo</a>.</p>
   </div>
 </footer>
 
