@@ -1201,6 +1201,24 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			});
 	};
 	window.msCloseDrawer = function () {
+		/*
+		 * STOP THE MEDIA BEFORE HIDING ANYTHING.
+		 *
+		 * Hiding an element does not pause it. An animated mission left
+		 * its video running -- with sound, on a loop -- for as long as the
+		 * page stayed open, because closing the drawer only set
+		 * drawer.hidden and the <video> was still in the document, still
+		 * playing, just not visible. Now that these have audio, that is
+		 * the difference between a closed mission and a stuck soundtrack.
+		 *
+		 * Paused BEFORE the element is detached: a detached media element
+		 * can keep its audio going until it is collected, so emptying the
+		 * body on its own is not a fix either.
+		 */
+		drawerBody.querySelectorAll('video, audio').forEach(function (m) {
+			try { m.pause(); m.currentTime = 0; } catch (e) {}
+		});
+		drawerBody.innerHTML = '';
 		drawer.hidden = true; LO = null; picked = {}; items = {}; shedByItem = {}; target = 100;
 	};
 	drawer.addEventListener('click', function (e) { if (e.target === drawer) msCloseDrawer(); });
