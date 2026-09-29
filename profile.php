@@ -1,5 +1,6 @@
 <?php
 include_once 'db.php';
+require_once 'profile-lib.php';
 
 // Set up session variables for header.php without forcing a login redirect
 $name = "";
@@ -38,6 +39,14 @@ if (!$user_result || $user_result->num_rows === 0) {
 $profile_user   = $user_result->fetch_assoc();
 $tid            = (int)$profile_user['id'];
 $show_nfts      = ($profile_user['visibility'] == 2);
+
+/*
+ * The games that shipped after this page did. Public, same as every other
+ * record here and the leaderboards they come from -- only the NFT
+ * collection is gated by visibility. A game with no plays is absent
+ * rather than zeroed; see profile-lib.php.
+ */
+$pf_games = profile_game_record($conn, (int)$profile_user['id']);
 $is_own_profile = isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] === $tid;
 $profile_avatar = "https://cdn.discordapp.com/avatars/{$profile_user['discord_id']}/{$profile_user['avatar']}.png";
 $display_name   = htmlspecialchars($profile_user['username']);
@@ -605,7 +614,7 @@ include 'header.php';
     position: relative;
     width: 100%;
     min-height: 240px;
-    border-radius: 12px;
+    border-radius: 0;
     overflow: hidden;
     background-color: #0a1929;
     background-size: cover;
@@ -647,7 +656,7 @@ include 'header.php';
 /* ── Badges ── */
 .badge {
     display: inline-flex; align-items: center; gap: 5px;
-    padding: 0 10px; border-radius: 20px; height: 24px; box-sizing: border-box;
+    padding: 0 10px; border-radius: 0; height: 24px; box-sizing: border-box;
     font-size: 0.72rem; font-weight: bold; letter-spacing: 0.04em; text-transform: uppercase;
 }
 .badge img { height: 13px; width: auto; flex-shrink: 0; }
@@ -662,7 +671,7 @@ include 'header.php';
 .profile-section {
     background: rgba(12, 28, 42, 0.85);
     border: 1px solid rgba(0,200,160,0.10);
-    border-radius: 10px;
+    border-radius: 0;
     padding: 22px 24px;
     margin-top: 18px;
 }
@@ -676,7 +685,7 @@ include 'header.php';
 .section-title-link {
     font-size: 0.68rem; font-weight: bold; letter-spacing: 0.06em;
     text-transform: uppercase; color: #07111d; text-decoration: none;
-    background: #00c8a0; border-radius: 20px; padding: 4px 12px;
+    background: #00c8a0; border-radius: 0; padding: 4px 12px;
     transition: background 0.2s, color 0.2s; white-space: nowrap;
 }
 .section-title-link:hover { background: #00a882; color: #07111d; }
@@ -694,7 +703,7 @@ include 'header.php';
 .stat-card {
     background: rgba(22,87,119,0.25);
     border: 1px solid rgba(0,200,160,0.12);
-    border-radius: 8px; padding: 16px 10px 14px; text-align: center;
+    border-radius: 0; padding: 16px 10px 14px; text-align: center;
     transition: border-color 0.2s, background 0.2s;
 }
 .stat-card:hover { border-color: rgba(0,200,160,0.35); background: rgba(22,87,119,0.40); }
@@ -723,10 +732,26 @@ include 'header.php';
 @media (max-width: 700px) { .activity-stats-row-5 { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 420px) { .activity-stats-row-5 { grid-template-columns: repeat(2, 1fr); } }
 
+/* Games: the same card language as .act-stat, in a grid that stays
+   readable whether the player has one game on record or nine. */
+.pf-game-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px;
+}
+.pf-game {
+    display: flex; flex-direction: column; gap: 2px; text-decoration: none;
+    background: rgba(22,87,119,0.22); border: 1px solid rgba(0,200,160,0.08);
+    border-radius: 0; padding: 13px 14px; transition: border-color .15s, background .15s;
+}
+.pf-game:hover { border-color: rgba(0,200,160,0.35); background: rgba(22,87,119,0.40); }
+.pf-game-name { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: #5a7888; }
+.pf-game-stat { font-size: 1.5rem; font-weight: bold; color: #00c8a0; line-height: 1.1; }
+.pf-game-lbl  { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: #8fa8b8; }
+.pf-game-sub  { font-size: 0.7rem; color: #5a7888; margin-top: 3px; }
+
 .act-stat {
     background: rgba(22,87,119,0.22);
     border: 1px solid rgba(0,200,160,0.08);
-    border-radius: 8px; padding: 14px 12px; text-align: center;
+    border-radius: 0; padding: 14px 12px; text-align: center;
 }
 .act-stat-num {
     font-size: 1.5rem; font-weight: bold; display: block; margin-bottom: 4px;
@@ -738,10 +763,10 @@ include 'header.php';
 /* ── Progress bar ── */
 .progress-bar-wrap {
     background: rgba(22,87,119,0.20);
-    border-radius: 4px; height: 6px; margin: 10px 0 4px; overflow: hidden;
+    border-radius: 0; height: 6px; margin: 10px 0 4px; overflow: hidden;
 }
 .progress-bar-fill {
-    height: 100%; border-radius: 4px;
+    height: 100%; border-radius: 0;
     background: linear-gradient(90deg, #00c8a0, #0090c8);
     transition: width 0.8s ease;
 }
@@ -762,11 +787,11 @@ include 'header.php';
 }
 .campaign-strip::-webkit-scrollbar { height: 4px; }
 .campaign-strip::-webkit-scrollbar-track { background: transparent; }
-.campaign-strip::-webkit-scrollbar-thumb { background: #2a4050; border-radius: 2px; }
+.campaign-strip::-webkit-scrollbar-thumb { background: #2a4050; border-radius: 0; }
 .campaign-card {
     display: flex; align-items: center; gap: 10px;
     background: #0a1929; border: 1px solid rgba(0,200,160,0.12);
-    border-radius: 8px; padding: 10px 14px;
+    border-radius: 0; padding: 10px 14px;
     flex-shrink: 0; white-space: nowrap;
 }
 .campaign-card img {
@@ -795,12 +820,12 @@ include 'header.php';
 }
 .image-strip::-webkit-scrollbar { height: 4px; }
 .image-strip::-webkit-scrollbar-track { background: transparent; }
-.image-strip::-webkit-scrollbar-thumb { background: #2a4050; border-radius: 2px; }
+.image-strip::-webkit-scrollbar-thumb { background: #2a4050; border-radius: 0; }
 .strip-card {
     flex: 1 1 110px;
     min-width: 100px;
     max-width: 140px;
-    border-radius: 8px;
+    border-radius: 0;
     overflow: hidden;
     background: #0a1929;
     border: 1px solid rgba(0,200,160,0.10);
@@ -825,7 +850,7 @@ include 'header.php';
 }
 .strip-card-badge {
     display: inline-block; font-size: 0.55rem; font-weight: bold;
-    letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px;
+    letter-spacing: 0.05em; padding: 1px 5px; border-radius: 0;
     margin-top: 3px; text-transform: uppercase;
 }
 .badge-done    { background: rgba(0,200,160,0.18); color: #00c8a0; }
@@ -850,7 +875,7 @@ include 'header.php';
 }
 .opponent-card {
     position: relative;
-    border-radius: 8px;
+    border-radius: 0;
     overflow: hidden;
     border: 1px solid rgba(0,200,160,0.12);
     background: #0a1929;
@@ -948,7 +973,7 @@ include 'header.php';
 }
 .calendar-week { display: flex; flex-direction: column; gap: 4px; }
 .calendar-day {
-    width: 100%; aspect-ratio: 1; border-radius: 3px;
+    width: 100%; aspect-ratio: 1; border-radius: 0;
     cursor: default; transition: transform 0.1s; position: relative;
 }
 .calendar-day:hover { transform: scale(1.4); z-index: 2; }
@@ -959,7 +984,7 @@ include 'header.php';
     display: flex; align-items: center; gap: 8px;
     font-size: 0.7rem; color: #5a7888; margin-top: 10px; justify-content: flex-end;
 }
-.legend-swatch { width: 10px; height: 10px; border-radius: 2px; }
+.legend-swatch { width: 10px; height: 10px; border-radius: 0; }
 
 /* ── Bottom two-col: Points + NFTs ── */
 .bottom-cols {
@@ -987,7 +1012,7 @@ include 'header.php';
 .currency-list { display: flex; flex-direction: column; gap: 9px; }
 .currency-row {
     display: flex; align-items: center; gap: 10px;
-    background: rgba(22,87,119,0.18); border-radius: 6px;
+    background: rgba(22,87,119,0.18); border-radius: 0;
     padding: 7px 12px; transition: background 0.15s;
 }
 .currency-row:hover { background: rgba(22,87,119,0.32); }
@@ -1004,7 +1029,7 @@ include 'header.php';
 .inv-card {
     display: flex; flex-direction: column; align-items: center; gap: 6px;
     background: rgba(22,87,119,0.25); border: 1px solid rgba(0,200,160,0.12);
-    border-radius: 8px; padding: 14px 12px 10px; min-width: 80px; text-align: center;
+    border-radius: 0; padding: 14px 12px 10px; min-width: 80px; text-align: center;
     transition: border-color 0.2s, background 0.2s;
 }
 .inv-card:hover { border-color: rgba(0,200,160,0.35); background: rgba(22,87,119,0.40); }
@@ -1025,11 +1050,11 @@ include 'header.php';
 }
 .nft-mosaic::-webkit-scrollbar { height: 4px; }
 .nft-mosaic::-webkit-scrollbar-track { background: transparent; }
-.nft-mosaic::-webkit-scrollbar-thumb { background: #2a4050; border-radius: 2px; }
+.nft-mosaic::-webkit-scrollbar-thumb { background: #2a4050; border-radius: 0; }
 .nft-thumb {
     flex-shrink: 0;
     width: 130px;
-    border-radius: 8px; overflow: hidden;
+    border-radius: 0; overflow: hidden;
     border: 1px solid rgba(0,200,160,0.12);
     background: #0a1929;
     transition: border-color 0.2s, transform 0.15s;
@@ -1050,7 +1075,7 @@ include 'header.php';
 .reward-strip-card {
     flex-shrink: 0;
     width: 120px;
-    border-radius: 8px; overflow: hidden;
+    border-radius: 0; overflow: hidden;
     background: #0a1929;
     border: 1px solid rgba(0,200,160,0.10);
     transition: border-color 0.2s, transform 0.15s;
@@ -1068,7 +1093,7 @@ include 'header.php';
 }
 .reward-strip-card-badge {
     display: inline-block; font-size: 0.52rem; font-weight: bold;
-    padding: 1px 5px; border-radius: 3px; margin-top: 3px;
+    padding: 1px 5px; border-radius: 0; margin-top: 3px;
     text-transform: uppercase;
 }
 .badge-soldout { background: rgba(255,80,80,0.15); color: #ff7f7f; }
@@ -1081,7 +1106,7 @@ include 'header.php';
     padding: 12px 16px;
     background: rgba(22,87,119,0.18);
     border: 1px dashed rgba(0,200,160,0.2);
-    border-radius: 8px; color: #5a7888; font-size: 0.8rem;
+    border-radius: 0; color: #5a7888; font-size: 0.8rem;
 }
 .own-profile-bar {
     display: flex; justify-content: flex-end; align-items: center;
@@ -1090,12 +1115,12 @@ include 'header.php';
 .own-profile-bar a {
     color: #00c8a0; text-decoration: none;
     border: 1px solid rgba(0,200,160,0.3);
-    padding: 4px 12px; border-radius: 20px; transition: background 0.15s;
+    padding: 4px 12px; border-radius: 0; transition: background 0.15s;
 }
 .own-profile-bar a:hover { background: rgba(0,200,160,0.12); }
 .share-btn {
     background: rgba(0,200,160,0.12); border: 1px solid rgba(0,200,160,0.35);
-    color: #00c8a0; padding: 5px 16px; border-radius: 20px; cursor: pointer;
+    color: #00c8a0; padding: 5px 16px; border-radius: 0; cursor: pointer;
     font-size: 0.78rem; transition: background 0.15s; text-decoration: none;
     display: inline-flex; align-items: center; gap: 5px;
 }
@@ -1132,7 +1157,7 @@ include 'header.php';
     gap: 8px;
 }
 .realm-profile-img {
-    width: 80px; height: 80px; object-fit: cover; border-radius: 8px;
+    width: 80px; height: 80px; object-fit: cover; border-radius: 0;
     border: 1px solid rgba(0,200,160,0.2); flex-shrink: 0;
 }
 .realm-profile-info {
@@ -1145,7 +1170,7 @@ include 'header.php';
     display: inline-flex; align-items: center; gap: 5px;
     font-size: 0.75rem; color: #aac0cc;
     background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
-    border-radius: 4px; padding: 3px 8px;
+    border-radius: 0; padding: 3px 8px;
 }
 @media (max-width: 600px) {
     .realm-profile-header { flex-direction: column; }
@@ -1161,7 +1186,7 @@ include 'header.php';
 }
 .realm-loc-card {
     background: rgba(22,87,119,0.22); border: 1px solid rgba(0,200,160,0.12);
-    border-radius: 8px; padding: 10px 12px 8px; display: flex; flex-direction: column; gap: 4px;
+    border-radius: 0; padding: 10px 12px 8px; display: flex; flex-direction: column; gap: 4px;
 }
 .realm-loc-offense { border-color: rgba(255,127,127,0.22); }
 .realm-loc-defense { border-color: rgba(0,200,160,0.22); }
@@ -1189,7 +1214,7 @@ include 'header.php';
 
 /* ── Faction members ── */
 .faction-member-card {
-    position: relative; border-radius: 8px; overflow: hidden;
+    position: relative; border-radius: 0; overflow: hidden;
     border: 1px solid rgba(0,200,160,0.12);
 }
 .faction-member-bg {
@@ -1735,6 +1760,30 @@ $realm_con_info = [
             <input type="hidden" name="filterbyswaps" value="weekly-swaps">
             <button class="lb-btn" type="submit">Weekly Skull Swap Leaderboard &rarr;</button>
         </form>
+    </div>
+</div>
+<?php endif; ?>
+
+<!-- Games -- everything built since this page was written. One panel
+     rather than nine sections: each of these already has its own page and
+     its own leaderboard, so what belongs here is the headline and a way
+     in, not a third copy of the game's own stats screen. -->
+<?php if ($pf_games): ?>
+<div class="profile-section" id="pf-games">
+    <div class="section-title"><span>&#127918; Games</span><a href="launchpad.php" class="section-title-link">Launchpad &rarr;</a></div>
+    <div class="pf-game-grid">
+    <?php foreach ($pf_games as $g): ?>
+        <a class="pf-game" href="<?php echo htmlspecialchars($g['url'], ENT_QUOTES, 'UTF-8'); ?>">
+            <span class="pf-game-name"><?php echo htmlspecialchars($g['name'], ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="pf-game-stat"><?php echo htmlspecialchars($g['stat'], ENT_QUOTES, 'UTF-8'); ?></span>
+            <span class="pf-game-lbl"><?php echo htmlspecialchars($g['label'], ENT_QUOTES, 'UTF-8'); ?></span>
+            <?php if (!empty($g['sub'])): ?>
+            <span class="pf-game-sub"><?php
+                echo implode(' &middot; ', array_map(function ($x) {
+                    return htmlspecialchars($x, ENT_QUOTES, 'UTF-8'); }, $g['sub'])); ?></span>
+            <?php endif; ?>
+        </a>
+    <?php endforeach; ?>
     </div>
 </div>
 <?php endif; ?>

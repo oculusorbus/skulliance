@@ -9,6 +9,7 @@ Your Profile is your public showcase on Skulliance - a snapshot of your activity
 * **Campaign badges** for projects where you've completed all available quests.
 * **Activity calendars** - heatmaps of your daily-reward streaks, mission days, and raid days over the **last 91 days**.
 * **Member since** date, login streak, and your Discord avatar and username.
+* A **Games** panel covering everything built since the profile launched - DHC Fighters, DHC Arena, Realm Guardians, Crypt Crawl, Crypt Conquest, Gauntlets, Obscura and Skull Racer - with your headline record in each and a way straight into it. A game you have never played is simply absent rather than shown as a row of zeroes.
 
 ## Visibility
 
