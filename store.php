@@ -62,7 +62,7 @@ $st_projects = $st_admin ? getProjects($conn) : array();
 					<div class="st-head-left">
 						<span class="st-kick">Staking store</span>
 						<h2 class="st-title"><?php echo htmlspecialchars($st_title); ?></h2>
-						<p class="st-ctx">Spend the points your NFTs earn. Nothing here is for sale in any other currency.</p>
+						<p class="st-ctx">Spend the points your NFTs earn.</p>
 					</div>
 					<div class="st-head-right">
 						<?php /* The filter sits in the masthead deliberately -- its
