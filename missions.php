@@ -58,10 +58,18 @@ include 'header.php';
  * the browser immediately, ahead of every query, which is the same trick
  * the old page used.
  *
- * INDETERMINATE ON PURPOSE. The old bar animated a fill over nine
- * seconds, which looks like progress and is not -- it told you the same
- * story whether the page took one second or twenty. This one sweeps
- * until the page is there.
+ * IT FILLS, like every other loader on the platform (gallery.php,
+ * leaderboards.php). I had made it an indeterminate sweep on the
+ * argument that a timed fill is not real progress -- true, and beside
+ * the point: a bar that creeps toward an end reads as a page arriving,
+ * a bar that shuttles back and forth reads as nothing happening, and
+ * being the only page that behaves differently is its own problem.
+ *
+ * ease-out to 90% is the platform's convention and it is honest enough:
+ * it moves quickly, slows as it goes, and never claims to have finished
+ * something it cannot measure. When the page actually lands the bar is
+ * driven to 100% before the fade, so it completes rather than vanishing
+ * mid-stride.
  */
 ?>
 <style>
@@ -72,12 +80,14 @@ include 'header.php';
   padding-top: env(safe-area-inset-top, 0px); box-sizing: border-box; }
 #ms-loader.gone { opacity: 0; pointer-events: none; }
 @keyframes ms-pulse { 0%,100% { opacity: .35; transform: scale(.94); } 50% { opacity: 1; transform: scale(1); } }
-@keyframes ms-sweep { 0% { left: -40%; } 100% { left: 100%; } }
+@keyframes ms-fill { to { width: 90%; } }
 #ms-loader .ms-l-mark { animation: ms-pulse 1.2s ease-in-out infinite; }
-#ms-loader .ms-l-rail { position: relative; width: 190px; height: 3px;
+#ms-loader .ms-l-rail { width: 200px; height: 3px; border-radius: 2px;
   background: rgba(255,255,255,.08); overflow: hidden; }
-#ms-loader .ms-l-rail i { position: absolute; top: 0; width: 40%; height: 100%;
-  background: #00c8a0; animation: ms-sweep 1.1s linear infinite; }
+#ms-loader .ms-l-rail i { display: block; width: 0; height: 100%; border-radius: 2px;
+  background: #00c8a0; animation: ms-fill 9s ease-out forwards; }
+/* The page is here: finish the bar rather than leaving it mid-stride. */
+#ms-loader.gone .ms-l-rail i { animation: none; width: 100%; transition: width .18s ease-out; }
 #ms-loader .ms-l-text { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
   color: rgba(255,255,255,.35); }
 </style>
@@ -952,8 +962,10 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 (function () {
 	var l = document.getElementById('ms-loader');
 	if (!l) return;
+	/* .gone drives the bar to 100% and starts the fade in one class; the
+	   fade is .35s, so give the bar its .18s to land first. */
 	l.classList.add('gone');
-	setTimeout(function () { l.remove(); }, 400);
+	setTimeout(function () { l.remove(); }, 450);
 }());
 </script>
 <?php if ($ms_user > 0): ?>
