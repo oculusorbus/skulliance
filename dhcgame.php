@@ -100,8 +100,8 @@ $canonical  = 'https://www.skulliance.io/staking/dhcgame.php';
    1200x630 minimum X and Facebook want, so neither crops it to a strip. */
 $og_image   = 'https://www.skulliance.io/staking/images/dhcgame.png';
 $shot_url   = 'images/dhcgame.png';
-$page_title = 'Digi-Hell Corps - Build NFT Characters and Battle Them Free';
-$page_desc  = 'Build a Digi-Hell Corps Fighter from real NFT traits, browse the full collection, and take your squad into the Arena - a free match-3 battler. No download, no wallet needed to play.';
+$page_title = 'DHC Fighters - Build NFT Characters and Battle Them Free';
+$page_desc  = 'Build a DHC Fighter from real NFT traits, browse the full collection, and take your squad into the Arena - a free match-3 battler. No download, no wallet needed to play.';
 $short_desc = 'Build a Fighter from NFT traits, browse the collection, and battle in the Arena. Free in your browser.';
 
 /* Relative hrefs throughout. Session cookies are host-only -- no domain= on
@@ -129,13 +129,13 @@ $href_gallery   = 'dhcgallery.php';
   <meta property="og:title" content="<?php echo htmlspecialchars($page_title); ?>">
   <meta property="og:description" content="<?php echo htmlspecialchars($page_desc); ?>">
   <meta property="og:image" content="<?php echo $og_image; ?>">
-  <meta property="og:image:alt" content="A Digi-Hell Corps Arena battle: two Crews of three Fighters either side of a seven-by-seven gem board">
+  <meta property="og:image:alt" content="A DHC Fighters Arena battle: two Crews of three Fighters either side of a seven-by-seven gem board">
   <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="<?php echo htmlspecialchars($page_title); ?>">
   <meta name="twitter:description" content="<?php echo htmlspecialchars($short_desc); ?>">
   <meta name="twitter:image" content="<?php echo $og_image; ?>">
-  <meta name="twitter:image:alt" content="A Digi-Hell Corps Arena battle in progress">
+  <meta name="twitter:image:alt" content="A DHC Fighters Arena battle in progress">
 
   <script type="application/ld+json">
   {
@@ -143,8 +143,11 @@ $href_gallery   = 'dhcgallery.php';
     "@graph": [
       {
         "@type": "VideoGame",
-        "name": "Digi-Hell Corps Arena",
-        "alternateName": ["DHC Arena", "Digi-Hell Corps"],
+        "name": "DHC Fighters",
+        /* The full name and the Arena stay as alternates: they are what people
+           search for and what the art itself is called, even though the product
+           is named DHC Fighters everywhere it is displayed. */
+        "alternateName": ["DHC Arena", "Digi-Hell Corps", "Digital Hell Citizens 2"],
         "url": "<?php echo $canonical; ?>",
         "image": "<?php echo $og_image; ?>",
         "description": <?php echo json_encode($page_desc); ?>,
@@ -167,7 +170,7 @@ $href_gallery   = 'dhcgallery.php';
         "@type": "BreadcrumbList",
         "itemListElement": [
           { "@type": "ListItem", "position": 1, "name": "Skulliance", "item": "https://www.skulliance.io/" },
-          { "@type": "ListItem", "position": 2, "name": "Digi-Hell Corps", "item": "<?php echo $canonical; ?>" }
+          { "@type": "ListItem", "position": 2, "name": "DHC Fighters", "item": "<?php echo $canonical; ?>" }
         ]
       }
     ]
@@ -307,7 +310,7 @@ $href_gallery   = 'dhcgallery.php';
 
 <header class="hero">
   <div class="wrap">
-    <span class="kicker">Digi-Hell Corps</span>
+    <span class="kicker">DHC Fighters</span>
     <h1>Build a Fighter. Then break theirs.</h1>
     <p class="lede">Ten trait slots, three Fighters to a Crew, and a board between you and the other Crew's back rank. Assemble from real NFT art, browse the whole collection, and fight — free, in your browser, no download.</p>
     <div class="cta-row">
@@ -378,7 +381,7 @@ if ($dhc_fighters && $ART !== ''):
     </div>
     <div class="card">
       <h3>Collection — browse it all</h3>
-      <p>The full Digi-Hell Corps collection, open to everyone. Filter by trait, see what is rare and what only looks rare, and find the pieces a build needs before you commit to it.</p>
+      <p>The full DHC collection, open to everyone. Filter by trait, see what is rare and what only looks rare, and find the pieces a build needs before you commit to it.</p>
       <p>No account required to look.</p>
       <a class="more" href="<?php echo $href_gallery; ?>">Browse the collection &rarr;</a>
     </div>
@@ -404,7 +407,7 @@ if ($dhc_fighters && $ART !== ''):
   <p class="lede center">Your Crew on the left, theirs on the right, a seven-by-seven board between you. Match to charge your Fighters; rank decides who takes the hit. The arena itself is named after the back Fighter's background.</p>
   <a class="shot" href="<?php echo $href_arena; ?>">
     <img src="<?php echo htmlspecialchars($shot_url); ?>" width="1996" height="1255"
-         alt="A Digi-Hell Corps Arena battle: three Fighters on each side of a seven-by-seven gem board, with health bars and kit chips"
+         alt="A DHC Fighters Arena battle: three Fighters on each side of a seven-by-seven gem board, with health bars and kit chips"
          loading="lazy" decoding="async">
   </a>
   <p class="center" style="margin-top:14px;"><a class="btn" href="<?php echo $href_arena; ?>">Play a practice battle</a></p>
@@ -444,7 +447,7 @@ if ($dhc_fighters && $ART !== ''):
 
 <footer>
   <div class="wrap">
-    <p>Digi-Hell Corps is part of <a href="https://www.skulliance.io/">Skulliance</a> — NFT staking, games and a marketplace.</p>
+    <p>DHC Fighters is part of <a href="https://www.skulliance.io/">Skulliance</a> — NFT staking, games and a marketplace.</p>
   </div>
 </footer>
 

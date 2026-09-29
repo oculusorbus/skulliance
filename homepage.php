@@ -221,6 +221,20 @@
               "isAccessibleForFree": true,
               "publisher": { "@id": "https://www.skulliance.io/#organization" }
             }
+          },
+          {
+            "@type": "ListItem",
+            "position": 7,
+            "item": {
+              "@type": "VideoGame",
+              "name": "DHC Fighters",
+              "url": "https://www.skulliance.io/staking/dhcgame.php",
+              "image": "https://www.skulliance.io/staking/images/dhcgame.png",
+              "genre": ["Match 3", "Strategy", "Collectible Card Game"],
+              "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+              "isAccessibleForFree": true,
+              "publisher": { "@id": "https://www.skulliance.io/#organization" }
+            }
           }
         ]
       }
@@ -360,11 +374,13 @@
     .hp-card h3 { margin-bottom: 8px; }
     .hp-card p { margin: 0 0 14px; color: #c7d0d9; font-size: 0.96rem; }
 
-    /* Games -- fixed 2-column grid so the 4 current games (Monstrocity,
-       Skull Swap, Crypt Crawl, Crypt Conquest) sit in a clean 2x2 instead
-       of auto-fit's 3-then-1 lone-straggler split at this section's
-       ~1060px content width. Revisit (back to auto-fit, or add a 3rd
-       column) if the game count ever changes. */
+    /* Games -- fixed 2-column grid, which auto-fit would break: at this
+       section's ~1060px content width it lays out 3 then a lone straggler.
+       Two columns divides evenly for any EVEN number of games, which is
+       why the count matters: 6 was 3 clean rows, and DHC Fighters makes 7,
+       so the last card now sits alone. Adding an eighth closes it, or go
+       to a 3rd column at 9. Count is Monstrocity, Skull Swap, Crypt Crawl,
+       Crypt Conquest, Skull Racer, Realm Guardians, DHC Fighters. */
     .hp-games { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 24px; }
     @media (max-width: 640px) {
       .hp-games { grid-template-columns: 1fr; }
@@ -706,6 +722,15 @@
             <h3>Realm Guardians - Tower Defense</h3>
             <p>Your realm has to hold. Your NFTs man the wall carrying the gear you gave them, the horde is made of other players, and a monthly leaderboard ranks how long you lasted - not how big your realm is.</p>
             <a class="hp-cta" href="https://www.skulliance.io/staking/guardiansgame.php">Play Realm Guardians</a>
+          </div>
+          <!-- DHC Fighters. -->
+          <div class="hp-game">
+            <a class="hp-game-art" href="https://www.skulliance.io/staking/dhcgame.php" aria-label="Play DHC Fighters, the free browser character builder and match 3 battler">
+              <img src="https://www.skulliance.io/staking/images/dhcgame.png" alt="DHC Fighters - two Crews of three facing each other across a gem board" loading="lazy" decoding="async">
+            </a>
+            <h3>DHC Fighters - Build &amp; Battle</h3>
+            <p>Assemble a Fighter from ten trait slots, field a Crew of three, and take it to the Arena - a match 3 battler where rank decides who takes the hit and rarity does not decide the fight.</p>
+            <a class="hp-cta" href="https://www.skulliance.io/staking/dhcgame.php">Play DHC Fighters</a>
           </div>
         </div>
       </div>
