@@ -62,6 +62,17 @@ switch ($what) {
 		               'total' => $ms_total,
 		               'ready' => count(array_filter($ms_active, function($a){ return !empty($a['ready']); }))));
 
+	case 'deploy':
+		/* db.php's own three renderers, unchanged -- they echo, so the output
+		   is captured. Expensive enough to be worth keeping off first paint:
+		   renderStartAllFreeEligibleMissionsButton() runs one NFT query per
+		   level-1 quest. */
+		ob_start();
+		renderStartAllFreeEligibleMissionsButton($conn);
+		renderStartAutoMissionsButton($conn);
+		renderMaxMaxiMissionsButton($conn);
+		dhc_json(array('ok' => true, 'html' => ob_get_clean()));
+
 	case 'news':
 		$ms_new_rungs = mission_frontier($conn);
 		ob_start(); include __DIR__ . '/../missions-news.php'; $html = ob_get_clean();

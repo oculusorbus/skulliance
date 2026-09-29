@@ -28,6 +28,7 @@ $WORLD = array(
 	'quest'       => array(),
 	'idle'        => array(),            // project_id => idle nft count
 	'unattempted' => array(),            // quest rows the user has never launched
+	'ladder'      => array(),            // every (project_id, level, id) in level order
 );
 $WROTE = array();   // every insert/update, in order
 
@@ -86,6 +87,11 @@ class MConn {
 		if (strpos($flat, 'FROM nfts n INNER JOIN collections c') !== false) {
 			$r = array();
 			foreach ($WORLD['eligible'] as $id => $rate) $r[] = array('id' => $id, 'rate' => $rate);
+			return new MRes($r);
+		}
+		if (strpos($flat, 'SELECT project_id, level, id FROM quests') !== false) {
+			$r = array();
+			foreach ($WORLD['ladder'] as $row) $r[] = $row;
 			return new MRes($r);
 		}
 		if (strpos($flat, 'FROM quests q INNER JOIN projects p') !== false
@@ -183,11 +189,28 @@ $r = mission_launch($conn, 77, array(), array());
 ok(empty($r['ok']), 'refused with no squad and no success item');
 ok(!wrote('mission'), 'nothing written for an empty load-out');
 
-/* But a success item alone IS a mission -- that is how Max Maxi farms. */
-reset_world(null, array(), array(1 => 1));
+/*
+ * AN ITEM-ONLY LOAD-OUT IS LEGAL, BUT ONLY WITH THE ROSTER HOME.
+ *
+ * Start Max Maxi launches with no NFTs at all -- that is how twenty
+ * missions go out on one roster -- but renderMaxMaxiMissionsButton()
+ * refuses to appear unless maxMaxiAvailableNfts() > 0. Holding NFTs back
+ * is what buys the right to spend an item; send everything and you are
+ * locked out until they come home. Without this the launcher would let
+ * anyone fire missions off nothing but item stock forever.
+ */
+reset_world(null, array(10 => 30), array(1 => 1));   // one NFT home, not sent
 $r = mission_launch($conn, 77, array(), array(1));
-ok(!empty($r['ok']), 'a 100% item with no NFTs still launches');
+ok(!empty($r['ok']), 'a 100% item sends a mission with no crew while some roster is home');
 ok($r['success'] == 100, 'and it is a 100% mission');
+ok(!wrote('nft'), 'and it really does send nobody -- the NFTs stay available');
+
+reset_world(null, array(), array(1 => 1));           // whole roster deployed
+$r = mission_launch($conn, 77, array(), array(1));
+ok(empty($r['ok']), 'the same item is refused once the whole roster is out');
+ok(!wrote('mission'), 'and nothing is written');
+ok(!wrote('amount'), 'the item is not consumed by a refused launch');
+echo "  refusal reads: " . ($r['message'] ?? '?') . "\n";
 
 echo "\nthe money path\n";
 
@@ -275,6 +298,44 @@ $WORLD['unattempted'] = array(qrow(21, 2, 9, 100, 'Affordable'), qrow(22, 5, 9, 
 $f = mission_frontier($conn);
 ok($f[0]['quest_id'] === 21, 'a rung you can launch now sorts above a deeper one you cannot');
 ok($f[1]['shortfall'] == 750, 'and the blocked one says how much short you are');
+
+echo "\nrungs slotted in after the player passed them\n";
+
+/*
+ * THE QUESTION THIS ANSWERS: if I never ran level 31, how is level 33
+ * open? Because level 31 did not exist when they climbed past. quests.id
+ * is auto-increment, so a rung whose id is higher than a HIGHER-level
+ * rung in the same project was inserted into the middle afterwards.
+ */
+mission_levels_forget();
+$WORLD['levels']  = array(9 => 32);
+$WORLD['balance'] = array(9 => 99999);
+$WORLD['idle']    = array(9 => 6);
+$WORLD['ladder']  = array(
+	array('project_id' => 9, 'level' => 31, 'id' => 900),   // added last
+	array('project_id' => 9, 'level' => 32, 'id' => 400),
+	array('project_id' => 9, 'level' => 33, 'id' => 401),
+);
+$WORLD['unattempted'] = array(qrow(900, 31, 9, 100, 'Queen of Hearts'),
+                              qrow(401, 33, 9, 100, 'Cybernetic Research'));
+$f = mission_frontier($conn);
+$by = array(); foreach ($f as $r) $by[$r['quest_id']] = $r;
+ok(count($f) === 2, 'both unlocked-and-unrun rungs are listed');
+ok(!empty($by[900]['added_later']), 'a rung with a higher id than the levels above it was added later');
+ok(empty($by[401]['added_later']), 'the genuine frontier rung was not');
+ok(!empty($by[401]['frontier']) && empty($by[900]['frontier']), 'and only 33 is the frontier');
+
+/* A ladder built in order must never be flagged. */
+mission_levels_forget();
+$WORLD['ladder'] = array(
+	array('project_id' => 9, 'level' => 1, 'id' => 10),
+	array('project_id' => 9, 'level' => 2, 'id' => 11),
+	array('project_id' => 9, 'level' => 3, 'id' => 12),
+);
+$WORLD['levels'] = array(9 => 1);
+$WORLD['unattempted'] = array(qrow(11, 2, 9, 100, 'In order'));
+$f = mission_frontier($conn);
+ok(count($f) === 1 && empty($f[0]['added_later']), 'a ladder authored in order flags nothing');
 
 echo "\nart paths\n";
 ok(mission_art_slug("Widow's Walk") === 'widows-walk', "the apostrophe is dropped, as getInventory() does");

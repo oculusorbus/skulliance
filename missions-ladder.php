@@ -53,7 +53,10 @@ if (!isset($ms_new_ids)) {
 	/* WHY it cannot be launched, in the order a player would fix it. */
 	$block = '';
 	if (!$open)                  $block = 'Clear level ' . (int)$q['unlock_at'] . ' to open this';
-	else if (!$q['has_squad'])   $block = 'No idle NFTs for this project';
+	/* Nothing home means nothing can go out, item or not -- see
+	   mission_launch(). Worth saying, because a pack full of 100% items
+	   looks like it should be enough and is not. */
+	else if (!$q['has_squad'])   $block = 'Nothing home to send';
 	else if (!$q['affordable'])  $block = ms_n($q['shortfall']) . ' more ' . $q['currency'] . ' needed';
 ?>
 	<div class="ms-quest<?php echo $open ? '' : ' locked'; echo $can ? ' can' : ''; echo $ready ? ' ready' : ''; ?>"

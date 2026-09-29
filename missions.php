@@ -5,6 +5,10 @@ include 'message.php';
 include 'verify.php';
 include 'skulliance.php';
 require_once 'missions-lib.php';
+/* Before ANY output, or the header is already sent. Tells nginx not to sit
+   on the response, which is what makes the early flush below actually
+   reach the browser. */
+header('X-Accel-Buffering: no');
 include 'header.php';
 
 /*
@@ -41,6 +45,49 @@ include 'header.php';
  * expects (mission-row-, mission-result-, mission-reward-, currency-,
  * consumable-, retreat-button-). Claiming is the money path and was working.
  */
+
+?>
+<?php
+/*
+ * THE LOADER, AND WHY IT IS FLUSHED HERE.
+ *
+ * This page is slow before it is anything -- verify.php runs on every
+ * request platform-wide, and the queries below add to it. A loader that
+ * only appears once the HTML lands is useless for that, because the wait
+ * happens BEFORE the first byte. So the overlay is printed and pushed to
+ * the browser immediately, ahead of every query, which is the same trick
+ * the old page used.
+ *
+ * INDETERMINATE ON PURPOSE. The old bar animated a fill over nine
+ * seconds, which looks like progress and is not -- it told you the same
+ * story whether the page took one second or twenty. This one sweeps
+ * until the page is there.
+ */
+?>
+<style>
+#ms-loader { position: fixed; inset: 0; background: #07111d; z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; transition: opacity .35s ease; }
+#ms-loader.gone { opacity: 0; pointer-events: none; }
+@keyframes ms-pulse { 0%,100% { opacity: .35; transform: scale(.94); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes ms-sweep { 0% { left: -40%; } 100% { left: 100%; } }
+#ms-loader .ms-l-mark { animation: ms-pulse 1.2s ease-in-out infinite; }
+#ms-loader .ms-l-rail { position: relative; width: 190px; height: 3px;
+  background: rgba(255,255,255,.08); overflow: hidden; }
+#ms-loader .ms-l-rail i { position: absolute; top: 0; width: 40%; height: 100%;
+  background: #00c8a0; animation: ms-sweep 1.1s linear infinite; }
+#ms-loader .ms-l-text { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(255,255,255,.35); }
+</style>
+<div id="ms-loader">
+	<div class="ms-l-mark"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48"></div>
+	<div class="ms-l-rail"><i></i></div>
+	<div class="ms-l-text">Loading missions</div>
+</div>
+<?php
+/* Push it to the browser NOW, before a single query runs. */
+if (ob_get_level() > 0) @ob_flush();
+@flush();
 
 $ms_user = mission_user_id();
 
@@ -135,7 +182,7 @@ define('MS_FIELD_CAP', 24);
   color: #b9c7d4; padding: 1px 6px; }
 .ms-nav a i.go { background: #f5a623; color: #07111d; font-weight: bold; }
 /* Jumping must not drop the heading under the sticky bar. */
-#ms-sec-daily, #ms-news, #ms-sec-deploy, #ms-field-section, #ms-sec-launch, #ms-sec-record
+#ms-sec-daily, #ms-news, #ms-sec-deploy, #ms-field-section, #ms-sec-launch
   { scroll-margin-top: 54px; }
 @media (max-width: 700px) {
   .ms-nav { padding-right: 56px; overflow-x: auto; flex-wrap: nowrap; }
@@ -256,6 +303,10 @@ define('MS_FIELD_CAP', 24);
    break is theirs and would stack the buttons vertically in here. */
 .ms-deploy-buttons br { display: none; }
 .ms-deploy-buttons .button { border-radius: 0; margin: 0; }
+/* Holds the row's height while the launchers are fetched, so the sections
+   below it do not jump when they land. */
+.ms-deploy-buttons { min-height: 38px; }
+.ms-deploy-wait { font-size: .78rem; color: #4f7488; align-self: center; }
 
 /* ---- sections --------------------------------------------------------- */
 .ms-section { margin: 0 0 26px; }
@@ -270,6 +321,11 @@ define('MS_FIELD_CAP', 24);
   font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; padding: 6px 12px;
   cursor: pointer; border-radius: 0; }
 .ms-more-btn:hover { background: rgba(0,200,160,.12); }
+.ms-notice { background: #0a1929; border: 1px solid rgba(0,200,160,.2);
+  border-left: 3px solid #00c8a0; padding: 14px 18px; }
+.ms-notice p { margin: 0 0 10px; font-size: .86rem; color: #b9c7d4; max-width: 62ch; }
+.ms-notice ul { list-style: none; margin: 0; padding: 0; }
+.ms-notice .small-button { border-radius: 0; }
 .ms-empty { background: #0a1929; border: 1px solid rgba(0,200,160,.12); padding: 28px 22px; }
 .ms-empty h4 { margin: 0 0 6px; color: #e8eaed; font-size: 1rem; text-transform: none; }
 .ms-empty p { margin: 0; color: #8fa8b8; font-size: .86rem; max-width: 60ch; }
@@ -511,12 +567,21 @@ define('MS_FIELD_CAP', 24);
 					<p>Missions run for days, not minutes. Collect when they land. Fail four in
 					   a row on one job and the fifth is guaranteed.</p></div>
 			</div>
+			<?php
+			/* renderWalletConnection() returns immediately when there is no
+			   user_id -- skulliance.php:550 -- so calling it here, as the old
+			   page did, printed nothing at all under a "connect a wallet"
+			   heading. A visitor has to sign in before there is an account to
+			   attach a wallet to, so that is what this asks for. */
+			?>
 			<div class="ms-guest">
-				<h3>Connect a wallet to begin</h3>
-				<p>Staking is free and your NFTs stay in your own wallet the entire time.</p>
-				<div class="ms-guest-wallet"><?php renderWalletConnection("missions"); ?></div>
+				<h3>Sign in to begin</h3>
+				<p>Missions run on NFTs you already own. Sign in, link a wallet, and
+				   anything from a registered collection starts earning -- staking is free
+				   and your NFTs never leave your wallet.</p>
 				<p class="ms-fine">Claiming from the store needs membership; missions do not.
-				   <a href="info.php">How membership works &rarr;</a></p>
+				   <a href="info.php">How membership works &rarr;</a>
+				   &nbsp;&middot;&nbsp; <a href="skullpaper.php?page=missions">Read the mission rules &rarr;</a></p>
 			</div>
 		</div>
 	</div>
@@ -636,7 +701,6 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 				<a href="#ms-field-section" data-sec="ms-field-section">In the field <i id="ms-nav-field"><?php
 					echo ms_n($ms_total); ?></i></a>
 				<a href="#ms-sec-launch" data-sec="ms-sec-launch">Launch</a>
-				<a href="#ms-sec-record" data-sec="ms-sec-record">Record</a>
 			</nav>
 
 			<div id="ms-sec-daily"><div id="ms-daily-slot"><?php include 'missions-daily.php'; ?></div></div>
@@ -669,10 +733,19 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 					<b>Daily deployment</b>
 					<span>Send everything idle in one press.</span>
 				</div>
-				<div class="ms-deploy-buttons">
-					<?php $ms_bulk_projects = renderStartAllFreeEligibleMissionsButton($conn); ?>
-					<?php renderStartAutoMissionsButton($conn); ?>
-					<?php renderMaxMaxiMissionsButton($conn); ?>
+				<?php
+				/*
+				 * LOADED A BEAT LATER, because working out which of these
+				 * three to show is expensive: renderStartAllFreeEligible-
+				 * MissionsButton() runs one NFT query PER level-1 quest, so
+				 * on a platform with forty projects that is forty correlated
+				 * queries before the page can print anything. They are
+				 * buttons, not information -- they can arrive a moment after
+				 * the page does. The box is sized up front so nothing jumps.
+				 */
+				?>
+				<div class="ms-deploy-buttons" id="ms-deploy-buttons">
+					<span class="ms-deploy-wait">Checking what you can send&hellip;</span>
 				</div>
 			</div>
 
@@ -718,24 +791,40 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 				</div>
 			</div>
 
-			<?php /* The detailed month/all-time breakdown keeps db.php's renderer
-			         and its lazy load; it is the one part of the old page that
-			         was already legible. */ ?>
-			<div class="ms-section" id="ms-sec-record">
-				<div class="ms-section-head"><h3>Your record</h3></div>
-				<div class="content missions" id="total-missions-container"></div>
-			</div>
-
-			<?php /* The daily reward moved to the top -- it is a once-a-day
-			         action on a timer and it was landing below everything.
-			         What is left here is the wallet panel, which is a utility
-			         you go looking for rather than something that expires. */ ?>
-			<div class="ms-section">
+			<?php
+			/*
+			 * THE WALLET PROMPT, ONLY WHEN THERE IS ONE.
+			 *
+			 * renderWalletConnection() returns early on any page that is not
+			 * wallets.php once you already have a wallet linked --
+			 * skulliance.php:559 -- so a "Wallets" heading here was an empty
+			 * box for every staker who can actually use this page. On the old
+			 * layout it was buried inside the daily-rewards <ul> and its
+			 * emptiness never showed.
+			 *
+			 * Rather than re-deriving that rule and drifting from it, the
+			 * output is captured and the section is only drawn if there IS
+			 * any. It also emits a bare <li>, so it needs a list around it.
+			 *
+			 * Anyone in this branch has no wallet linked, which means no NFTs,
+			 * which means missions cannot do anything for them yet -- so it is
+			 * worth saying why rather than just showing a button. Everyone
+			 * else manages wallets on wallets.php, where the nav already
+			 * points.
+			 */
+			ob_start(); renderWalletConnection("missions"); $ms_wallet = ob_get_clean();
+			?>
+			<?php if (trim($ms_wallet) !== ''): ?>
+			<div class="ms-section" id="ms-sec-wallet">
 				<div class="ms-section-head"><h3>Wallets</h3></div>
-				<div class="content" id="player-stats">
-					<?php renderWalletConnection("missions"); ?>
+				<div class="ms-notice">
+					<p>No wallet linked yet. Missions run on the NFTs you already own, so
+					   there is nothing to send until one is connected. Staking is free and
+					   your NFTs never leave your wallet.</p>
+					<ul id="player-stats"><?php echo $ms_wallet; ?></ul>
 				</div>
 			</div>
+			<?php endif; ?>
 
 		</div>
 	</div>
@@ -758,6 +847,17 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 </body>
 <?php $conn->close(); ?>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript">
+/* The document is here, so the overlay goes. Not waiting on window.load --
+   that waits on every mission thumbnail, and the page is usable long
+   before the last image decodes. */
+(function () {
+	var l = document.getElementById('ms-loader');
+	if (!l) return;
+	l.classList.add('gone');
+	setTimeout(function () { l.remove(); }, 400);
+}());
+</script>
 <?php if ($ms_user > 0): ?>
 <script type="text/javascript">
 /*
@@ -930,8 +1030,13 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 					+ '<img src="' + esc(s.image) + '" alt="" loading="lazy" onerror="this.src=\'/staking/icons/skull.png\'">'
 					+ '<span>+' + s.rate + '%</span></button>';
 			}).join('')
-			: '<p class="ms-d-desc">Every NFT you own for this project is already out on a mission.'
-			  + ' A success item can still send this one on its own.</p>';
+			/* AN ITEM CANNOT COVER AN EMPTY ROSTER. An item-only load-out is
+			   legal -- Max Maxi sends no NFTs at all -- but only while some
+			   of the project's NFTs are still home. Holding them back is
+			   what buys the right to spend the item; once everything is out
+			   you are locked out until it comes back. */
+			: '<p class="ms-d-desc">Every NFT you own for this project is out on a mission.'
+			  + ' Some have to be home before you can send another, even with an item.</p>';
 
 		var pack = LO.items.length
 			? LO.items.map(function (it) {
@@ -984,8 +1089,9 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		 * of the button working right up until the server says no.
 		 */
 		var stop = '';
-		if (!LO.affordable) stop = 'You need ' + n(LO.cost - LO.balance) + ' more ' + LO.currency;
-		else if (!LO.squad.length && !LO.items.length) stop = 'Nothing available to send yet';
+		if (!LO.affordable)        stop = 'You need ' + n(LO.cost - LO.balance) + ' more ' + LO.currency;
+		else if (!LO.squad.length) stop = 'Nothing home to send';
+		else if (!LO.items.length && !LO.squad.length) stop = 'Nothing available to send yet';
 		if (stop) {
 			var go = document.getElementById('ms-d-go');
 			go.disabled = true;
@@ -1161,6 +1267,11 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		var msg = document.getElementById('ms-d-msg');
 		var p = rateParts();
 		var ids = Object.keys(picked);
+		if (!LO.squad.length) {
+			msg.className = 'ms-d-msg';
+			msg.textContent = 'Every NFT you own for this project is out on a mission.';
+			return;
+		}
 		if (!ids.length && p.boost <= 0) {
 			msg.className = 'ms-d-msg';
 			msg.textContent = 'Pick at least one NFT, or a success item, before launching.';
@@ -1224,22 +1335,24 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		});
 	}());
 
-	/* The record panel keeps db.php's renderer and its lazy load. */
-	if (typeof loadTotalMissions === 'function') loadTotalMissions();
-
-	/* The three bulk launchers hide themselves when there is nothing to
-	   deploy. If all three are hidden the bar is an empty box with a
-	   heading, so say what is actually going on instead. */
+	/* The three bulk launchers, fetched after paint. Each hides itself when
+	   there is nothing for it to do, so if all three come back hidden the
+	   bar says what is actually going on rather than sitting empty. */
 	(function () {
-		var bar = document.getElementById('ms-sec-deploy');
-		if (!bar) return;
-		var any = Array.prototype.some.call(bar.querySelectorAll('span[id]'), function (s) {
-			return s.style.display !== 'none' && s.querySelector('button');
-		});
-		if (!any) {
-			bar.querySelector('.ms-deploy-buttons').innerHTML =
-				'<span class="ms-d-cost">Everything you own is already out on a mission.</span>';
-		}
+		var slot = document.getElementById('ms-deploy-buttons');
+		if (!slot) return;
+		fetch('ajax/mission-data.php?what=deploy', {credentials: 'same-origin'})
+			.then(function (r) { return r.json(); })
+			.then(function (j) {
+				if (!j || !j.ok) { slot.innerHTML = ''; return; }
+				slot.innerHTML = j.html;
+				var any = Array.prototype.some.call(slot.querySelectorAll('span[id]'), function (s) {
+					return s.style.display !== 'none' && s.querySelector('button');
+				});
+				if (!any) slot.innerHTML =
+					'<span class="ms-deploy-wait">Everything you own is already out on a mission.</span>';
+			})
+			.catch(function () { slot.innerHTML = ''; });
 	}());
 }());
 </script>

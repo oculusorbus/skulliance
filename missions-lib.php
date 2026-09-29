@@ -275,6 +275,34 @@ function mission_frontier($conn) {
 		 ORDER BY q.project_id ASC, q.level ASC");
 	if (!$res) return $out;
 
+	/*
+	 * WAS THIS RUNG ADDED AFTER THE PLAYER PASSED IT?
+	 *
+	 * The obvious question about this list is the right one: if I never ran
+	 * level 31, how is level 33 open? The answer is almost always that
+	 * level 31 did not exist when they were climbing -- an artist extended
+	 * the ladder and the new rungs landed BELOW where the player already
+	 * was.
+	 *
+	 * quests.id is auto-increment, so that is checkable rather than a
+	 * guess: a rung whose id is higher than some HIGHER-level rung in the
+	 * same project was created after that one, which means it was inserted
+	 * into the middle of an existing ladder.
+	 */
+	$ceiling = array();   // project_id => the smallest id found above each level
+	$qr = $conn->query("SELECT project_id, level, id FROM quests ORDER BY project_id, level");
+	$rows = array();
+	if ($qr) while ($r = $qr->fetch_assoc()) $rows[(int)$r['project_id']][] = $r;
+	foreach ($rows as $pid2 => $list) {
+		/* Walk from the top down, carrying the smallest id seen above. */
+		$min = null;
+		for ($i = count($list) - 1; $i >= 0; $i--) {
+			$ceiling[$pid2][(int)$list[$i]['level']] = $min;
+			$id = (int)$list[$i]['id'];
+			if ($min === null || $id < $min) $min = $id;
+		}
+	}
+
 	/* Idle crew and balance per project, two queries rather than two per row. */
 	$idle = array(); $bal = array();
 	$ir = $conn->query(
@@ -317,6 +345,11 @@ function mission_frontier($conn) {
 			/* The rung you just earned is the deepest one. Everything below
 			   it you could have run any time. */
 			'frontier'   => ((int)$row['level'] === $done + 1),
+			/* True when a higher-level rung in this project has a LOWER id,
+			   i.e. this one was slotted in afterwards. */
+			'added_later' => (isset($ceiling[$pid][(int)$row['level']])
+			                  && $ceiling[$pid][(int)$row['level']] !== null
+			                  && (int)$row['id'] > $ceiling[$pid][(int)$row['level']]),
 		);
 	}
 
@@ -703,8 +736,27 @@ function mission_launch($conn, $quest_id, $nft_ids, $item_ids) {
 		if (isset($boost_map[$i])) $boost += $boost_map[$i];
 	}
 
-	/* The old rule, kept: a mission with no squad AND no success item is a
-	   mission with a zero chance, which is a mistake rather than a gamble. */
+	/*
+	 * YOU MUST HAVE SOMEBODY HOME, even if you do not send them.
+	 *
+	 * This is the rule that stops success items being farmed indefinitely,
+	 * and I had it wrong: an item-only load-out is legal -- Start Max Maxi
+	 * launches with 'nfts' => array() by design -- but ONLY while some of
+	 * that project's roster is still undeployed. renderMaxMaxiMissionsButton()
+	 * enforces exactly this with maxMaxiAvailableNfts() > 0, and hides
+	 * itself the moment the roster is out.
+	 *
+	 * The point is that holding NFTs back is what buys the right to spend
+	 * an item. Send everything and you are locked out until they come
+	 * home; a launcher that ignored that would let anyone keep firing
+	 * missions off nothing but stock.
+	 */
+	if (!$eligible)
+		return array('ok' => false, 'message' => 'Every NFT you own for this project is out on '
+			. 'a mission. Some have to be home before you can send another, even with an item.');
+
+	/* And a mission with no crew AND no success item has a zero chance,
+	   which is a mistake rather than a gamble. */
 	if (!$squad && $boost <= 0)
 		return array('ok' => false, 'message' => $dropped
 			? 'Those NFTs are no longer available -- they may already be on a mission. Reload and try again.'
