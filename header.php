@@ -170,14 +170,27 @@
 		  <div class="nav-dropdown navbar-first">
 		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Play</span>
 		    <div class="nav-dropdown-menu">
+		      <!-- EVERY LINK HERE GOES STRAIGHT TO THE GAME.
+		           These used to point at the *game.php MARKETING pages on the
+		           theory that a member might not know what a game was. In
+		           practice it is an extra click on every single attempt to
+		           play, forever, to re-read a pitch you have already accepted
+		           by signing in.
+
+		           It was also inconsistent: launchpad.php has always linked
+		           straight to the games, so the same "Play" intent behaved
+		           differently depending on which menu you used.
+
+		           This menu only renders for a signed-in member -- the whole
+		           navbar is inside `if(isset($name))` -- so the public pages
+		           lose nothing. They are still reached from the homepage, from
+		           site-header.php on every public page, and from search, which
+		           is who they were written for. -->
 		      <a href="missions.php">Missions</a>
 		      <a href="realms.php">Realms</a>
-		      <!-- Listed under Realms deliberately: it reads that realm's locations,
-		           soldiers and gear to build its starting position.
-		           Points at the MARKETING page, not straight at the game, matching
-		           Crypt Crawl / Crypt Conquest / Skull Racer below. Obscura is the
-		           one exception and says so in its own comment. -->
-		      <a href="guardiansgame.php">Guardians</a>
+		      <!-- Listed under Realms deliberately: it reads that realm's
+		           locations, soldiers and gear to build its starting position. -->
+		      <a href="guardians.php">Guardians</a>
 		      <a href="dhcfighters.php">DHC Fighters</a>
 		      <!-- The real Arena, wired to the platform: real Fighters, a real
 		           opponent, a server that owns every rule, real trait drops. The
@@ -186,15 +199,15 @@
 		           state and pays nothing, so a player finding it would only be
 		           confused about which one counts. See dhcarena.md. -->
 		      <a href="dhcarena.php">DHC Arena</a>
-		      <a href="cryptcrawlgame.php">Crypt Crawl</a>
-		      <a href="cryptconquestgame.php">Crypt Conquest</a>
-		      <a href="match3rpg.php">Monstrocity</a>
+		      <a href="cryptcrawl.php">Crypt Crawl</a>
+		      <a href="cryptconquest.php">Crypt Conquest</a>
+		      <a href="monstrocity.php">Monstrocity</a>
 		      <a href="monstrocity.php#boss">Boss Battles</a>
 		      <a href="skullswap.php">Skull Swap</a>
-		      <a href="skullracergame.php">Skull Racer</a>
+		      <a href="skullracer.php">Skull Racer</a>
               <a href="gauntlets.php">Gauntlets</a>		
-		      <!-- Straight to the game, not a *game.php marketing landing:
-		           Obscura deliberately has no public page, it's an internal one. -->		  
+		      <!-- Obscura has no public page at all; it is internal. It used
+		           to be the exception to a rule that no longer exists. -->
 		      <a href="obscura.php">Obscura</a>
 		      <!-- DHC Fighters only. The Fighter Collection is deliberately NOT
 		           listed here: Play is a list of things to play, and the gallery
