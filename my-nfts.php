@@ -43,6 +43,36 @@ foreach ($mn_rows as $r) {
 	$c = $r['currency'];
 	$mn_rate[$c] = (isset($mn_rate[$c]) ? $mn_rate[$c] : 0) + (float)$r['rate'];
 }
+
+/*
+ * WHAT IS THE SAME ON EVERY CARD GETS SAID ONCE.
+ *
+ * The rate is per COLLECTION, not per NFT, and most people view this
+ * filtered to one project -- so "2 CRYPT/night", "Project: Crypties",
+ * "Collection: Crypties - Season 1" were repeating identically on all 24
+ * cards. Four of five lines the same, twenty-four times: that is what made
+ * the grid read as a database report instead of a collection. The art is
+ * the only thing that differs, and it was the smallest part of the card.
+ *
+ * So each field is checked across the page. Uniform ones move to a single
+ * context line under the title and come off the cards entirely; the cards
+ * keep only what actually varies.
+ */
+$mn_same = array('project' => true, 'collection' => true, 'rate' => true);
+if ($mn_rows) {
+	$f = $mn_rows[0];
+	foreach ($mn_rows as $r) {
+		if ($r['project_name']    !== $f['project_name'])    $mn_same['project']    = false;
+		if ($r['collection_name'] !== $f['collection_name']) $mn_same['collection'] = false;
+		if ($r['rate'].$r['currency'] !== $f['rate'].$f['currency']) $mn_same['rate'] = false;
+	}
+	$mn_ctx = array();
+	if ($mn_same['project'])    $mn_ctx[] = $f['project_name'];
+	if ($mn_same['collection'] && $f['collection_name'] !== $f['project_name']) $mn_ctx[] = $f['collection_name'];
+	if ($mn_same['rate'])       $mn_ctx[] = $f['rate'] . ' ' . $f['currency'] . ' per NFT, nightly';
+} else {
+	$mn_ctx = array();
+}
 ?>
 
 <!-- Modal -->
@@ -76,26 +106,38 @@ foreach ($mn_rows as $r) {
              collection IS and what it earns, so the first thing a staker
              sees is a number rather than a heading. */ ?>
     <div class="mn-head">
-      <div>
+      <div class="mn-head-left">
         <span class="mn-kick">Your collection</span>
         <h2 class="mn-title">Staked NFTs</h2>
+        <?php if ($mn_ctx): ?>
+        <?php /* Everything identical across the page, said once. */ ?>
+        <p class="mn-ctx"><?php echo htmlspecialchars(implode(' · ', $mn_ctx)); ?></p>
+        <?php endif; ?>
       </div>
-      <?php if ($mn_user && $mn_total > 0): ?>
-      <div class="mn-figures">
-        <div class="mn-fig"><b><?php echo number_format($mn_total); ?></b><span>Staking</span></div>
-        <?php foreach (array_slice($mn_rate, 0, 2, true) as $cur => $amt): ?>
-        <div class="mn-fig">
-          <b><?php echo number_format($amt, ($amt < 10 ? 2 : 0)); ?></b>
-          <span><?php echo htmlspecialchars($cur); ?> / night<?php echo $mn_pages > 1 ? ' (page)' : ''; ?></span>
+      <div class="mn-head-right">
+        <?php /* THE FILTER LIVES IN THE MASTHEAD NOW. #filter-nfts carries
+                 `position:relative; top:-35px` so it could ride up beside
+                 the old bare <h2>; against a taller masthead that -35px
+                 dropped it straight on top of the figures and clipped
+                 them. Neutralised in this page's CSS and placed on
+                 purpose instead. */ ?>
+        <?php filterNFTs("my-nfts", "", "get"); ?>
+        <?php if ($mn_user && $mn_total > 0): ?>
+        <div class="mn-figures">
+          <div class="mn-fig"><b><?php echo number_format($mn_total); ?></b><span>Staking</span></div>
+          <?php foreach (array_slice($mn_rate, 0, 2, true) as $cur => $amt): ?>
+          <div class="mn-fig">
+            <b><?php echo number_format($amt, ($amt < 10 ? 2 : 0)); ?></b>
+            <span><?php echo htmlspecialchars($cur); ?> / night<?php echo $mn_pages > 1 ? ' (page)' : ''; ?></span>
+          </div>
+          <?php endforeach; ?>
         </div>
-        <?php endforeach; ?>
+        <?php endif; ?>
       </div>
-      <?php endif; ?>
     </div>
 
     <a name="holdings" id="holdings"></a>
     <div class="content" id="filtered-content">
-      <?php filterNFTs("my-nfts", "", "get"); ?>
 
       <div id="nfts" class="nfts">
       <?php if (!$mn_user): ?>
@@ -121,18 +163,24 @@ foreach ($mn_rows as $r) {
                them. */ ?>
         <div class="nft">
           <div class="nft-data">
-            <span class="nft-name"><?php echo htmlspecialchars($row["nfts_name"]); ?></span>
-            <a href="<?php echo nftExplorerUrl($conn, $row["asset_id"], isset($row["blockchain_id"]) ? $row["blockchain_id"] : 1); ?>"
+            <a class="nft-art" href="<?php echo nftExplorerUrl($conn, $row["asset_id"], isset($row["blockchain_id"]) ? $row["blockchain_id"] : 1); ?>"
                target="_blank" rel="noopener"><?php
               echo renderIPFS($row["ipfs"], $row["collection_id"],
                    getIPFS($row["ipfs"], $row["collection_id"], $row["project_id"]), false, $row["nfts_id"]);
             ?></a>
-            <?php /* The rate is the reason this page exists, so it is the
-                     one fact given weight; project and collection are
-                     context and are set below it. */ ?>
+            <span class="nft-name"><?php echo htmlspecialchars($row["nfts_name"]); ?></span>
+            <?php /* Only what differs. When the whole page shares a rate,
+                     a project or a collection, it is in the context line
+                     above and repeating it here is 24 copies of one fact. */ ?>
+            <?php if (!$mn_same['rate']): ?>
             <span class="nft-rate"><b><?php echo $row["rate"]; ?></b> <?php echo htmlspecialchars($row["currency"]); ?><i>/night</i></span>
-            <span class="nft-level"><strong>Project</strong><br><?php echo htmlspecialchars($row["project_name"]); ?></span>
-            <span class="nft-level"><strong>Collection</strong><br><?php echo htmlspecialchars($row["collection_name"]); ?></span>
+            <?php endif; ?>
+            <?php if (!$mn_same['project']): ?>
+            <span class="nft-level"><?php echo htmlspecialchars($row["project_name"]); ?></span>
+            <?php endif; ?>
+            <?php if (!$mn_same['collection'] && $row["collection_name"] !== $row["project_name"]): ?>
+            <span class="nft-level"><?php echo htmlspecialchars($row["collection_name"]); ?></span>
+            <?php endif; ?>
           </div>
         </div>
       <?php endforeach; endif; ?>
@@ -165,12 +213,21 @@ foreach ($mn_rows as $r) {
 <style>
 /* Scoped to this page. Loaded after flexbox.css, so it refines the .nft
    card rather than replacing it -- the class stays, the look changes, and
-   showcase.php's copy of the same class is unaffected because these rules
-   are only on this page. */
+   showcase.php's copy of the same markup is unaffected because these
+   rules only exist on this page.
+
+   SQUARE, NOT ROUNDED. DHC Fighters and the Arena have no rounded corners
+   and they are the pages that read as modern; the 2.5rem radius on .nft
+   and the 10px on .nft-data are the old platform's. Hard edges here, in
+   one place, so the two halves of the site stop disagreeing. */
+
 .mn-head {
   display: flex; align-items: flex-end; justify-content: space-between;
-  gap: 24px; flex-wrap: wrap; margin: 0 0 18px;
+  gap: 24px; flex-wrap: wrap; margin: 0 0 20px;
+  border-bottom: 1px solid rgba(0,200,160,.14); padding-bottom: 16px;
 }
+.mn-head-left { min-width: 0; }
+.mn-head-right { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
 .mn-kick { display: block; font-size: .7rem; letter-spacing: .16em; text-transform: uppercase; color: #00c8a0; }
 /* The platform styles every h2 uppercase and teal, which stacked two teal
    uppercase lines once the kicker was added above it. The kicker keeps the
@@ -181,60 +238,99 @@ foreach ($mn_rows as $r) {
   font-size: clamp(1.5rem, 3vw, 2.1rem);
   text-transform: none; color: #e8eaed; letter-spacing: -.01em;
 }
-.mn-figures { display: flex; gap: 10px; flex-wrap: wrap; }
+/* Everything identical across the page, stated once. */
+.mn-ctx { margin: 8px 0 0; font-size: .82rem; color: #7a9eb0; }
+
+.mn-figures { display: flex; gap: 8px; flex-wrap: wrap; }
 .mn-fig {
   background: #0a1929; border: 1px solid rgba(0,200,160,.14);
-  border-radius: 10px; padding: 10px 16px; min-width: 104px; text-align: left;
+  border-radius: 0; padding: 9px 15px; min-width: 96px; text-align: left;
 }
-.mn-fig b { display: block; font-size: 1.3rem; color: #00c8a0; line-height: 1.1; }
-.mn-fig span { font-size: .68rem; color: #7a9eb0; letter-spacing: .04em; text-transform: uppercase; }
+.mn-fig b { display: block; font-size: 1.25rem; color: #00c8a0; line-height: 1.1; }
+.mn-fig span { font-size: .64rem; color: #7a9eb0; letter-spacing: .05em; text-transform: uppercase; }
+
+/*
+ * NEGATIVE-OFFSET HACKS, NEUTRALISED. The platform claws back space with
+ * `position: relative; top: -Npx` in at least eight places -- here
+ * #filter-nfts is -35px and #filtered-content is -40px, both tuned to
+ * close the gap under a bare <h2>. Give a page a taller masthead and
+ * those offsets stop closing a gap and start landing content ON TOP of
+ * something: the filter sat over the figures and clipped them, and the
+ * content grid covered the context line.
+ *
+ * THIS IS THE FIRST THING TO CHECK ON EVERY REMAINING PAGE. Grep
+ * `top: -` in flexbox.css before changing any page header; a layout that
+ * depends on the header being exactly one line tall will break silently
+ * and only at certain widths.
+ */
+#filtered-content { position: static; top: 0; }
+#filter-nfts { position: static; top: 0; text-align: left; font-size: 1rem; margin: 0; }
+#filter-nfts label { display: block; font-size: .64rem; letter-spacing: .05em;
+  text-transform: uppercase; color: #7a9eb0; margin-bottom: 4px; }
+#filter-nfts label strong { font-weight: inherit; }
+#filterNFTs { border-radius: 0; height: 38px; }
 
 /*
  * THE CARD GRID. The platform gives .nft `width: 25%; float: left` -- a
- * hard four-column float layout from before this had a phone audience --
- * and .nft-data `text-align: right`, which is why every label hugs the
- * right edge. Both are overridden here rather than changed in
- * flexbox.css, because showcase.php renders the identical markup through
- * getNFTs() and must keep behaving exactly as it does. This CSS is inline
- * on this page, so it cannot reach showcase.php at all.
+ * hard four-column float layout from before there was a phone audience --
+ * and .nft-data `text-align: right`, which is why every label hugged the
+ * right edge. Both are overridden here rather than in flexbox.css,
+ * because showcase.php renders the identical markup through getNFTs() and
+ * must keep behaving exactly as it does.
  */
 #filtered-content .nfts {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr));
-  gap: 14px; align-items: stretch;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px; align-items: stretch;
 }
-#filtered-content .nft { width: auto; float: none; font-size: 12px; }
+#filtered-content .nft { width: auto; float: none; font-size: 12px; border-radius: 0; }
 #filtered-content .nft-data {
   margin: 0; min-height: 0; height: 100%;
   display: flex; flex-direction: column; text-align: left;
-  border-radius: 14px; padding: 12px;
+  border-radius: 0; padding: 0; overflow: hidden;
+  background: #0a1929; border: 1px solid rgba(0,200,160,.14);
+  transition: border-color .15s;
 }
-#filtered-content .nft-name { padding-top: 0; font-size: .9rem; }
-#filtered-content .nft-data a { display: block; margin: 10px 0 0; }
-#filtered-content .nft-data img { border-radius: 10px; width: 100%; height: auto; display: block; }
-/* Pins the figures to the bottom of every card, so a long collection name
-   cannot knock one card's numbers out of line with its neighbours. */
-#filtered-content .nft-rate { margin-top: auto; }
-#filtered-content .nft-level { color: #7a9eb0; margin-top: 6px; display: block; }
-#filtered-content .nft-level strong { color: #9fb4c4; font-weight: 600; }
-.nft-rate {
-  display: block; margin: 10px 0 2px; font-size: .78rem; color: #7a9eb0;
+#filtered-content .nft-data:hover { border-color: rgba(0,200,160,.5); }
+
+/* THE ART IS THE PRODUCT, so it leads and it fills the card's width
+   edge to edge -- it was a thumbnail under five lines of text. */
+#filtered-content .nft-art { display: block; line-height: 0; }
+#filtered-content .nft-data img {
+  width: 100%; height: auto; display: block; border-radius: 0;
 }
-.nft-rate b { color: #00c8a0; font-size: 1.05rem; }
-.nft-rate i { font-style: normal; opacity: .7; }
+#filtered-content .nft-name {
+  padding: 10px 12px 0; font-size: .82rem; color: #e8eaed;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Pinned to the bottom so a long collection name cannot knock one card's
+   figures out of line with its neighbours. */
+#filtered-content .nft-rate { margin-top: auto; padding: 8px 12px 0; }
+#filtered-content .nft-rate b { color: #00c8a0; font-size: 1rem; }
+#filtered-content .nft-rate i { font-style: normal; opacity: .7; }
+#filtered-content .nft-level {
+  color: #7a9eb0; display: block; padding: 4px 12px 0; font-size: .74rem;
+}
+#filtered-content .nft-data > :last-child { padding-bottom: 10px; }
 
 .mn-empty {
   grid-column: 1 / -1; text-align: center; padding: 48px 20px;
-  background: #0a1929; border: 1px solid rgba(0,200,160,.12); border-radius: 14px;
+  background: #0a1929; border: 1px solid rgba(0,200,160,.12); border-radius: 0;
 }
 .mn-empty h3 { color: #e8eaed; margin: 0 0 8px; }
 .mn-empty p { color: #b9c7d4; max-width: 520px; margin: 0 auto 14px; font-size: .94rem; }
 .mn-btn {
-  display: inline-block; margin: 4px 4px 0; padding: 10px 20px; border-radius: 999px;
+  display: inline-block; margin: 4px 4px 0; padding: 11px 22px; border-radius: 0;
   font-weight: 700; font-size: .9rem; text-decoration: none !important;
   background: linear-gradient(135deg,#00c8a0,#0596c4); color: #04121b !important;
 }
 .mn-btn.ghost { background: transparent; color: #00c8a0 !important; border: 1px solid rgba(0,200,160,.45); }
-@media (max-width: 620px) { .mn-head { align-items: flex-start; } }
+
+/* Pagination, squared to match. */
+#filtered-content .page-btn { border-radius: 0; }
+@media (max-width: 720px) {
+  .mn-head { align-items: flex-start; }
+  .mn-head-right { width: 100%; }
+}
 </style>
 
 	<!-- Footer -->
