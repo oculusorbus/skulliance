@@ -930,18 +930,35 @@
     </section>
 
     <!-- Staking Partners -->
-    <?php /* PARTNERS. The count IS the argument -- twenty-seven projects
-             chose to be here -- and it was buried in a sentence. The
-             marquee below stays: it is already the most alive thing on the
-             page, and its images are lazy and below the fold, which is
-             what the hero strip could not be. */ ?>
+    <?php
+    /*
+     * PARTNERS. The count IS the argument and it was buried in a sentence,
+     * so it is the heading now -- but it is READ FROM THE DATABASE, never
+     * written here.
+     *
+     * A hardcoded 27 was wrong the moment it was typed: that is the length
+     * of $hp_partners, which is the list of projects that have a FLYER
+     * IMAGE, not the list of projects that stake. Not every partner has
+     * artwork on file, so the marquee has always been a subset and any
+     * number taken from it understates the platform.
+     *
+     * hp_stat_artists() counts DISTINCT project_id in collections, which
+     * is the real answer and stays right as artists join. It falls back to
+     * a wording with no number rather than to a wrong one -- "0 projects
+     * stake here" on the page arguing that projects stake here would be
+     * the worst sentence on the site.
+     */
+    $partner_n = isset($stat_artists) ? (int)$stat_artists : hp_stat_artists();
+    ?>
     <section id="partners" class="hp-layer alt">
       <div class="wrap">
         <span class="hp-kick">Partner projects</span>
-        <h2>Twenty-seven more projects stake here.</h2>
-        <p class="hp-say">Skulliance opened partner staking to other Cardano artists and projects, and
-           now to the XRP Ledger. Their holders earn points, redeem the same incentives and climb
-           the same leaderboards.</p>
+        <h2><?php echo $partner_n > 6
+              ? number_format($partner_n) . ' artists and projects stake here.'
+              : 'Artists keep joining.'; ?></h2>
+        <p class="hp-say">Six founded it; the rest were invited. Skulliance opened partner staking to
+           other Cardano artists and projects, and now to the XRP Ledger - their holders earn points,
+           redeem the same incentives and climb the same leaderboards. A few below, not all of them.</p>
         <?php
         // Partner flyers, split half/half across two counter-scrolling
         // marquee rows so the majority of artists register at a glance.
