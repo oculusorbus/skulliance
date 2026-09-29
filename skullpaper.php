@@ -259,7 +259,39 @@ $extra_head = <<<HTML
 HTML;
 
 include 'header.php';
+
+/*
+ * THE PUBLIC MENU, FOR ANONYMOUS READERS ONLY.
+ *
+ * The Skull Paper is deliberately public -- it does not include
+ * skulliance.php -- but header.php's entire navbar lives inside
+ * `if(isset($name))`, and $name is only set for a signed-in member. So a
+ * stranger who arrives here from search gets an EMPTY nav: no way back to
+ * the homepage, the games, the staking platform, anything. They finish
+ * reading and the only exit is the back button.
+ *
+ * site-header.php is the same public nav the homepage and the game
+ * landings carry, so this is one file rather than a fourth menu, and its
+ * links are root-relative (host-only cookies -- see that file).
+ *
+ * NOT shown to members: they already have the platform navbar above, and
+ * two menu bars stacked is worse than the problem being fixed.
+ */
+$sp_public_nav = !isset($name);
+if ($sp_public_nav) {
+	include __DIR__ . '/site-header.php';
+}
 ?>
+<?php if ($sp_public_nav): ?>
+<style>
+/* The contents sidebar is position:sticky at top:10px, and site-header.php
+   is sticky at top:0 and ~51px tall -- so without this the sidebar scrolls
+   up UNDER the menu and its first few links sit behind it. Only applied
+   when the public menu is actually rendered; a member has the platform
+   navbar, which is not sticky, and 10px stays right for them. */
+#skullpaper .sp-side { top: 62px; }
+</style>
+<?php endif; ?>
 <style>
 #skullpaper { color:#e8eaed; }
 #skullpaper .sp-row { display:flex; flex-wrap:wrap; align-items:flex-start; gap:0; }
