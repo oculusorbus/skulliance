@@ -65,9 +65,11 @@ include 'header.php';
  */
 ?>
 <style>
+/* Full-screen, so it has to clear the notch as well. */
 #ms-loader { position: fixed; inset: 0; background: #07111d; z-index: 9999;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px; transition: opacity .35s ease; }
+  gap: 18px; transition: opacity .35s ease;
+  padding-top: env(safe-area-inset-top, 0px); box-sizing: border-box; }
 #ms-loader.gone { opacity: 0; pointer-events: none; }
 @keyframes ms-pulse { 0%,100% { opacity: .35; transform: scale(.94); } 50% { opacity: 1; transform: scale(1); } }
 @keyframes ms-sweep { 0% { left: -40%; } 100% { left: 100%; } }
@@ -185,11 +187,26 @@ define('MS_FIELD_CAP', 24);
 .ms-primer-more:hover { text-decoration: underline; }
 
 /* ---- section nav ------------------------------------------------------
-   Sticky at top: 0. The platform navbar is position:relative on desktop so
-   it scrolls away and leaves this the topmost thing; under 700px it becomes
-   a burger fixed at the top RIGHT, which is what the padding dodges. */
+ * STICKS BELOW THE STATUS BAR, NOT UNDER IT.
+ *
+ * header.php ships viewport-fit=cover and
+ * apple-mobile-web-app-status-bar-style=black-translucent, which is what
+ * makes the installed PWA draw under the iPhone's clock and battery on
+ * purpose. A bar pinned at top:0 parks itself right there -- half
+ * unreadable and, in the strip the status bar owns, untappable. The inset
+ * is exactly how far it has to come down; env() is 0 everywhere else, so
+ * desktop and in-browser are unchanged.
+ *
+ * The platform navbar is position:relative on desktop so it scrolls away
+ * and leaves this the topmost thing; under 700px it becomes a burger fixed
+ * at the top RIGHT, which is what the padding dodges.
+ */
 .ms-nav {
-  position: sticky; top: 0; z-index: 90; display: flex; gap: 2px; flex-wrap: wrap;
+  /* 20, not 90: this only has to sit above the page's own cards. Anything
+     higher starts competing with the platform's overlays -- it was beating
+     the opened burger menu, which is a full-screen affordance. */
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  display: flex; gap: 2px; flex-wrap: wrap;
   background: #07111d; border-bottom: 1px solid rgba(0,200,160,.18);
   margin: 0 0 16px; padding: 4px 0;
 }
@@ -203,9 +220,10 @@ define('MS_FIELD_CAP', 24);
 .ms-nav a i { font-style: normal; font-size: .62rem; background: rgba(255,255,255,.08);
   color: #b9c7d4; padding: 1px 6px; }
 .ms-nav a i.go { background: #f5a623; color: #07111d; font-weight: bold; }
-/* Jumping must not drop the heading under the sticky bar. */
+/* Jumping must not drop the heading under the sticky bar -- which now sits
+   an inset lower than it used to, so the margin has to follow it. */
 #ms-sec-daily, #ms-news, #ms-sec-deploy, #ms-field-section, #ms-sec-launch
-  { scroll-margin-top: 54px; }
+  { scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 54px); }
 @media (max-width: 700px) {
   .ms-nav { padding-right: 56px; overflow-x: auto; flex-wrap: nowrap; }
   .ms-nav a { padding: 7px 10px; }
@@ -547,10 +565,23 @@ define('MS_FIELD_CAP', 24);
 
 @media (max-width: 900px) {
   .ms-launch { grid-template-columns: 1fr; }
-  /* The picker becomes a horizontal rail rather than a 40-item column you
-     would have to scroll past to reach the missions. */
-  .ms-projects { flex-direction: row; overflow-x: auto; max-height: none; padding-bottom: 6px; }
-  .ms-proj { flex: 0 0 168px; }
+  /*
+   * A WRAPPING GRID, not a horizontal rail.
+   *
+   * The rail meant forty projects behind a sideways scroll you had to drag
+   * through to find anything -- the old icon grid let you take them all in
+   * at once, which is the whole job a picker has. So: every project on
+   * screen, icon-led, name under it, wrapping down the page like the grid
+   * it replaced. The page scrolls; the picker does not.
+   */
+  .ms-projects { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 6px; overflow: visible; max-height: none; padding-right: 0; }
+  .ms-proj { grid-template-columns: 1fr; justify-items: center; text-align: center;
+    padding: 9px 6px; gap: 0; }
+  .ms-proj img { grid-row: auto; width: 34px; height: 34px; margin-bottom: 5px; }
+  .ms-proj-name { width: 100%; text-align: center; font-size: .7rem; }
+  .ms-proj-sub  { width: 100%; text-align: center; font-size: .6rem; }
+  .ms-proj-bar  { width: 100%; margin-top: 5px; }
 }
 @media (max-width: 620px) {
   .ms-drawer { padding: 0; }
@@ -959,6 +990,81 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			})
 			.catch(function () {});
 	}
+
+	/*
+	 * THE THREE BULK LAUNCHERS.
+	 *
+	 * Re-fetched rather than re-enabled, because whether each one should
+	 * exist at all depends on what is left to send -- and that is exactly
+	 * what just changed. They hide themselves server-side when there is
+	 * nothing for them to do.
+	 */
+	function refreshDeploy() {
+		var slot = document.getElementById('ms-deploy-buttons');
+		if (!slot) return Promise.resolve();
+		return fetch('ajax/mission-data.php?what=deploy', {credentials: 'same-origin'})
+			.then(function (r) { return r.json(); })
+			.then(function (j) {
+				if (!j || !j.ok) { slot.innerHTML = ''; return; }
+				slot.innerHTML = j.html;
+				var any = Array.prototype.some.call(slot.querySelectorAll('span[id]'), function (s) {
+					return s.style.display !== 'none' && s.querySelector('button');
+				});
+				if (!any) slot.innerHTML =
+					'<span class="ms-deploy-wait">Everything you own is already out on a mission.</span>';
+			})
+			.catch(function () { slot.innerHTML = ''; });
+	}
+
+	/*
+	 * AND THEY ARE DRIVEN FROM HERE, not from skulliance.js.
+	 *
+	 * Its three *Ajax() functions set the button to "Working..." and clear
+	 * it by calling loadCurrentMissions() -- which on the old page
+	 * re-rendered the launchers themselves, because getCurrentMissions()
+	 * emitted them. This page renders them separately, so the override
+	 * repainted the field and left the button disabled on "Working..."
+	 * forever. Max Maxi showed it worst: it is the slowest of the three.
+	 *
+	 * These also do what the originals never did: handle failure. $.get's
+	 * success callback does not run on a timeout or a 500, so a launcher
+	 * that errored hung in exactly the same way -- and Max Maxi can fire
+	 * twenty missions with a Discord webhook each, which is the most
+	 * likely thing on this page to run long.
+	 *
+	 * Overriding after skulliance.js loads rather than editing it, because
+	 * nine other pages share that file.
+	 */
+	function bulkLaunch(btn, url) {
+		var all = ['#startFreeMissionsForm button', '#startAutoMissionsForm button',
+		           '#startMaxMaxiMissionsForm button'];
+		btn.innerHTML = '<span class="btn-spinner"></span> Working&hellip;';
+		/* All three draw on the same NFTs, points and item stock, so a second
+		   click landing mid-run would be deciding what to spend from a page
+		   that is already out of date. */
+		all.forEach(function (sel) { var b = document.querySelector(sel); if (b) b.disabled = true; });
+
+		fetch(url, {credentials: 'same-origin'})
+			.then(function (r) {
+				if (!r.ok) throw new Error('HTTP ' + r.status);
+				return r.text();
+			})
+			.then(function () { return Promise.all([refreshField(), refreshDeploy()]); })
+			.catch(function () {
+				/* Rebuild the bar either way -- some of the batch may well have
+				   gone out before it failed, and the field list says which. */
+				refreshField();
+				refreshDeploy().then(function () {
+					var slot = document.getElementById('ms-deploy-buttons');
+					if (slot) slot.insertAdjacentHTML('beforeend',
+						'<span class="ms-deploy-wait">That did not finish cleanly. '
+						+ 'Check what went out below before pressing again.</span>');
+				});
+			});
+	}
+	window.startFreeMissionsAjax    = function (b) { bulkLaunch(b, 'ajax/start-free-missions.php'); };
+	window.startAutoMissionsAjax    = function (b) { bulkLaunch(b, 'ajax/start-auto-missions.php'); };
+	window.startMaxMaxiMissionsAjax = function (b) { bulkLaunch(b, 'ajax/start-maxmaxi-missions.php'); };
 
 	/* The rest of the field, on request. Fetching rather than rendering all
 	   of them up front is the whole point of the cap. */
@@ -1399,25 +1505,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		});
 	}());
 
-	/* The three bulk launchers, fetched after paint. Each hides itself when
-	   there is nothing for it to do, so if all three come back hidden the
-	   bar says what is actually going on rather than sitting empty. */
-	(function () {
-		var slot = document.getElementById('ms-deploy-buttons');
-		if (!slot) return;
-		fetch('ajax/mission-data.php?what=deploy', {credentials: 'same-origin'})
-			.then(function (r) { return r.json(); })
-			.then(function (j) {
-				if (!j || !j.ok) { slot.innerHTML = ''; return; }
-				slot.innerHTML = j.html;
-				var any = Array.prototype.some.call(slot.querySelectorAll('span[id]'), function (s) {
-					return s.style.display !== 'none' && s.querySelector('button');
-				});
-				if (!any) slot.innerHTML =
-					'<span class="ms-deploy-wait">Everything you own is already out on a mission.</span>';
-			})
-			.catch(function () { slot.innerHTML = ''; });
-	}());
+	refreshDeploy();
 }());
 </script>
 <?php endif; ?>
