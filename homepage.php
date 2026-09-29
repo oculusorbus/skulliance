@@ -10,9 +10,28 @@
 // This template intentionally bypasses the WordPress chrome (get_header /
 // get_footer stay disabled) and emits a fully self-contained document:
 // all CSS is inline, all asset URLs are absolute, and there are zero
-// dependencies on the staking platform's stylesheets. That keeps the
-// repo copy and the WordPress copy byte-identical - migrating is a pure
-// copy-paste - and nothing under WP or /staking can drift the design.
+// dependencies on the staking platform's stylesheets. Nothing under WP or
+// /staking can drift the design.
+//
+// DEPLOYED BY INCLUDE, NOT BY COPY-PASTE. The WordPress theme file is a
+// stub that includes THIS file from the staking directory, so a push and a
+// pull deploys the homepage -- no copying, and no chance of the two copies
+// disagreeing. The stub keeps the "Template name:" header, because that is
+// what makes the template selectable in WordPress; everything else lives
+// here:
+//
+//     <?php
+//     /** Template name: Homepage */
+//     $hp = '/home/jeremiah/skulliance.io/staking/homepage.php';
+//     if (is_readable($hp)) { include $hp; } else { get_header(); get_footer(); }
+//
+// THIS FILE MUST STAY SAFE TO INCLUDE FROM ANOTHER APPLICATION. It has no
+// includes, reads no $_SESSION, and depends on no current working
+// directory -- so it behaves the same under WordPress as under /staking.
+// Keep it that way: for database figures use homepage-data.php, which is
+// built for this, and never include db.php here. db.php loads its
+// credentials by a CWD-relative path (which breaks under WP), turns
+// display_errors ON, and starts a session -- see that file's header.
 //
 // Design language matches the match3rpg.php / skullswap.php landing pages:
 // navy #07111d base, brand teal #00c8a0 -> #0596c4 gradient CTAs, glow
