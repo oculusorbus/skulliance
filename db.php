@@ -15134,7 +15134,17 @@ function checkObscuraLeaderboard($conn, $weekly=false, $rewards=false) {
  * (dhcf_rescore_all), so this reads the cached column rather than recomputing
  * 200 Fighters on every page view.
  */
-function checkDHCFightersLeaderboard($conn, $monthly = false) {
+function checkDHCFightersLeaderboard($conn, $monthly = false, $rewards = false) {
+	/*
+	 * 100,000 CARBON down the monthly board by rank, the same harmonic split
+	 * every other board uses: rank 1 takes the pool, rank 2 half of it, and
+	 * so on. Sits alongside Missions and Crypt Conquest; DHC Arena is the
+	 * headline at 250,000.
+	 *
+	 * Paid by rewards.php?dhcfighters=1, which needs its OWN monthly crontab
+	 * entry -- nothing in this repo schedules anything.
+	 */
+	$carbon = 100000;
 	/*
 	 * MONTHLY = a Fighter BUILT this month that carries a trait EARNED this
 	 * month. Both, not either, because each condition alone has a hole and
@@ -15159,11 +15169,30 @@ function checkDHCFightersLeaderboard($conn, $monthly = false) {
 	 * Disassembled Fighters are gone from the table entirely, so no period has
 	 * to exclude them any more.
 	 */
-	$where = $monthly
-		? "WHERE f.disassembled_at IS NULL
-		     AND f.created_at      >= DATE_FORMAT(NOW(), '%Y-%m-01')
-		     AND f.newest_trait_at >= DATE_FORMAT(NOW(), '%Y-%m-01')"
-		: "WHERE f.disassembled_at IS NULL";
+	/*
+	 * A REWARD RUN SETTLES THE MONTH THAT JUST CLOSED, so it needs both ends
+	 * of the window -- the display board only needs "since the 1st" because
+	 * there is no future to exclude.
+	 *
+	 * Written against NOW() - INTERVAL 1 MONTH rather than a stored season,
+	 * which makes it safe to run LATE: on the 5th, last month is still last
+	 * month. It is NOT safe to run TWICE for the same month -- there is no
+	 * rewarded flag on dhc_fighters to close, exactly as with the Arena
+	 * ladder, so a second run pays everybody again. Once, on the 1st.
+	 */
+	if ($rewards) {
+		$where = "WHERE f.disassembled_at IS NULL
+		            AND f.created_at      >= DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%Y-%m-01')
+		            AND f.created_at      <  DATE_FORMAT(NOW(), '%Y-%m-01')
+		            AND f.newest_trait_at >= DATE_FORMAT(NOW() - INTERVAL 1 MONTH, '%Y-%m-01')
+		            AND f.newest_trait_at <  DATE_FORMAT(NOW(), '%Y-%m-01')";
+	} else if ($monthly) {
+		$where = "WHERE f.disassembled_at IS NULL
+		            AND f.created_at      >= DATE_FORMAT(NOW(), '%Y-%m-01')
+		            AND f.newest_trait_at >= DATE_FORMAT(NOW(), '%Y-%m-01')";
+	} else {
+		$where = "WHERE f.disassembled_at IS NULL";
+	}
 	$sql = "
 		SELECT u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
 		       MAX(f.rarity_score) AS best_score,
@@ -15179,10 +15208,11 @@ function checkDHCFightersLeaderboard($conn, $monthly = false) {
 
 	if ($result && $result->num_rows > 0) {
 		$fireworks = false; $leaderboardCounter = 0; $last_score = null; $third_score = null;
-		$lb_rows = [];
+		$lb_rows = []; $description = ""; $counter = 0;
 
 		while ($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
+			$counter++;
 			// Tuple ordered to match ORDER BY, so the podium cannot disagree
 			// with the row order.
 			$score = [intval($row['best_score']), intval($row['fighters'])];
@@ -15223,15 +15253,38 @@ function checkDHCFightersLeaderboard($conn, $monthly = false) {
 				'Fighters'     => number_format($row['fighters']),
 				'Total'        => number_format($row['total_score']) . ' pts',
 			];
+			/* The payout column only means anything on a windowed board --
+			   all-time never pays, so it never shows a figure. */
+			$reward_col = ($monthly || $rewards)
+			            ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND"
+			            : '';
 			$lb_rows[] = ['rank' => $leaderboardCounter, 'trophy' => $trophy, 'avatar_url' => $avatar_url,
-			              'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => ''];
+			              'name' => $name_html, 'highlight' => $highlight, 'stats' => $stats, 'reward' => $reward_col];
 			$last_score = $score;
+
+			if ($rewards) {
+				updateBalance($conn, $row['user_id'], 15, round($carbon / $leaderboardCounter));
+				logCredit($conn, $row['user_id'], round($carbon / $leaderboardCounter), 15);
+				if ($counter <= 45) {
+					$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter . " <@" . $row['discord_id'] . "> Best Fighter: " . number_format($row['best_score']) . " pts, Fighters: " . $row['fighters'] . "\r\n";
+					$description .= "        " . number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND\r\n";
+				}
+			}
+		}
+
+		if ($rewards) {
+			/* Nothing is reset. The date window partitions the table, so last
+			   month's Fighters can never fall into this month's board however
+			   often this runs -- the one thing to avoid is running it twice
+			   for the SAME month. */
+			$last_month = date('F', strtotime('first day of last month'));
+			discordmsg("\u{1F9EC} " . $last_month . " DHC Fighters Results", $description, "", "https://skulliance.io/staking/leaderboards.php");
 		}
 
 		renderLeaderboardList($lb_rows);
 		if ($fireworks) fireworks();
 	} else {
-		$scope = $monthly ? "this month" : "";
+		$scope = ($monthly || $rewards) ? "this month" : "";
 		echo "<p>No Fighters have been assembled yet $scope.</p>";
 		echo '<form action="leaderboards.php" method="post"><input type="hidden" name="filterby" value="dhcfighters"><input type="submit" class="small-button" value="View All DHC Fighters"></form><br><br>';
 	}

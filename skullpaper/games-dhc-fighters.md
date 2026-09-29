@@ -359,6 +359,12 @@ Ranking on your best rather than your total is deliberate: the game is to build
 one exceptional character, not to hoard. Volume only separates players who
 already match on quality.
 
+**100,000 CARBON** is split down the monthly board by rank at the end of each
+month - rank 1 takes the pool, rank 2 half of it, and so on, the same share-out
+every other board uses. Top finishers' CARBON converts to DIAMOND at 100:1. See
+[[staking-crafting]]. The all-time board is a record, not a purse; it never
+pays.
+
 ---
 
 ## Layering
