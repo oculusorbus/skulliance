@@ -159,7 +159,9 @@
 		  <?php if(isset($avatar_url)){?>
 	      <img class="rounded-full" src="<?php echo $avatar_url?>" onerror="this.src='icons/skull.png'" />
 		  <?php } ?>
-		  <a href="profile.php<?php echo (isset($name)) ? '?username='.urlencode($name) : ''; ?>"><?php echo (isset($name))?$name:"";?></a>
+		  <?php /* nav-me: the identity row, styled as a header rather than as
+		           another menu item -- see .navbar a.nav-me in flexbox.css. */ ?>
+		  <a class="nav-me" href="profile.php<?php echo (isset($name)) ? '?username='.urlencode($name) : ''; ?>"><?php echo (isset($name))?$name:"";?></a>
 
 		  <!-- Launchpad: a top-level link, deliberately not inside a dropdown.
 		       It is the page after login and the way back to everything, so

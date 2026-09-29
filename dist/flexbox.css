@@ -1909,8 +1909,22 @@ section.active {
 	.banner .logo img{
 		width: 90%;
 	}
+	/* ONE ALIGNMENT FOR THE WHOLE MENU.
+	   It had three at once: .navbar a is centred, so Launchpad was; the
+	   dropdown trigger is display:flex, so its own text-align never
+	   applied and Play sat hard left; and the sub-items are indented left.
+	   Three justifications in one list reads as broken rather than as
+	   hierarchy. Everything is left now, and only the indent distinguishes
+	   a child from a parent. */
 	.navbar a{
 		width: 100%;
+		text-align: left;
+	}
+	.nav-dropdown-trigger {
+		text-align: left;
+		/* space-between puts the chevron on the right edge, where a
+		   disclosure arrow belongs, instead of tight against the word. */
+		justify-content: space-between;
 	}
 	#burger-menu {
 		display: block;
@@ -1934,11 +1948,21 @@ section.active {
 	.navbar-first {
 		margin-left: 0;
 	}
+	/* THE IDENTITY HEADER. The avatar was 120x120 -- a third of a phone
+	   screen spent before the first menu item, and the reason the menu
+	   needed scrolling to reach anything. Small enough to be a label, with
+	   the name under it and a rule to separate the two from the list. */
 	.navbar img {
-		margin: 0 auto;
-		width: 120px;
-		height: 120px;
-		margin-top: 10px;
+		margin: 14px auto 8px;
+		width: 56px;
+		height: 56px;
+	}
+	.navbar a.nav-me {
+		text-align: center;
+		padding: 0 20px 14px;
+		color: #7a9eb0;
+		font-size: 0.9rem;
+		border-bottom: 1px solid rgba(0,200,160,0.18);
 	}
 	.member {
 		width: 100%;
