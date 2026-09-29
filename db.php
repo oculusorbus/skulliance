@@ -4231,6 +4231,62 @@ function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $proj
 	}
 }
 
+/*
+ * ADMIN EDIT, and the only writer that can change an item after listing.
+ *
+ * updateItem() above is dead code -- nothing calls it -- and it covers
+ * four of the eight columns a listing actually has. Left in place rather
+ * than widened, because a dead function that still compiles is harmless
+ * and rewriting one changes the meaning of a name somebody may yet grep.
+ *
+ * ONLY THE FIELDS PASSED ARE WRITTEN. $f is whitelisted here, not at the
+ * caller, so a new key appearing in a POST body cannot become a new SET
+ * clause; anything not on this list is dropped silently.
+ *
+ * The AUTHORISATION CHECK IS NOT HERE. It belongs at the endpoint, where
+ * there is a session to check it against -- see ajax/item-edit.php. This
+ * function assumes its caller already earned the right to call it.
+ */
+function adminUpdateItem($conn, $item_id, $f){
+	$item_id = (int)$item_id;
+	if ($item_id <= 0) return array('success' => false, 'message' => 'Invalid item.');
+
+	$text = array('name', 'image_url');
+	$nums = array('price', 'quantity', 'project_id', 'secondary_project_id', 'featured');
+
+	/* WHICH OF THOSE ARE REALLY ON `items` IS ASKED, NOT ASSUMED. The store
+	   query reads `secondary_project_id` and `featured` unprefixed out of a
+	   join, so nothing in this repo proves which side of the join owns them
+	   -- and an UPDATE naming a column that lives on `projects` fails the
+	   whole statement, taking the name and image edit down with it.
+	   SHOW COLUMNS, not information_schema: the cPanel user gets #1044 on
+	   information_schema, so a guard written against it would pass on the
+	   one server it exists to protect. */
+	$have = array();
+	$cols = $conn->query("SHOW COLUMNS FROM items");
+	if ($cols) while ($c = $cols->fetch_assoc()) $have[$c['Field']] = true;
+	if ($have) {
+		$text = array_values(array_filter($text, function($k) use ($have) { return isset($have[$k]); }));
+		$nums = array_values(array_filter($nums, function($k) use ($have) { return isset($have[$k]); }));
+	}
+
+	$set = array();
+	foreach ($text as $k)
+		if (array_key_exists($k, $f))
+			$set[] = "`$k` = '" . mysqli_real_escape_string($conn, (string)$f[$k]) . "'";
+	foreach ($nums as $k)
+		if (array_key_exists($k, $f))
+			$set[] = "`$k` = '" . (float)$f[$k] . "'";
+
+	if (!$set) return array('success' => false, 'message' => 'Nothing to change.');
+
+	$sql = "UPDATE items SET " . implode(', ', $set) . " WHERE id = '$item_id' LIMIT 1";
+	if ($conn->query($sql) !== TRUE)
+		return array('success' => false, 'message' => 'Database error: ' . $conn->error);
+
+	return array('success' => true);
+}
+
 // Get items for store
 /*
  * THE SAME ITEMS getItems() RENDERS, RETURNED INSTEAD OF ECHOED.

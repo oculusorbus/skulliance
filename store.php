@@ -39,6 +39,20 @@ foreach ($st_items as $it) {
 	if (!empty($it['owned'])) $st_owned++;
 	elseif (!empty($it['affordable'])) $st_afford++;
 }
+
+/*
+ * ADMIN EDIT, user 1 only.
+ *
+ * A listing has been unchangeable once submitted: a typo, a dead image URL
+ * or a price agreed afterwards all meant opening phpMyAdmin. This draws an
+ * Edit control on each card and hands it to ajax/item-edit.php.
+ *
+ * THIS FLAG DECIDES NOTHING BUT WHETHER A BUTTON IS DRAWN. The endpoint
+ * re-checks the session itself, because a button nobody can see is not a
+ * permission -- anyone can POST to the endpoint directly.
+ */
+$st_admin    = isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] === 1;
+$st_projects = $st_admin ? getProjects($conn) : array();
 ?>
 		<a name="store" id="store"></a>
 		<div class="row" id="row1">
@@ -91,12 +105,45 @@ foreach ($st_items as $it) {
 						$pid = (int)$row['project_id']; ?>
 						<div class="nft store-item<?php echo !empty($row['owned']) ? ' st-owned' : ''; ?>">
 							<div class="nft-data">
+								<?php if ($st_admin): ?>
+								<?php /* Every value the form needs is already in $row, so the
+								         card carries it and the modal opens with no round
+								         trip. The raw name is stored -- including the literal
+								         <br> some listings use -- so an edit that does not
+								         touch the name writes back exactly what was there. */ ?>
+								<button type="button" class="st-edit" title="Edit this listing"
+									data-id="<?php echo (int)$row['item_id']; ?>"
+									data-name="<?php echo htmlspecialchars($row['item_name'], ENT_QUOTES, 'UTF-8'); ?>"
+									data-image="<?php echo htmlspecialchars($row['image_url'], ENT_QUOTES, 'UTF-8'); ?>"
+									data-price="<?php echo (float)$row['price']; ?>"
+									data-quantity="<?php echo (int)$row['quantity']; ?>"
+									data-project="<?php echo (int)$row['project_id']; ?>"
+									data-secondary="<?php echo (int)$row['secondary_project_id']; ?>"
+									data-featured="<?php echo !empty($row['featured']) ? 1 : 0; ?>"
+									onclick="openItemEdit(this)">Edit</button>
+								<?php endif; ?>
 								<span class="nft-image"><img loading="lazy"
 									onError="this.src='/staking/icons/skull.png';"
 									src="<?php echo htmlspecialchars($row['image_url']); ?>"
 									style="cursor:zoom-in;"
 									onclick="openStoreImageModal(this.src, this.closest('.nft-data').querySelector('.nft-name').textContent)"></span>
-								<span class="nft-name"><?php echo htmlspecialchars($row['item_name']); ?></span>
+								<?php
+								/* ITEM NAMES CONTAIN A DELIBERATE <br>. Several are written
+								   as "Galaxy of Sons<br>Claimer's Choice (DM Oculus Orbus)"
+								   so the qualifier sits on its own line. The old code echoed
+								   the name raw, which rendered it -- and also rendered
+								   anything else anyone typed. htmlspecialchars() alone fixed
+								   that and printed a literal "<br>" on the card.
+								   So: escape everything, then put back the one tag that is
+								   meant to be there. Stricter than the original and it keeps
+								   the line break. */
+								/* double_encode FALSE: a name already containing an
+								   entity would otherwise become &amp;#39; on screen. */
+								$st_name = str_replace(
+									array('&lt;br&gt;', '&lt;br/&gt;', '&lt;br /&gt;'), '<br>',
+									htmlspecialchars($row['item_name'], ENT_QUOTES, 'UTF-8', false));
+								?>
+								<span class="nft-name"><?php echo $st_name; ?></span>
 
 								<?php /* Project and stock on one line instead of two
 								         stacked label/value pairs -- at a glance you
@@ -137,6 +184,58 @@ foreach ($st_items as $it) {
 				<?php if(isset($_SESSION['userData']['user_id'])){ renderItemSubmissionForm($creators, "store"); } ?>
 			</div>
 		</div>
+<?php if ($st_admin): ?>
+		<!-- Admin listing editor. Rendered for user 1 only; the endpoint checks again. -->
+		<div id="st-edit-modal" class="st-modal" style="display:none;">
+			<?php /* A REAL FORM, pointed at the endpoint rather than at this page.
+			         store.php's own handler creates an item whenever it sees a
+			         POSTed `name`, so a form that fell back to a normal submit
+			         would silently duplicate the listing it was meant to fix.
+			         Posting to ajax/item-edit.php means the no-JS path still
+			         performs the edit -- it just shows JSON instead of a page. */ ?>
+			<form id="st-edit-form" class="st-modal-box" action="ajax/item-edit.php" method="post"
+				onsubmit="return submitItemEdit(event);">
+				<h3>Edit listing</h3>
+				<input type="hidden" name="item_id" id="st-e-id">
+				<label>Name <i>&lt;br&gt; makes a line break</i>
+					<textarea name="name" id="st-e-name" rows="2"></textarea></label>
+				<label>Image URL
+					<input type="text" name="image_url" id="st-e-image"></label>
+				<div class="st-e-preview"><img id="st-e-img" src="" alt=""
+					onerror="this.src='/staking/icons/skull.png';"></div>
+				<div class="st-e-row">
+					<label>Price
+						<input type="number" name="price" id="st-e-price" step="any" min="0"></label>
+					<label>Quantity <i>-1 unlimited, 0 delists</i>
+						<input type="number" name="quantity" id="st-e-qty" step="1" min="-1"></label>
+				</div>
+				<div class="st-e-row">
+					<label>Project
+						<select name="project_id" id="st-e-project">
+							<?php foreach ($st_projects as $pid2 => $pr): ?>
+							<option value="<?php echo (int)$pid2; ?>"><?php
+								echo htmlspecialchars($pr['name'] . ' (' . $pr['currency'] . ')'); ?></option>
+							<?php endforeach; ?>
+						</select></label>
+					<label>Second currency
+						<select name="secondary_project_id" id="st-e-secondary">
+							<option value="0">None</option>
+							<?php foreach ($st_projects as $pid2 => $pr): ?>
+							<option value="<?php echo (int)$pid2; ?>"><?php
+								echo htmlspecialchars($pr['name'] . ' (' . $pr['currency'] . ')'); ?></option>
+							<?php endforeach; ?>
+						</select></label>
+				</div>
+				<label class="st-e-check"><input type="checkbox" name="featured" id="st-e-featured" value="1">
+					Featured <i>shows under the Exclusive filter and sorts first</i></label>
+				<p class="st-e-msg" id="st-e-msg"></p>
+				<div class="st-e-actions">
+					<button type="button" class="small-button" onclick="closeItemEdit()">Cancel</button>
+					<button type="submit" class="small-button" id="st-e-save">Save changes</button>
+				</div>
+			</form>
+		</div>
+<?php endif; ?>
 		<!-- Store image modal -->
 		<div id="store-image-modal" onclick="closeStoreImageModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;flex-direction:column;gap:12px;cursor:zoom-out;">
 			<img id="store-modal-img" src="" alt="" style="max-width:90vw;max-height:80vh;border-radius:8px;object-fit:contain;box-shadow:0 8px 40px rgba(0,0,0,0.7);">
@@ -185,11 +284,20 @@ foreach ($st_items as $it) {
 #filtered-content { position: static; top: 0; border-radius: 0; }
 .main .content, .main .content *, .st-head * { border-radius: 0; }
 
-#filtered-content .nfts {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+/* THE STORE HAS ITS OWN LAYOUT SYSTEM, and it is !important.
+   `.store-nfts { display: flex !important }` beat the grid outright, and
+   `.store-item { width: 33% }` lost to this file's `width: auto` -- so
+   the result was flex-wrap with content-sized cards, which is why rows
+   held five, then five, then six. Grid has to be declared !important to
+   win, and then width:auto is correct rather than harmful. */
+#filtered-content .nfts,
+#filtered-content .nfts.store-nfts {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(216px, 1fr));
   gap: 12px; align-items: stretch;
 }
-#filtered-content .nft { width: auto; float: none; font-size: 12px; }
+#filtered-content .nft,
+#filtered-content .nft.store-item { width: auto; float: none; font-size: 12px; }
 #filtered-content .nft-data {
   margin: 0; min-height: 0; height: 100%; padding: 0; overflow: hidden;
   display: flex; flex-direction: column; text-align: left;
@@ -202,10 +310,13 @@ foreach ($st_items as $it) {
    the creator uploaded, and .nft-image's fixed 170px window with
    overflow-y:hidden clipped every one that was not square. A 1/1 box with
    object-fit:contain keeps the grid even and shows the whole photo. */
-#filtered-content .nft-image {
+#filtered-content .nft-image,
+#filtered-content .store-item .nft-image {
   display: block; float: none; margin: 0;
-  min-height: 0; max-height: none; overflow: visible;
-  aspect-ratio: 1 / 1; background: #07111d;
+  /* `.store-item .nft-image { height: 180px }` would otherwise fight the
+     aspect-ratio box and win on the cascade for height. */
+  height: auto; min-height: 0; max-height: none; overflow: visible;
+  aspect-ratio: 1 / 1; background: #07111d; border-radius: 0;
 }
 #filtered-content .nft-image img {
   width: 100%; height: 100%; max-width: none; max-height: none;
@@ -248,6 +359,56 @@ foreach ($st_items as $it) {
 .st-empty h3 { color: #e8eaed; margin: 0 0 8px; }
 .st-empty p { color: #b9c7d4; max-width: 520px; margin: 0 auto; font-size: .94rem; }
 @media (max-width: 720px) { .st-head { align-items: flex-start; } .st-head-right { width: 100%; } }
+
+/* ---- admin edit (user 1 only; nothing below renders for anyone else) ---- */
+#filtered-content .nft-data { position: relative; }
+#filtered-content .st-edit {
+  position: absolute; top: 6px; right: 6px; z-index: 2;
+  font-size: .62rem; letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 0; cursor: pointer;
+  background: rgba(7,17,29,.86); color: #00c8a0; border: 1px solid rgba(0,200,160,.45);
+  /* pointer-events with the opacity, not just the opacity: an invisible
+     button that still swallows clicks turns the top-right corner of every
+     card into a trap where the image zoom should be. */
+  opacity: 0; pointer-events: none; transition: opacity .12s;
+}
+/* Visible on hover on a pointer device, always visible on touch -- a
+   control you cannot hover is a control you cannot find. */
+#filtered-content .nft-data:hover .st-edit,
+#filtered-content .st-edit:focus { opacity: 1; pointer-events: auto; }
+@media (hover: none) { #filtered-content .st-edit { opacity: 1; pointer-events: auto; } }
+#filtered-content .st-edit:hover { background: #00c8a0; color: #07111d; }
+
+.st-modal {
+  position: fixed; inset: 0; z-index: 1001; background: rgba(0,0,0,.85);
+  align-items: flex-start; justify-content: center; overflow-y: auto; padding: 40px 16px;
+}
+.st-modal-box {
+  background: #0a1929; border: 1px solid rgba(0,200,160,.3); border-radius: 0;
+  padding: 22px; width: 100%; max-width: 520px; text-align: left;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.st-modal-box h3 { margin: 0; color: #e8eaed; text-transform: none; text-align: left; }
+.st-modal-box label { display: block; font-size: .68rem; letter-spacing: .06em;
+  text-transform: uppercase; color: #7a9eb0; text-align: left; }
+.st-modal-box label i { font-style: normal; text-transform: none; letter-spacing: 0; opacity: .7; }
+.st-modal-box input[type=text], .st-modal-box input[type=number],
+.st-modal-box textarea, .st-modal-box select {
+  display: block; width: 100%; box-sizing: border-box; margin-top: 4px;
+  background: #07111d; color: #e8eaed; border: 1px solid rgba(0,200,160,.22);
+  border-radius: 0; padding: 8px 10px; font-size: .86rem; font-family: inherit;
+}
+.st-e-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.st-e-row > label { flex: 1 1 180px; }
+.st-e-check { display: flex !important; align-items: flex-start; gap: 8px; }
+.st-e-check input { margin-top: 2px; }
+.st-e-preview { background: #07111d; border: 1px solid rgba(0,200,160,.14);
+  height: 150px; display: flex; align-items: center; justify-content: center; }
+.st-e-preview img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.st-e-msg { margin: 0; font-size: .8rem; color: #f5a623; min-height: 1em; text-align: left; }
+.st-e-msg.ok { color: #00c8a0; }
+.st-e-actions { display: flex; gap: 10px; justify-content: flex-end; }
+.st-e-actions .small-button { border-radius: 0; }
 </style>
 
 		<!-- Footer -->
@@ -274,6 +435,75 @@ function openStoreImageModal(src, name){
 function closeStoreImageModal(){
 	document.getElementById('store-image-modal').style.display = 'none';
 }
-document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeStoreImageModal(); });
+document.addEventListener('keydown', function(e){ if(e.key !== 'Escape') return;
+	closeStoreImageModal(); if (typeof closeItemEdit === 'function') closeItemEdit(); });
 </script>
+<?php if ($st_admin): ?>
+<script type="text/javascript">
+/* Admin listing editor. Every value comes off the card's own data-* set,
+   so opening the form costs nothing and works with the page already
+   rendered. The endpoint is the authority on whether any of it is allowed. */
+function openItemEdit(btn){
+	var d = btn.dataset;
+	document.getElementById('st-e-id').value       = d.id;
+	document.getElementById('st-e-name').value     = d.name;
+	document.getElementById('st-e-image').value    = d.image;
+	document.getElementById('st-e-img').src        = d.image;
+	document.getElementById('st-e-price').value    = d.price;
+	document.getElementById('st-e-qty').value      = d.quantity;
+	document.getElementById('st-e-project').value  = d.project;
+	document.getElementById('st-e-secondary').value = d.secondary;
+	document.getElementById('st-e-featured').checked = d.featured === '1';
+	setItemEditMsg('', false);
+	document.getElementById('st-e-save').disabled = false;
+	document.getElementById('st-edit-modal').style.display = 'flex';
+}
+function closeItemEdit(){
+	var m = document.getElementById('st-edit-modal');
+	if (m) m.style.display = 'none';
+}
+function setItemEditMsg(text, ok){
+	var el = document.getElementById('st-e-msg');
+	el.textContent = text;
+	el.className = 'st-e-msg' + (ok ? ' ok' : '');
+}
+/* Live preview, so a pasted URL that 404s is obvious before saving
+   rather than after it is on everyone's store page. */
+document.getElementById('st-e-image').addEventListener('input', function(){
+	document.getElementById('st-e-img').src = this.value || '/staking/icons/skull.png';
+});
+/* Clicking the backdrop closes; clicking the form must not. */
+document.getElementById('st-edit-modal').addEventListener('click', function(e){
+	if (e.target === this) closeItemEdit();
+});
+function submitItemEdit(e){
+	e.preventDefault();
+	var form = document.getElementById('st-edit-form');
+	var save = document.getElementById('st-e-save');
+	save.disabled = true;
+	setItemEditMsg('Saving...', true);
+	fetch('ajax/item-edit.php', { method: 'POST', body: new FormData(form),
+			credentials: 'same-origin' })
+		.then(function(r){ return r.json(); })
+		.then(function(j){
+			if (j && j.success) {
+				setItemEditMsg('Saved. Reloading...', true);
+				/* RELOAD RATHER THAN PATCH THE CARD. Price, currency options,
+				   affordability and the featured-first ordering are all worked
+				   out server-side, so repainting one card in place would leave
+				   the rest of the page disagreeing with the database. */
+				window.location.reload();
+			} else {
+				save.disabled = false;
+				setItemEditMsg((j && j.message) || 'Save failed.', false);
+			}
+		})
+		.catch(function(){
+			save.disabled = false;
+			setItemEditMsg('Could not reach the server.', false);
+		});
+	return false;
+}
+</script>
+<?php endif; ?>
 </html>
