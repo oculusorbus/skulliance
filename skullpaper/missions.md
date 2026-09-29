@@ -60,10 +60,11 @@ An NFT on a mission is **locked for its duration** - it cannot staff anything el
 
 Success items and your crew are therefore fitted together automatically:
 
-* Pick a success item that does not fit and the crew **makes room for it**, dropping the lowest-rated NFTs until the rest fits under what the item does not already cover. Put the item away and they come back.
+* Pick a success item that does not fit and the crew **makes room for it**, dropping the lowest-rated NFTs until the rest fits under 100%. Put the item away and exactly those NFTs come back - anything you picked by hand stays where you put it.
+* An item that already fits changes nothing. A 25% item on top of a 24% crew is 49%, so nobody is dropped.
 * The **100% Success** item guarantees the mission on its own, so it clears the crew entirely and any other percentage item with it. That is the whole reason Start Max Maxi can send twenty missions off one roster.
 * **You still need NFTs at home.** An item can send a mission with no crew attached, but only while some of that project's NFTs are *not* already deployed. Holding NFTs back is what buys the right to spend an item - send everything and you are locked out of that project until they come home, however many items you are holding.
-* **Fast Forward** and **Double Rewards** are not success items and are never cleared.
+* **Fast Forward** and **Double Rewards** change the duration and the payout, not the odds, so they never touch your crew and are never cleared by a success item.
 * The meter says how many NFTs you have **left free for other missions**, and warns you when a selection is over 100% and being wasted.
 
 ## Daily reward

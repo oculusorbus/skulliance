@@ -64,6 +64,26 @@ function mission_levels($conn, $reset = false) {
 }
 function mission_levels_forget($conn = null) { mission_levels($conn, true); }
 
+/*
+ * THE ADMIN VIEW, and it is a VIEW only.
+ *
+ * Configuring a ladder means looking at rungs the player has not reached
+ * -- checking the art resolved, the cost and reward read right, the
+ * description is there. The old page allowed that by rendering the submit
+ * form for locked missions when the discord id matched, and the locked
+ * card still had an onclick that pressed it. startMission() never
+ * re-checked the lock, so a stray click LAUNCHED a locked mission for
+ * real, and a success there jumps the cleared level past every rung
+ * underneath. That is the most likely cause of the "unlocked but never
+ * run" rungs on this very account.
+ *
+ * So the two are separated: this opens locked missions for inspection,
+ * and mission_launch() still refuses them for everybody, admin included.
+ */
+function mission_is_admin() {
+	return mission_user_id() === 1;
+}
+
 function mission_user_id() {
 	return isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
 }

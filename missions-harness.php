@@ -178,6 +178,24 @@ $r = mission_launch($conn, 78, array(10), array());
 ok(empty($r['ok']), 'a locked mission is refused server-side');
 ok(!wrote('mission'), 'and nothing is written');
 
+/*
+ * NOT EVEN FOR USER 1. The admin may OPEN a locked rung to check how it is
+ * configured -- mission_is_admin() gates that -- but launching one is the
+ * accident that jumps a cleared level past every rung underneath, which is
+ * the most likely cause of the "unlocked but never run" rows on this very
+ * account. The old page allowed it: getMissions() rendered the submit form
+ * for locked missions when the discord id matched, and startMission() never
+ * re-checked.
+ */
+$SESS_WAS = $_SESSION;
+$_SESSION = array('userData' => array('user_id' => 1, 'discord_id' => '772831523899965440'));
+$WROTE = array(); $conn = new MConn();
+ok(mission_is_admin(), 'user 1 is the admin');
+$r = mission_launch($conn, 78, array(10), array());
+ok(empty($r['ok']), 'and a locked mission is refused for the admin too');
+ok(!wrote('mission'), 'nothing written for the admin either');
+$_SESSION = $SESS_WAS;
+
 reset_world(null, array(10 => 30), array(), 40);   // cost 100, balance 40
 $r = mission_launch($conn, 77, array(10), array());
 ok(empty($r['ok']), 'refused when you cannot afford it');

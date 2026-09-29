@@ -289,6 +289,7 @@ define('MS_FIELD_CAP', 24);
 /* The label on the action line, where there is room for the long one. */
 .ms-quest-go i, .ms-quest-block i { font-style: normal; color: #f5a623; font-weight: bold;
   text-transform: uppercase; letter-spacing: .06em; font-size: .62rem; }
+.ms-d-locked { color: #f5a623; }
 
 /* ---- daily deployment ------------------------------------------------- */
 .ms-deploy {
@@ -1013,7 +1014,9 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 					+ 'Could not reach the server.</p></div></div>';
 			});
 	};
-	window.msCloseDrawer = function () { drawer.hidden = true; LO = null; picked = {}; items = {}; target = 100; };
+	window.msCloseDrawer = function () {
+		drawer.hidden = true; LO = null; picked = {}; items = {}; shedByItem = {}; target = 100;
+	};
 	drawer.addEventListener('click', function (e) { if (e.target === drawer) msCloseDrawer(); });
 	document.addEventListener('keydown', function (e) {
 		if (e.key === 'Escape' && !drawer.hidden) msCloseDrawer();
@@ -1051,7 +1054,8 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			'<div class="ms-d-art">' + art + '</div>'
 			+ '<div class="ms-d-scroll"><div class="ms-d-main">'
 			+ '<h3 id="ms-d-title">' + esc(LO.title) + '</h3>'
-			+ '<p class="ms-d-sub">' + esc(LO.project) + ' &middot; Level ' + LO.level + '</p>'
+			+ '<p class="ms-d-sub">' + esc(LO.project) + ' &middot; Level ' + LO.level
+			+   (LO.locked ? ' &middot; <b class="ms-d-locked">Locked</b>' : '') + '</p>'
 			+ (LO.description ? '<p class="ms-d-desc">' + esc(LO.description) + '</p>' : '')
 			+ '<div class="ms-d-facts">'
 			+   '<span><i>Cost</i><b>' + (LO.cost > 0 ? n(LO.cost) + ' ' + esc(LO.currency) : 'Free') + '</b></span>'
@@ -1089,9 +1093,13 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		 * of the button working right up until the server says no.
 		 */
 		var stop = '';
-		if (!LO.affordable)        stop = 'You need ' + n(LO.cost - LO.balance) + ' more ' + LO.currency;
+		/* LOCKED IS FIRST AND ABSOLUTE. Only an admin can get here with a
+		   locked quest, to check how it is configured -- and launching it
+		   is exactly the accident that jumps a cleared level past every
+		   rung underneath. mission_launch() refuses it too, whoever asks. */
+		if (LO.locked)             stop = 'Locked - inspection only';
+		else if (!LO.affordable)   stop = 'You need ' + n(LO.cost - LO.balance) + ' more ' + LO.currency;
 		else if (!LO.squad.length) stop = 'Nothing home to send';
-		else if (!LO.items.length && !LO.squad.length) stop = 'Nothing available to send yet';
 		if (stop) {
 			var go = document.getElementById('ms-d-go');
 			go.disabled = true;
@@ -1109,6 +1117,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 				var a = b.getAttribute('data-act');
 				/* Clear drops the crew AND the target, so a later item
 				   toggle does not quietly resurrect it. */
+				shedByItem = {};      // an explicit re-pick voids what items owe
 				if (a === 'none') { target = 0; applyThreshold(0); return; }
 				target = (a === 'max') ? 100 : LO.threshold;
 				refit();
@@ -1123,21 +1132,46 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		var id = b.getAttribute('data-nft');
 		if (picked[id] !== undefined) { delete picked[id]; b.classList.remove('on'); }
 		else { picked[id] = parseFloat(b.getAttribute('data-rate')); b.classList.add('on'); }
+		/* Touched by hand, so no longer something an item owes back --
+		   otherwise removing an item would undo a deliberate choice. */
+		delete shedByItem[id];
 		paintRate();
 	}
+	/*
+	 * ITEMS ONLY EVER TAKE AWAY WHAT WILL NOT FIT, AND GIVE BACK EXACTLY
+	 * THAT. Two things were wrong before:
+	 *
+	 *  1. EVERY item ran the shed, including Fast Forward and Double
+	 *     Rewards, which add no success at all. Picking Fast Forward
+	 *     deselected NFTs for no reason whatsoever.
+	 *
+	 *  2. It shed down to `target`, and target is the whale-BALANCING
+	 *     share, which sits well under 100 when a lot of rate is already
+	 *     deployed. So a 75% item on a 24% roster drove the budget to zero
+	 *     and cleared a crew that fitted perfectly well: 24 + 75 is 99.
+	 *
+	 * The only hard ceiling is 100. Balance and Maximise still decide the
+	 * OPENING fit, but once items are in play the single rule is: shed
+	 * only what pushes past 100, and put it back when the item goes.
+	 */
+	var shedByItem = {};        // nft_id -> rate, taken by an item, owed back
+
 	function toggleItem(b) {
 		var id = b.getAttribute('data-item');
 		var adding = (items[id] === undefined);
-		if (adding) { items[id] = parseFloat(b.getAttribute('data-boost')); b.classList.add('on'); }
+		var boost  = parseFloat(b.getAttribute('data-boost')) || 0;
+		if (adding) { items[id] = boost; b.classList.add('on'); }
 		else        { delete items[id]; b.classList.remove('on'); }
-		/* An item that does not fit MAKES ITSELF FIT, rather than being
-		   refused. Put it away again and the crew comes back. */
-		/* A 100% item GUARANTEES the mission on its own, so it makes every
-		   other success item and the whole crew redundant -- and spending
-		   them alongside it is spending them for nothing. This is what the
-		   old inventory's clearSuccessRate() did when you picked it. */
-		if (adding && items[id] >= 100) clearOtherBoosts(id);
-		if (adding) shedToFit(); else fillToFit();
+
+		/* Fast Forward and Double Rewards change the duration and the
+		   payout, not the odds, so they never touch the crew. */
+		if (boost > 0) {
+			/* A 100% item guarantees the mission on its own, so any other
+			   success item alongside it is spent for nothing -- what the old
+			   clearSuccessRate() did when you picked it. */
+			if (adding && boost >= 100) clearOtherBoosts(id);
+			if (adding) shedToFit(); else restoreShed();
+		}
 		paintRate();
 	}
 
@@ -1151,11 +1185,11 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		});
 	}
 
-	function budget() {
-		var boost = 0;
-		for (var i in items) boost += items[i];
-		return Math.max(0, target - boost);
-	}
+	function totalBoost() { var t = 0; for (var i in items) t += items[i]; return t; }
+	/* The ceiling ITEMS shed against: the real 100, not the balance share. */
+	function boostBudget() { return Math.max(0, 100 - totalBoost()); }
+	/* The ceiling the tool buttons and the opening fit use. */
+	function budget() { return Math.max(0, target - totalBoost()); }
 	function crewRate() { var t = 0; for (var k in picked) t += picked[k]; return t; }
 	function nftEl(id)  { return drawerBody.querySelector('.ms-d-nft[data-nft="' + id + '"]'); }
 
@@ -1176,28 +1210,33 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	 * whole reason Max Maxi can send twenty missions off one roster.
 	 */
 	function shedToFit() {
-		var cap = budget();
+		var cap = boostBudget();
 		var ids = Object.keys(picked).sort(function (a, b) { return picked[a] - picked[b]; });
 		var total = crewRate(), i = 0;
 		while (total > cap && i < ids.length) {
 			var id = ids[i++];
 			total -= picked[id];
+			shedByItem[id] = picked[id];      // owed back if the item goes
 			delete picked[id];
 			var el = nftEl(id); if (el) el.classList.remove('on');
 		}
 	}
 
-	/* Putting an item away gives the budget back, so refill from the
-	   highest rates down -- the same order Maximise and Balance use. */
-	function fillToFit() {
-		var cap = budget(), total = crewRate();
-		drawerBody.querySelectorAll('.ms-d-nft').forEach(function (b) {
-			var id = b.getAttribute('data-nft');
-			if (picked[id] !== undefined) return;
-			var rate = parseFloat(b.getAttribute('data-rate'));
-			if (total + rate > cap) return;
-			total += rate; picked[id] = rate; b.classList.add('on');
-		});
+	/*
+	 * Putting an item away returns exactly the NFTs that item took, not a
+	 * fresh greedy pick -- so a hand-built crew survives a change of mind.
+	 */
+	function restoreShed() {
+		var cap = boostBudget(), total = crewRate();
+		Object.keys(shedByItem)
+			.sort(function (a, b) { return shedByItem[b] - shedByItem[a]; })
+			.forEach(function (id) {
+				var rate = shedByItem[id];
+				if (picked[id] !== undefined || total + rate > cap) return;
+				total += rate; picked[id] = rate;
+				delete shedByItem[id];
+				var el = nftEl(id); if (el) el.classList.add('on');
+			});
 	}
 
 	/* Used on open and by the tool buttons, where a clean re-pick IS what
@@ -1267,6 +1306,11 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		var msg = document.getElementById('ms-d-msg');
 		var p = rateParts();
 		var ids = Object.keys(picked);
+		if (LO.locked) {
+			msg.className = 'ms-d-msg';
+			msg.textContent = 'This mission is locked. Opening it is for checking its setup only.';
+			return;
+		}
 		if (!LO.squad.length) {
 			msg.className = 'ms-d-msg';
 			msg.textContent = 'Every NFT you own for this project is out on a mission.';

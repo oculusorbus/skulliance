@@ -82,7 +82,10 @@ switch ($what) {
 		$qid = isset($_GET['quest_id']) ? (int)$_GET['quest_id'] : 0;
 		$lo  = mission_loadout($conn, $qid);
 		if (!$lo) dhc_json(array('ok' => false, 'message' => 'That mission is not available.'));
-		if (!empty($lo['locked'])) dhc_json(array('ok' => false, 'message' => 'That mission is still locked.'));
+		/* An admin may INSPECT a locked rung -- the drawer disables launching
+		   and mission_launch() refuses it regardless. See mission_is_admin(). */
+		if (!empty($lo['locked']) && !mission_is_admin())
+			dhc_json(array('ok' => false, 'message' => 'That mission is still locked.'));
 		dhc_json(array('ok' => true, 'loadout' => $lo));
 
 	default:

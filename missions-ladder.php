@@ -17,6 +17,7 @@ if (!isset($ms_project)) $ms_project = 0;
 if (!isset($ms_quests))  $ms_quests  = $ms_project ? mission_quests($conn, $ms_project) : array();
 if (!function_exists('ms_n')) { function ms_n($v) { return number_format((float)$v); } }
 if (!function_exists('ms_e')) { function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); } }
+$ms_admin = mission_is_admin();
 /*
  * Which rungs here have never been run, and WHICH KIND.
  *
@@ -48,7 +49,9 @@ if (!isset($ms_new_ids)) {
 	 * could not read its description or look at the art the artist made for
 	 * it. Whether you can LAUNCH is a separate question, answered inside.
 	 */
-	$can  = $open;
+	/* An admin can open a locked rung to check how it is configured; the
+	   drawer will not let it be launched. Everyone else: unlocked only. */
+	$can   = $open || $ms_admin;
 	$ready = $open && $q['affordable'] && $q['has_squad'];
 	/* WHY it cannot be launched, in the order a player would fix it. */
 	$block = '';
@@ -74,9 +77,12 @@ if (!isset($ms_new_ids)) {
 		 * still says exactly what to do, so it is a locked door with a sign
 		 * on it rather than a mystery.
 		 */
-		$q_title = $open ? $q['title']
+		/* Obfuscation is for players -- it protects the reveal. It would just
+		   get in the way of the person who has to configure the thing. */
+		$show   = $open || $ms_admin;
+		$q_title = $show ? $q['title']
 		         : preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $q['title']));
-		$q_image = $open ? $q['image'] : 'icons/padlock.png';
+		$q_image = $show ? $q['image'] : 'icons/padlock.png';
 		?>
 		<div class="ms-quest-art">
 			<img src="<?php echo ms_e($q_image); ?>" alt="" loading="lazy"
@@ -95,7 +101,7 @@ if (!isset($ms_new_ids)) {
 			<?php endif; ?>
 		</div>
 		<div class="ms-quest-body">
-			<span class="ms-quest-title<?php echo $open ? '' : ' hidden'; ?>"><?php echo ms_e($q_title); ?></span>
+			<span class="ms-quest-title<?php echo $show ? '' : ' hidden'; ?>"><?php echo ms_e($q_title); ?></span>
 			<span class="ms-quest-pay">
 				<?php if ((float)$q['cost'] > 0): ?>
 				<em><?php echo ms_n($q['cost']); ?></em> &rarr;
@@ -115,7 +121,8 @@ if (!isset($ms_new_ids)) {
 				$tag = $ms_new_ids[(int)$q['quest_id']] ? 'New' : 'Never run';
 			?>
 			<?php if ($block && !$open): ?>
-			<span class="ms-quest-block"><?php echo ms_e($block); ?></span>
+			<span class="ms-quest-block"><?php echo ms_e($block);
+				echo $ms_admin ? ' <i>inspect</i>' : ''; ?></span>
 			<?php elseif ($block): ?>
 			<?php /* Unlocked but not launchable: still opens, so say what is
 			         missing AND that you can look. */ ?>
