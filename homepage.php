@@ -322,23 +322,6 @@
     .hp-stat b { display: block; font-size: 1.6rem; color: #00c8a0; line-height: 1.1; }
     .hp-stat span { font-size: .72rem; color: #7a9eb0; letter-spacing: .04em; text-transform: uppercase; }
 
-    /* The art, on the first screen. */
-    .hp-artstrip {
-      width: 100vw; margin: 34px calc(50% - 50vw) 0; overflow: hidden;
-      -webkit-mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
-              mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
-    }
-    .hp-artstrip-track {
-      display: flex; gap: 16px; width: max-content;
-      animation: hp-artscroll 55s linear infinite;
-    }
-    .hp-artstrip-track:hover { animation-play-state: paused; }
-    @keyframes hp-artscroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-    @media (prefers-reduced-motion: reduce) { .hp-artstrip-track { animation: none; } }
-    .hp-artstrip img {
-      width: 132px; height: 132px; object-fit: cover; border-radius: 12px;
-      border: 1px solid rgba(0,200,160,.14); flex: 0 0 auto;
-    }
     .hp-cta {
       display: inline-block;
       background: linear-gradient(135deg, #00c8a0, #0596c4);
@@ -365,6 +348,103 @@
     .hp-center { text-align: center; }
     .hp-intro { max-width: 760px; margin: 0 auto 8px; color: #c7d0d9; }
     section h2 { text-align: center; }
+
+    /*
+     * ================= THE LAYER CAKE ==================================
+     * Every section used to be the same shape -- 48px of padding, a
+     * hairline rule, a centred h2, a centred 760px paragraph, then a grid.
+     * Three of those in a row is why Mission, Games and Platform read as
+     * one long undifferentiated page: nothing tells you a new idea has
+     * started, so nothing invites you to stop and read it.
+     *
+     * A layer is now a FULL-BLEED BAND with its own ground. Alternating
+     * grounds do the work the hairline was failing to do, and each layer
+     * gets its own rhythm -- the mission is left-aligned over art, the
+     * games layer leads with one big one, the platform layer states what
+     * you DO before showing twenty screenshots of it.
+     */
+    .hp-layer {
+      width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
+      padding: 84px 0;
+    }
+    .hp-layer + .hp-layer { border-top: 0; }
+    .hp-layer.alt { background: #0a1724; }
+    .hp-layer .wrap { max-width: 1120px; margin: 0 auto; padding: 0 22px; }
+    /* A layer heading is BIG and can sit left. A centred 1.5rem h2 over a
+       centred paragraph is the shape of a 2009 brochure. */
+    .hp-layer h2 {
+      font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.08;
+      letter-spacing: -.02em; text-align: left; margin: 0 0 14px;
+    }
+    .hp-layer .hp-kick {
+      display: block; font-size: .74rem; letter-spacing: .18em;
+      text-transform: uppercase; color: #00c8a0; margin-bottom: 12px;
+      text-align: left;
+    }
+    .hp-layer .hp-say { max-width: 620px; color: #b9c7d4; font-size: 1.02rem; }
+
+    /* ---- Mission: a claim over the art, not a paragraph under it ---- */
+    .hp-mission {
+      position: relative; overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(7,17,29,.96) 0%, rgba(7,17,29,.82) 46%, rgba(7,17,29,.30) 100%),
+        url('https://www.skulliance.io/staking/images/skulliance-group.jpg') center/cover no-repeat;
+    }
+    .hp-mission .wrap { padding-top: 26px; padding-bottom: 26px; }
+    .hp-mission .hp-say { max-width: 560px; }
+    @media (max-width: 720px) {
+      .hp-mission {
+        background:
+          linear-gradient(180deg, rgba(7,17,29,.90) 0%, rgba(7,17,29,.96) 70%),
+          url('https://www.skulliance.io/staking/images/skulliance-group.jpg') center/cover no-repeat;
+      }
+    }
+
+    /* ---- Games: one featured, the rest compact ---- */
+    .hp-feature {
+      display: grid; grid-template-columns: 1.05fr .95fr; gap: 34px;
+      align-items: center; margin-top: 26px;
+    }
+    @media (max-width: 860px) { .hp-feature { grid-template-columns: 1fr; gap: 20px; } }
+    .hp-feature img { border-radius: 14px; border: 1px solid rgba(0,200,160,.16); box-shadow: 0 18px 46px rgba(0,0,0,.5); }
+    .hp-feature .hp-tag {
+      display: inline-block; font-size: .7rem; letter-spacing: .14em;
+      text-transform: uppercase; color: #04121b; font-weight: 800;
+      background: linear-gradient(135deg,#00c8a0,#0596c4);
+      padding: 4px 10px; border-radius: 999px; margin-bottom: 10px;
+    }
+    .hp-feature h3 { font-size: 1.5rem; color: #e8eaed; margin: 0 0 10px; }
+    .hp-more {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px;
+    }
+    @media (max-width: 860px) { .hp-more { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 520px) { .hp-more { grid-template-columns: 1fr; } }
+    .hp-mini {
+      display: block; background: #0a1929; border: 1px solid rgba(0,200,160,.12);
+      border-radius: 12px; padding: 14px; text-decoration: none !important;
+      transition: border-color .15s, transform .15s;
+    }
+    .hp-mini:hover { border-color: rgba(0,200,160,.45); transform: translateY(-2px); }
+    .hp-mini img { border-radius: 8px; aspect-ratio: 16/10; object-fit: cover; width: 100%; }
+    .hp-mini b { display: block; margin-top: 10px; color: #e8eaed; font-size: .94rem; }
+    .hp-mini span { display: block; color: #7a9eb0; font-size: .82rem; margin-top: 2px; }
+
+    /* ---- Platform: say what you DO, then show the wall ---- */
+    .hp-does { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 30px; }
+    @media (max-width: 860px) { .hp-does { grid-template-columns: 1fr; } }
+    .hp-do img { border-radius: 12px; border: 1px solid rgba(0,200,160,.14); aspect-ratio: 16/10; object-fit: cover; width: 100%; }
+    .hp-do h3 { font-size: 1.1rem; color: #00c8a0; margin: 14px 0 6px; }
+    .hp-do p { color: #b9c7d4; font-size: .92rem; margin: 0; }
+    /* The twenty screenshots are not a menu, they are EVIDENCE. Labelled as
+       such and shrunk, they stop asking to be read one by one. */
+    .hp-wall-label {
+      margin: 52px 0 14px; font-size: .74rem; letter-spacing: .16em;
+      text-transform: uppercase; color: #5a7888; text-align: left;
+    }
+    .hp-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 10px; }
+    .hp-wall a { display: block; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,.07); }
+    .hp-wall a:hover { border-color: rgba(0,200,160,.45); }
+    .hp-wall img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; }
 
     /* Card grids */
     .hp-grid {
@@ -669,6 +749,19 @@
    *     Games" as a badge is a claim; "7" next to "12,000 NFTs staked" is
    *     evidence, and it costs one query each, cached five minutes.
    * The logo stays.
+   *
+   * A SCROLLING WALL OF ARTIST FLYERS WAS HERE AND WAS REMOVED. It looked
+   * right and cost 18MB: those nine files are 1.2-2.8MB each at 1500px,
+   * rendered into 132px tiles. The partner strip further down gets away
+   * with the same images only because it is loading="lazy" and below the
+   * fold -- and lazy is exactly what a marquee CANNOT use, because a tile
+   * arrives by transform rather than by layout and so never loads at all.
+   * Eager meant 18MB in front of the first screen.
+   *
+   * The Mission layer immediately below is now full-bleed artwork at
+   * 0.3MB, which does the "lead with the art" job better and avoids two
+   * art walls back to back. Bring the strip back only with resized files:
+   * a 132px tile wants about 300px of source, not 1500.
    */
   require_once __DIR__ . '/homepage-data.php';
   $stat_staked  = hp_stat_nfts_staked();
@@ -685,9 +778,6 @@
   if ($stat_artists > 0) $hp_tiles[] = array(number_format($stat_artists), 'Artists & projects');
   $hp_tiles[] = array('7', 'Free games');
 
-  /* Already on the server and used further down this page. */
-  $hp_hero_art = array('sinderskullz.png','kimosabe.png','crypties.png','galactico.png',
-                       'ohhmeed.png','hype.png','maxingo.png','darkula.jpg','skowl.jpg');
   ?>
   <header class="hp-hero" id="top">
     <img class="hp-logo" src="https://www.skulliance.io/staking/images/skulliancelogo.png" alt="Skulliance logo" fetchpriority="high" decoding="async">
@@ -713,96 +803,86 @@
       <?php endforeach; ?>
     </div>
 
-    <?php /* The art, on the first screen instead of thousands of pixels
-             down. Repeat until a HALF-track exceeds any viewport and keep
-             the count EVEN, or the -50% loop gaps at the turn -- nine tiles
-             is 1332px a half against a 2560px desktop. */ ?>
-    <div class="hp-artstrip">
-      <div class="hp-artstrip-track">
-        <?php $hp_ap = max(2, 2 * (int)ceil(20 / count($hp_hero_art)));
-              for ($i = 0; $i < $hp_ap; $i++): foreach ($hp_hero_art as $f): ?>
-        <img src="https://www.skulliance.io/staking/images/projects/<?php echo htmlspecialchars($f); ?>"
-             alt="" loading="lazy" decoding="async">
-        <?php endforeach; endfor; ?>
-      </div>
-    </div>
   </header>
 
   <main>
 
-    <!-- Mission -->
-    <section id="mission">
+    <?php /* MISSION. It was a centred paragraph under a picture, with no
+             link in it -- 371 characters and nothing to do. "Mission" is
+             also an inward-facing word: nobody arrives wanting to read
+             one. The art is now the ground rather than an illustration
+             underneath, the claim is a sentence instead of a statement of
+             intent, and there is finally somewhere to go from here. */ ?>
+    <section id="mission" class="hp-layer hp-mission">
       <div class="wrap">
-        <h2>Mission</h2>
-        <p class="hp-intro hp-center">The mission of Skulliance is to connect skull art collectors with the premier skull NFT artists on the Cardano blockchain and elevate the collective art form and community within the space. Cardano is our home - led by Oculus Orbus, an avid skull NFT collector and developer, Skulliance gives artists a stage and collectors a reason to keep coming back every day.</p>
-        <img src="https://www.skulliance.io/staking/images/skulliance-group.jpg" alt="Skulliance founding artists group artwork" loading="lazy" decoding="async" style="border-radius:14px; margin-top:18px;">
+        <span class="hp-kick">Why this exists</span>
+        <h2>Artists get a stage.<br>Collectors get a reason to come back.</h2>
+        <p class="hp-say">Skulliance connects collectors with the artists and projects behind the
+           art, and then gives the art something to do - staking, missions, games, a marketplace.
+           Led by Oculus Orbus, a collector and developer, and built on Cardano with the XRP
+           Ledger alongside it.</p>
+        <p style="margin-top:22px;"><a class="hp-cta hp-secondary" href="#artists">Meet the artists</a></p>
       </div>
     </section>
 
-    <!-- Games -->
-    <section id="games">
+    <?php /* GAMES. Seven cards of identical weight meant a visitor had to
+             evaluate all seven to find one, which is the same as evaluating
+             none. One is featured at full width with its screenshot, and
+             the other six sit under it as compact tiles -- a glance now
+             yields a decision instead of a reading task.
+
+             DHC Fighters leads because it is the newest, the only one that
+             is a build-and-battle rather than a score chase, and the one
+             with a page of its own to land on. */ ?>
+    <section id="games" class="hp-layer alt">
       <div class="wrap">
-        <h2>Free Browser Games</h2>
-        <p class="hp-intro hp-center">No download, no signup, no paywall - every game runs in any browser on phone, tablet, or desktop. Collectors can log in to save scores, climb the leaderboards, and battle with characters from their own NFT collections.</p>
-        <div class="hp-games">
-          <div class="hp-game">
-            <a class="hp-game-art" href="https://www.skulliance.io/staking/match3rpg.php" aria-label="Play Monstrocity, the free match 3 RPG">
-              <img src="https://www.skulliance.io/staking/images/monstrocity/logo.png" alt="Monstrocity Match 3 RPG logo" loading="lazy" decoding="async">
-            </a>
-            <h3>Monstrocity - Match 3 RPG</h3>
-            <p>Real RPG combat wrapped around a match 3 board - character stats, special attacks, power-ups, boss battles, and 35+ visual themes from featured artists.</p>
-            <a class="hp-cta" href="https://www.skulliance.io/staking/match3rpg.php">Play Monstrocity</a>
+        <span class="hp-kick">Free browser games</span>
+        <h2>Seven games. No download, no signup.</h2>
+        <p class="hp-say">Every one runs in any browser on a phone, tablet or desktop. Log in and
+           they play with characters from your own collection, and your scores climb the
+           leaderboards.</p>
+
+        <div class="hp-feature">
+          <a href="https://www.skulliance.io/staking/dhcgame.php" aria-label="Play DHC Fighters">
+            <img src="https://www.skulliance.io/staking/images/dhcgame.png"
+                 alt="DHC Fighters - two Crews of three facing each other across a gem board"
+                 loading="lazy" decoding="async">
+          </a>
+          <div>
+            <span class="hp-tag">Newest</span>
+            <h3>DHC Fighters - build and battle</h3>
+            <p class="hp-say">Assemble a Fighter from ten trait slots, field a Crew of three, and
+               take it into the Arena - a match 3 battler where rank decides who takes the hit
+               and rarity does not decide the fight. Browse the whole collection while you plan.</p>
+            <p style="margin-top:18px;"><a class="hp-cta" href="https://www.skulliance.io/staking/dhcgame.php">Play DHC Fighters</a></p>
           </div>
-          <div class="hp-game">
-            <a class="hp-game-art" href="https://www.skulliance.io/staking/skullswap.php" aria-label="Play Skull Swap, the free match 3 puzzle game">
-              <img src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board" loading="lazy" decoding="async">
-            </a>
-            <h3>Skull Swap - Match 3 Puzzle</h3>
-            <p>A pure score chase: exactly 25 matches to forge Carbon and Diamond bombs, chain detonations for huge combos, and squeeze out every last point.</p>
-            <a class="hp-cta" href="https://www.skulliance.io/staking/skullswap.php">Play Skull Swap</a>
-          </div>
-          <div class="hp-game">
-            <a class="hp-game-art" href="https://www.skulliance.io/staking/cryptcrawlgame.php" aria-label="Play Crypt Crawl, the free solo Scoundrel-style card game">
-              <img src="https://www.skulliance.io/staking/images/cryptcrawl.png" alt="Crypt Crawl dungeon-crawl card game board" loading="lazy" decoding="async">
-            </a>
-            <h3>Crypt Crawl - Scoundrel-Style Card Game</h3>
-            <p>A 44-card crypt crawl illustrated entirely in Crypties NFT art - weapons that wear down, medkits that diminish, and one guaranteed Last Stand when it matters most.</p>
-            <a class="hp-cta" href="https://www.skulliance.io/staking/cryptcrawlgame.php">Play Crypt Crawl</a>
-          </div>
-          <div class="hp-game">
-            <a class="hp-game-art" href="https://www.skulliance.io/staking/cryptconquestgame.php" aria-label="Play Crypt Conquest, the free solo Regicide-style card game">
-              <img src="https://www.skulliance.io/staking/images/cryptconquest.png" alt="Crypt Conquest card game board" loading="lazy" decoding="async">
-            </a>
-            <h3>Crypt Conquest - Regicide-Style Card Game</h3>
-            <p>Dethrone all 12 court cards of the Necropolis with suit powers, two Jokers, and one Last Stand - illustrated entirely in Crypties NFT art.</p>
-            <a class="hp-cta" href="https://www.skulliance.io/staking/cryptconquestgame.php">Play Crypt Conquest</a>
-          </div>
-          <div class="hp-game">
-            <a class="hp-game-art" href="https://www.skulliance.io/staking/skullracergame.php" aria-label="Play Skull Racer, the free retro arcade highway racing game">
-              <img src="https://www.skulliance.io/staking/racing/images/screenshot.png" alt="Skull Racer arcade racing game - a night desert highway with traffic ahead" loading="lazy" decoding="async">
-            </a>
-            <h3>Skull Racer - Retro Arcade Racer</h3>
-            <p>Three laps of a night desert highway at 180 mph - boost pads, jump ramps, traffic to thread, and ghost cars of the current record holders running the line beside you.</p>
-            <a class="hp-cta" href="https://www.skulliance.io/staking/skullracergame.php">Play Skull Racer</a>
-          </div>
-          <!-- Realm Guardians. -->
-          <div class="hp-game">
-            <a class="hp-game-art" href="https://www.skulliance.io/staking/guardiansgame.php" aria-label="Play Realm Guardians, the free browser tower defense game built on your NFT realm">
-              <img src="https://www.skulliance.io/staking/images/guardians.png" alt="Realm Guardians tower defense - a realm wall facing an oncoming horde" loading="lazy" decoding="async">
-            </a>
-            <h3>Realm Guardians - Tower Defense</h3>
-            <p>Your realm has to hold. Your NFTs man the wall carrying the gear you gave them, the horde is made of other players, and a monthly leaderboard ranks how long you lasted - not how big your realm is.</p>
-            <a class="hp-cta" href="https://www.skulliance.io/staking/guardiansgame.php">Play Realm Guardians</a>
-          </div>
-          <!-- DHC Fighters. -->
-          <div class="hp-game">
-            <a class="hp-game-art" href="https://www.skulliance.io/staking/dhcgame.php" aria-label="Play DHC Fighters, the free browser character builder and match 3 battler">
-              <img src="https://www.skulliance.io/staking/images/dhcgame.png" alt="DHC Fighters - two Crews of three facing each other across a gem board" loading="lazy" decoding="async">
-            </a>
-            <h3>DHC Fighters - Build &amp; Battle</h3>
-            <p>Assemble a Fighter from ten trait slots, field a Crew of three, and take it to the Arena - a match 3 battler where rank decides who takes the hit and rarity does not decide the fight.</p>
-            <a class="hp-cta" href="https://www.skulliance.io/staking/dhcgame.php">Play DHC Fighters</a>
-          </div>
+        </div>
+
+        <div class="hp-more">
+          <a class="hp-mini" href="https://www.skulliance.io/staking/match3rpg.php">
+            <img src="https://www.skulliance.io/staking/images/screenshots/monstrocity.png" alt="Monstrocity" loading="lazy" decoding="async">
+            <b>Monstrocity</b><span>Match 3 RPG - stats, bosses, 35+ themes</span>
+          </a>
+          <a class="hp-mini" href="https://www.skulliance.io/staking/skullswap.php">
+            <img src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap" loading="lazy" decoding="async">
+            <b>Skull Swap</b><span>Match 3 score chase - 25 moves, chain the bombs</span>
+          </a>
+          <a class="hp-mini" href="https://www.skulliance.io/staking/cryptcrawlgame.php">
+            <img src="https://www.skulliance.io/staking/images/cryptcrawl.png" alt="Crypt Crawl" loading="lazy" decoding="async">
+            <b>Crypt Crawl</b><span>Scoundrel-style card crawl in Crypties art</span>
+          </a>
+          <a class="hp-mini" href="https://www.skulliance.io/staking/cryptconquestgame.php">
+            <img src="https://www.skulliance.io/staking/images/cryptconquest.png" alt="Crypt Conquest" loading="lazy" decoding="async">
+            <b>Crypt Conquest</b><span>Regicide-style solo - dethrone all 12 courts</span>
+          </a>
+          <a class="hp-mini" href="https://www.skulliance.io/staking/skullracergame.php">
+            <img src="https://www.skulliance.io/staking/racing/images/screenshot.png" alt="Skull Racer" loading="lazy" decoding="async">
+            <b>Skull Racer</b><span>Retro arcade racer - three laps, ghost cars</span>
+          </a>
+          <a class="hp-mini" href="https://www.skulliance.io/staking/guardiansgame.php">
+            <img src="https://www.skulliance.io/staking/images/guardians.png" alt="Realm Guardians" loading="lazy" decoding="async">
+            <b>Realm Guardians</b><span>Tower defense on your own realm</span>
+          </a>
         </div>
       </div>
     </section>
@@ -884,11 +964,46 @@
       </div>
     </section>
 
-    <!-- Staking Platform -->
-    <section id="platform">
+    <?php /* PLATFORM. This was 698 characters of prose followed by TWENTY
+             equally-weighted screenshots -- a contact sheet, not a section.
+             Twenty thumbnails asking to be read one by one is the same as
+             none being read, and the one paragraph explaining them was a
+             single sentence with eight clauses in it.
+
+             So: say what you actually DO here, in three, with the three
+             best pictures. The remaining screenshots stay, but as a WALL
+             that is labelled as evidence of depth rather than as a menu.
+             Nothing was deleted; the twenty stopped competing with the
+             three that matter. */ ?>
+    <section id="platform" class="hp-layer">
       <div class="wrap">
-        <h2>The Staking Platform</h2>
-        <p class="hp-intro hp-center">Log in with Discord, connect your Cardano wallets, and your qualifying NFTs start earning nightly off-chain points - redeemable for exclusive incentives in the staking store. Claim daily rewards, send your NFTs on idle missions, build out your Realm, run the Gauntlet, delegate core project NFTs to Diamond Skulls to earn CARBON and craft DIAMOND, explore the Skulliverse, and climb the leaderboards.</p>
+        <span class="hp-kick">The staking platform</span>
+        <h2>Your NFTs earn while you do nothing.<br>Then you spend it.</h2>
+        <p class="hp-say">Log in with Discord, connect a Cardano or XRPL wallet, and qualifying
+           NFTs start earning nightly. No gas, no transactions, nothing leaves your wallet.</p>
+
+        <div class="hp-does">
+          <div class="hp-do">
+            <a href="https://www.skulliance.io/staking/"><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png" alt="" loading="lazy" decoding="async"></a>
+            <h3>Earn nightly</h3>
+            <p>Every qualifying NFT pays points each night at its collection's rate. Daily rewards
+               and streaks stack on top.</p>
+          </div>
+          <div class="hp-do">
+            <a href="https://www.skulliance.io/staking/missions.php"><img src="https://www.skulliance.io/staking/images/screenshots/missions.png" alt="" loading="lazy" decoding="async"></a>
+            <h3>Send them out</h3>
+            <p>Idle missions, Realms to build, Gauntlets to run, Diamond Skull delegation that pays
+               CARBON and crafts DIAMOND.</p>
+          </div>
+          <div class="hp-do">
+            <a href="https://www.skulliance.io/staking/store.php"><img src="https://www.skulliance.io/staking/images/screenshots/store.png" alt="" loading="lazy" decoding="async"></a>
+            <h3>Spend the points</h3>
+            <p>The staking store carries incentives you cannot get anywhere else, and the
+               leaderboards keep score.</p>
+          </div>
+        </div>
+
+        <p class="hp-wall-label">And the rest of it</p>
         <?php
         // Platform screenshot cards. Images live on the server at
         // /staking/images/screenshots/ (uploaded via FTP, not in the repo).
@@ -911,39 +1026,26 @@
             ['analytics.png',     'Analytics',                'https://www.skulliance.io/staking/analytics.php'],
         ];
         ?>
-        <div class="hp-grid hp-shots">
+        <div class="hp-wall">
+          <?php /* A tile, not a card: the h3 is gone and the name lives in
+                   title/alt. Twenty headings in one section is what made
+                   this read as twenty things to evaluate. */ ?>
           <?php foreach ($hp_shots as $hp_shot): list($hp_shot_file, $hp_shot_name, $hp_shot_url) = $hp_shot; ?>
-          <div class="hp-shot-card">
-            <h3><?php echo htmlspecialchars($hp_shot_name); ?></h3>
-            <a href="<?php echo $hp_shot_url; ?>"><img src="<?php echo $hp_shot_base . $hp_shot_file; ?>" alt="<?php echo htmlspecialchars($hp_shot_name); ?> screenshot" loading="lazy" decoding="async"></a>
-          </div>
+          <a href="<?php echo $hp_shot_url; ?>" title="<?php echo htmlspecialchars($hp_shot_name); ?>">
+            <img src="<?php echo $hp_shot_base . $hp_shot_file; ?>" alt="<?php echo htmlspecialchars($hp_shot_name); ?>" loading="lazy" decoding="async">
+          </a>
           <?php endforeach; ?>
           <!-- Lives directly at /staking/images/ (not the shared screenshots/
                base above the loop uses), so it's its own card rather than
                another $hp_shots row. -->
-          <div class="hp-shot-card">
-            <h3>Crypt Crawl</h3>
-            <a href="https://www.skulliance.io/staking/cryptcrawlgame.php"><img src="https://www.skulliance.io/staking/images/cryptcrawl.png" alt="Crypt Crawl screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Crypt Conquest</h3>
-            <a href="https://www.skulliance.io/staking/cryptconquestgame.php"><img src="https://www.skulliance.io/staking/images/cryptconquest.png" alt="Crypt Conquest screenshot" loading="lazy" decoding="async"></a>
-          </div>
+          <a href="https://www.skulliance.io/staking/cryptcrawlgame.php" title="Crypt Crawl"><img src="https://www.skulliance.io/staking/images/cryptcrawl.png" alt="Crypt Crawl" loading="lazy" decoding="async"></a>
+          <a href="https://www.skulliance.io/staking/cryptconquestgame.php" title="Crypt Conquest"><img src="https://www.skulliance.io/staking/images/cryptconquest.png" alt="Crypt Conquest" loading="lazy" decoding="async"></a>
           <!-- Lives under /staking/racing/images/ with the rest of the
                racer's own assets, so like the two above it's its own card
                rather than another $hp_shots row off the shared base. -->
-          <div class="hp-shot-card">
-            <h3>Skull Racer</h3>
-            <a href="https://www.skulliance.io/staking/skullracergame.php"><img src="https://www.skulliance.io/staking/racing/images/screenshot.png" alt="Skull Racer screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>Realm Guardians</h3>
-            <a href="https://www.skulliance.io/staking/guardiansgame.php"><img src="https://www.skulliance.io/staking/images/guardians.png" alt="Realm Guardians screenshot" loading="lazy" decoding="async"></a>
-          </div>
-          <div class="hp-shot-card">
-            <h3>DHC Fighters</h3>
-            <a href="https://www.skulliance.io/staking/dhcgame.php"><img src="https://www.skulliance.io/staking/images/dhcgame.png" alt="DHC Fighters Arena screenshot" loading="lazy" decoding="async"></a>
-          </div>
+          <a href="https://www.skulliance.io/staking/skullracergame.php" title="Skull Racer"><img src="https://www.skulliance.io/staking/racing/images/screenshot.png" alt="Skull Racer" loading="lazy" decoding="async"></a>
+          <a href="https://www.skulliance.io/staking/guardiansgame.php" title="Realm Guardians"><img src="https://www.skulliance.io/staking/images/guardians.png" alt="Realm Guardians" loading="lazy" decoding="async"></a>
+          <a href="https://www.skulliance.io/staking/dhcgame.php" title="DHC Fighters"><img src="https://www.skulliance.io/staking/images/dhcgame.png" alt="DHC Fighters" loading="lazy" decoding="async"></a>
         </div>
         <p class="hp-center" style="margin-top: 28px;"><a class="hp-cta" href="https://www.skulliance.io/staking">Start Staking</a></p>
       </div>
