@@ -39,6 +39,31 @@ function mission_boost_map() { return array(1 => 100, 2 => 75, 3 => 50, 4 => 25)
 define('MISSION_ITEM_FAST_FORWARD', 5);
 define('MISSION_ITEM_DOUBLE_REWARD', 6);
 
+/*
+ * getMissionLevels() MEMOISED FOR ONE REQUEST.
+ *
+ * It is the same query every time -- every successfully cleared level for
+ * this user -- and first paint asks for it five times over: the project
+ * picker, the ladder, the frontier notice, the overview and the drawer
+ * each need it. db.php's copy is left alone; this is the only caller
+ * inside this file.
+ */
+/* A REQUEST-LIFETIME CACHE IS A STALE CACHE the moment anything changes
+   what it holds, so it is resettable and every writer here clears it. The
+   harness clears it too -- which is how this hazard was found rather than
+   shipped: the memoised version passed every launch test and quietly broke
+   four frontier ones. */
+function mission_levels($conn, $reset = false) {
+	static $cache = null;
+	if ($reset) { $cache = null; return array(); }
+	if ($cache === null) {
+		$cache = getMissionLevels($conn);
+		if (!is_array($cache)) $cache = array();
+	}
+	return $cache;
+}
+function mission_levels_forget($conn = null) { mission_levels($conn, true); }
+
 function mission_user_id() {
 	return isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
 }
@@ -105,7 +130,7 @@ function mission_projects($conn) {
 		$br = $conn->query("SELECT project_id, balance FROM balances WHERE user_id = '$uid'");
 		if ($br) while ($r = $br->fetch_assoc()) $balances[(int)$r['project_id']] = (float)$r['balance'];
 	}
-	$cleared = $uid > 0 ? getMissionLevels($conn) : array();
+	$cleared = $uid > 0 ? mission_levels($conn) : array();
 
 	while ($row = $res->fetch_assoc()) {
 		$pid   = (int)$row['id'];
@@ -156,7 +181,7 @@ function mission_quests($conn, $project_id) {
 		 WHERE p.id = '$pid' ORDER BY q.level ASC");
 	if (!$res) return $out;
 
-	$cleared = $uid > 0 ? getMissionLevels($conn) : array();
+	$cleared = $uid > 0 ? mission_levels($conn) : array();
 	$done    = isset($cleared[$pid]) ? (int)$cleared[$pid] : 0;
 
 	$balance = 0; $idle = 0; $running = array();
@@ -239,7 +264,7 @@ function mission_frontier($conn) {
 	$out = array();
 	if ($uid <= 0) return $out;
 
-	$cleared = getMissionLevels($conn);
+	$cleared = mission_levels($conn);
 	if (!$cleared) return $out;      /* nothing cleared anywhere: nothing is new */
 
 	$res = $conn->query(
@@ -337,7 +362,7 @@ function mission_loadout($conn, $quest_id) {
 
 	/* Locked is decided here, not by the page. The drawer can be opened by
 	   anything that knows a quest id. */
-	$cleared = getMissionLevels($conn);
+	$cleared = mission_levels($conn);
 	$done    = isset($cleared[$pid]) ? (int)$cleared[$pid] : 0;
 	$locked  = ((int)$q['level'] > $done + 1);
 
@@ -445,10 +470,31 @@ function mission_loadout($conn, $quest_id) {
  * the two the old card made you work out: whether it is claimable NOW, and
  * what the reward will actually be after a Double Rewards item.
  */
-function mission_active($conn) {
+function mission_active($conn, $limit = 0) {
 	$uid = mission_user_id();
 	$out = array();
 	if ($uid <= 0) return $out;
+
+	/*
+	 * ITEMS FOR EVERY MISSION IN ONE QUERY.
+	 *
+	 * This used to call getMissionConsumables() inside the row loop, which
+	 * is one query per mission -- the same shape getCurrentMissions() has.
+	 * That was survivable while the list was behind a lazy ajax load with a
+	 * spinner in front of it. It is not survivable on first paint: a real
+	 * account had 179 missions in progress, so the page was issuing 180
+	 * queries before it printed anything.
+	 */
+	$items_by_mission = array();
+	$ir = $conn->query(
+		"SELECT mc.mission_id, c.id AS consumable_id, c.name
+		 FROM missions_consumables mc
+		 INNER JOIN consumables c ON c.id = mc.consumable_id
+		 INNER JOIN missions m ON m.id = mc.mission_id
+		 WHERE m.status = '0' AND m.user_id = '$uid'
+		 ORDER BY c.id ASC");
+	if ($ir) while ($r = $ir->fetch_assoc())
+		$items_by_mission[(int)$r['mission_id']][(int)$r['consumable_id']] = $r['name'];
 
 	$res = $conn->query(
 		"SELECT m.id AS mission_id, m.quest_id, m.created_date, m.status,
@@ -468,8 +514,7 @@ function mission_active($conn) {
 	$boost_map = mission_boost_map();
 	while ($row = $res->fetch_assoc()) {
 		$mid   = (int)$row['mission_id'];
-		$items = getMissionConsumables($conn, $mid);
-		if (!is_array($items)) $items = array();
+		$items = isset($items_by_mission[$mid]) ? $items_by_mission[$mid] : array();
 
 		$boost = 0; $reward = (float)$row['reward']; $fast = false;
 		foreach ($items as $cid => $name) {
@@ -517,7 +562,31 @@ function mission_active($conn) {
 	}
 	/* Closest to done first: what you came to claim should be at the top. */
 	usort($out, function($a, $b) { return $a['due'] - $b['due']; });
+
+	/*
+	 * A CAP, because 179 cards is not a list, it is a wall. Everything
+	 * READY is kept whatever the limit -- those are the reason you opened
+	 * the page -- and the in-flight ones are trimmed to the limit behind
+	 * them. mission_active_total() says how many there really are so the
+	 * page can offer the rest.
+	 */
+	if ($limit > 0 && count($out) > $limit) {
+		$keep = array(); $spare = $limit;
+		foreach ($out as $m) {
+			if (!empty($m['ready'])) { $keep[] = $m; continue; }
+			if ($spare-- > 0) $keep[] = $m;
+		}
+		$out = $keep;
+	}
 	return $out;
+}
+
+/* How many are actually out, without building any of them. */
+function mission_active_total($conn) {
+	$uid = mission_user_id();
+	if ($uid <= 0) return 0;
+	$r = $conn->query("SELECT COUNT(*) AS n FROM missions WHERE status = '0' AND user_id = '$uid'");
+	return ($r && $r->num_rows) ? (int)$r->fetch_assoc()['n'] : 0;
 }
 
 /*
@@ -543,7 +612,7 @@ function mission_overview($conn) {
 	}
 
 	$t = $conn->query("SELECT project_id, MAX(level) AS top FROM quests GROUP BY project_id");
-	$cleared = getMissionLevels($conn);
+	$cleared = mission_levels($conn);
 	if ($t) while ($x = $t->fetch_assoc()) {
 		$pid = (int)$x['project_id']; $top = (int)$x['top'];
 		if ($top <= 0) continue;
@@ -587,7 +656,7 @@ function mission_launch($conn, $quest_id, $nft_ids, $item_ids) {
 
 	/* Locked is re-derived. The ladder is the game; a crafted request must
 	   not be able to skip it. */
-	$cleared = getMissionLevels($conn);
+	$cleared = mission_levels($conn);
 	$done    = isset($cleared[$pid]) ? (int)$cleared[$pid] : 0;
 	if ((int)$q['level'] > $done + 1)
 		return array('ok' => false, 'message' => 'That mission is still locked.');
@@ -670,6 +739,10 @@ function mission_launch($conn, $quest_id, $nft_ids, $item_ids) {
 	}
 	if ($tx) @$conn->commit();
 
+	/* The roster and the balances just changed; so might the ladder if
+	   anything downstream re-reads it in this same request. */
+	mission_levels_forget($conn);
+
 	$success = min(100, $squad_rate + $boost);
 	mission_announce($conn, $q, $mission_id, count($squad), $success, $boost, array_keys($items));
 
@@ -710,4 +783,75 @@ function mission_announce($conn, $q, $mission_id, $nft_count, $success, $boost, 
 
 	discordmsg("⚔️ Mission Embarked", $desc, $img, "https://skulliance.io/staking/missions.php",
 		"missions", $avurl, "FF6B35", array("name" => $name, "icon_url" => $avurl, "url" => $profile));
+}
+
+/*
+ * THE DAILY REWARD, as data.
+ *
+ * WHAT WAS WRONG WITH IT: renderDailyRewardsSection() printed the whole
+ * seven-day ladder as seven full-width rows and then put the three things
+ * you actually came for -- whether you can claim, the countdown, and the
+ * button -- UNDERNEATH all seven. On the rebuilt page that landed at the
+ * very bottom, so a staker whose whole visit is "claim my daily" had to
+ * scroll past everything else and then read a table to find out whether
+ * there was anything to claim.
+ *
+ * THE SIDE EFFECT IS KEPT. The old renderer resets your streak when you
+ * are eligible and did not claim yesterday, and that reset has to happen
+ * on a page view or a lapsed streak never clears. It is done here, in the
+ * same order, rather than quietly dropped along with the markup.
+ *
+ * Each day of the cycle pays a fixed consumable plus points. Days already
+ * taken carry the real currency they paid; days ahead are a tier amount
+ * and an unknown currency, which is why the old markup called them RANDOM.
+ */
+function mission_daily($conn) {
+	$uid = mission_user_id();
+	if ($uid <= 0) return null;
+
+	$eligible = getDailyRewardEligibility($conn);
+	if ($eligible && !verifyYesterdaysRewards($conn)) resetDailyRewardStreak($conn);
+
+	$streak = (int)getCurrentDailyRewardStreak($conn);
+	$taken  = getStreakRewards($conn);
+	$tiers  = getRewardTiers();
+
+	/* Fixed per day, and the same map skulliance.js carries for the reveal. */
+	$items = array(1 => 'random-reward', 2 => '25-success', 3 => 'fast-forward',
+	               4 => '50-success', 5 => '75-success', 6 => 'double-rewards',
+	               7 => '100-success');
+	$names = array(1 => 'Random Reward', 2 => '25% Success', 3 => 'Fast Forward',
+	               4 => '50% Success', 5 => '75% Success', 6 => 'Double Rewards',
+	               7 => '100% Success');
+
+	$today = min(7, $streak + 1);
+	$days  = array();
+	for ($d = 1; $d <= 7; $d++) {
+		$got = isset($taken[$d]) ? $taken[$d] : null;
+		$days[] = array(
+			'day'       => $d,
+			'claimed'   => ($d <= $streak),
+			'current'   => ($d === $today),
+			'item'      => $names[$d],
+			'item_icon' => 'icons/' . $items[$d] . '.png',
+			'amount'    => $got ? (float)$got['amount'] : (float)$tiers[$d],
+			/* A day not yet taken has no currency -- it is drawn at claim time. */
+			'currency'  => $got ? $got['currency'] : '',
+			'icon'      => $got ? 'icons/' . strtolower($got['currency']) . '.png' : '',
+		);
+	}
+
+	/* The countdown and the bar are the existing helpers' markup, reused
+	   verbatim: skulliance.js's dailyReward() writes the very same strings
+	   into these slots on a successful claim, so generating them any other
+	   way here would make the before and after disagree. */
+	return array(
+		'eligible'  => (bool)$eligible,
+		'streak'    => $streak,
+		'today'     => $today,
+		'days'      => $days,
+		'remaining' => $eligible ? '' : getRewardTimeRemaining($conn),
+		'bar'       => $eligible ? '' : getRewardProgressBar($conn),
+		'total'     => getStreaksTotal($conn),
+	);
 }

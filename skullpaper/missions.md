@@ -34,7 +34,13 @@ So the missions page now says so. A band near the top lists **every mission that
 
 * A mission counts as never run if there is no record of you launching it at all - not cleared, not failed, never sent.
 * A project where you have cleared **nothing** is left out. Level 1 being available is the starting position, not a discovery, and listing every project's would bury the one rung that actually just opened.
-* Missions in that state are also flagged **New** in the project's ladder.
+
+Two different things can put a mission on that list, and the ladder labels them apart:
+
+* **New** - the rung directly above your highest cleared level. This is the one that just opened.
+* **Never run** - a rung further down that you passed over. That happens when a mission is added to a ladder *below* where you already are, so it appears unlocked without ever having been new to you.
+
+Only the first is actually news, which is why only it gets the solid badge.
 
 ## Inventory
 
@@ -50,9 +56,15 @@ Three controls sit above the crew:
 
 The meter also tells you when a crew is **over** 100%, since anything past it is wasted on that mission.
 
+## Daily reward
+
+Seven days, each paying a fixed item plus points, climbing to a **100% Success** item and 30 points on day seven. Miss a day and the streak starts over.
+
+It sits **directly under the page heading** as a single strip: seven chips showing where you are in the cycle, what today pays, and the claim button. Once claimed it collapses to a line with the countdown to the next one. It used to print all seven days as full-width rows with the claim state underneath them, which put the one thing you came for at the very bottom of the page.
+
 ## Missions Status
 
-The **In the field** list tracks everything you have out, closest to landing first, with a live countdown, the crew size, the reward and the success rate you sent it at. Once any of your missions are completed, you'll be able to claim them and review which missions were successful and which failed.
+The **In the field** list tracks everything you have out, closest to landing first, with a live countdown, the crew size, the reward and the success rate you sent it at. Anything that has **landed is always shown**; if you have a very large number still running, the rest sit behind a **Show all** button rather than painting hundreds of cards before the page can render. Once any of your missions are completed, you'll be able to claim them and review which missions were successful and which failed.
 
 To make missions easier to claim, a **Collect all** banner appears above the list whenever anything has landed, and claims every completed mission in one press. Each card then reveals in place whether it succeeded or failed, and what it dropped.
 

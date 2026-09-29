@@ -44,221 +44,20 @@ include 'header.php';
 
 $ms_user = mission_user_id();
 ?>
-<?php if ($ms_user <= 0): ?>
-<?php
-/* ---------------------------------------------------------------- guest -- */
-/* The old guest view was a bare "Please connect a Cardano wallet to view
-   missions." next to a wallet widget -- no answer to why anyone would. */
-?>
-	<div class="row" id="row1">
-		<div class="main">
-			<div class="ms-head">
-				<span class="ms-kick">Missions</span>
-				<h2 class="ms-title">Send your NFTs out to work.</h2>
-				<p class="ms-ctx">Missions are the idle game built on top of staking. You pick a job,
-				   send the NFTs you already own, and they come back days later with points -- or
-				   empty-handed. Nothing is ever spent from your wallet and nothing leaves it.</p>
-			</div>
-			<div class="ms-primer">
-				<div class="ms-step"><b>1</b><h3>Pick a job</h3>
-					<p>Each project has a ladder of missions. Clearing one opens the next, so
-					   the bigger rewards are earned rather than bought.</p></div>
-				<div class="ms-step"><b>2</b><h3>Send a crew</h3>
-					<p>The NFTs you send decide your odds. More of them, and rarer ones, raise
-					   the success rate. Items in your pack can push it to a certainty.</p></div>
-				<div class="ms-step"><b>3</b><h3>Come back</h3>
-					<p>Missions run for days, not minutes. Collect when they land. Fail four in
-					   a row on one job and the fifth is guaranteed.</p></div>
-			</div>
-			<div class="ms-guest">
-				<h3>Connect a wallet to begin</h3>
-				<p>Staking is free and your NFTs stay in your own wallet the entire time.</p>
-				<div class="ms-guest-wallet"><?php renderWalletConnection("missions"); ?></div>
-				<p class="ms-fine">Claiming from the store needs membership; missions do not.
-				   <a href="info.php">How membership works &rarr;</a></p>
-			</div>
-		</div>
-	</div>
-<?php else: ?>
-<?php
-/* --------------------------------------------------------------- staker -- */
-$ms_over     = mission_overview($conn);
-$ms_active   = mission_active($conn);
-$ms_projects = mission_projects($conn);
-
-$ms_ready = 0;
-foreach ($ms_active as $a) if (!empty($a['ready'])) $ms_ready++;
-
-/*
- * THE DEFAULT PROJECT -- the fix for the empty page.
+<?php /*
+ * THE STYLESHEET GOES FIRST, before a single element of the page.
  *
- * Preference order, and each step is a real answer to "what did they come
- * here to do": the project they were last looking at, then one they have
- * idle NFTs for AND an unlocked mission they can afford, then any with
- * idle NFTs, then simply the first. There is no branch that shows nothing.
- */
-$ms_project = 0;
-$ms_byid    = array();
-foreach ($ms_projects as $p) $ms_byid[$p['project_id']] = $p;
-
-if (isset($_SESSION['userData']['project_id'])
-    && isset($ms_byid[(int)$_SESSION['userData']['project_id']]))
-	$ms_project = (int)$_SESSION['userData']['project_id'];
-
-if (!$ms_project) foreach ($ms_projects as $p)
-	if ($p['eligible'] && $p['levels_open'] > 0) { $ms_project = $p['project_id']; break; }
-if (!$ms_project) foreach ($ms_projects as $p)
-	if ($p['eligible']) { $ms_project = $p['project_id']; break; }
-if (!$ms_project && $ms_projects) $ms_project = $ms_projects[0]['project_id'];
-
-$ms_quests = $ms_project ? mission_quests($conn, $ms_project) : array();
-$ms_pname  = isset($ms_byid[$ms_project]) ? $ms_byid[$ms_project]['name'] : '';
-
-/* Rungs that opened while you were not looking. See mission_frontier(). */
-$ms_new_rungs = mission_frontier($conn);
-$ms_new_ids   = array();
-foreach ($ms_new_rungs as $r) $ms_new_ids[(int)$r['quest_id']] = true;
-
-/* A staker who has never run one gets the primer. Once they have, the page
-   is a control panel and the primer would be in the way every day. */
-$ms_new = empty($ms_over['ever']);
-
-function ms_n($v) { return number_format((float)$v); }
-function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
-?>
-	<div class="row" id="row1">
-		<div class="main">
-
-			<div class="ms-head">
-				<div class="ms-head-left">
-					<span class="ms-kick">Missions</span>
-					<h2 class="ms-title"><?php
-						echo $ms_ready  ? ms_n($ms_ready) . ' ready to collect'
-						   : ($ms_active ? ms_n(count($ms_active)) . ' in the field'
-						   : 'Send your NFTs out to work.'); ?></h2>
-					<p class="ms-ctx"><?php
-						echo $ms_new
-						  ? 'Pick a job, send the NFTs you already own, collect points when they land.'
-						  : 'Your NFTs earn while they are away. Nothing leaves your wallet.'; ?></p>
-				</div>
-				<div class="ms-figures">
-					<div class="ms-fig"><b><?php echo ms_n($ms_over['active']); ?></b><span>In the field</span></div>
-					<?php if ($ms_ready): ?>
-					<div class="ms-fig ms-fig-go"><b><?php echo ms_n($ms_ready); ?></b><span>Ready</span></div>
-					<?php endif; ?>
-					<div class="ms-fig"><b><?php echo ms_n($ms_over['success']); ?></b><span>Completed</span></div>
-					<?php if ($ms_new_rungs): ?>
-					<div class="ms-fig ms-fig-new"><b><?php echo ms_n(count($ms_new_rungs)); ?></b><span>Never run</span></div>
-					<?php endif; ?>
-					<div class="ms-fig"><b><?php echo ms_n($ms_over['levels_open']); ?><i>/<?php
-						echo ms_n($ms_over['levels_top']); ?></i></b><span>Levels open</span></div>
-				</div>
-			</div>
-
-			<?php if ($ms_new): ?>
-			<div class="ms-primer">
-				<div class="ms-step"><b>1</b><h3>Pick a job</h3>
-					<p>Each project has a ladder. Clearing one mission opens the next, so the
-					   bigger rewards are earned rather than bought.</p></div>
-				<div class="ms-step"><b>2</b><h3>Send a crew</h3>
-					<p>The NFTs you send decide your odds -- more of them, and rarer ones, raise
-					   the success rate. Items in your pack can push it to a certainty.</p></div>
-				<div class="ms-step"><b>3</b><h3>Come back</h3>
-					<p>Missions run for days. Collect when they land. Fail four in a row on one
-					   job and the fifth is guaranteed.</p></div>
-				<a class="ms-primer-more" href="skullpaper.php?page=missions">Read the full rules &rarr;</a>
-			</div>
-			<?php endif; ?>
-
-			<div id="ms-news"><?php include 'missions-news.php'; ?></div>
-
-			<?php /* DAILY DEPLOYMENT -- promoted out of the Current Missions panel,
-			         where it used to sit below the fold. For a lot of stakers
-			         pressing these IS the visit. The three renderers are db.php's
-			         own and still call their existing ajax; they hide themselves
-			         when there is nothing to launch, which is why the bar checks
-			         for a visible child before showing a heading. */ ?>
-			<div class="ms-deploy" id="ms-deploy">
-				<div class="ms-deploy-label">
-					<b>Daily deployment</b>
-					<span>Send everything idle in one press.</span>
-				</div>
-				<div class="ms-deploy-buttons">
-					<?php $ms_bulk_projects = renderStartAllFreeEligibleMissionsButton($conn); ?>
-					<?php renderStartAutoMissionsButton($conn); ?>
-					<?php renderMaxMaxiMissionsButton($conn); ?>
-				</div>
-			</div>
-
-			<?php /* ---- in the field ---- */ ?>
-			<div class="ms-section" id="ms-field-section">
-				<div class="ms-section-head">
-					<h3>In the field</h3>
-					<span id="ms-claim-slot"></span>
-				</div>
-				<div id="ms-field"><?php include 'missions-field.php'; ?></div>
-			</div>
-
-			<?php /* ---- launch ---- */ ?>
-			<div class="ms-section">
-				<div class="ms-section-head">
-					<h3>Launch a mission</h3>
-					<span class="ms-section-note" id="ms-project-note"><?php echo ms_e($ms_pname); ?></span>
-				</div>
-				<div class="ms-launch">
-					<div class="ms-projects" id="ms-projects">
-						<?php foreach ($ms_projects as $p):
-							$sel = ($p['project_id'] === $ms_project); ?>
-						<button type="button" class="ms-proj<?php
-								echo $sel ? ' sel' : ''; echo $p['eligible'] ? ' can' : ''; ?>"
-							data-project="<?php echo (int)$p['project_id']; ?>"
-							data-name="<?php echo ms_e($p['name']); ?>"
-							onclick="msPickProject(<?php echo (int)$p['project_id']; ?>, this)">
-							<img src="<?php echo ms_e($p['icon']); ?>" alt="" loading="lazy"
-								onerror="this.style.visibility='hidden'">
-							<span class="ms-proj-name"><?php echo ms_e($p['name']); ?></span>
-							<span class="ms-proj-sub"><?php
-								if ($p['levels_top'] > 0) {
-									echo (int)$p['levels_open'] . '/' . (int)$p['levels_top'] . ' open';
-									if ($p['idle_nfts']) echo ' &middot; ' . (int)$p['idle_nfts'] . ' idle';
-								} else { echo 'No missions yet'; } ?></span>
-							<span class="ms-proj-bar<?php echo $p['complete'] ? ' full' : ''; ?>"><i style="width:<?php
-								echo $p['levels_top'] > 0
-									? (int)round($p['levels_open'] / $p['levels_top'] * 100) : 0; ?>%"></i></span>
-						</button>
-						<?php endforeach; ?>
-					</div>
-					<div class="ms-ladder" id="ms-ladder"><?php include 'missions-ladder.php'; ?></div>
-				</div>
-			</div>
-
-			<?php /* The detailed month/all-time breakdown keeps db.php's renderer
-			         and its lazy load; it is the one part of the old page that
-			         was already legible. */ ?>
-			<div class="ms-section">
-				<div class="ms-section-head"><h3>Your record</h3></div>
-				<div class="content missions" id="total-missions-container"></div>
-			</div>
-
-			<div class="ms-section ms-rewards">
-				<div class="ms-section-head"><h3>Daily rewards</h3></div>
-				<div class="content" id="player-stats">
-					<?php renderWalletConnection("missions"); ?>
-					<?php renderDailyRewardsSection(); ?>
-				</div>
-			</div>
-
-		</div>
-	</div>
-
-	<?php /* ---- the launch drawer ---- */ ?>
-	<div id="ms-drawer" class="ms-drawer" hidden>
-		<div class="ms-drawer-box" role="dialog" aria-modal="true" aria-labelledby="ms-d-title">
-			<button type="button" class="ms-drawer-x" onclick="msCloseDrawer()" aria-label="Close">&times;</button>
-			<div id="ms-drawer-body"></div>
-		</div>
-	</div>
-<?php endif; ?>
+ * It was at the bottom, after all the markup, and the result was a
+ * full-blown flash of unstyled content: the browser painted every mission
+ * card with only flexbox.css applied -- .nft at width:25%, .nfts holding
+ * a 1000px min-height, and the art at its natural size -- so the page
+ * showed metre-tall NFT images and stacked white boxes for as long as it
+ * took the rest of the document to arrive, then reflowed. On a page this
+ * size that is a second or more of garbage.
+ *
+ * Inline rather than a file on purpose, same as my-nfts and store: one
+ * request, no second round trip, and nothing for another page to inherit.
+ */ ?>
 
 <style>
 /* Scoped to missions.php, same approach as my-nfts and store: override what
@@ -271,7 +70,8 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
    page under the old mission grid whether or not anything was in it. */
 .ms-head, .ms-head *, .ms-section, .ms-section *,
 .ms-primer, .ms-primer *, .ms-deploy, .ms-deploy *, .ms-guest, .ms-guest *,
-.ms-news, .ms-news *, .ms-drawer, .ms-drawer * { text-align: left; }
+.ms-news, .ms-news *, .ms-drawer, .ms-drawer *,
+.ms-daily, .ms-daily * { text-align: left; }
 .main .content { border-radius: 0; }
 
 .ms-head {
@@ -311,6 +111,85 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
   font-size: .82rem; color: #00c8a0; text-decoration: none; }
 .ms-primer-more:hover { text-decoration: underline; }
 
+/* ---- section nav ------------------------------------------------------
+   Sticky at top: 0. The platform navbar is position:relative on desktop so
+   it scrolls away and leaves this the topmost thing; under 700px it becomes
+   a burger fixed at the top RIGHT, which is what the padding dodges. */
+.ms-nav {
+  position: sticky; top: 0; z-index: 90; display: flex; gap: 2px; flex-wrap: wrap;
+  background: #07111d; border-bottom: 1px solid rgba(0,200,160,.18);
+  margin: 0 0 16px; padding: 4px 0;
+}
+.ms-nav a {
+  display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 0;
+  font-size: .74rem; color: #7a9eb0; text-decoration: none; white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+.ms-nav a:hover { color: #e8eaed; background: rgba(0,200,160,.06); }
+.ms-nav a.on { color: #00c8a0; border-bottom-color: #00c8a0; }
+.ms-nav a i { font-style: normal; font-size: .62rem; background: rgba(255,255,255,.08);
+  color: #b9c7d4; padding: 1px 6px; }
+.ms-nav a i.go { background: #f5a623; color: #07111d; font-weight: bold; }
+/* Jumping must not drop the heading under the sticky bar. */
+#ms-sec-daily, #ms-news, #ms-sec-deploy, #ms-field-section, #ms-sec-launch, #ms-sec-record
+  { scroll-margin-top: 54px; }
+@media (max-width: 700px) {
+  .ms-nav { padding-right: 56px; overflow-x: auto; flex-wrap: nowrap; }
+  .ms-nav a { padding: 7px 10px; }
+}
+
+/* ---- daily reward -----------------------------------------------------
+   Seven rows became one strip. Claimable is a teal card you cannot miss
+   from the top of the page; already claimed collapses to a quiet line,
+   because then it is just a fact rather than a thing to do. */
+/* auto + 1fr, not 1fr + auto: the track is content-width and the action
+   column takes the slack, so on a wide monitor the two halves do not end up
+   pinned to opposite edges with a metre of nothing between them. */
+.ms-daily { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px 28px;
+  align-items: center; background: #0a1929; border: 1px solid rgba(0,200,160,.14);
+  padding: 12px 16px; margin: 0 0 16px; }
+.ms-daily.go { border-color: rgba(0,200,160,.5); background: rgba(0,200,160,.06); }
+.ms-daily-kick { display: block; font-size: .64rem; letter-spacing: .12em;
+  text-transform: uppercase; color: #7a9eb0; margin-bottom: 7px; }
+.ms-daily.go .ms-daily-kick { color: #00c8a0; }
+.ms-daily-track { display: flex; gap: 5px; flex-wrap: wrap; }
+.ms-day { position: relative; display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; background: #07111d; border: 1px solid rgba(255,255,255,.08); }
+.ms-day img { width: 19px; height: 19px; object-fit: contain; opacity: .3; }
+.ms-day i { position: absolute; bottom: -1px; right: 1px; font-style: normal;
+  font-size: .5rem; color: #4f7488; }
+.ms-day.done { border-color: rgba(0,200,160,.45); background: rgba(0,200,160,.08); }
+.ms-day.done img { opacity: 1; }
+.ms-day.done i { color: #00c8a0; }
+/* The rung you are on, whether or not it can be taken yet. */
+.ms-day.now { border-color: #f5a623; }
+.ms-day.now img { opacity: .85; }
+.ms-day.now i { color: #f5a623; }
+.ms-daily-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-start; }
+/* dailyReward() sets display:flex on #claimed, #progress_bar and #remaining,
+   so these have to read correctly as flex boxes, not just as blocks. */
+.ms-daily-line { display: flex; align-items: center; gap: 7px; font-size: .84rem; color: #b9c7d4; }
+.ms-daily-line strong { color: #e8eaed; }
+.ms-daily-line .icon { height: 18px; width: auto; margin: 0; }
+.ms-daily-done strong { color: #00c8a0; }
+.ms-daily-next { color: #7a9eb0; font-size: .78rem; }
+.ms-daily-bar { width: 140px; }
+.ms-daily .button { border-radius: 0; margin: 0; }
+.ms-daily-foot { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid rgba(255,255,255,.06); padding-top: 9px; font-size: .74rem; color: #7a9eb0; }
+.ms-daily-foot form { margin: 0; }
+.ms-daily-lb { background: transparent; border: 1px solid rgba(0,200,160,.3); color: #00c8a0;
+  font-size: .64rem; letter-spacing: .06em; text-transform: uppercase; padding: 3px 9px;
+  cursor: pointer; border-radius: 0; }
+.ms-daily-lb:hover { background: rgba(0,200,160,.12); }
+/* The progress bar markup comes from getRewardProgressBar() and carries the
+   platform's own w3-*-rewards classes; only the width needs constraining. */
+.ms-daily-bar .w3-border-rewards { width: 100%; }
+@media (max-width: 760px) {
+  .ms-daily { grid-template-columns: 1fr; }
+  .ms-daily-right { justify-content: flex-start; }
+}
+
 /* ---- newly unlocked ---------------------------------------------------
    Amber, not teal. Teal on this page means "good to go"; this is "you are
    about to miss something", which is a different thing and has to read as
@@ -338,8 +217,14 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 .ms-news-more { margin: 9px 0 0; font-size: .76rem; color: #7a9eb0; }
 .ms-fig-new { border-color: rgba(245,166,35,.5); }
 .ms-fig-new b { color: #f5a623; }
+/* Two badges, because they mean two different things. Solid amber = the
+   rung that just opened. Outline = one you passed over on the way up;
+   still worth catching, but it is not news and must not shout like it. */
 .ms-quest-new { position: absolute; top: 4px; right: 4px; font-size: .56rem; letter-spacing: .08em;
   text-transform: uppercase; background: #f5a623; color: #07111d; padding: 2px 5px; font-weight: bold; }
+/* The label on the action line, where there is room for the long one. */
+.ms-quest-go i, .ms-quest-block i { font-style: normal; color: #f5a623; font-weight: bold;
+  text-transform: uppercase; letter-spacing: .06em; font-size: .62rem; }
 
 /* ---- daily deployment ------------------------------------------------- */
 .ms-deploy {
@@ -362,6 +247,12 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 .ms-section-head h3 { margin: 0; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase;
   color: #7a9eb0; font-weight: normal; }
 .ms-section-note { font-size: .78rem; color: #00c8a0; }
+.ms-more { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.ms-more span { font-size: .78rem; color: #7a9eb0; }
+.ms-more-btn { background: transparent; border: 1px solid rgba(0,200,160,.3); color: #00c8a0;
+  font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; padding: 6px 12px;
+  cursor: pointer; border-radius: 0; }
+.ms-more-btn:hover { background: rgba(0,200,160,.12); }
 .ms-empty { background: #0a1929; border: 1px solid rgba(0,200,160,.12); padding: 28px 22px; }
 .ms-empty h4 { margin: 0 0 6px; color: #e8eaed; font-size: 1rem; text-transform: none; }
 .ms-empty p { margin: 0; color: #8fa8b8; font-size: .86rem; max-width: 60ch; }
@@ -567,6 +458,262 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 }
 </style>
 
+<?php if ($ms_user <= 0): ?>
+<?php
+/* ---------------------------------------------------------------- guest -- */
+/* The old guest view was a bare "Please connect a Cardano wallet to view
+   missions." next to a wallet widget -- no answer to why anyone would. */
+?>
+	<div class="row" id="row1">
+		<div class="main">
+			<div class="ms-head">
+				<span class="ms-kick">Missions</span>
+				<h2 class="ms-title">Send your NFTs out to work.</h2>
+				<p class="ms-ctx">Missions are the idle game built on top of staking. You pick a job,
+				   send the NFTs you already own, and they come back days later with points -- or
+				   empty-handed. Nothing is ever spent from your wallet and nothing leaves it.</p>
+			</div>
+			<div class="ms-primer">
+				<div class="ms-step"><b>1</b><h3>Pick a job</h3>
+					<p>Each project has a ladder of missions. Clearing one opens the next, so
+					   the bigger rewards are earned rather than bought.</p></div>
+				<div class="ms-step"><b>2</b><h3>Send a crew</h3>
+					<p>The NFTs you send decide your odds. More of them, and rarer ones, raise
+					   the success rate. Items in your pack can push it to a certainty.</p></div>
+				<div class="ms-step"><b>3</b><h3>Come back</h3>
+					<p>Missions run for days, not minutes. Collect when they land. Fail four in
+					   a row on one job and the fifth is guaranteed.</p></div>
+			</div>
+			<div class="ms-guest">
+				<h3>Connect a wallet to begin</h3>
+				<p>Staking is free and your NFTs stay in your own wallet the entire time.</p>
+				<div class="ms-guest-wallet"><?php renderWalletConnection("missions"); ?></div>
+				<p class="ms-fine">Claiming from the store needs membership; missions do not.
+				   <a href="info.php">How membership works &rarr;</a></p>
+			</div>
+		</div>
+	</div>
+<?php else: ?>
+<?php
+/* --------------------------------------------------------------- staker -- */
+$ms_over     = mission_overview($conn);
+$ms_active   = mission_active($conn);
+$ms_projects = mission_projects($conn);
+
+$ms_ready = 0;
+foreach ($ms_active as $a) if (!empty($a['ready'])) $ms_ready++;
+
+/*
+ * THE DEFAULT PROJECT -- the fix for the empty page.
+ *
+ * Preference order, and each step is a real answer to "what did they come
+ * here to do": the project they were last looking at, then one they have
+ * idle NFTs for AND an unlocked mission they can afford, then any with
+ * idle NFTs, then simply the first. There is no branch that shows nothing.
+ */
+$ms_project = 0;
+$ms_byid    = array();
+foreach ($ms_projects as $p) $ms_byid[$p['project_id']] = $p;
+
+if (isset($_SESSION['userData']['project_id'])
+    && isset($ms_byid[(int)$_SESSION['userData']['project_id']]))
+	$ms_project = (int)$_SESSION['userData']['project_id'];
+
+if (!$ms_project) foreach ($ms_projects as $p)
+	if ($p['eligible'] && $p['levels_open'] > 0) { $ms_project = $p['project_id']; break; }
+if (!$ms_project) foreach ($ms_projects as $p)
+	if ($p['eligible']) { $ms_project = $p['project_id']; break; }
+if (!$ms_project && $ms_projects) $ms_project = $ms_projects[0]['project_id'];
+
+$ms_quests = $ms_project ? mission_quests($conn, $ms_project) : array();
+$ms_pname  = isset($ms_byid[$ms_project]) ? $ms_byid[$ms_project]['name'] : '';
+
+/* The daily reward. Computed up here with everything else because it is
+   the most time-sensitive thing on the page -- it expires -- so it renders
+   directly under the masthead rather than at the bottom. */
+$ms_daily = mission_daily($conn);
+
+/* Rungs that opened while you were not looking. See mission_frontier(). */
+$ms_new_rungs = mission_frontier($conn);
+$ms_new_ids   = array();
+foreach ($ms_new_rungs as $r) $ms_new_ids[(int)$r['quest_id']] = !empty($r['frontier']);
+
+/* A staker who has never run one gets the primer. Once they have, the page
+   is a control panel and the primer would be in the way every day. */
+$ms_new = empty($ms_over['ever']);
+
+function ms_n($v) { return number_format((float)$v); }
+function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
+?>
+	<div class="row" id="row1">
+		<div class="main">
+
+			<div class="ms-head">
+				<div class="ms-head-left">
+					<span class="ms-kick">Missions</span>
+					<h2 class="ms-title"><?php
+						echo $ms_ready  ? ms_n($ms_ready) . ' ready to collect'
+						   : ($ms_active ? ms_n(count($ms_active)) . ' in the field'
+						   : 'Send your NFTs out to work.'); ?></h2>
+					<p class="ms-ctx"><?php
+						echo $ms_new
+						  ? 'Pick a job, send the NFTs you already own, collect points when they land.'
+						  : 'Your NFTs earn while they are away. Nothing leaves your wallet.'; ?></p>
+				</div>
+				<div class="ms-figures">
+					<div class="ms-fig"><b><?php echo ms_n($ms_over['active']); ?></b><span>In the field</span></div>
+					<?php if ($ms_ready): ?>
+					<div class="ms-fig ms-fig-go"><b><?php echo ms_n($ms_ready); ?></b><span>Ready</span></div>
+					<?php endif; ?>
+					<div class="ms-fig"><b><?php echo ms_n($ms_over['success']); ?></b><span>Completed</span></div>
+					<?php if ($ms_new_rungs): ?>
+					<div class="ms-fig ms-fig-new"><b><?php echo ms_n(count($ms_new_rungs)); ?></b><span>Never run</span></div>
+					<?php endif; ?>
+					<div class="ms-fig"><b><?php echo ms_n($ms_over['levels_open']); ?><i>/<?php
+						echo ms_n($ms_over['levels_top']); ?></i></b><span>Levels open</span></div>
+				</div>
+			</div>
+
+			<?php
+			/*
+			 * SECTION NAV -- what the old quick-menu was for.
+			 *
+			 * That menu existed because a staker with a hundred missions in
+			 * flight could not reach anything without a long scroll. It only
+			 * appeared under 700px, and it worked by hiding the other panels
+			 * with inline style.display, which is why the page had four
+			 * sections fighting over who was visible.
+			 *
+			 * This is the same job done differently: sticky at every width,
+			 * nothing hidden, and it carries the counts so you can see where
+			 * the work is before you jump. Items whose section is not on the
+			 * page are not rendered at all.
+			 */
+			?>
+			<nav class="ms-nav" id="ms-nav">
+				<a href="#ms-sec-daily" data-sec="ms-sec-daily">Daily<?php
+					echo (!empty($ms_daily['eligible'])) ? ' <i class="go">!</i>' : ''; ?></a>
+				<?php if ($ms_new_rungs): ?>
+				<a href="#ms-news" data-sec="ms-news">Never run <i id="ms-nav-new"><?php
+					echo count($ms_new_rungs); ?></i></a>
+				<?php endif; ?>
+				<a href="#ms-sec-deploy" data-sec="ms-sec-deploy">Deploy</a>
+				<a href="#ms-field-section" data-sec="ms-field-section">In the field <i id="ms-nav-field"><?php
+					echo ms_n($ms_total); ?></i></a>
+				<a href="#ms-sec-launch" data-sec="ms-sec-launch">Launch</a>
+				<a href="#ms-sec-record" data-sec="ms-sec-record">Record</a>
+			</nav>
+
+			<div id="ms-sec-daily"><div id="ms-daily-slot"><?php include 'missions-daily.php'; ?></div></div>
+
+			<?php if ($ms_new): ?>
+			<div class="ms-primer">
+				<div class="ms-step"><b>1</b><h3>Pick a job</h3>
+					<p>Each project has a ladder. Clearing one mission opens the next, so the
+					   bigger rewards are earned rather than bought.</p></div>
+				<div class="ms-step"><b>2</b><h3>Send a crew</h3>
+					<p>The NFTs you send decide your odds -- more of them, and rarer ones, raise
+					   the success rate. Items in your pack can push it to a certainty.</p></div>
+				<div class="ms-step"><b>3</b><h3>Come back</h3>
+					<p>Missions run for days. Collect when they land. Fail four in a row on one
+					   job and the fifth is guaranteed.</p></div>
+				<a class="ms-primer-more" href="skullpaper.php?page=missions">Read the full rules &rarr;</a>
+			</div>
+			<?php endif; ?>
+
+			<div id="ms-news"><?php include 'missions-news.php'; ?></div>
+
+			<?php /* DAILY DEPLOYMENT -- promoted out of the Current Missions panel,
+			         where it used to sit below the fold. For a lot of stakers
+			         pressing these IS the visit. The three renderers are db.php's
+			         own and still call their existing ajax; they hide themselves
+			         when there is nothing to launch, which is why the bar checks
+			         for a visible child before showing a heading. */ ?>
+			<div class="ms-deploy" id="ms-sec-deploy">
+				<div class="ms-deploy-label">
+					<b>Daily deployment</b>
+					<span>Send everything idle in one press.</span>
+				</div>
+				<div class="ms-deploy-buttons">
+					<?php $ms_bulk_projects = renderStartAllFreeEligibleMissionsButton($conn); ?>
+					<?php renderStartAutoMissionsButton($conn); ?>
+					<?php renderMaxMaxiMissionsButton($conn); ?>
+				</div>
+			</div>
+
+			<?php /* ---- in the field ---- */ ?>
+			<div class="ms-section" id="ms-field-section">
+				<div class="ms-section-head">
+					<h3>In the field</h3>
+					<span id="ms-claim-slot"></span>
+				</div>
+				<div id="ms-field"><?php include 'missions-field.php'; ?></div>
+			</div>
+
+			<?php /* ---- launch ---- */ ?>
+			<div class="ms-section" id="ms-sec-launch">
+				<div class="ms-section-head">
+					<h3>Launch a mission</h3>
+					<span class="ms-section-note" id="ms-project-note"><?php echo ms_e($ms_pname); ?></span>
+				</div>
+				<div class="ms-launch">
+					<div class="ms-projects" id="ms-projects">
+						<?php foreach ($ms_projects as $p):
+							$sel = ($p['project_id'] === $ms_project); ?>
+						<button type="button" class="ms-proj<?php
+								echo $sel ? ' sel' : ''; echo $p['eligible'] ? ' can' : ''; ?>"
+							data-project="<?php echo (int)$p['project_id']; ?>"
+							data-name="<?php echo ms_e($p['name']); ?>"
+							onclick="msPickProject(<?php echo (int)$p['project_id']; ?>, this)">
+							<img src="<?php echo ms_e($p['icon']); ?>" alt="" loading="lazy"
+								onerror="this.style.visibility='hidden'">
+							<span class="ms-proj-name"><?php echo ms_e($p['name']); ?></span>
+							<span class="ms-proj-sub"><?php
+								if ($p['levels_top'] > 0) {
+									echo (int)$p['levels_open'] . '/' . (int)$p['levels_top'] . ' open';
+									if ($p['idle_nfts']) echo ' &middot; ' . (int)$p['idle_nfts'] . ' idle';
+								} else { echo 'No missions yet'; } ?></span>
+							<span class="ms-proj-bar<?php echo $p['complete'] ? ' full' : ''; ?>"><i style="width:<?php
+								echo $p['levels_top'] > 0
+									? (int)round($p['levels_open'] / $p['levels_top'] * 100) : 0; ?>%"></i></span>
+						</button>
+						<?php endforeach; ?>
+					</div>
+					<div class="ms-ladder" id="ms-ladder"><?php include 'missions-ladder.php'; ?></div>
+				</div>
+			</div>
+
+			<?php /* The detailed month/all-time breakdown keeps db.php's renderer
+			         and its lazy load; it is the one part of the old page that
+			         was already legible. */ ?>
+			<div class="ms-section" id="ms-sec-record">
+				<div class="ms-section-head"><h3>Your record</h3></div>
+				<div class="content missions" id="total-missions-container"></div>
+			</div>
+
+			<?php /* The daily reward moved to the top -- it is a once-a-day
+			         action on a timer and it was landing below everything.
+			         What is left here is the wallet panel, which is a utility
+			         you go looking for rather than something that expires. */ ?>
+			<div class="ms-section">
+				<div class="ms-section-head"><h3>Wallets</h3></div>
+				<div class="content" id="player-stats">
+					<?php renderWalletConnection("missions"); ?>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+	<?php /* ---- the launch drawer ---- */ ?>
+	<div id="ms-drawer" class="ms-drawer" hidden>
+		<div class="ms-drawer-box" role="dialog" aria-modal="true" aria-labelledby="ms-d-title">
+			<button type="button" class="ms-drawer-x" onclick="msCloseDrawer()" aria-label="Close">&times;</button>
+			<div id="ms-drawer-body"></div>
+		</div>
+	</div>
+<?php endif; ?>
+
 	<!-- Footer -->
 	<div class="footer">
 	  <p>Skulliance<br>Copyright © <span id="year"></span>
@@ -600,6 +747,10 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	}
 
 	/* ---------- the field list ---------------------------------------- */
+	function navCount(id, v) {
+		var el = document.getElementById(id);
+		if (el && typeof v === 'number') el.textContent = n(v);
+	}
 	function paintField(html, ready) {
 		document.getElementById('ms-field').innerHTML = html;
 		var fig = document.querySelector('.ms-fig-go');
@@ -611,7 +762,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	function refreshField() {
 		return fetch('ajax/mission-data.php?what=field', {credentials: 'same-origin'})
 			.then(function (r) { return r.json(); })
-			.then(function (j) { if (j && j.ok) paintField(j.html, j.ready); })
+			.then(function (j) { if (j && j.ok) { paintField(j.html, j.ready); navCount('ms-nav-field', j.total); } })
 			.then(refreshNews);
 	}
 	/* Launching a rung is precisely what stops it being "never run", and the
@@ -627,9 +778,22 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 				document.getElementById('ms-news').innerHTML = j.html;
 				var fig = document.querySelector('.ms-fig-new');
 				if (fig) { if (j.count > 0) fig.querySelector('b').textContent = n(j.count); else fig.remove(); }
+				var nv = document.querySelector('.ms-nav a[data-sec="ms-news"]');
+				if (nv) { if (j.count > 0) navCount('ms-nav-new', j.count); else nv.remove(); }
 			})
 			.catch(function () {});
 	}
+
+	/* The rest of the field, on request. Fetching rather than rendering all
+	   of them up front is the whole point of the cap. */
+	window.msShowAllField = function (btn) {
+		btn.disabled = true;
+		btn.textContent = 'Loading\u2026';
+		fetch('ajax/mission-data.php?what=field&all=1', {credentials: 'same-origin'})
+			.then(function (r) { return r.json(); })
+			.then(function (j) { if (j && j.ok) paintField(j.html, j.ready); })
+			.catch(function () { btn.disabled = false; btn.textContent = 'Show all'; });
+	};
 
 	/* A rung you cannot launch yet still deserves a way through to it. */
 	window.msJumpToProject = function (pid) {
@@ -861,6 +1025,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 					return;
 				}
 				paintField(j.field, j.ready);
+				navCount('ms-nav-field', j.total);
 				refreshNews();
 				msCloseDrawer();
 				/* The ladder now shows one more "out" badge, and the crew that
@@ -876,6 +1041,30 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			});
 	}
 
+	/*
+	 * WHICH SECTION YOU ARE IN. An observer rather than a scroll handler:
+	 * this page can be very tall, and a listener firing on every pixel of a
+	 * scroll through two hundred cards is exactly the sort of thing that
+	 * makes a long page feel worse than it is.
+	 */
+	(function () {
+		var nav = document.getElementById('ms-nav');
+		if (!nav || !('IntersectionObserver' in window)) return;
+		var links = {};
+		nav.querySelectorAll('a[data-sec]').forEach(function (a) { links[a.getAttribute('data-sec')] = a; });
+		var seen = {};
+		var io = new IntersectionObserver(function (entries) {
+			entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
+			var first = null;
+			Object.keys(links).forEach(function (id) { if (!first && seen[id]) first = id; });
+			Object.keys(links).forEach(function (id) { links[id].classList.toggle('on', id === first); });
+		}, {rootMargin: '-56px 0px -60% 0px'});
+		Object.keys(links).forEach(function (id) {
+			var el = document.getElementById(id);
+			if (el) io.observe(el);
+		});
+	}());
+
 	/* The record panel keeps db.php's renderer and its lazy load. */
 	if (typeof loadTotalMissions === 'function') loadTotalMissions();
 
@@ -883,7 +1072,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	   deploy. If all three are hidden the bar is an empty box with a
 	   heading, so say what is actually going on instead. */
 	(function () {
-		var bar = document.getElementById('ms-deploy');
+		var bar = document.getElementById('ms-sec-deploy');
 		if (!bar) return;
 		var any = Array.prototype.some.call(bar.querySelectorAll('span[id]'), function (s) {
 			return s.style.display !== 'none' && s.querySelector('button');

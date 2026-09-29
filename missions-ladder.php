@@ -17,11 +17,19 @@ if (!isset($ms_project)) $ms_project = 0;
 if (!isset($ms_quests))  $ms_quests  = $ms_project ? mission_quests($conn, $ms_project) : array();
 if (!function_exists('ms_n')) { function ms_n($v) { return number_format((float)$v); } }
 if (!function_exists('ms_e')) { function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); } }
-/* Which rungs here have never been run. Same set the notice at the top of
-   the page is built from, so browsing a project agrees with it. */
+/*
+ * Which rungs here have never been run, and WHICH KIND.
+ *
+ * Two different things, and calling both "New" made the badge meaningless:
+ * a project can show level 7 as the rung that just opened AND level 5 as
+ * one that was passed over, because clearing a level is what unlocks the
+ * next and nothing forces you to run every rung on the way up. Only the
+ * frontier -- cleared + 1 -- is actually new. The rest were skipped, which
+ * is still worth flagging but is not news.
+ */
 if (!isset($ms_new_ids)) {
 	$ms_new_ids = array();
-	foreach (mission_frontier($conn) as $r) $ms_new_ids[(int)$r['quest_id']] = true;
+	foreach (mission_frontier($conn) as $r) $ms_new_ids[(int)$r['quest_id']] = !empty($r['frontier']);
 }
 ?>
 <?php if (!$ms_quests): ?>
@@ -48,7 +56,12 @@ if (!isset($ms_new_ids)) {
 			<img src="<?php echo ms_e($q['image']); ?>" alt="" loading="lazy"
 				onerror="this.src='/staking/icons/skull.png';">
 			<span class="ms-quest-lvl">Lv <?php echo (int)$q['level']; ?></span>
-			<?php if ($open && isset($ms_new_ids[(int)$q['quest_id']])): ?>
+			<?php /* ONLY THE SHORT ONE GOES ON THE ART. The box is 84px wide and
+			         already carries the level chip; "Never run" at this size is
+			         70px of it and covered the chip entirely. The longer label
+			         goes on the action line below, which has the whole card
+			         width to itself. */ ?>
+			<?php if ($open && !empty($ms_new_ids[(int)$q['quest_id']])): ?>
 			<span class="ms-quest-new">New</span>
 			<?php endif; ?>
 			<?php if ((int)$q['running'] > 0): ?>
@@ -66,10 +79,21 @@ if (!isset($ms_new_ids)) {
 			<span class="ms-quest-meta"><?php echo (int)$q['duration']; ?> day<?php
 				echo (int)$q['duration'] === 1 ? '' : 's';
 				if ((int)$q['duration'] > 0) echo ' &middot; ' . ms_n($q['net_per_day']) . '/day'; ?></span>
+			<?php
+			/* Two different facts, said plainly rather than by badge colour:
+			   "New" is the rung that just opened (cleared + 1), "Never run" is
+			   one further down you passed over -- which happens when a mission
+			   is added to a ladder below where you already are. */
+			$tag = '';
+			if ($open && isset($ms_new_ids[(int)$q['quest_id']]))
+				$tag = $ms_new_ids[(int)$q['quest_id']] ? 'New' : 'Never run';
+			?>
 			<?php if ($block): ?>
-			<span class="ms-quest-block"><?php echo ms_e($block); ?></span>
+			<span class="ms-quest-block"><?php if ($tag): ?><i><?php echo $tag; ?></i> &middot;
+				<?php endif; ?><?php echo ms_e($block); ?></span>
 			<?php else: ?>
-			<span class="ms-quest-go">Send a crew &rarr;</span>
+			<span class="ms-quest-go"><?php if ($tag): ?><i><?php echo $tag; ?></i> &middot;
+				<?php endif; ?>Send a crew &rarr;</span>
 			<?php endif; ?>
 		</div>
 	</div>

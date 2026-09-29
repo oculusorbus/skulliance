@@ -52,9 +52,11 @@ $r = mission_launch($conn, $quest_id, $nft_ids, $item_ids);
    paint uses, so a just-launched mission cannot look different from a
    reloaded one. */
 if (!empty($r['ok'])) {
-	$ms_active = mission_active($conn);
+	$ms_active = mission_active($conn, 24);
+	$ms_total  = mission_active_total($conn);
 	ob_start(); include __DIR__ . '/../missions-field.php'; $r['field'] = ob_get_clean();
 	$r['overview'] = mission_overview($conn);
+	$r['total']    = $ms_total;
 	$r['ready']    = count(array_filter($ms_active, function($a){ return !empty($a['ready']); }));
 }
 $conn->close();

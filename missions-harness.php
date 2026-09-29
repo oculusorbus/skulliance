@@ -126,6 +126,7 @@ function reset_world($quest = null, $eligible = array(), $amounts = array(), $ba
 	$WORLD['balance']  = array(9 => $balance);
 	$WROTE = array();
 	$conn = new MConn();
+	mission_levels_forget();
 }
 function wrote($kind) { global $WROTE; $o = array(); foreach ($WROTE as $w) if ($w[0] === $kind) $o[] = $w; return $o; }
 
@@ -229,7 +230,7 @@ function qrow($id, $level, $pid, $cost, $title) {
 
 /* Cleared level 2 on project 9. Level 3 is open and never launched: that is
    the rung the holder keeps missing. Level 4 is still locked. */
-$WORLD['levels']      = array(9 => 2);
+mission_levels_forget(); $WORLD['levels'] = array(9 => 2);
 $WORLD['balance']     = array(9 => 5000);
 $WORLD['idle']        = array(9 => 6);
 $WORLD['unattempted'] = array(qrow(31, 3, 9, 300, 'Walker'), qrow(32, 4, 9, 500, 'Clicker'));
@@ -242,12 +243,12 @@ ok($f && !empty($f[0]['affordable']) && !empty($f[0]['has_squad']), 'says it can
 /* THE DAY-ONE RULE. A brand new staker has cleared nothing, so level 1 on
    every project is "open and never launched" -- forty rows of noise that
    would bury the one rung this list exists to surface. */
-$WORLD['levels']      = array();
+mission_levels_forget(); $WORLD['levels'] = array();
 $WORLD['unattempted'] = array(qrow(1, 1, 9, 0, 'First Steps'), qrow(2, 1, 12, 0, 'Also First'));
 ok(mission_frontier($conn) === array(), 'a staker who has cleared nothing sees no "new" rungs');
 
 /* Cleared on project 9 only: project 12's level 1 still is not news. */
-$WORLD['levels']      = array(9 => 1);
+mission_levels_forget(); $WORLD['levels'] = array(9 => 1);
 $WORLD['balance']     = array(9 => 5000, 12 => 5000);
 $WORLD['idle']        = array(9 => 6, 12 => 6);
 $WORLD['unattempted'] = array(qrow(20, 2, 9, 100, 'Second Rung'), qrow(2, 1, 12, 0, 'Untouched Project'));
@@ -258,7 +259,7 @@ ok(count($f) === 1 && $f[0]['quest_id'] === 20, 'the rule is per project, not gl
    excludes any quest with a missions row, which the stub models by simply
    not returning it. What is checked here is that a cleared-but-lower rung
    that WAS never launched still shows, because it is a real missed one. */
-$WORLD['levels']      = array(9 => 4);
+mission_levels_forget(); $WORLD['levels'] = array(9 => 4);
 $WORLD['balance']     = array(9 => 5000);
 $WORLD['idle']        = array(9 => 6);
 $WORLD['unattempted'] = array(qrow(21, 2, 9, 100, 'Skipped'), qrow(22, 5, 9, 900, 'Frontier'));

@@ -52,9 +52,14 @@ switch ($what) {
 		dhc_json(array('ok' => true, 'project_id' => $ms_project, 'html' => $html));
 
 	case 'field':
-		$ms_active = mission_active($conn);
+		/* The cap is the default; `all` lifts it. Kept out of the partial so
+		   the first paint and the refresh answer to the same switch. */
+		$ms_all    = !empty($_GET['all']);
+		$ms_active = mission_active($conn, $ms_all ? 0 : 24);
+		$ms_total  = mission_active_total($conn);
 		ob_start(); include __DIR__ . '/../missions-field.php'; $html = ob_get_clean();
 		dhc_json(array('ok' => true, 'html' => $html, 'overview' => mission_overview($conn),
+		               'total' => $ms_total,
 		               'ready' => count(array_filter($ms_active, function($a){ return !empty($a['ready']); }))));
 
 	case 'news':
