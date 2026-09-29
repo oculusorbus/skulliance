@@ -8,6 +8,7 @@ Skull Swap is a fast, pure **match-3 puzzle** - no RPG layer, just a score chase
 * The tiles are the **project icons** from across the Skulliance ecosystem.
 * Score comes from matches, **cascade combos** (chains that clear as tiles fall), and **special bombs** (CARBON and DIAMOND bombs) that clear larger areas.
 * Skull Swap is **public** - anyone can play, even logged out. You must be logged in for your score to be saved to the leaderboard.
+* Signed in, the **Play** menu drops you straight onto the board. The page a logged-out visitor lands on, with the pitch and the screenshot, is for people who have not decided yet.
 
 ## Scoring & Anti-Cheat
 

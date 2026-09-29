@@ -77,9 +77,21 @@ if (!isset($ms_new_ids)) {
 		 * still says exactly what to do, so it is a locked door with a sign
 		 * on it rather than a mystery.
 		 */
-		/* Obfuscation is for players -- it protects the reveal. It would just
-		   get in the way of the person who has to configure the thing. */
-		$show   = $open || $ms_admin;
+		/*
+		 * THE LADDER LOOKS THE SAME TO EVERYONE, admin included.
+		 *
+		 * The admin exception belongs to CLICKING a locked rung, not to
+		 * reading it off the grid -- $can above. Inspecting how a mission
+		 * is configured happens in the drawer, which shows the real title,
+		 * art and description; the grid stays the grid, so what user 1
+		 * sees while browsing is what a player sees.
+		 *
+		 * An earlier version let the admin see through the lock here too,
+		 * on the reasoning that configuring is easier with the names
+		 * visible. It is, marginally -- and the cost is never seeing your
+		 * own ladder the way it actually reads.
+		 */
+		$show   = $open;
 		$q_title = $show ? $q['title']
 		         : preg_replace('/[0-9_-]/', '#', preg_replace('/[a-zA-Z_-]/', '?', $q['title']));
 		$q_image = $show ? $q['image'] : 'icons/padlock.png';

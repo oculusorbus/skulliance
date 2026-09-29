@@ -19,6 +19,26 @@ if (session_status() === PHP_SESSION_ACTIVE
 }
 $is_logged_in = isset($_SESSION['userData']['user_id']);
 
+/*
+ * A MEMBER CLICKING "PLAY" GETS THE GAME, not the pitch.
+ *
+ * The Play menu only renders for a signed-in member, so arriving here
+ * from it means the pitch has already been accepted -- and re-reading it
+ * on every single attempt to play is exactly the annoyance the other
+ * five games had removed when their menu links stopped pointing at
+ * *game.php landings. Skull Swap was missed because it is not a separate
+ * landing file: the landing and the game are two divs in here, and the
+ * landing was the one that rendered by default FOR EVERYONE.
+ *
+ * Done server-side rather than by calling ssPlay() on load, so there is
+ * no flash of the marketing page before it is hidden again.
+ *
+ * The landing is not lost. It is what a logged-out visitor still gets on
+ * this same URL, which is the audience it was written for, and it is
+ * still linked from homepage.php and site-header.php.
+ */
+$ss_straight_to_game = $is_logged_in;
+
 // Project currency icons - the game's tile set (this.allIcons) and, for
 // public visitors, the landing page's scrolling icon marquee (which also
 // wants the project name for its labels). Grouped by currency to keep the
@@ -813,14 +833,19 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
   <?php if ($is_logged_in): ?>
      <!-- Floating back button for logged-in users - the page has no nav.
           Collapses to a bare arrow once the game is activated. -->
-     <a id="ss-exit" href="launchpad.php" aria-label="Back to the Skulliance Launchpad">
+     <?php /* The floating pill is landing-only -- ssPlay() hides it -- so a
+              member who never sees the landing must not start with it either.
+              GO BACK, in the row under the board, is their way out. */ ?>
+     <a id="ss-exit" href="launchpad.php" aria-label="Back to the Skulliance Launchpad"<?php
+        if ($ss_straight_to_game) echo ' style="display:none"'; ?>>
          <span class="mx-arrow">&larr;</span>
          <span class="mx-label">Back to Staking</span>
      </a>
   <?php endif; ?>
 
-     <!-- Hidden for ALL visitors until they hit Play on the landing -->
-     <div id="game-container" style="display:none">
+     <!-- Hidden for a VISITOR until they hit Play on the landing; a member
+          arrives with it already open. -->
+     <div id="game-container" style="display:<?php echo $ss_straight_to_game ? 'flex' : 'none'; ?>">
          <div id="hud">
              <div id="score">Score: 0</div>
              <div id="matches">Matches: 0/25</div>
@@ -951,7 +976,8 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
           numbers mirror the in-game guide modal so the copy stays
           truthful to the mechanics - if scoring is ever rebalanced,
           update both. -->
-     <div id="ss-landing"<?php if ($is_logged_in) echo ' class="ss-has-exit"'; ?>>
+     <div id="ss-landing"<?php if ($is_logged_in) echo ' class="ss-has-exit"'; ?><?php
+          if ($ss_straight_to_game) echo ' style="display:none"'; ?>>
          <header class="ss-hero">
              <a class="ss-shot-link" href="#" onclick="ssPlay(); return false;" aria-label="Play Skull Swap now">
                  <img class="ss-shot" src="https://www.skulliance.io/staking/images/skullswap.png" alt="Skull Swap match 3 puzzle game board with skull tiles and bombs" width="1207" height="1207" fetchpriority="high" decoding="async">
