@@ -496,15 +496,26 @@ define('MS_FIELD_CAP', 24);
    below the fold -- and the page behind it scrolls too, so you could not
    tell which scrollbar you were meant to use. Header and footer are fixed;
    only the middle scrolls. */
-.ms-drawer-box { position: relative; background: #0a1929; border: 1px solid rgba(0,200,160,.32);
+.ms-drawer-box { background: #0a1929; border: 1px solid rgba(0,200,160,.32);
   width: 100%; max-width: 640px; max-height: calc(100vh - 64px);
   display: flex; flex-direction: column; overflow: hidden; }
 #ms-drawer-body { display: contents; }
 .ms-d-scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
 .ms-d-foot { flex: 0 0 auto; border-top: 1px solid rgba(0,200,160,.18);
   background: #0a1929; padding: 12px 18px; text-align: left; }
-.ms-drawer-x { position: absolute; top: 6px; right: 8px; z-index: 2; background: transparent;
-  border: 0; color: #7a9eb0; font-size: 1.6rem; line-height: 1; cursor: pointer; padding: 2px 8px; }
+/* A row of its own, so nothing the browser or the OS paints on top of a
+   video can ever land under it. Costs ~34px and removes a whole class of
+   collision. */
+.ms-d-bar { flex: 0 0 auto; display: flex; justify-content: flex-end; align-items: center;
+  background: #0a1929; border-bottom: 1px solid rgba(0,200,160,.14); padding: 0 4px; }
+/* 44px tall, which is the minimum finger target iOS asks for -- this is
+   the control a thumb was already missing, so it does not get to be the
+   smallest thing on the screen. */
+.ms-drawer-x { background: transparent; border: 0; color: #7a9eb0; cursor: pointer;
+  font-size: .72rem; letter-spacing: .08em; text-transform: uppercase;
+  display: flex; align-items: center; gap: 6px; padding: 0 14px; min-height: 44px;
+  line-height: 1; }
+.ms-drawer-x span { font-size: 1.25rem; line-height: .8; }
 .ms-drawer-x:hover { color: #e8eaed; }
 /* THE DRAWER IS WHERE YOU GO TO LOOK AT IT, so nothing is cropped here at
    all. Taller than the card thumbnail and contained, on a dark ground. */
@@ -909,7 +920,17 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	<?php /* ---- the launch drawer ---- */ ?>
 	<div id="ms-drawer" class="ms-drawer" hidden>
 		<div class="ms-drawer-box" role="dialog" aria-modal="true" aria-labelledby="ms-d-title">
-			<button type="button" class="ms-drawer-x" onclick="msCloseDrawer()" aria-label="Close">&times;</button>
+			<?php /* CLOSE GETS ITS OWN ROW. It used to be absolutely positioned
+			         over the top-right of the box, which is the same corner
+			         iOS draws its unmute badge in on a muted autoplaying
+			         inline video -- so reaching for the sound closed the
+			         mission. That badge is drawn by the OS over the video;
+			         it cannot be out-stacked, only avoided. */ ?>
+			<div class="ms-d-bar">
+				<button type="button" class="ms-drawer-x" onclick="msCloseDrawer()" aria-label="Close mission">
+					<span aria-hidden="true">&times;</span> Close
+				</button>
+			</div>
 			<div id="ms-drawer-body"></div>
 		</div>
 	</div>
