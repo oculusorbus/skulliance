@@ -842,8 +842,8 @@
             <a href="https://www.skulliance.io/staking/guardiansgame.php"><img src="https://www.skulliance.io/staking/images/guardians.png" alt="Realm Guardians screenshot" loading="lazy" decoding="async"></a>
           </div>
           <div class="hp-shot-card">
-            <h3>Digi-Hell Corps</h3>
-            <a href="https://www.skulliance.io/staking/dhcgame.php"><img src="https://www.skulliance.io/staking/images/dhcgame.png" alt="Digi-Hell Corps Arena screenshot" loading="lazy" decoding="async"></a>
+            <h3>DHC Fighters</h3>
+            <a href="https://www.skulliance.io/staking/dhcgame.php"><img src="https://www.skulliance.io/staking/images/dhcgame.png" alt="DHC Fighters Arena screenshot" loading="lazy" decoding="async"></a>
           </div>
         </div>
         <p class="hp-center" style="margin-top: 28px;"><a class="hp-cta" href="https://www.skulliance.io/staking">Start Staking</a></p>
