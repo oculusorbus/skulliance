@@ -104,7 +104,11 @@ function dhc_fighter_art(array $f, $ART, array $SLOT_CAT) {
 }
 
 $canonical  = 'https://www.skulliance.io/staking/dhcgame.php';
-$og_image   = 'https://www.skulliance.io/staking/images/projects/maxingo.png';
+/* The Arena mid-battle: both Crews, the board, the terrain name. A share
+   card should show the thing, and this is the thing. 1996x1255 clears the
+   1200x630 minimum X and Facebook want, so neither crops it to a strip. */
+$og_image   = 'https://www.skulliance.io/staking/images/dhcgame.png';
+$shot_url   = 'images/dhcgame.png';
 $page_title = 'Digi-Hell Corps - Build NFT Characters and Battle Them Free';
 $page_desc  = 'Build a Digi-Hell Corps Fighter from real NFT traits, browse the full collection, and take your squad into the Arena - a free match-3 battler. No download, no wallet needed to play.';
 $short_desc = 'Build a Fighter from NFT traits, browse the collection, and battle in the Arena. Free in your browser.';
@@ -134,11 +138,13 @@ $href_gallery   = 'dhcgallery.php';
   <meta property="og:title" content="<?php echo htmlspecialchars($page_title); ?>">
   <meta property="og:description" content="<?php echo htmlspecialchars($page_desc); ?>">
   <meta property="og:image" content="<?php echo $og_image; ?>">
+  <meta property="og:image:alt" content="A Digi-Hell Corps Arena battle: two Crews of three Fighters either side of a seven-by-seven gem board">
   <meta property="og:locale" content="en_US">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="<?php echo htmlspecialchars($page_title); ?>">
   <meta name="twitter:description" content="<?php echo htmlspecialchars($short_desc); ?>">
   <meta name="twitter:image" content="<?php echo $og_image; ?>">
+  <meta name="twitter:image:alt" content="A Digi-Hell Corps Arena battle in progress">
 
   <script type="application/ld+json">
   {
@@ -309,6 +315,16 @@ $href_gallery   = 'dhcgallery.php';
     .faq summary::before { content: '+ '; color: #00c8a0; font-weight: 700; }
     .faq details[open] summary::before { content: '– '; }
     .faq p { color: #b9c7d4; margin: 10px 0 0; font-size: .93rem; }
+    /* The screenshot. aspect-ratio + width/height on the tag together stop
+       the page jumping when a 1.2MB image finally lands. */
+    .shot {
+      display: block; margin: 24px auto 0; max-width: 980px;
+      border-radius: 14px; overflow: hidden;
+      border: 1px solid rgba(0,200,160,.18);
+      box-shadow: 0 18px 50px rgba(0,0,0,.45);
+    }
+    .shot img { width: 100%; height: auto; aspect-ratio: 1996 / 1255; }
+    .shot:hover { border-color: rgba(0,200,160,.5); }
     footer { border-top: 1px solid rgba(255,255,255,.08); padding: 28px 20px; text-align: center; color: #5a7888; font-size: .85rem; }
   </style>
 </head>
@@ -402,6 +418,25 @@ if ($dhc_fighters && $ART !== ''):
       <a class="more" href="<?php echo $href_arena; ?>">Play the Arena &rarr;</a>
     </div>
   </div>
+</section>
+
+<hr class="rule">
+
+<?php /* THE SCREENSHOT IS THE PITCH. Everything above describes a battler;
+         this is the only place a visitor sees one. Below the fold and
+         lazy-loaded -- it is a 1.2MB PNG, so it must not be in the way of
+         first paint -- with width/height so the page does not jump when it
+         arrives. Clickable, because the next thing anyone wants after
+         looking at it is to play it. */ ?>
+<section class="wrap">
+  <h2 class="center">What a battle looks like</h2>
+  <p class="lede center">Your Crew on the left, theirs on the right, a seven-by-seven board between you. Match to charge your Fighters; rank decides who takes the hit. The arena itself is named after the back Fighter's background.</p>
+  <a class="shot" href="<?php echo $href_arena; ?>">
+    <img src="<?php echo htmlspecialchars($shot_url); ?>" width="1996" height="1255"
+         alt="A Digi-Hell Corps Arena battle: three Fighters on each side of a seven-by-seven gem board, with health bars and kit chips"
+         loading="lazy" decoding="async">
+  </a>
+  <p class="center" style="margin-top:14px;"><a class="btn" href="<?php echo $href_arena; ?>">Play a practice battle</a></p>
 </section>
 
 <hr class="rule">
