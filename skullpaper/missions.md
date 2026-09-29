@@ -44,7 +44,9 @@ Two different things can put a mission on that list, and they are kept apart:
 
 **Any mission you have unlocked can be opened**, whether or not you can staff it today - the artwork and the description are worth seeing on their own, and the load-out tells you what is missing. Locked missions stay hidden behind a padlock until you clear the level below them.
 
-Choosing a mission opens its **load-out**: the artwork at full size and uncropped, the description, what it costs and pays, your balance, and every NFT you own for that project that is not already out on a mission. A crew is picked for you to start with - deselect or add as you like, and the success meter moves as you do.
+Choosing a mission opens its **load-out**: the artwork at full size and uncropped, the description, what it costs and pays, your balance, and every NFT you own for that project that is not already out on a mission.
+
+Some missions are **animated**, and those play in the load-out with full controls - scrubber, fullscreen and sound. They start muted because browsers will not autoplay audio, so unmute in the player to hear the piece as the artist made it. Mission descriptions can carry **links** too, which open in a new tab. A crew is picked for you to start with - deselect or add as you like, and the success meter moves as you do.
 
 There is also a very interesting feature for whales. If you have enough NFTs to garner over 100% success rate, the system automatically balances your crew across multiple mission runs rather than spending it all on one.
 

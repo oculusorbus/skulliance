@@ -355,6 +355,64 @@ $WORLD['unattempted'] = array(qrow(11, 2, 9, 100, 'In order'));
 $f = mission_frontier($conn);
 ok(count($f) === 1 && empty($f[0]['added_later']), 'a ladder authored in order flags nothing');
 
+echo "\nmission descriptions keep their markup, and only their markup\n";
+
+/*
+ * An allow-list, so the interesting cases are the ones it must REFUSE.
+ * A quest description is authored through the database rather than a
+ * form, but it is still rendered into innerHTML on a page where the
+ * player is about to spend points, so "it is trusted content" is not a
+ * reason to hand it a script tag.
+ */
+function rt($in) { return mission_rich_text($in); }
+
+ok(rt('Plain prose, nothing to do.') === 'Plain prose, nothing to do.', 'plain text is untouched');
+ok(rt('one<br>two') === 'one<br>two', '<br> survives -- descriptions use it');
+ok(rt('a <b>bold</b> and <em>emphasis</em>') === 'a <b>bold</b> and <em>emphasis</em>',
+   'the bare formatting tags survive');
+
+$link = rt('see <a href="https://xrp.cafe/collection/bootlegs">the drop</a> now');
+ok(strpos($link, '<a href="https://xrp.cafe/collection/bootlegs"') !== false, 'a real link is rendered');
+ok(strpos($link, 'target="_blank"') !== false, 'and opens away from the page');
+ok(strpos($link, 'rel="noopener noreferrer"') !== false, 'with the opener severed');
+ok(strpos($link, '&lt;a') === false, 'no escaped tag left showing in the prose');
+
+$js = rt('<a href="javascript:alert(1)">tap</a>');
+ok(strpos($js, '<a') === false, 'a javascript: href is not a link');
+ok(strpos($js, 'tap') !== false, 'but its text is kept');
+ok(strpos($js, '</a>') === false, 'and no stray closing tag is left behind');
+ok(strpos($js, 'alert') === false || strpos($js, 'href') === false, 'the payload never reaches an attribute');
+
+$data = rt('<a href="data:text/html;base64,PHNjcmlwdD4=">x</a>');
+ok(strpos($data, '<a') === false, 'a data: href is not a link either');
+
+$scr = rt('hi <script>alert(1)</script>');
+ok(strpos($scr, '<script') === false, 'a script tag is escaped, not run');
+ok(strpos($scr, '&lt;script&gt;') !== false, 'it shows as text');
+
+$img = rt('<img src=x onerror="alert(1)">');
+ok(strpos($img, '<img') === false, 'an img tag is not on the list');
+
+$attr = rt('<b onclick="alert(1)">bold</b>');
+ok(strpos($attr, '<b onclick') === false, 'an allowed tag carrying an attribute is NOT restored');
+ok(strpos($attr, '&lt;b onclick') !== false, 'it stays escaped, which is the safe direction');
+
+/* The reason the href is captured lazily to its MATCHING closing entity
+   rather than "up to the next &": a query string is full of ampersands,
+   and stopping at the first one silently truncated the URL. */
+$q = rt('<a href="https://xrp.cafe/c?id=7&amp;sort=new">list</a>');
+ok(strpos($q, 'id=7&amp;sort=new') !== false, 'a query string survives intact');
+
+/* Mixed: one link that stands and one that is dropped. The closers have to
+   balance against what actually survived. */
+$mix = rt('<a href="https://a.com">good</a> and <a href="javascript:x">bad</a>');
+ok(substr_count($mix, '<a href=') === 1, 'only the good link is rendered');
+ok(substr_count($mix, '</a>') === 1, 'and exactly one closing tag is left');
+ok(strpos($mix, 'bad') !== false, 'the dropped one keeps its text');
+
+ok(rt('Rate is 5 &amp; rising') === 'Rate is 5 &amp; rising', 'an existing entity is not double-encoded');
+ok(rt('') === '' && rt(null) === '', 'empty and null are handled');
+
 echo "\nart paths\n";
 ok(mission_art_slug("Widow's Walk") === 'widows-walk', "the apostrophe is dropped, as getInventory() does");
 ok(mission_art_slug('Enter the Galacticverse') === 'enter-the-galacticverse', 'spaces become hyphens');

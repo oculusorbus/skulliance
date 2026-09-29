@@ -508,12 +508,19 @@ define('MS_FIELD_CAP', 24);
 .ms-drawer-x:hover { color: #e8eaed; }
 /* THE DRAWER IS WHERE YOU GO TO LOOK AT IT, so nothing is cropped here at
    all. Taller than the card thumbnail and contained, on a dark ground. */
+/* Taller when it is a video: the control bar eats the bottom of the frame,
+   and these are animations people are meant to watch rather than glance at. */
 .ms-d-art { height: 260px; flex: 0 0 auto; background: #07111d; }
+.ms-d-art:has(video) { height: 320px; }
+@media (max-width: 620px) { .ms-d-art:has(video) { height: 240px; } }
 .ms-d-art img, .ms-d-art video { width: 100%; height: 100%; object-fit: contain; display: block; }
 .ms-d-main { padding: 16px 18px; text-align: left; }
 .ms-d-main h3 { margin: 0; color: #e8eaed; font-size: 1.15rem; text-transform: none; }
 .ms-d-sub { font-size: .74rem; color: #7a9eb0; margin: 2px 0 10px; }
-.ms-d-desc { font-size: .84rem; color: #8fa8b8; line-height: 1.55; margin: 0 0 14px; }
+.ms-d-desc { font-size: .84rem; color: #8fa8b8; line-height: 1.55; margin: 0 0 14px;
+  overflow-wrap: anywhere; }
+.ms-d-desc a { color: #00c8a0; text-decoration: underline; }
+.ms-d-desc a:hover { color: #00e6b8; }
 .ms-d-facts { display: flex; gap: 16px; flex-wrap: wrap; border-top: 1px solid rgba(0,200,160,.12);
   border-bottom: 1px solid rgba(0,200,160,.12); padding: 10px 0; margin-bottom: 14px; }
 .ms-d-facts > span { display: flex; flex-direction: column; }
@@ -1181,8 +1188,23 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	});
 
 	function renderDrawer() {
+		/*
+		 * A MISSION VIDEO IS A PIECE OF WORK, NOT A BACKGROUND LOOP.
+		 *
+		 * It was rendering muted, looping and with no controls, which
+		 * makes an animation with a soundtrack into wallpaper. `controls`
+		 * gives the player the scrubber and, more to the point, the
+		 * unmute button.
+		 *
+		 * It still starts muted, because every browser blocks autoplay
+		 * WITH sound and a video that refuses to start is worse than one
+		 * that starts quiet -- so the first frame plays on arrival and the
+		 * sound is one tap away. preload=metadata so the drawer opens at
+		 * once rather than after the file does.
+		 */
 		var art = LO.video
-			? '<video src="' + esc(LO.video) + '" poster="' + esc(LO.image) + '" autoplay muted loop playsinline></video>'
+			? '<video src="' + esc(LO.video) + '" poster="' + esc(LO.image) + '"'
+			  + ' controls autoplay muted loop playsinline preload="metadata"></video>'
 			: '<img src="' + esc(LO.image) + '" alt="" onerror="this.src=\'/staking/icons/skull.png\'">';
 
 		var crew = LO.squad.length
@@ -1214,7 +1236,12 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			+ '<h3 id="ms-d-title">' + esc(LO.title) + '</h3>'
 			+ '<p class="ms-d-sub">' + esc(LO.project) + ' &middot; Level ' + LO.level
 			+   (LO.locked ? ' &middot; <b class="ms-d-locked">Locked</b>' : '') + '</p>'
-			+ (LO.description ? '<p class="ms-d-desc">' + esc(LO.description) + '</p>' : '')
+			/* NOT esc(). A few descriptions carry real markup -- links, line
+			   breaks -- and escaping the lot printed the tag source inside
+			   the bio. description_html is allow-listed server-side by
+			   mission_rich_text(): bare formatting tags and anchors whose
+			   href it has checked, everything else still escaped. */
+			+ (LO.description_html ? '<p class="ms-d-desc">' + LO.description_html + '</p>' : '')
 			+ '<div class="ms-d-facts">'
 			+   '<span><i>Cost</i><b>' + (LO.cost > 0 ? n(LO.cost) + ' ' + esc(LO.currency) : 'Free') + '</b></span>'
 			+   '<span><i>Reward</i><b>' + n(LO.reward) + ' ' + esc(LO.currency) + '</b></span>'

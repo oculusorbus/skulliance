@@ -180,6 +180,78 @@ function mission_projects($conn) {
 }
 
 /*
+ * MISSION DESCRIPTIONS CARRY REAL MARKUP.
+ *
+ * A few quests are written with links in them -- "see the drop at
+ * xrp.cafe" and the like -- and escaping the lot printed the tag source
+ * inside the mission bio. Same shape as the store's deliberate <br>, but
+ * an anchor is not a tag you can un-escape with str_replace: it has an
+ * attribute, and that attribute is the dangerous part.
+ *
+ * So this is an ALLOW-LIST, not an un-escape. Everything is escaped
+ * first, then exactly the tags that belong in a paragraph of prose are
+ * put back:
+ *
+ *   br b strong i em u   restored only in their BARE form. A tag written
+ *                        with any attribute at all -- <b onclick=...> --
+ *                        does not match the pattern and stays escaped,
+ *                        which is the safe direction by construction.
+ *   a                    restored only with an href this function has
+ *                        looked at: http, https, mailto or a site-root
+ *                        path. javascript: and data: fall through and the
+ *                        anchor is dropped, keeping its text.
+ *
+ * Every surviving anchor gets target=_blank and rel=noopener noreferrer;
+ * it is a link out of a page the player is mid-task on.
+ */
+function mission_rich_text($html) {
+	if ($html === null || $html === '') return '';
+
+	/* double_encode false: a description already containing &amp; should not
+	   become &amp;amp; on screen. */
+	$out = htmlspecialchars((string)$html, ENT_QUOTES, 'UTF-8', false);
+
+	/* Bare formatting tags only -- no attributes can ride along. */
+	$out = preg_replace('#&lt;(/?)(br|b|strong|i|em|u)\s*/?&gt;#i', '<$1$2>', $out);
+
+	/*
+	 * Anchors, one at a time, with the href validated before it is trusted.
+	 *
+	 * The tag body is matched with a tempered dot rather than [^&]*, which
+	 * was the first attempt and could not work: after escaping, the
+	 * attribute is href=&quot;...&quot; and those entities ARE ampersands,
+	 * so the body never matched and no link was ever rendered. Nothing is
+	 * left un-escaped in the subject, so "up to the first &gt;" is exact.
+	 */
+	$out = preg_replace_callback(
+		'#&lt;a\b((?:(?!&gt;).)*?)&gt;#is',
+		function ($m) {
+			/* Lazily to the MATCHING closing entity, so a query string full
+			   of &amp; does not truncate the URL. */
+			if (!preg_match('#href\s*=\s*(&quot;|&\#039;)(.*?)\1#is', $m[1], $h)) return '';
+			$href = html_entity_decode($h[2], ENT_QUOTES, 'UTF-8');
+			/* Anything not plainly a document reference is not a link. */
+			if (!preg_match('#^(https?://|mailto:|/)\S*$#i', $href)) return '';
+			return '<a href="' . htmlspecialchars($href, ENT_QUOTES, 'UTF-8')
+			     . '" target="_blank" rel="noopener noreferrer">';
+		},
+		$out);
+
+	/* Closing tags, balanced against the anchors that actually survived --
+	   a dropped javascript: link must not leave a stray </a> behind. */
+	$opens = substr_count($out, '<a href=');
+	$out   = str_replace('&lt;/a&gt;', $opens > 0 ? '</a>' : '', $out);
+	$closes = substr_count($out, '</a>');
+	while ($closes > $opens) {
+		$at  = strrpos($out, '</a>');
+		$out = substr_replace($out, '', $at, 4);
+		$closes--;
+	}
+
+	return $out;
+}
+
+/*
  * ONE PROJECT'S LADDER.
  *
  * Returns every quest for a project with its state worked out, including
@@ -494,6 +566,7 @@ function mission_loadout($conn, $quest_id) {
 		'quest_id'    => (int)$q['id'],
 		'title'       => $q['title'],
 		'description' => $q['description'],
+		'description_html' => mission_rich_text($q['description']),
 		'project_id'  => $pid,
 		'project'     => $q['project_name'],
 		'currency'    => $q['currency'],
