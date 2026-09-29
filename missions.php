@@ -176,7 +176,12 @@ define('MS_FIELD_CAP', 24);
   gap: 1px; background: rgba(0,200,160,.14); border: 1px solid rgba(0,200,160,.14);
   margin: 0 0 20px; max-width: 1080px;
 }
-@media (max-width: 760px) { .ms-primer { grid-template-columns: 1fr; } }
+/* minmax(0, 1fr), NOT 1fr. `1fr` means `minmax(auto, 1fr)`, and that `auto`
+   floor lets a wide child push the track past its container -- which is how
+   a single-column mobile layout still ends up scrolling sideways. The
+   daily strip did it: a flex row holding the day line and the Claim button
+   would not shrink below their combined width. */
+@media (max-width: 760px) { .ms-primer { grid-template-columns: minmax(0, 1fr); } }
 .ms-step { background: #0a1929; padding: 16px 18px; }
 .ms-step b { display: inline-block; font-size: .68rem; letter-spacing: .1em; color: #07111d;
   background: #00c8a0; padding: 2px 7px; margin-bottom: 8px; }
@@ -222,7 +227,7 @@ define('MS_FIELD_CAP', 24);
 .ms-nav a i.go { background: #f5a623; color: #07111d; font-weight: bold; }
 /* Jumping must not drop the heading under the sticky bar -- which now sits
    an inset lower than it used to, so the margin has to follow it. */
-#ms-sec-daily, #ms-news, #ms-sec-deploy, #ms-field-section, #ms-sec-launch
+#ms-sec-daily, #ms-news, #ms-sec-deploy, #ms-field-section, #ms-sec-launch, #ms-ladder
   { scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 54px); }
 @media (max-width: 700px) {
   .ms-nav { padding-right: 56px; overflow-x: auto; flex-wrap: nowrap; }
@@ -243,7 +248,7 @@ define('MS_FIELD_CAP', 24);
 .ms-daily-kick { display: block; font-size: .64rem; letter-spacing: .12em;
   text-transform: uppercase; color: #7a9eb0; margin-bottom: 7px; }
 .ms-daily.go .ms-daily-kick { color: #00c8a0; }
-.ms-daily-track { display: flex; gap: 5px; flex-wrap: wrap; }
+.ms-daily-track { display: flex; gap: 5px; flex-wrap: wrap; min-width: 0; }
 .ms-day { position: relative; display: flex; align-items: center; justify-content: center;
   width: 34px; height: 34px; background: #07111d; border: 1px solid rgba(255,255,255,.08); }
 .ms-day img { width: 19px; height: 19px; object-fit: contain; opacity: .3; }
@@ -256,7 +261,8 @@ define('MS_FIELD_CAP', 24);
 .ms-day.now { border-color: #f5a623; }
 .ms-day.now img { opacity: .85; }
 .ms-day.now i { color: #f5a623; }
-.ms-daily-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: flex-start; }
+.ms-daily-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  justify-content: flex-start; min-width: 0; }
 /* dailyReward() sets display:flex on #claimed, #progress_bar and #remaining,
    so these have to read correctly as flex boxes, not just as blocks. */
 .ms-daily-line { display: flex; align-items: center; gap: 7px; font-size: .84rem; color: #b9c7d4; }
@@ -276,7 +282,7 @@ define('MS_FIELD_CAP', 24);
    platform's own w3-*-rewards classes; only the width needs constraining. */
 .ms-daily-bar .w3-border-rewards { width: 100%; }
 @media (max-width: 760px) {
-  .ms-daily { grid-template-columns: 1fr; }
+  .ms-daily { grid-template-columns: minmax(0, 1fr); }
   .ms-daily-right { justify-content: flex-start; }
 }
 
@@ -561,10 +567,11 @@ define('MS_FIELD_CAP', 24);
 .ms-d-msg.ok { color: #00c8a0; }
 .ms-d-launch { display: flex; align-items: center; justify-content: space-between;
   gap: 12px; flex-wrap: wrap; }
+.ms-d-cost { min-width: 0; overflow-wrap: anywhere; }
 .ms-d-cost { font-size: .78rem; color: #7a9eb0; }
 
 @media (max-width: 900px) {
-  .ms-launch { grid-template-columns: 1fr; }
+  .ms-launch { grid-template-columns: minmax(0, 1fr); }
   /*
    * A WRAPPING GRID, not a horizontal rail.
    *
@@ -576,18 +583,29 @@ define('MS_FIELD_CAP', 24);
    */
   .ms-projects { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
     gap: 6px; overflow: visible; max-height: none; padding-right: 0; }
-  .ms-proj { grid-template-columns: 1fr; justify-items: center; text-align: center;
+  .ms-proj { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center;
     padding: 9px 6px; gap: 0; }
   .ms-proj img { grid-row: auto; width: 34px; height: 34px; margin-bottom: 5px; }
   .ms-proj-name { width: 100%; text-align: center; font-size: .7rem; }
   .ms-proj-sub  { width: 100%; text-align: center; font-size: .6rem; }
   .ms-proj-bar  { width: 100%; margin-top: 5px; }
+  /* No ring on the icon. On the desktop list it helps you scan a dense
+     column for the projects you can actually send to; in a grid of tiles
+     that already print "18 idle" underneath, it is just noise around
+     every other icon. */
+  .ms-proj.can img { outline: none; }
 }
 @media (max-width: 620px) {
-  .ms-drawer { padding: 0; }
-  .ms-drawer-box { max-width: none; max-height: 100vh; height: 100vh; border: 0; }
+  /* FULL SCREEN, BUT NOT UNDER THE CLOCK. The close button sits 6px from
+     the top of the box, so a box starting at viewport 0 puts it inside the
+     strip iOS owns -- visible and untappable. Pad the overlay down by the
+     inset and take the same off the box's height. */
+  .ms-drawer { padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); }
+  .ms-drawer-box { max-width: none; border: 0;
+    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    max-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
   .ms-head { align-items: flex-start; }
-  .ms-cards { grid-template-columns: 1fr; }
+  .ms-cards { grid-template-columns: minmax(0, 1fr); }
   .ms-deploy { flex-direction: column; align-items: flex-start; }
   .ms-d-art { height: 200px; }
 }
@@ -1115,7 +1133,21 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			.then(function (r) { return r.json(); })
 			.then(function (j) {
 				lad.removeAttribute('aria-busy');
-				if (j && j.ok) lad.innerHTML = j.html;
+				if (!j || !j.ok) return;
+				lad.innerHTML = j.html;
+				/*
+				 * ON A PHONE, GO TO WHAT WAS JUST ASKED FOR.
+				 *
+				 * The picker is a wrapping grid of every project, which is
+				 * right for finding one and wrong for what happens next:
+				 * picking one left you above forty tiles you now had to
+				 * scroll past to reach the missions you picked them for.
+				 * On desktop the ladder is already beside the picker, so
+				 * moving the page there would be jarring rather than
+				 * helpful -- hence the width check.
+				 */
+				if (window.matchMedia('(max-width: 900px)').matches)
+					lad.scrollIntoView({behavior: 'smooth', block: 'start'});
 			})
 			.catch(function () { lad.removeAttribute('aria-busy'); });
 	};
@@ -1482,27 +1514,67 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	}
 
 	/*
-	 * WHICH SECTION YOU ARE IN. An observer rather than a scroll handler:
-	 * this page can be very tall, and a listener firing on every pixel of a
-	 * scroll through two hundred cards is exactly the sort of thing that
-	 * makes a long page feel worse than it is.
+	 * WHICH SECTION YOU ARE IN.
+	 *
+	 * The first cut used an IntersectionObserver and lit whichever section
+	 * was FIRST IN DOM ORDER among those intersecting. That is wrong on a
+	 * page where several sections are on screen at once: tapping "Launch"
+	 * left the underline on "Daily", because Daily was still visible and
+	 * came first. It also gave no feedback at all on the tap itself -- the
+	 * underline only moved once the smooth scroll had finished, if ever.
+	 *
+	 * So: the current section is the LAST one whose top has passed the bar,
+	 * which is the ordinary reading of "where am I", and a tap lights its
+	 * own link immediately rather than waiting to be told.
+	 *
+	 * A scroll listener, but rAF-throttled and reading five rects, which is
+	 * nothing. The observer was chosen to avoid per-pixel work; it bought
+	 * that and lost correctness.
 	 */
 	(function () {
 		var nav = document.getElementById('ms-nav');
-		if (!nav || !('IntersectionObserver' in window)) return;
-		var links = {};
-		nav.querySelectorAll('a[data-sec]').forEach(function (a) { links[a.getAttribute('data-sec')] = a; });
-		var seen = {};
-		var io = new IntersectionObserver(function (entries) {
-			entries.forEach(function (e) { seen[e.target.id] = e.isIntersecting; });
-			var first = null;
-			Object.keys(links).forEach(function (id) { if (!first && seen[id]) first = id; });
-			Object.keys(links).forEach(function (id) { links[id].classList.toggle('on', id === first); });
-		}, {rootMargin: '-56px 0px -60% 0px'});
-		Object.keys(links).forEach(function (id) {
-			var el = document.getElementById(id);
-			if (el) io.observe(el);
+		if (!nav) return;
+		var links = [];
+		nav.querySelectorAll('a[data-sec]').forEach(function (a) {
+			links.push({id: a.getAttribute('data-sec'), a: a});
 		});
+		if (!links.length) return;
+
+		function light(id) {
+			links.forEach(function (l) { l.a.classList.toggle('on', l.id === id); });
+		}
+
+		var ticking = false, pinned = null, pinnedUntil = 0;
+		function sync() {
+			ticking = false;
+			/* While a tap's smooth scroll is still running, the tapped link
+			   stays lit -- otherwise it flickers through every section on
+			   the way past. */
+			if (pinned && Date.now() < pinnedUntil) return;
+			pinned = null;
+			var line = nav.getBoundingClientRect().bottom + 8;
+			var current = links[0].id;
+			links.forEach(function (l) {
+				var el = document.getElementById(l.id);
+				if (el && el.getBoundingClientRect().top <= line) current = l.id;
+			});
+			light(current);
+		}
+		window.addEventListener('scroll', function () {
+			if (ticking) return;
+			ticking = true;
+			requestAnimationFrame(sync);
+		}, {passive: true});
+		window.addEventListener('resize', sync, {passive: true});
+
+		links.forEach(function (l) {
+			l.a.addEventListener('click', function () {
+				pinned = l.id;
+				pinnedUntil = Date.now() + 900;   /* long enough for the smooth scroll */
+				light(l.id);
+			});
+		});
+		sync();
 	}());
 
 	refreshDeploy();

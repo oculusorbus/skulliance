@@ -257,18 +257,26 @@ include 'header.php';
 .dhcg-empty{border:1px dashed var(--line,#1b3346);border-radius:3px;padding:26px;font-size:13px;opacity:.7}
 
 /* detail */
+/* The padding carries the iPhone safe-area insets. In the installed PWA the
+   page draws under the clock and battery by design (viewport-fit=cover plus
+   black-translucent), so a nearly full-height panel puts its close button --
+   12px from the panel top -- inside the strip iOS owns: visible, unclickable.
+   env() is 0 everywhere else. */
 #dhcg-veil{position:fixed;inset:0;z-index:9998;display:none;align-items:center;justify-content:center;
-  background:rgba(4,12,22,.86);padding:20px}
+  background:rgba(4,12,22,.86);
+  padding:calc(env(safe-area-inset-top,0px) + 20px) 20px calc(env(safe-area-inset-bottom,0px) + 20px)}
 #dhcg-veil.on{display:flex}
 /* Wider than the metadata needs, because the art is the point: the grid shows
    Fighters at 250px and this is the only place one is seen large. The art
    column takes the larger share and is capped to the panel height so a short
    window scrolls the trait list rather than the character. */
-#dhcg-panel{width:min(1180px,100%);max-height:90vh;overflow:auto;background:var(--panel,#0a1929);
+/* 100% not 90vh: vh ignores the veil's padding, so the panel could still
+   grow back up into the inset the padding just cleared. */
+#dhcg-panel{width:min(1180px,100%);max-height:100%;overflow:auto;background:var(--panel,#0a1929);
   border:1px solid var(--line,#1b3346);border-radius:4px;display:grid;
   grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
 @media (max-width:760px){#dhcg-panel{grid-template-columns:1fr}}
-#dhcg-panel .big{position:relative;aspect-ratio:1;max-height:90vh;background:var(--panel2,#0d1e2e)}
+#dhcg-panel .big{position:relative;aspect-ratio:1;max-height:100%;background:var(--panel2,#0d1e2e)}
 #dhcg-panel .big img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 #dhcg-info{padding:18px 20px}
 #dhcg-info h2{margin:0 0 2px;font-size:20px}
