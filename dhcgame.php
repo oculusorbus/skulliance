@@ -1,6 +1,6 @@
 <?php
 /**
- * digihellcorps.php — public landing page for the DHC ecosystem:
+ * dhcgame.php — public landing page for the DHC ecosystem:
  * build a Fighter, browse the Collection, fight in the Arena.
  *
  * SESSION HANDLING IS COPIED FROM match3rpg.php ON PURPOSE. Bare
@@ -103,7 +103,7 @@ function dhc_fighter_art(array $f, $ART, array $SLOT_CAT) {
     return $out;
 }
 
-$canonical  = 'https://www.skulliance.io/staking/digihellcorps.php';
+$canonical  = 'https://www.skulliance.io/staking/dhcgame.php';
 $og_image   = 'https://www.skulliance.io/staking/images/projects/maxingo.png';
 $page_title = 'Digi-Hell Corps - Build NFT Characters and Battle Them Free';
 $page_desc  = 'Build a Digi-Hell Corps Fighter from real NFT traits, browse the full collection, and take your squad into the Arena - a free match-3 battler. No download, no wallet needed to play.';
