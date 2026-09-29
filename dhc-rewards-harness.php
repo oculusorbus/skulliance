@@ -139,9 +139,19 @@ ok(!$DISCORD, 'and posts nothing');
 
 echo "\nthe endpoint\n";
 $rw = file_get_contents(__DIR__ . '/rewards.php');
-ok(strpos($rw, "isset(\$_GET['dhcfighters'])") !== false, 'rewards.php answers ?dhcfighters');
-ok(strpos($rw, 'checkDHCFightersLeaderboard($conn, false, true)') !== false, 'and calls it in reward mode');
-ok(strpos($rw, "isset(\$_GET['dhcarena'])") !== false, 'the arena entry is still there');
+/* Asserted against the job TABLE, not against a literal isset() line.
+   rewards.php dispatches every single-board flag through one generic
+   loop now, so checking for "isset($_GET['dhcfighters'])" would be
+   testing the spelling of an implementation that has already changed
+   once -- which is exactly what it did, and this is what caught it. */
+ok(preg_match("/'dhcfighters'\s*=> array\('monthly'/", $rw) === 1,
+   'dhcfighters is registered as a MONTHLY job');
+ok(strpos($rw, 'checkDHCFightersLeaderboard($conn, false, true)') !== false,
+   'and that job calls it in reward mode');
+ok(preg_match("/'dhcarena'\s*=> array\('monthly'/", $rw) === 1,
+   'the arena job is still registered, and still monthly');
+ok(strpos($rw, 'foreach ($reward_jobs as $rj_name => $rj_def)') !== false,
+   'and a single-board flag still reaches its job');
 /* The cron passes dhcfighters=true on the command line; rewards.php turns
    argv into $_GET with parse_str, and isset() is what it checks. */
 $probe = array(); parse_str('dhcfighters=true', $probe);
