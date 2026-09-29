@@ -4232,6 +4232,81 @@ function updateItem($conn, $item_id, $name, $image_url, $price, $quantity, $proj
 }
 
 // Get items for store
+/*
+ * THE SAME ITEMS getItems() RENDERS, RETURNED INSTEAD OF ECHOED.
+ *
+ * Same additive pattern as getNFTsData(): identical filter, query and
+ * ORDER BY, plus the per-item things the card needs and cannot work out
+ * for itself -- the payment options, the viewer's balance against each
+ * one, whether they can afford it and whether they already bought it.
+ * That arithmetic stays here because it is business logic; only the
+ * markup moves to the page.
+ *
+ * getItems() is left alone. It has one caller today and no second one is
+ * wanted, but leaving it working means store.php can be reverted in a
+ * single line if anything about the new page is wrong.
+ *
+ * renderBuyButton() is untouched and still called from the page: it emits
+ * a form that posts a purchase, which is exactly the kind of thing that
+ * should not be duplicated into a template.
+ */
+function getItemsData($conn, $filterby = "") {
+	if ($filterby != "0" && $filterby != "exclusive") {
+		$filterby = is_numeric($filterby) ? "AND project_id = '".(int)$filterby."' " : "";
+	} else if ($filterby == "exclusive") {
+		$filterby = "AND featured = '1' ";
+	} else {
+		$filterby = "";
+	}
+
+	$bal = array(); $purchased = array();
+	$logged_in = isset($_SESSION['userData']['user_id']);
+	if ($logged_in) {
+		$uid = (int)$_SESSION['userData']['user_id'];
+		$br = $conn->query("SELECT project_id, balance FROM balances WHERE user_id = '$uid'");
+		if ($br) while ($b = $br->fetch_assoc()) $bal[(int)$b['project_id']] = (float)$b['balance'];
+		$pr = $conn->query("SELECT DISTINCT item_id FROM transactions WHERE user_id = '$uid' AND type = 'debit' AND item_id > 0");
+		if ($pr) while ($p = $pr->fetch_assoc()) $purchased[(int)$p['item_id']] = true;
+	}
+
+	$sql = "SELECT items.id AS item_id, items.name AS item_name, image_url, price, quantity, project_id, secondary_project_id, projects.name AS project_name, projects.currency AS currency, divider, featured FROM items INNER JOIN projects ON projects.id = items.project_id WHERE quantity != 0 ".$filterby." ORDER BY featured DESC, projects.id, items.name ASC";
+	$res = $conn->query($sql);
+	$out = array();
+	if (!$res) return $out;
+
+	while ($row = $res->fetch_assoc()) {
+		$pid   = (int)$row['project_id'];
+		$price = (float)$row['price'];
+		$div   = (float)($row['divider'] ?: 1);
+
+		$options = array();
+		$options[] = array('project_id' => $pid, 'currency' => $row['currency'], 'price' => $price);
+		if ($row['secondary_project_id'] != 0) {
+			$sec = getProjectInfo($conn, $row['secondary_project_id']);
+			$options[] = array('project_id' => (int)$row['secondary_project_id'],
+			                   'currency' => $sec['currency'], 'price' => $price);
+		}
+		if ($pid != 7) {
+			$options[] = array('project_id' => 7, 'currency' => 'DIAMOND', 'price' => $price / $div);
+		}
+
+		$row['owned'] = $logged_in && isset($purchased[(int)$row['item_id']]);
+		foreach ($options as $i => $opt) {
+			$ub = isset($bal[$opt['project_id']]) ? $bal[$opt['project_id']] : 0;
+			$options[$i]['balance']    = $ub;
+			$options[$i]['can_afford'] = (!$logged_in || $ub >= $opt['price']);
+		}
+		$row['options']   = $options;
+		$row['logged_in'] = $logged_in;
+		/* Cheapest route the viewer can actually take, so the card can say
+		   what it costs THEM rather than listing three prices. */
+		$row['affordable'] = false;
+		foreach ($options as $opt) if ($opt['can_afford']) { $row['affordable'] = true; break; }
+		$out[] = $row;
+	}
+	return $out;
+}
+
 function getItems($conn, $page, $filterby=""){
 	global $conn;
 	if($filterby != "0" && $filterby != "exclusive"){
