@@ -271,12 +271,25 @@ a.lb-period:hover { color: #e8eaed; background: rgba(0,200,160,0.08); }
 .lb-period.on {
   color: #07111d; background: #00c8a0; border-color: #00c8a0; font-weight: bold;
 }
-/* The board picker takes the right-hand end of the row. */
-.lb-pick { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+/* The two pickers take the right-hand end of the row. */
+.lb-picks { margin-left: auto; display: flex; align-items: center; gap: 8px 18px;
+  flex-wrap: wrap; }
+.lb-pick { display: flex; align-items: center; gap: 8px; }
+/* filterLeaderboard() emits a hidden form alongside its label; without this
+   it is a zero-size flex ITEM and still collects the row's 18px gap. */
+#filterLeaderboardForm { display: none; }
 .lb-pick span { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
   color: rgba(255,255,255,0.45); white-space: nowrap; }
-.lb-pick select { width: auto; min-width: 170px; max-width: 260px; margin: 0;
-  font-size: 0.78rem; padding: 5px 10px; border-radius: 0; height: auto; }
+/* ONE RULE FOR BOTH. #filterLeaderboard arrives from flexbox.css at 190px
+   wide, 30px tall, 20px bold with an 8px radius -- nothing like the board
+   picker beside it, which is what made the pair look unrelated. The id
+   beats the class, so it is named here rather than relying on .lb-pick
+   select alone. */
+.lb-pick select,
+.lb-pick select#filterLeaderboard { width: auto; min-width: 170px; max-width: 260px;
+  margin: 0; font-size: 0.78rem; font-weight: normal; padding: 5px 10px;
+  border-radius: 0; height: auto; background-color: #0a1929; color: #e8eaed;
+  border: 1px solid rgba(0,200,160,0.18); font-family: inherit; }
 /* THE TWO NUDGES THIS PAGE INHERITS. flexbox.css pulls #filtered-content up
    40px and #filter-nfts a further 35 -- tuned for a page whose <h2> sat
    alone above the panel, and shared with store, my-nfts, showcase and
@@ -289,8 +302,12 @@ a.lb-period:hover { color: #e8eaed; background: rgba(0,200,160,0.08); }
 @media (max-width: 560px) {
   .lb-periods { width: 100%; }
   .lb-period { flex: 1; text-align: center; }
-  .lb-pick { margin-left: 0; width: 100%; }
-  .lb-pick select { flex: 1; min-width: 0; max-width: none; }
+  /* Stacked, each on its own full-width row, so the two read as a pair
+     rather than one wrapping awkwardly under the other. */
+  .lb-picks { margin-left: 0; width: 100%; }
+  .lb-pick { width: 100%; }
+  .lb-pick select,
+  .lb-pick select#filterLeaderboard { flex: 1; min-width: 0; max-width: none; }
 }
 .lb-hub-note  { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
 .lb-hub-note a { color: #00c8a0; }
@@ -628,14 +645,21 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 					/* And the other half: jump to a different board without
 					   the hub round trip either. No hub entry in it -- the
 					   link above already is that. */
+					/* The two pickers share a wrapper so they travel
+					   together to the right-hand end and stack as a pair on
+					   a phone. The project finder used to render inside the
+					   panel below with its own label style and a 190px
+					   select, which is what made them look unrelated. */
+					echo "<div class='lb-picks'>";
 					renderLeaderboardPicker($filterby);
+					filterLeaderboard("leaderboards");
+					echo "</div>";
 					echo "</div>";
 				}
 				?>
 
 				<div class="content" id="filtered-content">
 				    <?php
-				    filterLeaderboard("leaderboards");
 				    $leaderboard_top3 = [];
 				    ob_start();
 				    switch (true) {

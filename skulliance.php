@@ -1046,44 +1046,60 @@ function filterDiamondSkulls($page){
 }
 
 function filterLeaderboard($page){
-	global $conn;
+	global $conn, $filterby;
 	$core_projects = getProjects($conn, "core");
 	$partner_projects = getProjects($conn, "partner");
 	$anchor = "";
-	echo'
-	<div id="filter-nfts">
-		<label for="filterLeaderboard"><strong>Projects:</strong></label>
-		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterLeaderboard" id="filterLeaderboard">
-			<!-- Board leaderboards deliberately are NOT listed here any more.
-			     They live on the hub (leaderboards.php with no filter), which
-			     shows each with its current leader. This control went back to
-			     what it was originally built for -- finding a PROJECT -- because
-			     mixing ~31 board entries in with 36+ projects made it useless for
-			     both jobs. Adding a board here again would undo that. -->
-			<option value="hub">Leaderboard Hub</option>
-			<!-- Delegations (project 15) intentionally not listed: it has its
-			     own card on the hub. ?filterby=15 still works -- it resolves
-			     through the numeric project branch, not a named case -- so
-			     the hub card and any existing link are unaffected. -->
-			<optgroup label="Projects">
-				<option value="0">All Projects</option>
-			</optgroup>
-			<optgroup label="Core Projects">';
+	/*
+	 * THE SAME SHAPE AS THE BOARD PICKER, and standing next to it.
+	 *
+	 * This used to render as #filter-nfts inside the results panel, with
+	 * its own label style and a 190px/20px/8px-radius select from
+	 * flexbox.css -- so the two dropdowns on the page looked like they came
+	 * from different sites, and this one showed a blank box because nothing
+	 * in it matches a board slug. It emits .lb-pick markup now, the same as
+	 * renderLeaderboardPicker(), and leaderboards.php places both in the
+	 * subhead row.
+	 *
+	 * NO LEADERBOARD HUB ENTRY. The "All Leaderboards" link sits in the same
+	 * row and is a better affordance than an option buried in a project
+	 * list.
+	 *
+	 * Called ONLY from leaderboards.php -- see the note in
+	 * skullpaper/MAINTENANCE.md -- so this markup is not shared.
+	 */
+	$cur = (string)$filterby;
+	$is_project = ($cur !== "" && ctype_digit($cur));
+	echo '
+	<label class="lb-pick" for="filterLeaderboard"><span>Projects:</span>
+		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterLeaderboard" id="filterLeaderboard">';
+			/* A board is showing, so no project is current -- say so rather
+			   than leaving an empty box, or worse, appearing to claim the
+			   first project in the list. */
+			if (!$is_project) echo '<option value="" selected>Choose&hellip;</option>';
+			/* Board leaderboards deliberately are NOT listed here. They live
+			   on the hub and in the Games picker beside this one; mixing ~31
+			   board entries in with 36+ projects made this useless for both
+			   jobs. Delegations (project 15) is intentionally absent too: it
+			   has its own hub card, and ?filterby=15 still resolves through
+			   the numeric project branch. */
+			echo '<optgroup label="Projects"><option value="0"' . ($cur === "0" ? ' selected' : '') . '>All Projects</option></optgroup>';
+			echo '<optgroup label="Core Projects">';
 			foreach($core_projects AS $id => $project){
-				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+				echo '<option value="'.$id.'"' . ($cur === (string)$id ? ' selected' : '') . '>'.$project["name"].'</option>';
 			}
 			echo '</optgroup><optgroup label="Partner Projects">';
 			foreach($partner_projects AS $id => $project){
-				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+				echo '<option value="'.$id.'"' . ($cur === (string)$id ? ' selected' : '') . '>'.$project["name"].'</option>';
 			}
 			echo '</optgroup>';
 		echo '
 		</select>
-		<form id="filterLeaderboardForm" action="'.$page.'.php'.$anchor.'" method="post">
-		  <input type="hidden" id="filterby" name="filterby" value="">
-		  <input type="submit" value="Submit" style="display:none;">
-		</form>
-	</div>';
+	</label>
+	<form id="filterLeaderboardForm" action="'.$page.'.php'.$anchor.'" method="post">
+	  <input type="hidden" id="filterby" name="filterby" value="">
+	  <input type="submit" value="Submit" style="display:none;">
+	</form>';
 }
 
 function filterPolicies($page){

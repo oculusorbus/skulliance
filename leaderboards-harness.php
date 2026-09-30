@@ -139,8 +139,53 @@ foreach (array('activity' => 'activity-weekly', 'streaks' => 'monthly-streaks',
 	 . leaderboardShortestPeriod($SKULLIANCE_BOARDS[$k]) . "'");
 }
 
-echo "\nthe page wires it up\n";
+/*
+ * THE TWO DROPDOWNS ARE A PAIR. The project finder rendered inside the
+ * results panel with its own label style and flexbox.css's
+ * #filterLeaderboard -- 190px wide, 30px tall, 20px bold, 8px radius --
+ * beside a board picker that looked nothing like it, and it showed a blank
+ * box on a board page because no option matched. Same .lb-pick shape now,
+ * same row, same rule, and a real placeholder.
+ */
+echo "\nthe two dropdowns match\n";
 $lb = file_get_contents(__DIR__ . '/leaderboards.php');
+$sk = file_get_contents(__DIR__ . '/skulliance.php');
+$fl = brace_extract($sk, 'function filterLeaderboard($page){');
+ok($fl !== '', 'filterLeaderboard() not found in skulliance.php');
+ok(strpos($fl, 'class="lb-pick"') !== false,
+   'the project finder no longer uses the same .lb-pick shape as the board '
+ . 'picker, so the two look unrelated again');
+ok(strpos($fl, 'id="filter-nfts"') === false,
+   'the project finder is back in the #filter-nfts wrapper, which flexbox.css '
+ . 'pulls up 35px and right-aligns into the period toggle');
+ok(strpos($fl, 'Leaderboard Hub') === false,
+   'the hub is back as a dropdown option; the All Leaderboards link beside it '
+ . 'is the better affordance');
+ok(strpos($fl, 'Choose&hellip;</option>') !== false && strpos($fl, '$is_project') !== false,
+   'the project select has no placeholder, so on a board page it renders '
+ . 'blank or appears to claim whichever project sorts first');
+ok(preg_match('/ctype_digit/', $fl) === 1,
+   'nothing decides whether a project is actually current, so the selected '
+ . 'option cannot be right');
+/* One rule for both selects, and it has to out-specify the id. */
+/* The BASE rule, not the one in the media query -- matched on a
+   declaration only the base rule carries, or removing the id from the base
+   selector reads as fine because the narrow-screen rule still names it. */
+ok(preg_match('/\.lb-pick select#filterLeaderboard \{[^}]*background-color/s', $lb) === 1,
+   'the shared select rule does not name #filterLeaderboard, so flexbox.css\'s '
+ . 'id rule (190px, 20px, bold, 8px radius) wins and the pair mismatch returns');
+ok(preg_match('/#filterLeaderboardForm \{[^}]*display:\s*none/', $lb) === 1,
+   'the hidden form is a zero-size flex ITEM in the subhead row and still '
+ . 'collects the row gap');
+/* And it is rendered in the row, not in the panel. */
+$subAt  = strpos($lb, "echo \"<div class='lb-subhead'>\"");
+$callAt = strpos($lb, 'filterLeaderboard("leaderboards")');
+$panelAt = strpos($lb, "<div class=\"content\" id=\"filtered-content\">");
+ok($subAt !== false && $callAt > $subAt && $callAt < $panelAt,
+   'filterLeaderboard() is called from inside the results panel again '
+ . 'instead of the subhead row');
+
+echo "\nthe page wires it up\n";
 ok(strpos($lb, 'renderLeaderboardPeriods($filterby)') !== false,
    'leaderboards.php never calls the switcher');
 ok(preg_match('/\.lb-period\.on\s*\{[^}]*background/', $lb) === 1,
