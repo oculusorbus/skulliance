@@ -33,6 +33,28 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $fail = 0;
 function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $what\n"; } }
 
+/**
+ * Source with comments removed.
+ *
+ * THREE TIMES NOW a check in this codebase has matched the comment that
+ * explains the very thing being checked -- 'discordmsg' in the daily-reward
+ * harness, 'filterNFTsForm' in the get-realm check, 'toggleRaids' here. A
+ * comment saying "X was removed" contains X. Strip before searching, or
+ * search for a form only markup can have.
+ */
+function no_comments($src) {
+	$out = '';
+	foreach (token_get_all($src) as $t) {
+		if (is_string($t)) { $out .= $t; continue; }
+		if ($t[0] === T_COMMENT || $t[0] === T_DOC_COMMENT) {
+			$out .= str_repeat("\n", substr_count($t[1], "\n"));
+			continue;
+		}
+		$out .= $t[1];
+	}
+	return $out;
+}
+
 /** Brace-match a function out of a source string. */
 function extract_fn_db($src, $name) {
 	$at = strpos($src, 'function ' . $name . '(');
@@ -377,7 +399,7 @@ ok(count($qi[0]) === 5,
  */
 echo "\nraid rows\n";
 $dbsrc = file_get_contents(__DIR__ . '/db.php');
-$gr = extract_fn_db($dbsrc, 'getRaids');
+$gr = no_comments('<?php ' . extract_fn_db($dbsrc, 'getRaids'));
 ok($gr !== '', 'getRaids() not found in db.php');
 ok(strpos($gr, "class='rr'") !== false, 'getRaids() no longer emits a compact row');
 ok(strpos($gr, "class='rc-detail'") !== false && strpos($gr, 'hidden') !== false,
@@ -399,6 +421,23 @@ ok(strpos($src, "removeAttribute('id')") !== false,
    'the modal clone keeps its ids, so every getElementById in the page can land '
  . 'in the copy instead of the original');
 printf("  compact row + hidden detail + modal: wired\n");
+
+/* NO DISCLOSURE ARROW. The sections were collapsible because a raid was a
+   400px card; a raid is a row now, and an arrow between the player and the
+   list is the step this whole change existed to remove. */
+ok(strpos($gr, 'toggleRaids') === false,
+   'the raid sections collapse again -- that press is the thing the compact '
+ . 'rows were meant to make unnecessary');
+ok(strpos($gr, 'raid-arrow-icon') === false, 'the disclosure arrow is back on the raid sections');
+ok(strpos($gr, "rc-section-count") !== false, 'the section heading lost its count');
+ok(strpos($gr, "style='display:") === false && strpos($gr, 'style="display:\'.$display') === false,
+   'the raid container is rendered with an inline display again, so it can load hidden');
+/* A cap instead, so a long list still has a lid but the first few are
+   visible without pressing anything. */
+ok(strpos($gr, 'rr-more') !== false && strpos($gr, 'showAllRaidRows') !== false,
+   'long raid lists have no cap -- the history page has no LIMIT at all');
+ok(strpos($src, 'function showAllRaidRows') !== false,
+   'realms.php has no showAllRaidRows(), so the Show all button does nothing');
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);

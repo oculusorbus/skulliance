@@ -245,8 +245,11 @@ if (ob_get_level() > 0) @ob_flush();
 .rr-btn.quiet { border-color:rgba(255,255,255,.14); color:rgba(255,255,255,.45);
   background:none; }
 .rr-btn.quiet:hover { border-color:#ff5c5c; color:#ff5c5c; background:rgba(255,92,92,.06); }
-/* The section header stops needing to collapse, so it reads as a heading. */
-.rc-section-title { cursor:pointer; }
+/* The section header is a heading now, not a control. */
+.rc-section-title { cursor:default; display:flex; align-items:baseline; gap:8px; }
+.rc-section-count { font-size:.7rem; opacity:.4; font-variant-numeric:tabular-nums; }
+.rr-showall { margin-top:2px; }
+.rr-showall .rr-btn { width:100%; justify-content:center; text-align:center; }
 #raid-detail-body .rc-card { margin:0; }
 
 /* ── REALM IDENTITY ─────────────────────────────────────────────────────── */
@@ -1522,6 +1525,16 @@ $conn->close();
 	 * refreshed. Everything inside is loading=lazy, so a card nobody opens
 	 * never fetches its theme art or avatars.
 	 */
+	/* The list shows its first few and keeps the rest one press away. The
+	   sections used to collapse instead, which hid everything including the
+	   raid you came to look at. */
+	function showAllRaidRows(btn){
+		var list = btn.closest('.content.raids');
+		if (!list) return;
+		[].forEach.call(list.querySelectorAll('.rr-more'), function(r){ r.hidden = false; });
+		btn.parentNode.remove();
+	}
+
 	function openRaidDetail(raidId){
 		var src = document.getElementById('raid-detail-' + raidId);
 		var body = document.getElementById('raid-detail-body');

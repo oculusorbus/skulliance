@@ -9626,11 +9626,23 @@ function getRaids($conn, $type, $status="pending", $history=false){
 		$final_output = "";
 		if ($result->num_rows > 0) {
 			// output data of each row
-			$final_output .= "<div class='rc-section-title' onclick='toggleRaids(this.querySelector(\".raid-arrow-icon\"), \"" . $type . "\", \"" . $status . "\")'>"
-				. "<img class='raid-arrow-icon' id='" . $arrow . "' src='icons/" . $arrow . ".png'>"
+			/*
+			 * NO DISCLOSURE ARROW. These sections had to be collapsible
+			 * because a single raid was a 400px card and four sections of
+			 * them buried the page. A raid is one row now, so the arrow was
+			 * an extra press standing between the player and the thing they
+			 * came to look at -- which was the whole point of tightening the
+			 * rows. The heading carries the count instead.
+			 *
+			 * $arrow and the <type>-<status>-raids session flag are left
+			 * alone: raids.php shares this renderer and toggleRaids() is
+			 * still defined, so nothing breaks on a stale page.
+			 */
+			$final_output .= "<div class='rc-section-title'>"
 				. "<span class='rc-section-label'>" . strtoupper($type) . " " . strtoupper($status) . "</span>"
+				. "<span class='rc-section-count'>" . (int)$result->num_rows . "</span>"
 				. "</div>";
-			$final_output .= '<div class="content raids" id="'.$type."-".$status.'-raids-container" style="display:'.$display.'">';
+			$final_output .= '<div class="content raids" id="'.$type."-".$status.'-raids-container">';
 			if ($status == "completed" || $status == "pending") {
 				$final_output .= "<div class='rc-anim-all-row'><button class='small-button' onclick='showAllRaidAnimations(this)'>&#9654; Play All</button></div>";
 			}
@@ -9879,10 +9891,26 @@ function getRaids($conn, $type, $status="pending", $history=false){
 			if(strtolower($status) == "completed"){
 				$rows = array_reverse($rows);
 			}
+			/*
+			 * A CAP, NOT A COLLAPSE. Ten pending raids is 790px and the
+			 * history page has no LIMIT at all, so a long list still needs
+			 * a lid -- but the first few are visible without pressing
+			 * anything, which a collapsed section never was. Same shape as
+			 * the missions field list.
+			 */
+			$_rr_i = 0; $_rr_cap = 5; $_rr_total = count($rows);
 			foreach($rows AS $duration => $output){
-			    $final_output .= $output;
+				$_rr_i++;
+				if($_rr_i > $_rr_cap){
+					$output = str_replace("<div class='rr'", "<div class='rr rr-more' hidden", $output);
+				}
+				$final_output .= $output;
 			}
 			$final_output .= "</div>"; // rc-list
+			if($_rr_total > $_rr_cap){
+				$final_output .= "<div class='rr-showall'><button type='button' class='rr-btn'"
+					. " onclick='showAllRaidRows(this)'>Show all " . $_rr_total . "</button></div>";
+			}
 			if(!$history && $status == "Completed"){
 				$final_output .= "<div class='rc-history-link'><a href='raids.php'>View ".ucfirst($type)." Raid History</a></div>";
 			}
