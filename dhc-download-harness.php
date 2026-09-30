@@ -214,5 +214,152 @@ if ($base === '' || !function_exists('imagecreatetruecolor')) {
 	echo "  (test renders cleaned up)\n";
 }
 
+/* ---------- 3. the endpoint itself ------------------------------------------ */
+/*
+ * Everything above tests the renderer. This tests dhc-download.php, over real
+ * HTTP, because what breaks it is not something a function call can show: the
+ * response headers, and whether ANY stray output got in front of the PNG.
+ * db.php runs with display_errors on and prints nothing today -- add one echo
+ * or raise one notice and every download becomes a corrupt file with no error
+ * anywhere. The endpoint buffers the include for exactly that reason, so the
+ * stub below deliberately prints while loading and the response still has to
+ * begin with the PNG magic.
+ *
+ * THE DATABASE IS STUBBED BY SHADOWING db.php ON include_path. The endpoint
+ * says `include 'db.php'` with no leading dot, which searches include_path
+ * first, so a db.php in the temp directory wins. Everything else -- the
+ * library, the renderer, the art, the headers -- is the real thing.
+ *
+ * TWO TRAPS, both hit writing this:
+ *
+ *   shell_exec() BLOCKS on a backgrounded `php -S`, redirects and all, because
+ *   it reads the pipe until EOF and the server never closes it. proc_open with
+ *   the descriptors pointed at /dev/null is the way to start it and not wait.
+ *
+ *   $http_response_header is deprecated in PHP 8.5 and prints a notice per
+ *   request, so the request is written on a raw socket instead. That also
+ *   makes the status line and the header block ordinary strings rather than
+ *   something the stream wrapper has already interpreted.
+ *
+ * Anything that cannot be set up SKIPS loudly. A harness that hangs is worse
+ * than one that says it did not run.
+ */
+echo "\nendpoint\n";
+$stub = sys_get_temp_dir() . '/dhc-dl-stub-' . getmypid();
+$port = 0;
+if ($sock = @stream_socket_server('tcp://127.0.0.1:0', $e1, $e2)) {
+	$nm   = stream_socket_get_name($sock, false);
+	$port = (int)substr($nm, strrpos($nm, ':') + 1);
+	fclose($sock);                       // released, then handed straight to php -S
+}
+if ($base === '' || !$port || !@mkdir($stub, 0777, true)) {
+	echo "  SKIPPED — no trait art, or could not get a port / temp dir.\n";
+} else {
+	$traits = json_encode(array(
+		'background' => $pick('background', 3), 'torso'  => $pick('torso', 5),
+		'head'       => $pick('head', 7),       'weapon' => $pick('weapon', 6),
+	));
+	file_put_contents($stub . '/db.php',
+		"<?php\n"
+	  . "class StubRes { public \$r; function __construct(\$r){ \$this->r = \$r; }\n"
+	  . "  function fetch_assoc(){ \$r = \$this->r; \$this->r = null; return \$r; } }\n"
+	  . "class StubConn { function query(\$sql){\n"
+	  . "    if (!preg_match('/serial = (\\d+)/', \$sql, \$m)) return false;\n"
+	  . "    if ((int)\$m[1] !== 4242) return new StubRes(null);\n"
+	  . "    return new StubRes(array('id'=>17,'serial'=>4242,'name'=>'Deep Sea Krusher',\n"
+	  . "      'traits'=>" . var_export($traits, true) . ")); }\n"
+	  . "  function close(){} }\n"
+	  . "\$conn = new StubConn();\n"
+	  . "/* THE POINT OF THE STUB: db.php is allowed to print, and none of it may\n"
+	  . "   reach the image. */\n"
+	  . "echo \"db.php printed this and it must never reach the PNG\\n\";\n");
+
+	$null = defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null';
+	$proc = @proc_open(
+		/* output_buffering=0 ON PURPOSE. With the ini's default 4096 on, PHP
+		   buffers db.php's echo for free and the endpoint looks safe even
+		   with its own ob_start() deleted -- measured, that revert passed.
+		   The live server's ini is not this machine's, so the test pins it
+		   off and makes the code's own buffering do the work. */
+		array(PHP_BINARY, '-d', 'include_path=' . $stub, '-d', 'output_buffering=0',
+		      '-S', '127.0.0.1:' . $port, '-t', __DIR__),
+		array(0 => array('file', $null, 'r'),
+		      1 => array('file', $null, 'w'),
+		      2 => array('file', $null, 'w')),
+		$pipes, $stub);
+
+	$up = false;
+	for ($i = 0; $i < 50 && is_resource($proc); $i++) {
+		if ($c = @fsockopen('127.0.0.1', $port, $en, $es, 0.2)) { fclose($c); $up = true; break; }
+		usleep(100000);                  // 5s ceiling; the server binds in well under one
+	}
+	if (!$up) {
+		echo "  SKIPPED — the built-in server never came up on port $port.\n";
+	} else {
+		/** One raw HTTP/1.0 request. Returns array(status line, headers, body). */
+		$get = function ($qs) use ($port) {
+			$fp = @fsockopen('127.0.0.1', $port, $en, $es, 5);
+			if (!$fp) return array('', array(), '');
+			stream_set_timeout($fp, 20);
+			fwrite($fp, "GET /dhc-download.php" . $qs . " HTTP/1.0\r\n"
+			          . "Host: 127.0.0.1:$port\r\nConnection: close\r\n\r\n");
+			$raw = stream_get_contents($fp);
+			fclose($fp);
+			$cut = strpos($raw, "\r\n\r\n");
+			if ($cut === false) return array('', array(), $raw);
+			$head = explode("\r\n", substr($raw, 0, $cut));
+			return array(array_shift($head), $head, substr($raw, $cut + 4));
+		};
+		$hdr = function ($head, $name) {
+			foreach ($head as $h) {
+				if (stripos($h, $name . ':') === 0) return trim(substr($h, strlen($name) + 1));
+			}
+			return '';
+		};
+
+		list($status, $head, $png) = $get('?serial=4242');
+		printf("  %s  %d bytes  %s\n", $status, strlen($png), $hdr($head, 'Content-Disposition'));
+
+		ok(strpos($status, '200') !== false, 'the endpoint answers 200 for a real Fighter');
+		ok(substr($png, 0, 8) === "\x89PNG\r\n\x1a\n",
+		   'the response STARTS with the PNG magic -- db.php printed while loading, and '
+		 . 'one byte of that in front makes every download a corrupt file');
+		ok(strpos($png, 'must never reach the PNG') === false,
+		   "the stub's output leaked into the image body");
+		file_put_contents($stub . '/out.png', $png);
+		$sz = @getimagesize($stub . '/out.png');
+		ok($sz && $sz[0] === 1000 && $sz[1] === 1000,
+		   'the bytes on the wire are a real 1000x1000 PNG');
+		ok($hdr($head, 'Content-Type') === 'image/png', 'served as image/png');
+		ok($hdr($head, 'Content-Disposition')
+		   === 'attachment; filename="DHC2F4242-Deep-Sea-Krusher.png"',
+		   'the browser is told to save it, under the name the library decided');
+		ok((int)$hdr($head, 'Content-Length') === strlen($png),
+		   'Content-Length matches the body');
+
+		/* A failure must be plain text with a real status, never a part-image. */
+		foreach (array('' => 400, '?serial=0' => 400, '?serial=abc' => 400,
+		               '?serial=-5' => 400, '?serial=9999' => 404) as $qs => $want) {
+			list($st, $h2, $body) = $get($qs);
+			ok(strpos($st, (string)$want) !== false,
+			   "'$qs' should answer $want, answered: " . $st);
+			ok(strpos($body, "\x89PNG") === false,
+			   "'$qs' returned image bytes for a request with no Fighter behind it");
+		}
+		echo "  error paths: no serial / 0 / abc / -5 -> 400, unknown serial -> 404\n";
+
+		/* The render cache is the whole reason this is affordable at all. */
+		$t0 = microtime(true); $get('?serial=4242'); $warm = (microtime(true) - $t0) * 1000;
+		printf("  warm request: %.1f ms (cold is ~125)\n", $warm);
+		ok($warm < 60, sprintf('a repeat request should come straight out of dhcrenders/; '
+		                     . '%.0f ms means it recomposed', $warm));
+	}
+	if (is_resource($proc)) { proc_terminate($proc); proc_close($proc); }
+	foreach (glob(__DIR__ . '/dhcrenders/f4242-*') as $f) @unlink($f);
+	foreach (glob($stub . '/*') as $f) @unlink($f);
+	@rmdir($stub);
+	echo "  (stub, server and test renders cleaned up)\n";
+}
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all download checks passed\n");
 exit($fail ? 1 : 0);
