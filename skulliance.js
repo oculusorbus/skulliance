@@ -1410,6 +1410,10 @@ function _locConAjax(url){
 				var resp = JSON.parse(xhttp.responseText);
 				if(resp.error){ console.log(resp.error); return; }
 				updateInventoryStrip(resp.inventory);
+				/* AFTER the strip: _syncLocConsumableSlots reads each item's
+				   remaining count out of #inv-qty-N to decide whether an
+				   unequipped slot is spendable, so the strip has to hold the
+				   new numbers before it runs. */
 				if(resp.equipped) _syncLocConsumableSlots(resp.equipped);
 				if(resp.upgrades) _updateUpgradeDisplays(resp.upgrades);
 			} catch(e){ console.log('Consumable AJAX error', e); }
@@ -1424,8 +1428,13 @@ function updateInventoryStrip(inventory){
 		if(qtyEl) qtyEl.textContent = qty;
 		var slotEl = document.getElementById('inv-slot-'+cid);
 		if(slotEl){
-			slotEl.classList.remove('available','unavailable');
-			slotEl.classList.add(qty > 0 ? 'available' : 'unavailable');
+			/* .has / .none, matching realms-locations.php. This wrote
+			   available/unavailable until the panel was rebuilt, so after a
+			   stock or unstock the strip ADDED a class nothing styles while
+			   keeping the one it had -- the icons stopped agreeing with the
+			   counts underneath them and only a reload sorted it out. */
+			slotEl.classList.remove('has','none');
+			slotEl.classList.add(qty > 0 ? 'has' : 'none');
 		}
 	}
 }

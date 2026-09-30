@@ -202,6 +202,24 @@ foreach ($wanted as $w) {
 	   "skulliance.js tests slot.classList.contains('$w') and the panel never sets it "
 	 . '-- contains() returns false, nothing throws, and that feature silently stops');
 }
+/* THE INVENTORY STRIP TOO. updateInventoryStrip() rewrites the state class
+   on #inv-slot-N after every stock/unstock, and it wrote available /
+   unavailable -- names the partial does not use. It removed two classes
+   that were not there and added one nothing styles, so the ORIGINAL class
+   survived: an item that ran out kept its bright slot, one that came back
+   stayed dimmed, and only a reload agreed with the counts. */
+preg_match_all("/slotEl\.classList\.add\(qty > 0 \? '([a-z]+)' : '([a-z]+)'\)/", $js, $im2);
+$stripClasses = array();
+if (!empty($im2[1])) $stripClasses = array_merge($im2[1], $im2[2]);
+printf("  inventory strip writes: %s\n",
+	$stripClasses ? implode(', ', $stripClasses) : '(not found)');
+ok(!empty($stripClasses), 'could not find updateInventoryStrip()\'s class write');
+foreach ($stripClasses as $c) {
+	ok(in_array($c, $emitted, true),
+	   "updateInventoryStrip() writes '$c' on a slot and the partial never uses it -- "
+	 . 'the class it rendered with survives and the icon stops matching its count');
+}
+
 /* Same for the two labels the script writes back, so the widths measured in
    the panel stay the widths that ship. */
 foreach (array("'Stock'", "'Unstock'") as $lbl) {
