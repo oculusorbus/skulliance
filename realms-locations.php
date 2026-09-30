@@ -56,7 +56,23 @@ $rl_cons  = $rl_panel['consumables'];
 		<strong>Inventory</strong>
 		<span class="rl-inv-acts">
 			<button type="button" class="rl-btn sm" onclick="openInventoryInfoModal()">What these do</button>
-			<button type="button" class="rl-btn sm" id="stock-all-btn" onclick="stockAllLocations()">Stock every location</button>
+			<?php /* Rendered in the state it is actually in, like the
+			         per-location button: _checkStockButtonStates() flips it to
+			         Unstock when every location is full and nothing is spare,
+			         and a hardcoded verb showed the wrong one until the script
+			         ran. Short label -- the row it sits in already says
+			         INVENTORY. */
+			$rl_any_spare = false; $rl_any_worn = false;
+			foreach ($rl_panel['rows'] as $rr) {
+				foreach ($rl_cons as $ccid2 => $cn2) {
+					if (isset($rr['equipped'][$ccid2]))          $rl_any_worn  = true;
+					elseif ($rl_panel['inventory'][$ccid2] > 0)  $rl_any_spare = true;
+				}
+			}
+			$rl_all_unstock = (!$rl_any_spare && $rl_any_worn); ?>
+			<button type="button" class="rl-btn sm" id="stock-all-btn"
+				onclick="<?php echo $rl_all_unstock ? 'unstock' : 'stock'; ?>AllLocations()"><?php
+				echo $rl_all_unstock ? 'Unstock all' : 'Stock all'; ?></button>
 		</span>
 	</div>
 	<div class="rl-slots">

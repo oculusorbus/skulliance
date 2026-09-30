@@ -1392,10 +1392,10 @@ function _checkStockButtonStates(){
 	var allBtn = document.getElementById('stock-all-btn');
 	if(!allBtn) return;
 	if(!globalAnyAvailable && globalAnyEquipped){
-		allBtn.textContent = 'Unstock every location';
+		allBtn.textContent = 'Unstock all';
 		allBtn.onclick = unstockAllLocations;
 	} else {
-		allBtn.textContent = 'Stock every location';
+		allBtn.textContent = 'Stock all';
 		allBtn.onclick = stockAllLocations;
 	}
 }

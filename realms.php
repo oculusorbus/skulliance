@@ -265,15 +265,38 @@ if (ob_get_level() > 0) @ob_flush();
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 @keyframes lb { to { width:90%; } }
 /* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
-/* Clear the fixed quick-menu, plus the home indicator on an iPhone. */
+/* Clear the fixed quick-menu, plus the home indicator on an iPhone. The
+   100px here was sized for an 84px bar; it is 46px now. */
 #locations, #realm, #raids, #realms {
-  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
-/* THE BAR ITSELF HAD NO INSET. bottom:0 on an iOS PWA puts its lower edge
-   under the home indicator, so the row of icons sits against it and the bar
-   appears to shift between panels. Padding rather than offset, so the
-   background still reaches the bottom of the screen. */
+  padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
+/* ── THE QUICK MENU ───────────────────────────────────────────────────────
+ *
+ * It was 84px of bar for five 25px icons: flexbox.css gives each one
+ * `padding: 20px` inside a 65px box, so most of the height was padding, and
+ * then the safe-area inset added another ~34px underneath. That reads as a
+ * band of dead space below the icons, which is what it is.
+ *
+ * AND IT COULD CHANGE HEIGHT. The icons are 512x512 source art with no
+ * width/height attributes, sized only by CSS percentage -- so the bar's
+ * height depended on when each one decoded, and switching panels could
+ * reflow it. They are fixed-size now and the bar has a fixed content
+ * height, so it cannot move whatever the images do.
+ *
+ * The inset stays: viewport-fit=cover is set in header.php, so bottom:0 IS
+ * the physical bottom of the screen and without it the icons would sit on
+ * the home indicator. It is the bar's own padding that had to go, not the
+ * clearance. Net: shorter than it was BEFORE the inset was added.
+ *
+ * Page-local, so dropship/header.php's copy is untouched.
+ */
 #quick-menu {
-  padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px)) !important; }
+  display: flex !important; align-items: center; justify-content: space-around;
+  gap: 4px; height: auto; padding: 6px 8px !important;
+  padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important; }
+#quick-menu img {
+  width: 34px !important; height: 34px !important; max-width: none !important;
+  padding: 5px !important; margin: 0; box-sizing: border-box; flex: none; }
+#quick-menu .selected { border-radius: 0; }
 #map #container-wrapper { padding-top: 35px; padding-bottom: 100px; }
 /* Soldiers / Location Modals */
 .soldiers-stat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
@@ -942,11 +965,11 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 ?>
 <?php if($realm_status){ ?>
 <div id="quick-menu">
-	<img id="locations-icon" title="Locations" src="icons/locations.png" onclick="toggleSections('locations');">
-	<img id="map-icon" title="Map" src="icons/map.png" onclick="toggleSections('map');">
-	<img id="realm-icon" title="Realm" src="icons/realm.png" onclick="toggleSections('realm');">
-	<img id="raids-icon" title="Raids" src="icons/raids.png" onclick="toggleSections('raids');">
-	<img id="realms-icon" title="Realms" src="icons/quests.png" onclick="toggleSections('realms');">
+	<img width="34" height="34" id="locations-icon" title="Locations" src="icons/locations.png" onclick="toggleSections('locations');">
+	<img width="34" height="34" id="map-icon" title="Map" src="icons/map.png" onclick="toggleSections('map');">
+	<img width="34" height="34" id="realm-icon" title="Realm" src="icons/realm.png" onclick="toggleSections('realm');">
+	<img width="34" height="34" id="raids-icon" title="Raids" src="icons/raids.png" onclick="toggleSections('raids');">
+	<img width="34" height="34" id="realms-icon" title="Realms" src="icons/quests.png" onclick="toggleSections('realms');">
 </div>
 <?php } ?>
 	<!-- Inventory Info Modal -->

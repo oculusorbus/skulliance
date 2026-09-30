@@ -222,11 +222,23 @@ foreach ($stripClasses as $c) {
 
 /* Same for the two labels the script writes back, so the widths measured in
    the panel stay the widths that ship. */
-foreach (array("'Stock'", "'Unstock'") as $lbl) {
+foreach (array("'Stock'", "'Unstock'", "'Stock all'", "'Unstock all'") as $lbl) {
 	ok(strpos($js, 'textContent = ' . $lbl) !== false,
-	   "skulliance.js no longer writes $lbl -- it used to write the longer "
-	 . '"Stock Location", which is wider than the row was measured for');
+	   "skulliance.js no longer writes $lbl -- the originals were \"Stock "
+	 . 'Location" and "Stock All Locations", wider than the rows were measured for '
+	 . 'and more words than either button needs');
 }
+/* Both buttons are rendered in their real state, so neither shows the wrong
+   verb until the script runs -- or for good, if the script ever dies. */
+$panelSrc = file_get_contents(__DIR__ . '/realms-locations.php');
+foreach (array('stock-btn-' => 'the per-location button',
+               'stock-all-btn' => 'the all-locations button') as $needle => $what) {
+	ok(strpos($panelSrc, $needle) !== false, "$what is gone");
+}
+ok(substr_count($panelSrc, "? 'unstock' : 'stock'") >= 1
+   && substr_count($panelSrc, "? 'Unstock all' : 'Stock all'") >= 1,
+   'a stock button is hardcoded to one verb again, so it shows the wrong one '
+ . 'until _checkStockButtonStates() runs');
 
 /* ---------- 6. nothing rounded, nothing duplicated -------------------------- */
 echo "\nstyle\n";

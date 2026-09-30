@@ -296,6 +296,15 @@ $insets = substr_count($src, 'safe-area-inset-bottom');
 printf("  safe-area-inset-bottom used %d time(s); preload generated from realm_con_names(): %s\n",
 	$insets, $genPreload ? 'yes' : 'no');
 ok($insets >= 2, 'the panels also need the inset, or their last row hides behind the bar');
+/* The bar must not be able to change height as its art decodes -- 512x512
+   source images sized only by CSS percentage made the bar reflow, which is
+   how a position:fixed element appears to move between panels. */
+preg_match_all('/<img width="\d+" height="\d+" id="[a-z]+-icon"/', $src, $qi);
+printf("  quick-menu icons with explicit dimensions: %d of 5\n", count($qi[0]));
+ok(count($qi[0]) === 5,
+   'the quick-menu icons have no width/height attributes -- they are 512x512 '
+ . 'source art sized by percentage, so the bar reflows as they decode and a '
+ . 'fixed bar that changes height reads as a bar that moves');
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);
