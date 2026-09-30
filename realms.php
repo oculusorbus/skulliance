@@ -7,7 +7,431 @@ include 'skulliance.php';
 include 'header.php';
 require_once __DIR__ . '/realms-lib.php';   // the locations panel, as data
 
+/*
+ * THE PAGE STYLESHEET IS PRINTED HERE, ABOVE THE MARKUP.
+ *
+ * It used to sit ~600 lines below the content it styles, so the browser
+ * painted the whole locations panel unstyled first: the seven item icons
+ * have no width of their own and rendered at full size, filling the screen
+ * until the stylesheet arrived. The old panel got away with it because its
+ * images carried inline width attributes; the rebuilt one styles them with
+ * classes, which is correct and made the flash impossible to miss.
+ *
+ * Same fix, same reason as missions.php. Kept as a single block so it can
+ * be moved back in one line if it ever needs to be.
+ */
+?>
+<style>
+/* ── LOCATIONS PANEL ──────────────────────────────────────────────────────
+ *
+ * Squared, to match missions and profile. The old panel was pill buttons and
+ * 12px panel radii inside loud cyan/magenta category boxes, printed the same
+ * loadout twice -- four name tags above seven slots wearing ticks -- and put
+ * three buttons on every row with Unstock orphaned on a line of its own.
+ *
+ * NAMESPACED .rl-*. This page shares a stylesheet with everything else and
+ * flexbox.css already owns names like .top; a bare .slot or .group here would
+ * be the same mistake.
+ */
+.rl-head { display:flex; align-items:center; gap:12px; padding:0 0 12px;
+  border-bottom:1px solid rgba(0,200,160,.15); margin-bottom:12px; }
+.rl-logo { width:96px; opacity:.9; margin:0; }
+.rl-head-acts { margin-left:auto; display:flex; gap:6px; }
+
+/* The platform's button, squared and sized for a dense panel. .button and
+   .small-button both arrive from flexbox.css carrying width and shadow this
+   layout does not want. */
+.rl-btn { font:inherit; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase;
+  padding:7px 12px; border:1px solid rgba(0,200,160,.35); border-radius:0;
+  background:rgba(0,200,160,.06); color:#00c8a0; cursor:pointer; width:auto;
+  box-shadow:none; margin:0; line-height:1; white-space:nowrap; }
+.rl-btn:hover { background:rgba(0,200,160,.16); }
+.rl-btn:disabled { opacity:.45; cursor:default; }
+.rl-btn.sm { font-size:.64rem; padding:5px 8px; letter-spacing:.05em; }
+.rl-btn.go { background:#00c8a0; color:#07111d; border-color:#00c8a0; font-weight:bold; }
+.rl-btn.go:hover { background:#25e3bd; }
+
+/* The two numbers that actually decide a raid. */
+.rl-boosts { display:flex; flex-wrap:wrap; gap:14px; align-items:baseline;
+  padding:9px 11px; margin-bottom:12px; border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03); font-size:.75rem; }
+.rl-boosts b { color:#00c8a0; font-size:1rem; margin-right:3px; }
+.rl-boosts-note { opacity:.45; font-size:.68rem; flex-basis:100%; }
+
+.rl-inv { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03);
+  padding:9px 11px; margin-bottom:16px; }
+.rl-inv-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+.rl-inv-head strong { font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; opacity:.7; }
+.rl-inv-acts { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
+
+/* One slot style for the inventory strip and every location's kit. */
+/* 28px and a 4px gap so all seven fit one row beside Stock/Manage in the
+   left column's real width (~380px of content). At 34px they wrapped 5+2,
+   which pushed the buttons onto a third line and made every card taller
+   than the information in it. Measured, not guessed. */
+.rl-slots { display:flex; gap:4px; flex-wrap:wrap; }
+.rl-slot { position:relative; width:28px; height:28px; flex:none; display:block;
+  border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.25); }
+.rl-slot img { width:100%; height:100%; object-fit:contain; display:block; padding:3px;
+  box-sizing:border-box; }
+.rl-slot.none { opacity:.3; }
+.rl-slot.has { cursor:pointer; }
+.rl-slot.has:hover { border-color:#00c8a0; }
+.rl-slot.on { border-color:#00c8a0; background:rgba(0,200,160,.14); cursor:pointer; }
+.rl-slot i { position:absolute; right:-2px; bottom:-2px; font-style:normal; font-size:.6rem;
+  line-height:1; padding:1px 3px; background:#07111d; border:1px solid rgba(255,255,255,.16);
+  color:#c8dce8; }
+.rl-slot i.on { background:#00c8a0; color:#07111d; border-color:#00c8a0; }
+
+/* Category. A label and a hairline, not a coloured box round everything. */
+.rl-group { margin:0 0 18px; }
+.rl-group h4 { margin:0 0 8px; font-size:.68rem; letter-spacing:.16em; text-transform:uppercase;
+  opacity:.5; border-bottom:1px solid rgba(255,255,255,.08); padding-bottom:5px; }
+
+.rl-loc { border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.02);
+  padding:10px 11px; margin-bottom:8px; }
+.rl-loc-top { display:flex; align-items:flex-start; gap:10px; width:100%;
+  text-align:left; background:none; border:0; padding:0; margin:0; color:inherit;
+  font:inherit; }
+.rl-loc-top.can { cursor:pointer; }
+.rl-loc-top.can:hover .rl-loc-id strong { text-decoration:underline; }
+.rl-loc-top.can:focus-visible { outline:2px solid #00c8a0; outline-offset:2px; }
+.rl-loc-icon { width:40px; height:40px; flex:none; opacity:.9; object-fit:contain; margin:0; }
+.rl-loc-id { flex:1; min-width:0; }
+.rl-loc-id strong { display:block; font-size:.86rem; letter-spacing:.06em; color:#00c8a0; }
+.rl-loc-sub { display:block; font-size:.7rem; opacity:.6; margin-top:2px; }
+.rl-loc-sub em { opacity:.55; font-style:normal; }
+.rl-loc-lv { flex:none; font-size:.72rem; opacity:.75; font-variant-numeric:tabular-nums; }
+.rl-loc-lv b { font-size:.9rem; color:#c8dce8; font-weight:normal; }
+/* Past the ceiling is a badge of honour, not an error. */
+.rl-loc-lv.over b { color:#ffc800; }
+
+.rl-loc-offer { display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+  margin:9px 0 0; padding-top:9px; border-top:1px solid rgba(255,255,255,.06); }
+.rl-price { font-size:.7rem; opacity:.6; font-variant-numeric:tabular-nums; }
+.rl-short { font-size:.7rem; color:#ffc800; opacity:.85; }
+.rl-cap { font-size:.7rem; opacity:.6; }
+.rl-run { font-size:.72rem; color:#00c8a0; }
+.rl-run + .countdown { font-size:.78rem; font-variant-numeric:tabular-nums; color:#c8dce8; }
+.rl-run-note { font-size:.68rem; opacity:.45; }
+
+.rl-loc-acts { display:flex; gap:6px; flex:none; margin-left:auto; }
+.rl-loc-kit { margin-top:9px; }
+
+/* Phones: the actions take their own line rather than squeezing the offer. */
+@media (max-width:640px){
+  .rl-loc-acts { margin-left:0; width:100%; }
+  .rl-loc-acts .rl-btn { flex:1; }
+}
+@keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
+@keyframes lb { to { width:90%; } }
+/* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
+#locations, #realm, #stats, #raids, #realms { padding-bottom: 100px; }
+#map #container-wrapper { padding-top: 35px; padding-bottom: 100px; }
+/* Soldiers / Location Modals */
+.soldiers-stat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+.soldiers-stat { background:rgba(255,255,255,0.06); border-radius:8px; padding:10px 14px; flex:1; min-width:100px; }
+.soldiers-stat-label { display:block; font-size:0.72rem; opacity:0.5; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:3px; }
+.soldiers-stat-value { display:block; font-size:1.1rem; font-weight:bold; color:#00c8a0; }
+.soldiers-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:8px; }
+.soldier-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; text-align:center; font-size:0.75rem; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.soldier-card.selected { border-color:#00c8a0; background:rgba(0,200,160,0.1); }
+.soldier-card.soldier-ready { border-color:#00c8a0; }
+.soldier-card.soldier-dead { opacity:0.7; }
+.soldier-nft-img { width:64px; height:64px; object-fit:cover; border-radius:6px; }
+.soldier-name { font-size:0.7rem; opacity:0.8; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:10ch; }
+.soldier-status { font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); }
+.soldier-status.status-ready { background:rgba(0,200,160,0.2); color:#00c8a0; }
+.soldier-status.status-deployed { background:rgba(74,144,217,0.2); color:#4a90d9; }
+.soldier-status.status-training { background:rgba(255,200,0,0.15); color:#ffc800; }
+.soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
+/* Crypt coffin cards */
+#crypt-soldiers-grid .soldier-status { background:none; }
+.coffin-wrapper {
+    background: url('icons/coffin.png') center bottom / contain no-repeat;
+}
+.coffin-card {
+    background: rgba(30, 10, 10, 0.7);
+    border: 1px solid rgba(150, 50, 50, 0.4);
+    border-radius: 8px;
+    padding: 32.5px;
+    text-align: center;
+    font-size: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: -4px;
+}
+#crypt-soldiers-grid { grid-template-columns:repeat(4,1fr); }
+.coffin-card.soldier-ready {
+    border-color:rgba(0,200,160,0.5);
+    background:rgba(0,40,30,0.7);
+    box-shadow:0 0 10px rgba(0,200,160,0.15);
+}
+@keyframes resurrect-ascend {
+    0%   { transform:translateY(0) scale(1);   opacity:1; filter:brightness(1); }
+    30%  { transform:translateY(-8px) scale(1.05); opacity:1; filter:brightness(1.8) drop-shadow(0 0 8px #00c8a0); }
+    60%  { transform:translateY(-30px) scale(0.95); opacity:0.7; filter:brightness(2.5) drop-shadow(0 0 16px #ffffff); }
+    100% { transform:translateY(-80px) scale(0.6); opacity:0; filter:brightness(4) drop-shadow(0 0 24px #ffffff); }
+}
+.coffin-wrapper.ascending {
+    background-image: none;
+    animation: resurrect-ascend 0.9s ease-in forwards;
+    pointer-events:none;
+}
+.soldier-status.status-reserve { background:rgba(180,100,255,0.15); color:#b464ff; }
+.soldier-badge { font-size:0.62rem; padding:1px 5px; border-radius:3px; background:rgba(255,150,0,0.2); color:#ffa040; }
+.partner-badge { background:rgba(150,100,255,0.2); color:#b08aff; }
+.soldier-gear-row { display:flex; flex-direction:column; align-items:center; gap:4px; margin-top:4px; }
+.soldier-gear-slot { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:0.7rem; opacity:0.85; height:52px; }
+.soldier-gear-slot img.icon { margin-right:0; }
+.gear-label { font-size:0.65rem; opacity:0.7; }
+.gear-empty { font-size:0.65rem; opacity:0.4; display:flex; align-items:flex-start; justify-content:center; height:52px; padding-top:2px; }
+/* Compact gear row (armory/tower cards) */
+.soldier-gear-compact { display:flex; flex-direction:row; gap:6px; justify-content:center; margin-top:4px; width:100%; }
+.gear-compact-slot { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; }
+.gear-compact-empty { font-size:0.65rem; opacity:0.3; }
+/* Tower header and action rows */
+.tower-garrison-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.tower-garrison-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.tower-deploy-row { margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+@media (max-width:500px) {
+    .soldiers-grid { grid-template-columns:repeat(3,1fr); }
+    #crypt-soldiers-grid { grid-template-columns:repeat(2,1fr); }
+    .gear-inventory-row { flex-direction:column !important; }
+    .soldiers-stat-row { display:grid; grid-template-columns:repeat(2,1fr); }
+    .soldiers-stat { padding:7px 10px; min-width:0; }
+    .soldiers-stat-label { font-size:0.66rem; }
+    .soldiers-stat-value { font-size:0.95rem; }
+    .tower-garrison-header { flex-direction:column; align-items:flex-start; }
+    .tower-deploy-row { justify-content:flex-end; }
+}
+.soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
+.soldier-gear-controls .dropdown { font-size:0.7rem; padding:2px 4px; width:100%; }
+.soldiers-table { border-collapse:collapse; }
+.soldiers-table th, .soldiers-table td { padding:4px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.08); }
+.soldiers-table th { font-size:0.72rem; opacity:0.55; font-weight:normal; text-transform:uppercase; }
+.deploy-axis { display:flex; align-items:center; gap:12px; }
+.deploy-axis-label { font-size:0.78rem; opacity:0.6; text-transform:uppercase; letter-spacing:0.05em; width:110px; flex-shrink:0; }
+.deploy-tier-group { display:flex; gap:6px; flex:1; }
+.deploy-tier-btn { flex:1; padding:6px 4px; font-size:0.78rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; cursor:pointer; transition:background 0.15s,border-color 0.15s; }
+.deploy-tier-btn:hover { background:rgba(255,255,255,0.1); }
+.deploy-tier-btn.active { background:rgba(0,200,160,0.18); border-color:#00c8a0; color:#00c8a0; font-weight:bold; }
+
+/* ── Raid Launch Animation ───────────────────────────────────── */
+#raid-anim-overlay {
+    position:fixed; inset:0; z-index:2000;
+    background-color:#07111d;
+    background-image: url('images/darkworld.png');
+    background-size:cover; background-position:center;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    gap:16px; opacity:0; transition:opacity .3s ease;
+}
+#raid-anim-overlay::before {
+    content:''; position:absolute; inset:0;
+    background:rgba(7,17,29,.78); pointer-events:none;
+}
+#raid-anim-overlay.active { opacity:1; }
+#raid-anim-field {
+    display:flex; flex-direction:row; align-items:center; justify-content:center;
+    gap:0; width:100%; max-width:900px; padding:0 10px; box-sizing:border-box;
+    position:relative; z-index:1;
+}
+.rla-loading { display:none; }
+.rla-side {
+    display:flex; flex-direction:row; align-items:center; justify-content:center;
+    gap:6px; flex:1; opacity:0; transition:opacity .5s ease, transform .5s ease;
+}
+.rla-side.rla-atk { transform:translateX(-20px); }
+.rla-side.rla-def { transform:translateX(20px); }
+.rla-side.revealed { opacity:1; transform:translateX(0); }
+.rla-realm-wrap {
+    display:flex; flex-direction:column; align-items:center; gap:5px; flex-shrink:0;
+}
+.rla-realm-img {
+    width:90px; height:90px; object-fit:cover; border-radius:8px;
+    border:1px solid rgba(255,255,255,.12);
+}
+.rla-realm-name {
+    font-size:.62rem; color:rgba(255,255,255,.45); text-align:center;
+    max-width:90px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.rla-loc-col { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
+.rla-loc-icon { width:26px; height:26px; border-radius:5px; overflow:hidden; flex-shrink:0; }
+.rla-loc-icon img { width:100%; height:100%; object-fit:cover; display:block; }
+.rla-loc-icon.rla-shielded img { filter:drop-shadow(0 0 6px rgba(0,200,160,.9)); }
+.rla-portal-icon {
+    display:flex; flex-direction:column; align-items:center; gap:3px; flex-shrink:0;
+}
+.rla-portal-icon img { width:38px; height:38px; object-fit:contain; display:block; }
+.rla-portal-icon.rla-shielded img { filter:drop-shadow(0 0 6px rgba(0,200,160,.9)); }
+.rla-portal-label { font-size:.55rem; color:rgba(255,255,255,.3); letter-spacing:.05em; text-transform:uppercase; }
+.rla-soldiers-col { display:grid; grid-template-columns:repeat(2, 28px); gap:2px; flex-shrink:0; align-content:start; min-width:58px; }
+.rla-soldier { width:28px; height:28px; border-radius:4px; overflow:hidden; flex-shrink:0; background:url('icons/skull.png') center/cover no-repeat; }
+.rla-soldier img { width:100%; height:100%; object-fit:cover; display:block; }
+.rla-def .rla-soldier { opacity:.75; }
+.rla-status {
+    font-size:1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+    color:#00c8a0; min-height:1.4em; text-align:center;
+    animation:rla-status-pop .35s cubic-bezier(.18,.89,.32,1.28) both;
+    position:relative; z-index:1;
+}
+@keyframes rla-status-pop { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
+@keyframes rla-crash { 0%,100%{transform:translate(0,0)} 15%{transform:translate(-6px,-2px)} 30%{transform:translate(6px,2px)} 45%{transform:translate(-5px,1px)} 60%{transform:translate(4px,-2px)} 75%{transform:translate(-2px,1px)} }
+.rla-crash { animation: rla-crash .5s ease both; }
+.rla-btn-row {
+    position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
+    display:flex; gap:10px; z-index:1;
+}
+.rla-skip-btn {
+    background:none; border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.3);
+    padding:5px 16px; border-radius:20px; font-size:.72rem; cursor:pointer;
+    letter-spacing:.06em; text-transform:uppercase; transition:color .15s,border-color .15s;
+}
+.rla-skip-btn:hover { color:#e8eaed; border-color:rgba(255,255,255,.4); }
+@media (max-width:600px) {
+    #raid-anim-field { padding:0 4px; }
+    .rla-side { gap:3px; }
+    .rla-realm-img { width:46px; height:46px; }
+    .rla-realm-name { max-width:46px; font-size:.52rem; }
+    .rla-portal-icon img { width:22px; height:22px; }
+    .rla-portal-label { font-size:.46rem; }
+    .rla-soldiers-col { grid-template-columns:repeat(1, 18px); min-width:18px; gap:1px; }
+    .rla-soldier { width:18px; height:18px; }
+    .rla-loc-col { gap:3px; }
+    .rla-loc-icon { width:14px; height:14px; border-radius:3px; }
+}
+@media (min-width:1200px) {
+    #raid-anim-overlay { gap:22px; }
+    #raid-anim-field { max-width:1140px; }
+    .rla-side { gap:8px; }
+    .rla-realm-img { width:114px; height:114px; }
+    .rla-realm-name { max-width:114px; font-size:.7rem; }
+    .rla-loc-col { gap:7px; }
+    .rla-loc-icon { width:32px; height:32px; }
+    .rla-portal-icon img { width:48px; height:48px; }
+    .rla-soldiers-col { grid-template-columns:repeat(2, 36px); min-width:74px; gap:3px; }
+    .rla-soldier { width:36px; height:36px; border-radius:5px; }
+    .rla-status { font-size:1.2rem; }
+    #raid-anim-result { min-width:220px; max-width:380px; padding:16px 28px; }
+    .rla-result-row { font-size:.88rem; }
+    .rla-result-icon { width:18px; height:18px; }
+}
+@media (min-width:1600px) {
+    #raid-anim-overlay { gap:28px; }
+    #raid-anim-field { max-width:1500px; }
+    .rla-side { gap:12px; }
+    .rla-realm-img { width:144px; height:144px; border-radius:10px; }
+    .rla-realm-name { max-width:144px; font-size:.82rem; }
+    .rla-loc-col { gap:9px; }
+    .rla-loc-icon { width:40px; height:40px; border-radius:7px; }
+    .rla-portal-icon img { width:62px; height:62px; }
+    .rla-soldiers-col { grid-template-columns:repeat(2, 46px); min-width:94px; gap:5px; }
+    .rla-soldier { width:46px; height:46px; border-radius:6px; }
+    .rla-status { font-size:1.45rem; }
+    #raid-anim-result { min-width:270px; max-width:460px; padding:18px 32px; gap:9px; }
+    .rla-result-row { font-size:1rem; }
+    .rla-result-icon { width:20px; height:20px; }
+}
+@media (min-width:1920px) {
+    #raid-anim-overlay { gap:34px; }
+    #raid-anim-field { max-width:1760px; }
+    .rla-side { gap:16px; }
+    .rla-realm-img { width:172px; height:172px; border-radius:12px; }
+    .rla-realm-name { max-width:172px; font-size:.94rem; }
+    .rla-loc-col { gap:11px; }
+    .rla-loc-icon { width:48px; height:48px; border-radius:9px; }
+    .rla-portal-icon img { width:76px; height:76px; }
+    .rla-soldiers-col { grid-template-columns:repeat(2, 56px); min-width:114px; gap:6px; }
+    .rla-soldier { width:56px; height:56px; border-radius:7px; }
+    .rla-status { font-size:1.65rem; }
+    #raid-anim-result { min-width:310px; max-width:540px; padding:20px 36px; gap:10px; }
+    .rla-result-row { font-size:1.1rem; }
+    .rla-result-icon { width:22px; height:22px; }
+}
+@media (min-width:2560px) {
+    #raid-anim-overlay { gap:42px; }
+    #raid-anim-field { max-width:2360px; }
+    .rla-side { gap:20px; }
+    .rla-realm-img { width:220px; height:220px; border-radius:16px; }
+    .rla-realm-name { max-width:220px; font-size:1.1rem; }
+    .rla-loc-col { gap:14px; }
+    .rla-loc-icon { width:60px; height:60px; border-radius:11px; }
+    .rla-portal-icon img { width:96px; height:96px; }
+    .rla-soldiers-col { grid-template-columns:repeat(2, 70px); min-width:142px; gap:8px; }
+    .rla-soldier { width:70px; height:70px; border-radius:9px; }
+    .rla-status { font-size:2rem; }
+    #raid-anim-result { min-width:380px; max-width:660px; padding:24px 44px; gap:12px; }
+    .rla-result-row { font-size:1.25rem; }
+    .rla-result-icon { width:26px; height:26px; }
+}
+/* ── Result replay: soldier deaths ──────────────────────────── */
+@keyframes rla-death-shake {
+    0%,100% { transform:translate(0,0) scale(1); }
+    10%  { transform:translate(-4px,-2px) scale(1.14); }
+    30%  { transform:translate( 4px, 3px) scale(1.20); }
+    50%  { transform:translate(-4px,-1px) scale(1.14); }
+    70%  { transform:translate( 3px, 2px) scale(1.07); }
+    90%  { transform:translate(-2px,-1px) scale(1.03); }
+}
+.rla-dying { animation:rla-death-shake .52s ease both; position:relative; z-index:2; }
+.rla-dead { filter:drop-shadow(0 0 7px rgba(255,40,40,.98)) brightness(.62) grayscale(.25); }
+/* ── Result card — position:absolute, top set by JS to sit just below status text ── */
+#raid-anim-result {
+    position:absolute; z-index:2;
+    left:50%;
+    display:flex; flex-direction:column; align-items:center; gap:7px;
+    padding:13px 22px; background:rgba(7,17,29,.92);
+    border:1px solid rgba(0,200,160,.22); border-radius:12px;
+    min-width:180px; max-width:310px;
+    opacity:0; transform:translateX(-50%) translateY(8px) scale(.82);
+    transition:opacity .45s ease, transform .45s ease;
+    pointer-events:none;
+}
+#raid-anim-result.visible { opacity:1; transform:translateX(-50%) translateY(0) scale(1); pointer-events:auto; }
+/* ── Realm and location glows ────────────────────────────────── */
+.rla-realm-win  .rla-realm-img { filter:drop-shadow(0 0 14px rgba(0,200,160,.95)); transition:filter .6s ease; }
+.rla-realm-lose .rla-realm-img { filter:drop-shadow(0 0 14px rgba(255,60,60,.9));  transition:filter .6s ease; }
+.rla-glow-green img { filter:drop-shadow(0 0 8px rgba(0,200,160,.9)); transition:filter .6s ease; }
+.rla-glow-red   img { filter:drop-shadow(0 0 8px rgba(255,60,60,.9)); transition:filter .6s ease; }
+
+.rla-result-badge { font-size:1.05rem; font-weight:700; letter-spacing:.05em; margin-bottom:2px; }
+.rla-result-badge.rla-victory { color:#00c8a0; }
+.rla-result-badge.rla-defeat  { color:#ff5c5c; }
+.rla-result-row { display:flex; align-items:center; gap:7px; font-size:.78rem; color:rgba(255,255,255,.82); }
+.rla-result-deaths { color:rgba(255,90,90,.80); font-size:.72rem; }
+.rla-result-icon { width:16px; height:16px; object-fit:contain; flex-shrink:0; }
+.rla-result-divider { width:100%; height:1px; background:rgba(255,255,255,.08); margin:3px 0; }
+/* ── Play All button row ─────────────────────────────────────── */
+.rc-anim-all-row { display:flex; justify-content:flex-end; padding:4px 0 6px; }
+</style>
+<?php
+
 $realm_status = checkRealm($conn);
+/*
+ * SET ONCE, AT PAGE SCOPE.
+ *
+ * $realm_id used to be assigned inside the locations panel, three nested
+ * blocks down, and the RIGHT column -- the realm image, the Theme dropdown
+ * and the Faction dropdown -- read it afterwards. It worked only because
+ * the panel is included at global scope and leaked it.
+ *
+ * Moving the panel into a partial took the leak with it, and the right
+ * column silently degraded: isset($realm_id) was false, so $image was never
+ * set, the theme image fell through to its hardcoded '7' (a DIFFERENT theme,
+ * which reads exactly like the saved one was changed -- it was not, nothing
+ * writes a theme outside the $_POST['filterby'] branch), isset($image) was
+ * false so the Theme dropdown was not rendered at all, and
+ * getRealmFaction($conn, null) matched nothing so the Faction select showed
+ * whichever option happened to be first.
+ */
+$realm_id = $realm_status ? getRealmID($conn) : 0;
+/* And the location icon map, while the connection is still open. */
+$loc_icon_map = array();
+foreach (getLocationInfo($conn) as $loc_id => $loc) {
+	$loc_icon_map[intval($loc_id)] = 'icons/locations/' . $loc['name'] . '.png';
+}
 
 if(isset($_POST['realm']) && isset($_POST['faction'])){
 	if(!$realm_status){
@@ -672,391 +1096,6 @@ $conn->close();
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="map.js?var=<?php echo rand(0,999); ?>"></script>
 <?php if($realm_status){ ?>
-<style>
-/* ── LOCATIONS PANEL ──────────────────────────────────────────────────────
- *
- * Squared, to match missions and profile. The old panel was pill buttons and
- * 12px panel radii inside loud cyan/magenta category boxes, printed the same
- * loadout twice -- four name tags above seven slots wearing ticks -- and put
- * three buttons on every row with Unstock orphaned on a line of its own.
- *
- * NAMESPACED .rl-*. This page shares a stylesheet with everything else and
- * flexbox.css already owns names like .top; a bare .slot or .group here would
- * be the same mistake.
- */
-.rl-head { display:flex; align-items:center; gap:12px; padding:0 0 12px;
-  border-bottom:1px solid rgba(0,200,160,.15); margin-bottom:12px; }
-.rl-logo { width:96px; opacity:.9; margin:0; }
-.rl-head-acts { margin-left:auto; display:flex; gap:6px; }
-
-/* The platform's button, squared and sized for a dense panel. .button and
-   .small-button both arrive from flexbox.css carrying width and shadow this
-   layout does not want. */
-.rl-btn { font:inherit; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase;
-  padding:7px 12px; border:1px solid rgba(0,200,160,.35); border-radius:0;
-  background:rgba(0,200,160,.06); color:#00c8a0; cursor:pointer; width:auto;
-  box-shadow:none; margin:0; line-height:1; white-space:nowrap; }
-.rl-btn:hover { background:rgba(0,200,160,.16); }
-.rl-btn:disabled { opacity:.45; cursor:default; }
-.rl-btn.sm { font-size:.64rem; padding:5px 8px; letter-spacing:.05em; }
-.rl-btn.go { background:#00c8a0; color:#07111d; border-color:#00c8a0; font-weight:bold; }
-.rl-btn.go:hover { background:#25e3bd; }
-
-/* The two numbers that actually decide a raid. */
-.rl-boosts { display:flex; flex-wrap:wrap; gap:14px; align-items:baseline;
-  padding:9px 11px; margin-bottom:12px; border:1px solid rgba(255,255,255,.08);
-  background:rgba(255,255,255,.03); font-size:.75rem; }
-.rl-boosts b { color:#00c8a0; font-size:1rem; margin-right:3px; }
-.rl-boosts-note { opacity:.45; font-size:.68rem; flex-basis:100%; }
-
-.rl-inv { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03);
-  padding:9px 11px; margin-bottom:16px; }
-.rl-inv-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
-.rl-inv-head strong { font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; opacity:.7; }
-.rl-inv-acts { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
-
-/* One slot style for the inventory strip and every location's kit. */
-/* 28px and a 4px gap so all seven fit one row beside Stock/Manage in the
-   left column's real width (~380px of content). At 34px they wrapped 5+2,
-   which pushed the buttons onto a third line and made every card taller
-   than the information in it. Measured, not guessed. */
-.rl-slots { display:flex; gap:4px; flex-wrap:wrap; }
-.rl-slot { position:relative; width:28px; height:28px; flex:none; display:block;
-  border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.25); }
-.rl-slot img { width:100%; height:100%; object-fit:contain; display:block; padding:3px;
-  box-sizing:border-box; }
-.rl-slot.none { opacity:.3; }
-.rl-slot.has { cursor:pointer; }
-.rl-slot.has:hover { border-color:#00c8a0; }
-.rl-slot.on { border-color:#00c8a0; background:rgba(0,200,160,.14); cursor:pointer; }
-.rl-slot i { position:absolute; right:-2px; bottom:-2px; font-style:normal; font-size:.6rem;
-  line-height:1; padding:1px 3px; background:#07111d; border:1px solid rgba(255,255,255,.16);
-  color:#c8dce8; }
-.rl-slot i.on { background:#00c8a0; color:#07111d; border-color:#00c8a0; }
-
-/* Category. A label and a hairline, not a coloured box round everything. */
-.rl-group { margin:0 0 18px; }
-.rl-group h4 { margin:0 0 8px; font-size:.68rem; letter-spacing:.16em; text-transform:uppercase;
-  opacity:.5; border-bottom:1px solid rgba(255,255,255,.08); padding-bottom:5px; }
-
-.rl-loc { border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.02);
-  padding:10px 11px; margin-bottom:8px; }
-.rl-loc-top { display:flex; align-items:flex-start; gap:10px; width:100%;
-  text-align:left; background:none; border:0; padding:0; margin:0; color:inherit;
-  font:inherit; }
-.rl-loc-top.can { cursor:pointer; }
-.rl-loc-top.can:hover .rl-loc-id strong { text-decoration:underline; }
-.rl-loc-top.can:focus-visible { outline:2px solid #00c8a0; outline-offset:2px; }
-.rl-loc-icon { width:40px; height:40px; flex:none; opacity:.9; object-fit:contain; margin:0; }
-.rl-loc-id { flex:1; min-width:0; }
-.rl-loc-id strong { display:block; font-size:.86rem; letter-spacing:.06em; color:#00c8a0; }
-.rl-loc-sub { display:block; font-size:.7rem; opacity:.6; margin-top:2px; }
-.rl-loc-sub em { opacity:.55; font-style:normal; }
-.rl-loc-lv { flex:none; font-size:.72rem; opacity:.75; font-variant-numeric:tabular-nums; }
-.rl-loc-lv b { font-size:.9rem; color:#c8dce8; font-weight:normal; }
-/* Past the ceiling is a badge of honour, not an error. */
-.rl-loc-lv.over b { color:#ffc800; }
-
-.rl-loc-offer { display:flex; align-items:center; gap:9px; flex-wrap:wrap;
-  margin:9px 0 0; padding-top:9px; border-top:1px solid rgba(255,255,255,.06); }
-.rl-price { font-size:.7rem; opacity:.6; font-variant-numeric:tabular-nums; }
-.rl-short { font-size:.7rem; color:#ffc800; opacity:.85; }
-.rl-cap { font-size:.7rem; opacity:.6; }
-.rl-run { font-size:.72rem; color:#00c8a0; }
-.rl-run + .countdown { font-size:.78rem; font-variant-numeric:tabular-nums; color:#c8dce8; }
-.rl-run-note { font-size:.68rem; opacity:.45; }
-
-.rl-loc-acts { display:flex; gap:6px; flex:none; margin-left:auto; }
-.rl-loc-kit { margin-top:9px; }
-
-/* Phones: the actions take their own line rather than squeezing the offer. */
-@media (max-width:640px){
-  .rl-loc-acts { margin-left:0; width:100%; }
-  .rl-loc-acts .rl-btn { flex:1; }
-}
-@keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
-@keyframes lb { to { width:90%; } }
-/* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
-#locations, #realm, #stats, #raids, #realms { padding-bottom: 100px; }
-#map #container-wrapper { padding-top: 35px; padding-bottom: 100px; }
-/* Soldiers / Location Modals */
-.soldiers-stat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
-.soldiers-stat { background:rgba(255,255,255,0.06); border-radius:8px; padding:10px 14px; flex:1; min-width:100px; }
-.soldiers-stat-label { display:block; font-size:0.72rem; opacity:0.5; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:3px; }
-.soldiers-stat-value { display:block; font-size:1.1rem; font-weight:bold; color:#00c8a0; }
-.soldiers-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:8px; }
-.soldier-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; text-align:center; font-size:0.75rem; display:flex; flex-direction:column; align-items:center; gap:4px; }
-.soldier-card.selected { border-color:#00c8a0; background:rgba(0,200,160,0.1); }
-.soldier-card.soldier-ready { border-color:#00c8a0; }
-.soldier-card.soldier-dead { opacity:0.7; }
-.soldier-nft-img { width:64px; height:64px; object-fit:cover; border-radius:6px; }
-.soldier-name { font-size:0.7rem; opacity:0.8; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:10ch; }
-.soldier-status { font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); }
-.soldier-status.status-ready { background:rgba(0,200,160,0.2); color:#00c8a0; }
-.soldier-status.status-deployed { background:rgba(74,144,217,0.2); color:#4a90d9; }
-.soldier-status.status-training { background:rgba(255,200,0,0.15); color:#ffc800; }
-.soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
-/* Crypt coffin cards */
-#crypt-soldiers-grid .soldier-status { background:none; }
-.coffin-wrapper {
-    background: url('icons/coffin.png') center bottom / contain no-repeat;
-}
-.coffin-card {
-    background: rgba(30, 10, 10, 0.7);
-    border: 1px solid rgba(150, 50, 50, 0.4);
-    border-radius: 8px;
-    padding: 32.5px;
-    text-align: center;
-    font-size: 0.75rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    margin-bottom: -4px;
-}
-#crypt-soldiers-grid { grid-template-columns:repeat(4,1fr); }
-.coffin-card.soldier-ready {
-    border-color:rgba(0,200,160,0.5);
-    background:rgba(0,40,30,0.7);
-    box-shadow:0 0 10px rgba(0,200,160,0.15);
-}
-@keyframes resurrect-ascend {
-    0%   { transform:translateY(0) scale(1);   opacity:1; filter:brightness(1); }
-    30%  { transform:translateY(-8px) scale(1.05); opacity:1; filter:brightness(1.8) drop-shadow(0 0 8px #00c8a0); }
-    60%  { transform:translateY(-30px) scale(0.95); opacity:0.7; filter:brightness(2.5) drop-shadow(0 0 16px #ffffff); }
-    100% { transform:translateY(-80px) scale(0.6); opacity:0; filter:brightness(4) drop-shadow(0 0 24px #ffffff); }
-}
-.coffin-wrapper.ascending {
-    background-image: none;
-    animation: resurrect-ascend 0.9s ease-in forwards;
-    pointer-events:none;
-}
-.soldier-status.status-reserve { background:rgba(180,100,255,0.15); color:#b464ff; }
-.soldier-badge { font-size:0.62rem; padding:1px 5px; border-radius:3px; background:rgba(255,150,0,0.2); color:#ffa040; }
-.partner-badge { background:rgba(150,100,255,0.2); color:#b08aff; }
-.soldier-gear-row { display:flex; flex-direction:column; align-items:center; gap:4px; margin-top:4px; }
-.soldier-gear-slot { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font-size:0.7rem; opacity:0.85; height:52px; }
-.soldier-gear-slot img.icon { margin-right:0; }
-.gear-label { font-size:0.65rem; opacity:0.7; }
-.gear-empty { font-size:0.65rem; opacity:0.4; display:flex; align-items:flex-start; justify-content:center; height:52px; padding-top:2px; }
-/* Compact gear row (armory/tower cards) */
-.soldier-gear-compact { display:flex; flex-direction:row; gap:6px; justify-content:center; margin-top:4px; width:100%; }
-.gear-compact-slot { display:flex; flex-direction:column; align-items:center; gap:2px; flex:1; }
-.gear-compact-empty { font-size:0.65rem; opacity:0.3; }
-/* Tower header and action rows */
-.tower-garrison-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
-.tower-garrison-controls { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
-.tower-deploy-row { margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
-@media (max-width:500px) {
-    .soldiers-grid { grid-template-columns:repeat(3,1fr); }
-    #crypt-soldiers-grid { grid-template-columns:repeat(2,1fr); }
-    .gear-inventory-row { flex-direction:column !important; }
-    .soldiers-stat-row { display:grid; grid-template-columns:repeat(2,1fr); }
-    .soldiers-stat { padding:7px 10px; min-width:0; }
-    .soldiers-stat-label { font-size:0.66rem; }
-    .soldiers-stat-value { font-size:0.95rem; }
-    .tower-garrison-header { flex-direction:column; align-items:flex-start; }
-    .tower-deploy-row { justify-content:flex-end; }
-}
-.soldier-gear-controls { display:flex; flex-direction:column; gap:4px; width:100%; margin-top:4px; }
-.soldier-gear-controls .dropdown { font-size:0.7rem; padding:2px 4px; width:100%; }
-.soldiers-table { border-collapse:collapse; }
-.soldiers-table th, .soldiers-table td { padding:4px 10px; text-align:left; border-bottom:1px solid rgba(255,255,255,0.08); }
-.soldiers-table th { font-size:0.72rem; opacity:0.55; font-weight:normal; text-transform:uppercase; }
-.deploy-axis { display:flex; align-items:center; gap:12px; }
-.deploy-axis-label { font-size:0.78rem; opacity:0.6; text-transform:uppercase; letter-spacing:0.05em; width:110px; flex-shrink:0; }
-.deploy-tier-group { display:flex; gap:6px; flex:1; }
-.deploy-tier-btn { flex:1; padding:6px 4px; font-size:0.78rem; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); border-radius:6px; color:#fff; cursor:pointer; transition:background 0.15s,border-color 0.15s; }
-.deploy-tier-btn:hover { background:rgba(255,255,255,0.1); }
-.deploy-tier-btn.active { background:rgba(0,200,160,0.18); border-color:#00c8a0; color:#00c8a0; font-weight:bold; }
-
-/* ── Raid Launch Animation ───────────────────────────────────── */
-#raid-anim-overlay {
-    position:fixed; inset:0; z-index:2000;
-    background-color:#07111d;
-    background-image: url('images/darkworld.png');
-    background-size:cover; background-position:center;
-    display:none; flex-direction:column; align-items:center; justify-content:center;
-    gap:16px; opacity:0; transition:opacity .3s ease;
-}
-#raid-anim-overlay::before {
-    content:''; position:absolute; inset:0;
-    background:rgba(7,17,29,.78); pointer-events:none;
-}
-#raid-anim-overlay.active { opacity:1; }
-#raid-anim-field {
-    display:flex; flex-direction:row; align-items:center; justify-content:center;
-    gap:0; width:100%; max-width:900px; padding:0 10px; box-sizing:border-box;
-    position:relative; z-index:1;
-}
-.rla-loading { display:none; }
-.rla-side {
-    display:flex; flex-direction:row; align-items:center; justify-content:center;
-    gap:6px; flex:1; opacity:0; transition:opacity .5s ease, transform .5s ease;
-}
-.rla-side.rla-atk { transform:translateX(-20px); }
-.rla-side.rla-def { transform:translateX(20px); }
-.rla-side.revealed { opacity:1; transform:translateX(0); }
-.rla-realm-wrap {
-    display:flex; flex-direction:column; align-items:center; gap:5px; flex-shrink:0;
-}
-.rla-realm-img {
-    width:90px; height:90px; object-fit:cover; border-radius:8px;
-    border:1px solid rgba(255,255,255,.12);
-}
-.rla-realm-name {
-    font-size:.62rem; color:rgba(255,255,255,.45); text-align:center;
-    max-width:90px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.rla-loc-col { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
-.rla-loc-icon { width:26px; height:26px; border-radius:5px; overflow:hidden; flex-shrink:0; }
-.rla-loc-icon img { width:100%; height:100%; object-fit:cover; display:block; }
-.rla-loc-icon.rla-shielded img { filter:drop-shadow(0 0 6px rgba(0,200,160,.9)); }
-.rla-portal-icon {
-    display:flex; flex-direction:column; align-items:center; gap:3px; flex-shrink:0;
-}
-.rla-portal-icon img { width:38px; height:38px; object-fit:contain; display:block; }
-.rla-portal-icon.rla-shielded img { filter:drop-shadow(0 0 6px rgba(0,200,160,.9)); }
-.rla-portal-label { font-size:.55rem; color:rgba(255,255,255,.3); letter-spacing:.05em; text-transform:uppercase; }
-.rla-soldiers-col { display:grid; grid-template-columns:repeat(2, 28px); gap:2px; flex-shrink:0; align-content:start; min-width:58px; }
-.rla-soldier { width:28px; height:28px; border-radius:4px; overflow:hidden; flex-shrink:0; background:url('icons/skull.png') center/cover no-repeat; }
-.rla-soldier img { width:100%; height:100%; object-fit:cover; display:block; }
-.rla-def .rla-soldier { opacity:.75; }
-.rla-status {
-    font-size:1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
-    color:#00c8a0; min-height:1.4em; text-align:center;
-    animation:rla-status-pop .35s cubic-bezier(.18,.89,.32,1.28) both;
-    position:relative; z-index:1;
-}
-@keyframes rla-status-pop { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
-@keyframes rla-crash { 0%,100%{transform:translate(0,0)} 15%{transform:translate(-6px,-2px)} 30%{transform:translate(6px,2px)} 45%{transform:translate(-5px,1px)} 60%{transform:translate(4px,-2px)} 75%{transform:translate(-2px,1px)} }
-.rla-crash { animation: rla-crash .5s ease both; }
-.rla-btn-row {
-    position:absolute; bottom:24px; left:50%; transform:translateX(-50%);
-    display:flex; gap:10px; z-index:1;
-}
-.rla-skip-btn {
-    background:none; border:1px solid rgba(255,255,255,.15); color:rgba(255,255,255,.3);
-    padding:5px 16px; border-radius:20px; font-size:.72rem; cursor:pointer;
-    letter-spacing:.06em; text-transform:uppercase; transition:color .15s,border-color .15s;
-}
-.rla-skip-btn:hover { color:#e8eaed; border-color:rgba(255,255,255,.4); }
-@media (max-width:600px) {
-    #raid-anim-field { padding:0 4px; }
-    .rla-side { gap:3px; }
-    .rla-realm-img { width:46px; height:46px; }
-    .rla-realm-name { max-width:46px; font-size:.52rem; }
-    .rla-portal-icon img { width:22px; height:22px; }
-    .rla-portal-label { font-size:.46rem; }
-    .rla-soldiers-col { grid-template-columns:repeat(1, 18px); min-width:18px; gap:1px; }
-    .rla-soldier { width:18px; height:18px; }
-    .rla-loc-col { gap:3px; }
-    .rla-loc-icon { width:14px; height:14px; border-radius:3px; }
-}
-@media (min-width:1200px) {
-    #raid-anim-overlay { gap:22px; }
-    #raid-anim-field { max-width:1140px; }
-    .rla-side { gap:8px; }
-    .rla-realm-img { width:114px; height:114px; }
-    .rla-realm-name { max-width:114px; font-size:.7rem; }
-    .rla-loc-col { gap:7px; }
-    .rla-loc-icon { width:32px; height:32px; }
-    .rla-portal-icon img { width:48px; height:48px; }
-    .rla-soldiers-col { grid-template-columns:repeat(2, 36px); min-width:74px; gap:3px; }
-    .rla-soldier { width:36px; height:36px; border-radius:5px; }
-    .rla-status { font-size:1.2rem; }
-    #raid-anim-result { min-width:220px; max-width:380px; padding:16px 28px; }
-    .rla-result-row { font-size:.88rem; }
-    .rla-result-icon { width:18px; height:18px; }
-}
-@media (min-width:1600px) {
-    #raid-anim-overlay { gap:28px; }
-    #raid-anim-field { max-width:1500px; }
-    .rla-side { gap:12px; }
-    .rla-realm-img { width:144px; height:144px; border-radius:10px; }
-    .rla-realm-name { max-width:144px; font-size:.82rem; }
-    .rla-loc-col { gap:9px; }
-    .rla-loc-icon { width:40px; height:40px; border-radius:7px; }
-    .rla-portal-icon img { width:62px; height:62px; }
-    .rla-soldiers-col { grid-template-columns:repeat(2, 46px); min-width:94px; gap:5px; }
-    .rla-soldier { width:46px; height:46px; border-radius:6px; }
-    .rla-status { font-size:1.45rem; }
-    #raid-anim-result { min-width:270px; max-width:460px; padding:18px 32px; gap:9px; }
-    .rla-result-row { font-size:1rem; }
-    .rla-result-icon { width:20px; height:20px; }
-}
-@media (min-width:1920px) {
-    #raid-anim-overlay { gap:34px; }
-    #raid-anim-field { max-width:1760px; }
-    .rla-side { gap:16px; }
-    .rla-realm-img { width:172px; height:172px; border-radius:12px; }
-    .rla-realm-name { max-width:172px; font-size:.94rem; }
-    .rla-loc-col { gap:11px; }
-    .rla-loc-icon { width:48px; height:48px; border-radius:9px; }
-    .rla-portal-icon img { width:76px; height:76px; }
-    .rla-soldiers-col { grid-template-columns:repeat(2, 56px); min-width:114px; gap:6px; }
-    .rla-soldier { width:56px; height:56px; border-radius:7px; }
-    .rla-status { font-size:1.65rem; }
-    #raid-anim-result { min-width:310px; max-width:540px; padding:20px 36px; gap:10px; }
-    .rla-result-row { font-size:1.1rem; }
-    .rla-result-icon { width:22px; height:22px; }
-}
-@media (min-width:2560px) {
-    #raid-anim-overlay { gap:42px; }
-    #raid-anim-field { max-width:2360px; }
-    .rla-side { gap:20px; }
-    .rla-realm-img { width:220px; height:220px; border-radius:16px; }
-    .rla-realm-name { max-width:220px; font-size:1.1rem; }
-    .rla-loc-col { gap:14px; }
-    .rla-loc-icon { width:60px; height:60px; border-radius:11px; }
-    .rla-portal-icon img { width:96px; height:96px; }
-    .rla-soldiers-col { grid-template-columns:repeat(2, 70px); min-width:142px; gap:8px; }
-    .rla-soldier { width:70px; height:70px; border-radius:9px; }
-    .rla-status { font-size:2rem; }
-    #raid-anim-result { min-width:380px; max-width:660px; padding:24px 44px; gap:12px; }
-    .rla-result-row { font-size:1.25rem; }
-    .rla-result-icon { width:26px; height:26px; }
-}
-/* ── Result replay: soldier deaths ──────────────────────────── */
-@keyframes rla-death-shake {
-    0%,100% { transform:translate(0,0) scale(1); }
-    10%  { transform:translate(-4px,-2px) scale(1.14); }
-    30%  { transform:translate( 4px, 3px) scale(1.20); }
-    50%  { transform:translate(-4px,-1px) scale(1.14); }
-    70%  { transform:translate( 3px, 2px) scale(1.07); }
-    90%  { transform:translate(-2px,-1px) scale(1.03); }
-}
-.rla-dying { animation:rla-death-shake .52s ease both; position:relative; z-index:2; }
-.rla-dead { filter:drop-shadow(0 0 7px rgba(255,40,40,.98)) brightness(.62) grayscale(.25); }
-/* ── Result card — position:absolute, top set by JS to sit just below status text ── */
-#raid-anim-result {
-    position:absolute; z-index:2;
-    left:50%;
-    display:flex; flex-direction:column; align-items:center; gap:7px;
-    padding:13px 22px; background:rgba(7,17,29,.92);
-    border:1px solid rgba(0,200,160,.22); border-radius:12px;
-    min-width:180px; max-width:310px;
-    opacity:0; transform:translateX(-50%) translateY(8px) scale(.82);
-    transition:opacity .45s ease, transform .45s ease;
-    pointer-events:none;
-}
-#raid-anim-result.visible { opacity:1; transform:translateX(-50%) translateY(0) scale(1); pointer-events:auto; }
-/* ── Realm and location glows ────────────────────────────────── */
-.rla-realm-win  .rla-realm-img { filter:drop-shadow(0 0 14px rgba(0,200,160,.95)); transition:filter .6s ease; }
-.rla-realm-lose .rla-realm-img { filter:drop-shadow(0 0 14px rgba(255,60,60,.9));  transition:filter .6s ease; }
-.rla-glow-green img { filter:drop-shadow(0 0 8px rgba(0,200,160,.9)); transition:filter .6s ease; }
-.rla-glow-red   img { filter:drop-shadow(0 0 8px rgba(255,60,60,.9)); transition:filter .6s ease; }
-
-.rla-result-badge { font-size:1.05rem; font-weight:700; letter-spacing:.05em; margin-bottom:2px; }
-.rla-result-badge.rla-victory { color:#00c8a0; }
-.rla-result-badge.rla-defeat  { color:#ff5c5c; }
-.rla-result-row { display:flex; align-items:center; gap:7px; font-size:.78rem; color:rgba(255,255,255,.82); }
-.rla-result-deaths { color:rgba(255,90,90,.80); font-size:.72rem; }
-.rla-result-icon { width:16px; height:16px; object-fit:contain; flex-shrink:0; }
-.rla-result-divider { width:100%; height:1px; background:rgba(255,255,255,.08); margin:3px 0; }
-/* ── Play All button row ─────────────────────────────────────── */
-.rc-anim-all-row { display:flex; justify-content:flex-end; padding:4px 0 6px; }
-</style>
 <script type='text/javascript'>
 	//if($(window).width() <= 700){
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
@@ -1464,15 +1503,14 @@ $conn->close();
 	/* ── LOCATION MODALS ─────────────────────────────────── */
 	var _locModalTitles    = {1:'Portal',2:'Armory',3:'Tower',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
 	var _locModalEndpoints = {1:'get-portal-report',2:'get-armory',3:'get-tower',4:'get-barracks',5:'get-factory',6:'get-crypt',7:'get-mine'};
-	var _locModalIcons     = <?php
-		/* Read here rather than relying on a $locations left behind by the
-		   panel above -- the panel is a partial now and leaks nothing. */
-		$icon_map = array();
-		foreach (getLocationInfo($conn) as $loc_id => $loc) {
-			$icon_map[intval($loc_id)] = 'icons/locations/' . $loc['name'] . '.png';
-		}
-		echo json_encode($icon_map);
-	?>;
+	<?php /* Built at the top of the page, NOT here: $conn->close() runs
+	         hundreds of lines above this point, and a query against a closed
+	         connection prints a PHP error straight into the middle of this
+	         script. That is a JS syntax error, and a syntax error anywhere in
+	         a <script> stops the WHOLE block -- this one runs from line ~1078
+	         to ~2618, so it took the quick menu, the panel switcher and every
+	         function defined below it down with it. */ ?>
+	var _locModalIcons     = <?php echo json_encode($loc_icon_map); ?>;
 	var _barracksPage = 1;
 	var _armoryPage   = 1;
 	var _portalPage   = 1;
