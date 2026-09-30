@@ -1716,7 +1716,7 @@ $conn->close();
 
 		// Map: just toggle visibility — reinitializing the SVG map via AJAX is not supported
 		if(selection === 'map'){
-			document.getElementById('map').style.display = 'block';
+			rlPanel('map', true);
 			return;
 		}
 
@@ -1728,8 +1728,14 @@ $conn->close();
 			+ '<div style="font-size:.75rem;color:rgba(255,255,255,.35);letter-spacing:.1em;text-transform:uppercase;">Loading</div>'
 			+ '</div>';
 
+		/* rlPanel, NOT container.style.display. #realm and #raids each sit
+		   inside a wrapper that rlPanel hides with them, so showing the
+		   panel directly left the wrapper down and the section rendered
+		   into something invisible -- which is exactly what happened when
+		   the wrappers were introduced and only the HIDE path was routed
+		   through the helper. Every show and every hide goes through it. */
 		var container = document.getElementById(selection);
-		container.style.display = 'block';
+		rlPanel(selection, true);
 		container.innerHTML = loadingHtml;
 
 		$.get('ajax/get-' + selection + '.php', function(html){
@@ -1742,7 +1748,7 @@ $conn->close();
 		// Desktop: locations shows realm panel alongside it
 		if($(window).width() > 700 && selection === 'locations'){
 			var realmEl = document.getElementById('realm');
-			realmEl.style.display = 'block';
+			rlPanel('realm', true);
 			realmEl.innerHTML = loadingHtml;
 			$.get('ajax/get-realm.php', function(html){
 				realmEl.innerHTML = html;

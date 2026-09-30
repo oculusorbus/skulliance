@@ -879,6 +879,22 @@ ok(preg_match('/function rlPanel\(sec, on\)\{[^}]*data-wrap/s', $src) === 1,
 ok(strpos(no_comments($src), "sections.forEach(function(s){ rlPanel(s, false); });") !== false,
    'toggleSections() is writing style.display straight onto each section '
  . 'again, which bypasses rlPanel() and leaves every wrapper standing');
+/*
+ * AND EVERY SHOW GOES THROUGH IT TOO. Routing only the HIDE path through
+ * rlPanel is what broke Raids and Realm: the wrapper came down with the
+ * panel, then the show path wrote container.style.display = 'block'
+ * directly, so the panel was made visible inside a wrapper that was still
+ * display:none. The section rendered into nothing, at every width. One
+ * half of a pair is worse than neither half.
+ */
+$ts = no_comments(substr($src, strpos($src, 'function toggleSections(')));
+$ts = substr($ts, 0, strpos($ts, "\n\t}") + 3);
+preg_match_all('/\.style\.display\s*=/', $ts, $direct);
+printf("  toggleSections direct style.display writes: %d\n", count($direct[0]));
+ok(count($direct[0]) === 0,
+   'toggleSections() writes .style.display directly on a section again; it '
+ . 'has to go through rlPanel() or the section\'s wrapper is left behind '
+ . '-- hidden on a show, standing on a hide');
 
 /* The headings were sized as CONTROLS -- flexbox.css gives them 1.6rem at
    weight 300, a pointer cursor and a hover fade, because they used to be
