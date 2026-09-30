@@ -631,6 +631,31 @@ ok(preg_match('/background-repeat:\s*no-repeat/', $mobileCss) === 1,
  * reliable way to force a zoom-out on iOS, and doing so would throw away
  * their place on the map, so the overlay is pinned to visualViewport.
  */
+/*
+ * AND IT ZOOMS BACK OUT FIRST. Anchoring alone left the card opening over a
+ * corner of a zoomed-in map, which reads as the page lurching. iOS has no
+ * API for resetting zoom, so this is the meta-tag clamp: declare the page
+ * unzoomable for a moment, which makes Safari clamp the scale, then put the
+ * ORIGINAL tag straight back. The restore is the dangerous half -- leaving
+ * user-scalable=0 behind disables pinch for the rest of the session on
+ * every page sharing header.php's viewport, which is worse than the bug.
+ */
+ok(strpos($mapJs, 'function resetPageZoom()') !== false
+   && preg_match('/resetPageZoom\(\);\s*\n\s*popupOverlay\.style\.display/', $mapJs) === 1,
+   'the popup no longer zooms the page out before it opens');
+ok(preg_match('/setTimeout\(\(\) => meta\.setAttribute\(\x27content\x27, original\)/', $mapJs) === 1,
+   'the viewport meta is clamped and never restored -- that disables '
+ . 'pinch-zoom for the rest of the session, on every page, which is a worse '
+ . 'bug than the one being fixed');
+ok(preg_match('/vv\.scale <= 1\.01/', $mapJs) === 1,
+   'the zoom reset fires even when the page is not zoomed, so an ordinary tap '
+ . 'rewrites the shared viewport meta for nothing');
+ok(preg_match('/if \(\/maximum-scale\/\.test\(original\)\) return false/', $mapJs) === 1,
+   'nothing guards against re-entering while the restore is still pending -- '
+ . 'a second tap would capture the CLAMPED tag as the original and make '
+ . 'user-scalable=0 permanent');
+/* The anchor stays as the fallback: the clamp is a trick, and Safari has
+   changed its mind about it before. */
 ok(strpos($mapJs, 'function anchorPopup()') !== false
    && preg_match('/popupOverlay\.style\.display = \x27flex\x27;\s*\n\s*anchorPopup\(\);/', $mapJs) === 1,
    'the realm popup is not anchored to the visual viewport when it opens, so '

@@ -92,8 +92,41 @@ function showPopup(realmSrc, avatarSrc, userName, realmName, factionName, factio
         chipsEl.innerHTML = '<span class="popup-stat popup-badge-peace">Peaceful</span>';
     }
 
+    /* Zoom out FIRST, so the card opens against the whole map rather than
+       over a corner of it, then anchor -- see both functions below. */
+    resetPageZoom();
     popupOverlay.style.display = 'flex';
     anchorPopup();
+}
+
+/*
+ * ZOOM THE PAGE BACK OUT BEFORE THE CARD OPENS.
+ *
+ * iOS exposes no API for this. The one thing that works is to declare the
+ * page briefly unzoomable in the viewport meta -- Safari clamps the current
+ * scale to maximum-scale the moment the tag changes -- and then put the
+ * original tag straight back, which hands pinch-zoom over again. Leaving
+ * user-scalable=0 behind would disable pinch for the rest of the session,
+ * which is a worse bug than the one being fixed, so the restore is not
+ * optional and is not conditional.
+ *
+ * ONLY WHEN ACTUALLY ZOOMED. An ordinary tap at scale 1 must not touch the
+ * meta tag at all; header.php's viewport is shared by every page.
+ *
+ * It is a trick, and Safari has changed its mind about it before. That is
+ * why anchorPopup() stays: if the clamp silently does nothing, the card is
+ * still placed over what the player is looking at rather than off-screen.
+ */
+function resetPageZoom() {
+    const vv = window.visualViewport;
+    if (!vv || vv.scale <= 1.01) return false;
+    const meta = document.querySelector('meta[name="viewport"]');
+    if (!meta) return false;
+    const original = meta.getAttribute('content');
+    if (/maximum-scale/.test(original)) return false;   /* someone else owns it */
+    meta.setAttribute('content', original + ', maximum-scale=1, user-scalable=0');
+    setTimeout(() => meta.setAttribute('content', original), 300);
+    return true;
 }
 
 /*
