@@ -69,6 +69,33 @@ ok(leaderboardBoardFor('15')['key'] === 'delegations',
  . 'the comparison casts both');
 ok(render(null) === '', 'a null filterby renders something');
 
+/*
+ * AN AVERAGE LEVEL IS NOT A DECIMAL(4). The all-time Monstrocity board
+ * ranks on AVG(level) and MySQL returns that as a DECIMAL, so the hub card
+ * read "Lvl 28.0000". The monthly board uses MAX(level), an integer, which
+ * is why only one of the two ever looked wrong.
+ *
+ * The rtrim pair is the part worth pinning: it relies on number_format
+ * having put a '.' in the string. Without that, "20" would trim to "2".
+ */
+echo "\nan average level reads like a level\n";
+eval(brace_extract($db, 'function lbAvgLevel($v)'));
+$levels = array('28.0000' => '28', '27.6667' => '27.7', '27.0999' => '27.1',
+                '100.0000' => '100', '20.1000' => '20.1', '9.9500' => '10',
+                '0.0000' => '0', '30' => '30', '7' => '7');
+foreach ($levels as $in => $want) {
+	ok(lbAvgLevel($in) === $want,
+	   "lbAvgLevel('$in') gave '" . lbAvgLevel($in) . "', wanted '$want'");
+}
+printf("  %d level formats checked, trailing zeros dropped and whole numbers kept whole\n",
+	count($levels));
+$dbsrc = $db;
+ok(strpos($dbsrc, "'score'=>'Lvl '.lbAvgLevel(") !== false,
+   'the Monstrocity hub card prints the raw AVG again -- "Lvl 28.0000"');
+ok(strpos($dbsrc, '$stats = [$level_label=>lbAvgLevel(') !== false,
+   'the Monstrocity board row prints the raw AVG again, so the row and the '
+ . 'hub card disagree');
+
 echo "\nthe page wires it up\n";
 $lb = file_get_contents(__DIR__ . '/leaderboards.php');
 ok(strpos($lb, 'renderLeaderboardPeriods($filterby)') !== false,

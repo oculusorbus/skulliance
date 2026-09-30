@@ -7845,6 +7845,23 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 }
 
 // Check Monstrocity Leaderboard
+/**
+ * An average level, printed the way a person would write it.
+ *
+ * The all-time Monstrocity board ranks on AVG(level), and MySQL hands an
+ * AVG back as a DECIMAL -- so the hub card read "Lvl 28.0000" and the row
+ * under "Avg Level" read the same. The monthly board uses MAX(level) and
+ * is a plain integer, which is why only one of the two ever looked wrong.
+ *
+ * One decimal is the most that means anything for an average of levels,
+ * and a whole number drops the point entirely: 28.0000 -> 28,
+ * 27.6667 -> 27.7. number_format runs first so the string always contains
+ * a '.', which is what stops the rtrim pair turning "20" into "2".
+ */
+function lbAvgLevel($v) {
+	return rtrim(rtrim(number_format(round((float)$v, 1), 1, '.', ''), '0'), '.');
+}
+
 function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 	$claw = 30000;
 	$carbon = 30000;
@@ -7873,7 +7890,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 		while($row = $result->fetch_assoc()) {
 			$leaderboardCounter++;
 			$counter++;
-			if($leaderboardCounter <= 3){ global $leaderboard_top3; $leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>'Lvl '.$row['max_level']]; }
+			if($leaderboardCounter <= 3){ global $leaderboard_top3; $leaderboard_top3[] = ['username'=>$row['username'],'discord_id'=>$row['discord_id'],'avatar'=>$row['avatar'],'visibility'=>$row['visibility'],'score'=>'Lvl '.lbAvgLevel($row['max_level'])]; }
 			$trophy = "";
 			$level = $row["max_level"];
 			$score = $row["max_score"];
@@ -7933,7 +7950,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 			$name_html = "<a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 			$level_label = $monthly ? "Level" : "Avg Level";
 			$score_label = $monthly ? "Score" : "Avg Score";
-			$stats = [$level_label=>$row["max_level"],$score_label=>number_format($row["max_score"]),'Completions'=>number_format($row["completions"])];
+			$stats = [$level_label=>lbAvgLevel($row["max_level"]),$score_label=>number_format($row["max_score"]),'Completions'=>number_format($row["completions"])];
 			$reward_col = $monthly ? number_format(round($claw/$leaderboardCounter))." CLAW + ".number_format(round($carbon/$leaderboardCounter))." CARBON" : '';
 			$lb_rows[] = ['rank'=>$leaderboardCounter,'trophy'=>$trophy,'avatar_url'=>$avatar_url,'name'=>$name_html,'highlight'=>($highlight=="highlight"),'stats'=>$stats,'reward'=>$reward_col];
 			$last_total = $score;
