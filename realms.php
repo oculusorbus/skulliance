@@ -427,11 +427,40 @@ $realm_status = checkRealm($conn);
  * whichever option happened to be first.
  */
 $realm_id = $realm_status ? getRealmID($conn) : 0;
-/* And the location icon map, while the connection is still open. */
+/*
+ * And everything else the REST of the page reads out of the locations panel.
+ *
+ * All of this used to be assigned inside the panel and picked up later by
+ * markup hundreds of lines below it -- the modal icon map, the Portal level
+ * in two raid dialogs. Moving the panel into a partial took the lot, and
+ * $levels[1] inside the big <script> block printed a PHP warning into the
+ * middle of the JavaScript, which is a syntax error, which kills the WHOLE
+ * block -- the quick menu and every function in it included.
+ *
+ * That failure is invisible from the page text, too: the warning lands
+ * inside a <script>, so document.body.innerText showed zero warnings while
+ * the page was thoroughly broken.
+ *
+ * Read once, here, while the connection is open and before anything needs
+ * them. realms-harness.php checks that nothing in the script block reads a
+ * variable that is not defined up here.
+ */
 $loc_icon_map = array();
 foreach (getLocationInfo($conn) as $loc_id => $loc) {
 	$loc_icon_map[intval($loc_id)] = 'icons/locations/' . $loc['name'] . '.png';
 }
+$levels = $realm_status ? getRealmLocationLevels($conn) : array();
+/*
+ * These three were assigned in the tail block, AFTER the markup that reads
+ * them: #enlist-selected-count prints $barracks_slots_open at roughly line
+ * 1050 and it was not assigned until ~1109, so the Enlist modal has always
+ * opened on "0 of 0 slots selected". Pre-dates the panel rebuild; found by
+ * realms-harness.php's read-before-write pass while chasing $levels.
+ */
+$nft_project_tree    = getUserNFTProjectTree($conn);
+$barracks_cap        = $realm_id ? getDeploymentCap($conn, $realm_id) : 0;
+$barracks_slots_open = $realm_id
+	? max(0, $barracks_cap - getTotalSoldierSlotCost($conn, $realm_id)) : 0;
 
 if(isset($_POST['realm']) && isset($_POST['faction'])){
 	if(!$realm_status){
@@ -1002,7 +1031,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				<h2 style="margin:0;font-size:1rem;">Select Soldiers for Raid</h2>
 				<button class="raid-modal-close" onclick="closeRaidSoldierModal()" aria-label="Close">&times;</button>
 			</div>
-			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 10px;">Select up to <?php echo min(intval($levels[1]), 10); ?> trained soldiers from your Barracks (max 10 per raid). Their equipped weapon and armor will go on this raid.</p>
+			<p style="font-size:0.78rem;opacity:0.55;margin:0 0 10px;">Select up to <?php echo min(intval(isset($levels[1]) ? $levels[1] : 0), 10); ?> trained soldiers from your Barracks (max 10 per raid). Their equipped weapon and armor will go on this raid.</p>
 			<div id="raid-soldiers-grid"><div style="text-align:center;padding:20px;opacity:0.5;">Loading...</div></div>
 			<div class="raid-modal-footer">
 				<span id="raid-soldiers-count" style="font-size:0.8rem;opacity:0.65;margin-right:auto;">0 / 10 selected</span>
@@ -1086,9 +1115,6 @@ if($realm_status && isset($_SESSION['userData']['user_id'])){
 	echo "<script>window.myRealmId = ".(int)getRealmID($conn).";</script>";
 $_raidDeployConfig = isset($_SESSION['raidDeployConfig']) ? $_SESSION['raidDeployConfig'] : array('amount'=>'tactical','weapon'=>'balanced','armor'=>'medium');
 }
-$nft_project_tree    = getUserNFTProjectTree($conn);
-$barracks_cap        = getDeploymentCap($conn, $realm_id);
-$barracks_slots_open = max(0, $barracks_cap - getTotalSoldierSlotCost($conn, $realm_id));
 // Close DB Connection
 $conn->close();
 ?>
@@ -1210,7 +1236,7 @@ $conn->close();
 
 	/* ── RAID SOLDIER SELECTION ──────────────────────────── */
 	// Intercept openRaidConsumablesModal to show soldier picker first
-	var _portalLevel              = Math.min(<?php echo intval($levels[1]); ?>, 10);
+	var _portalLevel              = Math.min(<?php echo intval(isset($levels[1]) ? $levels[1] : 0); ?>, 10);
 	var _nftProjectTree           = <?php echo json_encode($nft_project_tree); ?>;
 	var _barracksOpenSlots        = <?php echo intval($barracks_slots_open); ?>;
 	var _raidSoldierSelectedIds   = [];
