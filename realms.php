@@ -5,6 +5,7 @@ include 'message.php';
 include 'verify.php';
 include 'skulliance.php';
 include 'header.php';
+require_once __DIR__ . '/realms-lib.php';   // the locations panel, as data
 
 $realm_status = checkRealm($conn);
 
@@ -47,157 +48,14 @@ $incoming_completed = getRaids($conn, "incoming", "completed");
 			$projects = getProjects($conn, "core");
 			if($realm_status){
 				if(checkRealmState($conn) == 1){
-					$status = getRealmLocationsUpgrades($conn);
-					$locations = getLocationInfo($conn);
-					?>
-					<ul style='position:relative;top:-51px'>
-					<?php
-					$realm_id = getRealmID($conn);
-					$levels = getRealmLocationLevels($conn);
-					$loc_consumables = getRealmLocationConsumables($conn, $realm_id);
-					$amounts_data = getCurrentAmounts($conn);
-					$con_names = array(1=>'100% Success',2=>'75% Success',3=>'50% Success',4=>'25% Success',5=>'Fast Forward',6=>'Double Rewards',7=>'Random Reward');
-					?>
-					<li class="role" style="display:block;padding:8px 0 12px;">
-						<div class="location-row realm-header-row" style="border-bottom:1px solid rgba(0,200,160,0.15);padding-bottom:14px;margin-bottom:6px;align-items:center;">
-							<div class="realm-logo-wrap" style="flex-shrink:0;">
-								<img src="images/realms-logo.png" style="width:100px;opacity:0.9;margin-right:0;margin-top:8px;"/>
-							</div>
-							<div class="realm-header-spacer" style="flex:1;"></div>
-							<div class="realm-deactivate-wrap" style="flex-shrink:0;text-align:right;display:flex;gap:6px;align-items:center;">
-								<input class="small-button" type="button" value="Guide" onclick="openGuideModal()"/>
-								<?php echo '<input class="small-button" type="button" value="Deactivate" onclick="deactivateRealm('.$realm_id.');">';?>
-							</div>
-						</div>
-					</li>
-					<li class="role" style="display:block;padding:4px 0 8px;">
-						<strong class="loc-inventory-header">Inventory</strong>
-						<div class="loc-inventory-strip">
-							<?php foreach($con_names as $cid => $cname):
-								$qty = isset($amounts_data[$cid]) ? intval($amounts_data[$cid]['amount']) : 0;
-								$icon = strtolower(str_replace('%','',str_replace(' ','-',$cname))).'.png';
-							?>
-							<div class="loc-inv-slot <?php echo $qty > 0 ? 'available' : 'unavailable'; ?>"
-							     id="inv-slot-<?php echo $cid; ?>"
-							     title="<?php echo htmlspecialchars($cname); ?>">
-								<img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'"/>
-								<span class="loc-con-badge" id="inv-qty-<?php echo $cid; ?>"><?php echo $qty; ?></span>
-							</div>
-							<?php endforeach; ?>
-							<div class="loc-stock-row" style="margin-top:6px;gap:6px;">
-								<button class="small-button" onclick="openInventoryInfoModal()">Inventory Info</button>
-								<button class="small-button" id="stock-all-btn" onclick="stockAllLocations()">Stock All Locations</button>
-							</div>
-						</div>
-					</li>
-					<?php
-					$previous_type = "";
-					foreach($locations AS $location_id => $location){
-						if($previous_type == ""){
-							echo "<div class='location-wrapper ".$location['type']."'>".ucfirst($location['type']);
-						}else if($previous_type != $location['type']){
-							echo "</div>";
-							echo "<div class='location-wrapper ".$location['type']."'>".ucfirst($location['type']);
-						}
-						?>
-						<li class="role">
-							<div class="location-row">
-								<div class="location-icon-wrap">
-									<img style="opacity:0.85;width:44px;" title="<?php echo $location['description'];?>" src="icons/locations/<?php echo $location['name']; ?>.png">
-								</div>
-								<div class="location-info">
-									<strong><?php echo strtoupper($location['name']); ?></strong>
-									<div class="location-meta">Level <?php echo $levels[$location_id]; ?>
-									<?php
-									/* THE PRICE COMES FROM THE SERVER'S OWN QUOTE, the same
-									   one ajax/upgrade-realm-location.php charges against.
-									   These three lines used to live here as well as in the
-									   endpoint's head -- except the endpoint never actually
-									   applied them, and simply spent whatever the query
-									   string said. One function decides now, so what is
-									   printed and what is charged cannot disagree. */
-									$q = null;
-									if(!isset($status[$location_id])){
-										$q = realmUpgradeQuote($conn, $location_id);
-										$duration = $q['duration'];
-										$cost     = $q['cost']; ?>
-										&bull; <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?>
-										&bull; <?php echo $duration." ".($duration == 1 ? "Day" : "Days"); ?>
-									<?php } ?>
-									</div>
-									<?php
-									$loc_eq = isset($loc_consumables[$location_id]) ? $loc_consumables[$location_id] : array();
-									$s_boost = 0;
-									if(isset($loc_eq[1])) $s_boost += 4;
-									if(isset($loc_eq[2])) $s_boost += 3;
-									if(isset($loc_eq[3])) $s_boost += 2;
-									if(isset($loc_eq[4])) $s_boost += 1;
-									$s_boost = min(10, $s_boost);
-									$tags = array();
-									if($s_boost > 0)      $tags[] = '+'.$s_boost.'% Success';
-									if(isset($loc_eq[5])) $tags[] = 'Fast Forward';
-									if(isset($loc_eq[6])) $tags[] = 'Shield';
-									if(isset($loc_eq[7])) $tags[] = 'Random Reward';
-									?>
-									<div id="loc-status-<?php echo $location_id; ?>" class="loc-status-labels">
-										<?php foreach($tags as $tag): ?><span class="loc-status-tag"><?php echo $tag; ?></span><?php endforeach; ?>
-									</div>
-								</div>
-								<div class="location-action" id="loc-action-<?php echo $location_id; ?>">
-								<div id="loc-upgrade-<?php echo $location_id; ?>" class="loc-upgrade-wrap"><?php
-								if(!isset($status[$location_id])){
-									$balance = $q['balance'];
-									if($q['ok']){
-										$upgrade_verbiage = ($levels[$location_id] >= 10) ? "Maintain" : "Upgrade";
-										echo "<input id='upgrade-button-".$location_id."' class='small-button' type='button' value='".$upgrade_verbiage." Lv".$duration."' onclick='upgradeRealmLocation(this, ".$realm_id.", ".$location_id.", ".$duration.", ".$cost.", ".$location_id.")'>";
-									}else{
-										echo "<div class='loc-need-msg' id='upgrade-message-".$location_id."'>Need ".number_format($cost-$balance)." ".$projects[$location_id]['currency']."</div>";
-										echo "<input id='points-button-".$location_id."' class='small-button' type='button' value='".$points_multiplier."x Pts' onclick=\"togglePointsButtons('disable');pointsOption(this, ".$realm_id.", ".$location_id.", ".$duration.", ".$cost.")\"".">";
-									}
-								}else{ echo $status[$location_id]; }
-								?></div><?php
-							// Location-specific modal button
-							$loc_modal_map = array(1=>'Manage Portal',2=>'Manage Armory',3=>'Manage Tower',4=>'Manage Barracks',5=>'Manage Factory',6=>'Manage Crypt',7=>'Manage Mine');
-							if(isset($loc_modal_map[$location_id])){
-								echo "<input class='small-button loc-modal-btn' type='button' value='".$loc_modal_map[$location_id]."' onclick='openLocationModal(".$location_id.")'>";
-							}
-								?>
-								</div>
-							</div>
-							<!-- Consumable strip for this location -->
-							<div class="loc-consumable-strip" id="loc-consumables-<?php echo $location_id; ?>">
-								<?php foreach($con_names as $cid => $cname):
-									$equipped = isset($loc_consumables[$location_id][$cid]);
-									$qty = isset($amounts_data[$cid]) ? intval($amounts_data[$cid]['amount']) : 0;
-									$icon = strtolower(str_replace('%','',str_replace(' ','-',$cname))).'.png';
-									$slot_class = $equipped ? 'equipped' : ($qty > 0 ? 'available' : 'unavailable');
-									$slot_title = htmlspecialchars($cname).($equipped?' (Equipped - click to unequip)':($qty>0?' (Click to equip)':' (None in inventory)'));
-									$slot_onclick = $equipped ? 'removeLocationConsumable('.$location_id.','.$cid.')' : ($qty>0 ? 'applyLocationConsumable('.$location_id.','.$cid.')' : '');
-								?>
-								<div class="loc-con-slot <?php echo $slot_class; ?>"
-								     id="loc-con-<?php echo $location_id.'-'.$cid; ?>"
-								     title="<?php echo $slot_title; ?>"
-								     onclick="<?php echo $slot_onclick; ?>">
-									<img class="icon" src="icons/<?php echo $icon; ?>" onerror="this.src='icons/skull.png'"/>
-									<?php if($equipped): ?>
-									<span class="loc-con-badge equipped">&#10003;</span>
-									<?php elseif($qty > 0): ?>
-									<span class="loc-con-badge" id="loc-inv-<?php echo $location_id.'-'.$cid; ?>"><?php echo $qty; ?></span>
-									<?php endif; ?>
-								</div>
-								<?php endforeach; ?>
-								<div class="loc-stock-row">
-									<button class="small-button" id="stock-btn-<?php echo $location_id; ?>" onclick="stockLocation(<?php echo $location_id; ?>)">Stock Location</button>
-								</div>
-							</div>
-							</li>
-					<?php
-					$previous_type = $location['type'];
-					}
-					echo "</div>";
-					?>
-					</ul>
-				<?php
+					/* One panel, one partial. realm_location_panel() calls
+					   getRealmLocationsUpgrades() itself -- which is what
+					   completes a due upgrade -- so it is not called twice here.
+					   The <ul> wrapper and its -51px nudge are gone with the
+					   <li> rows they were holding up. */
+					$rl_panel = realm_location_panel($conn);
+					$rl_guide = true;
+					include __DIR__ . '/realms-locations.php';
 				}else{
 					$realm_id = getRealmID($conn);
 					echo "<h2>Realm Status</h2>";
@@ -815,6 +673,107 @@ $conn->close();
 <script type="text/javascript" src="map.js?var=<?php echo rand(0,999); ?>"></script>
 <?php if($realm_status){ ?>
 <style>
+/* ── LOCATIONS PANEL ──────────────────────────────────────────────────────
+ *
+ * Squared, to match missions and profile. The old panel was pill buttons and
+ * 12px panel radii inside loud cyan/magenta category boxes, printed the same
+ * loadout twice -- four name tags above seven slots wearing ticks -- and put
+ * three buttons on every row with Unstock orphaned on a line of its own.
+ *
+ * NAMESPACED .rl-*. This page shares a stylesheet with everything else and
+ * flexbox.css already owns names like .top; a bare .slot or .group here would
+ * be the same mistake.
+ */
+.rl-head { display:flex; align-items:center; gap:12px; padding:0 0 12px;
+  border-bottom:1px solid rgba(0,200,160,.15); margin-bottom:12px; }
+.rl-logo { width:96px; opacity:.9; margin:0; }
+.rl-head-acts { margin-left:auto; display:flex; gap:6px; }
+
+/* The platform's button, squared and sized for a dense panel. .button and
+   .small-button both arrive from flexbox.css carrying width and shadow this
+   layout does not want. */
+.rl-btn { font:inherit; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase;
+  padding:7px 12px; border:1px solid rgba(0,200,160,.35); border-radius:0;
+  background:rgba(0,200,160,.06); color:#00c8a0; cursor:pointer; width:auto;
+  box-shadow:none; margin:0; line-height:1; white-space:nowrap; }
+.rl-btn:hover { background:rgba(0,200,160,.16); }
+.rl-btn:disabled { opacity:.45; cursor:default; }
+.rl-btn.sm { font-size:.64rem; padding:5px 8px; letter-spacing:.05em; }
+.rl-btn.go { background:#00c8a0; color:#07111d; border-color:#00c8a0; font-weight:bold; }
+.rl-btn.go:hover { background:#25e3bd; }
+
+/* The two numbers that actually decide a raid. */
+.rl-boosts { display:flex; flex-wrap:wrap; gap:14px; align-items:baseline;
+  padding:9px 11px; margin-bottom:12px; border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03); font-size:.75rem; }
+.rl-boosts b { color:#00c8a0; font-size:1rem; margin-right:3px; }
+.rl-boosts-note { opacity:.45; font-size:.68rem; flex-basis:100%; }
+
+.rl-inv { border:1px solid rgba(255,255,255,.08); background:rgba(255,255,255,.03);
+  padding:9px 11px; margin-bottom:16px; }
+.rl-inv-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+.rl-inv-head strong { font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; opacity:.7; }
+.rl-inv-acts { margin-left:auto; display:flex; gap:6px; flex-wrap:wrap; }
+
+/* One slot style for the inventory strip and every location's kit. */
+/* 28px and a 4px gap so all seven fit one row beside Stock/Manage in the
+   left column's real width (~380px of content). At 34px they wrapped 5+2,
+   which pushed the buttons onto a third line and made every card taller
+   than the information in it. Measured, not guessed. */
+.rl-slots { display:flex; gap:4px; flex-wrap:wrap; }
+.rl-slot { position:relative; width:28px; height:28px; flex:none; display:block;
+  border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.25); }
+.rl-slot img { width:100%; height:100%; object-fit:contain; display:block; padding:3px;
+  box-sizing:border-box; }
+.rl-slot.none { opacity:.3; }
+.rl-slot.has { cursor:pointer; }
+.rl-slot.has:hover { border-color:#00c8a0; }
+.rl-slot.on { border-color:#00c8a0; background:rgba(0,200,160,.14); cursor:pointer; }
+.rl-slot i { position:absolute; right:-2px; bottom:-2px; font-style:normal; font-size:.6rem;
+  line-height:1; padding:1px 3px; background:#07111d; border:1px solid rgba(255,255,255,.16);
+  color:#c8dce8; }
+.rl-slot i.on { background:#00c8a0; color:#07111d; border-color:#00c8a0; }
+
+/* Category. A label and a hairline, not a coloured box round everything. */
+.rl-group { margin:0 0 18px; }
+.rl-group h4 { margin:0 0 8px; font-size:.68rem; letter-spacing:.16em; text-transform:uppercase;
+  opacity:.5; border-bottom:1px solid rgba(255,255,255,.08); padding-bottom:5px; }
+
+.rl-loc { border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.02);
+  padding:10px 11px; margin-bottom:8px; }
+.rl-loc-top { display:flex; align-items:flex-start; gap:10px; width:100%;
+  text-align:left; background:none; border:0; padding:0; margin:0; color:inherit;
+  font:inherit; }
+.rl-loc-top.can { cursor:pointer; }
+.rl-loc-top.can:hover .rl-loc-id strong { text-decoration:underline; }
+.rl-loc-top.can:focus-visible { outline:2px solid #00c8a0; outline-offset:2px; }
+.rl-loc-icon { width:40px; height:40px; flex:none; opacity:.9; object-fit:contain; margin:0; }
+.rl-loc-id { flex:1; min-width:0; }
+.rl-loc-id strong { display:block; font-size:.86rem; letter-spacing:.06em; color:#00c8a0; }
+.rl-loc-sub { display:block; font-size:.7rem; opacity:.6; margin-top:2px; }
+.rl-loc-sub em { opacity:.55; font-style:normal; }
+.rl-loc-lv { flex:none; font-size:.72rem; opacity:.75; font-variant-numeric:tabular-nums; }
+.rl-loc-lv b { font-size:.9rem; color:#c8dce8; font-weight:normal; }
+/* Past the ceiling is a badge of honour, not an error. */
+.rl-loc-lv.over b { color:#ffc800; }
+
+.rl-loc-offer { display:flex; align-items:center; gap:9px; flex-wrap:wrap;
+  margin:9px 0 0; padding-top:9px; border-top:1px solid rgba(255,255,255,.06); }
+.rl-price { font-size:.7rem; opacity:.6; font-variant-numeric:tabular-nums; }
+.rl-short { font-size:.7rem; color:#ffc800; opacity:.85; }
+.rl-cap { font-size:.7rem; opacity:.6; }
+.rl-run { font-size:.72rem; color:#00c8a0; }
+.rl-run + .countdown { font-size:.78rem; font-variant-numeric:tabular-nums; color:#c8dce8; }
+.rl-run-note { font-size:.68rem; opacity:.45; }
+
+.rl-loc-acts { display:flex; gap:6px; flex:none; margin-left:auto; }
+.rl-loc-kit { margin-top:9px; }
+
+/* Phones: the actions take their own line rather than squeezing the offer. */
+@media (max-width:640px){
+  .rl-loc-acts { margin-left:0; width:100%; }
+  .rl-loc-acts .rl-btn { flex:1; }
+}
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 @keyframes lb { to { width:90%; } }
 /* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
@@ -1506,8 +1465,12 @@ $conn->close();
 	var _locModalTitles    = {1:'Portal',2:'Armory',3:'Tower',4:'Barracks',5:'Factory',6:'Crypt',7:'Mine'};
 	var _locModalEndpoints = {1:'get-portal-report',2:'get-armory',3:'get-tower',4:'get-barracks',5:'get-factory',6:'get-crypt',7:'get-mine'};
 	var _locModalIcons     = <?php
+		/* Read here rather than relying on a $locations left behind by the
+		   panel above -- the panel is a partial now and leaks nothing. */
 		$icon_map = array();
-		foreach ($locations as $loc_id => $loc) { $icon_map[intval($loc_id)] = 'icons/locations/' . $loc['name'] . '.png'; }
+		foreach (getLocationInfo($conn) as $loc_id => $loc) {
+			$icon_map[intval($loc_id)] = 'icons/locations/' . $loc['name'] . '.png';
+		}
 		echo json_encode($icon_map);
 	?>;
 	var _barracksPage = 1;

@@ -8357,6 +8357,17 @@ function getRealmLocationNamesLevels($conn, $realm_id){
 	return $levels;
 }
 
+/*
+ * THE HIGHEST LEVEL AN UPGRADE CAN BUY.
+ *
+ * Not the highest level a location can BE. Raids credit levels with no cap
+ * (updateRealmLocationLevel), and holding a location well above this is a
+ * deliberate playstyle -- drift past the ceiling and few realms will attack
+ * you. What this caps is the purchase: past it there is nothing left to buy,
+ * so nothing is offered.
+ */
+if (!defined('REALM_UPGRADE_CEILING')) define('REALM_UPGRADE_CEILING', 10);
+
 /**
  * THE PRICE OF AN UPGRADE, DECIDED BY THE SERVER.
  *
@@ -8386,7 +8397,8 @@ function getRealmLocationNamesLevels($conn, $realm_id){
 function realmUpgradeQuote($conn, $location_id, $project_id = 0){
 	$out = array('ok' => false, 'why' => '', 'realm_id' => 0, 'location_id' => 0,
 	             'level' => 0, 'duration' => 0, 'cost' => 0, 'project_id' => 0,
-	             'currency' => '', 'balance' => 0, 'multiplier' => 1);
+	             'currency' => '', 'balance' => 0, 'multiplier' => 1,
+	             'at_ceiling' => false);
 	if (empty($_SESSION['userData']['user_id'])) { $out['why'] = 'Not signed in.'; return $out; }
 
 	$location_id = (int)$location_id;
@@ -8414,10 +8426,28 @@ function realmUpgradeQuote($conn, $location_id, $project_id = 0){
 
 	$level = (int)getRealmLocationLevel($conn, $realm_id, $location_id);
 	$out['level'] = $level;
-	/* Identical to what realms.php printed: past 10 it is a Maintain at 10. */
-	if ($level > 10)       $duration = 10;
-	elseif ($level === 10) $duration = 10;
-	else                   $duration = $level + 1;
+
+	/*
+	 * NOTHING IS SOLD AT OR ABOVE THE CEILING.
+	 *
+	 * The page used to offer "Maintain Lv10" here and it could only cost you.
+	 * At exactly 10 it took 1,000 currency and ten days of lockout to change
+	 * nothing; above 10 -- where raids legitimately push a location, and
+	 * where power players deliberately sit -- upgradeRealmLocationLevel()
+	 * SET the level back to 10. Measured: a level 21 Portal came out at 10.
+	 * Completing an upgrade does nothing else (it sets the level, clears the
+	 * row, burns a Fast Forward and posts to Discord), so there is no state
+	 * at 10+ in which buying one helps.
+	 *
+	 * Refused here and not only in the markup, because the button was never
+	 * the thing that decided -- see this function's header.
+	 */
+	if ($level >= REALM_UPGRADE_CEILING) {
+		$out['at_ceiling'] = true;
+		$out['why'] = 'Already at the upgrade ceiling.';
+		return $out;
+	}
+	$duration = $level + 1;
 	$out['duration'] = $duration;
 
 	$base = $duration * 100;
@@ -8617,16 +8647,24 @@ function getRealmLocationLevel($conn, $realm_id, $location_id){
 }
 
 function upgradeRealmLocationLevel($conn, $realm_id, $location_id, $duration){
-	$current_level = getRealmLocationLevel($conn, $realm_id, $location_id);
-	// Check if current level is greater than upgrade duration. If so, sync upgrade to current level to avoid penalizing owner.
-	if($current_level > $duration){
-		$duration = $current_level;
-	}
-	// Safety precaution in case someone manages to level up a location past 10
-	if($duration > 10){
-		$duration = 10;
-	}
-	//$new_level = $current_level + 1;
+	$current_level = (int)getRealmLocationLevel($conn, $realm_id, $location_id);
+	/*
+	 * AN UPGRADE CAN NEVER LOWER A LEVEL.
+	 *
+	 * These were two clauses that cancelled each other out. The first said
+	 * "sync upgrade to current level to avoid penalizing owner"; the second,
+	 * "safety precaution in case someone manages to level up a location past
+	 * 10", immediately capped it back to 10 and undid the protection. A
+	 * level 21 Portal finishing a Maintain came out at 10, and the Realms
+	 * leaderboard ranks on SUM(level).
+	 *
+	 * Above 10 is not something anyone "manages" -- raids credit levels with
+	 * no cap and holding a location up there is a deliberate playstyle, the
+	 * reward for which is that almost nobody attacks you. So the purchased
+	 * target is capped, and the level itself is never reduced.
+	 */
+	$target    = min(REALM_UPGRADE_CEILING, (int)$duration);
+	$duration  = max($current_level, $target);
 	$sql = "UPDATE realms_locations SET level = '".$duration."' WHERE realm_id='".$realm_id."' AND location_id='".$location_id."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";

@@ -1072,20 +1072,22 @@ function pointsOption(pointsOptionButton, realmID, locationID, duration, cost){
 	};
 }
 
-function togglePointsButtons(status){
-	for (let i = 1; i <= 7; i++) {
-		pointsButton = document.getElementById('points-button-'+i);
-		if (typeof(pointsButton) != 'undefined' && pointsButton != null){
-			if(status == "disable"){
-				pointsButton.disabled = true;
-				pointsButton.style.display = "none";
-			}else if(status == "enable"){
-				pointsButton.removeAttribute("disabled");
-				pointsButton.style.display = "block";
-			}
-		}
-	}
-}
+/*
+ * THE GLOBAL LOCK IS GONE, and this is kept only so nothing that still calls
+ * it breaks.
+ *
+ * It used to hide the "pay with other points" button on ALL SEVEN locations
+ * the moment you pressed one, until that purchase finished or you reloaded.
+ * The reason was real: the dropdowns were built from balances read at page
+ * render, so spending on one location left the other six quoting prices
+ * against money you no longer had, and nothing re-checked at spend time.
+ *
+ * realmUpgradeQuote() re-prices and re-checks the balance at the moment of
+ * spend now, so a stale choice is refused with "Need 400 more DREAD" instead
+ * of going through. Locking six locations to protect against something the
+ * server already refuses is a worse trade than the refusal.
+ */
+function togglePointsButtons(status){ /* intentionally does nothing -- see above */ }
 
 // Global state for raid consumables modal
 var _raidModalDefenseId = null;
@@ -1431,43 +1433,71 @@ function _syncLocConsumableSlots(equippedMap){
 			var isEquipped = equippedMap[lid] && equippedMap[lid][cid];
 			var invQtyEl = document.getElementById('inv-qty-'+cid);
 			var qty = invQtyEl ? parseInt(invQtyEl.textContent) : 0;
-			slotEl.classList.remove('equipped','available','unavailable');
-			var badge = slotEl.querySelector('.loc-con-badge');
+			/* Classes and badge element follow realms-locations.php: the slot
+			   is .rl-slot with on/has/none, and the count is an <i>, not a
+			   .loc-con-badge span. Changing the markup without changing this
+			   leaves equipping silently not updating the tick. */
+			slotEl.classList.remove('on','has','none');
+			var badge = slotEl.querySelector('i');
+			var mkBadge = function(){ var b=document.createElement('i'); slotEl.appendChild(b); return b; };
 			if(isEquipped){
-				slotEl.classList.add('equipped');
+				slotEl.classList.add('on');
 				slotEl.setAttribute('onclick','removeLocationConsumable('+lid+','+cid+')');
-				if(badge){ badge.classList.add('equipped'); badge.textContent = '\u2713'; }
-				else{ var nb=document.createElement('span'); nb.className='loc-con-badge equipped'; nb.textContent='\u2713'; slotEl.appendChild(nb); }
+				if(!badge) badge = mkBadge();
+				badge.className = 'on'; badge.textContent = '\u2713';
 			} else if(qty > 0){
-				slotEl.classList.add('available');
+				slotEl.classList.add('has');
 				slotEl.setAttribute('onclick','applyLocationConsumable('+lid+','+cid+')');
-				if(badge){ badge.classList.remove('equipped'); badge.textContent = qty; }
-				else{ var nb2=document.createElement('span'); nb2.className='loc-con-badge'; nb2.textContent=qty; slotEl.appendChild(nb2); }
+				if(!badge) badge = mkBadge();
+				badge.className = ''; badge.textContent = qty;
 			} else {
-				slotEl.classList.add('unavailable');
+				slotEl.classList.add('none');
 				slotEl.setAttribute('onclick','');
 				if(badge) badge.remove();
 			}
 		}
-		_updateLocationStatusLabels(lid, equippedMap[lid]);
+		_updateLocationStatusLabels(lid, equippedMap[lid], equippedMap);
 	}
 	_checkStockButtonStates();
 }
 
-function _updateLocationStatusLabels(lid, equippedRow){
-	var el = document.getElementById('loc-status-'+lid);
+/*
+ * The one line under a location's name, kept in step with what PHP's
+ * realm_location_effects() renders on load. It used to fill a separate
+ * #loc-status-N strip of name tags that sat directly above seven slots
+ * showing the identical state; the strip is gone and this writes the
+ * effect summary instead.
+ *
+ * WORDING FOLLOWS THE CODE, not the item names. Consumable 6 is called
+ * "Double Rewards" and on a location it is a shield -- startRaid() spends
+ * it to absorb a hit. Consumable 7 does nothing at all until every
+ * location on that side has one, which is why it is annotated rather than
+ * asserted.
+ */
+function _updateLocationStatusLabels(lid, equippedRow, allEquipped){
+	var el = document.getElementById('loc-sub-'+lid);
 	if(!el) return;
 	equippedRow = equippedRow || {};
 	var boostMap = {1:4, 2:3, 3:2, 4:1};
 	var boost = 0;
 	for(var cid in boostMap){ if(equippedRow[cid]) boost += boostMap[cid]; }
 	boost = Math.min(10, boost);
-	var tags = [];
-	if(boost > 0)      tags.push('+'+boost+'% Success');
-	if(equippedRow[5]) tags.push('Fast Forward');
-	if(equippedRow[6]) tags.push('Shield');
-	if(equippedRow[7]) tags.push('Random Reward');
-	el.innerHTML = tags.map(function(t){ return '<span class="loc-status-tag">'+t+'</span>'; }).join('');
+	var bits = [];
+	if(boost > 0)      bits.push('+'+boost+'% success');
+	if(equippedRow[5]) bits.push('half-time upgrades');
+	if(equippedRow[6]) bits.push('shields one raid hit');
+	if(equippedRow[7]){
+		var defense = [3,5,7], side = defense.indexOf(lid) !== -1 ? 'defense' : 'offense';
+		var ids = side === 'defense' ? defense : [1,2,4,6], armed = true;
+		for(var i=0;i<ids.length;i++){
+			if(!(allEquipped && allEquipped[ids[i]] && allEquipped[ids[i]][7])){ armed = false; break; }
+		}
+		bits.push(armed ? 'random reward armed'
+		                : 'random reward (needs every '+side+' location)');
+	}
+	el.innerHTML = bits.length ? bits.map(function(b){
+		return b.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }).join(' &middot; ')
+		: '<em>nothing equipped</em>';
 }
 
 function _updateUpgradeDisplays(upgrades){

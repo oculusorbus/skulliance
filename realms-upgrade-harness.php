@@ -40,6 +40,13 @@ function extract_fn($src, $name) {
 }
 
 $db   = file_get_contents(__DIR__ . '/db.php');
+/* The ceiling comes out of db.php rather than being repeated here, or the
+   harness would keep passing after somebody moved it. */
+preg_match("/define\('REALM_UPGRADE_CEILING',\s*(\d+)\)/", $db, $cm);
+ok(!empty($cm[1]), 'REALM_UPGRADE_CEILING is not defined in db.php');
+define('REALM_UPGRADE_CEILING', (int)$cm[1]);
+printf("ceiling: %d\n\n", REALM_UPGRADE_CEILING);
+
 $body = extract_fn($db, 'realmUpgradeQuote');
 if ($body === '') { echo "  FAIL  realmUpgradeQuote() not found in db.php\n"; exit(1); }
 ok(strpos($body, 'getRealmID($conn)') !== false,
@@ -91,13 +98,34 @@ ok($q['cost'] === 400, 'the price is duration x 100, quoted ' . $q['cost']);
 ok($q['realm_id'] === 77, 'the quote did not use the session realm');
 ok($q['project_id'] === 4, "the default currency should be the location's own");
 
-/* The ladder, including the Maintain case past 10. */
-foreach (array(0 => 1, 1 => 2, 9 => 10, 10 => 10, 21 => 10) as $lvl => $want) {
+/* The ladder up to the ceiling. */
+foreach (array(0 => 1, 1 => 2, 8 => 9, 9 => 10) as $lvl => $want) {
 	$GLOBALS['LEVEL'] = $lvl;
 	$d = realmUpgradeQuote($conn, 4);
+	ok($d['ok'], "level $lvl should be upgradeable: " . $d['why']);
 	ok($d['duration'] === $want,
 	   "level $lvl should quote Lv$want, quoted Lv" . $d['duration']);
 	ok($d['cost'] === $want * 100, "level $lvl priced at " . $d['cost']);
+}
+
+/*
+ * AT AND ABOVE THE CEILING, NOTHING IS SOLD.
+ *
+ * The page used to offer "Maintain Lv10" here. At exactly 10 that cost 1,000
+ * currency and ten days of lockout to change nothing. Above 10 -- where
+ * raids push a location and where a power player deliberately sits -- the
+ * completion SET the level back to 10. There is no state up here where
+ * buying an upgrade helps, so the server refuses to price one.
+ */
+echo "\n  at the ceiling\n";
+foreach (array(10, 14, 21, 31) as $lvl) {
+	$GLOBALS['LEVEL'] = $lvl;
+	$d = realmUpgradeQuote($conn, 4);
+	printf("    level %-3d -> %s\n", $lvl, $d['ok'] ? 'SOLD (wrong)' : $d['why']);
+	ok(!$d['ok'], "level $lvl was offered an upgrade that can only cost the player");
+	ok(!empty($d['at_ceiling']), "level $lvl is not flagged as at the ceiling, so the "
+	                           . 'panel cannot explain why there is no button');
+	ok($d['cost'] === 0, "level $lvl was still given a price of " . $d['cost']);
 }
 $GLOBALS['LEVEL'] = 3;
 
@@ -166,18 +194,74 @@ $_SESSION = array('userData' => array('user_id' => 42));
  * it spent the query string instead. A copy coming back is the regression.
  */
 echo "\none pricer\n";
+/* Who is allowed to decide a price: the two endpoints that spend, and the
+   panel's data layer. realms.php and ajax/get-locations.php used to ask
+   directly; they include realms-lib.php now, which is the only renderer that
+   does. */
 foreach (array('ajax/upgrade-realm-location.php', 'ajax/points-option.php',
-               'ajax/get-locations.php', 'realms.php') as $f) {
+               'realms-lib.php') as $f) {
 	$src = file_get_contents(__DIR__ . '/' . $f);
 	ok(strpos($src, 'realmUpgradeQuote(') !== false, "$f no longer asks for a server quote");
+}
+/* And nobody at all works the price out for themselves. Each of these once
+   carried its own copy of the three-line ladder. */
+foreach (array('ajax/upgrade-realm-location.php', 'ajax/points-option.php',
+               'ajax/get-locations.php', 'realms.php', 'realms-lib.php',
+               'realms-locations.php') as $f) {
+	$src = file_get_contents(__DIR__ . '/' . $f);
 	ok(!preg_match('/\$cost\s*=\s*\$duration\s*\*\s*100/', $src),
 	   "$f prices the upgrade itself again instead of asking realmUpgradeQuote()");
+	ok(!preg_match('/\$levels\[\$location_id\]\s*>\s*10/', $src),
+	   "$f has its own copy of the level ladder again");
+}
+/* The renderers must go through the partial, not rebuild the panel. */
+foreach (array('realms.php', 'ajax/get-locations.php') as $f) {
+	$src = file_get_contents(__DIR__ . '/' . $f);
+	ok(strpos($src, "realms-locations.php") !== false,
+	   "$f no longer includes the shared panel partial -- the two copies are back");
 }
 $ep = file_get_contents(__DIR__ . '/ajax/upgrade-realm-location.php');
 foreach (array('cost', 'duration', 'realm_id') as $p) {
 	ok(strpos($ep, "\$_GET['$p']") === false,
 	   "the upgrade endpoint reads \$_GET['$p'] again -- that is the hole");
 }
+
+/* ---------- 5. completing an upgrade never lowers a level -------------------- */
+/*
+ * upgradeRealmLocationLevel() had two clauses that cancelled out. The first
+ * -- "sync upgrade to current level to avoid penalizing owner" -- protected a
+ * location above the ceiling; the second -- "safety precaution in case
+ * someone manages to level up a location past 10" -- immediately capped it
+ * back and undid the protection. A level 21 Portal finishing a Maintain came
+ * out at 10, and the Realms leaderboard ranks on SUM(level).
+ *
+ * The ceiling rule above means nothing at 10+ can be BOUGHT any more, but
+ * this is the write itself and other paths reach it, so it is pinned here.
+ */
+echo "\nan upgrade can never lower a level\n";
+$lvlBody = extract_fn($db, 'upgradeRealmLocationLevel');
+ok($lvlBody !== '', 'upgradeRealmLocationLevel() not found');
+$lvlBody = str_replace('getRealmLocationLevel($conn, $realm_id, $location_id)',
+                       '$GLOBALS["LVL"]', $lvlBody);
+$lvlBody = preg_replace('/\$sql = "UPDATE.*?\n/s', '$GLOBALS["WROTE"] = $duration;' . "\n",
+                        $lvlBody, 1);
+$lvlBody = preg_replace('/if \(\$conn->query\(\$sql\).*?\}\s*\}/s', '}', $lvlBody);
+eval($lvlBody);
+
+foreach (array(array(3, 4, 4), array(9, 10, 10), array(10, 10, 10),
+               array(14, 10, 14), array(21, 10, 21), array(31, 10, 31),
+               array(21, 21, 21), array(5, 99, 10)) as $c) {
+	list($have, $bought, $want) = $c;
+	$GLOBALS['LVL'] = $have; $GLOBALS['WROTE'] = null;
+	upgradeRealmLocationLevel(null, 1, 1, $bought);
+	printf("  at %-3d completing a Lv%-3d upgrade -> %s\n", $have, $bought, $GLOBALS['WROTE']);
+	ok($GLOBALS['WROTE'] === $want,
+	   "level $have finishing a Lv$bought upgrade should end at $want, ended at "
+	 . var_export($GLOBALS['WROTE'], true));
+	ok($GLOBALS['WROTE'] >= $have,
+	   "level $have was LOWERED to " . $GLOBALS['WROTE'] . ' by completing an upgrade');
+}
+ok(REALM_UPGRADE_CEILING === 10, 'the ceiling moved; the expectations above assume 10');
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realm upgrade checks passed\n");
 exit($fail ? 1 : 0);
