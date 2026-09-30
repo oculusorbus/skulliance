@@ -108,12 +108,19 @@ $incoming_completed = getRaids($conn, "incoming", "completed");
 								<div class="location-info">
 									<strong><?php echo strtoupper($location['name']); ?></strong>
 									<div class="location-meta">Level <?php echo $levels[$location_id]; ?>
-									<?php 
-									if(!isset($status[$location_id])){  
-										if($levels[$location_id] > 10){ $duration = 10;
-										}else if($levels[$location_id] == 10){ $duration = $levels[$location_id];
-										}else{ $duration = $levels[$location_id]+1; }
-										$cost = $duration*100; ?>
+									<?php
+									/* THE PRICE COMES FROM THE SERVER'S OWN QUOTE, the same
+									   one ajax/upgrade-realm-location.php charges against.
+									   These three lines used to live here as well as in the
+									   endpoint's head -- except the endpoint never actually
+									   applied them, and simply spent whatever the query
+									   string said. One function decides now, so what is
+									   printed and what is charged cannot disagree. */
+									$q = null;
+									if(!isset($status[$location_id])){
+										$q = realmUpgradeQuote($conn, $location_id);
+										$duration = $q['duration'];
+										$cost     = $q['cost']; ?>
 										&bull; <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?>
 										&bull; <?php echo $duration." ".($duration == 1 ? "Day" : "Days"); ?>
 									<?php } ?>
@@ -139,8 +146,8 @@ $incoming_completed = getRaids($conn, "incoming", "completed");
 								<div class="location-action" id="loc-action-<?php echo $location_id; ?>">
 								<div id="loc-upgrade-<?php echo $location_id; ?>" class="loc-upgrade-wrap"><?php
 								if(!isset($status[$location_id])){
-									$balance = getBalance($conn, $location_id);
-									if($balance >= $cost){
+									$balance = $q['balance'];
+									if($q['ok']){
 										$upgrade_verbiage = ($levels[$location_id] >= 10) ? "Maintain" : "Upgrade";
 										echo "<input id='upgrade-button-".$location_id."' class='small-button' type='button' value='".$upgrade_verbiage." Lv".$duration."' onclick='upgradeRealmLocation(this, ".$realm_id.", ".$location_id.", ".$duration.", ".$cost.", ".$location_id.")'>";
 									}else{

@@ -8357,6 +8357,106 @@ function getRealmLocationNamesLevels($conn, $realm_id){
 	return $levels;
 }
 
+/**
+ * THE PRICE OF AN UPGRADE, DECIDED BY THE SERVER.
+ *
+ * ajax/upgrade-realm-location.php used to take duration, cost, project_id AND
+ * realm_id straight off the query string and hand them to
+ * upgradeRealmLocation(), which intval'd them and spent them. The comment in
+ * that endpoint said "need to double check duration and cost in case someone
+ * tries to manually override these variables in the JS function" and no such
+ * check was ever written. A crafted request could therefore buy a level 10
+ * upgrade for nothing, and because updateBalance() has no floor and the
+ * endpoint spends -$cost, a NEGATIVE cost credited the account instead of
+ * debiting it. It could also name somebody else's realm.
+ *
+ * So nothing about the transaction is taken from the client any more except
+ * WHICH location and WHICH currency. Everything else is derived here:
+ *
+ *   realm       the session user's own, via getRealmID(). Never a parameter.
+ *   duration    the next level up, capped at 10 -- the same three lines
+ *               realms.php printed, which is why both now call this instead
+ *               of each keeping a copy.
+ *   cost        duration * 100, doubled when paying in another project's
+ *               points (the $points_multiplier the page has always applied).
+ *
+ * Returns array('ok'=>bool, 'why'=>string, ...quote). Callers render from the
+ * quote so the price shown and the price charged cannot drift apart.
+ */
+function realmUpgradeQuote($conn, $location_id, $project_id = 0){
+	$out = array('ok' => false, 'why' => '', 'realm_id' => 0, 'location_id' => 0,
+	             'level' => 0, 'duration' => 0, 'cost' => 0, 'project_id' => 0,
+	             'currency' => '', 'balance' => 0, 'multiplier' => 1);
+	if (empty($_SESSION['userData']['user_id'])) { $out['why'] = 'Not signed in.'; return $out; }
+
+	$location_id = (int)$location_id;
+	$project_id  = (int)$project_id;
+	if ($location_id <= 0) { $out['why'] = 'No location.'; return $out; }
+
+	/* THE REALM IS NOT A PARAMETER. Whatever the client said, this is the
+	   signed-in player's realm or there is no transaction. */
+	$realm_id = (int)getRealmID($conn);
+	if ($realm_id <= 0) { $out['why'] = 'You have no realm.'; return $out; }
+	$out['realm_id'] = $realm_id;
+	$out['location_id'] = $location_id;
+
+	/* The location has to exist and be part of that realm. */
+	$chk = $conn->query("SELECT l.id FROM locations l
+	                     INNER JOIN realms_locations rl
+	                        ON rl.location_id = l.id AND rl.realm_id = ".$realm_id."
+	                     WHERE l.id = ".$location_id." LIMIT 1");
+	if (!$chk || !$chk->num_rows) { $out['why'] = 'No such location in your realm.'; return $out; }
+
+	if (checkRealmLocationUpgrade($conn, $realm_id, $location_id)) {
+		$out['why'] = 'That location is already being upgraded.';
+		return $out;
+	}
+
+	$level = (int)getRealmLocationLevel($conn, $realm_id, $location_id);
+	$out['level'] = $level;
+	/* Identical to what realms.php printed: past 10 it is a Maintain at 10. */
+	if ($level > 10)       $duration = 10;
+	elseif ($level === 10) $duration = 10;
+	else                   $duration = $level + 1;
+	$out['duration'] = $duration;
+
+	$base = $duration * 100;
+
+	/* WHICH CURRENCY. The location's own project is the default and costs
+	   base; anything else is partner points at the multiplier. Project 15 is
+	   excluded here exactly as getLocationBalances() excludes it. */
+	$mult = isset($GLOBALS['points_multiplier']) ? (int)$GLOBALS['points_multiplier'] : 2;
+	if ($project_id === 0) $project_id = $location_id;
+	if ($project_id === $location_id) {
+		$out['multiplier'] = 1;
+		$cost = $base;
+	} else {
+		if ($project_id === 15) { $out['why'] = 'That balance cannot be spent here.'; return $out; }
+		$pchk = $conn->query("SELECT id FROM projects WHERE id = ".$project_id." LIMIT 1");
+		if (!$pchk || !$pchk->num_rows) { $out['why'] = 'No such balance.'; return $out; }
+		$out['multiplier'] = $mult;
+		$cost = $base * $mult;
+	}
+	$out['project_id'] = $project_id;
+	$out['cost'] = $cost;
+
+	$cur = $conn->query("SELECT currency FROM projects WHERE id = ".$project_id." LIMIT 1");
+	if ($cur && ($crow = $cur->fetch_assoc())) $out['currency'] = $crow['currency'];
+
+	/* AND IT HAS TO BE AFFORDABLE. updateBalance() has no floor -- it writes
+	   whatever sum it is handed -- so without this a request could simply
+	   drive a balance negative. */
+	$balance = (int)getBalance($conn, $project_id);
+	$out['balance'] = $balance;
+	if ($balance < $cost) {
+		$out['why'] = 'Need '.number_format($cost - $balance).' more '.$out['currency'].'.';
+		return $out;
+	}
+
+	$out['ok'] = true;
+	return $out;
+}
+
 function upgradeRealmLocation($conn, $realm_id, $location_id, $duration, $cost, $project_id){
 	if(isset($_SESSION['userData']['user_id'])){
 		$realm_id    = intval($realm_id);

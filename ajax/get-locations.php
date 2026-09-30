@@ -72,11 +72,13 @@ if($realm_status){
 						<strong><?php echo strtoupper($location['name']); ?></strong>
 						<div class="location-meta">Level <?php echo $levels[$location_id]; ?>
 						<?php
+						/* Same server quote realms.php and the upgrade endpoint use --
+						   this is the refresh of that list and must price it identically. */
+						$q = null;
 						if(!isset($status[$location_id])){
-							if($levels[$location_id] > 10){ $duration = 10;
-							}else if($levels[$location_id] == 10){ $duration = $levels[$location_id];
-							}else{ $duration = $levels[$location_id]+1; }
-							$cost = $duration*100; ?>
+							$q = realmUpgradeQuote($conn, $location_id);
+							$duration = $q['duration'];
+							$cost     = $q['cost']; ?>
 							&bull; <?php echo number_format($cost)." ".$projects[$location_id]['currency']; ?>
 							&bull; <?php echo $duration." ".($duration == 1 ? "Day" : "Days"); ?>
 						<?php } ?>
@@ -102,8 +104,8 @@ if($realm_status){
 					<div class="location-action" id="loc-action-<?php echo $location_id; ?>">
 					<div id="loc-upgrade-<?php echo $location_id; ?>" class="loc-upgrade-wrap"><?php
 					if(!isset($status[$location_id])){
-						$balance = getBalance($conn, $location_id);
-						if($balance >= $cost){
+						$balance = $q['balance'];
+						if($q['ok']){
 							$upgrade_verbiage = ($levels[$location_id] >= 10) ? "Maintain" : "Upgrade";
 							echo "<input id='upgrade-button-".$location_id."' class='small-button' type='button' value='".$upgrade_verbiage." Lv".$duration."' onclick='upgradeRealmLocation(this, ".$realm_id.", ".$location_id.", ".$duration.", ".$cost.", ".$location_id.")'>";
 						}else{
