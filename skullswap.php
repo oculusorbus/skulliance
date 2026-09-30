@@ -1664,7 +1664,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              }
          }
 
-         setTimeout(() => {
+         setTimeout(async () => {
              if (startY === endY) {
                  const row = this.board[startY];
                  const tempRow = [...row];
@@ -1686,7 +1686,11 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              }
 
              this.renderBoard();
-             const hasMatches = this.resolveMatches(endX, endY);
+             /* AWAITED. The match has to be fully scored before it is
+                counted and before endGame() can set isGrandFinale -- that
+                flag stops the final move forging its bomb, and the save
+                below reads a score the handler has not finished writing. */
+             const hasMatches = await this.resolveMatches(endX, endY);
 
              if (hasMatches) {
                  this.matchCount++;
@@ -2041,8 +2045,10 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
 
          if (moved || this.matchCheckCount < 2) {
              this.matchCheckCount++;
-             setTimeout(() => {
-                 const hasMatches = this.resolveMatches();
+             setTimeout(async () => {
+                 /* awaited, or hasMatches is a Promise -- always truthy --
+                    and matchCheckCount never resets. */
+                 const hasMatches = await this.resolveMatches();
                  if (!hasMatches) this.matchCheckCount = 0;
                  const tiles = document.querySelectorAll(`.${fallClass}`);
                  tiles.forEach(tile => {
@@ -2072,7 +2078,27 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          return count;
      }
 
-     resolveMatches(selectedX = null, selectedY = null) {
+     /*
+      * ASYNC, AND THE CALLER THAT ENDS THE GAME MUST AWAIT IT.
+      *
+      * This used to return true the instant it found a match, while the
+      * handler that clears the tiles and adds the score was still
+      * running. Two things fell out of that, both reported:
+      *
+      *   The last move got no blast. The swap handler counted the match,
+      *   saw matchCount hit 25 and called endGame(), which sets
+      *   isGrandFinale -- and handleMatches()/handleBombMatches() both
+      *   check that flag before forging their bomb. So a Carbon or
+      *   Diamond earned on move 25 was never created, and the finale
+      *   swept only the bombs that were already down.
+      *
+      *   The saved score was not the score on screen. endGame() finishes
+      *   with saveSwapScore(this.score), but the final match's points
+      *   were still being added by a handler running alongside it. The
+      *   display kept climbing after the save had been taken, so the
+      *   leaderboard got a smaller number than the player was looking at.
+      */
+     async resolveMatches(selectedX = null, selectedY = null) {
          if (this.isGrandFinale) return false;
          const matchResult = this.checkMatches(selectedX, selectedY);
          if (matchResult.hasMatches) {
@@ -2090,9 +2116,9 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                      }
                  }
                  if (bombTile) {
-                     this.handleBombMatches(matches, bombTile.special, bombTileX, bombTileY);
+                     await this.handleBombMatches(matches, bombTile.special, bombTileX, bombTileY);
                  } else {
-                     this.handleMatches(matches, bombType, bombX, bombY);
+                     await this.handleMatches(matches, bombType, bombX, bombY);
                  }
              }
              return true;
@@ -2168,7 +2194,15 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          return { hasMatches, matches: allMatches, bombType, bombX, bombY };
      }
 
-     handleMatches(matches, bombType, bombX, bombY) {
+     /*
+      * async, and the 300ms is awaited rather than handed to setTimeout.
+      *
+      * It was fire-and-forget, which meant the caller could not know when
+      * the match had actually scored -- endGame() already tried to
+      * `await this.handleMatches(...)` and was awaiting undefined. See
+      * resolveMatches() for what that cost.
+      */
+     async handleMatches(matches, bombType, bombX, bombY) {
          this.playSound('match');
          matches.forEach(match => {
              const [x, y] = match.split(',').map(Number);
@@ -2177,7 +2211,8 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              }
          });
 
-         setTimeout(() => {
+         await new Promise(resolve => setTimeout(resolve, 300));
+         {
              matches.forEach(match => {
                  const [x, y] = match.split(',').map(Number);
                  this.board[y][x].icon = null;
@@ -2196,7 +2231,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              document.getElementById('score').textContent = `Score: ${this.score}`;
             
              this.cascadeTiles();
-         }, 300);
+         }
      }
 
      /*
