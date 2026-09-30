@@ -1005,7 +1005,10 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			?>
 		</div>
 	  </div>
-	  <div class="main">
+	  <?php /* data-wrap: this .main is a WRAPPER round #realm, and .main
+	           carries 20px of padding. Hiding #realm on its own left the
+	           wrapper behind as 40px of empty gutter -- see rlPanel(). */ ?>
+	  <div class="main" data-wrap="realm">
 		<div id="realm">
 		<a name="realm-image" id="realm-image"></a>
 		<div class="content realm">
@@ -1046,7 +1049,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 </div>
 
 <?php if($realm_status){ ?>
-<div class="row">	
+<div class="row" data-wrap="raids">
 	<div class="main">
 		<?php
 			/* THE STATS PANEL IS GONE. getTotalFactionRaids() and
@@ -1520,9 +1523,24 @@ $conn->close();
 			a.classList.toggle('on', a.getAttribute('data-sec') === sec);
 		});
 	}
+	/*
+	 * A PANEL AND WHATEVER WRAPS IT GO TOGETHER.
+	 *
+	 * #realm and #raids are not top-level: each sits inside a .main (and
+	 * #realm inside #row0's .main), and .main carries 20px of padding. So
+	 * hiding the panel alone left its wrapper behind as 40px of empty
+	 * gutter -- twice, which is 80px of navy nothing stacked above whichever
+	 * section you were actually looking at. Reported as a gap before the
+	 * map, that being the section which most often follows both.
+	 *
+	 * The ids stay on the INNER divs, because that is what the refresh
+	 * endpoints write innerHTML into; the wrappers are marked instead.
+	 */
 	function rlPanel(sec, on){
 		var el = document.getElementById(sec);
 		if (el) el.style.display = on ? 'block' : 'none';
+		var wrap = document.querySelector('[data-wrap="' + sec + '"]');
+		if (wrap) wrap.style.display = on ? '' : 'none';
 	}
 
 	/* ONE panel is not a destination of its own: on a wide screen the realm
@@ -1689,10 +1707,10 @@ $conn->close();
 	function toggleSections(selection){
 		window.scrollTo(0, 0);
 		var sections = ['locations','map','realm','raids','realms'];
-		sections.forEach(function(s){
-			var el = document.getElementById(s);
-			if (el) el.style.display = 'none';
-		});
+		/* Through rlPanel, so the wrappers come down with their panels --
+		   writing style.display straight onto the section here is exactly
+		   what left the empty gutters behind. */
+		sections.forEach(function(s){ rlPanel(s, false); });
 		if(!document.getElementById(selection)) return;
 		rlMark(selection);
 

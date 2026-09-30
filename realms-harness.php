@@ -838,6 +838,24 @@ ok(preg_match('/#map > \.main \{[^}]*padding-top:\s*0/', $src) === 1
    && preg_match('/#map #container-wrapper \{[^}]*padding-top:\s*0/', $src) === 1,
    'the map section is inheriting the page gutter again -- 54px of empty '
  . 'background before the map starts');
+/*
+ * AND THE EMPTY WRAPPERS COME DOWN WITH THEIR PANELS. #realm and #raids
+ * are not top-level: each sits inside a .main, and .main carries 20px of
+ * padding. Hiding the panel alone left the wrapper as 40px of empty
+ * gutter, twice -- 80px stacked above whatever section you were looking
+ * at, which is the rest of the gap that was reported before the map after
+ * the .main/#container-wrapper padding was already removed.
+ */
+foreach (array('realm', 'raids') as $wrapped) {
+	ok(preg_match('/data-wrap="' . $wrapped . '"/', $src) === 1,
+	   "the .main wrapping #$wrapped is not marked data-wrap, so hiding the "
+	 . 'panel leaves 40px of empty gutter behind it');
+}
+ok(preg_match('/function rlPanel\(sec, on\)\{[^}]*data-wrap/s', $src) === 1,
+   'rlPanel() no longer hides the wrapper alongside the panel');
+ok(strpos(no_comments($src), "sections.forEach(function(s){ rlPanel(s, false); });") !== false,
+   'toggleSections() is writing style.display straight onto each section '
+ . 'again, which bypasses rlPanel() and leaves every wrapper standing');
 
 /* The headings were sized as CONTROLS -- flexbox.css gives them 1.6rem at
    weight 300, a pointer cursor and a hover fade, because they used to be
