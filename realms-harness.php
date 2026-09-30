@@ -780,6 +780,65 @@ ok(preg_match('/\.rr:hover\s*\{[^}]*background/', $src) === 1,
 ok(strpos($gr, 'raids.php') === false && strpos($gr, 'rc-history-link') === false,
    'the raid history link is back under the completed lists; it points at the '
  . 'same renderer with the LIMIT lifted, which Show-all already covers');
+/*
+ * PENDING FIRST, BOTH DIRECTIONS, THEN COMPLETED. The order was grouped by
+ * direction -- outgoing-pending, outgoing-completed, incoming-pending,
+ * incoming-completed -- which buried the incoming raids you can still act
+ * on underneath a history list. And the whole thing was written out twice:
+ * ajax/get-raids.php had its own copy, the FOURTH panel on this page to be
+ * duplicated after the locations panel, the realm panel and the Attack
+ * header.
+ */
+$raidsPartial = __DIR__ . '/realms-raids.php';
+ok(is_file($raidsPartial), 'realms-raids.php is gone; the raid lists and their '
+ . 'order are back to being written out twice');
+$rp = no_comments(file_get_contents($raidsPartial));
+preg_match_all('/\\$rr_(out|in)_(pending|done)/', $rp, $om, PREG_SET_ORDER);
+$order = array();
+foreach ($om as $mm) { $k = $mm[1] . '_' . $mm[2]; if (!in_array($k, $order, true)) $order[] = $k; }
+printf("  raid list order: %s\n", implode(' > ', $order));
+$echoAt = strpos($rp, 'foreach');
+preg_match_all('/\\$rr_(out|in)_(pending|done)/', substr($rp, $echoAt), $em, PREG_SET_ORDER);
+$rendered = array();
+foreach ($em as $mm) $rendered[] = $mm[1] . '_' . $mm[2];
+ok($rendered === array('out_pending', 'in_pending', 'out_done', 'in_done'),
+   'the raid lists are not rendered pending-first: got '
+ . implode(' > ', $rendered));
+foreach (array('realms.php' => $src, 'ajax/get-raids.php' => file_get_contents(__DIR__ . '/ajax/get-raids.php')) as $who => $body) {
+	ok(strpos($body, 'realms-raids.php') !== false,
+	   "$who does not include realms-raids.php -- it is writing its own copy of "
+	 . 'the raid lists, which is how three other panels on this page shipped a '
+	 . 'redesign nobody saw');
+	ok(substr_count(no_comments($body), "class=\"content raids\"") === 0
+	   && substr_count(no_comments($body), "class='content raids'") === 0,
+	   "$who still emits its own .content.raids blocks");
+}
+/*
+ * AND THE COMPLETED LISTS STAY WHERE THEY ARE. getRaids(..., 'completed')
+ * is what RESOLVES finished raids -- endRaid() updates consumables inside
+ * it -- so realms.php runs it near the top, before the locations panel
+ * prices anything. Moving those calls into the partial would render the
+ * panel above from pre-raid state.
+ */
+ok(preg_match('/\$outgoing_completed = getRaids\(\$conn, "outgoing", "completed"\);/', $src) === 1
+   && strpos($src, '$rr_out_done = $outgoing_completed;') !== false,
+   'realms.php no longer resolves completed raids before the locations panel '
+ . 'renders, or no longer hands that markup to the partial -- the panel will '
+ . 'price locations from pre-raid state');
+
+/*
+ * THE MAP STARTS UNDER THE NAV. It is full-bleed art with its own backdrop
+ * and was inheriting .main's 20px and #container-wrapper's 20px on top of
+ * the nav's 14px margin: 54px of navy nothing before the picture, measured,
+ * on every width. Hidden until now by the -100px nudge on #map, which I
+ * removed as a leftover -- for this section it was not a leftover, it was
+ * masking this.
+ */
+ok(preg_match('/#map > \.main \{[^}]*padding-top:\s*0/', $src) === 1
+   && preg_match('/#map #container-wrapper \{[^}]*padding-top:\s*0/', $src) === 1,
+   'the map section is inheriting the page gutter again -- 54px of empty '
+ . 'background before the map starts');
+
 printf("  compact row + hidden detail + modal: wired; cap enforced; row-wide hit area\n");
 
 /* NO DISCLOSURE ARROW. The sections were collapsible because a raid was a

@@ -363,6 +363,22 @@ if (ob_get_level() > 0) @ob_flush();
 /* No bottom bar to clear any more -- just the home indicator. */
 #locations, #realm, #raids, #realms {
   padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+/* ── THE MAP SITS UNDER THE NAV, NOT BELOW A GUTTER ────────────────────
+ * The map is full-bleed art with its own backdrop, and it was inheriting
+ * the page's panel padding on top of that: .main's 20px and
+ * #container-wrapper's 20px, under the nav's own 14px margin. 54px of navy
+ * nothing before the picture started, on every width.
+ *
+ * It was invisible until now because the script block used to pull #map up
+ * by 100px -- a nudge I removed with the others as a leftover from the days
+ * when each section carried an <h2> outside its panel. For #map it was not
+ * that: it was masking this. Removing the padding is the fix the nudge was
+ * standing in for, and it does not move anything else on the page.
+ */
+#map > .main { padding-top: 0; }
+#map #container-wrapper { padding-top: 0; }
+@media (max-width: 700px) { #map > .main { padding-left: 0; padding-right: 0; } }
+
 /* ── SECTION NAV ────────────────────────────────────────────────────────
    Sticky at the top, matching missions.php. The bottom icon bar it replaces
    is documented where the nav is rendered. */
@@ -1030,29 +1046,15 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 			   reporting function is a separate decision from removing the
 			   panel that showed it. */
 			echo '<div id="raids">';
-			$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
-			if(isset($outgoing_raids)){
-				echo '<div class="content raids">';
-				echo $outgoing_raids;
-				echo '</div>';
-			}	
-			if(isset($outgoing_completed)){
-				echo '<div class="content raids">';
-				echo $outgoing_completed;
-				echo '</div>';
-			}
-			$incoming_raids = getRaids($conn, "incoming", "pending"); 
-			if(isset($incoming_raids)){
-				echo '<div class="content raids">';
-				echo $incoming_raids;
-				echo '</div>';
-			}	
-			if(isset($incoming_completed)){
-				echo '<div class="content raids">';
-				echo $incoming_completed;
-				echo '</div>';
-			}
-			echo "</div>";	
+			/* ONE COPY, shared with ajax/get-raids.php, and pending leads --
+			   see realms-raids.php. $outgoing_completed / $incoming_completed
+			   were rendered near the top of this file on purpose (they
+			   resolve finished raids), so they are handed in rather than
+			   re-run. */
+			$rr_out_done = $outgoing_completed;
+			$rr_in_done  = $incoming_completed;
+			include __DIR__ . '/realms-raids.php';
+			echo "</div>";
 		?>
 	</div>
 </div>
