@@ -116,6 +116,11 @@ $dhca_preload = $dhcf_editing ? $dhcf_editing['traits'] : null;
 /* The canvas download. Signed-in only -- dhc-download.php will not draw
    traits the player does not own, so a guest's button could only refuse. */
 $dhca_can_download = $dhcf_user > 0;
+/* The live rank strip. Editing passes the Fighter's own id so it is left
+   out of the pool it is ranked against -- otherwise it competes with
+   itself and a build about to be the rarest reads as second. */
+$dhca_can_rank = $dhcf_user > 0;
+$dhca_edit_id  = $dhcf_editing ? (int)$dhcf_editing['id'] : 0;
 ?>
 
 <style>

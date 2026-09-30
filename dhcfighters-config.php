@@ -135,8 +135,66 @@ function dhcf_trait_name($category, $slug) {
  * one of these exceptions was expensive to find.
  * ------------------------------------------------------------------ */
 
-/** Companions that belong against the body, drawn below Arms rather than last. */
-define('DHCF_COMPANION_UNDER', array('dh-vision-shoulder-cam', 'code-sea-predator'));
+/*
+ * THE FOUR AXES a Fighter is ranked on, in display order, as slug => label.
+ *
+ * dhcgallery.php's sort buttons named these and the assembler's live preview
+ * chips show them, so they live here rather than in either -- "Deadliest"
+ * meaning one thing on the Collection and another on the canvas is the whole
+ * failure this prevents. What each one IS lives in dhc-ranks.php
+ * (dhcf_rank_values); this is only their names and their order.
+ *
+ * Here and not in dhc-ranks.php because the assembler needs the labels and
+ * already requires this file, while dhc-ranks.php drags in the library and
+ * the Arena engine.
+ */
+function dhcf_rank_axes() {
+	return array(
+		'rarest' => 'Rarest',
+		'might'  => 'Deadliest',
+		'tough'  => 'Toughest',
+		'power'  => 'Hardest hitting',
+	);
+}
+
+/*
+ * Companions that belong against the body, drawn below Arms rather than last.
+ *
+ * DH VISION SHOULDER CAM CAME OFF THIS LIST. It was put on it because a
+ * shoulder mount drawn in front of the character looks stuck to the outside
+ * of it -- but "below Arms" is also below Effects, the head and the headgear,
+ * and a headgear piece drawn over a shoulder cam looks worse than the problem
+ * it was solving. There is no position in a flat stack that is under the arms
+ * and over the head, so it goes back to the default: last, like every
+ * ordinary companion. Code Sea Predator wraps the body rather than perching
+ * on it and still reads correctly underneath.
+ */
+define('DHCF_COMPANION_UNDER', array('code-sea-predator'));
+
+/*
+ * COMPANIONS THE ARMS DRAW OVER -- without dropping them below the head.
+ *
+ * The DH Vision Shoulder Cam wants two things at once: above the head and the
+ * headgear (a headgear piece drawn over a shoulder mount looks broken), and
+ * under the arms (an arm passing in front of the shoulder should pass in
+ * front of what is bolted to it). The slot order runs arms, effects, head,
+ * headgear, companion -- so there is no position for the COMPANION that
+ * satisfies both.
+ *
+ * So the arms move instead. With the cam on, Arms is drawn last, above the
+ * companion. Everything else keeps its place.
+ *
+ * WHAT THIS COSTS, and it is a real trade: Arms then also draws over the head
+ * and the headgear. Checked against the art -- the arm traits hang at the
+ * sides and do not reach the face -- but a future arm that raises a hand
+ * above the shoulder would cover it, and the fix then is to take the cam off
+ * this list, not to add a per-arm exception on top of a per-companion one.
+ *
+ * Not applied to arms that are themselves drawn behind the torso
+ * (DHCF_ARMS_BEHIND_TORSO): those are accents flanking the body, and hoisting
+ * them to the very front is the opposite of what they are for.
+ */
+define('DHCF_ARMS_OVER_COMPANION', array('dh-vision-shoulder-cam'));
 
 /** Effects that read as environment: dropped to just behind the torso. */
 define('DHCF_EFFECTS_BEHIND_TORSO', array('xlon-s-black-fire-attack'));
@@ -346,6 +404,14 @@ function dhcf_layer_order($traits) {
 	if (!empty($traits['arms']) && in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {
 		$order = dhcf_move_before($order, 'arms', 'torso');
 	}
+	/* Arms to the very front for the shoulder cam -- see
+	   DHCF_ARMS_OVER_COMPANION. After the behind-torso rule below would
+	   undo it, so it runs here and skips arms that belong behind the body. */
+	if (!empty($traits['companion']) && !empty($traits['arms'])
+	    && in_array($traits['companion'], DHCF_ARMS_OVER_COMPANION, true)
+	    && !in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {
+		$order = dhcf_move_last($order, 'arms');
+	}
 	/* A comic cover goes under a companion that was demoted below Arms --
 	   see DHCF_COMPANION_OVER_COVER. Runs AFTER the companion move, because
 	   it targets wherever the companion ended up, and BEFORE the
@@ -372,6 +438,15 @@ function dhcf_layer_order($traits) {
 		}
 	}
 	return $order;
+}
+
+/** Move $what to the very end, preserving everything else. */
+function dhcf_move_last($order, $what) {
+	$out = array();
+	foreach ($order as $k) if ($k !== $what) $out[] = $k;
+	if (count($out) === count($order)) return $order;   // it was not in the list
+	$out[] = $what;
+	return $out;
 }
 
 /** Move $what immediately before $before, preserving everything else. */

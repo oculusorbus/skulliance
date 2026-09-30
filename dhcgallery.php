@@ -47,6 +47,9 @@ require_once __DIR__ . '/dhcfighters-lib.php';
  * expensive ornament.
  */
 require_once __DIR__ . '/dhcarena-engine.php';
+/* One definition of Rarest / Deadliest / Toughest / Hardest hitting, shared
+   with the assembler's live rank preview. */
+require_once __DIR__ . '/dhc-ranks.php';
 
 $dhcg_user = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
 
@@ -115,15 +118,21 @@ if ($res) {
 		   and fighting style, headgear sets how often a hit lands big -- so
 		   these three numbers, and not the score, are what a Crew is picked on. */
 		$built        = dhca_build_fighter($row['traits'], '', 'g'.$row['id'], $dhcg_rarity);
-		$row['hp']    = (int)$built['maxHp'];
-		$row['pow']   = (int)$built['power'];
+		$row['roles'] = isset($built['roles']) ? $built['roles'] : array();
+		$row['kit']   = $built['kit'];
 		$row['crit']  = (float)$built['critC'];
 		$row['resist']= (float)$built['resist'];
 		$row['assist']= (float)$built['assist'];
 		$row['charge']= (float)$built['charge'];
-		$row['roles'] = isset($built['roles']) ? $built['roles'] : array();
-		$row['kit']   = $built['kit'];
-		$row['might'] = $row['hp'] * $row['pow'];
+		/* The four sort axes come from dhc-ranks.php, which is also what the
+		   assembler's live preview ranks against. They were defined here
+		   first; they are defined THERE now, so "Deadliest" cannot come to
+		   mean one thing on this page and another on the canvas. $built is
+		   passed in so this stays one pass per row. */
+		$rv           = dhcf_rank_values($row['traits'], (int)$row['rarity_score'], $built);
+		$row['hp']    = $rv['tough'];
+		$row['pow']   = $rv['power'];
+		$row['might'] = $rv['might'];
 
 		$dhcg_owners[(int)$row['user_id']] = $row['username'];
 		$dhcg_all[] = $row;
@@ -292,6 +301,13 @@ include 'header.php';
 #dhcg-traits .sl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.45;display:block}
 #dhcg-traits .tr{font-size:9px;letter-spacing:.1em;text-transform:uppercase}
 #dhcg-traits .rt{font-size:10px;opacity:.6;font-variant-numeric:tabular-nums}
+/* Only ever shown on your own Fighters -- see the note above open(). */
+#dhcg-get{display:none;align-items:center;gap:7px;margin:0 0 14px;text-decoration:none;
+  border:1px solid var(--ochre,#00c8a0);color:var(--ochre,#00c8a0);font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;padding:7px 12px;border-radius:2px}
+#dhcg-get.on{display:inline-flex}
+#dhcg-get:hover{background:var(--ochre,#00c8a0);color:var(--ink,#07111d)}
+#dhcg-get small{letter-spacing:0;text-transform:none;opacity:.7;font-size:10px}
 #dhcg-close{position:absolute;right:14px;top:12px;background:none;border:1px solid var(--line,#1b3346);
   color:var(--dim,#7a9eb0);font:inherit;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
   padding:5px 10px;border-radius:2px;cursor:pointer}
@@ -324,8 +340,11 @@ include 'header.php';
   <?php
     $tiers = array('mythic'=>'Mythic','legendary'=>'Legendary','epic'=>'Epic',
                    'uncommon'=>'Uncommon','common'=>'Common');
-    $sorts = array('rarest'=>'Rarest','might'=>'Deadliest','tough'=>'Toughest',
-                   'power'=>'Hardest hitting','newest'=>'Newest','oldest'=>'Oldest',
+    /* The four stat axes and their labels come from dhcf_rank_axes(), so the
+       button here and the chip on the assembler canvas cannot end up calling
+       the same number two different things. The rest are orderings of the
+       table, not axes, and stay local. */
+    $sorts = dhcf_rank_axes() + array('newest'=>'Newest','oldest'=>'Oldest',
                    'serial'=>'By number','traits'=>'Most traits');
   ?>
   <div class="dhcg-bar">
@@ -466,6 +485,7 @@ include 'header.php';
       <button type="button" id="dhcg-close">Close</button>
       <h2 id="dhcg-name"></h2>
       <p class="by" id="dhcg-by"></p>
+      <a id="dhcg-get" href="#" download>&#8595; Full size <small>1000px PNG</small></a>
       <div id="dhcg-stat"></div>
       <ul id="dhcg-traits"></ul>
     </div>
@@ -481,15 +501,22 @@ include 'header.php';
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
 
   /*
-   * NO DOWNLOAD BUTTON HERE, deliberately. A full-size, flattened, named
-   * picture of somebody's assembly is theirs to hand out, not a stranger's to
-   * take -- and this page is public. It shipped with one for a day on the
-   * argument that the layers below are public anyway; that argument was
-   * wrong, and the reasoning is in dhc-download.php's header. The download
-   * lives in the assembler, next to Copy link to this build, and on your own
-   * roster cards. dhc-download.php refuses a Fighter that is not yours, so
-   * re-adding a button here would only produce a 404.
+   * THE DOWNLOAD BUTTON IS SHOWN ON YOUR OWN FIGHTERS ONLY.
+   *
+   * This page is public and most of what it shows belongs to somebody else. A
+   * full-size, flattened, named picture of an assembly is the owner's to hand
+   * out, not a stranger's to take -- it shipped ungated for a day on the
+   * argument that the layers below are public anyway, and that argument was
+   * wrong. But a player browsing the Collection and finding their own Fighter
+   * should not have to go back to the workshop for it.
+   *
+   * ME is 0 for a signed-out visitor, so the `> 0` matters: without it every
+   * guest would match every Fighter whose ownerId came back as 0.
+   * dhc-download.php checks ownership again in its WHERE clause regardless --
+   * this only decides whether to offer the button.
    */
+  var ME = <?php echo (int)$dhcg_user; ?>;
+
   function open(f) {
     // The same layer list the card used, so this is the card at a larger size
     // rather than a second opinion about draw order -- but pointed at the
@@ -507,6 +534,11 @@ include 'header.php';
     document.getElementById('dhcg-by').innerHTML =
       '<img alt="" src="' + esc(f.avatar) + '"> assembled by ' + esc(f.owner) +
       ' · <a href="dhcgallery.php?owner=' + f.ownerId + '" style="color:var(--ochre,#00c8a0)">see their Fighters</a>';
+
+    var get = document.getElementById('dhcg-get');
+    var mine = ME > 0 && f.ownerId === ME;
+    get.classList.toggle('on', mine);
+    get.href = mine ? 'dhc-download.php?serial=' + f.serial : '#';
 
     var made = (f.created || '').replace(' ', ' · ').slice(0, 16);
     /* Rarity score first because it is what the board ranks on, then what the

@@ -164,6 +164,16 @@ $dhca_preload = isset($dhca_preload) && is_array($dhca_preload) ? $dhca_preload 
  */
 $dhca_can_download = !empty($dhca_can_download);
 
+/*
+ * $dhca_can_rank -- show the live "where this build would place" strip, and
+ * $dhca_edit_id -- the Fighter being edited, so it can be left out of the
+ * pool it is ranked against. Both set by the caller; the strip needs a signed
+ * -in session because ajax/dhc-build-stats.php will not answer without one.
+ */
+$dhca_can_rank = !empty($dhca_can_rank);
+$dhca_edit_id  = isset($dhca_edit_id) ? (int)$dhca_edit_id : 0;
+/* dhcf_rank_axes() comes from dhcfighters-config.php, required above. */
+
 $dhc_traits = array();
 foreach ($dhc_slots as $key => $s) {
 	$dir = $s[1];
@@ -372,6 +382,33 @@ a{color:var(--ochre)}
 .btn.primary:hover{filter:brightness(1.12)}
 
 /* ---- stack readout ---- */
+/* WHERE THIS BUILD WOULD PLACE. Same width as the stack below it so the
+   column reads as one panel, and four equal cells so the numbers line up and
+   a rank that moves is visible as movement rather than as reflow. */
+.ranks{width:min(66vh,100%);border:1px solid var(--line);background:var(--panel);
+  display:grid;grid-template-columns:repeat(4,1fr)}
+.ranks.off{display:none}
+.ranks .rk{padding:8px 10px;border-right:1px solid var(--line);min-width:0}
+.ranks .rk:last-child{border-right:0}
+.ranks .rk b{display:block;font-size:16px;color:var(--bone);font-weight:400;
+  font-variant-numeric:tabular-nums;line-height:1.15}
+.ranks .rk i{display:block;font-style:normal;font-size:8.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--dim);margin-top:2px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ranks .rk s{display:block;text-decoration:none;font-size:9.5px;color:var(--dim);
+  opacity:.75;font-variant-numeric:tabular-nums}
+/* Top three are worth noticing without reading the number.
+   NAMESPACED: flexbox.css already owns a bare `.top`, and it is
+   `display:flex; gap:16px; padding:14px 20px` -- a plain .top here laid the
+   three lines of the cell out in a row, and only on the cells in the top
+   three, which are the ones that matter most. Caught by previewing against
+   the real stylesheet rather than a stand-in. */
+.ranks .rk.rk-top b{color:var(--ochre)}
+.ranks.busy{opacity:.55}
+/* Phones: four across is 60px a cell, which truncates every label. */
+@media (max-width:620px){ .ranks{grid-template-columns:repeat(2,1fr)}
+  .ranks .rk:nth-child(2){border-right:0}
+  .ranks .rk:nth-child(-n+2){border-bottom:1px solid var(--line)} }
 .stack{width:min(66vh,100%);border:1px solid var(--line);background:var(--panel)}
 .stack h3{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--dim);border-bottom:1px solid var(--line)}
@@ -533,6 +570,18 @@ a{color:var(--ochre)}
       <button class="btn" id="getpng">Download 1000px PNG</button>
       <?php endif; ?>
     </div>
+    <?php if ($dhca_can_rank): ?>
+    <?php /* Filled by ajax/dhc-build-stats.php on every change to the canvas.
+             Rendered empty and hidden so the page does not jump when the
+             first answer lands. */ ?>
+    <div class="ranks off" id="ranks" aria-live="polite">
+      <?php foreach (dhcf_rank_axes() as $rk => $rlabel): ?>
+      <span class="rk" data-k="<?php echo htmlspecialchars($rk); ?>">
+        <b>&mdash;</b><i><?php echo htmlspecialchars($rlabel); ?></i><s></s>
+      </span>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
     <div class="stack">
       <h3><span id="stackTitle">Draw order &mdash; back to front</span>
           <button type="button" id="resetOrder" hidden>Reset order</button></h3>
@@ -583,10 +632,13 @@ a{color:var(--ochre)}
 
   /*
    * COMPANIONS NORMALLY DRAW LAST -- a pet or drone floats in front of the
-   * Fighter. These are the exceptions, which belong against the body rather
-   * than in front of it: the DH Vision Shoulder Cam mounts ON the shoulder, and
-   * Code Sea Predator wraps the body. Drawn over, either one looks stuck to the
-   * outside of the character, so the arms and headgear have to sit above them.
+   * Fighter. Code Sea Predator is the exception: it wraps the body rather
+   * than sitting in front of it, so the arms belong above it.
+   *
+   * The DH Vision Shoulder Cam used to be here too, on the same reasoning,
+   * and came off. Dropping a companion below Arms drops it below the Effects
+   * slots, the head and the headgear as well -- and headgear drawn over a
+   * shoulder cam looked worse than a shoulder cam drawn in front.
    *
    * Handled by reordering the draw sequence rather than adding an eleventh slot
    * for two traits. layerOrder() is the one definition of what draws when, and
@@ -604,6 +656,9 @@ a{color:var(--ochre)}
    * moving up. See DHCF_COMPANION_OVER_COVER for why the shoulder cam is not
    * in this list.
    */
+  /* Arms to the very front when the shoulder cam is on -- the only way to be
+     above the head AND under the arms at once. See DHCF_ARMS_OVER_COMPANION. */
+  var ARMS_OVER_COMPANION = <?php echo json_encode(DHCF_ARMS_OVER_COMPANION); ?>;
   var COVER_EFFECTS = <?php echo json_encode(DHCF_COVER_EFFECTS); ?>;
   var COMPANION_OVER_COVER = <?php echo json_encode(DHCF_COMPANION_OVER_COVER); ?>;
 
@@ -921,6 +976,16 @@ a{color:var(--ochre)}
       // a > t, so pulling arms out does not shift the torso index
       if (a > -1 && t > -1 && a > t) order.splice(t, 0, order.splice(a, 1)[0]);
     }
+    // Arms last for the shoulder cam. Before the behind-torso rule below,
+    // which would otherwise be undone, and skipping arms that belong behind
+    // the body in the first place.
+    if (sel.companion && sel.arms
+        && ARMS_OVER_COMPANION.indexOf(sel.companion) !== -1
+        && ARMS_BEHIND_TORSO.indexOf(sel.arms) === -1) {
+      var ka = order.map(function (s) { return s.key; });
+      var ai2 = ka.indexOf('arms');
+      if (ai2 > -1) order.push(order.splice(ai2, 1)[0]);
+    }
     // A comic cover drops below a companion that was demoted above. After the
     // companion move, so it targets where the companion actually landed;
     // before the behind-torso rule, which is more specific and still wins.
@@ -1036,7 +1101,78 @@ a{color:var(--ochre)}
                                 : 'Every layer is hidden — use the ● toggles to bring them back';
     paintStack();
     writeHash();
+    <?php if ($dhca_can_rank): ?>refreshRanks();<?php endif; ?>
   }
+
+  <?php if ($dhca_can_rank): ?>
+  /*
+   * WHERE THIS BUILD WOULD PLACE, live, on the four axes the Collection
+   * sorts by. The point is to answer it while the answer can still change
+   * your mind -- saving spends the traits, so "what did that piece actually
+   * do" was a question you could only ask afterwards.
+   *
+   * THE NUMBERS ARE COMPUTED SERVER-SIDE and this only draws them. Health
+   * comes from the torso and power from the weapon by way of
+   * dhca_build_fighter(), the Arena's own builder; working them out again in
+   * here would put a second opinion about what a trait is worth next to the
+   * one the Arena actually fights with, which is the same class of bug as a
+   * second opinion about draw order.
+   *
+   * DEBOUNCED, because paint() runs on every single pick and a player
+   * clicking down a list of 60 heads would otherwise open 60 requests. 250ms
+   * is under the time it takes to look at what changed.
+   *
+   * SEQUENCED, because the debounce does not stop two requests being in
+   * flight after a pause -- and the slower one must not overwrite the newer
+   * answer with a stale rank. Only the latest sequence number is allowed to
+   * paint.
+   */
+  var ranksEl   = document.getElementById('ranks');
+  var rankTimer = null, rankSeq = 0;
+  var EDIT_ID   = <?php echo (int)$dhca_edit_id; ?>;
+
+  function refreshRanks() {
+    clearTimeout(rankTimer);
+    rankTimer = setTimeout(askRanks, 250);
+  }
+
+  function askRanks() {
+    var n = 0; for (var k in sel) if (sel[k]) n++;
+    if (!n) { ranksEl.classList.add('off'); return; }
+    var seq  = ++rankSeq;
+    var body = 'traits=' + encodeURIComponent(JSON.stringify(sel));
+    if (EDIT_ID) body += '&edit=' + EDIT_ID;
+    ranksEl.classList.add('busy');
+    fetch('ajax/dhc-build-stats.php', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body
+    }).then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (seq !== rankSeq) return;          // a newer build already answered
+        ranksEl.classList.remove('busy');
+        if (!j || !j.ok || !j.axes) { ranksEl.classList.add('off'); return; }
+        ranksEl.classList.remove('off');
+        Object.keys(j.axes).forEach(function (k) {
+          var cell = ranksEl.querySelector('.rk[data-k="' + k + '"]');
+          if (!cell) return;
+          var a = j.axes[k];
+          cell.querySelector('b').textContent = '#' + a.rank;
+          cell.querySelector('s').textContent = 'of ' + a.of + ' \u00b7 '
+            + a.value.toLocaleString();
+          cell.classList.toggle('rk-top', a.rank <= 3);
+          cell.title = a.label + ': this build would be ' + a.rank + ' of ' + a.of
+                     + ' saved Fighters, at ' + a.value.toLocaleString() + '.';
+        });
+      })
+      .catch(function () {
+        /* Offline, signed out mid-session, or the endpoint is unhappy. The
+           strip is a preview of something you can simply save and find out,
+           so it goes quiet rather than shouting. */
+        if (seq === rankSeq) { ranksEl.classList.remove('busy'); ranksEl.classList.add('off'); }
+      });
+  }
+  <?php endif; ?>
 
   function paintStack() {
     stackEl.innerHTML = '';

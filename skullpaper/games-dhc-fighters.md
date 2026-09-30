@@ -303,6 +303,23 @@ never stop being useful, however much of the collection you've seen.
 **Click a saved Fighter to see it on the canvas.** Its own traits show as
 unavailable in the picker — you are viewing it, not rebuilding it.
 
+### What that piece just did
+
+As you build, a strip under the canvas says **where this Fighter would place
+if you saved it right now**, on the four things the Collection ranks by:
+**Rarest**, **Deadliest**, **Toughest** and **Hardest hitting**. Each one shows
+the place, the size of the field, and the number itself — *#12 of 413 · 6,240*.
+
+It updates as you pick, so you can see what a trade actually costs before you
+make it: a rarer headgear that drops you nine places on Toughest is a decision,
+not a surprise. Saving **spends** the traits, so this is the only point at which
+knowing is any use.
+
+The numbers are the same ones the Collection sorts on and the Arena fights
+with — health comes from the torso, power from the weapon — so the preview and
+the real thing cannot disagree. Editing a saved Fighter leaves its own row out
+of the comparison, or it would be competing with itself.
+
 ### Take the picture with you
 
 **Download 1000px PNG** sits in the assembler next to *Copy link to this build*,
@@ -403,10 +420,14 @@ letting you build something that renders wrongly. Some of what it handles:
   face. The **comic covers** are full-frame treatments — masthead, price box,
   barcode — and the character deliberately breaks out of them: head, headgear,
   weapon and arms all draw over the frame.
-- **Two companions draw against the body** rather than in front of it. The DH
-  Vision Shoulder Cam mounts *on* the shoulder and Code Sea Predator wraps the
-  body, so drawing either in front made it look stuck to the outside of the
-  character. Both sit under the arms and the headgear instead.
+- **Code Sea Predator draws against the body** rather than in front of it. It
+  wraps the character, so drawn over the top it looked stuck to the outside;
+  it sits under the arms instead.
+- **The DH Vision Shoulder Cam is bolted on, so the arms pass in front of it**
+  — but it still needs to be above the head and the headgear, because headgear
+  drawn over a shoulder mount looks broken. Nothing in a single stack of layers
+  is both under the arms and over the head, so the **arms** move to the front
+  for this one instead of the companion moving back.
 - **Code Sea Predator stays on top of a comic cover.** Dropping a companion
   below the arms also puts it below the Effects slots — that is simply the
   order the layers run in, and there is no position that is under the arms and

@@ -72,11 +72,17 @@ ok(strpos($js, '<?') === false, 'the extracted JS still contains PHP');
 /* Each case is named for the exception it exists to pin down. */
 $cover  = DHCF_COVER_EFFECTS[0];
 $cover2 = isset(DHCF_COVER_EFFECTS[1]) ? DHCF_COVER_EFFECTS[1] : $cover;
-$under  = DHCF_COMPANION_UNDER[0];                        // dh-vision-shoulder-cam
+/* While DHCF_COMPANION_UNDER holds one entry these are the same trait, so the
+   'demoted' and 'over-cover' rows below coincide. That is fine -- they are
+   testing different rules and will separate again the moment a second
+   companion is demoted -- but do not read two passing rows as two cases. */
+$under  = DHCF_COMPANION_UNDER[0];
 $over   = DHCF_COMPANION_OVER_COVER[0];                   // code-sea-predator
+if ($under === $over) echo "  (only one demoted companion, so two rows below coincide)\n";
 $behind = DHCF_EFFECTS_BEHIND_TORSO[0];
 $backarm = DHCF_ARMS_BEHIND_TORSO[0];
 $onearm  = array_keys(DHCF_ONE_ARM)[0];
+$armsover = DHCF_ARMS_OVER_COMPANION[0];   // dh-vision-shoulder-cam
 $plain = array('background' => 'bg', 'torso' => 'body', 'head' => 'face',
                'headgear' => 'hat', 'arms' => 'limbs', 'weapon' => 'axe-ish');
 
@@ -109,6 +115,16 @@ $cases = array(
 	'one-sided arm'             => ms_case($plain, array('companion' => $over,
 	                                                     'arms'      => $onearm,
 	                                                     'effects1'  => $cover)),
+	/* The shoulder cam: above head and headgear (so NOT demoted) but under
+	   the arms, which is only expressible by moving the arms to the front. */
+	'shoulder cam'              => ms_case($plain, array('companion' => $armsover)),
+	'shoulder cam, no arms'     => array('background' => 'bg', 'torso' => 'body',
+	                                     'head' => 'face', 'headgear' => 'hat',
+	                                     'companion' => $armsover),
+	'shoulder cam + rear arms'  => ms_case($plain, array('companion' => $armsover,
+	                                                     'arms'      => $backarm)),
+	'shoulder cam + cover'      => ms_case($plain, array('companion' => $armsover,
+	                                                     'effects1'  => $cover)),
 	'no companion at all'       => ms_case($plain, array('effects1'  => $cover)),
 	'cover, no other traits'    => array('background' => 'bg', 'torso' => 'body',
 	                                     'head' => 'face', 'effects1' => $cover),
@@ -121,6 +137,7 @@ $prelude = "var SLOTS = " . json_encode(array_map(function ($k) { return array('
          . "var COMPANION_UNDER = "      . json_encode(DHCF_COMPANION_UNDER)      . ";\n"
          . "var ARMS_BEHIND_TORSO = "    . json_encode(DHCF_ARMS_BEHIND_TORSO)    . ";\n"
          . "var EFFECTS_BEHIND_TORSO = " . json_encode(DHCF_EFFECTS_BEHIND_TORSO) . ";\n"
+         . "var ARMS_OVER_COMPANION = " . json_encode(DHCF_ARMS_OVER_COMPANION) . ";\n"
          . "var COVER_EFFECTS = "        . json_encode(DHCF_COVER_EFFECTS)        . ";\n"
          . "var COMPANION_OVER_COVER = " . json_encode(DHCF_COMPANION_OVER_COVER) . ";\n"
          . "var sel = {};\n";
@@ -135,6 +152,20 @@ for (var name in CASES) {
 }
 console.log(JSON.stringify(out));
 ";
+/*
+ * EVERY CONSTANT THE REAL CODE USES HAS TO BE IN THE PRELUDE. Add a rule to
+ * layerOrder() that reads a new constant and this harness dies with a bare
+ * ReferenceError from node -- which is loud, but says nothing about what is
+ * missing. Naming it here turns that into a sentence. (It has happened once:
+ * ARMS_OVER_COMPANION.)
+ */
+preg_match_all('/\b([A-Z][A-Z0-9_]{3,})\b/', $js, $cm);
+foreach (array_unique($cm[1]) as $name) {
+	ok(strpos($prelude, 'var ' . $name . ' =') !== false,
+	   "the extracted JS reads $name and the harness prelude does not define it -- "
+	 . 'add it from the matching DHCF_ constant, or the comparison cannot run');
+}
+
 $tmp = sys_get_temp_dir() . '/dhc-layerorder-' . getmypid() . '.js';
 file_put_contents($tmp, $driver);
 $raw = shell_exec('node ' . escapeshellarg($tmp) . ' 2>&1');
