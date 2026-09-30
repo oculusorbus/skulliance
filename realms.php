@@ -313,92 +313,29 @@ if (ob_get_level() > 0) @ob_flush();
 }
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 @keyframes lb { to { width:90%; } }
-/* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
-/* Clear the fixed quick-menu, plus the home indicator on an iPhone. The
-   100px here was sized for an 84px bar; it is 46px now. */
+/* No bottom bar to clear any more -- just the home indicator. */
 #locations, #realm, #raids, #realms {
-  padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px)); }
-/* ── THE QUICK MENU ───────────────────────────────────────────────────────
- *
- * It was 84px of bar for five 25px icons: flexbox.css gives each one
- * `padding: 20px` inside a 65px box, so most of the height was padding, and
- * then the safe-area inset added another ~34px underneath. That reads as a
- * band of dead space below the icons, which is what it is.
- *
- * AND IT COULD CHANGE HEIGHT. The icons are 512x512 source art with no
- * width/height attributes, sized only by CSS percentage -- so the bar's
- * height depended on when each one decoded, and switching panels could
- * reflow it. They are fixed-size now and the bar has a fixed content
- * height, so it cannot move whatever the images do.
- *
- * The inset stays: viewport-fit=cover is set in header.php, so bottom:0 IS
- * the physical bottom of the screen and without it the icons would sit on
- * the home indicator. It is the bar's own padding that had to go, not the
- * clearance. Net: shorter than it was BEFORE the inset was added.
- *
- * Page-local, so dropship/header.php's copy is untouched.
- */
-/* THE INSET IS HEIGHT, NOT PADDING, and that distinction is the whole bug.
-   With padding-bottom the icons centre in the CONTENT box, which sits above
-   the inset -- so on an iPhone they were pushed up with a ~34px band of bare
-   background beneath them. Reported as both "not vertically centered" and
-   "dead space below it", which is one thing seen twice. As height, the
-   icons centre across the whole bar: still well clear of the home
-   indicator, and no band. */
-/* CENTRED WITH A CAP, not spread. space-around across a 100%-wide bar threw
-   the five icons to the far corners of a desktop window -- the old rule kept
-   them together with text-align:center and 18%-wide inline images. A centred
-   row with a max-width behaves on both: clustered on a monitor, evenly
-   spaced across a phone. */
-#quick-menu {
-  display: flex !important; align-items: center; justify-content: center;
-  gap: min(9vw, 34px); box-sizing: border-box;
-  /* PINNED, and it owns its own safe-area clearance.
-     flexbox.css's standalone block gives every page's bar the inset as
-     padding-bottom, which is right for the pages that do not size their
-     own -- but padding centres the icons ABOVE the inset. Here the inset
-     is height instead, so they centre across the whole bar, and the
-     page-level padding is zeroed so the two do not stack. */
-  bottom: 0 !important; left: 0; right: 0;
-  padding: 0 8px !important;
-  height: calc(46px + env(safe-area-inset-bottom, 0px)); }
-#quick-menu img {
-  width: 34px !important; height: 34px !important; max-width: none !important;
-  padding: 5px !important; margin: 0; box-sizing: border-box; flex: none; }
-#quick-menu .selected { border-radius: 0; }
-/* ROOM TO BREATHE ON A DESKTOP. The 46px bar and 34px icons were sized for
-   a phone, where the bar is a thumb target competing for screen height. On
-   a monitor that reads as cramped -- 6px of clearance above and below, and
-   a gap capped at 34px that bunches four icons into the middle. Nothing
-   below 700px changes. */
-@media (min-width: 701px) {
-  #quick-menu { height: 62px; gap: 30px; }
-  #quick-menu img { width: 44px !important; height: 44px !important;
-    padding: 8px !important; }
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+/* ── SECTION NAV ────────────────────────────────────────────────────────
+   Sticky at the top, matching missions.php. The bottom icon bar it replaces
+   is documented where the nav is rendered. */
+.rl-nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  display: flex; gap: 2px; flex-wrap: wrap;
+  background: #07111d; border-bottom: 1px solid rgba(0,200,160,.18);
+  margin: 0 0 14px; padding: 4px 0; }
+.rl-nav a {
+  display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 0;
+  font-size: .74rem; color: #7a9eb0; text-decoration: none; white-space: nowrap;
+  border-bottom: 2px solid transparent; }
+.rl-nav a:hover { color: #e8eaed; background: rgba(0,200,160,.06); }
+.rl-nav a.on { color: #00c8a0; border-bottom-color: #00c8a0; }
+@media (max-width: 700px) {
+  /* Dodge the burger, which is fixed at the top right. */
+  .rl-nav { padding-right: 56px; overflow-x: auto; flex-wrap: nowrap; }
+  .rl-nav a { padding: 8px 11px; }
 }
-#map #container-wrapper { padding-top: 35px; padding-bottom: 100px; }
-/* Soldiers / Location Modals */
-.soldiers-stat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
-.soldiers-stat { background:rgba(255,255,255,0.06); border-radius:8px; padding:10px 14px; flex:1; min-width:100px; }
-.soldiers-stat-label { display:block; font-size:0.72rem; opacity:0.5; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:3px; }
-.soldiers-stat-value { display:block; font-size:1.1rem; font-weight:bold; color:#00c8a0; }
-.soldiers-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:8px; }
-.soldier-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; text-align:center; font-size:0.75rem; display:flex; flex-direction:column; align-items:center; gap:4px; }
-.soldier-card.selected { border-color:#00c8a0; background:rgba(0,200,160,0.1); }
-.soldier-card.soldier-ready { border-color:#00c8a0; }
-.soldier-card.soldier-dead { opacity:0.7; }
-.soldier-nft-img { width:64px; height:64px; object-fit:cover; border-radius:6px; }
-.soldier-name { font-size:0.7rem; opacity:0.8; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:10ch; }
-.soldier-status { font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); }
-.soldier-status.status-ready { background:rgba(0,200,160,0.2); color:#00c8a0; }
-.soldier-status.status-deployed { background:rgba(74,144,217,0.2); color:#4a90d9; }
-.soldier-status.status-training { background:rgba(255,200,0,0.15); color:#ffc800; }
-.soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
-/* Crypt coffin cards */
-#crypt-soldiers-grid .soldier-status { background:none; }
-.coffin-wrapper {
-    background: url('icons/coffin.png') center bottom / contain no-repeat;
-}
+
 .coffin-card {
     background: rgba(30, 10, 10, 0.7);
     border: 1px solid rgba(150, 50, 50, 0.4);
@@ -793,6 +730,34 @@ $incoming_completed = getRaids($conn, "incoming", "completed");
 ?>
 <!-- The flexible grid (content) -->
 
+<?php if($realm_status){ ?>
+<?php /*
+ * THE SECTION NAV, AT THE TOP AND STICKY.
+ *
+ * This was a fixed bar at the BOTTOM of the screen, and in a standalone PWA
+ * it would not stay there: measured from a screen recording, it sat ~46px
+ * higher whenever the page content was short. Between the iPhone home
+ * indicator, a `bottom:0` that a deliberate rule was lifting off the floor,
+ * and a safe-area inset that had to be height rather than padding to centre
+ * anything, it took five passes and still misbehaved on the device.
+ *
+ * missions.php has had a sticky nav at the TOP of its content since its own
+ * rebuild and has none of these problems -- nothing below the fold, no
+ * indicator to dodge, no fixed positioning to lose. Same pattern here, and
+ * the two pages now look and behave alike.
+ *
+ * It still SWITCHES panels rather than scrolling to them, because realms
+ * shows one section at a time and the map is far too heavy to leave
+ * rendered. Only the control moved.
+ */ ?>
+<nav class="rl-nav" id="rl-nav">
+	<a href="#locations" data-sec="locations" class="on" onclick="return rlNav('locations')">Locations</a>
+	<a href="#realm" data-sec="realm" onclick="return rlNav('realm')">Realm</a>
+	<a href="#map" data-sec="map" onclick="return rlNav('map')">Map</a>
+	<a href="#raids" data-sec="raids" onclick="return rlNav('raids')">Raids</a>
+	<a href="#realms" data-sec="realms" onclick="return rlNav('realms')">Attack</a>
+</nav>
+<?php } ?>
 <div class="row" id="row0">
 	  <div class="side" id="locations">
 		<div class="content realm">
@@ -1042,15 +1007,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	echo "</div>";
 } 
 ?>
-<?php if($realm_status){ ?>
-<div id="quick-menu">
-	<img width="34" height="34" id="locations-icon" title="Locations" src="icons/locations.png" onclick="toggleSections('locations');">
-	<img width="34" height="34" id="map-icon" title="Map" src="icons/map.png" onclick="toggleSections('map');">
-	<img width="34" height="34" id="realm-icon" title="Realm" src="icons/realm.png" onclick="toggleSections('realm');">
-	<img width="34" height="34" id="raids-icon" title="Raids" src="icons/raids.png" onclick="toggleSections('raids');">
-	<img width="34" height="34" id="realms-icon" title="Realms" src="icons/quests.png" onclick="toggleSections('realms');">
-</div>
-<?php } ?>
+<?php /* The bottom icon bar is gone; see .rl-nav at the top of the page. */ ?>
 	<!-- Inventory Info Modal -->
 	<div id="inventory-info-overlay" onclick="closeInventoryInfoModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1006;"></div>
 	<div id="inventory-info-modal" class="modal" style="display:none;z-index:1007;" onclick="closeInventoryInfoModal()">
@@ -1366,6 +1323,7 @@ $conn->close();
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="map.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="swipe-nav.js?var=<?php echo rand(0,999); ?>"></script>
 <?php if($realm_status){ ?>
 <script type='text/javascript'>
 	/* THE PAGE IS HERE, so the loader goes. Not on window.load -- that waits
@@ -1384,70 +1342,100 @@ $conn->close();
 		setTimeout(function () { l.remove(); }, 450);
 	}());
 
-		document.getElementById('back-to-top-button').style.zIndex = "-1";
-		document.getElementById('quick-menu').style.display = "block";
-		document.getElementById('map').style.position = "relative";
-		document.getElementById('map').style.top = '-100px';
-		document.getElementById('raids').style.position = "relative";
-		document.getElementById('raids').style.top = '-55px';
-		document.getElementById('realms').style.position = "relative";
-		document.getElementById('realms').style.top = '-95px';
-		/*
-		 * NO NUDGE ON #realm ANY MORE.
-		 *
-		 * The -25px existed to pull this column up over an <h2> that sat
-		 * OUTSIDE .content -- 44px of heading plus its margin, in a column
-		 * whose sibling starts its panel immediately. The realm name is
-		 * inside the panel now, so both columns begin at .main/.side's own
-		 * 20px padding and line up on their own; the nudge just lifted the
-		 * right one 25px clear of the left and clipped the title.
-		 *
-		 * I removed this once, "measured" that it made things worse, and
-		 * put it back -- against a browser tab still showing the OLD page,
-		 * which of course still had the heading outside. Reload before
-		 * measuring.
-		 */
-		if($(window).width() > 700){
-			document.getElementById('realm-icon').style.display = "none";
-		}else{
-			document.getElementById('map-icon').style.display = "none";
+	document.getElementById('back-to-top-button').style.zIndex = "-1";
+	document.getElementById('map').style.position = "relative";
+	document.getElementById('map').style.top = '-100px';
+	document.getElementById('raids').style.position = "relative";
+	document.getElementById('raids').style.top = '-55px';
+	document.getElementById('realms').style.position = "relative";
+	document.getElementById('realms').style.top = '-95px';
+	/*
+	 * NO NUDGE ON #realm ANY MORE.
+	 *
+	 * The -25px existed to pull this column up over an <h2> that sat
+	 * OUTSIDE .content -- 44px of heading plus its margin, in a column
+	 * whose sibling starts its panel immediately. The realm name is
+	 * inside the panel now, so both columns begin at .main/.side's own
+	 * 20px padding and line up on their own; the nudge just lifted the
+	 * right one 25px clear of the left and clipped the title.
+	 *
+	 * I removed this once, "measured" that it made things worse, and
+	 * put it back -- against a browser tab still showing the OLD page,
+	 * which of course still had the heading outside. Reload before
+	 * measuring.
+	 */
+
+	/*
+	 * ONE PLACE THAT KNOWS THE NAV.
+	 *
+	 * What was here instead was twenty unguarded
+	 * getElementById('<section>-icon') calls against the bottom icon bar.
+	 * Every one of them was a dereference with nothing checking it, so the
+	 * day an icon was renamed or removed the very first statement of this
+	 * 1,500-line block threw and the page came back as one long stack of
+	 * panels with no working buttons -- twice. These three helpers return
+	 * or do nothing instead, and every later caller goes through them.
+	 */
+	function rlNavLink(sec){
+		var nav = document.getElementById('rl-nav');
+		return nav ? nav.querySelector('a[data-sec="' + sec + '"]') : null;
+	}
+	function rlMark(sec){
+		var nav = document.getElementById('rl-nav');
+		if (!nav) return;
+		[].forEach.call(nav.querySelectorAll('a[data-sec]'), function(a){
+			a.classList.toggle('on', a.getAttribute('data-sec') === sec);
+		});
+	}
+	function rlPanel(sec, on){
+		var el = document.getElementById(sec);
+		if (el) el.style.display = on ? 'block' : 'none';
+	}
+
+	/* Two of the five panels are never a destination of their own: on a
+	   wide screen the realm rides alongside the locations, on a narrow one
+	   the map rides under the realm. Drop the link, keep the panel. */
+	var rlWide = $(window).width() > 700;
+	(function(){
+		var hide = rlNavLink(rlWide ? 'realm' : 'map');
+		if (hide) hide.style.display = 'none';
+	}());
+
+	if(window.location.hash == "#realm-image" || window.location.hash == "#realm-name"){
+		rlPanel('locations', rlWide);
+		rlPanel('realm', true);
+		rlMark(rlWide ? 'locations' : 'realm');
+	}else{
+		rlPanel('locations', true);
+		if(!rlWide) rlPanel('realm', false);
+		rlMark('locations');
+	}
+	rlPanel('map', false);
+	rlPanel('raids', false);
+	rlPanel('realms', false);
+
+	/*
+	 * SWIPE BETWEEN SECTIONS ON A PHONE.
+	 *
+	 * The nav is a five-wide horizontal scroller down there; a swipe gets
+	 * to the far end without reaching for it. swipe-nav.js clicks the next
+	 * visible link rather than calling toggleSections itself, so this adds
+	 * no second idea of what a section change is -- and the link it skips
+	 * on a narrow screen (Map, which rides under the realm) is skipped here
+	 * too, because it is display:none and has no offsetParent.
+	 *
+	 * Nothing happens while a modal is up: the manage dialogs, the raid
+	 * detail card and the launch animation all sit over the page, and
+	 * swapping the page under them is never what the swipe meant.
+	 */
+	if (window.SkullSwipe) SkullSwipe.init('rl-nav', {
+		blocked: function () {
+			var els = document.querySelectorAll(
+				'.modal, .popup-overlay, #raid-detail-modal, #raid-detail-overlay, #raid-anim-overlay');
+			for (var i = 0; i < els.length; i++) if (els[i].offsetParent !== null) return true;
+			return false;
 		}
-		if(window.location.hash == "#realm-image" || window.location.hash == "#realm-name"){
-			if($(window).width() > 700){
-				document.getElementById('locations').style.display = "block";
-				document.getElementById('locations-icon').classList.add("selected");
-				document.getElementById('realm').style.display = "block";
-			}else{
-				document.getElementById('realm').style.display = "block";
-				document.getElementById('realm-icon').classList.add("selected");
-				document.getElementById('locations').style.display = "none";
-				document.getElementById('locations-icon').classList.remove("selected");
-			}
-			document.getElementById('map').style.display = "none";
-			document.getElementById('map-icon').classList.remove("selected");
-			document.getElementById('raids').style.display = "none";
-			document.getElementById('raids-icon').classList.remove("selected");
-			document.getElementById('realms').style.display = "none";
-			document.getElementById('realms-icon').classList.remove("selected");
-		}else{
-			document.getElementById('locations').style.display = "block";
-			document.getElementById('locations-icon').classList.add("selected");
-			if($(window).width() <= 700){
-				document.getElementById('realm').style.display = "none";
-				document.getElementById('realm-icon').classList.remove("selected");
-			}
-			document.getElementById('map').style.display = "none";
-			document.getElementById('map-icon').classList.remove("selected");
-			document.getElementById('raids').style.display = "none";
-			document.getElementById('raids-icon').classList.remove("selected");
-			document.getElementById('realms').style.display = "none";
-			document.getElementById('realms-icon').classList.remove("selected");
-		}
-	/*}else{
-		document.getElementById('quick-menu').style.display = "none";
-		//document.getElementById('row1').style.position = "relative";
-		//document.getElementById('row1').style.top = '-65px';
-	}*/
+	});
 	
 	/*
 	 * THEME AND FACTION, WITHOUT A PAGE RELOAD.
@@ -1528,6 +1516,13 @@ $conn->close();
 	/* The list shows its first few and keeps the rest one press away. The
 	   sections used to collapse instead, which hid everything including the
 	   raid you came to look at. */
+	/* The nav links carry real hrefs so they work without JS and can be
+	   opened in a new tab; this stops the jump and switches instead. */
+	function rlNav(section){
+		toggleSections(section);
+		return false;
+	}
+
 	function showAllRaidRows(btn){
 		var list = btn.closest('.content.raids');
 		if (!list) return;
@@ -1561,12 +1556,11 @@ $conn->close();
 		window.scrollTo(0, 0);
 		var sections = ['locations','map','realm','raids','realms'];
 		sections.forEach(function(s){
-			document.getElementById(s).style.display = 'none';
-			document.getElementById(s+'-icon').classList.remove('selected');
+			var el = document.getElementById(s);
+			if (el) el.style.display = 'none';
 		});
-
 		if(!document.getElementById(selection)) return;
-		document.getElementById(selection+'-icon').classList.add('selected');
+		rlMark(selection);
 
 		// Map: just toggle visibility — reinitializing the SVG map via AJAX is not supported
 		if(selection === 'map'){

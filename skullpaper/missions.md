@@ -83,6 +83,20 @@ The **In the field** list tracks everything you have out, closest to landing fir
 
 To make missions easier to claim, a **Collect all** banner appears above the list whenever anything has landed, and claims every completed mission in one press. Each card then reveals in place whether it succeeded or failed, and what it dropped.
 
+## Getting around the page
+
+The strip of links across the top - **Daily**, **Never run**, **Deploy**, **In
+the field**, **Launch** - stays pinned there as you scroll and jumps to each
+section, with a count on the tabs that carry one. On a page that can be two
+hundred cards tall, that is the difference between reading it and hunting
+through it.
+
+**On a phone you can also swipe.** A swipe left moves to the next section, a
+swipe right to the previous one, exactly as if you had pressed the link. It
+stands down while the mission drawer or the menu is open, and any swipe that
+starts on the link strip, on a field, or on something that scrolls sideways
+belongs to that thing instead. [[realms]] has the same gesture.
+
 ## Launching Missions in Bulk
 
 Three buttons in the **Daily deployment** bar near the top of the page launch in

@@ -186,17 +186,28 @@ foreach ($sections as $sec) {
 	ok(preg_match('/id="' . $sec . '"|id=\'' . $sec . '\'/', $src) === 1,
 	   "toggleSections() lists '$sec' but nothing renders id=\"$sec\" -- "
 	 . 'getElementById returns null, .style throws, and the whole script block dies');
-	ok(preg_match('/id="' . $sec . '-icon"/', $src) === 1,
-	   "no quick-menu icon with id=\"$sec-icon\" for section '$sec' -- same crash");
+	ok(preg_match('/data-sec="' . $sec . '"/', $src) === 1,
+	   "no nav link with data-sec=\"$sec\" for section '$sec' -- the section is "
+	 . 'reachable only by hash, and rlMark() will never light anything for it');
 }
-/* And the reverse: an icon wired to a section the list does not know about
-   would silently do nothing. */
-preg_match_all('/id="([a-z]+)-icon"/', $src, $im);
-foreach (array_unique($im[1]) as $icon) {
-	ok(in_array($icon, $sections, true),
-	   "there is a '$icon-icon' in the quick menu that toggleSections() never "
-	 . 'hides or selects');
+/* And the reverse: a link pointing at a section the list does not know about
+   would switch to a panel toggleSections() never hides again. */
+preg_match_all('/data-sec="([a-z]+)"/', $src, $im);
+foreach (array_unique($im[1]) as $link) {
+	ok(in_array($link, $sections, true),
+	   "there is a nav link for '$link' that toggleSections() never hides or selects");
 }
+/*
+ * AND NOTHING MAY DEREFERENCE A '-icon' ID AGAIN. The bottom bar is gone;
+ * the twenty unguarded getElementById('<sec>-icon') calls that opened this
+ * block went with it. One left behind throws on the FIRST statement of a
+ * 1,500-line <script> and the page comes back as a single stack of panels.
+ */
+$realmsJs = $src;
+preg_match_all("/getElementById\((['\"])([a-z]+)-icon\\1\)/", no_comments($realmsJs), $icons);
+ok(empty($icons[0]),
+   'realms.php still reads a <section>-icon element; the quick menu that provided '
+ . 'them is gone, so this is a null dereference at the top of the script block');
 /* Every other direct touch of a panel id outside that loop. */
 preg_match_all("/getElementById\('([a-z-]+)'\)\.style/", $src, $gm);
 $missing = array();
@@ -351,13 +362,33 @@ $genPreload = strpos($src, "foreach (realm_con_names() as") !== false
 ok($genPreload, 'the item icons are no longer preloaded -- as CSS backgrounds they '
               . 'queue behind every eager <img> on a 162-image page, which is exactly '
               . 'the intermittent missing icon that was reported twice');
-ok(strpos($src, '#quick-menu') !== false && strpos($src, 'safe-area-inset-bottom') !== false,
-   'the fixed quick-menu has no bottom safe-area inset -- on an iOS PWA its lower '
- . 'edge sits under the home indicator');
-/* THE BAR MUST HUG THE BOTTOM IN STANDALONE. flexbox.css used to lift it by
-   the inset plus 10px and paint a body::after strip to mask the gap; that
-   lift is invisible in desktop Chrome and was reported three times as the
-   bar sitting high with dead space under it. */
+/*
+ * THE BAR IS GONE. It was position:fixed at the bottom, which on an iOS PWA
+ * meant fighting the home indicator, and it moved between panels because it
+ * reacted to the height of the page: no content, bar high; content, bar
+ * dropped. Reported four times in four different words. The nav is a sticky
+ * strip at the TOP now, the same control missions.php uses, and top:0 has
+ * none of those problems -- nothing below the fold, no indicator to dodge,
+ * no fixed positioning to lose.
+ */
+ok(preg_match('/\.rl-nav\s*\{[^}]*position:\s*sticky/', $src) === 1,
+   'the section nav is not position:sticky -- it scrolls away on a long page, '
+ . 'which is the whole reason it moved to the top');
+ok(preg_match('/\.rl-nav\s*\{[^}]*top:\s*env\(safe-area-inset-top/', $src) === 1,
+   'the sticky nav pins to top:0, so on an iOS PWA it parks in the strip the '
+ . 'status bar owns -- half unreadable and untappable');
+ok(preg_match('/@media \(max-width: 700px\)[^}]*\{\s*[^}]*\.rl-nav\s*\{[^}]*padding-right/', $src) === 1
+   || preg_match('/\.rl-nav\s*\{[^}]*padding-right:\s*56px/', $src) === 1,
+   'the nav does not dodge the burger, which is fixed at the top right under '
+ . '700px -- the last link ends up under it');
+ok(strpos($src, 'id="quick-menu"') === false,
+   'the bottom quick menu is back in realms.php; the sticky nav replaced it and '
+ . 'having both means two controls disagreeing about which panel is open');
+/* THE BAR MUST HUG THE BOTTOM IN STANDALONE, on the pages that still have
+   one -- guardians and obscura do. flexbox.css used to lift it by the inset
+   plus 10px and paint a body::after strip to mask the gap; that lift is
+   invisible in desktop Chrome and was reported three times as the bar
+   sitting high with dead space under it. */
 $flex = file_get_contents(__DIR__ . '/dist/flexbox.css');
 ok(!preg_match('/#quick-menu\s*\{[^}]*bottom:\s*calc\(env\(safe-area-inset-bottom[^}]*\+\s*10px/', $flex),
    'flexbox.css lifts #quick-menu off the bottom again in standalone -- that is the '
@@ -365,24 +396,52 @@ ok(!preg_match('/#quick-menu\s*\{[^}]*bottom:\s*calc\(env\(safe-area-inset-botto
 ok(strpos($flex, 'body:has(#quick-menu[style*="block"])::after') === false,
    'the body::after masking strip is back; it exists only to hide the gap under a '
  . 'lifted bar, and the bar is not lifted any more');
-ok(strpos($src, 'bottom: 0 !important') !== false,
-   'realms no longer pins its own bar to the bottom');
-ok(strpos($src, 'padding: 0 8px !important') !== false,
-   'realms is not zeroing the page-level bar padding, so the global inset padding '
- . 'and this page\'s inset height will stack into a double gap');
-$insets = substr_count($src, 'safe-area-inset-bottom');
-printf("  safe-area-inset-bottom used %d time(s); preload generated from realm_con_names(): %s\n",
-	$insets, $genPreload ? 'yes' : 'no');
-ok($insets >= 2, 'the panels also need the inset, or their last row hides behind the bar');
-/* The bar must not be able to change height as its art decodes -- 512x512
-   source images sized only by CSS percentage made the bar reflow, which is
-   how a position:fixed element appears to move between panels. */
-preg_match_all('/<img width="\d+" height="\d+" id="[a-z]+-icon"/', $src, $qi);
-printf("  quick-menu icons with explicit dimensions: %d of 5\n", count($qi[0]));
-ok(count($qi[0]) === 5,
-   'the quick-menu icons have no width/height attributes -- they are 512x512 '
- . 'source art sized by percentage, so the bar reflows as they decode and a '
- . 'fixed bar that changes height reads as a bar that moves');
+printf("  preload generated from realm_con_names(): %s; sticky nav: %s\n",
+	$genPreload ? 'yes' : 'no',
+	preg_match('/\.rl-nav\s*\{[^}]*position:\s*sticky/', $src) ? 'yes' : 'no');
+/* The panels still need the bottom inset -- not to clear a bar any more, but
+   so their last row is not under the home indicator. */
+ok(substr_count($src, 'safe-area-inset-bottom') >= 1,
+   'the panels lost the bottom inset, so their last row sits under the iOS home '
+ . 'indicator');
+
+/* ---------- 8b. swipe between sections on a phone ------------------------ */
+/*
+ * swipe-nav.js CLICKS THE NEXT NAV LINK rather than calling toggleSections()
+ * itself. That is the whole design: realms swaps panels, missions jumps to a
+ * hash, and neither page grew a second idea of what a section change is. A
+ * swipe implementation that reached for toggleSections directly would work
+ * on realms and be dead code on missions, and would drift the first time a
+ * link learns to do anything else.
+ */
+echo "\nswipe between sections\n";
+$swipe = file_get_contents(__DIR__ . '/swipe-nav.js');
+$swipeC = no_comments($swipe);
+ok(strpos($swipeC, '.click()') !== false,
+   'swipe-nav.js no longer clicks the nav link -- if it calls the page\'s own '
+ . 'switcher instead it is a second copy of the navigation rule');
+ok(strpos($swipeC, 'touchstart') !== false && strpos($swipeC, 'mousedown') === false,
+   'swipe-nav.js binds something other than touch; this is meant to be invisible '
+ . 'to a mouse');
+ok(strpos($swipeC, 'overflowX') !== false,
+   'swipe-nav.js no longer gives way to sideways scrollers -- it will steal the '
+ . 'drag from the nav strip itself, from wide tables and from the map');
+ok(strpos($swipeC, 'show-menu') !== false,
+   'swipe-nav.js no longer stands down while the burger is open, and the burger '
+ . 'is a full-screen affordance on every page here');
+ok(strpos($swipeC, 'offsetParent') !== false,
+   'swipe-nav.js counts hidden links, so a swipe on a phone will land on the '
+ . 'section realms deliberately dropped from the nav at that width');
+foreach (array('realms.php' => 'rl-nav', 'missions.php' => 'ms-nav') as $page => $navId) {
+	$ps = file_get_contents(__DIR__ . '/' . $page);
+	ok(strpos($ps, 'swipe-nav.js') !== false,
+	   "$page does not load swipe-nav.js");
+	ok(strpos(no_comments($ps), "SkullSwipe.init('$navId'") !== false,
+	   "$page loads swipe-nav.js but never initialises it against #$navId");
+	ok(strpos(no_comments($ps), 'blocked:') !== false,
+	   "$page initialises the swipe with no blocked() guard, so a swipe over an "
+	 . 'open dialog moves the page underneath it');
+}
 
 /* ---------- 9. raid rows are compact, with the card in a modal ------------ */
 /*

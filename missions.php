@@ -975,6 +975,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 </body>
 <?php $conn->close(); ?>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="swipe-nav.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript">
 /* The document is here, so the overlay goes. Not waiting on window.load --
    that waits on every mission thumbnail, and the page is usable long
@@ -1687,6 +1688,25 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		});
 		sync();
 	}());
+
+	/*
+	 * SWIPE BETWEEN SECTIONS ON A PHONE.
+	 *
+	 * Same gesture as realms, same shared file, and here it is purely an
+	 * accelerator: swipe-nav.js clicks the next nav link, the link jumps to
+	 * its own #hash, and the scroll-spy above lights it and pins it exactly
+	 * as it does for a tap. Nothing here knows where the sections are.
+	 *
+	 * Not while the launch drawer is up -- it is a full-screen dialog over
+	 * the page, and scrolling the page behind it is not what the swipe
+	 * meant.
+	 */
+	if (window.SkullSwipe) SkullSwipe.init('ms-nav', {
+		blocked: function () {
+			var dr = document.getElementById('ms-drawer');
+			return !!(dr && !dr.hidden);
+		}
+	});
 
 	refreshDeploy();
 }());

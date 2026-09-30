@@ -89,3 +89,23 @@ get.
 **Deactivate** has moved to the bottom of the locations panel, on its own. It
 was next to the Guide button, which on a phone put it directly under the fixed
 menu button. It still asks for confirmation.
+
+## Getting around the page
+
+Realms shows one section at a time, and the strip of links across the top of
+the page is how you move between them: **Locations**, **Realm**, **Map**,
+**Raids** and **Attack**. It stays pinned to the top as you scroll, so the rest
+of the page is always one press away no matter how far down a long locations
+list you are. On a wide screen your realm panel rides alongside the locations
+rather than being its own destination; on a phone the map rides under the realm
+panel, so whichever of the two is riding along is dropped from the strip.
+
+This replaced a row of icons that used to sit fixed at the bottom of the
+screen. It is the same control the Missions page uses, in the same place.
+
+**On a phone you can also swipe.** A swipe left moves to the next section, a
+swipe right to the previous one. It is purely a shortcut - the links do exactly
+the same thing - and it stands down whenever the gesture belongs to something
+else: a dialog being open, the menu being open, or a swipe that starts on the
+link strip itself, on a field, or on anything that scrolls sideways. Missions
+works the same way, jumping to the next section down the page.
