@@ -96,6 +96,49 @@ ok(strpos($dbsrc, '$stats = [$level_label=>lbAvgLevel(') !== false,
    'the Monstrocity board row prints the raw AVG again, so the row and the '
  . 'hub card disagree');
 
+/*
+ * THE BOARD PICKER. The period switcher only solved half of it -- you
+ * could change the timeframe without the hub, but not the BOARD, so
+ * comparing two games was still hub, find card, click.
+ *
+ * It points at each board's SHORTEST period rather than all-time, because
+ * the switcher sits right beside it: landing on the live cut and stepping
+ * back is one press, and it keeps the list one entry per board.
+ */
+echo "\nthe board picker\n";
+eval(brace_extract($db, 'function leaderboardShortestPeriod($meta)'));
+eval(brace_extract($db, 'function renderLeaderboardPicker($slug)'));
+function pick($slug) { ob_start(); renderLeaderboardPicker($slug); return ob_get_clean(); }
+
+$h = pick('monthly-dhcarena');
+printf("  %d boards in %d groups\n", substr_count($h, '<option'), substr_count($h, '<optgroup'));
+ok(substr_count($h, '<option') === count($SKULLIANCE_BOARDS),
+   'the picker is not listing every catalogued board');
+ok(substr_count($h, '<optgroup') === count(array_unique(array_column($SKULLIANCE_BOARDS, 'group'))),
+   'the picker groups do not match the hub sections');
+ok(preg_match('/<option selected>DHC Arena|<option[^>]* selected>DHC Arena/', $h) === 1,
+   'the board you are on is not selected in the picker');
+ok(strpos($h, 'Choose') === false,
+   'a placeholder is shown even though the current slug IS a board');
+ok(strpos(pick('7'), 'Choose') !== false,
+   'a project board shows some other board as current instead of a placeholder');
+/* The hub is the back link, not a dropdown row. */
+ok(strpos($h, 'filterby=hub') === false && strpos($h, '>Hub<') === false,
+   'the picker lists the hub; the back link already is that');
+/* Shortest period, per board. */
+foreach ($SKULLIANCE_BOARDS as $key => $meta) {
+	$want = leaderboardShortestPeriod($meta);
+	ok(strpos($h, 'filterby=' . rawurlencode($want) . "'") !== false
+	   || strpos($h, 'filterby=' . urlencode($want) . "'") !== false,
+	   "the picker does not point '$key' at its shortest period ($want)");
+}
+foreach (array('activity' => 'activity-weekly', 'streaks' => 'monthly-streaks',
+               'realms' => 'realms', 'gamemaster' => 'gamemaster-weekly') as $k => $want) {
+	ok(leaderboardShortestPeriod($SKULLIANCE_BOARDS[$k]) === $want,
+	   "shortest period for '$k' should be '$want', got '"
+	 . leaderboardShortestPeriod($SKULLIANCE_BOARDS[$k]) . "'");
+}
+
 echo "\nthe page wires it up\n";
 $lb = file_get_contents(__DIR__ . '/leaderboards.php');
 ok(strpos($lb, 'renderLeaderboardPeriods($filterby)') !== false,
@@ -103,6 +146,29 @@ ok(strpos($lb, 'renderLeaderboardPeriods($filterby)') !== false,
 ok(preg_match('/\.lb-period\.on\s*\{[^}]*background/', $lb) === 1,
    'the current period has no filled state, so nothing says which one you are on');
 ok(strpos($lb, 'lb-subhead') !== false, 'the back link and the switcher are not on one row');
+ok(strpos($lb, 'renderLeaderboardPicker($filterby)') !== false,
+   'leaderboards.php never calls the board picker');
+/*
+ * THE TWO NUDGES. flexbox.css pulls #filtered-content up 40px and
+ * #filter-nfts a further 35, tuned for a page whose <h2> sat alone above
+ * the panel and shared with store/my-nfts/showcase/collections -- so they
+ * cannot be changed there. With a subhead row between heading and panel
+ * they drag the board up over it: measured, the content began 26px ABOVE
+ * the bottom of the subhead, and the Find a Project <select> landed
+ * directly on the period toggle. That is why the toggle was reachable on a
+ * phone and invisible on a desktop.
+ */
+ok(preg_match('/#filtered-content \{ top: 0; \}/', $lb) === 1
+   && preg_match('/#filter-nfts \{ top: 0; \}/', $lb) === 1,
+   'leaderboards.php no longer cancels the inherited -40px/-35px pull-ups, '
+ . 'so the panel climbs over the subhead and the project select covers the '
+ . 'period toggle again');
+ok(preg_match('/\.lb-periods \{[^}]*margin-left:\s*auto/', $lb) === 0,
+   'the period toggle is pushed right again, which is where the pulled-up '
+ . 'project select sits');
+ok(preg_match('/\.lb-subhead \{[^}]*z-index:\s*1/s', $lb) === 1,
+   'the subhead has no stacking context, so anything pulled up from the '
+ . 'panel below can paint over the controls again');
 
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }

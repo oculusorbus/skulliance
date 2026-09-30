@@ -245,11 +245,20 @@ include 'header.php';
    a phone rather than squeezing, because the periods are the control you
    came for and must not shrink to fit beside the way out. */
 .lb-subhead {
-  display: flex; align-items: baseline; gap: 10px 18px; flex-wrap: wrap;
+  /* relative + a z-index so nothing pulled up from the panel below can
+     paint over the controls again. */
+  position: relative; z-index: 1;
+  display: flex; align-items: center; gap: 10px 18px; flex-wrap: wrap;
   margin: 0 0 14px;
 }
 .lb-subhead .lb-back { margin: 0; }
-.lb-periods { display: flex; gap: 2px; margin-left: auto; flex-wrap: wrap; }
+/* NOT margin-left:auto. Pushed right, this landed on top of #filter-nfts
+   -- the Find a Project control, which flexbox.css pulls UP 35px and
+   right-aligns, so the far right of this row was already occupied. The
+   toggle rendered perfectly and sat underneath a <select>, which is why it
+   was reachable on a phone (where the pair stack) and invisible on a
+   desktop. It reads better here anyway, next to the way back. */
+.lb-periods { display: flex; gap: 2px; flex-wrap: wrap; }
 .lb-period {
   font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
   padding: 5px 11px; text-decoration: none;
@@ -262,9 +271,26 @@ a.lb-period:hover { color: #e8eaed; background: rgba(0,200,160,0.08); }
 .lb-period.on {
   color: #07111d; background: #00c8a0; border-color: #00c8a0; font-weight: bold;
 }
+/* The board picker takes the right-hand end of the row. */
+.lb-pick { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.lb-pick span { font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: rgba(255,255,255,0.45); white-space: nowrap; }
+.lb-pick select { width: auto; min-width: 170px; max-width: 260px; margin: 0;
+  font-size: 0.78rem; padding: 5px 10px; border-radius: 0; height: auto; }
+/* THE TWO NUDGES THIS PAGE INHERITS. flexbox.css pulls #filtered-content up
+   40px and #filter-nfts a further 35 -- tuned for a page whose <h2> sat
+   alone above the panel, and shared with store, my-nfts, showcase and
+   collections, so they cannot be changed there. With a real subhead row
+   between the heading and the panel they drag the whole board up over it:
+   measured, the content began 26px ABOVE the bottom of the subhead. Zeroed
+   here, the panel sits 14px below it, which is the subhead's own margin. */
+#filtered-content { top: 0; }
+#filter-nfts { top: 0; }
 @media (max-width: 560px) {
-  .lb-periods { margin-left: 0; width: 100%; }
+  .lb-periods { width: 100%; }
   .lb-period { flex: 1; text-align: center; }
+  .lb-pick { margin-left: 0; width: 100%; }
+  .lb-pick select { flex: 1; min-width: 0; max-width: none; }
 }
 .lb-hub-note  { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
 .lb-hub-note a { color: #00c8a0; }
@@ -599,6 +625,10 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 					   Opening All-Time and wanting Monthly used to mean
 					   going back to the hub and finding the card again. */
 					renderLeaderboardPeriods($filterby);
+					/* And the other half: jump to a different board without
+					   the hub round trip either. No hub entry in it -- the
+					   link above already is that. */
+					renderLeaderboardPicker($filterby);
 					echo "</div>";
 				}
 				?>

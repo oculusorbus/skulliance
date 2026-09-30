@@ -1052,7 +1052,7 @@ function filterLeaderboard($page){
 	$anchor = "";
 	echo'
 	<div id="filter-nfts">
-		<label for="filterLeaderboard"><strong>Find a Project:</strong></label>
+		<label for="filterLeaderboard"><strong>Projects:</strong></label>
 		<select onchange="javascript:filterLeaderboard(this.options[this.selectedIndex].value);" name="filterLeaderboard" id="filterLeaderboard">
 			<!-- Board leaderboards deliberately are NOT listed here any more.
 			     They live on the hub (leaderboards.php with no filter), which

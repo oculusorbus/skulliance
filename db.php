@@ -7302,6 +7302,63 @@ function leaderboardBoardFor($slug) {
 }
 
 /**
+ * The shortest period a board keeps.
+ *
+ * The picker below points at THIS rather than at all-time, because the
+ * period switcher is right beside it: landing on the live cut of a board
+ * and stepping back to all-time is one press, and it means the dropdown
+ * lists one entry per board instead of one per board per period.
+ */
+function leaderboardShortestPeriod($meta) {
+	foreach (array('Weekly', 'Monthly', 'All-Time') as $p) {
+		if (isset($meta['periods'][$p])) return $meta['periods'][$p];
+	}
+	return reset($meta['periods']);
+}
+
+/**
+ * Jump straight to another board.
+ *
+ * The period switcher solved half the problem -- you could change the
+ * timeframe without going back to the hub, but not the BOARD. Comparing
+ * two games still meant hub, find card, click. This is the other half, and
+ * it is grouped exactly as the hub groups its cards (Platform, Missions,
+ * Realms, Games, Specialty Games) so the two read the same way.
+ *
+ * Same catalogue as everything else on this page, so a board added to
+ * $SKULLIANCE_BOARDS appears in the hub, the switcher and here at once.
+ */
+function renderLeaderboardPicker($slug) {
+	global $SKULLIANCE_BOARDS;
+	$cur    = leaderboardBoardFor($slug);
+	$curKey = $cur ? $cur['key'] : '';
+	$groups = array();
+	foreach ($SKULLIANCE_BOARDS as $key => $meta) {
+		if (!empty($meta['periods'])) $groups[$meta['group']][$key] = $meta;
+	}
+	if (!$groups) return;
+	/* "Games", the player's word for it -- the list also carries the
+	   platform, missions and realms boards, but those are a handful beside
+	   fifteen games and they are grouped under their own headings. */
+	echo "<label class='lb-pick'><span>Games:</span>";
+	echo "<select class='dropdown' onchange=\"if(this.value)location.href=this.value;\">";
+	/* A project board, or anything not in the catalogue, has nothing to
+	   select -- say so rather than showing someone else's board as current. */
+	if (!$cur) echo "<option value='' selected>Choose&hellip;</option>";
+	foreach ($groups as $gname => $boards) {
+		echo "<optgroup label='" . htmlspecialchars($gname, ENT_QUOTES, 'UTF-8') . "'>";
+		foreach ($boards as $key => $meta) {
+			echo "<option value='leaderboards.php?filterby="
+			   . urlencode(leaderboardShortestPeriod($meta)) . "'"
+			   . ($key === $curKey ? " selected" : "") . ">"
+			   . htmlspecialchars($meta['label'], ENT_QUOTES, 'UTF-8') . "</option>";
+		}
+		echo "</optgroup>";
+	}
+	echo "</select></label>";
+}
+
+/**
  * The period switcher, shown on a board page.
  *
  * Opening All-Time and then wanting Monthly meant going back to the hub and
@@ -7430,7 +7487,7 @@ function renderLeaderboardHub($conn) {
 	// Projects are a lookup, not a browse -- 36+ of them would swamp the grid,
 	// so they stay behind the existing dropdown rather than getting cards.
 	echo "<h3 class='lb-hub-group'>Projects</h3>";
-	echo "<div class='lb-hub-note'>Use <strong>Find a Project</strong> above to jump to any project's holdings "
+	echo "<div class='lb-hub-note'>Use <strong>Projects</strong> above to jump to any project's holdings "
 	   . "leaderboard, or <a href='leaderboards.php?filterby=0'>view all projects</a>. "
 	   . "That selector lists projects only &mdash; every board on this platform has a card on this page.</div>";
 
