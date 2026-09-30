@@ -426,6 +426,33 @@ if ($base === '' || !$port || !@mkdir($stub, 0777, true)) {
 
 		list($st, $h7, $body) = $get($mine, false);
 		ok(strpos($st, '403') !== false, 'a signed-out build request must be refused');
+
+		/*
+		 * IT HAS TO BE A FIGHTER. Without the required-three gate,
+		 * ?build={"head":"x"} renders that head alone on a transparent 1000px
+		 * canvas -- the endpoint becomes a way to walk the trait art out of
+		 * the platform one clean layer at a time. Every one of these uses
+		 * traits the player DOES own, so only the completeness rule can
+		 * refuse them.
+		 */
+		$partials = array(
+			'head alone'        => array('head' => $tset['head']),
+			'torso alone'       => array('torso' => $tset['torso']),
+			'background alone'  => array('background' => $tset['background']),
+			'no background'     => array('torso' => $tset['torso'], 'head' => $tset['head']),
+			'no head'           => array('background' => $tset['background'],
+			                             'torso' => $tset['torso']),
+			'weapon on its own' => array('weapon' => $tset['weapon']),
+		);
+		$leaked = array();
+		foreach ($partials as $label => $part) {
+			list($st, $h8, $body) = $get('?build=' . rawurlencode(json_encode($part)));
+			ok(strpos($st, '400') !== false,
+			   "'$label' should be refused as an incomplete Fighter; answered: " . $st);
+			if (strpos($body, "\x89PNG") !== false) $leaked[] = $label;
+		}
+		ok(!$leaked, 'single-trait art escaped as a PNG: ' . implode(', ', $leaked));
+		printf("  incomplete builds refused: %s\n", implode(', ', array_keys($partials)));
 		printf("  build: own traits -> 200 %s | unowned trait -> 403 | signed out -> 403\n",
 			trim(str_replace('attachment; filename=', '', $cd)));
 

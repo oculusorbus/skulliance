@@ -1613,11 +1613,21 @@ a{color:var(--ochre)}
    * The server re-checks that every trait is one this player owns, so this
    * is a convenience, not the gate.
    */
+  /* Mirrors DHCF_REQUIRED, exactly as dhcfighters.php's save button does. The
+     server is the authority -- dhc-download.php refuses an incomplete build,
+     because otherwise ?build={"head":"x"} is a way to walk the trait art out
+     one clean 1000px layer at a time -- and this exists so the button says
+     what is missing instead of navigating into a refusal. */
+  var DL_REQUIRED = <?php echo json_encode(DHCF_REQUIRED); ?>;
+
   document.getElementById('getpng').addEventListener('click', function () {
-    var btn = this, was = btn.textContent, n = 0;
-    for (var k in sel) if (sel[k]) n++;
-    if (!n) { btn.textContent = 'Nothing on the canvas'; 
-              setTimeout(function(){ btn.textContent = was; }, 1600); return; }
+    var btn = this, was = btn.textContent;
+    var missing = DL_REQUIRED.filter(function (k) { return !sel[k]; });
+    if (missing.length) {
+      btn.textContent = 'Needs a ' + missing.join(', ');
+      setTimeout(function () { btn.textContent = was; }, 2200);
+      return;
+    }
     btn.textContent = 'Building PNG\u2026';
     /* The wait is the render, ~125ms cold and cached after that, but the
        button should not look stuck if the server is slow. */

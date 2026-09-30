@@ -31,9 +31,11 @@
  *             which races and also confirms that a serial exists.
  *
  *   ?build=   the arrangement currently on the assembler canvas, which usually
- *             has not been saved and has no serial at all. Gated on the traits
- *             instead: every piece in it has to be one you have actually been
- *             awarded. You can take a picture of anything you could build.
+ *             has not been saved and has no serial at all. Gated twice: every
+ *             piece has to be one you have actually been awarded, AND it has
+ *             to be a whole Fighter -- background, torso and head, the same
+ *             three a save insists on. Without the second gate this is a way
+ *             to walk the trait art out one clean 1000px layer at a time.
  *
  * NOTHING MAY PRINT BEFORE THE IMAGE. db.php runs with display_errors on, so
  * the include is buffered; a notice landing in front of the PNG header is a
@@ -121,6 +123,24 @@ if ($serial > 0) {
 	 */
 	$traits = dhcf_clean_traits($build);
 	if (!$traits) dhcd_fail(400, 'That build has nothing in it.');
+	/*
+	 * IT HAS TO BE A FIGHTER, not a trait.
+	 *
+	 * Without this, ?build={"head":"x"} renders that head alone on a
+	 * transparent 1000px canvas -- which turns this endpoint into a way to
+	 * walk Maxingo's art out of the platform one clean layer at a time. The
+	 * required three are the same three dhcf_save_fighter() insists on
+	 * (DHCF_REQUIRED), so the rule is "you can take a picture of anything you
+	 * could save", not a new restriction invented here.
+	 *
+	 * A background is one of them, so every download lands on solid art
+	 * rather than alpha, and a torso and a head cover the middle of it.
+	 */
+	$missing = dhcf_missing_required($traits);
+	if ($missing) {
+		dhcd_fail(400, 'A Fighter needs a ' . implode(', ', $missing)
+		             . ' before it can be downloaded.');
+	}
 	$owned = dhcf_owned($conn, $me);
 	foreach ($traits as $slot => $slug) {
 		$cat = dhcf_slot_category($slot);

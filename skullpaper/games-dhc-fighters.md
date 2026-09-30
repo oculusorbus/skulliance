@@ -339,6 +339,11 @@ and nobody else, and an unsaved build only for a player who actually holds every
 trait in it. The Collection lets anyone *look* at any Fighter; handing out a
 finished, named picture of one is the owner's call.
 
+**And it has to be a whole Fighter** — a background, a torso and a head, the
+same three a save insists on. The download exists so you can show off what you
+assembled, not so the trait art can be walked out of the platform one clean
+layer at a time.
+
 **Edit changes a Fighter without losing it.** Its traits are freed back to you
 for as long as the editor is open, so you can swap one out, add a piece to an
 empty slot, or strip it back. The Fighter keeps its **number, its name and its
