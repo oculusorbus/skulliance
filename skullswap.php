@@ -923,6 +923,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
 
              <div class="guide-section">
                  <h3>Chain Detonations Are Where Big Scores Come From</h3>
+                 <p><strong>Lining bombs up in a match sets off every one of them</strong>, one after another, and a match of four or five also forges the bomb it earned &#8211; so four Diamonds fire all four plus a Carbon. You get <strong>+150 for each bomb beyond the first</strong> on top, because every one of them cost a match to build.</p>
                  <p>If a bomb explosion hits another bomb, the second bomb chain-detonates for an extra:</p>
                  <ul>
                      <li><img src="icons/carbon.png" style="width:14px;height:14px;vertical-align:middle;"> Carbon chain = <strong>+50 bonus</strong></li>
@@ -958,6 +959,8 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
                          <tr><td>Manually detonate <img src="icons/carbon.png" alt=""> Carbon (13-tile cross)</td><td>~130 + 25 = <strong>155</strong></td></tr>
                          <tr><td>Manually detonate <img src="icons/diamond.png" alt=""> Diamond (full board)</td><td>~630 + 50 = <strong>680</strong></td></tr>
                          <tr><td>Chain: <img src="icons/carbon.png" alt=""> Carbon into <img src="icons/diamond.png" alt=""> Diamond</td><td><strong>+100 bonus</strong> on top</td></tr>
+                        <tr><td>Match bombs together (2+)</td><td>every one detonates, <strong>+150 each</strong> beyond the first</td></tr>
+                        <tr><td>Match 4 or 5 bombs</td><td>also forges its own bomb, which detonates too</td></tr>
                      </tbody>
                  </table>
              </div>
@@ -1077,6 +1080,8 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                          <tr><td>Manually detonate <img src="icons/carbon.png" alt="Carbon"> Carbon (13-tile cross)</td><td>~130 + 25 = <strong>155</strong></td></tr>
                          <tr><td>Manually detonate <img src="icons/diamond.png" alt="Diamond"> Diamond (full board)</td><td>~630 + 50 = <strong>680</strong></td></tr>
                          <tr><td>Chain: <img src="icons/carbon.png" alt="Carbon"> Carbon into <img src="icons/diamond.png" alt="Diamond"> Diamond</td><td><strong>+100 bonus</strong> on top</td></tr>
+                        <tr><td>Match bombs together (2+)</td><td>every one detonates, <strong>+150 each</strong> beyond the first</td></tr>
+                        <tr><td>Match 4 or 5 bombs</td><td>also forges its own bomb, which detonates too</td></tr>
                      </tbody>
                  </table>
              </div>
@@ -1232,7 +1237,12 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              carbonDetonation: 50,
              diamondDetonation: 100,
              carbonCleared: 25,
-             diamondCleared: 50
+             diamondCleared: 50,
+             /* Per extra bomb in a single match: two bombs +150, three +300,
+                four +450, five +600. Deliberately below one Diamond
+                detonation (~780) -- the reward for a bomb match should be
+                the detonations it sets off, not the bonus on top of them. */
+             bombComboStep: 150
          };
 
          this.sounds = {
@@ -2187,6 +2197,34 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          }, 300);
      }
 
+     /*
+      * A MATCH CONTAINING BOMBS: every one of them goes off.
+      *
+      * WHAT THIS USED TO DO, and why it was wrong. It cleared all the
+      * matched tiles, then detonated exactly ONE of them -- so lining up
+      * four Diamonds deleted three of them for 10 points each and fired
+      * the fourth. It also computed the match-size bomb (4 -> Carbon,
+      * 5 -> Diamond) and then threw that away, because the caller only
+      * uses it on the no-bomb path. The single most difficult thing to
+      * set up on the board was the worst-scoring move in the game, and
+      * nothing told you.
+      *
+      * Now:
+      *   - every bomb in the match detonates, one after another, each
+      *     with its own bonus and its own blast. The board refills
+      *     between them (handleBombDetonation does that), which is what
+      *     makes the second and third worth anything.
+      *   - the match ALSO forges its size bomb and detonates that too,
+      *     last: four Diamonds really do produce the Carbon they earned.
+      *   - a complexity bonus on top, because assembling several bombs
+      *     into one line costs several moves to set up.
+      *
+      * Positions are recorded BEFORE the tiles are cleared. Clearing
+      * first is deliberate -- it stops a blast re-matching a bomb that
+      * is already accounted for -- so each detonation fires from the
+      * coordinate its bomb occupied, which is exactly where the player
+      * put it.
+      */
      async handleBombMatches(matches, bombType, bombX, bombY) {
          this.playSound('match');
          matches.forEach(match => {
@@ -2198,6 +2236,14 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
 
          await new Promise(resolve => setTimeout(resolve, 300));
 
+         /* Every bomb in the match, in board order, before anything is cleared. */
+         const bombsInMatch = [];
+         matches.forEach(match => {
+             const [x, y] = match.split(',').map(Number);
+             const tile = this.board[y][x];
+             if (tile && tile.special) bombsInMatch.push({ x: x, y: y, type: tile.special });
+         });
+
          matches.forEach(match => {
              const [x, y] = match.split(',').map(Number);
              this.board[y][x].icon = null;
@@ -2207,18 +2253,33 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
 
          this.score += matches.size * 10;
 
-         if (bombType === 'carbon') {
-             this.score += this.bonusScores.carbonDetonation;
-             console.log(`Carbon bomb detonated at (${bombX}, ${bombY}), +${this.bonusScores.carbonDetonation} bonus`);
-             await this.clearRowAndColumn(bombX, bombY);
-         } else if (bombType === 'diamond') {
-             this.score += this.bonusScores.diamondDetonation;
-             console.log(`Diamond bomb detonated at (${bombX}, ${bombY}), +${this.bonusScores.diamondDetonation} bonus`);
-             await this.clearBoard(bombX, bombY);
+         /* Paid for the SETUP, not for the blast -- every bomb beyond the
+            first cost a whole match of its own to forge. */
+         if (bombsInMatch.length > 1) {
+             const combo = this.bonusScores.bombComboStep * (bombsInMatch.length - 1);
+             this.score += combo;
+             console.log(`Bomb combo: ${bombsInMatch.length} bombs matched, +${combo} bonus`);
+         }
+
+         /* One at a time, so the player can see each one land. */
+         for (const b of bombsInMatch) {
+             await this.handleBombDetonation(b.x, b.y, b.type);
+         }
+
+         /* And the bomb the match itself earned. A 4-match forges Carbon
+            and a 5-match Diamond, exactly as a no-bomb match would -- the
+            difference is that this one goes off rather than being left on
+            a board the blasts have just cleared. */
+         const forged = matches.size === 4 ? this.specialTypes.bomb4
+                      : matches.size >= 5 ? this.specialTypes.bomb5 : null;
+         if (forged && !this.isGrandFinale) {
+             this.playSound(forged === 'carbon' ? 'carbonBombAppear' : 'diamondBombAppear');
+             console.log(`Match of ${matches.size} forged a ${forged} bomb, detonating it`);
+             await this.handleBombDetonation(bombX, bombY, forged);
          }
 
          document.getElementById('score').textContent = `Score: ${this.score}`;
-        
+
          this.cascadeTiles();
      }
 
