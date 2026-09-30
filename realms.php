@@ -203,6 +203,52 @@ if (ob_get_level() > 0) @ob_flush();
 
 .rl-loc-acts { display:flex; gap:6px; flex:none; margin-left:auto; }
 
+/* ── RAID ROWS ──────────────────────────────────────────────────────────
+   One line per raid. The rich card is still rendered next to each row,
+   hidden, and opens in a modal -- see openRaidDetail(). */
+.rr { position:relative; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.02);
+  padding:8px 10px 8px; margin-bottom:6px; }
+.rr-bar { position:absolute; left:0; right:0; top:0; height:2px;
+  background:rgba(255,255,255,.07); }
+.rr-bar i { display:block; height:100%; background:#00c8a0; }
+.rr-main { flex:1 1 240px; min-width:0; display:flex; align-items:center; gap:9px;
+  background:none; border:0; padding:0; margin:0; color:inherit; font:inherit;
+  text-align:left; cursor:pointer; }
+.rr-main:hover .rr-who b { text-decoration:underline; }
+.rr-main:focus-visible { outline:2px solid #00c8a0; outline-offset:2px; }
+.rr-av { width:30px; height:30px; flex:none; border-radius:50%; object-fit:cover;
+  background:var(--panel2,#0d1f2d); margin:0; }
+.rr-who { flex:1; min-width:0; display:block; }
+.rr-who b { display:block; font-size:.82rem; font-weight:normal; color:#00c8a0;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rr-who i { display:block; font-style:normal; font-size:.68rem; opacity:.5;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.rr-meta { flex:none; text-align:right; }
+.rr-pct { display:block; font-size:.9rem; color:#c8dce8; font-variant-numeric:tabular-nums; }
+.rr-badge { display:block; font-size:.7rem; letter-spacing:.08em; text-transform:uppercase; }
+.rr-badge.rc-victory { color:#00c8a0; }
+.rr-badge.rc-defeat  { color:#ff5c5c; }
+.rr-when { display:block; font-size:.68rem; opacity:.5; font-variant-numeric:tabular-nums; }
+.rr-when .countdown { font-size:.68rem; }
+/* Shares the second line with the buttons rather than claiming one of its
+   own -- three lines per row for two facts was most of what the compact
+   view was meant to save. */
+.rr-tags { flex:1 1 140px; min-width:0; font-size:.66rem; opacity:.45;
+  align-self:center; }
+.rr-acts { flex:none; display:flex; gap:6px; margin-left:auto; }
+.rr-btn { font:inherit; font-size:.66rem; letter-spacing:.06em; text-transform:uppercase;
+  padding:5px 9px; border:1px solid rgba(0,200,160,.35); border-radius:0; width:auto;
+  background:rgba(0,200,160,.06); color:#00c8a0; cursor:pointer; box-shadow:none;
+  margin:0; line-height:1; white-space:nowrap; }
+.rr-btn:hover { background:rgba(0,200,160,.16); }
+.rr-btn.quiet { border-color:rgba(255,255,255,.14); color:rgba(255,255,255,.45);
+  background:none; }
+.rr-btn.quiet:hover { border-color:#ff5c5c; color:#ff5c5c; background:rgba(255,92,92,.06); }
+/* The section header stops needing to collapse, so it reads as a heading. */
+.rc-section-title { cursor:pointer; }
+#raid-detail-body .rc-card { margin:0; }
+
 /* ── REALM IDENTITY ─────────────────────────────────────────────────────── */
 /* flexbox.css puts text-align:center on .main, and this panel lives inside
    one -- the labels, the helper lines and the saved message all came out
@@ -1068,6 +1114,22 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 		</div>
 	</div>
 
+	<!-- Raid Detail Modal -->
+	<?php /* The rich raid card, shown over the page. The card markup is
+	         already in the document next to each compact row (hidden), so
+	         this moves it in rather than re-rendering or re-fetching it --
+	         no second copy of a 250-line renderer to keep in step. */ ?>
+	<div id="raid-detail-overlay" onclick="closeRaidDetail()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:1010;"></div>
+	<div id="raid-detail-modal" class="modal" style="display:none;z-index:1011;" onclick="closeRaidDetail()">
+		<div class="raid-modal-content" style="max-width:640px;max-height:88vh;overflow-y:auto;" onclick="event.stopPropagation()">
+			<div class="raid-modal-header">
+				<h2 style="margin:0;font-size:1rem;letter-spacing:0.04em;">Raid</h2>
+				<button class="raid-modal-close" onclick="closeRaidDetail()" aria-label="Close">&times;</button>
+			</div>
+			<div id="raid-detail-body"></div>
+		</div>
+	</div>
+
 	<!-- Guide Modal -->
 	<div id="guide-modal-overlay" onclick="closeGuideModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;"></div>
 	<div id="guide-modal" class="modal" style="display:none;z-index:1001;" onclick="closeGuideModal()">
@@ -1450,6 +1512,37 @@ $conn->close();
 			if (el) el.setAttribute('data-was', el.value);
 		});
 	}());
+
+	/*
+	 * THE RAID DETAIL MODAL.
+	 *
+	 * The full card is already in the page beside each compact row, inside a
+	 * hidden .rc-detail. This CLONES it into the modal rather than moving it,
+	 * so the row keeps its own copy and re-opening works after the list is
+	 * refreshed. Everything inside is loading=lazy, so a card nobody opens
+	 * never fetches its theme art or avatars.
+	 */
+	function openRaidDetail(raidId){
+		var src = document.getElementById('raid-detail-' + raidId);
+		var body = document.getElementById('raid-detail-body');
+		if (!src || !body) return;
+		body.innerHTML = src.innerHTML;
+		/* The clone carries ids that now exist twice -- strip them so nothing
+		   getElementById's its way into the copy instead of the original. */
+		[].forEach.call(body.querySelectorAll('[id]'), function(el){ el.removeAttribute('id'); });
+		document.getElementById('raid-detail-overlay').style.display = 'block';
+		document.getElementById('raid-detail-modal').style.display = 'block';
+		/* Countdowns in the clone are driven by the same tick that drives the
+		   originals, which walks .countdown[data-deadline] -- nothing to wire. */
+	}
+	function closeRaidDetail(){
+		document.getElementById('raid-detail-overlay').style.display = 'none';
+		document.getElementById('raid-detail-modal').style.display = 'none';
+		document.getElementById('raid-detail-body').innerHTML = '';
+	}
+	document.addEventListener('keydown', function(e){
+		if (e.key === 'Escape' && document.getElementById('raid-detail-modal').style.display === 'block') closeRaidDetail();
+	});
 
 	function toggleSections(selection){
 		window.scrollTo(0, 0);

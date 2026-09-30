@@ -9690,6 +9690,17 @@ function getRaids($conn, $type, $status="pending", $history=false){
 					$_def_tags = array();
 					if($defender_boost > 0) $_def_tags[] = '+'.$defender_boost.'% Defense';
 					foreach($_def_tags as $_t) $defense_results .= "<span class='rc-pill rc-pill-neutral'>".$_t."</span>";
+					/* WHAT THE COMPACT ROW SHOWS: this player's own odds and
+					   their own modifiers, not both sides'. Outgoing you are
+					   the attacker, incoming you are the defender. */
+					$_my_pct  = ($type == 'outgoing') ? round(100 - $adj_threshold) : round($adj_threshold);
+					/* array_unique: Fast Forward can arrive twice -- once from the
+					   consumables list and once from the duration inference above,
+					   which exists because FF is burned at inception and normally
+					   never stored. If it ever IS stored the row read
+					   "Fast Forward - Fast Forward". */
+					$_my_tags = array_values(array_unique(
+						($type == 'outgoing') ? $_off_tags : $_def_tags));
 				}else{
 					$time_message = "0d 0h 0m 0s";
 					$status = "Completed";
@@ -9804,18 +9815,65 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$rows[$decimal] .= $_raid_logs['defense'];
 				$rows[$decimal] .= "</div>";
 				$rows[$decimal] .= "</div>"; // rc-card-body
-				// Action buttons
+				$rows[$decimal] .= "</div>"; // rc-card
+
+				/*
+				 * THE COMPACT ROW, and the card above becomes its detail.
+				 *
+				 * Each card is a progress bar, a realm name, a date, a header
+				 * with theme art, two full-bleed columns with their own
+				 * background images and avatars, a stack of result pills and
+				 * an action row -- 400px and more per raid on a phone, which
+				 * is why both sections had to be collapsible to be usable at
+				 * all. The list is one line per raid now and the card opens
+				 * over the page; nothing is lost, and Replay still launches
+				 * the battle animation straight from the row.
+				 */
+				$_rr_av = ($row['avatar'] != '')
+					? "https://cdn.discordapp.com/avatars/".$row['discord_id']."/".$row['avatar'].".jpg"
+					: "/staking/icons/skull.png";
 				if($status == "Completed"){
-					$rows[$decimal] .= "<div class='rc-action-row'><button class='small-button' onclick='showRaidResultAnimation(".$row['raid_id'].")'>&#9654; Replay</button></div>";
-				} else {
-					$_replay_btn = "<button class='small-button' onclick='showRaidViewAnimation(".$row['raid_id'].")'>&#9654; Replay</button>";
+					$_rr_stat = "<span class='rr-badge ".$_rc_outcome_class."'>".$_rc_outcome_badge."</span>";
+					$_rr_when = $_date_fmt($date);
+					$_rr_tags = "";
+				}else{
+					$_rr_stat = "<span class='rr-pct'>".$_my_pct."%</span>";
+					$_rr_when = $time_message;
+					/* Escape each tag, then join -- escaping the joined string
+					   would turn the separator entity into visible text. */
+					$_rr_tags = $_my_tags
+						? "<span class='rr-tags'>" . implode(' &middot; ',
+							array_map(function($t){ return htmlspecialchars($t, ENT_QUOTES); }, $_my_tags))
+						  . "</span>"
+						: "";
+				}
+				if($status == "Completed"){
+					$_rr_acts = "<button class='rr-btn' onclick='showRaidResultAnimation(".$row['raid_id'].")'>&#9654; Replay</button>";
+				}else{
+					$_rr_acts = "<button class='rr-btn' onclick='showRaidViewAnimation(".$row['raid_id'].")'>&#9654; Replay</button>";
 					if($type == 'outgoing' && $date > time()){
-						$rows[$decimal] .= "<div class='rc-action-col'>$_replay_btn<input type='button' class='small-button' value='Retreat' onclick='retreatRaid(".$row['raid_id'].")'/></div>";
-					} else {
-						$rows[$decimal] .= "<div class='rc-action-row'>$_replay_btn</div>";
+						$_rr_acts .= "<button class='rr-btn quiet' onclick='retreatRaid(".$row['raid_id'].")'>Retreat</button>";
 					}
 				}
-				$rows[$decimal] .= "</div>"; // rc-card
+				$_compact  = "<div class='rr' data-raid-id='".$row['raid_id']."'>";
+				$_compact .= "<div class='rr-bar'><i style='width:".$_rc_pct."%'></i></div>";
+				$_compact .= "<button type='button' class='rr-main' onclick='openRaidDetail(".$row['raid_id'].")'"
+				          . " title='See the full result for this raid'>";
+				$_compact .= "<img class='rr-av' loading='lazy' src='".$_rr_av."' alt=''"
+				          . " onerror='this.src=\"/staking/icons/skull.png\";'>";
+				$_compact .= "<span class='rr-who'><b>".ucfirst($row['realm_name'])."</b>"
+				          . "<i>".htmlspecialchars($row['username'], ENT_QUOTES)."</i></span>";
+				$_compact .= "<span class='rr-meta'>".$_rr_stat."<span class='rr-when'>".$_rr_when."</span></span>";
+				$_compact .= "</button>";
+				if($_rr_tags !== "") $_compact .= $_rr_tags;
+				$_compact .= "<span class='rr-acts'>".$_rr_acts."</span>";
+				$_compact .= "</div>";
+				/* The rich card, kept exactly as it was, parked for the modal.
+				   hidden means its theme art and avatars -- all loading=lazy --
+				   are never fetched until something opens it. */
+				$rows[$decimal] = $_compact
+					. "<div class='rc-detail' id='raid-detail-".$row['raid_id']."' hidden>"
+					. $rows[$decimal] . "</div>";
 			}
 			ksort($rows);
 			if(strtolower($status) == "completed"){

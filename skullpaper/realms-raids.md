@@ -87,3 +87,18 @@ This section highlights the results of recent incoming raids on your realm.
 ## Monthly Leaderboard
 
 The monthly leaderboard for Raids showcases the performance of participants. All raid participants earn their fair share of 1 million CARBON based on their performance. CARBON is crucial for upgrading Realm locations because it can be burned to form DIAMOND and then shattered to equal parts core project points through Crafting. The Crafting panel can be found in the sidebar of the Dashboard or Store pages. Raid participants should garner a substantial amount of CARBON every month preventing them from having to rely on the 3x alternative point cost to upgrade locations.
+
+## Reading your raid lists
+
+Outgoing and incoming are **one line per raid**: who you are fighting, your
+own odds or the result, the countdown, and what you brought. **Replay** is on
+the row, so the battle animation is always one tap away, and **Retreat** sits
+beside it on outgoing raids that are still running.
+
+Tap the row for the full card - both sides' results, what was won or lost, and
+the location damage. It opens over the page.
+
+They used to be full cards in the list: a progress bar, a realm name, a date,
+a header with artwork, two large panels with their own background images, and
+a stack of result pills. Four hundred pixels a raid, which is why the sections
+had to be collapsed before you could reach anything below them.

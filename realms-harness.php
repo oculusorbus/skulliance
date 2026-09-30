@@ -33,6 +33,19 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $fail = 0;
 function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $what\n"; } }
 
+/** Brace-match a function out of a source string. */
+function extract_fn_db($src, $name) {
+	$at = strpos($src, 'function ' . $name . '(');
+	if ($at === false) return '';
+	$open = strpos($src, '{', $at);
+	$d = 0;
+	for ($i = $open, $n = strlen($src); $i < $n; $i++) {
+		if ($src[$i] === '{') $d++;
+		elseif ($src[$i] === '}') { $d--; if ($d === 0) return substr($src, $at, $i - $at + 1); }
+	}
+	return '';
+}
+
 $file = __DIR__ . '/realms.php';
 $src  = file_get_contents($file);
 $toks = token_get_all($src);
@@ -348,6 +361,44 @@ ok(count($qi[0]) === 5,
    'the quick-menu icons have no width/height attributes -- they are 512x512 '
  . 'source art sized by percentage, so the bar reflows as they decode and a '
  . 'fixed bar that changes height reads as a bar that moves');
+
+/* ---------- 9. raid rows are compact, with the card in a modal ------------ */
+/*
+ * Each raid card was a progress bar, a realm name, a date, a header with
+ * theme art, two full-bleed columns with their own backgrounds and avatars,
+ * a stack of pills and an action row -- 400px+ per raid, which is why both
+ * sections had to be collapsible to be usable. The list is one line per
+ * raid now and the card opens over the page.
+ *
+ * THE CARD IS NOT RE-RENDERED ANYWHERE. It sits hidden beside its row and
+ * the modal clones it, so there is no second copy of a 250-line renderer to
+ * keep in step -- the failure mode this file has caught three times already
+ * with get-locations and get-realm.
+ */
+echo "\nraid rows\n";
+$dbsrc = file_get_contents(__DIR__ . '/db.php');
+$gr = extract_fn_db($dbsrc, 'getRaids');
+ok($gr !== '', 'getRaids() not found in db.php');
+ok(strpos($gr, "class='rr'") !== false, 'getRaids() no longer emits a compact row');
+ok(strpos($gr, "class='rc-detail'") !== false && strpos($gr, 'hidden') !== false,
+   'the rich card is not parked hidden beside its row, so the list is long again');
+ok(strpos($gr, 'openRaidDetail(') !== false, 'the compact row does not open the detail');
+foreach (array('showRaidViewAnimation(', 'showRaidResultAnimation(', 'retreatRaid(') as $fn) {
+	ok(strpos($gr, $fn) !== false, "getRaids() lost $fn -- Replay or Retreat is gone");
+}
+/* Replay has to be on the ROW, not only inside the modal: the battle
+   animation is the thing worth reaching in one tap. */
+$rrBlock = substr($gr, strpos($gr, "\$_compact  ="));
+ok(strpos($gr, "\$_rr_acts") !== false && strpos($rrBlock, "rr-acts") !== false,
+   'the action buttons are not on the compact row');
+foreach (array('openRaidDetail', 'closeRaidDetail', 'raid-detail-body', 'raid-detail-overlay')
+         as $hook) {
+	ok(strpos($src, $hook) !== false, "realms.php is missing $hook for the raid modal");
+}
+ok(strpos($src, "removeAttribute('id')") !== false,
+   'the modal clone keeps its ids, so every getElementById in the page can land '
+ . 'in the copy instead of the original');
+printf("  compact row + hidden detail + modal: wired\n");
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);
