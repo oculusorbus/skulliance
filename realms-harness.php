@@ -131,5 +131,60 @@ ok($styleAt !== false && $markupAt !== false && $styleAt < $markupAt,
  . 'first and the item icons, which have no width of their own, fill the screen '
  . 'until it arrives');
 
+/* ---------- 4. the switcher cannot reach for an element that is not there -- */
+/*
+ * toggleSections() walks a list of panel ids and touches each one's
+ * .style and its matching -icon, unguarded. Delete a panel -- as the raid
+ * and faction stats panel just was -- and getElementById returns null,
+ * .style throws, and the whole <script> block stops. That block is 1,500
+ * lines and holds the quick menu, so the symptom is the entire page
+ * rendering as one long dump. It has happened twice for other reasons; this
+ * closes the third door.
+ */
+echo "\nthe panel switcher\n";
+preg_match("/var sections = \[([^\]]*)\]/", $src, $sm);
+ok(!empty($sm[1]), 'could not find the sections list in toggleSections()');
+preg_match_all("/'([a-z]+)'/", $sm[1], $names);
+$sections = $names[1];
+printf("  sections: %s\n", implode(', ', $sections));
+foreach ($sections as $sec) {
+	ok(preg_match('/id="' . $sec . '"|id=\'' . $sec . '\'/', $src) === 1,
+	   "toggleSections() lists '$sec' but nothing renders id=\"$sec\" -- "
+	 . 'getElementById returns null, .style throws, and the whole script block dies');
+	ok(preg_match('/id="' . $sec . '-icon"/', $src) === 1,
+	   "no quick-menu icon with id=\"$sec-icon\" for section '$sec' -- same crash");
+}
+/* And the reverse: an icon wired to a section the list does not know about
+   would silently do nothing. */
+preg_match_all('/id="([a-z]+)-icon"/', $src, $im);
+foreach (array_unique($im[1]) as $icon) {
+	ok(in_array($icon, $sections, true),
+	   "there is a '$icon-icon' in the quick menu that toggleSections() never "
+	 . 'hides or selects');
+}
+/* Every other direct touch of a panel id outside that loop. */
+preg_match_all("/getElementById\('([a-z-]+)'\)\.style/", $src, $gm);
+$missing = array();
+foreach (array_unique($gm[1]) as $id) {
+	if (!preg_match('/id="' . preg_quote($id, '/') . '"|id=\'' . preg_quote($id, '/') . '\'/', $src)
+	    && strpos($src, "id='" . $id . "'") === false) $missing[$id] = true;
+}
+/* back-to-top-button lives in header.php, not here. */
+unset($missing['back-to-top-button']);
+ok(!$missing, 'the script sets .style on ids this page never renders: '
+            . implode(', ', array_keys($missing)));
+
+/* ---------- 5. the loader ---------------------------------------------------- */
+echo "\nthe loader\n";
+$loaderAt  = strpos($src, 'id="rl-loader"');
+$flushAt   = strpos($src, '@flush();');
+$markupAt2 = strpos($src, '<div class="row" id="row0">');
+ok($loaderAt !== false, 'the full-screen loader is gone');
+ok($flushAt !== false && $loaderAt < $flushAt && $flushAt < $markupAt2,
+   'the loader is not flushed before the page does its work -- it would arrive '
+ . 'with everything else and show nothing');
+ok(strpos($src, "getElementById('rl-loader')") !== false,
+   'nothing dismisses the loader, so the page would stay behind it');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);

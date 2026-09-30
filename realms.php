@@ -8,6 +8,53 @@ include 'header.php';
 require_once __DIR__ . '/realms-lib.php';   // the locations panel, as data
 
 /*
+ * FULL-SCREEN LOADER, FLUSHED BEFORE A SINGLE QUERY RUNS.
+ *
+ * Realms is a heavy page -- seven locations, each priced by its own quote,
+ * plus the map data, the raid lists and the soldier roster -- and it showed
+ * nothing at all until the whole lot landed. Worse, the panel painted
+ * unstyled on the way (the item icons have no width of their own), so the
+ * first thing a player saw was a screenful of giant circles.
+ *
+ * Same loader as missions.php, for the same reasons, including the ones its
+ * header argues at length: the bar FILLS rather than sweeping, because a bar
+ * creeping toward an end reads as a page arriving and a shuttle reads as
+ * nothing happening. It eases out to 90% and is driven to 100% on arrival,
+ * so it completes rather than vanishing mid-stride.
+ *
+ * Printed here, immediately after header.php, and flushed -- everything
+ * below this line is work the player would otherwise be staring at a blank
+ * screen through.
+ */
+?>
+<style>
+#rl-loader { position: fixed; inset: 0; background: #07111d; z-index: 9999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; transition: opacity .35s ease;
+  padding-top: env(safe-area-inset-top, 0px); box-sizing: border-box; }
+#rl-loader.gone { opacity: 0; pointer-events: none; }
+@keyframes rl-pulse { 0%,100% { opacity: .35; transform: scale(.94); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes rl-fill { to { width: 90%; } }
+#rl-loader .rl-l-mark { animation: rl-pulse 1.2s ease-in-out infinite; }
+#rl-loader .rl-l-rail { width: 200px; height: 3px; border-radius: 2px;
+  background: rgba(255,255,255,.08); overflow: hidden; }
+#rl-loader .rl-l-rail i { display: block; width: 0; height: 100%; border-radius: 2px;
+  background: #00c8a0; animation: rl-fill 9s ease-out forwards; }
+#rl-loader.gone .rl-l-rail i { animation: none; width: 100%; transition: width .18s ease-out; }
+#rl-loader .rl-l-text { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(255,255,255,.35); }
+</style>
+<div id="rl-loader">
+	<div class="rl-l-mark"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48"></div>
+	<div class="rl-l-rail"><i></i></div>
+	<div class="rl-l-text">Loading realms</div>
+</div>
+<?php
+/* Push it to the browser NOW. */
+if (ob_get_level() > 0) @ob_flush();
+@flush();
+
+/*
  * THE PAGE STYLESHEET IS PRINTED HERE, ABOVE THE MARKUP.
  *
  * It used to sit ~600 lines below the content it styles, so the browser
@@ -126,7 +173,7 @@ require_once __DIR__ . '/realms-lib.php';   // the locations panel, as data
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 @keyframes lb { to { width:90%; } }
 /* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
-#locations, #realm, #stats, #raids, #realms { padding-bottom: 100px; }
+#locations, #realm, #raids, #realms { padding-bottom: 100px; }
 #map #container-wrapper { padding-top: 35px; padding-bottom: 100px; }
 /* Soldiers / Location Modals */
 .soldiers-stat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
@@ -692,10 +739,14 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 <div class="row">	
 	<div class="main">
 		<?php
-			echo '<div id="stats">';
-			getTotalFactionRaids($conn);
-			getTotalRaids($conn);
-			echo '</div>';
+			/* THE STATS PANEL IS GONE. getTotalFactionRaids() and
+			   getTotalRaids() drew a month-to-date scoreboard -- score,
+			   total raids, in progress, success and failure rates -- that
+			   nobody was reading, including the person who built it. The
+			   raid LIST below is operational and stays. Both functions are
+			   left in db.php; nothing else calls them, but removing a
+			   reporting function is a separate decision from removing the
+			   panel that showed it. */
 			echo '<div id="raids">';
 			$outgoing_raids = getRaids($conn, "outgoing", "pending"); 
 			if(isset($outgoing_raids)){
@@ -817,7 +868,6 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	<img id="locations-icon" title="Locations" src="icons/locations.png" onclick="toggleSections('locations');">
 	<img id="map-icon" title="Map" src="icons/map.png" onclick="toggleSections('map');">
 	<img id="realm-icon" title="Realm" src="icons/realm.png" onclick="toggleSections('realm');">
-	<img id="stats-icon" title="Stats" src="icons/stats.png" onclick="toggleSections('stats');">
 	<img id="raids-icon" title="Raids" src="icons/raids.png" onclick="toggleSections('raids');">
 	<img id="realms-icon" title="Realms" src="icons/quests.png" onclick="toggleSections('realms');">
 </div>
@@ -1123,13 +1173,26 @@ $conn->close();
 <script type="text/javascript" src="map.js?var=<?php echo rand(0,999); ?>"></script>
 <?php if($realm_status){ ?>
 <script type='text/javascript'>
-	//if($(window).width() <= 700){
+	/* THE PAGE IS HERE, so the loader goes. Not on window.load -- that waits
+	   on the map's artwork and every location icon, and the page is usable
+	   long before the last one decodes.
+
+	   FIRST STATEMENT IN THE BLOCK ON PURPOSE. Everything below is one
+	   <script>, and a PHP warning printed into any of it is a syntax error
+	   that stops the lot -- which has happened twice. If that ever recurs,
+	   the loader staying up is a visible symptom instead of a silently
+	   half-dead page. */
+	(function () {
+		var l = document.getElementById('rl-loader');
+		if (!l) return;
+		l.classList.add('gone');
+		setTimeout(function () { l.remove(); }, 450);
+	}());
+
 		document.getElementById('back-to-top-button').style.zIndex = "-1";
 		document.getElementById('quick-menu').style.display = "block";
 		document.getElementById('map').style.position = "relative";
 		document.getElementById('map').style.top = '-100px';
-		document.getElementById('stats').style.position = "relative";
-		document.getElementById('stats').style.top = '-55px';
 		document.getElementById('raids').style.position = "relative";
 		document.getElementById('raids').style.top = '-55px';
 		document.getElementById('realms').style.position = "relative";
@@ -1154,8 +1217,6 @@ $conn->close();
 			}
 			document.getElementById('map').style.display = "none";
 			document.getElementById('map-icon').classList.remove("selected");
-			document.getElementById('stats').style.display = "none";
-			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
 			document.getElementById('raids-icon').classList.remove("selected");
 			document.getElementById('realms').style.display = "none";
@@ -1169,8 +1230,6 @@ $conn->close();
 			}
 			document.getElementById('map').style.display = "none";
 			document.getElementById('map-icon').classList.remove("selected");
-			document.getElementById('stats').style.display = "none";
-			document.getElementById('stats-icon').classList.remove("selected");
 			document.getElementById('raids').style.display = "none";
 			document.getElementById('raids-icon').classList.remove("selected");
 			document.getElementById('realms').style.display = "none";
@@ -1184,7 +1243,7 @@ $conn->close();
 	
 	function toggleSections(selection){
 		window.scrollTo(0, 0);
-		var sections = ['locations','map','realm','stats','raids','realms'];
+		var sections = ['locations','map','realm','raids','realms'];
 		sections.forEach(function(s){
 			document.getElementById(s).style.display = 'none';
 			document.getElementById(s+'-icon').classList.remove('selected');
