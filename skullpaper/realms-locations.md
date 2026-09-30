@@ -32,7 +32,14 @@ refused with a message instead of six locations being frozen to prevent it.
 
 ## Upgrade Cost
 
-Upgrading a location to its next level costs **next level × 100** core project points (e.g. Level 0→1 costs 100, Level 9→10 costs 1,000). If you don't have enough of the matching core project points, you can upgrade with **any points at 2× the cost** - this lets partner-only stakers participate in Realms. (It was 3× originally and was lowered to take the edge off for stakers who hold no core project; this page had not caught up. The platform charges `$points_multiplier`.)
+Upgrading a location to its next level costs **next level × 100** core project points (e.g. Level 0→1 costs 100, Level 9→10 costs 1,000). If you don't have enough of the matching core project points, you can upgrade with **any points at 2× the cost**. (It was 3× originally and was lowered to take the edge off for stakers who hold no core project; this page had not caught up. The platform charges `$points_multiplier`.)
+
+**Paying the multiplier is not the only route, and it is rarely the best one.**
+Every game on the platform awards CARBON, 100 CARBON burns into 1 DIAMOND, and
+a DIAMOND shatters into **equal parts of all six core points** - the exact
+points a location upgrade wants. So a staker who owns no core project NFT at
+all can fund their whole Realm by playing, without ever spending partner points
+at a premium or buying in. See [[staking-crafting]].
 
 Upgrades complete on a timer and are claimed automatically when you visit the Realms page. A completed upgrade overrides any damage taken while it was in progress - **but it can never lower a location.** If raiding has carried you above Level 10, finishing an upgrade leaves you where you are. It used to set you back to 10: a Level 21 Portal came out of a "Maintain" at Level 10, and the Realms leaderboard ranks on the sum of your levels.
 
