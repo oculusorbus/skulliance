@@ -27,6 +27,25 @@ require_once __DIR__ . '/realms-lib.php';   // the locations panel, as data
  * screen through.
  */
 ?>
+<?php
+/*
+ * PRELOAD THE SEVEN ITEM ICONS.
+ *
+ * They were <img> tags -- the same seven files fetched once in the strip and
+ * once per location, 56 requests for 7 images, and on a phone a different one
+ * failed to arrive on every load. As CSS backgrounds that is 7 requests, but
+ * a background-image is fetched at LOWER priority than an in-viewport <img>,
+ * and this page carries 162 images of which 52 are eager. So the count
+ * problem was fixed and the icons went to the back of the queue instead --
+ * same symptom, different cause, which is why it looked unfixed.
+ *
+ * Preloading puts them back at the front while keeping the single fetch.
+ */
+foreach (realm_con_names() as $rl_pcid => $rl_pcname) {
+	echo '<link rel="preload" as="image" href="icons/'
+	   . htmlspecialchars(realm_con_icon($rl_pcname), ENT_QUOTES) . '">' . "\n";
+}
+?>
 <style>
 #rl-loader { position: fixed; inset: 0; background: #07111d; z-index: 9999;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -246,7 +265,15 @@ if (ob_get_level() > 0) @ob_flush();
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 @keyframes lb { to { width:90%; } }
 /* Padding so content can scroll clear of the fixed quick-menu (~120px tall) */
-#locations, #realm, #raids, #realms { padding-bottom: 100px; }
+/* Clear the fixed quick-menu, plus the home indicator on an iPhone. */
+#locations, #realm, #raids, #realms {
+  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+/* THE BAR ITSELF HAD NO INSET. bottom:0 on an iOS PWA puts its lower edge
+   under the home indicator, so the row of icons sits against it and the bar
+   appears to shift between panels. Padding rather than offset, so the
+   background still reaches the bottom of the screen. */
+#quick-menu {
+  padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px)) !important; }
 #map #container-wrapper { padding-top: 35px; padding-bottom: 100px; }
 /* Soldiers / Location Modals */
 .soldiers-stat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }

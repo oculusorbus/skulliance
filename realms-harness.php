@@ -274,5 +274,28 @@ ok(count($icm[1]) === 0 && strpos($src, '.rl-ico-<?php') !== false
    || count($icm[1]) >= 7,
    'the .rl-ico-N background rules are missing, so every slot would be blank');
 
+/* ---------- 8. the icons are preloaded, and the bar clears the notch ------- */
+/*
+ * A background-image is fetched at LOWER priority than an in-viewport <img>,
+ * and this page carries 162 images with 52 of them eager. Moving the seven
+ * item icons to backgrounds cut 56 requests to 7 and then let them lose the
+ * race anyway -- same missing-icon symptom, different cause. The preloads
+ * are what put them back in front, so losing them silently reintroduces it.
+ */
+echo "\nicon priority and safe areas\n";
+preg_match_all('/rel="preload" as="image"/', $src, $pl);
+$genPreload = strpos($src, "foreach (realm_con_names() as") !== false
+           && strpos($src, 'rel="preload" as="image"') !== false;
+ok($genPreload, 'the item icons are no longer preloaded -- as CSS backgrounds they '
+              . 'queue behind every eager <img> on a 162-image page, which is exactly '
+              . 'the intermittent missing icon that was reported twice');
+ok(strpos($src, '#quick-menu') !== false && strpos($src, 'safe-area-inset-bottom') !== false,
+   'the fixed quick-menu has no bottom safe-area inset -- on an iOS PWA its lower '
+ . 'edge sits under the home indicator');
+$insets = substr_count($src, 'safe-area-inset-bottom');
+printf("  safe-area-inset-bottom used %d time(s); preload generated from realm_con_names(): %s\n",
+	$insets, $genPreload ? 'yes' : 'no');
+ok($insets >= 2, 'the panels also need the inset, or their last row hides behind the bar');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);
