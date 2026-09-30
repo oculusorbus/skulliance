@@ -605,8 +605,39 @@ ok(preg_match('/min-width:\s*0/', $mobileCss) === 1,
    'the mobile map block does not free the flex chain with min-width:0 -- a '
  . 'flex item defaults to min-width:auto, so #container will not shrink below '
  . 'the SVG and every other rule in this block does nothing');
-ok(preg_match('/#container svg\s*\{[^}]*width:\s*100%/', $mobileCss) === 1,
-   'the mobile map does not scale the SVG to the screen');
+/*
+ * THE BOX HAS TO SCALE WITH THE DRAWING. map.js gives #container an explicit
+ * inline width and height -- it has always been sized TO the map rather than
+ * BY it -- so scaling the SVG in CSS was never enough on its own: the picture
+ * came down to 330 x 601 and its box stayed 1132 x 2062, leaving 1471px of
+ * empty background under the map on a 390px phone. That is what was reported
+ * as the backdrop running on for multiples of the map's length. One scale
+ * factor, applied to both.
+ */
+ok(preg_match('/container\.style\.width\s*=\s*`\$\{fitW\}px`/', $mapJs) === 1
+   && preg_match('/container\.style\.height\s*=\s*`\$\{fitH\}px`/', $mapJs) === 1,
+   '#container is sized from the raw svgW/svgH again, so on a phone the box '
+ . 'stays full size while the map inside it shrinks -- dead background for '
+ . 'multiples of the map\'s height');
+ok(preg_match('/svg\.setAttribute\(\x27width\x27,\s*fitW\)/', $mapJs) === 1,
+   'the SVG is not being fitted, so the map overflows the phone sideways');
+ok(preg_match('/background-repeat:\s*no-repeat/', $mobileCss) === 1,
+   'the map backdrop can tile again; with cover that only shows when the box '
+ . 'is wrong, but it is the visible symptom and costs nothing to pin');
+/*
+ * AND THE POPUP HAS TO FOLLOW THE ZOOM. position:fixed measures against the
+ * LAYOUT viewport, so a pinch-zoomed player tapping a marker got an overlay
+ * laid out across the whole unzoomed page, mostly off-screen. There is no
+ * reliable way to force a zoom-out on iOS, and doing so would throw away
+ * their place on the map, so the overlay is pinned to visualViewport.
+ */
+ok(strpos($mapJs, 'function anchorPopup()') !== false
+   && preg_match('/popupOverlay\.style\.display = \x27flex\x27;\s*\n\s*anchorPopup\(\);/', $mapJs) === 1,
+   'the realm popup is not anchored to the visual viewport when it opens, so '
+ . 'it lands off-screen for anyone who has pinch-zoomed the map');
+ok(preg_match('/visualViewport\.addEventListener\(\x27resize\x27/', $mapJs) === 1
+   && preg_match('/visualViewport\.addEventListener\(\x27scroll\x27/', $mapJs) === 1,
+   'the popup does not follow a zoom or pan that happens while it is open');
 ok(strpos(no_comments('<?php ' . $mapJs), 'MOBILE_DESIGN_W') !== false
    && preg_match('/innerWidth\s*<=\s*MOBILE_BP\s*\?\s*MOBILE_DESIGN_W/', $mapJs) === 1,
    'packFactions() is packing to the phone\'s own width again, which turns the '

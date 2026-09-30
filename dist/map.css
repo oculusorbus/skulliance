@@ -16,17 +16,23 @@
  * alone (header.php sets no maximum-scale) for a closer look.
  */
 @media (max-width: 768px) {
-    /* MIN-WIDTH:0 IS THE WHOLE TRICK, and without it the other three rules
-       do nothing at all. #map is a .row (display:flex), .main and #container
-       are flex items, and a flex item defaults to min-width:auto -- it
-       refuses to shrink below its content. So #container stayed at the SVG's
-       intrinsic 1132px, and `width: 100%` on the SVG resolved against a
-       parent that had already grown to fit it. Measured: 1132px wide inside
-       a 390px page either way. With the chain freed it renders 330 x 601. */
+    /* MIN-WIDTH:0, or the column cannot narrow at all. #map is a .row
+       (display:flex) and .main and #container are flex items, which default
+       to min-width:auto and refuse to shrink below their content -- so the
+       whole column simply grew to the map's width and pushed the page
+       sideways. Still required now that map.js fits the drawing in pixels:
+       that stops the map being too WIDE for the column, this is what lets
+       the column be narrow in the first place. */
     #map, #map .main, #container-wrapper, #container { min-width: 0; }
-    #container-wrapper { padding: 10px; min-height: 0; }
-    #container { max-width: 100%; }
-    #container svg { width: 100%; height: auto; }
+    /* no-repeat because `cover` on a box that is accidentally taller than
+       its content tiles the landscape down the page, which is how the dead
+       space showed up. Belt and braces now that the box is the right size. */
+    #container-wrapper { padding: 10px; min-height: 0; background-repeat: no-repeat; }
+    /* NO `width: 100%` ON THE SVG. map.js sets concrete pixel attributes for
+       this breakpoint -- a percentage width scales the element but leaves
+       the parent reserving the intrinsic height, which measured 601px of map
+       inside a 2062px box. max-width is a guard, not the mechanism. */
+    #container, #container svg { max-width: 100%; }
 }
 
 @keyframes raid-pulse {

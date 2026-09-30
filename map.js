@@ -93,8 +93,46 @@ function showPopup(realmSrc, avatarSrc, userName, realmName, factionName, factio
     }
 
     popupOverlay.style.display = 'flex';
+    anchorPopup();
 }
-function hidePopup() { popupOverlay.style.display = 'none'; }
+
+/*
+ * THE POPUP FOLLOWS WHAT YOU ARE ACTUALLY LOOKING AT.
+ *
+ * Pinch-zoom the page and position:fixed still measures against the LAYOUT
+ * viewport, not the visual one -- so a zoomed-in player tapping a marker got
+ * an overlay laid out across the whole unzoomed page, mostly off-screen.
+ *
+ * The obvious fix is to zoom back out first, and there is no reliable way to
+ * do that: iOS exposes no API for it, the maximum-scale meta trick is flaky
+ * and global, and it would throw away the player's position on the map every
+ * time they opened a realm. visualViewport is the standard answer -- it
+ * reports exactly the rectangle being displayed, at any zoom or scroll -- so
+ * the overlay is pinned to that instead and lands centred on screen whatever
+ * the zoom is, with the map left where it was underneath.
+ */
+function anchorPopup() {
+    const vv = window.visualViewport;
+    if (!vv) return;                       /* then fixed/100% is already right */
+    popupOverlay.style.width  = vv.width      + 'px';
+    popupOverlay.style.height = vv.height     + 'px';
+    popupOverlay.style.left   = vv.offsetLeft + 'px';
+    popupOverlay.style.top    = vv.offsetTop  + 'px';
+}
+if (window.visualViewport) {
+    /* Only while it is open: zooming or scrolling with the popup up has to
+       keep it in view, and doing nothing when it is closed keeps this off
+       the critical path of every pinch. */
+    const follow = () => { if (popupOverlay.style.display === 'flex') anchorPopup(); };
+    window.visualViewport.addEventListener('resize', follow);
+    window.visualViewport.addEventListener('scroll', follow);
+}
+function hidePopup() {
+    popupOverlay.style.display = 'none';
+    /* Hand the sizing back to the stylesheet. */
+    popupOverlay.style.width = popupOverlay.style.height = '';
+    popupOverlay.style.left  = popupOverlay.style.top    = '';
+}
 popupOverlay.addEventListener('click', e => { if (e.target === popupOverlay) hidePopup(); });
 popupClose.addEventListener('click', hidePopup);
 
@@ -221,6 +259,8 @@ const MOBILE_BP = 768;
    1132 x 2062, the same shape it has on a desktop, and CSS scales that to
    the screen. */
 const MOBILE_DESIGN_W = 1400;
+/* .main's 20px each side plus #container-wrapper's 10px each side. */
+const MOBILE_GUTTER = 60;
 
 function packFactions(fdata) {
     const vw = window.innerWidth <= MOBILE_BP ? MOBILE_DESIGN_W : window.innerWidth;
@@ -637,9 +677,36 @@ function renderMap() {
         svg.appendChild(lbl);
     }
 
+    /*
+     * FIT IT HERE, IN PIXELS.
+     *
+     * #container is given an explicit inline width and height two lines
+     * down -- it has always been sized to the drawing rather than sized BY
+     * it. So scaling the map in CSS was never going to be enough: with
+     * `width: 100%` on the SVG the picture came down to 330 x 601 and the
+     * box it sits in stayed at 1132 x 2062, leaving 1471px of empty
+     * background under the map on a 390px phone. That is the backdrop
+     * running on for multiples of the map's length that was reported, and
+     * it is why poking the container's style in a console appeared to
+     * "fix" it: that overwrote the inline height.
+     *
+     * So the scale is computed once, here, and BOTH the svg and the box it
+     * lives in use it. renderMap() already re-runs on resize, so rotating
+     * the phone re-fits.
+     */
+    let fitW = svgW, fitH = svgH;
+    if (window.innerWidth <= MOBILE_BP) {
+        const avail = Math.max(240, window.innerWidth - MOBILE_GUTTER);
+        const k = Math.min(1, avail / svgW);
+        fitW = Math.round(svgW * k);
+        fitH = Math.round(svgH * k);
+        svg.setAttribute('width',  fitW);
+        svg.setAttribute('height', fitH);
+    }
+
     container.innerHTML = '';
-    container.style.width  = `${svgW}px`;
-    container.style.height = `${svgH}px`;
+    container.style.width  = `${fitW}px`;
+    container.style.height = `${fitH}px`;
     container.appendChild(svg);
 }
 
