@@ -469,6 +469,19 @@ ok(preg_match('/@media \(max-width: 700px\)[^}]*\{\s*[^}]*\.rl-nav\s*\{[^}]*padd
    || preg_match('/\.rl-nav\s*\{[^}]*padding-right:\s*56px/', $src) === 1,
    'the nav does not dodge the burger, which is fixed at the top right under '
  . '700px -- the last link ends up under it');
+/*
+ * BUT NOTHING ELSE SHOULD DODGE IT. .rl-head used to reserve 64px on the
+ * right for the same burger, from when the panel started at the top of the
+ * screen. The nav owns that band now: the burger runs from the top inset
+ * down 39px, .rl-nav covers 0 to inset+38 opaque at z-index 20, and the two
+ * only ever render together (same $realm_status branch). Measured at three
+ * scroll positions -- the Guide button shares the burger's column and never
+ * its rows, passing up behind the nav instead. The padding was shifting the
+ * button left to avoid a collision that cannot happen.
+ */
+ok(preg_match('/\.rl-head \{[^}]*padding-right/', $src) === 0,
+   '.rl-head is dodging the burger again, which shifts the Guide button left '
+ . 'for a collision the sticky nav already makes impossible');
 ok(strpos($src, 'id="quick-menu"') === false,
    'the bottom quick menu is back in realms.php; the sticky nav replaced it and '
  . 'having both means two controls disagreeing about which panel is open');

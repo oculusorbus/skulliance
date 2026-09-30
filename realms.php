@@ -355,11 +355,16 @@ if (ob_get_level() > 0) @ob_flush();
   display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .rl-danger span { font-size:.68rem; opacity:.4; flex:1 1 200px; }
 
-/* Clear the fixed burger (50px wide plus 10px padding, z-index 99) so nothing
-   tappable hides beneath it. */
-@media (max-width:700px){
-  .rl-head { padding-right:64px; }
-}
+/* NO BURGER DODGE HERE ANY MORE. This header used to reserve 64px on the
+   right because the burger is fixed at the top of the screen and the panel
+   started up there with it. The section nav took that band: the burger sits
+   from the top inset down 39px, .rl-nav covers 0 to inset+38 at z-index 20
+   and is opaque, and the two only ever render together (both are inside the
+   same $realm_status branch). So anything scrolling through that strip is
+   behind the nav, not exposed under the burger, and the Guide button was
+   being shifted left to avoid a collision that can no longer happen.
+   The nav itself still dodges -- see .rl-nav below -- because it shares the
+   band with the burger rather than scrolling under it. */
 /* Slots left, Manage right, on one row. */
 .rl-loc-kit { margin-top:9px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .rl-loc-kit .rl-slots { flex:1 1 auto; }
