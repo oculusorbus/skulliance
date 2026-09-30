@@ -437,6 +437,44 @@ ok(mission_art_slug('Enter the Galacticverse') === 'enter-the-galacticverse', 's
  * unpinned one screenful down. If this nav is ever moved out of .main, that
  * is the failure to expect.
  */
+/* ---------- the headline follows the page --------------------------------
+ *
+ * "4 ready to collect" stayed on the page after all four were collected,
+ * and the In-the-field figure read 200 while the nav badge beside it
+ * already said 196. Only the nav badge and the Ready chip were ever being
+ * repainted; the h2 and the other three figures were first-paint PHP that
+ * nothing touched again. The DATA was already there -- both endpoints have
+ * been returning `overview` all along and the callbacks threw it away.
+ *
+ * The logic itself is exercised by missions-head-harness.js, which runs the
+ * real paintOverview() against a DOM stub. This side just holds the
+ * contract the two of them depend on: the hooks in the markup, and the
+ * endpoints actually sending an overview.
+ */
+echo "\nthe headline and figures repaint\n";
+$msrc = file_get_contents(__DIR__ . '/missions.php');
+ok(strpos($msrc, 'id="ms-title"') !== false,
+   'the headline has no id, so nothing can rewrite it after a collect');
+/* Anchored to the MARKUP. A bare strpos passes on the querySelector in
+   paintOverview() itself, which is how removing the real hook read as
+   fine. */
+foreach (array('active', 'ready', 'completed', 'levels') as $fig) {
+	ok(preg_match('/<div class="ms-fig[^"]*" data-fig="' . $fig . '"/', $msrc) === 1,
+	   "the $fig figure lost its data-fig hook and will go stale after a collect");
+}
+/* Matched on the call shape, which appears nowhere in a comment in this
+   file -- realms-harness.php's no_comments() does not live here. */
+ok(substr_count($msrc, 'paintField(j.html, j.ready, j.overview)') === 2
+   && strpos($msrc, 'paintField(j.field, j.ready, j.overview)') !== false,
+   'a paintField() caller is dropping the overview again, so the figures '
+ . 'beside the headline will disagree with the nav badge');
+foreach (array('ajax/mission-data.php', 'ajax/mission-launch.php') as $ep) {
+	ok(strpos(file_get_contents(__DIR__ . '/' . $ep), 'mission_overview($conn)') !== false,
+	   "$ep no longer returns an overview, so the header cannot be repainted");
+}
+ok(is_file(__DIR__ . '/missions-head-harness.js'),
+   'missions-head-harness.js is gone; the repaint rules are unchecked');
+
 echo "\nthe sticky section nav\n";
 $msrc = file_get_contents(__DIR__ . '/missions.php');
 ok(preg_match('/\.ms-nav\s*\{.*?position:\s*sticky;\s*top:\s*0\s*;/s', $msrc) === 1,

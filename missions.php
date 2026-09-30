@@ -778,7 +778,10 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			<div class="ms-head">
 				<div class="ms-head-left">
 					<span class="ms-kick">Missions</span>
-					<h2 class="ms-title"><?php
+					<?php /* id and data-fig hooks: these numbers are facts about
+					         the page that COLLECTING changes, and until now only
+					         the nav badge was told. See paintOverview(). */ ?>
+					<h2 class="ms-title" id="ms-title"><?php
 						echo $ms_ready  ? ms_n($ms_ready) . ' ready to collect'
 						   : ($ms_active ? ms_n(count($ms_active)) . ' in the field'
 						   : 'Send your NFTs out to work.'); ?></h2>
@@ -788,15 +791,15 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 						  : 'Your NFTs earn while they are away. Nothing leaves your wallet.'; ?></p>
 				</div>
 				<div class="ms-figures">
-					<div class="ms-fig"><b><?php echo ms_n($ms_over['active']); ?></b><span>In the field</span></div>
+					<div class="ms-fig" data-fig="active"><b><?php echo ms_n($ms_over['active']); ?></b><span>In the field</span></div>
 					<?php if ($ms_ready): ?>
-					<div class="ms-fig ms-fig-go"><b><?php echo ms_n($ms_ready); ?></b><span>Ready</span></div>
+					<div class="ms-fig ms-fig-go" data-fig="ready"><b><?php echo ms_n($ms_ready); ?></b><span>Ready</span></div>
 					<?php endif; ?>
-					<div class="ms-fig"><b><?php echo ms_n($ms_over['success']); ?></b><span>Completed</span></div>
+					<div class="ms-fig" data-fig="completed"><b><?php echo ms_n($ms_over['success']); ?></b><span>Completed</span></div>
 					<?php if ($ms_new_rungs): ?>
-					<div class="ms-fig ms-fig-new"><b><?php echo ms_n(count($ms_new_rungs)); ?></b><span>Never run</span></div>
+					<div class="ms-fig ms-fig-new" data-fig="new"><b><?php echo ms_n(count($ms_new_rungs)); ?></b><span>Never run</span></div>
 					<?php endif; ?>
-					<div class="ms-fig"><b><?php echo ms_n($ms_over['levels_open']); ?><i>/<?php
+					<div class="ms-fig" data-fig="levels"><b><?php echo ms_n($ms_over['levels_open']); ?><i>/<?php
 						echo ms_n($ms_over['levels_top']); ?></i></b><span>Levels open</span></div>
 				</div>
 			</div>
@@ -1046,18 +1049,79 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		var el = document.getElementById(id);
 		if (el && typeof v === 'number') el.textContent = n(v);
 	}
-	function paintField(html, ready) {
-		document.getElementById('ms-field').innerHTML = html;
-		var fig = document.querySelector('.ms-fig-go');
-		if (fig && typeof ready === 'number') {
-			if (ready > 0) fig.querySelector('b').textContent = n(ready);
-			else fig.remove();
+	/*
+	 * THE HEADLINE IS A FACT ABOUT THE PAGE, AND COLLECTING CHANGES IT.
+	 *
+	 * "4 ready to collect" stayed on the page after all four were
+	 * collected, and the In-the-field figure went on reading 200 while the
+	 * nav badge beside it already said 196. Only the nav badge and the
+	 * Ready chip were ever being told; the h2 and the other three figures
+	 * were first-paint PHP and nothing touched them again.
+	 *
+	 * The data was already there -- ajax/mission-data.php and
+	 * ajax/mission-launch.php have both been returning `overview` all
+	 * along, and it was being thrown away at the callback.
+	 */
+	function figValue(name) {
+		var b = document.querySelector('[data-fig="' + name + '"] b');
+		if (!b) return null;
+		var v = parseInt(String(b.textContent).replace(/[^0-9]/g, ''), 10);
+		return isNaN(v) ? null : v;
+	}
+	function setFig(name, v) {
+		var b = document.querySelector('[data-fig="' + name + '"] b');
+		if (b && typeof v === 'number') b.textContent = n(v);
+	}
+	function paintOverview(ready, ov) {
+		/* The Ready chip is only RENDERED when there is something ready, so
+		   it has to be created as well as removed -- a countdown finishing
+		   under a refresh is exactly that case. */
+		var go = document.querySelector('[data-fig="ready"]');
+		if (typeof ready === 'number') {
+			if (ready > 0 && !go) {
+				var after = document.querySelector('[data-fig="active"]');
+				if (after) {
+					go = document.createElement('div');
+					go.className = 'ms-fig ms-fig-go';
+					go.setAttribute('data-fig', 'ready');
+					go.innerHTML = '<b></b><span>Ready</span>';
+					after.parentNode.insertBefore(go, after.nextSibling);
+				}
+			}
+			if (go) {
+				if (ready > 0) go.querySelector('b').textContent = n(ready);
+				else { go.remove(); go = null; }
+			}
 		}
+		if (ov) {
+			setFig('active', ov.active);
+			setFig('completed', ov.success);
+			var lv = document.querySelector('[data-fig="levels"] b');
+			if (lv && typeof ov.levels_open === 'number') {
+				lv.textContent = n(ov.levels_open);
+				var slash = document.createElement('i');
+				slash.textContent = '/' + n(ov.levels_top);
+				lv.appendChild(slash);
+			}
+		}
+		/* Same three-way rule the PHP uses. Falls back to reading the figure
+		   off the page when a caller has no overview to give. */
+		var t = document.getElementById('ms-title');
+		if (!t) return;
+		var active = (ov && typeof ov.active === 'number') ? ov.active : figValue('active');
+		if (typeof ready !== 'number') return;
+		t.textContent = ready > 0 ? n(ready) + ' ready to collect'
+		              : (active > 0 ? n(active) + ' in the field'
+		                            : 'Send your NFTs out to work.');
+	}
+	function paintField(html, ready, ov) {
+		document.getElementById('ms-field').innerHTML = html;
+		paintOverview(ready, ov);
 	}
 	function refreshField() {
 		return fetch('ajax/mission-data.php?what=field', {credentials: 'same-origin'})
 			.then(function (r) { return r.json(); })
-			.then(function (j) { if (j && j.ok) { paintField(j.html, j.ready); navCount('ms-nav-field', j.total); } })
+			.then(function (j) { if (j && j.ok) { paintField(j.html, j.ready, j.overview); navCount('ms-nav-field', j.total); } })
 			.then(refreshNews);
 	}
 	/* Launching a rung is precisely what stops it being "never run", and the
@@ -1174,7 +1238,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		btn.textContent = 'Loading\u2026';
 		fetch('ajax/mission-data.php?what=field&all=1', {credentials: 'same-origin'})
 			.then(function (r) { return r.json(); })
-			.then(function (j) { if (j && j.ok) paintField(j.html, j.ready); })
+			.then(function (j) { if (j && j.ok) paintField(j.html, j.ready, j.overview); })
 			.catch(function () { btn.disabled = false; btn.textContent = 'Show all'; });
 	};
 
@@ -1617,7 +1681,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 					msg.textContent = (j && j.message) || 'Could not launch.';
 					return;
 				}
-				paintField(j.field, j.ready);
+				paintField(j.field, j.ready, j.overview);
 				navCount('ms-nav-field', j.total);
 				refreshNews();
 				msCloseDrawer();
