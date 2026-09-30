@@ -187,11 +187,6 @@ foreach ($rl_panel['rows'] as $r):
 				elseif ($rl_panel['inventory'][$ccid] > 0) $rl_spare = true;
 			}
 			$rl_unstock = (!$rl_spare && $rl_worn); ?>
-			<span class="rl-loc-acts">
-				<button type="button" class="rl-btn sm" id="stock-btn-<?php echo $r['id']; ?>"
-					onclick="<?php echo $rl_unstock ? 'unstock' : 'stock'; ?>Location(<?php echo $r['id']; ?>)"><?php
-					echo $rl_unstock ? 'Unstock' : 'Stock'; ?></button>
-			</span>
 		</div>
 
 		<div class="rl-loc-kit">
@@ -228,14 +223,33 @@ foreach ($rl_panel['rows'] as $r):
 			         soldier training, portal reports, the crypt -- and a
 			         player who never notices it never opens them. The header
 			         stays clickable as a convenience; this is the signpost. */ ?>
-			<?php if ($rl_can_manage): ?>
-			<?php /* Just "Manage": the card names the location two lines above,
-			         and "Manage Barracks" at 133px pushed the kit row to two
-			         lines in a 356px column. The full phrase is on the title. */ ?>
-			<button type="button" class="rl-btn sm go"
-				title="<?php echo rl_e('Manage the ' . $rl_manage[$r['id']]); ?>"
-				onclick="openLocationModal(<?php echo $r['id']; ?>)">Manage</button>
-			<?php endif; ?>
+			<?php /* STOCK AND MANAGE SIT TOGETHER, ON THE ROW WITH THE ITEMS.
+			         Stock was on the offer row above because the two of them
+			         plus seven 28px slots measured 357px in a 356px column and
+			         wrapped the slots onto a second line. Splitting them fixed
+			         the wrap and created a worse problem: the control that
+			         stocks this location was nowhere near the items it stocks,
+			         and the two buttons sat far enough apart to be a misclick
+			         risk on a phone.
+			         They are one flex unit now, so they stay side by side and
+			         WRAP TOGETHER onto a second line when the column is too
+			         narrow -- the slots keep their single row either way, which
+			         was the point of moving Stock out in the first place.
+			         Manage is rightmost: Stock is the frequent one and belongs
+			         nearer the items, Manage opens a dialog. */ ?>
+			<span class="rl-loc-acts">
+				<button type="button" class="rl-btn sm" id="stock-btn-<?php echo $r['id']; ?>"
+					onclick="<?php echo $rl_unstock ? 'unstock' : 'stock'; ?>Location(<?php echo $r['id']; ?>)"><?php
+					echo $rl_unstock ? 'Unstock' : 'Stock'; ?></button>
+				<?php if ($rl_can_manage): ?>
+				<?php /* Just "Manage": the card names the location two lines
+				         above, and "Manage Barracks" at 133px pushed this row
+				         to two lines in a 356px column. */ ?>
+				<button type="button" class="rl-btn sm go"
+					title="<?php echo rl_e('Manage the ' . $rl_manage[$r['id']]); ?>"
+					onclick="openLocationModal(<?php echo $r['id']; ?>)">Manage</button>
+				<?php endif; ?>
+			</span>
 		</div>
 	</div>
 <?php endforeach; if ($rl_prev !== '') echo "</div>\n"; ?>

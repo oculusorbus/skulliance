@@ -241,6 +241,42 @@ ok(substr_count($panelSrc, "? 'unstock' : 'stock'") >= 1
  . 'until _checkStockButtonStates() runs');
 
 /* ---------- 6. nothing rounded, nothing duplicated -------------------------- */
+/*
+ * STOCK AND MANAGE STAY TOGETHER, ON THE ROW WITH THE ITEMS.
+ *
+ * Stock used to live on the offer row above, because Stock + Manage +
+ * seven 28px slots measured 357px in a 356px column and wrapped the slots
+ * onto a second line. That fixed the wrap and left the control that stocks
+ * a location nowhere near the items it stocks. They are one flex unit in
+ * .rl-loc-kit now, so they wrap together and the slots keep one row.
+ */
+echo "\nstock sits with manage\n";
+$locSrc = file_get_contents(__DIR__ . '/realms-locations.php');
+$kitAt   = strpos($locSrc, 'class="rl-loc-kit"');
+$stockAt = strpos($locSrc, 'id="stock-btn-');
+$manageAt = strpos($locSrc, '>Manage</button>');
+ok($kitAt !== false && $stockAt !== false && $manageAt !== false,
+   'the kit row, the Stock button or the Manage button is gone');
+ok($stockAt > $kitAt,
+   'the Stock button is rendered before the kit row again, which puts it '
+ . 'back on the offer row away from the items it stocks');
+ok($manageAt > $stockAt,
+   'Manage is no longer after Stock -- Manage is meant to be rightmost');
+ok(substr_count($locSrc, 'class="rl-loc-acts"') === 1,
+   'there is more than one .rl-loc-acts per location, so the buttons are '
+ . 'split across rows again');
+/* Both inside the one span, or they can wrap apart. */
+$acts = substr($locSrc, strpos($locSrc, 'class="rl-loc-acts"'));
+$acts = substr($acts, 0, strpos($acts, '</span>'));
+ok(strpos($acts, 'id="stock-btn-') !== false && strpos($acts, '>Manage</button>') !== false,
+   'Stock and Manage are not inside the same wrapper, so they can wrap onto '
+ . 'different lines and drift apart');
+$rsrc = file_get_contents(__DIR__ . '/realms.php');
+ok(preg_match('/\.rl-loc-kit \.rl-loc-acts \{[^}]*flex:\s*none/', $rsrc) === 1
+   && preg_match('/\.rl-loc-kit \.rl-loc-acts \{[^}]*margin-left:\s*auto/', $rsrc) === 1,
+   'the button pair is not held to the right as one unit, so the slots and '
+ . 'the buttons will share a flex line and the icons will wrap');
+
 echo "\nstyle\n";
 $page = file_get_contents(__DIR__ . '/realms.php');
 /*

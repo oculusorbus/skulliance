@@ -364,6 +364,10 @@ if (ob_get_level() > 0) @ob_flush();
 .rl-loc-kit { margin-top:9px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .rl-loc-kit .rl-slots { flex:1 1 auto; }
 .rl-loc-kit .rl-btn { flex:none; }
+/* Stock and Manage as ONE unit, pushed right and wrapping together. Kept
+   out of the slots' flex line so the seven icons never break onto two rows,
+   which is what splitting these two apart was originally protecting. */
+.rl-loc-kit .rl-loc-acts { flex:none; margin-left:auto; display:flex; gap:6px; align-items:center; }
 
 /* Phones: the actions still sit right, at their own size. They used to go
    full width on their own line, which turned Stock into a banner. */
