@@ -417,6 +417,45 @@ echo "\nart paths\n";
 ok(mission_art_slug("Widow's Walk") === 'widows-walk', "the apostrophe is dropped, as getInventory() does");
 ok(mission_art_slug('Enter the Galacticverse') === 'enter-the-galacticverse', 'spaces become hyphens');
 
+/* ---------- the page shell: the sticky nav --------------------------------
+ *
+ * Two rules, both of which look like styling and are not.
+ *
+ * THE INSET IS PADDING, NOT `top`. body carries
+ * padding-top:env(safe-area-inset-top) and that padding SCROLLS AWAY, so a
+ * bar pinned at top:env(inset) leaves a transparent band above it that page
+ * content rides up through -- into the clock and the battery. Measured both
+ * ways in Chrome against a stand-in 59px inset: with the old rule the element
+ * painted 20px down the screen was a mission card, with this one it is the
+ * bar. The inset has to be the bar's own padding so its background owns that
+ * band at every scroll position.
+ *
+ * THE CONTAINING BLOCK. .ms-nav lives inside .main, a flex child with auto
+ * height (measured 3753px against a 1323px .container), which is the only
+ * reason this page's sticky holds all the way down. realms.php put its nav
+ * as a direct child of .container -- height:100%, one viewport -- and it
+ * unpinned one screenful down. If this nav is ever moved out of .main, that
+ * is the failure to expect.
+ */
+echo "\nthe sticky section nav\n";
+$msrc = file_get_contents(__DIR__ . '/missions.php');
+ok(preg_match('/\.ms-nav\s*\{.*?position:\s*sticky;\s*top:\s*0\s*;/s', $msrc) === 1,
+   'the sticky nav does not pin at top:0 -- any offset above 0 leaves a '
+ . 'transparent band that page content scrolls through, over the status bar');
+ok(preg_match('/\.ms-nav\s*\{.*?padding:\s*calc\(\s*[0-9]+px\s*\+\s*env\(safe-area-inset-top/s', $msrc) === 1,
+   'the nav does not pay the top safe-area inset as its own padding, so on an '
+ . 'iOS PWA its links sit in the strip the status bar owns');
+ok(preg_match('/scroll-margin-top:\s*calc\(env\(safe-area-inset-top/', $msrc) === 1,
+   'the sections lost their scroll-margin-top, so a jump lands the heading '
+ . 'behind the bar');
+/* .main is what makes the pin hold; the nav has to stay inside it. */
+$navAt  = strpos($msrc, '<nav class="ms-nav"');
+$mainAt = strrpos(substr($msrc, 0, $navAt === false ? 0 : $navAt), '<div class="main">');
+ok($navAt !== false && $mainAt !== false,
+   'the nav is no longer rendered inside <div class="main"> -- that is the '
+ . 'auto-height box its position:sticky depends on, and outside it the pin '
+ . 'dies one viewport down the way realms.php did');
+
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
-echo "all missions-lib checks passed\n";
+echo "all missions checks passed\n";

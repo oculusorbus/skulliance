@@ -225,10 +225,18 @@ define('MS_FIELD_CAP', 24);
   /* 20, not 90: this only has to sit above the page's own cards. Anything
      higher starts competing with the platform's overlays -- it was beating
      the opened burger menu, which is a full-screen affordance. */
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  /* top:0, NOT top:env(inset). The inset was the right DISTANCE and the wrong
+     MECHANISM. body carries padding-top:env(safe-area-inset-top), so at rest
+     the bar already starts below the status bar -- but that padding SCROLLS
+     AWAY, and the band it leaves behind is transparent. Cards rode up through
+     it into the clock and the battery; caught on realms from a phone
+     recording, and this page had it too. Pinning at 0 and paying the inset as
+     the bar's OWN padding means its background owns that band at every scroll
+     position, with the links still below the status bar. */
+  position: sticky; top: 0; z-index: 20;
   display: flex; gap: 2px; flex-wrap: wrap;
   background: #07111d; border-bottom: 1px solid rgba(0,200,160,.18);
-  margin: 0 0 16px; padding: 4px 0;
+  margin: 0 0 16px; padding: calc(4px + env(safe-area-inset-top, 0px)) 0 4px;
 }
 .ms-nav a {
   display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 0;
@@ -240,8 +248,9 @@ define('MS_FIELD_CAP', 24);
 .ms-nav a i { font-style: normal; font-size: .62rem; background: rgba(255,255,255,.08);
   color: #b9c7d4; padding: 1px 6px; }
 .ms-nav a i.go { background: #f5a623; color: #07111d; font-weight: bold; }
-/* Jumping must not drop the heading under the sticky bar -- which now sits
-   an inset lower than it used to, so the margin has to follow it. */
+/* A jump must not drop the heading under the bar, and the bar is now the
+   inset TALLER rather than the inset lower -- same total height off the top
+   of the screen, so this margin keeps counting both parts. */
 #ms-sec-daily, #ms-news, #ms-sec-deploy, #ms-field-section, #ms-sec-launch, #ms-ladder
   { scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 54px); }
 @media (max-width: 700px) {
