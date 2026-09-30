@@ -225,19 +225,31 @@ define('MS_FIELD_CAP', 24);
   /* 20, not 90: this only has to sit above the page's own cards. Anything
      higher starts competing with the platform's overlays -- it was beating
      the opened burger menu, which is a full-screen affordance. */
-  /* top:0, NOT top:env(inset). The inset was the right DISTANCE and the wrong
-     MECHANISM. body carries padding-top:env(safe-area-inset-top), so at rest
-     the bar already starts below the status bar -- but that padding SCROLLS
-     AWAY, and the band it leaves behind is transparent. Cards rode up through
-     it into the clock and the battery; caught on realms from a phone
-     recording, and this page had it too. Pinning at 0 and paying the inset as
-     the bar's OWN padding means its background owns that band at every scroll
-     position, with the links still below the status bar. */
-  position: sticky; top: 0; z-index: 20;
+  /* THE INSET IS PAID ONLY WHILE STUCK, and never as height.
+     body carries padding-top:env(safe-area-inset-top) and that padding
+     SCROLLS AWAY, leaving a transparent band that cards rode up through into
+     the clock and the battery. Paying it as the bar's own padding fixed that
+     and cost a permanent inset-tall gap above the bar at rest -- ~59px of
+     nothing between the figures and the tabs on an iPhone, which is not a
+     trade worth making.
+     So the bar pins at the inset, as it always did, and a ::before paints the
+     band above it only when it is actually stuck. Being absolutely
+     positioned, that pseudo-element has NO layout box: the bar cannot change
+     height between the two states, so nothing below it can jump. Realms
+     solves the same problem with a negative top margin instead, which works
+     there because its nav is the first thing on the page; here .ms-head sits
+     above it and a negative margin would eat into that. */
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
   display: flex; gap: 2px; flex-wrap: wrap;
   background: #07111d; border-bottom: 1px solid rgba(0,200,160,.18);
-  margin: 0 0 16px; padding: calc(4px + env(safe-area-inset-top, 0px)) 0 4px;
+  margin: 0 0 16px; padding: 4px 0;
 }
+.ms-nav::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 100%;
+  height: env(safe-area-inset-top, 0px); background: #07111d;
+  display: none;
+}
+.ms-nav.stuck::before { display: block; }
 .ms-nav a {
   display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 0;
   font-size: .74rem; color: #7a9eb0; text-decoration: none; white-space: nowrap;
@@ -1743,9 +1755,15 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			links.forEach(function (l) { l.a.classList.toggle('on', l.id === id); });
 		}
 
+		/* The bar is stuck when it has reached its own `top` offset. Reading
+		   that from the computed style means the inset never has to be
+		   duplicated in JS -- and it is 0 everywhere but an iOS PWA, where
+		   the whole mechanism is a no-op. */
+		function stickTop() { return parseFloat(getComputedStyle(nav).top) || 0; }
 		var ticking = false, pinned = null, pinnedUntil = 0;
 		function sync() {
 			ticking = false;
+			nav.classList.toggle('stuck', nav.getBoundingClientRect().top <= stickTop() + 0.5);
 			/* While a tap's smooth scroll is still running, the tapped link
 			   stays lit -- otherwise it flickers through every section on
 			   the way past. */

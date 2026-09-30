@@ -496,12 +496,38 @@ ok(strpos($msrc, '>Maximise<') === false,
 
 echo "\nthe sticky section nav\n";
 $msrc = file_get_contents(__DIR__ . '/missions.php');
-ok(preg_match('/\.ms-nav\s*\{.*?position:\s*sticky;\s*top:\s*0\s*;/s', $msrc) === 1,
-   'the sticky nav does not pin at top:0 -- any offset above 0 leaves a '
- . 'transparent band that page content scrolls through, over the status bar');
-ok(preg_match('/\.ms-nav\s*\{.*?padding:\s*calc\(\s*[0-9]+px\s*\+\s*env\(safe-area-inset-top/s', $msrc) === 1,
-   'the nav does not pay the top safe-area inset as its own padding, so on an '
- . 'iOS PWA its links sit in the strip the status bar owns');
+ok(preg_match('/\.ms-nav\s*\{.*?position:\s*sticky;\s*top:\s*env\(safe-area-inset-top/s', $msrc) === 1,
+   'the sticky nav does not pin at the safe-area inset, so its links sit in '
+ . 'the strip the status bar owns');
+/*
+ * AND IT PAYS THE INSET ONLY WHILE STUCK, NEVER AS HEIGHT.
+ *
+ * Paying it as padding covered the status-bar strip and cost a permanent
+ * inset-tall gap above the bar at rest -- ~59px of nothing between the
+ * figures and the tabs on an iPhone. The bar pins at the inset again, and
+ * a ::before paints the strip only when .stuck is on. It is absolutely
+ * positioned, so it has no layout box and the bar's height cannot change
+ * between the two states -- which is what stops the page jumping as it
+ * sticks. Measured: gap above the nav 0px at rest, height 39 in both
+ * states, and a card visible in the strip with the band off but not with
+ * it on.
+ */
+ok(preg_match('/\.ms-nav\s*\{.*?padding:\s*calc\(\s*[0-9]+px\s*\+\s*env\(safe-area-inset-top/s', $msrc) === 0,
+   'the nav is paying the safe-area inset as padding again, which is a '
+ . 'permanent inset-tall gap above it at rest');
+ok(preg_match('/\.ms-nav::before\s*\{[^}]*height:\s*env\(safe-area-inset-top/s', $msrc) === 1,
+   'nothing paints the status-bar strip above the stuck nav, so page content '
+ . 'scrolls through it into the clock and the battery');
+ok(preg_match('/\.ms-nav::before\s*\{[^}]*position:\s*absolute/s', $msrc) === 1,
+   'the band has a layout box, so the nav changes height when it sticks and '
+ . 'the page jumps');
+ok(preg_match('/\.ms-nav::before\s*\{[^}]*display:\s*none/s', $msrc) === 1
+   && preg_match('/\.ms-nav\.stuck::before\s*\{[^}]*display:\s*block/', $msrc) === 1,
+   'the band is painted even when the nav is not stuck, where it covers the '
+ . 'page content sitting above the nav');
+ok(strpos($msrc, "classList.toggle('stuck'") !== false
+   && strpos($msrc, 'function stickTop()') !== false,
+   'nothing marks the nav as stuck, so the band never appears');
 ok(preg_match('/scroll-margin-top:\s*calc\(env\(safe-area-inset-top/', $msrc) === 1,
    'the sections lost their scroll-margin-top, so a jump lands the heading '
  . 'behind the bar');
