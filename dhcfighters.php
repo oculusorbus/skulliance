@@ -113,6 +113,9 @@ include 'header.php';
 $dhca_mode    = 'fighters';
 $dhca_owned   = $dhcf_avail;
 $dhca_preload = $dhcf_editing ? $dhcf_editing['traits'] : null;
+/* The canvas download. Signed-in only -- dhc-download.php will not draw
+   traits the player does not own, so a guest's button could only refuse. */
+$dhca_can_download = $dhcf_user > 0;
 ?>
 
 <style>

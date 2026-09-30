@@ -292,13 +292,6 @@ include 'header.php';
 #dhcg-traits .sl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.45;display:block}
 #dhcg-traits .tr{font-size:9px;letter-spacing:.1em;text-transform:uppercase}
 #dhcg-traits .rt{font-size:10px;opacity:.6;font-variant-numeric:tabular-nums}
-/* The one thing you can take away with you. Ochre, not a ghost button: it is
-   the action on this panel, the rest of it is reading. */
-#dhcg-get{display:inline-flex;align-items:center;gap:7px;margin:0 0 14px;text-decoration:none;
-  border:1px solid var(--ochre,#00c8a0);color:var(--ochre,#00c8a0);font-size:10px;
-  letter-spacing:.1em;text-transform:uppercase;padding:7px 12px;border-radius:2px}
-#dhcg-get:hover{background:var(--ochre,#00c8a0);color:var(--ink,#07111d)}
-#dhcg-get small{letter-spacing:0;text-transform:none;opacity:.7;font-size:10px}
 #dhcg-close{position:absolute;right:14px;top:12px;background:none;border:1px solid var(--line,#1b3346);
   color:var(--dim,#7a9eb0);font:inherit;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
   padding:5px 10px;border-radius:2px;cursor:pointer}
@@ -473,9 +466,6 @@ include 'header.php';
       <button type="button" id="dhcg-close">Close</button>
       <h2 id="dhcg-name"></h2>
       <p class="by" id="dhcg-by"></p>
-      <?php /* The panel already loads the 1000px masters as a stack of layers;
-               this is the same thing flattened into one file you can post. */ ?>
-      <a id="dhcg-get" href="#" download>&#8595; Full size <small>1000px PNG</small></a>
       <div id="dhcg-stat"></div>
       <ul id="dhcg-traits"></ul>
     </div>
@@ -490,6 +480,16 @@ include 'header.php';
 
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
 
+  /*
+   * NO DOWNLOAD BUTTON HERE, deliberately. A full-size, flattened, named
+   * picture of somebody's assembly is theirs to hand out, not a stranger's to
+   * take -- and this page is public. It shipped with one for a day on the
+   * argument that the layers below are public anyway; that argument was
+   * wrong, and the reasoning is in dhc-download.php's header. The download
+   * lives in the assembler, next to Copy link to this build, and on your own
+   * roster cards. dhc-download.php refuses a Fighter that is not yours, so
+   * re-adding a button here would only produce a 404.
+   */
   function open(f) {
     // The same layer list the card used, so this is the card at a larger size
     // rather than a second opinion about draw order -- but pointed at the
@@ -507,8 +507,6 @@ include 'header.php';
     document.getElementById('dhcg-by').innerHTML =
       '<img alt="" src="' + esc(f.avatar) + '"> assembled by ' + esc(f.owner) +
       ' · <a href="dhcgallery.php?owner=' + f.ownerId + '" style="color:var(--ochre,#00c8a0)">see their Fighters</a>';
-
-    document.getElementById('dhcg-get').href = 'dhc-download.php?serial=' + f.serial;
 
     var made = (f.created || '').replace(' ', ' · ').slice(0, 16);
     /* Rarity score first because it is what the board ranks on, then what the

@@ -18,11 +18,22 @@
  * assembler, the Arena and the Discord embed. This asks that renderer for
  * 1000 instead of 500 and sends the bytes.
  *
- * PUBLIC, like dhcgallery.php. Nobody owns these -- the whole collection is
- * browsable by a stranger and the 1000px layers are already served to any
- * visitor who opens a Fighter -- so gating the flattened version would only
- * stop the sharing this exists to enable. The owner is not checked and does
- * not need to be.
+ *     dhc-download.php?build=<json of slot => slug>
+ *
+ * YOURS ONLY. It shipped public first, on the argument that the collection is
+ * public anyway and the 1000px layers are already served to anyone who opens a
+ * Fighter in the gallery. That was wrong: a flattened, named, ready-to-post
+ * picture of somebody's assembly is theirs to hand out, not a stranger's to
+ * take. Two forms, both gated:
+ *
+ *   ?serial=  a Fighter you saved. Ownership is the WHERE clause, the same way
+ *             ajax/dhc-rename-fighter.php does it -- not a read then a compare,
+ *             which races and also confirms that a serial exists.
+ *
+ *   ?build=   the arrangement currently on the assembler canvas, which usually
+ *             has not been saved and has no serial at all. Gated on the traits
+ *             instead: every piece in it has to be one you have actually been
+ *             awarded. You can take a picture of anything you could build.
  *
  * NOTHING MAY PRINT BEFORE THE IMAGE. db.php runs with display_errors on, so
  * the include is buffered; a notice landing in front of the PNG header is a
@@ -56,18 +67,72 @@ function dhcd_fail($code, $msg) {
    and a fatal on the next line. */
 if (!isset($conn) || !$conn) dhcd_fail(503, 'Database unavailable.');
 
+/*
+ * WHO IS ASKING. The conditional gate dhcgallery.php and dhcsandbox.php use:
+ * skulliance.php redirects an anonymous visitor to error.php, which would
+ * hand an HTML page to something expecting a PNG, so guests are turned away
+ * here with plain text instead. verify.php first -- it defines checkUser(),
+ * which skulliance.php calls to resolve the user id. Merge the cookie, never
+ * assign; see skulliance.php's own note.
+ */
+if (!isset($_SESSION['logged_in']) && isset($_COOKIE['SessionCookie'])) {
+	$dhcd_ck = json_decode($_COOKIE['SessionCookie'], true);
+	if (is_array($dhcd_ck)) {
+		/* isset() first, unlike the copies of this block on the ordinary
+		   pages. They can afford a warning; this one is streaming binary,
+		   and one notice in front of the PNG is a corrupt download. */
+		$_SESSION = array_merge(isset($_SESSION) ? (array)$_SESSION : array(), $dhcd_ck);
+	} else {
+		setcookie('SessionCookie', '', time() - 3600);
+	}
+	unset($dhcd_ck);
+}
+if (empty($_SESSION['logged_in'])) dhcd_fail(403, 'Sign in to download your Fighters.');
+ob_start();
+include 'verify.php';
+include 'skulliance.php';
+ob_end_clean();
+$me = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
+if ($me <= 0) dhcd_fail(403, 'Sign in to download your Fighters.');
+
 $serial = isset($_GET['serial']) ? (int)$_GET['serial'] : 0;
-if ($serial <= 0) dhcd_fail(400, 'No Fighter asked for.');
+$build  = isset($_GET['build'])  ? json_decode((string)$_GET['build'], true) : null;
 
-$row = null;
-$res = $conn->query(sprintf(
-	"SELECT id, serial, name, traits FROM dhc_fighters
-	 WHERE serial = %d AND disassembled_at IS NULL LIMIT 1", $serial));
-if ($res) $row = $res->fetch_assoc();
-if (!$row) dhcd_fail(404, 'No Fighter with that number.');
+if ($serial > 0) {
+	/* Ownership is the WHERE clause. A Fighter that is not yours reads exactly
+	   like one that does not exist, which is the answer a stranger should get. */
+	$row = null;
+	$res = $conn->query(sprintf(
+		"SELECT id, serial, name, traits FROM dhc_fighters
+		 WHERE serial = %d AND user_id = %d AND disassembled_at IS NULL LIMIT 1",
+		$serial, $me));
+	if ($res) $row = $res->fetch_assoc();
+	if (!$row) dhcd_fail(404, 'No Fighter of yours with that number.');
 
-$traits = json_decode($row['traits'], true);
-if (!is_array($traits) || !$traits) dhcd_fail(404, 'That Fighter has no layout to draw.');
+	$traits = json_decode($row['traits'], true);
+	if (!is_array($traits) || !$traits) dhcd_fail(404, 'That Fighter has no layout to draw.');
+} elseif (is_array($build) && $build) {
+	/*
+	 * AN UNSAVED BUILD. dhcf_clean_traits() drops anything that is not a real
+	 * slot, so the only thing left to check is that the pieces are the
+	 * player's -- dhcf_owned(), not dhcf_available(), because a trait already
+	 * committed to another saved Fighter is still a trait you own and still
+	 * something you are entitled to a picture of.
+	 */
+	$traits = dhcf_clean_traits($build);
+	if (!$traits) dhcd_fail(400, 'That build has nothing in it.');
+	$owned = dhcf_owned($conn, $me);
+	foreach ($traits as $slot => $slug) {
+		$cat = dhcf_slot_category($slot);
+		if (empty($owned[$cat][$slug])) dhcd_fail(403, 'That build uses a trait you do not own.');
+	}
+	/* No serial to name the file after, so the traits name it. Identical
+	   builds reuse the filename instead of piling up as "(1)", "(2)". */
+	$row = array('serial' => null,
+	             'name'   => 'build-' . substr(md5(json_encode($traits)), 0, 6));
+} else {
+	dhcd_fail(400, 'No Fighter asked for.');
+}
 
 /*
  * 1000 first, 500 as a fallback. The fallback is not about GD being missing --

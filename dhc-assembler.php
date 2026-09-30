@@ -156,6 +156,14 @@ $dhc_rarity = is_file(__DIR__ . '/dhcrarity.php') ? (require __DIR__ . '/dhcrari
  */
 $dhca_preload = isset($dhca_preload) && is_array($dhca_preload) ? $dhca_preload : null;
 
+/*
+ * $dhca_can_download -- show the "Download 1000px PNG" button. Off unless the
+ * caller says otherwise, because the sandbox offers every trait in the game
+ * and dhc-download.php will only draw pieces the player actually owns: the
+ * button would be there and refuse.
+ */
+$dhca_can_download = !empty($dhca_can_download);
+
 $dhc_traits = array();
 foreach ($dhc_slots as $key => $s) {
 	$dir = $s[1];
@@ -515,6 +523,15 @@ a{color:var(--ochre)}
       <button class="btn" id="randFull">Randomize (everything)</button>
       <button class="btn" id="clear">Clear</button>
       <button class="btn" id="share">Copy link to this build</button>
+      <?php /* Beside the share button because it is the same kind of action:
+               both take the arrangement currently on the canvas somewhere
+               else. It is NOT offered in the sandbox -- that has every trait
+               unlocked whether you hold it or not, and dhc-download.php will
+               only draw pieces you own. $dhca_can_download is set by
+               dhcfighters.php for a signed-in player. */ ?>
+      <?php if (!empty($dhca_can_download)): ?>
+      <button class="btn" id="getpng">Download 1000px PNG</button>
+      <?php endif; ?>
     </div>
     <div class="stack">
       <h3><span id="stackTitle">Draw order &mdash; back to front</span>
@@ -1445,6 +1462,33 @@ a{color:var(--ochre)}
     var done = function () { btn.textContent = 'Link copied'; setTimeout(function(){ btn.textContent = was; }, 1600); };
     if (navigator.clipboard) navigator.clipboard.writeText(location.href).then(done, done); else done();
   });
+
+  <?php if ($dhca_can_download): ?>
+  /*
+   * DOWNLOAD THE BUILD ON THE CANVAS, not a saved row -- most of the time
+   * there is no saved row, and the button next to it shares the canvas too.
+   *
+   * location.assign rather than fetch+blob: the response carries
+   * Content-Disposition: attachment, so the browser saves it and never
+   * navigates, and the canvas the player spent ten minutes on stays exactly
+   * where it is. A blob would also mean holding a 700KB PNG in memory to
+   * achieve the same thing.
+   *
+   * The server re-checks that every trait is one this player owns, so this
+   * is a convenience, not the gate.
+   */
+  document.getElementById('getpng').addEventListener('click', function () {
+    var btn = this, was = btn.textContent, n = 0;
+    for (var k in sel) if (sel[k]) n++;
+    if (!n) { btn.textContent = 'Nothing on the canvas'; 
+              setTimeout(function(){ btn.textContent = was; }, 1600); return; }
+    btn.textContent = 'Building PNG\u2026';
+    /* The wait is the render, ~125ms cold and cached after that, but the
+       button should not look stuck if the server is slow. */
+    setTimeout(function () { btn.textContent = was; }, 2500);
+    location.assign('dhc-download.php?build=' + encodeURIComponent(JSON.stringify(sel)));
+  });
+  <?php endif; ?>
 
   buildTabs();
   var PRELOAD = <?php echo json_encode($dhca_preload); ?>;

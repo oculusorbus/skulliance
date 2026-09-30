@@ -279,22 +279,6 @@ Filters are carried in the link, so a particular view is something you can send
 to someone — and now to anyone, not only to another staker. A shared link
 carries its own title and preview: *"Mythic Fighters"* posts as exactly that.
 
-### Take the picture with you
-
-Every Fighter can be downloaded as a **1000px PNG** — the arrow in the corner of
-its card in your workshop, or **Full size** on its panel in the Collection. That
-is the size Maxingo drew the trait art at, so it is the largest version that is
-real detail rather than an upscale, and it is one flat file rather than the
-eleven layers the page stacks to show it to you.
-
-It is drawn by the same renderer as the Discord announcement and the Arena, so
-what you download is what everyone else sees, down to the layer order. A Fighter
-with no Background trait downloads with a transparent surround, because that is
-genuinely what it is — put it on whatever you like.
-
-Anyone can download any Fighter. The layers are already public on the
-Collection page, and a collection that gets shown is the whole point.
-
 ---
 
 ## Originality
@@ -318,6 +302,25 @@ never stop being useful, however much of the collection you've seen.
 
 **Click a saved Fighter to see it on the canvas.** Its own traits show as
 unavailable in the picker — you are viewing it, not rebuilding it.
+
+### Take the picture with you
+
+**Download 1000px PNG** sits in the assembler next to *Copy link to this build*,
+and takes whatever is on the canvas right now — saved or not. Your own saved
+Fighters also carry a small **↓** in the corner of their roster card.
+
+1000px is the size Maxingo drew the trait art at, so it is the largest version
+that is real detail rather than an upscale, and it arrives as one flat file
+rather than the eleven layers the page stacks to show it to you. It is drawn by
+the same renderer as the Discord announcement and the Arena, so what you
+download is what everyone else sees, down to the layer order. A Fighter with no
+Background trait downloads with a transparent surround, because that is
+genuinely what it is — put it on whatever you like.
+
+**It is yours only.** A saved Fighter downloads for the player who assembled it
+and nobody else, and an unsaved build only for a player who actually holds every
+trait in it. The Collection lets anyone *look* at any Fighter; handing out a
+finished, named picture of one is the owner's call.
 
 **Edit changes a Fighter without losing it.** Its traits are freed back to you
 for as long as the editor is open, so you can swap one out, add a piece to an

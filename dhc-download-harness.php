@@ -255,24 +255,53 @@ if ($sock = @stream_socket_server('tcp://127.0.0.1:0', $e1, $e2)) {
 if ($base === '' || !$port || !@mkdir($stub, 0777, true)) {
 	echo "  SKIPPED — no trait art, or could not get a port / temp dir.\n";
 } else {
-	$traits = json_encode(array(
-		'background' => $pick('background', 3), 'torso'  => $pick('torso', 5),
-		'head'       => $pick('head', 7),       'weapon' => $pick('weapon', 6),
-	));
+	$tset = array('background' => $pick('background', 3), 'torso'  => $pick('torso', 5),
+	              'head'       => $pick('head', 7),       'weapon' => $pick('weapon', 6));
+	$traits = json_encode($tset);
+	/* Owned by user 7 and nobody else. dhcf_owned() groups the drops ledger,
+	   so the stub answers that query with one row per trait. */
+	$drops = array();
+	foreach ($tset as $slot => $slug) {
+		$drops[] = array('category' => dhcf_slot_category($slot), 'slug' => $slug,
+		                 'copies' => 1, 'first_at' => '2026-01-01 00:00:00');
+	}
 	file_put_contents($stub . '/db.php',
 		"<?php\n"
-	  . "class StubRes { public \$r; function __construct(\$r){ \$this->r = \$r; }\n"
-	  . "  function fetch_assoc(){ \$r = \$this->r; \$this->r = null; return \$r; } }\n"
+	  . "class StubRes { public \$rows; function __construct(\$r){ \$this->rows = \$r; }\n"
+	  . "  function fetch_assoc(){ return \$this->rows ? array_shift(\$this->rows) : null; } }\n"
 	  . "class StubConn { function query(\$sql){\n"
+	  . "    if (strpos(\$sql, 'dhc_trait_drops') !== false) {\n"
+	  . "      if (!preg_match('/user_id = (\\d+)/', \$sql, \$u) || (int)\$u[1] !== 7)\n"
+	  . "        return new StubRes(array());\n"
+	  . "      return new StubRes(" . var_export($drops, true) . ");\n"
+	  . "    }\n"
 	  . "    if (!preg_match('/serial = (\\d+)/', \$sql, \$m)) return false;\n"
-	  . "    if ((int)\$m[1] !== 4242) return new StubRes(null);\n"
-	  . "    return new StubRes(array('id'=>17,'serial'=>4242,'name'=>'Deep Sea Krusher',\n"
-	  . "      'traits'=>" . var_export($traits, true) . ")); }\n"
+	  . "    preg_match('/user_id = (\\d+)/', \$sql, \$u);\n"
+	  . "    \$owner = 7;   // DHC2F4242 belongs to user 7; 5555 belongs to user 8\n"
+	  . "    if ((int)\$m[1] === 5555) \$owner = 8;\n"
+	  . "    elseif ((int)\$m[1] !== 4242) return new StubRes(array());\n"
+	  . "    /* No user_id clause at all? Then answer like a real database\n"
+	  . "       would -- hand over the row whoever is asking. That is what\n"
+	  . "       makes deleting the ownership clause fail the RIGHT check. */\n"
+	  . "    if (isset(\$u[1]) && (int)\$u[1] !== \$owner) return new StubRes(array());\n"
+	  . "    return new StubRes(array(array('id'=>17,'serial'=>(int)\$m[1],\n"
+	  . "      'name'=>'Deep Sea Krusher','traits'=>" . var_export($traits, true) . "))); }\n"
 	  . "  function close(){} }\n"
 	  . "\$conn = new StubConn();\n"
 	  . "/* THE POINT OF THE STUB: db.php is allowed to print, and none of it may\n"
 	  . "   reach the image. */\n"
 	  . "echo \"db.php printed this and it must never reach the PNG\\n\";\n");
+	/*
+	 * verify.php and skulliance.php are shadowed too, for the same reason and
+	 * by the same trick. They resolve the signed-in user against the real
+	 * session store, which this has no way to stand up -- so the stub simply
+	 * says "you are user 7" and what gets tested is the endpoint's OWN gate:
+	 * that it refuses without a session at all, and that ownership is decided
+	 * by the query rather than by a read and a compare.
+	 */
+	file_put_contents($stub . '/verify.php', "<?php /* stub: checkUser() lives here */\n");
+	file_put_contents($stub . '/skulliance.php',
+		"<?php\n\$_SESSION['userData']['user_id'] = 7;\n");
 
 	$null = defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null';
 	$proc = @proc_open(
@@ -296,13 +325,20 @@ if ($base === '' || !$port || !@mkdir($stub, 0777, true)) {
 	if (!$up) {
 		echo "  SKIPPED — the built-in server never came up on port $port.\n";
 	} else {
-		/** One raw HTTP/1.0 request. Returns array(status line, headers, body). */
-		$get = function ($qs) use ($port) {
+		/**
+		 * One raw HTTP/1.0 request. Returns array(status line, headers, body).
+		 * $signed_in sends a SessionCookie, which is what makes the endpoint
+		 * take the logged-in branch -- so passing false is a real anonymous
+		 * request and not a simulated one.
+		 */
+		$get = function ($qs, $signed_in = true) use ($port) {
 			$fp = @fsockopen('127.0.0.1', $port, $en, $es, 5);
 			if (!$fp) return array('', array(), '');
 			stream_set_timeout($fp, 20);
+			$cookie = $signed_in
+				? "Cookie: SessionCookie=" . rawurlencode('{"logged_in":true}') . "\r\n" : '';
 			fwrite($fp, "GET /dhc-download.php" . $qs . " HTTP/1.0\r\n"
-			          . "Host: 127.0.0.1:$port\r\nConnection: close\r\n\r\n");
+			          . "Host: 127.0.0.1:$port\r\n" . $cookie . "Connection: close\r\n\r\n");
 			$raw = stream_get_contents($fp);
 			fclose($fp);
 			$cut = strpos($raw, "\r\n\r\n");
@@ -348,6 +384,51 @@ if ($base === '' || !$port || !@mkdir($stub, 0777, true)) {
 		}
 		echo "  error paths: no serial / 0 / abc / -5 -> 400, unknown serial -> 404\n";
 
+		/*
+		 * IT IS YOURS ONLY. This shipped public for a day, so these are the
+		 * checks that keep it from going back: a stranger, and a signed-in
+		 * player reaching for somebody else's serial. Both must come back
+		 * with no image at all -- and the second answers 404 rather than 403
+		 * on purpose, because 403 would confirm that the serial exists.
+		 */
+		list($st, $h3, $body) = $get('?serial=4242', false);
+		ok(strpos($st, '403') !== false,
+		   'a signed-out request must be refused; answered: ' . $st);
+		ok(strpos($body, "\x89PNG") === false, 'a signed-out request got image bytes');
+
+		list($st, $h4, $body) = $get('?serial=5555');           // owned by user 8
+		ok(strpos($st, '404') !== false,
+		   "another player's Fighter must not download; answered: " . $st);
+		ok(strpos($body, "\x89PNG") === false, "another player's Fighter returned image bytes");
+		echo "  ownership: signed out -> 403, someone else's serial -> 404\n";
+
+		/*
+		 * THE CANVAS BUILD. The assembler's button sends the arrangement
+		 * rather than a serial, because most of the time there is no saved
+		 * row to name. Gated on the traits instead: every piece has to be one
+		 * the player has been awarded.
+		 */
+		$mine  = '?build=' . rawurlencode(json_encode($tset));
+		$nicked = $tset; $nicked['head'] = $pick('head', 11);   // a head user 7 never got
+		$theirs = '?build=' . rawurlencode(json_encode($nicked));
+
+		list($st, $h5, $png2) = $get($mine);
+		ok(strpos($st, '200') !== false, 'a build of your own traits downloads; answered: ' . $st);
+		ok(substr($png2, 0, 8) === "\x89PNG\r\n\x1a\n", 'the build response is a PNG');
+		$cd = $hdr($h5, 'Content-Disposition');
+		ok(strpos($cd, 'DHC-Fighter-build-') === 0 || strpos($cd, 'filename="DHC-Fighter-build-') !== false,
+		   'an unsaved build is named for its traits, not for a serial it does not have: ' . $cd);
+
+		list($st, $h6, $body) = $get($theirs);
+		ok(strpos($st, '403') !== false,
+		   'a build containing a trait you do not own must be refused; answered: ' . $st);
+		ok(strpos($body, "\x89PNG") === false, 'an unowned build returned image bytes');
+
+		list($st, $h7, $body) = $get($mine, false);
+		ok(strpos($st, '403') !== false, 'a signed-out build request must be refused');
+		printf("  build: own traits -> 200 %s | unowned trait -> 403 | signed out -> 403\n",
+			trim(str_replace('attachment; filename=', '', $cd)));
+
 		/* The render cache is the whole reason this is affordable at all. */
 		$t0 = microtime(true); $get('?serial=4242'); $warm = (microtime(true) - $t0) * 1000;
 		printf("  warm request: %.1f ms (cold is ~125)\n", $warm);
@@ -356,6 +437,7 @@ if ($base === '' || !$port || !@mkdir($stub, 0777, true)) {
 	}
 	if (is_resource($proc)) { proc_terminate($proc); proc_close($proc); }
 	foreach (glob(__DIR__ . '/dhcrenders/f4242-*') as $f) @unlink($f);
+	foreach (glob(__DIR__ . '/dhcrenders/f0-*') as $f) @unlink($f);   // the build renders
 	foreach (glob($stub . '/*') as $f) @unlink($f);
 	@rmdir($stub);
 	echo "  (stub, server and test renders cleaned up)\n";
