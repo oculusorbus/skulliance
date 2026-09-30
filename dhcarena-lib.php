@@ -103,6 +103,25 @@ function dhca_already_rewarded($conn, $attacker, $defender) {
 	return $r && (int)$r['c'] > 0;
 }
 
+/**
+ * Rivals this player has ALREADY been paid for today, as a uid => true map.
+ *
+ * The same fact dhca_already_rewarded() checks, asked once for the whole
+ * rival list instead of per battle. It exists because the rule was invisible:
+ * beating someone twice in a day is a perfectly ordinary thing to do, the
+ * second win pays nothing, and nothing anywhere said so -- reported as "I won
+ * and got no trait, is that a bug?", which is exactly what it looks like.
+ */
+function dhca_paid_today($conn, $user_id) {
+	$out = array();
+	$res = $conn->query("SELECT DISTINCT defender_id FROM dhc_arena_battles
+	                     WHERE attacker_id = ".(int)$user_id."
+	                       AND DATE(started_at) = CURDATE() AND rewarded = 1");
+	if (!$res) return $out;          // a failed read hides the marker, never invents one
+	while ($r = $res->fetch_assoc()) $out[(int)$r['defender_id']] = true;
+	return $out;
+}
+
 /** Why this player cannot start a battle right now, or '' if they can. */
 function dhca_entry_block($conn, $user_id) {
 	dhca_sweep_stale($conn, $user_id);
@@ -448,10 +467,28 @@ function dhca_finish($conn, &$b) {
 		dhca_record($conn, $def, (int)$fid, !$fell);
 	}
 
+	/*
+	 * WHY THERE WAS NO TRAIT, not just that there wasn't one. Two different
+	 * rules can swallow a win's drop and the end screen used to blame the
+	 * wrong one for the first and say nothing at all about the second:
+	 *
+	 *   'opponent'  this pairing already paid today. One rewarded battle per
+	 *               rival, so the second win off the same Crew is for the
+	 *               ladder only.
+	 *   'cap'       the win qualified but dhcf_award() declined -- the three
+	 *               Arena drops for today are already spent. $rewarded stays
+	 *               1 here, which is correct (the pairing DID consume its one
+	 *               payout) and is why "no drop" could not be read off it.
+	 */
 	$rewarded = 0;
-	if ($won && !dhca_already_rewarded($conn, $att, $def)) {
-		$rewarded = 1;
-		dhca_pay($conn, $att, $b);
+	if ($won) {
+		if (dhca_already_rewarded($conn, $att, $def)) {
+			$b['nodrop'] = 'opponent';
+		} else {
+			$rewarded = 1;
+			dhca_pay($conn, $att, $b);
+			if (empty($b['drop'])) $b['nodrop'] = 'cap';
+		}
 	}
 
 	$conn->query(sprintf(

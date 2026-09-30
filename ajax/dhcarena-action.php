@@ -39,6 +39,9 @@ if ($do === 'move') {
 	if ($b['over'] !== null) {
 		$out['over']     = $b['over'];
 		$out['rewarded'] = !empty($b['rewarded']);
+		/* '' | 'opponent' | 'cap' -- why a win paid nothing. The end screen
+		   cannot work this out from 'rewarded' alone; see dhca_settle(). */
+		$out['nodrop']   = isset($b['nodrop']) ? $b['nodrop'] : '';
 		if (!empty($b['drop'])) $out['drop'] = $b['drop'];
 	}
 	dhca_out(true, '', $out);

@@ -107,6 +107,9 @@ $available = dhca_available($crew);
 $block     = $user_id ? dhca_entry_block($conn, $user_id) : 'Sign in to enter the Arena.';
 $spent     = $user_id ? dhca_battles_today($conn, $user_id) : 0;
 $foesList  = $user_id ? dhca_opponents($conn, $user_id) : array();
+/* Which of them have already paid out today -- one query for the whole
+   list, the same fact dhca_already_rewarded() checks per battle. */
+$paidToday = $user_id ? dhca_paid_today($conn, $user_id) : array();
 $ladder    = dhca_ladder($conn, null, 10);
 
 /*
@@ -959,6 +962,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-foe img{width:28px;height:28px;border-radius:50%;flex:none;background:var(--panel2)}
 .arena-wrap .a-foe .n{flex:1;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .arena-wrap .a-foe .m{font-size:10px;opacity:.6;white-space:nowrap}
+/* Already paid out today. Dimmed, not disabled: the rematch still counts for
+   the ladder and the win record, so this is information and not a block.
+   Namespaced under .a-foe like everything else here -- a bare .paid would be
+   one more global class in a stylesheet that already owns .top. */
+.arena-wrap .a-foe.paid{opacity:.62}
+.arena-wrap .a-foe.paid:hover,.arena-wrap .a-foe.paid.sel{opacity:1}
+.arena-wrap .a-foe .paidtag{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;
+  white-space:nowrap;color:var(--dim);border:1px solid var(--line);border-radius:2px;
+  padding:2px 5px;flex:none}
 .arena-wrap .a-go{margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 /* The platform's buttons, not the game's. .btn inside #arenaBattle keeps the
    monospace board styling; out here it should look like every other control on
@@ -1166,10 +1178,16 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <?php foreach ($foesList as $o):
         $av = ($o['discord_id'] && $o['avatar'])
             ? 'https://cdn.discordapp.com/avatars/'.$o['discord_id'].'/'.$o['avatar'].'.png' : ''; ?>
-        <div class="a-foe" data-uid="<?php echo (int)$o['user_id']; ?>">
+        <?php /* PAID means you already took a trait off this rival today. Still
+                 selectable -- the ladder and the win record both still count,
+                 and a player may well want the rematch -- but say so before
+                 the battle rather than after it. */
+              $paid = isset($paidToday[(int)$o['user_id']]); ?>
+        <div class="a-foe<?php echo $paid ? ' paid' : ''; ?>" data-uid="<?php echo (int)$o['user_id']; ?>">
           <img src="<?php echo htmlspecialchars($av); ?>" alt="" onerror="this.style.visibility='hidden'">
           <span class="n"><?php echo htmlspecialchars($o['username']); ?></span>
           <span class="m"><?php echo (int)$o['fighters']; ?> Fighters · best <?php echo number_format((int)$o['best']); ?></span>
+          <?php if ($paid): ?><span class="paidtag" title="One trait per opponent per day. A rematch still counts for the ladder.">Beaten today &middot; no trait</span><?php endif; ?>
         </div>
       <?php endforeach; ?>
       </div>
@@ -2135,9 +2153,17 @@ function showEnd(res){
         + standing.map(function(f){ return f.name.split(' ')[0]; }).join(' and ') + '.';
     /* Practice pays nothing and says so, rather than staying quiet and letting
        a player wonder where their trait went. */
-    if (practice)                   sub += ' Practice — nothing was at stake.';
-    else if (res.drop)              sub += ' A trait dropped — check your collection.';
-    else if (res.rewarded === false) sub += ' No trait this time: the daily cap is spent.';
+    /* NAME THE ACTUAL RULE. This used to blame the daily cap for everything,
+       which was wrong twice over: a repeat win off the same rival is a
+       different rule, and a genuinely spent cap leaves rewarded === true and
+       so said nothing at all. Reported as "I won and got no trait -- bug?",
+       which is what an unexplained blank looks like. */
+    if (practice)                       sub += ' Practice — nothing was at stake.';
+    else if (res.drop)                  sub += ' A trait dropped — check your collection.';
+    else if (res.nodrop === 'opponent') sub += ' No trait: this rival already paid out today. '
+                                             + 'One trait per opponent — beat someone new for another.';
+    else if (res.nodrop === 'cap')      sub += ' No trait: your three Arena drops for today are spent.';
+    else if (res.rewarded === false)    sub += ' No trait this time.';
   } else {
     sub = practice
       ? 'Your Crew is down. Practice — nothing was at stake, so go again.'
