@@ -374,9 +374,51 @@ ok($genPreload, 'the item icons are no longer preloaded -- as CSS backgrounds th
 ok(preg_match('/\.rl-nav\s*\{[^}]*position:\s*sticky/', $src) === 1,
    'the section nav is not position:sticky -- it scrolls away on a long page, '
  . 'which is the whole reason it moved to the top');
-ok(preg_match('/\.rl-nav\s*\{[^}]*top:\s*env\(safe-area-inset-top/', $src) === 1,
-   'the sticky nav pins to top:0, so on an iOS PWA it parks in the strip the '
- . 'status bar owns -- half unreadable and untappable');
+/*
+ * STICKY NEEDS A CONTAINING BLOCK TALLER THAN ONE SCREEN, and flexbox.css
+ * gives .container height:100%. The nav is a direct child of it, so the
+ * first cut of this pinned for exactly one viewport and then scrolled away
+ * -- reported as the menu disappearing halfway down a section. Every part of
+ * that is invisible in the nav's own rules, which is why it is checked here.
+ */
+ok(preg_match('/^\s*\.container\s*\{[^}]*height:\s*auto/m', $src) === 1,
+   'realms.php no longer overrides .container height -- flexbox.css pins it to '
+ . '100% of the viewport, and a position:sticky child cannot stick outside its '
+ . 'containing block, so the nav will unpin one screenful down');
+ok(preg_match('/height:\s*100%/', $flexContainer = (function(){
+		$f = file_get_contents(__DIR__ . '/dist/flexbox.css');
+		return preg_match('/\.container\s*\{([^}]*)\}/', $f, $m) ? $m[1] : '';
+	})()) === 1,
+   'flexbox.css no longer sets .container height:100%, so the realms override '
+ . 'above is now dead weight -- delete it rather than leaving a comment '
+ . 'explaining a problem that no longer exists');
+/*
+ * THE INSET IS PADDING, NOT `top`. body carries padding-top:env(inset) and
+ * that padding SCROLLS AWAY; pinning the bar at top:env(inset) leaves the
+ * band above it transparent, and page content rides up through it into the
+ * clock and the battery. Paying the inset as the bar's own padding makes its
+ * background own that band at every scroll position.
+ */
+ok(preg_match('/\.rl-nav\s*\{[^}]*top:\s*0\s*;/', $src) === 1,
+   'the sticky nav does not pin at top:0, so whatever offset it uses leaves a '
+ . 'transparent band above it that page content scrolls through');
+ok(preg_match('/\.rl-nav\s*\{[^}]*padding:\s*calc\(\s*[0-9]+px\s*\+\s*env\(safe-area-inset-top/', $src) === 1,
+   'the nav does not pay the top safe-area inset as its own padding -- on an '
+ . 'iOS PWA its links sit in the strip the status bar owns');
+/*
+ * ORDER IS ACTION FIRST. Locations and Attack are the two places you do
+ * something; Raids, Realm and the Map are things you read or set once. They
+ * also have to be ADJACENT, because on a phone the swipe walks this list and
+ * the two action panels being one swipe apart is the point.
+ */
+preg_match_all('/<a href="#[a-z]+" data-sec="([a-z]+)"/', $src, $ord);
+printf("  nav order: %s\n", implode(' > ', $ord[1]));
+ok(isset($ord[1][0]) && $ord[1][0] === 'locations' && isset($ord[1][1]) && $ord[1][1] === 'realms',
+   'the nav no longer leads with the two action sections (Locations then '
+ . 'Attack) -- reference panels are in front of them and they are no longer '
+ . 'one swipe apart');
+ok(isset($ord[1][4]) && $ord[1][4] === 'map',
+   'the Map is not last; it is purely reference and should trail the list');
 ok(preg_match('/@media \(max-width: 700px\)[^}]*\{\s*[^}]*\.rl-nav\s*\{[^}]*padding-right/', $src) === 1
    || preg_match('/\.rl-nav\s*\{[^}]*padding-right:\s*56px/', $src) === 1,
    'the nav does not dodge the burger, which is fixed at the top right under '

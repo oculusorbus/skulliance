@@ -93,12 +93,17 @@ menu button. It still asks for confirmation.
 ## Getting around the page
 
 Realms shows one section at a time, and the strip of links across the top of
-the page is how you move between them: **Locations**, **Realm**, **Map**,
-**Raids** and **Attack**. It stays pinned to the top as you scroll, so the rest
-of the page is always one press away no matter how far down a long locations
-list you are. On a wide screen your realm panel rides alongside the locations
-rather than being its own destination; on a phone the map rides under the realm
-panel, so whichever of the two is riding along is dropped from the strip.
+the page is how you move between them. The two you act in come first -
+**Locations** and **Attack** - then **Raids**, then **Realm**, then the
+**Map**, which is there to look at rather than to do anything in. It stays
+pinned to the top as you scroll, so the rest of the page is always one press
+away no matter how far down a long locations list you are.
+
+On a wide screen your realm panel rides alongside the locations rather than
+being its own destination; on a phone the map rides under the realm panel. So
+the strip reads **Locations, Attack, Raids, Realm** on a phone and
+**Locations, Attack, Raids, Map** on a desktop - whichever panel is riding
+along is dropped from it.
 
 This replaced a row of icons that used to sit fixed at the bottom of the
 screen. It is the same control the Missions page uses, in the same place.

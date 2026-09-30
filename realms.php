@@ -319,11 +319,34 @@ if (ob_get_level() > 0) @ob_flush();
 /* ── SECTION NAV ────────────────────────────────────────────────────────
    Sticky at the top, matching missions.php. The bottom icon bar it replaces
    is documented where the nav is rendered. */
+/*
+ * THE CONTAINING BLOCK, which is the whole reason the first cut of this
+ * unpinned itself halfway down a section.
+ *
+ * flexbox.css gives .container height:100% -- exactly one viewport tall,
+ * with the page's content simply overflowing it. A position:sticky child is
+ * clamped to its containing block, so the nav pinned for the first screenful
+ * and then scrolled away with the rest of the page. It looked like sticky
+ * "not working on long pages", which is the opposite of what was happening:
+ * it worked perfectly, inside a box one screen tall.
+ *
+ * missions.php never showed this because .ms-nav sits inside .main, which is
+ * a flex child with auto height. Nothing else on realms uses that 100%:
+ * min-height:100% is what actually keeps a short page filling the screen and
+ * it is still there, and .container paints no background.
+ */
+.container { height: auto; }
 .rl-nav {
-  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  /* top:0, NOT top:env(inset). body carries padding-top:env(safe-area-inset-top),
+     so at rest the nav already starts below the status bar -- but that padding
+     SCROLLS AWAY, and the band it leaves is transparent. Page content rode up
+     through it and collided with the clock and the battery. Pinning at 0 and
+     paying the inset as the bar's own padding means the bar's background owns
+     that band at every scroll position, with the links still below it. */
+  position: sticky; top: 0; z-index: 20;
   display: flex; gap: 2px; flex-wrap: wrap;
   background: #07111d; border-bottom: 1px solid rgba(0,200,160,.18);
-  margin: 0 0 14px; padding: 4px 0; }
+  margin: 0 0 14px; padding: calc(4px + env(safe-area-inset-top, 0px)) 0 4px; }
 .rl-nav a {
   display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 0;
   font-size: .74rem; color: #7a9eb0; text-decoration: none; white-space: nowrap;
@@ -750,12 +773,24 @@ $incoming_completed = getRaids($conn, "incoming", "completed");
  * shows one section at a time and the map is far too heavy to leave
  * rendered. Only the control moved.
  */ ?>
+<?php /*
+ * ORDER IS ACTION FIRST, REFERENCE LAST. Locations and Attack are the two
+ * places you actually do something, so they lead and they sit next to each
+ * other -- which also makes them one swipe apart on a phone. Then Raids, then
+ * Realm (settings), then the Map, which is pure reference.
+ *
+ * The two that are never a destination of their own are dropped at the width
+ * where they ride along: Realm on a wide screen (it renders beside the
+ * locations), Map on a narrow one (it renders under the realm panel). So the
+ * real strip is Locations/Attack/Raids/Realm on a phone and
+ * Locations/Attack/Raids/Map on a desktop.
+ */ ?>
 <nav class="rl-nav" id="rl-nav">
 	<a href="#locations" data-sec="locations" class="on" onclick="return rlNav('locations')">Locations</a>
+	<a href="#realms" data-sec="realms" onclick="return rlNav('realms')">Attack</a>
+	<a href="#raids" data-sec="raids" onclick="return rlNav('raids')">Raids</a>
 	<a href="#realm" data-sec="realm" onclick="return rlNav('realm')">Realm</a>
 	<a href="#map" data-sec="map" onclick="return rlNav('map')">Map</a>
-	<a href="#raids" data-sec="raids" onclick="return rlNav('raids')">Raids</a>
-	<a href="#realms" data-sec="realms" onclick="return rlNav('realms')">Attack</a>
 </nav>
 <?php } ?>
 <div class="row" id="row0">
