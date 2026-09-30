@@ -521,7 +521,41 @@ foreach (array('openRaidDetail', 'closeRaidDetail', 'raid-detail-body', 'raid-de
 ok(strpos($src, "removeAttribute('id')") !== false,
    'the modal clone keeps its ids, so every getElementById in the page can land '
  . 'in the copy instead of the original');
-printf("  compact row + hidden detail + modal: wired\n");
+/*
+ * THE CAP HAS TO ACTUALLY CAP. getRaids() marks rows past the fifth with
+ * the `hidden` attribute, which is enforced by a UA rule that ANY author
+ * `display` beats -- and .rr sets display:flex. So every row rendered and
+ * "Show all 10" removed a button that did nothing. Reported as exactly
+ * that. It needs a rule that outranks .rr, and 'hidden' being silently
+ * ignored is the same shape of bug as classList.contains() on a renamed
+ * class: nothing throws.
+ */
+ok(preg_match('/\.rr\[hidden\]\s*\{[^}]*display:\s*none/', $src) === 1,
+   'nothing overrides .rr { display:flex } for [hidden] rows, so getRaids()\'s '
+ . 'cap renders every row anyway and the Show-all button does nothing');
+ok(strpos(no_comments($gr), 'rr-more') !== false && strpos($src, 'rr-more') !== false,
+   'the capped rows and the Show-all handler disagree about the .rr-more marker');
+/*
+ * THE WHOLE ROW IS THE HIT AREA. .rr-main is flex:1 1 240px, so on a
+ * pending row -- pills, Replay AND Retreat beside it -- it was squeezed to
+ * the left quadrant and the rest of the row did nothing. Completed rows
+ * carry less, which is why it read as random rather than as a layout rule.
+ */
+ok(preg_match('/\.rr-main::after\s*\{[^}]*position:\s*absolute[^}]*inset:\s*0/', $src) === 1,
+   'the raid row has no stretched hit area, so only the part .rr-main happens '
+ . 'to be flexed to is clickable -- narrowest on pending rows, which carry the '
+ . 'most beside it');
+ok(preg_match('/\.rr-tags,\s*\.rr-acts\s*\{[^}]*z-index:\s*1/', $src) === 1,
+   'the action buttons are not lifted above the row-wide hit area, so Replay '
+ . 'and Retreat now open the modal instead of firing');
+ok(preg_match('/\.rr:hover\s*\{[^}]*background/', $src) === 1,
+   'the raid row does not highlight on hover, so nothing signals that it opens '
+ . 'anything');
+/* The history link was built for one player who has left. */
+ok(strpos($gr, 'raids.php') === false && strpos($gr, 'rc-history-link') === false,
+   'the raid history link is back under the completed lists; it points at the '
+ . 'same renderer with the LIMIT lifted, which Show-all already covers');
+printf("  compact row + hidden detail + modal: wired; cap enforced; row-wide hit area\n");
 
 /* NO DISCLOSURE ARROW. The sections were collapsible because a raid was a
    400px card; a raid is a row now, and an arrow between the player and the

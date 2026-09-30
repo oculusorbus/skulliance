@@ -1936,10 +1936,23 @@ section.active {
 		/* Below the iPhone notch / status bar — fallback 0 on devices without insets */
 		top: env(safe-area-inset-top, 0px);
 		right: env(safe-area-inset-right, 0px);
+		/* IT LINES UP WITH THE SECTION NAV. missions.php and realms.php both
+		   carry a sticky bar across the top, and this sat in it hanging 4-6px
+		   past its bottom border -- measured 45px tall against a 38px bar.
+		   Sized to the bar instead: a 50x39 box (39 of bar + a 10px right
+		   gutter) with the square glyph contained inside it, which puts the
+		   icon's centre on the links' centre to the pixel and leaves nothing
+		   overhanging. object-fit is what keeps the art square once the box
+		   stops being one; object-position keeps it on the right edge it has
+		   always sat on, so nothing moves sideways.
+		   The 5px top padding is gone because the CENTRING replaced it -- the
+		   art carries 23% of its own vertical padding, so the bars still
+		   clear the status bar by ~9px at this size. */
 		width: 50px;
-		height: auto;
-		padding-top: 5px;
-		padding-right: 10px;
+		height: 39px;
+		padding: 0 10px 0 0;
+		object-fit: contain;
+		object-position: right center;
 	}
 	
 	.row, .navbar {   
@@ -2890,12 +2903,6 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .rc-log-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rc-log-gear { display: flex; gap: 2px; flex-shrink: 0; }
 /* History link */
-.rc-history-link {
-    padding: 4px 2px 10px;
-    font-size: 0.82rem;
-}
-.rc-history-link a { color: #7a9eb0; text-decoration: none; }
-.rc-history-link a:hover { color: #00c8a0; }
 
 /* ── Raid Stats & Faction Stats cards ─────────────────────── */
 .rs-grid {

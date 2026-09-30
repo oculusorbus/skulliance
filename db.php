@@ -9911,9 +9911,19 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$final_output .= "<div class='rr-showall'><button type='button' class='rr-btn'"
 					. " onclick='showAllRaidRows(this)'>Show all " . $_rr_total . "</button></div>";
 			}
-			if(!$history && $status == "Completed"){
-				$final_output .= "<div class='rc-history-link'><a href='raids.php'>View ".ucfirst($type)." Raid History</a></div>";
-			}
+			/*
+			 * NO HISTORY LINK. It was built for one player who asked for it
+			 * and is no longer active, and it sat under every completed
+			 * list on the page pointing at raids.php -- which is the SAME
+			 * renderer with the LIMIT 10 lifted, so the only thing it adds
+			 * over "Show all" is rows 11 and beyond.
+			 *
+			 * raids.php and the $history flag stay. The page is still
+			 * reachable by URL and is still listed in dhcfighters-config.php,
+			 * and deleting a page is a separate decision from removing a
+			 * link to it -- the same call made when the raid stats panel
+			 * went and getTotalRaids() stayed.
+			 */
 			$final_output .= "</div>";
 			return $final_output;
 		} else {

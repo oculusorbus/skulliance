@@ -209,14 +209,40 @@ if (ob_get_level() > 0) @ob_flush();
 .rr { position:relative; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
   border:1px solid rgba(255,255,255,.09); background:rgba(255,255,255,.02);
   padding:8px 10px 8px; margin-bottom:6px; }
+/*
+ * THE CAP WAS NEVER ACTUALLY CAPPING. getRaids() marks the rows past the
+ * fifth with the `hidden` attribute, and hidden is enforced by a UA rule --
+ * which ANY author `display` beats, including the flex two lines up. So all
+ * ten rows rendered and "Show all 10" removed a button that did nothing.
+ * Reported exactly that way. hidden is a silent API in the same manner
+ * classList is: nothing throws, the attribute is just ignored.
+ */
+.rr[hidden] { display:none; }
+/*
+ * THE WHOLE ROW IS THE BUTTON.
+ *
+ * .rr-main is flex:1 1 240px, so on a PENDING row -- which also carries the
+ * boost pills and a Replay plus a Retreat -- it gets squeezed to the left
+ * quadrant and the rest of the row is dead to the touch. Completed rows have
+ * less beside them, so they felt fine, which is why this read as random.
+ * Stretching a pseudo-element over the row makes the whole thing the hit
+ * area without a second click handler or a wrapping anchor, and the real
+ * controls are lifted back above it.
+ */
+.rr-main::after { content:''; position:absolute; inset:0; }
+.rr-tags, .rr-acts { position:relative; z-index:1; }
+.rr:hover { background:rgba(0,200,160,.05); border-color:rgba(0,200,160,.3); }
+.rr:has(.rr-main:focus-visible) { border-color:#00c8a0; }
 .rr-bar { position:absolute; left:0; right:0; top:0; height:2px;
   background:rgba(255,255,255,.07); }
 .rr-bar i { display:block; height:100%; background:#00c8a0; }
 .rr-main { flex:1 1 240px; min-width:0; display:flex; align-items:center; gap:9px;
   background:none; border:0; padding:0; margin:0; color:inherit; font:inherit;
   text-align:left; cursor:pointer; }
-.rr-main:hover .rr-who b { text-decoration:underline; }
-.rr-main:focus-visible { outline:2px solid #00c8a0; outline-offset:2px; }
+.rr:hover .rr-who b { text-decoration:underline; }
+/* The outline has to be the ROW's, since the button is now the whole row and
+   an outline on its own 240px box would sit in the middle of it. */
+.rr-main:focus-visible { outline:none; }
 .rr-av { width:30px; height:30px; flex:none; border-radius:50%; object-fit:cover;
   background:var(--panel2,#0d1f2d); margin:0; }
 .rr-who { flex:1; min-width:0; display:block; }
@@ -343,10 +369,23 @@ if (ob_get_level() > 0) @ob_flush();
      through it and collided with the clock and the battery. Pinning at 0 and
      paying the inset as the bar's own padding means the bar's background owns
      that band at every scroll position, with the links still below it. */
+  /* NEGATIVE TOP MARGIN, equal to the inset. The bar is the first thing on
+     this page, and body's padding-top:env(inset) put an empty band above it
+     at rest -- dead space on load that vanished the moment you scrolled and
+     the bar pinned to 0. Pulling the bar up by exactly that inset means its
+     resting position IS its pinned position: no band, and no jump when the
+     pin takes over. Everything after it comes up with it, which is right,
+     because the bar now pays the inset itself.
+     Not needed on missions: its nav is not the first thing on the page, so
+     that padding is separating a real panel from the status bar there. */
   position: sticky; top: 0; z-index: 20;
   display: flex; gap: 2px; flex-wrap: wrap;
   background: #07111d; border-bottom: 1px solid rgba(0,200,160,.18);
-  margin: 0 0 14px; padding: calc(4px + env(safe-area-inset-top, 0px)) 0 4px; }
+  /* The negative top goes IN the shorthand. Written as its own margin-top
+     above this line it was silently reset to 0 by the shorthand that
+     followed, which is the whole bug class this page keeps hitting. */
+  margin: calc(-1 * env(safe-area-inset-top, 0px)) 0 14px;
+  padding: calc(4px + env(safe-area-inset-top, 0px)) 0 4px; }
 .rl-nav a {
   display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 0;
   font-size: .74rem; color: #7a9eb0; text-decoration: none; white-space: nowrap;
