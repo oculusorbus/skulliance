@@ -634,16 +634,35 @@ ok(preg_match('/svg\.setAttribute\(\x27width\x27,\s*fitW\)/', $mapJs) === 1,
  * longest faction NAME and moves with the data. The viewBox is grown to
  * the measured getBBox() instead, which is why zero padding is correct.
  */
-ok(strpos($mapJs, 'svg.getBBox()') !== false
-   && preg_match('/setAttribute\(\x27viewBox\x27, `\$\{vx\} \$\{vy\} \$\{vw\} \$\{vh\}`\)/', $mapJs) === 1,
+ok(preg_match('/setAttribute\(\x27viewBox\x27, `\$\{vx\} \$\{vy\} \$\{vw\} \$\{vh\}`\)/', $mapJs) === 1,
    'the viewBox is no longer grown to the drawing\'s real extent, so the '
  . 'faction name pills paint outside the box and land under the sticky nav');
+/*
+ * AND IT MUST NOT ASK THE LAYOUT. getBBox() returns all zeros for an
+ * element inside a display:none subtree -- verified in Chrome -- and
+ * renderMap() runs at page load, when #map is hidden. Measuring that way
+ * silently reported nothing, the box came out with only the slack, and
+ * the top row of labels stayed under the nav. The extents are tracked
+ * from the same geometry the shapes are drawn from instead.
+ */
+ok(preg_match('/^\s*(?!\s*\*)[^\n]*svg\.getBBox\(\)/m', no_comments('<?php ' . $mapJs)) === 0,
+   'map.js measures the drawing with getBBox() again -- it renders while '
+ . '#map is display:none, where getBBox reports all zeros');
+ok(preg_match('/const ink = \(x0, y0, x1, y1\)/', $mapJs) === 1,
+   'the ink tracker is gone; nothing knows how far outside the packed '
+ . 'blocks the map actually draws');
+ok(substr_count($mapJs, 'ink(') >= 3,
+   'something that draws outside the faction blocks is no longer being '
+ . 'tracked -- the pills, the marker rings and the marker name labels all '
+ . 'reach past them, and the widest of the three is a realm NAME');
+ok(strpos($mapJs, 'measureTextWidth(realm.user_name') !== false,
+   'the marker name labels are not measured, so a long username still '
+ . 'hangs outside the box -- they are text-anchor:middle and reach further '
+ . 'left than any ring');
 ok(preg_match('/const k = Math\.min\(1, avail \/ vw\)/', $mapJs) === 1,
    'the phone fit is scaling from the packer box rather than the measured '
  . 'one, so the map will not match the space it is given');
-ok(strpos($mapJs, 'container.appendChild(svg);') < strpos($mapJs, 'svg.getBBox()'),
-   'getBBox() is called before the svg is in the document, where it cannot '
- . 'report anything');
+
 ok(preg_match('/background-repeat:\s*no-repeat/', $mobileCss) === 1,
    'the map backdrop can tile again; with cover that only shows when the box '
  . 'is wrong, but it is the visible symptom and costs nothing to pin');

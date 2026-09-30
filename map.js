@@ -368,6 +368,31 @@ function renderMap() {
         svgH = Math.max(svgH, p.y+p.h+PAD);
     }
 
+    /*
+     * WHAT IS DRAWN OUTSIDE THE PACKED BLOCKS, tracked as we draw it.
+     *
+     * svgW/svgH above are the union of the faction BLOCKS, and two things
+     * are deliberately drawn outside them: a faction's name pill sits at
+     * `y - 17`, above its territory and centred on the territory's width
+     * (so a long name on a block at x=0 hangs off the left as well), and a
+     * marker's rings extend past its radius.
+     *
+     * THIS WAS getBBox() AND THAT WAS WRONG. getBBox returns all zeros for
+     * an element inside a display:none subtree -- verified -- and
+     * renderMap() runs at page load, when #map is hidden. So it silently
+     * measured nothing and the box came out with only the slack, which is
+     * why the top row of labels was still cut off under the nav. These
+     * numbers are computed from the same geometry the shapes are drawn
+     * from, so they do not care whether anything is laid out yet.
+     */
+    let inkX0 = 0, inkY0 = 0, inkX1 = svgW, inkY1 = svgH;
+    const ink = (x0, y0, x1, y1) => {
+        if (x0 < inkX0) inkX0 = x0;
+        if (y0 < inkY0) inkY0 = y0;
+        if (x1 > inkX1) inkX1 = x1;
+        if (y1 > inkY1) inkY1 = y1;
+    };
+
     const svg = svgEl('svg', {width:svgW, height:svgH, viewBox:`0 0 ${svgW} ${svgH}`});
     const defs = svgEl('defs');
     svg.appendChild(defs);
@@ -464,6 +489,19 @@ function renderMap() {
             const pos = positions[i] || centroid(poly);
             const idx = clipIdx++;
             const Rr = R + realm.avg_level; // grow marker by average location level
+            /* The rings first: +11 is the own-realm ring, +3 its stroke. */
+            ink(pos.x - Rr - 14, pos.y - Rr - 14, pos.x + Rr + 14, pos.y + Rr + 14);
+            /* THEN THE TWO LABELS UNDER IT, which are the real reach. They
+               are text-anchor:middle at 10px Arial, so a long username
+               extends further left of a marker than any ring does -- the
+               widest ink on the whole map turned out to be a realm name,
+               not a faction pill. Measured, because it depends entirely on
+               the name. The +26 is the second line's baseline and 4 is its
+               halo stroke. */
+            const nameW = Math.max(
+                measureTextWidth(realm.user_name || '', 10, 'Arial, sans-serif', 'normal', '0'),
+                measureTextWidth(realm.realm_name || '', 10, 'Arial, sans-serif', 'normal', '0'));
+            ink(pos.x - nameW / 2 - 4, pos.y, pos.x + nameW / 2 + 4, pos.y + Rr + 26 + 4);
 
             // Circular clip for avatar
             const cp = svgEl('clipPath', {id:`ac${idx}`});
@@ -669,6 +707,7 @@ function renderMap() {
         const pillH = fontSize + padY * 2;
         const pillX = c.x - pillW / 2;
         const pillY = y - 17;
+        ink(pillX, pillY, pillX + pillW, pillY + pillH);
 
         // Dark pill background
         svg.appendChild(svgEl('rect', {
@@ -710,48 +749,32 @@ function renderMap() {
         svg.appendChild(lbl);
     }
 
-    /*
-     * IN THE DOM FIRST, SIZED SECOND. getBBox() is the only honest source
-     * for how much room the drawing needs, and it needs to be rendered to
-     * answer.
-     */
     container.innerHTML = '';
     container.appendChild(svg);
 
     /*
      * THE BOX HAS TO CONTAIN ITS OWN INK.
      *
-     * svgW/svgH come from the PACKER -- the union of the faction blocks --
-     * but plenty is drawn outside those blocks. A faction's name pill is
-     * placed at `y - 17`, above its territory, and centred on the
-     * territory's width, so a long name on a block at x=0 hangs off the
-     * left as well. Measured on a real map: 17 above the top, 25.3 off the
-     * left, nothing right or bottom.
+     * map.css sets `overflow: visible`, so the pills and rings tracked by
+     * ink() above were never clipped -- they simply painted outside the
+     * element's box, over whatever the layout had put there. That was
+     * harmless while the map section carried 40px of top padding. With the
+     * padding gone it is the sticky nav, which has a background and a
+     * higher z-index, so the top row of faction labels went under it.
      *
-     * map.css sets `overflow: visible`, so none of that was clipped -- it
-     * simply painted outside the element's box, over whatever the layout
-     * had put there. With the section's top padding gone that meant the
-     * sticky nav, which has a background and a higher z-index, so the top
-     * row of faction labels and one tall realm ring were half covered.
+     * Padding it back by a guess is the wrong shape of fix: the left bleed
+     * depends on the longest faction NAME, so it moves with the data.
+     * Growing the viewBox to the tracked extent makes the overhang part of
+     * the picture, and then zero section padding is exactly right.
      *
-     * Padding it by a guess is the wrong shape of fix: the left bleed
-     * depends on the longest faction NAME, so it changes with the data.
-     * Growing the viewBox to the measured ink makes the overhang part of
-     * the picture, and then zero padding is exactly right.
-     *
-     * The slack covers what getBBox() does not: it reports geometry only,
-     * with no stroke width and no filter region, and the markers carry
-     * both.
+     * The slack is for the filter regions -- the glow on the territory
+     * borders spreads past the geometry it is applied to.
      */
     const BLEED_SLACK = 6;
-    let vx = 0, vy = 0, vw = svgW, vh = svgH;
-    try {
-        const bb = svg.getBBox();
-        vx = Math.min(0, Math.floor(bb.x - BLEED_SLACK));
-        vy = Math.min(0, Math.floor(bb.y - BLEED_SLACK));
-        vw = Math.max(svgW, Math.ceil(bb.x + bb.width  + BLEED_SLACK)) - vx;
-        vh = Math.max(svgH, Math.ceil(bb.y + bb.height + BLEED_SLACK)) - vy;
-    } catch (e) { /* no layout yet: the packer's own box is the fallback */ }
+    const vx = Math.min(0, Math.floor(inkX0 - BLEED_SLACK));
+    const vy = Math.min(0, Math.floor(inkY0 - BLEED_SLACK));
+    const vw = Math.max(svgW, Math.ceil(inkX1 + BLEED_SLACK)) - vx;
+    const vh = Math.max(svgH, Math.ceil(inkY1 + BLEED_SLACK)) - vy;
     svg.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
 
     /*
