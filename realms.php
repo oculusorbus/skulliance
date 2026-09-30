@@ -283,6 +283,27 @@ if (ob_get_level() > 0) @ob_flush();
    one -- the labels, the helper lines and the saved message all came out
    centred. Same leak the missions rebuild hit. */
 .ri, .ri * { text-align:left; }
+/* ── ATTACK PANEL HEADER ───────────────────────────────────────────────
+   Title and Sort By on one row inside the panel. The <h2> used to sit
+   OUTSIDE .content.realms while #filter-nfts floated right INSIDE it, so on
+   a wide monitor they ended up on different lines at opposite ends of a
+   1900px panel with nothing tying them together. Same shape as .ri-head. */
+.ra-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:0 0 12px; border-bottom:1px solid rgba(0,200,160,.15);
+  margin:0 0 12px; }
+.ra-head h2 { margin:0; font-size:1.05rem; letter-spacing:.04em; }
+.ra-sort { margin:0 0 0 auto; display:flex; align-items:center; gap:8px; }
+.ra-sort label { margin:0; font-size:.72rem; letter-spacing:.06em;
+  text-transform:uppercase; color:#7a9eb0; white-space:nowrap; }
+.ra-sort label strong { font-weight:normal; }
+/* #filterRealms arrives from flexbox.css with its own width; in a header row
+   it only needs to be as wide as its longest option. */
+.ra-sort select#filterRealms { width:auto; min-width:150px; margin:0;
+  font-size:.78rem; padding:6px 10px; }
+@media (max-width:700px){
+  .ra-sort { margin-left:0; width:100%; }
+  .ra-sort select#filterRealms { flex:1; min-width:0; }
+}
 .ri-head { display:flex; align-items:center; gap:10px; margin:0 0 10px; }
 .ri-head h2 { margin:0; font-size:1.05rem; letter-spacing:.04em; display:flex;
   align-items:center; gap:8px; }
@@ -699,6 +720,15 @@ select, input[type=text], textarea,
 .rla-loc-icon, .rla-portal-icon, .rla-soldier,
 .popup-image, .popup-stat, .popup-avatar,
 #confirm-modal, #confirm-modal .modal-box,
+/* THE PILLS THE FIRST SWEEP MISSED. The sweep took the rtc- CARDS and left
+   the rtc- PILLS, which is most of what is actually on screen in the Attack
+   list: every location chip (20px, a true pill), every balance chip (12px),
+   the +10% avg badge (10px), the garrison slots (5px) and the 14px trait
+   thumbnails inside the chips (2px). */
+.rtc-loc-pill, .rtc-loc-pill-icon, .rtc-loc-cat-boost,
+.rtc-balance-pill, .rtc-garrison-slot, .rtc-garrison-slot img,
+.rtc-stat, .rtc-status-msg,
+.ra-sort select#filterRealms,
 [data-tooltip]::after { border-radius: 0; }
 /* Avatars stay circular -- they are portraits, not panels. */
 .rc-avatar, .rtc-avatar,
@@ -1025,43 +1055,15 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	    </div>
 	</div>
 </div>
-<div class="row" id="realms">	
+<div class="row" id="realms">
 	<div class="main">
-		<a name="realms" id="realms"></a>	
-		<h2>Realms</h2>	
-		<div class="content realms" id="filtered-content">
-			<?php
-			if(checkRealm($conn)){
-				if(checkRealmState($conn) == 1){
-					?>
-					<?php echo '
-					<div id="filter-nfts">
-						<label for="filterRealms"><strong>Sort By:</strong></label>
-						<select onchange="javascript:filterRealms(this.options[this.selectedIndex]);" name="filterRealms" id="filterRealms">';
-							echo '<optgroup label="Eligible">';
-								echo '<option value="weakness">Weakness</option>';
-								echo '<option value="strength">Strength</option>';
-								echo '<option value="wealth">Wealth</option>';
-								echo '<option value="random">Random</option>';
-							echo '</optgroup>';
-							echo '<optgroup label="All">';
-								echo '<option value="weakness">Weakness</option>';
-								echo '<option value="strength">Strength</option>';
-								echo '<option value="wealth">Wealth</option>';
-								echo '<option value="random">Random</option>';
-							echo '</optgroup>';
-						echo '
-						</select>
-					</div>';?>
-					<?php
-					$sort = "weakness";
-					echo "<div id='realms-list'>";
-					getRealms($conn, $sort, "Eligible");
-					echo "</div>";
-				}
-			}
-			?>
-		</div>
+		<a name="realms" id="realms"></a>
+		<?php
+		if(checkRealm($conn) && checkRealmState($conn) == 1){
+			/* ONE COPY, shared with ajax/get-realms.php -- see the partial. */
+			include __DIR__ . '/realms-attack.php';
+		}
+		?>
 	</div>
 </div>
 <?php } ?>

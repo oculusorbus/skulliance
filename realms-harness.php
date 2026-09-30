@@ -335,6 +335,52 @@ printf("  get-realm.php is %d bytes and includes the partial: %s\n",
  * now: one request each, and a miss leaves an empty slot rather than a
  * broken-image glyph.
  */
+/* ---------- 7b. the attack panel is one copy too --------------------------
+ *
+ * THE THIRD TIME. get-locations.php, then get-realm.php, now get-realms.php
+ * -- each carried its own stale copy of a panel, so the redesigned markup in
+ * realms.php was swapped out for the old one by the first refresh. On a
+ * desktop that refresh happens immediately, which is how a rebuilt panel
+ * shipped that the player had literally never seen.
+ */
+echo "\nthe attack panel\n";
+$attackPartial = __DIR__ . '/realms-attack.php';
+ok(is_file($attackPartial), 'realms-attack.php is gone; the Attack panel header is '
+ . 'back to being written out twice');
+$gRealms = file_get_contents(__DIR__ . '/ajax/get-realms.php');
+foreach (array('realms.php' => $src, 'ajax/get-realms.php' => $gRealms) as $who => $body) {
+	ok(strpos($body, "realms-attack.php") !== false,
+	   "$who does not include realms-attack.php -- it is rendering its own copy "
+	 . 'of the Attack header, which is the drift that has now bitten three panels');
+	/* The MARKUP, not the identifier: realms.php names #filterRealms twice in
+	   its squaring block, which is not a second copy of the control. */
+	ok(strpos(no_comments($body), 'name="filterRealms"') === false,
+	   "$who still writes its own Sort By control");
+}
+/* no_comments(), because the partial's own header comment quotes the very
+   markup being looked for. That is the FOURTH time a check in this file has
+   matched the comment explaining it. */
+$apSrc = no_comments(file_get_contents($attackPartial));
+ok(strpos($apSrc, 'ra-head') !== false && strpos($apSrc, '<h2>Realms</h2>') !== false
+   && strpos($apSrc, 'class="content realms"') !== false,
+   'the Attack heading is outside the panel again -- with the sort control '
+ . 'floated inside it, the two end up on different lines at opposite ends of '
+ . 'a very wide panel');
+/* The heading must be INSIDE .content, not before it. */
+ok(strpos($apSrc, 'class="content realms"') < strpos($apSrc, '<h2>Realms</h2>'),
+   'the <h2> is rendered before .content.realms opens, which is the layout '
+ . 'that was reported');
+printf("  attack panel: one partial, header inside the panel\n");
+/* THE SWEEP TOOK THE CARDS AND LEFT THE PILLS, which is most of what is
+   actually on screen in the Attack list. Every one of these carries a radius
+   in dist/flexbox.css. */
+foreach (array('rtc-loc-pill', 'rtc-loc-cat-boost', 'rtc-balance-pill',
+               'rtc-garrison-slot') as $pill) {
+	ok(preg_match('/\.' . $pill . '\b[^{]*\{[^}]*\}|\.' . $pill . '\b[^{]*,/', $src) === 1
+	   || strpos($src, '.' . $pill . ',') !== false,
+	   "the squaring block does not name .$pill, and flexbox.css rounds it");
+}
+
 echo "\nitem icons\n";
 $panel = file_get_contents(__DIR__ . '/realms-locations.php');
 $imgs  = substr_count($panel, 'src="icons/');
