@@ -19,10 +19,19 @@ $rl_cons  = $rl_panel['consumables'];
 <div class="rl-head">
 	<img class="rl-logo" src="images/realms-logo.png" alt="Realms">
 	<div class="rl-head-acts">
+		<?php /* GUIDE AND DEACTIVATE WERE THE SAME BUTTON, SIDE BY SIDE. One
+		         explains a genuinely complicated game to someone seeing it for
+		         the first time; the other shuts their realm down. Reading as a
+		         matched pair of admin controls made the help invisible and the
+		         destructive action casual. Guide leads and is marked as help;
+		         Deactivate is quiet and sits apart. */ ?>
 		<?php if ($rl_guide): ?>
-		<button type="button" class="rl-btn" onclick="openGuideModal()">Guide</button>
+		<button type="button" class="rl-btn help" onclick="openGuideModal()">
+			<span aria-hidden="true">?</span> How Realms works
+		</button>
 		<?php endif; ?>
-		<button type="button" class="rl-btn" onclick="deactivateRealm(<?php echo (int)$rl_panel['realm_id']; ?>)">Deactivate</button>
+		<button type="button" class="rl-btn quiet"
+			onclick="deactivateRealm(<?php echo (int)$rl_panel['realm_id']; ?>)">Deactivate</button>
 	</div>
 </div>
 
@@ -170,6 +179,22 @@ foreach ($rl_panel['rows'] as $r):
 				</span>
 			<?php endforeach; ?>
 			</div>
+			<?php /* MANAGE IS BACK, AND EXPLICIT. It came off when Stock and
+			         Manage together needed 357px in a 356px column; Stock has
+			         since moved up to the offer row, so the kit row has room
+			         (seven 28px slots is 220px of 356). A clickable title is a
+			         weak affordance for the thing these modals actually are --
+			         soldier training, portal reports, the crypt -- and a
+			         player who never notices it never opens them. The header
+			         stays clickable as a convenience; this is the signpost. */ ?>
+			<?php if ($rl_can_manage): ?>
+			<?php /* Just "Manage": the card names the location two lines above,
+			         and "Manage Barracks" at 133px pushed the kit row to two
+			         lines in a 356px column. The full phrase is on the title. */ ?>
+			<button type="button" class="rl-btn sm go"
+				title="<?php echo rl_e('Manage the ' . $rl_manage[$r['id']]); ?>"
+				onclick="openLocationModal(<?php echo $r['id']; ?>)">Manage</button>
+			<?php endif; ?>
 		</div>
 	</div>
 <?php endforeach; if ($rl_prev !== '') echo "</div>\n"; ?>

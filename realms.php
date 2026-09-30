@@ -96,6 +96,14 @@ if (ob_get_level() > 0) @ob_flush();
 .rl-btn:disabled { opacity:.45; cursor:default; }
 .rl-btn.sm { font-size:.64rem; padding:5px 8px; letter-spacing:.05em; }
 .rl-btn.go { background:#00c8a0; color:#07111d; border-color:#00c8a0; font-weight:bold; }
+/* Help reads as help: it leads the row and carries a marker. */
+.rl-btn.help { display:inline-flex; align-items:center; gap:6px; }
+.rl-btn.help span { display:inline-flex; align-items:center; justify-content:center;
+  width:15px; height:15px; border:1px solid currentColor; font-size:.62rem; line-height:1; }
+/* And Deactivate stops competing with it. */
+.rl-btn.quiet { border-color:rgba(255,255,255,.14); color:rgba(255,255,255,.45);
+  background:none; }
+.rl-btn.quiet:hover { border-color:#ff5c5c; color:#ff5c5c; background:rgba(255,92,92,.06); }
 .rl-btn.go:hover { background:#25e3bd; }
 
 /* The two numbers that actually decide a raid. */
@@ -163,7 +171,10 @@ if (ob_get_level() > 0) @ob_flush();
 .rl-run-note { font-size:.68rem; opacity:.45; }
 
 .rl-loc-acts { display:flex; gap:6px; flex:none; margin-left:auto; }
-.rl-loc-kit { margin-top:9px; }
+/* Slots left, Manage right, on one row. */
+.rl-loc-kit { margin-top:9px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.rl-loc-kit .rl-slots { flex:1 1 auto; }
+.rl-loc-kit .rl-btn { flex:none; }
 
 /* Phones: the actions still sit right, at their own size. They used to go
    full width on their own line, which turned Stock into a banner. */
@@ -452,6 +463,56 @@ if (ob_get_level() > 0) @ob_flush();
 .rla-result-divider { width:100%; height:1px; background:rgba(255,255,255,.08); margin:3px 0; }
 /* ── Play All button row ─────────────────────────────────────── */
 .rc-anim-all-row { display:flex; justify-content:flex-end; padding:4px 0 6px; }
+/* ── SQUARED, PAGE-WIDE ───────────────────────────────────────────────────
+ *
+ * The locations panel was built square; everything else on Realms was still
+ * round, because the radii do not live here -- they come from
+ * dist/flexbox.css, which every page shares. realms.php's own stylesheet
+ * had exactly two rounded rules in it (the loader rail, twice).
+ *
+ * SCOPED BY BEING HERE. This <style> is inline in realms.php, so it applies
+ * to this page and nowhere else -- squaring .content or .button in
+ * flexbox.css would reshape every page on the platform in one commit.
+ * missions.php set the precedent for doing it locally; this is the same
+ * move, widened to the families Realms actually renders:
+ * the raid cards (rc-), the raid targets (rtc-), the modals, the soldier and
+ * coffin cards, and the raid animation's chrome.
+ *
+ * LAST IN THE SHEET ON PURPOSE. Equal specificity means source order
+ * decides, and .soldier-card, .coffin-card and the fifteen .rla-* rules are
+ * all declared further down this same <style>. With this block at the top
+ * they simply won -- measured: .soldier-card still came back 8px.
+ *
+ * TWO THINGS STAY ROUND ON PURPOSE: anything at 50% is a circular avatar,
+ * and the loader's 3px progress rail keeps its 2px cap -- that is a rounded
+ * line, not a rounded panel. Neither is matched below.
+ *
+ * NOTHING HERE CHANGES BEHAVIOUR. The raid animation's timing, sequencing
+ * and markup are untouched; only its corners are.
+ */
+.content,
+.button, .small-button, .dropdown,
+select, input[type=text], textarea,
+#filterNFTs, #filterRealms,
+.selected,
+.rc-card, .rc-avatar, .rc-card-body,
+.rc-action-col, .rc-action-row,
+.rtc-avatar, .rtc-theme, .rtc-action,
+.raid-target-card, .raid-button,
+.raid-con-row, .raid-con-summary,
+.raid-gear-icon, .raid-config-label,
+.mc-card, .mc-currency-icon, .mc-items .icon,
+.soldiers-stat, .soldier-card, .soldier-nft-img,
+.soldier-status, .coffin-card,
+.rla-realm-img, .rla-side, .rla-status,
+.rla-result-card, .rla-skip-btn, .rla-loading,
+.rla-loc-icon, .rla-portal-icon, .rla-soldier,
+.popup-image, .popup-stat, .popup-avatar,
+#confirm-modal, #confirm-modal .modal-box,
+[data-tooltip]::after { border-radius: 0; }
+/* Avatars stay circular -- they are portraits, not panels. */
+.rc-avatar, .rtc-avatar,
+.popup-avatar { border-radius: 50%; }
 </style>
 <?php
 
