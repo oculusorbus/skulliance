@@ -943,7 +943,8 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
                  <ol>
                      <li>Always take a <strong>5-match over a 3-match</strong> &#8211; <img src="icons/diamond.png" style="width:14px;height:14px;vertical-align:middle;"> Diamond bomb is worth hundreds of points</li>
                      <li>Take a <strong>4-match over a 3-match</strong> &#8211; <img src="icons/carbon.png" style="width:14px;height:14px;vertical-align:middle;"> Carbon bomb beats a plain clear every time</li>
-                     <li><strong>Position your drag endpoint</strong> &#8211; where you release determines where the bomb spawns, so place it where it can chain later</li>
+                     <li><strong>Match bombs into each other</strong> &#8211; two or more bombs in one line all detonate, the match forges another bomb on top, and you get +150 per extra bomb. The biggest move in the game</li>
+                     <li><strong>Position your drag endpoint</strong> &#8211; where you release determines where the bomb spawns, so place it where it can chain or line up with another</li>
                      <li><strong>Detonate before match 25</strong> &#8211; never let the game auto-fire your bombs at discount rates</li>
                  </ol>
              </div>
@@ -1093,7 +1094,8 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  <ol class="ss-tips">
                      <li><strong>Always take a 5-match over a 3-match.</strong> A Diamond bomb is worth hundreds of points; a quick clear is worth 30.</li>
                      <li><strong>Take a 4-match over a 3-match.</strong> A Carbon bomb beats a plain clear every time.</li>
-                     <li><strong>Position your drag endpoint.</strong> The bomb spawns where you release, so place it where it can chain into another bomb later.</li>
+                     <li><strong>Line bombs up and match them.</strong> Two or more bombs in a single match all detonate, one after another, and a 4- or 5-match forges another bomb that fires too - plus +150 for every bomb beyond the first. Nothing else on the board scores like it.</li>
+                     <li><strong>Position your drag endpoint.</strong> The bomb spawns where you release, so place it where it can chain into another bomb later - or line up with one.</li>
                      <li><strong>Detonate before match 25.</strong> When your last match fires, leftover bombs auto-detonate at discount rates - you keep the tile points but lose every +25/+50 bonus.</li>
                  </ol>
              </div>
@@ -1105,7 +1107,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  <ol>
                      <li>Hit Play - the board loads instantly in your browser on phone, tablet, or desktop.</li>
                      <li>Drag a tile to swap it with a neighbor and line up 3 or more matching icons.</li>
-                     <li>Chase 4- and 5-matches to forge bombs, then detonate them for the big points.</li>
+                     <li>Chase 4- and 5-matches to forge bombs, then detonate them - or line two bombs up and match them together for the biggest score in the game.</li>
                  </ol>
                  <p class="ss-center"><button class="ss-cta" type="button" onclick="ssPlay()">Start Playing Now</button></p>
              </div>
@@ -1128,7 +1130,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  </details>
                  <details>
                      <summary>How do I get a high score in Skull Swap?</summary>
-                     <p>Prioritize 4- and 5-matches to forge Carbon and Diamond bombs, place bombs near each other so detonations chain for +50/+100 bonuses, and always detonate manually before your 25th match - the End Game Trap auto-fires leftover bombs without the bonuses.</p>
+                     <p>Prioritize 4- and 5-matches to forge Carbon and Diamond bombs. Then either place them near each other so detonations chain for +50/+100, or - better - line two or more up and match them together: every bomb in the match detonates, the match forges another bomb that detonates too, and each bomb beyond the first pays +150. Always detonate manually before your 25th match; the End Game Trap auto-fires leftover bombs without the bonuses.</p>
                  </details>
                  <details>
                      <summary>Do I need an account to play?</summary>
