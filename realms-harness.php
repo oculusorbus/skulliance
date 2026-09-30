@@ -254,6 +254,33 @@ foreach ($pf as $k => $v) {
 	 . 'controls will be there on load and gone the moment the panel reloads');
 }
 
+/* ---------- 6c. the realm panel has one copy too --------------------------- */
+/*
+ * ajax/get-realm.php re-renders the realm column, and toggleSections() swaps
+ * it in every time the desktop layout shows Locations. It carried its own
+ * copy of the OLD panel -- heading outside .content, "Theme:" labels, the
+ * hidden form that reloaded the page -- so the rebuilt panel was replaced by
+ * the old one on the first toggle and was never actually seen on a phone or
+ * a desktop. The same drift as ajax/get-locations.php, found the same way:
+ * by the owner screenshotting markup that no longer exists in the source.
+ */
+echo "\nthe realm panel refresh\n";
+$grealm = file_get_contents(__DIR__ . '/ajax/get-realm.php');
+ok(strpos($grealm, "realms-identity.php") !== false,
+   'ajax/get-realm.php does not include the identity partial -- it is rendering '
+ . 'its own copy of the realm panel, which will silently replace the real one');
+/* MATCHED AS MARKUP, not as words. The first version of this check looked
+   for the bare string 'filterNFTsForm' and found it in this file's own
+   comment explaining what had been removed -- the same self-reference that
+   caught out daily-reward-harness.php. */
+foreach (array('<label for="filterNFTs"', 'id="filterNFTsForm"', 'id="factionsForm"')
+         as $stale) {
+	ok(strpos($grealm, $stale) === false,
+	   "ajax/get-realm.php still renders '$stale' from the old panel");
+}
+printf("  get-realm.php is %d bytes and includes the partial: %s\n",
+	strlen($grealm), strpos($grealm, 'realms-identity.php') !== false ? 'yes' : 'NO');
+
 /* ---------- 7. the icons are fetched once each ----------------------------- */
 /*
  * The seven item icons are drawn in the inventory strip and on all seven

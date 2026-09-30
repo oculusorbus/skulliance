@@ -289,10 +289,22 @@ if (ob_get_level() > 0) @ob_flush();
  *
  * Page-local, so dropship/header.php's copy is untouched.
  */
+/* THE INSET IS HEIGHT, NOT PADDING, and that distinction is the whole bug.
+   With padding-bottom the icons centre in the CONTENT box, which sits above
+   the inset -- so on an iPhone they were pushed up with a ~34px band of bare
+   background beneath them. Reported as both "not vertically centered" and
+   "dead space below it", which is one thing seen twice. As height, the
+   icons centre across the whole bar: still well clear of the home
+   indicator, and no band. */
+/* CENTRED WITH A CAP, not spread. space-around across a 100%-wide bar threw
+   the five icons to the far corners of a desktop window -- the old rule kept
+   them together with text-align:center and 18%-wide inline images. A centred
+   row with a max-width behaves on both: clustered on a monitor, evenly
+   spaced across a phone. */
 #quick-menu {
-  display: flex !important; align-items: center; justify-content: space-around;
-  gap: 4px; height: auto; padding: 6px 8px !important;
-  padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important; }
+  display: flex !important; align-items: center; justify-content: center;
+  gap: min(9vw, 34px); padding: 0 8px !important;
+  height: calc(46px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
 #quick-menu img {
   width: 34px !important; height: 34px !important; max-width: none !important;
   padding: 5px !important; margin: 0; box-sizing: border-box; flex: none; }
