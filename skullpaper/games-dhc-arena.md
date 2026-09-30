@@ -327,7 +327,12 @@ again, and it still counts on the ladder — it simply will not pay a second
 trait. And the platform-wide cap of **three traits a day** applies here as
 everywhere else, so the Arena cannot be farmed past it.
 
-Both of those are now **visible before and after the fight**. A rival you have
+A win only counts as your payout for that rival **if a trait actually came out
+of it**. A win blocked by the three-a-day cap leaves the rival unspent, so it
+can still pay you tomorrow — it used to consume the pairing anyway, which cost
+you the trait and the rematch both.
+
+Both of those rules are now **visible before and after the fight**. A rival you have
 already taken a trait off today is marked *Beaten today · no trait* in the list
 — still pickable, because the rematch counts for the ladder — and a win that
 pays nothing says which of the two rules swallowed it rather than leaving you

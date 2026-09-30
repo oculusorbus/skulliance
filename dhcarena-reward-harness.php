@@ -47,7 +47,7 @@ function extract_fn($src, $name) {
 	return '';
 }
 $src = file_get_contents(__DIR__ . '/dhcarena-lib.php');
-foreach (array('dhca_already_rewarded', 'dhca_paid_today') as $fn) {
+foreach (array('dhca_already_rewarded', 'dhca_paid_today', 'dhca_payout_outcome') as $fn) {
 	$body = extract_fn($src, $fn);
 	if ($body === '') { echo "  FAIL  could not find $fn() in dhcarena-lib.php\n"; exit(1); }
 	eval($body);
@@ -88,6 +88,50 @@ class BattleConn {
 		return new BattleRes($out);
 	}
 }
+
+/* ---------- 0. the flag follows the trait ----------------------------------- */
+/*
+ * THE BUG THIS EXISTS FOR. dhca_settle() used to set $rewarded = 1 and THEN
+ * call dhca_pay(), storing 1 whether or not dhcf_award() actually handed
+ * anything over. A win that hit the three-a-day cap therefore paid nothing
+ * and ALSO burned the pairing's one payout for the day -- the player lost the
+ * trait and the chance to win it off that rival later, and the rival list
+ * then marked them as already beaten. Reported by a player who lost several
+ * battles, finally won one, and got nothing.
+ *
+ * rewarded is what dhca_already_rewarded() and dhca_paid_today() both read,
+ * so it has to mean "a trait came out of this" and nothing looser.
+ */
+echo "the rewarded flag\n";
+$cases = array(
+	//  already paid, got a drop   => flag, why
+	array(false, true,  1, ''),
+	array(false, false, 0, 'cap'),
+	array(true,  false, 0, 'opponent'),
+	array(true,  true,  0, 'opponent'),   // cannot happen; must not pay twice if it does
+);
+foreach ($cases as $c) {
+	list($paidAlready, $gotDrop, $wantFlag, $wantWhy) = $c;
+	list($flag, $why) = dhca_payout_outcome($paidAlready, $gotDrop);
+	printf("  already=%-5s drop=%-5s -> rewarded=%d %s\n",
+		var_export($paidAlready, true), var_export($gotDrop, true), $flag,
+		$why === '' ? '' : "($why)");
+	ok($flag === $wantFlag && $why === $wantWhy,
+	   'already=' . var_export($paidAlready, true) . ' drop=' . var_export($gotDrop, true)
+	 . " should give ($wantFlag, '$wantWhy'), gave ($flag, '$why')");
+}
+ok(dhca_payout_outcome(false, false)[0] === 0,
+   'a win that awarded nothing must NOT mark the pairing as paid -- that costs the '
+ . 'player the trait and the rematch that could still have earned it');
+
+/* And the call site has to use it. The rule being right in a function nothing
+   calls is how this looked before. */
+ok(strpos($src, 'dhca_payout_outcome(') !== false
+   && substr_count($src, 'dhca_payout_outcome(') >= 2,
+   'dhca_settle() does not call dhca_payout_outcome() -- the rule above is not the '
+ . 'one the game runs');
+ok(!preg_match('/\$rewarded = 1;\s*\n\s*dhca_pay\(/', $src),
+   'dhca_settle() sets the rewarded flag before dhca_pay() again, which is the bug');
 
 /* ---------- 1. the two agree ------------------------------------------------ */
 echo "agreement\n";

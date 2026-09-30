@@ -92,6 +92,25 @@ function dhca_battles_today($conn, $user_id) {
 	return $r ? (int)$r['c'] : 0;
 }
 
+/**
+ * What a won battle did: array(rewarded flag, why-no-trait).
+ *
+ * Pulled out of dhca_settle() so the one rule that decides whether a pairing
+ * is spent can be tested on its own -- dhca_settle() needs a live battle, a
+ * board and four tables, and the rule underneath it is four lines.
+ *
+ * THE FLAG MEANS "A TRAIT CAME OUT OF THIS", nothing looser. dhc_arena_battles
+ * .rewarded is what dhca_already_rewarded() reads to decide whether the
+ * pairing may pay again, and what dhca_paid_today() reads to mark the rival
+ * list -- so setting it for a win that awarded nothing costs the player the
+ * trait AND the chance to win it off that rival later.
+ */
+function dhca_payout_outcome($already_paid, $got_drop) {
+	if ($already_paid) return array(0, 'opponent');
+	if (!$got_drop)    return array(0, 'cap');
+	return array(1, '');
+}
+
 /** Has this pairing already paid out today? One rewarded battle per opponent. */
 function dhca_already_rewarded($conn, $attacker, $defender) {
 	$res = $conn->query("SELECT COUNT(*) AS c FROM dhc_arena_battles
@@ -468,27 +487,29 @@ function dhca_finish($conn, &$b) {
 	}
 
 	/*
-	 * WHY THERE WAS NO TRAIT, not just that there wasn't one. Two different
-	 * rules can swallow a win's drop and the end screen used to blame the
-	 * wrong one for the first and say nothing at all about the second:
+	 * WHY THERE WAS NO TRAIT, not just that there wasn't one.
 	 *
 	 *   'opponent'  this pairing already paid today. One rewarded battle per
 	 *               rival, so the second win off the same Crew is for the
 	 *               ladder only.
-	 *   'cap'       the win qualified but dhcf_award() declined -- the three
-	 *               Arena drops for today are already spent. $rewarded stays
-	 *               1 here, which is correct (the pairing DID consume its one
-	 *               payout) and is why "no drop" could not be read off it.
+	 *   'cap'       the win qualified and dhcf_award() still declined -- the
+	 *               three Arena drops for today are spent, or the cap check
+	 *               itself failed (it fails closed).
+	 *
+	 * THE FLAG FOLLOWS THE TRAIT, and it used to be set before the trait was
+	 * known. $rewarded = 1 was written, THEN dhca_pay() ran, and the UPDATE
+	 * stored 1 whether or not anything was awarded -- so a win that hit the
+	 * cap paid nothing AND burned the pairing's one payout for the day.
+	 * Reported as "I lost a bunch, finally beat a player, got no trait, and
+	 * now the list says I already beat them today". The rival marker was
+	 * telling the truth about the flag; the flag was wrong.
 	 */
 	$rewarded = 0;
 	if ($won) {
-		if (dhca_already_rewarded($conn, $att, $def)) {
-			$b['nodrop'] = 'opponent';
-		} else {
-			$rewarded = 1;
-			dhca_pay($conn, $att, $b);
-			if (empty($b['drop'])) $b['nodrop'] = 'cap';
-		}
+		$alreadyPaid = dhca_already_rewarded($conn, $att, $def);
+		if (!$alreadyPaid) dhca_pay($conn, $att, $b);
+		list($rewarded, $why) = dhca_payout_outcome($alreadyPaid, !empty($b['drop']));
+		if ($why !== '') $b['nodrop'] = $why;
 	}
 
 	$conn->query(sprintf(
