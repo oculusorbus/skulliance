@@ -26,8 +26,15 @@ $rl_cons  = $rl_panel['consumables'];
 		         destructive action casual. Guide leads and is marked as help;
 		         Deactivate is quiet and sits apart. */ ?>
 		<?php if ($rl_guide): ?>
-		<button type="button" class="rl-btn help" onclick="openGuideModal()">
-			<span aria-hidden="true">?</span> How Realms works
+		<?php /* THE LABEL IS "Guide" AND STAYS "Guide". I renamed it to "How
+		         Realms works" thinking it was clearer, and the owner could not
+		         find a button he has used for months -- it reads as some new
+		         help link, not as the Realm & Raids guide. The pairing problem
+		         was real, so it keeps the marker and the ochre; the word does
+		         not change. */ ?>
+		<button type="button" class="rl-btn help" onclick="openGuideModal()"
+			title="Realm &amp; Raids Guide - how locations, raids and factions work">
+			<span aria-hidden="true">?</span> Guide
 		</button>
 		<?php endif; ?>
 		<button type="button" class="rl-btn quiet"
@@ -154,9 +161,22 @@ foreach ($rl_panel['rows'] as $r):
 			         buttons needed 357px in a 356px column, so the slots wrapped
 			         to a second line and every card grew a row. The slots get
 			         the full width now and this row was already flexible. */ ?>
+			<?php /* RENDER THE STATE THE BUTTON IS ACTUALLY IN.
+			         _checkStockButtonStates() flips this to Unstock when a
+			         location has items on it and none spare, using the same
+			         two facts. Emitting "Stock" unconditionally meant a fully
+			         stocked location showed the wrong verb until the script
+			         ran, and showed it for good if the script ever died. */
+			$rl_spare = false; $rl_worn = false;
+			foreach ($rl_cons as $ccid => $cn) {
+				if (isset($r['equipped'][$ccid]))        $rl_worn  = true;
+				elseif ($rl_panel['inventory'][$ccid] > 0) $rl_spare = true;
+			}
+			$rl_unstock = (!$rl_spare && $rl_worn); ?>
 			<span class="rl-loc-acts">
 				<button type="button" class="rl-btn sm" id="stock-btn-<?php echo $r['id']; ?>"
-					onclick="stockLocation(<?php echo $r['id']; ?>)">Stock</button>
+					onclick="<?php echo $rl_unstock ? 'unstock' : 'stock'; ?>Location(<?php echo $r['id']; ?>)"><?php
+					echo $rl_unstock ? 'Unstock' : 'Stock'; ?></button>
 			</span>
 		</div>
 

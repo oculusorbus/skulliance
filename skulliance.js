@@ -1369,28 +1369,33 @@ function _checkStockButtonStates(){
 		for(var cid = 1; cid <= 7; cid++){
 			var slot = document.getElementById('loc-con-'+lid+'-'+cid);
 			if(!slot) continue;
-			if(slot.classList.contains('available')) hasAvailable = true;
-			if(slot.classList.contains('equipped'))  hasEquipped  = true;
+			/* .has / .on, matching realms-locations.php. These read
+			   'available' / 'equipped' until the panel was rebuilt, and the
+			   rename was missed here -- so nothing ever counted as equipped,
+			   every button said Stock, and Unstock became unreachable.
+			   realms-panel-harness.php now diffs the two sets. */
+			if(slot.classList.contains('has')) hasAvailable = true;
+			if(slot.classList.contains('on'))  hasEquipped  = true;
 		}
 		if(hasAvailable) globalAnyAvailable = true;
 		if(hasEquipped)  globalAnyEquipped  = true;
 		var btn = document.getElementById('stock-btn-'+lid);
 		if(!btn) continue;
 		if(!hasAvailable && hasEquipped){
-			btn.textContent = 'Unstock Location';
+			btn.textContent = 'Unstock';
 			btn.onclick = (function(l){ return function(){ unstockLocation(l); }; })(lid);
 		} else {
-			btn.textContent = 'Stock Location';
+			btn.textContent = 'Stock';
 			btn.onclick = (function(l){ return function(){ stockLocation(l); }; })(lid);
 		}
 	}
 	var allBtn = document.getElementById('stock-all-btn');
 	if(!allBtn) return;
 	if(!globalAnyAvailable && globalAnyEquipped){
-		allBtn.textContent = 'Unstock All Locations';
+		allBtn.textContent = 'Unstock every location';
 		allBtn.onclick = unstockAllLocations;
 	} else {
-		allBtn.textContent = 'Stock All Locations';
+		allBtn.textContent = 'Stock every location';
 		allBtn.onclick = stockAllLocations;
 	}
 }

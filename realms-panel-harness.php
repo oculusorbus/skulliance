@@ -174,6 +174,42 @@ ok(in_array('random reward armed', $full[0]['effects']['notes'], true),
    'a fully covered offense side should read as armed, got: '
  . implode(', ', $full[0]['effects']['notes']));
 
+/* ---------- 5b. the classes the JS reads are the classes we emit ----------- */
+/*
+ * THE THIRD TIME THIS BIT. Renaming the slot classes broke
+ * _syncLocConsumableSlots() (it looked for .loc-con-badge) and then
+ * _checkStockButtonStates() (it looked for .available and .equipped, so
+ * nothing ever counted as equipped, every button read Stock, and Unstock
+ * became unreachable). Neither throws -- classList.contains() just returns
+ * false -- so the feature quietly stops working.
+ *
+ * Whatever classList names skulliance.js tests on a slot must be names the
+ * partial actually puts on one.
+ */
+echo "\nthe classes skulliance.js reads\n";
+$js = file_get_contents(__DIR__ . '/skulliance.js');
+preg_match_all("/slot(?:El)?\.classList\.contains\('([a-z-]+)'\)/", $js, $cm);
+$wanted = array_values(array_unique($cm[1]));
+preg_match_all('/class="rl-slot ([a-z]+)"/', $html, $em);
+/* The partial writes the state through a PHP expression, so take the set it
+   can produce from the source rather than from one render. */
+preg_match_all("/'(on|has|none)'/", file_get_contents(__DIR__ . '/realms-locations.php'), $pm);
+$emitted = array_values(array_unique(array_merge($em[1], $pm[1])));
+printf("  js tests: %s\n  partial emits: %s\n",
+	$wanted ? implode(', ', $wanted) : '(none)', implode(', ', $emitted));
+foreach ($wanted as $w) {
+	ok(in_array($w, $emitted, true),
+	   "skulliance.js tests slot.classList.contains('$w') and the panel never sets it "
+	 . '-- contains() returns false, nothing throws, and that feature silently stops');
+}
+/* Same for the two labels the script writes back, so the widths measured in
+   the panel stay the widths that ship. */
+foreach (array("'Stock'", "'Unstock'") as $lbl) {
+	ok(strpos($js, 'textContent = ' . $lbl) !== false,
+	   "skulliance.js no longer writes $lbl -- it used to write the longer "
+	 . '"Stock Location", which is wider than the row was measured for');
+}
+
 /* ---------- 6. nothing rounded, nothing duplicated -------------------------- */
 echo "\nstyle\n";
 $page = file_get_contents(__DIR__ . '/realms.php');
