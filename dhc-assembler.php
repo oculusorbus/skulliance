@@ -578,6 +578,18 @@ a{color:var(--ochre)}
    */
   var COMPANION_UNDER = <?php echo json_encode(DHCF_COMPANION_UNDER); ?>;
 
+  /*
+   * ...and the cost of that reordering. "Below Arms" also means below the
+   * Effects slots, because that is the slot order -- so a comic cover, which
+   * is a frame and not an effect, was drawn OVER these two while it drew
+   * under every ordinary companion. No position in a flat stack is below
+   * Arms and above Effects, so the cover moves down instead of the companion
+   * moving up. See DHCF_COMPANION_OVER_COVER for why the shoulder cam is not
+   * in this list.
+   */
+  var COVER_EFFECTS = <?php echo json_encode(DHCF_COVER_EFFECTS); ?>;
+  var COMPANION_OVER_COVER = <?php echo json_encode(DHCF_COMPANION_OVER_COVER); ?>;
+
   /* Exceptions, reported from testing: these weapons are drawn against the
      torso's own arms -- held in them, or posed to rest on them. An Arms trait
      replaces those arms with a different pose, so the weapon ends up floating
@@ -891,6 +903,18 @@ a{color:var(--ochre)}
       var a = k.indexOf('arms'), t = k.indexOf('torso');
       // a > t, so pulling arms out does not shift the torso index
       if (a > -1 && t > -1 && a > t) order.splice(t, 0, order.splice(a, 1)[0]);
+    }
+    // A comic cover drops below a companion that was demoted above. After the
+    // companion move, so it targets where the companion actually landed;
+    // before the behind-torso rule, which is more specific and still wins.
+    if (sel.companion && COMPANION_OVER_COVER.indexOf(sel.companion) !== -1) {
+      ['effects1', 'effects2'].forEach(function (key) {
+        if (!sel[key] || COVER_EFFECTS.indexOf(sel[key]) === -1) return;
+        var k = order.map(function (s) { return s.key; });
+        var e = k.indexOf(key), c = k.indexOf('companion');
+        // e > c here, so pulling the effect out does not shift the companion
+        if (e > -1 && c > -1 && e > c) order.splice(c, 0, order.splice(e, 1)[0]);
+      });
     }
     ['effects1', 'effects2'].forEach(function (key) {
       if (!effectBehindTorso(key)) return;

@@ -141,6 +141,44 @@ define('DHCF_COMPANION_UNDER', array('dh-vision-shoulder-cam', 'code-sea-predato
 /** Effects that read as environment: dropped to just behind the torso. */
 define('DHCF_EFFECTS_BEHIND_TORSO', array('xlon-s-black-fire-attack'));
 
+/*
+ * THE COMIC COVERS. Not an effect that happens to the Fighter -- a frame the
+ * Fighter is standing inside, masthead and price box and barcode. The
+ * character deliberately breaks out of it: head, headgear, weapon and a
+ * normal companion all draw over the frame, which is the look.
+ *
+ * dhc-download-harness.php checks this list against the art on disk, so a
+ * fourth cover cannot be added and silently miss the rule below.
+ */
+define('DHCF_COVER_EFFECTS', array(
+	'dhc2-comic-cover-1', 'dhc2-comic-cover-2', 'dhc2-comic-cover-3',
+));
+
+/*
+ * COMPANIONS THAT STAY ON TOP OF A COVER.
+ *
+ * A demoted companion (see DHCF_COMPANION_UNDER) is moved to just before
+ * Arms, which is what the shoulder-cam rule is for -- but the slot order
+ * runs arms, effects, head, headgear, so "below Arms" unavoidably means
+ * below the Effects slots too. With a comic cover in one of them the frame
+ * ended up drawn OVER the companion, while every ordinary companion drew
+ * over the frame. Same Fighter, two opposite answers depending on which pet
+ * it carried.
+ *
+ * There is no position in a flat stack that is below Arms and above Effects,
+ * so the cover moves instead: it drops to just before the companion. The
+ * companion stays against the body and the frame stays behind both.
+ *
+ * DH Vision Shoulder Cam is NOT on this list. It has exactly the same
+ * problem and adding it is one word, but it was not what was asked for and
+ * it changes the look of Fighters already saved.
+ *
+ * Every entry here must also be in DHCF_COMPANION_UNDER. A companion that
+ * was never demoted still draws last, and pushing the cover below it would
+ * put the frame over the head instead -- the harness asserts this.
+ */
+define('DHCF_COMPANION_OVER_COVER', array('code-sea-predator'));
+
 /**
  * Arms drawn BEHIND the torso: accents flanking the body, not replacements for
  * its arms. Permanent -- the Perforator's cutoffs are not clean enough to sit
@@ -307,6 +345,26 @@ function dhcf_layer_order($traits) {
 	}
 	if (!empty($traits['arms']) && in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {
 		$order = dhcf_move_before($order, 'arms', 'torso');
+	}
+	/* A comic cover goes under a companion that was demoted below Arms --
+	   see DHCF_COMPANION_OVER_COVER. Runs AFTER the companion move, because
+	   it targets wherever the companion ended up, and BEFORE the
+	   behind-torso rule, which is more specific and must still win. */
+	if (!empty($traits['companion'])
+	    && in_array($traits['companion'], DHCF_COMPANION_OVER_COVER, true)) {
+		foreach (array('effects1', 'effects2') as $k) {
+			if (empty($traits[$k]) || !in_array($traits[$k], DHCF_COVER_EFFECTS, true)) continue;
+			/* Only when the cover is currently ABOVE the companion. If the
+			   companion was never demoted it is already last, and moving the
+			   cover down to meet it would put the frame over the head -- the
+			   opposite of the point. The canvas guards the same way (it has
+			   to, for its splice arithmetic), and the two must not differ
+			   even on a misconfigured list. */
+			$at = array_search($k, $order, true);
+			$ci = array_search('companion', $order, true);
+			if ($at === false || $ci === false || $at <= $ci) continue;
+			$order = dhcf_move_before($order, $k, 'companion');
+		}
 	}
 	foreach (array('effects1', 'effects2') as $k) {
 		if (!empty($traits[$k]) && in_array($traits[$k], DHCF_EFFECTS_BEHIND_TORSO, true)) {

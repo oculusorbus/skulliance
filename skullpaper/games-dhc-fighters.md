@@ -397,7 +397,18 @@ letting you build something that renders wrongly. Some of what it handles:
 - **Some weapons cannot be combined with Arms traits** — they are drawn against
   the torso's own arms, which an Arms trait replaces.
 - **Effects sit under the head**, so they cross the Fighter without covering the
-  face. The comic covers are full-frame treatments and only ever draw on top.
+  face. The **comic covers** are full-frame treatments — masthead, price box,
+  barcode — and the character deliberately breaks out of them: head, headgear,
+  weapon and arms all draw over the frame.
+- **Two companions draw against the body** rather than in front of it. The DH
+  Vision Shoulder Cam mounts *on* the shoulder and Code Sea Predator wraps the
+  body, so drawing either in front made it look stuck to the outside of the
+  character. Both sit under the arms and the headgear instead.
+- **Code Sea Predator stays on top of a comic cover.** Dropping a companion
+  below the arms also puts it below the Effects slots — that is simply the
+  order the layers run in, and there is no position that is under the arms and
+  over the effects. So with this pairing the cover moves down instead, and the
+  companion keeps its place against the body.
 - **Some headgear needs a head to sit on.** Beheaded Cyborg has no skull under
   the headgear, so the pieces that would rest on one are not offered with it —
   most headgear still works, and the assembler tells you which does not.
