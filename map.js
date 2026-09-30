@@ -711,36 +711,69 @@ function renderMap() {
     }
 
     /*
-     * FIT IT HERE, IN PIXELS.
-     *
-     * #container is given an explicit inline width and height two lines
-     * down -- it has always been sized to the drawing rather than sized BY
-     * it. So scaling the map in CSS was never going to be enough: with
-     * `width: 100%` on the SVG the picture came down to 330 x 601 and the
-     * box it sits in stayed at 1132 x 2062, leaving 1471px of empty
-     * background under the map on a 390px phone. That is the backdrop
-     * running on for multiples of the map's length that was reported, and
-     * it is why poking the container's style in a console appeared to
-     * "fix" it: that overwrote the inline height.
-     *
-     * So the scale is computed once, here, and BOTH the svg and the box it
-     * lives in use it. renderMap() already re-runs on resize, so rotating
-     * the phone re-fits.
+     * IN THE DOM FIRST, SIZED SECOND. getBBox() is the only honest source
+     * for how much room the drawing needs, and it needs to be rendered to
+     * answer.
      */
-    let fitW = svgW, fitH = svgH;
+    container.innerHTML = '';
+    container.appendChild(svg);
+
+    /*
+     * THE BOX HAS TO CONTAIN ITS OWN INK.
+     *
+     * svgW/svgH come from the PACKER -- the union of the faction blocks --
+     * but plenty is drawn outside those blocks. A faction's name pill is
+     * placed at `y - 17`, above its territory, and centred on the
+     * territory's width, so a long name on a block at x=0 hangs off the
+     * left as well. Measured on a real map: 17 above the top, 25.3 off the
+     * left, nothing right or bottom.
+     *
+     * map.css sets `overflow: visible`, so none of that was clipped -- it
+     * simply painted outside the element's box, over whatever the layout
+     * had put there. With the section's top padding gone that meant the
+     * sticky nav, which has a background and a higher z-index, so the top
+     * row of faction labels and one tall realm ring were half covered.
+     *
+     * Padding it by a guess is the wrong shape of fix: the left bleed
+     * depends on the longest faction NAME, so it changes with the data.
+     * Growing the viewBox to the measured ink makes the overhang part of
+     * the picture, and then zero padding is exactly right.
+     *
+     * The slack covers what getBBox() does not: it reports geometry only,
+     * with no stroke width and no filter region, and the markers carry
+     * both.
+     */
+    const BLEED_SLACK = 6;
+    let vx = 0, vy = 0, vw = svgW, vh = svgH;
+    try {
+        const bb = svg.getBBox();
+        vx = Math.min(0, Math.floor(bb.x - BLEED_SLACK));
+        vy = Math.min(0, Math.floor(bb.y - BLEED_SLACK));
+        vw = Math.max(svgW, Math.ceil(bb.x + bb.width  + BLEED_SLACK)) - vx;
+        vh = Math.max(svgH, Math.ceil(bb.y + bb.height + BLEED_SLACK)) - vy;
+    } catch (e) { /* no layout yet: the packer's own box is the fallback */ }
+    svg.setAttribute('viewBox', `${vx} ${vy} ${vw} ${vh}`);
+
+    /*
+     * FIT IT HERE, IN PIXELS, and size the BOX with the picture.
+     *
+     * #container is given an explicit width and height below -- it has
+     * always been sized to the drawing rather than by it -- so scaling the
+     * map in CSS was never enough: the picture came down to 330 x 601 and
+     * its box stayed 1132 x 2062, leaving 1471px of empty background under
+     * it on a 390px phone. One scale factor, applied to both.
+     */
+    let fitW = vw, fitH = vh;
     if (window.innerWidth <= MOBILE_BP) {
         const avail = Math.max(240, window.innerWidth - MOBILE_GUTTER);
-        const k = Math.min(1, avail / svgW);
-        fitW = Math.round(svgW * k);
-        fitH = Math.round(svgH * k);
-        svg.setAttribute('width',  fitW);
-        svg.setAttribute('height', fitH);
+        const k = Math.min(1, avail / vw);
+        fitW = Math.round(vw * k);
+        fitH = Math.round(vh * k);
     }
-
-    container.innerHTML = '';
+    svg.setAttribute('width',  fitW);
+    svg.setAttribute('height', fitH);
     container.style.width  = `${fitW}px`;
     container.style.height = `${fitH}px`;
-    container.appendChild(svg);
 }
 
 renderMap();

@@ -621,6 +621,29 @@ ok(preg_match('/container\.style\.width\s*=\s*`\$\{fitW\}px`/', $mapJs) === 1
  . 'multiples of the map\'s height');
 ok(preg_match('/svg\.setAttribute\(\x27width\x27,\s*fitW\)/', $mapJs) === 1,
    'the SVG is not being fitted, so the map overflows the phone sideways');
+/*
+ * AND THE BOX CONTAINS ITS OWN INK. svgW/svgH come from the packer -- the
+ * union of the faction BLOCKS -- but the name pills are drawn at y-17,
+ * above their territory and centred on its width, so they hang off the top
+ * and (for a long name on a block at x=0) off the left. Measured on a real
+ * map: 17 above, 25.3 left. map.css sets overflow:visible, so that was
+ * never clipped, it just painted over whatever the layout had put there --
+ * and once the section's top padding went, that was the sticky nav.
+ *
+ * Padding by a guess is the wrong shape: the left bleed depends on the
+ * longest faction NAME and moves with the data. The viewBox is grown to
+ * the measured getBBox() instead, which is why zero padding is correct.
+ */
+ok(strpos($mapJs, 'svg.getBBox()') !== false
+   && preg_match('/setAttribute\(\x27viewBox\x27, `\$\{vx\} \$\{vy\} \$\{vw\} \$\{vh\}`\)/', $mapJs) === 1,
+   'the viewBox is no longer grown to the drawing\'s real extent, so the '
+ . 'faction name pills paint outside the box and land under the sticky nav');
+ok(preg_match('/const k = Math\.min\(1, avail \/ vw\)/', $mapJs) === 1,
+   'the phone fit is scaling from the packer box rather than the measured '
+ . 'one, so the map will not match the space it is given');
+ok(strpos($mapJs, 'container.appendChild(svg);') < strpos($mapJs, 'svg.getBBox()'),
+   'getBBox() is called before the svg is in the document, where it cannot '
+ . 'report anything');
 ok(preg_match('/background-repeat:\s*no-repeat/', $mobileCss) === 1,
    'the map backdrop can tile again; with cover that only shows when the box '
  . 'is wrong, but it is the visible symptom and costs nothing to pin');
