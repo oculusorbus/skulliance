@@ -319,6 +319,22 @@ ok($genPreload, 'the item icons are no longer preloaded -- as CSS backgrounds th
 ok(strpos($src, '#quick-menu') !== false && strpos($src, 'safe-area-inset-bottom') !== false,
    'the fixed quick-menu has no bottom safe-area inset -- on an iOS PWA its lower '
  . 'edge sits under the home indicator');
+/* THE BAR MUST HUG THE BOTTOM IN STANDALONE. flexbox.css used to lift it by
+   the inset plus 10px and paint a body::after strip to mask the gap; that
+   lift is invisible in desktop Chrome and was reported three times as the
+   bar sitting high with dead space under it. */
+$flex = file_get_contents(__DIR__ . '/dist/flexbox.css');
+ok(!preg_match('/#quick-menu\s*\{[^}]*bottom:\s*calc\(env\(safe-area-inset-bottom[^}]*\+\s*10px/', $flex),
+   'flexbox.css lifts #quick-menu off the bottom again in standalone -- that is the '
+ . 'dead band under the bar, and it does not reproduce outside a PWA');
+ok(strpos($flex, 'body:has(#quick-menu[style*="block"])::after') === false,
+   'the body::after masking strip is back; it exists only to hide the gap under a '
+ . 'lifted bar, and the bar is not lifted any more');
+ok(strpos($src, 'bottom: 0 !important') !== false,
+   'realms no longer pins its own bar to the bottom');
+ok(strpos($src, 'padding: 0 8px !important') !== false,
+   'realms is not zeroing the page-level bar padding, so the global inset padding '
+ . 'and this page\'s inset height will stack into a double gap');
 $insets = substr_count($src, 'safe-area-inset-bottom');
 printf("  safe-area-inset-bottom used %d time(s); preload generated from realm_con_names(): %s\n",
 	$insets, $genPreload ? 'yes' : 'no');

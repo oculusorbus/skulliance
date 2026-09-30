@@ -3862,50 +3862,32 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
 .page-ellipsis { color: #7a9eb0; padding: 0 4px; line-height: 34px; }
 .page-info { width: 100%; font-size: 0.78rem; color: #7a9eb0; padding-top: 4px; }
 
-/* Standalone PWA: lift #quick-menu off the iPhone home indicator and put
-   a solid strip below it (matched to the page background, #07111d) for
-   consistent visual placement. Placed at end of file so it wins cascade
-   order over the base #quick-menu rule that uses `padding` shorthand
-   earlier in this file. The strip is rendered via body::after and pinned
-   to the viewport bottom.
-
-   THE STRIP IS SCOPED TO PAGES SHOWING THE QUICK MENU, and it must be.
-   It existed to mask the gap UNDER a lifted #quick-menu -- but body::after
-   applies to every page, and #quick-menu is only present on realms.php,
-   missions.php and dropship. On everything else in the PWA it was a fixed
-   bar permanently covering the bottom ~44px of the VIEWPORT (safe-area
-   inset plus 10px): not just the end of the document, but whatever content
-   happened to be there at any scroll position. Reported on DHC Fighters,
-   where it hid the Arena stats on trait claims -- rubber-banding revealed
-   them and letting go put them back underneath. body's padding-bottom did
-   not help, because padding extends the DOCUMENT; a viewport-fixed strip
-   covers the bottom of the SCREEN regardless of where you are in the page.
-
-   :has() keys it to the menu actually being displayed. The menu is toggled
-   by inline style on those pages (style.display = "block" / "none"), so
-   matching [style*="block"] tracks it live and, importantly, has the right
-   POLARITY: before the JS runs there is no inline style at all, so nothing
-   paints. Where :has() is unsupported the whole selector drops out, which
-   removes the strip -- the safe direction, and what the platform did
-   before this block existed. */
+/* Standalone PWA: the quick menu HUGS THE BOTTOM.
+ *
+ * It used to be lifted off the home indicator --
+ * `bottom: calc(env(safe-area-inset-bottom) + 10px)` -- with a body::after
+ * strip painted underneath to mask the gap that created. Reported, twice,
+ * as the bar sitting high with dead space below it and appearing to move
+ * with the page: in standalone the lift is real, and it is invisible in
+ * desktop Chrome, which is why it survived several rounds of looking.
+ *
+ * The clearance the lift was buying is the bar's own padding now, so the
+ * background reaches the screen edge and the icons still sit clear of the
+ * indicator. With nothing lifted there is no gap, so the masking strip is
+ * gone with it -- and that strip was itself a fix for a fix: scoped with
+ * :has() after it was found covering the bottom of every OTHER page in the
+ * PWA.
+ *
+ * body's padding is what stops the last row of content hiding under the
+ * bar, so it tracks the bar's height rather than the old lift.
+ */
 @media (display-mode: standalone) {
-  body:has(#quick-menu[style*="block"])::after {
-    content: '';
-    position: fixed;
-    left: 0; right: 0;
-    bottom: 0;
-    height: calc(env(safe-area-inset-bottom, 0px) + 10px);
-    background: #07111d;
-    z-index: 1;
-    pointer-events: none;
-  }
   #quick-menu {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
-    padding-bottom: 5px;
+    bottom: 0;
+    padding-bottom: calc(5px + env(safe-area-inset-bottom, 0px));
   }
-  /* Only where the strip is actually painted. Padding the body on every
-     page bought nothing and cost a dead band at the foot of each one. */
   body:has(#quick-menu[style*="block"]) {
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 52px);
   }
 }
+

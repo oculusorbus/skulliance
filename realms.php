@@ -303,8 +303,16 @@ if (ob_get_level() > 0) @ob_flush();
    spaced across a phone. */
 #quick-menu {
   display: flex !important; align-items: center; justify-content: center;
-  gap: min(9vw, 34px); padding: 0 8px !important;
-  height: calc(46px + env(safe-area-inset-bottom, 0px)); box-sizing: border-box; }
+  gap: min(9vw, 34px); box-sizing: border-box;
+  /* PINNED, and it owns its own safe-area clearance.
+     flexbox.css's standalone block gives every page's bar the inset as
+     padding-bottom, which is right for the pages that do not size their
+     own -- but padding centres the icons ABOVE the inset. Here the inset
+     is height instead, so they centre across the whole bar, and the
+     page-level padding is zeroed so the two do not stack. */
+  bottom: 0 !important; left: 0; right: 0;
+  padding: 0 8px !important;
+  height: calc(46px + env(safe-area-inset-bottom, 0px)); }
 #quick-menu img {
   width: 34px !important; height: 34px !important; max-width: none !important;
   padding: 5px !important; margin: 0; box-sizing: border-box; flex: none; }
