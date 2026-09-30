@@ -839,6 +839,16 @@ ok(preg_match('/#map > \.main \{[^}]*padding-top:\s*0/', $src) === 1
    'the map section is inheriting the page gutter again -- 54px of empty '
  . 'background before the map starts');
 
+/* The headings were sized as CONTROLS -- flexbox.css gives them 1.6rem at
+   weight 300, a pointer cursor and a hover fade, because they used to be
+   the toggles that collapsed each list. They are labels now and should sit
+   at the same size as this page's other panel headings. */
+ok(preg_match('/\.rc-section-label \{[^}]*font-size:\s*1\.05rem/', $src) === 1,
+   'the raid section headings are back to the 1.6rem they had when they were '
+ . 'the collapse toggles, which shouts over every other heading on the page');
+ok(preg_match('/\.rc-section-title:hover \{[^}]*opacity:\s*1/', $src) === 1,
+   'the raid headings still fade on hover, which says clickable about '
+ . 'something that no longer does anything');
 printf("  compact row + hidden detail + modal: wired; cap enforced; row-wide hit area\n");
 
 /* NO DISCLOSURE ARROW. The sections were collapsible because a raid was a

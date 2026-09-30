@@ -272,7 +272,19 @@ if (ob_get_level() > 0) @ob_flush();
   background:none; }
 .rr-btn.quiet:hover { border-color:#ff5c5c; color:#ff5c5c; background:rgba(255,92,92,.06); }
 /* The section header is a heading now, not a control. */
+/* SIZED FOR A CONTROL IT NO LONGER IS. flexbox.css gives .rc-section-label
+   1.6rem at weight 300 and .rc-section-title a pointer cursor and a hover
+   fade, because the heading used to BE the toggle that collapsed each raid
+   list. The lists do not collapse any more, so it is a label, and it should
+   read like the other panel headings on this page (.ri-head h2, .ra-head h2
+   are both 1.05rem/.04em) instead of shouting over them. Caps stay -- the
+   rest of the page uses them.
+   Scoped here rather than in flexbox.css because raids.php shares this
+   renderer and is a different context: a full-history page where the
+   heading is the only thing on it. */
 .rc-section-title { cursor:default; display:flex; align-items:baseline; gap:8px; }
+.rc-section-title:hover { opacity:1; }
+.rc-section-label { font-size:1.05rem; font-weight:normal; letter-spacing:.04em; }
 .rc-section-count { font-size:.7rem; opacity:.4; font-variant-numeric:tabular-nums; }
 .rr-showall { margin-top:2px; }
 .rr-showall .rr-btn { width:100%; justify-content:center; text-align:center; }

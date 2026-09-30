@@ -485,6 +485,15 @@ foreach (array('ajax/mission-data.php', 'ajax/mission-launch.php') as $ep) {
 ok(is_file(__DIR__ . '/missions-head-harness.js'),
    'missions-head-harness.js is gone; the repaint rules are unchecked');
 
+/* The empty-roster notice is rendered INTO .ms-d-crew, which is a
+   62px-track grid, so without a span it wraps to a word or two per line. */
+ok(preg_match('/\.ms-d-crew \.ms-d-desc \{[^}]*grid-column:\s*1 \/ -1/', $msrc) === 1,
+   'the "everything is out on a mission" notice is not spanning the crew '
+ . 'grid, so it renders as a 62px-wide sliver of text');
+/* US spelling, like the rest of the platform's buttons. */
+ok(strpos($msrc, '>Maximise<') === false,
+   'the load-out tool button is back to the British spelling');
+
 echo "\nthe sticky section nav\n";
 $msrc = file_get_contents(__DIR__ . '/missions.php');
 ok(preg_match('/\.ms-nav\s*\{.*?position:\s*sticky;\s*top:\s*0\s*;/s', $msrc) === 1,

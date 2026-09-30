@@ -604,6 +604,12 @@ define('MS_FIELD_CAP', 24);
    so this is a lid on one section rather than the only way to reach Launch. */
 .ms-d-crew { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
   gap: 6px; max-height: 210px; overflow-y: auto; }
+/* THE EMPTY-ROSTER NOTICE IS A SENTENCE, NOT A CARD. It is rendered into
+   this grid, so without a span it becomes one 62px column and wraps to a
+   word or two per line -- a vertical sliver of text beside an empty area.
+   Spanning every track also means the grid is one short row instead of a
+   210px scroller with three words in it. */
+.ms-d-crew .ms-d-desc { grid-column: 1 / -1; margin: 0; }
 .ms-d-nft { position: relative; background: #07111d; border: 1px solid rgba(255,255,255,.07);
   padding: 0; cursor: pointer; border-radius: 0; overflow: hidden; }
 .ms-d-nft img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; opacity: .45;
@@ -1422,7 +1428,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			+ '</div>'
 			+ '<div class="ms-d-group"><div class="ms-d-group-head"><h4>Crew</h4>'
 			+   '<div class="ms-d-tools">'
-			+     '<button type="button" class="ms-d-tool" data-act="max">Maximise</button>'
+			+     '<button type="button" class="ms-d-tool" data-act="max">Maximize</button>'
 			+     '<button type="button" class="ms-d-tool" data-act="balance">Balance</button>'
 			+     '<button type="button" class="ms-d-tool" data-act="none">Clear</button>'
 			+   '</div></div>'
