@@ -502,6 +502,52 @@ ok(substr_count($src, 'safe-area-inset-bottom') >= 1,
  * on realms and be dead code on missions, and would drift the first time a
  * link learns to do anything else.
  */
+/* ---------- 8c. the map is a real destination on a phone ------------------
+ *
+ * map.css opened with `#map { display: none !important }` below 768px, and
+ * that was correct at the time: packFactions() sized itself to the VIEWPORT,
+ * so at 390px it could not fit two faction blocks side by side and the map
+ * came out 542 x 4652 -- a twelve-screen ribbon that overflowed sideways as
+ * well (measured, 52 realms across 10 factions). It composes at a fixed
+ * design width now and the CSS scales it: 330 x 601 at the same phone.
+ *
+ * THE min-width:0 IS LOAD-BEARING. #map is a .row (display:flex) and
+ * #container is a flex item, so both default to min-width:auto and refuse to
+ * shrink below the SVG's intrinsic width. Without it the other three rules
+ * measure 1132px inside a 390px page -- they do literally nothing.
+ */
+echo "\nthe map on a phone\n";
+$mapJs  = file_get_contents(__DIR__ . '/map.js');
+$mapCss = file_get_contents(__DIR__ . '/dist/map.css');
+ok(strpos($mapCss, '#map { display: none !important; }') === false,
+   'map.css hides #map on a phone again, so the Map tab leads to an empty panel');
+preg_match('/@media \(max-width: 768px\) \{(.*?)\n\}/s', $mapCss, $mq);
+$mobileCss = isset($mq[1]) ? $mq[1] : '';
+ok($mobileCss !== '', 'map.css has no <=768px block at all');
+ok(preg_match('/min-width:\s*0/', $mobileCss) === 1,
+   'the mobile map block does not free the flex chain with min-width:0 -- a '
+ . 'flex item defaults to min-width:auto, so #container will not shrink below '
+ . 'the SVG and every other rule in this block does nothing');
+ok(preg_match('/#container svg\s*\{[^}]*width:\s*100%/', $mobileCss) === 1,
+   'the mobile map does not scale the SVG to the screen');
+ok(strpos(no_comments('<?php ' . $mapJs), 'MOBILE_DESIGN_W') !== false
+   && preg_match('/innerWidth\s*<=\s*MOBILE_BP\s*\?\s*MOBILE_DESIGN_W/', $mapJs) === 1,
+   'packFactions() is packing to the phone\'s own width again, which turns the '
+ . 'map into a single column -- 542 x 4652 on a 390px screen');
+/* And the page has to stop treating the map as a passenger. */
+ok(preg_match("/if \(rlWide\) \{ var hide = rlNavLink\('realm'\)/", $src) === 1,
+   'realms.php still drops the Map link at phone width, so the map it can now '
+ . 'render is unreachable');
+ok(strpos(no_comments($src), "selection === 'realm'") === false,
+   'the map is still stapled under the realm panel on a phone; it has its own '
+ . 'tab now and would render twice');
+/* The nudges every section used to need are gone with the headings. */
+ok(preg_match("/getElementById\('(map|raids|realms|realm)'\)\.style\.top/", no_comments($src)) === 0,
+   'a section is being nudged up by a negative top again -- those existed only '
+ . 'to pull a panel over an <h2> that sat outside it, and no heading is '
+ . 'outside a panel any more');
+printf("  map composes at a design width and scales to the screen\n");
+
 echo "\nswipe between sections\n";
 $swipe = file_get_contents(__DIR__ . '/swipe-nav.js');
 $swipeC = no_comments($swipe);

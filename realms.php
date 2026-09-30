@@ -1419,14 +1419,23 @@ $conn->close();
 	}());
 
 	document.getElementById('back-to-top-button').style.zIndex = "-1";
-	document.getElementById('map').style.position = "relative";
-	document.getElementById('map').style.top = '-100px';
-	document.getElementById('raids').style.position = "relative";
-	document.getElementById('raids').style.top = '-55px';
-	document.getElementById('realms').style.position = "relative";
-	document.getElementById('realms').style.top = '-95px';
 	/*
-	 * NO NUDGE ON #realm ANY MORE.
+	 * NO NUDGES ANY MORE, ON ANY SECTION.
+	 *
+	 * #map -100, #raids -55, #realms -95 and #realm -25 all existed for the
+	 * same reason: each section used to carry an <h2> OUTSIDE its .content,
+	 * and the nudge pulled the panel back up over it. Not one of those
+	 * headings is outside a panel now -- the realm name went into the realm
+	 * panel, the raid lists render their own headings inside .content.raids,
+	 * the map never had one, and the Attack title has just moved inside
+	 * .content.realms with the Sort By control. What is left is four
+	 * sections lifted up under the nav for no reason; #realms at -95 is most
+	 * of why that panel's title looked wrong.
+	 *
+	 * The #realm one is worth repeating: I removed it once, "measured" that
+	 * it made things worse, and put it back -- against a browser tab still
+	 * showing the OLD page, which of course still had the heading outside.
+	 * Reload before measuring.
 	 *
 	 * The -25px existed to pull this column up over an <h2> that sat
 	 * OUTSIDE .content -- 44px of heading plus its margin, in a column
@@ -1438,7 +1447,6 @@ $conn->close();
 	 * I removed this once, "measured" that it made things worse, and
 	 * put it back -- against a browser tab still showing the OLD page,
 	 * which of course still had the heading outside. Reload before
-	 * measuring.
 	 */
 
 	/*
@@ -1468,14 +1476,15 @@ $conn->close();
 		if (el) el.style.display = on ? 'block' : 'none';
 	}
 
-	/* Two of the five panels are never a destination of their own: on a
-	   wide screen the realm rides alongside the locations, on a narrow one
-	   the map rides under the realm. Drop the link, keep the panel. */
+	/* ONE panel is not a destination of its own: on a wide screen the realm
+	   rides alongside the locations, so its link comes out. The MAP used to
+	   come out on a phone for the same reason -- it rode under the realm
+	   panel -- but it could not actually render there, because map.css hid
+	   it outright below 768px. It composes at a fixed design width and
+	   scales to the screen now, so it is a destination like the rest and
+	   sits last, being the one thing on this page you only look at. */
 	var rlWide = $(window).width() > 700;
-	(function(){
-		var hide = rlNavLink(rlWide ? 'realm' : 'map');
-		if (hide) hide.style.display = 'none';
-	}());
+	if (rlWide) { var hide = rlNavLink('realm'); if (hide) hide.style.display = 'none'; }
 
 	if(window.location.hash == "#realm-image" || window.location.hash == "#realm-name"){
 		rlPanel('locations', rlWide);
@@ -1672,10 +1681,10 @@ $conn->close();
 				realmEl.innerHTML = html;
 			});
 		}
-		// Mobile: realm shows map alongside it
-		if($(window).width() <= 700 && selection === 'realm'){
-			document.getElementById('map').style.display = 'block';
-		}
+		/* The map no longer rides under the realm panel on a phone. It was
+		   put there when it had no link of its own, and it was invisible
+		   there anyway -- map.css hid #map below 768px. It has its own tab
+		   now. */
 	}
 	_checkStockButtonStates();
 

@@ -1,5 +1,32 @@
+/*
+ * THE MAP ON A PHONE. This used to be `#map { display: none !important }`,
+ * and that was the right call at the time: the packer sized itself to the
+ * VIEWPORT, so at 390px it could not put two faction blocks side by side and
+ * the map came out 542 x 4652 -- a twelve-screen ribbon that overflowed
+ * sideways as well.
+ *
+ * map.js composes at a fixed MOBILE_DESIGN_W below this same breakpoint now,
+ * so the drawing keeps the shape it has on a desktop and this only has to
+ * scale it down. The SVG carries a viewBox, so width:100% + height:auto is
+ * the whole of it -- no transform, no second layout.
+ *
+ * At a 390px screen that is about a third scale: territories, faction chips
+ * and markers all read, individual realm names do not. Tapping a marker
+ * opens the popup with the detail, and the page's own pinch-zoom is left
+ * alone (header.php sets no maximum-scale) for a closer look.
+ */
 @media (max-width: 768px) {
-    #map { display: none !important; }
+    /* MIN-WIDTH:0 IS THE WHOLE TRICK, and without it the other three rules
+       do nothing at all. #map is a .row (display:flex), .main and #container
+       are flex items, and a flex item defaults to min-width:auto -- it
+       refuses to shrink below its content. So #container stayed at the SVG's
+       intrinsic 1132px, and `width: 100%` on the SVG resolved against a
+       parent that had already grown to fit it. Measured: 1132px wide inside
+       a 390px page either way. With the chain freed it renders 330 x 601. */
+    #map, #map .main, #container-wrapper, #container { min-width: 0; }
+    #container-wrapper { padding: 10px; min-height: 0; }
+    #container { max-width: 100%; }
+    #container svg { width: 100%; height: auto; }
 }
 
 @keyframes raid-pulse {

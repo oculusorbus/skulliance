@@ -208,8 +208,22 @@ function buildFactionData() {
     });
 }
 
+/* Below this the map is FITTED to the screen by CSS rather than packed to
+   it -- see map.css. Matches map.css's own breakpoint, not realms.php's 700:
+   this is about how the drawing is laid out, not about the page's columns. */
+const MOBILE_BP = 768;
+/* The width the map is COMPOSED at on a phone. Packing to vw*.92 there means
+   the packer cannot fit two faction blocks beside each other -- every block
+   is ceil(sqrt(n))*170 wide, so anything with five realms is already 510 --
+   and the map degenerates into a single column. Measured on a 52-realm, ten-
+   faction population at a 390px phone: 542 x 4652, which is a twelve-screen
+   ribbon that ALSO overflows sideways. Composed at 1400 the same data is
+   1132 x 2062, the same shape it has on a desktop, and CSS scales that to
+   the screen. */
+const MOBILE_DESIGN_W = 1400;
+
 function packFactions(fdata) {
-    const vw = window.innerWidth;
+    const vw = window.innerWidth <= MOBILE_BP ? MOBILE_DESIGN_W : window.innerWidth;
     const totalArea = fdata.reduce((s,f) => s+f.w*f.h, 0);
     const containerW = Math.max(Math.min(vw*.92, Math.sqrt(totalArea*2.2)), 320);
 

@@ -100,10 +100,13 @@ pinned to the top as you scroll, so the rest of the page is always one press
 away no matter how far down a long locations list you are.
 
 On a wide screen your realm panel rides alongside the locations rather than
-being its own destination; on a phone the map rides under the realm panel. So
-the strip reads **Locations, Attack, Raids, Realm** on a phone and
-**Locations, Attack, Raids, Map** on a desktop - whichever panel is riding
-along is dropped from it.
+being its own destination, so its link is dropped there. Everything else is
+on the strip at every width, **the map included**. It used to be hidden
+below 768px, because the map laid itself out to the width of your screen and
+on a phone that turned it into a single column twelve screens deep. It is
+composed at a fixed size now and scaled to fit, so you get the whole map on
+one screen - territories, factions and every realm marker - and you pinch to
+zoom in or tap a marker for the full detail.
 
 This replaced a row of icons that used to sit fixed at the bottom of the
 screen. It is the same control the Missions page uses, in the same place.
