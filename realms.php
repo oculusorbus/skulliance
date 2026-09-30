@@ -165,10 +165,10 @@ if (ob_get_level() > 0) @ob_flush();
 .rl-loc-acts { display:flex; gap:6px; flex:none; margin-left:auto; }
 .rl-loc-kit { margin-top:9px; }
 
-/* Phones: the actions take their own line rather than squeezing the offer. */
+/* Phones: the actions still sit right, at their own size. They used to go
+   full width on their own line, which turned Stock into a banner. */
 @media (max-width:640px){
-  .rl-loc-acts { margin-left:0; width:100%; }
-  .rl-loc-acts .rl-btn { flex:1; }
+  .rl-loc-acts { margin-left:auto; }
 }
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 @keyframes lb { to { width:90%; } }
