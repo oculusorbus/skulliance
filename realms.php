@@ -317,6 +317,16 @@ if (ob_get_level() > 0) @ob_flush();
   width: 34px !important; height: 34px !important; max-width: none !important;
   padding: 5px !important; margin: 0; box-sizing: border-box; flex: none; }
 #quick-menu .selected { border-radius: 0; }
+/* ROOM TO BREATHE ON A DESKTOP. The 46px bar and 34px icons were sized for
+   a phone, where the bar is a thumb target competing for screen height. On
+   a monitor that reads as cramped -- 6px of clearance above and below, and
+   a gap capped at 34px that bunches four icons into the middle. Nothing
+   below 700px changes. */
+@media (min-width: 701px) {
+  #quick-menu { height: 62px; gap: 30px; }
+  #quick-menu img { width: 44px !important; height: 44px !important;
+    padding: 8px !important; }
+}
 #map #container-wrapper { padding-top: 35px; padding-bottom: 100px; }
 /* Soldiers / Location Modals */
 .soldiers-stat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
