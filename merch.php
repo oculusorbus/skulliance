@@ -202,7 +202,7 @@ $connected_stores = $merch_acct ? json_decode($merch_acct['connected_stores'], t
 .product-type-btn      { padding:7px 14px; border-radius:6px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.05); color:#e8eaed; cursor:pointer; font-size:.82rem; transition:background .15s,border-color .15s; }
 .product-type-btn.selected { background:rgba(0,200,160,.15); border-color:#00c8a0; color:#00c8a0; }
 .merch-filters         { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:center; }
-.merch-select          { padding:7px 10px; border-radius:6px; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.06); color:#e8eaed; font-size:.84rem; cursor:pointer; }
+.merch-select          { padding:7px 10px; border-radius:0; border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.06); color:#e8eaed; font-size:.84rem; cursor:pointer; }
 .merch-select:focus    { outline:none; border-color:#00c8a0; }
 .merch-pagination      { display:flex; gap:6px; justify-content:center; align-items:center; margin-top:20px; flex-wrap:wrap; }
 .merch-page-btn        { padding:6px 12px; border-radius:6px; border:1px solid rgba(255,255,255,.12); background:rgba(255,255,255,.05); color:#e8eaed; font-size:.82rem; cursor:pointer; text-decoration:none; transition:background .15s,border-color .15s; }

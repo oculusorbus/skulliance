@@ -39,7 +39,13 @@ $now_ts = time();
 .auction-modal-close:hover { color:#fff; }
 .form-row { display:flex; flex-direction:column; gap:5px; }
 .form-row label { font-size:0.78rem; opacity:0.6; }
-.form-row input, .form-row textarea, .form-row select { background:#0a1520; border:1px solid rgba(255,255,255,0.1); border-radius:6px; color:#e8eef4; padding:8px 10px; font-size:0.85rem; width:100%; box-sizing:border-box; }
+.form-row input, .form-row textarea, .form-row select { background:#0a1520; border:1px solid rgba(255,255,255,0.1); color:#e8eef4; padding:8px 10px; font-size:0.85rem; width:100%; box-sizing:border-box; }
+/* The dropdown squares with the rest of the platform; the text fields keep
+   their own shape, which is not what was asked for. Split out of the rule
+   above rather than overridden after it, so a sweep for rounded dropdowns
+   sees the truth instead of a 6px rule cancelled three lines later. */
+.form-row input, .form-row textarea { border-radius:6px; }
+.form-row select { border-radius:0; }
 .form-row textarea { resize:vertical; min-height:70px; }
 .form-row input:focus, .form-row textarea:focus, .form-row select:focus { outline:none; border-color:rgba(0,200,160,0.4); }
 .form-section-label { font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em; opacity:0.4; margin-top:4px; }

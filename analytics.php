@@ -309,7 +309,7 @@ include 'header.php';
 .trend-select {
     background: rgba(0,200,160,0.07);
     border: 1px solid rgba(0,200,160,0.2);
-    border-radius: 6px;
+    border-radius: 0;
     color: #c8dce8;
     font-size: 0.78rem;
     padding: 6px 10px;

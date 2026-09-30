@@ -322,7 +322,7 @@ a:hover { color: #00a882; }
 
 .wallet-connect select {
 	width: 148px;
-    border-radius: 8px;
+    border-radius: 0;
     height: 30px;
     font-weight: bold;
     background-color: #0d1e2e;
@@ -389,7 +389,7 @@ a:hover { color: #00a882; }
 
 #filterNFTs {
     width: 190px;
-    border-radius: 8px;
+    border-radius: 0;
     height: 30px;
     font-weight: bold;
     background-color: #0d1e2e;
@@ -402,7 +402,7 @@ a:hover { color: #00a882; }
 
 #filterRealms {
     width: 190px;
-    border-radius: 8px;
+    border-radius: 0;
     height: 30px;
     font-weight: bold;
     background-color: #0d1e2e;
@@ -415,7 +415,7 @@ a:hover { color: #00a882; }
 
 #filterLeaderboard {
     width: 190px;
-    border-radius: 8px;
+    border-radius: 0;
     height: 30px;
     font-weight: bold;
     background-color: #0d1e2e;
@@ -426,9 +426,18 @@ a:hover { color: #00a882; }
 	font-family: Arial, sans-serif;
 }
 
+/* ── EVERY DROPDOWN IS SQUARE ────────────────────────────────────────────
+   The platform squared its panels, buttons and cards page by page and left
+   the <select>s rounded behind them, so the one round thing left on a
+   screen was usually a dropdown. This is the baseline for any select with
+   no rule of its own; the handful that DO have one are zeroed where they
+   are declared, because an id or a class beats a bare tag and a rule in a
+   page's own <style> comes after this file either way. */
+select { border-radius: 0; }
+
 .dropdown{
     width: 300px !important;
-    border-radius: 8px;
+    border-radius: 0;
     height: 30px;
     font-weight: bold;
     background-color: #0d1e2e;
