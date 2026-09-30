@@ -817,30 +817,36 @@ function getRandomReward($conn){
 		updateBalance($conn, $_SESSION['userData']['user_id'], $project_id, $project["amount"]);
 		logCredit($conn, $_SESSION['userData']['user_id'], $project["amount"], $project_id, $crafting=0, $bonus=1);
 		getDailyConsumable($conn, $current_streak);
-		// Webhook notification
-		$day_consumables = array(1=>7, 2=>4, 3=>5, 4=>3, 5=>2, 6=>6, 7=>1);
-		$con_id  = $day_consumables[$current_streak];
-		$con_res = $conn->query("SELECT name FROM consumables WHERE id='".$con_id."'");
-		$con_row = $con_res ? $con_res->fetch_assoc() : null;
-		$con_name = $con_row ? $con_row['name'] : '';
-		$total_res = $conn->query("SELECT COUNT(id) AS total FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND bonus='1'");
-		$total_row = $total_res ? $total_res->fetch_assoc() : null;
-		$total_claims = $total_row ? (int)$total_row['total'] : 0;
-		$dr_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
-		$dr_discord_id = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
-		$dr_avatar     = isset($_SESSION['userData']['avatar'])     ? $_SESSION['userData']['avatar']     : '';
-		$dr_avatar_url = ($dr_discord_id && $dr_avatar) ? "https://cdn.discordapp.com/avatars/".$dr_discord_id."/".$dr_avatar.".png" : "";
-		$dr_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($dr_username);
-		$dr_mention    = $dr_discord_id ? "<@".$dr_discord_id.">" : $dr_username;
-		$streak_bar    = str_repeat("🔥", $current_streak).str_repeat("⬜", 7 - $current_streak);
-		$currency_icon = "https://skulliance.io/staking/icons/".strtolower(str_replace("$", "", $project['currency'])).".png";
-		$dr_desc  = $dr_mention." claimed their [daily reward](".$dr_profile.")!\n\n";
-		$dr_desc .= "📅 **Streak:** Day ".$current_streak." of 7　".$streak_bar."\n";
-		$dr_desc .= "💰 **Reward:** ".$project['amount']." ".$project['currency']."\n";
-		$dr_desc .= "🎁 **Bonus Item:** ".$con_name."\n";
-		$dr_desc .= "🏆 **Total Claims:** ".$total_claims;
-		$dr_author = array("name" => $dr_username." · Day ".$current_streak." of 7", "icon_url" => $dr_avatar_url, "url" => $dr_profile);
-		discordmsg("🌟 Daily Reward Claimed", $dr_desc, $currency_icon, "https://skulliance.io/staking", "dailyrewards", $dr_avatar_url, "FFD700", $dr_author);
+
+		/*
+		 * THE DISCORD POST DOES NOT HAPPEN HERE ANY MORE.
+		 *
+		 * discordmsg() is a synchronous curl POST with an 8 second timeout,
+		 * and it used to sit between the player pressing Claim and the reply
+		 * that redraws the strip -- so every claim waited on a third party,
+		 * and a bad minute at Discord's end was a claim that appeared to
+		 * hang. Reported as "the daily reward claim is a bit slow".
+		 *
+		 * Deferring it past the response is NOT an option on this server:
+		 * see cryptcrawlFlushPendingSideEffects() below for the three
+		 * attempts that failed in production (fastcgi_finish_request, then
+		 * X-Accel-Buffering plus an explicit flush). The only thing that
+		 * works here is a SEPARATE request the browser makes once it has
+		 * already painted -- ajax/daily-reward-announce.php.
+		 *
+		 * What is left behind is a marker, not a message: the announcement
+		 * text is built server-side at flush time by dailyRewardAnnounce(),
+		 * so a client can ask for its own claim to be announced and nothing
+		 * else. Time-stamped because skulliance.php serialises $_SESSION into
+		 * a six-month cookie, and anything stranded here would otherwise ride
+		 * along in it indefinitely -- the same trap dhcf_unseen documents.
+		 */
+		$_SESSION['dr_announce'] = array(
+			'day'      => (int)$current_streak,
+			'amount'   => $project['amount'],
+			'currency' => $project['currency'],
+			'at'       => time(),
+		);
 
 		/*
 		 * SEVENTH DAY PAYS A TRAIT.
@@ -870,6 +876,49 @@ function getRandomReward($conn){
 
 		return $project;
 	}
+}
+
+/**
+ * Announce a claimed daily reward on Discord.
+ *
+ * Split out of getRandomReward() so the claim can answer the browser without
+ * waiting on an 8-second curl timeout. Called from
+ * ajax/daily-reward-announce.php, a request the player is not waiting on.
+ *
+ * TAKES THE FOUR FACTS AND DERIVES THE REST. The caller hands over what the
+ * claim actually paid; everything else -- the item name, the total, the
+ * player's identity -- is read here from the database and the session, so a
+ * client cannot dictate what gets posted to Discord by tampering with the
+ * marker it triggers this with.
+ */
+function dailyRewardAnnounce($conn, $day, $amount, $currency) {
+	if (!function_exists('discordmsg')) return;
+	$day = (int)$day;
+	if ($day < 1 || $day > 7) return;
+
+	$day_consumables = array(1=>7, 2=>4, 3=>5, 4=>3, 5=>2, 6=>6, 7=>1);
+	$con_id  = $day_consumables[$day];
+	$con_res = $conn->query("SELECT name FROM consumables WHERE id='".$con_id."'");
+	$con_row = $con_res ? $con_res->fetch_assoc() : null;
+	$con_name = $con_row ? $con_row['name'] : '';
+	$total_res = $conn->query("SELECT COUNT(id) AS total FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND bonus='1'");
+	$total_row = $total_res ? $total_res->fetch_assoc() : null;
+	$total_claims = $total_row ? (int)$total_row['total'] : 0;
+	$dr_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
+	$dr_discord_id = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
+	$dr_avatar     = isset($_SESSION['userData']['avatar'])     ? $_SESSION['userData']['avatar']     : '';
+	$dr_avatar_url = ($dr_discord_id && $dr_avatar) ? "https://cdn.discordapp.com/avatars/".$dr_discord_id."/".$dr_avatar.".png" : "";
+	$dr_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($dr_username);
+	$dr_mention    = $dr_discord_id ? "<@".$dr_discord_id.">" : $dr_username;
+	$streak_bar    = str_repeat("🔥", $day).str_repeat("⬜", 7 - $day);
+	$currency_icon = "https://skulliance.io/staking/icons/".strtolower(str_replace("$", "", $currency)).".png";
+	$dr_desc  = $dr_mention." claimed their [daily reward](".$dr_profile.")!\n\n";
+	$dr_desc .= "📅 **Streak:** Day ".$day." of 7　".$streak_bar."\n";
+	$dr_desc .= "💰 **Reward:** ".$amount." ".$currency."\n";
+	$dr_desc .= "🎁 **Bonus Item:** ".$con_name."\n";
+	$dr_desc .= "🏆 **Total Claims:** ".$total_claims;
+	$dr_author = array("name" => $dr_username." · Day ".$day." of 7", "icon_url" => $dr_avatar_url, "url" => $dr_profile);
+	discordmsg("🌟 Daily Reward Claimed", $dr_desc, $currency_icon, "https://skulliance.io/staking", "dailyrewards", $dr_avatar_url, "FFD700", $dr_author);
 }
 
 // Get daily consumable reward for user

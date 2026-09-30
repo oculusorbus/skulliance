@@ -75,6 +75,8 @@ Seven days, each paying a fixed item plus points, climbing to a **100% Success**
 
 It sits **directly under the page heading** as a single strip: seven chips showing where you are in the cycle, what today pays, and the claim button. Once claimed it collapses to a line with the countdown to the next one. It used to print all seven days as full-width rows with the claim state underneath them, which put the one thing you came for at the very bottom of the page.
 
+**The claim is quick now, and says so while it works.** The button reads *Claiming…* and stops accepting presses until it lands, and comes back with a message if the claim fails rather than sitting there. The Discord announcement used to happen *inside* the claim — so every press waited on a round trip to Discord before your own reward appeared. It is posted straight after now, out of your way.
+
 ## Missions Status
 
 The **In the field** list tracks everything you have out, closest to landing first, with a live countdown, the crew size, the reward and the success rate you sent it at. Anything that has **landed is always shown**; if you have a very large number still running, the rest sit behind a **Show all** button rather than painting hundreds of cards before the page can render. Once any of your missions are completed, you'll be able to claim them and review which missions were successful and which failed.

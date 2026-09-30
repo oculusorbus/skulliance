@@ -867,8 +867,52 @@ function getQuests(projectID){
 
 
 function dailyReward(){
+	/*
+	 * SAY SOMETHING WHILE IT WORKS, and refuse a second press.
+	 *
+	 * The button used to sit there unchanged until the reply arrived and then
+	 * vanish -- so a claim that took a moment looked like a click that had
+	 * not registered, which is how it was reported. Worse, nothing stopped a
+	 * second press: two claims racing each other both pass
+	 * getDailyRewardEligibility() before either increments the streak.
+	 *
+	 * The button is an <input type="button">, so the label is .value, not
+	 * .textContent.
+	 */
+	var btn = document.getElementById('claimRewardButton');
+	if (btn) {
+		if (btn.disabled) return;
+		btn.dataset.label = btn.value;
+		/* PIN THE WIDTH before swapping the label. "Claiming..." is narrower
+		   than "Claim reward", and a control that resizes because you pressed
+		   it reads as a misfire -- the same reason the bulk launchers keep
+		   their label in the layout (see .ms-busy in missions.php). No
+		   spinner here: this is an <input type="button">, which cannot carry
+		   a ::after to paint one into. */
+		btn.style.minWidth = btn.offsetWidth + 'px';
+		btn.disabled = true;
+		btn.value = 'Claiming\u2026';
+		btn.classList.add('is-working');
+	}
+	/* Put it back exactly as it was, for the paths where the claim did not
+	   happen -- a network drop, a 500. Leaving it disabled strands the player
+	   on a reward they are still owed with no way to ask for it again. */
+	var restore = function (msg) {
+		if (!btn) return;
+		btn.disabled = false;
+		btn.style.minWidth = '';
+		btn.classList.remove('is-working');
+		btn.value = msg || btn.dataset.label || 'Claim reward';
+		if (msg) setTimeout(function () { btn.value = btn.dataset.label || 'Claim reward'; }, 2600);
+	};
+
 	var xhttp = new XMLHttpRequest();
 	xhttp.open('GET', 'ajax/daily-reward.php?status=true', true);
+	/* Not forever. Past this the claim has almost certainly failed, and a
+	   button stuck on "Claiming..." is worse than one that says try again. */
+	xhttp.timeout = 20000;
+	xhttp.ontimeout = function () { restore('Timed out \u2014 try again'); };
+	xhttp.onerror   = function () { restore('Network error \u2014 try again'); };
 	xhttp.send();
 	xhttp.onreadystatechange = function() {
 	  if (xhttp.readyState == XMLHttpRequest.DONE) {
@@ -905,10 +949,28 @@ function dailyReward(){
 			document.getElementById('remaining').innerHTML = obj.remaining;
 	  	  }
 		  document.getElementById('claimRewardButton').style.display = "none";
-		  console.log(data);
+
+		  /*
+		   * ANNOUNCE IT AFTER THE PAINT, not during the claim.
+		   *
+		   * discordmsg() is a curl POST with an 8 second timeout and it used
+		   * to run inside the claim, so the player waited on Discord before
+		   * their own reward appeared. It is its own request now -- see
+		   * ajax/daily-reward-announce.php for why a deferred flush inside
+		   * the claim does not work on this server. Nothing is read back: the
+		   * claim is already committed and already on screen.
+		   */
+		  try {
+		    var ann = new XMLHttpRequest();
+		    ann.open('POST', 'ajax/daily-reward-announce.php', true);
+		    ann.send();
+		  } catch (e) {}
 	      // Do something with the data
 	    } else {
-	      // Handle error
+	      /* A 500 from the claim leaves the reward unclaimed, so the button
+	         has to come back. It used to be an empty branch, which left it
+	         reading "Claiming..." forever. */
+	      restore('Could not claim \u2014 try again');
 	    }
 	  }
 	};

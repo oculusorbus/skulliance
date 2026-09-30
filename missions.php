@@ -152,6 +152,11 @@ define('MS_FIELD_CAP', 24);
 }
 .ms-daily .button:active, .ms-deploy-buttons .button:active,
 .ms-claimbar .button:active, .ms-d-launch .button:active { box-shadow: none; transform: none; }
+/* Claiming. The button is an <input>, so it cannot carry the ::after spinner
+   the deploy buttons use -- it says "Claiming..." at a pinned width instead
+   (skulliance.js) and this makes it look inert while it does. */
+.ms-daily .button:disabled { opacity: .5; cursor: default; }
+.ms-daily .button.is-working { opacity: .7; }
 
 .ms-head, .ms-head *, .ms-section, .ms-section *,
 .ms-primer, .ms-primer *, .ms-deploy, .ms-deploy *, .ms-guest, .ms-guest *,
