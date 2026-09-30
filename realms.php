@@ -1247,8 +1247,21 @@ $conn->close();
 		document.getElementById('raids').style.top = '-55px';
 		document.getElementById('realms').style.position = "relative";
 		document.getElementById('realms').style.top = '-95px';
-		document.getElementById('realm').style.position = "relative";
-		document.getElementById('realm').style.top = '-25px';
+		/*
+		 * NO NUDGE ON #realm ANY MORE.
+		 *
+		 * The -25px existed to pull this column up over an <h2> that sat
+		 * OUTSIDE .content -- 44px of heading plus its margin, in a column
+		 * whose sibling starts its panel immediately. The realm name is
+		 * inside the panel now, so both columns begin at .main/.side's own
+		 * 20px padding and line up on their own; the nudge just lifted the
+		 * right one 25px clear of the left and clipped the title.
+		 *
+		 * I removed this once, "measured" that it made things worse, and
+		 * put it back -- against a browser tab still showing the OLD page,
+		 * which of course still had the heading outside. Reload before
+		 * measuring.
+		 */
 		if($(window).width() > 700){
 			document.getElementById('realm-icon').style.display = "none";
 		}else{

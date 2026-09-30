@@ -12,13 +12,18 @@ $projects = getProjects($conn, "core");
 <?php
 if($realm_status){
 	if(checkRealmState($conn) == 1){
-		/* THE SAME PARTIAL THE PAGE USES. This file used to carry its own
-		   near-verbatim copy of the panel -- same strip, same rows, same
-		   price ladder -- and the two had already drifted apart (the page
-		   had a Guide button, this did not). No Guide here still, but for a
-		   reason now: it lives outside the fragment this replaces. */
+		/* THE SAME PARTIAL THE PAGE USES, AND THE SAME FLAGS.
+		   This file used to carry its own near-verbatim copy of the panel and
+		   the two had drifted: the page had a Guide button, this did not. I
+		   unified the markup but kept the drift, setting $rl_guide = false on
+		   the theory that the button sat outside this fragment. It does not
+		   -- .rl-head is part of the partial, and this endpoint replaces the
+		   whole panel. So the Guide vanished the moment anything refreshed
+		   the list: stocking, unstocking, equipping an item, starting an
+		   upgrade. Reported as the button going missing again, which it was,
+		   just not on load. */
 		$rl_panel = realm_location_panel($conn);
-		$rl_guide = false;
+		$rl_guide = true;
 		include __DIR__ . '/../realms-locations.php';
 	}else{
 		$realm_id = getRealmID($conn);

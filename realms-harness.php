@@ -213,6 +213,47 @@ ok(strpos($ident, 'factionsForm') === false && strpos($ident, '.submit()') === f
    'the identity panel submits a form again -- that reloads the whole page to '
  . 'change one dropdown, which is what this replaced');
 
+/* ---------- 6b. the refresh renders the same panel as the page ------------- */
+/*
+ * ajax/get-locations.php replaces the WHOLE locations panel, header and
+ * all. Any flag it passes the partial differently from realms.php is a
+ * control that exists on load and disappears the first time anything
+ * refreshes the list -- which is what happened to the Guide button: set
+ * false here on the mistaken theory that it sat outside the fragment, it
+ * vanished on the first stock, equip or upgrade.
+ */
+echo "\nthe panel refresh\n";
+$refresh = file_get_contents(__DIR__ . '/ajax/get-locations.php');
+/* Only the flags the PARTIAL reads from its caller: anything it uses but
+   never assigns itself. That keeps loop variables in either file -- the CSS
+   generator's $rl_cid, the partial's own $rl_spare -- out of the comparison. */
+$partialSrc = file_get_contents(__DIR__ . '/realms-locations.php');
+preg_match_all('/\$rl_([a-z_]+)/', $partialSrc, $used);
+preg_match_all('/\$rl_([a-z_]+)\s*=/', $partialSrc, $setInPartial);
+/* `$rl_x = isset($rl_x) ? $rl_x : default;` is not the partial owning that
+   variable -- it is the partial declaring that the CALLER supplies it and
+   giving a fallback. Treating it as an assignment is how $rl_guide fell out
+   of this comparison, which is the very flag that went wrong. */
+preg_match_all('/\$rl_([a-z_]+)\s*=\s*isset\(\$rl_\1\)/', $partialSrc, $defaulted);
+$owned = array_diff(array_unique($setInPartial[1]), array_unique($defaulted[1]));
+$contract = array_values(array_diff(array_unique($used[1]), $owned));
+printf("  the partial expects from its caller: %s\n", implode(', ', $contract));
+ok(!empty($contract), 'the partial appears to take nothing from its caller, which cannot be right');
+
+preg_match_all('/\$rl_([a-z_]+)\s*=\s*([^;]+);/', $src, $pageFlags, PREG_SET_ORDER);
+preg_match_all('/\$rl_([a-z_]+)\s*=\s*([^;]+);/', $refresh, $refFlags, PREG_SET_ORDER);
+$pf = array(); foreach ($pageFlags as $m) $pf[$m[1]] = trim($m[2]);
+$rf = array(); foreach ($refFlags as $m) $rf[$m[1]] = trim($m[2]);
+foreach ($pf as $k => $v) {
+	if (!in_array($k, $contract, true)) continue;
+	if ($k === 'panel') continue;                 // the data itself, built the same way
+	if (!isset($rf[$k])) { ok(false, "realms.php sets \$rl_$k and the refresh does not"); continue; }
+	printf("  \$rl_%-8s page=%-28s refresh=%s\n", $k, $v, $rf[$k]);
+	ok($rf[$k] === $v,
+	   "\$rl_$k is '$v' on the page and '{$rf[$k]}' on the refresh -- whatever that "
+	 . 'controls will be there on load and gone the moment the panel reloads');
+}
+
 /* ---------- 7. the icons are fetched once each ----------------------------- */
 /*
  * The seven item icons are drawn in the inventory strip and on all seven
