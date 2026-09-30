@@ -577,7 +577,7 @@ a{color:var(--ochre)}
     <div class="ranks off" id="ranks" aria-live="polite">
       <?php foreach (dhcf_rank_axes() as $rk => $rlabel): ?>
       <span class="rk" data-k="<?php echo htmlspecialchars($rk); ?>">
-        <b>&mdash;</b><i><?php echo htmlspecialchars($rlabel); ?></i><s></s>
+        <b>&ndash;</b><i><?php echo htmlspecialchars($rlabel); ?></i><s></s>
       </span>
       <?php endforeach; ?>
     </div>

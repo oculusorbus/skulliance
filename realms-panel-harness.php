@@ -177,9 +177,24 @@ ok(in_array('random reward armed', $full[0]['effects']['notes'], true),
 /* ---------- 6. nothing rounded, nothing duplicated -------------------------- */
 echo "\nstyle\n";
 $page = file_get_contents(__DIR__ . '/realms.php');
-preg_match_all('/\.rl-[a-z-]+\s*\{[^}]*border-radius:\s*([0-9]+)px/', $page, $rm);
-$rounded = array_values(array_filter($rm[1], function ($v) { return (int)$v > 0; }));
-ok(!$rounded, 'the panel has rounded corners again: ' . implode(', ', $rounded) . 'px');
+/*
+ * THE LOADER RAIL IS EXEMPT, and it is worth saying why rather than just
+ * narrowing the pattern: a 2px radius on a 3px progress bar is a rounded
+ * LINE CAP, not a rounded panel, and profile.php keeps the same exception
+ * for the same reason. Everything else under .rl- is panel chrome and stays
+ * square. (This check caught the rail the moment the loader landed, which is
+ * the check working -- the fix is to name the exception, not to delete it.)
+ */
+preg_match_all('/(\.rl-[a-z-]+)((?:\s*,\s*\.rl-[a-z-]+)*)\s*\{[^}]*border-radius:\s*([0-9]+)px/', $page, $rm, PREG_SET_ORDER);
+$exempt  = array('.rl-l-rail');
+$rounded = array();
+foreach ($rm as $hit) {
+	if ((int)$hit[3] === 0) continue;
+	$sel = $hit[1];
+	if (in_array($sel, $exempt, true)) continue;
+	$rounded[] = $sel . ' ' . $hit[3] . 'px';
+}
+ok(!$rounded, 'the panel has rounded corners again: ' . implode(', ', $rounded));
 ok(strpos($html, 'loc-status-tag') === false,
    'the name-tag strip is back -- it repeated the seven slots directly below it');
 

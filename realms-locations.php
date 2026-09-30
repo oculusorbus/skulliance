@@ -34,7 +34,7 @@ $rl_cons  = $rl_panel['consumables'];
 <div class="rl-boosts">
 	<span><b><?php echo (int)$rl_panel['boosts']['offense']; ?>%</b> offense success</span>
 	<span><b><?php echo (int)$rl_panel['boosts']['defense']; ?>%</b> defense success</span>
-	<span class="rl-boosts-note">averaged across each side's locations &mdash; this is what a raid uses</span>
+	<span class="rl-boosts-note">averaged across each side's locations - this is what a raid uses</span>
 </div>
 
 <div class="rl-inv">
@@ -48,7 +48,7 @@ $rl_cons  = $rl_panel['consumables'];
 	<div class="rl-slots">
 		<?php foreach ($rl_cons as $cid => $cname): $qty = $rl_panel['inventory'][$cid]; ?>
 		<span class="rl-slot <?php echo $qty > 0 ? 'has' : 'none'; ?>" id="inv-slot-<?php echo $cid; ?>"
-			title="<?php echo rl_e($cname . ($qty > 0 ? " — you have $qty" : ' — none left')); ?>">
+			title="<?php echo rl_e($cname . ($qty > 0 ? " - you have $qty" : ' - none left')); ?>">
 			<img src="icons/<?php echo rl_e(realm_con_icon($cname)); ?>" alt="" onerror="this.src='icons/skull.png'">
 			<i id="inv-qty-<?php echo $cid; ?>"><?php echo $qty; ?></i>
 		</span>
@@ -84,7 +84,7 @@ foreach ($rl_panel['rows'] as $r):
 		<<?php echo $rl_can_manage ? 'button type="button"' : 'div'; ?> class="rl-loc-top<?php
 			echo $rl_can_manage ? ' can' : ''; ?>"<?php
 			if ($rl_can_manage): ?> onclick="openLocationModal(<?php echo $r['id']; ?>)"
-			title="<?php echo rl_e('Manage the ' . $rl_manage[$r['id']] . ' — ' . $r['description']); ?>"<?php
+			title="<?php echo rl_e('Manage the ' . $rl_manage[$r['id']] . ' - ' . $r['description']); ?>"<?php
 			else: ?> title="<?php echo rl_e($r['description']); ?>"<?php endif; ?>>
 			<img class="rl-loc-icon" src="icons/locations/<?php echo rl_e($r['name']); ?>.png"
 				alt="" onerror="this.src='icons/skull.png'">
@@ -111,7 +111,7 @@ foreach ($rl_panel['rows'] as $r):
 			<?php /* Same countdown hook the old markup used, so the existing
 			         tick script keeps driving it. */ ?>
 			<span class="rl-run">Upgrading to Lv<?php echo (int)$r['running']['target']; ?></span>
-			<span class="countdown" data-deadline="<?php echo (int)$r['running']['deadline']; ?>">&mdash;</span>
+			<span class="countdown" data-deadline="<?php echo (int)$r['running']['deadline']; ?>">&hellip;</span>
 			<span class="rl-run-note"><?php echo (int)$r['running']['days']; ?>
 				<?php echo $r['running']['days'] == 1 ? 'day' : 'days'; ?> total</span>
 		<?php elseif (!empty($q['at_ceiling'])): ?>
@@ -122,7 +122,7 @@ foreach ($rl_panel['rows'] as $r):
 			         answer is that there is nothing left to buy. */ ?>
 			<?php /* Short on purpose: long enough to push Stock onto its own
 			         line was long enough to say twice. */ ?>
-			<span class="rl-cap">Past the ceiling &mdash; raids move it from here</span>
+			<span class="rl-cap">Past the ceiling - raids move it from here</span>
 		<?php elseif ($q && $q['ok']): ?>
 			<button type="button" class="rl-btn go" id="upgrade-button-<?php echo $r['id']; ?>"
 				onclick="upgradeRealmLocation(this, <?php echo (int)$rl_panel['realm_id']; ?>, <?php echo $r['id']; ?>, <?php echo (int)$q['duration']; ?>, <?php echo (int)$q['cost']; ?>, <?php echo $r['id']; ?>)">
@@ -157,8 +157,8 @@ foreach ($rl_panel['rows'] as $r):
 				$on  = isset($r['equipped'][$cid]);
 				$qty = $rl_panel['inventory'][$cid];
 				$cls = $on ? 'on' : ($qty > 0 ? 'has' : 'none');
-				$tip = $cname . ($on ? ' — equipped, click to remove'
-				                     : ($qty > 0 ? " — click to equip ($qty left)" : ' — none left'));
+				$tip = $cname . ($on ? ' - equipped, click to remove'
+				                     : ($qty > 0 ? " - click to equip ($qty left)" : ' - none left'));
 				$act = $on ? 'removeLocationConsumable(' . $r['id'] . ',' . $cid . ')'
 				           : ($qty > 0 ? 'applyLocationConsumable(' . $r['id'] . ',' . $cid . ')' : '');
 			?>
