@@ -455,6 +455,16 @@ echo "\nthe headline and figures repaint\n";
 $msrc = file_get_contents(__DIR__ . '/missions.php');
 ok(strpos($msrc, 'id="ms-title"') !== false,
    'the headline has no id, so nothing can rewrite it after a collect');
+/* AND IT COUNTS THE ACCOUNT, NOT THE PAGE. The field list is capped at
+   MS_FIELD_CAP with the rest behind Show all, so counting the rendered
+   rows announced "24 in the field" to someone with 196 out -- while the
+   figure beside it and the nav badge both showed the real number. */
+ok(strpos($msrc, "ms_n(count(\$ms_active)) . ' in the field'") === false,
+   'the headline is counting the RENDERED rows again, which is the capped '
+ . 'list, not how many missions are actually out');
+ok(strpos($msrc, "ms_n(\$ms_total) . ' in the field'") !== false,
+   'the headline is not using $ms_total (mission_active_total), so it cannot '
+ . 'be the real number of missions in the field');
 /* Anchored to the MARKUP. A bare strpos passes on the querySelector in
    paintOverview() itself, which is how removing the real hook read as
    fine. */

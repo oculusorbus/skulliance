@@ -782,8 +782,16 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 					         the page that COLLECTING changes, and until now only
 					         the nav badge was told. See paintOverview(). */ ?>
 					<h2 class="ms-title" id="ms-title"><?php
+						/* $ms_total, NOT count($ms_active). The field list is
+						   capped at MS_FIELD_CAP and the rest sit behind Show
+						   all, so counting the rendered rows announced "24 in
+						   the field" to a player with 196 out -- while the
+						   figure beside it and the nav badge both said the
+						   real number. The headline is a fact about the
+						   account, not about how much of it is on screen.
+						   paintOverview() uses ov.active for the same reason. */
 						echo $ms_ready  ? ms_n($ms_ready) . ' ready to collect'
-						   : ($ms_active ? ms_n(count($ms_active)) . ' in the field'
+						   : ($ms_total ? ms_n($ms_total) . ' in the field'
 						   : 'Send your NFTs out to work.'); ?></h2>
 					<p class="ms-ctx"><?php
 						echo $ms_new

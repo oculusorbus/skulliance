@@ -241,6 +241,31 @@ include 'header.php';
   text-decoration: none;
 }
 .lb-back:hover { color: #00c8a0; }
+/* Back-link left, period switcher right, on one line. They wrap onto two on
+   a phone rather than squeezing, because the periods are the control you
+   came for and must not shrink to fit beside the way out. */
+.lb-subhead {
+  display: flex; align-items: baseline; gap: 10px 18px; flex-wrap: wrap;
+  margin: 0 0 14px;
+}
+.lb-subhead .lb-back { margin: 0; }
+.lb-periods { display: flex; gap: 2px; margin-left: auto; flex-wrap: wrap; }
+.lb-period {
+  font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 5px 11px; text-decoration: none;
+  color: rgba(255,255,255,0.45);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 0;
+}
+.lb-period + .lb-period { border-left: 0; }
+a.lb-period:hover { color: #e8eaed; background: rgba(0,200,160,0.08); }
+.lb-period.on {
+  color: #07111d; background: #00c8a0; border-color: #00c8a0; font-weight: bold;
+}
+@media (max-width: 560px) {
+  .lb-periods { margin-left: 0; width: 100%; }
+  .lb-period { flex: 1; text-align: center; }
+}
 .lb-hub-note  { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
 .lb-hub-note a { color: #00c8a0; }
 .lb-hub-stamp { margin-top: 26px; font-size: 0.68rem; color: rgba(255,255,255,0.25); text-align: center; }
@@ -567,7 +592,14 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				// back button. Hidden on the hub itself, where it would just
 				// link to the page you are already on.
 				if ($filterby !== "hub") {
+					echo "<div class='lb-subhead'>";
 					echo "<a class='lb-back' href='leaderboards.php'>&larr; All Leaderboards</a>";
+					/* The sibling periods for THIS board, from the same
+					   $SKULLIANCE_BOARDS map the hub cards are built from.
+					   Opening All-Time and wanting Monthly used to mean
+					   going back to the hub and finding the card again. */
+					renderLeaderboardPeriods($filterby);
+					echo "</div>";
 				}
 				?>
 

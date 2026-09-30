@@ -7272,6 +7272,65 @@ function refreshLeaderboardSnapshots($conn) {
 	return array('updated' => $done, 'skipped' => $skipped);
 }
 
+/**
+ * Which board does this filterby slug belong to, and which period is it?
+ *
+ * Returns array('key', 'meta', 'current') or null when the slug is not one
+ * of the catalogued boards -- a plain project id lands here too, and gets
+ * null, which is right.
+ *
+ * $SKULLIANCE_BOARDS ALREADY KNOWS THIS. The hub cards are built from the
+ * same 'periods' map, so the period switcher on a board page cannot drift
+ * from the links on the hub: add a period to the catalogue and both grow it.
+ */
+function leaderboardBoardFor($slug) {
+	global $SKULLIANCE_BOARDS;
+	if ($slug === null || $slug === '' || $slug === 'hub') return null;
+	foreach ($SKULLIANCE_BOARDS as $key => $meta) {
+		if (empty($meta['periods'])) continue;
+		foreach ($meta['periods'] as $label => $target) {
+			/* Compared AS STRINGS because one slug is numeric ('15' is the
+			   delegations board) while $filterby arrives as a string from
+			   the query and as an int elsewhere. Not a PHP 7 saved-you-once
+			   guard: since PHP 8, 0 == 'activity-ath' is already false. */
+			if ((string)$target === (string)$slug) {
+				return array('key' => $key, 'meta' => $meta, 'current' => $label);
+			}
+		}
+	}
+	return null;
+}
+
+/**
+ * The period switcher, shown on a board page.
+ *
+ * Opening All-Time and then wanting Monthly meant going back to the hub and
+ * finding the card again -- two navigations to change one word, and no way
+ * to compare the two. The periods are siblings, so they belong together on
+ * the board itself.
+ *
+ * Nothing is printed for a one-period board. On the HUB the period row is
+ * rendered even when there is only one, so the cards keep a common height;
+ * here there is no row of anything to line up with, and a lone inert
+ * "All-Time" is just a label that looks like a control.
+ */
+function renderLeaderboardPeriods($slug) {
+	$b = leaderboardBoardFor($slug);
+	if (!$b || count($b['meta']['periods']) < 2) return;
+	echo "<nav class='lb-periods' aria-label='Time period'>";
+	foreach ($b['meta']['periods'] as $label => $target) {
+		if ($label === $b['current']) {
+			echo "<span class='lb-period on' aria-current='page'>"
+			   . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "</span>";
+		} else {
+			echo "<a class='lb-period' href='leaderboards.php?filterby="
+			   . urlencode($target) . "'>"
+			   . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "</a>";
+		}
+	}
+	echo "</nav>";
+}
+
 // The hub itself: a card per board, showing its current leader.
 function renderLeaderboardHub($conn) {
 	global $SKULLIANCE_BOARDS;

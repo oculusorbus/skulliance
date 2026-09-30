@@ -27,3 +27,15 @@ The **Find a Project** selector next to it does one job: jumping to a project's 
 Each mode ranks by its own calculated score. The page shows a top-3 podium with avatars and medals, followed by an extended ranked list. Only stakers who've set their profile to visible appear publicly. Reward-bearing leaderboards divide their pool down the rankings by rank, so finishers beyond the podium still earn a share.
 
 ![All-time activity leaderboard with podium](https://www.skulliance.io/staking/images/screenshots/leaderboard.png)
+
+## Switching periods
+
+Most boards are kept for more than one stretch of time - all-time, and a
+monthly or weekly cut alongside it. Those live together now: open any board
+and the periods it has sit at the top right, next to the way back to the
+hub, with the one you are reading marked.
+
+Before this you had to return to the leaderboard hub and find the card again
+to change from all-time to monthly, which made comparing the two a chore.
+Boards that only have one period, like Realm Power, show no switcher at all
+rather than a button that does nothing.
