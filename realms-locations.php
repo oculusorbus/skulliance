@@ -37,8 +37,6 @@ $rl_cons  = $rl_panel['consumables'];
 			<span aria-hidden="true">?</span> Guide
 		</button>
 		<?php endif; ?>
-		<button type="button" class="rl-btn quiet"
-			onclick="deactivateRealm(<?php echo (int)$rl_panel['realm_id']; ?>)">Deactivate</button>
 	</div>
 </div>
 
@@ -65,7 +63,7 @@ $rl_cons  = $rl_panel['consumables'];
 		<?php foreach ($rl_cons as $cid => $cname): $qty = $rl_panel['inventory'][$cid]; ?>
 		<span class="rl-slot <?php echo $qty > 0 ? 'has' : 'none'; ?>" id="inv-slot-<?php echo $cid; ?>"
 			title="<?php echo rl_e($cname . ($qty > 0 ? " - you have $qty" : ' - none left')); ?>">
-			<img src="icons/<?php echo rl_e(realm_con_icon($cname)); ?>" alt="" onerror="this.src='icons/skull.png'">
+			<b class="rl-ico rl-ico-<?php echo (int)$cid; ?>"></b>
 			<i id="inv-qty-<?php echo $cid; ?>"><?php echo $qty; ?></i>
 		</span>
 		<?php endforeach; ?>
@@ -191,9 +189,16 @@ foreach ($rl_panel['rows'] as $r):
 				$act = $on ? 'removeLocationConsumable(' . $r['id'] . ',' . $cid . ')'
 				           : ($qty > 0 ? 'applyLocationConsumable(' . $r['id'] . ',' . $cid . ')' : '');
 			?>
+				<?php /* A <b> WITH A BACKGROUND, NOT AN <img>. The same seven
+				         icons were fetched eight times over -- once in the
+				         strip and once per location, 56 requests for 7 files.
+				         On a phone that is how you get a different one
+				         dropping on every load. As a background each file is
+				         requested once, and a miss degrades to an empty slot
+				         rather than a broken image. */ ?>
 				<span class="rl-slot <?php echo $cls; ?>" id="loc-con-<?php echo $r['id'] . '-' . $cid; ?>"
 					title="<?php echo rl_e($tip); ?>"<?php if ($act): ?> onclick="<?php echo $act; ?>"<?php endif; ?>>
-					<img src="icons/<?php echo rl_e(realm_con_icon($cname)); ?>" alt="" onerror="this.src='icons/skull.png'">
+					<b class="rl-ico rl-ico-<?php echo (int)$cid; ?>"></b>
 					<?php if ($on): ?><i class="on">&#10003;</i>
 					<?php elseif ($qty > 0): ?><i id="loc-inv-<?php echo $r['id'] . '-' . $cid; ?>"><?php echo $qty; ?></i><?php endif; ?>
 				</span>
@@ -218,3 +223,16 @@ foreach ($rl_panel['rows'] as $r):
 		</div>
 	</div>
 <?php endforeach; if ($rl_prev !== '') echo "</div>\n"; ?>
+
+<?php /* DEACTIVATE LIVES DOWN HERE NOW. It was in the header beside Guide,
+         which put it under the fixed burger menu on a phone -- a 60px
+         tap target at z-index 99 sitting directly on top of the control
+         that shuts your realm down. It does confirm first, so a misclick
+         was never instantly destructive, but a destructive action should
+         not be the thing your thumb finds by accident. At the foot, away
+         from everything, is where it belongs regardless of the overlap. */ ?>
+<div class="rl-danger">
+	<button type="button" class="rl-btn quiet"
+		onclick="deactivateRealm(<?php echo (int)$rl_panel['realm_id']; ?>)">Deactivate realm</button>
+	<span>Stops raids against you. You cannot reactivate for 30 days.</span>
+</div>

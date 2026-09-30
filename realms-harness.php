@@ -186,5 +186,52 @@ ok($flushAt !== false && $loaderAt < $flushAt && $flushAt < $markupAt2,
 ok(strpos($src, "getElementById('rl-loader')") !== false,
    'nothing dismisses the loader, so the page would stay behind it');
 
+/* ---------- 6. the identity panel ------------------------------------------ */
+/*
+ * Swapping this block in is what swallowed the whole #raids row a moment
+ * ago -- caught by the switcher check above, which is the third time that
+ * check has earned itself. These pin the pieces the panel needs.
+ */
+echo "\nthe identity panel\n";
+ok(strpos($src, "include __DIR__ . '/realms-identity.php'") !== false,
+   'realms.php no longer includes the identity partial');
+$ident = file_get_contents(__DIR__ . '/realms-identity.php');
+foreach (array('id="realmName"', 'id="filterNFTs"', 'id="faction"', 'id="ri-image"', 'id="ri-msg"')
+         as $hook) {
+	ok(strpos($ident, $hook) !== false, "the identity panel lost $hook");
+}
+ok(strpos($src, 'function setRealmIdentity') !== false,
+   'setRealmIdentity() is gone, so both dropdowns would do nothing');
+ok(strpos($ident, 'setRealmIdentity(') !== false,
+   'the dropdowns are not wired to setRealmIdentity()');
+/* editRealmName() lives in skulliance.js and writes into #realmName. */
+ok(strpos(file_get_contents(__DIR__ . '/skulliance.js'), "getElementById('realmName')") !== false
+   || strpos($ident, 'editRealmName') !== false,
+   'nothing renames the realm any more');
+/* The old full-page submit must not come back. */
+ok(strpos($ident, 'factionsForm') === false && strpos($ident, '.submit()') === false,
+   'the identity panel submits a form again -- that reloads the whole page to '
+ . 'change one dropdown, which is what this replaced');
+
+/* ---------- 7. the icons are fetched once each ----------------------------- */
+/*
+ * The seven item icons are drawn in the inventory strip and on all seven
+ * locations. As <img> that was 56 requests for 7 files, and on a phone a
+ * different one failed to arrive on every load. They are CSS backgrounds
+ * now: one request each, and a miss leaves an empty slot rather than a
+ * broken-image glyph.
+ */
+echo "\nitem icons\n";
+$panel = file_get_contents(__DIR__ . '/realms-locations.php');
+$imgs  = substr_count($panel, 'src="icons/');
+printf("  <img src=\"icons/...\"> in the panel: %d\n", $imgs);
+ok($imgs <= 1, "the panel renders $imgs icon <img> tags; the seven item icons should be "
+             . 'CSS backgrounds so each file is fetched once, not once per slot');
+preg_match_all('/\.rl-ico-(\d+)\s*\{\s*background-image/', $src, $icm);
+printf("  .rl-ico-N background rules: %d\n", count($icm[1]));
+ok(count($icm[1]) === 0 && strpos($src, '.rl-ico-<?php') !== false
+   || count($icm[1]) >= 7,
+   'the .rl-ico-N background rules are missing, so every slot would be blank');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);

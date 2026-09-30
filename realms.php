@@ -129,6 +129,18 @@ if (ob_get_level() > 0) @ob_flush();
   border:1px solid rgba(255,255,255,.12); background:rgba(0,0,0,.25); }
 .rl-slot img { width:100%; height:100%; object-fit:contain; display:block; padding:3px;
   box-sizing:border-box; }
+/* ONE REQUEST PER ICON, NOT EIGHT. The strip and all seven locations draw
+   the same seven files; as <img> that was 56 requests for 7 images, and on a
+   phone a different one dropped on every load. As a background each is
+   fetched once and reused, and a miss leaves an empty slot rather than a
+   broken-image glyph. Generated from realm_con_names() so the list cannot
+   drift from the markup. */
+.rl-ico { position:absolute; inset:3px; display:block;
+  background-repeat:no-repeat; background-position:center; background-size:contain; }
+<?php foreach (realm_con_names() as $rl_cid => $rl_cname): ?>
+.rl-ico-<?php echo (int)$rl_cid; ?> { background-image:url(icons/<?php
+	echo htmlspecialchars(realm_con_icon($rl_cname), ENT_QUOTES); ?>); }
+<?php endforeach; ?>
 .rl-slot.none { opacity:.3; }
 .rl-slot.has { cursor:pointer; }
 .rl-slot.has:hover { border-color:#00c8a0; }
@@ -171,6 +183,56 @@ if (ob_get_level() > 0) @ob_flush();
 .rl-run-note { font-size:.68rem; opacity:.45; }
 
 .rl-loc-acts { display:flex; gap:6px; flex:none; margin-left:auto; }
+
+/* ── REALM IDENTITY ─────────────────────────────────────────────────────── */
+/* flexbox.css puts text-align:center on .main, and this panel lives inside
+   one -- the labels, the helper lines and the saved message all came out
+   centred. Same leak the missions rebuild hit. */
+.ri, .ri * { text-align:left; }
+.ri-head { display:flex; align-items:center; gap:10px; margin:0 0 10px; }
+.ri-head h2 { margin:0; font-size:1.05rem; letter-spacing:.04em; display:flex;
+  align-items:center; gap:8px; }
+.ri-edit { background:none; border:0; padding:0; cursor:pointer; line-height:0; }
+.ri-edit img { width:18px; opacity:.55; margin:0; }
+.ri-edit:hover img { opacity:1; }
+.ri-art { border:1px solid rgba(255,255,255,.09); background:rgba(0,0,0,.2); line-height:0; }
+.ri-art img { width:100%; display:block; }
+/* Two settings, side by side, each saying what it changes. They were stacked
+   under the image with bold labels, which read as a form to fill in. */
+.ri-controls { display:flex; gap:12px; flex-wrap:wrap; margin-top:12px; }
+.ri-field { flex:1 1 220px; min-width:0; display:block; }
+.ri-field > span { display:block; font-size:.68rem; letter-spacing:.14em;
+  text-transform:uppercase; opacity:.55; margin-bottom:5px; }
+/* TWO FIGHTS WITH flexbox.css, BOTH WORTH KNOWING.
+   #filterNFTs is an ID there -- 190px wide, 20px bold, 30px tall -- so a
+   class selector loses to it and the Theme select came out twice the size
+   of the Faction one with its own label clipped. Matched with the ancestor
+   class instead, which wins 1-1-0 over 1-0-0 without !important.
+   .dropdown is `width: 300px !important`, which nothing but !important can
+   beat -- so these selects simply do not carry that class. It bought them
+   nothing that is not set here anyway. */
+.ri-field select,
+.ri-controls #filterNFTs, .ri-controls #faction {
+  width:100%; font:inherit; font-size:.8rem; font-weight:normal; height:auto;
+  padding:7px 9px; background:var(--panel2,#0d1f2d); color:#c8dce8;
+  border:1px solid rgba(255,255,255,.14); border-radius:0; text-align:left; }
+.ri-field select:focus { outline:1px solid #00c8a0; outline-offset:-1px; }
+.ri-field i { display:block; font-style:normal; font-size:.68rem; opacity:.4; margin-top:5px; }
+.ri-field.saving select { opacity:.5; }
+.ri-msg { margin:10px 0 0; font-size:.74rem; padding:7px 9px;
+  border:1px solid rgba(0,200,160,.3); color:#00c8a0; background:rgba(0,200,160,.06); }
+.ri-msg.bad { border-color:rgba(255,92,92,.35); color:#ff8f8f; background:rgba(255,92,92,.07); }
+
+/* The one destructive control on the page, at the foot and on its own. */
+.rl-danger { margin-top:22px; padding-top:14px; border-top:1px solid rgba(255,255,255,.07);
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.rl-danger span { font-size:.68rem; opacity:.4; flex:1 1 200px; }
+
+/* Clear the fixed burger (50px wide plus 10px padding, z-index 99) so nothing
+   tappable hides beneath it. */
+@media (max-width:700px){
+  .rl-head { padding-right:64px; }
+}
 /* Slots left, Manage right, on one row. */
 .rl-loc-kit { margin-top:9px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 .rl-loc-kit .rl-slots { flex:1 1 auto; }
@@ -685,65 +747,25 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	  <div class="main">
 		<div id="realm">
 		<a name="realm-image" id="realm-image"></a>
-		<h2><?php echo checkRealm($conn)?"<span id='realmName'>".getRealmName($conn)."</span>&nbsp;<img style='max-width:25px;cursor: pointer;' src='icons/edit.png' class='icon' onclick='editRealmName(this);'/>":"Realm"; ?></h2>
-	    <div class="content realm">
+		<div class="content realm">
 		<?php
+		/*
+		 * THE POST HANDLERS STAY. They are the no-JS path and createRealm()
+		 * shares the same $_POST names; the dropdowns themselves now go
+		 * through ajax/realm-identity.php and do not reload the page.
+		 */
 		if(isset($_POST['filterby'])){
 			$image = $_POST['filterby'];
-			$filterby = $_POST['filterby'];
 			if(verifyRealmTheme($conn, $_POST['filterby']) || $_POST['filterby'] == 0){
 				updateRealmTheme($conn, $realm_id, $_POST['filterby']);
 			}else{
 				$project_info = getProjectInfo($conn, $_POST['filterby']);
-				//$image = getRealmThemeID($conn, $realm_id);
-				//$filterby = $image;
 				alert("You must own at least 1 NFT from ".$project_info["name"]." in order to save this theme. Purchase an NFT and refresh your wallet(s) to try again.");
 			}
 		}else{
 			if(isset($realm_id)){
 				$image = getRealmThemeID($conn, $realm_id);
 			}
-		}?>
-		<img src="images/themes/<?php echo (isset($image)?$image:'7');?>.jpg" width="100%"/>
-		<?php if(isset($image)){
-		$selected = "";
-		$theme_id = getRealmThemeID($conn, $realm_id);
-		echo '
-		<div id="filter-nfts" style="position:static;margin-top:10px;">
-			<label for="filterNFTs"><strong>Theme:</strong></label>
-			<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs" class="dropdown">
-				<optgroup label="Core Projects">';
-				$projects = array_reverse($projects, true);
-				foreach($projects AS $id => $project){
-					if($theme_id == $id){
-						$selected = "selected";
-					}else{
-						$selected = "";
-					}
-					echo '<option '.$selected.' value="'.$id.'">'.$project["name"].'</option>';
-				}
-				echo '</optgroup><optgroup label="Partner Projects">';
-				$partner_projects = getProjects($conn, "partner");
-				foreach($partner_projects AS $id => $project){
-					if($theme_id == $id){
-						$selected = "selected";
-					}else{
-						$selected = "";
-					}
-					echo '<option '.$selected.' value="'.$id.'">'.$project["name"].'</option>';
-				}
-				echo '</optgroup>';
-				if($_SESSION['userData']['discord_id'] == '772831523899965440'){
-				echo '</optgroup><optgroup label="Founder">';
-				echo '<option value="0">Oculus Orbus</option>';
-				echo '</optgroup>';
-				}
-			echo '
-			</select>
-			<form id="filterNFTsForm" action="realms.php#realm-image" method="post">
-			  <input type="hidden" id="filterby" name="filterby" value="">
-			  <input type="submit" value="Submit" style="display:none;">
-			</form><br>';
 		}
 		if(isset($_POST['faction'])){
 			if(verifyRealmFaction($conn, $_POST['faction'])){
@@ -752,50 +774,16 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				$project_info = getProjectInfo($conn, $_POST['faction']);
 				alert("You must own at least 1 NFT from ".$project_info["name"]." in order to join this Faction. Purchase an NFT and refresh your wallet(s) to try again.");
 			}
-			
+		}
+		if($realm_status){
+			include __DIR__ . '/realms-identity.php';
 		}
 		?>
-		<?php if($realm_status){ ?>
-		<form id="factionsForm" action="realms.php#realm-image" method="post">
-		<label for="faction"><strong>Faction:</strong></label>
-		<select onchange="document.getElementById('factionsForm').submit();" class="dropdown" name="faction" id="faction">
-		<?php
-		$selected = "";
-		$project_id = getRealmFaction($conn, $realm_id);
-		$core_projects = getProjects($conn, "core");
-		$partner_projects = getProjects($conn, "partner");
-		?>
-		<optgroup label="Core Factions">';
-		<?php
-		unset($core_projects[7]);
-		foreach($core_projects AS $id => $project){
-			if($project_id == $id){
-				$selected = "selected";
-			}else{
-				$selected = "";
-			}
-			echo '<option '.$selected.' value="'.$id.'">'.$project["name"].'</option>';
-		}
-		echo '</optgroup><optgroup label="Partner Factions">';
-		$partner_projects = getProjects($conn, "partner");
-		foreach($partner_projects AS $id => $project){
-			if($project_id == $id){
-				$selected = "selected";
-			}else{
-				$selected = "";
-			}
-			echo '<option '.$selected.' value="'.$id.'">'.$project["name"].'</option>';
-		}
-		echo '</optgroup>';
-		?>
-		</select>
-		</form>
-		<?php } ?>
 		</div>
-	    </div>
 		</div>
-	  </div>
+	</div>
 </div>
+
 <?php if($realm_status){ ?>
 <div class="row">	
 	<div class="main">
@@ -836,6 +824,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 	</div>
 </div>
 <?php } ?>
+
 <?php if($realm_status){ ?>
 <div class="row" id="map" style="display:none">	
 	<div class="main">
@@ -1302,6 +1291,73 @@ $conn->close();
 		//document.getElementById('row1').style.top = '-65px';
 	}*/
 	
+	/*
+	 * THEME AND FACTION, WITHOUT A PAGE RELOAD.
+	 *
+	 * Both used to submit a form: the theme through a hidden
+	 * #filterNFTsForm, the faction with an inline factionsForm.submit().
+	 * This page is heavy enough to need a loading screen, so changing one
+	 * dropdown meant re-running seven priced locations, the map data, the
+	 * raid lists and the roster, and losing your scroll position, to alter
+	 * one image or one row. A refusal was worse: the page came back with a
+	 * JS alert() over it.
+	 *
+	 * The server still decides. ajax/realm-identity.php re-checks ownership
+	 * with the same verifyRealmTheme()/verifyRealmFaction() the form handler
+	 * used, and takes the realm from the session rather than the request.
+	 */
+	function setRealmIdentity(what, value, sel){
+		var field = sel.closest('.ri-field');
+		var msg   = document.getElementById('ri-msg');
+		var prev  = sel.getAttribute('data-was') || '';
+		if (field) field.classList.add('saving');
+		sel.disabled = true;
+		if (msg) msg.hidden = true;
+
+		var body = 'what=' + encodeURIComponent(what) + '&value=' + encodeURIComponent(value);
+		fetch('ajax/realm-identity.php', {
+			method: 'POST', credentials: 'same-origin',
+			headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+			body: body
+		}).then(function(r){ return r.json(); })
+		  .then(function(j){
+			sel.disabled = false;
+			if (field) field.classList.remove('saving');
+			if (!j || !j.ok) {
+				/* PUT THE DROPDOWN BACK. A refused change that leaves the
+				   select showing the thing you cannot have reads as saved. */
+				if (prev !== '') sel.value = prev;
+				if (msg) { msg.textContent = (j && j.message) || 'That did not save.';
+				           msg.className = 'ri-msg bad'; msg.hidden = false; }
+				return;
+			}
+			sel.setAttribute('data-was', sel.value);
+			if (j.image) {
+				var img = document.getElementById('ri-image');
+				/* Cache-bust: the filename is the project id, so the browser
+				   would otherwise reuse a theme you just changed away from. */
+				if (img) img.src = j.image + '?v=' + Date.now();
+			}
+			if (msg) { msg.textContent = j.message || 'Saved.';
+			           msg.className = 'ri-msg'; msg.hidden = false;
+			           setTimeout(function(){ msg.hidden = true; }, 2600); }
+		  })
+		  .catch(function(){
+			sel.disabled = false;
+			if (field) field.classList.remove('saving');
+			if (prev !== '') sel.value = prev;
+			if (msg) { msg.textContent = 'Could not reach the server.';
+			           msg.className = 'ri-msg bad'; msg.hidden = false; }
+		  });
+	}
+	/* Remember what each select was on, so a refusal can put it back. */
+	(function(){
+		['filterNFTs','faction'].forEach(function(id){
+			var el = document.getElementById(id);
+			if (el) el.setAttribute('data-was', el.value);
+		});
+	}());
+
 	function toggleSections(selection){
 		window.scrollTo(0, 0);
 		var sections = ['locations','map','realm','raids','realms'];

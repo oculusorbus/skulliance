@@ -69,3 +69,23 @@ The duration of a potential raid is calculated by the difference in offense and 
 * **Max Raids Reached** - This indicates that you have reached the maximum number of raids allowed based on your portal level and cannot raid anymore Realms at this time.
 
 ![Realm locations, inventory, and realm artwork](https://www.skulliance.io/staking/images/screenshots/realms.png)
+
+## Your realm panel
+
+The right-hand panel is your realm's own: its name, its artwork, and the two
+settings that define it.
+
+* **Theme** is the artwork. Any project you hold at least one NFT from.
+* **Faction** is who you raid alongside. Same requirement.
+
+Changing either **no longer reloads the page.** It used to submit a form, which
+meant re-running every priced location, the map, the raid lists and your
+soldier roster just to change one picture - and if you picked something you do
+not hold an NFT for, the refusal arrived as a pop-up over the reloaded page.
+Now it saves in place and tells you inline, and a refused change puts the
+dropdown back where it was rather than leaving it showing something you did not
+get.
+
+**Deactivate** has moved to the bottom of the locations panel, on its own. It
+was next to the Guide button, which on a phone put it directly under the fixed
+menu button. It still asks for confirmation.
