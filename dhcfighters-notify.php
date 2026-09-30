@@ -152,10 +152,16 @@ function dhcf_notify_drop($conn, $user_id, $drop, $game_key) {
  * SAPI, a missing source file, an unwritable directory. Every caller treats ''
  * as "post without a picture", because a Fighter announced as text is far
  * better than a save that failed over a render.
+ *
+ * $size is the edge of the square canvas. 500 is the default and what Discord,
+ * the Arena and the landing thumbnails ask for; dhc-download.php asks for 1000,
+ * which is the size of the master art, so a player can post their Fighter
+ * somewhere that is not this site. Nothing above 1000 is real detail.
  */
-function dhcf_render_fighter($traits, $serial) {
+function dhcf_render_fighter($traits, $serial, $size = 500) {
 	try {
 		if (!function_exists('imagecreatetruecolor') || !function_exists('imagecopyresampled')) return '';
+		$size = max(100, min(1000, (int)$size));   // 1000 is the master art; above it is just blur
 
 		$base = '';
 		foreach (array('web', 'dhc', 'dhc/web', 'traits') as $c) {
@@ -167,8 +173,6 @@ function dhcf_render_fighter($traits, $serial) {
 		if (!is_dir($dir) && !@mkdir($dir, 0775, true)) return '';
 		if (!is_writable($dir)) return '';
 
-		$size = 500;                       // plenty for a Discord embed, quick to build
-
 		/*
 		 * ALREADY BUILT? The filename is the serial plus a hash of the exact
 		 * traits, so an existing file IS this Fighter -- and an edited one
@@ -177,7 +181,15 @@ function dhcf_render_fighter($traits, $serial) {
 		 * public landing page asks for a wall of them at once, where
 		 * recomposing 28 thousand-pixel stacks per page view is not.
 		 */
-		$name = 'f' . (int)$serial . '-' . substr(md5(json_encode($traits)), 0, 8) . '.png';
+		/*
+		 * THE 500 IS UNSUFFIXED ON PURPOSE. Every render made before this
+		 * function took a size is a 500 sitting in dhcrenders/ under the
+		 * plain name; putting the size in every filename would orphan the
+		 * whole cache and recompose a thousand-pixel stack per Fighter the
+		 * next time Discord or the Arena asked for one.
+		 */
+		$name = 'f' . (int)$serial . '-' . substr(md5(json_encode($traits)), 0, 8)
+		      . ($size === 500 ? '' : '@' . $size) . '.png';
 		if (is_file($dir . '/' . $name)) {
 			return 'https://skulliance.io/staking/dhcrenders/' . $name;
 		}

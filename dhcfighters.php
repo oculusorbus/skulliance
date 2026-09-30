@@ -171,6 +171,20 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-cancel{font-size:11px;color:var(--dim);text-decoration:none;border-bottom:1px solid transparent}
 .dhcf-cancel:hover{color:var(--ochre);border-bottom-color:currentColor}
 .dhcf-card .acts .dhcf-edit{text-decoration:none;display:inline-flex;align-items:center}
+/* DOWNLOAD SITS ON THE PICTURE, NOT IN THE ACTION ROW. Measured: Edit,
+   Rename and Disassemble already fill a 150px card exactly, and a fourth
+   control -- even a two-character one -- pushed the row 7px wide, with
+   Disassemble already at its min-content width and nothing left to shrink.
+   The corner is also where a download control belongs: it is attached to
+   the thing being downloaded, and it costs the row nothing. .dhcf-card is
+   already position:relative, and this is a SIBLING of .art rather than a
+   child, because .art is itself a button and buttons do not nest. */
+.dhcf-card .dhcf-get{position:absolute;top:5px;right:5px;z-index:2;
+  display:flex;align-items:center;justify-content:center;width:26px;height:26px;
+  border-radius:2px;text-decoration:none;font-size:13px;line-height:1;
+  background:rgba(4,18,28,.72);border:1px solid var(--line);color:var(--bone)}
+.dhcf-card .dhcf-get:hover{border-color:var(--ochre);color:var(--ochre);
+  background:rgba(4,18,28,.92)}
 .dhcf-stat b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
 .dhcf-stat span{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.6}
 /* Reference block, below everything you actually operate. It answers "what
@@ -339,6 +353,14 @@ a.dhcf-stat span{opacity:.85}
           <?php foreach ($dhcf_roster as $f): ?>
             <div class="dhcf-card" data-id="<?php echo (int)$f['id']; ?>"
                  data-traits="<?php echo htmlspecialchars(json_encode($f['traits']), ENT_QUOTES); ?>">
+              <?php /* The card draws the 250px layers; this is those same
+                       traits at the 1000px masters, flattened into one file
+                       you can post. On the art because the action row is
+                       full -- see .dhcf-get. */ ?>
+              <a class="dhcf-get" download
+                 href="dhc-download.php?serial=<?php echo (int)$f['serial']; ?>"
+                 title="Download <?php echo htmlspecialchars($f['display']); ?> as a 1000px PNG"
+                 aria-label="Download <?php echo htmlspecialchars($f['display']); ?> as a 1000px PNG">&#8595;</a>
               <?php /* A button, not a div with a click handler: this is a real
                        control and should be reachable by keyboard like one. */ ?>
               <button type="button" class="art" title="View <?php echo htmlspecialchars($f['display']); ?> on the canvas">

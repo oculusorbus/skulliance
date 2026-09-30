@@ -279,6 +279,22 @@ Filters are carried in the link, so a particular view is something you can send
 to someone — and now to anyone, not only to another staker. A shared link
 carries its own title and preview: *"Mythic Fighters"* posts as exactly that.
 
+### Take the picture with you
+
+Every Fighter can be downloaded as a **1000px PNG** — the arrow in the corner of
+its card in your workshop, or **Full size** on its panel in the Collection. That
+is the size Maxingo drew the trait art at, so it is the largest version that is
+real detail rather than an upscale, and it is one flat file rather than the
+eleven layers the page stacks to show it to you.
+
+It is drawn by the same renderer as the Discord announcement and the Arena, so
+what you download is what everyone else sees, down to the layer order. A Fighter
+with no Background trait downloads with a transparent surround, because that is
+genuinely what it is — put it on whatever you like.
+
+Anyone can download any Fighter. The layers are already public on the
+Collection page, and a collection that gets shown is the whole point.
+
 ---
 
 ## Originality

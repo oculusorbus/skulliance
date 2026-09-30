@@ -210,6 +210,24 @@ function dhcf_display_name($row) {
 	return dhcf_default_name((int)$row['serial']);
 }
 
+/**
+ * What a downloaded Fighter is called on disk. See dhc-download.php.
+ *
+ * Serial first so a folder of them sorts, given name after it, reduced to
+ * something every filesystem and every upload form will take -- this string
+ * is usually what gets typed into the post the download exists for.
+ */
+function dhcf_download_filename($row) {
+	$num  = isset($row['serial']) && $row['serial'] !== null
+	      ? dhcf_default_name((int)$row['serial']) : 'DHC-Fighter';
+	$safe = preg_replace('/[^A-Za-z0-9]+/', '-', dhcf_display_name($row));
+	$safe = trim(preg_replace('/-+/', '-', (string)$safe), '-');
+	/* An unnamed Fighter's display name IS the serial, so appending it would
+	   produce DHC2F0123-DHC2F0123.png. */
+	if ($safe === '' || strcasecmp($safe, $num) === 0) return $num . '.png';
+	return $num . '-' . $safe . '.png';
+}
+
 /* ------------------------------------------------------------------ *
  * AWARDING A TRAIT
  * ------------------------------------------------------------------ */
