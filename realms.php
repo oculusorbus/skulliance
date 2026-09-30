@@ -419,6 +419,41 @@ if (ob_get_level() > 0) @ob_flush();
   .rl-nav a { padding: 8px 11px; }
 }
 
+/*
+ * SOLDIER CARDS -- RESTORED. I deleted this entire run by accident in
+ * 19ed0d81 while cutting the #quick-menu blocks out of this sheet: the bar's
+ * rules and these sat next to each other and I took the lot. Nothing threw
+ * and nothing looked wrong on the page itself, because every one of these
+ * classes only renders INSIDE a Manage modal -- so the damage showed up as
+ * "managing locations has blown out nft images, unusable on mobile", which
+ * is what .soldier-nft-img losing width:64px does to a 1000px NFT.
+ *
+ * .soldiers-grid losing display:grid is the other half: the cards stopped
+ * being a grid and stacked one per row, which is why the modal below is
+ * endless. The @media (max-width:500px) block that sets this grid to three
+ * columns survived the cut and was overriding a grid that no longer existed.
+ */
+.soldiers-stat-row { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+.soldiers-stat { background:rgba(255,255,255,0.06); border-radius:8px; padding:10px 14px; flex:1; min-width:100px; }
+.soldiers-stat-label { display:block; font-size:0.72rem; opacity:0.5; letter-spacing:0.04em; text-transform:uppercase; margin-bottom:3px; }
+.soldiers-stat-value { display:block; font-size:1.1rem; font-weight:bold; color:#00c8a0; }
+.soldiers-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-top:8px; }
+.soldier-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px; text-align:center; font-size:0.75rem; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.soldier-card.selected { border-color:#00c8a0; background:rgba(0,200,160,0.1); }
+.soldier-card.soldier-ready { border-color:#00c8a0; }
+.soldier-card.soldier-dead { opacity:0.7; }
+.soldier-nft-img { width:64px; height:64px; object-fit:cover; border-radius:6px; }
+.soldier-name { font-size:0.7rem; opacity:0.8; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:10ch; }
+.soldier-status { font-size:0.68rem; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.08); }
+.soldier-status.status-ready { background:rgba(0,200,160,0.2); color:#00c8a0; }
+.soldier-status.status-deployed { background:rgba(74,144,217,0.2); color:#4a90d9; }
+.soldier-status.status-training { background:rgba(255,200,0,0.15); color:#ffc800; }
+.soldier-status.status-dead { background:rgba(255,60,60,0.15); color:#ff6060; }
+/* Crypt coffin cards */
+#crypt-soldiers-grid .soldier-status { background:none; }
+.coffin-wrapper {
+    background: url('icons/coffin.png') center bottom / contain no-repeat;
+}
 .coffin-card {
     background: rgba(30, 10, 10, 0.7);
     border: 1px solid rgba(150, 50, 50, 0.4);

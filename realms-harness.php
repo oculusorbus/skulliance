@@ -516,6 +516,83 @@ ok(substr_count($src, 'safe-area-inset-bottom') >= 1,
  * shrink below the SVG's intrinsic width. Without it the other three rules
  * measure 1132px inside a 390px page -- they do literally nothing.
  */
+/* ---------- 8d. every class the Manage modals render has a rule -----------
+ *
+ * I DELETED SIXTEEN RULES BY ACCIDENT and shipped it. Cutting the
+ * #quick-menu blocks out of realms.php's sheet took the whole soldier-card
+ * run with them -- they sat next to each other. Nothing threw, no harness
+ * moved, and the PAGE looked perfect, because every one of those classes
+ * only renders INSIDE a Manage modal. It surfaced as "managing locations
+ * has blown out nft images, unusable on mobile": .soldier-nft-img had lost
+ * width:64px, so a 1000px NFT rendered at 1000px, and .soldiers-grid had
+ * lost display:grid, so the cards stopped being a grid and stacked one per
+ * screen. The @media(max-width:500px) rule setting that grid to three
+ * columns SURVIVED the cut and was overriding a grid that no longer
+ * existed, which is why nothing looked obviously missing in the source.
+ *
+ * So: every realms-only class those endpoints emit must have a rule here.
+ * This is the check that would have caught it.
+ */
+echo "\nthe manage modals have their styles\n";
+$styleBlocks = array();
+preg_match_all('/<style[^>]*>(.*?)<\/style>/s', $src, $sb);
+$sheet = implode("\n", $sb[1]);
+ok(count($sb[1]) >= 2, 'realms.php has fewer <style> blocks than expected; the '
+ . 'audit below would be looking at the wrong one');
+$emitted = array();
+foreach (array_merge(glob(__DIR__ . '/ajax/get-*.php'), array(__DIR__ . '/realms.php')) as $f) {
+	preg_match_all('/class=["\']([^"\']+)["\']/', file_get_contents($f), $cm);
+	foreach ($cm[1] as $attr) {
+		foreach (preg_split('/\s+/', $attr) as $c) {
+			/* Only the families realms.php owns. .button, .icon and friends
+			   come from flexbox.css and are not this page's to define. */
+			if (preg_match('/^(soldier|soldiers|coffin|gear|tower)-/', $c)
+			 || in_array($c, array('soldiers-grid', 'soldiers-table'), true)) {
+				$emitted[$c] = true;
+			}
+		}
+	}
+}
+ok(count($emitted) > 10, 'the class scan found almost nothing, so it is not '
+ . 'actually scanning the modal endpoints any more');
+/* A rule in EITHER sheet counts: .soldier-discharge-btn is a red variant of
+   the platform's own .small-button and lives in flexbox.css, not here.
+   .tower-pick has no rule anywhere by design -- it is the selector jQuery
+   uses to find the cards. Named explicitly rather than excused by an "is it
+   used in JS" test, so that deleting a real rule cannot slip through the
+   same door. */
+$flexAll  = file_get_contents(__DIR__ . '/dist/flexbox.css');
+/* THE SQUARING BLOCK IS NOT A STYLE for this purpose. It lists most of these
+   classes by name to zero their corners, so a class whose ONLY remaining
+   mention is in there would read as styled while having lost everything that
+   positions it -- .soldiers-stat did exactly that and passed. Drop any rule
+   whose whole body is a border-radius before auditing. */
+$radiusOnly = '/[^{}]+\{\s*border-radius:[^;}]+;?\s*\}/';
+$sheet   = preg_replace($radiusOnly, '', $sheet);
+$flexAll = preg_replace($radiusOnly, '', $flexAll);
+$jsOnly   = array('tower-pick' => true);
+$unstyled = array();
+foreach (array_keys($emitted) as $c) {
+	if (isset($jsOnly[$c])) continue;
+	$sel = '/\.' . preg_quote($c, '/') . '[\s.,{:]/';
+	if (!preg_match($sel, $sheet) && !preg_match($sel, $flexAll)) $unstyled[] = $c;
+}
+sort($unstyled);
+printf("  modal classes rendered: %d; unstyled: %s\n",
+	count($emitted), $unstyled ? implode(', ', $unstyled) : 'none');
+ok(empty($unstyled),
+   'these classes are rendered by a Manage modal and have no rule in '
+ . 'realms.php: ' . implode(', ', $unstyled) . ' -- a modal is the one place '
+ . 'on this page where losing a rule is invisible until someone opens it');
+/* The two that actually caused the report, named so a future cut cannot
+   quietly take them again. */
+ok(preg_match('/\.soldiers-grid\s*\{[^}]*display:\s*grid/', $sheet) === 1,
+   '.soldiers-grid lost display:grid -- the soldier cards stack one per row '
+ . 'and the modal becomes endless on a phone');
+ok(preg_match('/\.soldier-nft-img\s*\{[^}]*width:\s*64px/', $sheet) === 1,
+   '.soldier-nft-img lost its width -- NFT art renders at its natural size, '
+ . 'which is what "blown out nft images" was');
+
 echo "\nthe map on a phone\n";
 $mapJs  = file_get_contents(__DIR__ . '/map.js');
 $mapCss = file_get_contents(__DIR__ . '/dist/map.css');
