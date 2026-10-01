@@ -58,7 +58,50 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
         return '';
     }
 
+    /*
+     * DISCORD'S EMBED LIMITS ARE HARD LIMITS. Over any of them and the whole
+     * POST is rejected 400 and NOTHING is posted -- not a truncated embed, not
+     * a plain-text fallback, nothing.
+     *
+     * This is not theoretical. The monthly leaderboard posts list up to 45
+     * ranked players at ~107 characters each: 4,815 characters against a 4,096
+     * limit, overflowing from the 39th entry. A board quietly stops announcing
+     * itself the month it grows past 38 players, and because the response was
+     * discarded (see below) there was no way to tell that from "the cron did
+     * not run" -- which is exactly how this was reported.
+     *
+     * Cuts on a line boundary where there is one in reach, so a rank list ends
+     * after a whole entry rather than halfway through someone's name.
+     */
+    function skl_embed_trim($text, $limit) {
+        if (!is_string($text) || $text === '' || mb_strlen($text) <= $limit) return $text;
+        $note = "\r\n… truncated";
+        $keep = $limit - mb_strlen($note);
+        if ($keep < 1) return mb_substr($text, 0, $limit);
+        $cut  = mb_substr($text, 0, $keep);
+        $nl   = mb_strrpos($cut, "\n");
+        /* Only snap back to a newline if one is reasonably near the end --
+           otherwise a single enormous paragraph would lose most of itself. */
+        if ($nl !== false && $nl > $keep * 0.6) $cut = mb_substr($cut, 0, $nl);
+        return rtrim($cut) . $note;
+    }
+
+    /* Discord's documented per-field caps, and the 6000 ceiling on the sum of
+       them all -- which is why description is trimmed twice: once to its own
+       limit, and again if title + footer leave it less room than that. */
+    define('SKL_EMBED_TITLE_MAX', 256);
+    define('SKL_EMBED_DESC_MAX', 4096);
+    define('SKL_EMBED_FOOTER_MAX', 2048);
+    define('SKL_EMBED_TOTAL_MAX', 6000);
+
     function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null, $footer=null, $content="") {
+        /*
+         * RE-ENTRY GUARD. alertAdmin() reports a failure by calling THIS
+         * function, so a post that fails because the default webhook is dead
+         * would raise an alert down the same dead webhook, which fails, which
+         * alerts... Static, so the flag survives for the whole request.
+         */
+        static $skl_alerting = false;
 
 		if($url == ""){
 			$url = "https://skulliance.io/staking";
@@ -155,6 +198,21 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 		}
 	    $timestamp = date("c", strtotime("now"));
 
+	    /* Trimmed HERE, once, rather than at ~40 call sites. */
+	    $title       = skl_embed_trim($title, SKL_EMBED_TITLE_MAX);
+	    $description = skl_embed_trim($description, SKL_EMBED_DESC_MAX);
+	    if (is_array($footer) && isset($footer['text'])) {
+	        $footer['text'] = skl_embed_trim($footer['text'], SKL_EMBED_FOOTER_MAX);
+	    }
+	    /* The 6000 ceiling counts every text field together, so a long title
+	       and footer steal from the description's own 4096. */
+	    $other = mb_strlen((string)$title)
+	           + (is_array($footer) && isset($footer['text']) ? mb_strlen((string)$footer['text']) : 0)
+	           + (is_array($author) && isset($author['name']) ? mb_strlen((string)$author['name']) : 0);
+	    if ($other + mb_strlen((string)$description) > SKL_EMBED_TOTAL_MAX) {
+	        $description = skl_embed_trim($description, max(1, SKL_EMBED_TOTAL_MAX - $other));
+	    }
+
 	    $embed = [
 	        "title"       => $title,
 	        "type"        => "rich",
@@ -217,7 +275,42 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
             curl_setopt( $ch, CURLOPT_HEADER, 0);
             curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
             $response = curl_exec( $ch );
+            /*
+             * THE RESPONSE USED TO BE READ INTO A VARIABLE AND THROWN AWAY.
+             * Every way a Discord post can fail -- a rotated webhook (401), a
+             * deleted one (404), an embed over a limit (400), rate limiting
+             * (429) -- looked exactly like success from in here, and the cron
+             * runner swallows stdout anyway. The reported symptom was "the
+             * monthly script didn't run"; it had run, and paid out, and only
+             * the announcements were missing. Nothing on the platform could
+             * have told anyone that.
+             *
+             * Discord answers a webhook POST with 204 No Content on success.
+             */
+            $status = (int) curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
+            $cerr   = curl_error( $ch );
             curl_close( $ch );
+
+            if ($status < 200 || $status >= 300) {
+                $where = ($channel !== "" ? $channel : "default");
+                $why   = $cerr !== "" ? $cerr : substr((string)$response, 0, 400);
+                error_log("discordmsg: $where webhook returned $status for \"$title\" -- $why");
+                /*
+                 * Signature is the channel + status, NOT the message: a board
+                 * that posts 12 results would otherwise raise 12 alerts, and
+                 * a NEW kind of failure still gets through immediately
+                 * because its signature differs.
+                 */
+                if (!$skl_alerting && function_exists('alertAdmin')) {
+                    $skl_alerting = true;
+                    alertAdmin(
+                        "Discord post rejected ($status)",
+                        "**Channel:** " . $where . "\n**Post:** " . $title . "\n**Response:** " . $why,
+                        "discordmsg-" . $where . "-" . $status
+                    );
+                    $skl_alerting = false;
+                }
+            }
         }
     }
 
