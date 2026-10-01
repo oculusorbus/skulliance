@@ -8,6 +8,10 @@
 
 ![Oculus Lounge](https://www.oculuslounge.vip/lounge/oculus-lounge-dancers.png)
 
+## Finding It
+
+Oculus Lounge is in the **Play** menu and on the launchpad, in both places labelled **NSFW** - it is a topless club, and the label is there so nobody opens it without knowing what it is. It shares an engine with [[games-drop-ship]], so each link carries the game it means; picking one always takes you to that one.
+
 ## Overview
 
 The Oculus Lounge game allows VIP token holders to send their OG Disco Solaris NFTs to the club with a combination of clothing, toys, and items.

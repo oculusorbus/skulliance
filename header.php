@@ -215,7 +215,13 @@
 		           listed here: Play is a list of things to play, and the gallery
 		           is reached from inside DHC Fighters, where a player already has
 		           a Fighter worth going to look at. -->
-		      <a href="dropship/dashboard.php">Drop Ship</a>
+		      <!-- ?project_id= on both: Drop Ship and Oculus Lounge are one
+		           codebase switched by a session value, so without it each
+		           link opens whichever of the two the session was last left
+		           on. dropship/dropship.php validates the id against
+		           getProjects() before storing it. -->
+		      <a href="dropship/dashboard.php?project_id=1">Drop Ship</a>
+		      <a href="dropship/dashboard.php?project_id=4">Oculus Lounge <span class="nav-nsfw">NSFW</span></a>
 		    </div>
 		  </div>
 

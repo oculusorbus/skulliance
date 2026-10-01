@@ -23,15 +23,47 @@ foreach ($guilds as $key => $guildData) {
 */
 
 // Project initialization, had to move from dashboard because of so many dependencies on project id
+//
+// ACCEPTS THE PROJECT FROM THE QUERY STRING as well as the Select Project
+// form, so a link can land on a specific game. Skulliance's launchpad links
+// straight to Oculus Lounge (?project_id=4) and to Drop Ship (?project_id=1);
+// without this both tiles opened whichever one the session was last left on,
+// and the player had to find the dropdown to switch.
+//
+// VALIDATED AGAINST getProjects(), the same list the dropdown is built from.
+// This value is interpolated directly into SQL further down -- getProjectName()
+// and getProjectPolicyId() in db.php both read
+// $_SESSION['userData']['dropship_project_id'] straight into a query string,
+// and so does a good deal else -- so an unchecked one is an injection, and a
+// GET makes it reachable from any link rather than only from this page's own
+// form. The POST goes through the same check for that reason; it never had
+// one. An unrecognised id is ignored rather than stored.
 $project_id = "";
 $project_id_changed = "false";
+
+$ds_requested = null;
 if(isset($_POST['project_id'])){
-	$project_id = $_POST['project_id'];
-	if($project_id != $_SESSION['userData']['dropship_project_id']){
-		$project_id_changed = "true";
+	$ds_requested = $_POST['project_id'];
+}else if(isset($_GET['project_id'])){
+	$ds_requested = $_GET['project_id'];
+}
+
+if($ds_requested !== null){
+	$ds_allowed = getProjects($conn);   // returns null when the table is empty
+	$ds_pick    = intval($ds_requested);
+	if(is_array($ds_allowed) && isset($ds_allowed[$ds_pick])){
+		$project_id = $ds_pick;
+		if(!isset($_SESSION['userData']['dropship_project_id'])
+		   || $project_id != $_SESSION['userData']['dropship_project_id']){
+			$project_id_changed = "true";
+		}
+		$_SESSION['userData']['dropship_project_id'] = $project_id;
 	}
-	$_SESSION['userData']['dropship_project_id'] = $project_id;
-}else if(!isset($_SESSION['userData']['dropship_project_id'])){
+}
+
+// Still nothing on the session -- first visit, or a request that named a
+// project that does not exist. Drop Ship is the default it always was.
+if(!isset($_SESSION['userData']['dropship_project_id'])){
 	$_SESSION['userData']['dropship_project_id'] = 1;
 	$project_id = 1;
 }
