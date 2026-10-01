@@ -41,6 +41,36 @@ foreach ($st_items as $it) {
 }
 
 /*
+ * WHAT YOU HAVE ALREADY CLAIMED GOES TO THE BOTTOM.
+ *
+ * getItemsData() orders by featured, then project, then name -- which is
+ * the right order for a catalogue and the wrong one for a shopper, because
+ * it scatters the rows you can do nothing about through the ones you can.
+ * A claimed card is dimmed and its buy buttons are disabled, so every one
+ * of them sitting mid-list is a gap in the thing you are actually reading.
+ *
+ * A partition rather than a sort, so it does not depend on the sort being
+ * stable. PHP's sorts ARE stable from 8.0 and a usort here would behave
+ * identically -- measured -- but this platform has around twenty PHP
+ * builds available and nothing pins which one serves the page, and on 7.x
+ * an unstable sort would scatter the catalogue order inside each half.
+ * Partitioning cannot do that: within each half the original order is
+ * carried through untouched, so featured items still lead and projects
+ * still group.
+ *
+ * Done here rather than in the SQL because 'owned' is not a column -- it
+ * is resolved per viewer after the query, so ORDER BY cannot see it.
+ */
+if ($st_owned) {
+	$st_open = array(); $st_done = array();
+	foreach ($st_items as $it) {
+		if (!empty($it['owned'])) $st_done[] = $it; else $st_open[] = $it;
+	}
+	$st_items = array_merge($st_open, $st_done);
+	unset($st_open, $st_done);
+}
+
+/*
  * EDITING A LISTING AFTER IT IS SUBMITTED.
  *
  * A listing used to be frozen the moment it was created: a typo, a dead
