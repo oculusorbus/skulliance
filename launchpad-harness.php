@@ -69,13 +69,15 @@ foreach ($ds_tiles as $label => $href) {
 ok(isset($ds_tiles['Drop Ship'])     && strpos($ds_tiles['Drop Ship'], 'project_id=1') !== false,     'Drop Ship no longer pins project 1');
 ok(isset($ds_tiles['Oculus Lounge']) && strpos($ds_tiles['Oculus Lounge'], 'project_id=4') !== false, 'Oculus Lounge no longer pins project 4');
 
-/* The badge is the whole reason the 5th field exists. */
+/* NSFW IS IN THE DESCRIPTION, not a badge. It was a badge briefly and the
+   pill was the wrong shape for it; what matters is only that the warning is
+   on screen before the click, so the check is on the text a player reads,
+   not on the markup that carries it. */
 $lounge = null;
 foreach ($lp_sections as $sec) foreach ($sec['items'] as $it) if ($it[2] === 'Oculus Lounge') $lounge = $it;
 ok($lounge !== null, 'the Oculus Lounge tile is gone');
-ok($lounge !== null && isset($lounge[4]) && $lounge[4] === 'NSFW', 'the Oculus Lounge tile lost its NSFW badge');
-ok(strpos($lp, 'lp-tile-badge') !== false && strpos($lp, '$it[4]') !== false,
-   'launchpad.php no longer renders the badge field, so the NSFW label is in the data and nowhere on screen');
+ok($lounge !== null && stripos($lounge[3], 'NSFW') !== false,
+   'the Oculus Lounge description no longer says NSFW: "' . ($lounge[3] ?? '') . '"');
 
 /* ---------------------------------------------------------------- *
  * The Play menu in the nav carries the same pair, pinned the same way.
@@ -90,14 +92,11 @@ foreach ($nav[1] as $i => $href) {
 	   "the nav's \"$text\" link has no project_id, so it opens whichever game the session was last on");
 }
 ok(strpos($hdr, 'dropship/dashboard.php?project_id=4') !== false, 'Oculus Lounge is not in the Play menu');
-ok(preg_match('#Oculus Lounge\s*<span class="nav-nsfw">NSFW</span>#', $hdr) === 1,
-   'the Play menu entry lost its NSFW badge');
-$css = file_get_contents($root . '/dist/flexbox.css');
-/* The SELECTOR, not the substring: ".nav-nsfwX {" contains ".nav-nsfw" and a
-   bare strpos passed a mutation that renamed the rule out from under the
-   markup. */
-ok(preg_match('/^\.nav-nsfw\s*\{/m', $css) === 1,
-   'the NSFW badge has no style rule, so it renders as plain text in the menu');
+/* The menu has no room for a description, so the warning rides in the link
+   text itself. Plain text, deliberately -- it was a styled pill and the pill
+   was the wrong shape for it. */
+ok(preg_match('#>Oculus Lounge[^<]*NSFW[^<]*</a>#', $hdr) === 1,
+   'the Play menu entry no longer says NSFW');
 
 /* ---------------------------------------------------------------- *
  * The real validation block out of dropship/dropship.php, driven.

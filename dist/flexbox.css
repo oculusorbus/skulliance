@@ -237,21 +237,6 @@ a:hover { color: #00a882; }
   color: #f5a623;
   border: 1px solid rgba(245,166,35,0.45);
 }
-/* Marks a menu entry as adult. Same shape as .nav-tag on purpose -- two
-   badges of different shapes in one menu read as a mistake rather than as
-   two kinds of warning -- in red, because this one is not "come and look",
-   it is "know what this is before you click". */
-.nav-nsfw {
-  font-size: 0.62rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  vertical-align: middle;
-  margin-left: 6px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  color: #ff9090;
-  border: 1px solid rgba(255,112,112,0.45);
-}
 @media screen and (min-width: 701px) {
   .nav-dropdown:hover > .nav-dropdown-menu { display: flex; }
 }

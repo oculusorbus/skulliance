@@ -91,7 +91,7 @@ $lp_sections = array(
 			// -- click Oculus Lounge, then Drop Ship, and you got the Lounge
 			// again. dropship.php validates the id against getProjects().
 			array('dropship/dashboard.php?project_id=1', '🪖', 'Drop Ship',    'NFT battler'),
-			array('dropship/dashboard.php?project_id=4', '🪩', 'Oculus Lounge', 'Club night battler', 'NSFW'),
+			array('dropship/dashboard.php?project_id=4', '🪩', 'Oculus Lounge', 'NSFW Club Crawler'),
 		),
 	),
 	'Collect' => array(
@@ -204,11 +204,7 @@ if ($lp_balance === 0) {
 			<?php foreach ($lp_sec['items'] as $it): ?>
 				<a class="lp-tile" href="<?php echo htmlspecialchars($it[0]); ?>">
 					<span class="lp-tile-icon"><?php echo $it[1]; ?></span>
-					<span class="lp-tile-name"><?php echo htmlspecialchars($it[2]); ?><?php
-						// Optional 5th field: a badge. Only Oculus Lounge carries
-						// one today, and the whole point of it is that nobody
-						// opens that tile without having been told first.
-						if (isset($it[4])): ?><span class="lp-tile-badge"><?php echo htmlspecialchars($it[4]); ?></span><?php endif; ?></span>
+					<span class="lp-tile-name"><?php echo htmlspecialchars($it[2]); ?></span>
 					<span class="lp-tile-desc"><?php echo htmlspecialchars($it[3]); ?></span>
 				</a>
 			<?php endforeach; ?>
@@ -270,22 +266,6 @@ if ($lp_balance === 0) {
 .lp-tile-icon { font-size: 1.6rem; line-height: 1; margin-bottom: 8px; }
 .lp-tile-name { font-weight: bold; font-size: 0.95rem; }
 .lp-tile-desc { font-size: 0.73rem; color: rgba(255,255,255,0.45); margin-top: 4px; }
-/* The same shape and colour as .nav-nsfw in flexbox.css, which marks the same
-   game in the Play menu. One word in two shapes reads as a mistake rather
-   than as two kinds of warning, so the pill shape .nav-tag established wins
-   over this page's own square-everything instinct. */
-.lp-tile-badge {
-	display: inline-block;
-	margin-left: 6px;
-	padding: 2px 6px;
-	border: 1px solid rgba(255,112,112,0.45);
-	border-radius: 999px;
-	color: #ff9090;
-	font-size: 0.62rem;
-	letter-spacing: 0.1em;
-	text-transform: uppercase;
-	vertical-align: middle;
-}
 </style>
 
 </body>
