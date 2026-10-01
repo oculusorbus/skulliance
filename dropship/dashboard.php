@@ -3,6 +3,7 @@ include 'db.php';
 include 'dropship.php';
 include 'webhooks.php';           // $bot_token -- must precede role.php's use of it
 require_once 'role.php';          // dropshipMemberHasRole(), for the VIP recheck below
+require_once 'vip-links.php';     // oculusVipLinks(), for the Play gate below
 include 'header.php';
 
 /*
@@ -524,8 +525,13 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 								</form>';
 							}else if($_SESSION['userData']['dropship_project_id'] == 3){ 
 								echo "<p><strong>You Must Have 5+ NFTs to Play</strong></p>";
-							}else if($_SESSION['userData']['dropship_project_id'] == 4){ 
-									echo "<p><strong>You Must Have a <a href='https://www.wayup.io/collection/3d250a78df7ad14e9472d9b63159ef2d099740c593c0ba53059f144a?do=true&f=JTdCJTIyUmFyaXR5JTNBJTIyJTNBJTdCJTIyTGVnZW5kYXJ5JTIwLSUyMFZJUCUyMiUzQXRydWUlN0QlN0Q%3D' target='_blank'>VIP Token</a> to Play or <a href='/discoin.php'>Purchase a Temporary VIP Pass with DISCOIN</a></strong></p>";
+							}else if($_SESSION['userData']['dropship_project_id'] == 4){
+									// The refusal used to be one link to the marketplace, which
+									// leaves out the step the gate actually tests: the Discord
+									// role. Someone holding the token was refused here and had no
+									// way to find out why. See dropship/vip-links.php.
+									echo oculusVipLinks('<strong>You need VIP access to play.</strong>');
+									echo "<p><a href='discoin.php'>Or buy a temporary VIP pass with DISCOIN</a></p>";
 							}else if($_SESSION['userData']['dropship_project_id'] != 3){ 
 								echo $play_button;
  							} ?>

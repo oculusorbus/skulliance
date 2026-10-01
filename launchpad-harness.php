@@ -25,6 +25,26 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $fail = 0;
 function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $what\n"; } }
 
+/* Strip comments before scanning for code. A commented-out oculusVipLinks()
+   call still contains the string "oculusVipLinks(", and a bare strpos passed
+   exactly that mutation -- the fifth time a harness in this repo has matched
+   prose instead of the code it was checking.
+   TRAILING comments count, not just whole-line ones. The require_once lines
+   that pull in vip-links.php each carry a trailing "oculusVipLinks()" note
+   saying what they are for, and that note alone satisfied a check for the
+   call -- so deleting the actual call passed. The line-comment pattern
+   therefore matches anywhere on a line, but skips a slash-slash preceded by
+   a colon or a slash so it does not eat the https:// in a URL. */
+function no_comments($s) {
+	$s = preg_replace('!/\*.*?\*/!s', '', $s);
+	/* ~ as the delimiter, not ! -- the ! inside the (?<! lookbehind closes a
+	   !-delimited pattern early and PHP then reads the rest as modifiers:
+	   "Unknown modifier '['". */
+	$s = preg_replace('~(?<![:/])//.*$~m', '', $s);
+	$s = preg_replace('!^\s*#.*$!m', '', $s);
+	return $s;
+}
+
 $root = __DIR__;
 $lp   = file_get_contents($root . '/launchpad.php');
 
@@ -98,6 +118,54 @@ ok(strpos($hdr, 'dropship/dashboard.php?project_id=4') !== false, 'Oculus Lounge
    a decision, not an omission. */
 ok(strpos($hdr, 'Oculus Lounge (NSFW)') === false && strpos($hdr, 'nav-nsfw') === false,
    'NSFW is back in the Play menu; it belongs in the launchpad description only');
+
+/* ---------------------------------------------------------------- *
+ * The way into Oculus Lounge is stated wherever it is asked about.
+ *
+ * The gate tests a Discord ROLE, not the token, so "buy a VIP token" on its
+ * own is incomplete advice -- it already sent someone who owned one away
+ * refused and none the wiser. These three links travel together or the
+ * second step goes missing again, which is the step nobody can guess.
+ * ---------------------------------------------------------------- */
+echo "\nthe VIP route is complete wherever it is given\n";
+$vip_src = no_comments(file_get_contents($root . '/dropship/vip-links.php'));
+preg_match_all("/define\('(OCULUS_[A-Z_]+)',\s*'([^']+)'\)/", $vip_src, $dm);
+$urls = array_combine($dm[1], $dm[2]);
+ok(count($urls) === 3, 'expected three URLs in dropship/vip-links.php, found ' . count($urls));
+ok(isset($urls['OCULUS_VIP_BUY'])     && strpos($urls['OCULUS_VIP_BUY'], 'wayup.io') !== false,       'the VIP token listing link is gone');
+ok(isset($urls['OCULUS_VIP_DISCORD']) && strpos($urls['OCULUS_VIP_DISCORD'], 'discord.com/invite') !== false,
+   'the Discord invite is missing or is not the canonical invite URL (a t.co shortlink is a third-party redirect on the one step nobody can guess)');
+ok(isset($urls['OCULUS_SITE'])        && strpos($urls['OCULUS_SITE'], 'oculuslounge.vip') !== false,  'the official site link is gone');
+
+/* The filter is part of the listing link: the bare collection is the whole
+   Disco Solaris drop, most of which is not a VIP token. */
+ok(isset($urls['OCULUS_VIP_BUY']) && strpos($urls['OCULUS_VIP_BUY'], '?do=true&f=') !== false,
+   'the VIP listing link lost its rarity filter, so it now points at the whole collection');
+
+/* Every page that turns someone away, or that is read by someone who has not
+   got in yet, renders the set rather than hand-copying part of it. */
+foreach (array(
+	'dropship/dashboard.php'    => 'the Play gate, which is where a player is actually refused',
+	'dropship/instructions.php' => 'the Where to Buy section',
+	'dropship/discoin.php'      => 'the DISCOIN page, read by exactly the person with no token',
+) as $file => $why) {
+	$src = no_comments(file_get_contents($root . '/' . $file));
+	ok(strpos($src, 'oculusVipLinks(') !== false, "$why no longer renders the VIP route");
+	ok(strpos($src, "require_once 'vip-links.php'") !== false, "$file calls oculusVipLinks() without requiring vip-links.php");
+	/* A hand-copied URL is the drift this partial exists to prevent. */
+	ok(substr_count($src, 'wayup.io/collection/3d250a78') === 0,
+	   "$file has its own copy of the VIP listing URL again; it should come from vip-links.php");
+}
+
+/* The Skull Paper cannot include PHP, so its copy is checked against the
+   constants rather than trusted. */
+$md = file_get_contents($root . '/skullpaper/games-oculus-lounge.md');
+foreach ($urls as $name => $url) {
+	ok(strpos($md, $url) !== false,
+	   "games-oculus-lounge.md has drifted from $name in vip-links.php");
+}
+ok(stripos($md, 'role') !== false,
+   'the Skull Paper no longer says the gate is a Discord role, which is the half players miss');
 
 /* ---------------------------------------------------------------- *
  * The real validation block out of dropship/dropship.php, driven.

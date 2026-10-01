@@ -3,6 +3,7 @@ include 'db.php';
 include 'webhooks.php';
 include 'role.php';
 include 'dropship.php';
+require_once 'vip-links.php';     // oculusVipLinks(), for the permanent-access note
 include 'header.php';
 
 if(!isset($_SESSION['userData']['transaction'])){
@@ -19,6 +20,12 @@ if(!isset($_SESSION['userData']['transaction'])){
 					If you don't hold a VIP token, you can purchase temporary VIP access with DISCOIN. You will receive temporary VIP roles in Discord and temporary access to the Oculus Lounge game.<br>
 					Be warned that the Oculus Lounge bouncers may kick you out in a few minutes or a few hours for sneaking into the VIP lounge. Even if you're kicked out quickly, your session for the game will last as long as you are logged in.
 					</p>
+					<?php
+					// This page is read by exactly the person who does not have a
+					// token, so the permanent route belongs on it. From
+					// vip-links.php, the same three links as the Play gate.
+					echo oculusVipLinks('<strong>Want permanent access instead?</strong>');
+					?>
 					<p>
 					Please send 1.<?php echo $_SESSION['userData']['transaction']; ?> ADA and 1,000 DISCOIN in a single transaction to the following address:
 					</p>

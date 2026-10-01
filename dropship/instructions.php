@@ -2,6 +2,7 @@
 include 'db.php';
 include 'webhooks.php';
 include 'dropship.php';
+require_once 'vip-links.php';     // oculusVipLinks(), for the Where to Buy section
 include 'header.php';
 ?>
 		<!-- Page-local styling only -- icon-led rows and card-style section
@@ -210,9 +211,13 @@ include 'header.php';
 					?>
 					<p>
 						<a href="https://www.wayup.io/collection/d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779" target="_blank">Disco Solaris NFTs</a>
-						&mdash;
-						<a href="https://www.wayup.io/collection/3d250a78df7ad14e9472d9b63159ef2d099740c593c0ba53059f144a?do=true&f=JTdCJTIyUmFyaXR5JTNBJTIyJTNBJTdCJTIyTGVnZW5kYXJ5JTIwLSUyMFZJUCUyMiUzQXRydWUlN0QlN0Q%3D" target="_blank">VIP Tokens</a>
 					</p>
+					<?php
+					// The VIP token link alone was not enough: the game gates on
+					// the Discord role, which the token does not grant by itself.
+					// Same three links as the Play gate, from vip-links.php.
+					echo oculusVipLinks();
+					?>
 					<?php } else { ?>
 					<p><a href="https://www.wayup.io/collection/4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c" target="_blank">wayup.io</a></p>
 					<?php } ?>
