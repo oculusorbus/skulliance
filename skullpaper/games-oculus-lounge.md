@@ -10,7 +10,7 @@
 
 ## Finding It
 
-Oculus Lounge is in the **Play** menu and on the launchpad, in both places labelled **NSFW** - it is a topless club, and the label is there so nobody opens it without knowing what it is. The launchpad calls it an NSFW Club Crawler. It shares an engine with [[games-drop-ship]], so each link carries the game it means; picking one always takes you to that one.
+Oculus Lounge is in the **Play** menu and on the launchpad, where it is described as an **NSFW Club Crawler** - it is a topless club, and the label is there so nobody opens it without knowing what it is. It shares an engine with [[games-drop-ship]], so each link carries the game it means; picking one always takes you to that one.
 
 ## Overview
 

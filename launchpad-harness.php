@@ -92,11 +92,12 @@ foreach ($nav[1] as $i => $href) {
 	   "the nav's \"$text\" link has no project_id, so it opens whichever game the session was last on");
 }
 ok(strpos($hdr, 'dropship/dashboard.php?project_id=4') !== false, 'Oculus Lounge is not in the Play menu');
-/* The menu has no room for a description, so the warning rides in the link
-   text itself. Plain text, deliberately -- it was a styled pill and the pill
-   was the wrong shape for it. */
-ok(preg_match('#>Oculus Lounge[^<]*NSFW[^<]*</a>#', $hdr) === 1,
-   'the Play menu entry no longer says NSFW');
+/* NO NSFW IN THE MENU, deliberately -- the nav is a plain list of game names
+   and the label went in the launchpad description instead, which is the one
+   place with room to say it. Asserted so it does not drift back in: this is
+   a decision, not an omission. */
+ok(strpos($hdr, 'Oculus Lounge (NSFW)') === false && strpos($hdr, 'nav-nsfw') === false,
+   'NSFW is back in the Play menu; it belongs in the launchpad description only');
 
 /* ---------------------------------------------------------------- *
  * The real validation block out of dropship/dropship.php, driven.

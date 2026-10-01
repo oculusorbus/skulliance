@@ -221,7 +221,7 @@
 		           on. dropship/dropship.php validates the id against
 		           getProjects() before storing it. -->
 		      <a href="dropship/dashboard.php?project_id=1">Drop Ship</a>
-		      <a href="dropship/dashboard.php?project_id=4">Oculus Lounge (NSFW)</a>
+		      <a href="dropship/dashboard.php?project_id=4">Oculus Lounge</a>
 		    </div>
 		  </div>
 
