@@ -199,6 +199,30 @@ foreach ($roles as $key => $roleData) {
 	}
 }
 
+/*
+ * THE SESSION FLAG COUNTS AS VIP TOO, and until now it was written twice
+ * and read nowhere.
+ *
+ * $vip above comes from $_SESSION['userData']['roles'], which is a SNAPSHOT
+ * taken once by process-oauth.php at login -- four sequential Discord calls
+ * whose failures getUsersGuildsRoles() silently ignores. So a role granted
+ * after you signed in does not exist as far as this page is concerned.
+ *
+ * That is not a theoretical gap, it is the paid path: buying a temporary
+ * pass runs ajax/transaction.php, which assigns the real VIP role through
+ * the bot AND sets $_SESSION['userData']['VIP'] -- but the snapshot was
+ * taken before the purchase, so dashboard.php went on refusing a player who
+ * had just paid for access, until they happened to log out and back in.
+ *
+ * Both writers of this flag (here, and the purchase) mean exactly "this
+ * person is VIP", so the gate honours it. It only ever GRANTS: a missing
+ * flag still falls through to the role check, so nothing is taken away
+ * from someone the snapshot already approved.
+ */
+if ($vip !== 'true' && !empty($_SESSION['userData']['VIP'])) {
+	$vip = 'true';
+}
+
 // Prevent riff raff from getting into the game and adding records to the db, send them to buy the NFTs
 /*
 if ($features == 0){
