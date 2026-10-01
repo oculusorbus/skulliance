@@ -412,7 +412,7 @@ $conn->close();
 <div class="ana-row ana-row-3" style="margin-top:11px;">
 
     <div class="ana-card">
-        <div class="ana-game-title">💀 Crypt Crawl · Solo Dungeon</div>
+        <div class="ana-game-title">💀 Crypt Crawl · Scoundrel</div>
         <div class="ana-game-grid">
             <div class="ana-game-stat accent">
                 <div class="ana-game-stat-label">This Month</div>
