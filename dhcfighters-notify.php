@@ -190,7 +190,12 @@ function dhcf_render_fighter($traits, $serial, $size = 500) {
 		 */
 		$name = 'f' . (int)$serial . '-' . substr(md5(json_encode($traits)), 0, 8)
 		      . ($size === 500 ? '' : '@' . $size) . '.png';
-		if (is_file($dir . '/' . $name)) {
+		/* A ZERO-BYTE HIT IS NOT A HIT. Renders used to be written straight
+		   to this name, so a write that died partway left a stub that
+		   is_file() has been happily serving ever since -- see the note on
+		   the write below. Any such leftovers re-compose now instead of
+		   being handed to Discord forever. */
+		if (is_file($dir . '/' . $name) && @filesize($dir . '/' . $name) > 0) {
 			return 'https://skulliance.io/staking/dhcrenders/' . $name;
 		}
 
@@ -251,8 +256,37 @@ function dhcf_render_fighter($traits, $serial, $size = 500) {
 		}
 		if (!$drew) return '';
 
-		$ok   = @imagepng($out, $dir . '/' . $name, 6);
-		if (!$ok) return '';
+		/*
+		 * WRITE SOMEWHERE ELSE, THEN MOVE IT. This used to imagepng()
+		 * straight onto $name, and the cache check above trusts is_file().
+		 * imagepng creates the destination immediately and fills it
+		 * progressively, so:
+		 *
+		 *   - any other request asking for the same Fighter mid-write --
+		 *     the gallery wall, the Arena, a second save -- took the early
+		 *     return, handed Discord the URL of a TRUNCATED png, and
+		 *     Discord cached the failure;
+		 *   - and a write that died partway (memory, disk) left a stub that
+		 *     satisfies is_file() FOREVER, so that Fighter was broken in
+		 *     every embed from then on.
+		 *
+		 * Which is the shape of the report: sometimes it renders, sometimes
+		 * it does not, and it has been like that for a while.
+		 *
+		 * rename() is atomic within a filesystem, and the temp file is in
+		 * the same directory, so a reader sees no file or the finished one
+		 * -- never a partial. The pid and a random suffix keep two
+		 * simultaneous composes of the same Fighter off each other's temp.
+		 */
+		$tmp = $dir . '/.' . $name . '.' . getmypid() . '-' . mt_rand(1000, 9999) . '.tmp';
+		/* NO imagedestroy(). It has had no effect since PHP 8.0 and emits a
+		   deprecation notice from 8.5, and this platform runs with
+		   display_errors ON -- a notice from inside a render is printed
+		   into whatever page or JSON called it. GD images are freed when
+		   the function returns. */
+		$ok  = @imagepng($out, $tmp, 6);
+		if (!$ok || !@filesize($tmp)) { @unlink($tmp); return ''; }
+		if (!@rename($tmp, $dir . '/' . $name)) { @unlink($tmp); return ''; }
 
 		return 'https://skulliance.io/staking/dhcrenders/' . $name;
 	} catch (Throwable $e) {
