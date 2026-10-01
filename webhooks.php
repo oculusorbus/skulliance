@@ -12,6 +12,52 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
     // behavior, not an assumption. Leave $content empty (the default) for
     // every existing call site that doesn't need to actually ping anyone;
     // this is purely additive.
+    /*
+     * IF THE IMAGE IS OURS, SEND THE BYTES -- DO NOT ASK DISCORD TO FETCH IT.
+     *
+     * Embeds have been showing broken images intermittently for a long time,
+     * across Fighters, trait drops and raids. The origin is not the problem,
+     * and that was measured rather than assumed: skulliance.io answers
+     * Discordbot in 0.27s, serves 60 requests at 12 concurrency without a
+     * stumble, does not discriminate by user agent, has no WAF in front and
+     * prunes nothing. The file behind one failed Fighter embed is a valid
+     * 224,773-byte PNG that opens fine in a browser.
+     *
+     * What the three cases share is the only thing left: Discord's proxy has
+     * to reach this server at post time, and a miss is cached against the
+     * URL. Raids settle it -- those use realm theme art that has existed for
+     * months, so nothing about when a file was written explains them.
+     *
+     * So the dependency goes. Any image URL on our own domain is resolved to
+     * its file and uploaded with the post as a multipart attachment, which
+     * the embed then references as attachment://<name>. Discord never comes
+     * back to us: the image either posts or the post fails, and there is no
+     * window to lose. Anything not ours, or too big, or missing, falls back
+     * to the URL exactly as before.
+     */
+    function skl_local_image_path($url) {
+        if (!is_string($url) || $url === '') return '';
+        $root = realpath(__DIR__);
+        if ($root === false) return '';
+        foreach (array('https://skulliance.io/staking/',
+                       'https://www.skulliance.io/staking/') as $prefix) {
+            if (strpos($url, $prefix) !== 0) continue;
+            $rel = parse_url(substr($url, strlen($prefix)), PHP_URL_PATH);
+            if ($rel === null || $rel === false || $rel === '') return '';
+            $abs = realpath($root . '/' . rawurldecode($rel));
+            /* realpath + prefix check: a ../ in the URL cannot walk out. */
+            if ($abs === false || strpos($abs, $root . DIRECTORY_SEPARATOR) !== 0) return '';
+            if (!is_file($abs)) return '';
+            $size = filesize($abs);
+            /* Discord refuses oversized uploads; 7MB leaves room under the
+               8MB floor. Nothing we post is close, but a fallback beats a
+               rejected post. */
+            if ($size < 1 || $size > 7340032) return '';
+            return $abs;
+        }
+        return '';
+    }
+
     function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null, $footer=null, $content="") {
 
 		if($url == ""){
@@ -118,7 +164,12 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 	        "color"       => hexdec( $color ?: "000000" ),
 	        "thumbnail"   => ["url" => $thumbnail],
 	    ];
-	    if ($imageurl !== "") $embed["image"] = ["url" => $imageurl];
+	    /* attachment:// refers to a file uploaded in the same multipart
+	       request -- see the curl block below. */
+	    $attachfile = skl_local_image_path($imageurl);
+	    $attachok   = ($attachfile !== "");
+	    if ($attachok)            $embed["image"] = ["url" => "attachment://" . rawurlencode(basename($attachfile))];
+	    elseif ($imageurl !== "") $embed["image"] = ["url" => $imageurl];
 	    if($author) $embed["author"] = $author;
 	    // $footer is ["text" => ..., "icon_url" => ...] (icon_url optional) --
 	    // renders as a small icon + line of text at the very bottom of the
@@ -143,13 +194,28 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 
         if($webhook != "") {
             $ch = curl_init( $webhook );
-            curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
-            curl_setopt( $ch, CURLOPT_POST, 1);
-            curl_setopt( $ch, CURLOPT_POSTFIELDS, $msg);
+            if ($attachok) {
+                /* Multipart: the embed JSON goes in payload_json and the
+                   image rides along as files[0]. NO Content-type header --
+                   curl has to set its own multipart boundary, and forcing
+                   application/json here makes Discord reject the whole
+                   post. The timeout is longer because this one carries a
+                   couple of hundred KB rather than a line of JSON. */
+                curl_setopt( $ch, CURLOPT_POST, 1);
+                curl_setopt( $ch, CURLOPT_POSTFIELDS, array(
+                    'payload_json' => $msg,
+                    'files[0]'     => new CURLFile($attachfile, 'image/png', basename($attachfile)),
+                ));
+                curl_setopt( $ch, CURLOPT_TIMEOUT, 20);
+            } else {
+                curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+                curl_setopt( $ch, CURLOPT_POST, 1);
+                curl_setopt( $ch, CURLOPT_POSTFIELDS, $msg);
+                curl_setopt( $ch, CURLOPT_TIMEOUT, 8);
+            }
             curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
             curl_setopt( $ch, CURLOPT_HEADER, 0);
             curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
-            curl_setopt( $ch, CURLOPT_TIMEOUT, 8);
             $response = curl_exec( $ch );
             curl_close( $ch );
         }

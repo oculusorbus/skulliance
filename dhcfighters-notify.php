@@ -61,6 +61,7 @@ function dhcf_art_base() {
 	return 'https://skulliance.io/staking/' . $b;
 }
 
+
 /**
  * Author block for an embed: display name plus their Discord avatar.
  *
@@ -320,10 +321,15 @@ function dhcf_notify_fighter($conn, $user_id, $row) {
 		$desc = '**' . number_format((int)$row['score']) . ' pts** · '
 		      . count($traits) . ' traits' . "\n" . implode("\n", $lines);
 
+		/* discordmsg() uploads this rather than linking it -- the URL is on
+		   our own server, so it resolves the file and attaches the bytes.
+		   See the note there. */
+		$render = dhcf_render_fighter($traits, $row['serial']);
+
 		discordmsg(
 			$name . ' assembled ' . $row['display'],
 			$desc,
-			dhcf_render_fighter($traits, $row['serial']),
+			$render,
 			'https://skulliance.io/staking/dhcfighters.php',
 			'dhcfighters',
 			'',

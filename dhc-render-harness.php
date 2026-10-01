@@ -103,6 +103,125 @@ printf("  a %s-byte truncation of it is_file()s true and decodes false\n", numbe
 array_map('unlink', glob($dir . '/*') ?: array());
 @rmdir($dir);
 
+echo "\nthe embed carries its own image\n";
+/*
+ * The render race was real but it was never the whole story: RAIDS fail the
+ * same way, and those use realm theme art that has existed for months, so
+ * nothing about when a file was written explains them. What Fighters, trait
+ * drops and raids share is that Discord's proxy has to reach this server at
+ * post time, and a miss is cached against the URL.
+ *
+ * So discordmsg() uploads any image that lives on our own domain. These
+ * checks drive the REAL function at a local server standing in for Discord
+ * and read what actually arrived -- the shape of a multipart body is not
+ * something to verify by reading it.
+ */
+$wh = file_get_contents(__DIR__ . '/webhooks.php');
+ok(strpos($wh, 'CURLFile($attachfile') !== false,
+   'discordmsg() no longer uploads the file, so Discord is back to fetching '
+ . 'the URL at the one moment it is least likely to work');
+ok(preg_match('/if \(\$attachok\) \{(?:(?!CURLOPT_HTTPHEADER).)*?\n            \} else/s', $wh) === 1,
+   'the multipart branch sets its own Content-type; curl has to write the '
+ . 'boundary itself or Discord rejects the post');
+
+$port = 8791;
+$root = __DIR__ . '/tmp-whtest-' . getmypid();
+@mkdir($root, 0775, true);
+/* files[0] arrives as $_FILES['files']['name'][0] -- PHP folds the index
+   into every sub-key rather than giving one entry per file, so a naive
+   read prints "Array". Flattened here. */
+file_put_contents($root . '/hook.php',
+    '<?php $f = array();' . "\n"
+  . 'foreach ($_FILES as $v) {' . "\n"
+  . '  $names = is_array($v["name"]) ? $v["name"] : array($v["name"]);' . "\n"
+  . '  $sizes = is_array($v["size"]) ? $v["size"] : array($v["size"]);' . "\n"
+  . '  foreach ($names as $i => $n) $f[] = array("name" => $n, "size" => $sizes[$i] ?? 0);' . "\n"
+  . '}' . "\n"
+  . 'file_put_contents(__DIR__ . "/got.txt", ($_POST["payload_json"] ?? file_get_contents("php://input")) . "\n---FILES---\n" . json_encode($f));' . "\n"
+  . 'echo "ok";');
+$im = imagecreatetruecolor(64, 64);
+imagefilledrectangle($im, 0, 0, 63, 63, imagecolorallocate($im, 10, 200, 160));
+imagepng($im, $root . '/shot.png');
+
+$srv = proc_open('php -S 127.0.0.1:' . $port . ' -t ' . escapeshellarg($root),
+    array(0 => array('file', '/dev/null', 'r'),
+          1 => array('file', '/dev/null', 'w'),
+          2 => array('file', '/dev/null', 'w')), $pipes);
+for ($i = 0; $i < 40; $i++) {               /* wait for it, do not guess */
+    $c = @fsockopen('127.0.0.1', $port, $e, $es, 0.2);
+    if ($c) { fclose($c); break; }
+    usleep(100000);
+}
+
+/* The real functions, with the webhook pointed at our stand-in and __DIR__
+   rebased so a "skulliance.io" URL resolves into the temp dir. */
+function be2($src, $sig) {
+    $at = strpos($src, $sig); if ($at === false) return '';
+    $i = strpos($src, '{', $at); $d = 0;
+    for ($j = $i; $j < strlen($src); $j++) {
+        if ($src[$j] === '{') $d++;
+        elseif ($src[$j] === '}') { $d--; if (!$d) return substr($src, $at, $j - $at + 1); }
+    }
+    return '';
+}
+$resolver = be2($wh, 'function skl_local_image_path($url)');
+$resolver = str_replace('realpath(__DIR__)', 'realpath(' . var_export($root, true) . ')', $resolver);
+eval($resolver);
+$fn = be2($wh, 'function discordmsg(');
+/* EVERY assignment, and matched loosely: discordmsg picks its webhook
+   through ~24 branches and several are ternaries
+   (function_exists('getXWebhook') ? getXWebhook() : ""), so a pattern for
+   a bare call misses exactly the channel this test uses. */
+$fn = preg_replace('/\$webhook\s*=\s*[^;]+;/',
+                   '$webhook = "http://127.0.0.1:' . $port . '/hook.php";', $fn);
+eval($fn);
+
+ok(skl_local_image_path('https://skulliance.io/staking/shot.png') !== '',
+   'an image on our own domain is not being resolved to a file');
+ok(skl_local_image_path('https://example.invalid/x.png') === '',
+   'a THIRD PARTY url resolves to a local file, which it must never do');
+/* A traversal that reaches a file which REALLY EXISTS outside the root --
+   ../../etc/passwd resolves to nothing from here, so it passed with the
+   guard removed and proved nothing. */
+ok(skl_local_image_path('https://skulliance.io/staking/../webhooks.php') === '',
+   'a traversal in the url escapes the web root and would upload a source '
+ . 'file to Discord');
+ok(skl_local_image_path('https://skulliance.io/staking/missing.png') === '',
+   'a url with no file behind it still claims an attachment');
+
+discordmsg('t', 'd', 'https://skulliance.io/staking/shot.png', '', 'dhcfighters', '', '00C8A0', null, null, '');
+usleep(700000);
+$got = @file_get_contents($root . '/got.txt');
+ok(!empty($got), 'the stand-in webhook received nothing at all');
+if (!empty($got)) {
+    list($json, $files) = array_pad(explode("\n---FILES---\n", $got, 2), 2, '');
+    $f = json_decode($files, true);
+    $first = (is_array($f) && $f) ? reset($f) : array();
+    printf("  uploaded %s (%s bytes)\n", $first['name'] ?? '(nothing)', $first['size'] ?? 0);
+    ok(($first['size'] ?? 0) > 0, 'no file arrived with the post');
+    ok(($first['name'] ?? '') === 'shot.png',
+       'the upload lost its filename, which attachment:// refers to by name');
+    ok(strpos($json, 'attachment://shot.png') !== false,
+       'the embed points at a URL instead of the attachment it just uploaded');
+    ok(strpos($json, 'https://skulliance.io/staking/shot.png') === false,
+       'the original URL is still in the embed, so Discord would fetch it anyway');
+}
+
+/* A third-party image must behave exactly as before: URL, no upload. */
+@unlink($root . '/got.txt');
+discordmsg('t', 'd', 'https://example.invalid/outside.png', '', 'dhcfighters', '', '00C8A0', null, null, '');
+usleep(700000);
+$got2 = @file_get_contents($root . '/got.txt');
+ok(!empty($got2) && strpos($got2, 'example.invalid/outside.png') !== false,
+   'a third-party image URL no longer reaches the embed');
+ok(!empty($got2) && strpos($got2, '---FILES---' . "\n" . '[]') !== false
+   || (!empty($got2) && substr_count($got2, '"size"') === 0),
+   'something was uploaded for a third-party URL');
+
+if (is_resource($srv)) { proc_terminate($srv); proc_close($srv); }
+array_map('unlink', glob($root . '/*') ?: array());
+@rmdir($root);
+
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
 echo "all render cache checks passed\n";
