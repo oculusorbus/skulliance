@@ -923,7 +923,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
 
              <div class="guide-section">
                  <h3>Chain Detonations Are Where Big Scores Come From</h3>
-                 <p><strong>Lining bombs up in a match sets off every one of them</strong>, one after another, and a match of four or five also forges the bomb it earned &#8211; so four Diamonds fire all four plus a Carbon. You get <strong>+150 for each bomb beyond the first</strong> on top, because every one of them cost a match to build.</p>
+                 <p><strong>Only a match of five sets off the bombs in it.</strong> Line five up and every one detonates, one after another, and the match forges a Diamond that fires last too &#8211; plus <strong>+150 for each bomb beyond the first</strong>, because every one cost a match to build. A match of <strong>four</strong> does not fire them: it spends them, credits you for each one, and forges the Carbon it earned, which then detonates. A match of <strong>three</strong> is just three tiles.</p>
                  <p>If a bomb explosion hits another bomb, the second bomb chain-detonates for an extra:</p>
                  <ul>
                      <li><img src="icons/carbon.png" style="width:14px;height:14px;vertical-align:middle;"> Carbon chain = <strong>+50 bonus</strong></li>
@@ -943,7 +943,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
                  <ol>
                      <li>Always take a <strong>5-match over a 3-match</strong> &#8211; <img src="icons/diamond.png" style="width:14px;height:14px;vertical-align:middle;"> Diamond bomb is worth hundreds of points</li>
                      <li>Take a <strong>4-match over a 3-match</strong> &#8211; <img src="icons/carbon.png" style="width:14px;height:14px;vertical-align:middle;"> Carbon bomb beats a plain clear every time</li>
-                     <li><strong>Match bombs into each other</strong> &#8211; two or more bombs in one line all detonate, the match forges another bomb on top, and you get +150 per extra bomb. The biggest move in the game</li>
+                     <li><strong>Match five bombs into each other</strong> &#8211; all five detonate, the match forges a Diamond that fires too, and you get +150 per extra bomb. The biggest move in the game. Four is not the same move: it pays you for the bombs and gives you a Carbon</li>
                      <li><strong>Position your drag endpoint</strong> &#8211; where you release determines where the bomb spawns, so place it where it can chain or line up with another</li>
                      <li><strong>Detonate before match 25</strong> &#8211; never let the game auto-fire your bombs at discount rates</li>
                  </ol>
@@ -960,8 +960,8 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
                          <tr><td>Manually detonate <img src="icons/carbon.png" alt=""> Carbon (13-tile cross)</td><td>~130 + 25 = <strong>155</strong></td></tr>
                          <tr><td>Manually detonate <img src="icons/diamond.png" alt=""> Diamond (full board)</td><td>~630 + 50 = <strong>680</strong></td></tr>
                          <tr><td>Chain: <img src="icons/carbon.png" alt=""> Carbon into <img src="icons/diamond.png" alt=""> Diamond</td><td><strong>+100 bonus</strong> on top</td></tr>
-                        <tr><td>Match bombs together (2+)</td><td>every one detonates, <strong>+150 each</strong> beyond the first</td></tr>
-                        <tr><td>Match 4 or 5 bombs</td><td>also forges its own bomb, which detonates too</td></tr>
+                        <tr><td>Match <strong>five</strong> bombs together</td><td>every one detonates, <strong>+150 each</strong> beyond the first</td></tr>
+                        <tr><td>Match 4 bombs</td><td>credits each bomb spent and forges a Carbon, which detonates</td></tr>
                      </tbody>
                  </table>
              </div>
@@ -1081,8 +1081,8 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                          <tr><td>Manually detonate <img src="icons/carbon.png" alt="Carbon"> Carbon (13-tile cross)</td><td>~130 + 25 = <strong>155</strong></td></tr>
                          <tr><td>Manually detonate <img src="icons/diamond.png" alt="Diamond"> Diamond (full board)</td><td>~630 + 50 = <strong>680</strong></td></tr>
                          <tr><td>Chain: <img src="icons/carbon.png" alt="Carbon"> Carbon into <img src="icons/diamond.png" alt="Diamond"> Diamond</td><td><strong>+100 bonus</strong> on top</td></tr>
-                        <tr><td>Match bombs together (2+)</td><td>every one detonates, <strong>+150 each</strong> beyond the first</td></tr>
-                        <tr><td>Match 4 or 5 bombs</td><td>also forges its own bomb, which detonates too</td></tr>
+                        <tr><td>Match <strong>five</strong> bombs together</td><td>every one detonates, <strong>+150 each</strong> beyond the first</td></tr>
+                        <tr><td>Match 4 bombs</td><td>credits each bomb spent and forges a Carbon, which detonates</td></tr>
                      </tbody>
                  </table>
              </div>
@@ -1094,7 +1094,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  <ol class="ss-tips">
                      <li><strong>Always take a 5-match over a 3-match.</strong> A Diamond bomb is worth hundreds of points; a quick clear is worth 30.</li>
                      <li><strong>Take a 4-match over a 3-match.</strong> A Carbon bomb beats a plain clear every time.</li>
-                     <li><strong>Line bombs up and match them.</strong> Two or more bombs in a single match all detonate, one after another, and a 4- or 5-match forges another bomb that fires too - plus +150 for every bomb beyond the first. Nothing else on the board scores like it.</li>
+                     <li><strong>Line five bombs up and match them.</strong> Every one detonates, one after another, and the match forges a Diamond that fires too - plus +150 for every bomb beyond the first. Nothing else on the board scores like it. A 4-match of bombs pays you for them and forges a Carbon that detonates, which is good but not that.</li>
                      <li><strong>Position your drag endpoint.</strong> The bomb spawns where you release, so place it where it can chain into another bomb later - or line up with one.</li>
                      <li><strong>Detonate before match 25.</strong> When your last match fires, leftover bombs auto-detonate at discount rates - you keep the tile points but lose every +25/+50 bonus.</li>
                  </ol>
@@ -1130,7 +1130,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  </details>
                  <details>
                      <summary>How do I get a high score in Skull Swap?</summary>
-                     <p>Prioritize 4- and 5-matches to forge Carbon and Diamond bombs. Then either place them near each other so detonations chain for +50/+100, or - better - line two or more up and match them together: every bomb in the match detonates, the match forges another bomb that detonates too, and each bomb beyond the first pays +150. Always detonate manually before your 25th match; the End Game Trap auto-fires leftover bombs without the bonuses.</p>
+                     <p>Prioritize 4- and 5-matches to forge Carbon and Diamond bombs. Then either place them near each other so detonations chain for +50/+100, or - better - line <strong>five</strong> up and match them together: every bomb in the match detonates, the match forges a Diamond that detonates too, and each bomb beyond the first pays +150. A 4-match of bombs is the consolation version - it credits you for each bomb and forges a Carbon that fires. Always detonate manually before your 25th match; the End Game Trap auto-fires leftover bombs without the bonuses.</p>
                  </details>
                  <details>
                      <summary>Do I need an account to play?</summary>
@@ -2115,7 +2115,27 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                          }
                      }
                  }
-                 if (bombTile) {
+                 /*
+                  * A MATCHED BOMB ONLY GOES OFF AT FIVE.
+                  *
+                  *   3 -- nothing special. A bomb in a 3-match is just a
+                  *        tile: it clears, and that is all.
+                  *   4 -- the bombs are CONSUMED, not fired. The player is
+                  *        credited for what they spent and the match forges
+                  *        the Carbon it earned, which then detonates.
+                  *   5 -- the ultra match. Every bomb in it detonates, and
+                  *        so does the Diamond it forges.
+                  *
+                  * This reverts 4befb56d, which fired every bomb in ANY
+                  * match. The reasoning there -- that lining up four
+                  * Diamonds for 40 points was the worst move in the game --
+                  * was right about the symptom and wrong to fix it by
+                  * changing the rule. Four is paid for in credit now, not
+                  * in detonations.
+                  *
+                  * A 3-match never reaches handleBombMatches at all.
+                  */
+                 if (bombTile && matches.size >= 4) {
                      await this.handleBombMatches(matches, bombTile.special, bombTileX, bombTileY);
                  } else {
                      await this.handleMatches(matches, bombType, bombX, bombY);
@@ -2290,23 +2310,50 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
 
          this.score += matches.size * 10;
 
-         /* Paid for the SETUP, not for the blast -- every bomb beyond the
-            first cost a whole match of its own to forge. */
-         if (bombsInMatch.length > 1) {
-             const combo = this.bonusScores.bombComboStep * (bombsInMatch.length - 1);
-             this.score += combo;
-             console.log(`Bomb combo: ${bombsInMatch.length} bombs matched, +${combo} bonus`);
-         }
+         /* FIVE IS THE LINE. Only an ultra match sets matched bombs off. */
+         const isUltra = matches.size >= 5;
 
-         /* One at a time, so the player can see each one land. */
-         for (const b of bombsInMatch) {
-             await this.handleBombDetonation(b.x, b.y, b.type);
+         if (isUltra) {
+             /* Paid for the SETUP, not for the blast -- every bomb beyond
+                the first cost a whole match of its own to forge. */
+             if (bombsInMatch.length > 1) {
+                 const combo = this.bonusScores.bombComboStep * (bombsInMatch.length - 1);
+                 this.score += combo;
+                 console.log(`Bomb combo: ${bombsInMatch.length} bombs matched, +${combo} bonus`);
+             }
+
+             /* One at a time, so the player can see each one land. */
+             for (const b of bombsInMatch) {
+                 await this.handleBombDetonation(b.x, b.y, b.type);
+             }
+         } else {
+             /*
+              * A FOUR SPENDS ITS BOMBS INSTEAD OF FIRING THEM.
+              *
+              * They are gone either way, and a bomb that vanishes for ten
+              * points a tile is the trap that started all this -- so each
+              * one consumed is credited at what its detonation bonus would
+              * have been (Carbon 50, Diamond 100). Not the blast, which is
+              * worth far more: the player chose a four, and a four forges a
+              * Carbon rather than setting off what it swallowed.
+              */
+             let wasted = 0;
+             for (const b of bombsInMatch) {
+                 wasted += (b.type === 'diamond')
+                         ? this.bonusScores.diamondDetonation
+                         : this.bonusScores.carbonDetonation;
+             }
+             if (wasted) {
+                 this.score += wasted;
+                 console.log(`Match of ${matches.size} consumed ${bombsInMatch.length} bomb(s), +${wasted} credit`);
+             }
          }
 
          /* And the bomb the match itself earned. A 4-match forges Carbon
             and a 5-match Diamond, exactly as a no-bomb match would -- the
             difference is that this one goes off rather than being left on
-            a board the blasts have just cleared. */
+            a board the blasts have just cleared. On a four this IS the
+            payoff: the Carbon you got out of the deal, detonating after. */
          const forged = matches.size === 4 ? this.specialTypes.bomb4
                       : matches.size >= 5 ? this.specialTypes.bomb5 : null;
          if (forged && !this.isGrandFinale) {

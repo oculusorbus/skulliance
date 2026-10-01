@@ -116,10 +116,18 @@ function ok(cond, what) { if (!cond) { fails++; console.log('  FAIL  ' + what); 
   ok(four > c4,   'diamonds beat carbons at the same count');
   ok(c4 > c3 && c3 > c1, 'each extra carbon is worth more');
 
-  console.log('\nevery matched bomb detonates, and the match forges its own');
+  /* A MATCHED BOMB ONLY GOES OFF AT FIVE. This block used to assert the
+     opposite -- "all four diamonds go off, not just one" -- which was
+     4befb56d's rule and was never the game's. A four CONSUMES its bombs,
+     credits them, and fires only the Carbon it forged. The full 3/4/5
+     table, driven through resolveMatches so the 3-match router is covered
+     too, lives in skullswap-bombmatch-harness.js. */
+  console.log('\na four forges and fires one bomb; only a five sets off what it matched');
   const det = await detonations(['diamond','diamond','diamond','diamond'], 4);
-  ok(det.filter(d => d === 'diamond').length === 4, 'all four diamonds go off, not just one');
-  ok(det[det.length - 1] === 'carbon', 'and a 4-match forges a carbon, which goes off last');
+  ok(det.filter(d => d === 'diamond').length === 0,
+     'a 4-match detonated the diamonds it swallowed; four consumes, it does not fire');
+  ok(det.length === 1 && det[0] === 'carbon',
+     'a 4-match should fire exactly the carbon it forged; got [' + det.join(', ') + ']');
   const det5 = await detonations(['diamond','diamond','diamond','diamond','diamond'], 5);
   ok(det5.filter(d => d === 'diamond').length === 6, 'a 5-match forges a diamond: six detonations');
 
