@@ -1,8 +1,45 @@
 <?php
 include 'db.php';
 include 'dropship.php';
-include 'webhooks.php';
+include 'webhooks.php';           // $bot_token -- must precede role.php's use of it
+require_once 'role.php';          // dropshipMemberHasRole(), for the VIP recheck below
 include 'header.php';
+
+/*
+ * THE ROLES SNAPSHOT GOES STALE, AND THIS ONE GATES A GAME.
+ *
+ * $vip comes from $_SESSION['userData']['roles'], which process-oauth.php
+ * fills ONCE at login from four sequential Discord calls whose failures
+ * getUsersGuildsRoles() silently ignores. A role granted after sign-in --
+ * or lost to a single rate-limited call -- does not exist to this page.
+ * Confirmed from a real account: holding the VIP role and the token,
+ * refused by the gate, and logging out and back in fixed it.
+ *
+ * So when the snapshot says no, ask Discord. Only then: a player the
+ * snapshot already approves never costs an API call. Once every five
+ * minutes at most, because this runs on every dashboard load.
+ *
+ * IT ONLY EVER GRANTS. dropshipMemberHasRole() returns null when Discord
+ * could not be asked, which is not the same as "no", and even a definite
+ * false is ignored here -- an outage must never lock out someone who was
+ * already playing.
+ */
+if ($vip !== 'true'
+    && isset($_SESSION['userData']['dropship_project_id'])
+    && $_SESSION['userData']['dropship_project_id'] == 4
+    && !empty($_SESSION['userData']['discord_id'])) {
+
+	$ds_now  = time();
+	$ds_last = isset($_SESSION['userData']['vip_recheck_at'])
+	         ? (int)$_SESSION['userData']['vip_recheck_at'] : 0;
+	if ($ds_now - $ds_last >= 300) {
+		$_SESSION['userData']['vip_recheck_at'] = $ds_now;
+		if (dropshipMemberHasRole($_SESSION['userData']['discord_id'], '966399108011163678') === true) {
+			$_SESSION['userData']['VIP'] = true;
+		}
+	}
+	if (!empty($_SESSION['userData']['VIP'])) $vip = 'true';
+}
 
 // Handle post actions at the top of the page to ensure data is accurate before rendering HTML
 // Soldier allocation
