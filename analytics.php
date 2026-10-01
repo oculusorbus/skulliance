@@ -317,6 +317,7 @@ include 'header.php';
     outline: none;
 }
 .trend-select option { background: #0d2035; }
+.trend-select optgroup { background: #0d2035; color: #7a9eb0; font-style: normal; }
 .trend-range-group { display: flex; gap: 4px; flex-wrap: wrap; }
 .trend-range-btn {
     background: rgba(255,255,255,0.05);
@@ -396,21 +397,42 @@ include 'header.php';
     <div class="ana-card" id="trends-card">
 
         <div class="trend-controls">
+            <!-- Grouped, because a flat list of two dozen entries makes you read
+                 all of it to find one game. The headings match the leaderboard
+                 hub's own groups ($SKULLIANCE_BOARDS in db.php) so the two
+                 pages name the same things the same way. Drop Ship and Oculus
+                 Lounge are absent on purpose - see the note in
+                 ajax/analytics-trends.php. -->
             <select id="trend-metric" class="trend-select" onchange="fetchTrend()">
-                <option value="transactions">Transactions</option>
-                <option value="stakers">Stakers Joined</option>
-                <option value="nfts">NFTs Added</option>
-                <option value="wallets">Wallets Connected</option>
-                <option value="realms">Realms Created</option>
-                <option value="rewards">Daily Rewards</option>
-                <option value="missions">Missions</option>
-                <option value="raids">Raids</option>
-                <option value="skullswap">Skull Swap</option>
-                <option value="monstrocity">Monstrocity</option>
-                <option value="bossbattles">Boss Battles</option>
-                <option value="upgrades">Location Upgrades</option>
-                <option value="crafting">Crafting</option>
-                <option value="store">Store Claims</option>
+                <optgroup label="Platform">
+                    <option value="transactions">Transactions</option>
+                    <option value="stakers">Stakers Joined</option>
+                    <option value="nfts">NFTs Added</option>
+                    <option value="wallets">Wallets Connected</option>
+                    <option value="rewards">Daily Rewards</option>
+                </optgroup>
+                <optgroup label="Realms &amp; Missions">
+                    <option value="realms">Realms Created</option>
+                    <option value="missions">Missions</option>
+                    <option value="raids">Raids</option>
+                    <option value="upgrades">Location Upgrades</option>
+                    <option value="crafting">Crafting</option>
+                    <option value="store">Store Claims</option>
+                </optgroup>
+                <optgroup label="Games">
+                    <option value="skullswap">Skull Swap</option>
+                    <option value="monstrocity">Monstrocity</option>
+                    <option value="bossbattles">Boss Battles</option>
+                    <option value="cryptcrawl">Crypt Crawl</option>
+                    <option value="cryptconquest">Crypt Conquest</option>
+                    <option value="gauntlets">Gauntlets</option>
+                    <option value="skullracer">Skull Racer</option>
+                    <option value="obscura">Obscura</option>
+                    <option value="guardians">Realm Guardians</option>
+                    <option value="dhcarena">DHC Arena</option>
+                    <option value="dhcfighters">DHC Fighters Assembled</option>
+                    <option value="dhctraits">DHC Traits Awarded</option>
+                </optgroup>
             </select>
 
             <div class="trend-range-group">
@@ -458,21 +480,33 @@ fetch('ajax/analytics-content.php')
 
 // ── Trends chart ──────────────────────────────────────────────────
 (function() {
+    // One entry per <option> above. A missing key falls back to the raw
+    // metric name in the tooltip, which is how "dhctraits" would end up on
+    // screen - keep the two lists together.
     const metricLabels = {
-        stakers:      'Stakers Joined',
-        nfts:         'NFTs Added',
-        wallets:      'Wallets Connected',
-        realms:       'Realms Created',
-        rewards:      'Daily Rewards',
-        missions:     'Missions',
-        raids:        'Raids',
-        skullswap:    'Skull Swap',
-        monstrocity:  'Monstrocity',
-        bossbattles:  'Boss Battles',
-        upgrades:     'Location Upgrades',
-        crafting:     'Crafting',
-        store:        'Store Claims',
-        transactions: 'Transactions',
+        transactions:  'Transactions',
+        stakers:       'Stakers Joined',
+        nfts:          'NFTs Added',
+        wallets:       'Wallets Connected',
+        rewards:       'Daily Rewards',
+        realms:        'Realms Created',
+        missions:      'Missions',
+        raids:         'Raids',
+        upgrades:      'Location Upgrades',
+        crafting:      'Crafting',
+        store:         'Store Claims',
+        skullswap:     'Skull Swap',
+        monstrocity:   'Monstrocity',
+        bossbattles:   'Boss Battles',
+        cryptcrawl:    'Crypt Crawl',
+        cryptconquest: 'Crypt Conquest',
+        gauntlets:     'Gauntlets',
+        skullracer:    'Skull Racer',
+        obscura:       'Obscura',
+        guardians:     'Realm Guardians',
+        dhcarena:      'DHC Arena',
+        dhcfighters:   'DHC Fighters Assembled',
+        dhctraits:     'DHC Traits Awarded',
     };
 
     let trendChart = null;
@@ -505,11 +539,20 @@ fetch('ajax/analytics-content.php')
         const params = new URLSearchParams({ metric });
         if (start) params.append('start', start);
         if (end)   params.append('end',   end);
-        document.getElementById('trend-loading').style.display = 'flex';
+        const loading = document.getElementById('trend-loading');
+        loading.innerHTML = 'Loading&hellip;';
+        loading.style.display = 'flex';
         fetch('ajax/analytics-trends.php?' + params)
             .then(r => r.json())
-            .then(d => renderTrendChart(d, metricLabels[metric] || metric))
-            .catch(() => document.getElementById('trend-loading').style.display = 'none');
+            .then(d => {
+                // An errored metric and an unplayed game both come back with
+                // no rows. Say which one this is rather than drawing an empty
+                // chart that reads as "nobody plays this".
+                if (d.error) { trendMessage('No data available for this metric.'); return; }
+                if (!d.labels.length) { trendMessage('Nothing recorded in this range yet.'); return; }
+                renderTrendChart(d, metricLabels[metric] || metric);
+            })
+            .catch(() => trendMessage('Could not load this trend.'));
     };
 
     window.setTrendRange = function(btn) {
@@ -519,6 +562,13 @@ fetch('ajax/analytics-content.php')
         document.getElementById('trend-custom').style.display = activeRange === 'custom' ? 'flex' : 'none';
         if (activeRange !== 'custom') fetchTrend();
     };
+
+    function trendMessage(text) {
+        const l = document.getElementById('trend-loading');
+        l.textContent = text;
+        l.style.display = 'flex';
+        if (trendChart) { trendChart.destroy(); trendChart = null; }
+    }
 
     function renderTrendChart(data, label) {
         document.getElementById('trend-loading').style.display = 'none';

@@ -17,6 +17,14 @@ function ana_pct($part, $total) {
     if (intval($total) == 0) return 0;
     return round(intval($part) / intval($total) * 100);
 }
+// Same shape as ana_stat() but keeps the decimals. Lap and race times are
+// floats and intval() would turn a 95.42 second record into "95".
+function ana_stat_f($conn, $sql) {
+    $r = $conn->query($sql);
+    if (!$r) return 0.0;
+    $row = $r->fetch_row();
+    return floatval($row[0]);
+}
 
 $tz     = new DateTimeZone('America/Chicago');
 $now_dt = new DateTime('now', $tz);
@@ -76,6 +84,113 @@ $swap_week = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHERE
 $mono_all   = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHERE project_id = 36");
 $mono_month = ana_stat($conn, "SELECT COALESCE(SUM(attempts),0) FROM scores WHERE project_id = 36 AND DATE(date_created) >= $mf");
 
+/*
+ * ── The rest of the games ─────────────────────────────────────────
+ *
+ * Every count below uses the SAME definition of a play as the Activity
+ * leaderboard in db.php (its $sources array) and as the trend chart in
+ * ajax/analytics-trends.php: completed runs only for the solo games, resolved
+ * encounters for Gauntlets, one row per fallen siege for Guardians. Three
+ * places, one definition - if a game's definition changes, all three move.
+ *
+ * Date columns differ per table and are not guessable (created_at for the
+ * racer and for Fighters, started_at for Arena, resolved_date for Gauntlet
+ * encounters, date_created for the rest). Each one is taken from that table's
+ * own CREATE in the code, not assumed.
+ */
+
+// ── Crypt Crawl ───────────────────────────────────────────────────
+$crawl_all   = ana_stat($conn, "SELECT COUNT(*) FROM cryptcrawls WHERE status IN ('won','lost')");
+$crawl_month = ana_stat($conn, "SELECT COUNT(*) FROM cryptcrawls WHERE status IN ('won','lost') AND DATE(date_created) >= $mf");
+$crawl_won   = ana_stat($conn, "SELECT COUNT(*) FROM cryptcrawls WHERE status = 'won'");
+
+// ── Crypt Conquest ────────────────────────────────────────────────
+$conq_all   = ana_stat($conn, "SELECT COUNT(*) FROM cryptconquests WHERE status IN ('won','lost')");
+$conq_month = ana_stat($conn, "SELECT COUNT(*) FROM cryptconquests WHERE status IN ('won','lost') AND DATE(date_created) >= $mf");
+$conq_won   = ana_stat($conn, "SELECT COUNT(*) FROM cryptconquests WHERE status = 'won'");
+
+// ── Realm Guardians ───────────────────────────────────────────────
+// Every row is a fallen realm -- there is no win condition -- so the count is
+// sieges played, and `held` is waves survived past the wave you started on.
+$grd_all   = ana_stat($conn, "SELECT COUNT(*) FROM guardians_scores");
+$grd_month = ana_stat($conn, "SELECT COUNT(*) FROM guardians_scores WHERE DATE(date_created) >= $mf");
+$grd_held  = ana_stat($conn, "SELECT COALESCE(SUM(held),0) FROM guardians_scores");
+
+// ── Skull Racer ───────────────────────────────────────────────────
+// Only finished, sanity-checked races are ever inserted, so there is no
+// status filter to apply -- the table has nothing else in it.
+$racer_all   = ana_stat($conn,   "SELECT COUNT(*) FROM skull_racer_runs");
+$racer_month = ana_stat($conn,   "SELECT COUNT(*) FROM skull_racer_runs WHERE DATE(created_at) >= $mf");
+$racer_best  = ana_stat_f($conn, "SELECT COALESCE(MIN(fastest_lap),0) FROM skull_racer_runs");
+
+// ── Obscura ───────────────────────────────────────────────────────
+// Runs, not solves, for the card's headline -- a solve is a ~15 second unit
+// and counting those would dwarf every other game here. Solves go in the note.
+$obs_runs   = ana_stat($conn, "SELECT COUNT(*) FROM obscura_scores WHERE active = 0");
+$obs_month  = ana_stat($conn, "SELECT COUNT(*) FROM obscura_scores WHERE active = 0 AND DATE(date_created) >= $mf");
+$obs_solves = ana_stat($conn, "SELECT COALESCE(SUM(solves),0) FROM obscura_scores");
+
+// ── Gauntlets ─────────────────────────────────────────────────────
+$gaunt_all   = ana_stat($conn, "SELECT COUNT(*) FROM gauntlets_encounters WHERE outcome != 'pending'");
+$gaunt_month = ana_stat($conn, "SELECT COUNT(*) FROM gauntlets_encounters WHERE outcome != 'pending' AND DATE(resolved_date) >= $mf");
+$gaunt_runs  = ana_stat($conn, "SELECT COUNT(*) FROM gauntlets");
+
+// ── DHC Fighters ──────────────────────────────────────────────────
+// Assembled Fighters currently standing -- a disassembled one is removed from
+// the table, so this is a population, not a lifetime total. The trait ledger
+// IS append-only, which is why the note carries it.
+$dhcf_all   = ana_stat($conn, "SELECT COUNT(*) FROM dhc_fighters");
+$dhcf_month = ana_stat($conn, "SELECT COUNT(*) FROM dhc_fighters WHERE DATE(created_at) >= $mf");
+$dhct_all   = ana_stat($conn, "SELECT COUNT(*) FROM dhc_trait_drops");
+
+// ── DHC Arena ─────────────────────────────────────────────────────
+$dhca_all   = ana_stat($conn, "SELECT COUNT(*) FROM dhc_arena_battles");
+$dhca_month = ana_stat($conn, "SELECT COUNT(*) FROM dhc_arena_battles WHERE DATE(started_at) >= $mf");
+$dhca_done  = ana_stat($conn, "SELECT COUNT(*) FROM dhc_arena_battles WHERE outcome != 0");
+
+/*
+ * ── Drop Ship and Oculus Lounge ───────────────────────────────────
+ *
+ * Their own database, reached through db.php's dropShipDbConnection() (the
+ * same one the leaderboard snapshots use). Two reasons the shape is different
+ * from every card above:
+ *
+ *  1. `results` has NO date column. A run is filed against a game ROUND, not
+ *     a timestamp, so "this month" cannot be asked -- the comparable period is
+ *     the round that is running right now, which is exactly what Drop Ship's
+ *     own current board shows. That is also why neither game appears in the
+ *     trend chart.
+ *  2. One row per player per round, replaced when they beat it (see
+ *     deleteResult() in dropship/db.php), so a count is best runs recorded,
+ *     not every attempt ever made.
+ *
+ * A down or missing Drop Ship database leaves $ds_ok false and the whole
+ * section is skipped rather than rendering a row of zeros, which would read
+ * as "nobody plays it".
+ */
+$ds_ok = false;
+$ds_games = array();
+$ds_conn = function_exists('dropShipDbConnection') ? dropShipDbConnection() : null;
+if ($ds_conn) {
+    $ds_ok = true;
+    foreach (array(
+        DROPSHIP_PROJECT_DROPSHIP => array('Drop Ship',     '🪖'),
+        DROPSHIP_PROJECT_LOUNGE   => array('Oculus Lounge', '🪩'),
+    ) as $ds_pid => $ds_meta) {
+        $ds_pid  = intval($ds_pid);
+        $gr      = $ds_conn->query("SELECT id FROM games WHERE active = 1 AND project_id = $ds_pid LIMIT 1");
+        $game_id = ($gr && $gr->num_rows > 0) ? intval($gr->fetch_assoc()['id']) : 0;
+        $ds_games[] = array(
+            'name'    => $ds_meta[0],
+            'icon'    => $ds_meta[1],
+            'round'   => $game_id ? ana_stat($ds_conn, "SELECT COUNT(*) FROM results WHERE project_id = $ds_pid AND game_id = $game_id") : 0,
+            'live'    => $game_id > 0,
+            'all'     => ana_stat($ds_conn, "SELECT COUNT(*) FROM results WHERE project_id = $ds_pid"),
+            'players' => ana_stat($ds_conn, "SELECT COUNT(DISTINCT user_id) FROM results WHERE project_id = $ds_pid"),
+        );
+    }
+}
+
 // ── Economy ───────────────────────────────────────────────────────
 $total_trans      = ana_stat($conn, "SELECT COUNT(*) FROM transactions");
 $total_credits    = ana_stat($conn, "SELECT COUNT(*) FROM transactions WHERE type = 'credit'");
@@ -134,7 +249,7 @@ $conn->close();
     <h1><span>Skulliance</span> Analytics</h1>
     <div class="ana-hero-right">
         <div class="ana-updated">Updated: <strong><?php echo $updated; ?></strong></div>
-        <div class="ana-tagline">Public engagement report — transparency is a feature</div>
+        <div class="ana-tagline">Public engagement report - transparency is a feature</div>
     </div>
 </div>
 
@@ -244,7 +359,7 @@ $conn->close();
 </div>
 
 <!-- ── Gaming ── -->
-<div class="ana-section-label">Gaming <span style="font-size:0.6rem;font-weight:400;color:#7a9eb0;letter-spacing:0;text-transform:none;">Skull Swap &amp; Boss Battles cycle resets Thursday 4pm CST · Monstrocity is monthly</span></div>
+<div class="ana-section-label">Gaming <span style="font-size:0.6rem;font-weight:400;color:#7a9eb0;letter-spacing:0;text-transform:none;">Weekly cycles reset Thursday 4pm CST · everything else runs monthly</span></div>
 <div class="ana-row ana-row-3">
 
     <div class="ana-card">
@@ -293,6 +408,161 @@ $conn->close();
     </div>
 
 </div>
+
+<div class="ana-row ana-row-3" style="margin-top:11px;">
+
+    <div class="ana-card">
+        <div class="ana-game-title">💀 Crypt Crawl · Solo Dungeon</div>
+        <div class="ana-game-grid">
+            <div class="ana-game-stat accent">
+                <div class="ana-game-stat-label">This Month</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($crawl_month); ?></div>
+            </div>
+            <div class="ana-game-stat">
+                <div class="ana-game-stat-label">All Time</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($crawl_all); ?></div>
+            </div>
+        </div>
+        <div class="ana-game-note">Delves completed · <strong><?php echo ana_pct($crawl_won, $crawl_all); ?>%</strong> survived</div>
+    </div>
+
+    <div class="ana-card">
+        <div class="ana-game-title">👑 Crypt Conquest · Regicide</div>
+        <div class="ana-game-grid">
+            <div class="ana-game-stat accent">
+                <div class="ana-game-stat-label">This Month</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($conq_month); ?></div>
+            </div>
+            <div class="ana-game-stat">
+                <div class="ana-game-stat-label">All Time</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($conq_all); ?></div>
+            </div>
+        </div>
+        <div class="ana-game-note">Runs completed · <strong><?php echo ana_pct($conq_won, $conq_all); ?>%</strong> cleared the castle</div>
+    </div>
+
+    <div class="ana-card">
+        <div class="ana-game-title">🛡️ Realm Guardians · Tower Defense</div>
+        <div class="ana-game-grid">
+            <div class="ana-game-stat accent">
+                <div class="ana-game-stat-label">This Month</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($grd_month); ?></div>
+            </div>
+            <div class="ana-game-stat">
+                <div class="ana-game-stat-label">All Time</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($grd_all); ?></div>
+            </div>
+        </div>
+        <div class="ana-game-note">Sieges defended · <strong><?php echo ana_fmt($grd_held); ?></strong> waves held</div>
+    </div>
+
+</div>
+
+<div class="ana-row ana-row-3" style="margin-top:11px;">
+
+    <div class="ana-card">
+        <div class="ana-game-title">🏁 Skull Racer</div>
+        <div class="ana-game-grid">
+            <div class="ana-game-stat accent">
+                <div class="ana-game-stat-label">This Month</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($racer_month); ?></div>
+            </div>
+            <div class="ana-game-stat">
+                <div class="ana-game-stat-label">All Time</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($racer_all); ?></div>
+            </div>
+        </div>
+        <div class="ana-game-note">Races finished<?php if ($racer_best > 0): ?> · best lap <strong><?php echo number_format($racer_best, 2); ?>s</strong><?php endif; ?></div>
+    </div>
+
+    <div class="ana-card">
+        <div class="ana-game-title">🔍 Obscura · Art Recognition</div>
+        <div class="ana-game-grid">
+            <div class="ana-game-stat accent">
+                <div class="ana-game-stat-label">This Month</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($obs_month); ?></div>
+            </div>
+            <div class="ana-game-stat">
+                <div class="ana-game-stat-label">All Time</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($obs_runs); ?></div>
+            </div>
+        </div>
+        <div class="ana-game-note">Runs completed · <strong><?php echo ana_fmt($obs_solves); ?></strong> NFTs identified</div>
+    </div>
+
+    <div class="ana-card">
+        <div class="ana-game-title">🥊 Gauntlets</div>
+        <div class="ana-game-grid">
+            <div class="ana-game-stat accent">
+                <div class="ana-game-stat-label">This Month</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($gaunt_month); ?></div>
+            </div>
+            <div class="ana-game-stat">
+                <div class="ana-game-stat-label">All Time</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($gaunt_all); ?></div>
+            </div>
+        </div>
+        <div class="ana-game-note">Encounters resolved across <strong><?php echo ana_fmt($gaunt_runs); ?></strong> runs</div>
+    </div>
+
+</div>
+
+<div class="ana-row ana-row-3" style="margin-top:11px;">
+
+    <div class="ana-card">
+        <div class="ana-game-title">🧬 DHC Fighters · Trait Assembly</div>
+        <div class="ana-game-grid">
+            <div class="ana-game-stat accent">
+                <div class="ana-game-stat-label">This Month</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($dhcf_month); ?></div>
+            </div>
+            <div class="ana-game-stat">
+                <div class="ana-game-stat-label">Standing</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($dhcf_all); ?></div>
+            </div>
+        </div>
+        <div class="ana-game-note">Fighters assembled · <strong><?php echo ana_fmt($dhct_all); ?></strong> traits awarded</div>
+    </div>
+
+    <div class="ana-card">
+        <div class="ana-game-title">🏟️ DHC Arena · Crew Battles</div>
+        <div class="ana-game-grid">
+            <div class="ana-game-stat accent">
+                <div class="ana-game-stat-label">This Month</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($dhca_month); ?></div>
+            </div>
+            <div class="ana-game-stat">
+                <div class="ana-game-stat-label">All Time</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($dhca_all); ?></div>
+            </div>
+        </div>
+        <div class="ana-game-note">Battles started · <strong><?php echo ana_fmt($dhca_done); ?></strong> fought to a result</div>
+    </div>
+
+</div>
+
+<?php if ($ds_ok): ?>
+<!-- ── Specialty Games ── -->
+<div class="ana-section-label">Specialty Games <span style="font-size:0.6rem;font-weight:400;color:#7a9eb0;letter-spacing:0;text-transform:none;">Same server, own database · scored by game round rather than by date</span></div>
+<div class="ana-row ana-row-3">
+    <?php foreach ($ds_games as $g): ?>
+    <div class="ana-card">
+        <div class="ana-game-title"><?php echo $g['icon']; ?> <?php echo htmlspecialchars($g['name']); ?></div>
+        <div class="ana-game-grid">
+            <div class="ana-game-stat accent">
+                <div class="ana-game-stat-label"><?php echo $g['live'] ? 'This Round' : 'No Round Live'; ?></div>
+                <div class="ana-game-stat-value"><?php echo $g['live'] ? ana_fmt($g['round']) : '-'; ?></div>
+            </div>
+            <div class="ana-game-stat">
+                <div class="ana-game-stat-label">All Time</div>
+                <div class="ana-game-stat-value"><?php echo ana_fmt($g['all']); ?></div>
+            </div>
+        </div>
+        <div class="ana-game-note">Best runs recorded · <strong><?php echo ana_fmt($g['players']); ?></strong> players</div>
+    </div>
+    <?php endforeach; ?>
+</div>
+<?php endif; ?>
 
 <!-- ── Projects ── -->
 <div class="ana-section-label">Projects</div>
