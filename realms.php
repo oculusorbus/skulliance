@@ -300,6 +300,19 @@ if (ob_get_level() > 0) @ob_flush();
    OUTSIDE .content.realms while #filter-nfts floated right INSIDE it, so on
    a wide monitor they ended up on different lines at opposite ends of a
    1900px panel with nothing tying them together. Same shape as .ri-head. */
+/* THE SORT CONTROL WAS UNDER THE PINNED NAV. flexbox.css pulls
+   #filtered-content up 40px and #filter-nfts a further 35 -- 75px in total,
+   which on this page lifts the Sort By select clean out of its own header
+   row and behind the sticky .rl-nav, leaving a sliver of its bottom edge
+   showing. Those two rules are shared with store/my-nfts/showcase/
+   collections, so they cannot be changed where they are declared; they are
+   zeroed HERE, scoped to this page, the same fix and the same two rules the
+   leaderboards page needed. flexbox.css already zeroes both under 700px,
+   which is why this only ever showed on desktop. Ids, because an id beats
+   .ra-sort, and this <style> comes after flexbox.css so equal specificity
+   still wins. */
+#filtered-content { top: 0; }
+#filter-nfts { top: 0; }
 .ra-head { display:flex; align-items:center; gap:12px; flex-wrap:wrap;
   padding:0 0 12px; border-bottom:1px solid rgba(0,200,160,.15);
   margin:0 0 12px; }

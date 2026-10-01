@@ -300,5 +300,51 @@ ok(!$rounded, 'the panel has rounded corners again: ' . implode(', ', $rounded))
 ok(strpos($html, 'loc-status-tag') === false,
    'the name-tag strip is back -- it repeated the seven slots directly below it');
 
+/* ---------------------------------------------------------------------------
+ * THE SORT CONTROL MUST NOT SIT UNDER THE PINNED NAV.
+ *
+ * flexbox.css pulls #filtered-content up 40px and #filter-nfts a further 35.
+ * On a page with a sticky nav that is 75px of lift straight into it: measured
+ * in headless Chrome against the real stylesheet, the Sort By select landed
+ * at y21 with the nav occupying 0-41, and elementFromPoint at the select's
+ * own centre returned .rl-nav -- so it was not merely clipped, it could not
+ * be clicked. With the two rules zeroed the select sits at y96, in its own
+ * header row beside the <h2> at y94, and hit-tests as itself.
+ *
+ * Those rules cannot be changed where they are declared: store, my-nfts,
+ * showcase and collections share them. flexbox.css already zeroes both under
+ * 700px, which is why this only ever showed on desktop -- and why a phone
+ * screenshot of this page would have looked fine.
+ *
+ * The leaderboards page needed the identical fix for the identical two
+ * rules. Checked statically here rather than measured, because a geometry
+ * test needs a browser; what is pinned is that realms.php declares both and
+ * that nothing later in the page puts the lift back.
+ * ------------------------------------------------------------------------- */
+$rl_src = file_get_contents(__DIR__ . '/realms.php');
+$rl_css = '';
+if (preg_match_all('/<style[^>]*>(.*?)<\/style>/s', $rl_src, $sm)) {
+	$rl_css = preg_replace('/<\?php.*?\?>/s', '', implode("\n", $sm[1]));
+}
+$rl_css = preg_replace('!/\*.*?\*/!s', '', $rl_css);   // its own prose, not its rules
+
+foreach (array('#filtered-content', '#filter-nfts') as $sel) {
+	$q = preg_quote($sel, '/');
+	ok(preg_match('/' . $q . '\s*\{[^}]*\btop\s*:\s*0(?:px)?\s*[;}]/', $rl_css) === 1,
+	   "realms.php no longer zeroes the top on $sel, so flexbox.css lifts the Sort By control under the pinned nav");
+	/* And nothing later re-lifts it. A negative top anywhere in this page's
+	   own CSS for either selector is the bug coming back by another route. */
+	ok(preg_match('/' . $q . '\s*\{[^}]*\btop\s*:\s*-/', $rl_css) !== 1,
+	   "realms.php puts a negative top back on $sel");
+}
+/* The control has to be reachable, which means it has to be in the partial
+   the Attack panel actually renders -- including the AJAX re-render, which
+   is the copy that replaced a redesign three times before it became one. */
+$ra = file_get_contents(__DIR__ . '/realms-attack.php');
+ok(strpos($ra, 'id="filter-nfts"') !== false && strpos($ra, 'id="filterRealms"') !== false,
+   'the Sort By control is no longer in realms-attack.php');
+ok(strpos(file_get_contents(__DIR__ . '/ajax/get-realms.php'), 'realms-attack.php') !== false,
+   'the AJAX re-render no longer uses the shared partial, so it will ship the old header again');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms panel checks passed\n");
 exit($fail ? 1 : 0);
