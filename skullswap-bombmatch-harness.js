@@ -94,27 +94,46 @@ async function play(bombTypes, matchSize) {
 
   const m3 = await play([C, C, C], 3);
   console.log(`  3 carbons   -> detonated [${m3.fired.join(', ') || 'nothing'}]  score ${m3.score}`);
-  ok(m3.fired.length === 0, 'a 3-match detonated something; three bombs in a line must not go off');
-  /* And no CREDIT either. Routing a 3-match into the bomb path fires
-     nothing -- isUltra is false and a three forges no bomb -- so counting
-     detonations alone passes a 3 that is quietly collecting the
-     consumed-bomb credit. Three bombs in a line are worth exactly three
-     tiles. */
-  ok(m3.score === 30,
-     'a 3-match of bombs scored ' + m3.score + ', not a plain 30 -- it is '
-   + 'being credited for the bombs it consumed, which applies only to a four');
+  ok(m3.fired.length === 1 && m3.fired[0] === 'carbon',
+     'a 3-match should fire exactly ONE bomb, as the original game did; got ['
+   + m3.fired.join(', ') + ']');
+  /* And no CREDIT. The consumed-bomb payment belongs to the four; a three
+     is paid in the blast it just set off. */
+  ok(m3.score < 30 + 50 + 1000,
+     'a 3-match looks like it is collecting the four\'s consumed-bomb credit '
+   + 'on top of its detonation');
 
   const m3d = await play([D, D, D], 3);
-  ok(m3d.fired.length === 0, 'three DIAMONDS in a 3-match detonated; size decides, not type');
+  console.log(`  3 diamonds  -> detonated [${m3d.fired.join(', ') || 'nothing'}]  score ${m3d.score}`);
+  ok(m3d.fired.length === 1 && m3d.fired[0] === 'diamond',
+     'three DIAMONDS must fire one Diamond -- a full-board clear; got ['
+   + m3d.fired.join(', ') + ']');
+  ok(m3d.score > m3.score,
+     'three Diamonds score no more than three Carbons, so the bomb that fired '
+   + 'was not the Diamond');
 
   const m4 = await play([C, C, C, C], 4);
   console.log(`  4 carbons   -> detonated [${m4.fired.join(', ') || 'nothing'}]  score ${m4.score}`);
-  ok(m4.fired.length === 1 && m4.fired[0] === 'carbon',
-     'a 4-match should fire exactly the Carbon it forged, nothing else; got [' + m4.fired.join(', ') + ']');
-  ok(m4.score > 40 + 50, 'a 4-match is not crediting the bombs it consumed');
+  ok(m4.fired.length === 2,
+     'a 4-match should fire TWO bombs -- the original detonation plus the '
+   + 'Carbon it forged; got [' + m4.fired.join(', ') + ']');
+  ok(m4.score > 40 + 50, 'a 4-match is not crediting the bombs it wasted');
+  const m4d = await play([D, D, D, D], 4);
+  console.log(`  4 diamonds  -> detonated [${m4d.fired.join(', ') || 'nothing'}]  score ${m4d.score}`);
+  ok(m4d.fired[0] === 'diamond' && m4d.fired[1] === 'carbon',
+     'a 4-match of Diamonds should fire a Diamond first, then the forged '
+   + 'Carbon; got [' + m4d.fired.join(', ') + ']');
+
+  /* THE WHOLE POINT: a harder shape must never score less. Four Diamonds
+     paying less than three was the trap that caused the original overreach,
+     and it came straight back the moment the four stopped firing its bomb. */
+  ok(m4d.score > m3d.score,
+     'four Diamonds (' + m4d.score + ') score less than three (' + m3d.score
+   + ') -- the harder shape is the worse move again');
 
   const m5 = await play([C, C, C, C, C], 5);
   console.log(`  5 carbons   -> detonated [${m5.fired.join(', ') || 'nothing'}]  score ${m5.score}`);
+  ok(m5.score > m4.score, 'five carbons score no more than four');
   ok(m5.fired.length === 6,
      'an ultra match should fire all five matched bombs plus the Diamond it forged; got '
      + m5.fired.length);
@@ -124,16 +143,23 @@ async function play(bombTypes, matchSize) {
   const oneBomb  = await play([C, null, null, null], 4);
   const twoBombs = await play([C, C, null, null], 4);
   console.log(`  1 bomb in a 4 -> ${oneBomb.score}   2 bombs in a 4 -> ${twoBombs.score}`);
+  /* With one bomb in the match, that bomb FIRES and nothing is wasted, so
+     the credit is zero. The second bomb is the first wasted one. */
   ok(twoBombs.score > oneBomb.score,
-     'two consumed bombs credit no more than one, so the credit is not per bomb');
-  const diamondIn4 = await play([D, null, null, null], 4);
-  ok(diamondIn4.score > oneBomb.score,
-     'a consumed Diamond credits the same as a Carbon; it is worth more');
+     'a second bomb in a 4-match adds nothing, so the waste credit is not '
+   + 'being paid per extra bomb');
+  ok(oneBomb.fired.length === 2,
+     'a lone bomb in a 4-match did not fire its own detonation');
 
   console.log('\nand a plain match is untouched');
   const plain3 = await play([null, null, null], 3);
   ok(plain3.fired.length === 0 && plain3.score === 30,
      'a plain 3-match no longer scores 30 with nothing firing; got ' + plain3.score);
+  /* One bomb in a 3-match still fires: the rule is about the match holding
+     a bomb at all, not about all three being bombs. */
+  const one3 = await play([C, null, null], 3);
+  ok(one3.fired.length === 1,
+     'a single bomb caught in a 3-match did not fire; got [' + one3.fired.join(', ') + ']');
 
   console.log(fails ? `\nFAILED: ${fails} check(s)` : '\nall bomb-match rule checks passed');
   process.exit(fails ? 1 : 0);

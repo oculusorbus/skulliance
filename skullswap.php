@@ -2115,27 +2115,10 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                          }
                      }
                  }
-                 /*
-                  * A MATCHED BOMB ONLY GOES OFF AT FIVE.
-                  *
-                  *   3 -- nothing special. A bomb in a 3-match is just a
-                  *        tile: it clears, and that is all.
-                  *   4 -- the bombs are CONSUMED, not fired. The player is
-                  *        credited for what they spent and the match forges
-                  *        the Carbon it earned, which then detonates.
-                  *   5 -- the ultra match. Every bomb in it detonates, and
-                  *        so does the Diamond it forges.
-                  *
-                  * This reverts 4befb56d, which fired every bomb in ANY
-                  * match. The reasoning there -- that lining up four
-                  * Diamonds for 40 points was the worst move in the game --
-                  * was right about the symptom and wrong to fix it by
-                  * changing the rule. Four is paid for in credit now, not
-                  * in detonations.
-                  *
-                  * A 3-match never reaches handleBombMatches at all.
-                  */
-                 if (bombTile && matches.size >= 4) {
+                 /* Any match holding a bomb goes down the bomb path; what
+                    happens there depends on its SIZE -- see the table on
+                    handleBombMatches(). */
+                 if (bombTile) {
                      await this.handleBombMatches(matches, bombTile.special, bombTileX, bombTileY);
                  } else {
                      await this.handleMatches(matches, bombType, bombX, bombY);
@@ -2310,8 +2293,22 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
 
          this.score += matches.size * 10;
 
-         /* FIVE IS THE LINE. Only an ultra match sets matched bombs off. */
+         /*
+          * WHAT A MATCHED BOMB DOES, BY SIZE.
+          *
+          *   3 -- ONE bomb detonates: the one you swapped into place.
+          *        This is the original game's rule, and 4befb56d replaced
+          *        it with "all of them" on the argument that four Diamonds
+          *        for 40 points was the worst move on the board. Right
+          *        about the symptom, wrong to rewrite the rule.
+          *   4 -- no matched bomb fires. They are SPENT: credited at what
+          *        each would have paid on detonation, and the match forges
+          *        the Carbon it earned, which goes off instead.
+          *   5 -- the ultra match, and the only one where EVERY bomb in
+          *        the line detonates, plus the Diamond it forges.
+          */
          const isUltra = matches.size >= 5;
+         const isFour  = matches.size === 4;
 
          if (isUltra) {
              /* Paid for the SETUP, not for the blast -- every bomb beyond
@@ -2328,24 +2325,39 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              }
          } else {
              /*
-              * A FOUR SPENDS ITS BOMBS INSTEAD OF FIRING THEM.
+              * THREE AND FOUR BOTH FIRE THE ORIGINAL DETONATION.
               *
-              * They are gone either way, and a bomb that vanishes for ten
-              * points a tile is the trap that started all this -- so each
-              * one consumed is credited at what its detonation bonus would
-              * have been (Carbon 50, Diamond 100). Not the blast, which is
-              * worth far more: the player chose a four, and a four forges a
-              * Carbon rather than setting off what it swallowed.
+              * That single blast never goes away at any size -- it is what
+              * the game has always done with a bomb caught in a match, and
+              * everything else here is on top of it. bombX/bombY is the
+              * bomb the caller picked out of the line, Diamond over Carbon
+              * where there is a choice, so three Diamonds still clear the
+              * board.
               */
-             let wasted = 0;
-             for (const b of bombsInMatch) {
-                 wasted += (b.type === 'diamond')
-                         ? this.bonusScores.diamondDetonation
-                         : this.bonusScores.carbonDetonation;
-             }
-             if (wasted) {
-                 this.score += wasted;
-                 console.log(`Match of ${matches.size} consumed ${bombsInMatch.length} bomb(s), +${wasted} credit`);
+             await this.handleBombDetonation(bombX, bombY, bombType);
+
+             if (isFour) {
+                 /*
+                  * AND A FOUR PAYS FOR THE EXTRAS IT SWALLOWED.
+                  *
+                  * One bomb fired; the rest are gone for ten points a tile,
+                  * which is the trap that started all this. Each of those
+                  * is credited at what its own detonation would have paid
+                  * (Carbon 50, Diamond 100) -- the bomb that DID fire is
+                  * skipped, because it was not wasted. A four also forges
+                  * the Carbon it earned, below, which goes off after.
+                  */
+                 let wasted = 0;
+                 for (const b of bombsInMatch) {
+                     if (b.x === bombX && b.y === bombY) continue;   // this one fired
+                     wasted += (b.type === 'diamond')
+                             ? this.bonusScores.diamondDetonation
+                             : this.bonusScores.carbonDetonation;
+                 }
+                 if (wasted) {
+                     this.score += wasted;
+                     console.log(`Match of 4 wasted ${bombsInMatch.length - 1} bomb(s), +${wasted} credit`);
+                 }
              }
          }
 

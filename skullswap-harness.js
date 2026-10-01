@@ -114,7 +114,14 @@ function ok(cond, what) { if (!cond) { fails++; console.log('  FAIL  ' + what); 
   ok(four > one4, 'four diamonds beat one -- the bug that started this');
   ok(five > four, 'five beat four');
   ok(four > c4,   'diamonds beat carbons at the same count');
-  ok(c4 > c3 && c3 > c1, 'each extra carbon is worth more');
+  /* c3 and c1 are deliberately EQUAL now. A three fires its one bomb and
+     pays nothing for the others -- the waste credit belongs to the four,
+     by decision. So the ladder runs across match SIZE, not across how many
+     bombs happen to be sitting in a three. */
+  ok(c4 > c3, 'a 4-match of carbons does not beat a 3-match');
+  ok(c3 === c1,
+     'a 3-match is paying for its extra bombs (' + c3 + ' vs ' + c1 + '); '
+   + 'the waste credit applies only to a four');
 
   /* A MATCHED BOMB ONLY GOES OFF AT FIVE. This block used to assert the
      opposite -- "all four diamonds go off, not just one" -- which was
@@ -122,12 +129,11 @@ function ok(cond, what) { if (!cond) { fails++; console.log('  FAIL  ' + what); 
      credits them, and fires only the Carbon it forged. The full 3/4/5
      table, driven through resolveMatches so the 3-match router is covered
      too, lives in skullswap-bombmatch-harness.js. */
-  console.log('\na four forges and fires one bomb; only a five sets off what it matched');
+  console.log('\nthe original detonation fires at every size; only a five fires them all');
   const det = await detonations(['diamond','diamond','diamond','diamond'], 4);
-  ok(det.filter(d => d === 'diamond').length === 0,
-     'a 4-match detonated the diamonds it swallowed; four consumes, it does not fire');
-  ok(det.length === 1 && det[0] === 'carbon',
-     'a 4-match should fire exactly the carbon it forged; got [' + det.join(', ') + ']');
+  ok(det.length === 2 && det[0] === 'diamond' && det[1] === 'carbon',
+     'a 4-match should fire the original Diamond and then the Carbon it '
+   + 'forged, and nothing else; got [' + det.join(', ') + ']');
   const det5 = await detonations(['diamond','diamond','diamond','diamond','diamond'], 5);
   ok(det5.filter(d => d === 'diamond').length === 6, 'a 5-match forges a diamond: six detonations');
 
