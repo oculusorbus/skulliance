@@ -228,5 +228,16 @@ ok(strpos($clean, "\$out['error']") !== false,
 ok(strpos(no_comments($page_src), 'if (d.error)') !== false,
    'analytics.php no longer reads the error back, so the endpoint reports to nobody');
 
+/* Undated rows are the third state, and the one that actually bit: Realm
+   Guardians has 39 sieges on record with a NULL date_created on every one, so
+   the chart drew nothing and read as a game nobody plays. Dropping those rows
+   silently is what made the two look identical. */
+ok(strpos($clean, "\$undated += ") !== false,
+   'the endpoint drops NULL-dated rows again instead of counting them');
+ok(strpos($clean, "\$out['undated']") !== false,
+   'the endpoint counts undated rows and then never reports them');
+ok(strpos(no_comments($page_src), 'd.undated') !== false,
+   'analytics.php no longer reads undated back, so an undated table reads as an empty one');
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

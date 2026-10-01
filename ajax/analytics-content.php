@@ -507,7 +507,7 @@ $conn->close();
 
 </div>
 
-<div class="ana-row ana-row-3" style="margin-top:11px;">
+<div class="ana-row ana-row-2" style="margin-top:11px;">
 
     <div class="ana-card">
         <div class="ana-game-title">🧬 DHC Fighters · Trait Assembly</div>
@@ -544,7 +544,7 @@ $conn->close();
 <?php if ($ds_ok): ?>
 <!-- ── Specialty Games ── -->
 <div class="ana-section-label">Specialty Games <span style="font-size:0.6rem;font-weight:400;color:#7a9eb0;letter-spacing:0;text-transform:none;">Same server, own database · scored by game round rather than by date</span></div>
-<div class="ana-row ana-row-3">
+<div class="ana-row ana-row-2">
     <?php foreach ($ds_games as $g): ?>
     <div class="ana-card">
         <div class="ana-game-title"><?php echo $g['icon']; ?> <?php echo htmlspecialchars($g['name']); ?></div>

@@ -90,6 +90,9 @@ include 'header.php';
 .ana-row-5 { grid-template-columns: repeat(5, 1fr); }
 .ana-row-4 { grid-template-columns: repeat(4, 1fr); }
 .ana-row-3 { grid-template-columns: repeat(3, 1fr); }
+/* For a row that holds exactly two cards. In a 3-column grid those two sat at
+   two-thirds width with a hole where the third would be. */
+.ana-row-2 { grid-template-columns: repeat(2, 1fr); }
 
 /* ── Base card ───────────────────────────────────────────────── */
 .ana-card {
@@ -358,6 +361,18 @@ include 'header.php';
     cursor: pointer;
 }
 .trend-chart-wrap { position: relative; height: 280px; }
+/* display is set here, not left to the UA [hidden] rule: any author display
+   declaration beats it, and a .trend-note with its own display would be
+   permanently visible. */
+.trend-note {
+    display: block;
+    margin-top: 9px;
+    font-size: 0.65rem;
+    color: #7a9eb0;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding-top: 7px;
+}
+.trend-note[hidden] { display: none; }
 .trend-loading {
     position: absolute;
     inset: 0;
@@ -383,7 +398,7 @@ include 'header.php';
     .ana-hero { flex-direction: column; align-items: flex-start; gap: 6px; }
 }
 @media (max-width: 480px) {
-    .ana-row-5, .ana-row-4, .ana-row-3 { grid-template-columns: 1fr; }
+    .ana-row-5, .ana-row-4, .ana-row-3, .ana-row-2 { grid-template-columns: 1fr; }
     .ana-proj-cols { grid-template-columns: 1fr; }
 }
 </style>
@@ -456,6 +471,7 @@ include 'header.php';
             <canvas id="trend-canvas"></canvas>
             <div class="trend-loading" id="trend-loading">Loading&hellip;</div>
         </div>
+        <div class="trend-note" id="trend-note" hidden></div>
 
     </div>
 
@@ -549,8 +565,22 @@ fetch('ajax/analytics-content.php')
                 // no rows. Say which one this is rather than drawing an empty
                 // chart that reads as "nobody plays this".
                 if (d.error) { trendMessage('No data available for this metric.'); return; }
-                if (!d.labels.length) { trendMessage('Nothing recorded in this range yet.'); return; }
+                if (!d.labels.length) {
+                    // Undated rows are not nothing. Realm Guardians has 39
+                    // sieges on record and no date on any of them, and an
+                    // empty chart said "nobody plays this" rather than
+                    // "this is not being timestamped".
+                    trendMessage(d.undated
+                        ? d.undated.toLocaleString() + ' recorded, none of them dated - nothing to plot.'
+                        : 'Nothing recorded in this range yet.');
+                    return;
+                }
                 renderTrendChart(d, metricLabels[metric] || metric);
+                // A partial gap undercounts the line silently, so it is said
+                // out loud under the chart rather than left to be noticed.
+                trendNote(d.undated
+                    ? d.undated.toLocaleString() + ' undated ' + (d.undated === 1 ? 'row is' : 'rows are') + ' not shown on this chart.'
+                    : '');
             })
             .catch(() => trendMessage('Could not load this trend.'));
     };
@@ -567,7 +597,14 @@ fetch('ajax/analytics-content.php')
         const l = document.getElementById('trend-loading');
         l.textContent = text;
         l.style.display = 'flex';
+        trendNote('');
         if (trendChart) { trendChart.destroy(); trendChart = null; }
+    }
+
+    function trendNote(text) {
+        const n = document.getElementById('trend-note');
+        n.textContent = text;
+        n.hidden = !text;
     }
 
     function renderTrendChart(data, label) {

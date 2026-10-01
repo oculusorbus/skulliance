@@ -99,19 +99,32 @@ $sql = "SELECT DATE_FORMAT($date_col, '$fmt') AS period, $aggregate AS total
         GROUP BY period
         ORDER BY period ASC";
 
-$result = $conn->query($sql);
-$labels = [];
-$data   = [];
-$error  = null;
+$result  = $conn->query($sql);
+$labels  = [];
+$data    = [];
+$undated = 0;
+$error   = null;
 
 if ($result) {
     while ($row = $result->fetch_assoc()) {
-        // A row whose date column is NULL groups under a NULL period. That is
-        // history from before a table got its date column (see db.php's note
-        // on adding one nullable so the back catalogue stays NULL) and it has
-        // no place on a timeline, so it is dropped rather than drawn at the
-        // left edge as if it all happened at once.
-        if ($row['period'] === null) continue;
+        /*
+         * A row whose date column is NULL groups under a NULL period. It has
+         * no place on a timeline, so it is not plotted -- but it IS counted
+         * and reported, because "undated" and "never happened" are completely
+         * different facts and the chart cannot tell them apart on its own.
+         *
+         * Realm Guardians is the live example: 39 sieges on record, every one
+         * of them with a NULL date_created, so All Time drew an empty chart
+         * that read as a game nobody has played. The same NULL also makes the
+         * MONTHLY Realm Guardians leaderboard report zero, which is the
+         * failure mode db.php's own migration note warns about -- all-time
+         * looks fine while the dated views quietly go empty.
+         *
+         * Only All Time can ever see these. Every other range filters on
+         * DATE(col) >= ..., and NULL fails that comparison, so $undated is
+         * correctly 0 there rather than a number the range cannot account for.
+         */
+        if ($row['period'] === null) { $undated += intval($row['total']); continue; }
         $labels[] = $row['period'];
         $data[]   = intval($row['total']);
     }
@@ -125,5 +138,6 @@ if ($result) {
 
 $conn->close();
 $out = ['labels' => $labels, 'data' => $data];
-if ($error) $out['error'] = $error;
+if ($undated) $out['undated'] = $undated;
+if ($error)   $out['error']   = $error;
 echo json_encode($out);
