@@ -44,13 +44,28 @@ const cls  = page.slice(page.indexOf('class Match3Game {'), page.indexOf('const 
                  .replace(/<\?php[\s\S]*?\?>/g, 'null');
 const Match3Game = eval(cls + '\n; Match3Game');
 
+/* bonusScores as the constructor actually declares it. */
+function REAL_BONUSES() {
+  const at = page.indexOf('this.bonusScores = {');
+  const open = page.indexOf('{', at);
+  let depth = 0, end = open;
+  for (let i = open; i < page.length; i++) {
+    if (page[i] === '{') depth++;
+    else if (page[i] === '}') { depth--; if (!depth) { end = i; break; } }
+  }
+  return eval('(' + page.slice(open, end + 1) + ')');
+}
+
 function makeGame() {
   const g = Object.create(Match3Game.prototype);
   g.width = 8; g.height = 8; g.score = 0; g.isGrandFinale = false; g.isDetonating = false;
   g.specialTypes = { bomb4: 'carbon', bomb5: 'diamond' };
   g.specialIcons = { carbon: 'CARBON', diamond: 'DIAMOND' };
-  g.bonusScores = { carbonDetonation:50, diamondDetonation:100, carbonCleared:25,
-                    diamondCleared:50, bombComboStep:150 };
+  /* THE REAL NUMBERS, read out of the page. A hand-copied bonusScores
+     drifts: multiMatchStep was added to the game and every stub here kept
+     its old five keys, so the new bonus scored undefined and the total
+     came out NaN -- in a probe, silently. */
+  g.bonusScores = REAL_BONUSES();
   g.board = [];
   for (let y=0;y<8;y++){ g.board.push([]); for(let x=0;x<8;x++) g.board[y].push({icon:'skull'+((x+y)%5), special:null, element:mkEl()}); }
   g.playSound = () => {}; g.renderBoard = () => {};
@@ -160,6 +175,63 @@ async function play(bombTypes, matchSize) {
   const one3 = await play([C, null, null], 3);
   ok(one3.fired.length === 1,
      'a single bomb caught in a 3-match did not fire; got [' + one3.fired.join(', ') + ']');
+
+  /* ---- separate matches off one slide ------------------------------ */
+  console.log('\nseparate matches off one slide');
+  /* Paint whole shapes on a board of unique icons so only what is painted
+     can match, then resolve for real and read what the game forged. */
+  async function slide(paint) {
+    const g = makeGame();
+    for (let y=0;y<8;y++) for (let x=0;x<8;x++) g.board[y][x] = { icon:'u'+(y*8+x), special:null, element:mkEl() };
+    paint(g);
+    const made = [], real = console.log;
+    let groups = '?';
+    console.log = (m) => { const s2 = String(m);
+      const c = s2.match(/^Created (\w+)/); if (c) made.push(c[1]);
+      const gm = s2.match(/Separate matches this slide: \d+ \[([^\]]*)\]/); if (gm) groups = gm[1]; };
+    await g.resolveMatches(0, 0);
+    console.log = real;
+    return { made, groups, score: g.score };
+  }
+  const row = (g, y, n, icon, special) => { for (let i=0;i<n;i++)
+      g.board[y][i] = special ? {icon:null, special, element:mkEl()} : {icon, special:null, element:mkEl()}; };
+
+  const two3 = await slide(g => { row(g,0,3,'A'); row(g,4,3,'B'); });
+  console.log(`  two 3s        matches=[${two3.groups}] forged=[${two3.made.join(', ')||'-'}] score=${two3.score}`);
+  ok(two3.made.filter(m => m === 'diamond').length === 1,
+     'two separate 3-matches must forge one Diamond; forged [' + two3.made.join(', ') + ']');
+
+  const three3 = await slide(g => { row(g,0,3,'A'); row(g,3,3,'B'); row(g,6,3,'E'); });
+  console.log(`  three 3s      matches=[${three3.groups}] forged=[${three3.made.join(', ')||'-'}] score=${three3.score}`);
+  ok(three3.made.filter(m => m === 'diamond').length === 2,
+     'three separate 3-matches must forge two Diamonds; forged [' + three3.made.join(', ') + ']');
+
+  const four3 = await slide(g => { row(g,0,4,'A'); row(g,4,3,'B'); });
+  console.log(`  a 4 and a 3   matches=[${four3.groups}] forged=[${four3.made.join(', ')||'-'}] score=${four3.score}`);
+  ok(four3.made.filter(m => m === 'carbon').length === 1 && four3.made.filter(m => m === 'diamond').length === 1,
+     'a 4 beside a 3 must forge the Carbon the four earned AND an escalation '
+   + 'Diamond; forged [' + four3.made.join(', ') + ']');
+
+  const five3 = await slide(g => { row(g,0,5,'A'); row(g,4,3,'B'); });
+  console.log(`  a 5 and a 3   matches=[${five3.groups}] forged=[${five3.made.join(', ')||'-'}] score=${five3.score}`);
+  ok(five3.made.filter(m => m === 'diamond').length === 2,
+     'a 5 beside a 3 must forge the five\'s Diamond AND an escalation Diamond; '
+   + 'forged [' + five3.made.join(', ') + ']');
+
+  /* An L is ONE match of five, not two threes -- the runs share a corner. */
+  const ell = await slide(g => { row(g,0,3,'A'); for (let i=0;i<3;i++) g.board[i][0] = {icon:'A',special:null,element:mkEl()}; });
+  console.log(`  an L          matches=[${ell.groups}] forged=[${ell.made.join(', ')||'-'}] score=${ell.score}`);
+  ok(ell.groups === '5', 'an L should read as one match of 5, not two of 3; got [' + ell.groups + ']');
+  ok(ell.made.filter(m => m === 'diamond').length === 1,
+     'an L forges one Diamond for being a five, and no escalation Diamond on top');
+
+  console.log('\nmultiple matches are paid for, not just tolerated');
+  const single3 = await slide(g => { row(g,0,3,'A'); });
+  ok(two3.score > single3.score * 2,
+     'two matches off one slide (' + two3.score + ') score no better than two '
+   + 'separate single matches would -- the whole point is that the harder '
+   + 'move is recognised');
+  ok(three3.score > two3.score, 'a third match adds nothing');
 
   console.log(fails ? `\nFAILED: ${fails} check(s)` : '\nall bomb-match rule checks passed');
   process.exit(fails ? 1 : 0);

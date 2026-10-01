@@ -47,14 +47,29 @@ const cls  = page.slice(page.indexOf('class Match3Game {'), page.indexOf('const 
 /* A class declaration inside eval() stays in the eval's scope; hand it back. */
 const Match3Game = eval(cls + '\n; Match3Game');
 
+/* bonusScores as the constructor actually declares it. */
+function REAL_BONUSES() {
+  const at = page.indexOf('this.bonusScores = {');
+  const open = page.indexOf('{', at);
+  let depth = 0, end = open;
+  for (let i = open; i < page.length; i++) {
+    if (page[i] === '{') depth++;
+    else if (page[i] === '}') { depth--; if (!depth) { end = i; break; } }
+  }
+  return eval('(' + page.slice(open, end + 1) + ')');
+}
+
 const mkEl = () => ({ classList:{add(){},remove(){}}, style:{}, remove(){} });
 function makeGame() {
   const g = Object.create(Match3Game.prototype);
   g.width = 8; g.height = 8; g.score = 0; g.isGrandFinale = false; g.isDetonating = false;
   g.specialTypes = { bomb4: 'carbon', bomb5: 'diamond' };
   g.specialIcons = { carbon: 'CARBON', diamond: 'DIAMOND' };
-  g.bonusScores = { carbonDetonation:50, diamondDetonation:100, carbonCleared:25,
-                    diamondCleared:50, bombComboStep:150 };
+  /* THE REAL NUMBERS, read out of the page. A hand-copied bonusScores
+     drifts: multiMatchStep was added to the game and every stub here kept
+     its old five keys, so the new bonus scored undefined and the total
+     came out NaN -- in a probe, silently. */
+  g.bonusScores = REAL_BONUSES();
   g.board = [];
   for (let y=0;y<8;y++){ g.board.push([]); for(let x=0;x<8;x++) g.board[y].push({icon:'skull'+((x+y)%5), special:null, element:mkEl()}); }
   // no-op the presentation

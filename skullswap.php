@@ -1244,7 +1244,14 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                 four +450, five +600. Deliberately below one Diamond
                 detonation (~780) -- the reward for a bomb match should be
                 the detonations it sets off, not the bonus on top of them. */
-             bombComboStep: 150
+             bombComboStep: 150,
+             /* Per extra MATCH off one slide: two matches +200, three +400.
+                Setting up a second match from a single swap is a different
+                skill from setting up a long one, and it already earns a
+                Diamond -- this is the points half of the same recognition.
+                Above bombComboStep because the shape is harder to engineer
+                and rarer to stumble into. */
+             multiMatchStep: 200
          };
 
          this.sounds = {
@@ -1771,7 +1778,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                      if (matchResult.hasMatches && matchResult.matches.size >= 3) {
                          hasMatches = true;
                          console.log(`Grand finale match found at (${x}, ${y}) with size ${matchResult.matches.size}`);
-                         await this.handleMatches(matchResult.matches, null, matchResult.bombX, matchResult.bombY);
+                         await this.handleMatches(matchResult.matches, null, matchResult.bombX, matchResult.bombY, matchResult.groups);
                      }
                  }
              }
@@ -2102,7 +2109,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          if (this.isGrandFinale) return false;
          const matchResult = this.checkMatches(selectedX, selectedY);
          if (matchResult.hasMatches) {
-             const { matches, bombType, bombX, bombY } = matchResult;
+             const { matches, groups, bombType, bombX, bombY } = matchResult;
              if (matches.size >= 3) {
                  // Scan all matched tiles for an existing bomb — prefer diamond over carbon
                  let bombTile = null, bombTileX, bombTileY;
@@ -2119,9 +2126,9 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                     happens there depends on its SIZE -- see the table on
                     handleBombMatches(). */
                  if (bombTile) {
-                     await this.handleBombMatches(matches, bombTile.special, bombTileX, bombTileY);
+                     await this.handleBombMatches(matches, bombTile.special, bombTileX, bombTileY, groups);
                  } else {
-                     await this.handleMatches(matches, bombType, bombX, bombY);
+                     await this.handleMatches(matches, bombType, bombX, bombY, groups);
                  }
              }
              return true;
@@ -2134,6 +2141,20 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          const allMatches = new Set();
          let bombType = null;
          let bombX, bombY;
+         /*
+          * EVERY RUN, KEPT SEPARATELY.
+          *
+          * allMatches below is the flat union of every matched tile, and
+          * for a long time it was all this returned -- so the game judged
+          * a move by how many TILES it cleared and had no idea whether
+          * that was one line or three. Two separate 3-matches came to six
+          * tiles and were treated as an ultra five; an L came to five and
+          * was treated the same.
+          *
+          * Separate matches off one slide are their own thing, so the runs
+          * are collected here and merged into groups below.
+          */
+         const runs = [];
 
          for (let y = 0; y < this.height; y++) {
              let matchStart = 0;
@@ -2145,9 +2166,12 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  if (icon !== currentIcon || x === this.width) {
                      const matchLength = x - matchStart;
                      if (matchLength >= 3) {
+                         const run = [];
                          for (let i = matchStart; i < x; i++) {
                              allMatches.add(`${i},${y}`);
+                             run.push(`${i},${y}`);
                          }
+                         runs.push(run);
                          console.log(`Horizontal match of ${matchLength} at row ${y}, start ${matchStart}, end ${x - 1}`);
                          hasMatches = true;
                      }
@@ -2167,9 +2191,12 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  if (icon !== currentIcon || y === this.height) {
                      const matchLength = y - matchStart;
                      if (matchLength >= 3) {
+                         const run = [];
                          for (let i = matchStart; i < y; i++) {
                              allMatches.add(`${x},${i}`);
+                             run.push(`${x},${i}`);
                          }
+                         runs.push(run);
                          console.log(`Vertical match of ${matchLength} at col ${x}, start ${matchStart}, end ${y - 1}`);
                          hasMatches = true;
                      }
@@ -2179,8 +2206,31 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              }
          }
 
+         /*
+          * RUNS THAT SHARE A TILE ARE ONE MATCH.
+          *
+          * An L or a T is two runs crossing at a corner, and that is one
+          * shape of five, not two matches of three -- so they merge. Two
+          * parallel rows that merely sit next to each other share no tile
+          * and stay separate, which is what they look like.
+          */
+         const groups = [];
+         runs.forEach(run => {
+             const hits = [];
+             groups.forEach((g, i) => { if (run.some(c => g.has(c))) hits.push(i); });
+             if (!hits.length) { groups.push(new Set(run)); return; }
+             const keep = groups[hits[0]];
+             run.forEach(c => keep.add(c));
+             /* A run can bridge two groups that were separate until now. */
+             for (let i = hits.length - 1; i >= 1; i--) {
+                 groups[hits[i]].forEach(c => keep.add(c));
+                 groups.splice(hits[i], 1);
+             }
+         });
+
          if (hasMatches) {
              const matchSize = allMatches.size;
+             console.log(`Separate matches this slide: ${groups.length} [${groups.map(g => g.size).join(', ')}]`);
              console.log(`Total unique matched tiles: ${matchSize}, selected position: (${selectedX}, ${selectedY})`);
             
              if (selectedX !== null && selectedY !== null && allMatches.has(`${selectedX},${selectedY}`)) {
@@ -2194,7 +2244,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
              bombType = matchSize === 4 ? 'bomb4' : matchSize >= 5 ? 'bomb5' : null;
          }
 
-         return { hasMatches, matches: allMatches, bombType, bombX, bombY };
+         return { hasMatches, matches: allMatches, groups, bombType, bombX, bombY };
      }
 
      /*
@@ -2205,7 +2255,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
       * `await this.handleMatches(...)` and was awaiting undefined. See
       * resolveMatches() for what that cost.
       */
-     async handleMatches(matches, bombType, bombX, bombY) {
+     async handleMatches(matches, bombType, bombX, bombY, groups) {
          this.playSound('match');
          matches.forEach(match => {
              const [x, y] = match.split(',').map(Number);
@@ -2223,18 +2273,84 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
                  this.board[y][x].element = null;
              });
 
-             if (bombType && !this.isGrandFinale) {
-                 this.createSpecialTile(bombX, bombY, bombType);
-                 this.board[bombY][bombX].element.classList.add('bomb-creation');
-                 this.playSound(bombType === 'bomb4' ? 'carbonBombAppear' : 'diamondBombAppear');
-                 console.log(`Bomb placed at (${bombX}, ${bombY})`);
-             }
+             /* Each match forges by its own size, and every match beyond
+                the first forges a Diamond on top -- see forgeFromGroups. */
+             this.forgeFromGroups(groups || [matches], matches, bombX, bombY);
 
              this.score += matches.size * 10;
              document.getElementById('score').textContent = `Score: ${this.score}`;
             
              this.cascadeTiles();
          }
+     }
+
+     /*
+      * WHAT ONE SLIDE FORGES.
+      *
+      * Two things stack:
+      *
+      *   - each separate match forges by its OWN size: a four makes a
+      *     Carbon, a five makes a Diamond, a three makes nothing.
+      *   - and every match beyond the first makes a Diamond on top. Two
+      *     threes forge one Diamond; three threes forge two; a five and a
+      *     three forge the five's Diamond AND an escalation Diamond.
+      *
+      * A four in among them still makes its Carbon, because that is its
+      * own size reward and the escalation is separate.
+      *
+      * Placement: a match puts its bomb on the tile you released, when
+      * that tile is in it, so the player decides where it lands. Anything
+      * else goes on a tile the match just cleared.
+      */
+     forgeFromGroups(groups, matches, swapX, swapY) {
+         if (this.isGrandFinale) return [];
+
+         /*
+          * PAID FOR THE SECOND MATCH, not just given a bomb for it.
+          * Landing two matches off one slide is a different skill from
+          * landing one long one, and the Diamonds below are the other half
+          * of the same recognition.
+          */
+         if (groups.length > 1) {
+             const multi = this.bonusScores.multiMatchStep * (groups.length - 1);
+             this.score += multi;
+             console.log(`${groups.length} separate matches off one slide, +${multi} bonus`);
+         }
+         const taken = new Set();
+         const free = (group) => {
+             const key = `${swapX},${swapY}`;
+             if (group && group.has(key) && !taken.has(key)) { taken.add(key); return [swapX, swapY]; }
+             for (const c of (group || matches)) {
+                 if (!taken.has(c)) { taken.add(c); return c.split(',').map(Number); }
+             }
+             for (const c of matches) {
+                 if (!taken.has(c)) { taken.add(c); return c.split(',').map(Number); }
+             }
+             return null;
+         };
+
+         const forged = [];
+         groups.forEach(g => {
+             const type = g.size === 4 ? this.specialTypes.bomb4
+                        : g.size >= 5 ? this.specialTypes.bomb5 : null;
+             if (!type) return;
+             const at = free(g);
+             if (at) forged.push({ x: at[0], y: at[1], type: type });
+         });
+         for (let i = 1; i < groups.length; i++) {
+             const at = free(groups[i]);
+             if (at) forged.push({ x: at[0], y: at[1], type: this.specialTypes.bomb5 });
+         }
+
+         forged.forEach(f => {
+             this.createSpecialTile(f.x, f.y, f.type === this.specialTypes.bomb5 ? 'bomb5' : 'bomb4');
+             this.playSound(f.type === this.specialTypes.bomb5 ? 'diamondBombAppear' : 'carbonBombAppear');
+         });
+         if (forged.length) {
+             console.log(`Forged ${forged.length} bomb(s) from ${groups.length} match(es): `
+                       + forged.map(f => f.type).join(', '));
+         }
+         return forged;
      }
 
      /*
@@ -2265,7 +2381,7 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
       * coordinate its bomb occupied, which is exactly where the player
       * put it.
       */
-     async handleBombMatches(matches, bombType, bombX, bombY) {
+     async handleBombMatches(matches, bombType, bombX, bombY, groups) {
          this.playSound('match');
          matches.forEach(match => {
              const [x, y] = match.split(',').map(Number);
@@ -2307,71 +2423,77 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
           *   5 -- the ultra match, and the only one where EVERY bomb in
           *        the line detonates, plus the Diamond it forges.
           */
-         const isUltra = matches.size >= 5;
-         const isFour  = matches.size === 4;
+         /*
+          * EVERY MATCH IS JUDGED ON ITS OWN SIZE.
+          *
+          * The rule is per MATCH, not per slide: two separate threes that
+          * each hold a bomb each fire their own, and a five sitting beside
+          * a three is an ultra while the three beside it is not. Judging
+          * the whole slide by its tile total is what made two threes read
+          * as a five.
+          */
+         const slideGroups = (groups && groups.length) ? groups : [matches];
 
-         if (isUltra) {
-             /* Paid for the SETUP, not for the blast -- every bomb beyond
-                the first cost a whole match of its own to forge. */
-             if (bombsInMatch.length > 1) {
-                 const combo = this.bonusScores.bombComboStep * (bombsInMatch.length - 1);
-                 this.score += combo;
-                 console.log(`Bomb combo: ${bombsInMatch.length} bombs matched, +${combo} bonus`);
+         for (const g of slideGroups) {
+             const inGroup = bombsInMatch.filter(b => g.has(`${b.x},${b.y}`));
+             if (!inGroup.length) continue;
+
+             if (g.size >= 5) {
+                 /* THE ULTRA. Every bomb in THIS match goes off. Paid for
+                    the setup, not the blast -- each bomb beyond the first
+                    cost a whole match of its own to forge. */
+                 if (inGroup.length > 1) {
+                     const combo = this.bonusScores.bombComboStep * (inGroup.length - 1);
+                     this.score += combo;
+                     console.log(`Bomb combo: ${inGroup.length} bombs in a match of ${g.size}, +${combo} bonus`);
+                 }
+                 for (const b of inGroup) {
+                     await this.handleBombDetonation(b.x, b.y, b.type);
+                 }
+                 continue;
              }
 
-             /* One at a time, so the player can see each one land. */
-             for (const b of bombsInMatch) {
-                 await this.handleBombDetonation(b.x, b.y, b.type);
-             }
-         } else {
              /*
-              * THREE AND FOUR BOTH FIRE THE ORIGINAL DETONATION.
-              *
-              * That single blast never goes away at any size -- it is what
-              * the game has always done with a bomb caught in a match, and
-              * everything else here is on top of it. bombX/bombY is the
-              * bomb the caller picked out of the line, Diamond over Carbon
-              * where there is a choice, so three Diamonds still clear the
-              * board.
+              * THREE AND FOUR FIRE ONE, which is what the game has always
+              * done with a bomb caught in a match. Diamond over Carbon
+              * where the match holds both, so three Diamonds still clear
+              * the board. It goes off before anything it chains into.
               */
-             await this.handleBombDetonation(bombX, bombY, bombType);
+             let pick = inGroup[0];
+             for (const b of inGroup) if (b.type === 'diamond') { pick = b; break; }
+             await this.handleBombDetonation(pick.x, pick.y, pick.type);
 
-             if (isFour) {
+             if (g.size === 4) {
                  /*
-                  * AND A FOUR PAYS FOR THE EXTRAS IT SWALLOWED.
-                  *
-                  * One bomb fired; the rest are gone for ten points a tile,
-                  * which is the trap that started all this. Each of those
-                  * is credited at what its own detonation would have paid
-                  * (Carbon 50, Diamond 100) -- the bomb that DID fire is
-                  * skipped, because it was not wasted. A four also forges
-                  * the Carbon it earned, below, which goes off after.
+                  * AND A FOUR PAYS FOR THE EXTRAS IT SWALLOWED. One bomb
+                  * fired; the rest are gone for ten points a tile, which
+                  * is the trap that started all this. Each is credited at
+                  * what its own detonation would have paid -- the one that
+                  * DID fire is skipped, because it was not wasted.
                   */
                  let wasted = 0;
-                 for (const b of bombsInMatch) {
-                     if (b.x === bombX && b.y === bombY) continue;   // this one fired
+                 for (const b of inGroup) {
+                     if (b === pick) continue;
                      wasted += (b.type === 'diamond')
                              ? this.bonusScores.diamondDetonation
                              : this.bonusScores.carbonDetonation;
                  }
                  if (wasted) {
                      this.score += wasted;
-                     console.log(`Match of 4 wasted ${bombsInMatch.length - 1} bomb(s), +${wasted} credit`);
+                     console.log(`Match of 4 wasted ${inGroup.length - 1} bomb(s), +${wasted} credit`);
                  }
              }
          }
 
-         /* And the bomb the match itself earned. A 4-match forges Carbon
-            and a 5-match Diamond, exactly as a no-bomb match would -- the
-            difference is that this one goes off rather than being left on
-            a board the blasts have just cleared. On a four this IS the
-            payoff: the Carbon you got out of the deal, detonating after. */
-         const forged = matches.size === 4 ? this.specialTypes.bomb4
-                      : matches.size >= 5 ? this.specialTypes.bomb5 : null;
-         if (forged && !this.isGrandFinale) {
-             this.playSound(forged === 'carbon' ? 'carbonBombAppear' : 'diamondBombAppear');
-             console.log(`Match of ${matches.size} forged a ${forged} bomb, detonating it`);
-             await this.handleBombDetonation(bombX, bombY, forged);
+         /* And whatever the slide forged -- each match's own size bomb plus
+            a Diamond for every match beyond the first. They go off rather
+            than being left on a board the blasts have just cleared, which
+            on a four IS the payoff: the Carbon you got out of the deal. */
+         const forged = this.forgeFromGroups(groups && groups.length ? groups : [matches],
+                                             matches, bombX, bombY);
+         for (const f of forged) {
+             console.log(`Forged ${f.type} detonating at (${f.x}, ${f.y})`);
+             await this.handleBombDetonation(f.x, f.y, f.type);
          }
 
          document.getElementById('score').textContent = `Score: ${this.score}`;
