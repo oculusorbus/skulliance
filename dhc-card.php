@@ -51,6 +51,13 @@ ob_end_clean();
 
 const DHCC_W = 1200;
 const DHCC_H = 630;
+/* Backdrop blur strength: the art is resampled down to this many pixels and
+   blown back up, so SMALLER is blurrier. 28 keeps the colour and the broad
+   shapes of the Fighter's own background and loses every readable edge. */
+const DHCC_BLUR = 28;
+/* How far the backdrop is pushed back. -110 of 255 is heavy on purpose --
+   at -72 the sides still read as art and fought with the portrait. */
+const DHCC_DIM = -110;
 
 function dhcc_fail($code = 404) {
 	http_response_code($code);
@@ -114,18 +121,45 @@ $sw = imagesx($src); $sh = imagesy($src);
 $card = imagecreatetruecolor(DHCC_W, DHCC_H);
 imagefilledrectangle($card, 0, 0, DHCC_W, DHCC_H, imagecolorallocate($card, 7, 17, 29));
 
-/* BACKDROP: the same art blown up to cover the full 2:1 and pushed back, so
-   the sides are part of the picture instead of dead slab. Cover, not fit --
-   it is being cropped on purpose here, which is fine because the crisp copy
-   on top is the one being looked at. */
-$scale = max(DHCC_W / $sw, DHCC_H / $sh);
-$bw = (int)round($sw * $scale); $bh = (int)round($sh * $scale);
-imagecopyresampled($card, $src, (int)((DHCC_W - $bw) / 2), (int)((DHCC_H - $bh) / 2), 0, 0, $bw, $bh, $sw, $sh);
+/* BACKDROP: the same art as a soft wash, so the sides are part of the
+   picture instead of dead slab.
+ *
+ * DOWNSCALE-THEN-UPSCALE, NOT IMG_FILTER_GAUSSIAN_BLUR. That filter is a
+ * fixed 3x3 kernel: on a 1200px canvas even several passes leave the art
+ * essentially sharp, and the first version of this card shipped with crisp
+ * spikes and blocks down both sides competing with the Fighter in front of
+ * them -- it read as a louder copy of the portrait rather than a backdrop.
+ * Resampling down to DHCC_BLUR px and back up is a real blur, costs one
+ * resample, and gets stronger the smaller that number is.
+ *
+ * Darkened hard afterwards for the same reason: this is a ground, and a
+ * ground that can be read is a distraction. */
+$cur = imagecreatetruecolor(DHCC_BLUR, DHCC_BLUR);
+imagecopyresampled($cur, $src, 0, 0, 0, 0, DHCC_BLUR, DHCC_BLUR, $sw, $sh);
+$cw = DHCC_BLUR;
+/* BACK UP IN STAGES, not in one jump. GD stops interpolating usefully at a
+   40x upscale: going straight from 28px to 1200px produced hard-edged
+   squares, a mosaic that reads as a rendering fault rather than a backdrop.
+   Each intermediate resample interpolates, and a gaussian pass at each size
+   softens what is left. */
+foreach (array(120, 400) as $step) {
+	$next = imagecreatetruecolor($step, $step);
+	imagecopyresampled($next, $cur, 0, 0, 0, 0, $step, $step, $cw, $cw);
+	if (function_exists('imagefilter')) {
+		for ($i = 0; $i < 3; $i++) @imagefilter($next, IMG_FILTER_GAUSSIAN_BLUR);
+	}
+	$cur = $next; $cw = $step;
+}
+$scale = max(DHCC_W / $cw, DHCC_H / $cw);
+$bw = (int)round($cw * $scale); $bh = (int)round($cw * $scale);
+imagecopyresampled($card, $cur, (int)((DHCC_W - $bw) / 2), (int)((DHCC_H - $bh) / 2),
+                   0, 0, $bw, $bh, $cw, $cw);
 if (function_exists('imagefilter')) {
-	/* Blur first, then darken: darkening a sharp copy leaves readable detail
-	   competing with the Fighter in front of it. */
 	for ($i = 0; $i < 3; $i++) @imagefilter($card, IMG_FILTER_GAUSSIAN_BLUR);
-	@imagefilter($card, IMG_FILTER_BRIGHTNESS, -72);
+	@imagefilter($card, IMG_FILTER_BRIGHTNESS, DHCC_DIM);
+	/* Pulled towards the platform's own ground so a vivid trait background
+	   does not tint the whole card. */
+	@imagefilter($card, IMG_FILTER_COLORIZE, 0, 6, 18, 0);
 }
 
 /* THE FIGHTER, WHOLE. Fit to the height with a little air top and bottom, so

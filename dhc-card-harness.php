@@ -52,12 +52,33 @@ if (!function_exists('imagecreatetruecolor')) {
 	   the values just read out of the file rather than hardcoding a second
 	   copy here -- that way changing them in dhc-card.php moves this test
 	   with it instead of silently diverging from it. */
-	if (!defined('DHCC_W')) define('DHCC_W', $W);
-	if (!defined('DHCC_H')) define('DHCC_H', $H);
+	foreach (array('DHCC_W' => $W, 'DHCC_H' => $H) as $cname => $cval) {
+		if (!defined($cname)) define($cname, $cval);
+	}
+	/* Every other constant the block uses, read out of the file the same
+	   way, so adding one there does not mean a fatal here. */
+	if (preg_match_all('/const (DHCC_[A-Z]+) = (-?\d+);/', $clean, $cm, PREG_SET_ORDER)) {
+		foreach ($cm as $c) if (!defined($c[1])) define($c[1], (int)$c[2]);
+	}
 
+	/*
+	 * A CHECKERBOARD, not a flat fill. The backdrop checks below ask whether
+	 * the blur is soft and whether it is dark, and a flat source answers
+	 * both by accident -- it has no detail to turn into a mosaic and no
+	 * brightness to leave in. Both mutations (one-jump upscale, and the dim
+	 * reduced to nothing) passed against a plain red square. Fine detail in
+	 * bright colours is what the real trait art looks like to a downscaler.
+	 */
 	$sw = $sh = 1000;
 	$src = imagecreatetruecolor($sw, $sh);
-	imagefilledrectangle($src, 0, 0, $sw, $sh, imagecolorallocate($src, 200, 30, 30));
+	$hot  = imagecolorallocate($src, 245, 215, 70);
+	$cold = imagecolorallocate($src, 210, 40, 40);
+	for ($cx = 0; $cx < $sw; $cx += 25) {
+		for ($cy = 0; $cy < $sh; $cy += 25) {
+			imagefilledrectangle($src, $cx, $cy, $cx + 24, $cy + 24,
+				((($cx / 25) + ($cy / 25)) % 2) ? $hot : $cold);
+		}
+	}
 	/* Markers on the extreme top and bottom rows of the source art. */
 	imagefilledrectangle($src, 0, 0, $sw, 6, imagecolorallocate($src, 0, 255, 0));
 	imagefilledrectangle($src, 0, $sh - 6, $sw, $sh, imagecolorallocate($src, 0, 0, 255));
@@ -84,6 +105,44 @@ if (!function_exists('imagecreatetruecolor')) {
 	$edge = imagecolorat($card, 8, (int)($H / 2));
 	$ground = (7 << 16) | (17 << 8) | 29;
 	ok($edge !== $ground, 'the sides are flat ground; the backdrop fill is gone');
+
+	/*
+	 * AND IT HAS TO BE SOFT. The first version jumped 28px straight to
+	 * 1200px; GD stops interpolating usefully at that ratio and renders hard
+	 * squares -- a mosaic that reads as a rendering fault rather than a
+	 * backdrop. That shipped, and I only saw it by looking at a real card.
+	 *
+	 * MEASURING IT TOOK THREE TRIES. Neighbour-difference does not separate
+	 * the two: the -110 dim clamps most of the backdrop towards black, so a
+	 * hard edge and a soft one both come out as a small difference. What
+	 * does separate them is the LONGEST RUN OF IDENTICAL PIXELS -- a mosaic
+	 * block survives the clamp as one flat slab. Measured on this fixture:
+	 * 86 staged, 341 one-jump. 200 sits between them with room either side.
+	 */
+	$maxrun = 0;
+	for ($y = 120; $y < $H - 110; $y += 40) {
+		$run = 0; $prev = null;
+		for ($x = 10; $x < 290; $x++) {
+			$p = imagecolorat($card, $x, $y);
+			if ($prev !== null) {
+				if ($p === $prev) { $run++; if ($run > $maxrun) $maxrun = $run; }
+				else $run = 0;
+			}
+			$prev = $p;
+		}
+	}
+	ok($maxrun < 200,
+	   "the backdrop has a $maxrun-pixel run of identical colour; it is a mosaic, not a blur");
+
+	/* And pushed back far enough that it is a ground, not a second picture. */
+	$lum = 0; $n = 0;
+	for ($x = 10; $x < 260; $x += 10) for ($y = 40; $y < $H - 40; $y += 40) {
+		$c = imagecolorat($card, $x, $y);
+		$lum += 0.2126 * (($c >> 16) & 255) + 0.7152 * (($c >> 8) & 255) + 0.0722 * ($c & 255);
+		$n++;
+	}
+	$avg = $lum / max(1, $n);
+	ok($avg < 70, sprintf('the backdrop averages %.0f/255 luminance; that competes with the Fighter', $avg));
 }
 
 echo "\nit draws through the one renderer, and only for saved Fighters\n";
