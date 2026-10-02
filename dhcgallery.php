@@ -89,6 +89,11 @@ $dhcg_rarity   = dhcf_rarity();
 $dhcg_kits     = array();      // kit id => label, for the filter bar
 foreach (dhca_kits() as $k) $dhcg_kits[$k['id']] = $k;
 $dhcg_kit_counts = array();
+/* Every saved Fighter's four numbers, each axis sorted. Read ONCE for the
+   whole page, not per row -- it is disk-cached against COUNT(*) and
+   MAX(updated_at), but re-reading it inside the loop would still be a
+   file read and a json_decode per Fighter. */
+$dhcg_pool = dhcf_rank_pool($conn);
 
 if ($res) {
 	while ($row = $res->fetch_assoc()) {
@@ -133,6 +138,17 @@ if ($res) {
 		$row['hp']    = $rv['tough'];
 		$row['pow']   = $rv['power'];
 		$row['might'] = $rv['might'];
+		/* WHERE IT PLACES, on the same four axes the assembler previews live.
+		   Against the WHOLE collection, not against whatever this page is
+		   filtered to -- "#3 of 9 legendary Fighters" would be a different
+		   and much less interesting claim than "#3 of 108". dhcf_rank_pool()
+		   is read once outside this loop and is disk-cached, so ranking a row
+		   is a binary search and nothing more. */
+		$row['rank'] = array();
+		foreach (dhcf_rank_axes() as $rk => $rlabel) {
+			$row['rank'][$rk] = dhcf_rank_of($dhcg_pool[$rk], $rv[$rk]);
+		}
+		$row['rankOf'] = (int)$dhcg_pool['_n'];
 
 		$dhcg_owners[(int)$row['user_id']] = $row['username'];
 		$dhcg_all[] = $row;
@@ -308,6 +324,24 @@ include 'header.php';
 #dhcg-get.on{display:inline-flex}
 #dhcg-get:hover{background:var(--ochre,#00c8a0);color:var(--ink,#07111d)}
 #dhcg-get small{letter-spacing:0;text-transform:none;opacity:.7;font-size:10px}
+.dhcg-acts{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.dhcg-acts #dhcg-get{margin:0}
+/* Same shape as the download beside it -- they are the two things you do
+   with a Fighter you own, and one looking like a button while the other
+   looks like a link would imply one of them is the real one. */
+#dhcg-share{display:none;align-items:center;gap:7px;text-decoration:none;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  border:1px solid var(--ochre,#00c8a0);color:var(--ochre,#00c8a0);padding:7px 12px}
+#dhcg-share.on{display:inline-flex}
+#dhcg-share:hover{background:var(--ochre,#00c8a0);color:var(--ink,#07111d)}
+/* The four ranks, ahead of the raw stats: where it places is the headline,
+   what it is made of is the detail. */
+#dhcg-rank{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;align-items:flex-end}
+#dhcg-rank div{border:1px solid var(--line,#1b3346);padding:6px 10px;min-width:74px}
+#dhcg-rank b{display:block;font-size:16px;font-variant-numeric:tabular-nums;color:var(--ochre,#00c8a0)}
+#dhcg-rank span{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.55}
+#dhcg-rank .of{border:0;padding:0 0 6px;font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;opacity:.45;min-width:0}
 #dhcg-close{position:absolute;right:14px;top:12px;background:none;border:1px solid var(--line,#1b3346);
   color:var(--dim,#7a9eb0);font:inherit;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
   padding:5px 10px;border-radius:2px;cursor:pointer}
@@ -417,6 +451,8 @@ include 'header.php';
         'charge'  => round($f['charge'], 2),
         'roles'   => $f['roles'],
         'kit'     => $f['kit']['emoji'] . ' ' . $f['kit']['name'] . ' — ' . $f['kit']['note'],
+        'rank'    => $f['rank'],
+        'rankOf'  => (int)$f['rankOf'],
         'created' => $f['created_at'],
         'parts'   => $f['parts'],
         'layers'  => array(),
@@ -485,7 +521,13 @@ include 'header.php';
       <button type="button" id="dhcg-close">Close</button>
       <h2 id="dhcg-name"></h2>
       <p class="by" id="dhcg-by"></p>
-      <a id="dhcg-get" href="#" download>&#8595; Full size <small>1000px PNG</small></a>
+      <div class="dhcg-acts">
+        <a id="dhcg-get" href="#" download>&#8595; Full size <small>1000px PNG</small></a>
+        <?php /* target=_blank: the composer must not replace the Collection
+                 the player is still browsing. */ ?>
+        <a id="dhcg-share" href="#" target="_blank" rel="noopener">&#120143; Share</a>
+      </div>
+      <div id="dhcg-rank"></div>
       <div id="dhcg-stat"></div>
       <ul id="dhcg-traits"></ul>
     </div>
@@ -517,6 +559,55 @@ include 'header.php';
    */
   var ME = <?php echo (int)$dhcg_user; ?>;
 
+  /* The four axes, in the order dhcf_rank_axes() defines them, so the strip
+     and the share sentence cannot disagree with the assembler's preview. */
+  var AXES = <?php
+    $ax = array();
+    foreach (dhcf_rank_axes() as $k => $l) $ax[] = array($k, $l);
+    echo json_encode($ax);
+  ?>;
+
+  /*
+   * THE SHARE SENTENCE.
+   *
+   * Written here rather than through db.php's shareOnXButton() because this
+   * one is built in the browser from whichever Fighter is open, and because
+   * the interesting claim is the RANK, not the score -- "#4 deadliest of 108"
+   * says something a stranger can weigh, where "6,846" says nothing at all.
+   * Only the two best placements are named: four of them reads as a stat
+   * dump, and X truncates anyway.
+   *
+   * X counts every URL as 23 characters whatever its length, which is what
+   * the budget below accounts for -- the same arithmetic shareOnXUrl() does
+   * server-side.
+   */
+  var X_HANDLE = '@skulliance';
+
+  function shareText(f) {
+    var best = AXES.map(function (a) { return { label: a[1], rank: f.rank[a[0]] }; })
+                   .sort(function (x, y) { return x.rank - y.rank; })
+                   .slice(0, 2)
+                   .map(function (r) { return '#' + r.rank.toLocaleString() + ' ' + r.label.toLowerCase(); });
+
+    var body = f.name + ' - ' + best.join(', ') + ' of ' +
+               f.rankOf.toLocaleString() + ' DHC Fighters.';
+    /* What it is made of, only if it fits. */
+    var tail = ' ' + f.pow + ' power, ' + f.hp + ' health, assembled from ' +
+               f.parts.length + ' earned traits.';
+    var limit = 280 - 24 - ('\n\n' + X_HANDLE).length;
+    if ((body + tail).length <= limit) body += tail;
+    if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '…';
+    return body + '\n\n' + X_HANDLE;
+  }
+
+  function shareHref(f) {
+    /* The link names the Fighter so the post lands on it, not on the front
+       of the Collection. */
+    var url = 'https://skulliance.io/staking/dhcgallery.php?fighter=' + f.serial;
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(shareText(f)) +
+           '&url=' + encodeURIComponent(url);
+  }
+
   function open(f) {
     // The same layer list the card used, so this is the card at a larger size
     // rather than a second opinion about draw order -- but pointed at the
@@ -540,6 +631,20 @@ include 'header.php';
     get.classList.toggle('on', mine);
     get.href = mine ? 'dhc-download.php?serial=' + f.serial : '#';
 
+    /* SHARE IS OWNER-ONLY, the same rule the download follows and for the
+       same reason: posting somebody else's assembly as the thing you built
+       is not a share, and the composer would prefill it in their voice. */
+    var share = document.getElementById('dhcg-share');
+    share.classList.toggle('on', mine);
+    share.href = mine ? shareHref(f) : '#';
+
+    /* The URL names the Fighter, so a share lands on it rather than on the
+       front of the collection. replaceState, not pushState: opening a card
+       should not add a history entry that Back then has to walk through. */
+    if (f.serial) {
+      try { history.replaceState(null, '', 'dhcgallery.php?fighter=' + f.serial); } catch (e) {}
+    }
+
     var made = (f.created || '').replace(' ', ' · ').slice(0, 16);
     /* Rarity score first because it is what the board ranks on, then what the
        Arena will actually get: health from the torso, power from the weapon,
@@ -558,6 +663,16 @@ include 'header.php';
       '<div><b>DHC2F' + f.serial + '</b><span>Number</span></div>' +
       '<div><b style="font-size:11px">' + esc(made) + '</b><span>Assembled</span></div>';
 
+    /* WHERE IT PLACES, which is the thing worth saying out loud about a
+       Fighter and the thing a share is built from. Same four axes and the
+       same pool the assembler previews against, so a Fighter does not rank
+       one way on the canvas and another here. */
+    document.getElementById('dhcg-rank').innerHTML = f.rank
+      ? AXES.map(function (a) {
+          return '<div><b>#' + f.rank[a[0]].toLocaleString() + '</b><span>' + a[1] + '</span></div>';
+        }).join('') + '<div class="of">of ' + f.rankOf.toLocaleString() + ' Fighters</div>'
+      : '';
+
     document.getElementById('dhcg-traits').innerHTML = f.parts.map(function (p) {
       var worn = p.worn > 0 ? p.worn + ' of 226 wear this' : 'in no minted Fighter';
       return '<li><span><span class="sl">' + esc(p.slot) + '</span>' + esc(p.name) +
@@ -570,7 +685,36 @@ include 'header.php';
     document.getElementById('dhcg-close').focus();
   }
 
-  function close() { veil.classList.remove('on'); }
+  function close() {
+    veil.classList.remove('on');
+    /* Drop the ?fighter= again so a refresh or a copied URL from here is the
+       Collection, not whichever card happened to be open last. */
+    try {
+      var u = new URL(window.location.href);
+      if (u.searchParams.has('fighter')) {
+        u.searchParams.delete('fighter');
+        history.replaceState(null, '', u.pathname + (u.search || '') + u.hash);
+      }
+    } catch (e) {}
+  }
+
+  /*
+   * ?fighter=SERIAL opens that card on load, which is what makes a shared
+   * link worth clicking. Reads the cards already on the page rather than
+   * fetching: if the Fighter is not in the current filter or page of
+   * results, there is nothing to open and the Collection is still a
+   * reasonable place to land.
+   */
+  (function () {
+    var want = new URLSearchParams(window.location.search).get('fighter');
+    if (!want) return;
+    var cards = document.querySelectorAll('.dhcg-card');
+    for (var i = 0; i < cards.length; i++) {
+      var data;
+      try { data = JSON.parse(cards[i].getAttribute('data-f')); } catch (e) { continue; }
+      if (String(data.serial) === String(want)) { open(data); break; }
+    }
+  })();
   document.getElementById('dhcg-close').addEventListener('click', close);
   veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
