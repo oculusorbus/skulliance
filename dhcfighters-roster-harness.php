@@ -158,6 +158,12 @@ ok($panel_count === 3,
    'expected exactly three panels in the grid (roster, ladder, trait drops), found ' . $panel_count);
 ok(strpos($panels, 'dhcf-games') !== false,
    'the trait-drop list is outside the panels grid again, so it is back below the fold on a desktop');
+/* ORDER: roster, trait drops, ladder. The drop list sits beside the roster
+   because the two are read together -- what you have, and where the next
+   piece comes from -- and the ladder goes last because it is the only one
+   of the three that is about other people. */
+ok(strpos($panels, 'dhcf-games') < strpos($panels, 'dhcf-ladder'),
+   'the ladder column comes before the trait-drop column');
 
 /* The flexbox detail that is easy to lose and silently wrong: a flex child's
    default min-height is auto, so without min-height:0 the all-time table

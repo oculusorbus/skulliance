@@ -509,30 +509,13 @@ a.dhcf-stat span{opacity:.85}
       </div>
     </div>
 
-    <?php /* ONE ladder panel, monthly first. Two panels side by side pushed
-             "Where traits drop" below the fold on a desktop, and the two
-             lists are the same four columns of the same table -- reading as
-             two separate things was never right. Monthly leads because it is
-             the short list and the live one; all-time fills whatever height
-             the roster column creates. */ ?>
-    <div class="dhcf-panel dhcf-ladder">
-      <h2>Ladder &mdash; best Fighter</h2>
-      <div class="body">
-        <div class="lb-sec">
-          <h3>This month</h3>
-          <?php echo dhcf_board_html($dhcf_lb_month); ?>
-        </div>
-        <div class="lb-sec lb-ath">
-          <h3>All time</h3>
-          <?php echo dhcf_board_html($dhcf_lb_ath); ?>
-        </div>
-      </div>
-    </div>
-
-    <?php /* The freed column. Same markup as before -- it was a full-width
-             block under the panels, which on a wide screen meant scrolling
-             past two half-empty ladders to reach the one thing that answers
-             "what should I play next". */ ?>
+    <?php /* SECOND, between the roster and the ladder. It was a full-width
+             block below the panels, so on a wide screen you scrolled past
+             two half-empty ladders to reach the one thing that answers
+             "what should I play next" -- and putting it third would have
+             left it last in reading order for the same reason. It sits
+             beside the roster because the two are read together: what you
+             have, and where the next piece comes from. */ ?>
     <div class="dhcf-panel dhcf-games">
 
       <?php
@@ -590,6 +573,28 @@ a.dhcf-stat span{opacity:.85}
         </li>
       <?php endforeach; ?>
       </ul>
+    <?php /* ONE ladder panel, LAST. It used to be two panels side by side,
+             which pushed "Where traits drop" below the fold on a desktop --
+             and the two lists are the same four columns of the same table,
+             so reading as two separate things was never right either.
+             Monthly leads inside it because it is the short list and the
+             live one; all-time fills whatever height the roster column
+             creates. Last of the three because it is the only one that is
+             about other people. */ ?>
+    <div class="dhcf-panel dhcf-ladder">
+      <h2>Ladder &mdash; best Fighter</h2>
+      <div class="body">
+        <div class="lb-sec">
+          <h3>This month</h3>
+          <?php echo dhcf_board_html($dhcf_lb_month); ?>
+        </div>
+        <div class="lb-sec lb-ath">
+          <h3>All time</h3>
+          <?php echo dhcf_board_html($dhcf_lb_ath); ?>
+        </div>
+      </div>
+    </div>
+
     </div>
 
   </div>
