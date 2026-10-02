@@ -754,8 +754,16 @@ function dhcf_cap($key) {
  *
  * Here instead, so both callers get the same answer whichever runs first.
  * Checked in order, so a different upload path is one edit.
+ *
+ * NAMED dhcf_art_dir, NOT dhcf_art_base: dhcfighters-notify.php has had a
+ * dhcf_art_base() of its own for a long time and it is a DIFFERENT function
+ * -- it returns the absolute https:// prefix Discord needs, because Discord
+ * fetches the image itself and a relative path is nothing to it. Declaring a
+ * second dhcf_art_base() here was a fatal "cannot redeclare" the moment both
+ * files loaded, which dhcfighters-lib.php does on every trait award. Notify's
+ * now builds its URL on this.
  */
-function dhcf_art_base() {
+function dhcf_art_dir() {
 	static $base = null;
 	if ($base !== null) return $base;
 	$base = '';

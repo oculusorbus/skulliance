@@ -42,12 +42,12 @@ if (!isset($dhca_owned)) $dhca_owned = null;
  */
 if (!isset($dhca_standalone)) $dhca_standalone = ($dhca_mode === 'sandbox');
 
-// Where the art landed -- dhcf_art_base() in dhcfighters-config.php, so a host
+// Where the art landed -- dhcf_art_dir() in dhcfighters-config.php, so a host
 // page that draws Fighters BEFORE including this file gets the same answer.
 // dhcfighters.php does exactly that: its roster is buffered into $dhca_aside
 // ahead of this include, and when the detection lived here those cards drew
 // with an empty base and an "Undefined variable" warning in their alt text.
-$dhc_base = dhcf_art_base();
+$dhc_base = dhcf_art_dir();
 
 // slot key => [label, directory under <base>/<size>/, optional]
 $dhc_slots = array(

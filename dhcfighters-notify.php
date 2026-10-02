@@ -49,13 +49,24 @@ function dhcf_tier_color($tier) {
 	return isset($map[$tier]) ? $map[$tier] : '7A9EB0';
 }
 
-/** Absolute base for trait art. Discord fetches these itself, so relative fails. */
+/**
+ * Absolute base for trait art. Discord fetches these itself, so relative fails.
+ *
+ * The directory scan is dhcf_art_dir() in dhcfighters-config.php -- one answer
+ * for both, rather than two copies of the same candidate list drifting apart.
+ * The function_exists guard is real: dhc-compose.php @include_once's this file
+ * on its own, with no config loaded.
+ */
 function dhcf_art_base() {
 	static $b = null;
 	if ($b === null) {
-		$b = '';
-		foreach (array('web', 'dhc', 'dhc/web', 'traits') as $c) {
-			if (is_dir(__DIR__ . '/' . $c . '/1000')) { $b = $c; break; }
+		if (function_exists('dhcf_art_dir')) {
+			$b = dhcf_art_dir();
+		} else {
+			$b = '';
+			foreach (array('web', 'dhc', 'dhc/web', 'traits') as $c) {
+				if (is_dir(__DIR__ . '/' . $c . '/1000')) { $b = $c; break; }
+			}
 		}
 	}
 	return 'https://skulliance.io/staking/' . $b;

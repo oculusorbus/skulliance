@@ -230,20 +230,43 @@ ok(strpos($clean, 'class="dhcf-panel dhcf-aside"') !== false,
  * assembler defines. $dhc_base was exactly that: set at the top of
  * dhc-assembler.php, read by the card loop, and the buffer runs first -- so
  * every card shipped with an empty src and "Undefined variable $dhc_base"
- * printed into its alt text. dhcf_art_base() lives in dhcfighters-config.php
+ * printed into its alt text. dhcf_art_dir() lives in dhcfighters-config.php
  * now, which both sides already require, and both call it.
  */
 require_once __DIR__ . '/dhcfighters-config.php';
-ok(function_exists('dhcf_art_base'), 'dhcf_art_base() is gone from dhcfighters-config.php');
-ok(dhcf_art_base() !== '', 'dhcf_art_base() resolves to nothing; every Fighter image would 404');
-ok(strpos($clean, '$dhc_base = dhcf_art_base();') !== false,
+ok(function_exists('dhcf_art_dir'), 'dhcf_art_dir() is gone from dhcfighters-config.php');
+ok(dhcf_art_dir() !== '', 'dhcf_art_dir() resolves to nothing; every Fighter image would 404');
+ok(strpos($clean, '$dhc_base = dhcf_art_dir();') !== false,
    'dhcfighters.php no longer resolves the art base itself, so the buffered roster reads the assembler\'s copy before it exists');
-ok(strpos($clean, '$dhc_base = dhcf_art_base();') < strpos($clean, 'ob_start();'),
+ok(strpos($clean, '$dhc_base = dhcf_art_dir();') < strpos($clean, 'ob_start();'),
    'the art base is resolved AFTER the roster is buffered, which is the same bug in a different order');
 
 $asm = no_comments(file_get_contents(__DIR__ . '/dhc-assembler.php'));
-ok(strpos($asm, '$dhc_base = dhcf_art_base();') !== false,
+ok(strpos($asm, '$dhc_base = dhcf_art_dir();') !== false,
    'the assembler went back to detecting the art path itself; there must be one answer, not two');
+
+/*
+ * AND THE NAME MUST NOT COLLIDE. dhcfighters-notify.php has had its own
+ * dhcf_art_base() for a long time, returning the ABSOLUTE https:// prefix
+ * Discord needs rather than the relative directory. Adding a second
+ * dhcf_art_base() in config was a fatal "cannot redeclare" the moment both
+ * loaded -- which dhcfighters-lib.php does on every single trait award, so
+ * it broke the drop path outright. php -l cannot see it; only loading both
+ * can, so that is what this does.
+ */
+$notify = no_comments(file_get_contents(__DIR__ . '/dhcfighters-notify.php'));
+ok(preg_match_all('/function\s+dhcf_art_dir\s*\(/', $notify) === 0,
+   'dhcfighters-notify.php declares dhcf_art_dir() too; one of them will fatal');
+ok(preg_match_all('/function\s+dhcf_art_base\s*\(/', no_comments(file_get_contents(__DIR__ . '/dhcfighters-config.php'))) === 0,
+   'dhcfighters-config.php declares dhcf_art_base(), which notify already owns -- a fatal on every trait award');
+/* Drive it: the award path loads config (via the lib) and then notify. */
+$probe = escapeshellarg('require ' . escapeshellarg(__DIR__ . '/dhcfighters-config.php')
+       . '; require ' . escapeshellarg(__DIR__ . '/dhcfighters-notify.php')
+       . '; echo "OK:" . dhcf_art_dir() . "|" . dhcf_art_base();');
+$res = shell_exec(PHP_BINARY . ' -r ' . $probe . ' 2>/dev/null');
+ok(strpos((string)$res, 'OK:') !== false,
+   'loading dhcfighters-config.php and dhcfighters-notify.php together fatals; that is the trait-award path');
+ok(strpos((string)$res, 'OK:|') === false, 'the art directory resolves to nothing when both are loaded');
 $pick_at = strpos($asm, '<div class="picker">');
 ok($pick_at !== false, 'the picker markup moved');
 $picker = substr($asm, $pick_at, strpos($asm, '</div>', strpos($asm, 'dhca_aside', $pick_at)) - $pick_at);
