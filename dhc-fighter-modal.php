@@ -53,6 +53,15 @@ if (!defined('DHCM_RENDERED')) {
 @media (max-width:760px){#dhcg-panel{grid-template-columns:1fr}}
 #dhcg-panel .big{position:relative;aspect-ratio:1;max-height:100%;background:var(--panel2,#0d1e2e)}
 #dhcg-panel .big img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+/* The close control. LEFT BEHIND when this panel was pulled out of
+   dhcgallery.php: the extraction started at the #dhcg-veil rule and this one
+   sat above it, so the Collection kept its styling and the assembler got a
+   bare browser <button> -- white, rounded, system font, in the middle of a
+   dark panel. Nothing warns about a rule that only one of two callers has. */
+#dhcg-close{position:absolute;right:14px;top:12px;background:none;border:1px solid var(--line,#1b3346);
+  color:var(--dim,#7a9eb0);font:inherit;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  padding:5px 10px;border-radius:2px;cursor:pointer}
+#dhcg-close:hover{border-color:var(--ochre,#00c8a0);color:var(--ochre,#00c8a0)}
 #dhcg-info{padding:18px 20px}
 #dhcg-info h2{margin:0 0 2px;font-size:20px}
 #dhcg-info .by{font-size:11px;opacity:.65;display:flex;align-items:center;gap:6px;margin:0 0 14px}

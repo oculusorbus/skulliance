@@ -189,6 +189,49 @@ console.log('\nthe panel is shared, not copied');
 	ok(pgRaw.indexOf('<div id="dhcg-veil"') === -1,
 	   'the Collection has its own copy of the panel markup again');
 	ok(m.indexOf('window.DHC_MODAL = {') > -1, 'the panel exposes no way to open it');
+
+	/*
+	 * EVERY RULE FOR THE PANEL LIVES WITH THE PANEL.
+	 *
+	 * #dhcg-close was left behind in dhcgallery.php when this was pulled
+	 * out -- the extraction started at the #dhcg-veil rule and that one sat
+	 * above it. The Collection kept its styling and the assembler rendered a
+	 * bare browser <button>: white, rounded, system font, in the middle of a
+	 * dark panel. Nothing warns about a rule only one of two callers has, and
+	 * neither page is "wrong" on its own.
+	 *
+	 * So: no stylesheet outside the partial may style anything named dhcg-.
+	 */
+	/* The names the PANEL emits, read from its own markup -- not every
+	   dhcg- prefix: the Collection page has .dhcg-wrap, .dhcg-head and
+	   .dhcg-grid of its own, which share the prefix and are nothing to do
+	   with this. Matching on the prefix flagged four of those. */
+	const panelMarkup = gallery.slice(gallery.indexOf('</style>'));
+	const owned = new Set();
+	for (const mm of panelMarkup.matchAll(/id="(dhcg-[a-z-]+)"/g)) owned.add('#' + mm[1]);
+	for (const mm of panelMarkup.matchAll(/class="(dhcg-[a-z-]+)"/g)) owned.add('.' + mm[1]);
+
+	const strays = [];
+	for (const file of ['dhcgallery.php', 'dhcfighters.php', 'dhc-assembler.php']) {
+		const body = fs.readFileSync(path.join(__dirname, file), 'utf8');
+		for (const block of body.match(/<style[^>]*>[\s\S]*?<\/style>/g) || []) {
+			/* Selector position only -- a rule BODY mentioning the name (a
+			   url(), a content string) is not styling it. */
+			for (const sel of block.match(/^[^@{}\n][^{}\n]*\{/gm) || []) {
+				for (const name of owned) {
+					/* Word-boundaried: #dhcg-get must not match #dhcg-getter. */
+					if (new RegExp(name.replace('.', '\\.') + '(?![a-z-])').test(sel)) {
+						strays.push(file + ': ' + sel.trim().replace(/\{$/, ''));
+						break;
+					}
+				}
+			}
+		}
+	}
+	ok(owned.size >= 10, 'only ' + owned.size + ' panel selectors found; the scan is looking at the wrong text');
+	ok(strays.length === 0,
+	   'the panel is styled from outside the partial, so one caller will render it wrong:\n    '
+	 + strays.join('\n    '));
 	ok(mRaw.indexOf("defined('DHCM_RENDERED')") > -1,
 	   'the panel can be emitted twice on one page, which would duplicate every id in it');
 

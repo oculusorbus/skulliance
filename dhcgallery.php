@@ -360,10 +360,6 @@ include 'header.php';
    env() is 0 everywhere else. */
 /* The Fighter detail panel -- its CSS, markup and behaviour are all in
    dhc-fighter-modal.php now, shared with the assembler. */
-#dhcg-close{position:absolute;right:14px;top:12px;background:none;border:1px solid var(--line,#1b3346);
-  color:var(--dim,#7a9eb0);font:inherit;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  padding:5px 10px;border-radius:2px;cursor:pointer}
-#dhcg-close:hover{border-color:var(--ochre,#00c8a0);color:var(--ochre,#00c8a0)}
 </style>
 
 <div class="dhcg-wrap">
