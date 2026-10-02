@@ -282,24 +282,37 @@ a.dhcf-stat span{opacity:.85}
  * --stage, so the page ran two vertical rules a couple of hundred pixels
  * apart, one below the other.
  *
- * THE +2px IS TWO SEPARATE PIXELS, both measured rather than guessed:
- *   1. .shell has its own 1px border, so its first track starts at x+1
- *      while this panel's border box starts at x. (Measured: .shell left
- *      14, .stage left 15, this panel's left 14.)
- *   2. the rule to line up with is the picker's LEFT border, which occupies
- *      the pixel AFTER the stage track ends; this panel's own right border
- *      occupies the pixel BEFORE its edge. One more pixel puts the two on
- *      the same column of pixels rather than side by side.
- * At +1px the two rules measured one pixel apart, which is exactly what was
- * reported. At +2px: picker border [653,654), panel border [653,654).
+ * NO COLUMN GAP, because the edge that has to line up is the RIGHT panel's
+ * LEFT edge against the picker's left edge -- those two boxes are the same
+ * column of the page and the eye follows them as one line. With a 14px
+ * gutter that is impossible: the gutter puts the right panel 14px past
+ * wherever the left one ends, so either the left panel's right edge meets
+ * the picker's border or the right panel's left edge does, never both. An
+ * earlier pass aligned the left one, which is why this still read as
+ * crooked -- the misaligned edge was the one being looked at.
  *
- * Same 900px breakpoint as .shell, so the two collapse to one column
- * together rather than one stacking while the other is still split.
+ * .shell solves it the same way and always has: gap:0, stage and picker
+ * sharing an edge with a single border between them. This row now mirrors
+ * that, so the two blocks read as one grid rather than two.
+ *
+ * The +1px is .shell's own border: its first track starts at x+1 while this
+ * panel's border box starts at x. Measured: .shell 14, .stage 15, panel 14.
+ * .dhcf-games drops its right border so the seam stays ONE rule and not two
+ * touching -- the surviving rule is the ladder's left border, landing on the
+ * same pixels as the picker's.
+ *
+ * Same 900px breakpoint as .shell, so the two collapse together rather than
+ * one stacking while the other is still split.
  */
 .dhcf-panels{display:grid;
-  grid-template-columns:minmax(0,calc(var(--stage) + 2px)) minmax(0,1fr);
-  gap:14px;margin-top:18px}
-@media (max-width:900px){.dhcf-panels{grid-template-columns:1fr}}
+  grid-template-columns:minmax(0,calc(var(--stage) + 1px)) minmax(0,1fr);
+  column-gap:0;row-gap:14px;margin-top:18px}
+.dhcf-panels > .dhcf-games{border-right:0}
+@media (max-width:900px){
+  /* Stacked, they are not columns at all and each needs its own frame. */
+  .dhcf-panels{grid-template-columns:1fr;row-gap:14px}
+  .dhcf-panels > .dhcf-games{border-right:1px solid var(--line)}
+}
 
 /* ---- the roster, inside the picker column ---------------------------------
    It is a .dhcf-panel for its internals (header, cards, pager) but it is no

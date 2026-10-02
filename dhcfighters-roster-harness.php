@@ -223,10 +223,24 @@ echo "\nthe columns below line up with the assembler's own split\n";
    them sat at --stage, so two vertical rules ran down the page a couple of
    hundred pixels apart. Measured after the fix: the picker's left border and
    this panel's right border both occupy [653,654) at 1200/1400/1800/2000. */
-ok(preg_match('/\.dhcf-panels\{[^}]*grid-template-columns:minmax\(0,calc\(var\(--stage\) \+ 2px\)\)/', $clean) === 1,
-   'the panels grid no longer tracks --stage (+2px), so its split drifts from the assembler\'s');
-ok(preg_match('/@media \(max-width:900px\)\{\.dhcf-panels\{grid-template-columns:1fr\}\}/', $clean) === 1,
+ok(preg_match('/\.dhcf-panels\{[^}]*grid-template-columns:minmax\(0,calc\(var\(--stage\) \+ 1px\)\)/', $clean) === 1,
+   'the panels grid no longer tracks --stage (+1px for .shell\'s own border), so its split drifts from the assembler\'s');
+/* NO COLUMN GAP. The edge that must line up is the RIGHT panel's LEFT edge
+   against the picker's left edge -- same column of the page, read as one
+   line. A gutter makes that impossible: it puts the right panel 14px past
+   wherever the left one ends, so only one of the two edges can meet the
+   picker's border. An earlier pass aligned the LEFT panel's right edge and
+   it still read as crooked, because the misaligned edge was the one being
+   looked at. .shell has always solved this with gap:0 and a shared border;
+   this mirrors it. Measured: both rules at [653,654) at 1200/1400/2000. */
+ok(preg_match('/\.dhcf-panels\{[^}]*column-gap:0/', $clean) === 1,
+   'the panels row has a column gap again, so the ladder cannot sit on the picker\'s edge');
+ok(preg_match('/\.dhcf-panels > \.dhcf-games\{border-right:0\}/', $clean) === 1,
+   'the trait-drop panel kept its right border, so the seam is two touching rules where the shell has one');
+ok(preg_match('/@media \(max-width:900px\)\{[^}]*\.dhcf-panels\{grid-template-columns:1fr/s', $clean) === 1,
    'the panels no longer collapse at the same 900px breakpoint as .shell');
+ok(preg_match('/@media \(max-width:900px\)\{[\s\S]{0,400}?\.dhcf-panels > \.dhcf-games\{border-right:1px/', $clean) === 1,
+   'stacked, the trait-drop panel never gets its right border back, so it renders as an open box');
 ok(preg_match('/\.dhcf-wrap\{--stage:/', $asm_pre) === 1,
    '--stage is no longer declared on .dhcf-wrap, so the host page cannot line up with the shell');
 
