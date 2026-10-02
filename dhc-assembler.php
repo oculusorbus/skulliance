@@ -1471,9 +1471,23 @@ a{color:var(--ochre)}
     none.innerHTML = '<img alt=""><span>None</span>';
     none.addEventListener('click', function () { choose(active, null); buildTabs(); paint(); buildGrid(); });
     gridEl.appendChild(none);
-    // If anything in this category is ruled out, say so once at the top rather
-    // than leaving the reader to hover a greyed tile to find out why.
-    var banner = null;
+    /*
+     * WHY SOME TILES ARE GREY, said once at the top rather than leaving the
+     * reader to hover one and find out.
+     *
+     * IT USED TO QUOTE THE FIRST BLOCKED TILE'S OWN REASON, verbatim and
+     * with no count: open the Torso tab with one committed torso among
+     * forty free ones and it announced "Your only copy is in a saved
+     * Fighter. Disassemble it to free this trait." That reads as a
+     * statement about the trait you just picked, or about the build on the
+     * canvas -- which is why it looked like a bug on a fresh page with a
+     * random build of traits the player plainly had. It was describing a
+     * tile they had not looked at.
+     *
+     * So: count them, and say which of the two things is true. Nothing
+     * blocked, no banner. */
+    var blockedCount = 0;
+    var blockedWhy = null;
     var shown = 0;
     sortByRarity(list).forEach(function (t) {
       if (rarityFilter && t.tier !== rarityFilter) return;   // secondary filter
@@ -1485,7 +1499,7 @@ a{color:var(--ochre)}
       b.title = why || (t.name + (t.tier ? ' — ' + t.tier + ', ' + t.rate + '% drop'
               + (t.worn ? ' (' + t.worn + ' of the 226 original fighters)'
                         : ' (in no original fighter)') : ''));
-      if (why) { b.disabled = true; if (!banner) banner = why; }
+      if (why) { b.disabled = true; blockedCount++; if (!blockedWhy) blockedWhy = why; }
       b.setAttribute('aria-pressed', sel[active] === t.slug ? 'true' : 'false');
       var i = document.createElement('img');
       i.loading = 'lazy'; i.alt = t.name; i.src = url(s.dir, t.slug, 250);
@@ -1513,9 +1527,28 @@ a{color:var(--ochre)}
       none2.textContent = 'No ' + rarityFilter + ' traits in ' + s.label + '.';
       gridEl.appendChild(none2);
     }
-    if (banner) {
+    if (blockedCount) {
       var n = document.createElement('p');
-      n.className = 'conflict'; n.textContent = banner;
+      n.className = 'conflict';
+      /*
+       * EVERYTHING BLOCKED: quote the reason. It is true of the whole tab,
+       * there is nothing to pick, and the reason is the only useful thing
+       * to say -- this is the case the banner was written for, and it is
+       * usually a conflict ("no head to sit on") rather than ownership.
+       *
+       * SOME BLOCKED: a COUNT, and no cause. Quoting one tile's reason was
+       * the bug: one committed torso among forty free ones announced "Your
+       * only copy is in a saved Fighter", which reads as a statement about
+       * the trait you are wearing. And a cause cannot be generalised
+       * anyway -- blockedReason() returns ownership, head/headgear
+       * conflicts and arms/weapon exclusivity, so "already in saved
+       * Fighters" would simply be wrong on the Headgear tab. The specific
+       * reason stays on each greyed tile's own tooltip, which is where
+       * someone asking about a particular one looks.
+       */
+      n.textContent = (blockedCount >= shown && blockedWhy)
+        ? blockedWhy
+        : blockedCount + ' of ' + shown + ' unavailable with this build. Hover one to see why.';
       gridEl.insertBefore(n, gridEl.firstChild);
     }
   }

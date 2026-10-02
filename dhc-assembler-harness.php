@@ -105,5 +105,37 @@ ok($draw[0] === 'background', 'draw order no longer starts at background — lay
 printf("tabs: %d slots, %d tabs, opens on '%s', draws from '%s'\n",
 	count($draw), count($tabs), $tabs[0], $draw[0]);
 
+/* ---------------------------------------------------------------------------
+ * THE "WHY ARE THESE GREY" BANNER.
+ *
+ * It used to quote the FIRST blocked tile's own reason, verbatim and with no
+ * count. Open the Torso tab with one committed torso among forty free ones
+ * and it announced "Your only copy is in a saved Fighter. Disassemble it to
+ * free this trait." -- which reads as a statement about the trait you are
+ * wearing, not about a tile further down that you never looked at. On a
+ * fresh page with a randomised build of traits the player plainly owned, it
+ * looked like a straightforward bug.
+ *
+ * Now: all blocked -> quote the reason (it is true of the whole tab, and is
+ * usually a conflict rather than ownership). Some blocked -> a COUNT and no
+ * cause, because blockedReason() returns ownership, head/headgear conflicts
+ * AND arms/weapon exclusivity, so no single cause can be generalised.
+ * ------------------------------------------------------------------------- */
+$asm_src = file_get_contents(__DIR__ . '/dhc-assembler.php');
+$asm_c   = preg_replace('!/\*.*?\*/!s', '', $asm_src);
+
+ok(strpos($asm_c, 'if (!banner) banner = why;') === false,
+   'the banner quotes the first blocked tile again, which reads as a claim about the build');
+ok(preg_match('/blockedCount\+\+;\s*if \(!blockedWhy\) blockedWhy = why;/', $asm_c) === 1,
+   'the blocked tiles are no longer counted');
+ok(strpos($asm_c, "blockedCount + ' of ' + shown + ' unavailable with this build.") !== false,
+   'the partial case no longer reports a count');
+ok(preg_match('/\(blockedCount >= shown && blockedWhy\)/', $asm_c) === 1,
+   'the reason is quoted without checking it applies to every tile on the tab');
+/* The count must not name a cause: ownership is only one of three. */
+$banner = substr($asm_c, strpos($asm_c, 'n.textContent = (blockedCount'), 260);
+ok(stripos($banner, 'saved Fighter') === false,
+   'the count names a cause; head/headgear and arms/weapon conflicts block tiles too, so it would be wrong on those tabs');
+
 echo "\n".($fail ? "FAILED: $fail check(s)\n" : "all assembler checks passed\n");
 exit($fail ? 1 : 0);
