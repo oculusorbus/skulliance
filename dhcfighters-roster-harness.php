@@ -218,6 +218,42 @@ ok(preg_match('/\.dhcf-ladder \.lb-ath\{[^}]*flex:1/', $clean) === 1,
 /* ---------------------------------------------------------------- *
  * The roster lives in the picker's aside.
  * ---------------------------------------------------------------- */
+echo "\nnothing scrolls inside anything on a phone\n";
+/*
+ * Desktop keeps its inner scrollers -- the picker is a real column beside a
+ * canvas and the roster is capped at half of it, which is wanted. Stacked on
+ * a phone neither has a column height to fill, so the same declarations only
+ * produce short windows onto long lists: scroll the page to the traits, then
+ * scroll again inside them, with Fighters past the second row clipped away
+ * entirely. Measured after the fix at 400 and 900: zero inner scrollers,
+ * zero clipped elements. At 1400: grid auto, aside 50%, ladder auto.
+ */
+ok(preg_match('/@media \(max-width:900px\)\{[^}]*\.picker\{position:static;width:auto;max-height:none\}/', $asm_pre) === 1,
+   'the picker is capped again on mobile, which is what turns its trait list into an inner scroller');
+ok(preg_match('/@media \(max-width:900px\)\{[\s\S]{0,600}?\.picker > \.dhcf-aside\{max-height:none;margin-top:0/', $asm_pre) === 1,
+   'the roster keeps its 50% cap on mobile, so Fighters past the second row are clipped away');
+/* Desktop must NOT have been collateral. */
+ok(preg_match('/\.picker > \.dhcf-aside\{flex:0 1 auto;max-height:50%/', $asm_pre) === 1,
+   'the roster lost its desktop cap; it will push the picker past the shell it is positioned inside');
+ok(preg_match('/\.grid\{flex:1;overflow:auto;padding:10px/', $asm_pre) === 1,
+   'the trait grid lost its desktop scroller');
+
+/*
+ * ORDER, NOT JUST PRESENCE. The picker section redeclares .grid with its own
+ * overflow:auto further down the file, so a mobile override written with the
+ * other mobile rules higher up loses at equal specificity -- which it did:
+ * the computed overflow-y at 400px was still "auto" after the first attempt.
+ * The override has to come after the declaration it is overriding.
+ */
+$grid_decl   = strpos($asm_pre, '.grid{flex:1;overflow:auto;padding:10px');
+$grid_mobile = strpos($asm_pre, '.grid{flex:none;overflow:visible');
+ok($grid_mobile !== false, 'the trait grid never drops its scroller on mobile');
+ok($grid_mobile !== false && $grid_decl !== false && $grid_mobile > $grid_decl,
+   'the mobile .grid rule sits BEFORE the .grid declaration it overrides, so it loses the cascade');
+
+ok(preg_match('/@media \(max-width:900px\)\{[\s\S]{0,400}?\.dhcf-ladder \.lb-ath\{overflow:visible/', $clean) === 1,
+   'the ladder drops its inner scroller at the wrong breakpoint; it must match the 900px where .shell and .dhcf-panels stack');
+
 echo "\nthe columns below line up with the assembler's own split\n";
 /* The panels used to divide 50/50 while the stage/picker seam directly above
    them sat at --stage, so two vertical rules ran down the page a couple of

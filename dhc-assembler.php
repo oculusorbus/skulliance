@@ -378,9 +378,31 @@ a{color:var(--ochre)}
 .picker > .dhcf-aside{flex:0 1 auto;max-height:50%;min-height:0;margin-top:auto;
   display:flex;flex-direction:column}
 @media (max-width:900px){
-  /* Single column: back into flow, and cap the picker rather than trapping
-     the canvas in a short scroller on a phone. */
-  .picker{position:static;width:auto;max-height:min(78vh,720px)}
+  /*
+   * ONE COLUMN, AND NOTHING SCROLLS INSIDE ANYTHING.
+   *
+   * The picker used to be capped at min(78vh,720px) with .grid scrolling
+   * inside it. On a desktop that is right -- the picker is a column beside a
+   * canvas and has a height to fill. Stacked on a phone it is just a short
+   * window onto a long list: you scroll the page to the traits, then scroll a
+   * second time INSIDE them, and the host's aside below was being clipped by
+   * its own 50% cap on top of that, so Fighters past the second row could not
+   * be reached at all. Two nested scrollers and hidden content, to save
+   * length on the one device where length is free.
+   *
+   * So: no cap, no inner scroller, every trait and every Fighter laid out and
+   * reachable with the page scroll alone. max-height:none has to be stated on
+   * the aside HERE rather than in the host page -- this stylesheet is emitted
+   * at the include point, which is after the host's own <style>, so an
+   * equal-specificity override there loses the cascade. That is exactly how
+   * the clipping survived a first attempt at fixing it.
+   */
+  .picker{position:static;width:auto;max-height:none}
+  /* Stacked there is no column to pin to, so the bottom pin goes too. */
+  .picker > .dhcf-aside{max-height:none;margin-top:0;overflow:visible}
+  /* .grid is NOT unset here: the picker section further down redeclares it
+     with its own overflow:auto, which would win. Its mobile rule lives
+     immediately after that declaration instead. */
 }
 <?php endif; ?>
 
@@ -505,6 +527,23 @@ a{color:var(--ochre)}
 .grid{flex:1;overflow:auto;padding:10px;display:grid;
   grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;
   align-content:start;grid-auto-rows:max-content}
+<?php if (!$dhca_standalone): ?>
+/* EVERY TRAIT LAID OUT ON A PHONE, no scroller inside the list. Stacked, the
+   picker has no column height to fill, so flex:1 and overflow:auto only
+   produce a short window onto a long list -- scroll the page to the traits,
+   then scroll again inside them. On a desktop the same two declarations are
+   correct and are left alone: the picker IS a column there, beside a canvas,
+   with a height to fill.
+ *
+ * THIS HAS TO SIT AFTER THE DECLARATION ABOVE, not with the other mobile
+ * rules higher up the file: that block comes first in source and this rule
+ * re-sets overflow at the same specificity, so the earlier one lost and the
+ * inner scroller survived. Measured, not assumed -- the computed overflow-y
+ * at 400px was still "auto". */
+@media (max-width:900px){
+  .grid{flex:none;overflow:visible;max-height:none}
+}
+<?php endif; ?>
 .cell{background:var(--panel2);border:1px solid var(--line);cursor:pointer;padding:0;
   display:flex;flex-direction:column;border-radius:2px;overflow:hidden}
 .cell:hover{border-color:var(--ochre)}

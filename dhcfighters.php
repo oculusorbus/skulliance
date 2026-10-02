@@ -334,10 +334,12 @@ a.dhcf-stat span{opacity:.85}
 .picker > .dhcf-aside .dhcf-card .sc{font-size:9px}
 .picker > .dhcf-aside .dhcf-card .sc.st{font-size:8px}
 @media (max-width:900px){
-  /* Single column: the picker is back in normal flow and capped, so a
-     nested scroller inside it is a trap rather than a saving. */
-  .picker > .dhcf-aside{max-height:none}
-  .picker > .dhcf-aside > .body{overflow:visible}
+  /* Single column: the whole roster laid out, nothing scrolling inside it.
+     The cap and the pin are lifted in dhc-assembler.php's own mobile block,
+     NOT here -- that stylesheet is emitted at the include point, after this
+     one, so an equal-specificity rule here loses the cascade and the
+     clipping survives. This only has to clear the body's own scroller. */
+  .picker > .dhcf-aside > .body{overflow:visible;max-height:none}
 }
 /* ---- the ladder column ----------------------------------------------------
    Grid items stretch, so this panel is already exactly as tall as the roster
@@ -355,10 +357,13 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-ladder .lb-ath{flex:1;min-height:0;overflow-y:auto}
 /* The sub-heading has to stay put while its own list scrolls under it. */
 .dhcf-ladder .lb-ath h3{position:sticky;top:0;background:var(--ink);padding-bottom:4px;z-index:1}
-@media (max-width:760px){
-  /* Stacked, there is no column height to fill and a nested scroller inside a
-     page that already scrolls is just a trap. */
-  .dhcf-ladder .lb-ath{overflow:visible}
+@media (max-width:900px){
+  /* 900, not 760: that is where .shell and .dhcf-panels both go single
+     column, and between the two numbers the ladder was already stacked --
+     no column height left to fill -- while still scrolling inside itself.
+     A nested scroller in a page that already scrolls is a trap, and one on
+     a block that is no longer a column is a trap for nothing. */
+  .dhcf-ladder .lb-ath{overflow:visible;max-height:none}
 }
 .dhcf-panel{border:1px solid var(--line);border-radius:3px;overflow:hidden}
 .dhcf-panel h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
