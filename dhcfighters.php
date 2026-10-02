@@ -375,7 +375,12 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-lb th{text-align:left;font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:.55;padding:4px 6px}
 .dhcf-lb td{padding:5px 6px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
 .dhcf-lb .r{width:26px;opacity:.6}
-.dhcf-save{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 0}
+/* Breathing room when a Fighter card scrolls the assembler to the top -- see
+   the .art click handler. Flush against the viewport edge reads as cut off. */
+.dhcf-wrap .shell{scroll-margin-top:12px}
+/* margin BELOW now, not above: it leads the assembler rather than trailing
+   it. The .dhcf-stats strip above supplies its own spacing. */
+.dhcf-save{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
 .dhcf-save input{flex:1;min-width:170px;font:inherit;font-size:12px;padding:7px 9px;border-radius:2px;
   background:var(--ink);border:1px solid var(--line);color:inherit}
 .dhcf-save button{font:inherit;font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;
@@ -526,8 +531,13 @@ a.dhcf-stat span{opacity:.85}
   $dhca_aside = ob_get_clean();
   ?>
 
-  <?php include __DIR__ . '/dhc-assembler.php'; ?>
-
+  <?php /* ABOVE THE ASSEMBLER, NOT BELOW IT. It used to sit under the shell,
+           which on a wide screen put it beneath the draw-order list on one
+           side and twenty roster cards on the other -- the one control the
+           whole page exists to reach, in the busiest place on it. Here it is
+           the first thing under the header, on its own line, with nothing
+           else competing. It still acts on whatever is on the canvas; being
+           above it changes nothing but where you look for it. */ ?>
   <div class="dhcf-save<?php echo $dhcf_editing ? ' editing' : ''; ?>">
     <?php if ($dhcf_editing): ?>
       <?php /* No name field: an edit keeps the Fighter's name, which is most of
@@ -544,6 +554,8 @@ a.dhcf-stat span{opacity:.85}
     <?php endif; ?>
     <span class="dhcf-say" id="dhcfSay"></span>
   </div>
+
+  <?php include __DIR__ . '/dhc-assembler.php'; ?>
 
   <div class="dhcf-panels">
 
@@ -838,8 +850,16 @@ function dhcf_board_html($rows) {
       if (!window.DHC_LOAD) return;
       DHC_LOAD(traits);
       syncSave();
-      var frame = document.getElementById('frame');
-      if (frame) frame.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      /* THE TOP OF THE ASSEMBLER, not the middle of the canvas. The canvas
+         is 66vh tall, so centring it put its midpoint at the viewport's
+         midpoint -- which on any normal window scrolls very nearly to the
+         top of the PAGE, past the header and the stats strip, and left you
+         scrolling back down to see what you had just clicked. 'start' with a
+         scroll-margin on .shell lands the assembly image just under the top
+         edge instead. The navbar is position:relative, so nothing is
+         covering it. */
+      var top = document.querySelector('.shell') || document.getElementById('frame');
+      if (top) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
       msg('Viewing ' + card.querySelector('.nm').textContent
           + ' — use Edit to change it, or Disassemble to free its traits.', true);
     });

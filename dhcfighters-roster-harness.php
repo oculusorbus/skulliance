@@ -217,6 +217,37 @@ ok(preg_match('/\.dhcf-ladder \.lb-ath\{[^}]*flex:1/', $clean) === 1,
 /* ---------------------------------------------------------------- *
  * The roster lives in the picker's aside.
  * ---------------------------------------------------------------- */
+echo "\nthe save bar leads the assembler\n";
+/* It used to sit under the shell, which on a wide screen put the one control
+   the page exists to reach beneath the draw-order list on one side and
+   twenty roster cards on the other. */
+$save_at = strpos($clean, '<div class="dhcf-save');
+$asm_at  = strpos($clean, "include __DIR__ . '/dhc-assembler.php'");
+ok($save_at !== false, 'the save bar is gone');
+ok($save_at < $asm_at, 'the save bar is back below the assembler, where it gets lost');
+/* And there must still be exactly ONE of it -- lifting markup from one place
+   to another is how a page ends up rendering the bar twice with a handler
+   bound to whichever id the browser saw first.
+   The BAR is what gets counted, not the button: id="dhcfSave" legitimately
+   appears twice in the source, once in each arm of the $dhcf_editing
+   if/else, and only one of those is ever rendered. Counting the button
+   failed against correct markup. */
+ok(substr_count($clean, '<div class="dhcf-save') === 1,
+   'the save bar is rendered more than once');
+ok(substr_count($clean, 'id="dhcfSay"') === 1, 'there is more than one #dhcfSay status line');
+$bar_block = substr($clean, $save_at, strpos($clean, '<?php endif; ?>', $save_at) - $save_at);
+ok(substr_count($bar_block, 'id="dhcfSave"') === 2
+   && strpos($bar_block, '<?php else: ?>') !== false,
+   'the save button is no longer one-per-branch of the editing conditional');
+
+/* Clicking a Fighter must not throw you at the top of the page. */
+ok(strpos($clean, "block: 'center'") === false,
+   "the card click centres the canvas again; at 66vh tall that scrolls almost to the top of the page");
+ok(preg_match("/scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\)/", $clean) === 1,
+   'the card click no longer scrolls the assembler to the top of the viewport');
+ok(strpos($clean, '.shell{scroll-margin-top') !== false,
+   'the assembler has no scroll margin, so it lands flush against the viewport edge');
+
 echo "\nthe roster fills the picker column\n";
 ok(preg_match('/ob_start\(\);.*?Your Fighters.*?\$dhca_aside = ob_get_clean\(\);/s', $clean) === 1,
    'the roster is no longer buffered into $dhca_aside, so nothing reaches the picker');
