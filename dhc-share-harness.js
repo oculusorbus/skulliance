@@ -88,6 +88,13 @@ console.log('the Collection share names the BEST placements');
 	   uncredited is the wrong default. */
 	ok(/Art by @MMAXI404/.test(t),
 	   'the post no longer credits the artist: ' + JSON.stringify(t.slice(-80)));
+	/* Its own paragraph, not a second line of the pitch -- X collapses
+	   nothing, so a single newline reads as one block of four lines. */
+	ok(/Arena!\n\nArt by @MMAXI404/.test(t),
+	   'the credit is not separated from the invitation by a blank line');
+	/* Three paragraphs: the Fighter, the invitation, the credit. */
+	ok(t.split('\n\n').length === 3,
+	   'the post is ' + t.split('\n\n').length + ' paragraphs, expected 3');
 	ok(fits(t), 'the post is ' + (t.length + URL_COST) + ' characters with the URL, over X\'s ' + LIMIT);
 	console.log('  ' + JSON.stringify(t));
 }
