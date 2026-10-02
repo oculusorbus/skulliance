@@ -281,7 +281,33 @@ a.dhcf-stat span{opacity:.85}
   .dhcf-games ul{grid-template-columns:repeat(6,minmax(0,1fr))}
   .dhcf-games li{padding:7px 9px}
 }
+/* TWO columns now, not three: the roster moved up into the picker's dead
+   space, leaving the trait-drop list and the ladder to share the row. */
 .dhcf-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:18px}
+
+/* ---- the roster, inside the picker column ---------------------------------
+   It is a .dhcf-panel for its internals (header, cards, pager) but it is no
+   longer a panel in a grid: the picker already supplies the frame, so the
+   outer border would double every edge against it. */
+.picker > .dhcf-aside{border:0;border-radius:0;border-top:1px solid var(--line)}
+.picker > .dhcf-aside > .body{flex:1;min-height:0;overflow-y:auto;padding:8px 10px}
+/* Smaller cards here than on a full-width panel. This is a character select
+   in a ~380-600px column, not the gallery -- at the roster's own 150px floor
+   it managed two per row and the pager did all the work. */
+.picker > .dhcf-aside .dhcf-roster{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:7px}
+.picker > .dhcf-aside .dhcf-card .acts{gap:3px;padding:0 5px 5px}
+.picker > .dhcf-aside .dhcf-card .acts button,
+.picker > .dhcf-aside .dhcf-card .acts .dhcf-edit{font-size:8px;padding:3px 2px}
+.picker > .dhcf-aside .dhcf-card .meta{padding:4px 6px}
+.picker > .dhcf-aside .dhcf-card .nm{font-size:10px}
+.picker > .dhcf-aside .dhcf-card .sc{font-size:9px}
+.picker > .dhcf-aside .dhcf-card .sc.st{font-size:8px}
+@media (max-width:900px){
+  /* Single column: the picker is back in normal flow and capped, so a
+     nested scroller inside it is a trap rather than a saving. */
+  .picker > .dhcf-aside{max-height:none}
+  .picker > .dhcf-aside > .body{overflow:visible}
+}
 /* ---- the ladder column ----------------------------------------------------
    Grid items stretch, so this panel is already exactly as tall as the roster
    beside it -- which is as tall as the player's own Fighter count makes it.
@@ -406,28 +432,25 @@ a.dhcf-stat span{opacity:.85}
     </div>
   </div>
 
-  <?php include __DIR__ . '/dhc-assembler.php'; ?>
-
-  <div class="dhcf-save<?php echo $dhcf_editing ? ' editing' : ''; ?>">
-    <?php if ($dhcf_editing): ?>
-      <?php /* No name field: an edit keeps the Fighter's name, which is most of
-               the reason to edit rather than rebuild. Rename is its own button
-               on the card. */ ?>
-      <span class="dhcf-editing">Editing <b><?php echo htmlspecialchars($dhcf_editing['display']); ?></b>
-        &middot; keeps its number and name</span>
-      <button type="button" id="dhcfSave" data-edit="<?php echo (int)$dhcf_editing['id']; ?>">Update Fighter</button>
-      <a class="dhcf-cancel" href="dhcfighters.php">Cancel</a>
-    <?php else: ?>
-      <input type="text" id="dhcfName" maxlength="48"
-             placeholder="Name this Fighter (optional &mdash; defaults to <?php echo htmlspecialchars($dhcf_next); ?>)">
-      <button type="button" id="dhcfSave">Save Fighter</button>
-    <?php endif; ?>
-    <span class="dhcf-say" id="dhcfSay"></span>
-  </div>
-
-  <div class="dhcf-panels">
-
-    <div class="dhcf-panel">
+  <?php
+  /*
+   * THE ROSTER GOES IN THE PICKER COLUMN, not in the grid below.
+   *
+   * The picker is as tall as the stage beside it -- canvas, buttons, ranks
+   * and the whole draw-order list -- and one slot's worth of thumbnails
+   * almost never reaches the bottom of that. On Torso it left most of a
+   * screen of empty panel. The roster is the right thing to put there: it is
+   * the character select, and choosing who to work on then dressing them is
+   * one movement, not two parts of the page.
+   *
+   * Buffered into a string and handed to the assembler rather than included
+   * after it, because dhc-assembler.php has to stay something dhcsandbox.php
+   * can include with no roster, no session and no database. See $dhca_aside
+   * there.
+   */
+  ob_start();
+  ?>
+    <div class="dhcf-panel dhcf-aside">
       <h2>Your Fighters<?php if (count($dhcf_roster) > 1): ?><label class="dhcf-sort"><span>Sort</span><select id="dhcfSort">
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
@@ -508,6 +531,31 @@ a.dhcf-stat span{opacity:.85}
         <?php endif; ?>
       </div>
     </div>
+
+  <?php
+  $dhca_aside = ob_get_clean();
+  ?>
+
+  <?php include __DIR__ . '/dhc-assembler.php'; ?>
+
+  <div class="dhcf-save<?php echo $dhcf_editing ? ' editing' : ''; ?>">
+    <?php if ($dhcf_editing): ?>
+      <?php /* No name field: an edit keeps the Fighter's name, which is most of
+               the reason to edit rather than rebuild. Rename is its own button
+               on the card. */ ?>
+      <span class="dhcf-editing">Editing <b><?php echo htmlspecialchars($dhcf_editing['display']); ?></b>
+        &middot; keeps its number and name</span>
+      <button type="button" id="dhcfSave" data-edit="<?php echo (int)$dhcf_editing['id']; ?>">Update Fighter</button>
+      <a class="dhcf-cancel" href="dhcfighters.php">Cancel</a>
+    <?php else: ?>
+      <input type="text" id="dhcfName" maxlength="48"
+             placeholder="Name this Fighter (optional &mdash; defaults to <?php echo htmlspecialchars($dhcf_next); ?>)">
+      <button type="button" id="dhcfSave">Save Fighter</button>
+    <?php endif; ?>
+    <span class="dhcf-say" id="dhcfSay"></span>
+  </div>
+
+  <div class="dhcf-panels">
 
     <?php /* SECOND, between the roster and the ladder. It was a full-width
              block below the panels, so on a wide screen you scrolled past

@@ -322,7 +322,9 @@ of the comparison, or it would be competing with itself.
 
 ### Finding the one to work on
 
-Your roster sorts, from the **Sort** control next to *Your Fighters*:
+Your saved Fighters sit under the trait picker, on the right of the
+assembler - pick who to work on, then dress them without moving down the
+page. The **Sort** control is in that panel's header:
 
 | Sort | Puts first |
 | --- | --- |

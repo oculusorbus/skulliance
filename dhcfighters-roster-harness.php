@@ -150,12 +150,15 @@ ok(substr_count($panels, 'dhcf_board_html($dhcf_lb_month)') === 1
    'the two ladders are no longer rendered exactly once each');
 ok(strpos($panels, 'dhcf_board_html($dhcf_lb_month)') < strpos($panels, 'dhcf_board_html($dhcf_lb_ath)'),
    'all-time is rendered before this month; the short, live list goes first');
-/* class="dhcf-panel" and class="dhcf-panel dhcf-games" -- but NOT the
-   wrapper's own class="dhcf-panels", which contains the same prefix and
-   made this count 4 against correct markup. */
+/* TWO in the grid now -- trait drops and the ladder. The roster went up into
+   the picker column. Note the pattern excludes the wrapper's own
+   class="dhcf-panels", which carries the same prefix and once made this
+   count one too many against correct markup. */
 $panel_count = preg_match_all('/class="dhcf-panel[" ]/', $panels);
-ok($panel_count === 3,
-   'expected exactly three panels in the grid (roster, ladder, trait drops), found ' . $panel_count);
+ok($panel_count === 2,
+   'expected two panels in the grid (trait drops, ladder), found ' . $panel_count);
+ok(strpos($panels, 'Your Fighters') === false,
+   'the roster is back in the grid; it belongs in the picker column, which is otherwise empty below the thumbnails');
 ok(strpos($panels, 'dhcf-games') !== false,
    'the trait-drop list is outside the panels grid again, so it is back below the fold on a desktop');
 /* ORDER: roster, trait drops, ladder. The drop list sits beside the roster
@@ -174,6 +177,46 @@ ok(preg_match('/\.dhcf-ladder \.lb-ath\{[^}]*min-height:0/', $clean) === 1,
    'the all-time section lost min-height:0');
 ok(preg_match('/\.dhcf-ladder \.lb-ath\{[^}]*flex:1/', $clean) === 1,
    'the all-time section no longer grows, so the column ends in dead space');
+
+/* ---------------------------------------------------------------- *
+ * The roster lives in the picker's aside.
+ * ---------------------------------------------------------------- */
+echo "\nthe roster fills the picker column\n";
+ok(preg_match('/ob_start\(\);.*?Your Fighters.*?\$dhca_aside = ob_get_clean\(\);/s', $clean) === 1,
+   'the roster is no longer buffered into $dhca_aside, so nothing reaches the picker');
+ok(strpos($clean, '$dhca_aside = ob_get_clean();') < strpos($clean, "include __DIR__ . '/dhc-assembler.php'"),
+   '$dhca_aside is built AFTER the assembler is included, so it arrives too late to render');
+ok(strpos($clean, 'class="dhcf-panel dhcf-aside"') !== false,
+   'the roster panel lost its .dhcf-aside class, which is what the picker styles it by');
+
+$asm = no_comments(file_get_contents(__DIR__ . '/dhc-assembler.php'));
+$pick_at = strpos($asm, '<div class="picker">');
+ok($pick_at !== false, 'the picker markup moved');
+$picker = substr($asm, $pick_at, strpos($asm, '</div>', strpos($asm, 'dhca_aside', $pick_at)) - $pick_at);
+ok(strpos($picker, 'dhca_aside') !== false,
+   'the assembler no longer renders $dhca_aside inside .picker');
+ok(strpos($picker, 'id="grid"') < strpos($picker, 'dhca_aside'),
+   'the aside renders above the trait grid; it fills the space BELOW it');
+ok(preg_match('/\.picker > \.dhcf-aside\{[^}]*max-height:50%/', $asm) === 1,
+   'the aside is uncapped; a tall roster will push the picker past the shell it is positioned inside');
+ok(preg_match('/\.picker > \.dhcf-aside\{[^}]*min-height:0/', $asm) === 1,
+   'the aside lost min-height:0 and will refuse to shrink');
+/* PINNED. .grid is flex:1 and absorbs the slack, which puts the aside at the
+   foot of the column today -- by side effect, not by instruction. The roster
+   is the same whatever tab is open, so its top edge must not move when you
+   click from a 42-thumbnail slot to a 6-thumbnail one. Verified in headless
+   Chrome at 60, 6 and 0 thumbnails: top stayed at 590px, flush with the
+   picker's bottom, in all three. */
+ok(preg_match('/\.picker > \.dhcf-aside\{[^}]*margin-top:auto/', $asm) === 1,
+   'the aside is no longer pinned to the bottom of the picker; it will move as the trait grid changes size');
+
+/* The assembler has to stay includable by a page with no roster at all --
+   dhcsandbox.php is public and has no session, no database and no Fighters. */
+ok(strpos($asm, 'if (!empty($dhca_aside))') !== false,
+   'the aside is rendered without an empty check; the sandbox would emit a stray undefined variable');
+$sandbox = file_get_contents(__DIR__ . '/dhcsandbox.php');
+ok(strpos($sandbox, 'dhca_aside') === false,
+   'dhcsandbox.php now sets $dhca_aside; the sandbox is public and owns no roster');
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

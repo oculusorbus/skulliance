@@ -357,6 +357,18 @@ a{color:var(--ochre)}
   width:max(380px, 100% - var(--stage));
   display:flex;flex-direction:column;min-height:0}
 .grid{flex:1;min-height:0;overflow:auto}
+/* The host's aside takes at most half the column so the thumbnails it sits
+   under keep a usable share, and scrolls inside itself rather than pushing
+   the picker past the shell it is absolutely positioned inside.
+ *
+ * PINNED TO THE BOTTOM with margin-top:auto. .grid is flex:1 and so already
+ * absorbs the slack today, which puts the aside at the foot of the column by
+ * side effect -- but only for as long as that stays true. The aside holds the
+ * same roster whatever tab is open, so its top edge must not move when you
+ * click from a slot with 42 thumbnails to one with 6; stating it here means
+ * the next change to .grid cannot start it bouncing. */
+.picker > .dhcf-aside{flex:0 1 auto;max-height:50%;min-height:0;margin-top:auto;
+  display:flex;flex-direction:column}
 @media (max-width:900px){
   /* Single column: back into flow, and cap the picker rather than trapping
      the canvas in a short scroller on a phone. */
@@ -593,6 +605,22 @@ a{color:var(--ochre)}
     <div class="tabs" id="tabs" role="tablist"></div>
     <div class="rarbar" id="rarbar"></div>
     <div class="grid" id="grid" role="tabpanel"></div>
+    <?php
+      /*
+       * OPTIONAL ASIDE, filled by the host page. The picker is as tall as the
+       * stage beside it (canvas + buttons + draw order), and one slot's worth
+       * of thumbnails rarely reaches the bottom of that -- on Torso it leaves
+       * most of a screen empty. dhcfighters.php puts the Fighter roster in
+       * there, which is the one thing a player wants next to the picker
+       * anyway: choose a character, then dress it.
+       *
+       * A STRING, not an include: the host builds it with its own data and
+       * its own markup, so the assembler stays something dhcsandbox.php can
+       * include without owning a roster, a session or a database. Unset
+       * everywhere else, so nothing renders.
+       */
+      if (!empty($dhca_aside)) echo $dhca_aside;
+    ?>
   </div>
 </div>
 <script>
