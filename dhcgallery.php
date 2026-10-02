@@ -210,7 +210,65 @@ $dhcg_desc  = $dhcg_what.' assembled on Skulliance, browsable by anyone. '
             . number_format($dhcg_total).' built so far, each one put together piece by '
             . 'piece from a shared set of parts — and no two the same. See what every '
             . 'trait is worth, what it does in a fight, and who built it.';
+/*
+ * ?fighter=SERIAL MAKES THIS A PAGE ABOUT ONE FIGHTER, as far as X and every
+ * other crawler is concerned. Without per-Fighter tags a shared link carries
+ * the generic collection image, which is the same picture for all 108 of
+ * them -- and a share that shows somebody else's logo instead of the thing
+ * you built is not worth posting. x.com/intent/post cannot attach a file;
+ * the ONLY image a post carries is the one the shared URL declares here.
+ *
+ * Its own query, not a scan of $dhcg_rows: the rows are whatever this page
+ * is filtered and paged to, and a link to a Fighter outside that filter must
+ * still unfurl. Cheap, indexed on serial, and only runs when the parameter
+ * is present.
+ *
+ * The CARD is dhc-card.php, which is 1200x630 -- X centre-crops
+ * summary_large_image, so handing it the square render would behead the
+ * Fighter.
+ */
+$dhcg_one = null;
+if (isset($_GET['fighter']) && (int)$_GET['fighter'] > 0) {
+	$fq = $conn->prepare("SELECT f.serial, f.name, f.rarity_score, f.traits, u.username
+	                      FROM dhc_fighters f
+	                      LEFT JOIN users u ON u.id = f.user_id
+	                      WHERE f.serial = ? AND f.disassembled_at IS NULL LIMIT 1");
+	if ($fq) {
+		$fs = (int)$_GET['fighter'];
+		$fq->bind_param('i', $fs);
+		$fq->execute();
+		$dhcg_one = $fq->get_result()->fetch_assoc() ?: null;
+		$fq->close();
+	}
+	if ($dhcg_one) {
+		$dhcg_one['traits']  = json_decode($dhcg_one['traits'], true) ?: array();
+		$dhcg_one['display'] = dhcf_display_name($dhcg_one);
+		$ov = dhcf_rank_values($dhcg_one['traits'], (int)$dhcg_one['rarity_score']);
+		$obest = array();
+		foreach (dhcf_rank_axes() as $ok => $olabel) {
+			$obest[] = array('label' => $olabel, 'rank' => dhcf_rank_of($dhcg_pool[$ok], $ov[$ok]));
+		}
+		usort($obest, function ($x, $y) { return $x['rank'] <=> $y['rank']; });
+		$dhcg_one['blurb'] = '#' . number_format($obest[0]['rank']) . ' ' . strtolower($obest[0]['label'])
+		                   . ', #' . number_format($obest[1]['rank']) . ' ' . strtolower($obest[1]['label'])
+		                   . ' of ' . number_format((int)$dhcg_pool['_n']) . ' DHC Fighters'
+		                   . (!empty($dhcg_one['username']) ? ', assembled by ' . $dhcg_one['username'] : '')
+		                   . '. Built piece by piece from traits earned across Skulliance.';
+		$dhcg_canonical = 'https://www.skulliance.io/staking/dhcgallery.php?fighter=' . (int)$dhcg_one['serial'];
+		$dhcg_title     = $dhcg_one['display'] . ' - DHC Fighters | Skulliance';
+		$dhcg_desc      = $dhcg_one['blurb'];
+	}
+}
+
 $page_title_override = $dhcg_title;
+/* One Fighter gets its own card; the collection keeps the house image. */
+$dhcg_card_img = $dhcg_one
+    ? 'https://www.skulliance.io/staking/dhc-card.php?serial=' . (int)$dhcg_one['serial']
+    : 'https://www.skulliance.io/staking/images/og.jpg';
+$dhcg_card_alt = $dhcg_one
+    ? $dhcg_one['display'] . ', a DHC Fighter assembled on Skulliance'
+    : 'The DHC Fighter Collection - characters assembled from a shared set of traits';
+
 $extra_head = '
 <meta name="description" content="'.htmlspecialchars($dhcg_desc).'">
 <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1">
@@ -220,13 +278,16 @@ $extra_head = '
 <meta property="og:url" content="'.$dhcg_canonical.'">
 <meta property="og:title" content="'.htmlspecialchars($dhcg_title).'">
 <meta property="og:description" content="'.htmlspecialchars($dhcg_desc).'">
-<meta property="og:image" content="https://www.skulliance.io/staking/images/og.jpg">
-<meta property="og:image:alt" content="The DHC Fighter Collection - characters assembled from a shared set of traits">
+<meta property="og:image" content="'.htmlspecialchars($dhcg_card_img).'">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="'.htmlspecialchars($dhcg_card_alt).'">
 <meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="'.htmlspecialchars($dhcg_title).'">
 <meta name="twitter:description" content="'.htmlspecialchars($dhcg_desc).'">
-<meta name="twitter:image" content="https://www.skulliance.io/staking/images/og.jpg">
+<meta name="twitter:image" content="'.htmlspecialchars($dhcg_card_img).'">
+<meta name="twitter:image:alt" content="'.htmlspecialchars($dhcg_card_alt).'">
 ';
 
 include 'header.php';
