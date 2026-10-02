@@ -74,13 +74,14 @@ $serial = isset($_GET['serial']) ? (int)$_GET['serial'] : 0;
 if ($serial <= 0) dhcc_fail(400);
 if (!function_exists('imagecreatetruecolor') || !function_exists('dhcf_render_fighter')) dhcc_fail(503);
 
-$stmt = $conn->prepare("SELECT traits, traits_hash FROM dhc_fighters
-                        WHERE serial = ? AND disassembled_at IS NULL LIMIT 1");
-if (!$stmt) dhcc_fail(503);
-$stmt->bind_param('i', $serial);
-$stmt->execute();
-$row = $stmt->get_result()->fetch_assoc();
-$stmt->close();
+/* $conn->query(), not prepare()+get_result(): mysqli_stmt::get_result()
+   needs mysqlnd and this server's mysqli is not built against it, so the
+   call is a FATAL there and php -l cannot see it. $serial is already cast
+   to int above. See the same note in dhcgallery.php. */
+$res = $conn->query("SELECT traits, traits_hash FROM dhc_fighters
+                     WHERE serial = $serial AND disassembled_at IS NULL LIMIT 1");
+if (!$res) dhcc_fail(503);
+$row = $res->fetch_assoc();
 if (!$row) dhcc_fail();
 
 $traits = json_decode($row['traits'], true);

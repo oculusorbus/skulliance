@@ -152,7 +152,13 @@ ok(strpos($clean, 'disassembled_at IS NULL') !== false,
    'a disassembled Fighter still has a card');
 ok(strpos($clean, "_GET['build']") === false && strpos($clean, '$_GET[\'traits\']') === false,
    'the card accepts an arbitrary build; that is a way to walk the trait art out without owning any of it');
-ok(preg_match('/bind_param\(\'i\'/', $clean) === 1, 'the serial is not bound as an integer parameter');
+/* Not bind_param: prepared statements are unusable here (no mysqlnd, see
+   below). The platform's own guarantee is the CAST, so that is what is
+   checked -- the serial must be (int) before it is anywhere near a query. */
+ok(preg_match('/\$serial = isset\(\$_GET\[\'serial\'\]\) \? \(int\)\$_GET\[\'serial\'\] : 0;/', $clean) === 1,
+   'the serial is not cast to an integer on the way in');
+ok(preg_match('/WHERE serial = \$serial\b/', $clean) === 1,
+   'the query no longer uses the cast $serial; anything else here is an injection');
 
 echo "\nthe cache cannot serve a stale or half-written card\n";
 /* In the KEY, not merely somewhere in the file: traits_hash is also in the
@@ -172,6 +178,51 @@ ok(strpos($clean, 'ob_end_clean();') !== false, 'the buffer is never discarded')
    with display_errors on, the notice lands in the image. */
 ok(preg_match('/^[^\/\n]*imagedestroy\s*\(/m', $clean) === 0,
    'imagedestroy() is back; it is a no-op since PHP 8.0, deprecated in 8.5, and its notice would corrupt the JPEG');
+
+/*
+ * THE SERVER HAS NO mysqlnd, SO get_result() IS A FATAL.
+ *
+ * mysqli_stmt::get_result() is only compiled in when mysqli is built
+ * against mysqlnd, and this host's is not. The method simply does not
+ * exist there -- "Call to undefined method mysqli_stmt::get_result()",
+ * fatal, whole page gone. php -l cannot see it (the parser has no opinion
+ * about which methods a class has at runtime) and neither can any local
+ * test, because the CLI php here DOES have mysqlnd.
+ *
+ * This shipped in both of these files and took down every shared
+ * ?fighter= link. The constraint was already written down in
+ * ajax/cache-nft-image.php -- "mysqli on this server is built without
+ * mysqlnd, so get_result() is unavailable, stick with the codebase's
+ * standard string-concat + query() pattern" -- and I did not look.
+ *
+ * Checked across the WHOLE repo, not just these two files: the next person
+ * to reach for a prepared statement will hit it in some third place.
+ */
+echo "\nnothing calls get_result(), which does not exist on this server\n";
+{
+	$offenders = array(); $scanned = 0;
+	$needle = 'get_' . 'result(';   /* split, or this file matches itself */
+	$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(__DIR__,
+		FilesystemIterator::SKIP_DOTS));
+	foreach ($it as $f) {
+		if ($f->getExtension() !== 'php') continue;
+		$path = $f->getPathname();
+		/* Skip vendored code and this file. A library shipping its own
+		   mysqlnd path is not this platform's problem, and a harness that
+		   names the thing it is banning is not an offender. */
+		if (preg_match('#/(\.git|vendor|node_modules)/#', $path)) continue;
+		if ($path === __FILE__) continue;
+		$scanned++;
+		if (strpos(no_comments(file_get_contents($path)), $needle) !== false) {
+			$offenders[] = str_replace(__DIR__ . '/', '', $path);
+		}
+	}
+	ok(!$offenders,
+	   $needle . ') is called in: ' . implode(', ', $offenders)
+	 . ' -- this server\'s mysqli has no mysqlnd, so that is a fatal in production '
+	 . 'and invisible to php -l and to any local test');
+	printf("  %d php files scanned, %d offender(s)\n", $scanned, count($offenders));
+}
 
 echo "\nthe gallery points X at the card\n";
 $g = no_comments(file_get_contents(__DIR__ . '/dhcgallery.php'));

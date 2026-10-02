@@ -229,16 +229,26 @@ $dhcg_desc  = $dhcg_what.' assembled on Skulliance, browsable by anyone. '
  */
 $dhcg_one = null;
 if (isset($_GET['fighter']) && (int)$_GET['fighter'] > 0) {
-	$fq = $conn->prepare("SELECT f.serial, f.name, f.rarity_score, f.traits, u.username
-	                      FROM dhc_fighters f
-	                      LEFT JOIN users u ON u.id = f.user_id
-	                      WHERE f.serial = ? AND f.disassembled_at IS NULL LIMIT 1");
+	/*
+	 * $conn->query(), NOT prepare()+get_result().
+	 *
+	 * mysqli_stmt::get_result() needs mysqlnd, and this server's mysqli is
+	 * not built against it -- the call is simply undefined there. It is a
+	 * fatal, not a warning, and php -l cannot see it: the method exists in
+	 * the class as far as the parser is concerned. This shipped and every
+	 * shared ?fighter= link died on it.
+	 *
+	 * The whole platform uses $conn->query() with the value cast or escaped,
+	 * 544 times in db.php alone, for exactly this reason. A serial is an
+	 * int, and (int) is the cast that makes it safe.
+	 */
+	$fs = (int)$_GET['fighter'];
+	$fq = $conn->query("SELECT f.serial, f.name, f.rarity_score, f.traits, u.username
+	                    FROM dhc_fighters f
+	                    LEFT JOIN users u ON u.id = f.user_id
+	                    WHERE f.serial = $fs AND f.disassembled_at IS NULL LIMIT 1");
 	if ($fq) {
-		$fs = (int)$_GET['fighter'];
-		$fq->bind_param('i', $fs);
-		$fq->execute();
-		$dhcg_one = $fq->get_result()->fetch_assoc() ?: null;
-		$fq->close();
+		$dhcg_one = $fq->fetch_assoc() ?: null;
 	}
 	if ($dhcg_one) {
 		$dhcg_one['traits']  = json_decode($dhcg_one['traits'], true) ?: array();
