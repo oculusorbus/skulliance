@@ -139,7 +139,9 @@ $short_desc = 'Build a Fighter from NFT traits, browse the collection, and battl
    collection the art comes from. The Wayup URL is the one the Skull Paper
    already uses, so the two cannot drift. External, so absolute is correct
    here -- the host-only cookie rule is about links back into Skulliance. */
-$artist_x       = 'https://x.com/MMAXI404';
+/* From dhcfighters-config.php, so the credit on this page and the credit
+   in every DHC intro cannot drift to different accounts. */
+$artist_x       = defined('DHCF_ARTIST_X') ? DHCF_ARTIST_X : 'https://x.com/MMAXI404';
 $collection_url = 'https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5';
 
 $href_arena     = 'dhcarena.php';

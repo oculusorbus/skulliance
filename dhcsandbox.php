@@ -52,6 +52,11 @@ $dhca_standalone = false;
 /* Rendered first because the assembler resolves $dhc_base (where the art
    landed) as a side effect, and the social card below needs it. */
 ob_start();
+/* dhcf_artist_link() for the credit below. The assembler pulls the same
+   config in, so this is belt and braces -- but leaning on a transitive
+   include is exactly how $dhc_base ended up undefined in a page that read
+   it before the file defining it had run. */
+require_once __DIR__ . '/dhcfighters-config.php';
 include __DIR__ . '/dhc-assembler.php';
 $dhc_assembler = ob_get_clean();
 
@@ -139,7 +144,7 @@ include 'header.php';
 
   <div class="dhcs-head">
     <h1>Trait Sandbox</h1>
-    <span class="sub">Digital Hell Citizens 2: Fighters &middot; art by Maxingo</span>
+    <span class="sub">Digital Hell Citizens 2: Fighters &middot; art by <?php echo dhcf_artist_link(); ?></span>
   </div>
   <p class="dhcs-note">
     Every trait unlocked, whether you own it or not, and the layers can be

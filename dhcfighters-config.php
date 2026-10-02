@@ -99,6 +99,29 @@ function dhcf_slot_category($slot) {
  */
 define('DHCF_REQUIRED', array('background', 'torso', 'head'));
 
+/*
+ * The artist, and where to send people who want to see more of the work.
+ *
+ * ONE DEFINITION because it belongs in every DHC intro -- the assembler, the
+ * Collection, the sandbox and the marketing page all credit Maxingo, and a
+ * credit that is a link on one page and plain text on the next is a credit
+ * nobody follows. dhcgame.php had this URL hardcoded as $artist_x first; it
+ * reads it from here now.
+ *
+ * NOTE: homepage.php's partner row links Maxingo to x.com/madmaxi__, a
+ * different handle. That one is deliberately left alone -- it is a partner
+ * listing rather than a DHC credit, and which account is current is not
+ * something this file should guess at.
+ */
+define('DHCF_ARTIST',   'Maxingo');
+define('DHCF_ARTIST_X', 'https://x.com/MMAXI404');
+
+/** The artist's name as a link, for the intros that credit him. */
+function dhcf_artist_link($text = null) {
+	return '<a href="' . DHCF_ARTIST_X . '" target="_blank" rel="noopener">'
+	     . htmlspecialchars($text === null ? DHCF_ARTIST : $text) . '</a>';
+}
+
 /** Required slots the layout is missing, by category name. Empty means valid. */
 function dhcf_missing_required($traits) {
 	$missing = array();

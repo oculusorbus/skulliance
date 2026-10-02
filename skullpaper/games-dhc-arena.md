@@ -11,7 +11,7 @@ Win and a **wildcard trait** drops into your collection, which is the loop: play
 the other games to earn traits, assemble Fighters out of them, send those
 Fighters into the Arena, and win more traits.
 
-The art is Maxingo's, the same trait set the assembler draws from. The Fighters
+The art is [Maxingo](https://x.com/MMAXI404)'s, the same trait set the assembler draws from. The Fighters
 on the board are your saved assemblies, layer for layer.
 
 **You do not need an account to play it.** Opened logged out, DHC Arena deals

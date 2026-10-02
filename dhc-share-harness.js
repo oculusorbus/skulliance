@@ -277,6 +277,41 @@ console.log('\nthe panel is shared, not copied');
 	   'an edit no longer sheds ?edit= when the panel closes, so a reload reopens the editor');
 }
 
+console.log('\nevery DHC intro credits the artist with a link');
+{
+	/* A credit that is a link on one page and plain text on the next is a
+	   credit nobody follows. One definition, used by all of them, so they
+	   cannot drift to different accounts -- dhcgame.php had its own copy of
+	   the URL before this. */
+	const cfg = fs.readFileSync(path.join(__dirname, 'dhcfighters-config.php'), 'utf8');
+	ok(/define\('DHCF_ARTIST_X', 'https:\/\/x\.com\/MMAXI404'\)/.test(cfg),
+	   'the artist link is gone or points somewhere else');
+	ok(/function dhcf_artist_link\(/.test(cfg), 'dhcf_artist_link() is gone');
+
+	for (const f of ['dhcgallery.php', 'dhcfighters.php', 'dhcsandbox.php']) {
+		const body = fs.readFileSync(path.join(__dirname, f), 'utf8');
+		const vis  = strip(body);
+		/* The NAME must not appear unlinked in rendered copy: that is the
+		   state this fixes. Comments are stripped first -- several explain
+		   the change and mention him by name. */
+		ok(!/art by Maxingo/.test(vis),
+		   f + ' still credits Maxingo as plain text; the credit should link to his account');
+		ok(body.indexOf('dhcf_artist_link()') > -1,
+		   f + ' does not use the shared artist link');
+	}
+	/* The marketing page already linked him -- it must read the shared
+	   constant rather than keep its own copy of the URL. */
+	const game = fs.readFileSync(path.join(__dirname, 'dhcgame.php'), 'utf8');
+	ok(/\$artist_x\s*=\s*defined\('DHCF_ARTIST_X'\)/.test(game),
+	   'dhcgame.php hardcodes the artist URL again instead of reading the shared one');
+
+	/* And the docs. */
+	for (const f of ['skullpaper/games-dhc-fighters.md', 'skullpaper/games-dhc-arena.md']) {
+		const md = fs.readFileSync(path.join(__dirname, f), 'utf8');
+		ok(md.indexOf('(https://x.com/MMAXI404)') > -1, f + ' does not link the artist');
+	}
+}
+
 console.log('\nthe Collection says who owns the art');
 {
 	/* "nobody owns the artwork" was both untrue and the opposite of what the
@@ -286,7 +321,10 @@ console.log('\nthe Collection says who owns the art');
 	const visible = strip(page);
 	ok(visible.indexOf('nobody owns') === -1,
 	   'the Collection says nobody owns the artwork; Maxingo does');
-	ok(visible.indexOf('Maxingo owns the') > -1,
+	/* The name is emitted by dhcf_artist_link() now, so it is not a literal
+	   in the source any more -- assert on the call plus the clause it
+	   introduces, which is what actually renders. */
+	ok(/dhcf_artist_link\(\); \?> owns the artwork/.test(page),
 	   'the Collection no longer says who owns the artwork');
 }
 

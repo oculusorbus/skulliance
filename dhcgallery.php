@@ -378,7 +378,7 @@ include 'header.php';
 
   <div class="dhcg-head">
     <h1>The Collection</h1>
-    <span class="sub">Every Fighter assembled on Skulliance &middot; art by Maxingo</span>
+    <span class="sub">Every Fighter assembled on Skulliance &middot; art by <?php echo dhcf_artist_link(); ?></span>
   </div>
   <p class="dhcg-note">
     <?php echo number_format($dhcg_total); ?> assembled so far.
@@ -387,8 +387,8 @@ include 'header.php';
              the opposite of what this notice is for -- the point is that
              assembling a Fighter here gives you no claim on it, BECAUSE
              somebody already holds it. */ ?>
-    These are platform features, <b>not NFTs</b> &mdash; they cannot be minted and Maxingo owns the
-    artwork.
+    These are platform features, <b>not NFTs</b> &mdash; they cannot be minted and
+    <?php echo dhcf_artist_link(); ?> owns the artwork.
     <?php /* dhcfighters.php is behind the gate this page just stepped around, so
              for a visitor that link is an error page, not an invitation. */ ?>
     <?php if ($dhcg_guest): ?>

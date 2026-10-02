@@ -8,10 +8,10 @@ Fighter means playing across all of them. You assemble what you've earned in
 the trait assembler, save it, and your best Fighter's rarity score sets your
 place on the board.
 
-The art is by **Maxingo**, from the *Digital Hell Citizens 2: Fighters*
-collection.
+The art is by **[Maxingo](https://x.com/MMAXI404)**, from the *Digital Hell
+Citizens 2: Fighters* collection.
 
-> Maxingo shared the trait art so this could be built, and what you assemble
+> [Maxingo](https://x.com/MMAXI404) shared the trait art so this could be built, and what you assemble
 > here is **not an NFT** — it cannot be minted, and earning a trait gives you no
 > ownership of the artwork. The genuine, ownable Fighters are the
 > [Digital Hell Citizens 2 collection on wayup](https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5)

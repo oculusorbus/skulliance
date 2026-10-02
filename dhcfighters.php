@@ -477,7 +477,7 @@ a.dhcf-stat span{opacity:.85}
       <div class="dhcf-head">
         <h1>DHC Fighters</h1>
         <span class="sub"><a href="https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5"
-           target="_blank" rel="noopener">Digital Hell Citizens 2: Fighters</a> &middot; art by Maxingo</span>
+           target="_blank" rel="noopener">Digital Hell Citizens 2: Fighters</a> &middot; art by <?php echo dhcf_artist_link(); ?></span>
       </div>
       <?php /* ONE paragraph. The subtitle above already says "art by Maxingo", so a
                second sentence establishing that was repeating itself, and the rights
@@ -501,7 +501,7 @@ a.dhcf-stat span{opacity:.85}
         best fighter's rarity score sets your place on the leaderboard, and everything you save
         joins the <a href="dhcgallery.php">Fighter Collection</a> for every staker to browse.
         Rarity comes from the original NFT collection: how many of the 226 minted Fighters
-        actually wear that trait. Maxingo shared
+        actually wear that trait. <?php echo dhcf_artist_link(); ?> shared
         the art so this could be built, and what you assemble here is <b>not an NFT</b> &mdash; it
         cannot be minted, and earning a trait gives you no ownership of the artwork. The genuine,
         ownable Fighters are from the official NFT collection.
