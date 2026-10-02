@@ -709,6 +709,26 @@ include 'header.php';
     share.classList.toggle('on', mine);
     share.href = mine ? shareHref(f) : '#';
 
+    /*
+     * WARM THE CARD NOW, not when X asks for it.
+     *
+     * dhc-card.php renders on demand the first time: a 1000px composite of
+     * every layer, then the 1200x630 card, then a disk write. That is
+     * seconds. X's crawler fetches the image once, shortly after the
+     * composer opens, and if it does not get an answer quickly it shows no
+     * card at all -- and then caches that nothing for the URL, so the next
+     * person to open the same link sees no card either.
+     *
+     * Opening your own Fighter is the earliest moment we know which card
+     * might be wanted, and it is a long way before the Share click. One
+     * cached JPEG, fetched by the browser and then thrown away: by the time
+     * the crawler arrives the file is on disk and the request is a readfile.
+     */
+    if (mine && f.serial) {
+      var warm = new Image();
+      warm.src = 'dhc-card.php?serial=' + f.serial;
+    }
+
     /* The URL names the Fighter, so a share lands on it rather than on the
        front of the collection. replaceState, not pushState: opening a card
        should not add a history entry that Back then has to walk through. */

@@ -135,6 +135,15 @@ console.log('\nsharing somebody else\'s Fighter is not offered');
 	   'the share href is built for Fighters the viewer does not own');
 	ok(g.indexOf("'dhcgallery.php?fighter=' + f.serial") > -1,
 	   'the shared link no longer names the Fighter, so it lands on the front of the Collection');
+	/* The card renders on demand the first time -- a full composite and a
+	   disk write, which is seconds. X fetches it once, shortly after the
+	   composer opens, and caches "no card" for the URL if it is not ready.
+	   Warming it when the owner opens their own Fighter puts it on disk long
+	   before the crawler asks. */
+	ok(/warm\.src = 'dhc-card\.php\?serial=' \+ f\.serial/.test(g),
+	   'the card is no longer warmed when its owner opens it, so X can time out on the first fetch and cache nothing');
+	ok(/if \(mine && f\.serial\)/.test(g),
+	   'the warm fires for Fighters the viewer does not own, rendering cards nobody asked for');
 	/* The opener reads it as new URLSearchParams(location.search).get(...),
 	   so match THAT, not a `searchParams.` property access that is never
 	   written. The first version of this check failed against working code. */
