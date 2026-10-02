@@ -217,7 +217,15 @@ if (!defined('DHCM_RENDERED')) {
     document.getElementById('dhcg-name').textContent = f.name;
     document.getElementById('dhcg-by').innerHTML =
       '<img alt="" src="' + esc(f.avatar) + '"> assembled by ' + esc(f.owner) +
-      ' · <a href="dhcgallery.php?owner=' + f.ownerId + '" style="color:var(--ochre,#00c8a0)">see their Fighters</a>';
+      ' · <a href="dhcgallery.php?owner=' + f.ownerId + '" style="color:var(--ochre,#00c8a0)">'
+      /* The count makes the link an actual invitation -- "see their 27
+         Fighters" is worth a click in a way "see their Fighters" is not.
+         Falls back to the bare wording if the caller did not send one,
+         rather than rendering "see their 0 Fighters". */
+      + (f.ownerN > 0
+          ? 'see their ' + f.ownerN.toLocaleString() + ' Fighter' + (f.ownerN === 1 ? '' : 's')
+          : 'see their Fighters')
+      + '</a>';
 
     var get = document.getElementById('dhcg-get');
     var mine = ME > 0 && f.ownerId === ME;

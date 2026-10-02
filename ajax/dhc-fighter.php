@@ -68,6 +68,13 @@ foreach (dhcf_layers($row['traits'], __DIR__ . '/../' . dhcf_art_dir()) as $L) {
 	$layers[] = array('c' => $L['cat'], 's' => $L['slug'], 'n' => $L['nudge'], 'k' => $L['clip']);
 }
 
+/* Same figure the Collection shows: every saved Fighter this builder has,
+   not whatever a filtered page happened to list. */
+$ownerN = 0;
+$cq = $conn->query("SELECT COUNT(*) AS n FROM dhc_fighters
+                    WHERE user_id = " . (int)$row['user_id'] . " AND disassembled_at IS NULL");
+if ($cq && ($cr = $cq->fetch_assoc())) $ownerN = (int)$cr['n'];
+
 $avatar = (!empty($row['discord_id']) && !empty($row['avatar']))
         ? 'https://cdn.discordapp.com/avatars/' . $row['discord_id'] . '/' . $row['avatar'] . '.jpg'
         : 'icons/skulliance.png';
@@ -78,6 +85,7 @@ $out = array(
 	'owner'   => $row['username'],
 	'ownerId' => (int)$row['user_id'],
 	'avatar'  => $avatar,
+	'ownerN'  => $ownerN,
 	'score'   => (int)$row['rarity_score'],
 	'hp'      => (int)$rv['tough'],
 	'pow'     => (int)$rv['power'],

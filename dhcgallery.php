@@ -95,6 +95,16 @@ $dhcg_kit_counts = array();
    file read and a json_decode per Fighter. */
 $dhcg_pool = dhcf_rank_pool($conn);
 
+/* How many Fighters each builder has, for the "see their N Fighters" link in
+   the detail panel. Its own query rather than a tally of $dhcg_rows: those
+   are whatever this page is filtered and paged to, so counting them would
+   say "see their 3 Fighters" to someone looking at a tier filter when the
+   builder has thirty. One grouped read for the whole page. */
+$dhcg_counts = array();
+$cq = $conn->query("SELECT user_id, COUNT(*) AS n FROM dhc_fighters
+                    WHERE disassembled_at IS NULL GROUP BY user_id");
+if ($cq) while ($cr = $cq->fetch_assoc()) $dhcg_counts[(int)$cr['user_id']] = (int)$cr['n'];
+
 if ($res) {
 	while ($row = $res->fetch_assoc()) {
 		$row['traits'] = json_decode($row['traits'], true) ?: array();
@@ -456,6 +466,7 @@ include 'header.php';
         'owner'   => $f['username'],
         'ownerId' => (int)$f['user_id'],
         'avatar'  => $av,
+        'ownerN'  => isset($dhcg_counts[(int)$f['user_id']]) ? $dhcg_counts[(int)$f['user_id']] : 0,
         'score'   => (int)$f['rarity_score'],
         'hp'      => (int)$f['hp'],
         'pow'     => (int)$f['pow'],

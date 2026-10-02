@@ -277,6 +277,27 @@ console.log('\nthe panel is shared, not copied');
 	   'an edit no longer sheds ?edit= when the panel closes, so a reload reopens the editor');
 }
 
+console.log('\nthe builder link counts their Fighters');
+{
+	const m = strip(gallery);
+	ok(/see their ' \+ f\.ownerN\.toLocaleString\(\) \+ ' Fighter'/.test(m),
+	   'the builder link no longer names how many Fighters they have');
+	ok(/f\.ownerN === 1 \? '' : 's'/.test(m), 'the count is not pluralised');
+	/* Never "see their 0 Fighters": a payload without the number falls back
+	   to the bare wording. */
+	ok(/f\.ownerN > 0/.test(m), 'a missing count would render as "see their 0 Fighters"');
+
+	/* THE COUNT IS EVERY FIGHTER THEY HAVE, not the ones on screen. Tallying
+	   the page's own rows would say "see their 3 Fighters" to somebody
+	   looking at a tier filter when the builder has thirty. */
+	ok(/SELECT user_id, COUNT\(\*\) AS n FROM dhc_fighters\s*\n?\s*WHERE disassembled_at IS NULL GROUP BY user_id/.test(page),
+	   'the Collection no longer counts each builder\'s Fighters with its own query');
+	const ep = fs.readFileSync(path.join(__dirname, 'ajax/dhc-fighter.php'), 'utf8');
+	ok(/'ownerN'  => \$ownerN,/.test(ep), 'the single-Fighter endpoint does not send the count');
+	ok(/WHERE user_id = " \. \(int\)\$row\['user_id'\] \. " AND disassembled_at IS NULL/.test(ep),
+	   'the endpoint counts disassembled Fighters, or does not cast the id');
+}
+
 console.log('\nthe modal shows where it places');
 {
 	const g = strip(gallery);
