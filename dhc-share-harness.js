@@ -26,8 +26,16 @@ let fail = 0;
 const ok = (c, w) => { if (!c) { fail++; console.log('  FAIL  ' + w); } };
 const strip = (t) => t.replace(/<\?php[\s\S]*?\?>/g, '0');
 
-const gallery   = fs.readFileSync(path.join(__dirname, 'dhcgallery.php'), 'utf8');
+/* The share text moved into the shared modal when the assembler's own
+   button was removed -- that one could never show the Fighter's art, which
+   is the whole value of the post. One copy now, used by the Collection and
+   by the panel the assembler opens on save. */
+const gallery   = fs.readFileSync(path.join(__dirname, 'dhc-fighter-modal.php'), 'utf8');
 const assembler = fs.readFileSync(path.join(__dirname, 'dhc-assembler.php'), 'utf8');
+/* The Collection PAGE, as distinct from the panel it shares with the
+   assembler: the deep-link opener and the card payload stayed here when the
+   panel moved out. */
+const page      = fs.readFileSync(path.join(__dirname, 'dhcgallery.php'), 'utf8');
 
 /* X's own arithmetic: 280 total, any URL counts 23 (+1 for the space). */
 const LIMIT = 280;
@@ -71,6 +79,10 @@ console.log('the Collection share names the BEST placements');
 	   thing and nothing about why a stranger should join. */
 	ok(/Join @skulliance/.test(t) && /Arena/.test(t),
 	   'the post no longer invites anyone to play: ' + JSON.stringify(t.slice(-60)));
+	/* None of this exists without the art, and a Fighter going out
+	   uncredited is the wrong default. */
+	ok(/Art by @MMAXI404/.test(t),
+	   'the post no longer credits the artist: ' + JSON.stringify(t.slice(-80)));
 	ok(fits(t), 'the post is ' + (t.length + URL_COST) + ' characters with the URL, over X\'s ' + LIMIT);
 	console.log('  ' + JSON.stringify(t));
 }
@@ -114,41 +126,16 @@ console.log('\nthe stat tail is dropped rather than overflowing');
 	ok(fits(long), 'the long post kept a tail it had no room for');
 }
 
-/* ---- the assembler's icon button ---- */
-console.log('\nthe assembler icon builds the same shape of post');
+/* ---- the assembler has no share button any more ---- */
+console.log('\nthe assembler does not offer a share it cannot illustrate');
 {
-	const i = assembler.indexOf('shareXBtn.addEventListener');
-	ok(i > -1, 'the assembler share handler is gone');
-	const seg = assembler.slice(i, assembler.indexOf('\n  }', i));
-	ok(/280 - 24 - tail\.length/.test(seg),
-	   'the assembler post is not budgeted against X\'s 23-character URL cost');
-	ok(/Join @skulliance/.test(seg) && /Arena/.test(seg),
-	   'the assembler post does not invite anyone to play, it only tags the account');
-	/* Both posts must say the same thing; two different invitations is two
-	   different products as far as a reader scrolling past is concerned. */
-	const asmTail = (seg.match(/var tail = '\\n\\n([^']+)';/) || [])[1];
-	ok(asmTail && handleMatch && asmTail === handleMatch[1],
-	   'the assembler and the Collection invite differently:\n    ' + JSON.stringify(asmTail)
-	 + '\n    ' + JSON.stringify(handleMatch && handleMatch[1]));
-	ok(/sort\(function \(a, b\) \{ return a\.rank - b\.rank; \}\)/.test(seg),
-	   'the assembler no longer picks the BEST placements');
-	ok(/slice\(0, 2\)/.test(seg), 'the assembler names more than two placements; that reads as a stat dump');
-	ok(/dhcgallery\.php/.test(seg),
-	   'the assembler links somewhere other than the public Collection; dhcfighters.php is behind the login '
-	 + 'and a shared link that greets a stranger with a sign-in wall is worse than no link');
-}
-
-console.log('\nthe button cannot post an empty claim');
-{
-	const h = strip(assembler);
-	ok(/id="sharex"[^>]*disabled/.test(h),
-	   'the share button starts enabled, so it can be clicked before the ranks have answered');
-	ok(h.indexOf('if (shareXBtn) shareXBtn.disabled = false;') > -1,
-	   'the button is never enabled once the ranks arrive');
-	ok(/LAST_AXES = null;\n\s*if \(shareXBtn\) shareXBtn\.disabled = true;/.test(h),
-	   'a failed rank fetch leaves the button enabled with nothing to say');
-	ok(/aria-label="Share this build on X"/.test(h),
-	   'the icon-only button has no accessible name');
+	/* x.com/intent/post shows the image the SHARED URL declares, and an
+	   unsaved build on a login-gated page has no URL and no card. The button
+	   there could only ever post text. Saving opens the Collection's own
+	   panel instead, which has the Fighter, the card and the ranks. */
+	ok(assembler.indexOf('id="sharex"') === -1,
+	   'the assembler share button is back; it cannot put the Fighter in the post');
+	ok(assembler.indexOf('LAST_AXES') === -1, 'dead share state left behind in the assembler');
 }
 
 console.log('\nsharing somebody else\'s Fighter is not offered');
@@ -169,21 +156,67 @@ console.log('\nsharing somebody else\'s Fighter is not offered');
 	   'the card is no longer warmed when its owner opens it, so X can time out on the first fetch and cache nothing');
 	ok(/if \(mine && f\.serial\)/.test(g),
 	   'the warm fires for Fighters the viewer does not own, rendering cards nobody asked for');
-	/* The opener reads it as new URLSearchParams(location.search).get(...),
-	   so match THAT, not a `searchParams.` property access that is never
-	   written. The first version of this check failed against working code. */
-	ok(/URLSearchParams\(window\.location\.search\)\.get\('fighter'\)/.test(g),
+	/* In the PAGE, not the panel: the opener is how this page chooses which
+	   Fighter to show, which is the one piece that did not move.
+	   It reads as new URLSearchParams(location.search).get(...), so match
+	   THAT, not a `searchParams.` property access that is never written --
+	   the first version of this check failed against working code. */
+	ok(/URLSearchParams\(window\.location\.search\)\.get\('fighter'\)/.test(strip(page)),
 	   'nothing opens the named Fighter on arrival, so the deep link does nothing');
+}
+
+/* ---- one panel, two callers ---- */
+console.log('\nthe panel is shared, not copied');
+{
+	/* RAW for anything in PHP, stripped only for JS and markup: strip()
+	   removes <?php ?> blocks wholesale, and the include lines, the
+	   $dhcm_deeplink flags and the DHCM_RENDERED guard all live in one.
+	   Checking the stripped text reported three working things as missing. */
+	const m = strip(gallery), mRaw = gallery;
+	const pg = strip(page),   pgRaw = page;
+	const asm = fs.readFileSync(path.join(__dirname, 'dhcfighters.php'), 'utf8');
+	/* Three copies of a detail panel is how this platform has shipped a
+	   redesigned-but-invisible panel three times. */
+	ok(pgRaw.indexOf("include __DIR__ . '/dhc-fighter-modal.php'") > -1,
+	   'the Collection no longer includes the shared panel');
+	ok(asm.indexOf("include __DIR__ . '/dhc-fighter-modal.php'") > -1,
+	   'the assembler no longer includes the shared panel');
+	ok(pgRaw.indexOf('<div id="dhcg-veil"') === -1,
+	   'the Collection has its own copy of the panel markup again');
+	ok(m.indexOf('window.DHC_MODAL = {') > -1, 'the panel exposes no way to open it');
+	ok(mRaw.indexOf("defined('DHCM_RENDERED')") > -1,
+	   'the panel can be emitted twice on one page, which would duplicate every id in it');
+
+	/* ONLY THE COLLECTION OWNS THE ?fighter= URL. On the assembler the panel
+	   is a review of what was just saved; rewriting the address to a
+	   different page would send a refresh somewhere else entirely. */
+	ok(/\$dhcm_deeplink = true;/.test(pgRaw), 'the Collection stopped claiming the ?fighter= URL');
+	ok(/\$dhcm_deeplink = false;/.test(asm), 'the assembler rewrites the address to dhcgallery.php');
+	ok(m.indexOf('if (DEEPLINK && f.serial)') > -1,
+	   'the panel rewrites the URL unconditionally, which is wrong on every page but one');
+
+	/* Saving opens it, and closing it is what reloads -- a timer the player
+	   cannot see is a worse place for the page change. */
+	ok(asm.indexOf('window.DHC_MODAL.onClose = after;') > -1,
+	   'closing the panel after a save no longer refreshes the roster behind it');
+	ok(asm.indexOf("fetch('ajax/dhc-fighter.php?serial=") > -1,
+	   'the assembler no longer fetches the saved Fighter, so it has nothing to show');
+	/* A failed fetch must not strand someone on a saved Fighter with no
+	   panel and no reload. */
+	ok(/\.catch\(function \(\) \{ setTimeout\(after, 900\); \}\);/.test(asm),
+	   'a failed panel fetch leaves the page as it was, with the save invisible');
+	ok(/if \(!d\.serial \|\| !window\.DHC_MODAL\) \{ setTimeout\(after, 900\); return; \}/.test(asm),
+	   'nothing falls back when the panel or the serial is missing');
 }
 
 console.log('\nthe modal shows where it places');
 {
 	const g = strip(gallery);
 	ok(g.indexOf("document.getElementById('dhcg-rank')") > -1, 'the rank strip is not rendered');
-	ok(/'rank'    => \$f\['rank'\]/.test(gallery), 'the card payload no longer carries the ranks');
-	ok(/\$dhcg_pool = dhcf_rank_pool\(\$conn\);/.test(gallery), 'the rank pool is gone');
+	ok(/'rank'    => \$f\['rank'\]/.test(page), 'the card payload no longer carries the ranks');
+	ok(/\$dhcg_pool = dhcf_rank_pool\(\$conn\);/.test(page), 'the rank pool is gone');
 	/* Once per page, not once per row. */
-	const occurrences = (gallery.match(/dhcf_rank_pool\(\$conn\)/g) || []).length;
+	const occurrences = (page.match(/dhcf_rank_pool\(\$conn\)/g) || []).length;
 	ok(occurrences === 1, 'dhcf_rank_pool() is called ' + occurrences + ' times; it belongs outside the row loop');
 }
 

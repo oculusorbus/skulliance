@@ -666,6 +666,16 @@ a.dhcf-stat span{opacity:.85}
 
   <?php include __DIR__ . '/dhc-assembler.php'; ?>
 
+  <?php
+    /* The Collection's own Fighter panel, shown here the moment a save
+       lands so the thing you just built can be looked at, downloaded and
+       posted without going to find it. NOT deep-linked: this page does not
+       own the ?fighter= URL, and rewriting the address to dhcgallery.php
+       would send a refresh somewhere else. */
+    $dhcm_user = $dhcf_user; $dhcm_base = $dhc_base; $dhcm_deeplink = false;
+    include __DIR__ . '/dhc-fighter-modal.php';
+  ?>
+
   <div class="dhcf-panels">
 
     <?php /* SECOND, between the roster and the ladder. It was a full-width
@@ -938,13 +948,35 @@ function dhcf_board_html($rows) {
             line = 'Saved as ' + d.display + ' — ' + d.score + ' pts';
           }
           msg(line, true);
-          // Back to the build page after an edit, so the roster shows the
-          // result rather than leaving ?edit= in the URL.
-          setTimeout(function () {
-            // Leaving ?edit= in the URL would re-open the editor on reload.
+
+          /*
+           * SHOW WHAT WAS JUST BUILT. The page used to reload 900ms later,
+           * which threw away the one moment the player most wants to look
+           * at the thing -- and left Download and Share somewhere they had
+           * to go and find. Same panel as the Collection, opened here.
+           *
+           * The reload still happens, on close, because the roster and the
+           * trait counts behind the panel are now stale. Closing it is the
+           * natural end of "I made this", so it is a better place for the
+           * page change than a timer the player cannot see.
+           *
+           * A failure to fetch the panel must not strand them: fall back to
+           * exactly the old behaviour.
+           */
+          var after = function () {
             if (editId) location.href = 'dhcfighters.php';
             else location.reload();
-          }, 900);
+          };
+          if (!d.serial || !window.DHC_MODAL) { setTimeout(after, 900); return; }
+          fetch('ajax/dhc-fighter.php?serial=' + encodeURIComponent(d.serial), {
+            credentials: 'same-origin'
+          }).then(function (r) { return r.json(); })
+            .then(function (p) {
+              if (!p || !p.ok || !p.fighter) { setTimeout(after, 900); return; }
+              window.DHC_MODAL.onClose = after;
+              window.DHC_MODAL.open(p.fighter);
+            })
+            .catch(function () { setTimeout(after, 900); });
         }
         else { msg(d.message || 'Could not save.', false); syncSave(); }
       })

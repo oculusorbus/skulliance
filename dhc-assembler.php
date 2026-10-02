@@ -447,9 +447,6 @@ a{color:var(--ochre)}
    the real stylesheet rather than a stand-in. */
 .ranks .rk.rk-top b{color:var(--ochre)}
 .ranks.busy{opacity:.55}
-/* Icon-only, so it is sized by the mark rather than by a label. */
-.btn-x{font-size:15px;line-height:1;padding:7px 11px;min-width:0}
-.btn-x:disabled{opacity:.35;cursor:default}
 /* Phones: four across is 60px a cell, which truncates every label. */
 @media (max-width:620px){ .ranks{grid-template-columns:repeat(2,1fr)}
   .ranks .rk:nth-child(2){border-right:0}
@@ -630,19 +627,6 @@ a{color:var(--ochre)}
                dhcfighters.php for a signed-in player. */ ?>
       <?php if (!empty($dhca_can_download)): ?>
       <button class="btn" id="getpng">Download 1000px PNG</button>
-      <?php endif; ?>
-      <?php /* THE LOGO ALONE, because by this point the row has four labels
-               in it and a fifth would wrap on anything narrow. It is also
-               the one control here whose meaning a mark carries on its own.
-               Disabled until the ranks strip has answered -- the post is
-               built from those placements, and "share" producing an empty
-               sentence is worse than a button that is visibly not ready
-               yet. Hidden entirely in the sandbox: it has every trait
-               unlocked, so a rank from it would be a claim about a build
-               nobody earned. */ ?>
-      <?php if (!empty($dhca_can_download)): ?>
-      <button class="btn btn-x" id="sharex" type="button" disabled
-              title="Share this build on X" aria-label="Share this build on X">&#120143;</button>
       <?php endif; ?>
     </div>
     <?php if ($dhca_can_rank): ?>
@@ -1220,10 +1204,6 @@ a{color:var(--ochre)}
    */
   var ranksEl   = document.getElementById('ranks');
   var rankTimer = null, rankSeq = 0;
-  /* The placements the share sentence is built from. Null until the strip
-     has answered, which is what keeps the button disabled. */
-  var LAST_AXES = null;
-  var shareXBtn = document.getElementById('sharex');
   var EDIT_ID   = <?php echo (int)$dhca_edit_id; ?>;
 
   function refreshRanks() {
@@ -1248,8 +1228,6 @@ a{color:var(--ochre)}
         ranksEl.classList.remove('busy');
         if (!j || !j.ok || !j.axes) { ranksEl.classList.add('off'); return; }
         ranksEl.classList.remove('off');
-        LAST_AXES = j.axes;
-        if (shareXBtn) shareXBtn.disabled = false;
         Object.keys(j.axes).forEach(function (k) {
           var cell = ranksEl.querySelector('.rk[data-k="' + k + '"]');
           if (!cell) return;
@@ -1268,52 +1246,11 @@ a{color:var(--ochre)}
            so it goes quiet rather than shouting. */
         if (seq === rankSeq) {
           ranksEl.classList.remove('busy'); ranksEl.classList.add('off');
-          LAST_AXES = null;
-          if (shareXBtn) shareXBtn.disabled = true;
         }
       });
   }
 
-  /*
-   * SHARE THE BUILD ON X.
-   *
-   * The rank is the claim worth making -- "#4 deadliest of 108" is something
-   * a stranger can weigh, where a raw score is a number with no scale. Two
-   * placements, not four: four reads as a stat dump and X truncates anyway.
-   *
-   * It links to the public Collection rather than to this page, which is
-   * behind the login: a shared link that greets a stranger with a sign-in
-   * wall is worse than no link. An unsaved build has no permalink of its own
-   * to point at, which is the honest limit of sharing from the canvas --
-   * save it and the Collection's own share names the Fighter.
-   *
-   * X counts any URL as 23 characters regardless of length; the budget below
-   * is the same arithmetic shareOnXUrl() does server-side.
-   */
-  if (shareXBtn) {
-    shareXBtn.addEventListener('click', function () {
-      if (!LAST_AXES) return;
-      var best = Object.keys(LAST_AXES).map(function (k) {
-        return { label: LAST_AXES[k].label, rank: LAST_AXES[k].rank, of: LAST_AXES[k].of };
-      }).sort(function (a, b) { return a.rank - b.rank; });
-      if (!best.length) return;
 
-      var parts = best.slice(0, 2).map(function (r) {
-        return '#' + r.rank.toLocaleString() + ' ' + r.label.toLowerCase();
-      });
-      /* A call to action, not just a tag -- see the same note in
-         dhcgallery.php. The budget below already accounts for its length. */
-      var tail = '\n\nJoin @skulliance to assemble your own Fighter and battle other players in the Arena!';
-      var body = 'Just put this DHC Fighter together - ' + parts.join(', ') +
-                 ' of ' + best[0].of.toLocaleString() + ' built so far.';
-      var limit = 280 - 24 - tail.length;
-      if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '\u2026';
-
-      window.open('https://x.com/intent/post?text=' + encodeURIComponent(body + tail) +
-                  '&url=' + encodeURIComponent('https://skulliance.io/staking/dhcgallery.php'),
-                  '_blank', 'noopener');
-    });
-  }
   <?php endif; ?>
 
   function paintStack() {
