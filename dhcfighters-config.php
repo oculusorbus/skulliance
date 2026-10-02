@@ -740,3 +740,28 @@ function dhcf_cap($key) {
 	$g = dhcf_game($key);
 	return ($g && isset($g['cap'])) ? (int)$g['cap'] : DHCF_DAILY_CAP;
 }
+
+/**
+ * Where the trait art landed on disk, relative to the web root.
+ *
+ * LIVED IN dhc-assembler.php AS A BARE $dhc_base, which was fine while the
+ * assembler was the only thing that drew a Fighter. It is not any more:
+ * dhcfighters.php renders its roster BEFORE including the assembler (the
+ * cards are buffered into $dhca_aside so they can go in the picker column),
+ * and at that point $dhc_base did not exist yet -- so every card emitted
+ * `src="/250/torso/x.png"` with an "Undefined variable" warning printed into
+ * the alt text. Which is exactly what shipped.
+ *
+ * Here instead, so both callers get the same answer whichever runs first.
+ * Checked in order, so a different upload path is one edit.
+ */
+function dhcf_art_base() {
+	static $base = null;
+	if ($base !== null) return $base;
+	$base = '';
+	foreach (array('web', 'dhc', 'dhc/web', 'traits') as $c) {
+		if (is_dir(__DIR__ . '/' . $c . '/1000')) { $base = $c; break; }
+	}
+	return $base;
+}
+

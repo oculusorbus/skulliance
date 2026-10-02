@@ -159,6 +159,42 @@ ok($panel_count === 2,
    'expected two panels in the grid (trait drops, ladder), found ' . $panel_count);
 ok(strpos($panels, 'Your Fighters') === false,
    'the roster is back in the grid; it belongs in the picker column, which is otherwise empty below the thumbnails');
+
+/*
+ * AND THEY MUST BE SIBLINGS, which counting cannot tell you.
+ *
+ * A misplaced </div> once left .dhcf-ladder nested INSIDE .dhcf-games. The
+ * count above was still 2, the page still had both panels, PHP still linted
+ * clean -- and the grid had one child, so the two rendered full width,
+ * stacked, which is precisely the layout this work existed to replace. It
+ * shipped. So walk the divs and check the parent, rather than trusting a
+ * substring tally.
+ */
+$depth  = 0;
+$parent = array();
+$seen   = array();
+preg_match_all('/<div\b[^>]*>|<\/div>/', preg_replace('/<\?php.*?\?>/s', '', $panels), $tags, PREG_PATTERN_ORDER);
+foreach ($tags[0] as $tag) {
+	if ($tag === '</div>') { array_pop($parent); $depth--; continue; }
+	if (preg_match('/class="([^"]*)"/', $tag, $cm)) {
+		$cls = $cm[1];
+		if ($cls !== 'dhcf-panels' && strpos($cls, 'dhcf-panel') === 0) {
+			$seen[$cls] = end($parent) === false ? 'ROOT' : end($parent);
+		}
+		$parent[] = $cls;
+	} else {
+		$parent[] = '';
+	}
+	$depth++;
+}
+foreach (array('dhcf-panel dhcf-games', 'dhcf-panel dhcf-ladder') as $cls) {
+	ok(isset($seen[$cls]), "the \"$cls\" panel is gone");
+	ok(isset($seen[$cls]) && $seen[$cls] === 'dhcf-panels',
+	   "\"$cls\" is nested inside \"" . ($seen[$cls] ?? '?') . "\" instead of being a child of the grid, "
+	 . 'so it renders full width instead of as a column');
+}
+ok($depth === -1,
+   'the panels markup does not balance (' . $depth . '); a stray or missing </div> changes what is nested in what');
 ok(strpos($panels, 'dhcf-games') !== false,
    'the trait-drop list is outside the panels grid again, so it is back below the fold on a desktop');
 /* ORDER: roster, trait drops, ladder. The drop list sits beside the roster
@@ -189,7 +225,25 @@ ok(strpos($clean, '$dhca_aside = ob_get_clean();') < strpos($clean, "include __D
 ok(strpos($clean, 'class="dhcf-panel dhcf-aside"') !== false,
    'the roster panel lost its .dhcf-aside class, which is what the picker styles it by');
 
+/*
+ * THE ROSTER DRAWS BEFORE THE ASSEMBLER RUNS, so it cannot read anything the
+ * assembler defines. $dhc_base was exactly that: set at the top of
+ * dhc-assembler.php, read by the card loop, and the buffer runs first -- so
+ * every card shipped with an empty src and "Undefined variable $dhc_base"
+ * printed into its alt text. dhcf_art_base() lives in dhcfighters-config.php
+ * now, which both sides already require, and both call it.
+ */
+require_once __DIR__ . '/dhcfighters-config.php';
+ok(function_exists('dhcf_art_base'), 'dhcf_art_base() is gone from dhcfighters-config.php');
+ok(dhcf_art_base() !== '', 'dhcf_art_base() resolves to nothing; every Fighter image would 404');
+ok(strpos($clean, '$dhc_base = dhcf_art_base();') !== false,
+   'dhcfighters.php no longer resolves the art base itself, so the buffered roster reads the assembler\'s copy before it exists');
+ok(strpos($clean, '$dhc_base = dhcf_art_base();') < strpos($clean, 'ob_start();'),
+   'the art base is resolved AFTER the roster is buffered, which is the same bug in a different order');
+
 $asm = no_comments(file_get_contents(__DIR__ . '/dhc-assembler.php'));
+ok(strpos($asm, '$dhc_base = dhcf_art_base();') !== false,
+   'the assembler went back to detecting the art path itself; there must be one answer, not two');
 $pick_at = strpos($asm, '<div class="picker">');
 ok($pick_at !== false, 'the picker markup moved');
 $picker = substr($asm, $pick_at, strpos($asm, '</div>', strpos($asm, 'dhca_aside', $pick_at)) - $pick_at);

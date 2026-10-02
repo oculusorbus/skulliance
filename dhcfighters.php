@@ -448,6 +448,11 @@ a.dhcf-stat span{opacity:.85}
    * can include with no roster, no session and no database. See $dhca_aside
    * there.
    */
+  /* dhcf_art_base(), not the assembler's own $dhc_base: that is set inside
+     dhc-assembler.php, which has not run yet at this point. Reading it here
+     is what put "Undefined variable $dhc_base" into the alt text of every
+     roster card. Same function the assembler itself now calls. */
+  $dhc_base = dhcf_art_base();
   ob_start();
   ?>
     <div class="dhcf-panel dhcf-aside">
@@ -621,6 +626,8 @@ a.dhcf-stat span{opacity:.85}
         </li>
       <?php endforeach; ?>
       </ul>
+    </div>
+
     <?php /* ONE ladder panel, LAST. It used to be two panels side by side,
              which pushed "Where traits drop" below the fold on a desktop --
              and the two lists are the same four columns of the same table,
@@ -641,8 +648,6 @@ a.dhcf-stat span{opacity:.85}
           <?php echo dhcf_board_html($dhcf_lb_ath); ?>
         </div>
       </div>
-    </div>
-
     </div>
 
   </div>
@@ -669,7 +674,10 @@ function dhcf_board_html($rows) {
      Hidden, not removed: every card carries its traits in a data attribute and
      its own Edit / Rename / Disassemble wiring, and rebuilding the grid per
      page would mean re-attaching all of it for no gain. */
-  var PER_PAGE = 12, rpage = 0;
+  /* 20, not 12. In the picker column the cards sit at a 96px floor and run
+     seven or more to a row, so a dozen was two rows and a pager -- more
+     paging than choosing. */
+  var PER_PAGE = 20, rpage = 0;
   var rcards = [].slice.call(document.querySelectorAll('.dhcf-card'));
   var rpager = document.getElementById('dhcfPager');
   function rpaint() {

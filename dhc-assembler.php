@@ -42,12 +42,12 @@ if (!isset($dhca_owned)) $dhca_owned = null;
  */
 if (!isset($dhca_standalone)) $dhca_standalone = ($dhca_mode === 'sandbox');
 
-// Where the art landed. Checked in order so a different upload path needs one
-// edit here, not a hunt through the file.
-$dhc_base = '';
-foreach (array('web', 'dhc', 'dhc/web', 'traits') as $c) {
-	if (is_dir(__DIR__ . '/' . $c . '/1000')) { $dhc_base = $c; break; }
-}
+// Where the art landed -- dhcf_art_base() in dhcfighters-config.php, so a host
+// page that draws Fighters BEFORE including this file gets the same answer.
+// dhcfighters.php does exactly that: its roster is buffered into $dhca_aside
+// ahead of this include, and when the detection lived here those cards drew
+// with an empty base and an "Undefined variable" warning in their alt text.
+$dhc_base = dhcf_art_base();
 
 // slot key => [label, directory under <base>/<size>/, optional]
 $dhc_slots = array(
