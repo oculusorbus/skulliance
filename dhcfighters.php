@@ -275,8 +275,31 @@ a.dhcf-stat span{opacity:.85}
   .dhcf-games li{padding:7px 9px}
 }
 /* TWO columns now, not three: the roster moved up into the picker's dead
-   space, leaving the trait-drop list and the ladder to share the row. */
-.dhcf-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:18px}
+   space, leaving the trait-drop list and the ladder to share the row.
+ *
+ * AND THEY SPLIT WHERE THE ASSEMBLER SPLITS. An auto-fit grid divided these
+ * two 50/50 while the stage/picker seam directly above them sits at
+ * --stage, so the page ran two vertical rules a couple of hundred pixels
+ * apart, one below the other.
+ *
+ * THE +2px IS TWO SEPARATE PIXELS, both measured rather than guessed:
+ *   1. .shell has its own 1px border, so its first track starts at x+1
+ *      while this panel's border box starts at x. (Measured: .shell left
+ *      14, .stage left 15, this panel's left 14.)
+ *   2. the rule to line up with is the picker's LEFT border, which occupies
+ *      the pixel AFTER the stage track ends; this panel's own right border
+ *      occupies the pixel BEFORE its edge. One more pixel puts the two on
+ *      the same column of pixels rather than side by side.
+ * At +1px the two rules measured one pixel apart, which is exactly what was
+ * reported. At +2px: picker border [653,654), panel border [653,654).
+ *
+ * Same 900px breakpoint as .shell, so the two collapse to one column
+ * together rather than one stacking while the other is still split.
+ */
+.dhcf-panels{display:grid;
+  grid-template-columns:minmax(0,calc(var(--stage) + 2px)) minmax(0,1fr);
+  gap:14px;margin-top:18px}
+@media (max-width:900px){.dhcf-panels{grid-template-columns:1fr}}
 
 /* ---- the roster, inside the picker column ---------------------------------
    It is a .dhcf-panel for its internals (header, cards, pager) but it is no
@@ -291,6 +314,8 @@ a.dhcf-stat span{opacity:.85}
 .picker > .dhcf-aside .dhcf-card .acts{gap:3px;padding:0 5px 5px}
 .picker > .dhcf-aside .dhcf-card .acts button,
 .picker > .dhcf-aside .dhcf-card .acts .dhcf-edit{font-size:8px;padding:3px 2px}
+.picker > .dhcf-aside .dhcf-card .acts .dhcf-scrap{padding:3px 4px}
+.picker > .dhcf-aside .dhcf-card .acts .dhcf-scrap svg{width:10px;height:10px}
 .picker > .dhcf-aside .dhcf-card .meta{padding:4px 6px}
 .picker > .dhcf-aside .dhcf-card .nm{font-size:10px}
 .picker > .dhcf-aside .dhcf-card .sc{font-size:9px}
@@ -368,6 +393,13 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-card .firstb{color:var(--ochre);opacity:1;font-size:8.5px;letter-spacing:.12em;
   border:1px solid var(--ochre);border-radius:999px;padding:1px 5px;margin-left:4px}
 .dhcf-card .acts{display:flex;gap:5px;padding:0 8px 8px}
+/* The trash button does not share the 1fr the two word buttons take -- it is
+   as wide as its icon, which is what gives Edit and Rename room to stay
+   words. */
+.dhcf-card .acts .dhcf-scrap{flex:0 0 auto;display:inline-flex;align-items:center;
+  justify-content:center;padding:3px 6px}
+.dhcf-card .acts .dhcf-scrap svg{width:11px;height:11px;display:block;
+  fill:none;stroke:currentColor;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
 .dhcf-card .acts button{flex:1;font:inherit;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
   padding:4px;cursor:pointer;background:none;border:1px solid var(--line);border-radius:2px;color:inherit}
 .dhcf-card .acts button:hover{border-color:var(--ochre);color:var(--ochre)}
@@ -513,7 +545,18 @@ a.dhcf-stat span{opacity:.85}
               <div class="acts">
                 <a class="dhcf-edit" href="dhcfighters.php?edit=<?php echo (int)$f['id']; ?>">Edit</a>
                 <button type="button" class="dhcf-rename">Rename</button>
-                <button type="button" class="dhcf-scrap">Disassemble</button>
+                <?php /* An icon, because the word does not fit. "Disassemble" was
+                         already the longest label in a three-control row, and in
+                         the picker column the cards are ~96px wide -- it rendered
+                         as "DISA". A clipped word is worse than no word: it reads
+                         as a layout fault and says nothing about what the button
+                         does. An inline SVG rather than the 🗑 emoji, which is a
+                         different shape, weight and colour on every platform and
+                         would not take currentColor on hover. The name survives
+                         in title and aria-label, and the confirm still spells
+                         out what disassembly costs. */ ?>
+                <button type="button" class="dhcf-scrap" title="Disassemble <?php echo htmlspecialchars($f['display']); ?>"
+                        aria-label="Disassemble <?php echo htmlspecialchars($f['display']); ?>"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6.5 1.5h3M2.5 3.5h11M4.5 3.5l.7 10a1 1 0 0 0 1 .95h3.6a1 1 0 0 0 1-.95l.7-10M6.8 6.3v5.4M9.2 6.3v5.4"/></svg></button>
               </div>
             </div>
           <?php endforeach; ?>

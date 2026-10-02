@@ -32,8 +32,9 @@ function no_comments($s) {
 	return $s;
 }
 
-$src   = file_get_contents(__DIR__ . '/dhcfighters.php');
-$clean = no_comments($src);
+$src     = file_get_contents(__DIR__ . '/dhcfighters.php');
+$clean   = no_comments($src);
+$asm_pre = no_comments(file_get_contents(__DIR__ . '/dhc-assembler.php'));
 
 /* ---------------------------------------------------------------- *
  * Deadliest and Toughest are the Arena's own numbers.
@@ -217,6 +218,42 @@ ok(preg_match('/\.dhcf-ladder \.lb-ath\{[^}]*flex:1/', $clean) === 1,
 /* ---------------------------------------------------------------- *
  * The roster lives in the picker's aside.
  * ---------------------------------------------------------------- */
+echo "\nthe columns below line up with the assembler's own split\n";
+/* The panels used to divide 50/50 while the stage/picker seam directly above
+   them sat at --stage, so two vertical rules ran down the page a couple of
+   hundred pixels apart. Measured after the fix: the picker's left border and
+   this panel's right border both occupy [653,654) at 1200/1400/1800/2000. */
+ok(preg_match('/\.dhcf-panels\{[^}]*grid-template-columns:minmax\(0,calc\(var\(--stage\) \+ 2px\)\)/', $clean) === 1,
+   'the panels grid no longer tracks --stage (+2px), so its split drifts from the assembler\'s');
+ok(preg_match('/@media \(max-width:900px\)\{\.dhcf-panels\{grid-template-columns:1fr\}\}/', $clean) === 1,
+   'the panels no longer collapse at the same 900px breakpoint as .shell');
+ok(preg_match('/\.dhcf-wrap\{--stage:/', $asm_pre) === 1,
+   '--stage is no longer declared on .dhcf-wrap, so the host page cannot line up with the shell');
+
+echo "\nthe disassemble control fits the card\n";
+/* "Disassemble" was the longest label in a three-control row and the cards
+   in the picker column are ~96px: it rendered as "DISA". A clipped word is
+   worse than none -- it reads as a layout fault and says nothing. Measured
+   after: Edit 23px + Rename 51px + trash 20px in a 111px row, nothing
+   clipped or overflowing on any of 26 cards. */
+ok(strpos($clean, '>Disassemble</button>') === false,
+   'the word Disassemble is back on the button; it does not fit the card');
+/* NOT [^>]* here: the title attribute in between contains a <?php ?> tag,
+   whose own ">" ends that run before it ever reaches aria-label. The first
+   version of this check failed against correct markup for that reason. */
+ok(preg_match('/class="dhcf-scrap"[\s\S]{0,400}?aria-label="Disassemble/', $clean) === 1,
+   'the disassemble button has no accessible name, so it is an unlabelled icon to a screen reader');
+ok(preg_match('/class="dhcf-scrap"[^>]*title="Disassemble/', $clean) === 1,
+   'the disassemble button has no title, so nothing explains the icon on hover');
+ok(preg_match('/\.dhcf-card \.acts \.dhcf-scrap\{[^}]*flex:0 0 auto/', $clean) === 1,
+   'the trash button takes a 1fr share again, which is what squeezed the word buttons');
+ok(strpos($clean, 'stroke:currentColor') !== false,
+   'the icon no longer inherits currentColor, so it will not follow the hover state');
+/* The confirm still has to spell out what it costs -- the icon carries less
+   warning than the word did. */
+ok(strpos($clean, "confirm('Disassemble ") !== false,
+   'the confirmation prompt is gone; an icon with no confirm is a one-click permanent delete');
+
 echo "\nthe save bar leads the assembler\n";
 /* It used to sit under the shell, which on a wide screen put the one control
    the page exists to reach beneath the draw-order list on one side and

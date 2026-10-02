@@ -328,6 +328,14 @@ a{color:var(--ochre)}
    flat width so a tall narrow window can still shrink the stage below the
    canvas cap, and minmax(380px,1fr) keeps the picker usable when it does --
    that is the case this used to handle by never growing at all. */
+/* --stage is declared on .dhcf-wrap as well as on .shell so a HOST PAGE can
+   line its own columns up with the assembler's split. dhcfighters.php does:
+   the panels below the shell used to divide 50/50 while the stage/picker
+   seam above them sat at --stage, so two vertical lines ran down the page a
+   couple of hundred pixels apart. Same value in both places, so .shell is
+   unaffected whether it inherits one or declares its own (dhcsandbox.php has
+   no .dhcf-wrap at all). */
+.dhcf-wrap{--stage:calc(66vh + 44px)}
 .shell{--stage:calc(66vh + 44px);
   display:grid;grid-template-columns:minmax(0,var(--stage)) minmax(380px,1fr);gap:0;<?php
   // Only the standalone page has a viewport to fill. Embedded, the shell is
