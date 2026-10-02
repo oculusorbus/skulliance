@@ -277,6 +277,19 @@ console.log('\nthe panel is shared, not copied');
 	   'an edit no longer sheds ?edit= when the panel closes, so a reload reopens the editor');
 }
 
+console.log('\nthe Collection says who owns the art');
+{
+	/* "nobody owns the artwork" was both untrue and the opposite of what the
+	   notice is for: assembling a Fighter here gives you no claim on the art
+	   BECAUSE somebody already holds it. Checked on the rendered copy, not
+	   the comment that explains the change. */
+	const visible = strip(page);
+	ok(visible.indexOf('nobody owns') === -1,
+	   'the Collection says nobody owns the artwork; Maxingo does');
+	ok(visible.indexOf('Maxingo owns the') > -1,
+	   'the Collection no longer says who owns the artwork');
+}
+
 console.log('\nthe builder link counts their Fighters');
 {
 	const m = strip(gallery);

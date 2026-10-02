@@ -382,7 +382,12 @@ include 'header.php';
   </div>
   <p class="dhcg-note">
     <?php echo number_format($dhcg_total); ?> assembled so far.
-    These are platform features, <b>not NFTs</b> &mdash; they cannot be minted and nobody owns the
+    <?php /* "Maxingo owns the artwork", not "nobody owns" it. The old wording
+             read as a claim that the art is unowned, which is both untrue and
+             the opposite of what this notice is for -- the point is that
+             assembling a Fighter here gives you no claim on it, BECAUSE
+             somebody already holds it. */ ?>
+    These are platform features, <b>not NFTs</b> &mdash; they cannot be minted and Maxingo owns the
     artwork.
     <?php /* dhcfighters.php is behind the gate this page just stepped around, so
              for a visitor that link is an error page, not an invitation. */ ?>
