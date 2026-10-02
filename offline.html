@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skulliance - connection lost</title>
+<!--
+  Served by service-worker.js when a page navigation fails or stalls.
+
+  SELF-CONTAINED ON PURPOSE: no stylesheet, no font, no script file, no image
+  request. It is shown precisely when the network is not working, so anything
+  it had to fetch would be the one thing that cannot arrive. The logo is an
+  inline SVG for the same reason.
+
+  It exists because the app is display:standalone. In a browser tab a failed
+  navigation still leaves an address bar, a back button and a reload button.
+  In the installed app it leaves nothing, which is why the only way out was
+  force-quitting and reopening.
+-->
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #07111d; color: #e8eaed;
+    font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    padding: calc(24px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px));
+    text-align: center;
+  }
+  .wrap { max-width: 420px; }
+  .mark { width: 44px; height: 60px; margin: 0 auto 18px; display: block; opacity: .9; }
+  h1 { font-size: 1.15rem; margin: 0 0 10px; letter-spacing: .02em; }
+  p { margin: 0 0 14px; color: #9fb4c4; font-size: .9rem; }
+  .why { font-size: .8rem; color: #7a9eb0; background: rgba(255,255,255,.04);
+         border: 1px solid rgba(255,255,255,.08); padding: 10px 12px; text-align: left; }
+  .why b { color: #c8dce8; font-weight: 600; }
+  .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  button, a.btn {
+    font: inherit; font-size: .85rem; letter-spacing: .04em;
+    padding: 11px 20px; cursor: pointer; text-decoration: none;
+    border: 1px solid #00c8a0; background: #00c8a0; color: #07111d;
+  }
+  a.btn.ghost { background: transparent; color: #00c8a0; }
+  button:disabled { opacity: .5; cursor: default; }
+  .state { margin-top: 14px; font-size: .78rem; color: #7a9eb0; min-height: 1.2em; }
+  .state.on { color: #00c8a0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <svg class="mark" viewBox="0 0 24 32" fill="none" stroke="#00c8a0" stroke-width="1.6" aria-hidden="true">
+    <path d="M12 1.5C6.2 1.5 1.8 5.8 1.8 11.6c0 3.6 1.6 6 3.4 7.6v4.1c0 1 .8 1.8 1.8 1.8h10c1 0 1.8-.8 1.8-1.8v-4.1c1.8-1.6 3.4-4 3.4-7.6C22.2 5.8 17.8 1.5 12 1.5Z"/>
+    <circle cx="8.4" cy="12" r="2.1"/><circle cx="15.6" cy="12" r="2.1"/>
+    <path d="M10 19.5v5.6M14 19.5v5.6"/>
+  </svg>
+
+  <h1>Skulliance can't reach the server</h1>
+  <p>The page stopped loading before it arrived. Nothing you were doing has been lost.</p>
+
+  <div class="why" id="why">Checking your connection&hellip;</div>
+
+  <div class="row">
+    <button id="retry" type="button">Try again</button>
+    <a class="btn ghost" href="/staking/launchpad.php">Go to Launchpad</a>
+  </div>
+
+  <div class="state" id="state"></div>
+</div>
+
+<script>
+(function () {
+  var why   = document.getElementById('why');
+  var state = document.getElementById('state');
+  var retry = document.getElementById('retry');
+
+  /* Say WHICH failure this is, because the three need different things from
+     the reader: no signal, a connection that is up but not carrying, or a
+     server that is actually down. Guessing wrong wastes their time -- the
+     reported habit was toggling wifi off to force cellular, which only helps
+     for one of the three. */
+  function describe() {
+    if (!navigator.onLine) {
+      return 'Your device reports <b>no internet connection</b>. ' +
+             'Wi-Fi with no route out does this too - switching to mobile data usually clears it.';
+    }
+    var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (c && (c.effectiveType === 'slow-2g' || c.effectiveType === '2g')) {
+      return 'You are online but the connection is <b>very slow</b> (' + c.effectiveType +
+             '). The page was still arriving when it timed out.';
+    }
+    if (c && c.downlink === 0) {
+      return 'Your device says it is online but <b>nothing is getting through</b>. ' +
+             'This is the usual sign of a Wi-Fi network that has dropped its route out.';
+    }
+    return 'Your device says it is <b>online</b>, so this is most likely the connection ' +
+           'dropping mid-request or the server not answering. Trying again usually works.';
+  }
+  why.innerHTML = describe();
+
+  /* Reload the page that failed, not this one: this document was served in
+     its place, so history still points at where you were going. */
+  function again() {
+    retry.disabled = true;
+    state.textContent = 'Retrying…';
+    state.className = 'state';
+    location.reload();
+  }
+  retry.addEventListener('click', again);
+
+  /* Coming back online is the moment a retry will work, so say so rather
+     than leaving the reader to keep tapping. Deliberately NOT automatic: a
+     page reloading itself under someone is worse than a button lighting up. */
+  window.addEventListener('online', function () {
+    why.innerHTML = describe();
+    state.textContent = 'Back online - tap Try again.';
+    state.className = 'state on';
+  });
+  window.addEventListener('offline', function () {
+    why.innerHTML = describe();
+    state.textContent = '';
+    state.className = 'state';
+  });
+})();
+</script>
+</body>
+</html>

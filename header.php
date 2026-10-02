@@ -93,6 +93,19 @@
     opacity: 0; transition: opacity .25s ease;
 }
 #nav-loader.active { opacity: 1; }
+/* The stall panel. Hidden until the navigation has visibly failed to
+   arrive, so a normal load never shows a hint of it. */
+#nav-stall { display: none; max-width: 320px; text-align: center; padding: 0 20px; }
+#nav-loader.stalled #nav-stall { display: block; }
+#nav-loader.stalled .nl-bar-wrap, #nav-loader.stalled .nl-text { display: none; }
+#nav-stall .ns-why { font-size: .8rem; color: #9fb4c4; line-height: 1.55; margin: 0 0 14px; }
+#nav-stall .ns-why b { color: #c8dce8; }
+#nav-stall .ns-row { display: flex; gap: 9px; justify-content: center; flex-wrap: wrap; }
+#nav-stall button {
+    font: inherit; font-size: .8rem; letter-spacing: .04em; padding: 10px 18px;
+    cursor: pointer; border: 1px solid #00c8a0; background: #00c8a0; color: #07111d;
+}
+#nav-stall button.ghost { background: transparent; color: #00c8a0; }
 @keyframes nl-bar { to { width: 90%; } }
 @keyframes lp { 0%,100%{opacity:.3;transform:scale(.92)} 50%{opacity:1;transform:scale(1)} }
 .nl-bar-wrap { width: 200px; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
@@ -103,19 +116,111 @@
     <div style="animation:lp 1.2s ease-in-out infinite;"><img src="/staking/pwa/skulliance-logo-icon.png" alt="" width="35" height="48"></div>
     <div class="nl-bar-wrap"><div class="nl-bar"></div></div>
     <div class="nl-text">Loading&hellip;</div>
+    <div id="nav-stall">
+        <p class="ns-why" id="ns-why"></p>
+        <div class="ns-row">
+            <button type="button" id="ns-retry">Try again</button>
+            <button type="button" id="ns-cancel" class="ghost">Stay on this page</button>
+        </div>
+    </div>
 </div>
 <script>
 (function(){
+    /*
+     * THE LOADER USED TO HAVE NO WAY OUT.
+     *
+     * It covers the whole screen the moment an internal link is clicked, its
+     * bar animates for twelve seconds and then sits at 90%, and nothing ever
+     * cancels it. On a good connection that is invisible. On a failing one it
+     * is a full-screen spinner with no cancel, no retry and no explanation --
+     * and because the app is display:standalone there is no address bar or
+     * reload button behind it either. The reported behaviour was closing the
+     * app and reopening it, which is the only thing left to do.
+     *
+     * So the loader now gives up out loud. After STALL_MS it says what it
+     * thinks is wrong and offers both ways out: try the same page again, or
+     * stay where you were -- the old page is still loaded and perfectly
+     * usable underneath.
+     *
+     * 9 seconds: long enough that a slow-but-working page is not interrupted
+     * (the bar's own animation runs 12s, so this lands while it is visibly
+     * still going), short enough to beat the point where someone force-quits.
+     */
+    var STALL_MS = 9000;
+    var stallTimer = null;
+    var pendingDest = null;
+
+    function connectionNote() {
+        if (!navigator.onLine) {
+            return 'Your device reports <b>no internet connection</b>. Wi-Fi that has ' +
+                   'dropped its route out looks like this too - switching to mobile data usually clears it.';
+        }
+        var c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        if (c && (c.effectiveType === 'slow-2g' || c.effectiveType === '2g')) {
+            return 'You are online but the connection is <b>very slow</b> (' + c.effectiveType +
+                   '), so the page may still be on its way.';
+        }
+        if (c && c.downlink === 0) {
+            return 'Your device says it is online but <b>nothing is getting through</b> - ' +
+                   'usually a Wi-Fi network that has lost its route out.';
+        }
+        return 'You appear to be <b>online</b>, so the request is most likely stuck rather than refused.';
+    }
+
+    function showStall() {
+        var el = document.getElementById('nav-loader');
+        var why = document.getElementById('ns-why');
+        if (!el || !why) return;
+        why.innerHTML = '<b>This is taking longer than usual.</b><br>' + connectionNote();
+        el.classList.add('stalled');
+    }
+
+    function hideNavLoader() {
+        var el = document.getElementById('nav-loader');
+        if (stallTimer) { clearTimeout(stallTimer); stallTimer = null; }
+        if (!el) return;
+        el.classList.remove('stalled', 'active');
+        el.style.display = 'none';
+    }
+
     function showNavLoader() {
         var el = document.getElementById('nav-loader');
         if (!el) return;
         var bar = el.querySelector('.nl-bar');
         if (bar) { var nb = bar.cloneNode(true); nb.style.animation = 'nl-bar 12s ease-out forwards'; bar.parentNode.replaceChild(nb, bar); }
+        el.classList.remove('stalled');
         el.style.transition = 'none';
         el.style.opacity = '1';
         el.style.display = 'flex';
         el.classList.add('active');
+        if (stallTimer) clearTimeout(stallTimer);
+        stallTimer = setTimeout(showStall, STALL_MS);
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var r = document.getElementById('ns-retry');
+        var c = document.getElementById('ns-cancel');
+        /* Retry re-issues the same navigation and restarts the clock, so a
+           second stall is reported too rather than hanging silently. */
+        if (r) r.addEventListener('click', function () {
+            var dest = pendingDest || window.location.href;
+            var el = document.getElementById('nav-loader');
+            if (el) el.classList.remove('stalled');
+            if (stallTimer) clearTimeout(stallTimer);
+            stallTimer = setTimeout(showStall, STALL_MS);
+            window.location.href = dest;
+        });
+        /* The page underneath never went anywhere -- it is still loaded and
+           still works. Dismissing is a real option, not a placebo. */
+        if (c) c.addEventListener('click', hideNavLoader);
+    });
+
+    /* Losing the connection while waiting is the one case where we know
+       immediately, so do not make them wait out the full nine seconds. */
+    window.addEventListener('offline', function () {
+        var el = document.getElementById('nav-loader');
+        if (el && el.classList.contains('active')) showStall();
+    });
     document.addEventListener('click', function(e) {
         var a = e.target.closest('a[href]');
         if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
@@ -137,14 +242,16 @@
             }
             showNavLoader();
             var dest = a.href;
+            pendingDest = dest;
             setTimeout(function(){ window.location.href = dest; }, 50);
         }
     });
     // Hide if browser restores page from bfcache
     window.addEventListener('pageshow', function(e) {
         if (e.persisted) {
+            if (stallTimer) { clearTimeout(stallTimer); stallTimer = null; }
             var el = document.getElementById('nav-loader');
-            if (el) { el.classList.remove('active'); setTimeout(function(){ el.style.display='none'; }, 300); }
+            if (el) { el.classList.remove('stalled', 'active'); setTimeout(function(){ el.style.display='none'; }, 300); }
         }
     });
 })();
