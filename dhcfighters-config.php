@@ -122,6 +122,26 @@ function dhcf_artist_link($text = null) {
 	     . htmlspecialchars($text === null ? DHCF_ARTIST : $text) . '</a>';
 }
 
+/*
+ * The minted collection the trait art comes from, and the only place a
+ * genuinely ownable Fighter exists. Same reasoning as the artist link: the
+ * rights notice on dhcfighters.php, the subtitle above it, dhcgame.php's
+ * credit block and the Skull Paper all point at this one policy, and a
+ * notice that says "the genuine ones are over there" without saying WHERE
+ * is doing half a job.
+ *
+ * The policy id is the marketplace identifier on Cardano -- see
+ * multichain-schema.md. dhcrarity.php reads the same policy from Koios.
+ */
+define('DHCF_POLICY', 'b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5');
+define('DHCF_COLLECTION_URL', 'https://www.wayup.io/collection/' . DHCF_POLICY);
+
+/** The minted collection as a link, for the notices that point at it. */
+function dhcf_collection_link($text = 'Digital Hell Citizens 2: Fighters') {
+	return '<a href="' . DHCF_COLLECTION_URL . '" target="_blank" rel="noopener">'
+	     . htmlspecialchars($text) . '</a>';
+}
+
 /** Required slots the layout is missing, by category name. Empty means valid. */
 function dhcf_missing_required($traits) {
 	$missing = array();

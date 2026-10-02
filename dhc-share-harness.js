@@ -299,11 +299,28 @@ console.log('\nevery DHC intro credits the artist with a link');
 		ok(body.indexOf('dhcf_artist_link()') > -1,
 		   f + ' does not use the shared artist link');
 	}
+	/* THE RIGHTS NOTICE HAS TO POINT SOMEWHERE. "The genuine, ownable
+	   Fighters are from the official NFT collection" without a link is
+	   half a sentence -- it names a destination and withholds it. */
+	const fighters = fs.readFileSync(path.join(__dirname, 'dhcfighters.php'), 'utf8');
+	ok(/dhcf_collection_link\('official NFT collection'\)/.test(fighters),
+	   'the rights notice names the minted collection without linking to it');
+	ok(/define\('DHCF_COLLECTION_URL'/.test(cfg), 'the collection URL is no longer defined once');
+	ok(/function dhcf_collection_link\(/.test(cfg), 'dhcf_collection_link() is gone');
+	/* And no page keeps its own copy of the policy id. */
+	for (const f of ['dhcfighters.php', 'dhcgallery.php']) {
+		const body = fs.readFileSync(path.join(__dirname, f), 'utf8');
+		ok(body.indexOf('wayup.io/collection/b31a34ca2b08') === -1,
+		   f + ' hardcodes the collection URL again instead of using the shared one');
+	}
+
 	/* The marketing page already linked him -- it must read the shared
 	   constant rather than keep its own copy of the URL. */
 	const game = fs.readFileSync(path.join(__dirname, 'dhcgame.php'), 'utf8');
 	ok(/\$artist_x\s*=\s*defined\('DHCF_ARTIST_X'\)/.test(game),
 	   'dhcgame.php hardcodes the artist URL again instead of reading the shared one');
+	ok(/\$collection_url\s*=\s*defined\('DHCF_COLLECTION_URL'\)/.test(game),
+	   'dhcgame.php hardcodes the collection URL again instead of reading the shared one');
 
 	/* And the docs. */
 	for (const f of ['skullpaper/games-dhc-fighters.md', 'skullpaper/games-dhc-arena.md']) {

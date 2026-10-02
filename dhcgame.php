@@ -142,7 +142,10 @@ $short_desc = 'Build a Fighter from NFT traits, browse the collection, and battl
 /* From dhcfighters-config.php, so the credit on this page and the credit
    in every DHC intro cannot drift to different accounts. */
 $artist_x       = defined('DHCF_ARTIST_X') ? DHCF_ARTIST_X : 'https://x.com/MMAXI404';
-$collection_url = 'https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5';
+/* Shared with every DHC notice that points at the minted collection -- see
+   dhcfighters-config.php. */
+$collection_url = defined('DHCF_COLLECTION_URL') ? DHCF_COLLECTION_URL
+                : 'https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5';
 
 $href_arena     = 'dhcarena.php';
 $href_fighters  = 'dhcfighters.php';
