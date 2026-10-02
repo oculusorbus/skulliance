@@ -144,6 +144,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 <?php /* Build, browse, fight -- one activity across three pages. A guest gets
          the other two pointed at sign-in rather than at error.php. */ ?>
 <?php $dhcnav_at = 'arena'; $dhcnav_guest = $dhca_guest; include 'dhc-nav.php'; ?>
+<?php
+  /* One typeface for every DHC surface -- the Arena's titles were the
+     monospace body face while the Collection's were the display one. */
+  require_once __DIR__ . '/dhc-type.php'; dhc_type_styles();
+?>
 <style>
 /* ================== TWO SKINS, AND THE SEAM BETWEEN THEM ====================
    THE SELECTION SCREEN IS A PLATFORM PAGE. It sits in the platform header, next

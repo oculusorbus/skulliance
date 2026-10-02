@@ -277,6 +277,59 @@ console.log('\nthe panel is shared, not copied');
 	   'an edit no longer sheds ?edit= when the panel closes, so a reload reopens the editor');
 }
 
+console.log('\none typeface across every DHC surface\n');
+{
+	/*
+	 * Moving between the DHC tabs changed the body text and the headings.
+	 * Measured in headless Chrome against the real CSS: the Fighter panel,
+	 * which is position:fixed and sits OUTSIDE .dhcg-wrap on the Collection,
+	 * rendered Arial/Arial/Arial for body, title and close button. With the
+	 * shared block it is JetBrains Mono / Archivo Black / JetBrains Mono,
+	 * and content outside DHC is still Arial.
+	 */
+	const type = fs.readFileSync(path.join(__dirname, 'dhc-type.php'), 'utf8');
+	ok(/function dhc_type_styles\(/.test(type), 'dhc-type.php no longer exposes the styles');
+	/* Inert on include: every DHC page requires its libraries before
+	   header.php has emitted anything, and a partial that echoed on include
+	   would print in front of the document. */
+	ok(!/^\s*<style>/m.test(type.slice(0, type.indexOf('function dhc_type_styles'))),
+	   'dhc-type.php emits markup on include, which lands in front of the document');
+	ok(/if \(defined\('DHC_TYPE_RENDERED'\)\) return;/.test(type),
+	   'the type block can be emitted more than once');
+
+	/* Every DHC wrapper has to be in the selector list, or that surface
+	   silently falls back to the platform's Arial. The fixed-position panel
+	   and the travelling nav strip are the two that are not page wrappers
+	   at all, and they are exactly the two that were wrong. */
+	/* Check the BODY-FONT rule specifically, not the file: every one of
+	   these also appears in the headings and controls selectors, so a loose
+	   indexOf stayed green with the surface removed from the rule that
+	   actually sets the family. Two mutations survived that way. */
+	const bodyRule = type.slice(type.indexOf('.dhcf-wrap, .dhcg-wrap'));
+	const bodySel  = bodyRule.slice(0, bodyRule.indexOf('{'));
+	for (const sel of ['.dhcf-wrap', '.dhcg-wrap', '.arena-wrap', '.shell', '.dhcnav', '#dhcg-veil']) {
+		ok(new RegExp('(^|,\\s*)' + sel.replace('.', '\\.') + '\\s*(,|$)').test(bodySel.trim()),
+		   'dhc-type.php does not give ' + sel + ' the body face, so that surface renders in the site font');
+	}
+	ok(/#dhcg-veil h1, #dhcg-veil h2, #dhcg-veil h3/.test(type),
+	   'the panel headings are not covered, so a Fighter name renders in the body face');
+
+	/* And the three entry points call it. */
+	for (const f of ['dhc-assembler.php', 'dhcgallery.php', 'dhcarena.php']) {
+		const body = fs.readFileSync(path.join(__dirname, f), 'utf8');
+		ok(body.indexOf('dhc_type_styles()') > -1, f + ' never emits the shared type block');
+	}
+
+	/* THE LEAK THAT HID THE GAP. dhc-assembler.php declared h1,h2,h3
+	   unscoped, so including it restyled the host page's headings
+	   document-wide -- and covered the panel's missing rule on the one page
+	   that includes it, which is why this only looked broken on the
+	   Collection. */
+	const asmSrc = fs.readFileSync(path.join(__dirname, 'dhc-assembler.php'), 'utf8');
+	ok(!/^h1,h2,h3,\.btn,\.tab\{/m.test(strip(asmSrc)),
+	   'the assembler styles h1,h2,h3 unscoped again, restyling every heading on whatever page includes it');
+}
+
 console.log('\nevery DHC intro credits the artist with a link');
 {
 	/* A credit that is a link on one page and plain text on the next is a

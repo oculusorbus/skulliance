@@ -50,6 +50,7 @@ require_once __DIR__ . '/dhcarena-engine.php';
 /* One definition of Rarest / Deadliest / Toughest / Hardest hitting, shared
    with the assembler's live rank preview. */
 require_once __DIR__ . '/dhc-ranks.php';
+require_once __DIR__ . '/dhc-type.php';   // one typeface for every DHC surface
 
 $dhcg_user = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
 
@@ -313,6 +314,7 @@ $extra_head = '
 include 'header.php';
 ?>
 
+<?php dhc_type_styles();   /* one typeface for every DHC surface */ ?>
 <style>
 .dhcg-wrap{padding:14px;max-width:100%;overflow-x:clip;
   color:var(--bone,#e8eaed);font:14px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace}

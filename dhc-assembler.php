@@ -20,6 +20,7 @@
  * cheaper than teaching the platform header about a second stylesheet.
  */
 require_once __DIR__ . '/dhcfighters-config.php';   // the layering rules live here
+require_once __DIR__ . '/dhc-type.php';             // one typeface for every DHC surface
 
 if (!isset($dhca_mode))  $dhca_mode  = 'sandbox';
 if (!isset($dhca_owned)) $dhca_owned = null;
@@ -265,6 +266,9 @@ if ($dhca_owned !== null) {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;600&display=swap">
+<?php /* One typeface for every DHC surface -- see dhc-type.php. Emitted
+         before this page's own rules so a page can still override. */
+       dhc_type_styles(); ?>
 <style>
 <?php if ($dhca_standalone): ?>
 /* THE SANDBOX KEEPS ITS OWN SKIN. It is a public, DHC-branded tool handed to
@@ -305,8 +309,14 @@ body{
   font:14px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
   -webkit-font-smoothing:antialiased}
 <?php endif; ?>
-h1,h2,h3,.btn,.tab{font-family:"Archivo Black",Impact,sans-serif;font-weight:400}
-.dhcf-wrap h1,.dhcf-wrap h2,.dhcf-wrap button{font-family:"Archivo Black",Impact,sans-serif;font-weight:400}
+/* SCOPED. This was `h1,h2,h3,.btn,.tab` with no scope at all, so including
+   the assembler restyled every heading on the host page -- and masked the
+   fact that the Fighter panel had no font rule of its own, because the leak
+   happened to cover it on this page and not on the Collection. Headings now
+   come from dhc-type.php; what is left here is the two classes that are
+   genuinely the assembler's. */
+.shell .btn,.shell .tab,.dhcf-wrap .btn,.dhcf-wrap .tab{
+  font-family:"Archivo Black",Impact,sans-serif;font-weight:400}
 a{color:var(--ochre)}
 
 .top{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;
