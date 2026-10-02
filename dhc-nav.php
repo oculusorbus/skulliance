@@ -101,6 +101,28 @@ $dhcnav_items = array(
 	$here   = ($key === $dhcnav_at);
 	$locked = ($dhcnav_guest && $gated && !$here);
 	$to     = $locked ? 'index.php' : $href;
+
+	/*
+	 * AN ANCHOR INTO THE PAGE YOU ARE ALREADY ON MUST BE JUST THE HASH.
+	 *
+	 * "dhcfighters.php#drops" only jumps in place when everything before the
+	 * "#" matches the current URL EXACTLY. It does not while editing
+	 * (?edit=12), and any mismatch makes it a navigation instead -- which
+	 * reloads the assembler, the trait index, the roster art and two
+	 * leaderboards to reach a list already rendered further down the same
+	 * document. In the installed PWA that reload was reported as never
+	 * finishing at all.
+	 *
+	 * Derived rather than special-cased on 'status': any future item that
+	 * points a fragment at its own page gets the same treatment, and nothing
+	 * has to remember to add it.
+	 */
+	$hash = strpos($href, '#');
+	if (!$locked && $hash !== false
+	    && isset($dhcnav_items[$dhcnav_at])
+	    && $dhcnav_items[$dhcnav_at][0] === substr($href, 0, $hash)) {
+		$to = substr($href, $hash);
+	}
 	$cls    = trim(($here ? 'on' : ($locked ? 'locked' : '')) . ($mobile ? ' only-mobile' : ''));
 	$title  = $locked
 		? $label.' — sign in to '.$hint

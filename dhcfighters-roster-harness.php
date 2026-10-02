@@ -218,6 +218,31 @@ ok(preg_match('/\.dhcf-ladder \.lb-ath\{[^}]*flex:1/', $clean) === 1,
 /* ---------------------------------------------------------------- *
  * The roster lives in the picker's aside.
  * ---------------------------------------------------------------- */
+echo "\nthe intro folds on a phone without losing the rights notice\n";
+/*
+ * Six lines of prose above the thing people came to use is the whole first
+ * screenful on a narrow screen. But the second half of it is the rights
+ * notice -- what you assemble is not an NFT, earning a trait is not
+ * ownership -- so it folds rather than disappearing.
+ * Measured at load: 245px -> 20px at 390 and 700, unchanged 74px at 1100.
+ */
+ok(preg_match('/<details class="dhcf-note" id="dhcfNote" open>/', $clean) === 1,
+   'the intro is no longer a <details open>; with JS off a phone would get a notice it cannot open');
+ok(strpos($clean, '<summary>') !== false, 'the fold has no summary, so there is nothing to tap');
+/* The sentences that must survive whatever happens to the layout. */
+foreach (array('not an NFT', 'no ownership of the artwork', 'Maxingo') as $must) {
+	ok(strpos($src, $must) !== false,
+	   "the intro no longer says \"$must\"; that is the rights notice, not decoration");
+}
+ok(preg_match('/\.dhcf-note > summary\{display:none\}/', $clean) === 1,
+   'the summary shows on desktop, where this should render exactly as the paragraph it replaced');
+ok(preg_match('/@media \(max-width:700px\)\{[\s\S]{0,600}?\.dhcf-note > summary\{display:block/', $clean) === 1,
+   'the summary never appears on a phone, so the fold cannot be opened');
+ok(strpos($clean, "matchMedia('(max-width:700px)')") !== false,
+   'the fold no longer decides from the viewport');
+ok(strpos($clean, "n.addEventListener('toggle'") !== false,
+   'a reader who opens the notice has it shut again on the next resize');
+
 echo "\nthe mobile shortcut to the trait-drop list\n";
 /*
  * "What can I still pull today" is asked several times a day, and on a phone
@@ -242,6 +267,18 @@ foreach ($im as $row) {
 }
 ok(strpos($items_src, "'dhcfighters.php#drops'") !== false,
    'the Games shortcut no longer points at the drop list anchor');
+/*
+ * AND ON THE PAGE IT POINTS INTO IT MUST BE JUST THE HASH. "page.php#frag"
+ * only jumps in place when everything before the "#" matches the current URL
+ * exactly -- it does not while editing (?edit=12) -- and any mismatch makes
+ * it a navigation that reloads the assembler, the trait index, the roster
+ * art and two leaderboards to reach a list already further down the same
+ * document. In the installed PWA that reload was reported as never
+ * finishing. Rendered both ways: on 'fighters' the href is "#drops", on
+ * 'arena' it is "dhcfighters.php#drops".
+ */
+ok(strpos($nav, '$dhcnav_items[$dhcnav_at][0] === substr($href, 0, $hash)') !== false,
+   'the strip no longer collapses a fragment aimed at the current page, so it reloads instead of jumping');
 ok(preg_match("/'status'\s*=> array\('dhcfighters\.php#drops', 'Games', 'review', 1, 1\)/", $items_src) === 1,
    'the Games entry changed shape: it must be gated and mobile-only, labelled noun/verb like its neighbours');
 ok(preg_match('/\.dhcnav a\.only-mobile\{display:none\}/', $nav) === 1,

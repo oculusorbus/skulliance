@@ -183,6 +183,21 @@ $dhca_edit_id  = $dhcf_editing ? (int)$dhcf_editing['id'] : 0;
 .dhcf-note{font-size:11.5px;opacity:.65;line-height:1.6;margin:0}
 .dhcf-note b{opacity:.95}
 .dhcf-note a{color:var(--ochre)}
+.dhcf-note p{margin:0}
+/* Desktop: a <details> that is open with no summary IS the paragraph it
+   replaced, down to the pixel. */
+.dhcf-note > summary{display:none}
+@media (max-width:700px){
+  .dhcf-note > summary{display:block;cursor:pointer;list-style:none;
+    font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.75;
+    padding:2px 0}
+  .dhcf-note > summary::-webkit-details-marker{display:none}
+  /* A caret, because a summary with the marker suppressed and nothing in its
+     place does not read as something you can open. */
+  .dhcf-note > summary::after{content:' +';opacity:.6}
+  .dhcf-note[open] > summary::after{content:' \2212';}
+  .dhcf-note[open] > p{padding-top:4px}
+}
 /* flex:0 1 auto + min-width:0, NOT 0 0 auto. A flex item that cannot shrink
    keeps its single-line max-content width, so wrap never engages and five
    tiles push the page sideways on a phone. Allowing it to shrink is what lets
@@ -455,7 +470,20 @@ a.dhcf-stat span{opacity:.85}
                second sentence establishing that was repeating itself, and the rights
                notice does not need its own block to be read -- it needs to be short,
                unambiguous, and to point somewhere. */ ?>
-      <p class="dhcf-note">
+      <?php /* COLLAPSED ON A PHONE, not removed. It is six lines of prose above
+               the thing people came to use, and on a narrow screen that is the
+               whole first screenful. But it is not only prose: the second half
+               is the rights notice -- what you assemble is not an NFT, earning
+               a trait is not ownership -- and that does not get quietly
+               dropped on the device most people read the page on. A <details>
+               puts it one tap away instead of none.
+               Open in the markup and closed by the script below, so with no
+               JavaScript at all a phone gets the full text rather than a
+               notice it cannot reach. The summary is hidden on desktop, where
+               this renders exactly as the paragraph it was. */ ?>
+      <details class="dhcf-note" id="dhcfNote" open>
+        <summary>What this is, and what it is not</summary>
+        <p>
         Earn traits by playing across the platform, then assemble and save Fighters &mdash; your
         best fighter's rarity score sets your place on the leaderboard, and everything you save
         joins the <a href="dhcgallery.php">Fighter Collection</a> for every staker to browse.
@@ -464,7 +492,27 @@ a.dhcf-stat span{opacity:.85}
         the art so this could be built, and what you assemble here is <b>not an NFT</b> &mdash; it
         cannot be minted, and earning a trait gives you no ownership of the artwork. The genuine,
         ownable Fighters are from the official NFT collection.
-      </p>
+        </p>
+      </details>
+      <script>
+        /* Inline and immediately after the element, so it collapses before
+           first paint rather than flashing the full text and then folding.
+           The listener is for rotation and for a desktop window dragged
+           narrow: without it the state is decided once at load and a phone
+           turned sideways keeps whichever one it started with. Once a reader
+           has opened or closed it themselves, their choice is left alone. */
+        (function () {
+          var n = document.getElementById('dhcfNote');
+          if (!n || !window.matchMedia) return;
+          var mq = window.matchMedia('(max-width:700px)');
+          var touched = false;
+          n.addEventListener('toggle', function () { touched = true; });
+          function sync() { if (!touched) { n.open = !mq.matches; } }
+          sync();
+          if (mq.addEventListener) mq.addEventListener('change', sync);
+          else if (mq.addListener) mq.addListener(sync);
+        })();
+      </script>
     </div>
 
     <div class="dhcf-stats">
