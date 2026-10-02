@@ -1750,13 +1750,11 @@ a{color:var(--ochre)}
   /**
    * Load a saved Fighter onto the canvas.
    *
-   * Used by the EDIT preload. It used to also back "click a Fighter to view
-   * it on the canvas", where the Save button refusing was correct because
-   * you were looking rather than rebuilding -- that is gone: clicking a
-   * Fighter now navigates to ?edit= and the server frees its own traits
-   * back to it first. A caller that loads a build WITHOUT doing that gets a
-   * canvas the Save button will refuse, which is no longer a state the
-   * interface can reach on purpose.
+   * The canvas is already the best view of a Fighter, so viewing one needs no
+   * second interface -- just put it there. Traits committed to that Fighter
+   * will read as unavailable in the picker and the Save button will refuse,
+   * which is correct: you are looking at it, not rebuilding it. Disassemble it
+   * and the same traits become placeable again.
    *
    * Unknown slugs are skipped rather than trusted, so a Fighter naming art the
    * player no longer holds loads the parts that still exist instead of

@@ -247,6 +247,30 @@ ok(strpos($clean, "matchMedia('(max-width:700px)')") !== false,
 ok(strpos($clean, "n.addEventListener('toggle'") !== false,
    'a reader who opens the notice has it shut again on the next resize');
 
+echo "\nthe save note cannot go stale\n";
+/*
+ * The note ("Needs a background to save.") and the save result share one
+ * line. They used to arbitrate by SNIFFING style.opacity -- syncSave only
+ * cleared its own note if the opacity still read '.6'. That is not state,
+ * it is a guess about who wrote last, and it is wrong the moment anything
+ * else touches the element: the note then sits under an ENABLED Save button
+ * saying a background is missing while one is on the canvas.
+ */
+ok(strpos($clean, "say.style.opacity === '.6'") === false,
+   'the note is arbitrated by sniffing style.opacity again, which cannot tell who wrote the text');
+ok(strpos($clean, 'var sayIsNote = false;') !== false,
+   'nothing tracks whether the shared line currently holds a note');
+ok(preg_match('/function msg\(t, good\) \{[^}]*sayIsNote = false;/s', $clean) === 1,
+   'msg() does not release the note flag, so syncSave will wipe a save result');
+/* A click covers picking a trait; it does not cover a build arriving from
+   ?build=, an edit preload, a keyboard pick or the layer drag. */
+foreach (array('click', 'keyup', 'change', 'dragend') as $ev) {
+	ok(strpos($clean, "document.addEventListener('" . $ev . "'") !== false,
+	   "nothing re-checks the save state on $ev, so a wrong note sticks until something else is clicked");
+}
+ok(preg_match("/window\.addEventListener\('load', function \(\) \{ setTimeout\(syncSave, 0\); \}\)/", $clean) === 1,
+   'the save state is never re-checked after load, so a canvas the assembler filled in during init is judged before it exists');
+
 echo "\nleaving edit mode is a visible way out\n";
 /* Edit mode is a state the whole page is in, and the way out of it was an
    11px grey word next to a filled button. A player who wants to build

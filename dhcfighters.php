@@ -924,7 +924,24 @@ function dhcf_board_html($rows) {
   rpaint();
 
   var say = document.getElementById('dhcfSay');
-  function msg(t, good) { say.textContent = t; say.style.color = good ? 'var(--ochre)' : '#ff5c5c'; }
+  /*
+   * ONE LINE, TWO WRITERS. syncSave() puts a dim "needs a background" note
+   * there; msg() puts a save result there. They used to arbitrate by
+   * SNIFFING style.opacity -- syncSave only cleared its own note if the
+   * opacity still read '.6' -- which is not state, it is a guess about who
+   * wrote last, and it is wrong as soon as anything else touches the
+   * element. A note left behind that way sits under an ENABLED Save button
+   * telling you a background is missing while one is plainly on the canvas.
+   *
+   * A flag instead, so each writer knows whether the text is still theirs.
+   */
+  var sayIsNote = false;
+  function msg(t, good) {
+    say.textContent = t;
+    say.style.color = good ? 'var(--ochre)' : '#ff5c5c';
+    say.style.opacity = '';
+    sayIsNote = false;
+  }
 
   /* The assembler exposes its current selection on window.DHC_SELECTION -- the
      save button reads it rather than the DOM, so what gets stored is exactly
@@ -960,12 +977,27 @@ function dhcf_board_html($rows) {
       say.textContent = note;
       say.style.color = '';
       say.style.opacity = '.6';
-    } else if (say.style.opacity === '.6') {
-      say.textContent = ''; say.style.opacity = '';
+      sayIsNote = true;
+    } else if (sayIsNote) {
+      say.textContent = ''; say.style.opacity = ''; sayIsNote = false;
     }
   }
   syncSave();
-  document.addEventListener('click', function () { setTimeout(syncSave, 0); });
+  /*
+   * RE-CHECK ON MORE THAN CLICKS. A click covers picking a trait and hitting
+   * Randomize, but not a build arriving from ?build= or from an edit
+   * preload, not a keyboard pick, and not the layer drag. Anything that can
+   * change what is on the canvas has to be able to leave the note and the
+   * button agreeing with it -- otherwise the first wrong state sticks until
+   * the player happens to click something.
+   */
+  document.addEventListener('click',   function () { setTimeout(syncSave, 0); });
+  document.addEventListener('keyup',   function () { setTimeout(syncSave, 0); });
+  document.addEventListener('change',  function () { setTimeout(syncSave, 0); });
+  document.addEventListener('dragend', function () { setTimeout(syncSave, 0); });
+  /* And once more after everything has settled, for a canvas the assembler
+     filled in during its own init rather than in response to anything. */
+  window.addEventListener('load', function () { setTimeout(syncSave, 0); });
 
   saveBtn.addEventListener('click', function () {
     var sel = (window.DHC_SELECTION && window.DHC_SELECTION()) || {};
