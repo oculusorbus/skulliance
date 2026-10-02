@@ -218,6 +218,45 @@ ok(preg_match('/\.dhcf-ladder \.lb-ath\{[^}]*flex:1/', $clean) === 1,
 /* ---------------------------------------------------------------- *
  * The roster lives in the picker's aside.
  * ---------------------------------------------------------------- */
+echo "\nthe mobile shortcut to the trait-drop list\n";
+/*
+ * "What can I still pull today" is asked several times a day, and on a phone
+ * dhcfighters.php stacks: the list is below the assembler, the canvas, the
+ * draw order and twenty roster cards. The shortcut is an ANCHOR into that
+ * page from the DHC strip, mobile only -- on a desktop the list is already a
+ * column of the page and a link to it would be clutter.
+ * Measured at 360/400: five chips, two rows, 83px, nothing clipped, no
+ * sideways scroll. At 1000: four chips, one row.
+ */
+$nav = no_comments(file_get_contents(__DIR__ . '/dhc-nav.php'));
+$n_at  = strpos($nav, '$dhcnav_items = array(');
+ok($n_at !== false, '$dhcnav_items is gone from dhc-nav.php');
+$items_src = substr($nav, $n_at, strpos($nav, "\n);", $n_at) - $n_at);
+preg_match_all("/'([a-z]+)'\s*=> array\(([^)]*)\)/", $items_src, $im, PREG_SET_ORDER);
+ok(count($im) >= 5, 'expected at least five DHC strip entries, found ' . count($im));
+/* list() destructures five fields now. A four-field row is an undefined
+   offset on every DHC page at once, not just the one that added it. */
+foreach ($im as $row) {
+	$fields = count(explode(',', $row[2]));
+	ok($fields === 5, "the \"{$row[1]}\" strip entry has $fields fields, not 5; list() will warn on every DHC page");
+}
+ok(strpos($items_src, "'dhcfighters.php#drops'") !== false,
+   'the Games shortcut no longer points at the drop list anchor');
+ok(preg_match("/'status'\s*=> array\('dhcfighters\.php#drops', 'Games', 'review', 1, 1\)/", $items_src) === 1,
+   'the Games entry changed shape: it must be gated and mobile-only, labelled noun/verb like its neighbours');
+ok(preg_match('/\.dhcnav a\.only-mobile\{display:none\}/', $nav) === 1,
+   'the shortcut is no longer hidden on desktop, where the list it jumps to is already on screen');
+ok(preg_match('/@media \(max-width:700px\)\{[\s\S]{0,600}?\.dhcnav a\.only-mobile\{display:flex\}/', $nav) === 1,
+   'the shortcut never becomes visible on a phone, which is the only place it exists for');
+ok(preg_match('/@media \(max-width:700px\)\{[\s\S]{0,600}?\.dhcnav\{flex-wrap:wrap;overflow-x:visible\}/', $nav) === 1,
+   'the strip scrolls sideways again on a phone; five chips do not fit and a scroller hides the overflow behind an untold gesture');
+
+/* The anchor has to land somewhere. */
+ok(strpos($clean, 'class="dhcf-panel dhcf-games" id="drops"') !== false,
+   'the trait-drop panel lost id="drops", so the shortcut scrolls nowhere');
+ok(preg_match('/\.dhcf-games\{[^}]*scroll-margin-top/', $clean) === 1,
+   'the drop panel has no scroll margin, so the anchor lands it flush against the top edge');
+
 echo "\nnothing scrolls inside anything on a phone\n";
 /*
  * Desktop keeps its inner scrollers -- the picker is a real column beside a

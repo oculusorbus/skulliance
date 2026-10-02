@@ -27,11 +27,31 @@
 $dhcnav_at    = isset($dhcnav_at) ? $dhcnav_at : '';
 $dhcnav_guest = !empty($dhcnav_guest);
 
+/*
+ * [href, label, hint, gated, mobile_only]
+ *
+ * THE FIFTH FIELD IS WHY THIS IS NO LONGER FOUR ENTRIES. "Where traits drop"
+ * is a column of dhcfighters.php, so on a desktop it is already on screen and
+ * a link to it would be clutter. On a phone that page stacks and the list
+ * sits below the assembler, the canvas, the draw order and twenty roster
+ * cards -- and "what can I still pull today" is the single most-repeated
+ * question a trait hunter has, several times a day. So the shortcut exists
+ * only where the scrolling does.
+ *
+ * It is an ANCHOR into that page, not a page of its own: a second URL, a
+ * second menu entry and a second copy of the panel's markup, all to show a
+ * list that is already rendered, is a worse trade than a hash.
+ *
+ * Label is the noun and the hint is the verb, like every other entry here --
+ * Fighters/build, Collection/browse, Arena/fight. Hence Games/review rather
+ * than "Status", which is neither.
+ */
 $dhcnav_items = array(
-	'fighters'   => array('dhcfighters.php', 'Fighters',   'build',  1),   // gated
-	'collection' => array('dhcgallery.php',  'Collection', 'browse', 0),   // public
-	'arena'      => array('dhcarena.php',    'Arena',      'fight',  0),   // public
-	'sandbox'    => array('dhcsandbox.php',  'Sandbox',    'experiment', 0), // public
+	'fighters'   => array('dhcfighters.php', 'Fighters',   'build',  1, 0),
+	'status'     => array('dhcfighters.php#drops', 'Games', 'review', 1, 1),
+	'collection' => array('dhcgallery.php',  'Collection', 'browse', 0, 0),
+	'arena'      => array('dhcarena.php',    'Arena',      'fight',  0, 0),
+	'sandbox'    => array('dhcsandbox.php',  'Sandbox',    'experiment', 0, 0),
 );
 ?>
 <style>
@@ -40,6 +60,19 @@ $dhcnav_items = array(
 .dhcnav{display:flex;gap:6px;margin:0 0 14px;flex-wrap:nowrap;overflow-x:auto;
   -webkit-overflow-scrolling:touch;scrollbar-width:none}
 .dhcnav::-webkit-scrollbar{display:none}
+/* Desktop never shows the Games shortcut: the list it jumps to is already a
+   column of the page it jumps into. */
+.dhcnav a.only-mobile{display:none}
+@media (max-width:700px){
+  /* TWO ROWS, NOT A SIDEWAYS SCROLLER. Five chips do not fit a phone, and a
+     horizontal scroller hides whichever ones overflow behind a gesture
+     nobody is told about -- the same trap the trait grid had. Wrapping costs
+     about thirty pixels and shows all five. The strip sits below the navbar
+     in normal flow, so nothing here can reach the burger. */
+  .dhcnav{flex-wrap:wrap;overflow-x:visible}
+  .dhcnav a{flex:1 1 auto;align-items:center}
+  .dhcnav a.only-mobile{display:flex}
+}
 .dhcnav a{flex:0 0 auto;display:flex;flex-direction:column;gap:1px;
   border:1px solid var(--line,#1b2836);border-radius:3px;padding:6px 14px;
   text-decoration:none;color:var(--bone,#c9d6e2);background:var(--panel2,#0d1826);
@@ -62,11 +95,13 @@ $dhcnav_items = array(
 </style>
 <nav class="dhcnav" aria-label="DHC Fighters, Collection and Arena">
 <?php foreach ($dhcnav_items as $key => $it):
-	list($href, $label, $hint, $gated) = $it;
+	/* Hidden with CSS rather than skipped in PHP: one menu, one markup, and
+	   no server-side guess about what device is asking. */
+	list($href, $label, $hint, $gated, $mobile) = $it;
 	$here   = ($key === $dhcnav_at);
 	$locked = ($dhcnav_guest && $gated && !$here);
 	$to     = $locked ? 'index.php' : $href;
-	$cls    = $here ? 'on' : ($locked ? 'locked' : '');
+	$cls    = trim(($here ? 'on' : ($locked ? 'locked' : '')) . ($mobile ? ' only-mobile' : ''));
 	$title  = $locked
 		? $label.' — sign in to '.$hint
 		: ($here ? 'You are here' : $label.' — '.$hint);

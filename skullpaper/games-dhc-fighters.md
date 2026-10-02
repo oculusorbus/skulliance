@@ -320,6 +320,14 @@ with — health comes from the torso, power from the weapon — so the preview a
 the real thing cannot disagree. Editing a saved Fighter leaves its own row out
 of the comparison, or it would be competing with itself.
 
+### Checking what a game still owes you
+
+**Where traits drop** lists every game, what it pays, how far through that
+category you are, and how many drops it has left for you today. On a desktop
+it is a column of the DHC Fighters page. On a phone it is below everything
+else, so the DHC strip at the top of the page carries a **Games** shortcut -
+only on a phone - that jumps straight down to it.
+
 ### Finding the one to work on
 
 Your saved Fighters sit under the trait picker, on the right of the

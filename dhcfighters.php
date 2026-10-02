@@ -229,7 +229,7 @@ a.dhcf-stat span{opacity:.85}
 /* It is a .dhcf-panel now, which already supplies the border, the radius and
    the clip -- and it sits IN the panels grid, so the standalone block's own
    top margin would show up as a gap only this column had. */
-.dhcf-games{overflow:hidden}
+.dhcf-games{overflow:hidden;scroll-margin-top:12px}
 /* One game per row in a column, rather than the two-up grid it used across
    the full page width. auto-fill at 240px would still manage two columns in a
    wide panel and the rows read better as a list. */
@@ -627,7 +627,10 @@ a.dhcf-stat span{opacity:.85}
              left it last in reading order for the same reason. It sits
              beside the roster because the two are read together: what you
              have, and where the next piece comes from. */ ?>
-    <div class="dhcf-panel dhcf-games">
+    <?php /* id="drops" is the DHC strip's mobile-only Games shortcut target
+             -- see dhc-nav.php. scroll-margin-top keeps the panel heading
+             clear of the top edge when it lands. */ ?>
+    <div class="dhcf-panel dhcf-games" id="drops">
 
       <?php
         /*
