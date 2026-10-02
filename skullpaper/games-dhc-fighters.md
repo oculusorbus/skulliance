@@ -320,6 +320,28 @@ with — health comes from the torso, power from the weapon — so the preview a
 the real thing cannot disagree. Editing a saved Fighter leaves its own row out
 of the comparison, or it would be competing with itself.
 
+### Finding the one to work on
+
+Your roster sorts, from the **Sort** control next to *Your Fighters*:
+
+| Sort | Puts first |
+| --- | --- |
+| Newest / Oldest | When you saved it |
+| Rarest | Highest rarity score |
+| Least rare | **Lowest** score - the ones with the most to gain from an edit |
+| Deadliest | Highest **POW** |
+| Toughest | Highest **HP** |
+| Name | A to Z |
+
+POW and HP are on every card, and they are the Arena's own numbers - derived
+by the same code that builds your Crew for a battle, so a Fighter the roster
+calls deadly is the one the Arena agrees is deadly. Rarity and POW are *not*
+the same question: rarity is what the leaderboards rank, POW is what wins a
+fight, and the Fighter topping one often is not the one topping the other.
+That is the point of being able to sort on both.
+
+Your choice is remembered on that device.
+
 ### Take the picture with you
 
 **Download 1000px PNG** sits in the assembler next to *Copy link to this build*,
@@ -381,8 +403,9 @@ want. Clearing the name puts the number back.
 
 ## The leaderboards
 
-Two boards, both ranked on **your single best Fighter**, with the number of
-Fighters you've saved as the tie-break.
+Two boards in one panel - **this month** first, then **all time** below it -
+both ranked on **your single best Fighter**, with the number of Fighters
+you've saved as the tie-break.
 
 - **All-time** — every Fighter you have saved.
 - **Monthly** — Fighters **built this month** that carry a trait **earned this

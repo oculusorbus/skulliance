@@ -48,8 +48,43 @@ if ($dhcf_edit > 0 && $dhcf_user) {
 // With a Fighter open for editing, its own traits count as available to it.
 $dhcf_avail    = $dhcf_user ? dhcf_available($conn, $dhcf_user, $dhcf_edit) : array();
 $dhcf_roster   = $dhcf_user ? dhcf_fighters($conn, $dhcf_user)  : array();
+
+/*
+ * WHAT EACH FIGHTER WILL ACTUALLY BE IN A FIGHT, so the roster can be sorted
+ * on it. dhca_build_fighter() is the SAME function the Arena's Crew picker
+ * and the battle itself use -- deriving a second opinion here would let this
+ * page call a Fighter deadly that the Arena then disagrees with, which is
+ * precisely the trap the picker's own comment warns about.
+ *
+ * dhcarena-engine.php is safe to pull in from here: it is deliberately
+ * isolated from the DB and session layers (no $conn, no $_SESSION, no echo),
+ * and dhcarena-lib.php already loads it alongside dhcfighters-lib.php, so the
+ * two have always coexisted.
+ *
+ * Rarity score is NOT recomputed -- it is already on the row, and the stored
+ * column is what the leaderboard ranks on, so the roster must agree with it.
+ */
+require_once __DIR__ . '/dhcarena-engine.php';
+$dhcf_rar = dhcf_rarity();
+foreach ($dhcf_roster as $i => $f) {
+	$built = dhca_build_fighter(is_array($f['traits']) ? $f['traits'] : array(),
+	                            '', 'f' . $f['id'], $dhcf_rar);
+	$dhcf_roster[$i]['pow']  = (int)$built['power'];
+	$dhcf_roster[$i]['hp']   = (int)$built['maxHp'];
+	$dhcf_roster[$i]['crit'] = (int)round($built['critC'] * 100);
+}
 $dhcf_next     = dhcf_default_name(dhcf_next_serial($conn));
-$dhcf_lb_ath   = dhcf_leaderboard($conn, 'ath', 10);
+/*
+ * The ladder is ONE panel now, so all-time has a whole column's worth of
+ * space under the monthly list rather than a panel of its own. Fetch deep
+ * enough to fill it and let CSS decide how much actually shows: how tall the
+ * column is depends on how many Fighters the player has (the roster beside it
+ * sets the row height) AND on how many cards fit per row at this width, which
+ * is not knowable from here. So the count is a ceiling, not a guess.
+ *
+ * Monthly stays short on purpose -- it IS the short list, and it goes first.
+ */
+$dhcf_lb_ath   = dhcf_leaderboard($conn, 'ath', 30);
 $dhcf_lb_month = dhcf_leaderboard($conn, 'monthly', 10);
 
 // totals for the header strip
@@ -198,8 +233,14 @@ a.dhcf-stat span{opacity:.85}
 /* Reference block, below everything you actually operate. It answers "what
    should I play next", which is worth having on the page but never worth
    pushing the assembler down the screen for. */
-.dhcf-games{border:1px solid var(--line);border-radius:3px;overflow:hidden;margin-top:14px}
-.dhcf-games ul{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+/* It is a .dhcf-panel now, which already supplies the border, the radius and
+   the clip -- and it sits IN the panels grid, so the standalone block's own
+   top margin would show up as a gap only this column had. */
+.dhcf-games{overflow:hidden}
+/* One game per row in a column, rather than the two-up grid it used across
+   the full page width. auto-fill at 240px would still manage two columns in a
+   wide panel and the rows read better as a list. */
+.dhcf-games ul{display:block}
 .dhcf-games li+li{border-top:0}
 .dhcf-games h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
   opacity:.7;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
@@ -241,6 +282,27 @@ a.dhcf-stat span{opacity:.85}
   .dhcf-games li{padding:7px 9px}
 }
 .dhcf-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:18px}
+/* ---- the ladder column ----------------------------------------------------
+   Grid items stretch, so this panel is already exactly as tall as the roster
+   beside it -- which is as tall as the player's own Fighter count makes it.
+   The monthly list takes the space it needs and all-time takes the REST, so
+   the column fills rather than ending in dead space or pushing the page
+   taller. min-height:0 on both the body and the scroller is the part that is
+   easy to miss: a flex child's default min-height is auto, so without it the
+   all-time table refuses to shrink and overflows the panel instead of
+   scrolling inside it. */
+.dhcf-ladder{display:flex;flex-direction:column}
+.dhcf-ladder .body{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+.dhcf-ladder .lb-sec h3{margin:0 0 5px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  opacity:.5;font-weight:normal}
+.dhcf-ladder .lb-ath{flex:1;min-height:0;overflow-y:auto}
+/* The sub-heading has to stay put while its own list scrolls under it. */
+.dhcf-ladder .lb-ath h3{position:sticky;top:0;background:var(--ink);padding-bottom:4px;z-index:1}
+@media (max-width:760px){
+  /* Stacked, there is no column height to fill and a nested scroller inside a
+     page that already scrolls is just a trap. */
+  .dhcf-ladder .lb-ath{overflow:visible}
+}
 .dhcf-panel{border:1px solid var(--line);border-radius:3px;overflow:hidden}
 .dhcf-panel h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;
   opacity:.65;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;
@@ -270,6 +332,20 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-card .meta{padding:6px 8px}
 .dhcf-card .nm{font-size:11.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dhcf-card .sc{font-size:10px;opacity:.6;font-variant-numeric:tabular-nums}
+.dhcf-card .sc.st{display:block;font-size:9px;opacity:.45;letter-spacing:.04em}
+/* Sits in the panel's <h2>, which is a flex row ending in the collection
+   link -- margin-left:auto on the link already pushes that to the right, so
+   this only has to not stretch. */
+.dhcf-sort{display:inline-flex;align-items:center;gap:6px;margin-left:14px;font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;opacity:.6;font-weight:normal}
+.dhcf-sort select{font:inherit;font-size:10px;letter-spacing:.04em;text-transform:none;
+  background:var(--panel2);color:inherit;border:1px solid var(--line);border-radius:0;
+  padding:3px 6px}
+.dhcf-sort select:hover{border-color:var(--ochre)}
+@media (max-width:560px){
+  .dhcf-sort{margin-left:0;width:100%}
+  .dhcf-sort select{flex:1;min-width:0}
+}
 .dhcf-card .firstb{color:var(--ochre);opacity:1;font-size:8.5px;letter-spacing:.12em;
   border:1px solid var(--ochre);border-radius:999px;padding:1px 5px;margin-left:4px}
 .dhcf-card .acts{display:flex;gap:5px;padding:0 8px 8px}
@@ -352,14 +428,32 @@ a.dhcf-stat span{opacity:.85}
   <div class="dhcf-panels">
 
     <div class="dhcf-panel">
-      <h2>Your Fighters<a href="dhcgallery.php?mine=1">In the collection &rsaquo;</a></h2>
+      <h2>Your Fighters<?php if (count($dhcf_roster) > 1): ?><label class="dhcf-sort"><span>Sort</span><select id="dhcfSort">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="rarest">Rarest</option>
+            <option value="commonest">Least rare</option>
+            <option value="deadliest">Deadliest</option>
+            <option value="toughest">Toughest</option>
+            <option value="name">Name</option>
+          </select></label><?php endif; ?><a href="dhcgallery.php?mine=1">In the collection &rsaquo;</a></h2>
       <div class="body">
         <?php if (!$dhcf_roster): ?>
           <p style="font-size:12px;opacity:.6;margin:2px 0">Nothing saved yet.</p>
         <?php else: ?>
         <div class="dhcf-roster">
           <?php foreach ($dhcf_roster as $f): ?>
+            <?php /* Every sortable fact as a data attribute. The sort is
+                     client-side because the roster is already fully rendered
+                     and paged in the browser -- see the pager comment in the
+                     script block -- and a round trip to reorder cards that
+                     are all here already would be pure latency. */ ?>
             <div class="dhcf-card" data-id="<?php echo (int)$f['id']; ?>"
+                 data-score="<?php echo (int)$f['rarity_score']; ?>"
+                 data-pow="<?php echo (int)$f['pow']; ?>"
+                 data-hp="<?php echo (int)$f['hp']; ?>"
+                 data-created="<?php echo (int)strtotime($f['created_at']); ?>"
+                 data-name="<?php echo htmlspecialchars($f['display'], ENT_QUOTES); ?>"
                  data-traits="<?php echo htmlspecialchars(json_encode($f['traits']), ENT_QUOTES); ?>">
               <?php /* The card draws the 250px layers; this is those same
                        traits at the 1000px masters, flattened into one file
@@ -392,7 +486,11 @@ a.dhcf-stat span{opacity:.85}
                 <?php /* No FIRST badge: a trait set can only exist once now, so
                          every Fighter would wear one and a badge everything has
                          says nothing. See dhcf_save_fighter(). */ ?>
+                <?php /* POW and HP are on the card because otherwise "sort by
+                         deadliest" reorders the grid on a number the player
+                         cannot see, which reads as the sort being broken. */ ?>
                 <span class="sc"><?php echo number_format((int)$f['rarity_score']); ?> pts</span>
+                <span class="sc st"><?php echo (int)$f['pow']; ?> POW &middot; <?php echo (int)$f['hp']; ?> HP</span>
               </div>
               <div class="acts">
                 <a class="dhcf-edit" href="dhcfighters.php?edit=<?php echo (int)$f['id']; ?>">Edit</a>
@@ -411,31 +509,40 @@ a.dhcf-stat span{opacity:.85}
       </div>
     </div>
 
-    <div class="dhcf-panel">
-      <h2>All-time &mdash; best Fighter</h2>
+    <?php /* ONE ladder panel, monthly first. Two panels side by side pushed
+             "Where traits drop" below the fold on a desktop, and the two
+             lists are the same four columns of the same table -- reading as
+             two separate things was never right. Monthly leads because it is
+             the short list and the live one; all-time fills whatever height
+             the roster column creates. */ ?>
+    <div class="dhcf-panel dhcf-ladder">
+      <h2>Ladder &mdash; best Fighter</h2>
       <div class="body">
-        <?php echo dhcf_board_html($dhcf_lb_ath); ?>
+        <div class="lb-sec">
+          <h3>This month</h3>
+          <?php echo dhcf_board_html($dhcf_lb_month); ?>
+        </div>
+        <div class="lb-sec lb-ath">
+          <h3>All time</h3>
+          <?php echo dhcf_board_html($dhcf_lb_ath); ?>
+        </div>
       </div>
     </div>
 
-    <div class="dhcf-panel">
-      <h2>This month</h2>
-      <div class="body">
-        <?php echo dhcf_board_html($dhcf_lb_month); ?>
-      </div>
-    </div>
+    <?php /* The freed column. Same markup as before -- it was a full-width
+             block under the panels, which on a wide screen meant scrolling
+             past two half-empty ladders to reach the one thing that answers
+             "what should I play next". */ ?>
+    <div class="dhcf-panel dhcf-games">
 
-  </div>
-
-  <?php
-      /*
-       * WHERE TRAITS COME FROM -- shown always, not just to an empty account.
-       * It is the answer to "what should I play next", which is a question a
-       * player with 40 traits asks more often than one with none, and the
-       * counts turn it from a legend into a progress list.
-       */
-    ?>
-  <div class="dhcf-games">
+      <?php
+        /*
+         * WHERE TRAITS COME FROM -- shown always, not just to an empty
+         * account. It is the answer to "what should I play next", which a
+         * player with 40 traits asks more often than one with none, and the
+         * counts turn it from a legend into a progress list.
+         */
+      ?>
       <h2>Where traits drop
         <span><?php echo (int)$dhcf_distinct; ?>/<?php echo (int)$dhcf_all; ?></span>
       </h2>
@@ -484,6 +591,8 @@ a.dhcf-stat span{opacity:.85}
       <?php endforeach; ?>
       </ul>
     </div>
+
+  </div>
 </div>
 
 <?php
@@ -528,6 +637,53 @@ function dhcf_board_html($rows) {
     document.getElementById('dhcfPrev').addEventListener('click', function () { rpage--; rpaint(); });
     document.getElementById('dhcfNext').addEventListener('click', function () { rpage++; rpaint(); });
   }
+
+  /* ---- roster sorting ---------------------------------------------------
+     Reorders the same cards rather than re-rendering: they carry their own
+     wiring and their own 250px layer stack, so moving the nodes keeps both.
+     Every order ends with the same two tiebreaks, so equal Fighters never
+     shuffle between sorts and the grid cannot appear to change at random. */
+  var rgrid = document.querySelector('.dhcf-roster');
+  var rsort = document.getElementById('dhcfSort');
+  var SORT_KEY = 'dhcf.roster.sort';
+
+  function rnum(c, k) { var v = parseFloat(c.getAttribute('data-' + k)); return isNaN(v) ? 0 : v; }
+  function rname(c) { return (c.getAttribute('data-name') || '').toLowerCase(); }
+  function tiebreak(a, b) {
+    return (rnum(b, 'score') - rnum(a, 'score')) || (rnum(b, 'created') - rnum(a, 'created'));
+  }
+  var ORDERS = {
+    /* The server already hands them over newest-first, but say so explicitly
+       -- the default must survive being switched away from and back. */
+    newest:    function (a, b) { return rnum(b, 'created') - rnum(a, 'created') || tiebreak(a, b); },
+    oldest:    function (a, b) { return rnum(a, 'created') - rnum(b, 'created') || tiebreak(a, b); },
+    rarest:    function (a, b) { return rnum(b, 'score') - rnum(a, 'score') || tiebreak(a, b); },
+    /* The one that answers "which should I work on": least rare FIRST. */
+    commonest: function (a, b) { return rnum(a, 'score') - rnum(b, 'score') || tiebreak(a, b); },
+    deadliest: function (a, b) { return rnum(b, 'pow') - rnum(a, 'pow') || tiebreak(a, b); },
+    toughest:  function (a, b) { return rnum(b, 'hp') - rnum(a, 'hp') || tiebreak(a, b); },
+    name:      function (a, b) { return rname(a).localeCompare(rname(b)) || tiebreak(a, b); }
+  };
+
+  function rapply(key, remember) {
+    var cmp = ORDERS[key] || ORDERS.newest;
+    rcards.sort(cmp);
+    /* appendChild MOVES an existing node, so this reorders in place. */
+    if (rgrid) rcards.forEach(function (c) { rgrid.appendChild(c); });
+    rpage = 0;
+    rpaint();
+    /* Storage throws in a private window and can simply be unavailable; the
+       sort has to work either way, so this is best-effort on both sides. */
+    if (remember) { try { localStorage.setItem(SORT_KEY, key); } catch (e) {} }
+  }
+
+  if (rsort) {
+    var saved = null;
+    try { saved = localStorage.getItem(SORT_KEY); } catch (e) {}
+    if (saved && ORDERS[saved]) { rsort.value = saved; rapply(saved, false); }
+    rsort.addEventListener('change', function () { rapply(rsort.value, true); });
+  }
+
   rpaint();
 
   var say = document.getElementById('dhcfSay');

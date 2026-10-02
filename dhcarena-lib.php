@@ -764,7 +764,7 @@ function dhca_announce($conn, $b, $won, $rewarded) {
 		if ($winU['avatar'] !== '') $author['icon_url'] = $winU['avatar'];
 
 		ob_start();
-		discordmsg($won ? '⚔️ Arena — Challenger Wins' : '🛡️ Arena — Defence Holds',
+		discordmsg($won ? '⚔️ Arena — Challenger Wins' : '🛡️ Arena — Defense Holds',
 			$desc, $img, 'https://skulliance.io/staking/dhcarena.php', 'dhcarena', $thumb,
 			$won ? '00C8A0' : 'E0466B', $author, null, $ping);
 		ob_end_clean();
