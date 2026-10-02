@@ -152,17 +152,20 @@ if (!defined('DHCM_RENDERED')) {
    * THE TAIL IS A CALL TO ACTION, not just a tag. A bare @skulliance tells
    * a stranger scrolling past who made the thing and nothing about why they
    * should care; the point of the post is the next player, not the credit.
-   * THE ARTIST IS CREDITED IN EVERY POST. None of this exists without
-   * Maxingo's art, and a Fighter going out into the world uncredited is
-   * the wrong default -- so it is part of the tail rather than something a
-   * player has to remember to add.
+   * THE ARTIST IS CREDITED IN EVERY POST, on its own line under the
+   * invitation. None of this exists without Maxingo's art, and a Fighter
+   * going out into the world uncredited is the wrong default -- so it is
+   * part of the tail rather than something a player has to remember. It
+   * sits after the invitation rather than in front of it because the post
+   * is an invitation first; the credit is a fact it carries, not its
+   * opening line.
    *
    * The whole tail costs ~104 characters, which is why the stat sentence
    * below is conditional: the credit and the invitation both matter more
    * than the health number, so the stats are what drops if there is ever
    * not room.
    */
-  var X_HANDLE = 'Art by @MMAXI404. Join @skulliance to assemble your own Fighter and battle other players in the Arena!';
+  var X_HANDLE = 'Join @skulliance to assemble your own Fighter and battle other players in the Arena!\nArt by @MMAXI404';
 
   function shareText(f) {
     var best = AXES.map(function (a) { return { label: a[1], rank: f.rank[a[0]] }; })

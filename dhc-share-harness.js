@@ -54,10 +54,15 @@ ok(a > -1 && b > a, 'shareText() is gone from dhcgallery.php');
  * kinder than the real thing tests nothing.
  */
 const handleMatch = gallery.match(/var X_HANDLE = '([^']+)';/);
-if (!handleMatch) { console.log('  FAIL  X_HANDLE is gone from dhcgallery.php'); fail++; }
+if (!handleMatch) { console.log('  FAIL  X_HANDLE is gone from dhc-fighter-modal.php'); fail++; }
+/* The capture is SOURCE text, so an escape in the literal arrives here as
+   two characters. The browser sees one. Un-escaping matters for the length
+   budget as well as for reading it: counting "\n" as 2 overstates the tail
+   and would let a genuinely over-length post pass. */
+const unescapeJs = (t) => t.replace(/\\n/g, '\n').replace(/\\'/g, "'").replace(/\\\\/g, '\\');
 const ctx = {
 	AXES: [['rarest','Rarest'],['might','Deadliest'],['tough','Toughest'],['power','Hardest hitting']],
-	X_HANDLE: handleMatch ? handleMatch[1] : '@skulliance',
+	X_HANDLE: handleMatch ? unescapeJs(handleMatch[1]) : '@skulliance',
 };
 vm.createContext(ctx);
 vm.runInContext(strip(gallery.slice(a, b)), ctx);
@@ -207,6 +212,19 @@ console.log('\nthe panel is shared, not copied');
 	   'a failed panel fetch leaves the page as it was, with the save invisible');
 	ok(/if \(!d\.serial \|\| !window\.DHC_MODAL\) \{ setTimeout\(after, 900\); return; \}/.test(asm),
 	   'nothing falls back when the panel or the serial is missing');
+
+	/* AN EDIT GETS THE PANEL TOO. Save and update share one success path --
+	   editId only picks the endpoint, the wording and where `after` goes
+	   (dhcfighters.php, to shed ?edit=, rather than a reload). Reviewing
+	   what an edit turned the Fighter into is the same moment as reviewing
+	   a new one, so this asserts the two have not been branched apart. */
+	const okBlock = asm.slice(asm.indexOf('var after = function ()'),
+	                          asm.indexOf('.catch(function () { setTimeout(after, 900); });'));
+	ok(okBlock.length > 0, 'the save success path moved');
+	ok(!/editId/.test(okBlock.slice(okBlock.indexOf('if (!d.serial'))),
+	   'the panel is now gated on editId, so an edit no longer gets it');
+	ok(/if \(editId\) location\.href = 'dhcfighters\.php';/.test(okBlock),
+	   'an edit no longer sheds ?edit= when the panel closes, so a reload reopens the editor');
 }
 
 console.log('\nthe modal shows where it places');
