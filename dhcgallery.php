@@ -652,7 +652,14 @@ include 'header.php';
    * the budget below accounts for -- the same arithmetic shareOnXUrl() does
    * server-side.
    */
-  var X_HANDLE = '@skulliance';
+  /*
+   * THE TAIL IS A CALL TO ACTION, not just a tag. A bare @skulliance tells
+   * a stranger scrolling past who made the thing and nothing about why they
+   * should care; the point of the post is the next player, not the credit.
+   * It costs ~84 characters, which is why the stat sentence below is
+   * conditional -- the invitation matters more than the health number.
+   */
+  var X_HANDLE = 'Join @skulliance to assemble your own Fighter and battle other players in the Arena!';
 
   function shareText(f) {
     var best = AXES.map(function (a) { return { label: a[1], rank: f.rank[a[0]] }; })

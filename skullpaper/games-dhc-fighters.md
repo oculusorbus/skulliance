@@ -360,11 +360,12 @@ Fighter ever saved, not just the ones currently on screen.
 
 On your own Fighters there is a **Share** button next to the download, and the
 assembler carries the same thing as an **X** button beside *Download 1000px
-PNG*. Both write the post for you, leading with your two best placements,
+PNG*. Both write the post for you - leading with your two best placements,
 because "#4 deadliest of 108" says more than any score does. **The post
 carries a picture of the Fighter** - a wide card built from the same render
 the Arena and Discord use - and the link opens that exact Fighter in the
-Collection for whoever clicks it.
+Collection for whoever clicks it. It closes by inviting whoever reads it to
+come and build one of their own.
 
 Sharing is only offered on Fighters you built. Posting someone else's assembly
 in your own voice is not a share.

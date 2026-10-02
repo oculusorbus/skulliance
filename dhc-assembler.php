@@ -1301,7 +1301,9 @@ a{color:var(--ochre)}
       var parts = best.slice(0, 2).map(function (r) {
         return '#' + r.rank.toLocaleString() + ' ' + r.label.toLowerCase();
       });
-      var tail = '\n\n@skulliance';
+      /* A call to action, not just a tag -- see the same note in
+         dhcgallery.php. The budget below already accounts for its length. */
+      var tail = '\n\nJoin @skulliance to assemble your own Fighter and battle other players in the Arena!';
       var body = 'Just put this DHC Fighter together - ' + parts.join(', ') +
                  ' of ' + best[0].of.toLocaleString() + ' built so far.';
       var limit = 280 - 24 - tail.length;

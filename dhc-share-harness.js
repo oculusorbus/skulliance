@@ -38,9 +38,18 @@ const fits = (text) => text.length + URL_COST <= LIMIT;
 const a = gallery.indexOf('  function shareText(f) {');
 const b = gallery.indexOf('  function shareHref(f) {');
 ok(a > -1 && b > a, 'shareText() is gone from dhcgallery.php');
+/*
+ * X_HANDLE IS READ OUT OF THE FILE, not declared here. It was stubbed as
+ * '@skulliance' while the real one had become an 84-character call to
+ * action -- so every budget assertion below was measuring a tail 73
+ * characters shorter than the one that actually ships. A fixture that is
+ * kinder than the real thing tests nothing.
+ */
+const handleMatch = gallery.match(/var X_HANDLE = '([^']+)';/);
+if (!handleMatch) { console.log('  FAIL  X_HANDLE is gone from dhcgallery.php'); fail++; }
 const ctx = {
 	AXES: [['rarest','Rarest'],['might','Deadliest'],['tough','Toughest'],['power','Hardest hitting']],
-	X_HANDLE: '@skulliance',
+	X_HANDLE: handleMatch ? handleMatch[1] : '@skulliance',
 };
 vm.createContext(ctx);
 vm.runInContext(strip(gallery.slice(a, b)), ctx);
@@ -58,6 +67,10 @@ console.log('the Collection share names the BEST placements');
 	ok(/#54 rarest/.test(t),   'the second-best placement is not in the post: ' + t);
 	ok(!/#61 toughest/.test(t), 'a worse placement was included over a better one: ' + t);
 	ok(t.indexOf('@skulliance') > -1, 'the post does not tag the account, which is the point of posting it');
+	/* And it has to INVITE, not merely tag: a bare handle says who made the
+	   thing and nothing about why a stranger should join. */
+	ok(/Join @skulliance/.test(t) && /Arena/.test(t),
+	   'the post no longer invites anyone to play: ' + JSON.stringify(t.slice(-60)));
 	ok(fits(t), 'the post is ' + (t.length + URL_COST) + ' characters with the URL, over X\'s ' + LIMIT);
 	console.log('  ' + JSON.stringify(t));
 }
@@ -85,7 +98,12 @@ console.log('\nand stays inside the budget when everything is long');
 	   + (huge.length + URL_COST) + ' characters');
 	ok(huge.indexOf('@skulliance') > -1,
 	   'truncation ate the handle -- the exact failure shareOnXUrl() documents: ' + JSON.stringify(huge.slice(-40)));
-	ok(/…\n\n@skulliance$/.test(huge), 'an oversized post was cut without saying it was cut');
+	/* The ellipsis sits where the body was cut, immediately before the tail
+	   -- matched relative to the tail rather than to a literal handle, which
+	   is what broke this check when the handle became an invitation. */
+	ok(huge.indexOf('…\n\n') > -1 && huge.endsWith(ctx.X_HANDLE),
+	   'an oversized post was cut without saying it was cut, or lost its tail: '
+	 + JSON.stringify(huge.slice(-30)));
 }
 
 console.log('\nthe stat tail is dropped rather than overflowing');
@@ -104,7 +122,14 @@ console.log('\nthe assembler icon builds the same shape of post');
 	const seg = assembler.slice(i, assembler.indexOf('\n  }', i));
 	ok(/280 - 24 - tail\.length/.test(seg),
 	   'the assembler post is not budgeted against X\'s 23-character URL cost');
-	ok(/@skulliance/.test(seg), 'the assembler post does not tag the account');
+	ok(/Join @skulliance/.test(seg) && /Arena/.test(seg),
+	   'the assembler post does not invite anyone to play, it only tags the account');
+	/* Both posts must say the same thing; two different invitations is two
+	   different products as far as a reader scrolling past is concerned. */
+	const asmTail = (seg.match(/var tail = '\\n\\n([^']+)';/) || [])[1];
+	ok(asmTail && handleMatch && asmTail === handleMatch[1],
+	   'the assembler and the Collection invite differently:\n    ' + JSON.stringify(asmTail)
+	 + '\n    ' + JSON.stringify(handleMatch && handleMatch[1]));
 	ok(/sort\(function \(a, b\) \{ return a\.rank - b\.rank; \}\)/.test(seg),
 	   'the assembler no longer picks the BEST placements');
 	ok(/slice\(0, 2\)/.test(seg), 'the assembler names more than two placements; that reads as a stat dump');
