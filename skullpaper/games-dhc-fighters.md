@@ -320,6 +320,17 @@ with — health comes from the torso, power from the weapon — so the preview a
 the real thing cannot disagree. Editing a saved Fighter leaves its own row out
 of the comparison, or it would be competing with itself.
 
+### Changing one you already made
+
+**Click a Fighter in your roster and you are editing it.** Its own traits are
+freed back to it, so you can swap pieces around and press *Update Fighter* -
+it keeps its number and its name. The card you are editing is outlined and
+labelled so you can tell at a glance.
+
+Clicking a different Fighter switches to editing that one instead. Nothing you
+have not saved carries across, which is the point: one Fighter at a time, and
+the thing on the canvas is always the thing you are about to save.
+
 ### Checking what a game still owes you
 
 **Where traits drop** lists every game, what it pays, how far through that

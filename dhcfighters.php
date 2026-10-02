@@ -228,7 +228,6 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-editing b{opacity:1}
 .dhcf-cancel{font-size:11px;color:var(--dim);text-decoration:none;border-bottom:1px solid transparent}
 .dhcf-cancel:hover{color:var(--ochre);border-bottom-color:currentColor}
-.dhcf-card .acts .dhcf-edit{text-decoration:none;display:inline-flex;align-items:center}
 /* NO DOWNLOAD ARROW ON THE CARD. It used to sit in the corner of the art,
    which was the right place for it while the roster was a full-width panel
    of 150px cards. In the picker column the cards are half that and run seven
@@ -340,8 +339,7 @@ a.dhcf-stat span{opacity:.85}
    it managed two per row and the pager did all the work. */
 .picker > .dhcf-aside .dhcf-roster{grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:7px}
 .picker > .dhcf-aside .dhcf-card .acts{gap:3px;padding:0 5px 5px}
-.picker > .dhcf-aside .dhcf-card .acts button,
-.picker > .dhcf-aside .dhcf-card .acts .dhcf-edit{font-size:8px;padding:3px 2px}
+.picker > .dhcf-aside .dhcf-card .acts button{font-size:8px;padding:3px 2px}
 .picker > .dhcf-aside .dhcf-card .acts .dhcf-scrap{padding:3px 4px}
 .picker > .dhcf-aside .dhcf-card .acts .dhcf-scrap svg{width:10px;height:10px}
 .picker > .dhcf-aside .dhcf-card .meta{padding:4px 6px}
@@ -401,6 +399,13 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-pager button:disabled{opacity:.35;cursor:default}
 .dhcf-pager button:not(:disabled):hover{border-color:var(--ochre);color:var(--ochre)}
 .dhcf-card{border:1px solid var(--line);border-radius:3px;overflow:hidden;position:relative}
+/* The one being edited, marked on the card as well as in the save bar --
+   the bar is at the top of the page and the roster is beside the picker, so
+   on a tall page they are nowhere near each other. */
+.dhcf-card.editing{border-color:var(--ochre)}
+.dhcf-card.editing .art::after{content:'EDITING';position:absolute;left:0;right:0;bottom:0;
+  background:var(--ochre);color:var(--ink);font-size:8px;letter-spacing:.14em;
+  text-align:center;padding:2px 0}
 .dhcf-card .art{position:relative;aspect-ratio:1;background:var(--panel2);overflow:hidden;
   display:block;width:100%;padding:0;border:0;cursor:pointer}
 .dhcf-card .art:hover{outline:1px solid var(--ochre);outline-offset:-1px}
@@ -572,16 +577,35 @@ a.dhcf-stat span{opacity:.85}
                      and paged in the browser -- see the pager comment in the
                      script block -- and a round trip to reorder cards that
                      are all here already would be pure latency. */ ?>
-            <div class="dhcf-card" data-id="<?php echo (int)$f['id']; ?>"
+            <div class="dhcf-card<?php echo ($dhcf_edit === (int)$f['id']) ? ' editing' : ''; ?>" data-id="<?php echo (int)$f['id']; ?>"
                  data-score="<?php echo (int)$f['rarity_score']; ?>"
                  data-pow="<?php echo (int)$f['pow']; ?>"
                  data-hp="<?php echo (int)$f['hp']; ?>"
                  data-created="<?php echo (int)strtotime($f['created_at']); ?>"
                  data-name="<?php echo htmlspecialchars($f['display'], ENT_QUOTES); ?>"
                  data-traits="<?php echo htmlspecialchars(json_encode($f['traits']), ENT_QUOTES); ?>">
-              <?php /* A button, not a div with a click handler: this is a real
-                       control and should be reachable by keyboard like one. */ ?>
-              <button type="button" class="art" title="View <?php echo htmlspecialchars($f['display']); ?> on the canvas">
+              <?php /*
+                * CLICKING A FIGHTER EDITS IT. It used to only LOAD the build
+                * onto the canvas, which looked identical to editing and was
+                * not: the traits were still committed to that Fighter, so the
+                * picker greyed them out and Save refused. You then had to
+                * find the Edit link to do the thing you had already asked
+                * for.
+                *
+                * Worse, the two states could disagree. Editing Fighter A and
+                * then clicking Fighter B swapped the canvas to B's build
+                * while the page was still editing A -- so Save would have
+                * made A into a copy of B, and failed on the duplicate trait
+                * set with a message about something the player never asked
+                * to do.
+                *
+                * One meaning now: click a Fighter and you are editing that
+                * Fighter. A real button, not a div with a handler, so it is
+                * reachable by keyboard like the control it is.
+                */ ?>
+              <button type="button" class="art" data-edit="<?php echo (int)$f['id']; ?>"
+                      title="Edit <?php echo htmlspecialchars($f['display']); ?>"<?php
+                      echo ($dhcf_edit === (int)$f['id']) ? ' aria-current="true"' : ''; ?>>
                 <?php
                   /* dhcf_layer_order(), not dhcf_slots(): the raw slot order
                      ignores every exception, so a Fighter wearing Code Sea
@@ -608,8 +632,11 @@ a.dhcf-stat span{opacity:.85}
                 <span class="sc"><?php echo number_format((int)$f['rarity_score']); ?> pts</span>
                 <span class="sc st"><?php echo (int)$f['pow']; ?> POW &middot; <?php echo (int)$f['hp']; ?> HP</span>
               </div>
+              <?php /* NO EDIT LINK. Clicking the Fighter IS editing it -- see the
+                       note on .art above. A second control for the thing the
+                       whole card already does was the source of the confusion
+                       rather than a way out of it. */ ?>
               <div class="acts">
-                <a class="dhcf-edit" href="dhcfighters.php?edit=<?php echo (int)$f['id']; ?>">Edit</a>
                 <button type="button" class="dhcf-rename">Rename</button>
                 <?php /* An icon, because the word does not fit. "Disassemble" was
                          already the longest label in a three-control row, and in
@@ -823,6 +850,28 @@ function dhcf_board_html($rows) {
      wiring and their own 250px layer stack, so moving the nodes keeps both.
      Every order ends with the same two tiebreaks, so equal Fighters never
      shuffle between sorts and the grid cannot appear to change at random. */
+  /* Which Fighter this page is editing, 0 when building a new one. Server
+     side it is $dhcf_edit; the card click reads it so clicking the one you
+     are already editing does not reload and discard the canvas. */
+  var EDITING = <?php echo (int)$dhcf_edit; ?>;
+
+  /*
+   * ARRIVING TO EDIT PUTS YOU AT THE ASSEMBLER, not at the top of the
+   * document. Clicking a Fighter is a navigation now, and a fresh page load
+   * starts above the header, the stats strip and the save bar -- so the
+   * thing you just clicked would be off screen and you would scroll down to
+   * find it. That is the same complaint the old canvas-swap scroll fixed,
+   * and it came back the moment the click became a page change.
+   *
+   * No smooth behaviour: this is where the page should already have been,
+   * not a journey. 'auto' lands before first paint rather than animating
+   * from a position nobody chose to be at.
+   */
+  if (EDITING) {
+    var shell = document.querySelector('.shell');
+    if (shell) shell.scrollIntoView({ block: 'start' });
+  }
+
   var rgrid = document.querySelector('.dhcf-roster');
   var rsort = document.getElementById('dhcfSort');
   var SORT_KEY = 'dhcf.roster.sort';
@@ -983,29 +1032,21 @@ function dhcf_board_html($rows) {
       .catch(function () { btn.disabled = false; msg('Network error.', false); });
   });
 
-  /* Click a saved Fighter to put it on the canvas. This is still VIEWING --
-     its traits are committed to it, so the picker greys them out. Changing it
-     is the Edit button, which reloads with those traits freed. */
+  /*
+   * Click a saved Fighter to EDIT it. A navigation, not a canvas swap: the
+   * server has to free that Fighter's own traits back to it (see
+   * dhcf_available's $ignore_id) before the picker can offer them, and that
+   * is the whole difference between looking at a build and being able to
+   * save one.
+   *
+   * Already editing this one? Then there is nothing to do, and reloading
+   * would throw away whatever changes are on the canvas.
+   */
   document.querySelectorAll('.dhcf-card .art').forEach(function (art) {
     art.addEventListener('click', function () {
-      var card = art.closest('.dhcf-card');
-      var traits;
-      try { traits = JSON.parse(card.dataset.traits); } catch (e) { return; }
-      if (!window.DHC_LOAD) return;
-      DHC_LOAD(traits);
-      syncSave();
-      /* THE TOP OF THE ASSEMBLER, not the middle of the canvas. The canvas
-         is 66vh tall, so centring it put its midpoint at the viewport's
-         midpoint -- which on any normal window scrolls very nearly to the
-         top of the PAGE, past the header and the stats strip, and left you
-         scrolling back down to see what you had just clicked. 'start' with a
-         scroll-margin on .shell lands the assembly image just under the top
-         edge instead. The navbar is position:relative, so nothing is
-         covering it. */
-      var top = document.querySelector('.shell') || document.getElementById('frame');
-      if (top) top.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      msg('Viewing ' + card.querySelector('.nm').textContent
-          + ' — use Edit to change it, or Disassemble to free its traits.', true);
+      var id = art.getAttribute('data-edit');
+      if (!id || String(id) === String(EDITING)) return;
+      location.href = 'dhcfighters.php?edit=' + encodeURIComponent(id);
     });
   });
 

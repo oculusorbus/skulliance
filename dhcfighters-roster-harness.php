@@ -111,7 +111,11 @@ printf("  %d options, %d comparators\n", count($options), count($orders));
 preg_match_all("/rnum\(\s*[ab]\s*,\s*'([a-z]+)'\s*\)/", $orders_src, $m3);
 $needed = array_unique($m3[1]);
 if (preg_match("/rname\(/", $orders_src)) $needed[] = 'name';
-$card_at = strpos($src, '<div class="dhcf-card"');
+/* The class is dynamic now (" editing" on the one being edited), so anchor
+   on the prefix -- the exact-match anchor silently found nothing and the
+   slice started at byte 0, which reported all five data attributes missing
+   from markup that has them. */
+$card_at = strpos($src, '<div class="dhcf-card');
 $card    = substr($src, $card_at, 900);
 foreach ($needed as $attr) {
 	ok(strpos($card, 'data-' . $attr . '="') !== false,
@@ -242,6 +246,41 @@ ok(strpos($clean, "matchMedia('(max-width:700px)')") !== false,
    'the fold no longer decides from the viewport');
 ok(strpos($clean, "n.addEventListener('toggle'") !== false,
    'a reader who opens the notice has it shut again on the next resize');
+
+echo "\nclicking a Fighter edits it, and nothing else claims to\n";
+/*
+ * ONE MEANING FOR A CLICK. The card used to only LOAD the build onto the
+ * canvas, which looks exactly like editing and is not -- the traits were
+ * still committed to that Fighter, so the picker greyed them out and Save
+ * refused. You then had to find a separate Edit link to do the thing you
+ * had already asked for.
+ *
+ * And the two states could disagree: editing A and then clicking B swapped
+ * the canvas to B's build while the page was still editing A, so Save would
+ * have turned A into a copy of B and then failed on the duplicate trait set,
+ * reporting something the player never asked to do.
+ */
+ok(strpos($clean, "location.href = 'dhcfighters.php?edit=' + encodeURIComponent(id)") !== false,
+   'clicking a Fighter no longer edits it');
+ok(strpos($clean, 'class="dhcf-edit"') === false,
+   'the Edit link is back; a second control for what the card already does is where the confusion came from');
+/* Clicking the one already open must NOT reload -- that would throw away
+   whatever is on the canvas. */
+ok(strpos($clean, 'if (!id || String(id) === String(EDITING)) return;') !== false,
+   'clicking the Fighter being edited reloads the page and discards the canvas');
+ok(preg_match('/var EDITING = <\?php echo \(int\)\$dhcf_edit; \?>;/', $src) === 1,
+   'the page no longer tells the client which Fighter it is editing');
+/* And the one being edited has to be identifiable in the roster: the save
+   bar naming it is at the top of the page, the roster is beside the picker,
+   and on a tall page they are nowhere near each other. */
+/* BOTH halves, named separately: there are two rules and checking the
+   shared prefix stayed green when the border one was deleted. */
+ok(preg_match('/\.dhcf-card\.editing\{[^}]*border-color/', $clean) === 1,
+   'the Fighter being edited has no highlighted border in the roster');
+ok(strpos($clean, ".dhcf-card.editing .art::after{content:'EDITING'") !== false,
+   'the Fighter being edited is not labelled in the roster');
+ok(strpos($src, "(\$dhcf_edit === (int)\$f['id']) ? ' editing' : ''") !== false,
+   'nothing puts the editing class on the card being edited');
 
 echo "\nthe mobile shortcut to the trait-drop list\n";
 /*
@@ -406,8 +445,12 @@ ok(substr_count($bar_block, 'id="dhcfSave"') === 2
 /* Clicking a Fighter must not throw you at the top of the page. */
 ok(strpos($clean, "block: 'center'") === false,
    "the card click centres the canvas again; at 66vh tall that scrolls almost to the top of the page");
-ok(preg_match("/scrollIntoView\(\{ behavior: 'smooth', block: 'start' \}\)/", $clean) === 1,
-   'the card click no longer scrolls the assembler to the top of the viewport');
+/* Clicking a Fighter is a NAVIGATION now, so the old in-page scroll is
+   gone -- but a fresh load starts above the header, the stats strip and the
+   save bar, which puts the thing you just clicked off screen. Landing at
+   the assembler is the same requirement in a different mechanism. */
+ok(preg_match("/if \(EDITING\) \{[\s\S]{0,200}?shell\.scrollIntoView\(\{ block: 'start' \}\)/", $clean) === 1,
+   'arriving to edit no longer lands at the assembler, so the Fighter you clicked is off screen');
 ok(strpos($clean, '.shell{scroll-margin-top') !== false,
    'the assembler has no scroll margin, so it lands flush against the viewport edge');
 
