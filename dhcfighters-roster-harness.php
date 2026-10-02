@@ -247,6 +247,20 @@ ok(strpos($clean, "matchMedia('(max-width:700px)')") !== false,
 ok(strpos($clean, "n.addEventListener('toggle'") !== false,
    'a reader who opens the notice has it shut again on the next resize');
 
+echo "\nleaving edit mode is a visible way out\n";
+/* Edit mode is a state the whole page is in, and the way out of it was an
+   11px grey word next to a filled button. A player who wants to build
+   something new should not have to notice it. Hollow rather than filled:
+   same box as Update Fighter, so it reads as the alternative action rather
+   than competing with the one you came to do. Measured: both 35px tall and
+   top-aligned, 139px filled against 79px outlined. */
+ok(preg_match('/\.dhcf-cancel\{[^}]*border:1px solid var\(--ochre\)/', $clean) === 1,
+   'Cancel is back to a plain link; leaving an edit should be as findable as finishing one');
+ok(preg_match('/\.dhcf-cancel\{[^}]*background:transparent/', $clean) === 1,
+   'Cancel is filled, so it competes with Update Fighter instead of offering the way back');
+ok(preg_match('/\.dhcf-cancel\{[^}]*padding:8px 16px/', $clean) === 1,
+   'Cancel no longer matches the save button\'s box, so the pair looks misaligned');
+
 echo "\nclicking a Fighter edits it, and nothing else claims to\n";
 /*
  * ONE MEANING FOR A CLICK. The card used to only LOAD the build onto the

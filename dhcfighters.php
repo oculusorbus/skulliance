@@ -226,8 +226,16 @@ a.dhcf-stat span{opacity:.85}
 .dhcf-save.editing{border-color:var(--ochre)}
 .dhcf-editing{font-size:12px;opacity:.8}
 .dhcf-editing b{opacity:1}
-.dhcf-cancel{font-size:11px;color:var(--dim);text-decoration:none;border-bottom:1px solid transparent}
-.dhcf-cancel:hover{color:var(--ochre);border-bottom-color:currentColor}
+/* A HOLLOW BUTTON, not a quiet link. Leaving edit mode is the way out of a
+   state the whole page is in, and a player who wants to build something new
+   should not have to notice a 11px grey word to find it. Same box as Update
+   Fighter beside it -- filled is the thing you came to do, outlined is the
+   way back -- rather than a second filled button competing with it. */
+.dhcf-cancel{font:inherit;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  padding:8px 16px;cursor:pointer;border-radius:2px;text-decoration:none;
+  background:transparent;border:1px solid var(--ochre);color:var(--ochre);
+  display:inline-flex;align-items:center}
+.dhcf-cancel:hover{background:var(--ochre);color:var(--ink)}
 /* NO DOWNLOAD ARROW ON THE CARD. It used to sit in the corner of the art,
    which was the right place for it while the roster was a full-width panel
    of 150px cards. In the picker column the cards are half that and run seven
