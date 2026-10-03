@@ -445,10 +445,13 @@ function obscuraWeeklyLeaderUserId($conn) {
 }
 
 /*
- * A run ended -- announce it, with the artwork that beat them.
+ * A run ended -- announce it, with the artwork that beat them and the name
+ * they put to it.
  *
  * Showing the NFT is the point: the interesting part of a loss is which piece
  * was unrecognisable from a sliver, and that is worth seeing in the channel.
+ * The wrong guesses go on the post for the same reason -- with the picture
+ * right there, how far off the call was is the readable part.
  *
  * Deliberately NOT every run. Obscura runs end far more often than a Crypt
  * Crawl delve does -- failing the first puzzle of a fresh run is routine and
@@ -457,7 +460,7 @@ function obscuraWeeklyLeaderUserId($conn) {
  */
 define('OBSCURA_ANNOUNCE_MIN_STREAK', 3);
 
-function obscuraAnnounceRunEnd($conn, $user_id, $streak, $solves, $best_streak, $reveal, $collection_name) {
+function obscuraAnnounceRunEnd($conn, $user_id, $streak, $solves, $best_streak, $reveal, $collection_name, $wrong = array()) {
 	if (intval($streak) < OBSCURA_ANNOUNCE_MIN_STREAK) return;
 	// webhooks.php may not be loaded by whatever included us. A missing Discord
 	// post is cosmetic; a fatal here would break the guess response itself and
@@ -484,10 +487,43 @@ function obscuraAnnounceRunEnd($conn, $user_id, $streak, $solves, $best_streak, 
 	if (obscuraWeeklyLeaderUserId($conn) === $user_id)      $badges[] = "🔥 **#1 This Week!**";
 	$badge_text = $badges ? ("\n\n" . implode("\n", $badges)) : "";
 
+	/*
+	 * WHAT THEY SAID IT WAS. The artwork is already on the post, so the
+	 * interesting question is not only which piece beat them -- it is how far
+	 * off the call was, and that can only be judged with the wrong name
+	 * sitting next to the right one. A sliver mistaken for a set that looks
+	 * nothing like it reads very differently from one mistaken for its
+	 * nearest neighbour, and that is the part worth seeing in the channel.
+	 *
+	 * Ids resolved in ONE query and then walked in GUESS ORDER, not in the
+	 * order the rows come back -- the sequence is the story (the last name is
+	 * the guess that actually ended the run) and IN (...) makes no promise
+	 * about ordering. A collection that has since been deleted drops out
+	 * rather than printing a blank or a bare id.
+	 */
+	$guessed = array();
+	$gids = array_values(array_unique(array_filter(array_map('intval', (array)$wrong))));
+	if ($gids) {
+		$gr = $conn->query("SELECT id, name FROM collections WHERE id IN (" . implode(',', $gids) . ")");
+		$gnames = array();
+		if ($gr) while ($g = $gr->fetch_assoc()) $gnames[intval($g['id'])] = trim((string)$g['name']);
+		foreach ($gids as $gid) if (!empty($gnames[$gid])) $guessed[] = $gnames[$gid];
+	}
+	// "then" rather than an arrow or a numbered list: it carries the order in
+	// a line that still reads as a sentence at any of the lengths this can be
+	// (three at the easy tiers, one at the top, where a single attempt means
+	// the one name IS the whole story).
+	$guess_line = $guessed
+		? "❌ **They guessed:** " . implode(', then ', $guessed) . "\n"
+		: '';
+
 	$piece = trim((string)($reveal['name'] ?? ''));
 	$desc  = "<@" . $u['discord_id'] . "> ran out of attempts at a streak of **" . number_format($streak) . "**.\n\n"
 	       . "🔍 **Stumped by:** " . ($piece !== '' ? $piece : 'an unnamed piece') . "\n"
-	       . "🗂️ **Collection:** " . $collection_name . "\n"
+	       // "It was", not "Collection": there are two collection names on this
+	       // post now and the label has to say which one is the answer.
+	       . "🗂️ **It was:** " . $collection_name . "\n"
+	       . $guess_line
 	       . "✅ **Solved this run:** " . number_format($solves)
 	       . $badge_text;
 
@@ -617,8 +653,10 @@ function obscuraGuess($conn, $user_id, $collection_id) {
 			updated_at = NOW() WHERE user_id = $user_id");
 		$run_solves = obscuraCloseRun($conn, $user_id);
 		// $streak is this run's peak, read before the reset above.
+		// $wrong already has this final guess appended, so it carries every
+		// wrong call of the puzzle in the order they were made.
 		obscuraAnnounceRunEnd($conn, $user_id, $streak, $run_solves,
-			intval($run['best_streak']), $reveal, $name);
+			intval($run['best_streak']), $reveal, $name, $wrong);
 		return array('result'=>'failed', 'answer_id'=>$answer, 'answer_name'=>$name,
 		             'reveal'=>$reveal, 'streak'=>0, 'best'=>intval($run['best_streak']));
 	}
