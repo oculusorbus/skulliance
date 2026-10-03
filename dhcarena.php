@@ -976,6 +976,33 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-foe .paidtag{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;
   white-space:nowrap;color:var(--dim);border:1px solid var(--line);border-radius:2px;
   padding:2px 5px;flex:none}
+/*
+ * THE RIVAL LIST SCROLLED IN BOTH DIRECTIONS ON A PHONE.
+ *
+ * Vertically because .a-foes is a 330px window with overflow:auto -- a
+ * short scroller inside a page that already scrolls, which is the same
+ * trap the DHC trait grid had. Horizontally because each row is a flex
+ * line whose children refuse to shrink: .m and .paidtag are both
+ * white-space:nowrap, so the row's min-content width is the avatar plus
+ * the full "35 Fighters - best 2,176" plus the full "Beaten today - no
+ * trait". Past about 500px of content that exceeds the column, .n
+ * ellipsises away to nothing (which is why the names vanished) and
+ * overflow:auto turns the remainder into a sideways scroll.
+ *
+ * So on a phone: no window, and the row becomes a grid that stacks the
+ * three pieces beside the avatar instead of fighting for one line. The
+ * avatar spans the rows so the text block aligns under itself.
+ */
+@media (max-width:700px){
+  .arena-wrap .a-foes{max-height:none;overflow:visible}
+  .arena-wrap .a-foe{display:grid;grid-template-columns:28px minmax(0,1fr);
+    column-gap:10px;row-gap:2px;align-items:center}
+  .arena-wrap .a-foe img{grid-row:1 / span 2;align-self:start}
+  .arena-wrap .a-foe .n{grid-column:2;white-space:normal}
+  .arena-wrap .a-foe .m{grid-column:2;white-space:normal}
+  /* justify-self so the pill is its own width rather than the column's. */
+  .arena-wrap .a-foe .paidtag{grid-column:2;justify-self:start;white-space:normal}
+}
 .arena-wrap .a-go{margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 /* The platform's buttons, not the game's. .btn inside #arenaBattle keeps the
    monospace board styling; out here it should look like every other control on

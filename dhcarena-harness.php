@@ -220,3 +220,51 @@ $r2 = dhca_new_battle($mt,$ft,$names,$rarity,999); play($r2);
 $same = ($r1['over'] === $r2['over'] && $r1['round'] === $r2['round']
          && json_encode($r1['board']) === json_encode($r2['board']));
 echo "\ndeterminism: same seed replays identically -- " . ($same ? "yes" : "NO") . "\n";
+
+/* ---------------------------------------------------------------------------
+ * THE RIVAL LIST ON A PHONE.
+ *
+ * It scrolled in BOTH directions, and the two causes are different:
+ *
+ *   Vertically, .a-foes is a 330px window with overflow:auto -- a short
+ *   scroller inside a page that already scrolls, the same trap the DHC trait
+ *   grid had.
+ *
+ *   Horizontally, each row is a flex line whose children refuse to shrink:
+ *   .m and .paidtag are both white-space:nowrap, so the row's min-content
+ *   width is the avatar plus the whole of "35 Fighters - best 2,176" plus the
+ *   whole of "Beaten today - no trait". Over the column width, .n ellipsises
+ *   away to NOTHING and overflow:auto turns the rest into a sideways scroll.
+ *
+ * Measured at 390px, before: scrollHeight > clientHeight, scrollWidth 358 vs
+ * client 342, and four of eight usernames rendering 0px wide -- which is the
+ * screenshot, rows with no name on them. After: neither axis scrolls and all
+ * eight names are visible. Desktop keeps its 330px window.
+ * ------------------------------------------------------------------------- */
+$ar_src = file_get_contents(__DIR__ . '/dhcarena.php');
+$ar_css = preg_replace('!/\*.*?\*/!s', '', $ar_src);
+
+$ar_fail = 0;
+$arok = function ($cond, $what) use (&$ar_fail) {
+	if (!$cond) { $ar_fail++; echo "  FAIL  $what\n"; }
+};
+
+echo "\nthe rival list does not scroll inside itself on a phone\n";
+$arok(preg_match('/@media \(max-width:700px\)\{[\s\S]{0,900}?\.arena-wrap \.a-foes\{max-height:none;overflow:visible\}/', $ar_css) === 1,
+   'the rival list keeps its 330px window on a phone, so it is a short scroller inside a page that already scrolls');
+/* Desktop must keep it: the panel sits beside the board there and an
+   unbounded list would push everything else off the screen. */
+$arok(strpos($ar_css, '.arena-wrap .a-foes{display:flex;flex-direction:column;gap:5px;max-height:330px;overflow:auto}') !== false,
+   'the rival list lost its desktop window, which is what keeps the panel beside the board');
+
+echo "\nand a row cannot be wider than the column\n";
+$arok(preg_match('/@media \(max-width:700px\)\{[\s\S]{0,900}?\.arena-wrap \.a-foe\{display:grid/', $ar_css) === 1,
+   'the rival row is still one flex line on a phone, so nowrap children force it wider than the screen');
+foreach (array('.n', '.m', '.paidtag') as $part) {
+	$arok(preg_match('/@media \(max-width:700px\)\{[\s\S]{0,900}?\.arena-wrap \.a-foe \\' . $part . '\{[^}]*white-space:normal/', $ar_css) === 1,
+	   'the rival row\'s ' . $part . ' is still nowrap on a phone; it is what pushes the name out of view');
+}
+$arok(preg_match('/\.arena-wrap \.a-foe img\{grid-row:1 \/ span 2/', $ar_css) === 1,
+   'the avatar no longer spans the stacked rows, so the text does not align beside it');
+
+echo ($ar_fail ? "\n$ar_fail arena-layout check(s) FAILED\n" : "\nrival list layout: ok\n");
