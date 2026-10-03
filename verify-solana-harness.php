@@ -483,5 +483,44 @@ ok(preg_match('/\$gateways\s*=\s*\$is_url\s*\?\s*\[\s*\'\'\s*\]/', $csrc) === 1,
 ok(preg_match('/\$clean_ipfs\s*=\s*\$is_url\s*\?\s*\$ipfs\s*:\s*str_replace/', $csrc) === 1,
    'the "ipfs/" strip still runs on absolute URLs, which rewrites any path containing it');
 
+/* ---------------------------------------------------------------- *
+ * Where a Solana collection and a Solana wallet link to.
+ * ---------------------------------------------------------------- */
+echo "\nthe links on the Collections page\n";
+if (!defined('XRPL_CHAIN_ID')) define('XRPL_CHAIN_ID', 2);
+eval(lift($dsrc, 'function collectionMarketUrl(', 'collectionMarketUrl()'));
+eval(lift($dsrc, 'function accountExplorerUrl(',  'accountExplorerUrl()'));
+
+$OMEN_COLL = 'Fd5Sy7yPb5NyrsQYpTz1dvMNzwEJmH2pFxCV8BYpUjm2';
+ok(collectionMarketUrl($OMEN_COLL, SOLANA_CHAIN_ID) === 'https://www.tensor.trade/trade/' . $OMEN_COLL,
+   'a Solana collection does not link to its marketplace, so the Collections page shows it as plain text');
+/* The whole reason Solana needs no marketplace_slug: the identifier IS the
+   address. A slug is an override, not a requirement. */
+ok(collectionMarketUrl($OMEN_COLL, SOLANA_CHAIN_ID, null) !== '',
+   'a Solana collection with no marketplace_slug produces no link, which would make the column mandatory');
+ok(collectionMarketUrl($OMEN_COLL, SOLANA_CHAIN_ID, 'omen-named') === 'https://www.tensor.trade/trade/omen-named',
+   'a marketplace_slug does not override the address');
+/* base58 has no checksum, so a truncated address is still legal-looking.
+   A dead link reads as a broken platform; plain text reads as missing data. */
+ok(collectionMarketUrl(substr($OMEN_COLL, 0, 20), SOLANA_CHAIN_ID) === '',
+   'a too-short address still produced a marketplace link, which would 404');
+ok(collectionMarketUrl('not base58 !!', SOLANA_CHAIN_ID) === '', 'junk produced a marketplace link');
+ok(collectionMarketUrl('', SOLANA_CHAIN_ID) === '', 'an empty policy produced a marketplace link');
+/* The other two chains must be untouched by any of this. */
+ok(collectionMarketUrl(str_repeat('a', 56), 1) === 'https://www.wayup.io/collection/' . str_repeat('a', 56),
+   'the Cardano marketplace link changed');
+ok(collectionMarketUrl('rPdvC6ccq8hCdPKSPJkPmyZ4Mi1oG2FFkT:0', XRPL_CHAIN_ID, 'bootlegs')
+   === 'https://xrp.cafe/collection/bootlegs', 'the XRPL marketplace link changed');
+
+echo "\nand where a wallet address links to\n";
+ok(accountExplorerUrl($OWNER, SOLANA_CHAIN_ID) === 'https://solscan.io/account/' . $OWNER,
+   'a Solana address does not link to a Solana explorer');
+/* The default-to-Cardano branch is the trap: pool.pm given a Solana address
+   renders "not found", which reads as the platform losing somebody's wallet. */
+ok(strpos(accountExplorerUrl($OWNER, SOLANA_CHAIN_ID), 'pool.pm') === false,
+   'a Solana address is being sent to pool.pm');
+ok(accountExplorerUrl('stake1abc', 1) === 'https://pool.pm/stake1abc', 'the Cardano explorer link changed');
+ok(accountExplorerUrl('rAbc', XRPL_CHAIN_ID) === 'https://bithomp.com/en/explorer/rAbc', 'the XRPL explorer link changed');
+
 echo "\n" . ($fail ? "FAILED ($fail)\n" : "solana verifier: ok\n");
 exit($fail ? 1 : 0);

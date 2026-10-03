@@ -92,6 +92,7 @@ define('MERCH_ENCRYPT_CIPHER', 'AES-256-CBC');
    by every page, most of which never load the XRPL files, and an undefined
    constant is a fatal in PHP 8. All three guards, so any include order works. */
 if (!defined('XRPL_CHAIN_ID')) define('XRPL_CHAIN_ID', 2);
+if (!defined('SOLANA_CHAIN_ID')) define('SOLANA_CHAIN_ID', 3);
 
 // Gateway used for an NFT image that is not cached locally yet. See getIPFS().
 // Overridable in credentials/db_credentials.php.
@@ -3564,13 +3565,50 @@ function collectionMarketUrl($policy, $blockchain_id = 1, $slug = null) {
 			return 'https://xrp.cafe/profile/' . rawurlencode($issuer);
 		return '';
 	}
+	if ((int)$blockchain_id === SOLANA_CHAIN_ID) {
+		/*
+		 * NO SLUG IS NEEDED HERE, which is the difference from XRPL.
+		 *
+		 * marketplace_slug exists because an XRPL collection is
+		 * issuer:taxon and xrp.cafe's slug is an artist-chosen vanity
+		 * string with no derivation in either direction -- twenty-one
+		 * collections had to have theirs hunted by hand. A Solana
+		 * collection IS an address, and that address is what marketplaces
+		 * route by, so the link builds itself from the policy exactly as
+		 * the Cardano one does.
+		 *
+		 * Tensor, because /trade/ accepts EITHER the collection address or
+		 * a named slug, so one template covers both and a slug stays
+		 * meaningful as an override without inventing a second
+		 * marketplace. Verified against this collection: the address form
+		 * answers 200 and the page carries the collection's name.
+		 */
+		$slug = trim((string)$slug);
+		if ($slug !== '' && preg_match('/^[a-z0-9][a-z0-9._-]{0,63}$/i', $slug))
+			return 'https://www.tensor.trade/trade/' . rawurlencode($slug);
+		/* Validated by DECODING, not by a pattern: base58 has no checksum,
+		   so a truncated address is still legal-looking and would be a dead
+		   link -- and a dead link reads as a broken platform where plain
+		   text reads as missing data. */
+		if (function_exists('sol_base58_decode') && strlen(sol_base58_decode($policy)) === 32)
+			return 'https://www.tensor.trade/trade/' . rawurlencode($policy);
+		if (!function_exists('sol_base58_decode')
+		    && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $policy))
+			return 'https://www.tensor.trade/trade/' . rawurlencode($policy);
+		return '';
+	}
 	/* Cardano: 56 hex characters, or nothing. */
 	return preg_match('/^[0-9a-f]{56}$/i', $policy)
 		? 'https://www.wayup.io/collection/' . $policy : '';
 }
 
 function accountExplorerUrl($address, $blockchain_id = 1) {
-	return ((int)$blockchain_id === 2)
+	/* A chain each, and no silent default to Cardano: pool.pm given a
+	   Solana address renders a "not found" page, which reads as the
+	   platform having lost somebody's wallet rather than as a wrong link. */
+	if ((int)$blockchain_id === SOLANA_CHAIN_ID)
+		return 'https://solscan.io/account/' . rawurlencode($address);
+	return ((int)$blockchain_id === XRPL_CHAIN_ID)
 		? 'https://bithomp.com/en/explorer/' . rawurlencode($address)
 		: 'https://pool.pm/' . rawurlencode($address);
 }

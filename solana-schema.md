@@ -99,6 +99,14 @@ already belongs to — not a new one. That is the placement decision in
 chain, and splitting the artist by chain grows a special case in every
 project-level feature for ever after.
 
+**Leave `marketplace_slug` NULL.** It exists for XRPL, where a collection is
+`issuer:taxon` and xrp.cafe's slug is an artist-chosen vanity string with no
+derivation in either direction — twenty-one of those had to be hunted by hand
+after the fact. A Solana collection *is* an address, and that address is what
+marketplaces route by, so `collectionMarketUrl()` builds the link from the
+policy exactly as it does for Cardano. Setting a slug is an override, not a
+requirement: Tensor's `/trade/` accepts either form.
+
 **`rate` is a judgement, and it is the only number here that can cost
 money.** The OMEN collection on Solana is **7,209 assets**. Every one of them
 earns this rate every day from the night it is registered, and a good share
