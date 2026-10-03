@@ -445,6 +445,28 @@ function obscuraWeeklyLeaderUserId($conn) {
 }
 
 /*
+ * One offered option, written the way the player saw it on the button.
+ *
+ * The buttons show the PROJECT above the COLLECTION (see obscura.php's
+ * .ob-opt-project, and the same pair rebuilt in its JS), for the reason
+ * obscuraPickPuzzle() gives: a collection name on its own is frequently
+ * useless -- "Season 1" identifies nothing -- and several projects run
+ * collections with similar names. A post that names only the collection
+ * makes the reader do that disambiguation themselves.
+ *
+ * THE PROJECT IS DROPPED WHEN IT REPEATS THE COLLECTION. Plenty of projects
+ * here have a single collection carrying the project's own name, and
+ * "Sinder Skullz (Sinder Skullz)" reads as a bug rather than as detail.
+ */
+function obscuraOptionLabel($opt) {
+	$name = trim((string)($opt['name'] ?? ''));
+	$proj = trim((string)($opt['project'] ?? ''));
+	if ($name === '') return '';
+	if ($proj === '' || strcasecmp($proj, $name) === 0) return $name;
+	return $name . ' (' . $proj . ')';
+}
+
+/*
  * A run ended -- announce it, with the artwork that beat them and the name
  * they put to it.
  *
@@ -460,7 +482,7 @@ function obscuraWeeklyLeaderUserId($conn) {
  */
 define('OBSCURA_ANNOUNCE_MIN_STREAK', 3);
 
-function obscuraAnnounceRunEnd($conn, $user_id, $streak, $solves, $best_streak, $reveal, $collection_name, $wrong = array()) {
+function obscuraAnnounceRunEnd($conn, $user_id, $streak, $solves, $best_streak, $reveal, $collection_name, $puzzle = array()) {
 	if (intval($streak) < OBSCURA_ANNOUNCE_MIN_STREAK) return;
 	// webhooks.php may not be loaded by whatever included us. A missing Discord
 	// post is cosmetic; a fatal here would break the guess response itself and
@@ -495,20 +517,35 @@ function obscuraAnnounceRunEnd($conn, $user_id, $streak, $solves, $best_streak, 
 	 * nothing like it reads very differently from one mistaken for its
 	 * nearest neighbour, and that is the part worth seeing in the channel.
 	 *
-	 * Ids resolved in ONE query and then walked in GUESS ORDER, not in the
-	 * order the rows come back -- the sequence is the story (the last name is
-	 * the guess that actually ended the run) and IN (...) makes no promise
-	 * about ordering. A collection that has since been deleted drops out
-	 * rather than printing a blank or a bare id.
+	 * NAMES COME FROM THE PUZZLE'S OWN OPTIONS, NOT FROM A LOOKUP. The run row
+	 * already stores every button that was offered, with its project, which is
+	 * (a) exactly the wording the player tapped, so a collection renamed later
+	 * cannot make the post describe a choice nobody was shown, (b) the project
+	 * as well as the collection, which is the whole reason the buttons carry
+	 * it, and (c) no query at all on the path of a lost run.
+	 *
+	 * Walked in GUESS ORDER, not in options order -- the options are shuffled
+	 * before they are stored, and the sequence is the story here: the last
+	 * name is the guess that actually ended the run.
 	 */
-	$guessed = array();
-	$gids = array_values(array_unique(array_filter(array_map('intval', (array)$wrong))));
-	if ($gids) {
-		$gr = $conn->query("SELECT id, name FROM collections WHERE id IN (" . implode(',', $gids) . ")");
-		$gnames = array();
-		if ($gr) while ($g = $gr->fetch_assoc()) $gnames[intval($g['id'])] = trim((string)$g['name']);
-		foreach ($gids as $gid) if (!empty($gnames[$gid])) $guessed[] = $gnames[$gid];
+	$puzzle = is_array($puzzle) ? $puzzle : array();
+	$opts   = (isset($puzzle['options']) && is_array($puzzle['options'])) ? $puzzle['options'] : array();
+	$labels = array();
+	foreach ($opts as $o) {
+		if (!is_array($o)) continue;
+		$oid = intval($o['id'] ?? 0);
+		if ($oid > 0) $labels[$oid] = obscuraOptionLabel($o);
 	}
+	$guessed = array();
+	$gids = array_values(array_unique(array_filter(array_map('intval', (array)($puzzle['wrong'] ?? array())))));
+	foreach ($gids as $gid) if (!empty($labels[$gid])) $guessed[] = $labels[$gid];
+
+	/* The answer gets the same treatment, so the two lines are comparable at a
+	   glance -- naming the project on one and not the other is worse than
+	   naming it on neither. $collection_name is the fallback for a run row
+	   stored before the options carried a project. */
+	$aid = intval($puzzle['answer_id'] ?? 0);
+	$answer_label = ($aid > 0 && !empty($labels[$aid])) ? $labels[$aid] : $collection_name;
 	// "then" rather than an arrow or a numbered list: it carries the order in
 	// a line that still reads as a sentence at any of the lengths this can be
 	// (three at the easy tiers, one at the top, where a single attempt means
@@ -522,7 +559,7 @@ function obscuraAnnounceRunEnd($conn, $user_id, $streak, $solves, $best_streak, 
 	       . "🔍 **Stumped by:** " . ($piece !== '' ? $piece : 'an unnamed piece') . "\n"
 	       // "It was", not "Collection": there are two collection names on this
 	       // post now and the label has to say which one is the answer.
-	       . "🗂️ **It was:** " . $collection_name . "\n"
+	       . "🗂️ **It was:** " . $answer_label . "\n"
 	       . $guess_line
 	       . "✅ **Solved this run:** " . number_format($solves)
 	       . $badge_text;
@@ -613,7 +650,10 @@ function obscuraGuess($conn, $user_id, $collection_id) {
 
 	// Only options actually offered can be guessed, and only once each --
 	// otherwise a client could burn attempts or replay a known-wrong answer.
-	$offered = array_column(json_decode($run['options'], true) ?: array(), 'id');
+	// Decoded once and kept: the ids gate the guess, and the whole list is
+	// what the run-end post labels the guesses from.
+	$offered_opts = json_decode($run['options'], true) ?: array();
+	$offered = array_column($offered_opts, 'id');
 	if (!in_array($guess, $offered, true) || in_array($guess, $wrong, true)) {
 		return array('error' => 'bad_guess');
 	}
@@ -654,9 +694,11 @@ function obscuraGuess($conn, $user_id, $collection_id) {
 		$run_solves = obscuraCloseRun($conn, $user_id);
 		// $streak is this run's peak, read before the reset above.
 		// $wrong already has this final guess appended, so it carries every
-		// wrong call of the puzzle in the order they were made.
+		// wrong call of the puzzle in the order they were made. The options go
+		// with it because they hold the project alongside each collection.
 		obscuraAnnounceRunEnd($conn, $user_id, $streak, $run_solves,
-			intval($run['best_streak']), $reveal, $name, $wrong);
+			intval($run['best_streak']), $reveal, $name,
+			array('wrong' => $wrong, 'options' => $offered_opts, 'answer_id' => $answer));
 		return array('result'=>'failed', 'answer_id'=>$answer, 'answer_name'=>$name,
 		             'reveal'=>$reveal, 'streak'=>0, 'best'=>intval($run['best_streak']));
 	}

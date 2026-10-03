@@ -68,9 +68,10 @@ the answer.
 A run that got somewhere is posted to the Obscura channel on Discord, with the
 artwork that finally beat you attached. The post names the piece, the collection
 it actually came from, and the collection or collections you called it instead -
-the picture is sitting right there, so how far off the guess was is half the fun
-of reading it. If the run ended on your best streak yet, or you are top of the
-week, the post says so.
+each written the way the buttons were, with its project, so a set is as easy to
+place in the channel as it was on the board. The picture is sitting right there,
+so how far off the guess was is half the fun of reading it. If the run ended on
+your best streak yet, or you are top of the week, the post says so.
 
 Short runs are left alone. Losing the first puzzle of a fresh run is routine and
 does not go in the channel.

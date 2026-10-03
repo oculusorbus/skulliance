@@ -1474,15 +1474,35 @@ The post also names THE WRONG GUESSES, in the order they were made, because the
 artwork is attached and how far off the call was is only readable with the wrong
 name next to the right one. `obscuraGuess()` hands `$wrong` over AFTER appending
 the final guess, so the list includes the one that actually ended the run -
-swapping those two statements silently drops the most interesting name. The ids
-are resolved in ONE `IN (...)` query and then walked in GUESS ORDER, not in the
-order the rows come back: MySQL makes no promise there, and the sequence is the
-story. A collection deleted since the guess drops out rather than printing a
-blank or a bare id. The answer's label changed from "Collection:" to "It was:"
-at the same time - there are two collection names on the post now and the old
-label did not say which was which. `obscura-announce-harness.php` covers all of
-it with no database (its fake connection returns the name rows REVERSED on
-purpose) and pins the call site as well as the function.
+swapping those two statements silently drops the most interesting name.
+
+EACH GUESS IS LABELLED `Collection (Project)` BY `obscuraOptionLabel()`, the same
+pairing the game's own buttons show (`.ob-opt-project` sits above the collection
+in `obscura.php` and in its JS re-render) and for the reason
+`obscuraPickPuzzle()` gives: a collection name alone identifies nothing ("Season
+1") and several projects run collections with similar names. The project is
+DROPPED when it only repeats the collection, case-insensitively - plenty of
+projects here have one collection carrying the project's own name, and "Sinder
+Skullz (Sinder Skullz)" reads as a bug. The answer line gets the identical
+treatment, because naming the project on one line and not the other is worse
+than naming it on neither.
+
+THE LABELS COME FROM THE RUN ROW'S OWN STORED OPTIONS, NOT FROM A LOOKUP. The
+announce takes a `$puzzle` array (`wrong`, `options`, `answer_id`) and reads the
+same `json_decode($run['options'])` that gated the guess - that is exactly the
+wording the player tapped, carries the project already, and costs no query on
+the path of a lost run. Going back to `collections` would also let a rename
+between the guess and the post describe a choice nobody was offered. The list is
+walked in GUESS order, never options order: `obscuraSetPuzzle()` stores them
+`shuffle()`d. The answer's label falls back to the passed `$collection_name` for
+a run row stored before options carried a project.
+
+The answer's label also changed from "Collection:" to "It was:" - there are
+several collection names on the post now and the old label did not say which was
+which. `obscura-announce-harness.php` covers all of it with no database or
+network (its fixture stores the options in a different order from the guesses,
+and its fake connection fails the test if `collections` is queried at all) and
+pins the call site as well as the function.
 
 The reveal caption also links the collection to **Wayup**
 (`https://www.wayup.io/collection/<policy>`), reusing `getPoliciesListing()`'s
