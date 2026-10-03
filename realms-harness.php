@@ -1008,8 +1008,12 @@ ok(strpos($raids, "include 'db.php'") === false && strpos($raids, "include 'head
 ok(strpos($raids, '302') !== false,
    'the redirect is permanent; 301 is cached forever and hard to undo if the page comes back');
 $cfg = file_get_contents(__DIR__ . '/dhcfighters-config.php');
-ok(strpos($cfg, "'url' => 'realms.php#raids'") !== false,
-   'the DHC trait-drop list points at raids.php again');
+/* The plain page, not a section hash: someone arriving to go raiding wants
+   the Realms page, and Locations is where a raid starts. */
+ok(strpos($cfg, "'url' => 'realms.php',") !== false,
+   'the DHC trait-drop list points somewhere other than the Realms page');
+ok(strpos($cfg, "'url' => 'raids.php'") === false,
+   'the DHC trait-drop list points at the redirect page again');
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);

@@ -47,9 +47,11 @@ if (!defined('DHCM_RENDERED')) {
    window scrolls the trait list rather than the character. */
 /* 100% not 90vh: vh ignores the veil's padding, so the panel could still
    grow back up into the inset the padding just cleared. */
+/* position:relative so the close control anchors to the PANEL. Without it
+   the nearest positioned ancestor was #dhcg-veil -- see that rule. */
 #dhcg-panel{width:min(1180px,100%);max-height:100%;overflow:auto;background:var(--panel,#0a1929);
   border:1px solid var(--line,#1b3346);border-radius:4px;display:grid;
-  grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+  grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);position:relative}
 @media (max-width:760px){#dhcg-panel{grid-template-columns:1fr}}
 #dhcg-panel .big{position:relative;aspect-ratio:1;max-height:100%;background:var(--panel2,#0d1e2e)}
 #dhcg-panel .big img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
@@ -58,10 +60,38 @@ if (!defined('DHCM_RENDERED')) {
    sat above it, so the Collection kept its styling and the assembler got a
    bare browser <button> -- white, rounded, system font, in the middle of a
    dark panel. Nothing warns about a rule that only one of two callers has. */
-#dhcg-close{position:absolute;right:14px;top:12px;background:none;border:1px solid var(--line,#1b3346);
+/*
+ * IT WAS ANCHORED TO THE SCREEN, NOT THE PANEL. Nothing between it and
+ * #dhcg-veil was positioned, so `top:12px` meant twelve pixels from the top
+ * of the VIEWPORT -- and the veil's own padding reserves
+ * env(safe-area-inset-top) but an absolutely positioned child ignores
+ * padding. In the installed PWA on a notched phone that put the only close
+ * control underneath the status bar, where it cannot be tapped. The
+ * reported symptom was having to hit the very edge of the screen to
+ * dismiss: that is the veil's click-to-close, which is all that was left.
+ *
+ * Anchored to the panel now, and on a phone pinned to the viewport clear of
+ * the inset so it stays reachable however far the panel is scrolled -- the
+ * panel scrolls internally, so an absolute child scrolls away with the art.
+ *
+ * 44px minimum: a 23px-tall control is below every touch-target guideline
+ * there is, and this is the one control the modal cannot do without.
+ */
+#dhcg-close{position:absolute;right:10px;top:10px;z-index:3;
+  background:var(--panel,#0a1929);border:1px solid var(--line,#1b3346);
   color:var(--dim,#7a9eb0);font:inherit;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  padding:5px 10px;border-radius:2px;cursor:pointer}
+  padding:5px 12px;min-height:34px;border-radius:2px;cursor:pointer}
 #dhcg-close:hover{border-color:var(--ochre,#00c8a0);color:var(--ochre,#00c8a0)}
+@media (max-width:760px){
+  /* Fixed to the viewport, below the notch, above everything. The panel is
+     nearly the whole screen at this width, so there is barely any veil left
+     to tap -- this has to be the way out, not the fallback. */
+  #dhcg-close{position:fixed;
+    top:calc(env(safe-area-inset-top,0px) + 10px);
+    right:calc(env(safe-area-inset-right,0px) + 10px);
+    min-height:44px;min-width:64px;padding:5px 14px;
+    background:var(--ochre,#00c8a0);border-color:var(--ochre,#00c8a0);color:var(--ink,#07111d)}
+}
 #dhcg-info{padding:18px 20px}
 #dhcg-info h2{margin:0 0 2px;font-size:20px}
 #dhcg-info .by{font-size:11px;opacity:.65;display:flex;align-items:center;gap:6px;margin:0 0 14px}

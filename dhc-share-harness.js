@@ -277,6 +277,38 @@ console.log('\nthe panel is shared, not copied');
 	   'an edit no longer sheds ?edit= when the panel closes, so a reload reopens the editor');
 }
 
+console.log('\nthe panel can be closed on a phone\n');
+{
+	const m = strip(gallery);
+	/*
+	 * THE CLOSE CONTROL WAS ANCHORED TO THE SCREEN, NOT THE PANEL. Nothing
+	 * between it and #dhcg-veil was positioned, so `top:12px` meant twelve
+	 * pixels from the top of the VIEWPORT -- and the veil's padding reserves
+	 * env(safe-area-inset-top) while an absolutely positioned child ignores
+	 * padding. On a notched phone in the installed app that put the only
+	 * close control under the status bar. The reported symptom was having to
+	 * tap the very edge of the screen, which is the veil's click-to-close:
+	 * all that was left.
+	 *
+	 * Measured after: 390px -> fixed, 65x44, in the viewport, unmoved when
+	 * the panel is scrolled to the bottom, and elementFromPoint at its
+	 * centre returns the button. 1200px -> absolute, anchored to
+	 * #dhcg-panel, in the panel's own corner.
+	 */
+	ok(/#dhcg-panel\{[^}]*position:relative/.test(m),
+	   'the panel is not positioned, so the close control anchors to the viewport again');
+	ok(/@media \(max-width:760px\)\{[\s\S]{0,400}?#dhcg-close\{position:fixed/.test(m),
+	   'the close control scrolls away with the panel on a phone');
+	ok(/top:calc\(env\(safe-area-inset-top,0px\) \+ 10px\)/.test(m),
+	   'the close control ignores the safe-area inset, so it sits under the notch');
+	ok(/min-height:44px/.test(m),
+	   'the close control is below the minimum touch target on a phone');
+	/* The veil tap must survive as a second way out, not the only one. */
+	ok(/veil\.addEventListener\('click'[\s\S]{0,120}?close\(\)/.test(m),
+	   'tapping outside the panel no longer closes it');
+	ok(/e\.key === 'Escape'/.test(m), 'Escape no longer closes the panel');
+}
+
 console.log('\none typeface across every DHC surface\n');
 {
 	/*
