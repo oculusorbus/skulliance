@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS blockchains (
 	name          VARCHAR(64)  NOT NULL,          -- 'Cardano', 'XRP Ledger'
 	api_base      VARCHAR(255) DEFAULT NULL,      -- the node/indexer this chain verifies against
 	explorer_nft  VARCHAR(255) DEFAULT NULL,      -- printf template for one NFT's page
-	address_re    VARCHAR(255) DEFAULT NULL,      -- validation pattern for an address
+	ipfs_gateway  VARCHAR(255) DEFAULT NULL,      -- how ipfs:// is resolved for this chain
 	active        TINYINT(1)   NOT NULL DEFAULT 1,
 	INDEX idx_active (active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -154,8 +154,21 @@ INSERT INTO blockchains (id, slug, name) VALUES
 	(2, 'xrpl',    'XRP Ledger');
 ```
 
+> **This block is the DESIGN SKETCH. `multichain-schema.md` is the migration
+> that was actually run, and it is the authority.** An earlier draft here
+> carried an `address_re` column that was never created and omitted
+> `ipfs_gateway`, which was — and that divergence cost a `#1054 Unknown
+> column` on the first attempt to add Solana. `getChainSetting()`'s whitelist
+> (`api_base`, `explorer_nft`, `ipfs_gateway`) is the other honest record of
+> what exists. If the two files ever disagree again, believe the migration.
+>
+> An address pattern is deliberately NOT a column. Validation is code:
+> `sol_valid_address()` DECODES the address and requires exactly 32 bytes,
+> because a 44-character string of legal base58 characters can still decode
+> to 33 and a regex cannot see that.
+
 **What the table is for, and what it is not for.** It holds a chain's
-*configuration* — endpoints, URL templates, validation patterns. It does not
+*configuration* — endpoints and URL templates. It does not
 hold behaviour. The per-chain verifier stays code (§5). A table that tries to
 express "how to read metadata on this chain" will be worse than a switch
 statement and much harder to debug.

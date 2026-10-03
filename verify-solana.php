@@ -360,13 +360,21 @@ function sol_storable_image($img) {
  * An https URI is itself and nothing else — racing gateways for it would be
  * nonsense. An ipfs:// URI becomes one candidate per gateway.
  */
-function sol_metadata_urls($uri) {
+function sol_metadata_urls($uri, $preferred = '') {
 	$uri = sol_normalise_image($uri);
 	if ($uri === '') return array();
 	if (strpos($uri, 'ipfs://') === 0) {
 		$cid = substr($uri, 7);
+		/* The chain's own blockchains.ipfs_gateway goes FIRST, then the
+		   built-in list as fallback. That is the entire reason the setting is
+		   a column rather than a constant: a gateway going bad is a config
+		   change, not a deploy. De-duplicated, so naming one that is already
+		   in the list costs a wasted round rather than two. */
+		$list = sol_gateways();
+		$preferred = trim((string)$preferred);
+		if ($preferred !== '') array_unshift($list, $preferred);
 		$out = array();
-		foreach (sol_gateways() as $g) $out[] = $g . $cid;
+		foreach (array_unique($list) as $g) $out[] = $g . $cid;
 		return $out;
 	}
 	if (preg_match('~^https?://~i', $uri)) return array($uri);
@@ -477,18 +485,19 @@ function sol_fetch_many($urls, $fetch, $fetch_many = null) {
  * whatever round one could not answer. For an https collection there is only
  * ever one round. Keyed by position so the caller can zip it back.
  */
-function sol_resolve_many($assets, $fetch, $fetch_many = null, $deadline = 0) {
-	$out = array(); $cands = array();
+function sol_resolve_many($assets, $fetch, $fetch_many = null, $deadline = 0, $gateway = '') {
+	$out = array(); $cands = array(); $most = 0;
 	foreach ($assets as $i => $a) {
 		$out[$i] = array('name' => $a['name'], 'image' => '');
-		$c = sol_metadata_urls($a['uri']);
-		if ($c) $cands[$i] = $c;
+		$c = sol_metadata_urls($a['uri'], $gateway);
+		if ($c) { $cands[$i] = $c; $most = max($most, count($c)); }
 	}
 	if (!$cands) return $out;
 
-	$rounds = 0;
-	foreach (sol_gateways() as $_unused) { $rounds++; }   // never more rounds than gateways
-	for ($r = 0; $r < max(1, $rounds); $r++) {
+	/* As many rounds as the longest candidate list, not a fixed count: with a
+	   preferred gateway prepended there is one more than sol_gateways() has,
+	   and hard-coding that length would silently never try the last one. */
+	for ($r = 0; $r < max(1, $most); $r++) {
 		if ($deadline && time() > $deadline) break;
 		$batch = array();
 		foreach ($cands as $i => $list) if (isset($list[$r])) $batch[$i] = $list[$r];
@@ -581,6 +590,7 @@ function sol_verify_user($conn, $user_id, $budget = 45) {
 			getNFTAssetIDs($conn, SOLANA_CHAIN_ID), array(), array(
 				'api_base' => getChainSetting($conn, SOLANA_CHAIN_ID, 'api_base',
 				                              'https://api.mainnet-beta.solana.com'),
+				'gateway'  => getChainSetting($conn, SOLANA_CHAIN_ID, 'ipfs_gateway', ''),
 				/* Short: somebody is watching a spinner. If the cluster is slow
 				   the nightly pass picks it up, which beats a hung request. */
 				'deadline' => time() + (int)$budget,
@@ -627,6 +637,7 @@ function sol_nightly($conn, $budget = 600) {
 			getNFTAssetIDs($conn, SOLANA_CHAIN_ID), array(), array(
 				'api_base' => getChainSetting($conn, SOLANA_CHAIN_ID, 'api_base',
 				                              'https://api.mainnet-beta.solana.com'),
+				'gateway'  => getChainSetting($conn, SOLANA_CHAIN_ID, 'ipfs_gateway', ''),
 				'deadline' => time() + (int)$budget,
 				'clear'    => function() use ($conn) { removeUsers($conn, SOLANA_CHAIN_ID); },
 			));
@@ -667,6 +678,8 @@ function sol_nightly($conn, $budget = 600) {
 function verifyNFTsSolana($conn, $addresses, $collections, $asset_ids,
                           $nft_owners = array(), $opt = array()) {
 	$api      = isset($opt['api_base']) ? $opt['api_base'] : 'https://api.mainnet-beta.solana.com';
+	/* Only used by a collection whose metadata is on IPFS. OMEN's is not;
+	   a later one's might be. */
 	$fetch    = isset($opt['fetch'])    ? $opt['fetch']    : 'sol_http';
 	$clear    = isset($opt['clear'])    ? $opt['clear']    : null;
 	$deadline = isset($opt['deadline']) ? (int)$opt['deadline'] : 0;
@@ -747,7 +760,8 @@ function verifyNFTsSolana($conn, $addresses, $collections, $asset_ids,
 	foreach ($queue as $i => $q) if ($q['need']) $wanted[$i] = $q['asset'];
 	$metas = $wanted
 		? sol_resolve_many($wanted, $fetch,
-			isset($opt['fetch_many']) ? $opt['fetch_many'] : null, $deadline)
+			isset($opt['fetch_many']) ? $opt['fetch_many'] : null, $deadline,
+			isset($opt['gateway']) ? $opt['gateway'] : '')
 		: array();
 
 	$wrote = 0; $repaired = 0;

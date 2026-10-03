@@ -258,6 +258,20 @@ ok(sol_metadata_urls('https://omenati.com/art/01998.json') === array('https://om
 ok(count(sol_metadata_urls('ipfs://' . $CID)) === count(sol_gateways()),
    'an ipfs metadata URI did not produce one candidate per gateway');
 ok(sol_metadata_urls('') === array(), 'an empty URI produced candidates');
+/* blockchains.ipfs_gateway is a COLUMN so a bad gateway is a config change
+   rather than a deploy -- which is only true if it is actually tried first. */
+$pref = sol_metadata_urls('ipfs://' . $CID, 'https://my.gateway/ipfs/');
+ok($pref[0] === 'https://my.gateway/ipfs/' . $CID,
+   "the chain's own ipfs_gateway is not tried first, so setting the column does nothing");
+ok(count($pref) === count(sol_gateways()) + 1,
+   'the built-in gateways were dropped when a preferred one was given; it must be a head start, not a replacement');
+/* Naming one already in the list must not make it two rounds of the same
+   request. */
+$dup = sol_metadata_urls('ipfs://' . $CID, sol_gateways()[0]);
+ok(count($dup) === count(sol_gateways()), 'a preferred gateway already in the list was tried twice');
+ok(sol_metadata_urls('https://omenati.com/a.json', 'https://my.gateway/ipfs/')
+   === array('https://omenati.com/a.json'),
+   'a preferred gateway was applied to an https URI, which is not a CID to hang off anything');
 
 echo "\nreading a metadata document\n";
 $asset = array('name' => 'OMEN #1998', 'uri' => 'https://omenati.com/art/01998.json',
@@ -290,6 +304,15 @@ $dead_first = function ($urls) use (&$ROUNDS, $CID) {
 $res = sol_resolve_many(array($ipfs_asset), 'stub_fetch', $dead_first);
 ok($res[0]['image'] === 'ipfs://' . $CID, 'a dead first gateway was not retried on the next one');
 ok($ROUNDS === 2, "a dead gateway cost $ROUNDS rounds, not 2");
+/* EVERY candidate must get a round. With a preferred gateway prepended there
+   is one more than sol_gateways() has, and a round count hard-coded to the
+   built-in list would never try the last one -- the failure being that the
+   final fallback silently does not exist. */
+$ROUNDS = 0;
+$all_dead = function ($urls) use (&$ROUNDS) { $ROUNDS++; $o = array(); foreach ($urls as $k => $u) $o[$k] = ''; return $o; };
+sol_resolve_many(array($ipfs_asset), 'stub_fetch', $all_dead, 0, 'https://my.gateway/ipfs/');
+ok($ROUNDS === count(sol_gateways()) + 1,
+   "every gateway was not tried: $ROUNDS rounds for " . (count(sol_gateways()) + 1) . ' candidates');
 $ROUNDS = 0;
 $https_asset = array('name' => 'N2', 'uri' => 'https://omenati.com/art/1.json', 'collection' => 'C', 'owner' => 'O', 'id' => 'A2');
 $count_rounds = function ($urls) use (&$ROUNDS) {
@@ -345,6 +368,40 @@ ok($w['fingerprint'] === 'AAA' && $w['asset_name'] === 'AAA', 'the asset id is n
 ok($w['name'] === 'OMEN #1998', 'the on-chain name did not reach the row');
 ok($w['image'] === 'https://omenati.com/art/01998.jpg', 'the image did not reach the row');
 ok($w['address'] === $OWNER, 'the holder address did not reach the row');
+
+echo "\nand the chain's gateway setting reaches the fetch\n";
+/* Build a Core account by hand so the uri can be ipfs:// -- the real fixture
+   is OMEN, which is https and therefore never exercises the gateway at all.
+   Same layout sol_parse_asset() reads: key, owner, UA kind, UA pubkey,
+   then two length-prefixed strings. */
+function mkasset($owner, $collection, $name, $uri) {
+	$d  = "\x01" . sol_base58_decode($owner) . "\x02" . sol_base58_decode($collection);
+	$d .= pack('V', strlen($name)) . $name;
+	$d .= pack('V', strlen($uri))  . $uri;
+	$d .= str_repeat("\x00", 8);
+	return base64_encode($d);
+}
+$OMEN_C  = 'Fd5Sy7yPb5NyrsQYpTz1dvMNzwEJmH2pFxCV8BYpUjm2';
+$ipfs_b64 = mkasset($OWNER, $OMEN_C, 'IPFS #1', 'ipfs://' . $CID);
+/* Prove the hand-built account is really readable before trusting it. */
+$chk = sol_parse_asset($ipfs_b64);
+ok(is_array($chk) && $chk['uri'] === 'ipfs://' . $CID && $chk['owner'] === $OWNER,
+   'the hand-built Core account does not parse, so the test below proves nothing');
+
+$ASKED_URLS = array();
+$grab = function ($urls) use (&$ASKED_URLS) {
+	foreach ($urls as $u) $ASKED_URLS[] = $u;
+	$o = array(); foreach ($urls as $k => $u) $o[$k] = '';   // all fail, so every round runs
+	return $o;
+};
+$ipfs_node = function ($url, $post) use ($ipfs_b64) { return rpc_ok(array(acct('IPFSA', $ipfs_b64))); };
+verifyNFTsSolana($conn, array($OWNER), array($OMEN_C => 99), array(), array(), array(
+	'fetch' => $ipfs_node, 'fetch_many' => $grab, 'clear' => function () {},
+	'gateway' => 'https://my.gateway/ipfs/',
+));
+ok(!empty($ASKED_URLS) && $ASKED_URLS[0] === 'https://my.gateway/ipfs/' . $CID,
+   "the pass did not try the chain's configured ipfs_gateway first; it asked "
+ . (empty($ASKED_URLS) ? 'nothing' : $ASKED_URLS[0]));
 
 echo "\nand leaves other collections alone\n";
 $WROTE = array();

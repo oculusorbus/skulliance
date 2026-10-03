@@ -17,13 +17,20 @@ defaults, which happen to be correct, so the pass would *work* — and then
 page would have no explorer link. Add the row.
 
 ```sql
-INSERT INTO blockchains (id, slug, name, api_base, explorer_nft, address_re, active)
+INSERT INTO blockchains (id, slug, name, api_base, explorer_nft, ipfs_gateway, active)
 VALUES (3, 'solana', 'Solana',
         'https://api.mainnet-beta.solana.com',
         'https://solscan.io/token/%s',
-        '^[1-9A-HJ-NP-Za-km-z]{32,44}$',
+        'https://ipfs.io/ipfs/',
         1);
 ```
+
+> The columns are `api_base`, `explorer_nft`, `ipfs_gateway`, `active` —
+> **taken from `multichain-schema.md`, the migration that was actually run**,
+> not from `multichain.md` §3a, whose sketch carried an `address_re` that was
+> never created. Getting that wrong is a `#1054 Unknown column` and it
+> happened on the first attempt. `getChainSetting()` whitelists exactly those
+> three settings, which is the other place to check.
 
 `api_base` is the **public cluster**, which answers unauthenticated and is
 what every measurement in `multichain.md` was taken against. It is also rate
@@ -32,10 +39,16 @@ If Omen's holders arrive in numbers, swap this one column for a provider
 endpoint (Helius has a free tier that serves `getProgramAccounts`) — no code
 changes, because nothing hard-codes it.
 
-`address_re` is **documentation, not the check**. `sol_valid_address()`
-decodes the address and requires exactly 32 bytes, because a 44-character
-string of legal base58 characters can still decode to 33 and the regex cannot
-see that.
+**There is no address-pattern column, by design.** Validation is code:
+`sol_valid_address()` decodes the address and requires exactly 32 bytes,
+because a 44-character string of legal base58 characters can still decode to
+33 and a regex cannot see that.
+
+`ipfs_gateway` is **unused by OMEN**, which serves its art and metadata over
+plain https. It is set anyway because it is what chains 1 and 2 carry, and
+because a later Solana collection that does use IPFS gets this gateway tried
+FIRST, ahead of the built-in list — which is the whole point of the column
+being a column.
 
 ---
 
