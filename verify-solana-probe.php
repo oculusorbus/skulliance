@@ -173,6 +173,36 @@ if (!$got['ok']) {
 	exit(1);
 }
 if (!$got['list']) {
+	/*
+	 * NO ACCOUNT *AND* NOTHING HELD IS THE SIGNATURE OF A MISTYPED ADDRESS,
+	 * and it has to be called out, because the honest answer ("holds no Core
+	 * assets") is true of a wrong address and tells you nothing.
+	 *
+	 * SOLANA ADDRESSES CARRY NO CHECKSUM. Cardano's bech32 and XRPL's base58
+	 * both embed one, so a dropped character is rejected outright. Here it
+	 * is not: dropping the last character of the OMEN collection leaves 43
+	 * base58 characters that still decode to exactly 32 bytes -- a perfectly
+	 * valid address for an account that does not exist. That is a real
+	 * truncated paste, not a hypothetical, and it produced this exact
+	 * message.
+	 *
+	 * "No account" on its own is NOT the signal: a wallet that has never
+	 * held SOL has no account either, and can still hold Core assets. It is
+	 * the combination that means nobody is home.
+	 */
+	if ($acct === null) {
+		printf("Nothing at that address: no account, and no Metaplex Core assets.\n\n");
+		printf("  you gave  : %s  (%d characters)\n\n", $arg, strlen($arg));
+		echo "CHECK THE ADDRESS FIRST. Solana addresses have no checksum, so a\n"
+		   . "truncated or mistyped one is still a VALID address -- just somebody\n"
+		   . "else's, or nobody's. A dropped character cannot be detected here, and\n"
+		   . "a 43-character paste decodes to a perfectly good 32-byte key.\n";
+		if (strlen($arg) < 44)
+			echo "\nYours is shorter than the usual 44 characters, which is what a\n"
+			   . "truncated copy looks like. Re-copy the whole thing.\n";
+		echo "\nIf the address IS right, then it is an empty or unfunded wallet.\n";
+		exit(1);
+	}
 	echo "That wallet holds no Metaplex Core assets.\n\n"
 	   . "If they can see NFTs in their wallet app, those are on a different\n"
 	   . "standard — Token Metadata or compressed — which this platform does not\n"
