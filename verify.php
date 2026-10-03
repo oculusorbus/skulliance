@@ -10,6 +10,98 @@ if(isset($argv)){
 	parse_str(implode('&', array_slice($argv, 1)), $_GET);
 }
 /*
+ * THE SOLANA PASS, BY HAND. Like the XRPL one below it, this is not a
+ * scheduled job -- it runs inside the main verify block, for the reason
+ * written out there.
+ *
+ *   php verify.php verify=solana                run it now
+ *   php verify.php verify=solana dry=1          read and report, write nothing
+ *   php verify.php verify=solana dry=1 addr=... ...using one address, before
+ *                                               anybody has linked a wallet
+ */
+if(isset($_GET['verify']) && $_GET['verify'] === 'solana'){
+	set_time_limit(0);
+	require_once __DIR__ . '/verify-solana.php';
+
+	$sol_collections = getCollectionIDs($conn, SOLANA_CHAIN_ID);
+
+	/*
+	 * addr=... uses ONE address instead of the wallets table, so the whole
+	 * pass can be proven before anybody has linked anything. Dry runs only:
+	 * staking an address nobody has proved they hold is the one thing this
+	 * file must never make easy.
+	 */
+	if(!empty($_GET['addr'])){
+		if(empty($_GET['dry'])){
+			echo "addr= is for dry runs only. A real pass reads the wallets table,\n";
+			echo "because that is the only place an address has been proved.\n";
+			exit(1);
+		}
+		$sol_addresses = array(trim($_GET['addr']));
+	}else{
+		$sol_addresses = getAllAddresses($conn, SOLANA_CHAIN_ID);
+	}
+
+	if(!$sol_addresses || !$sol_collections){
+		printf("solana: nothing to do — %d linked address(es), %d registered collection(s)\n",
+			count($sol_addresses), count($sol_collections));
+		if(!$sol_collections)
+			echo "  Register one first:\n"
+			   . "    php verify-solana-probe.php <collection|asset|wallet address>\n";
+		if(!$sol_addresses)
+			echo "  Or try a dry run against one address:\n"
+			   . "    php verify.php verify=solana dry=1 addr=<your address>\n";
+		exit(1);
+	}
+
+	/*
+	 * A DRY RUN PRINTS WHAT IS NOT REGISTERED, not just what is.
+	 *
+	 * A collection address off by one character matches nothing, raises
+	 * nothing, and looks exactly like a correct run against a wallet that
+	 * holds none of it. The only way to tell those apart is to list what the
+	 * chain says the wallet holds that we did NOT recognise.
+	 */
+	if(!empty($_GET['dry'])){
+		$api = getChainSetting($conn, SOLANA_CHAIN_ID, 'api_base',
+		                       'https://api.mainnet-beta.solana.com');
+		$seen = array(); $bad = array(); $unknown = array();
+		foreach($sol_addresses AS $addr){
+			$got = sol_account_assets($api, $addr, 'sol_http');
+			if(!$got['ok']){ $bad[] = $addr; continue; }
+			foreach($got['list'] AS $a){
+				if(isset($sol_collections[$a['collection']]))
+					$seen[$a['collection']] = (isset($seen[$a['collection']]) ? $seen[$a['collection']] : 0) + 1;
+				else
+					$unknown[$a['collection']] = (isset($unknown[$a['collection']]) ? $unknown[$a['collection']] : 0) + 1;
+			}
+		}
+		echo "solana DRY RUN — nothing was written\n";
+		printf("  %d address(es), %d registered collection(s)\n",
+			count($sol_addresses), count($sol_collections));
+		if($bad) echo "  COULD NOT READ: " . implode(', ', $bad) . "\n";
+		if($seen){
+			echo "  would stake:\n";
+			foreach($seen AS $policy => $n) printf("    %-44s %d\n", $policy, $n);
+		}else{
+			echo "  would stake: NOTHING\n";
+		}
+		if($unknown){
+			echo "\n  held, but NOT registered:\n";
+			foreach($unknown AS $policy => $n) printf("    %-44s %d\n", $policy, $n);
+			echo "\n  If one of those is the collection you meant to add, the policy in\n";
+			echo "  the collections table does not match what the chain says. That is\n";
+			echo "  the failure this mode exists to show.\n";
+			echo "    php verify-solana-probe.php <that address>\n";
+		}
+		exit(($bad || !$seen) ? 1 : 0);
+	}
+
+	echo sol_nightly($conn) . "\n";
+	exit;
+}
+
+/*
  * THE XRPL PASS, BY HAND. Not a scheduled job -- see the note in the main
  * verify block below for why it runs inside that one instead.
  *
@@ -118,6 +210,21 @@ if(isset($_GET['verify'])){
 	 */
 	require_once __DIR__ . '/verify-xrpl.php';
 	echo xrpl_nightly($conn) . "\n";
+
+	/*
+	 * SOLANA, FOR THE SAME REASONS AND IN THE SAME PLACE. Everything the
+	 * comment above says about the payout race applies identically: the
+	 * payouts below are platform-wide and must not start until every chain
+	 * has finished rebuilding ownership. sol_nightly() never throws and is
+	 * bounded by its own wall-clock budget, so a Solana problem costs Solana
+	 * holders a night and costs nobody else anything.
+	 *
+	 * Each chain clears only its OWN rows -- removeUsers($conn, <chain>) --
+	 * which is what makes running them in one job safe. A pass that cleared
+	 * another chain's rows would never restore them, and nothing would error.
+	 */
+	require_once __DIR__ . '/verify-solana.php';
+	echo sol_nightly($conn) . "\n";
 
 	$addresses = array();
 	$addresses = getAllAddresses($conn);

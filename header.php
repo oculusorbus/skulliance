@@ -464,6 +464,11 @@
 					     onerror="walletMark(this,'ADA')">
 					<span class="wallet-panel-name">Cardano<small>Lace, Eternl, Vespr&hellip;</small></span>
 				</div>
+				<div class="wallet-panel" onclick="walletStep('solana')" title="Solana wallets">
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/solana.png" alt=""
+					     onerror="walletMark(this,'SOL')">
+					<span class="wallet-panel-name">Solana<small>Solflare, Phantom&hellip;</small></span>
+				</div>
 				<div class="wallet-panel" onclick="walletStep('xrpl')" title="XRPL wallets">
 					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/xrp.png" alt=""
 					     onerror="walletMark(this,'XRP')">
@@ -503,6 +508,56 @@
 			         `display:flex` outranks -- every tile would show, detected
 			         or not. The old list markup got away with it; a grid of
 			         .wallet-panel does not. */ ?>
+			<?php /* SOLANA. Every wallet here is an injected provider, so this
+			         is the Cardano shape rather than the XRPL one: no QR, no
+			         websocket, no server credentials, no vendored SDK. The
+			         page asks the extension for its pubkey and posts it.
+
+			         EVERY TILE IS HIDDEN UNTIL DETECTED, unlike the XRPL grid
+			         where Xaman is always offered because it is a phone app.
+			         There is no phone-app equivalent here: a Solana wallet is
+			         either injected into this page or it is not reachable
+			         from it at all, so showing a tile that cannot work would
+			         only produce "I clicked Solflare and nothing happened".
+
+			         display:none RATHER THAN THE hidden ATTRIBUTE, same trap
+			         as the XRPL grid -- `hidden` is a UA-stylesheet
+			         display:none and .wallet-panel's display:flex outranks
+			         it, so every tile would show regardless of detection. */ ?>
+			<div id="wallet-solana-list" class="wallet-grid" style="display:none">
+				<div class="wallet-panel" id="solflare-btn" style="display:none"
+				     onclick="solanaConnect('solflare')" title="Connect with Solflare">
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/solflare.png" alt=""
+					     onerror="walletMark(this,'SF')">
+					<span class="wallet-panel-name">Solflare<small>Browser extension</small></span>
+				</div>
+				<div class="wallet-panel" id="phantom-btn" style="display:none"
+				     onclick="solanaConnect('phantom')" title="Connect with Phantom">
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/phantom.png" alt=""
+					     onerror="walletMark(this,'PH')">
+					<span class="wallet-panel-name">Phantom<small>Browser extension</small></span>
+				</div>
+				<div class="wallet-panel" id="backpack-btn" style="display:none"
+				     onclick="solanaConnect('backpack')" title="Connect with Backpack">
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/backpack.png" alt=""
+					     onerror="walletMark(this,'BP')">
+					<span class="wallet-panel-name">Backpack<small>Browser extension</small></span>
+				</div>
+				<?php /* THE ANSWER TO THE QUESTION THIS GRID WILL BE ASKED MOST.
+				         A large share of this platform's traffic is the phone
+				         PWA, and there is no Solana extension on a phone --
+				         not in Safari, not in Chrome. The wallet apps each
+				         carry their own browser, and the provider IS injected
+				         there, so the path exists; it is just not the one
+				         somebody is on when they read this. Saying so beats
+				         an empty grid. */ ?>
+				<div class="wallet-panel-empty" id="solana-note">
+					No wallet detected. On a phone, open
+					<strong>skulliance.io/staking</strong> inside the
+					<strong>Solflare</strong> or <strong>Phantom</strong> app's own
+					browser &mdash; there are no wallet extensions on mobile.
+				</div>
+			</div>
 			<div id="wallet-xrpl-list" class="wallet-grid" style="display:none">
 				<div class="wallet-panel" onclick="xamanConnect()" title="Connect with Xaman">
 					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/xaman.png" alt=""
@@ -725,6 +780,160 @@
 				}, 250);
 			})();
 
+			/* ---------------- SOLANA ----------------------------------------
+			   Injected providers only, so there is no library to vendor and
+			   nothing to load: the wallet puts an object on the page and the
+			   page asks it for a pubkey. Closer to the Cardano path than to
+			   anything in the XRPL block above.
+
+			   EACH WALLET IS MATCHED ON ITS OWN NAMESPACE, not on
+			   window.solana. Several wallets claim window.solana and the last
+			   one to load wins, so clicking "Solflare" with Phantom also
+			   installed could connect Phantom and link the wrong address
+			   without ever saying so. window.phantom.solana and
+			   window.solflare are each set only by their own extension.
+			   window.solana is read ONLY as a fallback and only when it
+			   identifies itself as the wallet that was clicked. */
+			var SOLANA_EXT = {
+				solflare: {
+					el: 'solflare-btn',
+					get: function(){
+						if (window.solflare && window.solflare.isSolflare) return window.solflare;
+						if (window.solana && window.solana.isSolflare) return window.solana;
+						return null;
+					}
+				},
+				phantom: {
+					el: 'phantom-btn',
+					get: function(){
+						if (window.phantom && window.phantom.solana && window.phantom.solana.isPhantom)
+							return window.phantom.solana;
+						if (window.solana && window.solana.isPhantom) return window.solana;
+						return null;
+					}
+				},
+				backpack: {
+					el: 'backpack-btn',
+					get: function(){
+						if (window.backpack && window.backpack.isBackpack) return window.backpack;
+						if (window.solana && window.solana.isBackpack) return window.solana;
+						return null;
+					}
+				}
+			};
+
+			/* Polled, not asked once, for the same reason the XRPL probe is:
+			   an extension's injection script can land after this one does,
+			   and a single check at load tells somebody who HAS the wallet
+			   that they do not. The note tile hides itself as soon as any
+			   wallet turns up. */
+			(function(){
+				var tries = 0;
+				var t = setInterval(function(){
+					var left = 0, found = 0;
+					for (var k in SOLANA_EXT) {
+						var e = document.getElementById(SOLANA_EXT[k].el);
+						if (!e) continue;
+						/* Reveal by CLEARING the inline display so the tile falls
+						   back to .wallet-panel's flex; assigning 'flex' would rot
+						   the moment that class changes. */
+						if (e.style.display === 'none' && SOLANA_EXT[k].get()) e.style.display = '';
+						if (e.style.display === 'none') left++; else found++;
+					}
+					var note = document.getElementById('solana-note');
+					if (note) note.style.display = found ? 'none' : '';
+					if (!left || ++tries > 40) clearInterval(t);
+				}, 250);
+			})();
+
+			/* STATUS IS DRIVEN FROM HERE, NOT FROM wallet.js.
+			   wallet.js is loaded as type="module", so showWalletConnecting()
+			   and showWalletResult() are module-scoped and simply do not
+			   exist in this inline script -- a `typeof x === 'function'`
+			   guard around them is always false, which would have made the
+			   whole Solana flow a click that does nothing visible. The XRPL
+			   block above sidesteps the same wall with xamanSay(); this does
+			   it by writing #wallet-status with the classes wallet.js uses,
+			   so the two paths look identical without sharing scope. */
+			function solEsc(t){
+				var d = document.createElement('div');
+				d.textContent = (t === undefined || t === null) ? '' : String(t);
+				return d.innerHTML;
+			}
+			function solStatus(html){
+				if (typeof window.walletHideSteps === 'function') window.walletHideSteps();
+				var rf = document.querySelector('.wallet-modal-refresh');
+				if (rf) rf.style.display = 'none';
+				var st = document.getElementById('wallet-status');
+				if (!st) return;
+				st.innerHTML = html;
+				st.style.display = 'flex';
+			}
+			function solSay(msg){
+				solStatus('<div class="wallet-spinner"></div>'
+				        + '<p class="wallet-status-text">' + solEsc(msg) + '</p>');
+			}
+			function solResult(ok, msg){
+				solStatus('<span class="wallet-result-icon ' + (ok ? 'success' : 'error') + '">'
+				        + (ok ? '&#10003;' : '&#10007;') + '</span>'
+				        + '<p class="wallet-status-text">' + solEsc(msg) + '</p>'
+				        + (ok ? '' : '<button class="wallet-refresh-btn wallet-result-action"'
+				               + ' onclick="walletStep(\'solana\')">Try Again</button>'));
+			}
+
+			function solanaConnect(which){
+				var def = SOLANA_EXT[which];
+				var provider = def && def.get();
+				if (!provider) {
+					solResult(false, 'That wallet is not available on this page.');
+					return;
+				}
+				solSay('Waiting for ' + which.charAt(0).toUpperCase() + which.slice(1)
+				     + '\u2026 approve the connection in your wallet.');
+
+				/* connect() resolves differently across wallets -- some return
+				   {publicKey}, some resolve empty and set it on the provider --
+				   so take whichever is actually populated rather than guessing
+				   one and failing silently. */
+				Promise.resolve(provider.connect())
+					.then(function(res){
+						var pk = (res && res.publicKey) || provider.publicKey;
+						if (!pk) throw new Error('The wallet did not return an address.');
+						/* A PublicKey object, not a string. toBase58() is the
+						   documented accessor; String() happens to work on every
+						   current wallet and is the fallback, not the plan. */
+						return (typeof pk.toBase58 === 'function') ? pk.toBase58() : String(pk);
+					})
+					.then(function(addr){
+						solSay('Linking\u2026 reading what you hold.');
+						var fd = new FormData();
+						fd.append('address', addr);
+						fd.append('via', which);
+						return fetch('ajax/solana-link.php',
+							{method:'POST', body:fd, credentials:'same-origin'});
+					})
+					.then(function(r){ return r.text(); })
+					.then(function(t){
+						var res; try { res = JSON.parse(t); } catch(e){ throw new Error(t.slice(0,120)); }
+						if (!res.ok) { solResult(false, res.message || 'Could not link.'); return; }
+						solResult(true, res.message || 'Wallet linked.');
+						setTimeout(function(){ location.reload(); }, 1600);
+					})
+					.catch(function(e){
+						/* A user closing the popup is an ANSWER, not a fault, and
+						   must not be dressed up as an error with a Try Again
+						   button. Wallets report it as code 4001 or a message
+						   with "reject"/"cancel" in it; either way, put them back
+						   on the grid they came from. */
+						var m = (e && e.message) ? e.message : 'Could not connect.';
+						if ((e && e.code === 4001) || /reject|cancel|denied|closed|user/i.test(m)) {
+							if (typeof walletStep === 'function') walletStep('solana');
+							return;
+						}
+						solResult(false, m);
+					});
+			}
+
 			/* A DIRECT-LEDGER PATH WAS BUILT AND THEN REMOVED. The browser can
 			   talk to a Ledger over WebHID with no wallet provider in the way,
 			   which answers a real complaint: Crossmark and GemWallet both make
@@ -903,7 +1112,7 @@
 			         exactly what that page did before any of this existed. */ ?>
 			<script>
 			var WALLET_MULTICHAIN = <?php echo $wallet_multichain ? 'true' : 'false'; ?>;
-			var WALLET_STEPS = {chain:'wallet-chain', cardano:'wallet-grid', xrpl:'wallet-xrpl-list'};
+			var WALLET_STEPS = {chain:'wallet-chain', cardano:'wallet-grid', xrpl:'wallet-xrpl-list', solana:'wallet-solana-list'};
 			var walletStepCur = WALLET_MULTICHAIN ? 'chain' : 'cardano';
 
 			/* SAFETY NET, NOT THE EXPECTED STATE. All six logos are on the
@@ -934,6 +1143,7 @@
 				var ttl = document.getElementById('wallet-modal-title');
 				if (ttl) ttl.textContent = step === 'cardano' ? 'Cardano Wallets'
 				                         : step === 'xrpl'    ? 'XRPL Wallets'
+				                         : step === 'solana'  ? 'Solana Wallets'
 				                         :                      'Connect Wallet';
 				var st = document.getElementById('wallet-status');
 				if (st) { st.style.display = 'none'; st.innerHTML = ''; }
