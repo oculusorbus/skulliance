@@ -957,5 +957,59 @@ ok(strpos($gr, 'rr-more') !== false && strpos($gr, 'showAllRaidRows') !== false,
 ok(strpos($src, 'function showAllRaidRows') !== false,
    'realms.php has no showAllRaidRows(), so the Show all button does nothing');
 
+/* ---------------------------------------------------------------------------
+ * ARRIVING AT A SECTION.
+ *
+ * The nav links are #locations/#realms/#raids/#realm/#map, but only
+ * #realm-image and #realm-name were honoured on load -- so an incoming link
+ * to #raids opened Locations, and so did a refresh or a Back after clicking
+ * a tab. DHC Fighters' trait-drop list pointed at the old standalone
+ * raids.php instead, which renders the same lists with none of this page's
+ * CSS: an unstyled wall of markup, reported from the installed PWA.
+ * ------------------------------------------------------------------------- */
+echo "\na section in the hash opens that section\n";
+ok(strpos($src, "var rlSections = ['locations', 'realms', 'raids', 'realm', 'map'];") !== false,
+   'the section whitelist is gone; a hash cannot open a section');
+/* The comment between the branch and the call is two lines, not one -- the
+   first version of this assumed one and failed against working code. Match
+   across whatever is in between instead of counting lines. */
+ok(preg_match('/\}else if\(rlSections\.indexOf\(rlHash\) !== -1\)\{[\s\S]{0,300}?rlNav\(rlHash\);/', $src) === 1,
+   'an incoming section hash no longer opens that section on load');
+/* Through rlNav(), the same path a tab click takes -- an arrival and a
+   click must not end in different states. */
+ok(strpos($src, 'rlNav(rlHash);') !== false,
+   'the hash opens a panel by some other route than the one a click uses');
+/* The hash is user input and rlPanel() takes it as a selector, so it has to
+   be checked against the nav's own list rather than passed through. */
+ok(strpos($src, 'rlPanel(rlHash') === false,
+   'a raw hash is passed to rlPanel(); it must be whitelisted first');
+/* Every section the nav offers must be in the whitelist, or that tab is
+   linkable from the nav and not reachable by URL. */
+preg_match_all('/data-sec="([a-z]+)"/', $src, $nm);
+foreach (array_unique($nm[1]) as $sec) {
+	ok(strpos($src, "'" . $sec . "'") !== false,
+	   "the nav offers \"$sec\" but the hash whitelist does not list it");
+}
+
+echo "\nthe old standalone raids page sends people to the real one\n";
+/* Comment-stripped: this file's own header explains what it used to do and
+   names getRaids(), db.php and header.php while doing so. Checking the raw
+   text reported the redirect as still rendering raids -- the sixth time a
+   harness here has matched the prose instead of the code. */
+$raids = preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/raids.php'));
+ok(strpos($raids, "header('Location: realms.php#raids'") !== false,
+   'raids.php no longer redirects; it renders the raid lists with none of this page CSS');
+ok(strpos($raids, 'getRaids(') === false,
+   'raids.php renders raids again instead of redirecting');
+/* A redirect after output is not a redirect, and db.php runs with
+   display_errors on. */
+ok(strpos($raids, "include 'db.php'") === false && strpos($raids, "include 'header.php'") === false,
+   'raids.php includes something that prints before the redirect header');
+ok(strpos($raids, '302') !== false,
+   'the redirect is permanent; 301 is cached forever and hard to undo if the page comes back');
+$cfg = file_get_contents(__DIR__ . '/dhcfighters-config.php');
+ok(strpos($cfg, "'url' => 'realms.php#raids'") !== false,
+   'the DHC trait-drop list points at raids.php again');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);

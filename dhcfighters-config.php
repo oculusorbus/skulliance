@@ -607,7 +607,11 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// refuses a target more than 3 defense levels below you, so a defender's gap
 	// caps at +3 outside a revenge raid. That asymmetry is intended. Punching up
 	// five levels is a deliberate long-odds choice; nobody chooses to be raided.
-	'raids'          => array('label' => 'Realm Raids', 'url' => 'raids.php',
+	/* realms.php#raids, NOT the old standalone raids.php. That page renders
+	   the same raid lists with none of the Realms page's CSS, so following
+	   this link landed on an unstyled wall of markup -- it redirects here
+	   now, and realms.php honours a section hash on arrival. */
+	'raids'          => array('label' => 'Realm Raids', 'url' => 'realms.php#raids',
 	                          'category' => 'wildcard', 'trigger' => 'win a raid, or repel one',
 	                          'gated' => true, 'base' => 'run',
 	                          'bands' => array(1 => 'placement_10', 3 => 'placement_3', 5 => 'placement_1')),

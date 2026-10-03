@@ -1575,10 +1575,31 @@ $conn->close();
 	var rlWide = $(window).width() > 700;
 	if (rlWide) { var hide = rlNavLink('realm'); if (hide) hide.style.display = 'none'; }
 
+	/*
+	 * A SECTION IN THE HASH OPENS THAT SECTION.
+	 *
+	 * The nav's own links are #locations/#realms/#raids/#realm/#map, but
+	 * only #realm-image and #realm-name were ever honoured on load -- so an
+	 * incoming link to #raids landed on Locations, and so did a refresh or
+	 * a Back after clicking a tab. DHC Fighters' trait-drop list pointed at
+	 * the old standalone raids.php instead, which renders the raid lists
+	 * with none of this page's CSS; that page now redirects here, and this
+	 * is what makes the destination correct rather than merely styled.
+	 *
+	 * Whitelisted against the nav's own data-sec values: a hash is user
+	 * input and rlPanel() takes it as a selector.
+	 */
+	var rlHash = (window.location.hash || '').replace('#', '');
+	var rlSections = ['locations', 'realms', 'raids', 'realm', 'map'];
+
 	if(window.location.hash == "#realm-image" || window.location.hash == "#realm-name"){
 		rlPanel('locations', rlWide);
 		rlPanel('realm', true);
 		rlMark(rlWide ? 'locations' : 'realm');
+	}else if(rlSections.indexOf(rlHash) !== -1){
+		/* Same path a tab click takes, so an arrival and a click cannot end
+		   up in different states. */
+		rlNav(rlHash);
 	}else{
 		rlPanel('locations', true);
 		if(!rlWide) rlPanel('realm', false);
