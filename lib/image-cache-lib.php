@@ -24,6 +24,20 @@ $magick_tmp_dir = '/home/jeremiah/magick-tmp';
 @mkdir($magick_tmp_dir, 0700, true);
 putenv("MAGICK_TMPDIR=$magick_tmp_dir");
 
+/**
+ * Does nfts.ipfs hold a whole URL rather than a bare CID?
+ *
+ * The column has held a bare CID for every Cardano and XRPL row ever
+ * written. A collection that hosts its own art stores the absolute URL
+ * instead (Solana's OMEN serves from omenati.com), and every rule in this
+ * file that assumes a CID -- the length floor, the "ipfs/" strip, the
+ * gateway race -- has to step aside for it. One predicate so the two
+ * functions below cannot disagree about which kind of value they have.
+ */
+function _ipfs_is_url(string $ipfs): bool {
+    return (bool)preg_match('~^https?://~i', $ipfs);
+}
+
 function cacheNFTImage(
     string $ipfs,
     int $collection_id,
@@ -44,7 +58,8 @@ function cacheNFTImage(
         return $msg;
     };
 
-    $clean_check = str_replace('ipfs/', '', $ipfs);
+    $is_url      = _ipfs_is_url($ipfs);
+    $clean_check = $is_url ? $ipfs : str_replace('ipfs/', '', $ipfs);
     if (empty(trim($clean_check))) {
         return ['status' => 'skipped', 'url' => null,
                 'message' => $emit("[SKIP]   Empty IPFS hash for collection $collection_id")];
@@ -54,7 +69,15 @@ function cacheNFTImage(
     $web_base = '/staking/images/nfts/' . $project_id . '/' . $collection_id . '/' . $md5;
 
     // ── Skip obviously malformed CIDs before any network activity ─────────────
-    if (!str_contains($ipfs, 'data:image/svg+xml;base64')) {
+    /*
+     * NOT APPLIED TO A URL, and this one would have bitten silently: the
+     * floor exists because a CID shorter than 46 characters is truncated,
+     * but "https://omenati.com/art/01998.jpg" is 33 and perfectly valid.
+     * Every Solana OMEN image would have been skipped here, before any
+     * network activity, and the only trace would be a [SKIP] line calling a
+     * working URL a malformed CID.
+     */
+    if (!$is_url && !str_contains($ipfs, 'data:image/svg+xml;base64')) {
         $cid_check = trim($clean_check);
         if (strlen($cid_check) < 46 || stripos($cid_check, 'ImageCID') !== false) {
             return ['status' => 'skipped', 'url' => null,
@@ -125,9 +148,28 @@ function _doCacheFetch(
     int $max_fetch_seconds = 0
 ): array {
     // ── Fetch with gateway fallback and retry ────────────────────────────────
-    $clean_ipfs = str_replace('ipfs/', '', $ipfs);
+    /*
+     * nfts.ipfs HOLDS ONE OF TWO THINGS.
+     *
+     * A bare CID, for every Cardano and XRPL row ever written, which is why
+     * _fetchRace() builds its URL as gateway . value. Or a whole absolute
+     * http(s) URL, for a collection that hosts its own art -- Solana's OMEN
+     * serves from omenati.com and has no CID to race for.
+     *
+     * An absolute URL therefore gets exactly one "gateway", the empty
+     * string, so gateway . value is the URL itself and the racing machinery
+     * below works unchanged with a field of one. Nothing else in this
+     * function needs to know the difference.
+     *
+     * The str_replace is skipped for a URL as well, and that is not
+     * cosmetic: a path containing "ipfs/" (an artist hosting at
+     * https://host/ipfs/thing.png) would otherwise be edited into a
+     * different URL that 404s.
+     */
+    $is_url     = _ipfs_is_url($ipfs);
+    $clean_ipfs = $is_url ? $ipfs : str_replace('ipfs/', '', $ipfs);
 
-    $gateways = [
+    $gateways = $is_url ? [''] : [
         'https://ipfs.io/ipfs/',
         'https://nftstorage.link/ipfs/',
         'https://w3s.link/ipfs/',
@@ -136,12 +178,14 @@ function _doCacheFetch(
         'https://dweb.link/ipfs/',
     ];
     // Rotate the starting gateway per worker so concurrent CLI workers don't
-    // all hammer the same gateway first.
-    $offset   = $wid % count($gateways);
-    $gateways = array_merge(
-        array_slice($gateways, $offset),
-        array_slice($gateways, 0, $offset)
-    );
+    // all hammer the same gateway first. Meaningless for a single origin.
+    if (!$is_url) {
+        $offset   = $wid % count($gateways);
+        $gateways = array_merge(
+            array_slice($gateways, $offset),
+            array_slice($gateways, 0, $offset)
+        );
+    }
 
     $body         = false;
     $content_type = '';

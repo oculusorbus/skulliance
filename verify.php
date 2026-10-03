@@ -668,6 +668,29 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 		// On-chain check for Digi Monks
 		if(str_contains($image, "data:image/svg+xml;base64")){
 			$ipfs = $image;
+		/*
+		 * AN ABSOLUTE URL IS STORED WHOLE, not chopped.
+		 *
+		 * The substr(7) below strips "ipfs://" and is right for every Cardano
+		 * and XRPL image this platform has ever written, because nfts.ipfs
+		 * held a BARE CID and the image cache built its URL as
+		 * gateway . value. Solana's OMEN serves its art from
+		 * https://omenati.com, and seven characters off the front of that is
+		 * "//omenati.com/art/01998.jpg", fetched as
+		 * "https://ipfs.io/ipfs///omenati.com/art/01998.jpg" -- a poisoned
+		 * column that looks like data and fails inside a nightly worker.
+		 *
+		 * This branch is strictly ADDITIVE: no input that reached substr(7)
+		 * before and worked takes a different path now. An image that was
+		 * already an absolute https URL was being mangled, so the only
+		 * behaviour that changes is behaviour that was broken.
+		 *
+		 * The two readers were taught the same distinction: getIPFS() in
+		 * db.php and _doCacheFetch() in lib/image-cache-lib.php. Those three
+		 * are the only places that consume this column.
+		 */
+		}else if(preg_match('~^https?://~i', (string)$image)){
+			$ipfs = $image;
 		}else{
 			$ipfs = substr($image, 7, strlen($image));
 		}

@@ -3579,6 +3579,17 @@ function getIPFS($ipfs, $collection_id, $project_id = 0){
 	if(str_contains($ipfs, "data:image/svg+xml;base64")){
 		return $ipfs;
 	}
+	/*
+	 * An absolute URL is the picture, not a CID to hang off a gateway.
+	 *
+	 * nfts.ipfs holds a bare CID for every Cardano and XRPL row, and a whole
+	 * https URL for a collection that hosts its art itself (Solana's OMEN
+	 * serves from omenati.com). Checked BEFORE the local-cache lookup would
+	 * be wrong -- the cache keys on md5($ipfs), which works for either form,
+	 * so the cached copy still wins when there is one and this is only the
+	 * fallback. See processNFT() in verify.php for the other half.
+	 */
+	$ipfs_is_url = (bool)preg_match('~^https?://~i', (string)$ipfs);
 	// Check for locally cached image first
 	if($project_id > 0){
 		$matches = glob(__DIR__ . '/images/nfts/' . $project_id . '/' . $collection_id . '/' . md5($ipfs) . '.*');
@@ -3606,6 +3617,9 @@ function getIPFS($ipfs, $collection_id, $project_id = 0){
 	 * is what the browser should be hitting. The constant is overridable in
 	 * credentials/ so a gateway going bad is a config change, not a deploy.
 	 */
+	if($ipfs_is_url){
+		return $ipfs;
+	}
 	$ipfs = str_replace("ipfs/", "", $ipfs);
 	return IPFS_FALLBACK_GATEWAY . $ipfs;
 }
