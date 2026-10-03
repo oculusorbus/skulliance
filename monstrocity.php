@@ -2049,8 +2049,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        },
 	        {
 	          value: "fauna",
-	          project: "Nemonium",
-	          title: "Fauna x Nemonium",
+	          project: "Omen",
+	          title: "Fauna x Omen",
 	          policyIds: "7cd357f96d7a7325ff3038e78e004840706887790d8b513913b45c27",
 	          orientations: "Right",
 	          ipfsPrefixes: "https://ipfs.io/ipfs/",
@@ -2059,7 +2059,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        },
 	        {
 	          value: "omen",
-	          project: "Nemonium",
+	          project: "Omen",
 	          title: "Omen Legends",
 	          policyIds: "da286f15e0de865e3d50fec6fa0484d7e2309671dc4ba8ce6bdd122b",
 	          orientations: "Right",
@@ -2069,8 +2069,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        },
 	        {
 	          value: "sh4pes",
-	          project: "Nemonium",
-	          title: "Sh4pes x Nemonium",
+	          project: "Omen",
+	          title: "Sh4pes x Omen",
 	          policyIds: "2d868badf3dc317234fe253859621fedf661bf9eba275faea80a8bfe",
 	          orientations: "Left",
 	          ipfsPrefixes: "https://ipfs.io/ipfs/",

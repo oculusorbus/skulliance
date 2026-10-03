@@ -752,7 +752,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
         // in the monstrocity.php JSON (since the logo lives inside a theme folder,
         // not a project-named folder). Slugified project names happen to match the
         // theme value for some projects (apprentices, blackflag, etc.) but for
-        // many they don't (Heist on Alpha → proxy, Josh Howard → muses, Nemonium
+        // many they don't (Heist on Alpha → proxy, Josh Howard → muses, Omen
         // → fauna, etc.) - explicit map avoids 404s.
         $img_base = 'https://www.skulliance.io/staking/images/monstrocity/';
         $projects = [
@@ -764,7 +764,7 @@ $short_desc   = 'A free browser Match 3 RPG with real combat depth, 35+ themes, 
             'Havoc Worlds'     => 'havocworlds',
             'Heist on Alpha'   => 'proxy',
             'Josh Howard'      => 'muses',
-            'Nemonium'         => 'omen',
+            'Omen'             => 'omen',
             'Pendulum'         => 'pendulum',
             'Perps'            => 'perps',
             'Vampire Invasion' => 'vampireinvasion',

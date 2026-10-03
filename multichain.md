@@ -1,6 +1,17 @@
-# Multi-chain staking — XRPL
+# Multi-chain staking — XRPL and Solana
 
-**Status: built, not yet live.** Phase one is wired end to end:
+**XRPL: live.** The status line here read "built, not yet live" for longer
+than it was true — the live-data fixes that followed it (an r-address filed
+as Cardano and alerting Koios all night, truncated NFTokenIDs, animated art
+with no `image` slot, xrp.cafe links on the Collections page) are all
+evidence of real holders on real rows.
+
+**Solana: built, not live.** Chain 3, for OMEN, which moved from Cardano.
+Everything is wired end to end and nothing has been switched on: the
+`blockchains` row, the collection `INSERT` and its rate are all still to be
+run by hand. See **§13** and `solana-schema.md`.
+
+The XRPL file list, which is also the shape every later chain copies:
 
 | | |
 |---|---|
@@ -1486,3 +1497,154 @@ points. Its only success metric is whether XRPL holders connect and play.
   mandatory rather than merely advisable: each pass zeroes and restores only
   its own chain's rows, and a chain whose verifier did not run must not have
   had its ownership cleared.
+
+---
+
+## 13. Solana
+
+Chain 3. Added for **OMEN**, a project already on this platform whose
+collectors moved to Solana; one of its stakers asked for it. The engineering
+was roughly half the XRPL build because §2 and §3 did the structural work
+once, and most of what follows is about the three places Solana is *not* like
+XRPL.
+
+| | |
+|---|---|
+| `solana-schema.md` | the migration — one `INSERT`, **not yet run** |
+| `verify-solana.php` | the verifier, feeding the existing `processNFT()` |
+| `verify-solana-harness.php` | its tests: no network, no database |
+| `verify-solana-probe.php` | prints a collection's `INSERT` from any address |
+| `verify-solana-doctor.php` | CLI: why did this holder's NFTs not show up? |
+| `solana-wallet-harness.js` | the wallet-detection table, driven against fake windows |
+| `ajax/solana-link.php` | link a wallet the browser reports |
+| `header.php` | the Solana chain tile, the wallet grid, `solanaConnect()` |
+| `verify.php` | `verify=solana`, and `sol_nightly()` inside the main job |
+
+`db.php` needed **no changes at all**. Every accessor the XRPL work made
+chain-scoped — `removeUsers()`, `getAllAddresses()`, `getNFTAssetIDs()`,
+`getCollectionIDs()`, `createNFT()`, `createAddress()`, `getChainSetting()` —
+already takes a chain id and does the right thing with a 3 in it. That is the
+payoff §3b was predicting.
+
+### 13a. Metaplex Core, and why that is the whole shape of the reader
+
+OMEN is **MPL Core** (`CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d`), not the
+older Token Metadata standard. A Core asset is a **single account** holding
+owner, collection, name and uri, rather than an SPL mint plus a token account
+plus a metadata PDA.
+
+Three consequences, all good:
+
+- **Ownership is a byte range.** `getProgramAccounts` with a `memcmp` filter
+  at offset 1 returns every Core asset a wallet holds, in one call, with no
+  paging. XRPL's `account_nfts` marker loop — the one that truncates silently
+  if you forget it — has no equivalent here to forget.
+- **The name is on-chain.** Only the image needs the metadata document, so an
+  NFT can never end up called `Solana #12345` because a gateway had a bad
+  minute. XRPL needed a whole repair path to undo exactly that; the Solana
+  equivalent only ever repairs a *missing image*.
+- **No credentials.** The public cluster answers unauthenticated. Measured
+  against a real holder: 7 assets in 0.35s, their metadata in 0.62s, and the
+  entire 7,209-asset collection in about a second.
+
+**What is NOT handled, deliberately.** Token Metadata NFTs and compressed
+NFTs. Each would be its own reader, not a setting — and a compressed NFT is
+not an account at all, it lives in a Merkle tree and cannot be read this way
+at any price. `verify-solana-probe.php` says so by name when pointed at one,
+because "nothing showed up" otherwise has no explanation attached.
+
+**The public cluster is rate limited** and Solana's own docs say not to lean
+on it. If OMEN's holders arrive in numbers, `blockchains.api_base` is one
+column and nothing hard-codes it.
+
+### 13b. nfts.ipfs can hold a URL now — the one change that reached Cardano
+
+§6b said the image cache needed no changes at all, and that this held only
+because **`nfts.ipfs` holds a bare CID**: the cache builds `gateway . value`
+and `processNFT()` gets there by chopping seven characters. It also said that
+if a future collection ever hosted off IPFS, `xrpl_storable_image()` was the
+one function to change.
+
+OMEN serves its art from `https://omenati.com`. So that happened.
+
+The column now holds **either** a bare CID **or** a whole absolute http(s)
+URL, and the three — only three — places that read it each learned the
+difference:
+
+| Reader | What changed |
+|---|---|
+| `processNFT()` (verify.php) | an absolute URL is stored whole, not `substr(7)`-ed |
+| `getIPFS()` (db.php) | an absolute URL is returned as-is instead of hung off a gateway |
+| `lib/image-cache-lib.php` | `_ipfs_is_url()`, one empty "gateway", and the CID floor skipped |
+
+The branch is **additive**: an absolute URL was being mangled before, so the
+only behaviour that changes is behaviour that was already broken.
+
+**The one that would have been silent:** the cache skips anything under 46
+characters as a malformed CID, before any network activity.
+`https://omenati.com/art/01998.jpg` is 33. Every OMEN image would have been
+skipped, and the only trace would have been a `[SKIP]` line calling a working
+URL a malformed CID.
+
+### 13c. Connecting a wallet is the Cardano shape, not the Xaman shape
+
+Solflare, Phantom and Backpack are **injected providers**. No QR, no
+websocket, no server credentials, no vendored SDK — the page asks the
+extension for a pubkey and posts it. §4 was the largest single piece of the
+XRPL build and Solana skips nearly all of it.
+
+**Several wallets claim `window.solana`, and the last to load wins.** So a
+page with both Phantom and Solflare has one `window.solana` and two wallets,
+and matching on it means clicking *Solflare* can connect *Phantom*: a real
+wallet opens, a real address comes back, the link succeeds, and it is the
+wrong address. Nothing logs a complaint. Each wallet is therefore matched on
+its **own** namespace first (`window.solflare`, `window.phantom.solana`,
+`window.backpack`), and `window.solana` is read only when it identifies
+itself as the wallet that was clicked. `solana-wallet-harness.js` is that
+rule written down.
+
+**There are no wallet extensions on a phone**, which matters here more than
+on most platforms because so much of this traffic is the PWA. The wallet apps
+carry their own browsers and the provider *is* injected there, so the path
+exists; the grid says so rather than showing an empty box.
+
+**Server-side signature verification is available here and was not on XRPL.**
+Solana signatures are ed25519 and nothing else, and `lib/sodium_compat` is
+already vendored because no PHP build on this server has `ext/sodium`. §4f
+settled for "the browser reports the address" because XRPL keys can be
+secp256k1 and there is no pure-PHP verifier for that half. Sign-In-With-Solana
+is therefore a later, purely additive change: a new `via` value and a
+signature field, with every existing row keeping the method it was linked
+under. Not done yet because it is a second round trip through the wallet for
+every link and buys nothing until there is something worth stealing behind a
+linked address.
+
+### 13d. OMEN, specifically
+
+- **Collection:** `Fd5Sy7yPb5NyrsQYpTz1dvMNzwEJmH2pFxCV8BYpUjm2`, named `OMEN`,
+  7,247 minted and **7,209 live**.
+- **It belongs to the EXISTING project**, the one the Cardano OMEN collection
+  is already under — §3d, not a new project. The project has been renamed from
+  Nemonium to Omen.
+- **The rate is the only number here that can cost money.** 7,209 assets earn
+  it every day from the night the row is inserted, and a good share belong to
+  people who have never staked here. Pick it against the reward pool.
+- **Double-staking is prevented by the migration itself, not by us.** Holders
+  swapped 1-for-1: the Cardano piece went to an Omen-controlled wallet and the
+  Solana piece was airdropped, so a migrated holder no longer holds the
+  Cardano original and a holder who did not migrate has no Solana piece.
+  **The hazard that remains:** if those Cardano NFTs were not burned, the
+  Omen-controlled wallet holds thousands of them, and that wallet must never
+  be linked as a staker.
+- **The Solana collection is not a copy of the Cardano one.** Reading
+  `properties.origin` across a 300-asset sample: ~46% `cardano`, ~53%
+  `bitcoin-ordinals`, the rest other. Only the Cardano-origin pieces carry a
+  `cardano_asset` fingerprint back to a row this platform already has. This
+  matters for exactly two things — the supply the rate is set against, and the
+  Monstrocity `omen` theme, which is keyed to the Cardano policy and to
+  Cardano-lineage trait names. It is not a reason to do anything about
+  Bitcoin.
+- **The Monstrocity theme is not extended to Solana** by any of this. §8's
+  phase-two note applies: per-game metadata only matters if an off-Cardano
+  collection is given a game theme, and that is a separate decision.
+
