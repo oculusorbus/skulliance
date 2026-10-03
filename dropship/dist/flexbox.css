@@ -1133,9 +1133,24 @@ input:checked + .slider:before {
   /* #0a1929 -- the site's own card/content-panel color (.inventory-item,
      .instr-section, etc.), user-specified directly against the real
      rendered page rather than approximating body's blended wallpaper. */
+  /* ABSOLUTE, NOT FIXED. It was fixed, and a fixed positioned box with
+     z-index:0 paints ABOVE every non-positioned in-flow element on the
+     page -- so once the page scrolled it stopped being a backdrop for
+     the clearance gap and became a 60px bar sitting on top of the
+     content, slicing the soldier cards in half. Measured at 393px with
+     the page scrolled 600: the artwork was painted over from y=0 to
+     y=60 and only appeared below it.
+     This strip exists to paint ONE thing -- the padding-top:60px gap
+     above the page's own content -- and that gap is at the top of the
+     DOCUMENT, not the top of the viewport. Absolute puts it exactly
+     there and lets it scroll away with everything else. Nothing is in
+     that gap to be covered (#burger-icon is z-index:99 and .navbar is
+     z-index:1, both above this), and once it has scrolled past, content
+     passing under the fixed burger icon is the same as on every other
+     page here. */
   .container::before {
     content: '';
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
