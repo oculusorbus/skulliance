@@ -143,14 +143,45 @@ $im = imagecreatetruecolor(64, 64);
 imagefilledrectangle($im, 0, 0, 63, 63, imagecolorallocate($im, 10, 200, 160));
 imagepng($im, $root . '/shot.png');
 
+/* A NONCE, BECAUSE THE PORT IS FIXED AND A STALE SERVER ANSWERS ON IT.
+   This harness fataled once (discordmsg() gained a call to skl_embed_trim()
+   and only discordmsg() was being lifted), which skipped the cleanup at the
+   bottom and left a php -S from that run still listening on 8791, still
+   serving the PREVIOUS run's directory. Every run after that posted to the
+   old server, wrote got.txt somewhere else, and reported three confident
+   failures about webhooks.php that had nothing to do with webhooks.php.
+   That cost an hour. So: prove the thing answering is the server this run
+   started, and say so plainly if it is not. */
+$nonce = bin2hex(random_bytes(8));
+file_put_contents($root . '/nonce.txt', $nonce);
+
 $srv = proc_open('php -S 127.0.0.1:' . $port . ' -t ' . escapeshellarg($root),
     array(0 => array('file', '/dev/null', 'r'),
           1 => array('file', '/dev/null', 'w'),
           2 => array('file', '/dev/null', 'w')), $pipes);
+
+/* AND KILL IT WHATEVER HAPPENS. The cleanup at the bottom of this file only
+   runs when the file reaches the bottom; a fatal, an exception or a Ctrl-C
+   all skip it, which is how the orphan above came to exist. */
+register_shutdown_function(function () use (&$srv, $root) {
+    if (is_resource($srv)) { @proc_terminate($srv); @proc_close($srv); $srv = null; }
+    array_map('unlink', glob($root . '/*') ?: array());
+    @rmdir($root);
+});
+
 for ($i = 0; $i < 40; $i++) {               /* wait for it, do not guess */
     $c = @fsockopen('127.0.0.1', $port, $e, $es, 0.2);
     if ($c) { fclose($c); break; }
     usleep(100000);
+}
+$whose = @file_get_contents('http://127.0.0.1:' . $port . '/nonce.txt');
+if (trim((string)$whose) !== $nonce) {
+    echo "  FAIL  something else is already listening on 127.0.0.1:$port -- almost\n"
+       . "        certainly a php -S orphaned by an earlier run of this file that\n"
+       . "        did not reach its cleanup. Every check below would fail against\n"
+       . "        it and none of those failures would be about webhooks.php.\n"
+       . "        Fix:  pkill -f 'php -S 127.0.0.1:$port'\n";
+    exit(1);
 }
 
 /* The real functions, with the webhook pointed at our stand-in and __DIR__
@@ -167,6 +198,18 @@ function be2($src, $sig) {
 $resolver = be2($wh, 'function skl_local_image_path($url)');
 $resolver = str_replace('realpath(__DIR__)', 'realpath(' . var_export($root, true) . ')', $resolver);
 eval($resolver);
+/* discordmsg() CALLS skl_embed_trim(), so lifting one without the other is
+   a fatal the moment the post is built -- which is exactly what happened
+   when the embed-limit work added that call: this harness went red and
+   stayed red, because nothing it prints before the fatal looks wrong.
+   The limit constants come with it; they are read inside the trim. */
+foreach (array('SKL_EMBED_TITLE_MAX', 'SKL_EMBED_DESC_MAX',
+               'SKL_EMBED_FOOTER_MAX', 'SKL_EMBED_TOTAL_MAX') as $c) {
+	if (!defined($c) && preg_match("/define\('" . $c . "',\s*(\d+)\)/", $wh, $m))
+		define($c, (int)$m[1]);
+}
+if (!function_exists('skl_embed_trim')) eval(be2($wh, 'function skl_embed_trim('));
+
 $fn = be2($wh, 'function discordmsg(');
 /* EVERY assignment, and matched loosely: discordmsg picks its webhook
    through ~24 branches and several are ternaries

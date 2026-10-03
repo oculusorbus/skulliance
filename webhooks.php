@@ -289,7 +289,13 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
              */
             $status = (int) curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
             $cerr   = curl_error( $ch );
-            curl_close( $ch );
+            /* NO curl_close(). It has had no effect since PHP 8.0 -- the
+               handle is an object freed when it falls out of scope -- and it
+               is DEPRECATED from 8.5, which this machine already runs.
+               display_errors is ON here, so on a newer build the notice
+               prints wherever discordmsg() was called from: into a page, into
+               an AJAX endpoint's JSON, or into an image. Same removal, same
+               reasoning, as dhc-card.php and dhcfighters-notify.php. */
 
             if ($status < 200 || $status >= 300) {
                 $where = ($channel !== "" ? $channel : "default");
