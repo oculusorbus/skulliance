@@ -37,6 +37,35 @@ ON DUPLICATE KEY UPDATE name = VALUES(name);
 constant so a node can be swapped without a deploy — if `xrplcluster.com` is
 slow one night, point it at `s1.ripple.com` and the next cron pass uses it.
 
+## 1b. The marketplace template (added later)
+
+```sql
+ALTER TABLE blockchains ADD COLUMN marketplace_url VARCHAR(255) DEFAULT NULL AFTER explorer_nft;
+
+UPDATE blockchains SET marketplace_url = 'https://www.wayup.io/collection/%s'  WHERE id = 1;
+UPDATE blockchains SET marketplace_url = 'https://xrp.cafe/collection/%s'      WHERE id = 2;
+UPDATE blockchains SET marketplace_url = 'https://www.tensor.trade/trade/%s'   WHERE id = 3;
+```
+
+`explorer_nft` was a column from the start and the marketplace link was
+hardcoded in `collectionMarketUrl()`. They are the same kind of thing --
+a printf template, one per chain -- and the split was accidental, so
+switching marketplace meant a deploy.
+
+**SAFE TO SKIP.** `collectionMarketUrl()` carries the three values above
+as built-in defaults and only prefers the column when it is present and
+contains `%s`, so every link behaves identically before and after. Until
+the ALTER runs, `admin-blockchains.php` disables that one field and says
+why rather than writing to a column that is not there.
+
+**This is NOT where a collection's slug goes.** The marketplace belongs
+to the chain; the identifier belongs to the collection. xrp.cafe
+addresses a collection by an artist-chosen slug -- `bootlegs`,
+`moneyhorse`, `vipasana`, `random-digi-hell-scenes` are four live values
+on four collections of the same chain -- so `collections.marketplace_slug`
+stays exactly where it is. `%s` takes the slug where there is one and the
+on-chain id otherwise.
+
 ## 2. The foreign keys
 
 ```sql

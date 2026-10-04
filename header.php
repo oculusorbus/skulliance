@@ -383,6 +383,7 @@
 		      <a href="admin-projects.php">Projects</a>
 		      <a href="admin-collections.php">Collections</a>
 		      <a href="admin-missions.php">Missions</a>
+		      <a href="admin-blockchains.php">Chains</a>
 		    </div>
 		  </div>
 		  <?php endif; ?>

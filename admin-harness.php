@@ -243,7 +243,7 @@ ok(admin_reorder_plan($rows, admin_reorder_move($rows, $ids[2], 'up'), 0)['error
  * guards something that would be invisible if it broke.
  */
 echo "\nthe panel pages\n";
-$PAGES = array('admin-projects.php', 'admin-collections.php', 'admin-missions.php');
+$PAGES = array('admin-projects.php', 'admin-collections.php', 'admin-missions.php', 'admin-blockchains.php');
 $src = array();
 foreach ($PAGES as $f) {
 	ok(is_file(__DIR__ . '/' . $f), "$f is missing");
@@ -356,6 +356,42 @@ ok(preg_match('/\$chain === 3 &&[^;]*sol_base58_decode/s', $co) === 1,
    'the Solana branch no longer decodes the address -- base58 has no checksum, so a truncated one is still legal-looking');
 ok(preg_match('/FROM collections WHERE policy/', $co) === 1,
    'the collections page does not check the on-chain id is unused; two rows would claim the same NFTs');
+
+/* ---------- the marketplace template ------------------------------- *
+ *
+ * The MARKETPLACE is per chain and now lives in blockchains; the
+ * IDENTIFIER is per collection and stays on collections. Four live XRPL
+ * collections have four different slugs, so the slug can never become a
+ * chain setting -- these pin the split in both directions.
+ */
+echo "\nthe marketplace link\n";
+$db = preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/db.php'));
+ok(strpos($db, "'marketplace_url' => 1") !== false,
+   "getChainSetting() does not whitelist marketplace_url, so the column reads as its default and is silently ignored");
+ok(preg_match("/function collectionMarketUrl\(.*\\\$conn = null\)/", $db) === 1,
+   'collectionMarketUrl() no longer accepts $conn, so it cannot consult the chain row');
+ok(preg_match('/getChainSetting\(\$conn, \$bid, .marketplace_url./', $db) === 1,
+   'collectionMarketUrl() never reads marketplace_url from the chain');
+/* The template comes out of a database column, so a stray % in one must
+   not reach sprintf -- same trap nftExplorerUrl() already documents. */
+ok(strpos($db, 'str_replace(\'%s\', rawurlencode($id), $tpl)') !== false,
+   'the marketplace template is interpolated with sprintf; a stray % in the column is a ValueError, '
+ . 'which is a broken page rather than a broken link');
+/* A template without its placeholder points every collection at one page. */
+$bc = preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/admin-blockchains.php'));
+ok(strpos($bc, "strpos(\$v, '%s') === false") !== false,
+   'admin-blockchains.php accepts a template with no %s, which links every collection to the same page');
+/* Asserted against the VISIBLE prose, not a comment -- $bc has comments
+   stripped, and the point is that an admin reading the page is told
+   where the slug lives, not that the source mentions it. */
+$bc_flat = preg_replace('/\s+/', ' ', $bc);   // the prose wraps across lines in the source
+ok(stripos($bc_flat, 'marketplace slug lives on the collection') !== false,
+   'admin-blockchains.php does not tell the reader where a collection slug actually lives, '
+ . 'which is exactly the confusion that prompted this split');
+/* And the slug stays on the collection. */
+$co2 = preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/admin-collections.php'));
+ok(strpos($co2, 'name="marketplace_slug"') !== false,
+   'the collection form lost its marketplace_slug field; four live XRPL collections have four different slugs');
 
 /* The old tabbed page stays as a redirect rather than a 404. */
 $old = file_get_contents(__DIR__ . '/admin.php');

@@ -3198,7 +3198,7 @@ function getCollectionId($conn, $policy){
  * exist yet, so code deployed ahead of the migration still runs.
  */
 function getChainSetting($conn, $blockchain_id, $field, $default = '') {
-	$ok = array('api_base' => 1, 'explorer_nft' => 1, 'ipfs_gateway' => 1);
+	$ok = array('api_base' => 1, 'explorer_nft' => 1, 'ipfs_gateway' => 1, 'marketplace_url' => 1);
 	if (!isset($ok[$field])) return $default;
 	$res = @$conn->query("SELECT `$field` FROM blockchains WHERE id = ".(int)$blockchain_id." LIMIT 1");
 	if (!$res || !$res->num_rows) return $default;
@@ -3552,54 +3552,79 @@ function nftExplorerUrl($conn, $asset_id, $blockchain_id = 1) {
  * malformed policy, because a dead link reads as a broken platform while
  * plain text reads as missing data.
  */
-function collectionMarketUrl($policy, $blockchain_id = 1, $slug = null) {
+/**
+ * WHICH MARKETPLACE, AND WHICH IDENTIFIER. Two different questions, and
+ * they were tangled together.
+ *
+ * The MARKETPLACE is a property of the CHAIN -- wayup for Cardano,
+ * xrp.cafe for XRPL, Tensor for Solana -- and it now lives in
+ * blockchains.marketplace_url beside explorer_nft, which is the same kind
+ * of thing and already a column. That split was accidental: explorer_nft
+ * got one and this did not, so switching marketplace was a deploy. Now it
+ * is an edit, which matters the day a marketplace goes down.
+ *
+ * The IDENTIFIER is a property of the COLLECTION. Cardano and Solana use
+ * the on-chain id itself. XRPL does NOT: xrp.cafe addresses a collection
+ * by an artist-chosen slug ("bootlegs", "moneyhorse", "vipasana") that
+ * cannot be derived from issuer:taxon in either direction, which is why
+ * collections.marketplace_slug exists and why twenty-one of them had to
+ * be hunted by hand. Those are four different values on four collections
+ * of the same chain, so the slug can never move to the chain row.
+ *
+ * Rule: prefer the slug, fall back to the on-chain id, and validate the
+ * id per chain -- a malformed one produces a dead link, and a dead link
+ * reads as a broken platform where plain text reads as missing data.
+ *
+ * $conn is optional and last so no existing call site changes. Without it
+ * the built-in templates below apply, which are the values the three
+ * chains shipped with.
+ */
+function collectionMarketUrl($policy, $blockchain_id = 1, $slug = null, $conn = null) {
+	static $builtin = array(
+		1 => 'https://www.wayup.io/collection/%s',
+		2 => 'https://xrp.cafe/collection/%s',
+		3 => 'https://www.tensor.trade/trade/%s',
+	);
+	$bid    = (int)$blockchain_id;
 	$policy = trim((string)$policy);
-	if ((int)$blockchain_id === XRPL_CHAIN_ID) {
-		$slug = trim((string)$slug);
-		if ($slug !== '' && preg_match('/^[a-z0-9][a-z0-9._-]{0,63}$/i', $slug))
-			return 'https://xrp.cafe/collection/' . rawurlencode($slug);
-		/* No slug: not every collection on the ledger has a marketplace page.
-		   Two of the first twenty-one did not. */
+	$slug   = trim((string)$slug);
+
+	$tpl = isset($builtin[$bid]) ? $builtin[$bid] : '';
+	if ($conn !== null) {
+		$fromdb = getChainSetting($conn, $bid, 'marketplace_url', '');
+		if ($fromdb !== '' && strpos($fromdb, '%s') !== false) $tpl = $fromdb;
+	}
+	if ($tpl === '') return '';
+
+	/* str_replace, not sprintf: the template comes from a database column
+	   and a stray '%' in one is a ValueError in PHP 8 -- a broken page
+	   instead of a broken link. Same reasoning as nftExplorerUrl(). */
+	$link = function($id) use ($tpl) { return str_replace('%s', rawurlencode($id), $tpl); };
+
+	/* A slug always wins where one exists, on any chain. */
+	if ($slug !== '' && preg_match('/^[a-z0-9][a-z0-9._-]{0,63}$/i', $slug)) return $link($slug);
+
+	if ($bid === XRPL_CHAIN_ID) {
+		/* No slug: not every collection on the ledger has a marketplace
+		   page -- two of the first twenty-one did not. The issuer's
+		   profile is the nearest honest thing, and it is chain-specific
+		   enough that no template can express it. */
 		$issuer = strpos($policy, ':') !== false ? strstr($policy, ':', true) : '';
 		if (preg_match('/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/', $issuer))
 			return 'https://xrp.cafe/profile/' . rawurlencode($issuer);
 		return '';
 	}
-	if ((int)$blockchain_id === SOLANA_CHAIN_ID) {
-		/*
-		 * NO SLUG IS NEEDED HERE, which is the difference from XRPL.
-		 *
-		 * marketplace_slug exists because an XRPL collection is
-		 * issuer:taxon and xrp.cafe's slug is an artist-chosen vanity
-		 * string with no derivation in either direction -- twenty-one
-		 * collections had to have theirs hunted by hand. A Solana
-		 * collection IS an address, and that address is what marketplaces
-		 * route by, so the link builds itself from the policy exactly as
-		 * the Cardano one does.
-		 *
-		 * Tensor, because /trade/ accepts EITHER the collection address or
-		 * a named slug, so one template covers both and a slug stays
-		 * meaningful as an override without inventing a second
-		 * marketplace. Verified against this collection: the address form
-		 * answers 200 and the page carries the collection's name.
-		 */
-		$slug = trim((string)$slug);
-		if ($slug !== '' && preg_match('/^[a-z0-9][a-z0-9._-]{0,63}$/i', $slug))
-			return 'https://www.tensor.trade/trade/' . rawurlencode($slug);
-		/* Validated by DECODING, not by a pattern: base58 has no checksum,
-		   so a truncated address is still legal-looking and would be a dead
-		   link -- and a dead link reads as a broken platform where plain
-		   text reads as missing data. */
-		if (function_exists('sol_base58_decode') && strlen(sol_base58_decode($policy)) === 32)
-			return 'https://www.tensor.trade/trade/' . rawurlencode($policy);
-		if (!function_exists('sol_base58_decode')
-		    && preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $policy))
-			return 'https://www.tensor.trade/trade/' . rawurlencode($policy);
-		return '';
+	if ($bid === SOLANA_CHAIN_ID) {
+		/* Validated by DECODING: base58 carries no checksum, so a
+		   truncated address is still legal-looking. */
+		if (function_exists('sol_base58_decode')) {
+			if (strlen(sol_base58_decode($policy)) === 32) return $link($policy);
+			return '';
+		}
+		return preg_match('/^[1-9A-HJ-NP-Za-km-z]{32,44}$/', $policy) ? $link($policy) : '';
 	}
 	/* Cardano: 56 hex characters, or nothing. */
-	return preg_match('/^[0-9a-f]{56}$/i', $policy)
-		? 'https://www.wayup.io/collection/' . $policy : '';
+	return preg_match('/^[0-9a-f]{56}$/i', $policy) ? $link($policy) : '';
 }
 
 function accountExplorerUrl($address, $blockchain_id = 1) {
@@ -8215,7 +8240,8 @@ function getPoliciesListing($conn, $project_id=0) {
 			$gpl_url  = collectionMarketUrl(
 				$row["policy"] ?? '',
 				$row["blockchain_id"] ?? 1,
-				$row["marketplace_slug"] ?? null);
+				$row["marketplace_slug"] ?? null,
+				$conn);
 			$gpl_cell = $gpl_url !== ''
 				? "<a href='" . htmlspecialchars($gpl_url) . "' target='_blank' rel='noopener'"
 				  . " title='View " . $gpl_name . " on its marketplace'>" . $gpl_name . "</a>"

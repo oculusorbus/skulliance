@@ -65,6 +65,11 @@
   padding:2px 7px;font-size:.8rem;cursor:pointer;align-self:auto;font-weight:normal}
 .adm-table .nudge button:hover:not(:disabled){background:rgba(0,200,160,.12)}
 .adm-table .nudge button:disabled{color:#2b3f50;border-color:rgba(0,200,160,.06);cursor:default}
+.adm-chainslug{font-family:ui-monospace,Menlo,monospace;font-size:.7rem;color:#5a7888;
+  text-transform:none;letter-spacing:0;margin-left:8px}
+.adm-inline{flex-direction:row;align-items:center;gap:9px;text-transform:none;letter-spacing:0;
+  font-size:.86rem;color:#c8d8e8}
+.adm-inline input{width:auto}
 #reorder-actions{display:flex;gap:14px;align-items:center}
 #reorder-actions a{color:#5a7888}
 @media (max-width:560px){.adm-head{flex-direction:column;align-items:flex-start}}
