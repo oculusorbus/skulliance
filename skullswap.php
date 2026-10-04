@@ -2050,8 +2050,44 @@ function closeGuide() { document.getElementById('guide-overlay').style.display =
          this.renderBoard();
          this.playSound('cascade');
 
-         if (moved || this.matchCheckCount < 2) {
-             this.matchCheckCount++;
+         /*
+          * A SETTLED BOARD CAN STILL HOLD A MATCH, and the old condition
+          * walked away from it.
+          *
+          * The re-check used to run while `moved || matchCheckCount < 2`,
+          * and matchCheckCount was incremented on EVERY cascade while only
+          * being reset by a check that found nothing. So a long bomb chain
+          * -- which runs a cascade per blast -- pushed the counter to 2 or
+          * more, and the first cascade afterwards that moved nothing took
+          * the else branch: counter reset, nothing scheduled, and any match
+          * sitting on the board was simply abandoned. Reported as "the
+          * cascade left a match of 3 just sitting there", and reproducible
+          * on demand: a full board that cannot fall, one three on it, and
+          * matchCheckCount at 2.
+          *
+          * WHAT THE COUNTER ACTUALLY IS, because it is easy to read it
+          * backwards: it is not a brake, it is a GRACE ALLOWANCE. "Nothing
+          * moved, but look twice more anyway" -- a cheap net for a match
+          * that settles a beat late. It was never what stops the loop;
+          * nothing stops the loop because nothing restarts it. The chain
+          * only continues when resolveMatches() finds a match, and the
+          * handler that clears it is what calls cascadeTiles() again. A
+          * check that finds nothing simply ends there.
+          *
+          * The bug was that productive cascades spent the grace. Every
+          * blast in a chain incremented it, so by the time the board
+          * settled there was none left, and the one check that mattered
+          * never ran.
+          *
+          * So the board is now ASKED whether it still holds a match rather
+          * than being guessed at from a counter, and the grace is reset by
+          * anything productive so it is available when it is actually
+          * needed. checkMatches() only reads the board, and is asked only
+          * when nothing moved -- the one case where it changes the answer.
+          */
+         const pending = moved ? true : this.checkMatches().hasMatches;
+         if (pending || this.matchCheckCount < 2) {
+             this.matchCheckCount = pending ? 0 : this.matchCheckCount + 1;
              setTimeout(async () => {
                  /* awaited, or hasMatches is a Promise -- always truthy --
                     and matchCheckCount never resets. */
