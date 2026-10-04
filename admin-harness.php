@@ -161,5 +161,42 @@ ok(admin_art_missing('mov', array('mov')) !== array(),
    'mov was accepted; nothing on this host can read one and the game has no branch for it');
 ok(!isset(admin_art_kinds()['mov']), 'mov is listed as a renderable format');
 
+/* ---------- the panel's own write path ---------------------------------- *
+ *
+ * admin.php is not loadable here (it includes db.php and emits a page), so
+ * these are textual -- but each one guards a property that would be
+ * invisible if it broke, and all three have a specific failure in mind.
+ */
+echo "\nthe panel cannot be talked into a bad write\n";
+$ap = file_get_contents(__DIR__ . '/admin.php');
+$body = preg_replace('!/\*.*?\*/!s', '', $ap);
+
+/* THE WHOLE POINT. The form displays reward and duration; it must not
+   SEND them, or a hand-edited field walks straight past the validator
+   and recreates Trash Collection by hand. */
+ok(strpos($body, "_POST['reward']") === false,
+   'admin.php reads reward from the POST; it has to be derived from cost and level or the form can be edited');
+ok(strpos($body, "_POST['duration']") === false,
+   'admin.php reads duration from the POST; it has to be derived from the cost');
+ok(preg_match('/\$reward\s*=\s*admin_mission_reward\(/', $body) === 1, 'the mission reward is not derived');
+ok(preg_match('/\$duration\s*=\s*admin_mission_duration\(/', $body) === 1, 'the mission duration is not derived');
+
+/* Checked on the way in AND again before any write. A page that gates
+   once at the top and then trusts itself is one early-return away from a
+   write with no check in front of it. */
+ok(substr_count($body, 'adminRights()') >= 2,
+   'adminRights() is consulted once; the POST handler must check again rather than trust the page gate');
+ok(strpos($body, "REQUEST_METHOD'] === 'POST'") !== false, 'the write block is not gated on POST');
+
+/* Uploads: the type has to come from the file, not from its name. */
+ok(strpos($body, 'finfo_file') !== false,
+   'uploads trust the browser-supplied filename for the type; this writes into a directory the server serves');
+ok(strpos($body, 'move_uploaded_file') !== false, 'uploads are not moved with move_uploaded_file()');
+
+/* Every write goes through the validator rather than straight to SQL. */
+ok(strpos($body, 'admin_validate_mission(') !== false, 'the mission write does not call the validator');
+ok(strpos($body, 'admin_currency_problem(') !== false, 'the project write does not check the currency is free');
+ok(strpos($body, 'admin_art_missing(') !== false, 'the mission write does not check its art arrived');
+
 echo "\n" . ($fail ? "FAILED ($fail)\n" : "all admin-lib checks passed\n");
 exit($fail ? 1 : 0);

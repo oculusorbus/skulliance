@@ -365,6 +365,12 @@
 		      <a href="crafting.php">Crafting</a>
 		      <a href="transactions.php">Transactions</a>
 		      <a href="wallets.php">Wallets</a>
+		      <?php /* User 1 only, and admin.php checks again rather than
+		               trusting that this link was not rendered -- the nav
+		               decides what to DRAW, the page decides what to ALLOW. */
+		            if (isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] === 1): ?>
+		      <a href="admin.php">Admin</a>
+		      <?php endif; ?>
 		    </div>
 		  </div>
 
