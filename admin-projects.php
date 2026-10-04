@@ -82,7 +82,7 @@ admin_flash($MSG);
     <a href="admin-missions.php?project=<?php echo $pid; ?>">Missions</a>
   <?php endif; ?></p>
 
-<section class="adm-card">
+<div class="adm-card">
   <h3><?php echo $P ? 'Edit ' . htmlspecialchars($P['name']) : 'New project'; ?></h3>
   <form method="post" enctype="multipart/form-data" class="adm-form">
     <input type="hidden" name="project_id" value="<?php echo $pid; ?>">
@@ -113,9 +113,9 @@ admin_flash($MSG);
     <?php endif; ?>
     <button type="submit"><?php echo $P ? 'Save project' : 'Create project'; ?></button>
   </form>
-</section>
+</div>
 
-<section class="adm-card">
+<div class="adm-card">
   <h3>All projects</h3>
   <div class="adm-tablewrap"><table class="adm-table">
     <thead><tr><th>Project</th><th>Currency</th><th>Icon</th><th>Collections</th><th>Missions</th><th></th></tr></thead>
@@ -138,7 +138,7 @@ admin_flash($MSG);
     <?php endforeach; ?>
     </tbody>
   </table></div>
-</section>
+</div>
 
 </div></div>
 <?php include 'admin-css.php'; ?>

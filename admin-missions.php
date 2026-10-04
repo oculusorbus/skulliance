@@ -116,7 +116,7 @@ $Q = null; foreach ($M as $row) if ((int)$row['id'] === $qid) $Q = $row;
   <a href="admin-projects.php?project=<?php echo $pid; ?>">Project settings</a> &nbsp;|&nbsp;
   <a href="admin-collections.php?project=<?php echo $pid; ?>">Collections</a></p>
 
-<section class="adm-card">
+<div class="adm-card">
   <h3><?php echo htmlspecialchars($PROJECTS[$pid]['name']); ?> &mdash;
       <?php echo count($M); ?> mission<?php echo count($M) === 1 ? '' : 's'; ?></h3>
   <?php foreach ($problems as $p): ?>
@@ -153,9 +153,9 @@ $Q = null; foreach ($M as $row) if ((int)$row['id'] === $qid) $Q = $row;
   <?php else: ?>
     <p class="adm-note">No missions yet. The first one is the free intro: level 1, cost 0, reward 10, one day.</p>
   <?php endif; ?>
-</section>
+</div>
 
-<section class="adm-card">
+<div class="adm-card">
   <h3><?php echo $Q ? 'Edit level ' . (int)$Q['level'] : 'Add mission &mdash; level ' . $next_level; ?></h3>
   <form method="post" enctype="multipart/form-data" class="adm-form">
     <input type="hidden" name="project_id" value="<?php echo $pid; ?>">
@@ -191,7 +191,7 @@ $Q = null; foreach ($M as $row) if ((int)$row['id'] === $qid) $Q = $row;
     <button type="submit"><?php echo $Q ? 'Save mission' : 'Add mission'; ?></button>
     <?php if ($Q): ?><p class="adm-note"><a href="admin-missions.php?project=<?php echo $pid; ?>">Cancel &mdash; add a new mission instead</a></p><?php endif; ?>
   </form>
-</section>
+</div>
 
 </div></div>
 <?php include 'admin-css.php'; ?>

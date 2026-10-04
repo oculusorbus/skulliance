@@ -94,7 +94,7 @@ $C = null; foreach ($COLS as $c) if ((int)$c['id'] === $cid) $C = $c;
   <a href="admin-projects.php?project=<?php echo $pid; ?>">Project settings</a> &nbsp;|&nbsp;
   <a href="admin-missions.php?project=<?php echo $pid; ?>">Missions</a></p>
 
-<section class="adm-card">
+<div class="adm-card">
   <h3><?php echo htmlspecialchars($PROJECTS[$pid]['name']); ?> &mdash;
       <?php echo count($COLS); ?> collection<?php echo count($COLS) === 1 ? '' : 's'; ?></h3>
   <?php if ($COLS): ?>
@@ -119,9 +119,9 @@ $C = null; foreach ($COLS as $c) if ((int)$c['id'] === $cid) $C = $c;
   <?php else: ?>
     <p class="adm-note">No collections yet. Nothing from this project can be staked until one exists.</p>
   <?php endif; ?>
-</section>
+</div>
 
-<section class="adm-card">
+<div class="adm-card">
   <h3><?php echo $C ? 'Edit ' . htmlspecialchars($C['name']) : 'Add a collection'; ?></h3>
   <form method="post" class="adm-form">
     <input type="hidden" name="project_id" value="<?php echo $pid; ?>">
@@ -147,7 +147,7 @@ $C = null; foreach ($COLS as $c) if ((int)$c['id'] === $cid) $C = $c;
     <button type="submit"><?php echo $C ? 'Save collection' : 'Add collection'; ?></button>
     <?php if ($C): ?><p class="adm-note"><a href="admin-collections.php?project=<?php echo $pid; ?>">Cancel &mdash; add a new one instead</a></p><?php endif; ?>
   </form>
-</section>
+</div>
 
 </div></div>
 <?php include 'admin-css.php'; ?>

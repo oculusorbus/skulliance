@@ -21,6 +21,15 @@
 .adm-msg.good{border-color:#00c8a0;background:rgba(0,200,160,.1);color:#00c8a0}
 .adm-pick{display:flex;gap:10px;align-items:center;margin:0 0 18px;flex-wrap:wrap}
 .adm-pick label{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:#5a7888}
+/* INSURANCE, AND THE REASON THE PANEL WAS INVISIBLE. dist/flexbox.css
+   carries a BARE ELEMENT rule -- `section { opacity: 0 }` with a
+   `section.active { opacity: 1 }` revealed by a scroll observer in
+   skulliance.js. The admin cards were <section> and these pages do not
+   load that script, so every card rendered at full size with nothing
+   painted in it: present in the DOM, correctly laid out, completely
+   invisible. The cards are <div> now; this keeps anything nested under
+   .adm visible even if a <section> comes back. */
+.adm section{opacity:1}
 .adm-card{background:#0a1929;border:1px solid rgba(0,200,160,.14);padding:20px;margin:0 0 18px}
 .adm-form{display:flex;flex-direction:column;gap:14px;margin-top:12px}
 .adm-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}

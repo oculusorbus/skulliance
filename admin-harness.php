@@ -174,6 +174,11 @@ foreach ($PAGES as $f) {
 	$src[$f] = is_file(__DIR__ . '/' . $f) ? preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/' . $f)) : '';
 }
 
+/* And the stylesheet keeps the override, in case one comes back. */
+$css_src = file_get_contents(__DIR__ . '/admin-css.php');
+ok(preg_match('/\.adm section\s*\{[^}]*opacity:\s*1/', $css_src) === 1,
+   'admin-css.php no longer forces .adm section back to opacity 1; a stray <section> would be invisible again');
+
 $lib_src = preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/admin-lib.php'));
 ok(strpos($lib_src, "include __DIR__ . '/header.php'") === false,
    'admin-lib.php includes header.php from inside a function again -- that runs it in the function scope, '
@@ -201,6 +206,16 @@ foreach ($PAGES as $f) {
 	   content with no box. */
 	ok(strpos($b, 'class="container"') === false,
 	   "$f opens its own .container -- header.php already left one open and nesting them is what broke the layout");
+	/* THE ONE THAT MADE THE WHOLE PANEL INVISIBLE. dist/flexbox.css has a
+	   BARE ELEMENT rule -- `section { opacity: 0 }`, revealed by adding
+	   .active from a scroll observer in skulliance.js. Admin pages do not
+	   load that script, so a <section> here renders at full size with
+	   nothing painted inside it: in the DOM, correctly laid out, and
+	   completely invisible. No error, nothing in the console, and every
+	   control in it unclickable because there is nothing to see. */
+	ok(strpos($b, '<section') === false,
+	   "$f uses a <section>, which dist/flexbox.css hides with opacity:0 until skulliance.js adds .active -- "
+	 . 'these pages do not load it, so the content renders invisible');
 	ok(strpos($b, 'class="column"') === false,
 	   "$f uses .column, which does not exist in dist/flexbox.css (only .col1of2 and .col1of3 do)");
 	/* A failed write must say so. mysqli_report is OFF platform-wide, so
