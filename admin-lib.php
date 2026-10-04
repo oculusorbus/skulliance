@@ -410,6 +410,129 @@ function admin_art_missing($extension, $have) {
 }
 
 /**
+ * WHAT HAPPENS TO THE FILES WHEN A MISSION IS EDITED.
+ *
+ * The art filename is the TITLE, so renaming a mission renames its
+ * files. Before this, an edit left the old files behind and the row
+ * pointing at names that did not exist -- a broken tile plus permanent
+ * debt in images/missions/, growing by one orphan per rename.
+ *
+ * A PLAN, NOT AN ACTION. This decides and returns; the caller applies.
+ * The whole point is that something which deletes art can be exercised
+ * exhaustively with no filesystem, and admin-harness.php does.
+ *
+ *   $old_slug   '' for a new mission
+ *   $new_ext    the format the row will claim
+ *   $disk_old   extensions on disk for the OLD slug
+ *   $disk_new   extensions on disk for the NEW slug
+ *   $uploaded   extensions arriving in this request, written to the NEW slug
+ *
+ * Returns rename/delete/missing/keep, all as plain "slug.ext" strings.
+ * `missing` non-empty means DO NOT SAVE: the row would claim a format
+ * whose file is not there.
+ */
+function admin_art_plan($old_slug, $new_slug, $new_ext, $disk_old, $disk_new, $uploaded) {
+	$kinds = admin_art_kinds();
+	$out = array('rename' => array(), 'delete' => array(), 'missing' => array(), 'keep' => array());
+	if (!isset($kinds[$new_ext])) { $out['missing'][] = $new_ext; return $out; }
+
+	$same     = ($old_slug === $new_slug || $old_slug === '');
+	$disk_old = array_values(array_unique(array_map('strtolower', (array)$disk_old)));
+	$disk_new = array_values(array_unique(array_map('strtolower', (array)$disk_new)));
+	$uploaded = array_values(array_unique(array_map('strtolower', (array)$uploaded)));
+
+	/* An mp4 needs its .gif too -- that is the still every <img> asks
+	   for (mission_art_ext). Everything else is its own still. */
+	$required = array($kinds[$new_ext]['still']);
+	if ($kinds[$new_ext]['video']) $required[] = $new_ext;
+	$required = array_values(array_unique($required));
+
+	/* An upload always wins: it is the newest thing the operator did. */
+	$have_new = array_values(array_unique(array_merge($same ? $disk_old : $disk_new, $uploaded)));
+
+	foreach ($required as $ext) {
+		if (in_array($ext, $have_new, true)) { $out['keep'][] = "$new_slug.$ext"; continue; }
+		/* Not under the new name, but the old name has it: rename rather
+		   than demand a re-upload. This is the whole request. */
+		if (!$same && in_array($ext, $disk_old, true)) {
+			$out['rename'][] = array("$old_slug.$ext", "$new_slug.$ext");
+			continue;
+		}
+		$out['missing'][] = $ext;
+	}
+
+	/* NO DEBT. Two sources of it: files still under the old name that
+	   nothing renamed, and files under the new name in a format this
+	   mission no longer claims -- an mp4 switched to png leaves a .mp4
+	   and a .gif behind otherwise. */
+	foreach ($disk_old as $ext) {
+		if ($same) continue;
+		$renamed = false;
+		foreach ($out['rename'] as $r) if ($r[0] === "$old_slug.$ext") { $renamed = true; break; }
+		if (!$renamed) $out['delete'][] = "$old_slug.$ext";
+	}
+	foreach (array_unique(array_merge($same ? $disk_old : $disk_new, $uploaded)) as $ext) {
+		if (!in_array($ext, $required, true)) $out['delete'][] = "$new_slug.$ext";
+	}
+
+	/*
+	 * A RENAME'S DESTINATION MUST NEVER ALSO BE DELETED -- that is how a
+	 * successful rename loses the file a moment later.
+	 *
+	 * It cannot happen as this stands, and the reason is worth writing
+	 * down rather than guarding: a rename destination is always a
+	 * REQUIRED extension under the new slug, and the two delete sources
+	 * are old-slug files (a different name) and new-slug files in
+	 * formats that are NOT required. The sets cannot intersect.
+	 *
+	 * There was a filter here for it. It was removed because it could
+	 * never fire, and unreachable code that looks load-bearing is worse
+	 * than none -- a mutation proved it changed nothing. The invariant
+	 * is asserted in admin-harness.php instead, so a future change that
+	 * adds a third delete source fails loudly there rather than being
+	 * silently papered over here.
+	 */
+	$out['delete'] = array_values(array_unique($out['delete']));
+	return $out;
+}
+
+/**
+ * Apply a plan. Returns '' or a message, and leaves the files as it
+ * found them if a rename fails partway.
+ *
+ * ORDER IS THE SAFETY. Renames first, because they are reversible;
+ * deletions LAST, and only once the caller has confirmed the row saved.
+ * Deleting before the write is how an edit that fails validation takes
+ * the art with it.
+ */
+function admin_art_apply_renames($dir, $plan) {
+	$done = array();
+	foreach ($plan['rename'] as $r) {
+		$from = $dir . '/' . $r[0];
+		$to   = $dir . '/' . $r[1];
+		if (!is_file($from)) continue;
+		if (!@rename($from, $to)) {
+			foreach (array_reverse($done) as $u) @rename($dir . '/' . $u[1], $dir . '/' . $u[0]);
+			return 'Could not rename ' . htmlspecialchars($r[0]) . ' to ' . htmlspecialchars($r[1])
+			     . '. Nothing was changed.';
+		}
+		$done[] = $r;
+	}
+	return '';
+}
+
+function admin_art_apply_deletes($dir, $plan) {
+	$gone = 0;
+	foreach ($plan['delete'] as $f) {
+		/* Belt and braces on a destructive call: only ever a bare
+		   slug.ext inside the missions directory, never a path. */
+		if (!preg_match('/^[a-z0-9][a-z0-9\-]*\.(png|jpg|gif|mp4)$/', $f)) continue;
+		if (is_file($dir . '/' . $f) && @unlink($dir . '/' . $f)) $gone++;
+	}
+	return $gone;
+}
+
+/**
  * Resize and optimise through the SAME Imagick path the NFT cache uses.
  *
  * lib/image-cache-lib.php already does this in the web SAPI --

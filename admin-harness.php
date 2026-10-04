@@ -161,6 +161,78 @@ ok(admin_art_missing('mov', array('mov')) !== array(),
    'mov was accepted; nothing on this host can read one and the game has no branch for it');
 ok(!isset(admin_art_kinds()['mov']), 'mov is listed as a renderable format');
 
+echo "\nediting a mission's art: rename, replace, and leave no debt\n";
+/* The plan is pure, so every shape of edit is exercised here with no
+   filesystem -- which is the only honest way to test something that
+   deletes somebody's artwork. */
+function plan_is($got, $want_rename, $want_delete, $want_missing, $label) {
+	$r = array_map(function($x){ return $x[0] . '>' . $x[1]; }, $got['rename']); sort($r);
+	$d = $got['delete']; sort($d);
+	$m = $got['missing']; sort($m);
+	sort($want_rename); sort($want_delete); sort($want_missing);
+	ok($r === $want_rename, "$label: renames were [" . implode(' ', $r) . '], expected [' . implode(' ', $want_rename) . ']');
+	ok($d === $want_delete, "$label: deletes were [" . implode(' ', $d) . '], expected [' . implode(' ', $want_delete) . ']');
+	ok($m === $want_missing, "$label: missing was [" . implode(' ', $m) . '], expected [' . implode(' ', $want_missing) . ']');
+}
+
+/* THE HEADLINE CASE: a retitle with nothing uploaded. The file follows
+   the title; the operator should not have to find the art again. */
+plan_is(admin_art_plan('old-name', 'new-name', 'png', array('png'), array(), array()),
+        array('old-name.png>new-name.png'), array(), array(), 'retitle, png, no upload');
+
+/* An mp4 retitle moves BOTH halves of the pair. */
+plan_is(admin_art_plan('old-name', 'new-name', 'mp4', array('mp4', 'gif'), array(), array()),
+        array('old-name.gif>new-name.gif', 'old-name.mp4>new-name.mp4'), array(), array(),
+        'retitle, mp4 pair, no upload');
+
+/* A retitle where the old art is incomplete must still refuse, not
+   half-rename and save a row pointing at a missing video. */
+plan_is(admin_art_plan('old-name', 'new-name', 'mp4', array('gif'), array(), array()),
+        array('old-name.gif>new-name.gif'), array(), array('mp4'), 'retitle, mp4 missing its video');
+
+/* REPLACING THE ART WITHOUT RETITLING: the upload wins, nothing moves,
+   nothing is orphaned. */
+plan_is(admin_art_plan('same', 'same', 'png', array('png'), array('png'), array('png')),
+        array(), array(), array(), 'same title, new png over the old one');
+
+/* CHANGING FORMAT is where the debt came from. png -> mp4 leaves a
+   stale .png behind unless it is cleaned up. */
+plan_is(admin_art_plan('same', 'same', 'mp4', array('png'), array('png'), array('mp4', 'gif')),
+        array(), array('same.png'), array(), 'same title, png becomes an mp4 pair');
+
+/* ...and the reverse: mp4 -> png must take BOTH old files with it. */
+plan_is(admin_art_plan('same', 'same', 'png', array('mp4', 'gif'), array('mp4', 'gif'), array('png')),
+        array(), array('same.gif', 'same.mp4'), array(), 'same title, mp4 pair becomes a png');
+
+/* A retitle AND a format change at once: the old pair goes, the new
+   file stands alone under the new name. */
+plan_is(admin_art_plan('old-name', 'new-name', 'png', array('mp4', 'gif'), array(), array('png')),
+        array(), array('old-name.gif', 'old-name.mp4'), array(), 'retitle and reformat together');
+
+/* A retitle where an upload also arrives: the upload wins and the old
+   file is cleaned up rather than renamed on top of it. */
+plan_is(admin_art_plan('old-name', 'new-name', 'png', array('png'), array(), array('png')),
+        array(), array('old-name.png'), array(), 'retitle with a replacement uploaded');
+
+/* A new mission has no old slug and nothing to clean. */
+plan_is(admin_art_plan('', 'brand-new', 'png', array(), array(), array('png')),
+        array(), array(), array(), 'a brand new mission');
+plan_is(admin_art_plan('', 'brand-new', 'mp4', array(), array(), array('mp4')),
+        array(), array(), array('gif'), 'a brand new mp4 with no still');
+
+/* THE ONE THAT WOULD LOSE ART: a rename's destination must never also
+   be queued for deletion. */
+$p = admin_art_plan('old-name', 'new-name', 'gif', array('gif', 'png'), array(), array());
+$dests = array(); foreach ($p['rename'] as $r) $dests[] = $r[1];
+foreach ($dests as $dst) ok(!in_array($dst, $p['delete'], true),
+   "a file is renamed to $dst and then deleted, which loses the art");
+ok(in_array('old-name.png', $p['delete'], true), 'the leftover old .png was not cleaned up');
+
+/* An unknown format is refused before anything is planned. */
+$bad = admin_art_plan('a', 'b', 'mov', array('mov'), array(), array());
+ok($bad['missing'] === array('mov') && $bad['rename'] === array() && $bad['delete'] === array(),
+   'an unsupported format produced a rename or a delete instead of a refusal');
+
 echo "\nreordering a ladder\n";
 /* Aeoniumsky's shape: a flat-100 project, level 1 free. */
 function rowset($levels_costs) {
@@ -310,7 +382,24 @@ ok(strpos($mi, "_POST['duration']") === false, 'admin-missions.php reads duratio
 ok(preg_match('/\$reward\s*=\s*admin_mission_reward\(/', $mi) === 1, 'the mission reward is not derived');
 ok(preg_match('/\$duration\s*=\s*admin_mission_duration\(/', $mi) === 1, 'the mission duration is not derived');
 ok(strpos($mi, 'admin_validate_mission(') !== false, 'the mission write does not call the validator');
-ok(strpos($mi, 'admin_art_missing(') !== false, 'the mission write does not check its art arrived');
+/* EDITING ART: rename, replace, no debt. The order is the safety, so
+   the harness pins the order and not just the calls. */
+ok(strpos($mi, 'admin_art_plan(') !== false, 'the mission write does not plan its file changes');
+ok(strpos($mi, 'admin_art_apply_renames(') !== false, 'a retitle no longer moves the art, so it asks for a re-upload');
+ok(strpos($mi, 'admin_art_apply_deletes(') !== false, 'nothing cleans up, so images/missions/ gains an orphan per rename');
+ok(strpos($mi, '$Q_before') !== false, 'the save does not read the row before editing it, so it cannot know the old filename');
+/* DELETES AFTER THE WRITE. Before it, an edit that fails validation
+   takes the artwork with it. */
+$i_write  = strpos($mi, '$wrote =');
+$i_delete = strpos($mi, 'admin_art_apply_deletes(');
+$i_rename = strpos($mi, 'admin_art_apply_renames(');
+ok($i_rename !== false && $i_write !== false && $i_rename < $i_write,
+   'the renames happen after the row is written, so a failed rename leaves a row pointing at nothing');
+ok($i_delete !== false && $i_write !== false && $i_delete > $i_write,
+   'files are deleted BEFORE the row is written -- a save that fails validation would take the art with it');
+/* And a failed write puts the renames back. */
+ok(preg_match('/if \(!\$wrote\)\s*\{[^}]*admin_art_apply_renames/s', $mi) === 1,
+   'a refused write leaves the files renamed for a title that was never saved');
 
 /* REORDERING. Both routes must end in the planner, and the save must be
    scoped to the project -- a stray id in the posted order would

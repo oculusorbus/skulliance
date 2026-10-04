@@ -77,6 +77,12 @@ $ext     = strtolower(trim((string)($_POST['extension'] ?? 'png')));
 $reward   = admin_mission_reward($cost, $level);
 $duration = admin_mission_duration($cost);
 
+/* The row as it stands, so a retitle knows which files to move. */
+$Q_before = null;
+if ($id > 0) {
+	$qr = $conn->query("SELECT title, extension FROM quests WHERE id = $id AND project_id = $project LIMIT 1");
+	if ($qr && $qr->num_rows) $Q_before = $qr->fetch_assoc();
+}
 $existing = adm_missions($conn, $project);
 $others   = array();
 foreach ($existing as $lv => $row) if ((int)$row['id'] !== $id) $others[] = (int)$lv;
@@ -95,23 +101,48 @@ if (isset($taken[$slug]))
 	$errs[] = 'Another mission (id ' . $taken[$slug] . ') already produces the art filename "'
 	        . htmlspecialchars($slug) . '". Saving this would overwrite its image.';
 
-/* Which art files exist, counting whatever arrived with this post. */
-$dir  = __DIR__ . '/images/missions';
-$have = array();
-foreach (array('png','jpg','gif','mp4') as $e) if (is_file("$dir/$slug.$e")) $have[] = $e;
-$upload_err = '';
-foreach (array('art' => array('png','jpg','gif','mp4'), 'art_still' => array('gif','png','jpg')) as $field => $allow) {
+/*
+ * THE FILES. The art filename is the title, so a retitle has to MOVE the
+ * art rather than ask for it again -- and whatever the edit leaves
+ * behind has to go, or images/missions/ gains an orphan per rename.
+ *
+ * ORDER IS THE SAFETY:
+ *   1. see what is on disk, under the old name and the new one
+ *   2. write any uploads (newest thing the operator did, so they win)
+ *   3. plan, and refuse if the result would be incomplete
+ *   4. rename -- reversible, and rolled back if one fails
+ *   5. save the row
+ *   6. ONLY THEN delete
+ * Deleting before the write is how an edit that fails validation takes
+ * the artwork with it.
+ */
+$dir      = __DIR__ . '/images/missions';
+$EXTS     = array('png', 'jpg', 'gif', 'mp4');
+$old_slug = ($Q_before && trim((string)$Q_before['title']) !== '')
+          ? admin_mission_slug($Q_before['title']) : '';
+$disk_old = array();
+foreach ($EXTS as $e) if ($old_slug !== '' && is_file("$dir/$old_slug.$e")) $disk_old[] = $e;
+
+$uploaded = array();
+foreach (array('art' => $EXTS, 'art_still' => array('gif', 'png', 'jpg')) as $field => $allow) {
 	if (!isset($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) continue;
-	if (!$errs) {
-		$e = adm_accept_upload($field, $dir, $slug, $allow);
-		if ($e !== '') $upload_err = $e;
-	}
+	if ($errs) continue;                       // never write for a save that cannot happen
+	$e = adm_accept_upload($field, $dir, $slug, $allow);
+	if ($e !== '') { $errs[] = $e; continue; }
+	/* Which extension actually landed -- adm_accept_upload() names the
+	   file from the FILE's type, not from what the field was called. */
+	foreach ($allow as $x) if (is_file("$dir/$slug.$x")) { $uploaded[] = $x; }
 }
-if ($upload_err !== '') $errs[] = $upload_err;
+$disk_new = array();
+foreach ($EXTS as $e) if (is_file("$dir/$slug.$e")) $disk_new[] = $e;
+
+$plan = admin_art_plan($old_slug, $slug, $ext, $disk_old, $disk_new, $uploaded);
+if (!$errs && $plan['missing'])
+	$errs[] = 'Missing the .' . implode(', .', $plan['missing']) . ' file. '
+	        . ($ext === 'mp4' ? 'An mp4 mission needs the .mp4 and a .gif beside it for the still.' : '');
 if (!$errs) {
-	$have = array();
-	foreach (array('png','jpg','gif','mp4') as $e) if (is_file("$dir/$slug.$e")) $have[] = $e;
-	foreach (admin_art_missing($ext, $have) as $m) $errs[] = $m;
+	$rn = admin_art_apply_renames($dir, $plan);
+	if ($rn !== '') $errs[] = $rn;
 }
 
 if ($errs) { $MSG['err'] = array_merge($MSG['err'], $errs); }
@@ -127,12 +158,26 @@ else {
 		                cost=$cost, reward=$reward, duration=$duration, level=$level WHERE id=$id")
 		: $conn->query("INSERT INTO quests (title, description, extension, project_id, cost, reward, duration, level)
 		                VALUES ('$t','$d','$x',$project,$cost,$reward,$duration,$level)");
-	if (!$wrote) $MSG['err'][] = 'The database refused that write: ' . htmlspecialchars($conn->error);
-	else { header('Location: admin-missions.php?project=' . $project . '&saved=1'); exit; }
+	if (!$wrote) {
+	/* Put the files back: they were renamed for a title that was never
+	   written, and leaving them is worse than not having moved them. */
+	$back = array('rename' => array());
+	foreach ($plan['rename'] as $r) $back['rename'][] = array($r[1], $r[0]);
+	admin_art_apply_renames($dir, $back);
+	$MSG['err'][] = 'The database refused that write: ' . htmlspecialchars($conn->error);
+} else {
+	$gone = admin_art_apply_deletes($dir, $plan);     // LAST, and only now
+	header('Location: admin-missions.php?project=' . $project . '&saved=1'
+	     . ($plan['rename'] ? '&moved=' . count($plan['rename']) : '')
+	     . ($gone ? '&cleaned=' . $gone : ''));
+	exit;
+}
 	}
 	}
 }
 if (isset($_GET['saved'])) $MSG['ok'][] = 'Saved.';
+if (isset($_GET['moved']))   $MSG['ok'][] = (int)$_GET['moved'] . ' art file(s) renamed to match the new title.';
+if (isset($_GET['cleaned'])) $MSG['ok'][] = (int)$_GET['cleaned'] . ' file(s) no longer needed were removed.';
 if (isset($_GET['reordered'])) $MSG['ok'][] = 'Reordered &mdash; ' . (int)$_GET['reordered']
 	. ' mission(s) moved to a new tier. The project pays exactly what it did before.';
 
