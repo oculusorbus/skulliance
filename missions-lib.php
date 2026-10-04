@@ -98,6 +98,35 @@ function mission_art_slug($title) {
 }
 
 /*
+ * WHICH FILE IS THE STILL IMAGE.
+ *
+ * quests.extension records the format a mission was authored in, and for
+ * an mp4 that is NOT the picture: an mp4 mission ships two files, the
+ * video and a .gif alongside it, and every surface that wants an <img>
+ * wants the gif. Everything else is its own still.
+ *
+ * This existed as the same ternary written out at five call sites. Four
+ * had it; two did not, and both were real:
+ *
+ *   mission_active() SELECTed q.extension and then hardcoded '.png',
+ *   so every gif, mp4 and jpg mission rendered a broken image in the
+ *   field list -- the view a player looks at while a mission is OUT.
+ *   266 of 455 missions on the live table, 58% of them.
+ *
+ *   mission_share_payload() used the raw extension, so an mp4 mission
+ *   published slug.mp4 as the embed image on Discord and X, which no
+ *   embed renders.
+ *
+ * One function so the pairing rule cannot be half-remembered again.
+ * mov is deliberately NOT mapped: nothing in this codebase can read one,
+ * and quietly pointing at a .gif that was never produced would turn a
+ * visible break into an invisible one. See missions-economy.md section 6.
+ */
+function mission_art_ext($extension) {
+	return ($extension === 'mp4') ? 'gif' : $extension;
+}
+
+/*
  * THE PROJECT PICKER.
  *
  * The old filter was forty unlabelled currency icons with a hover tooltip,
@@ -300,8 +329,7 @@ function mission_quests($conn, $project_id) {
 		$cost   = (float)$row['cost'];
 		$locked = ($level > $done + 1);
 		$slug   = mission_art_slug($row['title']);
-		/* mp4 quests keep a .gif alongside for the still. */
-		$ext    = ($row['extension'] === 'mp4') ? 'gif' : $row['extension'];
+		$ext    = mission_art_ext($row['extension']);
 
 		$out[] = array(
 			'quest_id'    => (int)$row['id'],
@@ -429,8 +457,7 @@ function mission_frontier($conn) {
 			'cost'       => $cost,
 			'reward'     => (float)$row['reward'],
 			'duration'   => (int)$row['duration'],
-			'image'      => 'images/missions/' . $slug . '.'
-			                . (($row['extension'] === 'mp4') ? 'gif' : $row['extension']),
+			'image'      => 'images/missions/' . $slug . '.' . mission_art_ext($row['extension']),
 			'affordable' => ($cost <= 0 || $balance >= $cost),
 			'shortfall'  => ($cost > $balance) ? $cost - $balance : 0,
 			'has_squad'  => (isset($idle[$pid]) && $idle[$pid] > 0),
@@ -575,7 +602,7 @@ function mission_loadout($conn, $quest_id) {
 		'duration'    => (int)$q['duration'],
 		'level'       => (int)$q['level'],
 		'locked'      => $locked,
-		'image'       => 'images/missions/' . $slug . '.' . (($q['extension'] === 'mp4') ? 'gif' : $q['extension']),
+		'image'       => 'images/missions/' . $slug . '.' . mission_art_ext($q['extension']),
 		'video'       => ($q['extension'] === 'mp4') ? 'images/missions/' . $slug . '.mp4' : '',
 		'balance'     => $balance,
 		'affordable'  => ((float)$q['cost'] <= 0 || $balance >= (float)$q['cost']),
@@ -683,7 +710,8 @@ function mission_active($conn, $limit = 0) {
 			'ready'      => $ready,
 			'percent'    => $pct,
 			'items'      => $icons,
-			'image'      => 'images/missions/' . mission_art_slug($row['title']) . '.png',
+			'image'      => 'images/missions/' . mission_art_slug($row['title'])
+			                . '.' . mission_art_ext($row['extension']),
 		);
 	}
 	/* Closest to done first: what you came to claim should be at the top. */
@@ -905,7 +933,8 @@ function mission_announce($conn, $q, $mission_id, $nft_count, $success, $boost, 
 	$avatar  = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
 	$avurl   = ($discord && $avatar) ? "https://cdn.discordapp.com/avatars/$discord/$avatar.png" : '';
 	$profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($name);
-	$img     = "https://skulliance.io/staking/images/missions/" . mission_art_slug($q['title']) . "." . $q['extension'];
+	$img     = "https://skulliance.io/staking/images/missions/" . mission_art_slug($q['title'])
+	         . "." . mission_art_ext($q['extension']);
 
 	$extras = array();
 	$boost_map = mission_boost_map();

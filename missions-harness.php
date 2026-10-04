@@ -539,6 +539,53 @@ ok($navAt !== false && $mainAt !== false,
  . 'auto-height box its position:sticky depends on, and outside it the pin '
  . 'dies one viewport down the way realms.php did');
 
+/* ---------- mission art: one pairing rule, five call sites --------------- *
+ *
+ * quests.extension is the format a mission was AUTHORED in, which for an
+ * mp4 is not the picture: an mp4 ships two files, the video and a .gif
+ * beside it, and every surface wanting an <img> wants the gif.
+ *
+ * That ternary used to be written out at each call site. Four had it and
+ * two did not, and both were live defects -- mission_active() SELECTed
+ * q.extension and then hardcoded '.png', breaking the field-list image for
+ * 266 of 455 missions, and the share payload handed Discord a .mp4 as an
+ * embed image. The rule now lives in mission_art_ext(), and what this
+ * section really guards is that nobody restates it inline again.
+ */
+echo "\nmission art\n";
+$ml = file_get_contents(__DIR__ . '/missions-lib.php');
+
+ok(mission_art_ext('mp4') === 'gif', 'an mp4 mission no longer shows its paired .gif as the still');
+foreach (array('png', 'jpg', 'gif') as $e) {
+	ok(mission_art_ext($e) === $e, "a $e mission's still is no longer its own file");
+}
+/* NOT mapped on purpose: nothing here can read a mov, and pointing at a
+   .gif that was never produced turns a visible break into a silent one. */
+ok(mission_art_ext('mov') === 'mov', 'mov is being quietly remapped to a file nobody generated');
+
+/* The filename IS the title, so the slug has to stay filesystem-safe. */
+ok(mission_art_slug("Ohh Meed's Bar") === 'ohh-meeds-bar', 'the art slug no longer strips apostrophes and spaces');
+ok(mission_art_slug('Enter The Galacticverse') === 'enter-the-galacticverse', 'the art slug is no longer lowercased');
+
+/* No art path may restate the pairing or assume a format. Both of the
+   fixed bugs are exactly this shape, so the guard is textual -- and it
+   counts rather than greps, because the rule legitimately appears once:
+   inside mission_art_ext() itself. */
+$body = preg_replace('!/\*.*?\*/!s', '', $ml);
+ok(substr_count($body, "'mp4') ? 'gif'") === 1,
+   'the mp4->gif rule is written in ' . substr_count($body, "'mp4') ? 'gif'")
+ . ' places; it belongs in mission_art_ext() and nowhere else');
+ok(preg_match("~images/missions/[^\n]*\\.png'~", $body) !== 1,
+   "an art path hardcodes .png again -- that is the mission_active() bug, and it is invisible for png missions");
+/* Every still-image path must reach the helper. Four call sites build one
+   (browse, picker, loadout, active) and the share payload is the fifth. */
+/* MINUS THE DEFINITION. Counting raw occurrences includes
+   `function mission_art_ext(` itself, so five call sites plus the
+   declaration is six -- and a `>= 5` check passed with a call site
+   deleted, which is exactly the share-card bug coming back. */
+$uses = substr_count($body, 'mission_art_ext(') - substr_count($body, 'function mission_art_ext(');
+ok($uses >= 5, "only $uses call site(s) use mission_art_ext(); there are five art paths and one has stopped");
+
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
 echo "all missions checks passed\n";
