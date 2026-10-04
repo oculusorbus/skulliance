@@ -3601,8 +3601,26 @@ function collectionMarketUrl($policy, $blockchain_id = 1, $slug = null, $conn = 
 	   instead of a broken link. Same reasoning as nftExplorerUrl(). */
 	$link = function($id) use ($tpl) { return str_replace('%s', rawurlencode($id), $tpl); };
 
-	/* A slug always wins where one exists, on any chain. */
-	if ($slug !== '' && preg_match('/^[a-z0-9][a-z0-9._-]{0,63}$/i', $slug)) return $link($slug);
+	/*
+	 * A SLUG ONLY APPLIES WHERE THE MARKETPLACE ACCEPTS ONE.
+	 *
+	 * xrp.cafe addresses a collection by an artist-chosen slug and
+	 * Tensor takes either a slug or the collection address, so on those
+	 * two a slug is the better identifier. WAYUP ADDRESSES BY POLICY AND
+	 * NOTHING ELSE -- a slug there produces wayup.io/collection/<slug>,
+	 * which is a dead link.
+	 *
+	 * The pre-refactor code had this right by accident, because each
+	 * chain had its own branch and the Cardano one simply never looked
+	 * at the slug. Flattening them into one template made the slug apply
+	 * everywhere, which is a trap rather than a feature: no Cardano
+	 * collection has a slug today (checked -- all 263 live links are
+	 * 56-hex policies), so it would sit latent until somebody filled the
+	 * field in and quietly broke that collection's link.
+	 */
+	$slug_chains = array(XRPL_CHAIN_ID => 1, SOLANA_CHAIN_ID => 1);
+	if (isset($slug_chains[$bid]) && $slug !== ''
+	    && preg_match('/^[a-z0-9][a-z0-9._-]{0,63}$/i', $slug)) return $link($slug);
 
 	if ($bid === XRPL_CHAIN_ID) {
 		/* No slug: not every collection on the ledger has a marketplace

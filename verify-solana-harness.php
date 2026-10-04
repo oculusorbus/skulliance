@@ -500,6 +500,15 @@ ok(collectionMarketUrl($OMEN_COLL, SOLANA_CHAIN_ID, null) !== '',
    'a Solana collection with no marketplace_slug produces no link, which would make the column mandatory');
 ok(collectionMarketUrl($OMEN_COLL, SOLANA_CHAIN_ID, 'omen-named') === 'https://www.tensor.trade/trade/omen-named',
    'a marketplace_slug does not override the address');
+/* BUT NOT ON CARDANO. Wayup addresses by policy and nothing else, so a
+   slug there is a dead link. Each chain used to have its own branch and
+   the Cardano one never looked at the slug; flattening them into one
+   template made it apply everywhere, which is a trap waiting for the
+   first person to fill the field in. All 263 live Cardano links are
+   56-hex policies, so it was latent rather than broken. */
+ok(collectionMarketUrl(str_repeat('a', 56), 1, 'some-slug')
+   === 'https://www.wayup.io/collection/' . str_repeat('a', 56),
+   'a slug on a Cardano collection replaced the policy in the wayup link, which is a dead link');
 /* base58 has no checksum, so a truncated address is still legal-looking.
    A dead link reads as a broken platform; plain text reads as missing data. */
 ok(collectionMarketUrl(substr($OMEN_COLL, 0, 20), SOLANA_CHAIN_ID) === '',

@@ -142,7 +142,9 @@ $C = null; foreach ($COLS as $c) if ((int)$c['id'] === $cid) $C = $c;
         <small>Points per NFT per day.</small></label>
       <label>Marketplace slug
         <input type="text" name="marketplace_slug" value="<?php echo htmlspecialchars($C['marketplace_slug'] ?? ''); ?>">
-        <small>XRPL only. Cardano and Solana build the link from the id.</small></label>
+        <small>XRPL and Solana only &mdash; xrp.cafe addresses a collection by an artist-chosen
+               slug, and Tensor takes either. Wayup addresses by policy, so a slug is ignored on
+               Cardano rather than producing a dead link.</small></label>
     </div>
     <button type="submit"><?php echo $C ? 'Save collection' : 'Add collection'; ?></button>
     <?php if ($C): ?><p class="adm-note"><a href="admin-collections.php?project=<?php echo $pid; ?>">Cancel &mdash; add a new one instead</a></p><?php endif; ?>
