@@ -352,7 +352,10 @@ $Q = null; foreach ($M as $row) if ((int)$row['id'] === $qid) $Q = $row;
             <option value="<?php echo $k; ?>" <?php echo (($Q['extension'] ?? 'png') === $k) ? 'selected' : ''; ?>>.<?php echo $k; ?></option>
           <?php endforeach; ?>
         </select>
-        <small>An .mp4 needs a .gif uploaded too &mdash; that is the still every tile shows.</small></label>
+        <small>An .mp4 needs a .gif uploaded too &mdash; that is the still every tile shows
+               and the video's poster. <strong>.mov is not accepted:</strong> an iPhone records
+               HEVC, which plays in Safari and is a black frame in Chrome. Convert to H.264 MP4
+               first.</small></label>
       <label>Cost
         <input type="number" name="cost" step="100" min="0"
                value="<?php echo $Q ? (int)$Q['cost'] : $def['cost']; ?>">

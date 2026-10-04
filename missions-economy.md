@@ -265,10 +265,34 @@ uploaded. The platform **already has the tooling**, though:
 animated gifs, and resizes with `FILTER_LANCZOS` to 1000px wide. An uploader
 can reuse that path rather than inventing one.
 
-**What it cannot do on this host:** there is no `ffmpeg` and no `exec()`
-anywhere in the codebase, and Imagick will not read mp4 without video
-delegates. So **mp4 → gif cannot be automated server-side** without new
-infrastructure. The realistic version is that the tool *detects* the
+**What it cannot do on this host — measured, 2026-10-04.**
+`missions-media-probe.php` settles this; run it over HTTP, not just the
+CLI, because the shell php is a different build from the one Apache
+runs.
+
+| | |
+|---|---|
+| `exec()` | **available**, `disable_functions` empty (CLI; web SAPI still unverified) |
+| `ffmpeg` | **not installed** — absent from PATH and from every cPanel location checked |
+
+So the blocker is ffmpeg itself, not PHP's configuration, and **a static
+build dropped in `~/bin/ffmpeg` would be enough** — the probe already
+looks there.
+
+**Until then `.mov` stays refused**, and that is a deliberate trade
+rather than laziness. `missions.php` builds
+`<video src="…" poster="…">` with no `type` attribute, so the browser
+sniffs the container: a QuickTime file carrying H.264 plays nearly
+everywhere, but an iPhone has recorded **HEVC** by default since iOS 11,
+and HEVC in Chrome or Firefox is a black frame. It would play for
+whoever uploaded it and be broken for a share of players, with nothing
+logged. A visible refusal beats that. The refusal now names the fix
+rather than only the problem.
+
+**The `.gif` is required either way**, because it is the poster *and*
+the still on every tile — so accepting `.mov` would not remove the
+conversion work, only the mov→mp4 half of it. With ffmpeg reachable,
+one upload could produce both files and the whole manual step goes. The realistic version is that the tool *detects* the
 problem: an mp4 upload without its paired gif is refused with a message
 saying so, rather than saving a row that renders a broken tile.
 

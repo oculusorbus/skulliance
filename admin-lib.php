@@ -630,7 +630,33 @@ function adm_accept_upload($field, $dir, $basename, $allowed_ext) {
 	$by_mime = array('image/png' => 'png', 'image/jpeg' => 'jpg',
 	                 'image/gif' => 'gif', 'video/mp4' => 'mp4');
 	$ext = isset($by_mime[$mime]) ? $by_mime[$mime] : '';
-	if ($ext === '') return 'That is not a PNG, JPG, GIF or MP4 (it looks like "' . htmlspecialchars($mime) . '").';
+	if ($ext === '') {
+		/*
+		 * NAME THE FIX, NOT JUST THE PROBLEM. QuickTime is the one
+		 * people actually try, because it is what a phone and a screen
+		 * recorder produce, and "that is not an MP4" leaves them to work
+		 * out what to do about it.
+		 *
+		 * It is refused rather than accepted because a .mov from an
+		 * iPhone is HEVC: it plays for whoever uploaded it and shows a
+		 * black frame in Chrome and Firefox, with nothing logged. A
+		 * visible refusal beats a break only some players see. This
+		 * stops being true the moment ffmpeg is reachable -- see
+		 * missions-media-probe.php -- because the .mov would then be
+		 * transcoded rather than handed to the browser.
+		 */
+		$known = array(
+			'video/quicktime' => 'A .mov cannot be used directly: an iPhone records HEVC, which plays in '
+			                   . 'Safari and shows a black frame in Chrome and Firefox. Convert it to '
+			                   . 'H.264 MP4 and upload that, plus a .gif for the still.',
+			'image/webp'      => 'WebP is not one of the four formats the mission tiles render. Save it as PNG.',
+			'image/avif'      => 'AVIF is not one of the four formats the mission tiles render. Save it as PNG.',
+			'image/svg+xml'   => 'SVG is not rendered on mission tiles. Export it as a PNG.',
+			'video/webm'      => 'WebM is not rendered on mission tiles. Convert it to H.264 MP4, plus a .gif.',
+		);
+		if (isset($known[$mime])) return $known[$mime];
+		return 'That is not a PNG, JPG, GIF or MP4 (it looks like "' . htmlspecialchars($mime) . '").';
+	}
 	if (!in_array($ext, $allowed_ext, true))
 		return 'A .' . $ext . ' is not accepted here. Allowed: .' . implode(', .', $allowed_ext) . '.';
 

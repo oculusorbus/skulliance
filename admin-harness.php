@@ -160,6 +160,20 @@ ok(admin_art_missing('mp4', array('gif')) !== array(),
 ok(admin_art_missing('mov', array('mov')) !== array(),
    'mov was accepted; nothing on this host can read one and the game has no branch for it');
 ok(!isset(admin_art_kinds()['mov']), 'mov is listed as a renderable format');
+/* A REFUSAL THAT NAMES THE FIX. QuickTime is the one people actually
+   try, because it is what a phone and a screen recorder produce, and
+   "that is not an MP4" leaves them to work the rest out. */
+$lib_raw = file_get_contents(__DIR__ . '/admin-lib.php');
+/* Matched with \s* because the map is column-aligned -- a literal
+   "'image/webp' =>" misses it by two spaces, which is the third time an
+   assertion in this file has been wrong about whitespace rather than
+   the code being wrong. */
+foreach (array('video/quicktime', 'image/webp', 'video/webm', 'image/svg+xml') as $m) {
+	ok(preg_match("/'" . preg_quote($m, '/') . "'\s*=>/", $lib_raw) === 1,
+	   "an upload of $m gets the generic \"not a PNG, JPG, GIF or MP4\" message instead of being told what to do");
+}
+ok(stripos($lib_raw, 'H.264') !== false,
+   'nothing tells the operator which codec is safe, which is the actual fix');
 
 echo "\nediting a mission's art: rename, replace, and leave no debt\n";
 /* The plan is pure, so every shape of edit is exercised here with no
