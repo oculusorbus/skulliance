@@ -365,14 +365,27 @@
 		      <a href="crafting.php">Crafting</a>
 		      <a href="transactions.php">Transactions</a>
 		      <a href="wallets.php">Wallets</a>
-		      <?php /* User 1 only, and admin.php checks again rather than
-		               trusting that this link was not rendered -- the nav
-		               decides what to DRAW, the page decides what to ALLOW. */
-		            if (isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] === 1): ?>
-		      <a href="admin.php">Admin</a>
-		      <?php endif; ?>
 		    </div>
 		  </div>
+
+		  <?php /* ADMIN. Its own dropdown rather than a link buried under
+		           Account, because it is three separate jobs and lumping
+		           them behind one entry is what made the tabbed version
+		           awkward to use.
+
+		           User 1 only -- and each page checks AGAIN rather than
+		           trusting that this was not rendered. The nav decides what
+		           to DRAW; the page decides what to ALLOW. */
+		        if (isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] === 1): ?>
+		  <div class="nav-dropdown">
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Admin</span>
+		    <div class="nav-dropdown-menu">
+		      <a href="admin-projects.php">Projects</a>
+		      <a href="admin-collections.php">Collections</a>
+		      <a href="admin-missions.php">Missions</a>
+		    </div>
+		  </div>
+		  <?php endif; ?>
 
 		  <a href="skullpaper.php">Skull Paper</a>
 		  <a href="logout.php">Logout</a>

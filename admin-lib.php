@@ -347,3 +347,133 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 		return 'Could not process that image: ' . $ex->getMessage();
 	}
 }
+
+/* ---------- reads and uploads, shared by the three admin pages ----------- *
+ *
+ * They take $conn as a parameter and this file still includes nothing, so
+ * admin-harness.php keeps running the rules with no database.
+ */
+/* reads -------------------------------------------------------- */
+
+function adm_projects($conn) {
+	$out = array();
+	$r = $conn->query("SELECT id, name, currency, discord_id, divider FROM projects ORDER BY name ASC");
+	while ($r && $row = $r->fetch_assoc()) $out[(int)$row['id']] = $row;
+	return $out;
+}
+function adm_collections($conn, $project_id) {
+	$out = array(); $project_id = (int)$project_id;
+	$r = $conn->query("SELECT id, name, policy, rate, blockchain_id, marketplace_slug
+	                   FROM collections WHERE project_id = $project_id ORDER BY name ASC");
+	while ($r && $row = $r->fetch_assoc()) $out[] = $row;
+	return $out;
+}
+function adm_missions($conn, $project_id) {
+	$out = array(); $project_id = (int)$project_id;
+	$r = $conn->query("SELECT id, title, description, extension, cost, reward, duration, level
+	                   FROM quests WHERE project_id = $project_id ORDER BY level ASC");
+	while ($r && $row = $r->fetch_assoc()) $out[(int)$row['level']] = $row;
+	return $out;
+}
+/* Every title on the platform, because the art filename is the title and
+   a collision silently overwrites another project's file. */
+function adm_all_titles($conn, $except_id = 0) {
+	$out = array(); $except_id = (int)$except_id;
+	$r = $conn->query("SELECT id, title FROM quests" . ($except_id ? " WHERE id != $except_id" : ""));
+	while ($r && $row = $r->fetch_assoc()) $out[admin_mission_slug($row['title'])] = (int)$row['id'];
+	return $out;
+}
+
+/* ---------- uploads ------------------------------------------------------ */
+
+/**
+ * Accept one uploaded file into $dir/$basename.$ext, resized and stripped.
+ * Returns '' or a message. Nothing is written until the type is confirmed
+ * from the FILE, never from the name the browser supplied.
+ */
+function adm_accept_upload($field, $dir, $basename, $allowed_ext) {
+	if (!isset($_FILES[$field]) || $_FILES[$field]['error'] === UPLOAD_ERR_NO_FILE) return '';
+	$f = $_FILES[$field];
+	if ($f['error'] !== UPLOAD_ERR_OK)  return 'Upload failed (code ' . (int)$f['error'] . ').';
+	if ($f['size'] > 24 * 1024 * 1024)  return 'That file is over 24MB.';
+
+	/* THE EXTENSION COMES FROM THE CONTENT. A browser-supplied name is a
+	   claim, and this writes into a directory the web server serves. */
+	$mime = function_exists('finfo_open')
+		? finfo_file(finfo_open(FILEINFO_MIME_TYPE), $f['tmp_name']) : '';
+	$by_mime = array('image/png' => 'png', 'image/jpeg' => 'jpg',
+	                 'image/gif' => 'gif', 'video/mp4' => 'mp4');
+	$ext = isset($by_mime[$mime]) ? $by_mime[$mime] : '';
+	if ($ext === '') return 'That is not a PNG, JPG, GIF or MP4 (it looks like "' . htmlspecialchars($mime) . '").';
+	if (!in_array($ext, $allowed_ext, true))
+		return 'A .' . $ext . ' is not accepted here. Allowed: .' . implode(', .', $allowed_ext) . '.';
+
+	if (!is_dir($dir) && !@mkdir($dir, 0755, true)) return 'Could not create ' . basename($dir) . '/.';
+	$dest = rtrim($dir, '/') . '/' . $basename . '.' . $ext;
+
+	/* An mp4 is stored as uploaded -- Imagick cannot read one, and there
+	   is no ffmpeg on this host to transcode with. See the pairing rule in
+	   missions-economy.md section 6b. */
+	if ($ext === 'mp4') return @move_uploaded_file($f['tmp_name'], $dest) ? '' : 'Could not write ' . basename($dest) . '.';
+	return admin_write_image($f['tmp_name'], $dest);
+}
+
+
+/**
+ * THE GATE, AND THE CHROME, FOR EVERY ADMIN PAGE.
+ *
+ * Three pages now instead of one, which is three places to forget the
+ * check. So they call this instead of each rolling their own: it decides,
+ * renders the header, opens the layout and draws the sub-nav.
+ *
+ * LAYOUT, AND WHY THE FIRST VERSION RENDERED NOTHING USEFUL. header.php
+ * leaves a `<div class="container">` OPEN for the page to fill. The panel
+ * opened a SECOND container inside it and then a `<div class="column">` --
+ * and `.column` does not exist in dist/flexbox.css at all. A classless div
+ * in a flex row, inside a nested height:100% container, is why selecting a
+ * project appeared to do nothing: the form submitted fine, the page came
+ * back, and the content had no box to live in. The house pattern is a
+ * `.row` holding `.col1of3` (flex: 33%), which is wrong for a full-width
+ * table, so this opens a row with its own full-width child.
+ */
+function admin_chrome($active) {
+	$r = adminRights();
+	if (!$r['ok']) {
+		http_response_code(404);              // never confirm the panel exists
+		include __DIR__ . '/header.php';
+		echo '<div class="row"><div class="adm"><h2>Not found</h2></div></div>';
+		exit;
+	}
+	include __DIR__ . '/header.php';
+	$tabs = array(
+		'projects'    => array('admin-projects.php',    'Projects'),
+		'collections' => array('admin-collections.php', 'Collections'),
+		'missions'    => array('admin-missions.php',    'Missions'),
+	);
+	echo '<div class="row"><div class="adm">';
+	echo '<div class="adm-head"><h2>Admin</h2><nav class="adm-tabs">';
+	foreach ($tabs as $key => $t) {
+		printf('<a href="%s" class="%s">%s</a>', $t[0], $key === $active ? 'on' : '', $t[1]);
+	}
+	echo '</nav></div>';
+}
+
+function admin_flash($msgs) {
+	foreach ($msgs['err'] as $m) echo '<p class="adm-msg bad">' . $m . '</p>';
+	foreach ($msgs['ok']  as $m) echo '<p class="adm-msg good">' . $m . '</p>';
+}
+
+/**
+ * The project picker every page carries. A real submit button, not an
+ * onchange -- the select works without JS and cannot fail silently.
+ */
+function admin_project_picker($projects, $pid, $self) {
+	echo '<form method="get" action="' . htmlspecialchars($self) . '" class="adm-pick">';
+	echo '<label for="project">Project</label>';
+	echo '<select name="project" id="project"><option value="0">&mdash; pick a project &mdash;</option>';
+	foreach ($projects as $id => $p) {
+		printf('<option value="%d"%s>%s (%s)</option>', $id, $id === $pid ? ' selected' : '',
+			htmlspecialchars($p['name']), htmlspecialchars($p['currency']));
+	}
+	echo '</select><button type="submit">Open</button></form>';
+}

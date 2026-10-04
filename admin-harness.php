@@ -161,42 +161,81 @@ ok(admin_art_missing('mov', array('mov')) !== array(),
    'mov was accepted; nothing on this host can read one and the game has no branch for it');
 ok(!isset(admin_art_kinds()['mov']), 'mov is listed as a renderable format');
 
-/* ---------- the panel's own write path ---------------------------------- *
+/* ---------- the three pages ---------------------------------------- *
  *
- * admin.php is not loadable here (it includes db.php and emits a page), so
- * these are textual -- but each one guards a property that would be
- * invisible if it broke, and all three have a specific failure in mind.
+ * They include db.php and emit a page, so these are textual -- but each
+ * guards something that would be invisible if it broke.
  */
-echo "\nthe panel cannot be talked into a bad write\n";
-$ap = file_get_contents(__DIR__ . '/admin.php');
-$body = preg_replace('!/\*.*?\*/!s', '', $ap);
+echo "\nthe panel pages\n";
+$PAGES = array('admin-projects.php', 'admin-collections.php', 'admin-missions.php');
+$src = array();
+foreach ($PAGES as $f) {
+	ok(is_file(__DIR__ . '/' . $f), "$f is missing");
+	$src[$f] = is_file(__DIR__ . '/' . $f) ? preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/' . $f)) : '';
+}
 
-/* THE WHOLE POINT. The form displays reward and duration; it must not
-   SEND them, or a hand-edited field walks straight past the validator
-   and recreates Trash Collection by hand. */
-ok(strpos($body, "_POST['reward']") === false,
-   'admin.php reads reward from the POST; it has to be derived from cost and level or the form can be edited');
-ok(strpos($body, "_POST['duration']") === false,
-   'admin.php reads duration from the POST; it has to be derived from the cost');
-ok(preg_match('/\$reward\s*=\s*admin_mission_reward\(/', $body) === 1, 'the mission reward is not derived');
-ok(preg_match('/\$duration\s*=\s*admin_mission_duration\(/', $body) === 1, 'the mission duration is not derived');
+foreach ($PAGES as $f) {
+	$b = $src[$f];
+	/* Drawn by admin_chrome(), re-checked before any write. A page that
+	   gates once and then trusts itself is one early return from an
+	   unguarded write. */
+	ok(strpos($b, 'admin_chrome(') !== false, "$f does not go through admin_chrome(), so its rights check is its own");
+	ok(strpos($b, 'adminIsSuper()') !== false, "$f never re-checks rights inside its write block");
+	ok(strpos($b, "REQUEST_METHOD'] === 'POST'") !== false, "$f has no POST gate");
+	/* THE LAYOUT BUG THAT MADE THE FIRST VERSION LOOK BROKEN. header.php
+	   leaves a .container OPEN; opening a second one, or using the
+	   .column class that does not exist in dist/flexbox.css, leaves the
+	   content with no box. */
+	ok(strpos($b, 'class="container"') === false,
+	   "$f opens its own .container -- header.php already left one open and nesting them is what broke the layout");
+	ok(strpos($b, 'class="column"') === false,
+	   "$f uses .column, which does not exist in dist/flexbox.css (only .col1of2 and .col1of3 do)");
+	/* A failed write must say so. mysqli_report is OFF platform-wide, so
+	   query() returns false rather than throwing, and a silent redirect
+	   back to the form looks exactly like success. */
+	ok(strpos($b, '$conn->error') !== false, "$f redirects without ever checking whether the write succeeded");
+}
 
-/* Checked on the way in AND again before any write. A page that gates
-   once at the top and then trusts itself is one early-return away from a
-   write with no check in front of it. */
-ok(substr_count($body, 'adminRights()') >= 2,
-   'adminRights() is consulted once; the POST handler must check again rather than trust the page gate');
-ok(strpos($body, "REQUEST_METHOD'] === 'POST'") !== false, 'the write block is not gated on POST');
+/* THE WHOLE POINT of the missions page: the form displays reward and
+   duration and must not SEND them, or a hand-edited field walks past the
+   validator and recreates Trash Collection by hand. */
+$mi = $src['admin-missions.php'];
+ok(strpos($mi, "_POST['reward']") === false,
+   'admin-missions.php reads reward from the POST; it has to be derived or the form can be edited');
+ok(strpos($mi, "_POST['duration']") === false, 'admin-missions.php reads duration from the POST');
+ok(preg_match('/\$reward\s*=\s*admin_mission_reward\(/', $mi) === 1, 'the mission reward is not derived');
+ok(preg_match('/\$duration\s*=\s*admin_mission_duration\(/', $mi) === 1, 'the mission duration is not derived');
+ok(strpos($mi, 'admin_validate_mission(') !== false, 'the mission write does not call the validator');
+ok(strpos($mi, 'admin_art_missing(') !== false, 'the mission write does not check its art arrived');
 
-/* Uploads: the type has to come from the file, not from its name. */
-ok(strpos($body, 'finfo_file') !== false,
-   'uploads trust the browser-supplied filename for the type; this writes into a directory the server serves');
-ok(strpos($body, 'move_uploaded_file') !== false, 'uploads are not moved with move_uploaded_file()');
+$pr = $src['admin-projects.php'];
+ok(strpos($pr, 'admin_currency_problem(') !== false, 'the project write does not check the currency is free');
+/* adm_accept_upload() lives in admin-lib.php now, shared by both
+   uploading pages, so the type check is asserted there. */
+$lib = file_get_contents(__DIR__ . '/admin-lib.php');
+ok(strpos($lib, 'finfo_file') !== false,
+   'uploads trust the browser-supplied type; this writes into a directory the server serves');
+ok(strpos($lib, 'move_uploaded_file') !== false, 'uploads are not moved with move_uploaded_file()');
+ok(strpos($pr, 'adm_accept_upload(') !== false, 'the project page never accepts an icon upload');
 
-/* Every write goes through the validator rather than straight to SQL. */
-ok(strpos($body, 'admin_validate_mission(') !== false, 'the mission write does not call the validator');
-ok(strpos($body, 'admin_currency_problem(') !== false, 'the project write does not check the currency is free');
-ok(strpos($body, 'admin_art_missing(') !== false, 'the mission write does not check its art arrived');
+$co = $src['admin-collections.php'];
+/* Greping for the NAME is not enough: putting `false &&` in front of the
+   whole condition leaves the string in the file and the check dead. Tie
+   it to the chain branch it guards. */
+ok(preg_match('/\$chain === 3 &&[^;]*sol_base58_decode/s', $co) === 1,
+   'the Solana branch no longer decodes the address -- base58 has no checksum, so a truncated one is still legal-looking');
+ok(preg_match('/FROM collections WHERE policy/', $co) === 1,
+   'the collections page does not check the on-chain id is unused; two rows would claim the same NFTs');
+
+/* The old tabbed page stays as a redirect rather than a 404. */
+$old = file_get_contents(__DIR__ . '/admin.php');
+ok(strpos($old, 'admin-projects.php') !== false && stripos($old, 'Location:') !== false,
+   'admin.php no longer redirects, so an old bookmark 404s');
+
+/* And the nav offers all three. */
+$hd = file_get_contents(__DIR__ . '/header.php');
+foreach ($PAGES as $f) ok(strpos($hd, $f) !== false, "the nav has no link to $f");
+ok(preg_match('/user_id\'\]\s*===?\s*1/', $hd) === 1, 'the Admin nav is not gated to user 1');
 
 echo "\n" . ($fail ? "FAILED ($fail)\n" : "all admin-lib checks passed\n");
 exit($fail ? 1 : 0);
