@@ -174,12 +174,25 @@ foreach ($PAGES as $f) {
 	$src[$f] = is_file(__DIR__ . '/' . $f) ? preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/' . $f)) : '';
 }
 
+$lib_src = preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/admin-lib.php'));
+ok(strpos($lib_src, "include __DIR__ . '/header.php'") === false,
+   'admin-lib.php includes header.php from inside a function again -- that runs it in the function scope, '
+ . 'with none of the globals it reads');
+
 foreach ($PAGES as $f) {
 	$b = $src[$f];
 	/* Drawn by admin_chrome(), re-checked before any write. A page that
 	   gates once and then trusts itself is one early return from an
 	   unguarded write. */
-	ok(strpos($b, 'admin_chrome(') !== false, "$f does not go through admin_chrome(), so its rights check is its own");
+	ok(strpos($b, 'admin_require()') !== false, "$f does not call admin_require(), so its rights check is its own");
+	ok(strpos($b, 'admin_chrome(') !== false, "$f does not open the admin layout");
+	/* HEADER AT GLOBAL SCOPE. `include` inside a function body runs the
+	   included file in THAT function's scope, and header.php reads $name
+	   and $avatar_url which skulliance.php sets globally -- so including
+	   it from inside admin_chrome() handed it an empty scope and rendered
+	   the logged-out branch. The page must include it itself. */
+	ok(preg_match("/^include 'header\\.php';/m", $b) === 1,
+	   "$f does not include header.php at global scope");
 	ok(strpos($b, 'adminIsSuper()') !== false, "$f never re-checks rights inside its write block");
 	ok(strpos($b, "REQUEST_METHOD'] === 'POST'") !== false, "$f has no POST gate");
 	/* THE LAYOUT BUG THAT MADE THE FIRST VERSION LOOK BROKEN. header.php

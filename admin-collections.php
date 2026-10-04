@@ -10,6 +10,7 @@
 include 'db.php';
 include 'skulliance.php';
 require_once __DIR__ . '/admin-lib.php';
+admin_require();   // before any output, and before header.php
 
 $MSG = array('ok' => array(), 'err' => array());
 $pid = isset($_GET['project']) ? (int)$_GET['project'] : 0;
@@ -78,6 +79,7 @@ if (isset($_GET['saved'])) $MSG['ok'][] = 'Saved.';
 $PROJECTS = adm_projects($conn);
 if ($pid && !isset($PROJECTS[$pid])) $pid = 0;
 
+include 'header.php';   // GLOBAL scope: header.php reads $name and $avatar_url
 admin_chrome('collections');
 admin_flash($MSG);
 admin_project_picker($PROJECTS, $pid, 'admin-collections.php');

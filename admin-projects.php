@@ -13,6 +13,7 @@
 include 'db.php';
 include 'skulliance.php';
 require_once __DIR__ . '/admin-lib.php';
+admin_require();   // before any output, and before header.php
 
 $MSG = array('ok' => array(), 'err' => array());
 $pid = isset($_GET['project']) ? (int)$_GET['project'] : 0;
@@ -65,6 +66,7 @@ $PROJECTS = adm_projects($conn);
 if ($pid && !isset($PROJECTS[$pid])) $pid = 0;
 $P = $pid ? $PROJECTS[$pid] : null;
 
+include 'header.php';   // GLOBAL scope: header.php reads $name and $avatar_url
 admin_chrome('projects');
 admin_flash($MSG);
 ?>

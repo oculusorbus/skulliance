@@ -420,31 +420,41 @@ function adm_accept_upload($field, $dir, $basename, $allowed_ext) {
 
 
 /**
- * THE GATE, AND THE CHROME, FOR EVERY ADMIN PAGE.
+ * THE GATE. Called BEFORE header.php, and it renders no chrome.
  *
- * Three pages now instead of one, which is three places to forget the
- * check. So they call this instead of each rolling their own: it decides,
- * renders the header, opens the layout and draws the sub-nav.
+ * WHY NOT ONE FUNCTION THAT ALSO INCLUDES THE HEADER, which is what this
+ * was: `include` inside a function body executes the included file in
+ * that FUNCTION'S scope. header.php reads $name and $avatar_url, which
+ * skulliance.php sets at global scope, so including it from inside a
+ * function hands it an empty scope -- it renders its logged-out branch,
+ * and the page comes out structurally different from every other page on
+ * the platform. Includes of a page template belong at global scope, and
+ * that is now the caller's job.
+ */
+function admin_require() {
+	$r = adminRights();
+	if ($r['ok']) return;
+	/* Plain 404, no site chrome: an admin page should not confirm it
+	   exists, and there is nothing useful to draw around the refusal. */
+	http_response_code(404);
+	header('Content-Type: text/plain; charset=utf-8');
+	echo "Not found.\n";
+	exit;
+}
+
+/**
+ * Opens the admin layout and draws the sub-nav. Call AFTER header.php.
  *
  * LAYOUT, AND WHY THE FIRST VERSION RENDERED NOTHING USEFUL. header.php
  * leaves a `<div class="container">` OPEN for the page to fill. The panel
- * opened a SECOND container inside it and then a `<div class="column">` --
- * and `.column` does not exist in dist/flexbox.css at all. A classless div
- * in a flex row, inside a nested height:100% container, is why selecting a
- * project appeared to do nothing: the form submitted fine, the page came
- * back, and the content had no box to live in. The house pattern is a
- * `.row` holding `.col1of3` (flex: 33%), which is wrong for a full-width
- * table, so this opens a row with its own full-width child.
+ * opened a SECOND container inside it and then a `<div class="column">`,
+ * and `.column` does not exist in dist/flexbox.css at all -- it has
+ * .col1of2 and .col1of3 (flex: 33%) and nothing else. A classless div in
+ * a flex row, inside a nested height:100% container, is why the first
+ * version looked inert: the forms submitted, the pages came back, and the
+ * content had no box to live in.
  */
 function admin_chrome($active) {
-	$r = adminRights();
-	if (!$r['ok']) {
-		http_response_code(404);              // never confirm the panel exists
-		include __DIR__ . '/header.php';
-		echo '<div class="row"><div class="adm"><h2>Not found</h2></div></div>';
-		exit;
-	}
-	include __DIR__ . '/header.php';
 	$tabs = array(
 		'projects'    => array('admin-projects.php',    'Projects'),
 		'collections' => array('admin-collections.php', 'Collections'),
