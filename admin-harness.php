@@ -238,6 +238,14 @@ ok(strpos($mi, 'admin_art_missing(') !== false, 'the mission write does not chec
 
 $pr = $src['admin-projects.php'];
 ok(strpos($pr, 'admin_currency_problem(') !== false, 'the project write does not check the currency is free');
+/* A NEW project defaults its discord_id to the admin, because a blank one
+   means nobody can edit that project's store listings. An EXISTING blank
+   must be left alone -- substituting there reassigns the listings. */
+ok(defined('ADMIN_DEFAULT_DISCORD') && ADMIN_DEFAULT_DISCORD !== '',
+   'ADMIN_DEFAULT_DISCORD is not set, so a new project gets an unowned store');
+ok(preg_match('/\$P \? \$P\[.discord_id.\] : ADMIN_DEFAULT_DISCORD/', $pr) === 1,
+   'the Discord id is not defaulted for new projects only -- a ?? on the column would also overwrite '
+ . 'an existing blank, which reassigns who can edit that project\'s store listings');
 /* adm_accept_upload() lives in admin-lib.php now, shared by both
    uploading pages, so the type check is asserted there. */
 $lib = file_get_contents(__DIR__ . '/admin-lib.php');

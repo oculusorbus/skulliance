@@ -24,6 +24,21 @@ if (!defined('ADMIN_SUPER_USER')) define('ADMIN_SUPER_USER', 1);
    0 disables the cap and reproduces the live uncapped behaviour exactly. */
 if (!defined('ADMIN_MULT_CAP')) define('ADMIN_MULT_CAP', 0);
 
+/*
+ * WHO OWNS A NEW PROJECT'S STORE LISTINGS BY DEFAULT.
+ *
+ * projects.discord_id is what storeItemEditRights() matches a signed-in
+ * creator against, so it decides who may edit that project's shop items.
+ * Most partners do not run their own shop, and leaving the field blank
+ * means NOBODY can edit those listings -- not even through the partner
+ * path -- which only shows up the first time one needs fixing.
+ *
+ * So a new project defaults to the admin's own id. Editing an existing
+ * project never substitutes it: a blank there was somebody's decision,
+ * and silently filling it in would hand over listings.
+ */
+if (!defined('ADMIN_DEFAULT_DISCORD')) define('ADMIN_DEFAULT_DISCORD', '772831523899965440');
+
 /**
  * WHO MAY USE THIS PANEL.
  *

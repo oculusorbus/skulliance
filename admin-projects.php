@@ -95,8 +95,14 @@ admin_flash($MSG);
         <small>Becomes <code>icons/<em>currency</em>.png</code> and a Skull Swap tile. Must be unique,
                ignoring case.</small></label>
       <label>Discord ID
-        <input type="text" name="discord_id" value="<?php echo htmlspecialchars($P['discord_id'] ?? ''); ?>">
-        <small>Lets this creator edit their own store listings.</small></label>
+        <?php /* $P ? ... : default -- NOT ?? on the column. An existing
+                 project with a blank discord_id has one deliberately, and
+                 filling it in on an edit would quietly reassign who can
+                 edit that project's store listings. */ ?>
+        <input type="text" name="discord_id"
+               value="<?php echo htmlspecialchars($P ? $P['discord_id'] : ADMIN_DEFAULT_DISCORD); ?>">
+        <small>Whoever this is can edit the project's store listings.
+               Defaults to you &mdash; change it only if the partner runs their own shop.</small></label>
       <label>Divider
         <input type="number" name="divider" step="0.01" min="0.01"
                value="<?php echo htmlspecialchars($P['divider'] ?? '1'); ?>">
