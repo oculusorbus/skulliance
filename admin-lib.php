@@ -248,6 +248,94 @@ function admin_validate_ladder($rows, $cap = null) {
 	return $e;
 }
 
+/* ---------- reordering ---------------------------------------------- */
+
+/**
+ * REORDERING A LADDER, AND THE PROPERTY THAT MAKES IT SAFE.
+ *
+ * The rungs belong to the PROJECT; the story belongs to the MISSION. A
+ * project's ladder is its sorted list of costs -- 200, 300, 500, 700 --
+ * and level N always pays what level N paid. Dragging a mission does not
+ * move its cost with it; it moves the mission onto a different rung.
+ *
+ * So reordering NEVER CHANGES WHAT THE PROJECT PAYS. The same rungs exist
+ * before and after, the same total CARBON goes out over the same number
+ * of days, and all that changes is which title sits at which tier. That
+ * is the whole reason this is safe to offer as a drag: the worst case is
+ * a story out of order, never an economy quietly rewritten.
+ *
+ * Level 1 is the free intro wherever it lands, so dragging a paid mission
+ * to the top makes it free and pushes the old opener onto rung 2.
+ *
+ * $rows is id => array(level, cost, ...) as the table has them now.
+ * $ordered_ids is the new order, top first. Returns:
+ *   array('plan' => id => array(level, cost, reward, duration), 'errors' => array())
+ */
+function admin_reorder_plan($rows, $ordered_ids, $cap = null) {
+	$errors = array();
+	$have = array_map('intval', array_keys($rows));
+	$want = array();
+	foreach ((array)$ordered_ids as $i) { $i = (int)$i; if ($i > 0) $want[] = $i; }
+
+	/* A PERMUTATION, NOTHING ELSE. A short list would silently drop
+	   missions off the ladder; a long one would renumber something from
+	   another project. Compared as sorted sets so order is irrelevant
+	   here and duplicates are caught. */
+	$a = $have; $b = $want; sort($a); sort($b);
+	if ($a !== $b) {
+		$errors[] = 'That order does not match this project\'s missions exactly '
+		          . '(' . count($want) . ' given, ' . count($have) . ' expected). Nothing was changed.';
+		return array('plan' => array(), 'errors' => $errors);
+	}
+
+	/* The project's own rungs, in level order. Costs are taken from the
+	   ladder as it stands rather than regenerated, so a wide-spread
+	   project keeps its wide spread and a flat one keeps its flat steps. */
+	$by_level = array();
+	foreach ($rows as $id => $r) $by_level[(int)$r['level']] = (int)$r['cost'];
+	ksort($by_level);
+	$rungs = array_values($by_level);
+
+	$plan = array();
+	foreach ($want as $pos => $id) {
+		$level = $pos + 1;
+		if ($level === 1) {
+			$plan[$id] = array('level' => 1, 'cost' => 0, 'reward' => 10, 'duration' => 1);
+			continue;
+		}
+		$cost = isset($rungs[$pos]) ? (int)$rungs[$pos] : admin_next_cost($rungs, $level);
+		$plan[$id] = array(
+			'level'    => $level,
+			'cost'     => $cost,
+			'reward'   => admin_mission_reward($cost, $level, $cap),
+			'duration' => admin_mission_duration($cost),
+		);
+	}
+	return array('plan' => $plan, 'errors' => $errors);
+}
+
+/**
+ * The order after moving one mission one place up or down.
+ *
+ * The no-JS half of the feature: up and down are submit buttons, so the
+ * ladder can always be reordered even where a drag cannot happen -- a
+ * touch screen, a keyboard, or JS that failed to load. Both paths end in
+ * admin_reorder_plan(), so there is one set of rules and not two.
+ */
+function admin_reorder_move($rows, $quest_id, $direction) {
+	$order = array();
+	foreach ($rows as $id => $r) $order[(int)$r['level']] = (int)$id;
+	ksort($order);
+	$order = array_values($order);
+
+	$at = array_search((int)$quest_id, $order, true);
+	if ($at === false) return $order;
+	$to = ($direction === 'up') ? $at - 1 : $at + 1;
+	if ($to < 0 || $to >= count($order)) return $order;      // already at the end
+	$tmp = $order[$at]; $order[$at] = $order[$to]; $order[$to] = $tmp;
+	return $order;
+}
+
 /* ---------- currency icons ---------------------------------------------- */
 
 /**
@@ -489,16 +577,26 @@ function admin_flash($msgs) {
 }
 
 /**
- * The project picker every page carries. A real submit button, not an
- * onchange -- the select works without JS and cannot fail silently.
+ * The project picker every page carries.
+ *
+ * Submits on change, with the button only inside <noscript>. Choosing
+ * from a dropdown and then confirming it is a click nobody should have
+ * to make -- the button was added while the picker was a suspect for the
+ * panel being unresponsive, and it was innocent: the cards were
+ * <section>, which dist/flexbox.css hides at opacity 0.
+ *
+ * <noscript> is the right home for the fallback because its contents are
+ * not parsed as elements at all when scripting is on, so there is no
+ * stray button to hide with CSS and nothing to get out of step.
  */
 function admin_project_picker($projects, $pid, $self) {
 	echo '<form method="get" action="' . htmlspecialchars($self) . '" class="adm-pick">';
 	echo '<label for="project">Project</label>';
-	echo '<select name="project" id="project"><option value="0">&mdash; pick a project &mdash;</option>';
+	echo '<select name="project" id="project" onchange="this.form.submit()">';
+	echo '<option value="0">&mdash; pick a project &mdash;</option>';
 	foreach ($projects as $id => $p) {
 		printf('<option value="%d"%s>%s (%s)</option>', $id, $id === $pid ? ' selected' : '',
 			htmlspecialchars($p['name']), htmlspecialchars($p['currency']));
 	}
-	echo '</select><button type="submit">Open</button></form>';
+	echo '</select><noscript><button type="submit">Open</button></noscript></form>';
 }

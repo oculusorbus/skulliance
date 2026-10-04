@@ -56,5 +56,16 @@
 .adm-table .trunc{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .adm-table a{color:#00c8a0}
 .ok-dot{color:#00c8a0}.bad-dot{color:#e0705f}
+.adm-table tr[draggable]{cursor:default}
+.adm-table .grip{cursor:grab;color:#5a7888;letter-spacing:-2px;user-select:none;width:20px}
+.adm-table .grip:active{cursor:grabbing}
+.adm-table tr.dragging{opacity:.45;background:rgba(0,200,160,.08)}
+.adm-table .nudge{white-space:nowrap}
+.adm-table .nudge button{background:transparent;border:1px solid rgba(0,200,160,.18);color:#00c8a0;
+  padding:2px 7px;font-size:.8rem;cursor:pointer;align-self:auto;font-weight:normal}
+.adm-table .nudge button:hover:not(:disabled){background:rgba(0,200,160,.12)}
+.adm-table .nudge button:disabled{color:#2b3f50;border-color:rgba(0,200,160,.06);cursor:default}
+#reorder-actions{display:flex;gap:14px;align-items:center}
+#reorder-actions a{color:#5a7888}
 @media (max-width:560px){.adm-head{flex-direction:column;align-items:flex-start}}
 </style>

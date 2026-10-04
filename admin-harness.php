@@ -161,6 +161,82 @@ ok(admin_art_missing('mov', array('mov')) !== array(),
    'mov was accepted; nothing on this host can read one and the game has no branch for it');
 ok(!isset(admin_art_kinds()['mov']), 'mov is listed as a renderable format');
 
+echo "\nreordering a ladder\n";
+/* Aeoniumsky's shape: a flat-100 project, level 1 free. */
+function rowset($levels_costs) {
+	$r = array(); $id = 100;
+	foreach ($levels_costs as $lv => $cost) {
+		$r[$id++] = array('level' => $lv, 'cost' => $cost,
+		                  'reward' => $cost ? (int)(($cost * (10 + $lv)) / 10) : 10,
+		                  'duration' => $cost ? (int)($cost / 100) : 1);
+	}
+	return $r;
+}
+$rows = rowset(array(1 => 0, 2 => 200, 3 => 300, 4 => 400));   // ids 100..103
+$ids  = array_keys($rows);
+
+/* THE PROPERTY THAT MAKES A DRAG SAFE: the rungs belong to the project,
+   so the same costs exist before and after -- only the mapping moves. */
+$rev = array_reverse($ids);
+$out = admin_reorder_plan($rows, $rev, 0);
+ok($out['errors'] === array(), 'a straight reversal was refused: ' . implode(' / ', $out['errors']));
+$before = array(); foreach ($rows as $r) $before[] = (int)$r['cost']; sort($before);
+$after  = array(); foreach ($out['plan'] as $p) $after[] = (int)$p['cost']; sort($after);
+ok($before === $after,
+   'reordering changed the set of costs on the ladder -- it must only change which mission sits on which rung');
+$spend_before = array_sum($before); $spend_after = array_sum($after);
+ok($spend_before === $spend_after, 'the project pays a different total after a reorder');
+
+/* Level 1 is the free intro WHEREVER it lands. */
+$first = $out['plan'][$rev[0]];
+ok($first['level'] === 1 && $first['cost'] === 0 && $first['reward'] === 10 && $first['duration'] === 1,
+   'the mission dragged to the top did not become the free intro');
+/* ...and the old opener picks up rung 2 rather than staying free. */
+$last = $out['plan'][$ids[0]];
+ok($last['cost'] > 0, 'the old level-1 mission stayed free after being moved down');
+
+/* Every row is contiguous, derived, and clean. */
+$levels = array(); foreach ($out['plan'] as $p) $levels[] = $p['level'];
+sort($levels);
+ok($levels === range(1, count($rows)), 'the new levels are not contiguous from 1');
+foreach ($out['plan'] as $id => $p) {
+	if ($p['level'] === 1) continue;
+	ok($p['reward'] === admin_mission_reward($p['cost'], $p['level'], 0), "row $id: reward is not derived from its new level");
+	ok($p['duration'] === admin_mission_duration($p['cost']), "row $id: duration is not cost / 100");
+	ok($p['reward'] % 10 === 0, "row $id: reward is off a multiple of ten");
+}
+
+/* A WIDE-SPREAD project keeps its own rungs rather than being flattened. */
+$wide = rowset(array(1 => 0, 2 => 300, 3 => 500, 4 => 700, 5 => 1000, 6 => 1500));
+$wout = admin_reorder_plan($wide, array_reverse(array_keys($wide)), 0);
+$wcosts = array(); foreach ($wout['plan'] as $p) $wcosts[] = (int)$p['cost']; sort($wcosts);
+ok($wcosts === array(0, 300, 500, 700, 1000, 1500),
+   'a wide-spread project was flattened onto 100-steps by a reorder: ' . implode(',', $wcosts));
+
+echo "\nand anything that is not a permutation is refused outright\n";
+foreach (array(
+	'a missing mission'   => array_slice($ids, 1),
+	'a duplicate'         => array($ids[0], $ids[0], $ids[1], $ids[2]),
+	'a stranger'          => array($ids[0], $ids[1], $ids[2], 999999),
+	'nothing at all'      => array(),
+) as $what => $bad) {
+	$r = admin_reorder_plan($rows, $bad, 0);
+	ok($r['errors'] !== array(), "$what was accepted as an order");
+	ok($r['plan'] === array(), "$what produced a plan anyway -- a partial write is worse than a refusal");
+}
+
+echo "\nand up/down move exactly one place\n";
+$up = admin_reorder_move($rows, $ids[2], 'up');
+ok($up === array($ids[0], $ids[2], $ids[1], $ids[3]), 'up did not swap with the row above: ' . implode(',', $up));
+$dn = admin_reorder_move($rows, $ids[0], 'down');
+ok($dn === array($ids[1], $ids[0], $ids[2], $ids[3]), 'down did not swap with the row below');
+ok(admin_reorder_move($rows, $ids[0], 'up') === $ids, 'up at the top of the ladder changed the order');
+ok(admin_reorder_move($rows, $ids[3], 'down') === $ids, 'down at the bottom changed the order');
+ok(admin_reorder_move($rows, 999999, 'up') === $ids, 'moving a mission that is not here changed the order');
+/* Both paths end in the planner, so a move is always a valid permutation. */
+ok(admin_reorder_plan($rows, admin_reorder_move($rows, $ids[2], 'up'), 0)['errors'] === array(),
+   'the order produced by a move is not accepted by the planner');
+
 /* ---------- the three pages ---------------------------------------- *
  *
  * They include db.php and emit a page, so these are textual -- but each
@@ -235,6 +311,24 @@ ok(preg_match('/\$reward\s*=\s*admin_mission_reward\(/', $mi) === 1, 'the missio
 ok(preg_match('/\$duration\s*=\s*admin_mission_duration\(/', $mi) === 1, 'the mission duration is not derived');
 ok(strpos($mi, 'admin_validate_mission(') !== false, 'the mission write does not call the validator');
 ok(strpos($mi, 'admin_art_missing(') !== false, 'the mission write does not check its art arrived');
+
+/* REORDERING. Both routes must end in the planner, and the save must be
+   scoped to the project -- a stray id in the posted order would
+   otherwise renumber somebody else's ladder. */
+ok(strpos($mi, 'admin_reorder_plan(') !== false, 'the reorder write does not go through the planner');
+ok(strpos($mi, 'admin_reorder_move(') !== false, 'the up/down buttons do not go through the shared move helper');
+ok(preg_match('/UPDATE quests SET level[^;]*AND project_id/s', $mi) === 1,
+   'the reorder UPDATE is not scoped to the project; a stray id could renumber another ladder');
+/* The mission-save block must not also run on a reorder post, or a drag
+   would try to save a mission with no title. */
+ok(strpos($mi, "!== 'reorder'") !== false,
+   'the mission save does not stand down for a reorder post');
+/* The up/down buttons are plain submits, so the ladder is reorderable
+   with the script absent -- the lesson from the picker. */
+ok(preg_match('/name="up_<\?php/', $mi) === 1 && preg_match('/name="down_<\?php/', $mi) === 1,
+   'the up/down buttons are gone, leaving drag as the only way to reorder');
+ok(strpos($mi, 'type="submit" name="up_') !== false,
+   'the up button is not a real submit, so it needs JS to do anything');
 
 $pr = $src['admin-projects.php'];
 ok(strpos($pr, 'admin_currency_problem(') !== false, 'the project write does not check the currency is free');

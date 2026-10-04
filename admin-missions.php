@@ -21,6 +21,49 @@ $pid = isset($_GET['project']) ? (int)$_GET['project'] : 0;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if (!adminIsSuper()) { http_response_code(403); exit; }
 
+	/* --- REORDER: a dragged order, or one of the up/down buttons --- */
+	if (($_POST['action'] ?? '') === 'reorder') {
+		$project = (int)($_POST['project_id'] ?? 0);
+		$rows    = adm_missions($conn, $project);          // keyed by level
+		$by_id   = array();
+		foreach ($rows as $r) $by_id[(int)$r['id']] = array('level' => (int)$r['level'], 'cost' => (int)$r['cost']);
+
+		/* TWO WAYS IN, ONE SET OF RULES. A drag posts the whole order; an
+		   up/down button posts a single move, which is turned into the
+		   same list. Both end in admin_reorder_plan(). */
+		$move = ''; $move_id = 0;
+		foreach (array_keys($_POST) as $k) {
+			if (strpos($k, 'up_') === 0)   { $move = 'up';   $move_id = (int)substr($k, 3); break; }
+			if (strpos($k, 'down_') === 0) { $move = 'down'; $move_id = (int)substr($k, 5); break; }
+		}
+		$order = ($move !== '')
+			? admin_reorder_move($by_id, $move_id, $move)
+			: array_values(array_filter(array_map('intval', explode(',', (string)($_POST['order'] ?? '')))));
+
+		$res = admin_reorder_plan($by_id, $order);
+		if ($res['errors']) { $MSG['err'] = array_merge($MSG['err'], $res['errors']); }
+		else {
+			/* The index on (project_id, level) is NOT unique, so levels can
+			   be shuffled in place without a two-phase dance. Only rows
+			   that actually change are written, and project_id is in the
+			   WHERE so a stray id cannot reach another project's ladder. */
+			$changed = 0; $failed = 0;
+			foreach ($res['plan'] as $qid => $pl) {
+				$now = $rows[$by_id[$qid]['level']];
+				if ((int)$now['level'] === $pl['level'] && (int)$now['cost'] === $pl['cost']
+				 && (int)$now['reward'] === $pl['reward'] && (int)$now['duration'] === $pl['duration']) continue;
+				$ok = $conn->query("UPDATE quests SET level = " . (int)$pl['level'] . ", cost = " . (int)$pl['cost']
+				                 . ", reward = " . (int)$pl['reward'] . ", duration = " . (int)$pl['duration']
+				                 . " WHERE id = " . (int)$qid . " AND project_id = $project");
+				if ($ok) $changed++; else $failed++;
+			}
+			if ($failed) $MSG['err'][] = "$failed row(s) would not write: " . htmlspecialchars($conn->error);
+			else { header('Location: admin-missions.php?project=' . $project . '&reordered=' . $changed); exit; }
+		}
+	}
+
+	/* --- SAVE ONE MISSION --- */
+	if (($_POST['action'] ?? '') !== 'reorder') {
 $id      = (int)($_POST['quest_id'] ?? 0);
 $project = (int)($_POST['project_id'] ?? 0);
 $title   = trim((string)($_POST['title'] ?? ''));
@@ -86,9 +129,12 @@ else {
 		                VALUES ('$t','$d','$x',$project,$cost,$reward,$duration,$level)");
 	if (!$wrote) $MSG['err'][] = 'The database refused that write: ' . htmlspecialchars($conn->error);
 	else { header('Location: admin-missions.php?project=' . $project . '&saved=1'); exit; }
-}
+	}
+	}
 }
 if (isset($_GET['saved'])) $MSG['ok'][] = 'Saved.';
+if (isset($_GET['reordered'])) $MSG['ok'][] = 'Reordered &mdash; ' . (int)$_GET['reordered']
+	. ' mission(s) moved to a new tier. The project pays exactly what it did before.';
 
 $PROJECTS = adm_projects($conn);
 if ($pid && !isset($PROJECTS[$pid])) $pid = 0;
@@ -123,8 +169,20 @@ $Q = null; foreach ($M as $row) if ((int)$row['id'] === $qid) $Q = $row;
     <p class="adm-msg bad"><?php echo htmlspecialchars($p); ?></p>
   <?php endforeach; ?>
   <?php if ($M): ?>
-  <div class="adm-tablewrap"><table class="adm-table">
-    <thead><tr><th>Lvl</th><th>Mission</th><th>Art</th><th>Cost</th><th>Reward</th><th>&times;</th><th>Days</th><th>Net/day</th><th></th></tr></thead>
+  <?php /* THE LADDER IS THE PROJECT'S, NOT THE MISSION'S. Dragging moves a
+           mission onto a different rung; it does not carry its cost with
+           it. So the same costs exist before and after and the project
+           pays exactly what it did -- only which story sits at which tier
+           changes. That is what makes this safe to offer as a drag. */ ?>
+  <p class="adm-note">Drag a row by its handle to move it, or use the arrows.
+     Rungs belong to the project, so reordering never changes what it pays &mdash;
+     only which mission sits at which tier. Level 1 is always the free intro.</p>
+  <form method="post" id="reorder-form">
+  <input type="hidden" name="action" value="reorder">
+  <input type="hidden" name="project_id" value="<?php echo $pid; ?>">
+  <input type="hidden" name="order" id="order" value="">
+  <div class="adm-tablewrap"><table class="adm-table" id="ladder">
+    <thead><tr><th></th><th>Lvl</th><th>Mission</th><th>Art</th><th>Cost</th><th>Reward</th><th>&times;</th><th>Days</th><th>Net/day</th><th>Move</th><th></th></tr></thead>
     <tbody>
     <?php foreach ($M as $lv => $row):
       $c = (int)$row['cost']; $w = (int)$row['reward']; $d = (int)$row['duration'];
@@ -133,23 +191,101 @@ $Q = null; foreach ($M as $row) if ((int)$row['id'] === $qid) $Q = $row;
       $art_ok = is_file(__DIR__ . '/images/missions/' . $still)
              && ($row['extension'] !== 'mp4' || is_file(__DIR__ . '/images/missions/' . $slug . '.mp4'));
     ?>
-      <tr>
-        <td class="mono"><?php echo (int)$lv; ?></td>
+      <tr draggable="true" data-id="<?php echo (int)$row['id']; ?>">
+        <td class="grip" title="Drag to move">&#8942;&#8942;</td>
+        <td class="mono lvl"><?php echo (int)$lv; ?></td>
         <td><?php echo htmlspecialchars($row['title']); ?></td>
         <td><?php echo $art_ok
              ? '<span class="ok-dot">&#10003;</span>'
              : '<span class="bad-dot" title="missing ' . htmlspecialchars($still) . '">&#10007;</span>'; ?>
             <?php echo htmlspecialchars($row['extension']); ?></td>
-        <td class="mono"><?php echo $c ? number_format($c) : '&mdash;'; ?></td>
-        <td class="mono"><?php echo number_format($w); ?></td>
-        <td class="mono"><?php echo $c ? number_format($w / $c, 1) : '&mdash;'; ?></td>
-        <td class="mono"><?php echo $d; ?></td>
-        <td class="mono"><?php echo $d ? number_format(admin_mission_per_day($c, $w, $d)) : '&mdash;'; ?></td>
+        <td class="mono cost"><?php echo $c ? number_format($c) : '&mdash;'; ?></td>
+        <td class="mono reward"><?php echo number_format($w); ?></td>
+        <td class="mono mult"><?php echo $c ? number_format($w / $c, 1) : '&mdash;'; ?></td>
+        <td class="mono days"><?php echo $d; ?></td>
+        <td class="mono perday"><?php echo $d ? number_format(admin_mission_per_day($c, $w, $d)) : '&mdash;'; ?></td>
+        <td class="nudge">
+          <button type="submit" name="up_<?php echo (int)$row['id']; ?>" value="1"
+                  title="Move up"<?php echo $lv == 1 ? ' disabled' : ''; ?>>&uarr;</button>
+          <button type="submit" name="down_<?php echo (int)$row['id']; ?>" value="1"
+                  title="Move down"<?php echo $lv == count($M) ? ' disabled' : ''; ?>>&darr;</button>
+        </td>
         <td><a href="admin-missions.php?project=<?php echo $pid; ?>&quest=<?php echo (int)$row['id']; ?>">Edit</a></td>
       </tr>
     <?php endforeach; ?>
     </tbody>
   </table></div>
+  <p class="adm-note" id="reorder-actions" hidden>
+    <button type="submit" id="save-order">Save new order</button>
+    <a href="admin-missions.php?project=<?php echo $pid; ?>">Cancel</a></p>
+  </form>
+  <?php /* The rungs, so a drag can show the consequence before it is saved.
+           Same numbers the server will derive -- level 1 free, then each
+           rung's own cost with reward = cost x (1 + level/10). */ ?>
+  <script>
+  (function(){
+    const RUNGS = <?php
+      $rungs = array();
+      foreach ($M as $lv => $row) {
+        $c = (int)$row['cost'];
+        $rungs[] = array('cost' => $c, 'reward' => (int)$row['reward'], 'days' => (int)$row['duration']);
+      }
+      echo json_encode($rungs);
+    ?>;
+    const tbody = document.querySelector('#ladder tbody');
+    if (!tbody) return;
+    const form = document.getElementById('reorder-form');
+    const actions = document.getElementById('reorder-actions');
+    const orderInput = document.getElementById('order');
+    const original = [...tbody.rows].map(r => r.dataset.id).join(',');
+    let dragged = null;
+
+    const fmt = n => n.toLocaleString('en-US');
+    function repaint(){
+      [...tbody.rows].forEach((row, i) => {
+        /* The rung at this POSITION, not the one the mission arrived with. */
+        const level = i + 1;
+        const rung  = (level === 1) ? {cost:0, reward:10, days:1} : RUNGS[i];
+        if (!rung) return;
+        const mult = rung.cost ? (Math.round((10 + level) ) / 10) : null;
+        const reward = rung.cost ? Math.round(rung.cost * (10 + level) / 10) : 10;
+        const perDay = rung.days ? Math.round((reward - rung.cost) / rung.days) : 10;
+        row.querySelector('.lvl').textContent    = level;
+        row.querySelector('.cost').textContent   = rung.cost ? fmt(rung.cost) : '\u2014';
+        row.querySelector('.reward').textContent = fmt(reward);
+        row.querySelector('.mult').textContent   = rung.cost ? mult.toFixed(1) : '\u2014';
+        row.querySelector('.days').textContent   = rung.days;
+        row.querySelector('.perday').textContent = fmt(perDay);
+      });
+      const now = [...tbody.rows].map(r => r.dataset.id).join(',');
+      orderInput.value = now;
+      actions.hidden = (now === original);
+    }
+
+    tbody.addEventListener('dragstart', e => {
+      const tr = e.target.closest('tr'); if (!tr) return;
+      dragged = tr; tr.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      /* Firefox will not start a drag without data set. */
+      e.dataTransfer.setData('text/plain', tr.dataset.id);
+    });
+    tbody.addEventListener('dragend', () => {
+      if (dragged) dragged.classList.remove('dragging');
+      dragged = null; repaint();
+    });
+    tbody.addEventListener('dragover', e => {
+      e.preventDefault(); if (!dragged) return;
+      const over = e.target.closest('tr');
+      if (!over || over === dragged) return;
+      const r = over.getBoundingClientRect();
+      const after = (e.clientY - r.top) > r.height / 2;
+      tbody.insertBefore(dragged, after ? over.nextSibling : over);
+    });
+    /* The up/down buttons are real submits and need no help, so nothing
+       here touches them -- they work with this script absent. */
+    form.addEventListener('submit', () => { orderInput.value = [...tbody.rows].map(r => r.dataset.id).join(','); });
+  })();
+  </script>
   <?php else: ?>
     <p class="adm-note">No missions yet. The first one is the free intro: level 1, cost 0, reward 10, one day.</p>
   <?php endif; ?>
