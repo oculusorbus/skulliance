@@ -596,6 +596,10 @@ define('MS_FIELD_CAP', 24);
 .ms-d-facts i { font-style: normal; font-size: .58rem; letter-spacing: .08em;
   text-transform: uppercase; color: #4f7488; }
 .ms-d-facts b { font-size: .88rem; color: #b9c7d4; font-weight: normal; }
+/* A figure an item has changed, with what it was beside it. */
+.ms-d-facts b.ms-cut { color: #00c8a0; }
+.ms-d-facts b em { font-style: normal; font-size: .72rem; color: #5e7a8a;
+  text-decoration: line-through; margin-left: 5px; }
 
 /* THE SUCCESS METER is the whole point of the drawer: it is the number the
    old page made you read off a list while a server round trip recomputed
@@ -1082,6 +1086,9 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	 * target minus the boost, floored at zero.
 	 */
 	var target = 100;
+	/* From the PHP constant, so the drawer and mission_launch() cannot
+	   drift to different ideas of which item Fast Forward is. */
+	var MS_FAST_FORWARD = <?php echo (int)MISSION_ITEM_FAST_FORWARD; ?>;
 
 	function n(v) { return Number(v || 0).toLocaleString(); }
 	function esc(s) {
@@ -1494,8 +1501,10 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			+ '<div class="ms-d-facts">'
 			+   '<span><i>Cost</i><b>' + (LO.cost > 0 ? n(LO.cost) + ' ' + esc(LO.currency) : 'Free') + '</b></span>'
 			+   '<span><i>Reward</i><b>' + n(LO.reward) + ' ' + esc(LO.currency) + '</b></span>'
-			+   '<span><i>Runs for</i><b>' + LO.duration + (LO.duration === 1 ? ' day' : ' days') + '</b></span>'
-			+   '<span><i>Net per day</i><b>' + n(Math.round(LO.net_per_day)) + '</b></span>'
+			/* Both of these move when Fast Forward is picked, so they are
+			   written by paintRate() rather than baked in here. */
+			+   '<span><i>Runs for</i><b id="ms-d-days"></b></span>'
+			+   '<span><i>Net per day</i><b id="ms-d-netday"></b></span>'
 			+   '<span><i>Your balance</i><b>' + n(LO.balance) + ' ' + esc(LO.currency) + '</b></span>'
 			+ '</div>'
 			+ '<div class="ms-d-rate">'
@@ -1700,6 +1709,25 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		paintRate();
 	}
 
+	/*
+	 * THE FAST FORWARD RULE, in one place.
+	 *
+	 * The server never stores a shortened duration. mission_active() and
+	 * completeMission() both pull the mission's created_date BACK by
+	 * ceil(duration / 2) days and then count the full duration forward
+	 * from there, so the wait actually left is what that leaves over --
+	 * floor(duration / 2), which is ZERO for a one-day mission. The same
+	 * arithmetic has to happen here or the drawer promises a timeframe the
+	 * claim will not honour.
+	 */
+	function effectiveDays() {
+		var d = LO.duration;
+		/* undefined, not falsy: Fast Forward's boost IS 0. */
+		if (items[MS_FAST_FORWARD] === undefined) return d;
+		return d - Math.ceil(d / 2);
+	}
+	function daysText(d) { return d <= 0 ? 'No wait' : d + (d === 1 ? ' day' : ' days'); }
+
 	function rateParts() {
 		var crew = 0, boost = 0;
 		for (var k in picked) crew += picked[k];
@@ -1730,9 +1758,33 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		/* Say it plainly rather than making them work it out: over 100 is
 		   waste, and the old page only told you by refusing at the alert. */
 
+		/*
+		 * WHAT FAST FORWARD IS SAVING THEM, before they spend it. The item
+		 * used to change nothing on screen: you picked it, the facts still
+		 * read "Runs for 4 days", and the only way to find out it had
+		 * worked was to launch and look at the countdown.
+		 */
+		var eff = effectiveDays(), cut = (eff !== LO.duration);
+		var days = document.getElementById('ms-d-days');
+		days.className = cut ? 'ms-cut' : '';
+		days.innerHTML = daysText(eff) + (cut ? ' <em>' + daysText(LO.duration) + '</em>' : '');
+		/* Scaled off the figure the server already worked out rather than
+		   restating (reward - cost) / duration here. A mission that lands
+		   the moment it is sent pays its whole net on the one day. */
+		var netd = document.getElementById('ms-d-netday');
+		var perDay = n(Math.round(LO.net_per_day * LO.duration / Math.max(1, eff)));
+		/* Marked only when the figure MOVED. On a one-day mission the item
+		   removes the wait without changing what a day pays, so flagging it
+		   would point at a number that is the same as it ever was. */
+		netd.className = (cut && perDay !== n(Math.round(LO.net_per_day))) ? 'ms-cut' : '';
+		netd.textContent = perDay;
+
+		var when = (eff <= 0) ? 'lands the moment you send it'
+		         : 'back in ' + eff + (eff === 1 ? ' day' : ' days');
+		if (cut) when += ' instead of ' + LO.duration + (LO.duration === 1 ? ' day' : ' days');
 		document.getElementById('ms-d-summary').textContent =
 			(LO.cost > 0 ? 'Costs ' + n(LO.cost) + ' ' + LO.currency : 'Free to run')
-			+ ' · back in ' + LO.duration + (LO.duration === 1 ? ' day' : ' days');
+			+ ' · ' + when;
 	}
 
 	function launch() {

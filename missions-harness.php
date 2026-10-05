@@ -29,6 +29,8 @@ $WORLD = array(
 	'idle'        => array(),            // project_id => idle nft count
 	'unattempted' => array(),            // quest rows the user has never launched
 	'ladder'      => array(),            // every (project_id, level, id) in level order
+	'inflight'    => array(),            // missions rows still out
+	'm_items'     => array(),            // mission_id => array(consumable_id => name)
 );
 $WROTE = array();   // every insert/update, in order
 
@@ -111,6 +113,15 @@ class MConn {
 			preg_match_all("/'(\d+)'/", $flat, $m);
 			$WROTE[] = array('item', (int)$m[1][1]); return true;
 		}
+		if (strpos($flat, 'FROM missions_consumables mc') !== false) {
+			$r = array();
+			foreach ($WORLD['m_items'] as $mid => $its)
+				foreach ($its as $cid => $name)
+					$r[] = array('mission_id' => $mid, 'consumable_id' => $cid, 'name' => $name);
+			return new MRes($r);
+		}
+		if (strpos($flat, 'SELECT m.id AS mission_id, m.quest_id, m.created_date') !== false)
+			return new MRes($WORLD['inflight']);
 		/* The drawer's NEIGHBOUR lookup: two LIMIT 1 subselects in a UNION,
 		   nearest level either side.
 		
@@ -682,6 +693,50 @@ ok(strpos($step, 'msStopMedia()') !== false,
    'opening a mission over an open one leaves the old video playing');
 ok(strpos($step, 'items = {}') !== false && strpos($step, 'shedByItem = {}') !== false,
    "stepping carries the previous mission's consumables into the next launch");
+
+/* ---------- Fast Forward is a shorter wait, and the drawer says so ------- *
+ *
+ * It is NOT stored as a shorter duration. mission_active() and
+ * completeMission() both pull created_date BACK by ceil(duration / 2) and
+ * then count the full duration forward from there, so the wait left over
+ * is duration - ceil(duration / 2) -- which is ZERO on a one-day mission.
+ *
+ * This section is the AUTHORITY for that number. The drawer now prints it
+ * before the item is spent, and missions-fastforward-harness.js drives the
+ * browser's copy of the arithmetic against the same table, because the two
+ * being written in different languages is exactly how they drift.
+ */
+echo "\nfast forward shortens the wait\n";
+
+/* Shared with the JS harness, which reads it out of this file. */
+$FF_TABLE = array(1 => 0, 2 => 1, 3 => 1, 4 => 2, 5 => 2, 6 => 3, 7 => 3, 8 => 4);
+
+function ff_wait($conn, $duration, $with_item) {
+	global $WORLD;
+	$WORLD['inflight'] = array(array(
+		'mission_id' => 500, 'quest_id' => 77, 'created_date' => date('Y-m-d H:i:s'),
+		'status' => '0', 'title' => 'Timed', 'cost' => 0, 'reward' => 300,
+		'duration' => $duration, 'extension' => 'png', 'level' => 3,
+		'project_name' => 'Test Project', 'currency' => 'STAR',
+		'total_nfts' => 1, 'squad_rate' => 30));
+	$WORLD['m_items'] = $with_item
+		? array(500 => array(MISSION_ITEM_FAST_FORWARD => 'Fast Forward'))
+		: array();
+	$a = mission_active($conn);
+	if (!$a) return null;
+	/* Back to whole days the same way the lib counts them forward. */
+	return (int)round(($a[0]['due'] - time()) / 86400);
+}
+
+foreach ($FF_TABLE as $d => $expect) {
+	ok(ff_wait($conn, $d, false) === $d, "a $d-day mission with no item does not wait $d days");
+	ok(ff_wait($conn, $d, true) === $expect,
+	   "a $d-day mission with Fast Forward waits " . ff_wait($conn, $d, true) . ", not $expect days");
+}
+/* The one that is easy to get wrong in either direction: half of one day
+   is not one day and it is not half a day, it is nothing left to wait. */
+ok(ff_wait($conn, 1, true) === 0, 'Fast Forward on a one-day mission does not land it immediately');
+$WORLD['inflight'] = array(); $WORLD['m_items'] = array();
 
 /* ---------- mission art: one pairing rule, five call sites --------------- *
  *

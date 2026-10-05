@@ -15,8 +15,10 @@ All of the items have rarity and utility as shown below:
 * **75% Success:** 10% (Ultra Rare) - 75% Success Rate on Mission
 * **50% Success:** 15% (Rare) - 50% Success Rate on Mission
 * **25% Success:** 20% (Uncommon) - 25% Success Rate on Mission
-* **Fast Forward:** 20% (Uncommon) - Split Mission time in half, round up if duration is a prime number
+* **Fast Forward:** 20% (Uncommon) - Cuts the wait in half, rounding in your favour on an odd number of days
 * **Random Reward:** 25% (Common) - Swap for a Random Reward from any project upon success
+
+**What Fast Forward actually takes off:** half the days, with the odd day going to you - a 4-day mission lands in 2, a 5-day mission in 2, and a 1-day mission lands the moment you send it. **The load-out shows you the new figure before you spend the item**, with the old duration struck through beside it, so you can see what you are saving rather than finding out from the countdown afterwards.
 
 ## Stacking
 
