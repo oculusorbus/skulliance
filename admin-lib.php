@@ -532,6 +532,54 @@ function admin_art_apply_deletes($dir, $plan) {
 	return $gone;
 }
 
+/*
+ * HOW BIG AN IMAGE MAY BE, AND HOW MUCH MEMORY IT NEEDS.
+ *
+ * ImageMagick allocates its pixel cache at Q16 -- EIGHT bytes a pixel,
+ * not four -- and a resize needs a working copy on top, so the real cost
+ * is roughly 16 bytes per pixel. A 5000x5000 upload is 25 megapixels and
+ * therefore about 400MB.
+ *
+ * AND PAST ITS MEMORY LIMIT, IMAGEMAGICK DOES NOT FAIL. It spills the
+ * pixel cache to DISK and carries on, which turns a two-second resize
+ * into minutes. That is what took the staking site down on 2026-10-05: a
+ * 5000x5000 mission image against a flat 256MB limit, the request never
+ * returning, and every navigation behind it passing the service worker's
+ * 20s timeout and landing on offline.html. The server was never down.
+ *
+ * So the limit is sized to the IMAGE rather than fixed, and anything
+ * genuinely absurd is refused up front from the header alone -- instantly,
+ * and with a number in the message -- instead of being accepted and
+ * silently ground through swap.
+ */
+if (!defined('ADMIN_IMAGE_MAX_MP'))  define('ADMIN_IMAGE_MAX_MP', 30);          // megapixels
+if (!defined('ADMIN_IMAGE_MAX_MEM')) define('ADMIN_IMAGE_MAX_MEM', 576);        // MB ceiling
+
+/**
+ * Decide before decoding. Pure, so admin-harness.php can cover the sums
+ * without an image or an Imagick.
+ *
+ * Returns array('ok' => bool, 'mem' => bytes, 'why' => message).
+ */
+function admin_image_budget($w, $h) {
+	$w = (int)$w; $h = (int)$h;
+	if ($w <= 0 || $h <= 0)
+		return array('ok' => false, 'mem' => 0, 'why' => 'That file does not read as an image.');
+
+	$mp = ($w * $h) / 1000000;
+	if ($mp > ADMIN_IMAGE_MAX_MP) {
+		return array('ok' => false, 'mem' => 0, 'why' => sprintf(
+			'That image is %d x %d (%s megapixels), over the %d megapixel limit. '
+			. 'Resize it to about 2000px on the long edge and upload again -- mission art is '
+			. 'never displayed above 1000px, so nothing is lost.',
+			$w, $h, rtrim(rtrim(number_format($mp, 1), '0'), '.'), ADMIN_IMAGE_MAX_MP));
+	}
+	/* 16 bytes a pixel covers the Q16 cache and one working copy, with a
+	   64MB floor so a small image still gets room to breathe. */
+	$need = max(64 * 1024 * 1024, (int)($w * $h * 16));
+	return array('ok' => true, 'mem' => min($need, ADMIN_IMAGE_MAX_MEM * 1024 * 1024), 'why' => '');
+}
+
 /**
  * Resize and optimise through the SAME Imagick path the NFT cache uses.
  *
@@ -546,10 +594,20 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 		/* Still better than refusing: an unoptimised image renders. */
 		return @copy($tmp_path, $dest_path) ? '' : 'Could not write ' . basename($dest_path) . '.';
 	}
+	/* FROM THE HEADER, BEFORE ANY DECODE. getimagesize() reads a few
+	   bytes; it is the difference between an instant refusal and a
+	   request that never comes back. */
+	$size = @getimagesize($tmp_path);
+	$budget = admin_image_budget($size ? $size[0] : 0, $size ? $size[1] : 0);
+	if (!$budget['ok']) return $budget['why'];
+
 	try {
 		$im = new Imagick();
-		$im->setResourceLimit(Imagick::RESOURCETYPE_MEMORY, 256 * 1024 * 1024);
-		$im->setResourceLimit(Imagick::RESOURCETYPE_MAP,    256 * 1024 * 1024);
+		$im->setResourceLimit(Imagick::RESOURCETYPE_MEMORY, $budget['mem']);
+		$im->setResourceLimit(Imagick::RESOURCETYPE_MAP,    $budget['mem']);
+		/* A huge JPEG can be decoded already scaled down, which skips the
+		   full-size allocation entirely. PNG has no equivalent. */
+		if ($max_width > 0) $im->setOption('jpeg:size', ($max_width * 2) . 'x' . ($max_width * 2));
 		$im->readImage($tmp_path);
 		if ($im->getNumberImages() > 1) {
 			/* Coalesce first or every frame after the first resizes against

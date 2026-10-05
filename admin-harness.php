@@ -175,6 +175,52 @@ foreach (array('video/quicktime', 'image/webp', 'video/webm', 'image/svg+xml') a
 ok(stripos($lib_raw, 'H.264') !== false,
    'nothing tells the operator which codec is safe, which is the actual fix');
 
+echo "\nhow big an image may be\n";
+/* THE ONE THAT TOOK THE SITE DOWN, 2026-10-05. A 5000x5000 mission
+   upload against a flat 256MB Imagick limit: ImageMagick does not fail
+   past its limit, it spills the pixel cache to disk and grinds, so the
+   request never returned and every navigation behind it fell through
+   the service worker's 20s timeout onto offline.html. */
+$b5 = admin_image_budget(5000, 5000);
+ok($b5['ok'] === true, 'a 5000x5000 upload is refused; it is large but legitimate and should be downscaled, not rejected');
+/* 8 bytes a pixel is the Q16 pixel cache ALONE; a resize needs a working
+   copy on top. Asserting only the cache size passes a flat 256MB limit,
+   which is the exact configuration that hung -- so the bar is 12. */
+ok($b5['mem'] >= 25000000 * 12,
+   'a 25-megapixel image is given ' . round($b5['mem'] / 1048576) . 'MB. Its Q16 pixel cache alone is ~200MB '
+ . 'and a resize needs a working copy, so ImageMagick would spill to disk and the request would hang '
+ . 'rather than fail');
+
+/* Small images must not be handed enormous limits either. */
+$b1 = admin_image_budget(800, 600);
+ok($b1['ok'] === true && $b1['mem'] <= 128 * 1048576,
+   'a small image is given ' . round($b1['mem'] / 1048576) . 'MB, far more than it can use');
+
+/* And something genuinely absurd is refused FROM THE HEADER, instantly,
+   rather than accepted and ground through swap. */
+foreach (array(array(6000, 6000), array(10000, 10000), array(20000, 2000)) as $d) {
+	$b = admin_image_budget($d[0], $d[1]);
+	ok($b['ok'] === false, "{$d[0]}x{$d[1]} was accepted; past the budget it cannot finish in a request");
+	ok(strpos($b['why'], 'megapixel') !== false && preg_match('/\d/', $b['why']) === 1 || strlen($b['why']) > 40,
+	   "{$d[0]}x{$d[1]} is refused without telling the operator the limit or what to do");
+}
+ok(admin_image_budget(0, 0)['ok'] === false, 'a file with no dimensions was accepted');
+ok(admin_image_budget(-5, 100)['ok'] === false, 'a negative dimension was accepted');
+/* The ceiling must bound even an in-budget image. */
+ok(admin_image_budget(5500, 5450)['mem'] <= ADMIN_IMAGE_MAX_MEM * 1048576,
+   'the memory grant ignores its own ceiling');
+
+/* And the decision has to happen BEFORE the decode, or it saves nothing. */
+$lib_b = preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/admin-lib.php'));
+$wi    = strpos($lib_b, 'function admin_write_image');
+$body  = substr($lib_b, $wi, 1800);
+ok(strpos($body, 'getimagesize') !== false,
+   'admin_write_image() does not read the header first, so an oversized image is only discovered after decoding it');
+ok(strpos($body, 'admin_image_budget') < strpos($body, 'readImage'),
+   'the budget is checked after readImage(), which is after the allocation that causes the hang');
+ok(strpos($body, 'RESOURCETYPE_MEMORY, $budget') !== false,
+   'the Imagick memory limit is a fixed number again rather than sized to the image');
+
 echo "\nediting a mission's art: rename, replace, and leave no debt\n";
 /* The plan is pure, so every shape of edit is exercised here with no
    filesystem -- which is the only honest way to test something that
