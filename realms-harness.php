@@ -609,6 +609,13 @@ ok(preg_match('/\.soldier-nft-img\s*\{[^}]*width:\s*64px/', $sheet) === 1,
 echo "\nthe map on a phone\n";
 $mapJs  = file_get_contents(__DIR__ . '/map.js');
 $mapCss = file_get_contents(__DIR__ . '/dist/map.css');
+/* NOT asserting whether the darkworld backdrop is on -- that is a
+   preference and the comment says how to flip it. What must hold either
+   way is that #container-wrapper paints a ground at all: without one the
+   page's own wallpaper shows through the map, which is a bug rather than
+   a taste. */
+ok(preg_match('/#container-wrapper\s*\{[^}]*background-color:\s*#[0-9a-f]{3,8}/i', $mapCss) === 1,
+   '#container-wrapper has no background-color, so the map renders over the page wallpaper');
 ok(strpos($mapCss, '#map { display: none !important; }') === false,
    'map.css hides #map on a phone again, so the Map tab leads to an empty panel');
 preg_match('/@media \(max-width: 768px\) \{(.*?)\n\}/s', $mapCss, $mq);

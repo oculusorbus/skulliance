@@ -71,9 +71,21 @@
     align-items: flex-start;
     min-height: 79vh;
     padding: 20px;
-    background-image: url('../images/darkworld.png');
-    background-size: cover;
-    background-position: center;
+    /* THE DARKWORLD BACKDROP IS OFF, 2026-10-05, and commented rather
+       than deleted so it is one uncomment to bring back.
+
+       It worked when the map was crowded -- dozens of factions, the
+       texture reading as terrain between them. With the map now showing
+       only realms that have raided or defended in the last month there
+       is far more empty space, and the texture competes with the
+       markers instead of sitting behind them.
+
+       background-color stays either way: #container-wrapper must never
+       render transparent, or the page's own wallpaper shows through the
+       map. */
+    /* background-image: url('../images/darkworld.png'); */
+    /* background-size: cover; */
+    /* background-position: center; */
     background-color: #07111d;
     box-sizing: border-box;
 }
