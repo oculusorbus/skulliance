@@ -1015,5 +1015,52 @@ ok(strpos($cfg, "'url' => 'realms.php',") !== false,
 ok(strpos($cfg, "'url' => 'raids.php'") === false,
    'the DHC trait-drop list points at the redirect page again');
 
+/* ---------- the map only shows realms that still fight -------------- *
+ *
+ * getFactionsRealmsMapData() echoes a CSV into a <script> and needs a
+ * database, so these read the real query text, which is where the rule
+ * actually lives.
+ */
+echo "\nthe map hides realms that have not fought\n";
+$dbsrc = file_get_contents(__DIR__ . '/db.php');
+$mapfn = substr($dbsrc, strpos($dbsrc, 'function getFactionsRealmsMapData('));
+$cut   = strpos($mapfn, "\nfunction ");
+if ($cut !== false) $mapfn = substr($mapfn, 0, $cut);
+
+ok(strpos($dbsrc, "define('REALM_MAP_ACTIVE_DAYS'") !== false,
+   'the activity window is not a named constant, so tuning the experiment means editing a query string');
+/* Raided OR defended. Checking only offense_id would quietly hide every
+   realm that plays defensively, which is the opposite of the intent. */
+ok(strpos($mapfn, 'r.offense_id = realms.id') !== false, 'the map filter ignores realms that raided');
+ok(strpos($mapfn, 'r.defense_id = realms.id') !== false,
+   'the map filter ignores realms that DEFENDED, so a purely defensive realm disappears');
+ok(preg_match('/created_date\s*>=\s*\(NOW\(\) - INTERVAL/', $mapfn) === 1,
+   'the map filter is not bounded by a date, so it is not filtering on recency at all');
+/* An empty map reads as broken rather than as quiet. */
+/* Asserted on the fallback being RUN, not merely declared: $all_sql
+   sitting there unused still satisfies a check for its name, which is
+   how the first version of this passed with the fallback deleted. */
+ok(strpos($mapfn, '$conn->query($all_sql)') !== false,
+   'a month with no raids at all would render an empty map -- the unfiltered query is never run');
+ok(preg_match('/\$fellback\s*=\s*true/', $mapfn) === 1,
+   'the fallback never marks itself, so it cannot announce that it fired');
+ok(strpos($mapfn, 'console.warn') !== false,
+   'the fallback is silent, so a filter that emptied the map cannot be told from one that did nothing');
+/* DISPLAY ONLY, and that is the line not to cross: if this filter ever
+   reaches the raid target list, hiding a realm also makes it unraidable
+   -- a gameplay change wearing a cosmetic one's clothes. */
+$raid_at = strpos($dbsrc, 'function getRealms($conn, $sort, $group)');
+ok($raid_at !== false,
+   'getRealms() is gone -- raid targeting may share the map query now, which would make hiding a realm '
+ . 'also make it unraidable');
+if ($raid_at !== false) {
+	$raidfn = substr($dbsrc, $raid_at);
+	$rcut   = strpos($raidfn, "\nfunction ");
+	if ($rcut !== false) $raidfn = substr($raidfn, 0, $rcut);
+	ok(strpos($raidfn, 'REALM_MAP_ACTIVE_DAYS') === false,
+	   "the raid target list now applies the MAP's activity filter, so hiding a realm would stop it "
+	 . 'being raidable -- that is a gameplay change, not a display one');
+}
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);

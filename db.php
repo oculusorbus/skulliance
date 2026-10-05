@@ -10848,10 +10848,55 @@ function checkRealmActivation($conn){
 	}
 }
 
+/*
+ * HOW RECENTLY A REALM HAS TO HAVE FOUGHT TO APPEAR ON THE MAP.
+ *
+ * Raided or defended, either counts -- a realm that has been attacked is
+ * as much a part of the map as one doing the attacking.
+ */
+if (!defined('REALM_MAP_ACTIVE_DAYS')) define('REALM_MAP_ACTIVE_DAYS', 30);
+
 function getFactionsRealmsMapData($conn){
-	$sql = 'SELECT users.username AS user_name, realms.id AS realm_id, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name, projects.currency AS faction_currency FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 ORDER BY faction_name';
-	
-	$result = $conn->query($sql);
+	/*
+	 * ONLY REALMS THAT HAVE FOUGHT RECENTLY.
+	 *
+	 * The map was every active realm ever created, and most of them had
+	 * not moved in months. Two things came of that: it was mostly dead
+	 * ground, and the dead ones were the ugly ones -- user_image is
+	 * built from users.avatar, so somebody who changed their Discord
+	 * avatar and never came back renders a 404 and falls through to the
+	 * skull icon. Filtering on activity removes most of those as a side
+	 * effect, because a player who still raids is a player whose avatar
+	 * is current.
+	 *
+	 * FACTIONS NEED NO FILTER OF THEIR OWN: map.js builds its faction
+	 * list by reducing over these rows, so a faction with no surviving
+	 * realm never appears.
+	 *
+	 * DISPLAY ONLY. Raid targeting is getRealms() on realms-attack.php,
+	 * a different function on a different page -- hiding a realm here
+	 * does not make it unraidable, and an inactive realm can still be
+	 * attacked and will reappear here when it is.
+	 */
+	$active_sql = 'SELECT users.username AS user_name, realms.id AS realm_id, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name, projects.currency AS faction_currency FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 AND EXISTS (SELECT 1 FROM raids r WHERE r.created_date >= (NOW() - INTERVAL ' . (int)REALM_MAP_ACTIVE_DAYS . ' DAY) AND (r.offense_id = realms.id OR r.defense_id = realms.id)) ORDER BY faction_name';
+	$all_sql    = 'SELECT users.username AS user_name, realms.id AS realm_id, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name, projects.currency AS faction_currency FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 ORDER BY faction_name';
+
+	$result   = $conn->query($active_sql);
+	$fellback = false;
+	/*
+	 * A QUIET MONTH MUST NOT PRODUCE AN EMPTY MAP, which reads as broken
+	 * rather than as quiet. If nobody has fought at all, show everyone
+	 * and say so in the console so the fallback is discoverable instead
+	 * of looking like the filter did nothing.
+	 */
+	if (!$result || $result->num_rows === 0) {
+		$result = $conn->query($all_sql);
+		$fellback = true;
+	}
+	if ($fellback) {
+		echo "<script>console.warn('map: no realm has raided or defended in the last "
+		   . (int)REALM_MAP_ACTIVE_DAYS . " days, so every active realm is shown.');</script>";
+	}
 
 	if ($result->num_rows > 0) {
 	    echo "<script type='text/javascript'>";
