@@ -557,8 +557,15 @@ define('MS_FIELD_CAP', 24);
 /* A row of its own, so nothing the browser or the OS paints on top of a
    video can ever land under it. Costs ~34px and removes a whole class of
    collision. */
-.ms-d-bar { flex: 0 0 auto; display: flex; justify-content: flex-end; align-items: center;
+.ms-d-bar { flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center;
   background: #0a1929; border-bottom: 1px solid rgba(0,200,160,.14); padding: 0 4px; }
+.ms-d-step { display: flex; gap: 2px; }
+/* 44px, the same finger target Close gets -- these sit next to it and
+   must not be the smaller thing a thumb misses. */
+.ms-d-arrow { background: transparent; border: 0; color: #7a9eb0; cursor: pointer;
+  min-width: 44px; height: 44px; font-size: 1.5rem; line-height: 1; padding: 0; }
+.ms-d-arrow:hover:not(:disabled) { color: #00c8a0; }
+.ms-d-arrow:disabled { color: #2b3f50; cursor: default; }
 /* 44px tall, which is the minimum finger target iOS asks for -- this is
    the control a thumb was already missing, so it does not get to be the
    smallest thing on the screen. */
@@ -995,6 +1002,19 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			         mission. That badge is drawn by the OS over the video;
 			         it cannot be out-stacked, only avoided. */ ?>
 			<div class="ms-d-bar">
+				<?php /* STEP THROUGH THE LADDER WITHOUT CLOSING. Disabled rather
+				         than hidden at either end, and disabled on the right when
+				         the next rung is locked -- "there is more, you have not
+				         earned it" reads better than a dead end. Whether it is
+				         locked is decided server-side in mission_loadout(), the
+				         same place ajax/mission-data.php decides whether to serve
+				         it, so the arrow and the endpoint cannot disagree. */ ?>
+				<div class="ms-d-step">
+					<button type="button" id="ms-d-prev" class="ms-d-arrow" onclick="msStep(-1)"
+					        aria-label="Previous mission" disabled>&lsaquo;</button>
+					<button type="button" id="ms-d-next" class="ms-d-arrow" onclick="msStep(1)"
+					        aria-label="Next mission" disabled>&rsaquo;</button>
+				</div>
 				<button type="button" class="ms-drawer-x" onclick="msCloseDrawer()" aria-label="Close mission">
 					<span aria-hidden="true">&times;</span> Close
 				</button>
@@ -1326,9 +1346,49 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	};
 
 	/* ---------- the launch drawer ------------------------------------- */
+	/*
+	 * The arrows read their state from the loadout the server just sent.
+	 * prev_id is null at the bottom of the ladder; next_open is false
+	 * when the next rung does not exist OR is locked for this user --
+	 * and user 1 is exempt, decided in mission_loadout() rather than
+	 * here, so the button and the endpoint cannot disagree.
+	 */
+	function msSyncArrows() {
+		var p = document.getElementById('ms-d-prev');
+		var n = document.getElementById('ms-d-next');
+		if (!p || !n) return;
+		var hasPrev = !!(LO && LO.prev_id);
+		var canNext = !!(LO && LO.next_open);
+		p.disabled = !hasPrev;
+		n.disabled = !canNext;
+		p.title = hasPrev ? 'Previous mission' : 'This is the first mission';
+		n.title = canNext ? 'Next mission'
+		        : (LO && LO.next_id ? 'The next mission is locked' : 'This is the last mission');
+	}
+
+	window.msStep = function (dir) {
+		if (!LO) return;
+		var id = (dir < 0) ? LO.prev_id : (LO.next_open ? LO.next_id : null);
+		if (!id) return;
+		/* Straight back through msOpenDrawer so a step and a fresh open
+		   are the same path -- the drawer is already open, so it simply
+		   repaints with the new mission. */
+		window.msOpenDrawer(id);
+	};
+
 	window.msOpenDrawer = function (questId) {
+		/* Stepping replaces the drawer's contents while it is open, so it
+		   has to do the same two things closing does: silence the outgoing
+		   mission's video (see msCloseDrawer -- detaching it does NOT stop
+		   it) and drop the selection state, or the consumables picked for
+		   one mission ride along into the next one's launch. */
+		msStopMedia();
+		picked = {}; items = {}; shedByItem = {}; target = 100;
 		drawerBody.innerHTML = '<div class="ms-d-scroll"><div class="ms-d-main"><p class="ms-d-desc">Loading…</p></div></div>';
 		drawer.hidden = false;
+		/* Both arrows off until the new loadout lands, or a fast
+		   double-click steps twice from stale LO and skips a mission. */
+		LO = null; msSyncArrows();
 		fetch('ajax/mission-data.php?what=loadout&quest_id=' + encodeURIComponent(questId),
 			{credentials: 'same-origin'})
 			.then(function (r) { return r.json(); })
@@ -1338,6 +1398,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 				LO = j.loadout;
 				target = LO.threshold;          // the default the old page pre-selected
 				renderDrawer();
+				msSyncArrows();
 				refit();
 			})
 			.catch(function () {
@@ -1345,24 +1406,28 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 					+ 'Could not reach the server.</p></div></div>';
 			});
 	};
-	window.msCloseDrawer = function () {
-		/*
-		 * STOP THE MEDIA BEFORE HIDING ANYTHING.
-		 *
-		 * Hiding an element does not pause it. An animated mission left
-		 * its video running -- with sound, on a loop -- for as long as the
-		 * page stayed open, because closing the drawer only set
-		 * drawer.hidden and the <video> was still in the document, still
-		 * playing, just not visible. Now that these have audio, that is
-		 * the difference between a closed mission and a stuck soundtrack.
-		 *
-		 * Paused BEFORE the element is detached: a detached media element
-		 * can keep its audio going until it is collected, so emptying the
-		 * body on its own is not a fix either.
-		 */
+	/*
+	 * STOP THE MEDIA BEFORE HIDING OR REPLACING ANYTHING.
+	 *
+	 * Hiding an element does not pause it. An animated mission left
+	 * its video running -- with sound, on a loop -- for as long as the
+	 * page stayed open, because closing the drawer only set
+	 * drawer.hidden and the <video> was still in the document, still
+	 * playing, just not visible. Now that these have audio, that is
+	 * the difference between a closed mission and a stuck soundtrack.
+	 *
+	 * Paused BEFORE the element is detached: a detached media element
+	 * can keep its audio going until it is collected, so emptying the
+	 * body on its own is not a fix either.
+	 */
+	function msStopMedia() {
 		drawerBody.querySelectorAll('video, audio').forEach(function (m) {
 			try { m.pause(); m.currentTime = 0; } catch (e) {}
 		});
+	}
+
+	window.msCloseDrawer = function () {
+		msStopMedia();
 		drawerBody.innerHTML = '';
 		drawer.hidden = true; LO = null; picked = {}; items = {}; shedByItem = {}; target = 100;
 	};

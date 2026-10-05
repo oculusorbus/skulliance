@@ -588,8 +588,45 @@ function mission_loadout($conn, $quest_id) {
 		);
 	}
 
+	/*
+	 * THE NEIGHBOURS ON THIS PROJECT'S LADDER, so the drawer can step
+	 * through missions without closing and reopening.
+	 *
+	 * The LOCK RULE IS DECIDED HERE, not by the arrows. A level is open
+	 * when it is no higher than the next one you have not cleared, and
+	 * ajax/mission-data.php already refuses a locked loadout to anyone
+	 * but user 1 -- so if the client decided this for itself, the two
+	 * would disagree and the arrow would open an error. `next_open` is
+	 * the same question the endpoint will ask.
+	 *
+	 * next_id is returned EVEN WHEN IT IS LOCKED, so the arrow can be
+	 * shown disabled rather than vanish: "there is more, you have not
+	 * earned it" reads better than a dead end.
+	 */
+	$prev_id = null; $next_id = null; $next_level = 0;
+	$lvl = (int)$q['level'];
+	/* NEAREST level either side, not level-1 and level+1: the ladder is
+	   ORDER BY level ASC (mission_quests()), so a project with a gap in
+	   its numbering still steps from card to card the way it looks. */
+	$nr = $conn->query(
+		"(SELECT id, level FROM quests WHERE project_id = '$pid' AND level < $lvl ORDER BY level DESC LIMIT 1)
+		 UNION ALL
+		 (SELECT id, level FROM quests WHERE project_id = '$pid' AND level > $lvl ORDER BY level ASC LIMIT 1)");
+	while ($nr && $row = $nr->fetch_assoc()) {
+		if ((int)$row['level'] < $lvl) $prev_id = (int)$row['id'];
+		else { $next_id = (int)$row['id']; $next_level = (int)$row['level']; }
+	}
+	/* The SAME rule $locked uses above, asked about the next rung. */
+	$next_locked = ($next_id !== null) && ($next_level > $done + 1);
+
 	$slug = mission_art_slug($q['title']);
 	return array(
+		'prev_id'     => $prev_id,
+		'next_id'     => $next_id,
+		'next_locked' => $next_locked,
+		/* Admin sees every rung, which is the same exemption the endpoint
+		   makes -- mission_is_admin(). */
+		'next_open'   => ($next_id !== null) && (!$next_locked || mission_is_admin()),
 		'quest_id'    => (int)$q['id'],
 		'title'       => $q['title'],
 		'description' => $q['description'],

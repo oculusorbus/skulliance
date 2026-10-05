@@ -111,6 +111,39 @@ class MConn {
 			preg_match_all("/'(\d+)'/", $flat, $m);
 			$WROTE[] = array('item', (int)$m[1][1]); return true;
 		}
+		/* The drawer's NEIGHBOUR lookup: two LIMIT 1 subselects in a UNION,
+		   nearest level either side.
+		
+		   This INTERPRETS the SQL rather than restating what it ought to
+		   mean -- it reads the WHERE, the ORDER BY direction and the LIMIT
+		   off each subselect. A stub that re-derives the intent cannot
+		   fail: the first version of this one answered "nearest either
+		   side" from the fixture directly, and flipping the real query's
+		   ORDER BY to ASC/DESC -- which strands both arrows on a ladder
+		   with a gap -- still passed. */
+		if (strpos($flat, 'SELECT id, level FROM quests WHERE') !== false) {
+			$r = array();
+			foreach (explode('UNION ALL', $flat) as $sub) {
+				$rows = $WORLD['ladder'];
+				if (preg_match("/project_id = '(\d+)'/", $sub, $mp)) {
+					$p = (int)$mp[1];
+					$rows = array_filter($rows, function ($x) use ($p) {
+						return (int)$x['project_id'] === $p; });
+				}
+				if (preg_match('/level ([<>]) (\d+)/', $sub, $ml)) {
+					$op = $ml[1]; $lv = (int)$ml[2];
+					$rows = array_filter($rows, function ($x) use ($op, $lv) {
+						return $op === '<' ? (int)$x['level'] < $lv : (int)$x['level'] > $lv; });
+				}
+				$rows = array_values($rows);
+				$desc = (bool)preg_match('/ORDER BY level DESC/', $sub);
+				usort($rows, function ($a, $b) use ($desc) {
+					return $desc ? (int)$b['level'] - (int)$a['level'] : (int)$a['level'] - (int)$b['level']; });
+				if (preg_match('/LIMIT (\d+)/', $sub, $mn)) $rows = array_slice($rows, 0, (int)$mn[1]);
+				foreach ($rows as $x) $r[] = array('id' => $x['id'], 'level' => $x['level']);
+			}
+			return new MRes($r);
+		}
 		if (strpos($flat, 'FROM consumables WHERE id') !== false)
 			return new MRes(array(array('name' => 'Fast Forward')));
 		return new MRes(array());
@@ -538,6 +571,117 @@ ok($navAt !== false && $mainAt !== false,
    'the nav is no longer rendered inside <div class="main"> -- that is the '
  . 'auto-height box its position:sticky depends on, and outside it the pin '
  . 'dies one viewport down the way realms.php did');
+
+/* ---------- stepping through the ladder from inside the drawer ----------- *
+ *
+ * The drawer grew prev/next arrows, which means the answer to "is the next
+ * rung mine to see" is now asked in two places: by the arrow, and by
+ * ajax/mission-data.php when the arrow is clicked. If those two disagree
+ * the arrow is live and opens an error.
+ *
+ * So the lock decision is made HERE, once, as `next_open`, using the same
+ * rule `locked` uses one screen up -- and the checks below are about that
+ * agreement, not about the arrow's appearance.
+ */
+echo "\nstepping through the ladder\n";
+
+function lo_world($level, $done, $ladder) {
+	global $WORLD, $conn;
+	$WORLD['levels']  = array(9 => $done);
+	$WORLD['balance'] = array(9 => 500);
+	$WORLD['ladder']  = $ladder;
+	$WORLD['eligible'] = array();
+	$WORLD['quest']   = array('id' => 77, 'title' => 'Mid Ladder', 'description' => 'go',
+		'cost' => 100, 'reward' => 300, 'duration' => 2, 'extension' => 'png',
+		'level' => $level, 'project_id' => 9, 'currency' => 'STAR',
+		'project_name' => 'Test Project');
+	$conn = new MConn();
+	mission_levels_forget();
+	return mission_loadout($conn, 77);
+}
+$LAD = array(
+	array('project_id' => 9, 'level' => 1, 'id' => 10),
+	array('project_id' => 9, 'level' => 2, 'id' => 11),
+	array('project_id' => 9, 'level' => 3, 'id' => 12),
+	array('project_id' => 9, 'level' => 4, 'id' => 13),
+);
+
+/* Standing on 3 with 2 cleared: 3 is open, 4 is not. */
+$lo = lo_world(3, 2, $LAD);
+ok($lo['prev_id'] === 11, 'the rung below is not offered');
+ok($lo['next_id'] === 13, 'a LOCKED next rung still comes back, so the arrow can be disabled rather than vanish');
+ok($lo['next_locked'] === true, 'the rung above a cleared+1 level is not reported locked');
+ok($lo['next_open'] === false, 'a staker is being offered a rung the endpoint will refuse');
+
+/* The admin exemption, which is the whole reason next_open exists apart
+   from next_locked: ajax/mission-data.php serves a locked loadout to user
+   1, so the arrow has to be live for user 1 and nobody else. */
+$SESS_WAS = $_SESSION;
+$_SESSION = array('userData' => array('user_id' => 1, 'discord_id' => '772831523899965440'));
+$lo = lo_world(3, 2, $LAD);
+ok(mission_is_admin(), 'user 1 is the admin');
+ok($lo['next_locked'] === true, 'the rung is still reported locked for the admin -- it IS locked');
+ok($lo['next_open'] === true, 'the admin cannot step onto a locked rung the endpoint would serve them');
+$_SESSION = $SESS_WAS;
+
+/* Either end of the ladder. */
+$lo = lo_world(1, 0, $LAD);
+ok($lo['prev_id'] === null, 'the first rung reports something below it');
+ok($lo['next_id'] === 11, 'and still offers the one above');
+
+$lo = lo_world(4, 9, $LAD);
+ok($lo['next_id'] === null, 'the last rung reports something above it');
+ok($lo['next_locked'] === false, 'a missing next rung is being reported as locked');
+ok($lo['next_open'] === false, 'and the arrow would be live with nowhere to go');
+
+/* NEAREST level, not level+-1. The ladder is ORDER BY level ASC, so a
+   project whose numbering skips -- which an interrupted reorder leaves
+   behind -- must still step from card to card the way it looks. */
+$GAP = array(
+	array('project_id' => 9, 'level' => 2, 'id' => 20),
+	array('project_id' => 9, 'level' => 5, 'id' => 21),
+	array('project_id' => 9, 'level' => 9, 'id' => 22),
+);
+$lo = lo_world(5, 9, $GAP);
+ok($lo['prev_id'] === 20, 'a gap in the numbering strands the back arrow');
+ok($lo['next_id'] === 22, 'a gap in the numbering strands the forward arrow');
+
+/* Another project's rungs are not this ladder. The other project's rows
+   come FIRST and sit at the same levels, so an unscoped lookup returns
+   THEM on the tie -- with this ladder's rows first, dropping the
+   project_id from the query changed nothing and the check was decorative. */
+$lo = lo_world(3, 2, array_merge(array(
+	array('project_id' => 4, 'level' => 2, 'id' => 80),
+	array('project_id' => 4, 'level' => 4, 'id' => 81)), $LAD));
+ok($lo['prev_id'] === 11 && $lo['next_id'] === 13, 'the arrows walk into another project\'s ladder');
+
+/*
+ * AND THE CLIENT MUST NOT RE-DERIVE IT. The arrow reads next_open and
+ * nothing else; the moment the page starts comparing levels to cleared
+ * counts for itself, it can disagree with the endpoint -- which is the
+ * one failure mode this design exists to prevent.
+ */
+$mp = file_get_contents(__DIR__ . '/missions.php');
+ok(strpos($mp, 'LO.next_open') !== false, 'the drawer no longer reads next_open');
+ok(strpos($mp, 'next_locked') === false,
+   'missions.php mentions next_locked -- the lock decision has leaked into the client');
+
+/*
+ * Stepping replaces the drawer's body while it is open, so it has to do
+ * what closing does. Two things bite otherwise, and both were live bugs
+ * in the shape of this one: a detached <video> keeps playing (see
+ * msCloseDrawer), and consumables picked for one mission stay picked.
+ */
+/* The PREAMBLE only -- everything msOpenDrawer does before it asks the
+   server. Sliced to the fetch rather than to msCloseDrawer, because
+   msStopMedia's own declaration sits between the two and a slice that
+   reaches it finds the name whether or not anything calls it. */
+$step = substr($mp, strpos($mp, 'window.msOpenDrawer = function'));
+$step = substr($step, 0, strpos($step, "fetch('ajax/mission-data.php?what=loadout"));
+ok(strpos($step, 'msStopMedia()') !== false,
+   'opening a mission over an open one leaves the old video playing');
+ok(strpos($step, 'items = {}') !== false && strpos($step, 'shedByItem = {}') !== false,
+   "stepping carries the previous mission's consumables into the next launch");
 
 /* ---------- mission art: one pairing rule, five call sites --------------- *
  *

@@ -46,6 +46,8 @@ Two different things can put a mission on that list, and they are kept apart:
 
 Choosing a mission opens its **load-out**: the artwork at full size and uncropped, the description, what it costs and pays, your balance, and every NFT you own for that project that is not already out on a mission.
 
+**You can step along the ladder without closing it.** Arrows at the top of the load-out move to the mission below or above the one you are looking at, so reading through a project's missions is two keys' worth of clicking rather than open-close-open. The back arrow goes dim on the first mission; the forward arrow goes dim when the mission above is still locked, so you can see that there is more up there without being able to walk into it.
+
 Some missions are **animated**, and those play in the load-out with full controls - scrubber, fullscreen and sound. They start muted because browsers will not autoplay audio, so unmute in the player to hear the piece as the artist made it. Mission descriptions can carry **links** too, which open in a new tab. A crew is picked for you to start with - deselect or add as you like, and the success meter moves as you do.
 
 There is also a very interesting feature for whales. If you have enough NFTs to garner over 100% success rate, the system automatically balances your crew across multiple mission runs rather than spending it all on one.
