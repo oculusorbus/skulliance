@@ -384,6 +384,7 @@
 		      <a href="admin-collections.php">Collections</a>
 		      <a href="admin-missions.php">Missions</a>
 		      <a href="admin-blockchains.php">Chains</a>
+		      <a href="admin-flyers.php">Flyers</a>
 		    </div>
 		  </div>
 		  <?php endif; ?>
