@@ -1661,3 +1661,192 @@ linked address.
   phase-two note applies: per-game metadata only matters if an off-Cardano
   collection is given a game theme, and that is a separate decision.
 
+
+## 14. Polygon
+
+Shipped 2026-10-06 for **Danketsu** (project 10), contract
+`0xee79a3e8aef1109a6ee82bf399ce9e1bd43cf5c4`, chain id **4**. It is the
+only Polygon collection and the only EVM chain, so everything below is
+written for ERC-721 and nothing is generalised past it.
+
+### 14a. The owner map, and why this chain reads backwards
+
+Cardano, XRPL and Solana all answer **"what does this wallet hold"**.
+ERC-721 has no such call. The optional interface that would provide one,
+`ERC721Enumerable` (`0x780e9d63`), is **not implemented by Danketsu** —
+measured, not assumed; `polygon-probe.php` prints it. The alternatives
+were both bad: scanning `Transfer` logs back to the deploy block is far
+outside what a public node will serve, and an indexer API means a paid
+key as a hard dependency.
+
+So the question is inverted. Read the **collection's** owner map —
+`ownerOf(1..totalSupply)`, batched through **Multicall3**
+(`0xca11bde05977b3631167028862be2a173976ca11`, same address on every
+chain) at `POLYGON_CHUNK = 250` per `eth_call` — and intersect it against
+the wallets this platform knows about.
+
+Measured on the live server: **4,444 tokens in 18 calls at ~180ms each**,
+about 3.2s, no API key. That is cheap enough to run at connect time as
+well as nightly, which is why there is no owner-map cache. If a node
+starts rate-limiting, the cache goes in `poly_owner_map()` and nowhere
+else.
+
+Two properties worth keeping:
+
+* **One read answers for every user at once**, so the cost is set by how
+  big the collection is, not by how many holders have linked a wallet. It
+  does not grow as the platform grows.
+* The read-before-write gate comes **cheaper** here than on the other
+  chains: there is one read rather than one per address, so "did every
+  address succeed" collapses to "did every chunk succeed". Any chunk
+  failing means nothing is cleared and nothing is written.
+
+`allowFailure` is **true** on every batched call, deliberately: `ownerOf`
+reverts for a burned token and this collection has exactly one (4,443 of
+4,444 ids have an owner). With it false, that single id fails the whole
+batch of 250 and the chunk looks like a network problem.
+
+### 14b. PHP cannot compute keccak256, and what that costs
+
+A selector is the first four bytes of `keccak256(signature)`. PHP has no
+keccak — `hash('sha3-256')` is FIPS-202, a **different padding** and a
+different digest. Rather than vendor a hasher for four constants, the
+selectors are written out in `poly_sel()` and each was proved against the
+live contract before being committed.
+
+Two consequences:
+
+* **EIP-55 checksum validation also needs keccak**, so addresses are
+  validated by *shape* and lower-cased. A mistyped address reads as
+  "holds nothing" rather than being rejected — visible, not silent.
+* **Sign-In-With-Ethereum is a real piece of work here**, unlike Solana.
+  Recovering an address from an EIP-191 signature needs secp256k1 public
+  key recovery *and* keccak256, and this server has neither. Both would
+  have to be vendored in pure PHP. Solana's equivalent is one
+  `sodium_crypto_sign_verify_detached()` call away and simply not done
+  yet; do not file these two under the same heading.
+
+### 14c. Addresses are folded, on both sides, always
+
+`ownerOf` answers lower case. MetaMask reports EIP-55 mixed case. If the
+two are not folded to one case, **no wallet ever matches any token and
+the pass reports a clean zero** — the single most likely day-one bug on
+this chain, and a completely silent one.
+
+`ajax/polygon-link.php` folds **before storing**, not just before
+comparing. The verifier folds both sides too, but a row stored in one
+case and matched in another is one refactor away from matching nothing,
+with nothing erroring when it breaks.
+
+`nfts.asset_id` is `contract:tokenId` (47 characters) because a token id
+is unique only within its contract. `poly_check_schema()` verifies the
+column can hold it rather than trusting that — MySQL outside strict mode
+truncates silently, and the next pass then compares a full id against a
+truncated one, never matches, and inserts the whole collection again.
+
+### 14d. A gateway URL is not a website
+
+This is the one piece of image handling that is not generic, and §13b is
+the half that came before it.
+
+Danketsu's metadata does not point `image` at `ipfs://`. It points at
+`https://<cid>.ipfs.nftstorage.link/1.png?ext=png` — an absolute URL
+naming a **specific public gateway**, and that gateway answers 302 then
+429. Stored as-is it would be fetched as-is forever, because `getIPFS()`
+and `lib/image-cache-lib.php` both treat an absolute URL as opaque and
+give it the single empty "gateway".
+
+That is **exactly right for OMEN**, which serves from its project's own
+domain, and **exactly wrong here**. The difference is whether the URL is
+somebody's *site* or somebody's *gateway*: a gateway URL names content
+that exists independently of it, so the CID is the durable part and the
+host is an accident. `poly_gateway_cid()` tells them apart and folds the
+gateway form back to `ipfs://CID/path`, letting the cache race every
+gateway for it.
+
+**The returned value keeps its `ipfs://` prefix**, because `processNFT()`
+does `substr($image, 7)` on the way into `nfts.ipfs`. Returning the bare
+CID — which is what the column ends up holding, and therefore looks
+correct — costs the CID its first seven characters, silently.
+`sol_storable_image()` has the same contract for the same reason, and
+`verify-polygon-harness.php` pins it by lifting the real branch out of
+`verify.php` rather than trusting a stub.
+
+### 14e. One tile, and the permission going back
+
+Solana needs three wallet tiles because Solflare, Phantom and Backpack
+each inject their own namespace and matching on `window.solana` can
+silently connect the wrong one. **Every EVM wallet shares
+`window.ethereum` by design**, so there is nothing to choose between —
+three buttons would all do the same thing and two of them would name a
+wallet that is not about to open. The single tile names whatever turned
+up, and prefers MetaMask under EIP-5749's `.providers` because MetaMask's
+fox is the logo on it.
+
+**The network switch asks, it does not require.**
+`eth_requestAccounts` returns the same address whatever chain the wallet
+is on, and ownership is read from our own node server-side, so the switch
+to `0x89` buys reassurance and nothing else. A refusal that propagated
+would invent a failure for a step that did not need to succeed, for
+everybody who keeps their wallet on another chain. `4902` (chain not
+configured) is treated the same way rather than prompting to add a
+network that changes nothing.
+
+Both chains now **hand the permission back** once the address is
+recorded: Polygon via `wallet_revokePermissions`, Solana via
+`provider.disconnect()`. Per MetaMask's own docs, granting `eth_accounts`
+also grants `eth_sendTransaction`, `personal_sign` and
+`eth_signTypedData_v4` — there is no read-only connect, the permission
+*is* the connection. What a site can do is not keep it. Best effort on
+both: older builds do not implement it, and by then the link has already
+succeeded, so a failure has nothing the holder could act on. **Not on a
+failed link** — Try Again has to work without a second approval.
+
+### 14f. The links
+
+| Link | Built by | Shape |
+|---|---|---|
+| Collection | `collectionMarketUrl()` | OpenSea, **by slug** — Danketsu's is `danketsu-nft`, verified against the live page (`danketsu` is a different thing). Polygon joins `$slug_chains`. |
+| Collection, no slug | same | **Rarible**, which addresses by contract. Not OpenSea with a contract — that is the dead-link trap wayup set on Cardano. |
+| Token | `nftExplorerUrl()` | `opensea.io/assets/matic/<contract>/<id>`. Built, not substituted: `asset_id` is two things and a one-`%s` template cannot express it. A `blockchains.explorer_nft` template still wins if one is set. |
+| Wallet | `accountExplorerUrl()` | PolygonScan. Not a default to pool.pm, which renders "not found" and reads as a lost wallet. |
+
+### 14g. Operating it
+
+```
+php verify.php verify=polygon dry=1 addr=0x...   before anyone has linked
+php verify.php verify=polygon dry=1              every linked wallet
+php verify.php verify=polygon                    for real
+php polygon-probe.php step=gateways              which gateways still answer
+php image-cache.php --chain=4 --workers=4        warm the art
+```
+
+The dry run prints the **whole owner map**, not just our share, because
+the failure it exists to catch cannot show up the way it does on the
+other chains. There, a contract wrong by a character appears under "held,
+but NOT registered". Here an unregistered contract is never read at all,
+so the same mistake looks like a collection nobody happens to hold —
+identical to a correct run, unless the supply is printed beside it.
+
+**`--workers` on the cache run is not decoration.** Danketsu's art is
+**5000×5000**, which is 25 megapixels and about **200MB resident** in
+Imagick Q16, sixteen times over if sixteen workers decode at once.
+Imagick's documented behaviour past its own 256MB limit is to spill to
+disk rather than fail, so the symptom is not an error — it is a run that
+takes minutes per image and OOM-killed workers. Cardano's art never came
+close, which is why 16 was fine for years.
+
+### 14h. Still open
+
+* **No signature verification**, as on every other chain here — the
+  browser reports the address and we take its word. An unclaimed address
+  can be claimed by anyone; first claimer wins. Not new, not
+  Polygon-specific, and §14b says what fixing it would cost on this chain
+  specifically.
+* **One working IPFS gateway.** Of the seven in `lib/ipfs-gateways.php`,
+  only `ipfs.filebase.io` serves Danketsu's art from this server. If it
+  drops those pins, new art stops warming — already-cached images are
+  unaffected. Argues for warming held tokens early rather than lazily.
+* Danketsu's art is **split across several CID directories** (token 1 and
+  token 2519 are in different ones), so a partial pin shows up as some
+  images working and others not, rather than a uniform failure.

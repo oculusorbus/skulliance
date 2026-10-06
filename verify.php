@@ -10,6 +10,69 @@ if(isset($argv)){
 	parse_str(implode('&', array_slice($argv, 1)), $_GET);
 }
 /*
+ * IS verify.php THE PAGE BEING REQUESTED, OR DID SOMETHING INCLUDE IT?
+ *
+ * Every block below is gated on isset($_GET['verify']) and nothing else
+ * -- no auth, no CLI check -- and the last of them ends in platform-wide
+ * payouts. verify.php is included by store.php, realms.php, wallets.php,
+ * my-nfts.php, auctions.php, cryptcrawl.php, cryptconquest.php,
+ * dhcgallery.php, raffles-verify.php and wallet-ajax.php, so until now
+ * `store.php?verify=1` ran the entire nightly job, payouts included, for
+ * anyone who typed it.
+ *
+ * That contradicts a rule this codebase already states for itself: the
+ * leaderboard snapshot cron is kept deliberately read-only and its
+ * dispatch deliberately separate, because coupling it "would put payout
+ * paths one edit away from an unattended cron" (MAINTENANCE.md). Ten
+ * pages is rather more than one edit.
+ *
+ * SCRIPT_FILENAME is the entry point, not the included file, so this is
+ * true exactly when verify.php is what was asked for -- which covers the
+ * CLI runs (php verify.php verify=polygon) and a URL cron on
+ * verify.php?verify=1 unchanged, and nothing else. Chosen over a shared
+ * token as the FIRST fix precisely because it cannot break a cron that
+ * already works: if the existing crontab points at verify.php, it keeps
+ * running with no change at all.
+ *
+ * It is not sufficient on its own -- verify.php itself is still reachable
+ * over HTTP by anyone. See VERIFY_JOB_TOKEN below for the other half,
+ * which needs a crontab edit and is therefore opt-in.
+ */
+/* Both sides must RESOLVE. realpath() returns false for a path that does
+   not exist, and false === false is true -- so comparing the raw results
+   would hand a pass to any context where SCRIPT_FILENAME is not a real
+   file (php -r, for one, where it is the empty string). */
+$verify_self  = @realpath(__FILE__);
+$verify_asked = isset($_SERVER['SCRIPT_FILENAME']) ? @realpath($_SERVER['SCRIPT_FILENAME']) : false;
+$verify_entry = is_string($verify_self) && is_string($verify_asked) && $verify_self === $verify_asked;
+if (!$verify_entry && isset($_GET['verify'])) {
+	error_log('verify.php: ?verify= ignored, included by '
+	        . (isset($_SERVER['SCRIPT_FILENAME']) ? $_SERVER['SCRIPT_FILENAME'] : '?')
+	        . ' rather than requested directly');
+}
+
+/*
+ * THE OTHER HALF, AND IT IS OPT-IN BECAUSE IT NEEDS A CRONTAB EDIT.
+ *
+ * Define VERIFY_JOB_TOKEN in credentials/db_credentials.php and the job
+ * refuses to run over HTTP without ?token=<it>. Leave it undefined and
+ * behaviour is exactly as it was, so this ships without touching a
+ * running cron. CLI never needs it -- a shell on the box is already past
+ * any gate this could impose.
+ *
+ *   define('VERIFY_JOB_TOKEN', '<long random string>');
+ *   crontab: .../verify.php?verify=1&token=<the same string>
+ */
+function verify_job_allowed() {
+	if (PHP_SAPI === 'cli') return true;
+	if (!defined('VERIFY_JOB_TOKEN') || VERIFY_JOB_TOKEN === '') return true;
+	$given = isset($_GET['token']) ? (string)$_GET['token'] : '';
+	/* Constant time: a timing oracle on a token that triggers payouts is
+	   not a thing to leave lying around. */
+	return hash_equals((string)VERIFY_JOB_TOKEN, $given);
+}
+
+/*
  * THE SOLANA PASS, BY HAND. Like the XRPL one below it, this is not a
  * scheduled job -- it runs inside the main verify block, for the reason
  * written out there.
@@ -19,7 +82,7 @@ if(isset($argv)){
  *   php verify.php verify=solana dry=1 addr=... ...using one address, before
  *                                               anybody has linked a wallet
  */
-if(isset($_GET['verify']) && $_GET['verify'] === 'solana'){
+if($verify_entry && verify_job_allowed() && isset($_GET['verify']) && $_GET['verify'] === 'solana'){
 	set_time_limit(0);
 	require_once __DIR__ . '/verify-solana.php';
 
@@ -111,7 +174,7 @@ if(isset($_GET['verify']) && $_GET['verify'] === 'solana'){
  *   php verify.php verify=polygon dry=1 addr=0x. ...using one address, before
  *                                                anybody has linked a wallet
  */
-if(isset($_GET['verify']) && $_GET['verify'] === 'polygon'){
+if($verify_entry && verify_job_allowed() && isset($_GET['verify']) && $_GET['verify'] === 'polygon'){
 	set_time_limit(0);
 	require_once __DIR__ . '/verify-polygon.php';
 
@@ -211,7 +274,7 @@ if(isset($_GET['verify']) && $_GET['verify'] === 'polygon'){
  *   php verify.php verify=xrpl dry=1 addr=r...   ...using one address, before
  *                                                anybody has linked a wallet
  */
-if(isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
+if($verify_entry && verify_job_allowed() && isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
 	set_time_limit(0);
 	require_once __DIR__ . '/verify-xrpl.php';
 
@@ -287,7 +350,7 @@ if(isset($_GET['verify']) && $_GET['verify'] === 'xrpl'){
 }
 
 // Distinguish between a logged in user and verification cron job
-if(isset($_GET['verify'])){
+if($verify_entry && verify_job_allowed() && isset($_GET['verify'])){
 	set_time_limit(0);
 
 	/*

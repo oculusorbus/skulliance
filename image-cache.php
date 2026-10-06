@@ -6,7 +6,8 @@ set_time_limit(0);
 ini_set('memory_limit', '512M');
 
 $base_path   = __DIR__ . '/images/nfts/';
-$num_workers = 16; // Parallel worker processes
+$num_workers = 16; // Parallel worker processes; see --workers below
+$worker_note = '';
 
 // Defensive sweep of stale lock files from prior runs. Each lock is touched
 // at /tmp/nft-img-{md5}.lock when a fetch starts and unlinked in a finally
@@ -62,9 +63,32 @@ foreach ($cli_args as $arg) {
     } elseif (preg_match('/^--project=(\d+)$/', $arg, $m)) {
         $filter_sql .= ' AND c.project_id = ' . (int)$m[1];
         $filter_desc = 'project ' . (int)$m[1];
+    } elseif (preg_match('/^--workers=(\d+)$/', $arg, $m)) {
+        /*
+         * WHY THIS EXISTS: PIXELS, NOT FILES.
+         *
+         * Every worker decodes a whole image before resizing it to 1000px,
+         * and Imagick Q16 costs 8 bytes per pixel -- so the peak is set by
+         * the biggest image in the set, not the average or the file size.
+         * Danketsu's art is 5000x5000, which is 25 megapixels and about
+         * 200MB resident, sixteen times over if sixteen workers happen to
+         * be decoding at once. That is 3.2GB against an LVE cap, and
+         * Imagick's documented behaviour past its own 256MB limit
+         * (lib/image-cache-lib.php) is to SPILL TO DISK rather than fail
+         * -- so the symptom is not an error, it is a run that takes
+         * minutes per image, and the OOM-killed workers this script
+         * already sweeps stale locks for.
+         *
+         * Cardano's art never came close, which is why 16 was fine for
+         * years. Check before a bulk run of a new collection:
+         *   curl -sr 0-63 <image-url> | xxd | head
+         * IHDR carries width and height in the first 24 bytes.
+         */
+        $num_workers = max(1, min(16, (int)$m[1]));
+        $worker_note = ' (--workers)';
     } else {
         echo "Unknown argument: $arg\n";
-        echo "usage: php image-cache.php [--chain=N] [--collection=N] [--project=N]\n";
+        echo "usage: php image-cache.php [--chain=N] [--collection=N] [--project=N] [--workers=N]\n";
         exit(1);
     }
 }
@@ -145,7 +169,7 @@ $actual_workers = max(1, min($num_workers, (int) ceil($total / $min_per_worker))
 $chunks         = array_chunk($rows, (int) ceil($total / $actual_workers));
 unset($rows); // free master memory before forking
 
-echo "Found $total NFTs — spawning $actual_workers workers.\n\n";
+echo "Found $total NFTs — spawning $actual_workers workers$worker_note.\n\n";
 
 $children  = [];
 $tmp_dir   = sys_get_temp_dir();

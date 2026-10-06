@@ -807,7 +807,7 @@
     <h1>Most NFTs just sit there. <span class="hp-turn">Yours don't have to.</span></h1>
 
     <p class="hp-lede">Skulliance is a collective of NFT artists/projects on
-       <strong>Cardano, Solana and the XRP Ledger</strong>. Stake your NFTs for daily rewards,
+       <strong>Cardano, Solana, Polygon and the XRP Ledger</strong>. Stake your NFTs for daily rewards,
        send them on missions, or take them into seven free browser games. No signup to play.</p>
 
     <div class="hp-ctas">
@@ -838,8 +838,8 @@
         <h2>Artists get a stage.<br>Collectors get a reason to come back.</h2>
         <p class="hp-say">Skulliance connects collectors with the artists and projects behind the
            art, and then gives the art something to do - staking, missions, games, a marketplace.
-           Led by Oculus Orbus, a collector and developer, and built on Cardano with the XRP
-           Ledger alongside it.</p>
+           Led by Oculus Orbus, a collector and developer, and built on Cardano with Solana,
+           Polygon and the XRP Ledger alongside it.</p>
         <p style="margin-top:22px;"><a class="hp-cta hp-secondary" href="#artists">Meet the artists</a></p>
       </div>
     </section>
@@ -957,7 +957,8 @@
               ? number_format($partner_n) . ' artists and projects stake here.'
               : 'Artists keep joining.'; ?></h2>
         <p class="hp-say">Six founded it; the rest were invited. Skulliance opened partner staking to
-           other Cardano artists and projects, and now to the XRP Ledger and Solana - their holders earn points,
+           other Cardano artists and projects, and now to Solana, Polygon and the XRP Ledger - their
+           holders earn points,
            redeem the same incentives and climb the same leaderboards. A few below, not all of them.</p>
         <?php
         // Partner flyers, split half/half across two counter-scrolling
@@ -1030,7 +1031,7 @@
       <div class="wrap">
         <span class="hp-kick">The staking platform</span>
         <h2>Your NFTs earn while you do nothing.<br>Then you spend it.</h2>
-        <p class="hp-say">Log in with Discord, connect a Cardano, Solana or XRPL wallet, and qualifying
+        <p class="hp-say">Log in with Discord, connect a Cardano, Solana, Polygon or XRPL wallet, and qualifying
            NFTs start earning nightly. No gas, no transactions, nothing leaves your wallet.</p>
 
         <div class="hp-does">
