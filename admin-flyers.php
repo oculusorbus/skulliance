@@ -363,14 +363,40 @@ admin_chrome('flyers');
 
 	$('download').addEventListener('click', function () {
 		var name = ($('name').value || $('ticker').value || 'flyer').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'flyer';
+		/*
+		 * A NEW WINDOW, SO THE WORK SURVIVES. Nothing here is saved, and
+		 * on some browsers (iOS, the installed PWA) a download navigates
+		 * the page itself -- taking every upload and slider with it. The
+		 * window is opened NOW, inside the click, because toBlob is async
+		 * and a window.open from its callback is a popup the browser
+		 * blocks. The blob URL is never revoked: the new window is still
+		 * showing it, and it dies with this page anyway.
+		 */
+		var win = window.open('', '_blank');
 		try {
 			canvas.toBlob(function (b) {
-				var a = document.createElement('a');
-				a.href = URL.createObjectURL(b); a.download = name + '.png';
-				document.body.appendChild(a); a.click(); a.remove();
-				setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+				var url = URL.createObjectURL(b), file = name + '.png';
+				if (!win) {   // popup blocked: plain download, which most desktops handle in place
+					var a = document.createElement('a');
+					a.href = url; a.download = file; a.target = '_blank';
+					document.body.appendChild(a); a.click(); a.remove();
+					return;
+				}
+				win.document.write('<!doctype html><html><head><meta charset="utf-8">'
+					+ '<meta name="viewport" content="width=device-width,initial-scale=1">'
+					+ '<title>' + file + '</title><style>'
+					+ 'body{margin:0;background:#07111d;color:#c8d8e8;font:15px/1.5 Arial,sans-serif;text-align:center;padding:16px}'
+					+ 'img{max-width:100%;max-height:85vh;display:block;margin:0 auto 14px;border:1px solid rgba(0,200,160,.2)}'
+					+ 'a{display:inline-block;background:#00c8a0;color:#07111d;padding:11px 20px;font-weight:bold;text-decoration:none}'
+					+ 'p{color:#5a7888;font-size:13px}</style></head><body>'
+					+ '<img src="' + url + '" alt="">'
+					+ '<a href="' + url + '" download="' + file + '">Save ' + file + '</a>'
+					+ '<p>Or right-click / long-press the image to save it. Your builder tab is untouched.</p>'
+					+ '</body></html>');
+				win.document.close();
 			}, 'image/png');
 		} catch (err) {
+			if (win) win.close();
 			status.textContent = 'The browser would not export the canvas: ' + err.message;
 		}
 	});
