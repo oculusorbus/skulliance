@@ -55,7 +55,7 @@ if (!$cli) {
 
 /* Which steps to run, and in what order. Each one is bounded so that no
    single request can outlast the service worker's patience. */
-$PP_STEPS = array('env', 'rpc', 'contract', 'batch', 'media', 'schema');
+$PP_STEPS = array('env', 'rpc', 'contract', 'batch', 'media', 'gateways', 'schema');
 
 $step = $cli ? '' : (isset($_GET['step']) ? (string)$_GET['step'] : '');
 $sweep_from = 0;
@@ -469,6 +469,54 @@ if (is_array($meta)) {
 }
 say();
 
+}
+
+if (pp_do('gateways')) {
+/*
+ * THE PLATFORM'S OWN GATEWAY LIST, FROM THIS SERVER, WITHOUT STOPPING EARLY.
+ *
+ * Measured from a laptop this looked like every gateway being dead. It was
+ * not: a known-good CID got the same 429s, so what was being measured was
+ * that IP having been rate-limited by repeated probing. Which gateways work
+ * is a property of THIS SERVER's address and nowhere else, so it is asked
+ * here.
+ *
+ * TWO CIDs, and the pair is the point. The well-known one is pinned
+ * everywhere, so a failure on it means the gateway is refusing US. Danketsu's
+ * is the one that matters, and a failure on it ALONE means that gateway
+ * simply does not have the content. Testing only one cannot tell those apart,
+ * and they call for opposite fixes.
+ */
+say('-- gateways, as seen from this server -------------------------------');
+$KNOWN = 'QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG';          // "hello world"
+$DANK  = 'bafybeihz5555nb3vdcteuczpsdoqizesglvqp3nvubtsqw6cyqa6h4la6i/1.png';
+/* Exactly the list lib/image-cache-lib.php races, plus the one that is not
+   in it. Kept literal rather than parsed out of that file: if they drift,
+   this report should say so rather than quietly follow. */
+$LIVE = array(
+	'https://ipfs.io/ipfs/', 'https://nftstorage.link/ipfs/', 'https://w3s.link/ipfs/',
+	'https://gateway.pinata.cloud/ipfs/', 'https://4everland.io/ipfs/',
+	'https://dweb.link/ipfs/',
+	'https://ipfs.filebase.io/ipfs/',   // NOT in image-cache-lib.php
+);
+say(sprintf('  %-36s %-14s %s', '', 'known-good CID', 'Danketsu image'));
+$any_dank = 0;
+foreach ($LIVE as $g) {
+	$c1 = 0; $t1 = '';
+	pp_fetch($g . $KNOWN, $c1, $t1, true);
+	$c2 = 0; $t2 = '';
+	pp_fetch($g . $DANK, $c2, $t2, true);
+	if ($c2 === 200) $any_dank++;
+	$note = '';
+	if ($c1 === 200 && $c2 !== 200)      $note = '   <- works, but has not got this CID';
+	else if ($c1 !== 200 && $c2 !== 200) $note = '   <- refusing this server';
+	say(sprintf('  %-36s %-14s %-14s%s', $g, 'HTTP ' . $c1, 'HTTP ' . $c2, $note));
+}
+say();
+say('  gateways that can serve Danketsu art: ' . $any_dank . ' of ' . count($LIVE));
+if ($any_dank === 0)
+	say('  -> NO gateway here can fetch it. Polygon art cannot be cached until one can.');
+say();
 }
 
 if (pp_do('schema')) {
