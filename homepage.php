@@ -1085,14 +1085,11 @@
     /* Already read at the top of the page -- see $hp_chain_word. */
     if ($hp_chains):
       $hp_icon_base = 'https://www.skulliance.io/staking/icons/';
-      /* THE SLUG IS NOT ALWAYS THE FILENAME. blockchains.slug is 'xrpl'
-         and the logo has always been icons/xrp.png -- named after the
-         asset, not the ledger. Mapped here rather than by renaming the
-         file, because that file is referenced by the wallet modal too and
-         images ship by FTP, so a rename is a deploy nobody can do from
-         the repo. Anything unmapped uses its slug, which is right for
-         cardano, solana and polygon. */
-      $hp_icon_file = array('xrpl' => 'xrp');
+      /* The slug is not always the filename -- see lib/chain-icons.php.
+         Shared with the Collections table rather than copied, because a
+         second copy of a four-entry map is how this codebase ended up
+         with four different IPFS gateway lists. */
+      require_once __DIR__ . '/lib/chain-icons.php';
     ?>
     <section id="chains" class="hp-layer hp-thin">
       <div class="wrap">
@@ -1113,8 +1110,8 @@
                      has not had them uploaded would otherwise print four
                      broken-image glyphs on the front page. */ ?>
             <img class="hp-chain-icon" loading="lazy" decoding="async" alt=""
-                 src="<?php echo $hp_icon_base . rawurlencode(isset($hp_icon_file[$hp_c['slug']]) ? $hp_icon_file[$hp_c['slug']] : $hp_c['slug']); ?>.png"
-                 onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'hp-chain-icon hp-chain-mark',textContent:<?php echo htmlspecialchars(json_encode(strtoupper(substr($hp_c['slug'], 0, 3))), ENT_QUOTES); ?>}))">
+                 src="<?php echo $hp_icon_base . rawurlencode(chain_icon_file($hp_c['slug'])); ?>.png"
+                 onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'hp-chain-icon hp-chain-mark',textContent:<?php echo htmlspecialchars(json_encode(chain_icon_mark($hp_c['slug'])), ENT_QUOTES); ?>}))">
             <span class="hp-chain-name"><?php echo htmlspecialchars($hp_c['name']); ?></span>
             <span class="hp-chain-n"><?php
               echo number_format($hp_n) . ' collection' . ($hp_n === 1 ? '' : 's');

@@ -82,9 +82,21 @@ ok(word_for(0, $m[0]) === 'multiple',
 echo "\nand the band renders nothing rather than something empty\n";
 ok(strpos($raw, 'if ($hp_chains):') !== false,
    'the band is no longer guarded on having chains to show');
-ok(strpos($raw, "\$hp_icon_file = array('xrpl' => 'xrp')") !== false,
-   "the xrpl->xrp icon mapping is gone; blockchains.slug is 'xrpl' and the file is icons/xrp.png, "
- . 'so XRP Ledger would render as a broken image');
+/*
+ * THE MAP MOVED to lib/chain-icons.php, shared with the Collections
+ * table, because homepage.php cannot include db.php and a second copy of
+ * a four-entry map is how this codebase ended up with four different
+ * IPFS gateway lists. So the check follows it: the band must USE the
+ * shared helper, and the helper must still know about xrpl.
+ */
+require_once __DIR__ . '/lib/chain-icons.php';
+ok(strpos($raw, "require_once __DIR__ . '/lib/chain-icons.php'") !== false,
+   'the band no longer requires the shared chain-icon map');
+ok(strpos($raw, 'chain_icon_file($hp_c[\'slug\'])') !== false,
+   'the band builds its icon path itself again instead of using chain_icon_file()');
+ok(chain_icon_file('xrpl') === 'xrp',
+   "chain_icon_file() lost the xrpl->xrp mapping; blockchains.slug is 'xrpl' and the file is "
+ . 'icons/xrp.png, so XRP Ledger renders as a broken image on the homepage and in Collections');
 
 /* hp_chains() must keep the last good answer rather than caching an
    empty band over it for five minutes. */

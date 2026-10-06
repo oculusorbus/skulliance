@@ -8285,16 +8285,78 @@ function getDiamondSkullTotal($conn, $user_id=0){
 }
 
 // Get policy IDs
-function getPoliciesListing($conn, $project_id=0) {
-	$where = "";
-	if($project_id != 0){
-		$where = "WHERE collections.project_id = '".$project_id."'";
-	}
-	$sql = "SELECT collections.name AS collection_name, policy, collections.blockchain_id AS blockchain_id, collections.marketplace_slug AS marketplace_slug, rate, projects.name AS project_name, currency, COUNT(nfts.id) AS total FROM collections INNER JOIN nfts ON nfts.collection_id = collections.id INNER JOIN users ON users.id = nfts.user_id INNER JOIN projects ON projects.id = collections.project_id ".$where." AND users.id != '0' GROUP BY collections.id ORDER BY projects.id, collections.name ASC";
+/**
+ * CHAINS THAT ACTUALLY HAVE COLLECTIONS, for the Collections filter.
+ *
+ * Same rule as the homepage band's hp_chains(): a blockchains row can be
+ * configured before anything is on it, and offering a filter that selects
+ * nothing is worse than not offering it. INNER JOIN, not LEFT.
+ *
+ * Returns id => array(slug, name), ordered the way the table is.
+ */
+function getChainsWithCollections($conn) {
+	$out = array();
+	$res = @$conn->query(
+		"SELECT b.id, b.slug, b.name
+		   FROM blockchains b
+		   INNER JOIN collections c ON c.blockchain_id = b.id
+		  WHERE b.active = 1
+		  GROUP BY b.id, b.slug, b.name
+		  ORDER BY COUNT(c.id) DESC, b.id ASC");
+	while ($res && $row = $res->fetch_assoc())
+		$out[(int)$row['id']] = array('slug' => $row['slug'], 'name' => $row['name']);
+	return $out;
+}
+
+/**
+ * The chain's logo, as a table cell. Falls back to a lettermark, because
+ * icons ship by FTP and a chain added without one would otherwise put a
+ * broken-image glyph in every row of its collections.
+ */
+function chainBadge($slug, $name) {
+	require_once __DIR__ . '/lib/chain-icons.php';
+	$file = chain_icon_file($slug);
+	$nm   = htmlspecialchars((string)$name);
+	if ($file === '') return "<span class='chain-badge'>" . $nm . "</span>";
+	return "<span class='chain-badge'>"
+	     . "<img src='icons/" . rawurlencode($file) . ".png' alt='' width='20' height='20'"
+	     . " loading='lazy' decoding='async' class='chain-badge-i'"
+	     . " onerror=\"this.replaceWith(Object.assign(document.createElement('span'),"
+	     . "{className:'chain-badge-i chain-badge-m',textContent:'" . chain_icon_mark($slug) . "'}))\">"
+	     . "<span class='chain-badge-n'>" . $nm . "</span></span>";
+}
+
+function getPoliciesListing($conn, $project_id=0, $blockchain_id=0) {
+	/*
+	 * BUILT AS A LIST, not by string-appending a WHERE.
+	 *
+	 * The previous version put "WHERE ..." in a variable and dropped it
+	 * in front of "AND users.id != '0'" -- so with no project filter the
+	 * query read "... ON projects.id = collections.project_id AND
+	 * users.id != '0'", with the user condition silently part of the JOIN
+	 * rather than a WHERE. Equivalent for an INNER JOIN and a trap the
+	 * moment anything becomes a LEFT JOIN, and there is no room for a
+	 * second filter in that shape at all.
+	 */
+	$cond = array("users.id != '0'");
+	if ((int)$project_id !== 0)    $cond[] = "collections.project_id = '" . (int)$project_id . "'";
+	if ((int)$blockchain_id !== 0) $cond[] = "collections.blockchain_id = '" . (int)$blockchain_id . "'";
+	$where = 'WHERE ' . implode(' AND ', $cond);
+
+	$chains = getChainsWithCollections($conn);
+
+	$sql = "SELECT collections.name AS collection_name, policy, collections.blockchain_id AS blockchain_id, collections.marketplace_slug AS marketplace_slug, rate, projects.name AS project_name, currency, COUNT(nfts.id) AS total FROM collections INNER JOIN nfts ON nfts.collection_id = collections.id INNER JOIN users ON users.id = nfts.user_id INNER JOIN projects ON projects.id = collections.project_id ".$where." GROUP BY collections.id ORDER BY projects.id, collections.name ASC";
 	$result = $conn->query($sql);
-	
+
+	/* THE CHAIN COLUMN IS ONLY WORTH ITS WIDTH WHEN THERE IS MORE THAN
+	   ONE CHAIN TO TELL APART. On a single-chain platform it is a column
+	   of identical logos. */
+	$show_chain = count($chains) > 1;
+
 	echo "<table cellspacing='0' id='transactions'>";
-	echo "<tr><th align='left'>Collection</th><th align='left'>Project</th><th align='left'>Reward Rate</th><th align='left'>Total Staked</th></tr>";
+	echo "<tr><th align='left'>Collection</th>"
+	   . ($show_chain ? "<th align='left'>Chain</th>" : "")
+	   . "<th align='left'>Project</th><th align='left'>Reward Rate</th><th align='left'>Total Staked</th></tr>";
 	if ($result->num_rows > 0) {
 	  // output data of each row
 	  	while($row = $result->fetch_assoc()) {
@@ -8320,6 +8382,12 @@ function getPoliciesListing($conn, $project_id=0) {
 
 		  	echo "<tr>";
 			echo "<td align='left'>".$gpl_cell."</td>";
+			if ($show_chain) {
+				$gpl_bid = (int)($row["blockchain_id"] ?? 1);
+				echo "<td align='left'>" . (isset($chains[$gpl_bid])
+					? chainBadge($chains[$gpl_bid]['slug'], $chains[$gpl_bid]['name'])
+					: '') . "</td>";
+			}
 			echo "<td align='left'>".htmlspecialchars($row["project_name"])."</td>";
 			echo "<td align='left'>".$row["rate"]." ".$row["currency"]."</td>";
 			echo "<td align='left'>".$row["total"]."</td>";

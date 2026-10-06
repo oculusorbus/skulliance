@@ -316,6 +316,16 @@ function filterPolicies(criteria){
 	document.getElementById("filterPoliciesForm").submit();
 }
 
+/* The Collections chain filter. Its own form, carrying the project
+   filter along in a hidden field, so choosing a chain does not throw
+   away the project you were looking at. */
+function filterChain(criteria){
+	var f = document.getElementById("filterChainForm");
+	if (!f) return;
+	document.getElementById('filterchain').value = criteria;
+	f.submit();
+}
+
 function filterLeaderboard(criteria){
 	document.getElementById('filterby').value = criteria;
 	var loader = document.getElementById('lb-loader');

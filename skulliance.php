@@ -888,6 +888,14 @@ if(isset($_GET['filterby'])){
 	$filterby = $_GET['filterby'];
 	$_SESSION['userData']['filterby'] = $filterby;
 }
+/* The Collections chain filter. Remembered like filterby so the page
+   comes back the way it was left. 0 means every chain. */
+$filterchain = isset($_SESSION['userData']['filterchain']) ? (int)$_SESSION['userData']['filterchain'] : 0;
+if(isset($_POST['filterchain']) || isset($_GET['filterchain'])){
+	$filterchain = (int)(isset($_POST['filterchain']) ? $_POST['filterchain'] : $_GET['filterchain']);
+	if($filterchain < 0) $filterchain = 0;
+	$_SESSION['userData']['filterchain'] = $filterchain;
+}
 if(isset($_POST['filterbystreak'])){
 	$filterby = $_POST['filterbystreak'];
 	$_SESSION['userData']['filterby'] = $filterby;
@@ -1103,10 +1111,17 @@ function filterLeaderboard($page){
 }
 
 function filterPolicies($page){
-	global $conn;
+	global $conn, $filterchain;
 	$core_projects = getProjects($conn, "core");
 	$partner_projects = getProjects($conn, "partner");
 	$anchor = "";
+	/*
+	 * THE CHAIN FILTER IS ONLY OFFERED WHEN THERE IS A CHOICE. One chain
+	 * means a dropdown whose every option returns the same rows, which
+	 * reads as a broken control rather than as a simple platform.
+	 */
+	$chains = function_exists('getChainsWithCollections') ? getChainsWithCollections($conn) : array();
+	$sel    = isset($filterchain) ? (int)$filterchain : 0;
 	echo '
 	<div id="filter-nfts">
 		<label for="filterPolicies"><strong>Filter By:</strong></label>
@@ -1123,9 +1138,30 @@ function filterPolicies($page){
 			}
 			echo '</optgroup>';
 		echo '
+		</select>';
+		if (count($chains) > 1) {
+			/* Its OWN form, posting filterchain, so the two filters do not
+			   clear each other: picking a chain keeps the project you were
+			   looking at and the other way round. */
+			echo '
+		<select onchange="javascript:filterChain(this.options[this.selectedIndex].value);" name="filterChainSel" id="filterChainSel">
+			<option value="0"'.($sel === 0 ? ' selected' : '').'>All chains</option>';
+			foreach($chains AS $cid => $chain){
+				echo '<option value="'.(int)$cid.'"'.($sel === (int)$cid ? ' selected' : '').'>'
+				   . htmlspecialchars($chain["name"]).'</option>';
+			}
+			echo '
 		</select>
+		<form id="filterChainForm" action="'.$page.'.php'.$anchor.'" method="post">
+		  <input type="hidden" id="filterchain" name="filterchain" value="">
+		  <input type="hidden" name="filterby" value="'.htmlspecialchars((string)(isset($GLOBALS["filterby"]) ? $GLOBALS["filterby"] : 0)).'">
+		  <input type="submit" value="Submit" style="display:none;">
+		</form>';
+		}
+		echo '
 		<form id="filterPoliciesForm" action="'.$page.'.php'.$anchor.'" method="post">
 		  <input type="hidden" id="filterby" name="filterby" value="">
+		  <input type="hidden" name="filterchain" value="'.$sel.'">
 		  <input type="submit" value="Submit" style="display:none;">
 		</form>
 	</div>';
