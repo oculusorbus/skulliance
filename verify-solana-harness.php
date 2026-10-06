@@ -487,7 +487,14 @@ ok(preg_match('/\$clean_ipfs\s*=\s*\$is_url\s*\?\s*\$ipfs\s*:\s*str_replace/', $
  * Where a Solana collection and a Solana wallet link to.
  * ---------------------------------------------------------------- */
 echo "\nthe links on the Collections page\n";
-if (!defined('XRPL_CHAIN_ID')) define('XRPL_CHAIN_ID', 2);
+/* EVERY chain id collectionMarketUrl() names, not just the two this file
+   is about: the function is lifted out of db.php and run without it, and
+   an undefined constant is a FATAL in PHP 8 -- which is the same reason
+   db.php guards all of them. Adding a chain to that function breaks this
+   harness until its id is added here too, and that is the intended
+   warning rather than a nuisance. */
+if (!defined('XRPL_CHAIN_ID'))    define('XRPL_CHAIN_ID', 2);
+if (!defined('POLYGON_CHAIN_ID')) define('POLYGON_CHAIN_ID', 4);
 eval(lift($dsrc, 'function collectionMarketUrl(', 'collectionMarketUrl()'));
 eval(lift($dsrc, 'function accountExplorerUrl(',  'accountExplorerUrl()'));
 

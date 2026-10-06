@@ -93,6 +93,7 @@ define('MERCH_ENCRYPT_CIPHER', 'AES-256-CBC');
    constant is a fatal in PHP 8. All three guards, so any include order works. */
 if (!defined('XRPL_CHAIN_ID')) define('XRPL_CHAIN_ID', 2);
 if (!defined('SOLANA_CHAIN_ID')) define('SOLANA_CHAIN_ID', 3);
+if (!defined('POLYGON_CHAIN_ID')) define('POLYGON_CHAIN_ID', 4);
 
 // Gateway used for an NFT image that is not cached locally yet. See getIPFS().
 // Overridable in credentials/db_credentials.php.
@@ -3523,6 +3524,20 @@ function nftExplorerUrl($conn, $asset_id, $blockchain_id = 1) {
 		}
 	}
 	$bid = (int)$blockchain_id;
+	/*
+	 * A POLYGON ASSET ID IS TWO THINGS, and a one-placeholder template
+	 * cannot express it. nfts.asset_id holds 'contract:tokenId' (the
+	 * token id alone is unique only within its contract) and OpenSea
+	 * wants them as separate path segments, so this is built rather than
+	 * substituted. A template in blockchains.explorer_nft still wins, for
+	 * the reason that column exists.
+	 */
+	if ($bid === POLYGON_CHAIN_ID && !isset($tpl[$bid])) {
+		$p = explode(':', (string)$asset_id, 2);
+		if (count($p) === 2 && $p[0] !== '' && $p[1] !== '')
+			return 'https://opensea.io/assets/matic/' . rawurlencode($p[0]) . '/' . rawurlencode($p[1]);
+		return '';
+	}
 	$t = isset($tpl[$bid]) ? $tpl[$bid] : $tpl[1];
 	/* str_replace, not sprintf: the template comes from a database column, and
 	   a stray '%' in one is a ValueError in PHP 8 -- a broken page instead of
@@ -3584,6 +3599,10 @@ function collectionMarketUrl($policy, $blockchain_id = 1, $slug = null, $conn = 
 		1 => 'https://www.wayup.io/collection/%s',
 		2 => 'https://xrp.cafe/collection/%s',
 		3 => 'https://www.tensor.trade/trade/%s',
+		/* OpenSea addresses a collection by ITS OWN slug, never by the
+		   contract -- see the Polygon branch below for what happens
+		   without one. */
+		4 => 'https://opensea.io/collection/%s',
 	);
 	$bid    = (int)$blockchain_id;
 	$policy = trim((string)$policy);
@@ -3618,7 +3637,7 @@ function collectionMarketUrl($policy, $blockchain_id = 1, $slug = null, $conn = 
 	 * 56-hex policies), so it would sit latent until somebody filled the
 	 * field in and quietly broke that collection's link.
 	 */
-	$slug_chains = array(XRPL_CHAIN_ID => 1, SOLANA_CHAIN_ID => 1);
+	$slug_chains = array(XRPL_CHAIN_ID => 1, SOLANA_CHAIN_ID => 1, POLYGON_CHAIN_ID => 1);
 	if (isset($slug_chains[$bid]) && $slug !== ''
 	    && preg_match('/^[a-z0-9][a-z0-9._-]{0,63}$/i', $slug)) return $link($slug);
 
@@ -3631,6 +3650,18 @@ function collectionMarketUrl($policy, $blockchain_id = 1, $slug = null, $conn = 
 		if (preg_match('/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/', $issuer))
 			return 'https://xrp.cafe/profile/' . rawurlencode($issuer);
 		return '';
+	}
+	if ($bid === POLYGON_CHAIN_ID) {
+		/*
+		 * No slug: OpenSea addresses a collection ONLY by its own slug,
+		 * so feeding it a contract address produces a dead link -- the
+		 * wayup trap again. Rarible addresses by contract and works
+		 * without one (verified against Danketsu), so it is the nearest
+		 * honest thing, exactly as the issuer profile is on XRPL.
+		 */
+		$c = strtolower(trim($policy));
+		return preg_match('/^0x[0-9a-f]{40}$/', $c)
+			? 'https://rarible.com/collection/polygon/' . rawurlencode($c) . '/items' : '';
 	}
 	if ($bid === SOLANA_CHAIN_ID) {
 		/* Validated by DECODING: base58 carries no checksum, so a
@@ -3651,6 +3682,8 @@ function accountExplorerUrl($address, $blockchain_id = 1) {
 	   platform having lost somebody's wallet rather than as a wrong link. */
 	if ((int)$blockchain_id === SOLANA_CHAIN_ID)
 		return 'https://solscan.io/account/' . rawurlencode($address);
+	if ((int)$blockchain_id === POLYGON_CHAIN_ID)
+		return 'https://polygonscan.com/address/' . rawurlencode($address);
 	return ((int)$blockchain_id === XRPL_CHAIN_ID)
 		? 'https://bithomp.com/en/explorer/' . rawurlencode($address)
 		: 'https://pool.pm/' . rawurlencode($address);

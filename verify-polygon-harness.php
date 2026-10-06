@@ -424,6 +424,70 @@ ok($r['repaired'] === 1, 'a row with no picture was not repaired when the docume
 ok($REPAIRED && $REPAIRED[0][0] === $C1 . ':1', 'the repair targeted the wrong asset');
 $conn->blank = array();
 
+echo "\nwhere a Polygon collection, token and wallet link to\n";
+
+/* Lifted out of db.php and run without it, the way verify-solana-harness
+   does -- these are the three links the Collections page, the gallery and
+   the wallet list build, and none of them has a Polygon branch by
+   default. */
+function plift($src, $sig, $what) {
+	$at = strpos($src, $sig);
+	ok($at !== false, "$what is gone");
+	if ($at === false) return '';
+	$i = strpos($src, '{', $at); $depth = 0; $end = $i;
+	for ($n = strlen($src); $i < $n; $i++) {
+		if ($src[$i] === '{') $depth++;
+		elseif ($src[$i] === '}') { $depth--; if ($depth === 0) { $end = $i; break; } }
+	}
+	return substr($src, $at, $end - $at + 1);
+}
+$dsrc = file_get_contents(__DIR__ . '/db.php');
+if (!defined('XRPL_CHAIN_ID'))   define('XRPL_CHAIN_ID', 2);
+if (!defined('SOLANA_CHAIN_ID')) define('SOLANA_CHAIN_ID', 3);
+eval(plift($dsrc, 'function collectionMarketUrl(', 'collectionMarketUrl()'));
+eval(plift($dsrc, 'function accountExplorerUrl(',  'accountExplorerUrl()'));
+eval(plift($dsrc, 'function nftExplorerUrl(',      'nftExplorerUrl()'));
+
+$CC = '0xee79a3e8aef1109a6ee82bf399ce9e1bd43cf5c4';
+
+/* WITH a slug: OpenSea, which addresses a collection by slug and nothing
+   else. Danketsu's is danketsu-nft, verified against the live page --
+   "danketsu" is not it, and returns OpenSea's generic landing title. */
+ok(collectionMarketUrl($CC, POLYGON_CHAIN_ID, 'danketsu-nft')
+   === 'https://opensea.io/collection/danketsu-nft', 'the slug no longer reaches OpenSea');
+/* WITHOUT one: NOT OpenSea. Handing it a contract address produces a dead
+   page -- the same trap wayup set on Cardano. Rarible addresses by
+   contract and works, so it is the nearest honest thing. */
+$noslug = collectionMarketUrl($CC, POLYGON_CHAIN_ID);
+ok(strpos($noslug, 'opensea.io') === false,
+   'a contract address is being handed to OpenSea as if it were a slug: ' . $noslug);
+ok($noslug === 'https://rarible.com/collection/polygon/' . $CC . '/items',
+   'the no-slug fallback is ' . var_export($noslug, true));
+ok(collectionMarketUrl('not-an-address', POLYGON_CHAIN_ID) === '',
+   'a junk policy produces a link rather than nothing');
+
+/* A Cardano policy must not pick up Polygon's behaviour, and vice versa. */
+ok(collectionMarketUrl(str_repeat('a', 56), 1, 'some-slug')
+   === 'https://www.wayup.io/collection/' . str_repeat('a', 56),
+   'adding Polygon to $slug_chains let a slug through on Cardano');
+
+/* The token link. asset_id is contract:tokenId and OpenSea wants the two
+   as separate path segments, which a single-%s template cannot express --
+   so it is built, and must not fall through to pool.pm. */
+$fake_conn = new PConn();
+$tok = nftExplorerUrl($fake_conn, $CC . ':4312', POLYGON_CHAIN_ID);
+ok($tok === 'https://opensea.io/assets/matic/' . $CC . '/4312',
+   'the token link is ' . var_export($tok, true));
+ok(strpos($tok, 'pool.pm') === false, 'a Polygon token links to a Cardano explorer');
+ok(nftExplorerUrl($fake_conn, 'no-colon-here', POLYGON_CHAIN_ID) === '',
+   'a malformed asset id produces a link rather than nothing');
+
+ok(accountExplorerUrl('0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', POLYGON_CHAIN_ID)
+   === 'https://polygonscan.com/address/0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+   'a Polygon wallet does not link to polygonscan');
+ok(strpos(accountExplorerUrl('0xAAAA', POLYGON_CHAIN_ID), 'pool.pm') === false,
+   'a Polygon wallet links to pool.pm, which renders a "not found" and reads as a lost wallet');
+
 echo "\nthere is one gateway list, not four\n";
 
 /*
