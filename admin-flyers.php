@@ -120,9 +120,9 @@ admin_chrome('flyers');
           <label>Shade at the bottom <input type="range" id="f-shade" min="0" max="1" step="0.01" value="0.35"></label>
           <label>Top edge, left <input type="range" id="f-winTopL" min="0" max="700" value="360"></label>
           <label>Top edge, right <input type="range" id="f-winTopR" min="-700" max="400" value="-180"></label>
+          <label>Grit <input type="range" id="f-grit" min="0" max="2" step="0.05" value="1"></label>
           <label>Bottom edge, left <input type="range" id="f-winBotL" min="700" max="1300" value="1080"></label>
           <label>Bottom edge, right <input type="range" id="f-winBotR" min="400" max="1200" value="705"></label>
-          <label>Grit <input type="range" id="f-grit" min="0" max="2" step="0.05" value="1"></label>
         </div>
         <button type="button" id="f-reroll" class="fly-ghost">Re-roll the brush strokes</button>
       </div>
