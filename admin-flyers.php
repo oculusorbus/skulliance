@@ -107,6 +107,13 @@ admin_chrome('flyers');
       <div class="adm-form">
         <div class="adm-grid">
           <label>Zoom <input type="range" id="f-artZoom" min="0.4" max="3" step="0.01" value="1"></label>
+          <label>Rotate <span class="fly-val" id="f-artRotVal">0&deg;</span>
+            <input type="range" id="f-artRot" min="-45" max="45" step="0.25" value="0"></label>
+          <div class="fly-rotbtns">
+              <button type="button" class="fly-ghost" data-match="top">Match top edge</button>
+              <button type="button" class="fly-ghost" data-match="bot">Match bottom edge</button>
+              <button type="button" class="fly-ghost" data-match="zero">Straight</button>
+          </div>
           <label>Move left/right <input type="range" id="f-artX" min="-1" max="1" step="0.005" value="0"></label>
           <label>Move up/down <input type="range" id="f-artY" min="-1" max="1" step="0.005" value="0"></label>
           <label>Shade at the bottom <input type="range" id="f-shade" min="0" max="1" step="0.01" value="0.35"></label>
@@ -180,6 +187,9 @@ admin_chrome('flyers');
 .adm .fly-colors input[type=color]{height:38px;padding:2px;width:100%}
 .adm input[type=range]{padding:0;border:0;background:transparent;accent-color:#00c8a0}
 .adm .fly-ghost{background:transparent;color:#00c8a0;border:1px solid rgba(0,200,160,.4)}
+.fly-val{color:#c8d8e8;letter-spacing:0;margin-left:6px}
+.fly-rotbtns{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end}
+.adm .fly-rotbtns button{padding:5px 9px;font-size:.72rem;font-weight:normal}
 .adm .fly-ghost:hover{background:rgba(0,200,160,.12)}
 @media (max-width:900px){.fly{grid-template-columns:1fr}.fly-preview{position:static;order:-1}}
 </style>
@@ -194,7 +204,7 @@ admin_chrome('flyers');
 	var imgs = { brand: null, art: null, logo: null, icon: null };
 	var seed = 1337;
 	var COLS = ['colHighlight', 'colDivider', 'colBullets', 'colRing'];
-	var NUM = ['artZoom', 'artX', 'artY', 'shade', 'winTopL', 'winTopR', 'winBotL', 'winBotR', 'grit',
+	var NUM = ['artZoom', 'artRot', 'artX', 'artY', 'shade', 'winTopL', 'winTopR', 'winBotL', 'winBotR', 'grit',
 	           'logoScale', 'logoY', 'iconX', 'iconY', 'iconScale'];
 
 	function loadImg(src) {
@@ -322,6 +332,20 @@ admin_chrome('flyers');
 	wire('art', 'art', function () { swatches(); });
 	wire('logo', 'logo');
 	wire('icon', 'icon');
+	/* Rotation: the slider, plus one-click matches to either slanted
+	   edge (the edge's angle across the full width). */
+	function showRot() { $('artRotVal').textContent = (+$('artRot').value).toFixed(1).replace(/\.0$/, '') + '\u00b0'; }
+	$('artRot').addEventListener('input', showRot);
+	document.querySelectorAll('[data-match]').forEach(function (b) {
+		b.addEventListener('click', function () {
+			var m = this.getAttribute('data-match'), deg = 0;
+			if (m === 'top') deg = Math.atan2($('winTopR').value - $('winTopL').value, FlyerBuilder.W) * 180 / Math.PI;
+			if (m === 'bot') deg = Math.atan2($('winBotR').value - $('winBotL').value, FlyerBuilder.W) * 180 / Math.PI;
+			$('artRot').value = Math.round(deg * 4) / 4;
+			showRot(); draw();
+		});
+	});
+
 	$('reroll').addEventListener('click', function () { seed = (Math.random() * 1e9) | 0; draw(); });
 
 	$('project').addEventListener('change', function () {

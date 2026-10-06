@@ -188,13 +188,21 @@
 			   extent above the canvas, or every image comes in zoomed. */
 			var top = Math.max(0, Math.min(s.winTopL, s.winTopR) - 40), bot = Math.min(H, Math.max(s.winBotL, s.winBotR) + 60);
 			var bw = W, bh = bot - top;
-			var a = imgs.art, sc = Math.max(bw / a.width, bh / a.height) * s.artZoom;
+			/* ROTATION KEEPS THE COVER. A tilted image needs to be bigger to
+			   still reach every corner of the box, so the fit is computed
+			   against the box's extent in the image's own rotated frame --
+			   otherwise turning it to match the slant opens black corners. */
+			var th = (s.artRot || 0) * Math.PI / 180, cs = Math.abs(Math.cos(th)), sn = Math.abs(Math.sin(th));
+			var a = imgs.art, sc = Math.max((bw * cs + bh * sn) / a.width, (bw * sn + bh * cs) / a.height) * s.artZoom;
 			var dw = a.width * sc, dh = a.height * sc;
-			var dx = (W - dw) / 2 + s.artX * (W / 2), dy = top + (bh - dh) / 2 + s.artY * (bh / 2);
+			var cx = W / 2 + s.artX * (W / 2), cy = top + bh / 2 + s.artY * (bh / 2);
 
 			var art = document.createElement('canvas'); art.width = W; art.height = H;
 			var ac = art.getContext('2d');
-			ac.drawImage(a, dx, dy, dw, dh);
+			ac.save();
+			ac.translate(cx, cy); ac.rotate(th);
+			ac.drawImage(a, -dw / 2, -dh / 2, dw, dh);
+			ac.restore();
 			/* The shade: a falloff toward the bottom edge so the title reads. */
 			if (s.shade > 0) {
 				var yb = (s.winBotL + s.winBotR) / 2;
