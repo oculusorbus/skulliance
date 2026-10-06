@@ -834,10 +834,23 @@
   <header class="hp-hero" id="top">
     <img class="hp-logo" src="https://www.skulliance.io/staking/images/skulliancelogo.png" alt="Skulliance logo" fetchpriority="high" decoding="async">
 
-    <?php /* Two beats: name the problem, then the turn. That shape is what
-             makes a line repeatable, and it leads on the one thing that is
-             actually different here rather than on the category. */ ?>
-    <h1>Most NFTs just sit there. <span class="hp-turn">Yours don't have to.</span></h1>
+    <?php /* TWO BEATS: the art, then what there is to do with it. .hp-turn
+             renders the second as its own gradient line, so the shape is a
+             constraint rather than a flourish.
+
+             IT USED TO READ "Most NFTs just sit there. Yours don't have
+             to." That picked the wrong adversary. Skulliance is a
+             collective OF these projects, so opening by describing their
+             art as inert argues against the partners further down the same
+             page -- and tells a visitor their own collection has been
+             wasted. Guilt is a poor first feeling for a page whose actual
+             pitch is a good time.
+
+             The triad is VERBS, not nouns. "Fun, games and community" says
+             fun and games twice; play / earn / belong maps one word each to
+             the games, the staking and the collective, with nothing
+             doubled. */ ?>
+    <h1>Celebrate the art you love. <span class="hp-turn">Play, earn, and belong.</span></h1>
 
     <p class="hp-lede">Skulliance is a collective of NFT artists/projects on
        <strong><?php echo htmlspecialchars($hp_chain_word); ?> blockchains</strong>. Stake your NFTs for daily rewards,
