@@ -802,6 +802,24 @@
   $stat_stakers = hp_stat_stakers();
   $stat_artists = hp_stat_artists();
 
+  /* READ ONCE, UP HERE, because two places need it: the lede at the top of
+     the page and the chain band further down. Counting chains in the lede
+     is the whole point -- "four blockchains" typed by hand is the same
+     stale-content trap the band exists to close, one screen higher up and
+     read by far more people. */
+  $hp_chains   = function_exists('hp_chains') ? hp_chains() : array();
+  $hp_chain_n  = count($hp_chains);
+  /* Spelled out: a lede reads better with a word than a digit, and the
+     numerals are carrying the stat tiles already. Falls back to the digit
+     past ten, and to "multiple" when the database could not be reached --
+     a lede must never read "0 blockchains". */
+  $hp_chain_word = 'multiple';
+  if ($hp_chain_n > 0) {
+      $hp_words = array(1 => 'one', 2 => 'two', 3 => 'three', 4 => 'four', 5 => 'five',
+                        6 => 'six', 7 => 'seven', 8 => 'eight', 9 => 'nine', 10 => 'ten');
+      $hp_chain_word = isset($hp_words[$hp_chain_n]) ? $hp_words[$hp_chain_n] : (string)$hp_chain_n;
+  }
+
   /* A ZERO IS WORSE THAN A GAP. These fall back to 0 when the database is
      unreachable, and a homepage announcing "0 NFTs staked" argues against
      itself -- it is the one number a sceptic believes instantly. A stat
@@ -822,7 +840,7 @@
     <h1>Most NFTs just sit there. <span class="hp-turn">Yours don't have to.</span></h1>
 
     <p class="hp-lede">Skulliance is a collective of NFT artists/projects on
-       <strong>Cardano, Solana, Polygon and the XRP Ledger</strong>. Stake your NFTs for daily rewards,
+       <strong><?php echo htmlspecialchars($hp_chain_word); ?> blockchains</strong>. Stake your NFTs for daily rewards,
        send them on missions, or take them into seven free browser games. No signup to play.</p>
 
     <div class="hp-ctas">
@@ -853,8 +871,8 @@
         <h2>Artists get a stage.<br>Collectors get a reason to come back.</h2>
         <p class="hp-say">Skulliance connects collectors with the artists and projects behind the
            art, and then gives the art something to do - staking, missions, games, a marketplace.
-           Led by Oculus Orbus, a collector and developer, and built on Cardano with Solana,
-           Polygon and the XRP Ledger alongside it.</p>
+           Led by Oculus Orbus, a collector and developer, and built on Cardano with
+           several other chains alongside it.</p>
         <p style="margin-top:22px;"><a class="hp-cta hp-secondary" href="#artists">Meet the artists</a></p>
       </div>
     </section>
@@ -972,7 +990,7 @@
               ? number_format($partner_n) . ' artists and projects stake here.'
               : 'Artists keep joining.'; ?></h2>
         <p class="hp-say">Six founded it; the rest were invited. Skulliance opened partner staking to
-           other Cardano artists and projects, and now to Solana, Polygon and the XRP Ledger - their
+           other Cardano artists and projects, and then to every chain it runs on - their
            holders earn points,
            redeem the same incentives and climb the same leaderboards. A few below, not all of them.</p>
         <?php
@@ -1064,7 +1082,7 @@
      * Renders NOTHING if the query fails or a chain has no collections.
      * An empty or half-populated band is worse than no band.
      */
-    $hp_chains = function_exists('hp_chains') ? hp_chains() : array();
+    /* Already read at the top of the page -- see $hp_chain_word. */
     if ($hp_chains):
       $hp_icon_base = 'https://www.skulliance.io/staking/icons/';
       /* THE SLUG IS NOT ALWAYS THE FILENAME. blockchains.slug is 'xrpl'
@@ -1078,7 +1096,7 @@
     ?>
     <section id="chains" class="hp-layer hp-thin">
       <div class="wrap">
-        <span class="hp-kick">Four chains</span>
+        <span class="hp-kick"><?php echo htmlspecialchars(ucfirst($hp_chain_word)); ?> chains</span>
         <h2>Wherever your NFTs live, they can work here.</h2>
         <p class="hp-say">Skulliance started on Cardano and did not stay there. Staking,
            missions, games and the marketplace are the same wherever your NFTs came
@@ -1113,7 +1131,7 @@
       <div class="wrap">
         <span class="hp-kick">The staking platform</span>
         <h2>Your NFTs earn while you do nothing.<br>Then you spend it.</h2>
-        <p class="hp-say">Log in with Discord, connect a Cardano, Solana, Polygon or XRPL wallet, and qualifying
+        <p class="hp-say">Log in with Discord, connect a wallet on any chain Skulliance supports, and qualifying
            NFTs start earning nightly. No gas, no transactions, nothing leaves your wallet.</p>
 
         <div class="hp-does">
