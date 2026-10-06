@@ -439,8 +439,18 @@ $mi = $src['admin-missions.php'];
 ok(strpos($mi, "_POST['reward']") === false,
    'admin-missions.php reads reward from the POST; it has to be derived or the form can be edited');
 ok(strpos($mi, "_POST['duration']") === false, 'admin-missions.php reads duration from the POST');
-ok(preg_match('/\$reward\s*=\s*admin_mission_reward\(/', $mi) === 1, 'the mission reward is not derived');
-ok(preg_match('/\$duration\s*=\s*admin_mission_duration\(/', $mi) === 1, 'the mission duration is not derived');
+ok(preg_match('/\$duration\s*=\s*admin_mission_duration\(/', $mi) === 0,
+   'the save handler calls admin_mission_duration() directly again');
+/* DERIVED, but no longer by calling the raw helper here: both the form
+   and the save path go through admin_mission_derive(), because calling
+   the helpers directly is precisely what made level 1 unsaveable. The
+   assertion is the property -- derived, not posted -- not the spelling. */
+ok(preg_match('/\$d\s*=\s*admin_mission_derive\(/', $mi) === 1,
+   'the mission reward and duration are not derived through admin_mission_derive()');
+ok(preg_match('/\$reward\s*=\s*admin_mission_reward\(/', $mi) === 0,
+   'the save handler calls admin_mission_reward() directly again -- that is the level-1 bug, '
+ . 'where the form showed 10/1 and the POST computed 0/0');
+
 ok(strpos($mi, 'admin_validate_mission(') !== false, 'the mission write does not call the validator');
 /* EDITING ART: rename, replace, no debt. The order is the safety, so
    the harness pins the order and not just the calls. */
@@ -551,6 +561,46 @@ ok(strpos($old, 'admin-projects.php') !== false && stripos($old, 'Location:') !=
 $hd = file_get_contents(__DIR__ . '/header.php');
 foreach ($PAGES as $f) ok(strpos($hd, $f) !== false, "the nav has no link to $f");
 ok(preg_match('/user_id\'\]\s*===?\s*1/', $hd) === 1, 'the Admin nav is not gated to user 1');
+
+echo "\nlevel 1 can actually be saved\n";
+
+/*
+ * THE BUG: the save handler derived reward and duration by calling
+ * admin_mission_reward() and admin_mission_duration() directly, while
+ * the FORM displayed admin_mission_defaults(), which special-cases the
+ * free intro. At level 1 the first pair gives 0 and 0, the second gives
+ * 10 and 1, and admin_validate_mission() then refused the save with
+ * "Level 1 is the free intro" -- a true message about values the user
+ * never typed. Level 1 was unsaveable on every project.
+ *
+ * The old assertion here REQUIRED the handler to call the raw helpers,
+ * so the harness was enforcing the bug's shape. It checked the spelling
+ * of the derivation rather than the property, which is that reward and
+ * duration are derived and not posted.
+ */
+$d1x = admin_mission_derive(0, 1);
+ok($d1x['cost'] === 0 && $d1x['reward'] === 10 && $d1x['duration'] === 1,
+   'level 1 does not derive the free intro: ' . json_encode($d1x));
+$dx = admin_mission_derive(900, 1);
+ok($dx['cost'] === 0 && $dx['reward'] === 10 && $dx['duration'] === 1,
+   'a cost posted on level 1 reaches the table: ' . json_encode($dx));
+
+/* THE ROUND TRIP, which is the point: whatever derive() produces must
+   satisfy the validator, at every level. */
+foreach (array(1, 2, 3, 7, 14, 20, 46) as $lv) {
+	$cost = ($lv <= 1) ? 0 : 100 * $lv;
+	$dd   = admin_mission_derive($cost, $lv, 0);
+	$ee   = admin_validate_mission(array('title' => 'Probe ' . $lv, 'level' => $lv,
+		'cost' => $dd['cost'], 'reward' => $dd['reward'], 'duration' => $dd['duration']), array(), 0);
+	ok(!$ee, "level $lv derives values its own validator rejects: " . implode(' | ', $ee));
+}
+
+/* The form shows defaults(); the handler calls derive(). At level 1 they
+   must agree or the panel displays something it will not write. */
+$defx = admin_mission_defaults(array(), 1);
+ok($defx['cost'] === $d1x['cost'] && $defx['reward'] === $d1x['reward']
+   && $defx['duration'] === $d1x['duration'],
+   'what the form displays for level 1 is not what the save path writes');
 
 echo "\n" . ($fail ? "FAILED ($fail)\n" : "all admin-lib checks passed\n");
 exit($fail ? 1 : 0);

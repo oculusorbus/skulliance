@@ -73,9 +73,14 @@ $cost    = (int)($_POST['cost'] ?? 0);
 $ext     = strtolower(trim((string)($_POST['extension'] ?? 'png')));
 
 /* DERIVED, NEVER POSTED. The form shows them; it does not send
-   them, so a hand-edited field cannot reach the table. */
-$reward   = admin_mission_reward($cost, $level);
-$duration = admin_mission_duration($cost);
+   them, so a hand-edited field cannot reach the table.
+   Through admin_mission_derive(), which is also what the form below
+   displays from -- calling the raw helpers here instead is what made
+   level 1 unsaveable. */
+$d        = admin_mission_derive($cost, $level);
+$cost     = $d['cost'];
+$reward   = $d['reward'];
+$duration = $d['duration'];
 
 /* The row as it stands, so a retitle knows which files to move. */
 $Q_before = null;

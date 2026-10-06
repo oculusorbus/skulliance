@@ -163,16 +163,41 @@ function admin_mission_per_day($cost, $reward, $duration) {
  * The operator writes the title, the description and the art; the
  * economics are not their problem.
  */
+/**
+ * WHAT A RUNG PAYS, GIVEN ITS COST AND LEVEL. One function, because there
+ * were two and they disagreed.
+ *
+ * The free intro is the special case: level 1 is cost 0, reward 10, one
+ * day on all 39 projects, and it cannot be derived from the cost because
+ * admin_mission_duration(0) is 0 and admin_mission_reward(0, 1) is 0.
+ *
+ * THAT IS NOT HYPOTHETICAL. admin_mission_defaults() special-cased level
+ * 1 and the save handler called the two raw functions directly, so the
+ * form displayed "reward 10, 1 day" and the POST computed 0 and 0 -- and
+ * admin_validate_mission() then refused the save with "Level 1 is the
+ * free intro", which is true and was not the user's doing. Level 1 could
+ * not be saved on any project. Both callers go through here now so the
+ * displayed numbers and the written ones cannot drift again.
+ *
+ * Returns array(cost, reward, duration) -- cost included because level 1
+ * forces it to 0 whatever was posted.
+ */
+function admin_mission_derive($cost, $level, $cap = null) {
+	$level = (int)$level;
+	if ($level <= 1) return array('cost' => 0, 'reward' => 10, 'duration' => 1);
+	$cost = (int)$cost;
+	return array('cost'     => $cost,
+	             'reward'   => admin_mission_reward($cost, $level, $cap),
+	             'duration' => admin_mission_duration($cost));
+}
+
 function admin_mission_defaults($existing_costs, $level, $cap = null) {
 	$level = (int)$level;
-	if ($level <= 1) {
-		return array('level' => 1, 'cost' => 0, 'reward' => 10, 'duration' => 1, 'per_day' => 10.0);
-	}
-	$cost = admin_next_cost($existing_costs, $level);
-	$rew  = admin_mission_reward($cost, $level, $cap);
-	$dur  = admin_mission_duration($cost);
-	return array('level' => $level, 'cost' => $cost, 'reward' => $rew, 'duration' => $dur,
-	             'per_day' => admin_mission_per_day($cost, $rew, $dur));
+	$cost  = ($level <= 1) ? 0 : admin_next_cost($existing_costs, $level);
+	$d     = admin_mission_derive($cost, $level, $cap);
+	return array('level' => $level, 'cost' => $d['cost'], 'reward' => $d['reward'],
+	             'duration' => $d['duration'],
+	             'per_day' => admin_mission_per_day($d['cost'], $d['reward'], $d['duration']));
 }
 
 /**
