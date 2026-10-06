@@ -577,6 +577,8 @@
 				         there, so the path exists; it is just not the one
 				         somebody is on when they read this. Saying so beats
 				         an empty grid. */ ?>
+				<p class="wallet-readonly-note">Read-only. Skulliance never asks you to
+				sign or send anything, and disconnects as soon as your address is linked.</p>
 				<div class="wallet-panel-empty" id="solana-note">
 					No wallet detected. On a phone, open
 					<strong>skulliance.io/staking</strong> inside the
@@ -601,6 +603,15 @@
 					     onerror="walletMark(this,'MM')">
 					<span class="wallet-panel-name" id="evm-btn-name">MetaMask<small>Browser extension</small></span>
 				</div>
+				<?php /* SAID BEFORE THEY CLICK, not after. MetaMask's prompt
+				         will say this site may "send requests for
+				         transactions", and that is true and not declinable
+				         -- eth_accounts grants it. Somebody weighing whether
+				         to connect their wallet deserves to know what we do
+				         with it while they are still deciding. */ ?>
+				<p class="wallet-readonly-note">Read-only. Skulliance never asks you to
+				sign or send anything, and hands the connection back as soon as your
+				address is linked.</p>
 				<div class="wallet-panel-empty" id="polygon-note">
 					No wallet detected. On a phone, open
 					<strong>skulliance.io/staking</strong> inside the
@@ -973,6 +984,42 @@
 					if (p[EVM_WALLETS[i][0]]) return EVM_WALLETS[i][1];
 				return 'Your wallet';
 			}
+			/*
+			 * HAND THE PERMISSION BACK THE MOMENT WE ARE DONE WITH IT.
+			 *
+			 * MetaMask's connect prompt says the site may "send requests for
+			 * transactions", and that is accurate and NOT something a site
+			 * can decline: per MetaMask's own docs, granting eth_accounts
+			 * also grants eth_sendTransaction, personal_sign and
+			 * eth_signTypedData_v4. There is no read-only connect. The
+			 * permission is the connection.
+			 *
+			 * What a site CAN do is not keep it. This platform needs the
+			 * address exactly once -- ownership is then read from our own
+			 * node, server-side, forever after -- so the standing connection
+			 * buys us nothing and costs the holder a dapp with transaction
+			 * rights sitting in their wallet indefinitely.
+			 *
+			 * wallet_revokePermissions (MIP-2) gives it back, which also
+			 * removes Skulliance from their Connected Sites list. Their
+			 * wallet stays linked here; that link lives in our database and
+			 * never needed the wallet again.
+			 *
+			 * BEST EFFORT, ALWAYS. Older builds do not implement it and
+			 * MetaMask Mobile has shipped versions where it silently does
+			 * nothing. A failure here must never surface -- the link has
+			 * already succeeded and there is nothing for the holder to do
+			 * about it.
+			 */
+			function evmRevoke(provider){
+				try {
+					Promise.resolve(provider.request({
+						method: 'wallet_revokePermissions',
+						params: [{eth_accounts: {}}]
+					})).catch(function(){});
+				} catch (e) {}
+			}
+
 			function polyResult(ok, msg){
 				solStatus('<span class="wallet-result-icon ' + (ok ? 'success' : 'error') + '">'
 				        + (ok ? '&#10003;' : '&#10007;') + '</span>'
@@ -1033,7 +1080,13 @@
 					.then(function(r){ return r.text(); })
 					.then(function(t){
 						var res; try { res = JSON.parse(t); } catch(e){ throw new Error(t.slice(0,120)); }
-						if (!res.ok) { polyResult(false, res.message || 'Could not link.'); return; }
+						if (!res.ok) {
+							/* Keep the connection on failure -- Try Again has to
+							   work without a second approval. */
+							polyResult(false, res.message || 'Could not link.');
+							return;
+						}
+						evmRevoke(provider);
 						polyResult(true, res.message || 'Wallet linked.');
 						setTimeout(function(){ location.reload(); }, 1600);
 					})
@@ -1085,6 +1138,11 @@
 					.then(function(t){
 						var res; try { res = JSON.parse(t); } catch(e){ throw new Error(t.slice(0,120)); }
 						if (!res.ok) { solResult(false, res.message || 'Could not link.'); return; }
+						/* Same reasoning as evmRevoke(): the address was all we
+						   needed and ownership is read server-side from here on,
+						   so the session goes back. Best effort -- the link has
+						   already succeeded. */
+						try { if (provider.disconnect) Promise.resolve(provider.disconnect()).catch(function(){}); } catch (e) {}
 						solResult(true, res.message || 'Wallet linked.');
 						setTimeout(function(){ location.reload(); }, 1600);
 					})
@@ -1346,6 +1404,8 @@
 			.wallet-panel-mark{display:flex;align-items:center;justify-content:center;
 			  background:#123049;color:#00c8a0;font-weight:700;font-size:.85rem;
 			  letter-spacing:.04em}
+			.wallet-readonly-note{grid-column:1/-1;margin:0 0 2px;font-size:.72rem;
+			  line-height:1.5;color:#5a7888}
 			#xrpl-note{font-size:.72rem;padding:4px 0 0;line-height:1.5}
 			#xrpl-note strong{color:#c8d8e8}
 			</style>

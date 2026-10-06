@@ -58,7 +58,8 @@ function grabVar(sig) {
 }
 
 const code = [grabVar('var EVM_WALLETS = ['), grab('function evmProvider('),
-              grab('function evmName('), grab('function polygonConnect(')].join('\n');
+              grab('function evmName('), grab('function evmRevoke('),
+              grab('function polygonConnect(')].join('\n');
 if (fails) { console.log('\nFAILED\n'); process.exit(1); }
 
 /* ---------- the world the page runs in ---------------------------------- */
@@ -135,6 +136,10 @@ function connectWith(switchBehaviour, opts) {
 			calls.push(req.method);
 			if (req.method === 'eth_requestAccounts') return Promise.resolve([ADDR]);
 			if (req.method === 'wallet_switchEthereumChain') return switchBehaviour(req);
+			if (req.method === 'wallet_revokePermissions') {
+				if (opts && opts.revokeThrows) throw new Error('not implemented');
+				if (opts && opts.revokeRejects) return Promise.reject(new Error('unsupported method'));
+			}
 			return Promise.resolve(null);
 		}
 	};
@@ -197,6 +202,57 @@ connectWith(() => Promise.reject({code: 4001, message: 'User rejected the reques
 		ok(h3.log.result && /another account/.test(h3.log.result.msg),
 		   "the endpoint's own message was replaced with a generic one");
 
+		console.log('\nthe permission goes back when we are done with it');
+
+		/*
+		 * MetaMask's prompt says the site may "send requests for
+		 * transactions". That is accurate and cannot be declined -- per
+		 * MetaMask's docs, eth_accounts also grants eth_sendTransaction,
+		 * personal_sign and eth_signTypedData_v4, so the permission IS the
+		 * connection. What we can do is not KEEP it: the address is needed
+		 * once and ownership is read server-side from then on.
+		 *
+		 * These checks are that promise. If the revoke silently stops
+		 * happening, holders are left with a dapp holding transaction
+		 * rights indefinitely and nothing anywhere would say so.
+		 */
+		return connectWith(() => Promise.resolve(null)).then(({h, calls}) => {
+			ok(calls.indexOf('wallet_revokePermissions') !== -1,
+			   'the eth_accounts permission is NOT handed back after linking');
+			ok(calls.indexOf('wallet_revokePermissions') > calls.indexOf('eth_requestAccounts'),
+			   'the permission is revoked before it has been used');
+			ok(h.log.posted !== null && h.log.result && h.log.result.ok,
+			   'revoking broke the link it comes after');
+		});
+	})
+	.then(() => {
+		/* A revoke that is unsupported must be invisible. Older builds do
+		   not implement it, and MetaMask Mobile has shipped versions where
+		   it does nothing -- the link has already succeeded by then, so a
+		   failure here has nothing the holder could act on. */
+		return connectWith(() => Promise.resolve(null), {revokeRejects: true}).then(({h}) => {
+			ok(h.log.result && h.log.result.ok,
+			   'a wallet that cannot revoke turns a successful link into a failure');
+		});
+	})
+	.then(() => {
+		return connectWith(() => Promise.resolve(null), {revokeThrows: true}).then(({h}) => {
+			ok(h.log.result && h.log.result.ok,
+			   'a revoke that THROWS synchronously takes the whole link down with it');
+		});
+	})
+	.then(() => {
+		/* And not on failure: Try Again has to work without a second
+		   approval prompt. */
+		return connectWith(() => Promise.resolve(null),
+			{reply: {ok: false, message: 'That wallet is linked to another account.'}})
+			.then(({h, calls}) => {
+				ok(calls.indexOf('wallet_revokePermissions') === -1,
+				   'the permission is revoked even when the link FAILED, so Try Again needs a fresh approval');
+				ok(h.log.result && h.log.result.ok === false, 'the failure was not surfaced');
+			});
+	})
+	.then(() => {
 		console.log('');
 		if (fails) { console.log(fails + ' check(s) FAILED'); process.exit(1); }
 		console.log('polygon wallet: ok');
