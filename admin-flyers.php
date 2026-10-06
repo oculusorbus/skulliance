@@ -139,8 +139,8 @@ admin_chrome('flyers');
           <label>Icon size inside ring <input type="range" id="f-iconScale" min="0.4" max="1.4" step="0.01" value="1"></label>
           <label>Headline font
             <select id="f-headFont">
+              <option value='700 "Rajdhani"' selected>Rajdhani</option>
               <option value='800 "Saira Semi Condensed"'>Saira Semi Condensed</option>
-              <option value='700 "Rajdhani"'>Rajdhani</option>
               <option value='400 "Russo One"'>Russo One</option>
             </select></label>
         </div>
