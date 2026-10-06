@@ -1122,6 +1122,13 @@ function filterPolicies($page){
 	 */
 	$chains = function_exists('getChainsWithCollections') ? getChainsWithCollections($conn) : array();
 	$sel    = isset($filterchain) ? (int)$filterchain : 0;
+	/* AT REST IT READS "Chain", NOT "All". The project select next to it
+	   shows "Project" when nothing is picked -- its first option is the
+	   label, and the control names the axis it filters. Marking "All"
+	   selected instead put "Project" and "All" side by side, where the
+	   second one does not say all of WHAT. So nothing is pre-selected at
+	   0 and the first option stands as the label; once a chain is chosen
+	   the control shows that chain, which is the same behaviour. */
 	echo '
 	<div id="filter-nfts">
 		<label for="filterPolicies"><strong>Filter By:</strong></label>
@@ -1145,7 +1152,8 @@ function filterPolicies($page){
 			   looking at and the other way round. */
 			echo '
 		<select onchange="javascript:filterChain(this.options[this.selectedIndex].value);" name="filterChainSel" id="filterChainSel">
-			<option value="0"'.($sel === 0 ? ' selected' : '').'>All chains</option>';
+			<option value="0">Chain</option>
+			<option value="0">All</option>';
 			foreach($chains AS $cid => $chain){
 				echo '<option value="'.(int)$cid.'"'.($sel === (int)$cid ? ' selected' : '').'>'
 				   . htmlspecialchars($chain["name"]).'</option>';

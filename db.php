@@ -8309,21 +8309,36 @@ function getChainsWithCollections($conn) {
 }
 
 /**
- * The chain's logo, as a table cell. Falls back to a lettermark, because
- * icons ship by FTP and a chain added without one would otherwise put a
- * broken-image glyph in every row of its collections.
+ * The chain's logo, as a table cell. LOGO ONLY -- the name is a tooltip.
+ *
+ * Four logos down a column are read as a shape, which is the whole point
+ * of a logo; repeating the word beside every one of them doubles the
+ * column width to restate what the picture already said. The name is on
+ * `title`, for the reader who does not recognise a mark.
+ *
+ * THE alt TEXT IS NOT OPTIONAL AND IS NOT EMPTY. While the name sat next
+ * to it the image was decorative and alt='' was right. With the name
+ * gone the image IS the information, so an empty alt leaves the column
+ * blank to a screen reader and the chain unknowable without a mouse --
+ * and `title` is not a substitute, since it is not announced reliably
+ * and never appears on touch.
+ *
+ * Falls back to a lettermark, because icons ship by FTP and a chain
+ * added before its logo is uploaded would otherwise put a broken-image
+ * glyph in every row of its collections.
  */
 function chainBadge($slug, $name) {
 	require_once __DIR__ . '/lib/chain-icons.php';
 	$file = chain_icon_file($slug);
-	$nm   = htmlspecialchars((string)$name);
+	$nm   = htmlspecialchars((string)$name, ENT_QUOTES);
 	if ($file === '') return "<span class='chain-badge'>" . $nm . "</span>";
-	return "<span class='chain-badge'>"
-	     . "<img src='icons/" . rawurlencode($file) . ".png' alt='' width='20' height='20'"
+	return "<span class='chain-badge' title='" . $nm . "'>"
+	     . "<img src='icons/" . rawurlencode($file) . ".png' alt='" . $nm . "' width='24' height='24'"
 	     . " loading='lazy' decoding='async' class='chain-badge-i'"
 	     . " onerror=\"this.replaceWith(Object.assign(document.createElement('span'),"
-	     . "{className:'chain-badge-i chain-badge-m',textContent:'" . chain_icon_mark($slug) . "'}))\">"
-	     . "<span class='chain-badge-n'>" . $nm . "</span></span>";
+	     . "{className:'chain-badge-i chain-badge-m',textContent:'" . chain_icon_mark($slug) . "',"
+	     . "title:this.alt,role:'img','aria-label':this.alt}))\">"
+	     . "</span>";
 }
 
 function getPoliciesListing($conn, $project_id=0, $blockchain_id=0) {

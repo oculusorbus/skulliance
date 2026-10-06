@@ -387,6 +387,23 @@ a:hover { color: #00a882; }
 	font-family: Arial, sans-serif;
 }
 
+/* The Collections chain filter sits beside #filterNFTs and must not look
+   like a different control. Narrower only because a chain name is one
+   short word where a project name is not. */
+#filterChainSel {
+    width: 150px;
+    border-radius: 0;
+    height: 30px;
+    font-weight: bold;
+    background-color: #0d1e2e;
+    color: #D6DDDE;
+    text-align: left;
+    font-size: 20px;
+    border: 1px solid rgba(0,200,160,0.18);
+    font-family: Arial, sans-serif;
+    margin-left: 8px;
+}
+
 #filterNFTs {
     width: 190px;
     border-radius: 0;
@@ -3730,7 +3747,9 @@ input[type="range"]#carbon::-moz-range-thumb, input[type="range"]#balance::-moz-
     .side { border-right: none; padding: 10px; }
     /* Filter: remove negative-top overlap, shrink font */
     #filter-nfts { font-size: 14px; top: 0; text-align: left; margin-bottom: 8px; }
-    #filterNFTs, #faction { font-size: 14px; width: auto; max-width: 100%; }
+    #filterNFTs, #faction, #filterChainSel { font-size: 14px; width: auto; max-width: 100%; }
+    /* Stacked under the project filter rather than squeezed beside it. */
+    #filterChainSel { margin-left: 0; margin-top: 6px; }
     /* Filtered content: remove negative-top that causes overlap when stacked */
     #filtered-content { top: 0; }
     /* Realms header: collapse spacer so logo and deactivate button sit side by side on mobile */

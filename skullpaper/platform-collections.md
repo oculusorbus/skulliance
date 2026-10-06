@@ -5,8 +5,9 @@ The Collections page is the registry of every NFT collection Skulliance supports
 ## What It Shows
 
 * Every supported collection and the **project** it belongs to.
-* The **chain** each one is on, with its logo, so a list spanning several
-  chains can be read at a glance rather than by recognising identifiers.
+* The **chain** each one is on, as its logo, so a list spanning several
+  chains can be read at a glance. Hover a logo you do not recognise and it
+  names the chain.
 * Filtering by **project** and by **chain**. The two work together - picking a
   chain keeps the project you were looking at, and the other way round. The
   chain filter only appears when there is more than one chain to choose

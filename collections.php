@@ -7,17 +7,16 @@ include 'header.php';
 <style>
 /* The chain badge in the Collections table. The logos are the same
    white-on-transparent marks the wallet modal uses, so they need no
-   plate on this dark ground. 20px: big enough to tell four chains apart
-   at a glance, small enough not to set the row height. */
-.chain-badge { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
-.chain-badge-i { width: 20px; height: 20px; object-fit: contain; flex: 0 0 20px; opacity: .9; }
+   plate on this dark ground. 24px because the logo is now alone in the
+   column -- the chain name is a tooltip, not a label. help cursor is
+   the standing convention for "there is a title here". */
+.chain-badge { display: inline-flex; align-items: center; cursor: help; }
+.chain-badge-i { width: 24px; height: 24px; object-fit: contain; flex: 0 0 24px; opacity: .9;
+  transition: opacity .15s; }
+.chain-badge:hover .chain-badge-i { opacity: 1; }
 .chain-badge-m { display: inline-flex; align-items: center; justify-content: center;
-  background: #123049; color: #00c8a0; font-size: .58rem; font-weight: 700; letter-spacing: .02em; }
-.chain-badge-n { font-size: .86em; }
+  background: #123049; color: #00c8a0; font-size: .6rem; font-weight: 700; letter-spacing: .02em; }
 #filter-nfts select { margin-right: 8px; }
-/* Under ~560px the name doubles the column width for no information the
-   logo has not already given. */
-@media (max-width: 560px) { .chain-badge-n { display: none; } }
 </style>
 		<a name="policies" id="policies"></a>
 		<div class="row" id="row1">

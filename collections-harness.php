@@ -141,6 +141,58 @@ foreach (array(array($c, 5), array($c1, 4)) as $case) {
 	 . ' -- a header and body mismatch shifts every column');
 }
 
+echo "\nthe filter control names its own axis\n";
+
+/*
+ * SIDE BY SIDE WITH THE PROJECT FILTER, which shows "Project" at rest
+ * because its first option IS the label. Pre-selecting "All" on the
+ * chain one put "Project" and "All" next to each other, where the
+ * second does not say all of WHAT.
+ */
+$fsrc = file_get_contents(__DIR__ . '/skulliance.php');
+$at   = strpos($fsrc, 'id="filterChainSel"');
+ok($at !== false, 'the chain select is gone from filterPolicies()');
+$sel_block = substr($fsrc, $at, 600);
+ok(strpos($sel_block, '<option value="0">Chain</option>') !== false,
+   'the chain select has no resting label, so it reads "All" beside "Project"');
+ok(strpos($sel_block, '<option value="0">All</option>') !== false,
+   'the chain select lost its plain All option');
+/* The All option must carry NO conditional selected -- that is exactly
+   what replaced the "Chain" label with the word "All". A real chain
+   still does, or the control forgets what it is filtering by. */
+ok(preg_match('/selected[^>]{0,40}>All</', $sel_block) === 0,
+   'the All option is pre-selected again, which hides the "Chain" label');
+ok(strpos($sel_block, "\$sel === (int)\$cid ? ' selected'") !== false,
+   'a chosen chain is no longer marked selected, so the control forgets what it is filtering by');
+
+/*
+ * IT MUST LOOK LIKE THE CONTROL BESIDE IT. Compared against #filterNFTs
+ * rather than asserted to exist: the first version checked only that
+ * "#filterChainSel {" appeared somewhere, and the narrow-screen rule
+ * uses the same selector -- so renaming the MAIN rule still passed.
+ */
+$css = file_get_contents(__DIR__ . '/dist/flexbox.css');
+function decls($css, $sel) {
+	if (!preg_match('/' . preg_quote($sel, '/') . '\s*\{([^}]*)\}/', $css, $m)) return null;
+	$out = array();
+	foreach (explode(';', $m[1]) as $d) {
+		$d = trim($d); if ($d === '') continue;
+		list($k, $v) = array_pad(explode(':', $d, 2), 2, '');
+		$k = trim($k);
+		/* width and margin legitimately differ: a chain name is one short
+		   word where a project name is not. */
+		if (in_array($k, array('width', 'margin-left', 'margin-top'), true)) continue;
+		$out[$k] = trim($v);
+	}
+	return $out;
+}
+$a = decls($css, '#filterNFTs');
+$b = decls($css, '#filterChainSel');
+ok($b !== null, 'the chain select has no rule, so it renders as a white browser default beside a dark one');
+ok($a !== null && $b !== null && $a == $b,
+   'the chain select no longer matches #filterNFTs: ' . json_encode(array_diff_assoc((array)$a, (array)$b)));
+ok(strpos($css, '#filterNFTs, #faction, #filterChainSel') !== false,
+   'the chain select is left out of the narrow-screen rule');
 echo "\nthe logo, and the name that is not the filename\n";
 
 ok(chain_icon_file('xrpl') === 'xrp',
@@ -154,11 +206,39 @@ ok(chain_icon_mark('polygon') === 'POL', 'the lettermark is wrong');
 
 $badge = chainBadge('xrpl', 'XRP Ledger');
 ok(strpos($badge, "icons/xrp.png") !== false, "the badge points at icons/xrp.png: $badge");
-ok(strpos($badge, 'XRP Ledger') !== false, 'the badge lost the chain name');
 ok(strpos($badge, 'onerror=') !== false,
    'the badge has no lettermark fallback -- icons ship by FTP, so a new chain would show a broken image');
-/* The name is attacker-controlled only by an admin, but it is still output. */
+
+/*
+ * LOGO ONLY, NAME IN A TOOLTIP. Repeating the word beside every logo
+ * doubles the column to restate what the picture said.
+ */
+$text = trim(strip_tags($badge));
+ok($text === '', "the chain name is printed beside the logo again: '$text'");
+ok(strpos($badge, "title='XRP Ledger'") !== false,
+   'the badge has no title, so a reader who does not recognise the mark cannot find out what it is');
+
+/*
+ * AND THE alt IS NOT EMPTY, which stopped being optional the moment the
+ * visible name went away. While the name sat beside it the image was
+ * decorative; now the image IS the information, so alt='' leaves the
+ * column blank to a screen reader. title is not a substitute -- it is
+ * not announced reliably and never appears on touch.
+ */
+ok(strpos($badge, "alt='XRP Ledger'") !== false,
+   'the logo carries an empty alt, so the Chain column is unreadable without a mouse');
+ok(strpos($badge, "alt=''") === false, 'the logo alt is empty');
+/* The lettermark replacement has to carry it too, or the fallback is
+   the state that loses the information. */
+ok(strpos($badge, "aria-label':this.alt") !== false && strpos($badge, 'title:this.alt') !== false,
+   'the lettermark fallback drops the chain name, so a missing icon makes the chain unknowable');
+
+/* The name is admin-entered, and it lands inside SINGLE-quoted
+   attributes -- an apostrophe must not close one. */
 ok(strpos(chainBadge('x', '<script>'), '<script>') === false, 'the chain name is not escaped');
+$apos = chainBadge('cardano', "Bob's Chain");
+ok(strpos($apos, "Bob's") === false && strpos($apos, '&#039;') !== false,
+   "an apostrophe in a chain name breaks out of the single-quoted title attribute: $apos");
 
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
