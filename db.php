@@ -95,10 +95,30 @@ if (!defined('XRPL_CHAIN_ID')) define('XRPL_CHAIN_ID', 2);
 if (!defined('SOLANA_CHAIN_ID')) define('SOLANA_CHAIN_ID', 3);
 if (!defined('POLYGON_CHAIN_ID')) define('POLYGON_CHAIN_ID', 4);
 
-// Gateway used for an NFT image that is not cached locally yet. See getIPFS().
-// Overridable in credentials/db_credentials.php.
+/*
+ * Gateway used for an NFT image that is not cached locally yet. See getIPFS().
+ * Overridable in credentials/db_credentials.php.
+ *
+ * THIS IS THE SECOND TIME THIS CONSTANT HAS HAD TO MOVE, which is the
+ * useful thing to know about it. It was ipfs.io, which started answering
+ * 429 for this server; it became Pinata because Pinata served every one
+ * of the first XRPL holder's twenty NFTs. As of 2026-10-06 Pinata
+ * answers 000/301 here and serves nothing -- found when the first
+ * Polygon NFT staked correctly and showed a broken image pointing at it.
+ *
+ * Measured the same way each time, now by polygon-probe.php's gateways
+ * step: a CID pinned everywhere AND the one actually wanted, so "this
+ * gateway refuses us" can be told from "this gateway has not got it".
+ * Of seven, filebase alone serves Danketsu's art.
+ *
+ * It is ONE name and it will rot again. The real fix is the local cache
+ * -- this only has to hold until image-cache.php stores the file, which
+ * is what the browser should be hitting. Keep it the same host that
+ * heads lib/ipfs-gateways.php, and re-measure rather than guess:
+ *   php polygon-probe.php step=gateways
+ */
 if (!defined('IPFS_FALLBACK_GATEWAY')) {
-    define('IPFS_FALLBACK_GATEWAY', 'https://gateway.pinata.cloud/ipfs/');
+    define('IPFS_FALLBACK_GATEWAY', 'https://ipfs.filebase.io/ipfs/');
 }
 
 // ── Printful OAuth credentials ──────────────────────────────

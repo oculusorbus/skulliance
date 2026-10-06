@@ -604,6 +604,24 @@ ok(count(ipfs_gateways()) >= 2, 'the shared gateway list has no fallback left');
 ok(in_array('https://ipfs.filebase.io/ipfs/', ipfs_gateways(), true),
    'the only gateway measured as serving Danketsu art is gone from the list');
 
+/*
+ * AND THE SINGLE-GATEWAY FALLBACK HAS TO AGREE WITH THE LIST.
+ *
+ * getIPFS() returns IPFS_FALLBACK_GATEWAY . $cid for anything not cached
+ * locally yet, and that is what the BROWSER fetches -- it never touches
+ * the raced list above. So the two can disagree completely and the only
+ * symptom is a broken image on a row that staked perfectly: which is
+ * exactly what the first Polygon NFT did, pointing at Pinata while the
+ * list had already moved on.
+ */
+$gsrc = file_get_contents(__DIR__ . '/db.php');
+preg_match("/define\('IPFS_FALLBACK_GATEWAY',\s*'([^']+)'\)/", $gsrc, $gm);
+ok(!empty($gm[1]), 'IPFS_FALLBACK_GATEWAY is gone from db.php');
+ok(!empty($gm[1]) && $gm[1] === ipfs_gateways()[0],
+   'IPFS_FALLBACK_GATEWAY is ' . (isset($gm[1]) ? $gm[1] : '?')
+ . ' but the gateway list now leads with ' . ipfs_gateways()[0]
+ . ' -- an uncached image goes to the one nobody measured');
+
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
 echo "polygon verifier: ok\n";
