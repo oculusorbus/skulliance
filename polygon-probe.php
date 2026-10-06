@@ -83,17 +83,30 @@ if ($cli) {
 	   . '<p>Read-only. Each step is a separate request, so none of them can trip the 20s offline page.</p>'
 	   . '<pre id="out">starting…' . "\n" . '</pre>'
 	   . '<button id="sweep" disabled>Sweep all 4,444 tokens</button>'
+	   /* A RUNNING STEP HAS TO LOOK DIFFERENT FROM A FINISHED RUN. The
+	      first version appended output and showed nothing in between, so a
+	      slow step was indistinguishable from the end of the report -- and
+	      the gateway survey (14 requests) was read as a finished run with
+	      two steps silently missing. It now names the step it is waiting
+	      on and says plainly when there is nothing left. */
 	   . '<script>(function(){'
 	   . 'var out=document.getElementById("out"),steps=' . $qs . ';'
 	   . 'function go(list,done){ if(!list.length){ if(done)done(); return; }'
-	   . ' var s=list.shift();'
+	   . ' var s=list.shift(), base=out.textContent;'
+	   . ' out.textContent=base+"  ... running "+s+", please wait\\n";'
+	   . ' window.scrollTo(0,document.body.scrollHeight);'
 	   . ' fetch(location.pathname+"?step="+encodeURIComponent(s),{credentials:"same-origin"})'
-	   . '  .then(function(r){return r.text();})'
-	   . '  .then(function(t){ out.textContent+=t; window.scrollTo(0,document.body.scrollHeight); go(list,done); })'
-	   . '  .catch(function(e){ out.textContent+="\\n  step "+s+" FAILED in the browser: "+e+"\\n"; go(list,done); }); }'
+	   . '  .then(function(r){return r.text().then(function(t){'
+	   . '    return r.ok?t:(t||("  step "+s+" returned HTTP "+r.status+" with no output\\n")); }); })'
+	   . '  .then(function(t){ out.textContent=base+(t||("  step "+s+" returned nothing\\n"));'
+	   . '    window.scrollTo(0,document.body.scrollHeight); go(list,done); })'
+	   . '  .catch(function(e){ out.textContent=base+"  step "+s+" FAILED in the browser: "+e+"\\n"; go(list,done); }); }'
 	   . 'out.textContent="";'
+	   . 'function fin(msg){ return function(){ out.textContent+="\\n=== "+msg+" ===\\n";'
+	   . ' window.scrollTo(0,document.body.scrollHeight); }; }'
 	   . 'go(steps.slice(),function(){ var b=document.getElementById("sweep"); b.disabled=false;'
-	   . ' b.onclick=function(){ b.disabled=true; go(["sweep"]); }; });'
+	   . ' fin("all steps complete, safe to copy")();'
+	   . ' b.onclick=function(){ b.disabled=true; go(["sweep"],fin("sweep complete")); }; });'
 	   . '})();</script>';
 	exit;
 }
@@ -340,6 +353,47 @@ function pp_fetch($url, &$code = null, &$ctype = null, $head = false) {
 	return ($b === false) ? '' : (string)$b;
 }
 
+/*
+ * MANY AT ONCE, because a survey of gateways is the one job where doing
+ * them in turn is indefensible: fourteen HEADs at a 6s timeout is 84
+ * seconds of wall clock to answer a question whose slowest component is
+ * 6 seconds. The first version did exactly that and never finished.
+ *
+ * Same shape as sol_http_many() in verify-solana.php -- curl_multi, keys
+ * preserved, no exceptions.
+ */
+function pp_fetch_many($urls, $head = false, $timeout = 6) {
+	$out = array();
+	if (!$urls) return $out;
+	$mh = curl_multi_init();
+	$handles = array();
+	foreach ($urls as $key => $url) {
+		$ch = curl_init($url);
+		curl_setopt_array($ch, array(
+			CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 3,
+			CURLOPT_TIMEOUT => $timeout, CURLOPT_CONNECTTIMEOUT => 4, CURLOPT_NOBODY => (bool)$head,
+			CURLOPT_USERAGENT => 'Skulliance/1.0 (+https://skulliance.io)',
+		));
+		curl_multi_add_handle($mh, $ch);
+		$handles[$key] = $ch;
+	}
+	$running = null;
+	do {
+		curl_multi_exec($mh, $running);
+		if ($running) curl_multi_select($mh, 1.0);
+	} while ($running > 0);
+	foreach ($handles as $key => $ch) {
+		$out[$key] = array(
+			'code'  => (int)curl_getinfo($ch, CURLINFO_HTTP_CODE),
+			'type'  => (string)curl_getinfo($ch, CURLINFO_CONTENT_TYPE),
+			'body'  => (string)curl_multi_getcontent($ch),
+		);
+		curl_multi_remove_handle($mh, $ch);
+	}
+	curl_multi_close($mh);
+	return $out;
+}
+
 if (pp_do('env')) {
 	say('SAPI                : ' . PHP_SAPI . ($cli ? '   <- not the one that matters' : '   <- this is the one that matters'));
 	say('PHP                 : ' . PHP_VERSION);
@@ -519,19 +573,22 @@ $LIVE = array(
 	'https://dweb.link/ipfs/',
 	'https://ipfs.filebase.io/ipfs/',   // NOT in image-cache-lib.php
 );
+$urls = array();
+foreach ($LIVE as $i => $g) { $urls['k' . $i] = $g . $KNOWN; $urls['d' . $i] = $g . $DANK; }
+$t = microtime(true);
+$got = pp_fetch_many($urls, true);
 say(sprintf('  %-36s %-14s %s', '', 'known-good CID', 'Danketsu image'));
 $any_dank = 0;
-foreach ($LIVE as $g) {
-	$c1 = 0; $t1 = '';
-	pp_fetch($g . $KNOWN, $c1, $t1, true);
-	$c2 = 0; $t2 = '';
-	pp_fetch($g . $DANK, $c2, $t2, true);
+foreach ($LIVE as $i => $g) {
+	$c1 = isset($got['k' . $i]) ? $got['k' . $i]['code'] : 0;
+	$c2 = isset($got['d' . $i]) ? $got['d' . $i]['code'] : 0;
 	if ($c2 === 200) $any_dank++;
 	$note = '';
 	if ($c1 === 200 && $c2 !== 200)      $note = '   <- works, but has not got this CID';
 	else if ($c1 !== 200 && $c2 !== 200) $note = '   <- refusing this server';
 	say(sprintf('  %-36s %-14s %-14s%s', $g, 'HTTP ' . $c1, 'HTTP ' . $c2, $note));
 }
+say('  (' . count($urls) . ' requests in parallel, ' . ms($t) . ')');
 say();
 say('  gateways that can serve Danketsu art: ' . $any_dank . ' of ' . count($LIVE));
 if ($any_dank === 0)
