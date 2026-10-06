@@ -60,7 +60,13 @@ $PP_STEPS = array('env', 'rpc', 'contract', 'batch', 'media', 'gateways', 'schem
 $step = $cli ? '' : (isset($_GET['step']) ? (string)$_GET['step'] : '');
 $sweep_from = 0;
 if ($cli) {
-	$step = in_array('sweep', $argv, true) ? 'all+sweep' : 'all';
+	/* `step=<name>` runs ONE step, the way the browser does. That is not a
+	   convenience: running them all in order is what hid a helper declared
+	   inside another step's if-block, because the CLI always happened to
+	   define it first. Every step must stand alone. */
+	$one  = '';
+	foreach ($argv as $a) if (strpos($a, 'step=') === 0) $one = substr($a, 5);
+	$step = ($one !== '') ? $one : (in_array('sweep', $argv, true) ? 'all+sweep' : 'all');
 } else if ($step === '') {
 	/* THE NAVIGATION ITSELF DOES NO WORK. It paints, and the steps arrive
 	   over fetch() -- which service-worker.js ignores, because it returns
@@ -266,6 +272,74 @@ function pp_need_node() {
 	return $n;
 }
 
+/*
+ * HOISTED TO TOP LEVEL, and it has to stay here.
+ *
+ * These lived inside the media step. A function declared inside an `if`
+ * only exists when that branch RUNS -- so the CLI, which walks every step
+ * in order, always defined them before anything needed them, while the web
+ * form fetches one step per request and the gateways step died on
+ * "Call to undefined function pp_fetch()". A bug the stepped design
+ * introduced and the CLI could not see.
+ */
+
+/*
+ * THE TRAP THIS SECTION EXISTS FOR.
+ *
+ * Danketsu's metadata does not point at ipfs:// for the picture. The
+ * `image` field is an absolute https URL on a GATEWAY -- and that
+ * gateway (nftstorage.link) answers 302 then 429. The same CID through a
+ * working gateway returns the png.
+ *
+ * getIPFS() and _ipfs_is_url() currently treat an absolute URL as opaque
+ * and fetch it as-is, which is exactly right for Omen and exactly wrong
+ * here. What is needed is to recognise a gateway-SHAPED url, lift the CID
+ * out of it, and re-resolve through our own list. pp_gateway_cid() below
+ * is the sketch of that.
+ */
+function pp_gateway_cid($url) {
+	$u = (string)$url;
+	/* https://<cid>.ipfs.<host>/<path> */
+	if (preg_match('~^https?://([a-z0-9]{46,})\.ipfs\.[^/]+/?(.*)$~i', $u, $m))
+		return array('cid' => strtolower($m[1]), 'path' => $m[2]);
+	/* https://<host>/ipfs/<cid>/<path> */
+	if (preg_match('~^https?://[^/]+/ipfs/([A-Za-z0-9]{46,})/?(.*)$~', $u, $m))
+		return array('cid' => $m[1], 'path' => $m[2]);
+	return null;
+}
+
+/*
+ * MEASURED 2026-10-05, probing Danketsu's own CID. filebase was the ONLY
+ * one of these that served it: ipfs.io, dweb.link and w3s.link have all
+ * switched to a service-worker-only gateway and answer 429 or an HTML
+ * notice instead of the file, nftstorage.link (which is where Danketsu's
+ * metadata POINTS) answers 302 then 429, and 4everland/storry/ipfs.cyou
+ * answer 301/403/nothing. filebase also rate-limits under rapid repeats,
+ * so this list is ordered best-first and a miss is not a verdict.
+ *
+ * The platform's own lists -- lib/image-cache-lib.php:172 and db.php:3471
+ * -- still lead with ipfs.io, so every first-warm of a new image pays a
+ * dead gateway's timeout before it gets anywhere.
+ */
+$GATES = array('https://ipfs.filebase.io/ipfs/', 'https://gateway.pinata.cloud/ipfs/',
+               'https://ipfs.io/ipfs/', 'https://dweb.link/ipfs/', 'https://w3s.link/ipfs/');
+
+function pp_fetch($url, &$code = null, &$ctype = null, $head = false) {
+	$ch = curl_init($url);
+	curl_setopt_array($ch, array(
+		CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 3,
+		/* Six seconds is the whole budget per gateway: five of them at 30s
+		   each is what spent the navigation's 20 seconds and produced
+		   offline.html on the first web run. */
+		CURLOPT_TIMEOUT => 6, CURLOPT_CONNECTTIMEOUT => 4, CURLOPT_NOBODY => (bool)$head,
+		CURLOPT_USERAGENT => 'Skulliance/1.0 (+https://skulliance.io)',
+	));
+	$b = curl_exec($ch);
+	$code  = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	$ctype = (string)curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
+	return ($b === false) ? '' : (string)$b;
+}
+
 if (pp_do('env')) {
 	say('SAPI                : ' . PHP_SAPI . ($cli ? '   <- not the one that matters' : '   <- this is the one that matters'));
 	say('PHP                 : ' . PHP_VERSION);
@@ -374,62 +448,8 @@ $u = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['tokenURI'] . pp_uint(1));
 $turi = ($u === null) ? '' : (string)pp_decode_string($u);
 say('  tokenURI(1)         : ' . $turi);
 
-/*
- * THE TRAP THIS SECTION EXISTS FOR.
- *
- * Danketsu's metadata does not point at ipfs:// for the picture. The
- * `image` field is an absolute https URL on a GATEWAY -- and that
- * gateway (nftstorage.link) answers 302 then 429. The same CID through a
- * working gateway returns the png.
- *
- * getIPFS() and _ipfs_is_url() currently treat an absolute URL as opaque
- * and fetch it as-is, which is exactly right for Omen and exactly wrong
- * here. What is needed is to recognise a gateway-SHAPED url, lift the CID
- * out of it, and re-resolve through our own list. pp_gateway_cid() below
- * is the sketch of that.
- */
-function pp_gateway_cid($url) {
-	$u = (string)$url;
-	/* https://<cid>.ipfs.<host>/<path> */
-	if (preg_match('~^https?://([a-z0-9]{46,})\.ipfs\.[^/]+/?(.*)$~i', $u, $m))
-		return array('cid' => strtolower($m[1]), 'path' => $m[2]);
-	/* https://<host>/ipfs/<cid>/<path> */
-	if (preg_match('~^https?://[^/]+/ipfs/([A-Za-z0-9]{46,})/?(.*)$~', $u, $m))
-		return array('cid' => $m[1], 'path' => $m[2]);
-	return null;
-}
 
-/*
- * MEASURED 2026-10-05, probing Danketsu's own CID. filebase was the ONLY
- * one of these that served it: ipfs.io, dweb.link and w3s.link have all
- * switched to a service-worker-only gateway and answer 429 or an HTML
- * notice instead of the file, nftstorage.link (which is where Danketsu's
- * metadata POINTS) answers 302 then 429, and 4everland/storry/ipfs.cyou
- * answer 301/403/nothing. filebase also rate-limits under rapid repeats,
- * so this list is ordered best-first and a miss is not a verdict.
- *
- * The platform's own lists -- lib/image-cache-lib.php:172 and db.php:3471
- * -- still lead with ipfs.io, so every first-warm of a new image pays a
- * dead gateway's timeout before it gets anywhere.
- */
-$GATES = array('https://ipfs.filebase.io/ipfs/', 'https://gateway.pinata.cloud/ipfs/',
-               'https://ipfs.io/ipfs/', 'https://dweb.link/ipfs/', 'https://w3s.link/ipfs/');
 
-function pp_fetch($url, &$code = null, &$ctype = null, $head = false) {
-	$ch = curl_init($url);
-	curl_setopt_array($ch, array(
-		CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 3,
-		/* Six seconds is the whole budget per gateway: five of them at 30s
-		   each is what spent the navigation's 20 seconds and produced
-		   offline.html on the first web run. */
-		CURLOPT_TIMEOUT => 6, CURLOPT_CONNECTTIMEOUT => 4, CURLOPT_NOBODY => (bool)$head,
-		CURLOPT_USERAGENT => 'Skulliance/1.0 (+https://skulliance.io)',
-	));
-	$b = curl_exec($ch);
-	$code  = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-	$ctype = (string)curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-	return ($b === false) ? '' : (string)$b;
-}
 
 $meta = null;
 if (strpos($turi, 'ipfs://') === 0) {
