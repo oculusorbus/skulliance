@@ -34,6 +34,27 @@ include '../db.php';
 include '../skulliance.php';
 require_once __DIR__ . '/../verify-polygon.php';
 require_once __DIR__ . '/../dhc-json.php';
+/*
+ * processNFT() LIVES IN verify.php, and this endpoint is what writes rows.
+ *
+ * Without this include the call inside verifyNFTsPolygon() is an undefined
+ * function -- a Throwable, caught by poly_verify_user()'s own catch, turned
+ * into "Wallet linked. Your NFTs will be counted tonight." The wallet row
+ * is created, nothing is staked, and the only trace is one error_log line.
+ *
+ * UNSET FIRST, AND THIS IS NOT OPTIONAL. verify.php's nightly block is
+ * gated on nothing but isset($_GET['verify']) -- no auth, no CLI check --
+ * and it ends in platform-wide payouts. Including it here without
+ * clearing that would make this URL a second trigger for the whole job,
+ * reachable by anyone who can append ?verify=1. Every page that already
+ * includes verify.php has the same shape; this one at least does not add
+ * to it. See MAINTENANCE.md.
+ *
+ * verify.php after its gated blocks is function declarations only, so with
+ * that key gone the include does nothing but define them.
+ */
+unset($_GET['verify']);
+require_once __DIR__ . '/../verify.php';
 
 /* THIS REQUEST READS A WHOLE COLLECTION'S OWNER MAP and then a metadata
    document per new token. The map is 18 calls at ~180ms for 4,444 tokens,

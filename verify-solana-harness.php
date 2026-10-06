@@ -528,6 +528,48 @@ ok(collectionMarketUrl(str_repeat('a', 56), 1) === 'https://www.wayup.io/collect
 ok(collectionMarketUrl('rPdvC6ccq8hCdPKSPJkPmyZ4Mi1oG2FFkT:0', XRPL_CHAIN_ID, 'bootlegs')
    === 'https://xrp.cafe/collection/bootlegs', 'the XRPL marketplace link changed');
 
+echo "\nthe link endpoint can actually reach the writer\n";
+
+/*
+ * THE BUG THIS EXISTS FOR, AND WHY NOTHING ABOVE CAUGHT IT.
+ *
+ * processNFT() is declared in verify.php and nowhere else.
+ * ajax/solana-link.php included db.php, skulliance.php and
+ * verify-solana.php -- none of which define it -- so the call inside
+ * verifyNFTsSolana() was an undefined function. That is a Throwable,
+ * sol_verify_user() catches Throwable, and the holder got "Wallet linked.
+ * Your NFTs will be counted tonight." with a wallet row created and
+ * nothing staked.
+ *
+ * EVERY CHECK ABOVE PASSED THROUGHOUT, because this harness DEFINES its
+ * own processNFT() stub -- that is what let it test the pass at all, and
+ * it is exactly what made it blind to the real one being absent. A stub
+ * cannot tell you whether the thing it stands in for is reachable.
+ *
+ * So this check is static, and about the file rather than the function.
+ */
+$ep = file_get_contents(__DIR__ . '/ajax/solana-link.php');
+$vp = file_get_contents(__DIR__ . '/verify.php');
+ok(strpos($vp, 'function processNFT(') !== false,
+   'processNFT() has moved out of verify.php; this endpoint requires the wrong file');
+$req = strpos($ep, 'require_once __DIR__ . \'/../verify.php\'');
+ok($req !== false,
+   'ajax/solana-link.php no longer includes verify.php, so processNFT() is undefined and every link '
+ . 'silently stakes nothing');
+
+/*
+ * AND THE UNSET MUST COME FIRST. verify.php's nightly block is gated on
+ * nothing but isset($_GET['verify']) -- no auth, no CLI check -- and ends
+ * in platform-wide payouts. Including it from an HTTP endpoint without
+ * clearing that key turns this URL into a second trigger for the whole
+ * job for anyone who appends ?verify=1.
+ */
+$uns = strpos($ep, 'unset($_GET[\'verify\']);');
+ok($uns !== false, 'ajax/solana-link.php includes verify.php WITHOUT unsetting $_GET[verify] first -- '
+                 . '?verify=1 on this endpoint would run the nightly payout job');
+ok($uns !== false && $req !== false && $uns < $req,
+   'the unset comes AFTER the require, which is too late -- the job block runs at include time');
+
 echo "\nand where a wallet address links to\n";
 ok(accountExplorerUrl($OWNER, SOLANA_CHAIN_ID) === 'https://solscan.io/account/' . $OWNER,
    'a Solana address does not link to a Solana explorer');
