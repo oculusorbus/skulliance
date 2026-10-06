@@ -785,6 +785,50 @@ ok(preg_match("~images/missions/[^\n]*\\.png'~", $body) !== 1,
 $uses = substr_count($body, 'mission_art_ext(') - substr_count($body, 'function mission_art_ext(');
 ok($uses >= 5, "only $uses call site(s) use mission_art_ext(); there are five art paths and one has stopped");
 
+echo "\nmission art busts the cache\n";
+
+/*
+ * The server sends mission art with max-age=604800. Re-uploading a file
+ * under the same name therefore changes nothing for anyone who has seen
+ * the old one, for SEVEN DAYS -- which is indistinguishable from the
+ * upload having failed, and is exactly how it presented when Buffy Bot's
+ * frame timing was fixed and the browser kept the broken copy.
+ */
+$probe_dir = __DIR__ . '/images/missions';
+@mkdir($probe_dir, 0755, true);
+$probe = $probe_dir . '/_harness_probe.png';
+file_put_contents($probe, 'x');
+$u = mission_art_url('_harness_probe', 'png');
+ok(strpos($u, 'images/missions/_harness_probe.png') === 0, "the path changed shape: $u");
+ok(preg_match('/\?v=\d+$/', $u) === 1,
+   "a re-uploaded image stays cached for a week: no ?v= on $u");
+/* The buster must track the FILE, not the clock, or every request is a
+   cache miss and the max-age is wasted. */
+$again = mission_art_url('_harness_probe', 'png');
+ok($u === $again, 'the buster changes between calls, so the image is never cached at all');
+touch($probe, time() + 60);
+clearstatcache(true, $probe);
+ok(mission_art_url('_harness_probe', 'png') !== $u,
+   'the buster did not change when the file did, which is the whole point');
+@unlink($probe);
+
+/* A missing file must not produce "?v=" with nothing after it. */
+$missing = mission_art_url('_harness_absent', 'png');
+ok(strpos($missing, '?') === false, "a missing file produced a malformed url: $missing");
+
+/*
+ * AND IT IS BUILT IN ONE PLACE. This path was spelled out at seven call
+ * sites; six of them would have kept serving stale art while one did
+ * not, which is worse than all seven being wrong.
+ */
+$body = preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/missions-lib.php'));
+ok(substr_count($body, "'images/missions/'") === 1,
+   'the art path is spelled out at ' . substr_count($body, "'images/missions/'")
+ . ' places again; it belongs in mission_art_url() and nowhere else');
+ok(substr_count($body, 'mission_art_url(') >= 7,
+   'only ' . substr_count($body, 'mission_art_url(') . ' uses of mission_art_url(); there are '
+ . 'seven art paths and one has stopped going through it');
+
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
 echo "all missions checks passed\n";

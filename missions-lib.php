@@ -122,6 +122,31 @@ function mission_art_slug($title) {
  * and quietly pointing at a .gif that was never produced would turn a
  * visible break into an invisible one. See missions-economy.md section 6.
  */
+/**
+ * A MISSION ART URL, WITH A CACHE-BUSTER.
+ *
+ * The server sends mission art with max-age=604800, so a re-uploaded
+ * image is invisible for SEVEN DAYS to anyone who has seen the old one.
+ * Not theoretical: Buffy Bot was re-uploaded with its frame timing
+ * fixed and the browser kept showing the broken copy, which looks
+ * exactly like the upload having failed again.
+ *
+ * ?v=<mtime> is the same trick getIPFS() already uses for NFT images,
+ * and for the same reason -- the path is stable, so only the mtime can
+ * tell a new file from an old one. A missing file gets no parameter
+ * rather than an error; the <img> 404s either way and the onerror
+ * fallback handles it.
+ *
+ * ONE FUNCTION, because this path was built in seven places. Today
+ * alone a duplicated gateway list, a duplicated chain-icon map and a
+ * duplicated reward derivation each turned into a bug.
+ */
+function mission_art_url($slug, $ext) {
+	$rel = 'images/missions/' . $slug . '.' . $ext;
+	$mt  = @filemtime(__DIR__ . '/' . $rel);
+	return $mt ? $rel . '?v=' . $mt : $rel;
+}
+
 function mission_art_ext($extension) {
 	return ($extension === 'mp4') ? 'gif' : $extension;
 }
@@ -342,8 +367,8 @@ function mission_quests($conn, $project_id) {
 			'reward'      => (float)$row['reward'],
 			'duration'    => (int)$row['duration'],
 			'level'       => $level,
-			'image'       => 'images/missions/' . $slug . '.' . $ext,
-			'video'       => ($row['extension'] === 'mp4') ? 'images/missions/' . $slug . '.mp4' : '',
+			'image'       => mission_art_url($slug, $ext),
+			'video'       => ($row['extension'] === 'mp4') ? mission_art_url($slug, 'mp4') : '',
 			'locked'      => $locked,
 			/* WHY, not just whether. Each of these is a different thing for
 			   the player to do next, and the old page said only "disabled". */
@@ -457,7 +482,7 @@ function mission_frontier($conn) {
 			'cost'       => $cost,
 			'reward'     => (float)$row['reward'],
 			'duration'   => (int)$row['duration'],
-			'image'      => 'images/missions/' . $slug . '.' . mission_art_ext($row['extension']),
+			'image'      => mission_art_url($slug, mission_art_ext($row['extension'])),
 			'affordable' => ($cost <= 0 || $balance >= $cost),
 			'shortfall'  => ($cost > $balance) ? $cost - $balance : 0,
 			'has_squad'  => (isset($idle[$pid]) && $idle[$pid] > 0),
@@ -639,8 +664,8 @@ function mission_loadout($conn, $quest_id) {
 		'duration'    => (int)$q['duration'],
 		'level'       => (int)$q['level'],
 		'locked'      => $locked,
-		'image'       => 'images/missions/' . $slug . '.' . mission_art_ext($q['extension']),
-		'video'       => ($q['extension'] === 'mp4') ? 'images/missions/' . $slug . '.mp4' : '',
+		'image'       => mission_art_url($slug, mission_art_ext($q['extension'])),
+		'video'       => ($q['extension'] === 'mp4') ? mission_art_url($slug, 'mp4') : '',
 		'balance'     => $balance,
 		'affordable'  => ((float)$q['cost'] <= 0 || $balance >= (float)$q['cost']),
 		'squad'       => $squad,
@@ -747,8 +772,7 @@ function mission_active($conn, $limit = 0) {
 			'ready'      => $ready,
 			'percent'    => $pct,
 			'items'      => $icons,
-			'image'      => 'images/missions/' . mission_art_slug($row['title'])
-			                . '.' . mission_art_ext($row['extension']),
+			'image'      => mission_art_url(mission_art_slug($row['title']), mission_art_ext($row['extension'])),
 		);
 	}
 	/* Closest to done first: what you came to claim should be at the top. */
@@ -970,8 +994,10 @@ function mission_announce($conn, $q, $mission_id, $nft_count, $success, $boost, 
 	$avatar  = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
 	$avurl   = ($discord && $avatar) ? "https://cdn.discordapp.com/avatars/$discord/$avatar.png" : '';
 	$profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($name);
-	$img     = "https://skulliance.io/staking/images/missions/" . mission_art_slug($q['title'])
-	         . "." . mission_art_ext($q['extension']);
+	/* Absolute for Discord, same buster: an embed cached against the old
+	   art is the same problem one step further away. */
+	$img     = "https://skulliance.io/staking/"
+	         . mission_art_url(mission_art_slug($q['title']), mission_art_ext($q['extension']));
 
 	$extras = array();
 	$boost_map = mission_boost_map();
