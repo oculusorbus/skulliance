@@ -201,6 +201,7 @@
 			var ac = art.getContext('2d');
 			ac.save();
 			ac.translate(cx, cy); ac.rotate(th);
+			if (s.artFlip) ac.scale(-1, 1);   // after the rotate, so a flip keeps the tilt
 			ac.drawImage(a, -dw / 2, -dh / 2, dw, dh);
 			ac.restore();
 			/* The shade: a falloff toward the bottom edge so the title reads. */

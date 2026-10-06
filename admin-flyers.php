@@ -114,6 +114,7 @@ admin_chrome('flyers');
               <button type="button" class="fly-ghost" data-match="bot">Match bottom edge</button>
               <button type="button" class="fly-ghost" data-match="zero">Straight</button>
           </div>
+          <label class="adm-inline"><input type="checkbox" id="f-artFlip"> Flip horizontally</label>
           <label>Move left/right <input type="range" id="f-artX" min="-1" max="1" step="0.005" value="0"></label>
           <label>Move up/down <input type="range" id="f-artY" min="-1" max="1" step="0.005" value="0"></label>
           <label>Shade at the bottom <input type="range" id="f-shade" min="0" max="1" step="0.01" value="0.35"></label>
@@ -226,7 +227,7 @@ admin_chrome('flyers');
 		var s = { seed: seed };
 		NUM.forEach(function (k) { s[k] = parseFloat($(k).value); });
 		COLS.forEach(function (k) { s[k] = $(k).value; });
-		['logoWhite', 'iconWhite', 'showIcon'].forEach(function (k) { s[k] = $(k).checked; });
+		['logoWhite', 'iconWhite', 'showIcon', 'artFlip'].forEach(function (k) { s[k] = $(k).checked; });
 		['name', 'ticker', 'line1', 'line2', 'line3', 'url', 'headFont'].forEach(function (k) { s[k] = $(k).value; });
 		s.bullets = [$('b1').value, $('b2').value, $('b3').value];
 		return s;
