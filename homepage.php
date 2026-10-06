@@ -1306,12 +1306,23 @@
              merch -- which is the same mistake the hero made and the same
              answer: a page that ends by offering a choice ends without an
              action. It closes on the one thing that costs a visitor
-             nothing, and repeats the headline's promise so the page ends
-             where it began. */ ?>
+             nothing, and echoes the headline so the page ends where it
+             began.
+
+             IT USED TO READ "Still just sitting there?", echoing the old
+             hero. That was the worse of the two: the hero described other
+             people's NFTs as inert, but this asked it of the READER, after
+             they had scrolled the whole page. Ending by implying somebody
+             is idle is a strange way to thank them for reading.
+
+             The body underneath was always right -- costs nothing, needs
+             no wallet, everything else waits for you -- so only the
+             challenge above it changed. "The fun part" picks up the word
+             the new hero is built on and hands straight to the button. */ ?>
     <section class="hp-layer hp-close">
       <div class="wrap hp-center">
         <img class="hp-final-art" src="https://www.skulliance.io/staking/images/skulliance-cardano-logo.png" alt="" width="1500" height="1674" loading="lazy" decoding="async">
-        <h2 class="hp-close-h">Still just sitting there?</h2>
+        <h2 class="hp-close-h">Start with the fun part.</h2>
         <p class="hp-say hp-close-p">Play something first - it costs nothing and needs no wallet. The
            staking, the artists and the rest of it will still be here when you want them.</p>
         <div class="hp-ctas" style="justify-content:center;">
