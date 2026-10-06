@@ -113,5 +113,101 @@ for (const k of Object.keys(els)) {
 	   `ajax/solana-link.php does not whitelist via='${k}', so link_method would record 'extension' instead`);
 }
 
-console.log('\n' + (fails ? `FAILED (${fails})\n` : 'solana wallet detection: ok\n'));
-process.exit(fails ? 1 : 0);
+console.log('\nthe session goes back when we are done with it');
+
+/*
+ * REPORTED ON THE SOLFLARE PROMPT, and true of MetaMask too: connecting
+ * grants the site the ability to PROPOSE a signature, and no wallet
+ * offers a read-only variant of that. The permission is the connection.
+ *
+ * What a site can do is not keep it. This platform needs the pubkey once
+ * -- ownership is read from our own RPC, server-side, from then on -- so
+ * solanaConnect() disconnects as soon as the link lands.
+ *
+ * This section exists because that change shipped WITHOUT it. Everything
+ * above only reads markup and a lookup table; nothing here had ever
+ * driven solanaConnect(), so the disconnect had no test at all while the
+ * identical Polygon revoke had six mutations behind it.
+ */
+function grab(sig) {
+	const at = src.indexOf(sig);
+	ok(at !== -1, sig + ' is gone from header.php');
+	if (at === -1) return '';
+	let i = src.indexOf('{', at), depth = 0;
+	for (; i < src.length; i++) {
+		if (src[i] === '{') depth++;
+		else if (src[i] === '}') { depth--; if (depth === 0) return src.slice(at, i + 1); }
+	}
+	return '';
+}
+const connectSrc = table + '\n' + grab('function solanaConnect(');
+
+function solWorld(opts) {
+	opts = opts || {};
+	const log = {result: null, posted: null, step: null, disconnects: 0};
+	const provider = {
+		isSolflare: true,
+		connect: () => Promise.resolve({publicKey: {toBase58: () => opts.addr || 'Fd5Sy7yPb5NyrsQ'}})
+	};
+	if (!opts.noDisconnect) provider.disconnect = () => {
+		log.disconnects++;
+		if (opts.disconnectThrows) throw new Error('nope');
+		if (opts.disconnectRejects) return Promise.reject(new Error('nope'));
+		return Promise.resolve();
+	};
+	const env = {
+		window: {solflare: provider},
+		document: {getElementById: () => null, querySelector: () => null},
+		solStatus: () => {}, solEsc: s => String(s), solSay: () => {},
+		solResult: (okFlag, msg) => { log.result = {ok: okFlag, msg: msg}; },
+		walletStep: st => { log.step = st; },
+		FormData: function () { this.d = {}; this.append = (k, v) => { this.d[k] = v; }; },
+		fetch: (url, init) => {
+			log.posted = {url: url, body: init.body.d};
+			return Promise.resolve({text: () => Promise.resolve(
+				JSON.stringify(opts.reply || {ok: true, message: 'Wallet linked.'}))});
+		},
+		setTimeout: () => {}, location: {reload: () => {}}
+	};
+	return {env, log};
+}
+function solRun(opts) {
+	const {env, log} = solWorld(opts);
+	const names = Object.keys(env);
+	new Function(...names, connectSrc + "\nsolanaConnect('solflare');")(...names.map(k => env[k]));
+	return new Promise(r => setImmediate(() => setImmediate(() => setImmediate(() => r(log)))));
+}
+
+solRun().then(log => {
+	ok(log.posted !== null, 'the connect never reached ajax/solana-link.php');
+	ok(log.disconnects === 1,
+	   'the wallet session is NOT handed back after linking (' + log.disconnects + ' disconnects)');
+	ok(log.result && log.result.ok, 'disconnecting broke the link it comes after');
+
+	/* Not on failure: Try Again must work without re-approving. */
+	return solRun({reply: {ok: false, message: 'That wallet is linked to another account.'}});
+}).then(log => {
+	ok(log.disconnects === 0,
+	   'the session is dropped even when the link FAILED, so Try Again needs a fresh approval');
+	ok(log.result && log.result.ok === false, 'the failure was not surfaced');
+
+	/* Best effort, three ways it can not work. */
+	return solRun({disconnectRejects: true});
+}).then(log => {
+	ok(log.result && log.result.ok, 'a wallet whose disconnect REJECTS turns a good link into a failure');
+	return solRun({disconnectThrows: true});
+}).then(log => {
+	ok(log.result && log.result.ok, 'a wallet whose disconnect THROWS takes the whole link down with it');
+	/* Not every provider implements it -- hence the `if (provider.disconnect)`
+	   guard. Without it this is a TypeError after a successful link. */
+	return solRun({noDisconnect: true});
+}).then(log => {
+	ok(log.result && log.result.ok,
+	   'a wallet with NO disconnect() method fails the link instead of being left alone');
+
+	console.log('\n' + (fails ? `FAILED (${fails})\n` : 'solana wallet: ok\n'));
+	process.exit(fails ? 1 : 0);
+}).catch(e => {
+	console.log('  FAIL  harness threw: ' + (e && e.stack || e));
+	process.exit(1);
+});
