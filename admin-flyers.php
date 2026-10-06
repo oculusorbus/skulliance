@@ -366,39 +366,40 @@ admin_chrome('flyers');
 		/*
 		 * A NEW WINDOW, SO THE WORK SURVIVES. Nothing here is saved, and
 		 * on some browsers (iOS, the installed PWA) a download navigates
-		 * the page itself -- taking every upload and slider with it. The
-		 * window is opened NOW, inside the click, because toBlob is async
-		 * and a window.open from its callback is a popup the browser
-		 * blocks. The blob URL is never revoked: the new window is still
-		 * showing it, and it dies with this page anyway.
+		 * the page itself -- taking every upload and slider with it.
+		 *
+		 * A DATA URL, NOT A BLOB URL. The first version handed the new
+		 * window a blob: URL made by THIS tab. The window is about:blank,
+		 * and Chrome could show that image but not save it -- "Save" and
+		 * "Save image as" both failed with a no-connection error, because
+		 * a download re-fetches its source and a blob owned by another
+		 * document is not something the about:blank page can fetch. A
+		 * data URL carries the bytes inside the page itself, so there is
+		 * nothing to fetch. toDataURL is synchronous, which also keeps
+		 * window.open inside the click, where popup blockers allow it.
 		 */
-		var win = window.open('', '_blank');
-		try {
-			canvas.toBlob(function (b) {
-				var url = URL.createObjectURL(b), file = name + '.png';
-				if (!win) {   // popup blocked: plain download, which most desktops handle in place
-					var a = document.createElement('a');
-					a.href = url; a.download = file; a.target = '_blank';
-					document.body.appendChild(a); a.click(); a.remove();
-					return;
-				}
-				win.document.write('<!doctype html><html><head><meta charset="utf-8">'
-					+ '<meta name="viewport" content="width=device-width,initial-scale=1">'
-					+ '<title>' + file + '</title><style>'
-					+ 'body{margin:0;background:#07111d;color:#c8d8e8;font:15px/1.5 Arial,sans-serif;text-align:center;padding:16px}'
-					+ 'img{max-width:100%;max-height:85vh;display:block;margin:0 auto 14px;border:1px solid rgba(0,200,160,.2)}'
-					+ 'a{display:inline-block;background:#00c8a0;color:#07111d;padding:11px 20px;font-weight:bold;text-decoration:none}'
-					+ 'p{color:#5a7888;font-size:13px}</style></head><body>'
-					+ '<img src="' + url + '" alt="">'
-					+ '<a href="' + url + '" download="' + file + '">Save ' + file + '</a>'
-					+ '<p>Or right-click / long-press the image to save it. Your builder tab is untouched.</p>'
-					+ '</body></html>');
-				win.document.close();
-			}, 'image/png');
-		} catch (err) {
-			if (win) win.close();
-			status.textContent = 'The browser would not export the canvas: ' + err.message;
+		var data;
+		try { data = canvas.toDataURL('image/png'); }
+		catch (err) { status.textContent = 'The browser would not export the canvas: ' + err.message; return; }
+		var file = name + '.png', win = window.open('', '_blank');
+		if (!win) {   // popup blocked: plain download, which desktops handle in place
+			var a = document.createElement('a');
+			a.href = data; a.download = file;
+			document.body.appendChild(a); a.click(); a.remove();
+			return;
 		}
+		win.document.write('<!doctype html><html><head><meta charset="utf-8">'
+			+ '<meta name="viewport" content="width=device-width,initial-scale=1">'
+			+ '<title>' + file + '</title><style>'
+			+ 'body{margin:0;background:#07111d;color:#c8d8e8;font:15px/1.5 Arial,sans-serif;text-align:center;padding:16px}'
+			+ 'img{max-width:100%;max-height:85vh;display:block;margin:0 auto 14px;border:1px solid rgba(0,200,160,.2)}'
+			+ 'a{display:inline-block;background:#00c8a0;color:#07111d;padding:11px 20px;font-weight:bold;text-decoration:none}'
+			+ 'p{color:#5a7888;font-size:13px}</style></head><body>'
+			+ '<img src="' + data + '" alt="">'
+			+ '<a href="' + data + '" download="' + file + '">Save ' + file + '</a>'
+			+ '<p>Or right-click / long-press the image to save it. Your builder tab is untouched.</p>'
+			+ '</body></html>');
+		win.document.close();
 	});
 
 	/* Fonts first, or the first frame is drawn in a fallback face and
