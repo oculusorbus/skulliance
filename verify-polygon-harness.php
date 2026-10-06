@@ -505,11 +505,23 @@ eval(plift($dsrc, 'function nftExplorerUrl(',      'nftExplorerUrl()'));
 
 $CC = '0xee79a3e8aef1109a6ee82bf399ce9e1bd43cf5c4';
 
-/* WITH a slug: OpenSea, which addresses a collection by slug and nothing
-   else. Danketsu's is danketsu-nft, verified against the live page --
-   "danketsu" is not it, and returns OpenSea's generic landing title. */
-ok(collectionMarketUrl($CC, POLYGON_CHAIN_ID, 'danketsu-nft')
-   === 'https://opensea.io/collection/danketsu-nft', 'the slug no longer reaches OpenSea');
+/*
+ * WITH a slug: OpenSea, which addresses a collection by slug and nothing
+ * else. Danketsu's is danketsu-3.
+ *
+ * I FIRST PUT danketsu-nft HERE AND IT WAS A COPYCAT -- a different
+ * 11-item collection that happens to share the name. I had "verified"
+ * it by loading the page and seeing a plausible <title>, which checks
+ * that a slug EXISTS, not that it is the right CONTRACT. A slug carries
+ * no identity: anyone can mint 11 items and call them Danketsu.
+ *
+ * THE ONLY SAFE CHECK STARTS FROM THE CONTRACT. Open
+ * opensea.io/item/polygon/<contract>/<id>, which cannot be
+ * impersonated, and click through to the collection it belongs to.
+ * That is how danketsu-3 was arrived at. Never by searching the name.
+ */
+ok(collectionMarketUrl($CC, POLYGON_CHAIN_ID, 'danketsu-3')
+   === 'https://opensea.io/collection/danketsu-3', 'the slug no longer reaches OpenSea');
 /* WITHOUT one: NOT OpenSea. Handing it a contract address produces a dead
    page -- the same trap wayup set on Cardano. Rarible addresses by
    contract and works, so it is the nearest honest thing. */
@@ -531,7 +543,7 @@ ok(collectionMarketUrl(str_repeat('a', 56), 1, 'some-slug')
    so it is built, and must not fall through to pool.pm. */
 $fake_conn = new PConn();
 $tok = nftExplorerUrl($fake_conn, $CC . ':4312', POLYGON_CHAIN_ID);
-ok($tok === 'https://opensea.io/assets/matic/' . $CC . '/4312',
+ok($tok === 'https://opensea.io/item/polygon/' . $CC . '/4312',
    'the token link is ' . var_export($tok, true));
 ok(strpos($tok, 'pool.pm') === false, 'a Polygon token links to a Cardano explorer');
 ok(nftExplorerUrl($fake_conn, 'no-colon-here', POLYGON_CHAIN_ID) === '',

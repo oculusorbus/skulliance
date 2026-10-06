@@ -3554,8 +3554,12 @@ function nftExplorerUrl($conn, $asset_id, $blockchain_id = 1) {
 	 */
 	if ($bid === POLYGON_CHAIN_ID && !isset($tpl[$bid])) {
 		$p = explode(':', (string)$asset_id, 2);
+		/* /item/polygon/, not /assets/matic/. The old shape still works by
+		   redirect, but a redirect is a round trip and the canonical form
+		   is what OpenSea serves today -- verified by loading the old one
+		   and watching it land on the new. */
 		if (count($p) === 2 && $p[0] !== '' && $p[1] !== '')
-			return 'https://opensea.io/assets/matic/' . rawurlencode($p[0]) . '/' . rawurlencode($p[1]);
+			return 'https://opensea.io/item/polygon/' . rawurlencode($p[0]) . '/' . rawurlencode($p[1]);
 		return '';
 	}
 	$t = isset($tpl[$bid]) ? $tpl[$bid] : $tpl[1];

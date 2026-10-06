@@ -82,7 +82,7 @@ $ROWS = array(
 	      'marketplace_slug' => null, 'rate' => '5', 'project_name' => 'Skulliance',
 	      'currency' => 'SKULL', 'total' => '120'),
 	array('collection_name' => 'Danketsu', 'policy' => '0xee79a3e8aef1109a6ee82bf399ce9e1bd43cf5c4',
-	      'blockchain_id' => 4, 'marketplace_slug' => 'danketsu-nft', 'rate' => '3',
+	      'blockchain_id' => 4, 'marketplace_slug' => 'danketsu-3', 'rate' => '3',
 	      'project_name' => 'Danketsu', 'currency' => 'DANK', 'total' => '1'),
 );
 

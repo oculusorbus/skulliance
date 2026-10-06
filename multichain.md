@@ -1806,9 +1806,9 @@ failed link** — Try Again has to work without a second approval.
 
 | Link | Built by | Shape |
 |---|---|---|
-| Collection | `collectionMarketUrl()` | OpenSea, **by slug** — Danketsu's is `danketsu-nft`, verified against the live page (`danketsu` is a different thing). Polygon joins `$slug_chains`. |
+| Collection | `collectionMarketUrl()` | OpenSea, **by slug** — Danketsu's is `danketsu-3`. Polygon joins `$slug_chains`. **A SLUG CARRIES NO IDENTITY** — see §14i. |
 | Collection, no slug | same | **Rarible**, which addresses by contract. Not OpenSea with a contract — that is the dead-link trap wayup set on Cardano. |
-| Token | `nftExplorerUrl()` | `opensea.io/assets/matic/<contract>/<id>`. Built, not substituted: `asset_id` is two things and a one-`%s` template cannot express it. A `blockchains.explorer_nft` template still wins if one is set. |
+| Token | `nftExplorerUrl()` | `opensea.io/item/polygon/<contract>/<id>` — the canonical shape; `/assets/matic/` still works but redirects. Built, not substituted: `asset_id` is two things and a one-`%s` template cannot express it. A `blockchains.explorer_nft` template still wins if one is set. |
 | Wallet | `accountExplorerUrl()` | PolygonScan. Not a default to pool.pm, which renders "not found" and reads as a lost wallet. |
 
 ### 14g. Operating it
@@ -1850,3 +1850,42 @@ close, which is why 16 was fine for years.
 * Danketsu's art is **split across several CID directories** (token 1 and
   token 2519 are in different ones), so a partial pin shows up as some
   images working and others not, rather than a uniform failure.
+
+### 14i. A marketplace slug carries no identity
+
+I shipped `danketsu-nft` as Danketsu's OpenSea slug. It is a **copycat**
+— a different, 11-item collection that happens to share the name. The
+real one is **`danketsu-3`**.
+
+What I did to "verify" it was load `opensea.io/collection/danketsu-nft`
+and see the title *Danketsu NFT - Collection | OpenSea*, versus
+`opensea.io/collection/danketsu` which returned OpenSea's generic
+landing title. That distinguishes **a slug that exists** from **a slug
+that does not**. It says nothing about which contract is behind it, and
+a name is free: anyone can mint eleven pictures and call them Danketsu.
+
+**The only safe check starts from the contract and walks outward:**
+
+1. Open `opensea.io/item/polygon/<contract>/<tokenId>`. That URL is
+   addressed by contract and cannot be impersonated.
+2. Click through to the collection it belongs to.
+3. The slug in the resulting URL is the real one.
+
+Never arrive at a slug by searching the collection's name, and never
+accept one because the page loaded.
+
+**This is an argument against slugs generally.** Every other Polygon
+link here is contract-addressed and therefore unfakeable — the token
+link, the wallet link, and the no-slug Rarible fallback. The collection
+link is the only one that depends on a human having typed the right
+free-text string into an admin field, and it is the only one that has
+been wrong. If a contract-addressed collection URL becomes available on
+a marketplace the project actually uses, prefer it and drop the slug.
+
+**Worth knowing for Danketsu specifically:** the `danketsu-3` page
+carries the banner *"WE ARE NO LONGER TRADEABLE ON OS — Please go to
+Magic Eden"*. So the correct OpenSea link now points at a market the
+project has left. Magic Eden's Polygon URL shape could not be
+determined — `magiceden.io/collections/polygon/<contract>` and
+`magiceden.us/collections/polygon/<contract>` both 404 — so that is an
+open question rather than a finished decision.
