@@ -166,6 +166,60 @@ function hp_stat_artists($fallback = 0) {
 	}, $fallback);
 }
 
+/**
+ * The chains staking actually runs on, with how much is on each.
+ *
+ * READ FROM THE DATABASE RATHER THAN LISTED, and that is the whole point
+ * of it existing. The homepage named its chains in four separate hand-
+ * written strings, and when Solana shipped only three got updated -- one
+ * still read "built on Cardano with the XRP Ledger alongside it" months
+ * later. A band of logos maintained by hand would be the fifth place to
+ * go stale, and the most visible.
+ *
+ * A CHAIN WITH NO COLLECTIONS IS NOT ADVERTISED. blockchains can carry a
+ * row that has been set up but has nothing on it yet -- that is a
+ * configuration step, not a chain this platform stakes. Same rule as
+ * hp_dhc_fighters(): a marketing section with empty frames is worse than
+ * one section shorter.
+ *
+ * Ordered by how much is on each, so Cardano leads because it genuinely
+ * does rather than because it is hardcoded first.
+ *
+ * Returns a list of ['slug','name','collections','projects'], or the
+ * caller's fallback. The caller renders nothing on an empty list.
+ */
+function hp_chains($fallback = array()) {
+	$raw = hp_cached('chains', function ($c) {
+		$r = @$c->query(
+			"SELECT b.slug, b.name,
+			        COUNT(DISTINCT col.id)         AS collections,
+			        COUNT(DISTINCT col.project_id) AS projects
+			   FROM blockchains b
+			   INNER JOIN collections col ON col.blockchain_id = b.id
+			  WHERE b.active = 1
+			  GROUP BY b.id, b.slug, b.name
+			  ORDER BY collections DESC, b.id ASC");
+		if (!$r) return null;
+		$out = array();
+		while ($row = $r->fetch_assoc()) {
+			$slug = preg_replace('/[^a-z0-9-]/', '', strtolower((string)$row['slug']));
+			if ($slug === '') continue;
+			$out[] = array(
+				'slug'        => $slug,
+				'name'        => (string)$row['name'],
+				'collections' => (int)$row['collections'],
+				'projects'    => (int)$row['projects'],
+			);
+		}
+		/* null, not '[]', so hp_cached() keeps the last good answer rather
+		   than caching an empty band over it for five minutes. */
+		return $out ? json_encode($out) : null;
+	}, '');
+
+	$list = (is_string($raw) && $raw !== '') ? json_decode($raw, true) : null;
+	return is_array($list) ? $list : $fallback;
+}
+
 /** Wallets linked, across every chain. */
 function hp_stat_wallets($fallback = 0) {
 	return (int)hp_cached('wallets', function ($c) {

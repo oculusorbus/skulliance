@@ -369,6 +369,21 @@
     }
     .hp-layer + .hp-layer { border-top: 0; }
     .hp-layer.alt { background: #0a1724; }
+    /* The chain band. Logos are white monochrome marks on transparent --
+       the same files the wallet modal uses -- so they sit on this dark
+       ground without a plate behind them. Cardano's is a 128px source and
+       the rest are 256px; both land fine at 44. */
+    .hp-chains { list-style: none; margin: 30px 0 0; padding: 0; display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+    .hp-chain { display: flex; flex-direction: column; align-items: center;
+      text-align: center; gap: 9px; padding: 22px 14px;
+      background: #0a1929; border: 1px solid rgba(0,200,160,.14); }
+    .hp-chain-icon { width: 44px; height: 44px; object-fit: contain; opacity: .92; }
+    .hp-chain-mark { display: flex; align-items: center; justify-content: center;
+      background: #123049; color: #00c8a0; font-weight: 700; font-size: .8rem;
+      letter-spacing: .04em; }
+    .hp-chain-name { font-weight: 600; color: #e8eaed; }
+    .hp-chain-n { font-size: .78rem; color: #7a9eb0; line-height: 1.45; }
     .hp-layer .wrap { max-width: 1120px; margin: 0 auto; padding: 0 22px; }
     /* A layer heading is BIG and can sit left. A centred 1.5rem h2 over a
        centred paragraph is the shape of a 2009 brochure. */
@@ -1027,6 +1042,73 @@
              that is labelled as evidence of depth rather than as a menu.
              Nothing was deleted; the twenty stopped competing with the
              three that matter. */ ?>
+    <?php
+    /* ---- the chains ----------------------------------------------------
+     *
+     * WHAT THIS BAND IS FOR. A visitor arriving from Danketsu or OMEN has
+     * exactly one question before any of the rest of this page matters:
+     * is my chain here. The lede names all four in a sentence, which
+     * answers it only if you read the sentence.
+     *
+     * IT IS NOT A ROW OF LOGOS. Four crypto logos in a row is the generic
+     * thing every chain-adjacent site does and it reads as padding. Each
+     * one here carries what is actually ON that chain, counted from the
+     * database -- which is both the more convincing claim and the reason
+     * it cannot go stale. The page already had four hand-written chain
+     * lists and one of them sat wrong for months after Solana shipped; a
+     * hand-maintained logo band would have been the fifth.
+     *
+     * The order is by how much is on each, so Cardano leads because it
+     * genuinely does rather than because it was typed first.
+     *
+     * Renders NOTHING if the query fails or a chain has no collections.
+     * An empty or half-populated band is worse than no band.
+     */
+    $hp_chains = function_exists('hp_chains') ? hp_chains() : array();
+    if ($hp_chains):
+      $hp_icon_base = 'https://www.skulliance.io/staking/icons/';
+      /* THE SLUG IS NOT ALWAYS THE FILENAME. blockchains.slug is 'xrpl'
+         and the logo has always been icons/xrp.png -- named after the
+         asset, not the ledger. Mapped here rather than by renaming the
+         file, because that file is referenced by the wallet modal too and
+         images ship by FTP, so a rename is a deploy nobody can do from
+         the repo. Anything unmapped uses its slug, which is right for
+         cardano, solana and polygon. */
+      $hp_icon_file = array('xrpl' => 'xrp');
+    ?>
+    <section id="chains" class="hp-layer hp-thin">
+      <div class="wrap">
+        <span class="hp-kick">Four chains</span>
+        <h2>Wherever your NFTs live, they can work here.</h2>
+        <p class="hp-say">Skulliance started on Cardano and did not stay there. Staking,
+           missions, games and the marketplace are the same wherever your NFTs came
+           from - the points land in one account.</p>
+
+        <ul class="hp-chains">
+          <?php foreach ($hp_chains as $hp_c):
+            $hp_n = (int)$hp_c['collections'];
+            $hp_p = (int)$hp_c['projects'];
+          ?>
+          <li class="hp-chain">
+            <?php /* The lettermark fallback is not decoration: icons ship by
+                     FTP and live outside the repo, so a deploy to a host that
+                     has not had them uploaded would otherwise print four
+                     broken-image glyphs on the front page. */ ?>
+            <img class="hp-chain-icon" loading="lazy" decoding="async" alt=""
+                 src="<?php echo $hp_icon_base . rawurlencode(isset($hp_icon_file[$hp_c['slug']]) ? $hp_icon_file[$hp_c['slug']] : $hp_c['slug']); ?>.png"
+                 onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'hp-chain-icon hp-chain-mark',textContent:<?php echo htmlspecialchars(json_encode(strtoupper(substr($hp_c['slug'], 0, 3))), ENT_QUOTES); ?>}))">
+            <span class="hp-chain-name"><?php echo htmlspecialchars($hp_c['name']); ?></span>
+            <span class="hp-chain-n"><?php
+              echo number_format($hp_n) . ' collection' . ($hp_n === 1 ? '' : 's');
+              if ($hp_p > 1) echo ' &middot; ' . number_format($hp_p) . ' projects';
+            ?></span>
+          </li>
+          <?php endforeach; ?>
+        </ul>
+      </div>
+    </section>
+    <?php endif; ?>
+
     <section id="platform" class="hp-layer">
       <div class="wrap">
         <span class="hp-kick">The staking platform</span>
