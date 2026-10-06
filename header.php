@@ -490,6 +490,11 @@
 					     onerror="walletMark(this,'SOL')">
 					<span class="wallet-panel-name">Solana<small>Solflare, Phantom&hellip;</small></span>
 				</div>
+				<div class="wallet-panel" onclick="walletStep('polygon')" title="Polygon wallets">
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/polygon.png" alt=""
+					     onerror="walletMark(this,'POL')">
+					<span class="wallet-panel-name">Polygon<small>MetaMask, Rabby&hellip;</small></span>
+				</div>
 				<div class="wallet-panel" onclick="walletStep('xrpl')" title="XRPL wallets">
 					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/xrp.png" alt=""
 					     onerror="walletMark(this,'XRP')">
@@ -577,6 +582,30 @@
 					<strong>skulliance.io/staking</strong> inside the
 					<strong>Solflare</strong> or <strong>Phantom</strong> app's own
 					browser &mdash; there are no wallet extensions on mobile.
+				</div>
+			</div>
+			<?php /* POLYGON. One tile, because on an EVM chain there is only
+			         ever one provider to talk to: every browser wallet
+			         injects window.ethereum, and whichever the user has set
+			         as default is the one that answers. Listing MetaMask,
+			         Rabby and Coinbase separately would be three buttons
+			         that all do the same thing and two of them lying about
+			         which wallet is about to open.
+
+			         Hidden until detected, same as the Solana grid and for
+			         the same reason. */ ?>
+			<div id="wallet-polygon-list" class="wallet-grid" style="display:none">
+				<div class="wallet-panel" id="evm-btn" style="display:none"
+				     onclick="polygonConnect()" title="Connect your Polygon wallet">
+					<img class="wallet-panel-icon" loading="lazy" decoding="async" src="icons/metamask.png" alt=""
+					     onerror="walletMark(this,'MM')">
+					<span class="wallet-panel-name" id="evm-btn-name">MetaMask<small>Browser extension</small></span>
+				</div>
+				<div class="wallet-panel-empty" id="polygon-note">
+					No wallet detected. On a phone, open
+					<strong>skulliance.io/staking</strong> inside the
+					<strong>MetaMask</strong> app's own browser &mdash; there are
+					no wallet extensions on mobile.
 				</div>
 			</div>
 			<div id="wallet-xrpl-list" class="wallet-grid" style="display:none">
@@ -902,6 +931,125 @@
 				               + ' onclick="walletStep(\'solana\')">Try Again</button>'));
 			}
 
+			/* ---------------- POLYGON (EVM) ----------------------------
+			   ONE PROVIDER, NOT A LIST. Every EVM browser wallet injects
+			   window.ethereum and the user's default is whichever answers,
+			   so unlike Solana there is nothing to match on a namespace --
+			   and nothing to get wrong by matching. The tile names whatever
+			   actually turned up rather than always saying MetaMask.
+
+			   THE SELECTED NETWORK DOES NOT MATTER for reading ownership.
+			   eth_requestAccounts returns the same address whatever chain
+			   the wallet is on -- an EVM address is identical across all of
+			   them -- and this platform reads Danketsu ownership from its
+			   OWN Polygon node, server-side. The switch below is therefore
+			   reassurance, not a requirement: somebody who connects while
+			   on Ethereum, sees no mention of Polygon and stakes nothing
+			   will blame the network. Which is exactly why a DECLINED
+			   switch must still link the wallet. */
+			var EVM_WALLETS = [
+				['isRabby',          'Rabby'],
+				['isCoinbaseWallet', 'Coinbase Wallet'],
+				['isBraveWallet',    'Brave Wallet'],
+				['isTrust',          'Trust Wallet'],
+				['isMetaMask',       'MetaMask']
+			];
+			function evmProvider(){
+				var p = window.ethereum;
+				if (!p) return null;
+				/* Several wallets installed: EIP-5749 puts them all on
+				   .providers and window.ethereum is whichever won the race.
+				   Prefer MetaMask there, since that is the tile's logo. */
+				if (p.providers && p.providers.length) {
+					for (var i = 0; i < p.providers.length; i++)
+						if (p.providers[i] && p.providers[i].isMetaMask) return p.providers[i];
+					return p.providers[0];
+				}
+				return p;
+			}
+			function evmName(p){
+				if (!p) return 'MetaMask';
+				for (var i = 0; i < EVM_WALLETS.length; i++)
+					if (p[EVM_WALLETS[i][0]]) return EVM_WALLETS[i][1];
+				return 'Your wallet';
+			}
+			function polyResult(ok, msg){
+				solStatus('<span class="wallet-result-icon ' + (ok ? 'success' : 'error') + '">'
+				        + (ok ? '&#10003;' : '&#10007;') + '</span>'
+				        + '<p class="wallet-status-text">' + solEsc(msg) + '</p>'
+				        + (ok ? '' : '<button class="wallet-refresh-btn wallet-result-action"'
+				               + ' onclick="walletStep(\'polygon\')">Try Again</button>'));
+			}
+
+			/* Polled for the same reason the Solana probe is: an extension's
+			   injection can land after this script does. */
+			(function(){
+				var tries = 0;
+				var t = setInterval(function(){
+					var btn = document.getElementById('evm-btn');
+					var note = document.getElementById('polygon-note');
+					var p = evmProvider();
+					if (btn && p) {
+						btn.style.display = '';
+						var nm = document.getElementById('evm-btn-name');
+						if (nm) nm.innerHTML = solEsc(evmName(p))
+						                     + '<small>Browser extension</small>';
+					}
+					if (note) note.style.display = (btn && btn.style.display !== 'none') ? 'none' : '';
+					if (p || ++tries > 40) clearInterval(t);
+				}, 250);
+			})();
+
+			function polygonConnect(){
+				var provider = evmProvider();
+				if (!provider) { polyResult(false, 'No Ethereum wallet is available on this page.'); return; }
+				var label = evmName(provider);
+				solSay('Waiting for ' + label + '\u2026 approve the connection in your wallet.');
+
+				Promise.resolve(provider.request({method: 'eth_requestAccounts'}))
+					.then(function(accts){
+						if (!accts || !accts.length) throw new Error('The wallet did not return an address.');
+						var addr = String(accts[0]);
+						/* ASK for Polygon, do not require it. 0x89 is 137.
+						   4902 means the chain is not in their wallet yet;
+						   offering to add it is a second prompt for something
+						   that changes nothing here, so it is not offered.
+						   Any refusal at all falls through to the link. */
+						return Promise.resolve(provider.request({
+								method: 'wallet_switchEthereumChain',
+								params: [{chainId: '0x89'}]
+							}))
+							.catch(function(){ return null; })
+							.then(function(){ return addr; });
+					})
+					.then(function(addr){
+						solSay('Linking\u2026 reading what you hold.');
+						var fd = new FormData();
+						fd.append('address', addr);
+						fd.append('via', 'metamask');
+						return fetch('ajax/polygon-link.php',
+							{method:'POST', body:fd, credentials:'same-origin'});
+					})
+					.then(function(r){ return r.text(); })
+					.then(function(t){
+						var res; try { res = JSON.parse(t); } catch(e){ throw new Error(t.slice(0,120)); }
+						if (!res.ok) { polyResult(false, res.message || 'Could not link.'); return; }
+						polyResult(true, res.message || 'Wallet linked.');
+						setTimeout(function(){ location.reload(); }, 1600);
+					})
+					.catch(function(e){
+						/* Closing the popup is an ANSWER, not a fault. EIP-1193
+						   says 4001 for a user rejection; put them back on the
+						   grid rather than showing an error with a Try Again. */
+						var m = (e && e.message) ? e.message : 'Could not connect.';
+						if ((e && e.code === 4001) || /reject|cancel|denied|closed|user/i.test(m)) {
+							if (typeof walletStep === 'function') walletStep('polygon');
+							return;
+						}
+						polyResult(false, m);
+					});
+			}
+
 			function solanaConnect(which){
 				var def = SOLANA_EXT[which];
 				var provider = def && def.get();
@@ -1133,7 +1281,8 @@
 			         exactly what that page did before any of this existed. */ ?>
 			<script>
 			var WALLET_MULTICHAIN = <?php echo $wallet_multichain ? 'true' : 'false'; ?>;
-			var WALLET_STEPS = {chain:'wallet-chain', cardano:'wallet-grid', xrpl:'wallet-xrpl-list', solana:'wallet-solana-list'};
+			var WALLET_STEPS = {chain:'wallet-chain', cardano:'wallet-grid', xrpl:'wallet-xrpl-list',
+			                    solana:'wallet-solana-list', polygon:'wallet-polygon-list'};
 			var walletStepCur = WALLET_MULTICHAIN ? 'chain' : 'cardano';
 
 			/* SAFETY NET, NOT THE EXPECTED STATE. All six logos are on the
@@ -1165,6 +1314,7 @@
 				if (ttl) ttl.textContent = step === 'cardano' ? 'Cardano Wallets'
 				                         : step === 'xrpl'    ? 'XRPL Wallets'
 				                         : step === 'solana'  ? 'Solana Wallets'
+				                         : step === 'polygon' ? 'Polygon Wallets'
 				                         :                      'Connect Wallet';
 				var st = document.getElementById('wallet-status');
 				if (st) { st.style.display = 'none'; st.innerHTML = ''; }
