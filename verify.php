@@ -102,6 +102,107 @@ if(isset($_GET['verify']) && $_GET['verify'] === 'solana'){
 }
 
 /*
+ * THE POLYGON PASS, BY HAND. Like the other two, this is not a scheduled
+ * job -- it runs inside the main verify block, for the reason written
+ * there.
+ *
+ *   php verify.php verify=polygon                run it now
+ *   php verify.php verify=polygon dry=1          read and report, write nothing
+ *   php verify.php verify=polygon dry=1 addr=0x. ...using one address, before
+ *                                                anybody has linked a wallet
+ */
+if(isset($_GET['verify']) && $_GET['verify'] === 'polygon'){
+	set_time_limit(0);
+	require_once __DIR__ . '/verify-polygon.php';
+
+	$poly_collections = getCollectionIDs($conn, POLYGON_CHAIN_ID);
+
+	/* addr=... uses ONE address instead of the wallets table, so the pass
+	   can be proven before anybody has linked anything. Dry runs only: a
+	   real pass must read the wallets table or it would clear everybody
+	   else's rows and rebuild only this one. */
+	if(!empty($_GET['addr'])){
+		if(empty($_GET['dry'])){
+			echo "addr= is for dry runs only. A real pass reads the wallets table,\n";
+			echo "and running it for one address would clear everybody else's rows.\n";
+			exit(1);
+		}
+		$poly_addresses = array((string)$_GET['addr']);
+	}else{
+		$poly_addresses = getAllAddresses($conn, POLYGON_CHAIN_ID);
+	}
+
+	if(!$poly_collections){
+		echo "polygon: no collections registered for chain " . POLYGON_CHAIN_ID . ".\n";
+		echo "  Add one in the Collections admin panel, with the CONTRACT ADDRESS\n";
+		echo "  as the policy, in lower case.\n";
+		exit(1);
+	}
+	if(!$poly_addresses){
+		echo "polygon: no wallets linked on chain " . POLYGON_CHAIN_ID . ".\n";
+		echo "  Try a dry run against one address first:\n"
+		   . "    php verify.php verify=polygon dry=1 addr=0xYourAddress\n";
+		exit(1);
+	}
+
+	/*
+	 * A DRY RUN PRINTS THE WHOLE OWNER MAP, not just our share.
+	 *
+	 * The failure this exists to catch is a contract address that is
+	 * wrong by a character. On the per-wallet chains that shows up as
+	 * "held, but NOT registered"; here it cannot, because an unregistered
+	 * contract is never read at all. What it looks like instead is a
+	 * collection whose map comes back EMPTY -- indistinguishable from a
+	 * correct run against a collection nobody here holds, unless the
+	 * supply is printed beside it.
+	 */
+	if(!empty($_GET['dry'])){
+		$node = poly_pick_node(getChainSetting($conn, POLYGON_CHAIN_ID, 'api_base', ''));
+		if($node === ''){
+			echo "polygon DRY RUN - no node answered on chain 137.\n";
+			exit(1);
+		}
+		echo "polygon DRY RUN - nothing was written\n";
+		echo "  node: $node\n";
+		printf("  %d address(es), %d registered collection(s)\n",
+			count($poly_addresses), count($poly_collections));
+
+		$mine = array();
+		foreach($poly_addresses AS $a){
+			$n = poly_norm_address($a);
+			if($n === '') echo "  NOT AN ADDRESS: " . $a . "\n";
+			else $mine[$n] = 1;
+		}
+
+		$total_ours = 0; $bad = 0;
+		foreach($poly_collections AS $contract => $cid){
+			$map = poly_owner_map($node, $contract, 'poly_http');
+			if(!$map['ok']){
+				$bad++;
+				printf("  %-44s COULD NOT READ: %s\n", $contract, implode('; ', $map['failed']));
+				echo "    A contract address that is wrong by one character looks exactly\n";
+				echo "    like this. Check it against the chain before blaming the node.\n";
+				continue;
+			}
+			$ours = 0;
+			foreach($map['owners'] AS $owner) if(isset($mine[$owner])) $ours++;
+			$total_ours += $ours;
+			printf("  %-44s supply %d, %d owned, %d ours\n",
+				$contract, $map['supply'], count($map['owners']), $ours);
+			if(count($map['owners']) === 0){
+				echo "    NOBODY owns any of it, which for a live collection means the\n";
+				echo "    policy in the collections table is not this contract.\n";
+			}
+		}
+		echo $total_ours ? "  would stake: $total_ours\n" : "  would stake: NOTHING\n";
+		exit(($bad || !$total_ours) ? 1 : 0);
+	}
+
+	echo poly_nightly($conn) . "\n";
+	exit;
+}
+
+/*
  * THE XRPL PASS, BY HAND. Not a scheduled job -- see the note in the main
  * verify block below for why it runs inside that one instead.
  *
@@ -225,6 +326,21 @@ if(isset($_GET['verify'])){
 	 */
 	require_once __DIR__ . '/verify-solana.php';
 	echo sol_nightly($conn) . "\n";
+
+	/*
+	 * POLYGON, SAME PLACE AND SAME CONTRACT. poly_nightly() never throws
+	 * and is bounded by a wall-clock budget, and it clears only
+	 * removeUsers($conn, POLYGON_CHAIN_ID).
+	 *
+	 * It is CHEAPER than the two above rather than more expensive, which
+	 * is worth knowing before anyone reaches for a budget: this chain
+	 * reads the collection once instead of once per address, so its cost
+	 * is set by how big the collection is, not by how many holders have
+	 * linked a wallet. 4,444 tokens is 18 calls, measured at ~3.2s on
+	 * this server, and that figure does not move as the platform grows.
+	 */
+	require_once __DIR__ . '/verify-polygon.php';
+	echo poly_nightly($conn) . "\n";
 
 	$addresses = array();
 	$addresses = getAllAddresses($conn);

@@ -168,12 +168,21 @@ ok(poly_gateway_cid('https://omenati.com/art/01998.jpg') === null,
 ok(poly_storable_image('https://omenati.com/art/01998.jpg') === 'https://omenati.com/art/01998.jpg',
    "OMEN's absolute URL is no longer stored whole -- that breaks Solana");
 
-ok(poly_storable_image($DANK) === 'bafybeihz5555nb3vdcteuczpsdoqizesglvqp3nvubtsqw6cyqa6h4la6i/1.png?ext=png',
+/*
+ * WHAT THIS FUNCTION RETURNS IS PRE-STRIP, NOT WHAT LANDS IN THE COLUMN.
+ * processNFT() does substr($image, 7) on its way to nfts.ipfs, so the
+ * 'ipfs://' has to still be attached here. Returning the bare CID -- which
+ * is what the column ends up holding, and therefore looks correct -- costs
+ * the CID its first seven characters, silently. The round-trip below is
+ * what actually pins this; these three only say what the contract is.
+ */
+$CIDPATH = 'bafybeihz5555nb3vdcteuczpsdoqizesglvqp3nvubtsqw6cyqa6h4la6i/1.png?ext=png';
+$CIDONLY = 'bafybeihz5555nb3vdcteuczpsdoqizesglvqp3nvubtsqw6cyqa6h4la6i';
+ok(poly_storable_image($DANK) === 'ipfs://' . $CIDPATH,
    'the Danketsu image is not stored as a CID the cache can race for');
-ok(poly_storable_image('ipfs://bafybeihz5555nb3vdcteuczpsdoqizesglvqp3nvubtsqw6cyqa6h4la6i')
-   === 'bafybeihz5555nb3vdcteuczpsdoqizesglvqp3nvubtsqw6cyqa6h4la6i', 'a plain ipfs:// uri is mangled');
-ok(poly_storable_image('ipfs://ipfs/bafybeihz5555nb3vdcteuczpsdoqizesglvqp3nvubtsqw6cyqa6h4la6i')
-   === 'bafybeihz5555nb3vdcteuczpsdoqizesglvqp3nvubtsqw6cyqa6h4la6i', 'the doubled ipfs/ prefix survives');
+ok(poly_storable_image('ipfs://' . $CIDONLY) === 'ipfs://' . $CIDONLY, 'a plain ipfs:// uri is mangled');
+ok(poly_storable_image('ipfs://ipfs/' . $CIDONLY) === 'ipfs://' . $CIDONLY,
+   'the doubled ipfs/ prefix survives');
 /* A poisoned nfts.ipfs is unrecoverable in practice, so anything that is
    neither a CID nor an absolute URL is dropped rather than stored. */
 ok(poly_storable_image('ar://abcdef') === '', 'an arweave uri is being stored');
@@ -346,7 +355,8 @@ ok(!isset($by[$C1 . ':3']), "a token owned by a stranger was written");
 ok($by[$C1 . ':1']['chain'] === POLYGON_CHAIN_ID,
    'the row is not tagged Polygon -- the Cardano pass will zero it tonight');
 ok($by[$C1 . ':1']['name'] === 'Danketsu #1', 'the name did not come from the metadata');
-ok($by[$C1 . ':1']['image'] === str_repeat('a', 59) . '/1.png', 'the image was not stored as a CID');
+ok($by[$C1 . ':1']['image'] === 'ipfs://' . str_repeat('a', 59) . '/1.png',
+   'the image handed to processNFT lost its ipfs:// prefix');
 
 echo "\na mixed-case wallet still matches\n";
 
@@ -423,6 +433,51 @@ $r = run_pass($conn, array($A), array($C1 => 7), array());
 ok($r['repaired'] === 1, 'a row with no picture was not repaired when the document came back');
 ok($REPAIRED && $REPAIRED[0][0] === $C1 . ':1', 'the repair targeted the wrong asset');
 $conn->blank = array();
+
+echo "\nthrough the real processNFT, into the column\n";
+
+/*
+ * THE STUB ABOVE IS NOT THE WRITER. Every check so far has handed its
+ * image to a processNFT() defined in this file, which records whatever it
+ * is given -- so it could not possibly catch the value being the wrong
+ * SHAPE for the real one. The real processNFT() strips seven characters
+ * off anything that is not an absolute URL, and that is a contract
+ * between two files with nothing enforcing it.
+ *
+ * So the real branch is lifted out of verify.php and run. What it
+ * computes as $ipfs is literally what lands in nfts.ipfs.
+ */
+$vsrc = file_get_contents(__DIR__ . '/verify.php');
+$pat  = "if(str_contains(\$image, \"data:image/svg+xml;base64\")){";
+$at   = strpos($vsrc, $pat);
+ok($at !== false, "processNFT()'s image branch is gone from verify.php");
+/* To the END of the chain, not to the first `}else{`. The clause that
+   matters is the LAST one -- the substr($image, 7) -- and an extraction
+   that stops at the first else drops exactly the behaviour under test,
+   leaving $ipfs unset and every assertion comparing against null. */
+$tail = strpos($vsrc, '$ipfs = substr($image, 7, strlen($image));', $at);
+ok($tail !== false, 'the substr(7) clause is gone from processNFT()');
+$end  = strpos($vsrc, '}', $tail) + 1;
+$branch = substr($vsrc, $at, $end - $at);
+
+function stored_ipfs($image, $branch) {
+	$ipfs = null;
+	eval($branch);
+	return $ipfs;
+}
+ok(stored_ipfs(poly_storable_image($DANK), $branch) === $CIDPATH,
+   'the Danketsu image lands in nfts.ipfs as ' . var_export(stored_ipfs(poly_storable_image($DANK), $branch), true)
+ . ', not the CID -- processNFT() strips seven characters and this value was already stripped');
+ok(stored_ipfs(poly_storable_image('ipfs://' . $CIDONLY), $branch) === $CIDONLY,
+   'a plain CID does not survive the round trip');
+/* And the OMEN shape must still come out whole, because the same branch
+   serves Solana and an absolute URL must NOT be chopped. */
+ok(stored_ipfs(poly_storable_image('https://omenati.com/art/01998.jpg'), $branch)
+   === 'https://omenati.com/art/01998.jpg', "OMEN's URL is being chopped on the way into the column");
+/* The cache's own floor: under 46 characters it refuses the value as a
+   malformed CID, so what we store has to clear it. */
+ok(strlen(stored_ipfs(poly_storable_image($DANK), $branch)) >= 46,
+   'the stored value is under the image cache\'s 46-character CID floor and will be skipped');
 
 echo "\nwhere a Polygon collection, token and wallet link to\n";
 

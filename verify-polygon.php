@@ -443,7 +443,16 @@ function poly_storable_image($img) {
 			error_log('verify-polygon: dropping short CID ' . substr($norm, 0, 80));
 			return '';
 		}
-		return $rest;
+		/*
+		 * THE 'ipfs://' STAYS ON. processNFT() does substr($image, 7) to
+		 * strip it before writing nfts.ipfs, so what this function returns
+		 * is pre-strip, not post-strip. Returning the bare CID here --
+		 * which is what the column ends up holding, and so looks right --
+		 * gets seven more characters taken off it and stores
+		 * 'hz5555nb...' silently. sol_storable_image() has the same
+		 * contract for the same reason.
+		 */
+		return 'ipfs://' . $rest;
 	}
 	if (preg_match('~^https?://~i', $norm)) return $norm;
 	if (strpos($norm, 'data:image/svg+xml;base64') === 0) return $norm;
