@@ -410,7 +410,32 @@ function mission_frontier($conn) {
 	if ($uid <= 0) return $out;
 
 	$cleared = mission_levels($conn);
-	if (!$cleared) return $out;      /* nothing cleared anywhere: nothing is new */
+
+	/*
+	 * PROJECTS THIS USER HOLDS ANYTHING FOR, deployed or not.
+	 *
+	 * HOLDING IS WHAT MAKES LEVEL 1 NEWS. The original rule skipped any
+	 * project with nothing cleared, on the grounds that "level 1 being
+	 * available is the starting position, not a discovery, and listing
+	 * every project's would bury the one rung that actually just
+	 * opened". The first half of that is wrong and the second half is
+	 * the reason it looked right: the fear was forty level-1s, but a
+	 * staker only HOLDS a handful of projects, and for those few the
+	 * free intro is exactly the thing they would want pointing out.
+	 *
+	 * Separate from the idle count below, which answers a different
+	 * question -- can they launch it right now. Someone whose whole
+	 * roster is deployed still qualifies and should still be told.
+	 */
+	$held = array();
+	$hr = $conn->query(
+		"SELECT c.project_id, COUNT(*) AS n FROM nfts n
+		 INNER JOIN collections c ON c.id = n.collection_id
+		 WHERE n.user_id = '$uid' GROUP BY c.project_id");
+	if ($hr) while ($r = $hr->fetch_assoc()) $held[(int)$r['project_id']] = (int)$r['n'];
+
+	/* Nothing cleared and nothing held: there is genuinely no news. */
+	if (!$cleared && !$held) return $out;
 
 	$res = $conn->query(
 		"SELECT q.id, q.title, q.level, q.cost, q.reward, q.duration, q.extension,
@@ -464,9 +489,12 @@ function mission_frontier($conn) {
 
 	while ($row = $res->fetch_assoc()) {
 		$pid = (int)$row['project_id'];
-		/* Never cleared anything here -- level 1 is the start line, not news. */
-		if (empty($cleared[$pid])) continue;
-		$done = (int)$cleared[$pid];
+		/*
+		 * Nothing cleared here AND nothing held here: not their project,
+		 * so its level 1 is noise. Holding it makes the free intro news.
+		 */
+		if (empty($cleared[$pid]) && empty($held[$pid])) continue;
+		$done = isset($cleared[$pid]) ? (int)$cleared[$pid] : 0;
 		if ((int)$row['level'] > $done + 1) continue;      /* still locked */
 
 		$cost    = (float)$row['cost'];

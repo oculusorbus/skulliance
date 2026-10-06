@@ -27,6 +27,7 @@ $WORLD = array(
 	'amounts'     => array(),            // consumable_id => amount
 	'quest'       => array(),
 	'idle'        => array(),            // project_id => idle nft count
+	'held'        => array(),            // project_id => NFTs held at all, deployed or not
 	'unattempted' => array(),            // quest rows the user has never launched
 	'ladder'      => array(),            // every (project_id, level, id) in level order
 	'inflight'    => array(),            // missions rows still out
@@ -81,9 +82,15 @@ class MConn {
 			$p = isset($m[1]) ? (int)$m[1] : 0;
 			return new MRes(isset($WORLD['balance'][$p]) ? array(array('balance' => $WORLD['balance'][$p])) : array());
 		}
+		/* IDLE and HELD are different questions and must not share a
+		   fixture: idle is "can they launch it now", held is "is this
+		   their project at all". The two queries differ by the NOT IN,
+		   and so does this branch -- without that, the held rule is
+		   being tested against the idle numbers. */
 		if (strpos($flat, 'SELECT c.project_id, COUNT(*) AS n FROM nfts n') !== false) {
+			$which = (strpos($flat, 'NOT IN') !== false) ? 'idle' : 'held';
 			$r = array();
-			foreach ($WORLD['idle'] as $pid => $n) $r[] = array('project_id' => $pid, 'n' => $n);
+			foreach ($WORLD[$which] as $pid => $n) $r[] = array('project_id' => $pid, 'n' => $n);
 			return new MRes($r);
 		}
 		if (strpos($flat, 'FROM nfts n INNER JOIN collections c') !== false) {
@@ -325,20 +332,89 @@ ok($f && $f[0]['quest_id'] === 31, 'and it is the one that just opened');
 ok($f && !empty($f[0]['frontier']), 'flagged as the frontier rung');
 ok($f && !empty($f[0]['affordable']) && !empty($f[0]['has_squad']), 'says it can be launched now');
 
-/* THE DAY-ONE RULE. A brand new staker has cleared nothing, so level 1 on
-   every project is "open and never launched" -- forty rows of noise that
-   would bury the one rung this list exists to surface. */
+/*
+ * THE DAY-ONE RULE, AND WHAT IT WAS ACTUALLY FOR.
+ *
+ * It used to skip any project with nothing cleared, reasoning that a
+ * brand-new staker would otherwise see level 1 on all forty projects --
+ * noise that buries the one rung the list exists to surface.
+ *
+ * The fear was right and the rule was too wide. A staker only HOLDS a
+ * handful of projects, and for those the free intro is precisely what
+ * they would want pointing out: they qualify, it costs nothing, and
+ * nothing else tells them. So the gate is holding, not clearing.
+ */
 mission_levels_forget(); $WORLD['levels'] = array();
+$WORLD['held'] = array(); $WORLD['idle'] = array();
 $WORLD['unattempted'] = array(qrow(1, 1, 9, 0, 'First Steps'), qrow(2, 1, 12, 0, 'Also First'));
-ok(mission_frontier($conn) === array(), 'a staker who has cleared nothing sees no "new" rungs');
+ok(mission_frontier($conn) === array(),
+   'a staker who holds nothing is shown level 1 on every project -- that is the forty rows of noise');
 
-/* Cleared on project 9 only: project 12's level 1 still is not news. */
+/* Holds project 9 only, has cleared nothing anywhere: project 9's free
+   intro is news, project 12's is not. */
+mission_levels_forget(); $WORLD['levels'] = array();
+$WORLD['held'] = array(9 => 4); $WORLD['idle'] = array(9 => 4);
+$WORLD['balance'] = array(9 => 0);
+$f = mission_frontier($conn);
+ok(count($f) === 1 && $f[0]['quest_id'] === 1,
+   'a holder who has never played is not told their free mission is available');
+ok($f && !empty($f[0]['frontier']), 'the free intro is not flagged as the frontier rung');
+ok($f && !empty($f[0]['affordable']),
+   'the free intro reads as unaffordable; it costs 0 and the balance is 0');
+
+/*
+ * AND IT MUST DO IT SILENTLY. display_errors is ON on this server, so an
+ * "undefined array key" notice from $cleared[$pid] does not stay in a
+ * log -- it is printed into the page, and into the JSON that
+ * ajax/mission-data.php returns, where it breaks the parse. A staker who
+ * has cleared nothing is now a NORMAL case for this function rather than
+ * an early return, so every read of $cleared has to tolerate a miss.
+ */
+$notices = array();
+/* RESPECT THE @ OPERATOR. set_error_handler() is called even for
+   suppressed diagnostics, but display_errors does not PRINT those -- so
+   counting them would fail on mission_art_url()'s deliberate
+   @filemtime() for art that is not on this machine, which is not the
+   bug being tested. An undefined array key is not suppressed and still
+   lands here. */
+set_error_handler(function ($no, $str) use (&$notices) {
+	if (!(error_reporting() & $no)) return true;
+	$notices[] = $str; return true;
+});
+mission_levels_forget(); $WORLD['levels'] = array();
+$WORLD['held'] = array(9 => 4); $WORLD['idle'] = array(9 => 4);
+mission_frontier($conn);
+restore_error_handler();
+ok($notices === array(),
+   'mission_frontier() emits a PHP notice for a staker who has cleared nothing: '
+ . implode(' / ', $notices) . ' -- display_errors is on, so that lands in the AJAX JSON');
+
+/* HOLDING, NOT IDLE. A staker whose whole roster is deployed still
+   qualifies and should still be told. */
+mission_levels_forget();
+$WORLD['held'] = array(9 => 4); $WORLD['idle'] = array();
+$f = mission_frontier($conn);
+ok(count($f) === 1,
+   'a holder with everything deployed is skipped; holding is the question, not idleness');
+ok($f && empty($f[0]['has_squad']), 'has_squad should be false with nothing idle');
+
+/* Cleared on 9, holds 9 and 12: 12's level 1 is news now too. */
 mission_levels_forget(); $WORLD['levels'] = array(9 => 1);
-$WORLD['balance']     = array(9 => 5000, 12 => 5000);
-$WORLD['idle']        = array(9 => 6, 12 => 6);
+$WORLD['balance'] = array(9 => 5000, 12 => 5000);
+$WORLD['idle']    = array(9 => 6, 12 => 6);
+$WORLD['held']    = array(9 => 6, 12 => 6);
 $WORLD['unattempted'] = array(qrow(20, 2, 9, 100, 'Second Rung'), qrow(2, 1, 12, 0, 'Untouched Project'));
 $f = mission_frontier($conn);
-ok(count($f) === 1 && $f[0]['quest_id'] === 20, 'the rule is per project, not global');
+$ids = array(); foreach ($f as $r) $ids[] = $r['quest_id'];
+sort($ids);
+ok($ids === array(2, 20), 'a held project they have never started is still being hidden: ' . json_encode($ids));
+
+/* And a project they neither cleared nor hold stays out. */
+mission_levels_forget(); $WORLD['levels'] = array(9 => 1);
+$WORLD['held'] = array(9 => 6); $WORLD['idle'] = array(9 => 6);
+$f = mission_frontier($conn);
+ok(count($f) === 1 && $f[0]['quest_id'] === 20,
+   'a project they neither cleared nor hold is listed; that is the noise the rule exists to stop');
 
 /* A rung you already ran and FAILED is not new -- you saw it. The query
    excludes any quest with a missions row, which the stub models by simply

@@ -33,7 +33,8 @@ A long mission that lands while you are away clears its level and opens a brand 
 So the missions page now says so. A band near the top lists **every mission that is open to you and that you have never launched**, deepest first, with the ones you can send right now at the front. Each one goes straight to its load-out. It sits **above** the bulk launchers deliberately, because pressing those is what takes the crew.
 
 * A mission counts as never run if there is no record of you launching it at all - not cleared, not failed, never sent.
-* A project where you have cleared **nothing** is left out. Level 1 being available is the starting position, not a discovery, and listing every project's would bury the one rung that actually just opened.
+* A project you **hold nothing for** is left out. Otherwise a new account would see level 1 on every project at once, which buries the one rung that actually just opened.
+* But if you **do hold** a project's NFTs and have never started it, its **free opening mission is listed**. You qualify, it costs nothing, and nothing else on the page would tell you. Holding is the test, not having played - a roster that is entirely out on missions still counts.
 
 Two different things can put a mission on that list, and they are kept apart:
 
