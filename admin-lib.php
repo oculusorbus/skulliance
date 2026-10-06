@@ -770,6 +770,7 @@ function admin_chrome($active) {
 		'collections' => array('admin-collections.php', 'Collections'),
 		'missions'    => array('admin-missions.php',    'Missions'),
 		'blockchains' => array('admin-blockchains.php', 'Chains'),
+		'flyers'      => array('admin-flyers.php',      'Flyers'),
 	);
 	echo '<div class="row"><div class="adm">';
 	echo '<div class="adm-head"><h2>Admin</h2><nav class="adm-tabs">';
