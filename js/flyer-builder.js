@@ -22,7 +22,7 @@
 (function () {
 	'use strict';
 
-	var W = 1500, H = 1560;
+	var W = 1500, H = 1600;   // the URL baseline lands at 1552, leaving ~48px under it
 
 	/* mulberry32: a few lines, good enough for brush noise, and seedable. */
 	function rng(seed) {

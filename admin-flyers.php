@@ -35,7 +35,7 @@ admin_chrome('flyers');
 <link href="https://fonts.googleapis.com/css2?family=Saira+Semi+Condensed:wght@800&family=Rajdhani:wght@700&family=Russo+One&family=Open+Sans:ital,wght@0,400;0,600;1,600&display=block" rel="stylesheet">
 
 <p class="adm-note">Builds the &ldquo;is now live on&rdquo; announcement flyer. Pick a project to fill in its name,
-  ticker and points icon, add the art and the logo, and download a 1500&times;1560 PNG. Nothing is saved.</p>
+  ticker and points icon, add the art and the logo, and download a 1500&times;1600 PNG. Nothing is saved.</p>
 
 <div class="fly">
   <div class="fly-controls">
@@ -163,7 +163,7 @@ admin_chrome('flyers');
   </div>
 
   <div class="fly-preview">
-    <canvas id="f-canvas" width="1500" height="1560"></canvas>
+    <canvas id="f-canvas" width="1500" height="1600"></canvas>
     <div class="fly-actions">
       <button type="button" id="f-download">Download PNG</button>
       <span class="adm-note" id="f-status"></span>
