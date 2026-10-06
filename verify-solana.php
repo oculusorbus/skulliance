@@ -39,6 +39,8 @@
  * runs with no network and no database. See verify-solana-harness.php.
  */
 
+require_once __DIR__ . '/lib/ipfs-gateways.php';
+
 if (!defined('SOLANA_CHAIN_ID')) define('SOLANA_CHAIN_ID', 3);
 
 /* The MPL Core program. Every asset account this file reads is owned by it.
@@ -79,16 +81,7 @@ if (!defined('SOLANA_MAX_ASSETS')) define('SOLANA_MAX_ASSETS', 20000);
  * verify-xrpl.php: one gateway 429s under load and the failure looks like
  * "this collection has no metadata".
  */
-function sol_gateways() {
-	return array(
-		'https://gateway.pinata.cloud/ipfs/',
-		'https://nftstorage.link/ipfs/',
-		'https://w3s.link/ipfs/',
-		'https://4everland.io/ipfs/',
-		'https://ipfs.io/ipfs/',
-		'https://dweb.link/ipfs/',
-	);
-}
+function sol_gateways() { return ipfs_gateways(); }
 
 /* ---------- base58 --------------------------------------------------------- */
 

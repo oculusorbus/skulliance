@@ -3468,12 +3468,12 @@ function ensureNFTImageCached($ipfs, $collection_id, $project_id) {
     if (!empty(glob($dir . $md5 . '.*'))) return true; // already cached
 
     $clean = preg_replace('#^ipfs/#', '', $ipfs);
-    $gateways = [
-        'https://ipfs.io/ipfs/',
-        'https://nftstorage.link/ipfs/',
-        'https://dweb.link/ipfs/',
-        'https://gateway.pinata.cloud/ipfs/',
-    ];
+    /* ONE list, in lib/ipfs-gateways.php. ORDER MATTERS HERE: this walks
+     * them in turn at a 25s timeout each, where lib/image-cache-lib.php
+     * races. Only ajax/merch-debug.php calls this, which is why nobody
+     * noticed it spending 100 seconds to fail. */
+    require_once __DIR__ . '/lib/ipfs-gateways.php';
+    $gateways = ipfs_gateways();
 
     foreach ($gateways as $gw) {
         $ch = curl_init($gw . $clean);

@@ -169,14 +169,10 @@ function _doCacheFetch(
     $is_url     = _ipfs_is_url($ipfs);
     $clean_ipfs = $is_url ? $ipfs : str_replace('ipfs/', '', $ipfs);
 
-    $gateways = $is_url ? [''] : [
-        'https://ipfs.io/ipfs/',
-        'https://nftstorage.link/ipfs/',
-        'https://w3s.link/ipfs/',
-        'https://gateway.pinata.cloud/ipfs/',
-        'https://4everland.io/ipfs/',
-        'https://dweb.link/ipfs/',
-    ];
+    /* ONE list, in lib/ipfs-gateways.php, with the measurements behind
+     * its order. Racing means a dead entry costs no wall clock -- which is
+     * exactly why four dead ones sat here unnoticed. */
+    $gateways = $is_url ? [''] : ipfs_gateways();
     // Rotate the starting gateway per worker so concurrent CLI workers don't
     // all hammer the same gateway first. Meaningless for a single origin.
     if (!$is_url) {
