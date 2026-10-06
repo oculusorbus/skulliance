@@ -72,5 +72,21 @@
 .adm-inline input{width:auto}
 #reorder-actions{display:flex;gap:14px;align-items:center}
 #reorder-actions a{color:#5a7888}
-@media (max-width:560px){.adm-head{flex-direction:column;align-items:flex-start}}
+/* The current art on the edit form. Sized to be a REFERENCE while
+   writing a description, not a gallery -- big enough to make out what
+   the thing is doing, small enough that the description field stays on
+   screen beside it. */
+.adm-art{border-top:1px solid rgba(0,200,160,.14);padding-top:14px}
+.adm-art>strong{display:block;font-size:.72rem;letter-spacing:.09em;
+  text-transform:uppercase;color:#7a9eb0;margin-bottom:10px}
+.adm-art-row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start}
+.adm-art figure{margin:0}
+.adm-art img,.adm-art video{display:block;max-width:230px;max-height:230px;
+  width:auto;height:auto;background:#0a1929;border:1px solid rgba(0,200,160,.18)}
+.adm-art figcaption{font-size:.72rem;color:#5a7888;padding-top:5px}
+.adm-art-tag{color:#00c8a0}
+.adm-art-none{color:#e8b14c;font-size:.84rem;margin:0}
+.adm-art small{display:block;color:#5a7888;font-size:.78rem;margin-top:10px}
+@media (max-width:560px){.adm-head{flex-direction:column;align-items:flex-start}
+  .adm-art img,.adm-art video{max-width:100%}}
 </style>

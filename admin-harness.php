@@ -662,5 +662,61 @@ ok(preg_match('/\$frames\s*>\s*1\s*&&\s*\$w\s*>\s*0\s*&&\s*\$w\s*<=\s*\$max_widt
 ok(preg_match('/admin_image_budget\(\s*\$w\s*,\s*\$h\s*,\s*\$frames\s*\)/', $al) === 1,
    'admin_write_image() is not passing the frame count to the budget');
 
+echo "\nthe edit form shows the art it is about to describe\n";
+
+/*
+ * Rewriting a description means describing a picture, and the picture
+ * was in another tab. These are structural checks on admin-missions.php
+ * rather than a render, because the value is in WHICH url it builds and
+ * WHEN it builds it.
+ */
+$mi = $src['admin-missions.php'];
+
+/* THROUGH mission_art_url(), not a hand-built path. The game renders
+   through that function, so anything else can preview a file the
+   player's browser never asks for -- and it carries the ?v=<mtime>
+   without which a just-replaced image shows the old one for a week,
+   which is exactly the state this panel is used to fix. */
+ok(strpos($mi, 'mission_art_url($q_slug') !== false,
+   'the art preview builds its own path instead of using mission_art_url(), so it can disagree '
+ . 'with the game and will show a stale image after a re-upload');
+ok(preg_match("/<img src=\"<\?php echo htmlspecialchars\(mission_art_url/", $mi) === 1,
+   'the preview image src is not escaped through htmlspecialchars');
+
+/* EDIT ONLY. On a new mission there is nothing to show and an empty
+   frame is worse than no frame. */
+ok(preg_match('/if \(\$Q\):\s*\n\s*\$q_slug/', $mi) === 1,
+   'the art block is not gated on $Q, so adding a mission renders an empty preview');
+
+/* An mp4 is TWO uploads and either can be the broken one: the video the
+   player watches and the .gif every tile uses as its still. */
+ok(substr_count($mi, '<figure>') >= 2,
+   'the preview shows one file; an mp4 mission has two and either can be missing');
+ok(strpos($mi, "mission_art_url(\$q_slug, 'mp4')") !== false,
+   'an mp4 mission does not preview the video itself');
+/* preload=metadata paints a black box; the .gif is already the still
+   every tile uses, so it is the poster. A preview showing nothing until
+   it is pressed is not a reference. */
+ok(strpos($mi, 'poster=') !== false,
+   'the video preview has no poster, so it renders as a black rectangle');
+ok(strpos($mi, 'admin_art_missing(') !== false,
+   'a mission with art missing says nothing about it, which is the case the preview is most useful for');
+
+/* It must not claim a file exists without looking. */
+ok(substr_count($mi, 'is_file($q_dir') >= 2,
+   'the preview renders a tag without checking the file is there, so a missing image is a broken icon');
+
+/* The styles have to exist or the preview is a full-size image in the
+   middle of a form. */
+$css = $src['admin-css.php'] ?? file_get_contents(__DIR__ . '/admin-css.php');
+/* The SIZED rule, not just any rule naming the selector: the
+   narrow-screen block contains ".adm-art img,.adm-art video{max-width:100%}"
+   too, so a looser check passes with the main rule renamed away -- which
+   is exactly what it did the first time. */
+ok(preg_match('/\.adm-art img,\.adm-art video\{[^}]*max-width:\s*\d+px/', $css) === 1,
+   'the preview has no pixel size cap; a 2000px mission image renders full size inside the form');
+ok(preg_match('/\.adm-art img,\.adm-art video\{[^}]*max-height:\s*\d+px/', $css) === 1,
+   'the preview has no height cap, so a tall image pushes the description field off screen');
+
 echo "\n" . ($fail ? "FAILED ($fail)\n" : "all admin-lib checks passed\n");
 exit($fail ? 1 : 0);

@@ -369,6 +369,60 @@ $Q = null; foreach ($M as $row) if ((int)$row['id'] === $qid) $Q = $row;
         <input type="file" name="art" accept="image/png,image/jpeg,image/gif,video/mp4"></label>
       <label>Still image (mp4 only)
         <input type="file" name="art_still" accept="image/gif,image/png,image/jpeg"></label>
+      <?php
+      /*
+       * THE ART THIS MISSION ALREADY HAS.
+       *
+       * Rewriting a description means describing a picture, and the
+       * picture was three screens away in another tab. Shown at edit
+       * time only -- on a new mission there is nothing to show and an
+       * empty frame is worse than no frame.
+       *
+       * mission_art_url() rather than a hand-built path: it is the same
+       * function the game renders through, so the preview cannot point
+       * somewhere the player's browser does not, and it carries the
+       * ?v=<mtime> that makes a just-replaced file appear immediately
+       * instead of in seven days.
+       *
+       * An mp4 shows BOTH files, because they are two uploads and
+       * either can be the one that is wrong: the video the player
+       * watches and the .gif every tile uses as its still.
+       */
+      if ($Q):
+        $q_slug  = admin_mission_slug($Q['title']);
+        $q_ext   = (string)($Q['extension'] ?? 'png');
+        $q_still = admin_art_ext($q_ext);
+        $q_dir   = __DIR__ . '/images/missions/';
+        $has_still = is_file($q_dir . $q_slug . '.' . $q_still);
+        $has_vid   = ($q_ext === 'mp4') && is_file($q_dir . $q_slug . '.mp4');
+      ?>
+      <div class="adm-wide adm-art">
+        <strong>Current art</strong>
+        <div class="adm-art-row">
+          <?php if ($q_ext === 'mp4' && $has_vid): ?>
+            <?php /* poster = the .gif, which is what every tile uses as the
+                     still anyway. Without it preload="metadata" paints a
+                     black box and the preview shows nothing until pressed,
+                     which defeats the point of it being a reference. */ ?>
+            <figure><video src="<?php echo htmlspecialchars(mission_art_url($q_slug, 'mp4')); ?>"
+                           <?php if ($has_still): ?>poster="<?php echo htmlspecialchars(mission_art_url($q_slug, $q_still)); ?>"<?php endif; ?>
+                           controls muted loop playsinline preload="metadata"></video>
+              <figcaption class="mono"><?php echo htmlspecialchars($q_slug); ?>.mp4</figcaption></figure>
+          <?php endif; ?>
+          <?php if ($has_still): ?>
+            <figure><img src="<?php echo htmlspecialchars(mission_art_url($q_slug, $q_still)); ?>" alt="">
+              <figcaption class="mono"><?php echo htmlspecialchars($q_slug . '.' . $q_still); ?>
+                <?php if ($q_ext === 'mp4') echo ' <span class="adm-art-tag">still</span>'; ?></figcaption></figure>
+          <?php endif; ?>
+          <?php if (!$has_still || ($q_ext === 'mp4' && !$has_vid)):
+            foreach (admin_art_missing($q_ext, array_values(array_filter(array(
+                       $has_still ? $q_still : null, $has_vid ? 'mp4' : null)))) as $miss): ?>
+            <p class="adm-art-none"><?php echo htmlspecialchars($miss); ?></p>
+          <?php endforeach; endif; ?>
+        </div>
+        <small>Uploading above replaces these. Renaming the mission moves them.</small>
+      </div>
+      <?php endif; ?>
     </div>
     <label class="adm-wide">Description
       <textarea name="description" rows="6" required><?php echo htmlspecialchars($Q['description'] ?? ''); ?></textarea></label>
