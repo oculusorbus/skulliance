@@ -86,20 +86,56 @@ $ROWS = array(
 	      'project_name' => 'Danketsu', 'currency' => 'DANK', 'total' => '1'),
 );
 
-echo "the WHERE is built, not glued together\n";
+echo "every collection is listed, staked or not\n";
 
 $c = new CConn(); $c->chains = $CH4; $c->rows = $ROWS;
 render($c);
 $q = listing_sql();
-ok(strpos($q, "WHERE users.id != '0'") !== false,
-   "the user condition is not in a WHERE -- it is riding in the JOIN's ON again: $q");
-ok(strpos($q, "project_id AND users.id") === false,
-   'the user condition is glued onto the JOIN condition');
+
+/*
+ * THE PAGE IS A SHOP, NOT JUST A REGISTRY. A collection nobody has
+ * staked yet is the one a staker can go and buy into, and INNER JOIN
+ * nfts hid exactly those: no staked NFTs, no rows, gone from its own
+ * registry.
+ */
+ok(strpos($q, 'LEFT JOIN nfts') !== false,
+   'nfts is INNER JOINed again, so a collection nobody has staked vanishes from the list');
+
+/*
+ * AND THE USER CONDITION MUST BE IN THE JOIN, which is the exact
+ * opposite of what this file asserted an hour ago -- and for a reason,
+ * not a reversal. A LEFT JOIN followed by a WHERE on the right table's
+ * column is an INNER JOIN with extra steps: the unmatched rows come
+ * back NULL and the WHERE discards them, undoing the outer join
+ * silently. The previous comment in db.php called this "a trap the
+ * moment anything becomes a LEFT JOIN".
+ */
+ok(preg_match("/LEFT JOIN users ON users\\.id = nfts\\.user_id AND users\\.id != '0'/", $q) === 1,
+   "the user condition is not in the users JOIN: $q");
+ok(strpos($q, "WHERE users.id") === false,
+   'the user condition is back in a WHERE, which collapses the LEFT JOIN to an INNER one and '
+ . 'hides unstaked collections again');
+
+/*
+ * COUNT(users.id), NOT COUNT(nfts.id). With the join outer, an NFT whose
+ * owner is user 0 or deleted still yields a row with nfts.id set and
+ * users.id NULL -- counting nfts.id would credit the collection with it
+ * and every existing total would quietly change.
+ */
+ok(strpos($q, 'COUNT(users.id)') !== false,
+   'the count is back on nfts.id, which counts NFTs owned by nobody');
+
+/* With no filters at all there is no WHERE to write. */
+ok(strpos($q, 'WHERE') === false, "an unfiltered listing emits a WHERE clause: $q");
 
 render($c, 9);
 $q = listing_sql();
-ok(strpos($q, "collections.project_id = '9'") !== false, 'the project filter is not applied');
+ok(strpos($q, "WHERE collections.project_id = '9'") !== false, 'the project filter is not applied');
 ok(strpos($q, "users.id != '0'") !== false, 'the project filter dropped the user condition');
+/* The filters are conditions on COLLECTIONS -- the left table -- so they
+   belong in WHERE and do not re-collapse the outer join. */
+ok(strpos($q, 'LEFT JOIN nfts') !== false,
+   'filtering by project turned the nfts join back into an inner one');
 
 render($c, 0, 4);
 $q = listing_sql();
@@ -118,6 +154,19 @@ $evil = render($c, "9 OR 1=1", "4; DROP TABLE nfts");
 $q = listing_sql();
 ok(strpos($q, 'DROP') === false && strpos($q, 'OR 1=1') === false,
    "a filter value reached the SQL unescaped: $q");
+
+/* And the row itself: a zero-count collection renders, with its
+   marketplace link intact, because that link is the entire point of
+   showing it. */
+$c0 = new CConn(); $c0->chains = $CH4;
+$c0->rows = array(array('collection_name' => 'Brand New', 'policy' => str_repeat('b', 56),
+	'blockchain_id' => 1, 'marketplace_slug' => null, 'rate' => '5',
+	'project_name' => 'Skulliance', 'currency' => 'SKULL', 'total' => '0'));
+$h0 = render($c0);
+ok(strpos($h0, 'Brand New') !== false, 'a collection with nothing staked does not render at all');
+ok(strpos($h0, 'wayup.io') !== false,
+   'an unstaked collection has no marketplace link, which is the one thing a shopper came for');
+ok(preg_match('/>0</', $h0) === 1, 'the zero total is not shown');
 
 echo "\nthe Chain column earns its width or is not there\n";
 

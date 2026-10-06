@@ -4,7 +4,10 @@ The Collections page is the registry of every NFT collection Skulliance supports
 
 ## What It Shows
 
-* Every supported collection and the **project** it belongs to.
+* **Every** supported collection and the **project** it belongs to -
+  including ones nobody has staked yet, which show a total of 0. Those
+  are often the most interesting line on the page: a reward rate nobody
+  has taken up is one you can still go and buy into.
 * The **chain** each one is on, as its logo, so a list spanning several
   chains can be read at a glance. Hover a logo you do not recognise and it
   names the chain.

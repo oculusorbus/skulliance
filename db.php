@@ -8343,24 +8343,41 @@ function chainBadge($slug, $name) {
 
 function getPoliciesListing($conn, $project_id=0, $blockchain_id=0) {
 	/*
-	 * BUILT AS A LIST, not by string-appending a WHERE.
+	 * EVERY COLLECTION, STAKED OR NOT.
 	 *
-	 * The previous version put "WHERE ..." in a variable and dropped it
-	 * in front of "AND users.id != '0'" -- so with no project filter the
-	 * query read "... ON projects.id = collections.project_id AND
-	 * users.id != '0'", with the user condition silently part of the JOIN
-	 * rather than a WHERE. Equivalent for an INNER JOIN and a trap the
-	 * moment anything becomes a LEFT JOIN, and there is no room for a
-	 * second filter in that shape at all.
+	 * This page is a shop as much as a registry: somebody comparing
+	 * reward rates wants to see a collection nobody has staked yet,
+	 * because that is the one they can go and buy into. INNER JOIN nfts
+	 * hid exactly those -- a collection with no staked NFTs produced no
+	 * rows and vanished from its own registry.
+	 *
+	 * SO THE USER CONDITION MOVES INTO THE JOIN, and this is the one
+	 * place it belongs. A LEFT JOIN followed by a WHERE on the right
+	 * table's column is an INNER JOIN with extra steps: unmatched rows
+	 * come back as NULL and the WHERE then throws them away. The comment
+	 * that used to be here warned the old string-appended version was "a
+	 * trap the moment anything becomes a LEFT JOIN". This is that
+	 * moment.
+	 *
+	 * The filters stay in WHERE because they are conditions on
+	 * COLLECTIONS -- the left table -- so they narrow which collections
+	 * are listed rather than which NFTs are counted.
+	 *
+	 * COUNT(users.id), NOT COUNT(nfts.id). With the join outer, an NFT
+	 * whose owner is user 0 or a deleted user still yields a row with
+	 * nfts.id set and users.id NULL, and counting nfts.id would credit
+	 * the collection with it. Counting users.id counts exactly the pairs
+	 * the old INNER JOINs kept: every existing number is unchanged and
+	 * the newly visible ones are 0.
 	 */
-	$cond = array("users.id != '0'");
+	$cond = array();
 	if ((int)$project_id !== 0)    $cond[] = "collections.project_id = '" . (int)$project_id . "'";
 	if ((int)$blockchain_id !== 0) $cond[] = "collections.blockchain_id = '" . (int)$blockchain_id . "'";
-	$where = 'WHERE ' . implode(' AND ', $cond);
+	$where = $cond ? 'WHERE ' . implode(' AND ', $cond) : '';
 
 	$chains = getChainsWithCollections($conn);
 
-	$sql = "SELECT collections.name AS collection_name, policy, collections.blockchain_id AS blockchain_id, collections.marketplace_slug AS marketplace_slug, rate, projects.name AS project_name, currency, COUNT(nfts.id) AS total FROM collections INNER JOIN nfts ON nfts.collection_id = collections.id INNER JOIN users ON users.id = nfts.user_id INNER JOIN projects ON projects.id = collections.project_id ".$where." GROUP BY collections.id ORDER BY projects.id, collections.name ASC";
+	$sql = "SELECT collections.name AS collection_name, policy, collections.blockchain_id AS blockchain_id, collections.marketplace_slug AS marketplace_slug, rate, projects.name AS project_name, currency, COUNT(users.id) AS total FROM collections INNER JOIN projects ON projects.id = collections.project_id LEFT JOIN nfts ON nfts.collection_id = collections.id LEFT JOIN users ON users.id = nfts.user_id AND users.id != '0' ".$where." GROUP BY collections.id ORDER BY projects.id, collections.name ASC";
 	$result = $conn->query($sql);
 
 	/* THE CHAIN COLUMN IS ONLY WORTH ITS WIDTH WHEN THERE IS MORE THAN
