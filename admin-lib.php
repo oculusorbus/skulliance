@@ -586,8 +586,9 @@ if (!defined('ADMIN_IMAGE_MAX_MEM')) define('ADMIN_IMAGE_MAX_MEM', 576);        
  *
  * Returns array('ok' => bool, 'mem' => bytes, 'why' => message).
  */
-function admin_image_budget($w, $h) {
+function admin_image_budget($w, $h, $frames = 1) {
 	$w = (int)$w; $h = (int)$h;
+	$frames = max(1, (int)$frames);
 	if ($w <= 0 || $h <= 0)
 		return array('ok' => false, 'mem' => 0, 'why' => 'That file does not read as an image.');
 
@@ -599,10 +600,56 @@ function admin_image_budget($w, $h) {
 			. 'never displayed above 1000px, so nothing is lost.',
 			$w, $h, rtrim(rtrim(number_format($mp, 1), '0'), '.'), ADMIN_IMAGE_MAX_MP));
 	}
-	/* 16 bytes a pixel covers the Q16 cache and one working copy, with a
-	   64MB floor so a small image still gets room to breathe. */
-	$need = max(64 * 1024 * 1024, (int)($w * $h * 16));
-	return array('ok' => true, 'mem' => min($need, ADMIN_IMAGE_MAX_MEM * 1024 * 1024), 'why' => '');
+
+	/*
+	 * FRAMES COUNT, AND THE FIRST VERSION OF THIS DID NOT COUNT THEM.
+	 *
+	 * coalesceImages() expands every frame to the full canvas, so an
+	 * animated GIF costs width x height x 8 bytes PER FRAME, not once.
+	 * A 555 x 778 Buffy Bot at 58 frames is 191MB coalesced and roughly
+	 * double that at peak -- and this function handed Imagick the 64MB
+	 * floor, because it only ever looked at one frame. Past its limit
+	 * Imagick SPILLS TO DISK rather than failing, so the symptom was a
+	 * form that churned until the service worker gave up at 20s and
+	 * showed the offline page. Exactly the 5000x5000 failure again, in
+	 * the one dimension the fix for it did not measure.
+	 */
+	$need = max(64 * 1024 * 1024, (int)($w * $h * 16) * $frames);
+	$cap  = ADMIN_IMAGE_MAX_MEM * 1024 * 1024;
+	if ($need > $cap) {
+		return array('ok' => false, 'mem' => 0, 'why' => sprintf(
+			'That is %d frames at %d x %d, which needs about %dMB to process and the limit is '
+			. '%dMB. Either cut the frame count or scale it down -- mission art is never shown '
+			. 'above 1000px wide.',
+			$frames, $w, $h, (int)($need / 1048576), ADMIN_IMAGE_MAX_MEM));
+	}
+	return array('ok' => true, 'mem' => $need, 'why' => '');
+}
+
+/**
+ * HOW MANY FRAMES, WITHOUT DECODING ANYTHING.
+ *
+ * Imagick would tell us, but only after reading the file -- which is the
+ * allocation we are trying to decide about. A GIF announces each frame
+ * with a Graphic Control Extension (21 F9 04), so counting those is a
+ * byte scan over a few megabytes and costs nothing. Anything that is not
+ * a GIF is treated as one frame: PNG and JPEG are, and an APNG scanned
+ * this way reads as 1, which errs toward attempting rather than refusing.
+ */
+function admin_frame_count($path) {
+	$fh = @fopen($path, 'rb');
+	if (!$fh) return 1;
+	$magic = fread($fh, 6);
+	if ($magic !== 'GIF87a' && $magic !== 'GIF89a') { fclose($fh); return 1; }
+	$n = 0; $tail = '';
+	while (!feof($fh)) {
+		$chunk = $tail . fread($fh, 1 << 20);
+		$n += substr_count($chunk, "\x21\xf9\x04");
+		/* Carry the last 2 bytes so a marker split across reads is counted. */
+		$tail = substr($chunk, -2);
+	}
+	fclose($fh);
+	return max(1, $n);
 }
 
 /**
@@ -622,8 +669,24 @@ function admin_write_image($tmp_path, $dest_path, $max_width = 1000) {
 	/* FROM THE HEADER, BEFORE ANY DECODE. getimagesize() reads a few
 	   bytes; it is the difference between an instant refusal and a
 	   request that never comes back. */
-	$size = @getimagesize($tmp_path);
-	$budget = admin_image_budget($size ? $size[0] : 0, $size ? $size[1] : 0);
+	$size   = @getimagesize($tmp_path);
+	$w      = $size ? (int)$size[0] : 0;
+	$h      = $size ? (int)$size[1] : 0;
+	$frames = admin_frame_count($tmp_path);
+
+	/*
+	 * NOTHING TO DO IS THE CHEAPEST THING TO DO.
+	 *
+	 * An animated GIF already inside the display width needs no resize,
+	 * and coalescing 58 frames to change nothing is the whole cost for
+	 * none of the benefit. Copy it and keep the artist's exact timing.
+	 * Single-frame art still goes through Imagick, where the strip and
+	 * the recompress are cheap and worth having.
+	 */
+	if ($frames > 1 && $w > 0 && $w <= $max_width)
+		return @copy($tmp_path, $dest_path) ? '' : 'Could not write ' . basename($dest_path) . '.';
+
+	$budget = admin_image_budget($w, $h, $frames);
 	if (!$budget['ok']) return $budget['why'];
 
 	try {

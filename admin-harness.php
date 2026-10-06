@@ -602,5 +602,65 @@ ok($defx['cost'] === $d1x['cost'] && $defx['reward'] === $d1x['reward']
    && $defx['duration'] === $d1x['duration'],
    'what the form displays for level 1 is not what the save path writes');
 
+echo "\nan animated gif costs per FRAME, not once\n";
+
+/*
+ * THE BUG: admin_image_budget() measured one frame. coalesceImages()
+ * expands EVERY frame to the full canvas, so a 555 x 778 GIF at 58
+ * frames needs ~191MB and the budget handed Imagick the 64MB floor.
+ * Past its limit Imagick spills to DISK rather than failing, so the
+ * admin form churned until the service worker gave up at 20s and served
+ * offline.html. The same failure as the 5000x5000 upload, in the one
+ * dimension the fix for that did not measure.
+ */
+$one = admin_image_budget(555, 778, 1);
+$many = admin_image_budget(555, 778, 58);
+ok($one['ok'] && $many['ok'], 'a 58-frame 555x778 gif is refused outright');
+ok($many['mem'] > $one['mem'],
+   'the budget does not grow with frame count: 1 frame got ' . (int)($one['mem'] / 1048576)
+ . 'MB and 58 frames got ' . (int)($many['mem'] / 1048576) . 'MB');
+/* Linearity, measured ABOVE the 64MB floor -- at 555x778 a single frame
+   needs only 7MB, so the floor hides the scaling and a ratio taken there
+   says nothing. 2000x2000 clears it. */
+$f2 = admin_image_budget(2000, 2000, 2);
+$f8 = admin_image_budget(2000, 2000, 8);
+ok($f8['mem'] === $f2['mem'] * 4,
+   'the budget is not linear in frames above the floor: 2 frames ' . (int)($f2['mem'] / 1048576)
+ . 'MB, 8 frames ' . (int)($f8['mem'] / 1048576) . 'MB');
+ok($many['mem'] >= 555 * 778 * 8 * 58,
+   'the budget is below what coalescing 58 frames actually needs, which means a disk spill');
+
+/* And past the ceiling it must REFUSE with something actionable, not
+   hand out a number it knows is too small. */
+$huge = admin_image_budget(1920, 1080, 400);
+ok(!$huge['ok'], 'a 400-frame HD gif was accepted; that is several GB of coalesce');
+ok(strpos($huge['why'], 'frames') !== false,
+   'the refusal does not mention frames, so the operator cannot tell what to change');
+
+echo "\ncounting frames without decoding\n";
+
+/* A GIF announces each frame with a Graphic Control Extension. The count
+   is a byte scan, because asking Imagick means doing the allocation we
+   are trying to decide about. */
+$tmp = tempnam(sys_get_temp_dir(), 'gifx');
+file_put_contents($tmp, "GIF89a" . str_repeat("\x21\xf9\x04\x00\x00\x00\x00\x00", 7));
+ok(admin_frame_count($tmp) === 7, 'frame counting is wrong: got ' . admin_frame_count($tmp) . ', expected 7');
+file_put_contents($tmp, "\x89PNG\r\n\x1a\n" . str_repeat("\x21\xf9\x04", 5));
+ok(admin_frame_count($tmp) === 1, 'a PNG is being counted as multi-frame on a byte coincidence');
+file_put_contents($tmp, "GIF89a");
+ok(admin_frame_count($tmp) === 1, 'a GIF with no frames counted as 0, which would divide the budget to nothing');
+@unlink($tmp);
+ok(admin_frame_count('/no/such/file') === 1, 'a missing file does not fall back to one frame');
+
+echo "\nand the cheapest work is none\n";
+
+/* An animated gif already inside the display width needs no resize, so
+   coalescing it is the entire cost for none of the benefit. */
+$al = file_get_contents(__DIR__ . '/admin-lib.php');
+ok(preg_match('/\$frames\s*>\s*1\s*&&\s*\$w\s*>\s*0\s*&&\s*\$w\s*<=\s*\$max_width/', $al) === 1,
+   'admin_write_image() no longer short-circuits a multi-frame image that needs no resize');
+ok(preg_match('/admin_image_budget\(\s*\$w\s*,\s*\$h\s*,\s*\$frames\s*\)/', $al) === 1,
+   'admin_write_image() is not passing the frame count to the budget');
+
 echo "\n" . ($fail ? "FAILED ($fail)\n" : "all admin-lib checks passed\n");
 exit($fail ? 1 : 0);
