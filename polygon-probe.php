@@ -28,6 +28,19 @@
  *
  * READ-ONLY. Every call is eth_call at `latest`. It signs nothing, sends
  * no transaction, holds no key, and writes nothing to the database.
+ *
+ * WHY IT IS BUILT IN STEPS. The first web run died on offline.html. That
+ * was not Polygon: service-worker.js gives any NAVIGATION 20 seconds
+ * (NAV_TIMEOUT_MS) and then serves the offline page, and a probe that
+ * walks five IPFS gateways at a 30-second timeout each can spend minutes
+ * before it prints anything. Same shape as the 5000x5000 upload -- the
+ * server was fine, the browser gave up.
+ *
+ * So: no step may take long, and the page the browser NAVIGATES to does
+ * no work at all. It arrives instantly and pulls each step with fetch(),
+ * which the service worker does not touch -- it returns early on
+ * anything whose mode is not 'navigate' (service-worker.js:93). The
+ * plain-text stepped form is still there for curl and the CLI.
  */
 
 $cli = (PHP_SAPI === 'cli');
@@ -38,12 +51,56 @@ if (!$cli) {
 	include __DIR__ . '/skulliance.php';
 	require_once __DIR__ . '/admin-lib.php';
 	if (!adminIsSuper()) { http_response_code(404); header('Content-Type: text/plain'); echo "Not found.\n"; exit; }
-	header('Content-Type: text/plain; charset=utf-8');
 }
-$sweep = $cli ? in_array('sweep', $argv, true) : !empty($_GET['sweep']);
+
+/* Which steps to run, and in what order. Each one is bounded so that no
+   single request can outlast the service worker's patience. */
+$PP_STEPS = array('env', 'rpc', 'contract', 'batch', 'media', 'schema');
+
+$step = $cli ? '' : (isset($_GET['step']) ? (string)$_GET['step'] : '');
+$sweep_from = 0;
+if ($cli) {
+	$step = in_array('sweep', $argv, true) ? 'all+sweep' : 'all';
+} else if ($step === '') {
+	/* THE NAVIGATION ITSELF DOES NO WORK. It paints, and the steps arrive
+	   over fetch() -- which service-worker.js ignores, because it returns
+	   early on any request whose mode is not 'navigate'. Navigating
+	   straight into the probe is what produced offline.html. */
+	header('Content-Type: text/html; charset=utf-8');
+	$qs = json_encode(array_values($PP_STEPS));
+	echo '<!doctype html><meta charset="utf-8"><title>Polygon probe</title>'
+	   . '<style>body{background:#0a1929;color:#b9c7d4;font:13px/1.5 ui-monospace,Menlo,monospace;margin:0;padding:18px}'
+	   . 'h1{font-size:15px;color:#00c8a0;margin:0 0 4px}p{margin:0 0 14px;color:#7a9eb0}'
+	   . 'pre{white-space:pre-wrap;margin:0}button{background:transparent;border:1px solid #00c8a0;color:#00c8a0;'
+	   . 'font:inherit;padding:7px 14px;margin:14px 8px 0 0;cursor:pointer}button:disabled{opacity:.4;cursor:default}</style>'
+	   . '<h1>Polygon probe &mdash; Danketsu</h1>'
+	   . '<p>Read-only. Each step is a separate request, so none of them can trip the 20s offline page.</p>'
+	   . '<pre id="out">starting…' . "\n" . '</pre>'
+	   . '<button id="sweep" disabled>Sweep all 4,444 tokens</button>'
+	   . '<script>(function(){'
+	   . 'var out=document.getElementById("out"),steps=' . $qs . ';'
+	   . 'function go(list,done){ if(!list.length){ if(done)done(); return; }'
+	   . ' var s=list.shift();'
+	   . ' fetch(location.pathname+"?step="+encodeURIComponent(s),{credentials:"same-origin"})'
+	   . '  .then(function(r){return r.text();})'
+	   . '  .then(function(t){ out.textContent+=t; window.scrollTo(0,document.body.scrollHeight); go(list,done); })'
+	   . '  .catch(function(e){ out.textContent+="\\n  step "+s+" FAILED in the browser: "+e+"\\n"; go(list,done); }); }'
+	   . 'out.textContent="";'
+	   . 'go(steps.slice(),function(){ var b=document.getElementById("sweep"); b.disabled=false;'
+	   . ' b.onclick=function(){ b.disabled=true; go(["sweep"]); }; });'
+	   . '})();</script>';
+	exit;
+}
+if (!$cli) header('Content-Type: text/plain; charset=utf-8');
+$sweep_only = ($step === 'sweep');
 
 function say($s = '') { echo $s . "\n"; if (PHP_SAPI !== 'cli') @flush(); }
 function ms($t) { return number_format((microtime(true) - $t) * 1000, 0) . 'ms'; }
+/* Does this request run that step? */
+function pp_do($name) {
+	global $step;
+	return ($step === $name) || ($step === 'all' && $name !== 'sweep') || ($step === 'all+sweep');
+}
 
 /* The collection, and the contract the user gave. Lower case throughout:
    ownerOf returns lower case and MetaMask reports EIP-55 mixed case, so
@@ -156,8 +213,11 @@ function pp_rpc($url, $method, $params, &$err = null) {
 		CURLOPT_POSTFIELDS     => $body,
 		CURLOPT_HTTPHEADER     => array('Content-Type: application/json'),
 		CURLOPT_RETURNTRANSFER => true,
-		CURLOPT_TIMEOUT        => 45,
-		CURLOPT_CONNECTTIMEOUT => 10,
+		/* BOUNDED ON PURPOSE. A node that is merely slow has to fail fast
+		   enough that a whole step still fits inside the service worker's
+		   20 seconds, and a batch of 250 answers in ~330ms when it works. */
+		CURLOPT_TIMEOUT        => 12,
+		CURLOPT_CONNECTTIMEOUT => 5,
 		/* publicnode 403s a request with no User-Agent, which looked like
 		   a block on this server's IP until it was sent one. */
 		CURLOPT_USERAGENT      => 'Skulliance/1.0 (+https://skulliance.io)',
@@ -177,75 +237,109 @@ function pp_call($url, $to, $data, &$err = null) {
 	return pp_rpc($url, 'eth_call', array(array('to' => $to, 'data' => $data), 'latest'), $err);
 }
 
-/* ---------- report --------------------------------------------------------- */
+/* ---------- report, one bounded step at a time ----------------------------- */
 
-say('SAPI                : ' . PHP_SAPI . ($cli ? '   <- not the one that matters' : '   <- this is the one that matters'));
-say('PHP                 : ' . PHP_VERSION);
-say('curl                : ' . (function_exists('curl_init')
-	? 'yes (' . (string)@curl_version()['version'] . ')' : 'NOT AVAILABLE -- nothing below can work'));
-say('contract            : ' . PP_CONTRACT . '  (Danketsu, project ' . PP_PROJECT_ID . ')');
-say();
-
-say('-- reaching a Polygon node ------------------------------------------');
-$RPC = null;
-foreach ($PP_RPCS as $url) {
-	$t = microtime(true); $err = null;
-	$r = pp_rpc($url, 'eth_chainId', array(), $err);
-	if ($r !== null && hexdec($r) === 137) { say(sprintf('  %-42s ok    %s  chainId 137', $url, ms($t))); if (!$RPC) $RPC = $url; }
-	else                                    say(sprintf('  %-42s FAIL  %s', $url, (string)$err));
+/*
+ * EACH STEP IS A SEPARATE REQUEST over the web, so nothing carries over
+ * between them -- the node has to be re-resolved every time. That costs
+ * one eth_chainId and buys the property that matters: no single request
+ * can outlast service-worker.js's 20 seconds and get replaced by
+ * offline.html.
+ */
+function pp_node($verbose = false) {
+	global $PP_RPCS;
+	static $picked = null;
+	if ($picked !== null && !$verbose) return $picked;
+	foreach ($PP_RPCS as $url) {
+		$t = microtime(true); $err = null;
+		$r = pp_rpc($url, 'eth_chainId', array(), $err);
+		$ok = ($r !== null && hexdec($r) === 137);
+		if ($verbose) say($ok ? sprintf('  %-42s ok    %s  chainId 137', $url, ms($t))
+		                      : sprintf('  %-42s FAIL  %s', $url, (string)$err));
+		if ($ok && $picked === null) { $picked = $url; if (!$verbose) return $picked; }
+	}
+	return $picked;
 }
-if (!$RPC) { say(); say('No Polygon node is reachable from this server. Nothing else can be measured.'); exit(1); }
-say('  using               : ' . $RPC);
-say();
-
-say('-- what the contract is --------------------------------------------');
-$t = microtime(true);
-$nm = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['name']);
-$sy = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['symbol']);
-$ts = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['totalSupply']);
-say('  name()              : ' . var_export(pp_decode_string((string)$nm), true));
-say('  symbol()            : ' . var_export(pp_decode_string((string)$sy), true));
-$supply = ($ts === null) ? 0 : (int)hexdec($ts);
-say('  totalSupply()       : ' . number_format($supply));
-foreach (array('ERC721' => '80ac58cd', 'ERC721Metadata' => '5b5e139f',
-               'ERC721Enumerable' => '780e9d63', 'ERC1155' => 'd9b67a26') as $label => $iface) {
-	$r = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['supportsInterface'] . str_pad($iface, 64, '0', STR_PAD_RIGHT));
-	$yes = ($r !== null && (int)hexdec($r) === 1);
-	say(sprintf('  supports %-18s: %s%s', $label, $yes ? 'yes' : 'no',
-		($label === 'ERC721Enumerable' && !$yes) ? '   <- why the owner map is read per TOKEN, not per wallet' : ''));
+function pp_need_node() {
+	$n = pp_node();
+	if (!$n) say('  no Polygon node reachable -- run the rpc step');
+	return $n;
 }
-say('  (' . ms($t) . ' for six eth_calls)');
-say();
 
-say('-- one Multicall3 batch of ' . PP_CHUNK . ' ownerOf calls -------------------');
-$ids = range(1, PP_CHUNK);
-$calls = array();
-foreach ($ids as $i) $calls[] = $PP_SEL['ownerOf'] . pp_uint($i);
-$data = pp_aggregate3(PP_CONTRACT, $calls);
-say('  request body        : ' . number_format(strlen($data) / 2) . ' bytes of calldata');
-$t = microtime(true); $err = null;
-$res = pp_call($RPC, PP_MULTICALL, $data, $err);
-if ($res === null) {
-	say('  FAILED              : ' . (string)$err);
+if (pp_do('env')) {
+	say('SAPI                : ' . PHP_SAPI . ($cli ? '   <- not the one that matters' : '   <- this is the one that matters'));
+	say('PHP                 : ' . PHP_VERSION);
+	say('curl                : ' . (function_exists('curl_init')
+		? 'yes (' . (string)@curl_version()['version'] . ')' : 'NOT AVAILABLE -- nothing below can work'));
+	say('contract            : ' . PP_CONTRACT . '  (Danketsu, project ' . PP_PROJECT_ID . ')');
 	say();
-	say('  This is the call the whole design rests on. If it fails only over the web,');
-	say('  suspect a request-size or outbound-POST limit rather than the node.');
-	exit(1);
 }
-say('  response            : ' . number_format(strlen($res) / 2) . ' bytes   ' . ms($t));
-$rows = pp_decode_aggregate3($res);
-$owners = array(); $reverted = 0;
-foreach ($rows as $k => $row) {
-	if (!$row['ok']) { $reverted++; continue; }
-	$owners[$ids[$k]] = pp_decode_addr($row['data']);
-}
-say('  decoded             : ' . count($rows) . ' results, ' . count($owners) . ' owned, ' . $reverted . ' reverted');
-say('  token 1 owner       : ' . (isset($owners[1]) ? $owners[1] : '(none)'));
-say('  token ' . PP_CHUNK . ' owner     : ' . (isset($owners[PP_CHUNK]) ? $owners[PP_CHUNK] : '(none)'));
-say();
 
-if ($sweep) {
+if (pp_do('rpc')) {
+	say('-- reaching a Polygon node ------------------------------------------');
+	$t = microtime(true);
+	$n = pp_node(true);
+	say('  using               : ' . ($n ? $n : 'NONE -- nothing else can be measured'));
+	say('  (' . ms($t) . ')');
+	say();
+	if (!$n && !$cli) exit;
+}
+
+if (pp_do('contract') && ($RPC = pp_need_node())) {
+	say('-- what the contract is --------------------------------------------');
+	$t = microtime(true);
+	$nm = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['name']);
+	$sy = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['symbol']);
+	$ts = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['totalSupply']);
+	say('  name()              : ' . var_export(pp_decode_string((string)$nm), true));
+	say('  symbol()            : ' . var_export(pp_decode_string((string)$sy), true));
+	$supply = ($ts === null) ? 0 : (int)hexdec($ts);
+	say('  totalSupply()       : ' . number_format($supply));
+	foreach (array('ERC721' => '80ac58cd', 'ERC721Metadata' => '5b5e139f',
+	               'ERC721Enumerable' => '780e9d63', 'ERC1155' => 'd9b67a26') as $label => $iface) {
+		$r = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['supportsInterface'] . str_pad($iface, 64, '0', STR_PAD_RIGHT));
+		$yes = ($r !== null && (int)hexdec($r) === 1);
+		say(sprintf('  supports %-18s: %s%s', $label, $yes ? 'yes' : 'no',
+			($label === 'ERC721Enumerable' && !$yes) ? '   <- why the owner map is read per TOKEN, not per wallet' : ''));
+	}
+	say('  (' . ms($t) . ' for six eth_calls)');
+	say();
+}
+
+if (pp_do('batch') && ($RPC = pp_need_node())) {
+	say('-- one Multicall3 batch of ' . PP_CHUNK . ' ownerOf calls -------------------');
+	$ids = range(1, PP_CHUNK);
+	$calls = array();
+	foreach ($ids as $i) $calls[] = $PP_SEL['ownerOf'] . pp_uint($i);
+	$data = pp_aggregate3(PP_CONTRACT, $calls);
+	say('  request body        : ' . number_format(strlen($data) / 2) . ' bytes of calldata');
+	$t = microtime(true); $err = null;
+	$res = pp_call($RPC, PP_MULTICALL, $data, $err);
+	if ($res === null) {
+		say('  FAILED              : ' . (string)$err);
+		say();
+		say('  This is the call the whole design rests on. If it fails only over the web,');
+		say('  suspect a request-size or outbound-POST limit rather than the node.');
+		say();
+	} else {
+		say('  response            : ' . number_format(strlen($res) / 2) . ' bytes   ' . ms($t));
+		$rows = pp_decode_aggregate3($res);
+		$owners = array(); $reverted = 0;
+		foreach ((array)$rows as $k => $row) {
+			if (!$row['ok']) { $reverted++; continue; }
+			$owners[$ids[$k]] = pp_decode_addr($row['data']);
+		}
+		say('  decoded             : ' . count((array)$rows) . ' results, ' . count($owners) . ' owned, ' . $reverted . ' reverted');
+		say('  token 1 owner       : ' . (isset($owners[1]) ? $owners[1] : '(none)'));
+		say('  token ' . PP_CHUNK . ' owner     : ' . (isset($owners[PP_CHUNK]) ? $owners[PP_CHUNK] : '(none)'));
+		say();
+	}
+}
+
+if (pp_do('sweep') && ($RPC = pp_need_node())) {
 	say('-- the whole collection --------------------------------------------');
+	$ts = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['totalSupply']);
+	$supply = ($ts === null) ? 0 : (int)hexdec($ts);
 	$all = array(); $fail = 0; $calls_made = 0; $t = microtime(true);
 	for ($start = 1; $start <= $supply; $start += PP_CHUNK) {
 		$ids = range($start, min($start + PP_CHUNK - 1, $supply));
@@ -259,24 +353,22 @@ if ($sweep) {
 			if ($row['ok']) $all[$ids[$k]] = pp_decode_addr($row['data']);
 	}
 	$el = microtime(true) - $t;
-	$holders = array_count_values($all);
+	$holders = array_count_values(array_filter($all));
 	arsort($holders);
 	say('  rpc calls           : ' . $calls_made . ' (' . PP_CHUNK . ' tokens each)' . ($fail ? ", $fail FAILED" : ''));
 	say('  wall clock          : ' . number_format($el, 1) . 's');
 	say('  tokens with owner   : ' . number_format(count($all)) . ' / ' . number_format($supply));
 	say('  distinct holders    : ' . number_format(count($holders)));
-	$top = array_slice($holders, 0, 3, true);
-	foreach ($top as $addr => $cnt) say('    ' . $addr . '  x' . $cnt);
-	say();
+	foreach (array_slice($holders, 0, 3, true) as $addr => $cnt) say('    ' . $addr . '  x' . $cnt);
 	/* WHY THIS SHAPE IS WORTH IT: one sweep answers for every user at
 	   once, and a row that should not exist cannot survive it. The cost
 	   scales with COLLECTION size, not holder count -- fine nightly,
 	   too slow to run while somebody watches a connect spinner, so the
 	   map wants caching with the nightly refreshing it. */
-	say('  -> at this speed a nightly sweep is affordable; a connect-time one is not.');
+	say('  -> a nightly sweep is affordable at this speed; a connect-time one is not.');
 	say();
 }
-
+if (pp_do('media') && ($RPC = pp_need_node())) {
 say('-- metadata and the picture ----------------------------------------');
 $u = pp_call($RPC, PP_CONTRACT, '0x' . $PP_SEL['tokenURI'] . pp_uint(1));
 $turi = ($u === null) ? '' : (string)pp_decode_string($u);
@@ -327,7 +419,10 @@ function pp_fetch($url, &$code = null, &$ctype = null, $head = false) {
 	$ch = curl_init($url);
 	curl_setopt_array($ch, array(
 		CURLOPT_RETURNTRANSFER => true, CURLOPT_FOLLOWLOCATION => true, CURLOPT_MAXREDIRS => 3,
-		CURLOPT_TIMEOUT => 30, CURLOPT_CONNECTTIMEOUT => 10, CURLOPT_NOBODY => (bool)$head,
+		/* Six seconds is the whole budget per gateway: five of them at 30s
+		   each is what spent the navigation's 20 seconds and produced
+		   offline.html on the first web run. */
+		CURLOPT_TIMEOUT => 6, CURLOPT_CONNECTTIMEOUT => 4, CURLOPT_NOBODY => (bool)$head,
 		CURLOPT_USERAGENT => 'Skulliance/1.0 (+https://skulliance.io)',
 	));
 	$b = curl_exec($ch);
@@ -346,7 +441,10 @@ if (strpos($turi, 'ipfs://') === 0) {
 		$j = json_decode($body, true);
 		$good = ($code === 200 && is_array($j));
 		say(sprintf('    %-34s %s', $g, $good ? 'ok' : ('no (HTTP ' . $code . ', ' . substr($ct, 0, 24) . ')')));
-		if ($good && !$meta) $meta = $j;
+		/* STOP AT THE FIRST ONE THAT ANSWERS. Walking all five is what a
+		   list is for when they are all failing, but it is also five
+		   timeouts, and this step has to finish. */
+		if ($good) { $meta = $j; break; }
 	}
 }
 if (is_array($meta)) {
@@ -363,6 +461,7 @@ if (is_array($meta)) {
 			$code = 0; $ct = '';
 			pp_fetch($g . $cid['cid'] . '/' . $cid['path'], $code, $ct, true);
 			say(sprintf('    %-34s HTTP %d %s', $g, $code, substr($ct, 0, 24)));
+			if ($code === 200) { say('    -> re-resolving the lifted CID works; the published URL does not.'); break; }
 		}
 	} else {
 		say('  CID lifted out      : (not a gateway-shaped URL -- fetch it as-is)');
@@ -370,6 +469,9 @@ if (is_array($meta)) {
 }
 say();
 
+}
+
+if (pp_do('schema')) {
 say('-- can the schema hold it ------------------------------------------');
 /*
  * A Polygon NFT needs a globally unique asset_id, and the only thing that
@@ -395,4 +497,7 @@ if (!$cli && isset($conn) && $conn) {
 	say('  (run this over the web -- the CLI has no database handle here)');
 }
 say();
-say('done. Nothing was written.');
+}
+
+if ($step === 'all' || $step === 'all+sweep' || $step === 'schema')
+	say('done. Nothing was written.');
