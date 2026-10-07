@@ -313,11 +313,21 @@ Raids and Boss Battles; see [[games-dhc-fighters]].
 The roll is banded by **how far up you punched** — the gap between the rival
 Crew's best Fighter and your own, by rarity score:
 
-| Beating a Crew | Rolls on |
-|---|---|
-| better than yours | a better table, improving as the gap widens |
-| far better than yours | the best table the Arena offers |
-| weaker than yours | the standard table |
+| Their best, minus yours | Legendary | Mythic |
+|---|---|---|
+| under 100 (level, or punching down) | 3.5% | 0.5% |
+| 100 or more | 9% | 2% |
+| 300 or more | 15% | 3% |
+| 600 or more | 22% | **8%** |
+
+So the hardest fight available is **sixteen times** the mythic chance of
+farming someone weaker, and six times the legendary chance.
+
+**The rival list shows this per opponent**, once you have picked your Crew —
+the gap is measured against the Fighters you bring, not the ones you own, so
+it moves as you change your line-up. The best fight on the board is
+highlighted. Nothing stops you beating the weakest Crew every time; it is
+simply the worst-paid thing you can do.
 
 It is the same principle as raid looting: the risk you took is what is being
 rewarded.

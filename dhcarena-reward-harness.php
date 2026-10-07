@@ -47,7 +47,12 @@ function extract_fn($src, $name) {
 	return '';
 }
 $src = file_get_contents(__DIR__ . '/dhcarena-lib.php');
-foreach (array('dhca_already_rewarded', 'dhca_paid_today', 'dhca_payout_outcome') as $fn) {
+/* dhca_reward_bands() probes dhcf_table_for(), so the real reward config
+   has to be loaded -- lifting the function without it would test the
+   probe against nothing. dhcfighters-config.php is pure definitions. */
+require_once __DIR__ . '/dhcfighters-config.php';
+foreach (array('dhca_already_rewarded', 'dhca_paid_today', 'dhca_payout_outcome',
+               'dhca_gap_steps', 'dhca_reward_bands') as $fn) {
 	$body = extract_fn($src, $fn);
 	if ($body === '') { echo "  FAIL  could not find $fn() in dhcarena-lib.php\n"; exit(1); }
 	eval($body);
@@ -195,6 +200,67 @@ ok(!preg_match("/rewarded === false\) *sub \+= ' No trait this time: the daily c
    'the end screen is blaming the daily cap for a repeat-opponent win again');
 ok(strpos($page, 'dhca_paid_today') !== false,
    'dhcarena.php stopped asking which rivals already paid, so the list is unmarked again');
+
+echo "\nwhat the rival list promises is what the win pays\n";
+
+/*
+ * Punching up has always paid better -- dhca_pay() bands the trait roll
+ * on the Crews' best rarity scores -- and nothing on the opponent select
+ * said so, so the rational play was to farm the weakest Crew. The fix is
+ * to print the odds on each rival.
+ *
+ * WHICH CREATES THE ONLY RISK WORTH TESTING: a screen that quotes odds
+ * the payout does not honour is worse than no screen. A player picks the
+ * hard fight for a mythic chance that never existed, loses the bench
+ * time, and has no way to tell they were misled.
+ *
+ * dhca_reward_bands() is built by PROBING dhcf_table_for(), the function
+ * dhca_pay() calls, rather than restating its thresholds. These checks
+ * are that the probe stayed faithful.
+ */
+$bands = dhca_reward_bands();
+ok(count($bands) >= 2, 'the reward ladder collapsed to one band; punching up would read the same as farming down');
+
+/* Every step from 0 to 12 must land on the band the payout would use. */
+$drift = array();
+for ($g = 0; $g <= 12; $g++) {
+	$real = dhcf_table_for('arena', $g);
+	$show = $bands[0];
+	foreach ($bands as $b) if ($g >= $b['from']) $show = $b;
+	if ((float)$real['mythic'] !== $show['mythic'] || (float)$real['legendary'] !== $show['legendary'])
+		$drift[] = "gap $g: pays {$real['mythic']}% mythic, list says {$show['mythic']}%";
+}
+ok(!$drift, 'the rival list quotes odds the payout does not honour: ' . implode('; ', $drift));
+
+/* The ladder must actually RISE, or the whole point is lost. */
+$prev = -1; $rising = true;
+foreach ($bands as $b) { if ($b['mythic'] < $prev) $rising = false; $prev = $b['mythic']; }
+ok($rising, 'the reward ladder does not increase with the gap, so punching up pays no better');
+ok($bands[count($bands)-1]['mythic'] > $bands[0]['mythic'] * 2,
+   'the best band is not meaningfully better than a level fight ('
+ . $bands[0]['mythic'] . '% vs ' . $bands[count($bands)-1]['mythic'] . '%), so nothing is being encouraged');
+ok($bands[count($bands)-1]['best'] === true && $bands[0]['best'] === false,
+   'the top band is not flagged, so the list cannot highlight the best fight available');
+
+/* ONE PIECE OF ARITHMETIC, not two. The page subtracts the same way the
+   payout does, or the quoted band is for a gap nobody has. */
+ok(dhca_gap_steps(3100, 4310) === 12, 'dhca_gap_steps() is not (theirs - mine) / 100');
+ok(dhca_gap_steps(4310, 3100) === -12, 'a downward gap does not go negative, so farming reads as punching up');
+ok(dhca_gap_steps(3100, 3149) === 0, 'a 49-point gap rounds up to a band the player has not earned');
+$lib = file_get_contents(__DIR__ . '/dhcarena-lib.php');
+ok(preg_match('/return dhca_gap_steps\(\$mine, \$foes\);/', $lib) === 1,
+   'dhca_rating_gap() does the subtraction itself again, so the payout and the list can drift');
+
+/* And the page has to actually render it, from server data. */
+$pg = file_get_contents(__DIR__ . '/dhcarena.php');
+ok(strpos($pg, 'json_encode(dhca_reward_bands())') !== false,
+   'the page no longer emits the server-authored bands, so the client is inventing percentages');
+ok(preg_match('/paintPicked\(\);\s*\n\s*paintOdds\(\);/', $pg) === 1,
+   'paintOdds() is not called from paintPicker(), so the odds go stale the moment the Crew changes');
+ok(strpos($pg, "data-best=\"<?php echo (int)\$o['best']") !== false,
+   'the rival card no longer carries its best score, so the gap cannot be computed');
+ok(strpos($pg, "if (!picked.length) { slot.textContent = ''") !== false,
+   'odds are shown before a Crew is picked, which quotes a gap measured against nothing');
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all arena reward checks passed\n");
 exit($fail ? 1 : 0);

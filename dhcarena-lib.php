@@ -613,6 +613,46 @@ function dhca_pay($conn, $user_id, &$b) {
 	$b['drop'] = $drop;
 }
 
+/**
+ * THE GAP, FROM TWO SCORES. Split out so the opponent-select screen can
+ * show what a fight pays using the same arithmetic that pays it. The
+ * screen and the payout disagreeing would be worse than not showing it:
+ * a player picks the hard fight for odds that never existed.
+ */
+function dhca_gap_steps($mine_best, $foes_best) {
+	return (int)round(((int)$foes_best - (int)$mine_best) / 100);
+}
+
+/**
+ * THE REWARD LADDER, FOR DISPLAY, PROBED FROM THE FUNCTION THAT PAYS IT.
+ *
+ * dhcf_table_for('arena', $steps) is what dhca_pay() calls. Rather than
+ * restate its thresholds here -- which is how two numbers drift apart --
+ * this asks it for every plausible gap and collapses the runs where the
+ * answer does not change. Re-band Arena in dhcfighters-config.php and
+ * this follows with nothing edited.
+ *
+ * Returns ordered array(from, legendary, mythic, best), where `from` is
+ * the smallest step count that reaches that table.
+ */
+function dhca_reward_bands($max_steps = 12) {
+	if (!function_exists('dhcf_table_for')) return array();
+	$out = array(); $prev = null;
+	for ($i = 0; $i <= (int)$max_steps; $i++) {
+		$t = dhcf_table_for('arena', $i);
+		$sig = isset($t['legendary']) ? $t['legendary'] . '/' . $t['mythic'] : '';
+		if ($sig === $prev) continue;
+		$prev = $sig;
+		$out[] = array('from' => $i,
+		               'legendary' => (float)($t['legendary'] ?? 0),
+		               'mythic'    => (float)($t['mythic'] ?? 0));
+	}
+	/* The top band is the one to beat, so the UI can say so. */
+	$n = count($out);
+	foreach ($out as $i => &$row) $row['best'] = ($i === $n - 1);
+	return $out;
+}
+
 /** Defender's best score minus the attacker's, in rough 100-point steps. */
 function dhca_rating_gap($conn, $b) {
 	$best = function($ids) use ($conn) {
@@ -625,7 +665,7 @@ function dhca_rating_gap($conn, $b) {
 	};
 	$mine = $best($b['meta']['mineIds']);
 	$foes = $best($b['meta']['foeIds']);
-	return (int)round(($foes - $mine) / 100);
+	return dhca_gap_steps($mine, $foes);
 }
 
 function dhca_username($conn, $user_id) {

@@ -967,6 +967,22 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-foe img{width:28px;height:28px;border-radius:50%;flex:none;background:var(--panel2)}
 .arena-wrap .a-foe .n{flex:1;min-width:0;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .arena-wrap .a-foe .m{font-size:10px;opacity:.6;white-space:nowrap}
+/* WHAT THE FIGHT PAYS. Sits after the Fighter count because the count is
+   who they are and this is what they are worth -- reading the row left to
+   right should answer "who" then "why bother". Dim on a level fight so
+   the ladder is legible as a ladder: the eye finds the bright rows. */
+.arena-wrap .a-foe .odds{font-size:10px;opacity:.45;white-space:nowrap;flex:none}
+.arena-wrap .a-foe.up .odds{opacity:.85;color:var(--ochre)}
+.arena-wrap .a-foe.top .odds{opacity:1;color:var(--bone);font-weight:600}
+/* The whole row lifts at the top band, so a player scanning the list sees
+   the best fight available without reading a single percentage. */
+.arena-wrap .a-foe.top{border-color:rgba(232,177,76,.45)}
+@media (max-width:560px){
+  /* The name gives up its ellipsis before the odds give up their line:
+     a truncated username still identifies a rival, a truncated
+     percentage is noise. */
+  .arena-wrap .a-foe .m{display:none}
+}
 /* Already paid out today. Dimmed, not disabled: the rematch still counts for
    the ladder and the win record, so this is information and not a block.
    Namespaced under .a-foe like everything else here -- a bare .paid would be
@@ -1215,10 +1231,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                  and a player may well want the rematch -- but say so before
                  the battle rather than after it. */
               $paid = isset($paidToday[(int)$o['user_id']]); ?>
-        <div class="a-foe<?php echo $paid ? ' paid' : ''; ?>" data-uid="<?php echo (int)$o['user_id']; ?>">
+        <div class="a-foe<?php echo $paid ? ' paid' : ''; ?>" data-uid="<?php echo (int)$o['user_id']; ?>"
+             data-best="<?php echo (int)$o['best']; ?>">
           <img src="<?php echo htmlspecialchars($av); ?>" alt="" onerror="this.style.visibility='hidden'">
           <span class="n"><?php echo htmlspecialchars($o['username']); ?></span>
           <span class="m"><?php echo (int)$o['fighters']; ?> Fighters · best <?php echo number_format((int)$o['best']); ?></span>
+          <?php /* Filled by paintOdds() once a Crew is picked: the gap depends
+                   on which Fighters you bring, so it cannot be rendered here. */ ?>
+          <span class="odds"></span>
           <?php if ($paid): ?><span class="paidtag" title="One trait per opponent per day. A rematch still counts for the ladder.">Beaten today &middot; no trait</span><?php endif; ?>
         </div>
       <?php endforeach; ?>
@@ -1393,6 +1413,12 @@ var SHARED = {3:{emoji:'🛡️',icon:'titanium-armor',name:'Shield',note:'shiel
 var ICON_BASE = 'icons/';
 function iconUrl(name){ return ICON_BASE + name + '.png'; }
 var CREW_SIZE = <?php echo DHCA_CREW_SIZE; ?>;
+/* THE REWARD LADDER, AUTHORED BY THE SERVER. dhca_reward_bands() probes
+   the same dhcf_table_for() that dhca_pay() calls, so these percentages
+   are the ones that actually pay. The client does the subtraction and
+   the lookup and nothing else -- it never decides what a band is worth,
+   which is the line this page holds everywhere else. */
+var ARENA_BANDS = <?php echo json_encode(dhca_reward_bands()); ?>;
 /* Why the player cannot enter, if they cannot. The server decides this again on
    every start -- this only keeps the button honest. */
 var BLOCKED = <?php echo json_encode($block); ?>;
@@ -2434,6 +2460,45 @@ function paintPicked(){
   });
 }
 
+/**
+ * WHAT EACH RIVAL IS WORTH, ON THE RIVAL ITSELF.
+ *
+ * Punching up has always paid better -- dhca_pay() bands the trait roll
+ * on the gap between the two Crews' best rarity scores, and the top band
+ * is sixteen times the mythic chance of a level fight. Nothing said so.
+ * The rival card showed "12 Fighters, best 4,310" and left the player to
+ * know the function existed, know the thresholds, and do the subtraction.
+ * So the rational play was to hammer the weakest Crew every time, which
+ * is the opposite of what the bands were built to encourage.
+ *
+ * Shown only once a Crew is picked, because the gap is measured against
+ * the Fighters you bring, not the ones you own. Guessing with your best
+ * Fighter would quote odds that change the moment you pick anyone else.
+ */
+function paintOdds(){
+  var foes = document.querySelectorAll('.a-foe');
+  if (!foes.length || !ARENA_BANDS.length) return;
+  var mine = 0;
+  picked.forEach(function(id){
+    var c = byFid(id);
+    if (c) mine = Math.max(mine, +(c.getAttribute('data-score') || 0));
+  });
+  foes.forEach(function(el){
+    var slot = el.querySelector('.odds');
+    if (!slot) return;
+    if (!picked.length) { slot.textContent = ''; el.classList.remove('up','top'); return; }
+    var steps = Math.round(((+el.getAttribute('data-best') || 0) - mine) / 100);
+    var band  = ARENA_BANDS[0];
+    ARENA_BANDS.forEach(function(b){ if (steps >= b.from) band = b; });
+    slot.textContent = band.mythic + '% mythic · ' + band.legendary + '% legendary';
+    /* Two classes, not one: "better than a level fight" and "the best
+       there is" are different decisions and the list should show both at
+       a glance. */
+    el.classList.toggle('up',  band !== ARENA_BANDS[0]);
+    el.classList.toggle('top', !!band.best);
+  });
+}
+
 function paintPicker(){
   allCards.forEach(function(c){
     var at = picked.indexOf(+c.getAttribute('data-fid'));
@@ -2449,6 +2514,7 @@ function paintPicker(){
     }
   });
   paintPicked();
+  paintOdds();
   var ready = (picked.length === CREW_SIZE && rival > 0);
   /* How many of the chosen Crew cannot fight a RANKED battle. The server
      decides this again on both paths -- dhca_start() refuses them and

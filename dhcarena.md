@@ -593,8 +593,21 @@ they quit, and the brief was to bring people *in*.
 Countermeasures against the rich-get-richer loop in §6:
 
 - Fighting far below your bracket pays little or nothing.
-- Band the trait reward on relative strength, so beating a weaker Crew is worth
-  less than holding off a stronger one.
+- **Band the trait reward on relative strength** so beating a weaker Crew is
+  worth less than holding off a stronger one. **Built**, in `dhca_pay()` via
+  `dhca_rating_gap()`: the gap between the two Crews' best `rarity_score`, in
+  100-point steps, selects the rarity table. 0.5% mythic at a level fight,
+  8% at +600.
+  **And it was invisible for a month, which made it worthless.** The rival
+  card showed "12 Fighters · best 4,310" and nothing else, so using the
+  incentive required knowing the function existed, knowing its thresholds and
+  doing the subtraction. The rational play was therefore to farm the weakest
+  Crew on the board — the exact behaviour the banding was built to discourage.
+  The odds are now printed on each rival once a Crew is picked, from
+  `dhca_reward_bands()`, which PROBES `dhcf_table_for()` rather than restating
+  it. A screen quoting odds the payout does not honour would be worse than no
+  screen at all: the player takes the hard fight, loses the bench time, and
+  has no way to tell they were misled.
 - **Knockout scaling (§5) is the main counterweight** and is now locked: a deep
   Crew serves longer benchings, so depth buys resilience rather than immunity.
 - **The daily battle allowance (§5) is the strongest counterweight** and is now
