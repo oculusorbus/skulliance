@@ -4,7 +4,7 @@ Gauntlets is an **NFT roguelike**. Each run, you draw a hand of your NFTs and ba
 
 ## The Run
 
-* Each run draws a **hand of 6** eligible NFTs from your collection.
+* Each run draws a **hand of 6** eligible NFTs from your collection, **spread across as many different collections as you hold**. If you own hundreds of one collection and a few of several others, the hand no longer fills up with the big one - it deals you one card per collection before coming back round for a second. Hold fewer than six collections and the remaining slots are filled from what you do have, so a single-collection holder still draws a full hand.
 * Pick an NFT to send into each encounter against an opponent NFT.
 * Win and you continue; **3 wins without a loss = a sweep** (the best possible result).
 * A loss ends the run.
@@ -26,7 +26,7 @@ Win chance is driven by a circular weakness chain among the six core projects:
 Before an encounter resolves, you can play consumables (see [[missions-consumable-items]]):
 
 * **100% / 75% / 50% / 25% Success** add **+4% / +3% / +2% / +1%** win chance.
-* **Fast Forward** swaps your chosen NFT for another card in your hand.
+* **Fast Forward** swaps your chosen NFT for another card in your hand - worth most when that card is from a different project, since the odds are set by the project matchup.
 * **Double Rewards** doubles the points reward for that encounter.
 * **Random Reward** redirects the encounter's reward to a random project's points.
 

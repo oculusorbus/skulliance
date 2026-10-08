@@ -13041,23 +13041,152 @@ function gauntletGetRunStats($conn, $run_id) {
 
 // Create a new run and draw a hand of GAUNTLET_HAND_SIZE NFTs
 // Excludes NFTs already played this week
-function gauntletStartRun($conn, $user_id) {
+/*
+ * HOW MANY CARDS TO TAKE FROM EACH COLLECTION.
+ *
+ * PURE -- no database, no randomness. $inventory arrives already shuffled by
+ * the caller, which is where the randomness lives; everything here is
+ * deterministic so it can be driven directly by gauntlets-harness.php.
+ *
+ * WHY A HAND NEEDS SPREADING AT ALL. The draw used to be one flat
+ * `ORDER BY RAND() LIMIT 6` across every NFT the player owns, so a holder of
+ * 200 of one collection and a handful of everything else drew a hand of
+ * almost nothing but the big collection. Reported from a real run: five of
+ * six cards from the same collection.
+ *
+ * That is not only repetitive, it empties the round of its decision.
+ * gauntletGetEffectiveProjectId() maps core projects 1-6 to THEMSELVES, so
+ * every card from one core-project collection carries the SAME effective
+ * project, and gauntletCalculateWinChance() therefore returns the same odds
+ * for all of them against any opponent. Five identical-odds cards is one
+ * choice wearing five costumes -- and it makes Fast Forward, which exists to
+ * let you swap AFTER seeing the opponent, buy nothing at all.
+ *
+ * So: one card per collection per lap, and the collections are visited one
+ * per PROJECT before any project gets a second one. Project is the finer
+ * point of the two -- it is what sets the odds -- while collection is what
+ * the player actually sees, and this ordering serves both.
+ *
+ * It PREFERS variety, it does not demand it. A player with one collection
+ * still gets a full hand from it, which is the same behaviour as before and
+ * the only correct answer when there is nothing to vary.
+ *
+ * Returns [collection_id => how many to draw].
+ */
+function gauntletPlanHand($inventory, $size) {
+	$size = intval($size);
+	/* A FAST PATH, not a correctness guard, and labelled that way because
+	   mutation testing proved it: with it removed, size 0 and a negative
+	   size still return an empty plan (`while ($taken < $size)` never
+	   enters) and an empty inventory still does (nothing to deal, so the
+	   no-progress break fires on the first pass). It saves the work, it
+	   does not change the answer. */
+	if ($size < 1 || !$inventory) return array();
+
+	/* Group the collections under their project, preserving the caller's
+	   shuffled order within each. */
+	$by_project = array();
+	foreach ($inventory as $row) {
+		$by_project[intval($row['project_id'])][] = $row;
+	}
+
+	/* Deal the collections out one project at a time, so the first lap below
+	   touches as many different projects as the player actually holds. */
+	$ordered = array();
+	for ($lap = 0; ; $lap++) {
+		$took = false;
+		foreach ($by_project as $cols) {
+			if (isset($cols[$lap])) { $ordered[] = $cols[$lap]; $took = true; }
+		}
+		if (!$took) break;
+	}
+
+	/* One card per collection per pass until the hand is full. A collection
+	   is skipped once it has given everything it has. */
+	$plan  = array();
+	$taken = 0;
+	while ($taken < $size) {
+		$progress = false;
+		foreach ($ordered as $row) {
+			if ($taken >= $size) break;
+			$cid  = intval($row['collection_id']);
+			$have = isset($plan[$cid]) ? $plan[$cid] : 0;
+			if ($have >= intval($row['available'])) continue;
+			$plan[$cid] = $have + 1;
+			$taken++;
+			$progress = true;
+		}
+		/* EVERY collection is exhausted and the hand is still short. Without
+		   this the loop never ends -- the player simply owns fewer eligible
+		   NFTs than a full hand, which is a normal state late in a week. */
+		if (!$progress) break;
+	}
+	return $plan;
+}
+
+/*
+ * Draw a hand, spread across collections. Returns rows of [id, project_id],
+ * the same shape the single flat query used to return.
+ *
+ * Two query shapes, not one: a GROUP BY to learn what the player holds, then
+ * one small `ORDER BY RAND() LIMIT k` per collection the plan actually uses
+ * (at most GAUNTLET_HAND_SIZE of them). Pulling every row to shuffle in PHP
+ * was the alternative, and the whole reason this function exists is players
+ * holding hundreds of NFTs.
+ */
+function gauntletPickHandNFTs($conn, $user_id, $size, $exclude_ids = array()) {
 	$uid     = intval($user_id);
-	$used    = gauntletGetUsedNFTIds($conn, $uid);
-	$exclude = $used ? 'AND n.id NOT IN (' . implode(',', $used) . ')' : '';
+	$ids     = array();
+	foreach ($exclude_ids as $x) $ids[] = intval($x);
+	$exclude = $ids ? 'AND n.id NOT IN (' . implode(',', $ids) . ')' : '';
+
 	$r = $conn->query("
-		SELECT n.id, c.project_id
+		SELECT n.collection_id, c.project_id, COUNT(*) AS available
 		FROM nfts n
 		INNER JOIN collections c ON c.id = n.collection_id
 		WHERE n.user_id = $uid $exclude
-		ORDER BY RAND()
-		LIMIT " . GAUNTLET_HAND_SIZE . "
+		GROUP BY n.collection_id, c.project_id
 	");
-	if (!$r || !$r->num_rows) return false;
+	if (!$r || !$r->num_rows) return array();
+	$inventory = array();
+	while ($row = $r->fetch_assoc()) $inventory[] = $row;
+
+	/* The ONLY randomness in the draw. Everything downstream is deterministic,
+	   which is what makes gauntletPlanHand() testable. */
+	shuffle($inventory);
+
+	$out = array();
+	foreach (gauntletPlanHand($inventory, $size) as $cid => $take) {
+		$cid  = intval($cid);
+		$take = intval($take);
+		if ($take < 1) continue;
+		$q = $conn->query("
+			SELECT n.id, c.project_id
+			FROM nfts n
+			INNER JOIN collections c ON c.id = n.collection_id
+			WHERE n.user_id = $uid AND n.collection_id = $cid $exclude
+			ORDER BY RAND()
+			LIMIT $take
+		");
+		if ($q) while ($row = $q->fetch_assoc()) $out[] = $row;
+	}
+
+	/* gauntletGetHand() renders in insertion order, so without this the hand
+	   is laid out collection by collection -- tidy, and a dead giveaway that
+	   the draw is grouped rather than dealt. */
+	shuffle($out);
+	return $out;
+}
+
+function gauntletStartRun($conn, $user_id) {
+	$uid  = intval($user_id);
+	$used = gauntletGetUsedNFTIds($conn, $uid);
+	$rows = gauntletPickHandNFTs($conn, $uid, GAUNTLET_HAND_SIZE, $used);
+	if (!$rows) return false;
 	$conn->query("INSERT INTO gauntlets (user_id) VALUES ($uid)");
 	$run_id = intval($conn->insert_id);
 	if (!$run_id) return false;
-	while ($row = $r->fetch_assoc()) {
+	foreach ($rows as $row) {
 		$nft_id  = intval($row['id']);
 		$eff_id  = gauntletGetEffectiveProjectId(intval($row['project_id']));
 		$conn->query("INSERT INTO gauntlets_nfts (run_id, nft_id, effective_project_id) VALUES ($run_id, $nft_id, $eff_id)");
