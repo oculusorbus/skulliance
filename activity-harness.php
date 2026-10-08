@@ -388,10 +388,69 @@ ok('a real Arena description leaves no literal asterisks', strpos($h, '*') === f
 ok('a real Arena description keeps its emoji', strpos($h, '⚔️') !== false);
 
 $h = activity_format('<@772831523899965440> just became a member');
-ok('a raw Discord mention is not shown as a snowflake',
+ok('an UNKNOWN mention falls back to a neutral word, not a snowflake',
    strpos($h, '772831523899965440') === false && strpos($h, 'a member') !== false, $h);
 $h = activity_format('congrats <@!123456789012345678>');
 ok('the <@!id> nickname form is handled too', strpos($h, '123456789012345678') === false, $h);
+
+section('activity_format: resolved mentions');
+
+/* THE BUG THIS FIXES, verbatim off a live Gauntlets card: two different
+   players, both flattened to the same word, in a sentence whose entire
+   content was which of them won. */
+$names = array('772831523899965440' => 'oculusorbus', '123456789012345678' => 'mato_b13');
+$h = activity_format('<@772831523899965440> was defeated by <@123456789012345678>', $names);
+ok('both mentions resolve to their own name',
+   strpos($h, '<strong>oculusorbus</strong>') !== false
+   && strpos($h, '<strong>mato_b13</strong>') !== false, $h);
+ok('and neither reads "a member" any more', strpos($h, 'a member') === false, $h);
+
+$h = activity_format('<@772831523899965440> beat <@999999999999999999>', $names);
+ok('a known and an unknown id in one line resolve independently',
+   strpos($h, '<strong>oculusorbus</strong>') !== false && strpos($h, 'a member') !== false, $h);
+
+/* A username is player-supplied and reaches the page through a callback that
+   runs AFTER htmlspecialchars(), so it is escaped separately or it is a hole. */
+$h = activity_format('<@1> won', array('1' => '<img src=x onerror=alert(1)>'));
+ok('a hostile username cannot inject a tag',
+   strpos($h, '<img') === false && strpos($h, '&lt;img') !== false, $h);
+$h = activity_format('<@1> won', array('1' => "O'Brien & Sons"));
+ok('quotes and ampersands in a username are encoded',
+   strpos($h, '&amp;') !== false && strpos($h, '&#039;') !== false, $h);
+
+ok('an empty name map behaves exactly as before',
+   activity_format('<@1> x', array()) === activity_format('<@1> x'));
+
+section('activity_mention_names');
+
+$conn->ret = false;
+$conn->sqls = array();
+$rows = array(
+	array('description' => 'hi <@111111111111111111> and <@!222222222222222222>'),
+	array('description' => '<@111111111111111111> again'),
+	array('description' => 'nobody here'),
+	array('description' => null),
+);
+activity_mention_names($conn, $rows);
+$sql = $conn->last();
+ok('one query for the whole page, not one per card', count($conn->sqls) === 1, count($conn->sqls));
+ok('both ids are looked up',
+   strpos($sql, "'111111111111111111'") !== false && strpos($sql, "'222222222222222222'") !== false, $sql);
+ok('a repeated id is asked for once',
+   substr_count($sql, "'111111111111111111'") === 1, $sql);
+ok('it joins on discord_id', strpos($sql, 'discord_id IN (') !== false, $sql);
+
+$conn->sqls = array();
+ok('no mentions anywhere -> no query at all',
+   activity_mention_names($conn, array(array('description' => 'plain text'))) === array()
+   && $conn->sqls === array());
+ok('no rows -> empty map, no query', activity_mention_names($conn, array()) === array());
+ok('no connection -> empty map', activity_mention_names(null, $rows) === array());
+
+$conn->sqls = array();
+activity_mention_names($conn, array(array('description' => "<@1'); DROP TABLE users;--> x")));
+ok('a non-numeric mention body is not matched at all, so nothing is quoted',
+   $conn->sqls === array(), $conn->last());
 $h = activity_format('nice <:skull:112233445566778899> work');
 ok('a custom emoji ref degrades to :name:', strpos($h, '112233445566778899') === false
    && strpos($h, ':skull:') !== false, $h);
@@ -517,9 +576,31 @@ ok('card hrefs are restricted to http(s)', strpos($p, "preg_match('~^https?://~i
 ok('the embed image is lazy-loaded (some of this art is 5000x5000)',
    substr_count($p, 'loading="lazy"') >= 2);
 ok('the description goes through activity_format, not raw echo',
-   strpos($p, 'echo activity_format($r[\'description\'])') !== false);
+   strpos($p, 'echo activity_format($r[\'description\'], $ac_names)') !== false);
+ok('mentions are resolved once for the page, after the extra row is popped',
+   strpos($p, '$ac_names = activity_mention_names($conn, $ac_rows);') !== false
+   && strpos($p, 'if ($ac_more) array_pop($ac_rows);') < strpos($p, '$ac_names ='), $p ? '' : '');
 ok('one extra row is fetched to decide "Load older"',
    strpos($p, 'ACTIVITY_PAGE_SIZE + 1') !== false);
+
+/* REPORTED FROM A PHONE: the channel filter was the one white, rounded,
+   system-styled box on a dark page, because the rule set padding and
+   font-size and left every colour to the user agent. */
+$selAt = strpos($p, '#ac-filters select {');
+ok('the channel filter has its own rule', $selAt !== false);
+if ($selAt !== false) {
+	$rule = substr($p, $selAt, strpos($p, '}', $selAt) - $selAt);
+	ok('it sets a background, so it cannot fall back to the UA default',
+	   strpos($rule, 'background-color: #0d1e2e') !== false, $rule);
+	ok('it sets a text colour to go with that background',
+	   strpos($rule, 'color: #D6DDDE') !== false, $rule);
+	ok('it is square, like every other control on the platform',
+	   strpos($rule, 'border-radius: 0') !== false, $rule);
+}
+/* The popup list does NOT inherit the select's background on Windows or
+   Android -- without this the options stay white on white there. */
+ok('the option list is styled too',
+   strpos($p, '#ac-filters select option { background-color: #0d1e2e') !== false);
 
 restore_error_handler();
 echo "\n-------------------------------------------\n";

@@ -303,6 +303,52 @@ function activity_ago($datetime) {
 }
 
 /*
+ * Discord ids -> platform usernames, for a whole page of cards at once.
+ *
+ * WHY THIS EXISTS. Descriptions are written for Discord, where <@id> renders
+ * as the member's name. On the web it is a raw snowflake, so activity_format()
+ * replaced it with the word "a member" -- which produced, on a real Gauntlets
+ * card, "a member was defeated by a member (mato_b13)". Two different players,
+ * both erased, in a sentence whose whole content was which of them won.
+ *
+ * So the ids are looked up instead. ONE query for the entire page, not one per
+ * card: a Gauntlets or leaderboard run posts a dozen announcements naming the
+ * same handful of people, and a per-card lookup would be dozens of round trips
+ * to answer the same question.
+ *
+ * "a member" survives as the fallback for an id with no account here -- a
+ * Discord member who never linked, or a player since deleted.
+ */
+function activity_mention_names($conn, $rows) {
+	$out = array();
+	if (!($conn instanceof mysqli) || !$rows) return $out;
+
+	$ids = array();
+	foreach ($rows as $r) {
+		if (empty($r['description'])) continue;
+		if (preg_match_all('/<@!?(\d{5,25})>/', (string) $r['description'], $m)) {
+			foreach ($m[1] as $id) $ids[$id] = true;
+		}
+	}
+	if (!$ids) return $out;
+
+	/* Digits only by construction (the pattern above), so this cannot carry a
+	   quote -- escaped anyway rather than relying on a regex two functions
+	   away staying that way. */
+	$esc = array();
+	foreach (array_keys($ids) as $id) $esc[] = "'" . $conn->real_escape_string($id) . "'";
+
+	$r = @$conn->query("SELECT discord_id, username FROM users
+		WHERE discord_id IN (" . implode(',', $esc) . ")");
+	if (!$r) return $out;
+	while ($row = $r->fetch_assoc()) {
+		if ((string) $row['username'] === '') continue;
+		$out[(string) $row['discord_id']] = (string) $row['username'];
+	}
+	return $out;
+}
+
+/*
  * Discord markdown -> HTML, for the card body.
  *
  * Every description in the platform is written for Discord, so they are full
@@ -315,14 +361,20 @@ function activity_ago($datetime) {
  * built here. A description can contain a player-supplied name (realm names,
  * Fighter names), so this is the XSS boundary for the whole page.
  */
-function activity_format($text) {
+function activity_format($text, $names = array()) {
 	$s = htmlspecialchars((string) $text, ENT_QUOTES, 'UTF-8');
 
-	/* <@1234...> -- a Discord mention. Nothing on the web can resolve it to
-	   a name, and showing a raw snowflake is noise, so it becomes a neutral
-	   word. The platform's own announces normally also name the player in
-	   $author, which is what the card header shows. */
-	$s = preg_replace('/&lt;@!?\d+&gt;/', 'a member', $s);
+	/* <@1234...> -- a Discord mention. Resolved to the platform username when
+	   we have one (see activity_mention_names(), which looks up a whole page
+	   in one query), and only otherwise flattened to a neutral word.
+	   NOTE the entity form: htmlspecialchars() has already run, so the
+	   angle brackets are &lt; / &gt; by the time this sees them. The
+	   replacement is escaped because a username is player-supplied. */
+	$s = preg_replace_callback('/&lt;@!?(\d+)&gt;/', function ($m) use ($names) {
+		return isset($names[$m[1]])
+			? '<strong>' . htmlspecialchars($names[$m[1]], ENT_QUOTES, 'UTF-8') . '</strong>'
+			: 'a member';
+	}, $s);
 	/* <#123> channel and <:name:123> emoji refs, same reasoning. */
 	$s = preg_replace('/&lt;#\d+&gt;/', '', $s);
 	$s = preg_replace('/&lt;a?:(\w+):\d+&gt;/', ':$1:', $s);

@@ -42,6 +42,10 @@ $ac_rows = activity_recent($conn, ACTIVITY_PAGE_SIZE + 1, $ac_before, $ac_chan, 
 $ac_more = count($ac_rows) > ACTIVITY_PAGE_SIZE;
 if ($ac_more) array_pop($ac_rows);
 
+/* Resolve every <@id> on this page in ONE query -- after the extra row is
+   popped, so the card that is not being drawn does not pull names in. */
+$ac_names = activity_mention_names($conn, $ac_rows);
+
 /* Rebuild the querystring for a link that changes one filter and keeps the
    rest. Paging always resets -- a `before` id from the unfiltered feed is
    meaningless once the filter changes. */
@@ -68,13 +72,39 @@ include 'header.php';
    because they are different kinds of choice: three fixed viewpoints on the
    same feed, versus one of ~20 sources. */
 #ac-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0 20px; }
-.ac-seg { display: inline-flex; border: 1px solid rgba(0,200,160,0.25); border-radius: 8px; overflow: hidden; }
-.ac-seg a { display: block; padding: 7px 14px; font-size: .8rem; color: #9fb4c4; text-decoration: none;
+/* Square, like every other control on the platform -- flexbox.css squared the
+   panels, buttons and cards page by page and has a bare `select {
+   border-radius: 0 }` baseline to stop dropdowns being the one round thing
+   left on a screen. A rounded segmented control next to a square select
+   would reintroduce exactly that. */
+.ac-seg { display: inline-flex; border: 1px solid rgba(0,200,160,0.25); overflow: hidden; }
+/* 8px, not 7: it puts the segmented control's outer height at 33px, the same
+   as the select beside it. At 7px the two sat 2px apart along the top edge. */
+.ac-seg a { display: block; padding: 8px 14px; font-size: .8rem; color: #9fb4c4; text-decoration: none;
   background: #0a1929; transition: background .15s, color .15s; white-space: nowrap; }
 .ac-seg a + a { border-left: 1px solid rgba(0,200,160,0.18); }
 .ac-seg a:hover { color: #c8dce8; background: #0f2236; }
 .ac-seg a.on { background: #00c8a0; color: #04222c; font-weight: 700; }
-#ac-filters select { padding: 7px 10px; font-size: .8rem; }
+/*
+ * THE CHANNEL FILTER WEARS THE PLATFORM'S DROPDOWN, NOT THE BROWSER'S.
+ *
+ * This set only padding and font-size at first, which leaves every colour to
+ * the user agent -- so on a dark page the one white, rounded, system-styled
+ * box on screen was this. The values are flexbox.css's own dropdown
+ * convention (#filterLeaderboard / .dropdown), not new ones.
+ *
+ * The explicit rule on <option> is not redundant: a select's own background
+ * does not inherit into its popup list on Windows or Android, and the
+ * options would stay white-on-white there.
+ */
+#ac-filters select {
+  padding: 6px 10px; font-size: .8rem; font-weight: 700;
+  font-family: Arial, sans-serif;
+  background-color: #0d1e2e; color: #D6DDDE;
+  border: 1px solid rgba(0,200,160,0.18); border-radius: 0;
+  height: 33px;
+}
+#ac-filters select option { background-color: #0d1e2e; color: #D6DDDE; font-weight: 400; }
 
 /* The wall. auto-fill, not auto-fit: a single card should stay card-width
    instead of stretching across the viewport, which is what happens the moment
@@ -245,7 +275,7 @@ include 'header.php';
 								<?php if ((string) $r['description'] !== '') { ?>
 								<?php /* activity_format() escapes first and builds the only tags in
 								         its own output -- it is the XSS boundary for this page. */ ?>
-								<p class="ac-desc"><?php echo activity_format($r['description']); ?></p>
+								<p class="ac-desc"><?php echo activity_format($r['description'], $ac_names); ?></p>
 								<?php } ?>
 							</div>
 							<?php if ($img !== '') { ?>

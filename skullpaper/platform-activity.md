@@ -8,7 +8,7 @@ It sits next to the Launchpad in the menu.
 
 Every announcement the platform posts to Discord: missions completed, Arena battles, daily rewards, Realm sieges, Crypt Crawl runs, Gauntlets, store purchases, auctions, raffles, trait drops, leaderboard results. A new game or feature that announces anything shows up here the day it launches - nothing has to be wired up for it separately.
 
-A card carries whatever the announcement carried: the title, the description, the art, and who it was about. Clicking it takes you to whatever the announcement linked to.
+A card carries whatever the announcement carried: the title, the description, the art, and who it was about. Clicking it takes you to whatever the announcement linked to. Where an announcement mentions a player, the card shows their Skulliance name.
 
 ## What does not appear
 
