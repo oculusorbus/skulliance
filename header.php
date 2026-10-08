@@ -275,6 +275,12 @@
 		       burying it in a menu would defeat the point of it existing. -->
 		  <a href="launchpad.php">Launchpad</a>
 
+		  <!-- Activity: top-level alongside Launchpad for the same reason it is.
+		       It is the answer to "what is everyone doing", which is a question
+		       you ask on arrival, not one you go hunting through a menu for.
+		       Mirrors what Skull Bot announces to Discord -- see activity.php. -->
+		  <a href="activity.php">Activity</a>
+
 		  <!-- Play -->
 		  <div class="nav-dropdown navbar-first">
 		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Play</span>

@@ -81,6 +81,7 @@ $skullpaper_nav = [
 	]],
 	['slug' => 'platform', 'title' => 'Platform', 'emoji' => '🛠️', 'children' => [
 		['slug' => 'platform-dashboard',    'title' => 'Dashboard',    'emoji' => '📊'],
+		['slug' => 'platform-activity',     'title' => 'Activity',     'emoji' => '📣'],
 		['slug' => 'platform-gallery',      'title' => 'Gallery',      'emoji' => '🖼️'],
 		['slug' => 'platform-collections',  'title' => 'Collections',  'emoji' => '📚'],
 		['slug' => 'platform-leaderboards', 'title' => 'Leaderboards', 'emoji' => '🏅'],

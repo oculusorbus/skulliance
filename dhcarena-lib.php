@@ -803,10 +803,21 @@ function dhca_announce($conn, $b, $won, $rewarded) {
 		$author = array('name' => $won ? $att.' takes the Arena' : $def.' holds the Arena');
 		if ($winU['avatar'] !== '') $author['icon_url'] = $winU['avatar'];
 
+		/*
+		 * THE LAST TWO ARGS ARE FOR THE ACTIVITY FEED, not for Discord.
+		 *
+		 * This is the platform's only two-sided announce, and the only place
+		 * that knows both players. discordmsg() otherwise infers the actor
+		 * from the session, which here would always be the attacker -- the
+		 * defender is not making a request, they are being attacked, often
+		 * while offline. Without $defId the battle would be invisible in
+		 * their own feed. Attacker first so it reads as THEIR action under
+		 * "My activity", and lands in the defender's "Involving me".
+		 */
 		ob_start();
 		discordmsg($won ? '⚔️ Arena — Challenger Wins' : '🛡️ Arena — Defense Holds',
 			$desc, $img, 'https://skulliance.io/staking/dhcarena.php', 'dhcarena', $thumb,
-			$won ? '00C8A0' : 'E0466B', $author, null, $ping);
+			$won ? '00C8A0' : 'E0466B', $author, null, $ping, $attId, $defId);
 		ob_end_clean();
 	} catch (Throwable $e) {
 		// never reaches the player

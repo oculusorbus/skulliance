@@ -405,6 +405,23 @@ if($verify_entry && verify_job_allowed() && isset($_GET['verify'])){
 	require_once __DIR__ . '/verify-polygon.php';
 	echo poly_nightly($conn) . "\n";
 
+	/*
+	 * ACTIVITY FEED RETENTION. One DELETE on an indexed column, so it is
+	 * cheap and it is here rather than on a cron of its own -- the feed is
+	 * written from inside discordmsg() on every announce and nothing else
+	 * would ever trim it.
+	 *
+	 * Silent on the normal path. -1 means the DELETE could not run at all,
+	 * which before the table is created is the EXPECTED state, not a
+	 * failure: activity-schema.md is run by hand. So it is reported, not
+	 * alerted on.
+	 */
+	require_once __DIR__ . '/activity-lib.php';
+	$ac_pruned = activity_prune($conn);
+	echo ($ac_pruned < 0
+		? "activity: no table yet, nothing pruned\n"
+		: "activity: pruned " . $ac_pruned . " row(s) older than " . ACTIVITY_RETAIN_DAYS . " days\n");
+
 	$addresses = array();
 	$addresses = getAllAddresses($conn);
 

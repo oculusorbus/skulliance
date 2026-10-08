@@ -1,5 +1,10 @@
 <?PHP
 include_once __DIR__ . '/credentials/webhooks_credentials.php';
+/* The Activity feed is written from inside discordmsg() -- see activity-lib.php
+   for why it is a log rather than a query across the feature tables. Nothing
+   here depends on it: if the include is missing, function_exists() below is
+   false and every announce posts exactly as it always has. */
+@include_once __DIR__ . '/activity-lib.php';
 //
 //-- https://gist.github.com/Mo45/cb0813cb8a6ebcd6524f6a36d4f8862c
 //
@@ -94,7 +99,23 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
     define('SKL_EMBED_FOOTER_MAX', 2048);
     define('SKL_EMBED_TOTAL_MAX', 6000);
 
-    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null, $footer=null, $content="") {
+    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null, $footer=null, $content="", $actor_id=null, $actor_id2=0) {
+        /*
+         * $actor_id / $actor_id2 exist ONLY for the Activity feed -- neither
+         * touches the Discord payload. Both are optional and additive, so
+         * every one of the 100+ existing call sites is unchanged.
+         *
+         * $actor_id null (the default) means "work it out from the session",
+         * which is right for almost every announce: a player runs a mission,
+         * wins a battle, buys from the store, and the announce fires inside
+         * that player's own request. Pass it explicitly when the announce is
+         * about someone other than whoever owns the request.
+         *
+         * $actor_id2 is the other player in a two-sided announce and can
+         * never be inferred -- see dhca_announce(), which holds both the
+         * attacker and the defender and passes both, so an Arena result
+         * appears in the defender's feed too.
+         */
         /*
          * RE-ENTRY GUARD. alertAdmin() reports a failure by calling THIS
          * function, so a post that fails because the default webhook is dead
@@ -297,6 +318,40 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
                an AJAX endpoint's JSON, or into an image. Same removal, same
                reasoning, as dhc-card.php and dhcfighters-notify.php. */
 
+            /*
+             * MIRROR TO THE ACTIVITY FEED -- only what Discord actually took.
+             *
+             * Deliberately inside the 2xx branch's sibling check rather than
+             * up beside the json_encode(): a post that was rejected (401 from
+             * a rotated webhook, 400 from an over-length embed, 429) reached
+             * nobody, and a feed whose premise is "this was announced" must
+             * not carry it. An unconfigured webhook never gets here at all --
+             * the enclosing `if ($webhook != "")` already skipped it.
+             *
+             * NOT alertAdmin()'s posts. Those are operational failure reports
+             * with an @ping down the default webhook -- a dead cron, a
+             * database error, a rejected embed. They are not player activity
+             * and they would put internal failure detail on a page every
+             * member can read. $skl_alerting covers the alert raised from the
+             * failure branch below (statics are shared across calls to the
+             * same function, so it is still true inside the nested call);
+             * $GLOBALS['skl_ops_alert'] covers alertAdmin() called directly
+             * from anywhere else on the platform.
+             *
+             * Best-effort, like everything else in this function: by the time
+             * we are here the announced thing has already happened and been
+             * paid for, so a logging problem must not reach the response.
+             */
+            if ($status >= 200 && $status < 300
+                && !$skl_alerting
+                && empty($GLOBALS['skl_ops_alert'])
+                && function_exists('activity_log')) {
+                $aid = ($actor_id === null && function_exists('activity_actor'))
+                     ? activity_actor() : (int) $actor_id;
+                activity_log($channel, $title, $description, $url, $imageurl,
+                             $thumbnail, $color, $author, $footer, $aid, (int) $actor_id2);
+            }
+
             if ($status < 200 || $status >= 300) {
                 $where = ($channel !== "" ? $channel : "default");
                 $why   = $cerr !== "" ? $cerr : substr((string)$response, 0, 400);
@@ -365,18 +420,30 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
         // note on discordmsg()'s $content parameter above.
         $content = !empty($discordid_oculusorbus) ? '<@' . $discordid_oculusorbus . '>' : '';
 
-        discordmsg(
-            '⚠️ ' . $subject,
-            $detail,
-            "",
-            "https://skulliance.io/staking",
-            "",
-            "",
-            "CC0000",
-            null,
-            ["text" => php_uname('n') . ' · ' . date('Y-m-d H:i:s T')],
-            $content
-        );
+        /* NOT PLAYER ACTIVITY. discordmsg() mirrors what it posts to the
+           Activity feed, which every member can read; an ops alert carries
+           the failure detail that makes it useful (a stack location, a
+           database error, a dead webhook) and belongs nowhere near it. Set
+           around the call and always cleared, including if the post throws --
+           a leaked flag would silently stop the whole feed for the rest of
+           the request. */
+        $GLOBALS['skl_ops_alert'] = true;
+        try {
+            discordmsg(
+                '⚠️ ' . $subject,
+                $detail,
+                "",
+                "https://skulliance.io/staking",
+                "",
+                "",
+                "CC0000",
+                null,
+                ["text" => php_uname('n') . ' · ' . date('Y-m-d H:i:s T')],
+                $content
+            );
+        } finally {
+            $GLOBALS['skl_ops_alert'] = false;
+        }
         return true;
     }
 

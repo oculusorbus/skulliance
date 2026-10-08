@@ -1,0 +1,283 @@
+<?php
+/*
+ * ACTIVITY -- the platform's own copy of what Skull Bot announces to Discord.
+ *
+ * Reads nothing but the `activity` table. See activity-schema.md for why this
+ * is a log written at announce time rather than a query across the feature
+ * tables (short version: a lot of what gets announced is assembled into a
+ * sentence and stored nowhere else), and activity-lib.php for the writer.
+ *
+ * Until the table exists this renders an empty wall with an explanation
+ * rather than an error -- the feature is inert, not broken.
+ */
+include 'db.php';
+include 'webhooks.php';
+include 'skulliance.php';
+include_once 'activity-lib.php';
+
+/* ---- filters ------------------------------------------------------------- */
+
+$me = isset($_SESSION['userData']['user_id']) ? (int) $_SESSION['userData']['user_id'] : 0;
+
+/* Whitelisted rather than passed through: $scope reaches a WHERE clause, and
+   while activity_recent() ignores anything it doesn't recognise, the value is
+   also echoed back into the links below. */
+$ac_scope = isset($_GET['scope']) ? (string) $_GET['scope'] : 'all';
+if (!in_array($ac_scope, array('all', 'mine', 'involving'), true)) $ac_scope = 'all';
+if ($me <= 0) $ac_scope = 'all';
+
+$ac_chans = activity_channels($conn);
+$ac_chan  = isset($_GET['channel']) ? (string) $_GET['channel'] : '';
+/* Only a channel that actually has rows. Anything else is treated as "all",
+   so a stale bookmark shows the feed instead of an empty page. */
+if ($ac_chan !== '' && !isset($ac_chans[$ac_chan])) $ac_chan = '';
+
+$ac_before = isset($_GET['before']) ? (int) $_GET['before'] : 0;
+if ($ac_before < 0) $ac_before = 0;
+
+/* One extra row, used only to decide whether to draw "Load older". Asking for
+   PAGE_SIZE and then checking count() == PAGE_SIZE gets this wrong exactly
+   when the last page is full, and prints a dead button. */
+$ac_rows = activity_recent($conn, ACTIVITY_PAGE_SIZE + 1, $ac_before, $ac_chan, $me, $ac_scope);
+$ac_more = count($ac_rows) > ACTIVITY_PAGE_SIZE;
+if ($ac_more) array_pop($ac_rows);
+
+/* Rebuild the querystring for a link that changes one filter and keeps the
+   rest. Paging always resets -- a `before` id from the unfiltered feed is
+   meaningless once the filter changes. */
+function ac_link($overrides = array()) {
+	global $ac_scope, $ac_chan;
+	$q = array('scope' => $ac_scope, 'channel' => $ac_chan);
+	foreach ($overrides as $k => $v) $q[$k] = $v;
+	foreach ($q as $k => $v) if ($v === '' || $v === null) unset($q[$k]);
+	return 'activity.php' . ($q ? '?' . http_build_query($q) : '');
+}
+
+include 'header.php';
+?>
+<style>
+/* Scoped to this page. The wall is the only thing here, so it gets the full
+   width rather than sitting in the .col1of3 one-column grid the table pages
+   use -- a card wall at a third of the viewport is a list with pictures. */
+#ac-wrap { padding: 20px; width: 100%; }
+#ac-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 18px; margin-bottom: 4px; }
+#ac-head h2 { margin: 0; }
+#ac-head .ac-sub { color: #9fb4c4; font-size: .82rem; }
+
+/* Filters. The scope is a segmented control and the channel is a select,
+   because they are different kinds of choice: three fixed viewpoints on the
+   same feed, versus one of ~20 sources. */
+#ac-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0 20px; }
+.ac-seg { display: inline-flex; border: 1px solid rgba(0,200,160,0.25); border-radius: 8px; overflow: hidden; }
+.ac-seg a { display: block; padding: 7px 14px; font-size: .8rem; color: #9fb4c4; text-decoration: none;
+  background: #0a1929; transition: background .15s, color .15s; white-space: nowrap; }
+.ac-seg a + a { border-left: 1px solid rgba(0,200,160,0.18); }
+.ac-seg a:hover { color: #c8dce8; background: #0f2236; }
+.ac-seg a.on { background: #00c8a0; color: #04222c; font-weight: 700; }
+#ac-filters select { padding: 7px 10px; font-size: .8rem; }
+
+/* The wall. auto-fill, not auto-fit: a single card should stay card-width
+   instead of stretching across the viewport, which is what happens the moment
+   a filter narrows the feed to one result. */
+#ac-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+
+.ac-card { display: flex; flex-direction: column; background: #0d1e2e; border-radius: 10px;
+  overflow: hidden; border: 1px solid rgba(0,200,160,0.10);
+  /* The platform stylesheet centres body text, which is right for the panels
+     it was written for and wrong for a feed: centred ragged paragraphs have
+     no common left edge to scan down, so six cards read as six separate
+     blocks instead of a list. Reset it here rather than page-wide. */
+  text-align: left;
+  /* The accent edge carries the channel's own embed colour -- see the inline
+     style on each card. It is the only place the colour is used, so a post
+     with none simply has a neutral edge. */
+  border-left: 3px solid #1d4256; transition: border-color .15s, transform .15s; }
+.ac-card:hover { transform: translateY(-2px); }
+
+.ac-top { display: flex; align-items: center; gap: 9px; padding: 11px 13px 0; }
+.ac-av { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex: 0 0 30px;
+  background: #07111d; }
+.ac-who { min-width: 0; flex: 1; }
+.ac-who .ac-name { font-size: .78rem; color: #c8dce8; font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-who .ac-when { font-size: .7rem; color: #7c93a6; }
+.ac-chip { font-size: .62rem; letter-spacing: .04em; text-transform: uppercase; font-weight: 700;
+  color: #00c8a0; background: rgba(0,200,160,0.10); border-radius: 20px; padding: 3px 9px;
+  white-space: nowrap; flex: 0 0 auto; }
+
+.ac-body { padding: 10px 13px 13px; }
+.ac-title { font-size: .92rem; color: #e6f1f7; font-weight: 700; line-height: 1.35; margin: 0 0 6px; }
+.ac-desc { font-size: .78rem; color: #9fb4c4; line-height: 1.55; margin: 0;
+  /* Announcements run from one line to a dozen. Clamping keeps the wall a
+     wall; the card links to the thing itself for the rest. */
+  display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+.ac-desc a { color: #00c8a0; }
+.ac-desc code { background: #07111d; padding: 1px 4px; border-radius: 3px; font-size: .92em; }
+.ac-foot { font-size: .68rem; color: #6d8395; padding: 0 13px 12px; }
+
+/* The embed image. max-height matters more than it looks: some of this art is
+   5000x5000 (Danketsu), and the only thing stopping a 20-card page from
+   decoding a few hundred megapixels is this plus loading="lazy". */
+.ac-img { display: block; width: 100%; max-height: 240px; object-fit: cover; background: #07111d; }
+.ac-link { display: flex; flex-direction: column; flex: 1; }
+
+/*
+ * THE WHOLE CARD IS CLICKABLE, AND THE CARD IS NOT AN <a>.
+ *
+ * It was, and that was a real bug: activity_format() turns a Discord
+ * [text](url) into an anchor, and plenty of announcements carry one. An <a>
+ * inside an <a> is invalid HTML, so the parser CLOSES the outer one early --
+ * the card's own body was being hoisted out of its link entirely, which is
+ * how it was caught (one card in the preview had a .ac-link with a single
+ * child while every other had three).
+ *
+ * So the link is an empty overlay stretched across the card instead. The
+ * description's own anchors sit above it on z-index and keep working, which
+ * is also the better behaviour: a link in the text should go where it says,
+ * not where the card goes.
+ */
+.ac-card { position: relative; }
+.ac-stretch { position: absolute; inset: 0; z-index: 1; }
+.ac-desc a { position: relative; z-index: 2; }
+.ac-card:hover .ac-title { color: #00c8a0; }
+
+#ac-more { margin: 24px 0 0; text-align: center; }
+.ac-empty { background: #0a1929; border-radius: 10px; padding: 26px 22px; color: #9fb4c4;
+  font-size: .84rem; line-height: 1.6; max-width: 620px; }
+.ac-empty b { color: #c8dce8; }
+
+@media (max-width: 600px) {
+  #ac-wall { grid-template-columns: 1fr; }
+  #ac-wrap { padding: 14px; }
+}
+</style>
+		<div class="row" id="row1">
+			<div id="ac-wrap">
+				<div id="ac-head">
+					<h2>Activity</h2>
+					<span class="ac-sub">What Skull Bot has been announcing across the platform.</span>
+				</div>
+
+				<div id="ac-filters">
+					<?php if ($me > 0) { ?>
+					<div class="ac-seg">
+						<a href="<?php echo htmlspecialchars(ac_link(array('scope' => 'all')), ENT_QUOTES); ?>"
+						   class="<?php echo $ac_scope === 'all' ? 'on' : ''; ?>">All activity</a>
+						<a href="<?php echo htmlspecialchars(ac_link(array('scope' => 'mine')), ENT_QUOTES); ?>"
+						   class="<?php echo $ac_scope === 'mine' ? 'on' : ''; ?>">My activity</a>
+						<?php /* Not the same as "mine": an Arena battle fought AGAINST you is
+						         something you were involved in without making a request. */ ?>
+						<a href="<?php echo htmlspecialchars(ac_link(array('scope' => 'involving')), ENT_QUOTES); ?>"
+						   class="<?php echo $ac_scope === 'involving' ? 'on' : ''; ?>">Involving me</a>
+					</div>
+					<?php } ?>
+
+					<?php if ($ac_chans) { ?>
+					<select onchange="location.href=this.value;">
+						<option value="<?php echo htmlspecialchars(ac_link(array('channel' => '')), ENT_QUOTES); ?>"
+							<?php echo $ac_chan === '' ? 'selected' : ''; ?>>Everything</option>
+						<?php foreach ($ac_chans as $c => $n) { ?>
+						<option value="<?php echo htmlspecialchars(ac_link(array('channel' => $c)), ENT_QUOTES); ?>"
+							<?php echo $ac_chan === $c ? 'selected' : ''; ?>>
+							<?php echo htmlspecialchars(activity_channel_label($c)) . ' (' . (int) $n . ')'; ?>
+						</option>
+						<?php } ?>
+					</select>
+					<?php } ?>
+				</div>
+
+				<?php if (!$ac_rows) { ?>
+				<div class="ac-empty">
+					<?php if ($ac_scope !== 'all' || $ac_chan !== '') { ?>
+					<b>Nothing here yet.</b><br>
+					No activity matches this filter. Try <a href="activity.php">all activity</a>.
+					<?php } else { ?>
+					<b>The feed is still filling up.</b><br>
+					Activity is recorded as it is announced, so this wall starts from the day
+					the feature went live rather than from the beginning of the platform.
+					Play something and you will be the first card on it.
+					<?php } ?>
+				</div>
+				<?php } else { ?>
+
+				<div id="ac-wall">
+					<?php foreach ($ac_rows as $r) {
+						$edge  = preg_match('/^[0-9A-Fa-f]{6}$/', (string) $r['color']) && $r['color'] !== '000000'
+						       ? '#' . $r['color'] : '#1d4256';
+						$href  = (string) $r['url'];
+						/* Only http(s). The column is written from discordmsg()'s $url, which
+						   is platform-controlled today, but a javascript: href here would be
+						   a stored XSS on a page every member loads. */
+						if (!preg_match('~^https?://~i', $href)) $href = '';
+						$av    = (string) $r['author_icon'];
+						if ($av === '') $av = (string) $r['thumbnail'];
+						$who   = (string) $r['author_name'];
+						$img   = (string) $r['image_url'];
+					?>
+					<div class="ac-card" style="border-left-color: <?php echo htmlspecialchars($edge, ENT_QUOTES); ?>;">
+						<?php if ($href !== '') { ?>
+						<?php /* Empty by design -- see .ac-stretch. aria-label because an
+						         anchor with no text content is unreachable otherwise. */ ?>
+						<a class="ac-stretch" href="<?php echo htmlspecialchars($href, ENT_QUOTES); ?>"
+						   aria-label="<?php echo htmlspecialchars((string) $r['title'] !== ''
+						       ? (string) $r['title'] : activity_channel_label($r['channel']), ENT_QUOTES); ?>"></a>
+						<?php } ?>
+						<div class="ac-link">
+							<div class="ac-top">
+								<?php if ($av !== '') { ?>
+								<img class="ac-av" src="<?php echo htmlspecialchars($av, ENT_QUOTES); ?>"
+								     alt="" loading="lazy" onerror="this.src='icons/skull.png'">
+								<?php } ?>
+								<div class="ac-who">
+									<?php if ($who !== '') { ?>
+									<div class="ac-name"><?php echo htmlspecialchars($who); ?></div>
+									<?php } ?>
+									<div class="ac-when" title="<?php echo htmlspecialchars((string) $r['created_at'], ENT_QUOTES); ?>">
+										<?php echo htmlspecialchars(activity_ago($r['created_at'])); ?>
+									</div>
+								</div>
+								<span class="ac-chip"><?php echo htmlspecialchars(activity_channel_label($r['channel'])); ?></span>
+							</div>
+							<div class="ac-body">
+								<?php if ((string) $r['title'] !== '') { ?>
+								<p class="ac-title"><?php echo htmlspecialchars((string) $r['title']); ?></p>
+								<?php } ?>
+								<?php if ((string) $r['description'] !== '') { ?>
+								<?php /* activity_format() escapes first and builds the only tags in
+								         its own output -- it is the XSS boundary for this page. */ ?>
+								<p class="ac-desc"><?php echo activity_format($r['description']); ?></p>
+								<?php } ?>
+							</div>
+							<?php if ($img !== '') { ?>
+							<img class="ac-img" src="<?php echo htmlspecialchars($img, ENT_QUOTES); ?>"
+							     alt="" loading="lazy" onerror="this.style.display='none'">
+							<?php } ?>
+							<?php if ((string) $r['footer_text'] !== '') { ?>
+							<div class="ac-foot"><?php echo htmlspecialchars((string) $r['footer_text']); ?></div>
+							<?php } ?>
+						</div>
+					</div>
+					<?php } ?>
+				</div>
+
+				<?php if ($ac_more) {
+					$last = (int) $ac_rows[count($ac_rows) - 1]['id'];
+				?>
+				<div id="ac-more">
+					<a class="button" href="<?php echo htmlspecialchars(ac_link(array('before' => $last)), ENT_QUOTES); ?>">Load older</a>
+				</div>
+				<?php } ?>
+
+				<?php } ?>
+			</div>
+		</div>
+		<!-- Footer -->
+		<div class="footer">
+		  <p>Skulliance<br>Copyright © <span id="year"></span>
+		</div>
+	</div>
+  </div>
+</body>
+<?php $conn->close(); ?>
+<script type="text/javascript" src="skulliance.js"></script>
+</html>
