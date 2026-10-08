@@ -20,7 +20,7 @@ A card carries whatever the announcement carried: the title, the description, th
 
 * **All activity** - the whole platform.
 * **My activity** - things you did.
-* **Involving me** - that, plus things done to you. These are not the same: an Arena battle fought *against* you is something you were involved in without ever making a move, so it appears here but not under *My activity*.
+* **Involving me** - that, plus things done to you. These are not the same: a Gauntlet run against one of your NFTs, an Arena battle fought *against* you, or a live match someone challenged you to are all things you were involved in without making a move, so they appear here but not under *My activity*. Winning a raffle or an auction shows up for both you and the creator.
 * **Channel** - narrow to one source, for example only [[games-dhc-arena]] or only [[missions]]. Only channels that actually have activity are listed.
 
 ## History

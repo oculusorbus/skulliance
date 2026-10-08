@@ -555,6 +555,51 @@ $d = file_get_contents(__DIR__ . '/dhcarena-lib.php');
 ok('dhca_announce passes attacker AND defender',
    strpos($d, '$ping, $attId, $defId);') !== false);
 
+/*
+ * EVERY TWO-SIDED ANNOUNCE MUST PASS BOTH IDS, or "Involving me" is just a
+ * slower "My activity".
+ *
+ * Reported after the feed shipped: "Involving me is displaying notifications
+ * I initiated, not the ones that involve me." The filter was right; the DATA
+ * was not. Only ranked Arena was passing a second id, so every other
+ * multiplayer event on the platform recorded one participant and the other
+ * side never saw it. Gauntlets is the case that surfaced it -- and its own
+ * code comments call third-party inclusion the point of the Discord ping.
+ */
+$g = file_get_contents(__DIR__ . '/db.php');
+ok('Gauntlet victory records the runner AND the NFT owner fought',
+   substr_count($g, "\$wh_opp_ping, \$uid, intval(\$enc['opponent_user_id'])") === 2,
+   substr_count($g, "\$wh_opp_ping, \$uid, intval(\$enc['opponent_user_id'])"));
+
+$l = file_get_contents(__DIR__ . '/dhcarena-live.php');
+ok('a live Arena challenge reaches the person challenged',
+   preg_match('/Live Challenge.*?\(int\)\$row\[.host_id.\], \(int\)\$row\[.guest_id.\]/s', $l) === 1);
+ok('a live Arena result records both seats',
+   preg_match('/Live Match.*?\(int\)\$row\[.host_id.\], \(int\)\$row\[.guest_id.\]/s', $l) === 1);
+
+/* The two marketplace crons have NO SESSION, so activity_actor() returns 0
+   and an announce without an explicit id belongs to nobody -- it would not
+   appear under anyone's "My activity" either. Every call in both files now
+   names at least the creator. */
+foreach (array('auctions-verify.php', 'raffles-verify.php') as $f) {
+	$src2  = file_get_contents(__DIR__ . '/' . $f);
+	$calls = substr_count($src2, 'discordmsg(');
+	$attr  = substr_count($src2, "null, null, '',");
+	ok("$f attributes every announce it makes", $calls === $attr, "$calls calls, $attr attributed");
+}
+ok('the auction winner and creator are both recorded on a sale',
+   substr_count(file_get_contents(__DIR__ . '/auctions-verify.php'),
+      "null, null, '', \$prev_bidder, \$creator_id") === 2);
+ok('auction delivery and timeout record creator and winner',
+   substr_count(file_get_contents(__DIR__ . '/auctions-verify.php'),
+      "null, null, '', \$creator_id, \$winner_id") === 2);
+ok('the raffle winner and creator are both recorded on a draw',
+   substr_count(file_get_contents(__DIR__ . '/raffles-verify.php'),
+      "null, null, '', \$winning_uid, \$creator_id") === 2);
+ok('raffle delivery and timeout record creator and winner',
+   substr_count(file_get_contents(__DIR__ . '/raffles-verify.php'),
+      "null, null, '', \$creator_id, \$winner_id") === 2);
+
 $v = file_get_contents(__DIR__ . '/verify.php');
 ok('the nightly job prunes', strpos($v, 'activity_prune($conn)') !== false);
 ok('a missing table is reported, not alerted on',

@@ -275,9 +275,14 @@ function dhcal_announce_challenge($conn, $row, $crew = array()) {
 		   big slot -- the same split dhca_announce() uses, so a person and a
 		   character never compete for the same corner. */
 		ob_start();
+		/* Last two args are the Activity feed's, not Discord's: the host is
+		   issuing the challenge, the guest is being challenged and has made
+		   no request at all. Without the guest's id the challenge never
+		   appears in the feed of the person it was aimed at. */
 		discordmsg('⚔️ Arena — Live Challenge', $desc, $img,
 			'https://skulliance.io/staking/dhcarena.php', 'dhcarena',
-			$hostU['avatar'] !== '' ? $hostU['avatar'] : $img, 'F5A623', $author, null, $ping);
+			$hostU['avatar'] !== '' ? $hostU['avatar'] : $img, 'F5A623', $author, null, $ping,
+			(int)$row['host_id'], (int)$row['guest_id']);
 		ob_end_clean();
 	} catch (Throwable $e) {
 		// a Discord outage must never cost somebody their challenge
@@ -567,9 +572,14 @@ function dhcal_announce($conn, $row, $b, $hostWon) {
 		if ($winU['avatar'] !== '') $author['icon_url'] = $winU['avatar'];
 
 		ob_start();
+		/* Both seats, same as the challenge above. Host first for consistency
+		   with dhca_announce()'s attacker-first ordering -- a live match is
+		   mutual, so neither "initiated" it in the way a ranked attack is
+		   initiated, and the pair matters more than the order. */
 		discordmsg('🎮 Arena — Live Match', $desc, $img,
 			'https://skulliance.io/staking/dhcarena.php', 'dhcarena', $thumb,
-			'F5A623', $author, null, $ping);
+			'F5A623', $author, null, $ping,
+			(int)$row['host_id'], (int)$row['guest_id']);
 		ob_end_clean();
 	} catch (Throwable $e) {
 		// never reaches the players

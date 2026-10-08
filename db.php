@@ -13522,7 +13522,14 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		if ($random_reward) $wh_desc .= " *(Random Currency)*";
 		$wh_desc .= "\n🏆 **Win #$wh_wins** of " . GAUNTLET_MAX_WINS;
 		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
-		discordmsg($wh_title, $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlets.php", "gauntlet", $wh_player_img, $wh_color, ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile], null, $wh_opp_ping);
+		/* The last two args are the Activity feed's, not Discord's. A Gauntlet
+		   encounter is two players: the runner, and whoever owns the NFT that
+		   was fought. The opponent is not making a request -- that is the
+		   whole reason the ping above exists ("an inactive holder finding out
+		   their NFT is fighting in a Gauntlet is the hook to bring them
+		   back") -- so without the second id the encounter is invisible in
+		   their feed, which is exactly the case "Involving me" is for. */
+		discordmsg($wh_title, $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlets.php", "gauntlet", $wh_player_img, $wh_color, ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile], null, $wh_opp_ping, $uid, intval($enc['opponent_user_id']));
 	} else {
 		$wh_desc  = $wh_mention . " was defeated by $wh_opp_mention — run ends here.\n\n";
 		$wh_desc .= "🦴 **Player:** " . ($wh_pnft['name'] ?? 'Unknown') . " (" . ($wh_pnft['project_name'] ?? '') . ")\n";
@@ -13531,7 +13538,9 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 		$wh_desc .= "💰 **Opponent Earns:** " . number_format($reward) . " $wh_currency\n";
 		$wh_desc .= "🏆 **Final Record:** $wh_wins win" . ($wh_wins !== 1 ? "s" : "") . " / " . intval($wh_stats['losses']) . " loss" . (intval($wh_stats['losses']) !== 1 ? "es" : "");
 		if (!empty($wh_items)) $wh_desc .= "\n🎒 **Items Used:** " . implode(", ", $wh_items);
-		discordmsg("💀 Gauntlet Defeat", $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlets.php", "gauntlet", $wh_player_img, "E05555", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile], null, $wh_opp_ping);
+		/* Both players again -- see the victory branch. A defeat is the one a
+		   defender most wants to see: their NFT won. */
+		discordmsg("💀 Gauntlet Defeat", $wh_desc, $wh_opp_img, "https://skulliance.io/staking/gauntlets.php", "gauntlet", $wh_player_img, "E05555", ["name" => $wh_username, "icon_url" => $wh_ava_url, "url" => $wh_profile], null, $wh_opp_ping, $uid, intval($enc['opponent_user_id']));
 	}
 	return $outcome;
 }

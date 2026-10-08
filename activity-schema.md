@@ -48,10 +48,26 @@ passed explicitly by the caller, because nothing about the request can infer it.
 The **My activity** filter matches *either* column, so the event shows up for
 both players — the loser as much as the winner.
 
-Today the only two-sided announce on the platform is **DHC Arena**:
-`dhca_announce()` already holds both `$attId` and `$defId`, and passes them.
-Every other announce is about one player (or none, for a cron run), so they pass
-nothing and the column stays 0.
+Every multiplayer announce on the platform passes both:
+
+| Announce | `user_id` | `user_id2` |
+|---|---|---|
+| Gauntlet victory / defeat | the runner | owner of the NFT fought |
+| DHC Arena (ranked) | attacker | defender |
+| DHC Arena live challenge | host | the person challenged |
+| DHC Arena live match | host | guest |
+| Auction ended (sold) | winner | creator |
+| Auction delivered / timed out | creator | winner |
+| Raffle winner drawn | winner | creator |
+| Raffle delivered / timed out | creator | winner |
+
+The two marketplace crons have **no session**, so `activity_actor()` returns 0
+there and an announce that passes no id belongs to nobody - it would not appear
+under anyone's *My activity* either. Every call in `auctions-verify.php` and
+`raffles-verify.php` therefore names at least the creator, including the
+single-party ones (no bids, no tickets, minimum not met).
+
+Single-player announces pass nothing and the column stays 0.
 
 ## Schema
 

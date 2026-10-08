@@ -92,7 +92,13 @@ if ($result && $result->num_rows > 0) {
                     "**{$winner_name}** won **{$title}** with a bid of **" . number_format($prev_bid) . " $cur**!\n" .
                     "Creator: **{$auction['creator_name']}** — NFT delivery pending (30-day window). Creator paid upon confirmed on-chain delivery.",
                     $img_url, 'https://skulliance.io/staking/auctions.php',
-                    'auctions', '', 'ffc800'
+                    'auctions', '', 'ffc800',
+                    /* Activity feed only (args 11 and 12), never sent to Discord.
+                       This runs from cron with no session, so without them the
+                       announce is attributed to nobody at all. Winner first: the
+                       headline is their win. The creator is the other party and
+                       sees it under "Involving me". */
+                    null, null, '', $prev_bidder, $creator_id
                 );
                 echo "  Winner: $winner_name — delivery tracking active (30-day window).\n";
 
@@ -129,7 +135,8 @@ if ($result && $result->num_rows > 0) {
                     "**{$winner_name}** won **{$title}** with a bid of **" . number_format($prev_bid) . " $cur**!\n" .
                     "Creator: **{$auction['creator_name']}** — **" . number_format($prev_bid) . " $cur** sent to creator. Prize delivery in progress.",
                     $img_url, 'https://skulliance.io/staking/auctions.php',
-                    'auctions', '', 'ffc800'
+                    'auctions', '', 'ffc800',
+                    null, null, '', $prev_bidder, $creator_id
                 );
                 echo "  Winner: $winner_name — auction #$aid marked completed.\n";
             }
@@ -147,7 +154,9 @@ if ($result && $result->num_rows > 0) {
                 '⏱️ Auction Ended (No Bids): ' . $title,
                 "**{$title}** by **{$auction['creator_name']}** ended with no bids.",
                 $img_url, 'https://skulliance.io/staking/auctions.php',
-                'auctions', '', '555555'
+                'auctions', '', '555555',
+                /* One party: nobody bid, so there is no second id to record. */
+                null, null, '', $creator_id
             );
             echo "  No bids — auction #$aid closed.\n";
         }
@@ -251,7 +260,10 @@ while ($auction = $result2->fetch_assoc()) {
             "The NFT for **{$title}** has been confirmed received by **{$winner_name}**!\n" .
             "Creator **{$auction['creator_name']}** has been paid **" . number_format($prev_bid) . " $cur**.",
             $img_url, 'https://skulliance.io/staking/auctions.php',
-            'auctions', '', '00c8a0'
+            'auctions', '', '00c8a0',
+            /* Delivering is the creator's action, so they lead. $winner_id is
+               the id phase 1 PERSISTED, not $prev_bidder's live top bid. */
+            null, null, '', $creator_id, $winner_id
         );
         echo "  Auction #$aid delivery confirmed and completed.\n";
 
@@ -284,7 +296,8 @@ while ($auction = $result2->fetch_assoc()) {
             '❌ Auction Canceled (Delivery Timeout): ' . $title,
             "**{$title}** by **{$auction['creator_name']}** was canceled — NFT delivery to **{$winner_name}** was not confirmed within 30 days. The winner has been refunded.",
             $img_url, 'https://skulliance.io/staking/auctions.php',
-            'auctions', '', 'ff3333'
+            'auctions', '', 'ff3333',
+            null, null, '', $creator_id, $winner_id
         );
         echo "  Auction #$aid canceled (delivery timeout).\n";
 

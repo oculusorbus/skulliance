@@ -69,7 +69,11 @@ if ($result && $result->num_rows > 0) {
                 '🎟️ Raffle Ended (No Tickets): ' . $title,
                 "**{$title}** by **{$raffle['creator_name']}** ended with no tickets sold.",
                 $img_url, 'https://skulliance.io/staking/raffles.php',
-                'raffles', '', '555555'
+                'raffles', '', '555555',
+                /* Args 11 and 12 are the Activity feed's, never Discord's. This is
+                   cron, so with no id the announce belongs to nobody at all. One
+                   party here: nobody entered. */
+                null, null, '', $creator_id
             );
             echo "  No tickets sold — raffle #$rid closed.\n";
             continue;
@@ -117,7 +121,11 @@ if ($result && $result->num_rows > 0) {
                 '🎟️ Raffle Canceled (Min. Not Met): ' . $title,
                 "**{$title}** by **{$raffle['creator_name']}** ended with only **{$total_sold}** of **{$ticket_minimum}** required tickets sold. All tickets have been refunded.",
                 $img_url, 'https://skulliance.io/staking/raffles.php',
-                'raffles', '', '555555'
+                'raffles', '', '555555',
+                /* Creator only. There were buyers, but a refunded ticket does not
+                   make someone a PARTY to this -- the feed has two id slots, not a
+                   guest list. */
+                null, null, '', $creator_id
             );
             $conn->query("UPDATE raffles SET canceled=1, processing=0 WHERE id='$rid'");
             echo "  Ticket minimum not met ({$total_sold}/{$ticket_minimum}) — raffle #$rid canceled and refunded.\n";
@@ -166,7 +174,10 @@ if ($result && $result->num_rows > 0) {
                 "Drawn from **$total_sold** ticket(s).\n" .
                 "Creator: **{$raffle['creator_name']}** — NFT delivery pending (30-day window). Creator paid upon confirmed on-chain delivery.",
                 $img_url, 'https://skulliance.io/staking/raffles.php',
-                'raffles', '', 'a040ff'
+                'raffles', '', 'a040ff',
+                /* Winner leads -- the headline is their win -- creator second, so it
+                   reaches both under "Involving me". */
+                null, null, '', $winning_uid, $creator_id
             );
             echo "  Winner: $winner_name — delivery tracking active (30-day window).\n";
 
@@ -221,7 +232,8 @@ if ($result && $result->num_rows > 0) {
                 "Drawn from **$total_sold** ticket(s).\n" .
                 "Creator: **{$raffle['creator_name']}** — **$payout_str** sent to creator. Prize delivery in progress.",
                 $img_url, 'https://skulliance.io/staking/raffles.php',
-                'raffles', '', 'a040ff'
+                'raffles', '', 'a040ff',
+                null, null, '', $winning_uid, $creator_id
             );
             echo "  Winner: $winner_name — creator credited $payout_str — raffle #$rid completed.\n";
         }
@@ -333,7 +345,10 @@ while ($raffle = $result2->fetch_assoc()) {
             "The NFT for **{$title}** has been confirmed received by **{$winner_name}**!\n" .
             "Creator **{$raffle['creator_name']}** has been paid **$payout_str**.",
             $img_url, 'https://skulliance.io/staking/raffles.php',
-            'raffles', '', '00c8a0'
+            'raffles', '', '00c8a0',
+            /* Delivering is the creator's action, so they lead. $winner_id is the
+               id phase 1 PERSISTED; $winning_uid is not in scope down here. */
+            null, null, '', $creator_id, $winner_id
         );
         echo "  Raffle #$rid delivery confirmed and completed.\n";
 
@@ -387,7 +402,8 @@ while ($raffle = $result2->fetch_assoc()) {
             '❌ Raffle Canceled (Delivery Timeout): ' . $title,
             "**{$title}** by **{$raffle['creator_name']}** was canceled — NFT delivery to **{$winner_name}** was not confirmed within 30 days. All ticket buyers have been refunded.",
             $img_url, 'https://skulliance.io/staking/raffles.php',
-            'raffles', '', 'ff3333'
+            'raffles', '', 'ff3333',
+            null, null, '', $creator_id, $winner_id
         );
         echo "  Raffle #$rid canceled (delivery timeout).\n";
 
