@@ -242,8 +242,23 @@ ok('mine: does NOT include user_id2', strpos($conn->lastWhere(), 'user_id2') ===
 
 $conn->sqls = array();
 activity_recent($conn, 10, 0, '', 42, 'involving');
-ok('involving: matches either side',
-   $conn->lastWhere() === '(user_id = 42 OR user_id2 = 42)', $conn->lastWhere());
+ok('involving: matches the passive side only',
+   $conn->lastWhere() === 'user_id2 = 42', $conn->lastWhere());
+ok('involving: does NOT also match things I initiated',
+   strpos($conn->lastWhere(), 'user_id = 42') === false, $conn->lastWhere());
+
+/* THE THREE TABS PARTITION THE FEED. A row belongs to exactly one of
+   "mine" and "involving" for any given player, never both -- which is the
+   whole reason the superset was dropped. */
+$conn->sqls = array();
+activity_recent($conn, 10, 0, '', 42, 'mine');
+$mine = $conn->lastWhere();
+$conn->sqls = array();
+activity_recent($conn, 10, 0, '', 42, 'involving');
+$inv = $conn->lastWhere();
+ok('mine and involving are disjoint predicates, not nested ones',
+   $mine === 'user_id = 42' && $inv === 'user_id2 = 42' && $mine !== $inv,
+   "$mine | $inv");
 
 $conn->sqls = array();
 activity_recent($conn, 10, 0, '', 0, 'mine');

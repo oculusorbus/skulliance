@@ -218,7 +218,17 @@ include 'header.php';
 
 				<?php if (!$ac_rows) { ?>
 				<div class="ac-empty">
-					<?php if ($ac_scope !== 'all' || $ac_chan !== '') { ?>
+					<?php if ($ac_scope === 'involving' && $ac_chan === '') { ?>
+					<?php /* This tab is strictly passive, so empty is a NORMAL state --
+					         it means nobody has come at you yet, not that anything is
+					         broken. Say what the tab is for rather than leaving a
+					         player to guess from a blank panel. */ ?>
+					<b>Nobody has come for you yet.</b><br>
+					This is where things other people do <em>to</em> you show up - a Gauntlet
+					run against one of your NFTs, an Arena battle fought while you were away,
+					a challenge sent your way, someone winning something you listed.
+					Anything you did yourself is under <a href="<?php echo htmlspecialchars(ac_link(array('scope' => 'mine')), ENT_QUOTES); ?>">My activity</a>.
+					<?php } else if ($ac_scope !== 'all' || $ac_chan !== '') { ?>
 					<b>Nothing here yet.</b><br>
 					No activity matches this filter. Try <a href="activity.php">all activity</a>.
 					<?php } else { ?>

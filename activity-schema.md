@@ -42,11 +42,15 @@ faithful one.
 
 ## Two players
 
-`user_id` is the player whose request triggered the announce, resolved from the
-session. `user_id2` is the other player in a two-sided event, and has to be
-passed explicitly by the caller, because nothing about the request can infer it.
-The **My activity** filter matches *either* column, so the event shows up for
-both players — the loser as much as the winner.
+`user_id` is the **actor** — the player whose request triggered the announce,
+resolved from the session. `user_id2` is the **counterparty**, and has to be
+passed explicitly, because nothing about the request can infer it.
+
+The three filters partition the feed and do not overlap: *My activity* is
+`user_id = me`, *Involving me* is `user_id2 = me`. **Which way round a pair goes
+therefore matters.** It did not when *Involving me* was `user_id OR user_id2` —
+the OR absorbed a reversed pair silently — but now a pair the wrong way round
+hides the row from one player and misfiles it for the other.
 
 Every multiplayer announce on the platform passes both:
 

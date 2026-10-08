@@ -180,25 +180,37 @@ function activity_recent($conn, $limit = ACTIVITY_PAGE_SIZE, $before_id = 0, $ch
 	if ((int) $before_id > 0) $where[] = "id < " . (int) $before_id;
 	if ($channel !== '')      $where[] = "channel = '" . $conn->real_escape_string($channel) . "'";
 	/*
-	 * THREE SCOPES, AND THE THIRD IS NOT THE SECOND.
+	 * THREE SCOPES THAT DO NOT OVERLAP.
 	 *
 	 *   all        -- the whole platform.
-	 *   mine       -- things I did. user_id only.
-	 *   involving  -- that, plus things done TO me. user_id OR user_id2.
+	 *   mine       -- things I did.            user_id  = me
+	 *   involving  -- things done TO me.       user_id2 = me
 	 *
-	 * A DHC Arena result is the case that forces the split: the attacker
-	 * owns the request, so the battle is "mine" for them. The defender never
-	 * made a request at all and appears only in user_id2 -- a battle fought
-	 * against them is something they were involved in, not something they
-	 * did, and collapsing the two would put losses they never initiated in
-	 * their own activity list.
+	 * "involving" IS STRICTLY PASSIVE -- it is not a superset of "mine", and
+	 * that is a deliberate reversal. It shipped as `user_id OR user_id2`, the
+	 * conventional "everything about me" reading, and in use the two tabs
+	 * were nearly the same list: almost everything a player is party to, they
+	 * also started, so the second tab mostly reprinted the first and the
+	 * handful of rows worth seeing were buried in it.
+	 *
+	 * Strictly passive, the three tabs partition the feed. A Gauntlet run
+	 * against one of your NFTs, an Arena battle fought while you were
+	 * offline, a challenge someone sent you, a bid that won your auction --
+	 * things you did not do and would otherwise never have known about -- are
+	 * the entire contents of this tab, which is the only reason to have it.
+	 *
+	 * This depends on every two-sided announce putting the ACTOR in user_id
+	 * and the counterparty in user_id2. See activity-schema.md for the table
+	 * of who goes where; getting a pair the wrong way round now hides a row
+	 * from one player and misfiles it for the other, where before the OR
+	 * quietly absorbed the mistake.
 	 */
 	$uid = (int) $user_id;
 	if ($uid > 0) {
 		if ($scope === 'mine') {
 			$where[] = "user_id = " . $uid;
 		} else if ($scope === 'involving') {
-			$where[] = "(user_id = " . $uid . " OR user_id2 = " . $uid . ")";
+			$where[] = "user_id2 = " . $uid;
 		}
 		/* Any other $scope -- including 'all' -- means no user filter. */
 	}
