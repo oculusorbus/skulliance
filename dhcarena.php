@@ -2131,6 +2131,28 @@ function sendMove(a, z){
     : practice
     ? {do:'move', spec:JSON.stringify(practice), a:a, z:z}
     : {do:'move', battle_id:battleId, a:a, z:z};
+  /*
+   * A BATTLE THAT IS NOT LIVE, NOT PRACTICE AND HAS NO ID IS NOT A
+   * BATTLE, and must not be posted anywhere.
+   *
+   * Reported as "Lost contact with the Arena - that move was not
+   * played", over and over, on practice as a guest. The route there:
+   * startPractice() caught a draw error, set practice = null, and left
+   * the board on screen. Every later move then fell through this
+   * ternary to the RANKED endpoint with battle_id 0 -- and
+   * ajax/dhcarena-action.php answers a logged-out request with a 302 to
+   * HTML, which fetch follows and JSON.parse cannot read. A cosmetic
+   * drawing bug became a dead board that blamed the network.
+   *
+   * A ranked battle always has a real id, so this cannot fire on one.
+   */
+  if (!live && !practice && !(battleId > 0)) {
+    busy = false;
+    paintBoard();
+    logLine('sys','This battle is not connected to the Arena any more — start a new one.');
+    sfx('bad');
+    return;
+  }
   post(body, function(res){
     if (res && res.ok && res.spec) practice = res.spec;
     if (live && res) liveTook(res);
@@ -2869,9 +2891,17 @@ function startPractice(onFail){
     battleId = 0;
     try { openBattle(res, true); }
     catch (e) {
+      /*
+       * CLOSE IT, do not just forget it. This used to null `practice`
+       * and leave whatever had been drawn on screen -- a board that
+       * looks playable, is not, and sends its moves to an endpoint that
+       * redirects. Returning to setup is honest: the battle could not
+       * be drawn, so there is no battle.
+       */
       practice = null;
       if (window.console) console.error('arena practice', e);
-      onFail && onFail('Could not draw the battle.');
+      try { leaveBattle(); } catch (e2) {}
+      onFail && onFail('Could not draw the battle — try again.');
     }
   }, function(){
     busy = false;

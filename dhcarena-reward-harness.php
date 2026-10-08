@@ -262,5 +262,50 @@ ok(strpos($pg, "data-best=\"<?php echo (int)\$o['best']") !== false,
 ok(strpos($pg, "if (!picked.length) { slot.textContent = ''") !== false,
    'odds are shown before a Crew is picked, which quotes a gap measured against nothing');
 
+echo "\na guest never gets an HTML redirect from an AJAX endpoint\n";
+
+/*
+ * REPORTED: "Lost contact with the Arena - that move was not played",
+ * repeatedly, on practice in Chrome as a guest.
+ *
+ * That string is the fetch FAILING, not the server refusing -- a refusal
+ * arrives as ok:false with a message. The route there was three steps:
+ *   1. startPractice() caught a draw error and set practice = null,
+ *      leaving a board on screen that looked playable.
+ *   2. sendMove()'s ternary then fell through to the RANKED endpoint
+ *      with battle_id 0.
+ *   3. ajax/dhcarena-action.php includes skulliance.php, which 302s an
+ *      unidentified visitor to error.php. fetch follows it, gets HTML,
+ *      and JSON.parse reports a network-shaped error for a login state.
+ *
+ * Each step is guarded separately below, because any one of them alone
+ * turns a cosmetic bug into a dead board.
+ */
+$act = file_get_contents(__DIR__ . '/ajax/dhcarena-action.php');
+$iGuest = strpos($act, "if (empty(\$_SESSION['userData']['user_id']))");
+$iSkul  = strpos($act, "include '../skulliance.php'");
+ok($iGuest !== false, 'the guest check before skulliance.php is gone; a logged-out POST 302s to HTML');
+ok($iSkul !== false && $iGuest !== false && $iGuest < $iSkul,
+   'the guest check runs AFTER skulliance.php, which has already redirected by then');
+
+/* The PWA trap: that check must not fire for a player whose session
+   lives only in the SessionCookie, or it logs out every iOS user
+   instead of every guest. */
+ok(strpos($act, "array_merge((array)\$_SESSION, \$ck)") !== false,
+   'the guest check does not restore from SessionCookie first, so every PWA player reads as a guest');
+$iMerge = strpos($act, 'SessionCookie');
+ok($iMerge !== false && $iMerge < $iGuest,
+   'the session restore runs after the guest check, which makes the restore pointless');
+ok(strpos($act, '$_SESSION = $ck') === false,
+   'the restore replaces $_SESSION instead of merging; that wipes other pages state');
+
+/* And the client must not route a practice move to the ranked endpoint
+   in the first place. */
+$pg = file_get_contents(__DIR__ . '/dhcarena.php');
+ok(preg_match('/if \(!live && !practice && !\(battleId > 0\)\)/', $pg) === 1,
+   'sendMove() will post a battle with no id and no spec to the ranked endpoint again');
+ok(preg_match('/catch \(e\) \{\s*\n(?:.*\n)*?\s*try \{ leaveBattle\(\); \}/', $pg) === 1,
+   'a practice battle that cannot be drawn is left on screen instead of closed');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all arena reward checks passed\n");
 exit($fail ? 1 : 0);
