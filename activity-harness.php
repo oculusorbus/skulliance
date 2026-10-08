@@ -664,6 +664,25 @@ ok('the artwork fills the square frame',
    preg_match('/\.ac-shot img \{[^}]*object-fit: cover/s', $p) === 1);
 ok('and the emblem still opts out with contain',
    preg_match('/\.ac-shot\.is-mark img \{[^}]*object-fit: contain/s', $p) === 1);
+/* REPORTED: "icons have a weird dark border". The artwork frame paints
+   #07111d behind the image so a photo has a ground to load against; these
+   icons are TRANSPARENT PNGs, so that ground became a hard dark square
+   around the glyph. The emblem has to undo it explicitly. */
+ok('the emblem has no frame ground behind a transparent glyph',
+   preg_match('/\.ac-shot\.is-mark img \{[^}]*background: none/s', $p) === 1);
+ok('the emblem band absorbs the leftover card height',
+   preg_match('/\.ac-shot\.is-mark \{[^}]*flex: 1/s', $p) === 1);
+
+/* REPORTED: a "Start All" that launched 9 missions listed 4 and trailed off,
+   above half a card of nothing. The 7-line clamp is there to stop a long
+   description crowding out a 290px image -- a card with no image has nothing
+   to protect, and is also the emptiest-looking card on the wall. */
+ok('an imageless card is marked as such',
+   strpos($p, "\$img === '' ? ' ac-noart' : ''") !== false);
+ok('and it is allowed far more of its description',
+   preg_match('/\.ac-card\.ac-noart \.ac-desc \{[^}]*-webkit-line-clamp: 22/s', $p) === 1);
+ok('a card WITH art keeps the tight clamp',
+   preg_match('/\.ac-desc \{[^}]*-webkit-line-clamp: 7/s', $p) === 1);
 ok('the old fixed max-height crop is gone',
    strpos($p, 'max-height: 240px') === false);
 ok('the emblem opts out of the square frame',

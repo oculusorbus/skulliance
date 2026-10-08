@@ -150,6 +150,13 @@ include 'header.php';
   /* Announcements run from one line to a dozen. Clamping keeps the wall a
      wall; the card links to the thing itself for the rest. */
   display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; }
+/* A CARD WITH NO ART HAS NOTHING TO COMPETE WITH, SO IT GETS THE WORDS.
+   The 7-line clamp exists to stop a long description crowding out a 290px
+   image. Applied to an imageless card it did the opposite: a "Start All"
+   that launched 9 missions listed 4 and trailed off, above half a card of
+   nothing. These are also the cards that look emptiest, because grid
+   stretches them to a row sized by a card that does have art. */
+.ac-card.ac-noart .ac-desc { -webkit-line-clamp: 22; }
 .ac-desc a { color: #00c8a0; }
 .ac-desc code { background: #07111d; padding: 1px 4px; border-radius: 3px; font-size: .92em; }
 .ac-foot { font-size: .68rem; color: #6d8395; padding: 0 13px 12px; }
@@ -183,11 +190,20 @@ include 'header.php';
    is cropped to its middle, which is the accepted trade. */
 .ac-shot img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover;
   background: #07111d; }
-.ac-shot.is-mark { display: flex; align-items: center; justify-content: center;
-  padding: 20px; background: rgba(255,255,255,0.02);
+/* flex: 1 so the band takes whatever height the card has left rather than
+   being a short strip with a void under it. Grid stretches every card to its
+   row's tallest, and these are the SHORTEST cards on the wall -- a few lines
+   of text -- so the leftover space is largest exactly here. Absorbing it
+   centres the mark in the card instead of stranding it near the top. */
+.ac-shot.is-mark { display: flex; flex: 1; align-items: center; justify-content: center;
+  padding: 20px; min-height: 96px; background: rgba(255,255,255,0.02);
   border-top: 1px solid rgba(0,200,160,0.08); }
+/* background: none UNDOES the frame colour above, and it is the whole fix for
+   a reported dark box around the mark: these icons are transparent PNGs, so
+   the artwork frame's #07111d ground was painting a hard square behind a
+   glyph that is meant to sit on the card. */
 .ac-shot.is-mark img { width: 56px; height: 56px; aspect-ratio: auto;
-  object-fit: contain; opacity: .85; }
+  object-fit: contain; opacity: .85; background: none; }
 .ac-link { display: flex; flex-direction: column; flex: 1; }
 
 /*
@@ -293,7 +309,7 @@ include 'header.php';
 						$who   = (string) $r['author_name'];
 						$img   = (string) $r['image_url'];
 					?>
-					<div class="ac-card" style="border-left-color: <?php echo htmlspecialchars($edge, ENT_QUOTES); ?>;">
+					<div class="ac-card<?php echo $img === '' ? ' ac-noart' : ''; ?>" style="border-left-color: <?php echo htmlspecialchars($edge, ENT_QUOTES); ?>;">
 						<?php if ($href !== '') { ?>
 						<?php /* Empty by design -- see .ac-stretch. aria-label because an
 						         anchor with no text content is unreachable otherwise. */ ?>
