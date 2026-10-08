@@ -43,9 +43,13 @@ const URL_COST = 24;
 const fits = (text) => text.length + URL_COST <= LIMIT;
 
 /* ---- the Collection modal's shareText(), lifted out and run ---- */
-const a = gallery.indexOf('  function shareText(f) {');
-const b = gallery.indexOf('  function shareHref(f) {');
-ok(a > -1 && b > a, 'shareText() is gone from dhcgallery.php');
+/* Anchored on the NAME, not the full signature. These were pinned to
+   '  function shareText(f) {' and adding a second parameter silently broke
+   the lift -- the slice came back empty, shareText was never defined, and
+   the harness died on the first call instead of reporting anything useful. */
+const a = gallery.indexOf('  function shareText(');
+const b = gallery.indexOf('  function shareHref(');
+ok(a > -1 && b > a, 'shareText() is gone from dhc-fighter-modal.php');
 /*
  * X_HANDLE IS READ OUT OF THE FILE, not declared here. It was stubbed as
  * '@skulliance' while the real one had become an 84-character call to
@@ -55,6 +59,9 @@ ok(a > -1 && b > a, 'shareText() is gone from dhcgallery.php');
  */
 const handleMatch = gallery.match(/var X_HANDLE = '([^']+)';/);
 if (!handleMatch) { console.log('  FAIL  X_HANDLE is gone from dhc-fighter-modal.php'); fail++; }
+/* The brand account's tail, read out of the file for the same reason. */
+const showMatch = gallery.match(/var X_SHOWCASE = '([^']+)';/);
+if (!showMatch) { console.log('  FAIL  X_SHOWCASE is gone from dhc-fighter-modal.php'); fail++; }
 /* The capture is SOURCE text, so an escape in the literal arrives here as
    two characters. The browser sees one. Un-escaping matters for the length
    budget as well as for reading it: counting "\n" as 2 overstates the tail
@@ -63,6 +70,7 @@ const unescapeJs = (t) => t.replace(/\\n/g, '\n').replace(/\\'/g, "'").replace(/
 const ctx = {
 	AXES: [['rarest','Rarest'],['might','Deadliest'],['tough','Toughest'],['power','Hardest hitting']],
 	X_HANDLE: handleMatch ? unescapeJs(handleMatch[1]) : '@skulliance',
+	X_SHOWCASE: showMatch ? unescapeJs(showMatch[1]) : 'Arena.\n\nArt by @MMAXI404',
 };
 vm.createContext(ctx);
 vm.runInContext(strip(gallery.slice(a, b)), ctx);
@@ -97,6 +105,65 @@ console.log('the Collection share names the BEST placements');
 	   'the post is ' + t.split('\n\n').length + ' paragraphs, expected 3');
 	ok(fits(t), 'the post is ' + (t.length + URL_COST) + ' characters with the URL, over X\'s ' + LIMIT);
 	console.log('  ' + JSON.stringify(t));
+}
+
+console.log('\nthe showcase post is the platform talking about a player');
+{
+	const f = fighter({ owner: 'nothooley' });
+	const mine = ctx.shareText(f);
+	const show = ctx.shareText(f, true);
+
+	ok(mine !== show, 'the showcase voice is identical to the player voice');
+
+	/* THE BUILDER IS THE POINT OF THE POST, so they are named and they lead. */
+	ok(/^nothooley assembled /.test(show),
+	   'the showcase post does not open by crediting the builder: ' + JSON.stringify(show.slice(0, 60)));
+	ok(mine.indexOf('nothooley') === -1,
+	   'the PLAYER\'s own post now names them, which it should not -- they know who they are');
+
+	/* PLAIN TEXT, NOT AN @. f.owner is a Discord username and the platform
+	   stores no X handle for anyone, so an @ would tag whichever stranger
+	   holds that name on X. */
+	ok(show.indexOf('@nothooley') === -1,
+	   'the showcase post @-tags a Discord username as if it were an X handle');
+
+	/* THE ACCOUNT MUST NOT TAG ITSELF. That is the one thing the player tail
+	   does that the brand tail cannot. */
+	ok(mine.indexOf('@skulliance') > -1, 'the player post stopped tagging the account');
+	ok(show.indexOf('@skulliance') === -1,
+	   'the showcase post tags @skulliance, which is the account tagging itself');
+
+	/* It still has to invite, and it still has to credit the art. */
+	ok(/Arena/.test(show), 'the showcase post no longer invites anyone to play: ' + show);
+	ok(/Art by @MMAXI404/.test(show), 'the showcase post does not credit the artist: ' + show);
+	ok(show.split('\n\n').length === 3,
+	   'the showcase post is ' + show.split('\n\n').length + ' paragraphs, expected 3');
+
+	/* The stats are the other half of what was asked for. */
+	ok(/#4 deadliest/.test(show), 'the showcase post lost its best placement: ' + show);
+	ok(/118 power/.test(show) && /742 health/.test(show),
+	   'the showcase post lost the stats it exists to show off: ' + show);
+	/* "X assembled Y ... assembled from 9 traits" says it twice. */
+	ok(show.split('assembled').length - 1 === 1,
+	   'the showcase post says "assembled" twice: ' + show);
+
+	ok(fits(show), 'the showcase post is ' + (show.length + URL_COST) + ' characters with the URL, over ' + LIMIT);
+	console.log('  ' + JSON.stringify(show));
+
+	/* A showcase of a Fighter whose owner did not come through must not
+	   print "undefined assembled ...". */
+	const anon = ctx.shareText(fighter({ owner: '' }), true);
+	ok(anon.indexOf('undefined') === -1 && /^DHC2F528 - /.test(anon),
+	   'a missing owner breaks the showcase post: ' + JSON.stringify(anon.slice(0, 50)));
+
+	/* The budget has to hold with the longest plausible name AND a builder. */
+	const long = ctx.shareText(fighter({
+		owner: 'a'.repeat(32), name: 'X'.repeat(48), rankOf: 987654,
+		rank: { rarest: 123456, might: 234567, tough: 345678, power: 456789 },
+		pow: 99999, hp: 99999, parts: new Array(99).fill(0),
+	}), true);
+	ok(fits(long), 'the longest showcase post overflows: ' + (long.length + URL_COST) + ' characters');
+	ok(/Art by @MMAXI404/.test(long), 'the longest showcase post lost the artist credit');
 }
 
 console.log('\nand stays inside the budget when everything is long');
@@ -150,24 +217,63 @@ console.log('\nthe assembler does not offer a share it cannot illustrate');
 	ok(assembler.indexOf('LAST_AXES') === -1, 'dead share state left behind in the assembler');
 }
 
-console.log('\nsharing somebody else\'s Fighter is not offered');
+console.log('\nsharing somebody else\'s Fighter is offered to ONE account');
 {
 	const g = strip(gallery);
-	ok(/share\.classList\.toggle\('on', mine\)/.test(g),
-	   'the Collection share button is shown for Fighters the viewer does not own');
-	ok(/share\.href = mine \? shareHref\(f\) : '#'/.test(g),
-	   'the share href is built for Fighters the viewer does not own');
+	/*
+	 * THE RULE CHANGED, THE PROTECTION DID NOT.
+	 *
+	 * These three used to assert a bare `mine`. User 1 -- the account that
+	 * posts the Collection to X -- may now share and download any Fighter,
+	 * so `mine` became `canUse`. The assertions are rewritten rather than
+	 * deleted, because what they were really guarding is that an ORDINARY
+	 * viewer still cannot, and a deleted check guards nothing.
+	 *
+	 * canUse is pinned to its exact definition below for the same reason:
+	 * `mine || ME > 0` would also satisfy a loose "canUse is used here"
+	 * check while opening the button to every signed-in player.
+	 */
+	ok(/var canUse = mine \|\| ME === 1;/.test(g),
+	   'canUse is not "mine or user 1" -- the exemption is wider or narrower than one account');
+	ok(/var staff\s+= ME === 1 && !mine;/.test(g),
+	   'staff is not "user 1 on a Fighter they do not own"');
+	ok(/share\.classList\.toggle\('on', canUse\)/.test(g),
+	   'the share button is not gated on canUse');
+	ok(/share\.href = canUse \? shareHref\(f, staff\) : '#'/.test(g),
+	   'the share href is not gated on canUse, or does not pass the showcase flag');
+	ok(/get\.classList\.toggle\('on', canUse\)/.test(g),
+	   'the download button is not gated on canUse');
+	ok(/get\.href = canUse \? 'dhc-download\.php\?serial=' \+ f\.serial : '#'/.test(g),
+	   'the download href is not gated on canUse');
 	ok(g.indexOf("'dhcgallery.php?fighter=' + f.serial") > -1,
 	   'the shared link no longer names the Fighter, so it lands on the front of the Collection');
 	/* The card renders on demand the first time -- a full composite and a
 	   disk write, which is seconds. X fetches it once, shortly after the
 	   composer opens, and caches "no card" for the URL if it is not ready.
-	   Warming it when the owner opens their own Fighter puts it on disk long
-	   before the crawler asks. */
+	   Warming it when the composer opens puts it on disk long before the
+	   crawler asks -- and user 1 opening somebody else's Fighter is now the
+	   likeliest share on the platform, so the warm follows canUse too. */
 	ok(/warm\.src = 'dhc-card\.php\?serial=' \+ f\.serial/.test(g),
 	   'the card is no longer warmed when its owner opens it, so X can time out on the first fetch and cache nothing');
-	ok(/if \(mine && f\.serial\)/.test(g),
-	   'the warm fires for Fighters the viewer does not own, rendering cards nobody asked for');
+	ok(/if \(canUse && f\.serial\)/.test(g),
+	   'the warm does not follow canUse, so a staff share races the crawler on a cold card');
+
+	/*
+	 * AND THE SERVER STILL DECIDES. The two lines above only draw buttons.
+	 * dhc-download.php is where a stranger typing the URL is refused, so
+	 * the exemption there has to be exactly one account and has to keep the
+	 * disassembled check.
+	 */
+	const dl = fs.readFileSync(path.join(__dirname, 'dhc-download.php'), 'utf8');
+	ok(/\$own = \(\$me === 1\) \? '' : sprintf\(' AND user_id = %d', \$me\);/.test(dl),
+	   'dhc-download.php does not drop the ownership clause for exactly user 1');
+	ok(/WHERE serial = %d%s AND disassembled_at IS NULL/.test(dl),
+	   'the download no longer refuses a disassembled Fighter');
+	/* The ?build= branch is deliberately NOT exempt: it exists to stop the
+	   trait art being walked out a layer at a time, which does not change
+	   for user 1. */
+	ok(/dhcd_fail\(403, 'That build uses a trait you do not own\.'\)/.test(dl),
+	   'the unsaved-build gate was loosened along with the serial one');
 	/* In the PAGE, not the panel: the opener is how this page chooses which
 	   Fighter to show, which is the one piece that did not move.
 	   It reads as new URLSearchParams(location.search).get(...), so match

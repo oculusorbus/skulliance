@@ -207,28 +207,65 @@ if (!defined('DHCM_RENDERED')) {
    */
   var X_HANDLE = 'Join @skulliance to assemble your own Fighter and battle other players in the Arena!\n\nArt by @MMAXI404';
 
-  function shareText(f) {
+  /*
+   * THE SAME POST IN THE PLATFORM'S OWN VOICE.
+   *
+   * User 1 can share any Fighter, and the point of that is the Skulliance X
+   * account showcasing what players have built. The player tail cannot be
+   * reused for it: "Join @skulliance" is the account tagging itself, which
+   * reads as a mistake and spends 12 characters saying nothing. The
+   * invitation still has to be there -- a showcase that does not ask anyone
+   * to play is just a picture -- so it is the same sentence with the
+   * self-tag removed.
+   *
+   * The artist credit is NOT optional in either voice. A Fighter going out
+   * uncredited is the wrong default, and more so from the brand account.
+   */
+  var X_SHOWCASE = 'Assemble your own Fighter and battle other players in the Arena.\n\nArt by @MMAXI404';
+
+  /*
+   * showcase = the platform posting about somebody else's Fighter, which is
+   * what user 1 gets on a Fighter they do not own. Two things change and
+   * nothing else does:
+   *
+   *   - THE BUILDER IS NAMED, AND FIRST. The whole reason to post is that a
+   *     player made this, so the sentence leads with them rather than with
+   *     the Fighter. A player sharing their own does not need telling who
+   *     they are, which is why the default voice has never carried it.
+   *
+   *   - PLAIN TEXT, NOT AN @. f.owner is a Discord username; the platform
+   *     stores no X handle for anybody, so an @ in front of it would tag
+   *     whichever stranger happens to hold that name on X. Naming them in
+   *     words credits them and tags nobody by accident.
+   */
+  function shareText(f, showcase) {
     var best = AXES.map(function (a) { return { label: a[1], rank: f.rank[a[0]] }; })
                    .sort(function (x, y) { return x.rank - y.rank; })
                    .slice(0, 2)
                    .map(function (r) { return '#' + r.rank.toLocaleString() + ' ' + r.label.toLowerCase(); });
 
-    var body = f.name + ' - ' + best.join(', ') + ' of ' +
+    var handle = showcase ? X_SHOWCASE : X_HANDLE;
+    var who    = (showcase && f.owner) ? f.owner + ' assembled ' : '';
+
+    var body = who + f.name + ' - ' + best.join(', ') + ' of ' +
                f.rankOf.toLocaleString() + ' DHC Fighters.';
     /* What it is made of, only if it fits. */
     var tail = ' ' + f.pow + ' power, ' + f.hp + ' health, assembled from ' +
                f.parts.length + ' earned traits.';
-    var limit = 280 - 24 - ('\n\n' + X_HANDLE).length;
+    /* "X assembled Y ... assembled from 9 traits" says it twice. */
+    if (who) tail = ' ' + f.pow + ' power, ' + f.hp + ' health, from ' +
+                    f.parts.length + ' earned traits.';
+    var limit = 280 - 24 - ('\n\n' + handle).length;
     if ((body + tail).length <= limit) body += tail;
     if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '…';
-    return body + '\n\n' + X_HANDLE;
+    return body + '\n\n' + handle;
   }
 
-  function shareHref(f) {
+  function shareHref(f, showcase) {
     /* The link names the Fighter so the post lands on it, not on the front
        of the Collection. */
     var url = 'https://skulliance.io/staking/dhcgallery.php?fighter=' + f.serial;
-    return 'https://x.com/intent/post?text=' + encodeURIComponent(shareText(f)) +
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(shareText(f, showcase)) +
            '&url=' + encodeURIComponent(url);
   }
   function open(f) {
@@ -259,15 +296,39 @@ if (!defined('DHCM_RENDERED')) {
 
     var get = document.getElementById('dhcg-get');
     var mine = ME > 0 && f.ownerId === ME;
-    get.classList.toggle('on', mine);
-    get.href = mine ? 'dhc-download.php?serial=' + f.serial : '#';
 
-    /* SHARE IS OWNER-ONLY, the same rule the download follows and for the
-       same reason: posting somebody else's assembly as the thing you built
-       is not a share, and the composer would prefill it in their voice. */
+    /*
+     * SHARE AND DOWNLOAD ARE OWNER-ONLY, WITH ONE ACCOUNT EXEMPT.
+     *
+     * The rule and its reason stand: a flattened, ready-to-post picture of
+     * somebody's assembly is theirs to hand out, and a post written in their
+     * voice about a Fighter they did not build is not a share.
+     *
+     * User 1 is the platform's own account, and it is the one that posts the
+     * Collection to X. Showcasing what players have built is the point of
+     * that account, and it could not do it: the only Fighters it could reach
+     * were its own, which is the least interesting slice of the Collection.
+     * So it may share and download any of them, and when the Fighter is not
+     * its own the post is rewritten to credit the builder -- see shareText().
+     *
+     * SERVER-SIDE IS WHERE THIS IS DECIDED. ME comes from the session, but
+     * these two lines only draw buttons; dhc-download.php checks the same
+     * rule again against the session before it streams a byte, because a
+     * hidden button is not a permission.
+     */
+    var staff  = ME === 1 && !mine;
+    var canUse = mine || ME === 1;
+
+    get.classList.toggle('on', canUse);
+    get.href = canUse ? 'dhc-download.php?serial=' + f.serial : '#';
+    get.title = staff ? 'Download ' + f.owner + "'s Fighter at full size" : '';
+
     var share = document.getElementById('dhcg-share');
-    share.classList.toggle('on', mine);
-    share.href = mine ? shareHref(f) : '#';
+    share.classList.toggle('on', canUse);
+    share.href = canUse ? shareHref(f, staff) : '#';
+    /* Says which post is about to open. The two differ in voice, and
+       finding that out on X is finding it out too late. */
+    share.title = staff ? 'Post this to X as Skulliance, crediting ' + f.owner : '';
 
     /*
      * WARM THE CARD NOW, not when X asks for it.
@@ -284,7 +345,9 @@ if (!defined('DHCM_RENDERED')) {
      * cached JPEG, fetched by the browser and then thrown away: by the time
      * the crawler arrives the file is on disk and the request is a readfile.
      */
-    if (mine && f.serial) {
+    /* canUse, not mine: user 1 opening somebody else's Fighter is the most
+       likely share on the platform, and the crawler caches a miss. */
+    if (canUse && f.serial) {
       var warm = new Image();
       warm.src = 'dhc-card.php?serial=' + f.serial;
     }

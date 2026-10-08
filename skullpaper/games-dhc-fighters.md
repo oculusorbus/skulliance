@@ -382,6 +382,13 @@ whoever reads it to come and build one of their own.
 Sharing is only offered on Fighters you built. Posting someone else's assembly
 in your own voice is not a share.
 
+The one exception is the Skulliance account itself, which can share and
+download any Fighter in the Collection - that is how a build ends up on the
+Skulliance X feed. When it posts a Fighter it did not build, the wording
+changes: it leads with **your name**, credits you as the builder, and shows
+the placements and stats, because the point of that post is what a player
+made rather than what the platform did.
+
 ### Take the picture with you
 
 **Download 1000px PNG** sits in the assembler next to *Copy link to this build*,

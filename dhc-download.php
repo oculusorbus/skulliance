@@ -102,14 +102,33 @@ $build  = isset($_GET['build'])  ? json_decode((string)$_GET['build'], true) : n
 
 if ($serial > 0) {
 	/* Ownership is the WHERE clause. A Fighter that is not yours reads exactly
-	   like one that does not exist, which is the answer a stranger should get. */
+	   like one that does not exist, which is the answer a stranger should get.
+	 *
+	 * ONE ACCOUNT IS EXEMPT, AND ONLY HERE. User 1 is the platform's own
+	 * account and the one that posts the Collection to X; showcasing what
+	 * players have built is the point of it, and it needs the picture to do
+	 * that. So for user 1 the ownership half of the clause is dropped and
+	 * the Fighter still has to exist and not be disassembled.
+	 *
+	 * THIS IS THE CHECK THAT COUNTS. dhc-fighter-modal.php draws or hides
+	 * the button on the same rule, but a hidden button is not a permission
+	 * -- anyone can type the URL, so the gate lives in the query.
+	 *
+	 * The ?build= branch below is NOT exempted. A build is an arrangement
+	 * sitting on somebody's canvas rather than a saved Fighter, and its gate
+	 * exists to stop the trait art being walked out one clean 1000px layer
+	 * at a time; that reasoning does not change for user 1, who in any case
+	 * has no way to be looking at another player's unsaved canvas. */
 	$row = null;
+	$own = ($me === 1) ? '' : sprintf(' AND user_id = %d', $me);
 	$res = $conn->query(sprintf(
 		"SELECT id, serial, name, traits FROM dhc_fighters
-		 WHERE serial = %d AND user_id = %d AND disassembled_at IS NULL LIMIT 1",
-		$serial, $me));
+		 WHERE serial = %d%s AND disassembled_at IS NULL LIMIT 1",
+		$serial, $own));
 	if ($res) $row = $res->fetch_assoc();
-	if (!$row) dhcd_fail(404, 'No Fighter of yours with that number.');
+	if (!$row) dhcd_fail(404, $me === 1
+		? 'No Fighter with that number.'
+		: 'No Fighter of yours with that number.');
 
 	$traits = json_decode($row['traits'], true);
 	if (!is_array($traits) || !$traits) dhcd_fail(404, 'That Fighter has no layout to draw.');
