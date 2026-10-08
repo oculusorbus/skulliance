@@ -109,6 +109,15 @@ include 'header.php';
 /* The wall. auto-fill, not auto-fit: a single card should stay card-width
    instead of stretching across the viewport, which is what happens the moment
    a filter narrows the feed to one result. */
+/* Items STRETCH to the row's tallest, which is the default and is kept
+   deliberately. A text-only card next to one with square art therefore has
+   some empty space below its text. The alternative, align-items: start,
+   gives every card its natural height and in exchange leaves ragged holes
+   under the short ones, because grid still starts the next row below the
+   tallest card in this one -- it trades the flaw rather than fixing it.
+   Real masonry would fix it and costs the reading order: CSS columns fill
+   top-to-bottom per column, so on a feed sorted newest-first the seventh
+   card lands at the top of column two. Not worth it for a chronology. */
 #ac-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
 
 .ac-card { display: flex; flex-direction: column; background: #0d1e2e; border-radius: 10px;
@@ -145,10 +154,40 @@ include 'header.php';
 .ac-desc code { background: #07111d; padding: 1px 4px; border-radius: 3px; font-size: .92em; }
 .ac-foot { font-size: .68rem; color: #6d8395; padding: 0 13px 12px; }
 
-/* The embed image. max-height matters more than it looks: some of this art is
-   5000x5000 (Danketsu), and the only thing stopping a 20-card page from
-   decoding a few hundred megapixels is this plus loading="lazy". */
-.ac-img { display: block; width: 100%; max-height: 240px; object-fit: cover; background: #07111d; }
+/*
+ * THE IMAGE SLOT HOLDS TWO DIFFERENT KINDS OF THING.
+ *
+ * Most announcements carry ARTWORK -- mission art, a Fighter render, a realm
+ * scene -- and essentially all of it is square. A 240px-tall cover crop was
+ * therefore slicing the top and bottom off every one of them for no reason,
+ * so the frame is square and the art arrives whole.
+ *
+ * The daily reward announce carries a CURRENCY MARK instead: icons/<cur>.png,
+ * 120-128px, a flat white glyph meant to be seen at 24px. Rendered in the
+ * same frame it became a 290px blob that dwarfed the card it belonged to and
+ * said less than the "Reward: 20 MUSE" line already above it. It gets an
+ * emblem treatment instead -- small, contained, on its own slim band -- which
+ * also reads as what it is rather than pretending to be art.
+ *
+ * loading="lazy" still matters either way: some of this art is 5000x5000
+ * (Danketsu), and it is what stops a full page decoding a few hundred
+ * megapixels.
+ */
+/* cover, on a square frame. The art is mostly square already -- realm
+   scenes, Fighter renders, Monstrocity bosses -- so cover crops essentially
+   nothing off it, and it avoids the letterbox bars contain would put on
+   every card to accommodate the minority that are not. The frame being
+   square is what does the real work: the old 240px-tall crop was slicing the
+   top and bottom off square art, which is the whole thing that was hiding
+   the picture. Anything genuinely taller than square, like some mission art,
+   is cropped to its middle, which is the accepted trade. */
+.ac-shot img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover;
+  background: #07111d; }
+.ac-shot.is-mark { display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(0,200,160,0.08); }
+.ac-shot.is-mark img { width: 56px; height: 56px; aspect-ratio: auto;
+  object-fit: contain; opacity: .85; }
 .ac-link { display: flex; flex-direction: column; flex: 1; }
 
 /*
@@ -288,9 +327,22 @@ include 'header.php';
 								<p class="ac-desc"><?php echo activity_format($r['description'], $ac_names); ?></p>
 								<?php } ?>
 							</div>
-							<?php if ($img !== '') { ?>
-							<img class="ac-img" src="<?php echo htmlspecialchars($img, ENT_QUOTES); ?>"
-							     alt="" loading="lazy" onerror="this.style.display='none'">
+							<?php if ($img !== '') {
+								/* /icons/ is the platform's ornament directory -- currency
+								   marks, chain marks, the skull. Nothing in it is artwork,
+								   so anything from it gets the emblem treatment with no
+								   measuring and no layout shift. acShot() below is the
+								   belt-and-braces for everything else: this feed absorbs
+								   new announcements automatically, by design, so a future
+								   one passing a small image should not have to wait for
+								   someone to notice it looks wrong. */
+								$is_mark = (bool) preg_match('~/icons/[^/]+$~i', $img);
+							?>
+							<div class="ac-shot<?php echo $is_mark ? ' is-mark' : ''; ?>">
+								<img src="<?php echo htmlspecialchars($img, ENT_QUOTES); ?>"
+								     alt="" loading="lazy" onload="acShot(this)"
+								     onerror="this.parentNode.style.display='none'">
+							</div>
 							<?php } ?>
 							<?php if ((string) $r['footer_text'] !== '') { ?>
 							<div class="ac-foot"><?php echo htmlspecialchars((string) $r['footer_text']); ?></div>
@@ -319,5 +371,20 @@ include 'header.php';
   </div>
 </body>
 <?php $conn->close(); ?>
+<script>
+/* A small source image in the artwork frame is the daily-reward bug in its
+   general form. The /icons/ path check server-side catches the one case that
+   exists today with no flash; this catches anything new. 200px is the
+   threshold because the frame is ~290px wide -- below that an image is being
+   upscaled, which is the thing that looked wrong. */
+function acShot(img) {
+	if (img.naturalWidth && img.naturalWidth < 200) img.parentNode.classList.add('is-mark');
+}
+/* A cached image can finish before the handler is attached, so sweep once. */
+document.addEventListener('DOMContentLoaded', function () {
+	var imgs = document.querySelectorAll('.ac-shot img');
+	for (var i = 0; i < imgs.length; i++) if (imgs[i].complete) acShot(imgs[i]);
+});
+</script>
 <script type="text/javascript" src="skulliance.js"></script>
 </html>

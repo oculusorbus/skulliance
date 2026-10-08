@@ -635,6 +635,48 @@ ok('the channel filter is checked against channels that exist',
 ok('card hrefs are restricted to http(s)', strpos($p, "preg_match('~^https?://~i', \$href)") !== false);
 ok('the embed image is lazy-loaded (some of this art is 5000x5000)',
    substr_count($p, 'loading="lazy"') >= 2);
+
+/*
+ * THE DAILY REWARD PASSES A 128px CURRENCY MARK, NOT ARTWORK.
+ * db.php's claim announce sends icons/<currency>.png, which renders fine in
+ * a Discord embed and became a 290px white blob in a card. It is the ONLY
+ * announce on the platform that puts an icon in the image slot, which is why
+ * this is fixed in the feed rather than by changing a working announce.
+ */
+ok('anything from the ornament directory gets the emblem treatment',
+   strpos($p, "preg_match('~/icons/[^/]+$~i', \$img)") !== false);
+ok('the emblem class is applied server-side, so there is no layout shift',
+   strpos($p, "\$is_mark ? ' is-mark' : ''") !== false);
+ok('a small image is caught client-side too, for announces added later',
+   strpos($p, 'img.naturalWidth < 200') !== false);
+ok('and a cached image that loaded before the handler is swept',
+   strpos($p, 'if (imgs[i].complete) acShot(imgs[i]);') !== false);
+
+/* The art is square and was being cover-cropped to 240px tall, slicing the
+   top and bottom off every mission, realm and Fighter render. */
+ok('the artwork frame is square',
+   strpos($p, 'aspect-ratio: 1 / 1') !== false);
+/* cover on a square frame, not contain. Most art is already square so cover
+   crops essentially nothing, and contain would letterbox every card for the
+   minority that are taller. Squaring the FRAME is what stopped the picture
+   being hidden; the old 240px crop was cutting square art top and bottom. */
+ok('the artwork fills the square frame',
+   preg_match('/\.ac-shot img \{[^}]*object-fit: cover/s', $p) === 1);
+ok('and the emblem still opts out with contain',
+   preg_match('/\.ac-shot\.is-mark img \{[^}]*object-fit: contain/s', $p) === 1);
+ok('the old fixed max-height crop is gone',
+   strpos($p, 'max-height: 240px') === false);
+ok('the emblem opts out of the square frame',
+   strpos($p, '.ac-shot.is-mark img') !== false
+   && strpos($p, 'aspect-ratio: auto') !== false);
+/* onerror hides the WRAPPER now -- hiding only the <img> would leave the
+   emblem band's padding and border as an empty stripe. */
+ok('a broken image hides its frame, not just itself',
+   strpos($p, "onerror=\"this.parentNode.style.display='none'\"") !== false);
+
+$dbsrc = file_get_contents(__DIR__ . '/db.php');
+ok('the daily reward announce is unchanged (it renders correctly on Discord)',
+   strpos($dbsrc, '"dailyrewards", $dr_avatar_url, "FFD700", $dr_author)') !== false);
 ok('the description goes through activity_format, not raw echo',
    strpos($p, 'echo activity_format($r[\'description\'], $ac_names)') !== false);
 ok('mentions are resolved once for the page, after the extra row is popped',
