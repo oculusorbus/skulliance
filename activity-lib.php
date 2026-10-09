@@ -407,3 +407,159 @@ function activity_format($text, $names = array()) {
 
 	return nl2br($s, false);
 }
+
+/*
+ * ============================================================
+ * THE DAILY DIGEST
+ * ============================================================
+ *
+ * One day of the platform, reduced to the few things a poster can show:
+ * what happened, what it looked like, and who did it.
+ *
+ * WHY THIS LIVES HERE AND NOT IN A DOZEN FEATURES. The digest needs art
+ * from missions, raids, realms, Gauntlets, the Arena, Fighters, auctions
+ * and raffles, every player who turned up, and a count of each kind of
+ * thing. Assembling that from the feature tables means eight joins against
+ * eight schemas that share no shape -- and several of them do not keep the
+ * picture at all, only the ids it was built from.
+ *
+ * The activity table already has every one of those, because it was written
+ * from the announcement: image, avatar, name, channel, timestamp. So the
+ * digest is three queries against one table, and a feature that starts
+ * announcing something tomorrow is in the collage tomorrow with no work.
+ *
+ * Inherited from that: history starts when the table did, and anything
+ * never announced is not here. See activity-schema.md.
+ */
+
+/* Art small enough to be an ornament is not art. /icons/ is the platform's
+   ornament directory -- currency marks, chain marks -- and a 128px glyph
+   blown up into a collage tile is the same mistake the feed already made
+   once. See the .ac-shot.is-mark note in activity.php. */
+define('ACTIVITY_DIGEST_ART',     48);   // art tiles offered to the canvas
+define('ACTIVITY_DIGEST_PLAYERS', 24);   // players offered for shout-outs
+
+/*
+ * Everything the collage can draw for one day.
+ *
+ * $day is 'YYYY-MM-DD' in the server's own timezone -- the same clock the
+ * created_at column is written with, so "today" means the same thing here
+ * as it does on the feed.
+ */
+function activity_digest($conn, $day) {
+	$out = array(
+		'day'      => $day,
+		'total'    => 0,
+		'channels' => array(),
+		'art'      => array(),
+		'players'  => array(),
+	);
+	if (!($conn instanceof mysqli)) return $out;
+
+	if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $day)) return $out;
+	$d = $conn->real_escape_string($day);
+	/* A half-open range on created_at, NOT DATE(created_at) = '...'. The
+	   function form cannot use idx_created, so on a table holding months of
+	   announcements it reads every row to answer "what happened today". */
+	$win = "created_at >= '$d 00:00:00' AND created_at < DATE_ADD('$d 00:00:00', INTERVAL 1 DAY)";
+
+	/* ---- what kinds of thing, and how many ---- */
+	$r = @$conn->query("SELECT channel, COUNT(*) AS n FROM activity
+		WHERE $win GROUP BY channel ORDER BY n DESC");
+	if ($r) while ($row = $r->fetch_assoc()) {
+		$n = (int) $row['n'];
+		$out['total'] += $n;
+		$out['channels'][] = array(
+			'key'   => (string) $row['channel'],
+			'label' => activity_channel_label((string) $row['channel']),
+			'n'     => $n,
+		);
+	}
+	if (!$out['total']) return $out;
+
+	/* ---- the pictures ----
+	   DISTINCT on the url: a board that posts twelve results carries one
+	   piece of art twelve times, and a collage of the same tile twelve
+	   times is not a collage. MIN(id) keeps the first appearance so the
+	   ordering below is stable for a given day. */
+	$r = @$conn->query("SELECT image_url, MIN(id) AS first_id, MIN(channel) AS channel,
+		MIN(title) AS title, MIN(author_name) AS author_name, COUNT(*) AS n
+		FROM activity
+		WHERE $win AND image_url != '' AND image_url NOT LIKE '%/icons/%'
+		GROUP BY image_url
+		ORDER BY first_id ASC
+		LIMIT " . ACTIVITY_DIGEST_ART);
+	if ($r) while ($row = $r->fetch_assoc()) {
+		$src = activity_digest_src((string) $row['image_url']);
+		if ($src === '') continue;
+		$out['art'][] = array(
+			'src'     => $src,
+			'channel' => (string) $row['channel'],
+			'label'   => activity_channel_label((string) $row['channel']),
+			'title'   => (string) $row['title'],
+			'who'     => (string) $row['author_name'],
+		);
+	}
+
+	/* ---- the people ----
+	   Ranked by how much they did, because the shout-out row is short and
+	   the busiest day belongs at the front of it. */
+	$r = @$conn->query("SELECT author_name, MIN(author_icon) AS avatar, COUNT(*) AS n
+		FROM activity
+		WHERE $win AND author_name != ''
+		GROUP BY author_name
+		ORDER BY n DESC, author_name ASC
+		LIMIT " . ACTIVITY_DIGEST_PLAYERS);
+	if ($r) while ($row = $r->fetch_assoc()) {
+		$out['players'][] = array(
+			'name'   => (string) $row['author_name'],
+			'avatar' => activity_digest_src((string) $row['avatar']),
+			'n'      => (int) $row['n'],
+		);
+	}
+
+	return $out;
+}
+
+/*
+ * Make a stored image url safe for a CANVAS to draw.
+ *
+ * THE WHOLE COLLAGE HANGS ON THIS. A canvas that has drawn a cross-origin
+ * image without CORS is tainted, and toBlob() then throws -- so the failure
+ * is not a missing tile, it is no download at all, discovered at the end.
+ * js/flyer-builder.js carries the same warning for the same reason.
+ *
+ * Three cases:
+ *
+ *   - OUR OWN HOST, stored absolute. Returned RELATIVE. This is not
+ *     cosmetic: the login cookie has no domain, so the admin may be on
+ *     www.skulliance.io while the announce wrote https://skulliance.io/...,
+ *     and those are different ORIGINS to a canvas even though they are the
+ *     same site. A relative path is same-origin by construction, whichever
+ *     host the page was opened on.
+ *
+ *   - DISCORD'S CDN, which is where every avatar comes from. Kept absolute
+ *     and drawn with crossOrigin="anonymous"; it answers with
+ *     access-control-allow-origin: *, verified against the live host rather
+ *     than assumed.
+ *
+ *   - ANYTHING ELSE. Dropped. An arbitrary third-party host that does not
+ *     send CORS headers taints the canvas and costs the whole poster, and
+ *     there is no way to find that out before drawing it.
+ */
+function activity_digest_src($url) {
+	$url = trim((string) $url);
+	if ($url === '') return '';
+
+	if (preg_match('~^https?://(?:www\.)?skulliance\.io/staking/(.+)$~i', $url, $m)) return $m[1];
+	if (preg_match('~^https?://(?:www\.)?skulliance\.io/(.+)$~i', $url, $m))         return '/' . $m[1];
+	/* Already relative. Guard against a protocol-relative //evil.com/x,
+	   which is NOT a local path however much it looks like one. */
+	if ($url[0] !== '/' && strpos($url, '//') !== 0 && !preg_match('~^[a-z][a-z0-9+.-]*:~i', $url)) return $url;
+	if (strpos($url, '//') === 0) return '';
+	if (preg_match('~^/(?!/)~', $url)) return $url;
+
+	if (preg_match('~^https://cdn\.discordapp\.com/~i', $url)) return $url;
+
+	return '';
+}

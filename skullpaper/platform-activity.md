@@ -35,3 +35,11 @@ Activity is kept for **120 days** and then falls off the wall. The feature it ca
 
 Activity cards show the same names Skull Bot already announced in Discord. They are not currently filtered by the visibility setting described in [[platform-dashboard]]; if you want your results kept off public pages entirely, that is worth raising.
 
+
+## The daily digest
+
+Activity also feeds a poster. In the admin area, **Daily Digest** turns one day of the platform into a single image: the art that actually appeared that day, a tally of what happened, and the players who turned up, with their avatars.
+
+The arrangement is seeded by the date, so the same day always draws the same poster and no two days look alike - the shape of it is dictated by what people did. Pick a day, pick a shape (wide, tall or square), and download the PNG.
+
+It can only show what was announced, for the same reason the feed can: see *History* above.
