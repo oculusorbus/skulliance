@@ -341,10 +341,30 @@ ok('every row is filled, so a short row is just wider pictures',
    && strpos($j, 'var tw = (gw - GAP * (cnt - 1)) / cnt') !== false);
 /* A real poster ended on "REAL…" because the smallest category got 90-odd
    pixels. The tally line already names and counts every category. */
-ok('a category too narrow for its own name is dropped from the collage',
-   strpos($j, 'if (plan.length > maxBlocks) plan = plan.slice(0, maxBlocks);') !== false);
-ok('and the rounding error goes to the biggest block, not the last one',
-   strpos($j, 'widths[0] += innerW - sum;') !== false);
+/* A flat 150px minimum is wide enough for MISSIONS and not for REALM
+   GUARDIANS -- a live poster went out reading "REALM GUAR…". The minimum
+   has to be MEASURED per label. */
+ok('each block is at least as wide as its own measured label',
+   strpos($j, 'var lw = measure ? Math.ceil(measure(plan[i].label.toUpperCase())) : 0;') !== false
+   && strpos($j, 'mins[i] = Math.max(150, lw + 6);') !== false);
+ok('the label font is set before anything is measured against it',
+   strpos($j, "c.font = '700 ' + Math.round(chipS * 0.95)") < strpos($j, 'var blocks = clusters('));
+/* Iterative, because each category dropped also frees a gutter -- a fixed
+   maxBlocks could not see that. */
+ok('categories are dropped until the survivors all fit their names',
+   strpos($j, 'while (plan.length > 1 && need(plan.length) > w)') !== false);
+ok('and the per-label minimums never push the row past the band',
+   strpos($j, 'var over = sum - innerW') !== false);
+ok('spare width goes to the biggest block, never to the last one',
+   strpos($j, 'if (over < 0) widths[0] -= over;') !== false);
+/* The reclaim loop gave up the moment the SINGLE widest block was at its
+   minimum, while every other block might still have had slack -- nine long
+   category names overflowed the band by 147px, which on the poster is a
+   block hanging off the right edge. It has to pick the widest block that
+   still has room. */
+ok('the reclaim loop skips blocks already at their minimum instead of stopping',
+   strpos($j, 'if (widths[i] - 1 >= mins[i] && (pick < 0 || widths[i] > widths[pick])) pick = i;') !== false
+   && strpos($j, 'if (pick < 0) break;') !== false);
 /* Trait drops are the most frequent announcement on the platform and are
    single pieces of armour on a flat ground; a day's collage filled up with
    them while the Fighters people actually built were crowded out. */
@@ -362,6 +382,26 @@ ok('and it falls back to type rather than leaving no masthead at all',
 ok('the tally drops whole entries rather than ellipsising one',
    strpos($j, 'if (c.measureText(test).width > room) break;') !== false
    && strpos($j, 'D.channels.slice(0, 9)') === false);
+
+section('layout: the real functions, stressed');
+
+/*
+ * The geometry lives in its own node harness, because it has to RUN the
+ * layout rather than read it -- and that is where this went wrong twice:
+ * a block hanging off the right edge, and "REALM GUAR..." on a post that
+ * had already gone out to X. Shelled out rather than reimplemented here so
+ * there is one copy of those cases. Reported as skipped, not failed, if
+ * node is not on this machine.
+ */
+$node = trim((string) @shell_exec('command -v node 2>/dev/null'));
+if ($node === '') {
+	echo "  --   node not found; run digest-geometry-harness.js separately\n";
+} else {
+	$res = trim((string) @shell_exec(escapeshellcmd($node) . ' '
+	       . escapeshellarg(__DIR__ . '/digest-geometry-harness.js') . ' 2>&1'));
+	ok('no label is cut and nothing runs past the band, at any width or cap',
+	   strpos($res, 'OK') === 0, $res);
+}
 
 restore_error_handler();
 echo "\n-------------------------------------------\n";

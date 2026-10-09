@@ -176,7 +176,7 @@
 	/* Lay the blocks across the band. Each is a column group of its own
 	   width with its own internal grid, and a strip underneath for the one
 	   label. */
-	function clusters(r, x, y, w, h, plan) {
+	function clusters(r, x, y, w, h, plan, measure) {
 		/* TWO GAPS, AND THE DIFFERENCE IS THE GROUPING. With one gap
 		   everywhere the blocks were only distinguishable by reading the
 		   labels -- the tiles sat in one even field and the clustering, the
@@ -188,17 +188,30 @@
 		if (!plan.length) return out;
 
 		/*
-		 * A BLOCK TOO NARROW FOR ITS OWN NAME IS WORSE THAN NO BLOCK. The
-		 * first version handed every category a share of the width and the
-		 * smallest ones came out at 90-odd pixels, which fit two tiles and
-		 * an ellipsised label -- a real poster ended on "REAL…". The tally
-		 * line already names every category and counts it, so dropping the
-		 * tail from the COLLAGE loses nothing: it is the pictures that have
-		 * to earn their room.
+		 * A BLOCK TOO NARROW FOR ITS OWN NAME IS WORSE THAN NO BLOCK, and
+		 * "its own name" has to be MEASURED. This was a flat 150px, which is
+		 * wide enough for MISSIONS and not for REALM GUARDIANS -- a live
+		 * poster went out reading "REALM GUAR…". The minimum is now whatever
+		 * that block's label actually needs, so a long category name buys
+		 * itself the room or is dropped; the tally line still names and
+		 * counts every category either way, so the collage loses nothing by
+		 * leaving one out.
 		 */
-		var MINW = 150;
-		var maxBlocks = Math.max(1, Math.floor((w + BGAP) / (MINW + BGAP)));
-		if (plan.length > maxBlocks) plan = plan.slice(0, maxBlocks);
+		var mins = [];
+		for (i = 0; i < plan.length; i++) {
+			var lw = measure ? Math.ceil(measure(plan[i].label.toUpperCase())) : 0;
+			mins[i] = Math.max(150, lw + 6);
+		}
+
+		/* Drop the smallest categories until everything that is left can
+		   hold its own name. Iterative, because each one dropped also frees
+		   a gutter -- a fixed maxBlocks could not see that. */
+		var need = function (n) {
+			var t = BGAP * (n - 1);
+			for (var q = 0; q < n; q++) t += mins[q];
+			return t;
+		};
+		while (plan.length > 1 && need(plan.length) > w) { plan = plan.slice(0, -1); mins.pop(); }
 
 		var tiles = 0;
 		for (i = 0; i < plan.length; i++) tiles += plan[i].items.length;
@@ -210,11 +223,31 @@
 		   either squeezed or stretched. */
 		var innerW = w - BGAP * (plan.length - 1), widths = [], sum = 0;
 		for (i = 0; i < plan.length; i++) {
-			widths[i] = Math.max(MINW, Math.floor(innerW * plan[i].items.length / tiles));
+			widths[i] = Math.max(mins[i], Math.floor(innerW * plan[i].items.length / tiles));
 			sum += widths[i];
 		}
-		widths[0] += innerW - sum;
-		if (widths[0] < MINW) widths[0] = MINW;
+		/*
+		 * Reclaim the overshoot the per-label minimums caused, taking it off
+		 * the widest block that still has room above its OWN minimum.
+		 *
+		 * "that still has room" is the whole correction. The first version
+		 * found the single widest block and gave up the moment that one was
+		 * at its minimum -- while every other block might still have had
+		 * slack. A stress run with nine long category names overflowed the
+		 * band by 147px, which on the poster is a block hanging off the
+		 * right edge. Per pixel rather than in one go because each
+		 * decrement can change which block is widest.
+		 */
+		var over = sum - innerW, guard2 = 0;
+		while (over > 0 && guard2++ < 20000) {
+			var pick = -1;
+			for (i = 0; i < widths.length; i++) {
+				if (widths[i] - 1 >= mins[i] && (pick < 0 || widths[i] > widths[pick])) pick = i;
+			}
+			if (pick < 0) break;   /* every block is at its minimum */
+			widths[pick]--; over--;
+		}
+		if (over < 0) widths[0] -= over;
 
 		var cx = x, bodyH = h - LBL;
 		for (i = 0; i < plan.length; i++) {
@@ -325,7 +358,12 @@
 			   and the feast becomes a mosaic of mush. A tall poster has the
 			   room for a few more. */
 			var cap  = opts.format === 'wide' ? 14 : 16;
-			var blocks = clusters(r, mx, my, mw, mh, budget(group(art), cap));
+			/* The label font MUST be set before measuring, or the widths are
+			   computed against whatever font was last used -- which is the
+			   header's, and far wider. */
+			c.font = '700 ' + Math.round(chipS * 0.95) + 'px Rajdhani, sans-serif';
+			var blocks = clusters(r, mx, my, mw, mh, budget(group(art), cap),
+				function (t) { return c.measureText(t).width; });
 
 			for (var bi = 0; bi < blocks.length; bi++) {
 				var blk = blocks[bi];
