@@ -368,8 +368,33 @@ ok('the reclaim loop skips blocks already at their minimum instead of stopping',
 /* Trait drops are the most frequent announcement on the platform and are
    single pieces of armour on a flat ground; a day's collage filled up with
    them while the Fighters people actually built were crowded out. */
+$lib = file_get_contents(__DIR__ . '/activity-lib.php');
 ok('trait art is excluded from the pool by url, since the channel cannot tell it apart',
-   strpos(file_get_contents(__DIR__ . '/activity-lib.php'), "image_url NOT LIKE '%/250/%'") !== false);
+   strpos($lib, "image_url NOT LIKE '%/250/%'") !== false);
+/* Skull Racer's three box-art images are AI-generated where every other
+   picture on the platform is hand-drawn, and side by side in one collage
+   the difference is the first thing you see. Excluded by DIRECTORY so art
+   added there later is covered too. */
+ok('Skull Racer box art is excluded from the collage',
+   strpos($lib, "image_url NOT LIKE '%/racing/images/%'") !== false);
+/*
+ * Excluded from the PICTURES, never from the day: the tally counts every
+ * channel and its query carries no image filter at all.
+ *
+ * SCOPED TO activity_digest()'S BODY, not searched across the file.
+ * activity_channels() -- which fills the Activity page's filter dropdown
+ * -- opens with the identical "SELECT channel, COUNT(*) AS n FROM
+ * activity" and sits EARLIER in the file, so a plain strpos landed on that
+ * one and the assertion passed no matter what the digest's tally did. Two
+ * queries, same first line; the anchor has to say which.
+ */
+$digestBody = substr($lib, strpos($lib, 'function activity_digest($conn, $day)'));
+$digestBody = substr($digestBody, 0, strpos($digestBody, "\n}\n"));
+$chanQ = substr($digestBody, strpos($digestBody, 'SELECT channel, COUNT(*)'), 160);
+ok('the tally query is found inside activity_digest, not a namesake elsewhere',
+   strpos($chanQ, 'GROUP BY channel ORDER BY n DESC') !== false, $chanQ);
+ok('and none of the art exclusions touch the tally',
+   strpos($chanQ, 'image_url') === false, $chanQ);
 
 /* The homepage wordmark, not the word set in a Google font. */
 ok('the masthead is the real logo',

@@ -483,16 +483,31 @@ function activity_digest($conn, $day) {
 	   times is not a collage. MIN(id) keeps the first appearance so the
 	   ordering below is stable for a given day. */
 	/*
-	 * TRAIT DROPS ARE EXCLUDED; ASSEMBLED FIGHTERS ARE NOT.
+	 * WHAT IS NOT ALLOWED IN THE COLLAGE, AND WHY.
 	 *
-	 * Both announce down the dhcfighters channel, so the channel cannot tell
-	 * them apart -- the url does. A drop posts one PIECE of art,
-	 * <art>/250/<category>/<slug>.png: a shoulder plate on a flat ground, a
-	 * mask, a background swatch. They are the most frequent announcement on
-	 * the platform, so a day's collage filled up with disembodied armour
-	 * while the Fighters people actually built were crowded out. A finished
-	 * Fighter posts dhcrenders/<serial>, which is a character, and those
-	 * stay.
+	 * Each of these is excluded by URL rather than by channel, because in
+	 * every case the channel cannot tell the difference. They are still
+	 * COUNTED -- the tally line names each feature and its total -- so
+	 * nothing is hidden from the day, only from the pictures.
+	 *
+	 *   /icons/    the ornament directory: currency marks, chain marks. A
+	 *              128px glyph stretched into a collage tile is the mistake
+	 *              the Activity feed already made once.
+	 *
+	 *   /250/      a DHC TRAIT DROP, <art>/250/<category>/<slug>.png: one
+	 *              shoulder plate on a flat ground, a mask, a background
+	 *              swatch. They are the most frequent announcement on the
+	 *              platform, so the collage filled up with disembodied
+	 *              armour while the Fighters people actually built were
+	 *              crowded out. An ASSEMBLED Fighter posts dhcrenders/, is
+	 *              a character, and stays.
+	 *
+	 *   /racing/   Skull Racer's box art. Three fixed promo images, and
+	 *              they are AI-generated where every other picture on the
+	 *              platform is Maxingo's hand-drawn work -- side by side in
+	 *              one collage the difference is the first thing you see,
+	 *              and the poster is marketing for the hand-drawn work. The
+	 *              whole directory, so art added to it later is covered too.
 	 */
 	$r = @$conn->query("SELECT image_url, MIN(id) AS first_id, MIN(channel) AS channel,
 		MIN(title) AS title, MIN(author_name) AS author_name, COUNT(*) AS n
@@ -500,6 +515,7 @@ function activity_digest($conn, $day) {
 		WHERE $win AND image_url != ''
 		  AND image_url NOT LIKE '%/icons/%'
 		  AND image_url NOT LIKE '%/250/%'
+		  AND image_url NOT LIKE '%/racing/images/%'
 		GROUP BY image_url
 		ORDER BY first_id ASC
 		LIMIT " . ACTIVITY_DIGEST_ART);
