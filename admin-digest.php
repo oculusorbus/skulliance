@@ -147,3 +147,9 @@ window.DIGEST = <?php echo json_encode($DIGEST, JSON_UNESCAPED_SLASHES | JSON_UN
   if (jump) jump.addEventListener('change', function () { go(this.value); });
 })();
 </script>
+<?php /* EVERY admin page ends with this, and this one did not -- the whole
+         panel is scoped under .adm, which is where the 20px padding lives,
+         so without it the page rendered as unstyled text hard against the
+         left edge of the browser. admin_chrome() opens the .adm wrapper but
+         does not carry its styling. */ ?>
+<?php include 'admin-css.php'; ?>

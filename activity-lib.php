@@ -482,10 +482,24 @@ function activity_digest($conn, $day) {
 	   piece of art twelve times, and a collage of the same tile twelve
 	   times is not a collage. MIN(id) keeps the first appearance so the
 	   ordering below is stable for a given day. */
+	/*
+	 * TRAIT DROPS ARE EXCLUDED; ASSEMBLED FIGHTERS ARE NOT.
+	 *
+	 * Both announce down the dhcfighters channel, so the channel cannot tell
+	 * them apart -- the url does. A drop posts one PIECE of art,
+	 * <art>/250/<category>/<slug>.png: a shoulder plate on a flat ground, a
+	 * mask, a background swatch. They are the most frequent announcement on
+	 * the platform, so a day's collage filled up with disembodied armour
+	 * while the Fighters people actually built were crowded out. A finished
+	 * Fighter posts dhcrenders/<serial>, which is a character, and those
+	 * stay.
+	 */
 	$r = @$conn->query("SELECT image_url, MIN(id) AS first_id, MIN(channel) AS channel,
 		MIN(title) AS title, MIN(author_name) AS author_name, COUNT(*) AS n
 		FROM activity
-		WHERE $win AND image_url != '' AND image_url NOT LIKE '%/icons/%'
+		WHERE $win AND image_url != ''
+		  AND image_url NOT LIKE '%/icons/%'
+		  AND image_url NOT LIKE '%/250/%'
 		GROUP BY image_url
 		ORDER BY first_id ASC
 		LIMIT " . ACTIVITY_DIGEST_ART);
@@ -502,18 +516,41 @@ function activity_digest($conn, $day) {
 	}
 
 	/* ---- the people ----
-	   Ranked by how much they did, because the shout-out row is short and
-	   the busiest day belongs at the front of it. */
-	$r = @$conn->query("SELECT author_name, MIN(author_icon) AS avatar, COUNT(*) AS n
-		FROM activity
-		WHERE $win AND author_name != ''
-		GROUP BY author_name
-		ORDER BY n DESC, author_name ASC
+	 *
+	 * GROUPED BY user_id, NOT BY author_name. author_name is the embed's
+	 * author LINE, and it is not the person: the daily-reward announce
+	 * writes "president_crypto · Day 6 of 7" while every other announce
+	 * writes the bare username, so the same player arrived as two rows and
+	 * the shout-out row printed them twice. Seen on a real day -- four of
+	 * twelve faces were duplicates.
+	 *
+	 * user_id is the person. The join is INNER, so a cron announce with no
+	 * actor (user_id 0) drops out, which is right: a leaderboard payout is
+	 * not somebody turning up. The name and avatar come from the users table
+	 * rather than from whatever the embed happened to say, so they are
+	 * canonical and identical for every channel.
+	 *
+	 * Ranked by how much they did -- the row is short and the busiest day
+	 * belongs at the front of it.
+	 */
+	$r = @$conn->query("SELECT u.id, u.username, u.discord_id, u.avatar, COUNT(*) AS n
+		FROM activity a
+		INNER JOIN users u ON u.id = a.user_id
+		WHERE $win AND a.user_id > 0
+		GROUP BY u.id, u.username, u.discord_id, u.avatar
+		ORDER BY n DESC, u.username ASC
 		LIMIT " . ACTIVITY_DIGEST_PLAYERS);
 	if ($r) while ($row = $r->fetch_assoc()) {
+		$name = (string) $row['username'];
+		if ($name === '') continue;
+		/* Same shape the announces build, so the poster shows the face
+		   Discord shows. .png, matching db.php's $dr_avatar_url. */
+		$av = ((string) $row['discord_id'] !== '' && (string) $row['avatar'] !== '')
+			? 'https://cdn.discordapp.com/avatars/' . $row['discord_id'] . '/' . $row['avatar'] . '.png'
+			: '';
 		$out['players'][] = array(
-			'name'   => (string) $row['author_name'],
-			'avatar' => activity_digest_src((string) $row['avatar']),
+			'name'   => $name,
+			'avatar' => activity_digest_src($av),
 			'n'      => (int) $row['n'],
 		);
 	}

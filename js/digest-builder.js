@@ -26,6 +26,7 @@
 	'use strict';
 
 	var D = window.DIGEST || { total: 0, art: [], players: [], channels: [] };
+	var LOGO = null;   /* the homepage wordmark, loaded below */
 
 	/* Skulliance's own ground and accent, so the poster reads as the site. */
 	var INK = '#06101a', PANEL = '#0d1e2e', ACCENT = '#00c8a0', TEXT = '#e6f1f7', MUTE = '#8fa6b8';
@@ -114,49 +115,143 @@
 		return parseInt(p[2], 10) + ' ' + M[parseInt(p[1], 10) - 1] + ' ' + p[0];
 	}
 
-	/* ---------- the mosaic --------------------------------------------- */
+	/* ---------- the clusters ------------------------------------------ */
 
 	/*
-	 * A COLLAGE, NOT A CONTACT SHEET. A plain grid of equal tiles says
-	 * "report"; the brief was a visual feast whose shape is dictated by the
-	 * day. So the band is packed in columns of varying width, each column
-	 * split into one, two or three tiles -- which is what gives a big
-	 * Monstrocity boss next to a stack of three small Fighters, and makes a
-	 * ten-event day look different from a sixty-event one without anything
-	 * saying so.
+	 * ONE LABEL PER CATEGORY, NOT ONE PER TILE.
 	 *
-	 * Packed left to right so there is never a hole: the last column is
-	 * whatever width is left rather than whatever the random pick wanted.
+	 * The first version captioned every tile, and on a real day that read
+	 * DHC FIGHTERS five times, BOSS BATTLES three times and MISSIONS twice
+	 * down one poster -- the repetition was the loudest thing on it, and it
+	 * told you nothing the first instance had not. Art is grouped by channel
+	 * now, each group gets a contiguous block, and the name is said once
+	 * underneath it.
+	 *
+	 * The variety that the per-tile mosaic was there for has to come from
+	 * somewhere else, so it comes from the data: a block's WIDTH is its
+	 * share of the day and its internal grid follows from that, which means
+	 * a day of mostly Monstrocity looks nothing like a day of mostly raids.
 	 */
-	function mosaic(r, x, y, w, h, n) {
-		var cells = [], cols = [], left = w, GAP = 6;
-		if (n < 1) return cells;
-
-		/* Column widths, biased so one or two are noticeably wider. */
-		var minW = Math.max(110, w / Math.min(n, 9));
-		while (left > minW * 1.2 && cols.length < n) {
-			var cw = minW * (0.85 + r() * 1.5);
-			if (cw > left - minW) break;
-			cols.push(cw); left -= cw + GAP;
+	function group(art) {
+		var by = {}, order = [];
+		for (var i = 0; i < art.length; i++) {
+			var k = art[i].channel || '_';
+			if (!by[k]) { by[k] = { label: art[i].label || '', items: [] }; order.push(k); }
+			by[k].items.push(art[i]);
 		}
-		cols.push(left);
+		return order.map(function (k) { return by[k]; })
+		            .sort(function (a, b) { return b.items.length - a.items.length; });
+	}
 
-		var cx = x;
-		for (var i = 0; i < cols.length; i++) {
-			var cw2 = cols[i];
-			/* A wide column gets fewer, taller tiles; a narrow one stacks. */
-			var want = cw2 > w / 4 ? 1 + Math.floor(r() * 2) : 1 + Math.floor(r() * 3);
-			var rows = Math.max(1, Math.min(want, n - cells.length));
-			if (i === cols.length - 1) rows = Math.max(1, Math.min(n - cells.length, 3));
-			var ch = (h - GAP * (rows - 1)) / rows, cy = y;
-			for (var j = 0; j < rows && cells.length < n; j++) {
-				cells.push({ x: cx, y: cy, w: cw2, h: ch });
-				cy += ch + GAP;
+	/* How many tiles each category is allowed, proportional to its share of
+	   the day, with everyone who showed up at all getting at least one. */
+	function budget(groups, cap) {
+		var total = 0, i;
+		for (i = 0; i < groups.length; i++) total += groups[i].items.length;
+		if (!total) return [];
+
+		var out = [], left = Math.min(cap, total);
+		for (i = 0; i < groups.length && left > 0; i++) {
+			var want = Math.max(1, Math.round(cap * groups[i].items.length / total));
+			want = Math.min(want, groups[i].items.length, left);
+			out.push({ label: groups[i].label, items: groups[i].items.slice(0, want), src: groups[i] });
+			left -= want;
+		}
+		/* Spend whatever rounding left over on the categories that still
+		   have art to give, biggest first. */
+		var guard = 0;
+		while (left > 0 && guard++ < cap * 4) {
+			var moved = false;
+			for (i = 0; i < out.length && left > 0; i++) {
+				if (out[i].items.length < out[i].src.items.length) {
+					out[i].items.push(out[i].src.items[out[i].items.length]);
+					left--; moved = true;
+				}
 			}
-			cx += cw2 + GAP;
-			if (cells.length >= n) break;
+			if (!moved) break;
 		}
-		return cells;
+		return out;
+	}
+
+	/* Lay the blocks across the band. Each is a column group of its own
+	   width with its own internal grid, and a strip underneath for the one
+	   label. */
+	function clusters(r, x, y, w, h, plan) {
+		/* TWO GAPS, AND THE DIFFERENCE IS THE GROUPING. With one gap
+		   everywhere the blocks were only distinguishable by reading the
+		   labels -- the tiles sat in one even field and the clustering, the
+		   whole point of the change, was invisible. A wider gutter between
+		   categories than between their own tiles is what makes a block
+		   read as a block. */
+		var GAP = 7, BGAP = 22, out = [], i, k;
+		var LBL = Math.max(20, Math.round(h * 0.085));
+		if (!plan.length) return out;
+
+		/*
+		 * A BLOCK TOO NARROW FOR ITS OWN NAME IS WORSE THAN NO BLOCK. The
+		 * first version handed every category a share of the width and the
+		 * smallest ones came out at 90-odd pixels, which fit two tiles and
+		 * an ellipsised label -- a real poster ended on "REAL…". The tally
+		 * line already names every category and counts it, so dropping the
+		 * tail from the COLLAGE loses nothing: it is the pictures that have
+		 * to earn their room.
+		 */
+		var MINW = 150;
+		var maxBlocks = Math.max(1, Math.floor((w + BGAP) / (MINW + BGAP)));
+		if (plan.length > maxBlocks) plan = plan.slice(0, maxBlocks);
+
+		var tiles = 0;
+		for (i = 0; i < plan.length; i++) tiles += plan[i].items.length;
+		if (!tiles) return out;
+
+		/* Widths proportional to share, with the rounding error given to the
+		   BIGGEST block rather than to the last one -- the last is usually
+		   the smallest, and handing it the remainder is how it ended up
+		   either squeezed or stretched. */
+		var innerW = w - BGAP * (plan.length - 1), widths = [], sum = 0;
+		for (i = 0; i < plan.length; i++) {
+			widths[i] = Math.max(MINW, Math.floor(innerW * plan[i].items.length / tiles));
+			sum += widths[i];
+		}
+		widths[0] += innerW - sum;
+		if (widths[0] < MINW) widths[0] = MINW;
+
+		var cx = x, bodyH = h - LBL;
+		for (i = 0; i < plan.length; i++) {
+			var g = plan[i], gw = widths[i], n = g.items.length;
+
+			/* Columns from the space available, not from the count: a wide
+			   block of three wants one row of three, a narrow block of three
+			   wants a stack. ~165px is where a tile stops reading. */
+			var cols = Math.max(1, Math.min(n, Math.round(gw / 165) || 1));
+			var rows = Math.max(1, Math.ceil(n / cols));
+
+			/*
+			 * EVERY ROW IS FULL. Laying n items into a fixed cols x rows
+			 * grid leaves the last row short -- 5 tiles in 3 columns is a
+			 * row of 3 and a row of 2 with a hole beside it, and a hole in a
+			 * collage reads as a picture that failed to load. The items are
+			 * spread across the rows instead and each row's tiles are sized
+			 * to fill the block, so a short row is simply a row of wider
+			 * pictures.
+			 */
+			var base = Math.floor(n / rows), extra = n % rows;
+			var cells = [], idx = 0, cy = y;
+			var th = (bodyH - GAP * (rows - 1)) / rows;
+			for (var rr = 0; rr < rows; rr++) {
+				var cnt = base + (rr < extra ? 1 : 0);
+				if (cnt < 1) continue;
+				var tw = (gw - GAP * (cnt - 1)) / cnt, tx = cx;
+				for (k = 0; k < cnt; k++) {
+					cells.push({ x: tx, y: cy, w: tw, h: th, item: g.items[idx++] });
+					tx += tw + GAP;
+				}
+				cy += th + GAP;
+			}
+			out.push({ label: g.label, x: cx, w: gw, labelY: y + h - Math.round(LBL * 0.22), cells: cells });
+			cx += gw + BGAP;
+		}
+		return out;
 	}
 
 	/* ---------- the poster --------------------------------------------- */
@@ -182,19 +277,32 @@
 		var titleS = Math.round(W * (opts.format === 'wide' ? 0.042 : 0.052));
 		var headH  = Math.round(titleS * 1.9);
 
-		/* ---- header ---- */
+		/* ---- header ----
+		 * THE REAL WORDMARK, not the word set in a Google font. The homepage
+		 * logo is the platform's own lettering and a poster that goes out as
+		 * marketing should wear it rather than an approximation. It is
+		 * 700x300, drawn to a height and left to find its own width, so the
+		 * proportions are the designed ones. Falls back to type if the file
+		 * does not load -- a poster with no masthead is worse than one with
+		 * a typeset masthead. */
 		c.textBaseline = 'alphabetic';
-		c.fillStyle = TEXT;
-		c.font = '800 ' + titleS + 'px "Saira Semi Condensed", Impact, sans-serif';
-		var title = (opts.headline || 'SKULLIANCE').toUpperCase();
-		c.fillText(fit(c, title, W - PAD * 2), PAD, PAD + titleS);
+		var markH = Math.round(titleS * 1.15), baseline = PAD + titleS;
+
+		if (!opts.headline && LOGO) {
+			var markW = LOGO.naturalWidth * (markH / LOGO.naturalHeight);
+			c.drawImage(LOGO, PAD, PAD, markW, markH);
+		} else {
+			c.fillStyle = TEXT;
+			c.font = '800 ' + titleS + 'px "Saira Semi Condensed", Impact, sans-serif';
+			c.fillText(fit(c, (opts.headline || 'SKULLIANCE').toUpperCase(), W - PAD * 2), PAD, baseline);
+		}
 
 		c.fillStyle = ACCENT;
 		c.font = '700 ' + Math.round(titleS * 0.42) + 'px Rajdhani, sans-serif';
 		var sub = opts.headline ? prettyDay(D.day).toUpperCase()
 		                        : prettyDay(D.day).toUpperCase() + '  ·  ' + D.total +
 		                          ' EVENT' + (D.total === 1 ? '' : 'S') + ' ACROSS THE PLATFORM';
-		c.fillText(fit(c, sub, W - PAD * 2), PAD, PAD + titleS + Math.round(titleS * 0.55));
+		c.fillText(fit(c, sub, W - PAD * 2), PAD, PAD + markH + Math.round(titleS * 0.5));
 
 		/* ---- footer block: the tally, then the people ---- */
 		var avR      = Math.round(W * (opts.format === 'wide' ? 0.027 : 0.034));
@@ -217,36 +325,31 @@
 			   and the feast becomes a mosaic of mush. A tall poster has the
 			   room for a few more. */
 			var cap  = opts.format === 'wide' ? 14 : 16;
-			var take = Math.min(art.length, cap);
-			var cells = mosaic(r, mx, my, mw, mh, take);
+			var blocks = clusters(r, mx, my, mw, mh, budget(group(art), cap));
 
-			/* art[i], never art[i % len]. take is capped at art.length, so a
-			   modulo could only ever mean repeating a tile -- and the same
-			   picture twice in a collage reads as a bug, not as emphasis. */
-			for (var i = 0; i < cells.length; i++) {
-				var cell = cells[i], a = art[i];
-				c.save();
-				roundRect(c, cell.x, cell.y, cell.w, cell.h, 8);
-				c.clip();
-				c.fillStyle = PANEL; c.fillRect(cell.x, cell.y, cell.w, cell.h);
-				drawCover(c, a.img, cell.x, cell.y, cell.w, cell.h);
-
-				/* A label only where there is room for one to be read. The
-				   gradient is what keeps it legible over art that might be
-				   pale at the bottom. */
-				if (cell.w > 150 && cell.h > 90 && a.label) {
-					var g = c.createLinearGradient(0, cell.y + cell.h - 46, 0, cell.y + cell.h);
-					g.addColorStop(0, 'rgba(4,10,18,0)'); g.addColorStop(1, 'rgba(4,10,18,0.88)');
-					c.fillStyle = g; c.fillRect(cell.x, cell.y + cell.h - 46, cell.w, 46);
-					c.fillStyle = ACCENT;
-					c.font = '700 ' + Math.round(chipS * 0.82) + 'px Rajdhani, sans-serif';
-					c.fillText(fit(c, a.label.toUpperCase(), cell.w - 20), cell.x + 10, cell.y + cell.h - 14);
+			for (var bi = 0; bi < blocks.length; bi++) {
+				var blk = blocks[bi];
+				for (var i = 0; i < blk.cells.length; i++) {
+					var cell = blk.cells[i], a = cell.item;
+					c.save();
+					roundRect(c, cell.x, cell.y, cell.w, cell.h, 8);
+					c.clip();
+					c.fillStyle = PANEL; c.fillRect(cell.x, cell.y, cell.w, cell.h);
+					drawCover(c, a.img, cell.x, cell.y, cell.w, cell.h);
+					c.restore();
+					c.strokeStyle = 'rgba(0,200,160,0.16)'; c.lineWidth = 1;
+					roundRect(c, cell.x + 0.5, cell.y + 0.5, cell.w - 1, cell.h - 1, 8);
+					c.stroke();
 				}
-				c.restore();
-
-				c.strokeStyle = 'rgba(0,200,160,0.16)'; c.lineWidth = 1;
-				roundRect(c, cell.x + 0.5, cell.y + 0.5, cell.w - 1, cell.h - 1, 8);
-				c.stroke();
+				/* The one label, under the block and on the poster's own
+				   ground rather than over the art -- so it is legible
+				   whatever the pictures happen to be, which a gradient over
+				   pale art never quite is. */
+				if (blk.label) {
+					c.fillStyle = ACCENT;
+					c.font = '700 ' + Math.round(chipS * 0.95) + 'px Rajdhani, sans-serif';
+					c.fillText(fit(c, blk.label.toUpperCase(), blk.w), blk.x, blk.labelY);
+				}
 			}
 		} else {
 			c.fillStyle = PANEL; roundRect(c, mx, my, mw, mh, 10); c.fill();
@@ -259,9 +362,19 @@
 		var ty = H - PAD - peopleH - Math.round(tallyH * 0.35);
 		if (D.channels.length) {
 			c.font = '700 ' + chipS + 'px Rajdhani, sans-serif';
-			var parts = D.channels.slice(0, 9).map(function (ch) { return ch.n + ' ' + ch.label; });
+			/* DROP WHOLE ENTRIES, never ellipsise. A fixed slice(0,9) ran
+			   past the edge on a busy day and fit() cut it mid-word -- the
+			   poster said "19 Daily Rewar…", which reads as broken rather
+			   than as abbreviated. Fewer categories, each one whole. */
+			var parts = [], room = W - PAD * 2, sep = '   ·   ';
+			for (var ci = 0; ci < D.channels.length; ci++) {
+				var bit = D.channels[ci].n + ' ' + D.channels[ci].label;
+				var test = parts.concat([bit]).join(sep);
+				if (c.measureText(test).width > room) break;
+				parts.push(bit);
+			}
 			c.fillStyle = MUTE;
-			c.fillText(fit(c, parts.join('   ·   '), W - PAD * 2), PAD, ty);
+			c.fillText(parts.join(sep), PAD, ty);
 		}
 
 		/* ---- the shout-outs ---- */
@@ -334,6 +447,9 @@
 	Promise.all(
 		D.art.map(function (a) { return load(a.src).then(function (im) { a.img = im; }); })
 		.concat(D.players.map(function (p) { return load(p.avatar).then(function (im) { p.img = im; }); }))
+		/* Same-origin and relative, so it is safe for the canvas by the same
+		   rule everything else here follows. */
+		.concat([load('images/skulliancelogo.png').then(function (im) { LOGO = im; })])
 	).then(function () {
 		var gotArt = D.art.filter(function (a) { return a.img; }).length;
 		var gotAv  = D.players.filter(function (p) { return p.img; }).length;
@@ -383,5 +499,6 @@
 		}
 	});
 
-	window.DigestBuilder = { draw: draw, mosaic: mosaic, fit: fit, rng: rng, seedOf: seedOf };
+	window.DigestBuilder = { draw: draw, group: group, budget: budget, clusters: clusters,
+	                         fit: fit, rng: rng, seedOf: seedOf };
 })();

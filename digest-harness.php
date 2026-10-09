@@ -170,10 +170,24 @@ ok('and so are empty images', strpos($sql, "image_url != ''") !== false);
 /* A leaderboard run posts a dozen results carrying one piece of art. Twelve
    copies of one tile is not a collage. */
 ok('art is deduplicated by url', strpos($sql, 'GROUP BY image_url') !== false, $sql);
-ok('players are deduplicated by name', strpos($sql, 'GROUP BY author_name') !== false, $sql);
-ok('players with no name are skipped', strpos($sql, "author_name != ''") !== false);
+/*
+ * PLAYERS ARE GROUPED BY THE PERSON, NOT BY THE AUTHOR LINE.
+ *
+ * This shipped as GROUP BY author_name and the author line is not the
+ * person: the daily-reward announce writes "president_crypto · Day 6 of 7"
+ * while every other announce writes the bare username, so one player
+ * arrived as two rows. Seen on a real day -- four of twelve faces in the
+ * shout-out row were duplicates of each other.
+ */
+ok('players are grouped by user_id, not by the embed author line',
+   strpos($sql, 'GROUP BY u.id') !== false && strpos($sql, 'GROUP BY author_name') === false, $sql);
+ok('the name and avatar come from the users table, canonically',
+   strpos($sql, 'INNER JOIN users u ON u.id = a.user_id') !== false, $sql);
+/* INNER, so a cron announce with no actor drops out -- a leaderboard payout
+   is not somebody turning up. */
+ok('rows with no actor are excluded', strpos($sql, 'a.user_id > 0') !== false, $sql);
 ok('players are ranked by how much they did',
-   strpos($sql, 'ORDER BY n DESC, author_name ASC') !== false, $sql);
+   strpos($sql, 'ORDER BY n DESC, u.username ASC') !== false, $sql);
 ok('both pools are capped',
    strpos($sql, 'LIMIT ' . ACTIVITY_DIGEST_ART) !== false
    && strpos($sql, 'LIMIT ' . ACTIVITY_DIGEST_PLAYERS) !== false, $sql);
@@ -199,9 +213,9 @@ $conn->expect(
 	 array('image_url' => 'https://www.skulliance.io/staking/dhcrenders/f1.png',
 	       'first_id' => '12', 'channel' => 'dhcfighters', 'title' => 'F', 'author_name' => 'nothooley', 'n' => '2')),
 	array(
-	 array('author_name' => 'skowl', 'avatar' => 'https://cdn.discordapp.com/avatars/1/a.png', 'n' => '9'),
-	 array('author_name' => 'nobody', 'avatar' => '', 'n' => '1'),
-	 array('author_name' => 'offsite', 'avatar' => 'https://example.com/a.png', 'n' => '1')));
+	 array('id' => '4', 'username' => 'skowl',  'discord_id' => '77', 'avatar' => 'abc', 'n' => '9'),
+	 array('id' => '5', 'username' => 'nobody', 'discord_id' => '',   'avatar' => '',    'n' => '1'),
+	 array('id' => '6', 'username' => '',       'discord_id' => '88', 'avatar' => 'def', 'n' => '1')));
 $D = activity_digest($conn, '2026-10-08');
 
 ok('the total is the sum of the channel counts', $D['total'] === 11, $D['total']);
@@ -220,16 +234,16 @@ ok('and the two that survive are ours, relative',
 ok('art keeps its channel label for the tile caption',
    $D['art'][1]['label'] === 'DHC Fighters');
 
-ok('every player survives even when their avatar does not', count($D['players']) === 3);
-ok('a Discord avatar is kept whole',
-   $D['players'][0]['avatar'] === 'https://cdn.discordapp.com/avatars/1/a.png');
-/* A player with no usable avatar is NOT dropped -- the poster draws an
+ok('a nameless row is dropped rather than drawn as a blank face',
+   count($D['players']) === 2, count($D['players']));
+ok('the avatar is built from the users table, same shape the announces use',
+   $D['players'][0]['avatar'] === 'https://cdn.discordapp.com/avatars/77/abc.png',
+   $D['players'][0]['avatar']);
+/* A player with no Discord picture is NOT dropped -- the poster draws their
    initial instead, and dropping them would silently un-shout-out somebody
-   for never setting a Discord picture. */
-ok('a player with no avatar is kept with an empty one',
+   for never having set an avatar. */
+ok('a player with no avatar is kept, with an empty one',
    $D['players'][1]['name'] === 'nobody' && $D['players'][1]['avatar'] === '');
-ok('and so is one whose avatar is off-origin',
-   $D['players'][2]['name'] === 'offsite' && $D['players'][2]['avatar'] === '');
 ok('player counts are cast to int', $D['players'][0]['n'] === 9);
 
 section('admin-digest.php');
@@ -245,6 +259,24 @@ ok('it defaults to the SERVER clock, which is what created_at is written with',
    strpos($p, "date('Y-m-d')") !== false);
 ok('the data reaches the canvas as json, not as markup',
    strpos($p, 'window.DIGEST = <?php echo json_encode($DIGEST') !== false);
+/* The panel is scoped under .adm and that is where its padding lives, so a
+   page that opens the wrapper via admin_chrome() and never includes the
+   stylesheet renders as unstyled text against the edge of the browser.
+   Asserted for EVERY admin page, not just this one -- forgetting it is a
+   silent, page-wide break with no error anywhere. */
+$adminPages = glob(__DIR__ . '/admin-*.php');
+$noCss = array();
+foreach ($adminPages as $f) {
+	$b = basename($f);
+	if (in_array($b, array('admin-lib.php', 'admin-css.php', 'admin-harness.php'), true)) continue;
+	$src2 = file_get_contents($f);
+	if (strpos($src2, 'admin_chrome(') !== false && strpos($src2, "include 'admin-css.php'") === false) {
+		$noCss[] = $b;
+	}
+}
+ok('every admin page that opens the .adm wrapper also loads its styling',
+   $noCss === array(), implode(', ', $noCss));
+
 ok('it appears in the admin nav',
    strpos(file_get_contents(__DIR__ . '/admin-lib.php'), "'digest'      => array('admin-digest.php'") !== false);
 
@@ -283,7 +315,53 @@ ok('the shout-out row leaves room for the avatar AND the name',
 ok('and the reserved footer height matches that arithmetic',
    strpos($j, 'var peopleH  = D.players.length ? avR * 2 + nameS + 14 : 0;') !== false);
 ok('a tile is never drawn twice', strpos($j, 'art[i % art.length]') === false
-   && strpos($j, 'var cell = cells[i], a = art[i];') !== false);
+   && strpos($j, 'var cell = blk.cells[i], a = cell.item;') !== false);
+
+/*
+ * ONE LABEL PER CATEGORY. Captioning every tile read "DHC FIGHTERS" five
+ * times, "BOSS BATTLES" three times and "MISSIONS" twice down one real
+ * poster -- the repetition was the loudest thing on it and said nothing the
+ * first instance had not.
+ */
+ok('art is grouped by channel before it is laid out',
+   strpos($j, 'function group(art)') !== false && strpos($j, 'budget(group(art), cap)') !== false);
+ok('the label is drawn once per block, not once per tile',
+   strpos($j, 'if (blk.label) {') !== false
+   && substr_count($j, 'blk.label.toUpperCase()') === 1);
+ok('the label sits under its block on the poster ground, not over the art',
+   strpos($j, 'blk.labelY') !== false);
+/* With one gap everywhere the blocks were only distinguishable by reading
+   the labels -- the clustering, which is the whole point, was invisible. */
+ok('the gutter between categories is wider than the gap inside one',
+   strpos($j, 'var GAP = 7, BGAP = 22') !== false);
+/* 5 tiles in a 3-column grid is a row of 3 and a row of 2 with a HOLE
+   beside it, and a hole in a collage reads as a picture that failed. */
+ok('every row is filled, so a short row is just wider pictures',
+   strpos($j, 'var base = Math.floor(n / rows), extra = n % rows;') !== false
+   && strpos($j, 'var tw = (gw - GAP * (cnt - 1)) / cnt') !== false);
+/* A real poster ended on "REAL…" because the smallest category got 90-odd
+   pixels. The tally line already names and counts every category. */
+ok('a category too narrow for its own name is dropped from the collage',
+   strpos($j, 'if (plan.length > maxBlocks) plan = plan.slice(0, maxBlocks);') !== false);
+ok('and the rounding error goes to the biggest block, not the last one',
+   strpos($j, 'widths[0] += innerW - sum;') !== false);
+/* Trait drops are the most frequent announcement on the platform and are
+   single pieces of armour on a flat ground; a day's collage filled up with
+   them while the Fighters people actually built were crowded out. */
+ok('trait art is excluded from the pool by url, since the channel cannot tell it apart',
+   strpos(file_get_contents(__DIR__ . '/activity-lib.php'), "image_url NOT LIKE '%/250/%'") !== false);
+
+/* The homepage wordmark, not the word set in a Google font. */
+ok('the masthead is the real logo',
+   strpos($j, "load('images/skulliancelogo.png')") !== false);
+ok('and it falls back to type rather than leaving no masthead at all',
+   strpos($j, "if (!opts.headline && LOGO) {") !== false && strpos($j, "'SKULLIANCE'") !== false);
+
+/* "19 Daily Rewar…" on a real poster: a fixed slice ran past the edge and
+   the ellipsis landed mid-word, which reads as broken, not abbreviated. */
+ok('the tally drops whole entries rather than ellipsising one',
+   strpos($j, 'if (c.measureText(test).width > room) break;') !== false
+   && strpos($j, 'D.channels.slice(0, 9)') === false);
 
 restore_error_handler();
 echo "\n-------------------------------------------\n";
