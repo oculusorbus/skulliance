@@ -1016,7 +1016,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 /* The record is the claim, so it is the one thing here at full strength. */
 .arena-wrap .a-foe .nemrec{flex:1 0 100%;font-size:11px;color:#e0466b;font-weight:600;
   white-space:nowrap;padding-left:38px}
-.arena-wrap .a-foe .nemrec span{font-weight:400;opacity:.65;margin-left:5px;color:var(--bone)}
+/* The span is a separator dot now, not the trailing "over N battles" it was
+   styled for -- so even margins on both sides, and dim enough that the two
+   numbers either side of it are what the eye lands on. */
+.arena-wrap .a-foe .nemrec span{font-weight:400;opacity:.35;margin:0 4px;color:var(--bone)}
 /* The half they started, which nothing else on the platform tells you. */
 .arena-wrap .a-foe .nemcame{flex:1 0 100%;font-size:10px;opacity:.55;padding-left:38px;
   white-space:nowrap;margin-top:-3px}
@@ -1290,8 +1293,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <?php /* The record first, because it is the claim. Then how many
                    of those they started -- the half a defender is never
                    told about, since only the attacker is benched and only
-                   the attacker reaches the ladder. */ ?>
-          <span class="nemrec"><?php echo (int)$o['my_wins']; ?>–<?php echo (int)$o['their_wins']; ?><span>over <?php echo (int)$o['battles']; ?> battles</span></span>
+                   the attacker reaches the ladder.
+
+                   LABELLED, NOT A SCORELINE. This read "21-10 over 31
+                   battles", and a bare pair does not say whose number is
+                   whose -- reported as exactly that. The total went with it:
+                   outcome is only ever 1 or 2, so there are no draws and
+                   "over 31" was 21+10 restated. */ ?>
+          <span class="nemrec">Won <?php echo (int)$o['my_wins']; ?> <span>&middot;</span> Lost <?php echo (int)$o['their_wins']; ?></span>
           <?php if ((int)$o['they_attacked'] > 0): ?>
           <span class="nemcame"><?php echo (int)$o['they_attacked']; ?> of them <?php echo (int)$o['they_attacked'] === 1 ? 'was' : 'were'; ?> their doing</span>
           <?php endif; ?>
