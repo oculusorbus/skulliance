@@ -269,6 +269,95 @@ function dhca_opponents($conn, $user_id, $limit = 24) {
 	return $out;
 }
 
+/* An arch nemesis needs a history, not an incident. */
+define('DHCA_NEMESIS_MIN', 3);
+
+/*
+ * THE PLAYER YOU ARE LOCKED WITH.
+ *
+ * NOT "who beats you most" -- that is a wall, and pointing somebody at an
+ * opponent who always wins is discouraging rather than motivating. A nemesis
+ * is the one nothing is settled with, so the score rewards VOLUME and
+ * punishes a one-sided record:
+ *
+ *     score = battles - |my wins - their wins|
+ *
+ * Ten battles at 5-5 scores 10. Ten at 10-0 scores 0. Six at 4-2 scores 4.
+ *
+ * BOTH DIRECTIONS. Half of this history is battles they started against you,
+ * which you were never told about -- dhca_finish() benches only the attacker
+ * and dhca_ladder() counts only the attacker, so a defender is given no sign
+ * any of it happened. That half is the part worth surfacing.
+ *
+ * ALL-TIME, NOT SEASONAL. The ladder resets monthly; a grudge that resets
+ * with it is not a grudge.
+ *
+ * The ledger needs no filtering: practice is never stored at all, and live
+ * matches never touch this table ("Live never pays"), so every row here is a
+ * ranked battle between two real players.
+ */
+function dhca_nemesis($conn, $user_id) {
+	$uid = (int)$user_id;
+	if ($uid <= 0) return null;
+	$min = (int)DHCA_NEMESIS_MIN;
+
+	/* outcome: 1 = the ATTACKER won, 2 = the defender won. So which column is
+	   "my win" flips with which side of the row I am on. */
+	$sql = "SELECT t.other AS user_id, u.username, u.discord_id, u.avatar,
+	               SUM(t.n)          AS battles,
+	               SUM(t.mine)       AS my_wins,
+	               SUM(t.theirs)     AS their_wins,
+	               SUM(t.they_came)  AS they_attacked,
+	               MAX(t.last_at)    AS last_at
+	        FROM (
+	              SELECT defender_id AS other, 1 AS n,
+	                     (outcome = 1) AS mine, (outcome = 2) AS theirs,
+	                     0 AS they_came, started_at AS last_at
+	              FROM dhc_arena_battles
+	              WHERE attacker_id = $uid AND defender_id <> $uid AND outcome <> 0
+	              UNION ALL
+	              SELECT attacker_id AS other, 1 AS n,
+	                     (outcome = 2) AS mine, (outcome = 1) AS theirs,
+	                     1 AS they_came, started_at AS last_at
+	              FROM dhc_arena_battles
+	              WHERE defender_id = $uid AND attacker_id <> $uid AND outcome <> 0
+	             ) t
+	        INNER JOIN users u ON u.id = t.other
+	        GROUP BY t.other, u.username, u.discord_id, u.avatar
+	        HAVING battles >= $min
+	        ORDER BY (SUM(t.n) - ABS(SUM(t.mine) - SUM(t.theirs))) DESC,
+	                 battles DESC, last_at DESC
+	        LIMIT 1";
+	$res = $conn->query($sql);
+	if (!$res || !$res->num_rows) return null;
+	$r = $res->fetch_assoc();
+
+	/* The picker renders every rival from the same shape, so the nemesis has
+	   to arrive wearing it -- otherwise the card needs a second template and
+	   the two drift. fighters/best come from the same place dhca_opponents()
+	   reads them. */
+	$c = $conn->query("SELECT COUNT(*) AS fighters, MAX(rarity_score) AS best
+	                   FROM dhc_fighters WHERE user_id = ".(int)$r['user_id']);
+	$cr = ($c && $c->num_rows) ? $c->fetch_assoc() : array('fighters' => 0, 'best' => 0);
+
+	/* Fewer Fighters than a Crew needs and they cannot be fielded, so there is
+	   nothing to pin -- the same bar dhca_opponents() applies. */
+	if ((int)$cr['fighters'] < DHCA_CREW_SIZE) return null;
+
+	return array(
+		'user_id'       => (int)$r['user_id'],
+		'username'      => $r['username'],
+		'discord_id'    => $r['discord_id'],
+		'avatar'        => $r['avatar'],
+		'fighters'      => (int)$cr['fighters'],
+		'best'          => (int)$cr['best'],
+		'battles'       => (int)$r['battles'],
+		'my_wins'       => (int)$r['my_wins'],
+		'their_wins'    => (int)$r['their_wins'],
+		'they_attacked' => (int)$r['they_attacked'],
+	);
+}
+
 /**
  * The three a defender fields, and in what order.
  *

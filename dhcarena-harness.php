@@ -267,4 +267,85 @@ foreach (array('.n', '.m', '.paidtag') as $part) {
 $arok(preg_match('/\.arena-wrap \.a-foe img\{grid-row:1 \/ span 2/', $ar_css) === 1,
    'the avatar no longer spans the stacked rows, so the text does not align beside it');
 
+/* ---------------------------------------------------------------------------
+ * THE ARCH NEMESIS
+ *
+ * The scoring rule is the feature, so it is driven rather than read. It is
+ * NOT "who beats you most" -- that is a wall, and pointing a player at an
+ * opponent who always wins is discouraging. A nemesis is the one nothing is
+ * settled with:  score = battles - |my wins - their wins|.
+ * ------------------------------------------------------------------------- */
+$nem_src = file_get_contents(__DIR__ . '/dhcarena-lib.php');
+$nem_sql = substr($nem_src, strpos($nem_src, 'function dhca_nemesis'));
+$nem_sql = substr($nem_sql, 0, strpos($nem_sql, "\n}\n"));
+
+/* The ranking expression, evaluated the way MySQL would. */
+$score = function ($battles, $mine, $theirs) { return $battles - abs($mine - $theirs); };
+$arok($score(10, 5, 5)  >  $score(10, 10, 0),
+   'a 10-0 rout outranks an even 5-5 rivalry');
+$arok($score(10, 5, 5)  >  $score(4, 2, 2),
+   'a shorter even history outranks a longer one');
+$arok($score(10, 0, 10) === $score(10, 10, 0),
+   'being farmed and farming score differently, so a wall can become a nemesis');
+$arok($score(6, 4, 2)   >  $score(6, 6, 0),
+   'a one-sided six outranks a close six');
+
+$arok(strpos($nem_sql, 'SUM(t.n) - ABS(SUM(t.mine) - SUM(t.theirs))') !== false,
+   'the ORDER BY is not volume-minus-imbalance');
+/* BOTH DIRECTIONS. Half the history is battles they started, which the
+   defender is never told about -- only the attacker is benched and only the
+   attacker reaches the ladder. That half is the point of the feature. */
+$arok(substr_count($nem_sql, 'UNION ALL') === 1,
+   'the nemesis is computed from one side of the ledger only');
+/* The WHOLE clause of each branch, not just its first condition. A loose
+   check passed a mutation that prefixed the second branch with WHERE 0 --
+   the strings were all still there and the branch returned nothing. */
+$arok(strpos($nem_sql, 'WHERE attacker_id = $uid AND defender_id <> $uid AND outcome <> 0') !== false,
+   'the attacking branch no longer selects exactly the battles I started');
+$arok(strpos($nem_sql, 'WHERE defender_id = $uid AND attacker_id <> $uid AND outcome <> 0') !== false,
+   'the defending branch no longer selects exactly the battles they started');
+/* outcome 1 = the attacker won, so which column is "my win" flips with the
+   side of the row. Getting this backwards silently inverts every record. */
+/* The columns are SELECTed before the WHERE that identifies the branch, so
+   the match runs from the column to its WHERE, not the other way round. */
+$arok(preg_match('/\(outcome = 1\) AS mine.*?WHERE attacker_id = \$uid/s', $nem_sql) === 1,
+   'on a battle I started, outcome 1 is not counted as my win');
+$arok(preg_match('/\(outcome = 2\) AS mine.*?WHERE defender_id = \$uid/s', $nem_sql) === 1,
+   'on a battle they started, outcome 2 is not counted as my win');
+/* ONCE PER BRANCH. Checking it appears at all passed a mutation that
+   stripped it from the attacking half only -- the other half still had it. */
+$arok(substr_count($nem_sql, 'outcome <> 0') === 2,
+   'a branch counts unresolved battles');
+$arok(strpos($nem_sql, 'HAVING battles >= $min') !== false,
+   'a single battle can make somebody an arch nemesis');
+/* The ladder resets monthly; a grudge that resets with it is not a grudge. */
+$arok(strpos($nem_sql, 'season') === false,
+   'the nemesis is scoped to a season');
+/* Fewer Fighters than a Crew and they cannot be fielded -- the same bar
+   dhca_opponents() applies, so pinning them would offer an unplayable fight. */
+$arok(strpos($nem_sql, "< DHCA_CREW_SIZE) return null") !== false,
+   'a nemesis who can no longer field a Crew is still pinned');
+
+/* PINNED, NOT JUST STYLED. dhca_opponents() is ORDER BY best DESC LIMIT 24 --
+   the same two dozen for everyone -- so the nemesis is usually absent, and a
+   highlight on a card that never renders is the feature failing silently. */
+$arok(strpos($ar_src, 'array_unshift($foesList, $nemesis);') !== false,
+   'the nemesis is not inserted into the rival list');
+$arok(preg_match('/if \(\(int\)\$o\[.user_id.\] === \$nid\) \{ unset\(\$foesList\[\$i\]\); break; \}/', $ar_src) === 1,
+   'a nemesis already in the top 24 is listed twice');
+$arok(strpos($ar_src, "\$nem = isset(\$o['battles']);") !== false,
+   'the card cannot tell the nemesis row from an ordinary rival');
+/* .top is the ochre reward band and means something unrelated -- what the
+   fight pays, not who it is against. A row that is both must read as both. */
+/* INSIDE the rule, not anywhere in the file. Searching the whole stylesheet
+   passed a mutation that recoloured the row to the ochre reward band,
+   because the :hover rule below it still mentioned the red. */
+$nem_rule = '';
+$nem_at = strpos($ar_css, '.arena-wrap .a-foe.nem{');
+if ($nem_at !== false) $nem_rule = substr($ar_css, $nem_at, strpos($ar_css, '}', $nem_at) - $nem_at);
+$arok($nem_rule !== '' && strpos($nem_rule, 'rgba(224,70,107') !== false,
+   'the nemesis row has no colour of its own');
+$arok($nem_rule !== '' && strpos($nem_rule, '232,177,76') === false,
+   'the nemesis row reuses the ochre reward band, which means what the fight PAYS');
+
 echo ($ar_fail ? "\n$ar_fail arena-layout check(s) FAILED\n" : "\nrival list layout: ok\n");

@@ -107,6 +107,29 @@ $available = dhca_available($crew);
 $block     = $user_id ? dhca_entry_block($conn, $user_id) : 'Sign in to enter the Arena.';
 $spent     = $user_id ? dhca_battles_today($conn, $user_id) : 0;
 $foesList  = $user_id ? dhca_opponents($conn, $user_id) : array();
+
+/*
+ * THE ARCH NEMESIS, PINNED TO THE FRONT.
+ *
+ * dhca_opponents() is ORDER BY best DESC LIMIT 24 -- the same two dozen
+ * highest-rarity players for everybody -- so the one opponent you actually
+ * have a history with is very often not on the screen at all. Highlighting a
+ * card that never renders is the whole feature failing silently, so the
+ * nemesis is hoisted when present and inserted when not.
+ *
+ * It is also the first entry in that list chosen by something predictive: the
+ * ordering it jumps is by rarity_score, which the comment on dhca_defenders()
+ * measures at +0.04 correlation with combat strength.
+ */
+$nemesis = $user_id ? dhca_nemesis($conn, $user_id) : null;
+if ($nemesis) {
+	$nid = (int)$nemesis['user_id'];
+	foreach ($foesList as $i => $o) {
+		if ((int)$o['user_id'] === $nid) { unset($foesList[$i]); break; }
+	}
+	array_unshift($foesList, $nemesis);
+	$foesList = array_values($foesList);
+}
 /* Which of them have already paid out today -- one query for the whole
    list, the same fact dhca_already_rewarded() checks per battle. */
 $paidToday = $user_id ? dhca_paid_today($conn, $user_id) : array();
@@ -977,6 +1000,29 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 /* The whole row lifts at the top band, so a player scanning the list sees
    the best fight available without reading a single percentage. */
 .arena-wrap .a-foe.top{border-color:rgba(232,177,76,.45)}
+
+/* THE ARCH NEMESIS ROW.
+   Deliberately a DIFFERENT colour from .top, which is the ochre reward band.
+   Those two mean unrelated things -- one is what the fight pays, the other is
+   who it is against -- and a nemesis who also happens to pay well must read
+   as both at once rather than as a brighter version of one. The row wraps
+   because it carries a second line the others do not have. */
+.arena-wrap .a-foe.nem{border-color:rgba(224,70,107,.55);background:rgba(224,70,107,.06);
+  flex-wrap:wrap;position:relative}
+.arena-wrap .a-foe.nem:hover{border-color:#e0466b;background:rgba(224,70,107,.1)}
+.arena-wrap .a-foe .nemtag{position:absolute;top:-7px;left:9px;font-size:8.5px;letter-spacing:.06em;
+  text-transform:uppercase;font-weight:700;color:#0b1016;background:#e0466b;
+  padding:1px 5px;border-radius:2px}
+/* The record is the claim, so it is the one thing here at full strength. */
+.arena-wrap .a-foe .nemrec{flex:1 0 100%;font-size:11px;color:#e0466b;font-weight:600;
+  white-space:nowrap;padding-left:38px}
+.arena-wrap .a-foe .nemrec span{font-weight:400;opacity:.65;margin-left:5px;color:var(--bone)}
+/* The half they started, which nothing else on the platform tells you. */
+.arena-wrap .a-foe .nemcame{flex:1 0 100%;font-size:10px;opacity:.55;padding-left:38px;
+  white-space:nowrap;margin-top:-3px}
+@media (max-width:560px){
+  .arena-wrap .a-foe .nemrec,.arena-wrap .a-foe .nemcame{padding-left:0}
+}
 @media (max-width:560px){
   /* The name gives up its ellipsis before the odds give up their line:
      a truncated username still identifies a rival, a truncated
@@ -1231,11 +1277,25 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                  and a player may well want the rematch -- but say so before
                  the battle rather than after it. */
               $paid = isset($paidToday[(int)$o['user_id']]); ?>
-        <div class="a-foe<?php echo $paid ? ' paid' : ''; ?>" data-uid="<?php echo (int)$o['user_id']; ?>"
+        <?php /* The nemesis row carries its own history; no other row has
+                 these keys at all. */
+              $nem = isset($o['battles']); ?>
+        <div class="a-foe<?php echo $paid ? ' paid' : ''; ?><?php echo $nem ? ' nem' : ''; ?>" data-uid="<?php echo (int)$o['user_id']; ?>"
              data-best="<?php echo (int)$o['best']; ?>">
+          <?php if ($nem): ?><span class="nemtag">Arch nemesis</span><?php endif; ?>
           <img src="<?php echo htmlspecialchars($av); ?>" alt="" onerror="this.style.visibility='hidden'">
           <span class="n"><?php echo htmlspecialchars($o['username']); ?></span>
           <span class="m"><?php echo (int)$o['fighters']; ?> Fighters · best <?php echo number_format((int)$o['best']); ?></span>
+          <?php if ($nem): ?>
+          <?php /* The record first, because it is the claim. Then how many
+                   of those they started -- the half a defender is never
+                   told about, since only the attacker is benched and only
+                   the attacker reaches the ladder. */ ?>
+          <span class="nemrec"><?php echo (int)$o['my_wins']; ?>–<?php echo (int)$o['their_wins']; ?><span>over <?php echo (int)$o['battles']; ?> battles</span></span>
+          <?php if ((int)$o['they_attacked'] > 0): ?>
+          <span class="nemcame"><?php echo (int)$o['they_attacked']; ?> of them <?php echo (int)$o['they_attacked'] === 1 ? 'was' : 'were'; ?> their doing</span>
+          <?php endif; ?>
+          <?php endif; ?>
           <?php /* Filled by paintOdds() once a Crew is picked: the gap depends
                    on which Fighters you bring, so it cannot be rendered here. */ ?>
           <span class="odds"></span>
