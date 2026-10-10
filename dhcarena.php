@@ -1010,18 +1010,35 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-foe.nem{border-color:rgba(224,70,107,.55);background:rgba(224,70,107,.06);
   flex-wrap:wrap;position:relative}
 .arena-wrap .a-foe.nem:hover{border-color:#e0466b;background:rgba(224,70,107,.1)}
-.arena-wrap .a-foe .nemtag{position:absolute;top:-7px;left:9px;font-size:8.5px;letter-spacing:.06em;
-  text-transform:uppercase;font-weight:700;color:#0b1016;background:#e0466b;
-  padding:1px 5px;border-radius:2px}
+/* Right, not left: on the left it sat directly above the avatar and read as
+   a label ON the picture. On the right it has the row's empty end to itself.
+
+   CONTRAST, MEASURED. Near-black on the bright #e0466b is 4.78:1 -- nominally
+   AA, and nowhere near enough for 8.5px uppercase, which is how it was
+   reported. White needs a DARKER fill to work at all: white on #e0466b is
+   3.99:1 and actually worse. White on #a31f42 is 7.42:1, and the extra half
+   pixel of size with less tracking does the rest. */
+.arena-wrap .a-foe .nemtag{position:absolute;top:-7px;right:9px;font-size:9px;letter-spacing:.04em;
+  text-transform:uppercase;font-weight:700;color:#fff;background:#a31f42;
+  padding:1.5px 6px;border-radius:2px}
 /* EVERY NUMBER CARRIES ITS SUBJECT. This was "21-10", then "Won 21 · Lost
    10", and neither said WHOSE -- reported twice. The labels are quiet and
    the figures are loud, so it scans as three facts rather than a sentence.
    No nowrap: three labelled stats will not fit one line on a phone, and
    wrapping is better than clipping a number off the end. */
-.arena-wrap .a-foe .nemrec{flex:1 0 100%;font-size:10.5px;color:var(--bone);opacity:.7;
-  font-weight:400;padding-left:38px;line-height:1.5}
-.arena-wrap .a-foe .nemrec b{color:#e0466b;font-weight:700;font-size:11.5px;opacity:1}
-.arena-wrap .a-foe .nemrec i{font-style:normal;opacity:.3;margin:0 2px}
+/* opacity .85, not .7: at .7 the labels land at 7.6:1 and looked washed
+   beside figures that were themselves too dim. */
+.arena-wrap .a-foe .nemrec{flex:1 0 100%;font-size:10.5px;color:var(--bone);opacity:.85;
+  font-weight:400;padding-left:38px;line-height:1.35;margin-top:1px}
+.arena-wrap .a-foe .nemrec em{font-style:normal;white-space:nowrap}
+/* #e0466b measured 4.12:1 on this card -- under the 4.5 floor, so the figures
+   were the LEAST readable thing on the row despite being the point of it.
+   #ff6b8a is 6.06:1 and still unmistakably the nemesis colour. The fill
+   behind the row stays #e0466b: that is a border and a wash, not text. */
+.arena-wrap .a-foe .nemrec b{color:#ff6b8a;font-weight:700;opacity:1;margin-left:2px}
+/* The separator carries the only gap between stats, so the spacing is in one
+   place rather than split between a margin here and a space in the markup. */
+.arena-wrap .a-foe .nemrec i{font-style:normal;opacity:.3;padding:0 5px}
 @media (max-width:560px){
   .arena-wrap .a-foe .nemrec{padding-left:0}
 }
@@ -1049,7 +1066,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
  * line whose children refuse to shrink: .m and .paidtag are both
  * white-space:nowrap, so the row's min-content width is the avatar plus
  * the full "35 Fighters - best 2,176" plus the full "Beaten today - no
- * trait". Past about 500px of content that exceeds the column, .n
+ * trait available". Past about 500px of content that exceeds the column, .n
  * ellipsises away to nothing (which is why the names vanished) and
  * overflow:auto turns the remainder into a sideways scroll.
  *
@@ -1066,6 +1083,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   .arena-wrap .a-foe .m{grid-column:2;white-space:normal}
   /* justify-self so the pill is its own width rather than the column's. */
   .arena-wrap .a-foe .paidtag{grid-column:2;justify-self:start;white-space:normal}
+  /* THE NEMESIS LINE NEEDS PLACING TOO. Every child of this grid is assigned
+     column 2 explicitly, so one that is not gets auto-placed into the 28px
+     avatar column and crushed. Its flex:1 0 100% means nothing here, and the
+     padding that indents it past the avatar in the flex layout would double
+     the gap, so both are reset. */
+  .arena-wrap .a-foe .nemrec{grid-column:2;padding-left:0;white-space:normal}
 }
 .arena-wrap .a-go{margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 /* The platform's buttons, not the game's. .btn inside #arenaBattle keeps the
@@ -1299,14 +1322,17 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                    whose -- reported as exactly that. The total went with it:
                    outcome is only ever 1 or 2, so there are no draws and
                    "over 31" was 21+10 restated. */ ?>
-          <span class="nemrec">You won <b><?php echo (int)$o['my_wins']; ?></b>
-            <i>&middot;</i> They won <b><?php echo (int)$o['their_wins']; ?></b><?php if ((int)$o['they_attacked'] > 0): ?>
-            <i>&middot;</i> They started <b><?php echo (int)$o['they_attacked']; ?></b><?php endif; ?></span>
+          <?php /* Each stat is one <em>, and each <em> is nowrap. The line
+                   itself wraps, but only BETWEEN stats -- otherwise a long
+                   row breaks after "They started" and leaves the number
+                   stranded on its own line, which is what it did on a
+                   phone. */ ?>
+          <span class="nemrec"><em>You won <b><?php echo (int)$o['my_wins']; ?></b></em><i>&middot;</i><em>They won <b><?php echo (int)$o['their_wins']; ?></b></em><?php if ((int)$o['they_attacked'] > 0): ?><i>&middot;</i><em>They started <b><?php echo (int)$o['they_attacked']; ?></b></em><?php endif; ?></span>
           <?php endif; ?>
           <?php /* Filled by paintOdds() once a Crew is picked: the gap depends
                    on which Fighters you bring, so it cannot be rendered here. */ ?>
           <span class="odds"></span>
-          <?php if ($paid): ?><span class="paidtag" title="One trait per opponent per day. A rematch still counts for the ladder.">Beaten today &middot; no trait</span><?php endif; ?>
+          <?php if ($paid): ?><span class="paidtag" title="One trait per opponent per day. A rematch still counts for the ladder.">Beaten today &middot; no trait available</span><?php endif; ?>
         </div>
       <?php endforeach; ?>
       </div>

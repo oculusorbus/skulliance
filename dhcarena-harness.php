@@ -360,6 +360,14 @@ $nr_at = strpos($ar_css, '.arena-wrap .a-foe .nemrec{');
 if ($nr_at !== false) $nem_rec = substr($ar_css, $nr_at, strpos($ar_css, '}', $nr_at) - $nr_at);
 $arok($nem_rec !== '' && strpos($nem_rec, 'nowrap') === false,
    'the record is nowrap, so on a narrow card a figure is clipped rather than wrapped');
+/* Under 700px the row stops being a flex line and becomes a 28px/1fr grid in
+   which EVERY child is assigned column 2 by hand. A child that is not gets
+   auto-placed into the avatar column and crushed -- so the nemesis line has
+   to be placed there with the rest. */
+$ph_at = strpos($ar_css, '@media (max-width:700px)');
+$phone = $ph_at === false ? '' : substr($ar_css, $ph_at, 900);
+$arok($phone !== '' && strpos($phone, '.arena-wrap .a-foe .nemrec{grid-column:2') !== false,
+   'the nemesis record is not placed in the phone grid, so it lands in the 28px avatar column');
 /* .top is the ochre reward band and means something unrelated -- what the
    fight pays, not who it is against. A row that is both must read as both. */
 /* INSIDE the rule, not anywhere in the file. Searching the whole stylesheet
@@ -372,5 +380,30 @@ $arok($nem_rule !== '' && strpos($nem_rule, 'rgba(224,70,107') !== false,
    'the nemesis row has no colour of its own');
 $arok($nem_rule !== '' && strpos($nem_rule, '232,177,76') === false,
    'the nemesis row reuses the ochre reward band, which means what the fight PAYS');
+
+/*
+ * CONTRAST, MEASURED RATHER THAN EYEBALLED -- reported from the live card.
+ * On this ground (#0d1e2e under a 6% red wash) the bright #e0466b is 4.12:1,
+ * under the 4.5 AA floor, so the figures were the least readable thing on a
+ * row that exists to show them. And white on that same red is 3.99:1, so the
+ * badge cannot simply be inverted -- it needs a darker fill.
+ */
+$arok(strpos($ar_css, '.arena-wrap .a-foe .nemrec b{color:#ff6b8a') !== false,
+   'the figures are back on a colour that measures under 4.5:1 against the card');
+$nt_at = strpos($ar_css, '.arena-wrap .a-foe .nemtag{');
+$nemtag = $nt_at === false ? '' : substr($ar_css, $nt_at, strpos($ar_css, '}', $nt_at) - $nt_at);
+$arok($nemtag !== '' && strpos($nemtag, 'color:#fff') !== false
+   && strpos($nemtag, 'background:#a31f42') !== false,
+   'the Arch nemesis badge is not white on the darker fill, so it is under 5:1');
+$arok($nemtag !== '' && strpos($nemtag, 'font-size:8.5px') === false,
+   'the badge is back to 8.5px, which no contrast ratio rescues');
+/* Right-aligned: on the left it sat directly over the avatar. */
+$arok($nemtag !== '' && strpos($nemtag, 'right:9px') !== false
+   && strpos($nemtag, 'left:9px') === false,
+   'the Arch nemesis badge is not right-aligned');
+/* Each stat is one nowrap unit, so the line breaks BETWEEN stats and never
+   strands a number -- "They started" / "19" on two lines was reported. */
+$arok(strpos($ar_css, '.arena-wrap .a-foe .nemrec em{font-style:normal;white-space:nowrap}') !== false,
+   'a stat can be split across two lines, stranding its number');
 
 echo ($ar_fail ? "\n$ar_fail arena-layout check(s) FAILED\n" : "\nrival list layout: ok\n");
