@@ -284,6 +284,39 @@ console.log('\nsharing somebody else\'s Fighter is offered to ONE account');
 }
 
 /* ---- one panel, two callers ---- */
+console.log('\nthe Arena record reaches the Collection');
+{
+	/* dhc_arena_fighters keeps wins/losses as career totals that the schema
+	   marks public, and nothing outside the Arena's own Crew picker showed
+	   them -- the Collection described everything about a Fighter except
+	   whether it wins. */
+	const ajax = fs.readFileSync(path.join(__dirname, 'ajax', 'dhc-fighter.php'), 'utf8');
+
+	/* BOTH feed the SAME panel. A field present in one and missing from the
+	   other is a modal that shows the record only when you reached it one
+	   particular way. */
+	for (const [label, src] of [['dhcgallery.php', page], ['ajax/dhc-fighter.php', ajax]]) {
+		ok(/LEFT JOIN dhc_arena_fighters af ON af\.fighter_id = f\.id/.test(src),
+		   label + ' does not join the Arena record');
+		/* LEFT, not INNER: a Fighter never fielded has no row there at all and
+		   must still appear in its owner's Collection. */
+		ok(!/INNER JOIN dhc_arena_fighters/.test(src),
+		   label + ' inner-joins the record, so an unfought Fighter vanishes');
+		ok(/COALESCE\(af\.wins, 0\)/.test(src) && /COALESCE\(af\.losses, 0\)/.test(src),
+		   label + ' can emit null instead of 0 for a Fighter that never fought');
+		ok(/'aw'\s*=>/.test(src) && /'al'\s*=>/.test(src),
+		   label + ' does not put the record in the payload');
+	}
+
+	ok(/f\.aw \+ 'W \/ ' \+ f\.al \+ 'L'/.test(gallery),
+	   'the modal does not render the record as W / L, matching the Arena picker');
+	ok(gallery.indexOf('Arena record') > -1,
+	   'the record tile has no label');
+	/* 0W / 0L invites the reader to work out that it means untested. */
+	ok(gallery.indexOf('Not fought yet') > -1,
+	   'a Fighter that has never been fielded reads as 0W / 0L rather than in words');
+}
+
 console.log('\nthe panel is shared, not copied');
 {
 	/* RAW for anything in PHP, stripped only for JS and markup: strip()

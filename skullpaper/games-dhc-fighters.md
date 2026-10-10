@@ -389,6 +389,10 @@ changes: it leads with **your name**, credits you as the builder, and shows
 the placements and stats, because the point of that post is what a player
 made rather than what the platform did.
 
+### Its Arena record
+
+A Fighter's panel shows **Arena record** alongside its stats — career wins and losses, the same `W / L` the Arena's own Crew picker shows. One that has never been fielded reads **Not fought yet** rather than `0W / 0L`, because a zero record and an untested one are different things.
+
 ### Take the picture with you
 
 **Download 1000px PNG** sits in the assembler next to *Copy link to this build*,

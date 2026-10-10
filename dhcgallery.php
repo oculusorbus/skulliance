@@ -70,9 +70,15 @@ $where = array('f.disassembled_at IS NULL');
 if ($dhcg_owner) $where[] = 'f.user_id = ' . $dhcg_owner;
 if ($dhcg_mine && $dhcg_user) $where[] = 'f.user_id = ' . $dhcg_user;
 
-$sql = "SELECT f.*, u.username, u.discord_id, u.avatar
+/* The Arena record is LEFT joined: a Fighter that has never been fielded has
+   no row in dhc_arena_fighters at all, and must still appear in its owner's
+   Collection. wins/losses are career totals and the schema marks them public.
+   COALESCE so the payload is always two integers rather than two nulls. */
+$sql = "SELECT f.*, u.username, u.discord_id, u.avatar,
+               COALESCE(af.wins, 0) AS arena_wins, COALESCE(af.losses, 0) AS arena_losses
         FROM dhc_fighters f
         INNER JOIN users u ON u.id = f.user_id
+        LEFT JOIN dhc_arena_fighters af ON af.fighter_id = f.id
         WHERE " . implode(' AND ', $where) . "
         ORDER BY $order";
 $res = $conn->query($sql);
@@ -486,6 +492,8 @@ include 'header.php';
         'rank'    => $f['rank'],
         'rankOf'  => (int)$f['rankOf'],
         'created' => $f['created_at'],
+        'aw'      => (int)$f['arena_wins'],
+        'al'      => (int)$f['arena_losses'],
         'parts'   => $f['parts'],
         'layers'  => array(),
       );

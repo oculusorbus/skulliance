@@ -30,9 +30,15 @@ if ($serial <= 0) dhc_json(array('ok' => false, 'message' => 'No serial.'));
 
 /* $conn->query(), not a prepared statement: this server's mysqli has no
    mysqlnd, so get_result() is a fatal. $serial is cast above. */
-$res = $conn->query("SELECT f.*, u.username, u.discord_id, u.avatar
+/* Same LEFT JOIN as dhcgallery.php -- the deep-link endpoint and the page
+   feed the SAME modal, so a field present in one and missing from the other
+   is a panel that shows the record only when you scrolled to it. */
+$res = $conn->query("SELECT f.*, u.username, u.discord_id, u.avatar,
+                            COALESCE(af.wins, 0) AS arena_wins,
+                            COALESCE(af.losses, 0) AS arena_losses
                      FROM dhc_fighters f
                      LEFT JOIN users u ON u.id = f.user_id
+                     LEFT JOIN dhc_arena_fighters af ON af.fighter_id = f.id
                      WHERE f.serial = $serial AND f.disassembled_at IS NULL LIMIT 1");
 $row = ($res && $res->num_rows) ? $res->fetch_assoc() : null;
 if (!$row) dhc_json(array('ok' => false, 'message' => 'No such Fighter.'));
@@ -96,6 +102,8 @@ $out = array(
 	'roles'   => isset($built['roles']) ? $built['roles'] : array(),
 	'kit'     => $built['kit']['emoji'] . ' ' . $built['kit']['name'] . ' — ' . $built['kit']['note'],
 	'created' => $row['created_at'],
+	'aw'      => (int)$row['arena_wins'],
+	'al'      => (int)$row['arena_losses'],
 	'parts'   => $parts,
 	'rank'    => $rank,
 	'rankOf'  => (int)$pool['_n'],

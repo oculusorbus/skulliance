@@ -373,6 +373,18 @@ if (!defined('DHCM_RENDERED')) {
       (f.assist > 0 ? '<div><b>' + f.assist + '%</b><span>Companion assist</span></div>' : '') +
       (f.charge > 1 ? '<div><b>&times;' + f.charge + '</b><span>Charge rate</span></div>' : '') +
       '<div><b style="font-size:11px">' + esc(f.kit.split(' — ')[0]) + '</b><span>In the Arena</span></div>' +
+      /* WHAT IT HAS ACTUALLY DONE, next to what it is built to do.
+         dhc_arena_fighters keeps these as career totals and the schema marks
+         them public; nothing outside the Arena's own Crew picker was showing
+         them, so a Collection page said everything about a Fighter except
+         whether it wins. W/L rather than a bare pair, matching the picker at
+         dhcarena.php so the two cannot read differently.
+         A Fighter that has never been fielded has no row at all, which the
+         LEFT JOIN turns into 0/0 -- said in words, because "0W / 0L" invites
+         the reader to work out that it means untested. */
+      '<div><b style="font-size:' + ((f.aw || f.al) ? '13px' : '11px') + '">'
+        + ((f.aw || f.al) ? (f.aw + 'W / ' + f.al + 'L') : 'Not fought yet')
+        + '</b><span>Arena record</span></div>' +
       '<div><b>' + f.parts.length + '</b><span>Traits</span></div>' +
       '<div><b>DHC2F' + f.serial + '</b><span>Number</span></div>' +
       '<div><b style="font-size:11px">' + esc(made) + '</b><span>Assembled</span></div>';
