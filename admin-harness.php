@@ -557,9 +557,24 @@ $old = file_get_contents(__DIR__ . '/admin.php');
 ok(strpos($old, 'admin-projects.php') !== false && stripos($old, 'Location:') !== false,
    'admin.php no longer redirects, so an old bookmark 404s');
 
-/* And the nav offers all three. */
+/* And the nav offers all of them.
+ *
+ * THROUGH admin_tabs(), NOT AS LITERAL MARKUP. This used to grep header.php
+ * for each filename, which was right only while the dropdown was written out
+ * by hand -- and that hand-written copy is exactly what went stale when a
+ * page was added to admin_chrome()'s tab strip and not to the nav. The
+ * dropdown is generated from admin_tabs() now, so the filenames are
+ * deliberately absent from header.php and the thing to assert is that the
+ * list drives the nav and still names every page. */
 $hd = file_get_contents(__DIR__ . '/header.php');
-foreach ($PAGES as $f) ok(strpos($hd, $f) !== false, "the nav has no link to $f");
+ok(strpos($hd, 'foreach (admin_tabs() as $t)') !== false,
+   'the Admin dropdown is not generated from admin_tabs()');
+ok(strpos($hd, "require_once __DIR__ . '/admin-lib.php';") !== false,
+   'header.php does not load admin-lib.php, so admin_tabs() is undefined in the nav');
+require_once __DIR__ . '/admin-lib.php';
+$navPages = array();
+foreach (admin_tabs() as $t) $navPages[] = $t[0];
+foreach ($PAGES as $f) ok(in_array($f, $navPages, true), "the admin menu no longer offers $f");
 ok(preg_match('/user_id\'\]\s*===?\s*1/', $hd) === 1, 'the Admin nav is not gated to user 1');
 
 echo "\nlevel 1 can actually be saved\n";
