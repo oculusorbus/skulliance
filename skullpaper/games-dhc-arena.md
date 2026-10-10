@@ -309,9 +309,9 @@ Once you have fought someone **three times or more**, the Arena works out who yo
 
 It is not whoever beats you most — that is a wall, not a rival. It is the opponent with the most battles and the *least* settled between you: ten fought at five apiece outranks ten you swept. The grudge is all-time and does not reset with the monthly season, because one that did would not be a grudge.
 
-The card reads **You won 21 · They won 10 · They started 9**.
+The card reads **You won 21 · They won 11 · They started 63%**.
 
-That last figure is the part worth knowing. Defending costs you nothing — a defender is played by the AI, is never benched, and never reaches the ladder — so until now there was no way to find out that somebody had been coming at your Crew while you were away.
+That last figure is a share rather than a count, so you can see at a glance who comes after whom without adding the record up first — and it is the part worth knowing. Defending costs you nothing — a defender is played by the AI, is never benched, and never reaches the ladder — so until now there was no way to find out that somebody had been coming at your Crew while you were away.
 
 Only ranked battles count. Practice is never recorded at all, and live matches never touch the ladder.
 

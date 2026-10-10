@@ -351,8 +351,23 @@ $arok(strpos($ar_src, "You won <b><?php echo (int)\$o['my_wins']; ?></b>") !== f
    'the player\'s wins are not labelled as theirs');
 $arok(strpos($ar_src, "They won <b><?php echo (int)\$o['their_wins']; ?></b>") !== false,
    'the rival\'s wins are not labelled as theirs, or are still phrased as the player\'s losses');
-$arok(strpos($ar_src, "They started <b><?php echo (int)\$o['they_attacked']; ?></b>") !== false,
-   'the battles they initiated are not labelled, or use the old "their doing" phrasing');
+/* A SHARE, NOT A COUNT. "They started 20" against a 21-11 record forces the
+   reader to add the two up and compare, every time. The question the stat
+   exists to answer is who comes after whom, and a percentage answers it with
+   no arithmetic. */
+$arok(strpos($ar_src, 'They started <b><?php echo $pct; ?>%</b>') !== false,
+   'the battles they initiated are shown as a raw count again, or lost their label');
+/* $battles is dhca_nemesis()'s own row count. my_wins+their_wins happens to
+   equal it only because there are no draws -- one is the authority. */
+$arok(strpos($ar_src, "max(1, (int)\$o['battles'])") !== false,
+   'the percentage is not taken over the authoritative battle count, or can divide by zero');
+/* 0% is itself the answer -- you started every one of them -- so the stat is
+   no longer hidden when they have never attacked. */
+$arok(strpos($ar_src, "if ((int)\$o['they_attacked'] > 0)") === false,
+   'the share is hidden at 0%, which is a fact worth stating');
+/* The exact figures survive on the title, so nothing is lost. */
+$arok(strpos($ar_src, 'of <?php echo (int)$o[\'battles\']; ?> battles"') !== false,
+   'the raw counts are gone entirely rather than moved to the title');
 $arok(strpos($ar_src, 'their doing') === false && strpos($ar_src, 'nemcame') === false,
    'the awkward "N of them were their doing" line is still there');
 /* outcome is only ever 1 or 2, so there are no draws and the battle count is

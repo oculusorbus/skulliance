@@ -1334,7 +1334,17 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                    row breaks after "They started" and leaves the number
                    stranded on its own line, which is what it did on a
                    phone. */ ?>
-          <span class="nemrec"><em>You won <b><?php echo (int)$o['my_wins']; ?></b></em><i>&middot;</i><em>They won <b><?php echo (int)$o['their_wins']; ?></b></em><?php if ((int)$o['they_attacked'] > 0): ?><i>&middot;</i><em>They started <b><?php echo (int)$o['they_attacked']; ?></b></em><?php endif; ?></span>
+          <span class="nemrec"><em>You won <b><?php echo (int)$o['my_wins']; ?></b></em><i>&middot;</i><em>They won <b><?php echo (int)$o['their_wins']; ?></b></em><?php /* A PERCENTAGE, NOT A COUNT. "They started 20" against a 21-11
+                   record means adding the two up and comparing, in your head,
+                   every time you look at it. The question this stat exists to
+                   answer is "who comes after whom", and a share answers it
+                   without arithmetic. Exact numbers stay on the title.
+                   $battles is the row count from dhca_nemesis(), not
+                   my_wins+their_wins -- same figure, but one of them is the
+                   authority and the other is a coincidence of there being no
+                   draws. Shown even at 0%, which is itself the answer: you
+                   have started every one of them. */
+                $pct = (int)round((int)$o['they_attacked'] / max(1, (int)$o['battles']) * 100); ?><i>&middot;</i><em title="<?php echo (int)$o['they_attacked']; ?> of <?php echo (int)$o['battles']; ?> battles">They started <b><?php echo $pct; ?>%</b></em></span>
           <?php endif; ?>
           <?php /* Filled by paintOdds() once a Crew is picked: the gap depends
                    on which Fighters you bring, so it cannot be rendered here. */ ?>
