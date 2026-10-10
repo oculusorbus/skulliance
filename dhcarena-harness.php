@@ -254,7 +254,13 @@ $arok(preg_match('/@media \(max-width:700px\)\{[\s\S]{0,900}?\.arena-wrap \.a-fo
    'the rival list keeps its 330px window on a phone, so it is a short scroller inside a page that already scrolls');
 /* Desktop must keep it: the panel sits beside the board there and an
    unbounded list would push everything else off the screen. */
-$arok(strpos($ar_css, '.arena-wrap .a-foes{display:flex;flex-direction:column;gap:5px;max-height:330px;overflow:auto}') !== false,
+$fd_at  = strpos($ar_css, '.arena-wrap .a-foes{');
+$foes_d = $fd_at === false ? '' : substr($ar_css, $fd_at, strpos($ar_css, '}', $fd_at) - $fd_at);
+/* The two properties that matter, not the whole declaration verbatim --
+   pinning the exact string meant adding padding-top broke an assertion about
+   the window, which is a different fact. */
+$arok($foes_d !== '' && strpos($foes_d, 'max-height:330px') !== false
+   && strpos($foes_d, 'overflow:auto') !== false,
    'the rival list lost its desktop window, which is what keeps the panel beside the board');
 
 echo "\nand a row cannot be wider than the column\n";
@@ -401,6 +407,14 @@ $arok($nemtag !== '' && strpos($nemtag, 'font-size:8.5px') === false,
 $arok($nemtag !== '' && strpos($nemtag, 'right:9px') !== false
    && strpos($nemtag, 'left:9px') === false,
    'the Arch nemesis badge is not right-aligned');
+/* The tab hangs at top:-7px, OUTSIDE its row, and .a-foes is a scrollport
+   with overflow:auto -- which clips to its padding box. With no padding-top
+   the tab on the first row was sliced in half, and the nemesis is always the
+   first row. */
+$arok($foes_d !== '' && strpos($foes_d, 'padding-top:9px') !== false,
+   'the rival scroller has no padding-top, so the Arch nemesis tab is clipped by it');
+$arok($nemtag !== '' && strpos($nemtag, 'top:-7px') !== false,
+   'the tab no longer hangs above the row, so the scroller padding is now dead space');
 /* Each stat is one nowrap unit, so the line breaks BETWEEN stats and never
    strands a number -- "They started" / "19" on two lines was reported. */
 $arok(strpos($ar_css, '.arena-wrap .a-foe .nemrec em{font-style:normal;white-space:nowrap}') !== false,

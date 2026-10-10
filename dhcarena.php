@@ -981,7 +981,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    "this takes something away". */
 .arena-wrap .a-picked .chip:hover{border-color:var(--warn);background:rgba(208,70,58,.10)}
 .arena-wrap .a-picked .chip:hover i{color:var(--warn);opacity:1}
-.arena-wrap .a-foes{display:flex;flex-direction:column;gap:5px;max-height:330px;overflow:auto}
+/* padding-top so the Arch nemesis tab has somewhere to be. It is positioned
+   at top:-7px, i.e. OUTSIDE its row, and this is a 330px scrollport with
+   overflow:auto -- which clips to its padding box, so with no padding the
+   tab on the first row was sliced in half. 9px gives it 2px of clearance.
+   The nemesis is always the first row, so this is the only row it can
+   happen to. */
+.arena-wrap .a-foes{display:flex;flex-direction:column;gap:5px;max-height:330px;overflow:auto;
+  padding-top:9px}
 .arena-wrap .a-foe{display:flex;align-items:center;gap:10px;padding:7px 9px;border:1px solid var(--line);
   border-radius:3px;cursor:pointer}
 .arena-wrap .a-foe:hover{border-color:var(--ochre);background:rgba(0,200,160,.05)}
