@@ -73,6 +73,10 @@ CREATE TABLE IF NOT EXISTS dhc_arena_fighters (
 	user_id       INT          NOT NULL,
 	benched_until DATETIME     DEFAULT NULL,       -- unavailable until this time
 	ko            TINYINT(1)   NOT NULL DEFAULT 0, -- did it FALL, or only fight?
+	-- OPEN ISSUE: these do not count what they look like they count.
+	-- A "win" is SURVIVAL (!$fell), both Crews are recorded so offence and
+	-- defence are blended, and forfeits corrupt both directions.
+	-- See dhcarena-winloss-unresolved.md before building on them.
 	wins          INT          NOT NULL DEFAULT 0, -- career, public (see §8c)
 	losses        INT          NOT NULL DEFAULT 0,
 	season_wins   INT          NOT NULL DEFAULT 0,
