@@ -852,8 +852,21 @@ function admin_require() {
  * version looked inert: the forms submitted, the pages came back, and the
  * content had no box to live in.
  */
-function admin_chrome($active) {
-	$tabs = array(
+/**
+ * EVERY ADMIN PAGE, ONCE.
+ *
+ * This list was duplicated: admin_chrome()'s tab strip held one copy and
+ * header.php's Admin dropdown held another, written out by hand. Adding
+ * Daily Digest to the tabs left it missing from the dropdown, which is the
+ * only way most people reach the panel at all -- reported as "it is not in
+ * the menu". Same failure the platform has had four times now with gateway
+ * lists and chain maps: two copies of a list are one list and one bug.
+ *
+ * header.php requires this file inside its user-1 branch. Safe because
+ * nothing in here echoes or includes db.php -- see the header comment.
+ */
+function admin_tabs() {
+	return array(
 		'projects'    => array('admin-projects.php',    'Projects'),
 		'collections' => array('admin-collections.php', 'Collections'),
 		'missions'    => array('admin-missions.php',    'Missions'),
@@ -861,6 +874,10 @@ function admin_chrome($active) {
 		'flyers'      => array('admin-flyers.php',      'Flyers'),
 		'digest'      => array('admin-digest.php',      'Daily Digest'),
 	);
+}
+
+function admin_chrome($active) {
+	$tabs = admin_tabs();
 	echo '<div class="row"><div class="adm">';
 	echo '<div class="adm-head"><h2>Admin</h2><nav class="adm-tabs">';
 	foreach ($tabs as $key => $t) {

@@ -277,8 +277,33 @@ foreach ($adminPages as $f) {
 ok('every admin page that opens the .adm wrapper also loads its styling',
    $noCss === array(), implode(', ', $noCss));
 
-ok('it appears in the admin nav',
-   strpos(file_get_contents(__DIR__ . '/admin-lib.php'), "'digest'      => array('admin-digest.php'") !== false);
+/*
+ * ONE LIST, TWO CONSUMERS. admin_chrome()'s tab strip and header.php's
+ * Admin dropdown each used to carry a hand-written copy, so Daily Digest
+ * went into the tabs and was missing from the dropdown -- which is how the
+ * panel is actually reached, and how it was reported. Both read admin_tabs()
+ * now, and every page it names has to exist.
+ */
+require_once __DIR__ . '/admin-lib.php';
+$tabs = admin_tabs();
+ok('the digest is in the one admin page list', isset($tabs['digest']));
+$missing = array();
+foreach ($tabs as $k => $t) if (!is_file(__DIR__ . '/' . $t[0])) $missing[] = $t[0];
+ok('every page the admin menu offers exists', $missing === array(), implode(', ', $missing));
+
+$hdr = file_get_contents(__DIR__ . '/header.php');
+ok('the nav dropdown is generated from admin_tabs(), not written out again',
+   strpos($hdr, 'foreach (admin_tabs() as $t)') !== false);
+/* If any of these literals come back, the two lists have been split again. */
+$hand = 0;
+foreach ($tabs as $t) if (strpos($hdr, '"' . $t[0] . '"') !== false) $hand++;
+ok('no admin page is hard-coded into the nav alongside the generated list', $hand === 0, $hand);
+/* $lib is activity-lib.php elsewhere in this harness; this needs the ADMIN
+   lib, and reaching for the wrong one silently passed a null into substr(). */
+$adminlib = file_get_contents(__DIR__ . '/admin-lib.php');
+$chrome   = substr($adminlib, strpos($adminlib, 'function admin_chrome'), 200);
+ok('admin_chrome reads the same list rather than keeping its own',
+   strpos($chrome, '$tabs = admin_tabs();') !== false);
 
 section('js/digest-builder.js');
 

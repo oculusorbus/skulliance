@@ -386,11 +386,17 @@
 		  <div class="nav-dropdown">
 		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Admin</span>
 		    <div class="nav-dropdown-menu">
-		      <a href="admin-projects.php">Projects</a>
-		      <a href="admin-collections.php">Collections</a>
-		      <a href="admin-missions.php">Missions</a>
-		      <a href="admin-blockchains.php">Chains</a>
-		      <a href="admin-flyers.php">Flyers</a>
+		      <?php /* FROM admin_tabs(), not written out again. This list and
+		               admin_chrome()'s tab strip were two hand-kept copies,
+		               and a page added to one was missing from the other --
+		               which is worse here, because the dropdown is how the
+		               panel is actually reached. admin-lib.php echoes nothing
+		               and includes nothing, so requiring it from the nav is
+		               free. */
+		            require_once __DIR__ . '/admin-lib.php';
+		            foreach (admin_tabs() as $t) {
+		                printf('<a href="%s">%s</a>', htmlspecialchars($t[0]), htmlspecialchars($t[1]));
+		            } ?>
 		    </div>
 		  </div>
 		  <?php endif; ?>

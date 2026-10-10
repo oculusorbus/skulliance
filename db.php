@@ -11172,7 +11172,15 @@ function saveSwapScore($conn, $score){
 		$ss_desc      .= "🔢 **Attempts This Month:** ".$ss_attempts."\n";
 		$ss_desc      .= "📊 **Monthly Rank:** ".$ss_rank.$ss_rank_sfx;
 		$ss_author = array("name" => $ss_username, "icon_url" => $ss_avatar_url, "url" => $ss_profile);
-		discordmsg("🎴 Skull Swap", $ss_desc, "", "https://skulliance.io/staking/skullswap.php", "skullswap", $ss_avatar_url, "F39C12", $ss_author);
+		/* THE GAME'S OWN ART, which it had never posted. Skull Swap was the
+		   only game announcing with an empty image, so its Discord embeds
+		   were a bare block of text and its Activity cards were a title over
+		   half a card of nothing. 1207x1207, so it fills the feed's square
+		   frame without cropping and sits in the daily digest's collage.
+		   skl_local_image_path() resolves this host and uploads the bytes
+		   rather than asking Discord to fetch the URL -- see the note there
+		   on cached misses. */
+		discordmsg("🎴 Skull Swap", $ss_desc, "https://skulliance.io/staking/images/skullswap.png", "https://skulliance.io/staking/skullswap.php", "skullswap", $ss_avatar_url, "F39C12", $ss_author);
 	}else{
 		echo "User not logged in. Score cannot be saved.";
 	}
