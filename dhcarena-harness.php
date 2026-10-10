@@ -335,14 +335,31 @@ $arok(preg_match('/if \(\(int\)\$o\[.user_id.\] === \$nid\) \{ unset\(\$foesList
    'a nemesis already in the top 24 is listed twice');
 $arok(strpos($ar_src, "\$nem = isset(\$o['battles']);") !== false,
    'the card cannot tell the nemesis row from an ordinary rival');
-/* "21-10" does not say whose number is whose -- reported from the live card.
-   And the total was the two added together, since outcome is only ever 1 or
-   2 and there are no draws. */
-$arok(strpos($ar_src, 'Won <?php echo (int)$o[\'my_wins\']') !== false
-   && strpos($ar_src, 'Lost <?php echo (int)$o[\'their_wins\']') !== false,
-   'the record is an unlabelled scoreline again');
+/*
+ * EVERY NUMBER CARRIES ITS SUBJECT, and it took two goes. "21-10" reads as a
+ * scoreline with no clue whose side is whose; "Won 21 · Lost 10" names the
+ * outcome but still not the PERSON. Both were reported off the live card.
+ * The test is that each figure is preceded by who it belongs to.
+ */
+$arok(strpos($ar_src, "You won <b><?php echo (int)\$o['my_wins']; ?></b>") !== false,
+   'the player\'s wins are not labelled as theirs');
+$arok(strpos($ar_src, "They won <b><?php echo (int)\$o['their_wins']; ?></b>") !== false,
+   'the rival\'s wins are not labelled as theirs, or are still phrased as the player\'s losses');
+$arok(strpos($ar_src, "They started <b><?php echo (int)\$o['they_attacked']; ?></b>") !== false,
+   'the battles they initiated are not labelled, or use the old "their doing" phrasing');
+$arok(strpos($ar_src, 'their doing') === false && strpos($ar_src, 'nemcame') === false,
+   'the awkward "N of them were their doing" line is still there');
+/* outcome is only ever 1 or 2, so there are no draws and the battle count is
+   always wins plus losses -- printing it restates the two numbers beside it. */
 $arok(strpos($ar_src, 'battles</span>') === false,
    'the card restates the total, which is only wins plus losses');
+/* Three labelled stats do not fit one line on a phone, and clipping a number
+   off the end is worse than wrapping. */
+$nem_rec = '';
+$nr_at = strpos($ar_css, '.arena-wrap .a-foe .nemrec{');
+if ($nr_at !== false) $nem_rec = substr($ar_css, $nr_at, strpos($ar_css, '}', $nr_at) - $nr_at);
+$arok($nem_rec !== '' && strpos($nem_rec, 'nowrap') === false,
+   'the record is nowrap, so on a narrow card a figure is clipped rather than wrapped');
 /* .top is the ochre reward band and means something unrelated -- what the
    fight pays, not who it is against. A row that is both must read as both. */
 /* INSIDE the rule, not anywhere in the file. Searching the whole stylesheet

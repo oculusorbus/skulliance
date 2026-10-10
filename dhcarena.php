@@ -1013,18 +1013,17 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-foe .nemtag{position:absolute;top:-7px;left:9px;font-size:8.5px;letter-spacing:.06em;
   text-transform:uppercase;font-weight:700;color:#0b1016;background:#e0466b;
   padding:1px 5px;border-radius:2px}
-/* The record is the claim, so it is the one thing here at full strength. */
-.arena-wrap .a-foe .nemrec{flex:1 0 100%;font-size:11px;color:#e0466b;font-weight:600;
-  white-space:nowrap;padding-left:38px}
-/* The span is a separator dot now, not the trailing "over N battles" it was
-   styled for -- so even margins on both sides, and dim enough that the two
-   numbers either side of it are what the eye lands on. */
-.arena-wrap .a-foe .nemrec span{font-weight:400;opacity:.35;margin:0 4px;color:var(--bone)}
-/* The half they started, which nothing else on the platform tells you. */
-.arena-wrap .a-foe .nemcame{flex:1 0 100%;font-size:10px;opacity:.55;padding-left:38px;
-  white-space:nowrap;margin-top:-3px}
+/* EVERY NUMBER CARRIES ITS SUBJECT. This was "21-10", then "Won 21 · Lost
+   10", and neither said WHOSE -- reported twice. The labels are quiet and
+   the figures are loud, so it scans as three facts rather than a sentence.
+   No nowrap: three labelled stats will not fit one line on a phone, and
+   wrapping is better than clipping a number off the end. */
+.arena-wrap .a-foe .nemrec{flex:1 0 100%;font-size:10.5px;color:var(--bone);opacity:.7;
+  font-weight:400;padding-left:38px;line-height:1.5}
+.arena-wrap .a-foe .nemrec b{color:#e0466b;font-weight:700;font-size:11.5px;opacity:1}
+.arena-wrap .a-foe .nemrec i{font-style:normal;opacity:.3;margin:0 2px}
 @media (max-width:560px){
-  .arena-wrap .a-foe .nemrec,.arena-wrap .a-foe .nemcame{padding-left:0}
+  .arena-wrap .a-foe .nemrec{padding-left:0}
 }
 @media (max-width:560px){
   /* The name gives up its ellipsis before the odds give up their line:
@@ -1300,10 +1299,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                    whose -- reported as exactly that. The total went with it:
                    outcome is only ever 1 or 2, so there are no draws and
                    "over 31" was 21+10 restated. */ ?>
-          <span class="nemrec">Won <?php echo (int)$o['my_wins']; ?> <span>&middot;</span> Lost <?php echo (int)$o['their_wins']; ?></span>
-          <?php if ((int)$o['they_attacked'] > 0): ?>
-          <span class="nemcame"><?php echo (int)$o['they_attacked']; ?> of them <?php echo (int)$o['they_attacked'] === 1 ? 'was' : 'were'; ?> their doing</span>
-          <?php endif; ?>
+          <span class="nemrec">You won <b><?php echo (int)$o['my_wins']; ?></b>
+            <i>&middot;</i> They won <b><?php echo (int)$o['their_wins']; ?></b><?php if ((int)$o['they_attacked'] > 0): ?>
+            <i>&middot;</i> They started <b><?php echo (int)$o['they_attacked']; ?></b><?php endif; ?></span>
           <?php endif; ?>
           <?php /* Filled by paintOdds() once a Crew is picked: the gap depends
                    on which Fighters you bring, so it cannot be rendered here. */ ?>
