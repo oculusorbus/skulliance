@@ -388,6 +388,29 @@ define('DHCF_PAIRED_MARK', 'paired:');
 /** Vertical nudge in pixels of the 1000px master, positive = down. */
 define('DHCF_NUDGE', array('skull-krusher' => 23, 'skull-krusher-sash' => 13, 'axe' => 13));
 
+/**
+ * TRAITS THAT DO NOT FALL WHEN A FIGHTER DIES.
+ *
+ * The Arena's death sequence drops each layer out of the composite
+ * (keyframes disA/disB in dhcarena.php). That is wrong for a piece drawn as
+ * SUSPENDED FROM THE TOP OF THE FRAME: its art is cut off at the edge
+ * because it is meant to read as continuing past it, so the moment it
+ * translates down the cut is exposed and the frame edge shows.
+ *
+ * bio-circuit-head-port is the case that found this -- a head port on cables
+ * that run up and off the top. Pinned, the body falls out of it and it stays
+ * hanging, which is both the correct picture and a better death than
+ * everything sliding down together.
+ *
+ * MEASURED, NOT GUESSED: of 21 pieces whose art touches the top edge, the
+ * effects slots are all exempt already (they use `snuff`, which fades and
+ * scales UP, so it cannot open a gap). The remaining candidates in a falling
+ * slot are arms/dh-pilot, arms/symbio-flexx and companion/mk100-insekt --
+ * only the last reads as hanging rather than reaching, and none has been
+ * reported, so they are left alone pending a look.
+ */
+define('DHCF_DEATH_ANCHORED', array('bio-circuit-head-port'));
+
 /** Weapons drawn against the torso's own arms; cannot coexist with MOST Arms. */
 define('DHCF_ARMS_EXCLUSIVE', array('plastic-blaster', 'dh-raider-equipment', 'electric-morning-star'));
 

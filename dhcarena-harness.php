@@ -435,4 +435,36 @@ $arok($nemtag !== '' && strpos($nemtag, 'top:-7px') !== false,
 $arok(strpos($ar_css, '.arena-wrap .a-foe .nemrec em{font-style:normal;white-space:nowrap}') !== false,
    'a stat can be split across two lines, stranding its number');
 
+/* ---------------------------------------------------------------------------
+ * PIECES THAT MUST NOT FALL
+ *
+ * The death sequence drops each layer out of the composite. That is wrong
+ * for art drawn as SUSPENDED FROM THE TOP OF THE FRAME -- it is cut off at
+ * that edge on purpose, so translating it down exposes the cut and the frame
+ * edge shows through, which is how bio-circuit-head-port was reported.
+ * ------------------------------------------------------------------------- */
+require_once __DIR__ . '/dhcfighters-config.php';
+
+$arok(defined('DHCF_DEATH_ANCHORED') && in_array('bio-circuit-head-port', DHCF_DEATH_ANCHORED, true),
+   'bio-circuit-head-port is not anchored, so it falls and shows the frame edge');
+/* ONE list. The Arena reads the PHP constant rather than keeping a copy --
+   the platform has lost five lists to hand-kept duplicates already. */
+$arok(strpos($ar_src, 'var DEATH_ANCHORED = <?php echo json_encode(array_values(DHCF_DEATH_ANCHORED)); ?>;') !== false,
+   'the Arena does not take its anchored list from DHCF_DEATH_ANCHORED');
+/* The check needs the SLUG, and the layer tags only carried the slot. */
+$arok(strpos($ar_src, 'data-l="\'+k+\'" data-s="\'+t[k]+\'"') !== false,
+   'layer images no longer carry their trait slug, so nothing can be anchored');
+$arok(strpos($ar_src, "DEATH_ANCHORED.indexOf(img.getAttribute('data-s')) !== -1") !== false,
+   'the anchored test does not look at the slug');
+/* Both paths: the staggered fall AND the effects fade. */
+$arok(strpos($ar_src, 'if (anchored(img)) return;') !== false,
+   'an anchored piece is still given the falling animation');
+$arok(strpos($ar_src, "if (img && !anchored(img)) img.className = 'snuff';") !== false,
+   'an anchored effect is still snuffed');
+/* The group it belonged to must still fall -- a head grouped with an
+   anchored headgear has to drop OUT of it, which is the whole picture. */
+$kill = substr($ar_src, strpos($ar_src, 'function killAnim'), 1200);
+$arok(strpos($kill, 'if (anchored(img)) return;') < strpos($kill, 'found = true;'),
+   'an anchored piece still counts toward the stagger, so its group stops falling with it');
+
 echo ($ar_fail ? "\n$ar_fail arena-layout check(s) FAILED\n" : "\nrival list layout: ok\n");

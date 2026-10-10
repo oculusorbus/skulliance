@@ -1714,7 +1714,10 @@ function layerImgs(f, tagged){
       ? '<img class="bg" loading="lazy" alt="" src="'+artUrl('background',t.background,250)+'" onerror="this.remove()">' : '')
     + order.filter(function(k){ return k !== 'background' && t[k]; })
       .map(function(k){
-        return '<img'+(tagged ? ' data-l="'+k+'"' : '')+' loading="lazy" alt="" src="'
+        /* data-s carries the SLUG, not just the slot. killAnim() needs to
+           know which trait this is, because one of them must not fall --
+           see DEATH_ANCHORED. */
+        return '<img'+(tagged ? ' data-l="'+k+'" data-s="'+t[k]+'"' : '')+' loading="lazy" alt="" src="'
              + artUrl(SLOT_CAT[k] || k, t[k], 250) + '" onerror="this.remove()">';
       }).join('');
 }
@@ -1894,19 +1897,31 @@ var DEATH_ORDER = [
   {slots:['torso'],            alt:true},
 ];
 var DEATH_CUT   = ['effects','effects1','effects2'];
+/* PIECES THAT STAY PUT. Art drawn as hanging from the top of the frame is cut
+   off at that edge on purpose, so dropping it exposes the cut and the frame
+   shows through. Pinned, the Fighter falls out of it and it keeps hanging.
+   From DHCF_DEATH_ANCHORED so the list has one home. */
+var DEATH_ANCHORED = <?php echo json_encode(array_values(DHCF_DEATH_ANCHORED)); ?>;
 
 function killAnim(f){
   var e = elFor(f); if (!e) return;
   e.classList.add('dying'); flashTok(f,'big');
+  function anchored(img){
+    return !!img && DEATH_ANCHORED.indexOf(img.getAttribute('data-s')) !== -1;
+  }
   DEATH_CUT.forEach(function(slot){
     var img = e.querySelector('.art img[data-l="'+slot+'"]');
-    if (img) img.className = 'snuff';
+    if (img && !anchored(img)) img.className = 'snuff';
   });
   var step = 80, n = 0;
   DEATH_ORDER.forEach(function(group){
     var found = false;
     group.slots.forEach(function(slot){
       var img = e.querySelector('.art img[data-l="'+slot+'"]'); if (!img) return;
+      /* An anchored piece is left exactly where it is -- not animated, not
+         counted. The group it belonged to still falls: a head grouped with
+         an anchored headgear drops out of it, which is the point. */
+      if (anchored(img)) return;
       found = true;
       // one delay and one spin for the whole group, so its pieces stay together
       img.style.animationDelay = (n*step)+'ms';
