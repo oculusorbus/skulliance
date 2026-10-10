@@ -757,6 +757,12 @@ a{color:var(--ochre)}
      Enforced both ways. Whichever slot is filled first blocks the other, and
      the way out is always the None tile, so no build can become unescapable. */
   var ARMS_EXCLUSIVE = <?php echo json_encode(DHCF_ARMS_EXCLUSIVE); ?>;
+  /* Arms drawn UNDER the torso. They cannot cover the native arm an exclusive
+     weapon rests on, so they are the one kind that may wear one. Mirrors
+     dhcf_arms_weapon_clash() in dhcfighters-config.php -- the server checks
+     the same rule on save, so a disagreement here is a refused save, not a
+     broken Fighter. */
+  var ARMS_BEHIND_TORSO = <?php echo json_encode(DHCF_ARMS_BEHIND_TORSO); ?>;
   // head slug -> headgear it will not carry. See DHCF_HEADGEAR_EXCLUDED_BY_HEAD.
   var HEADGEAR_BLOCKED = <?php echo json_encode(DHCF_HEADGEAR_EXCLUDED_BY_HEAD); ?>;
   function headgearBlocked(head, gear) {
@@ -766,6 +772,13 @@ a{color:var(--ochre)}
   }
 
   function armsExclusive(slug) { return ARMS_EXCLUSIVE.indexOf(slug) !== -1; }
+  /* The pair, not the weapon alone. See ARMS_BEHIND_TORSO above. */
+  function armsWeaponClash(arms, weapon) {
+    if (!arms || !weapon) return false;
+    if (ARMS_EXCLUSIVE.indexOf(weapon) === -1) return false;
+    if (ARMS_BEHIND_TORSO.indexOf(arms) !== -1) return false;
+    return true;
+  }
 
   /*
    * COUPLED WEAPONS. Three relationships, and they are NOT the same one:
@@ -822,7 +835,7 @@ a{color:var(--ochre)}
       // The axe stands on its own when arms rule its partner out, rather than
       // the arms ruling out the axe. The coupling is what the axe prefers, not
       // a condition of wearing it.
-      if (!c.mutual && sel.arms && armsExclusive(c.front)) return;
+      if (!c.mutual && armsWeaponClash(sel.arms, c.front)) return;
       // Already wearing it by choice? Then it stays yours, and removing the axe
       // later leaves it be. Only a partner the coupling actually put there is
       // the coupling's to take away.
@@ -988,11 +1001,11 @@ a{color:var(--ochre)}
       return nameOf('head', slug) + ' cannot carry '
            + nameOf('headgear', sel.headgear) + '. Set Headgear to None first.';
 
-    if (key === 'weapon' && armsExclusive(slug) && sel.arms)
+    if (key === 'weapon' && armsWeaponClash(sel.arms, slug))
       return nameOf('weapon', slug) + ' is drawn against the torso’s own arms, so it cannot be '
-           + 'combined with an Arms trait. Set Arms to None first.';
-    if (key === 'arms' && sel.weapon && armsExclusive(sel.weapon))
-      return 'Arms traits repose the torso’s arms, which are what support '
+           + 'combined with ' + nameOf('arms', sel.arms) + '. Set Arms to None first.';
+    if (key === 'arms' && armsWeaponClash(slug, sel.weapon))
+      return nameOf('arms', slug) + ' covers the torso’s arms, which are what support '
            + nameOf('weapon', sel.weapon) + '. Set Weapon to None first.';
     return null;
   }
@@ -1009,7 +1022,7 @@ a{color:var(--ochre)}
   function dropConflicts() {
     // The weapon yields to the arms; anything that brought it stays. An axe with
     // no morning star is a fine Fighter, so only the blocked half is dropped.
-    if (sel.arms && sel.weapon && armsExclusive(sel.weapon)) {
+    if (armsWeaponClash(sel.arms, sel.weapon)) {
       delete sel.weapon; delete coupledIn.weapon;
     }
     // A sash is never a trait on its own, and neither half of a tethered pair
@@ -1647,7 +1660,7 @@ a{color:var(--ochre)}
       // Arms repose the torso's arms, so the weapons that rely on them are out
       // of the running once arms are on rather than picked and then discarded.
       var cands = placeable(pool).filter(function (t) {
-        return !(sel.arms && armsExclusive(t.slug));
+        return !armsWeaponClash(sel.arms, t.slug);
       });
       if (cands.length) {
         var total = 0, i;

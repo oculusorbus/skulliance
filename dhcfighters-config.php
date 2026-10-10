@@ -388,8 +388,40 @@ define('DHCF_PAIRED_MARK', 'paired:');
 /** Vertical nudge in pixels of the 1000px master, positive = down. */
 define('DHCF_NUDGE', array('skull-krusher' => 23, 'skull-krusher-sash' => 13, 'axe' => 13));
 
-/** Weapons drawn against the torso's own arms; cannot coexist with Arms. */
+/** Weapons drawn against the torso's own arms; cannot coexist with MOST Arms. */
 define('DHCF_ARMS_EXCLUSIVE', array('plastic-blaster', 'dh-raider-equipment', 'electric-morning-star'));
+
+/**
+ * DOES THIS ARMS TRAIT ACTUALLY CLASH WITH THIS WEAPON?
+ *
+ * The exclusive weapons are drawn against the torso's own arms, so the real
+ * question is not "are there arms?" but "is the arm this weapon rests on
+ * still visible?". Three cases, and only one of them is safe:
+ *
+ *   BEHIND_TORSO  drawn under everything, so it cannot cover the native arm
+ *                 or the weapon. SAFE -- perforator-arm-replacement's spikes
+ *                 read as an accent behind the shoulder and the blaster is
+ *                 untouched.
+ *
+ *   OVER_TORSO    keeps the native arms but draws OVER them, and over the
+ *                 weapon too, because arms come after weapon in dhcf_slots().
+ *                 Infested Robo Limb swallows the blaster's grip and trigger
+ *                 guard, so the gun reads as embedded in the limb rather than
+ *                 held. Its own comment says it "covers what is under it" --
+ *                 which here includes the arm doing the holding. BLOCKED.
+ *
+ *   full/hybrid   the native arm is replaced outright. BLOCKED.
+ *
+ * Checked against renders rather than reasoned: the first version of this
+ * exempted everything dhcf_armless_mode() called 'none', which is both of the
+ * first two cases, and the infested render showed that was wrong.
+ */
+function dhcf_arms_weapon_clash($arms, $weapon) {
+	if (empty($arms) || empty($weapon))                     return false;
+	if (!in_array($weapon, DHCF_ARMS_EXCLUSIVE, true))      return false;
+	if (in_array($arms, DHCF_ARMS_BEHIND_TORSO, true))      return false;
+	return true;
+}
 
 /*
  * HEADGEAR A GIVEN HEAD CANNOT WEAR.

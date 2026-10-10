@@ -137,5 +137,67 @@ $banner = substr($asm_c, strpos($asm_c, 'n.textContent = (blockedCount'), 260);
 ok(stripos($banner, 'saved Fighter') === false,
    'the count names a cause; head/headgear and arms/weapon conflicts block tiles too, so it would be wrong on those tabs');
 
+/* ---------------------------------------------------------------------------
+ * ARMS vs AN ARMS-EXCLUSIVE WEAPON
+ *
+ * The exclusive weapons are drawn against the torso's own arms, so the real
+ * question is whether the arm the weapon rests on is still visible -- not
+ * whether an Arms trait is present at all. Only arms drawn UNDER the torso
+ * pass, and that was established from renders:
+ *
+ *   perforator (BEHIND_TORSO) sits behind the shoulder and the blaster is
+ *   untouched -- it was blocked for nothing.
+ *
+ *   infested-robo-limb (OVER_TORSO) keeps the native arms but draws over them
+ *   AND over the weapon, swallowing the blaster's grip and trigger guard, so
+ *   the gun reads as embedded rather than held. An earlier version of this
+ *   rule exempted everything dhcf_armless_mode() calls 'none', which would
+ *   have shipped exactly that.
+ * ------------------------------------------------------------------------- */
+require_once __DIR__ . '/dhcfighters-config.php';
+
+ok(dhcf_arms_weapon_clash('perforator-arm-replacement', 'plastic-blaster') === false,
+   'a behind-torso arm is still blocked from an exclusive weapon');
+ok(dhcf_arms_weapon_clash('infested-robo-limb', 'plastic-blaster') === true,
+   'an over-torso arm is allowed with an exclusive weapon, and it covers the grip');
+ok(dhcf_arms_weapon_clash('head-chopper', 'plastic-blaster') === true,
+   'a hybrid-armless arm is allowed with an exclusive weapon');
+ok(dhcf_arms_weapon_clash('connected-protector-limbs', 'plastic-blaster') === true,
+   'a full-armless arm is allowed with an exclusive weapon');
+ok(dhcf_arms_weapon_clash('connected-protector-limbs', 'axe') === false,
+   'a NON-exclusive weapon is blocked by arms');
+ok(dhcf_arms_weapon_clash('', 'plastic-blaster') === false
+   && dhcf_arms_weapon_clash('connected-protector-limbs', '') === false,
+   'an empty slot counts as a clash');
+/* Every exclusive weapon, not just the one that prompted this. */
+foreach (DHCF_ARMS_EXCLUSIVE as $w) {
+	ok(dhcf_arms_weapon_clash('perforator-arm-replacement', $w) === false,
+	   "perforator is still blocked from $w");
+	ok(dhcf_arms_weapon_clash('connected-protector-limbs', $w) === true,
+	   "a full-armless arm is allowed with $w");
+}
+
+/* THE SERVER IS THE GATE. This rule lived only in the assembler's JavaScript,
+   so unlike the headgear rule beside it a stale tab or hand-edited link could
+   commit a Fighter the renderers then draw wrong. */
+$lib_src = file_get_contents(__DIR__ . '/dhcfighters-lib.php');
+ok(substr_count($lib_src, 'dhcf_arms_weapon_clash(') === 2,
+   'the save and edit paths do not BOTH enforce the arms/weapon rule');
+ok(strpos($lib_src, 'dhcf_headgear_blocked(') !== false,
+   'the headgear rule lost its server-side check');
+
+/* And the browser must apply the same pair rule, or it offers tiles the
+   server will refuse. */
+ok(strpos($asm_c, 'function armsWeaponClash(arms, weapon)') !== false,
+   'the assembler does not have the pairwise check');
+/* Populated FROM the constant, not merely declared. Stubbing it to [] leaves
+   the name in place and silently restores the blanket block in the browser
+   while the server still allows the pair -- the two then disagree, which is
+   the one outcome this whole change exists to avoid. */
+ok(strpos($asm_src, 'var ARMS_BEHIND_TORSO = <?php echo json_encode(DHCF_ARMS_BEHIND_TORSO); ?>;') !== false,
+   'the assembler does not take its exempt-arms list from DHCF_ARMS_BEHIND_TORSO');
+ok(preg_match('/\bsel\.arms && armsExclusive\(/', $asm_c) !== 1,
+   'a call site still blocks on the weapon alone, ignoring which arm it is');
+
 echo "\n".($fail ? "FAILED: $fail check(s)\n" : "all assembler checks passed\n");
 exit($fail ? 1 : 0);

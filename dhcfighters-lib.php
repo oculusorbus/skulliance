@@ -645,6 +645,19 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 			. dhcf_trait_name('head', $clean['head']) . '.', null);
 	}
 
+	/* THE SAME BOUNDARY, AND IT WAS MISSING. DHCF_ARMS_EXCLUSIVE lived only in
+	   dhc-assembler.php's JavaScript, so unlike the headgear rule beside it the
+	   arms/weapon pairing was advisory -- a stale tab or a hand-edited link
+	   could commit a Fighter whose weapon rests on arms that are not there, and
+	   the Collection, the Arena and the Discord embed would all draw it wrong. */
+	if (dhcf_arms_weapon_clash(
+			isset($clean['arms']) ? $clean['arms'] : '',
+			isset($clean['weapon']) ? $clean['weapon'] : '')) {
+		return array(false, dhcf_trait_name('weapon', $clean['weapon'])
+			. ' is drawn against the torso\'s own arms, so it cannot be worn with '
+			. dhcf_trait_name('arms', $clean['arms']) . '.', null);
+	}
+
 	$missing = dhcf_missing_required($clean);
 	if ($missing) {
 		return array(false, 'A Fighter needs a ' . implode(', ', $missing) . '.', null);
@@ -782,6 +795,19 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
 	    && dhcf_headgear_blocked($clean['head'], $clean['headgear'])) {
 		return array(false, dhcf_trait_name('headgear', $clean['headgear']) . ' cannot be worn with '
 			. dhcf_trait_name('head', $clean['head']) . '.', null);
+	}
+
+	/* THE SAME BOUNDARY, AND IT WAS MISSING. DHCF_ARMS_EXCLUSIVE lived only in
+	   dhc-assembler.php's JavaScript, so unlike the headgear rule beside it the
+	   arms/weapon pairing was advisory -- a stale tab or a hand-edited link
+	   could commit a Fighter whose weapon rests on arms that are not there, and
+	   the Collection, the Arena and the Discord embed would all draw it wrong. */
+	if (dhcf_arms_weapon_clash(
+			isset($clean['arms']) ? $clean['arms'] : '',
+			isset($clean['weapon']) ? $clean['weapon'] : '')) {
+		return array(false, dhcf_trait_name('weapon', $clean['weapon'])
+			. ' is drawn against the torso\'s own arms, so it cannot be worn with '
+			. dhcf_trait_name('arms', $clean['arms']) . '.', null);
 	}
 
 	$missing = dhcf_missing_required($clean);
