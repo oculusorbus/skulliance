@@ -93,6 +93,16 @@ function dhca_role_overrides() {
 		// in the name of the piece, not in what it does -- headgear you wear is
 		// armour however frightening it is called.
 		'dh-destroyer' => DHCA_ROLE_ARMOUR,
+		// Same mistake, opposite direction. 'demon-' was added to the ENERGY
+		// rules for occult effects -- digital-666-smoke, 666-demon-headgear --
+		// and it catches this one on the way past. But the Demon Companion is
+		// a creature standing behind the Fighter with its claws on it, which
+		// is the literal definition of BEAST ("fights alongside you"); every
+		// other living companion in the collection is one (code-sea-predator,
+		// both isopunks, mk100-insekt) and only the cams and antennae are not.
+		// Classifying it as energy made it the single exception, on a keyword
+		// about what it is CALLED rather than what it is.
+		'demon-companion' => DHCA_ROLE_BEAST,
 	);
 }
 

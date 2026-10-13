@@ -248,7 +248,7 @@ blaster arm adds damage; a protector arm adds armour. Both are arms.
 | **Armour** — helmets, plating, a deflektor limb | **Resistance** — a percentage off every hit you take |
 | **A weapon** — blasters, turrets, choppers, a laser cannon | **Power** — on top of what your weapon slot gives |
 | **Energy** — flames, lava, sparks, an inferno limb | **Charge** — you erupt sooner than the rest of your Crew |
-| **A creature** — isopunks, insekts, an infested limb | **An assist** — a chance it piles on an extra hit |
+| **A creature** — isopunks, insekts, the Demon, an infested limb | **An assist** — a chance it piles on an extra hit |
 
 Your **torso** still sets base health and your **weapon** still sets base power
 and your fighting style. Everything else — head, headgear, arms, both effects

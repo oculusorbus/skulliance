@@ -238,5 +238,60 @@ ok(preg_match("/key === 'head' && companionBlocked\(slug, sel\.companion\)/", $a
 ok(preg_match('/var COMPANION_BLOCKED\s*=\s*<\?php echo json_encode\(DHCF_COMPANION_EXCLUDED_BY_HEAD\);/', $asm_src) === 1,
    'the assembler does not take its refusal map from DHCF_COMPANION_EXCLUDED_BY_HEAD');
 
+/* ---------------------------------------------------------------------------
+ * ART, RARITY AND NAME MUST DESCRIBE THE SAME SET.
+ *
+ * Three files have to agree and none of them is generated from the others:
+ * the PNGs under dhc/web/1000 (uploaded by FTP, gitignored), dhcrarity.php
+ * (regenerated from chain by gen-rarity.py) and dhc/web/trait-index.json (the
+ * display names, written when art is imported).
+ *
+ * All three were out of step after the last drop and nothing noticed. Art with
+ * no rarity row is UNDROPPABLE -- dhcf_draw() pools from the rarity table, so
+ * the piece exists, renders, and can never be earned. A rarity row with no art
+ * is worse: it drops, and the player owns a layer that draws nothing. A
+ * missing NAME is the quiet one -- dhcf_trait_name() falls back to the slug,
+ * so ten new traits shipped reading "Dh Samurai Helmet" and "Dhc2 Comic Cover
+ * 4" in the picker, the modal, the Discord post and the share text.
+ *
+ * SKIPPED ENTIRELY WITHOUT THE ART, because dhc/ is gitignored: a checkout
+ * with no trait art must not fail this, or the harness is unrunnable anywhere
+ * but a machine that has FTP'd the collection down.
+ * ------------------------------------------------------------------------- */
+$artRoot = __DIR__ . '/dhc/web/1000';
+$idxFile = __DIR__ . '/dhc/web/trait-index.json';
+if (is_dir($artRoot) && is_file($idxFile)) {
+	$rar = require __DIR__ . '/dhcrarity.php';
+	$idx = json_decode(file_get_contents($idxFile), true);
+	ok(is_array($idx) && $idx, 'trait-index.json did not parse, so every trait falls back to its slug');
+	/* NOT categories. torso-noarms and companion-front are derived art keyed by
+	   another trait's slug -- they have no rarity, no name and no slot, and
+	   counting them here would demand rows that must never exist. */
+	$derived = array('torso-noarms' => 1, 'companion-front' => 1);
+	$noRarity = array(); $noName = array(); $noArt = array();
+	foreach (glob($artRoot . '/*', GLOB_ONLYDIR) as $dir) {
+		$cat = basename($dir);
+		if (isset($derived[$cat])) continue;
+		foreach (glob($dir . '/*.png') as $png) {
+			$slug = basename($png, '.png');
+			if (!isset($rar[$cat][$slug]))          $noRarity[] = "$cat/$slug";
+			if (!isset($idx[$cat][$slug]['name']))  $noName[]   = "$cat/$slug";
+		}
+	}
+	foreach ($rar as $cat => $rows) {
+		foreach ($rows as $slug => $_) {
+			if (!is_file($artRoot . '/' . $cat . '/' . $slug . '.png')) $noArt[] = "$cat/$slug";
+		}
+	}
+	ok(!$noRarity, 'art with no rarity row, so it can never drop: ' . implode(', ', $noRarity));
+	ok(!$noArt,    'rarity row with no art, so it drops and draws nothing: ' . implode(', ', $noArt));
+	ok(!$noName,   'art with no display name, so it shows as its slug: ' . implode(', ', $noName));
+	$nTraits = 0;
+	foreach ($rar as $rows) $nTraits += count($rows);
+	printf("art/rarity/name: %d traits, all three files agree\n", $nTraits);
+} else {
+	echo "art/rarity/name: SKIPPED (no dhc/web art in this checkout)\n";
+}
+
 echo "\n".($fail ? "FAILED: $fail check(s)\n" : "all assembler checks passed\n");
 exit($fail ? 1 : 0);
