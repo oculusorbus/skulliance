@@ -35,6 +35,80 @@
        pulled directly from code.jquery.com (the jQuery Foundation's own
        CDN, not a third-party mirror), unmodified. -->
   <script src="dist/jquery-3.6.3.min.js"></script>
+  <?php /* ------------------------------------------------------------------
+       BROKEN DISCORD AVATARS, HEALED ON SIGHT.
+
+       users.avatar holds a Discord avatar HASH and is only written at login.
+       Change your avatar on Discord and the hash we hold is dead: the URL is
+       still well-formed, the CDN 404s, and the page shows a broken image.
+       Players on a long session never log in again, so theirs stays broken --
+       and it is the ACTIVE ones it hurts, since a dormant player at least
+       reads as dormant.
+
+       ONE LISTENER FOR THE WHOLE PLATFORM, and that is the point of doing it
+       here. 101 places across 20 files hand-build this URL; adding an onerror
+       to each is 101 edits and the 102nd will forget. Error events do NOT
+       bubble, but they DO capture -- so a single capture-phase listener on
+       document sees every image that fails anywhere on the page, including
+       ones injected later by ajax, which is most of them.
+
+       The cascade: stored hash -> ask Discord once and write it back ->
+       placeholder. See avatar-lib.php.
+       ------------------------------------------------------------------ */ ?>
+  <script>
+  (function () {
+    var CDN  = 'cdn.discordapp.com/avatars/';
+    var SKULL = 'icons/skull.png';
+    /* One request per id per page, however many times the avatar appears --
+       a leaderboard can show the same broken player twenty times. Holds the
+       in-flight promise so later images wait on the first call rather than
+       starting their own. */
+    var inflight = {};
+
+    function placeholder(img) {
+      /* Clear the marker last: setting src fires another error if the
+         placeholder itself is missing, and we must not loop on that. */
+      if (img.getAttribute('src') === SKULL) return;
+      img.setAttribute('src', SKULL);
+    }
+
+    document.addEventListener('error', function (e) {
+      var img = e.target;
+      if (!img || img.tagName !== 'IMG') return;
+      var src = img.getAttribute('src') || '';
+      if (src.indexOf(CDN) === -1) return;
+      /* Second failure for this element: the refreshed URL is broken too, so
+         stop. Without this the swap below can ping-pong. */
+      if (img.dataset.avatarTried) { placeholder(img); return; }
+      img.dataset.avatarTried = '1';
+
+      var m = src.match(/avatars\/(\d{5,25})\//);
+      if (!m) { placeholder(img); return; }
+      var id = m[1];
+
+      if (!inflight[id]) {
+        inflight[id] = fetch('ajax/avatar-refresh.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'discord_id=' + encodeURIComponent(id)
+        }).then(function (r) { return r.json(); })
+          .catch(function () { return { url: null }; });
+      }
+      inflight[id].then(function (d) {
+        /* Every copy of this avatar on the page, not just the one that
+           failed -- the others are about to fail for the same reason. */
+        var sel = 'img[src*="' + CDN + id + '/"]';
+        var all = document.querySelectorAll(sel);
+        var fix = (d && d.url) ? d.url : SKULL;
+        for (var i = 0; i < all.length; i++) {
+          all[i].dataset.avatarTried = '1';
+          all[i].setAttribute('src', fix);
+        }
+        if (!all.length) { img.setAttribute('src', fix); }
+      });
+    }, true);   /* capture: error does not bubble */
+  })();
+  </script>
   <!--<link href="dist/output.css" rel="stylesheet">-->
   <link href="dist/flexbox.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
   <link href="dist/modal.css?var=<?php echo rand(0,999); ?>" rel="stylesheet">
