@@ -78,6 +78,39 @@ ok($nullBlk !== '', 'cannot find the unreachable-Discord branch to check');
 ok(strpos($nullBlk, 'SET avatar =') === false,
    'the failure path writes the avatar column, which it must never do');
 
+/* ---------- 2b. it must be able to actually reach Discord ------------------ */
+/*
+ * THE FIRST VERSION SHIPPED UNABLE TO. $bot_token lives in
+ * credentials/webhooks_credentials.php, which webhooks.php includes and
+ * nothing else does -- so an endpoint pulling in db.php and avatar-lib.php had
+ * no token, avatar_fetch_hash() returned null on its first line, and every
+ * avatar fell to the placeholder. From the outside that is indistinguishable
+ * from "all these users really did delete their accounts", which is exactly
+ * how it was reported. The harness tested the endpoint's SAFETY properties
+ * thoroughly and never once asked whether it could do its job.
+ */
+$libSrc = no_comments(file_get_contents(__DIR__ . '/avatar-lib.php'));
+ok(strpos($libSrc, "credentials/webhooks_credentials.php") !== false,
+   'avatar-lib.php does not load the credentials file, so $bot_token is never set and '
+ . 'the fetch returns null before it reaches Discord');
+ok(strpos($libSrc, 'include_once') !== false,
+   'the credentials include is not include_once; webhooks.php may have loaded it already');
+ok(function_exists('avatar_can_fetch'),
+   'there is no way to tell a missing token from a failed call');
+
+/* A missing token must NOT be stamped as a failed check: stamping starts an
+   hour's backoff against a fault that will still be there in an hour, and
+   turns a misconfiguration into "these users have no avatar". */
+$cfgAt  = strpos($ep, 'avatar_can_fetch()');
+$cfgEnd = $cfgAt === false ? false : strpos($ep, 'exit;', $cfgAt);
+$cfgBlk = ($cfgAt !== false && $cfgEnd !== false) ? substr($ep, $cfgAt, $cfgEnd - $cfgAt) : '';
+ok($cfgBlk !== '', 'the endpoint does not check whether it is configured at all');
+ok($cfgBlk !== '' && strpos($cfgBlk, 'avatar_checked_at') === false,
+   'an unconfigured endpoint stamps the throttle, so fixing the config leaves every '
+ . 'user backed off for an hour');
+ok($cfgBlk !== '' && strpos($cfgBlk, 'error_log') !== false,
+   'an unconfigured endpoint fails silently -- it looks exactly like working');
+
 /* ---------- 3. the browser listener ---------------------------------------- */
 $hd = no_comments(file_get_contents(__DIR__ . '/header.php'));
 

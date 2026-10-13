@@ -49,6 +49,29 @@
  * before concluding the cascade does not work.
  */
 
+/*
+ * THE BOT TOKEN HAS TO BE LOADED HERE, and forgetting it is why the first
+ * version of this never once reached Discord. $bot_token is defined in
+ * credentials/webhooks_credentials.php, which is included by webhooks.php and
+ * by nothing else -- so an endpoint that pulls in db.php and this file has no
+ * token, avatar_fetch_hash() returns null on its first line, and every avatar
+ * quietly falls to the placeholder. Identical, from the outside, to "all these
+ * users really did delete their accounts".
+ *
+ * include_once so this is harmless when webhooks.php got there first, and
+ * guarded because the credentials directory is server-only and absent from
+ * every checkout.
+ */
+if (!isset($bot_token) && is_file(__DIR__ . '/credentials/webhooks_credentials.php')) {
+	include_once __DIR__ . '/credentials/webhooks_credentials.php';
+}
+
+/** Is there a token at all? A configuration fault, not a transient failure. */
+function avatar_can_fetch() {
+	global $bot_token;
+	return !empty($bot_token) && function_exists('curl_init');
+}
+
 /** Discord's CDN, the one place that knows how an avatar URL is spelled. */
 define('AVATAR_CDN', 'https://cdn.discordapp.com/avatars/');
 
@@ -91,7 +114,7 @@ function avatar_url($discord_id, $hash, $size = 128) {
  */
 function avatar_fetch_hash($discord_id) {
 	global $bot_token;
-	if (empty($bot_token) || !function_exists('curl_init')) return null;
+	if (!avatar_can_fetch()) return null;
 	if (!preg_match('/^[0-9]{5,25}$/', (string)$discord_id)) return null;
 
 	$ch = curl_init('https://discord.com/api/v10/users/' . $discord_id);

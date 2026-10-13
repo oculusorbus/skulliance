@@ -72,6 +72,19 @@ if (!empty($row['too_soon'])) {
 	exit;
 }
 
+/*
+ * NO TOKEN IS A DIFFERENT THING FROM A FAILED CALL, and must not be stamped.
+ * Stamping it starts an hour's backoff from a fault that will still be there
+ * in an hour, and quietly converts a misconfiguration into "these users have
+ * no avatar". This is exactly how the first version of this endpoint failed:
+ * it had no token, returned null, stamped, and looked like it was working.
+ */
+if (!avatar_can_fetch()) {
+	error_log('avatar-refresh: no $bot_token -- is credentials/webhooks_credentials.php present?');
+	dhc_json(array('ok' => false, 'url' => null, 'why' => 'not configured'));
+	exit;
+}
+
 $hash = avatar_fetch_hash($did);
 
 if ($hash === null) {
