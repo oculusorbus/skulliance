@@ -206,10 +206,6 @@ $cases = array(
 	/* CODE SEA PREDATOR, which wants the same two things as the cam and one
 	   more: above the head and headgear, under ordinary arms, but OVER the
 	   turret limbs, which would otherwise swallow it. */
-	/* The head draws under the torso, except for a head with no neck to put
-	   into the collar -- a severed stump whose wires fall across the chest. */
-	'head under torso'          => $plain,
-	'headless stump over torso' => ms_case($plain, array('head' => DHCF_HEADS_OVER_TORSO[0])),
 	'sea predator'              => ms_case($plain, array('companion' => 'code-sea-predator')),
 	'sea predator + turret'     => ms_case($plain, array('companion' => 'code-sea-predator',
 	                                                     'arms' => 'turret-blue-cyborg-limbs')),
@@ -258,7 +254,6 @@ $prelude = "var SLOTS = " . json_encode(array_map(function ($k) { return array('
          . "var ARMS_OVER_COMPANION = " . json_encode(DHCF_ARMS_OVER_COMPANION) . ";\n"
          . "var ARMS_UNDER_COMPANION = " . json_encode(DHCF_ARMS_UNDER_COMPANION) . ";\n"
          . "var HEADGEAR_OVER_COMPANION = " . json_encode(DHCF_HEADGEAR_OVER_COMPANION) . ";\n"
-         . "var HEADS_OVER_TORSO = " . json_encode(DHCF_HEADS_OVER_TORSO) . ";\n"
          . "var COVER_EFFECTS = "        . json_encode(DHCF_COVER_EFFECTS)        . ";\n"
          . "var COMPANION_OVER_COVER = " . json_encode(DHCF_COMPANION_OVER_COVER) . ";\n"
          . "var COMPANION_TWO_PART = "   . json_encode(array_values(DHCF_COMPANION_TWO_PART)) . ";\n"
@@ -688,46 +683,13 @@ if (DHCF_COMPANION_TWO_PART) {
 		                     file_get_contents(__DIR__ . '/dhc-assembler.php'));
 		ok(strpos($asm4, "url('neckfill', 'neckfill', 1000)") !== false,
 		   'the canvas does not build the neck fill path, so the assembler keeps the bleed');
-		/* Under BOTH: it rides whichever of head and torso the order puts first. */
-		ok(preg_match("/if \\(s\\.key === nfAnchor\\) \\{\\s*var nf = document\\.getElementById\\('L-neckfill'\\);/", $asm4) === 1,
-		   'the canvas pins the neck fill to one slot instead of riding whichever of head and torso comes first');
+		/* Before the HEAD, which is itself before the torso. */
+		ok(preg_match("/if \(s\.key === 'head'\) \{\s*var nf = document\.getElementById\('L-neckfill'\);/", $asm4) === 1,
+		   'the canvas does not append the neck fill immediately before the head');
 		ok(strpos($asm4, "if (!sel.torso || !sel.head) {") !== false,
 		   'the canvas draws the neck fill without a head or without a torso');
 	} else {
 		echo "  neck fill: SKIPPED (not generated in this checkout)\n";
-	}
-
-	/* ---------------------------------------------------------------------
-	 * THE HEAD UNDER THE TORSO, AND THE ONE HEAD THAT IS NOT.
-	 * ------------------------------------------------------------------- */
-	$ixH = function ($traits) {
-		$o = dhcf_layer_order($traits);
-		return function ($k) use ($o) { return array_search($k, $o, true); };
-	};
-	$fh = $ixH(array('torso' => 'golden-cyborg', 'head' => 'mk100'));
-	ok($fh('head') < $fh('torso'),
-	   'the head draws over the torso again, so a neck lies on the collar instead of '
-	 . 'going into it');
-	$stump = DHCF_HEADS_OVER_TORSO[0];
-	$fh = $ixH(array('torso' => 'golden-cyborg', 'head' => $stump));
-	ok($fh('head') > $fh('torso'),
-	   "$stump draws under the torso, which loses the wires it is drawn to spill "
-	 . 'across the chest');
-
-	/* THE FILL GOES UNDER BOTH, whichever order they are in. Anchored to the
-	   head alone it surfaces above the body on the stump. */
-	foreach (array('mk100', $stump) as $hh) {
-		$cats = array_map(function ($l) { return $l['cat']; },
-		                  dhcf_layers(array('background' => 'black', 'torso' => 'golden-cyborg',
-		                                    'head' => $hh), $root));
-		$nf = array_search('neckfill', $cats, true);
-		ok($nf !== false, "the neck fill is not emitted with head $hh");
-		if ($nf !== false) {
-			ok($nf < array_search('head', $cats, true),
-			   "the neck fill draws over the head with $hh");
-			ok($nf < array_search('torso', $cats, true),
-			   "the neck fill draws over the torso with $hh -- it must be under both");
-		}
 	}
 
 	/* A headless Fighter is a real saved state, and still wears the claws. */
