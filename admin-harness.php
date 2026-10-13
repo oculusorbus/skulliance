@@ -610,11 +610,59 @@ ok($xo !== false && $sr !== false && $xo < $sr,
    words "toDataURL" and "catch" both appear passes when the try has been
    removed and the catch left dangling. */
 $tTry = strpos($cgNo, 'try {');
-$tUrl = strpos($cgNo, 'canvas.toDataURL');
+$tUrl = strpos($cgNo, 'canvas.toBlob');
 $tCat = strpos($cgNo, 'catch (e)');
 ok($tTry !== false && $tUrl !== false && $tCat !== false && $tTry < $tUrl && $tUrl < $tCat,
    'the export is not wrapped in try/catch, so a tainted canvas throws with no '
  . 'explanation after every avatar has loaded');
+/* A wall this size base64s to tens of megabytes, and a data URL puts every
+   one of them in an href attribute. The blob must also be revoked before a
+   redraw replaces it, or repeated draws leak the whole PNG each time. */
+ok(strpos($cgNo, 'canvas.toDataURL') === false,
+   'the avatar wall exports as a data URL, which at this size means a '
+ . 'multi-megabyte href attribute');
+ok(strpos($cgNo, 'revokeObjectURL') !== false,
+   'the previous blob is never revoked, so every redraw leaks a full-size PNG');
+
+/* ---------------------------------------------------------------------------
+ * A DOWNLOAD IS NOT A NAVIGATION (header.php)
+ *
+ * Tested here rather than in a header harness because the two pages that own
+ * a download link are both admin pages, and this is where they are covered.
+ *
+ * THE BUG: header.php intercepts link clicks to show the full-screen loader.
+ * Its "is this internal" test reads "anything without an http:// prefix is
+ * internal", so a data: URL qualified. It called preventDefault() -- killing
+ * the download -- and then set location.href to the data URL, which Chrome
+ * refuses to navigate to at the top level, and refuses SILENTLY. So nothing
+ * was requested, no page load ever arrived to dismiss the loader, and nine
+ * seconds later it reported that the connection was stuck. Reported on the
+ * avatar wall; admin-flyers.php had it too and had simply never been tried.
+ * ------------------------------------------------------------------------- */
+$hdSrc = file_get_contents(__DIR__ . '/header.php');
+$hdNo  = preg_replace('!/\*.*?\*/!s', '', $hdSrc);
+$hdNo  = preg_replace('~(?<![:/])//[^\n]*~', '', $hdNo);
+/* ORDER: the bail-out is worthless after preventDefault() has already
+   cancelled the save. Presence alone passes the broken arrangement. */
+$hDl  = strpos($hdNo, "a.hasAttribute('download')");
+$hPd  = strpos($hdNo, 'e.preventDefault()');
+ok($hDl !== false && $hPd !== false && $hDl < $hPd,
+   'the nav loader does not let <a download> through before preventDefault(), so '
+ . 'clicking a download cancels it and hangs the loader for nine seconds');
+/* data:, blob:, mailto:, tel: -- every scheme that is not a page. Order
+   again, for the same reason: bailing out after preventDefault() is too
+   late to be a bail-out. */
+$hSc = strpos($hdNo, '!/^https?:/i.test(href)');
+ok($hSc !== false && $hPd !== false && $hSc < $hPd,
+   'the nav loader still treats every non-http scheme (data:, blob:, mailto:, tel:) '
+ . 'as an internal page load');
+/* Both download pages must actually carry the attribute the exemption keys
+   on, or the fix above protects nothing. */
+foreach (array('admin-collage.php', 'admin-flyers.php') as $dlPage) {
+	$ds = file_get_contents(__DIR__ . '/' . $dlPage);
+	ok(preg_match('/\bdownload\s*=/', $ds) === 1 || strpos($ds, 'a.download') !== false,
+	   $dlPage . ' has no download attribute, so the nav-loader exemption does not apply to it');
+}
 /* It draws avatars through the shared builder, so an animated hash is .gif
    and a row that cannot make a URL gets the placeholder. */
 ok(strpos($cgNo, 'avatar_url(') !== false,

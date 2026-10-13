@@ -338,6 +338,33 @@
         if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
         var href = a.getAttribute('href');
         if (!href || href.charAt(0) === '#' || href.indexOf('javascript') === 0) return;
+
+        /*
+         * A DOWNLOAD IS NOT A NAVIGATION.
+         *
+         * <a download> saves a file and leaves the page exactly where it is,
+         * so there is nothing for the loader to wait on. Intercepting it was
+         * worse than pointless: preventDefault() cancelled the save, and the
+         * replacement `location.href = dest` sent the tab at the href -- a
+         * data: URL, which Chrome refuses to navigate to at the top level and
+         * refuses silently. The download never happened, the loader never had
+         * a page load to hide it, and nine seconds later it announced that the
+         * connection was stuck. Nothing had been requested at all.
+         *
+         * Reported on the avatar wall's Download PNG; admin-flyers.php had it
+         * too and nobody had tried it.
+         */
+        if (a.hasAttribute('download')) return;
+
+        /*
+         * Only http(s) is a page. The old test below reads "no http:// prefix
+         * means internal", so EVERY other scheme -- data:, blob:, mailto:,
+         * tel: -- came through as an internal page load and got the same
+         * treatment. There are no mailto: links on the platform today, which
+         * is the only reason this has not been reported before.
+         */
+        if (/^[a-z][a-z0-9+.\-]*:/i.test(href) && !/^https?:/i.test(href)) return;
+
         // Only internal links
         var isInternal = href.charAt(0) === '/' || href.charAt(0) === '.' ||
                          (!href.match(/^https?:\/\//) || href.indexOf(window.location.hostname) !== -1);

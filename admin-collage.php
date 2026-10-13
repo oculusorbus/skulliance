@@ -116,6 +116,7 @@ admin_chrome('collage');
 
 <script>
 (function () {
+  var dlUrl   = null;   /* revoked before each redraw, so repeated draws do not leak */
   var USERS   = <?php echo json_encode($cg_users, JSON_UNESCAPED_SLASHES); ?>;
   var SHOWNAM = <?php echo $cg_names ? 'true' : 'false'; ?>;
   var canvas  = document.getElementById('cg-canvas');
@@ -198,10 +199,33 @@ admin_chrome('collage');
           + (failed.length > 12 ? '…' : '') + '. Those hashes are stale; opening a page they '
           + 'appear on heals them, then draw again to include them.</span>'
         : '';
-      /* The export is the moment a tainted canvas reveals itself. */
+      /*
+       * A BLOB, NOT A DATA URL -- this wall is far bigger than the flyer.
+       *
+       * At this size the PNG base64s to tens of megabytes, and that whole
+       * string becomes an href attribute in the DOM. A blob: URL is a short
+       * handle to bytes the browser already holds, so the attribute stays
+       * tiny however large the wall gets, and the click saves it directly.
+       *
+       * (admin-flyers.php deliberately uses a data URL instead, for a
+       * different reason: it hands the image to a NEW window, and a blob
+       * owned by this document is not something an about:blank page can
+       * fetch when the user hits Save. Here the anchor lives in the same
+       * document that owns the blob, which is the case blobs are for.)
+       *
+       * The export is also the moment a tainted canvas reveals itself --
+       * toBlob throws SecurityError here, synchronously, exactly as
+       * toDataURL did.
+       */
       try {
-        dl.href = canvas.toDataURL('image/png');
-        dl.hidden = false;
+        if (dlUrl) { URL.revokeObjectURL(dlUrl); dlUrl = null; }
+        canvas.toBlob(function (blob) {
+          if (!blob) { status.textContent = 'Drawn, but the browser would not encode the PNG.'; return; }
+          dlUrl = URL.createObjectURL(blob);
+          dl.href = dlUrl;
+          dl.hidden = false;
+          status.textContent += '  PNG is ' + (blob.size / 1048576).toFixed(1) + ' MB.';
+        }, 'image/png');
       } catch (e) {
         status.textContent = 'Drawn, but the canvas is tainted so it cannot be exported: '
                            + e.message;
