@@ -512,13 +512,12 @@ letting you build something that renders wrongly. Some of what it handles:
   face. The **comic covers** are full-frame treatments — masthead, price box,
   barcode — and the character deliberately breaks out of them: head, headgear,
   weapon and arms all draw over the frame.
-- **There is a black fill behind every torso's neck.** Not every head reaches
-  the edge of the socket it sits in, and the gap left over is a hole in the
-  character's own outline — so the background showed through it and the head
-  read as floating. One flat black shape under the torso closes it for every
-  torso and head at once. It sits *under* the torso on purpose: everything it
-  spills sideways or downwards is hidden by the torso itself, so only its top
-  edge has to be exact.
+- **There is a black block behind every torso's neckline.** Not every head
+  reaches the edge of the socket it sits in, and the gap left over is a hole in
+  the character's own outline — so the background showed through it and the
+  head read as floating. One black block under the torso closes it for every
+  torso and head at once. It sits *under* the torso on purpose: anything it
+  spills is hidden by the torso itself.
 - **The Saber Tech Headgear draws over the DH Vision Shoulder Cam.** A
   companion normally draws over the headgear, which is right for the ones that
   hover. This helmet's pipe comes down past the shoulder, and the cam is bolted

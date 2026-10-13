@@ -620,30 +620,58 @@ if (DHCF_COMPANION_TWO_PART) {
 			   "neckfill/neckfill.png is missing at {$sz}px");
 		}
 		/*
-		 * AND IT MUST BE CURRENT. The shape is derived from every torso, arm
-		 * and head at once, so adding a single head can invalidate it --
-		 * silently, with no error anywhere, leaving a fill that is either
-		 * short of the new socket or unsafe over the new head. The generator
-		 * records a fingerprint of its inputs; this re-derives it from the art
-		 * on disk and compares.
+		 * THE TWO SIZES MUST BE THE SAME DRAWING.
+		 *
+		 * The 1000px block is authored by hand; the 250px one is resampled
+		 * from it by dhc-neckfill.php. If they are edited independently they
+		 * drift, and the thumbnail keeps a bleed the full size does not --
+		 * which is invisible until somebody looks at a card. Compared by the
+		 * fraction of the frame each covers and where it sits, not pixel for
+		 * pixel, because resampling is lossy by design.
+		 *
+		 * (There is no fingerprint file any more. The old generator derived
+		 * the shape from every torso, arm and head, so one new head could
+		 * invalidate it and staleness had to be detectable. An authored block
+		 * is not derived from anything, so there is nothing to go stale
+		 * against and a manifest would only claim a guarantee that is gone.)
 		 */
-		$nfj = $root . '/1000/neckfill/neckfill.json';
-		if (is_file($nfj)) {
-			$meta = json_decode(file_get_contents($nfj), true);
-			$fp = array();
-			foreach (array('torso','torso-noarms','arms','head') as $d) {
-				foreach (glob($root . '/1000/' . $d . '/*.png') as $f) {
-					$fp[] = $d . '/' . basename($f) . ':' . filesize($f);
-				}
+		$nfBox = function ($png) {
+			$im = @imagecreatefrompng($png);
+			if (!$im) return null;
+			if (!imageistruecolor($im)) imagepalettetotruecolor($im);
+			$w = imagesx($im); $h = imagesy($im);
+			$n = 0; $x0 = $w; $x1 = -1; $y0 = $h; $y1 = -1;
+			for ($y = 0; $y < $h; $y++) for ($x = 0; $x < $w; $x++) {
+				if (((imagecolorat($im, $x, $y) >> 24) & 0x7F) >= 64) continue;
+				$n++;
+				if ($x < $x0) $x0 = $x; if ($x > $x1) $x1 = $x;
+				if ($y < $y0) $y0 = $y; if ($y > $y1) $y1 = $y;
 			}
-			sort($fp);
-			ok(isset($meta['hash']) && $meta['hash'] === sha1(implode("\n", $fp)),
-			   'the neck fill is STALE -- the torso/arms/head art has changed since it was '
-			 . 'generated. Run: php dhc-neckfill.php');
-			ok(isset($meta['inputs']) && (int)$meta['inputs'] === count($fp),
-			   'the neck fill was generated from a different number of art files than are on disk now');
-		} else {
-			ok(false, 'neckfill.json is missing, so there is no way to tell whether the fill is current');
+			if ($x1 < 0) return null;
+			return array('frac' => $n / ($w * $h), 'x0' => $x0 / $w, 'x1' => $x1 / $w,
+			             'y0' => $y0 / $h, 'y1' => $y1 / $h);
+		};
+		$bigBox   = $nfBox($root . '/1000/neckfill/neckfill.png');
+		$smallBox = $nfBox($root . '/250/neckfill/neckfill.png');
+		ok($bigBox !== null, 'the 1000px neck fill is empty or unreadable');
+		ok($smallBox !== null, 'the 250px neck fill is empty or unreadable');
+		if ($bigBox && $smallBox) {
+			ok(abs($bigBox['frac'] - $smallBox['frac']) < 0.002,
+			   sprintf('the two neck fills cover different amounts of the frame (%.2f%% vs %.2f%%) '
+			         . '-- run: php dhc-neckfill.php',
+			           $bigBox['frac']*100, $smallBox['frac']*100));
+			foreach (array('x0','x1','y0','y1') as $edge) {
+				ok(abs($bigBox[$edge] - $smallBox[$edge]) < 0.01,
+				   "the two neck fills do not sit in the same place ($edge differs) -- "
+				 . 'run: php dhc-neckfill.php');
+			}
+			/* A block, not a full-body silhouette. The first version of this
+			   covered 21.7% of the frame and was wrong for it: it only has to
+			   cover the neckline, and everything else it claimed was hidden
+			   under a torso doing nothing. */
+			ok($bigBox['frac'] < 0.05,
+			   sprintf('the neck fill covers %.1f%% of the frame -- it is meant to be a block at '
+			         . 'the neckline, not a body-sized shape', $bigBox['frac']*100));
 		}
 
 		/* And the canvas draws it, in the same place. */

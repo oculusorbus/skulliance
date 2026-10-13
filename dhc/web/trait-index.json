@@ -1,0 +1,1053 @@
+{
+ "background": {
+  "advanced-circuit-1": {
+   "name": "Advanced Circuit #1",
+   "file": "advanced-circuit-1.png",
+   "source": "Advanced_Circuit_#1.jpg"
+  },
+  "advanced-circuit-2": {
+   "name": "Advanced Circuit #2",
+   "file": "advanced-circuit-2.png",
+   "source": "Advanced_Circuit_#2.jpg"
+  },
+  "black": {
+   "name": "Black",
+   "file": "black.png",
+   "source": "Black.jpg"
+  },
+  "bright-red": {
+   "name": "Bright Red",
+   "file": "bright-red.png",
+   "source": "Bright_Red.jpg"
+  },
+  "dark-explosion": {
+   "name": "Dark Explosion",
+   "file": "dark-explosion.png",
+   "source": "Dark_Explosion.jpg"
+  },
+  "data-tunnel": {
+   "name": "Data Tunnel",
+   "file": "data-tunnel.png",
+   "source": "Data_Tunnel.jpg"
+  },
+  "dh-aracnyd-web": {
+   "name": "DH Aracnyd Web",
+   "file": "dh-aracnyd-web.png",
+   "source": "DH_Aracnyd_Web.jpg"
+  },
+  "dh-killer-bubbles": {
+   "name": "DH Killer Bubbles",
+   "file": "dh-killer-bubbles.png",
+   "source": "DH_Killer_Bubbles.jpg"
+  },
+  "dh-landscape": {
+   "name": "DH Landscape",
+   "file": "dh-landscape.png",
+   "source": "DH_Landscape.jpg"
+  },
+  "dh-nebula-02": {
+   "name": "DH Nebula #02",
+   "file": "dh-nebula-02.png",
+   "source": "DH_Nebula_#02.jpg"
+  },
+  "dh-nebula-1": {
+   "name": "DH Nebula #1",
+   "file": "dh-nebula-1.png",
+   "source": "DH_Nebula_#1.jpg"
+  },
+  "dh-nebula-3": {
+   "name": "DH Nebula #3",
+   "file": "dh-nebula-3.png",
+   "source": "DH_Nebula_#3.jpg"
+  },
+  "dh-thunder": {
+   "name": "DH Thunder",
+   "file": "dh-thunder.png",
+   "source": "DH_Thunder.jpg"
+  },
+  "digital-abyss": {
+   "name": "Digital Abyss",
+   "file": "digital-abyss.png",
+   "source": "Digital_Abyss.jpg"
+  },
+  "digital-flames-1": {
+   "name": "Digital Flames #1",
+   "file": "digital-flames-1.png",
+   "source": "Digital_Flames_#1.jpg"
+  },
+  "digital-flames-2": {
+   "name": "Digital Flames #2",
+   "file": "digital-flames-2.png",
+   "source": "Digital_Flames_#2.jpg"
+  },
+  "digital-trap-01": {
+   "name": "Digital Trap #01",
+   "file": "digital-trap-01.png",
+   "source": "Digital_Trap_#01.jpg"
+  },
+  "digital-trap-03": {
+   "name": "Digital Trap #03",
+   "file": "digital-trap-03.png",
+   "source": "Digital_Trap_#03.jpg"
+  },
+  "digital-trap-04": {
+   "name": "Digital Trap #04",
+   "file": "digital-trap-04.png",
+   "source": "Digital_Trap_#04.jpg"
+  },
+  "digital-trap-2": {
+   "name": "Digital Trap #2",
+   "file": "digital-trap-2.png",
+   "source": "Digital_Trap_#2.jpg"
+  },
+  "eon-raider-spacecraft-window": {
+   "name": "Eon Raider Spacecraft Window",
+   "file": "eon-raider-spacecraft-window.png",
+   "source": "Eon_Raider_Spacecraft_Window.jpg"
+  },
+  "exoplanet-landscape": {
+   "name": "Exoplanet Landscape",
+   "file": "exoplanet-landscape.png",
+   "source": "Exoplanet_Landscape.jpg"
+  },
+  "experimentation-facility-entrance": {
+   "name": "Experimentation Facility Entrance",
+   "file": "experimentation-facility-entrance.png",
+   "source": "Experimentation_Facility_Entrance.jpg"
+  },
+  "hellscape": {
+   "name": "Hellscape",
+   "file": "hellscape.png",
+   "source": "Hellscape.jpg"
+  },
+  "light-blue": {
+   "name": "Light Blue",
+   "file": "light-blue.png",
+   "source": "Light_Blue.jpg"
+  },
+  "light-green": {
+   "name": "Light Green",
+   "file": "light-green.png",
+   "source": "Light_Green.jpg"
+  },
+  "light-purple": {
+   "name": "Light Purple",
+   "file": "light-purple.png",
+   "source": "Light_Purple.jpg"
+  },
+  "light-yellow": {
+   "name": "Light Yellow",
+   "file": "light-yellow.png",
+   "source": "Light_Yellow.jpg"
+  },
+  "quasar-tf-39-sun": {
+   "name": "Quasar TF-39 Sun",
+   "file": "quasar-tf-39-sun.png",
+   "source": "Quasar_TF-39_Sun.jpg"
+  },
+  "red": {
+   "name": "Red",
+   "file": "red.png",
+   "source": "Red.jpg"
+  },
+  "red-planet-decoy": {
+   "name": "Red Planet Decoy",
+   "file": "red-planet-decoy.png",
+   "source": "Red Planet Decoy.PNG"
+  },
+  "white": {
+   "name": "White",
+   "file": "white.png",
+   "source": "White.jpg"
+  },
+  "wormhole-passage": {
+   "name": "Wormhole Passage",
+   "file": "wormhole-passage.png",
+   "source": "Wormhole_Passage.jpg"
+  },
+  "xlon-ddos-attack": {
+   "name": "XLON Ddos Attack",
+   "file": "xlon-ddos-attack.png",
+   "source": "XLON_Ddos_Attack.jpg"
+  },
+  "xlon-s-2yk-attack-01": {
+   "name": "XLON s 2YK Attack #01",
+   "file": "xlon-s-2yk-attack-01.png",
+   "source": "XLON_s_2YK_Attack_#01.jpg"
+  },
+  "xlon-s-2yk-attack-02": {
+   "name": "XLON s 2YK Attack #02",
+   "file": "xlon-s-2yk-attack-02.png",
+   "source": "XLON_s_2YK_Attack_#02.jpg"
+  },
+  "xlon-s-building-trap": {
+   "name": "XLON s Building Trap",
+   "file": "xlon-s-building-trap.png",
+   "source": "XLON_s_Building_Trap.jpg"
+  },
+  "xlon-s-digital-smoke-attack": {
+   "name": "XLON s Digital Smoke Attack",
+   "file": "xlon-s-digital-smoke-attack.png",
+   "source": "XLON_s_Digital_Smoke_Attack.jpg"
+  },
+  "xlon-s-disintegrating-bubbles": {
+   "name": "XLON s Disintegrating Bubbles",
+   "file": "xlon-s-disintegrating-bubbles.png",
+   "source": "XLON_s_Disintegrating_Bubbles.jpg"
+  },
+  "xlon-s-optical-attack": {
+   "name": "XLON s Optical Attack",
+   "file": "xlon-s-optical-attack.png",
+   "source": "XLON_s_Optical_Attack.jpg"
+  },
+  "xlon-s-psi-attack": {
+   "name": "XLON s Psi Attack",
+   "file": "xlon-s-psi-attack.png",
+   "source": "XLON_s_Psi_Attack.jpg"
+  },
+  "xlons-building-interior": {
+   "name": "XLONs Building Interior",
+   "file": "xlons-building-interior.png",
+   "source": "XLONs_Building_Interior.jpg"
+  },
+  "xlons-s-complex": {
+   "name": "XLONs s Complex",
+   "file": "xlons-s-complex.png",
+   "source": "XLONs_s_Complex.jpg"
+  }
+ },
+ "torso": {
+  "amplified-dreadnought": {
+   "name": "Amplified Dreadnought",
+   "file": "amplified-dreadnought.png",
+   "source": "Amplified_Dreadnought.png"
+  },
+  "bone-robot": {
+   "name": "Bone robot",
+   "file": "bone-robot.png",
+   "source": "Bone_robot.png"
+  },
+  "c-4589-mechanic": {
+   "name": "C-4589 Mechanic",
+   "file": "c-4589-mechanic.png",
+   "source": "C-4589_Mechanic.png"
+  },
+  "c38": {
+   "name": "C38",
+   "file": "c38.png",
+   "source": "C38.png"
+  },
+  "c73": {
+   "name": "C73",
+   "file": "c73.png",
+   "source": "C73.png"
+  },
+  "cyber-venom-predator": {
+   "name": "Cyber Venom Predator",
+   "file": "cyber-venom-predator.png",
+   "source": "Cyber_Venom_Predator.png"
+  },
+  "data-explorer": {
+   "name": "Data Explorer",
+   "file": "data-explorer.png",
+   "source": "Data_Explorer.png"
+  },
+  "dh-alien-punk": {
+   "name": "DH Alien Punk",
+   "file": "dh-alien-punk.png",
+   "source": "DH_Alien_Punk.png"
+  },
+  "dh-cop": {
+   "name": "DH Cop",
+   "file": "dh-cop.png",
+   "source": "DH_Cop.png"
+  },
+  "dh-cop-2": {
+   "name": "DH Cop #2",
+   "file": "dh-cop-2.png",
+   "source": "DH_Cop_#2.png"
+  },
+  "dh-samurai-suit": {
+   "name": "DH Samurai Suit",
+   "file": "dh-samurai-suit.png",
+   "source": "DH_Samurai suit.PNG"
+  },
+  "dynamo": {
+   "name": "Dynamo",
+   "file": "dynamo.png",
+   "source": "Dynamo.png"
+  },
+  "golden-cyborg": {
+   "name": "Golden Cyborg",
+   "file": "golden-cyborg.png",
+   "source": "Golden_Cyborg.png"
+  },
+  "inferno-wasp-guardian": {
+   "name": "Inferno Wasp Guardian",
+   "file": "inferno-wasp-guardian.png",
+   "source": "Inferno_Wasp_Guardian.png"
+  },
+  "mk100": {
+   "name": "MK100",
+   "file": "mk100.png",
+   "source": "Mk100.png"
+  },
+  "mk200": {
+   "name": "MK200",
+   "file": "mk200.png",
+   "source": "Mk200.png"
+  },
+  "nebula-demon": {
+   "name": "Nebula Demon",
+   "file": "nebula-demon.png",
+   "source": "Nebula_Demon.png"
+  },
+  "planet-8tz-specter": {
+   "name": "Planet 8TZ Specter",
+   "file": "planet-8tz-specter.png",
+   "source": "Planet_8TZ_Specter.png"
+  },
+  "planet-p-386-punk": {
+   "name": "Planet P-386 Punk",
+   "file": "planet-p-386-punk.png",
+   "source": "Planet_P-386_Punk.png"
+  },
+  "red-cyborg": {
+   "name": "Red Cyborg",
+   "file": "red-cyborg.png",
+   "source": "Red_Cyborg.png"
+  },
+  "silver-cyborg": {
+   "name": "Silver Cyborg",
+   "file": "silver-cyborg.png",
+   "source": "Silver_Cyborg.png"
+  },
+  "skeletal-robot": {
+   "name": "Skeletal Robot",
+   "file": "skeletal-robot.png",
+   "source": "Skeletal_Robot_.png"
+  },
+  "t39-planet-alien-flesh": {
+   "name": "T39 Planet Alien Flesh",
+   "file": "t39-planet-alien-flesh.png",
+   "source": "T39_Planet_Alien_Flesh.png"
+  },
+  "v12-raider": {
+   "name": "V12 Raider",
+   "file": "v12-raider.png",
+   "source": "V12_Raider.png"
+  },
+  "virtual-raider": {
+   "name": "Virtual Raider",
+   "file": "virtual-raider.png",
+   "source": "Virtual_Raider.png"
+  },
+  "zx350-centinel": {
+   "name": "ZX350 Centinel",
+   "file": "zx350-centinel.png",
+   "source": "ZX350_Centinel.png"
+  }
+ },
+ "arms": {
+  "connected-protector-limbs": {
+   "name": "Connected Protector Limbs",
+   "file": "connected-protector-limbs.png",
+   "source": "Connected_Protector_Limbs.png"
+  },
+  "cyber-666-knight-armor": {
+   "name": "Cyber 666 Knight Armor",
+   "file": "cyber-666-knight-armor.png",
+   "source": "Cyber_666_Knight_Armor.png"
+  },
+  "cyber-inferno-limbs": {
+   "name": "Cyber Inferno Limbs",
+   "file": "cyber-inferno-limbs.png",
+   "source": "Cyber_Inferno_Limbs.png"
+  },
+  "deflektor": {
+   "name": "Deflektor",
+   "file": "deflektor.png",
+   "source": "Deflektor.png"
+  },
+  "deteriorated-mk100-blaster-arms": {
+   "name": "Deteriorated MK100 Blaster Arms",
+   "file": "deteriorated-mk100-blaster-arms.png",
+   "source": "Deteriorated_MK100_Blaster_Arms.png"
+  },
+  "dh-pilot": {
+   "name": "DH Pilot",
+   "file": "dh-pilot.png",
+   "source": "DH_Pilot.png"
+  },
+  "dh-samurai-augmented-arms": {
+   "name": "DH Samurai Augmented Arms",
+   "file": "dh-samurai-augmented-arms.png",
+   "source": "DH_Samurai augmented arms.PNG"
+  },
+  "golden-cyborg-limbs": {
+   "name": "Golden Cyborg Limbs",
+   "file": "golden-cyborg-limbs.png",
+   "source": "Golden_Cyborg_Limbs.png"
+  },
+  "head-chopper": {
+   "name": "Head Chopper",
+   "file": "head-chopper.png",
+   "source": "Head_Chopper.png"
+  },
+  "infested-robo-limb": {
+   "name": "Infested Robo-Limb",
+   "file": "infested-robo-limb.png",
+   "source": "Infested_Robo-Limb.png"
+  },
+  "influenza-blaster-3k": {
+   "name": "Influenza Blaster 3K",
+   "file": "influenza-blaster-3k.png",
+   "source": "Influenza_Blaster_3K.png"
+  },
+  "mk100-blaster-arms": {
+   "name": "MK100 Blaster Arms",
+   "file": "mk100-blaster-arms.png",
+   "source": "MK100_Blaster_Arms.png"
+  },
+  "perforator-arm-replacement": {
+   "name": "Perforator Arm Accent",
+   "file": "perforator-arm-replacement.png",
+   "source": "Perforator_Arm_Replacement.png"
+  },
+  "robo-crusher-arms": {
+   "name": "Robo Crusher Arms",
+   "file": "robo-crusher-arms.png",
+   "source": "Robo_Crusher_Arms.png"
+  },
+  "silver-cyborg-limbs": {
+   "name": "Silver Cyborg Limbs",
+   "file": "silver-cyborg-limbs.png",
+   "source": "Silver_Cyborg_Limbs.png"
+  },
+  "skeletal-stabber": {
+   "name": "Skeletal Stabber",
+   "file": "skeletal-stabber.png",
+   "source": "Skeletal_Stabber.png"
+  },
+  "symbio-flexx": {
+   "name": "symbio-flexx",
+   "file": "symbio-flexx.png",
+   "source": "symbiō-flexx_.png"
+  },
+  "turret-blue-cyborg-limbs": {
+   "name": "Turret Blue Cyborg Limbs",
+   "file": "turret-blue-cyborg-limbs.png",
+   "source": "Turret_Blue_Cyborg_Limbs.png"
+  }
+ },
+ "head": {
+  "alien-zombie": {
+   "name": "Alien Zombie",
+   "file": "alien-zombie.png",
+   "source": "Alien_Zombie.png"
+  },
+  "alien-zombie-02": {
+   "name": "Alien Zombie #02",
+   "file": "alien-zombie-02.png",
+   "source": "Alien_Zombie_#02.png"
+  },
+  "beheaded-cyborg": {
+   "name": "Beheaded Cyborg",
+   "file": "beheaded-cyborg.png",
+   "source": "Beheaded_Cyborg.png"
+  },
+  "broken-xlon-repeater-1": {
+   "name": "Broken XLON Repeater 1",
+   "file": "broken-xlon-repeater-1.png",
+   "source": "Broken_XLON_Repeater 1.png"
+  },
+  "broken-xlon-repeater": {
+   "name": "Broken XLON Repeater",
+   "file": "broken-xlon-repeater.png",
+   "source": "Broken_XLON_Repeater.png"
+  },
+  "c73": {
+   "name": "C73",
+   "file": "c73.png",
+   "source": "C73.png"
+  },
+  "cyborg-stryker": {
+   "name": "Cyborg Stryker",
+   "file": "cyborg-stryker.png",
+   "source": "Cyborg_Stryker.png"
+  },
+  "cyborg-stryker-02": {
+   "name": "Cyborg Stryker #02",
+   "file": "cyborg-stryker-02.png",
+   "source": "Cyborg_Stryker_#02.png"
+  },
+  "cyborg-stryker-03": {
+   "name": "Cyborg Stryker #03",
+   "file": "cyborg-stryker-03.png",
+   "source": "Cyborg_Stryker_#03.png"
+  },
+  "dh-alien-punk": {
+   "name": "DH Alien Punk",
+   "file": "dh-alien-punk.png",
+   "source": "DH_Alien_Punk.png"
+  },
+  "dh-cop-01": {
+   "name": "DH Cop #01",
+   "file": "dh-cop-01.png",
+   "source": "DH_Cop_#01.png"
+  },
+  "dh-cop-2": {
+   "name": "DH Cop #2",
+   "file": "dh-cop-2.png",
+   "source": "DH_Cop_#2.png"
+  },
+  "dh-demon": {
+   "name": "DH Demon",
+   "file": "dh-demon.png",
+   "source": "DH_Demon.png"
+  },
+  "dh-zombie": {
+   "name": "DH Zombie",
+   "file": "dh-zombie.png",
+   "source": "DH_Zombie.png"
+  },
+  "dh-cop-03-1": {
+   "name": "DH Cop #03 1",
+   "file": "dh-cop-03-1.png",
+   "source": "Dh_Cop_#03 1.png"
+  },
+  "dh-cop-03": {
+   "name": "DH Cop #03",
+   "file": "dh-cop-03.png",
+   "source": "Dh_Cop_#03.png"
+  },
+  "gas-mask": {
+   "name": "Gas Mask",
+   "file": "gas-mask.png",
+   "source": "Gas_Mask.png"
+  },
+  "golden-cyborg": {
+   "name": "Golden Cyborg",
+   "file": "golden-cyborg.png",
+   "source": "Golden_Cyborg.png"
+  },
+  "happy-cyborg-decoy": {
+   "name": "Happy Cyborg Decoy",
+   "file": "happy-cyborg-decoy.png",
+   "source": "Happy_Cyborg_Decoy.png"
+  },
+  "inferno-wasp-guardian": {
+   "name": "Inferno Wasp Guardian",
+   "file": "inferno-wasp-guardian.png",
+   "source": "Inferno_Wasp_Guardian.png"
+  },
+  "mk100": {
+   "name": "MK100",
+   "file": "mk100.png",
+   "source": "Mk100_.png"
+  },
+  "mk100-torso": {
+   "name": "MK100 Torso",
+   "file": "mk100-torso.png",
+   "source": "Mk100_Torso.png"
+  },
+  "mk200": {
+   "name": "MK200",
+   "file": "mk200.png",
+   "source": "Mk200.png"
+  },
+  "mk300": {
+   "name": "MK300",
+   "file": "mk300.png",
+   "source": "Mk300.png"
+  },
+  "mutant-goblin": {
+   "name": "Mutant Goblin",
+   "file": "mutant-goblin.png",
+   "source": "Mutant_Goblin_.png"
+  },
+  "planet-1kz-killer-alien": {
+   "name": "Planet 1KZ Killer Alien",
+   "file": "planet-1kz-killer-alien.png",
+   "source": "Planet_1KZ_Killer_Alien.png"
+  },
+  "planet-8tz-specter-1": {
+   "name": "Planet 8TZ Specter 1",
+   "file": "planet-8tz-specter-1.png",
+   "source": "Planet_8TZ_Specter 1.png"
+  },
+  "planet-8tz-specter": {
+   "name": "Planet 8TZ Specter",
+   "file": "planet-8tz-specter.png",
+   "source": "Planet_8TZ_Specter.png"
+  },
+  "predator": {
+   "name": "Predator",
+   "file": "predator.png",
+   "source": "Predator.png"
+  },
+  "sentinel": {
+   "name": "Sentinel",
+   "file": "sentinel.png",
+   "source": "Sentinel.png"
+  },
+  "silver-cyborg": {
+   "name": "Silver Cyborg",
+   "file": "silver-cyborg.png",
+   "source": "Silver_Cyborg.png"
+  },
+  "u-e-mutant-01": {
+   "name": "U.E. Mutant #01",
+   "file": "u-e-mutant-01.png",
+   "source": "U.E._Mutant_#01.png"
+  },
+  "u-e-mutant-02": {
+   "name": "U.E. Mutant #02",
+   "file": "u-e-mutant-02.png",
+   "source": "U.E._Mutant_#02.png"
+  },
+  "v12-punk-raider": {
+   "name": "V12 Punk Raider",
+   "file": "v12-punk-raider.png",
+   "source": "V12_Punk_Raider.png"
+  },
+  "xbot": {
+   "name": "XBot",
+   "file": "xbot.png",
+   "source": "XBot_.png"
+  }
+ },
+ "headgear": {
+  "666-demon-headgear": {
+   "name": "666 Demon Headgear",
+   "file": "666-demon-headgear.png",
+   "source": "666_Demon_Headgear.png"
+  },
+  "alien-predator": {
+   "name": "Alien Predator",
+   "file": "alien-predator.png",
+   "source": "Alien_Predator.png"
+  },
+  "alien-skull": {
+   "name": "Alien Skull",
+   "file": "alien-skull.png",
+   "source": "Alien_Skull_.png"
+  },
+  "arachno-neural-implant": {
+   "name": "Arachno Neural Implant",
+   "file": "arachno-neural-implant.png",
+   "source": "Arachno_Neural_Implant.png"
+  },
+  "bio-circuit-head-port": {
+   "name": "Bio Circuit Head Port",
+   "file": "bio-circuit-head-port.png",
+   "source": "Bio_Circuit_Head_Port.png"
+  },
+  "code-prisoner-helmet": {
+   "name": "Code Prisoner Helmet",
+   "file": "code-prisoner-helmet.png",
+   "source": "Code_Prisoner_Helmet.png"
+  },
+  "cyber-insekt-helmet": {
+   "name": "Cyber Insekt Helmet",
+   "file": "cyber-insekt-helmet.png",
+   "source": "Cyber_Insekt_Helmet.png"
+  },
+  "cyber-knight-helmet": {
+   "name": "Cyber Knight Helmet",
+   "file": "cyber-knight-helmet.png",
+   "source": "Cyber_Knight_Helmet.png"
+  },
+  "cyber-purr-helmet": {
+   "name": "Cyber Purr Helmet",
+   "file": "cyber-purr-helmet.png",
+   "source": "Cyber_Purr_Helmet.png"
+  },
+  "cyber-voodoo": {
+   "name": "Cyber Voodoo",
+   "file": "cyber-voodoo.png",
+   "source": "Cyber_Voodoo.png"
+  },
+  "cyber-voodoo-1": {
+   "name": "Cyber Voodoo 1",
+   "file": "cyber-voodoo-1.png",
+   "source": "Cyber_Voodoo 1.png"
+  },
+  "damaged-mk100-scuba-headgear": {
+   "name": "Damaged MK100 Scuba Headgear",
+   "file": "damaged-mk100-scuba-headgear.png",
+   "source": "Damaged_MK100_Scuba_Headgear.png"
+  },
+  "dh-destroyer": {
+   "name": "DH Destroyer",
+   "file": "dh-destroyer.png",
+   "source": "DH_Destroyer.png"
+  },
+  "dh-fire-goggles": {
+   "name": "DH Fire Goggles",
+   "file": "dh-fire-goggles.png",
+   "source": "DH_Fire_Goggles.png"
+  },
+  "dh-insekto-helmet": {
+   "name": "DH Insekto Helmet",
+   "file": "dh-insekto-helmet.png",
+   "source": "DH_Insekto helmet.PNG"
+  },
+  "dh-manta-ray-helmet": {
+   "name": "DH Manta Ray Helmet",
+   "file": "dh-manta-ray-helmet.png",
+   "source": "DH_Manta Ray helmet.PNG"
+  },
+  "dh-samurai-helmet": {
+   "name": "DH Samurai Helmet",
+   "file": "dh-samurai-helmet.png",
+   "source": "DH_Samurai Helmet.PNG"
+  },
+  "dh-sorceror": {
+   "name": "DH Sorceror",
+   "file": "dh-sorceror.png",
+   "source": "DH_Sorceror.png"
+  },
+  "dm-mask": {
+   "name": "DM Mask",
+   "file": "dm-mask.png",
+   "source": "DØØM_Mask.png"
+  },
+  "e-pharaoh-head": {
+   "name": "E Pharaoh Head",
+   "file": "e-pharaoh-head.png",
+   "source": "E_Pharaoh_Head.png"
+  },
+  "golden-cyber-plague-detecting-mask": {
+   "name": "Golden Cyber Plague Detecting Mask",
+   "file": "golden-cyber-plague-detecting-mask.png",
+   "source": "Golden_Cyber_Plague_Detecting_Mask.png"
+  },
+  "killer-phantom-mask": {
+   "name": "Killer Phantom Mask",
+   "file": "killer-phantom-mask.png",
+   "source": "Killer_Phantom_Mask.png"
+  },
+  "malware-detecting-mask": {
+   "name": "Malware Detecting Mask",
+   "file": "malware-detecting-mask.png",
+   "source": "Malware_Detecting_Mask.png"
+  },
+  "merged": {
+   "name": "Merged",
+   "file": "merged.png",
+   "source": "Merged.png"
+  },
+  "mk100-codesea-explorer-helmet": {
+   "name": "MK100 Codesea Explorer Helmet",
+   "file": "mk100-codesea-explorer-helmet.png",
+   "source": "MK100_Codesea_Explorer_Helmet.png"
+  },
+  "mk100-scuba-headgear": {
+   "name": "MK100 Scuba Headgear",
+   "file": "mk100-scuba-headgear.png",
+   "source": "MK100_Scuba_Headgear.png"
+  },
+  "mk200-cyber-plague-vr-mask": {
+   "name": "MK200 Cyber Plague VR Mask",
+   "file": "mk200-cyber-plague-vr-mask.png",
+   "source": "MK200_Cyber_Plague_VR_Mask.png"
+  },
+  "red-cyborg-helmet": {
+   "name": "Red Cyborg Helmet",
+   "file": "red-cyborg-helmet.png",
+   "source": "Red_Cyborg_Helmet.png"
+  },
+  "saber-tech-headgear": {
+   "name": "Saber Tech Headgear",
+   "file": "saber-tech-headgear.png",
+   "source": "Saber_Tech_Headgear.png"
+  },
+  "skull-collector-helmet": {
+   "name": "Skull Collector Helmet",
+   "file": "skull-collector-helmet.png",
+   "source": "Skull_Collector_Helmet.png"
+  },
+  "steel-viking-helmet": {
+   "name": "Steel Viking Helmet",
+   "file": "steel-viking-helmet.png",
+   "source": "Steel_Viking_Helmet.png"
+  },
+  "superbug-3": {
+   "name": "Superbug 3",
+   "file": "superbug-3.png",
+   "source": "Superbug_3.png"
+  },
+  "tank-helmet": {
+   "name": "Tank Helmet",
+   "file": "tank-helmet.png",
+   "source": "Tank Helmet.PNG"
+  },
+  "trojan-detection-mask": {
+   "name": "Trojan Detection Mask",
+   "file": "trojan-detection-mask.png",
+   "source": "Trojan_Detection_Mask.png"
+  },
+  "ww2-helmet": {
+   "name": "WW2 Helmet",
+   "file": "ww2-helmet.png",
+   "source": "WW2_Helmet.png"
+  },
+  "xlon-implant": {
+   "name": "XLON Implant",
+   "file": "xlon-implant.png",
+   "source": "XLON_Implant.png"
+  }
+ },
+ "weapon": {
+  "annihilation-belt": {
+   "name": "Annihilation Belt",
+   "file": "annihilation-belt.png",
+   "source": "Annihilation_Belt.png"
+  },
+  "axe": {
+   "name": "Axe",
+   "file": "axe.png",
+   "source": "Axe.png"
+  },
+  "bioweapon": {
+   "name": "Bioweapon",
+   "file": "bioweapon.png",
+   "source": "Bioweapon.png"
+  },
+  "dh-raider-equipment": {
+   "name": "DH Raider Equipment",
+   "file": "dh-raider-equipment.png",
+   "source": "DH_Raider_Equipment.png"
+  },
+  "dh-spike-blaster": {
+   "name": "DH Spike Blaster",
+   "file": "dh-spike-blaster.png",
+   "source": "DH_Spike_Blaster.png"
+  },
+  "dh-spike-blaster-1": {
+   "name": "DH Spike Blaster 1",
+   "file": "dh-spike-blaster-1.png",
+   "source": "DH_Spike_Blaster 1.png"
+  },
+  "electric-morning-star": {
+   "name": "Electric Morning Star",
+   "file": "electric-morning-star.png",
+   "source": "Electric_Morning_Star.png"
+  },
+  "lil-fren": {
+   "name": "Lil Fren",
+   "file": "lil-fren.png",
+   "source": "Lil_Fren.png"
+  },
+  "lil-fren-1": {
+   "name": "Lil Fren 1",
+   "file": "lil-fren-1.png",
+   "source": "Lil_Fren 1.png"
+  },
+  "mega-taser-cannon": {
+   "name": "Mega Taser Cannon",
+   "file": "mega-taser-cannon.png",
+   "source": "Mega_Taser_Cannon.png"
+  },
+  "mega-taser-cannon-1": {
+   "name": "Mega Taser Cannon 1",
+   "file": "mega-taser-cannon-1.png",
+   "source": "Mega_Taser_Cannon 1.png"
+  },
+  "plastic-blaster": {
+   "name": "Plastic Blaster",
+   "file": "plastic-blaster.png",
+   "source": "Plastic_Blaster.png"
+  },
+  "scythe": {
+   "name": "Scythe",
+   "file": "scythe.png",
+   "source": "Scythe.png"
+  },
+  "scythe-sash": {
+   "name": "Scythe Sash",
+   "file": "scythe-sash.png",
+   "source": "Scythe.png"
+  },
+  "skull-krusher": {
+   "name": "Skull Krusher",
+   "file": "skull-krusher.png",
+   "source": "Skull_Krusher_.png"
+  },
+  "skull-krusher-sash": {
+   "name": "Skull Krusher Sash",
+   "file": "skull-krusher-sash.png",
+   "source": "Skull_Krusher_.png"
+  }
+ },
+ "companion": {
+  "arachnid-laser-cannon": {
+   "name": "Arachnid Laser Cannon",
+   "file": "arachnid-laser-cannon.png",
+   "source": "Arachnid_Laser_Cannon.png"
+  },
+  "code-sea-predator": {
+   "name": "Code Sea Predator",
+   "file": "code-sea-predator.png",
+   "source": "Code_Sea_Predator.png"
+  },
+  "demon-companion": {
+   "name": "Demon Companion",
+   "file": "demon-companion.png",
+   "source": "Demon companion back.PNG"
+  },
+  "dh-vision-shoulder-cam": {
+   "name": "DH Vision Shoulder Cam",
+   "file": "dh-vision-shoulder-cam.png",
+   "source": "DH_Vision_Shoulder_Cam.png"
+  },
+  "golden-isopunk": {
+   "name": "Golden Isopunk",
+   "file": "golden-isopunk.png",
+   "source": "Golden_Isopunk.png"
+  },
+  "mk100-insekt": {
+   "name": "MK100 Insekt",
+   "file": "mk100-insekt.png",
+   "source": "MK100_Insekt.png"
+  },
+  "silver-isopunk": {
+   "name": "Silver Isopunk",
+   "file": "silver-isopunk.png",
+   "source": "Silver_Isopunk.png"
+  },
+  "threat-seeker-antenna": {
+   "name": "Threat Seeker Antenna",
+   "file": "threat-seeker-antenna.png",
+   "source": "Threat_Seeker_Antenna.png"
+  },
+  "u-vigilance-device-1": {
+   "name": "U. Vigilance Device #1",
+   "file": "u-vigilance-device-1.png",
+   "source": "U._Vigilance_Device_#1.png"
+  },
+  "u-vigilance-device-2": {
+   "name": "U. Vigilance Device #2",
+   "file": "u-vigilance-device-2.png",
+   "source": "U._Vigilance_Device_#2.png"
+  }
+ },
+ "effects": {
+  "2yk-flames": {
+   "name": "2YK Flames",
+   "file": "2yk-flames.png",
+   "source": "2YK_Flames.png"
+  },
+  "cyber-lava-attack": {
+   "name": "Cyber Lava Attack",
+   "file": "cyber-lava-attack.png",
+   "source": "Cyber_Lava_Attack.png"
+  },
+  "cyber-sparks": {
+   "name": "Cyber Sparks",
+   "file": "cyber-sparks.png",
+   "source": "Cyber_Sparks.png"
+  },
+  "dhc2-comic-cover-1": {
+   "name": "DHC2 Comic Cover #1",
+   "file": "dhc2-comic-cover-1.png",
+   "source": "DHC2_Comic_Cover_#1.png"
+  },
+  "dhc2-comic-cover-2": {
+   "name": "DHC2 Comic Cover #2",
+   "file": "dhc2-comic-cover-2.png",
+   "source": "DHC2_Comic_Cover_#2.png"
+  },
+  "dhc2-comic-cover-3": {
+   "name": "DHC2 Comic Cover #3",
+   "file": "dhc2-comic-cover-3.png",
+   "source": "DHC2_Comic_Cover_#3.png"
+  },
+  "dhc2-comic-cover-4": {
+   "name": "DHC2 Comic Cover #4",
+   "file": "dhc2-comic-cover-4.png",
+   "source": "DHC2 Comic Cover #4.PNG"
+  },
+  "digi-goo-trap": {
+   "name": "Digi Goo Trap",
+   "file": "digi-goo-trap.png",
+   "source": "Digi_Goo_Trap.png"
+  },
+  "digital-666-smoke": {
+   "name": "Digital 666 Smoke",
+   "file": "digital-666-smoke.png",
+   "source": "Digital_666_Smoke.png"
+  },
+  "digital-bubbles-1": {
+   "name": "Digital Bubbles #1",
+   "file": "digital-bubbles-1.png",
+   "source": "Digital_Bubbles_#1.png"
+  },
+  "digital-bubbles-2": {
+   "name": "Digital Bubbles #2",
+   "file": "digital-bubbles-2.png",
+   "source": "Digital_Bubbles_#2.png"
+  },
+  "digital-bubbles-3": {
+   "name": "Digital Bubbles #3",
+   "file": "digital-bubbles-3.png",
+   "source": "Digital_Bubbles_#3.png"
+  },
+  "digital-fire": {
+   "name": "Digital Fire",
+   "file": "digital-fire.png",
+   "source": "Digital_Fire.png"
+  },
+  "dissolving-code-attack": {
+   "name": "Dissolving Code Attack",
+   "file": "dissolving-code-attack.png",
+   "source": "Dissolving_Code_Attack.png"
+  },
+  "earth-recovery-system-interface": {
+   "name": "Earth Recovery System Interface",
+   "file": "earth-recovery-system-interface.png",
+   "source": "Earth Recovery System Interface.PNG"
+  },
+  "electricity": {
+   "name": "Electricity",
+   "file": "electricity.png",
+   "source": "Electricity.png"
+  },
+  "lava-thunder-attack": {
+   "name": "Lava Thunder Attack",
+   "file": "lava-thunder-attack.png",
+   "source": "Lava_Thunder_Attack.png"
+  },
+  "love-demonstration": {
+   "name": "Love Demonstration",
+   "file": "love-demonstration.png",
+   "source": "Love_Demonstration.png"
+  },
+  "virtual-smoke": {
+   "name": "Virtual Smoke",
+   "file": "virtual-smoke.png",
+   "source": "Virtual_Smoke.png"
+  },
+  "xlon-digi-fire-attack": {
+   "name": "XLON Digi Fire Attack",
+   "file": "xlon-digi-fire-attack.png",
+   "source": "XLON_Digi_Fire_Attack.png"
+  },
+  "xlon-s-black-fire-attack": {
+   "name": "XLON s Black Fire Attack",
+   "file": "xlon-s-black-fire-attack.png",
+   "source": "XLON_s_Black_Fire_Attack.png"
+  },
+  "xlon-s-chamber-destruction": {
+   "name": "XLON s Chamber Destruction",
+   "file": "xlon-s-chamber-destruction.png",
+   "source": "XLON_s_Chamber_Destruction.png"
+  },
+  "xlon-s-code-attack": {
+   "name": "XLON s Code Attack",
+   "file": "xlon-s-code-attack.png",
+   "source": "XLON_s_Code_Attack.png"
+  }
+ }
+}
