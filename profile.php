@@ -7,7 +7,7 @@ $name = "";
 $avatar_url = "";
 if (isset($_SESSION['userData'])) {
     extract($_SESSION['userData']);
-    $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
+    $avatar_url = avatar_url($discord_id, $avatar);
 }
 
 // Determine which profile to show
@@ -48,7 +48,7 @@ $show_nfts      = ($profile_user['visibility'] == 2);
  */
 $pf_games = profile_game_record($conn, (int)$profile_user['id']);
 $is_own_profile = isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] === $tid;
-$profile_avatar = "https://cdn.discordapp.com/avatars/{$profile_user['discord_id']}/{$profile_user['avatar']}.png";
+$profile_avatar = avatar_url($profile_user['discord_id'], $profile_user['avatar']);
 $display_name   = htmlspecialchars($profile_user['username']);
 $member_since   = date('M Y', strtotime($profile_user['date_created']));
 
@@ -1440,7 +1440,7 @@ $realm_con_info = [
                     <div class="faction-member-bg" style="<?php echo $fm_bg; ?>"></div>
                     <div class="faction-member-group">
                         <?php foreach ($group as $fm):
-                            $fm_av = "https://cdn.discordapp.com/avatars/{$fm['discord_id']}/{$fm['avatar']}.png";
+                            $fm_av = avatar_url($fm['discord_id'], $fm['avatar']);
                         ?>
                         <a href="profile.php?username=<?php echo urlencode($fm['username']); ?>" class="faction-member-row">
                             <img class="faction-member-avatar" src="<?php echo $fm_av; ?>?size=64" alt="" loading="lazy" onerror="this.src='icons/skull.png'">
@@ -1581,7 +1581,7 @@ $realm_con_info = [
     <div class="image-strip-section-label"><?php echo date('F'); ?> Opponents</div>
     <div class="opponents-grid">
         <?php foreach ($opponents as $opp):
-            $opp_av    = "https://cdn.discordapp.com/avatars/{$opp['discord_id']}/{$opp['avatar']}.png";
+            $opp_av    = avatar_url($opp['discord_id'], $opp['avatar']);
             $opp_tid   = (int)$opp['opp_theme_id'];
             $opp_bg    = $opp_tid ? "background-image:url('images/themes/{$opp_tid}.jpg')" : "background-color:#122030";
             $is_nemesis = !empty($opp['is_nemesis']);

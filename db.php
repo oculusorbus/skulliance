@@ -934,7 +934,7 @@ function dailyRewardAnnounce($conn, $day, $amount, $currency) {
 	$dr_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
 	$dr_discord_id = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
 	$dr_avatar     = isset($_SESSION['userData']['avatar'])     ? $_SESSION['userData']['avatar']     : '';
-	$dr_avatar_url = ($dr_discord_id && $dr_avatar) ? "https://cdn.discordapp.com/avatars/".$dr_discord_id."/".$dr_avatar.".png" : "";
+	$dr_avatar_url = ($dr_discord_id && $dr_avatar) ? avatar_url($dr_discord_id, $dr_avatar) : "";
 	$dr_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($dr_username);
 	$dr_mention    = $dr_discord_id ? "<@".$dr_discord_id.">" : $dr_username;
 	$streak_bar    = str_repeat("🔥", $day).str_repeat("⬜", 7 - $day);
@@ -1834,7 +1834,7 @@ function startMission($conn){
 						$m_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
 						$m_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
 						$m_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
-						$m_avatar_url = ($m_discord && $m_avatar) ? "https://cdn.discordapp.com/avatars/".$m_discord."/".$m_avatar.".png" : "";
+						$m_avatar_url = ($m_discord && $m_avatar) ? avatar_url($m_discord, $m_avatar) : "";
 						$m_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($m_username);
 						$m_slug       = strtolower(str_replace("'", "", str_replace(" ", "-", $title)));
 						$m_image_url  = "https://skulliance.io/staking/images/missions/".$m_slug.".".$extension;
@@ -1954,7 +1954,7 @@ function startAllFreeEligibleMissions($conn){
 		$sf_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
 		$sf_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
 		$sf_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
-		$sf_avatar_url = ($sf_discord && $sf_avatar) ? "https://cdn.discordapp.com/avatars/".$sf_discord."/".$sf_avatar.".png" : "";
+		$sf_avatar_url = ($sf_discord && $sf_avatar) ? avatar_url($sf_discord, $sf_avatar) : "";
 		$sf_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($sf_username);
 		$sf_mention    = $sf_discord ? "<@".$sf_discord.">" : $sf_username;
 		$sf_count      = count($sf_titles);
@@ -2249,7 +2249,7 @@ function startAutoMissions($conn) {
 		$am_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
 		$am_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
 		$am_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
-		$am_avatar_url = ($am_discord && $am_avatar) ? "https://cdn.discordapp.com/avatars/".$am_discord."/".$am_avatar.".png" : "";
+		$am_avatar_url = ($am_discord && $am_avatar) ? avatar_url($am_discord, $am_avatar) : "";
 		$am_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($am_username);
 		$am_mention    = $am_discord ? "<@".$am_discord.">" : $am_username;
 		$am_count      = count($auto_launched);
@@ -2482,7 +2482,7 @@ function startMaxMaxiMissions($conn) {
 	$mm_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
 	$mm_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
 	$mm_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
-	$mm_avatar_url = ($mm_discord && $mm_avatar) ? "https://cdn.discordapp.com/avatars/".$mm_discord."/".$mm_avatar.".png" : "";
+	$mm_avatar_url = ($mm_discord && $mm_avatar) ? avatar_url($mm_discord, $mm_avatar) : "";
 	$mm_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($mm_username);
 	$mm_mention    = $mm_discord ? "<@".$mm_discord.">" : $mm_username;
 	$mm_count      = count($launched);
@@ -2775,7 +2775,7 @@ function retreatMission($conn, $mission_id, $quest_id){
 	  	$rm_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
 	  	$rm_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
 	  	$rm_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
-	  	$rm_avatar_url = ($rm_discord && $rm_avatar) ? "https://cdn.discordapp.com/avatars/".$rm_discord."/".$rm_avatar.".png" : "";
+	  	$rm_avatar_url = ($rm_discord && $rm_avatar) ? avatar_url($rm_discord, $rm_avatar) : "";
 	  	$rm_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($rm_username);
 	  	$rm_slug       = strtolower(str_replace("'", "", str_replace(" ", "-", $rm_title)));
 	  	$rm_image_url  = $rm_title ? "https://skulliance.io/staking/images/missions/".$rm_slug.".".$rm_ext : "";
@@ -5345,7 +5345,7 @@ function checkRealmsLeaderboard($conn){
 		$highlight = (isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id']);
 		$offense = calculateRaidOffense($conn, $row['realm_id']);
 		$defense = calculateRaidDefense($conn, $row['realm_id']);
-		$avatar_url = "https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg";
+		$avatar_url = avatar_url($row["discord_id"], $row["avatar"]);
 		$name_html = htmlspecialchars($row['realm_name'])." <span style='opacity:.6'>&middot;</span> <a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 		$stats = [
 			'Faction' => $row['currency'],
@@ -5501,7 +5501,7 @@ function checkLeaderboard($conn, $clean, $project_id=0) {
 						$delegated = " Delegated";
 						$diamond_skull_count = " - ".getDiamondSkullTotal($conn, $row["user_id"])." Diamond Skulls";
 					}
-					$avatar_url = ($row["avatar"] != "") ? "https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg" : '/staking/icons/skull.png';
+					$avatar_url = ($row["avatar"] != "") ? avatar_url($row["discord_id"], $row["avatar"]) : '/staking/icons/skull.png';
 					$name_html = "<a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 					$stats = ['NFTs' => $row["total"].$delegated.$diamond_skull_count, 'Points' => (($project_id != 0) ? number_format($current_balance)." ".$row["currency"] : number_format($current_balance))];
 					$lb_rows[] = ['rank'=>$leaderboardCounter,'trophy'=>$trophy,'avatar_url'=>$avatar_url,'name'=>$name_html,'highlight'=>($highlight=="highlight"),'stats'=>$stats];
@@ -5795,7 +5795,7 @@ function checkDropShipLeaderboard($conn, $ds_project_id, $mode = 'ath') {
 
 		$did        = $row['discord_id'] ?? '';
 		$avatar_url = ($did !== '' && ($row['avatar'] ?? '') !== '')
-			? "https://cdn.discordapp.com/avatars/" . $did . "/" . $row['avatar'] . ".jpg"
+			? avatar_url($did, $row['avatar'])
 			: "icons/skull.png";
 
 		if ($leaderboardCounter <= 3) {
@@ -5973,7 +5973,7 @@ function checkMissionsUnlockedLeaderboard($conn) {
 		if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $uid) $fireworks = true;
 
 		$highlight  = isset($_SESSION['userData']['user_id']) && $uid == $_SESSION['userData']['user_id'];
-		$avatar_url = "https://cdn.discordapp.com/avatars/" . $u['discord_id'] . "/" . $u['avatar'] . ".jpg";
+		$avatar_url = avatar_url($u['discord_id'], $u['avatar']);
 		$name_html  = "<a href='profile.php?username=" . urlencode($u['username']) . "'>" . htmlspecialchars($u['username']) . "</a>";
 		$pct        = $global_total > 0 ? (int)round(($data['unlocked'] / $global_total) * 100) : 0;
 		$stats      = array(
@@ -6098,7 +6098,7 @@ function checkMissionsLeaderboard($conn, $monthly=false, $rewards=false){
 					$highlight = "highlight";
 				}
 			}
-			$avatar_url = "https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg";
+			$avatar_url = avatar_url($row["discord_id"], $row["avatar"]);
 			$name_html = "<a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 			$stats = ['Score'=>number_format($row["score"]),'Missions'=>number_format($row["total"]),'Success'=>number_format($row["success"]),'Failure'=>number_format($row["failure"]),'In Progress'=>$row["progress"]];
 			$reward_col = $monthly ? number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND" : '';
@@ -6239,7 +6239,7 @@ function checkRaidsLeaderboard($conn, $monthly=false, $rewards=false){
 					$highlight = "highlight";
 				}
 			}
-			$avatar_url = "https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg";
+			$avatar_url = avatar_url($row["discord_id"], $row["avatar"]);
 			$name_html = "<a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 			$stats = ['Faction'=>$row["currency"],'Score'=>number_format($row["score"]),'Raids'=>number_format($row["total"]),'Rewards'=>number_format($row["success"]),'Penalties'=>number_format($row["failure"]),'In Progress'=>$row["progress"]];
 			$reward_col = $monthly ? number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND" : '';
@@ -6508,7 +6508,7 @@ function checkStreaksLeaderboard($conn, $monthly=false, $rewards=false){
 					$highlight = "highlight";
 				}
 			}
-				$avatar_url = "https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg";
+				$avatar_url = avatar_url($row["discord_id"], $row["avatar"]);
 			$name_html = "<a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 			$stats = ['Streaks'=>number_format($row["streak_total"]),'Current Streak'=>$row["streak"]." days"];
 			$reward_col = $monthly ? number_format(round($carbon/$leaderboardCounter))." CARBON = ".number_format(floor(round($carbon/$leaderboardCounter)/100))." DIAMOND" : '';
@@ -6625,7 +6625,7 @@ function checkSkullSwapsLeaderboard($conn, $weekly=false, $rewards=false){
 					$highlight = "highlight";
 				}
 			}
-			$avatar_url = "https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg";
+			$avatar_url = avatar_url($row["discord_id"], $row["avatar"]);
 			$name_html = "<a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 			$score_label = $weekly ? "High Score" : "Avg High Score";
 			$stats = [$score_label=>number_format($row["max_score"]),'Attempts'=>number_format($row["attempts"])];
@@ -6743,7 +6743,7 @@ function checkBossBattlesLeaderboard($conn, $weekly=false, $rewards=false){
 					$highlight = "highlight";
 				}
 			}
-			$avatar_url = "https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg";
+			$avatar_url = avatar_url($row["discord_id"], $row["avatar"]);
 			$name_html = "<a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 			$stats = ['Dmg Dealt'=>number_format($row["damage_dealt_total"]),'Dmg Taken'=>number_format($row["damage_taken_total"]),'Encounters'=>number_format($row["encounters_total"])];
 			$reward_col = $weekly ? number_format(round($points/$leaderboardCounter))." CLAW/CARBON" : '';
@@ -6858,7 +6858,7 @@ function checkGauntletsLeaderboard($conn, $weekly=false, $rewards=false) {
 			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
 
 			$highlight   = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
-			$avatar_url  = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$avatar_url  = avatar_url($row['discord_id'], $row['avatar']);
 			$name_html   = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
 			$reward_col  = ($weekly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
 			$stats       = [
@@ -6971,7 +6971,7 @@ function checkCryptCrawlLeaderboard($conn, $weekly=false, $rewards=false) {
 			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
 
 			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
-			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$avatar_url = avatar_url($row['discord_id'], $row['avatar']);
 			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
 			$reward_col = ($weekly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
 			$stats      = [
@@ -7095,7 +7095,7 @@ function checkCryptConquestLeaderboard($conn, $monthly=false, $rewards=false) {
 			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
 
 			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
-			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$avatar_url = avatar_url($row['discord_id'], $row['avatar']);
 			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
 			$reward_col = ($monthly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
 			$stats      = [
@@ -7609,7 +7609,7 @@ function renderLeaderboardHub($conn) {
 				// distinction existed still render, they just fall through to
 				// the skull.
 				if ($champion['discord_id'] !== '' && $champion['avatar'] !== '') {
-					$av = "https://cdn.discordapp.com/avatars/" . $champion['discord_id'] . "/" . $champion['avatar'] . ".png";
+					$av = avatar_url($champion['discord_id'], $champion['avatar']);
 				} else if ($champion['avatar'] !== '') {
 					$av = $champion['avatar'];
 				} else {
@@ -8025,7 +8025,7 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 		if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $uid) $fireworks = true;
 
 		$highlight  = isset($_SESSION['userData']['user_id']) && $uid == $_SESSION['userData']['user_id'];
-		$avatar_url = "https://cdn.discordapp.com/avatars/" . $u['discord_id'] . "/" . $u['avatar'] . ".jpg";
+		$avatar_url = avatar_url($u['discord_id'], $u['avatar']);
 		$name_html  = "<a href='profile.php?username=" . urlencode($u['username']) . "'>" . htmlspecialchars($u['username']) . "</a>";
 		$stats = [
 			'Points'    => number_format($data['total_pts']),
@@ -8160,7 +8160,7 @@ function checkMonstrocityLeaderboard($conn, $monthly=false, $rewards=false){
 					$highlight = "highlight";
 				}
 			}
-			$avatar_url = "https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg";
+			$avatar_url = avatar_url($row["discord_id"], $row["avatar"]);
 			$name_html = "<a href='profile.php?username=".urlencode($row["username"])."'>".htmlspecialchars($row["username"])."</a>";
 			$level_label = $monthly ? "Level" : "Avg Level";
 			$score_label = $monthly ? "Score" : "Avg Score";
@@ -9338,7 +9338,7 @@ function retreatRaid($conn, $raid_id){
 	if($ri){
 		$off_mention    = $ri['off_discord'] ? "<@".$ri['off_discord'].">" : $ri['off_username'];
 		$def_mention    = $ri['def_discord'] ? "<@".$ri['def_discord'].">" : $ri['def_username'];
-		$off_avatar_url = ($ri['off_discord'] && $ri['off_avatar']) ? "https://cdn.discordapp.com/avatars/".$ri['off_discord']."/".$ri['off_avatar'].".png" : "";
+		$off_avatar_url = ($ri['off_discord'] && $ri['off_avatar']) ? avatar_url($ri['off_discord'], $ri['off_avatar']) : "";
 		$def_image_url  = $ri['def_theme_id'] ? "https://skulliance.io/staking/images/themes/".$ri['def_theme_id'].".jpg" : "";
 		$retreat_desc   = $off_mention." has called off the attack.\n\n";
 		$retreat_desc  .= "🏳️ **Retreating:** ".$ri['off_username']." — ".$ri['off_name']."\n";
@@ -9921,7 +9921,7 @@ function startRaid($conn, $defense_id, $duration, $consumables = array()){
 			$dur_res = $conn->query("SELECT duration FROM raids WHERE id='".$raid_id."'");
 			$dur_row = $dur_res ? $dur_res->fetch_assoc() : null;
 			$display_duration = $dur_row ? $dur_row['duration'] : $duration;
-			$off_avatar_url = ($off_discord && $off_avatar) ? "https://cdn.discordapp.com/avatars/".$off_discord."/".$off_avatar.".png" : "";
+			$off_avatar_url = ($off_discord && $off_avatar) ? avatar_url($off_discord, $off_avatar) : "";
 			$def_image_url  = $def_theme_id ? "https://skulliance.io/staking/images/themes/".$def_theme_id.".jpg" : "";
 			$raid_author = array("name" => $off_username." · ".$off_name, "icon_url" => $off_avatar_url, "url" => "https://skulliance.io/staking/profile.php?username=".urlencode($off_username));
 			$raid_desc  = $off_mention." has declared war!\n\n";
@@ -10194,10 +10194,10 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$rows[$decimal] .= "</div>"; // rc-card-header
 				// Avatars per column: session user vs opponent, assigned by raid direction
 				$_sess_avatar_url = (isset($_SESSION['userData']['discord_id'], $_SESSION['userData']['avatar']) && $_SESSION['userData']['avatar'] != '')
-					? 'https://cdn.discordapp.com/avatars/'.$_SESSION['userData']['discord_id'].'/'.$_SESSION['userData']['avatar'].'.jpg'
+					? avatar_url($_SESSION['userData']['discord_id'], $_SESSION['userData']['avatar'])
 					: '/staking/icons/skull.png';
 				$_opp_avatar_url = ($row['avatar'] != '')
-					? 'https://cdn.discordapp.com/avatars/'.$row['discord_id'].'/'.$row['avatar'].'.jpg'
+					? avatar_url($row['discord_id'], $row['avatar'])
 					: '/staking/icons/skull.png';
 				// outgoing: col1=attacker(session), col2=defender(opponent)
 				// incoming: col1=attacker(opponent), col2=defender(session)
@@ -10241,7 +10241,7 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				 * the battle animation straight from the row.
 				 */
 				$_rr_av = ($row['avatar'] != '')
-					? "https://cdn.discordapp.com/avatars/".$row['discord_id']."/".$row['avatar'].".jpg"
+					? avatar_url($row['discord_id'], $row['avatar'])
 					: "/staking/icons/skull.png";
 				if($status == "Completed"){
 					$_rr_stat = "<span class='rr-badge ".$_rc_outcome_class."'>".$_rc_outcome_badge."</span>";
@@ -10776,8 +10776,8 @@ function endRaid($conn, $raid_id){
 	$def_theme_id = $def_info ? $def_info['theme_id']   : '';
 	$off_mention  = $off_discord ? "<@".$off_discord.">" : $off_username;
 	$def_mention  = $def_discord ? "<@".$def_discord.">" : $def_username;
-	$off_avatar_url = ($off_discord && $off_avatar) ? "https://cdn.discordapp.com/avatars/".$off_discord."/".$off_avatar.".png" : "";
-	$def_avatar_url = ($def_discord && $def_avatar) ? "https://cdn.discordapp.com/avatars/".$def_discord."/".$def_avatar.".png" : "";
+	$off_avatar_url = ($off_discord && $off_avatar) ? avatar_url($off_discord, $off_avatar) : "";
+	$def_avatar_url = ($def_discord && $def_avatar) ? avatar_url($def_discord, $def_avatar) : "";
 	$off_image_url  = $off_theme_id ? "https://skulliance.io/staking/images/themes/".$off_theme_id.".jpg" : "";
 	$def_image_url  = $def_theme_id ? "https://skulliance.io/staking/images/themes/".$def_theme_id.".jpg" : "";
 	// Consumables used in this raid
@@ -10948,7 +10948,7 @@ function toggleRealmState($conn, $realm_id, $type){
 	$rs_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
 	$rs_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
 	$rs_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
-	$rs_avatar_url = ($rs_discord && $rs_avatar) ? "https://cdn.discordapp.com/avatars/".$rs_discord."/".$rs_avatar.".png" : "";
+	$rs_avatar_url = ($rs_discord && $rs_avatar) ? avatar_url($rs_discord, $rs_avatar) : "";
 	$rs_mention    = $rs_discord ? "<@".$rs_discord.">" : $rs_username;
 	$rs_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($rs_username);
 	$rs_res        = $conn->query("SELECT r.name AS realm_name, r.theme_id, p.name AS faction_name FROM realms r INNER JOIN projects p ON p.id = r.project_id WHERE r.id='".$realm_id."'");
@@ -11182,7 +11182,7 @@ function saveSwapScore($conn, $score){
 		$ss_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
 		$ss_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
 		$ss_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
-		$ss_avatar_url = ($ss_discord && $ss_avatar) ? "https://cdn.discordapp.com/avatars/".$ss_discord."/".$ss_avatar.".png" : "";
+		$ss_avatar_url = ($ss_discord && $ss_avatar) ? avatar_url($ss_discord, $ss_avatar) : "";
 		$ss_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($ss_username);
 		$ss_mention    = $ss_discord ? "<@".$ss_discord.">" : $ss_username;
 		$ss_desc       = $ss_mention." completed a Skull Swap round!".($ss_is_high ? " 🆕 **New High Score!**" : "")."\n\n";
@@ -13479,7 +13479,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	$wh_discord   = $_SESSION['userData']['discord_id'] ?? '';
 	$wh_avatar    = $_SESSION['userData']['avatar']     ?? '';
 	$wh_mention   = $wh_discord ? "<@$wh_discord>" : $wh_username;
-	$wh_ava_url   = ($wh_discord && $wh_avatar) ? "https://cdn.discordapp.com/avatars/$wh_discord/$wh_avatar.png" : "";
+	$wh_ava_url   = ($wh_discord && $wh_avatar) ? avatar_url($wh_discord, $wh_avatar) : "";
 	$wh_profile   = "https://skulliance.io/staking/profile.php?username=" . urlencode($wh_username);
 	// Player NFT
 	$wh_pnft_r    = $conn->query("SELECT n.name, n.ipfs, n.collection_id, c.project_id, p.name AS project_name FROM nfts n INNER JOIN collections c ON c.id=n.collection_id INNER JOIN projects p ON p.id=c.project_id WHERE n.id=".intval($enc['player_nft_id'])." LIMIT 1");
@@ -13501,7 +13501,7 @@ function gauntletResolveEncounter($conn, $user_id, $encounter_id, $consumable_id
 	// name needs to stand on its own rather than depend on the mention
 	// resolving.
 	$wh_opp_mention = $wh_opp_discord ? "<@$wh_opp_discord> ($wh_opp_uname)" : $wh_opp_uname;
-	$wh_opp_ava_url = ($wh_opp_discord && $wh_opp_avatar) ? "https://cdn.discordapp.com/avatars/$wh_opp_discord/$wh_opp_avatar.png" : "";
+	$wh_opp_ava_url = ($wh_opp_discord && $wh_opp_avatar) ? avatar_url($wh_opp_discord, $wh_opp_avatar) : "";
 	$wh_opp_profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($wh_opp_uname);
 	// Real ping (message content, not just the embed) for the OPPONENT only --
 	// third-party inclusion is the point (an inactive holder finding out their
@@ -14270,7 +14270,7 @@ function cryptcrawlAnnounceResult($conn, $run) {
 	$cc_username   = !empty($user_row['username']) ? $user_row['username'] : 'Unknown';
 	$cc_discord    = $user_row['discord_id'];
 	$cc_avatar     = $user_row['avatar'] ?? '';
-	$cc_avatar_url = ($cc_discord && $cc_avatar) ? "https://cdn.discordapp.com/avatars/" . $cc_discord . "/" . $cc_avatar . ".png" : "";
+	$cc_avatar_url = ($cc_discord && $cc_avatar) ? avatar_url($cc_discord, $cc_avatar) : "";
 	$cc_profile    = "https://skulliance.io/staking/profile.php?username=" . urlencode($cc_username);
 	$cc_mention    = "<@" . $cc_discord . ">";
 	$cc_depth      = intval($run['rooms_cleared']);
@@ -14748,7 +14748,7 @@ function cryptconquestGetCardArtPools($conn, $seed = 0) {
 		$key = $court_keys[$i];
 		$court_urls[$key] = getIPFS($row['ipfs'], $row['collection_id'], $row['project_id']);
 		$avatar_url = (!empty($row['discord_id']) && !empty($row['avatar']))
-			? "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".png"
+			? avatar_url($row['discord_id'], $row['avatar'])
 			: "";
 		$court_owners[$key] = [
 			'user_id'    => intval($row['user_id']),
@@ -15085,7 +15085,7 @@ function cryptconquestAnnounceResult($conn, $run, $killer = null) {
 	$cq_username   = !empty($user_row['username']) ? $user_row['username'] : 'Unknown';
 	$cq_discord    = $user_row['discord_id'];
 	$cq_avatar     = $user_row['avatar'] ?? '';
-	$cq_avatar_url = ($cq_discord && $cq_avatar) ? "https://cdn.discordapp.com/avatars/" . $cq_discord . "/" . $cq_avatar . ".png" : "";
+	$cq_avatar_url = ($cq_discord && $cq_avatar) ? avatar_url($cq_discord, $cq_avatar) : "";
 	$cq_profile    = "https://skulliance.io/staking/profile.php?username=" . urlencode($cq_username);
 	$cq_mention    = "<@" . $cq_discord . ">";
 	$cq_depth      = intval($run['enemies_defeated']);
@@ -15566,7 +15566,7 @@ function skullRacerIsNewBestLap($conn, $user_id, $current_run_id, $fastest_lap) 
 // avatar-decal comment), so "no avatar linked" should just leave that
 // skull alone rather than stamp a second, generic one on top of it.
 function skullRacerAvatarUrl($discord_id, $avatar) {
-	return ($discord_id && $avatar) ? "https://cdn.discordapp.com/avatars/".$discord_id."/".$avatar.".jpg" : null;
+	return ($discord_id && $avatar) ? avatar_url($discord_id, $avatar) : null;
 }
 
 function skullRacerGetGhosts($conn) {
@@ -15657,7 +15657,7 @@ function skullRacerAnnounceResult($conn, $run) {
 	$sr_username   = !empty($user_row['username']) ? $user_row['username'] : 'Unknown';
 	$sr_discord    = $user_row['discord_id'];
 	$sr_avatar     = $user_row['avatar'] ?? '';
-	$sr_avatar_url = ($sr_discord && $sr_avatar) ? "https://cdn.discordapp.com/avatars/" . $sr_discord . "/" . $sr_avatar . ".png" : "";
+	$sr_avatar_url = ($sr_discord && $sr_avatar) ? avatar_url($sr_discord, $sr_avatar) : "";
 	$sr_profile    = "https://skulliance.io/staking/profile.php?username=" . urlencode($sr_username);
 	$sr_mention    = "<@" . $sr_discord . ">";
 	$sr_author     = array("name" => $sr_username, "icon_url" => $sr_avatar_url, "url" => $sr_profile);
@@ -15808,7 +15808,7 @@ function checkSkullRacerLeaderboard($conn, $weekly=false, $rewards=false, $mode=
 			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
 
 			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
-			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$avatar_url = avatar_url($row['discord_id'], $row['avatar']);
 			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
 			$reward_col = ($weekly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
 			// Both boards show both numbers; the one being ranked on leads, so
@@ -15963,7 +15963,7 @@ function checkObscuraLeaderboard($conn, $weekly=false, $rewards=false) {
 			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
 
 			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
-			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$avatar_url = avatar_url($row['discord_id'], $row['avatar']);
 			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
 			$reward_col = ($weekly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
 			$stats      = [
@@ -16125,7 +16125,7 @@ function checkDHCFightersLeaderboard($conn, $monthly = false, $rewards = false) 
 			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
 
 			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
-			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$avatar_url = avatar_url($row['discord_id'], $row['avatar']);
 			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
 			$stats      = [
 				'Best Fighter' => number_format($row['best_score']) . ' pts',
@@ -16257,7 +16257,7 @@ function checkDHCArenaLeaderboard($conn, $monthly = false, $rewards = false) {
 			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
 
 			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
-			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$avatar_url = avatar_url($row['discord_id'], $row['avatar']);
 			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
 			$reward_col = ($monthly || $rewards)
 			            ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND"
@@ -16425,7 +16425,7 @@ function checkGuardiansLeaderboard($conn, $monthly=false, $rewards=false) {
 			if (isset($_SESSION['userData']['user_id']) && $_SESSION['userData']['user_id'] == $row['user_id']) $fireworks = true;
 
 			$highlight  = isset($_SESSION['userData']['user_id']) && $row['user_id'] == $_SESSION['userData']['user_id'];
-			$avatar_url = "https://cdn.discordapp.com/avatars/" . $row['discord_id'] . "/" . $row['avatar'] . ".jpg";
+			$avatar_url = avatar_url($row['discord_id'], $row['avatar']);
 			$name_html  = "<a href='profile.php?username=" . urlencode($row['username']) . "'>" . htmlspecialchars($row['username']) . "</a>";
 			$reward_col = ($monthly || $rewards) ? number_format(round($carbon / $leaderboardCounter)) . " CARBON = " . number_format(floor(round($carbon / $leaderboardCounter) / 100)) . " DIAMOND" : '';
 			$stats      = [

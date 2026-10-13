@@ -65,7 +65,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	$rg_did = $_SESSION['userData']['discord_id'] ?? null;
 	$rg_av  = $_SESSION['userData']['avatar'] ?? null;
 	if ($name !== null && $rg_did && $rg_av) {
-		$avatar_url = "https://cdn.discordapp.com/avatars/$rg_did/$rg_av.jpg";
+		$avatar_url = avatar_url($rg_did, $rg_av);
 	}
 }
 include 'header.php';
@@ -661,7 +661,7 @@ if ($hr) while ($h = $hr->fetch_assoc()) {
 		// server-side before it is ever put in a Discord message -- a mention
 		// string built from client input is an injection vector otherwise.
 		'did'  => preg_replace('/[^0-9]/', '', (string)$h['discord_id']),
-		'img'  => 'https://cdn.discordapp.com/avatars/' . $h['discord_id'] . '/' . $h['avatar'] . '.png',
+		'img'  => avatar_url($h['discord_id'], $h['avatar']),
 	);
 }
 ?>

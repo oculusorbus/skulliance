@@ -30,7 +30,7 @@ if (isset($_SESSION['userData']['user_id']) && isset($data['score']) && isset($d
     $mn_username   = !empty($_SESSION['userData']['username']) ? $_SESSION['userData']['username'] : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
     $mn_discord    = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
     $mn_avatar     = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
-    $mn_avatar_url = ($mn_discord && $mn_avatar) ? "https://cdn.discordapp.com/avatars/".$mn_discord."/".$mn_avatar.".png" : "";
+    $mn_avatar_url = ($mn_discord && $mn_avatar) ? avatar_url($mn_discord, $mn_avatar) : "";
     $mn_profile    = "https://skulliance.io/staking/profile.php?username=".urlencode($mn_username);
     $mn_mention    = $mn_discord ? "<@".$mn_discord.">" : $mn_username;
     $mn_opp_slug   = strtolower(str_replace(' ', '-', $mn_opponent));

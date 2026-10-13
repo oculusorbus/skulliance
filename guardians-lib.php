@@ -76,6 +76,11 @@
  * silently rewrite history.
  */
 
+/* avatar_url() -- required here rather than relied on from a caller: these are
+   libraries, and a page that includes one without db.php would fatal on an
+   undefined function at render time. require_once, so the usual path where
+   db.php already pulled it in costs nothing. */
+require_once __DIR__ . '/avatar-lib.php';
 define('GUARDIANS_MIN_WAVE_SECONDS', 15);
 
 /*
@@ -310,7 +315,7 @@ function guardiansAnnounceDefeat($conn, $user_id, $result) {
 		$u    = $ur->fetch_assoc();
 		$name = (string)($u['username'] ?? 'A guardian');
 		if (!empty($u['discord_id']) && !empty($u['avatar'])) {
-			$avatar = 'https://cdn.discordapp.com/avatars/' . $u['discord_id'] . '/' . $u['avatar'] . '.png';
+			$avatar = avatar_url($u['discord_id'], $u['avatar']);
 		}
 	}
 	$thumb = $avatar !== '' ? $avatar : 'https://skulliance.io/staking/icons/locations/tower.png';

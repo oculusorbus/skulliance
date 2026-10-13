@@ -54,7 +54,7 @@ if ($result['success'] && $auction) {
     $cancel_author = [
         'name'     => $creator,
         'url'      => $d_id ? 'https://discord.com/users/' . $d_id : '',
-        'icon_url' => ($d_id && $d_avatar) ? 'https://cdn.discordapp.com/avatars/' . $d_id . '/' . $d_avatar . '.png' : '',
+        'icon_url' => ($d_id && $d_avatar) ? avatar_url($d_id, $d_avatar) : '',
     ];
     discordmsg(
         '🚫 Auction Canceled: ' . $title,

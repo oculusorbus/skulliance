@@ -12,6 +12,10 @@
  * changes.
  *
  * Usage: php dhc-rewards-harness.php */
+/* The extracted db.php functions now call avatar_url(). They are eval'd in
+   isolation here, so the library has to be in scope or they fatal on an
+   undefined function -- which is a fault in the harness, not the code. */
+require_once __DIR__ . '/avatar-lib.php';
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
 $fail = 0;

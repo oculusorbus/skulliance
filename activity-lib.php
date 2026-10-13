@@ -41,6 +41,11 @@
  * See multichain.md for the same constraint written up at length.
  */
 
+/* avatar_url() -- required here rather than relied on from a caller: these are
+   libraries, and a page that includes one without db.php would fatal on an
+   undefined function at render time. require_once, so the usual path where
+   db.php already pulled it in costs nothing. */
+require_once __DIR__ . '/avatar-lib.php';
 /* Days of history kept. Pruned by activity_prune(), called from the nightly
    job -- see verify.php. The feed is a "what's happening" wall, not an
    archive: the tables behind each event remain the record of it. */
@@ -562,7 +567,7 @@ function activity_digest($conn, $day) {
 		/* Same shape the announces build, so the poster shows the face
 		   Discord shows. .png, matching db.php's $dr_avatar_url. */
 		$av = ((string) $row['discord_id'] !== '' && (string) $row['avatar'] !== '')
-			? 'https://cdn.discordapp.com/avatars/' . $row['discord_id'] . '/' . $row['avatar'] . '.png'
+			? avatar_url($row['discord_id'], $row['avatar'])
 			: '';
 		$out['players'][] = array(
 			'name'   => $name,

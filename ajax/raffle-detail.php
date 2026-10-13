@@ -94,7 +94,7 @@ $conn->close();
       $cav  = $raffle['creator_avatar'] ?? '';
       $cdis = $raffle['creator_discord'] ?? '';
       $cname = htmlspecialchars($raffle['creator_name']);
-      if ($cdis && $cav) echo '<img src="https://cdn.discordapp.com/avatars/' . $cdis . '/' . $cav . '.png" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;">';
+      if ($cdis && $cav) echo '<img src="' . htmlspecialchars(avatar_url($cdis, $cav)) . '" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;">';
       echo '<a href="/staking/profile.php?username=' . $cname . '" style="color:inherit;text-decoration:underline;">' . $cname . '</a>';
     ?>
   </div>
@@ -193,7 +193,7 @@ $conn->close();
     <div class="bid-row" style="<?php echo $is_you ? 'background:rgba(0,200,160,0.12);' : ''; ?>">
       <span style="display:flex;align-items:center;gap:5px;flex:1;min-width:0;">
         <?php if (!empty($h['discord_id']) && !empty($h['avatar'])): ?>
-        <img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($h['discord_id']); ?>/<?php echo htmlspecialchars($h['avatar']); ?>.png" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;flex-shrink:0;">
+        <img src="<?php echo htmlspecialchars(avatar_url(htmlspecialchars($h['discord_id']), htmlspecialchars($h['avatar']))); ?>" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;flex-shrink:0;">
         <?php endif; ?>
         <a href="/staking/profile.php?username=<?php echo htmlspecialchars($h['username']); ?>" style="color:inherit;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo htmlspecialchars($h['username']); ?></a>
       </span>

@@ -198,7 +198,7 @@ $now_ts = time();
             <?php endif; ?>
             <div style="font-size:0.72rem;opacity:0.35;display:flex;align-items:center;gap:5px;">By
               <?php if (!empty($a['creator_discord']) && !empty($a['creator_avatar'])): ?>
-              <img src="https://cdn.discordapp.com/avatars/<?php echo $a['creator_discord']; ?>/<?php echo $a['creator_avatar']; ?>.png" style="width:14px;height:14px;border-radius:50%;vertical-align:middle;">
+              <img src="<?php echo htmlspecialchars(avatar_url($a['creator_discord'], $a['creator_avatar'])); ?>" style="width:14px;height:14px;border-radius:50%;vertical-align:middle;">
               <?php endif; ?>
               <a href="/staking/profile.php?username=<?php echo htmlspecialchars($a['creator_name']); ?>" style="color:inherit;text-decoration:underline;"><?php echo htmlspecialchars($a['creator_name']); ?></a>
             </div>

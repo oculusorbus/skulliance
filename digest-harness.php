@@ -213,9 +213,15 @@ $conn->expect(
 	 array('image_url' => 'https://www.skulliance.io/staking/dhcrenders/f1.png',
 	       'first_id' => '12', 'channel' => 'dhcfighters', 'title' => 'F', 'author_name' => 'nothooley', 'n' => '2')),
 	array(
-	 array('id' => '4', 'username' => 'skowl',  'discord_id' => '77', 'avatar' => 'abc', 'n' => '9'),
+	 /* REAL-SHAPED IDS AND HASHES. These were '77'/'abc', which avatar_url()
+	    rightly refuses -- a Discord id is 5-25 digits and a hash 8-64 chars --
+	    so the fixture was asserting a URL the platform would never build. A
+	    fixture that cannot pass validation tests the wrong thing. */
+	 array('id' => '4', 'username' => 'skowl',  'discord_id' => '236886908867837952',
+	       'avatar' => '1a620cd4a16cb745b8ee1881f1b1e968', 'n' => '9'),
 	 array('id' => '5', 'username' => 'nobody', 'discord_id' => '',   'avatar' => '',    'n' => '1'),
-	 array('id' => '6', 'username' => '',       'discord_id' => '88', 'avatar' => 'def', 'n' => '1')));
+	 array('id' => '6', 'username' => '',       'discord_id' => '395932963826827264',
+	       'avatar' => '9156434528f9f8445113b91b2285ed36', 'n' => '1')));
 $D = activity_digest($conn, '2026-10-08');
 
 ok('the total is the sum of the channel counts', $D['total'] === 11, $D['total']);
@@ -237,7 +243,7 @@ ok('art keeps its channel label for the tile caption',
 ok('a nameless row is dropped rather than drawn as a blank face',
    count($D['players']) === 2, count($D['players']));
 ok('the avatar is built from the users table, same shape the announces use',
-   $D['players'][0]['avatar'] === 'https://cdn.discordapp.com/avatars/77/abc.png',
+   $D['players'][0]['avatar'] === avatar_url('236886908867837952', '1a620cd4a16cb745b8ee1881f1b1e968'),
    $D['players'][0]['avatar']);
 /* A player with no Discord picture is NOT dropped -- the poster draws their
    initial instead, and dropping them would silently un-shout-out somebody

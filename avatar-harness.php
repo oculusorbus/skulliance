@@ -160,6 +160,11 @@ $builders = array(
 	'db.php'           => array("class='rtc-avatar'", "class='rc-avatar'"),
 	'dhcarena.php'     => array('$av = ($o[\'discord_id\']'),
 	'leaderboards.php' => array('$av   = htmlspecialchars(avatar_url'),
+	/* The Collection card payload feeds the grid AND the Fighter panel, and
+	   ajax/dhc-fighter.php rebuilds the same payload for a single serial --
+	   a wrong extension in either broke the panel. */
+	'dhcgallery.php'      => array('$av = avatar_url('),
+	'ajax/dhc-fighter.php'=> array('$avatar = avatar_url('),
 );
 $imgTags = array(
 	'db.php'       => array("class='rtc-avatar'", "class='rc-avatar'"),
@@ -218,6 +223,63 @@ ok(!preg_match('/avatar_url\([^)]*\)[^>]{0,160}onerror/', $dbSrc),
 /* db.php is where the shared builder is loaded for the whole platform. */
 ok(preg_match("/require_once __DIR__ \. '\/avatar-lib\.php'/", $dbSrc) === 1,
    'db.php does not load avatar-lib.php, so every page calling avatar_url() fatals');
+
+/* ---------- 5. no hand-built avatar URL anywhere ---------------------------- */
+/*
+ * THE WHACK-A-MOLE ENDED HERE. Each page fixed individually revealed another
+ * with its own hiding place -- a .jpg in a card payload, a URL concat()ed
+ * inside SQL, an onerror that hid the image. There were 70 of these. The only
+ * way to stop finding them one report at a time is to assert that none exist.
+ *
+ * dropship/ is excluded: a separate application with its own db.php and no
+ * avatar-lib, so its avatars are its own problem.
+ */
+/* Three legitimate exceptions, each for a different reason:
+     header.php      -- the listener's own CDN prefix, which is how it RECOGNISES
+                        an avatar that failed; it builds nothing.
+     digest-harness  -- fixtures, not URLs anything renders.
+     gallery.php     -- built in JavaScript from a client-side payload, so no PHP
+                        function can reach it. It already asks for .png, the safe
+                        form, and a failure still goes through the listener; only
+                        an animated avatar is wrong there. Worth doing, not urgent. */
+$avatarExempt = array('header.php', 'digest-harness.php', 'gallery.php');
+$built = array();
+foreach (glob(__DIR__ . '/*.php') as $f) {
+	if (strpos(basename($f), 'avatar-') === 0) continue;
+	if (in_array(basename($f), $avatarExempt, true)) continue;
+	$src = no_comments(file_get_contents($f));
+	if (preg_match('/["\']https:\/\/cdn\.discordapp\.com\/avatars\//', $src)) {
+		$built[] = basename($f);
+	}
+}
+foreach (glob(__DIR__ . '/ajax/*.php') as $f) {
+	$src = no_comments(file_get_contents($f));
+	if (preg_match('/["\']https:\/\/cdn\.discordapp\.com\/avatars\//', $src)) {
+		$built[] = 'ajax/' . basename($f);
+	}
+}
+ok(!$built,
+   'these still hand-build a Discord avatar URL instead of calling avatar_url(), so they '
+ . "pick their own file type and miss the refresh: " . implode(', ', $built));
+
+/* Every file that calls it must be able to reach it. A library relying on its
+   caller having loaded db.php fatals the moment something includes it alone. */
+$callers = array();
+foreach (array_merge(glob(__DIR__ . '/*.php'), glob(__DIR__ . '/ajax/*.php')) as $f) {
+	$b = basename($f);
+	if (strpos($b, 'avatar-') === 0 || strpos($b, '-harness') !== false) continue;
+	$src = no_comments(file_get_contents($f));
+	if (strpos($src, 'avatar_url(') === false) continue;
+	/* Any spelling: include 'db.php', require_once __DIR__ . '/avatar-lib.php',
+	   include '../db.php'. Matching the literal filename is enough and does not
+	   care how the path was assembled. */
+	if (strpos($src, 'avatar-lib.php') !== false) continue;
+	if (preg_match('/(include|require)(_once)?[^;\n]*db\.php/', $src)) continue;
+	$callers[] = $b;
+}
+ok(!$callers,
+   'these call avatar_url() without loading db.php or avatar-lib.php, so they fatal on an '
+ . 'undefined function: ' . implode(', ', $callers));
 
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all avatar checks passed\n");
 exit($fail ? 1 : 0);

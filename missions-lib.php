@@ -29,6 +29,11 @@
  * eligible set rather than trusting it.
  */
 
+/* avatar_url() -- required here rather than relied on from a caller: these are
+   libraries, and a page that includes one without db.php would fatal on an
+   undefined function at render time. require_once, so the usual path where
+   db.php already pulled it in costs nothing. */
+require_once __DIR__ . '/avatar-lib.php';
 /* Included with require_once everywhere; db.php's own include_once habit is
    the precedent. No define-guard brace wrapper, which only hides a double
    include behind a parse error the day someone edits the bottom of the file. */
@@ -1020,7 +1025,7 @@ function mission_announce($conn, $q, $mission_id, $nft_count, $success, $boost, 
 	         : (!empty($_SESSION['userData']['name']) ? $_SESSION['userData']['name'] : 'Unknown');
 	$discord = isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '';
 	$avatar  = isset($_SESSION['userData']['avatar']) ? $_SESSION['userData']['avatar'] : '';
-	$avurl   = ($discord && $avatar) ? "https://cdn.discordapp.com/avatars/$discord/$avatar.png" : '';
+	$avurl   = ($discord && $avatar) ? avatar_url($discord, $avatar) : '';
 	$profile = "https://skulliance.io/staking/profile.php?username=" . urlencode($name);
 	/* Absolute for Discord, same buster: an embed cached against the old
 	   art is the same problem one step further away. */

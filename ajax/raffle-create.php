@@ -156,7 +156,7 @@ $d_avatar    = $_SESSION['userData']['avatar'] ?? '';
 $d_author    = [
     'name'     => $creator,
     'url'      => $d_id ? 'https://discord.com/users/' . $d_id : '',
-    'icon_url' => ($d_id && $d_avatar) ? 'https://cdn.discordapp.com/avatars/' . $d_id . '/' . $d_avatar . '.png' : '',
+    'icon_url' => ($d_id && $d_avatar) ? avatar_url($d_id, $d_avatar) : '',
 ];
 $end_fmt     = (new DateTime($end_date, new DateTimeZone('UTC')))->setTimezone(new DateTimeZone('America/Chicago'))->format('M j, Y');
 $opt_labels  = [];

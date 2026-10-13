@@ -43,7 +43,7 @@ $user_id = isset($_SESSION['userData']['user_id']) ? intval($_SESSION['userData'
 if ($user_id > 0 && isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     extract($_SESSION['userData']);
     if (isset($discord_id) && isset($avatar)) {
-        $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
+        $avatar_url = avatar_url($discord_id, $avatar);
     }
 }
 

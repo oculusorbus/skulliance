@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($user_id > 0 && isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	extract($_SESSION['userData']);
 	if (isset($discord_id) && isset($avatar)) {
-		$avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
+		$avatar_url = avatar_url($discord_id, $avatar);
 	}
 }
 

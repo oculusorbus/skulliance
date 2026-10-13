@@ -81,9 +81,9 @@ $cq = $conn->query("SELECT COUNT(*) AS n FROM dhc_fighters
                     WHERE user_id = " . (int)$row['user_id'] . " AND disassembled_at IS NULL");
 if ($cq && ($cr = $cq->fetch_assoc())) $ownerN = (int)$cr['n'];
 
-$avatar = (!empty($row['discord_id']) && !empty($row['avatar']))
-        ? 'https://cdn.discordapp.com/avatars/' . $row['discord_id'] . '/' . $row['avatar'] . '.jpg'
-        : 'icons/skulliance.png';
+/* Same payload shape as dhcgallery.php's card, so the same builder -- the
+   Fighter panel is fed by both and a wrong extension in either broke it. */
+$avatar = avatar_url($row['discord_id'], $row['avatar']);
 
 $out = array(
 	'name'    => $row['display'],

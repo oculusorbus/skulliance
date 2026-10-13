@@ -17,6 +17,11 @@
  * -- a no-op since PHP 8.0, deprecated in 8.5 -- is deliberately not used.
  */
 
+/* avatar_url() -- required here rather than relied on from a caller: these are
+   libraries, and a page that includes one without db.php would fatal on an
+   undefined function at render time. require_once, so the usual path where
+   db.php already pulled it in costs nothing. */
+require_once __DIR__ . '/avatar-lib.php';
 /*
  * LOAD THE WEBHOOKS OURSELVES.
  *
@@ -89,8 +94,7 @@ function dhcf_author_block($conn, $user_id) {
 	$name = $u['username'] !== '' ? $u['username'] : 'a player';
 	$author = array('name' => $name);
 	if (!empty($u['discord_id']) && !empty($u['avatar'])) {
-		$author['icon_url'] = 'https://cdn.discordapp.com/avatars/'
-		                    . $u['discord_id'] . '/' . $u['avatar'] . '.jpg';
+		$author['icon_url'] = avatar_url($u['discord_id'], $u['avatar']);
 	}
 	/*
 	 * A mention only notifies from discordmsg()'s top-level $content field --

@@ -488,7 +488,7 @@ if ($state === 'encounter') {
 	?>
 		<div class="history-row">
 			<div class="history-badge <?php echo $hr['outcome']; ?>"><?php echo strtoupper(substr($hr['outcome'], 0, 1)); ?></div>
-			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)<?php if (!empty($hr['opponent_username'])): ?> &middot;<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?><img class="history-avatar" src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($hr['opponent_discord_id']); ?>/<?php echo htmlspecialchars($hr['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a><?php endif; ?></div>
+			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)<?php if (!empty($hr['opponent_username'])): ?> &middot;<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?><img class="history-avatar" src="<?php echo htmlspecialchars(avatar_url(htmlspecialchars($hr['opponent_discord_id']), htmlspecialchars($hr['opponent_avatar']))); ?>" alt="" onerror="this.src='icons/skull.png'"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a><?php endif; ?></div>
 			<div class="history-meta">
 				<div class="history-reward <?php echo $reward_class; ?>"><?php echo $reward_label; ?><img src="<?php echo htmlspecialchars($reward_icon); ?>" onerror="this.src='icons/skull.png'"></div>
 				<div class="history-odds"><?php echo $effective_wc; ?>%</div>
@@ -557,7 +557,7 @@ if ($state === 'encounter') {
 			<div class="arena-card-project"><?php echo htmlspecialchars($enc['player_project_name']); ?></div>
 			<div class="arena-card-user">
 				<?php if (!empty($player_discord_id) && !empty($player_avatar)): ?>
-				<img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($player_discord_id); ?>/<?php echo htmlspecialchars($player_avatar); ?>.png" alt="" onerror="this.src='icons/skull.png'">
+				<img src="<?php echo htmlspecialchars(avatar_url(htmlspecialchars($player_discord_id), htmlspecialchars($player_avatar))); ?>" alt="" onerror="this.src='icons/skull.png'">
 				<?php endif; ?>
 				<a href="profile.php?username=<?php echo urlencode($player_username); ?>"><?php echo htmlspecialchars($player_username); ?></a>
 			</div>
@@ -570,7 +570,7 @@ if ($state === 'encounter') {
 			<div class="arena-card-project"><?php echo htmlspecialchars($enc['opponent_project_name']); ?></div>
 			<div class="arena-card-user">
 				<?php if (!empty($enc['opponent_discord_id']) && !empty($enc['opponent_avatar'])): ?>
-				<img src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($enc['opponent_discord_id']); ?>/<?php echo htmlspecialchars($enc['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'">
+				<img src="<?php echo htmlspecialchars(avatar_url(htmlspecialchars($enc['opponent_discord_id']), htmlspecialchars($enc['opponent_avatar']))); ?>" alt="" onerror="this.src='icons/skull.png'">
 				<?php endif; ?>
 				<?php if (!empty($enc['opponent_username'])): ?>
 				<a href="profile.php?username=<?php echo urlencode($enc['opponent_username']); ?>"><?php echo htmlspecialchars($enc['opponent_username']); ?></a>
@@ -761,7 +761,7 @@ if ($state === 'encounter') {
 	?>
 		<div class="history-row">
 			<div class="history-badge <?php echo $hr['outcome']; ?>"><?php echo strtoupper(substr($hr['outcome'], 0, 1)); ?></div>
-			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)<?php if (!empty($hr['opponent_username'])): ?> &middot;<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?><img class="history-avatar" src="https://cdn.discordapp.com/avatars/<?php echo htmlspecialchars($hr['opponent_discord_id']); ?>/<?php echo htmlspecialchars($hr['opponent_avatar']); ?>.png" alt="" onerror="this.src='icons/skull.png'"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a><?php endif; ?></div>
+			<div class="history-text">vs <?php echo htmlspecialchars($hr['opponent_nft_name']); ?> (<?php echo htmlspecialchars($hr['opponent_project_name']); ?>)<?php if (!empty($hr['opponent_username'])): ?> &middot;<?php if (!empty($hr['opponent_discord_id']) && !empty($hr['opponent_avatar'])): ?><img class="history-avatar" src="<?php echo htmlspecialchars(avatar_url(htmlspecialchars($hr['opponent_discord_id']), htmlspecialchars($hr['opponent_avatar']))); ?>" alt="" onerror="this.src='icons/skull.png'"><?php endif; ?><a href="profile.php?username=<?php echo urlencode($hr['opponent_username']); ?>"><?php echo htmlspecialchars($hr['opponent_username']); ?></a><?php endif; ?></div>
 			<div class="history-meta">
 				<div class="history-reward <?php echo $reward_class; ?>"><?php echo $reward_label; ?><img src="<?php echo htmlspecialchars($reward_icon); ?>" onerror="this.src='icons/skull.png'"></div>
 				<div class="history-odds"><?php echo $effective_wc; ?>%</div>

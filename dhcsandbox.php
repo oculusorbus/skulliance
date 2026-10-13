@@ -96,7 +96,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	$dhcs_did = $_SESSION['userData']['discord_id'] ?? null;
 	$dhcs_av  = $_SESSION['userData']['avatar'] ?? null;
 	if ($name !== null && $dhcs_did && $dhcs_av)
-		$avatar_url = "https://cdn.discordapp.com/avatars/$dhcs_did/$dhcs_av.jpg";
+		$avatar_url = avatar_url($dhcs_did, $dhcs_av);
 }
 
 /*

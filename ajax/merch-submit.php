@@ -244,7 +244,7 @@ if (!empty($created_product_ids)) {
     $discord_id  = $_SESSION['userData']['discord_id'] ?? '';
     $username    = $_SESSION['userData']['username'] ?? ($_SESSION['userData']['name'] ?? 'Unknown');
     $avatar      = $_SESSION['userData']['avatar'] ?? '';
-    $avatar_url  = ($discord_id && $avatar) ? "https://cdn.discordapp.com/avatars/{$discord_id}/{$avatar}.png" : '';
+    $avatar_url  = ($discord_id && $avatar) ? avatar_url($discord_id, $avatar) : '';
     $mention     = $discord_id ? "<@{$discord_id}>" : $username;
     $nft_img_url = getIPFS($nft['ipfs'], $nft['collection_id'], $nft['project_id']);
     if (str_starts_with($nft_img_url, '/')) $nft_img_url = 'https://skulliance.io' . $nft_img_url;

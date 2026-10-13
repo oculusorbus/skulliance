@@ -79,6 +79,11 @@
  * already has history; see the note in checkActivityLeaderboard().
  */
 
+/* avatar_url() -- required here rather than relied on from a caller: these are
+   libraries, and a page that includes one without db.php would fatal on an
+   undefined function at render time. require_once, so the usual path where
+   db.php already pulled it in costs nothing. */
+require_once __DIR__ . '/avatar-lib.php';
 // The noose. Deliberately a plain table rather than a formula: every tier is
 // visible at a glance and tunable without arithmetic.
 function obscuraDifficulty($streak) {
@@ -255,7 +260,7 @@ function obscuraRevealDetails($conn, $nft_id) {
 		// (leaderboards.php:302-304). The avatar is gated with the username, not
 		// separately: a face is every bit as identifying as a name.
 		$out['owner_avatar'] = ($a['avatar'] && $a['discord_id'])
-			? 'https://cdn.discordapp.com/avatars/' . $a['discord_id'] . '/' . $a['avatar'] . '.png'
+			? avatar_url($a['discord_id'], $a['avatar'])
 			: 'icons/skull.png';
 	}
 	return $out;
@@ -497,7 +502,7 @@ function obscuraAnnounceRunEnd($conn, $user_id, $streak, $solves, $best_streak, 
 
 	$username   = !empty($u['username']) ? $u['username'] : 'Unknown';
 	$avatar_url = ($u['discord_id'] && $u['avatar'])
-		? "https://cdn.discordapp.com/avatars/" . $u['discord_id'] . "/" . $u['avatar'] . ".png" : "";
+		? avatar_url($u['discord_id'], $u['avatar']) : "";
 	$author  = array("name" => $username, "icon_url" => $avatar_url,
 	                 "url"  => "https://skulliance.io/staking/profile.php?username=" . urlencode($username));
 

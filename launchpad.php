@@ -33,7 +33,7 @@ $lp_user_id  = intval($_SESSION['userData']['user_id'] ?? 0);
 $lp_discord  = $_SESSION['userData']['discord_id'] ?? '';
 $lp_avatar   = $_SESSION['userData']['avatar'] ?? '';
 $lp_avatar_url = ($lp_discord && $lp_avatar)
-	? "https://cdn.discordapp.com/avatars/$lp_discord/$lp_avatar.png"
+	? avatar_url($lp_discord, $lp_avatar)
 	: "icons/skull.png";
 
 // Three cheap signals, all from helpers that already exist. Each is wrapped

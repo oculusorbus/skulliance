@@ -91,7 +91,7 @@ $conn->close();
       $cdis = $auction['creator_discord'] ?? '';
       $cname = htmlspecialchars($auction['creator_name']);
       $cuser = htmlspecialchars($auction['creator_name']);
-      if ($cdis && $cav) echo '<img src="https://cdn.discordapp.com/avatars/' . $cdis . '/' . $cav . '.png" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;">';
+      if ($cdis && $cav) echo '<img src="' . htmlspecialchars(avatar_url($cdis, $cav)) . '" style="width:16px;height:16px;border-radius:50%;vertical-align:middle;">';
       echo '<a href="/staking/profile.php?username=' . $cuser . '" style="color:inherit;text-decoration:underline;">' . $cname . '</a>';
     ?>
   </div>
@@ -189,7 +189,7 @@ $conn->close();
     <div class="bid-row">
       <span style="flex:1;min-width:0;display:flex;align-items:center;gap:5px;">
         <?php if (!empty($b['bidder_discord']) && !empty($b['bidder_avatar'])): ?>
-        <img src="https://cdn.discordapp.com/avatars/<?php echo $b['bidder_discord']; ?>/<?php echo $b['bidder_avatar']; ?>.png" style="width:16px;height:16px;border-radius:50%;flex-shrink:0;">
+        <img src="<?php echo htmlspecialchars(avatar_url($b['bidder_discord'], $b['bidder_avatar'])); ?>" style="width:16px;height:16px;border-radius:50%;flex-shrink:0;">
         <?php endif; ?>
         <a href="/staking/profile.php?username=<?php echo htmlspecialchars($b['bidder_name']); ?>" style="color:inherit;text-decoration:underline;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo htmlspecialchars($b['bidder_name']); ?></a>
       </span>

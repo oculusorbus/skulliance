@@ -43,7 +43,7 @@ if ($result['success']) {
     $buy_author  = [
         'name'     => $buyer,
         'url'      => $d_id ? 'https://discord.com/users/' . $d_id : '',
-        'icon_url' => ($d_id && $d_avatar) ? 'https://cdn.discordapp.com/avatars/' . $d_id . '/' . $d_avatar . '.png' : '',
+        'icon_url' => ($d_id && $d_avatar) ? avatar_url($d_id, $d_avatar) : '',
     ];
     discordmsg(
         '🎟️ Ticket Purchase: ' . ($raffle['title'] ?? ''),

@@ -1,4 +1,9 @@
 <?php
+/* avatar_url() -- required here rather than relied on from a caller: these are
+   libraries, and a page that includes one without db.php would fatal on an
+   undefined function at render time. require_once, so the usual path where
+   db.php already pulled it in costs nothing. */
+require_once __DIR__ . '/avatar-lib.php';
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -72,7 +77,7 @@ extract($_SESSION['userData'] ?? []);
 //print_r($_POST);
 //exit();
 
-$avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
+$avatar_url = avatar_url($discord_id, $avatar);
 
 /* Logic for maintenance mode that allows restriction to specific discord ids for troubleshooting
 if($_SESSION['userData']['discord_id'] != "772831523899965440"){

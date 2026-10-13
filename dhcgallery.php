@@ -503,9 +503,10 @@ include 'header.php';
   <?php else: ?>
   <div class="dhcg-grid">
     <?php foreach ($dhcg_rows as $f):
-      $av = (!empty($f['discord_id']) && !empty($f['avatar']))
-          ? 'https://cdn.discordapp.com/avatars/' . $f['discord_id'] . '/' . $f['avatar'] . '.jpg'
-          : 'icons/skulliance.png';
+      /* avatar_url(): .jpg 404s on some avatars where .png is fine, and an
+         animated one is only served as .gif. This payload feeds the card AND
+         the Fighter panel, so a wrong extension here broke both at once. */
+      $av = avatar_url($f['discord_id'], $f['avatar']);
       $card = array(
         'name'    => $f['display'],
         'serial'  => (int)$f['serial'],

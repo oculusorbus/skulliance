@@ -30,6 +30,10 @@
  *
  * Usage: php obscura-announce-harness.php
  */
+/* The extracted function now calls avatar_url(). It is eval'd in isolation
+   here, so the library has to be in scope or it fatals on an undefined
+   function -- a fault in the harness, not the code. */
+require_once __DIR__ . '/avatar-lib.php';
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
 $fail = 0;

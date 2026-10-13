@@ -6,7 +6,7 @@ $name = "";
 $avatar_url = "";
 if (isset($_SESSION['userData'])) {
     extract($_SESSION['userData']);
-    $avatar_url = "https://cdn.discordapp.com/avatars/$discord_id/$avatar.jpg";
+    $avatar_url = avatar_url($discord_id, $avatar);
 }
 
 // Loader CSS injected into <head> so it's available before body renders

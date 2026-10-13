@@ -9,6 +9,11 @@
    Schema: dhcarena-schema.md. Design: dhcarena.md.
    ============================================================================ */
 
+/* avatar_url() -- required here rather than relied on from a caller: these are
+   libraries, and a page that includes one without db.php would fatal on an
+   undefined function at render time. require_once, so the usual path where
+   db.php already pulled it in costs nothing. */
+require_once __DIR__ . '/avatar-lib.php';
 require_once __DIR__ . '/dhcarena-engine.php';
 require_once __DIR__ . '/dhcfighters-lib.php';      // pulls dhcfighters-config.php
 
@@ -803,7 +808,7 @@ function dhca_identity($conn, $user_id) {
 	$u = $r->fetch_assoc();
 	if ($u['username'] !== '') $out['name'] = $u['username'];
 	if (!empty($u['discord_id']) && !empty($u['avatar']))
-		$out['avatar'] = 'https://cdn.discordapp.com/avatars/'.$u['discord_id'].'/'.$u['avatar'].'.jpg';
+		$out['avatar'] = avatar_url($u['discord_id'], $u['avatar']);
 	if (!empty($u['discord_id'])) $out['mention'] = '<@'.$u['discord_id'].'>';
 	return $out;
 }
