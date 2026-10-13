@@ -278,6 +278,39 @@ define('DHCF_ARMS_UNDER_COMPANION', array(
 	'code-sea-predator' => array('turret-blue-cyborg-limbs'),
 ));
 
+/*
+ * HEADGEAR THAT DRAWS OVER A PARTICULAR COMPANION.
+ *
+ * A companion is last in dhcf_slots(), so it draws over the headgear, and for
+ * the floating pets that is right -- they hover in front of the shoulder.
+ * The Saber Tech Headgear is the exception: its pipe comes down off the helmet
+ * and past the shoulder, and the DH Vision Shoulder Cam is BOLTED to that
+ * shoulder. A pipe running behind the mount reads as the pipe passing through
+ * the character; nested over it, it reads as a pipe lying across a fitting,
+ * which is what the art draws.
+ *
+ * KEYED BY PAIR. The cam still draws over every other headgear, and this
+ * helmet still draws under every other companion -- it is the two specific
+ * pieces whose shapes meet, not a rule about helmets or about cams.
+ *
+ * THE THIRD PAIRWISE EXCEPTION OF THIS SHAPE (see DHCF_ARMS_OVER_HEADGEAR and
+ * DHCF_ARMS_UNDER_COMPANION). They are deliberately separate constants rather
+ * than one table keyed by slot pair: each is read by a different step of
+ * dhcf_layer_order() and they fire at different points in the sequence, so
+ * merging them would mean one table whose rows mean different things depending
+ * on which two slots they name. If a fourth lands, revisit that.
+ */
+define('DHCF_HEADGEAR_OVER_COMPANION', array(
+	'saber-tech-headgear' => array('dh-vision-shoulder-cam'),
+));
+
+/** Does this headgear draw in front of this companion? */
+function dhcf_headgear_over_companion($headgear, $companion) {
+	if ($headgear === '' || $companion === '') return false;
+	$x = DHCF_HEADGEAR_OVER_COMPANION;
+	return isset($x[$headgear]) && in_array($companion, $x[$headgear], true);
+}
+
 /** Do these arms stay behind this companion, despite the hoist rule? */
 function dhcf_arms_under_companion($companion, $arms) {
 	if ($companion === '' || $arms === '') return false;
@@ -771,6 +804,20 @@ function dhcf_layer_order($traits) {
 		if ($ai !== false && $gi !== false && $ai < $gi) {
 			$order = dhcf_move_after($order, 'arms', 'headgear');
 		}
+	}
+	/*
+	 * THE SABER PIPE OVER THE SHOULDER CAM -- see DHCF_HEADGEAR_OVER_COMPANION.
+	 *
+	 * Runs AFTER the arms-over-companion rule above, deliberately. That rule
+	 * moves the arms to the very END for the cam, and this one only moves the
+	 * HEADGEAR past the companion -- so the arms stay in front of both, which
+	 * is what the cam rule exists to guarantee. Putting this first would still
+	 * work today, but only because move_last() happens to run afterwards; the
+	 * order is written down so it cannot become accidental.
+	 */
+	if (!empty($traits['headgear']) && !empty($traits['companion'])
+	    && dhcf_headgear_over_companion($traits['headgear'], $traits['companion'])) {
+		$order = dhcf_move_after($order, 'headgear', 'companion');
 	}
 	/* A comic cover goes under a companion that was demoted below Arms --
 	   see DHCF_COMPANION_OVER_COVER. Runs AFTER the companion move, because

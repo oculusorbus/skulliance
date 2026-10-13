@@ -785,6 +785,10 @@ a{color:var(--ochre)}
      Blue Cyborg Limbs swallow the Code Sea Predator rather than crossing in
      front of it. See DHCF_ARMS_UNDER_COMPANION. */
   var ARMS_UNDER_COMPANION = <?php echo json_encode(DHCF_ARMS_UNDER_COMPANION); ?>;
+  /* Headgear that draws in FRONT of a particular companion -- the Saber Tech
+     pipe nests over the shoulder cam it would otherwise pass behind. Keyed by
+     headgear. See DHCF_HEADGEAR_OVER_COMPANION. */
+  var HEADGEAR_OVER_COMPANION = <?php echo json_encode(DHCF_HEADGEAR_OVER_COMPANION); ?>;
   var COVER_EFFECTS = <?php echo json_encode(DHCF_COVER_EFFECTS); ?>;
   var COMPANION_OVER_COVER = <?php echo json_encode(DHCF_COMPANION_OVER_COVER); ?>;
 
@@ -1158,6 +1162,14 @@ a{color:var(--ochre)}
       var ka = order.map(function (s) { return s.key; });
       var ai2 = ka.indexOf('arms');
       if (ai2 > -1) order.push(order.splice(ai2, 1)[0]);
+    }
+    /* The saber pipe over the shoulder cam. After the arms-over-companion
+       rule above, so the arms stay in front of both -- see
+       DHCF_HEADGEAR_OVER_COMPANION. */
+    if (sel.headgear && sel.companion
+        && HEADGEAR_OVER_COMPANION[sel.headgear]
+        && HEADGEAR_OVER_COMPANION[sel.headgear].indexOf(sel.companion) !== -1) {
+      mv('headgear', 'companion', true);
     }
     /* THE SAMURAI PAIR. Last of the arm moves, so it beats the demon's
        hands-under-arms move when both apply -- headgear < claws < arms is the

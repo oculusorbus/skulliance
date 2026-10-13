@@ -195,6 +195,14 @@ $cases = array(
 	'one-sided arm'             => ms_case($plain, array('companion' => 'golden-isopunk',
 	                                                     'arms'      => $onearm,
 	                                                     'effects1'  => $cover)),
+	/* THE SABER PIPE over the cam it is bolted beside, plus the two
+	   neighbours that must NOT move. */
+	'saber + cam'               => ms_case($plain, array('headgear' => 'saber-tech-headgear',
+	                                                     'companion' => 'dh-vision-shoulder-cam')),
+	'saber + ordinary pet'      => ms_case($plain, array('headgear' => 'saber-tech-headgear',
+	                                                     'companion' => 'golden-isopunk')),
+	'other gear + cam'          => ms_case($plain, array('headgear' => 'ww2-helmet',
+	                                                     'companion' => 'dh-vision-shoulder-cam')),
 	/* CODE SEA PREDATOR, which wants the same two things as the cam and one
 	   more: above the head and headgear, under ordinary arms, but OVER the
 	   turret limbs, which would otherwise swallow it. */
@@ -245,6 +253,7 @@ $prelude = "var SLOTS = " . json_encode(array_map(function ($k) { return array('
          . "var EFFECTS_BEHIND_TORSO = " . json_encode(DHCF_EFFECTS_BEHIND_TORSO) . ";\n"
          . "var ARMS_OVER_COMPANION = " . json_encode(DHCF_ARMS_OVER_COMPANION) . ";\n"
          . "var ARMS_UNDER_COMPANION = " . json_encode(DHCF_ARMS_UNDER_COMPANION) . ";\n"
+         . "var HEADGEAR_OVER_COMPANION = " . json_encode(DHCF_HEADGEAR_OVER_COMPANION) . ";\n"
          . "var COVER_EFFECTS = "        . json_encode(DHCF_COVER_EFFECTS)        . ";\n"
          . "var COMPANION_OVER_COVER = " . json_encode(DHCF_COMPANION_OVER_COVER) . ";\n"
          . "var COMPANION_TWO_PART = "   . json_encode(array_values(DHCF_COMPANION_TWO_PART)) . ";\n"
@@ -527,6 +536,46 @@ if (DHCF_COMPANION_TWO_PART) {
 	$f2 = $ix2($base2 + array('companion' => 'golden-isopunk', 'arms' => $ordinaryArm));
 	ok($f2('companion') > $f2('arms'),
 	   'an ordinary companion had its arms hoisted over it');
+
+	/* ---------------------------------------------------------------------
+	 * THE SABER PIPE OVER THE SHOULDER CAM.
+	 *
+	 * The pipe comes down off the helmet past a cam that is bolted to the
+	 * shoulder. Behind the mount it reads as passing through the character.
+	 * A pair rule: the cam still covers every other headgear and this helmet
+	 * still goes under every other companion.
+	 * ------------------------------------------------------------------- */
+	$sgr = array_keys(DHCF_HEADGEAR_OVER_COMPANION)[0];
+	$scm = DHCF_HEADGEAR_OVER_COMPANION[$sgr][0];
+	$ix3 = function ($traits) {
+		$o = dhcf_layer_order($traits);
+		return function ($k) use ($o) { return array_search($k, $o, true); };
+	};
+	$base3 = array('torso' => 'amplified-dreadnought', 'head' => 'alien-zombie-02');
+
+	$f3 = $ix3($base3 + array('headgear' => $sgr, 'companion' => $scm));
+	ok($f3('headgear') > $f3('companion'),
+	   "$sgr still draws under $scm, so its pipe runs behind the mount");
+
+	$f3 = $ix3($base3 + array('headgear' => $sgr, 'companion' => 'golden-isopunk'));
+	ok($f3('headgear') < $f3('companion'),
+	   "$sgr now draws over EVERY companion; the rule is the pair, not the helmet");
+
+	$f3 = $ix3($base3 + array('headgear' => 'ww2-helmet', 'companion' => $scm));
+	ok($f3('headgear') < $f3('companion'),
+	   "$scm now draws under EVERY headgear; the rule is the pair, not the cam");
+
+	/* AND THE CAM KEEPS ITS OWN RULE. DHCF_ARMS_OVER_COMPANION puts the arms
+	   in front of the cam; moving the headgear past the companion must not
+	   land it in front of the arms as a side effect. */
+	$f3 = $ix3($base3 + array('headgear' => $sgr, 'companion' => $scm,
+	                          'arms' => 'connected-protector-limbs'));
+	ok($f3('arms') > $f3('companion'),
+	   'the saber rule cost the shoulder cam its arms-in-front rule');
+	ok($f3('arms') > $f3('headgear'),
+	   'the headgear ended up over the arms, which the cam pairing does not want');
+	ok($f3('headgear') > $f3('companion'),
+	   'the saber rule stopped applying once arms were added');
 
 	/* A headless Fighter is a real saved state, and still wears the claws. */
 	$lsNoHead = dhcf_layers(array('torso' => 'amplified-dreadnought', 'companion' => $tp), $root);

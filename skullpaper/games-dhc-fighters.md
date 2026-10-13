@@ -512,6 +512,13 @@ letting you build something that renders wrongly. Some of what it handles:
   face. The **comic covers** are full-frame treatments — masthead, price box,
   barcode — and the character deliberately breaks out of them: head, headgear,
   weapon and arms all draw over the frame.
+- **The Saber Tech Headgear draws over the DH Vision Shoulder Cam.** A
+  companion normally draws over the headgear, which is right for the ones that
+  hover. This helmet's pipe comes down past the shoulder, and the cam is bolted
+  to that shoulder — behind the mount the pipe reads as passing through the
+  character, so it nests over it instead. The pair is the exception: the cam
+  still covers every other headgear, and this helmet still goes under every
+  other companion.
 - **Code Sea Predator sits over the headgear and under the arms.** It wraps the
   character, so drawn over the top it looked stuck to the outside — but putting
   it against the body also put it under the head and the headgear, and a large
