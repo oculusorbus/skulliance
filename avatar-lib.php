@@ -126,18 +126,31 @@ function avatar_fetch_hash($discord_id) {
 		CURLOPT_TIMEOUT        => 6,
 		CURLOPT_CONNECTTIMEOUT => 3,
 	));
-	$body = curl_exec($ch);
-	$code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	$body    = curl_exec($ch);
+	$code    = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	$curlErr = curl_error($ch);
 	curl_close($ch);
 
 	/* 404 is an ANSWER: the account no longer exists, so stop asking. 429 and
 	   5xx are not -- they are us being told to come back later, and recording
 	   them as "no avatar" would make a rate limit look like a deleted user. */
 	if ($code === 404) return '';
-	if ($code !== 200 || $body === false) return null;
+	if ($code !== 200 || $body === false) {
+		/* THE STATUS IS THE ONLY THING THAT EXPLAINS A STUCK AVATAR. Without
+		   it, a failure looks exactly like a deleted account from outside, and
+		   because the endpoint re-stamps its backoff on every failure the
+		   window never stays open long enough to reproduce live. */
+		global $avatar_last_error;
+		$avatar_last_error = $code ? ('http ' . $code) : ('curl: ' . $curlErr);
+		return null;
+	}
 
 	$j = json_decode($body, true);
-	if (!is_array($j)) return null;
+	if (!is_array($j)) {
+		global $avatar_last_error;
+		$avatar_last_error = 'unparseable body';
+		return null;
+	}
 	/* A user with no custom avatar has avatar: null. That is an answer too. */
 	return isset($j['avatar']) && $j['avatar'] !== null ? (string)$j['avatar'] : '';
 }

@@ -88,12 +88,19 @@ if (!avatar_can_fetch()) {
 $hash = avatar_fetch_hash($did);
 
 if ($hash === null) {
+	global $avatar_last_error;
+	$why = isset($avatar_last_error) && $avatar_last_error !== '' ? $avatar_last_error : 'unknown';
+	error_log('avatar-refresh: ' . $did . ' could not be resolved -- ' . $why);
 	/* Could not find out. Stamp the attempt so a page full of broken avatars
 	   does not retry in a loop, but do NOT touch the stored hash: overwriting
 	   a good-but-stale hash with nothing because Discord was busy would make a
 	   rate limit permanent. */
 	$conn->query("UPDATE users SET avatar_checked_at = NOW() WHERE id = " . (int)$row['id']);
-	dhc_json(array('ok' => false, 'url' => null, 'why' => 'unavailable'));
+	/* The upstream status is reported, not hidden: a stuck avatar is otherwise
+	   indistinguishable from a deleted account, and the backoff below means a
+	   live reproduction is hard to catch. It reveals only that we ask Discord,
+	   which is not a secret. */
+	dhc_json(array('ok' => false, 'url' => null, 'why' => 'unavailable', 'upstream' => $why));
 	exit;
 }
 
