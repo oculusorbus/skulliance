@@ -64,6 +64,16 @@
        in-flight promise so later images wait on the first call rather than
        starting their own. */
     var inflight = {};
+    /* AND ONE AT A TIME, which is not the same thing. Deduping by id still
+       let a page with five different broken avatars fire five refreshes in
+       the same instant; each one costs a Discord API call, Discord rate-limits
+       the burst, and the endpoint records every rejection as an hour's
+       backoff. The next hour's single attempt then lands in the next burst and
+       loses again -- one account stayed broken for days that way, and looked
+       from the outside exactly like a deleted Discord account.
+       Chained, so the calls go out in series with a gap between them. */
+    var queue = Promise.resolve();
+    var SPACING_MS = 250;
 
     function placeholder(img) {
       /* Clear the marker last: setting src fires another error if the
@@ -87,12 +97,21 @@
       var id = m[1];
 
       if (!inflight[id]) {
-        inflight[id] = fetch('ajax/avatar-refresh.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: 'discord_id=' + encodeURIComponent(id)
-        }).then(function (r) { return r.json(); })
-          .catch(function () { return { url: null }; });
+        inflight[id] = queue = queue.then(function () {
+          return fetch('ajax/avatar-refresh.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'discord_id=' + encodeURIComponent(id)
+          }).then(function (r) { return r.json(); })
+            .catch(function () { return { url: null }; })
+            .then(function (d) {
+              /* Space the NEXT one, not this one: the answer is handed on
+                 immediately and only the queue waits. */
+              return new Promise(function (go) {
+                setTimeout(function () { go(d); }, SPACING_MS);
+              });
+            });
+        });
       }
       inflight[id].then(function (d) {
         /* Every copy of this avatar on the page, not just the one that

@@ -128,6 +128,21 @@ ok(strpos($hd, 'inflight[id]') !== false,
 ok(strpos($hd, 'querySelectorAll') !== false,
    'only the image that failed is repaired, leaving the other copies broken');
 
+/*
+ * SERIAL, NOT JUST DEDUPED. Deduping by id still let a page with five
+ * DIFFERENT broken avatars fire five refreshes at once; Discord rate-limits
+ * the burst and the endpoint writes each rejection down as an hour's backoff,
+ * so the next hour's single attempt lands in the next burst and loses again.
+ * One account stayed broken for days that way and looked, from outside,
+ * exactly like a deleted Discord account. The queue is what stops us causing
+ * the failure we then back off from.
+ */
+ok(strpos($hd, 'queue = queue.then(') !== false,
+   'the refreshes are not chained, so a page of broken avatars fires them all at once '
+ . 'and rate-limits itself');
+ok(preg_match('/SPACING_MS\s*=\s*\d+/', $hd) === 1,
+   'there is no gap between queued refreshes');
+
 /* ---------- 4. the pages that were actually reported broken ---------------- */
 /*
  * MEASURED AGAINST THE LIVE CDN, not assumed: for the same hash, .png returns
