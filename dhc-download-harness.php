@@ -300,8 +300,17 @@ if ($base === '' || !$port || !@mkdir($stub, 0777, true)) {
 	 * by the query rather than by a read and a compare.
 	 */
 	file_put_contents($stub . '/verify.php', "<?php /* stub: checkUser() lives here */\n");
+	/* THE STUB READS THE USER OUT OF THE COOKIE. It used to hardcode 7, which
+	   is fine until a rule applies to ONE account: user 1 is exempt from the
+	   ?build= ownership check, and there was no way to be user 1. The real
+	   skulliance.php resolves the session for itself, so this stays a stub of
+	   the same shape -- the endpoint's own gates are still what gets tested. */
 	file_put_contents($stub . '/skulliance.php',
-		"<?php\n\$_SESSION['userData']['user_id'] = 7;\n");
+		"<?php\n"
+	  . "\$ck = isset(\$_COOKIE['SessionCookie'])\n"
+	  . "    ? json_decode(\$_COOKIE['SessionCookie'], true) : null;\n"
+	  . "\$_SESSION['userData']['user_id'] = (is_array(\$ck) && !empty(\$ck['user_id']))\n"
+	  . "    ? (int)\$ck['user_id'] : 7;\n");
 
 	$null = defined('PHP_OS_FAMILY') && PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null';
 	$proc = @proc_open(
@@ -331,12 +340,13 @@ if ($base === '' || !$port || !@mkdir($stub, 0777, true)) {
 		 * take the logged-in branch -- so passing false is a real anonymous
 		 * request and not a simulated one.
 		 */
-		$get = function ($qs, $signed_in = true) use ($port) {
+		$get = function ($qs, $signed_in = true, $as = 7) use ($port) {
 			$fp = @fsockopen('127.0.0.1', $port, $en, $es, 5);
 			if (!$fp) return array('', array(), '');
 			stream_set_timeout($fp, 20);
 			$cookie = $signed_in
-				? "Cookie: SessionCookie=" . rawurlencode('{"logged_in":true}') . "\r\n" : '';
+				? "Cookie: SessionCookie=" . rawurlencode(json_encode(
+					array('logged_in' => true, 'user_id' => (int)$as))) . "\r\n" : '';
 			fwrite($fp, "GET /dhc-download.php" . $qs . " HTTP/1.0\r\n"
 			          . "Host: 127.0.0.1:$port\r\n" . $cookie . "Connection: close\r\n\r\n");
 			$raw = stream_get_contents($fp);
@@ -426,6 +436,42 @@ if ($base === '' || !$port || !@mkdir($stub, 0777, true)) {
 
 		list($st, $h7, $body) = $get($mine, false);
 		ok(strpos($st, '403') !== false, 'a signed-out build request must be refused');
+
+		/*
+		 * USER 1 IS EXEMPT FROM THE OWNERSHIP HALF, AND ONLY THAT HALF.
+		 *
+		 * dhcsandbox.php unlocks every trait in the game, so the account that
+		 * posts the Collection to X cannot take a picture of anything it
+		 * arranges there without this. $theirs is the same build that just
+		 * answered 403 for user 7 -- the ONLY difference between the two
+		 * requests is who is asking.
+		 */
+		list($st, $h9, $png3) = $get($theirs, true, 1);
+		ok(strpos($st, '200') !== false,
+		   'user 1 must be able to download a build of traits it does not own; answered: ' . $st);
+		ok(substr($png3, 0, 8) === "\x89PNG\r\n\x1a\n", "user 1's unowned build is a PNG");
+
+		/* AND THE COMPLETENESS GATE STILL APPLIES TO IT. This is the check
+		   that was actually holding the art in -- the ownership one was only
+		   ever answering "are these pieces yours". If user 1 can pull a single
+		   head out at 1000px, the exemption went too far. */
+		$leaked1 = array();
+		foreach ($partials1 = array(
+				'head alone'       => array('head' => $nicked['head']),
+				'torso alone'      => array('torso' => $tset['torso']),
+				'no background'    => array('torso' => $tset['torso'], 'head' => $nicked['head']),
+			) as $label => $part) {
+			list($st, $hA, $body) = $get('?build=' . rawurlencode(json_encode($part)), true, 1);
+			ok(strpos($st, '400') !== false,
+			   "user 1 asking for '$label' must still be refused; answered: " . $st);
+			if (strpos($body, "\x89PNG") !== false) $leaked1[] = $label;
+		}
+		ok(!$leaked1, 'single-trait art escaped as a PNG for user 1: ' . implode(', ', $leaked1));
+
+		/* And a signed-out request does NOT become user 1 by claiming to be. */
+		list($st, $hB, $body) = $get($theirs, false, 1);
+		ok(strpos($st, '403') !== false, 'a signed-out request claiming user 1 must be refused');
+		echo "  user 1: unowned build -> 200, incomplete build -> 400, signed out -> 403\n";
 
 		/*
 		 * IT HAS TO BE A FIGHTER. Without the required-three gate,

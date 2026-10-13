@@ -161,7 +161,9 @@ $dhca_preload = isset($dhca_preload) && is_array($dhca_preload) ? $dhca_preload 
  * $dhca_can_download -- show the "Download 1000px PNG" button. Off unless the
  * caller says otherwise, because the sandbox offers every trait in the game
  * and dhc-download.php will only draw pieces the player actually owns: the
- * button would be there and refuse.
+ * button would be there and refuse. dhcsandbox.php turns it on for USER 1
+ * alone, who is exempt from that ownership check -- the reasoning is on the
+ * flag there and on the ?build= branch of the endpoint.
  */
 $dhca_can_download = !empty($dhca_can_download);
 
@@ -631,10 +633,11 @@ a{color:var(--ochre)}
       <button class="btn" id="share">Copy link to this build</button>
       <?php /* Beside the share button because it is the same kind of action:
                both take the arrangement currently on the canvas somewhere
-               else. It is NOT offered in the sandbox -- that has every trait
-               unlocked whether you hold it or not, and dhc-download.php will
-               only draw pieces you own. $dhca_can_download is set by
-               dhcfighters.php for a signed-in player. */ ?>
+               else. $dhca_can_download is set by dhcfighters.php for any
+               signed-in player, and by dhcsandbox.php for user 1 only -- the
+               sandbox has every trait unlocked whether you hold it or not, and
+               dhc-download.php will only draw pieces you own unless you are
+               the account that posts the Collection. */ ?>
       <?php if (!empty($dhca_can_download)): ?>
       <button class="btn" id="getpng">Download 1000px PNG</button>
       <?php endif; ?>

@@ -49,6 +49,26 @@ $dhca_mode       = 'sandbox';
 $dhca_owned      = null;
 $dhca_standalone = false;
 
+/*
+ * DOWNLOAD THE CANVAS -- USER 1 ONLY, AND THIS IS THE PAGE IT MATTERS ON.
+ *
+ * Everywhere else the button is offered to any signed-in player, because
+ * everywhere else the canvas can only hold traits they were awarded. Here it
+ * holds ANY trait in the game, which is why the sandbox has never had one:
+ * dhc-download.php checks ownership and the button would sit there and refuse.
+ *
+ * User 1 is the platform's own account -- the one that posts the Collection to
+ * X -- and showcasing what the traits can do is what the sandbox is for. The
+ * anti-extraction gate that the ownership check was carrying is NOT lifted
+ * with it: dhcf_missing_required() still refuses anything that is not a whole
+ * Fighter, so this cannot be used to pull Maxingo's art out a layer at a time.
+ *
+ * THE BUTTON IS NOT THE GATE. dhc-download.php makes the same decision again
+ * from the session, because anyone can type the URL.
+ */
+$dhca_can_download = !$dhcs_guest
+	&& (int)($_SESSION['userData']['user_id'] ?? 0) === 1;
+
 /* Rendered first because the assembler resolves $dhc_base (where the art
    landed) as a side effect, and the social card below needs it. */
 ob_start();

@@ -114,11 +114,9 @@ if ($serial > 0) {
 	 * the button on the same rule, but a hidden button is not a permission
 	 * -- anyone can type the URL, so the gate lives in the query.
 	 *
-	 * The ?build= branch below is NOT exempted. A build is an arrangement
-	 * sitting on somebody's canvas rather than a saved Fighter, and its gate
-	 * exists to stop the trait art being walked out one clean 1000px layer
-	 * at a time; that reasoning does not change for user 1, who in any case
-	 * has no way to be looking at another player's unsaved canvas. */
+	 * The ?build= branch below is NOW exempted too, which REVERSES what this
+	 * comment used to say -- see the note on that branch for why the reason
+	 * given here did not survive contact with the sandbox. */
 	$row = null;
 	$own = ($me === 1) ? '' : sprintf(' AND user_id = %d', $me);
 	$res = $conn->query(sprintf(
@@ -160,10 +158,36 @@ if ($serial > 0) {
 		dhcd_fail(400, 'A Fighter needs a ' . implode(', ', $missing)
 		             . ' before it can be downloaded.');
 	}
-	$owned = dhcf_owned($conn, $me);
-	foreach ($traits as $slot => $slug) {
-		$cat = dhcf_slot_category($slot);
-		if (empty($owned[$cat][$slug])) dhcd_fail(403, 'That build uses a trait you do not own.');
+	/*
+	 * AND USER 1 IS EXEMPT FROM THE OWNERSHIP HALF OF IT.
+	 *
+	 * This branch deliberately was not exempt, on the reasoning that its gate
+	 * exists to stop the trait art being walked out a layer at a time. That
+	 * reasoning was attached to the wrong check. The thing actually holding
+	 * that line is dhcf_missing_required() directly above, which refuses
+	 * anything that is not a whole Fighter -- background, torso and head, the
+	 * same three a save insists on -- and it still applies to user 1. The
+	 * ownership check was only ever answering "are these pieces yours", which
+	 * is a question about entitlement, not about extraction.
+	 *
+	 * And there is one page where that question has a different answer:
+	 * dhcsandbox.php unlocks every trait in the game on purpose, so the
+	 * platform account cannot take a picture of anything it arranges there --
+	 * which is exactly what the sandbox is for. User 1 posts the Collection
+	 * to X.
+	 *
+	 * SANDBOX-ONLY IS A CONSEQUENCE, NOT A RULE ENFORCED HERE. An endpoint
+	 * cannot tell which page a build came from (Referer is both absent and
+	 * forgeable), so the exemption is per-ACCOUNT. It has no effect anywhere
+	 * else, because every other page only ever puts traits on the canvas that
+	 * the player already owns -- there is nothing for it to unlock there.
+	 */
+	if ($me !== 1) {
+		$owned = dhcf_owned($conn, $me);
+		foreach ($traits as $slot => $slug) {
+			$cat = dhcf_slot_category($slot);
+			if (empty($owned[$cat][$slug])) dhcd_fail(403, 'That build uses a trait you do not own.');
+		}
 	}
 	/* No serial to name the file after, so the traits name it. Identical
 	   builds reuse the filename instead of piling up as "(1)", "(2)". */

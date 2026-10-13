@@ -415,7 +415,12 @@ finished, named picture of one is the owner's call.
 **And it has to be a whole Fighter** — a background, a torso and a head, the
 same three a save insists on. The download exists so you can show off what you
 assembled, not so the trait art can be walked out of the platform one clean
-layer at a time.
+layer at a time. That rule has no exceptions, for anybody.
+
+**The Sandbox is the one place the button is not offered**, because it unlocks
+every trait in the game whether you hold it or not, so the download would be
+there and refuse. The Skulliance account is the exception: it posts the
+Collection to X, and showing what the traits can do is what the Sandbox is for.
 
 **Edit changes a Fighter without losing it.** Its traits are freed back to you
 for as long as the editor is open, so you can swap one out, add a piece to an
