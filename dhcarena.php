@@ -134,6 +134,13 @@ if ($nemesis) {
    list, the same fact dhca_already_rewarded() checks per battle. */
 $paidToday = $user_id ? dhca_paid_today($conn, $user_id) : array();
 $ladder    = dhca_ladder($conn, null, 10);
+/* AND THE SAME BOARD WITH NO MONTH BOUNDARY. Monthly answers "who is winning
+   right now", which resets and is the live race; all-time answers "who has
+   ever been good at this", which a new month cannot take away. The Fighters
+   page carries both in one panel for exactly this reason and this mirrors it.
+   Shorter than monthly on purpose -- it changes slowly, so a long list of it
+   is a long list of the same names. */
+$ladderAth = dhca_ladder($conn, DHCA_LADDER_ALL_TIME, 10);
 
 /*
  * WHAT EACH FIGHTER WILL ACTUALLY BE, derived here so the picker can sort and
@@ -900,6 +907,13 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px}
 .arena-wrap .a-panel h2 span{opacity:.75;letter-spacing:.08em;white-space:nowrap}
 .arena-wrap .a-panel .body{padding:10px 12px}
+/* The two ladder windows inside one panel. The h3 is quieter than the panel's
+   own h2 -- it is a divider within a thing, not another thing -- and the
+   second section carries the rule, so the first does not start with one. */
+.arena-wrap .a-lsec + .a-lsec{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.arena-wrap .a-lsec h3{margin:0 0 6px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  opacity:.55;font-weight:600;display:flex;gap:7px;align-items:baseline}
+.arena-wrap .a-lsec h3 span{opacity:.7;letter-spacing:.08em;font-weight:400}
 .arena-wrap .a-tools{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 9px;
   font-size:11px}
 .arena-wrap .a-tools .lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.5}
@@ -987,8 +1001,27 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    tab on the first row was sliced in half. 9px gives it 2px of clearance.
    The nemesis is always the first row, so this is the only row it can
    happen to. */
-.arena-wrap .a-foes{display:flex;flex-direction:column;gap:5px;max-height:330px;overflow:auto;
-  padding-top:9px}
+/*
+ * THE WINDOW IS THE SCREEN'S, NOT A NUMBER. It was max-height:330px, which
+ * scrolled nine rivals inside a page that already scrolls while the column
+ * had several hundred pixels of nothing under it -- reported exactly that way.
+ *
+ * But the cap was not pointless, and removing it outright is the wrong fix:
+ * Enter the Arena and Practice sit directly BELOW this list, and
+ * dhca_opponents() can return 24 rivals, so an unbounded list puts the page's
+ * primary action a thousand pixels down for anyone with a full roster of them.
+ *
+ * So it takes the height the viewport actually has. The 340px is everything
+ * else in the column that has to stay reachable -- the page header and stats
+ * strip above, the panel heading, and the two buttons plus the practice note
+ * below. Measured on the reporter's own viewport: 9 rivals no longer scroll,
+ * and a full 24 still leaves both buttons on screen.
+ *
+ * The padding-top is for the ARCH NEMESIS badge, which sits above the first
+ * row's top edge; without it the badge is clipped by this scrollport.
+ */
+.arena-wrap .a-foes{display:flex;flex-direction:column;gap:5px;padding-top:9px;
+  max-height:calc(100vh - 340px);overflow:auto}
 .arena-wrap .a-foe{display:flex;align-items:center;gap:10px;padding:7px 9px;border:1px solid var(--line);
   border-radius:3px;cursor:pointer}
 .arena-wrap .a-foe:hover{border-color:var(--ochre);background:rgba(0,200,160,.05)}
@@ -1016,7 +1049,25 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    because it carries a second line the others do not have. */
 .arena-wrap .a-foe.nem{border-color:rgba(224,70,107,.55);background:rgba(224,70,107,.06);
   flex-wrap:wrap;position:relative}
-.arena-wrap .a-foe.nem:hover{border-color:#e0466b;background:rgba(224,70,107,.1)}
+/*
+ * HOVER AND SELECT ARE THE SAME EVERYWHERE, INCLUDING HERE.
+ *
+ * .a-foe.nem is declared AFTER .a-foe.sel and carries the same specificity,
+ * so it won on background and border-color and a selected nemesis kept its
+ * crimson while every other rival turned ochre -- selection read as a
+ * different thing depending on which row you clicked. Reported as "it throws
+ * me off", and it is a cascade-order accident rather than a decision.
+ *
+ * The crimson stays where it belongs: the resting border and the ARCH NEMESIS
+ * badge, which is what marks the row out. What you DID to the row is feedback
+ * about the interaction, and that has to mean the same thing on every row.
+ * Hover is included deliberately -- fixing only the click would give this one
+ * row a crimson hover that snaps to ochre on selection, which is a bigger
+ * jump than the problem.
+ */
+.arena-wrap .a-foe.nem:hover{border-color:var(--ochre);background:rgba(0,200,160,.05)}
+.arena-wrap .a-foe.nem.sel{border-color:var(--ochre);box-shadow:inset 0 0 0 1px var(--ochre);
+  background:rgba(0,200,160,.08)}
 /* Right, not left: on the left it sat directly above the avatar and read as
    a label ON the picture. On the right it has the row's empty end to itself.
 
@@ -1393,26 +1444,24 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       </div>
     </div>
 
+    <?php /* ONE panel, two windows -- the same shape the Fighters page settled
+             on. They are the same five columns of the same table, so two
+             panels side by side would read as two different things and cost a
+             whole column. This month leads because it is the live race; all
+             time sits under it because it is the slower, longer answer. */ ?>
     <div class="a-panel">
-      <h2>Ladder <span><?php echo htmlspecialchars(dhca_season()); ?></span></h2>
+      <h2>Ladder</h2>
       <div class="body">
-      <?php if (!$ladder): ?>
-        <p class="a-sub" style="margin:0">No battles fought this season yet. Be first.</p>
-      <?php else: ?>
-      <table class="a-lad">
-      <thead><tr><th>#</th><th><?php echo $dhca_guest ? 'Player' : 'Staker'; ?></th><th>W</th><th>L</th><th>Best chain</th></tr></thead>
-      <tbody>
-      <?php foreach ($ladder as $i => $l): ?>
-        <tr<?php echo ((int)$l['user_id'] === $user_id) ? ' class="me"' : ''; ?>>
-          <td class="r"><?php echo $i+1; ?></td>
-          <td><?php echo htmlspecialchars($l['username']); ?></td>
-          <td class="r"><?php echo (int)$l['wins']; ?></td>
-          <td class="r"><?php echo (int)$l['losses']; ?></td>
-          <td class="r">x<?php echo (int)$l['best_chain']; ?></td>
-        </tr>
-      <?php endforeach; ?>
-      </tbody></table>
-      <?php endif; ?>
+        <div class="a-lsec">
+          <h3>This month <span><?php echo htmlspecialchars(dhca_season()); ?></span></h3>
+          <?php echo dhca_ladder_html($ladder, $user_id, $dhca_guest,
+                    'No battles fought this season yet. Be first.'); ?>
+        </div>
+        <div class="a-lsec">
+          <h3>All time</h3>
+          <?php echo dhca_ladder_html($ladderAth, $user_id, $dhca_guest,
+                    'No battles fought yet.'); ?>
+        </div>
       </div>
     </div>
   </div>
@@ -3392,6 +3441,38 @@ post({do:'resume'}, function(res){
 </script>
 
 <?php
+/**
+ * One ladder table, rendered twice -- this month and all time.
+ *
+ * It is a function rather than two copies of the markup for the reason this
+ * codebase keeps relearning: a duplicated list drifts. The two boards are the
+ * same five columns of the same table, and a column added to one and not the
+ * other is a bug nothing would catch, because both would still render.
+ *
+ * $empty is passed in because the two windows are empty for different reasons
+ * and the player should be told which: nobody has fought THIS MONTH is a
+ * standing invitation, nobody has fought AT ALL is a different sentence.
+ */
+function dhca_ladder_html($rows, $user_id, $guest, $empty) {
+	if (!$rows) {
+		return '<p class="a-sub" style="margin:0">' . htmlspecialchars($empty) . '</p>';
+	}
+	$h = '<table class="a-lad"><thead><tr><th>#</th><th>'
+	   . ($guest ? 'Player' : 'Staker')
+	   . '</th><th>W</th><th>L</th><th>Best chain</th></tr></thead><tbody>';
+	foreach ($rows as $i => $l) {
+		$me = ((int)$l['user_id'] === (int)$user_id) ? ' class="me"' : '';
+		$h .= '<tr' . $me . '>'
+		    . '<td class="r">' . ($i + 1) . '</td>'
+		    . '<td>' . htmlspecialchars($l['username']) . '</td>'
+		    . '<td class="r">' . (int)$l['wins'] . '</td>'
+		    . '<td class="r">' . (int)$l['losses'] . '</td>'
+		    . '<td class="r">x' . (int)$l['best_chain'] . '</td>'
+		    . '</tr>';
+	}
+	return $h . '</tbody></table>';
+}
+
 /*
  * dhc-dropmodal.php is already pulled in by header.php platform-wide, so a win
  * that drops a trait reveals it here without this page doing anything.

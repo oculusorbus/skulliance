@@ -373,6 +373,11 @@ then on the longest cascade chain you managed.
 **250,000 CARBON** is split down the ladder by rank at the end of each month,
 the same way every other monthly board pays — see [[platform-leaderboards]].
 
+**There is an all-time board under the monthly one**, same five columns. The
+monthly board is the live race and it resets; the all-time board is the record
+of everyone who has ever been good at this, and a new month cannot take it
+away. Only the monthly one pays.
+
 Only **attacking** results count on the ladder. Your Crew defends whether you
 are there or not, and a board that paid for defensive results would pay for
 being popular.

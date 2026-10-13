@@ -32,7 +32,19 @@ ALTER TABLE dhc_arena_fighters
   ADD COLUMN ko TINYINT(1) NOT NULL DEFAULT 0 AFTER benched_until;
 ```
 
-**2. `dhc_arena_live`**, for human-vs-human matches — the `CREATE TABLE` is at
+**2. An index for the all-time ladder:**
+
+```sql
+ALTER TABLE dhc_arena_battles
+  ADD INDEX idx_outcome (outcome, attacker_id);
+```
+
+The monthly ladder narrows on `idx_season (season, outcome)` first, so it only
+ever groups one month of rows. The all-time board has no season to narrow on and
+groups the whole table, which grows forever. This is not urgent at today's row
+count and will be: add it before the table gets large, not after.
+
+**3. `dhc_arena_live`**, for human-vs-human matches — the `CREATE TABLE` is at
 the bottom of this file under *Live battles*. Live play is inert until it
 exists: the Challenge button will simply report that it could not send.
 

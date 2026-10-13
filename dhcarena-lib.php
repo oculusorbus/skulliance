@@ -921,17 +921,37 @@ function dhca_announce($conn, $b, $won, $rewarded) {
  * allowance for everyone, ranking on total wins IS ranking on win rate, while
  * still making an unspent battle a wasted one.
  */
+/* Pass this as the season for a ladder with no month boundary at all. A
+   sentinel rather than '' or null, because dhca_ladder() reads both of those
+   as "the current season" and a typo must not silently publish all-time
+   standings under a monthly heading. */
+define('DHCA_LADDER_ALL_TIME', '*');
+
 function dhca_ladder($conn, $season = null, $limit = 25) {
 	$season = $season ?: dhca_season();
 	$limit  = (int)$limit;
 	$out = array();
+	/*
+	 * ONE QUERY, TWO WINDOWS. The all-time board is the monthly board without
+	 * the season clause -- same columns, same grouping, same order -- so it is
+	 * the same SQL with one predicate swapped rather than a second function
+	 * that can drift from this one about what a win is.
+	 *
+	 * `outcome IN (1,2)` not `outcome <> 0`: identical result (0, 1 and 2 are
+	 * the only values) and an IN list is something MySQL can use an index for,
+	 * which the all-time branch needs because it has no season to narrow on.
+	 * See the index note in dhcarena-schema.md.
+	 */
+	$window = ($season === DHCA_LADDER_ALL_TIME)
+		? ""
+		: "b.season = '" . $conn->real_escape_string($season) . "' AND ";
 	$sql = "SELECT u.id AS user_id, u.username, u.discord_id, u.avatar, u.visibility,
 	               SUM(b.outcome = 1) AS wins,
 	               SUM(b.outcome = 2) AS losses,
 	               MAX(b.best_chain)  AS best_chain
 	        FROM dhc_arena_battles b
 	        INNER JOIN users u ON u.id = b.attacker_id
-	        WHERE b.season = '".$conn->real_escape_string($season)."' AND b.outcome <> 0
+	        WHERE {$window}b.outcome IN (1,2)
 	        GROUP BY u.id
 	        ORDER BY wins DESC, losses ASC, best_chain DESC
 	        LIMIT $limit";

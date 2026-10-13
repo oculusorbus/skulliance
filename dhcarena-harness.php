@@ -259,9 +259,52 @@ $foes_d = $fd_at === false ? '' : substr($ar_css, $fd_at, strpos($ar_css, '}', $
 /* The two properties that matter, not the whole declaration verbatim --
    pinning the exact string meant adding padding-top broke an assertion about
    the window, which is a different fact. */
-$arok($foes_d !== '' && strpos($foes_d, 'max-height:330px') !== false
-   && strpos($foes_d, 'overflow:auto') !== false,
-   'the rival list lost its desktop window, which is what keeps the panel beside the board');
+/*
+ * THE WINDOW IS VIEWPORT-RELATIVE NOW, not 330px. The fixed cap scrolled nine
+ * rivals -- 445px of content -- while the column had hundreds of pixels of
+ * nothing under it, and that was reported. But the cap itself is not wrong:
+ * Enter the Arena and Practice sit BELOW this list and dhca_opponents()
+ * returns up to 24 rivals, so an unbounded list buries the page's primary
+ * action. calc(100vh - N) keeps both: it uses whatever the screen has.
+ *
+ * MEASURED at the reporter's own 1454x1046 viewport, which is the only reason
+ * to believe the constant: 9 rivals -> 445px of content in a 706px window, no
+ * scroll, button at y=650. 24 rivals -> scrolls, button still at y=911, on
+ * screen. The old 330px scrolled at 9.
+ *
+ * Asserted as "viewport-relative and still bounded" rather than as the exact
+ * expression, so tuning the subtrahend is not a test failure -- what must not
+ * come back is a fixed pixel cap, and what must not go away is the cap.
+ */
+$arok($foes_d !== '' && strpos($foes_d, 'overflow:auto') !== false,
+   'the rival list lost its desktop window entirely; Enter the Arena sits below it and '
+ . 'a 24-rival list would push it off the screen');
+$arok($foes_d !== '' && preg_match('/max-height:calc\(100vh\s*-\s*\d+px\)/', $foes_d) === 1,
+   'the rival list is back on a FIXED max-height; it must size to the viewport, or it '
+ . 'scrolls on a tall screen that had room to show the whole list');
+$arok($foes_d !== '' && strpos($foes_d, 'max-height:330px') === false,
+   'the 330px window is back -- it scrolled nine rivals, which is what was reported');
+
+/*
+ * SELECTING THE NEMESIS LOOKS LIKE SELECTING ANYONE ELSE.
+ *
+ * .a-foe.nem is declared after .a-foe.sel with equal specificity, so it won
+ * on background and border-color and a selected nemesis stayed crimson while
+ * every other rival turned ochre. Reported as "it throws me off". The crimson
+ * belongs to the row's IDENTITY (its resting border and the ARCH NEMESIS
+ * badge); what you did to it is interaction feedback, and that has to read
+ * the same everywhere.
+ *
+ * Checked as "a .nem.sel rule exists and names the accent", not as the exact
+ * declaration, because the point is that the override is present at all --
+ * without it the later .nem rule silently wins again.
+ */
+$arok(preg_match('/\.arena-wrap \.a-foe\.nem\.sel\{[^}]*var\(--ochre\)/', $ar_css) === 1,
+   'selecting the arch nemesis does not use the same highlight as selecting any other '
+ . 'rival -- .a-foe.nem is declared later and wins on background and border');
+$arok(preg_match('/\.arena-wrap \.a-foe\.nem:hover\{[^}]*var\(--ochre\)/', $ar_css) === 1,
+   'hovering the arch nemesis still goes crimson while selecting it goes ochre, which is '
+ . 'a bigger jump than the problem being fixed');
 
 echo "\nand a row cannot be wider than the column\n";
 $arok(preg_match('/@media \(max-width:700px\)\{[\s\S]{0,900}?\.arena-wrap \.a-foe\{display:grid/', $ar_css) === 1,
@@ -467,4 +510,92 @@ $kill = substr($ar_src, strpos($ar_src, 'function killAnim'), 1200);
 $arok(strpos($kill, 'if (anchored(img)) return;') < strpos($kill, 'found = true;'),
    'an anchored piece still counts toward the stagger, so its group stops falling with it');
 
+/* THIS SECTION DID NOT AFFECT THE EXIT CODE. It printed its failures and
+   returned 0 regardless, so every assertion above was advisory -- a mutation
+   that reinstated the 330px window printed FAIL and the run still "passed".
+   Found by mutation-testing the rival-list change; nothing else would have
+   shown it, because a harness that cannot fail looks exactly like one that
+   is passing. */
 echo ($ar_fail ? "\n$ar_fail arena-layout check(s) FAILED\n" : "\nrival list layout: ok\n");
+if ($ar_fail) exit(1);
+
+/* ===========================================================================
+ * THE LADDER, BOTH WINDOWS
+ *
+ * The all-time board is the monthly board without the season clause. Written
+ * as a second function it would drift about what a win is, so dhca_ladder()
+ * swaps one predicate -- and these checks EXECUTE it against a stub
+ * connection rather than reading the file, so what is compared is the SQL the
+ * live page actually sends.
+ * ======================================================================== */
+class DhcaLadderStubConn {
+	public $sqls = array();
+	public function real_escape_string($s) { return addslashes($s); }
+	public function query($sql) { $this->sqls[] = $sql; return false; }
+}
+$ld_fail = 0;
+$ldok = function ($cond, $what) use (&$ld_fail) {
+	if (!$cond) { $ld_fail++; echo "  FAIL  $what\n"; }
+};
+require_once __DIR__ . '/dhcarena-lib.php';
+
+$ldStub = new DhcaLadderStubConn();
+dhca_ladder($ldStub, null, 10);
+dhca_ladder($ldStub, DHCA_LADDER_ALL_TIME, 10);
+$ldok(count($ldStub->sqls) === 2, 'dhca_ladder() did not issue one query per call');
+list($ldMonth, $ldAll) = array($ldStub->sqls[0], $ldStub->sqls[1]);
+
+$season = dhca_season();
+$ldok(strpos($ldMonth, "b.season = '" . $season . "'") !== false,
+   'the monthly ladder is no longer scoped to the current season');
+$ldok(strpos($ldAll, 'season') === false,
+   'the ALL-TIME ladder still filters on a season, so it is just another monthly board');
+
+/* The two must differ ONLY by that clause. Anything else -- a column, the
+   grouping, the order, the limit -- diverging means the two boards would
+   disagree about who is top, which is the whole reason this is one function. */
+$ldNormal = str_replace("b.season = '" . $season . "' AND ", '', $ldMonth);
+$ldok(preg_replace('/\s+/', ' ', $ldNormal) === preg_replace('/\s+/', ' ', $ldAll),
+   'the two ladders differ by more than the season clause, so they can disagree about '
+ . 'what counts as a win');
+
+/* Both windows count the same outcomes. `outcome IN (1,2)` rather than
+   `<> 0` is deliberate: identical result, and an IN list is indexable, which
+   the all-time branch needs because it has no season to narrow on. */
+foreach (array('monthly' => $ldMonth, 'all-time' => $ldAll) as $ldName => $ldSql) {
+	$ldok(strpos($ldSql, 'outcome IN (1,2)') !== false,
+	   "the $ldName ladder does not count exactly the resolved battles");
+	$ldok(strpos($ldSql, 'b.outcome = 1) AS wins') !== false
+	   || strpos($ldSql, 'SUM(b.outcome = 1) AS wins') !== false,
+	   "the $ldName ladder stopped counting wins as outcome 1");
+	$ldok(strpos($ldSql, 'GROUP BY u.id') !== false, "the $ldName ladder is not grouped per player");
+	$ldok(strpos($ldSql, 'LIMIT 10') !== false, "the $ldName ladder ignored its limit");
+}
+
+/* The sentinel must not be confusable with an ordinary season. '' and null
+   both mean "this month" and always have; a board published under the wrong
+   heading is worse than no board. */
+$ldStub2 = new DhcaLadderStubConn();
+dhca_ladder($ldStub2, '', 10);
+$ldok(strpos($ldStub2->sqls[0], "b.season = '" . $season . "'") !== false,
+   "an empty season no longer means the current one");
+
+/* And the page renders BOTH, through one renderer. */
+$ldPage = preg_replace(array('!/\*.*?\*/!s', '~(?<![:/])//.*$~m'), '',
+                       file_get_contents(__DIR__ . '/dhcarena.php'));
+$ldok(strpos($ldPage, 'dhca_ladder($conn, DHCA_LADDER_ALL_TIME') !== false,
+   'dhcarena.php does not fetch the all-time ladder');
+$ldok(substr_count($ldPage, 'dhca_ladder_html(') === 3,
+   'the two ladder sections are not both rendered through the one renderer '
+ . '(expected two calls plus its definition)');
+/* ONCE, inside dhca_ladder_html(). Two occurrences means the markup was
+   copied back into the page for one of the sections, which is how the two
+   boards start differing by a column. */
+$ldok(substr_count($ldPage, '<table class="a-lad">') === 1,
+   'the ladder table markup appears ' . substr_count($ldPage, '<table class="a-lad">')
+ . ' times, not once -- it belongs only in dhca_ladder_html()');
+$ldok(strpos(substr($ldPage, strpos($ldPage, 'function dhca_ladder_html')), '<table class="a-lad">') !== false,
+   'the one copy of the ladder markup is not inside dhca_ladder_html()');
+
+echo ($ld_fail ? "\n$ld_fail ladder check(s) FAILED\n" : "ladder, both windows: ok\n");
+if ($ld_fail) exit(1);
