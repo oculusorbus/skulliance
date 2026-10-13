@@ -519,7 +519,12 @@ letting you build something that renders wrongly. Some of what it handles:
   companion keeps its place against the body.
 - **Some headgear needs a head to sit on.** Beheaded Cyborg has no skull under
   the headgear, so the pieces that would rest on one are not offered with it —
-  most headgear still works, and the assembler tells you which does not.
+  most headgear still works, and the assembler tells you which does not. Pieces
+  that enclose the neck rather than rest on a skull are fine, which is why the
+  Trojan Detection Mask is offered: there is a minted Fighter wearing exactly
+  that combination. **The collection outranks these rules** — if the 226 minted
+  Fighters contain a pairing, it is buildable here, whatever the layering
+  looked like to us.
 - **The DH Samurai helmet goes behind the DH Samurai arms.** Headgear draws
   over arms everywhere else, and should — a helmet is worn on the head, which
   is in front of the shoulders. This one pair is drawn the other way round: the

@@ -1,0 +1,1423 @@
+{
+ "policy": "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
+ "fighters": 226,
+ "note": "Slugs, derived from the CIP-25 metadata under the DHC2 policy via Koios, resolved to platform slugs with the SAME alias and normalisation rules dhc/gen-rarity.py uses. Trait names under \"unmapped\" are minted traits with no platform art -- 1/1 pieces and variants Maxingo did not deliver -- so they cannot appear in any build and no rule can refer to them.",
+ "unmapped": {
+  "background": {
+   "XLONs Complex Trap": 4,
+   "XLONs Room Entrance": 4,
+   "Eon Raider Spacecraft Interior": 5,
+   "XLONs Complex Interior": 1
+  },
+  "torso": {
+   "ZX50 Centinel": 1,
+   "ZX50 Sentinel": 1,
+   "Virtual Smoke": 1,
+   "UE Punk": 6,
+   "Damaged DH Cop #1": 2,
+   "Battled Out Red Cyborg": 1
+  },
+  "head": {
+   "Red Cyborg": 10,
+   "XLON Repeater": 4,
+   "Virtual Smoke": 1,
+   "Virtual Raider": 2,
+   "UE Mutant Pirate": 2,
+   "Battled Out Red Cyborg": 1
+  },
+  "headgear": {
+   "Post Apocalyptic Exo Mask": 4,
+   "Code Viking Helmet": 1
+  },
+  "effects": {
+   "Short Circuit": 6,
+   "Virtual Toxic Smoke": 2,
+   "Digi Goo Attack": 1,
+   "Love Bomb": 4,
+   "Bionic Eye": 2,
+   "Dissolving Bubbles #1": 1
+  },
+  "arms": {
+   "Turret Blue MK200 Limbs": 8
+  },
+  "weapon": {
+   "Bone Blaster 3X": 3
+  }
+ },
+ "traits": {
+  "DHC2F001": {},
+  "DHC2F002": {},
+  "DHC2F003": {},
+  "DHC2F004": {},
+  "DHC2F007": {
+   "head": "alien-zombie",
+   "headgear": "red-cyborg-helmet",
+   "torso": "bone-robot",
+   "arms": "infested-robo-limb",
+   "weapon": "scythe-sash",
+   "background": "wormhole-passage",
+   "effects1": "dhc2-comic-cover-1",
+   "effects2": "dissolving-code-attack"
+  },
+  "DHC2F008": {
+   "head": "sentinel",
+   "headgear": "golden-cyber-plague-detecting-mask",
+   "torso": "t39-planet-alien-flesh",
+   "arms": "dh-pilot",
+   "companion": "dh-vision-shoulder-cam",
+   "effects1": "dhc2-comic-cover-3"
+  },
+  "DHC2F010": {
+   "head": "cyborg-stryker-02",
+   "headgear": "skull-collector-helmet",
+   "torso": "silver-cyborg",
+   "arms": "symbio-flexx",
+   "background": "dh-aracnyd-web",
+   "effects1": "dhc2-comic-cover-3",
+   "effects2": "digital-fire"
+  },
+  "DHC2F011": {
+   "head": "xbot",
+   "headgear": "superbug-3",
+   "torso": "golden-cyborg",
+   "weapon": "electric-morning-star",
+   "background": "hellscape",
+   "effects1": "digital-bubbles-2",
+   "effects2": "cyber-lava-attack"
+  },
+  "DHC2F013": {
+   "head": "dh-demon",
+   "weapon": "annihilation-belt",
+   "companion": "silver-isopunk",
+   "background": "dh-nebula-02",
+   "effects1": "dhc2-comic-cover-4",
+   "effects2": "digital-bubbles-2"
+  },
+  "DHC2F014": {
+   "head": "dh-cop-03-1",
+   "headgear": "alien-skull",
+   "torso": "dynamo",
+   "weapon": "bioweapon",
+   "background": "xlon-s-2yk-attack-01",
+   "effects1": "dissolving-code-attack",
+   "effects2": "cyber-lava-attack"
+  },
+  "DHC2F015": {
+   "head": "xbot",
+   "headgear": "mk100-scuba-headgear",
+   "torso": "mk100",
+   "weapon": "dh-raider-equipment",
+   "companion": "mk100-insekt",
+   "background": "digital-trap-01",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F016": {
+   "head": "golden-cyborg",
+   "torso": "golden-cyborg",
+   "arms": "golden-cyborg-limbs",
+   "companion": "golden-isopunk",
+   "background": "hellscape",
+   "effects1": "dhc2-comic-cover-2"
+  },
+  "DHC2F018": {
+   "head": "c73",
+   "headgear": "dh-sorceror",
+   "torso": "c-4589-mechanic",
+   "arms": "cyber-666-knight-armor",
+   "background": "advanced-circuit-1",
+   "effects1": "earth-recovery-system-interface"
+  },
+  "DHC2F020": {
+   "companion": "arachnid-laser-cannon",
+   "effects1": "xlon-s-chamber-destruction"
+  },
+  "DHC2F021": {
+   "head": "mk100",
+   "headgear": "cyber-purr-helmet",
+   "torso": "data-explorer",
+   "arms": "silver-cyborg-limbs",
+   "background": "xlon-s-2yk-attack-01",
+   "effects1": "dhc2-comic-cover-3",
+   "effects2": "cyber-sparks"
+  },
+  "DHC2F022": {
+   "head": "sentinel",
+   "headgear": "malware-detecting-mask",
+   "torso": "dh-cop",
+   "arms": "deflektor",
+   "companion": "mk100-insekt",
+   "background": "dh-nebula-1",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F023": {
+   "head": "cyborg-stryker-02",
+   "torso": "t39-planet-alien-flesh",
+   "arms": "influenza-blaster-3k",
+   "weapon": "skull-krusher-sash",
+   "background": "dh-thunder",
+   "effects1": "digital-bubbles-2",
+   "effects2": "dissolving-code-attack"
+  },
+  "DHC2F025": {
+   "head": "sentinel",
+   "headgear": "red-cyborg-helmet",
+   "torso": "c-4589-mechanic",
+   "arms": "robo-crusher-arms",
+   "background": "xlon-ddos-attack",
+   "effects1": "dhc2-comic-cover-2",
+   "effects2": "digital-bubbles-3"
+  },
+  "DHC2F026": {
+   "headgear": "xlon-implant",
+   "torso": "dh-cop-2",
+   "arms": "connected-protector-limbs",
+   "weapon": "mega-taser-cannon-1",
+   "effects1": "digital-666-smoke"
+  },
+  "DHC2F027": {
+   "head": "alien-zombie-02",
+   "headgear": "killer-phantom-mask",
+   "torso": "t39-planet-alien-flesh",
+   "arms": "perforator-arm-replacement",
+   "background": "red-planet-decoy",
+   "effects1": "dhc2-comic-cover-4",
+   "effects2": "cyber-lava-attack"
+  },
+  "DHC2F028": {
+   "head": "mk300",
+   "headgear": "alien-predator",
+   "torso": "t39-planet-alien-flesh",
+   "arms": "robo-crusher-arms",
+   "weapon": "annihilation-belt",
+   "background": "digital-trap-04"
+  },
+  "DHC2F030": {
+   "head": "dh-cop-2",
+   "headgear": "malware-detecting-mask",
+   "torso": "dh-cop-2",
+   "background": "xlons-s-complex",
+   "effects1": "dhc2-comic-cover-3",
+   "effects2": "xlon-digi-fire-attack"
+  },
+  "DHC2F031": {
+   "head": "u-e-mutant-02",
+   "headgear": "saber-tech-headgear",
+   "torso": "dh-cop-2",
+   "weapon": "dh-raider-equipment",
+   "companion": "silver-isopunk",
+   "effects1": "xlon-s-black-fire-attack"
+  },
+  "DHC2F032": {
+   "head": "mk100",
+   "headgear": "cyber-purr-helmet",
+   "torso": "amplified-dreadnought",
+   "weapon": "lil-fren-1",
+   "background": "digital-flames-2",
+   "effects1": "xlon-s-chamber-destruction"
+  },
+  "DHC2F037": {
+   "head": "c73",
+   "headgear": "malware-detecting-mask",
+   "torso": "dh-cop",
+   "background": "hellscape",
+   "effects1": "dhc2-comic-cover-1",
+   "effects2": "lava-thunder-attack"
+  },
+  "DHC2F038": {
+   "head": "beheaded-cyborg",
+   "headgear": "cyber-purr-helmet",
+   "torso": "cyber-venom-predator",
+   "companion": "u-vigilance-device-2",
+   "background": "dh-aracnyd-web"
+  },
+  "DHC2F043": {
+   "head": "beheaded-cyborg",
+   "headgear": "trojan-detection-mask",
+   "torso": "planet-8tz-specter",
+   "background": "advanced-circuit-1",
+   "effects1": "dhc2-comic-cover-1",
+   "effects2": "virtual-smoke"
+  },
+  "DHC2F047": {
+   "head": "mk100",
+   "headgear": "mk100-codesea-explorer-helmet",
+   "torso": "mk100",
+   "arms": "mk100-blaster-arms",
+   "companion": "mk100-insekt",
+   "background": "digital-trap-2"
+  },
+  "DHC2F049": {
+   "torso": "data-explorer",
+   "background": "dh-landscape",
+   "effects1": "dhc2-comic-cover-3",
+   "effects2": "digi-goo-trap"
+  },
+  "DHC2F050": {
+   "head": "cyborg-stryker",
+   "torso": "bone-robot",
+   "companion": "dh-vision-shoulder-cam",
+   "background": "xlon-s-2yk-attack-01",
+   "effects1": "earth-recovery-system-interface",
+   "effects2": "digital-666-smoke"
+  },
+  "DHC2F052": {
+   "background": "xlon-s-psi-attack",
+   "effects1": "lava-thunder-attack",
+   "effects2": "cyber-lava-attack"
+  },
+  "DHC2F055": {
+   "head": "c73",
+   "headgear": "code-prisoner-helmet",
+   "torso": "c73",
+   "background": "dh-aracnyd-web",
+   "effects1": "dhc2-comic-cover-3"
+  },
+  "DHC2F058": {
+   "head": "sentinel",
+   "headgear": "skull-collector-helmet",
+   "torso": "skeletal-robot",
+   "background": "xlon-s-psi-attack",
+   "effects1": "dhc2-comic-cover-2"
+  },
+  "DHC2F059": {
+   "head": "mk100",
+   "torso": "v12-raider",
+   "arms": "head-chopper",
+   "background": "advanced-circuit-2",
+   "effects1": "dhc2-comic-cover-1"
+  },
+  "DHC2F062": {
+   "head": "sentinel",
+   "headgear": "saber-tech-headgear",
+   "torso": "dynamo",
+   "arms": "robo-crusher-arms",
+   "companion": "u-vigilance-device-1",
+   "effects1": "dhc2-comic-cover-2",
+   "effects2": "digital-fire"
+  },
+  "DHC2F064": {
+   "head": "u-e-mutant-02",
+   "headgear": "saber-tech-headgear",
+   "torso": "zx350-centinel",
+   "arms": "dh-pilot",
+   "companion": "arachnid-laser-cannon"
+  },
+  "DHC2F065": {
+   "head": "cyborg-stryker",
+   "headgear": "cyber-purr-helmet",
+   "torso": "dh-cop-2",
+   "arms": "connected-protector-limbs",
+   "effects2": "digital-bubbles-3"
+  },
+  "DHC2F066": {
+   "head": "predator",
+   "torso": "skeletal-robot",
+   "background": "red-planet-decoy",
+   "effects1": "dhc2-comic-cover-4",
+   "effects2": "lava-thunder-attack"
+  },
+  "DHC2F067": {
+   "head": "dh-alien-punk",
+   "torso": "dh-cop",
+   "arms": "symbio-flexx",
+   "effects1": "dhc2-comic-cover-3"
+  },
+  "DHC2F069": {
+   "head": "beheaded-cyborg",
+   "torso": "silver-cyborg",
+   "arms": "robo-crusher-arms",
+   "background": "digital-trap-04",
+   "effects1": "lava-thunder-attack"
+  },
+  "DHC2F073": {
+   "head": "u-e-mutant-01",
+   "headgear": "golden-cyber-plague-detecting-mask",
+   "torso": "cyber-venom-predator",
+   "weapon": "annihilation-belt",
+   "companion": "u-vigilance-device-1"
+  },
+  "DHC2F076": {
+   "head": "silver-cyborg",
+   "headgear": "trojan-detection-mask",
+   "torso": "silver-cyborg",
+   "arms": "symbio-flexx",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F077": {
+   "head": "broken-xlon-repeater-1",
+   "torso": "dynamo",
+   "weapon": "lil-fren-1",
+   "background": "quasar-tf-39-sun"
+  },
+  "DHC2F079": {
+   "head": "u-e-mutant-02",
+   "headgear": "666-demon-headgear",
+   "torso": "dh-cop-2",
+   "background": "digital-trap-04",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F080": {
+   "head": "u-e-mutant-02",
+   "headgear": "skull-collector-helmet",
+   "torso": "dh-cop",
+   "background": "digital-trap-03",
+   "effects1": "lava-thunder-attack"
+  },
+  "DHC2F081": {
+   "head": "sentinel",
+   "headgear": "alien-skull",
+   "torso": "amplified-dreadnought",
+   "background": "digital-flames-2",
+   "effects1": "dhc2-comic-cover-2",
+   "effects2": "digital-bubbles-1"
+  },
+  "DHC2F083": {
+   "head": "cyborg-stryker-02",
+   "torso": "amplified-dreadnought",
+   "weapon": "skull-krusher-sash",
+   "background": "digital-trap-2"
+  },
+  "DHC2F087": {
+   "head": "u-e-mutant-02",
+   "headgear": "cyber-insekt-helmet",
+   "torso": "c38",
+   "weapon": "lil-fren-1"
+  },
+  "DHC2F088": {
+   "head": "dh-cop-03-1",
+   "headgear": "mk200-cyber-plague-vr-mask",
+   "torso": "data-explorer",
+   "effects1": "dhc2-comic-cover-1",
+   "effects2": "dissolving-code-attack"
+  },
+  "DHC2F090": {
+   "torso": "c73",
+   "arms": "robo-crusher-arms",
+   "background": "digital-trap-2"
+  },
+  "DHC2F093": {
+   "head": "dh-alien-punk",
+   "headgear": "golden-cyber-plague-detecting-mask",
+   "arms": "symbio-flexx",
+   "background": "xlon-ddos-attack"
+  },
+  "DHC2F095": {
+   "head": "dh-zombie",
+   "headgear": "red-cyborg-helmet",
+   "torso": "zx350-centinel",
+   "arms": "deflektor",
+   "background": "digital-trap-04",
+   "effects1": "xlon-digi-fire-attack"
+  },
+  "DHC2F097": {
+   "head": "dh-cop-03-1",
+   "headgear": "mk100-codesea-explorer-helmet",
+   "torso": "dh-cop",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F098": {
+   "head": "mk300",
+   "torso": "dh-cop-2",
+   "weapon": "axe",
+   "background": "dh-killer-bubbles",
+   "effects1": "digital-fire"
+  },
+  "DHC2F099": {
+   "head": "cyborg-stryker",
+   "headgear": "alien-skull",
+   "torso": "skeletal-robot",
+   "background": "xlon-s-digital-smoke-attack",
+   "effects1": "digital-bubbles-1"
+  },
+  "DHC2F100": {
+   "head": "cyborg-stryker-02",
+   "torso": "bone-robot",
+   "weapon": "scythe-sash",
+   "background": "digital-flames-2",
+   "effects1": "dhc2-comic-cover-1"
+  },
+  "DHC2F101": {
+   "head": "cyborg-stryker-03",
+   "headgear": "code-prisoner-helmet",
+   "torso": "c-4589-mechanic",
+   "arms": "infested-robo-limb",
+   "background": "advanced-circuit-1"
+  },
+  "DHC2F102": {
+   "head": "sentinel",
+   "torso": "mk200",
+   "background": "dark-explosion",
+   "effects1": "xlon-s-chamber-destruction"
+  },
+  "DHC2F103": {
+   "head": "happy-cyborg-decoy",
+   "torso": "dh-cop",
+   "weapon": "plastic-blaster",
+   "effects1": "earth-recovery-system-interface"
+  },
+  "DHC2F107": {
+   "torso": "dh-cop",
+   "arms": "cyber-inferno-limbs",
+   "weapon": "annihilation-belt",
+   "background": "digital-trap-04",
+   "effects1": "earth-recovery-system-interface"
+  },
+  "DHC2F108": {
+   "head": "predator",
+   "torso": "dh-cop-2",
+   "arms": "deflektor",
+   "background": "digital-trap-04",
+   "effects1": "dhc2-comic-cover-3"
+  },
+  "DHC2F109": {
+   "head": "v12-punk-raider",
+   "arms": "connected-protector-limbs",
+   "weapon": "annihilation-belt",
+   "background": "quasar-tf-39-sun"
+  },
+  "DHC2F111": {
+   "head": "dh-cop-03-1",
+   "headgear": "red-cyborg-helmet",
+   "torso": "dh-cop-2",
+   "arms": "turret-blue-cyborg-limbs",
+   "background": "advanced-circuit-2"
+  },
+  "DHC2F112": {
+   "head": "predator",
+   "torso": "planet-8tz-specter",
+   "arms": "robo-crusher-arms",
+   "companion": "golden-isopunk",
+   "background": "digital-flames-2"
+  },
+  "DHC2F114": {
+   "head": "planet-1kz-killer-alien",
+   "headgear": "red-cyborg-helmet",
+   "torso": "mk200",
+   "weapon": "lil-fren-1",
+   "background": "dh-aracnyd-web"
+  },
+  "DHC2F116": {
+   "head": "u-e-mutant-01",
+   "headgear": "mk200-cyber-plague-vr-mask",
+   "torso": "bone-robot",
+   "arms": "skeletal-stabber",
+   "background": "digital-flames-2"
+  },
+  "DHC2F117": {
+   "head": "alien-zombie-02",
+   "headgear": "damaged-mk100-scuba-headgear",
+   "torso": "dh-cop"
+  },
+  "DHC2F120": {
+   "head": "happy-cyborg-decoy",
+   "headgear": "mk100-codesea-explorer-helmet",
+   "torso": "amplified-dreadnought",
+   "background": "hellscape",
+   "effects1": "xlon-digi-fire-attack"
+  },
+  "DHC2F121": {
+   "head": "predator",
+   "torso": "dynamo",
+   "weapon": "electric-morning-star",
+   "background": "advanced-circuit-1",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F122": {
+   "head": "dh-cop-03-1",
+   "headgear": "cyber-insekt-helmet",
+   "torso": "t39-planet-alien-flesh",
+   "arms": "deteriorated-mk100-blaster-arms",
+   "effects1": "cyber-sparks"
+  },
+  "DHC2F125": {
+   "head": "mk100",
+   "torso": "skeletal-robot",
+   "background": "digital-flames-1",
+   "effects1": "xlon-s-black-fire-attack",
+   "effects2": "cyber-lava-attack"
+  },
+  "DHC2F126": {
+   "head": "beheaded-cyborg",
+   "torso": "t39-planet-alien-flesh",
+   "arms": "connected-protector-limbs",
+   "weapon": "annihilation-belt",
+   "companion": "u-vigilance-device-1"
+  },
+  "DHC2F127": {
+   "head": "cyborg-stryker",
+   "headgear": "ww2-helmet",
+   "torso": "t39-planet-alien-flesh",
+   "effects1": "digital-fire"
+  },
+  "DHC2F128": {
+   "torso": "dh-cop",
+   "weapon": "scythe-sash",
+   "background": "advanced-circuit-1",
+   "effects1": "xlon-digi-fire-attack"
+  },
+  "DHC2F130": {
+   "head": "xbot",
+   "torso": "bone-robot",
+   "weapon": "plastic-blaster",
+   "companion": "u-vigilance-device-1",
+   "effects1": "xlon-digi-fire-attack"
+  },
+  "DHC2F131": {
+   "head": "dh-cop-03-1",
+   "headgear": "malware-detecting-mask",
+   "torso": "t39-planet-alien-flesh",
+   "weapon": "dh-raider-equipment",
+   "background": "xlon-ddos-attack"
+  },
+  "DHC2F133": {
+   "head": "silver-cyborg",
+   "torso": "mk200",
+   "companion": "dh-vision-shoulder-cam",
+   "background": "digital-flames-2",
+   "effects1": "cyber-sparks"
+  },
+  "DHC2F135": {
+   "head": "xbot",
+   "headgear": "golden-cyber-plague-detecting-mask",
+   "torso": "c73",
+   "companion": "u-vigilance-device-2",
+   "background": "xlon-ddos-attack"
+  },
+  "DHC2F137": {},
+  "DHC2F138": {
+   "head": "v12-punk-raider",
+   "headgear": "mk200-cyber-plague-vr-mask",
+   "torso": "mk100",
+   "background": "advanced-circuit-1",
+   "effects1": "xlon-digi-fire-attack"
+  },
+  "DHC2F141": {
+   "head": "u-e-mutant-01",
+   "headgear": "saber-tech-headgear",
+   "torso": "t39-planet-alien-flesh",
+   "weapon": "bioweapon",
+   "background": "digital-trap-2"
+  },
+  "DHC2F143": {
+   "head": "silver-cyborg",
+   "torso": "bone-robot",
+   "arms": "robo-crusher-arms",
+   "background": "dh-aracnyd-web",
+   "effects1": "lava-thunder-attack"
+  },
+  "DHC2F144": {
+   "head": "gas-mask",
+   "torso": "v12-raider",
+   "arms": "perforator-arm-replacement",
+   "background": "advanced-circuit-1",
+   "effects1": "xlon-s-black-fire-attack"
+  },
+  "DHC2F146": {
+   "head": "dh-alien-punk",
+   "headgear": "ww2-helmet",
+   "torso": "dh-alien-punk",
+   "weapon": "annihilation-belt",
+   "companion": "code-sea-predator"
+  },
+  "DHC2F149": {
+   "head": "dh-cop-01",
+   "torso": "inferno-wasp-guardian",
+   "weapon": "annihilation-belt",
+   "effects1": "digital-666-smoke"
+  },
+  "DHC2F152": {
+   "head": "c73",
+   "torso": "c38",
+   "companion": "u-vigilance-device-2",
+   "background": "data-tunnel",
+   "effects1": "lava-thunder-attack"
+  },
+  "DHC2F154": {
+   "head": "dh-cop-03-1",
+   "headgear": "superbug-3",
+   "torso": "data-explorer",
+   "background": "digital-flames-1",
+   "effects1": "xlon-s-chamber-destruction"
+  },
+  "DHC2F155": {
+   "head": "dh-alien-punk",
+   "weapon": "dh-raider-equipment",
+   "background": "dh-killer-bubbles",
+   "effects1": "earth-recovery-system-interface"
+  },
+  "DHC2F156": {
+   "head": "u-e-mutant-01",
+   "headgear": "dm-mask",
+   "torso": "zx350-centinel",
+   "background": "xlons-s-complex",
+   "effects1": "digital-fire"
+  },
+  "DHC2F157": {
+   "head": "gas-mask",
+   "headgear": "dh-fire-goggles",
+   "torso": "skeletal-robot",
+   "weapon": "annihilation-belt",
+   "background": "dh-thunder"
+  },
+  "DHC2F159": {
+   "head": "cyborg-stryker-03",
+   "headgear": "cyber-purr-helmet",
+   "torso": "red-cyborg",
+   "background": "digital-trap-01",
+   "effects1": "dhc2-comic-cover-1"
+  },
+  "DHC2F160": {
+   "head": "sentinel",
+   "headgear": "dh-fire-goggles",
+   "background": "xlon-s-psi-attack",
+   "effects1": "digital-fire"
+  },
+  "DHC2F162": {
+   "head": "u-e-mutant-02",
+   "headgear": "red-cyborg-helmet",
+   "torso": "dh-cop",
+   "arms": "cyber-666-knight-armor",
+   "weapon": "skull-krusher-sash",
+   "background": "dark-explosion"
+  },
+  "DHC2F163": {
+   "head": "sentinel",
+   "headgear": "red-cyborg-helmet",
+   "torso": "skeletal-robot",
+   "background": "xlon-s-psi-attack"
+  },
+  "DHC2F165": {
+   "head": "sentinel",
+   "headgear": "saber-tech-headgear",
+   "torso": "dynamo",
+   "background": "data-tunnel",
+   "effects1": "digital-bubbles-2"
+  },
+  "DHC2F166": {
+   "head": "sentinel",
+   "torso": "dh-cop",
+   "effects1": "dhc2-comic-cover-2",
+   "effects2": "digital-bubbles-2"
+  },
+  "DHC2F167": {
+   "head": "u-e-mutant-02",
+   "headgear": "cyber-insekt-helmet",
+   "torso": "c-4589-mechanic",
+   "weapon": "plastic-blaster",
+   "background": "experimentation-facility-entrance"
+  },
+  "DHC2F168": {
+   "head": "silver-cyborg",
+   "torso": "amplified-dreadnought",
+   "arms": "cyber-666-knight-armor",
+   "background": "digital-trap-01",
+   "effects1": "xlon-s-chamber-destruction"
+  },
+  "DHC2F169": {
+   "head": "alien-zombie-02",
+   "headgear": "cyber-purr-helmet",
+   "torso": "bone-robot",
+   "arms": "deteriorated-mk100-blaster-arms",
+   "background": "dh-nebula-02"
+  },
+  "DHC2F170": {
+   "head": "mk100",
+   "headgear": "mk100-codesea-explorer-helmet",
+   "torso": "bone-robot",
+   "companion": "threat-seeker-antenna",
+   "background": "experimentation-facility-entrance"
+  },
+  "DHC2F172": {
+   "head": "predator",
+   "torso": "dh-cop",
+   "weapon": "axe",
+   "background": "digital-trap-2",
+   "effects1": "digital-bubbles-2"
+  },
+  "DHC2F173": {
+   "head": "beheaded-cyborg",
+   "torso": "v12-raider",
+   "companion": "silver-isopunk",
+   "background": "digital-trap-04",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F174": {
+   "head": "mk100",
+   "torso": "zx350-centinel",
+   "arms": "influenza-blaster-3k",
+   "effects1": "xlon-digi-fire-attack",
+   "effects2": "xlon-s-chamber-destruction"
+  },
+  "DHC2F175": {
+   "headgear": "xlon-implant",
+   "torso": "c-4589-mechanic",
+   "weapon": "mega-taser-cannon-1",
+   "background": "digital-flames-2"
+  },
+  "DHC2F176": {
+   "head": "cyborg-stryker",
+   "headgear": "malware-detecting-mask",
+   "torso": "dh-cop-2",
+   "weapon": "dh-spike-blaster-1",
+   "background": "xlon-ddos-attack"
+  },
+  "DHC2F177": {
+   "head": "gas-mask",
+   "torso": "bone-robot",
+   "companion": "mk100-insekt",
+   "background": "dh-thunder"
+  },
+  "DHC2F178": {
+   "torso": "t39-planet-alien-flesh",
+   "effects1": "xlon-s-chamber-destruction",
+   "effects2": "digital-666-smoke"
+  },
+  "DHC2F179": {
+   "head": "dh-demon",
+   "torso": "data-explorer",
+   "companion": "threat-seeker-antenna",
+   "background": "xlon-s-2yk-attack-01",
+   "effects1": "lava-thunder-attack",
+   "effects2": "dissolving-code-attack"
+  },
+  "DHC2F181": {
+   "head": "v12-punk-raider",
+   "torso": "dh-cop",
+   "weapon": "mega-taser-cannon-1",
+   "background": "dh-thunder"
+  },
+  "DHC2F182": {
+   "head": "cyborg-stryker",
+   "headgear": "cyber-purr-helmet",
+   "torso": "zx350-centinel",
+   "weapon": "annihilation-belt"
+  },
+  "DHC2F183": {
+   "torso": "dh-cop",
+   "weapon": "plastic-blaster",
+   "background": "digital-flames-1",
+   "effects1": "cyber-sparks"
+  },
+  "DHC2F184": {
+   "head": "alien-zombie-02",
+   "headgear": "cyber-purr-helmet",
+   "torso": "t39-planet-alien-flesh",
+   "weapon": "lil-fren-1",
+   "background": "red-planet-decoy"
+  },
+  "DHC2F185": {
+   "head": "c73",
+   "headgear": "cyber-purr-helmet",
+   "torso": "dh-alien-punk",
+   "background": "xlon-ddos-attack",
+   "effects1": "xlon-s-chamber-destruction"
+  },
+  "DHC2F189": {
+   "head": "silver-cyborg",
+   "torso": "silver-cyborg",
+   "arms": "silver-cyborg-limbs",
+   "companion": "silver-isopunk"
+  },
+  "DHC2F190": {
+   "head": "planet-8tz-specter-1",
+   "torso": "planet-8tz-specter",
+   "background": "digital-flames-1",
+   "effects1": "xlon-digi-fire-attack"
+  },
+  "DHC2F193": {
+   "head": "golden-cyborg",
+   "torso": "c38",
+   "effects1": "dhc2-comic-cover-1"
+  },
+  "DHC2F198": {
+   "head": "beheaded-cyborg",
+   "torso": "nebula-demon",
+   "background": "xlons-s-complex",
+   "effects1": "xlon-s-black-fire-attack"
+  },
+  "DHC2F199": {
+   "head": "mk100",
+   "headgear": "dh-destroyer",
+   "torso": "mk200",
+   "effects1": "earth-recovery-system-interface"
+  },
+  "DHC2F203": {
+   "head": "c73",
+   "headgear": "golden-cyber-plague-detecting-mask",
+   "torso": "c73",
+   "arms": "perforator-arm-replacement"
+  },
+  "DHC2F204": {
+   "head": "dh-cop-2",
+   "headgear": "dm-mask",
+   "torso": "nebula-demon",
+   "background": "hellscape"
+  },
+  "DHC2F205": {
+   "head": "v12-punk-raider",
+   "torso": "dh-alien-punk",
+   "weapon": "axe",
+   "effects1": "earth-recovery-system-interface",
+   "effects2": "xlon-s-chamber-destruction"
+  },
+  "DHC2F206": {
+   "head": "golden-cyborg",
+   "torso": "golden-cyborg",
+   "arms": "symbio-flexx",
+   "effects1": "digital-fire"
+  },
+  "DHC2F207": {
+   "head": "dh-cop-01",
+   "headgear": "cyber-knight-helmet",
+   "torso": "dh-cop",
+   "arms": "deflektor"
+  },
+  "DHC2F209": {
+   "head": "u-e-mutant-01",
+   "torso": "skeletal-robot",
+   "arms": "robo-crusher-arms",
+   "companion": "dh-vision-shoulder-cam"
+  },
+  "DHC2F211": {
+   "head": "xbot",
+   "torso": "inferno-wasp-guardian",
+   "weapon": "axe",
+   "effects1": "lava-thunder-attack"
+  },
+  "DHC2F212": {
+   "head": "v12-punk-raider",
+   "torso": "mk100",
+   "arms": "silver-cyborg-limbs",
+   "background": "quasar-tf-39-sun"
+  },
+  "DHC2F213": {
+   "head": "sentinel",
+   "torso": "t39-planet-alien-flesh",
+   "arms": "perforator-arm-replacement",
+   "background": "xlon-s-digital-smoke-attack",
+   "effects1": "dhc2-comic-cover-1"
+  },
+  "DHC2F214": {
+   "head": "cyborg-stryker-03",
+   "headgear": "saber-tech-headgear",
+   "torso": "skeletal-robot",
+   "arms": "robo-crusher-arms"
+  },
+  "DHC2F218": {
+   "head": "silver-cyborg",
+   "torso": "c38",
+   "arms": "deflektor"
+  },
+  "DHC2F219": {
+   "head": "mk300",
+   "torso": "v12-raider",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F220": {
+   "head": "sentinel",
+   "headgear": "code-prisoner-helmet",
+   "torso": "amplified-dreadnought",
+   "weapon": "skull-krusher-sash"
+  },
+  "DHC2F221": {
+   "torso": "v12-raider",
+   "background": "xlons-s-complex"
+  },
+  "DHC2F223": {
+   "head": "sentinel",
+   "headgear": "cyber-knight-helmet",
+   "torso": "skeletal-robot",
+   "arms": "connected-protector-limbs",
+   "background": "digital-trap-03"
+  },
+  "DHC2F224": {
+   "head": "cyborg-stryker",
+   "torso": "nebula-demon",
+   "background": "xlons-s-complex",
+   "effects1": "dhc2-comic-cover-2"
+  },
+  "DHC2F226": {
+   "head": "cyborg-stryker-03",
+   "headgear": "cyber-knight-helmet",
+   "torso": "dh-cop",
+   "weapon": "lil-fren-1"
+  },
+  "DHC2F227": {
+   "head": "alien-zombie-02",
+   "headgear": "arachno-neural-implant",
+   "torso": "mk200"
+  },
+  "DHC2F228": {
+   "head": "u-e-mutant-02",
+   "headgear": "bio-circuit-head-port",
+   "torso": "cyber-venom-predator",
+   "background": "experimentation-facility-entrance"
+  },
+  "DHC2F229": {
+   "head": "happy-cyborg-decoy",
+   "torso": "silver-cyborg",
+   "companion": "arachnid-laser-cannon",
+   "background": "digital-flames-2"
+  },
+  "DHC2F231": {
+   "head": "cyborg-stryker-02",
+   "torso": "silver-cyborg",
+   "background": "dh-aracnyd-web",
+   "effects1": "digital-fire"
+  },
+  "DHC2F237": {
+   "head": "dh-cop-01",
+   "torso": "amplified-dreadnought",
+   "companion": "arachnid-laser-cannon",
+   "background": "xlon-ddos-attack"
+  },
+  "DHC2F239": {
+   "head": "golden-cyborg",
+   "torso": "v12-raider",
+   "background": "xlon-s-2yk-attack-01",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F240": {
+   "head": "xbot",
+   "torso": "mk100",
+   "arms": "influenza-blaster-3k",
+   "background": "digital-abyss",
+   "effects1": "lava-thunder-attack"
+  },
+  "DHC2F241": {
+   "torso": "t39-planet-alien-flesh",
+   "arms": "symbio-flexx"
+  },
+  "DHC2F247": {
+   "head": "dh-alien-punk",
+   "torso": "cyber-venom-predator",
+   "background": "dh-thunder",
+   "effects1": "lava-thunder-attack"
+  },
+  "DHC2F252": {
+   "head": "cyborg-stryker",
+   "torso": "golden-cyborg",
+   "weapon": "axe",
+   "background": "xlon-s-2yk-attack-02"
+  },
+  "DHC2F253": {
+   "head": "cyborg-stryker-02",
+   "headgear": "alien-skull",
+   "torso": "c38",
+   "background": "dh-nebula-02"
+  },
+  "DHC2F255": {
+   "head": "dh-cop-03-1",
+   "torso": "cyber-venom-predator",
+   "companion": "code-sea-predator",
+   "background": "advanced-circuit-1"
+  },
+  "DHC2F257": {
+   "head": "sentinel",
+   "headgear": "mk200-cyber-plague-vr-mask",
+   "torso": "dh-cop",
+   "weapon": "plastic-blaster"
+  },
+  "DHC2F262": {
+   "head": "dh-alien-punk",
+   "torso": "red-cyborg",
+   "background": "xlon-s-2yk-attack-02",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F264": {
+   "head": "cyborg-stryker",
+   "headgear": "bio-circuit-head-port",
+   "torso": "v12-raider"
+  },
+  "DHC2F265": {
+   "head": "c73",
+   "headgear": "skull-collector-helmet",
+   "torso": "skeletal-robot",
+   "background": "xlon-ddos-attack",
+   "effects1": "xlon-s-black-fire-attack"
+  },
+  "DHC2F267": {
+   "head": "u-e-mutant-01",
+   "torso": "silver-cyborg",
+   "arms": "cyber-666-knight-armor",
+   "background": "dh-aracnyd-web"
+  },
+  "DHC2F272": {
+   "head": "v12-punk-raider",
+   "torso": "dh-cop",
+   "arms": "perforator-arm-replacement",
+   "weapon": "lil-fren-1"
+  },
+  "DHC2F274": {
+   "head": "dh-demon",
+   "torso": "bone-robot",
+   "effects1": "digital-bubbles-2"
+  },
+  "DHC2F276": {
+   "head": "cyborg-stryker",
+   "torso": "cyber-venom-predator",
+   "arms": "robo-crusher-arms",
+   "background": "wormhole-passage"
+  },
+  "DHC2F277": {
+   "head": "sentinel",
+   "headgear": "red-cyborg-helmet",
+   "torso": "c38",
+   "background": "xlon-s-2yk-attack-01"
+  },
+  "DHC2F279": {
+   "head": "dh-alien-punk",
+   "torso": "t39-planet-alien-flesh",
+   "arms": "deflektor",
+   "effects1": "xlon-s-code-attack"
+  },
+  "DHC2F283": {
+   "torso": "dynamo",
+   "companion": "u-vigilance-device-1"
+  },
+  "DHC2F284": {
+   "head": "cyborg-stryker-02",
+   "torso": "dh-cop",
+   "weapon": "lil-fren-1"
+  },
+  "DHC2F285": {
+   "head": "beheaded-cyborg",
+   "torso": "c-4589-mechanic",
+   "arms": "cyber-inferno-limbs",
+   "background": "digital-flames-2"
+  },
+  "DHC2F289": {
+   "head": "dh-cop-03-1",
+   "headgear": "malware-detecting-mask",
+   "torso": "red-cyborg",
+   "companion": "arachnid-laser-cannon"
+  },
+  "DHC2F291": {
+   "head": "mk200",
+   "headgear": "arachno-neural-implant",
+   "torso": "planet-8tz-specter"
+  },
+  "DHC2F293": {
+   "head": "dh-cop-03-1",
+   "torso": "planet-8tz-specter",
+   "arms": "infested-robo-limb"
+  },
+  "DHC2F294": {
+   "head": "alien-zombie",
+   "headgear": "superbug-3",
+   "torso": "mk200",
+   "companion": "dh-vision-shoulder-cam"
+  },
+  "DHC2F297": {
+   "head": "dh-cop-01",
+   "torso": "bone-robot",
+   "weapon": "lil-fren-1",
+   "effects1": "earth-recovery-system-interface"
+  },
+  "DHC2F300": {
+   "head": "u-e-mutant-01",
+   "torso": "dynamo",
+   "companion": "demon-companion",
+   "effects1": "digital-bubbles-1"
+  },
+  "DHC2F304": {
+   "head": "dh-alien-punk",
+   "torso": "skeletal-robot",
+   "companion": "dh-vision-shoulder-cam",
+   "background": "dh-aracnyd-web"
+  },
+  "DHC2F305": {
+   "head": "dh-cop-03-1",
+   "torso": "c73",
+   "companion": "threat-seeker-antenna"
+  },
+  "DHC2F309": {
+   "head": "beheaded-cyborg",
+   "torso": "inferno-wasp-guardian",
+   "effects1": "digital-bubbles-3"
+  },
+  "DHC2F311": {
+   "head": "sentinel",
+   "torso": "mk100",
+   "weapon": "plastic-blaster",
+   "background": "data-tunnel",
+   "effects1": "dhc2-comic-cover-1"
+  },
+  "DHC2F314": {
+   "head": "cyborg-stryker-02",
+   "torso": "dh-cop-2",
+   "weapon": "lil-fren-1",
+   "effects1": "cyber-lava-attack"
+  },
+  "DHC2F316": {
+   "head": "sentinel",
+   "headgear": "mk200-cyber-plague-vr-mask",
+   "torso": "virtual-raider",
+   "background": "hellscape"
+  },
+  "DHC2F319": {
+   "head": "c73",
+   "torso": "nebula-demon",
+   "background": "dh-nebula-3",
+   "effects1": "digital-bubbles-1"
+  },
+  "DHC2F321": {
+   "head": "xbot",
+   "headgear": "dh-destroyer",
+   "torso": "c-4589-mechanic",
+   "weapon": "annihilation-belt"
+  },
+  "DHC2F322": {
+   "head": "mk200",
+   "torso": "dh-cop",
+   "background": "advanced-circuit-2",
+   "effects1": "digital-fire"
+  },
+  "DHC2F323": {
+   "head": "u-e-mutant-01",
+   "headgear": "arachno-neural-implant",
+   "torso": "v12-raider",
+   "background": "quasar-tf-39-sun"
+  },
+  "DHC2F325": {
+   "head": "beheaded-cyborg",
+   "torso": "virtual-raider",
+   "weapon": "scythe-sash",
+   "effects1": "lava-thunder-attack"
+  },
+  "DHC2F326": {
+   "head": "u-e-mutant-02",
+   "headgear": "xlon-implant",
+   "torso": "nebula-demon",
+   "background": "digital-trap-01"
+  },
+  "DHC2F327": {
+   "head": "sentinel",
+   "torso": "red-cyborg",
+   "background": "digital-trap-03",
+   "effects1": "digital-bubbles-1"
+  },
+  "DHC2F328": {
+   "head": "xbot",
+   "headgear": "cyber-purr-helmet",
+   "torso": "data-explorer",
+   "companion": "u-vigilance-device-1"
+  },
+  "DHC2F331": {
+   "head": "mk100",
+   "torso": "zx350-centinel",
+   "background": "dh-nebula-1"
+  },
+  "DHC2F337": {
+   "head": "gas-mask",
+   "torso": "zx350-centinel",
+   "background": "digital-flames-1",
+   "effects1": "digital-fire"
+  },
+  "DHC2F338": {
+   "head": "dh-cop-03-1",
+   "torso": "c38",
+   "background": "xlon-s-psi-attack",
+   "effects1": "xlon-s-chamber-destruction"
+  },
+  "DHC2F341": {
+   "head": "inferno-wasp-guardian",
+   "torso": "zx350-centinel",
+   "background": "dh-nebula-1",
+   "effects1": "digital-666-smoke"
+  },
+  "DHC2F342": {
+   "head": "mk300",
+   "weapon": "electric-morning-star"
+  },
+  "DHC2F343": {
+   "torso": "bone-robot",
+   "background": "quasar-tf-39-sun",
+   "effects1": "digital-bubbles-2"
+  },
+  "DHC2F344": {
+   "head": "golden-cyborg",
+   "headgear": "dm-mask",
+   "torso": "golden-cyborg"
+  },
+  "DHC2F345": {
+   "head": "inferno-wasp-guardian",
+   "torso": "inferno-wasp-guardian",
+   "background": "xlon-s-psi-attack"
+  },
+  "DHC2F351": {
+   "head": "u-e-mutant-02",
+   "headgear": "saber-tech-headgear",
+   "torso": "skeletal-robot"
+  },
+  "DHC2F352": {
+   "head": "alien-zombie-02",
+   "headgear": "skull-collector-helmet",
+   "torso": "bone-robot",
+   "arms": "robo-crusher-arms"
+  },
+  "DHC2F354": {
+   "head": "beheaded-cyborg",
+   "torso": "golden-cyborg",
+   "background": "dh-aracnyd-web"
+  },
+  "DHC2F356": {
+   "head": "predator",
+   "torso": "skeletal-robot",
+   "background": "xlons-s-complex"
+  },
+  "DHC2F360": {
+   "head": "cyborg-stryker",
+   "torso": "mk200"
+  },
+  "DHC2F361": {
+   "head": "cyborg-stryker",
+   "headgear": "dm-mask",
+   "torso": "v12-raider"
+  },
+  "DHC2F362": {
+   "head": "c73",
+   "torso": "cyber-venom-predator",
+   "background": "hellscape"
+  },
+  "DHC2F363": {
+   "head": "u-e-mutant-02",
+   "headgear": "dm-mask",
+   "torso": "c38"
+  },
+  "DHC2F364": {
+   "companion": "mk100-insekt"
+  },
+  "DHC2F365": {
+   "head": "v12-punk-raider",
+   "torso": "v12-raider",
+   "arms": "symbio-flexx"
+  },
+  "DHC2F366": {
+   "head": "cyborg-stryker-02",
+   "headgear": "trojan-detection-mask"
+  },
+  "DHC2F369": {
+   "head": "sentinel",
+   "torso": "amplified-dreadnought",
+   "companion": "dh-vision-shoulder-cam"
+  },
+  "DHC2F372": {
+   "torso": "planet-8tz-specter",
+   "effects1": "earth-recovery-system-interface"
+  },
+  "DHC2F373": {
+   "head": "mk200",
+   "torso": "dh-cop",
+   "arms": "connected-protector-limbs"
+  },
+  "DHC2F375": {
+   "head": "sentinel",
+   "headgear": "trojan-detection-mask",
+   "torso": "c38"
+  },
+  "DHC2F379": {
+   "head": "mk200",
+   "torso": "c-4589-mechanic"
+  },
+  "DHC2F380": {
+   "torso": "bone-robot",
+   "companion": "silver-isopunk"
+  },
+  "DHC2F382": {
+   "head": "xbot",
+   "torso": "mk200",
+   "effects1": "dissolving-code-attack"
+  },
+  "DHC2F384": {
+   "head": "gas-mask",
+   "headgear": "superbug-3"
+  },
+  "DHC2F385": {
+   "head": "dh-demon",
+   "torso": "skeletal-robot",
+   "companion": "demon-companion"
+  },
+  "DHC2F388": {
+   "head": "planet-8tz-specter-1",
+   "torso": "c-4589-mechanic",
+   "background": "digital-trap-01"
+  },
+  "DHC2F389": {
+   "head": "v12-punk-raider",
+   "torso": "planet-8tz-specter",
+   "background": "quasar-tf-39-sun"
+  },
+  "DHC2F390": {
+   "head": "mk200",
+   "torso": "red-cyborg"
+  },
+  "DHC2F391": {
+   "head": "silver-cyborg",
+   "torso": "nebula-demon",
+   "background": "digital-flames-2"
+  },
+  "DHC2F392": {
+   "head": "xbot",
+   "torso": "bone-robot",
+   "background": "digital-trap-01"
+  },
+  "DHC2F394": {
+   "head": "cyborg-stryker-02",
+   "torso": "dh-alien-punk",
+   "background": "xlons-s-complex"
+  },
+  "DHC2F396": {
+   "head": "mk200",
+   "torso": "c38",
+   "background": "xlon-ddos-attack"
+  },
+  "DHC2F398": {
+   "head": "predator",
+   "torso": "golden-cyborg",
+   "background": "digital-trap-2"
+  },
+  "DHC2F401": {
+   "head": "cyborg-stryker",
+   "torso": "nebula-demon",
+   "background": "xlon-s-2yk-attack-02"
+  },
+  "DHC2F402": {
+   "head": "xbot",
+   "torso": "c73",
+   "background": "xlons-s-complex"
+  },
+  "DHC2F403": {
+   "head": "mk100",
+   "torso": "nebula-demon",
+   "background": "digital-trap-2"
+  },
+  "DHC2F405": {
+   "head": "gas-mask",
+   "torso": "amplified-dreadnought",
+   "background": "dh-nebula-02"
+  },
+  "DHC2F406": {
+   "background": "data-tunnel"
+  },
+  "DHC2F408": {
+   "head": "v12-punk-raider",
+   "torso": "amplified-dreadnought",
+   "background": "red-planet-decoy"
+  },
+  "DHC2F414": {
+   "head": "xbot",
+   "torso": "cyber-venom-predator"
+  },
+  "DHC2F416": {
+   "torso": "red-cyborg"
+  },
+  "DHC2F418": {
+   "head": "beheaded-cyborg",
+   "torso": "c73"
+  },
+  "DHC2F420": {
+   "torso": "virtual-raider"
+  }
+ }
+}

@@ -580,6 +580,20 @@ function dhcf_arms_weapon_clash($arms, $weapon) {
  * fails -- most of the 32 still work -- so this is an explicit list per head
  * rather than a blanket "headless heads wear nothing" rule.
  *
+ * THE MINTED COLLECTION OVERRULES THIS LIST. The pairings here were judged by
+ * eye, and one of them -- beheaded-cyborg + trojan-detection-mask -- is a
+ * Fighter that actually exists: DHC2F043, confirmed against the CIP-25
+ * metadata under the DHC2 policy. Calling a canonical Fighter unbuildable is a
+ * worse fault than any layering oddity, so it came off the list. The art says
+ * why it belongs off: the Trojan mask is a full faceplate that encloses the
+ * neck stump, so unlike a helmet it needs no skull beneath it.
+ *
+ * All 14 were checked the same way, not just the reported one. Only two
+ * Beheaded Cyborgs in the mint wear headgear at all (DHC2F038 Cyber Purr
+ * Helmet, which was never excluded, and DHC2F043), so the other 13 exclusions
+ * have no mint precedent and stand. dhc-mint-harness.php re-runs that check
+ * against a committed snapshot of the metadata.
+ *
  * Enforced in three places, which is why it lives here rather than in any one of
  * them: dhcf_layers() for every PHP renderer, the canvas's own paint() in
  * dhc-assembler.php, and blockedReason() in the picker so the pairing cannot be
@@ -600,7 +614,7 @@ define('DHCF_HEADGEAR_EXCLUDED_BY_HEAD', array(
 		'dm-mask',
 		'golden-cyber-plague-detecting-mask',
 		'mk200-cyber-plague-vr-mask',
-		'trojan-detection-mask',
+		/* NOT trojan-detection-mask: DHC2F043 wears exactly this pairing. */
 		'xlon-implant',
 		'malware-detecting-mask',
 	),
