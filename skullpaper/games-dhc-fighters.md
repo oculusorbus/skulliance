@@ -134,6 +134,14 @@ is worth roughly two and a half times the commonest, not three hundred times.
 That keeps both things worth doing — filling every slot on a Fighter matters as
 much as chasing a single spectacular trait.
 
+**The tier decides how often a trait drops**, and it always decides it the same
+way: within any one slot, a Legendary trait is rarer than an Epic one, which is
+rarer than an Uncommon, and so on down. How many traits happen to share a tier
+does not change that — it only changes how often you see *that tier at all*.
+Headgear has one Common piece and twelve Legendary ones, so a Common headgear
+is an uncommon sight even though that single piece is the likeliest headgear to
+drop.
+
 **How well you do improves what you get, not how often.** A drop's quality comes
 from the best of three things: the game itself, how far you got, and where you
 placed on the leaderboard. Escaping all 15 crypts in Crypt Crawl rolls the

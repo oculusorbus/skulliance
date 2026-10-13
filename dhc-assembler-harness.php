@@ -296,5 +296,61 @@ if (is_dir($artRoot) && is_file($idxFile)) {
 	echo "art/rarity/name: SKIPPED (no dhc/web art in this checkout)\n";
 }
 
+/* ---------------------------------------------------------------------------
+ * A RARER TRAIT MUST DROP LESS OFTEN THAN A COMMONER ONE.
+ *
+ * The one property the rarity labels promise, and nothing checked it. The
+ * table was built by giving each TIER a share of the category and splitting it
+ * among its members -- which is only the same as a per-trait weight when the
+ * tiers hold similar numbers. The DH Samurai Suit was the only legendary
+ * torso, so it took all 9% and dropped more often than any individual common
+ * torso at 5.50%. Headgear had the mirror: one common taking all 44%. Eight of
+ * 65 tier comparisons were inverted, the worst an uncommon weapon at 28.57%
+ * against a common at 14.97%.
+ *
+ * gen-rarity.py reads those numbers as per-trait WEIGHTS now, so the property
+ * holds by construction. This asserts it anyway, per category, because the
+ * next change to that script will not be thinking about it.
+ * ------------------------------------------------------------------------- */
+$rarAll = require __DIR__ . '/dhcrarity.php';
+$tierOrder = array('common', 'uncommon', 'epic', 'legendary', 'mythic');
+$inversions = array();
+foreach ($rarAll as $cat => $rows) {
+	/* One rate per tier -- every member of a tier shares it, which is itself
+	   worth confirming: a tier whose members differ would mean the weight was
+	   not applied uniformly. */
+	$byTier = array();
+	foreach ($rows as $slug => $info) {
+		$t = $info[0]; $rate = (float)$info[2];
+		if (isset($byTier[$t]) && abs($byTier[$t] - $rate) > 0.011) {
+			$inversions[] = "$cat/$t has two different rates ({$byTier[$t]} and $rate)";
+		}
+		$byTier[$t] = $rate;
+	}
+	$present = array();
+	foreach ($tierOrder as $t) if (isset($byTier[$t])) $present[$t] = $byTier[$t];
+	$keys = array_keys($present);
+	for ($i = 0; $i < count($keys); $i++) {
+		for ($j = $i + 1; $j < count($keys); $j++) {
+			if ($present[$keys[$j]] > $present[$keys[$i]]) {
+				$inversions[] = sprintf('%s: %s drops at %.2f%% but %s only %.2f%%',
+					$cat, $keys[$j], $present[$keys[$j]], $keys[$i], $present[$keys[$i]]);
+			}
+		}
+	}
+}
+ok(!$inversions, "a rarer tier drops MORE often than a commoner one:\n        "
+   . implode("\n        ", $inversions));
+printf("rarity: %d categories, every tier rarer than the one above it\n", count($rarAll));
+
+/* And nothing that is not a slot may be in the table at all. torso-noarms,
+   companion-front and neckfill are derived art; neckfill reached it once and
+   was scored mythic at 0.24% -- a drop nobody can receive for a slot nobody
+   can fill. */
+foreach (array('neckfill', 'torso-noarms', 'companion-front') as $notASlot) {
+	ok(!isset($rarAll[$notASlot]),
+	   "$notASlot is in the rarity table; it is derived art, not a trait");
+}
+
 echo "\n".($fail ? "FAILED: $fail check(s)\n" : "all assembler checks passed\n");
 exit($fail ? 1 : 0);
