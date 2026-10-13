@@ -744,6 +744,9 @@ a{color:var(--ochre)}
   var TP_HANDS_UNDER_ARMS  = <?php echo json_encode(array_values(DHCF_TWOPART_HANDS_UNDER_ARMS)); ?>;
   var TP_OVER_ARMS         = <?php echo json_encode(array_values(DHCF_TWOPART_OVER_ARMS)); ?>;
   var TP_HANDS_OVER_GEAR   = <?php echo json_encode(array_values(DHCF_TWOPART_HANDS_OVER_HEADGEAR)); ?>;
+  /* Arms that draw in FRONT of one particular headgear -- the samurai pair.
+     Keyed by headgear, listing the arms. See DHCF_ARMS_OVER_HEADGEAR. */
+  var ARMS_OVER_GEAR       = <?php echo json_encode(DHCF_ARMS_OVER_HEADGEAR); ?>;
   var COMPANION_BLOCKED    = <?php echo json_encode(DHCF_COMPANION_EXCLUDED_BY_HEAD); ?>;
   function companionBlocked(head, comp) {
     if (!head || !comp) return false;
@@ -759,6 +762,11 @@ a{color:var(--ochre)}
   /* Which slot the claws are drawn immediately after. */
   function twoPartHandsAfter() {
     return (sel.headgear && TP_HANDS_OVER_GEAR.indexOf(sel.headgear) !== -1) ? 'headgear' : 'head';
+  }
+  function armsOverHeadgear() {
+    return !!(sel.headgear && sel.arms
+              && ARMS_OVER_GEAR[sel.headgear]
+              && ARMS_OVER_GEAR[sel.headgear].indexOf(sel.arms) !== -1);
   }
 
   /*
@@ -1112,15 +1120,18 @@ a{color:var(--ochre)}
        front of (wings), some arms the whole demon sits in front of, and some
        arms that have to cover the CLAWS -- which means lifting that arm above
        the head, since the claws draw there and arms normally do not. */
+    /* Hoisted out of the two-part block below: the samurai rule further down
+       needs the same move, and a second copy of this arithmetic is exactly how
+       the canvas drifts from dhcf_layer_order(). */
+    var mv = function (what, anchor, after) {
+      var k = order.map(function (s) { return s.key; });
+      var w = k.indexOf(what), a = k.indexOf(anchor);
+      if (w < 0 || a < 0) return;
+      var item = order.splice(w, 1)[0];
+      var at = order.map(function (s) { return s.key; }).indexOf(anchor);
+      order.splice(after ? at + 1 : at, 0, item);
+    };
     if (companionTwoPart()) {
-      var mv = function (what, anchor, after) {
-        var k = order.map(function (s) { return s.key; });
-        var w = k.indexOf(what), a = k.indexOf(anchor);
-        if (w < 0 || a < 0) return;
-        var item = order.splice(w, 1)[0];
-        var at = order.map(function (s) { return s.key; }).indexOf(anchor);
-        order.splice(after ? at + 1 : at, 0, item);
-      };
       if (sel.arms && TP_OVER_ARMS.indexOf(sel.arms) !== -1)            mv('companion', 'arms', true);
       else if (sel.torso && TP_BODY_OVER_TORSO.indexOf(sel.torso) !== -1) mv('companion', 'torso', true);
       else                                                              mv('companion', 'torso', false);
@@ -1141,6 +1152,18 @@ a{color:var(--ochre)}
       var ka = order.map(function (s) { return s.key; });
       var ai2 = ka.indexOf('arms');
       if (ai2 > -1) order.push(order.splice(ai2, 1)[0]);
+    }
+    /* THE SAMURAI PAIR. Last of the arm moves, so it beats the demon's
+       hands-under-arms move when both apply -- headgear < claws < arms is the
+       only order that satisfies every rule at once, and it needs the arms
+       after the headgear. See DHCF_ARMS_OVER_HEADGEAR. */
+    if (armsOverHeadgear() && ARMS_BEHIND_TORSO.indexOf(sel.arms) === -1) {
+      /* Only forward, never back -- the shoulder-cam rule may already have
+         pushed the arms past the companion, and moving them to just-after
+         headgear from there would undo it. Same guard as PHP. */
+      var kg = order.map(function (s) { return s.key; });
+      var ag = kg.indexOf('arms'), gg = kg.indexOf('headgear');
+      if (ag > -1 && gg > -1 && ag < gg) mv('arms', 'headgear', true);
     }
     // A comic cover drops below a companion that was demoted above. After the
     // companion move, so it targets where the companion actually landed;

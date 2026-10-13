@@ -520,6 +520,13 @@ letting you build something that renders wrongly. Some of what it handles:
 - **Some headgear needs a head to sit on.** Beheaded Cyborg has no skull under
   the headgear, so the pieces that would rest on one are not offered with it —
   most headgear still works, and the assembler tells you which does not.
+- **The DH Samurai helmet goes behind the DH Samurai arms.** Headgear draws
+  over arms everywhere else, and should — a helmet is worn on the head, which
+  is in front of the shoulders. This one pair is drawn the other way round: the
+  helmet's neck flare is a soft hanging guard and the suit's pauldrons are
+  rigid plate, so the flare belongs behind them. It is the *pair* that is the
+  exception, not either piece — the helmet still draws over every other Arms
+  trait, and the arms still draw under every other headgear.
 - **The Demon Companion is attached, not floating.** Every other companion
   hovers at the shoulder, so one layer behind the Fighter is enough. The Demon
   grips the body: its torso and wings go *behind* the Fighter and its claws

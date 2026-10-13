@@ -62,7 +62,8 @@ $js = '';
    layerOrder() calls it, so lifting layerOrder() alone gives node a function
    that references something that does not exist. */
 foreach (array('layerOrder', 'armsBehindTorso', 'effectBehindTorso',
-               'companionTwoPart', 'companionBlocked', 'twoPartHandsAfter') as $fn) {
+               'companionTwoPart', 'companionBlocked', 'twoPartHandsAfter',
+               'armsOverHeadgear') as $fn) {
 	$body = extract_fn($src, $fn);
 	ok($body !== '', "found $fn() in dhc-assembler.php — if this fails the page was "
 	                . 'restructured and this harness is testing nothing');
@@ -95,6 +96,8 @@ $plain = array('background' => 'bg', 'torso' => 'body', 'head' => 'face',
    arms and tested nothing. */
 function ms_case($plain, $extra) { return array_merge($plain, $extra); }
 $twoPart = DHCF_COMPANION_TWO_PART ? DHCF_COMPANION_TWO_PART[0] : 'golden-isopunk';
+$sgGear = array_keys(DHCF_ARMS_OVER_HEADGEAR)[0];
+$sgArms = DHCF_ARMS_OVER_HEADGEAR[$sgGear][0];
 $rk = array_keys(DHCF_COMPANION_EXCLUDED_BY_HEAD);
 $refuseHead = $rk ? $rk[0] : 'beheaded-cyborg';
 $cases = array(
@@ -118,6 +121,27 @@ $cases = array(
 	                                                     'arms' => DHCF_TWOPART_OVER_ARMS[0])),
 	'attached, head refuses it' => ms_case($plain, array('companion' => $twoPart,
 	                                                     'head' => $refuseHead)),
+	/* THE SAMURAI PAIR, and the three combinations it could disturb. The pair
+	   itself lifts the arms over the headgear; everything else that touches
+	   either piece must be left exactly where it was. */
+	'samurai pair'              => ms_case($plain, array('headgear' => $sgGear,
+	                                                     'arms' => $sgArms)),
+	'samurai gear, other arms'  => ms_case($plain, array('headgear' => $sgGear,
+	                                                     'arms' => 'skeletal-stabber')),
+	'samurai arms, other gear'  => ms_case($plain, array('headgear' => 'tank-helmet',
+	                                                     'arms' => $sgArms)),
+	'samurai pair + demon'      => ms_case($plain, array('headgear' => $sgGear,
+	                                                     'arms' => $sgArms,
+	                                                     'companion' => $twoPart)),
+	'samurai pair + companion'  => ms_case($plain, array('headgear' => $sgGear,
+	                                                     'arms' => $sgArms,
+	                                                     'companion' => 'golden-isopunk')),
+	'samurai pair + cover'      => ms_case($plain, array('headgear' => $sgGear,
+	                                                     'arms' => $sgArms,
+	                                                     'effects1' => $cover)),
+	'samurai pair + cam'        => ms_case($plain, array('headgear' => $sgGear,
+	                                                     'arms' => $sgArms,
+	                                                     'companion' => 'dh-vision-shoulder-cam')),
 	'ordinary companion'        => ms_case($plain, array('companion' => 'golden-isopunk')),
 	'cover, ordinary companion' => ms_case($plain, array('companion' => 'golden-isopunk',
 	                                                     'effects1'  => $cover)),
@@ -172,6 +196,7 @@ $prelude = "var SLOTS = " . json_encode(array_map(function ($k) { return array('
          . "var TP_OVER_ARMS = "         . json_encode(array_values(DHCF_TWOPART_OVER_ARMS)) . ";\n"
          . "var TP_HANDS_OVER_GEAR = "   . json_encode(array_values(DHCF_TWOPART_HANDS_OVER_HEADGEAR)) . ";\n"
          . "var COMPANION_BLOCKED = "    . json_encode(DHCF_COMPANION_EXCLUDED_BY_HEAD) . ";\n"
+         . "var ARMS_OVER_GEAR = "       . json_encode(DHCF_ARMS_OVER_HEADGEAR) . ";\n"
          . "var sel = {};\n";
 $driver = $prelude . $js . "
 var CASES = " . json_encode($cases) . ";
@@ -330,6 +355,64 @@ if (DHCF_COMPANION_TWO_PART) {
 		   && in_array('demon-companion', DHCF_COMPANION_EXCLUDED_BY_HEAD[$h], true),
 		   "$h no longer refuses the demon, which has nothing to grip on it");
 	}
+
+	/* ---------------------------------------------------------------------
+	 * THE SAMURAI PAIR, AND WHAT IT MUST NOT DISTURB.
+	 *
+	 * The diff against the canvas further down only proves the two agree; it
+	 * would pass just as happily if both were wrong. These say what the order
+	 * is supposed to BE.
+	 * ------------------------------------------------------------------- */
+	$ix = function ($traits) {
+		$o = dhcf_layer_order($traits);
+		return function ($k) use ($o) { return array_search($k, $o, true); };
+	};
+	$sgG = array_keys(DHCF_ARMS_OVER_HEADGEAR)[0];
+	$sgA = DHCF_ARMS_OVER_HEADGEAR[$sgG][0];
+
+	$f = $ix(array('torso' => 'amplified-dreadnought', 'head' => 'alien-zombie-02',
+	               'headgear' => $sgG, 'arms' => $sgA));
+	ok($f('arms') > $f('headgear'),
+	   "$sgA does not draw in front of $sgG, which is the whole of this rule");
+
+	/* THE PAIR, NOT THE PIECES. Generalising either way was rendered and
+	   rejected -- skeletal-stabber swallows the helmet, and the broad flat
+	   helmets end up behind the shoulder spikes. */
+	$f = $ix(array('torso' => 'amplified-dreadnought', 'head' => 'alien-zombie-02',
+	               'headgear' => $sgG, 'arms' => 'skeletal-stabber'));
+	ok($f('arms') < $f('headgear'),
+	   "$sgG now draws behind OTHER arms too; the rule is the pair, not the helmet");
+	$f = $ix(array('torso' => 'amplified-dreadnought', 'head' => 'alien-zombie-02',
+	               'headgear' => 'tank-helmet', 'arms' => $sgA));
+	ok($f('arms') < $f('headgear'),
+	   "$sgA now draws over OTHER headgear too; the rule is the pair, not the arms");
+
+	/* AND IT MUST NOT PULL THE ARMS BACKWARDS. The shoulder cam has already
+	   pushed them past the companion for its own rule; moving them to
+	   just-after-headgear from there would undo it. This shipped broken once
+	   and this is the check that found it. */
+	$cam = DHCF_ARMS_OVER_COMPANION[0];
+	$f = $ix(array('torso' => 'amplified-dreadnought', 'head' => 'alien-zombie-02',
+	               'headgear' => $sgG, 'arms' => $sgA, 'companion' => $cam));
+	ok($f('arms') > $f('companion'),
+	   "the samurai rule pulled the arms back behind $cam, undoing DHCF_ARMS_OVER_COMPANION");
+	ok($f('arms') > $f('headgear'),
+	   'the samurai pair lost its own rule when the shoulder cam was added');
+
+	/* WITH THE DEMON, three rules apply at once and only one order satisfies
+	   all of them: headgear < claws < arms. Asserted on the real layer list,
+	   because the claws are not a slot and dhcf_layer_order() cannot show
+	   them. */
+	$ls2 = dhcf_layers(array('torso' => 'amplified-dreadnought', 'head' => 'alien-zombie-02',
+	                         'headgear' => $sgG, 'arms' => $sgA, 'companion' => $tp), $root);
+	$c2 = array_map(function ($l) { return $l['cat']; }, $ls2);
+	$j = function ($c) use ($c2) { return array_search($c, $c2, true); };
+	ok($j('companion-front') !== false && $j('headgear') !== false
+	   && $j('companion-front') > $j('headgear'),
+	   'with the samurai pair the claws fell back under the helmet');
+	ok($j('arms') !== false && $j('companion-front') !== false
+	   && $j('arms') > $j('companion-front'),
+	   'with the samurai pair the claws landed ON TOP of the arm meant to cover them');
 
 	/* A headless Fighter is a real saved state, and still wears the claws. */
 	$lsNoHead = dhcf_layers(array('torso' => 'amplified-dreadnought', 'companion' => $tp), $root);

@@ -463,6 +463,37 @@ define('DHCF_COMPANION_EXCLUDED_BY_HEAD', array(
 	'cyborg-stryker-02' => array('demon-companion'),
 ));
 
+/*
+ * ARMS THAT GO IN FRONT OF A PARTICULAR HEADGEAR.
+ *
+ * Headgear draws over arms everywhere else and should: a helmet is worn on the
+ * head, which is in front of the shoulders. The DH Samurai set breaks that,
+ * because the helmet's neck flare and the suit's shoulder plates occupy the
+ * same band -- and the flare is a soft hanging guard that belongs BEHIND a
+ * rigid pauldron, so with the default order the helmet reads as cutting the
+ * shoulder in half.
+ *
+ * KEYED BY PAIR, NOT BY EITHER TRAIT ALONE, and that is from measurement
+ * rather than caution. Generalising it either way was rendered and rejected:
+ *   - "the samurai helmet goes under every arm" changes 17 combinations, and
+ *     Skeletal Stabber (which covers 28.9% of the helmet) swallows it whole;
+ *   - "the samurai arms go over every headgear" changes 22, and the DH Manta
+ *     Ray (12.9%) and Tank (10.5%) helmets are broad flat pieces that then sit
+ *     behind the shoulder spikes, which is the same fault in reverse.
+ * Only the two samurai pieces are drawn to overlap this way, so only that pair
+ * is listed.
+ */
+define('DHCF_ARMS_OVER_HEADGEAR', array(
+	'dh-samurai-helmet' => array('dh-samurai-augmented-arms'),
+));
+
+/** Do these arms draw in front of this headgear? */
+function dhcf_arms_over_headgear($headgear, $arms) {
+	if ($headgear === '' || $arms === '') return false;
+	$x = DHCF_ARMS_OVER_HEADGEAR;
+	return isset($x[$headgear]) && in_array($arms, $x[$headgear], true);
+}
+
 /** Is this companion refused by this head? */
 function dhcf_companion_blocked($head, $companion) {
 	if ($head === '' || $companion === '') return false;
@@ -641,6 +672,40 @@ function dhcf_layer_order($traits) {
 	    && in_array($traits['companion'], DHCF_ARMS_OVER_COMPANION, true)
 	    && !in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {
 		$order = dhcf_move_last($order, 'arms');
+	}
+	/*
+	 * THE SAMURAI PAIR -- see DHCF_ARMS_OVER_HEADGEAR.
+	 *
+	 * Last of the arm moves, so it beats the demon's hands-under-arms move
+	 * (which only lifts the arm above the HEAD) when both apply. That is not
+	 * an accident of ordering, it is the only arrangement that satisfies every
+	 * rule at once: the samurai helmet is on DHCF_TWOPART_HANDS_OVER_HEADGEAR
+	 * so the claws go over the helmet, and the samurai arms are on
+	 * DHCF_TWOPART_HANDS_UNDER_ARMS so the arms go over the claws. Headgear <
+	 * claws < arms is the only order that is all three, and it needs the arms
+	 * after the headgear -- which is exactly what this move does. Without it
+	 * the two demon rules contradict each other on this pairing and the claws
+	 * land on top of the arm that is supposed to cover them.
+	 *
+	 * Skips arms that belong behind the body, same guard as the rule above:
+	 * hoisting one of those to the front is the opposite of its own rule.
+	 */
+	if (!empty($traits['arms']) && !empty($traits['headgear'])
+	    && dhcf_arms_over_headgear($traits['headgear'], $traits['arms'])
+	    && !in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {
+		/* ONLY FORWARD, NEVER BACK. The shoulder-cam rule above has already
+		   pushed the arms to the very END for its own pairing, and moving
+		   them to just-after-headgear from there would pull them back BEHIND
+		   the companion -- undoing the one rule DHCF_ARMS_OVER_COMPANION
+		   exists to enforce. Caught by the harness on
+		   samurai pair + dh-vision-shoulder-cam, which is a real build.
+		   Anything already in front of the headgear is already satisfying
+		   this rule and must be left alone. */
+		$ai = array_search('arms', $order, true);
+		$gi = array_search('headgear', $order, true);
+		if ($ai !== false && $gi !== false && $ai < $gi) {
+			$order = dhcf_move_after($order, 'arms', 'headgear');
+		}
 	}
 	/* A comic cover goes under a companion that was demoted below Arms --
 	   see DHCF_COMPANION_OVER_COVER. Runs AFTER the companion move, because
