@@ -1280,6 +1280,32 @@ a{color:var(--ochre)}
       rest.style.transform = rn ? 'translateY(' + (rn / 10) + '%)' : '';
     }
     /*
+     * THE NECK FILL: one flat black shape under the torso, closing the gap
+     * where a head does not reach the edge of the socket. Without it the
+     * BACKGROUND shows through that gap and the head reads as detached.
+     *
+     * Its own element like the other derived layers, and placed by the reorder
+     * pass below rather than by where it is created. ONLY WITH A HEAD ON:
+     * with no head the socket is open sky rather than a hole, and the shape
+     * dhc-neckfill.php computes is not safe there -- see the note on
+     * the same rule in dhcf_layers().
+     */
+    var nfill = document.getElementById('L-neckfill');
+    if (!sel.torso || !sel.head) {
+      if (nfill) nfill.remove();
+    } else {
+      if (!nfill) {
+        nfill = document.createElement('img');
+        nfill.id = 'L-neckfill'; nfill.alt = '';
+        frame.appendChild(nfill);
+      }
+      var nwant = url('neckfill', 'neckfill', 1000);
+      if (nfill.getAttribute('src') !== nwant) nfill.setAttribute('src', nwant);
+      /* Rides with the TORSO's visibility, not its own: it exists to back the
+         torso's socket, so a hidden torso must not leave a black plate behind. */
+      nfill.style.display = hidden.torso ? 'none' : '';
+    }
+    /*
      * The attached companion's front half: its claws, over the head. Its own
      * element for the same reason the torso restore layer has one -- it has to
      * be placed at a point in the order that is not its slot, and removed the
@@ -1302,6 +1328,11 @@ a{color:var(--ochre)}
     }
     // keep DOM order == layer order, regardless of the order things were picked
     layerOrder().forEach(function (s) {
+      // the neck fill goes UNDER the torso, so it is appended before it
+      if (s.key === 'torso') {
+        var nf = document.getElementById('L-neckfill');
+        if (nf) frame.appendChild(nf);
+      }
       var el = document.getElementById('L-' + s.key);
       if (el) frame.appendChild(el);
       // the restore layer rides with the torso, directly above it

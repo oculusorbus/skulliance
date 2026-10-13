@@ -267,7 +267,10 @@ if (is_dir($artRoot) && is_file($idxFile)) {
 	/* NOT categories. torso-noarms and companion-front are derived art keyed by
 	   another trait's slug -- they have no rarity, no name and no slot, and
 	   counting them here would demand rows that must never exist. */
-	$derived = array('torso-noarms' => 1, 'companion-front' => 1);
+	/* neckfill joins them: it is a single shared shape keyed to nothing at all
+	   -- not a trait, not equippable, not scored -- and demanding a rarity row
+	   and a display name for it would be demanding rows that must never exist. */
+	$derived = array('torso-noarms' => 1, 'companion-front' => 1, 'neckfill' => 1);
 	$noRarity = array(); $noName = array(); $noArt = array();
 	foreach (glob($artRoot . '/*', GLOB_ONLYDIR) as $dir) {
 		$cat = basename($dir);

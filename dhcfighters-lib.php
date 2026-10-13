@@ -1095,6 +1095,31 @@ function dhcf_layers($traits, $webroot = '') {
 		$armless = ($slot === 'torso' && $mode !== 'none' && $webroot !== ''
 		            && is_file($webroot . '/1000/torso-noarms/' . $slug . '.png'));
 
+		/*
+		 * THE NECK FILL, IMMEDIATELY UNDER THE TORSO.
+		 *
+		 * Some heads do not reach the edge of the torso's neck socket, and the
+		 * gap left over is a hole in the character's outline -- so the
+		 * BACKGROUND comes through it and the head reads as detached. One flat
+		 * black shape behind the torso closes it for every torso at once.
+		 *
+		 * UNDER the torso is what makes one shared shape workable: everything
+		 * it spills sideways or downwards is hidden by the torso itself, so
+		 * only its top edge has to be right. dhc-neckfill.php
+		 * computes it as the region that is never open sky for ANY
+		 * torso/arms/head combination in the game.
+		 *
+		 * ONLY WITH A HEAD ON. With no head the socket is open sky rather than
+		 * a hole, and a black plate in it is just a black plate -- the
+		 * generator leaves the no-head case out of its safety set for exactly
+		 * this reason, so the layer must not be drawn without one.
+		 */
+		if ($slot === 'torso' && !empty($traits['head']) && $webroot !== ''
+		    && is_file($webroot . '/1000/neckfill/neckfill.png')) {
+			$out[] = array('cat' => 'neckfill', 'slug' => 'neckfill',
+			               'nudge' => 0, 'clip' => '');
+		}
+
 		$out[] = array('cat' => $armless ? 'torso-noarms' : $cat,
 		               'slug' => $slug, 'nudge' => $nudge, 'clip' => '');
 

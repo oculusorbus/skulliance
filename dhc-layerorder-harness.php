@@ -577,6 +577,88 @@ if (DHCF_COMPANION_TWO_PART) {
 	ok($f3('headgear') > $f3('companion'),
 	   'the saber rule stopped applying once arms were added');
 
+	/* ---------------------------------------------------------------------
+	 * THE NECK FILL, under the torso.
+	 *
+	 * Closes the gap where a head does not reach the edge of the socket --
+	 * without it the background shows through a hole in the character's own
+	 * outline. One shared shape, safe because it is black only where black can
+	 * never be wrong for any torso/arms/head combination.
+	 * ------------------------------------------------------------------- */
+	if (is_file($root . '/1000/neckfill/neckfill.png')) {
+		$nf = function ($traits) use ($root) {
+			return array_map(function ($l) { return $l['cat']; }, dhcf_layers($traits, $root));
+		};
+		$c4 = $nf(array('background' => 'black', 'torso' => 'golden-cyborg', 'head' => 'mk100'));
+		$i4 = array_search('neckfill', $c4, true);
+		ok($i4 !== false, 'the neck fill is not emitted at all');
+		ok($i4 !== false && $i4 < array_search('torso', $c4, true),
+		   'the neck fill draws OVER the torso, which would black out the chest');
+		ok($i4 !== false && $i4 > array_search('background', $c4, true),
+		   'the neck fill draws under the background, where nothing can see it');
+
+		/* NO HEAD, NO FILL. The generator leaves the no-head case out of its
+		   safety set -- with no head the socket is open sky, not a hole, so
+		   the shape is not safe there and a black plate would just show. */
+		ok(!in_array('neckfill', $nf(array('background' => 'black', 'torso' => 'golden-cyborg')), true),
+		   'the neck fill is drawn with no head on, where its shape is not safe');
+		ok(!in_array('neckfill', $nf(array('background' => 'black', 'head' => 'mk100')), true),
+		   'the neck fill is drawn with no torso, which has no socket to fill');
+
+		/* It must sit under the ARMLESS torso too -- that is the variant the
+		   renderer actually draws once arms are on. */
+		$c5 = $nf(array('background' => 'black', 'torso' => 'golden-cyborg',
+		                'head' => 'mk100', 'arms' => 'skeletal-stabber'));
+		$i5 = array_search('neckfill', $c5, true);
+		ok($i5 !== false && $i5 < array_search('torso-noarms', $c5, true),
+		   'the neck fill is not under the armless torso, which is what gets drawn with arms on');
+
+		/* BOTH SIZES ON DISK. A missing 250 means every thumbnail on the
+		   Collection keeps the bleed while the full size is fixed. */
+		foreach (array(1000, 250) as $sz) {
+			ok(is_file($root . '/' . $sz . '/neckfill/neckfill.png'),
+			   "neckfill/neckfill.png is missing at {$sz}px");
+		}
+		/*
+		 * AND IT MUST BE CURRENT. The shape is derived from every torso, arm
+		 * and head at once, so adding a single head can invalidate it --
+		 * silently, with no error anywhere, leaving a fill that is either
+		 * short of the new socket or unsafe over the new head. The generator
+		 * records a fingerprint of its inputs; this re-derives it from the art
+		 * on disk and compares.
+		 */
+		$nfj = $root . '/1000/neckfill/neckfill.json';
+		if (is_file($nfj)) {
+			$meta = json_decode(file_get_contents($nfj), true);
+			$fp = array();
+			foreach (array('torso','torso-noarms','arms','head') as $d) {
+				foreach (glob($root . '/1000/' . $d . '/*.png') as $f) {
+					$fp[] = $d . '/' . basename($f) . ':' . filesize($f);
+				}
+			}
+			sort($fp);
+			ok(isset($meta['hash']) && $meta['hash'] === sha1(implode("\n", $fp)),
+			   'the neck fill is STALE -- the torso/arms/head art has changed since it was '
+			 . 'generated. Run: php dhc-neckfill.php');
+			ok(isset($meta['inputs']) && (int)$meta['inputs'] === count($fp),
+			   'the neck fill was generated from a different number of art files than are on disk now');
+		} else {
+			ok(false, 'neckfill.json is missing, so there is no way to tell whether the fill is current');
+		}
+
+		/* And the canvas draws it, in the same place. */
+		$asm4 = preg_replace(array('#/\*.*?\*/#s', '#//[^\n]*#'), '',
+		                     file_get_contents(__DIR__ . '/dhc-assembler.php'));
+		ok(strpos($asm4, "url('neckfill', 'neckfill', 1000)") !== false,
+		   'the canvas does not build the neck fill path, so the assembler keeps the bleed');
+		ok(preg_match("/if \(s\.key === 'torso'\) \{\s*var nf = document\.getElementById\('L-neckfill'\);/", $asm4) === 1,
+		   'the canvas does not append the neck fill immediately before the torso');
+		ok(strpos($asm4, "if (!sel.torso || !sel.head) {") !== false,
+		   'the canvas draws the neck fill without a head or without a torso');
+	} else {
+		echo "  neck fill: SKIPPED (not generated in this checkout)\n";
+	}
+
 	/* A headless Fighter is a real saved state, and still wears the claws. */
 	$lsNoHead = dhcf_layers(array('torso' => 'amplified-dreadnought', 'companion' => $tp), $root);
 	ok(in_array('companion-front', array_map(function ($l) { return $l['cat']; }, $lsNoHead), true),
