@@ -512,19 +512,22 @@ letting you build something that renders wrongly. Some of what it handles:
   face. The **comic covers** are full-frame treatments — masthead, price box,
   barcode — and the character deliberately breaks out of them: head, headgear,
   weapon and arms all draw over the frame.
-- **Code Sea Predator draws against the body** rather than in front of it. It
-  wraps the character, so drawn over the top it looked stuck to the outside;
-  it sits under the arms instead.
+- **Code Sea Predator sits over the headgear and under the arms.** It wraps the
+  character, so drawn over the top it looked stuck to the outside — but putting
+  it against the body also put it under the head and the headgear, and a large
+  piece like the Alien Predator or the Alien Skull buried the creature's own
+  head. So it stays in front and the **arms** move forward instead, the same
+  fix the DH Vision Shoulder Cam uses. The one exception is the **Turret Blue
+  Cyborg Limbs**, which are bulky enough to swallow it rather than cross in
+  front of it — the creature draws over those.
 - **The DH Vision Shoulder Cam is bolted on, so the arms pass in front of it**
   — but it still needs to be above the head and the headgear, because headgear
   drawn over a shoulder mount looks broken. Nothing in a single stack of layers
   is both under the arms and over the head, so the **arms** move to the front
   for this one instead of the companion moving back.
-- **Code Sea Predator stays on top of a comic cover.** Dropping a companion
-  below the arms also puts it below the Effects slots — that is simply the
-  order the layers run in, and there is no position that is under the arms and
-  over the effects. So with this pairing the cover moves down instead, and the
-  companion keeps its place against the body.
+- **A companion always draws over a comic cover**, now that none of them sits
+  against the body. A full-frame cover is drawn before the companion, so the
+  pet is never buried by the frame.
 - **Some headgear needs a head to sit on.** Beheaded Cyborg has no skull under
   the headgear, so the pieces that would rest on one are not offered with it —
   most headgear still works, and the assembler tells you which does not. Pieces

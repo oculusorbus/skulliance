@@ -209,10 +209,22 @@ function dhcf_rank_axes() {
  * and a headgear piece drawn over a shoulder cam looks worse than the problem
  * it was solving. There is no position in a flat stack that is under the arms
  * and over the head, so it goes back to the default: last, like every
- * ordinary companion. Code Sea Predator wraps the body rather than perching
- * on it and still reads correctly underneath.
+ * ordinary companion.
+ *
+ * AND THEN CODE SEA PREDATOR CAME OFF IT TOO, for exactly the same reason the
+ * cam did. "Wraps the body and still reads correctly underneath" was true of
+ * the torso and false of the head: demoted below Arms is also below the head
+ * and the headgear, so a big piece -- Alien Predator, Alien Skull -- buried
+ * the creature's own head. Reported from the Collection with five Fighters
+ * showing it. It takes the cam's solution: stay last, and move the ARMS
+ * forward instead (DHCF_ARMS_OVER_COMPANION).
+ *
+ * THE LIST IS NOW EMPTY, and the rule that reads it is kept anyway. Nothing
+ * about the mechanism was wrong -- a companion really can want to sit against
+ * the body -- it is just that both of its members turned out to want the head
+ * more. Deleting the rule would mean rediscovering it the next time.
  */
-define('DHCF_COMPANION_UNDER', array('code-sea-predator'));
+define('DHCF_COMPANION_UNDER', array());
 
 /*
  * COMPANIONS THE ARMS DRAW OVER -- without dropping them below the head.
@@ -236,8 +248,42 @@ define('DHCF_COMPANION_UNDER', array('code-sea-predator'));
  * Not applied to arms that are themselves drawn behind the torso
  * (DHCF_ARMS_BEHIND_TORSO): those are accents flanking the body, and hoisting
  * them to the very front is the opposite of what they are for.
+ *
+ * CODE SEA PREDATOR JOINED, off the back of the same report that took it out
+ * of DHCF_COMPANION_UNDER: it wants the head and the headgear underneath it,
+ * and an arm crossing the body in front of it.
  */
-define('DHCF_ARMS_OVER_COMPANION', array('dh-vision-shoulder-cam'));
+define('DHCF_ARMS_OVER_COMPANION', array('dh-vision-shoulder-cam', 'code-sea-predator'));
+
+/*
+ * ARMS THAT STAY BEHIND A COMPANION THAT OTHERWISE DRAWS OVER IT.
+ *
+ * THE NOTE ABOVE ADVISES AGAINST THIS, and it is worth saying why this is not
+ * the case it was warning about. That warning is about an arm that COVERS the
+ * companion -- the answer there is to take the companion off the hoist list,
+ * because the arm is doing its job. This is the opposite: Turret Blue Cyborg
+ * Limbs are bulky enough to swallow the creature rather than cross in front
+ * of it, so the companion belongs in front of THEM specifically while still
+ * passing behind every ordinary arm.
+ *
+ * Those limbs are already recognised as unusually big elsewhere for the same
+ * reason -- they are in DHCF_TWOPART_OVER_ARMS, which puts the whole Demon in
+ * front of them. Two independent readings of the art agreeing is the reason
+ * this is a per-arm exception rather than a second opinion.
+ *
+ * Keyed by companion, listing the arms, so this cannot become a blanket rule
+ * by accident.
+ */
+define('DHCF_ARMS_UNDER_COMPANION', array(
+	'code-sea-predator' => array('turret-blue-cyborg-limbs'),
+));
+
+/** Do these arms stay behind this companion, despite the hoist rule? */
+function dhcf_arms_under_companion($companion, $arms) {
+	if ($companion === '' || $arms === '') return false;
+	$x = DHCF_ARMS_UNDER_COMPANION;
+	return isset($x[$companion]) && in_array($arms, $x[$companion], true);
+}
 
 /** Effects that read as environment: dropped to just behind the torso. */
 define('DHCF_EFFECTS_BEHIND_TORSO', array('xlon-s-black-fire-attack'));
@@ -279,7 +325,11 @@ define('DHCF_COVER_EFFECTS', array(
  * was never demoted still draws last, and pushing the cover below it would
  * put the frame over the head instead -- the harness asserts this.
  */
-define('DHCF_COMPANION_OVER_COVER', array('code-sea-predator'));
+/* EMPTY NOW, and the rule is kept for the same reason DHCF_COMPANION_UNDER's
+   is: this only ever matters for a DEMOTED companion, and there are none. An
+   undemoted companion is already last, which is above both effects slots, so
+   a cover cannot get in front of it and there is nothing to correct. */
+define('DHCF_COMPANION_OVER_COVER', array());
 
 /**
  * Arms drawn BEHIND the torso: accents flanking the body, not replacements for
@@ -684,7 +734,8 @@ function dhcf_layer_order($traits) {
 	   undo it, so it runs here and skips arms that belong behind the body. */
 	if (!empty($traits['companion']) && !empty($traits['arms'])
 	    && in_array($traits['companion'], DHCF_ARMS_OVER_COMPANION, true)
-	    && !in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {
+	    && !in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)
+	    && !dhcf_arms_under_companion($traits['companion'], $traits['arms'])) {
 		$order = dhcf_move_last($order, 'arms');
 	}
 	/*

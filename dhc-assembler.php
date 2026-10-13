@@ -781,6 +781,10 @@ a{color:var(--ochre)}
   /* Arms to the very front when the shoulder cam is on -- the only way to be
      above the head AND under the arms at once. See DHCF_ARMS_OVER_COMPANION. */
   var ARMS_OVER_COMPANION = <?php echo json_encode(DHCF_ARMS_OVER_COMPANION); ?>;
+  /* The arms that are exempt from that hoist, keyed by companion -- Turret
+     Blue Cyborg Limbs swallow the Code Sea Predator rather than crossing in
+     front of it. See DHCF_ARMS_UNDER_COMPANION. */
+  var ARMS_UNDER_COMPANION = <?php echo json_encode(DHCF_ARMS_UNDER_COMPANION); ?>;
   var COVER_EFFECTS = <?php echo json_encode(DHCF_COVER_EFFECTS); ?>;
   var COMPANION_OVER_COVER = <?php echo json_encode(DHCF_COMPANION_OVER_COVER); ?>;
 
@@ -1148,7 +1152,9 @@ a{color:var(--ochre)}
     // the body in the first place.
     if (sel.companion && sel.arms
         && ARMS_OVER_COMPANION.indexOf(sel.companion) !== -1
-        && ARMS_BEHIND_TORSO.indexOf(sel.arms) === -1) {
+        && ARMS_BEHIND_TORSO.indexOf(sel.arms) === -1
+        && !(ARMS_UNDER_COMPANION[sel.companion]
+             && ARMS_UNDER_COMPANION[sel.companion].indexOf(sel.arms) !== -1)) {
       var ka = order.map(function (s) { return s.key; });
       var ai2 = ka.indexOf('arms');
       if (ai2 > -1) order.push(order.splice(ai2, 1)[0]);

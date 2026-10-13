@@ -77,13 +77,48 @@ ok(strpos($js, '<?') === false, 'the extracted JS still contains PHP');
 /* Each case is named for the exception it exists to pin down. */
 $cover  = DHCF_COVER_EFFECTS[0];
 $cover2 = isset(DHCF_COVER_EFFECTS[1]) ? DHCF_COVER_EFFECTS[1] : $cover;
-/* While DHCF_COMPANION_UNDER holds one entry these are the same trait, so the
-   'demoted' and 'over-cover' rows below coincide. That is fine -- they are
-   testing different rules and will separate again the moment a second
-   companion is demoted -- but do not read two passing rows as two cases. */
-$under  = DHCF_COMPANION_UNDER[0];
-$over   = DHCF_COMPANION_OVER_COVER[0];                   // code-sea-predator
-if ($under === $over) echo "  (only one demoted companion, so two rows below coincide)\n";
+/*
+ * BOTH LISTS ARE EMPTY NOW, and that is the interesting case to get right.
+ *
+ * These used to be DHCF_COMPANION_UNDER[0] and DHCF_COMPANION_OVER_COVER[0].
+ * The moment Code Sea Predator left both lists, that read null -- so five
+ * rows below quietly became "a Fighter with no companion", passed, and
+ * proved nothing. A harness that reports a rule as tested when the rule has
+ * no members is worse than one that does not test it, because the row is
+ * still there and still green.
+ *
+ * So: with no members, the ROWS ARE DROPPED and the gap is announced, and
+ * what gets asserted instead is that both code paths still EXIST in both
+ * implementations. An empty list is a list waiting for a member, not a
+ * reason to let the mechanism rot.
+ */
+$under  = DHCF_COMPANION_UNDER      ? DHCF_COMPANION_UNDER[0]      : '';
+$over   = DHCF_COMPANION_OVER_COVER ? DHCF_COMPANION_OVER_COVER[0] : '';
+if ($under === '' || $over === '') {
+	printf("  NOTE: DHCF_COMPANION_UNDER has %d member(s) and DHCF_COMPANION_OVER_COVER %d.\n",
+		count(DHCF_COMPANION_UNDER), count(DHCF_COMPANION_OVER_COVER));
+	echo "        Rows needing one are SKIPPED below -- those rules are unexercised,
+"
+	   . "        not passing. The code paths are asserted to still exist instead.\n";
+	/* The mechanism, in both implementations. Comments stripped: a rule that
+	   survives only in prose is a rule that has been deleted. */
+	$cfgCode = preg_replace(array('#/\*.*?\*/#s', '#//[^\n]*#'), '',
+	                        file_get_contents(__DIR__ . '/dhcfighters-config.php'));
+	$asmCode = preg_replace(array('#/\*.*?\*/#s', '#//[^\n]*#'), '',
+	                        file_get_contents(__DIR__ . '/dhc-assembler.php'));
+	ok(strpos($cfgCode, 'DHCF_COMPANION_UNDER, true)') !== false,
+	   'dhcf_layer_order() no longer demotes a companion at all, so refilling '
+	 . 'DHCF_COMPANION_UNDER would do nothing');
+	ok(strpos($asmCode, 'COMPANION_UNDER.indexOf(') !== false,
+	   'the canvas no longer demotes a companion, so it would disagree with PHP '
+	 . 'the moment the list has a member again');
+	ok(strpos($cfgCode, 'DHCF_COMPANION_OVER_COVER, true)') !== false,
+	   'dhcf_layer_order() no longer moves a cover below a demoted companion');
+	ok(strpos($asmCode, 'COMPANION_OVER_COVER.indexOf(') !== false,
+	   'the canvas no longer moves a cover below a demoted companion');
+} else if ($under === $over) {
+	echo "  (only one demoted companion, so two rows below coincide)\n";
+}
 $behind = DHCF_EFFECTS_BEHIND_TORSO[0];
 $backarm = DHCF_ARMS_BEHIND_TORSO[0];
 $onearm  = array_keys(DHCF_ONE_ARM)[0];
@@ -145,26 +180,29 @@ $cases = array(
 	'ordinary companion'        => ms_case($plain, array('companion' => 'golden-isopunk')),
 	'cover, ordinary companion' => ms_case($plain, array('companion' => 'golden-isopunk',
 	                                                     'effects1'  => $cover)),
-	'demoted companion'         => ms_case($plain, array('companion' => $under)),
-	'cover + demoted companion' => ms_case($plain, array('companion' => $under,
-	                                                     'effects1'  => $cover)),
-	'cover + over-cover comp'   => ms_case($plain, array('companion' => $over,
-	                                                     'effects1'  => $cover)),
-	'plain fx + over-cover'     => ms_case($plain, array('companion' => $over,
-	                                                     'effects1'  => 'electricity')),
-	'two covers + over-cover'   => ms_case($plain, array('companion' => $over,
-	                                                     'effects1'  => $cover,
-	                                                     'effects2'  => $cover2)),
-	'cover in slot 2 only'      => ms_case($plain, array('companion' => $over,
+	/* THESE FOUR ONLY EVER USED A COMPANION AS SCENERY. They are about the
+	   effects slots, the behind-torso arm and the one-sided arm; which
+	   companion is on is irrelevant to every one of them, and pinning them to
+	   a demoted one made four rules hostage to a list that is now empty. An
+	   ordinary companion exercises them exactly as well. */
+	'cover in slot 2 only'      => ms_case($plain, array('companion' => 'golden-isopunk',
 	                                                     'effects2'  => $cover)),
-	'behind-torso fx wins'      => ms_case($plain, array('companion' => $over,
+	'behind-torso fx wins'      => ms_case($plain, array('companion' => 'golden-isopunk',
 	                                                     'effects1'  => $behind)),
-	'arms behind torso'         => ms_case($plain, array('companion' => $over,
+	'arms behind torso'         => ms_case($plain, array('companion' => 'golden-isopunk',
 	                                                     'arms'      => $backarm,
 	                                                     'effects1'  => $cover)),
-	'one-sided arm'             => ms_case($plain, array('companion' => $over,
+	'one-sided arm'             => ms_case($plain, array('companion' => 'golden-isopunk',
 	                                                     'arms'      => $onearm,
 	                                                     'effects1'  => $cover)),
+	/* CODE SEA PREDATOR, which wants the same two things as the cam and one
+	   more: above the head and headgear, under ordinary arms, but OVER the
+	   turret limbs, which would otherwise swallow it. */
+	'sea predator'              => ms_case($plain, array('companion' => 'code-sea-predator')),
+	'sea predator + turret'     => ms_case($plain, array('companion' => 'code-sea-predator',
+	                                                     'arms' => 'turret-blue-cyborg-limbs')),
+	'cam + turret'              => ms_case($plain, array('companion' => 'dh-vision-shoulder-cam',
+	                                                     'arms' => 'turret-blue-cyborg-limbs')),
 	/* The shoulder cam: above head and headgear (so NOT demoted) but under
 	   the arms, which is only expressible by moving the arms to the front. */
 	'shoulder cam'              => ms_case($plain, array('companion' => $armsover)),
@@ -179,6 +217,24 @@ $cases = array(
 	'cover, no other traits'    => array('background' => 'bg', 'torso' => 'body',
 	                                     'head' => 'face', 'effects1' => $cover),
 );
+/* THE DEMOTION ROWS, built only when the lists have a member. Appended rather
+   than written inline so an empty list leaves no row at all -- a case built on
+   a missing fixture is a Fighter with no companion, which passes and proves
+   nothing. That is exactly what happened when Code Sea Predator left. */
+if ($under !== '') {
+	$cases['demoted companion']         = ms_case($plain, array('companion' => $under));
+	$cases['cover + demoted companion'] = ms_case($plain, array('companion' => $under,
+	                                                            'effects1'  => $cover));
+}
+if ($over !== '') {
+	$cases['cover + over-cover comp'] = ms_case($plain, array('companion' => $over,
+	                                                          'effects1'  => $cover));
+	$cases['plain fx + over-cover']   = ms_case($plain, array('companion' => $over,
+	                                                          'effects1'  => 'electricity'));
+	$cases['two covers + over-cover'] = ms_case($plain, array('companion' => $over,
+	                                                          'effects1'  => $cover,
+	                                                          'effects2'  => $cover2));
+}
 
 /* ---------- 4. run the canvas's own code ----------------------------------- */
 $prelude = "var SLOTS = " . json_encode(array_map(function ($k) { return array('key' => $k); },
@@ -188,6 +244,7 @@ $prelude = "var SLOTS = " . json_encode(array_map(function ($k) { return array('
          . "var ARMS_BEHIND_TORSO = "    . json_encode(DHCF_ARMS_BEHIND_TORSO)    . ";\n"
          . "var EFFECTS_BEHIND_TORSO = " . json_encode(DHCF_EFFECTS_BEHIND_TORSO) . ";\n"
          . "var ARMS_OVER_COMPANION = " . json_encode(DHCF_ARMS_OVER_COMPANION) . ";\n"
+         . "var ARMS_UNDER_COMPANION = " . json_encode(DHCF_ARMS_UNDER_COMPANION) . ";\n"
          . "var COVER_EFFECTS = "        . json_encode(DHCF_COVER_EFFECTS)        . ";\n"
          . "var COMPANION_OVER_COVER = " . json_encode(DHCF_COMPANION_OVER_COVER) . ";\n"
          . "var COMPANION_TWO_PART = "   . json_encode(array_values(DHCF_COMPANION_TWO_PART)) . ";\n"
@@ -413,6 +470,63 @@ if (DHCF_COMPANION_TWO_PART) {
 	ok($j('arms') !== false && $j('companion-front') !== false
 	   && $j('arms') > $j('companion-front'),
 	   'with the samurai pair the claws landed ON TOP of the arm meant to cover them');
+
+	/* ---------------------------------------------------------------------
+	 * CODE SEA PREDATOR: over the headgear, under the arms, over the turret.
+	 *
+	 * It was DEMOTED below Arms, which is also below the head and headgear,
+	 * so a big piece buried it -- five Fighters in the Collection showed the
+	 * creature's head gone under an Alien Predator or Alien Skull. It takes
+	 * the shoulder cam's solution instead: stay last and move the ARMS.
+	 * ------------------------------------------------------------------- */
+	$sp = 'code-sea-predator';
+	/* A REAL ARM, and picked rather than typed. 'robo-arms' was used here
+	   first and does not exist -- dhcf_layer_order() does not care (it reads
+	   the trait array, not the disk) so the assertions still passed, but the
+	   render built from the same fixture silently drew no arms at all, which
+	   is how it was noticed. Anything that is not behind the torso, not the
+	   turret and has art. */
+	$ordinaryArm = '';
+	foreach (array_keys(dhcf_rarity()['arms']) as $a) {
+		if (in_array($a, DHCF_ARMS_BEHIND_TORSO, true)) continue;
+		if (dhcf_arms_under_companion('code-sea-predator', $a)) continue;
+		if (!is_file($root . '/1000/arms/' . $a . '.png')) continue;
+		$ordinaryArm = $a; break;
+	}
+	ok($ordinaryArm !== '', 'no ordinary arm with art to test against');
+	$ix2 = function ($traits) {
+		$o = dhcf_layer_order($traits);
+		return function ($k) use ($o) { return array_search($k, $o, true); };
+	};
+	$base2 = array('torso' => 'amplified-dreadnought', 'head' => 'alien-zombie-02',
+	               'headgear' => 'alien-predator');
+
+	$f2 = $ix2($base2 + array('companion' => $sp));
+	ok($f2('companion') > $f2('headgear'),
+	   "$sp still draws under the headgear -- this is the reported bug");
+	ok($f2('companion') > $f2('head'), "$sp still draws under the head");
+
+	$f2 = $ix2($base2 + array('companion' => $sp, 'arms' => $ordinaryArm));
+	ok($f2('arms') > $f2('companion'),
+	   "an ordinary arm no longer passes in FRONT of $sp");
+	ok($f2('companion') > $f2('headgear'),
+	   "$sp lost the headgear fix as soon as an arm was added");
+
+	$f2 = $ix2($base2 + array('companion' => $sp, 'arms' => 'turret-blue-cyborg-limbs'));
+	ok($f2('companion') > $f2('arms'),
+	   'the turret limbs draw over ' . $sp . ', which is what they swallow it with');
+
+	/* The exception is keyed to the COMPANION. The cam must be unaffected by
+	   it, or one companion's fix has silently become the other's. */
+	$f2 = $ix2($base2 + array('companion' => 'dh-vision-shoulder-cam',
+	                          'arms' => 'turret-blue-cyborg-limbs'));
+	ok($f2('arms') > $f2('companion'),
+	   "the turret exception leaked onto the shoulder cam, which wants the arms in front");
+
+	/* And an ordinary companion gains nothing from any of it. */
+	$f2 = $ix2($base2 + array('companion' => 'golden-isopunk', 'arms' => $ordinaryArm));
+	ok($f2('companion') > $f2('arms'),
+	   'an ordinary companion had its arms hoisted over it');
 
 	/* A headless Fighter is a real saved state, and still wears the claws. */
 	$lsNoHead = dhcf_layers(array('torso' => 'amplified-dreadnought', 'companion' => $tp), $root);
