@@ -367,9 +367,9 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
       echo '<span class="podium-name" style="'.$above_style.'">'.htmlspecialchars($u['project_name']).'</span>';
     } else {
       $prof = 'profile.php?username='.urlencode($u['username']);
-      $av   = ($u['avatar'] && $u['discord_id'])
-            ? 'https://cdn.discordapp.com/avatars/'.htmlspecialchars($u['discord_id']).'/'.htmlspecialchars($u['avatar']).'.png'
-            : 'icons/skull.png';
+      /* avatar_url() validates the row and falls back to the placeholder
+         itself, so the ternary and the hand-built URL both go. */
+      $av   = htmlspecialchars(avatar_url($u['discord_id'], $u['avatar']));
       $is_me = ($me !== '' && $u['username'] === $me);
       $avatar_style = $is_me
         ? 'animation: '.$fade_in.', podium-user-glow 1.4s ease-in-out '.($delay + 0.9).'s infinite;'

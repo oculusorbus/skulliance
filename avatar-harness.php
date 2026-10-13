@@ -128,5 +128,68 @@ ok(strpos($hd, 'inflight[id]') !== false,
 ok(strpos($hd, 'querySelectorAll') !== false,
    'only the image that failed is repaired, leaving the other copies broken');
 
+/* ---------- 4. the pages that were actually reported broken ---------------- */
+/*
+ * MEASURED AGAINST THE LIVE CDN, not assumed: for the same hash, .png returns
+ * 200 wherever anything does, while .jpg 404s on some avatars. Half the
+ * platform's hand-built URLs asked for .jpg, which is a plain bug and nothing
+ * to do with a hash going stale -- no amount of refreshing from Discord would
+ * have fixed it. avatar_url() picks the extension from the hash.
+ */
+/*
+ * CHECKED PER SITE, NOT PER FILE. "does this file mention avatar_url anywhere"
+ * passes while one of its two renderers regresses, and a regex for a literal
+ * URL never matches db.php at all, because it builds them by concatenation --
+ * the ".jpg" sits in its own string. Both of those let a reinstated bug
+ * through when they were written loosely, which mutation testing showed. Each
+ * site is named by the CSS class it renders.
+ */
+/* Line-scoped. A character window around the marker reaches into the
+   NEIGHBOURING renderers -- db.php has forty more of these within a few
+   hundred bytes, most still on .jpg -- and reports their faults against this
+   one. The marker is the exact line that renders the avatar. */
+$sites = array(
+	'db.php'           => array("class='rtc-avatar'", "class='rc-avatar'"),
+	'dhcarena.php'     => array('$av = ($o[\'discord_id\']'),
+	'leaderboards.php' => array('$av   = htmlspecialchars(avatar_url'),
+);
+foreach ($sites as $f => $marks) {
+	$lines = explode("\n", no_comments(file_get_contents(__DIR__ . '/' . $f)));
+	foreach ($marks as $mark) {
+		$hit = null;
+		foreach ($lines as $i => $ln) { if (strpos($ln, $mark) !== false) { $hit = $i; break; } }
+		ok($hit !== null, "$f no longer contains \"$mark\" -- this check is testing nothing");
+		if ($hit === null) continue;
+		/* The line itself and one either side: a ternary assignment wraps, so
+		   the avatar_url() call can sit on the line AFTER the marker. One line,
+		   not a byte window -- see the note above. */
+		$blk = ($hit > 0 ? $lines[$hit - 1] : '') . "\n" . $lines[$hit]
+		     . "\n" . (isset($lines[$hit + 1]) ? $lines[$hit + 1] : '');
+		ok(strpos($blk, 'avatar_url(') !== false,
+		   "$f \"$mark\" hand-builds its avatar URL again instead of calling avatar_url()");
+		ok(strpos($blk, '.jpg') === false,
+		   "$f \"$mark\" asks the CDN for .jpg, which 404s where .png is fine");
+		ok(stripos($blk, 'onerror') === false,
+		   "$f \"$mark\" has an inline onerror again, which jumps to the skull before "
+		 . 'the refresh gets its turn');
+	}
+}
+
+/*
+ * AN INLINE onerror ON AN AVATAR TAKES THE REFRESH'S TURN AWAY. The realms map
+ * had onerror='this.src="icons/skull.png"', so a dead hash jumped straight to
+ * the placeholder instead of being refreshed. header.php's listener runs in
+ * the capture phase and therefore still fires first, but the inline handler
+ * then blanks the src underneath it -- and the result is a skull either way
+ * on the one page the owner kept reporting.
+ */
+$dbSrc = no_comments(file_get_contents(__DIR__ . '/db.php'));
+ok(!preg_match('/avatar_url\([^)]*\)[^>]{0,160}onerror/', $dbSrc),
+   'db.php still puts an inline onerror on an avatar, which pre-empts the refresh');
+
+/* db.php is where the shared builder is loaded for the whole platform. */
+ok(preg_match("/require_once __DIR__ \. '\/avatar-lib\.php'/", $dbSrc) === 1,
+   'db.php does not load avatar-lib.php, so every page calling avatar_url() fatals');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all avatar checks passed\n");
 exit($fail ? 1 : 0);

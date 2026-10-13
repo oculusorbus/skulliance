@@ -1,6 +1,11 @@
 <?php
 include 'credentials/db_credentials.php';
 include_once 'role.php';
+/* avatar_url(): one spelling of a Discord avatar URL for the whole platform.
+   Here because db.php is what every page already has, and because db.php
+   itself renders two of them (the realms map). It defines functions and
+   constants only -- no output, no queries -- so it is safe this early. */
+require_once __DIR__ . '/avatar-lib.php';
 
 // Only resume an existing session — don't manufacture a fresh one for
 // every cookieless visitor. Bots and scrapers don't preserve cookies,
@@ -9445,7 +9450,13 @@ function getRealms($conn, $sort, $group){
 				$output[$key] .= "<div class='rtc-title-row'>";
 				$output[$key] .= "<span class='rtc-realm-name'>".ucfirst($row['realm_name'])."</span>";
 				$output[$key] .= "<a href='/staking/profile.php?username=".urlencode($row["username"])."' class='rtc-user'>";
-				if($row["avatar"] != "") $output[$key] .= "<img src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg' class='rtc-avatar' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\"'>";
+				/* avatar_url(): .jpg 404s on some avatars where .png is fine, and
+				   .gif is the ONLY form an animated one is served in -- both were
+				   wrong here. The inline onerror is gone with it: header.php's
+				   listener refreshes a dead hash from Discord before falling back,
+				   and an inline handler that jumps straight to the skull takes that
+				   chance away. */
+				if($row["avatar"] != "") $output[$key] .= "<img src='".htmlspecialchars(avatar_url($row["discord_id"], $row["avatar"]))."' class='rtc-avatar' loading='lazy'>";
 				$output[$key] .= "<span>".$row["username"]."</span></a>";
 				$output[$key] .= "</div>";
 				if($row["currency"] != "") $output[$key] .= "<div class='rtc-faction'><img src='/staking/icons/".strtolower($row["currency"]).".png' class='rtc-faction-icon' onerror='this.src=\"/staking/icons/skull.png\"'><span>".$row["project_name"]."</span></div>";
@@ -10171,7 +10182,9 @@ function getRaids($conn, $type, $status="pending", $history=false){
 				$rows[$decimal] .= "<div class='rc-card-header'>";
 				$rows[$decimal] .= "<img class='rc-theme-img' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";' src='images/themes/".$row["theme_id"].".jpg'>";
 				$rows[$decimal] .= "<a href='/staking/profile.php?username=".urlencode($row['username'])."'  class='rc-user-row'>";
-				if($row["avatar"] != "") $rows[$decimal] .= "<img class='rc-avatar' loading='lazy' onerror='this.src=\"/staking/icons/skull.png\";' src='https://cdn.discordapp.com/avatars/".$row["discord_id"]."/".$row["avatar"].".jpg'>";
+				/* See the note on the rtc-avatar above: correct extension, and the
+				   inline onerror removed so the refresh gets its turn. */
+				if($row["avatar"] != "") $rows[$decimal] .= "<img class='rc-avatar' loading='lazy' src='".htmlspecialchars(avatar_url($row["discord_id"], $row["avatar"]))."'>";
 				$rows[$decimal] .= "<span class='rc-username'>".$row['username']."</span></a>";
 				if($status == "Completed"){
 					$rows[$decimal] .= "<div class='rc-outcome-badge ".$_rc_outcome_class."'>".$_rc_outcome_badge."</div>";

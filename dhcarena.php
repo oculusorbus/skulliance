@@ -1353,8 +1353,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <?php else: ?>
       <div class="a-foes">
       <?php foreach ($foesList as $o):
+        /* avatar_url() picks the extension from the hash -- an animated avatar
+           is served as .gif only, and .jpg 404s on some. '' when there is none,
+           which this template already handles. */
         $av = ($o['discord_id'] && $o['avatar'])
-            ? 'https://cdn.discordapp.com/avatars/'.$o['discord_id'].'/'.$o['avatar'].'.png' : ''; ?>
+            ? avatar_url($o['discord_id'], $o['avatar']) : ''; ?>
         <?php /* PAID means you already took a trait off this rival today. Still
                  selectable -- the ladder and the win record both still count,
                  and a player may well want the rematch -- but say so before
