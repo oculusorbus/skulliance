@@ -11048,8 +11048,8 @@ function getFactionsRealmsMapData($conn){
 	 * does not make it unraidable, and an inactive realm can still be
 	 * attacked and will reappear here when it is.
 	 */
-	$active_sql = 'SELECT users.username AS user_name, realms.id AS realm_id, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name, projects.currency AS faction_currency FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 AND EXISTS (SELECT 1 FROM raids r WHERE r.created_date >= (NOW() - INTERVAL ' . (int)REALM_MAP_ACTIVE_DAYS . ' DAY) AND (r.offense_id = realms.id OR r.defense_id = realms.id)) ORDER BY faction_name';
-	$all_sql    = 'SELECT users.username AS user_name, realms.id AS realm_id, concat("https://cdn.discordapp.com/avatars/",users.discord_id,"/",users.avatar,".jpg") AS user_image, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name, projects.currency AS faction_currency FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 ORDER BY faction_name';
+	$active_sql = 'SELECT users.username AS user_name, realms.id AS realm_id, users.discord_id AS u_discord, users.avatar AS u_avatar, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name, projects.currency AS faction_currency FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 AND EXISTS (SELECT 1 FROM raids r WHERE r.created_date >= (NOW() - INTERVAL ' . (int)REALM_MAP_ACTIVE_DAYS . ' DAY) AND (r.offense_id = realms.id OR r.defense_id = realms.id)) ORDER BY faction_name';
+	$all_sql    = 'SELECT users.username AS user_name, realms.id AS realm_id, users.discord_id AS u_discord, users.avatar AS u_avatar, realms.name AS realm_name, concat("https://skulliance.io/staking/images/themes/",realms.theme_id,".jpg") AS realm_image, projects.name AS faction_name, projects.currency AS faction_currency FROM `realms` INNER JOIN projects ON projects.id = realms.project_id INNER JOIN users ON users.id = realms.user_id WHERE realms.active = 1 ORDER BY faction_name';
 
 	$result   = $conn->query($active_sql);
 	$fellback = false;
@@ -11082,7 +11082,13 @@ function getFactionsRealmsMapData($conn){
 				$avg_level = round($level / count($levels));
 				$realms[$row['realm_id']] = array();
 				$realms[$row['realm_id']]["user_name"] = $row['user_name'];
-				$realms[$row['realm_id']]["user_image"] = $row['user_image'];
+				/* BUILT IN PHP, NOT IN SQL. This URL used to be concat()ed in the
+				   query with ".jpg" hardcoded -- which 404s on some avatars where
+				   .png is fine, and is never right for an animated one. A URL
+				   assembled in SQL is also invisible to every search for the
+				   places that build avatar URLs, which is why this one survived
+				   the conversion that fixed the rest of the map. */
+				$realms[$row['realm_id']]["user_image"] = avatar_url($row['u_discord'], $row['u_avatar']);
 				$realms[$row['realm_id']]["realm_name"] = $row['realm_name'];
 				$realms[$row['realm_id']]["realm_image"] = $row['realm_image'];
 				$realms[$row['realm_id']]["faction_name"] = $row['faction_name'];

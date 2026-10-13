@@ -148,42 +148,70 @@ ok(strpos($hd, 'querySelectorAll') !== false,
    NEIGHBOURING renderers -- db.php has forty more of these within a few
    hundred bytes, most still on .jpg -- and reports their faults against this
    one. The marker is the exact line that renders the avatar. */
-$sites = array(
+/* TWO DIFFERENT CONCERNS, so two lists. A line that BUILDS the URL must call
+   avatar_url() and must not name a file type; a line that RENDERS the <img>
+   must not carry an inline onerror, which pre-empts the refresh -- and those
+   are rarely the same line, because the URL is usually built into a variable
+   a few lines above the tag that uses it.
+
+   Line-scoped either way. A byte window reaches into the forty neighbouring
+   renderers still in db.php and blames this one for their faults. */
+$builders = array(
 	'db.php'           => array("class='rtc-avatar'", "class='rc-avatar'"),
 	'dhcarena.php'     => array('$av = ($o[\'discord_id\']'),
 	'leaderboards.php' => array('$av   = htmlspecialchars(avatar_url'),
 );
-foreach ($sites as $f => $marks) {
+$imgTags = array(
+	'db.php'       => array("class='rtc-avatar'", "class='rc-avatar'"),
+	'dhcarena.php' => array('<img src="<?php echo htmlspecialchars($av)'),
+);
+function nf_find($lines, $mark) {
+	foreach ($lines as $i => $ln) if (strpos($ln, $mark) !== false) return $i;
+	return null;
+}
+function nf_block($lines, $hit) {
+	return ($hit > 0 ? $lines[$hit - 1] : '') . "\n" . $lines[$hit]
+	     . "\n" . (isset($lines[$hit + 1]) ? $lines[$hit + 1] : '');
+}
+foreach ($builders as $f => $marks) {
 	$lines = explode("\n", no_comments(file_get_contents(__DIR__ . '/' . $f)));
 	foreach ($marks as $mark) {
-		$hit = null;
-		foreach ($lines as $i => $ln) { if (strpos($ln, $mark) !== false) { $hit = $i; break; } }
+		$hit = nf_find($lines, $mark);
 		ok($hit !== null, "$f no longer contains \"$mark\" -- this check is testing nothing");
 		if ($hit === null) continue;
-		/* The line itself and one either side: a ternary assignment wraps, so
-		   the avatar_url() call can sit on the line AFTER the marker. One line,
-		   not a byte window -- see the note above. */
-		$blk = ($hit > 0 ? $lines[$hit - 1] : '') . "\n" . $lines[$hit]
-		     . "\n" . (isset($lines[$hit + 1]) ? $lines[$hit + 1] : '');
+		$blk = nf_block($lines, $hit);
 		ok(strpos($blk, 'avatar_url(') !== false,
 		   "$f \"$mark\" hand-builds its avatar URL again instead of calling avatar_url()");
 		ok(strpos($blk, '.jpg') === false,
 		   "$f \"$mark\" asks the CDN for .jpg, which 404s where .png is fine");
-		ok(stripos($blk, 'onerror') === false,
-		   "$f \"$mark\" has an inline onerror again, which jumps to the skull before "
-		 . 'the refresh gets its turn');
+	}
+}
+foreach ($imgTags as $f => $marks) {
+	$lines = explode("\n", no_comments(file_get_contents(__DIR__ . '/' . $f)));
+	foreach ($marks as $mark) {
+		$hit = nf_find($lines, $mark);
+		ok($hit !== null, "$f no longer contains the img tag \"$mark\"");
+		if ($hit === null) continue;
+		/* The tag itself only. An onerror that HIDES the image is as bad as one
+		   that swaps the skull in: the refresh lands on an element nobody sees. */
+		ok(stripos($lines[$hit], 'onerror') === false,
+		   "$f \"$mark\" has an inline onerror again, which takes the refresh's turn away");
 	}
 }
 
-/*
- * AN INLINE onerror ON AN AVATAR TAKES THE REFRESH'S TURN AWAY. The realms map
- * had onerror='this.src="icons/skull.png"', so a dead hash jumped straight to
- * the placeholder instead of being refreshed. header.php's listener runs in
- * the capture phase and therefore still fires first, but the inline handler
- * then blanks the src underneath it -- and the result is a skull either way
- * on the one page the owner kept reporting.
- */
 $dbSrc = no_comments(file_get_contents(__DIR__ . '/db.php'));
+
+/*
+ * A URL BUILT IN SQL IS INVISIBLE TO EVERY SEARCH FOR ONE. The realms map
+ * concat()ed its avatar URL inside the query with ".jpg" hardcoded, so it
+ * survived the pass that converted every PHP-built URL on the same page --
+ * grepping for the places that build avatar URLs simply does not find it.
+ */
+ok(!preg_match('/concat\s*\(\s*"https:\/\/cdn\.discordapp\.com\/avatars/i', $dbSrc),
+   'db.php builds an avatar URL inside a SQL query again -- invisible to every search '
+ . 'for avatar URLs, and it cannot use avatar_url()');
+ok(strpos($dbSrc, 'avatar_url($row[\'u_discord\'], $row[\'u_avatar\'])') !== false,
+   'the realms map no longer builds its avatar through avatar_url()');
 ok(!preg_match('/avatar_url\([^)]*\)[^>]{0,160}onerror/', $dbSrc),
    'db.php still puts an inline onerror on an avatar, which pre-empts the refresh');
 

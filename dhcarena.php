@@ -1369,7 +1369,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <div class="a-foe<?php echo $paid ? ' paid' : ''; ?><?php echo $nem ? ' nem' : ''; ?>" data-uid="<?php echo (int)$o['user_id']; ?>"
              data-best="<?php echo (int)$o['best']; ?>">
           <?php if ($nem): ?><span class="nemtag">Arch nemesis</span><?php endif; ?>
-          <img src="<?php echo htmlspecialchars($av); ?>" alt="" onerror="this.style.visibility='hidden'">
+          <?php /* NO INLINE onerror. It used to hide the image, which takes the
+                   refresh's turn away: header.php's listener asks Discord for the
+                   current hash and swaps it in, and an element that has already
+                   been hidden is a repair nobody sees. A dead hash now falls to
+                   the skull like everywhere else. */ ?>
+          <img src="<?php echo htmlspecialchars($av); ?>" alt="">
           <span class="n"><?php echo htmlspecialchars($o['username']); ?></span>
           <span class="m"><?php echo (int)$o['fighters']; ?> Fighters · best <?php echo number_format((int)$o['best']); ?></span>
           <?php if ($nem): ?>
