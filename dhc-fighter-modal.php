@@ -113,7 +113,13 @@ if (!defined('DHCM_RENDERED')) {
    hover, the convention for text that happens to be a link. The whole cell is
    the target, not just the word, because the row is already a grid and a 11px
    word is a small thing to hit on a phone. */
-#dhcg-traits .tn{display:block;color:inherit;text-decoration:none;border-radius:2px}
+/* text-align:left IS LOad-BEARING. flexbox.css carries a bare `a{text-align:
+   center}` that applies to every anchor on the platform, and this cell was a
+   <span> until the trait names became links -- so turning them into links
+   centred the whole trait list and nothing in this file said why. The same
+   rule is why `color:inherit` is here: the global sets a{color:#00c8a0}.
+   Anything given to .tn has to re-state what the element default was. */
+#dhcg-traits .tn{display:block;text-align:left;color:inherit;text-decoration:none;border-radius:2px}
 #dhcg-traits .tn:hover,#dhcg-traits .tn:focus-visible{color:var(--ochre,#00c8a0)}
 /* The NAME carries the underline, not the whole cell: the slot and the
    "N of 226 wear this" line are context, and underlining all three reads as

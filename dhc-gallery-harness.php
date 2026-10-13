@@ -107,5 +107,39 @@ foreach (array(__DIR__ . '/dhcgallery.php', __DIR__ . '/ajax/dhc-fighter.php') a
 	   basename($f) . " stopped putting 'cat' in each trait, so the panel's links read undefined");
 }
 
+/* ---------- 5. the global anchor rules these links sit under --------------- */
+/*
+ * dist/flexbox.css carries a BARE `a { ... }` -- every anchor on the platform
+ * gets its colour and its text-align from it. The trait cell was a <span>
+ * until it became a link, so turning it into one inherited both: the trait
+ * list shipped CENTRED, which is what the owner reported.
+ *
+ * Asserted CONDITIONALLY. If that global rule is ever dropped, the guard in
+ * the panel becomes unnecessary rather than wrong, and a test demanding it
+ * forever would be pinning a workaround to a problem that no longer exists.
+ * So this checks the global first and only then requires the counter.
+ */
+$fbx = @file_get_contents(__DIR__ . '/dist/flexbox.css');
+if ($fbx === false) {
+	echo "global anchor rules: SKIPPED (dist/flexbox.css not in this checkout)\n";
+} else {
+	/* The bare `a {` block, not `.navbar a` or any other scoped one. */
+	$bare = preg_match('/(^|\})\s*a\s*\{([^}]*)\}/m', $fbx, $m) ? $m[2] : '';
+	$centres = stripos($bare, 'text-align') !== false && stripos($bare, 'center') !== false;
+	$colours = stripos($bare, 'color') !== false;
+	printf("global a{}: text-align:center %s, color %s\n",
+		$centres ? 'YES' : 'no', $colours ? 'YES' : 'no');
+	if ($centres) {
+		ok(preg_match('/#dhcg-traits \.tn\{[^}]*text-align:\s*left/', $modal) === 1,
+		   'flexbox.css centres every bare <a> and #dhcg-traits .tn does not set text-align:left, '
+		 . 'so the trait list renders centred -- it did exactly that once');
+	}
+	if ($colours) {
+		ok(preg_match('/#dhcg-traits \.tn\{[^}]*color:\s*inherit/', $modal) === 1,
+		   'flexbox.css colours every bare <a> and .tn does not re-state a colour, so forty '
+		 . 'trait names turn into the link accent and bury the tier chips');
+	}
+}
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all gallery checks passed\n");
 exit($fail ? 1 : 0);
