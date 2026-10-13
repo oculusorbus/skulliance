@@ -575,6 +575,56 @@ require_once __DIR__ . '/admin-lib.php';
 $navPages = array();
 foreach (admin_tabs() as $t) $navPages[] = $t[0];
 foreach ($PAGES as $f) ok(in_array($f, $navPages, true), "the admin menu no longer offers $f");
+/* AND EVERY TAB POINTS AT A FILE THAT EXISTS. $PAGES is only the four pages
+   with write paths; the read-only builders (flyers, digest, the avatar wall)
+   are deliberately not in it, so nothing checked their filenames at all -- a
+   typo in admin_tabs() is a menu item that 404s and no test would notice. */
+foreach (admin_tabs() as $key => $t) {
+	ok(is_file(__DIR__ . '/' . $t[0]),
+	   "the admin tab '$key' points at {$t[0]}, which does not exist");
+}
+
+/* ---------------------------------------------------------------------------
+ * THE AVATAR WALL (admin-collage.php)
+ *
+ * Read-only like the digest and the flyer builder, so the write-path checks
+ * above do not apply. What it CAN get silently wrong is the canvas.
+ * ------------------------------------------------------------------------- */
+$cgSrc = file_get_contents(__DIR__ . '/admin-collage.php');
+/* BOTH comment styles. Stripping only /* *\/ left "// admin_require();" in
+   the source, so a commented-out gate still satisfied a strpos for it -- the
+   mutation that removes the admin check passed. */
+$cgNo  = preg_replace('!/\*.*?\*/!s', '', $cgSrc);
+$cgNo  = preg_replace('~(?<![:/])//[^\n]*~', '', $cgNo);
+
+/* crossOrigin AFTER src is ignored: the images still draw, the canvas is
+   silently tainted, and the only symptom is toDataURL() throwing once all 399
+   have loaded -- the worst possible place to discover it. Asserted by ORDER,
+   because both lines being present is exactly the broken version. */
+$xo = strpos($cgNo, "im.crossOrigin = 'anonymous'");
+$sr = strpos($cgNo, 'im.src = src');
+ok($xo !== false && $sr !== false && $xo < $sr,
+   'crossOrigin is set after src (or missing), so the canvas taints and the export fails '
+ . 'only after every avatar has loaded');
+/* ORDER, not presence: try { ... toDataURL ... } catch. Checking that the
+   words "toDataURL" and "catch" both appear passes when the try has been
+   removed and the catch left dangling. */
+$tTry = strpos($cgNo, 'try {');
+$tUrl = strpos($cgNo, 'canvas.toDataURL');
+$tCat = strpos($cgNo, 'catch (e)');
+ok($tTry !== false && $tUrl !== false && $tCat !== false && $tTry < $tUrl && $tUrl < $tCat,
+   'the export is not wrapped in try/catch, so a tainted canvas throws with no '
+ . 'explanation after every avatar has loaded');
+/* It draws avatars through the shared builder, so an animated hash is .gif
+   and a row that cannot make a URL gets the placeholder. */
+ok(strpos($cgNo, 'avatar_url(') !== false,
+   'the avatar wall hand-builds its URLs instead of calling avatar_url()');
+ok(strpos($cgNo, 'admin_require();') !== false,
+   'the avatar wall is not gated to the admin');
+/* Zero matching accounts must not reach the grid maths: ceil(sqrt(0)) is 0
+   and the modulo divides by it. */
+ok(strpos($cgNo, 'if (!n)') !== false,
+   'an empty result reaches the grid arithmetic, where cols is 0 and i % cols divides by zero');
 ok(preg_match('/user_id\'\]\s*===?\s*1/', $hd) === 1, 'the Admin nav is not gated to user 1');
 
 echo "\nlevel 1 can actually be saved\n";
