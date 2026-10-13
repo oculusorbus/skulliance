@@ -1109,12 +1109,13 @@ function dhcf_layers($traits, $webroot = '') {
 		 * computes it as the region that is never open sky for ANY
 		 * torso/arms/head combination in the game.
 		 *
-		 * ONLY WITH A HEAD ON. With no head the socket is open sky rather than
-		 * a hole, and a black plate in it is just a black plate -- the
-		 * generator leaves the no-head case out of its safety set for exactly
-		 * this reason, so the layer must not be drawn without one.
+		 * BOTH A TORSO AND A HEAD. With no head the socket is open sky rather
+		 * than a hole and a black plate in it is just a black plate; with no
+		 * torso there is no socket at all. The emit now hangs off the HEAD
+		 * slot rather than the torso, because the head draws under the torso
+		 * and this has to be under the head -- background, fill, head, torso.
 		 */
-		if ($slot === 'torso' && !empty($traits['head']) && $webroot !== ''
+		if ($slot === 'head' && !empty($traits['torso']) && $webroot !== ''
 		    && is_file($webroot . '/1000/neckfill/neckfill.png')) {
 			$out[] = array('cat' => 'neckfill', 'slug' => 'neckfill',
 			               'nudge' => 0, 'clip' => '');

@@ -78,9 +78,23 @@ define('DHCF_RULES_VERSION', '1');
  * same category, as do both effects slots -- owning a trait lets you place it
  * in either, subject to the front/back partition the assembler enforces.
  * ------------------------------------------------------------------ */
+/*
+ * THE HEAD DRAWS UNDER THE TORSO.
+ *
+ * It used to draw over it, and that was wrong in the one place the two meet:
+ * a head's neck is drawn down past the jaw, and over the torso it lay ON TOP
+ * of the neckline instead of going into it. A neck that overlaps the collar
+ * reads as a head resting on a body; a neck that disappears behind it reads as
+ * a head IN a body, which is what the art is drawn for.
+ *
+ * THIS DOES NOT CHANGE HOW MUCH BACKGROUND SHOWS. Background shows wherever
+ * NEITHER layer covers, which no ordering can affect -- measured both ways and
+ * identical to the pixel. The neck fill is what closes that, and it is
+ * unaffected by this; the two changes solve different halves of the junction.
+ */
 function dhcf_slots() {
-	return array('background', 'weaponBack', 'torso', 'weapon', 'arms',
-	             'effects1', 'effects2', 'head', 'headgear', 'companion');
+	return array('background', 'weaponBack', 'head', 'torso', 'weapon', 'arms',
+	             'effects1', 'effects2', 'headgear', 'companion');
 }
 
 function dhcf_slot_category($slot) {
@@ -584,11 +598,19 @@ function dhcf_companion_blocked($head, $companion) {
 	return isset($x[$head]) && in_array($companion, $x[$head], true);
 }
 
-/** Which slot the claws are drawn immediately after. */
+/**
+ * Which slot the claws are drawn immediately after.
+ *
+ * THE TORSO, NOT THE HEAD. It was the head, back when the head drew over the
+ * torso and "after the head" therefore meant "over the body as well". The head
+ * draws UNDER the torso now, so anchoring there would put the claws behind the
+ * chest -- a demon gripping a Fighter from inside it. The claws have to be
+ * over both, and the torso is the later of the two.
+ */
 function dhcf_twopart_hands_after($traits) {
 	$gear = isset($traits['headgear']) ? $traits['headgear'] : '';
 	if ($gear !== '' && in_array($gear, DHCF_TWOPART_HANDS_OVER_HEADGEAR, true)) return 'headgear';
-	return 'head';
+	return 'torso';
 }
 
 /** Is this companion the attached kind, with a second piece over the front? */
@@ -751,12 +773,14 @@ function dhcf_layer_order($traits) {
 			$order = dhcf_move_before($order, 'companion', 'torso');
 		}
 
-		/* After the HEAD, not last. dhcf_layers() inserts the claws immediately
-		   after the head slot, so head > claws > arms > headgear puts the arm
-		   over the claws without also lifting it over the helmet -- which
-		   dhcf_move_last() would have done. */
+		/* After the TORSO, not last, and not after the head. It was the head,
+		   when the head drew over the torso; now the head draws under it, so
+		   moving the arms there would put them behind the chest. The claws are
+		   emitted after the torso (see dhcf_twopart_hands_after), so
+		   torso > claws > arms > headgear puts the arm over the claws without
+		   also lifting it over the helmet -- which dhcf_move_last() would. */
 		if ($arms2 !== '' && in_array($arms2, DHCF_TWOPART_HANDS_UNDER_ARMS, true)) {
-			$order = dhcf_move_after($order, 'arms', 'head');
+			$order = dhcf_move_after($order, 'arms', 'torso');
 		}
 	}
 	if (!empty($traits['arms']) && in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {

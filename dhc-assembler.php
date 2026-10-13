@@ -54,6 +54,7 @@ $dhc_base = dhcf_art_dir();
 $dhc_slots = array(
 	'background' => array('Background',      'background', false),
 	'weaponBack' => array('Weapon (behind)', 'weapon',     true),
+	'head'       => array('Head',            'head',       false),
 	'torso'      => array('Torso',           'torso',      false),
 	// WEAPON BEFORE ARMS. A weapon is gripped, so the hand and forearm belong in
 	// front of it -- drawing arms first put the grip over the knuckles. Reported
@@ -69,7 +70,6 @@ $dhc_slots = array(
 	// interchangeable slots, so which one a trait goes in decides what covers what.
 	'effects1'   => array('Effects 1',       'effects',    true),
 	'effects2'   => array('Effects 2',       'effects',    true),
-	'head'       => array('Head',            'head',       false),
 	'headgear'   => array('Headgear',        'headgear',   true),
 	'companion'  => array('Companion',       'companion',  true),
 );
@@ -760,8 +760,11 @@ a{color:var(--ochre)}
            && !companionBlocked(sel.head, sel.companion);
   }
   /* Which slot the claws are drawn immediately after. */
+  /* THE TORSO, not the head -- the head draws under the torso now, so anchoring
+     the claws there would put them behind the chest. See
+     dhcf_twopart_hands_after(). */
   function twoPartHandsAfter() {
-    return (sel.headgear && TP_HANDS_OVER_GEAR.indexOf(sel.headgear) !== -1) ? 'headgear' : 'head';
+    return (sel.headgear && TP_HANDS_OVER_GEAR.indexOf(sel.headgear) !== -1) ? 'headgear' : 'torso';
   }
   function armsOverHeadgear() {
     return !!(sel.headgear && sel.arms
@@ -1143,7 +1146,7 @@ a{color:var(--ochre)}
       if (sel.arms && TP_OVER_ARMS.indexOf(sel.arms) !== -1)            mv('companion', 'arms', true);
       else if (sel.torso && TP_BODY_OVER_TORSO.indexOf(sel.torso) !== -1) mv('companion', 'torso', true);
       else                                                              mv('companion', 'torso', false);
-      if (sel.arms && TP_HANDS_UNDER_ARMS.indexOf(sel.arms) !== -1)     mv('arms', 'head', true);
+      if (sel.arms && TP_HANDS_UNDER_ARMS.indexOf(sel.arms) !== -1)     mv('arms', 'torso', true);
     }
     if (armsBehindTorso()) {
       var k = order.map(function (s) { return s.key; });
@@ -1328,8 +1331,8 @@ a{color:var(--ochre)}
     }
     // keep DOM order == layer order, regardless of the order things were picked
     layerOrder().forEach(function (s) {
-      // the neck fill goes UNDER the torso, so it is appended before it
-      if (s.key === 'torso') {
+      // the neck fill goes under the HEAD, which itself goes under the torso
+      if (s.key === 'head') {
         var nf = document.getElementById('L-neckfill');
         if (nf) frame.appendChild(nf);
       }

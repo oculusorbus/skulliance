@@ -369,7 +369,11 @@ if (DHCF_COMPANION_TWO_PART) {
 	/* And the anchor the canvas picks has to be the same one, for both kinds
 	   of headgear -- that is the whole of the rule the two share. */
 	foreach (array(DHCF_TWOPART_HANDS_OVER_HEADGEAR[0] => 'headgear',
-	               '666-demon-headgear'                => 'head') as $gear => $want) {
+	/* 'torso', not 'head': the head draws UNDER the torso now, so anchoring the
+	   claws on it would put them behind the chest. The five helmets on
+	   DHCF_TWOPART_HANDS_OVER_HEADGEAR are unchanged -- those still want the
+	   claws over the helmet, which is later again. */
+	               '666-demon-headgear'                => 'torso') as $gear => $want) {
 		ok(dhcf_twopart_hands_after(array('headgear' => $gear)) === $want,
 		   "php anchors the claws on '" . dhcf_twopart_hands_after(array('headgear' => $gear))
 		 . "' with $gear, not '$want'");
@@ -679,8 +683,9 @@ if (DHCF_COMPANION_TWO_PART) {
 		                     file_get_contents(__DIR__ . '/dhc-assembler.php'));
 		ok(strpos($asm4, "url('neckfill', 'neckfill', 1000)") !== false,
 		   'the canvas does not build the neck fill path, so the assembler keeps the bleed');
-		ok(preg_match("/if \(s\.key === 'torso'\) \{\s*var nf = document\.getElementById\('L-neckfill'\);/", $asm4) === 1,
-		   'the canvas does not append the neck fill immediately before the torso');
+		/* Before the HEAD, which is itself before the torso. */
+		ok(preg_match("/if \(s\.key === 'head'\) \{\s*var nf = document\.getElementById\('L-neckfill'\);/", $asm4) === 1,
+		   'the canvas does not append the neck fill immediately before the head');
 		ok(strpos($asm4, "if (!sel.torso || !sel.head) {") !== false,
 		   'the canvas draws the neck fill without a head or without a torso');
 	} else {
