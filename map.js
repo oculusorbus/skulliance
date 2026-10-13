@@ -472,12 +472,15 @@ function renderMap() {
     const realmPositions = {}; // realm_id → {x, y, color}
     const markerGroups   = {}; // realm_id → <g> element
 
-    // Build sets of realm IDs active in raids this month
-    const activeRaidRealms = new Set(); // attackers + defenders (used for avatar display)
-    const activeAttackers  = new Set(); // attackers only (used for glow)
+    // Attackers this month, for the marker glow.
+    //
+    // There was a second set here -- attackers AND defenders -- that decided
+    // whether a marker showed its owner's avatar or a skull. Every realm shows
+    // its avatar now, so it had no readers left; a set that is still built and
+    // never read is the kind of thing that gets "restored" later by someone
+    // assuming it mattered.
+    const activeAttackers = new Set(); // attackers only (used for glow)
     for (const pair of (window.raidPairs || [])) {
-        activeRaidRealms.add(String(pair[0]));
-        activeRaidRealms.add(String(pair[1]));
         activeAttackers.add(String(pair[0]));
     }
     for (const {faction, x, y, w, h, poly} of placedWithPoly) {
@@ -542,9 +545,15 @@ function renderMap() {
                 g.appendChild(ownRing);
             }
 
-            // Realm theme image (default), swaps to avatar on hover
+            // EVERY REALM SHOWS ITS OWNER'S AVATAR. This used to show a skull
+            // for any realm that had not raided this month, so the map read as
+            // "who fought" -- but a realm is only on the map at all because it
+            // has been raided recently enough to qualify, and a field of skulls
+            // reads as broken images rather than as a signal. The raid
+            // highlighting it doubled up on is already carried by the glow and
+            // the connecting lines.
             const img = svgEl('image', {
-                href: (realm.realm_id && activeRaidRealms.has(realm.realm_id)) ? realm.user_image : 'icons/skull.png',
+                href: realm.user_image,
                 x: pos.x-Rr, y: pos.y-Rr,
                 width: Rr*2, height: Rr*2,
                 'clip-path': `url(#ac${idx})`,
@@ -633,8 +642,9 @@ function renderMap() {
                 }
             });
             g.addEventListener('mouseleave', () => {
-                const defaultAvatar = (realm.realm_id && activeRaidRealms.has(realm.realm_id)) ? realm.user_image : 'icons/skull.png';
-                img.setAttribute('href', defaultAvatar);
+                /* Back to the avatar, not to a skull -- see the note where the
+                   image is created. */
+                img.setAttribute('href', realm.user_image);
                 img.onerror = function() { this.setAttribute('href', 'icons/skull.png'); };
                 for (const ln of linesGroup.children) {
                     ln.style.opacity = '';

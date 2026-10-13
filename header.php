@@ -76,19 +76,34 @@
     var SPACING_MS = 250;
 
     function placeholder(img) {
-      /* Clear the marker last: setting src fires another error if the
+      /* Clear the marker last: setting the source fires another error if the
          placeholder itself is missing, and we must not loop on that. */
-      if (img.getAttribute('src') === SKULL) return;
-      img.setAttribute('src', SKULL);
+      var a = avatarAttr(img);
+      if (!a || img.getAttribute(a) === SKULL) return;
+      img.setAttribute(a, SKULL);
     }
 
+    /* SVG <image> COUNTS TOO, and it is a different attribute. The realms map
+       draws its markers as SVG images, whose tagName is the lowercase 'image'
+       and whose source is href, not src -- so a listener that tests for 'IMG'
+       and reads src skips the one page where every face on screen is an
+       avatar. */
+    function avatarAttr(el) {
+      if (!el || !el.tagName) return null;
+      var t = String(el.tagName).toLowerCase();
+      if (t === 'img')   return 'src';
+      if (t === 'image') return el.hasAttribute('href') ? 'href' : 'xlink:href';
+      return null;
+    }
     document.addEventListener('error', function (e) {
       var img = e.target;
-      if (!img || img.tagName !== 'IMG') return;
-      var src = img.getAttribute('src') || '';
+      var attr = avatarAttr(img);
+      if (!attr) return;
+      var src = img.getAttribute(attr) || '';
       if (src.indexOf(CDN) === -1) return;
       /* Second failure for this element: the refreshed URL is broken too, so
          stop. Without this the swap below can ping-pong. */
+      /* dataset works on SVG elements too, so one guard covers both. */
       if (img.dataset.avatarTried) { placeholder(img); return; }
       img.dataset.avatarTried = '1';
 
@@ -115,15 +130,19 @@
       }
       inflight[id].then(function (d) {
         /* Every copy of this avatar on the page, not just the one that
-           failed -- the others are about to fail for the same reason. */
-        var sel = 'img[src*="' + CDN + id + '/"]';
-        var all = document.querySelectorAll(sel);
+           failed -- the others are about to fail for the same reason. Both
+           element kinds, each by its own attribute. */
+        var frag = CDN + id + '/';
+        var all = document.querySelectorAll(
+          'img[src*="' + frag + '"], image[href*="' + frag + '"]');
         var fix = (d && d.url) ? d.url : SKULL;
         for (var i = 0; i < all.length; i++) {
+          var a = avatarAttr(all[i]);
+          if (!a) continue;
           all[i].dataset.avatarTried = '1';
-          all[i].setAttribute('src', fix);
+          all[i].setAttribute(a, fix);
         }
-        if (!all.length) { img.setAttribute('src', fix); }
+        if (!all.length) { img.setAttribute(attr, fix); }
       });
     }, true);   /* capture: error does not bubble */
   })();

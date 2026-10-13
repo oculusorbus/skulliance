@@ -143,6 +143,37 @@ ok(strpos($hd, 'queue = queue.then(') !== false,
 ok(preg_match('/SPACING_MS\s*=\s*\d+/', $hd) === 1,
    'there is no gap between queued refreshes');
 
+/*
+ * SVG <image> IS THE OTHER HALF OF "EVERY AVATAR". The realms map draws its
+ * markers as SVG images -- tagName 'image', source in href, not src -- so a
+ * listener that tests for 'IMG' and reads src skips the one page where every
+ * face on screen is an avatar. It would heal everywhere except there.
+ */
+ok(strpos($hd, "=== 'image'") !== false,
+   'the listener ignores SVG <image>, so the realms map never heals');
+ok(strpos($hd, "image[href*=") !== false,
+   'the repair pass only looks for <img>, so SVG copies keep the broken source');
+/* The HANDLER must derive it, not just the helper exist: hardcoding
+   var attr = 'src' leaves avatarAttr() defined and unused, and SVG images get
+   a src attribute written that nothing reads. */
+ok(preg_match('/var attr\s*=\s*avatarAttr\(/', $hd) === 1,
+   'the handler hardcodes the source attribute instead of deriving it, so one element '
+ . 'kind is written wrongly');
+
+/* ---------- 6. the realms map shows every avatar ------------------------- */
+/*
+ * It used to draw a skull for any realm outside this month's raid pairs, which
+ * reads as a field of broken images rather than as a signal -- and a realm is
+ * only on the map at all because it has been raided recently enough to
+ * qualify. The glow and the connecting lines already carry the raid state.
+ */
+$mapSrc = file_get_contents(__DIR__ . '/map.js');
+ok(strpos($mapSrc, 'activeRaidRealms') === false,
+   'the map decides avatar-or-skull from raid activity again; every realm should '
+ . 'show its owner');
+ok(preg_match("/href:\s*realm\.user_image/", $mapSrc) === 1,
+   'the map marker no longer takes its image straight from the realm owner');
+
 /* ---------- 4. the pages that were actually reported broken ---------------- */
 /*
  * MEASURED AGAINST THE LIVE CDN, not assumed: for the same hash, .png returns
