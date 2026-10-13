@@ -156,9 +156,9 @@ function dhcf_notify_drop($conn, $user_id, $drop, $game_key) {
 /**
  * Flatten a saved layout to a PNG so Discord has something to show.
  *
- * Composited server-side with GD, using dhcf_layer_order() -- the same rules
- * the assembler draws with, so the announcement matches what the player built
- * rather than approximating it.
+ * Composited server-side with GD from dhcf_layers() -- literally the same
+ * stack the Collection renders, not a second implementation of it, so the
+ * announcement matches what the player built rather than approximating it.
  *
  * Returns an absolute URL, or '' if anything at all went wrong: no GD on this
  * SAPI, a missing source file, an unwritable directory. Every caller treats ''
@@ -173,6 +173,11 @@ function dhcf_notify_drop($conn, $user_id, $drop, $game_key) {
 function dhcf_render_fighter($traits, $serial, $size = 500) {
 	try {
 		if (!function_exists('imagecreatetruecolor') || !function_exists('imagecopyresampled')) return '';
+		/* This file is normally reached THROUGH dhcfighters-lib.php, but a
+		   couple of endpoints require it directly. Resolved at call time, so
+		   there is no load-order loop with lib's own conditional require. */
+		if (!function_exists('dhcf_layers')) require_once __DIR__ . '/dhcfighters-lib.php';
+		if (!function_exists('dhcf_layers')) return '';
 		$size = max(100, min(1000, (int)$size));   // 1000 is the master art; above it is just blur
 
 		$base = '';
@@ -217,84 +222,48 @@ function dhcf_render_fighter($traits, $serial, $size = 500) {
 		imagefill($out, 0, 0, imagecolorallocatealpha($out, 0, 0, 0, 127));
 		imagealphablending($out, true);    // now composite onto it
 
+		/*
+		 * ONE STACK, BUILT ONCE. This loop used to re-derive the whole layer
+		 * stack itself -- the armless torso swap, the single-arm restore, the
+		 * nudge, the attached companion's claws and which head refuses them --
+		 * alongside dhcf_layers() doing exactly the same thing for the
+		 * Collection. Every rule therefore had to be written twice, and the
+		 * Demon's five sandbox exceptions landed in one copy before the other,
+		 * which is how the Arena lost its effects: twice.
+		 *
+		 * dhcf_layers() is now the single answer and this function only paints
+		 * it. The only translation left is the unit: dhcf_layers() reports the
+		 * nudge as a percentage of the canvas, because the still renderer
+		 * positions with CSS, while GD wants pixels.
+		 */
 		$drew = 0;
-		foreach (dhcf_layer_order($traits) as $slot) {
-			if (empty($traits[$slot])) continue;
-			$cat  = dhcf_slot_category($slot);
-			$slug = $traits[$slot];
-
-			// Armless torso variant, exactly as the assembler chooses it
-			// dhcf_armless_mode() decides this for every renderer at once.
-			$armMode = dhcf_armless_mode(isset($traits['arms']) ? $traits['arms'] : '');
-			$catDir = $cat;
-			if ($slot === 'torso' && $armMode !== 'none'
-			    && is_file(__DIR__ . '/' . $base . '/1000/torso-noarms/' . $slug . '.png')) {
-				$catDir = 'torso-noarms';
-			}
-
-			$file = __DIR__ . '/' . $base . '/1000/' . $catDir . '/' . $slug . '.png';
+		foreach (dhcf_layers($traits, __DIR__ . '/' . $base) as $L) {
+			$file = __DIR__ . '/' . $base . '/1000/' . $L['cat'] . '/' . $L['slug'] . '.png';
 			if (!is_file($file)) continue;
 			$layer = @imagecreatefrompng($file);
 			if (!$layer) continue;
 
-			// Assembly nudge, scaled from the 1000px master to this canvas
-			$nudge = isset(DHCF_NUDGE[$slug]) ? (int)round(DHCF_NUDGE[$slug] * $size / 1000) : 0;
+			$nudge = (int)round($L['nudge'] * $size / 100);
 
-			imagecopyresampled($out, $layer, 0, $nudge, 0, 0, $size, $size,
-			                   imagesx($layer), imagesy($layer));
+			if ($L['clip'] === '') {
+				imagecopyresampled($out, $layer, 0, $nudge, 0, 0, $size, $size,
+				                   imagesx($layer), imagesy($layer));
+			} else {
+				/* The half of a normal torso a single-sided arm does not
+				   cover, drawn back over the armless one. The source window
+				   has to track the destination window, or the wrong half of
+				   the torso lands in the kept side. */
+				$cut = (int)round($size * DHCF_ONE_ARM_SPLIT / 100);
+				$dx  = $L['clip'] === 'right' ? $cut : 0;
+				$w   = $L['clip'] === 'right' ? $size - $cut : $cut;
+				$sx  = (int)round(imagesx($layer) * $dx / $size);
+				$sw  = (int)round(imagesx($layer) * $w  / $size);
+				imagecopyresampled($out, $layer, $dx, $nudge, $sx, 0, $w, $size,
+				                   $sw, imagesy($layer));
+			}
 			$drew++;
-
-			/*
-			 * SINGLE-SIDED ARM: put back the arm it does not cover, by drawing
-			 * the NORMAL torso over the armless one, clipped to that half. Same
-			 * rule as the canvas -- see DHCF_ONE_ARM.
-			 */
-			if ($slot === 'torso' && $catDir === 'torso-noarms' && $armMode === 'hybrid') {
-				$keep = DHCF_ONE_ARM[$traits['arms']];
-				$full = __DIR__ . '/' . $base . '/1000/torso/' . $slug . '.png';
-				$src  = is_file($full) ? @imagecreatefrompng($full) : null;
-				if ($src) {
-					$cut = (int)round($size * DHCF_ONE_ARM_SPLIT / 100);
-					$dx  = $keep === 'right' ? $cut : 0;
-					$w   = $keep === 'right' ? $size - $cut : $cut;
-					// source window must track the destination window, or the
-					// wrong half of the torso lands in the kept side
-					$sx  = (int)round(imagesx($src) * $dx / $size);
-					$sw  = (int)round(imagesx($src) * $w  / $size);
-					imagecopyresampled($out, $src, $dx, $nudge, $sx, 0, $w, $size,
-					                   $sw, imagesy($src));
-				}
-			}
-
-			/*
-			 * ATTACHED COMPANION, FRONT HALF. Rides with the HEAD, exactly as
-			 * the arm restore rides with the torso: the claws go over the face
-			 * and under any headgear. Same rule as dhcf_layers() and the
-			 * canvas -- all three ask dhcf_companion_two_part(), so a Fighter
-			 * cannot come out of Discord looking different from the Collection.
-			 */
-			if ($slot === 'head' && !empty($traits['companion'])
-			    && dhcf_companion_two_part($traits['companion'])) {
-				$cf = __DIR__ . '/' . $base . '/1000/companion-front/' . $traits['companion'] . '.png';
-				$cimg = is_file($cf) ? @imagecreatefrompng($cf) : null;
-				if ($cimg) {
-					imagecopyresampled($out, $cimg, 0, 0, 0, 0, $size, $size,
-					                   imagesx($cimg), imagesy($cimg));
-				}
-			}
 		}
 
-		/* No head to ride with, and the claws are still worn. Matches the
-		   same fallback in dhcf_layers(). */
-		if (!empty($traits['companion']) && dhcf_companion_two_part($traits['companion'])
-		    && empty($traits['head'])) {
-			$cf = __DIR__ . '/' . $base . '/1000/companion-front/' . $traits['companion'] . '.png';
-			$cimg = is_file($cf) ? @imagecreatefrompng($cf) : null;
-			if ($cimg) {
-				imagecopyresampled($out, $cimg, 0, 0, 0, 0, $size, $size,
-				                   imagesx($cimg), imagesy($cimg));
-			}
-		}
 		if (!$drew) return '';
 
 		/*

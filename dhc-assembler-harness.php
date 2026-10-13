@@ -199,5 +199,44 @@ ok(strpos($asm_src, 'var ARMS_BEHIND_TORSO = <?php echo json_encode(DHCF_ARMS_BE
 ok(preg_match('/\bsel\.arms && armsExclusive\(/', $asm_c) !== 1,
    'a call site still blocks on the weapon alone, ignoring which arm it is');
 
+/* ---------------------------------------------------------------------------
+ * A HEAD THAT REFUSES A COMPANION
+ *
+ * The Demon grips the torso and the bare skull. On a Beheaded Cyborg there is
+ * no skull to grip, so dhcf_layers() drops BOTH halves of it -- and a dropped
+ * trait is one the player paid for and cannot see. The picker has to grey the
+ * tile and the save has to refuse it, in both directions, because either slot
+ * can be filled first.
+ * ------------------------------------------------------------------------- */
+foreach (DHCF_COMPANION_EXCLUDED_BY_HEAD as $head => $comps) {
+	foreach ($comps as $comp) {
+		ok(dhcf_companion_blocked($head, $comp) === true,
+		   "$head no longer refuses $comp");
+	}
+}
+ok(dhcf_companion_blocked('', 'demon-companion') === false,
+   'an empty head counts as a refusal, which would block the tile on a fresh build');
+ok(dhcf_companion_blocked('beheaded-cyborg', '') === false,
+   'an empty companion counts as a refusal');
+
+/* Extracted per function, so dropping the check from ONE of the two save
+   paths fails here -- a count over the whole file would not. */
+foreach (array('dhcf_save_fighter', 'dhcf_update_fighter') as $fn) {
+	$at = strpos($lib_src, 'function ' . $fn . '(');
+	$body = $at === false ? '' : substr($lib_src, $at, 4000);
+	ok($at !== false, "found $fn() in dhcfighters-lib.php");
+	ok(strpos($body, 'dhcf_companion_blocked(') !== false,
+	   "$fn() does not refuse a companion the head cannot hold, so a stale tab can commit one");
+}
+/* Both directions in the picker: whichever slot the player fills first has to
+   rule the other one out, or the tab they open second offers a pairing the
+   save will then reject. */
+ok(preg_match("/key === 'companion' && companionBlocked\(sel\.head, slug\)/", $asm_c) === 1,
+   'the Companion tab does not grey companions the chosen head refuses');
+ok(preg_match("/key === 'head' && companionBlocked\(slug, sel\.companion\)/", $asm_c) === 1,
+   'the Head tab does not grey heads that refuse the chosen companion');
+ok(preg_match('/var COMPANION_BLOCKED\s*=\s*<\?php echo json_encode\(DHCF_COMPANION_EXCLUDED_BY_HEAD\);/', $asm_src) === 1,
+   'the assembler does not take its refusal map from DHCF_COMPANION_EXCLUDED_BY_HEAD');
+
 echo "\n".($fail ? "FAILED: $fail check(s)\n" : "all assembler checks passed\n");
 exit($fail ? 1 : 0);

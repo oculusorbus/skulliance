@@ -515,6 +515,25 @@ letting you build something that renders wrongly. Some of what it handles:
 - **Some headgear needs a head to sit on.** Beheaded Cyborg has no skull under
   the headgear, so the pieces that would rest on one are not offered with it —
   most headgear still works, and the assembler tells you which does not.
+- **The Demon Companion is attached, not floating.** Every other companion
+  hovers at the shoulder, so one layer behind the Fighter is enough. The Demon
+  grips the body: its torso and wings go *behind* the Fighter and its claws
+  come back over the front, so one trait is drawn in two places at once. You
+  equip it once and spend it once — the second half is not a separate trait and
+  cannot be mixed with another companion.
+- **What the Demon's claws pass in front of, and what passes in front of them.**
+  The claws land over the face and under most headgear. Five helmets are the
+  exception — Merged, WW2 Helmet, Cyber Insekt Helmet, XLON Implant and DH
+  Samurai Helmet — where the claws read as gripping the helmet rather than
+  being buried under it. Five Arms traits cover the claws instead: Skeletal
+  Stabber, Cyber 666 Knight Armor, Connected Protector Limbs, Deflektor and DH
+  Samurai Augmented Arms. And two — Turret Blue Cyborg Limbs and Robo Crusher
+  Arms — are heavy enough that the whole Demon moves in front of them. Two
+  torsos, Inferno Wasp Guardian and Red Cyborg, have wings or plating wide
+  enough to swallow the Demon, so it comes forward of those as well.
+- **The Demon needs a head to hold.** Beheaded Cyborg and Cyborg Stryker #02
+  give it nothing to grip, so it is not offered with either — the same rule as
+  headgear above, and the assembler says so when you try.
 
 These rules keep improving, and because a saved Fighter stores *which traits*
 rather than a finished picture, every improvement applies to Fighters that were

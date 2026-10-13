@@ -658,6 +658,18 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 			. dhcf_trait_name('arms', $clean['arms']) . '.', null);
 	}
 
+	/* And the same for a head that refuses a companion. The Demon grips the
+	   torso and the bare skull with its claws, so a head that is missing or
+	   armoured over leaves the claws holding nothing; dhcf_layers() drops the
+	   companion in that case, which would silently charge a player for a trait
+	   that never appears. Refuse the save instead. */
+	if (!empty($clean['head']) && !empty($clean['companion'])
+	    && dhcf_companion_blocked($clean['head'], $clean['companion'])) {
+		return array(false, dhcf_trait_name('companion', $clean['companion'])
+			. ' has nothing to hold onto on a '
+			. dhcf_trait_name('head', $clean['head']) . '.', null);
+	}
+
 	$missing = dhcf_missing_required($clean);
 	if ($missing) {
 		return array(false, 'A Fighter needs a ' . implode(', ', $missing) . '.', null);
@@ -808,6 +820,18 @@ function dhcf_update_fighter($conn, $user_id, $fighter_id, $traits) {
 		return array(false, dhcf_trait_name('weapon', $clean['weapon'])
 			. ' is drawn against the torso\'s own arms, so it cannot be worn with '
 			. dhcf_trait_name('arms', $clean['arms']) . '.', null);
+	}
+
+	/* And the same for a head that refuses a companion. The Demon grips the
+	   torso and the bare skull with its claws, so a head that is missing or
+	   armoured over leaves the claws holding nothing; dhcf_layers() drops the
+	   companion in that case, which would silently charge a player for a trait
+	   that never appears. Refuse the save instead. */
+	if (!empty($clean['head']) && !empty($clean['companion'])
+	    && dhcf_companion_blocked($clean['head'], $clean['companion'])) {
+		return array(false, dhcf_trait_name('companion', $clean['companion'])
+			. ' has nothing to hold onto on a '
+			. dhcf_trait_name('head', $clean['head']) . '.', null);
 	}
 
 	$missing = dhcf_missing_required($clean);
@@ -1000,12 +1024,24 @@ function dhcf_layers($traits, $webroot = '') {
 
 	$head = isset($traits['head']) ? $traits['head'] : '';
 
+	/* BOTH HALVES OR NEITHER. The companion slot is dropped below when a head
+	   refuses it, and the claws are a derived layer that would otherwise
+	   survive the drop -- leaving a pair of hands gripping nothing. */
+	$twoPart = !empty($traits['companion'])
+	           && dhcf_companion_two_part($traits['companion'])
+	           && !dhcf_companion_blocked($head, $traits['companion']);
+
 	foreach (dhcf_layer_order($traits) as $slot) {
 		if (empty($traits[$slot])) continue;
 		// Headgear this head refuses is dropped rather than drawn. A Fighter
 		// saved before the rule existed still carries the pairing, and the
 		// traits stay the player's either way -- what changes is the picture.
 		if ($slot === 'headgear' && dhcf_headgear_blocked($head, $traits[$slot])) continue;
+		/* Same rule for a companion a head refuses -- the Demon has no room on
+		   a Beheaded Cyborg. Dropped rather than assumed impossible: a Fighter
+		   saved before the rule existed still carries the pairing, and its
+		   traits are not at risk, only the picture. */
+		if ($slot === 'companion' && dhcf_companion_blocked($head, $traits[$slot])) continue;
 		$slug  = $traits[$slot];
 		$cat   = dhcf_slot_category($slot);
 		$nudge = isset(DHCF_NUDGE[$slug]) ? (float)DHCF_NUDGE[$slug] / 10 : 0;
@@ -1029,8 +1065,7 @@ function dhcf_layers($traits, $webroot = '') {
 		 * claws land over the face and under any headgear -- see
 		 * DHCF_COMPANION_TWO_PART for why that position and not another.
 		 */
-		if ($slot === 'head' && !empty($traits['companion'])
-		    && dhcf_companion_two_part($traits['companion'])) {
+		if ($twoPart && $slot === dhcf_twopart_hands_after($traits)) {
 			$out[] = array('cat' => 'companion-front', 'slug' => $traits['companion'],
 			               'nudge' => 0, 'clip' => '');
 		}
@@ -1043,8 +1078,7 @@ function dhcf_layers($traits, $webroot = '') {
 	 * saved state, not a hypothetical. Appended last in that case, which is
 	 * where the companion slot would have put them anyway.
 	 */
-	if (!empty($traits['companion']) && dhcf_companion_two_part($traits['companion'])
-	    && empty($traits['head'])) {
+	if ($twoPart && empty($traits[dhcf_twopart_hands_after($traits)])) {
 		$out[] = array('cat' => 'companion-front', 'slug' => $traits['companion'],
 		               'nudge' => 0, 'clip' => '');
 	}

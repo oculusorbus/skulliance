@@ -44,16 +44,29 @@ function dhcap_pick(&$seed, $list) {
 /**
  * One random Fighter's traits, legal by the same rules the assembler enforces.
  *
- * Headgear is drawn LAST and re-drawn if the head refuses it, because that is
- * the only pairing rule between two random slots -- a random Crew that renders
- * a skull poking through its own helmet would teach players that the artwork
- * is broken.
+ * Headgear and companion are drawn LAST and re-drawn if the head refuses them,
+ * because those are the only pairing rules between two random slots -- a random
+ * Crew that renders a skull poking through its own helmet would teach players
+ * that the artwork is broken.
  */
 function dhcap_random_traits($rarity, &$seed) {
 	$t = array();
-	foreach (array('background','torso','head','arms','weapon','effects','companion') as $cat) {
+	foreach (array('background','torso','head','arms','weapon','effects') as $cat) {
 		if (empty($rarity[$cat])) continue;
 		$t[$cat] = dhcap_pick($seed, array_keys($rarity[$cat]));
+	}
+	/* Companion gets the same treatment, and for the same reason: the Demon
+	   has no grip on a Beheaded Cyborg, and a practice Fighter whose companion
+	   is listed but never drawn reads as a broken render. */
+	if (!empty($rarity['companion'])) {
+		$pool = array_keys($rarity['companion']);
+		for ($try = 0; $try < 12; $try++) {
+			$comp = dhcap_pick($seed, $pool);
+			if (!function_exists('dhcf_companion_blocked')
+			    || !dhcf_companion_blocked($t['head'], $comp)) {
+				$t['companion'] = $comp; break;
+			}
+		}
 	}
 	if (!empty($rarity['headgear'])) {
 		$pool = array_keys($rarity['headgear']);

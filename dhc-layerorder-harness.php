@@ -61,7 +61,8 @@ $js = '';
 /* companionTwoPart joins the list for the same reason the other two are on it:
    layerOrder() calls it, so lifting layerOrder() alone gives node a function
    that references something that does not exist. */
-foreach (array('layerOrder', 'armsBehindTorso', 'effectBehindTorso', 'companionTwoPart') as $fn) {
+foreach (array('layerOrder', 'armsBehindTorso', 'effectBehindTorso',
+               'companionTwoPart', 'companionBlocked', 'twoPartHandsAfter') as $fn) {
 	$body = extract_fn($src, $fn);
 	ok($body !== '', "found $fn() in dhc-assembler.php — if this fails the page was "
 	                . 'restructured and this harness is testing nothing');
@@ -94,6 +95,8 @@ $plain = array('background' => 'bg', 'torso' => 'body', 'head' => 'face',
    arms and tested nothing. */
 function ms_case($plain, $extra) { return array_merge($plain, $extra); }
 $twoPart = DHCF_COMPANION_TWO_PART ? DHCF_COMPANION_TWO_PART[0] : 'golden-isopunk';
+$rk = array_keys(DHCF_COMPANION_EXCLUDED_BY_HEAD);
+$refuseHead = $rk ? $rk[0] : 'beheaded-cyborg';
 $cases = array(
 	'nothing special'           => $plain,
 	/* The ATTACHED companion. Its body goes behind the TORSO rather than
@@ -104,6 +107,17 @@ $cases = array(
 	'attached companion'        => ms_case($plain, array('companion' => $twoPart)),
 	'attached + cover'          => ms_case($plain, array('companion' => $twoPart,
 	                                                     'effects1'  => $cover)),
+	/* The five exceptions, each from the sandbox. The canvas and PHP have to
+	   agree on every one of them or a Fighter looks different where it was
+	   built from where it is shown. */
+	'attached, wing torso'      => ms_case($plain, array('companion' => $twoPart,
+	                                                     'torso' => DHCF_TWOPART_BODY_OVER_TORSO[0])),
+	'attached, arms over claws' => ms_case($plain, array('companion' => $twoPart,
+	                                                     'arms' => DHCF_TWOPART_HANDS_UNDER_ARMS[0])),
+	'attached, demon over arms' => ms_case($plain, array('companion' => $twoPart,
+	                                                     'arms' => DHCF_TWOPART_OVER_ARMS[0])),
+	'attached, head refuses it' => ms_case($plain, array('companion' => $twoPart,
+	                                                     'head' => $refuseHead)),
 	'ordinary companion'        => ms_case($plain, array('companion' => 'golden-isopunk')),
 	'cover, ordinary companion' => ms_case($plain, array('companion' => 'golden-isopunk',
 	                                                     'effects1'  => $cover)),
@@ -153,6 +167,11 @@ $prelude = "var SLOTS = " . json_encode(array_map(function ($k) { return array('
          . "var COVER_EFFECTS = "        . json_encode(DHCF_COVER_EFFECTS)        . ";\n"
          . "var COMPANION_OVER_COVER = " . json_encode(DHCF_COMPANION_OVER_COVER) . ";\n"
          . "var COMPANION_TWO_PART = "   . json_encode(array_values(DHCF_COMPANION_TWO_PART)) . ";\n"
+         . "var TP_BODY_OVER_TORSO = "   . json_encode(array_values(DHCF_TWOPART_BODY_OVER_TORSO)) . ";\n"
+         . "var TP_HANDS_UNDER_ARMS = "  . json_encode(array_values(DHCF_TWOPART_HANDS_UNDER_ARMS)) . ";\n"
+         . "var TP_OVER_ARMS = "         . json_encode(array_values(DHCF_TWOPART_OVER_ARMS)) . ";\n"
+         . "var TP_HANDS_OVER_GEAR = "   . json_encode(array_values(DHCF_TWOPART_HANDS_OVER_HEADGEAR)) . ";\n"
+         . "var COMPANION_BLOCKED = "    . json_encode(DHCF_COMPANION_EXCLUDED_BY_HEAD) . ";\n"
          . "var sel = {};\n";
 $driver = $prelude . $js . "
 var CASES = " . json_encode($cases) . ";
@@ -163,7 +182,12 @@ for (var name in CASES) {
   out[name] = layerOrder().map(function (s) { return s.key; })
                           .filter(function (k) { return !!sel[k]; });
 }
-console.log(JSON.stringify(out));
+var HANDS = {};
+[TP_HANDS_OVER_GEAR[0], '666-demon-headgear'].forEach(function (g) {
+  sel = { headgear: g };
+  HANDS[g] = twoPartHandsAfter();
+});
+console.log(JSON.stringify({ order: out, handsAfter: HANDS }));
 ";
 /*
  * EVERY CONSTANT THE REAL CODE USES HAS TO BE IN THE PRELUDE. Add a rule to
@@ -188,7 +212,9 @@ $tmp = sys_get_temp_dir() . '/dhc-layerorder-' . getmypid() . '.js';
 file_put_contents($tmp, $driver);
 $raw = shell_exec('node ' . escapeshellarg($tmp) . ' 2>&1');
 @unlink($tmp);
-$canvas = json_decode((string)$raw, true);
+$node   = json_decode((string)$raw, true);
+$canvas = is_array($node) && isset($node['order']) ? $node['order'] : null;
+$handsAfter = is_array($node) && isset($node['handsAfter']) ? $node['handsAfter'] : array();
 if (!is_array($canvas)) {
 	echo "  node produced nothing usable:\n" . substr((string)$raw, 0, 900) . "\n";
 	ok(false, 'could not run the canvas layerOrder() — the comparison did NOT happen');
@@ -236,6 +262,75 @@ if (DHCF_COMPANION_TWO_PART) {
 		ok($l['slug'] === $tp, 'the front half does not pair with its companion by slug');
 	}
 
+	/* THE FIVE HEADGEARS THE CLAWS GO OVER. Established in the sandbox: the
+	   claws reach around the skull, and on these five helmets they read as
+	   gripping the helmet rather than as buried under it. Every one of them,
+	   not just the first -- the list is the rule. */
+	foreach (DHCF_TWOPART_HANDS_OVER_HEADGEAR as $gear) {
+		$lg = dhcf_layers(array('torso' => 'amplified-dreadnought', 'head' => 'alien-zombie-02',
+		                        'headgear' => $gear, 'companion' => $tp), $root);
+		$gc = array_map(function ($l) { return $l['cat']; }, $lg);
+		$gi = function ($c) use ($gc) { return array_search($c, $gc, true); };
+		ok($gi('companion-front') !== false && $gi('headgear') !== false
+		   && $gi('companion-front') > $gi('headgear'),
+		   "the claws draw UNDER $gear, which is on the list of headgear they grip");
+	}
+	/* And the anchor the canvas picks has to be the same one, for both kinds
+	   of headgear -- that is the whole of the rule the two share. */
+	foreach (array(DHCF_TWOPART_HANDS_OVER_HEADGEAR[0] => 'headgear',
+	               '666-demon-headgear'                => 'head') as $gear => $want) {
+		ok(dhcf_twopart_hands_after(array('headgear' => $gear)) === $want,
+		   "php anchors the claws on '" . dhcf_twopart_hands_after(array('headgear' => $gear))
+		 . "' with $gear, not '$want'");
+		ok(isset($handsAfter[$gear]) && $handsAfter[$gear] === $want,
+		   "the canvas anchors the claws on '"
+		 . (isset($handsAfter[$gear]) ? $handsAfter[$gear] : '?')
+		 . "' with $gear, so it draws them in a different place from the server");
+	}
+
+	/* A HEAD THAT REFUSES IT LOSES BOTH HALVES. The claws are a derived layer,
+	   so dropping only the slot leaves a pair of hands gripping nothing -- and
+	   dropping only the claws leaves a demon with no grip. Neither may appear. */
+	foreach (DHCF_COMPANION_EXCLUDED_BY_HEAD as $rh => $rcomps) {
+		foreach ($rcomps as $rc) {
+			$lr = dhcf_layers(array('torso' => 'amplified-dreadnought', 'head' => $rh,
+			                        'companion' => $rc), $root);
+			$rcat = array_map(function ($l) { return $l['cat']; }, $lr);
+			ok(!in_array('companion', $rcat, true),
+			   "$rh still gets the body of $rc, which it has no room for");
+			ok(!in_array('companion-front', $rcat, true),
+			   "$rh still gets the claws of $rc, gripping a head that is not there");
+		}
+	}
+
+	/* MEMBERSHIP, NOT JUST SHAPE. Every list above is walked by a loop, so a
+	   list someone trims is a rule that silently stops being tested. These
+	   entries were each established by eye in the sandbox and are the reason
+	   the lists exist, so name them. */
+	foreach (array('merged', 'ww2-helmet', 'cyber-insekt-helmet', 'xlon-implant',
+	               'dh-samurai-helmet') as $gear) {
+		ok(in_array($gear, DHCF_TWOPART_HANDS_OVER_HEADGEAR, true),
+		   "$gear left DHCF_TWOPART_HANDS_OVER_HEADGEAR, so the claws go under it again");
+	}
+	foreach (array('inferno-wasp-guardian', 'red-cyborg') as $t) {
+		ok(in_array($t, DHCF_TWOPART_BODY_OVER_TORSO, true),
+		   "$t left DHCF_TWOPART_BODY_OVER_TORSO, so the demon hides behind its wings");
+	}
+	foreach (array('turret-blue-cyborg-limbs', 'robo-crusher-arms') as $a) {
+		ok(in_array($a, DHCF_TWOPART_OVER_ARMS, true),
+		   "$a left DHCF_TWOPART_OVER_ARMS");
+	}
+	foreach (array('skeletal-stabber', 'cyber-666-knight-armor', 'connected-protector-limbs',
+	               'deflektor', 'dh-samurai-augmented-arms') as $a) {
+		ok(in_array($a, DHCF_TWOPART_HANDS_UNDER_ARMS, true),
+		   "$a left DHCF_TWOPART_HANDS_UNDER_ARMS");
+	}
+	foreach (array('beheaded-cyborg', 'cyborg-stryker-02') as $h) {
+		ok(isset(DHCF_COMPANION_EXCLUDED_BY_HEAD[$h])
+		   && in_array('demon-companion', DHCF_COMPANION_EXCLUDED_BY_HEAD[$h], true),
+		   "$h no longer refuses the demon, which has nothing to grip on it");
+	}
+
 	/* A headless Fighter is a real saved state, and still wears the claws. */
 	$lsNoHead = dhcf_layers(array('torso' => 'amplified-dreadnought', 'companion' => $tp), $root);
 	ok(in_array('companion-front', array_map(function ($l) { return $l['cat']; }, $lsNoHead), true),
@@ -267,10 +362,14 @@ if (DHCF_COMPANION_TWO_PART) {
 	   directory in the GD renderer, because the COMMENT above it still said
 	   companion-front -- the same way the ALL-CAPS scan above was fooled by
 	   prose. Comments are stripped and the actual expression is named. */
+	/* TWO renderers now, not three. The GD renderer stopped rebuilding the
+	   stack and paints dhcf_layers() instead, which is checked separately
+	   below -- it cannot drift from the Collection because it IS the
+	   Collection's stack. What remains is the canvas, which has to stay a
+	   second implementation because it runs in the browser. */
 	$wants = array(
 		'dhcfighters-lib.php'     => "'cat' => 'companion-front'",
 		'dhc-assembler.php'       => "url('companion-front'",
-		'dhcfighters-notify.php'  => "/1000/companion-front/",
 	);
 	foreach ($wants as $f => $needle) {
 		$src2 = preg_replace(array('#/\*.*?\*/#s', '#//[^\n]*#'), '',
@@ -280,7 +379,28 @@ if (DHCF_COMPANION_TWO_PART) {
 		ok(strpos($src2, 'dhcf_companion_two_part') !== false
 		   || strpos($src2, 'companionTwoPart') !== false,
 		   "$f does not ask whether the companion is the attached kind");
+		/* The two rules that moved AFTER the Demon shipped. A renderer that
+		   anchors the claws on a hardcoded 'head' puts them under the five
+		   headgears they are meant to cover, and one that never asks about a
+		   refusing head draws a Demon gripping a severed neck. Both are
+		   silent -- nothing errors, the picture is just wrong in one place. */
+		ok(strpos($src2, 'dhcf_twopart_hands_after') !== false
+		   || strpos($src2, 'twoPartHandsAfter') !== false,
+		   "$f hardcodes where the claws go, so headgear they should cover will cover them");
+		ok(strpos($src2, 'dhcf_companion_blocked') !== false
+		   || strpos($src2, 'companionBlocked') !== false,
+		   "$f does not ask whether the head refuses the companion");
 	}
+	/* And the GD renderer paints that stack rather than deriving one. If it
+	   ever walks dhcf_layer_order() again it has re-acquired its own opinion
+	   about the armless swap, the nudge and the claws, and Discord can differ
+	   from the Collection without anything erroring. */
+	$gd = preg_replace(array('#/\*.*?\*/#s', '#//[^\n]*#'), '',
+	                   file_get_contents(__DIR__ . '/dhcfighters-notify.php'));
+	ok(strpos($gd, 'dhcf_layers($traits') !== false,
+	   'the GD renderer no longer paints dhcf_layers(), so Discord derives its own stack');
+	ok(strpos($gd, 'dhcf_layer_order(') === false,
+	   'the GD renderer builds its own layer order again, which is the drift this collapsed');
 }
 
 echo "\nlayer order, canvas vs php\n";

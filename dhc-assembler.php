@@ -735,8 +735,27 @@ a{color:var(--ochre)}
      claws over the head. One trait, two pieces of art. See
      DHCF_COMPANION_TWO_PART -- this is that list, not a second copy. */
   var COMPANION_TWO_PART = <?php echo json_encode(array_values(DHCF_COMPANION_TWO_PART)); ?>;
+  /* The five exceptions to where its halves go. All from DHCF_TWOPART_* --
+     the sandbox is where they were found, so the sandbox has to show them. */
+  var TP_BODY_OVER_TORSO   = <?php echo json_encode(array_values(DHCF_TWOPART_BODY_OVER_TORSO)); ?>;
+  var TP_HANDS_UNDER_ARMS  = <?php echo json_encode(array_values(DHCF_TWOPART_HANDS_UNDER_ARMS)); ?>;
+  var TP_OVER_ARMS         = <?php echo json_encode(array_values(DHCF_TWOPART_OVER_ARMS)); ?>;
+  var TP_HANDS_OVER_GEAR   = <?php echo json_encode(array_values(DHCF_TWOPART_HANDS_OVER_HEADGEAR)); ?>;
+  var COMPANION_BLOCKED    = <?php echo json_encode(DHCF_COMPANION_EXCLUDED_BY_HEAD); ?>;
+  function companionBlocked(head, comp) {
+    if (!head || !comp) return false;
+    var l = COMPANION_BLOCKED[head];
+    return !!l && l.indexOf(comp) !== -1;
+  }
+  /* Two-part AND actually drawable: a head that refuses it must take BOTH
+     halves, or the claws are left gripping nothing. */
   function companionTwoPart() {
-    return !!sel.companion && COMPANION_TWO_PART.indexOf(sel.companion) !== -1;
+    return !!sel.companion && COMPANION_TWO_PART.indexOf(sel.companion) !== -1
+           && !companionBlocked(sel.head, sel.companion);
+  }
+  /* Which slot the claws are drawn immediately after. */
+  function twoPartHandsAfter() {
+    return (sel.headgear && TP_HANDS_OVER_GEAR.indexOf(sel.headgear) !== -1) ? 'headgear' : 'head';
   }
 
   /*
@@ -1007,6 +1026,15 @@ a{color:var(--ochre)}
     if (key === 'head' && headgearBlocked(slug, sel.headgear))
       return nameOf('head', slug) + ' cannot carry '
            + nameOf('headgear', sel.headgear) + '. Set Headgear to None first.';
+    /* Same boundary for a companion a head refuses -- the Demon has nowhere to
+       grip on a Beheaded Cyborg. Blocked from both directions, so whichever
+       slot is filled first rules the other out and None is always the way back. */
+    if (key === 'companion' && companionBlocked(sel.head, slug))
+      return nameOf('head', sel.head) + ' cannot carry '
+           + nameOf('companion', slug) + '. Set Head to None first.';
+    if (key === 'head' && companionBlocked(slug, sel.companion))
+      return nameOf('head', slug) + ' cannot carry '
+           + nameOf('companion', sel.companion) + '. Set Companion to None first.';
 
     if (key === 'weapon' && armsWeaponClash(sel.arms, slug))
       return nameOf('weapon', slug) + ' is drawn against the torso’s own arms, so it cannot be '
@@ -1076,11 +1104,24 @@ a{color:var(--ochre)}
       if (ci > -1 && ai > -1) order.splice(ai, 0, order.splice(ci, 1)[0]);
     }
     /* An attached companion goes behind the TORSO, not merely behind the arms
-       -- it is standing behind the Fighter, not hovering beside it. */
+       -- it is standing behind the Fighter, not hovering beside it. Three
+       exceptions, mirroring dhcf_layer_order(): some torsos it must sit in
+       front of (wings), some arms the whole demon sits in front of, and some
+       arms that have to cover the CLAWS -- which means lifting that arm above
+       the head, since the claws draw there and arms normally do not. */
     if (companionTwoPart()) {
-      var ck = order.map(function (s) { return s.key; });
-      var cc = ck.indexOf('companion'), ct = ck.indexOf('torso');
-      if (cc > -1 && ct > -1 && cc > ct) order.splice(ct, 0, order.splice(cc, 1)[0]);
+      var mv = function (what, anchor, after) {
+        var k = order.map(function (s) { return s.key; });
+        var w = k.indexOf(what), a = k.indexOf(anchor);
+        if (w < 0 || a < 0) return;
+        var item = order.splice(w, 1)[0];
+        var at = order.map(function (s) { return s.key; }).indexOf(anchor);
+        order.splice(after ? at + 1 : at, 0, item);
+      };
+      if (sel.arms && TP_OVER_ARMS.indexOf(sel.arms) !== -1)            mv('companion', 'arms', true);
+      else if (sel.torso && TP_BODY_OVER_TORSO.indexOf(sel.torso) !== -1) mv('companion', 'torso', true);
+      else                                                              mv('companion', 'torso', false);
+      if (sel.arms && TP_HANDS_UNDER_ARMS.indexOf(sel.arms) !== -1)     mv('arms', 'head', true);
     }
     if (armsBehindTorso()) {
       var k = order.map(function (s) { return s.key; });
@@ -1224,8 +1265,9 @@ a{color:var(--ochre)}
         var r = document.getElementById('L-torsokeep');
         if (r) frame.appendChild(r);
       }
-      // the claws ride with the HEAD, directly above it and under any headgear
-      if (s.key === 'head') {
+      // the claws ride with the head -- or with the headgear, for the helmets
+      // they have to sit in front of. See twoPartHandsAfter().
+      if (s.key === twoPartHandsAfter()) {
         var cf = document.getElementById('L-companionfront');
         if (cf) frame.appendChild(cf);
       }

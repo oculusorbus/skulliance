@@ -418,6 +418,65 @@ define('DHCF_NUDGE', array('skull-krusher' => 23, 'skull-krusher-sash' => 13, 'a
  */
 define('DHCF_COMPANION_TWO_PART', array('demon-companion'));
 
+/*
+ * WHERE THE TWO HALVES GO WHEN THE DEFAULT IS WRONG.
+ *
+ * The default is body behind the torso, claws over the head and under the
+ * headgear. Five kinds of trait break it, all found by assembling them in the
+ * sandbox rather than by reasoning about the art:
+ *
+ * These lists name the OTHER trait, not the companion, because there is one
+ * two-part companion and the exceptions are properties of what it is worn
+ * with. A second one would want them keyed by companion.
+ */
+
+/* Torsos the body must sit IN FRONT of. Inferno Wasp Guardian has wings that
+   the body would otherwise hide behind. */
+define('DHCF_TWOPART_BODY_OVER_TORSO', array(
+	'inferno-wasp-guardian', 'red-cyborg',
+));
+
+/* Arms that must cover the claws. The claws normally draw above the head, and
+   dhcf_slots() puts arms BELOW the head, so the only way an arm can cover them
+   is for that arm to move above the head too -- which is the same move
+   DHCF_ARMS_OVER_COMPANION already makes for the shoulder cam. */
+define('DHCF_TWOPART_HANDS_UNDER_ARMS', array(
+	'skeletal-stabber', 'cyber-666-knight-armor', 'connected-protector-limbs',
+	'deflektor', 'dh-samurai-augmented-arms',
+));
+
+/* Arms the WHOLE demon sits in front of -- body included, so the body leaves
+   its place behind the torso entirely. */
+define('DHCF_TWOPART_OVER_ARMS', array(
+	'turret-blue-cyborg-limbs', 'robo-crusher-arms',
+));
+
+/* Headgear the claws must sit in front of, rather than under. */
+define('DHCF_TWOPART_HANDS_OVER_HEADGEAR', array(
+	'merged', 'ww2-helmet', 'cyber-insekt-helmet', 'xlon-implant', 'dh-samurai-helmet',
+));
+
+/* Heads the demon cannot be worn with at all. Same shape and same reasoning as
+   DHCF_HEADGEAR_EXCLUDED_BY_HEAD: keyed by head, listing what it refuses. */
+define('DHCF_COMPANION_EXCLUDED_BY_HEAD', array(
+	'beheaded-cyborg'   => array('demon-companion'),
+	'cyborg-stryker-02' => array('demon-companion'),
+));
+
+/** Is this companion refused by this head? */
+function dhcf_companion_blocked($head, $companion) {
+	if ($head === '' || $companion === '') return false;
+	$x = DHCF_COMPANION_EXCLUDED_BY_HEAD;
+	return isset($x[$head]) && in_array($companion, $x[$head], true);
+}
+
+/** Which slot the claws are drawn immediately after. */
+function dhcf_twopart_hands_after($traits) {
+	$gear = isset($traits['headgear']) ? $traits['headgear'] : '';
+	if ($gear !== '' && in_array($gear, DHCF_TWOPART_HANDS_OVER_HEADGEAR, true)) return 'headgear';
+	return 'head';
+}
+
 /** Is this companion the attached kind, with a second piece over the front? */
 function dhcf_companion_two_part($slug) {
 	return $slug !== '' && in_array($slug, DHCF_COMPANION_TWO_PART, true);
@@ -537,9 +596,40 @@ function dhcf_layer_order($traits) {
 	/* An ATTACHED companion goes further back than a demoted one: behind the
 	   TORSO, not merely behind the arms, because its body is standing behind
 	   the Fighter rather than hovering beside it. Its front half is not a slot
-	   and is added by dhcf_layers(). */
-	if (!empty($traits['companion']) && dhcf_companion_two_part($traits['companion'])) {
-		$order = dhcf_move_before($order, 'companion', 'torso');
+	   and is added by dhcf_layers().
+
+	   Three exceptions, each found in the sandbox:
+	     - some torsos have parts the body must not hide (wings), so it moves
+	       back in FRONT of the torso;
+	     - some arms the whole demon sits in front of, which takes the body
+	       further forward still;
+	     - some arms have to cover the CLAWS, and since the claws draw above
+	       the head and arms draw below it, the only way is to lift that arm
+	       above the head -- the same move DHCF_ARMS_OVER_COMPANION makes. */
+	/* Skipped when a head refuses it, matching the canvas: a companion that
+	   will not be drawn has no business being repositioned, and the two must
+	   agree about the order or the harness that compares them is right to
+	   complain. */
+	if (!empty($traits['companion']) && dhcf_companion_two_part($traits['companion'])
+	    && !dhcf_companion_blocked(isset($traits['head']) ? $traits['head'] : '', $traits['companion'])) {
+		$torso = isset($traits['torso']) ? $traits['torso'] : '';
+		$arms2 = isset($traits['arms'])  ? $traits['arms']  : '';
+
+		if ($arms2 !== '' && in_array($arms2, DHCF_TWOPART_OVER_ARMS, true)) {
+			$order = dhcf_move_after($order, 'companion', 'arms');
+		} elseif ($torso !== '' && in_array($torso, DHCF_TWOPART_BODY_OVER_TORSO, true)) {
+			$order = dhcf_move_after($order, 'companion', 'torso');
+		} else {
+			$order = dhcf_move_before($order, 'companion', 'torso');
+		}
+
+		/* After the HEAD, not last. dhcf_layers() inserts the claws immediately
+		   after the head slot, so head > claws > arms > headgear puts the arm
+		   over the claws without also lifting it over the helmet -- which
+		   dhcf_move_last() would have done. */
+		if ($arms2 !== '' && in_array($arms2, DHCF_TWOPART_HANDS_UNDER_ARMS, true)) {
+			$order = dhcf_move_after($order, 'arms', 'head');
+		}
 	}
 	if (!empty($traits['arms']) && in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {
 		$order = dhcf_move_before($order, 'arms', 'torso');
@@ -596,6 +686,18 @@ function dhcf_move_before($order, $what, $before) {
 	$at = array_search($before, $out, true);
 	if ($at === false) return $order;
 	array_splice($out, $at, 0, array($what));
+	return $out;
+}
+
+/* The mirror of the above. Both leave the order untouched when the anchor is
+   not present, so a rule naming a slot this Fighter does not wear is a no-op
+   rather than a reshuffle. */
+function dhcf_move_after($order, $what, $after) {
+	$out = array();
+	foreach ($order as $k) { if ($k !== $what) $out[] = $k; }
+	$at = array_search($after, $out, true);
+	if ($at === false) return $order;
+	array_splice($out, $at + 1, 0, array($what));
 	return $out;
 }
 
