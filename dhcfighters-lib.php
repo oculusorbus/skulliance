@@ -1077,7 +1077,17 @@ function dhcf_layers($traits, $webroot = '') {
 	           && dhcf_companion_two_part($traits['companion'])
 	           && !dhcf_companion_blocked($head, $traits['companion']);
 
-	foreach (dhcf_layer_order($traits) as $slot) {
+	/* THE NECK FILL GOES UNDER BOTH, so it hangs off whichever of head and
+	   torso the order puts FIRST. Normally that is the head; for a head on
+	   DHCF_HEADS_OVER_TORSO it is the torso, and anchoring on the head there
+	   would surface the fill above the body. */
+	$order     = dhcf_layer_order($traits);
+	$fillAfter = '';
+	foreach ($order as $slot0) {
+		if ($slot0 === 'head' || $slot0 === 'torso') { $fillAfter = $slot0; break; }
+	}
+
+	foreach ($order as $slot) {
 		if (empty($traits[$slot])) continue;
 		// Headgear this head refuses is dropped rather than drawn. A Fighter
 		// saved before the rule existed still carries the pairing, and the
@@ -1115,8 +1125,8 @@ function dhcf_layers($traits, $webroot = '') {
 		 * slot rather than the torso, because the head draws under the torso
 		 * and this has to be under the head -- background, fill, head, torso.
 		 */
-		if ($slot === 'head' && !empty($traits['torso']) && $webroot !== ''
-		    && is_file($webroot . '/1000/neckfill/neckfill.png')) {
+		if ($slot === $fillAfter && !empty($traits['head']) && !empty($traits['torso'])
+		    && $webroot !== '' && is_file($webroot . '/1000/neckfill/neckfill.png')) {
 			$out[] = array('cat' => 'neckfill', 'slug' => 'neckfill',
 			               'nudge' => 0, 'clip' => '');
 		}

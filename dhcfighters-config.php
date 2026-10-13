@@ -584,6 +584,27 @@ define('DHCF_ARMS_OVER_HEADGEAR', array(
 	'dh-samurai-helmet' => array('dh-samurai-augmented-arms'),
 ));
 
+/*
+ * HEADS THAT STILL DRAW OVER THE TORSO.
+ *
+ * The head goes under the torso now (see dhcf_slots) because a neck drawn past
+ * the jaw should disappear into the neckline rather than lie on top of it.
+ * That is true of heads that END at a neck. Beheaded Cyborg does not: it is a
+ * severed stump with wires and cabling spilling out of it, and that spill is
+ * drawn to fall ACROSS the chest. Under the torso it is simply gone -- the
+ * trait loses the detail it exists for.
+ *
+ * So the rule is "a neck goes into the collar", and a head with no neck is not
+ * covered by it. Listed per head rather than inferred, because nothing in the
+ * art says which heads end at a neck; it is a judgement from looking.
+ */
+define('DHCF_HEADS_OVER_TORSO', array('beheaded-cyborg'));
+
+/** Does this head draw in front of the torso rather than behind it? */
+function dhcf_head_over_torso($head) {
+	return $head !== '' && in_array($head, DHCF_HEADS_OVER_TORSO, true);
+}
+
 /** Do these arms draw in front of this headgear? */
 function dhcf_arms_over_headgear($headgear, $arms) {
 	if ($headgear === '' || $arms === '') return false;
@@ -782,6 +803,13 @@ function dhcf_layer_order($traits) {
 		if ($arms2 !== '' && in_array($arms2, DHCF_TWOPART_HANDS_UNDER_ARMS, true)) {
 			$order = dhcf_move_after($order, 'arms', 'torso');
 		}
+	}
+	/* A head with no neck keeps its old place, over the torso -- see
+	   DHCF_HEADS_OVER_TORSO. First of the slot moves, so everything that
+	   positions itself relative to the head or the torso below sees the final
+	   arrangement rather than the default one. */
+	if (!empty($traits['head']) && dhcf_head_over_torso($traits['head'])) {
+		$order = dhcf_move_after($order, 'head', 'torso');
 	}
 	if (!empty($traits['arms']) && in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {
 		$order = dhcf_move_before($order, 'arms', 'torso');

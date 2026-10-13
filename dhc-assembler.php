@@ -792,6 +792,10 @@ a{color:var(--ochre)}
      pipe nests over the shoulder cam it would otherwise pass behind. Keyed by
      headgear. See DHCF_HEADGEAR_OVER_COMPANION. */
   var HEADGEAR_OVER_COMPANION = <?php echo json_encode(DHCF_HEADGEAR_OVER_COMPANION); ?>;
+  /* Heads that keep their old place over the torso -- a severed stump whose
+     wires fall across the chest, which under the torso would simply be gone.
+     See DHCF_HEADS_OVER_TORSO. */
+  var HEADS_OVER_TORSO = <?php echo json_encode(DHCF_HEADS_OVER_TORSO); ?>;
   var COVER_EFFECTS = <?php echo json_encode(DHCF_COVER_EFFECTS); ?>;
   var COMPANION_OVER_COVER = <?php echo json_encode(DHCF_COMPANION_OVER_COVER); ?>;
 
@@ -1148,6 +1152,9 @@ a{color:var(--ochre)}
       else                                                              mv('companion', 'torso', false);
       if (sel.arms && TP_HANDS_UNDER_ARMS.indexOf(sel.arms) !== -1)     mv('arms', 'torso', true);
     }
+    /* A head with no neck stays over the torso. First of the slot moves, so
+       everything below positions against the final arrangement. */
+    if (sel.head && HEADS_OVER_TORSO.indexOf(sel.head) !== -1) mv('head', 'torso', true);
     if (armsBehindTorso()) {
       var k = order.map(function (s) { return s.key; });
       var a = k.indexOf('arms'), t = k.indexOf('torso');
@@ -1330,9 +1337,16 @@ a{color:var(--ochre)}
       cfront.style.display = hidden.companion ? 'none' : '';
     }
     // keep DOM order == layer order, regardless of the order things were picked
-    layerOrder().forEach(function (s) {
-      // the neck fill goes under the HEAD, which itself goes under the torso
-      if (s.key === 'head') {
+    var ord = layerOrder();
+    var nfAnchor = '';
+    for (var q = 0; q < ord.length; q++) {
+      if (ord[q].key === 'head' || ord[q].key === 'torso') { nfAnchor = ord[q].key; break; }
+    }
+    ord.forEach(function (s) {
+      // the neck fill goes under BOTH, so it rides whichever of head and torso
+      // the order puts first -- the head normally, the torso for the heads on
+      // HEADS_OVER_TORSO
+      if (s.key === nfAnchor) {
         var nf = document.getElementById('L-neckfill');
         if (nf) frame.appendChild(nf);
       }
