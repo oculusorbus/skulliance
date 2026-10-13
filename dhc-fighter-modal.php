@@ -106,6 +106,23 @@ if (!defined('DHCM_RENDERED')) {
 #dhcg-traits .sl{font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.45;display:block}
 #dhcg-traits .tr{font-size:9px;letter-spacing:.1em;text-transform:uppercase}
 #dhcg-traits .rt{font-size:10px;opacity:.6;font-variant-numeric:tabular-nums}
+/* The trait name is a link now. It must NOT look like the ochre buttons
+   elsewhere in the panel -- forty of them down a list would turn the trait
+   table into a wall of colour and bury the tier chips, which are the thing
+   being compared. So it inherits the body colour and earns an underline on
+   hover, the convention for text that happens to be a link. The whole cell is
+   the target, not just the word, because the row is already a grid and a 11px
+   word is a small thing to hit on a phone. */
+#dhcg-traits .tn{display:block;color:inherit;text-decoration:none;border-radius:2px}
+#dhcg-traits .tn:hover,#dhcg-traits .tn:focus-visible{color:var(--ochre,#00c8a0)}
+/* The NAME carries the underline, not the whole cell: the slot and the
+   "N of 226 wear this" line are context, and underlining all three reads as
+   three separate links. It is its own span because a bare text node cannot be
+   selected, and text-decoration on the <a> would propagate to the children
+   with no way for them to drop it. */
+#dhcg-traits .tn:hover .nm,#dhcg-traits .tn:focus-visible .nm{
+  text-decoration:underline;text-underline-offset:2px}
+#dhcg-traits .tn:focus-visible{outline:2px solid var(--ochre,#00c8a0);outline-offset:2px}
 /* Only ever shown on your own Fighters -- see the note above open(). */
 #dhcg-get{display:none;align-items:center;gap:7px;margin:0 0 14px;text-decoration:none;
   border:1px solid var(--ochre,#00c8a0);color:var(--ochre,#00c8a0);font-size:10px;
@@ -399,10 +416,32 @@ if (!defined('DHCM_RENDERED')) {
         }).join('') + '<div class="of">of ' + f.rankOf.toLocaleString() + ' Fighters</div>'
       : '';
 
+    /*
+     * EVERY TRAIT IS A LINK INTO THE COLLECTION, filtered to itself -- the
+     * same move as clicking a builder's name, and the question this panel
+     * provokes ("who else has this?") had no answer before.
+     *
+     * CATEGORY AND SLUG BOTH. Nine slugs exist in two categories at once, so
+     * ?trait=head:mk100 and ?trait=torso:mk100 are different traits with
+     * different art; dhcgallery.php validates the pair against the rarity
+     * table rather than trusting it.
+     *
+     * A PLAIN <a>, not a click handler that rewrites the grid. This panel is
+     * shared with the assembler, where there is no grid to rewrite, and the
+     * Collection's filters are already URLs -- so a link works identically
+     * from both callers and the result is somewhere you can link back to.
+     * No other parameter is carried: the trait is the new question, and
+     * arriving with somebody else's tier filter still applied would silently
+     * hide most of the answer.
+     */
     document.getElementById('dhcg-traits').innerHTML = f.parts.map(function (p) {
       var worn = p.worn > 0 ? p.worn + ' of 226 wear this' : 'in no minted Fighter';
-      return '<li><span><span class="sl">' + esc(p.slot) + '</span>' + esc(p.name) +
-             '<span class="sl" style="opacity:.4">' + worn + '</span></span>' +
+      var href = 'dhcgallery.php?trait=' + encodeURIComponent(p.cat + ':' + p.slug);
+      return '<li><a class="tn" href="' + href + '"' +
+             ' title="Show every Fighter wearing this ' + esc(p.slot) + '">' +
+             '<span class="sl">' + esc(p.slot) + '</span>' +
+             '<span class="nm">' + esc(p.name) + '</span>' +
+             '<span class="sl" style="opacity:.4">' + worn + '</span></a>' +
              '<span class="tr t-' + p.tier + '">' + p.tier + '</span>' +
              '<span class="rt">' + p.pts + ' pts</span></li>';
     }).join('');

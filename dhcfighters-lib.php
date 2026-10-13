@@ -27,6 +27,52 @@ function dhcf_rarity() {
 	return $r;
 }
 
+/**
+ * Parse a ?trait= filter into a canonical "category:slug", or '' for anything
+ * that is not a real trait.
+ *
+ * CATEGORY AND SLUG BOTH, never the slug alone. Nine slugs exist in two
+ * categories at once -- dh-alien-punk, golden-cyborg, silver-cyborg, mk100,
+ * mk200, c73, dh-cop-2, inferno-wasp-guardian, planet-8tz-specter -- and they
+ * are different traits with different art, different rarity and separate
+ * ledger rows. dhcf_committed() keys on "category|slug" for exactly this
+ * reason; a slug-only filter would pool two traits and report a count
+ * belonging to neither.
+ *
+ * VALIDATED, NOT MERELY SANITISED. A sanitised-but-unknown pair would render
+ * an empty grid under a chip naming a trait that does not exist, which reads
+ * as "nobody has this" rather than "there is no such thing". Checked against
+ * the rarity table, which is the list of traits that can exist at all.
+ */
+function dhcf_trait_filter($raw) {
+	$raw = (string)$raw;
+	if (strpos($raw, ':') === false) return '';
+	list($cat, $slug) = explode(':', $raw, 2);
+	$cat  = preg_replace('/[^a-z0-9-]/', '', strtolower($cat));
+	$slug = preg_replace('/[^a-z0-9-]/', '', strtolower($slug));
+	if ($cat === '' || $slug === '') return '';
+	return dhcf_trait_info($cat, $slug) ? $cat . ':' . $slug : '';
+}
+
+/**
+ * Is this Fighter wearing the filtered trait?
+ *
+ * $parts is the per-trait list the Collection already builds for every row
+ * (slot, cat, slug, name, tier, worn, rate, pts). Matching on cat+slug means
+ * both weapon slots and both effects slots count, which is wanted: a Fighter
+ * carrying the trait in either slot IS wearing it, and which of the two it
+ * sits in is an assembly detail nobody is asking about.
+ */
+function dhcf_traits_include($parts, $filter) {
+	if ($filter === '') return true;
+	if (strpos($filter, ':') === false) return true;
+	list($cat, $slug) = explode(':', $filter, 2);
+	foreach ((array)$parts as $p) {
+		if (isset($p['cat'], $p['slug']) && $p['cat'] === $cat && $p['slug'] === $slug) return true;
+	}
+	return false;
+}
+
 function dhcf_trait_info($category, $slug) {
 	$r = dhcf_rarity();
 	return isset($r[$category][$slug]) ? $r[$category][$slug] : null;

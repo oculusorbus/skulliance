@@ -60,6 +60,18 @@ $dhcg_tier  = isset($_GET['tier'])  ? preg_replace('/[^a-z]/', '', $_GET['tier']
 $dhcg_owner = isset($_GET['owner']) ? (int)$_GET['owner'] : 0;
 $dhcg_mine  = !empty($_GET['mine']);
 $dhcg_kit   = isset($_GET['kit']) ? preg_replace('/[^a-z]/', '', $_GET['kit']) : '';
+/*
+ * ?trait=<category>:<slug> -- CATEGORY AND SLUG, NOT SLUG ALONE.
+ *
+ * Nine slugs are both a head and a torso (dh-alien-punk, golden-cyborg,
+ * silver-cyborg, mk100, mk200, c73, dh-cop-2, inferno-wasp-guardian,
+ * planet-8tz-specter). They are different traits with different art, different
+ * rarity and separate ledger rows, so "filter by mk100" is not a question --
+ * dhcf_committed() keys on "category|slug" for the same reason. A slug-only
+ * filter would quietly pool two traits and report a count belonging to
+ * neither.
+ */
+$dhcg_trait = isset($_GET['trait']) ? dhcf_trait_filter($_GET['trait']) : '';
 
 $order = 'f.rarity_score DESC, f.created_at DESC';
 if ($dhcg_sort === 'newest')  $order = 'f.created_at DESC';
@@ -182,9 +194,13 @@ foreach ($dhcg_all as $i => $row) {
 }
 
 $dhcg_total = count($dhcg_all);
-$dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier, $dhcg_kit) {
+$dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier, $dhcg_kit, $dhcg_trait) {
 	if ($dhcg_tier !== '' && $r['best'] !== $dhcg_tier) return false;
 	if ($dhcg_kit !== '' && $r['kit']['id'] !== $dhcg_kit) return false;
+	/* In PHP like tier and kit, and for the same reason: the traits live in a
+	   JSON column. The rule itself is in the library so it can be driven
+	   without a database -- see dhcf_traits_include(). */
+	if (!dhcf_traits_include($r['parts'], $dhcg_trait)) return false;
 	return true;
 }));
 if ($dhcg_sort === 'traits') {
@@ -338,6 +354,11 @@ include 'header.php';
 .dhcg-bar a.on{border-color:var(--ochre,#00c8a0);color:var(--ink,#07111d);background:var(--ochre,#00c8a0)}
 .dhcg-bar a i{width:5px;height:5px;border-radius:50%;background:currentColor;font-style:normal}
 .dhcg-bar .sep{width:1px;height:18px;background:var(--line,#1b3346);margin:0 6px}
+/* The slot, inside the active trait chip. The chip's own colour is the ochre
+   fill, so this cannot be dimmed with opacity against the dark palette the way
+   the bar's other secondary text is -- it sits on the fill, not on the page. */
+.dhcg-bar .dhcg-chipcat{font-size:8.5px;letter-spacing:.14em;opacity:.62;
+  padding-right:5px;margin-right:1px;border-right:1px solid currentColor}
 .dhcg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
 .dhcg-card{border:1px solid var(--line,#1b3346);border-radius:3px;overflow:hidden;background:var(--panel,#0a1929);
   padding:0;cursor:pointer;color:inherit;font:inherit;text-align:left;display:block;width:100%}
@@ -460,6 +481,18 @@ include 'header.php';
     <?php if ($dhcg_owner && isset($dhcg_owners[$dhcg_owner])): ?>
       <a class="on" href="<?php echo htmlspecialchars(dhcg_url(array('owner' => ''))); ?>">
         <?php echo htmlspecialchars($dhcg_owners[$dhcg_owner]); ?> &times;</a>
+    <?php endif; ?>
+    <?php /* The trait chip, cleared the same way the builder chip is. Named by
+             its DISPLAY name, not its slug: the slug is a filename and the
+             panel the player clicked in said "DH Samurai Helmet". The slot is
+             spelled out beside it because nine slugs exist in two categories
+             and "MK100" alone would not say which one is being shown. */
+          if ($dhcg_trait !== ''):
+            list($tcc, $tss) = explode(':', $dhcg_trait, 2); ?>
+      <a class="on" href="<?php echo htmlspecialchars(dhcg_url(array('trait' => ''))); ?>"
+         title="Showing every Fighter wearing this trait">
+        <span class="dhcg-chipcat"><?php echo htmlspecialchars($tcc); ?></span>
+        <?php echo htmlspecialchars(dhcf_trait_name($tcc, $tss)) . ' ' . count($dhcg_rows); ?> &times;</a>
     <?php endif; ?>
   </div>
 

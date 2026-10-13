@@ -275,6 +275,14 @@ staker's Fighters. Click any of them for the full breakdown at full size —
 every trait, its tier, how many of the 226 minted Fighters wear it, and what it
 contributes to the score.
 
+**Every trait in that panel is a link.** Click one and the Collection comes
+back filtered to it: every Fighter anyone has assembled wearing that exact
+piece. It answers the question the panel provokes — *who else has this?* — the
+same way clicking a builder's name shows you everything they have made. The
+filter names the slot as well as the trait, because nine traits share a name
+across two slots: the **MK100** head and the **MK100** torso are different
+pieces with different art, and the Collection will not mix them.
+
 Filters are carried in the link, so a particular view is something you can send
 to someone — and now to anyone, not only to another staker. A shared link
 carries its own title and preview: *"Mythic Fighters"* posts as exactly that.
