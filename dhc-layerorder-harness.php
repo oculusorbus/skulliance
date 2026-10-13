@@ -58,7 +58,10 @@ function extract_fn($src, $name) {
 	return '';
 }
 $js = '';
-foreach (array('layerOrder', 'armsBehindTorso', 'effectBehindTorso') as $fn) {
+/* companionTwoPart joins the list for the same reason the other two are on it:
+   layerOrder() calls it, so lifting layerOrder() alone gives node a function
+   that references something that does not exist. */
+foreach (array('layerOrder', 'armsBehindTorso', 'effectBehindTorso', 'companionTwoPart') as $fn) {
 	$body = extract_fn($src, $fn);
 	ok($body !== '', "found $fn() in dhc-assembler.php — if this fails the page was "
 	                . 'restructured and this harness is testing nothing');
@@ -90,8 +93,17 @@ $plain = array('background' => 'bg', 'torso' => 'body', 'head' => 'face',
    that already exists, so "arms behind torso" silently kept $plain's ordinary
    arms and tested nothing. */
 function ms_case($plain, $extra) { return array_merge($plain, $extra); }
+$twoPart = DHCF_COMPANION_TWO_PART ? DHCF_COMPANION_TWO_PART[0] : 'golden-isopunk';
 $cases = array(
 	'nothing special'           => $plain,
+	/* The ATTACHED companion. Its body goes behind the TORSO rather than
+	   merely behind the arms, which is a different move from the demoted
+	   case below and has to agree between PHP and the canvas. Its front half
+	   is not a slot, so it cannot appear here -- dhcf_layers() is asserted
+	   separately further down. */
+	'attached companion'        => ms_case($plain, array('companion' => $twoPart)),
+	'attached + cover'          => ms_case($plain, array('companion' => $twoPart,
+	                                                     'effects1'  => $cover)),
 	'ordinary companion'        => ms_case($plain, array('companion' => 'golden-isopunk')),
 	'cover, ordinary companion' => ms_case($plain, array('companion' => 'golden-isopunk',
 	                                                     'effects1'  => $cover)),
@@ -140,6 +152,7 @@ $prelude = "var SLOTS = " . json_encode(array_map(function ($k) { return array('
          . "var ARMS_OVER_COMPANION = " . json_encode(DHCF_ARMS_OVER_COMPANION) . ";\n"
          . "var COVER_EFFECTS = "        . json_encode(DHCF_COVER_EFFECTS)        . ";\n"
          . "var COMPANION_OVER_COVER = " . json_encode(DHCF_COMPANION_OVER_COVER) . ";\n"
+         . "var COMPANION_TWO_PART = "   . json_encode(array_values(DHCF_COMPANION_TWO_PART)) . ";\n"
          . "var sel = {};\n";
 $driver = $prelude . $js . "
 var CASES = " . json_encode($cases) . ";
@@ -159,7 +172,12 @@ console.log(JSON.stringify(out));
  * missing. Naming it here turns that into a sentence. (It has happened once:
  * ARMS_OVER_COMPANION.)
  */
-preg_match_all('/\b([A-Z][A-Z0-9_]{3,})\b/', $js, $cm);
+/* COMMENTS FIRST. The scan looks for ALL-CAPS tokens, and prose is full of
+   them -- a comment reading "goes behind the TORSO" was enough to make this
+   demand a constant called TORSO and fail a working change. Only the code
+   can name a constant the driver has to define. */
+$jsCode = preg_replace(array('#/\*.*?\*/#s', '#//[^\n]*#'), '', $js);
+preg_match_all('/\b([A-Z][A-Z0-9_]{3,})\b/', $jsCode, $cm);
 foreach (array_unique($cm[1]) as $name) {
 	ok(strpos($prelude, 'var ' . $name . ' =') !== false,
 	   "the extracted JS reads $name and the harness prelude does not define it -- "
@@ -179,6 +197,92 @@ if (!is_array($canvas)) {
 }
 
 /* ---------- 5. compare ------------------------------------------------------ */
+/* ---------------------------------------------------------------------------
+ * THE ATTACHED COMPANION'S SECOND LAYER
+ *
+ * layerOrder() deals in SLOTS, and the front half is not one -- it is derived
+ * by dhcf_layers(), the same way the single-sided-arm restore is. So it has
+ * to be asserted on the layer list itself.
+ * ------------------------------------------------------------------------- */
+if (DHCF_COMPANION_TWO_PART) {
+	$tp   = DHCF_COMPANION_TWO_PART[0];
+	$root = __DIR__ . '/dhc/web';
+
+	$ls = dhcf_layers(array('torso' => 'amplified-dreadnought', 'head' => 'alien-zombie-02',
+	                        'headgear' => '666-demon-headgear', 'arms' => 'connected-protector-limbs',
+	                        'companion' => $tp), $root);
+	$cats = array_map(function ($l) { return $l['cat']; }, $ls);
+	$i = function ($c) use ($cats) { return array_search($c, $cats, true); };
+
+	/* WHICHEVER TORSO LAYER EXISTS. With arms equipped the torso is drawn from
+	   torso-noarms, so looking for 'torso' alone returns false and the
+	   comparison silently becomes "0 < false". Find the first layer of either
+	   kind instead. */
+	$torsoAt = null;
+	foreach ($cats as $ix => $c) {
+		if ($c === 'torso' || $c === 'torso-noarms') { $torsoAt = $ix; break; }
+	}
+	ok($torsoAt !== null, 'the test build has no torso layer at all');
+	ok($i('companion') !== false && $torsoAt !== null && $i('companion') < $torsoAt,
+	   'the attached companion body is not behind the torso');
+	ok($i('companion-front') !== false,
+	   'the attached companion never gets its front half');
+	ok($i('companion-front') > $i('head'),
+	   'the claws draw under the head, where the grip does not read at all');
+	ok($i('companion-front') < $i('headgear'),
+	   'the claws draw over the headgear instead of under it');
+	/* Same slug, two directories -- the pairing torso-noarms already uses. */
+	foreach ($ls as $l) if ($l['cat'] === 'companion-front') {
+		ok($l['slug'] === $tp, 'the front half does not pair with its companion by slug');
+	}
+
+	/* A headless Fighter is a real saved state, and still wears the claws. */
+	$lsNoHead = dhcf_layers(array('torso' => 'amplified-dreadnought', 'companion' => $tp), $root);
+	ok(in_array('companion-front', array_map(function ($l) { return $l['cat']; }, $lsNoHead), true),
+	   'a Fighter with no head loses the claws entirely');
+
+	/* An ordinary companion must gain nothing from any of this. */
+	$lsPlain = dhcf_layers(array('torso' => 'amplified-dreadnought', 'head' => 'alien-zombie-02',
+	                             'companion' => 'golden-isopunk'), $root);
+	$pc = array_map(function ($l) { return $l['cat']; }, $lsPlain);
+	ok(!in_array('companion-front', $pc, true),
+	   'an ordinary companion is given a front half it has no art for');
+	ok(array_search('companion', $pc, true) > array_search('torso', $pc, true),
+	   'an ordinary companion was moved behind the torso');
+
+	/* And the art has to actually be there, or every renderer silently skips it. */
+	foreach (DHCF_COMPANION_TWO_PART as $slug) {
+		foreach (array(1000, 250) as $sz) {
+			ok(is_file($root . '/' . $sz . '/companion-front/' . $slug . '.png'),
+			   "companion-front/$slug.png is missing at {$sz}px");
+			ok(is_file($root . '/' . $sz . '/companion/' . $slug . '.png'),
+			   "companion/$slug.png is missing at {$sz}px");
+		}
+	}
+	/* All three renderers ask the same question. A renderer that stops asking
+	   draws a different Fighter from the other two, which this codebase has
+	   already paid for twice. */
+	/* EACH RENDERER'S REAL PATH, not the words "companion-front" anywhere in
+	   the file. Checking the bare string passed a mutation that renamed the
+	   directory in the GD renderer, because the COMMENT above it still said
+	   companion-front -- the same way the ALL-CAPS scan above was fooled by
+	   prose. Comments are stripped and the actual expression is named. */
+	$wants = array(
+		'dhcfighters-lib.php'     => "'cat' => 'companion-front'",
+		'dhc-assembler.php'       => "url('companion-front'",
+		'dhcfighters-notify.php'  => "/1000/companion-front/",
+	);
+	foreach ($wants as $f => $needle) {
+		$src2 = preg_replace(array('#/\*.*?\*/#s', '#//[^\n]*#'), '',
+		                     file_get_contents(__DIR__ . '/' . $f));
+		ok(strpos($src2, $needle) !== false,
+		   "$f does not build the companion-front path, so it will draw this Fighter differently");
+		ok(strpos($src2, 'dhcf_companion_two_part') !== false
+		   || strpos($src2, 'companionTwoPart') !== false,
+		   "$f does not ask whether the companion is the attached kind");
+	}
+}
+
 echo "\nlayer order, canvas vs php\n";
 foreach ($cases as $name => $traits) {
 	$php = array();

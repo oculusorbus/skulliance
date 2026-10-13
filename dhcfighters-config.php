@@ -253,6 +253,7 @@ define('DHCF_EFFECTS_BEHIND_TORSO', array('xlon-s-black-fire-attack'));
  */
 define('DHCF_COVER_EFFECTS', array(
 	'dhc2-comic-cover-1', 'dhc2-comic-cover-2', 'dhc2-comic-cover-3',
+	'dhc2-comic-cover-4',
 ));
 
 /*
@@ -388,6 +389,40 @@ define('DHCF_PAIRED_MARK', 'paired:');
 /** Vertical nudge in pixels of the 1000px master, positive = down. */
 define('DHCF_NUDGE', array('skull-krusher' => 23, 'skull-krusher-sash' => 13, 'axe' => 13));
 
+/*
+ * A COMPANION THAT IS ATTACHED, NOT FLOATING.
+ *
+ * Every other companion is a mass hovering at the shoulder, so one layer over
+ * the top of everything is the whole of it. The Demon is gripping the Fighter:
+ * its body stands BEHIND the torso and its claws come over the front, around
+ * the head. One trait, two pieces of art, two places in the stack.
+ *
+ * The art pairs by SLUG across two directories, exactly as torso-noarms pairs
+ * with torso:
+ *
+ *     companion/<slug>.png        the body, drawn behind the torso
+ *     companion-front/<slug>.png  the claws, drawn over the head
+ *
+ * companion-front is deliberately NOT a slot. dhc-assembler.php's $dhc_slots
+ * drives the sandbox's per-directory glob(), so a directory that is not a slot
+ * never becomes a selectable trait -- which is what keeps this one trait
+ * rather than two.
+ *
+ * WHERE THE CLAWS GO, and it is a compromise the stack forces. They must sit
+ * above the head or the grip does not read at all -- rendered both ways, and
+ * below the head the claw simply disappears behind the skull. Headgear stays
+ * on top of them. Arms end up underneath, because dhcf_slots() already draws
+ * head over arms globally, so "above the head but below the arms" is not
+ * expressible in one pass. In practice the claws sit at head height and rarely
+ * meet an arms trait at all.
+ */
+define('DHCF_COMPANION_TWO_PART', array('demon-companion'));
+
+/** Is this companion the attached kind, with a second piece over the front? */
+function dhcf_companion_two_part($slug) {
+	return $slug !== '' && in_array($slug, DHCF_COMPANION_TWO_PART, true);
+}
+
 /**
  * TRAITS THAT DO NOT FALL WHEN A FIGHTER DIES.
  *
@@ -498,6 +533,13 @@ function dhcf_layer_order($traits) {
 
 	if (!empty($traits['companion']) && in_array($traits['companion'], DHCF_COMPANION_UNDER, true)) {
 		$order = dhcf_move_before($order, 'companion', 'arms');
+	}
+	/* An ATTACHED companion goes further back than a demoted one: behind the
+	   TORSO, not merely behind the arms, because its body is standing behind
+	   the Fighter rather than hovering beside it. Its front half is not a slot
+	   and is added by dhcf_layers(). */
+	if (!empty($traits['companion']) && dhcf_companion_two_part($traits['companion'])) {
+		$order = dhcf_move_before($order, 'companion', 'torso');
 	}
 	if (!empty($traits['arms']) && in_array($traits['arms'], DHCF_ARMS_BEHIND_TORSO, true)) {
 		$order = dhcf_move_before($order, 'arms', 'torso');

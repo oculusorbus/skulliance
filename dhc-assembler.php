@@ -731,6 +731,13 @@ a{color:var(--ochre)}
    * never disagree with what you are looking at.
    */
   var COMPANION_UNDER = <?php echo json_encode(DHCF_COMPANION_UNDER); ?>;
+  /* Companions that are ATTACHED rather than floating: body behind the torso,
+     claws over the head. One trait, two pieces of art. See
+     DHCF_COMPANION_TWO_PART -- this is that list, not a second copy. */
+  var COMPANION_TWO_PART = <?php echo json_encode(array_values(DHCF_COMPANION_TWO_PART)); ?>;
+  function companionTwoPart() {
+    return !!sel.companion && COMPANION_TWO_PART.indexOf(sel.companion) !== -1;
+  }
 
   /*
    * ...and the cost of that reordering. "Below Arms" also means below the
@@ -1068,6 +1075,13 @@ a{color:var(--ochre)}
       var ai = order.map(function (s) { return s.key; }).indexOf('arms');
       if (ci > -1 && ai > -1) order.splice(ai, 0, order.splice(ci, 1)[0]);
     }
+    /* An attached companion goes behind the TORSO, not merely behind the arms
+       -- it is standing behind the Fighter, not hovering beside it. */
+    if (companionTwoPart()) {
+      var ck = order.map(function (s) { return s.key; });
+      var cc = ck.indexOf('companion'), ct = ck.indexOf('torso');
+      if (cc > -1 && ct > -1 && cc > ct) order.splice(ct, 0, order.splice(cc, 1)[0]);
+    }
     if (armsBehindTorso()) {
       var k = order.map(function (s) { return s.key; });
       var a = k.indexOf('arms'), t = k.indexOf('torso');
@@ -1180,6 +1194,27 @@ a{color:var(--ochre)}
       var rn = NUDGE[sel.torso] || 0;
       rest.style.transform = rn ? 'translateY(' + (rn / 10) + '%)' : '';
     }
+    /*
+     * The attached companion's front half: its claws, over the head. Its own
+     * element for the same reason the torso restore layer has one -- it has to
+     * be placed at a point in the order that is not its slot, and removed the
+     * moment the selection stops needing it.
+     */
+    var twoPart = companionTwoPart();
+    var cfront  = document.getElementById('L-companionfront');
+    if (!twoPart) {
+      if (cfront) cfront.remove();
+    } else {
+      if (!cfront) {
+        cfront = document.createElement('img');
+        cfront.id = 'L-companionfront'; cfront.alt = '';
+        frame.appendChild(cfront);
+      }
+      var cwant = url('companion-front', sel.companion, 1000);
+      if (cfront.getAttribute('src') !== cwant) cfront.setAttribute('src', cwant);
+      /* Follows the companion's own hide toggle: one trait, one switch. */
+      cfront.style.display = hidden.companion ? 'none' : '';
+    }
     // keep DOM order == layer order, regardless of the order things were picked
     layerOrder().forEach(function (s) {
       var el = document.getElementById('L-' + s.key);
@@ -1188,6 +1223,11 @@ a{color:var(--ochre)}
       if (s.key === 'torso') {
         var r = document.getElementById('L-torsokeep');
         if (r) frame.appendChild(r);
+      }
+      // the claws ride with the HEAD, directly above it and under any headgear
+      if (s.key === 'head') {
+        var cf = document.getElementById('L-companionfront');
+        if (cf) frame.appendChild(cf);
       }
     });
     // "Nothing picked" and "everything hidden" both leave a blank canvas, and

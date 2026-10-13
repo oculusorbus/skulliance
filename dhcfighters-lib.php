@@ -1021,6 +1021,32 @@ function dhcf_layers($traits, $webroot = '') {
 			$out[] = array('cat' => 'torso', 'slug' => $slug, 'nudge' => $nudge,
 			               'clip' => DHCF_ONE_ARM[$arms]);
 		}
+
+		/*
+		 * THE ATTACHED COMPANION'S FRONT HALF. Same shape as the arm restore
+		 * above: one trait, a second derived layer, pairing by slug across a
+		 * directory that is not a slot. Emitted right after the HEAD, so the
+		 * claws land over the face and under any headgear -- see
+		 * DHCF_COMPANION_TWO_PART for why that position and not another.
+		 */
+		if ($slot === 'head' && !empty($traits['companion'])
+		    && dhcf_companion_two_part($traits['companion'])) {
+			$out[] = array('cat' => 'companion-front', 'slug' => $traits['companion'],
+			               'nudge' => 0, 'clip' => '');
+		}
+	}
+
+	/*
+	 * A Fighter with no head still wears the claws. The loop above hangs them
+	 * off the head layer, which is the right anchor when there is one and no
+	 * anchor at all when there is not -- and a headless Fighter is a real
+	 * saved state, not a hypothetical. Appended last in that case, which is
+	 * where the companion slot would have put them anyway.
+	 */
+	if (!empty($traits['companion']) && dhcf_companion_two_part($traits['companion'])
+	    && empty($traits['head'])) {
+		$out[] = array('cat' => 'companion-front', 'slug' => $traits['companion'],
+		               'nudge' => 0, 'clip' => '');
 	}
 	return $out;
 }

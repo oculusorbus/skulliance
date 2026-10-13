@@ -265,6 +265,35 @@ function dhcf_render_fighter($traits, $serial, $size = 500) {
 					                   $sw, imagesy($src));
 				}
 			}
+
+			/*
+			 * ATTACHED COMPANION, FRONT HALF. Rides with the HEAD, exactly as
+			 * the arm restore rides with the torso: the claws go over the face
+			 * and under any headgear. Same rule as dhcf_layers() and the
+			 * canvas -- all three ask dhcf_companion_two_part(), so a Fighter
+			 * cannot come out of Discord looking different from the Collection.
+			 */
+			if ($slot === 'head' && !empty($traits['companion'])
+			    && dhcf_companion_two_part($traits['companion'])) {
+				$cf = __DIR__ . '/' . $base . '/1000/companion-front/' . $traits['companion'] . '.png';
+				$cimg = is_file($cf) ? @imagecreatefrompng($cf) : null;
+				if ($cimg) {
+					imagecopyresampled($out, $cimg, 0, 0, 0, 0, $size, $size,
+					                   imagesx($cimg), imagesy($cimg));
+				}
+			}
+		}
+
+		/* No head to ride with, and the claws are still worn. Matches the
+		   same fallback in dhcf_layers(). */
+		if (!empty($traits['companion']) && dhcf_companion_two_part($traits['companion'])
+		    && empty($traits['head'])) {
+			$cf = __DIR__ . '/' . $base . '/1000/companion-front/' . $traits['companion'] . '.png';
+			$cimg = is_file($cf) ? @imagecreatefrompng($cf) : null;
+			if ($cimg) {
+				imagecopyresampled($out, $cimg, 0, 0, 0, 0, $size, $size,
+				                   imagesx($cimg), imagesy($cimg));
+			}
 		}
 		if (!$drew) return '';
 
