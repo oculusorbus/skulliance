@@ -622,9 +622,44 @@ ok(strpos($cgNo, 'avatar_url(') !== false,
 ok(strpos($cgNo, 'admin_require();') !== false,
    'the avatar wall is not gated to the admin');
 /* Zero matching accounts must not reach the grid maths: ceil(sqrt(0)) is 0
-   and the modulo divides by it. */
+   and the modulo divides by it. TWO guards, because there are two ways to
+   arrive at zero tiles: no rows matched, or every row's avatar 404'd. */
 ok(strpos($cgNo, 'if (!n)') !== false,
    'an empty result reaches the grid arithmetic, where cols is 0 and i % cols divides by zero');
+ok(strpos($cgNo, 'if (!kept.length)') !== false,
+   'a wall where every avatar failed to load reaches the grid arithmetic with zero tiles');
+
+/*
+ * "If they won't render, leave them out."
+ *
+ * A dead avatar hash is a well-formed URL on a row that looks fine, so the
+ * only way to know a tile will draw is to have loaded it. That makes the
+ * ORDER the property: every image resolves, THEN the canvas is sized. The
+ * first version sized from USERS.length and substituted icons/skull.png for
+ * each failure, which filled about a third of the wall with placeholders.
+ *
+ * Asserted by order rather than presence because the broken version contains
+ * all the same tokens -- it just runs them the other way round, and sizing a
+ * canvas for 399 tiles when 260 will draw leaves blank rows at the bottom.
+ */
+$cgLoad = strpos($cgNo, 'Promise.all(USERS.map');
+$cgSize = strpos($cgNo, 'canvas.width =');
+ok($cgLoad !== false && $cgSize !== false && $cgLoad < $cgSize,
+   'the canvas is sized before the avatars have loaded, so tiles that never render '
+ . 'still reserve their square and the wall ends in blank rows');
+/* The grid must derive from the kept count. Matching "Math.sqrt(" alone
+   passes the version that squares USERS.length. */
+ok(preg_match('/cols\s*=\s*Math\.ceil\(Math\.sqrt\(m\)\)/', $cgNo) === 1,
+   'the grid is not sized from the number of avatars that actually loaded');
+/* The substitution itself must be gone, not merely unreachable. */
+ok(strpos($cgNo, 'SKULL') === false,
+   'the avatar wall can still fall back to the skull placeholder, which the owner '
+ . 'asked to have left out entirely');
+/* And no-hash rows -- whose placeholder URL loads perfectly well, so the
+   canvas cannot drop them -- must be excluded in SQL instead. */
+ok(preg_match('/\$where\s*=\s*array\([^)]*avatar\s*<>\s*\x27\x27/', $cgNo) === 1,
+   'accounts with no avatar hash are not excluded in SQL, so they draw as skulls '
+ . 'that no client-side check can catch');
 ok(preg_match('/user_id\'\]\s*===?\s*1/', $hd) === 1, 'the Admin nav is not gated to user 1');
 
 echo "\nlevel 1 can actually be saved\n";

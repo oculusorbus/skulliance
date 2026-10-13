@@ -35,16 +35,20 @@ require_once __DIR__ . '/avatar-lib.php';
 
 /* ---- options, all in the query string so a layout can be linked ---- */
 $cg_publiconly = !empty($_GET['publiconly']);
-$cg_withav     = !isset($_GET['withav']) || !empty($_GET['withav']);   // default on
 $cg_names      = !empty($_GET['names']);
 $cg_sort       = (isset($_GET['sort']) && $_GET['sort'] === 'recent') ? 'recent' : 'oldest';
 
-$where = array("username <> ''");
+/*
+ * FACES ONLY, NO SKULLS -- not an option, because an option here can only
+ * make the poster worse. avatar_url() returns icons/skull.png for a row with
+ * no hash, and that file is same-origin so it loads and draws perfectly: a
+ * no-hash row is a skull on the wall, not a load failure the canvas can
+ * detect. So it is excluded in SQL. The other skull source -- a hash that
+ * exists but 404s -- is only discoverable in the browser, and is dropped
+ * there. Between the two, every tile on the finished wall is a real face.
+ */
+$where = array("username <> ''", "avatar <> ''");
 if ($cg_publiconly) $where[] = 'visibility = 2';
-/* An account with no avatar hash draws the skull. Worth being able to leave
-   them out: a wall of faces with thirty skulls in it reads as broken rather
-   than as "these people never set a picture". */
-if ($cg_withav)     $where[] = "avatar <> ''";
 
 /* id ASC is join order -- the oldest accounts first, which is the story this
    poster is telling. last_login DESC answers a different question and is
@@ -59,8 +63,8 @@ if ($res) {
 		$cg_users[] = array(
 			'n' => $r['username'],
 			/* Built here, not in JS: avatar_url() knows that an animated hash
-			   is .gif and a still one .png, and returns the placeholder for a
-			   row that cannot make a URL at all. */
+			   is .gif and a still one .png. A row whose id or hash it refuses
+			   comes back as the placeholder, which the draw step drops. */
 			'a' => avatar_url($r['discord_id'], $r['avatar']),
 			'd' => (string) $r['discord_id'],
 		);
@@ -82,12 +86,12 @@ admin_chrome('collage');
 
 <p class="adm-sub">
   One tile per account, oldest first. <b><?php echo number_format($cg_total); ?></b>
-  accounts match. Nothing is saved — set the options, draw it, download it.
+  accounts have an avatar set; any whose picture no longer loads is left out of
+  the wall rather than drawn as a skull. Nothing is saved — set the options,
+  draw it, download it.
 </p>
 
 <form class="cg-opts" method="get">
-  <label><input type="checkbox" name="withav" value="1" <?php echo $cg_withav ? 'checked' : ''; ?>>
-         Only accounts with an avatar</label>
   <label><input type="checkbox" name="publiconly" value="1" <?php echo $cg_publiconly ? 'checked' : ''; ?>>
          Public profiles only</label>
   <label><input type="checkbox" name="names" value="1" <?php echo $cg_names ? 'checked' : ''; ?>>
@@ -114,7 +118,6 @@ admin_chrome('collage');
 (function () {
   var USERS   = <?php echo json_encode($cg_users, JSON_UNESCAPED_SLASHES); ?>;
   var SHOWNAM = <?php echo $cg_names ? 'true' : 'false'; ?>;
-  var SKULL   = 'icons/skull.png';
   var canvas  = document.getElementById('cg-canvas');
   var status  = document.getElementById('cg-status');
   var missing = document.getElementById('cg-missing');
@@ -139,51 +142,61 @@ admin_chrome('collage');
     dl.hidden = true;
     status.textContent = 'Loading ' + n + ' avatars…';
 
-    /* A square-ish grid, so the poster works as a social card at any count. */
-    var cols = Math.ceil(Math.sqrt(n));
-    var rows = Math.ceil(n / cols);
-    var TILE = 128, PAD = 6, NAME = SHOWNAM ? 18 : 0;
-    var cellW = TILE + PAD, cellH = TILE + PAD + NAME;
-    var W = cols * cellW + PAD, H = rows * cellH + PAD;
-
-    canvas.width = W; canvas.height = H;
-    var c = canvas.getContext('2d');
-    c.fillStyle = '#050c14';
-    c.fillRect(0, 0, W, H);
-
-    var failed = [];
+    /*
+     * LOAD FIRST, THEN SIZE THE GRID. A dead avatar hash is only discoverable
+     * by trying it -- the URL is well formed and the row looks fine -- so the
+     * count of tiles that will actually draw is not known until every image
+     * has resolved. Laying out from USERS.length and substituting a skull
+     * filled roughly a third of the wall with placeholders, which is not the
+     * picture: this is a thank-you to people, not a report on data quality.
+     */
     Promise.all(USERS.map(function (u) { return load(u.a); })).then(function (imgs) {
-      return Promise.all(imgs.map(function (im, i) {
-        if (im) return im;
-        failed.push(USERS[i].n);
-        return load(SKULL);            /* same origin, always draws */
-      }));
-    }).then(function (imgs) {
+      var kept = [], failed = [];
       imgs.forEach(function (im, i) {
+        if (im) kept.push({ im: im, u: USERS[i] });
+        else    failed.push(USERS[i].n);
+      });
+      if (!kept.length) {
+        status.textContent = 'None of the ' + n + ' avatars would load.';
+        return;
+      }
+
+      /* A square-ish grid, so the poster works as a social card at any count. */
+      var m = kept.length;
+      var cols = Math.ceil(Math.sqrt(m));
+      var rows = Math.ceil(m / cols);
+      var TILE = 128, PAD = 6, NAME = SHOWNAM ? 18 : 0;
+      var cellW = TILE + PAD, cellH = TILE + PAD + NAME;
+      var W = cols * cellW + PAD, H = rows * cellH + PAD;
+
+      canvas.width = W; canvas.height = H;
+      var c = canvas.getContext('2d');
+      c.fillStyle = '#050c14';
+      c.fillRect(0, 0, W, H);
+
+      kept.forEach(function (k, i) {
         var x = PAD + (i % cols) * cellW, y = PAD + Math.floor(i / cols) * cellH;
-        if (im) {
-          c.save();
-          c.beginPath();
-          c.arc(x + TILE / 2, y + TILE / 2, TILE / 2, 0, Math.PI * 2);
-          c.closePath(); c.clip();
-          c.drawImage(im, x, y, TILE, TILE);
-          c.restore();
-        }
+        c.save();
+        c.beginPath();
+        c.arc(x + TILE / 2, y + TILE / 2, TILE / 2, 0, Math.PI * 2);
+        c.closePath(); c.clip();
+        c.drawImage(k.im, x, y, TILE, TILE);
+        c.restore();
         if (SHOWNAM) {
           c.fillStyle = '#7a9eb0';
           c.font = '11px system-ui, sans-serif';
           c.textAlign = 'center';
-          var nm = USERS[i].n;
+          var nm = k.u.n;
           if (nm.length > 16) nm = nm.slice(0, 15) + '…';
           c.fillText(nm, x + TILE / 2, y + TILE + 13);
         }
       });
-      status.textContent = n + ' accounts drawn.';
+      status.textContent = m + ' avatars drawn in a ' + cols + '\u00d7' + rows + ' grid.';
       missing.innerHTML = failed.length
-        ? '<span class="cg-bad">' + failed.length + ' avatar(s) would not load and were '
-          + 'drawn as the skull: ' + failed.slice(0, 12).join(', ')
-          + (failed.length > 12 ? '…' : '') + '. Open a page they appear on and the '
-          + 'refresh will heal them, then draw again.</span>'
+        ? '<span class="cg-bad">' + failed.length + ' left out because their avatar would '
+          + 'not load: ' + failed.slice(0, 12).join(', ')
+          + (failed.length > 12 ? '…' : '') + '. Those hashes are stale; opening a page they '
+          + 'appear on heals them, then draw again to include them.</span>'
         : '';
       /* The export is the moment a tainted canvas reveals itself. */
       try {
