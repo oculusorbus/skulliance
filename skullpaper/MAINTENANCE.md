@@ -125,6 +125,33 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 ### Membership Discord role IDs (skulliance.php:145-212)
 - Base 949930195584954378 · Elite 949930360681140274 · Inner Circle 949930529841635348.
 
+### assignRole() and the role-sync burst (role.php, driven from skulliance.php:151-195)
+- **THE ROLE LIST IS A LOGIN SNAPSHOT.** `skulliance.php` drives role removal from
+  `$_SESSION['userData']['roles']`, filled once at OAuth and never refreshed. It is the
+  same snapshot problem documented for the Oculus VIP gate above, in a second place.
+- **IT CALLS ONCE PER ROLE.** Up to 7 for the Ritual guild (1235869893664964608) on every
+  `dashboard.php` / `my-nfts.php` load. For somebody who has LEFT that guild the snapshot
+  still lists their old roles, so all 7 fire, all 404, and the list is unchanged next load.
+  That produced both reported symptoms: endless `10007 Unknown Member` alerts, and a 429
+  from 7 authenticated calls to one route in milliseconds - us rate-limiting ourselves.
+- **A per-request `static $notMember`, keyed `guild|user`**, drops that to one call. It does
+  not persist across requests, so a stale snapshot still costs exactly one 404 per page load.
+  Fixing that properly means refreshing the snapshot or pruning the session list - not done.
+- **10007 / 10013 are logged, never alerted.** The person is not in that guild; no admin can
+  fix it. 10004 Unknown Guild (bot removed) and 10011 Unknown Role still alert, because those
+  break roles for everyone.
+- **429 is a wait, not a failure.** `retry_after` comes back in the body, routinely under a
+  second for this route; retried once, and only when the wait is <= 2s, because this runs
+  inside a page load. A longer wait means give up and say so.
+- **THE HINT USED TO BLAME THE TOKEN FOR EVERYTHING.** "Check the bot token" was the default,
+  so a 429 sent you to rotate a working credential. The default now says what is actually
+  known, and 403 / 429 / 10004 each have their own.
+- `SKULL_DISCORD_API` makes it testable; production never defines it. `role-harness.php`
+  points it at a local `php -S` **router** (not files - the endpoint has no extension and
+  answers PUT/DELETE, which the built-in server 405s on a plain .php) and drives: left-guild,
+  the burst, the 429 retry including that it really waits, the hints, and success staying silent.
+- No `curl_close()` here either - same reason as dropship/role.php.
+
 ### Crafting (db.php:3947-3990)
 - Craft: burn equal parts of all 6 core points → DIAMOND (1:1 per point type).
 - Shatter: DIAMOND → equal parts of all 6 core points.
