@@ -212,6 +212,25 @@ sets front, mid and back**, so the Fighter you least want reached goes last.
   luck, but two matches from one slide is something you found, so only the
   slide itself is paid this way.
 - A match of **5 or more gives you another turn**.
+- A cascade **stops when a wave clears nothing**. That happens only in one
+  situation: every gem of the match is carrying a bomb that was armed this
+  move, and an unarmed bomb's gem is protected from clearing so the bomb
+  survives. The match still counts, it just cannot repeat. Those gems stay put,
+  their bombs go live at the end of the move, and the next match on them sets
+  them off.
+
+### Shield has a ceiling
+
+A Fighter's shield cannot exceed **half its own health**. It is a share rather
+than a flat number, so a tough Fighter carries a bigger shield the same way it
+carries more armour, and a shield match that would push past the ceiling simply
+tops up to it.
+
+Without that ceiling nothing ever took shield away except damage and a Break
+hit, so a Crew that kept matching blue banked it for the whole battle and
+eventually could not be killed. If you are facing a Crew that shields faster
+than you can cut through, **Break** (⛏️) strips shield equal to half its hit
+before any damage lands, and is the kit that exists for exactly this.
 
 ### Bombs
 

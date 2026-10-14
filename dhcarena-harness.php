@@ -150,6 +150,80 @@ printf("  turns   avg %.1f  median %d  p90 %d  max %d\n",
 	array_sum($turns)/count($turns), $turns[intdiv(count($turns),2)],
 	$turns[(int)floor(count($turns)*0.9)], end($turns));
 printf("  bombs   %.1f armed, %.1f detonated per battle\n", $bombs/$N, $blasts/$N);
+
+/* 1b. SHIELD HAS A CEILING.
+ *
+ * It had none and nothing ever removed it, so a Crew that kept matching blue
+ * banked shield for a whole battle -- and because a 5 anywhere in a cascade
+ * grants another turn, a defending Crew could stack several moves in a row
+ * doing it. Reported as an AI repeating the same match with a shield near 700
+ * and no way through. Measured before the fix: median 0, p99 802, worst 8117.
+ *
+ * Driven, not read: the cap is applied per Fighter against that Fighter's own
+ * maxHp, inside a branch that only runs on a blue match, and the amount it
+ * announces to the client has to be the gain that LANDED. None of that is
+ * visible in the shape of the source.
+ */
+$sh_fail = 0;
+$shok = function ($cond, $what) use (&$sh_fail) {
+	if (!$cond) { $sh_fail++; echo "  FAIL  $what\n"; }
+};
+/*
+ * THE SEEDS ARE NOT ARBITRARY. The runaway is ~0.5% of battles, so a round
+ * number of random ones does not contain it -- the first version of this
+ * check ran 60 battles, passed, and went on passing with the fix removed.
+ * These eight were found by sweeping 3000 battles against the PRE-FIX engine
+ * and keeping the ones whose cascade reached the guard. Each is a live
+ * reproduction; if the fix is removed, every one of them runs away again.
+ */
+$shRunaway = array(1219, 1757, 1825, 2252, 2348, 2476, 2500, 2701);
+$shMax = 0.0; $shOver = 0; $shSamples = 0; $shChainMax = 0;
+foreach ($shRunaway as $shSeed) {
+	$b = dhca_new_battle(crew($rarity,null,$shSeed), crew($rarity,null,$shSeed),
+	                     $names, $rarity, $shSeed);
+	$g = 0;
+	while ($b['over'] === null && $g++ < 400) {
+		$mv = dhca_ai_move($b);
+		if (!$mv) { dhca_fill_board($b); $mv = dhca_ai_move($b); if (!$mv) break; }
+		if (!dhca_play($b, $b['turn'], $mv[0], $mv[1])) break;
+		if ($b['stats']['best'] > $shChainMax) $shChainMax = $b['stats']['best'];
+		foreach (array('mine','foes') as $sd) foreach ($b[$sd] as $f) {
+			$shSamples++;
+			$lim = $f['maxHp'] * DHCA_SHIELD_CAP;
+			$ratio = $f['maxHp'] > 0 ? $f['shield'] / $f['maxHp'] : 0;
+			if ($ratio > $shMax) $shMax = $ratio;
+			/* +1 for the int rounding the cap itself does. */
+			if ($f['shield'] > $lim + 1) $shOver++;
+		}
+	}
+}
+$shok($shOver === 0,
+   $shOver . ' of ' . $shSamples . ' fighter-states carried more shield than '
+ . (DHCA_SHIELD_CAP * 100) . '% of their own health -- shield is accumulating without a ceiling again');
+$shok($shMax > 0.05,
+   'no Fighter in these battles reached even 5% shield (peak ' . round($shMax * 100, 1) . '%), so this '
+ . 'check is passing because shielding stopped happening, not because it is capped');
+/* AND THE CASCADE CANNOT RUN AWAY.
+ *
+ * A wave that clears nothing leaves the board untouched, so the same match is
+ * found again on the next pass and resolved again, to the guard at 40. The
+ * signature on the live ladder was a BEST CHAIN of exactly x40 while every
+ * other player sat between x5 and x9 -- chains ran 2..12 and then jumped
+ * straight to the guard, because 40 was never a cascade.
+ *
+ * Asserted against the guard itself: anything at or above it is the loop
+ * being stopped by its limit rather than finishing. */
+$shok($shChainMax < 40,
+   'a cascade reached ' . $shChainMax . ' links, which is the loop guard, not a cascade -- '
+ . 'a wave that clears nothing is being re-resolved');
+$shok($shChainMax >= 5,
+   'no cascade in these battles got past ' . $shChainMax . ' links, so the guard check above '
+ . 'is passing because cascades stopped happening');
+printf("  shield  peak %.0f%% of maxHp over %d fighter-states (cap %.0f%%)\n",
+	$shMax * 100, $shSamples, DHCA_SHIELD_CAP * 100);
+printf("  chains  longest %d links (guard is 40)\n", $shChainMax);
+echo ($sh_fail ? "\n$sh_fail shield/cascade check(s) FAILED\n" : "  shield cap and cascade guard: ok\n");
+if ($sh_fail) exit(1);
 printf("  never finished: %d\n", $stuck);
 
 /* 2. §4 -- commons must not be hopeless against legendaries */
@@ -211,6 +285,12 @@ for ($g = 0; $g < 12; $g++) {
 	}
 }
 printf("fx covers every bar: %d divergences over %d fighter-turns (want 0)\n", $div, $checked);
+/* IT PRINTED THE NUMBER AND CARRIED ON. A divergence means the client's bars
+   and the server's numbers have parted company -- the player watches a shield
+   that is not there -- and the run still exited 0, so a mutation that
+   announced the uncapped shield gain instead of the gain that landed passed
+   this check in silence. Same shape as the layout section that could not fail. */
+if ($div > 0) { echo "\n$div fx divergence(s) -- the client's bars no longer match the server\n"; exit(1); }
 
 /* 3. determinism -- the same seed and the same moves must give the same result */
 $seed = 4242;

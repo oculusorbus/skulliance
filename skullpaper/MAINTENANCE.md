@@ -152,6 +152,35 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   the burst, the 429 retry including that it really waits, the hints, and success staying silent.
 - No `curl_close()` here either - same reason as dropship/role.php.
 
+### DHC Arena: the shield ceiling and the cascade stall (dhcarena-engine.php)
+- `DHCA_SHIELD_CAP = 0.50` - max shield as a share of the Fighter's own maxHp. There was
+  no cap and nothing removes shield except damage absorbed and a Break hit, so it banked
+  for a whole battle. Measured before the fix over 300 simulated battles: median 0,
+  **p99 802, worst 8117**. After: p99 202, max 287. Median turns unchanged at 27.
+- **THE SHIELD EVENT MUST ANNOUNCE THE GAIN THAT LANDED, NOT THE ONE OFFERED.** The client
+  does `shield += e.v` to move the bar as the wave plays, so reporting the uncapped figure
+  floats its bars above the server's numbers for the rest of the battle. The harness's
+  "fx covers every bar" check catches this - but only since it was made to EXIT NONZERO;
+  it printed its divergence count and carried on, so it had been passing on a mutation
+  that did exactly this.
+- **THE CASCADE STALL, which was the real bug.** `dhca_resolve_wave()` drops any cell
+  holding a not-yet-live bomb from the clear, so arming a bomb does not delete the gem
+  under it. When EVERY cell of a matched group carries one, the whole match is dropped,
+  the board is untouched, and `dhca_matches()` returns the identical match next pass - so
+  it resolves again, to the guard at `$chain <= 40`, chain multiplier climbing to 14.65x.
+  `dhca_play()` now breaks when `$b['_cleared']` is empty.
+- **THE TELL WAS THE DISTRIBUTION, NOT THE SYMPTOM.** Reported as an opponent repeating a
+  match with ~700 shield. What identified it was the ladder: two players with BEST CHAIN
+  of exactly **x40** while everyone else sat x5-x9. Chains run 2..12 and then jump straight
+  to 40 with nothing between, because 40 was never a cascade - it was the guard.
+- **THE REPRODUCING SEEDS ARE LOAD-BEARING.** The runaway is ~0.5% of battles, so the first
+  version of the check ran 60 arbitrary battles, passed, and went on passing with the fix
+  removed. `$shRunaway` in dhcarena-harness.php holds eight seeds swept from 3000 battles
+  against the pre-fix engine; each is a live reproduction. Note `crew()` takes `&$seed` and
+  MUTATES it, so a seed captured after the call is not the one that produced the battle.
+- Ladder reads `MAX(b.best_chain)`, so one glitched battle pollutes a player's entry
+  permanently. x40 rows in `dhc_arena_battles` predate the fix and are not achievable now.
+
 ### Crafting (db.php:3947-3990)
 - Craft: burn equal parts of all 6 core points → DIAMOND (1:1 per point type).
 - Shatter: DIAMOND → equal parts of all 6 core points.

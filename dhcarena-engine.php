@@ -75,6 +75,25 @@ define('DHCA_BLAST_SCALE',  0.45);
    which is a mechanic outrunning the game it sits in. The reach change is the
    part that mattered and is untouched; this only softens the damage curve. */
 define('DHCA_BLAST_CHAIN',  0.30);   // extra damage per additional bomb
+
+/*
+ * SHIELD HAS A CEILING, AS A SHARE OF THE FIGHTER'S OWN HEALTH.
+ *
+ * It had none, and nothing ever took it away: the only subtractions are damage
+ * absorbed and a Break hit. A Crew that kept matching blue therefore banked
+ * shield for the whole battle, and because a 5 anywhere in a cascade grants
+ * another turn, a defending Crew could stack several moves back to back doing
+ * it. Reported as an AI that "kept doing the same match over and over" with a
+ * shield near 700 and no way through; simulating 300 battles found a median of
+ * 0, a p99 of 802 and a worst case of 8117, so 700 was the normal top end
+ * rather than a freak.
+ *
+ * A share of maxHp rather than a flat number, so it scales with the Fighter
+ * the way armour does and does not quietly become a tax on small builds. At
+ * 0.50 the ceiling sits at the p90 of what was already happening, which is the
+ * point of it: ordinary shielding is untouched and only the runaway is cut.
+ */
+define('DHCA_SHIELD_CAP',   0.50);   // max shield, as a share of maxHp
 define('DHCA_MULTI_MIN',    6);
 define('DHCA_MULTI_MEGA',   9);
 define('DHCA_MULTI_BONUS',  1.30);
@@ -462,11 +481,24 @@ function dhca_resolve_group(&$b, $side, $grp, $chain, $scale) {
 		// in every other arena, and the outliers reached 113. Cover should make
 		// a fight grindier, not a different length of game.
 		$amt = (int)round((6 + $grp['len'] * 4) * $mult * ($b['terrain'] === 'guard' ? 1.3 : 1));
+		$capped = false;
 		foreach (dhca_alive($b, $side) as $i => $f) {
-			$b[$side][$i]['shield'] += $amt;
-			$b['fx'][] = array('k'=>'shield','side'=>$side,'i'=>$i,'v'=>$amt);
+			/* THE DELTA THAT LANDED, not the one that was offered. The client
+			   does `shield += e.v` to move the bar as the wave plays, so
+			   announcing the uncapped figure would float its bars above the
+			   server's own numbers for the rest of the battle -- the same
+			   reason the Break hit below announces what it actually stripped. */
+			$cap  = (int)round($f['maxHp'] * DHCA_SHIELD_CAP);
+			$was  = $b[$side][$i]['shield'];
+			$now  = min($cap, $was + $amt);
+			$gain = $now - $was;
+			if ($gain <= 0) { $capped = true; continue; }
+			if ($gain < $amt) $capped = true;
+			$b[$side][$i]['shield'] = $now;
+			$b['fx'][] = array('k'=>'shield','side'=>$side,'i'=>$i,'v'=>$gain);
 		}
-		$b['log'][] = '🛡️ Shield x'.$grp['len'].' — +'.$amt.' to the whole Crew.';
+		$b['log'][] = '🛡️ Shield x'.$grp['len'].' — +'.$amt.' to the whole Crew'
+		            . ($capped ? ' (some at their limit).' : '.');
 		return;
 	}
 	if ($grp['type'] === 4) {                       // Charge
@@ -595,6 +627,35 @@ function dhca_play(&$b, $side, $a, $z) {
 		dhca_resolve_wave($b, $side, $ms, $chain);
 		if ($b['over'] !== null) break;
 		dhca_clear_and_drop($b, $ms);
+		/*
+		 * A WAVE THAT CLEARS NOTHING ENDS THE CASCADE.
+		 *
+		 * This loop assumes every wave changes the board. One case does not:
+		 * the bomb protection at the end of dhca_resolve_wave() drops any cell
+		 * holding a not-yet-live bomb from the clear, so that arming a bomb
+		 * does not delete the gem under it. When EVERY cell of a matched group
+		 * carries one, the whole match is dropped, the board is untouched, and
+		 * dhca_matches() hands back the identical match on the next pass --
+		 * which resolves it again, and again, to the guard at 40, with the
+		 * chain multiplier climbing to 14.65x and a Shield match re-applying
+		 * forty times.
+		 *
+		 * That is the reported bug: an opponent "doing the same match over and
+		 * over" with a shield near 700, and a BEST CHAIN of exactly x40 on the
+		 * ladder. The tell was in the distribution -- chains ran 2 to 12 and
+		 * then jumped straight to 40 with nothing in between, because 40 was
+		 * never a cascade, it was the guard. Measured at 72 nothing-cleared
+		 * waves and 2 runaway battles in 400.
+		 *
+		 * The match still resolves once, which is right -- it was made. It
+		 * simply cannot resolve twice. The gems stay on the board wearing
+		 * their new bombs, those bombs go live at the end of this move, and
+		 * the next match on them detonates as normal.
+		 */
+		if (empty($b['_cleared'])) {
+			$b['log'][] = 'The match is held by armed bombs — the cascade stops here.';
+			break;
+		}
 	}
 
 	// everything armed this move goes live for both sides
