@@ -599,3 +599,83 @@ $ldok(strpos(substr($ldPage, strpos($ldPage, 'function dhca_ladder_html')), '<ta
 
 echo ($ld_fail ? "\n$ld_fail ladder check(s) FAILED\n" : "ladder, both windows: ok\n");
 if ($ld_fail) exit(1);
+
+/* ---------------------------------------------------------------------------
+ * THE BOARD DOES NOT RAISE TOOLTIPS WHILE YOU READ IT
+ *
+ * Every cell carried a native title=, so moving the cursor across the board --
+ * which is how the game is played -- popped a tooltip about once a second,
+ * under the cursor, covering the tiles being compared. Reported as distracting
+ * while choosing a move, which is the only time it ever happened.
+ *
+ * The information was not lost, and that is what these checks protect:
+ *   - an ordinary gem's tooltip only repeated the legend, which is on screen
+ *     for the whole battle in a fixed place;
+ *   - a bomb's said something the legend did not, so the bomb key joins the
+ *     legend while a bomb is live.
+ * ------------------------------------------------------------------------- */
+$bt_fail = 0;
+$btok = function ($cond, $what) use (&$bt_fail) {
+	if (!$cond) { $bt_fail++; echo "  FAIL  $what\n"; }
+};
+$btSrc = file_get_contents(__DIR__ . '/dhcarena.php');
+$btNo  = preg_replace(array('!/\*.*?\*/!s', '~(?<![:/])//[^\n]*~'), '', $btSrc);
+
+/* The cell's opening tag, from `class="cell` to the `>` that ends it. Matching
+   the whole file for 'title=' would pass on the legend's and the buttons', and
+   those are fine -- it is specifically the forty-nine board cells that are not. */
+$btOpen = strpos($btNo, '<div class="cell ');
+$btKid  = $btOpen === false ? false : strpos($btNo, '<div class="g">', $btOpen);
+if ($btOpen !== false && $btKid !== false && $btKid > $btOpen) {
+	/* Exactly the opening tag and the bomb-glow wrapper -- everything emitted
+	   before the cell's first child. An unbounded window here swallowed half
+	   the file and matched the LEGEND's title=, so the check passed on a board
+	   that still had tooltips. Bound it, and prove the bound. */
+	$btTag = substr($btNo, $btOpen, $btKid - $btOpen);
+	$btok(strlen($btTag) < 700,
+	   'the cell-tag window is ' . strlen($btTag) . ' bytes, so it reaches past the '
+	 . 'cell into markup whose title= is legitimate');
+	$btok(strpos($btTag, 'title=') === false,
+	   'a board cell carries a title attribute again, so reading the board raises '
+	 . 'a tooltip under the cursor on every tile');
+} else {
+	$btok(false, 'the board cell markup no longer matches, so the tooltip check is '
+	           . 'not testing anything -- re-point it at the real cell tag');
+}
+
+/* The bomb key must exist, or removing the cell tooltip silently deleted the
+   only explanation of what a bomb does. */
+$btok(strpos($btNo, 'function paintBombKey(') !== false,
+   'there is no bomb key, so nothing on screen says what a bomb does');
+$btok(strpos($btNo, 'clears its row and column') !== false
+   && strpos($btNo, 'clears everything') !== false,
+   'the bomb key does not distinguish the cross bomb from the board bomb');
+
+/*
+ * THE STALENESS TRAP, which is the part worth a test.
+ *
+ * A bomb is armed and spent inside a single cascade, and paintBoard() runs
+ * several times during one WITHOUT paintChrome() following it (the land and
+ * settle calls). A bomb key painted only from paintChrome() is therefore a
+ * cascade behind: it would announce a bomb that just detonated, or miss one
+ * that just armed. Asserted by COUNT, because the broken version calls
+ * paintBombKey too -- just not from the function that knows.
+ */
+$btBoard = strpos($btNo, 'function paintBoard(');
+$btEnd   = strpos($btNo, 'function ', $btBoard + 10);
+$btok($btBoard !== false && $btEnd !== false
+   && strpos(substr($btNo, $btBoard, $btEnd - $btBoard), 'paintBombKey()') !== false,
+   'paintBoard() does not repaint the bomb key, so during a cascade it reports '
+ . 'the bombs from the previous repaint');
+$btok(substr_count($btNo, 'paintBombKey()') >= 2,
+   'the bomb key is painted from only one place; it needs both the board repaint '
+ . 'and the chrome repaint, which run independently');
+
+/* The legend is the fallback the cell tooltip was removed in favour of. If it
+   ever stops rendering, the removal above becomes a real loss. */
+$btok(strpos($btNo, "\$('legend').innerHTML") !== false,
+   'the gem legend no longer renders, which was the reason the per-cell tooltip '
+ . 'could be removed at all');
+
+echo ($bt_fail ? "\n$bt_fail board-tooltip check(s) FAILED\n" : "board tooltips: ok\n");
+if ($bt_fail) exit(1);

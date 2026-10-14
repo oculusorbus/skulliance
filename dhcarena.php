@@ -1835,6 +1835,35 @@ function paintTeams(){
     paintCharge(sd);
   });
 }
+/* Shared by the legend and the bomb key below it. */
+function chip(colour, icon, emoji, does, dead){
+  var face = icon ? '<i class="ico" style="--ico:url('+iconUrl(icon)+')"></i>' : emoji;
+  return '<span class="lchip'+(dead?' gone':'')+'" style="--lc:'+colour+'"><b>'+face+'</b>'+does+'</span>';
+}
+
+/*
+ * THE BOMB KEY -- what the cell tooltip used to be the only source of.
+ *
+ * Shown only while a bomb is actually on the board, which is the whole point
+ * of putting it here instead of in a permanent help panel: it appears next to
+ * the gem legend at the moment it means something, and takes no room the rest
+ * of the battle. A bomb wears its underlying gem's colour, so the chips take
+ * a fixed warning colour rather than pretending to match one.
+ */
+function paintBombKey(){
+  var cross = false, board = false, i, b;
+  if (S && S.bomb) {
+    for (i = 0; i < S.bomb.length; i++) {
+      b = Math.abs(S.bomb[i] || 0);
+      if (b === BOMB_CROSS) cross = true;
+      else if (b === BOMB_BOARD) board = true;
+    }
+  }
+  var h = (cross ? chip('var(--ochre)', 'grenade',    '', 'bomb &middot; clears its row and column') : '')
+        + (board ? chip('var(--blood)', 'demolition', '', 'board bomb &middot; clears everything')   : '');
+  document.querySelectorAll('.bombkey').forEach(function (el) { el.innerHTML = h; });
+}
+
 function paintBoard(dropAnim, settle){
   gridEl.style.gridTemplateColumns = 'repeat('+N+',1fr)';
   var h = '', i;
@@ -1851,12 +1880,23 @@ function paintBoard(dropAnim, settle){
              : bm === BOMB_CROSS
              ? '<span class="ico" style="--ico:url(' + iconUrl('grenade') + ')"></span>'
              : (gi.icon ? '<span class="ico" style="--ico:url(' + iconUrl(gi.icon) + ')"></span>' : gi.emoji);
-    var tip  = bm === BOMB_BOARD ? 'Board bomb — clears everything. Match its colour to set it off.'
-             : bm === BOMB_CROSS ? 'Bomb — clears its row and column. Match its colour to set it off.'
-             : gi.name+' — '+gi.note;
+    /*
+     * NO TITLE ON A CELL.
+     *
+     * Every one of the forty-nine carried a native tooltip, so reading the
+     * board -- which is the whole game, and is done by moving the cursor
+     * across it -- raised a pop-up roughly once a second, each one landing
+     * under the cursor on top of the tiles being compared. Reported as
+     * distracting while making a move, which is the only time it happened.
+     *
+     * Nothing is lost. For an ordinary gem the tooltip repeated the legend
+     * below the board, which is on screen for the whole battle and says the
+     * same thing in a fixed place. For a bomb it said something the legend
+     * did not, so the bomb key now joins the legend while a bomb is live.
+     */
     h += '<div class="cell '+SHAPE[v]+(bm?' bomb'+(bm===BOMB_BOARD?' bomb2':''):'')
        + (dropAnim?' drop':'')+(settle?' settle':'')+'" data-i="'+i+'"'
-       + ' style="--gc:var(--g'+v+')" title="'+tip+'">'
+       + ' style="--gc:var(--g'+v+')">'
        /* A BOMB'S GEM GETS AN UNCLIPPED WRAPPER, and only a bomb's.
           clip-path is applied AFTER filter on the same element, so a
           drop-shadow on .g is clipped away by .g's own hexagon or shield --
@@ -1872,24 +1912,25 @@ function paintBoard(dropAnim, settle){
        + '</div>';
   }
   gridEl.innerHTML = h;
+  paintBombKey();
 }
 function paintChrome(){
   var tb = $('terrain');
   if (tb && S.terrainBg) tb.style.backgroundImage = 'url("'+artUrl('background', S.terrainBg, 1000)+'")';
-  /* Effect first, always: the legend answers "what does this gem do", and it is
-     the only place that answer lives once the board is full. */
-  function chip(colour, icon, emoji, does, dead){
-    var face = icon ? '<i class="ico" style="--ico:url('+iconUrl(icon)+')"></i>' : emoji;
-    return '<span class="lchip'+(dead?' gone':'')+'" style="--lc:'+colour+'"><b>'+face+'</b>'+does+'</span>';
-  }
   var lg = [0,1,2].map(function(i){
     var f = null;
     S.mine.forEach(function(x){ if (x.rank === i) f = x; });
     return f ? chip('var(--g'+i+')', f.kit.icon, f.kit.emoji, f.kit.note, f.ko) : '';
   }).join('')
   + chip('var(--g3)', SHARED[3].icon, SHARED[3].emoji, 'shields crew')
-  + chip('var(--g4)', SHARED[4].icon, SHARED[4].emoji, 'erupts at 10');
+  + chip('var(--g4)', SHARED[4].icon, SHARED[4].emoji, 'erupts at 10')
+  /* Filled by paintBombKey, not here: a bomb is armed and spent inside a
+     cascade, and paintBoard runs on its own several times during one (see
+     the settle and land calls) without paintChrome following it. Writing the
+     key here would leave it a cascade behind. */
+  + '<span class="bombkey"></span>';
   $('legend').innerHTML = lg; $('legendM').innerHTML = lg;
+  paintBombKey();
   var reach = '<b>3</b> front · <b>4</b> mid · <b>5+</b> back · cascades multiply'
     /* The arena's name sits under the board all battle, and until now it was
        the only thing there that did not say what it meant -- you are told you
