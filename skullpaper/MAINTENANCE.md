@@ -181,6 +181,36 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 - Ladder reads `MAX(b.best_chain)`, so one glitched battle pollutes a player's entry
   permanently. x40 rows in `dhc_arena_battles` predate the fix and are not achievable now.
 
+### Monstrocity themes are a TABLE now (monstrocity-themes-lib.php, monstrocity-schema.md)
+- 49 themes used to be a `const themes = [...]` literal inside monstrocity.php. They are rows
+  in `monstrocity_themes`. **Nothing creates the table** - run the SQL in monstrocity-schema.md
+  by hand, same as dhcarena-schema.md.
+- **project_id / collection_id are NULLABLE AND MOSTLY NULL.** Many themes are for projects
+  that are not on Skulliance, so there is nothing to point at. `project_name`/`title` carry the
+  display strings. Do not make the FKs required.
+- **VISIBILITY IS TWO BOOLEANS, NOT A TIER.** The old `<?php if($dev)` block was nested inside
+  `<?php if($innercircle)`, so the one dev theme (`j2`) needs BOTH. A single tier column would
+  show it to a dev who is not Inner Circle - a state the old code could never produce.
+- **THE GATE IS monstrocity-themes-harness.php** and it compares against
+  `monstrocity-themes-snapshot.php`, a frozen copy of the original literal. That snapshot is a
+  FIXTURE: never edit it to make a test pass, and never add new themes to it. New themes are rows.
+- The comparison is byte-identical for 2 of the 4 visibility combinations and
+  **identical-ignoring-whitespace** for the other 2. The difference is 15-18 bytes of indentation
+  the `<?php if ?>` tag left in its own output. Because that comparison is blind to whitespace,
+  the harness ALSO pins exact newline/group/item counts per combination - without those, a
+  mutation collapsing every separator newline passed.
+- **THE STUB OBEYS THE SQL.** Its first version sorted and filtered in PHP whatever it was asked,
+  so reversing the ORDER BY and deleting `active = 1` both passed. It now honours those two
+  clauses and records the query.
+- **DEPLOY ORDER DOES NOT MATTER**, because an empty result falls back to the snapshot and logs.
+  Worst case of pulling before running the SQL is yesterday's theme list, not an empty picker on
+  a public game page. Still run the SQL first.
+- monstrocity.php now includes db.php (it previously had NO database connection at all) and its
+  `session_start()` is guarded, because db.php starts one conditionally and a second call is an
+  E_WARNING printed into the page.
+- `monstrocity-test.php` is a dead Grok-era backup carrying its own drifted copy (40 themes vs 49).
+  Deliberately NOT wired to the table. A deletion candidate, not a consumer.
+
 ### Crafting (db.php:3947-3990)
 - Craft: burn equal parts of all 6 core points → DIAMOND (1:1 per point type).
 - Shatter: DIAMOND → equal parts of all 6 core points.
