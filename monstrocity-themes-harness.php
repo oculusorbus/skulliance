@@ -303,6 +303,35 @@ $plain = rtrim(monstrocity_themes_js($conn, true, true), " \t\r\n");
 ok(preg_replace('/\s+/', '', $plain) === preg_replace('/\s+/', '', render_original($body, 1, 1)),
    'with no collections attached the output is no longer the original');
 
+/* ---- 4d. THE PAGE'S ASSEMBLY, not just the generator ---------------------
+ *
+ * Everything above tests monstrocity_themes_js(). None of it tested how
+ * monstrocity.php splices the result between "const themes = [" and "];",
+ * and that is where the first bug after deploy actually was: `?>` swallows
+ * the newline immediately after it, so the page emitted "}\t  ];" with the
+ * line break gone. Valid JS, wrong output, and invisible to every check here.
+ *
+ * So render the page's own template, with the same stub in scope, and look
+ * at what it really produces.
+ */
+$page  = file_get_contents(__DIR__ . '/monstrocity.php');
+$ps    = strpos($page, 'const themes = [');
+$pe    = strpos($page, '];', $ps);
+$tmpl  = substr($page, $ps, $pe - $ps + 2);
+$innercircle = true; $dev = true;      // names the template expects
+ob_start();
+eval('?>' . $tmpl);
+$assembled = ob_get_clean();
+
+ok(substr_count($assembled, 'policyIds:') === 49,
+   'the page template rendered ' . substr_count($assembled, 'policyIds:') . ' themes, not 49');
+ok(strpos($assembled, "}\n	  ];") !== false,
+   'the array does not close on its own line -- a `?>` is eating the newline before "];"');
+ok(strpos($assembled, '<?php') === false && strpos($assembled, '?>') === false,
+   'a PHP tag survived into the rendered page');
+ok(preg_match('/const themes = \[\s*\n\s*\{/', $assembled) === 1,
+   'the array does not open cleanly before its first entry');
+
 /* ---- 5. the data itself survived ----------------------------------------- */
 $all = monstrocity_themes($conn);
 ok(count($all) === 49, 'the reader returns ' . count($all) . ' themes, not 49');

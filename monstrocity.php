@@ -1956,7 +1956,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	  let updatePending = false;
 	  // Theme data extracted from original <select>
 	  const themes = [
-<?php echo monstrocity_themes_js($conn, $innercircle, $dev); ?>
+<?php /* The trailing newline is part of the echoed string, not a line break
+         written after the closing tag: a closing tag swallows the newline
+         that follows it, so the first version ran the final brace straight
+         into the line that closes the array. Keep it inside the echo. */
+   echo monstrocity_themes_js($conn, $innercircle, $dev) . "\n"; ?>
 	  ];
 	  
 	  function showThemeSelect(game) {
