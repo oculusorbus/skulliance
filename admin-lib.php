@@ -873,6 +873,7 @@ function admin_tabs() {
 		'blockchains' => array('admin-blockchains.php', 'Chains'),
 		'flyers'      => array('admin-flyers.php',      'Flyers'),
 		'digest'      => array('admin-digest.php',      'Daily Digest'),
+		'monstrocity' => array('admin-monstrocity.php', 'Monstrocity'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

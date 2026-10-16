@@ -224,6 +224,27 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   collection-override path untestable - it would never see a link row. And `lastSql` is useless
   with two queries: assert against the one that names the table you mean.
 
+### Monstrocity theme admin (admin-monstrocity.php, Phase 2)
+- Registered in `admin_tabs()` as `monstrocity`. Purpose is ADDING themes, not editing the 49
+  that exist, so the list is deliberately plain and the create form is where the work went.
+- **THE SLUG BECOMES A DIRECTORY**, so it is validated hard (lowercase/digits/hyphen, no leading
+  or trailing hyphen, which also excludes `.` and `..`) and the harness asserts the ORDER:
+  validation runs before `@mkdir`. Presence of a validator proves nothing if the folder is made first.
+- **THE SLUG IS IMMUTABLE ONCE CREATED.** Changing it would orphan every image under
+  `images/monstrocity/<slug>/`. Renaming belongs to Phase 3, where art is being moved anyway.
+- **POLICY IDS ARE LENGTH-CHECKED (56 hex).** A truncated paste is the error that produces a
+  theme matching nobody, with nothing in any log to say so.
+- Visibility nesting is enforced in validation too: dev-only without Inner Circle is refused,
+  because the old conditionals could never produce it.
+- Collection links are REPLACED wholesale on save; the form submits the complete set, so a diff
+  would only be a way to get it subtly wrong. Link order is the policy-id order.
+- Uploads reuse `adm_accept_upload()` -> `admin_write_image()` (Imagick, memory-budgeted,
+  GIF-aware, type taken from file content not filename). Background and logo are capped on the
+  long edge with NO forced aspect ratio - a background is chosen to read either side of the board.
+- Creating a theme makes `base/`, `leader/` and `battle-damaged/` so Phase 3 has somewhere to write.
+- The list's "Art on disk" column counts real files per folder, so what is still missing is
+  visible without opening an FTP client.
+
 ### Crafting (db.php:3947-3990)
 - Craft: burn equal parts of all 6 core points → DIAMOND (1:1 per point type).
 - Shatter: DIAMOND → equal parts of all 6 core points.

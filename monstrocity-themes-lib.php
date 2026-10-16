@@ -170,3 +170,99 @@ function monstrocity_themes_js($conn, $innercircle, $dev) {
 	}
 	return implode(",\n", $blocks);
 }
+
+/* ===========================================================================
+ * ADMIN SIDE
+ *
+ * Pure functions here, IO in admin-monstrocity.php, so the rules can be tested
+ * without a database or a web server. Same split the missions admin uses.
+ * ======================================================================== */
+
+/** Where a theme's art lives. Relative, because the page and the game both
+ *  reference it and only one of them knows the document root. */
+function monstrocity_theme_dir($slug) { return 'images/monstrocity/' . $slug; }
+
+/** The three folders every theme needs before Phase 3 can fill them. */
+function monstrocity_theme_subdirs() { return array('base', 'leader', 'battle-damaged'); }
+
+/**
+ * A slug is a FOLDER NAME and goes straight into a filesystem path and a URL,
+ * so it is checked hard rather than trusted. Returns '' or the reason.
+ */
+function monstrocity_slug_problem($slug, $taken = array()) {
+	if ($slug === '')                               return 'The folder name is required.';
+	if (strlen($slug) > 64)                         return 'The folder name is longer than 64 characters.';
+	if (!preg_match('/^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?$/', $slug))
+		return 'The folder name may use lowercase letters, numbers and hyphens only, '
+		     . 'and must start and end with a letter or number.';
+	/* '.' and '..' are already excluded by the pattern, but say so, because
+	   the reason this is strict is path traversal and not tidiness. */
+	if (in_array($slug, $taken, true))              return 'Another theme already uses the folder "' . $slug . '".';
+	return '';
+}
+
+/** Orientations the game understands. 'Random' means the source collection
+ *  faces both ways and each character is decided by eye. */
+function monstrocity_orientations() { return array('', 'Left', 'Right', 'Random'); }
+
+/** Extensions the character pipeline understands. gif/mov are legacy-only:
+ *  Phase 3 generates png. */
+function monstrocity_extensions() { return array('png', 'gif', 'jpg', 'mov'); }
+
+/**
+ * Everything wrong with a submitted theme, as a list of sentences.
+ * $taken is the slugs already in use, excluding this theme's own.
+ */
+function monstrocity_validate_theme($t, $taken = array()) {
+	$e = array();
+	$p = monstrocity_slug_problem(isset($t['slug']) ? $t['slug'] : '', $taken);
+	if ($p !== '') $e[] = $p;
+
+	if (trim((string)(isset($t['project_name']) ? $t['project_name'] : '')) === '')
+		$e[] = 'The project name is required -- it is what players see above the theme.';
+	if (trim((string)(isset($t['title']) ? $t['title'] : '')) === '')
+		$e[] = 'The title is required.';
+	if (trim((string)(isset($t['theme_group']) ? $t['theme_group'] : '')) === '')
+		$e[] = 'A group is required, because the picker renders themes under group headings.';
+
+	if (!in_array(isset($t['orientations']) ? $t['orientations'] : '', monstrocity_orientations(), true))
+		$e[] = 'Orientation must be blank, Left, Right or Random.';
+	if (!in_array(isset($t['extension']) ? $t['extension'] : '', monstrocity_extensions(), true))
+		$e[] = 'Extension must be one of: ' . implode(', ', monstrocity_extensions()) . '.';
+
+	/* A policy id is 56 hex characters. Checking it catches the single most
+	   common paste error -- a truncated id, or an asset name pasted instead --
+	   which otherwise fails silently as a theme that matches nobody. */
+	$pol = trim((string)(isset($t['policy_ids']) ? $t['policy_ids'] : ''));
+	if ($pol !== '') {
+		foreach (explode(',', $pol) as $one) {
+			$one = trim($one);
+			if ($one === '') { $e[] = 'The policy id list has an empty entry (a stray comma).'; continue; }
+			if (!preg_match('/^[0-9a-f]{56}$/i', $one))
+				$e[] = 'Policy id "' . $one . '" is not 56 hex characters.';
+		}
+	}
+
+	/* The nesting the old code had: the dev block sat inside the Inner Circle
+	   block, so dev-only without Inner Circle was never a state it could
+	   produce, and the renderer would show it to a dev who is not Inner
+	   Circle. Refuse it rather than quietly widening who can see a theme. */
+	if (!empty($t['req_dev']) && empty($t['req_innercircle']))
+		$e[] = 'A dev-only theme must also be Inner Circle -- that is how the visibility nests.';
+
+	return $e;
+}
+
+/**
+ * Which collections a theme should be linked to, from a submitted id list.
+ * Returns ints, de-duplicated, order preserved -- the order is the order the
+ * policy ids come out in, so it is the admin's choice and not the table's.
+ */
+function monstrocity_clean_collection_ids($raw) {
+	$out = array();
+	foreach ((array)$raw as $v) {
+		$i = (int)$v;
+		if ($i > 0 && !in_array($i, $out, true)) $out[] = $i;
+	}
+	return $out;
+}

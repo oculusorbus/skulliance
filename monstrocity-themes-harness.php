@@ -18,6 +18,7 @@ $fail = 0;
 function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $what\n"; } }
 
 require_once __DIR__ . '/monstrocity-themes-lib.php';
+function admin_tabs_src() { return file_get_contents(__DIR__ . '/admin-lib.php'); }
 
 /* ---- 1. the seed, parsed out of the schema doc ---------------------------- */
 $doc = file_get_contents(__DIR__ . '/monstrocity-schema.md');
@@ -358,5 +359,119 @@ foreach (array(array(0,0),array(1,1)) as $k) {
 ok(strpos(monstrocity_themes_js($dead, false, false), 'group: "Partner Project Themes"') !== false,
    'the fallback does not produce a usable theme list');
 
-echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall theme-extraction checks passed\n");
+/* ---- 7. the admin rules -------------------------------------------------- */
+echo "\nadmin validation\n";
+
+/* A slug becomes a folder name and a URL path, so the interesting cases are
+   the hostile ones, not the tidy ones. */
+$slugCases = array(
+	array('apprentices2', array(),                '',     'a plain slug'),
+	array('',             array(),                'bad',  'empty'),
+	array('../etc',       array(),                'bad',  'path traversal'),
+	array('a/b',          array(),                'bad',  'a slash'),
+	array('Theme',        array(),                'bad',  'uppercase'),
+	array('my theme',     array(),                'bad',  'a space'),
+	array('-lead',        array(),                'bad',  'leading hyphen'),
+	array('trail-',       array(),                'bad',  'trailing hyphen'),
+	array('.',            array(),                'bad',  'a bare dot'),
+	array('..',           array(),                'bad',  'a double dot'),
+	array('theme%00',     array(),                'bad',  'a null byte escape'),
+	array(str_repeat('a', 65), array(),           'bad',  '65 characters'),
+	array('taken',        array('taken'),         'bad',  'a duplicate'),
+	array('free',         array('taken'),         '',     'not a duplicate'),
+);
+foreach ($slugCases as $c) {
+	list($slug, $taken, $want, $label) = $c;
+	$got = monstrocity_slug_problem($slug, $taken);
+	$isBad = ($got !== '');
+	ok($isBad === ($want === 'bad'),
+	   "slug check wrong for $label (\"$slug\"): " . ($isBad ? "refused: $got" : 'accepted'));
+}
+
+$base = array('slug'=>'ok-theme','project_name'=>'P','title'=>'T','theme_group'=>'G',
+              'orientations'=>'Left','extension'=>'png','policy_ids'=>'');
+ok(monstrocity_validate_theme($base) === array(), 'a valid theme was refused: '
+   . implode(' | ', monstrocity_validate_theme($base)));
+
+$bad = $base; $bad['project_name'] = '  ';
+ok(monstrocity_validate_theme($bad) !== array(), 'a blank project name was accepted');
+$bad = $base; $bad['theme_group'] = '';
+ok(monstrocity_validate_theme($bad) !== array(), 'a theme with no group was accepted');
+$bad = $base; $bad['orientations'] = 'Sideways';
+ok(monstrocity_validate_theme($bad) !== array(), 'a nonsense orientation was accepted');
+$bad = $base; $bad['extension'] = 'php';
+ok(monstrocity_validate_theme($bad) !== array(), 'a .php extension was accepted, which would write executable art');
+
+/* A truncated policy id is the paste error that produces a theme matching
+   nobody, with nothing in any log to say so. */
+$bad = $base; $bad['policy_ids'] = '93ff51e7dfdf32314fd2f99ff222aa9c92f486b7';
+ok(monstrocity_validate_theme($bad) !== array(), 'a 40-character policy id was accepted');
+$good = $base; $good['policy_ids'] = '93ff51e7dfdf32314fd2f99ff222aa9c92f486b7d2cc0d46b64a9785';
+ok(monstrocity_validate_theme($good) === array(), 'a real 56-hex policy id was refused');
+$two = $base; $two['policy_ids'] = '93ff51e7dfdf32314fd2f99ff222aa9c92f486b7d2cc0d46b64a9785,'
+                                 . 'b3dab69f7e6100849434fb1781e34bd12a916557f6231b8d2629b6f6';
+ok(monstrocity_validate_theme($two) === array(), 'a two-policy list was refused');
+$comma = $base; $comma['policy_ids'] = '93ff51e7dfdf32314fd2f99ff222aa9c92f486b7d2cc0d46b64a9785,';
+ok(monstrocity_validate_theme($comma) !== array(), 'a trailing comma was accepted');
+
+/* The visibility nesting, preserved from the original conditionals. */
+$nest = $base; $nest['req_dev'] = 1; $nest['req_innercircle'] = 0;
+ok(monstrocity_validate_theme($nest) !== array(),
+   'dev-only without Inner Circle was accepted, which the old nesting could never produce');
+$nest['req_innercircle'] = 1;
+ok(monstrocity_validate_theme($nest) === array(), 'dev + Inner Circle was refused');
+
+ok(monstrocity_clean_collection_ids(array('3','3','x','0','-2','7')) === array(3, 7),
+   'collection ids are not cleaned to unique positive ints in order');
+ok(monstrocity_clean_collection_ids(array()) === array(), 'an empty collection list did not stay empty');
+
+/* ---- 8. the admin page's dangerous edges --------------------------------- */
+echo "\nadmin page safety\n";
+$ap = file_get_contents(__DIR__ . '/admin-monstrocity.php');
+/* BOTH comment styles, because a "// admin_require();" satisfied a plain
+   strpos on the collage page and the gate-removal mutation passed. */
+$apNo = preg_replace('!/\*.*?\*/!s', '', $ap);
+$apNo = preg_replace('~(?<![:/])//[^\n]*~', '', $apNo);
+
+ok(strpos($apNo, 'admin_require();') !== false, 'the Monstrocity admin is not gated to the admin');
+ok(strpos($apNo, 'admin_require();') < strpos($apNo, "include 'header.php'"),
+   'admin_require() runs after output has started, so the gate cannot redirect');
+
+/*
+ * THE SLUG BECOMES A DIRECTORY. mkdir() with anything from $_POST is a path
+ * traversal unless it has been checked first, so the ORDER is the property:
+ * validation, then the write. Presence of the validator proves nothing if it
+ * runs after the folder has already been made.
+ */
+$vAt = strpos($apNo, 'monstrocity_validate_theme(');
+$mAt = strpos($apNo, '@mkdir(');
+ok($vAt !== false && $mAt !== false && $vAt < $mAt,
+   'the theme folder is created before the slug has been validated, which makes '
+ . 'mkdir() reachable with a traversal');
+ok(strpos($apNo, 'if ($errs) {') !== false && strpos($apNo, 'if ($errs) {') < $mAt,
+   'nothing branches on the validation result before the folder is written');
+
+/*
+ * NOTHING FROM $_POST REACHES SQL UNESCAPED. Checked per query rather than
+ * per file: the file obviously contains both $_POST and query(), and that
+ * proves nothing about whether they ever meet.
+ */
+$bad = 0;
+if (preg_match_all('/\$conn->query\(((?:[^()]|\([^()]*\))*)\)/s', $apNo, $qm)) {
+	foreach ($qm[1] as $q) if (strpos($q, '$_POST') !== false || strpos($q, '$_GET') !== false) $bad++;
+}
+ok($bad === 0, $bad . ' query(...) calls interpolate $_POST or $_GET directly');
+/* And the values that do reach SQL went through one of the two safe routes. */
+ok(substr_count($apNo, 'real_escape_string') >= 1, 'no string is escaped anywhere, which cannot be right');
+ok(preg_match('/\$esc\s*=\s*function/', $apNo) === 1, 'the per-value escaper is gone');
+
+/* An edit must not be able to move a theme's folder out from under its art. */
+ok(strpos($apNo, "\$was['slug'] !== \$t['slug']") !== false,
+   'the slug can be changed on an existing theme, orphaning everything already uploaded');
+
+/* The tab is registered, so the page is reachable at all. */
+$tabs = admin_tabs_src();
+ok(strpos($tabs, 'admin-monstrocity.php') !== false, 'the Monstrocity tab is not in admin_tabs()');
+
+echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall theme checks passed\n");
 exit($fail ? 1 : 0);
