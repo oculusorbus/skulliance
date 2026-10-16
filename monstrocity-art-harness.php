@@ -651,5 +651,80 @@ ok(strpos($bp, "if (!\$msgs['err'] && !empty(\$_POST['after']))") !== false,
    'save-and-continue redirects even when something failed, throwing away the only '
  . 'explanation of what went wrong');
 
+/* ---- a dropdown must never lie about what is stored --------------------- */
+echo "\nselects reflect the database\n";
+/*
+ * REPORTED: size and powerup "not loading from the database" on the tune
+ * screen. A strict === against the allowed list matched nothing for a value
+ * stored with different case, so the browser showed the FIRST option.
+ *
+ * That is not cosmetic. The batch form submits every field, so one press of
+ * "Save all" would have written "Small" over every boss stored as "small",
+ * and the same for powerups -- a silent rewrite of the whole ladder.
+ */
+$sizes = monstrocity_sizes();
+$selOf = function ($html) {
+	return preg_match('/<option value="([^"]*)" selected>/', $html, $m) ? $m[1] : null;
+};
+ok($selOf(monstrocity_select_options('Medium', $sizes)) === 'Medium', 'an exact value was not selected');
+ok($selOf(monstrocity_select_options('medium', $sizes)) === 'Medium',
+   'a value differing only in case selected nothing, so the form would rewrite it on save');
+ok($selOf(monstrocity_select_options('  Large  ', $sizes)) === 'Large',
+   'a value with surrounding space selected nothing');
+ok($selOf(monstrocity_select_options('MINOR REGEN', monstrocity_powerups())) === 'Minor Regen',
+   'an uppercase powerup selected nothing');
+
+/* An unknown value is KEPT and shown, never quietly replaced. */
+$unknown = monstrocity_select_options('Huge', $sizes);
+ok($selOf($unknown) === 'Huge',
+   'an unrecognised stored value was dropped, so saving would overwrite it with the first option');
+ok(strpos($unknown, 'not a known value') !== false,
+   'an unrecognised value is shown without any sign that it is unrecognised');
+ok(substr_count($unknown, '<option') === count($sizes) + 1,
+   'the unrecognised value replaced a real option instead of being added alongside');
+/* Empty stays empty rather than inventing a selection. */
+ok($selOf(monstrocity_select_options('', $sizes)) === null,
+   'an empty stored value silently selected something');
+/* BOTH branches escape. The first version only fed a hostile STORED value,
+   which exercises the unknown-value branch; the mutation that unescaped the
+   ordinary options loop sailed through. */
+ok(strpos(monstrocity_select_options('a"b<i>', $sizes), '<i>') === false,
+   'a stored value is written into the option unescaped');
+$hostile = monstrocity_select_options('x', array('<script>bad</script>', 'ok"quote'));
+ok(strpos($hostile, '<script>') === false, 'an option label is written unescaped');
+ok(strpos($hostile, 'value="ok"quote"') === false, 'an option value does not escape its quotes');
+
+/* Both pages must use it rather than comparing by hand. */
+ok(substr_count($bp, 'monstrocity_select_options(') >= 4,
+   'only ' . substr_count($bp, 'monstrocity_select_options(') . ' selects go through the safe '
+ . 'renderer; a hand-rolled === comparison is what caused this');
+ok(preg_match('/<option value="<\?php echo \$sz;[^>]*\$bx\[.size.\] === /', $bp) !== 1,
+   'the tune screen still compares a stored size by hand');
+
+/* ---- reordering a ladder with arrows ------------------------------------ */
+echo "\nreorder arrows\n";
+/* The BUTTONS, not a mention. Renaming the class in the markup left the
+   script's own '.mb-up' selectors behind, and a plain strpos was happy. */
+ok(substr_count($bp, 'class="mb-up"') === 1 && substr_count($bp, 'class="mb-dn"') === 1,
+   'the tune screen has no reorder arrow buttons in its markup');
+/*
+ * The arrows move a BOSS between rungs: the difficulty block swaps with the
+ * neighbour so the curve stays exactly as tuned, and stays monotonic by
+ * construction rather than by the user doing arithmetic.
+ */
+ok(strpos($bp, "var FIELDS = ['max_health', 'strength', 'speed', 'tactics'];") !== false,
+   'the arrows do not swap the whole difficulty block, so the curve breaks when a boss moves');
+/* Size and powerup belong to the boss, not the rung. */
+ok(strpos($bp, "'size'") === false || !preg_match("/FIELDS = \[[^\]]*'size'/", $bp),
+   'size travels with the position rather than with the boss');
+ok(!preg_match("/FIELDS = \[[^\]]*'powerup'/", $bp),
+   'powerup travels with the position rather than with the boss');
+/* Nothing is written until Save all. */
+ok(!preg_match('/mb-up[\s\S]{0,2000}fetch\(/', $bp),
+   'the arrows post something immediately; a reorder should be abandonable by leaving the page');
+ok(strpos($bp, 'id="mb-dirty"') !== false,
+   'a reorder gives no sign that it is unsaved (the element is gone, even if the script '
+ . 'still looks for it)');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);

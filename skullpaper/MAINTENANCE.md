@@ -386,6 +386,28 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 - Only on a CLEAN save. If the art was refused, that message is the only way to find out, and
   redirecting past it would lose it.
 
+### TRAP: a `<select>` that does not reflect the stored value REWRITES IT
+- Reported as size and powerup "not loading from the database" on the boss tune screen. A strict
+  `===` against the allowed list matched nothing for a value stored with different case, so the
+  browser showed the FIRST option.
+- **THAT IS A SILENT DATA REWRITE, not a display bug.** The batch form submits every field, so one
+  press of "Save all" would have written "Small" over every boss stored as "small".
+- `monstrocity_select_options()` matches case- and space-insensitively, and when a value genuinely
+  is not in the list it KEEPS it as a selected option labelled "(not a known value)" rather than
+  swapping it. Validation then refuses it on save and names the boss - a human decides, nothing is
+  rewritten quietly. Every select on both Monstrocity forms goes through it.
+- Companion to the no-`value=` trap below: one submits the wrong value, the other displays the
+  wrong value. Both end in the database.
+
+### Boss reordering: arrows move the BOSS, the ladder keeps its curve
+- Order is strength, so reordering meant working out which numbers produce the sequence you
+  wanted. The arrows swap the whole difficulty block (health, strength, speed, tactics) with the
+  neighbouring row, so the curve stays exactly as tuned and stays monotonic BY CONSTRUCTION.
+- **Size and powerup do NOT swap.** They belong to the boss, not the rung - a Large boss does not
+  become Small by being fought earlier.
+- Purely client-side until "Save all", so a reorder is abandonable by leaving the page. The
+  harness asserts no fetch happens from the arrow handler.
+
 ### TRAP: an `<option>` with no `value=` submits its DISPLAY TEXT
 - Reported as "Extension must be one of: png, gif, jpg, mov" while PNG was selected. The boss
   form's extension options showed `.png` with a leading dot and carried no `value=`, so the

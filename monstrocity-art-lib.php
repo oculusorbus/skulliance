@@ -492,3 +492,38 @@ function monstrocity_boss_copyable() {
 	return array('project_id', 'collection_id', 'theme', 'max_health', 'strength',
 	             'speed', 'tactics', 'size', 'powerup', 'orientation', 'extension');
 }
+
+/**
+ * Render a <select>'s options so the STORED value is always the selected one.
+ *
+ * THE BUG THIS EXISTS FOR. The tune screen compared the stored value to the
+ * allowed list with ===, so anything differing by case or a stray space
+ * matched nothing and the browser fell back to showing the FIRST option.
+ * That is not a display glitch: the batch form submits every field, so one
+ * press of "Save all" would have written "Small" over every boss whose size
+ * was stored as "small", and the same for powerups. A dropdown that lies
+ * about what is stored is worse than one that refuses to load.
+ *
+ * So: match tolerantly, and when a value genuinely is not in the list, keep
+ * it as a selected option of its own rather than silently swapping it for
+ * something else. Validation will refuse it on save and name the boss, which
+ * is the right outcome -- a human decides, nothing is rewritten quietly.
+ */
+function monstrocity_select_options($stored, $options) {
+	$stored = (string)$stored;
+	$norm   = strtolower(trim($stored));
+	$match  = null;
+	foreach ($options as $o) if (strtolower(trim((string)$o)) === $norm) { $match = $o; break; }
+
+	$html = '';
+	if ($match === null && $norm !== '') {
+		$html .= '<option value="' . htmlspecialchars($stored, ENT_QUOTES) . '" selected>'
+		       . htmlspecialchars($stored) . ' (not a known value)</option>';
+	}
+	foreach ($options as $o) {
+		$sel = ($match !== null && $o === $match) ? ' selected' : '';
+		$html .= '<option value="' . htmlspecialchars((string)$o, ENT_QUOTES) . '"' . $sel . '>'
+		       . htmlspecialchars((string)$o) . '</option>';
+	}
+	return $html;
+}

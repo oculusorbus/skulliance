@@ -314,7 +314,15 @@ table.mb-tune input.n.wide { width:74px }
 table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(255,255,255,.14);
   border-radius:3px; padding:5px 6px; font-size:11px }
 .mb-bar { height:8px; background:#07111d; border:1px solid rgba(255,255,255,.1); border-radius:999px; overflow:hidden }
-.mb-bar span { display:block; height:100%; background:linear-gradient(90deg,#00a882,#00c8a0) }
+.mb-bar span { display:block; height:100%; background:linear-gradient(90deg,#00a882,#00c8a0);
+                transition:width .18s ease }
+.mb-mv { white-space:nowrap }
+.mb-mv button { background:#10222f; color:#9fb4c2; border:1px solid rgba(255,255,255,.14);
+                border-radius:3px; cursor:pointer; font-size:12px; line-height:1; padding:3px 6px }
+.mb-mv button:hover:not(:disabled) { border-color:#00c8a0; color:#00c8a0 }
+.mb-mv button:disabled { opacity:.25; cursor:default }
+table.mb-tune tr.moved td { background:rgba(0,200,160,.09) }
+.mb-dirty { color:#f5a623; font-size:11px; margin-left:10px }
 .mb-prev { display:flex; gap:10px; align-items:flex-start; margin-top:8px }
 .mb-prev figure { margin:0; text-align:center }
 .mb-prev img { width:110px; height:110px; object-fit:contain; background:#07111d;
@@ -350,12 +358,16 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
     <input type="hidden" name="batch" value="1">
     <input type="hidden" name="batch_theme" value="<?php echo htmlspecialchars($batch_theme); ?>">
     <table class="mb mb-tune">
-      <tr><th>#</th><th></th><th>Boss</th><th>Health</th><th>Str</th><th>Spd</th><th>Tac</th>
+      <tr><th>#</th><th>Move</th><th></th><th>Boss</th><th>Health</th><th>Str</th><th>Spd</th><th>Tac</th>
           <th>Size</th><th>Powerup</th><th>Curve</th></tr>
       <?php foreach ($batch_rows as $i => $bx): $bs = monstrocity_boss_slug($bx['name']);
             $ba = mb_art($bs, $bx['extension']); ?>
       <tr>
-        <td style="color:#5a7888"><?php echo $i + 1; ?></td>
+        <td class="mb-pos" style="color:#5a7888"><?php echo $i + 1; ?></td>
+        <td class="mb-mv">
+          <button type="button" class="mb-up" title="Move earlier">&uarr;</button>
+          <button type="button" class="mb-dn" title="Move later">&darr;</button>
+        </td>
         <td><?php if ($ba['base']): ?><img class="mb-thumb" alt=""
               src="<?php echo htmlspecialchars(monstrocity_boss_dir() . '/' . $bs . '.' . $bx['extension']); ?>"><?php endif; ?></td>
         <td><a class="bn" href="admin-monstrocity-boss.php?edit=<?php echo (int)$bx['id']; ?>"><?php echo htmlspecialchars($bx['name']); ?></a></td>
@@ -365,12 +377,14 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
           <td><input type="number" name="b[<?php echo (int)$bx['id']; ?>][<?php echo $st; ?>]" min="1" max="10"
                      value="<?php echo (int)$bx[$st]; ?>" class="n"></td>
         <?php endforeach; ?>
-        <td><select name="b[<?php echo (int)$bx['id']; ?>][size]"><?php foreach (monstrocity_sizes() as $sz): ?>
-              <option value="<?php echo $sz; ?>"<?php echo $bx['size'] === $sz ? ' selected' : ''; ?>><?php echo $sz; ?></option>
-            <?php endforeach; ?></select></td>
-        <td><select name="b[<?php echo (int)$bx['id']; ?>][powerup]"><?php foreach (monstrocity_powerups() as $pu): ?>
-              <option value="<?php echo $pu; ?>"<?php echo $bx['powerup'] === $pu ? ' selected' : ''; ?>><?php echo $pu; ?></option>
-            <?php endforeach; ?></select></td>
+        <?php /* Through the safe renderer: a strict === against the allowed list
+                 silently showed the FIRST option for anything stored with a
+                 different case, and this form submits every field -- one
+                 "Save all" would have rewritten them. */ ?>
+        <td><select name="b[<?php echo (int)$bx['id']; ?>][size]"><?php
+              echo monstrocity_select_options($bx['size'], monstrocity_sizes()); ?></select></td>
+        <td><select name="b[<?php echo (int)$bx['id']; ?>][powerup]"><?php
+              echo monstrocity_select_options($bx['powerup'], monstrocity_powerups()); ?></select></td>
         <td style="width:150px">
           <div class="mb-bar"><span style="width:<?php echo (int)round((int)$bx['max_health'] / $batch_maxhp * 100); ?>%"></span></div>
         </td>
@@ -380,8 +394,97 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
     <div class="mb-actions">
       <button class="adm-btn" type="submit">Save all <?php echo count($batch_rows); ?></button>
       <a class="adm-btn" href="admin-monstrocity-boss.php?new=1">Add another</a>
+      <span class="mb-dirty" id="mb-dirty" hidden>Reordered &mdash; not saved yet.</span>
     </div>
   </form>
+
+<script>
+(function () {
+  var table = document.querySelector('table.mb-tune');
+  if (!table) return;
+
+  /*
+   * ARROWS MOVE THE BOSS, NOT THE NUMBERS.
+   *
+   * Order is strength, so reordering used to mean working out which numbers
+   * produce the sequence you wanted -- arithmetic in service of a decision
+   * that is purely "this one comes first".
+   *
+   * So the LADDER keeps its difficulty curve and the bosses move between its
+   * rungs: pressing up swaps this boss's whole difficulty block (health,
+   * strength, speed, tactics) with the one above. The curve stays exactly as
+   * tuned and stays monotonic by construction, and the boss that moved takes
+   * the difficulty of the position it moved into.
+   *
+   * Size and powerup do NOT swap. Those belong to the boss, not the rung --
+   * a Large boss does not become Small by being fought earlier.
+   *
+   * Nothing is saved until Save all, so a reorder can be abandoned by
+   * leaving the page.
+   */
+  var FIELDS = ['max_health', 'strength', 'speed', 'tactics'];
+
+  function cellsOf(tr) {
+    var out = {};
+    FIELDS.forEach(function (f) {
+      out[f] = tr.querySelector('input[name$="[' + f + ']"]');
+    });
+    return out;
+  }
+
+  function swapStats(a, b) {
+    var ca = cellsOf(a), cb = cellsOf(b);
+    FIELDS.forEach(function (f) {
+      if (!ca[f] || !cb[f]) return;
+      var t = ca[f].value; ca[f].value = cb[f].value; cb[f].value = t;
+    });
+  }
+
+  function renumber() {
+    var rows = Array.prototype.slice.call(table.querySelectorAll('tr')).slice(1);
+    var maxHp = 1;
+    rows.forEach(function (r) {
+      var h = r.querySelector('input[name$="[max_health]"]');
+      if (h) maxHp = Math.max(maxHp, parseInt(h.value, 10) || 0);
+    });
+    rows.forEach(function (r, i) {
+      var pos = r.querySelector('.mb-pos');
+      if (pos) pos.textContent = i + 1;
+      var up = r.querySelector('.mb-up'), dn = r.querySelector('.mb-dn');
+      if (up) up.disabled = (i === 0);
+      if (dn) dn.disabled = (i === rows.length - 1);
+      var bar = r.querySelector('.mb-bar span');
+      var h = r.querySelector('input[name$="[max_health]"]');
+      if (bar && h) bar.style.width = Math.round((parseInt(h.value, 10) || 0) / maxHp * 100) + '%';
+    });
+  }
+
+  function dirty() { var d = document.getElementById('mb-dirty'); if (d) d.hidden = false; }
+
+  table.addEventListener('click', function (e) {
+    var btn = e.target.closest('.mb-up, .mb-dn');
+    if (!btn || btn.disabled) return;
+    var tr = btn.closest('tr');
+    var other = btn.classList.contains('mb-up') ? tr.previousElementSibling : tr.nextElementSibling;
+    if (!other || !other.querySelector('.mb-pos')) return;
+    swapStats(tr, other);
+    if (btn.classList.contains('mb-up')) tr.parentNode.insertBefore(tr, other);
+    else tr.parentNode.insertBefore(other, tr);
+    tr.classList.add('moved');
+    renumber(); dirty();
+    /* Keep the pressed arrow under the cursor after the row moves. */
+    var again = tr.querySelector(btn.classList.contains('mb-up') ? '.mb-up' : '.mb-dn');
+    if (again && !again.disabled) again.focus();
+  });
+
+  table.addEventListener('input', function (e) {
+    if (e.target.matches('input[name$="[max_health]"]')) renumber();
+    dirty();
+  });
+
+  renumber();
+})();
+</script>
   <?php endif; ?>
 
 <?php elseif (!$row): ?>
@@ -508,13 +611,9 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
         <div class="mb-field"><label>Tactics (1-10)</label>
           <input type="number" name="tactics" min="1" max="10" value="<?php echo (int)$row['tactics']; ?>"></div>
         <div class="mb-field"><label>Size</label>
-          <select name="size"><?php foreach (monstrocity_sizes() as $sz): ?>
-            <option value="<?php echo $sz; ?>"<?php echo $row['size'] === $sz ? ' selected' : ''; ?>><?php echo $sz; ?></option>
-          <?php endforeach; ?></select></div>
+          <select name="size"><?php echo monstrocity_select_options($row['size'], monstrocity_sizes()); ?></select></div>
         <div class="mb-field"><label>Powerup</label>
-          <select name="powerup"><?php foreach (monstrocity_powerups() as $pu): ?>
-            <option value="<?php echo $pu; ?>"<?php echo $row['powerup'] === $pu ? ' selected' : ''; ?>><?php echo $pu; ?></option>
-          <?php endforeach; ?></select>
+          <select name="powerup"><?php echo monstrocity_select_options($row['powerup'], monstrocity_powerups()); ?></select>
           <p class="hint">Only these four are implemented.</p></div>
       </div>
     </div>
@@ -537,11 +636,7 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
         </div>
         <div class="mb-field">
           <label>Faces</label>
-          <select name="orientation">
-            <?php foreach (array('Left','Right') as $o): ?>
-              <option value="<?php echo $o; ?>"<?php echo $row['orientation'] === $o ? ' selected' : ''; ?>><?php echo $o; ?></option>
-            <?php endforeach; ?>
-          </select>
+          <select name="orientation"><?php echo monstrocity_select_options($row['orientation'], array('Left','Right')); ?></select>
           <label style="margin-top:10px">File type</label>
           <select name="extension"><?php foreach (monstrocity_extensions() as $e): ?>
             <?php /* value= IS NOT OPTIONAL HERE. Without it a browser submits the option's
