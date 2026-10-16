@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS monstrocity_themes (
 	title           VARCHAR(128) NOT NULL,
 	policy_ids      TEXT         NOT NULL,            -- CSV, as the client expects
 	orientations    VARCHAR(32)  NOT NULL DEFAULT '', -- '' | Left | Right | Random
-	ipfs_prefixes   TEXT         NOT NULL,
+	ipfs_prefixes   TEXT         NOT NULL,            -- DEAD, see below. Safe to drop.
 	background      TINYINT(1)   NOT NULL DEFAULT 1,
 	extension       VARCHAR(8)   NOT NULL DEFAULT 'png',
 	theme_group     VARCHAR(64)  NOT NULL,
@@ -56,6 +56,27 @@ CREATE TABLE IF NOT EXISTS monstrocity_themes (
 	INDEX idx_render (active, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
+
+## `ipfs_prefixes` is dead and can be dropped
+
+Nothing selects it, nothing writes it, and the generated theme array no
+longer carries it.
+
+Storing a gateway per theme was the wrong shape twice over. It pinned all 49
+themes to `https://ipfs.io/ipfs/`, which **answers 429 to this server**, so
+every theme NFT was fetched from a host that refuses us. And it made a
+gateway going bad a data migration instead of a one-line change in
+`lib/ipfs-gateways.php`.
+
+The game resolves the way My NFTs does now: the locally cached file first,
+then each measured gateway in turn, then the placeholder.
+
+```sql
+ALTER TABLE monstrocity_themes DROP COLUMN ipfs_prefixes;
+```
+
+Optional. An unused column costs nothing, and keeping it preserves what the
+old themes named. Run it only if you want the table tidy.
 
 ## Collections attached to a theme
 

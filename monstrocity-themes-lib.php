@@ -107,7 +107,11 @@ function monstrocity_themes($conn) {
 	/* No mysqlnd on this host, so no get_result(). Plain query, and there is
 	   nothing user-supplied in it to escape. */
 	$res = $conn->query(
-		'SELECT id, slug, project_name, title, policy_ids, orientations, ipfs_prefixes,
+		/* ipfs_prefixes is NOT selected. Nothing reads it: the game resolves
+		   through the locally cached file and lib/ipfs-gateways.php, so a
+		   gateway per theme is neither consulted nor wanted. The column can
+		   be dropped; see monstrocity-schema.md. */
+		'SELECT id, slug, project_name, title, policy_ids, orientations,
 		        background, extension, theme_group, group_order,
 		        req_innercircle, req_dev
 		   FROM monstrocity_themes
@@ -205,7 +209,10 @@ function monstrocity_themes_js($conn, $innercircle, $dev) {
 				. "\t          title: \""        . $r['title']         . "\",\n"
 				. "\t          policyIds: \""    . $r['policy_ids']    . "\",\n"
 				. "\t          orientations: \"" . $r['orientations']  . "\",\n"
-				. "\t          ipfsPrefixes: \"" . $r['ipfs_prefixes'] . "\",\n"
+				/* ipfsPrefixes is gone from the emitted array too. Leaving an
+				   empty one would keep the historical shape, but it would also
+				   keep suggesting the field means something -- it does not,
+				   and the game no longer looks at it. */
 				. "\t\t\t  background: " . (!empty($r['background']) ? 'true' : 'false') . ",\n"
 				. "\t\t\t  extension: \"" . $r['extension'] . "\" // Applies only to character images\n"
 				. "\t        }";

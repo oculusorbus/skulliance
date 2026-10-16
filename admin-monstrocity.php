@@ -115,7 +115,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 		'title'           => trim($_POST['title'] ?? ''),
 		'policy_ids'      => trim($_POST['policy_ids'] ?? ''),
 		'orientations'    => $_POST['orientations'] ?? '',
-		'ipfs_prefixes'   => trim($_POST['ipfs_prefixes'] ?? ''),
 		'background'      => empty($_POST['background']) ? 0 : 1,
 		'extension'       => $_POST['extension'] ?? 'png',
 		'theme_group'     => trim($_POST['theme_group_new'] ?? '') !== ''
@@ -165,7 +164,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 			     . 'title='           . $esc($t['title']) . ','
 			     . 'policy_ids='      . $esc($t['policy_ids']) . ','
 			     . 'orientations='    . $esc($t['orientations']) . ','
-			     . 'ipfs_prefixes='   . $esc($t['ipfs_prefixes']) . ','
 			     . 'background='      . (int)$t['background'] . ','
 			     . 'extension='       . $esc($t['extension']) . ','
 			     . 'theme_group='     . $esc($t['theme_group']) . ','
@@ -181,14 +179,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 			$r = $conn->query('SELECT COALESCE(MAX(sort_order),0)+1 AS n FROM monstrocity_themes');
 			$next = $r ? (int)$r->fetch_assoc()['n'] : 1;
 			$conn->query('INSERT INTO monstrocity_themes
-				(slug, project_id, project_name, title, policy_ids, orientations, ipfs_prefixes,
+				(slug, project_id, project_name, title, policy_ids, orientations,
 				 background, extension, theme_group, group_order, req_innercircle, req_dev,
 				 sort_order, active, created_at) VALUES ('
 				. $esc($t['slug']) . ','
 				. ($t['project_id'] ? (int)$t['project_id'] : 'NULL') . ','
 				. $esc($t['project_name']) . ',' . $esc($t['title']) . ','
 				. $esc($t['policy_ids']) . ',' . $esc($t['orientations']) . ','
-				. $esc($t['ipfs_prefixes']) . ',' . (int)$t['background'] . ','
+				. (int)$t['background'] . ','
 				. $esc($t['extension']) . ',' . $esc($t['theme_group']) . ',' . (int)$gorder . ','
 				. (int)$t['req_innercircle'] . ',' . (int)$t['req_dev'] . ','
 				. $next . ',' . (int)$t['active'] . ', NOW())');
@@ -265,10 +263,7 @@ $row         = $edit_id ? mon_theme_row($conn, $edit_id) : null;
 $rowLinks    = $edit_id ? mon_links($conn, $edit_id) : array();
 if ($creating && !$row) {
 	$row = array('id'=>0,'slug'=>'','project_id'=>0,'project_name'=>'','title'=>'','policy_ids'=>'',
-	             /* BLANK, not ipfs.io. That gateway answers 429 to this server
-	                (lib/ipfs-gateways.php), and the game falls through the
-	                platform's measured list when a theme names nothing. */
-	             'orientations'=>'','ipfs_prefixes'=>'','background'=>1,
+	             'orientations'=>'','background'=>1,
 	             'extension'=>'png','theme_group'=>'','req_innercircle'=>0,'req_dev'=>0,'active'=>1);
 }
 /* The submission wins over the stored row, so a refused save redisplays what

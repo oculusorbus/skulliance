@@ -20,6 +20,7 @@ function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $
 require_once __DIR__ . '/harness-strip.php';
 require_once __DIR__ . '/monstrocity-themes-lib.php';
 function admin_tabs_src() { return file_get_contents(__DIR__ . '/admin-lib.php'); }
+$libSrc = file_get_contents(__DIR__ . '/monstrocity-themes-lib.php');
 
 /* ---- 1. the seed, parsed out of the schema doc ---------------------------- */
 $doc = file_get_contents(__DIR__ . '/monstrocity-schema.md');
@@ -197,11 +198,15 @@ foreach ($combos as $c) {
  * line and group counts are pinned per combination. If the formatting is ever
  * deliberately changed, these numbers get updated in the same commit.
  */
+/* Each count dropped by exactly one per theme (42, 48, 49, 42) when the dead
+   ipfsPrefixes line stopped being emitted. Updated deliberately, which is the
+   point of pinning them: the gate made a shape change announce itself rather
+   than slide through. */
 $shape = array(
-	'0|0' => array(434, 3, 42),
-	'1|0' => array(499, 4, 48),
-	'1|1' => array(509, 4, 49),
-	'0|1' => array(434, 3, 42),
+	'0|0' => array(392, 3, 42),
+	'1|0' => array(451, 4, 48),
+	'1|1' => array(460, 4, 49),
+	'0|1' => array(392, 3, 42),
 );
 foreach ($combos as $c) {
 	list($ic, $dv, $label) = $c;
@@ -731,6 +736,23 @@ $deadList = array('ipfs.io', 'dweb.link', 'nftstorage.link', 'w3s.link');
 foreach ($deadList as $dead)
 	ok(strpos($gamePage, "'" . $dead . "'") !== false,
 	   $dead . ' is not in the game\'s dead-gateway list, though it refuses this server');
+
+/*
+ * ipfs_prefixes IS DEAD END TO END, which is what makes the column safe to
+ * drop. Nothing selects it, nothing writes it, and the generated array no
+ * longer carries it. Storing a gateway per theme pinned 49 themes to one
+ * that refuses this server and made a gateway going bad a data migration.
+ */
+ok(strpos($libSrc, 'ipfs_prefixes') === false
+   || strpos($libSrc, "'SELECT id, slug, project_name, title, policy_ids, orientations,\n") !== false,
+   'monstrocity-themes-lib.php still selects ipfs_prefixes');
+ok(strpos($apNo, "\$_POST['ipfs_prefixes']") === false,
+   'the theme form still writes ipfs_prefixes, a column nothing reads');
+ok(strpos($apNo, 'ipfs_prefixes=') === false, 'the UPDATE still sets ipfs_prefixes');
+ok(preg_match('/INSERT INTO[\s\S]{0,400}ipfs_prefixes/', $apNo) !== 1,
+   'the INSERT still names ipfs_prefixes');
+ok(strpos(monstrocity_themes_js($conn, true, true), 'ipfsPrefixes') === false,
+   'the generated array still carries ipfsPrefixes, which keeps suggesting it means something');
 
 /* The tab is registered, so the page is reachable at all. */
 $tabs = admin_tabs_src();
