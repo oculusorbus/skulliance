@@ -96,5 +96,53 @@ if (in_array('live=1', $argv, true)) {
 	}
 }
 
+/* ---- 4. the game resolves like My NFTs does ----------------------------- */
+echo "\nhow the game resolves an NFT image\n";
+/*
+ * My NFTs is reliable because getIPFS() prefers a LOCAL CACHED FILE and the
+ * client never picks a gateway. The game built a URL client-side from a CID
+ * and a per-theme prefix, so it inherited whatever gateway the theme row
+ * happened to name -- ipfs.io, for all 49.
+ *
+ * ajax/get-nft-assets.php already returns localUrl alongside the CID. The
+ * game now builds the whole chain: cached copy, then each measured gateway,
+ * then the skull, and walks it on error instead of giving up after one try.
+ */
+ok(strpos($gameNo, 'function monstrocityImageChain(') !== false,
+   'the game does not build a fallback chain for NFT images');
+ok(strpos($gameNo, 'config.localUrl') !== false,
+   'the game ignores the locally cached copy the endpoint already hands it');
+/* The cached copy must come FIRST -- it is the only candidate that does not
+   involve a gateway at all. */
+$chAt = strpos($gameNo, 'function monstrocityImageChain(');
+$chEnd = strpos($gameNo, "\n    }", $chAt);
+$chBody = substr($gameNo, $chAt, $chEnd - $chAt);
+ok(strpos($chBody, 'config.localUrl') < strpos($chBody, 'MONSTROCITY_GATEWAYS'),
+   'the chain tries a gateway before the locally cached file');
+ok(strpos($chBody, "out.push('icons/skull.png')") !== false,
+   'the chain does not end at the placeholder, so a dead CID draws nothing');
+
+/* It must WALK, not stop at one fallback. */
+ok(strpos($gameNo, 'function monstrocityNextSrc(') !== false,
+   'there is no walker, so one failed gateway is the end of it');
+ok(strpos($gameNo, 'onerror="monstrocityNextSrc(this)"') !== false,
+   'the rendered images do not call the walker on error');
+/*
+ * AND IT MUST BE AN INLINE HANDLER. These elements are built as template
+ * strings with onerror attributes; an inline onerror pre-empts a document
+ * listener entirely, which is the trap that stopped the avatar repair
+ * firing on the leaderboards. A listener here would never run.
+ */
+ok(strpos($gameNo, "addEventListener('error'") === false,
+   'the game added a document-level error listener; the inline onerror on these images '
+ . 'pre-empts it and it would never fire');
+/* No render path may still jump straight to a single fallback. */
+ok(preg_match('/onerror="this\.src=\x27\$\{character\.fallbackUrl\}\x27"/', $gameNo) !== 1,
+   'a character image still replaces itself with one fallback instead of walking the chain');
+
+/* The per-theme prefix is no longer consulted anywhere. */
+ok(preg_match('/ipfsPrefix:\s*/', $gameNo) !== 1,
+   'the game still reads a per-theme ipfsPrefix, which pinned 49 themes to a dead gateway');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall ipfs checks passed\n");
 exit($fail ? 1 : 0);

@@ -2425,16 +2425,46 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     const MONSTROCITY_GATEWAYS = <?php echo json_encode(array_values(ipfs_gateways())); ?>;
     const MONSTROCITY_DEAD_GATEWAYS = ['ipfs.io', 'dweb.link', 'nftstorage.link', 'w3s.link'];
 
-    function monstrocityGateways(themePrefixes) {
+    /*
+     * EVERY PLACE AN NFT IMAGE COULD COME FROM, best first.
+     *
+     *   1. the locally cached copy, when get-nft-assets.php found one. This
+     *      is the whole reason My NFTs is reliable and the game was not --
+     *      a file off this server, no gateway involved.
+     *   2. each measured gateway in turn.
+     *   3. the skull, so a dead CID still draws something.
+     *
+     * THE THEME'S OWN ipfsPrefixes IS IGNORED. Storing a gateway per theme
+     * was the wrong shape: it pinned 49 themes to ipfs.io, which refuses
+     * this server, and it meant a gateway going bad was a data migration
+     * instead of a one-line change in lib/ipfs-gateways.php. The column is
+     * left in place but nothing reads it.
+     */
+    function monstrocityImageChain(config) {
       var out = [];
-      String(themePrefixes || '').split(',').forEach(function (p) {
-        p = p.trim();
-        if (!p) return;
-        if (MONSTROCITY_DEAD_GATEWAYS.some(function (d) { return p.indexOf(d) !== -1; })) return;
-        if (out.indexOf(p) === -1) out.push(p);
-      });
-      MONSTROCITY_GATEWAYS.forEach(function (g) { if (out.indexOf(g) === -1) out.push(g); });
+      if (config && config.localUrl) out.push(config.localUrl);
+      if (config && config.ipfs) {
+        MONSTROCITY_GATEWAYS.forEach(function (g) {
+          if (MONSTROCITY_DEAD_GATEWAYS.some(function (d) { return g.indexOf(d) !== -1; })) return;
+          out.push(g + config.ipfs);
+        });
+      }
+      out.push('icons/skull.png');
       return out;
+    }
+
+    /*
+     * Step an image to its next candidate. Called from the element's own
+     * onerror, NOT from a document listener: these are written as inline
+     * handlers, and an inline onerror pre-empts a listener entirely -- the
+     * same trap that stopped the avatar repair firing on the leaderboards.
+     */
+    function monstrocityNextSrc(el) {
+      var chain = (el.getAttribute('data-fb') || '').split('|').filter(Boolean);
+      var at = parseInt(el.getAttribute('data-fb-at') || '0', 10) + 1;
+      if (at >= chain.length) { el.onerror = null; el.src = 'icons/skull.png'; return; }
+      el.setAttribute('data-fb-at', at);
+      el.src = chain[at];
     }
 
     function monstrocitySlug(name) {
@@ -3410,6 +3440,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      var typeFolder;
 	      var imageUrl;
 	      var fallbackUrl; // New variable for fallback URL
+	      var imageChain = null; // every place this image could come from, best first
 	      var orientation = 'Left';
 	      var isNFT = false;
 	      var mediaType = 'image'; // Default to image
@@ -3421,7 +3452,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 	      const extension = themeData?.extension || 'png'; // Default to "png" if not specified
 	      const videoExtensions = ['mov', 'mp4']; // Define video extensions
-	      const defaultIpfsPrefix = MONSTROCITY_GATEWAYS[0]; // measured-good, not ipfs.io
 
 	      // Use config.imageUrl if provided (e.g., for bosses), otherwise proceed with existing logic
 	      if (config.imageUrl) {
@@ -3430,35 +3460,23 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          orientation = config.orientation || 'Right'; // Default to Right for bosses if not specified
 	      } else if (config.ipfs && config.policyId) {
 	          isNFT = true;
-	          var policyMetadata = { orientation: 'Right', ipfsPrefix: themeData?.ipfsPrefixes || defaultIpfsPrefix };
-	          // Use theme-specific ipfsPrefixes if available
+	          /* Orientation is still per policy; the gateway is not. */
+	          var policyOrientation = 'Right';
 	          if (themeData && themeData.policyIds) {
 	              var policyIds = themeData.policyIds.split(',').filter(id => id.trim());
 	              var orientations = themeData.orientations ? themeData.orientations.split(',').filter(o => o.trim()) : [];
-	              var ipfsPrefixes = monstrocityGateways(themeData.ipfsPrefixes);
 	              var policyIndex = policyIds.indexOf(config.policyId);
-	              if (policyIndex !== -1) {
-	                  policyMetadata = {
-	                      orientation: orientations.length === 1 ? orientations[0] : (orientations[policyIndex] || 'Right'),
-	                      ipfsPrefix: ipfsPrefixes.length === 1 ? ipfsPrefixes[0] : (ipfsPrefixes[policyIndex] || defaultIpfsPrefix)
-	                  };
-	              }
+	              if (policyIndex !== -1)
+	                  policyOrientation = orientations.length === 1
+	                      ? orientations[0] : (orientations[policyIndex] || 'Right');
 	          }
-	          if (policyMetadata.orientation === 'Random') {
-	              orientation = Math.random() < 0.5 ? 'Left' : 'Right';
-	          } else {
-	              orientation = policyMetadata.orientation;
-	          }
-	          // Prefer locally-cached image (served from /staking/images/nfts/...)
-	          // when get-nft-assets.php has detected one. Falls back to a public
-	          // IPFS gateway when the local cache hasn't picked the asset up yet.
-	          if (config.localUrl) {
-	              imageUrl = config.localUrl;
-	              fallbackUrl = policyMetadata.ipfsPrefix + config.ipfs;
-	          } else {
-	              imageUrl = policyMetadata.ipfsPrefix + config.ipfs;
-	              fallbackUrl = defaultIpfsPrefix + config.ipfs; // Set fallback URL
-	          }
+	          orientation = policyOrientation === 'Random'
+	              ? (Math.random() < 0.5 ? 'Left' : 'Right') : policyOrientation;
+
+	          /* Local cache, then every measured gateway, then the skull. */
+	          imageChain = monstrocityImageChain(config);
+	          imageUrl   = imageChain[0];
+	          fallbackUrl = imageChain[1] || 'icons/skull.png';
 	          // Determine mediaType from IPFS URL extension if present
 	          const urlExtension = imageUrl.split('.').pop().toLowerCase();
 	          if (videoExtensions.includes(urlExtension)) {
@@ -3523,6 +3541,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          lastStandActive: false,
 	          imageUrl: imageUrl,
 	          fallbackUrl: fallbackUrl, // Add fallbackUrl to character object
+	          imageChain: imageChain,   // walked by monstrocityNextSrc on error
 	          orientation: orientation,
 	          isNFT: isNFT,
 	          mediaType: mediaType
@@ -3580,7 +3599,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          const option = document.createElement('div');
 	          option.className = 'character-option';
 	          option.innerHTML = character.mediaType === 'video' ?
-	              `<video src="${character.imageUrl}" autoplay loop muted alt="${character.name}" onloadeddata="this.classList.add('loaded')" onerror="this.src='${character.fallbackUrl}'"></video>` +
+	              `<video src="${character.imageUrl}" autoplay loop muted alt="${character.name}" onloadeddata="this.classList.add('loaded')"` +
+	              ` data-fb="${(character.imageChain || [character.fallbackUrl]).join('|')}" data-fb-at="0"` +
+	              ` onerror="monstrocityNextSrc(this)"></video>` +
 	              `<p><strong>${character.name}</strong></p>` +
 	              `<p>Type: ${character.type}</p>` +
 	              `<p>Health: ${character.maxHealth}</p>` +
@@ -3589,7 +3610,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              `<p>Tactics: ${character.tactics}</p>` +
 	              `<p>Size: ${character.size}</p>` +
 	              `<p>Power-Up: ${character.powerup}</p>` :
-	              `<img loading="eager" src="${character.imageUrl}" alt="${character.name}" onload="this.classList.add('loaded')" onerror="this.src='${character.fallbackUrl}'">` +
+	              `<img loading="eager" src="${character.imageUrl}" alt="${character.name}" onload="this.classList.add('loaded')"` +
+	              ` data-fb="${(character.imageChain || [character.fallbackUrl]).join('|')}" data-fb-at="0"` +
+	              ` onerror="monstrocityNextSrc(this)">` +
 	              `<p><strong>${character.name}</strong></p>` +
 	              `<p>Type: ${character.type}</p>` +
 	              `<p>Health: ${character.maxHealth}</p>` +
@@ -5476,10 +5499,11 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	    let nftAssets = [];
 	    try {
+	        /* No ipfsPrefix: the endpoint returns a localUrl and a bare CID,
+	           and monstrocityImageChain() decides where to look. */
 	        const policies = policyIds.map((policyId, index) => ({
 	            policyId,
-	            orientation: themeData.orientations?.split(',')[index] || 'Right',
-	            ipfsPrefix: monstrocityGateways(themeData.ipfsPrefixes)[0]
+	            orientation: themeData.orientations?.split(',')[index] || 'Right'
 	        }));
 	        const response = await Promise.race([
 	            fetch('ajax/get-nft-assets.php', {

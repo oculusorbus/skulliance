@@ -460,6 +460,21 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   with the SELECT in the commit message; they need re-verifying, not editing.
 - This affects EVERY chain and collection, not just Monstrocity.
 
+### Monstrocity resolves NFT images the way My NFTs does (monstrocityImageChain)
+- **THE THEME'S `ipfs_prefixes` COLUMN IS DEAD. Nothing reads it.** Storing a gateway per theme
+  was the wrong shape: it pinned all 49 themes to ipfs.io, and it made a gateway going bad a data
+  migration instead of a one-line change in lib/ipfs-gateways.php. The column is left in the
+  table; do not reintroduce a reader for it.
+- The chain is: **locally cached file -> each measured gateway -> the skull.** The cached copy is
+  first because it is the only candidate not involving a gateway at all, and it is the whole
+  reason My NFTs was reliable while the game was not. `ajax/get-nft-assets.php` ALREADY returned
+  `localUrl` - the game simply was not using it as more than a single fallback.
+- `monstrocityNextSrc()` WALKS the chain on error. Previously one failed gateway was the end of it.
+- **IT IS AN INLINE `onerror`, DELIBERATELY.** These images are built as template strings with an
+  onerror attribute, and an inline handler pre-empts a document-level listener entirely - the
+  trap that stopped the avatar repair firing on the leaderboards. A listener here would never
+  run, and the harness asserts one is not added.
+
 ### THE GAME WAS FETCHING FROM A GATEWAY THAT REFUSES US (monstrocity.php)
 - `https://ipfs.io/ipfs/` was hardcoded in two places AND is the stored `ipfs_prefixes` of all 49
   themes. **ipfs.io answers 429 to this server** - measured 2026-10-05 in lib/ipfs-gateways.php
