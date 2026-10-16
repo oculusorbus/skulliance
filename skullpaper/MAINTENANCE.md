@@ -210,6 +210,19 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   E_WARNING printed into the page.
 - `monstrocity-test.php` is a dead Grok-era backup carrying its own drifted copy (40 themes vs 49).
   Deliberately NOT wired to the table. A deletion candidate, not a consumer.
+- **COLLECTIONS ARE MANY PER THEME, so they are `monstrocity_theme_collections`, not a column.**
+  That multiplicity is exactly why some themes carry a LIST of policy ids. Attach collections and
+  the policies are read from them; attach none and the legacy `policy_ids` string stands. Nothing
+  is attached at migration time, which is why every byte comparison still passes.
+- **A FAILED OR MISSING LINK TABLE MUST NOT BLANK THE POLICIES.** A theme with no policy ids
+  matches nobody's NFTs and silently stops recognising holdings. The override only applies when
+  the derived list is non-empty, and the harness drives a connection that fails just that query.
+- **TWO QUERIES, NOT A GROUP_CONCAT.** A GROUP_CONCAT join needs a GROUP BY that ONLY_FULL_GROUP_BY
+  can reject, and truncates at group_concat_max_len (1024, about 17 policies) SILENTLY. Two plain
+  reads merged in PHP have neither failure mode.
+- The stub dispatches on which table the SQL names. Returning themes for every query made the
+  collection-override path untestable - it would never see a link row. And `lastSql` is useless
+  with two queries: assert against the one that names the table you mean.
 
 ### Crafting (db.php:3947-3990)
 - Craft: burn equal parts of all 6 core points → DIAMOND (1:1 per point type).

@@ -22,19 +22,69 @@
  * Schema and seed: monstrocity-schema.md. Nothing here creates the table.
  */
 
+/**
+ * Policy ids per theme, taken from the collections attached to it.
+ *
+ * TWO QUERIES, NOT A GROUP_CONCAT. A join with GROUP_CONCAT would need a
+ * GROUP BY that ONLY_FULL_GROUP_BY can reject depending on the server's mode,
+ * and GROUP_CONCAT silently truncates at group_concat_max_len (1024 by
+ * default, about 17 policies) -- silently being the problem. Two plain reads
+ * and a merge in PHP have neither failure mode.
+ *
+ * Returns array(theme_id => 'policy,policy,...'); themes with nothing attached
+ * are simply absent.
+ */
+function monstrocity_theme_policies($conn) {
+	$out = array();
+	$res = $conn->query(
+		'SELECT tc.theme_id, c.policy
+		   FROM monstrocity_theme_collections tc
+		   JOIN collections c ON c.id = tc.collection_id
+		  WHERE c.policy <> \'\'
+		  ORDER BY tc.theme_id ASC, tc.sort_order ASC, c.id ASC');
+	if (!$res) return $out;                 // table not there yet: legacy strings stand
+	while ($r = $res->fetch_assoc()) {
+		$id = (int)$r['theme_id'];
+		if (!isset($out[$id])) $out[$id] = array();
+		if (!in_array($r['policy'], $out[$id], true)) $out[$id][] = $r['policy'];
+	}
+	foreach ($out as $id => $list) $out[$id] = implode(',', $list);
+	return $out;
+}
+
 /** Every active theme, in render order. Returns array of assoc rows. */
 function monstrocity_themes($conn) {
 	$out = array();
 	/* No mysqlnd on this host, so no get_result(). Plain query, and there is
 	   nothing user-supplied in it to escape. */
 	$res = $conn->query(
-		'SELECT slug, project_name, title, policy_ids, orientations, ipfs_prefixes,
+		'SELECT id, slug, project_name, title, policy_ids, orientations, ipfs_prefixes,
 		        background, extension, theme_group, group_order,
 		        req_innercircle, req_dev
 		   FROM monstrocity_themes
 		  WHERE active = 1
 		  ORDER BY sort_order ASC, id ASC');
 	if ($res) { while ($r = $res->fetch_assoc()) $out[] = $r; }
+	if (!$out) return $out;
+
+	/*
+	 * ATTACHED COLLECTIONS WIN OVER THE STATIC STRING.
+	 *
+	 * A theme can cover several collections, which is why some of them carry a
+	 * list of policy ids in the first place. Where those collections exist on
+	 * the platform, the policy belongs to the collection and should be read
+	 * from it, so changing a policy is one edit in one place.
+	 *
+	 * Where they do not -- and that is most themes, because plenty are for
+	 * projects that are not on Skulliance at all -- the legacy string stands
+	 * untouched. With nothing attached, which is the state at migration time,
+	 * every theme renders exactly the policy ids it always did.
+	 */
+	$derived = monstrocity_theme_policies($conn);
+	foreach ($out as $i => $r) {
+		$id = (int)$r['id'];
+		if (isset($derived[$id]) && $derived[$id] !== '') $out[$i]['policy_ids'] = $derived[$id];
+	}
 	return $out;
 }
 

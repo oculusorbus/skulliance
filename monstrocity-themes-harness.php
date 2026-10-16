@@ -24,7 +24,7 @@ $doc = file_get_contents(__DIR__ . '/monstrocity-schema.md');
 $at  = strpos($doc, 'VALUES');
 $sql = substr($doc, $at + 6, strpos($doc, ';', $at) - $at - 6);
 preg_match_all('/\(([^()]*(?:\([^)]*\)[^()]*)*)\)/', $sql, $mm);
-$cols = array('slug','project_id','collection_id','project_name','title','policy_ids',
+$cols = array('slug','project_id','project_name','title','policy_ids',
               'orientations','ipfs_prefixes','background','extension','theme_group',
               'group_order','req_innercircle','req_dev','sort_order','active','created_at');
 $seed = array();
@@ -39,6 +39,7 @@ foreach ($mm[1] as $tuple) {
 		if (strlen($v) > 1 && $v[0] === "'") $v = str_replace(array("\\'","\\\\"), array("'","\\"), substr($v, 1, -1));
 		$row[$c] = $v;
 	}
+	$row['id'] = count($seed) + 1;
 	$seed[] = $row;
 }
 ok(count($seed) === 49, 'the seed holds ' . count($seed) . ' themes, not the 49 that were in the code');
@@ -62,10 +63,30 @@ class MonStubRes {
  * explicit about what was asked for.
  */
 class MonStubConn {
-	public $rows; public $lastSql = '';
+	public $rows; public $lastSql = ''; public $sqls = array();
 	public function __construct($r) { $this->rows = $r; }
+	/* Collections attached to themes: array(theme_id => array(policy, ...)). */
+	public $links = array();
 	public function query($sql) {
-		$this->lastSql = $sql;
+		$this->lastSql = $sql; $this->sqls[] = $sql;
+
+		/* TWO TABLES NOW, so the stub has to know which one it was asked for.
+		   Returning themes for every query would make the collection-override
+		   path untestable -- it would never see a link row. */
+		if (strpos($sql, 'monstrocity_theme_collections') !== false) {
+			$rows = array();
+			foreach ($this->links as $tid => $policies) {
+				foreach ($policies as $i => $pol) {
+					if ($pol === '') continue;          // the query filters these out
+					$rows[] = array('theme_id' => (string)$tid, 'policy' => $pol, '_o' => $i);
+				}
+			}
+			usort($rows, function ($a, $b) {
+				return array((int)$a['theme_id'], $a['_o']) <=> array((int)$b['theme_id'], $b['_o']);
+			});
+			return new MonStubRes($rows);
+		}
+
 		$r = $this->rows;
 		if (preg_match('/\bactive\s*=\s*1\b/i', $sql)) {
 			$r = array_filter($r, function ($x) { return (int)$x['active'] === 1; });
@@ -182,10 +203,105 @@ foreach ($combos as $c) {
 
 /* The query really did ask for those two things, in the real SQL, not just in
    whatever the stub chose to do. */
-ok(preg_match('/\bactive\s*=\s*1\b/i', $conn->lastSql) === 1,
+/* The THEMES query specifically -- lastSql is now whichever ran most recently,
+   and the collections read runs second. Asserting against the wrong one is how
+   this check briefly started failing for the right reason. */
+$themeSql = '';
+foreach ($conn->sqls as $q) if (strpos($q, 'FROM monstrocity_themes') !== false) $themeSql = $q;
+$linkSql = '';
+foreach ($conn->sqls as $q) if (strpos($q, 'monstrocity_theme_collections') !== false) $linkSql = $q;
+ok($themeSql !== '', 'no query was ever issued against monstrocity_themes');
+ok(preg_match('/\bactive\s*=\s*1\b/i', $themeSql) === 1,
    'the themes query does not filter on active = 1, so a retired theme still renders');
-ok(preg_match('/ORDER BY\s+sort_order\s+ASC/i', $conn->lastSql) === 1,
+ok(preg_match('/ORDER BY\s+sort_order\s+ASC/i', $themeSql) === 1,
    'the themes query does not order by sort_order ASC, so group order is whatever the table returns');
+ok($linkSql !== '', 'the attached collections are never read, so linking one would do nothing');
+ok(preg_match('/ORDER BY\s+tc\.theme_id\s+ASC,\s*tc\.sort_order\s+ASC/i', $linkSql) === 1,
+   'attached collections are read in no defined order, so a theme\'s policy list could reshuffle between page loads');
+
+/* ---- 4c. collections override the legacy policy string ------------------- */
+/*
+ * A theme covers several collections, which is why some carry a list of
+ * policy ids. Where those collections exist here, the policy is read from
+ * them. Where they do not, the hardcoded string stands.
+ *
+ * The first half of this is the safety property for the migration: with
+ * nothing attached, output is unchanged -- which is what every byte
+ * comparison above has already proved, since $links starts empty.
+ */
+$before = monstrocity_themes($conn);
+$apprIx = null;
+foreach ($before as $i => $r) if ($r['slug'] === 'apprentices') $apprIx = $i;
+ok($apprIx !== null, 'the apprentices theme is missing from the seed');
+
+if ($apprIx !== null) {
+	$legacy = $before[$apprIx]['policy_ids'];
+	ok($legacy !== '', 'apprentices has no legacy policy string to override');
+
+	$conn->links = array((int)$before[$apprIx]['id'] => array('aaa111', 'bbb222'));
+	$after = monstrocity_themes($conn);
+	ok($after[$apprIx]['policy_ids'] === 'aaa111,bbb222',
+	   'attached collections did not replace the legacy policy ids (got "'
+	 . $after[$apprIx]['policy_ids'] . '")');
+
+	/* Order is the link order, not whatever the table felt like. */
+	$conn->links = array((int)$before[$apprIx]['id'] => array('zzz999', 'aaa111'));
+	$after = monstrocity_themes($conn);
+	ok($after[$apprIx]['policy_ids'] === 'zzz999,aaa111',
+	   'attached collections are not emitted in their sort order');
+
+	/* Everyone else is untouched by one theme being linked. */
+	$others = 0;
+	foreach ($after as $i => $r) if ($i !== $apprIx && $r['policy_ids'] !== $before[$i]['policy_ids']) $others++;
+	ok($others === 0, $others . ' other themes changed when one theme was linked');
+
+	/* A theme with links but no usable policy keeps its legacy string rather
+	   than rendering an empty policy list, which would silently un-gate it. */
+	$conn->links = array((int)$before[$apprIx]['id'] => array(''));
+	$after = monstrocity_themes($conn);
+	ok($after[$apprIx]['policy_ids'] === $legacy,
+	   'a theme linked to a collection with no policy lost its legacy ids and now matches nothing');
+
+	/* Two collections can legitimately share a policy (the same policy covering
+	   more than one collection row). The rendered list must not repeat it --
+	   the client splits this string and a duplicate is a wasted comparison at
+	   best and a confusing admin display at worst. */
+	$conn->links = array((int)$before[$apprIx]['id'] => array('dup111', 'dup111', 'other2'));
+	$after = monstrocity_themes($conn);
+	ok($after[$apprIx]['policy_ids'] === 'dup111,other2',
+	   'a policy shared by two attached collections is emitted twice (got "'
+	 . $after[$apprIx]['policy_ids'] . '")');
+
+	$conn->links = array();   // back to the migration state for anything below
+}
+
+/*
+ * IF THE LINK TABLE CANNOT BE READ, EVERY THEME KEEPS ITS LEGACY POLICIES.
+ *
+ * Same deploy window as the themes table itself: this code can be live before
+ * monstrocity_theme_collections exists. Failing that read must not blank out
+ * the policy ids, because a theme with no policies matches no NFTs and would
+ * quietly stop recognising anyone's holdings.
+ */
+class MonHalfConn extends MonStubConn {
+	public function query($sql) {
+		if (strpos($sql, 'monstrocity_theme_collections') !== false) return false;   // table absent
+		return parent::query($sql);
+	}
+}
+$half = new MonHalfConn($seed);
+$halfRows = monstrocity_themes($half);
+$fullRows = monstrocity_themes(new MonStubConn($seed));
+$lost = 0;
+foreach ($halfRows as $i => $r) if ($r['policy_ids'] !== $fullRows[$i]['policy_ids']) $lost++;
+ok(count($halfRows) === 49 && $lost === 0,
+   'with the link table missing, ' . $lost . ' themes lost their policy ids -- those themes '
+ . 'would match nobody\'s NFTs until the table exists');
+
+/* And with nothing attached, the rendered JS is still the frozen original. */
+$plain = rtrim(monstrocity_themes_js($conn, true, true), " \t\r\n");
+ok(preg_replace('/\s+/', '', $plain) === preg_replace('/\s+/', '', render_original($body, 1, 1)),
+   'with no collections attached the output is no longer the original');
 
 /* ---- 5. the data itself survived ----------------------------------------- */
 $all = monstrocity_themes($conn);
