@@ -68,7 +68,54 @@ function mb_art($slug, $ext) {
 	return $a;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+/*
+ * BATCH TUNING. Bosses are met as a sequence, so the numbers only make sense
+ * next to each other -- which a one-at-a-time form cannot show. This saves a
+ * whole theme's worth of stats in one pass.
+ *
+ * It is a batch of FIELDS, not of files. Nothing here uploads anything, so
+ * the one-request-per-image rule the art board lives by is untouched.
+ */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch'])) {
+	$rows = isset($_POST['b']) && is_array($_POST['b']) ? $_POST['b'] : array();
+	$saved = 0; $bad = array();
+	$themeSlugs = array_keys(mb_themes($conn));
+	$existing = array();
+	foreach (mb_all($conn) as $o) $existing[(int)$o['id']] = $o;
+
+	foreach ($rows as $rid => $f) {
+		$rid = (int)$rid;
+		if (!isset($existing[$rid])) continue;
+		/* Merge over the stored row: the batch form carries the tunable
+		   numbers only, and validating a half-row would reject it for fields
+		   this screen never showed. */
+		$merged = array_merge($existing[$rid], array(
+			'max_health' => (int)($f['max_health'] ?? 0),
+			'strength'   => (int)($f['strength'] ?? 0),
+			'speed'      => (int)($f['speed'] ?? 0),
+			'tactics'    => (int)($f['tactics'] ?? 0),
+			'size'       => $f['size'] ?? '',
+			'powerup'    => $f['powerup'] ?? '',
+		));
+		$taken = array();
+		foreach ($existing as $oid => $o) if ($oid !== $rid) $taken[] = monstrocity_boss_slug($o['name']);
+		$e = monstrocity_validate_boss($merged, $taken, $themeSlugs);
+		if ($e) { $bad[] = $existing[$rid]['name'] . ': ' . $e[0]; continue; }
+		$conn->query('UPDATE bosses SET max_health=' . (int)$merged['max_health']
+			. ',strength=' . (int)$merged['strength']
+			. ',speed='    . (int)$merged['speed']
+			. ',tactics='  . (int)$merged['tactics']
+			. ',size='     . "'" . $conn->real_escape_string($merged['size']) . "'"
+			. ',powerup='  . "'" . $conn->real_escape_string($merged['powerup']) . "'"
+			. ' WHERE id = ' . $rid);
+		$saved++;
+	}
+	if ($saved) $msgs['ok'][] = $saved . ' boss' . ($saved === 1 ? '' : 'es') . ' updated.';
+	foreach ($bad as $m) $msgs['err'][] = $m;
+	$batch_theme = (string)($_POST['batch_theme'] ?? '');
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['batch'])) {
 	$id = (int)($_POST['id'] ?? 0);
 	$b = array(
 		'name'          => trim($_POST['name'] ?? ''),
@@ -151,8 +198,38 @@ if ($creating && !$row) {
 	$row = array('id'=>0,'name'=>'','project_id'=>0,'collection_id'=>0,'theme'=>'','max_health'=>500,
 	             'strength'=>5,'speed'=>5,'tactics'=>5,'size'=>'Medium','powerup'=>'Heal',
 	             'orientation'=>'Left','extension'=>'png');
+	/*
+	 * DUPLICATE. Everything except the name and the art, because both are
+	 * identified by the name: copying the filename would point two bosses at
+	 * one image and the second one saved would replace the first's.
+	 *
+	 * Strength is bumped by one so the copy lands AFTER its source rather
+	 * than tying with it -- a tie has no defined order at all, which is the
+	 * single easiest thing to get wrong when building a set this way.
+	 */
+	$from = isset($_GET['from']) ? (int)$_GET['from'] : 0;
+	if ($from && ($src = mb_row($conn, $from))) {
+		foreach (monstrocity_boss_copyable() as $k)
+			if (isset($src[$k])) $row[$k] = $src[$k];
+		$row['strength'] = min(10, (int)$src['strength'] + 1);
+		$dup_from = $src['name'];
+	}
 }
 if (isset($repost)) $row = array_merge((array)$row, $repost);
+
+/* A theme's bosses, in the order the game will present them. */
+$batch_theme = isset($batch_theme) ? $batch_theme : (isset($_GET['tune']) ? (string)$_GET['tune'] : '');
+$batch_rows = array();
+if ($batch_theme !== '') {
+	foreach ($bosses as $bx) if ($bx['theme'] === $batch_theme) $batch_rows[] = $bx;
+	usort($batch_rows, function ($a, $b) {
+		return array((int)$a['strength'], (string)$a['name'])
+		   <=> array((int)$b['strength'], (string)$b['name']);
+	});
+}
+$batch_problems = monstrocity_boss_set_problems($batch_rows);
+$batch_maxhp = 1;
+foreach ($batch_rows as $bx) $batch_maxhp = max($batch_maxhp, (int)$bx['max_health']);
 
 include 'header.php';
 admin_chrome('monstrocity');
@@ -180,7 +257,18 @@ table.mb tr.gap td { border-top:1px solid rgba(0,200,160,.22); padding-top:11px 
 .mb-field .hint { font-size:11px; color:#5a7888; margin:5px 0 0; line-height:1.45 }
 .mb-check { display:flex; align-items:center; gap:7px; font-size:12px; color:#e8eaed; margin:9px 0 0 }
 .mb-back { font-size:12px; display:inline-block; margin:0 0 12px; text-align:left }
-.mb-actions { display:flex; gap:9px; margin-top:4px }
+.mb-actions { display:flex; gap:9px; margin-top:12px }
+.mb-lead { font-size:11px; color:#5a7888; margin:0 0 12px; line-height:1.55; max-width:80ch }
+.mb-probs { background:rgba(224,70,107,.08); border:1px solid rgba(224,70,107,.35); border-radius:4px;
+            padding:9px 12px; margin:0 0 14px; font-size:11px; color:#e8a0b0; line-height:1.6 }
+table.mb-tune input.n { width:52px; text-align:center; background:#07111d; color:#e8eaed;
+  border:1px solid rgba(255,255,255,.14); border-radius:3px; padding:5px 4px; font-size:12px;
+  font-family:ui-monospace,Menlo,monospace }
+table.mb-tune input.n.wide { width:74px }
+table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(255,255,255,.14);
+  border-radius:3px; padding:5px 6px; font-size:11px }
+.mb-bar { height:8px; background:#07111d; border:1px solid rgba(255,255,255,.1); border-radius:999px; overflow:hidden }
+.mb-bar span { display:block; height:100%; background:linear-gradient(90deg,#00a882,#00c8a0) }
 .mb-prev { display:flex; gap:10px; align-items:flex-start; margin-top:8px }
 .mb-prev figure { margin:0; text-align:center }
 .mb-prev img { width:110px; height:110px; object-fit:contain; background:#07111d;
@@ -188,7 +276,69 @@ table.mb tr.gap td { border-top:1px solid rgba(0,200,160,.22); padding-top:11px 
 .mb-prev figcaption { font-size:10px; color:#5a7888; margin-top:3px }
 </style>
 
-<?php if (!$row): ?>
+<?php if (!$row && $batch_theme !== ''): /* ========== TUNE A THEME'S LADDER ========== */ ?>
+
+  <a class="mb-back" href="admin-monstrocity-boss.php">&larr; All bosses</a>
+  <?php admin_flash($msgs); ?>
+  <p class="adm-sub">
+    Tuning <b><?php echo htmlspecialchars(isset($themes[$batch_theme]) ? $themes[$batch_theme] : $batch_theme); ?></b>
+    &mdash; <b><?php echo count($batch_rows); ?></b> bosses, shown in the order players meet them.
+    <a class="adm-btn" href="admin-monstrocity-boss.php?new=1" style="margin-left:8px">New boss</a>
+  </p>
+  <p class="mb-lead">
+    <b>Strength is the running order.</b> The game sorts by it, so changing a strength moves a boss
+    in the sequence, and two bosses sharing one have no defined order at all. The bar is health
+    relative to the toughest here.
+  </p>
+
+  <?php if ($batch_problems): ?>
+    <div class="mb-probs">
+      <?php foreach ($batch_problems as $pr): ?><div>&bull; <?php echo htmlspecialchars($pr); ?></div><?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+
+  <?php if (!$batch_rows): ?>
+    <p class="mb-lead">No bosses on this theme yet.</p>
+  <?php else: ?>
+  <form method="post" action="admin-monstrocity-boss.php">
+    <input type="hidden" name="batch" value="1">
+    <input type="hidden" name="batch_theme" value="<?php echo htmlspecialchars($batch_theme); ?>">
+    <table class="mb mb-tune">
+      <tr><th>#</th><th></th><th>Boss</th><th>Health</th><th>Str</th><th>Spd</th><th>Tac</th>
+          <th>Size</th><th>Powerup</th><th>Curve</th></tr>
+      <?php foreach ($batch_rows as $i => $bx): $bs = monstrocity_boss_slug($bx['name']);
+            $ba = mb_art($bs, $bx['extension']); ?>
+      <tr>
+        <td style="color:#5a7888"><?php echo $i + 1; ?></td>
+        <td><?php if ($ba['base']): ?><img class="mb-thumb" alt=""
+              src="<?php echo htmlspecialchars(monstrocity_boss_dir() . '/' . $bs . '.' . $bx['extension']); ?>"><?php endif; ?></td>
+        <td><a class="bn" href="admin-monstrocity-boss.php?edit=<?php echo (int)$bx['id']; ?>"><?php echo htmlspecialchars($bx['name']); ?></a></td>
+        <td><input type="number" name="b[<?php echo (int)$bx['id']; ?>][max_health]" min="1" max="100000"
+                   value="<?php echo (int)$bx['max_health']; ?>" class="n wide"></td>
+        <?php foreach (array('strength','speed','tactics') as $st): ?>
+          <td><input type="number" name="b[<?php echo (int)$bx['id']; ?>][<?php echo $st; ?>]" min="1" max="10"
+                     value="<?php echo (int)$bx[$st]; ?>" class="n"></td>
+        <?php endforeach; ?>
+        <td><select name="b[<?php echo (int)$bx['id']; ?>][size]"><?php foreach (monstrocity_sizes() as $sz): ?>
+              <option<?php echo $bx['size'] === $sz ? ' selected' : ''; ?>><?php echo $sz; ?></option>
+            <?php endforeach; ?></select></td>
+        <td><select name="b[<?php echo (int)$bx['id']; ?>][powerup]"><?php foreach (monstrocity_powerups() as $pu): ?>
+              <option<?php echo $bx['powerup'] === $pu ? ' selected' : ''; ?>><?php echo $pu; ?></option>
+            <?php endforeach; ?></select></td>
+        <td style="width:150px">
+          <div class="mb-bar"><span style="width:<?php echo (int)round((int)$bx['max_health'] / $batch_maxhp * 100); ?>%"></span></div>
+        </td>
+      </tr>
+      <?php endforeach; ?>
+    </table>
+    <div class="mb-actions">
+      <button class="adm-btn" type="submit">Save all <?php echo count($batch_rows); ?></button>
+      <a class="adm-btn" href="admin-monstrocity-boss.php?new=1">Add another</a>
+    </div>
+  </form>
+  <?php endif; ?>
+
+<?php elseif (!$row): ?>
 
   <p class="adm-sub">
     <b><?php echo count($bosses); ?></b> bosses. Art lives in one shared folder,
@@ -229,7 +379,13 @@ table.mb tr.gap td { border-top:1px solid rgba(0,200,160,.22); padding-top:11px 
         <?php if ($a['score'] >= 0 && $a['score'] < MONSTROCITY_DAMAGE_WEAK): ?>
           <br><span class="mb-warn">weak <?php echo $a['score']; ?></span><?php endif; ?>
       </td>
-      <td><a class="adm-btn" href="admin-monstrocity-boss.php?edit=<?php echo (int)$bx['id']; ?>">Edit</a></td>
+      <td style="white-space:nowrap">
+        <a class="adm-btn" href="admin-monstrocity-boss.php?edit=<?php echo (int)$bx['id']; ?>">Edit</a>
+        <a class="adm-btn" href="admin-monstrocity-boss.php?new=1&amp;from=<?php echo (int)$bx['id']; ?>"
+           title="Start a new boss from this one's settings">Copy</a>
+        <a class="adm-btn" href="admin-monstrocity-boss.php?tune=<?php echo urlencode($bx['theme']); ?>"
+           title="Tune every boss on this theme together">Tune</a>
+      </td>
     </tr>
     <?php endforeach; ?>
   </table>
@@ -244,7 +400,13 @@ table.mb tr.gap td { border-top:1px solid rgba(0,200,160,.22); padding-top:11px 
 
     <div class="mb-sect">
       <h3><?php echo $row['id'] ? 'Boss' : 'New boss'; ?></h3>
-      <p class="lead">The name is also the image filename. Renaming moves the art with it.</p>
+      <p class="lead">The name is also the image filename. Renaming moves the art with it.
+        <?php if (isset($dup_from)): ?><br>
+          <b style="color:#00c8a0">Copied from <?php echo htmlspecialchars($dup_from); ?>.</b>
+          Everything came across except the name and the art &mdash; both are identified by the
+          name, so sharing them would point two bosses at one image. Strength was bumped by one so
+          this one lands after its source instead of tying with it.
+        <?php endif; ?></p>
       <div class="mb-grid">
         <div class="mb-field">
           <label>Name</label>

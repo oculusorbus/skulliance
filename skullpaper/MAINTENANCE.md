@@ -340,6 +340,21 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   a separate migration with its own byte-identical gate.
 - Powerups are the only four the game implements: Minor Regen, Regenerate, Boost Attack, Heal.
   Anything else is a boss with no ability.
+- **STRENGTH IS THE RUNNING ORDER.** get-bosses.php sorts by project, collection, then strength,
+  and there is NO sort column. So changing a strength moves a boss in the sequence, and two
+  bosses sharing one have NO DEFINED ORDER - MySQL may return them either way between page loads.
+  `monstrocity_boss_set_problems()` reports ties, a later boss with less health than the one
+  before it, and a whole set on identical health (what duplicating and not retuning produces).
+- **DUPLICATE carries everything except the name and the art.** Both are keyed by the name, so
+  copying them would point two bosses at one image and the second save would replace the first's.
+  Strength is bumped by one so the copy lands AFTER its source rather than tying with it.
+- **THE BATCH TUNER (`?tune=<theme-slug>`) IS FIELDS ONLY.** It saves a whole theme's stats in one
+  pass because a ladder only makes sense read together, but it never touches a file - the
+  one-request-per-image rule the art board lives by is untouched, and the harness brace-matches
+  the batch block to prove `$_FILES` never appears inside it.
+- Each batch row is validated against the STORED row merged with the submitted numbers; validating
+  a half-row would reject it for fields the tuning screen never showed. A row that fails is
+  skipped and named, not written.
 
 ### HARNESS TRAP: the comment stripper ate `accept="image/*"` (harness-strip.php)
 - The one-line `preg_replace('!/\*.*?\*/!s', ...)` that every harness used inline treats the MIME

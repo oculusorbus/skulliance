@@ -381,3 +381,66 @@ function mart_rename_boss($old_slug, $new_slug, $ext = 'png') {
 	}
 	return '';
 }
+
+/**
+ * Problems with a set of bosses taken TOGETHER, which is how they are met.
+ *
+ * ORDER IS STRENGTH. ajax/get-bosses.php sorts by project, collection, then
+ * strength -- there is no sort column. So strength is not just a stat, it is
+ * the running order, and two bosses sharing one have no defined order at all:
+ * MySQL may return them either way and the sequence can change between page
+ * loads with nothing altered.
+ *
+ * Escalation is the other half. A later boss that is easier than the one
+ * before it is not necessarily wrong -- a glass cannon is a real design --
+ * but it is nearly always a typo, so it is reported rather than refused.
+ *
+ * $bosses: rows with name, strength, speed, tactics, max_health.
+ * Returns a list of sentences, worst first.
+ */
+function monstrocity_boss_set_problems($bosses) {
+	$out = array();
+	if (count($bosses) < 2) return $out;
+
+	usort($bosses, function ($a, $b) {
+		return array((int)$a['strength'], (string)$a['name'])
+		   <=> array((int)$b['strength'], (string)$b['name']);
+	});
+
+	/* Duplicate strengths: the order between them is whatever the database
+	   feels like, which is the one failure here that is not a judgement. */
+	$bystr = array();
+	foreach ($bosses as $b) $bystr[(int)$b['strength']][] = $b['name'];
+	foreach ($bystr as $s => $names) {
+		if (count($names) > 1)
+			$out[] = 'Strength ' . $s . ' is shared by ' . implode(' and ', $names)
+			       . ', and strength IS the running order -- their sequence is undefined.';
+	}
+
+	/* Power should climb with position. Health is the clearest signal. */
+	$prev = null;
+	foreach ($bosses as $b) {
+		if ($prev !== null && (int)$b['max_health'] < (int)$prev['max_health']) {
+			$out[] = $b['name'] . ' comes after ' . $prev['name'] . ' but has less health ('
+			       . number_format((int)$b['max_health']) . ' against '
+			       . number_format((int)$prev['max_health']) . ').';
+		}
+		$prev = $b;
+	}
+
+	/* And a flat run of health across a whole set usually means the numbers
+	   were copied and never adjusted -- which is exactly what duplicating a
+	   boss makes easy to do. */
+	$hp = array_unique(array_map(function ($b) { return (int)$b['max_health']; }, $bosses));
+	if (count($bosses) >= 3 && count($hp) === 1)
+		$out[] = 'Every boss here has the same health (' . number_format(reset($hp))
+		       . '), so the fight does not get harder.';
+	return $out;
+}
+
+/** The fields worth carrying over when a boss is duplicated. Deliberately
+ *  NOT the name (it is the filename) and NOT health (it tracks max_health). */
+function monstrocity_boss_copyable() {
+	return array('project_id', 'collection_id', 'theme', 'max_health', 'strength',
+	             'speed', 'tactics', 'size', 'powerup', 'orientation', 'extension');
+}

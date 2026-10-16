@@ -417,22 +417,143 @@ ok(strpos($bp, 'monstrocity_validate_boss(') !== false, 'the boss form does not 
  * write injected after it but outside the else -- so both the ordering and
  * the containment are asserted.
  */
-$vAt   = strpos($bp, 'monstrocity_validate_boss(');
-$elAt  = strpos($bp, '} else {', $vAt);
+/*
+ * EVERY WRITE IS GATED BY A VALIDATION, on BOTH paths.
+ *
+ * There are two now -- one boss at a time, and a whole theme's stats at once
+ * -- so a single "is the write after the else" check no longer says anything
+ * true: the batch update legitimately sits before the single-boss branch and
+ * failed that check while being perfectly well guarded.
+ *
+ * What holds for both is that each write has a validate call before it AND a
+ * branch on the result between the two. Finding the NEAREST preceding
+ * validate for each write is what makes that work with more than one path.
+ */
+$valAts = array();
+if (preg_match_all('/monstrocity_validate_boss\(/', $bp, $vm, PREG_OFFSET_CAPTURE))
+	foreach ($vm[0] as $v) $valAts[] = $v[1];
 $writes = array();
 if (preg_match_all('/(INSERT INTO bosses|UPDATE bosses SET)/', $bp, $wm, PREG_OFFSET_CAPTURE))
 	foreach ($wm[1] as $w) $writes[] = $w[1];
 ok($writes !== array(), 'the boss form never writes to the bosses table at all');
-ok($vAt !== false && $elAt !== false, 'the boss form does not branch on its validation result');
+ok(count($valAts) >= 2, 'only ' . count($valAts) . ' validation call(s) for ' . count($writes)
+   . ' write path(s) -- one of them is unguarded');
 foreach ($writes as $w) {
-	ok($w > $vAt,  'a write to bosses happens BEFORE validation (offset ' . $w . ')');
-	ok($w > $elAt, 'a write to bosses sits outside the validated-ok branch (offset ' . $w . ')');
+	$near = -1;
+	foreach ($valAts as $v) if ($v < $w && $v > $near) $near = $v;
+	ok($near >= 0, 'a write to bosses at offset ' . $w . ' has no validation before it at all');
+	if ($near < 0) continue;
+	/* Something between the two must act on the result, or the validation is
+	   decoration. Either branch shape counts: refuse-and-skip, or else. */
+	$between = substr($bp, $near, $w - $near);
+	ok(preg_match('/if \(\$e(rrs)?\)|\} else \{/', $between) === 1
+	   || preg_match('/if \(\$e(rrs)?\)/', $between) === 1,
+	   'nothing between the validation and the write at offset ' . $w . ' branches on the result');
 }
+/* The batch path specifically must SKIP a bad row rather than writing it. */
+ok(preg_match('/if \(\$e\) \{[^}]*continue;/s', $bp) === 1,
+   'the batch save does not skip a row that failed validation');
 $bad = 0;
 if (preg_match_all('/\$conn->query\(((?:[^()]|\([^()]*\))*)\)/s', $bp, $qm))
 	foreach ($qm[1] as $q) if (strpos($q, '$_POST') !== false || strpos($q, '$_GET') !== false) $bad++;
 ok($bad === 0, $bad . ' boss queries interpolate $_POST or $_GET directly');
 ok(strpos($bp, 'mart_rename_boss(') !== false, 'renaming a boss does not move its art');
+
+/* ---- a set of bosses, read together ------------------------------------- */
+echo "\nboss sets\n";
+$mk = function ($n, $str, $hp) {
+	return array('name'=>$n,'strength'=>$str,'speed'=>5,'tactics'=>5,'max_health'=>$hp);
+};
+/* A clean ladder has nothing to say about it. */
+$good = array($mk('A',2,200), $mk('B',4,400), $mk('C',7,900));
+ok(monstrocity_boss_set_problems($good) === array(),
+   'a properly escalating ladder was flagged: ' . implode(' | ', monstrocity_boss_set_problems($good)));
+ok(monstrocity_boss_set_problems(array($mk('Only',5,500))) === array(),
+   'a single boss was reported as a bad set');
+ok(monstrocity_boss_set_problems(array()) === array(), 'an empty theme produced problems');
+
+/*
+ * THE ONE THAT IS NOT A JUDGEMENT: get-bosses.php orders by strength and
+ * nothing else, so two bosses sharing one have no defined sequence -- the
+ * order can differ between page loads with nothing changed.
+ */
+$tie = array($mk('A',5,200), $mk('B',5,400));
+$p = monstrocity_boss_set_problems($tie);
+ok($p !== array() && strpos($p[0], 'Strength 5') !== false,
+   'two bosses sharing a strength were not flagged, though their running order is undefined');
+
+/*
+ * THE SET MUST BE SORTED BEFORE IT IS JUDGED. Rows arrive in whatever order
+ * the query gave them, and "comes after" only means anything in strength
+ * order. Fed out of order, this clean ladder must still come back clean --
+ * every other fixture here happened to be pre-sorted, so dropping the sort
+ * changed nothing and the mutation passed.
+ */
+$shuffled = array($mk('C',7,900), $mk('A',2,200), $mk('B',4,400));
+ok(monstrocity_boss_set_problems($shuffled) === array(),
+   'a clean ladder handed over out of order was reported as broken: '
+ . implode(' | ', monstrocity_boss_set_problems($shuffled)));
+
+/* Power should climb with position; a dip is nearly always a typo. */
+$dip = array($mk('A',2,500), $mk('B',4,300), $mk('C',7,900));
+$p2 = monstrocity_boss_set_problems($dip);
+ok(count(array_filter($p2, function ($x) { return strpos($x, 'less health') !== false; })) === 1,
+   'a later boss with less health than the one before it was not reported');
+
+/* A flat run is what duplicating a boss and forgetting to retune produces. */
+$flat = array($mk('A',2,500), $mk('B',4,500), $mk('C',7,500));
+ok(count(array_filter(monstrocity_boss_set_problems($flat),
+     function ($x) { return strpos($x, 'same health') !== false; })) === 1,
+   'three bosses with identical health were not flagged as a fight that never gets harder');
+/* But two identical ones are a pair, not a pattern. */
+ok(count(array_filter(monstrocity_boss_set_problems(array($mk('A',2,500), $mk('B',4,500))),
+     function ($x) { return strpos($x, 'same health') !== false; })) === 0,
+   'two bosses with matching health were reported as a flat ladder');
+
+/* Duplicating must not carry the name or the art, both keyed by the name. */
+$cp = monstrocity_boss_copyable();
+ok(!in_array('name', $cp, true),
+   'duplicating copies the name, which is the filename -- two bosses would share one image');
+ok(!in_array('health', $cp, true), 'duplicating copies current health rather than letting it track max');
+ok(in_array('theme', $cp, true) && in_array('max_health', $cp, true) && in_array('powerup', $cp, true),
+   'duplicating does not carry the settings worth copying');
+
+/* The page offers all three routes. */
+ok(strpos($bp, 'new=1&amp;from=') !== false, 'there is no way to duplicate a boss from the list');
+ok(strpos($bp, "isset(\$_GET['from'])") !== false, 'the form ignores the boss it was told to copy');
+ok(strpos($bp, "min(10, (int)\$src['strength'] + 1)") !== false,
+   'a duplicate keeps its source\'s strength, so the copy ties with it and their order is undefined');
+ok(strpos($bp, 'monstrocity_boss_set_problems(') !== false,
+   'the tuning view does not check the ladder it is showing');
+ok(strpos($bp, "name=\"batch\"") !== false || strpos($bp, "name='batch'") !== false,
+   'there is no batch save');
+/* The batch is FIELDS only. Images stay one request each. */
+ok(stripos($bp, 'batch') !== false && strpos($bp, 'mart_accept_boss') !== false
+   && strpos($bp, "\$_FILES['art']") !== false,
+   'the art upload path went missing');
+/*
+ * The batch block ONLY. An unbounded `batch.*?$_FILES` spans from the word
+ * batch to the single-boss upload hundreds of lines later and always
+ * matches -- the same reach-past-the-target mistake that has bitten three
+ * checks in this feature already. Brace-match the block instead.
+ */
+$bbAt = strpos($bp, "isset(\$_POST['batch'])");
+$bbBlock = '';
+if ($bbAt !== false) {
+	$open = strpos($bp, '{', $bbAt); $d = 0;
+	for ($i = $open; $i < strlen($bp); $i++) {
+		if ($bp[$i] === '{') $d++;
+		elseif ($bp[$i] === '}') { $d--; if (!$d) break; }
+	}
+	$bbBlock = substr($bp, $open, $i - $open + 1);
+}
+ok($bbBlock !== '' && strlen($bbBlock) < 4000,
+   'the batch block could not be isolated (' . strlen($bbBlock) . ' bytes), so the check below '
+ . 'is reaching past it');
+ok($bbBlock !== '' && strpos($bbBlock, '$_FILES') === false,
+   'the batch save touches uploaded files; it is stats only, and images stay one request each');
+ok($bbBlock !== '' && strpos($bbBlock, 'monstrocity_validate_boss(') !== false,
+   'the batch save writes rows it never validated');
 
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);
