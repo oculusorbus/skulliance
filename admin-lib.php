@@ -866,15 +866,19 @@ function admin_require() {
  * nothing in here echoes or includes db.php -- see the header comment.
  */
 function admin_tabs() {
+	/* Ordered the way the work runs: a chain holds projects, a project holds
+	   collections, collections feed missions, and Monstrocity sits on top of
+	   all of it with its bosses behind it. The three one-off tools go last.
+	   This array IS the tab order -- there is no separate sort. */
 	return array(
+		'blockchains' => array('admin-blockchains.php', 'Chains'),
 		'projects'    => array('admin-projects.php',    'Projects'),
 		'collections' => array('admin-collections.php', 'Collections'),
 		'missions'    => array('admin-missions.php',    'Missions'),
-		'blockchains' => array('admin-blockchains.php', 'Chains'),
-		'flyers'      => array('admin-flyers.php',      'Flyers'),
-		'digest'      => array('admin-digest.php',      'Daily Digest'),
 		'monstrocity' => array('admin-monstrocity.php', 'Monstrocity'),
 		'bosses'      => array('admin-monstrocity-boss.php', 'Bosses'),
+		'digest'      => array('admin-digest.php',      'Daily Digest'),
+		'flyers'      => array('admin-flyers.php',      'Flyers'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }
