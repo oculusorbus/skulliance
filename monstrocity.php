@@ -2388,6 +2388,26 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
         { name: "Drake", strength: 5, speed: 5, tactics: 5, size: "Medium", type: "Battle Damaged", powerup: "Regenerate" }
     ];*/
 
+    /*
+     * THE FILENAME RULE, AND IT MUST MATCH monstrocity_char_slug() IN
+     * monstrocity-themes-lib.php EXACTLY.
+     *
+     * This used to be name.toLowerCase().replace(/ /g, '-') written out in
+     * six places. That turns "Dr. Vape" into "dr.-vape", and the file is
+     * dr-vape.png -- so that boss has been showing a broken image in play.
+     *
+     * Apostrophes are DELETED rather than treated as separators
+     * ("Jack O'Treat" -> jack-otreat, confirmed against the server); every
+     * other non-alphanumeric run becomes a single hyphen.
+     */
+    function monstrocitySlug(name) {
+      return String(name == null ? '' : name)
+        .toLowerCase().trim()
+        .replace(/['\u2019`]/g, '')        /* apostrophes vanish: Jack O'Treat -> jack-otreat */
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    }
+
     const characterDirections = {
       "Billandar and Ted": "Left",
       "Craig": "Left",
@@ -2483,8 +2503,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 		    // Preload boss and character images
 		    const bossExtension = this.selectedBoss.extension || 'png';
-		    const bossImageUrl = this.selectedBoss.imageUrl || `images/monstrocity/bosses/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
-		    const bossBattleDamagedUrl = this.selectedBoss.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.selectedBoss.name.toLowerCase().replace(/ /g, '-')}.${bossExtension}`;
+		    const bossImageUrl = this.selectedBoss.imageUrl || `images/monstrocity/bosses/${monstrocitySlug(this.selectedBoss.name)}.${bossExtension}`;
+		    const bossBattleDamagedUrl = this.selectedBoss.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${monstrocitySlug(this.selectedBoss.name)}.${bossExtension}`;
 		    const preloadImages = [bossImageUrl, bossBattleDamagedUrl, this.selectedCharacter.imageUrl];
 		    preloadImages.forEach(url => {
 		        const img = new Image();
@@ -2629,7 +2649,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		            this.sounds.win.play();
 
 		            // Set battle-damaged image for player2
-		            let damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${this.player2.extension || 'png'}`;
+		            let damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${monstrocitySlug(this.player2.name)}.${this.player2.extension || 'png'}`;
 		            const p2Image = document.getElementById('p2-image');
 		            if (p2Image.tagName === 'IMG') {
 		                p2Image.src = damagedUrl;
@@ -3414,7 +3434,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	              case 'Battle Damaged': typeFolder = 'battle-damaged'; break;
 	              default: typeFolder = 'base';
 	          }
-	          imageUrl = this.baseImagePath + typeFolder + '/' + config.name.toLowerCase().replace(/ /g, '-') + '.' + extension;
+	          imageUrl = this.baseImagePath + typeFolder + '/' + monstrocitySlug(config.name) + '.' + extension;
 	          fallbackUrl = 'icons/skull.png'; // Fallback for non-NFTs
 	          orientation = characterDirections[config.name] || 'Left';
 	          // Determine mediaType from extension
@@ -5114,9 +5134,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          const themeExtension = themeData?.extension || 'png';
 
 	          if (this.selectedBoss) {
-	              damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${this.player2.extension || 'png'}`;
+	              damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${monstrocitySlug(this.player2.name)}.${this.player2.extension || 'png'}`;
 	          } else {
-	              damagedUrl = `${this.baseImagePath}battle-damaged/${this.player2.name.toLowerCase().replace(/ /g, '-')}.${themeExtension}`;
+	              damagedUrl = `${this.baseImagePath}battle-damaged/${monstrocitySlug(this.player2.name)}.${themeExtension}`;
 	          }
 
 	          const p2Image = document.getElementById('p2-image');

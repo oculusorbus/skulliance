@@ -347,8 +347,8 @@ function monstrocity_validate_boss($b, $taken = array(), $theme_slugs = array())
 	else {
 		$slug = monstrocity_boss_slug($name);
 		if (!preg_match('/^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?$/', $slug))
-			$e[] = 'That name does not reduce to a usable filename ("' . $slug . '"). '
-			     . 'Letters, numbers and spaces only.';
+			$e[] = 'That name does not reduce to a usable filename ("' . $slug . '") -- '
+			     . 'it needs at least one letter or digit in it.';
 		elseif (in_array($slug, $taken, true))
 			$e[] = 'Another boss already uses the filename "' . $slug . '.png" -- '
 			     . 'one would overwrite the other\'s art.';
@@ -384,6 +384,34 @@ function monstrocity_validate_boss($b, $taken = array(), $theme_slugs = array())
 		$e[] = 'Orientation must be Left or Right.';
 	if (!in_array(isset($b['extension']) ? $b['extension'] : '', monstrocity_extensions(), true))
 		$e[] = 'Extension must be one of: ' . implode(', ', monstrocity_extensions()) . '.';
+	return $e;
+}
+
+/**
+ * ONLY the fields the tune screen shows.
+ *
+ * The batch save ran the FULL boss validator over a stored row merged with
+ * the submitted numbers, so it refused rows for things that screen does not
+ * display and cannot change. Thirteen bosses came back with "Orientation must
+ * be Left or Right" from a form with no orientation field on it, one boss
+ * saved, and there was nothing to do about any of it.
+ *
+ * A screen may only refuse what it offers. Pre-existing problems elsewhere in
+ * the row belong to the single-boss form, which actually shows those fields.
+ */
+function monstrocity_validate_boss_stats($b) {
+	$e = array();
+	$mh = (int)(isset($b['max_health']) ? $b['max_health'] : 0);
+	if ($mh < 1)      $e[] = 'Max health must be at least 1.';
+	if ($mh > 100000) $e[] = 'Max health over 100,000 is almost certainly a typo.';
+	foreach (array('strength', 'speed', 'tactics') as $stat) {
+		$v = (int)(isset($b[$stat]) ? $b[$stat] : 0);
+		if ($v < 1 || $v > 10) $e[] = ucfirst($stat) . ' must be between 1 and 10.';
+	}
+	if (!in_array(isset($b['size']) ? $b['size'] : '', monstrocity_sizes(), true))
+		$e[] = 'Size must be ' . implode(', ', monstrocity_sizes()) . '.';
+	if (!in_array(isset($b['powerup']) ? $b['powerup'] : '', monstrocity_powerups(), true))
+		$e[] = 'Powerup must be one the game implements: ' . implode(', ', monstrocity_powerups()) . '.';
 	return $e;
 }
 

@@ -406,10 +406,42 @@ function monstrocity_characters() {
 	return $out;
 }
 
-/** The filename the game asks for: lowercased, spaces to hyphens. Derived,
- *  never typed, which is why nobody should ever rename a file by hand again. */
+/**
+ * The filename the game asks for. Derived, never typed.
+ *
+ * PUNCTUATION IS DROPPED, NOT HYPHENATED. The old rule was lowercase plus
+ * spaces-to-hyphens, which turns "Dr. Vape" into "dr.-vape" -- and the file
+ * on disk is dr-vape.png, because whoever named it by hand did the sensible
+ * thing. So the admin reported the art missing AND THE GAME NEVER FOUND IT
+ * EITHER: monstrocity.php derived the same wrong name in six places, so that
+ * boss has been showing a broken image in play, not just in the panel.
+ *
+ * Anything that is not a letter or a digit becomes a separator, runs of
+ * separators collapse to one hyphen, and the ends are trimmed:
+ *
+ * APOSTROPHES ARE DELETED, EVERYTHING ELSE SEPARATES. Confirmed against the
+ * files actually on the server, which is the only authority here:
+ *
+ *   "Dr. Vape"      -> dr-vape        (period separates)
+ *   "Ivy V."        -> ivy-v          (trailing period falls off)
+ *   "Jack O'Treat"  -> jack-otreat    (apostrophe VANISHES, it does not split)
+ *   "AI AI"         -> ai-ai
+ *   "Jack-O-Treat"  -> jack-o-treat   (a real hyphen does separate)
+ *
+ * The apostrophe is the one that is not obvious and the one that cost a
+ * boss its art: treating it as a separator gives jack-o-treat, and the file
+ * is jack-otreat.png.
+ *
+ * THE JS IN monstrocity.php MUST MATCH THIS EXACTLY -- see monstrocitySlug()
+ * there. The harness compares both against the same list of awkward names,
+ * because a filename agreed on by two implementations is the only kind that
+ * works.
+ */
 function monstrocity_char_slug($name) {
-	return str_replace(' ', '-', strtolower(trim($name)));
+	$s = strtolower(trim((string)$name));
+	$s = str_replace(array("'", "\xe2\x80\x99", '`'), '', $s);   // straight, curly, backtick
+	$s = preg_replace('/[^a-z0-9]+/', '-', $s);
+	return trim($s, '-');
 }
 
 /**

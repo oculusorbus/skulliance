@@ -98,7 +98,6 @@ if ($post_discarded) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded && isset($_POST['batch'])) {
 	$rows = isset($_POST['b']) && is_array($_POST['b']) ? $_POST['b'] : array();
 	$saved = 0; $bad = array();
-	$themeSlugs = array_keys(mb_themes($conn));
 	$existing = array();
 	foreach (mb_all($conn) as $o) $existing[(int)$o['id']] = $o;
 
@@ -108,17 +107,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded && isset($_POST['b
 		/* Merge over the stored row: the batch form carries the tunable
 		   numbers only, and validating a half-row would reject it for fields
 		   this screen never showed. */
-		$merged = array_merge($existing[$rid], array(
+		$merged = array(
 			'max_health' => (int)($f['max_health'] ?? 0),
 			'strength'   => (int)($f['strength'] ?? 0),
 			'speed'      => (int)($f['speed'] ?? 0),
 			'tactics'    => (int)($f['tactics'] ?? 0),
 			'size'       => $f['size'] ?? '',
 			'powerup'    => $f['powerup'] ?? '',
-		));
-		$taken = array();
-		foreach ($existing as $oid => $o) if ($oid !== $rid) $taken[] = monstrocity_boss_slug($o['name']);
-		$e = monstrocity_validate_boss($merged, $taken, $themeSlugs);
+		);
+		/* ONLY WHAT THIS SCREEN SHOWS. Running the full boss validator over
+		   the stored row refused thirteen rows for an orientation this form
+		   does not display, one boss saved, and there was no way to act on
+		   any of it. A pre-existing problem in a field the screen does not
+		   offer belongs to the single-boss form, which does offer it. */
+		$e = monstrocity_validate_boss_stats($merged);
 		if ($e) { $bad[] = $existing[$rid]['name'] . ': ' . $e[0]; continue; }
 		$conn->query('UPDATE bosses SET max_health=' . (int)$merged['max_health']
 			. ',strength=' . (int)$merged['strength']

@@ -386,6 +386,28 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 - Only on a CLEAN save. If the art was refused, that message is the only way to find out, and
   redirecting past it would lose it.
 
+### THE FILENAME RULE (monstrocity_char_slug + monstrocitySlug in monstrocity.php)
+- Was `strtolower` + spaces-to-hyphens, in PHP and spelled out SIX TIMES in the game's JS.
+  "Dr. Vape" became `dr.-vape` and the file is `dr-vape.png`, so the admin reported the art
+  missing **and the game had never found it either** - that boss was showing a broken image in
+  play. The panel only made a pre-existing bug visible.
+- **APOSTROPHES ARE DELETED; EVERYTHING ELSE SEPARATES.** Confirmed against the live server, which
+  is the only authority on what these files are called:
+  `Dr. Vape -> dr-vape`, `Ivy V. -> ivy-v`, **`Jack O'Treat -> jack-otreat`** (the apostrophe
+  VANISHES - treating it as a separator gives jack-o-treat, which does not exist),
+  `Jack-O-Treat -> jack-o-treat` (a real hyphen does separate).
+- The two implementations MUST agree. The harness drives both against the same list of awkward
+  names, including the 14 characters, whose slugs are unchanged by the new rule.
+
+### A SCREEN MAY ONLY REFUSE WHAT IT SHOWS (monstrocity_validate_boss_stats)
+- The batch tuner ran the FULL boss validator over the stored row merged with the submitted
+  numbers. Result: one boss saved and thirteen errors reading "Orientation must be Left or Right"
+  from a form that has no orientation field, with nothing the user could do about any of them.
+- The batch validates ONLY max_health, strength, speed, tactics, size and powerup - exactly what
+  it displays. A pre-existing problem in another field belongs to the single-boss form, which
+  does show it. The harness asserts a blank orientation/extension/name/theme/project/collection
+  cannot block a batch save, and that what IS shown is still checked.
+
 ### TRAP: a `<select>` that does not reflect the stored value REWRITES IT
 - Reported as size and powerup "not loading from the database" on the boss tune screen. A strict
   `===` against the allowed list matched nothing for a value stored with different case, so the

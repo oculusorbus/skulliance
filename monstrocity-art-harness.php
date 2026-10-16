@@ -429,8 +429,12 @@ ok(strpos($bp, 'monstrocity_validate_boss(') !== false, 'the boss form does not 
  * branch on the result between the two. Finding the NEAREST preceding
  * validate for each write is what makes that work with more than one path.
  */
+/* EITHER validator counts. The batch path deliberately uses the narrower
+   monstrocity_validate_boss_stats(), because a screen may only refuse what
+   it shows -- running the full one there rejected thirteen rows for an
+   orientation that form does not display. */
 $valAts = array();
-if (preg_match_all('/monstrocity_validate_boss\(/', $bp, $vm, PREG_OFFSET_CAPTURE))
+if (preg_match_all('/monstrocity_validate_boss(_stats)?\(/', $bp, $vm, PREG_OFFSET_CAPTURE))
 	foreach ($vm[0] as $v) $valAts[] = $v[1];
 $writes = array();
 if (preg_match_all('/(INSERT INTO bosses|UPDATE bosses SET)/', $bp, $wm, PREG_OFFSET_CAPTURE))
@@ -552,8 +556,12 @@ ok($bbBlock !== '' && strlen($bbBlock) < 4000,
  . 'is reaching past it');
 ok($bbBlock !== '' && strpos($bbBlock, '$_FILES') === false,
    'the batch save touches uploaded files; it is stats only, and images stay one request each');
-ok($bbBlock !== '' && strpos($bbBlock, 'monstrocity_validate_boss(') !== false,
+ok($bbBlock !== '' && strpos($bbBlock, 'monstrocity_validate_boss_stats(') !== false,
    'the batch save writes rows it never validated');
+/* And it must NOT use the full validator -- that is the bug being fixed. */
+ok($bbBlock !== '' && strpos($bbBlock, 'monstrocity_validate_boss(') === false,
+   'the batch save runs the FULL boss validator, so it refuses rows for fields the tune '
+ . 'screen does not show and cannot fix');
 
 /* ---- form plumbing that silently submits the wrong thing ---------------- */
 echo "\nselects and limits\n";
@@ -725,6 +733,82 @@ ok(!preg_match('/mb-up[\s\S]{0,2000}fetch\(/', $bp),
 ok(strpos($bp, 'id="mb-dirty"') !== false,
    'a reorder gives no sign that it is unsaved (the element is gone, even if the script '
  . 'still looks for it)');
+
+/* ---- the filename rule, against the files that actually exist ---------- */
+echo "\nfilenames\n";
+/*
+ * REPORTED: bosses with a period or an apostrophe showed no art, and the
+ * panel called them missing. The rule was lowercase plus spaces-to-hyphens,
+ * so "Dr. Vape" became "dr.-vape" and the file is dr-vape.png.
+ *
+ * THE GAME DERIVED THE SAME WRONG NAME IN SIX PLACES, so those bosses were
+ * showing a broken image in play too -- the panel only made it visible.
+ *
+ * Every expectation below was confirmed against the live server, which is
+ * the only authority on what these files are called.
+ */
+$slugCases = array(
+	'Dr. Vape'     => 'dr-vape',       // a period separates
+	'Ivy V.'       => 'ivy-v',         // a trailing period falls off
+	"Jack O'Treat" => 'jack-otreat',   // AN APOSTROPHE VANISHES, it does not split
+	'Uptown'       => 'uptown',
+	'Ronin'        => 'ronin',
+	'AI AI'        => 'ai-ai',
+	'Jack-O-Treat' => 'jack-o-treat',  // a real hyphen does separate
+	'  Spaced  Out  ' => 'spaced-out',
+	'Rock & Roll'  => 'rock-roll',
+	'Slime Mind'   => 'slime-mind',    // the 14 characters must be unaffected
+	'Billandar and Ted' => 'billandar-and-ted',
+);
+foreach ($slugCases as $name => $want) {
+	$got = monstrocity_char_slug($name);
+	ok($got === $want, '"' . $name . '" became "' . $got . '", not "' . $want . '"');
+}
+
+/*
+ * AND THE TWO IMPLEMENTATIONS MUST AGREE. A filename is only useful if the
+ * page that writes it and the game that asks for it derive the same string;
+ * they were two separate pieces of code saying slightly different things.
+ */
+$gameJs = file_get_contents(__DIR__ . '/monstrocity.php');
+ok(strpos($gameJs, 'function monstrocitySlug(') !== false,
+   'the game has no shared slug function, so the rule is spelled out per call site again');
+ok(substr_count($gameJs, "toLowerCase().replace(/ /g, '-')") === 0
+   || substr_count($gameJs, "name.toLowerCase().replace(/ /g, '-')") <= 1,
+   'the game still derives a filename the old way somewhere');
+ok(strpos($gameJs, "replace(/['\u2019`]/g, '')") !== false,
+   'the game does not delete apostrophes, so Jack O\'Treat resolves to jack-o-treat');
+ok(strpos($gameJs, "replace(/[^a-z0-9]+/g, '-')") !== false,
+   'the game does not collapse punctuation to a hyphen');
+/* Every boss filename in the game goes through it. */
+ok(substr_count($gameJs, 'monstrocitySlug(') >= 6,
+   'only ' . substr_count($gameJs, 'monstrocitySlug(') . ' call sites use the shared rule');
+
+/* ---- a batch may only refuse what it shows ------------------------------ */
+echo "\nbatch validation scope\n";
+/*
+ * REPORTED: hitting Save on the tune screen saved ONE boss and returned
+ * thirteen errors saying "Orientation must be Left or Right" -- from a form
+ * with no orientation field on it. The batch ran the full validator over the
+ * stored row, so every pre-existing problem elsewhere became a blocker here.
+ */
+$stats = array('max_health'=>500,'strength'=>5,'speed'=>5,'tactics'=>5,'size'=>'Medium','powerup'=>'Heal');
+ok(monstrocity_validate_boss_stats($stats) === array(),
+   'a valid set of tunable stats was refused: ' . implode(' | ', monstrocity_validate_boss_stats($stats)));
+/* The fields the screen does NOT show must not be able to block it. */
+foreach (array('orientation' => '', 'extension' => '', 'name' => '', 'theme' => '',
+               'project_id' => 0, 'collection_id' => 0) as $k => $v) {
+	$with = array_merge($stats, array($k => $v));
+	ok(monstrocity_validate_boss_stats($with) === array(),
+	   "a blank $k blocked a batch save, though the tune screen does not show that field");
+}
+/* But what it DOES show is still checked. */
+foreach (array(array('strength', 0), array('strength', 11), array('max_health', 0),
+               array('size', 'Huge'), array('powerup', 'Invisibility')) as $bad) {
+	$with = array_merge($stats, array($bad[0] => $bad[1]));
+	ok(monstrocity_validate_boss_stats($with) !== array(),
+	   $bad[0] . ' of "' . $bad[1] . '" was accepted by the batch validator');
+}
 
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);
