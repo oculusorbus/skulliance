@@ -218,8 +218,18 @@ function monstrocity_validate_theme($t, $taken = array()) {
 	$p = monstrocity_slug_problem(isset($t['slug']) ? $t['slug'] : '', $taken);
 	if ($p !== '') $e[] = $p;
 
-	if (trim((string)(isset($t['project_name']) ? $t['project_name'] : '')) === '')
-		$e[] = 'The project name is required -- it is what players see above the theme.';
+	/*
+	 * BLANK PROJECT NAME MEANS INHERIT, and only when there is something to
+	 * inherit from. Typing a name overrides the linked project's, which is
+	 * the whole point: several themes are a project's second or third outing
+	 * and want their own label, and plenty of themes have no Skulliance
+	 * project at all and must carry their own name.
+	 */
+	$hasName = trim((string)(isset($t['project_name']) ? $t['project_name'] : '')) !== '';
+	$hasProj = !empty($t['project_id']);
+	if (!$hasName && !$hasProj)
+		$e[] = 'A project name is required when no Skulliance project is linked -- '
+		     . 'it is what players see above the theme.';
 	if (trim((string)(isset($t['title']) ? $t['title'] : '')) === '')
 		$e[] = 'The title is required.';
 	if (trim((string)(isset($t['theme_group']) ? $t['theme_group'] : '')) === '')
@@ -251,6 +261,18 @@ function monstrocity_validate_theme($t, $taken = array()) {
 		$e[] = 'A dev-only theme must also be Inner Circle -- that is how the visibility nests.';
 
 	return $e;
+}
+
+/**
+ * The name players see. The typed override wins; otherwise the linked
+ * project's name; otherwise nothing, which validation has already refused.
+ */
+function monstrocity_display_project($typed, $project_id, $projects) {
+	$typed = trim((string)$typed);
+	if ($typed !== '') return $typed;
+	$pid = (int)$project_id;
+	if ($pid && isset($projects[$pid]['name'])) return $projects[$pid]['name'];
+	return '';
 }
 
 /**

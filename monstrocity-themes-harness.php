@@ -425,6 +425,29 @@ ok(monstrocity_clean_collection_ids(array('3','3','x','0','-2','7')) === array(3
    'collection ids are not cleaned to unique positive ints in order');
 ok(monstrocity_clean_collection_ids(array()) === array(), 'an empty collection list did not stay empty');
 
+/* ---- 7b. the project name is inherited, not retyped ---------------------- */
+$projStub = array(4 => array('name' => 'Happy Hoppers'), 9 => array('name' => 'Black Flag'));
+ok(monstrocity_display_project('', 4, $projStub) === 'Happy Hoppers',
+   'a blank name did not inherit the linked project');
+ok(monstrocity_display_project('Hoppy Valentines', 4, $projStub) === 'Hoppy Valentines',
+   'a typed name was overwritten by the project -- the override is the whole point');
+ok(monstrocity_display_project('   ', 4, $projStub) === 'Happy Hoppers',
+   'a name of spaces counted as an override');
+ok(monstrocity_display_project('', 0, $projStub) === '',
+   'a name appeared from nowhere with no project linked');
+ok(monstrocity_display_project('', 999, $projStub) === '',
+   'an unknown project id produced a name');
+
+/* And validation follows the same rule: a name is only required when there is
+   no project to inherit from. */
+$inh = array('slug'=>'x','project_name'=>'','project_id'=>4,'title'=>'T','theme_group'=>'G',
+             'orientations'=>'','extension'=>'png','policy_ids'=>'');
+ok(monstrocity_validate_theme($inh) === array(),
+   'a blank name with a linked project was refused: ' . implode(' | ', monstrocity_validate_theme($inh)));
+$inh['project_id'] = 0;
+ok(monstrocity_validate_theme($inh) !== array(),
+   'a blank name with NO linked project was accepted, so the theme would render unlabelled');
+
 /* ---- 8. the admin page's dangerous edges --------------------------------- */
 echo "\nadmin page safety\n";
 $ap = file_get_contents(__DIR__ . '/admin-monstrocity.php');
@@ -468,6 +491,52 @@ ok(preg_match('/\$esc\s*=\s*function/', $apNo) === 1, 'the per-value escaper is 
 /* An edit must not be able to move a theme's folder out from under its art. */
 ok(strpos($apNo, "\$was['slug'] !== \$t['slug']") !== false,
    'the slug can be changed on an existing theme, orphaning everything already uploaded');
+
+/*
+ * LIST OR FORM, NEVER BOTH. The form was a 420px column next to the list and
+ * had grown seventeen controls. The two views are now exclusive, which is
+ * only true if the markup actually branches on it.
+ */
+ok(preg_match('/if \(!\$row\):/', $ap) === 1, 'the view does not branch between list and form');
+ok(substr_count($ap, '<table class="mt">') === 1, 'the themes table is rendered more than once');
+/*
+ * The form must sit inside the else branch, not before it.
+ *
+ * Anchored on the unique FORM banner, NOT on "<?php else:" -- the list cell
+ * that reports policies has its own inline if/elseif/else, so searching for
+ * the first "<?php else:" found that one and the check passed with the
+ * branch separator deleted. An anchor that matches more than one thing is
+ * not an anchor.
+ */
+$elseAt = strpos($ap, '<?php else: /* ================= FORM');
+$formAt = strpos($ap, '<form method="post"');
+/* strrPos: the list cell has its own inline endif, which closes long before
+   the branch does. Same ambiguity as the else above, one line later. */
+$endAt  = strrpos($ap, '<?php endif; ?>');
+ok($elseAt !== false, 'the list/form branch separator is gone, so both views render at once');
+ok($elseAt !== false && $formAt > $elseAt && $formAt < $endAt,
+   'the form is not inside the else branch, so the list page renders it too');
+
+/* The collection filter must never hide something already ticked -- a theme
+   can span projects and you cannot save what you cannot see. */
+ok(strpos($ap, "r.querySelector('input').checked") !== false,
+   'the collection filter can hide a ticked collection');
+ok(strpos($ap, "all.checked || pid === '0'") !== false,
+   'the filter has no escape hatch for showing every project');
+
+/*
+ * dist/flexbox.css styles bare `a` with text-align:center for the whole
+ * platform, so any anchor or label in a scoped component has to restate it.
+ * Asserted CONDITIONALLY: if that global ever goes, this guard should drop
+ * rather than pin a rule nothing is countering any more.
+ */
+$fb = @file_get_contents(__DIR__ . '/dist/flexbox.css');
+if ($fb !== false && preg_match('/(^|})\s*a\s*\{[^}]*text-align\s*:\s*center/s', $fb)) {
+	foreach (array('.mt-back', '.mt-field label', '.mt-cols label', 'table.mt a.slug') as $sel) {
+		ok(preg_match('/' . preg_quote($sel, '/') . '[^}]*text-align/', $ap) === 1,
+		   $sel . ' does not restate text-align, so the global `a { text-align:center }` centres it');
+	}
+}
 
 /* The tab is registered, so the page is reachable at all. */
 $tabs = admin_tabs_src();

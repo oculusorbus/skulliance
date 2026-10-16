@@ -54,7 +54,7 @@ function mon_links($conn, $theme_id) {
 }
 function mon_collections($conn) {
 	$out = array();
-	$r = $conn->query('SELECT c.id, c.name, c.policy, p.name AS project
+	$r = $conn->query('SELECT c.id, c.name, c.policy, c.project_id, p.name AS project
 	                     FROM collections c LEFT JOIN projects p ON p.id = c.project_id
 	                    ORDER BY p.name ASC, c.name ASC');
 	if ($r) while ($x = $r->fetch_assoc()) $out[] = $x;
@@ -100,6 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	);
 	$links = monstrocity_clean_collection_ids($_POST['collections'] ?? array());
 	$errs  = monstrocity_validate_theme($t, mon_all_slugs($conn, $id));
+
+	/* Blank means inherit. Resolved here, once, so the stored row always has
+	   a usable name even if the project is later unlinked -- the alternative
+	   is a theme that renders a blank label the day somebody edits a project. */
+	$t['project_name'] = monstrocity_display_project($t['project_name'], $t['project_id'], adm_projects($conn));
 
 	/* A slug change would orphan the art, so it is refused rather than
 	   silently leaving 42 files in a folder nothing points at. Renaming a
@@ -209,208 +214,288 @@ include 'header.php';
 admin_chrome('monstrocity');
 ?>
 <style>
-.mt-wrap { display:grid; grid-template-columns: minmax(0,1fr); gap:18px }
-@media (min-width:1100px) { .mt-wrap.editing { grid-template-columns: minmax(0,420px) minmax(0,1fr) } }
+/* THE FORM IS ITS OWN PAGE. It was a 420px column beside the list holding
+   seventeen controls, which is a column doing a page's job. List and form are
+   now separate views of one URL: no ?edit / ?new shows the list, either one
+   shows only the form. */
 table.mt { width:100%; border-collapse:collapse; font-size:12px }
-table.mt th { text-align:left; font-weight:600; color:#7a9eb0; padding:6px 8px; border-bottom:1px solid rgba(0,200,160,.18); white-space:nowrap }
-table.mt td { padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle }
-table.mt tr.on td { background:rgba(0,200,160,.07) }
+table.mt th { text-align:left; font-weight:600; color:#7a9eb0; padding:7px 8px; border-bottom:1px solid rgba(0,200,160,.18); white-space:nowrap }
+table.mt td { padding:7px 8px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle }
 table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; color:#00c8a0 }
 .mt-pill { display:inline-block; font-size:10px; padding:1px 6px; border-radius:999px; border:1px solid rgba(255,255,255,.18); color:#9fb4c2 }
 .mt-pill.ic { border-color:#f5a623; color:#f5a623 }
 .mt-pill.dev{ border-color:#e0466b; color:#e0466b }
 .mt-pill.off{ opacity:.5; text-decoration:line-through }
 .mt-art { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#7a9eb0; white-space:nowrap }
-.mt-art b { color:#00c8a0; font-weight:600 }
-.mt-art i { color:#e0466b; font-style:normal }
-.mt-form { background:#0a1929; border:1px solid rgba(0,200,160,.15); border-radius:5px; padding:14px }
-.mt-form h3 { margin:0 0 10px; font-size:14px }
-.mt-form label { display:block; font-size:11px; color:#7a9eb0; margin:10px 0 3px }
-.mt-form input[type=text], .mt-form select, .mt-form textarea {
+.mt-art b { color:#00c8a0; font-weight:600 } .mt-art i { color:#e0466b; font-style:normal }
+
+.mt-page { max-width:1040px }
+.mt-sect { background:#0a1929; border:1px solid rgba(0,200,160,.15); border-radius:5px; padding:16px 18px; margin:0 0 14px }
+.mt-sect > h3 { margin:0 0 3px; font-size:13px; letter-spacing:.04em; text-transform:uppercase; color:#00c8a0 }
+.mt-sect > .lead { margin:0 0 14px; font-size:11px; color:#5a7888; line-height:1.5 }
+.mt-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px 18px }
+.mt-field label { display:block; font-size:11px; color:#7a9eb0; margin:0 0 4px; text-align:left }
+.mt-field input[type=text], .mt-field select, .mt-field textarea, .mt-field input[type=file] {
   width:100%; box-sizing:border-box; background:#07111d; color:#e8eaed;
-  border:1px solid rgba(255,255,255,.14); border-radius:3px; padding:6px 8px; font-size:12px }
-.mt-form textarea { min-height:52px; font-family:ui-monospace,Menlo,monospace; font-size:11px }
-.mt-form .row2 { display:flex; gap:10px } .mt-form .row2 > * { flex:1; min-width:0 }
-.mt-check { display:flex; align-items:center; gap:6px; font-size:12px; color:#e8eaed; margin:9px 0 }
-.mt-check input { margin:0 }
-.mt-note { font-size:11px; color:#5a7888; margin:4px 0 0; line-height:1.45 }
-.mt-cols { max-height:190px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:3px; padding:6px; background:#07111d }
-.mt-cols label { display:flex; gap:6px; align-items:flex-start; margin:0 0 5px; color:#e8eaed; font-size:11px }
-.mt-cols input { margin:2px 0 0 }
-.mt-cols .pol { font-family:ui-monospace,Menlo,monospace; color:#5a7888; font-size:10px }
-.mt-actions { display:flex; gap:8px; align-items:center; margin-top:14px }
+  border:1px solid rgba(255,255,255,.14); border-radius:3px; padding:7px 9px; font-size:12px }
+.mt-field textarea { min-height:64px; font-family:ui-monospace,Menlo,monospace; font-size:11px }
+.mt-field .hint { font-size:11px; color:#5a7888; margin:5px 0 0; line-height:1.45 }
+.mt-field.wide { grid-column:1/-1 }
+.mt-check { display:flex; align-items:flex-start; gap:7px; font-size:12px; color:#e8eaed; margin:0 0 9px }
+.mt-check input { margin:2px 0 0 } .mt-check span.sub { color:#5a7888; font-size:11px }
+.mt-cols { max-height:260px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:3px; padding:8px; background:#07111d }
+.mt-cols label { display:flex; gap:7px; align-items:flex-start; margin:0 0 7px; color:#e8eaed; font-size:11px; text-align:left }
+.mt-cols label.hid { display:none }
+.mt-cols input { margin:2px 0 0 } .mt-cols .pol { font-family:ui-monospace,Menlo,monospace; color:#5a7888; font-size:10px }
+.mt-colbar { display:flex; align-items:center; gap:12px; font-size:11px; color:#7a9eb0; margin:0 0 8px }
+.mt-actions { display:flex; gap:9px; align-items:center; margin-top:4px }
+.mt-back { font-size:12px; display:inline-block; margin:0 0 12px; text-align:left }
 </style>
 
-<p class="adm-sub">
-  <b><?php echo count($themes); ?></b> themes. The game reads this table directly &mdash;
-  there is no theme list in the code any more.
-  <a class="adm-btn" href="admin-monstrocity.php?new=1" style="margin-left:8px">New theme</a>
-</p>
-<?php admin_flash($msgs); ?>
+<?php if (!$row): /* ================= LIST ================= */ ?>
 
-<div class="mt-wrap<?php echo $row ? ' editing' : ''; ?>">
+  <p class="adm-sub">
+    <b><?php echo count($themes); ?></b> themes. The game reads this table directly &mdash;
+    there is no theme list in the code any more.
+    <a class="adm-btn" href="admin-monstrocity.php?new=1" style="margin-left:8px">New theme</a>
+  </p>
+  <?php admin_flash($msgs); ?>
+  <table class="mt">
+    <tr><th>#</th><th>Folder</th><th>Project</th><th>Title</th><th>Group</th>
+        <th>Policies</th><th>Art on disk</th><th></th></tr>
+    <?php foreach ($themes as $t):
+      $a = mon_art_state($t['slug'], $t['extension']);
+      $nlinks = isset($linkCount[(int)$t['id']]) ? $linkCount[(int)$t['id']] : 0;
+      $npol = $t['policy_ids'] === '' ? 0 : count(explode(',', $t['policy_ids'])); ?>
+    <tr>
+      <td style="color:#5a7888"><?php echo (int)$t['sort_order']; ?></td>
+      <td><a class="slug" href="admin-monstrocity.php?edit=<?php echo (int)$t['id']; ?>"><?php echo htmlspecialchars($t['slug']); ?></a></td>
+      <td><?php echo htmlspecialchars($t['project_name']); ?></td>
+      <td><?php echo htmlspecialchars($t['title']); ?>
+          <?php if (empty($t['active'])): ?> <span class="mt-pill off">off</span><?php endif; ?>
+          <?php if (!empty($t['req_dev'])): ?> <span class="mt-pill dev">dev</span>
+          <?php elseif (!empty($t['req_innercircle'])): ?> <span class="mt-pill ic">inner</span><?php endif; ?></td>
+      <td style="color:#7a9eb0"><?php echo htmlspecialchars($t['theme_group']); ?></td>
+      <td class="mt-art">
+        <?php if ($nlinks): ?><b><?php echo $nlinks; ?> collection<?php echo $nlinks === 1 ? '' : 's'; ?></b>
+        <?php elseif ($npol): ?><?php echo $npol; ?> listed
+        <?php else: ?><i>none</i><?php endif; ?></td>
+      <td class="mt-art">
+        <?php foreach (array('base','leader','battle-damaged') as $k): $n = $a[$k];
+          echo substr($k,0,1) . ($n === 14 ? '<b>14</b>' : ($n === 0 ? '<i>0</i>' : $n)) . ' ';
+        endforeach;
+        echo $a['background'] ? '<b>bg</b>' : '<i>bg</i>';
+        echo $a['logo'] ? ' <b>logo</b>' : ' <i>logo</i>'; ?></td>
+      <td><a class="adm-btn" href="admin-monstrocity.php?edit=<?php echo (int)$t['id']; ?>">Edit</a></td>
+    </tr>
+    <?php endforeach; ?>
+  </table>
 
-<?php if ($row): ?>
-  <form class="mt-form" method="post" enctype="multipart/form-data" action="admin-monstrocity.php">
-    <input type="hidden" name="id" value="<?php echo (int)$row['id']; ?>">
-    <h3><?php echo $row['id'] ? 'Edit ' . htmlspecialchars($row['title']) : 'New theme'; ?></h3>
+<?php else: /* ================= FORM ================= */ ?>
 
-    <label>Folder name</label>
-    <input type="text" name="slug" value="<?php echo htmlspecialchars($row['slug']); ?>"
-           <?php echo $row['id'] ? 'readonly' : ''; ?> placeholder="happyhoppers">
-    <p class="mt-note">
-      <?php if ($row['id']): ?>
-        Fixed once created &mdash; the art under <code><?php echo htmlspecialchars(monstrocity_theme_dir($row['slug'])); ?>/</code>
-        is addressed by it.
-      <?php else: ?>
-        Lowercase, numbers and hyphens. Becomes <code>images/monstrocity/&lt;name&gt;/</code>
-        and cannot be changed afterwards.
-      <?php endif; ?>
-    </p>
+  <div class="mt-page">
+    <a class="mt-back" href="admin-monstrocity.php">&larr; All themes</a>
+    <?php admin_flash($msgs); ?>
+    <form method="post" enctype="multipart/form-data" action="admin-monstrocity.php">
+      <input type="hidden" name="id" value="<?php echo (int)$row['id']; ?>">
 
-    <div class="row2">
-      <div>
-        <label>Project name (shown to players)</label>
-        <input type="text" name="project_name" value="<?php echo htmlspecialchars($row['project_name']); ?>">
+      <div class="mt-sect">
+        <h3><?php echo $row['id'] ? 'Theme' : 'New theme'; ?></h3>
+        <p class="lead"><?php echo $row['id']
+          ? 'Editing ' . htmlspecialchars($row['title']) . '.'
+          : 'The folder is created for you, with base, leader and battle-damaged inside it.'; ?></p>
+        <div class="mt-grid">
+          <div class="mt-field">
+            <label>Folder name</label>
+            <input type="text" name="slug" value="<?php echo htmlspecialchars($row['slug']); ?>"
+                   <?php echo $row['id'] ? 'readonly' : ''; ?> placeholder="happyhoppers">
+            <p class="hint"><?php echo $row['id']
+              ? 'Fixed once created &mdash; the art under <code>' . htmlspecialchars(monstrocity_theme_dir($row['slug'])) . '/</code> is addressed by it.'
+              : 'Lowercase, digits and hyphens. Becomes <code>images/monstrocity/&lt;name&gt;/</code> and cannot be changed later.'; ?></p>
+          </div>
+          <div class="mt-field">
+            <label>Theme title</label>
+            <input type="text" name="title" value="<?php echo htmlspecialchars($row['title']); ?>" placeholder="Hoppy Valentine's">
+            <p class="hint">This particular theme's name, shown under the project.</p>
+          </div>
+          <div class="mt-field">
+            <label>Skulliance project</label>
+            <select name="project_id" id="mt-proj">
+              <option value="0" data-name="">&mdash; not a Skulliance project &mdash;</option>
+              <?php foreach ($projects as $pid => $p): ?>
+                <option value="<?php echo (int)$pid; ?>" data-name="<?php echo htmlspecialchars($p['name']); ?>"
+                  <?php echo (int)$row['project_id'] === (int)$pid ? ' selected' : ''; ?>>
+                  <?php echo htmlspecialchars($p['name']); ?></option>
+              <?php endforeach; ?>
+            </select>
+            <p class="hint">Fills the name below and narrows the collection list. Plenty of themes
+               are for projects that are not on Skulliance; leaving this unset is normal.</p>
+          </div>
+          <div class="mt-field">
+            <label>Project name shown to players</label>
+            <input type="text" name="project_name" id="mt-pname" value="<?php echo htmlspecialchars($row['project_name']); ?>">
+            <p class="hint">Blank uses the linked project's name. Type here only to override it.</p>
+          </div>
+        </div>
       </div>
-      <div>
-        <label>Theme title</label>
-        <input type="text" name="title" value="<?php echo htmlspecialchars($row['title']); ?>">
-      </div>
-    </div>
 
-    <label>Skulliance project (optional)</label>
-    <select name="project_id">
-      <option value="0">&mdash; not a Skulliance project &mdash;</option>
-      <?php foreach ($projects as $pid => $p): ?>
-        <option value="<?php echo (int)$pid; ?>"<?php echo (int)$row['project_id'] === (int)$pid ? ' selected' : ''; ?>>
-          <?php echo htmlspecialchars($p['name']); ?></option>
-      <?php endforeach; ?>
-    </select>
-    <p class="mt-note">Plenty of themes are for projects that are not on Skulliance. Leaving this
-       unset is normal; the project name above is what players see either way.</p>
-
-    <div class="row2">
-      <div>
-        <label>Group</label>
-        <select name="theme_group">
-          <option value="">&mdash; pick &mdash;</option>
-          <?php foreach ($allGroups as $g => $o): ?>
-            <option value="<?php echo htmlspecialchars($g); ?>"<?php echo $row['theme_group'] === $g ? ' selected' : ''; ?>>
-              <?php echo htmlspecialchars($g); ?></option>
+      <div class="mt-sect">
+        <h3>Which NFTs this theme is for</h3>
+        <p class="lead">Tick collections and the policy ids come from them, so a policy is changed
+           in one place. Tick none and the list underneath is used as-is.</p>
+        <div class="mt-colbar">
+          <label class="mt-check" style="margin:0">
+            <input type="checkbox" id="mt-allcols"> <span>Show every project's collections</span>
+          </label>
+          <span id="mt-colcount"></span>
+        </div>
+        <div class="mt-cols" id="mt-cols">
+          <?php if (!$collections): ?><em style="color:#5a7888;font-size:11px">No collections on the platform.</em><?php endif; ?>
+          <?php foreach ($collections as $c): $on = in_array((int)$c['id'], $rowLinks, true); ?>
+            <label data-project="<?php echo (int)$c['project_id']; ?>">
+              <input type="checkbox" name="collections[]" value="<?php echo (int)$c['id']; ?>" <?php echo $on ? 'checked' : ''; ?>>
+              <span><?php echo htmlspecialchars($c['name']); ?>
+                <?php if ($c['project']): ?><span class="pol">&middot; <?php echo htmlspecialchars($c['project']); ?></span><?php endif; ?>
+                <br><span class="pol"><?php echo htmlspecialchars(substr((string)$c['policy'], 0, 32)); ?>&hellip;</span></span>
+            </label>
           <?php endforeach; ?>
-        </select>
+        </div>
+        <div class="mt-field wide" style="margin-top:14px">
+          <label>Policy ids (used only when no collection is ticked)</label>
+          <textarea name="policy_ids" spellcheck="false"><?php echo htmlspecialchars($row['policy_ids']); ?></textarea>
+          <p class="hint">Comma separated, 56 hex characters each. A truncated one is refused here
+             rather than becoming a theme that silently matches nobody.</p>
+        </div>
       </div>
-      <div>
-        <label>&hellip;or a new group</label>
-        <input type="text" name="theme_group_new" placeholder="leave blank to use the pick">
+
+      <div class="mt-sect">
+        <h3>Art</h3>
+        <p class="lead">Both are resized on the long edge and re-encoded. Neither is forced to a
+           shape &mdash; a background is picked to read either side of the board.</p>
+        <div class="mt-grid">
+          <div class="mt-field">
+            <label>Background &mdash; <code>monstrocity.png</code></label>
+            <input type="file" name="bg_file" accept="image/*">
+          </div>
+          <div class="mt-field">
+            <label>Project logo &mdash; <code>logo.png</code></label>
+            <input type="file" name="logo_file" accept="image/*">
+          </div>
+          <div class="mt-field">
+            <label>Source art faces</label>
+            <select name="orientations">
+              <?php foreach (monstrocity_orientations() as $o): ?>
+                <option value="<?php echo $o; ?>"<?php echo $row['orientations'] === $o ? ' selected' : ''; ?>>
+                  <?php echo $o === '' ? '— unset —' : $o; ?></option>
+              <?php endforeach; ?>
+            </select>
+            <p class="hint"><b>Random</b> means the collection faces both ways, so each character
+               is judged by eye rather than flipped as a batch.</p>
+          </div>
+          <div class="mt-field">
+            <label>Character file type</label>
+            <select name="extension">
+              <?php foreach (monstrocity_extensions() as $e): ?>
+                <option value="<?php echo $e; ?>"<?php echo $row['extension'] === $e ? ' selected' : ''; ?>>.<?php echo $e; ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <div class="row2">
-      <div>
-        <label>Source art faces</label>
-        <select name="orientations">
-          <?php foreach (monstrocity_orientations() as $o): ?>
-            <option value="<?php echo $o; ?>"<?php echo $row['orientations'] === $o ? ' selected' : ''; ?>>
-              <?php echo $o === '' ? '— unset —' : $o; ?></option>
-          <?php endforeach; ?>
-        </select>
+      <div class="mt-sect">
+        <h3>Placement and access</h3>
+        <div class="mt-grid">
+          <div class="mt-field">
+            <label>Group</label>
+            <select name="theme_group">
+              <option value="">&mdash; pick &mdash;</option>
+              <?php foreach ($allGroups as $g => $o): ?>
+                <option value="<?php echo htmlspecialchars($g); ?>"<?php echo $row['theme_group'] === $g ? ' selected' : ''; ?>>
+                  <?php echo htmlspecialchars($g); ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="mt-field">
+            <label>&hellip;or start a new group</label>
+            <input type="text" name="theme_group_new" placeholder="leave blank to use the pick">
+          </div>
+          <div class="mt-field">
+            <label>Visibility</label>
+            <label class="mt-check"><input type="checkbox" name="background" value="1" <?php echo !empty($row['background']) ? 'checked' : ''; ?>>
+              <span>Has a background image</span></label>
+            <label class="mt-check"><input type="checkbox" name="req_innercircle" value="1" <?php echo !empty($row['req_innercircle']) ? 'checked' : ''; ?>>
+              <span>Inner Circle only</span></label>
+            <label class="mt-check"><input type="checkbox" name="req_dev" value="1" <?php echo !empty($row['req_dev']) ? 'checked' : ''; ?>>
+              <span>Dev only <span class="sub">(must also be Inner Circle)</span></span></label>
+            <label class="mt-check"><input type="checkbox" name="active" value="1" <?php echo !empty($row['active']) ? 'checked' : ''; ?>>
+              <span>Active &mdash; shown in the picker</span></label>
+          </div>
+        </div>
       </div>
-      <div>
-        <label>Character file type</label>
-        <select name="extension">
-          <?php foreach (monstrocity_extensions() as $e): ?>
-            <option value="<?php echo $e; ?>"<?php echo $row['extension'] === $e ? ' selected' : ''; ?>>.<?php echo $e; ?></option>
-          <?php endforeach; ?>
-        </select>
+
+      <div class="mt-actions">
+        <button class="adm-btn" type="submit"><?php echo $row['id'] ? 'Save theme' : 'Create theme'; ?></button>
+        <a class="adm-btn" href="admin-monstrocity.php">Cancel</a>
       </div>
-    </div>
-    <p class="mt-note"><b>Random</b> means the collection's art faces both ways, so each
-       character is decided by eye rather than flipped as a batch.</p>
-
-    <label>Collections this theme covers</label>
-    <div class="mt-cols">
-      <?php if (!$collections): ?><em style="color:#5a7888;font-size:11px">No collections on the platform.</em><?php endif; ?>
-      <?php foreach ($collections as $c): ?>
-        <label>
-          <input type="checkbox" name="collections[]" value="<?php echo (int)$c['id']; ?>"
-                 <?php echo in_array((int)$c['id'], $rowLinks, true) ? 'checked' : ''; ?>>
-          <span><?php echo htmlspecialchars($c['name']); ?>
-            <?php if ($c['project']): ?><span class="pol">&middot; <?php echo htmlspecialchars($c['project']); ?></span><?php endif; ?>
-            <br><span class="pol"><?php echo htmlspecialchars(substr((string)$c['policy'], 0, 24)); ?>&hellip;</span>
-          </span>
-        </label>
-      <?php endforeach; ?>
-    </div>
-    <p class="mt-note">Tick any and the policy ids come from those collections, so a policy is
-       changed in one place. Tick none and the list below is used as-is.</p>
-
-    <label>Policy ids (used only when no collection is ticked)</label>
-    <textarea name="policy_ids" spellcheck="false"><?php echo htmlspecialchars($row['policy_ids']); ?></textarea>
-    <p class="mt-note">Comma separated, 56 hex characters each. A truncated one is refused here
-       rather than becoming a theme that silently matches nobody.</p>
-
-    <label>IPFS gateway prefix</label>
-    <input type="text" name="ipfs_prefixes" value="<?php echo htmlspecialchars($row['ipfs_prefixes']); ?>">
-
-    <div class="row2">
-      <div>
-        <label>Background image (<code>monstrocity.png</code>)</label>
-        <input type="file" name="bg_file" accept="image/*">
-      </div>
-      <div>
-        <label>Project logo (<code>logo.png</code>)</label>
-        <input type="file" name="logo_file" accept="image/*">
-      </div>
-    </div>
-    <p class="mt-note">Resized on the long edge and re-encoded. No fixed shape &mdash; a background
-       is picked to read either side of the board, and that is not one ratio.</p>
-
-    <label class="mt-check"><input type="checkbox" name="background" value="1" <?php echo !empty($row['background']) ? 'checked' : ''; ?>> Theme has a background image</label>
-    <label class="mt-check"><input type="checkbox" name="req_innercircle" value="1" <?php echo !empty($row['req_innercircle']) ? 'checked' : ''; ?>> Inner Circle only</label>
-    <label class="mt-check"><input type="checkbox" name="req_dev" value="1" <?php echo !empty($row['req_dev']) ? 'checked' : ''; ?>> Dev only <span class="mt-note" style="margin:0">(must also be Inner Circle)</span></label>
-    <label class="mt-check"><input type="checkbox" name="active" value="1" <?php echo !empty($row['active']) ? 'checked' : ''; ?>> Active</label>
-
-    <div class="mt-actions">
-      <button class="adm-btn" type="submit"><?php echo $row['id'] ? 'Save' : 'Create theme'; ?></button>
-      <a class="adm-btn" href="admin-monstrocity.php">Cancel</a>
-    </div>
-  </form>
-<?php endif; ?>
-
-  <div>
-    <table class="mt">
-      <tr><th>#</th><th>Folder</th><th>Project</th><th>Title</th><th>Group</th>
-          <th>Policies</th><th>Art on disk</th><th></th></tr>
-      <?php foreach ($themes as $t):
-        $a = mon_art_state($t['slug'], $t['extension']);
-        $nlinks = isset($linkCount[(int)$t['id']]) ? $linkCount[(int)$t['id']] : 0;
-        $npol = $t['policy_ids'] === '' ? 0 : count(explode(',', $t['policy_ids'])); ?>
-      <tr class="<?php echo (int)$t['id'] === (int)$edit_id ? 'on' : ''; ?>">
-        <td style="color:#5a7888"><?php echo (int)$t['sort_order']; ?></td>
-        <td><a class="slug" href="admin-monstrocity.php?edit=<?php echo (int)$t['id']; ?>"><?php echo htmlspecialchars($t['slug']); ?></a></td>
-        <td><?php echo htmlspecialchars($t['project_name']); ?></td>
-        <td><?php echo htmlspecialchars($t['title']); ?>
-            <?php if (empty($t['active'])): ?> <span class="mt-pill off">off</span><?php endif; ?>
-            <?php if (!empty($t['req_dev'])): ?> <span class="mt-pill dev">dev</span>
-            <?php elseif (!empty($t['req_innercircle'])): ?> <span class="mt-pill ic">inner</span><?php endif; ?></td>
-        <td style="color:#7a9eb0"><?php echo htmlspecialchars($t['theme_group']); ?></td>
-        <td class="mt-art">
-          <?php if ($nlinks): ?><b><?php echo $nlinks; ?> collection<?php echo $nlinks === 1 ? '' : 's'; ?></b>
-          <?php elseif ($npol): ?><?php echo $npol; ?> listed
-          <?php else: ?><i>none</i><?php endif; ?>
-        </td>
-        <td class="mt-art">
-          <?php foreach (array('base','leader','battle-damaged') as $k):
-            $n = $a[$k]; ?><?php echo substr($k,0,1); ?><?php
-            echo $n === 14 ? '<b>14</b>' : ($n === 0 ? '<i>0</i>' : $n); ?><?php echo $k === 'battle-damaged' ? '' : ' '; ?><?php endforeach; ?>
-          <?php echo $a['background'] ? ' <b>bg</b>' : ' <i>bg</i>'; ?><?php echo $a['logo'] ? ' <b>logo</b>' : ' <i>logo</i>'; ?>
-        </td>
-        <td><a class="adm-btn" href="admin-monstrocity.php?edit=<?php echo (int)$t['id']; ?>">Edit</a></td>
-      </tr>
-      <?php endforeach; ?>
-    </table>
+    </form>
   </div>
-</div>
+
+<script>
+(function () {
+  var proj  = document.getElementById('mt-proj'),
+      pname = document.getElementById('mt-pname'),
+      all   = document.getElementById('mt-allcols'),
+      box   = document.getElementById('mt-cols'),
+      count = document.getElementById('mt-colcount');
+  if (!proj || !box || !pname) return;
+  var rows = Array.prototype.slice.call(box.querySelectorAll('label[data-project]'));
+
+  /* THE TYPED NAME WINS. This only ever fills a field left empty, or replaces
+     one it filled itself. The moment the field is typed in, dataset.auto is
+     dropped and it is never touched again -- blank means "inherit" to the
+     server, so a stale auto-filled value would be stored as a deliberate
+     override of the project it came from. */
+  function syncName() {
+    var want = proj.options[proj.selectedIndex].getAttribute('data-name') || '';
+    if (pname.value === '' || pname.value === pname.dataset.auto) {
+      pname.value = want;
+      if (want) pname.dataset.auto = want; else delete pname.dataset.auto;
+    }
+    pname.placeholder = want ? want + ' (inherited)' : 'required when no project is linked';
+  }
+  pname.addEventListener('input', function () { delete pname.dataset.auto; });
+
+  /*
+   * A TICKED COLLECTION IS NEVER HIDDEN, whatever the filter says.
+   *
+   * Not because hiding it would unlink it -- a checked box inside a
+   * display:none label is still submitted; only `disabled` stops that. The
+   * reason is plainer: a theme can legitimately span projects, and a filter
+   * that hides a link already made means saving a theme while unable to see
+   * what it is attached to.
+   */
+  function filter() {
+    var pid = proj.value, shown = 0, hidden = 0;
+    rows.forEach(function (r) {
+      var keep = all.checked || pid === '0'
+              || r.getAttribute('data-project') === pid
+              || r.querySelector('input').checked;
+      r.classList.toggle('hid', !keep);
+      if (keep) shown++; else hidden++;
+    });
+    count.textContent = hidden
+      ? shown + ' shown, ' + hidden + ' hidden by project'
+      : shown + ' collection' + (shown === 1 ? '' : 's');
+  }
+
+  proj.addEventListener('change', function () { syncName(); filter(); });
+  all.addEventListener('change', filter);
+  box.addEventListener('change', filter);
+  if (pname.value === '') syncName();
+  filter();
+})();
+</script>
+
+<?php endif; ?>
 <?php include 'admin-css.php'; ?>

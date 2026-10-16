@@ -244,6 +244,23 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 - Creating a theme makes `base/`, `leader/` and `battle-damaged/` so Phase 3 has somewhere to write.
 - The list's "Art on disk" column counts real files per folder, so what is still missing is
   visible without opening an FTP client.
+- **LIST OR FORM, NEVER BOTH.** The form started as a 420px column beside the list and grew to
+  seventeen controls. One URL, two exclusive views: no `?edit`/`?new` shows the list.
+- **BLANK PROJECT NAME MEANS INHERIT.** `monstrocity_display_project()` resolves it at save, so
+  the stored row always holds a usable label even if the project is unlinked later. Typing a name
+  overrides. Validation only demands a name when NO project is linked.
+- **THE COLLECTION LIST FILTERS TO THE SELECTED PROJECT**, with a "show every project" escape and
+  a count of what is hidden. A TICKED collection is never hidden - not because hiding would unlink
+  it (a checked box in a `display:none` label is still submitted; only `disabled` stops that) but
+  because a theme can span projects and you cannot save what you cannot see.
+- `.mt-back`, `.mt-field label`, `.mt-cols label` and `table.mt a.slug` all restate `text-align`
+  to counter `dist/flexbox.css`'s global `a { text-align:center }`. The harness asserts this
+  CONDITIONALLY, so the guard drops if that global ever goes.
+- **ANCHOR WARNING FOR ANYONE EXTENDING THE HARNESS HERE.** The list cell that reports policies
+  contains its own inline `<?php else:` and `<?php endif; ?>`. Both of the obvious anchors for
+  "is the form inside the else branch" therefore match the WRONG occurrence, and the check passed
+  with the branch separator deleted. It anchors on the unique `FORM` banner and uses `strrpos`
+  for the endif.
 
 ### Crafting (db.php:3947-3990)
 - Craft: burn equal parts of all 6 core points → DIAMOND (1:1 per point type).
