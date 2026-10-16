@@ -318,6 +318,29 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 - The theme form shows the current logo on a checkerboard with its dimensions, and flags it when
   it is not the standard box.
 
+### Monstrocity bosses (admin-monstrocity-boss.php, bosses table)
+- Columns: `id, name, health, max_health, strength, speed, tactics, size, powerup, project_id,
+  collection_id, theme, orientation, extension`. **THERE WAS NO CREATE PATH AT ALL** - bosses were
+  hand-inserted in phpMyAdmin; the only writes in the codebase were health resets.
+- **A BOSS WITH A MISSING project_id OR collection_id DOES NOT ERROR, IT DISAPPEARS.**
+  ajax/get-bosses.php INNER JOINs both, so a bad id silently drops the row from the game with
+  nothing logged. That is the single worst thing this form can produce and it is refused hardest.
+- **ART IS ONE FLAT FOLDER shared by every theme**: `images/monstrocity/bosses/<name>.png` plus
+  `bosses/battle-damaged/<same>`. Filename derived from the NAME, same rule as characters.
+- **500 wide, aspect preserved** - measured from uptown (500x593) and ronin (500x500), same as
+  character art, so mart_resize() needed no special case.
+- **The red formula holds for bosses**: uptown generated vs shipped is 0.098/255. ronin is 2.97,
+  with 85% of pixels inside 5/255 and the outliers on grey source pixels where the shipped art went
+  saturated red and the formula gives pale pink - the same older-settings drift as the 18 themes.
+  Not a reason to change the formula.
+- **RENAMING A BOSS MOVES ITS ART** (`mart_rename_boss`), unlike a theme slug or a character name.
+  A boss name is free text somebody will want to correct, and the filename is derived from it.
+- `theme` is still a SLUG STRING, not a FK to monstrocity_themes. The form validates it against
+  real themes and the list flags "no such theme", but the column was left alone - converting it is
+  a separate migration with its own byte-identical gate.
+- Powerups are the only four the game implements: Minor Regen, Regenerate, Boost Attack, Heal.
+  Anything else is a boss with no ability.
+
 ### HARNESS TRAP: the comment stripper ate `accept="image/*"` (harness-strip.php)
 - The one-line `preg_replace('!/\*.*?\*/!s', ...)` that every harness used inline treats the MIME
   wildcard in `accept="image/*"` as a block-comment opener and deletes to the next real close -

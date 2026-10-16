@@ -874,6 +874,7 @@ function admin_tabs() {
 		'flyers'      => array('admin-flyers.php',      'Flyers'),
 		'digest'      => array('admin-digest.php',      'Daily Digest'),
 		'monstrocity' => array('admin-monstrocity.php', 'Monstrocity'),
+		'bosses'      => array('admin-monstrocity-boss.php', 'Bosses'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

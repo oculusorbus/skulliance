@@ -1,0 +1,385 @@
+<?php
+/*
+ * Monstrocity bosses: list, create, edit.
+ *
+ * There was no way to make one. Bosses are hand-inserted in phpMyAdmin,
+ * which is how a boss ends up pointing at a collection that is not there:
+ * get-bosses.php INNER JOINs projects AND collections, so a bad id does not
+ * raise anything, the boss simply never appears in the game. That is the
+ * failure this form exists to make impossible.
+ *
+ * ART IS ONE FLAT FOLDER, shared by every theme -- images/monstrocity/bosses/
+ * with the red variant under bosses/battle-damaged/ and the same filename.
+ * The filename comes from the NAME, so renaming a boss moves its art rather
+ * than orphaning it.
+ *
+ * A boss belongs to a theme, and the theme has to exist first.
+ */
+include 'db.php';
+include 'skulliance.php';
+require_once __DIR__ . '/admin-lib.php';
+admin_require();
+require_once __DIR__ . '/monstrocity-art-lib.php';
+
+$msgs = array('err' => array(), 'ok' => array());
+$edit_id  = isset($_GET['edit']) ? (int)$_GET['edit'] : 0;
+$creating = isset($_GET['new']);
+
+function mb_row($conn, $id) {
+	$r = $conn->query('SELECT * FROM bosses WHERE id = ' . (int)$id);
+	return $r ? $r->fetch_assoc() : null;
+}
+function mb_all($conn) {
+	$out = array();
+	$r = $conn->query('SELECT b.*, p.name AS project_name, c.name AS collection_name
+	                     FROM bosses b
+	                     LEFT JOIN projects p ON p.id = b.project_id
+	                     LEFT JOIN collections c ON c.id = b.collection_id
+	                    ORDER BY b.theme ASC, b.strength ASC, b.id ASC');
+	if ($r) while ($x = $r->fetch_assoc()) $out[] = $x;
+	return $out;
+}
+function mb_themes($conn) {
+	$out = array();
+	$r = $conn->query('SELECT slug, project_name, title FROM monstrocity_themes
+	                    WHERE active = 1 OR 1 = 1 ORDER BY sort_order ASC');
+	if ($r) while ($x = $r->fetch_assoc()) $out[$x['slug']] = $x['project_name'] . ' - ' . $x['title'];
+	return $out;
+}
+function mb_collections($conn) {
+	$out = array();
+	$r = $conn->query('SELECT c.id, c.name, c.project_id, p.name AS project
+	                     FROM collections c LEFT JOIN projects p ON p.id = c.project_id
+	                    ORDER BY p.name ASC, c.name ASC');
+	if ($r) while ($x = $r->fetch_assoc()) $out[] = $x;
+	return $out;
+}
+/* What art exists, and whether the red variant still matches the base. */
+function mb_art($slug, $ext) {
+	$dir = __DIR__ . '/' . monstrocity_boss_dir();
+	$base = $dir . '/' . $slug . '.' . $ext;
+	$dmg  = $dir . '/battle-damaged/' . $slug . '.' . $ext;
+	$a = array('base' => is_file($base), 'damaged' => is_file($dmg), 'score' => -1, 'dim' => '');
+	if ($a['base']) { $d = @getimagesize($base); if ($d) $a['dim'] = $d[0] . 'x' . $d[1]; }
+	if ($a['base'] && $a['damaged']) {
+		$b = mart_load($base); $v = mart_load($dmg);
+		if ($b && $v && imagesx($b) === imagesx($v)) $a['score'] = round(mart_damage_score($b, $v), 1);
+	}
+	return $a;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+	$id = (int)($_POST['id'] ?? 0);
+	$b = array(
+		'name'          => trim($_POST['name'] ?? ''),
+		'project_id'    => (int)($_POST['project_id'] ?? 0),
+		'collection_id' => (int)($_POST['collection_id'] ?? 0),
+		'theme'         => trim($_POST['theme'] ?? ''),
+		'max_health'    => (int)($_POST['max_health'] ?? 0),
+		'strength'      => (int)($_POST['strength'] ?? 0),
+		'speed'         => (int)($_POST['speed'] ?? 0),
+		'tactics'       => (int)($_POST['tactics'] ?? 0),
+		'size'          => $_POST['size'] ?? '',
+		'powerup'       => $_POST['powerup'] ?? '',
+		'orientation'   => $_POST['orientation'] ?? '',
+		'extension'     => $_POST['extension'] ?? 'png',
+	);
+	$themes = mb_themes($conn);
+	$taken = array();
+	foreach (mb_all($conn) as $o) if ((int)$o['id'] !== $id) $taken[] = monstrocity_boss_slug($o['name']);
+	$errs = monstrocity_validate_boss($b, $taken, array_keys($themes));
+
+	if ($errs) {
+		$msgs['err'] = $errs; $edit_id = $id; $creating = !$id; $repost = $b;
+	} else {
+		$slug = monstrocity_boss_slug($b['name']);
+		$esc = function ($v) use ($conn) { return "'" . $conn->real_escape_string($v) . "'"; };
+		$was = $id ? mb_row($conn, $id) : null;
+
+		/* RENAME MOVES THE ART. A boss name is free text somebody will want to
+		   correct, and the filename is derived from it, so leaving the files
+		   behind is how a boss starts showing a broken image. */
+		if ($was) {
+			$mv = mart_rename_boss(monstrocity_boss_slug($was['name']), $slug, $was['extension']);
+			if ($mv !== '') $msgs['err'][] = $mv;
+		}
+
+		$set = 'name=' . $esc($b['name'])
+		     . ',project_id=' . (int)$b['project_id']
+		     . ',collection_id=' . (int)$b['collection_id']
+		     . ',theme=' . $esc($b['theme'])
+		     . ',max_health=' . (int)$b['max_health']
+		     . ',strength=' . (int)$b['strength']
+		     . ',speed=' . (int)$b['speed']
+		     . ',tactics=' . (int)$b['tactics']
+		     . ',size=' . $esc($b['size'])
+		     . ',powerup=' . $esc($b['powerup'])
+		     . ',orientation=' . $esc($b['orientation'])
+		     . ',extension=' . $esc($b['extension']);
+		if ($id) {
+			$conn->query('UPDATE bosses SET ' . $set . ' WHERE id = ' . $id);
+			$msgs['ok'][] = 'Saved.';
+		} else {
+			/* health starts full; the nightly reset in db.php sets it back to
+			   max_health anyway, but a new boss should not arrive at zero. */
+			$conn->query('INSERT INTO bosses SET ' . $set . ', health=' . (int)$b['max_health']);
+			$id = (int)$conn->insert_id;
+			$msgs['ok'][] = 'Created "' . htmlspecialchars($b['name']) . '".';
+		}
+
+		if (isset($_FILES['art']) && $_FILES['art']['error'] !== UPLOAD_ERR_NO_FILE) {
+			if ($_FILES['art']['error'] !== UPLOAD_ERR_OK) {
+				$msgs['err'][] = 'Art: upload failed (code ' . (int)$_FILES['art']['error'] . ').';
+			} else {
+				list($w, $e) = mart_accept_boss($_FILES['art']['tmp_name'], $slug,
+				                                !empty($_POST['flip']), $b['extension']);
+				if ($w === '')      $msgs['err'][] = 'Art: ' . $e;
+				elseif ($e !== '')  $msgs['err'][] = 'Art: ' . $e;
+				else                $msgs['ok'][]  = 'Art saved and the red variant regenerated.';
+			}
+		}
+		$edit_id = $id; $creating = false;
+	}
+}
+
+$bosses      = mb_all($conn);
+$themes      = mb_themes($conn);
+$projects    = adm_projects($conn);
+$collections = mb_collections($conn);
+$row = $edit_id ? mb_row($conn, $edit_id) : null;
+if ($creating && !$row) {
+	$row = array('id'=>0,'name'=>'','project_id'=>0,'collection_id'=>0,'theme'=>'','max_health'=>500,
+	             'strength'=>5,'speed'=>5,'tactics'=>5,'size'=>'Medium','powerup'=>'Heal',
+	             'orientation'=>'Left','extension'=>'png');
+}
+if (isset($repost)) $row = array_merge((array)$row, $repost);
+
+include 'header.php';
+admin_chrome('monstrocity');
+?>
+<style>
+table.mb { width:100%; border-collapse:collapse; font-size:12px }
+table.mb th { text-align:left; font-weight:600; color:#7a9eb0; padding:7px 8px; border-bottom:1px solid rgba(0,200,160,.18); white-space:nowrap }
+table.mb td { padding:7px 8px; border-bottom:1px solid rgba(255,255,255,.05); vertical-align:middle }
+table.mb a.bn { font-family:ui-monospace,Menlo,monospace; text-align:left; color:#00c8a0 }
+table.mb tr.gap td { border-top:1px solid rgba(0,200,160,.22); padding-top:11px }
+.mb-theme { font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:#00c8a0 }
+.mb-stat { font-family:ui-monospace,Menlo,monospace; color:#9fb4c2 }
+.mb-art { font-family:ui-monospace,Menlo,monospace; font-size:11px; white-space:nowrap }
+.mb-art b { color:#00c8a0 } .mb-art i { color:#e0466b; font-style:normal }
+.mb-warn { color:#f5a623 }
+.mb-thumb { width:40px; height:40px; object-fit:contain; background:#07111d; border-radius:3px; display:block }
+.mb-sect { background:#0a1929; border:1px solid rgba(0,200,160,.15); border-radius:5px; padding:16px 18px; margin:0 0 14px }
+.mb-sect > h3 { margin:0 0 3px; font-size:13px; letter-spacing:.04em; text-transform:uppercase; color:#00c8a0 }
+.mb-sect > .lead { margin:0 0 14px; font-size:11px; color:#5a7888; line-height:1.5 }
+.mb-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,280px)); gap:14px 20px; justify-content:start }
+.mb-field label { display:block; font-size:11px; color:#7a9eb0; margin:0 0 4px; text-align:left }
+.mb-field input[type=text], .mb-field input[type=number], .mb-field select, .mb-field input[type=file] {
+  width:100%; box-sizing:border-box; background:#07111d; color:#e8eaed;
+  border:1px solid rgba(255,255,255,.14); border-radius:3px; padding:7px 9px; font-size:12px }
+.mb-field .hint { font-size:11px; color:#5a7888; margin:5px 0 0; line-height:1.45 }
+.mb-check { display:flex; align-items:center; gap:7px; font-size:12px; color:#e8eaed; margin:9px 0 0 }
+.mb-back { font-size:12px; display:inline-block; margin:0 0 12px; text-align:left }
+.mb-actions { display:flex; gap:9px; margin-top:4px }
+.mb-prev { display:flex; gap:10px; align-items:flex-start; margin-top:8px }
+.mb-prev figure { margin:0; text-align:center }
+.mb-prev img { width:110px; height:110px; object-fit:contain; background:#07111d;
+               border:1px solid rgba(255,255,255,.12); border-radius:4px; display:block }
+.mb-prev figcaption { font-size:10px; color:#5a7888; margin-top:3px }
+</style>
+
+<?php if (!$row): ?>
+
+  <p class="adm-sub">
+    <b><?php echo count($bosses); ?></b> bosses. Art lives in one shared folder,
+    <code>images/monstrocity/bosses/</code>, named after the boss.
+    <a class="adm-btn" href="admin-monstrocity-boss.php?new=1" style="margin-left:8px">New boss</a>
+    <a class="adm-btn" href="admin-monstrocity.php">Themes</a>
+  </p>
+  <?php admin_flash($msgs); ?>
+  <table class="mb">
+    <tr><th></th><th>Boss</th><th>Theme</th><th>Project / collection</th>
+        <th>HP</th><th>Str/Spd/Tac</th><th>Size</th><th>Powerup</th><th>Art</th><th></th></tr>
+    <?php $lastTheme = null; foreach ($bosses as $bx):
+      $slug = monstrocity_boss_slug($bx['name']);
+      $a = mb_art($slug, $bx['extension']);
+      $newTheme = ($bx['theme'] !== $lastTheme); $lastTheme = $bx['theme']; ?>
+    <tr class="<?php echo $newTheme ? 'gap' : ''; ?>">
+      <td><?php if ($a['base']): ?><img class="mb-thumb" alt=""
+            src="<?php echo htmlspecialchars(monstrocity_boss_dir() . '/' . $slug . '.' . $bx['extension']); ?>"><?php endif; ?></td>
+      <td><a class="bn" href="admin-monstrocity-boss.php?edit=<?php echo (int)$bx['id']; ?>"><?php echo htmlspecialchars($bx['name']); ?></a></td>
+      <td class="mb-theme"><?php echo htmlspecialchars($bx['theme']); ?>
+          <?php if (!isset($themes[$bx['theme']])): ?><br><span class="mb-warn">no such theme</span><?php endif; ?></td>
+      <td style="color:#7a9eb0"><?php
+          echo $bx['project_name'] === null
+             ? '<span class="mb-warn">missing project &mdash; hidden from the game</span>'
+             : htmlspecialchars($bx['project_name']);
+          echo '<br>';
+          echo $bx['collection_name'] === null
+             ? '<span class="mb-warn">missing collection &mdash; hidden from the game</span>'
+             : '<span style="color:#5a7888">' . htmlspecialchars($bx['collection_name']) . '</span>'; ?></td>
+      <td class="mb-stat"><?php echo number_format((int)$bx['max_health']); ?></td>
+      <td class="mb-stat"><?php echo (int)$bx['strength'] . '/' . (int)$bx['speed'] . '/' . (int)$bx['tactics']; ?></td>
+      <td style="color:#7a9eb0"><?php echo htmlspecialchars($bx['size']); ?></td>
+      <td style="color:#7a9eb0"><?php echo htmlspecialchars($bx['powerup']); ?></td>
+      <td class="mb-art">
+        <?php echo $a['base'] ? '<b>art</b>' : '<i>no art</i>'; ?>
+        <?php echo $a['damaged'] ? ' <b>red</b>' : ' <i>no red</i>'; ?>
+        <?php if ($a['dim']): ?><br><span style="color:#5a7888"><?php echo $a['dim']; ?></span><?php endif; ?>
+        <?php if ($a['score'] >= 0 && $a['score'] < MONSTROCITY_DAMAGE_WEAK): ?>
+          <br><span class="mb-warn">weak <?php echo $a['score']; ?></span><?php endif; ?>
+      </td>
+      <td><a class="adm-btn" href="admin-monstrocity-boss.php?edit=<?php echo (int)$bx['id']; ?>">Edit</a></td>
+    </tr>
+    <?php endforeach; ?>
+  </table>
+
+<?php else: ?>
+
+  <a class="mb-back" href="admin-monstrocity-boss.php">&larr; All bosses</a>
+  <?php admin_flash($msgs); ?>
+  <?php $slug = $row['name'] !== '' ? monstrocity_boss_slug($row['name']) : ''; ?>
+  <form method="post" enctype="multipart/form-data" action="admin-monstrocity-boss.php">
+    <input type="hidden" name="id" value="<?php echo (int)$row['id']; ?>">
+
+    <div class="mb-sect">
+      <h3><?php echo $row['id'] ? 'Boss' : 'New boss'; ?></h3>
+      <p class="lead">The name is also the image filename. Renaming moves the art with it.</p>
+      <div class="mb-grid">
+        <div class="mb-field">
+          <label>Name</label>
+          <input type="text" name="name" value="<?php echo htmlspecialchars($row['name']); ?>" placeholder="Hopper King">
+          <p class="hint">Saved as <code><?php echo $slug !== '' ? htmlspecialchars($slug) : '&lt;name&gt;'; ?>.png</code></p>
+        </div>
+        <div class="mb-field">
+          <label>Theme</label>
+          <select name="theme">
+            <option value="">&mdash; pick &mdash;</option>
+            <?php foreach ($themes as $ts => $tl): ?>
+              <option value="<?php echo htmlspecialchars($ts); ?>"<?php echo $row['theme'] === $ts ? ' selected' : ''; ?>>
+                <?php echo htmlspecialchars($tl); ?></option>
+            <?php endforeach; ?>
+          </select>
+          <p class="hint">The arena this boss is fought in. A theme has to exist first.</p>
+        </div>
+        <div class="mb-field">
+          <label>Project</label>
+          <select name="project_id" id="mb-proj">
+            <option value="0">&mdash; pick &mdash;</option>
+            <?php foreach ($projects as $pid => $p): ?>
+              <option value="<?php echo (int)$pid; ?>"<?php echo (int)$row['project_id'] === (int)$pid ? ' selected' : ''; ?>>
+                <?php echo htmlspecialchars($p['name']); ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="mb-field">
+          <label>Collection</label>
+          <select name="collection_id" id="mb-coll">
+            <option value="0" data-project="">&mdash; pick &mdash;</option>
+            <?php foreach ($collections as $c): ?>
+              <option value="<?php echo (int)$c['id']; ?>" data-project="<?php echo (int)$c['project_id']; ?>"
+                <?php echo (int)$row['collection_id'] === (int)$c['id'] ? ' selected' : ''; ?>>
+                <?php echo htmlspecialchars($c['name']); ?></option>
+            <?php endforeach; ?>
+          </select>
+          <p class="hint"><b>Both are required.</b> The game inner-joins them, so a boss missing
+             either does not error &mdash; it just never appears.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-sect">
+      <h3>Fight</h3>
+      <div class="mb-grid">
+        <div class="mb-field"><label>Max health</label>
+          <input type="number" name="max_health" min="1" max="100000" value="<?php echo (int)$row['max_health']; ?>"></div>
+        <div class="mb-field"><label>Strength (1-10)</label>
+          <input type="number" name="strength" min="1" max="10" value="<?php echo (int)$row['strength']; ?>"></div>
+        <div class="mb-field"><label>Speed (1-10)</label>
+          <input type="number" name="speed" min="1" max="10" value="<?php echo (int)$row['speed']; ?>"></div>
+        <div class="mb-field"><label>Tactics (1-10)</label>
+          <input type="number" name="tactics" min="1" max="10" value="<?php echo (int)$row['tactics']; ?>"></div>
+        <div class="mb-field"><label>Size</label>
+          <select name="size"><?php foreach (monstrocity_sizes() as $sz): ?>
+            <option<?php echo $row['size'] === $sz ? ' selected' : ''; ?>><?php echo $sz; ?></option>
+          <?php endforeach; ?></select></div>
+        <div class="mb-field"><label>Powerup</label>
+          <select name="powerup"><?php foreach (monstrocity_powerups() as $pu): ?>
+            <option<?php echo $row['powerup'] === $pu ? ' selected' : ''; ?>><?php echo $pu; ?></option>
+          <?php endforeach; ?></select>
+          <p class="hint">Only these four are implemented.</p></div>
+      </div>
+    </div>
+
+    <div class="mb-sect">
+      <h3>Art</h3>
+      <p class="lead">Resized to <?php echo (int)MONSTROCITY_ART_WIDTH; ?> wide with its shape kept,
+         and the red variant is generated from it &mdash; the same treatment the character art gets.</p>
+      <div class="mb-grid">
+        <div class="mb-field">
+          <label>Boss image</label>
+          <input type="file" name="art" accept="image/*">
+          <label class="mb-check"><input type="checkbox" name="flip" value="1"> Flip it horizontally</label>
+          <p class="hint">Drop in any size. Uploading replaces the red variant too, so the pair
+             can never drift apart.</p>
+        </div>
+        <div class="mb-field">
+          <label>Faces</label>
+          <select name="orientation">
+            <?php foreach (array('Left','Right') as $o): ?>
+              <option<?php echo $row['orientation'] === $o ? ' selected' : ''; ?>><?php echo $o; ?></option>
+            <?php endforeach; ?>
+          </select>
+          <label style="margin-top:10px">File type</label>
+          <select name="extension"><?php foreach (monstrocity_extensions() as $e): ?>
+            <option<?php echo $row['extension'] === $e ? ' selected' : ''; ?>>.<?php echo $e; ?></option>
+          <?php endforeach; ?></select>
+        </div>
+        <?php if ($slug !== ''): $a = mb_art($slug, $row['extension']); if ($a['base']): ?>
+        <div class="mb-field">
+          <label>On disk now &mdash; <?php echo htmlspecialchars($a['dim']); ?></label>
+          <div class="mb-prev">
+            <figure><img alt="" src="<?php echo htmlspecialchars(monstrocity_boss_dir() . '/' . $slug . '.' . $row['extension']); ?>?v=<?php echo time(); ?>"><figcaption>base</figcaption></figure>
+            <?php if ($a['damaged']): ?>
+            <figure><img alt="" src="<?php echo htmlspecialchars(monstrocity_boss_dir() . '/battle-damaged/' . $slug . '.' . $row['extension']); ?>?v=<?php echo time(); ?>">
+              <figcaption><?php echo $a['score'] >= 0
+                ? ($a['score'] < MONSTROCITY_DAMAGE_WEAK ? '<span class="mb-warn">weak ' . $a['score'] . '</span>' : $a['score'])
+                : 'red'; ?></figcaption></figure>
+            <?php endif; ?>
+          </div>
+        </div>
+        <?php endif; endif; ?>
+      </div>
+    </div>
+
+    <div class="mb-actions">
+      <button class="adm-btn" type="submit"><?php echo $row['id'] ? 'Save boss' : 'Create boss'; ?></button>
+      <a class="adm-btn" href="admin-monstrocity-boss.php">Cancel</a>
+    </div>
+  </form>
+
+<script>
+(function () {
+  /* The collection list is every collection on the platform, so narrow it to
+     the project once one is picked. A collection already chosen is never
+     hidden -- you cannot confirm what you cannot see, and this pair being
+     wrong is what makes a boss vanish from the game. */
+  var proj = document.getElementById('mb-proj'), coll = document.getElementById('mb-coll');
+  if (!proj || !coll) return;
+  var all = Array.prototype.slice.call(coll.options);
+  function filter() {
+    var pid = proj.value;
+    coll.innerHTML = '';
+    all.forEach(function (o) {
+      var keep = !o.value || !pid || pid === '0'
+              || o.getAttribute('data-project') === pid || o.selected;
+      if (keep) coll.appendChild(o);
+    });
+  }
+  proj.addEventListener('change', filter);
+  filter();
+})();
+</script>
+
+<?php endif; ?>
+<?php include 'admin-css.php'; ?>

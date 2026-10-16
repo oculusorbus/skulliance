@@ -335,5 +335,104 @@ ok(strpos($tf, 'mart_accept_logo(') !== false,
 ok(preg_match("/adm_accept_upload\\('logo_file'/", $tf) !== 1,
    'the generic uploader is still handling the logo as well, so the last writer wins');
 
+/* ---- bosses -------------------------------------------------------------- */
+echo "\nbosses\n";
+$okBoss = array('name'=>'Hopper King','project_id'=>4,'collection_id'=>9,'theme'=>'happyhoppers',
+                'max_health'=>500,'strength'=>7,'speed'=>5,'tactics'=>6,'size'=>'Large',
+                'powerup'=>'Heal','orientation'=>'Left','extension'=>'png');
+$TH = array('happyhoppers','blackflag');
+ok(monstrocity_validate_boss($okBoss, array(), $TH) === array(),
+   'a valid boss was refused: ' . implode(' | ', monstrocity_validate_boss($okBoss, array(), $TH)));
+ok(monstrocity_boss_slug('Hopper King') === 'hopper-king', 'the boss filename is not derived from the name');
+
+/*
+ * THE FAILURE THIS FORM EXISTS TO PREVENT. get-bosses.php INNER JOINs
+ * projects AND collections, so a boss missing either does not error -- it
+ * vanishes from the game with nothing logged. Both must be refused outright.
+ */
+foreach (array('project_id', 'collection_id') as $fk) {
+	$b = $okBoss; $b[$fk] = 0;
+	ok(monstrocity_validate_boss($b, array(), $TH) !== array(),
+	   "a boss with no $fk was accepted; the inner join would hide it from the game silently");
+}
+
+/* Two bosses whose names reduce to the same filename share one image, and
+   the second one saved replaces the first's art with no warning. */
+$dup = $okBoss; $dup['name'] = 'Hopper  King';
+ok(monstrocity_boss_slug('Hopper  King') !== 'hopper-king'
+   || monstrocity_validate_boss($dup, array('hopper-king'), $TH) !== array(),
+   'two bosses can share a filename, so one would overwrite the other\'s art');
+$clash = $okBoss;
+ok(monstrocity_validate_boss($clash, array('hopper-king'), $TH) !== array(),
+   'a name that collides with an existing boss filename was accepted');
+
+/* Stats the game actually understands. */
+foreach (array(array('strength',0), array('strength',11), array('speed',0), array('tactics',99)) as $c) {
+	$b = $okBoss; $b[$c[0]] = $c[1];
+	ok(monstrocity_validate_boss($b, array(), $TH) !== array(), $c[0] . ' of ' . $c[1] . ' was accepted');
+}
+$b = $okBoss; $b['powerup'] = 'Invisibility';
+ok(monstrocity_validate_boss($b, array(), $TH) !== array(),
+   'a powerup the game does not implement was accepted, so the boss would have no ability');
+$b = $okBoss; $b['size'] = 'Enormous';
+ok(monstrocity_validate_boss($b, array(), $TH) !== array(), 'an unknown size was accepted');
+$b = $okBoss; $b['max_health'] = 0;
+ok(monstrocity_validate_boss($b, array(), $TH) !== array(), 'a boss with no health was accepted');
+$b = $okBoss; $b['theme'] = 'nosuchtheme';
+ok(monstrocity_validate_boss($b, array(), $TH) !== array(),
+   'a boss pointing at a theme that does not exist was accepted');
+
+/* Writing art: same 500-wide rule, and the red variant comes with it. */
+$bdir = __DIR__ . '/' . monstrocity_boss_dir();
+@mkdir($bdir . '/battle-damaged', 0775, true);
+$tname = 'harness-boss-' . getmypid();
+list($bw, $be) = mart_accept_boss('/tmp/mah_src.png', $tname, false, 'png');
+ok($bw !== '' && $be === '', 'writing boss art failed: ' . $be);
+ok(is_file($bdir . '/' . $tname . '.png'), 'the boss image was not written to the shared folder');
+ok(is_file($bdir . '/battle-damaged/' . $tname . '.png'),
+   'the boss red variant was not generated, so the pair can drift apart');
+$bd = @getimagesize($bdir . '/' . $tname . '.png');
+ok($bd && $bd[0] === MONSTROCITY_ART_WIDTH, 'boss art was not resized to the standard width');
+
+/* A rename must take the art with it, or the boss shows a broken image. */
+$tname2 = $tname . '-renamed';
+ok(mart_rename_boss($tname, $tname2, 'png') === '', 'renaming boss art reported a failure');
+ok(is_file($bdir . '/' . $tname2 . '.png') && !is_file($bdir . '/' . $tname . '.png'),
+   'a renamed boss left its base art behind under the old filename');
+ok(is_file($bdir . '/battle-damaged/' . $tname2 . '.png'),
+   'a renamed boss left its red variant behind under the old filename');
+ok(mart_rename_boss('../evil', 'x', 'png') !== '', 'a traversal was accepted as a rename source');
+
+@unlink($bdir . '/' . $tname2 . '.png');
+@unlink($bdir . '/battle-damaged/' . $tname2 . '.png');
+ok(!is_file($bdir . '/' . $tname2 . '.png'), 'the harness left boss art behind in the live folder');
+
+/* The page's own gates. */
+$bp = harness_strip_comments(file_get_contents(__DIR__ . '/admin-monstrocity-boss.php'));
+ok(strpos($bp, 'admin_require();') !== false, 'the boss admin is not gated to the admin');
+ok(strpos($bp, 'monstrocity_validate_boss(') !== false, 'the boss form does not validate anything');
+/*
+ * NO WRITE MAY HAPPEN BEFORE VALIDATION, and none may happen when it fails.
+ * Checking only that the FIRST write sits after the validate call misses a
+ * write injected after it but outside the else -- so both the ordering and
+ * the containment are asserted.
+ */
+$vAt   = strpos($bp, 'monstrocity_validate_boss(');
+$elAt  = strpos($bp, '} else {', $vAt);
+$writes = array();
+if (preg_match_all('/(INSERT INTO bosses|UPDATE bosses SET)/', $bp, $wm, PREG_OFFSET_CAPTURE))
+	foreach ($wm[1] as $w) $writes[] = $w[1];
+ok($writes !== array(), 'the boss form never writes to the bosses table at all');
+ok($vAt !== false && $elAt !== false, 'the boss form does not branch on its validation result');
+foreach ($writes as $w) {
+	ok($w > $vAt,  'a write to bosses happens BEFORE validation (offset ' . $w . ')');
+	ok($w > $elAt, 'a write to bosses sits outside the validated-ok branch (offset ' . $w . ')');
+}
+$bad = 0;
+if (preg_match_all('/\$conn->query\(((?:[^()]|\([^()]*\))*)\)/s', $bp, $qm))
+	foreach ($qm[1] as $q) if (strpos($q, '$_POST') !== false || strpos($q, '$_GET') !== false) $bad++;
+ok($bad === 0, $bad . ' boss queries interpolate $_POST or $_GET directly');
+ok(strpos($bp, 'mart_rename_boss(') !== false, 'renaming a boss does not move its art');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);

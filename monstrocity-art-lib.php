@@ -259,3 +259,125 @@ function mart_accept_logo($tmp_path, $theme_slug) {
 	if ($err !== '') return array('', $err);
 	return array($dest, $note);
 }
+
+/* ===========================================================================
+ * BOSSES
+ *
+ * Bosses are rows in `bosses` and, unlike characters, their art lives in ONE
+ * FLAT FOLDER shared by every theme: images/monstrocity/bosses/<name>.png,
+ * with the red variant under bosses/battle-damaged/ using the same filename.
+ * The filename comes from the boss NAME, lowercased with spaces hyphenated --
+ * the same derivation the characters use.
+ *
+ * There has never been a way to create one. They are hand-inserted in
+ * phpMyAdmin, which is why a boss can quietly point at a collection that does
+ * not exist: get-bosses.php INNER JOINs both projects and collections, so a
+ * boss with a bad id does not error, it simply never appears in the game.
+ * ======================================================================== */
+
+function monstrocity_boss_dir()   { return 'images/monstrocity/bosses'; }
+function monstrocity_boss_slug($name) { return monstrocity_char_slug($name); }
+
+/** The four the game implements. Anything else is a boss with no ability. */
+function monstrocity_powerups() {
+	return array('Minor Regen', 'Regenerate', 'Boost Attack', 'Heal');
+}
+function monstrocity_sizes() { return array('Small', 'Medium', 'Large'); }
+
+/**
+ * Everything wrong with a submitted boss.
+ *
+ * $taken is the slugs of other bosses -- two bosses whose names reduce to the
+ * same filename would silently share one image, and the second one written
+ * would replace the first's art with no warning anywhere.
+ */
+function monstrocity_validate_boss($b, $taken = array(), $theme_slugs = array()) {
+	$e = array();
+	$name = trim((string)(isset($b['name']) ? $b['name'] : ''));
+	if ($name === '')               $e[] = 'The boss needs a name -- it is also the image filename.';
+	elseif (strlen($name) > 100)    $e[] = 'That name is longer than 100 characters.';
+	else {
+		$slug = monstrocity_boss_slug($name);
+		if (!preg_match('/^[a-z0-9]+(?:[a-z0-9-]*[a-z0-9])?$/', $slug))
+			$e[] = 'That name does not reduce to a usable filename ("' . $slug . '"). '
+			     . 'Letters, numbers and spaces only.';
+		elseif (in_array($slug, $taken, true))
+			$e[] = 'Another boss already uses the filename "' . $slug . '.png" -- '
+			     . 'one would overwrite the other\'s art.';
+	}
+
+	/*
+	 * A BOSS WITH A BAD PROJECT OR COLLECTION DOES NOT ERROR, IT DISAPPEARS.
+	 * get-bosses.php INNER JOINs both, so an unset id drops the row from the
+	 * listing with nothing logged. That is the worst failure this form can
+	 * produce, so it is the one it refuses hardest.
+	 */
+	if (empty($b['project_id']))    $e[] = 'Pick a project. Without one the boss is dropped from the game by an inner join, silently.';
+	if (empty($b['collection_id'])) $e[] = 'Pick a collection. Without one the boss is dropped from the game by an inner join, silently.';
+
+	$theme = (string)(isset($b['theme']) ? $b['theme'] : '');
+	if ($theme === '')              $e[] = 'Pick a theme. A boss is fought on one.';
+	elseif ($theme_slugs && !in_array($theme, $theme_slugs, true))
+		                            $e[] = 'There is no theme with the folder name "' . $theme . '".';
+
+	$mh = (int)(isset($b['max_health']) ? $b['max_health'] : 0);
+	if ($mh < 1)                    $e[] = 'Max health must be at least 1.';
+	if ($mh > 100000)               $e[] = 'Max health over 100,000 is almost certainly a typo.';
+
+	foreach (array('strength', 'speed', 'tactics') as $stat) {
+		$v = (int)(isset($b[$stat]) ? $b[$stat] : 0);
+		if ($v < 1 || $v > 10)      $e[] = ucfirst($stat) . ' must be between 1 and 10, like every other fighter.';
+	}
+	if (!in_array(isset($b['size']) ? $b['size'] : '', monstrocity_sizes(), true))
+		$e[] = 'Size must be ' . implode(', ', monstrocity_sizes()) . '.';
+	if (!in_array(isset($b['powerup']) ? $b['powerup'] : '', monstrocity_powerups(), true))
+		$e[] = 'Powerup must be one the game implements: ' . implode(', ', monstrocity_powerups()) . '.';
+	if (!in_array(isset($b['orientation']) ? $b['orientation'] : '', array('Left', 'Right'), true))
+		$e[] = 'Orientation must be Left or Right.';
+	if (!in_array(isset($b['extension']) ? $b['extension'] : '', monstrocity_extensions(), true))
+		$e[] = 'Extension must be one of: ' . implode(', ', monstrocity_extensions()) . '.';
+	return $e;
+}
+
+/**
+ * Accept a boss image: resize, optionally flip, write it, and regenerate the
+ * red variant from it -- the same rule as a character base, for the same
+ * reason. A damaged image derived from art that has since been replaced is
+ * the drift already visible across the live library.
+ */
+function mart_accept_boss($tmp_path, $slug, $flip = false, $ext = 'png') {
+	if (!preg_match('/^[a-z0-9-]+$/', $slug)) return array('', 'Bad boss filename.');
+	$im = mart_load($tmp_path);
+	if (!$im) return array('', 'That file is not an image this server can read.');
+	$im = mart_resize($im);
+	if ($flip) $im = mart_flip($im);
+
+	$dir  = __DIR__ . '/' . monstrocity_boss_dir();
+	$dest = $dir . '/' . $slug . '.' . $ext;
+	$err  = mart_save_png($im, $dest);
+	if ($err !== '') return array('', $err);
+	$derr = mart_save_png(mart_damage($im), $dir . '/battle-damaged/' . $slug . '.' . $ext);
+	if ($derr !== '') return array($dest, 'Saved, but the damaged variant failed: ' . $derr);
+	return array($dest, '');
+}
+
+/**
+ * Move a boss's art when it is renamed. Characters and themes refuse a rename
+ * because their names are fixed by the game or by a folder full of art; a
+ * boss name is free text that someone will reasonably want to correct, and
+ * leaving the art behind under the old filename is how a boss ends up showing
+ * a broken image.
+ */
+function mart_rename_boss($old_slug, $new_slug, $ext = 'png') {
+	if ($old_slug === $new_slug || $old_slug === '' || $new_slug === '') return '';
+	if (!preg_match('/^[a-z0-9-]+$/', $old_slug) || !preg_match('/^[a-z0-9-]+$/', $new_slug))
+		return 'Refusing to move art between unusable filenames.';
+	$dir = __DIR__ . '/' . monstrocity_boss_dir();
+	foreach (array('', 'battle-damaged/') as $sub) {
+		$from = $dir . '/' . $sub . $old_slug . '.' . $ext;
+		$to   = $dir . '/' . $sub . $new_slug . '.' . $ext;
+		if (is_file($from) && !@rename($from, $to))
+			return 'Could not move ' . $sub . $old_slug . '.' . $ext . '.';
+	}
+	return '';
+}
