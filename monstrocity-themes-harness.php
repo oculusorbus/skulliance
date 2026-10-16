@@ -659,6 +659,13 @@ ok($mergeAt !== false && $mergeAt > $repAt,
 ok(strpos($apNo, 'monstrocity_group_override(') !== false,
    'a newly typed group name is not handed back, so it vanishes from a refused form');
 
+/* The admin list reads in the order the picker renders, not table order.
+   sort_order put every new theme at the bottom, which made a new one hard
+   to find in the panel for the same reason it was hard to find in game. */
+ok(strpos($apNo, 'monstrocity_sort_themes($themes)') !== false,
+   'the themes list is still in sort_order, so a new theme lands at the bottom of the panel '
+ . 'while the picker shows it alphabetically');
+
 /*
  * AND THE BUG UNDERNEATH IT. A POST over post_max_size reaches PHP with
  * $_POST and $_FILES already discarded -- no warning, nothing in

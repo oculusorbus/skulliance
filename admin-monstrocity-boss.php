@@ -346,20 +346,38 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
 table.mb-tune tr.moved td { background:rgba(0,200,160,.09) }
 .mb-dirty { color:#f5a623; font-size:11px; margin-left:10px }
 details.mb-proj { border:1px solid rgba(0,200,160,.18); border-radius:5px; margin:0 0 8px; background:#0a1929 }
+/*
+ * THE PROJECT NAME WAS CENTRED, AND NOT BY AN INHERITED RULE.
+ *
+ * The disclosure triangle is a ::before on this summary, and a pseudo-
+ * element on a flex container IS A FLEX ITEM. So there were three items --
+ * marker, name, count -- and justify-content:space-between does exactly
+ * what it says with three: first at the start, last at the end, and the
+ * middle one CENTRED. The name sat in the middle of a very wide row.
+ *
+ * flex-start keeps the name against its marker; margin-left:auto on the
+ * count takes it to the far edge, which is what space-between was there
+ * for in the first place. text-align:left is stated anyway: flexbox.css
+ * centres bare anchors platform-wide and this panel has been caught by
+ * inherited alignment before.
+ */
 details.mb-proj > summary { cursor:pointer; padding:10px 13px; font-size:13px; color:#e8eaed;
-  list-style:none; display:flex; justify-content:space-between; align-items:baseline; gap:12px }
+  list-style:none; display:flex; justify-content:flex-start; align-items:baseline; gap:12px;
+  text-align:left }
+details.mb-proj > summary span { margin-left:auto }
 details.mb-proj > summary::-webkit-details-marker { display:none }
 details.mb-proj > summary::before { content:'\25B8'; color:#00c8a0; margin-right:8px; font-size:11px }
 details.mb-proj[open] > summary::before { content:'\25BE' }
 details.mb-proj > summary span { color:#5a7888; font-size:11px; font-family:ui-monospace,Menlo,monospace }
 details.mb-coll { margin:0 11px 10px 22px; border-left:2px solid rgba(0,200,160,.2) }
 details.mb-coll > summary { cursor:pointer; padding:6px 10px; font-size:11px; color:#00c8a0;
-  letter-spacing:.04em; text-transform:uppercase; list-style:none }
+  letter-spacing:.04em; text-transform:uppercase; list-style:none; text-align:left }
 details.mb-coll > summary::-webkit-details-marker { display:none }
 details.mb-coll > summary span { color:#5a7888; margin-left:8px; text-transform:none }
 details.mb-coll table.mb { margin:0 0 4px 10px; width:calc(100% - 10px) }
 table.mb-tune tr.mb-run td { background:rgba(0,200,160,.07); border-top:1px solid rgba(0,200,160,.3);
-  font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#00c8a0; padding:8px 8px 6px }
+  font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#00c8a0; padding:8px 8px 6px;
+  text-align:left }
 table.mb-tune tr.mb-run td span { color:#5a7888; text-transform:none; letter-spacing:0 }
 .mb-prev { display:flex; gap:10px; align-items:flex-start; margin-top:8px }
 .mb-prev figure { margin:0; text-align:center }

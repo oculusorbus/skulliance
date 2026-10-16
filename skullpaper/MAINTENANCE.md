@@ -200,6 +200,9 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   everything else. That is a deliberate output change, so the gate became SET identity: the same
   themes, in the same groups, visible to the same people, with order asserted separately. Editing
   the snapshot to agree would have thrown away the only record of what the literal held.
+- **The admin list uses the same comparator**, so the panel lists themes in the order players
+  see them. It was in sort_order, which put every new theme at the bottom - the same reason a new
+  theme was hard to find in the picker.
 - **The default game is PINNED FIRST** in its group; "Monstrocity" would otherwise sort under M
   among the partner projects. One line in the comparator if that is ever wrong.
 - Comparison is case-insensitive (a lowercase project name must not sort after "Zenith"), then
@@ -445,6 +448,16 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   highlights its own. A page may borrow another's tab (the art board has none of its own).
 - It uses `harness_strip_comments()`, because several of those pages contain `accept="image/*"`
   and the inline stripper eats live code from the slash-star in it.
+
+### TRAP: a `::before` marker is a FLEX ITEM, and space-between centres the middle one
+- The boss list's project headings use a `::before` triangle instead of the default disclosure
+  marker. A pseudo-element on a flex container IS a flex item, so the summary had THREE -
+  marker, project name, boss count - and `justify-content:space-between` did exactly what it
+  says: first at the start, last at the end, **middle one centred**. The project name sat in the
+  middle of a very wide row and read as deliberately centred text.
+- `flex-start` plus `margin-left:auto` on the count gives what space-between was there for.
+  `text-align:left` is stated anyway, since flexbox.css centres bare anchors platform-wide.
+- The harness asserts space-between is not used on a summary carrying a marker.
 
 ### TRAP: a `<select>` that does not reflect the stored value REWRITES IT
 - Reported as size and powerup "not loading from the database" on the boss tune screen. A strict

@@ -956,6 +956,37 @@ ok(strpos($bp, 'details class="mb-proj"') !== false || strpos($bp, '<details cla
    'the boss list is not grouped into collapsible project sections');
 ok(strpos($bp, 'class="mb-coll"') !== false,
    'projects are not subdivided by collection');
+/*
+ * The group headings read LEFT. dist/flexbox.css centres bare anchors
+ * platform-wide and this panel has been caught by inherited alignment
+ * before, so every heading that must read left states it. Asserted
+ * conditionally on that global still existing, so the guard is dropped
+ * rather than pinned if flexbox.css ever changes.
+ */
+/*
+ * AND NOT space-between ON A SUMMARY THAT HAS A ::before MARKER. The
+ * pseudo-element is a flex item, so three items plus space-between centres
+ * the middle one -- which is the project name, and is what was reported.
+ */
+$psAt = strpos($bp, 'details.mb-proj > summary {');
+$psBlk = $psAt === false ? '' : substr($bp, $psAt, strpos($bp, '}', $psAt) - $psAt);
+ok($psBlk !== '', 'could not read the project summary rule');
+ok(strpos($psBlk, 'space-between') === false,
+   'the project summary uses justify-content:space-between while carrying a ::before marker, '
+ . 'which makes three flex items and centres the project name between them');
+ok(strpos($bp, 'details.mb-proj > summary span { margin-left:auto }') !== false,
+   'the boss count is not pushed to the right edge, so it sits next to the project name');
+
+$fbx = @file_get_contents(__DIR__ . '/dist/flexbox.css');
+if ($fbx !== false && preg_match('/(^|})\s*a\s*\{[^}]*text-align\s*:\s*center/s', $fbx)) {
+	foreach (array('details.mb-proj > summary', 'details.mb-coll > summary',
+	               'table.mb-tune tr.mb-run td') as $selL) {
+		$at = strpos($bp, $selL);
+		$blk = $at === false ? '' : substr($bp, $at, strpos($bp, '}', $at) - $at);
+		ok($blk !== '' && strpos($blk, 'text-align:left') !== false,
+		   $selL . ' does not state text-align:left, so a global centring rule can claim it');
+	}
+}
 /* Projects start closed; collections inside an opened project start open,
    so one click gets to the bosses rather than two. */
 ok(preg_match('/<details class="mb-proj"<\?php echo \$isOpen \? \x27 open\x27 : \x27\x27; \?>/', $bp) === 1,

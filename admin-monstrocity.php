@@ -244,9 +244,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 
 /* ---------- read for display ----------------------------------------------- */
 
+/* Through the same comparator the picker renders with, so the panel lists
+   themes in the order players see them: groups in their own order, then
+   alphabetical by project inside each. sort_order put every new theme at
+   the bottom, which is what made Happy Hoppers hard to find here too. */
 $themes = array();
 $r = $conn->query('SELECT * FROM monstrocity_themes ORDER BY sort_order ASC, id ASC');
 if ($r) while ($x = $r->fetch_assoc()) $themes[] = $x;
+$themes = monstrocity_sort_themes($themes);
 
 $linkCount = array();
 $r = $conn->query('SELECT theme_id, COUNT(*) AS n FROM monstrocity_theme_collections GROUP BY theme_id');
@@ -327,14 +332,13 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
   </p>
   <?php admin_flash($msgs); ?>
   <table class="mt">
-    <tr><th>#</th><th>Folder</th><th>Project</th><th>Title</th><th>Group</th>
+    <tr><th>Folder</th><th>Project</th><th>Title</th><th>Group</th>
         <th>Policies</th><th>Art on disk</th><th></th></tr>
     <?php foreach ($themes as $t):
       $a = mon_art_state($t['slug'], $t['extension']);
       $nlinks = isset($linkCount[(int)$t['id']]) ? $linkCount[(int)$t['id']] : 0;
       $npol = $t['policy_ids'] === '' ? 0 : count(explode(',', $t['policy_ids'])); ?>
     <tr>
-      <td style="color:#5a7888"><?php echo (int)$t['sort_order']; ?></td>
       <td><a class="slug" href="admin-monstrocity.php?edit=<?php echo (int)$t['id']; ?>"><?php echo htmlspecialchars($t['slug']); ?></a></td>
       <td><?php echo htmlspecialchars($t['project_name']); ?></td>
       <td><?php echo htmlspecialchars($t['title']); ?>
