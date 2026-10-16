@@ -54,14 +54,27 @@ function mb_collections($conn) {
 	if ($r) while ($x = $r->fetch_assoc()) $out[] = $x;
 	return $out;
 }
-/* What art exists, and whether the red variant still matches the base. */
-function mb_art($slug, $ext) {
+/**
+ * What art exists for a boss.
+ *
+ * THE SCORE IS OPT-IN, AND THAT IS THE WHOLE PERFORMANCE STORY. Computing it
+ * decodes BOTH PNGs in full -- half a megabyte of pixels each, more for the
+ * larger bosses -- and then samples twenty-odd thousand of them. At about
+ * 11ms a boss on a fast machine and several times that on the host, a list
+ * of forty was doing a second or two of image work before it drew anything,
+ * every single load, to print a number nobody was reading there.
+ *
+ * The existence checks and the dimensions come from the file header and cost
+ * nothing measurable. Only the tune screen and the edit form ask for the
+ * score, and they look at one theme or one boss.
+ */
+function mb_art($slug, $ext, $with_score = false) {
 	$dir = __DIR__ . '/' . monstrocity_boss_dir();
 	$base = $dir . '/' . $slug . '.' . $ext;
 	$dmg  = $dir . '/battle-damaged/' . $slug . '.' . $ext;
 	$a = array('base' => is_file($base), 'damaged' => is_file($dmg), 'score' => -1, 'dim' => '');
 	if ($a['base']) { $d = @getimagesize($base); if ($d) $a['dim'] = $d[0] . 'x' . $d[1]; }
-	if ($a['base'] && $a['damaged']) {
+	if ($with_score && $a['base'] && $a['damaged']) {
 		$b = mart_load($base); $v = mart_load($dmg);
 		if ($b && $v && imagesx($b) === imagesx($v)) $a['score'] = round(mart_damage_score($b, $v), 1);
 	}
@@ -287,7 +300,7 @@ $batch_maxhp = 1;
 foreach ($batch_rows as $bx) $batch_maxhp = max($batch_maxhp, (int)$bx['max_health']);
 
 include 'header.php';
-admin_chrome('monstrocity');
+admin_chrome('bosses');   // its own tab, not the themes one
 ?>
 <style>
 table.mb { width:100%; border-collapse:collapse; font-size:12px }
@@ -332,6 +345,19 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
 .mb-mv button:disabled { opacity:.25; cursor:default }
 table.mb-tune tr.moved td { background:rgba(0,200,160,.09) }
 .mb-dirty { color:#f5a623; font-size:11px; margin-left:10px }
+details.mb-proj { border:1px solid rgba(0,200,160,.18); border-radius:5px; margin:0 0 8px; background:#0a1929 }
+details.mb-proj > summary { cursor:pointer; padding:10px 13px; font-size:13px; color:#e8eaed;
+  list-style:none; display:flex; justify-content:space-between; align-items:baseline; gap:12px }
+details.mb-proj > summary::-webkit-details-marker { display:none }
+details.mb-proj > summary::before { content:'\25B8'; color:#00c8a0; margin-right:8px; font-size:11px }
+details.mb-proj[open] > summary::before { content:'\25BE' }
+details.mb-proj > summary span { color:#5a7888; font-size:11px; font-family:ui-monospace,Menlo,monospace }
+details.mb-coll { margin:0 11px 10px 22px; border-left:2px solid rgba(0,200,160,.2) }
+details.mb-coll > summary { cursor:pointer; padding:6px 10px; font-size:11px; color:#00c8a0;
+  letter-spacing:.04em; text-transform:uppercase; list-style:none }
+details.mb-coll > summary::-webkit-details-marker { display:none }
+details.mb-coll > summary span { color:#5a7888; margin-left:8px; text-transform:none }
+details.mb-coll table.mb { margin:0 0 4px 10px; width:calc(100% - 10px) }
 table.mb-tune tr.mb-run td { background:rgba(0,200,160,.07); border-top:1px solid rgba(0,200,160,.3);
   font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#00c8a0; padding:8px 8px 6px }
 table.mb-tune tr.mb-run td span { color:#5a7888; text-transform:none; letter-spacing:0 }
@@ -379,7 +405,8 @@ table.mb-tune tr.mb-run td span { color:#5a7888; text-transform:none; letter-spa
           <th>Size</th><th>Powerup</th><th>Curve</th></tr>
       <?php $runKey = null; $runPos = 0;
             foreach ($batch_rows as $i => $bx): $bs = monstrocity_boss_slug($bx['name']);
-            $ba = mb_art($bs, $bx['extension']);
+            /* With the score: one theme at a time, and the number is the point here. */
+            $ba = mb_art($bs, $bx['extension'], true);
             /* THE PICKER GROUPS BY PROJECT AND COLLECTION, so the climb a
                player experiences happens inside one run. Showing the same
                breaks here is the only way this screen can be read as the
@@ -533,55 +560,77 @@ table.mb-tune tr.mb-run td span { color:#5a7888; text-transform:none; letter-spa
 
 <?php elseif (!$row): ?>
 
+  <?php
+    /* Grouped the way the picker groups them, which is also how they are
+       looked for: project, then collection. Closed by default -- a flat list
+       of every boss was downloading every thumbnail at full size before you
+       could read anything. */
+    $tree = array();
+    foreach ($bosses as $bx) {
+      $pk = $bx['project_name'] === null ? '\u{200B}No project' : $bx['project_name'];
+      $ck = $bx['collection_name'] === null ? 'No collection' : $bx['collection_name'];
+      $tree[$pk][$ck][] = $bx;
+    }
+    ksort($tree);
+    foreach ($tree as &$cols) ksort($cols);
+    unset($cols);
+    $openProject = isset($_GET['open']) ? (string)$_GET['open'] : '';
+  ?>
   <p class="adm-sub">
-    <b><?php echo count($bosses); ?></b> bosses. Art lives in one shared folder,
-    <code>images/monstrocity/bosses/</code>, named after the boss.
+    <b><?php echo count($bosses); ?></b> bosses across <b><?php echo count($tree); ?></b> projects.
     <a class="adm-btn" href="admin-monstrocity-boss.php?new=1" style="margin-left:8px">New boss</a>
     <a class="adm-btn" href="admin-monstrocity.php">Themes</a>
   </p>
   <?php admin_flash($msgs); ?>
-  <table class="mb">
-    <tr><th></th><th>Boss</th><th>Theme</th><th>Project / collection</th>
-        <th>HP</th><th>Str/Spd/Tac</th><th>Size</th><th>Powerup</th><th>Art</th><th></th></tr>
-    <?php $lastTheme = null; foreach ($bosses as $bx):
-      $slug = monstrocity_boss_slug($bx['name']);
-      $a = mb_art($slug, $bx['extension']);
-      $newTheme = ($bx['theme'] !== $lastTheme); $lastTheme = $bx['theme']; ?>
-    <tr class="<?php echo $newTheme ? 'gap' : ''; ?>">
-      <td><?php if ($a['base']): ?><img class="mb-thumb" alt=""
-            src="<?php echo htmlspecialchars(monstrocity_boss_dir() . '/' . $slug . '.' . $bx['extension']); ?>"><?php endif; ?></td>
-      <td><a class="bn" href="admin-monstrocity-boss.php?edit=<?php echo (int)$bx['id']; ?>"><?php echo htmlspecialchars($bx['name']); ?></a></td>
-      <td class="mb-theme"><?php echo htmlspecialchars($bx['theme']); ?>
-          <?php if (!isset($themes[$bx['theme']])): ?><br><span class="mb-warn">no such theme</span><?php endif; ?></td>
-      <td style="color:#7a9eb0"><?php
-          echo $bx['project_name'] === null
-             ? '<span class="mb-warn">missing project &mdash; hidden from the game</span>'
-             : htmlspecialchars($bx['project_name']);
-          echo '<br>';
-          echo $bx['collection_name'] === null
-             ? '<span class="mb-warn">missing collection &mdash; hidden from the game</span>'
-             : '<span style="color:#5a7888">' . htmlspecialchars($bx['collection_name']) . '</span>'; ?></td>
-      <td class="mb-stat"><?php echo number_format((int)$bx['max_health']); ?></td>
-      <td class="mb-stat"><?php echo (int)$bx['strength'] . '/' . (int)$bx['speed'] . '/' . (int)$bx['tactics']; ?></td>
-      <td style="color:#7a9eb0"><?php echo htmlspecialchars($bx['size']); ?></td>
-      <td style="color:#7a9eb0"><?php echo htmlspecialchars($bx['powerup']); ?></td>
-      <td class="mb-art">
-        <?php echo $a['base'] ? '<b>art</b>' : '<i>no art</i>'; ?>
-        <?php echo $a['damaged'] ? ' <b>red</b>' : ' <i>no red</i>'; ?>
-        <?php if ($a['dim']): ?><br><span style="color:#5a7888"><?php echo $a['dim']; ?></span><?php endif; ?>
-        <?php if ($a['score'] >= 0 && $a['score'] < MONSTROCITY_DAMAGE_WEAK): ?>
-          <br><span class="mb-warn">weak <?php echo $a['score']; ?></span><?php endif; ?>
-      </td>
-      <td style="white-space:nowrap">
-        <a class="adm-btn" href="admin-monstrocity-boss.php?edit=<?php echo (int)$bx['id']; ?>">Edit</a>
-        <a class="adm-btn" href="admin-monstrocity-boss.php?new=1&amp;from=<?php echo (int)$bx['id']; ?>"
-           title="Start a new boss from this one's settings">Copy</a>
-        <a class="adm-btn" href="admin-monstrocity-boss.php?tune=<?php echo urlencode($bx['theme']); ?>"
-           title="Tune every boss on this theme together">Tune</a>
-      </td>
-    </tr>
-    <?php endforeach; ?>
-  </table>
+
+  <?php foreach ($tree as $pname => $cols):
+    $pcount = 0; foreach ($cols as $cb) $pcount += count($cb);
+    $isOpen = ($openProject !== '' && $openProject === $pname); ?>
+    <details class="mb-proj"<?php echo $isOpen ? ' open' : ''; ?>>
+      <summary><?php echo htmlspecialchars(ltrim($pname, "\u{200B}")); ?>
+        <span><?php echo $pcount; ?> boss<?php echo $pcount === 1 ? '' : 'es'; ?>
+        &middot; <?php echo count($cols); ?> collection<?php echo count($cols) === 1 ? '' : 's'; ?></span>
+      </summary>
+      <?php foreach ($cols as $cname => $list): ?>
+        <details class="mb-coll" open>
+          <summary><?php echo htmlspecialchars($cname); ?>
+            <span><?php echo count($list); ?></span></summary>
+          <table class="mb">
+            <tr><th></th><th>Boss</th><th>Theme</th><th>HP</th><th>Str/Spd/Tac</th>
+                <th>Size</th><th>Powerup</th><th>Art</th><th></th></tr>
+            <?php foreach ($list as $bx):
+              $slug = monstrocity_boss_slug($bx['name']);
+              $a = mb_art($slug, $bx['extension']); ?>
+            <tr>
+              <td><?php if ($a['base']): ?><img class="mb-thumb" alt="" loading="lazy" decoding="async"
+                    src="<?php echo htmlspecialchars(monstrocity_boss_dir() . '/' . $slug . '.' . $bx['extension']); ?>"><?php endif; ?></td>
+              <td><a class="bn" href="admin-monstrocity-boss.php?edit=<?php echo (int)$bx['id']; ?>"><?php echo htmlspecialchars($bx['name']); ?></a></td>
+              <td class="mb-theme"><?php echo htmlspecialchars($bx['theme']); ?>
+                  <?php if (!isset($themes[$bx['theme']])): ?><br><span class="mb-warn">no such theme</span><?php endif; ?></td>
+              <td class="mb-stat"><?php echo number_format((int)$bx['max_health']); ?></td>
+              <td class="mb-stat"><?php echo (int)$bx['strength'] . '/' . (int)$bx['speed'] . '/' . (int)$bx['tactics']; ?></td>
+              <td style="color:#7a9eb0"><?php echo htmlspecialchars($bx['size']); ?></td>
+              <td style="color:#7a9eb0"><?php echo htmlspecialchars($bx['powerup']); ?></td>
+              <td class="mb-art">
+                <?php echo $a['base'] ? '<b>art</b>' : '<i>no art</i>'; ?>
+                <?php echo $a['damaged'] ? ' <b>red</b>' : ' <i>no red</i>'; ?>
+                <?php if ($a['dim']): ?><br><span style="color:#5a7888"><?php echo $a['dim']; ?></span><?php endif; ?>
+              </td>
+              <td style="white-space:nowrap">
+                <a class="adm-btn" href="admin-monstrocity-boss.php?edit=<?php echo (int)$bx['id']; ?>">Edit</a>
+                <a class="adm-btn" href="admin-monstrocity-boss.php?new=1&amp;from=<?php echo (int)$bx['id']; ?>"
+                   title="Start a new boss from this one's settings">Copy</a>
+                <a class="adm-btn" href="admin-monstrocity-boss.php?tune=<?php echo urlencode($bx['theme']); ?>"
+                   title="Tune every boss on this theme together">Tune</a>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+          </table>
+        </details>
+      <?php endforeach; ?>
+    </details>
+  <?php endforeach; ?>
+  <?php if (!$tree): ?><p class="mb-lead">No bosses yet.</p><?php endif; ?>
 
 <?php else: ?>
 
@@ -691,7 +740,7 @@ table.mb-tune tr.mb-run td span { color:#5a7888; text-transform:none; letter-spa
             <option value="<?php echo $e; ?>"<?php echo $row['extension'] === $e ? ' selected' : ''; ?>>.<?php echo $e; ?></option>
           <?php endforeach; ?></select>
         </div>
-        <?php if ($slug !== ''): $a = mb_art($slug, $row['extension']); if ($a['base']): ?>
+        <?php if ($slug !== ''): $a = mb_art($slug, $row['extension'], true); if ($a['base']): ?>
         <div class="mb-field">
           <label>On disk now &mdash; <?php echo htmlspecialchars($a['dim']); ?></label>
           <div class="mb-prev">

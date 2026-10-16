@@ -425,6 +425,27 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   does show it. The harness asserts a blank orientation/extension/name/theme/project/collection
   cannot block a batch save, and that what IS shown is still checked.
 
+### The boss list: 124 bosses, grouped, and not decoding them all
+- **THE LIST WAS DECODING EVERY BOSS'S ART TO DRAW ITSELF.** `mb_art()` loaded BOTH PNGs in full
+  and sampled ~22,500 pixels for a damage score - about 11ms per boss locally and several times
+  that on the host. With 124 bosses that is seconds of image work before anything renders, every
+  load, for a number that belongs on the per-theme and per-boss screens. The score is OPT-IN now
+  (`mb_art($slug, $ext, true)`); the list passes nothing and pays only for `getimagesize()`.
+- Thumbnails carry `loading="lazy"`, and the list is nested `<details>`: project closed by
+  default, collection open inside it, so one click reaches the bosses. The grouping matches the
+  picker's own project-then-collection order.
+
+### TRAP: admin-harness.php's `$PAGES` was a hardcoded list of four
+- The per-page checks (admin_require, admin_chrome) ran over four pages named when there were
+  four. SIX MORE were added since and none were covered, which is how
+  admin-monstrocity-boss.php shipped passing `admin_chrome('monstrocity')` - the Bosses page lit
+  the Monstrocity tab and nothing caught it.
+- There is now a sweep over `glob('admin-*.php')`, so a new page is covered the day it exists. It
+  asserts the gate, the layout call, that the tab key is real, and that a page owning a tab
+  highlights its own. A page may borrow another's tab (the art board has none of its own).
+- It uses `harness_strip_comments()`, because several of those pages contain `accept="image/*"`
+  and the inline stripper eats live code from the slash-star in it.
+
 ### TRAP: a `<select>` that does not reflect the stored value REWRITES IT
 - Reported as size and powerup "not loading from the database" on the boss tune screen. A strict
   `===` against the allowed list matched nothing for a value stored with different case, so the

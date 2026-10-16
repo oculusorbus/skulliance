@@ -21,6 +21,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $fail = 0;
 function ok($c, $w) { global $fail; if (!$c) { $fail++; echo "  FAIL  $w\n"; } }
 
+require_once __DIR__ . '/harness-strip.php';
 require_once __DIR__ . '/admin-lib.php';
 
 /* missions-lib.php includes nothing, but it does call db.php helpers at
@@ -391,6 +392,53 @@ $lib_src = preg_replace('!/\*.*?\*/!s', '', file_get_contents(__DIR__ . '/admin-
 ok(strpos($lib_src, "include __DIR__ . '/header.php'") === false,
    'admin-lib.php includes header.php from inside a function again -- that runs it in the function scope, '
  . 'with none of the globals it reads');
+
+/* ---------------------------------------------------------------------------
+ * EVERY ADMIN PAGE, not the four $PAGES happens to list.
+ *
+ * $PAGES is a hardcoded set written when there were four admin pages. Six
+ * more have been added since and none of them were covered by the per-page
+ * checks below -- which is how admin-monstrocity-boss.php shipped passing
+ * admin_chrome('monstrocity'), lighting up the Monstrocity tab while you
+ * were on Bosses, with nothing to catch it.
+ *
+ * Derived from the directory so a new page is covered the day it exists.
+ * harness_strip_comments(), not the inline regex, because several of these
+ * contain accept="image/*" and the naive stripper eats live code from the
+ * slash-star in it.
+ * ------------------------------------------------------------------------- */
+$ALL_ADMIN = array();
+foreach (glob(__DIR__ . '/admin-*.php') as $apf) {
+	$bn = basename($apf);
+	if (in_array($bn, array('admin-lib.php', 'admin-css.php', 'admin-harness.php'), true)) continue;
+	$ALL_ADMIN[$bn] = harness_strip_comments(file_get_contents($apf));
+}
+ok(count($ALL_ADMIN) >= 8,
+   'only ' . count($ALL_ADMIN) . ' admin pages found; the sweep below is not covering the panel');
+
+$tabsNow = admin_tabs();
+foreach ($ALL_ADMIN as $apName => $apBody) {
+	ok(strpos($apBody, 'admin_require()') !== false,
+	   "$apName does not call admin_require(), so its rights check is its own");
+	ok(strpos($apBody, 'admin_chrome(') !== false, "$apName does not open the admin layout");
+	/*
+	 * AND IT MUST HIGHLIGHT ITSELF. A page may legitimately borrow another's
+	 * tab -- the art board is reached from Monstrocity and has no tab of its
+	 * own -- so the rule is: the key must be a real tab, and when a tab
+	 * points at THIS file, that must be the key it passes.
+	 */
+	if (preg_match("/admin_chrome\('([a-z]+)'\)/", $apBody, $cm)) {
+		ok(isset($tabsNow[$cm[1]]), "$apName passes admin_chrome('{$cm[1]}'), which is not a tab");
+		$ownTab = '';
+		foreach ($tabsNow as $tk => $tv) if ($tv[0] === $apName) $ownTab = $tk;
+		if ($ownTab !== '')
+			ok($cm[1] === $ownTab,
+			   "$apName has its own tab '$ownTab' but highlights '{$cm[1]}', so the nav says you "
+			 . 'are somewhere you are not');
+	} else {
+		ok(false, "$apName calls admin_chrome() with something other than a plain tab key");
+	}
+}
 
 foreach ($PAGES as $f) {
 	$b = $src[$f];

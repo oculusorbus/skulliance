@@ -918,5 +918,53 @@ foreach (array(array('strength', 0), array('strength', 11), array('max_health', 
 	   $bad[0] . ' of "' . $bad[1] . '" was accepted by the batch validator');
 }
 
+/* ---- the list must not decode every boss's art to draw itself --------- */
+echo "\nlist cost\n";
+/*
+ * REPORTED AS A SLOW PAGE. The list called mb_art() for every boss, and that
+ * decoded BOTH PNGs in full and sampled twenty-odd thousand pixels to print
+ * a damage score -- about 11ms a boss on a fast machine, several times that
+ * on the host. Forty bosses meant a second or two of image work before
+ * anything was drawn, every load, for a number that belongs on the screens
+ * that are about one theme or one boss.
+ */
+ok(preg_match('/function mb_art\(\$slug, \$ext, \$with_score = false\)/', $bp) === 1,
+   'mb_art() computes the damage score unconditionally, so the list decodes every boss');
+/* The score work must sit behind that flag. */
+$maAt = strpos($bp, 'function mb_art(');
+$maEnd = strpos($bp, "\n}", $maAt);
+$maBody = substr($bp, $maAt, $maEnd - $maAt);
+ok(strpos($maBody, 'mart_load(') !== false, 'mb_art no longer reads the images at all');
+ok(preg_match('/if \(\$with_score && /', $maBody) === 1,
+   'the image decode is not gated on $with_score, so the list still pays for it');
+
+/* And the list itself must not ask for it. */
+$listAt = strpos($bp, 'foreach ($tree as $pname => $cols)');
+$listEnd = strpos($bp, '<?php else: ?>', $listAt);
+$listBlock = $listAt !== false && $listEnd !== false ? substr($bp, $listAt, $listEnd - $listAt) : '';
+ok($listBlock !== '', 'could not isolate the boss list to check what it computes');
+ok(strpos($listBlock, "mb_art(\$slug, \$bx['extension'])") !== false,
+   'the list does not call mb_art without the score flag');
+ok(strpos($listBlock, 'true)') === false || strpos($listBlock, "mb_art(\$slug, \$bx['extension'], true)") === false,
+   'the list asks mb_art for the score, which is what made it slow');
+/* Thumbnails must not all download at once. */
+ok(strpos($listBlock, 'loading="lazy"') !== false,
+   'the list loads every boss thumbnail eagerly, which is tens of megabytes before anything shows');
+
+/* ---- grouped into collapsible sections ---------------------------------- */
+ok(strpos($bp, 'details class="mb-proj"') !== false || strpos($bp, '<details class="mb-proj"') !== false,
+   'the boss list is not grouped into collapsible project sections');
+ok(strpos($bp, 'class="mb-coll"') !== false,
+   'projects are not subdivided by collection');
+/* Projects start closed; collections inside an opened project start open,
+   so one click gets to the bosses rather than two. */
+ok(preg_match('/<details class="mb-proj"<\?php echo \$isOpen \? \x27 open\x27 : \x27\x27; \?>/', $bp) === 1,
+   'project sections are not closed by default, so the page still renders everything');
+ok(strpos($bp, '<details class="mb-coll" open>') !== false,
+   'collection sections start closed, so finding a boss takes two clicks instead of one');
+/* The grouping must match the order the picker uses. */
+ok(strpos($bp, "\$tree[\$pk][\$ck][] = \$bx;") !== false,
+   'the list is not grouped project-then-collection, the way the picker shows them');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);
