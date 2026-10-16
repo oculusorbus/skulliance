@@ -286,6 +286,18 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 - The endpoint takes the theme's folder from the DATABASE, never the request, and the character
   must be one of the 14. Both are paths; neither is client-supplied.
 
+### Monstrocity art board: finishing a theme
+- **THERE IS NO SAVE BUTTON AND THE BOARD HAS TO SAY SO.** Reported from real use: 28 squares
+  filled, everything already on disk, and no way to tell. A banner states it outright, and the
+  only genuinely pending thing - the `active` flag - is a button right there.
+- **ACTIVATION IS REFUSED ON AN INCOMPLETE SET**, counted from the DISK by `mart_missing_slots()`,
+  not from what the page last drew. A tab left open since before a square was cleared cannot
+  publish a theme with a broken image in it. Both base AND leader are required for all 14.
+- **"Flip both" is two single-slot requests**, not a batch endpoint. The rule that one failure
+  costs one square holds for it too, and the harness asserts no batch flip action exists.
+- Escape the FIELDS, not the separator: `htmlspecialchars($a . ' &mdash; ' . $b)` turns the `&`
+  into `&amp;` and prints the entity as literal text. It shipped reading "HAPPY HOPPERS &MDASH;".
+
 ### HARNESS TRAP: the comment stripper ate `accept="image/*"` (harness-strip.php)
 - The one-line `preg_replace('!/\*.*?\*/!s', ...)` that every harness used inline treats the MIME
   wildcard in `accept="image/*"` as a block-comment opener and deletes to the next real close -

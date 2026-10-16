@@ -68,6 +68,29 @@ function slot_url($slug, $folder, $char, $file) {
 	     . '?v=' . (is_file($file) ? filemtime($file) : 0);
 }
 
+/*
+ * ACTIVATE. This is the only action here that changes what players see, which
+ * is why the board calls it the save: every square already wrote itself to
+ * disk, and the active flag is the thing that was actually still pending.
+ *
+ * REFUSED ON AN INCOMPLETE SET. A theme in the picker with empty slots shows
+ * a broken image where a character should be, and the player cannot tell that
+ * from a bug. Counting here rather than trusting the page means a stale tab
+ * cannot publish a half-built theme.
+ */
+if ($action === 'activate') {
+	$missing = mart_missing_slots($slug);
+	if ($missing) {
+		out(array('ok' => false, 'why' => count($missing) . ' slot'
+			. (count($missing) === 1 ? ' is' : 's are') . ' still empty ('
+			. implode(', ', array_slice($missing, 0, 4))
+			. (count($missing) > 4 ? ', and more' : '') . '). A theme in the picker with an empty '
+			. 'slot shows a broken image, and a player cannot tell that from a bug.'));
+	}
+	$conn->query('UPDATE monstrocity_themes SET active = 1, updated_at = NOW() WHERE id = ' . $theme_id);
+	out(array('ok' => true));
+}
+
 if ($action === 'upload') {
 	if (!isset($_FILES['image']) || $_FILES['image']['error'] !== UPLOAD_ERR_OK) {
 		$code = $_FILES['image']['error'] ?? -1;

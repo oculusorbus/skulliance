@@ -96,6 +96,14 @@ admin_chrome('monstrocity');
 .ma-score.weak { color:#e0466b }
 .ma-score.none { color:#3d5566 }
 .ma-err { font-size:10px; color:#e0466b; margin-top:3px; min-height:12px; line-height:1.3 }
+.ma-both { margin-top:7px; width:100%; font-size:10px; padding:3px 0; background:#10222f; color:#9fb4c2;
+           border:1px solid rgba(255,255,255,.14); border-radius:3px; cursor:pointer }
+.ma-both:hover { border-color:#00c8a0; color:#00c8a0 }
+.ma-done { background:#0a1929; border:1px solid rgba(255,255,255,.12); border-left:3px solid #7a9eb0;
+           border-radius:4px; padding:11px 14px; margin:0 0 14px; font-size:12px; color:#9fb4c2; line-height:1.6 }
+.ma-done.go { border-left-color:#00c8a0 }
+.ma-done b { color:#e8eaed }
+.ma-done .adm-btn { margin-left:8px }
 </style>
 
 <?php if (!$theme): ?>
@@ -103,10 +111,34 @@ admin_chrome('monstrocity');
 <?php else: ?>
   <a class="ma-back" href="admin-monstrocity.php">&larr; All themes</a>
   <div class="ma-head">
-    <h3><?php echo htmlspecialchars($theme['project_name'] . ' &mdash; ' . $theme['title'], ENT_QUOTES); ?></h3>
+    <?php /* Each field escaped on its own. Running the separator through
+             htmlspecialchars() too turned its & into &amp; and printed the
+             entity as literal text in the heading. */ ?>
+    <h3><?php echo htmlspecialchars($theme['project_name']); ?> &mdash;
+        <?php echo htmlspecialchars($theme['title']); ?></h3>
     <span class="ma-prog" id="ma-prog"></span>
     <?php if (empty($theme['active'])): ?>
       <span class="mt-pill off" style="border:1px solid #f5a623;color:#f5a623;padding:1px 7px;border-radius:999px;font-size:10px">not live yet</span>
+    <?php endif; ?>
+  </div>
+  <?php
+    $nbase = $nlead = 0;
+    foreach ($state as $st) { if ($st['base']) $nbase++; if ($st['leader']) $nlead++; }
+    $complete = ($nbase === 14 && $nlead === 14);
+  ?>
+  <div class="ma-done<?php echo $complete ? ' go' : ''; ?>" id="ma-done">
+    <?php if ($complete && empty($theme['active'])): ?>
+      <b>All 28 slots are filled and already saved.</b>
+      There is nothing to submit &mdash; every square wrote itself to disk as it landed.
+      The only thing left is to put the theme in front of players.
+      <button type="button" class="adm-btn" id="ma-activate">Make this theme live</button>
+    <?php elseif ($complete): ?>
+      <b>All 28 slots are filled, saved, and this theme is live.</b>
+      Changing a square here replaces it immediately, for everyone.
+    <?php else: ?>
+      <b>Nothing to save &mdash; each square writes itself as it lands.</b>
+      Leave and come back whenever; what is here is already on disk.
+      <span id="ma-left"></span>
     <?php endif; ?>
   </div>
   <p class="ma-sub">
@@ -126,6 +158,11 @@ admin_chrome('monstrocity');
         <div class="ma-who">
           <?php echo htmlspecialchars($c['name']); ?>
           <span class="faces"><?php echo htmlspecialchars($c['size']); ?><br>faces <b><?php echo $c['faces']; ?></b></span>
+          <?php /* A base and its leader are the same character, so they almost
+                   always face the same way and almost always need the same
+                   decision. Two clicks per row, fourteen rows, for something
+                   that is one judgement. */ ?>
+          <button type="button" class="ma-both" data-act="flip">flip both</button>
         </div>
         <?php foreach (array('base' => 'Base', 'leader' => 'Leader') as $slot => $cap): ?>
           <div class="ma-cell">
@@ -278,6 +315,12 @@ admin_chrome('monstrocity');
     var el = document.getElementById('ma-prog');
     el.innerHTML = 'base <b>' + b + '</b>/14 &middot; leader <b>' + l + '</b>/14'
                  + (weak ? ' &middot; <span style="color:#e0466b">' + weak + ' weak damage</span>' : '');
+    var left = document.getElementById('ma-left');
+    if (left) {
+      var n = (14 - b) + (14 - l);
+      left.innerHTML = n ? '<b>' + n + '</b> square' + (n === 1 ? '' : 's') + ' still empty.'
+                         : 'All 28 filled \u2014 reload to finish up.';
+    }
   }
 
   /*
@@ -293,12 +336,35 @@ admin_chrome('monstrocity');
     if (!e.target.closest('.ma-drop')) e.preventDefault();
   });
 
+  /* One request per slot still -- "both" is two calls, not a batch endpoint.
+     The rule that a failure costs one square holds either way. */
+  function flipSlot(row, slot) {
+    var cell = cellOf(row, slot), err = errOf(row, slot);
+    if (!cell.querySelector('img')) return Promise.resolve();
+    err.textContent = ''; cell.classList.add('busy');
+    var b = new FormData();
+    b.append('action', 'flip'); b.append('slot', slot); b.append('char', row.dataset.char);
+    return post(b).then(function (r) {
+      cell.classList.remove('busy');
+      if (!r.ok) { err.textContent = r.why || 'Failed.'; return; }
+      paint(row, slot, r.url);
+      if (slot === 'base') { paintDamaged(row, r.damaged || ''); if (r.damaged) refreshScore(row); }
+    });
+  }
+
   document.querySelectorAll('.ma-row').forEach(function (row) {
     ['base', 'leader'].forEach(function (slot) { wireCell(row, cellOf(row, slot), slot); });
+    var both = row.querySelector('.ma-both');
+    if (both) both.addEventListener('click', function () {
+      both.disabled = true;
+      flipSlot(row, 'base').then(function () { return flipSlot(row, 'leader'); })
+        .then(function () { both.disabled = false; progress(); });
+    });
     row.querySelectorAll('button[data-act]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var slot = btn.dataset.slot, err = errOf(row, slot), cell = cellOf(row, slot);
-        if (btn.dataset.act === 'clear' && !confirm('Clear the ' + slot + ' image for ' + row.dataset.char + '?')) return;
+        if (btn.dataset.act === 'flip') { flipSlot(row, slot).then(progress); return; }
+        if (!confirm('Clear the ' + slot + ' image for ' + row.dataset.char + '?')) return;
         err.textContent = ''; cell.classList.add('busy');
         var b = new FormData();
         b.append('action', btn.dataset.act); b.append('slot', slot); b.append('char', row.dataset.char);
@@ -315,6 +381,21 @@ admin_chrome('monstrocity');
       });
     });
   });
+  var activate = document.getElementById('ma-activate');
+  if (activate) activate.addEventListener('click', function () {
+    activate.disabled = true; activate.textContent = 'Going live\u2026';
+    var b = new FormData();
+    b.append('action', 'activate');
+    post(b).then(function (r) {
+      if (!r.ok) { activate.disabled = false; activate.textContent = 'Make this theme live';
+                   document.getElementById('ma-done').innerHTML =
+                     '<b style="color:#e0466b">Could not activate:</b> ' + (r.why || 'unknown'); return; }
+      document.getElementById('ma-done').innerHTML =
+        '<b>This theme is live.</b> It is in the picker now. Changing a square here replaces it '
+      + 'immediately, for everyone.';
+    });
+  });
+
   progress();
 })();
 </script>

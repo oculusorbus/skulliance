@@ -151,3 +151,28 @@ function mart_accept($tmp_path, $theme_slug, $slot, $char_slug, $flip) {
 	}
 	return array($dest, '');
 }
+
+/**
+ * Which slots a theme is still missing, as "Craig base" style labels.
+ *
+ * ACTIVATION HANGS ON THIS. A theme in the picker with an empty slot shows a
+ * broken image where a character should be, and a player cannot tell that
+ * from a bug. The count is taken from the DISK, not from whatever the page
+ * last drew, so a tab left open since before somebody cleared a square
+ * cannot publish a half-built theme.
+ *
+ * A pure function because the alternative is asserting on the order of lines
+ * in the endpoint, which stays true however the condition is broken -- the
+ * mutation that replaced the whole guard with `if (false)` passed that way.
+ */
+function mart_missing_slots($theme_slug) {
+	$dir = __DIR__ . '/' . monstrocity_theme_dir($theme_slug);
+	$out = array();
+	foreach (monstrocity_characters() as $c) {
+		foreach (array('base', 'leader') as $need) {
+			$f = $dir . '/' . monstrocity_slot_folder($need) . '/' . $c['slug'] . '.png';
+			if (!is_file($f)) $out[] = $c['name'] . ' ' . $need;
+		}
+	}
+	return $out;
+}

@@ -213,5 +213,57 @@ ok(strpos($pgNo, "e.target.closest('.ma-drop')") !== false,
 ok(substr_count($pgNo, "addEventListener('drop'") >= 2,
    'the slots themselves no longer accept a drop');
 
+/* ---- activate, and the board's answer to "how do I save" ---------------- */
+echo "\nfinishing a theme\n";
+/* The board must SAY that nothing is pending. Reported from real use: 28
+   squares filled, everything already on disk, and no way to tell. */
+ok(strpos($pg, 'Nothing to save') !== false || strpos($pg, 'already saved') !== false,
+   'the board never says that uploads have already saved, so there is nothing to look for');
+ok(strpos($pgNo, "id=\"ma-activate\"") !== false || strpos($pgNo, "id='ma-activate'") !== false,
+   'there is no way to put a finished theme live from the board');
+ok(strpos($pgNo, "action', 'activate'") !== false, 'the activate button is wired to nothing');
+
+/* Activation is the one action that changes what players see, so the server
+   decides whether the set is complete -- not a page that might be stale. */
+ok(strpos($epNo, "action === 'activate'") !== false, 'the endpoint cannot activate a theme');
+/* DRIVEN, not read. The order-of-lines version of this passed with the whole
+   guard replaced by `if (false)`. */
+$gt = 'harness-gate-' . getmypid();
+$gdir = __DIR__ . '/' . monstrocity_theme_dir($gt);
+@mkdir($gdir . '/base', 0775, true); @mkdir($gdir . '/leader', 0775, true);
+@mkdir($gdir . '/battle-damaged', 0775, true);
+ok(count(mart_missing_slots($gt)) === 28, 'an empty theme does not report all 28 slots missing');
+foreach (monstrocity_characters() as $c) {
+	mart_accept('/tmp/mah_src.png', $gt, 'base', $c['slug'], false);
+	mart_accept('/tmp/mah_src.png', $gt, 'leader', $c['slug'], false);
+}
+ok(mart_missing_slots($gt) === array(), 'a fully filled theme still reports missing slots: '
+   . implode(', ', mart_missing_slots($gt)));
+@unlink($gdir . '/leader/spydrax.png');
+$m = mart_missing_slots($gt);
+ok($m === array('Spydrax leader'), 'one removed leader was not reported alone: ' . implode(', ', $m));
+@unlink($gdir . '/base/craig.png');
+ok(count(mart_missing_slots($gt)) === 2, 'a missing base is not counted alongside a missing leader');
+/* And the endpoint refuses on the result rather than ignoring it. */
+ok(strpos($epNo, '$missing = mart_missing_slots($slug);') !== false,
+   'the endpoint no longer asks which slots are missing');
+ok(strpos($epNo, 'if ($missing) {') !== false && strpos($epNo, 'if ($missing) {') < strpos($epNo, 'SET active = 1'),
+   'the endpoint activates without acting on the missing-slot list');
+array_map('unlink', glob($gdir . '/*/*.png') ?: array());
+foreach (array('base','leader','battle-damaged') as $sd) @rmdir($gdir . '/' . $sd);
+@rmdir($gdir);
+ok(!is_dir($gdir), 'the harness left ' . $gdir . ' behind');
+
+/* "Flip both" must still be two single-slot requests -- the no-batch rule. */
+ok(strpos($pgNo, 'function flipSlot(') !== false, 'there is no shared single-slot flip');
+ok(strpos($pgNo, "flipSlot(row, 'base').then(function () { return flipSlot(row, 'leader'); })") !== false,
+   'flip both is not two separate single-slot requests, so one failure could take the pair down');
+ok(strpos($epNo, "action === 'flipboth'") === false && strpos($epNo, "'both'") === false,
+   'a batch flip endpoint appeared, which is the one thing this design does not have');
+
+/* The heading escaped its own separator and printed &mdash; as text. */
+ok(strpos($pg, "htmlspecialchars(\$theme['project_name'] . ' &mdash; '") === false,
+   'the heading runs its separator through htmlspecialchars, which prints the entity as text');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);
