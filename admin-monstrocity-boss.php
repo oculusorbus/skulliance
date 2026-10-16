@@ -332,6 +332,9 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
 .mb-mv button:disabled { opacity:.25; cursor:default }
 table.mb-tune tr.moved td { background:rgba(0,200,160,.09) }
 .mb-dirty { color:#f5a623; font-size:11px; margin-left:10px }
+table.mb-tune tr.mb-run td { background:rgba(0,200,160,.07); border-top:1px solid rgba(0,200,160,.3);
+  font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#00c8a0; padding:8px 8px 6px }
+table.mb-tune tr.mb-run td span { color:#5a7888; text-transform:none; letter-spacing:0 }
 .mb-prev { display:flex; gap:10px; align-items:flex-start; margin-top:8px }
 .mb-prev figure { margin:0; text-align:center }
 .mb-prev img { width:110px; height:110px; object-fit:contain; background:#07111d;
@@ -349,13 +352,13 @@ table.mb-tune tr.moved td { background:rgba(0,200,160,.09) }
     <a class="adm-btn" href="admin-monstrocity-boss.php?new=1" style="margin-left:8px">New boss</a>
   </p>
   <p class="mb-lead">
-    <b>Order is strength, then speed, then tactics.</b> The game sorts by exactly those three, so
-    the sequence here is the sequence players meet &mdash; and sharing a strength is fine now,
-    because speed and then tactics separate them. The arrows swap a boss's whole difficulty block
-    with its neighbour, so the curve you tune stays put and only the bosses move through it.<br>
-    <b>In game</b> is each boss's position among all <?php echo count($bosses); ?>, since the game
-    lists every theme in one climb and this screen shows one theme's slice of it. The bar is
-    health relative to the toughest here.
+    <b>The picker groups by project, then collection</b>, and inside each group orders by
+    strength, then speed, then tactics. The headings below are those groups, so what you see here
+    is the sequence players meet. Sharing a strength is fine &mdash; speed and then tactics
+    separate them, which is what makes a boss placeable without guesswork.<br>
+    The arrows swap a boss's whole difficulty block with its neighbour, so the curve you tune
+    stays put and only the bosses move through it. <b>In game</b> is the position among all
+    <?php echo count($bosses); ?> bosses; the bar is health relative to the toughest on this theme.
   </p>
 
   <?php if ($batch_problems): ?>
@@ -374,10 +377,22 @@ table.mb-tune tr.moved td { background:rgba(0,200,160,.09) }
       <tr><th>#</th><th title="Position among ALL bosses, which is the order players see">In&nbsp;game</th>
           <th>Move</th><th></th><th>Boss</th><th>Health</th><th>Str</th><th>Spd</th><th>Tac</th>
           <th>Size</th><th>Powerup</th><th>Curve</th></tr>
-      <?php foreach ($batch_rows as $i => $bx): $bs = monstrocity_boss_slug($bx['name']);
-            $ba = mb_art($bs, $bx['extension']); ?>
+      <?php $runKey = null; $runPos = 0;
+            foreach ($batch_rows as $i => $bx): $bs = monstrocity_boss_slug($bx['name']);
+            $ba = mb_art($bs, $bx['extension']);
+            /* THE PICKER GROUPS BY PROJECT AND COLLECTION, so the climb a
+               player experiences happens inside one run. Showing the same
+               breaks here is the only way this screen can be read as the
+               sequence it actually produces. */
+            $thisRun = (int)$bx['project_id'] . ':' . (int)$bx['collection_id'];
+            if ($thisRun !== $runKey): $runKey = $thisRun; $runPos = 0; ?>
+      <tr class="mb-run"><td colspan="12">
+        <?php echo htmlspecialchars($bx['project_name'] === null ? 'No project' : $bx['project_name']); ?>
+        <span>&middot; <?php echo htmlspecialchars($bx['collection_name'] === null ? 'no collection' : $bx['collection_name']); ?></span>
+      </td></tr>
+      <?php endif; $runPos++; ?>
       <tr>
-        <td class="mb-pos" style="color:#5a7888"><?php echo $i + 1; ?></td>
+        <td class="mb-pos" style="color:#5a7888"><?php echo $runPos; ?></td>
         <td class="mb-glob" style="color:#5a7888;font-family:ui-monospace,Menlo,monospace">
           <?php echo isset($globalPos[(int)$bx['id']]) ? $globalPos[(int)$bx['id']] . '<span style="opacity:.5">/' . count($bosses) . '</span>' : '&mdash;'; ?>
         </td>
@@ -464,12 +479,20 @@ table.mb-tune tr.moved td { background:rgba(0,200,160,.09) }
       var h = r.querySelector('input[name$="[max_health]"]');
       if (h) maxHp = Math.max(maxHp, parseInt(h.value, 10) || 0);
     });
+    /* Numbered within the run, and the arrows stop at its edges, because
+       that is the ladder a player climbs. */
+    var runPos = 0;
     rows.forEach(function (r, i) {
+      if (r.classList.contains('mb-run')) { runPos = 0; return; }
+      runPos++;
+      var prev = r.previousElementSibling, next = r.nextElementSibling;
+      var firstInRun = !prev || prev.classList.contains('mb-run');
+      var lastInRun  = !next || next.classList.contains('mb-run');
       var pos = r.querySelector('.mb-pos');
-      if (pos) pos.textContent = i + 1;
+      if (pos) pos.textContent = runPos;
       var up = r.querySelector('.mb-up'), dn = r.querySelector('.mb-dn');
-      if (up) up.disabled = (i === 0);
-      if (dn) dn.disabled = (i === rows.length - 1);
+      if (up) up.disabled = firstInRun;
+      if (dn) dn.disabled = lastInRun;
       var bar = r.querySelector('.mb-bar span');
       var h = r.querySelector('input[name$="[max_health]"]');
       if (bar && h) bar.style.width = Math.round((parseInt(h.value, 10) || 0) / maxHp * 100) + '%';
@@ -483,7 +506,11 @@ table.mb-tune tr.moved td { background:rgba(0,200,160,.09) }
     if (!btn || btn.disabled) return;
     var tr = btn.closest('tr');
     var other = btn.classList.contains('mb-up') ? tr.previousElementSibling : tr.nextElementSibling;
-    if (!other || !other.querySelector('.mb-pos')) return;
+    /* Never across a group heading. A boss's place in the picker is decided
+       by its project and collection first, so swapping stats with something
+       in a different run would move neither of them where it looked like
+       they were going. */
+    if (!other || other.classList.contains('mb-run') || !other.querySelector('.mb-pos')) return;
     swapStats(tr, other);
     if (btn.classList.contains('mb-up')) tr.parentNode.insertBefore(tr, other);
     else tr.parentNode.insertBefore(other, tr);

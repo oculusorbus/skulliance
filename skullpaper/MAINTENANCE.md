@@ -350,14 +350,22 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   a separate migration with its own byte-identical gate.
 - Powerups are the only four the game implements: Minor Regen, Regenerate, Boost Attack, Heal.
   Anything else is a boss with no ability.
-- **ORDER IS STRENGTH, THEN SPEED, THEN TACTICS, THEN id** - one decision, two implementations:
+- **ORDER IS PROJECT, COLLECTION, STRENGTH, SPEED, TACTICS, id** - one decision, two
+  implementations:
   `monstrocity_boss_order()` in PHP and the ORDER BY in ajax/get-bosses.php, which
   `monstrocity_boss_order_sql()` generates the canonical spelling of. **The harness extracts the
   game's clause and compares it EXACTLY** - a prefix match let a shortened helper pass.
-- **PROJECT AND COLLECTION ARE NO LONGER IN THE ORDERING.** They were grouping the list by project
-  before strength, so the tune screen's sequence did not match play whenever a theme spanned
-  collections - which is how this was reported. The picker filters by project with a dropdown, and
-  hiding needs no contiguity.
+- **THE GROUPING IS NOT OPTIONAL.** I removed project/collection from the ordering on the
+  reasoning that the picker's project dropdown made contiguity unnecessary. WRONG: the picker
+  opens UNFILTERED, so without grouping every project's bosses interleave by difficulty and the
+  list is a jumble. Restored, and the harness now asserts that a WEAK boss in project 2 still
+  sorts after a STRONG one in project 1.
+- The original mismatch was the admin ignoring the grouping, not the game having it. The tune
+  screen draws the same project+collection runs the picker does, numbers rows within a run, and
+  the arrows stop at run edges - swapping stats across a boundary would move neither boss where
+  it looked like it was going.
+- **ESCALATION IS JUDGED INSIDE A RUN.** Comparing the first boss of one collection against the
+  last of another reports a dip no player ever experiences.
 - Three stats give enough resolution to place a boss exactly without inventing a sort column, and
   they are the same three the arrows move. Sharing a strength is now FINE; only a full tie on all
   three is undefined, and that is what `monstrocity_boss_set_problems()` reports.

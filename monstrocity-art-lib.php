@@ -466,33 +466,56 @@ function mart_rename_boss($old_slug, $new_slug, $ext = 'png') {
  * more than one collection, which is why the panel's order did not match
  * what came out in play.
  *
- * STRENGTH, THEN SPEED, THEN TACTICS. Strength alone left ties with no
- * defined order at all -- the database could return them either way between
- * page loads. Three stats give enough resolution to place a boss exactly
- * where it is wanted without inventing a sort column, and they are the same
- * three numbers the arrows already move.
+ * PROJECT, THEN COLLECTION, THEN STRENGTH, SPEED, TACTICS, id.
  *
- * id last, so two bosses identical on all three are still deterministic.
+ * The grouping is NOT optional and removing it was a mistake: the boss
+ * picker is one long list and the project dropdown starts unfiltered, so
+ * without project and collection leading the sort every project's bosses
+ * interleave by difficulty and the display is a jumble. Grouping is what
+ * makes the list readable; the stats order the ladder INSIDE each group.
  *
- * Project and collection are gone from the ordering. They were grouping the
- * list by project, but the picker filters by project with a dropdown and
- * hiding does not need contiguity -- and a difficulty ladder reads better
- * climbing cleanly than restarting at every project boundary.
+ * The three stats are what the admin needed. Strength alone left ties with
+ * no defined order -- the database could return them either way between page
+ * loads -- and gave no resolution for placing a boss exactly where it is
+ * wanted. Speed and then tactics supply that without inventing a sort
+ * column, and they are the same three numbers the arrows already move.
  *
- * ajax/get-bosses.php MUST sort the same way. The harness checks its SQL.
+ * id last, so two bosses identical on everything are still deterministic.
+ *
+ * ajax/get-bosses.php MUST sort the same way. The harness pulls its ORDER BY
+ * out of the file and compares it exactly.
  */
 function monstrocity_boss_order($bosses) {
 	usort($bosses, function ($a, $b) {
-		return array((int)$a['strength'], (int)$a['speed'], (int)$a['tactics'], (int)(isset($a['id']) ? $a['id'] : 0))
-		   <=> array((int)$b['strength'], (int)$b['speed'], (int)$b['tactics'], (int)(isset($b['id']) ? $b['id'] : 0));
+		return array((int)(isset($a['project_id']) ? $a['project_id'] : 0),
+		             (int)(isset($a['collection_id']) ? $a['collection_id'] : 0),
+		             (int)$a['strength'], (int)$a['speed'], (int)$a['tactics'],
+		             (int)(isset($a['id']) ? $a['id'] : 0))
+		   <=> array((int)(isset($b['project_id']) ? $b['project_id'] : 0),
+		             (int)(isset($b['collection_id']) ? $b['collection_id'] : 0),
+		             (int)$b['strength'], (int)$b['speed'], (int)$b['tactics'],
+		             (int)(isset($b['id']) ? $b['id'] : 0));
 	});
 	return $bosses;
 }
 
 /** The SQL that has to match monstrocity_boss_order(). One spelling. */
 function monstrocity_boss_order_sql($alias = 'b') {
-	return 'ORDER BY ' . $alias . '.strength ASC, ' . $alias . '.speed ASC, '
+	return 'ORDER BY ' . $alias . '.project_id ASC, ' . $alias . '.collection_id ASC, '
+	     . $alias . '.strength ASC, ' . $alias . '.speed ASC, '
 	     . $alias . '.tactics ASC, ' . $alias . '.id ASC';
+}
+
+/** Bosses split into the runs the picker shows them in: one per
+ *  project+collection. The ladder inside each run is what escalates. */
+function monstrocity_boss_groups($bosses) {
+	$out = array();
+	foreach (monstrocity_boss_order($bosses) as $b) {
+		$k = (int)(isset($b['project_id']) ? $b['project_id'] : 0) . ':'
+		   . (int)(isset($b['collection_id']) ? $b['collection_id'] : 0);
+		$out[$k][] = $b;
+	}
+	return $out;
 }
 
 /**
@@ -514,6 +537,19 @@ function monstrocity_boss_order_sql($alias = 'b') {
 function monstrocity_boss_set_problems($bosses) {
 	$out = array();
 	if (count($bosses) < 2) return $out;
+
+	/*
+	 * CHECKED PER RUN. The picker groups by project and collection, so the
+	 * climb a player experiences is inside one group -- comparing a boss to
+	 * the last one of a different collection reports a dip that nobody will
+	 * ever see.
+	 */
+	if (count(monstrocity_boss_groups($bosses)) > 1) {
+		$all = array();
+		foreach (monstrocity_boss_groups($bosses) as $run)
+			$all = array_merge($all, monstrocity_boss_set_problems($run));
+		return $all;
+	}
 
 	$bosses = monstrocity_boss_order($bosses);
 

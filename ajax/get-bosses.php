@@ -42,14 +42,14 @@ function getBosses($conn) {
             FROM bosses b
             INNER JOIN projects p ON b.project_id = p.id
             INNER JOIN collections c ON b.collection_id = c.id 
-			/* ONE ORDER, shared with the admin. This used to group by project
-			   and collection first, so the tune screen's sequence did not
-			   match what players saw whenever a theme spanned collections.
-			   Strength then speed then tactics, with id last so a full tie
-			   is still deterministic. Must match monstrocity_boss_order().
-			   The project dropdown filters by hiding, which needs no
-			   contiguity. */
-			ORDER BY b.strength ASC, b.speed ASC, b.tactics ASC, b.id ASC
+			/* ONE ORDER, shared with the admin -- must match
+			   monstrocity_boss_order(). GROUPING FIRST: this list is shown
+			   unfiltered by default, so without project and collection
+			   leading the sort every project's bosses interleave by
+			   difficulty and the picker is a jumble. The stats order the
+			   ladder inside each group; id last so a full tie is still
+			   deterministic. */
+			ORDER BY b.project_id ASC, b.collection_id ASC, b.strength ASC, b.speed ASC, b.tactics ASC, b.id ASC
         ";
         $result = $conn->query($sql);
         if (!$result) {

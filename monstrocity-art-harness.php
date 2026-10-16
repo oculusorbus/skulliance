@@ -493,27 +493,58 @@ $p = monstrocity_boss_set_problems($tie);
 ok($p !== array() && strpos($p[0], 'identical on strength, speed and tactics') !== false,
    'two bosses identical on all three stats were not flagged, though nothing decides their order');
 
-/* And the order itself: three stats, in that priority. */
-$ordB = array(
-	array('name'=>'third', 'strength'=>5,'speed'=>5,'tactics'=>9,'max_health'=>100,'id'=>1),
-	array('name'=>'first', 'strength'=>4,'speed'=>9,'tactics'=>9,'max_health'=>100,'id'=>2),
-	array('name'=>'second','strength'=>5,'speed'=>4,'tactics'=>1,'max_health'=>100,'id'=>3),
-);
+/* Inside one project+collection: three stats, in that priority. */
+$B = function ($n, $st, $sp, $ta, $id, $pr = 1, $co = 1) {
+	return array('name'=>$n,'strength'=>$st,'speed'=>$sp,'tactics'=>$ta,'max_health'=>100,
+	             'id'=>$id,'project_id'=>$pr,'collection_id'=>$co);
+};
+$ordB = array($B('third',5,5,9,1), $B('first',4,9,9,2), $B('second',5,4,1,3));
 ok(array_column(monstrocity_boss_order($ordB), 'name') === array('first','second','third'),
    'bosses are not ordered strength, then speed, then tactics: '
  . implode(', ', array_column(monstrocity_boss_order($ordB), 'name')));
-/* Speed must not outrank strength. */
-$prio = array(
-	array('name'=>'strong','strength'=>9,'speed'=>1,'tactics'=>1,'id'=>1),
-	array('name'=>'quick', 'strength'=>1,'speed'=>9,'tactics'=>9,'id'=>2),
+ok(array_column(monstrocity_boss_order(array($B('strong',9,1,1,1), $B('quick',1,9,9,2))), 'name')
+   === array('quick','strong'), 'speed is outranking strength in the ordering');
+ok(array_column(monstrocity_boss_order(array($B('b',5,5,5,9), $B('a',5,5,5,2))), 'name')
+   === array('a','b'), 'a full tie is not broken by id, so the order can change between page loads');
+
+/*
+ * AND GROUPING COMES FIRST. The picker is shown unfiltered by default, so
+ * without project and collection leading the sort every project's bosses
+ * interleave by difficulty and the list is a jumble. Removing the grouping
+ * was a mistake and this is the check that will not let it happen twice: a
+ * WEAK boss in project 2 must still come after a STRONG one in project 1.
+ */
+$mixed = array($B('p2-weak', 1,1,1, 10, 2, 5), $B('p1-strong', 9,9,9, 11, 1, 1));
+ok(array_column(monstrocity_boss_order($mixed), 'name') === array('p1-strong', 'p2-weak'),
+   'project no longer groups the list, so projects interleave by difficulty in the picker');
+/* Collection groups within a project, the same way. */
+$cols = array($B('c9-weak', 1,1,1, 12, 1, 9), $B('c1-strong', 9,9,9, 13, 1, 1));
+ok(array_column(monstrocity_boss_order($cols), 'name') === array('c1-strong', 'c9-weak'),
+   'collection no longer groups within a project');
+/*
+ * ESCALATION IS JUDGED INSIDE A RUN. The picker groups, so comparing the
+ * first boss of one collection against the last of another reports a dip
+ * nobody will ever experience. Run 2 here starts far weaker than run 1
+ * ended, which is perfectly normal and must NOT be flagged.
+ */
+$twoRuns = array(
+	array('name'=>'r1a','strength'=>2,'speed'=>2,'tactics'=>2,'max_health'=>200,'id'=>1,'project_id'=>1,'collection_id'=>1),
+	array('name'=>'r1b','strength'=>8,'speed'=>8,'tactics'=>8,'max_health'=>900,'id'=>2,'project_id'=>1,'collection_id'=>1),
+	array('name'=>'r2a','strength'=>1,'speed'=>1,'tactics'=>1,'max_health'=>100,'id'=>3,'project_id'=>2,'collection_id'=>7),
+	array('name'=>'r2b','strength'=>5,'speed'=>5,'tactics'=>5,'max_health'=>500,'id'=>4,'project_id'=>2,'collection_id'=>7),
 );
-ok(array_column(monstrocity_boss_order($prio), 'name') === array('quick','strong'),
-   'speed is outranking strength in the ordering');
-/* id breaks a total tie so the sequence is at least stable. */
-$dead = array(array('name'=>'b','strength'=>5,'speed'=>5,'tactics'=>5,'id'=>9),
-              array('name'=>'a','strength'=>5,'speed'=>5,'tactics'=>5,'id'=>2));
-ok(array_column(monstrocity_boss_order($dead), 'name') === array('a','b'),
-   'a full tie is not broken by id, so the order can change between page loads');
+ok(monstrocity_boss_set_problems($twoRuns) === array(),
+   'a dip BETWEEN two runs was reported as a problem, though each run climbs cleanly: '
+ . implode(' | ', monstrocity_boss_set_problems($twoRuns)));
+/* But a dip INSIDE a run is still caught. */
+$badRun = $twoRuns;
+$badRun[1]['max_health'] = 50;      // r1b now weaker than r1a, same run
+ok(monstrocity_boss_set_problems($badRun) !== array(),
+   'a dip inside a single run went unreported');
+
+/* And the runs are exposed, since the climb happens inside one. */
+$runs = monstrocity_boss_groups(array_merge($mixed, $cols));
+ok(count($runs) === 3, 'bosses split into ' . count($runs) . ' runs, expected 3 (1:1, 1:9, 2:5)');
 
 /*
  * AND THE GAME'S SQL MUST SAY THE SAME THING. These are two implementations
@@ -521,11 +552,11 @@ ok(array_column(monstrocity_boss_order($dead), 'name') === array('a','b'),
  * exactly what happens when they drift, and it is what was reported.
  */
 $gb = file_get_contents(__DIR__ . '/ajax/get-bosses.php');
-ok(strpos($gb, 'ORDER BY b.strength ASC, b.speed ASC, b.tactics ASC, b.id ASC') !== false,
-   'ajax/get-bosses.php does not order by strength, speed, tactics, id');
-ok(strpos($gb, 'ORDER BY b.project_id, b.collection_id, b.strength') === false,
-   'the game still groups bosses by project and collection before strength, which is why the '
- . 'tune screen disagreed with it whenever a theme spanned collections');
+ok(strpos($gb, 'b.project_id ASC, b.collection_id ASC') !== false,
+   'the game no longer groups the picker by project and collection, so every project\'s bosses '
+ . 'interleave by difficulty and the list is a jumble');
+ok(strpos($gb, 'b.strength ASC, b.speed ASC, b.tactics ASC, b.id ASC') !== false,
+   'the game does not order by all three stats inside a group');
 /* EXACT, not a prefix. `ORDER BY b.strength ASC` is a substring of the real
    clause, so a helper shortened to just that passed a strpos happily. Pull
    the clause out of the file and compare the whole thing. */
@@ -543,6 +574,23 @@ ok(strpos($bp, 'monstrocity_boss_order($bosses)') !== false,
    'the tune screen does not compute a global position, so its numbering looks like it '
  . 'disagrees with the game');
 ok(strpos($bp, 'mb-glob') !== false, 'the global position is never displayed');
+
+/*
+ * THE TUNE SCREEN MUST SHOW THE RUNS. The picker groups by project and
+ * collection, so a flat list of a theme's bosses reads as a sequence the
+ * game never produces. Those breaks are drawn, and the arrows stop at them.
+ */
+/* The HEADING ROW, not the word. Renaming the class in the markup leaves
+   mb-run in the stylesheet and the script, and a plain strpos is happy. */
+ok(strpos($bp, 'class="mb-run"') !== false,
+   'the tune screen does not show where one project+collection run ends and the next begins');
+ok(strpos($bp, "other.classList.contains('mb-run')") !== false,
+   'an arrow can swap a boss with one in a different project or collection, which would move '
+ . 'neither of them where it looked like they were going');
+ok(strpos($bp, 'firstInRun') !== false && strpos($bp, 'lastInRun') !== false,
+   'the arrows do not stop at the edges of a run');
+ok(strpos($bp, 'monstrocity_boss_groups(') !== false || strpos($bp, '$thisRun') !== false,
+   'the tune screen does not group its rows the way the picker does');
 ok(strpos($bp, 'monstrocity_boss_order($batch_rows)') !== false,
    'the tune screen sorts its rows with its own comparator instead of the shared one');
 
