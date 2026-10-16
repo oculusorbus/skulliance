@@ -477,14 +477,74 @@ ok(monstrocity_boss_set_problems(array($mk('Only',5,500))) === array(),
 ok(monstrocity_boss_set_problems(array()) === array(), 'an empty theme produced problems');
 
 /*
- * THE ONE THAT IS NOT A JUDGEMENT: get-bosses.php orders by strength and
- * nothing else, so two bosses sharing one have no defined sequence -- the
- * order can differ between page loads with nothing changed.
+ * SHARING A STRENGTH IS NOW FINE. The order is strength, then speed, then
+ * tactics, so two bosses on the same strength are separated by the next
+ * stat -- that granularity is the whole reason for the three-part key.
  */
+$shared = array($mk('A',5,200), $mk('B',5,400));
+$shared[0]['speed'] = 4; $shared[1]['speed'] = 6;
+ok(monstrocity_boss_set_problems($shared) === array(),
+   'two bosses sharing a strength but differing on speed were still flagged: '
+ . implode(' | ', monstrocity_boss_set_problems($shared)));
+
+/* A FULL tie on all three is the only genuinely undefined case left. */
 $tie = array($mk('A',5,200), $mk('B',5,400));
 $p = monstrocity_boss_set_problems($tie);
-ok($p !== array() && strpos($p[0], 'Strength 5') !== false,
-   'two bosses sharing a strength were not flagged, though their running order is undefined');
+ok($p !== array() && strpos($p[0], 'identical on strength, speed and tactics') !== false,
+   'two bosses identical on all three stats were not flagged, though nothing decides their order');
+
+/* And the order itself: three stats, in that priority. */
+$ordB = array(
+	array('name'=>'third', 'strength'=>5,'speed'=>5,'tactics'=>9,'max_health'=>100,'id'=>1),
+	array('name'=>'first', 'strength'=>4,'speed'=>9,'tactics'=>9,'max_health'=>100,'id'=>2),
+	array('name'=>'second','strength'=>5,'speed'=>4,'tactics'=>1,'max_health'=>100,'id'=>3),
+);
+ok(array_column(monstrocity_boss_order($ordB), 'name') === array('first','second','third'),
+   'bosses are not ordered strength, then speed, then tactics: '
+ . implode(', ', array_column(monstrocity_boss_order($ordB), 'name')));
+/* Speed must not outrank strength. */
+$prio = array(
+	array('name'=>'strong','strength'=>9,'speed'=>1,'tactics'=>1,'id'=>1),
+	array('name'=>'quick', 'strength'=>1,'speed'=>9,'tactics'=>9,'id'=>2),
+);
+ok(array_column(monstrocity_boss_order($prio), 'name') === array('quick','strong'),
+   'speed is outranking strength in the ordering');
+/* id breaks a total tie so the sequence is at least stable. */
+$dead = array(array('name'=>'b','strength'=>5,'speed'=>5,'tactics'=>5,'id'=>9),
+              array('name'=>'a','strength'=>5,'speed'=>5,'tactics'=>5,'id'=>2));
+ok(array_column(monstrocity_boss_order($dead), 'name') === array('a','b'),
+   'a full tie is not broken by id, so the order can change between page loads');
+
+/*
+ * AND THE GAME'S SQL MUST SAY THE SAME THING. These are two implementations
+ * of one decision; the panel showing a different order from the game is
+ * exactly what happens when they drift, and it is what was reported.
+ */
+$gb = file_get_contents(__DIR__ . '/ajax/get-bosses.php');
+ok(strpos($gb, 'ORDER BY b.strength ASC, b.speed ASC, b.tactics ASC, b.id ASC') !== false,
+   'ajax/get-bosses.php does not order by strength, speed, tactics, id');
+ok(strpos($gb, 'ORDER BY b.project_id, b.collection_id, b.strength') === false,
+   'the game still groups bosses by project and collection before strength, which is why the '
+ . 'tune screen disagreed with it whenever a theme spanned collections');
+/* EXACT, not a prefix. `ORDER BY b.strength ASC` is a substring of the real
+   clause, so a helper shortened to just that passed a strpos happily. Pull
+   the clause out of the file and compare the whole thing. */
+$clause = '';
+if (preg_match('/ORDER BY b\.[^\n;\'"]*/', $gb, $cm)) $clause = trim($cm[0]);
+ok($clause !== '', 'could not find the ORDER BY in ajax/get-bosses.php');
+ok($clause === trim(monstrocity_boss_order_sql('b')),
+   'the game SQL and monstrocity_boss_order_sql() have drifted apart:' . "\n"
+ . '        game:   ' . $clause . "\n"
+ . '        helper: ' . trim(monstrocity_boss_order_sql('b')));
+
+/* The tune screen shows where a boss lands among ALL bosses, because it is
+   showing one theme's slice of a single global climb. */
+ok(strpos($bp, 'monstrocity_boss_order($bosses)') !== false,
+   'the tune screen does not compute a global position, so its numbering looks like it '
+ . 'disagrees with the game');
+ok(strpos($bp, 'mb-glob') !== false, 'the global position is never displayed');
+ok(strpos($bp, 'monstrocity_boss_order($batch_rows)') !== false,
+   'the tune screen sorts its rows with its own comparator instead of the shared one');
 
 /*
  * THE SET MUST BE SORTED BEFORE IT IS JUDGED. Rows arrive in whatever order

@@ -35,7 +35,7 @@ function mb_all($conn) {
 	                     FROM bosses b
 	                     LEFT JOIN projects p ON p.id = b.project_id
 	                     LEFT JOIN collections c ON c.id = b.collection_id
-	                    ORDER BY b.theme ASC, b.strength ASC, b.id ASC');
+	                    ORDER BY b.theme ASC, b.strength ASC, b.speed ASC, b.tactics ASC, b.id ASC');
 	if ($r) while ($x = $r->fetch_assoc()) $out[] = $x;
 	return $out;
 }
@@ -265,15 +265,22 @@ if ($creating && !$row) {
 }
 if (isset($repost)) $row = array_merge((array)$row, $repost);
 
-/* A theme's bosses, in the order the game will present them. */
+/*
+ * A theme's bosses, in the order the game will present them -- through the
+ * SAME function the game's SQL mirrors, not a second sort that drifts.
+ *
+ * AND THEIR GLOBAL POSITION. The tune screen shows one theme; the game lists
+ * every boss in one climb, so a theme's bosses are a SUBSEQUENCE of that. A
+ * row numbered 3 of 5 here can be 11th overall, and without saying so the
+ * panel looks like it disagrees with the game.
+ */
 $batch_theme = isset($batch_theme) ? $batch_theme : (isset($_GET['tune']) ? (string)$_GET['tune'] : '');
+$globalPos = array();
+foreach (monstrocity_boss_order($bosses) as $gi => $gb) $globalPos[(int)$gb['id']] = $gi + 1;
 $batch_rows = array();
 if ($batch_theme !== '') {
 	foreach ($bosses as $bx) if ($bx['theme'] === $batch_theme) $batch_rows[] = $bx;
-	usort($batch_rows, function ($a, $b) {
-		return array((int)$a['strength'], (string)$a['name'])
-		   <=> array((int)$b['strength'], (string)$b['name']);
-	});
+	$batch_rows = monstrocity_boss_order($batch_rows);
 }
 $batch_problems = monstrocity_boss_set_problems($batch_rows);
 $batch_maxhp = 1;
@@ -342,9 +349,13 @@ table.mb-tune tr.moved td { background:rgba(0,200,160,.09) }
     <a class="adm-btn" href="admin-monstrocity-boss.php?new=1" style="margin-left:8px">New boss</a>
   </p>
   <p class="mb-lead">
-    <b>Strength is the running order.</b> The game sorts by it, so changing a strength moves a boss
-    in the sequence, and two bosses sharing one have no defined order at all. The bar is health
-    relative to the toughest here.
+    <b>Order is strength, then speed, then tactics.</b> The game sorts by exactly those three, so
+    the sequence here is the sequence players meet &mdash; and sharing a strength is fine now,
+    because speed and then tactics separate them. The arrows swap a boss's whole difficulty block
+    with its neighbour, so the curve you tune stays put and only the bosses move through it.<br>
+    <b>In game</b> is each boss's position among all <?php echo count($bosses); ?>, since the game
+    lists every theme in one climb and this screen shows one theme's slice of it. The bar is
+    health relative to the toughest here.
   </p>
 
   <?php if ($batch_problems): ?>
@@ -360,12 +371,16 @@ table.mb-tune tr.moved td { background:rgba(0,200,160,.09) }
     <input type="hidden" name="batch" value="1">
     <input type="hidden" name="batch_theme" value="<?php echo htmlspecialchars($batch_theme); ?>">
     <table class="mb mb-tune">
-      <tr><th>#</th><th>Move</th><th></th><th>Boss</th><th>Health</th><th>Str</th><th>Spd</th><th>Tac</th>
+      <tr><th>#</th><th title="Position among ALL bosses, which is the order players see">In&nbsp;game</th>
+          <th>Move</th><th></th><th>Boss</th><th>Health</th><th>Str</th><th>Spd</th><th>Tac</th>
           <th>Size</th><th>Powerup</th><th>Curve</th></tr>
       <?php foreach ($batch_rows as $i => $bx): $bs = monstrocity_boss_slug($bx['name']);
             $ba = mb_art($bs, $bx['extension']); ?>
       <tr>
         <td class="mb-pos" style="color:#5a7888"><?php echo $i + 1; ?></td>
+        <td class="mb-glob" style="color:#5a7888;font-family:ui-monospace,Menlo,monospace">
+          <?php echo isset($globalPos[(int)$bx['id']]) ? $globalPos[(int)$bx['id']] . '<span style="opacity:.5">/' . count($bosses) . '</span>' : '&mdash;'; ?>
+        </td>
         <td class="mb-mv">
           <button type="button" class="mb-up" title="Move earlier">&uarr;</button>
           <button type="button" class="mb-dn" title="Move later">&darr;</button>

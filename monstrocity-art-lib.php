@@ -459,6 +459,43 @@ function mart_rename_boss($old_slug, $new_slug, $ext = 'png') {
 }
 
 /**
+ * THE ONE ORDER, used by the game and by the admin.
+ *
+ * The game sorted by project_id, collection_id, strength; the tune screen
+ * sorted by strength within a theme. Those disagree whenever a theme spans
+ * more than one collection, which is why the panel's order did not match
+ * what came out in play.
+ *
+ * STRENGTH, THEN SPEED, THEN TACTICS. Strength alone left ties with no
+ * defined order at all -- the database could return them either way between
+ * page loads. Three stats give enough resolution to place a boss exactly
+ * where it is wanted without inventing a sort column, and they are the same
+ * three numbers the arrows already move.
+ *
+ * id last, so two bosses identical on all three are still deterministic.
+ *
+ * Project and collection are gone from the ordering. They were grouping the
+ * list by project, but the picker filters by project with a dropdown and
+ * hiding does not need contiguity -- and a difficulty ladder reads better
+ * climbing cleanly than restarting at every project boundary.
+ *
+ * ajax/get-bosses.php MUST sort the same way. The harness checks its SQL.
+ */
+function monstrocity_boss_order($bosses) {
+	usort($bosses, function ($a, $b) {
+		return array((int)$a['strength'], (int)$a['speed'], (int)$a['tactics'], (int)(isset($a['id']) ? $a['id'] : 0))
+		   <=> array((int)$b['strength'], (int)$b['speed'], (int)$b['tactics'], (int)(isset($b['id']) ? $b['id'] : 0));
+	});
+	return $bosses;
+}
+
+/** The SQL that has to match monstrocity_boss_order(). One spelling. */
+function monstrocity_boss_order_sql($alias = 'b') {
+	return 'ORDER BY ' . $alias . '.strength ASC, ' . $alias . '.speed ASC, '
+	     . $alias . '.tactics ASC, ' . $alias . '.id ASC';
+}
+
+/**
  * Problems with a set of bosses taken TOGETHER, which is how they are met.
  *
  * ORDER IS STRENGTH. ajax/get-bosses.php sorts by project, collection, then
@@ -478,19 +515,18 @@ function monstrocity_boss_set_problems($bosses) {
 	$out = array();
 	if (count($bosses) < 2) return $out;
 
-	usort($bosses, function ($a, $b) {
-		return array((int)$a['strength'], (string)$a['name'])
-		   <=> array((int)$b['strength'], (string)$b['name']);
-	});
+	$bosses = monstrocity_boss_order($bosses);
 
-	/* Duplicate strengths: the order between them is whatever the database
-	   feels like, which is the one failure here that is not a judgement. */
-	$bystr = array();
-	foreach ($bosses as $b) $bystr[(int)$b['strength']][] = $b['name'];
-	foreach ($bystr as $s => $names) {
+	/* A FULL TIE on all three stats is the only genuinely undefined case
+	   now. Sharing a strength is fine -- speed and then tactics separate
+	   them -- which is exactly the granularity the three-part key buys. */
+	$byall = array();
+	foreach ($bosses as $b)
+		$byall[(int)$b['strength'] . '/' . (int)$b['speed'] . '/' . (int)$b['tactics']][] = $b['name'];
+	foreach ($byall as $k => $names) {
 		if (count($names) > 1)
-			$out[] = 'Strength ' . $s . ' is shared by ' . implode(' and ', $names)
-			       . ', and strength IS the running order -- their sequence is undefined.';
+			$out[] = implode(' and ', $names) . ' are identical on strength, speed and tactics ('
+			       . $k . '), so nothing decides which comes first.';
 	}
 
 	/* Power should climb with position. Health is the clearest signal. */

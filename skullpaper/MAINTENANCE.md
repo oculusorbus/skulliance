@@ -350,11 +350,20 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   a separate migration with its own byte-identical gate.
 - Powerups are the only four the game implements: Minor Regen, Regenerate, Boost Attack, Heal.
   Anything else is a boss with no ability.
-- **STRENGTH IS THE RUNNING ORDER.** get-bosses.php sorts by project, collection, then strength,
-  and there is NO sort column. So changing a strength moves a boss in the sequence, and two
-  bosses sharing one have NO DEFINED ORDER - MySQL may return them either way between page loads.
-  `monstrocity_boss_set_problems()` reports ties, a later boss with less health than the one
-  before it, and a whole set on identical health (what duplicating and not retuning produces).
+- **ORDER IS STRENGTH, THEN SPEED, THEN TACTICS, THEN id** - one decision, two implementations:
+  `monstrocity_boss_order()` in PHP and the ORDER BY in ajax/get-bosses.php, which
+  `monstrocity_boss_order_sql()` generates the canonical spelling of. **The harness extracts the
+  game's clause and compares it EXACTLY** - a prefix match let a shortened helper pass.
+- **PROJECT AND COLLECTION ARE NO LONGER IN THE ORDERING.** They were grouping the list by project
+  before strength, so the tune screen's sequence did not match play whenever a theme spanned
+  collections - which is how this was reported. The picker filters by project with a dropdown, and
+  hiding needs no contiguity.
+- Three stats give enough resolution to place a boss exactly without inventing a sort column, and
+  they are the same three the arrows move. Sharing a strength is now FINE; only a full tie on all
+  three is undefined, and that is what `monstrocity_boss_set_problems()` reports.
+- **THE TUNE SCREEN SHOWS ONE THEME, THE GAME LISTS THEM ALL.** A theme's bosses are a SUBSEQUENCE
+  of one global climb, so row 3 of 5 can be 11th in game. The "In game" column prints that, or the
+  panel looks like it disagrees with the game again.
 - **DUPLICATE carries everything except the name and the art.** Both are keyed by the name, so
   copying them would point two bosses at one image and the second save would replace the first's.
   Strength is bumped by one so the copy lands AFTER its source rather than tying with it.
