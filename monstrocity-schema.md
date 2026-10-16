@@ -74,13 +74,6 @@ CREATE TABLE IF NOT EXISTS monstrocity_theme_collections (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-**If you already ran the earlier version of the themes table**, this is the
-catch-up:
-
-```sql
-ALTER TABLE monstrocity_themes DROP COLUMN collection_id;
-```
-
 ### Which themes could be linked today
 
 This lists every theme whose hardcoded policy ids already exist as collections,
