@@ -555,5 +555,72 @@ ok($bbBlock !== '' && strpos($bbBlock, '$_FILES') === false,
 ok($bbBlock !== '' && strpos($bbBlock, 'monstrocity_validate_boss(') !== false,
    'the batch save writes rows it never validated');
 
+/* ---- form plumbing that silently submits the wrong thing ---------------- */
+echo "\nselects and limits\n";
+/*
+ * REPORTED: "Extension must be one of: png, gif, jpg, mov" while PNG was
+ * selected. An <option> with no value= submits its TEXT, and this one
+ * displayed ".png" with a leading dot, so the form posted ".png" and
+ * validation refused the thing the user had plainly chosen.
+ *
+ * The other selects on the page worked only because their text happened to
+ * equal their value. Requiring value= on every option is what stops the next
+ * decorated label repeating it.
+ */
+foreach (array('admin-monstrocity-boss.php', 'admin-monstrocity.php') as $formFile) {
+	$src = file_get_contents(__DIR__ . '/' . $formFile);
+	$total  = substr_count($src, '<option');
+	$valued = substr_count($src, '<option value=');
+	ok($total === $valued,
+	   $formFile . ': ' . ($total - $valued) . ' of ' . $total . ' <option> tags have no value=, '
+	 . 'so they submit their display text');
+}
+
+/*
+ * AND THE SIZE GUARD. GD allocates about 4 bytes a pixel and a resize holds
+ * source and destination at once, so a 4500x4500 PNG needs ~190MB. Over the
+ * limit PHP does not fail politely, it dies mid-request -- which on the art
+ * endpoint is a blank reply the page reports as "not JSON". Read from the
+ * header, before any decode, because afterwards is too late.
+ */
+$mkpng = function ($w, $h) { $im = imagecreatetruecolor($w, $h); ob_start(); imagepng($im); return ob_get_clean(); };
+ok(mart_too_big($mkpng(500, 500)) === '', 'a 500x500 image was refused as too large');
+ok(mart_too_big($mkpng(1200, 1200)) === '', 'a 1200x1200 image was refused as too large');
+$big = mart_too_big($mkpng(6000, 6000));
+ok($big !== '', 'a 6000x6000 image was accepted; decoding it would exhaust memory mid-request');
+ok(strpos($big, '6000x6000') !== false && stripos($big, 'MB') !== false,
+   'the refusal does not say the size or the budget, so there is nothing to act on: ' . $big);
+ok(stripos($big, '1500') !== false,
+   'the refusal does not say what size to export instead');
+ok(mart_too_big('not an image at all') !== '', 'a non-image was accepted by the size guard');
+
+/* The guard must run BEFORE the decode, or it protects nothing. */
+$lib = harness_strip_comments(file_get_contents(__DIR__ . '/monstrocity-art-lib.php'));
+$tbAt = strpos($lib, 'mart_too_big($raw)');
+$dcAt = strpos($lib, 'imagecreatefromstring($raw)');
+ok($tbAt !== false && $dcAt !== false && $tbAt < $dcAt,
+   'the size check runs after imagecreatefromstring(), by which point the memory is already gone');
+
+/* A refused load has to explain itself or the page says "not an image" to
+   somebody who uploaded a perfectly good one. */
+file_put_contents('/tmp/mah_huge.png', $mkpng(6000, 6000));
+ok(mart_load('/tmp/mah_huge.png') === null, 'an oversized image was loaded anyway');
+ok(strpos(mart_load_why(), '6000x6000') !== false,
+   'the reason an oversized image was refused is not available to the caller');
+@unlink('/tmp/mah_huge.png');
+
+/* The boss form must notice a dropped POST, same as the theme form. */
+$bpRaw = file_get_contents(__DIR__ . '/admin-monstrocity-boss.php');
+/* The ASSIGNMENT, not the mention. `$post_discarded = false && monstrocity_
+   post_discarded(...)` leaves the name sitting there and a presence check
+   is perfectly happy with it. */
+ok(preg_match('/^\$post_discarded = monstrocity_post_discarded\(/m', $bpRaw) === 1,
+   'the boss form does not set $post_discarded straight from the detector');
+/* And both save paths must actually be gated on it. */
+ok(substr_count($bpRaw, '!$post_discarded') === 2,
+   'only ' . substr_count($bpRaw, '!$post_discarded') . ' of the 2 save paths skip a dropped POST');
+ok(strpos($bpRaw, "'max_health'=>250") !== false,
+   'a new boss no longer defaults to 250 health');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);

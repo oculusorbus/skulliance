@@ -69,6 +69,25 @@ function mb_art($slug, $ext) {
 }
 
 /*
+ * A POST OVER post_max_size ARRIVES AS NO POST AT ALL -- $_POST and $_FILES
+ * are both discarded before this runs, with no warning and nothing in
+ * $_FILES['x']['error'] because $_FILES does not exist. The page would then
+ * validate an empty form and blame whichever field it checked first. Same
+ * detection as the theme form; boss art is the biggest thing posted here.
+ */
+$post_discarded = monstrocity_post_discarded(
+	$_SERVER['REQUEST_METHOD'] ?? '', $_POST, $_SERVER['CONTENT_LENGTH'] ?? 0);
+if ($post_discarded) {
+	$msgs['err'][] = 'That image was too large, so the server dropped the whole form before this '
+	               . 'page ran. You sent ' . number_format((int)$_SERVER['CONTENT_LENGTH'] / 1048576, 1)
+	               . 'MB; the limit is ' . htmlspecialchars((string)ini_get('post_max_size'))
+	               . ' per form and ' . htmlspecialchars((string)ini_get('upload_max_filesize'))
+	               . ' per file. Export the art smaller -- it is resized to '
+	               . MONSTROCITY_ART_WIDTH . 'px wide anyway.';
+	$creating = true;
+}
+
+/*
  * BATCH TUNING. Bosses are met as a sequence, so the numbers only make sense
  * next to each other -- which a one-at-a-time form cannot show. This saves a
  * whole theme's worth of stats in one pass.
@@ -76,7 +95,7 @@ function mb_art($slug, $ext) {
  * It is a batch of FIELDS, not of files. Nothing here uploads anything, so
  * the one-request-per-image rule the art board lives by is untouched.
  */
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded && isset($_POST['batch'])) {
 	$rows = isset($_POST['b']) && is_array($_POST['b']) ? $_POST['b'] : array();
 	$saved = 0; $bad = array();
 	$themeSlugs = array_keys(mb_themes($conn));
@@ -115,7 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['batch'])) {
 	$batch_theme = (string)($_POST['batch_theme'] ?? '');
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['batch'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded && !isset($_POST['batch'])) {
 	$id = (int)($_POST['id'] ?? 0);
 	$b = array(
 		'name'          => trim($_POST['name'] ?? ''),
@@ -195,7 +214,7 @@ $projects    = adm_projects($conn);
 $collections = mb_collections($conn);
 $row = $edit_id ? mb_row($conn, $edit_id) : null;
 if ($creating && !$row) {
-	$row = array('id'=>0,'name'=>'','project_id'=>0,'collection_id'=>0,'theme'=>'','max_health'=>500,
+	$row = array('id'=>0,'name'=>'','project_id'=>0,'collection_id'=>0,'theme'=>'','max_health'=>250,
 	             'strength'=>5,'speed'=>5,'tactics'=>5,'size'=>'Medium','powerup'=>'Heal',
 	             'orientation'=>'Left','extension'=>'png');
 	/*
@@ -320,10 +339,10 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
                      value="<?php echo (int)$bx[$st]; ?>" class="n"></td>
         <?php endforeach; ?>
         <td><select name="b[<?php echo (int)$bx['id']; ?>][size]"><?php foreach (monstrocity_sizes() as $sz): ?>
-              <option<?php echo $bx['size'] === $sz ? ' selected' : ''; ?>><?php echo $sz; ?></option>
+              <option value="<?php echo $sz; ?>"<?php echo $bx['size'] === $sz ? ' selected' : ''; ?>><?php echo $sz; ?></option>
             <?php endforeach; ?></select></td>
         <td><select name="b[<?php echo (int)$bx['id']; ?>][powerup]"><?php foreach (monstrocity_powerups() as $pu): ?>
-              <option<?php echo $bx['powerup'] === $pu ? ' selected' : ''; ?>><?php echo $pu; ?></option>
+              <option value="<?php echo $pu; ?>"<?php echo $bx['powerup'] === $pu ? ' selected' : ''; ?>><?php echo $pu; ?></option>
             <?php endforeach; ?></select></td>
         <td style="width:150px">
           <div class="mb-bar"><span style="width:<?php echo (int)round((int)$bx['max_health'] / $batch_maxhp * 100); ?>%"></span></div>
@@ -463,11 +482,11 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
           <input type="number" name="tactics" min="1" max="10" value="<?php echo (int)$row['tactics']; ?>"></div>
         <div class="mb-field"><label>Size</label>
           <select name="size"><?php foreach (monstrocity_sizes() as $sz): ?>
-            <option<?php echo $row['size'] === $sz ? ' selected' : ''; ?>><?php echo $sz; ?></option>
+            <option value="<?php echo $sz; ?>"<?php echo $row['size'] === $sz ? ' selected' : ''; ?>><?php echo $sz; ?></option>
           <?php endforeach; ?></select></div>
         <div class="mb-field"><label>Powerup</label>
           <select name="powerup"><?php foreach (monstrocity_powerups() as $pu): ?>
-            <option<?php echo $row['powerup'] === $pu ? ' selected' : ''; ?>><?php echo $pu; ?></option>
+            <option value="<?php echo $pu; ?>"<?php echo $row['powerup'] === $pu ? ' selected' : ''; ?>><?php echo $pu; ?></option>
           <?php endforeach; ?></select>
           <p class="hint">Only these four are implemented.</p></div>
       </div>
@@ -482,19 +501,28 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
           <label>Boss image</label>
           <input type="file" name="art" accept="image/*">
           <label class="mb-check"><input type="checkbox" name="flip" value="1"> Flip it horizontally</label>
-          <p class="hint">Drop in any size. Uploading replaces the red variant too, so the pair
-             can never drift apart.</p>
+          <p class="hint">Uploading replaces the red variant too, so the pair can never drift
+             apart. Limits: <b><?php echo htmlspecialchars((string)ini_get('upload_max_filesize')); ?></b>
+             per file, and anything over about 1500&times;1500 is refused because the server cannot
+             decode it inside its memory limit &mdash; it is resized to
+             <?php echo (int)MONSTROCITY_ART_WIDTH; ?>px wide regardless, so there is nothing to gain
+             from a larger export.</p>
         </div>
         <div class="mb-field">
           <label>Faces</label>
           <select name="orientation">
             <?php foreach (array('Left','Right') as $o): ?>
-              <option<?php echo $row['orientation'] === $o ? ' selected' : ''; ?>><?php echo $o; ?></option>
+              <option value="<?php echo $o; ?>"<?php echo $row['orientation'] === $o ? ' selected' : ''; ?>><?php echo $o; ?></option>
             <?php endforeach; ?>
           </select>
           <label style="margin-top:10px">File type</label>
           <select name="extension"><?php foreach (monstrocity_extensions() as $e): ?>
-            <option<?php echo $row['extension'] === $e ? ' selected' : ''; ?>>.<?php echo $e; ?></option>
+            <?php /* value= IS NOT OPTIONAL HERE. Without it a browser submits the option's
+                     TEXT, and this one displays ".png" with a leading dot, so the form posted
+                     ".png" and validation rejected an extension the user had plainly chosen.
+                     The selects below happened to work only because their text equals their
+                     value; they are explicit now so the next decorated label cannot repeat it. */ ?>
+            <option value="<?php echo $e; ?>"<?php echo $row['extension'] === $e ? ' selected' : ''; ?>>.<?php echo $e; ?></option>
           <?php endforeach; ?></select>
         </div>
         <?php if ($slug !== ''): $a = mb_art($slug, $row['extension']); if ($a['base']): ?>

@@ -356,6 +356,27 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   a half-row would reject it for fields the tuning screen never showed. A row that fails is
   skipped and named, not written.
 
+### TRAP: an `<option>` with no `value=` submits its DISPLAY TEXT
+- Reported as "Extension must be one of: png, gif, jpg, mov" while PNG was selected. The boss
+  form's extension options showed `.png` with a leading dot and carried no `value=`, so the
+  browser posted `.png` and validation refused the thing the user had plainly chosen.
+- The page's other selects worked only BY ACCIDENT, because their text equalled their value. All
+  twelve options now carry an explicit value, and the harness requires `<option` and
+  `<option value=` counts to match in both Monstrocity forms - that catches the whole class
+  rather than this one label.
+
+### TRAP: GD dies mid-request on a large source image (mart_too_big)
+- GD allocates ~4 bytes per pixel and a resize holds source and destination at once, so a
+  4500x4500 PNG needs about 190MB. Over memory_limit PHP does not fail politely - it dies
+  mid-request, which on ajax/monstrocity-art.php is a blank reply the page reports as "not JSON".
+- `mart_too_big()` reads the dimensions FROM THE HEADER, before any decode, and refuses with the
+  size, the budget and what to export instead. The harness asserts the check runs before
+  `imagecreatefromstring`, because afterwards the memory is already gone.
+- `mart_load()` returns null and `mart_load_why()` carries the reason, so a refusal does not come
+  back as "that is not an image" to somebody who uploaded a perfectly good one.
+- Boss art posts the ORIGINAL file (unlike the character board, which resizes in the browser
+  first), so the boss form also carries the dropped-POST detection and prints both limits.
+
 ### HARNESS TRAP: the comment stripper ate `accept="image/*"` (harness-strip.php)
 - The one-line `preg_replace('!/\*.*?\*/!s', ...)` that every harness used inline treats the MIME
   wildcard in `accept="image/*"` as a block-comment opener and deletes to the next real close -

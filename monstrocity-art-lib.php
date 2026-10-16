@@ -36,12 +36,60 @@ define('MONSTROCITY_ART_WIDTH', 500);   // width, aspect preserved -- see the sc
 define('MONSTROCITY_LOGO_W', 300);
 define('MONSTROCITY_LOGO_H', 125);
 
-/** Load any supported image as a truecolour GD resource with alpha intact. */
+/**
+ * Is this image small enough to decode without killing the request?
+ *
+ * GD allocates roughly 4 bytes per pixel for a truecolour image, and a
+ * resize holds the source and the destination at once. A 4500x4500 PNG is
+ * about 81MB decoded and 100MB+ in flight -- over a typical memory_limit,
+ * where it does not fail politely: PHP dies mid-request, which on an AJAX
+ * endpoint means a blank reply the page reports as "not JSON".
+ *
+ * Read from the HEADER, before any decode. That is the whole point: once
+ * imagecreatefromstring() has been called it is already too late.
+ *
+ * Returns '' if it will fit, or the reason it will not.
+ */
+function mart_too_big($raw) {
+	$x = @getimagesizefromstring($raw);
+	if (!$x) return 'That file is not an image this server can read.';
+	$w = (int)$x[0]; $h = (int)$x[1];
+	if ($w < 1 || $h < 1) return 'That image reports no size.';
+
+	$limit = trim((string)ini_get('memory_limit'));
+	if ($limit === '' || $limit === '-1') $bytes = 256 * 1024 * 1024;
+	else {
+		$n = (int)$limit;
+		$u = strtolower(substr($limit, -1));
+		$bytes = $u === 'g' ? $n * 1073741824 : ($u === 'm' ? $n * 1048576 : ($u === 'k' ? $n * 1024 : $n));
+	}
+	/* Source plus destination plus the rest of the request, with room spare.
+	   Deliberately conservative: refusing a large image with a sentence that
+	   says what to do beats a half-written response. */
+	$need = $w * $h * 4 * 2.5;
+	if ($need > $bytes * 0.7) {
+		return $w . 'x' . $h . ' is too large for this server to decode (it needs about '
+		     . round($need / 1048576) . 'MB and the limit is ' . round($bytes / 1048576) . 'MB). '
+		     . 'Export it at 1500px or less -- it is going to be resized to '
+		     . MONSTROCITY_ART_WIDTH . 'px wide anyway.';
+	}
+	return '';
+}
+
+/** Load any supported image as a truecolour GD resource with alpha intact.
+ *  Returns null when it cannot or should not be decoded; mart_load_why()
+ *  carries the reason for the caller that wants to explain itself. */
+$GLOBALS['mart_load_why'] = '';
+function mart_load_why() { return $GLOBALS['mart_load_why']; }
+
 function mart_load($path) {
+	$GLOBALS['mart_load_why'] = '';
 	$raw = @file_get_contents($path);
-	if ($raw === false) return null;
+	if ($raw === false) { $GLOBALS['mart_load_why'] = 'The upload did not arrive.'; return null; }
+	$why = mart_too_big($raw);
+	if ($why !== '') { $GLOBALS['mart_load_why'] = $why; return null; }
 	$im = @imagecreatefromstring($raw);
-	if (!$im) return null;
+	if (!$im) { $GLOBALS['mart_load_why'] = 'That file is not an image this server can read.'; return null; }
 	/* A PALETTE PNG MAKES imagecolorat() RETURN AN INDEX, not a colour, so
 	   every per-pixel read below would be reading palette slots. This has
 	   bitten this codebase before. */
@@ -153,7 +201,7 @@ function mart_accept($tmp_path, $theme_slug, $slot, $char_slug, $flip) {
 		                           return array('', 'Bad character name.');
 
 	$im = mart_load($tmp_path);
-	if (!$im)                      return array('', 'That file is not an image this server can read.');
+	if (!$im)                      return array('', mart_load_why());
 
 	$im = mart_resize($im);
 	if ($flip) $im = mart_flip($im);
@@ -252,7 +300,7 @@ function mart_fit_logo($im, $bw = MONSTROCITY_LOGO_W, $bh = MONSTROCITY_LOGO_H) 
 function mart_accept_logo($tmp_path, $theme_slug) {
 	if (monstrocity_slug_problem($theme_slug) !== '') return array('', 'Bad theme folder name.');
 	$im = mart_load($tmp_path);
-	if (!$im) return array('', 'That file is not an image this server can read.');
+	if (!$im) return array('', mart_load_why());
 	list($fitted, $note) = mart_fit_logo($im);
 	$dest = __DIR__ . '/' . monstrocity_theme_dir($theme_slug) . '/logo.png';
 	$err  = mart_save_png($fitted, $dest);
@@ -348,7 +396,7 @@ function monstrocity_validate_boss($b, $taken = array(), $theme_slugs = array())
 function mart_accept_boss($tmp_path, $slug, $flip = false, $ext = 'png') {
 	if (!preg_match('/^[a-z0-9-]+$/', $slug)) return array('', 'Bad boss filename.');
 	$im = mart_load($tmp_path);
-	if (!$im) return array('', 'That file is not an image this server can read.');
+	if (!$im) return array('', mart_load_why());
 	$im = mart_resize($im);
 	if ($flip) $im = mart_flip($im);
 
