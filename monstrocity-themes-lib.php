@@ -288,3 +288,35 @@ function monstrocity_clean_collection_ids($raw) {
 	}
 	return $out;
 }
+
+/**
+ * Did PHP throw this POST away before the script ran?
+ *
+ * Over post_max_size, $_POST and $_FILES are both discarded -- no warning,
+ * and nothing in $_FILES['x']['error'] because $_FILES does not exist. The
+ * page then validates an empty form and reports whichever field it checks
+ * first, which is how an oversized background image was announced as "the
+ * title is required" and took the whole submission down with it.
+ *
+ * CONTENT_LENGTH survives, and is the only thing that separates this from
+ * an honestly empty form.
+ *
+ * A pure function because the alternative is grepping the page for the word
+ * CONTENT_LENGTH, which stays true however the condition is broken.
+ */
+function monstrocity_post_discarded($method, $post, $content_length) {
+	return strtoupper((string)$method) === 'POST'
+	    && empty($post)
+	    && (int)$content_length > 0;
+}
+
+/**
+ * The group name to put back in the "or start a new group" box when a save
+ * is refused. A group that does not exist yet is not in the dropdown, so
+ * redisplaying from the select alone silently drops it.
+ */
+function monstrocity_group_override($group, $known_groups) {
+	$group = trim((string)$group);
+	if ($group === '') return '';
+	return array_key_exists($group, (array)$known_groups) ? '' : $group;
+}

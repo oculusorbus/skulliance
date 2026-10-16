@@ -538,6 +538,64 @@ if ($fb !== false && preg_match('/(^|})\s*a\s*\{[^}]*text-align\s*:\s*center/s',
 	}
 }
 
+/*
+ * A REFUSED SAVE MUST HAND BACK WHAT WAS TYPED.
+ *
+ * Reported from real use: one missing field wiped the whole form. The page
+ * rebuilt it from the database on any validation error, so a submission that
+ * was never stored had nothing to rebuild from. Uploads cannot be restored by
+ * anybody, which is exactly why losing the text as well is the difference
+ * between re-picking two files and starting over.
+ */
+ok(strpos($apNo, '$repost') !== false, 'a refused save still discards the submission');
+$errAt  = strpos($apNo, 'if ($errs) {');
+$repAt  = strpos($apNo, '$repost      = $t;');
+$mergeAt= strpos($apNo, 'array_merge((array)$row, $repost)');
+ok($repAt !== false && $errAt !== false && $repAt > $errAt,
+   'the submission is kept outside the error branch, so a successful save would redisplay too');
+ok($mergeAt !== false && $mergeAt > $repAt,
+   'what was typed is never merged back over the row read from the database');
+ok(strpos($apNo, 'monstrocity_group_override(') !== false,
+   'a newly typed group name is not handed back, so it vanishes from a refused form');
+
+/*
+ * AND THE BUG UNDERNEATH IT. A POST over post_max_size reaches PHP with
+ * $_POST and $_FILES already discarded -- no warning, nothing in
+ * $_FILES['x']['error'] because there is no $_FILES. The page then reported
+ * whichever field it validated first, so an oversized image was announced as
+ * "the title is required". CONTENT_LENGTH survives, which is the only way to
+ * tell that case apart from an empty form.
+ */
+/* DRIVEN, not grepped. The earlier version looked for the word
+   CONTENT_LENGTH in the page, which stays true however the condition is
+   broken -- a mutation that disabled the whole check passed it. */
+ok(monstrocity_post_discarded('POST', array(), 9000000) === true,
+   'an oversized POST (empty $_POST, non-zero CONTENT_LENGTH) is not recognised');
+ok(monstrocity_post_discarded('POST', array('title' => 'x'), 9000000) === false,
+   'a POST that arrived intact was treated as discarded');
+ok(monstrocity_post_discarded('POST', array(), 0) === false,
+   'a POST with no body at all was reported as oversized');
+ok(monstrocity_post_discarded('GET', array(), 9000000) === false,
+   'a GET was treated as a discarded POST');
+ok(monstrocity_post_discarded('post', array(), 100) === true,
+   'a lowercase method slipped past the check');
+
+ok(monstrocity_group_override('Bonus Themes', array('Bonus Themes' => 2)) === '',
+   'an existing group was echoed into the new-group box, which would duplicate it');
+ok(monstrocity_group_override('Frog Themes', array('Bonus Themes' => 2)) === 'Frog Themes',
+   'a brand-new group name is dropped when the form is redisplayed');
+ok(monstrocity_group_override('', array()) === '', 'an empty group produced a value');
+ok(monstrocity_group_override('  ', array()) === '', 'whitespace counted as a group name');
+
+$dropAt = strpos($apNo, '$post_discarded');
+$valAt  = strpos($apNo, 'monstrocity_validate_theme(');
+ok($dropAt !== false && $dropAt < $valAt,
+   'the discarded-POST check runs after validation, so the wrong message still wins');
+ok(preg_match('/REQUEST_METHOD.*?&&\s*!\$post_discarded/s', $apNo) === 1,
+   'the save path still runs on a discarded POST, where every field reads empty');
+ok(strpos($ap, "ini_get('post_max_size')") !== false,
+   'the real limits are never shown, so the fix is guesswork');
+
 /* The tab is registered, so the page is reachable at all. */
 $tabs = admin_tabs_src();
 ok(strpos($tabs, 'admin-monstrocity.php') !== false, 'the Monstrocity tab is not in admin_tabs()');

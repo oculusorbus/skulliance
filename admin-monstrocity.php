@@ -80,7 +80,31 @@ function mon_art_state($slug, $ext) {
 
 /* ---------- save ----------------------------------------------------------- */
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+/*
+ * A POST OVER post_max_size ARRIVES AS NO POST AT ALL.
+ *
+ * PHP discards $_POST and $_FILES before the script runs -- no warning, and
+ * nothing in $_FILES['x']['error'], because $_FILES does not exist either.
+ * The page then sees an empty form and reports whichever field it validates
+ * first, so an oversized background image was reported as "the title is
+ * required" and everything typed was thrown away with it.
+ *
+ * CONTENT_LENGTH is still there, which is how this is detectable at all.
+ */
+$post_discarded = monstrocity_post_discarded(
+	$_SERVER['REQUEST_METHOD'] ?? '', $_POST, $_SERVER['CONTENT_LENGTH'] ?? 0);
+if ($post_discarded) {
+	$sent = (int)$_SERVER['CONTENT_LENGTH'];
+	$msgs['err'][] = 'That upload was too large, so the server discarded the whole form before '
+	               . 'this page ran -- which is why nothing you typed came back. You sent '
+	               . number_format($sent / 1048576, 1) . 'MB; the limit is '
+	               . htmlspecialchars((string)ini_get('post_max_size')) . ' per form and '
+	               . htmlspecialchars((string)ini_get('upload_max_filesize')) . ' per file. '
+	               . 'Shrink the image, or raise both in .user.ini.';
+	$creating = true;      // fall through to an empty form rather than the list
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 	$id  = (int)($_POST['id'] ?? 0);
 	$t = array(
 		'slug'            => strtolower(trim($_POST['slug'] ?? '')),
@@ -120,6 +144,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if ($errs) {
 		$msgs['err'] = $errs;
 		$edit_id = $id; $creating = !$id;
+		/* HAND BACK WHAT THEY TYPED. Rebuilding the form from the database
+		   on a validation failure discards the whole submission, which turns
+		   one missing field into retyping everything -- and uploads cannot be
+		   restored by anyone, so losing the text as well is the difference
+		   between re-picking two files and starting over. */
+		$repost      = $t;
+		$repostLinks = $links;
 	} else {
 		$groups = mon_groups($conn);
 		$gorder = isset($groups[$t['theme_group']]) ? $groups[$t['theme_group']] : (count($groups) ? max($groups) + 1 : 0);
@@ -209,6 +240,15 @@ if ($creating && !$row) {
 	             'orientations'=>'','ipfs_prefixes'=>'https://ipfs.io/ipfs/','background'=>1,
 	             'extension'=>'png','theme_group'=>'','req_innercircle'=>0,'req_dev'=>0,'active'=>1);
 }
+/* The submission wins over the stored row, so a refused save redisplays what
+   was actually sent rather than what is in the table. */
+if (isset($repost)) {
+	$row      = array_merge((array)$row, $repost);
+	$rowLinks = $repostLinks;
+}
+/* A brand-new group name is not in the dropdown yet, so it would vanish from
+   a redisplayed form. Put it back in the field it came from. */
+$group_new = isset($repost) ? monstrocity_group_override($row['theme_group'], $allGroups) : '';
 
 include 'header.php';
 admin_chrome('monstrocity');
@@ -371,7 +411,11 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
       <div class="mt-sect">
         <h3>Art</h3>
         <p class="lead">Both are resized on the long edge and re-encoded. Neither is forced to a
-           shape &mdash; a background is picked to read either side of the board.</p>
+           shape &mdash; a background is picked to read either side of the board.<br>
+           Limits: <b><?php echo htmlspecialchars((string)ini_get('upload_max_filesize')); ?></b> per file,
+           <b><?php echo htmlspecialchars((string)ini_get('post_max_size')); ?></b> for the whole form.
+           Go over and the browser sends it anyway and the server drops everything, so the numbers
+           are worth a glance before a big background.</p>
         <div class="mt-grid">
           <div class="mt-field">
             <label>Background &mdash; <code>monstrocity.png</code></label>
@@ -418,7 +462,8 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
           </div>
           <div class="mt-field">
             <label>&hellip;or start a new group</label>
-            <input type="text" name="theme_group_new" placeholder="leave blank to use the pick">
+            <input type="text" name="theme_group_new" value="<?php echo htmlspecialchars($group_new); ?>"
+                   placeholder="leave blank to use the pick">
           </div>
           <div class="mt-field">
             <label>Visibility</label>
