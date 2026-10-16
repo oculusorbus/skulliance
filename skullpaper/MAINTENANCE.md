@@ -449,6 +449,30 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 - It uses `harness_strip_comments()`, because several of those pages contain `accept="image/*"`
   and the inline stripper eats live code from the slash-star in it.
 
+### A BARE CID IN METADATA WAS LOSING ITS FIRST SEVEN CHARACTERS (verify.php)
+- `$ipfs = substr($image, 7, strlen($image));` ran unconditionally, assuming everything reaching
+  it was an `ipfs://` URI. CIP-25 permits a BARE CID and older collections use one, so
+  `QmQtVpbUTXB29t...` was stored as `UTXB29tNsdza...` - a CID no gateway resolves, rendering the
+  skull placeholder forever with nothing anywhere saying why. Found on the Happy Hoppers Club
+  Posters, whose on-chain metadata is `"image": "QmQtVpbU..."` with no scheme.
+- Now strips the prefix only when `stripos($image, 'ipfs://') === 0`. Strictly additive: an
+  `ipfs://` value takes the identical path. **Rows written before this stay corrupt** - find them
+  with the SELECT in the commit message; they need re-verifying, not editing.
+- This affects EVERY chain and collection, not just Monstrocity.
+
+### THE GAME WAS FETCHING FROM A GATEWAY THAT REFUSES US (monstrocity.php)
+- `https://ipfs.io/ipfs/` was hardcoded in two places AND is the stored `ipfs_prefixes` of all 49
+  themes. **ipfs.io answers 429 to this server** - measured 2026-10-05 in lib/ipfs-gateways.php
+  and confirmed again on a Happy Hoppers poster: filebase 200 in 2.3s, ipfs.io 429, dweb.link 429.
+  A failed image plus the browser retrying it is what "stuttering" looks like.
+- `getIPFS()` in db.php has avoided ipfs.io for a while and prefers a LOCAL CACHED COPY first,
+  which is why My NFTs worked and the game did not - the game never used it.
+- The game now reads `ipfs_gateways()` and drops known-dead hosts from whatever a theme names, so
+  a theme cannot pin itself to a gateway that will not answer. New themes default to NO prefix.
+- **`ipfs_gateways()` is required INSIDE `ensureNFTImageCached()` in db.php**, so any page echoing
+  the list must require lib/ipfs-gateways.php itself or hit an undefined function.
+- A harness HEAD request to filebase returns 0; it does not answer HEAD. Use a ranged GET.
+
 ### TRAP: a `::before` marker is a FLEX ITEM, and space-between centres the middle one
 - The boss list's project headings use a `::before` triangle instead of the default disclosure
   marker. A pseudo-element on a flex container IS a flex item, so the summary had THREE -

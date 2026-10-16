@@ -22,6 +22,7 @@ require_once __DIR__ . '/admin-lib.php';
 admin_require();                       // before any output, and before header.php
 require_once __DIR__ . '/monstrocity-themes-lib.php';
 require_once __DIR__ . '/monstrocity-art-lib.php';   // the logo box
+require_once __DIR__ . '/lib/ipfs-gateways.php';
 
 $msgs = array('err' => array(), 'ok' => array());
 $edit_id = isset($_GET['edit']) ? (int)$_GET['edit'] : 0;
@@ -264,7 +265,10 @@ $row         = $edit_id ? mon_theme_row($conn, $edit_id) : null;
 $rowLinks    = $edit_id ? mon_links($conn, $edit_id) : array();
 if ($creating && !$row) {
 	$row = array('id'=>0,'slug'=>'','project_id'=>0,'project_name'=>'','title'=>'','policy_ids'=>'',
-	             'orientations'=>'','ipfs_prefixes'=>'https://ipfs.io/ipfs/','background'=>1,
+	             /* BLANK, not ipfs.io. That gateway answers 429 to this server
+	                (lib/ipfs-gateways.php), and the game falls through the
+	                platform's measured list when a theme names nothing. */
+	             'orientations'=>'','ipfs_prefixes'=>'','background'=>1,
 	             'extension'=>'png','theme_group'=>'','req_innercircle'=>0,'req_dev'=>0,'active'=>1);
 }
 /* The submission wins over the stored row, so a refused save redisplays what

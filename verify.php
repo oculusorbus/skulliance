@@ -994,8 +994,28 @@ function processNFT($conn, $policy_id, $asset_name, $name, $image, $fingerprint,
 		 */
 		}else if(preg_match('~^https?://~i', (string)$image)){
 			$ipfs = $image;
+		/*
+		 * STRIP "ipfs://" ONLY WHEN IT IS THERE.
+		 *
+		 * This used to be an unconditional substr($image, 7) on the
+		 * assumption that anything reaching here was an ipfs:// URI. Metadata
+		 * that carries a BARE CID -- which CIP-25 permits and several older
+		 * collections use -- had its first seven characters eaten:
+		 *
+		 *   QmQtVpbUTXB29tNsdza...  stored as  UTXB29tNsdza...
+		 *
+		 * A mangled CID no gateway can resolve, so the row renders the skull
+		 * placeholder forever and nothing anywhere says why. Found on the
+		 * Happy Hoppers Club Posters, whose metadata is exactly that shape.
+		 *
+		 * Strictly additive: an ipfs:// value takes the identical path it
+		 * always did, and the only behaviour that changes is behaviour that
+		 * was silently destroying data.
+		 */
+		}else if(stripos((string)$image, 'ipfs://') === 0){
+			$ipfs = substr($image, 7);
 		}else{
-			$ipfs = substr($image, 7, strlen($image));
+			$ipfs = (string)$image;
 		}
 	}else{
 		$ipfs = "";

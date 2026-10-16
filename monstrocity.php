@@ -12,6 +12,10 @@
 include 'db.php';
 if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 require_once __DIR__ . '/monstrocity-themes-lib.php';
+/* ipfs_gateways() is required INSIDE ensureNFTImageCached() in db.php, so it
+   is not defined until that function runs. The page echoes the list into its
+   JS, so it has to ask for it directly. */
+require_once __DIR__ . '/lib/ipfs-gateways.php';
 
 // Initialize default variables
 $member = false;
@@ -2400,6 +2404,39 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
      * ("Jack O'Treat" -> jack-otreat, confirmed against the server); every
      * other non-alphanumeric run becomes a single hyphen.
      */
+    /*
+     * IPFS GATEWAYS, FROM THE PLATFORM'S MEASURED LIST.
+     *
+     * This page used to hardcode https://ipfs.io/ipfs/ in two places, and
+     * every theme's stored ipfsPrefixes says the same. ipfs.io ANSWERS 429
+     * TO THIS PLATFORM -- measured 2026-10-05 and recorded in
+     * lib/ipfs-gateways.php, and confirmed again against a Happy Hoppers
+     * poster: filebase 200 in 2.3s, ipfs.io 429, dweb.link 429.
+     *
+     * So a theme NFT was being fetched from a gateway that refuses us, which
+     * is a failed image and a browser retrying it -- the stuttering that was
+     * reported. getIPFS() on the PHP side has avoided ipfs.io for exactly
+     * this reason for some time; the game never got the message.
+     *
+     * A theme may still name its own prefix, but the known-dead ones are
+     * dropped from whatever it names and the measured list follows as
+     * fallback, so no theme can pin itself to a gateway that cannot answer.
+     */
+    const MONSTROCITY_GATEWAYS = <?php echo json_encode(array_values(ipfs_gateways())); ?>;
+    const MONSTROCITY_DEAD_GATEWAYS = ['ipfs.io', 'dweb.link', 'nftstorage.link', 'w3s.link'];
+
+    function monstrocityGateways(themePrefixes) {
+      var out = [];
+      String(themePrefixes || '').split(',').forEach(function (p) {
+        p = p.trim();
+        if (!p) return;
+        if (MONSTROCITY_DEAD_GATEWAYS.some(function (d) { return p.indexOf(d) !== -1; })) return;
+        if (out.indexOf(p) === -1) out.push(p);
+      });
+      MONSTROCITY_GATEWAYS.forEach(function (g) { if (out.indexOf(g) === -1) out.push(g); });
+      return out;
+    }
+
     function monstrocitySlug(name) {
       return String(name == null ? '' : name)
         .toLowerCase().trim()
@@ -3384,7 +3421,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	      const themeData = themes.flatMap(group => group.items).find(item => item.value === this.theme);
 	      const extension = themeData?.extension || 'png'; // Default to "png" if not specified
 	      const videoExtensions = ['mov', 'mp4']; // Define video extensions
-	      const defaultIpfsPrefix = 'https://ipfs.io/ipfs/'; // Default fallback prefix
+	      const defaultIpfsPrefix = MONSTROCITY_GATEWAYS[0]; // measured-good, not ipfs.io
 
 	      // Use config.imageUrl if provided (e.g., for bosses), otherwise proceed with existing logic
 	      if (config.imageUrl) {
@@ -3398,7 +3435,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          if (themeData && themeData.policyIds) {
 	              var policyIds = themeData.policyIds.split(',').filter(id => id.trim());
 	              var orientations = themeData.orientations ? themeData.orientations.split(',').filter(o => o.trim()) : [];
-	              var ipfsPrefixes = themeData.ipfsPrefixes ? themeData.ipfsPrefixes.split(',').filter(p => p.trim()) : [defaultIpfsPrefix];
+	              var ipfsPrefixes = monstrocityGateways(themeData.ipfsPrefixes);
 	              var policyIndex = policyIds.indexOf(config.policyId);
 	              if (policyIndex !== -1) {
 	                  policyMetadata = {
@@ -5442,7 +5479,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	        const policies = policyIds.map((policyId, index) => ({
 	            policyId,
 	            orientation: themeData.orientations?.split(',')[index] || 'Right',
-	            ipfsPrefix: themeData.ipfsPrefixes?.split(',')[index] || 'https://ipfs.io/ipfs/'
+	            ipfsPrefix: monstrocityGateways(themeData.ipfsPrefixes)[0]
 	        }));
 	        const response = await Promise.race([
 	            fetch('ajax/get-nft-assets.php', {

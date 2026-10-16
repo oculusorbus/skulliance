@@ -704,6 +704,34 @@ ok(preg_match('/REQUEST_METHOD.*?&&\s*!\$post_discarded/s', $apNo) === 1,
 ok(strpos($ap, "ini_get('post_max_size')") !== false,
    'the real limits are never shown, so the fix is guesswork');
 
+/*
+ * NO PAGE MAY HARDCODE ipfs.io. It answers 429 to this server -- measured
+ * 2026-10-05, recorded in lib/ipfs-gateways.php, and confirmed again on a
+ * Happy Hoppers poster: filebase 200, ipfs.io 429, dweb.link 429. The game
+ * had it hardcoded in two places and in every theme's stored prefix, so a
+ * theme NFT was fetched from a gateway that refuses us -- a failed image and
+ * a browser retrying it, which is what "stuttering" looks like.
+ */
+$gamePage = file_get_contents(__DIR__ . '/monstrocity.php');
+ok(substr_count($gamePage, "'https://ipfs.io/ipfs/'") === 0,
+   'monstrocity.php still hardcodes ipfs.io, which answers 429 to this server');
+ok(strpos($gamePage, 'ipfs_gateways()') !== false,
+   'the game does not read the platform\'s measured gateway list');
+ok(strpos($gamePage, "require_once __DIR__ . '/lib/ipfs-gateways.php'") !== false,
+   'ipfs_gateways() is only required inside a db.php function, so the page would call an '
+ . 'undefined function when it echoes the list');
+ok(strpos($gamePage, 'MONSTROCITY_DEAD_GATEWAYS') !== false,
+   'a theme can still pin itself to a gateway that refuses us');
+/* And a new theme must not be created pointing at it. */
+ok(strpos($ap, "'ipfs_prefixes'=>'https://ipfs.io/ipfs/'") === false,
+   'a new theme is still created defaulting to ipfs.io');
+
+/* The filter has to actually drop them. Driven, since the rule is a list. */
+$deadList = array('ipfs.io', 'dweb.link', 'nftstorage.link', 'w3s.link');
+foreach ($deadList as $dead)
+	ok(strpos($gamePage, "'" . $dead . "'") !== false,
+	   $dead . ' is not in the game\'s dead-gateway list, though it refuses this server');
+
 /* The tab is registered, so the page is reachable at all. */
 $tabs = admin_tabs_src();
 ok(strpos($tabs, 'admin-monstrocity.php') !== false, 'the Monstrocity tab is not in admin_tabs()');
