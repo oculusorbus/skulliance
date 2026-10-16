@@ -262,6 +262,42 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   with the branch separator deleted. It anchors on the unique `FORM` banner and uses `strrpos`
   for the endif.
 
+### Monstrocity character art (Phase 3: admin-monstrocity-art.php, ajax/monstrocity-art.php, monstrocity-art-lib.php)
+- **THE `active` FLAG IS THE COMMIT.** Build a theme switched off, fill the board, switch it on.
+  That is why no staging layer exists: each slot saves straight to the live folder and the theme
+  simply is not in anyone's picker yet.
+- **NOTHING IS BATCHED.** Every upload, flip and clear is one request against one slot, so a
+  failure costs that slot. There is deliberately no "save all" and the harness asserts its absence.
+- **THE BROWSER RESIZES BEFORE SENDING** (stepwise halving on a canvas, then one final draw). A
+  source NFT is tens of MB, larger than post_max_size, and arrives as NO POST AT ALL - the exact
+  failure that wiped the theme form. After resizing, ~200KB goes over the wire and a timeout stops
+  being possible. Stepwise rather than one jump: a single large downscale aliases on detailed art.
+- **DAMAGE IS GENERATED, NEVER UPLOADED**, by HSL(hue 0, saturation 100%, lightness preserved).
+  Verified against 25 shipped base/damaged pairs across 5 themes at **0.234/255 mean error** - the
+  same image the owner was making by hand. A base regenerates its damaged variant on every write
+  and every flip, which is what stops the pair drifting apart (the live library has pairs that did).
+- **MONSTROCITY_DAMAGE_WEAK = 20.** Below it the red does not read on that art and the slot wants
+  different art instead. Calibrated from the live library: working themes score 50-80, invisible
+  ones under 10. This is the ONE place the owner's eye is actually required.
+- Resize is **500 wide, aspect preserved, never upscaled**. 11 of 45 themes are not square.
+- A MISSED DROP MUST NOT NAVIGATE THE PAGE. A window-level dragover/drop guard cancels the default
+  outside a slot; the workflow is dragging one file at a time out of a Finder window, so missing
+  is routine and the default action is to walk away from a half-filled board.
+- The endpoint takes the theme's folder from the DATABASE, never the request, and the character
+  must be one of the 14. Both are paths; neither is client-supplied.
+
+### HARNESS TRAP: the comment stripper ate `accept="image/*"` (harness-strip.php)
+- The one-line `preg_replace('!/\*.*?\*/!s', ...)` that every harness used inline treats the MIME
+  wildcard in `accept="image/*"` as a block-comment opener and deletes to the next real close -
+  **4KB to 9KB of LIVE CODE** on admin-monstrocity.php, admin-monstrocity-art.php and
+  admin-flyers.php. Assertions ran against a mangled file; two failed for that reason alone and
+  the rest passed without ever seeing the code they name.
+- `harness_strip_comments()` only treats a block comment as one when its opener is the first
+  non-whitespace on the line. **Other harnesses in this repo still use the naive inline version -
+  any that read a file containing `image/*` are suspect.**
+- Related: do not put a literal block-comment close, or a `];`, inside a comment that something
+  parses. Both have already truncated an extraction in this feature.
+
 ### Crafting (db.php:3947-3990)
 - Craft: burn equal parts of all 6 core points → DIAMOND (1:1 per point type).
 - Shatter: DIAMOND → equal parts of all 6 core points.

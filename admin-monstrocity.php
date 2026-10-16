@@ -269,11 +269,15 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
 .mt-art { font-family:ui-monospace,Menlo,monospace; font-size:11px; color:#7a9eb0; white-space:nowrap }
 .mt-art b { color:#00c8a0; font-weight:600 } .mt-art i { color:#e0466b; font-style:normal }
 
-.mt-page { max-width:1040px }
+/* Full width. The cap made sense when the form shared the page with the
+   list; on its own page it just wasted the right-hand third. The grid
+   below is what keeps fields a readable width, not an outer limit. */
+.mt-page { max-width:none }
 .mt-sect { background:#0a1929; border:1px solid rgba(0,200,160,.15); border-radius:5px; padding:16px 18px; margin:0 0 14px }
 .mt-sect > h3 { margin:0 0 3px; font-size:13px; letter-spacing:.04em; text-transform:uppercase; color:#00c8a0 }
 .mt-sect > .lead { margin:0 0 14px; font-size:11px; color:#5a7888; line-height:1.5 }
-.mt-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:14px 18px }
+.mt-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,320px)); gap:14px 22px;
+           justify-content:start }
 .mt-field label { display:block; font-size:11px; color:#7a9eb0; margin:0 0 4px; text-align:left }
 .mt-field input[type=text], .mt-field select, .mt-field textarea, .mt-field input[type=file] {
   width:100%; box-sizing:border-box; background:#07111d; color:#e8eaed;
@@ -326,7 +330,10 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
         endforeach;
         echo $a['background'] ? '<b>bg</b>' : '<i>bg</i>';
         echo $a['logo'] ? ' <b>logo</b>' : ' <i>logo</i>'; ?></td>
-      <td><a class="adm-btn" href="admin-monstrocity.php?edit=<?php echo (int)$t['id']; ?>">Edit</a></td>
+      <td style="white-space:nowrap">
+        <a class="adm-btn" href="admin-monstrocity.php?edit=<?php echo (int)$t['id']; ?>">Edit</a>
+        <a class="adm-btn" href="admin-monstrocity-art.php?theme=<?php echo (int)$t['id']; ?>">Art</a>
+      </td>
     </tr>
     <?php endforeach; ?>
   </table>
@@ -481,6 +488,9 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
 
       <div class="mt-actions">
         <button class="adm-btn" type="submit"><?php echo $row['id'] ? 'Save theme' : 'Create theme'; ?></button>
+        <?php if ($row['id']): ?>
+          <a class="adm-btn" href="admin-monstrocity-art.php?theme=<?php echo (int)$row['id']; ?>">Character art &rarr;</a>
+        <?php endif; ?>
         <a class="adm-btn" href="admin-monstrocity.php">Cancel</a>
       </div>
     </form>

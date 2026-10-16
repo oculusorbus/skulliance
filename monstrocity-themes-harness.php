@@ -17,6 +17,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $fail = 0;
 function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $what\n"; } }
 
+require_once __DIR__ . '/harness-strip.php';
 require_once __DIR__ . '/monstrocity-themes-lib.php';
 function admin_tabs_src() { return file_get_contents(__DIR__ . '/admin-lib.php'); }
 
@@ -453,8 +454,7 @@ echo "\nadmin page safety\n";
 $ap = file_get_contents(__DIR__ . '/admin-monstrocity.php');
 /* BOTH comment styles, because a "// admin_require();" satisfied a plain
    strpos on the collage page and the gate-removal mutation passed. */
-$apNo = preg_replace('!/\*.*?\*/!s', '', $ap);
-$apNo = preg_replace('~(?<![:/])//[^\n]*~', '', $apNo);
+$apNo = harness_strip_comments($ap);
 
 ok(strpos($apNo, 'admin_require();') !== false, 'the Monstrocity admin is not gated to the admin');
 ok(strpos($apNo, 'admin_require();') < strpos($apNo, "include 'header.php'"),

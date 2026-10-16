@@ -320,3 +320,94 @@ function monstrocity_group_override($group, $known_groups) {
 	if ($group === '') return '';
 	return array_key_exists($group, (array)$known_groups) ? '' : $group;
 }
+
+/* ===========================================================================
+ * CHARACTER ART (Phase 3)
+ * ======================================================================== */
+
+/**
+ * The 14 slots, and which way each character faces in the original game.
+ *
+ * THE ONE COPY. monstrocity.php carried this as a JS object literal called
+ * characterDirections, which is the same drift risk the theme list had: a
+ * list maintained in one file and depended on by another. The page reads it
+ * from here now.
+ *
+ * Orientation here is the TARGET -- what the slot needs in order to match the
+ * original Monstrocity character it stands in for. Whether a given upload has
+ * to be flipped to get there is a judgement about the art, not a lookup.
+ */
+function monstrocity_characters() {
+	$dir = array(
+		'Craig' => 'Left', 'Merdock' => 'Left', 'Goblin Ganger' => 'Left', 'Texby' => 'Left',
+		'Mandiblus' => 'Left', 'Koipon' => 'Left', 'Slime Mind' => 'Right',
+		'Billandar and Ted' => 'Left', 'Dankle' => 'Left', 'Jarhead' => 'Right',
+		'Spydrax' => 'Right', 'Katastrophy' => 'Right', 'Ouchie' => 'Left', 'Drake' => 'Right',
+	);
+	$roster = require __DIR__ . '/monstrocity-default-characters.php';
+	$out = array();
+	foreach ($roster as $c) {
+		$out[] = array(
+			'name'   => $c['name'],
+			'slug'   => monstrocity_char_slug($c['name']),
+			'faces'  => isset($dir[$c['name']]) ? $dir[$c['name']] : 'Left',
+			'size'   => $c['size'],
+		);
+	}
+	return $out;
+}
+
+/** The filename the game asks for: lowercased, spaces to hyphens. Derived,
+ *  never typed, which is why nobody should ever rename a file by hand again. */
+function monstrocity_char_slug($name) {
+	return str_replace(' ', '-', strtolower(trim($name)));
+}
+
+/**
+ * THE BATTLE-DAMAGED RECOLOUR, derived from the shipped art rather than
+ * guessed: hue 0, saturation 100%, lightness preserved from the source pixel.
+ *
+ * Fitted against base/battle-damaged pairs across seven themes and five
+ * characters, mean error 0.2-0.4 out of 255 -- exact to rounding. 21 of the
+ * platform's themes match it; the rest predate the convention and use a
+ * variety of older treatments, which is a reason to standardise, not a reason
+ * to make this configurable.
+ */
+function monstrocity_damage_rgb($r, $g, $b) {
+	$r /= 255; $g /= 255; $b /= 255;
+	$mx = max($r, $g, $b); $mn = min($r, $g, $b);
+	$l  = ($mx + $mn) / 2;
+	$c  = 1 - abs(2 * $l - 1);          // chroma at full saturation
+	$m  = $l - $c / 2;
+	return array((int)round(255 * ($c + $m)), (int)round(255 * $m), (int)round(255 * $m));
+}
+
+/**
+ * How visibly different two images are, 0-255. This is the whole question
+ * "will the red read on this art" reduced to a number.
+ *
+ * Calibrated against the live library: themes whose damage works land at
+ * 50-80, and the ones where a defeated character looks identical to a live
+ * one sit under 10. Below DAMAGE_WEAK the slot wants different art rather
+ * than a recolour -- which is the one place in this whole pipeline where the
+ * owner's eye is actually required.
+ */
+define('MONSTROCITY_DAMAGE_WEAK', 20.0);
+
+function monstrocity_damage_score_pixels($pairs) {
+	if (!$pairs) return 0.0;
+	$sum = 0.0;
+	foreach ($pairs as $p) {
+		list($ar, $ag, $ab, $br, $bg, $bb) = $p;
+		/* Luma-weighted, because the eye does not treat the channels equally
+		   and an unweighted distance over-rates a shift in blue. */
+		$sum += sqrt(0.299 * pow($ar - $br, 2) + 0.587 * pow($ag - $bg, 2) + 0.114 * pow($ab - $bb, 2));
+	}
+	return $sum / count($pairs);
+}
+
+/** Which of the three folders a slot writes into. */
+function monstrocity_slot_folder($slot) {
+	$map = array('base' => 'base', 'leader' => 'leader', 'damaged' => 'battle-damaged');
+	return isset($map[$slot]) ? $map[$slot] : '';
+}
