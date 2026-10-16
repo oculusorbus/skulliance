@@ -21,6 +21,7 @@ include 'skulliance.php';
 require_once __DIR__ . '/admin-lib.php';
 admin_require();                       // before any output, and before header.php
 require_once __DIR__ . '/monstrocity-themes-lib.php';
+require_once __DIR__ . '/monstrocity-art-lib.php';   // the logo box
 
 $msgs = array('err' => array(), 'ok' => array());
 $edit_id = isset($_GET['edit']) ? (int)$_GET['edit'] : 0;
@@ -210,10 +211,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 		/* Background and logo. Both capped on the long edge and re-encoded;
 		   neither is forced to an aspect ratio, because a background is chosen
 		   to sit either side of the board and there is no one shape for that. */
-		$up = adm_accept_upload('bg_file',   $dir, 'monstrocity', array('png','jpg','gif'));
+		$up = adm_accept_upload('bg_file', $dir, 'monstrocity', array('png','jpg','gif'));
 		if ($up !== '') $msgs['err'][] = 'Background: ' . $up;
-		$up = adm_accept_upload('logo_file', $dir, 'logo',        array('png','jpg','gif'));
-		if ($up !== '') $msgs['err'][] = 'Logo: ' . $up;
+
+		/*
+		 * THE LOGO GETS FITTED, NOT JUST RESIZED.
+		 *
+		 * adm_accept_upload() caps the long edge and keeps the aspect, which
+		 * is right for a background and wrong here. monstrocity.php renders
+		 * the logo as max-width:300 with a free height, so a tall logo towers,
+		 * a wide one is scaled down below everything else, and a narrow one
+		 * looks dwarfed. Letterboxing every logo into one 300x125 transparent
+		 * box makes all three render identically -- and it is the transparent
+		 * padding that was previously being added by hand in Photoshop.
+		 */
+		if (isset($_FILES['logo_file']) && $_FILES['logo_file']['error'] !== UPLOAD_ERR_NO_FILE) {
+			if ($_FILES['logo_file']['error'] !== UPLOAD_ERR_OK) {
+				$msgs['err'][] = 'Logo: upload failed (code ' . (int)$_FILES['logo_file']['error'] . ').';
+			} else {
+				list($lw, $lnote) = mart_accept_logo($_FILES['logo_file']['tmp_name'], $t['slug']);
+				if ($lw === '')        $msgs['err'][] = 'Logo: ' . $lnote;
+				elseif ($lnote !== '') $msgs['ok'][]  = 'Logo saved. ' . $lnote;
+				else                   $msgs['ok'][]  = 'Logo fitted to '
+				                                      . MONSTROCITY_LOGO_W . 'x' . MONSTROCITY_LOGO_H . '.';
+			}
+		}
 
 		if (!$msgs['err']) $msgs['ok'][] = 'Saved.';
 		$edit_id = $id; $creating = false;
@@ -431,6 +453,24 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
           <div class="mt-field">
             <label>Project logo &mdash; <code>logo.png</code></label>
             <input type="file" name="logo_file" accept="image/*">
+            <p class="hint">Fitted into <b><?php echo MONSTROCITY_LOGO_W; ?>&times;<?php echo MONSTROCITY_LOGO_H; ?></b>
+               and centred, with the rest left transparent. Any shape works &mdash; tall, wide or
+               narrow &mdash; and they all end up rendering the same size, so there is no need to
+               pad it yourself. Supply it at least that big and it stays sharp.</p>
+            <?php if ($row['id'] && is_file(__DIR__ . '/' . monstrocity_theme_dir($row['slug']) . '/logo.png')):
+              $lp = monstrocity_theme_dir($row['slug']) . '/logo.png';
+              $ld = @getimagesize(__DIR__ . '/' . $lp); ?>
+              <p class="hint" style="margin-top:7px">Current:
+                <?php echo $ld ? $ld[0] . '&times;' . $ld[1] : '?'; ?>
+                <?php if ($ld && ($ld[0] != MONSTROCITY_LOGO_W || $ld[1] != MONSTROCITY_LOGO_H)): ?>
+                  <b style="color:#f5a623">&mdash; not the standard box, re-upload to fix</b>
+                <?php endif; ?>
+              </p>
+              <div style="margin-top:6px;background:#07111d url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\'><rect width=\'8\' height=\'8\' fill=\'%23121c26\'/><rect x=\'8\' y=\'8\' width=\'8\' height=\'8\' fill=\'%23121c26\'/></svg>');border:1px solid rgba(255,255,255,.12);border-radius:3px;padding:6px;text-align:center">
+                <img src="<?php echo htmlspecialchars($lp); ?>?v=<?php echo @filemtime(__DIR__ . '/' . $lp); ?>"
+                     alt="" style="max-width:100%;display:block;margin:0 auto">
+              </div>
+            <?php endif; ?>
           </div>
           <div class="mt-field">
             <label>Source art faces</label>

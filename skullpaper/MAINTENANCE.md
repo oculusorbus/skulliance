@@ -298,6 +298,26 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 - Escape the FIELDS, not the separator: `htmlspecialchars($a . ' &mdash; ' . $b)` turns the `&`
   into `&amp;` and prints the entity as literal text. It shipped reading "HAPPY HOPPERS &MDASH;".
 
+### Monstrocity logos: one box, 300x125 (mart_fit_logo)
+- **THE PAGE RENDERS `max-width:300px; height:auto`** (monstrocity.php:124), which caps WIDTH and
+  leaves height free. That gives three different wrongs: 400x125 draws at 300x94 and looks small,
+  200x400 draws full height and towers, 119x128 draws tiny. All three were being fixed by hand.
+- **MEASURED FROM THE SHIPPED LOGOS: 44 of 49 are exactly 125 tall**, widths 119-400 (plus the
+  default theme's 1024x392 outlier). The invariant the design wants is that every logo occupies the
+  SAME BOX, so uploads are now letterboxed into 300x125 with transparent padding and centred. That
+  makes max-width a no-op and the rendered height always 125.
+- **CONTAIN, NEVER COVER OR STRETCH.** A logo is type and a mark; cropping or distorting either
+  ruins it. A 200x400 source draws about 63px wide inside the box, not 300.
+- **THE PADDING MUST BE EXPLICITLY TRANSPARENT.** `imagecreatetruecolor()` starts OPAQUE BLACK, so
+  skipping the alpha fill gives every logo a black slab that looks almost right on a dark page and
+  is impossible to unsee afterwards. The harness checks a corner pixel's alpha.
+- Small art IS enlarged rather than left tiny, but the caller is told, because the only fix for a
+  soft logo is a bigger source.
+- Existing logos are NOT rewritten. Padding a 232x125 to 300x125 renders identically (it was
+  already centred by `margin:0 auto`), so there is nothing to gain from touching them.
+- The theme form shows the current logo on a checkerboard with its dimensions, and flags it when
+  it is not the standard box.
+
 ### HARNESS TRAP: the comment stripper ate `accept="image/*"` (harness-strip.php)
 - The one-line `preg_replace('!/\*.*?\*/!s', ...)` that every harness used inline treats the MIME
   wildcard in `accept="image/*"` as a block-comment opener and deletes to the next real close -

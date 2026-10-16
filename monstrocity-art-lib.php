@@ -14,6 +14,28 @@ require_once __DIR__ . '/monstrocity-themes-lib.php';
 
 define('MONSTROCITY_ART_WIDTH', 500);   // width, aspect preserved -- see the schema notes
 
+/*
+ * THE LOGO BOX. Measured from the 49 logos already shipped: 44 of them are
+ * exactly 125 tall, and the sane widths top out around 300-400.
+ *
+ * monstrocity.php renders the logo as `max-width:300px; height:auto`, which
+ * is a WIDTH cap with a free height, and that produces three different
+ * wrongs depending on what you feed it:
+ *
+ *   400x125  -> drawn at 300x94, visibly smaller than its neighbours
+ *   200x400  -> drawn at 200x400, towering over the layout
+ *   119x128  -> drawn at 119x128, dwarfed by a 300-wide one
+ *
+ * The invariant the design wants is that every logo occupies the SAME BOX.
+ * Fitting each one inside 300x125 and padding the rest with transparency
+ * delivers that: max-width becomes a no-op, height is always 125, and the
+ * artwork keeps its own proportions wherever it lands inside.
+ *
+ * This is exactly the padding that was being added by hand.
+ */
+define('MONSTROCITY_LOGO_W', 300);
+define('MONSTROCITY_LOGO_H', 125);
+
 /** Load any supported image as a truecolour GD resource with alpha intact. */
 function mart_load($path) {
 	$raw = @file_get_contents($path);
@@ -175,4 +197,65 @@ function mart_missing_slots($theme_slug) {
 		}
 	}
 	return $out;
+}
+
+/**
+ * Fit a logo inside the standard box, centred, padded with transparency.
+ *
+ * CONTAIN, NOT COVER, AND NEVER CROPPED: a logo is type and a mark, and
+ * trimming either to fill a box ruins it. Whatever does not reach the edges
+ * is transparent, so the rendered result looks exactly like the artwork and
+ * simply sits in a consistent space.
+ *
+ * Small art IS enlarged to fit. A logo left at its own tiny size renders
+ * tiny, which is the problem rather than a cautious outcome -- but the caller
+ * is told when it happened, because the fix for a blurry logo is a bigger
+ * source file and nothing this function can do.
+ *
+ * Returns array($image, $noteOrEmpty).
+ */
+function mart_fit_logo($im, $bw = MONSTROCITY_LOGO_W, $bh = MONSTROCITY_LOGO_H) {
+	$w = imagesx($im); $h = imagesy($im);
+	if ($w < 1 || $h < 1) return array($im, '');
+
+	$scale = min($bw / $w, $bh / $h);
+	$nw = max(1, (int)round($w * $scale));
+	$nh = max(1, (int)round($h * $scale));
+
+	$out = imagecreatetruecolor($bw, $bh);
+	imagealphablending($out, false);
+	imagesavealpha($out, true);
+	/* A FULLY TRANSPARENT GROUND. imagecreatetruecolor() starts opaque black,
+	   so skipping this gives every logo a black slab behind it -- which on a
+	   dark page looks almost right and is impossible to unsee afterwards. */
+	imagefilledrectangle($out, 0, 0, $bw, $bh, imagecolorallocatealpha($out, 0, 0, 0, 127));
+
+	imagealphablending($out, true);
+	imagecopyresampled($out, $im, (int)(($bw - $nw) / 2), (int)(($bh - $nh) / 2), 0, 0, $nw, $nh, $w, $h);
+	imagealphablending($out, false);
+
+	$note = '';
+	if ($scale > 1.05) {
+		$note = 'That logo was only ' . $w . 'x' . $h . ' and had to be enlarged '
+		      . round($scale, 1) . 'x to fill the box, so it will look soft. '
+		      . 'A source at least ' . $bw . 'x' . $bh . ' would come out sharp.';
+	}
+	return array($out, $note);
+}
+
+/**
+ * Accept an uploaded logo: fit it to the box and write it as the theme's
+ * logo.png. Separate from the character pipeline because the shaping rule is
+ * different -- characters keep their aspect at a fixed width, a logo is
+ * letterboxed into a fixed box.
+ */
+function mart_accept_logo($tmp_path, $theme_slug) {
+	if (monstrocity_slug_problem($theme_slug) !== '') return array('', 'Bad theme folder name.');
+	$im = mart_load($tmp_path);
+	if (!$im) return array('', 'That file is not an image this server can read.');
+	list($fitted, $note) = mart_fit_logo($im);
+	$dest = __DIR__ . '/' . monstrocity_theme_dir($theme_slug) . '/logo.png';
+	$err  = mart_save_png($fitted, $dest);
+	if ($err !== '') return array('', $err);
+	return array($dest, $note);
 }

@@ -265,5 +265,75 @@ ok(strpos($epNo, "action === 'flipboth'") === false && strpos($epNo, "'both'") =
 ok(strpos($pg, "htmlspecialchars(\$theme['project_name'] . ' &mdash; '") === false,
    'the heading runs its separator through htmlspecialchars, which prints the entity as text');
 
+/* ---- the logo box -------------------------------------------------------- */
+echo "\nlogos\n";
+/*
+ * monstrocity.php renders the logo as max-width:300 with a free height, so
+ * the file's own dimensions decide how big it looks. Three different wrongs
+ * come out of that, and all three are fixed by one box.
+ */
+$cases = array(
+	array(400, 125, 'too wide: would be scaled to 300x94 and look smaller than its neighbours'),
+	array(200, 400, 'too tall: would tower over the layout'),
+	array(119, 128, 'narrow: would be dwarfed by a 300-wide logo'),
+	array(232, 125, 'already a normal size'),
+	array(300, 125, 'exactly the box'),
+	array(1024, 392, 'the default theme\'s outlier'),
+);
+foreach ($cases as $c) {
+	list($w, $h, $label) = $c;
+	$im = imagecreatetruecolor($w, $h);
+	imagefill($im, 0, 0, 0x3366cc);
+	list($o, $note) = mart_fit_logo($im);
+	ok(imagesx($o) === MONSTROCITY_LOGO_W && imagesy($o) === MONSTROCITY_LOGO_H,
+	   "$label -> came out " . imagesx($o) . 'x' . imagesy($o) . ' instead of the box');
+}
+
+/* CONTAIN, NOT COVER. A logo is type and a mark; cropping either ruins it.
+   A 200x400 source must fit entirely inside, which means its drawn width is
+   125/400 of 200, about 63 -- not 300. */
+$tall = imagecreatetruecolor(200, 400);
+imagefill($tall, 0, 0, 0xff0000);
+list($ft,) = mart_fit_logo($tall);
+$cols = 0;
+for ($x = 0; $x < MONSTROCITY_LOGO_W; $x++) {
+	$p = imagecolorat($ft, $x, (int)(MONSTROCITY_LOGO_H / 2));
+	if ((($p >> 24) & 0x7F) < 100) $cols++;
+}
+ok($cols > 50 && $cols < 80,
+   'a 200x400 logo drew ' . $cols . ' opaque columns; contain-fit should give about 63, '
+ . 'so it is being stretched or cropped rather than fitted');
+
+/* THE PADDING MUST BE TRANSPARENT. imagecreatetruecolor() starts opaque
+   black, so forgetting to fill gives every logo a black slab that looks
+   almost right on a dark page. */
+$corner = imagecolorat($ft, 1, 1);
+ok((($corner >> 24) & 0x7F) > 100,
+   'the padding around a fitted logo is opaque, so every logo gets a black slab behind it');
+
+/* Centred, not shoved into a corner. */
+$left = 0; $right = 0;
+for ($x = 0; $x < MONSTROCITY_LOGO_W; $x++) {
+	$p = imagecolorat($ft, $x, (int)(MONSTROCITY_LOGO_H / 2));
+	if ((($p >> 24) & 0x7F) < 100) { if (!$left) $left = $x; $right = $x; }
+}
+$padL = $left; $padR = MONSTROCITY_LOGO_W - 1 - $right;
+ok(abs($padL - $padR) <= 2, "the artwork is not centred: ${padL}px left, ${padR}px right");
+
+/* Small art is enlarged rather than left tiny, but the caller is told. */
+$tiny = imagecreatetruecolor(60, 25); imagefill($tiny, 0, 0, 0x00ff00);
+list($fs, $noteS) = mart_fit_logo($tiny);
+ok(imagesx($fs) === MONSTROCITY_LOGO_W, 'a tiny logo was not fitted to the box');
+ok($noteS !== '', 'a logo enlarged 5x was accepted without a word about it looking soft');
+list(, $noteOk) = mart_fit_logo(imagecreatetruecolor(300, 125));
+ok($noteOk === '', 'a correctly sized logo was warned about anyway');
+
+/* And the theme form routes logos through this, not the generic resizer. */
+$tf = harness_strip_comments(file_get_contents(__DIR__ . '/admin-monstrocity.php'));
+ok(strpos($tf, 'mart_accept_logo(') !== false,
+   'the theme form still sends logos through adm_accept_upload, which only caps the long edge');
+ok(preg_match("/adm_accept_upload\\('logo_file'/", $tf) !== 1,
+   'the generic uploader is still handling the logo as well, so the last writer wins');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);
