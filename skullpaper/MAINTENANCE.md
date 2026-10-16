@@ -356,6 +356,26 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   a half-row would reject it for fields the tuning screen never showed. A row that fails is
   skipped and named, not written.
 
+### TRAP: skulliance.php's store handler used to eat any form with a `name` field
+- `skulliance.php` is included by EVERY page, and its store-item submission handler engaged on
+  `isset($_POST['name'])` ALONE. Any form anywhere with a field called "name" was therefore
+  treated as a store submission. The Monstrocity boss form raised "Please fill out all the fields
+  in the item submission form" on a save that had already succeeded.
+- **The alert was the mild end of it.** A form posting name, image_url, price, quantity and
+  project_id together would have CREATED A STORE LISTING and announced it to Discord from an
+  unrelated page.
+- The guard now requires the store's own fields to be PRESENT. store.php sends all of them, so its
+  empty-field alert is unchanged - `isset()` is about existing, the check inside is about filled in.
+- admin-harness.php reads the guard condition out of the file and asserts each field is in it, and
+  separately asserts that NO `admin-*.php` posts the full store field set.
+
+### Monstrocity bosses: building a ladder without round trips
+- Saving used to land back on the boss just finished. **Save & copy** redirects to a new form
+  prefilled from the one just saved (strength +1), which is the loop a ladder is actually built in;
+  **Save & new** goes to a blank one. Both are redirects, so a refresh cannot resubmit the boss.
+- Only on a CLEAN save. If the art was refused, that message is the only way to find out, and
+  redirecting past it would lose it.
+
 ### TRAP: an `<option>` with no `value=` submits its DISPLAY TEXT
 - Reported as "Extension must be one of: png, gif, jpg, mov" while PNG was selected. The boss
   form's extension options showed `.png` with a leading dot and carried no `value=`, so the

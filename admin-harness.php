@@ -710,6 +710,46 @@ ok(preg_match('/\$where\s*=\s*array\([^)]*avatar\s*<>\s*\x27\x27/', $cgNo) === 1
  . 'that no client-side check can catch');
 ok(preg_match('/user_id\'\]\s*===?\s*1/', $hd) === 1, 'the Admin nav is not gated to user 1');
 
+/* ---------------------------------------------------------------------------
+ * THE STORE SUBMISSION HANDLER MUST NOT EAT OTHER FORMS
+ *
+ * skulliance.php is included by every page, and its store-item handler used
+ * to engage on `isset($_POST['name'])` ALONE. Any form anywhere with a field
+ * called "name" was therefore treated as a store submission: the Monstrocity
+ * boss form posts a boss name and raised "Please fill out all the fields in
+ * the item submission form" on a save that had already succeeded.
+ *
+ * The alert was the mild end of it. A form posting name, image_url, price,
+ * quantity and project_id together would have CREATED A STORE LISTING and
+ * announced it to Discord from a page with nothing to do with the store.
+ * ------------------------------------------------------------------------- */
+$sk   = file_get_contents(__DIR__ . '/skulliance.php');
+$skNo = preg_replace(array('~^[ \t]*/\*.*?\*/~ms', '~(?<![:/])//[^\n]*~'), '', $sk);
+/* Read the guard rather than matching PHP inside a regex inside a string --
+   the first attempt at this escaped wrong and failed against a condition
+   that was perfectly correct. */
+$gAt   = strpos($skNo, "if(isset(\$_POST['name']");
+$gEnd  = $gAt === false ? false : strpos($skNo, '{', $gAt);
+$guard = ($gAt !== false && $gEnd !== false) ? substr($skNo, $gAt, $gEnd - $gAt) : '';
+ok($guard !== '', 'could not find the store submission guard in skulliance.php');
+foreach (array('image_url', 'price', 'quantity') as $needField) {
+	ok(strpos($guard, "\$_POST['" . $needField . "']") !== false,
+	   'the store handler engages without requiring $_POST[' . $needField . '] to be present, so '
+	 . 'any form on the platform with a field called "name" is taken as a store submission');
+}
+ok(strpos($sk, 'fill out all the fields in the item submission form') !== false,
+   'the store form lost its own empty-field warning');
+
+/* And no admin page may post the full store field set by accident. */
+foreach (glob(__DIR__ . '/admin-*.php') as $afFile) {
+	$afSrc = file_get_contents($afFile);
+	$hasAll = true;
+	foreach (array('name', 'image_url', 'price', 'quantity') as $afF)
+		if (strpos($afSrc, 'name="' . $afF . '"') === false) { $hasAll = false; break; }
+	ok(!$hasAll, basename($afFile) . ' posts every field the store handler looks for, so '
+	           . 'submitting it would create a store listing');
+}
+
 echo "\nlevel 1 can actually be saved\n";
 
 /*

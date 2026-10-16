@@ -204,6 +204,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded && !isset($_POST['
 				else                $msgs['ok'][]  = 'Art saved and the red variant regenerated.';
 			}
 		}
+		/*
+		 * WHERE TO GO NEXT. Saving used to land you back on the boss you had
+		 * just finished, so building a set meant going out to the list and
+		 * back in for every one.
+		 *
+		 * "Save and copy" is the one that matters here: a ladder is built by
+		 * making the next boss out of the last one, and this is that loop
+		 * with nothing in between. It is a redirect rather than a re-render,
+		 * so a refresh cannot submit the same boss twice.
+		 *
+		 * Only on a clean save. If anything went wrong -- the art was
+		 * refused, say -- staying put is the only way to see why.
+		 */
+		if (!$msgs['err'] && !empty($_POST['after'])) {
+			$to = $_POST['after'] === 'copy'
+			    ? 'admin-monstrocity-boss.php?new=1&from=' . (int)$id
+			    : 'admin-monstrocity-boss.php?new=1';
+			header('Location: ' . $to . '&saved=' . urlencode($b['name']));
+			exit;
+		}
 		$edit_id = $id; $creating = false;
 	}
 }
@@ -226,12 +246,19 @@ if ($creating && !$row) {
 	 * than tying with it -- a tie has no defined order at all, which is the
 	 * single easiest thing to get wrong when building a set this way.
 	 */
+	if (isset($_GET['saved']) && $_GET['saved'] !== '')
+		$msgs['ok'][] = 'Saved "' . htmlspecialchars((string)$_GET['saved']) . '". Here is a blank one.';
 	$from = isset($_GET['from']) ? (int)$_GET['from'] : 0;
 	if ($from && ($src = mb_row($conn, $from))) {
 		foreach (monstrocity_boss_copyable() as $k)
 			if (isset($src[$k])) $row[$k] = $src[$k];
 		$row['strength'] = min(10, (int)$src['strength'] + 1);
 		$dup_from = $src['name'];
+		if (isset($_GET['saved'])) {
+			array_pop($msgs['ok']);
+			$msgs['ok'][] = 'Saved "' . htmlspecialchars((string)$_GET['saved'])
+			              . '". This one is a copy of it &mdash; rename it and adjust the numbers.';
+		}
 	}
 }
 if (isset($repost)) $row = array_merge((array)$row, $repost);
@@ -543,7 +570,14 @@ table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(
     </div>
 
     <div class="mb-actions">
-      <button class="adm-btn" type="submit"><?php echo $row['id'] ? 'Save boss' : 'Create boss'; ?></button>
+      <button class="adm-btn" type="submit" name="after" value=""><?php echo $row['id'] ? 'Save boss' : 'Create boss'; ?></button>
+      <button class="adm-btn" type="submit" name="after" value="copy"
+              title="Save, then start the next boss from this one's settings">Save &amp; copy &rarr;</button>
+      <button class="adm-btn" type="submit" name="after" value="new"
+              title="Save, then start a blank boss">Save &amp; new</button>
+      <?php if ($row['theme'] !== ''): ?>
+        <a class="adm-btn" href="admin-monstrocity-boss.php?tune=<?php echo urlencode($row['theme']); ?>">Tune this ladder</a>
+      <?php endif; ?>
       <a class="adm-btn" href="admin-monstrocity-boss.php">Cancel</a>
     </div>
   </form>

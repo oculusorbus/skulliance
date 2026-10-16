@@ -405,8 +405,29 @@ function havocWorlds($havoc_key, $address){
 	curl_close($ch);
 }
 
-// Item submission to store
-if(isset($_POST['name'])){
+/*
+ * Item submission to store.
+ *
+ * GATED ON THE WHOLE FORM, NOT JUST name.
+ *
+ * This used to engage on `isset($_POST['name'])` alone, and skulliance.php is
+ * included by every page on the platform -- so ANY form that happened to call
+ * a field "name" was treated as a store submission. The Monstrocity boss
+ * form posts a boss name and a project_id, and got
+ * "Please fill out all the fields in the item submission form" on a save that
+ * had worked perfectly.
+ *
+ * The alert was the harmless end of it. A form posting name, image_url,
+ * price, quantity and project_id together would have CREATED A STORE LISTING
+ * and announced it to Discord, from a page that has nothing to do with the
+ * store.
+ *
+ * Requiring the store's own fields to be PRESENT fixes both. The real form
+ * (store.php) sends all of them, so its empty-field alert still works
+ * exactly as before -- isset() is about the field existing, the check inside
+ * is still about it being filled in.
+ */
+if(isset($_POST['name'], $_POST['image_url'], $_POST['price'], $_POST['quantity'], $_POST['project_id'])){
 	if($_POST['name'] != "" && $_POST['image_url'] != "" && $_POST['price'] != "" && $_POST['quantity'] != "" && $_POST['project_id'] != ""){
 		if(isset($_POST['override'])){
 			createItem($conn, $_POST['name'], $_POST['image_url'], $_POST['price'], $_POST['quantity'], $_POST['project_id'], $_POST['override']);

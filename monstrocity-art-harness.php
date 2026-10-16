@@ -622,5 +622,34 @@ ok(substr_count($bpRaw, '!$post_discarded') === 2,
 ok(strpos($bpRaw, "'max_health'=>250") !== false,
    'a new boss no longer defaults to 250 health');
 
+/* ---- building a set without going back to the list ---------------------- */
+echo "\nsave and continue\n";
+/* Saving used to land back on the boss just finished, so building a ladder
+   meant a round trip through the list for every one. */
+ok(strpos($bp, 'value="copy"') !== false, 'there is no save-and-copy, which is how a ladder gets built');
+ok(strpos($bp, 'value="new"') !== false,  'there is no save-and-new');
+ok(substr_count($bp, 'name="after"') === 3,
+   'the three save buttons do not all submit the same field, so the destination is ambiguous');
+/* And copy must carry the boss it is copying, or "save and copy" is just
+   "save and new" with a different label -- which is what the mutation that
+   dropped `from=` turned it into, silently. */
+ok(strpos($bp, "'admin-monstrocity-boss.php?new=1&from=' . (int)\$id") !== false,
+   'save-and-copy does not pass the boss it just saved, so the new form comes up blank');
+
+/* It must be a REDIRECT, or a refresh resubmits the boss. */
+ok(strpos($bp, "header('Location: ' . \$to") !== false,
+   'save-and-continue re-renders instead of redirecting, so refreshing submits the boss again');
+$hdAt = strpos($bp, "header('Location: ");
+ok($hdAt !== false && $hdAt < strpos($bp, "include 'header.php'"),
+   'the redirect happens after output has started, where it cannot work');
+
+/*
+ * AND ONLY ON A CLEAN SAVE. If the art was refused the message is the only
+ * way to find out, and redirecting past it loses it.
+ */
+ok(strpos($bp, "if (!\$msgs['err'] && !empty(\$_POST['after']))") !== false,
+   'save-and-continue redirects even when something failed, throwing away the only '
+ . 'explanation of what went wrong');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);
