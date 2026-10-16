@@ -141,39 +141,51 @@ foreach ($combos as $c) {
 	$got  = rtrim(monstrocity_themes_js($conn, (bool)$ic, (bool)$dv), " \t\r\n");
 
 	/*
-	 * TWO TESTS, AND THE SECOND IS THE REAL ONE.
+	 * THE GATE CHANGED DELIBERATELY, AND NOT BY EDITING THE SNAPSHOT.
 	 *
-	 * Byte-identity was the gate I set, and two of the four combinations meet
-	 * it outright. The other two differ at exactly one place: the original
-	 * emitted "}\n\t    \t    ,\n" between the third and fourth groups, because
-	 * the line holding `<?php if($innercircle) { ?>` left its own indentation
-	 * behind in the output. That is an artifact of the tag, not content, and
-	 * reproducing it in a generator that has no tag would be daft.
+	 * Byte-identity was the right test for the migration: it proved that
+	 * moving 49 themes out of a literal into a table altered nothing, and
+	 * that was confirmed against the live page.
 	 *
-	 * So the gate becomes: WITH ALL WHITESPACE REMOVED, the two must be byte
-	 * identical. That still rules out every difference that could matter -- a
-	 * changed value, a lost theme, a reordered group, a stray character -- and
-	 * admits only differences in spacing between JS tokens. The byte count is
-	 * printed either way so a surprise cannot hide in the gap.
+	 * Themes are now ordered alphabetically by project within each group,
+	 * because sort_order put every NEW theme at the bottom of its group and
+	 * Happy Hoppers landed after everything else. That is a deliberate change
+	 * to the output, so byte-identity cannot hold any more -- and the honest
+	 * answer is to change what is asserted, NOT to regenerate the snapshot
+	 * until it agrees. The snapshot stays exactly as the literal was.
+	 *
+	 * What must still hold is that the SET is untouched: the same themes, in
+	 * the same groups, visible to exactly the same people. Only the sequence
+	 * within a group may move. The ordering itself is asserted separately,
+	 * against monstrocity_sort_themes().
 	 */
-	$wantTight = preg_replace('/\s+/', '', $want);
-	$gotTight  = preg_replace('/\s+/', '', $got);
-	if ($want === $got) {
-		printf("  identical, byte for byte (%6d bytes)   %s\n", strlen($got), $label);
-		continue;
+	$grab = function ($js) {
+		$out = array(); $g = '';
+		if (preg_match_all('/group: "([^"]+)"|value: "([^"]+)"/', $js, $m, PREG_SET_ORDER)) {
+			foreach ($m as $x) {
+				if ($x[1] !== '') { $g = $x[1]; $out[$g] = isset($out[$g]) ? $out[$g] : array(); continue; }
+				$out[$g][] = $x[2];
+			}
+		}
+		return $out;
+	};
+	$wantSet = $grab($want);
+	$gotSet  = $grab($got);
+	ok(array_keys($wantSet) === array_keys($gotSet),
+	   $label . ': the groups changed -- was [' . implode(' | ', array_keys($wantSet))
+	 . '], now [' . implode(' | ', array_keys($gotSet)) . ']');
+	$lost = array(); $gained = array();
+	foreach ($wantSet as $g2 => $slugs) {
+		$mine   = isset($gotSet[$g2]) ? $gotSet[$g2] : array();
+		$lost   = array_merge($lost,   array_values(array_diff($slugs, $mine)));
+		$gained = array_merge($gained, array_values(array_diff($mine, $slugs)));
 	}
-	if ($wantTight === $gotTight) {
-		printf("  identical ignoring whitespace (%6d vs %6d bytes, %+d)   %s\n",
-			strlen($want), strlen($got), strlen($got) - strlen($want), $label);
-		continue;
-	}
-	$fail++;
-	printf("  FAIL  %s : content differs, not just spacing\n", $label);
-	$n = min(strlen($wantTight), strlen($gotTight));
-	for ($i = 0; $i < $n; $i++) if ($wantTight[$i] !== $gotTight[$i]) break;
-	printf("        first real difference at token-byte %d\n", $i);
-	printf("        expected: %s\n", substr($wantTight, max(0,$i-60), 120));
-	printf("        got     : %s\n", substr($gotTight,  max(0,$i-60), 120));
+	ok($lost === array(),   $label . ': themes left their group: ' . implode(', ', $lost));
+	ok($gained === array(), $label . ': themes appeared the original did not have: ' . implode(', ', $gained));
+	$nWant = 0; foreach ($wantSet as $v) $nWant += count($v);
+	$nGot  = 0; foreach ($gotSet  as $v) $nGot  += count($v);
+	ok($nWant === $nGot, $label . ": the original showed $nWant themes, this shows $nGot");
+	printf("  same %2d themes in %d groups, reordered   %s\n", $nGot, count($gotSet), $label);
 }
 
 /* ---- 4b. the SHAPE, which the whitespace-blind comparison above cannot see --
@@ -300,10 +312,22 @@ ok(count($halfRows) === 49 && $lost === 0,
    'with the link table missing, ' . $lost . ' themes lost their policy ids -- those themes '
  . 'would match nobody\'s NFTs until the table exists');
 
-/* And with nothing attached, the rendered JS is still the frozen original. */
-$plain = rtrim(monstrocity_themes_js($conn, true, true), " \t\r\n");
-ok(preg_replace('/\s+/', '', $plain) === preg_replace('/\s+/', '', render_original($body, 1, 1)),
-   'with no collections attached the output is no longer the original');
+/* And with nothing attached, every theme still carries the policy string it
+   had in the literal -- compared as a SET, since the order is now different
+   on purpose. */
+$plain = monstrocity_themes_js($conn, true, true);
+$polOf = function ($js) {
+	$out = array();
+	if (preg_match_all('/value: "([^"]*)",\s*\n\s*project: "[^"]*",\s*\n\s*title: "[^"]*",\s*\n\s*policyIds: "([^"]*)"/', $js, $m, PREG_SET_ORDER))
+		foreach ($m as $x) $out[$x[1]] = $x[2];
+	ksort($out);
+	return $out;
+};
+$wantPol = $polOf(render_original($body, 1, 1));
+$gotPol  = $polOf($plain);
+ok(count($wantPol) === 49, 'could not read the policy ids out of the snapshot (' . count($wantPol) . ')');
+ok($wantPol === $gotPol,
+   'with no collections attached, some theme no longer carries the policy ids it had in the code');
 
 /* ---- 4d. THE PAGE'S ASSEMBLY, not just the generator ---------------------
  *
@@ -333,6 +357,83 @@ ok(strpos($assembled, '<?php') === false && strpos($assembled, '?>') === false,
    'a PHP tag survived into the rendered page');
 ok(preg_match('/const themes = \[\s*\n\s*\{/', $assembled) === 1,
    'the array does not open cleanly before its first entry');
+
+/* ---- 4e. the new ordering ------------------------------------------------ */
+/*
+ * sort_order put every new theme at the BOTTOM of its group, so Happy
+ * Hoppers appeared after everything else in Partner Project Themes. With
+ * fifty themes the only order a reader can predict is alphabetical.
+ */
+$ordRows = array(
+	array('slug'=>'zenith',       'project_name'=>'Zenith',        'title'=>'A',            'group_order'=>0, 'sort_order'=>1),
+	array('slug'=>'happyhoppers', 'project_name'=>'Happy Hoppers', 'title'=>'Hoppers',      'group_order'=>0, 'sort_order'=>99),
+	array('slug'=>'monstrocity',  'project_name'=>'Monstrocity',   'title'=>'Default Game', 'group_order'=>0, 'sort_order'=>0),
+	array('slug'=>'adapunks',     'project_name'=>'ADA Punks',     'title'=>'ADA Punks',    'group_order'=>2, 'sort_order'=>5),
+	array('slug'=>'blackflag',    'project_name'=>'Black Flag',    'title'=>'Black Flag',   'group_order'=>0, 'sort_order'=>2),
+);
+$ord = array_column(monstrocity_sort_themes($ordRows), 'slug');
+ok($ord === array('monstrocity', 'blackflag', 'happyhoppers', 'zenith', 'adapunks'),
+   'themes are not grouped then alphabetised by project: ' . implode(', ', $ord));
+/* The newest theme must NOT be last just because its sort_order is highest. */
+ok(array_search('happyhoppers', $ord) < array_search('zenith', $ord),
+   'a newly added theme still lands after everything else in its group');
+/* Groups keep their own order regardless of their names. */
+ok(array_search('adapunks', $ord) === 4, 'group order was not respected');
+/* The default game is pinned, or it sorts under M among the partners. */
+ok($ord[0] === 'monstrocity', 'the default game is no longer first in its group');
+/* Case must not decide: a lowercase project name sorting after "Zenith" is
+   the classic strcmp mistake. */
+$caseRows = array(
+	array('slug'=>'a','project_name'=>'zebra','title'=>'x','group_order'=>0,'sort_order'=>0),
+	array('slug'=>'b','project_name'=>'Apple','title'=>'x','group_order'=>0,'sort_order'=>1),
+);
+ok(array_column(monstrocity_sort_themes($caseRows), 'slug') === array('b', 'a'),
+   'a lowercase project name sorts after an uppercase one');
+/* Same project, two themes: title breaks the tie, then sort_order. */
+/* sort_order deliberately DISAGREES with the title order here. With both
+   agreeing, dropping the title comparison changed nothing and the mutation
+   passed -- the fixture has to be able to tell them apart. */
+$tieRows = array(
+	array('slug'=>'t2','project_name'=>'Same','title'=>'Second','group_order'=>0,'sort_order'=>1),
+	array('slug'=>'t1','project_name'=>'Same','title'=>'First', 'group_order'=>0,'sort_order'=>9),
+);
+ok(array_column(monstrocity_sort_themes($tieRows), 'slug') === array('t1', 't2'),
+   'two themes from one project are not ordered by title (sort_order is winning instead)');
+
+/*
+ * AND THE READER MUST USE IT. Every check above calls monstrocity_sort_themes()
+ * directly, so deleting the call from monstrocity_themes() left them all
+ * green while the page rendered in table order. Read the order back out of
+ * the generated JS instead.
+ */
+$renderedJs = monstrocity_themes_js($conn, true, true);
+$seq = array(); $curG = '';
+if (preg_match_all('/group: "([^"]+)"|project: "([^"]+)"/', $renderedJs, $sm, PREG_SET_ORDER)) {
+	foreach ($sm as $x) {
+		if ($x[1] !== '') { $curG = $x[1]; continue; }
+		$seq[$curG][] = $x[2];
+	}
+}
+ok($seq !== array(), 'could not read the rendered theme order back');
+foreach ($seq as $gname => $projects) {
+	/* The default game is pinned ahead of the alphabet; drop it before
+	   checking the rest is sorted. */
+	$check = $projects;
+	if (isset($check[0]) && $check[0] === 'Monstrocity') array_shift($check);
+	$sorted = $check;
+	usort($sorted, function ($x, $y) { return strcmp(strtolower($x), strtolower($y)); });
+	ok($check === $sorted,
+	   'the rendered output of "' . $gname . '" is not alphabetical by project. Got: '
+	 . implode(', ', array_slice($check, 0, 6)) . '...');
+}
+/* Happy Hoppers specifically -- the reported case. It must not be last in
+   its group simply because it was added last. */
+foreach ($seq as $gname => $projects) {
+	$at = array_search('Happy Hoppers', $projects, true);
+	if ($at === false) continue;
+	ok($at !== count($projects) - 1 || count($projects) === 1,
+	   'Happy Hoppers is still last in ' . $gname . ', which is what was reported');
+}
 
 /* ---- 5. the data itself survived ----------------------------------------- */
 $all = monstrocity_themes($conn);

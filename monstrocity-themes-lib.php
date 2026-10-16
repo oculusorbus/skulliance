@@ -52,6 +52,55 @@ function monstrocity_theme_policies($conn) {
 	return $out;
 }
 
+/**
+ * Render order: groups in their own order, themes alphabetical by project
+ * inside each one.
+ *
+ * sort_order used to decide this, which meant a new theme landed at the
+ * BOTTOM of its group -- Happy Hoppers appeared after everything else in
+ * Partner Project Themes, which is not where anyone looks for it. With
+ * fifty themes the only order a reader can predict is alphabetical.
+ *
+ * THE DEFAULT GAME IS PINNED FIRST. "Monstrocity" would otherwise sort under
+ * M, in the middle of the partner projects, and it is the theme the game
+ * falls back to and the one most players want. If that is the wrong call it
+ * is one line.
+ *
+ * sort_order survives as the last tiebreaker, so two themes from the same
+ * project with the same title still come out in a fixed order rather than
+ * whatever the table felt like.
+ *
+ * A pure function because order is now a decision rather than a column, and
+ * a decision should be testable without a database.
+ */
+function monstrocity_sort_themes($rows) {
+	usort($rows, function ($a, $b) {
+		$ga = (int)(isset($a['group_order']) ? $a['group_order'] : 0);
+		$gb = (int)(isset($b['group_order']) ? $b['group_order'] : 0);
+		if ($ga !== $gb) return $ga <=> $gb;
+
+		$da = (isset($a['slug']) && $a['slug'] === 'monstrocity') ? 0 : 1;
+		$db = (isset($b['slug']) && $b['slug'] === 'monstrocity') ? 0 : 1;
+		if ($da !== $db) return $da <=> $db;
+
+		/* Case-insensitive and accent-tolerant enough for project names:
+		   "adapunks" must not sort after "Zenith" because of its capital. */
+		$pa = strtolower(trim((string)(isset($a['project_name']) ? $a['project_name'] : '')));
+		$pb = strtolower(trim((string)(isset($b['project_name']) ? $b['project_name'] : '')));
+		$c = strcmp($pa, $pb);
+		if ($c !== 0) return $c;
+
+		$ta = strtolower(trim((string)(isset($a['title']) ? $a['title'] : '')));
+		$tb = strtolower(trim((string)(isset($b['title']) ? $b['title'] : '')));
+		$c = strcmp($ta, $tb);
+		if ($c !== 0) return $c;
+
+		return (int)(isset($a['sort_order']) ? $a['sort_order'] : 0)
+		   <=> (int)(isset($b['sort_order']) ? $b['sort_order'] : 0);
+	});
+	return $rows;
+}
+
 /** Every active theme, in render order. Returns array of assoc rows. */
 function monstrocity_themes($conn) {
 	$out = array();
@@ -85,7 +134,7 @@ function monstrocity_themes($conn) {
 		$id = (int)$r['id'];
 		if (isset($derived[$id]) && $derived[$id] !== '') $out[$i]['policy_ids'] = $derived[$id];
 	}
-	return $out;
+	return monstrocity_sort_themes($out);
 }
 
 /** Can this viewer see this theme? Mirrors the nesting of the old conditionals. */

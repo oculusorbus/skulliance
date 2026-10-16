@@ -194,6 +194,16 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 - **THE GATE IS monstrocity-themes-harness.php** and it compares against
   `monstrocity-themes-snapshot.php`, a frozen copy of the original literal. That snapshot is a
   FIXTURE: never edit it to make a test pass, and never add new themes to it. New themes are rows.
+- **THE GATE IS NO LONGER BYTE-IDENTITY, AND THE SNAPSHOT WAS NOT REGENERATED.** Themes are now
+  ordered alphabetically by project within each group (`monstrocity_sort_themes()`), because
+  sort_order put every new theme at the BOTTOM of its group - Happy Hoppers landed after
+  everything else. That is a deliberate output change, so the gate became SET identity: the same
+  themes, in the same groups, visible to the same people, with order asserted separately. Editing
+  the snapshot to agree would have thrown away the only record of what the literal held.
+- **The default game is PINNED FIRST** in its group; "Monstrocity" would otherwise sort under M
+  among the partner projects. One line in the comparator if that is ever wrong.
+- Comparison is case-insensitive (a lowercase project name must not sort after "Zenith"), then
+  title, then sort_order as a final tiebreaker so ties stay deterministic.
 - The comparison is byte-identical for 2 of the 4 visibility combinations and
   **identical-ignoring-whitespace** for the other 2. The difference is 15-18 bytes of indentation
   the `<?php if ?>` tag left in its own output. Because that comparison is blind to whitespace,
