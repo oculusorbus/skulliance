@@ -212,16 +212,63 @@ console.log('\n-- the clusters sit on a ring, not in a grid --');
   const spread = Math.max.apply(null, d) - Math.min.apply(null, d);
   ok(spread < 0.5, `every hub is the same distance from the centre (spread ${spread.toFixed(2)}px)`);
   ok(d[0] > 0, 'and that distance is not zero, so they are not stacked');
-  /* Angles evenly divided, which is what makes the seriation meaningful. */
-  const angs = clusters.map(c => {
+  /*
+   * NOT EVENLY SPACED -- SPACED BY WHAT EACH CLUSTER NEEDS. Equal slices
+   * assume equal clusters, and a player with twenty Fighters beside one with
+   * none is the case that broke: the big Crew spilled into the neighbour's,
+   * interleaving two players' portraits. These check the angles go all the
+   * way round in order, and that the gaps track cluster size.
+   */
+  const ring = clusters.map(c => {
     const id = c.getAttribute('data-id');
     let a = Math.atan2(hubOf[id].y - cy, hubOf[id].x - cx);
-    return (a + Math.PI * 2) % (Math.PI * 2);
-  }).sort((p, q) => p - q);
-  for (let i = 1; i < angs.length; i++) {
-    const step = angs[i] - angs[i - 1];
-    ok(Math.abs(step - Math.PI * 2 / nPlayers) < 0.01,
-       `  clusters ${i - 1} and ${i} are evenly spaced (${(step * 180 / Math.PI).toFixed(1)} deg)`);
+    return { id: id, a: (a + Math.PI * 2) % (Math.PI * 2) };
+  }).sort((p, q) => p.a - q.a);
+  for (let i = 0; i < ring.length; i++) {
+    const nxt = ring[(i + 1) % ring.length];
+    let step = nxt.a - ring[i].a;
+    if (step <= 0) step += Math.PI * 2;
+    ring[i].gap = step;
+  }
+  ok(new Set(ring.map(r => r.gap.toFixed(3))).size > 1,
+     'the gaps are not all identical, so the angles respond to cluster size');
+  /*
+   * NO BUNCHING. Summing the gaps is useless -- consecutive gaps around a
+   * circle total 2pi no matter how badly they are distributed, which is how
+   * a version that left all its slack in one place passed. What catches it
+   * is the SHAPE of the distribution: when the radius is set by the minimum
+   * rather than by demand, the leftover arc has to be spread across every
+   * gap, not dumped into the last one. Measured: correct comes out at
+   * 1.08x mean, leaving the slack undistributed at 2.00x.
+   */
+  const gmean = ring.reduce((t, r) => t + r.gap, 0) / ring.length;
+  const gmax  = Math.max.apply(null, ring.map(r => r.gap));
+  ok(gmax / gmean < 1.4,
+     `no cluster is left with an outsized gap beside it (widest ${(gmax / gmean).toFixed(2)}x mean)`);
+
+  /*
+   * AND EVERY CLUSTER HAS ROOM ON BOTH SIDES. A cluster placed at the edge
+   * of its own wedge rather than the middle of it has all its clearance on
+   * one side and none on the other, which is a different bug from being
+   * given too little in total. Measured against each cluster's real reach.
+   */
+  const reachOf = {};
+  for (const c of clusters) {
+    const id = c.getAttribute('data-id');
+    let reach = L.nodes[id].r;
+    for (const sg of all(c).filter(e => e._class.includes('riv-sat'))) {
+      const sd = satDisc(sg);
+      reach = Math.max(reach, Math.hypot(parseFloat(sd.attrs.cx) - hubOf[id].x,
+                                         parseFloat(sd.attrs.cy) - hubOf[id].y)
+                              + parseFloat(sd.attrs.r));
+    }
+    reachOf[id] = reach;
+  }
+  for (let i = 0; i < ring.length; i++) {
+    const a = ring[i], b = ring[(i + 1) % ring.length];
+    ok(a.gap * d[0] >= reachOf[a.id] + reachOf[b.id] - 1,
+       `  ${a.id} and ${b.id} have clearance between them `
+       + `(${(a.gap * d[0]).toFixed(0)} >= ${(reachOf[a.id] + reachOf[b.id]).toFixed(0)})`);
   }
   /* The canvas is square and holds the ring plus the widest cluster. */
   ok(W === H, `the canvas is square (${W}x${H})`);
@@ -578,6 +625,45 @@ console.log('\n-- ten players, the scale the Arena actually runs at --');
     const typical = others.reduce((t, r) => t + r, 0) / others.length;
     ok(e1.reach < typical * 2.2,
        `the deep cluster is not wildly bigger than the rest (${e1.reach.toFixed(0)} vs ${typical.toFixed(0)} typical)`);
+
+    /*
+     * THE DEEP CLUSTER IS GIVEN MORE OF THE CIRCLE. This is the actual fix
+     * for the portraits interleaving: its wedge has to be wider than a bare
+     * avatar's, or its Crew has nowhere to go but into the neighbour.
+     */
+    const cx2 = cw / 2, cy2 = ch / 2;
+    const ang = {};
+    for (const id of eids) {
+      let a = Math.atan2(ext[id].y - cy2, ext[id].x - cx2);
+      ang[id] = (a + Math.PI * 2) % (Math.PI * 2);
+    }
+    const byAng = eids.slice().sort((p, q) => ang[p] - ang[q]);
+    const wedge = {};
+    byAng.forEach((id, i) => {
+      const prev = byAng[(i - 1 + byAng.length) % byAng.length];
+      const next = byAng[(i + 1) % byAng.length];
+      let a1 = ang[id] - ang[prev]; if (a1 <= 0) a1 += Math.PI * 2;
+      let a2 = ang[next] - ang[id]; if (a2 <= 0) a2 += Math.PI * 2;
+      wedge[id] = (a1 + a2) / 2;
+    });
+    const smallest = eids.reduce((m, id) => ext[id].reach < ext[m].reach ? id : m, eids[0]);
+    ok(wedge['1'] > wedge[smallest],
+       `the 25-Fighter player gets a wider wedge than the smallest cluster `
+       + `(${(wedge['1'] * 180 / Math.PI).toFixed(0)} deg vs ${(wedge[smallest] * 180 / Math.PI).toFixed(0)} deg)`);
+    /* And no portrait of one player's sits inside another's reach. */
+    for (const id of eids) {
+      for (const sg of all(cs.find(c => c.getAttribute('data-id') === id))
+                        .filter(e => e._class.includes('riv-sat'))) {
+        const sd = satDisc(sg);
+        for (const other of eids) {
+          if (other === id) continue;
+          const d = Math.hypot(parseFloat(sd.attrs.cx) - ext[other].x,
+                               parseFloat(sd.attrs.cy) - ext[other].y);
+          ok(d >= ext[other].reach - 1,
+             `  a portrait of ${id} stays out of ${other}'s cluster (${d.toFixed(0)} >= ${ext[other].reach.toFixed(0)})`);
+        }
+      }
+    }
 
     /* Nothing is silently dropped: the label admits the overflow. */
     const subs = all(c1).filter(e => e.tagName === 'text').map(e => e.textContent);

@@ -914,11 +914,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    own h2 -- it is a divider within a thing, not another thing -- and the
    second section carries the rule, so the first does not start with one. */
 .arena-wrap .a-lsec + .a-lsec{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
-/* The panel heading is a link. flexbox.css styles a bare `a` globally with
-   text-align:center AND a colour of its own, so both have to be re-stated
-   here or the heading centres itself and changes colour. */
-.arena-wrap .a-panel h2 a.a-xlink{color:inherit;text-decoration:none;text-align:inherit}
-.arena-wrap .a-panel h2 a.a-xlink:hover{color:var(--ochre);text-decoration:underline}
+
 
 .arena-wrap .a-lsec h3{margin:0 0 6px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
   opacity:.55;font-weight:600;display:flex;gap:7px;align-items:baseline}
@@ -1556,17 +1552,6 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
              width and height at once, so it got a page and this got a link --
              which is also the honest size of the relationship, since the
              ladder is what people come to this page for. */ ?>
-    <div class="a-panel">
-      <h2><a href="rivalries.php" class="a-xlink">Rivalries</a></h2>
-      <div class="body">
-        <p class="a-sub" style="margin:0">
-          The ladder says who is winning. <a href="rivalries.php">Rivalries</a>
-          says who is fighting whom: every active player as a cluster, their
-          Crew drawn around them, and a line to everyone they have traded
-          battles with over the last <?php echo (int)DHCA_RIVALRY_DAYS; ?> days.
-        </p>
-      </div>
-    </div>
   </div>
 
   <!-- the board, hidden until a battle starts -->

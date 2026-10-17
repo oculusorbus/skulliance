@@ -457,7 +457,8 @@ being popular.
 
 The ladder says who is winning. **Rivalries** says who is fighting whom.
 
-It has **its own tab**, next to DHC Arena under Play. Every player who has settled a
+It has **its own tab** in the DHC strip, beside Fighters, Collection, Arena
+and Sandbox. Every player who has settled a
 battle in the window stands on a ring: their avatar, the Fighters they have
 been fielding drawn around them as portraits, and lines across the middle to
 everyone they have fought.
@@ -485,8 +486,13 @@ The window is **30 days** by default, with 7 and 90 available on the page.
 **At most 12 Fighters are drawn per player**, the ones fielded most, and the
 label says how many more there are. Somebody who has fielded twenty-five
 different Fighters in a month is telling you about their collection rather
-than about who they fight with, and two dozen portraits around one avatar
-pushed every other cluster out of shape.
+than about who they fight with.
+
+**Players get as much of the ring as they need, not an equal share.** Someone
+with a deep Crew is given a wide wedge so their Fighters have room; players
+with nothing around them pack in close. Dividing the circle evenly meant one
+big Crew spilled sideways into its neighbour, which is worse than crowding
+because it leaves two players' Fighters interleaved.
 
 Sizes go by **area, not radius**. A player with ten battles is not drawn ten
 times the size of one with a single battle, because that is not what the eye

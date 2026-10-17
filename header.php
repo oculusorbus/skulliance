@@ -453,12 +453,6 @@
 		           state and pays nothing, so a player finding it would only be
 		           confused about which one counts. See dhcarena.md. -->
 		      <a href="dhcarena.php">DHC Arena</a>
-		      <?php /* Rivalries sits beside the Arena, not inside it. It is not a
-		               thing to play, which is the rule the Collection is kept out
-		               of this list by -- but it is also not reachable from
-		               anywhere a player naturally goes, and a map of who is
-		               hunting whom is only worth drawing if people find it. */ ?>
-		      <a href="rivalries.php">Rivalries</a>
 		      <a href="cryptcrawl.php">Crypt Crawl</a>
 		      <a href="cryptconquest.php">Crypt Conquest</a>
 		      <a href="monstrocity.php">Monstrocity</a>
@@ -469,10 +463,13 @@
 		      <!-- Obscura has no public page at all; it is internal. It used
 		           to be the exception to a rule that no longer exists. -->
 		      <a href="obscura.php">Obscura</a>
-		      <!-- DHC Fighters only. The Fighter Collection is deliberately NOT
-		           listed here: Play is a list of things to play, and the gallery
-		           is reached from inside DHC Fighters, where a player already has
-		           a Fighter worth going to look at. -->
+		      <!-- DHC Fighters and DHC Arena only. The Fighter Collection and
+		           Rivalries are deliberately NOT listed here: Play is a list of
+		           things to PLAY, and those two are things to look at. Both are
+		           chips in dhc-nav.php, the strip across the top of every DHC
+		           page, which is where someone already inside DHC will find
+		           them -- and the only place they can be without this list
+		           turning into every page that mentions a Fighter. -->
 		      <!-- ?project_id= on both: Drop Ship and Oculus Lounge are one
 		           codebase switched by a session value, so without it each
 		           link opens whichever of the two the session was last left

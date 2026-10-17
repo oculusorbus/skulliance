@@ -221,5 +221,36 @@ ok(strpos($body, 'started_at >= NOW() - INTERVAL') !== false, 'and both are wind
 ok(substr_count($body, 'INTERVAL $d DAY') === 2, 'by the same $d, not two different windows');
 ok(strpos($body, '$d   = max(1, (int)$days);') !== false, 'the window is cast and floored before interpolation');
 
+echo "\n-- the DHC strip knows about every DHC page --\n";
+/*
+ * dhc-nav.php is the one strip across Fighters, Collection, Arena, Sandbox
+ * and Rivalries, and its whole point is that it cannot drift into five
+ * slightly different strips. The way it drifts anyway is a new page that
+ * includes it but is not IN it, which looks fine on every other page and
+ * leaves that one with nothing highlighted.
+ */
+$nav = file_get_contents(__DIR__ . '/dhc-nav.php');
+preg_match_all("/^\t'([a-z]+)'\s*=> array\('([^']+)'/m", $nav, $m, PREG_SET_ORDER);
+$items = array();
+foreach ($m as $hit) $items[$hit[1]] = $hit[2];
+ok(count($items) >= 5, 'the strip lists at least five entries (' . count($items) . ')');
+ok(isset($items['rivalries']), 'Rivalries is one of them');
+ok($items['rivalries'] === 'rivalries.php', 'and points at the right page');
+foreach ($items as $key => $href) {
+	$file = preg_replace('/#.*$/', '', $href);
+	if (!is_file(__DIR__ . '/' . $file)) { ok(false, "  $key points at a missing file ($file)"); continue; }
+	$src = file_get_contents(__DIR__ . '/' . $file);
+	ok(strpos($src, "dhcnav_at") !== false, "  $file includes the strip");
+	ok(strpos($src, "dhcnav_at = '" . $key . "'") !== false
+	   || strpos($src, '#') !== false && strpos($href, '#') !== false,
+	   "  $file marks itself as '$key', so one chip is highlighted");
+}
+/* And the page it was lifted out of must not also link to it: two routes to
+   one page, one of them a whole panel, is how the Arena ended up advertising
+   a map that is already a tab. */
+$arena = file_get_contents(__DIR__ . '/dhcarena.php');
+ok(strpos($arena, 'rivalries.php') === false,
+   'the Arena does not carry its own second link to Rivalries');
+
 echo "\n" . ($fails ? "$fails FAILED\n" : "all passed\n");
 exit($fails ? 1 : 0);

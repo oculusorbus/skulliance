@@ -96,7 +96,7 @@ include 'header.php';
 
 <?php dhc_type_styles(); ?>
 <style>
-.riv-wrap{padding:14px;max-width:100%;overflow-x:clip;
+.riv-wrap{padding:14px;max-width:1500px;margin:0 auto;overflow-x:clip;
   color:var(--bone,#e8eaed);font:14px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
   --ink:#07111d;--panel:#0a1929;--line:#1b3346;--dim:#7a9eb0;--ochre:#00c8a0;--blood:#e0466b}
 .riv-wrap h1{font-family:"Archivo Black",Impact,sans-serif;font-weight:400;margin:0;font-size:22px}
@@ -111,14 +111,23 @@ include 'header.php';
 .riv-bar a:hover{border-color:var(--ochre);color:var(--ochre)}
 .riv-bar a.on{border-color:var(--ochre);color:var(--ink);background:var(--ochre)}
 /*
- * THE MAP SCROLLS IN ITS OWN BOX. A graph has a natural size and shrinking it
- * to a phone makes it unreadable rather than smaller, so it keeps its size and
- * the box scrolls. The page body must never scroll sideways, which is why the
- * overflow is here and .riv-wrap clips.
+ * THE MAP FITS THE WIDTH AND THE PAGE GETS TALLER. It used to keep its
+ * natural size inside a scrolling box capped at 82vh, which meant a sideways
+ * scrollbar, a map pinned to the left of a wide screen, and only ever a
+ * window onto the graph.
+ *
+ * The SVG carries a viewBox, so width:100% and height:auto scale the whole
+ * thing to the column and let it run as tall as it needs -- the ring is
+ * roughly square, so on a wide screen the page simply becomes long. That is
+ * the right trade for a graph: scrolling DOWN past a map you can see all of
+ * beats scrolling ACROSS one you can only ever see part of.
+ *
+ * overflow-x stays as a safety net for a viewport narrower than the SVG can
+ * usefully shrink to; at these widths it should never engage.
  */
-.riv-map{overflow:auto;background:#050c14;border:1px solid var(--line);border-radius:4px;
-  padding:8px;-webkit-overflow-scrolling:touch;max-height:82vh}
-.riv-map svg{display:block;max-width:none}
+.riv-map{overflow-x:auto;background:#050c14;border:1px solid var(--line);border-radius:4px;
+  padding:8px;-webkit-overflow-scrolling:touch}
+.riv-map svg{display:block;width:100%;height:auto;max-width:none;margin:0 auto}
 .riv-key{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0;
   font-size:9.5px;letter-spacing:.06em;color:var(--dim)}
 .riv-key span{display:flex;align-items:center;gap:6px}
@@ -144,13 +153,13 @@ include 'header.php';
 </style>
 
 <div class="riv-wrap">
+  <?php $dhcnav_at = 'rivalries'; $dhcnav_guest = $riv_guest; include 'dhc-nav.php'; ?>
   <div class="riv-head">
     <h1>Rivalries</h1>
     <span class="sub">DHC Arena &middot; last <?php echo (int)$riv_days; ?> days</span>
   </div>
 
   <?php if (!$riv_n): ?>
-    <p class="riv-intro">Who is fighting whom in the <a href="dhcarena.php">DHC Arena</a>.</p>
     <div class="riv-empty">
       No settled battles in the last <?php echo (int)$riv_days; ?> days.
       <a href="dhcarena.php">Fight someone</a> and the map draws itself.
@@ -175,9 +184,6 @@ include 'header.php';
            href="rivalries.php<?php echo $d === DHCA_RIVALRY_DAYS ? '' : '?days=' . $d; ?>"><?php
            echo $lbl; ?></a>
       <?php endforeach; ?>
-      <span class="lbl" style="margin-left:10px">Go to</span>
-      <a href="dhcarena.php">The Arena</a>
-      <a href="dhcgallery.php">The Collection</a>
     </div>
 
     <div id="riv-map" class="riv-map"></div>

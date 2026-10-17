@@ -30,7 +30,7 @@ $dhcnav_guest = !empty($dhcnav_guest);
 /*
  * [href, label, hint, gated, mobile_only]
  *
- * THE FIFTH FIELD IS WHY THIS IS NO LONGER FOUR ENTRIES. "Where traits drop"
+ * THE FIFTH FIELD IS WHY THIS IS NOT A FLAT LIST. "Where traits drop"
  * is a column of dhcfighters.php, so on a desktop it is already on screen and
  * a link to it would be clutter. On a phone that page stacks and the list
  * sits below the assembler, the canvas, the draw order and twenty roster
@@ -51,6 +51,10 @@ $dhcnav_items = array(
 	'status'     => array('dhcfighters.php#drops', 'Games', 'review', 1, 1),
 	'collection' => array('dhcgallery.php',  'Collection', 'browse', 0, 0),
 	'arena'      => array('dhcarena.php',    'Arena',      'fight',  0, 0),
+	/* Public, like the Arena and the Collection: it is a picture of what the
+	   Arena has been doing, and every name and avatar on it is already on a
+	   leaderboard. Label is the noun and hint the verb, like the rest. */
+	'rivalries'  => array('rivalries.php',   'Rivalries',  'watch',  0, 0),
 	'sandbox'    => array('dhcsandbox.php',  'Sandbox',    'experiment', 0, 0),
 );
 ?>

@@ -179,7 +179,9 @@
    * enough when its circumference covers the sum -- which handles wildly
    * uneven cluster sizes without leaving a hole where a small one sits.
    */
-  const needed = outer.reduce((t, o) => t + 2 * o + GAP, 0);
+  /* Arc length each cluster needs to itself: its own width, plus a gap. */
+  const demand = seq.map(id => 2 * G[id].outer + GAP);
+  const needed = demand.reduce((t, d) => t + d, 0);
   const R = N === 1 ? 0 : Math.max(maxOut + 40, needed / (2 * Math.PI));
 
   const PAD = maxOut + LABEL + 20;
@@ -187,12 +189,37 @@
   const H = Math.round(2 * (R + PAD));
   const CX = W / 2, CY = H / 2;
 
+  /*
+   * ---- EVERY CLUSTER GETS THE ANGLE IT NEEDS, NOT AN EQUAL SHARE ----
+   *
+   * Dividing the circle into N equal slices assumes the clusters are the same
+   * size, and they are emphatically not: one player with twenty Fighters sits
+   * beside one with none, and the equal slice that was generous for the
+   * second was far too narrow for the first. Its Crew spilled sideways into
+   * the neighbour's -- portraits from two different players interleaved,
+   * which is worse than crowding because it is actively misleading about who
+   * owns what.
+   *
+   * So the circle is divided in PROPORTION to what each cluster occupies. A
+   * player with a deep Crew is handed a wide wedge and gets room to show it;
+   * players with nothing around them pack in close, which is exactly as much
+   * of the ring as they need.
+   *
+   * Any slack left when the radius is set by the minimum rather than by the
+   * demand is spread evenly, so the clusters still go all the way round
+   * instead of bunching at the top with a gap at the bottom.
+   */
+  const used  = needed / (R || 1);
+  const slack = Math.max(0, Math.PI * 2 - used) / N;
+  let acc = 0;
   /* Start at the top and run clockwise, so the busiest player -- first in the
      seriation -- is where the eye lands. */
   const placed = seq.map((id, i) => {
-    const a = -Math.PI / 2 + (i / N) * Math.PI * 2;
+    const slice = demand[i] / (R || 1) + slack;
+    const a = -Math.PI / 2 + acc + slice / 2;
+    acc += slice;
     return {
-      id: id, node: D.nodes[id], g: G[id], ang: a,
+      id: id, node: D.nodes[id], g: G[id], ang: a, slice: slice,
       x: CX + Math.cos(a) * R,
       y: CY + Math.sin(a) * R,
     };
