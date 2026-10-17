@@ -184,7 +184,8 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   margin:0 0 14px}
 #pt .pt-hero h1{font-size:clamp(30px,5.4vw,52px);font-weight:700;letter-spacing:-.01em}
 #pt .pt-hero h1 em{font-style:normal;color:var(--ochre)}
-#pt .pt-lede{margin:18px 0 0;font-size:clamp(15px,2vw,18px);line-height:1.65;color:#c7d3dc;max-width:62ch}
+#pt .pt-lede{margin:0;font-size:clamp(15px,2vw,18px);line-height:1.65;color:#c7d3dc;max-width:62ch}
+#pt .pt-hero-cols{margin-top:20px}
 #pt .pt-free{display:inline-flex;align-items:center;gap:9px;margin:24px 0 0;padding:9px 15px;
   border:1px solid var(--ochre);border-radius:3px;font-size:12px;letter-spacing:.1em;
   text-transform:uppercase;color:var(--ochre)}
@@ -204,6 +205,24 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   padding:16px 16px 17px}
 #pt .pt-build b{display:block;font-size:13px;margin:0 0 6px;color:var(--bone)}
 #pt .pt-build span{font-size:12.5px;line-height:1.6;color:var(--dim)}
+
+/* ---- prose that has to fill a wide page ----
+   WIDENING THE CONTAINER WAS ONLY HALF THE JOB. Running text is capped in
+   ch so it stays readable, which at 1280px left every paragraph hugging the
+   left edge with half the page empty beside it. Sections that end in a grid
+   fill the width themselves; the ones that are ONLY prose need the text laid
+   out in two columns, so the measure stays short and the block still spans
+   the page. Collapses to one column before the columns get too narrow. */
+/* COLUMNS, NOT A TWO-CELL GRID. A grid puts paragraph three under
+   paragraph one and leaves it stranded beside empty space; CSS columns flow
+   and balance the text so both sides end level, which is the whole reason
+   the block is in two columns at all. break-inside keeps a paragraph from
+   being split across the gap. */
+#pt .pt-cols{columns:2;column-gap:44px;margin:16px 0 0}
+#pt .pt-cols > p{margin:0 0 14px;break-inside:avoid;-webkit-column-break-inside:avoid;
+  max-width:62ch}
+#pt .pt-cols > p:last-child{margin-bottom:0}
+@media (max-width:900px){#pt .pt-cols{columns:1}}
 
 /* ---- the six founders ---- */
 #pt .pt-founders{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin:26px 0 0;
@@ -226,8 +245,16 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
    while these thirty lines belong to a page with its own tokens and its own
    type scale. Sharing the markup too would mean parameterising a prefix
    through both pages for no benefit either of them can see. */
-#pt .pt-strip{width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw);
-  overflow:hidden;padding:16px 0;
+/* BOUNDED BY THE COLUMN, NOT THE VIEWPORT. This was the homepage's
+   full-bleed treatment -- width:100vw with a calc shift -- and 100vw
+   INCLUDES THE VERTICAL SCROLLBAR, so on a 2560px window with a 15px bar
+   the strip measured 2560 against a 2545 content area and hung 7px off each
+   side, which turned on a horizontal scrollbar for the whole page. The
+   homepage gets away with it because it sets body{overflow-x:hidden}; doing
+   that here would create a scroll container and break the sticky nav. At
+   1280px the strip is wide enough that bleeding to the edge was never worth
+   a page-wide scrollbar. */
+#pt .pt-strip{overflow:hidden;padding:16px 0;
   -webkit-mask-image:linear-gradient(to right,transparent 0,#000 6%,#000 94%,transparent 100%);
           mask-image:linear-gradient(to right,transparent 0,#000 6%,#000 94%,transparent 100%)}
 #pt .pt-strip + .pt-strip{padding-top:0}
@@ -365,34 +392,38 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
     <h1><?php if ($pt_for !== ''): ?>Welcome, <em><?php echo $pt_e($pt_for); ?></em>.<br>You have been
         invited to join Skulliance.<?php
         else: ?>You have been invited<br>to join <em>Skulliance</em>.<?php endif; ?></h1>
-    <p class="pt-lede">There is no application form and no listing fee, because there is no list to
-      buy your way onto. Projects are here because we went and asked them, and
-      <?php echo $pt_for !== '' ? $pt_e($pt_for) : 'yours'; ?> is one we want.</p>
-    <p class="pt-lede" style="margin-top:14px">What that gets you is a home for your collectors:
-      somewhere to stake what they own, earn off-chain points you name, and play a dozen games alongside
-      <?php echo count($pt_names) >= 10 ? count($pt_names) . ' other projects' : 'the other projects already here'; ?>
-      and their communities. You build none of it. We do, and it costs you nothing.</p>
+    <div class="pt-cols pt-hero-cols">
+      <p class="pt-lede">There is no application form and no listing fee, because there is no
+        list to buy your way onto. Projects are here because we went and asked them, and
+        <?php echo $pt_for !== '' ? $pt_e($pt_for) : 'yours'; ?> is one we want.</p>
+      <p class="pt-lede">What that gets you is a home for your collectors: somewhere to stake
+        what they own, earn off-chain points you name, and play a dozen games alongside
+        <?php echo count($pt_names) >= 10 ? count($pt_names) . ' other projects' : 'the other projects already here'; ?>
+        and their communities. You build none of it. We do, and it costs you nothing.</p>
+    </div>
     <p class="pt-free">Free to join &middot; Free to stay</p>
   </div>
 
   <div class="pt-sect">
     <p class="pt-kicker">What this is</p>
     <h2>Six artists built somewhere their collectors would want to stay</h2>
-    <p>Skulliance started as a group of artists specialising in skull art on Cardano, who came
-      together under <a href="https://www.x.com/oculusorbus" target="_blank" rel="noopener"
-      style="color:var(--ochre)">Oculus Orbus</a> - a collector of their work who also happened to
-      be a developer. He built the staking platform so that holding any of their art earned
-      something from the first night, whether or not the holder ever played anything.</p>
-    <p style="margin-top:14px">It worked, so they started inviting other artists. Then it outgrew
-      one chain, and now runs on <?php echo $pt_e(implode(', ', $pt_chains)); ?> with every
-      project's holders on the same boards and the same account. It keeps growing for a plain
-      reason: a single collection cannot justify building staking, missions, realms, a
-      marketplace and a dozen games, and <?php echo count($pt_names) >= 10 ? count($pt_names) : 'forty'; ?>
-      of them together can. Every artist who joins makes the thing every other artist is part of
-      bigger, which is why nobody here is competing for the same collectors.</p>
-    <p style="margin-top:14px">It is a small team and a public one. Everyone is reachable, the
-      mechanics are all written down in the <a href="skullpaper.php" style="color:var(--ochre)">Skull
-      Paper</a>, and nothing about how the platform works is a secret from the people on it.</p>
+    <div class="pt-cols">
+      <p>Skulliance started as a group of artists specialising in skull art on Cardano, who came
+        together under <a href="https://www.x.com/oculusorbus" target="_blank" rel="noopener"
+        style="color:var(--ochre)">Oculus Orbus</a> - a collector of their work who also happened
+        to be a developer. He built the staking platform so that holding any of their art earned
+        something from the first night, whether or not the holder ever played anything.</p>
+      <p>It worked, so they started inviting other artists. Then it outgrew one chain, and now
+        runs on <?php echo $pt_e(implode(', ', $pt_chains)); ?> with every project's holders on
+        the same boards and the same account. It keeps growing for a plain reason: a single
+        collection cannot justify building staking, missions, realms, a marketplace and a dozen
+        games, and <?php echo count($pt_names) >= 10 ? count($pt_names) : 'forty'; ?> of them
+        together can. Every artist who joins makes the thing every other artist is part of
+        bigger, which is why nobody here is competing for the same collectors.</p>
+      <p>It is a small team and a public one. Everyone is reachable, the mechanics are all
+        written down in the <a href="skullpaper.php" style="color:var(--ochre)">Skull Paper</a>,
+        and nothing about how the platform works is a secret from the people on it.</p>
+    </div>
     <?php /* THE SIX THEMSELVES, the way the homepage shows them, from the
              one file both read. A platform screenshot here answered a
              question nobody had asked yet -- this section is about who
@@ -625,9 +656,15 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
     <div class="pt-shots two">
         <figure><img src="https://www.skulliance.io/staking/images/dhcgame.png" alt="DHC Arena"
           loading="lazy" decoding="async"><figcaption>DHC Arena, Crew versus Crew</figcaption></figure>
-        <figure><img src="https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png"
-          alt="Diamond Skulls" loading="lazy" decoding="async"><figcaption>Diamond Skulls, the
-          platform's own collection</figcaption></figure>
+        <?php /* NOT the Diamond Skulls screenshot that was here: Diamond
+                 Skulls is a separate feature and has nothing to do with
+                 DHC, so it was filler that contradicted the section it sat
+                 in. This is a real trait share card, rendered live by
+                 dhc-card.php -- which also demonstrates the claim in the
+                 card directly above it rather than just asserting it. */ ?>
+        <figure><img src="https://www.skulliance.io/staking/dhc-card.php?trait=headgear:tank-helmet"
+          alt="A DHC trait share card" loading="lazy" decoding="async"><figcaption>A trait, as it
+          posts to X</figcaption></figure>
     </div>
     <p style="margin-top:16px">The art is by <a href="https://x.com/MMAXI404" target="_blank"
       rel="noopener" style="color:var(--ochre)">Maxingo</a>, who shared it so this could be built.

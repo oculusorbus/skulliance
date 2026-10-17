@@ -328,6 +328,46 @@ echo "\npoints are described as points, and as off chain\n";
 	   'the closing list no longer rules out a token');
 }
 
+echo "\nevery picture is of the thing its section is about\n";
+{
+	/*
+	 * The DHC section shipped with a Diamond Skulls screenshot in it,
+	 * picked because it was a convenient second image. Diamond Skulls is a
+	 * separate feature; on a page whose whole job is making an unfamiliar
+	 * platform legible, filler that contradicts its own caption is worse
+	 * than one image.
+	 */
+	$da = strpos($src, "<p class=\"pt-kicker\">DHC</p>");
+	$db = $da === false ? false : strpos($src, '<div class="pt-sect">', $da);
+	$dhc = ($da === false || $db === false) ? '' : substr($src, $da, $db - $da);
+	ok($dhc !== '', 'the DHC section is gone');
+	ok(strpos($dhc, 'diamond-skulls') === false,
+	   'the DHC section shows a Diamond Skulls screenshot, which is a different feature');
+	/* Both its images have to be DHC. */
+	preg_match_all('/<img src="[^"]*\/staking\/([^"?]+)/', $dhc, $im);
+	foreach ($im[1] as $f) {
+		ok(stripos($f, 'dhc') !== false,
+		   'the DHC section shows ' . $f . ', which is not DHC');
+	}
+}
+
+echo "\nnothing is wider than the page\n";
+{
+	/*
+	 * 100vw INCLUDES THE VERTICAL SCROLLBAR. The marquee was copied from
+	 * the homepage's full-bleed treatment, and on a window with a scrollbar
+	 * it measured wider than the content area and turned on a horizontal
+	 * scrollbar for the whole page. The homepage only gets away with it
+	 * because it sets body{overflow-x:hidden} -- which here would create a
+	 * scroll container and break the sticky nav.
+	 */
+	ok(strpos($clean, '100vw') === false,
+	   'something is sized in 100vw, which includes the scrollbar and scrolls the page sideways');
+	ok(stripos($clean, 'overflow-x:hidden') === false
+	   && stripos($clean, 'overflow-x: hidden') === false,
+	   'the page hides horizontal overflow instead of not overflowing; that breaks the sticky nav');
+}
+
 echo "\nthe claims match the Skull Paper\n";
 {
 	/* The store flow is a promise about what WE do, so the address it names
