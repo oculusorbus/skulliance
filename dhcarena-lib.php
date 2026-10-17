@@ -1452,3 +1452,208 @@ function dhca_claim_ranks($cpool, $rv, $proven) {
 	}
 	return $out;
 }
+
+/* ===================================================================
+   RIVALRIES -- who has been fighting whom, and with what.
+   =================================================================== */
+
+define('DHCA_RIVALRY_DAYS', 30);   // the window: current events, not all history
+
+/**
+ * The rivalry graph for the last $days: players, the attacks between them, and
+ * each player's Fighters.
+ *
+ * THREE READS, EACH AGGREGATED IN SQL. The graph is small -- a busy month is
+ * tens of players and maybe a few hundred pairs -- but the tables behind it
+ * are not, so nothing here pulls battle rows into PHP to count them.
+ *
+ * WHAT IS AVAILABLE TODAY IS NOT WHAT IS AVAILABLE PER FIGHTER.
+ * dhc_arena_battles has recorded attacker, defender and outcome since the
+ * Arena opened, so the players and the lines between them are months deep.
+ * dhc_arena_battle_fighters is new, so the Fighter satellites only exist for
+ * battles logged since it landed, and a player's cluster can legitimately
+ * come back with a hub and no satellites. The renderer must survive that
+ * rather than treat it as missing data.
+ *
+ * ONLY SETTLED BATTLES COUNT. outcome 0 is a battle still in progress, and a
+ * game somebody walked away from mid-match is not a rivalry -- it is an
+ * unfinished sentence. dhca_forfeit() closes those with a real outcome, so
+ * they arrive here once they are actually over.
+ */
+function dhca_rivalries($conn, $days = DHCA_RIVALRY_DAYS) {
+	$d   = max(1, (int)$days);
+	$out = array('days' => $d, 'players' => array(), 'edges' => array(),
+	             'fighters' => array(), 'battles' => 0);
+
+	/* ---- 1. the edges, and every player who appears on one ---- */
+	$res = $conn->query(
+		"SELECT attacker_id, defender_id,
+		        COUNT(*)            AS n,
+		        SUM(outcome = 1)    AS aw
+		   FROM dhc_arena_battles
+		  WHERE outcome IN (1,2)
+		    AND started_at >= NOW() - INTERVAL $d DAY
+		  GROUP BY attacker_id, defender_id");
+	if (!$res) return $out;
+
+	$ids = array();
+	while ($r = $res->fetch_assoc()) {
+		$a = (int)$r['attacker_id']; $v = (int)$r['defender_id'];
+		/* A battle against yourself is not a rivalry. It should not exist, but
+		   a self-edge would render as a line from a node to itself and read as
+		   a glitch, so it is dropped here rather than in the renderer. */
+		if ($a === $v || !$a || !$v) continue;
+		$n  = (int)$r['n'];
+		$aw = (int)$r['aw'];
+		$out['edges'][] = array('a' => $a, 'd' => $v, 'n' => $n, 'aw' => $aw);
+		$out['battles'] += $n;
+		$ids[$a] = true; $ids[$v] = true;
+	}
+	if (!$ids) return $out;
+
+	/* ---- 2. who those people are ---- */
+	$in  = implode(',', array_map('intval', array_keys($ids)));
+	$res = $conn->query("SELECT id, username, discord_id, avatar FROM users WHERE id IN ($in)");
+	if ($res) {
+		while ($r = $res->fetch_assoc()) {
+			$out['players'][(int)$r['id']] = array(
+				'id'      => (int)$r['id'],
+				'name'    => (string)$r['username'],
+				'avatar'  => avatar_url($r['discord_id'], $r['avatar']),
+				'att'     => 0, 'def' => 0, 'wins' => 0, 'losses' => 0, 'battles' => 0,
+			);
+		}
+	}
+	/* Tallied from the edges rather than re-queried: the edge list already
+	   carries every battle in the window, split by direction and by who won,
+	   so a second GROUP BY over the same rows could only disagree with it. */
+	foreach ($out['edges'] as $e) {
+		foreach (array($e['a'], $e['d']) as $p) {
+			if (!isset($out['players'][$p])) continue;
+			$out['players'][$p]['battles'] += $e['n'];
+		}
+		if (isset($out['players'][$e['a']])) {
+			$out['players'][$e['a']]['att']    += $e['n'];
+			$out['players'][$e['a']]['wins']   += $e['aw'];
+			$out['players'][$e['a']]['losses'] += $e['n'] - $e['aw'];
+		}
+		if (isset($out['players'][$e['d']])) {
+			$out['players'][$e['d']]['def']    += $e['n'];
+			$out['players'][$e['d']]['wins']   += $e['n'] - $e['aw'];
+			$out['players'][$e['d']]['losses'] += $e['aw'];
+		}
+	}
+
+	/* ---- 3. the Fighters each of them fielded ---- */
+	$res = $conn->query(
+		"SELECT p.fighter_id, f.user_id, f.name, f.serial,
+		        COUNT(*)                   AS n,
+		        SUM(p.side = 1)            AS att,
+		        SUM(p.side = 2)            AS def,
+		        SUM(p.fell)                AS fell,
+		        COALESCE(SUM(p.dealt), 0)  AS dealt
+		   FROM dhc_arena_battle_fighters p
+		   INNER JOIN dhc_arena_battles b ON b.id = p.battle_id
+		   INNER JOIN dhc_fighters      f ON f.id = p.fighter_id
+		  WHERE b.outcome IN (1,2)
+		    AND b.started_at >= NOW() - INTERVAL $d DAY
+		  GROUP BY p.fighter_id, f.user_id, f.name, f.serial");
+	/* Missing or empty is the normal early state, not a failure. */
+	if ($res) {
+		while ($r = $res->fetch_assoc()) {
+			$uid = (int)$r['user_id'];
+			/* f.user_id is the CURRENT owner, which is not necessarily who
+			   fielded it -- a Fighter can change hands. Clustering by current
+			   owner is the honest choice for a "who is active now" map, but a
+			   Fighter whose owner is not on the graph has no cluster to sit
+			   in and is dropped rather than floated loose. */
+			if (!isset($out['players'][$uid])) continue;
+			if (!isset($out['fighters'][$uid])) $out['fighters'][$uid] = array();
+			$out['fighters'][$uid][] = array(
+				'id'      => (int)$r['fighter_id'],
+				'name'    => dhcf_display_name($r),
+				'battles' => (int)$r['n'],
+				'att'     => (int)$r['att'],
+				'def'     => (int)$r['def'],
+				'fell'    => (int)$r['fell'],
+				'dealt'   => (int)$r['dealt'],
+			);
+		}
+		foreach ($out['fighters'] as $uid => $list) {
+			usort($out['fighters'][$uid], function ($x, $y) {
+				return $y['battles'] <=> $x['battles'] ?: strcmp($x['name'], $y['name']);
+			});
+		}
+	}
+	return $out;
+}
+
+/**
+ * The graph arranged for drawing: one node per player with a radius, and one
+ * edge per ORDERED pair, folded so a mutual grudge is a single entry that
+ * knows it runs both ways.
+ *
+ * Split from the query so the layout can be driven without a database, and
+ * because the arithmetic here is the part worth testing: a radius scale that
+ * collapses or a fold that loses a direction is invisible in a screenshot.
+ */
+function dhca_rivalry_layout($riv, $rmin = 16, $rmax = 46) {
+	$nodes = array();
+	$busiest = 0;
+	foreach ($riv['players'] as $p) $busiest = max($busiest, $p['battles']);
+
+	foreach ($riv['players'] as $id => $p) {
+		/* SQUARE ROOT, NOT LINEAR. Area is what the eye reads on a circle, so
+		   scaling the radius linearly with battles makes a 10-battle player
+		   look ten times the player with one, which is a lie about a tenfold
+		   difference in activity. sqrt puts AREA in proportion instead.
+		   A lone player with every battle in the window still gets rmax. */
+		$share = $busiest > 0 ? sqrt($p['battles'] / $busiest) : 0;
+		$node = $p;
+		$node['r']  = (int)round($rmin + ($rmax - $rmin) * $share);
+		$node['fighters'] = isset($riv['fighters'][$id]) ? $riv['fighters'][$id] : array();
+		/* Which side of the board this player lives on, for the hub's ring.
+		   Deliberately not dhca_performance()'s `edge`, which is about win
+		   RATE -- this is about where the activity is. */
+		$node['lean'] = '';
+		if ($p['battles'] >= 3) {
+			if      ($p['att'] >= $p['def'] * 2) $node['lean'] = 'aggressor';
+			else if ($p['def'] >= $p['att'] * 2) $node['lean'] = 'target';
+		}
+		$nodes[$id] = $node;
+	}
+
+	/* Fold A->B and B->A into one undirected pair that remembers both counts.
+	   Two arrowheads on one line reads as a feud; two separate lines between
+	   the same pair of avatars reads as a rendering bug. */
+	$pairs = array();
+	foreach ($riv['edges'] as $e) {
+		$lo = min($e['a'], $e['d']); $hi = max($e['a'], $e['d']);
+		$k  = $lo . ':' . $hi;
+		if (!isset($pairs[$k])) {
+			$pairs[$k] = array('lo' => $lo, 'hi' => $hi, 'n' => 0,
+			                   'lohi' => 0, 'hilo' => 0, 'lowins' => 0, 'hiwins' => 0);
+		}
+		$pairs[$k]['n'] += $e['n'];
+		if ($e['a'] === $lo) {
+			$pairs[$k]['lohi']   += $e['n'];          // lo attacked hi this often
+			$pairs[$k]['lowins'] += $e['aw'];
+			$pairs[$k]['hiwins'] += $e['n'] - $e['aw'];
+		} else {
+			$pairs[$k]['hilo']   += $e['n'];
+			$pairs[$k]['hiwins'] += $e['aw'];
+			$pairs[$k]['lowins'] += $e['n'] - $e['aw'];
+		}
+	}
+	/* Heaviest grudge first: it is the one worth reading, and drawing it first
+	   puts it under the lighter lines rather than over them. */
+	$pairs = array_values($pairs);
+	usort($pairs, function ($x, $y) { return $y['n'] <=> $x['n']; });
+	foreach ($pairs as $i => $p) {
+		$pairs[$i]['mutual'] = ($p['lohi'] > 0 && $p['hilo'] > 0);
+	}
+
+	return array('nodes' => $nodes, 'pairs' => $pairs,
+	             'days' => $riv['days'], 'battles' => $riv['battles'],
+	             'busiest' => $busiest);
+}

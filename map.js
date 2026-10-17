@@ -16,12 +16,15 @@ const factions = Object.values(data.reduce((acc, d) => {
 // Sort realms within each faction by realm_id for stable marker placement
 factions.forEach(f => f.realms.sort((a, b) => parseInt(a.realm_id) - parseInt(b.realm_id)));
 
-// ── Colors ────────────────────────────────────────────────────────────────────
-const palette = [
-    '#FF3366','#FA00FF','#00E6B3','#00FFFF','#FF8C33',
-    '#33CC99','#8C33FF','#0077FF','#FF66CC','#FF80FF',
-    '#8000FF','#00B3B3','#4D4DFF','#CC99FF','#009999'
-];
+/* ── Colors ──────────────────────────────────────────────────────────────────
+   `palette`, hexToRgba, the seeded PRNG (mulberry32/hashStr), the polygon
+   helpers (jitterRect/chaikin/toPath/centroid/inPoly), placeMarkers, svgEl and
+   measureTextWidth all moved to map-kit.js, which the Rivalries map on the
+   Arena shares. They are globals from a classic script, so they are used here
+   exactly as before -- realms.php must load map-kit.js BEFORE this file.
+   getColor stays: the realm map wants a random colour per faction, where the
+   rivalry map wants a stable one per player (mapkitColorFor). */
+
 let colorPool = [];
 
 function getColor() {
@@ -30,25 +33,9 @@ function getColor() {
     return colorPool.splice(i, 1)[0];
 }
 
-function hexToRgba(hex, a) {
-    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-    return `rgba(${r},${g},${b},${a})`;
-}
 
 // ── Seeded PRNG ───────────────────────────────────────────────────────────────
-function mulberry32(seed) {
-    return function() {
-        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
-        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-        t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
-function hashStr(s) {
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = Math.imul(31, h) + s.charCodeAt(i) | 0;
-    return Math.abs(h);
-}
+
 
 // ── Popup ─────────────────────────────────────────────────────────────────────
 const popupOverlay = document.getElementById('popup-overlay');
@@ -170,99 +157,13 @@ popupOverlay.addEventListener('click', e => { if (e.target === popupOverlay) hid
 popupClose.addEventListener('click', hidePopup);
 
 // ── Territory geometry ────────────────────────────────────────────────────────
-function jitterRect(x, y, w, h, j, rng) {
-    rng = rng || Math.random.bind(Math);
-    const corners = [{x: x, y: y}, {x: x+w, y: y}, {x: x+w, y: y+h}, {x: x, y: y+h}];
-    const pts = [];
-    for (let i = 0; i < 4; i++) {
-        const a = corners[i], b = corners[(i+1)%4];
-        const horiz = (i === 0 || i === 2);
-        pts.push({ x: a.x + (rng()-.5)*j, y: a.y + (rng()-.5)*j });
-        for (const t of [0.33, 0.67]) {
-            pts.push({
-                x: a.x + (b.x-a.x)*t + (horiz ? 0 : 1) * (rng()-.5)*j*1.8,
-                y: a.y + (b.y-a.y)*t + (horiz ? 1 : 0) * (rng()-.5)*j*1.8
-            });
-        }
-    }
-    return pts;
-}
 
-function chaikin(pts, n=3) {
-    for (let i = 0; i < n; i++) {
-        const r = [];
-        for (let j = 0; j < pts.length; j++) {
-            const a = pts[j], b = pts[(j+1)%pts.length];
-            r.push({ x:.75*a.x+.25*b.x, y:.75*a.y+.25*b.y });
-            r.push({ x:.25*a.x+.75*b.x, y:.25*a.y+.75*b.y });
-        }
-        pts = r;
-    }
-    return pts;
-}
-
-function toPath(pts) {
-    return pts.map((p,i) => `${i?'L':'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') + 'Z';
-}
-
-function centroid(pts) {
-    return {
-        x: pts.reduce((s,p)=>s+p.x,0)/pts.length,
-        y: pts.reduce((s,p)=>s+p.y,0)/pts.length
-    };
-}
 
 // ── Point in polygon ──────────────────────────────────────────────────────────
-function inPoly(px, py, poly) {
-    let inside = false;
-    for (let i=0, j=poly.length-1; i<poly.length; j=i++) {
-        const {x:xi,y:yi}=poly[i], {x:xj,y:yj}=poly[j];
-        if (((yi>py) !== (yj>py)) && px < (xj-xi)*(py-yi)/(yj-yi)+xi) inside=!inside;
-    }
-    return inside;
-}
+
 
 // ── Marker placement within territory ────────────────────────────────────────
-function placeMarkers(poly, count, bbox, R, rng) {
-    rng = rng || Math.random.bind(Math);
-    const {x, y, w, h} = bbox;
-    const minDist = R * 3;
-    const cols = Math.ceil(Math.sqrt(count)) + 2;
-    const step = Math.max(minDist, Math.min(w, h) / cols);
-    const candidates = [];
 
-    for (let cy = y + R*2; cy < y+h-R*2; cy += step) {
-        for (let cx = x + R*2; cx < x+w-R*2; cx += step) {
-            const jx = cx + (rng()-.5)*step*.5;
-            const jy = cy + (rng()-.5)*step*.5;
-            if (inPoly(jx, jy, poly)) candidates.push({x:jx, y:jy});
-        }
-    }
-
-    // Shuffle
-    for (let i = candidates.length-1; i > 0; i--) {
-        const j = Math.floor(rng()*(i+1));
-        [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-    }
-
-    const chosen = [];
-    for (const c of candidates) {
-        if (chosen.length >= count) break;
-        if (!chosen.some(p => Math.hypot(p.x-c.x, p.y-c.y) < minDist)) chosen.push(c);
-    }
-
-    // Fallback: spiral from centroid
-    if (chosen.length < count) {
-        const cen = centroid(poly);
-        const rad = Math.min(w, h) * 0.28;
-        for (let i = chosen.length; i < count; i++) {
-            const a = (i / count) * Math.PI * 2;
-            chosen.push({ x: cen.x + Math.cos(a)*rad, y: cen.y + Math.sin(a)*rad });
-        }
-    }
-
-    return chosen.slice(0, count);
-}
 
 // ── Packing ───────────────────────────────────────────────────────────────────
 const CELL = 170;
@@ -332,29 +233,10 @@ function packFactions(fdata) {
 
 // ── SVG helpers ───────────────────────────────────────────────────────────────
 const NS = 'http://www.w3.org/2000/svg';
-function svgEl(tag, attrs={}) {
-    const e = document.createElementNS(NS, tag);
-    for (const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
-    return e;
-}
+
 
 // Persistent hidden SVG in the DOM used for text measurement
-const _measureSvg = document.createElementNS(NS, 'svg');
-_measureSvg.setAttribute('style', 'position:absolute;visibility:hidden;width:0;height:0;overflow:hidden');
-document.body.appendChild(_measureSvg);
 
-function measureTextWidth(text, fontSize, fontFamily, fontWeight, letterSpacing) {
-    const probe = document.createElementNS(NS, 'text');
-    probe.setAttribute('font-size', fontSize);
-    probe.setAttribute('font-family', fontFamily);
-    probe.setAttribute('font-weight', fontWeight);
-    probe.setAttribute('letter-spacing', letterSpacing);
-    probe.textContent = text;
-    _measureSvg.appendChild(probe);
-    const w = probe.getComputedTextLength();
-    _measureSvg.removeChild(probe);
-    return w;
-}
 
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderMap() {

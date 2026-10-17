@@ -1472,6 +1472,11 @@ $conn->close();
 ?>
 <script type="module" src="wallet.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
+<?php /* map-kit.js FIRST: map.js uses its globals at parse time for its own
+         top-level const initialisers, and the Rivalries map on the Arena
+         loads the same kit. Swap the order and the realm map dies with an
+         undefined-function error before it draws anything. */ ?>
+<script type="text/javascript" src="map-kit.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="map.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="swipe-nav.js?var=<?php echo rand(0,999); ?>"></script>
 <?php if($realm_status){ ?>

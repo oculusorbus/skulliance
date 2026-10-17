@@ -453,6 +453,55 @@ being popular.
 
 ---
 
+## Rivalries
+
+The ladder says who is winning. **Rivalries** says who is fighting whom.
+
+It is a map of the last **30 days**, drawn under the ladder. Every player who
+has settled a battle in that window gets a cluster: their avatar in the middle,
+their Fighters orbiting it as dots, and lines running to everyone they have
+fought.
+
+| What you see | What it means |
+|---|---|
+| A bigger avatar | That player has fought more battles |
+| A bigger dot | That Fighter has been fielded more |
+| A thicker line | A deeper rivalry, more battles between the pair |
+| A solid line with two arrowheads | It runs both ways. A real feud |
+| A dashed line with one arrowhead | One-sided. Somebody is doing the attacking |
+| A red ring | Mostly attacking |
+| A teal ring | Mostly being attacked |
+
+Hover anyone to pick their rivalries out of the rest; everything else dims.
+Hover a Fighter dot for its battles, how they split between attacking and
+defending, the damage it has dealt and how often it has been knocked out.
+
+Sizes go by **area, not radius**. A player with ten battles is not drawn ten
+times the size of one with a single battle, because that is not what the eye
+reads off a circle.
+
+**The window is 30 rolling days, not the season.** The ladder resets on the 1st
+and this does not. On the 2nd the ladder is nearly empty while the feuds that
+were running yesterday are still on the map, which is the point: this answers
+who is active right now, and activity does not stop because the month did.
+
+A red ring needs at least 3 battles and a 2-to-1 split before it appears. One
+attack is not a campaign.
+
+### Why some clusters have no dots
+
+The avatars and the lines come from the battle record, which has been kept
+since the Arena opened. Which **Fighters** were in a Crew is newer: it has only
+been recorded since the participation ledger landed, the same ledger behind
+the proven ranks in [[games-dhc-fighters]].
+
+So a player can legitimately show a full battle history and no Fighter dots at
+all. Nothing is missing; those battles were fought before anyone was writing
+down who was in the Crew. The dots fill in as new battles are fought, and the
+panel says how many players are still waiting.
+
+---
+
 ## Why it looks like it does
 
 Battles are announced in Discord when they finish, and **the defender is tagged**
