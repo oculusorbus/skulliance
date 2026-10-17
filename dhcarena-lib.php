@@ -79,6 +79,15 @@ function dhca_crew($conn, $user_id) {
 		                  ? $r['name'] : dhcf_default_name($r['serial']);
 		$rows[] = $r;
 	}
+	/* Decorated here so every caller gets it, and so the two lookups happen
+	   once for the whole roster rather than once per card. */
+	$profiles = dhca_crew_profiles($conn, $user_id);
+	foreach ($rows as $i => $r) {
+		$rows[$i]['profile'] = isset($profiles[(int)$r['id']])
+			? $profiles[(int)$r['id']]
+			: dhca_fighter_profile(array('all' => array('battles'=>0,'wins'=>0,'losses'=>0,
+			    'survived_wins'=>0,'fell_in_wins'=>0,'dealt'=>0)), null);
+	}
 	return $rows;
 }
 
@@ -760,6 +769,134 @@ function dhca_fighter_stats($conn, $fighter_id) {
 		foreach ($z as $f => $_) $out['all'][$f] += (int)$r[$f];
 	}
 	return $out;
+}
+
+/*
+ * HOW MANY BATTLES BEFORE A RATE MEANS ANYTHING. Three is not a sample, it is
+ * an anecdote: one unlucky front-rank battle takes a Fighter from 100% to 50%.
+ * Below this it says "Unproven" and shows the count, which is the honest
+ * answer and also the useful one -- it tells the player to field it more.
+ */
+define('DHCA_PROFILE_MIN', 5);
+define('DHCA_RELIABLE_PCT', 70);   // survives this share of its wins, or better
+define('DHCA_RISKY_PCT',    40);   // falls in more than half of them
+
+/**
+ * A Fighter at a glance: is it reliable, or is it risky?
+ *
+ * ONE LABEL AND THE FACT UNDER IT. The label is for the Crew picker, where the
+ * question is "do I field this", and a label alone is a judgement a player
+ * cannot check. The fact is what makes it trustworthy, and it is the thing
+ * that stays true if the thresholds are ever retuned.
+ *
+ * RANK IS SHOWN, NOT CORRECTED FOR. A match of 3 reaches the FRONT rank, so a
+ * front Fighter is hit far more often than a back one and 60% survival at the
+ * front is a better Fighter than 60% at the back. Quietly normalising that
+ * away would invent a number nobody can verify; printing the position it
+ * actually played lets the player read the rate properly.
+ *
+ * Takes the output of dhca_fighter_stats() plus the rank it plays most.
+ */
+function dhca_fighter_profile($stats, $rank_mode = null) {
+	$all  = $stats['all'];
+	$b    = (int)$all['battles'];
+	$wins = (int)$all['wins'];
+	$pos  = ($rank_mode === null) ? '' : array('front', 'mid', 'back')[max(0, min(2, (int)$rank_mode))];
+
+	$out = array('key' => 'unproven', 'label' => 'Unproven', 'fact' => '',
+	             'pos' => $pos, 'pct' => null, 'dpb' => 0);
+	$out['dpb'] = $b > 0 ? (int)round((int)$all['dealt'] / $b) : 0;
+
+	if ($b < DHCA_PROFILE_MIN) {
+		$out['fact'] = $b === 0 ? 'Not fought yet'
+		             : $b . ' battle' . ($b === 1 ? '' : 's') . ' so far';
+		return $out;
+	}
+	if ($wins < 1) {
+		/* Fought enough, never won. Survival says nothing -- a Crew only
+		   loses when every Fighter has fallen, so there is no win to have
+		   survived. The record is the fact. */
+		$out['key'] = 'winless'; $out['label'] = 'Winless';
+		$out['fact'] = '0 of ' . $b . ' battles won';
+		return $out;
+	}
+
+	$pct = round((int)$all['survived_wins'] / $wins * 100);
+	$out['pct']  = $pct;
+	$out['fact'] = 'survived ' . (int)$all['survived_wins'] . ' of ' . $wins . ' wins'
+	             . ($pos !== '' ? ', mostly at ' . $pos : '');
+	if      ($pct >= DHCA_RELIABLE_PCT) { $out['key'] = 'reliable'; $out['label'] = 'Reliable'; }
+	elseif  ($pct <  DHCA_RISKY_PCT)    { $out['key'] = 'risky';    $out['label'] = 'Risky'; }
+	else                                { $out['key'] = 'even';     $out['label'] = 'Even'; }
+	return $out;
+}
+
+/**
+ * Every Fighter of this player's, profiled, in two queries.
+ *
+ * NOT ONE QUERY PER FIGHTER. A roster runs to a dozen or more and this is
+ * called on the Arena page load; per-Fighter lookups would be a dozen round
+ * trips to decorate a list.
+ *
+ * TOLERANT OF THE TABLE NOT EXISTING, for the same reason dhca_crew() is
+ * tolerant of a missing column: this platform is updated by pulling the code
+ * and running the migration by hand, so there is always a window where the
+ * code is ahead of the database. A missing label is worth nothing; a missing
+ * Arena is worth a great deal. On failure every Fighter is simply Unproven.
+ *
+ * Returns fighter_id => profile.
+ */
+function dhca_crew_profiles($conn, $user_id) {
+	$uid = (int)$user_id;
+	$out = array();
+	$agg = $conn->query(
+		"SELECT p.fighter_id,
+		        COUNT(*)                                 AS battles,
+		        SUM(b.outcome = p.side)                  AS wins,
+		        SUM(b.outcome <> p.side)                 AS losses,
+		        SUM(b.outcome = p.side AND p.fell = 0)   AS survived_wins,
+		        SUM(b.outcome = p.side AND p.fell = 1)   AS fell_in_wins,
+		        COALESCE(SUM(p.dealt), 0)                AS dealt
+		   FROM dhc_arena_battle_fighters p
+		   INNER JOIN dhc_arena_battles b ON b.id = p.battle_id
+		   INNER JOIN dhc_fighters f      ON f.id = p.fighter_id
+		  WHERE f.user_id = $uid AND b.outcome IN (1,2)
+		  GROUP BY p.fighter_id");
+	if (!$agg) return $out;                       // table not there yet: all Unproven
+
+	$stats = array();
+	while ($r = $agg->fetch_assoc()) {
+		$one = array('battles'=>(int)$r['battles'], 'wins'=>(int)$r['wins'],
+		             'losses'=>(int)$r['losses'], 'survived_wins'=>(int)$r['survived_wins'],
+		             'fell_in_wins'=>(int)$r['fell_in_wins'], 'dealt'=>(int)$r['dealt']);
+		$stats[(int)$r['fighter_id']] = array('all'=>$one, 'attack'=>$one, 'defend'=>$one);
+	}
+	/* The position each one plays most, so a rate can be read properly. */
+	$modes = array();
+	$rk = $conn->query(
+		"SELECT p.fighter_id, p.`rank`, COUNT(*) AS n
+		   FROM dhc_arena_battle_fighters p
+		   INNER JOIN dhc_fighters f ON f.id = p.fighter_id
+		  WHERE f.user_id = $uid
+		  GROUP BY p.fighter_id, p.`rank`
+		  ORDER BY p.fighter_id ASC, n DESC, p.`rank` ASC");
+	if ($rk) while ($r = $rk->fetch_assoc()) {
+		$fid = (int)$r['fighter_id'];
+		if (!isset($modes[$fid])) $modes[$fid] = (int)$r['rank'];   // ordered, so first wins
+	}
+	foreach ($stats as $fid => $st)
+		$out[$fid] = dhca_fighter_profile($st, isset($modes[$fid]) ? $modes[$fid] : null);
+	return $out;
+}
+
+/** The rank a Fighter has stood in most often, or null if it has not fought. */
+function dhca_fighter_rank_mode($conn, $fighter_id) {
+	$res = $conn->query("SELECT `rank`, COUNT(*) AS n FROM dhc_arena_battle_fighters
+	                      WHERE fighter_id = " . (int)$fighter_id . "
+	                      GROUP BY `rank` ORDER BY n DESC, `rank` ASC LIMIT 1");
+	if (!$res) return null;
+	$r = $res->fetch_assoc();
+	return $r ? (int)$r['rank'] : null;
 }
 
 /** Survived-a-win as a percentage, or null when there is nothing to divide. */

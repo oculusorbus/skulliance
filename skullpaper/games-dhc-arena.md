@@ -61,6 +61,48 @@ defeat and every Fighter in that Crew is treated as having fallen, with the
 recovery that carries — giving up is not holding the line. Resuming costs you
 nothing at all.
 
+### Reading a Fighter before you field it
+
+Every Fighter in the picker carries one word, and the number behind it is in
+the tooltip:
+
+| | what it means |
+|---|---|
+| **Reliable** | survives most of the battles its Crew wins |
+| **Even** | survives about half of them |
+| **Risky** | usually falls even when the Crew wins |
+| **Winless** | has fought enough to judge, and has not won yet |
+| **Unproven** | fewer than five battles — field it and find out |
+
+**Surviving only tells you anything about a win.** A Crew loses only when
+every Fighter has fallen, so there is no such thing as surviving a defeat.
+The question the label answers is whether a Fighter was still standing at the
+end of the battles you won — because one that falls on the way did not carry
+that win the way the other two did.
+
+**Read the position with the rate.** A match of 3 reaches the FRONT rank, so
+the Fighter at the front is hit far more often than the one at the back. 60%
+at the front is a better Fighter than 60% at the back, and the tooltip says
+which seat it mostly stood in. Nothing is adjusted for you — the number is
+what happened.
+
+### Where to put them
+
+All three of your Fighters attack equally often: the gem colours come up in
+equal measure, and a colour is a rank. **Position decides how often you are
+hit, not how often you hit.**
+
+So the toughest Fighter belongs at the front, where a match of 3 lands and
+most of the damage goes. The deadliest belongs at the back — not because the
+back hits harder, it does not, but because only a match of 5 reaches it, so it
+survives longest and therefore attacks over more turns.
+
+One exception: a **Volley** Fighter ignores reach entirely and hits everything
+wherever it stands, so the back is strictly its best seat.
+
+And a fallen Fighter takes its colour with it. Matching a dead Fighter's gem
+does nothing at all, so losing one costs you a fifth of the board as well.
+
 **Your defence is your three strongest, arranged for you.** Not your three
 rarest — rarity score is close to unrelated to how a Fighter actually performs,
 which is deliberate. The game fields the best three by the health and power the

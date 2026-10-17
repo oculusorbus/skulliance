@@ -1066,5 +1066,57 @@ $plok($ct !== '' && strpos($ct, '`rank`') !== false,
    'the CREATE declares rank unquoted; it is reserved from MySQL 8.0.2 and the statement '
  . 'will not run');
 
+/* ---- the at-a-glance profile ------------------------------------------- */
+$mkSt = function ($b, $w, $sw, $d) {
+	$x = array('battles'=>$b,'wins'=>$w,'losses'=>$b-$w,'survived_wins'=>$sw,
+	           'fell_in_wins'=>$w-$sw,'dealt'=>$d);
+	return array('all'=>$x, 'attack'=>$x, 'defend'=>$x);
+};
+/*
+ * A RATE NEEDS A SAMPLE. Three battles is an anecdote -- one unlucky front
+ * rank takes a Fighter from 100% to 50% -- so below the floor it says how
+ * many it has fought, which is both honest and the useful instruction.
+ */
+$plok(dhca_fighter_profile($mkSt(0,0,0,0))['key'] === 'unproven', 'an unfought Fighter is not Unproven');
+$plok(dhca_fighter_profile($mkSt(0,0,0,0))['fact'] === 'Not fought yet',
+   'an unfought Fighter does not say so plainly');
+$plok(dhca_fighter_profile($mkSt(4,4,4,900))['key'] === 'unproven',
+   'four spotless battles already reads as Reliable, which a single bad one would undo');
+$plok(dhca_fighter_profile($mkSt(10,8,7,0))['key'] === 'reliable', '7 of 8 wins survived is not Reliable');
+$plok(dhca_fighter_profile($mkSt(10,8,2,0))['key'] === 'risky',    '2 of 8 wins survived is not Risky');
+$plok(dhca_fighter_profile($mkSt(12,9,5,0))['key'] === 'even',     '5 of 9 wins survived is not Even');
+/* Fought plenty, never won: survival cannot say anything, because a Crew only
+   loses when every Fighter has fallen. */
+$plok(dhca_fighter_profile($mkSt(8,0,0,900))['key'] === 'winless',
+   'a Fighter that has never won is rated on a survival rate it cannot have');
+$plok(dhca_fighter_profile($mkSt(8,0,0,900))['pct'] === null, 'a winless Fighter was given a percentage');
+
+/* The position is SHOWN, never corrected for -- a match of 3 reaches the
+   front, so the same rate means different things in different seats. */
+$pfFront = dhca_fighter_profile($mkSt(10,8,7,0), 0);
+$plok(strpos($pfFront['fact'], 'front') !== false, 'the position a Fighter plays is not in the fact');
+/* A MIDDLING RATE, deliberately. At 87% every threshold agrees whatever the
+   position, so a mutation that shifted the bar for back-rank Fighters changed
+   nothing and passed. 50% sits where a shifted threshold would show. */
+$pfMidRate = $mkSt(10, 8, 4, 0);          // 4 of 8 wins survived = 50%
+$keys = array();
+foreach (array(0, 1, 2) as $seat) $keys[] = dhca_fighter_profile($pfMidRate, $seat)['key'];
+$plok(count(array_unique($keys)) === 1,
+   'the label changes with position (' . implode(', ', $keys) . '), which silently invents a '
+ . 'number nobody can check -- the position is shown so the player can judge it, not corrected for');
+/* Damage per battle, not total: a veteran would otherwise always look better. */
+$plok(dhca_fighter_profile($mkSt(10,8,7,4000))['dpb'] === 400, 'damage is not reported per battle');
+$plok(dhca_fighter_profile($mkSt(0,0,0,0))['dpb'] === 0, 'an unfought Fighter divides by zero for damage');
+
+/* The picker must not hide a Fighter the player has already chosen. */
+$pfPage = file_get_contents(__DIR__ . '/dhcarena.php');
+$plok(strpos($pfPage, "c.classList.contains('sel')") !== false,
+   'the reliability filter does not exempt chosen Fighters, so narrowing the list would hide '
+ . 'Crew members the player had already picked');
+$plok(strpos($pfPage, 'data-pf="<?php echo htmlspecialchars(isset($f[\'profile\'])') !== false,
+   'the picker cards carry no profile key, so nothing can filter on it');
+$plok(strpos($pfPage, 'title="<?php echo htmlspecialchars($pf[\'fact\']') !== false,
+   'the label has no fact behind it, so a player cannot check it');
+
 echo ($pl_fail ? "\n$pl_fail ledger check(s) FAILED\n" : "participation ledger: ok\n");
 if ($pl_fail) exit(1);

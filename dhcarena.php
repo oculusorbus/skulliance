@@ -1305,6 +1305,28 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <?php endif; ?>
       </div>
       <div class="a-picked" id="aPicked"></div>
+      <?php
+        /* Counted from the roster rather than guessed, so a filter that would
+           show nothing is not offered at all. */
+        $pfCounts = array();
+        foreach ($crew as $f) {
+          $k = isset($f['profile']) ? $f['profile']['key'] : 'unproven';
+          $pfCounts[$k] = (isset($pfCounts[$k]) ? $pfCounts[$k] : 0) + 1;
+        }
+        $pfLabels = array('reliable' => 'Reliable', 'even' => 'Even',
+                          'risky' => 'Risky', 'winless' => 'Winless', 'unproven' => 'Unproven');
+      ?>
+      <?php if (count($pfCounts) > 1): ?>
+      <div class="a-pf-filter" id="aPfFilter">
+        <button type="button" class="on" data-pf="">All <b><?php echo count($crew); ?></b></button>
+        <?php foreach ($pfLabels as $k => $lbl): if (empty($pfCounts[$k])) continue; ?>
+          <button type="button" data-pf="<?php echo $k; ?>"><?php echo $lbl; ?>
+            <b><?php echo (int)$pfCounts[$k]; ?></b></button>
+        <?php endforeach; ?>
+        <span class="a-pf-note">Reliable means it survives most of the battles its Crew wins.
+          A Fighter at the front is hit far more often, so read the position in the tooltip.</span>
+      </div>
+      <?php endif; ?>
       <div class="a-pick">
       <?php foreach ($crew as $f):
         $t = $f['traits']; $ok = $f['available']; ?>
@@ -1312,6 +1334,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
              data-ok="<?php echo $ok?1:0; ?>" data-hp="<?php echo (int)$f['hp']; ?>"
              data-pow="<?php echo (int)$f['pow']; ?>" data-kit="<?php echo htmlspecialchars($f['kit']['id']); ?>"
              data-score="<?php echo (int)$f['rarity_score']; ?>"
+             data-pf="<?php echo htmlspecialchars(isset($f['profile']) ? $f['profile']['key'] : 'unproven'); ?>"
+             data-dpb="<?php echo (int)(isset($f['profile']) ? $f['profile']['dpb'] : 0); ?>"
              title="<?php echo htmlspecialchars($f['display'].' — '.$f['kit']['name'].', '.$f['kit']['note']
                      .' · '.$f['hp'].' health, '.$f['pow'].' power, '.$f['crit'].'% crit'); ?>">
           <div class="art">
@@ -1345,8 +1369,32 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <div class="nm"><?php echo htmlspecialchars($f['display']); ?></div>
           <div class="st"><span>♥ <?php echo (int)$f['hp']; ?></span><span>⚔ <?php echo (int)$f['pow']; ?></span>
             <em class="ico" style="--ico:url(icons/<?php echo htmlspecialchars($f['kit']['icon']); ?>.png)"></em></div>
-          <div class="wl"><?php echo number_format((int)$f['rarity_score']); ?> pts ·
-            <?php echo (int)$f['wins']; ?>W/<?php echo (int)$f['losses']; ?>L</div>
+          <?php
+            /*
+             * THE LABEL IS THE POINT, the numbers are the receipt.
+             *
+             * Picking a Crew is one question -- do I field this -- and a
+             * record of 21W/10L does not answer it, partly because it is
+             * survival rather than victory and partly because reading two
+             * numbers per card across a dozen cards is not a glance.
+             *
+             * The label answers it. The title carries the fact behind it so
+             * the label is checkable rather than something to be trusted,
+             * and the position is in there because a match of 3 reaches the
+             * FRONT rank -- 60% survival at the front is a better Fighter
+             * than 60% at the back, and hiding that would be inventing a
+             * number nobody can verify.
+             */
+            $pf = isset($f['profile']) ? $f['profile'] : null;
+          ?>
+          <div class="wl"><?php echo number_format((int)$f['rarity_score']); ?> pts
+            <?php if ($pf): ?>
+              &middot; <span class="pf pf-<?php echo $pf['key']; ?>"
+                title="<?php echo htmlspecialchars($pf['fact']
+                        . ($pf['dpb'] ? ' · ' . number_format($pf['dpb']) . ' damage a battle' : '')); ?>"><?php
+                echo htmlspecialchars($pf['label']); ?></span>
+            <?php endif; ?>
+          </div>
         </div>
       <?php endforeach; ?>
       </div>
@@ -1611,6 +1659,32 @@ var ARENA_BANDS = <?php echo json_encode(dhca_reward_bands()); ?>;
 /* Why the player cannot enter, if they cannot. The server decides this again on
    every start -- this only keeps the button honest. */
 var BLOCKED = <?php echo json_encode($block); ?>;
+
+/*
+ * The reliability filter on the Crew picker.
+ *
+ * Hides cards rather than removing them, so a Fighter already chosen for the
+ * Crew is never filtered out from under the player -- the selection is held
+ * on the card itself, and a hidden-but-selected Fighter still fights. Picking
+ * a Crew and then narrowing the list must not silently change the Crew.
+ */
+(function () {
+  var bar = document.getElementById('aPfFilter');
+  if (!bar) return;
+  bar.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-pf]');
+    if (!btn) return;
+    var want = btn.getAttribute('data-pf');
+    bar.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+    document.querySelectorAll('.a-card').forEach(function (c) {
+      /* `.sel` is the chosen-for-the-Crew class, NOT `.on` -- `.on` is the
+         filter button's own state and no card ever carries it, so the first
+         version hid Fighters the player had already picked. */
+      var keep = !want || c.getAttribute('data-pf') === want || c.classList.contains('sel');
+      c.classList.toggle('pf-hid', !keep);
+    });
+  });
+})();
 
 /*
  * The resume-or-forfeit choice on the entry block.
