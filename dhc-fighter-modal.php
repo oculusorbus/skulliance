@@ -155,6 +155,18 @@ if (!defined('DHCM_RENDERED')) {
 #dhcg-rank .of{border:0;padding:0 0 6px;font-size:9.5px;letter-spacing:.08em;
   text-transform:uppercase;opacity:.45;min-width:0}</style>
 
+/* The proven strip: the same tiles, plus a line under each saying where the
+   traits put the same Fighter. Tinted away from the ochre of the claimed
+   strip so the two are not mistaken for one row of eight numbers. */
+#dhcg-proven{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;align-items:flex-end}
+#dhcg-proven div{border:1px solid rgba(0,200,160,.22);padding:6px 10px;min-width:74px}
+#dhcg-proven b{display:block;font-size:16px;font-variant-numeric:tabular-nums;color:#e6b800}
+#dhcg-proven span{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.55;display:block}
+#dhcg-proven em{font-style:normal;font-size:8.5px;letter-spacing:.06em;opacity:.5;display:block;margin-top:3px}
+#dhcg-proven em.up{color:#00c8a0;opacity:.95}
+#dhcg-proven em.dn{color:#e0466b;opacity:.95}
+#dhcg-proven .hd{border:0;padding:0 0 6px;font-size:9.5px;letter-spacing:.08em;opacity:.5}
+#dhcg-proven .of{border:0;padding:0 0 6px;font-size:9.5px;letter-spacing:.08em;opacity:.5}
 <div id="dhcg-veil" role="dialog" aria-modal="true" aria-labelledby="dhcg-name">
   <div id="dhcg-panel">
     <div class="big" id="dhcg-big"></div>
@@ -169,6 +181,7 @@ if (!defined('DHCM_RENDERED')) {
         <a id="dhcg-share" href="#" target="_blank" rel="noopener">&#120143; Share</a>
       </div>
       <div id="dhcg-rank"></div>
+      <div id="dhcg-proven"></div>
       <div id="dhcg-stat"></div>
       <ul id="dhcg-traits"></ul>
     </div>
@@ -194,6 +207,21 @@ if (!defined('DHCM_RENDERED')) {
     $ax = array();
     foreach (dhcf_rank_axes() as $k => $l) $ax[] = array($k, $l);
     echo json_encode($ax);
+  ?>;
+
+  /*
+   * THE PROVEN AXES, and for each one the claimed axis it tests. Built from
+   * dhca_proven_axes() so the pairing lives in one place: the arithmetic that
+   * produces the number, the sort button on the Collection and this strip all
+   * read the same table, and "Toughest" cannot come to mean survival here and
+   * health there.
+   */
+  var PAXES = <?php
+    $pax = array();
+    if (function_exists('dhca_proven_axes')) {
+      foreach (dhca_proven_axes() as $k => $m) $pax[] = array($k, $m['label'], $m['claim'], $m['unit']);
+    }
+    echo json_encode($pax);
   ?>;
 
   /*
@@ -421,6 +449,65 @@ if (!defined('DHCM_RENDERED')) {
           return '<div><b>#' + f.rank[a[0]].toLocaleString() + '</b><span>' + a[1] + '</span></div>';
         }).join('') + '<div class="of">of ' + f.rankOf.toLocaleString() + ' Fighters</div>'
       : '';
+
+    /*
+     * AND WHAT THE LEDGER MAKES OF THE SAME THREE CLAIMS.
+     *
+     * The strip above is read off the traits a Fighter is wearing: its torso
+     * says it is tough, its weapon says it hits hard. This one is read off
+     * what happened when it was fielded. Where they disagree is the most
+     * interesting thing on the page -- a Fighter the traits rank 2nd toughest
+     * that is 14th by what actually survived is a Fighter whose owner has
+     * been fielding it wrong, or a torso the engine does not reward the way
+     * the rarity table implies.
+     *
+     * BOTH RANKS ARE OUT OF THE SAME POPULATION. dhcgallery.php re-ranks the
+     * claim over just the Fighters with a record, so subtracting one from the
+     * other is meaningful; see $dhcg_cpool there. Without that the gap would
+     * be an artefact of two different denominators.
+     *
+     * Absent entirely under DHCA_PROFILE_MIN battles: an unproven Fighter has
+     * nothing to put here, and a strip of dashes reads as a broken panel
+     * rather than as a new Fighter.
+     */
+    var pel = document.getElementById('dhcg-proven');
+    var hasP = f.prank && PAXES.length && Object.keys(f.prank).length;
+    if (!pel) { /* a host page without the strip */ }
+    else if (!hasP) {
+      pel.innerHTML = '';
+    } else {
+      /* The Fighter's OWN battle count belongs in the heading, beside the
+         word Arena. In the footer next to "of 31" it read as though the 31
+         Fighters had fought 12 battles between them. */
+      var nb = (f.perf && f.perf.battles) ? f.perf.battles : 0;
+      pel.innerHTML = '<div class="hd">In the Arena &middot; ' + nb.toLocaleString()
+                    + (nb === 1 ? ' battle' : ' battles') + '</div>'
+                    + PAXES.map(function (a) {
+        var key = a[0], label = a[1], claim = a[2], unit = a[3];
+        var pr  = f.prank[key];
+        var val = (f.perf && f.perf[key] != null) ? f.perf[key] : 0;
+        /* '% survived' already carries its own separator; 'dmg/battle' needs
+           a space. Driven off the unit string so the PHP table stays the one
+           place a unit is spelled. */
+        var shown = unit.charAt(0) === '%' ? val + unit : val + ' ' + unit;
+        var cr  = (f.crank && f.crank[claim]) ? f.crank[claim] : 0;
+        /* cr - pr > 0 means the ledger places it HIGHER than its traits do
+           (a smaller rank number is better), so the Fighter is beating what
+           it was built to be. */
+        var note = '';
+        if (cr) {
+          var gap = cr - pr;
+          note = gap > 0 ? '<em class="up">beats its build, #' + cr.toLocaleString() + ' on traits</em>'
+               : gap < 0 ? '<em class="dn">under its build, #' + cr.toLocaleString() + ' on traits</em>'
+               :           '<em>exactly as built</em>';
+        }
+        return '<div><b>#' + pr.toLocaleString() + '</b><span>' + label + '</span>'
+             + '<em>' + esc(shown) + '</em>' + note + '</div>';
+      }).join('')
+      + (f.edge === 'attack' ? '<div><b>&#9876;</b><span>Better attacking</span></div>' : '')
+      + (f.edge === 'defend' ? '<div><b>&#128737;</b><span>Better defending</span></div>' : '')
+      + '<div class="of">of ' + f.prankOf.toLocaleString() + ' Fighters with a record</div>';
+    }
 
     /*
      * EVERY TRAIT IS A LINK INTO THE COLLECTION, filtered to itself -- the

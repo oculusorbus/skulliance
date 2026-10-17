@@ -23,6 +23,10 @@ include '../db.php';
 require_once __DIR__ . '/../dhcfighters-lib.php';
 require_once __DIR__ . '/../dhc-ranks.php';
 require_once __DIR__ . '/../dhcarena-engine.php';
+/* dhca_performance(): the proven strip on the panel this endpoint feeds.
+   Without it the same Fighter shows the strip from the Collection and not
+   from the roster, which reads as a bug in the panel. */
+require_once __DIR__ . '/../dhcarena-lib.php';
 require_once __DIR__ . '/../dhc-json.php';
 
 $serial = isset($_GET['serial']) ? (int)$_GET['serial'] : 0;
@@ -69,6 +73,27 @@ $pool  = dhcf_rank_pool($conn);
 $rank  = array();
 foreach (dhcf_rank_axes() as $k => $label) $rank[$k] = dhcf_rank_of($pool[$k], $rv[$k]);
 
+/*
+ * AND WHAT THE LEDGER SHOWS, for the panel's second rank strip.
+ *
+ * Two aggregate reads, both scoped: dhca_performance() is one GROUP BY over
+ * the battle ledger, and dhca_claim_pool() selects only the ids that came
+ * back proven -- a few dozen rows, not all 226 Fighters. The arithmetic and
+ * the pooling both live in dhcarena-lib.php so this endpoint and
+ * dhcgallery.php cannot compute the same gap two different ways.
+ */
+$perf   = dhca_performance($conn);
+$mine   = isset($perf[(int)$row['id']]) ? $perf[(int)$row['id']] : null;
+$ppool  = dhca_performance_pool($perf);
+$prank  = array();
+if ($mine && $mine['all']['proven']) {
+	foreach (dhca_proven_axes() as $pk => $pmeta) {
+		$prank[$pk] = dhcf_rank_of($ppool[$pk], $mine['all'][$pk]);
+	}
+}
+$cpool  = dhca_claim_pool($conn, $perf);
+$crank  = dhca_claim_ranks($cpool, $rv, $mine && $mine['all']['proven']);
+
 $layers = array();
 foreach (dhcf_layers($row['traits'], __DIR__ . '/../' . dhcf_art_dir()) as $L) {
 	$layers[] = array('c' => $L['cat'], 's' => $L['slug'], 'n' => $L['nudge'], 'k' => $L['clip']);
@@ -107,6 +132,13 @@ $out = array(
 	'parts'   => $parts,
 	'rank'    => $rank,
 	'rankOf'  => (int)$pool['_n'],
+	/* Same four keys the Collection's card payload carries, so one panel
+	   renders identically whichever page opened it. */
+	'perf'    => $mine ? $mine['all'] : null,
+	'edge'    => $mine ? $mine['edge'] : '',
+	'prank'   => $prank,
+	'prankOf' => (int)$ppool['_n'],
+	'crank'   => $crank,
 	'layers'  => $layers,
 );
 $conn->close();

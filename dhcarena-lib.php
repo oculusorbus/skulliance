@@ -780,6 +780,7 @@ function dhca_fighter_stats($conn, $fighter_id) {
 define('DHCA_PROFILE_MIN', 5);
 define('DHCA_RELIABLE_PCT', 70);   // survives this share of its wins, or better
 define('DHCA_RISKY_PCT',    40);   // falls in more than half of them
+define('DHCA_EDGE_PCT', 15);   // win-rate gap that makes a Fighter a specialist
 
 /**
  * A Fighter at a glance: is it reliable, or is it risky?
@@ -1263,5 +1264,191 @@ function dhca_ladder($conn, $season = null, $limit = 25) {
 	$res = $conn->query($sql);
 	if (!$res) return $out;
 	while ($r = $res->fetch_assoc()) $out[] = $r;
+	return $out;
+}
+
+/* ===================================================================
+   WHAT THE LEDGER DEMONSTRATES, for the whole collection at once.
+   =================================================================== */
+
+/**
+ * Every Fighter's Arena performance, keyed by fighter id, in ONE read.
+ *
+ * dhca_fighter_stats() answers this for a single Fighter and is right for a
+ * detail panel. The Collection ranks a few hundred Fighters against each
+ * other on one page, so asking per row would be a few hundred queries to
+ * produce one sorted list. This is the same aggregation GROUPed by fighter as
+ * well as side.
+ *
+ * THE THREE PROVEN AXES MIRROR THE THREE CLAIMED ONES, deliberately, because
+ * the point of having them is to put the claim next to the evidence:
+ *
+ *   claimed (dhcf_rank_values)        proven (here)
+ *   power  = weapon's power           dmg    = damage actually dealt per battle
+ *   tough  = torso's health           live   = share of battles walked off alive
+ *   might  = tough * power            real   = dmg * live
+ *
+ * `might` multiplies staying power by hitting power, so its evidence
+ * multiplies the evidence for each: output, discounted by how often the
+ * Fighter is taken off the board before it can deliver. A glass cannon with
+ * one huge battle and four early exits does not out-rank a Fighter that is
+ * still swinging in round six, which is the whole claim `might` makes.
+ *
+ * Rates need a denominator worth dividing by, so a Fighter under
+ * DHCA_PROFILE_MIN battles gets its totals and `proven => false`. It is not
+ * scored and it is not ranked -- see dhca_performance_pool().
+ */
+function dhca_performance($conn) {
+	$out = array();
+	$res = $conn->query(
+		"SELECT p.fighter_id, p.side,
+		        COUNT(*)                                  AS battles,
+		        SUM(b.outcome = p.side)                   AS wins,
+		        SUM(p.fell = 0)                           AS survived,
+		        COALESCE(SUM(p.dealt), 0)                 AS dealt
+		   FROM dhc_arena_battle_fighters p
+		   INNER JOIN dhc_arena_battles b ON b.id = p.battle_id
+		  WHERE b.outcome IN (1,2)
+		  GROUP BY p.fighter_id, p.side");
+	/* Tolerant of the table not existing yet, exactly as dhca_crew_profiles()
+	   is: the Collection is a public page and must render before the first
+	   battle is ever logged. */
+	if (!$res) return $out;
+
+	$z = array('battles'=>0,'wins'=>0,'survived'=>0,'dealt'=>0);
+	while ($r = $res->fetch_assoc()) {
+		$fid = (int)$r['fighter_id'];
+		if (!isset($out[$fid])) $out[$fid] = array('all'=>$z, 'attack'=>$z, 'defend'=>$z);
+		$k = ((int)$r['side'] === 1) ? 'attack' : 'defend';
+		foreach ($z as $f => $_) {
+			$out[$fid][$k][$f]   = (int)$r[$f];
+			$out[$fid]['all'][$f] += (int)$r[$f];
+		}
+	}
+	foreach ($out as $fid => $s) $out[$fid] = dhca_performance_score($s);
+	return $out;
+}
+
+/**
+ * The derived numbers for one Fighter's raw tallies. Split out so a harness
+ * can drive the arithmetic without a database.
+ */
+function dhca_performance_score($s) {
+	foreach (array('all','attack','defend') as $k) {
+		$b = (int)$s[$k]['battles'];
+		$s[$k]['proven'] = ($b >= DHCA_PROFILE_MIN);
+		/* (int) on every one: round() returns a FLOAT, and these travel into
+		   json_encode() for the client and into === comparisons here. An
+		   un-cast percentage ships as 63.0 and matches nothing. */
+		$s[$k]['winpct'] = $b ? (int)round(100 * $s[$k]['wins']     / $b) : 0;
+		$s[$k]['live']   = $b ? (int)round(100 * $s[$k]['survived'] / $b) : 0;
+		$s[$k]['dmg']    = $b ? (int)round($s[$k]['dealt'] / $b)          : 0;
+		/* dmg * live, carried as damage-per-battle so the number means
+		   something on its own: "the damage this Fighter is still around to
+		   deal". A 300-damage Fighter that survives half its battles reads
+		   150, level with a 150-damage Fighter that always walks off. */
+		$s[$k]['real']   = (int)round($s[$k]['dmg'] * $s[$k]['live'] / 100);
+	}
+	/* Which side of the board it is actually better on. Needs BOTH records to
+	   be worth comparing -- a Fighter with nine attacks and one defence has
+	   not shown anything about defending. */
+	$s['edge'] = '';
+	if ($s['attack']['proven'] && $s['defend']['proven']) {
+		$d = $s['attack']['winpct'] - $s['defend']['winpct'];
+		if      ($d >=  DHCA_EDGE_PCT) $s['edge'] = 'attack';
+		else if ($d <= -DHCA_EDGE_PCT) $s['edge'] = 'defend';
+		else                           $s['edge'] = 'even';
+	}
+	return $s;
+}
+
+/**
+ * The sorted pools the Collection ranks against, built from dhca_performance().
+ *
+ * UNPROVEN FIGHTERS ARE ABSENT FROM THE POOLS, not zero in them. A Fighter
+ * with two battles is not the worst in the collection at anything; it is
+ * unmeasured, and ranking it last would be a claim the ledger does not
+ * support. So `_n` is how many Fighters have actually fought enough to be
+ * ranked, and a rank reads "#4 of 31" rather than "#4 of 108" -- the
+ * denominator has to be the measured population or the rank overstates
+ * itself.
+ */
+function dhca_performance_pool($perf) {
+	$pool = array('dmg'=>array(), 'live'=>array(), 'real'=>array(), 'winpct'=>array());
+	foreach ($perf as $s) {
+		if (empty($s['all']['proven'])) continue;
+		foreach ($pool as $axis => $_) $pool[$axis][] = $s['all'][$axis];
+	}
+	foreach ($pool as $axis => $vals) { rsort($pool[$axis]); }
+	$pool['_n'] = count($pool['dmg']);
+	return $pool;
+}
+
+/** The three proven axes and the claim each one tests. */
+function dhca_proven_axes() {
+	return array(
+		'real' => array('label'=>'Deadliest',       'claim'=>'might', 'unit'=>'dmg/battle held'),
+		'live' => array('label'=>'Toughest',        'claim'=>'tough', 'unit'=>'% survived'),
+		'dmg'  => array('label'=>'Hardest hitting', 'claim'=>'power', 'unit'=>'dmg/battle'),
+	);
+}
+
+/**
+ * The CLAIMED axes, ranked over only the Fighters that have a record.
+ *
+ * WHY THIS EXISTS AT ALL. A proven rank is out of the few dozen Fighters with
+ * five or more battles; a claimed rank, as dhc-ranks.php computes it, is out
+ * of every Fighter ever assembled. Setting "#4 proven" beside "#19 claimed"
+ * would read as a disagreement when #19 of 108 and #4 of 31 are nearly the
+ * same standing -- the gap would be an artefact of two denominators and
+ * nothing else. So the claim is re-ranked over exactly the population the
+ * evidence covers, and a gap becomes a finding.
+ *
+ * $known lets a caller that has already built every Fighter -- dhcgallery.php
+ * builds all of them for its kit and role readout -- hand over
+ * fighter_id => array('tough'=>, 'power'=>, 'might'=>) and skip the query
+ * entirely. Everything else (the single-Fighter AJAX endpoint) passes null and
+ * pays for one SELECT over just the proven ids, which is a few dozen rows.
+ */
+function dhca_claim_pool($conn, $perf, $known = null) {
+	$pool = array('tough' => array(), 'power' => array(), 'might' => array(), '_n' => 0);
+	$ids = array();
+	foreach ($perf as $fid => $s) if (!empty($s['all']['proven'])) $ids[] = (int)$fid;
+	if (!$ids) return $pool;
+
+	if (is_array($known)) {
+		foreach ($ids as $fid) {
+			if (!isset($known[$fid])) continue;
+			foreach (array('tough','power','might') as $k) $pool[$k][] = $known[$fid][$k];
+		}
+	} else {
+		/* Only the proven ids, and only the two columns a rank needs. */
+		$res = $conn->query('SELECT id, traits, rarity_score FROM dhc_fighters
+		                      WHERE disassembled_at IS NULL AND id IN (' . implode(',', $ids) . ')');
+		if ($res) {
+			$rarity = dhcf_rarity();
+			while ($r = $res->fetch_assoc()) {
+				$tr = json_decode($r['traits'], true) ?: array();
+				$rv = dhcf_rank_values($tr, (int)$r['rarity_score'],
+				                       dhca_build_fighter($tr, '', 'g' . (int)$r['id'], $rarity));
+				foreach (array('tough','power','might') as $k) $pool[$k][] = $rv[$k];
+			}
+		}
+	}
+	foreach (array('tough','power','might') as $k) rsort($pool[$k]);
+	$pool['_n'] = count($pool['might']);
+	return $pool;
+}
+
+/**
+ * One Fighter's claimed rank on each tested axis, against dhca_claim_pool().
+ * Empty for a Fighter with no record -- it has nothing to be compared to.
+ */
+function dhca_claim_ranks($cpool, $rv, $proven) {
+	$out = array();
+	if (!$proven || empty($cpool['_n'])) return $out;
+	foreach (array('tough','power','might') as $k) {
+		$out[$k] = dhcf_rank_of($cpool[$k], $rv[$k]);
+	}
 	return $out;
 }

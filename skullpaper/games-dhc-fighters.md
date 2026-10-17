@@ -297,6 +297,61 @@ carries its own title and preview: *"Mythic Fighters"* posts as exactly that.
 
 ---
 
+### What the traits claim, and what the Arena shows
+
+**Rarest**, **Deadliest**, **Toughest** and **Hardest hitting** are read off
+the traits a Fighter is wearing. They are predictions: a heavy torso should
+survive, a strong weapon should hurt. The Arena keeps the receipts, and the
+Collection now sorts on those too.
+
+Under **Proven** there are three more sorts, named after the same three claims
+because they are testing them:
+
+| Proven sort | Measured as | Tests the claim |
+|---|---|---|
+| Deadliest | Damage per battle, discounted by how often it is knocked out | Deadliest |
+| Toughest | Share of battles it walked off still standing | Toughest |
+| Hardest hitting | Damage dealt per battle | Hardest hitting |
+
+Proven Deadliest multiplies the other two, because the trait-based Deadliest
+multiplies health by power. A Fighter that hits for 300 and survives half its
+battles scores the same as one that hits for 150 and always walks off: the
+damage you can actually count on, rather than the damage it manages once
+before it falls.
+
+A Fighter needs **5 battles** before any of this is calculated. Below that it
+is unproven, has no proven rank, and sorts to the back of those three lists
+rather than to the bottom - nobody has fielded it, which is not the same
+finding as it never landing a hit.
+
+**Record** filters on what a Fighter has done rather than what it is:
+
+- **Proven** - has fought at least 5 battles, so its rates mean something.
+- **Attackers** - wins at least 15 points more often attacking than defending.
+- **Defenders** - the same, the other way round.
+
+A Fighter needs 5 battles on *each* side before either of those applies, and
+one with an even record across both is in neither list. The whole **Proven**
+and **Record** group is hidden until somebody has a record worth ranking.
+
+### Where the two disagree
+
+Open any proven Fighter and the panel carries a second strip of ranks under the
+first. Each one says where the ledger puts it, and underneath, where its
+traits put it:
+
+> **#1 Toughest** · 100% survived · *beats its build, #3 on traits*
+
+Both numbers are ranked over the same group - the Fighters that have actually
+fought - so the gap between them is real rather than an artefact of two
+different denominators. A Fighter wearing the third-best torso in that group
+that leads it on survival is telling you something: either its owner fields it
+where it is protected, or that torso is worth more than the rarity table
+implies. The claim and the evidence are both on the page, and where they part
+company is the most interesting thing about a Fighter.
+
+---
+
 ## Originality
 
 Every Fighter is one of a kind — see [[games-dhc-fighters#one-of-a-kind]] above.

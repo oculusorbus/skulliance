@@ -47,6 +47,9 @@ require_once __DIR__ . '/dhcfighters-lib.php';
  * expensive ornament.
  */
 require_once __DIR__ . '/dhcarena-engine.php';
+/* dhca_performance(): what the Arena ledger demonstrates, as against what a
+   Fighter's traits claim. The engine alone does not carry it. */
+require_once __DIR__ . '/dhcarena-lib.php';
 /* One definition of Rarest / Deadliest / Toughest / Hardest hitting, shared
    with the assembler's live rank preview. */
 require_once __DIR__ . '/dhc-ranks.php';
@@ -72,6 +75,20 @@ $dhcg_kit   = isset($_GET['kit']) ? preg_replace('/[^a-z]/', '', $_GET['kit']) :
  * neither.
  */
 $dhcg_trait = isset($_GET['trait']) ? dhcf_trait_filter($_GET['trait']) : '';
+
+/*
+ * ?perf=<attack|defend|proven> -- filters on what a Fighter has DONE, where
+ * tier, kit and trait all filter on what it is.
+ *
+ * `attack` and `defend` are not "has attacked" -- every fielded Fighter has
+ * done both. They mean the ledger shows this Fighter measurably BETTER on
+ * that side of the board: dhca_performance_score() only sets `edge` when both
+ * records clear DHCA_PROFILE_MIN and the win rates differ by DHCA_EDGE_PCT or
+ * more, so an even Fighter is in neither bucket and an unproven one is in no
+ * bucket at all.
+ */
+$dhcg_perf_f = isset($_GET['perf']) ? preg_replace('/[^a-z]/', '', $_GET['perf']) : '';
+if (!in_array($dhcg_perf_f, array('attack', 'defend', 'proven'), true)) $dhcg_perf_f = '';
 
 $order = 'f.rarity_score DESC, f.created_at DESC';
 if ($dhcg_sort === 'newest')  $order = 'f.created_at DESC';
@@ -113,6 +130,18 @@ $dhcg_kit_counts = array();
    MAX(updated_at), but re-reading it inside the loop would still be a
    file read and a json_decode per Fighter. */
 $dhcg_pool = dhcf_rank_pool($conn);
+
+/*
+ * AND THE SAME THING FROM THE LEDGER. Two reads for the whole page, like the
+ * rank pool above and for the same reason -- the Collection ranks every
+ * Fighter against every other, so this cannot be a query per row.
+ *
+ * $dhcg_ppool counts only Fighters that have fought DHCA_PROFILE_MIN battles,
+ * so its _n is smaller than $dhcg_pool['_n'] and the two denominators must
+ * not be swapped: "#3 of 108" and "#3 of 31" are different claims.
+ */
+$dhcg_perf  = dhca_performance($conn);
+$dhcg_ppool = dhca_performance_pool($dhcg_perf);
 
 /* How many Fighters each builder has, for the "see their N Fighters" link in
    the detail panel. Its own query rather than a tally of $dhcg_rows: those
@@ -179,6 +208,20 @@ if ($res) {
 		}
 		$row['rankOf'] = (int)$dhcg_pool['_n'];
 
+		/* WHERE THE LEDGER PUTS IT, on the three axes that have evidence.
+		   Absent entirely for a Fighter that has not fought enough -- an
+		   unproven Fighter has no proven rank, and filling one in with its
+		   position among four battles would be the one number on this page
+		   that is not true. */
+		$row['perf']  = isset($dhcg_perf[(int)$row['id']]) ? $dhcg_perf[(int)$row['id']] : null;
+		$row['prank'] = array();
+		if ($row['perf'] && $row['perf']['all']['proven']) {
+			foreach (dhca_proven_axes() as $pk => $pmeta) {
+				$row['prank'][$pk] = dhcf_rank_of($dhcg_ppool[$pk], $row['perf']['all'][$pk]);
+			}
+		}
+		$row['prankOf'] = (int)$dhcg_ppool['_n'];
+
 		$dhcg_owners[(int)$row['user_id']] = $row['username'];
 		$dhcg_all[] = $row;
 	}
@@ -193,14 +236,79 @@ foreach ($dhcg_all as $i => $row) {
 	$dhcg_kit_counts[$kid] = (isset($dhcg_kit_counts[$kid]) ? $dhcg_kit_counts[$kid] : 0) + 1;
 }
 
+/*
+ * How many Fighters each record filter would actually show.
+ *
+ * THESE DOUBLE AS THE SWITCH FOR THE WHOLE FEATURE. Before the first battle is
+ * logged every count is zero, and a sort button that cannot order anything or
+ * a chip that leads to an empty grid is worse than no button: it implies the
+ * page is broken rather than that the Arena is new. So the proven sorts and
+ * the record chips are drawn only where there is something to drive them, and
+ * they appear on their own as the ledger fills up.
+ */
+$dhcg_pcounts = array('proven' => 0, 'attack' => 0, 'defend' => 0);
+foreach ($dhcg_all as $r) {
+	if (empty($r['perf']['all']['proven'])) continue;
+	$dhcg_pcounts['proven']++;
+	if ($r['perf']['edge'] === 'attack') $dhcg_pcounts['attack']++;
+	if ($r['perf']['edge'] === 'defend') $dhcg_pcounts['defend']++;
+}
+
+/*
+ * THE CLAIMED AXES, RANKED AMONG THE FIGHTERS THAT HAVE FOUGHT -- and this is
+ * the whole reason the comparison is trustworthy.
+ *
+ * "#4 deadliest proven, #19 deadliest claimed" is not a sentence about one
+ * Fighter, because those two numbers have different denominators: the proven
+ * rank is out of the few dozen Fighters with a real record, the claimed rank
+ * is out of every Fighter ever assembled. #4 of 31 and #19 of 108 are nearly
+ * the same standing, so printing them side by side would manufacture a
+ * disagreement out of arithmetic.
+ *
+ * So the claim is re-ranked over exactly the population the evidence covers.
+ * Both numbers are then out of the same _n, a gap between them is a real
+ * finding, and "it is ranked 2nd toughest of the Fighters that have fought,
+ * but only 14th by what actually survived" means what it appears to mean.
+ *
+ * hp/pow/might are the same three values dhcf_rank_values() returns for
+ * tough/power/might, already on the row from the loop above.
+ */
+/*
+ * hp/pow/might are the same three values dhcf_rank_values() returns for
+ * tough/power/might, so this page hands them straight to dhca_claim_pool()
+ * rather than letting it re-query and re-build all 226 Fighters. The pool and
+ * the ranking themselves live in dhcarena-lib.php, because ajax/dhc-fighter.php
+ * serves the SAME panel for one Fighter and the two must not drift: a gap
+ * computed one way here and another way there is the one thing that would
+ * make the whole comparison untrustworthy.
+ */
+$dhcg_known = array();
+foreach ($dhcg_all as $r) {
+	$dhcg_known[(int)$r['id']] = array(
+		'tough' => $r['hp'], 'power' => $r['pow'], 'might' => $r['might'],
+	);
+}
+$dhcg_cpool = dhca_claim_pool($conn, $dhcg_perf, $dhcg_known);
+foreach ($dhcg_all as $i => $r) {
+	$dhcg_all[$i]['crank'] = dhca_claim_ranks(
+		$dhcg_cpool,
+		array('tough' => $r['hp'], 'power' => $r['pow'], 'might' => $r['might']),
+		!empty($r['perf']['all']['proven']));
+}
+
 $dhcg_total = count($dhcg_all);
-$dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier, $dhcg_kit, $dhcg_trait) {
+$dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier, $dhcg_kit, $dhcg_trait, $dhcg_perf_f) {
 	if ($dhcg_tier !== '' && $r['best'] !== $dhcg_tier) return false;
 	if ($dhcg_kit !== '' && $r['kit']['id'] !== $dhcg_kit) return false;
 	/* In PHP like tier and kit, and for the same reason: the traits live in a
 	   JSON column. The rule itself is in the library so it can be driven
 	   without a database -- see dhcf_traits_include(). */
 	if (!dhcf_traits_include($r['parts'], $dhcg_trait)) return false;
+	/* On the record, not on the build. A Fighter with no ledger row fails all
+	   three of these, which is correct: it has demonstrated nothing. */
+	if ($dhcg_perf_f === 'proven' && empty($r['perf']['all']['proven'])) return false;
+	if ($dhcg_perf_f === 'attack' && (!$r['perf'] || $r['perf']['edge'] !== 'attack')) return false;
+	if ($dhcg_perf_f === 'defend' && (!$r['perf'] || $r['perf']['edge'] !== 'defend')) return false;
 	return true;
 }));
 if ($dhcg_sort === 'traits') {
@@ -210,6 +318,30 @@ if ($dhcg_sort === 'traits') {
 if ($dhcg_sort === 'tough')  usort($dhcg_rows, function($a,$b){ return $b['hp']    <=> $a['hp']; });
 if ($dhcg_sort === 'power')  usort($dhcg_rows, function($a,$b){ return $b['pow']   <=> $a['pow']; });
 if ($dhcg_sort === 'might')  usort($dhcg_rows, function($a,$b){ return $b['might'] <=> $a['might']; });
+
+/*
+ * THE PROVEN AXES, sorted here for the same reason as the three above: they
+ * are not columns. Keys are the claimed key with a p- prefix (p-real tests
+ * might, p-live tests tough, p-dmg tests power) and ?sort= strips everything
+ * but a-z, so they arrive as preal/plive/pdmg.
+ *
+ * UNPROVEN FIGHTERS SORT LAST AS A BLOCK, never interleaved. Treating "no
+ * evidence" as a zero would bury a Fighter nobody has fielded below one that
+ * has demonstrably never landed a hit, and those are not the same finding.
+ * Within the block the order is left alone, so it keeps whatever the SQL
+ * ORDER BY gave it rather than inventing a ranking from no data.
+ */
+$dhcg_paxis = array('preal' => 'real', 'plive' => 'live', 'pdmg' => 'dmg');
+if (isset($dhcg_paxis[$dhcg_sort])) {
+	$pa = $dhcg_paxis[$dhcg_sort];
+	usort($dhcg_rows, function ($a, $b) use ($pa) {
+		$ap = !empty($a['perf']['all']['proven']);
+		$bp = !empty($b['perf']['all']['proven']);
+		if ($ap !== $bp) return $bp <=> $ap;          // proven ahead of unproven
+		if (!$ap) return 0;
+		return $b['perf']['all'][$pa] <=> $a['perf']['all'][$pa];
+	});
+}
 
 $dhc_base = '';
 foreach (array('web', 'dhc', 'dhc/web', 'traits') as $c) {
@@ -446,6 +578,34 @@ include 'header.php';
          href="<?php echo htmlspecialchars(dhcg_url(array('sort' => $k))); ?>"><?php echo $label; ?></a>
     <?php endforeach; ?>
 
+    <?php
+      /*
+       * THE SAME THREE CLAIMS, SETTLED BY THE LEDGER. Deadliest, Toughest and
+       * Hardest hitting appear twice in this bar on purpose: once above, where
+       * they are computed from the traits a Fighter is wearing, and once here,
+       * where they are computed from what it actually did in the Arena. The
+       * labels match deliberately -- the interesting thing about this feature
+       * is the disagreement, and renaming the proven axis to something else
+       * would hide it.
+       *
+       * dhca_proven_axes() carries which claim each one tests, so the title
+       * attribute cannot drift from the arithmetic in dhcarena-lib.php.
+       */
+      if ($dhcg_pcounts['proven']):
+        $claimed = dhcf_rank_axes(); ?>
+      <span class="sep"></span>
+      <span class="lbl" title="Ranked on the Arena ledger instead of on traits">Proven</span>
+      <?php foreach (dhca_proven_axes() as $pk => $pm): ?>
+        <a class="<?php echo $dhcg_sort === 'p' . $pk ? 'on' : ''; ?>"
+           title="<?php echo htmlspecialchars('Who the battle record says is really the '
+                  . strtolower($pm['label']) . ', measured in ' . $pm['unit']
+                  . '. Compare with ' . strtolower($claimed[$pm['claim']])
+                  . ', which is read off traits.'); ?>"
+           href="<?php echo htmlspecialchars(dhcg_url(array('sort' => 'p' . $pk))); ?>"><?php
+           echo htmlspecialchars($pm['label']); ?></a>
+      <?php endforeach; ?>
+    <?php endif; ?>
+
     <span class="sep"></span>
     <span class="lbl">Rarest trait</span>
     <a class="<?php echo $dhcg_tier === '' ? 'on' : ''; ?>"
@@ -472,6 +632,35 @@ include 'header.php';
          class="dhcg-ico" style="--ico:url(icons/<?php echo htmlspecialchars($kit['icon']); ?>.png)"></i> <?php
          echo htmlspecialchars($kit['name']) . ' ' . $dhcg_kit_counts[$kid]; ?></a>
     <?php endforeach; ?>
+
+    <?php
+      /* OFFENCE AND DEFENCE AS A FILTER, which is a different question from
+         either sort above: not "who is best" but "which side of the board is
+         this Fighter better on". A chip is drawn only when it would show
+         something, so an Arena where nobody has yet proven a lopsided record
+         shows no Attackers chip rather than an empty one. */
+      if ($dhcg_pcounts['proven']): ?>
+      <span class="sep"></span>
+      <span class="lbl">Record</span>
+      <a class="<?php echo $dhcg_perf_f === '' ? 'on' : ''; ?>"
+         href="<?php echo htmlspecialchars(dhcg_url(array('perf' => ''))); ?>">Any</a>
+      <a class="<?php echo $dhcg_perf_f === 'proven' ? 'on' : ''; ?>"
+         title="<?php echo DHCA_PROFILE_MIN; ?>+ battles fought, so its rates mean something"
+         href="<?php echo htmlspecialchars(dhcg_url(array('perf' => 'proven'))); ?>">Proven <?php
+         echo $dhcg_pcounts['proven']; ?></a>
+      <?php if ($dhcg_pcounts['attack']): ?>
+        <a class="<?php echo $dhcg_perf_f === 'attack' ? 'on' : ''; ?>"
+           title="Wins at least <?php echo DHCA_EDGE_PCT; ?> points more often attacking than defending"
+           href="<?php echo htmlspecialchars(dhcg_url(array('perf' => 'attack'))); ?>">Attackers <?php
+           echo $dhcg_pcounts['attack']; ?></a>
+      <?php endif; ?>
+      <?php if ($dhcg_pcounts['defend']): ?>
+        <a class="<?php echo $dhcg_perf_f === 'defend' ? 'on' : ''; ?>"
+           title="Wins at least <?php echo DHCA_EDGE_PCT; ?> points more often defending than attacking"
+           href="<?php echo htmlspecialchars(dhcg_url(array('perf' => 'defend'))); ?>">Defenders <?php
+           echo $dhcg_pcounts['defend']; ?></a>
+      <?php endif; ?>
+    <?php endif; ?>
 
     <span class="sep"></span>
     <?php if ($dhcg_user): ?>
@@ -525,6 +714,16 @@ include 'header.php';
         'kit'     => $f['kit']['emoji'] . ' ' . $f['kit']['name'] . ' — ' . $f['kit']['note'],
         'rank'    => $f['rank'],
         'rankOf'  => (int)$f['rankOf'],
+        /* The ledger's verdict travels with the card so the modal can set the
+           two side by side without a second request. `prank` is an empty
+           array for an unproven Fighter and the modal keys off that. */
+        'perf'    => $f['perf'] ? $f['perf']['all'] : null,
+        'edge'    => $f['perf'] ? $f['perf']['edge'] : '',
+        'prank'   => $f['prank'],
+        'prankOf' => (int)$f['prankOf'],
+        /* The trait claim re-ranked over the same population, so the modal can
+           subtract one from the other honestly. See $dhcg_cpool. */
+        'crank'   => $f['crank'],
         'created' => $f['created_at'],
         'aw'      => (int)$f['arena_wins'],
         'al'      => (int)$f['arena_losses'],
