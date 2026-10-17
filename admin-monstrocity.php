@@ -237,6 +237,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 		 * Reported, never refused: dropping a policy on purpose is a normal
 		 * edit, and the admin is the one who knows which it is.
 		 */
+		/*
+		 * A THEME THAT MATCHES NOBODY, BY WHATEVER ROUTE.
+		 *
+		 * The warnings below each describe one way the collection override
+		 * can narrow a theme, and all of them need collections to be ticked.
+		 * This one needs the opposite: NOTHING ticked and the policy id list
+		 * emptied, which is the state you land in if you read the filter
+		 * above the collection list as a select-all -- switch it on, tick
+		 * nothing, clear the list because the collections have it now, save.
+		 * Everything reports success and the theme silently offers the
+		 * default characters to everyone.
+		 *
+		 * Checked against what the theme ACTUALLY ends up with rather than
+		 * against the form, so it covers the missing-table case too.
+		 */
+		$after = monstrocity_theme_policies($conn);
+		$ends_with = isset($after[$id]) && $after[$id] !== ''
+		           ? $after[$id] : trim((string)$t['policy_ids']);
+		if ($ends_with === '' && !empty($t['active']))
+			$msgs['warn'][] = 'This theme now has no policy ids from either source, so it matches '
+			                . 'nobody\'s NFTs and offers only the default characters. Tick the '
+			                . 'collections it covers, or put the policy ids in the list below.';
+
 		if ($links && monstrocity_theme_links_table($conn)) {
 			$now    = monstrocity_theme_policies($conn);
 			$have   = isset($now[$id]) && $now[$id] !== '' ? explode(',', $now[$id]) : array();
@@ -376,10 +399,38 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
 .mt-check { display:flex; align-items:flex-start; gap:7px; font-size:12px; color:#e8eaed; margin:0 0 9px }
 .mt-check input { margin:2px 0 0 } .mt-check span.sub { color:#5a7888; font-size:11px }
 .mt-cols { max-height:260px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:3px; padding:8px; background:#07111d }
-.mt-cols label { display:flex; gap:7px; align-items:flex-start; margin:0 0 7px; color:#e8eaed; font-size:11px; text-align:left }
+/* .adm label is `display:flex; flex-direction:column` for the form's stacked
+   field labels, and admin-css.php is included AFTER this block, so an equal
+   -specificity rule here loses the tie -- which is why every collection sat
+   with its checkbox on the line above its name. Scoped under .adm to win it. */
+.adm .mt-cols label { display:flex; flex-direction:row; gap:7px; align-items:flex-start;
+                      margin:0 0 7px; color:#e8eaed; font-size:11px; letter-spacing:0;
+                      text-transform:none; text-align:left }
+.adm .mt-cols label input { margin:1px 0 0; width:auto }
 .mt-cols label.hid { display:none }
 .mt-cols input { margin:2px 0 0 } .mt-cols .pol { font-family:ui-monospace,Menlo,monospace; color:#5a7888; font-size:10px }
-.mt-colbar { display:flex; align-items:center; gap:12px; font-size:11px; color:#7a9eb0; margin:0 0 8px }
+.mt-colbar { display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; font-size:11px;
+             color:#7a9eb0; margin:0 0 8px }
+.mt-colbar-l { letter-spacing:.06em; text-transform:uppercase; color:#5a7888 }
+.mt-colbar-sep { width:1px; align-self:stretch; background:#1b3346; margin:0 2px }
+/*
+ * BOTH SCOPED UNDER .adm, which is not decoration. admin-css.php sets
+ * `.adm label{display:flex;flex-direction:column}` for the form's stacked
+ * field labels and `.adm button{background:#00c8a0;font-weight:bold}` for its
+ * Save button -- each (0,1,1), each beating a bare class. Unscoped, these
+ * radios stacked their dot above their text and these two tools rendered as
+ * filled mint primaries, louder than the Save button they sit above. Caught
+ * by previewing against the real stylesheet rather than reading the rules.
+ */
+.adm .mt-radio { display:flex; flex-direction:row; align-items:center; gap:5px; color:#e8eaed;
+                 cursor:pointer; font-size:11px; letter-spacing:0; text-transform:none }
+.adm .mt-radio input { margin:0; width:auto }
+/* Small enough to read as a tool rather than an action on the form itself --
+   the Save button is the only thing in here that should look like a button. */
+.adm .mt-mini { background:transparent; border:1px solid #2a4a63; color:#c7d3dc;
+                font:inherit; font-size:11px; font-weight:400; letter-spacing:0;
+                text-transform:none; padding:3px 9px; border-radius:2px; cursor:pointer }
+.adm .mt-mini:hover { background:transparent; border-color:#00c8a0; color:#00c8a0 }
 .mt-actions { display:flex; gap:9px; align-items:center; margin-top:4px }
 .mt-back { font-size:12px; display:inline-block; margin:0 0 12px; text-align:left }
 </style>
@@ -487,10 +538,34 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
              <code>monstrocity-schema.md</code>, then come back. Until then, use the policy id
              list at the bottom of this section.</p>
         <?php endif; ?>
+        <?php
+        /*
+         * THE FILTER AND THE BULK ACTION ARE DIFFERENT THINGS, AND THEY HAVE
+         * TO LOOK IT.
+         *
+         * This was one unlabelled checkbox reading "Show every project's
+         * collections", sitting directly on top of a list of checkboxes --
+         * which reads as a select-all, because that is what a checkbox above
+         * a list of checkboxes usually is. It was ticked, nothing was
+         * selected, the theme saved with no collections and an emptied policy
+         * list, and it matched nobody.
+         *
+         * So the filter is now a labelled radio pair (a two-state choice, not
+         * a thing you switch on) and the bulk action it was mistaken for
+         * actually exists next to it, as buttons, which cannot be confused
+         * for either. type="button" on both: a bare <button> in a form
+         * submits it.
+         */
+        ?>
         <div class="mt-colbar">
-          <label class="mt-check" style="margin:0">
-            <input type="checkbox" id="mt-allcols"> <span>Show every project's collections</span>
-          </label>
+          <span class="mt-colbar-l">Show</span>
+          <label class="mt-radio"><input type="radio" name="_colfilter" id="mt-colmine" checked>
+            <span>this project's</span></label>
+          <label class="mt-radio"><input type="radio" name="_colfilter" id="mt-allcols">
+            <span>every project's</span></label>
+          <span class="mt-colbar-sep"></span>
+          <button type="button" class="mt-mini" id="mt-coltick">Tick all shown</button>
+          <button type="button" class="mt-mini" id="mt-colclear">Untick all</button>
           <span id="mt-colcount"></span>
         </div>
         <div class="mt-cols" id="mt-cols">
@@ -665,8 +740,30 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
       : shown + ' collection' + (shown === 1 ? '' : 's');
   }
 
+  /*
+   * THE BULK ACTION ACTS ON WHAT IS SHOWN, NOT ON EVERYTHING.
+   *
+   * "Tick all shown" with the project filter on means that project's
+   * collections, which is what the old checkbox was mistaken for. With the
+   * filter off it means all of them, which is then plainly what the button
+   * says. Untick clears everything, shown or not -- a hidden tick the button
+   * refused to clear is a link the admin cannot see and cannot remove.
+   */
+  var tick  = document.getElementById('mt-coltick'),
+      clear = document.getElementById('mt-colclear'),
+      mine  = document.getElementById('mt-colmine');
+  if (tick) tick.addEventListener('click', function () {
+    rows.forEach(function (r) { if (!r.classList.contains('hid')) r.querySelector('input').checked = true; });
+    filter();
+  });
+  if (clear) clear.addEventListener('click', function () {
+    rows.forEach(function (r) { r.querySelector('input').checked = false; });
+    filter();
+  });
+
   proj.addEventListener('change', function () { syncName(); filter(); });
   all.addEventListener('change', filter);
+  if (mine) mine.addEventListener('change', filter);
   box.addEventListener('change', filter);
   if (pname.value === '') syncName();
   filter();

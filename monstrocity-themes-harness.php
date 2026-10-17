@@ -642,6 +642,12 @@ foreach (array(
 	'else if ($lost)'               => 'a policy the ticked collections do not cover goes unmentioned',
 	'$wrote !== count($links)'      => 'a half-written link set goes unmentioned, so the theme is '
 	                                 . 'silently narrower than what was ticked',
+	/* The one that needs NOTHING ticked. Every other warning is inside
+	   `if ($links)`, so a theme saved with no collections and an emptied
+	   policy list -- which is what reading the filter as a select-all gets
+	   you -- went through all of them and said nothing. */
+	'$ends_with === \'\''           => 'a theme that ends up with no policy ids from either '
+	                                 . 'source saves silently and offers only the defaults',
 ) as $needle => $why) {
 	ok(strpos($apNo, $needle) !== false, $why);
 }
@@ -662,8 +668,72 @@ ok(substr_count($apNo, "\$msgs['warn'][]") >= 4,
  * On the FORM, so the edit is not made twice, and on the SAVE, because a
  * form rendered before the table was dropped is still open somewhere.
  */
+/* And it must be OUTSIDE the `if ($links)` block, or it can never fire for
+   the case it exists for. Position, not presence: the check itself reads
+   correctly in either place. */
+$endsAt = strpos($apNo, '$ends_with === \'\'');
+$linksAt = strpos($apNo, 'if ($links && monstrocity_theme_links_table($conn)) {');
+ok($endsAt !== false && $linksAt !== false && $endsAt < $linksAt,
+   'the no-policies warning sits inside the block that requires collections to be ticked, '
+ . 'which is the one case it exists for');
+
 ok(strpos($apNo, 'if (!monstrocity_theme_links_table($conn)) {') !== false,
    'the save writes links without checking the table exists, so every tick is discarded in silence');
+
+/*
+ * THE FILTER MUST NOT LOOK LIKE A SELECT-ALL.
+ *
+ * It was one unlabelled checkbox, "Show every project's collections", sitting
+ * directly above a list of checkboxes -- which is where a select-all lives.
+ * It got ticked, nothing was selected, and the theme saved matching nobody.
+ * A radio pair is a two-state choice rather than a thing you switch on, and
+ * the bulk action it was mistaken for now exists beside it.
+ */
+ok(strpos($apNo, 'type="radio" name="_colfilter"') !== false,
+   'the project filter is a lone checkbox again, which reads as a select-all over the list below it');
+ok(substr_count($apNo, 'type="radio" name="_colfilter"') === 2,
+   'the filter radio pair is incomplete, so one of its two states cannot be chosen');
+ok(strpos($apNo, 'id="mt-coltick"') !== false && strpos($apNo, 'id="mt-colclear"') !== false,
+   'there is no bulk tick, so the filter is still the only thing that looks like one');
+
+/*
+ * AND EVERY ONE OF THEM HAS TO OUT-SPECIFY admin-css.php.
+ *
+ * That file is included at the END of this page, and it sets
+ * `.adm label{display:flex;flex-direction:column}` and
+ * `.adm button{background:#00c8a0;font-weight:bold}` -- both (0,1,1), both
+ * therefore beating a bare class on a tie. Unscoped, the filter radios
+ * stacked their dot above their text, the two tools rendered as filled mint
+ * primaries louder than Save, and every collection row put its checkbox on
+ * the line above its name. None of that is visible in the source; it was
+ * caught by previewing against the real stylesheet IN THE REAL ORDER.
+ */
+$css = substr($ap, strpos($ap, '<style>'), strpos($ap, '</style>') - strpos($ap, '<style>'));
+foreach (array('.mt-mini', '.mt-radio', '.mt-cols label') as $sel) {
+	/* ANCHORED ON THE BRACE. A plain strpos for ".adm .mt-radio " matched the
+	   DESCENDANT rule ".adm .mt-radio input", so unscoping the rule that
+	   actually fights .adm label passed. The selector has to be the whole
+	   selector, not a prefix of a longer one. */
+	ok(preg_match('/(^|[},\s])' . preg_quote('.adm ' . $sel, '/') . '\s*[{,]/m', $css) === 1,
+	   $sel . ' is not scoped under .adm, so admin-css.php wins the tie and overrides it');
+}
+/* The page's own <style> must still come BEFORE that include, or the reasoning
+   above is wrong and these rules are fighting a different battle. */
+ok(strpos($ap, '<style>') < strpos($ap, "include 'admin-css.php'"),
+   'admin-css.php is no longer included after this page\'s own style block');
+/* A bare <button> inside a form submits it: both of these would save the
+   theme instead of ticking anything. */
+ok(preg_match_all('/<button type="button" class="mt-mini"/', $apNo) === 2,
+   'a bulk-action button is missing type="button" and will submit the form');
+/* Untick clears EVERYTHING; tick only what is shown. A hidden tick that the
+   clear button refuses to touch is a link the admin can neither see nor
+   remove. */
+$clearAt = strpos($apNo, "clear.addEventListener('click'");
+$clearFn = $clearAt === false ? '' : substr($apNo, $clearAt, 220);
+ok($clearFn !== '' && strpos($clearFn, "rows.forEach(function (r) { r.querySelector('input').checked = false; });") !== false,
+   'Untick all skips hidden rows, leaving links the admin cannot see or remove');
+ok(strpos($apNo, "if (!r.classList.contains('hid')) r.querySelector('input').checked = true;") !== false,
+   'Tick all shown ticks hidden rows too, so the filter stops meaning anything');
 ok(substr_count($apNo, 'monstrocity_theme_links_table($conn)') >= 3,
    'the missing table is not reported on the form as well as the save, so the edit gets made twice');
 /* And the probe itself has to actually ask the database. */

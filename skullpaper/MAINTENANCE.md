@@ -248,6 +248,25 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
   NULL row, which is not TRUE, so a NULL policy was already excluded -- by three-valued logic
   rather than by statement, and reading the query it looked like only the empty string was. They
   are different mistakes with different fixes; monstrocity-theme-check.php reports them apart.
+- **THE PROJECT FILTER WAS READ AS A SELECT-ALL, AND SAVED A THEME MATCHING NOBODY.** It was one
+  unlabelled checkbox, "Show every project's collections", sitting directly above a list of
+  checkboxes -- which is where a select-all lives. Ticked, nothing selected, policy_ids cleared
+  because the collections were believed to have taken over: every warning in the save needs
+  collections to BE ticked, so all of them stayed quiet. Now a labelled radio pair (a two-state
+  choice, not a thing you switch on) with the bulk action it was mistaken for beside it as
+  buttons -- Tick all shown acts on the filtered set, Untick all clears everything including
+  hidden rows, or a link would exist that the admin can neither see nor remove. Both carry
+  `type="button"`; a bare <button> in a form submits it. And a save that ends with NO policy ids
+  from either source now warns, which is the guard that catches this whatever the route in.
+- **admin-css.php IS INCLUDED LAST, SO IT WINS EVERY TIE.** `.adm label{display:flex;
+  flex-direction:column}` and `.adm button{background:#00c8a0;font-weight:bold}` are both (0,1,1)
+  and beat a bare class: unscoped, the new filter radios stacked their dot above their text, the
+  two bulk tools rendered as filled mint primaries louder than Save, and every collection row had
+  had its checkbox on the line above its name all along. None of it is visible in the source --
+  caught by previewing against the real stylesheet IN THE REAL ORDER (page <style> first,
+  admin-css.php after), which is the whole reason that order matters in a preview. The harness
+  asserts each of the three is scoped under .adm, anchored on the rule's brace: a plain prefix
+  match hit ".adm .mt-radio input" and let the rule that actually fights .adm label go unscoped.
 - `monstrocity-theme-check.php` is the diagnostic: per theme, the attached collections and each
   one's policy, derived versus legacy, **what the shipped `monstrocity_themes()` actually hands
   the game** (not a second opinion about it), and -- given a username -- how many NFTs that player
