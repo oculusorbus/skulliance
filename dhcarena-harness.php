@@ -1120,3 +1120,54 @@ $plok(strpos($pfPage, 'title="<?php echo htmlspecialchars($pf[\'fact\']') !== fa
 
 echo ($pl_fail ? "\n$pl_fail ledger check(s) FAILED\n" : "participation ledger: ok\n");
 if ($pl_fail) exit(1);
+
+/*
+ * EVERY CLASS THIS PAGE INVENTS IS ACTUALLY STYLED.
+ *
+ * The reliability row shipped with none. .a-pf-filter and .a-pf-note were in
+ * the markup and nowhere in the stylesheet, so its buttons took the
+ * browser's default -- light pills with blue text, under two rows of dark
+ * ones. PHP was happy, the markup was valid, and nothing was looking at the
+ * pairing.
+ *
+ * Only the a- prefixed classes are checked: those are this page's own
+ * invention. Everything else belongs to flexbox.css or a shared include and
+ * is not this file's to define.
+ */
+$cs_fail = 0;
+$csok = function ($cond, $what) use (&$cs_fail) {
+	if (!$cond) { $cs_fail++; echo "FAIL  $what\n"; }
+};
+$csSrc = file_get_contents(__DIR__ . '/dhcarena.php');
+$csCss = '';
+if (preg_match_all('/<style>(.*?)<\/style>/s', $csSrc, $sm)) $csCss = implode("\n", $sm[1]);
+/*
+ * WITHOUT ITS COMMENTS. The note above .a-pf-filter names the class while
+ * explaining why it exists, and a plain strpos cannot tell prose from a
+ * selector -- with every rule deleted, the comment alone still answered
+ * "yes, that is styled". A comment describing a rule is the one thing
+ * guaranteed to survive the rule's removal.
+ */
+$csCss = preg_replace('~/\*.*?\*/~s', '', $csCss);
+$csok($csCss !== '', 'the page has a stylesheet to check against');
+$csok(strpos($csCss, 'shipped with no CSS') === false, 'and its comments are stripped from it');
+
+preg_match_all('/class=[\'"]([^\'"<]*)[\'"]/', $csSrc, $cm);
+$csUsed = array();
+foreach ($cm[1] as $attr) {
+	foreach (preg_split('/\s+/', $attr) as $c) {
+		$c = trim($c);
+		if ($c === '' || strpos($c, 'a-') !== 0) continue;
+		$csUsed[$c] = true;
+	}
+}
+$csok(count($csUsed) > 10, "found this page's own classes (" . count($csUsed) . ')');
+$csUnstyled = array();
+foreach (array_keys($csUsed) as $c) {
+	if (strpos($csCss, '.' . $c) === false) $csUnstyled[] = $c;
+}
+$csok(!$csUnstyled, 'every class the page invents is styled'
+   . ($csUnstyled ? ' -- these are not: ' . implode(', ', $csUnstyled) : ''));
+
+echo ($cs_fail ? "\n$cs_fail styling check(s) FAILED\n" : "every invented class is styled: ok\n");
+if ($cs_fail) exit(1);

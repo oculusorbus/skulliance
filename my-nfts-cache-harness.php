@@ -177,8 +177,10 @@ ok(preg_match("/busy'[^}]*setTimeout\(step/s", $run), 'and waits, rather than re
 /* The ONCE is the point: a busy server retried forever is the pile-up again
    in slow motion. "retried[id] appears" stayed true with the guard removed. */
 ok(strpos($run, "!retried[id]") !== false, 'the retry is guarded');
-ok(preg_match("/busy'\s*&&\s*!retried\[id\]/", $run),
-   'so a busy reply is retried once and once only');
+ok(preg_match("/!retried\[id\]\)/", $run),
+   'so a back-off reply is retried once and once only');
+ok(preg_match("/'ratelimited'\)\s*&&\s*!retried/", $run),
+   'and the rate limit backs off the same way, rather than counting as a failure');
 ok(strpos($run, 'retried[id] = true;') !== false, 'and the id is marked as having had its turn');
 ok(!preg_match("/busy'[^}]*streak/s", $run), 'it does not count toward the three-strikes breaker');
 

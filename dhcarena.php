@@ -919,15 +919,37 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-lsec h3{margin:0 0 6px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
   opacity:.55;font-weight:600;display:flex;gap:7px;align-items:baseline}
 .arena-wrap .a-lsec h3 span{opacity:.7;letter-spacing:.08em;font-weight:400}
-.arena-wrap .a-tools{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 9px;
+/*
+ * THE CHIP ROWS, sharing one set of rules.
+ *
+ * .a-pf-filter -- the reliability row -- shipped with no CSS at all and took
+ * the browser's default button: light pills with blue text, under two rows
+ * of dark ones. Listed alongside .a-tools rather than given a copy of these
+ * declarations, because a copy is the thing that drifts: the next time a
+ * chip's radius or hover changes, both rows change with it or neither does.
+ */
+.arena-wrap .a-tools,
+.arena-wrap .a-pf-filter{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 9px;
   font-size:11px}
 .arena-wrap .a-tools .lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.5}
 .arena-wrap .a-tools .sep{width:1px;height:14px;background:var(--line);margin:0 4px}
-.arena-wrap .a-tools button{font:inherit;font-size:11px;background:none;color:inherit;
+.arena-wrap .a-tools button,
+.arena-wrap .a-pf-filter button{font:inherit;font-size:11px;background:none;color:inherit;
   border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer;opacity:.75}
-.arena-wrap .a-tools button:hover{border-color:var(--ochre);opacity:1}
-.arena-wrap .a-tools button.on{border-color:var(--ochre);color:var(--ochre);
+.arena-wrap .a-tools button:hover,
+.arena-wrap .a-pf-filter button:hover{border-color:var(--ochre);opacity:1}
+.arena-wrap .a-tools button.on,
+.arena-wrap .a-pf-filter button.on{border-color:var(--ochre);color:var(--ochre);
   background:rgba(0,200,160,.08);opacity:1}
+/* The count inside a chip, quieter than its label. */
+.arena-wrap .a-pf-filter button b{font-weight:600;opacity:.85;margin-left:2px}
+/*
+ * The sentence above them. It was rendering at the page's base size, which
+ * shouted over the controls it describes, and it sat AFTER them -- prose
+ * explaining a filter belongs before the filter, not below it.
+ */
+.arena-wrap .a-pf-note{font-size:10px;line-height:1.5;opacity:.55;
+  margin:0 0 6px;max-width:72ch}
 .arena-wrap .a-card .st{display:flex;align-items:center;gap:6px;font-size:9.5px;opacity:.75;
   font-variant-numeric:tabular-nums;margin-top:2px}
 .arena-wrap .a-card .st em{font-style:normal;margin-left:auto;width:13px;height:13px}
@@ -1320,14 +1342,18 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                           'risky' => 'Risky', 'winless' => 'Winless', 'unproven' => 'Unproven');
       ?>
       <?php if (count($pfCounts) > 1): ?>
+      <?php /* The explanation comes BEFORE the controls it explains, and
+               outside the row: it is prose about the filters, not one of
+               them, and sitting last in a flex row it read as a very large
+               final chip. */ ?>
+      <p class="a-pf-note">Reliable means it survives most of the battles its Crew wins.
+        A Fighter at the front is hit far more often, so read the position in the tooltip.</p>
       <div class="a-pf-filter" id="aPfFilter">
         <button type="button" class="on" data-pf="">All <b><?php echo count($crew); ?></b></button>
         <?php foreach ($pfLabels as $k => $lbl): if (empty($pfCounts[$k])) continue; ?>
           <button type="button" data-pf="<?php echo $k; ?>"><?php echo $lbl; ?>
             <b><?php echo (int)$pfCounts[$k]; ?></b></button>
         <?php endforeach; ?>
-        <span class="a-pf-note">Reliable means it survives most of the battles its Crew wins.
-          A Fighter at the front is hit far more often, so read the position in the tooltip.</span>
       </div>
       <?php endif; ?>
       <div class="a-pick">
