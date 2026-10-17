@@ -355,6 +355,34 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
     <p class="pt-free">Free to join &middot; Free to stay</p>
   </div>
 
+  <div class="pt-sect">
+    <p class="pt-kicker">What this is</p>
+    <h2>Six artists built somewhere their collectors would want to stay</h2>
+    <p>Skulliance started as a group of artists specialising in skull art on Cardano, who came
+      together under <a href="https://www.x.com/oculusorbus" target="_blank" rel="noopener"
+      style="color:var(--ochre)">Oculus Orbus</a> - a collector of their work who also happened to
+      be a developer. He built the staking platform so that holding any of their art earned
+      something from the first night, whether or not the holder ever played anything.</p>
+    <p style="margin-top:14px">It worked, so they started inviting other artists. Then it outgrew
+      one chain, and now runs on <?php echo $pt_e(implode(', ', $pt_chains)); ?> with every
+      project's holders on the same boards and the same account. It keeps growing for a plain
+      reason: a single collection cannot justify building staking, missions, realms, a
+      marketplace and a dozen games, and <?php echo count($pt_names) >= 10 ? count($pt_names) : 'forty'; ?>
+      of them together can. Every artist who joins makes the thing every other artist is part of
+      bigger, which is why nobody here is competing for the same collectors.</p>
+    <p style="margin-top:14px">It is a small team and a public one. Everyone is reachable, the
+      mechanics are all written down in the <a href="skullpaper.php" style="color:var(--ochre)">Skull
+      Paper</a>, and nothing about how the platform works is a secret from the people on it.</p>
+    <div class="pt-shots two">
+        <figure><img src="https://www.skulliance.io/staking/images/skulliance-group.jpg"
+          alt="The six founding Skulliance characters" loading="lazy" decoding="async">
+          <figcaption>The six who started it</figcaption></figure>
+        <figure><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png"
+          alt="Staked NFTs on Skulliance" loading="lazy" decoding="async">
+          <figcaption>What a holder sees</figcaption></figure>
+    </div>
+  </div>
+
   <?php if (count($pt_names) >= 6): ?>
   <div class="pt-sect" style="border-bottom:0;padding-bottom:4px">
     <p class="pt-kicker">Who else was asked</p>
@@ -524,7 +552,10 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
     <p>Every one of these is already built, already live, and comes switched on the day you join.
       Your holders do not download anything.</p>
     <div class="pt-shots four">
-        <figure><img src="https://www.skulliance.io/staking/images/dhcgame.png" alt="DHC Arena" loading="lazy" decoding="async"><figcaption>DHC Arena</figcaption></figure>
+        <?php /* NOT DHC Arena: it has its own section further down, and
+                 leading the games row with it spends the first tile on
+                 something the page is about to cover properly. */ ?>
+        <figure><img src="https://www.skulliance.io/staking/images/screenshots/skull-swap.png" alt="Skull Swap" loading="lazy" decoding="async"><figcaption>Skull Swap</figcaption></figure>
         <figure><img src="https://www.skulliance.io/staking/images/cryptcrawl.png" alt="Crypt Crawl" loading="lazy" decoding="async"><figcaption>Crypt Crawl</figcaption></figure>
         <figure><img src="https://www.skulliance.io/staking/images/cryptconquest.png" alt="Crypt Conquest" loading="lazy" decoding="async"><figcaption>Crypt Conquest</figcaption></figure>
         <figure><img src="https://www.skulliance.io/staking/images/guardians.png" alt="Realm Guardians" loading="lazy" decoding="async"><figcaption>Realm Guardians</figcaption></figure>

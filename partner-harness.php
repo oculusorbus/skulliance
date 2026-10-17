@@ -200,6 +200,34 @@ echo "\nthe roster and the marquee are live, not a hardcoded list\n";
 	   'the roster renders however few projects there are');
 }
 
+echo "\nit says what Skulliance is before it asks for anything\n";
+{
+	/*
+	 * The page was written for people who already know what this is, and
+	 * most invitees do not. The origin section comes BEFORE the roster and
+	 * the ask: a stranger reading "40 projects are already here" has no
+	 * idea what they are already here for.
+	 */
+	$what  = strpos($src, 'What this is');
+	$who   = strpos($src, 'Who else was asked');
+	$asked = strpos($src, 'Everything we need from you');
+	ok($what !== false, 'the page no longer says what Skulliance is');
+	ok($what !== false && $who !== false && $what < $who,
+	   'the origin section sits after the roster; a stranger is shown a crowd before being told '
+	 . 'what they are a crowd for');
+	ok($what !== false && $asked !== false && $what < $asked,
+	   'the page asks for something before explaining what it is');
+	/* The claims in it are the ones the Skull Paper already makes. */
+	ok(strpos($src, 'Oculus Orbus') !== false, 'the founder is not named');
+	ok(strpos($src, 'skull art on Cardano') !== false,
+	   'the origin no longer says what the founding artists have in common');
+	/* And it must give the REASON it keeps growing, which is the argument
+	   this section exists to make -- not just a history. */
+	ok(stripos($src, 'cannot justify building') !== false,
+	   'the origin recounts history without saying why the platform keeps growing, which is the '
+	 . 'only part of it an invitee needs');
+}
+
 echo "\npoints are described as points, and as off chain\n";
 {
 	/*
