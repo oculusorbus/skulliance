@@ -30,7 +30,14 @@
  */
 function dhc_shot_src($base) {
 	foreach (array($base . '-sm.jpg', $base . '.png') as $f) {
-		$abs = __DIR__ . '/images/' . $f;
+		/* dirname(__DIR__), NOT __DIR__. This function used to live in
+		   dhcgame.php where __DIR__ was the site root; moving it into lib/
+		   silently repointed it at staking/lib/images/, which does not
+		   exist -- so every shot resolved to nothing and BOTH pages
+		   stopped showing their screenshots. The returned src stays
+		   relative ('images/...'), which is correct from any page in
+		   /staking/. */
+		$abs = dirname(__DIR__) . '/images/' . $f;
 		if (is_file($abs)) {
 			$d = @getimagesize($abs);
 			return array('src' => 'images/' . $f,

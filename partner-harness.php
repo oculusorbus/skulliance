@@ -361,6 +361,41 @@ echo "\nevery picture is of the thing its section is about\n";
 	   'the screenshots are hardcoded instead of resolved by the shared helper');
 	ok(strpos($dhc, 'dhc_shot_src(') !== false,
 	   'the DHC section does not call dhc_shot_src(), so a missing shot renders a broken frame');
+
+	/*
+	 * AND THE HELPER HAS TO ACTUALLY FIND A FILE.
+	 *
+	 * This function used to live in dhcgame.php, where __DIR__ was the site
+	 * root. Moving it into lib/ silently repointed it at staking/lib/images/
+	 * -- so it returned nothing for every shot and BOTH pages lost their
+	 * screenshots, with no error anywhere. Locally it returns nothing
+	 * either way, because images are not committed to this repo, and that
+	 * is exactly why reading the source was not enough: the broken version
+	 * and the correct one are indistinguishable until a file is there.
+	 *
+	 * So the test puts one there.
+	 */
+	require_once __DIR__ . '/lib/dhc-shots.php';
+	@mkdir(__DIR__ . '/images', 0755, true);
+	$probe = __DIR__ . '/images/zz-shot-probe.png';
+	$made  = false;
+	if (function_exists('imagecreatetruecolor')) {
+		$im = imagecreatetruecolor(40, 20);
+		$made = @imagepng($im, $probe);
+	}
+	if ($made) {
+		$got = dhc_shot_src('zz-shot-probe');
+		@unlink($probe);
+		ok(!empty($got), 'dhc_shot_src() cannot find a file that is in images/; check what __DIR__ '
+		              . 'means from the file it now lives in');
+		ok(!empty($got['src']) && $got['src'] === 'images/zz-shot-probe.png',
+		   'dhc_shot_src() returns ' . (empty($got['src']) ? 'nothing' : $got['src'])
+		 . ', which is not a path a page in /staking/ can use');
+		ok(!empty($got['w']) && (int)$got['w'] === 40,
+		   'dhc_shot_src() does not read the real dimensions, so the browser cannot reserve the box');
+	} else {
+		echo "  (no GD on this build -- dhc_shot_src() not exercised against a real file)\n";
+	}
 }
 
 echo "\nnothing is wider than the page\n";
