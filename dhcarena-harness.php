@@ -1055,6 +1055,16 @@ $plok(strpos(substr($plSrc, $fnAt, $fnEnd - $fnAt), 'dhca_log_participants(') !=
    'dhca_finish() does not write the ledger, so nothing is ever recorded');
 $plok(strpos($plSrc, 'INSERT IGNORE INTO dhc_arena_battle_fighters') !== false,
    'the ledger insert is not IGNORE, so a double settle can double-count');
+/* `rank` is reserved from MySQL 8.0.2 (the window function), so every
+   reference to it has to be quoted or the statement fails outright. */
+$plok(strpos($plSrc, '`rank`') !== false && !preg_match('/\(battle_id, fighter_id, side, rank,/', $plSrc),
+   'the ledger INSERT names rank unquoted, which is a reserved word from MySQL 8.0.2');
+$plSchema = file_get_contents(__DIR__ . '/dhcarena-schema.md');
+$ctAt = strpos($plSchema, 'CREATE TABLE IF NOT EXISTS dhc_arena_battle_fighters');
+$ct = $ctAt === false ? '' : substr($plSchema, $ctAt, 700);
+$plok($ct !== '' && strpos($ct, '`rank`') !== false,
+   'the CREATE declares rank unquoted; it is reserved from MySQL 8.0.2 and the statement '
+ . 'will not run');
 
 echo ($pl_fail ? "\n$pl_fail ledger check(s) FAILED\n" : "participation ledger: ok\n");
 if ($pl_fail) exit(1);

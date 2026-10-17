@@ -115,7 +115,10 @@ CREATE TABLE IF NOT EXISTS dhc_arena_battle_fighters (
 	battle_id  INT        NOT NULL,          -- dhc_arena_battles.id
 	fighter_id INT        NOT NULL,          -- dhc_fighters.id
 	side       TINYINT    NOT NULL,          -- 1 attacker, 2 defender
-	rank       TINYINT    NOT NULL,          -- 0 front, 1 mid, 2 back
+	-- BACKTICKED: `rank` is a reserved word from MySQL 8.0.2 (the window
+	-- function), so an unquoted column of that name fails at CREATE time.
+	-- dhca_log_participants() quotes it in the INSERT for the same reason.
+	`rank`     TINYINT    NOT NULL,          -- 0 front, 1 mid, 2 back
 	fell       TINYINT(1) NOT NULL,          -- knocked out before the end
 	dealt      INT        NOT NULL DEFAULT 0,-- damage this Fighter dealt
 	PRIMARY KEY (battle_id, fighter_id),
