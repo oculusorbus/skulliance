@@ -374,7 +374,20 @@ ok(strpos($mc[1], 'height: 38px') !== false,
 echo "\n-- it survives paging and does not strand the other filters --\n";
 ok(strpos($src, "\$cq = \$mn_coll > 0 ? '&collection=' . \$mn_coll : '';") !== false,
    'the collection rides along in the pager');
-ok(substr_count($src, '$fb . $cq') === 2, 'on both Prev and Next');
+/*
+ * EVERY pagination link, not a count of the ones I happened to write.
+ *
+ * This asserted exactly two and passed, because two was all I had patched:
+ * Prev and Next carried the collection and the NUMBERED page links did not,
+ * so clicking "3" dropped you back to the whole project. A count encodes
+ * the mistake it is supposed to catch. The property is that no pagination
+ * href uses $fb WITHOUT $cq.
+ */
+preg_match_all('/my-nfts\.php\?filterby=<\?php echo ([^;]*);/', $src, $hrefs);
+ok(count($hrefs[1]) >= 3, 'found the pagination links (' . count($hrefs[1]) . ')');
+$bare = array_values(array_filter($hrefs[1], function ($e) { return strpos($e, '$cq') === false; }));
+ok(!$bare, 'every one of them carries the collection'
+   . ($bare ? ' -- these do not: ' . implode(', ', $bare) : ''));
 ok(strpos($src, 'name="filterby" value="<?php echo htmlspecialchars($filterby); ?>"') !== false,
    'and the project survives changing the collection');
 ok(strpos($src, 'method="get"') !== false, 'GET, so a drilled-down view is a link');

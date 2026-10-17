@@ -329,7 +329,7 @@ if ($mn_rows) {
             if ($p == 1 || $p == $mn_pages || ($p >= $mn_page - 2 && $p <= $mn_page + 2)):
               if ($prev && $p - $prev > 1) echo "<span class='page-ellipsis'>&#8230;</span>";
               if ($p == $mn_page): ?><span class="page-btn active"><?php echo $p; ?></span><?php
-              else: ?><a class="page-btn" href="my-nfts.php?filterby=<?php echo $fb; ?>&page=<?php echo $p; ?>"><?php echo $p; ?></a><?php endif;
+              else: ?><a class="page-btn" href="my-nfts.php?filterby=<?php echo $fb . $cq; ?>&page=<?php echo $p; ?>"><?php echo $p; ?></a><?php endif;
               $prev = $p;
             endif;
           endfor; ?>
