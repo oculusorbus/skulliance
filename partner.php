@@ -265,6 +265,16 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   #pt .pt-shots.four{grid-template-columns:1fr 1fr}
 }
 
+/* ---- a plain statement, for the thing people are worried about ----
+   Not a spec box and not a card: those read as detail you can skip. This is
+   the paragraph that decides whether an artist keeps reading, so it gets the
+   page's quietest treatment and its largest body text. */
+#pt .pt-plain{margin:24px 0 0;padding:20px 22px;background:var(--panel);
+  border:1px solid var(--line);border-radius:3px}
+#pt .pt-plain h3{font-size:15px;margin:0 0 10px;color:var(--bone)}
+#pt .pt-plain p{font-size:13.5px;line-height:1.75;color:#c7d3dc;max-width:70ch}
+#pt .pt-plain p + p{margin-top:12px}
+
 /* ---- the spec box ---- */
 #pt .pt-spec{margin:24px 0 0;background:var(--panel);border:1px solid var(--line);
   border-left:3px solid var(--gold);border-radius:3px;padding:18px 20px}
@@ -339,7 +349,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
       buy your way onto. Projects are here because we went and asked them, and
       <?php echo $pt_for !== '' ? $pt_e($pt_for) : 'yours'; ?> is one we want.</p>
     <p class="pt-lede" style="margin-top:14px">What that gets you is a home for your collectors:
-      somewhere to stake what they own, earn points you name, and play a dozen games alongside
+      somewhere to stake what they own, earn off-chain points you name, and play a dozen games alongside
       <?php echo count($pt_names) >= 10 ? count($pt_names) . ' other projects' : 'the other projects already here'; ?>
       and their communities. You build none of it. We do, and it costs you nothing.</p>
     <p class="pt-free">Free to join &middot; Free to stay</p>
@@ -393,8 +403,9 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
       <li><b>Every collection you have</b><span>Not just the flagship. We add all of them and set
         each one's rate, so a 1/1 series and a 10k PFP set can pay differently and still belong to
         the same project.</span></li>
-      <li><b>Your points</b><span>Your own currency, earned nightly by your holders and spent across
-        the platform. We need two things from you for it, and they are both below.</span></li>
+      <li><b>Your points</b><span>Your own named points, earned nightly by your holders and spent
+        across the platform. Off chain, not a token - see below. We need two things from you for
+        them, and they are both below.</span></li>
       <li><b>Your missions</b><span>We write and configure the whole mission set. Holders send NFTs
         out on timed runs for your points; bigger holdings mean better success rates.</span></li>
       <li><b>Your realm theme</b><span>We build the artwork for your realm so holders can claim land
@@ -409,11 +420,33 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   </div>
 
   <div class="pt-sect">
-    <p class="pt-kicker">Your currency</p>
+    <p class="pt-kicker">Your points</p>
     <h2>Pick a word. Send one icon.</h2>
-    <p>That is the entire ask for points. Your currency shows up everywhere on the platform -
-      in the store, on the leaderboards, on every NFT panel, as a tile on the Skull Swap board -
-      so the icon gets a lot of use.</p>
+    <p>That is the entire ask. Your points show up everywhere on the platform - in the Store, on
+      the leaderboards, on every NFT panel, as a tile on the Skull Swap board - so the icon gets
+      a lot of use.</p>
+
+    <?php /*
+     * THE FEAR THIS SECTION HAS TO ANSWER, and it has to answer it here
+     * rather than in a footnote. An artist reading "your own currency"
+     * hears "you want me to launch a token": a contract, a listing, a price
+     * chart, holders who turn up to speculate, and a regulatory question
+     * nobody wants. None of that is what this is, and the page lost people
+     * on the word alone. So the word is gone and the facts are stated flat
+     * -- off chain, not minted, not tradeable, worth nothing outside the
+     * platform -- before anything about what they are for.
+     */ ?>
+    <div class="pt-plain">
+      <h3>Points are not a token</h3>
+      <p>They are a number in a database, held entirely <b>off chain</b>. Nothing is minted,
+        nothing is issued on any chain, and there is no contract anywhere. Points cannot be
+        bought, sold, sent between people, traded, swapped, bridged or withdrawn, and they have
+        no value off the platform. Nobody can speculate on them because there is nothing to
+        speculate on.</p>
+      <p>Your holders earn them by holding your art and turning up, and spend them in the Store
+        for things you and we put there. That is the whole mechanism. Joining Skulliance does not
+        put your project anywhere near a token launch, and it never will.</p>
+    </div>
 
     <?php if ($pt_icons): ?>
     <?php /* Doubled so the translateX(-50%) loop is seamless. The copy is
@@ -515,6 +548,39 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   </div>
 
   <div class="pt-sect">
+    <p class="pt-kicker">DHC</p>
+    <h2>The deep end, for the ones who want it</h2>
+    <p>Most stakers stake. A few want something to sink months into, and DHC is what they find.
+      It is the largest thing on the platform and it runs on top of everything else, so your
+      holders walk into it already playing.</p>
+    <ul class="pt-build">
+      <li><b>Traits drop from every game</b><span>Win a run of Crypt Crawl, hold a realm, place in
+        the Arena - any game can pay out a trait. Rarity is not invented: a trait's tier is how
+        many of the 226 original Fighters wore it, read from chain.</span></li>
+      <li><b>Fighters get assembled</b><span>Traits are parts. Players build their own Fighter out
+        of what they have earned, name it, and keep it - a thing that did not exist until they
+        made it.</span></li>
+      <li><b>And then they fight</b><span>DHC Arena is Crew versus Crew, player against player.
+        Rarity does not decide a fight, so a Fighter built from common parts can beat one built
+        from mythics.</span></li>
+      <li><b>All of it is public</b><span>The Collection is browsable by anyone, signed in or not,
+        with its own share cards. Your holders' Fighters are a thing they can post, which is
+        reach you did not pay for.</span></li>
+    </ul>
+    <div class="pt-shots two">
+        <figure><img src="https://www.skulliance.io/staking/images/dhcgame.png" alt="DHC Arena"
+          loading="lazy" decoding="async"><figcaption>DHC Arena, Crew versus Crew</figcaption></figure>
+        <figure><img src="https://www.skulliance.io/staking/images/screenshots/diamond-skulls.png"
+          alt="Diamond Skulls" loading="lazy" decoding="async"><figcaption>Diamond Skulls, the
+          platform's own collection</figcaption></figure>
+    </div>
+    <p style="margin-top:16px">The art is by <a href="https://x.com/MMAXI404" target="_blank"
+      rel="noopener" style="color:var(--ochre)">Maxingo</a>, who shared it so this could be built.
+      Nothing about DHC asks anything of you - it is simply there, and it is the reason a chunk
+      of the platform's regulars log in daily.</p>
+  </div>
+
+  <div class="pt-sect">
     <p class="pt-kicker">Leaderboards</p>
     <h2>Somewhere for your community to show off</h2>
     <p>Most boards run two tracks: a monthly one that often pays out, and an all-time one for
@@ -537,9 +603,9 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   <div class="pt-sect">
     <p class="pt-kicker">The Store</p>
     <h2>Give your points somewhere to go</h2>
-    <p>The Store is where points get spent. Your holders redeem <em>your</em> currency for items you
+    <p>The Store is where points get spent. Your holders redeem <em>your</em> points for items you
       contribute - NFTs, whitelist spots, merch, whatever you want to put up - and DIAMOND, the
-      platform currency, can claim anything.</p>
+      platform's own points, can claim anything.</p>
     <p style="margin-top:14px">You do not need to build any claim infrastructure, and you do not
       need to hand over custody of anything you are not giving away.</p>
     <div class="pt-shots">
@@ -592,7 +658,8 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
     </ul>
     <p style="margin-top:20px;color:var(--dim);font-size:13px">That is the whole list. We find your
       collections on chain ourselves, we set the rates, and we build the artwork. No fee, no
-      revenue share, no exclusivity, no token. You can leave whenever you like.</p>
+      revenue share, no exclusivity, and no token - points are off chain and stay that way. You
+      can leave whenever you like.</p>
   </div>
 
   <div class="pt-close">

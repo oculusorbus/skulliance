@@ -200,6 +200,61 @@ echo "\nthe roster and the marquee are live, not a hardcoded list\n";
 	   'the roster renders however few projects there are');
 }
 
+echo "\npoints are described as points, and as off chain\n";
+{
+	/*
+	 * WHY THIS IS ASSERTED AND NOT JUST WRITTEN CAREFULLY ONCE.
+	 *
+	 * An artist reading "your own currency" hears "you want me to launch a
+	 * token": a contract, a listing, a price chart, speculators, and a
+	 * regulatory question nobody wants. The page lost people on the word
+	 * alone. "Currency" is also the DATABASE COLUMN and half the function
+	 * names around it, so it is the single most likely word to be typed
+	 * back into the copy by someone working on the query right above it.
+	 *
+	 * So the check is on the MARKUP with the PHP stripped out: the column,
+	 * admin_currency_icon() and the comments explaining all this are fine
+	 * and must not trip it.
+	 */
+	$body = substr($src, strpos($src, '<div id="pt">'));
+	$visible = preg_replace('/<\?php.*?\?>/s', ' ', $body);
+	$visible = preg_replace('!/\*.*?\*/!s', ' ', $visible);
+	ok(stripos($visible, 'currenc') === false,
+	   'the word "currency" is back in the copy; it reads as a token launch, which is the '
+	 . 'single thing this page has to rule out');
+
+	/* And the reassurance itself has to be there, in the section about
+	   points rather than buried at the end. */
+	ok(strpos($visible, 'Points are not a token') !== false,
+	   'the off-chain statement is gone; "points" alone does not answer the worry');
+	/*
+	 * SCOPED TO THE BLOCK, not the page. "no contract" matched "No
+	 * contracts, no servers, no mod work" four sections away, so deleting
+	 * the sentence that actually reassures anybody passed. A phrase that
+	 * appears somewhere on a long page proves nothing about where it is.
+	 */
+	$pa = strpos($visible, 'pt-plain');
+	$pb = $pa === false ? false : strpos($visible, '</div>', $pa);
+	$block = ($pa === false || $pb === false) ? '' : substr($visible, $pa, $pb - $pa);
+	ok($block !== '', 'the off-chain block is gone from the markup');
+	foreach (array('off chain' => 'that points are off chain',
+	               'no contract' => 'that there is no contract',
+	               'traded' => 'that points cannot be traded',
+	               'no value off the platform' => 'that points are worth nothing elsewhere') as $needle => $what) {
+		ok(stripos($block, $needle) !== false, 'the off-chain block no longer says ' . $what);
+	}
+	/* It must come BEFORE the spec box: somebody who is worried stops
+	   reading at the worry, not after the filename rules. */
+	$plain = strpos($visible, 'Points are not a token');
+	$spec  = strpos($visible, 'What to send');
+	ok($plain !== false && $spec !== false && $plain < $spec,
+	   'the reassurance sits after the art spec, which is after the point somebody worried '
+	 . 'about tokens has stopped reading');
+	/* The closing ask repeats it, because that is the last thing read. */
+	ok(stripos($visible, 'no token') !== false,
+	   'the closing list no longer rules out a token');
+}
+
 echo "\nthe claims match the Skull Paper\n";
 {
 	/* The store flow is a promise about what WE do, so the address it names
