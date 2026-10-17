@@ -453,6 +453,12 @@
 		           state and pays nothing, so a player finding it would only be
 		           confused about which one counts. See dhcarena.md. -->
 		      <a href="dhcarena.php">DHC Arena</a>
+		      <?php /* Rivalries sits beside the Arena, not inside it. It is not a
+		               thing to play, which is the rule the Collection is kept out
+		               of this list by -- but it is also not reachable from
+		               anywhere a player naturally goes, and a map of who is
+		               hunting whom is only worth drawing if people find it. */ ?>
+		      <a href="rivalries.php">Rivalries</a>
 		      <a href="cryptcrawl.php">Crypt Crawl</a>
 		      <a href="cryptconquest.php">Crypt Conquest</a>
 		      <a href="monstrocity.php">Monstrocity</a>

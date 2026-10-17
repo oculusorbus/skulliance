@@ -37,7 +37,7 @@
      A hub plus a ring of Fighter portraits around it. The portraits are real
      art rather than dots, so they are big enough to read -- which means the
      cluster's footprint is driven by them, not by the avatar. */
-  const SAT_MIN = 15, SAT_MAX = 30;      // Fighter portrait radius
+  const SAT_MIN = 15, SAT_MAX = 30;      // Fighter portrait radius, at a small Crew
   /*
    * THE CREW OCCUPIES THE OUTER HALF of its hub, a little under 180 degrees.
    * Anything wider tips the end portraits back inward, where the grudge lines
@@ -45,23 +45,67 @@
    * instead of exactly on the boundary.
    */
   const CREW_SPAN = Math.PI * 0.9;
-  function satR(f, busiest) {
-    return Math.round(SAT_MIN + (SAT_MAX - SAT_MIN) * Math.sqrt(f.battles / (busiest || 1)));
+  /*
+   * AND IT IS BOUNDED, in three ways, because one player's roster blew the
+   * whole map apart.
+   *
+   * Portraits laid along an arc need ring radius proportional to how many
+   * there are: 25 Fighters at 30px each wanted a ring over 500px, so that one
+   * cluster swept a third of the canvas and dragged every other cluster's
+   * spacing out with it. A roster is also not the same question as a Crew --
+   * somebody who has fielded 25 different Fighters in a month is telling you
+   * about their collection, not about who they fight with.
+   *
+   *   CREW_MAX  draw the most-fielded few; the rest are counted in the label.
+   *   shrinking portraits get smaller as the Crew grows, so ten fit in
+   *             roughly the room six used to need.
+   *   shells    beyond PER_SHELL they stack outward in a second arc instead
+   *             of stretching the first one further round.
+   */
+  const CREW_MAX = window.RIVALRY_CREW_MAX || 12, PER_SHELL = 6;
+
+  function satR(f, busiest, smax) {
+    const smin = Math.max(6, Math.round(smax * 0.5));
+    return Math.round(smin + (smax - smin) * Math.sqrt(f.battles / (busiest || 1)));
   }
+
   function geom(node) {
-    const k = node.fighters.length;
+    const total = node.fighters.length;
+    const k = Math.min(total, CREW_MAX);
     const busiest = node.fighters.reduce((m, f) => Math.max(m, f.battles), 0) || 1;
-    const big = k ? Math.max.apply(null, node.fighters.map(f => satR(f, busiest))) : 0;
-    /*
-     * The portraits sit on a ring clear of the avatar -- and that ring also
-     * has to be long enough to hold them side by side. k portraits spread
-     * over CREW_SPAN are ring*SPAN/(k-1) apart, which must clear 2*big or
-     * they overlap. Taking the larger of the two is the only thing preventing
-     * a deep Crew from drawing itself as a pile.
-     */
-    const clear = k > 1 ? (2 * big * (k - 1)) / CREW_SPAN : 0;
-    const ring  = k ? Math.max(node.r + 6 + big, clear) : 0;
-    return { busiest: busiest, ring: ring, outer: Math.max(node.r, ring + big) + 2 };
+    if (!k) return { busiest: busiest, shown: 0, hidden: 0, smax: 0, shells: [], outer: node.r + 2 };
+
+    /* Portraits shrink with the Crew, so a deep one stays compact instead of
+       demanding a bigger ring for every extra Fighter. */
+    const smax = k <= PER_SHELL ? SAT_MAX
+               : Math.max(12, Math.round(SAT_MAX * Math.sqrt(PER_SHELL / k)));
+
+    /* Spread as evenly as possible over as few shells as will hold them. */
+    const nShell = Math.ceil(k / PER_SHELL);
+    const counts = [];
+    let left = k;
+    for (let i = 0; i < nShell; i++) {
+      const n = Math.ceil(left / (nShell - i));
+      counts.push(n);
+      left -= n;
+    }
+
+    /* Each shell has to clear the one inside it AND be long enough to hold
+       its own portraits side by side along CREW_SPAN. */
+    const shells = [];
+    let prev = node.r;
+    counts.forEach(n => {
+      const arc = n > 1 ? (2 * smax * (n - 1)) / CREW_SPAN : 0;
+      const r   = Math.max(prev + 6 + smax, arc);
+      shells.push({ n: n, r: r });
+      prev = r + smax;
+    });
+
+    return {
+      busiest: busiest, smax: smax,
+      shown: k, hidden: total - k, shells: shells,
+      outer: shells[shells.length - 1].r + smax + 2,
+    };
   }
 
   /*
@@ -285,11 +329,17 @@
      * reliably has to itself.
      */
     const mid = p.ang;                        // the outward direction
-    n.fighters.forEach((f, i) => {
-      const t0 = n.fighters.length === 1 ? 0.5 : i / (n.fighters.length - 1);
-      const a  = mid - CREW_SPAN / 2 + t0 * CREW_SPAN;
-      const fr = satR(f, p.g.busiest);
-      const cx = hub.x + Math.cos(a) * p.g.ring, cy = hub.y + Math.sin(a) * p.g.ring;
+    /* Shell by shell, busiest Fighters on the inner arc where they sit closest
+       to their owner. n.fighters arrives sorted by battles from the server. */
+    let fi = 0;
+    p.g.shells.forEach(shell => {
+      for (let j = 0; j < shell.n; j++, fi++) {
+        const f = n.fighters[fi];
+        if (!f) break;
+        const t0 = shell.n === 1 ? 0.5 : j / (shell.n - 1);
+        const a  = mid - CREW_SPAN / 2 + t0 * CREW_SPAN;
+        const fr = satR(f, p.g.busiest, p.g.smax);
+        const cx = hub.x + Math.cos(a) * shell.r, cy = hub.y + Math.sin(a) * shell.r;
 
       const sg = svgEl('g', {});
       sg.setAttribute('class', 'riv-sat');
@@ -348,6 +398,7 @@
         + (f.fell ? ', knocked out ' + f.fell + '\u00d7' : ', never knocked out');
       sg.appendChild(t);
       g.appendChild(sg);
+      }
     });
 
     /* The hub: a ring that says which way this player leans, then the avatar. */
@@ -397,13 +448,21 @@
       x: LX.toFixed(1), y: (LY + 12).toFixed(1), 'text-anchor': anchor,
       fill: hexToRgba(col, 0.85), 'font-size': 9.5, 'font-family': 'Arial, sans-serif',
     });
-    sub.textContent = `${n.battles} battle${n.battles === 1 ? '' : 's'} · ${n.wins}W ${n.losses}L`;
+    /* A CAPPED CREW SAYS SO. Without this a player who has fielded 25
+       Fighters looks like one who has fielded 12, which is a quieter lie
+       than it sounds: the size of the roster is the interesting thing
+       about them. */
+    sub.textContent = `${n.battles} battle${n.battles === 1 ? '' : 's'} · ${n.wins}W ${n.losses}L`
+      + (p.g.hidden ? ` · +${p.g.hidden} more` : '');
     g.appendChild(sub);
 
     const t = svgEl('title', {});
     t.textContent = `${n.name} \u00b7 ${n.battles} battles in the last ${D.days} days: `
       + `${n.att} attacking, ${n.def} defending. ${n.wins}W ${n.losses}L.`
-      + (n.fighters.length ? ` ${n.fighters.length} Fighter${n.fighters.length === 1 ? '' : 's'} fielded.` : '');
+      + (n.fighters.length
+          ? ` ${n.fighters.length} Fighter${n.fighters.length === 1 ? '' : 's'} fielded`
+            + (p.g.hidden ? `, the ${p.g.shown} most-used shown.` : '.')
+          : '');
     g.appendChild(t);
     svg.appendChild(g);
   });

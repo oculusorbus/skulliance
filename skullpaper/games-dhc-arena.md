@@ -457,7 +457,7 @@ being popular.
 
 The ladder says who is winning. **Rivalries** says who is fighting whom.
 
-It has **its own page**, linked from the Arena. Every player who has settled a
+It has **its own tab**, next to DHC Arena under Play. Every player who has settled a
 battle in the window stands on a ring: their avatar, the Fighters they have
 been fielding drawn around them as portraits, and lines across the middle to
 everyone they have fought.
@@ -481,6 +481,12 @@ Hover a Fighter for its battles, how they split between attacking and
 defending, the damage it has dealt and how often it has been knocked out.
 
 The window is **30 days** by default, with 7 and 90 available on the page.
+
+**At most 12 Fighters are drawn per player**, the ones fielded most, and the
+label says how many more there are. Somebody who has fielded twenty-five
+different Fighters in a month is telling you about their collection rather
+than about who they fight with, and two dozen portraits around one avatar
+pushed every other cluster out of shape.
 
 Sizes go by **area, not radius**. A player with ten battles is not drawn ten
 times the size of one with a single battle, because that is not what the eye

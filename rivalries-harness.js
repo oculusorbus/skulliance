@@ -79,6 +79,22 @@ function draw(layout) {
   return host;
 }
 
+console.log('-- the page and the renderer agree on the Crew cap --');
+/* rivalries.php states the number in its own copy and sends it to the
+   renderer; rivalries.js keeps a fallback in case the page did not. Two
+   independent 12s would disagree the first time either was tuned. */
+{
+  const php = fs.readFileSync(path.join(__dirname, 'rivalries.php'), 'utf8');
+  const js  = fs.readFileSync(path.join(__dirname, 'rivalries.js'), 'utf8');
+  const mP = php.match(/define\('RIV_CREW_SHOWN',\s*(\d+)\)/);
+  const mJ = js.match(/const CREW_MAX = window\.RIVALRY_CREW_MAX \|\| (\d+)/);
+  ok(!!mP, 'rivalries.php defines RIV_CREW_SHOWN');
+  ok(!!mJ, 'rivalries.js reads window.RIVALRY_CREW_MAX with a fallback');
+  ok(mP && mJ && mP[1] === mJ[1],
+     `the page's cap and the renderer's fallback match (${mP && mP[1]} / ${mJ && mJ[1]})`);
+  ok(php.indexOf('window.RIVALRY_CREW_MAX') > -1, 'and the page actually sends it');
+}
+
 console.log('-- the busy graph --');
 const L = LAYOUTS.busy;
 const host = draw(L);
@@ -273,14 +289,24 @@ for (const id of Object.keys(L.nodes)) {
    * big enough to hold six portraits side by side, so the cluster grows its
    * ring until they fit -- which is invisible until you count the gaps.
    */
+  /* EVERY PAIR, not just consecutive ones. Once a deep Crew stacks into a
+     second shell, "the next portrait" may be the one directly outward rather
+     than the one beside it, and a consecutive-only check stops describing
+     the thing it was written to catch. */
   const discs = all(cl).filter(e => e._class.includes('riv-sat')).map(satDisc);
-  for (let i = 1; i < discs.length; i++) {
-    const a = discs[i - 1], b = discs[i];
-    const gap = Math.hypot(parseFloat(a.attrs.cx) - parseFloat(b.attrs.cx),
-                           parseFloat(a.attrs.cy) - parseFloat(b.attrs.cy));
-    const need = parseFloat(a.attrs.r) + parseFloat(b.attrs.r);
-    ok(gap >= need - 0.5,
-       `    portraits ${i - 1} and ${i} do not overlap (${gap.toFixed(0)} >= ${need})`);
+  let tight = Infinity, tightPair = null;
+  for (let i = 0; i < discs.length; i++) {
+    for (let j = i + 1; j < discs.length; j++) {
+      const a = discs[i], b = discs[j];
+      const slack = Math.hypot(parseFloat(a.attrs.cx) - parseFloat(b.attrs.cx),
+                               parseFloat(a.attrs.cy) - parseFloat(b.attrs.cy))
+                  - (parseFloat(a.attrs.r) + parseFloat(b.attrs.r));
+      if (slack < tight) { tight = slack; tightPair = [i, j]; }
+    }
+  }
+  if (discs.length > 1) {
+    ok(tight >= -0.5,
+       `    no two portraits overlap (tightest ${tightPair} with ${tight.toFixed(0)}px)`);
   }
 }
 
@@ -513,6 +539,55 @@ console.log('\n-- ten players, the scale the Arena actually runs at --');
   }
   ok(all(sv).filter(e => e.tagName === 'line').length === CL.pairs.length,
      'every grudge is drawn at this scale too');
+
+  /*
+   * THE DEEP ROSTER, which is what broke the live map.
+   *
+   * Player1 has fielded 25 Fighters. Laid along one arc at full size that
+   * wanted a ring over 500px, so the cluster swept a third of the canvas and
+   * dragged every other cluster's spacing out with it. Three things keep it
+   * in its lane and all three are checked: the count drawn is capped, the
+   * portraits shrink, and the overflow stacks into a second arc rather than
+   * stretching the first further round.
+   */
+  {
+    const deep = CL.nodes['1'];
+    ok(deep.fighters.length === 25, `the fixture really has a 25-Fighter roster (${deep.fighters.length})`);
+    const c1 = cs.find(c => c.getAttribute('data-id') === '1');
+    const ds = all(c1).filter(e => e._class.includes('riv-sat')).map(satDisc);
+    ok(ds.length < deep.fighters.length, `not all 25 are drawn (${ds.length})`);
+    ok(ds.length >= 8, `but enough to be worth looking at (${ds.length})`);
+
+    /* The portraits shrank rather than the ring growing. */
+    const biggest = Math.max.apply(null, ds.map(d => parseFloat(d.attrs.r)));
+    const small = cs.find(c => c.getAttribute('data-id') === '2');
+    const sds = all(small).filter(e => e._class.includes('riv-sat')).map(satDisc);
+    const sBiggest = Math.max.apply(null, sds.map(d => parseFloat(d.attrs.r)));
+    ok(biggest < sBiggest,
+       `a deep Crew draws smaller portraits than a shallow one (${biggest} < ${sBiggest})`);
+
+    /* They stacked outward: more than one distinct distance from the hub. */
+    const e1 = ext['1'];
+    const rings = new Set(ds.map(d => Math.round(
+      Math.hypot(parseFloat(d.attrs.cx) - e1.x, parseFloat(d.attrs.cy) - e1.y))));
+    ok(rings.size >= 2, `the Crew stacks into shells, not one long arc (${rings.size} shells)`);
+
+    /* AND THE CLUSTER STAYS A REASONABLE SIZE. This is the actual symptom:
+       one roster must not set the scale of the whole map. */
+    const others = eids.filter(id => id !== '1').map(id => ext[id].reach);
+    const typical = others.reduce((t, r) => t + r, 0) / others.length;
+    ok(e1.reach < typical * 2.2,
+       `the deep cluster is not wildly bigger than the rest (${e1.reach.toFixed(0)} vs ${typical.toFixed(0)} typical)`);
+
+    /* Nothing is silently dropped: the label admits the overflow. */
+    const subs = all(c1).filter(e => e.tagName === 'text').map(e => e.textContent);
+    ok(subs.some(t => /\+\d+ more/.test(t)), `the label says how many are not shown (${subs.join(' | ')})`);
+    const hidden = deep.fighters.length - ds.length;
+    ok(subs.some(t => t.includes('+' + hidden + ' more')), `and the number is right (+${hidden})`);
+    /* A player whose Crew fits says nothing about overflow. */
+    const subs2 = all(small).filter(e => e.tagName === 'text').map(e => e.textContent);
+    ok(!subs2.some(t => /more/.test(t)), 'a Crew that fits carries no "+N more"');
+  }
 
   /*
    * LABELS LIVE OUTSIDE EVERY CLUSTER, including other people's. A username

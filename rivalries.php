@@ -40,6 +40,16 @@ require_once __DIR__ . '/dhcarena-engine.php';
 require_once __DIR__ . '/dhcarena-lib.php';      // dhca_rivalries() and friends
 require_once __DIR__ . '/dhc-type.php';          // one typeface for every DHC surface
 
+/*
+ * How many Fighters are drawn around a player. DEFINED HERE AND SENT TO THE
+ * RENDERER, rather than written out in both languages: the page says the
+ * number in its own copy and rivalries.js lays out exactly that many, and two
+ * independent 12s would disagree the first time one of them was tuned.
+ * rivalries.js keeps a fallback for the same reason ARM_SPLIT does, and
+ * rivalries-harness.js fails if the fallback and this drift apart.
+ */
+if (!defined('RIV_CREW_SHOWN')) define('RIV_CREW_SHOWN', 12);
+
 $riv_user = $riv_guest ? 0 : (int)(isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0);
 
 /* ?days= so a quiet month can be widened without a deploy. Bounded: a year is
@@ -154,6 +164,8 @@ include 'header.php';
       the Fighters around it are the Crew they have been fielding, each sized by
       how often. A thicker line is a deeper grudge. Hover anyone to pick their
       rivalries out of the rest, or hover a Fighter for its record.
+      Up to <?php echo (int)RIV_CREW_SHOWN; ?> Fighters are drawn per player,
+      the ones fielded most.
     </p>
 
     <div class="riv-bar">
@@ -219,6 +231,7 @@ window.RIVALRY_DATA = <?php
                           | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES);
 ?>;
 window.RIVALRY_ARM_SPLIT = <?php echo (int)DHCF_ONE_ARM_SPLIT; ?>;
+window.RIVALRY_CREW_MAX  = <?php echo (int)RIV_CREW_SHOWN; ?>;
 </script>
 <script src="map-kit.js?var=<?php echo rand(0,999); ?>"></script>
 <script src="rivalries.js?var=<?php echo rand(0,999); ?>"></script>

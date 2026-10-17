@@ -110,8 +110,16 @@ for ($i = 1; $i <= 10; $i++) {
 	$att = 30 - $i * 2; $def = 4 + $i;
 	$cp[$i] = fx_player($i, 'Player' . $i, $att, $def, (int)(($att + $def) * 0.5), (int)(($att + $def) * 0.5));
 	$cf[$i] = array();
-	/* Crews of 3 to 6, so cluster sizes differ and the ring has to cope. */
-	for ($j = 0; $j < 3 + ($i % 4); $j++) {
+	/*
+	 * Crews of 3 to 6 -- EXCEPT PLAYER 1, who has fielded 25 different
+	 * Fighters. That is a real shape: one player on the live map had a roster
+	 * that deep, and laying 25 portraits along an arc demanded a ring over
+	 * 500px wide, which swept a third of the canvas and dragged every other
+	 * cluster's spacing out with it. The cap, the shrink and the shells all
+	 * exist for this row.
+	 */
+	$crew = ($i === 1) ? 25 : 3 + ($i % 4);
+	for ($j = 0; $j < $crew; $j++) {
 		$cf[$i][] = fx_fighter(1000 + $i * 10 + $j, "F{$i}_{$j}", 12 - $j, 8 - $j, 4,
 		                       $j % 2, 300 - $j * 20, $j === 0 ? 'right' : '');
 	}
