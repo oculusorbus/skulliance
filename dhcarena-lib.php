@@ -507,8 +507,26 @@ function dhca_start($conn, $user_id, $defender_id, $fighter_ids) {
 		array_map(function($f){ return $f['traits']; }, $foes),
 		$names, $rarity, $seed);
 
+	/*
+	 * WHO YOU FOUGHT, carried in the state rather than looked up again.
+	 *
+	 * The share text named nobody -- "Swept the DHC Arena" reads the same
+	 * whoever was on the other side, which is most of what made it dull.
+	 * The client knows the rival it clicked, but not after a resume, so the
+	 * name belongs in the battle rather than in the page that started it.
+	 *
+	 * The USERNAME, which is a Discord username. The platform stores no X
+	 * handle for anybody, so this is named in words and never @-tagged --
+	 * an @ in front of it would tag whichever stranger holds that name on
+	 * X. Same rule dhc-fighter-modal.php follows for a Fighter's builder.
+	 */
+	$dname = '';
+	$dq = $conn->query("SELECT username FROM users WHERE id = " . (int)$defender_id . " LIMIT 1");
+	if ($dq && ($drow = $dq->fetch_assoc())) $dname = (string)$drow['username'];
+
 	$b['meta'] = array(
 		'attacker'=>$user_id, 'defender'=>$defender_id,
+		'defenderName'=>$dname,
 		'mineIds'=>array_map(function($f){ return (int)$f['id']; }, $mine),
 		'foeIds' =>array_map(function($f){ return (int)$f['id']; }, $foes),
 		'moves'=>array(),

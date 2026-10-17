@@ -2618,17 +2618,51 @@ function sendMove(a, z){
  */
 function shareLink(won, standing){
   var el = $('ecShare'); if (!el) return;
+
+  /*
+   * WHO, NOT JUST WHAT. "Swept the DHC Arena" read identically whoever was
+   * on the other side and whoever did it -- so the post named no opponent,
+   * no Fighter, and gave a reader nothing to be curious about.
+   *
+   * NAMED IN WORDS, NEVER @-TAGGED. S.meta.defenderName is a Discord
+   * username; the platform stores no X handle for anybody, so an @ would
+   * tag whichever stranger holds that name over there. dhc-fighter-modal.php
+   * credits a Fighter's builder the same way and for the same reason.
+   */
+  var foe = (S && S.meta && S.meta.defenderName) ? String(S.meta.defenderName) : '';
+  var vs  = foe ? foe + "'s Crew" : 'a real opponent';
+
+  /* The Fighters that did it, by first name -- the same shorthand the end
+     card uses, so the post matches the screen it was shared from. */
+  var heroes = (S && S[won ? 'mine' : 'foes'] || []).filter(function (f) { return !f.ko; })
+                 .map(function (f) { return f.name.split(' ')[0]; });
+
   var body;
   if (won) {
     body = standing === 3
-      ? 'Swept the DHC Arena — took their whole Crew down without losing a Fighter.'
-      : 'Won in the DHC Arena with ' + standing + ' Fighter' + (standing===1?'':'s') + ' still standing.';
+      ? 'Swept ' + vs + ' in the DHC Arena - their whole Crew down, and I did not lose a Fighter.'
+      : 'Beat ' + vs + ' in the DHC Arena with ' + standing + ' Fighter'
+        + (standing === 1 ? '' : 's') + ' still standing.';
+    if (heroes.length && standing < 3) body += ' ' + heroes.join(' and ') + ' held the line.';
   } else {
-    body = 'My Crew went down in the DHC Arena. Going again.';
+    body = 'My Crew went down to ' + vs + ' in the DHC Arena. Going again.';
   }
   if (S && S.stats && S.stats.best > 1) body += ' Best chain x' + S.stats.best + '.';
-  if (practice) body += ' (Practice)';
-  var tail = '\n\n@skulliance';
+  /* IN FRONT, because the budget trims from the END. Appended, a long
+     opponent name could push "(Practice)" off the post and leave a practice
+     result reading as a ranked one. */
+  if (practice) body = '(Practice) ' + body;
+
+  /*
+   * THE TAIL INVITES AND THEN CREDITS, the same one the Collection share
+   * carries. A bare @skulliance says who made the thing and nothing about
+   * why a stranger should turn up, and none of this exists without
+   * Maxingo's art -- a post going out uncredited is the wrong default.
+   */
+  var tail = '\n\nJoin @skulliance and battle other players in the Arena, free and in any browser.'
+           + '\n\nArt by @MMAXI404';
+  /* X counts ANY url as 23 characters and cuts the overflow off the END,
+     which is where the invitation and the credit live. Budget for it. */
   var limit = 280 - 24 - tail.length;
   if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '…';
   el.href = 'https://x.com/intent/post?text=' + encodeURIComponent(body + tail)

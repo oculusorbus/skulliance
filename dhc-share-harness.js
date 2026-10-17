@@ -706,5 +706,77 @@ console.log('\nthe drop modal shares the trait, not a screenshot of it');
 	   'Share on X navigates the game page away, or opens without rel="noopener"');
 }
 
+console.log('\nthe Arena share says who you beat');
+{
+	/*
+	 * THE FOURTH SHARE BUTTON. It posted "Swept the DHC Arena - took their
+	 * whole Crew down without losing a Fighter", which reads identically
+	 * whoever was on the other side and whoever did it: no opponent, no
+	 * Fighter, and a bare @skulliance tail. A player hand-wrote their own
+	 * post instead, which is the clearest possible verdict on it.
+	 */
+	const arena = fs.readFileSync(path.join(__dirname, 'dhcarena.php'), 'utf8');
+	const a = arena.indexOf('function shareLink(won, standing){');
+	const b = arena.indexOf('\n}', arena.indexOf('&url=', a)) + 2;
+	ok(a > -1 && b > a, 'shareLink() is gone from dhcarena.php');
+	const src = arena.slice(a, b);
+
+	const post = (S, won, standing, practice) => {
+		let href = '';
+		const ctx = { $: () => ({ set href(v) { href = v; } }), practice: !!practice, S,
+		              encodeURIComponent };
+		vm.createContext(ctx);
+		vm.runInContext(src, ctx);
+		ctx.shareLink(won, standing);
+		return decodeURIComponent(href.split('text=')[1].split('&url=')[0]);
+	};
+	const crew = (alive) => Array.from({ length: 3 },
+		(_, i) => ({ name: 'Fighter' + i + ' Surname', ko: i >= alive }));
+	const S = (over) => Object.assign({ meta: { defenderName: 'Ohh Meed' },
+		mine: crew(2), foes: crew(0), stats: { best: 4 } }, over || {});
+
+	const win = post(S(), true, 2);
+	ok(/Ohh Meed's Crew/.test(win), 'the post does not name who was beaten: ' + win);
+	ok(/Fighter0 and Fighter1/.test(win), 'the post does not name the Fighters that won it');
+	ok(/Best chain x4/.test(win), 'the chain is gone from the post');
+	ok(fits(win), 'the post is ' + win.length + ' characters plus a url');
+
+	/* NAMED, NEVER @-TAGGED: that is a Discord username and the platform
+	   stores no X handle for anybody, so an @ would tag a stranger. */
+	ok(!/@Ohh ?Meed/i.test(win), 'the opponent is @-tagged; that is a Discord name, not an X handle');
+
+	const sweep = post(S(), true, 3);
+	ok(/Swept Ohh Meed's Crew/.test(sweep), 'a sweep does not name the opponent: ' + sweep);
+	const loss = post(S(), false, 2);
+	ok(/went down to Ohh Meed's Crew/.test(loss), 'a loss does not name who did it: ' + loss);
+
+	/* A battle resumed before defenderName existed, or a practice run with
+	   no defender, must still produce a sentence. */
+	const anon = post(S({ meta: {} }), true, 2);
+	ok(!/undefined|null|'s Crew in the DHC Arena with/.test(anon.slice(0, 20)),
+	   'a missing opponent name leaks into the post: ' + anon);
+	ok(/a real opponent/.test(anon), 'there is no fallback when the opponent is unknown');
+
+	/* The tail invites and credits, like the other three. */
+	ok(/Join @skulliance/.test(win), 'the post no longer invites anyone to play');
+	ok(/Art by @MMAXI404$/.test(win), 'the post goes out uncredited');
+
+	/*
+	 * AND THE BUDGET. A username is content, not a constant -- it is
+	 * whatever somebody typed into Discord -- so a long one must trim the
+	 * sentence rather than the invitation and the credit off the end.
+	 */
+	const long = post(S({ meta: { defenderName: 'x'.repeat(90) } }), true, 2);
+	ok(fits(long), 'a long opponent name pushes the post to ' + long.length + ' characters');
+	ok(/Art by @MMAXI404$/.test(long), 'the trim ate the credit instead of the sentence');
+
+	/* "(Practice)" goes in FRONT, because the trim takes from the end: a
+	   long name could otherwise drop it and leave a practice result
+	   reading as a ranked one. */
+	const prac = post(S({ meta: { defenderName: 'x'.repeat(90) } }), true, 2, true);
+	ok(prac.indexOf('(Practice)') === 0,
+	   'the practice marker is not at the front, so a long name can truncate it away');
+}
+
 console.log('\n' + (fail ? fail + ' FAILED\n' : 'all good\n'));
 process.exit(fail ? 1 : 0);
