@@ -282,5 +282,35 @@ foreach ($um as $u) {
 ok(!$orphans, 'no token is used without either being declared here or carrying a fallback'
    . ($orphans ? ' (' . implode(', ', array_keys($orphans)) . ')' : ''));
 
+echo "\n-- the map is bounded on both axes --\n";
+/*
+ * MEASURED IN A BROWSER, PINNED HERE. At 2560x1323 the map renders 1243x993
+ * inside a full-width column, centred with equal gutters, and the page does
+ * not scroll. That came from three attempts: a fixed-size box that scrolled
+ * sideways, then width:100% which filled the column and ran off the bottom of
+ * a large display, and finally bounds on both axes with the viewBox free to
+ * scale between them.
+ *
+ * This cannot re-measure a layout without a browser, so it guards the shape
+ * of the rule instead -- the regression it exists for is somebody restoring
+ * width:100%, which silently reintroduces the overflow.
+ */
+$mapRule = '';
+if (preg_match('/\.riv-map svg\{([^}]*)\}/', $css, $mm)) $mapRule = $mm[1];
+ok($mapRule !== '', 'the map rule is there to check');
+ok(strpos($mapRule, 'max-width') !== false,  'it is bounded horizontally');
+ok(strpos($mapRule, 'max-height') !== false, 'and vertically, so it fits the window');
+ok(!preg_match('/(^|;)\s*width\s*:\s*100%/', $mapRule),
+   'and does NOT force width:100%, which is what made it overflow the screen');
+ok(preg_match('/(^|;)\s*width\s*:\s*auto/', $mapRule)
+   && preg_match('/(^|;)\s*height\s*:\s*auto/', $mapRule),
+   'both axes are auto, so the viewBox scales to whichever bound bites first');
+/* Centring moved to the flex container: margin:auto only centres a block
+   whose width is resolved, and this one's deliberately is not. */
+$boxRule = '';
+if (preg_match('/\.riv-map\{([^}]*)\}/', $css, $bm)) $boxRule = $bm[1];
+ok(strpos($boxRule, 'justify-content:center') !== false, 'the container centres it');
+ok(strpos($boxRule, 'display:flex') !== false, '...as a flex row, not with margin:auto');
+
 echo "\n" . ($fails ? "$fails FAILED\n" : "all passed\n");
 exit($fails ? 1 : 0);

@@ -107,34 +107,60 @@ include 'header.php';
   --ink:#07111d;--panel:#0a1929;--line:#1b3346;--dim:#7a9eb0;--ochre:#00c8a0;
   --blood:#e0466b;--bone:#e8eaed}
 .riv-wrap h1{font-family:"Archivo Black",Impact,sans-serif;font-weight:400;margin:0;font-size:22px}
-.riv-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;margin:0 0 6px}
-.riv-head .sub{font-size:12px;opacity:.65}
-.riv-intro{font-size:11.5px;opacity:.7;margin:0 0 14px;max-width:80ch;line-height:1.6}
+/*
+ * ONE HEADER ROW. The title, the blurb and the window buttons were three
+ * stacked blocks, and the blurb was capped at 80ch -- a sensible measure for
+ * a column of prose and the wrong one here, because it wrapped to five lines
+ * down the left while two thirds of a wide screen sat empty beside it. Five
+ * lines of chrome is five lines the map does not get.
+ *
+ * Side by side they take one line on a wide screen and still stack on a
+ * narrow one, since the row wraps and the blurb has a flex-basis it will not
+ * squeeze below.
+ */
+.riv-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 24px;margin:0 0 10px}
+.riv-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;flex:0 0 auto}
+.riv-head .sub{font-size:12px;opacity:.65;white-space:nowrap}
+.riv-intro{font-size:11.5px;opacity:.7;margin:0;line-height:1.6;flex:1 1 420px;min-width:0}
 .riv-intro b{opacity:1;color:var(--bone)}
-.riv-bar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px;align-items:center}
+.riv-bar{display:flex;flex-wrap:wrap;gap:6px;margin:0;align-items:center;flex:0 0 auto}
 .riv-bar .lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;margin-right:2px}
 .riv-bar a{font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;
   color:var(--dim);border:1px solid var(--line);padding:4px 9px;border-radius:3px}
 .riv-bar a:hover{border-color:var(--ochre);color:var(--ochre)}
 .riv-bar a.on{border-color:var(--ochre);color:var(--ink);background:var(--ochre)}
 /*
- * THE MAP FITS THE WIDTH AND THE PAGE GETS TALLER. It used to keep its
- * natural size inside a scrolling box capped at 82vh, which meant a sideways
- * scrollbar, a map pinned to the left of a wide screen, and only ever a
- * window onto the graph.
+ * THE MAP FITS THE SCREEN, ON BOTH AXES, AND STAYS CENTRED.
  *
- * The SVG carries a viewBox, so width:100% and height:auto scale the whole
- * thing to the column and let it run as tall as it needs -- the ring is
- * roughly square, so on a wide screen the page simply becomes long. That is
- * the right trade for a graph: scrolling DOWN past a map you can see all of
- * beats scrolling ACROSS one you can only ever see part of.
+ * Three attempts got here. First it kept its natural size inside a box capped
+ * at 82vh and scrolled: a sideways scrollbar, the map pinned to the left of a
+ * wide screen, and only ever a window onto the graph. Then it was told to
+ * fill the column -- width:100% -- which fixed the pinning and the sideways
+ * scroll, but on a large display the column is nearly two thousand pixels, so
+ * the map grew to match and ran off the bottom instead.
  *
- * overflow-x stays as a safety net for a viewport narrower than the SVG can
- * usefully shrink to; at these widths it should never engage.
+ * A graph wants to be seen whole. So it is bounded on BOTH axes and allowed
+ * to find its own size between them: max-width keeps it inside the column,
+ * max-height keeps it inside the window, width/height:auto let the viewBox
+ * scale it down to satisfy whichever bites first, and the aspect ratio is
+ * preserved either way. It never scales UP past its natural size, because
+ * enlarging a 1500px drawing to fill a 2000px column only makes the type
+ * coarse.
+ *
+ * The subtraction in max-height is the page above and below it -- navbar, DHC
+ * strip, heading, blurb, the window buttons and the legend. The max() floor
+ * stops a short window from squeezing the map into a stamp; below that it is
+ * better to scroll.
+ *
+ * Centred by the flex container rather than by margin:auto, which only
+ * centres a block whose width is resolved -- and this one's is deliberately
+ * not.
  */
-.riv-map{overflow-x:auto;background:#050c14;border:1px solid var(--line);border-radius:4px;
+.riv-map{display:flex;justify-content:center;align-items:flex-start;
+  overflow:auto;background:#050c14;border:1px solid var(--line);border-radius:4px;
   padding:8px;-webkit-overflow-scrolling:touch}
-.riv-map svg{display:block;width:100%;height:auto;max-width:none;margin:0 auto}
+.riv-map svg{display:block;width:auto;height:auto;
+  max-width:100%;max-height:max(420px, calc(100vh - 330px))}
 .riv-key{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0;
   font-size:9.5px;letter-spacing:.06em;color:var(--dim)}
 .riv-key span{display:flex;align-items:center;gap:6px}
@@ -161,12 +187,14 @@ include 'header.php';
 
 <div class="riv-wrap">
   <?php $dhcnav_at = 'rivalries'; $dhcnav_guest = $riv_guest; include 'dhc-nav.php'; ?>
-  <div class="riv-head">
-    <h1>Rivalries</h1>
-    <span class="sub">DHC Arena &middot; last <?php echo (int)$riv_days; ?> days</span>
-  </div>
-
+  <?php /* Title, blurb and window buttons share ONE row -- see .riv-top. */ ?>
+  <div class="riv-top">
+    <div class="riv-head">
+      <h1>Rivalries</h1>
+      <span class="sub">DHC Arena &middot; last <?php echo (int)$riv_days; ?> days</span>
+    </div>
   <?php if (!$riv_n): ?>
+  </div>
     <div class="riv-empty">
       No settled battles in the last <?php echo (int)$riv_days; ?> days.
       <a href="dhcarena.php">Fight someone</a> and the map draws itself.
@@ -176,12 +204,10 @@ include 'header.php';
       <b><?php echo number_format((int)$rivlay['battles']); ?></b>
       settled battle<?php echo $rivlay['battles'] === 1 ? '' : 's'; ?> between
       <b><?php echo number_format($riv_n); ?></b>
-      player<?php echo $riv_n === 1 ? '' : 's'; ?>. A bigger avatar has fought more;
-      the Fighters around it are the Crew they have been fielding, each sized by
-      how often. A thicker line is a deeper grudge. Hover anyone to pick their
-      rivalries out of the rest, or hover a Fighter for its record.
-      Up to <?php echo (int)RIV_CREW_SHOWN; ?> Fighters are drawn per player,
-      the ones fielded most.
+      player<?php echo $riv_n === 1 ? '' : 's'; ?>. Bigger avatars have fought more,
+      and the Fighters beside them are the Crew they field, each sized by how
+      often. Hover anyone to pick out their rivalries, or a Fighter for its
+      record. Up to <?php echo (int)RIV_CREW_SHOWN; ?> Fighters per player.
     </p>
 
     <div class="riv-bar">
@@ -192,6 +218,7 @@ include 'header.php';
            echo $lbl; ?></a>
       <?php endforeach; ?>
     </div>
+  </div>
 
     <div id="riv-map" class="riv-map"></div>
 
