@@ -334,5 +334,70 @@ ok($z < $fzi, "and the player panel sits below it ($z < $fzi), so a Fighter open
 ok(strpos($veil, 'safe-area-inset-top') !== false,
    'and it pads for the safe area, as the Fighter panel does');
 
+echo "\n-- the two maps animate at the same rates --\n";
+/*
+ * COHESION IS THE REQUIREMENT, so it is the thing tested. The rivalry map
+ * borrows the realm map's four animations, and the point is defeated the
+ * moment one of them is retuned on its own -- the two surfaces would still
+ * both move, just not together, which is harder to notice than it is to
+ * cause. This reads both stylesheets and compares.
+ */
+$realm = file_get_contents(__DIR__ . '/dist/map.css');
+ok($realm !== '', 'the realm map stylesheet is readable');
+
+/** Pull the duration and the timing function out of a named rule. */
+function riv_anim($css, $sel) {
+	if (!preg_match('/' . preg_quote($sel, '/') . '\s*\{([^}]*)\}/', $css, $m)) return null;
+	if (!preg_match('/animation:\s*([a-z-]+)\s+([\d.]+)s\s+([a-z-]+)/', $m[1], $a)) return null;
+	return array('name' => $a[1], 'secs' => (float)$a[2], 'ease' => $a[3]);
+}
+/** And the from/to opacities of a named keyframes block. */
+function riv_frames($css, $name) {
+	if (!preg_match('/@keyframes\s+' . preg_quote($name, '/') . '\s*\{((?:[^{}]|\{[^}]*\})*)\}/', $css, $m)) return null;
+	preg_match_all('/opacity:\s*([\d.]+)/', $m[1], $o);
+	$v = array_map('floatval', $o[1]);
+	if (!$v) {
+		preg_match('/stroke-dashoffset:\s*(-?\d+)/', $m[1], $d);
+		return $d ? array('dashoffset' => (int)$d[1]) : null;
+	}
+	sort($v);
+	return array('lo' => $v[0], 'hi' => $v[count($v) - 1]);
+}
+
+$pairs = array(
+	'lines at rest'   => array('.riv-map line.riv-line', '.raid-line',         'riv-pulse', 'raid-pulse'),
+	'lines on hover'  => array('.riv-map line.riv-march', '.raid-line-active', 'riv-march', 'raid-march'),
+	'a leaning player'=> array('.riv-ring-lean', '.marker-active-glow',        'riv-glow',  'marker-glow-pulse'),
+	'you'             => array('.riv-ring-me',   '.marker-own-glow',           'riv-own',   'marker-own-pulse'),
+);
+foreach ($pairs as $what => $pr) {
+	list($mineSel, $theirsSel, $mineKf, $theirsKf) = $pr;
+	$a = riv_anim($css, $mineSel);
+	$b = riv_anim($realm, $theirsSel);
+	ok($a !== null, "$what: the rivalry rule is there ($mineSel)");
+	ok($b !== null, "$what: the realm rule is there ($theirsSel)");
+	if (!$a || !$b) continue;
+	ok(abs($a['secs'] - $b['secs']) < 0.001,
+	   "  $what runs for the same time ({$a['secs']}s vs {$b['secs']}s)");
+	ok($a['ease'] === $b['ease'], "  and on the same curve ({$a['ease']})");
+	$fa = riv_frames($css, $mineKf);
+	$fb = riv_frames($realm, $theirsKf);
+	ok($fa !== null && $fb !== null, "  both keyframes are readable");
+	if ($fa && $fb) ok($fa == $fb, "  over the same range (" . json_encode($fa) . ")");
+}
+/* Your pulse must be the slower one, on both maps -- that is what makes it
+   findable rather than just another moving thing. */
+$me   = riv_anim($css, '.riv-ring-me');
+$lean = riv_anim($css, '.riv-ring-lean');
+ok($me && $lean && $me['secs'] > $lean['secs'],
+   'your own pulse is slower than a leaning player\'s, as on the realm map');
+$rme   = riv_anim($realm, '.marker-own-glow');
+$rlean = riv_anim($realm, '.marker-active-glow');
+ok($rme && $rlean && $rme['secs'] > $rlean['secs'], '...which is the relationship there too');
+
+/* And motion is optional on both. */
+ok(preg_match('/prefers-reduced-motion[^}]*\{[^@]*animation:\s*none/s', $css),
+   'reduced motion stops the animations, not just the transitions');
+
 echo "\n" . ($fails ? "$fails FAILED\n" : "all passed\n");
 exit($fails ? 1 : 0);

@@ -146,7 +146,7 @@ const rivSrc = fs.readFileSync(path.join(__dirname, 'rivalries.js'), 'utf8');
  */
 const FIT = { top: 160, legend: 20, note: 44, winH: 900, pad: 14, box: 18, gap: 6,
               boxW: 1600, boxPadX: 8 };
-function draw(layout, winH, boxW) {
+function draw(layout, winH, boxW, me) {
   const host = makeEl('div');
   host.closest = () => null;
   host._top = FIT.top;
@@ -177,6 +177,7 @@ function draw(layout, winH, boxW) {
      have a window with a height and a way to listen for resizes. */
   global.window = {
     RIVALRY_DATA: layout,
+    RIVALRY_ME: me || 0,
     innerHeight: winH || FIT.winH,
     addEventListener() {},
     getComputedStyle(el) {
@@ -936,6 +937,94 @@ console.log('\n-- ten players, the scale the Arena actually runs at --');
       }
     }
   }
+}
+
+console.log('\n-- the map breathes, and marches where you point --');
+/*
+ * The same four animations the realm map runs, so the two feel like one
+ * platform. What is checked is the STATE MACHINE, not the timings: which
+ * class is on which element when, and in particular that a dimmed line
+ * carries neither -- a CSS animation beats an ordinary declaration, so a
+ * line still running the idle pulse animates its own opacity and the dim
+ * never lands.
+ */
+{
+  const ln0 = lineEls[0];
+  ok(ln0._class.split(/\s+/).includes('riv-line'),
+     'at rest every line carries the idling pulse');
+  ok(!ln0._class.split(/\s+/).includes('riv-march'), 'and not the marching one');
+
+  const lo = ln0.getAttribute('data-lo');
+  const cl0 = clusters.find(c => c.getAttribute('data-id') === lo);
+  cl0.fire('mouseenter');
+  const has = (e, c) => e._class.split(/\s+/).includes(c);
+  let connected = 0, dimmed = 0;
+  for (const ln of lineEls) {
+    const on = ln.getAttribute('data-lo') === lo || ln.getAttribute('data-hi') === lo;
+    if (on) {
+      connected++;
+      ok(has(ln, 'riv-march'), '  a line you are pointing at marches');
+      ok(!has(ln, 'riv-line'), '  and stops idling, or the two animations fight');
+      ok(has(ln, 'riv-on'), '  and is marked as lit');
+    } else {
+      dimmed++;
+      ok(!has(ln, 'riv-line') && !has(ln, 'riv-march'),
+         '  an unconnected line carries NEITHER, so the dim can actually apply');
+    }
+  }
+  ok(connected > 0 && dimmed > 0,
+     `the fixture has both connected and unconnected lines (${connected}/${dimmed})`);
+
+  cl0.fire('mouseleave');
+  ok(lineEls.every(l => has(l, 'riv-line')), 'leaving puts every line back to idling');
+  ok(lineEls.every(l => !has(l, 'riv-march')), 'and nothing is left marching');
+
+  /* The rings. A player who leans gets the 1.6s glow; the viewer gets the
+     slower 2s one, on a ring of its own so it shows even if they lean
+     neither way. */
+  const leaning = Object.keys(L.nodes).filter(id => L.nodes[id].lean);
+  ok(leaning.length > 0, 'the fixture has leaning players');
+  for (const id of leaning) {
+    const c = clusters.find(x => x.getAttribute('data-id') === id);
+    ok(all(c).some(e => has(e, 'riv-ring-lean')), `  ${L.nodes[id].name}'s ring pulses`);
+  }
+  for (const id of Object.keys(L.nodes)) {
+    if (L.nodes[id].lean) continue;
+    const c = clusters.find(x => x.getAttribute('data-id') === id);
+    ok(!all(c).some(e => has(e, 'riv-ring-lean')),
+       `  ${L.nodes[id].name} leans neither way and has no pulsing ring`);
+  }
+
+  /*
+   * AND THE VIEWER'S OWN AVATAR, which is the realm map's nicest touch: a
+   * slower, deeper pulse than anyone else's so you find yourself at a
+   * glance. A guest is nobody and must light up nothing.
+   */
+  const guest = draw(L);
+  ok(!all(guest.children[0]).some(e => has(e, 'riv-ring-me')),
+     'a guest sees nobody highlighted as themselves');
+
+  /* Someone who leans, so the two rings have to coexist. */
+  const meLean = Object.keys(L.nodes).find(id => L.nodes[id].lean);
+  const asMe = draw(L, undefined, undefined, meLean);
+  const mine = all(asMe.children[0]).filter(e => has(e, 'riv-ring-me'));
+  ok(mine.length === 1, `signed in, exactly one ring marks you (${mine.length})`);
+  const myCluster = asMe.children[0].querySelectorAll('.riv-cluster')
+    .find(c => c.getAttribute('data-id') === String(meLean));
+  ok(all(myCluster).some(e => has(e, 'riv-ring-me')), 'and it is on your own cluster');
+  ok(all(myCluster).some(e => has(e, 'riv-ring-lean')),
+     'alongside your lean ring, not replacing it');
+  const r1 = parseFloat(all(myCluster).find(e => has(e, 'riv-ring-lean')).attrs.r);
+  const r2 = parseFloat(all(myCluster).find(e => has(e, 'riv-ring-me')).attrs.r);
+  ok(r2 > r1, `with yours outside it so both are visible (${r2} > ${r1})`);
+
+  /* And for a player who leans neither way, the ring still appears. */
+  const meFlat = Object.keys(L.nodes).find(id => !L.nodes[id].lean);
+  const asFlat = draw(L, undefined, undefined, meFlat);
+  const flatCl = asFlat.children[0].querySelectorAll('.riv-cluster')
+    .find(c => c.getAttribute('data-id') === String(meFlat));
+  ok(all(flatCl).some(e => has(e, 'riv-ring-me')),
+     'you are marked even when you lean neither way');
 }
 
 console.log('\n-- clicking a Fighter opens the COLLECTION\'s panel --');

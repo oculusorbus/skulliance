@@ -26,6 +26,8 @@
   /* DHCF_ONE_ARM_SPLIT, inlined by the page: where a two-arm master is cut to
      make a one-sided arm. The same constant the Collection and assembler use. */
   const ARM_SPLIT = window.RIVALRY_ARM_SPLIT || 50;
+  /* Who is looking, so their own avatar can pulse. 0 for a guest. */
+  const ME = window.RIVALRY_ME || 0;
   const host = document.getElementById('riv-map');
   if (!host) return;
   if (!D || !D.nodes || !Object.keys(D.nodes).length) return;   // the panel's own empty state stands
@@ -416,6 +418,8 @@
       'marker-end':   pr.lohi > 0 ? `url(#${mk})`  : '',
       'marker-start': pr.hilo > 0 ? `url(#${mk}b)` : '',
     });
+    /* Breathing, like a raid line on the realm map and at the same rate. */
+    line.setAttribute('class', 'riv-line');
     line.setAttribute('data-lo', pr.lo);
     line.setAttribute('data-hi', pr.hi);
     const nm = (id) => (D.nodes[id] ? D.nodes[id].name : '?');
@@ -519,11 +523,28 @@
 
     /* The hub: a ring that says which way this player leans, then the avatar. */
     if (n.lean) {
-      g.appendChild(svgEl('circle', {
+      const ring = svgEl('circle', {
         cx: hub.x, cy: hub.y, r: n.r + 5, fill: 'none',
         stroke: n.lean === 'aggressor' ? 'rgba(224,70,107,.85)' : 'rgba(0,200,160,.85)',
         'stroke-width': 2, filter: 'url(#riv-glow)',
-      }));
+      });
+      ring.setAttribute('class', 'riv-ring-lean');
+      g.appendChild(ring);
+    }
+    /*
+     * AND YOURS PULSES DIFFERENTLY. The realm map gives your own realm a
+     * slower, deeper pulse than an active raider's, so you can find yourself
+     * on a crowded map at a glance. Same here, same timings -- and a ring of
+     * its own rather than reusing the lean one, because you may lean neither
+     * way and should still be findable.
+     */
+    if (ME && String(ME) === String(p.id)) {
+      const me = svgEl('circle', {
+        cx: hub.x, cy: hub.y, r: n.r + (n.lean ? 9 : 5), fill: 'none',
+        stroke: col, 'stroke-width': 2.5, filter: 'url(#riv-glow)',
+      });
+      me.setAttribute('class', 'riv-ring-me');
+      g.appendChild(me);
     }
     const cid = 'rivclip' + p.id;
     const cp  = svgEl('clipPath', { id: cid });
@@ -679,6 +700,23 @@
       const on = id != null
         && (ln.getAttribute('data-lo') === String(id) || ln.getAttribute('data-hi') === String(id));
       ln.classList.toggle('riv-on', on);
+      /*
+       * THREE STATES, NOT TWO, and the third is the one that bites.
+       *
+       * Idle, a line breathes. Hovered and connected, it marches -- the
+       * realm map's hover exactly: a line you point at stops idling and
+       * starts running the way the battles went.
+       *
+       * Hovered and NOT connected, it must carry NEITHER class. A CSS
+       * animation beats an ordinary declaration, so a dimmed line still
+       * running riv-pulse keeps animating its own opacity between .4 and
+       * .85 and the dimming never lands -- the map would highlight without
+       * ever dimming. The realm map removes both classes for the same
+       * reason; it is not tidiness, it is the only way the dim applies.
+       */
+      const idle = (id == null);
+      ln.classList.toggle('riv-line', idle);
+      ln.classList.toggle('riv-march', !idle && on);
     }
     svg.querySelectorAll('.riv-cluster').forEach(c => {
       c.classList.toggle('riv-dim', id != null && c.getAttribute('data-id') !== String(id)

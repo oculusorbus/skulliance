@@ -177,6 +177,32 @@ include 'header.php';
   border-left:2px solid var(--line);padding-left:9px}
 .riv-empty{font-size:12px;color:var(--dim);border:1px solid var(--line);border-radius:4px;
   padding:26px;text-align:left;background:var(--panel)}
+/* ---- THE SAME FOUR ANIMATIONS THE REALM MAP USES -------------------------
+   Lifted from dist/map.css with their timings and ranges unchanged, because
+   the point is that the two maps feel like one platform rather than two
+   things that happen to both move. What they attach to differs -- a raid
+   line there is a grudge line here, a realm marker is a player -- but a line
+   breathes at the same rate on both, and your own avatar pulses slower and
+   deeper than anybody else's on both.
+
+     riv-pulse  1.4s alternate, .4 to .85   lines at rest
+     riv-march  0.7s linear, dashoffset -18 the lines you are hovering
+     riv-glow   1.6s, .5 to 1               a player who leans one way
+     riv-own    2s,   .35 to 1              you
+*/
+@keyframes riv-pulse { from { opacity:.4 } to { opacity:.85 } }
+@keyframes riv-march { to { stroke-dashoffset:-18 } }
+@keyframes riv-glow  { 0%,100% { opacity:.5 } 50% { opacity:1 } }
+@keyframes riv-own   { 0%,100% { opacity:.35 } 50% { opacity:1 } }
+.riv-map line.riv-line{animation:riv-pulse 1.4s ease-in-out infinite alternate}
+/* MARCHING NEEDS SOMETHING TO MARCH. A mutual grudge is drawn solid, so the
+   dashes come with the hover state -- the legend describes the map at rest,
+   and at rest the solid/dashed distinction is untouched. */
+.riv-map line.riv-march{animation:riv-march .7s linear infinite;
+  stroke-dasharray:6 3}
+.riv-ring-lean{animation:riv-glow 1.6s ease-in-out infinite}
+.riv-ring-me{animation:riv-own 2s ease-in-out infinite}
+
 /* Focus state lives as a class on the container, so "nothing is focused" is
    one fact rather than something assembled from every child -- and a touch
    device, which never fires mouseleave, cannot leave the map stuck dimmed. */
@@ -185,7 +211,13 @@ include 'header.php';
 .riv-map.riv-focused line.riv-on{opacity:1}
 .riv-cluster.riv-dim{opacity:.22}
 .riv-cluster,.riv-sat{cursor:pointer}
-@media (prefers-reduced-motion:reduce){.riv-cluster,.riv-map line{transition:none}}
+/* Everything stops for a viewer who asked for less motion -- the transitions
+   AND the four animations, or the map carries on breathing at them. */
+@media (prefers-reduced-motion:reduce){
+  .riv-cluster,.riv-map line{transition:none}
+  .riv-map line.riv-line,.riv-map line.riv-march,
+  .riv-ring-lean,.riv-ring-me{animation:none}
+}
 
 /* ---- the player panel ----------------------------------------------------
    Deliberately NOT a second Fighter panel. This one answers "who is this
@@ -362,6 +394,9 @@ window.RIVALRY_DATA = <?php
 ?>;
 window.RIVALRY_ARM_SPLIT = <?php echo (int)DHCF_ONE_ARM_SPLIT; ?>;
 window.RIVALRY_CREW_MAX  = <?php echo (int)RIV_CREW_SHOWN; ?>;
+/* Who is looking, so their own avatar can pulse the way the realm map
+   pulses yours. 0 for a guest, which pulses nothing. */
+window.RIVALRY_ME        = <?php echo (int)$riv_user; ?>;
 </script>
 <script src="map-kit.js?var=<?php echo rand(0,999); ?>"></script>
 <script src="rivalries.js?var=<?php echo rand(0,999); ?>"></script>

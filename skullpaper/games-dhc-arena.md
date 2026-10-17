@@ -476,6 +476,13 @@ them and sharing their colour.
 | A dashed line with one arrowhead | One-sided. Somebody is doing the attacking |
 | A red ring | Mostly attacking |
 | A teal ring | Mostly being attacked |
+| A slow pulse around an avatar | That is you |
+
+The map moves the way the realms map does, and at the same rates: grudge
+lines breathe, your own avatar carries a slower, deeper pulse than anyone
+else's so you can find yourself, and a ring glows around anyone who leans
+hard one way. Hover a player and their lines stop idling and start marching
+in the direction the battles went.
 
 Hover anyone to pick their rivalries out of the rest; everything else dims.
 Hover a Fighter for its battles, how they split between attacking and
