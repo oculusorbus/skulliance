@@ -148,57 +148,23 @@ echo "\nthe link preview carries the name and real art\n";
 	ok(strpos($clean, 'skulliancelogo.png') === false,
 	   'the card is back to the 700x300 wordmark, which X letterboxes');
 	/*
-	 * THE CARD IS GENERATED. Pointed straight at skulliancebackground.png
-	 * the Discord embed rendered NO IMAGE: it is a 4.6MB PNG and the embed
-	 * proxy skips one that large. Images on this server arrive by FTP and
-	 * are never committed, so the repo cannot add a resized one -- it
-	 * generates one from the file already there.
+	 * THE CARD IS images/og.jpg -- the six founding artists' work with the
+	 * wordmark on it. What broke the embed was pointing og:image at
+	 * skulliancebackground.png, a 4.6MB PNG the proxy skips; og.jpg is
+	 * 1.35MB and unfurls.
+	 *
+	 * I went a long way round this: a PHP endpoint that cropped and cached
+	 * a 1200x630 JPEG, then a shared compositor, then a generated static
+	 * file -- for a picture that already existed at a URL I had been given.
+	 * All of it is deleted. The check is that it stays deleted.
 	 */
-	ok(strpos($clean, 'partner-card.php') !== false,
-	   'og:image points at a static file again; the 4.6MB background does not render in Discord');
-	ok(!preg_match('/og:image" content="[^"]*\\/images\\//', $clean),
-	   'og:image points straight into images/ again; those files are megabytes and Discord skips them');
-	$ptc = file_get_contents(__DIR__ . '/partner-card.php');
-	$ptcc = harness_strip_comments($ptc);
-	/* The source is og.jpg: the six founding artists' work with the
-	   wordmark on it, which is the right picture for an invitation. */
-	ok(strpos($ptcc, "images/og.jpg") !== false, 'the card no longer draws from og.jpg');
-	ok(preg_match('/const PTC_W = 1200;/', $ptcc) === 1 && preg_match('/const PTC_H = 630;/', $ptcc) === 1,
-	   'the generated card is not 1200x630');
-	ok(preg_match('/og:image:width" content="\' \. \(int\)\$pt_card_w/', $clean) === 1,
-	   'the declared card dimensions are not the ones the generator produces');
-	/*
-	 * FIT OR CROP, CHOSEN BY THE SOURCE. og.jpg is 1416x1113 -- ratio 1.27
-	 * against the card's 1.91 -- so a centre crop keeps barely half its
-	 * height: it would cut the wordmark out of the top-left and lose the
-	 * top and bottom rows of the artists' work. Cropping is still right for
-	 * a source already near 2:1, so the decision is measured rather than
-	 * assumed and swapping the file cannot silently start beheading it.
-	 */
-	ok(strpos($ptcc, '$ratio = $sw / $sh;') !== false
-	   && strpos($ptcc, 'abs($ratio - $want)') !== false,
-	   'the card crops or fits unconditionally instead of deciding from the source ratio');
-	ok(strpos($ptcc, 'min(PTC_W / $sw, PTC_H / $sh)') !== false,
-	   'there is no fit path, so a near-square source is cropped in half');
-	ok(strpos($ptcc, 'imagefilledrectangle($card') !== false,
-	   'the letterbox has no ground colour, so a fitted card has black bars from nowhere');
-	/* Loaded by what the file IS: the source changed from PNG to JPEG once
-	   already, and imagecreatefrompng() on a JPEG returns false, which the
-	   endpoint would serve as a 503 with no clue why. */
-	ok(strpos($ptcc, 'IMAGETYPE_JPEG') !== false && strpos($ptcc, 'IMAGETYPE_PNG') !== false,
-	   'the card loads the source by extension rather than by its actual type');
-	/* Keyed on the SOURCE so replacing the background invalidates it. */
-	ok(strpos($ptcc, 'filemtime($src_abs)') !== false,
-	   'the card cache key ignores the source file, so a new background would never be picked up');
-	/* Atomic, or a half-written file is served as a valid hit for a week. */
-	ok(strpos($ptcc, '@rename($tmp, $cache)') !== false,
-	   'the card is written in place; a half-written one would be cached by the crawler');
-	/* And an unwritable cache dir must not mean no card at all. */
-	ok(substr_count($ptcc, 'imagejpeg(') >= 2,
-	   'there is no fallback path when dhcrenders/ cannot be written');
-	/* No text drawn: there is no TTF in this repo. */
-	ok(strpos($ptcc, 'imagettftext') === false && strpos($ptcc, 'imagestring') === false,
-	   'the card draws text, and there is no TTF in this repo (see dhc-card.php)');
+	ok(strpos($clean, 'images/og.jpg') !== false, 'the card no longer uses og.jpg');
+	ok(!is_file(__DIR__ . '/partner-card.php') && !is_file(__DIR__ . '/lib/partner-card-lib.php'),
+	   'the card generator is back; the image is a static file and needs none');
+	ok(strpos($clean, 'skulliancebackground.png') === false,
+	   'og:image is back on the 4.6MB background, which the embed proxy skips');
+	ok(strpos($clean, '$pt_card_w = 1416') !== false,
+	   'the declared dimensions are not og.jpg\'s actual 1416x1113');
 	ok(strpos($clean, 'og:image:width') !== false && strpos($clean, 'og:image:height') !== false,
 	   'the card declares no dimensions; a crawler that does not fetch the image cannot size it');
 	/* And the NAME has to reach the preview, which is the whole point of

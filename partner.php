@@ -117,30 +117,20 @@ $pt_chains = array('Cardano', 'XRPL', 'Solana');
 $pt_e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); };
 
 /*
- * THE LINK PREVIEW IS THE FIRST THING THEY SEE, because this page is sent in
- * a DM. Two separate problems, and only one of them is the picture.
+ * THE LINK PREVIEW, because this page is sent in a DM and the unfurled card
+ * is the first thing an invitee sees.
  *
- * THE SHAPE. summary_large_image is ~1.91:1 and X crops anything else.
- * skulliancelogo.png is 700x300 (2.33) and arrived letterboxed with the
- * wordmark squeezed into a band. skulliancebackground.png is the collage of
- * everybody's art, which is the right argument for this page and reads as
- * texture rather than competing with the title X renders beside it.
+ * images/og.jpg: the six founding artists' work with the Skulliance
+ * wordmark on it. 1.35MB, which unfurls fine -- what did not was pointing
+ * og:image at skulliancebackground.png, a 4.6MB PNG the embed proxy skips.
  *
- * THE WEIGHT, which is what actually broke it. Pointed straight at
- * skulliancebackground.png the embed rendered NO IMAGE AT ALL in Discord:
- * that file is a 4.6MB PNG and the embed proxy skips one that large. So the
- * card is GENERATED -- partner-card.php resizes it once to a 1200x630 JPEG
- * (~330KB) and caches it, the same arrangement dhc-card.php uses. Images are
- * deployed to this server by FTP and never committed, so generating from a
- * file already there is the only way the repo can fix this on its own.
- *
- * THE NAME IS IN THE TITLE, NOT THE IMAGE. There is no TTF in this repo (see
- * dhc-card.php, which went text-free for the same reason) and GD's bitmap
- * fonts at 1200px look like a mistake. X and Discord both render og:title at
- * full size next to the card, so the personalisation lands either way.
+ * THE NAME IS IN THE TITLE, NOT THE IMAGE. There is no TTF in this repo
+ * (see dhc-card.php, which went text-free for the same reason) and both X
+ * and Discord render og:title at full size beside the card, so the
+ * personalisation lands without touching the art.
  */
-$pt_card   = 'https://www.skulliance.io/staking/partner-card.php';
-$pt_card_w = 1200; $pt_card_h = 630;
+$pt_card   = 'https://www.skulliance.io/staking/images/og.jpg';
+$pt_card_w = 1416; $pt_card_h = 1113;
 $extra_head = '
   <meta name="description" content="' . $pt_e($pt_desc) . '">
   <meta name="robots" content="index,follow,max-image-preview:large">
