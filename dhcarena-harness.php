@@ -1187,5 +1187,50 @@ foreach (array_keys($csUsed) as $c) {
 $csok(!$csUnstyled, 'every class the page invents is styled'
    . ($csUnstyled ? ' -- these are not: ' . implode(', ', $csUnstyled) : ''));
 
+/*
+ * ONE ROW, THREE FILTERS, THREE HANDLERS THAT MUST NOT CLOBBER EACH OTHER.
+ *
+ * Sort, Fights like and Record share .a-tools now -- they narrow one list
+ * and reading as two stacked tools was wrong. The cost of sharing a
+ * container is that a handler doing querySelectorAll('button') reaches the
+ * other two: pressing a Record chip would clear the active state off the
+ * sort and the kit, leaving a sort still applied with nothing showing as
+ * selected.
+ *
+ * Every handler must therefore qualify by its own data attribute.
+ */
+$fs_fail = 0;
+$fsok = function ($cond, $what) use (&$fs_fail) {
+	if (!$cond) { $fs_fail++; echo "FAIL  $what\n"; }
+};
+$fsSrc = file_get_contents(__DIR__ . '/dhcarena.php');
+$fsok(substr_count($fsSrc, 'class="a-pf-filter"') === 0,
+   'the separate reliability row is gone');
+$fsok(substr_count($fsSrc, 'class="a-pf-note"') === 0, 'and so is its own note');
+$fsok(strpos($fsSrc, '<div class="a-tools" id="aPfFilter">') !== false,
+   'Record lives in the same row as Sort and Fights like');
+$fsok(substr_count($fsSrc, '<span class="lbl">') >= 3,
+   'and the row is labelled in three sections (' . substr_count($fsSrc, '<span class="lbl">') . ')');
+/* No handler may select buttons without qualifying them. */
+preg_match_all('/querySelectorAll\(\s*[\'"]([^\'"]*button[^\'"]*)[\'"]/', $fsSrc, $qm);
+$fsok(count($qm[1]) > 0, 'found the button selectors (' . count($qm[1]) . ')');
+$loose = array();
+foreach ($qm[1] as $sel) {
+	if (strpos($sel, '[data-') === false) $loose[] = $sel;
+}
+$fsok(!$loose, 'every one qualifies by a data attribute, so no handler clears another\'s state'
+   . ($loose ? ' -- these do not: ' . implode(' | ', $loose) : ''));
+/* And the explanation is one sentence above them, not one per row. */
+/* The MARKUP, not the string. The comment left where those rules used to
+   live names the class while explaining its absence -- the third time today
+   a check has matched my own prose instead of the code. */
+$fsok(substr_count($fsSrc, 'class="a-pf-note"') === 0, 'the second explanation is gone');
+$fsok(strpos($fsSrc, 'Sort the list, narrow it to one fighting') !== false,
+   'replaced by one sentence covering all three');
+$fsok(strpos($fsSrc, '$pfShow') !== false,
+   'and the Record half of it only appears when Record does');
+
+echo ($fs_fail ? "\n$fs_fail filter-row check(s) FAILED\n" : "one filter row: ok\n");
+
 echo ($cs_fail ? "\n$cs_fail styling check(s) FAILED\n" : "every invented class is styled: ok\n");
-if ($cs_fail) exit(1);
+if ($cs_fail || $fs_fail) exit(1);

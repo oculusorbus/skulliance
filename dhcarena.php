@@ -920,36 +920,27 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   opacity:.55;font-weight:600;display:flex;gap:7px;align-items:baseline}
 .arena-wrap .a-lsec h3 span{opacity:.7;letter-spacing:.08em;font-weight:400}
 /*
- * THE CHIP ROWS, sharing one set of rules.
+ * THE CHIP ROW. Sort, Fights like and Record all live in .a-tools now --
+ * they are three ways of narrowing one list, and as two separate rows with
+ * a note each they read as unrelated tools stacked up.
  *
- * .a-pf-filter -- the reliability row -- shipped with no CSS at all and took
- * the browser's default button: light pills with blue text, under two rows
- * of dark ones. Listed alongside .a-tools rather than given a copy of these
- * declarations, because a copy is the thing that drifts: the next time a
- * chip's radius or hover changes, both rows change with it or neither does.
+ * (.a-pf-filter was that second row's class. It briefly had no rules at all
+ * and took the browser's default button -- light pills with blue text under
+ * a row of dark ones -- then shared these. It has no markup left.)
  */
-.arena-wrap .a-tools,
-.arena-wrap .a-pf-filter{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 9px;
+.arena-wrap .a-tools{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin:0 0 9px;
   font-size:11px}
 .arena-wrap .a-tools .lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;opacity:.5}
 .arena-wrap .a-tools .sep{width:1px;height:14px;background:var(--line);margin:0 4px}
-.arena-wrap .a-tools button,
-.arena-wrap .a-pf-filter button{font:inherit;font-size:11px;background:none;color:inherit;
+.arena-wrap .a-tools button{font:inherit;font-size:11px;background:none;color:inherit;
   border:1px solid var(--line);border-radius:999px;padding:3px 9px;cursor:pointer;opacity:.75}
-.arena-wrap .a-tools button:hover,
-.arena-wrap .a-pf-filter button:hover{border-color:var(--ochre);opacity:1}
-.arena-wrap .a-tools button.on,
-.arena-wrap .a-pf-filter button.on{border-color:var(--ochre);color:var(--ochre);
+.arena-wrap .a-tools button:hover{border-color:var(--ochre);opacity:1}
+.arena-wrap .a-tools button.on{border-color:var(--ochre);color:var(--ochre);
   background:rgba(0,200,160,.08);opacity:1}
 /* The count inside a chip, quieter than its label. */
-.arena-wrap .a-pf-filter button b{font-weight:600;opacity:.85;margin-left:2px}
-/*
- * The sentence above them. It was rendering at the page's base size, which
- * shouted over the controls it describes, and it sat AFTER them -- prose
- * explaining a filter belongs before the filter, not below it.
- */
-.arena-wrap .a-pf-note{font-size:10px;line-height:1.5;opacity:.55;
-  margin:0 0 6px;max-width:72ch}
+.arena-wrap .a-tools button b{font-weight:600;opacity:.85;margin-left:2px}
+/* (.a-pf-note was this row's own sentence. The one explanation covering all
+   three filters is a plain .a-sub above them now, so the class is gone.) */
 /*
  * WHAT THE FILTER ACTUALLY DOES. The handler toggles this class on a card
  * and nothing else; without a rule the class went on, came off, and the
@@ -1318,10 +1309,51 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <?php if (!$crew): ?>
         <p class="a-sub" style="margin:0">No Fighters yet.</p>
       <?php else: ?>
+      <?php
+        /* Counted from the roster rather than guessed, so a filter that would
+           show nothing is not offered at all. Up here because both the
+           sentence and the chips below are built from it. */
+        $pfCounts = array();
+        foreach ($crew as $f) {
+          $k = isset($f['profile']) ? $f['profile']['key'] : 'unproven';
+          $pfCounts[$k] = (isset($pfCounts[$k]) ? $pfCounts[$k] : 0) + 1;
+        }
+        $pfLabels = array('reliable' => 'Reliable', 'even' => 'Even',
+                          'risky' => 'Risky', 'winless' => 'Winless', 'unproven' => 'Unproven');
+        /*
+         * A CLAUSE PER LABEL, and only for labels that are on screen. This
+         * used to define "Reliable" whatever the roster looked like -- and
+         * nobody has five battles yet, so the chips offered are Winless and
+         * Unproven while the explanation led with a word that was nowhere on
+         * the page. It grows into the rest as the ledger fills up.
+         */
+        $pfWhat = array(
+          'reliable' => '<b>Reliable</b> survives most of the battles its Crew wins',
+          'even'     => '<b>Even</b> survives about half of them',
+          'risky'    => '<b>Risky</b> falls in more than half',
+          'winless'  => '<b>Winless</b> has not won one yet',
+          'unproven' => '<b>Unproven</b> has fought fewer than ' . DHCA_PROFILE_MIN
+                      . ', too few to tell',
+        );
+        $pfNote = array();
+        foreach ($pfWhat as $k => $txt) if (!empty($pfCounts[$k])) $pfNote[] = $txt;
+        $pfShow = (count($pfCounts) > 1);
+      ?>
       <?php /* Sorting and filtering happen in the browser, not through a
                reload: a reload would throw away the Fighters already picked,
-               and picking is the whole reason this list exists. */ ?>
-      <div class="a-tools">
+               and picking is the whole reason this list exists.
+
+               ONE ROW, ONE EXPLANATION. Record arrived as a second row with
+               a note of its own, which made the panel read as two unrelated
+               tools stacked up. They are three ways of narrowing one list
+               and belong together, under a single sentence covering all of
+               them. */ ?>
+      <p class="a-sub" style="margin:0 0 7px">Sort the list, narrow it to one fighting
+         style, or narrow it by what a Fighter has actually done.<?php
+         if ($pfShow): ?> <?php echo implode('. ', $pfNote); ?>.
+         A Fighter at the front is hit far more often than one at the back, so read
+         the position in its tooltip alongside this.<?php endif; ?></p>
+      <div class="a-tools" id="aPfFilter">
         <span class="lbl">Sort</span>
         <button type="button" class="on" data-sort="might">Deadliest</button>
         <button type="button" data-sort="hp">Toughest</button>
@@ -1338,55 +1370,17 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                  . htmlspecialchars($k['name']).' '.$kitCount[$k['id']]; ?></button>
           <?php endforeach; ?>
         <?php endif; ?>
+        <?php if ($pfShow): ?>
+          <span class="sep"></span>
+          <span class="lbl">Record</span>
+          <button type="button" class="on" data-pf="">All <b><?php echo count($crew); ?></b></button>
+          <?php foreach ($pfLabels as $k => $lbl): if (empty($pfCounts[$k])) continue; ?>
+            <button type="button" data-pf="<?php echo $k; ?>"><?php echo $lbl; ?>
+              <b><?php echo (int)$pfCounts[$k]; ?></b></button>
+          <?php endforeach; ?>
+        <?php endif; ?>
       </div>
       <div class="a-picked" id="aPicked"></div>
-      <?php
-        /* Counted from the roster rather than guessed, so a filter that would
-           show nothing is not offered at all. */
-        $pfCounts = array();
-        foreach ($crew as $f) {
-          $k = isset($f['profile']) ? $f['profile']['key'] : 'unproven';
-          $pfCounts[$k] = (isset($pfCounts[$k]) ? $pfCounts[$k] : 0) + 1;
-        }
-        $pfLabels = array('reliable' => 'Reliable', 'even' => 'Even',
-                          'risky' => 'Risky', 'winless' => 'Winless', 'unproven' => 'Unproven');
-        /*
-         * A LINE PER LABEL, and only for labels that are on screen.
-         *
-         * The note used to open by defining "Reliable" whatever the roster
-         * looked like. Nobody has five battles yet, so the only chips
-         * offered are Winless and Unproven and the explanation led with a
-         * word that was nowhere on the page. Built from $pfCounts, it
-         * describes what is there and grows into the rest as the ledger
-         * fills up.
-         */
-        $pfWhat = array(
-          'reliable' => 'Reliable survives most of the battles its Crew wins',
-          'even'     => 'Even survives about half of them',
-          'risky'    => 'Risky falls in more than half',
-          'winless'  => 'Winless has not won one yet',
-          'unproven' => 'Unproven has fought fewer than ' . DHCA_PROFILE_MIN
-                      . ', too few to tell',
-        );
-        $pfNote = array();
-        foreach ($pfWhat as $k => $txt) if (!empty($pfCounts[$k])) $pfNote[] = $txt;
-      ?>
-      <?php if (count($pfCounts) > 1): ?>
-      <?php /* The explanation comes BEFORE the controls it explains, and
-               outside the row: it is prose about the filters, not one of
-               them, and sitting last in a flex row it read as a very large
-               final chip. */ ?>
-      <p class="a-pf-note"><?php echo htmlspecialchars(implode('. ', $pfNote)); ?>.
-        A Fighter at the front is hit far more often than one at the back, so read
-        the position in the tooltip alongside this.</p>
-      <div class="a-pf-filter" id="aPfFilter">
-        <button type="button" class="on" data-pf="">All <b><?php echo count($crew); ?></b></button>
-        <?php foreach ($pfLabels as $k => $lbl): if (empty($pfCounts[$k])) continue; ?>
-          <button type="button" data-pf="<?php echo $k; ?>"><?php echo $lbl; ?>
-            <b><?php echo (int)$pfCounts[$k]; ?></b></button>
-        <?php endforeach; ?>
-      </div>
-      <?php endif; ?>
       <div class="a-pick">
       <?php foreach ($crew as $f):
         $t = $f['traits']; $ok = $f['available']; ?>
@@ -1742,7 +1736,13 @@ var BLOCKED = <?php echo json_encode($block); ?>;
     var btn = e.target.closest('button[data-pf]');
     if (!btn) return;
     var want = btn.getAttribute('data-pf');
-    bar.querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b === btn); });
+    /* ONLY THE RECORD BUTTONS. They share a row with Sort and Fights like
+       now, so an unqualified querySelectorAll would clear the active state
+       off those two every time a Record chip was pressed -- the sort would
+       still be applied and nothing would look selected. */
+    bar.querySelectorAll('button[data-pf]').forEach(function (b) {
+      b.classList.toggle('on', b === btn);
+    });
     document.querySelectorAll('.a-card').forEach(function (c) {
       /* `.sel` is the chosen-for-the-Crew class, NOT `.on` -- `.on` is the
          filter button's own state and no card ever carries it, so the first
