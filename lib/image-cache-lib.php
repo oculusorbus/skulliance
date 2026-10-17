@@ -292,10 +292,52 @@ function _doCacheFetch(
                 'message' => $emit("[ERROR] Out of time and could not write $filepath")];
     }
 
+    /*
+     * TOO BIG TO PROCESS IS NOT TOO BIG TO KEEP.
+     *
+     * Imagick was the thing actually hanging. Five of these ran for eleven
+     * to fourteen MINUTES and took the site down with them, and none of it
+     * was the network: the gateway race is bounded by CURLOPT_TIMEOUT and a
+     * total budget, and honours both. It was the resize.
+     *
+     * Past the 256MB limit set below, ImageMagick spills to disk and a
+     * LANCZOS pass over a hi-res PNG -- or coalescing an animated GIF frame
+     * by frame -- grinds through hundreds of megabytes of temp files. The
+     * header of this file has warned about those spill files all along; what
+     * was missing was anything that declined to create them.
+     *
+     * So an oversized payload is written exactly as it arrived. It is a
+     * worse cache entry than a resized one and an enormously better outcome
+     * than a worker held for a quarter of an hour: it is on disk, it loads
+     * locally, and it is the original art rather than nothing.
+     */
+    $bytes = strlen($body);
+    if ($web_mode && $bytes > 8 * 1024 * 1024) {
+        if (file_put_contents($filepath, $body) !== false) {
+            return ['status' => 'cached', 'url' => $web_base . '.' . $ext,
+                    'message' => $emit("[CACHED] $filepath (unresized: "
+                                     . round($bytes / 1048576, 1) . "MB)")];
+        }
+        return ['status' => 'error', 'url' => null,
+                'message' => $emit("[ERROR] Could not write oversized $filepath")];
+    }
+
     try {
         $imagick = new Imagick();
         $imagick->setResourceLimit(Imagick::RESOURCETYPE_MEMORY, 256 * 1024 * 1024);
         $imagick->setResourceLimit(Imagick::RESOURCETYPE_MAP, 256 * 1024 * 1024);
+        /*
+         * AND A CLOCK IMAGEMAGICK ITSELF HONOURS. set_time_limit() does not
+         * count time spent in C, so it never touched this; RESOURCETYPE_TIME
+         * is ImageMagick's own limit and it aborts the operation rather than
+         * running to completion. Guarded, because the constant is not in
+         * every build -- where it is missing the size check above is the
+         * only brake, which is why that one is not conditional on it.
+         */
+        if (defined('Imagick::RESOURCETYPE_TIME')) {
+            $left = $web_mode ? max(5, (int)($budget - (microtime(true) - $_fetch_started))) : 60;
+            @$imagick->setResourceLimit(constant('Imagick::RESOURCETYPE_TIME'), $left);
+        }
         $imagick->readImageBlob($body);
 
         $width = $imagick->getImageWidth();

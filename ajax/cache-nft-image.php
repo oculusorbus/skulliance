@@ -43,6 +43,48 @@ header('Content-Type: application/json');
  */
 set_time_limit(30);
 
+/*
+ * ── CONCURRENCY CAP, PLATFORM-WIDE ──────────────────────────────────────────
+ *
+ * THE RATE LIMIT BELOW DOES NOT PREVENT AN OUTAGE and never did. It counts
+ * requests per minute per address, which says nothing about how many are
+ * running AT ONCE -- and it is per IP, so it cannot see the rest of the
+ * platform at all. Thirty slow requests inside a minute from one address is
+ * within its limit and is also every worker the account has.
+ *
+ * That is what happened: a client abandoned requests it thought had timed
+ * out and started more, the server went on working on all of them, and
+ * PHP-FPM ran out of workers. The whole site answered 503, including pages
+ * that have nothing to do with NFTs.
+ *
+ * The client bug is fixed, but relying on a caller to be well behaved is how
+ * this happened twice. This is the server's own floor: a handful of slots,
+ * taken with a non-blocking lock. No slot means an immediate, cheap refusal
+ * that frees the worker at once rather than a long request that occupies one.
+ *
+ * flock is released by the kernel when the process exits, so a worker killed
+ * mid-fetch does not strand its slot -- which a counter in a file would.
+ */
+$cc_slots = 3;
+$cc_held  = null;
+for ($i = 0; $i < $cc_slots; $i++) {
+    $fh = @fopen(sys_get_temp_dir() . '/nft-cache-slot-' . $i, 'c');
+    if (!$fh) continue;
+    if (@flock($fh, LOCK_EX | LOCK_NB)) { $cc_held = $fh; break; }
+    @fclose($fh);
+}
+if (!$cc_held) {
+    ob_clean();
+    echo json_encode(['success' => false, 'status' => 'busy',
+        'message' => 'Skulliance is already caching as many images as it can at once. '
+                   . 'Give it a moment and try again.']);
+    exit;
+}
+register_shutdown_function(function () use ($cc_held) {
+    @flock($cc_held, LOCK_UN);
+    @fclose($cc_held);
+});
+
 // ── IP-based rate limit ──────────────────────────────────────────────────────
 // 30 requests / 60s per IP. File holds newline-separated unix timestamps,
 // stale entries pruned on each call. Works across anonymous and logged-in

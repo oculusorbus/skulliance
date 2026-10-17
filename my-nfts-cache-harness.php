@@ -135,6 +135,53 @@ ok($ii !== false && $ij !== false && $ii < $ij, 'the check comes first');
 ok(strpos(substr($icl, $ii, $ij - $ii), 'file_put_contents') !== false,
    'and it still writes the bytes rather than giving up -- an unresized copy beats none');
 
+echo "\n-- the server caps how much of this runs at once --\n";
+/*
+ * The per-IP rate limit never prevented an outage and could not: it counts
+ * requests per minute, not requests in flight, and it is per address so it
+ * cannot see the rest of the platform. Thirty slow requests in a minute is
+ * inside its limit and is also every worker the account has.
+ */
+$ep3 = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/cache-nft-image.php'));
+ok(strpos($ep3, 'LOCK_EX | LOCK_NB') !== false, 'slots are taken with a NON-BLOCKING lock');
+ok(strpos($ep3, "'status' => 'busy'") !== false, 'and a full house is refused as busy');
+/* The refusal has to be GUARDED BY THE LOCK. "the busy string exists" stayed
+   true with the condition replaced by false, which is the cap removed. */
+ok(preg_match('/if \(!\$cc_held\) \{/', $ep3),
+   'the refusal fires when no slot was taken');
+ok(preg_match('/if \(!\$cc_held\) \{[^}]*busy/s', $ep3),
+   '...and that is the branch the busy reply is in');
+$bi = strpos($ep3, "'status' => 'busy'");
+$bj = strpos($ep3, 'exit;', $bi);
+ok($bj !== false && ($bj - $bi) < 400, 'the refusal exits immediately, freeing the worker');
+/* There are two shutdown handlers in this file -- one is the fatal reporter.
+   The slot's release has to be the one that closes over the lock. */
+ok(preg_match('/register_shutdown_function\(function \(\) use \(\$cc_held\)/', $ep3),
+   'the slot is released by a shutdown handler holding it');
+ok(preg_match('/use \(\$cc_held\)[^}]*LOCK_UN/s', $ep3), '...which unlocks it');
+/* flock is released by the kernel on exit, which a counter file would not be. */
+ok(strpos($ep3, 'flock') !== false && strpos($ep3, 'file_put_contents(sys_get_temp_dir() . \'/nft-cache-slot') === false,
+   'held as a lock rather than a counter, so a killed worker cannot strand a slot');
+$ci = strpos($ep3, '$cc_slots = ');
+ok($ci !== false, 'the cap is a named number');
+preg_match('/\$cc_slots = (\d+)/', $ep3, $cs);
+ok($cs && (int)$cs[1] >= 1 && (int)$cs[1] <= 6,
+   'and a small one (' . ($cs ? $cs[1] : '?') . '), since each slot can hold a worker for ' . $server_s . 's');
+/* It must be taken BEFORE the expensive work, or it caps nothing. */
+ok(strpos($ep3, '$cc_slots') < strpos($ep3, 'cacheNFTImage('),
+   'taken before any caching starts');
+
+echo "\n-- and the client treats busy as back-pressure, not failure --\n";
+ok(strpos($run, "d.status === 'busy'") !== false, 'busy is recognised');
+ok(preg_match("/busy'[^}]*setTimeout\(step/s", $run), 'and waits, rather than recording a failure');
+/* The ONCE is the point: a busy server retried forever is the pile-up again
+   in slow motion. "retried[id] appears" stayed true with the guard removed. */
+ok(strpos($run, "!retried[id]") !== false, 'the retry is guarded');
+ok(preg_match("/busy'\s*&&\s*!retried\[id\]/", $run),
+   'so a busy reply is retried once and once only');
+ok(strpos($run, 'retried[id] = true;') !== false, 'and the id is marked as having had its turn');
+ok(!preg_match("/busy'[^}]*streak/s", $run), 'it does not count toward the three-strikes breaker');
+
 echo "\n-- and it can always be called off --\n";
 ok(strpos($src, 'id="mn-cache-stop"') !== false, 'there is a stop button');
 ok(strpos($run, 'stopBtn.hidden = false;') !== false, 'shown while a run is going');
@@ -302,6 +349,27 @@ ok(strpos($src, 'WHERE n.user_id = $uid AND c.project_id = $mn_proj') !== false,
 ok(strpos($src, 'if ($mn_coll > 0 && !isset($mn_colls[$mn_coll])) $mn_coll = 0;') !== false,
    'an id they hold nothing in is dropped rather than obeyed');
 ok(strpos($src, "COUNT(*) AS n") !== false, 'each option carries how many they hold');
+
+echo "\n-- and it looks like the control beside it --\n";
+/*
+ * Left to the browser it came out white with a blue focus ring next to a
+ * dark select. flexbox.css carries this same note on #filterChainSel, which
+ * copies #filterNFTs property for property for exactly this reason -- so
+ * the properties that make a filter look like a filter are checked, not
+ * just that a rule exists.
+ */
+$fx = file_get_contents(__DIR__ . '/dist/flexbox.css');
+preg_match('/#filterNFTs \{([^}]*)\}/', $fx, $fn);
+preg_match('/#mn-coll \{([^}]*)\}/s', $src, $mc);
+ok(!empty($fn[1]) && !empty($mc[1]), 'both rules are readable');
+foreach (array('background-color', 'color', 'border', 'font-weight', 'font-family') as $prop) {
+	preg_match('/(?:^|;)\s*' . $prop . '\s*:\s*([^;]+)/mi', $fn[1], $a);
+	preg_match('/(?:^|;)\s*' . $prop . '\s*:\s*([^;]+)/mi', $mc[1], $b);
+	ok(!empty($a[1]) && !empty($b[1]) && trim($a[1]) === trim($b[1]),
+	   "  $prop matches the project filter (" . trim($a[1] ?? '?') . ")");
+}
+ok(strpos($mc[1], 'height: 38px') !== false,
+   '  and it is 38px, which is what this page overrides the other one to');
 
 echo "\n-- it survives paging and does not strand the other filters --\n";
 ok(strpos($src, "\$cq = \$mn_coll > 0 ? '&collection=' . \$mn_coll : '';") !== false,

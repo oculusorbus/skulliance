@@ -412,15 +412,41 @@ if ($mn_rows) {
 #filter-nfts label strong { font-weight: inherit; }
 #filterNFTs { border-radius: 0; height: 38px; }
 
-/* The collection drill-down, matching the project filter beside it rather
-   than inventing a second look. It appears only when a project is chosen
-   and that project holds more than one of the staker's collections. */
+/*
+ * The collection drill-down. It sits beside #filterNFTs and must not look
+ * like a different control -- which it did: left to the browser's defaults
+ * it came out white with a blue focus ring next to a dark one.
+ *
+ * flexbox.css already had this exact note on #filterChainSel, which is the
+ * chain filter on the Collections page and copies #filterNFTs property for
+ * property for the same reason. Copied again here rather than shared,
+ * because those two live in the platform stylesheet and this page owns its
+ * own; the alternative is editing a global rule to serve one page.
+ *
+ * Wider than the 190px of #filterNFTs: a project is "Dead Pop Hell" and a
+ * collection is a project name plus a tier plus a number.
+ */
 #mn-collfilter { text-align: left; font-size: 1rem; margin: 0; }
 #mn-collfilter label { display: block; font-size: .64rem; letter-spacing: .05em;
   text-transform: uppercase; color: #7a9eb0; margin-bottom: 4px; }
 #mn-collfilter label strong { font-weight: inherit; }
 #mn-collfilter form { margin: 0; }
-#mn-coll { border-radius: 0; height: 38px; max-width: 260px; }
+#mn-coll {
+  width: 240px;
+  max-width: 100%;
+  border-radius: 0;
+  /* 38px, not the platform's 30px: this page overrides #filterNFTs to 38
+     and a 30px control beside it reads as misaligned. */
+  height: 38px;
+  font-weight: bold;
+  background-color: #0d1e2e;
+  color: #D6DDDE;
+  text-align: left;
+  font-size: 20px;
+  border: 1px solid rgba(0,200,160,0.18);
+  font-family: Arial, sans-serif;
+}
+@media (max-width: 700px) { #mn-coll { font-size: 14px; width: auto; } }
 /* (.mn-head-right already wraps -- see above. A second rule saying so is a
    duplicate that reads as a dependency and is not one.) */
 
@@ -626,6 +652,7 @@ if ($filterby != "") {
     var rows = [];
     var stopped = false;
     var streak = 0;        // consecutive failures
+    var retried = {};      // ids given one second chance after a busy reply
 
     /* Stopping is always available. A run that cannot be called off is a run
        somebody has to close the tab to escape. */
@@ -739,10 +766,27 @@ if ($filterby != "") {
         }
         if (d.success) {
           record(d.status === 'exists' ? 'exists' : 'cached', nameFor(id), '', d.url);
-        } else {
-          record(d.status === 'skipped' ? 'skipped' : 'error', nameFor(id),
-                 d.message || 'Could not be saved.');
+          return;
         }
+        /*
+         * BUSY IS BACK-PRESSURE, NOT A FAILURE. The server caps how many of
+         * these run at once across the whole platform; being turned away
+         * means somebody else is caching, not that this image cannot be
+         * saved. Treating it as a failure would burn the retry and, worse,
+         * trip the three-strikes breaker on a perfectly healthy queue.
+         *
+         * It is also the one refusal that is instant, so waiting and
+         * retrying costs nothing. Once -- then it goes back in the queue as
+         * untried rather than being hammered.
+         */
+        if (d.status === 'busy' && !retried[id]) {
+          retried[id] = true;
+          prog.textContent = 'Waiting for a free slot\u2026';
+          setTimeout(step, 2500);
+          return;
+        }
+        record(d.status === 'skipped' ? 'skipped' : 'error', nameFor(id),
+               d.message || 'Could not be saved.');
       };
       /*
        * A REQUEST THAT DID NOT ANSWER STOPS THE RUN. It does not advance it.
