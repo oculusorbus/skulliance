@@ -156,17 +156,37 @@ echo "\nthe link preview carries the name and real art\n";
 	 */
 	ok(strpos($clean, 'partner-card.php') !== false,
 	   'og:image points at a static file again; the 4.6MB background does not render in Discord');
-	ok(strpos($clean, 'skulliancebackground.png') === false,
-	   'og:image is back on the full-size background, which Discord skips');
+	ok(!preg_match('/og:image" content="[^"]*\\/images\\//', $clean),
+	   'og:image points straight into images/ again; those files are megabytes and Discord skips them');
 	$ptc = file_get_contents(__DIR__ . '/partner-card.php');
 	$ptcc = harness_strip_comments($ptc);
+	/* The source is og.jpg: the six founding artists' work with the
+	   wordmark on it, which is the right picture for an invitation. */
+	ok(strpos($ptcc, "images/og.jpg") !== false, 'the card no longer draws from og.jpg');
 	ok(preg_match('/const PTC_W = 1200;/', $ptcc) === 1 && preg_match('/const PTC_H = 630;/', $ptcc) === 1,
 	   'the generated card is not 1200x630');
 	ok(preg_match('/og:image:width" content="\' \. \(int\)\$pt_card_w/', $clean) === 1,
 	   'the declared card dimensions are not the ones the generator produces');
-	/* Crop then resample: resizing 16:9 straight to 1.91:1 squashes it. */
-	ok(strpos($ptcc, 'imagecopyresampled($card, $src, 0, 0, $cx, $cy') !== false,
-	   'the card resizes without cropping to the target ratio, so the art is squashed');
+	/*
+	 * FIT OR CROP, CHOSEN BY THE SOURCE. og.jpg is 1416x1113 -- ratio 1.27
+	 * against the card's 1.91 -- so a centre crop keeps barely half its
+	 * height: it would cut the wordmark out of the top-left and lose the
+	 * top and bottom rows of the artists' work. Cropping is still right for
+	 * a source already near 2:1, so the decision is measured rather than
+	 * assumed and swapping the file cannot silently start beheading it.
+	 */
+	ok(strpos($ptcc, '$ratio = $sw / $sh;') !== false
+	   && strpos($ptcc, 'abs($ratio - $want)') !== false,
+	   'the card crops or fits unconditionally instead of deciding from the source ratio');
+	ok(strpos($ptcc, 'min(PTC_W / $sw, PTC_H / $sh)') !== false,
+	   'there is no fit path, so a near-square source is cropped in half');
+	ok(strpos($ptcc, 'imagefilledrectangle($card') !== false,
+	   'the letterbox has no ground colour, so a fitted card has black bars from nowhere');
+	/* Loaded by what the file IS: the source changed from PNG to JPEG once
+	   already, and imagecreatefrompng() on a JPEG returns false, which the
+	   endpoint would serve as a 503 with no clue why. */
+	ok(strpos($ptcc, 'IMAGETYPE_JPEG') !== false && strpos($ptcc, 'IMAGETYPE_PNG') !== false,
+	   'the card loads the source by extension rather than by its actual type');
 	/* Keyed on the SOURCE so replacing the background invalidates it. */
 	ok(strpos($ptcc, 'filemtime($src_abs)') !== false,
 	   'the card cache key ignores the source file, so a new background would never be picked up');

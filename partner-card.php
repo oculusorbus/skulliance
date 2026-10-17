@@ -2,9 +2,9 @@
 /**
  * partner-card.php -- the 1200x630 image Discord and X put on partner.php.
  *
- * WHY THIS EXISTS. partner.php pointed og:image straight at
- * images/skulliancebackground.png and the Discord embed rendered NO IMAGE AT
- * ALL. That file is a 4.6MB PNG; the embed proxy skips one that large. A
+ * WHY THIS EXISTS. partner.php pointed og:image straight at a full-size
+ * image in images/ and the Discord embed rendered NO IMAGE AT ALL. Those
+ * files run to several megabytes; the embed proxy skips one that large. A
  * resized copy would fix it, but images on this server are deployed by FTP
  * and never committed, so a repo change cannot put one there -- what the
  * repo CAN do is generate one from a file that is already on the server.
@@ -40,7 +40,7 @@ function ptc_send($file) {
 	exit;
 }
 
-$src_abs = __DIR__ . '/images/skulliancebackground.png';
+$src_abs = __DIR__ . '/images/og.jpg';
 if (!is_file($src_abs)) ptc_fail();
 if (!function_exists('imagecreatetruecolor')) ptc_fail(503);
 
@@ -56,24 +56,52 @@ $cache = $dir . '/partner-card-' . $key . '.jpg';
 
 if (is_file($cache) && filesize($cache) > 0) ptc_send($cache);
 
-$src = @imagecreatefrompng($src_abs);
+/* Loaded by what the file actually IS, not by its extension: the source has
+   already changed once (a PNG background, then this JPEG), and
+   imagecreatefrompng() on a JPEG returns false and would serve a 503. */
+$info = @getimagesize($src_abs);
+$src  = false;
+if ($info) {
+	if      ($info[2] === IMAGETYPE_JPEG) $src = @imagecreatefromjpeg($src_abs);
+	else if ($info[2] === IMAGETYPE_PNG)  $src = @imagecreatefrompng($src_abs);
+	else if ($info[2] === IMAGETYPE_GIF)  $src = @imagecreatefromgif($src_abs);
+}
 if (!$src) ptc_fail(503);
 $sw = imagesx($src); $sh = imagesy($src);
 
 /*
- * CENTRE CROP FIRST, THEN ONE RESAMPLE. The source is 16:9 and the card is
- * ~1.91:1; resizing straight to 1200x630 would squash it. Cropping to the
- * target ratio and resampling once keeps the art's proportions and costs a
- * single pass.
+ * FIT, NOT CROP, because of what this particular source is.
+ *
+ * og.jpg is 1416x1113 -- ratio 1.27, nearly square -- and the card is
+ * ~1.91:1. A centre crop would keep barely half its height: it would cut
+ * the Skulliance wordmark out of the top-left corner and lose the whole
+ * top and bottom rows of the artists' work. The point of using this image
+ * is that it shows all six founders' art, so it is scaled to fit whole and
+ * the leftover sides are filled with the platform's own ground.
+ *
+ * A crop is still right for a source already near 2:1; this chooses per
+ * image rather than assuming, so replacing the file does not silently
+ * start beheading it.
  */
-$want = PTC_W / PTC_H;
-if ($sw / $sh > $want) { $ch = $sh; $cw = (int)round($sh * $want); }
-else                   { $cw = $sw; $ch = (int)round($sw / $want); }
-$cx = (int)(($sw - $cw) / 2);
-$cy = (int)(($sh - $ch) / 2);
-
 $card = imagecreatetruecolor(PTC_W, PTC_H);
-imagecopyresampled($card, $src, 0, 0, $cx, $cy, PTC_W, PTC_H, $cw, $ch);
+imagefilledrectangle($card, 0, 0, PTC_W, PTC_H, imagecolorallocate($card, 7, 17, 29));
+
+$want = PTC_W / PTC_H;
+$ratio = $sw / $sh;
+if (abs($ratio - $want) < 0.18) {
+	/* Close enough to the card's shape that cropping loses almost nothing. */
+	if ($ratio > $want) { $ch = $sh; $cw = (int)round($sh * $want); }
+	else                { $cw = $sw; $ch = (int)round($sw / $want); }
+	imagecopyresampled($card, $src, 0, 0, (int)(($sw - $cw) / 2), (int)(($sh - $ch) / 2),
+	                   PTC_W, PTC_H, $cw, $ch);
+} else {
+	/* Too far off: fit the whole thing and centre it. */
+	$fit = min(PTC_W / $sw, PTC_H / $sh);
+	$fw  = (int)round($sw * $fit);
+	$fh  = (int)round($sh * $fit);
+	imagecopyresampled($card, $src, (int)((PTC_W - $fw) / 2), (int)((PTC_H - $fh) / 2), 0, 0,
+	                   $fw, $fh, $sw, $sh);
+}
 
 /* Atomic write, same reason dhc-card.php does it: two crawlers can arrive at
    once, and a half-written file that is nonzero would be served as a valid
