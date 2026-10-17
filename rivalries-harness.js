@@ -27,7 +27,21 @@ function makeEl(tag) {
        out again; without removeChild the hidden measuring svg grows forever
        and the first call throws. */
     removeChild(c) { const i = this.children.indexOf(c); if (i > -1) this.children.splice(i, 1); return c; },
-    addEventListener() {},
+    /* RECORDED, NOT SWALLOWED. The click paths are the point of the panels,
+       and a stub that drops listeners can only test that markup was built,
+       never that clicking it does anything. */
+    _on: null,
+    addEventListener(type, fn) {
+      if (!this._on) this._on = {};
+      (this._on[type] = this._on[type] || []).push(fn);
+    },
+    fire(type, ev) {
+      for (const fn of ((this._on && this._on[type]) || [])) fn(ev || {});
+    },
+    closest(sel) {
+      for (let e = this; e; e = e.parent) if (matches(e, sel)) return e;
+      return null;
+    },
     /* Enough layout API for the fit pass. The numbers are deliberately
        plausible rather than zero: the map measures its own top edge and its
        siblings' heights, and a stub that answers 0 to everything would let a
@@ -50,7 +64,9 @@ function makeEl(tag) {
       const fs = parseFloat(this.attrs['font-size']) || 11;
       return this._text.length * fs * 0.58;
     },
-    set innerHTML(v) { if (v === '') this.children = []; },
+    _html: '',
+    set innerHTML(v) { this._html = String(v); if (v === '') this.children = []; },
+    get innerHTML() { return this._html; },
     get classList() {
       const self = this;
       return {
@@ -108,6 +124,8 @@ global.document = {
   createElement: (tag) => makeEl(tag),
   getElementById: (id) => nodes[id] || null,
   body: { appendChild() {} },
+  /* The page binds Escape to close the player panel. */
+  addEventListener() {},
 };
 
 /* ---- load the real layout from PHP, then the real scripts ---- */
@@ -146,6 +164,15 @@ function draw(layout, winH, boxW) {
   host.nextElementSibling = legend;
   legend.nextElementSibling = note;
   nodes['riv-map'] = host;
+  /* The player panel's shell, which rivalries.php puts on the page. */
+  const veil = makeEl('div'); veil.hidden = true;
+  const pbody = makeEl('div');
+  const xbtn = makeEl('button'); xbtn.focus = () => {};
+  nodes['riv-veil'] = veil; nodes['riv-body'] = pbody; nodes['riv-close'] = xbtn;
+  /* Fetches are recorded rather than performed. */
+  const fetched = [];
+  global.fetch = (url) => { fetched.push(url); return Promise.resolve({ json: () => Promise.resolve({}) }); };
+  global.__panel = { veil, pbody, fetched };
   /* The map sizes itself to the room left in the window, so the stub has to
      have a window with a height and a way to listen for resizes. */
   global.window = {
@@ -908,6 +935,184 @@ console.log('\n-- ten players, the scale the Arena actually runs at --');
            `  ${id}'s label clears cluster ${other} (${d.toFixed(0)} >= ${e.reach.toFixed(0)})`);
       }
     }
+  }
+}
+
+console.log('\n-- clicking a Fighter opens the COLLECTION\'s panel --');
+/*
+ * The whole point of this path is that it is not a new panel. The page
+ * includes dhc-fighter-modal.php and asks ajax/dhc-fighter.php for the
+ * payload -- the same pair the Collection and the roster use -- so a Fighter
+ * reads identically wherever it is clicked.
+ */
+{
+  const php = fs.readFileSync(path.join(__dirname, 'rivalries.php'), 'utf8');
+  const js  = fs.readFileSync(path.join(__dirname, 'rivalries.js'), 'utf8');
+  const h2 = draw(LAYOUTS.crowded);
+  const sv2 = h2.children[0];
+  const panel = global.__panel;
+  let opened = null;
+  global.window.DHC_MODAL = { open: (f) => { opened = f; } };
+
+  const sat = all(sv2).filter(e => e._class.includes('riv-sat'))[0];
+  ok(!!sat.getAttribute('data-serial'), 'a portrait carries its serial');
+  const want = LAYOUTS.crowded.nodes['1'].fighters[0].serial;
+  ok(String(sat.getAttribute('data-serial')) === String(want),
+     `and it is the right one (${sat.getAttribute('data-serial')} = ${want})`);
+
+  panel.fetched.length = 0;
+  h2.fire('click', { target: sat });
+  ok(panel.fetched.length === 1, `clicking it fetches once (${panel.fetched.length})`);
+  ok(/ajax\/dhc-fighter\.php\?serial=/.test(panel.fetched[0] || ''),
+     `from the Collection's own endpoint (${panel.fetched[0]})`);
+  ok((panel.fetched[0] || '').indexOf('serial=' + want) > -1, 'for that serial');
+  ok(panel.veil.hidden, 'and does NOT open the player panel instead');
+
+  console.log('\n-- clicking a player opens the player panel --');
+  const cl = sv2.querySelectorAll('.riv-cluster').find(c => c.getAttribute('data-id') === '1');
+  panel.fetched.length = 0;
+  h2.fire('click', { target: cl });
+  ok(panel.veil.hidden === false, 'the panel is shown');
+  ok(panel.fetched.length === 0, 'with nothing fetched -- every number is already on the page');
+
+  const html = panel.pbody.innerHTML;
+  const n1 = LAYOUTS.crowded.nodes['1'];
+  ok(html.indexOf(n1.name) > -1, 'it names the player');
+  ok(html.indexOf('>' + n1.battles.toLocaleString() + '<') > -1, `and their battle count (${n1.battles})`);
+  ok(html.indexOf(n1.wins + '\u2013' + n1.losses) > -1, `and their record (${n1.wins}-${n1.losses})`);
+  ok(html.indexOf('dhcgallery.php?owner=' + n1.id) > -1, 'and links to their Fighters in the Collection');
+
+  /* Every rival, from this player's side of the pair. */
+  const rivals = LAYOUTS.crowded.pairs.filter(p => String(p.lo) === '1' || String(p.hi) === '1');
+  ok(rivals.length > 1, `the fixture gives this player several rivals (${rivals.length})`);
+  for (const p of rivals) {
+    const foe = LAYOUTS.crowded.nodes[String(p.lo) === '1' ? p.hi : p.lo];
+    ok(html.indexOf(foe.name) > -1, `  ${foe.name} is listed`);
+  }
+  /* HEAVIEST FIRST, which is the order that makes the table worth reading --
+     and the heaviest is the one the summary line calls out. */
+  const counts = (html.match(/<tr>[\s\S]*?<\/tr>/g) || [])
+    .map(r => (r.match(/<td class="r">(\d+)<\/td>/) || [])[1])
+    .filter(v => v !== undefined).map(Number);
+  ok(counts.length === rivals.length, `every rival is a row (${counts.length})`);
+  ok(counts.length > 1 && new Set(counts).size > 1,
+     `and their battle counts differ (${counts.join(',')}), so an order can be wrong`);
+  let sorted = true;
+  for (let i = 1; i < counts.length; i++) if (counts[i] > counts[i - 1]) sorted = false;
+  ok(sorted, `rivals are listed heaviest first (${counts.join(',')})`);
+  const top = Math.max.apply(null, counts);
+  ok(counts[0] === top, 'the deepest rivalry is the first row');
+  const topFoe = rivals.map(p => ({ p: p, foe: LAYOUTS.crowded.nodes[String(p.lo) === '1' ? p.hi : p.lo] }))
+                       .sort((a, b) => b.p.n - a.p.n)[0];
+  ok(html.indexOf('Fights <b>' + topFoe.foe.name + '</b> most') > -1,
+     `and the summary names them (${topFoe.foe.name})`);
+  /*
+   * AND THE PANEL SORTS FOR ITSELF. dhca_rivalry_layout() already hands the
+   * pairs over heaviest first, so simply walking them in order comes out
+   * right and deleting the panel's own sort changed nothing. That is a pass
+   * resting on an invariant in another file. Handing it a shuffled list is
+   * what actually tests it.
+   */
+  const shuffled = JSON.parse(JSON.stringify(LAYOUTS.crowded));
+  shuffled.pairs.sort((a, b) => a.n - b.n);          // lightest first, the wrong way round
+  const h3 = draw(shuffled);
+  const sv3 = h3.children[0];
+  h3.fire('click', { target: sv3.querySelectorAll('.riv-cluster')
+                                .find(c => c.getAttribute('data-id') === '1') });
+  const sc = (global.__panel.pbody.innerHTML.match(/<tr>[\s\S]*?<\/tr>/g) || [])
+    .map(r => (r.match(/<td class="r">(\d+)<\/td>/) || [])[1])
+    .filter(v => v !== undefined).map(Number);
+  let ssorted = true;
+  for (let i = 1; i < sc.length; i++) if (sc[i] > sc[i - 1]) ssorted = false;
+  ok(sc.length === counts.length, 'the shuffled data has the same rivals');
+  ok(ssorted, `and the panel still lists them heaviest first (${sc.join(',')})`);
+
+  /*
+   * THE WHOLE ROSTER, which is the reason this panel exists for a player with
+   * a deep Crew: the map draws CREW_MAX and says "+N more", and the N have to
+   * be somewhere.
+   */
+  const drawn = all(cl).filter(e => e._class.includes('riv-sat')).length;
+  ok(n1.fighters.length > drawn, `the map draws ${drawn} of ${n1.fighters.length}`);
+  const listed = (html.match(/class="riv-fig"/g) || []).length;
+  ok(listed === n1.fighters.length,
+     `but the panel lists every one (${listed} of ${n1.fighters.length})`);
+  for (const f of n1.fighters) {
+    ok(html.indexOf('data-serial="' + f.serial + '"') > -1, `  ${f.name} is in the roster`);
+  }
+  /* INSIDE the roster buttons. The player's own avatar and every rival's are
+     also <img>, so "the panel contains an image" was true with the portraits
+     removed entirely. */
+  ok(/class="riv-fig"[^>]*>\s*<span class="art">\s*<img/.test(html),
+     'and the roster entries carry the Fighter art, not just a name');
+
+  /*
+   * A PLAYER ON THE OTHER SIDE OF THE PAIR. Pairs are stored low-id to
+   * high-id, and player 1 is the low end of every pair it is in -- so reading
+   * only the `lo` branch produced a complete-looking panel for it and the
+   * test could not tell. Player 10 is the HIGH end of its pair with 1.
+   */
+  /* Chosen, not assumed: a pair whose two directions AND two records both
+     differ, so swapping either shows up. */
+  const hiPair = LAYOUTS.crowded.pairs.find(p => p.hilo !== p.lohi && p.hiwins !== p.lowins);
+  ok(!!hiPair, 'the fixture has a pair that is lopsided on both counts');
+  const hiId = String(hiPair.hi);
+  h2.fire('click', { target: sv2.querySelectorAll('.riv-cluster')
+                                .find(c => c.getAttribute('data-id') === hiId) });
+  const html10 = panel.pbody.innerHTML;
+  const foe10 = LAYOUTS.crowded.nodes[String(hiPair.lo)];
+  const me10 = LAYOUTS.crowded.nodes[hiId];
+  ok(html10.indexOf(me10.name) > -1, `the panel opens for ${me10.name}, the HIGH end of that pair`);
+  ok(html10.indexOf(foe10.name) > -1,
+     `and lists ${foe10.name}, who is the LOW end of it`);
+  /*
+   * THE WHOLE ROW, cell by cell. Looking for a bare number anywhere in the
+   * markup is not a test -- "1" appears in a dozen places, so swapping the
+   * two attack columns for this player still found it. These are the four
+   * cells of that opponent's row, in order.
+   */
+  const rowOf = (h, name) => {
+    for (const m of h.match(/<tr>[\s\S]*?<\/tr>/g) || []) {
+      if (m.indexOf('>' + name + '<') > -1 || m.indexOf(name + '</span>') > -1) {
+        return (m.match(/<td[^>]*>([\s\S]*?)<\/td>/g) || [])
+                 .map(c => c.replace(/<[^>]*>/g, '').trim());
+      }
+    }
+    return null;
+  };
+  const row = rowOf(html10, foe10.name);
+  ok(!!row, `the row for ${foe10.name} is there`);
+  if (row) {
+    ok(row[1] === String(hiPair.n), `  battles ${row[1]} = ${hiPair.n}`);
+    ok(row[2] === String(hiPair.hilo),
+       `  ${me10.name} started ${row[2]}, which must be hilo (${hiPair.hilo}) not lohi (${hiPair.lohi})`);
+    ok(row[3] === String(hiPair.lohi), `  and was attacked ${row[3]} = lohi (${hiPair.lohi})`);
+    ok(hiPair.hilo !== hiPair.lohi,
+       `  the two directions differ in this fixture (${hiPair.hilo} vs ${hiPair.lohi}), so a swap shows`);
+    ok(row[4] === hiPair.hiwins + '\u2013' + hiPair.lowins,
+       `  and the record is from ${me10.name}'s side (${row[4]})`);
+    ok(hiPair.hiwins !== hiPair.lowins, '  and the two records differ, so a swap shows there too');
+  }
+
+  console.log('\n-- and a Fighter in that roster opens the same panel --');
+  /* The panel is written with innerHTML and the stub keeps it as a string, so
+     the buttons cannot be clicked here -- what is checked is that they are
+     buttons carrying a serial, and that the page binds them to the same
+     opener the map uses. */
+  ok(/<button type="button" class="riv-fig" data-serial="\d+"/.test(html),
+     'each roster entry is a button carrying its serial');
+  ok(js.indexOf("querySelectorAll('.riv-fig')") > -1,
+     'and the page binds those buttons to the Fighter opener');
+
+  console.log('\n-- the page reuses the panel rather than rebuilding it --');
+  ok(php.indexOf("include __DIR__ . '/dhc-fighter-modal.php'") > -1,
+     'rivalries.php includes the Collection\'s Fighter panel');
+  ok(js.indexOf('ajax/dhc-fighter.php?serial=') > -1, 'and fetches its payload from the shared endpoint');
+  ok(js.indexOf('window.DHC_MODAL') > -1, 'opening it through DHC_MODAL');
+  /* The giveaway for a duplicated panel would be this file knowing about a
+     Fighter's internals -- traits, ranks, kits. It must not. */
+  for (const leak of ['rankOf', 'prank', 'crank', 'rarity', "'traits'"]) {
+    ok(js.indexOf(leak) === -1, `  rivalries.js does not reimplement ${leak}`);
   }
 }
 

@@ -186,6 +186,56 @@ include 'header.php';
 .riv-cluster.riv-dim{opacity:.22}
 .riv-cluster,.riv-sat{cursor:pointer}
 @media (prefers-reduced-motion:reduce){.riv-cluster,.riv-map line{transition:none}}
+
+/* ---- the player panel ----------------------------------------------------
+   Deliberately NOT a second Fighter panel. This one answers "who is this
+   person and who do they fight"; a Fighter is the Collection's panel, opened
+   through its own file. */
+.riv-veil{position:fixed;inset:0;z-index:70;background:rgba(3,8,14,.82);
+  display:flex;align-items:flex-start;justify-content:center;padding:4vh 16px;overflow:auto}
+.riv-veil[hidden]{display:none!important}
+.riv-sheet{position:relative;width:min(960px,100%);background:var(--panel);
+  border:1px solid var(--line);border-radius:6px;padding:20px 22px 22px}
+.riv-x{position:absolute;top:8px;right:10px;background:none;border:0;color:var(--dim);
+  font-size:24px;line-height:1;cursor:pointer;padding:4px 8px}
+.riv-x:hover{color:var(--bone)}
+.riv-ph{display:flex;align-items:center;gap:14px;margin:0 0 16px}
+.riv-ph img{width:64px;height:64px;border-radius:50%;flex:0 0 auto;background:#050c14}
+.riv-ph h2{margin:0;font-family:"Archivo Black",Impact,sans-serif;font-weight:400;font-size:19px}
+.riv-ph .lean{font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+  border:1px solid currentColor;border-radius:3px;padding:2px 7px;margin-left:8px;vertical-align:2px}
+.riv-ph .lean.a{color:var(--blood)} .riv-ph .lean.d{color:var(--ochre)}
+.riv-ph a{color:var(--ochre);font-size:11px;text-decoration:none;text-align:left}
+.riv-ph a:hover{text-decoration:underline}
+.riv-stats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.riv-stats div{border:1px solid var(--line);padding:7px 12px;min-width:84px;border-radius:3px}
+.riv-stats b{display:block;font-size:17px;font-variant-numeric:tabular-nums;color:var(--ochre)}
+.riv-stats span{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.55}
+.riv-sect{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;
+  margin:0 0 8px;padding-top:4px}
+.riv-vs{width:100%;border-collapse:collapse;font-size:11.5px;margin:0 0 18px}
+.riv-vs th{text-align:left;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+  opacity:.45;font-weight:400;padding:0 8px 6px 0}
+.riv-vs td{padding:5px 8px 5px 0;border-top:1px solid var(--line);vertical-align:middle}
+.riv-vs td.r{text-align:right;font-variant-numeric:tabular-nums}
+.riv-vs .who{display:flex;align-items:center;gap:8px}
+.riv-vs .who img{width:26px;height:26px;border-radius:50%;background:#050c14}
+.riv-vs .won{color:var(--ochre)} .riv-vs .lost{color:var(--blood)}
+/* The full roster, including the Fighters the map had no room to draw. */
+.riv-crew{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.riv-fig{background:#050c14;border:1px solid var(--line);border-radius:4px;padding:8px;
+  cursor:pointer;text-align:center;font:inherit;color:inherit}
+.riv-fig:hover{border-color:var(--ochre)}
+.riv-fig .art{position:relative;width:100%;aspect-ratio:1;margin:0 0 6px;overflow:hidden;
+  border-radius:50%;background:#0a1929}
+.riv-fig .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.riv-fig .nm{display:block;font-size:10px;line-height:1.3;word-break:break-word}
+.riv-fig .st{display:block;font-size:9px;opacity:.6;margin-top:2px;font-variant-numeric:tabular-nums}
+.riv-empty-note{font-size:11px;opacity:.6;margin:0}
+@media (max-width:620px){
+  .riv-sheet{padding:16px 14px 18px}
+  .riv-ph img{width:48px;height:48px}
+}
 </style>
 
 <div class="riv-wrap">
@@ -254,9 +304,35 @@ include 'header.php';
       </p>
     <?php endif; ?>
   <?php endif; ?>
+
+  <?php /* The player panel. Built by rivalries.js from the data already on
+           the page -- every number in it is in window.RIVALRY_DATA, so there
+           is nothing to fetch. The Fighter panel below is a different thing
+           entirely: that one is the Collection's, included whole. */ ?>
+  <div id="riv-veil" class="riv-veil" role="dialog" aria-modal="true" aria-labelledby="riv-pname" hidden>
+    <div class="riv-sheet">
+      <button type="button" class="riv-x" id="riv-close" aria-label="Close">&times;</button>
+      <div id="riv-body"></div>
+    </div>
+  </div>
 </div>
 
 <?php if ($riv_n): ?>
+<?php
+  /*
+   * THE FIGHTER PANEL, INCLUDED NOT REBUILT. This is the same
+   * dhc-fighter-modal.php the Collection and the roster open, and clicking a
+   * Fighter here fetches the same ajax/dhc-fighter.php payload they do. A
+   * second panel saying nearly the same things is how two surfaces come to
+   * disagree about what a Fighter is -- the proven ranks live in that file
+   * and nothing here needs to know about them.
+   *
+   * $dhcm_deeplink stays false: dhcgallery.php owns the ?fighter= URL, and
+   * two pages rewriting the address for the same panel would fight.
+   */
+  $dhcm_user = $riv_user; $dhcm_base = $riv_base; $dhcm_deeplink = false;
+  include __DIR__ . '/dhc-fighter-modal.php';
+?>
 <?php
   /*
    * map-kit.js BEFORE rivalries.js, and both after the markup: rivalries.js

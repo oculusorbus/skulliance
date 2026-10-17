@@ -64,6 +64,22 @@
    */
   const CREW_MAX = window.RIVALRY_CREW_MAX || 12, PER_SHELL = 6;
 
+  /*
+   * WHERE A TRAIT LAYER SITS, in whatever is drawing it.
+   *
+   * The map draws portraits as SVG and the player panel draws them as stacked
+   * <img>, which are different enough that one renderer cannot serve both --
+   * but the RULES are the same two numbers: how far the layer is nudged down,
+   * and where a single-sided arm is cut from the two-arm master. Those live
+   * here so the two cannot disagree about what a Fighter looks like.
+   */
+  function layerGeom(L, size) {
+    const g = { dy: (L.n || 0) / 100 * size, cut: null };
+    if (L.clip === 'right')     g.cut = { from: ARM_SPLIT, to: 100 };
+    else if (L.clip === 'left') g.cut = { from: 0, to: ARM_SPLIT };
+    return g;
+  }
+
   function satR(f, busiest, smax) {
     const smin = Math.max(6, Math.round(smax * 0.5));
     return Math.round(smin + (smax - smin) * Math.sqrt(f.battles / (busiest || 1)));
@@ -440,6 +456,9 @@
       const sg = svgEl('g', {});
       sg.setAttribute('class', 'riv-sat');
       sg.setAttribute('data-fid', f.id);
+      /* The serial too, because ajax/dhc-fighter.php is keyed on it and that
+         endpoint is how a click opens the Collection's panel. */
+      sg.setAttribute('data-serial', f.serial);
       /* A disc behind the art: the trait PNGs are transparent, and with no
          ground behind them a Fighter reads as floating debris, not a
          portrait. */
@@ -459,21 +478,22 @@
         const box = svgEl('g', { 'clip-path': 'url(#' + cid + ')' });
         const S = fr * 2, X = cx - fr, Y = cy - fr;
         f.layers.forEach((L, li) => {
+          const lg = layerGeom(L, S);
           const attrs = {
-            x: X.toFixed(1), y: (Y + (L.n || 0) / 100 * S).toFixed(1),
+            x: X.toFixed(1), y: (Y + lg.dy).toFixed(1),
             width: S.toFixed(1), height: S.toFixed(1),
             href: L.src, preserveAspectRatio: 'xMidYMid meet',
           };
           /* A single-sided arm is the two-arm master with half cut away. The
              Collection cuts it with a CSS inset(); a clipPath rect is the same
              cut and does not rely on CSS applying to an SVG <image>. */
-          if (L.clip === 'left' || L.clip === 'right') {
+          if (lg.cut) {
             const hid = cid + '_a' + li;
             const hcp = svgEl('clipPath', { id: hid });
             hcp.appendChild(svgEl('rect', {
-              x: (L.clip === 'right' ? X + S * (ARM_SPLIT / 100) : X).toFixed(1),
+              x: (X + S * lg.cut.from / 100).toFixed(1),
               y: Y.toFixed(1),
-              width: (S * (L.clip === 'right' ? (100 - ARM_SPLIT) : ARM_SPLIT) / 100).toFixed(1),
+              width: (S * (lg.cut.to - lg.cut.from) / 100).toFixed(1),
               height: S.toFixed(1),
             }));
             defs.appendChild(hcp);
@@ -670,8 +690,193 @@
     c.addEventListener('mouseenter', () => focus(c.getAttribute('data-id')));
     c.addEventListener('mouseleave', () => focus(null));
   });
+
+  /* ====================================================================
+     CLICKING THINGS
+     ==================================================================== */
+
+  const esc = (t) => String(t == null ? '' : t)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+  /*
+   * A FIGHTER OPENS THE COLLECTION'S PANEL, not one of ours.
+   *
+   * dhc-fighter-modal.php is included on this page and ajax/dhc-fighter.php
+   * returns exactly the payload it expects, keyed on serial -- the same pair
+   * the Collection and the roster use. So a Fighter clicked here shows its
+   * traits, its ranks and its proven record identically to everywhere else,
+   * and none of that has to be known about here. A second panel repeating
+   * most of it is how two surfaces start disagreeing about what a Fighter is.
+   */
+  let figBusy = false;
+  function openFighter(serial) {
+    if (!serial || figBusy || !window.DHC_MODAL) return;
+    figBusy = true;
+    fetch('ajax/dhc-fighter.php?serial=' + encodeURIComponent(serial), { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(d => { if (d && d.ok && d.fighter) window.DHC_MODAL.open(d.fighter); })
+      .catch(() => {})
+      .then(() => { figBusy = false; });
+  }
+
+  /* ---- the player panel ---- */
+  const veil = document.getElementById('riv-veil');
+  const pbody = document.getElementById('riv-body');
+
+  function closePlayer() {
+    if (veil) veil.hidden = true;
+  }
+  if (veil) {
+    const x = document.getElementById('riv-close');
+    if (x) x.addEventListener('click', closePlayer);
+    /* The backdrop closes it; the sheet itself must not. */
+    veil.addEventListener('click', (e) => { if (e.target === veil) closePlayer(); });
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && veil && !veil.hidden) closePlayer();
+  });
+
+  /** A Fighter portrait as stacked <img>, the HTML counterpart of the SVG one. */
+  function portrait(f) {
+    if (!f.layers || !f.layers.length) return '';
+    return f.layers.map(L => {
+      const g = layerGeom(L, 100);
+      const st = [];
+      if (g.dy) st.push('transform:translateY(' + g.dy + '%)');
+      if (g.cut) st.push('clip-path:inset(0 ' + (100 - g.cut.to) + '% 0 ' + g.cut.from + '%)');
+      return '<img alt="" loading="lazy" src="' + esc(L.src) + '"'
+           + (st.length ? ' style="' + st.join(';') + '"' : '') + '>';
+    }).join('');
+  }
+
+  /**
+   * Everything this page knows about one player, which is everything in
+   * RIVALRY_DATA -- so the panel opens instantly with nothing to fetch.
+   */
+  function openPlayer(id) {
+    const n = D.nodes[id];
+    if (!n || !veil || !pbody) return;
+
+    /* Their side of every pair they are in. The stored pair is keyed low-id
+       to high-id and knows both directions, so reading it from one player's
+       point of view is a matter of which end they are. */
+    const mine = [];
+    for (const p of D.pairs) {
+      const isLo = String(p.lo) === String(id);
+      if (!isLo && String(p.hi) !== String(id)) continue;
+      const foe = D.nodes[isLo ? p.hi : p.lo];
+      if (!foe) continue;
+      mine.push({
+        foe: foe,
+        n: p.n,
+        theyAttacked: isLo ? p.lohi : p.hilo,
+        wereAttacked: isLo ? p.hilo : p.lohi,
+        won:  isLo ? p.lowins : p.hiwins,
+        lost: isLo ? p.hiwins : p.lowins,
+      });
+    }
+    mine.sort((a, b) => b.n - a.n || b.won - a.won);
+
+    const nemesis = mine.length ? mine[0] : null;
+    const best = mine.filter(m => m.n >= 3).sort((a, b) => (b.won - b.lost) - (a.won - a.lost))[0];
+    const worst = mine.filter(m => m.n >= 3).sort((a, b) => (a.won - a.lost) - (b.won - b.lost))[0];
+
+    let h = '<div class="riv-ph">'
+      + (n.avatar ? '<img src="' + esc(n.avatar) + '" alt="">' : '')
+      + '<div><h2 id="riv-pname">' + esc(n.name)
+      + (n.lean === 'aggressor' ? '<span class="lean a">mostly attacking</span>' : '')
+      + (n.lean === 'target'    ? '<span class="lean d">mostly attacked</span>' : '')
+      + '</h2>'
+      + '<a href="dhcgallery.php?owner=' + encodeURIComponent(n.id) + '">'
+      + 'See every Fighter ' + esc(n.name) + ' has built &rsaquo;</a>'
+      + '</div></div>';
+
+    const pct = n.battles ? Math.round(100 * n.wins / n.battles) : 0;
+    h += '<div class="riv-stats">'
+      + '<div><b>' + n.battles.toLocaleString() + '</b><span>Battles, ' + D.days + 'd</span></div>'
+      + '<div><b>' + n.wins + '\u2013' + n.losses + '</b><span>Record</span></div>'
+      + '<div><b>' + pct + '%</b><span>Win rate</span></div>'
+      + '<div><b>' + n.att.toLocaleString() + '</b><span>Attacking</span></div>'
+      + '<div><b>' + n.def.toLocaleString() + '</b><span>Defending</span></div>'
+      + '<div><b>' + mine.length + '</b><span>Rival' + (mine.length === 1 ? '' : 's') + '</span></div>'
+      + '</div>';
+
+    if (nemesis) {
+      const bits = [];
+      bits.push('Fights <b>' + esc(nemesis.foe.name) + '</b> most, ' + nemesis.n + ' times');
+      if (best && best.won !== best.lost)  bits.push('best against <b>' + esc(best.foe.name) + '</b> at ' + best.won + '\u2013' + best.lost);
+      if (worst && worst !== best && worst.won !== worst.lost) bits.push('worst against <b>' + esc(worst.foe.name) + '</b> at ' + worst.won + '\u2013' + worst.lost);
+      h += '<p class="riv-empty-note" style="margin:-8px 0 16px">' + bits.join('. ') + '.</p>';
+    }
+
+    h += '<p class="riv-sect">Rivalries</p>';
+    if (!mine.length) {
+      h += '<p class="riv-empty-note">No settled battles against anyone in this window.</p>';
+    } else {
+      h += '<table class="riv-vs"><thead><tr><th>Opponent</th><th class="r">Battles</th>'
+         + '<th class="r">They started</th><th class="r">Were attacked</th><th class="r">Record</th>'
+         + '</tr></thead><tbody>';
+      for (const m of mine) {
+        const cls = m.won > m.lost ? 'won' : (m.won < m.lost ? 'lost' : '');
+        h += '<tr>'
+          + '<td><span class="who">'
+          + (m.foe.avatar ? '<img src="' + esc(m.foe.avatar) + '" alt="">' : '')
+          + esc(m.foe.name) + '</span></td>'
+          + '<td class="r">' + m.n + '</td>'
+          + '<td class="r">' + m.theyAttacked + '</td>'
+          + '<td class="r">' + m.wereAttacked + '</td>'
+          + '<td class="r ' + cls + '">' + m.won + '\u2013' + m.lost + '</td>'
+          + '</tr>';
+      }
+      h += '</tbody></table>';
+    }
+
+    /*
+     * THE WHOLE ROSTER, including the ones the map had no room for. The map
+     * draws the CREW_MAX most-fielded and says "+N more"; this is where the
+     * N live, because a panel can scroll and a ring cannot.
+     */
+    const crew = n.fighters || [];
+    h += '<p class="riv-sect">Fighters fielded'
+       + (crew.length ? ' \u00b7 ' + crew.length : '') + '</p>';
+    if (!crew.length) {
+      h += '<p class="riv-empty-note">No Fighters recorded yet. Which Fighters were in a '
+         + 'Crew has only been kept since the participation ledger landed.</p>';
+    } else {
+      h += '<div class="riv-crew">';
+      for (const f of crew) {
+        h += '<button type="button" class="riv-fig" data-serial="' + esc(f.serial) + '">'
+          + '<span class="art">' + portrait(f) + '</span>'
+          + '<span class="nm">' + esc(f.name) + '</span>'
+          + '<span class="st">' + f.battles + ' battle' + (f.battles === 1 ? '' : 's')
+          + ' \u00b7 ' + f.dealt.toLocaleString() + ' dmg</span>'
+          + '</button>';
+      }
+      h += '</div>';
+    }
+
+    pbody.innerHTML = h;
+    veil.hidden = false;
+    /* A Fighter in the roster opens the Collection's panel over this one. */
+    pbody.querySelectorAll('.riv-fig').forEach(btn => {
+      btn.addEventListener('click', () => openFighter(btn.getAttribute('data-serial')));
+    });
+    const x = document.getElementById('riv-close');
+    if (x) x.focus();
+  }
+
+  /*
+   * ONE CLICK HANDLER ON THE MAP. A Fighter opens its own panel and stops
+   * there; anything else inside a cluster opens the player. Delegated rather
+   * than bound per node, because the map is rebuilt wholesale on a redraw and
+   * per-node listeners would have to be rebound with it.
+   */
   host.addEventListener('click', (e) => {
-    const c = e.target.closest ? e.target.closest('.riv-cluster') : null;
-    focus(c ? c.getAttribute('data-id') : null);
+    const t = e.target;
+    const sat = t.closest ? t.closest('.riv-sat') : null;
+    if (sat) { openFighter(sat.getAttribute('data-serial')); return; }
+    const cl = t.closest ? t.closest('.riv-cluster') : null;
+    if (cl) { openPlayer(cl.getAttribute('data-id')); return; }
+    focus(null);
   });
 })();

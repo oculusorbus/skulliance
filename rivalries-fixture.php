@@ -27,7 +27,7 @@ function fx_fighter($id, $name, $b, $att, $def, $fell, $dealt, $clip = '') {
 		array('src'=>"web/250/head/h$id.png",  'n'=>-4, 'clip'=>''),
 	);
 	if ($clip !== '') $layers[] = array('src'=>"web/250/arms/a$id.png", 'n'=>0, 'clip'=>$clip);
-	return array('id'=>$id, 'name'=>$name, 'battles'=>$b, 'att'=>$att,
+	return array('id'=>$id, 'serial'=>$id, 'name'=>$name, 'battles'=>$b, 'att'=>$att,
 	             'def'=>$def, 'fell'=>$fell, 'dealt'=>$dealt, 'layers'=>$layers);
 }
 

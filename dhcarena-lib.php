@@ -1571,6 +1571,10 @@ function dhca_rivalries($conn, $days = DHCA_RIVALRY_DAYS) {
 			if (!isset($out['fighters'][$uid])) $out['fighters'][$uid] = array();
 			$out['fighters'][$uid][] = array(
 				'id'      => (int)$r['fighter_id'],
+				/* The SERIAL, not just the id: ajax/dhc-fighter.php is keyed on
+				   it, and that endpoint is how a click here opens the very same
+				   panel the Collection opens. */
+				'serial'  => (int)$r['serial'],
 				'name'    => dhcf_display_name($r),
 				/* The trait set, so a caller can draw the Fighter rather than a
 				   dot. Decoded here and not in the renderer: it is a JSON
