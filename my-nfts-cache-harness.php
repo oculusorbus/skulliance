@@ -167,5 +167,43 @@ ok(strpos($panel, 'd.image') === false && strpos($src, 'esc(d.image)') !== false
 ok(strpos($src, "this.src=\\'/staking/icons/skull.png\\'") !== false,
    'with the same skull fallback as everywhere else');
 
+echo "\n-- every file that calls a shared helper also loads it --\n";
+/*
+ * THIS ONE SHIPPED, AND IT BROKE THE NIGHTLY.
+ *
+ * lib/image-cache-lib.php has always called ipfs_gateways() and never
+ * required the file that defines it. It survived because db.php requires
+ * that file INSIDE ensureNFTImageCached(), so anything which happened to
+ * call that first had the function by luck -- and the nightly pass
+ * (image-cache.php) calls neither, so every NFT with an IPFS CID died on an
+ * undefined function. The pass was not "missing some"; it was failing on
+ * all of them bar the self-hosted-URL rows.
+ *
+ * A dependency satisfied by whoever happens to include you first is not
+ * satisfied. The rule: a file that CALLS it must REQUIRE it.
+ */
+require_once __DIR__ . '/harness-strip.php';
+$shared = array(
+	'ipfs_gateways'  => 'lib/ipfs-gateways.php',
+);
+foreach ($shared as $fn => $home) {
+	$callers = array();
+	foreach (glob(__DIR__ . '/*.php') as $f) $callers[] = $f;
+	foreach (glob(__DIR__ . '/lib/*.php') as $f) $callers[] = $f;
+	foreach (glob(__DIR__ . '/ajax/*.php') as $f) $callers[] = $f;
+	$checked = 0;
+	foreach ($callers as $f) {
+		$name = str_replace(__DIR__ . '/', '', $f);
+		if (substr($name, -12) === '-harness.php') continue;   // harnesses assert about it
+		if ($name === $home) continue;                          // the definition itself
+		$code = harness_strip_comments(file_get_contents($f));
+		if (strpos($code, $fn . '()') === false) continue;       // does not call it
+		$checked++;
+		ok(preg_match('~require(_once)?\s*.{0,40}' . preg_quote(basename($home), '~') . '~', $code) === 1,
+		   "  $name calls $fn() and requires " . basename($home));
+	}
+	ok($checked > 0, "found $checked callers of $fn() to check");
+}
+
 echo "\n" . ($fails ? "$fails FAILED\n" : "all passed\n");
 exit($fails ? 1 : 0);

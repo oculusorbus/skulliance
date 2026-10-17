@@ -38,6 +38,28 @@ function _ipfs_is_url(string $ipfs): bool {
     return (bool)preg_match('~^https?://~i', $ipfs);
 }
 
+/*
+ * THE GATEWAY LIST, REQUIRED BY THE FILE THAT USES IT.
+ *
+ * cacheNFTImage() has always called ipfs_gateways() and this file has never
+ * loaded it. It survived in exactly one place -- db.php requires it INSIDE
+ * ensureNFTImageCached(), so anything that happened to call that first had
+ * the function defined by luck. Nothing else did:
+ *
+ *   image-cache.php, the nightly pass, includes db.php and this file and
+ *   calls neither, so every NFT with an IPFS CID died on an undefined
+ *   function. That is why the nightly "wasn't catching everything" -- it was
+ *   catching almost nothing, and only the self-hosted-URL rows worked.
+ *
+ *   ajax/cache-nft-image.php caught the same fatal and reported it as a
+ *   per-image failure, which is how it finally became visible.
+ *
+ * Required here rather than in each caller because this is the file that
+ * calls it; a dependency satisfied by whoever happens to include you first
+ * is not satisfied.
+ */
+require_once __DIR__ . '/ipfs-gateways.php';
+
 function cacheNFTImage(
     string $ipfs,
     int $collection_id,
