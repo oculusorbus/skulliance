@@ -23,9 +23,24 @@ function makeEl(tag) {
     setAttribute(k, v) { if (k === 'class') this._class = String(v); this.attrs[k] = String(v); },
     getAttribute(k) { return k === 'class' ? this._class : (k in this.attrs ? this.attrs[k] : null); },
     appendChild(c) { c.parent = this; this.children.push(c); return c; },
+    /* map-kit.js's text measurer appends a probe and takes it straight back
+       out again; without removeChild the hidden measuring svg grows forever
+       and the first call throws. */
+    removeChild(c) { const i = this.children.indexOf(c); if (i > -1) this.children.splice(i, 1); return c; },
     addEventListener() {},
     set textContent(v) { this._text = String(v); },
     get textContent() { return this._text; },
+    /*
+     * A PLAUSIBLE TEXT WIDTH, not zero. map-kit.js's measureTextWidth asks
+     * the browser for getComputedTextLength, and a stub answering 0 makes
+     * every label weightless -- which is precisely how a canvas sized from
+     * measured labels passed while a long username ran off the edge. 0.58em
+     * per character is close enough to Arial for a margin check.
+     */
+    getComputedTextLength() {
+      const fs = parseFloat(this.attrs['font-size']) || 11;
+      return this._text.length * fs * 0.58;
+    },
     set innerHTML(v) { if (v === '') this.children = []; },
     get classList() {
       const self = this;
@@ -53,6 +68,30 @@ function matches(el, sel) {
    Defined up here because the outward-facing checks run before the section
    that first needed it, and a const is not hoisted. */
 const satDisc = (sg) => all(sg).filter(e => e.tagName === 'circle')[0];
+
+/* Every piece of ink an SVG actually puts down: circles by centre and radius,
+   text by its measured width in the direction its anchor runs. Shared so the
+   solo map and the crowded one are judged the same way. */
+function inkBounds(svg) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const e of all(svg)) {
+    if (e.tagName === 'circle') {
+      const x = parseFloat(e.attrs.cx), y = parseFloat(e.attrs.cy), r = parseFloat(e.attrs.r);
+      if (isNaN(x) || isNaN(y) || isNaN(r)) continue;
+      x0 = Math.min(x0, x - r); x1 = Math.max(x1, x + r);
+      y0 = Math.min(y0, y - r); y1 = Math.max(y1, y + r);
+    } else if (e.tagName === 'text') {
+      const tw = e.textContent.length * (parseFloat(e.attrs['font-size']) || 11) * 0.58;
+      const tx = parseFloat(e.attrs.x), ty = parseFloat(e.attrs.y);
+      if (isNaN(tx) || isNaN(ty)) continue;
+      const an = e.attrs['text-anchor'];
+      const ax = an === 'start' ? tx : (an === 'end' ? tx - tw : tx - tw / 2);
+      x0 = Math.min(x0, ax); x1 = Math.max(x1, ax + tw);
+      y0 = Math.min(y0, ty - 10); y1 = Math.max(y1, ty + 4);
+    }
+  }
+  return { x0: x0, y0: y0, x1: x1, y1: y1 };
+}
 
 const nodes = {};
 global.document = {
@@ -204,7 +243,26 @@ console.log('\n-- the clusters sit on a ring, not in a grid --');
  * sizes itself to what the clusters actually need.
  */
 {
-  const cx = W / 2, cy = H / 2;
+  /*
+   * THE RING CENTRE, FOUND FROM THE HUBS THEMSELVES.
+   *
+   * Not the middle of the canvas: that is sized to the ink and shifted, so
+   * its centre is wherever the drawing happened to land, with labels pushing
+   * further out on one side than another.
+   *
+   * And not the centroid of the hubs either, which only coincides with the
+   * centre when they are evenly spaced -- they are deliberately not, since
+   * each cluster gets the angle it needs. Three points on a circle fix its
+   * centre exactly, so that is what is used, and the test below is then a
+   * real test that the rest lie on the same circle.
+   */
+  const pts = [0, Math.floor(clusters.length / 3), Math.floor(2 * clusters.length / 3)]
+    .map(i => hubOf[clusters[i].getAttribute('data-id')]);
+  const [P, Q, S] = pts;
+  const dd = 2 * (P.x * (Q.y - S.y) + Q.x * (S.y - P.y) + S.x * (P.y - Q.y));
+  const sq = (p) => p.x * p.x + p.y * p.y;
+  const cx = (sq(P) * (Q.y - S.y) + sq(Q) * (S.y - P.y) + sq(S) * (P.y - Q.y)) / dd;
+  const cy = (sq(P) * (S.x - Q.x) + sq(Q) * (P.x - S.x) + sq(S) * (Q.x - P.x)) / dd;
   const d = clusters.map(c => {
     const id = c.getAttribute('data-id');
     return Math.hypot(hubOf[id].x - cx, hubOf[id].y - cy);
@@ -270,10 +328,20 @@ console.log('\n-- the clusters sit on a ring, not in a grid --');
        `  ${a.id} and ${b.id} have clearance between them `
        + `(${(a.gap * d[0]).toFixed(0)} >= ${(reachOf[a.id] + reachOf[b.id]).toFixed(0)})`);
   }
-  /* The canvas is square and holds the ring plus the widest cluster. */
-  ok(W === H, `the canvas is square (${W}x${H})`);
-  const widest = Math.max.apply(null, Object.values(L.nodes).map(n => n.r));
-  ok(W > 2 * (d[0] + widest), 'and is wide enough for the ring plus a cluster');
+  /*
+   * AND THE CANVAS IS TIGHT AROUND THE DRAWING. It used to be a square of
+   * ring plus a uniform margin, which meant slack on every side except the
+   * one cluster that set the margin -- dead space on a page that wants the
+   * full width, and enough of it to absorb a dropped label measurement
+   * without anything visibly breaking. Sized to the ink, there should be
+   * almost nothing between the outermost ink and the edge.
+   */
+  const ib = inkBounds(svg);
+  const ix0 = ib.x0, iy0 = ib.y0, ix1 = ib.x1, iy1 = ib.y1;
+  ok(ix0 >= 0 && iy0 >= 0 && ix1 <= W && iy1 <= H, 'all the ink is inside the canvas');
+  ok(ix0 < 24 && iy0 < 24, `the drawing starts near the top-left (${ix0.toFixed(0)},${iy0.toFixed(0)})`);
+  ok(W - ix1 < 24 && H - iy1 < 24,
+     `and ends near the bottom-right (${(W - ix1).toFixed(0)},${(H - iy1).toFixed(0)} to spare)`);
 }
 
 console.log('\n-- arrowheads are a fixed size and a visible colour --');
@@ -685,12 +753,34 @@ console.log('\n-- ten players, the scale the Arena actually runs at --');
     const id = c.getAttribute('data-id');
     for (const t of all(c).filter(e => e.tagName === 'text')) {
       const tx = parseFloat(t.attrs.x), ty = parseFloat(t.attrs.y);
-      ok(tx >= 0 && ty >= 0 && tx <= cw && ty <= ch, `  ${id}'s label is on the canvas`);
+      /*
+       * BY ITS EXTENT, NOT ITS ANCHOR POINT. A right-hand label is anchored
+       * at its left end and runs outward from there, so checking the anchor
+       * is inside the canvas says nothing about where the text ends -- which
+       * is how "michael_heistonalpha" came to be cut in half by the edge.
+       */
+      const tw = t.textContent.length * (parseFloat(t.attrs['font-size']) || 11) * 0.58;
+      const anc = t.attrs['text-anchor'];
+      const x0 = anc === 'start' ? tx : (anc === 'end' ? tx - tw : tx - tw / 2);
+      const x1 = x0 + tw;
+      ok(x0 >= 0 && x1 <= cw,
+         `  ${id}'s whole label fits the canvas (${x0.toFixed(0)}..${x1.toFixed(0)} in 0..${cw})`);
+      ok(ty >= 0 && ty <= ch, `  ${id}'s label is within the canvas height`);
       /* ANCHORED AWAY FROM ITS CLUSTER. A centred label on the left or right
          of the ring spreads half its width back over its own portraits, which
          the anchor-point check above cannot see. */
       const e0 = ext[id];
-      const cosA = (e0.x - cw / 2) / (Math.hypot(e0.x - cw / 2, e0.y - ch / 2) || 1);
+      /* Against the RING centre, not the canvas centre -- see the note in the
+         ring section. */
+      const tp = [0, Math.floor(eids.length / 3), Math.floor(2 * eids.length / 3)].map(k => ext[eids[k]]);
+      const dd2 = 2 * (tp[0].x * (tp[1].y - tp[2].y) + tp[1].x * (tp[2].y - tp[0].y)
+                     + tp[2].x * (tp[0].y - tp[1].y));
+      const sq2 = (q) => q.x * q.x + q.y * q.y;
+      const rcx = (sq2(tp[0]) * (tp[1].y - tp[2].y) + sq2(tp[1]) * (tp[2].y - tp[0].y)
+                 + sq2(tp[2]) * (tp[0].y - tp[1].y)) / dd2;
+      const rcy = (sq2(tp[0]) * (tp[2].x - tp[1].x) + sq2(tp[1]) * (tp[0].x - tp[2].x)
+                 + sq2(tp[2]) * (tp[1].x - tp[0].x)) / dd2;
+      const cosA = (e0.x - rcx) / (Math.hypot(e0.x - rcx, e0.y - rcy) || 1);
       const want = cosA > 0.3 ? 'start' : (cosA < -0.3 ? 'end' : 'middle');
       ok(t.attrs['text-anchor'] === want,
          `  ${id}'s label runs away from the cluster (anchor ${t.attrs['text-anchor']}, wanted ${want})`);
@@ -707,6 +797,43 @@ console.log('\n-- ten players, the scale the Arena actually runs at --');
 console.log('\n-- degenerate graphs --');
 const solo = draw(LAYOUTS.solo);
 ok(solo.children.length === 1, 'one player with one battle still draws');
+/*
+ * THE SOLO MAP IS WHERE THE CLUSTER ITSELF SETS THE BOUNDS. Everywhere else
+ * a label reaches further than the Crew it belongs to, so measuring only the
+ * labels happens to be enough -- with one player there is nothing either side
+ * of it, and the canvas has to come from the avatar and its Fighters.
+ */
+{
+  const ssvg = solo.children[0];
+  const sb = inkBounds(ssvg);
+  const sw = parseFloat(ssvg.attrs.width), sh = parseFloat(ssvg.attrs.height);
+  ok(sb.x0 >= 0 && sb.y0 >= 0 && sb.x1 <= sw && sb.y1 <= sh,
+     `the lone cluster is inside its canvas (${sb.x0.toFixed(0)}..${sb.x1.toFixed(0)} in 0..${sw})`);
+  ok(sb.x0 < 24 && sw - sb.x1 < 24,
+     `and the canvas is tight around it (${sb.x0.toFixed(0)} / ${(sw - sb.x1).toFixed(0)} spare)`);
+  /*
+   * AND IT FACES A DETERMINATE DIRECTION. With no ring there is no outward,
+   * so the angle the slice arithmetic produces is meaningless -- it pointed
+   * the lone player's Crew and label off wherever the division happened to
+   * land. Facing up is the choice; what matters is that it is a choice.
+   */
+  const sc = all(ssvg).filter(e => e._class.includes('riv-cluster'))[0];
+  const sim = all(sc).filter(e => e.tagName === 'image'
+    && (e.attrs['clip-path'] || '').indexOf('url(#rivclip') === 0
+    && (e.attrs['clip-path'] || '').indexOf('rivsat') < 0)[0];
+  const shx = parseFloat(sim.attrs.x) + parseFloat(sim.attrs.width) / 2;
+  const shy = parseFloat(sim.attrs.y) + parseFloat(sim.attrs.height) / 2;
+  const sps = all(sc).filter(e => e._class.includes('riv-sat')).map(satDisc);
+  ok(sps.length === 6, `the lone player's six Fighters are drawn (${sps.length})`);
+  for (const sp of sps) {
+    ok(parseFloat(sp.attrs.cy) < shy,
+       `  a portrait sits above the lone avatar (${sp.attrs.cy} < ${shy.toFixed(0)})`);
+  }
+  /* The Crew, not the avatar or the label, is what the canvas is sized to. */
+  const spx = sps.map(q => parseFloat(q.attrs.cx) - parseFloat(q.attrs.r));
+  ok(Math.min.apply(null, spx) < shx - parseFloat(sim.attrs.width) / 2,
+     'and the Crew reaches wider than the avatar, so it sets the bounds');
+}
 ok(solo.children[0].querySelectorAll('.riv-cluster').length === 1, 'as a single cluster');
 ok(all(solo.children[0]).filter(e => e.tagName === 'line').length === 0, 'with no lines');
 const nofight = draw(LAYOUTS.nofighters);

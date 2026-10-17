@@ -96,7 +96,7 @@ include 'header.php';
 
 <?php dhc_type_styles(); ?>
 <style>
-.riv-wrap{padding:14px;max-width:1500px;margin:0 auto;overflow-x:clip;
+.riv-wrap{padding:14px;max-width:100%;margin:0 auto;overflow-x:clip;
   color:var(--bone,#e8eaed);font:14px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
   --ink:#07111d;--panel:#0a1929;--line:#1b3346;--dim:#7a9eb0;--ochre:#00c8a0;--blood:#e0466b}
 .riv-wrap h1{font-family:"Archivo Black",Impact,sans-serif;font-weight:400;margin:0;font-size:22px}

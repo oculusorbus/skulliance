@@ -156,6 +156,14 @@
   const G   = {};
   seq.forEach(id => { G[id] = geom(D.nodes[id]); });
 
+  /* ONE DEFINITION OF THE SECOND LABEL LINE. It is measured below to size
+     the canvas and written out again when the cluster is drawn; two copies
+     of the string would mean measuring something other than what renders. */
+  function subText(n, g) {
+    return `${n.battles} battle${n.battles === 1 ? '' : 's'} · ${n.wins}W ${n.losses}L`
+         + (g.hidden ? ` · +${g.hidden} more` : '');
+  }
+
   /*
    * LABELS SIT RADIALLY OUTSIDE THE RING, not under their cluster.
    *
@@ -169,7 +177,7 @@
    * LABEL is the margin that annulus needs: the offset, two lines of text,
    * and enough width for a centred username to spread either side.
    */
-  const LABEL = 76, GAP = 26;
+  const LABEL_GAP = 17, GAP = 26;
   const outer = seq.map(id => G[id].outer);
   const maxOut = Math.max.apply(null, outer);
 
@@ -184,46 +192,113 @@
   const needed = demand.reduce((t, d) => t + d, 0);
   const R = N === 1 ? 0 : Math.max(maxOut + 40, needed / (2 * Math.PI));
 
-  const PAD = maxOut + LABEL + 20;
-  const W = Math.round(2 * (R + PAD));
-  const H = Math.round(2 * (R + PAD));
-  const CX = W / 2, CY = H / 2;
-
   /*
-   * ---- EVERY CLUSTER GETS THE ANGLE IT NEEDS, NOT AN EQUAL SHARE ----
+   * ---- THE CANVAS IS SIZED TO THE INK ----
    *
-   * Dividing the circle into N equal slices assumes the clusters are the same
-   * size, and they are emphatically not: one player with twenty Fighters sits
-   * beside one with none, and the equal slice that was generous for the
-   * second was far too narrow for the first. Its Crew spilled sideways into
-   * the neighbour's -- portraits from two different players interleaved,
-   * which is worse than crowding because it is actively misleading about who
-   * owns what.
+   * Not to a margin. A uniform PAD has to be the largest any cluster could
+   * need, applied on all four sides, so the map carries slack everywhere
+   * except at the one cluster that set it -- and the cluster that sets the
+   * margin is rarely the one sitting at the edge. That slack is dead space on
+   * a page that wants to be full width, and it also hides mistakes: a label
+   * measurement could be dropped entirely and the leftover room would absorb
+   * it.
    *
-   * So the circle is divided in PROPORTION to what each cluster occupies. A
-   * player with a deep Crew is handed a wide wedge and gets room to show it;
-   * players with nothing around them pack in close, which is exactly as much
-   * of the ring as they need.
-   *
-   * Any slack left when the radius is set by the minimum rather than by the
-   * demand is spread evenly, so the clusters still go all the way round
-   * instead of bunching at the top with a gap at the bottom.
+   * So the clusters are laid out around an origin, every piece of ink they
+   * produce is measured -- avatar, Crew, and both label lines in the
+   * direction that label actually runs -- and the canvas is the union, shifted
+   * into view. The widest ink on the realm map turned out to be a username
+   * rather than any shape, which is why map-kit.js carries a text measurer;
+   * the same is true here.
    */
+  const FONT = 'Arial, sans-serif';
+  let inkX0 = Infinity, inkY0 = Infinity, inkX1 = -Infinity, inkY1 = -Infinity;
+  function ink(x0, y0, x1, y1) {
+    if (x0 < inkX0) inkX0 = x0;
+    if (y0 < inkY0) inkY0 = y0;
+    if (x1 > inkX1) inkX1 = x1;
+    if (y1 > inkY1) inkY1 = y1;
+  }
+
   const used  = needed / (R || 1);
   const slack = Math.max(0, Math.PI * 2 - used) / N;
   let acc = 0;
-  /* Start at the top and run clockwise, so the busiest player -- first in the
-     seriation -- is where the eye lands. */
+  /* Laid out around (0,0) and shifted once the ink is known. Start at the top
+     and run clockwise, so the busiest player -- first in the seriation -- is
+     where the eye lands. */
   const placed = seq.map((id, i) => {
     const slice = demand[i] / (R || 1) + slack;
-    const a = -Math.PI / 2 + acc + slice / 2;
+    /*
+     * WITH ONE PLAYER THE RING HAS NO RADIUS, and the angle arithmetic goes
+     * with it: every cluster lands at the origin whatever the angle says, so
+     * `a` is free to be nonsense -- and it was, which pointed the lone
+     * player's Crew and label off in whichever direction the division
+     * happened to produce. There is nothing to orient around, so it faces up.
+     */
+    const a = N === 1 ? -Math.PI / 2 : (-Math.PI / 2 + acc + slice / 2);
     acc += slice;
-    return {
-      id: id, node: D.nodes[id], g: G[id], ang: a, slice: slice,
-      x: CX + Math.cos(a) * R,
-      y: CY + Math.sin(a) * R,
-    };
+    const g = G[id], n = D.nodes[id];
+    const x = Math.cos(a) * R, y = Math.sin(a) * R;
+
+    /*
+     * WHERE EACH PORTRAIT GOES, decided once.
+     *
+     * The draw loop used to work this out for itself, which left the ink pass
+     * with only `outer` to go on -- the cluster's worst-case reach in ANY
+     * direction. But the Crew occupies an ARC, so a box of `outer` on all four
+     * sides is far bigger than the cluster really is, and the canvas came out
+     * padded with dead space the drawing never used.
+     *
+     * Computing the positions here and handing them to the renderer makes the
+     * ink exact and removes the second copy of the arc maths at the same
+     * time: the thing measured is now literally the thing drawn.
+     */
+    const sats = [];
+    let fi = 0;
+    g.shells.forEach(shell => {
+      for (let j = 0; j < shell.n; j++, fi++) {
+        const f = n.fighters[fi];
+        if (!f) break;
+        const t0 = shell.n === 1 ? 0.5 : j / (shell.n - 1);
+        const sa = a - CREW_SPAN / 2 + t0 * CREW_SPAN;
+        const fr = satR(f, g.busiest, g.smax);
+        sats.push({ f: f, r: fr, x: x + Math.cos(sa) * shell.r, y: y + Math.sin(sa) * shell.r });
+      }
+    });
+    /* The avatar, allowing for its lean ring, then every portrait.
+       (The +5 for the ring is conservatism the tests cannot pin down: a
+       leaning avatar is never the outermost ink, because its own label always
+       reaches further out than it does. It stays because it is correct, not
+       because anything is currently measuring it.) */
+    ink(x - n.r - 5, y - n.r - 5, x + n.r + 5, y + n.r + 5);
+    sats.forEach(sv => ink(sv.x - sv.r, sv.y - sv.r, sv.x + sv.r, sv.y + sv.r));
+
+    /* The label, which runs outward from the cluster's edge and is the ink
+       most likely to be furthest out. Its horizontal reach depends on which
+       way it is anchored, so that is computed the same way it is drawn. */
+    const cosA = Math.cos(a);
+    const anchor = cosA > 0.3 ? 'start' : (cosA < -0.3 ? 'end' : 'middle');
+    const lw = Math.max(
+      measureTextWidth(n.name, 11, FONT, 'normal', '0'),
+      measureTextWidth(subText(n, g), 9.5, FONT, 'normal', '0'));
+    const lx = x + cosA * (g.outer + LABEL_GAP);
+    const ly = y + Math.sin(a) * (g.outer + LABEL_GAP) + 4;
+    const x0 = anchor === 'start' ? lx : (anchor === 'end' ? lx - lw : lx - lw / 2);
+    ink(x0, ly - 10, x0 + lw, ly + 12 + 4);
+
+    return { id: id, node: n, g: g, ang: a, slice: slice, anchor: anchor,
+             x: x, y: y, sats: sats };
   });
+
+  /* Shift the whole drawing into positive space with a hair of breathing room,
+     and the canvas is exactly the ink plus that. */
+  const EDGE = 10;
+  const OX = EDGE - inkX0, OY = EDGE - inkY0;
+  placed.forEach(p => {
+    p.x += OX; p.y += OY;
+    p.sats.forEach(sv => { sv.x += OX; sv.y += OY; });
+  });
+  const W = Math.round(inkX1 - inkX0 + EDGE * 2);
+  const H = Math.round(inkY1 - inkY0 + EDGE * 2);
 
   const svg = svgEl('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
   svg.setAttribute('class', 'riv-svg');
@@ -355,18 +430,12 @@
      * from the centre of the map, which is also the only space a cluster
      * reliably has to itself.
      */
-    const mid = p.ang;                        // the outward direction
-    /* Shell by shell, busiest Fighters on the inner arc where they sit closest
-       to their owner. n.fighters arrives sorted by battles from the server. */
-    let fi = 0;
-    p.g.shells.forEach(shell => {
-      for (let j = 0; j < shell.n; j++, fi++) {
-        const f = n.fighters[fi];
-        if (!f) break;
-        const t0 = shell.n === 1 ? 0.5 : j / (shell.n - 1);
-        const a  = mid - CREW_SPAN / 2 + t0 * CREW_SPAN;
-        const fr = satR(f, p.g.busiest, p.g.smax);
-        const cx = hub.x + Math.cos(a) * shell.r, cy = hub.y + Math.sin(a) * shell.r;
+    /* FROM p.sats, not worked out again here. The ink pass that sized the
+       canvas placed these; recomputing them is how a drawing comes to sit
+       somewhere the canvas was not measured for. */
+    p.sats.forEach(sv => {
+      {
+        const f = sv.f, fr = sv.r, cx = sv.x, cy = sv.y;
 
       const sg = svgEl('g', {});
       sg.setAttribute('class', 'riv-sat');
@@ -459,10 +528,13 @@
      * end on the left makes the text run AWAY from the cluster; only at the
      * top and bottom, where it runs along the tangent, does centred work.
      */
-    const LR = p.g.outer + 17;
-    const cosA = Math.cos(p.ang);
-    const anchor = cosA > 0.3 ? 'start' : (cosA < -0.3 ? 'end' : 'middle');
-    const LX = hub.x + cosA * LR;
+    /* p.anchor, NOT a second copy of the rule. The ink pass that sized the
+       canvas measured this label assuming one anchor; computing it again here
+       is how the canvas comes to be measured for a label other than the one
+       that gets drawn. */
+    const LR = p.g.outer + LABEL_GAP;
+    const anchor = p.anchor;
+    const LX = hub.x + Math.cos(p.ang) * LR;
     const LY = hub.y + Math.sin(p.ang) * LR + 4;
     const label = svgEl('text', {
       x: LX.toFixed(1), y: LY.toFixed(1), 'text-anchor': anchor,
@@ -479,8 +551,7 @@
        Fighters looks like one who has fielded 12, which is a quieter lie
        than it sounds: the size of the roster is the interesting thing
        about them. */
-    sub.textContent = `${n.battles} battle${n.battles === 1 ? '' : 's'} · ${n.wins}W ${n.losses}L`
-      + (p.g.hidden ? ` · +${p.g.hidden} more` : '');
+    sub.textContent = subText(n, p.g);
     g.appendChild(sub);
 
     const t = svgEl('title', {});

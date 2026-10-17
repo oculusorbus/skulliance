@@ -76,11 +76,29 @@ $busy = dhca_rivalry_layout(array(
 	),
 ));
 
+/*
+ * ONE PLAYER, AND A REAL CREW.
+ *
+ * With a single player the ring has no radius, so this is the only fixture
+ * where the angle arithmetic is degenerate and the cluster has to be oriented
+ * by hand. It is also the only place the PORTRAITS set the canvas bounds:
+ * everywhere else a label reaches further than the Crew it belongs to, so the
+ * Crew's own extent is never the outermost ink and a canvas that ignored it
+ * still came out big enough. Six Fighters spread over the arc reach further
+ * sideways than either the avatar or the label.
+ */
 $solo = dhca_rivalry_layout(array(
-	'days' => DHCA_RIVALRY_DAYS, 'battles' => 1,
-	'players'  => array(8 => fx_player(8, 'Lone', 1, 0, 1, 0)),
+	'days' => DHCA_RIVALRY_DAYS, 'battles' => 9,
+	'players'  => array(8 => fx_player(8, 'Lone', 9, 0, 6, 3)),
 	'edges'    => array(),
-	'fighters' => array(8 => array(fx_fighter(55, 'Only', 1, 1, 0, 0, 90))),
+	'fighters' => array(8 => array(
+		fx_fighter(55, 'Only',   9, 9, 0, 1, 900, 'left'),
+		fx_fighter(56, 'Second', 7, 7, 0, 0, 700),
+		fx_fighter(57, 'Third',  5, 5, 0, 2, 500),
+		fx_fighter(58, 'Fourth', 4, 4, 0, 0, 400),
+		fx_fighter(59, 'Fifth',  2, 2, 0, 1, 200),
+		fx_fighter(60, 'Sixth',  1, 1, 0, 0, 90),
+	)),
 ));
 
 $nofighters = dhca_rivalry_layout(array(
@@ -108,7 +126,31 @@ $empty = dhca_rivalry_layout(array(
 $cp = array(); $ce = array(); $cf = array();
 for ($i = 1; $i <= 10; $i++) {
 	$att = 30 - $i * 2; $def = 4 + $i;
-	$cp[$i] = fx_player($i, 'Player' . $i, $att, $def, (int)(($att + $def) * 0.5), (int)(($att + $def) * 0.5));
+	/*
+	 * REAL USERNAMES, AND LONG ONES ALL ROUND THE RING.
+	 *
+	 * The canvas margin used to be a flat 76px of assumed room, and
+	 * "michael_heistonalpha" ran off the right-hand edge and was cut in half.
+	 * Short fixture names could never catch that.
+	 *
+	 * Nor could ONE long name: a label at the top or bottom of the ring is
+	 * centre-anchored and spreads along the tangent, where it has the whole
+	 * width to play with. Only a label on the LEFT or RIGHT runs outward past
+	 * the edge, and which cluster lands there is decided by the seriation. So
+	 * every player gets a plausible username and several are long, which
+	 * guarantees the binding case is somewhere on the side.
+	 */
+	$names = array('michael_heistonalpha', 'oculusorbus', 'mikej_uptownmarge6',
+	               'damonoehlman', 'zerosum4327', 'chrisblimey', 'tallnupinks',
+	               'a_very_long_handle_indeed_here', 'vanwink',
+	               'marc1982_the_long_handle_here');
+	/* The eighth has a LONG NAME AND A SHALLOW CREW, so its name is far wider
+	   than its stats line. Everywhere else the "+N more" line is the longest
+	   text a cluster has, which means a canvas that measured only the stats
+	   line still came out big enough -- the gap has to be wide enough to
+	   survive the edge margin. */
+	$nm = $names[$i - 1];
+	$cp[$i] = fx_player($i, $nm, $att, $def, (int)(($att + $def) * 0.5), (int)(($att + $def) * 0.5));
 	$cf[$i] = array();
 	/*
 	 * Crews of 3 to 6 -- EXCEPT PLAYER 1, who has fielded 25 different
@@ -118,7 +160,18 @@ for ($i = 1; $i <= 10; $i++) {
 	 * cluster's spacing out with it. The cap, the shrink and the shells all
 	 * exist for this row.
 	 */
-	$crew = ($i === 1) ? 25 : 3 + ($i % 4);
+	/*
+	 * THREE DEEP ROSTERS, not one, and deliberately on different players.
+	 *
+	 * Two of them are adjacent-ish on the ring, which is the live shape that
+	 * made two players' portraits interleave. And they carry different
+	 * LONGEST LINES: player 1 and 6 have short-to-middling names so the
+	 * "+N more" stats line is their widest text, while player 10's handle is
+	 * longer than its stats line. The canvas margin is a max over clusters,
+	 * so unless both kinds exist, dropping one of the two measurements
+	 * changes nothing and the test cannot see it.
+	 */
+	$crew = in_array($i, array(1, 6, 10), true) ? ($i === 1 ? 25 : 20) : 3 + ($i % 4);
 	for ($j = 0; $j < $crew; $j++) {
 		$cf[$i][] = fx_fighter(1000 + $i * 10 + $j, "F{$i}_{$j}", 12 - $j, 8 - $j, 4,
 		                       $j % 2, 300 - $j * 20, $j === 0 ? 'right' : '');
