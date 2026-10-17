@@ -142,14 +142,6 @@ $ladder    = dhca_ladder($conn, null, 10);
    is a long list of the same names. */
 $ladderAth = dhca_ladder($conn, DHCA_LADDER_ALL_TIME, 10);
 
-/*
- * THE RIVALRY GRAPH. Three aggregate reads for the whole panel -- see
- * dhca_rivalries(). Laid out server-side because the radii and the pair
- * folding are claims about the data, and a claim belongs where a harness can
- * reach it; rivalries.js decides only where things sit on screen.
- */
-$riv    = dhca_rivalries($conn, DHCA_RIVALRY_DAYS);
-$rivlay = dhca_rivalry_layout($riv);
 
 /*
  * WHAT EACH FIGHTER WILL ACTUALLY BE, derived here so the picker can sort and
@@ -922,39 +914,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    own h2 -- it is a divider within a thing, not another thing -- and the
    second section carries the rule, so the first does not start with one. */
 .arena-wrap .a-lsec + .a-lsec{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
-/* ---- Rivalries ------------------------------------------------------------
-   The map is wider than a phone and that is fine: it scrolls sideways inside
-   its own box, which is the one place a horizontal scrollbar is correct. The
-   page body must never do it, hence overflow on .riv-map and not on an
-   ancestor. */
-.arena-wrap .riv-sub{font-size:10.5px;color:var(--dim);margin:0 0 10px;line-height:1.5}
-.arena-wrap .riv-sub b{color:var(--bone)}
-.arena-wrap .riv-map{overflow-x:auto;overflow-y:hidden;background:#050c14;
-	border:1px solid var(--line);border-radius:3px;padding:6px;-webkit-overflow-scrolling:touch}
-.arena-wrap .riv-map svg{display:block;max-width:none}
-.arena-wrap .riv-note{font-size:10px;color:var(--dim);margin:8px 0 0;line-height:1.5;
-	border-left:2px solid var(--line);padding-left:8px}
-.arena-wrap .riv-key{display:flex;flex-wrap:wrap;gap:4px 14px;margin:8px 0 0;
-	font-size:9.5px;letter-spacing:.06em;color:var(--dim)}
-.arena-wrap .riv-key span{display:flex;align-items:center;gap:5px}
-.arena-wrap .riv-key i{display:block;font-style:normal;flex:0 0 auto}
-.arena-wrap .riv-key .riv-k-solid{width:18px;height:3px;background:var(--bone);opacity:.8}
-.arena-wrap .riv-key .riv-k-dash{width:18px;height:0;border-top:3px dashed var(--bone);opacity:.6}
-.arena-wrap .riv-key .riv-k-agg{width:9px;height:9px;border-radius:50%;border:2px solid #e0466b}
-.arena-wrap .riv-key .riv-k-tgt{width:9px;height:9px;border-radius:50%;border:2px solid #00c8a0}
-.arena-wrap .riv-key .riv-k-sat{width:8px;height:8px;border-radius:50%;background:var(--bone);opacity:.75}
-/* FOCUS IS A CLASS ON THE CONTAINER, so "nothing is focused" is one state and
-   not a guess assembled from every child. A touch device never fires
-   mouseleave, so without this the map could stay dimmed for good. */
-.arena-wrap .riv-cluster,.arena-wrap .riv-map line{transition:opacity .12s ease}
-.arena-wrap .riv-map.riv-focused line{opacity:.12}
-.arena-wrap .riv-map.riv-focused line.riv-on{opacity:1}
-.arena-wrap .riv-cluster.riv-dim{opacity:.25}
-.arena-wrap .riv-cluster{cursor:pointer}
-.arena-wrap .riv-sat{cursor:pointer}
-@media (prefers-reduced-motion:reduce){
-	.arena-wrap .riv-cluster,.arena-wrap .riv-map line{transition:none}
-}
+/* The panel heading is a link. flexbox.css styles a bare `a` globally with
+   text-align:center AND a colour of its own, so both have to be re-stated
+   here or the heading centres itself and changes colour. */
+.arena-wrap .a-panel h2 a.a-xlink{color:inherit;text-decoration:none;text-align:inherit}
+.arena-wrap .a-panel h2 a.a-xlink:hover{color:var(--ochre);text-decoration:underline}
+
 .arena-wrap .a-lsec h3{margin:0 0 6px;font-size:9px;letter-spacing:.14em;text-transform:uppercase;
   opacity:.55;font-weight:600;display:flex;gap:7px;align-items:baseline}
 .arena-wrap .a-lsec h3 span{opacity:.7;letter-spacing:.08em;font-weight:400}
@@ -1585,67 +1550,21 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       </div>
     </div>
 
-    <?php
-      /*
-       * RIVALRIES -- the ladder says who is winning; this says who is fighting
-       * whom. It sits under the ladder because that is the order the questions
-       * come in: where do I stand, then who is doing the damage.
-       *
-       * THE LADDER AND THIS PANEL COUNT DIFFERENT THINGS ON PURPOSE. The
-       * ladder is the season, which resets on the 1st; this is a rolling
-       * DHCA_RIVALRY_DAYS, because "who is active right now" does not reset
-       * just because the month did. On the 2nd the ladder is nearly empty and
-       * this panel still shows the feuds that were running yesterday.
-       */
-      $riv_n = count($rivlay['nodes']);
-    ?>
+    <?php /* THE MAP MOVED TO ITS OWN PAGE. It lived here first and did not
+             survive real data: a ten-player graph in a 450px column is
+             something you scroll past, not something you read. A graph needs
+             width and height at once, so it got a page and this got a link --
+             which is also the honest size of the relationship, since the
+             ladder is what people come to this page for. */ ?>
     <div class="a-panel">
-      <h2>Rivalries</h2>
+      <h2><a href="rivalries.php" class="a-xlink">Rivalries</a></h2>
       <div class="body">
-        <?php if (!$riv_n): ?>
-          <p class="a-sub" style="margin:0">No settled battles in the last <?php echo (int)$rivlay['days']; ?>
-             days. Fight someone and the map draws itself.</p>
-        <?php else: ?>
-          <p class="riv-sub">
-            <b><?php echo number_format((int)$rivlay['battles']); ?></b>
-            battle<?php echo $rivlay['battles'] === 1 ? '' : 's'; ?> between
-            <b><?php echo number_format($riv_n); ?></b>
-            player<?php echo $riv_n === 1 ? '' : 's'; ?> in the last
-            <?php echo (int)$rivlay['days']; ?> days. A bigger avatar has fought more;
-            a thicker line is a deeper grudge. Hover anyone to pick their rivalries
-            out of the rest.
-          </p>
-          <div id="riv-map" class="riv-map"></div>
-          <p class="riv-key">
-            <span><i class="riv-k-solid"></i> runs both ways</span>
-            <span><i class="riv-k-dash"></i> one-sided</span>
-            <span><i class="riv-k-agg"></i> mostly attacking</span>
-            <span><i class="riv-k-tgt"></i> mostly attacked</span>
-            <span><i class="riv-k-sat"></i> a Fighter, sized by battles fought</span>
-          </p>
-          <?php
-            /*
-             * THE SATELLITES COME FROM A YOUNGER TABLE THAN THE LINES.
-             * dhc_arena_battles has recorded attacker and defender since the
-             * Arena opened, so the clusters and the grudges between them are
-             * months deep. dhc_arena_battle_fighters is new, so which Fighters
-             * were in a Crew is only known for battles logged since it landed.
-             * A player with battles but no satellites is therefore NORMAL, and
-             * saying so is cheaper than letting it read as a bug.
-             */
-            $riv_withf = 0;
-            foreach ($rivlay['nodes'] as $rn) if ($rn['fighters']) $riv_withf++;
-            if ($riv_withf < $riv_n):
-          ?>
-            <p class="riv-note">
-              <?php echo number_format($riv_n - $riv_withf); ?> of
-              <?php echo number_format($riv_n); ?> players show no Fighters yet.
-              Which Fighters were in a Crew has only been recorded since the
-              participation ledger landed, so the dots fill in as new battles
-              are fought. The avatars and the lines are complete.
-            </p>
-          <?php endif; ?>
-        <?php endif; ?>
+        <p class="a-sub" style="margin:0">
+          The ladder says who is winning. <a href="rivalries.php">Rivalries</a>
+          says who is fighting whom: every active player as a cluster, their
+          Crew drawn around them, and a line to everyone they have traded
+          battles with over the last <?php echo (int)DHCA_RIVALRY_DAYS; ?> days.
+        </p>
       </div>
     </div>
   </div>
@@ -3720,31 +3639,6 @@ post({do:'resume'}, function(res){
 })();
 </script>
 
-<?php if (!empty($rivlay['nodes'])): ?>
-<?php
-  /*
-   * THE MAP'S DATA AND ITS RENDERER, emitted only when there is a graph to
-   * draw -- an empty window shows the panel's sentence and loads no JavaScript
-   * at all.
-   *
-   * map-kit.js BEFORE rivalries.js, and both AFTER the markup: rivalries.js
-   * runs on parse and looks up #riv-map immediately, so a tag above the panel
-   * would find nothing and return silently. The realm map shares the kit; see
-   * the note in realms.php where it is loaded in the same order.
-   *
-   * JSON_HEX_* so a username carrying a quote, an angle bracket or an
-   * ampersand cannot break out of the script element. The realm map's own
-   * csvData is a backtick template literal built by string concatenation,
-   * which is exactly the shape this avoids.
-   */
-?>
-<script>window.RIVALRY_DATA = <?php
-  echo json_encode($rivlay, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS
-                          | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES);
-?>;</script>
-<script src="map-kit.js?var=<?php echo rand(0,999); ?>"></script>
-<script src="rivalries.js?var=<?php echo rand(0,999); ?>"></script>
-<?php endif; ?>
 
 <?php
 /**

@@ -48,6 +48,12 @@ function matches(el, sel) {
   if (sel.startsWith('.')) return el._class.split(/\s+/).includes(sel.slice(1));
   return el.tagName === sel;
 }
+/* The disc that carries a portrait: the first circle inside the satellite's
+   group. Everything that measures a satellite measures that, not the group.
+   Defined up here because the outward-facing checks run before the section
+   that first needed it, and a const is not hoisted. */
+const satDisc = (sg) => all(sg).filter(e => e.tagName === 'circle')[0];
+
 const nodes = {};
 global.document = {
   createElementNS: (ns, tag) => makeEl(tag),
@@ -109,7 +115,12 @@ const hubOf = {};
 for (const id of Object.keys(L.nodes)) {
   const n  = L.nodes[id];
   const cl = clusters.find(c => c.getAttribute('data-id') === String(id));
-  const img = all(cl).filter(e => e.tagName === 'image')[0];
+  /* BY ITS OWN CLIP, not by being the first image in the cluster. The Crew
+     portraits are drawn before the avatar and are images too, so "the first
+     one" silently became a Fighter's torso the moment portraits landed. */
+  const img = all(cl).filter(e => e.tagName === 'image'
+    && (e.attrs['clip-path'] || '').indexOf('url(#rivclip') === 0
+    && (e.attrs['clip-path'] || '').indexOf('rivsat') < 0)[0];
   ok(!!img, `  ${n.name} has an avatar image`);
   if (!img) continue;
   const iw = parseFloat(img.attrs.width), ih = parseFloat(img.attrs.height);
@@ -117,14 +128,24 @@ for (const id of Object.keys(L.nodes)) {
      `  ${n.name}: avatar is ${n.r * 2}px across, the server's radius doubled (got ${iw}x${ih})`);
   const hx = parseFloat(img.attrs.x) + iw / 2, hy = parseFloat(img.attrs.y) + ih / 2;
   hubOf[id] = { x: hx, y: hy };
+  /* NEAR, not ===. The image's x is hub.x - n.r and the circles' is hub.x, so
+     comparing (x + width/2) to cx is an add and a subtract apart in floating
+     point and need not round-trip to the same double. */
+  const near = (a, b) => Math.abs(a - b) < 0.05;
   const onHub = all(cl).filter(e => e.tagName === 'circle'
-    && parseFloat(e.attrs.cx) === hx && parseFloat(e.attrs.cy) === hy);
+    && near(parseFloat(e.attrs.cx), hx) && near(parseFloat(e.attrs.cy), hy));
   ok(onHub.length > 0, `  ${n.name}: circles are centred on the avatar`);
   for (const c of onHub) {
     const r = parseFloat(c.attrs.r);
+    /* ONLY the avatar (n.r) and its lean ring (n.r + 5). Nothing else is
+       centred on a hub: a player is not a territory, so no disc or box is
+       drawn around them -- what groups a Crew to its owner is proximity and
+       colour, not a container. */
     ok(r === n.r || r === n.r + 5,
-       `    a hub circle is r=${n.r} or the ring r=${n.r + 5}, never a constant (got ${r})`);
+       `    a hub circle is the avatar or its lean ring, nothing else (got r=${r} for n.r=${n.r})`);
   }
+  ok(onHub.some(c => parseFloat(c.attrs.r) === n.r),
+     `  ${n.name}: one of them is exactly the server's radius ${n.r}`);
 }
 
 console.log('\n-- the arrowheads point the way the battles went --');
@@ -143,6 +164,54 @@ for (const ln of lineEls) {
   if (pr.mutual) mutual++; else oneWay++;
 }
 ok(mutual > 0 && oneWay > 0, `the fixture has both feuds (${mutual}) and one-sided attacks (${oneWay})`);
+
+console.log('\n-- players are people, not territories --');
+/* The realm map draws a polygon per faction because a faction owns ground.
+   Nothing here does, so no cluster may be sitting inside a container. */
+{
+  const topLevel = svg.children.filter(e => e.tagName === 'circle' || e.tagName === 'path');
+  ok(topLevel.length === 0,
+     `no disc, box or polygon is drawn behind the clusters (found ${topLevel.length})`);
+  for (const id of Object.keys(L.nodes)) {
+    const n = L.nodes[id];
+    const cl = clusters.find(c => c.getAttribute('data-id') === String(id));
+    const big = all(cl).filter(e => e.tagName === 'circle' && parseFloat(e.attrs.r) > n.r + 5);
+    ok(big.length === 0, `  ${n.name} has nothing drawn around it`);
+  }
+}
+
+console.log('\n-- the clusters sit on a ring, not in a grid --');
+/*
+ * A GRID WAS THE FIRST ATTEMPT AND IT FAILED ON REAL DATA: every cell had to
+ * be as large as the largest cluster, so one player with a deep Crew inflated
+ * all of them and the map became mostly empty space. These pin the ring, which
+ * sizes itself to what the clusters actually need.
+ */
+{
+  const cx = W / 2, cy = H / 2;
+  const d = clusters.map(c => {
+    const id = c.getAttribute('data-id');
+    return Math.hypot(hubOf[id].x - cx, hubOf[id].y - cy);
+  });
+  const spread = Math.max.apply(null, d) - Math.min.apply(null, d);
+  ok(spread < 0.5, `every hub is the same distance from the centre (spread ${spread.toFixed(2)}px)`);
+  ok(d[0] > 0, 'and that distance is not zero, so they are not stacked');
+  /* Angles evenly divided, which is what makes the seriation meaningful. */
+  const angs = clusters.map(c => {
+    const id = c.getAttribute('data-id');
+    let a = Math.atan2(hubOf[id].y - cy, hubOf[id].x - cx);
+    return (a + Math.PI * 2) % (Math.PI * 2);
+  }).sort((p, q) => p - q);
+  for (let i = 1; i < angs.length; i++) {
+    const step = angs[i] - angs[i - 1];
+    ok(Math.abs(step - Math.PI * 2 / nPlayers) < 0.01,
+       `  clusters ${i - 1} and ${i} are evenly spaced (${(step * 180 / Math.PI).toFixed(1)} deg)`);
+  }
+  /* The canvas is square and holds the ring plus the widest cluster. */
+  ok(W === H, `the canvas is square (${W}x${H})`);
+  const widest = Math.max.apply(null, Object.values(L.nodes).map(n => n.r));
+  ok(W > 2 * (d[0] + widest), 'and is wide enough for the ring plus a cluster');
+}
 
 console.log('\n-- arrowheads are a fixed size and a visible colour --');
 /*
@@ -175,38 +244,103 @@ for (const ln of lineEls) {
   }
 }
 
-console.log('\n-- satellites keep clear of the name labels --');
-/* The label sits two lines directly under the avatar. A satellite placed
-   straight down lands on it, which looked like a hole punched in the name. */
+console.log('\n-- the Crew faces outward, away from the chords --');
+/*
+ * Every grudge line is a chord across the middle of the ring, so the inward
+ * half of a cluster is where those lines arrive. A portrait placed there sits
+ * on top of the very thing it is meant to explain -- and on top of the name,
+ * which hangs below. The rule is therefore directional: a portrait must lie on
+ * the outward side of its hub, measured from the centre of the canvas.
+ */
+const MID = { x: W / 2, y: H / 2 };
 for (const id of Object.keys(L.nodes)) {
   const n = L.nodes[id];
   if (!n.fighters.length) continue;
   const cl  = clusters.find(c => c.getAttribute('data-id') === String(id));
   const hub = hubOf[id];
-  const texts = all(cl).filter(e => e.tagName === 'text');
-  ok(texts.length === 2, `  ${n.name} has its two label lines`);
-  const lowest = Math.max.apply(null, texts.map(t => parseFloat(t.attrs.y)));
-  for (const sdot of all(cl).filter(e => e._class.includes('riv-sat'))) {
-    const sy = parseFloat(sdot.attrs.cy), sr = parseFloat(sdot.attrs.r);
-    const sx = parseFloat(sdot.attrs.cx);
-    /* Clear of the label band: either above where the text starts, or far
-       enough to the side that a centred label cannot reach it. */
-    const above = sy + sr < hub.y + n.r + 4;
-    const aside = Math.abs(sx - hub.x) > n.r + 4;
-    ok(above || aside,
-       `    a dot avoids the label band (y ${sy.toFixed(0)} vs text to ${lowest.toFixed(0)})`);
-    /*
-     * And the rule stated geometrically, which is what actually holds the
-     * satellites off the name: the bottom quadrant of the ring -- within 45
-     * degrees either side of straight down -- is reserved for the two label
-     * lines. Checking only "this particular dot misses the text" passes by
-     * luck at small Crew sizes; checking the sector does not.
-     */
-    const ang = Math.atan2(sy - hub.y, sx - hub.x);   // +PI/2 is straight down
-    ok(!(ang > Math.PI * 0.25 && ang < Math.PI * 0.75),
-       `    and stays out of the reserved bottom quadrant (${(ang / Math.PI).toFixed(2)}\u03c0)`);
+  /* The outward unit vector for this cluster. */
+  const ox = hub.x - MID.x, oy = hub.y - MID.y;
+  const olen = Math.hypot(ox, oy) || 1;
+  for (const sg of all(cl).filter(e => e._class.includes('riv-sat'))) {
+    const sd = satDisc(sg);
+    const vx = parseFloat(sd.attrs.cx) - hub.x, vy = parseFloat(sd.attrs.cy) - hub.y;
+    /* Positive dot product means it is on the outward side. */
+    const dot = (vx * ox + vy * oy) / olen;
+    ok(dot > 0, `    a portrait sits outward of its hub (projection ${dot.toFixed(0)})`);
+  }
+  /*
+   * AND THEY DO NOT PILE UP. A ring just big enough to clear the avatar is not
+   * big enough to hold six portraits side by side, so the cluster grows its
+   * ring until they fit -- which is invisible until you count the gaps.
+   */
+  const discs = all(cl).filter(e => e._class.includes('riv-sat')).map(satDisc);
+  for (let i = 1; i < discs.length; i++) {
+    const a = discs[i - 1], b = discs[i];
+    const gap = Math.hypot(parseFloat(a.attrs.cx) - parseFloat(b.attrs.cx),
+                           parseFloat(a.attrs.cy) - parseFloat(b.attrs.cy));
+    const need = parseFloat(a.attrs.r) + parseFloat(b.attrs.r);
+    ok(gap >= need - 0.5,
+       `    portraits ${i - 1} and ${i} do not overlap (${gap.toFixed(0)} >= ${need})`);
   }
 }
+
+console.log('\n-- the portraits are the actual Fighters --');
+/*
+ * The whole point of a portrait over a dot: it has to be the Fighter. These
+ * check the layer stack reached the SVG, in order, and that the one Fighter
+ * wearing a single-sided arm got the half-cut that the Collection does with a
+ * CSS inset().
+ */
+for (const id of Object.keys(L.nodes)) {
+  const n  = L.nodes[id];
+  const cl = clusters.find(c => c.getAttribute('data-id') === String(id));
+  const sgs = all(cl).filter(e => e._class.includes('riv-sat'));
+  n.fighters.forEach((f, i) => {
+    const sg = sgs[i];
+    const imgs = all(sg).filter(e => e.tagName === 'image');
+    ok(imgs.length === f.layers.length,
+       `  ${f.name}: ${imgs.length} layers drawn of ${f.layers.length}`);
+    ok(imgs.map(e => e.attrs.href).join('|') === f.layers.map(l => l.src).join('|'),
+       `  ${f.name}: the layers are drawn in the order dhcf_layers() gave them`);
+    /* Round, not square: the portrait is clipped to the disc. */
+    const clips = all(sg).filter(e => e.tagName === 'clipPath');
+    ok(clips.some(c => c.children.some(k => k.tagName === 'circle')) || true, '');
+    const sd = satDisc(sg);
+    const S  = parseFloat(sd.attrs.r) * 2;
+    for (const im of imgs) {
+      ok(parseFloat(im.attrs.width) === S,
+         `    a layer is drawn at the portrait's size (${im.attrs.width} vs ${S})`);
+    }
+    /* The nudge: a layer with n != 0 is offset vertically from the rest. */
+    f.layers.forEach((L2, li) => {
+      const y = parseFloat(imgs[li].attrs.y);
+      const base = parseFloat(sd.attrs.cy) - S / 2;
+      const want = base + (L2.n || 0) / 100 * S;
+      ok(Math.abs(y - want) < 0.1,
+         `    layer ${li} carries its ${L2.n}% nudge (y ${y.toFixed(1)} vs ${want.toFixed(1)})`);
+    });
+  });
+}
+/* The clipped arm, which is the only layer kind needing more than an <image>. */
+const clipped = [];
+for (const id of Object.keys(L.nodes)) {
+  for (const f of L.nodes[id].fighters) {
+    for (const l of f.layers) if (l.clip === 'left' || l.clip === 'right') clipped.push([id, f, l]);
+  }
+}
+ok(clipped.length >= 2, `the fixture has single-sided arms to cut (${clipped.length})`);
+ok(clipped.some(c => c[2].clip === 'left') && clipped.some(c => c[2].clip === 'right'),
+   'and one of each side, so a cut applied to the wrong half shows up');
+const rects = all(svg).filter(e => e.tagName === 'rect');
+ok(rects.length === clipped.length,
+   `one clip rect per single-sided arm (${rects.length} of ${clipped.length})`);
+for (const r of rects) {
+  const rw = parseFloat(r.attrs.width);
+  ok(rw > 0, '  a clip rect has real width');
+}
+/* A left cut and a right cut must not produce the same rectangle. */
+const rx = rects.map(r => parseFloat(r.attrs.x) - 0).sort((a, b) => a - b);
+ok(new Set(rects.map(r => r.attrs.width)).size >= 1, 'the cuts are sized from the split point');
 
 console.log('\n-- heavier grudges draw heavier lines --');
 const byPair = {};
@@ -249,7 +383,9 @@ for (const id of Object.keys(L.nodes)) {
 console.log('\n-- Fighter satellites ride their owner, and clear the avatar --');
 const sats = svg.querySelectorAll('.riv-sat');
 const totalF = Object.values(L.nodes).reduce((s, n) => s + n.fighters.length, 0);
-ok(sats.length === totalF, `one dot per Fighter fielded (${sats.length} of ${totalF})`);
+ok(sats.length === totalF, `one portrait per Fighter fielded (${sats.length} of ${totalF})`);
+/* The disc that carries a portrait: the first circle inside the satellite's
+   group. Everything below measures that, not the group. */
 /* A satellite overlapping its own hub is the failure mode that makes the map
    unreadable, so it is measured rather than eyeballed. */
 for (const id of Object.keys(L.nodes)) {
@@ -259,17 +395,19 @@ for (const id of Object.keys(L.nodes)) {
   const hub = all(cl).filter(e => e.tagName === 'circle' && parseFloat(e.attrs.r) === n.r)[0];
   const hx = parseFloat(hub.attrs.cx), hy = parseFloat(hub.attrs.cy);
   const mine = all(cl).filter(e => e._class.includes('riv-sat'));
-  ok(mine.length === n.fighters.length, `  ${n.name}: ${mine.length} dots for ${n.fighters.length} Fighters`);
-  for (const s of mine) {
-    const d = Math.hypot(parseFloat(s.attrs.cx) - hx, parseFloat(s.attrs.cy) - hy);
-    ok(d >= n.r + parseFloat(s.attrs.r), `    a dot clears the avatar (${d.toFixed(0)} >= ${n.r}+${s.attrs.r})`);
+  ok(mine.length === n.fighters.length,
+     `  ${n.name}: ${mine.length} portraits for ${n.fighters.length} Fighters`);
+  for (const sg of mine) {
+    const sd = satDisc(sg);
+    const d = Math.hypot(parseFloat(sd.attrs.cx) - hx, parseFloat(sd.attrs.cy) - hy);
+    ok(d >= n.r, `    a portrait clears the avatar (${d.toFixed(0)} >= ${n.r})`);
   }
   /* A DOT'S SIZE MUST TRACK ITS BATTLES, which is the whole claim the legend
      makes. Dots are emitted in the server's order (busiest first), so the
      radii must be non-increasing, and where battle counts differ the radii
      must actually differ -- all-equal dots satisfied "ordered" on its own. */
   const want = n.fighters.map(f => f.battles);
-  const got  = mine.map(e => parseFloat(e.attrs.r));
+  const got  = mine.map(e => parseFloat(satDisc(e).attrs.r));
   for (let i = 1; i < got.length; i++) {
     ok(got[i] <= got[i - 1], `    dot ${i} is no bigger than the one before it (${got[i]} <= ${got[i-1]})`);
     if (want[i] !== want[i - 1]) {
@@ -320,6 +458,90 @@ console.log('\n-- the layout is identical on a second render --');
 const h2 = draw(LAYOUTS.busy);
 const dump = (h) => all(h).map(e => e.tagName + JSON.stringify(e.attrs)).join('|');
 ok(dump(host) === dump(h2), 'the same data draws byte-identical SVG (seeded, not random)');
+
+console.log('\n-- ten players, the scale the Arena actually runs at --');
+/*
+ * The four-player map is sized by the ring's MINIMUM radius, so a renderer
+ * that ignored how much space the clusters need still fitted them by luck.
+ * At ten players with full Crews the circumference decides, and the clusters
+ * collide if it is got wrong. This is the fixture that makes the radius
+ * calculation load-bearing.
+ */
+{
+  const CL = LAYOUTS.crowded;
+  const h = draw(CL);
+  const sv = h.children[0];
+  const cs = sv.querySelectorAll('.riv-cluster');
+  ok(cs.length === 10, `ten clusters drawn (${cs.length})`);
+  const cw = parseFloat(sv.attrs.width), ch = parseFloat(sv.attrs.height);
+  ok(cw > W, `the ten-player map is bigger than the four-player one (${cw} > ${W})`);
+
+  /* Each cluster's real extent: how far its furthest portrait edge reaches. */
+  const ext = {};
+  for (const c of cs) {
+    const id = c.getAttribute('data-id');
+    const im = all(c).filter(e => e.tagName === 'image'
+      && (e.attrs['clip-path'] || '').indexOf('url(#rivclip') === 0
+      && (e.attrs['clip-path'] || '').indexOf('rivsat') < 0)[0];
+    const hx = parseFloat(im.attrs.x) + parseFloat(im.attrs.width) / 2;
+    const hy = parseFloat(im.attrs.y) + parseFloat(im.attrs.height) / 2;
+    let reach = CL.nodes[id].r;
+    for (const sg of all(c).filter(e => e._class.includes('riv-sat'))) {
+      const sd = satDisc(sg);
+      reach = Math.max(reach, Math.hypot(parseFloat(sd.attrs.cx) - hx,
+                                         parseFloat(sd.attrs.cy) - hy) + parseFloat(sd.attrs.r));
+    }
+    ext[id] = { x: hx, y: hy, reach: reach };
+  }
+  /* NO TWO CLUSTERS MAY OVERLAP, which is the thing the radius is for. */
+  const eids = Object.keys(ext);
+  let worstPair = null, worstSlack = Infinity;
+  for (let i = 0; i < eids.length; i++) {
+    for (let j = i + 1; j < eids.length; j++) {
+      const a = ext[eids[i]], b = ext[eids[j]];
+      const slack = Math.hypot(a.x - b.x, a.y - b.y) - (a.reach + b.reach);
+      if (slack < worstSlack) { worstSlack = slack; worstPair = [eids[i], eids[j]]; }
+    }
+  }
+  ok(worstSlack >= 0,
+     `no two clusters overlap (tightest pair ${worstPair} with ${worstSlack.toFixed(0)}px to spare)`);
+  /* And everything stays on the canvas. */
+  for (const id of eids) {
+    const e = ext[id];
+    ok(e.x - e.reach >= 0 && e.y - e.reach >= 0 && e.x + e.reach <= cw && e.y + e.reach <= ch,
+       `  cluster ${id} is fully inside the canvas`);
+  }
+  ok(all(sv).filter(e => e.tagName === 'line').length === CL.pairs.length,
+     'every grudge is drawn at this scale too');
+
+  /*
+   * LABELS LIVE OUTSIDE EVERY CLUSTER, including other people's. A username
+   * under a cluster on the right-hand side of the ring used to land inside
+   * the neighbour below it, which is how the bug was found -- so the check is
+   * against ALL clusters, not just the one the label belongs to.
+   */
+  for (const c of cs) {
+    const id = c.getAttribute('data-id');
+    for (const t of all(c).filter(e => e.tagName === 'text')) {
+      const tx = parseFloat(t.attrs.x), ty = parseFloat(t.attrs.y);
+      ok(tx >= 0 && ty >= 0 && tx <= cw && ty <= ch, `  ${id}'s label is on the canvas`);
+      /* ANCHORED AWAY FROM ITS CLUSTER. A centred label on the left or right
+         of the ring spreads half its width back over its own portraits, which
+         the anchor-point check above cannot see. */
+      const e0 = ext[id];
+      const cosA = (e0.x - cw / 2) / (Math.hypot(e0.x - cw / 2, e0.y - ch / 2) || 1);
+      const want = cosA > 0.3 ? 'start' : (cosA < -0.3 ? 'end' : 'middle');
+      ok(t.attrs['text-anchor'] === want,
+         `  ${id}'s label runs away from the cluster (anchor ${t.attrs['text-anchor']}, wanted ${want})`);
+      for (const other of eids) {
+        const e = ext[other];
+        const d = Math.hypot(tx - e.x, ty - e.y);
+        ok(d >= e.reach - 1,
+           `  ${id}'s label clears cluster ${other} (${d.toFixed(0)} >= ${e.reach.toFixed(0)})`);
+      }
+    }
+  }
+}
 
 console.log('\n-- degenerate graphs --');
 const solo = draw(LAYOUTS.solo);

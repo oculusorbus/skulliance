@@ -1546,7 +1546,7 @@ function dhca_rivalries($conn, $days = DHCA_RIVALRY_DAYS) {
 
 	/* ---- 3. the Fighters each of them fielded ---- */
 	$res = $conn->query(
-		"SELECT p.fighter_id, f.user_id, f.name, f.serial,
+		"SELECT p.fighter_id, f.user_id, f.name, f.serial, f.traits,
 		        COUNT(*)                   AS n,
 		        SUM(p.side = 1)            AS att,
 		        SUM(p.side = 2)            AS def,
@@ -1557,7 +1557,7 @@ function dhca_rivalries($conn, $days = DHCA_RIVALRY_DAYS) {
 		   INNER JOIN dhc_fighters      f ON f.id = p.fighter_id
 		  WHERE b.outcome IN (1,2)
 		    AND b.started_at >= NOW() - INTERVAL $d DAY
-		  GROUP BY p.fighter_id, f.user_id, f.name, f.serial");
+		  GROUP BY p.fighter_id, f.user_id, f.name, f.serial, f.traits");
 	/* Missing or empty is the normal early state, not a failure. */
 	if ($res) {
 		while ($r = $res->fetch_assoc()) {
@@ -1572,6 +1572,12 @@ function dhca_rivalries($conn, $days = DHCA_RIVALRY_DAYS) {
 			$out['fighters'][$uid][] = array(
 				'id'      => (int)$r['fighter_id'],
 				'name'    => dhcf_display_name($r),
+				/* The trait set, so a caller can draw the Fighter rather than a
+				   dot. Decoded here and not in the renderer: it is a JSON
+				   column and every consumer would otherwise repeat the decode
+				   and the empty-array fallback. dhca_rivalry_art() turns it
+				   into layers; nothing sends raw traits to the client. */
+				'traits'  => json_decode($r['traits'], true) ?: array(),
 				'battles' => (int)$r['n'],
 				'att'     => (int)$r['att'],
 				'def'     => (int)$r['def'],
@@ -1656,4 +1662,37 @@ function dhca_rivalry_layout($riv, $rmin = 16, $rmax = 46) {
 	return array('nodes' => $nodes, 'pairs' => $pairs,
 	             'days' => $riv['days'], 'battles' => $riv['battles'],
 	             'busiest' => $busiest);
+}
+
+/**
+ * Swap each Fighter's trait set for the image layers that draw it.
+ *
+ * SEPARATE FROM dhca_rivalries() because it needs the art directory, which is
+ * a property of the page and not of the data -- and because the traits must
+ * not reach the client. They are the Fighter's recipe; the map needs pictures.
+ *
+ * ONE DECODE, ONE LAYER PASS, AND THE TRAITS ARE DROPPED. dhcf_layers() is the
+ * same call the Collection and the Discord render use, so a Fighter cannot be
+ * drawn one way here and another way there -- it decides the armless-torso
+ * swap and the single-sided-arm restore, which no caller should be
+ * reimplementing.
+ */
+function dhca_rivalry_art(&$riv, $webroot, $base) {
+	foreach ($riv['fighters'] as $uid => $list) {
+		foreach ($list as $i => $f) {
+			$layers = array();
+			foreach (dhcf_layers($f['traits'], $webroot) as $L) {
+				$layers[] = array(
+					/* The 250px masters: a satellite is tens of pixels across,
+					   so the 1000px art would be a hundred needless megabytes
+					   on a busy map. */
+					'src'  => $base . '/250/' . $L['cat'] . '/' . $L['slug'] . '.png',
+					'n'    => (float)$L['nudge'],
+					'clip' => $L['clip'],
+				);
+			}
+			$riv['fighters'][$uid][$i]['layers'] = $layers;
+			unset($riv['fighters'][$uid][$i]['traits']);
+		}
+	}
 }

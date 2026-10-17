@@ -23,6 +23,9 @@
  */
 (function () {
   const D = window.RIVALRY_DATA;
+  /* DHCF_ONE_ARM_SPLIT, inlined by the page: where a two-arm master is cut to
+     make a one-sided arm. The same constant the Collection and assembler use. */
+  const ARM_SPLIT = window.RIVALRY_ARM_SPLIT || 50;
   const host = document.getElementById('riv-map');
   if (!host) return;
   if (!D || !D.nodes || !Object.keys(D.nodes).length) return;   // the panel's own empty state stands
@@ -30,31 +33,54 @@
   const ids = Object.keys(D.nodes);
   const N   = ids.length;
 
-  /* ---- cluster sizes -------------------------------------------------------
-     A cluster has to hold the hub plus its Fighters without them overlapping,
-     and placeMarkers will NOT refuse -- it lays the overflow on a circle round
-     the centroid and lets them collide. So the box is sized from the Crew
-     count here, which is the only place that can prevent it. */
-  const SAT_R = 11;                       // a Fighter satellite's radius
-  function boxFor(node) {
-    const hub  = node.r;
-    const sats = node.fighters.length;
-    /* Enough ring room for the satellites at SAT_R*3 spacing, outside the hub.
-       sqrt because they occupy a ring's area, not its circumference. */
-    const need = hub + SAT_R * 3 * Math.max(1, Math.sqrt(sats));
-    return Math.round(Math.max(hub * 2.6, need * 2) + 26);   // +26 for the name under it
+  /* ---- how big a cluster is -----------------------------------------------
+     A hub plus a ring of Fighter portraits around it. The portraits are real
+     art rather than dots, so they are big enough to read -- which means the
+     cluster's footprint is driven by them, not by the avatar. */
+  const SAT_MIN = 15, SAT_MAX = 30;      // Fighter portrait radius
+  /*
+   * THE CREW OCCUPIES THE OUTER HALF of its hub, a little under 180 degrees.
+   * Anything wider tips the end portraits back inward, where the grudge lines
+   * arrive and the name sits. 0.9pi leaves both ends comfortably outward
+   * instead of exactly on the boundary.
+   */
+  const CREW_SPAN = Math.PI * 0.9;
+  function satR(f, busiest) {
+    return Math.round(SAT_MIN + (SAT_MAX - SAT_MIN) * Math.sqrt(f.battles / (busiest || 1)));
+  }
+  function geom(node) {
+    const k = node.fighters.length;
+    const busiest = node.fighters.reduce((m, f) => Math.max(m, f.battles), 0) || 1;
+    const big = k ? Math.max.apply(null, node.fighters.map(f => satR(f, busiest))) : 0;
+    /*
+     * The portraits sit on a ring clear of the avatar -- and that ring also
+     * has to be long enough to hold them side by side. k portraits spread
+     * over CREW_SPAN are ring*SPAN/(k-1) apart, which must clear 2*big or
+     * they overlap. Taking the larger of the two is the only thing preventing
+     * a deep Crew from drawing itself as a pile.
+     */
+    const clear = k > 1 ? (2 * big * (k - 1)) / CREW_SPAN : 0;
+    const ring  = k ? Math.max(node.r + 6 + big, clear) : 0;
+    return { busiest: busiest, ring: ring, outer: Math.max(node.r, ring + big) + 2 };
   }
 
-  /* ---- placing the clusters ------------------------------------------------
-     A grid, ordered so the busiest player is central and heavy rivals sit near
-     each other. Not a force simulation: with tens of nodes a greedy seriation
-     reads just as well, costs nothing, and -- unlike a simulation -- lands in
-     the same place every time.
-
-     The order is: busiest first, then repeatedly whichever remaining player
-     has the heaviest grudge with somebody already placed. That keeps feuds
-     adjacent, so the thick lines stay short and the map does not turn into a
-     star of long crossing strands. */
+  /*
+   * ---- the ring ------------------------------------------------------------
+   *
+   * A GRID WAS WRONG. Every cell had to be as big as the biggest cluster, so
+   * one player with a deep Crew inflated all of them and the map became mostly
+   * empty space -- unreadable at ten players and worse at thirty.
+   *
+   * A ring fixes both halves of that. Clusters sit on a circle sized to what
+   * they actually need, so a quiet player takes a quiet player's room; and
+   * every grudge line becomes a chord across the middle, where it can be seen,
+   * instead of a strand threading between boxes.
+   *
+   * THE ORDER AROUND THE RING IS THE SERIATION, which matters more here than
+   * it did in a grid: neighbours on a circle are adjacent, so putting heavy
+   * rivals next to each other turns the deepest feuds into short chords near
+   * the rim and leaves the middle for the long, rarer ones.
+   */
   function order() {
     const weight = {};   // id -> id -> battles
     for (const p of D.pairs) {
@@ -82,31 +108,51 @@
     return out;
   }
 
-  const seq  = order();
-  const cols = Math.ceil(Math.sqrt(N));
-  const boxes = seq.map(id => boxFor(D.nodes[id]));
-  const cell  = Math.max.apply(null, boxes);
-  const GAP   = Math.round(cell * 0.22);
+  const seq = order();
+  const G   = {};
+  seq.forEach(id => { G[id] = geom(D.nodes[id]); });
 
-  /* Row-major, but serpentine: row 1 right-to-left, so a player at the end of
-     one row sits above the start of the next rather than diagonally across the
-     map from it. Adjacent in the ordering stays adjacent on screen. */
-  const placed = [];
-  seq.forEach((id, i) => {
-    const row = Math.floor(i / cols);
-    let col = i % cols;
-    if (row % 2 === 1) col = cols - 1 - col;
-    placed.push({
-      id: id, node: D.nodes[id],
-      x: GAP + col * (cell + GAP),
-      y: GAP + row * (cell + GAP),
-      w: cell, h: cell,
-    });
+  /*
+   * LABELS SIT RADIALLY OUTSIDE THE RING, not under their cluster.
+   *
+   * "Below" is only unambiguous in a grid. On a ring, the space below a
+   * cluster on the right-hand side is the inside of its neighbour, and that
+   * is exactly where a username landed -- swallowed by the next player's
+   * disc. Pushed outward instead, every label sits in the empty annulus
+   * beyond the clusters, where it has MORE angular room than the cluster it
+   * belongs to rather than less.
+   *
+   * LABEL is the margin that annulus needs: the offset, two lines of text,
+   * and enough width for a centred username to spread either side.
+   */
+  const LABEL = 76, GAP = 26;
+  const outer = seq.map(id => G[id].outer);
+  const maxOut = Math.max.apply(null, outer);
+
+  /*
+   * THE RADIUS COMES FROM THE CIRCUMFERENCE THE CLUSTERS NEED, not from a
+   * guess. Each wants 2*outer plus a gap of arc to itself, so the ring is big
+   * enough when its circumference covers the sum -- which handles wildly
+   * uneven cluster sizes without leaving a hole where a small one sits.
+   */
+  const needed = outer.reduce((t, o) => t + 2 * o + GAP, 0);
+  const R = N === 1 ? 0 : Math.max(maxOut + 40, needed / (2 * Math.PI));
+
+  const PAD = maxOut + LABEL + 20;
+  const W = Math.round(2 * (R + PAD));
+  const H = Math.round(2 * (R + PAD));
+  const CX = W / 2, CY = H / 2;
+
+  /* Start at the top and run clockwise, so the busiest player -- first in the
+     seriation -- is where the eye lands. */
+  const placed = seq.map((id, i) => {
+    const a = -Math.PI / 2 + (i / N) * Math.PI * 2;
+    return {
+      id: id, node: D.nodes[id], g: G[id], ang: a,
+      x: CX + Math.cos(a) * R,
+      y: CY + Math.sin(a) * R,
+    };
   });
-
-  const rows = Math.ceil(N / cols);
-  const W = GAP + cols * (cell + GAP);
-  const H = GAP + rows * (cell + GAP);
 
   const svg = svgEl('svg', { width: W, height: H, viewBox: `0 0 ${W} ${H}` });
   svg.setAttribute('class', 'riv-svg');
@@ -152,18 +198,27 @@
   glow.appendChild(gm);
   defs.appendChild(glow);
 
+  /* On the ring, a cluster's hub IS its position. */
   const at = {};
-  placed.forEach(p => { at[p.id] = { x: p.x + p.w / 2, y: p.y + p.h / 2, r: p.node.r }; });
+  placed.forEach(p => { at[p.id] = { x: p.x, y: p.y, r: p.node.r }; });
 
-  /* ---- the territories, under everything ---- */
-  placed.forEach(p => {
-    const rng  = mulberry32(hashStr('riv_' + p.id));
-    const poly = chaikin(jitterRect(p.x + 8, p.y + 8, p.w - 16, p.h - 16, 16, rng), 3);
-    p.poly = poly;
-    const col = mapkitColorFor(p.id);
-    svg.appendChild(svgEl('path', { d: toPath(poly), fill: hexToRgba(col, 0.05),
-                                    stroke: hexToRgba(col, 0.3), 'stroke-width': 1 }));
-  });
+  /*
+   * NOTHING IS DRAWN UNDER A CLUSTER, and that is deliberate.
+   *
+   * The realm map puts each faction inside a jittered polygon because a
+   * faction OWNS GROUND -- the shape is the territory, and the realms in it
+   * are what is standing there. None of that is true here. A player is a
+   * person, not a place, and their Fighters are not occupying anything: they
+   * are a crew standing with them. Drawing a box around each one borrowed
+   * the realm map's furniture along with its geometry and said something
+   * about the Arena that is not so.
+   *
+   * What groups a Crew to its owner instead is proximity and colour: the
+   * portraits sit in a tight arc against the avatar and are ringed in that
+   * player's colour. p.g.outer is still the cluster's reach -- the ring
+   * sizing and the label offsets are measured from it -- it is simply not
+   * painted.
+   */
 
   /* ---- the lines ----------------------------------------------------------
      Drawn AFTER the territories and BEFORE the avatars, so a grudge reads as
@@ -220,42 +275,79 @@
     g.setAttribute('data-id', p.id);
 
     /* Satellites first, so a Fighter can never cover its owner's face. */
-    const rng  = mulberry32(hashStr('riv_sat_' + p.id));
-    const hub  = at[p.id];
-    const busiest = n.fighters.reduce((m, f) => Math.max(m, f.battles), 0) || 1;
-    /* A ring around the hub, not placeMarkers: these belong TO the avatar and
-       should read as orbiting it, which a scatter inside the territory does
-       not. The ring clears the hub, and a seeded offset keeps two neighbouring
-       clusters from lining their satellites up identically. */
-    const ringR = n.r + SAT_R * 2.1;
+    const hub = at[p.id];
     /*
-     * THE BOTTOM OF THE RING IS RESERVED FOR THE NAME. Two lines of label sit
-     * directly under the avatar, and a full 360-degree ring drops a satellite
-     * straight onto them -- it read as a dot punched through the username.
-     * So the Fighters occupy the top 270 degrees, centred on straight up, and
-     * the lower quadrant is left to the text. The seeded offset is a nudge
-     * WITHIN that arc rather than a free rotation, or it would put a dot back
-     * where the label is.
+     * THE CREW FACES OUTWARD. Each cluster sits on a ring and every grudge
+     * line is a chord across the middle, so the inward side of a hub is where
+     * those lines arrive -- a portrait there sits on top of the very thing it
+     * is meant to explain. The Fighters therefore occupy the arc pointing AWAY
+     * from the centre of the map, which is also the only space a cluster
+     * reliably has to itself.
      */
-    const SPAN  = Math.PI * 1.5;
-    const START = -Math.PI / 2 - SPAN / 2;
-    const off   = (rng() - 0.5) * 0.3;
+    const mid = p.ang;                        // the outward direction
     n.fighters.forEach((f, i) => {
-      const a  = START + off + ((i + 0.5) / Math.max(1, n.fighters.length)) * SPAN;
-      const fr = Math.max(4, Math.round(SAT_R * Math.sqrt(f.battles / busiest)));
-      const cx = hub.x + Math.cos(a) * ringR, cy = hub.y + Math.sin(a) * ringR;
-      const dot = svgEl('circle', {
+      const t0 = n.fighters.length === 1 ? 0.5 : i / (n.fighters.length - 1);
+      const a  = mid - CREW_SPAN / 2 + t0 * CREW_SPAN;
+      const fr = satR(f, p.g.busiest);
+      const cx = hub.x + Math.cos(a) * p.g.ring, cy = hub.y + Math.sin(a) * p.g.ring;
+
+      const sg = svgEl('g', {});
+      sg.setAttribute('class', 'riv-sat');
+      sg.setAttribute('data-fid', f.id);
+      /* A disc behind the art: the trait PNGs are transparent, and with no
+         ground behind them a Fighter reads as floating debris, not a
+         portrait. */
+      sg.appendChild(svgEl('circle', {
         cx: cx.toFixed(1), cy: cy.toFixed(1), r: fr,
-        fill: hexToRgba(col, 0.9), stroke: 'rgba(0,0,0,.6)', 'stroke-width': 1,
-      });
-      dot.setAttribute('class', 'riv-sat');
+        fill: '#0a1929', stroke: hexToRgba(col, 0.75), 'stroke-width': 1.5,
+      }));
+      /* THE FIGHTER ITSELF, from the same layer stack the Collection and the
+         Discord render use. dhcf_layers() decided the draw order, the
+         armless-torso swap and the single-arm restore; none of it is
+         re-decided here. */
+      if (f.layers && f.layers.length) {
+        const cid = 'rivsat' + p.id + '_' + f.id;
+        const cp  = svgEl('clipPath', { id: cid });
+        cp.appendChild(svgEl('circle', { cx: cx.toFixed(1), cy: cy.toFixed(1), r: fr - 1 }));
+        defs.appendChild(cp);
+        const box = svgEl('g', { 'clip-path': 'url(#' + cid + ')' });
+        const S = fr * 2, X = cx - fr, Y = cy - fr;
+        f.layers.forEach((L, li) => {
+          const attrs = {
+            x: X.toFixed(1), y: (Y + (L.n || 0) / 100 * S).toFixed(1),
+            width: S.toFixed(1), height: S.toFixed(1),
+            href: L.src, preserveAspectRatio: 'xMidYMid meet',
+          };
+          /* A single-sided arm is the two-arm master with half cut away. The
+             Collection cuts it with a CSS inset(); a clipPath rect is the same
+             cut and does not rely on CSS applying to an SVG <image>. */
+          if (L.clip === 'left' || L.clip === 'right') {
+            const hid = cid + '_a' + li;
+            const hcp = svgEl('clipPath', { id: hid });
+            hcp.appendChild(svgEl('rect', {
+              x: (L.clip === 'right' ? X + S * (ARM_SPLIT / 100) : X).toFixed(1),
+              y: Y.toFixed(1),
+              width: (S * (L.clip === 'right' ? (100 - ARM_SPLIT) : ARM_SPLIT) / 100).toFixed(1),
+              height: S.toFixed(1),
+            }));
+            defs.appendChild(hcp);
+            const wrap = svgEl('g', { 'clip-path': 'url(#' + hid + ')' });
+            wrap.appendChild(svgEl('image', attrs));
+            box.appendChild(wrap);
+          } else {
+            box.appendChild(svgEl('image', attrs));
+          }
+        });
+        sg.appendChild(box);
+      }
       const t = svgEl('title', {});
       /* Said in words. "4/1/0" would need a legend nobody reads. */
-      t.textContent = `${f.name} — ${f.battles} battle${f.battles === 1 ? '' : 's'}`
-        + ` (${f.att} attacking, ${f.def} defending), ${f.dealt.toLocaleString()} damage dealt`
-        + (f.fell ? `, knocked out ${f.fell}×` : ', never knocked out');
-      dot.appendChild(t);
-      g.appendChild(dot);
+      t.textContent = f.name + ' \u00b7 ' + f.battles + ' battle' + (f.battles === 1 ? '' : 's')
+        + ' (' + f.att + ' attacking, ' + f.def + ' defending), '
+        + f.dealt.toLocaleString() + ' damage dealt'
+        + (f.fell ? ', knocked out ' + f.fell + '\u00d7' : ', never knocked out');
+      sg.appendChild(t);
+      g.appendChild(sg);
     });
 
     /* The hub: a ring that says which way this player leans, then the avatar. */
@@ -281,22 +373,35 @@
       cx: hub.x, cy: hub.y, r: n.r, fill: 'none', stroke: col, 'stroke-width': 2,
     }));
 
+    /*
+     * Radially outward, beyond the Crew -- and ANCHORED BY WHICH SIDE IT IS
+     * ON. A centred label at the outward point still spreads half its width
+     * back across the cluster, which on the left and right of the ring put
+     * the username over its own portraits. Anchoring start on the right and
+     * end on the left makes the text run AWAY from the cluster; only at the
+     * top and bottom, where it runs along the tangent, does centred work.
+     */
+    const LR = p.g.outer + 17;
+    const cosA = Math.cos(p.ang);
+    const anchor = cosA > 0.3 ? 'start' : (cosA < -0.3 ? 'end' : 'middle');
+    const LX = hub.x + cosA * LR;
+    const LY = hub.y + Math.sin(p.ang) * LR + 4;
     const label = svgEl('text', {
-      x: hub.x, y: hub.y + n.r + 15, 'text-anchor': 'middle',
+      x: LX.toFixed(1), y: LY.toFixed(1), 'text-anchor': anchor,
       fill: '#cfe3ee', 'font-size': 11, 'font-family': 'Arial, sans-serif',
     });
     label.textContent = n.name;
     g.appendChild(label);
 
     const sub = svgEl('text', {
-      x: hub.x, y: hub.y + n.r + 27, 'text-anchor': 'middle',
+      x: LX.toFixed(1), y: (LY + 12).toFixed(1), 'text-anchor': anchor,
       fill: hexToRgba(col, 0.85), 'font-size': 9.5, 'font-family': 'Arial, sans-serif',
     });
     sub.textContent = `${n.battles} battle${n.battles === 1 ? '' : 's'} · ${n.wins}W ${n.losses}L`;
     g.appendChild(sub);
 
     const t = svgEl('title', {});
-    t.textContent = `${n.name} — ${n.battles} battles in the last ${D.days} days: `
+    t.textContent = `${n.name} \u00b7 ${n.battles} battles in the last ${D.days} days: `
       + `${n.att} attacking, ${n.def} defending. ${n.wins}W ${n.losses}L.`
       + (n.fighters.length ? ` ${n.fighters.length} Fighter${n.fighters.length === 1 ? '' : 's'} fielded.` : '');
     g.appendChild(t);

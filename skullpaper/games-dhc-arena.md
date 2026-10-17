@@ -457,15 +457,19 @@ being popular.
 
 The ladder says who is winning. **Rivalries** says who is fighting whom.
 
-It is a map of the last **30 days**, drawn under the ladder. Every player who
-has settled a battle in that window gets a cluster: their avatar in the middle,
-their Fighters orbiting it as dots, and lines running to everyone they have
-fought.
+It has **its own page**, linked from the Arena. Every player who has settled a
+battle in the window stands on a ring: their avatar, the Fighters they have
+been fielding drawn around them as portraits, and lines across the middle to
+everyone they have fought.
+
+Nobody is boxed in. This is not a territory map like the realms: these are
+people and their crews, and what ties a Crew to its owner is standing next to
+them and sharing their colour.
 
 | What you see | What it means |
 |---|---|
 | A bigger avatar | That player has fought more battles |
-| A bigger dot | That Fighter has been fielded more |
+| A bigger portrait | That Fighter has been fielded more |
 | A thicker line | A deeper rivalry, more battles between the pair |
 | A solid line with two arrowheads | It runs both ways. A real feud |
 | A dashed line with one arrowhead | One-sided. Somebody is doing the attacking |
@@ -473,8 +477,10 @@ fought.
 | A teal ring | Mostly being attacked |
 
 Hover anyone to pick their rivalries out of the rest; everything else dims.
-Hover a Fighter dot for its battles, how they split between attacking and
+Hover a Fighter for its battles, how they split between attacking and
 defending, the damage it has dealt and how often it has been knocked out.
+
+The window is **30 days** by default, with 7 and 90 available on the page.
 
 Sizes go by **area, not radius**. A player with ten battles is not drawn ten
 times the size of one with a single battle, because that is not what the eye
@@ -488,17 +494,17 @@ who is active right now, and activity does not stop because the month did.
 A red ring needs at least 3 battles and a 2-to-1 split before it appears. One
 attack is not a campaign.
 
-### Why some clusters have no dots
+### Why some clusters have no Fighters
 
 The avatars and the lines come from the battle record, which has been kept
 since the Arena opened. Which **Fighters** were in a Crew is newer: it has only
 been recorded since the participation ledger landed, the same ledger behind
 the proven ranks in [[games-dhc-fighters]].
 
-So a player can legitimately show a full battle history and no Fighter dots at
-all. Nothing is missing; those battles were fought before anyone was writing
-down who was in the Crew. The dots fill in as new battles are fought, and the
-panel says how many players are still waiting.
+So a player can legitimately show a full battle history and no Fighters around
+them at all. Nothing is missing; those battles were fought before anyone was
+writing down who was in the Crew. The portraits fill in as new battles are
+fought, and the page says how many players are still waiting.
 
 ---
 

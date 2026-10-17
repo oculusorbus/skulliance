@@ -14,9 +14,21 @@ function fx_player($id, $name, $att, $def, $wins, $losses) {
 	             'att'=>$att, 'def'=>$def, 'wins'=>$wins, 'losses'=>$losses,
 	             'battles'=>$att + $def);
 }
-function fx_fighter($id, $name, $b, $att, $def, $fell, $dealt) {
+/*
+ * Fighters carry LAYERS, the shape dhca_rivalry_art() leaves behind: the trait
+ * PNGs that compose the portrait. One Fighter below wears a single-sided arm,
+ * which is drawn from the two-arm master with half clipped away -- the only
+ * layer kind that needs more than a plain <image>, and therefore the one worth
+ * having in a fixture.
+ */
+function fx_fighter($id, $name, $b, $att, $def, $fell, $dealt, $clip = '') {
+	$layers = array(
+		array('src'=>"web/250/torso/t$id.png", 'n'=>0,  'clip'=>''),
+		array('src'=>"web/250/head/h$id.png",  'n'=>-4, 'clip'=>''),
+	);
+	if ($clip !== '') $layers[] = array('src'=>"web/250/arms/a$id.png", 'n'=>0, 'clip'=>$clip);
 	return array('id'=>$id, 'name'=>$name, 'battles'=>$b, 'att'=>$att,
-	             'def'=>$def, 'fell'=>$fell, 'dealt'=>$dealt);
+	             'def'=>$def, 'fell'=>$fell, 'dealt'=>$dealt, 'layers'=>$layers);
 }
 
 /*
@@ -51,8 +63,8 @@ $busy = dhca_rivalry_layout(array(
 		   full 360 degrees still happens to miss the label. Six is enough that
 		   a full ring must put one there. */
 		1 => array(
-			fx_fighter(71, 'Vex',       16, 14, 2, 3, 1600),
-			fx_fighter(72, 'Hollow',    11,  9, 2, 1, 900),
+			fx_fighter(71, 'Vex',       16, 14, 2, 3, 1600, 'right'),
+			fx_fighter(72, 'Hollow',    11,  9, 2, 1, 900, 'left'),
 			fx_fighter(73, 'Pale Cur',   9,  7, 2, 2, 540),
 			fx_fighter(74, 'Grin',       6,  5, 1, 0, 410),
 			fx_fighter(75, 'Sallow',     6,  4, 2, 1, 300),
@@ -86,7 +98,36 @@ $empty = dhca_rivalry_layout(array(
 	'players' => array(), 'edges' => array(), 'fighters' => array(),
 ));
 
+/*
+ * A CROWDED MAP, at the scale the Arena actually runs at. The four-player
+ * fixture above is driven by the ring's MINIMUM radius, so a renderer that
+ * ignored how much room the clusters need still fit them in by luck. Ten
+ * players with full Crews is where the circumference, and not the floor,
+ * decides the radius -- and where clusters overlap if it is got wrong.
+ */
+$cp = array(); $ce = array(); $cf = array();
+for ($i = 1; $i <= 10; $i++) {
+	$att = 30 - $i * 2; $def = 4 + $i;
+	$cp[$i] = fx_player($i, 'Player' . $i, $att, $def, (int)(($att + $def) * 0.5), (int)(($att + $def) * 0.5));
+	$cf[$i] = array();
+	/* Crews of 3 to 6, so cluster sizes differ and the ring has to cope. */
+	for ($j = 0; $j < 3 + ($i % 4); $j++) {
+		$cf[$i][] = fx_fighter(1000 + $i * 10 + $j, "F{$i}_{$j}", 12 - $j, 8 - $j, 4,
+		                       $j % 2, 300 - $j * 20, $j === 0 ? 'right' : '');
+	}
+	/* A ring of grudges plus a couple of chords across it. */
+	$ce[] = array('a' => $i, 'd' => ($i % 10) + 1, 'n' => 11 - $i, 'aw' => (int)((11 - $i) / 2));
+	if ($i <= 3) $ce[] = array('a' => ($i % 10) + 1, 'd' => $i, 'n' => $i, 'aw' => 1);
+	if ($i <= 4) $ce[] = array('a' => $i, 'd' => (($i + 4) % 10) + 1, 'n' => 2, 'aw' => 1);
+}
+$crowded = dhca_rivalry_layout(array(
+	'days' => DHCA_RIVALRY_DAYS, 'battles' => 180,
+	'players' => $cp, 'edges' => $ce, 'fighters' => $cf,
+));
+
 file_put_contents($dir . '/layouts.json', json_encode(array(
+	'crowded' => $crowded,
 	'busy' => $busy, 'solo' => $solo, 'nofighters' => $nofighters, 'empty' => $empty,
 ), JSON_UNESCAPED_SLASHES));
-echo "layouts written: busy(" . count($busy['nodes']) . " nodes, " . count($busy['pairs']) . " pairs)\n";
+echo "layouts written: busy(" . count($busy['nodes']) . " nodes, " . count($busy['pairs']) . " pairs)"
+   . ", crowded(" . count($crowded['nodes']) . " nodes, " . count($crowded['pairs']) . " pairs)\n";
