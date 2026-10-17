@@ -1214,6 +1214,39 @@ console.log('\n-- clicking a Fighter opens the COLLECTION\'s panel --');
      removed entirely. */
   ok(/class="riv-fig"[^>]*>\s*<span class="art">\s*<img/.test(html),
      'and the roster entries carry the Fighter art, not just a name');
+  /*
+   * AND THE BOX HOLDING IT CAN HAVE A SIZE.
+   *
+   * The art sits in a <span>, and an inline box ignores width, height and
+   * aspect-ratio -- so the markup above was correct, the images were there,
+   * and the tiles still rendered as name-and-stats with an invisible gap on
+   * top. Every rule that gives a span a box must also make it one.
+   */
+  const php2 = fs.readFileSync(path.join(__dirname, 'rivalries.php'), 'utf8');
+  const css2 = php2.slice(php2.indexOf('<style>'), php2.indexOf('</style>'))
+                   .replace(/\/\*[\s\S]*?\*\//g, '');   // comments name classes too
+  /*
+   * Which classes end up on a span -- FROM BOTH FILES. The roster tiles are
+   * built as strings in rivalries.js, so the page's own markup does not
+   * contain them: scanning only the PHP found two unrelated spans and
+   * missed the one with the bug in it. The same blind spot as pf-hid on the
+   * Arena, which was also only ever written by a script.
+   */
+  const spanCls = new Set();
+  for (const src of [php2, rivSrc]) {
+    for (const m of src.match(/<span class=\\?["'][^"'\\]+/g) || []) {
+      for (const c of m.replace(/<span class=\\?["']/, '').split(/\s+/)) if (c) spanCls.add(c);
+    }
+  }
+  ok(spanCls.has('art'), 'the portrait box is a span (' + [...spanCls].join(', ') + ')');
+  for (const cls of spanCls) {
+    const rule = (css2.match(new RegExp('\\.[\\w-]*\\s*\\.' + cls + '\\s*\\{([^}]*)\\}')) || [])[1];
+    if (!rule) continue;
+    const boxy = /(^|;)\s*(width|height|aspect-ratio)\s*:/.test(rule);
+    if (!boxy) continue;
+    ok(/display\s*:\s*(block|flex|grid|inline-block)/.test(rule),
+       `  .${cls} is given a box, so it is also given a display (${rule.slice(0, 44)}...)`);
+  }
 
   /*
    * A PLAYER ON THE OTHER SIDE OF THE PAIR. Pairs are stored low-id to

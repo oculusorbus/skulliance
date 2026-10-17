@@ -269,7 +269,13 @@ include 'header.php';
 .riv-fig{background:#050c14;border:1px solid var(--line);border-radius:4px;padding:8px;
   cursor:pointer;text-align:center;font:inherit;color:inherit}
 .riv-fig:hover{border-color:var(--ochre)}
-.riv-fig .art{position:relative;width:100%;aspect-ratio:1;margin:0 0 6px;overflow:hidden;
+/* DISPLAY:BLOCK, because it is a <span>. An inline box ignores width,
+   height and aspect-ratio, so this had no height at all and the layers
+   inside -- absolutely positioned to fill it -- had nothing to fill. The
+   tiles rendered as name and stats with an invisible gap above. .nm and .st
+   below got their display:block because they are obviously text; the one
+   that is actually a box did not. */
+.riv-fig .art{display:block;position:relative;width:100%;aspect-ratio:1;margin:0 0 6px;overflow:hidden;
   border-radius:50%;background:#0a1929}
 .riv-fig .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .riv-fig .nm{display:block;font-size:10px;line-height:1.3;word-break:break-word}
