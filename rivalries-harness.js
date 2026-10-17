@@ -1007,6 +1007,71 @@ console.log('\n-- clicking a Fighter opens the COLLECTION\'s panel --');
   ok(html.indexOf('Fights <b>' + topFoe.foe.name + '</b> most') > -1,
      `and the summary names them (${topFoe.foe.name})`);
   /*
+   * "BEST AGAINST" HAS TO BE A WINNING RECORD. Taking the maximum of
+   * (won - lost) returns something even when every record is losing, and the
+   * panel said "best against oculusorbus at 5-6" -- the least bad, not a
+   * best. In this fixture nobody has a winning record at 3+ battles, so the
+   * claim must be absent entirely.
+   */
+  const mineAll = LAYOUTS.crowded.pairs
+    .filter(p => String(p.lo) === '1' || String(p.hi) === '1')
+    .map(p => { const lo = String(p.lo) === '1';
+                return { n: p.n, won: lo ? p.lowins : p.hiwins, lost: lo ? p.hiwins : p.lowins }; });
+  const anyWinning = mineAll.some(m => m.n >= 3 && m.won > m.lost);
+  ok(!anyWinning, 'this player has no winning record at 3+ battles in the fixture');
+  ok(html.indexOf('Best against') === -1, '...so the panel does not claim one');
+  for (const m of html.match(/(Best|Worst) against <b>[^<]+<\/b> at (\d+)\u2013(\d+)\./g) || []) {
+    const mm = m.match(/(Best|Worst) against <b>[^<]+<\/b> at (\d+)\u2013(\d+)\./);
+    const w = +mm[2], l = +mm[3];
+    ok(mm[1] === 'Best' ? w > l : l > w, `  "${mm[1]} against ... ${w}-${l}" is the right way round`);
+  }
+  /*
+   * A PLAYER WHO ONLY WINS, which is the mirror case. Player 3's deep
+   * records are both winning, so an unfiltered "worst" would hand back a
+   * 6-5 victory and label it their worst. Without this the filter could be
+   * deleted from that side and nothing noticed.
+   */
+  h2.fire('click', { target: sv2.querySelectorAll('.riv-cluster')
+                                .find(c => c.getAttribute('data-id') === '3') });
+  const html3 = global.__panel.pbody.innerHTML;
+  const mine3 = LAYOUTS.crowded.pairs
+    .filter(p => String(p.lo) === '3' || String(p.hi) === '3')
+    .map(p => { const lo = String(p.lo) === '3';
+                return { n: p.n, won: lo ? p.lowins : p.hiwins, lost: lo ? p.hiwins : p.lowins }; })
+    .filter(m => m.n >= 3);
+  ok(mine3.length >= 2 && mine3.every(m => m.won > m.lost),
+     'player 3 wins every rivalry deep enough to count');
+  ok(html3.indexOf('Best against') > -1, 'so the panel names a best');
+  ok(html3.indexOf('Worst against') === -1, 'and claims no worst, because there is not one');
+
+  /*
+   * EVERY PLAYER, not a hand-picked one. Player 3 above has two winning
+   * records of the SAME margin, so an unfiltered "worst" picks the same
+   * rivalry as "best" and the duplicate guard quietly suppresses it -- the
+   * mutation survived on that one player alone. Opening all of them finds
+   * the ones where it does not.
+   */
+  let claims = 0;
+  for (const pid of Object.keys(LAYOUTS.crowded.nodes)) {
+    h2.fire('click', { target: sv2.querySelectorAll('.riv-cluster')
+                                  .find(c => c.getAttribute('data-id') === pid) });
+    const ph = global.__panel.pbody.innerHTML;
+    for (const seg of ph.match(/(Best|Worst) against <b>[^<]+<\/b> at \d+\u2013\d+\./g) || []) {
+      const mm = seg.match(/(Best|Worst) against <b>([^<]+)<\/b> at (\d+)\u2013(\d+)\./);
+      const w = +mm[3], l = +mm[4];
+      claims++;
+      ok(mm[1] === 'Best' ? w > l : l > w,
+         `  ${LAYOUTS.crowded.nodes[pid].name}: "${mm[1]} against ${mm[2]} ${w}-${l}" is right`);
+    }
+  }
+  ok(claims >= 4, `the fixture produces enough best/worst claims to test (${claims})`);
+
+  /* And the sentences are sentences -- a full stop, then a capital. */
+  ok(/Fights <b>[^<]+<\/b> most, \d+ times?\./.test(html),
+     'the lead sentence is closed with a full stop');
+  ok(!/\. [a-z]/.test(html.replace(/<[^>]*>/g, '')),
+     'and nothing runs on with a lower-case word');
+  /*
    * AND THE PANEL SORTS FOR ITSELF. dhca_rivalry_layout() already hands the
    * pairs over heaviest first, so simply walking them in order comes out
    * right and deleting the panel's own sort changed nothing. That is a pass
@@ -1037,6 +1102,15 @@ console.log('\n-- clicking a Fighter opens the COLLECTION\'s panel --');
   const listed = (html.match(/class="riv-fig"/g) || []).length;
   ok(listed === n1.fighters.length,
      `but the panel lists every one (${listed} of ${n1.fighters.length})`);
+  /* NOTHING NEGATIVE REACHES THE MARKUP. A 25-strong roster walked the
+     fixture's counters past zero and the panel printed "-4 battles, -10 dmg"
+     without complaint -- real data cannot do that, but a fixture that can
+     exercises sorts and ratios against values the page will never see. */
+  ok(!/-\d+ battle|-[\d,]+ dmg/.test(html), 'no negative counts are rendered');
+  for (const f of n1.fighters) {
+    ok(f.battles >= 1 && f.att >= 0 && f.def >= 0 && f.dealt >= 0,
+       `  ${f.name} has sane numbers (${f.battles}b ${f.att}a ${f.def}d ${f.dealt}dmg)`);
+  }
   for (const f of n1.fighters) {
     ok(html.indexOf('data-serial="' + f.serial + '"') > -1, `  ${f.name} is in the roster`);
   }

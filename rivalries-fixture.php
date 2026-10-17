@@ -173,8 +173,14 @@ for ($i = 1; $i <= 10; $i++) {
 	 */
 	$crew = in_array($i, array(1, 6, 10), true) ? ($i === 1 ? 25 : 20) : 3 + ($i % 4);
 	for ($j = 0; $j < $crew; $j++) {
-		$cf[$i][] = fx_fighter(1000 + $i * 10 + $j, "F{$i}_{$j}", 12 - $j, 8 - $j, 4,
-		                       $j % 2, 300 - $j * 20, $j === 0 ? 'right' : '');
+		/* max(1, ...) because a 25-strong roster ran this straight past zero
+		   and the panel cheerfully rendered "-4 battles, -10 dmg". Real data
+		   cannot be negative; neither should the fixture, or a sort or a
+		   ratio could be exercised against values it will never see. */
+		$b  = max(1, 13 - $j);
+		$at = max(0, min($b, 9 - $j));
+		$cf[$i][] = fx_fighter(1000 + $i * 10 + $j, "F{$i}_{$j}", $b, $at, $b - $at,
+		                       $j % 2, max(10, 300 - $j * 20), $j === 0 ? 'right' : '');
 	}
 	/* A ring of grudges plus a couple of chords across it. */
 	$ce[] = array('a' => $i, 'd' => ($i % 10) + 1, 'n' => 11 - $i, 'aw' => (int)((11 - $i) / 2));

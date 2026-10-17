@@ -481,6 +481,14 @@ Hover anyone to pick their rivalries out of the rest; everything else dims.
 Hover a Fighter for its battles, how they split between attacking and
 defending, the damage it has dealt and how often it has been knocked out.
 
+**Click a player** for their panel: their record and win rate, the
+attack/defend split, every rival they have with the head-to-head and who
+started how many, who they fight most and who they are best and worst
+against, and their **whole roster** rather than the few the map has room to
+draw. **Click a Fighter**, there or on the map, and it opens the same panel
+the [[games-dhc-fighters]] Collection does, with its traits, its ranks and
+its proven record.
+
 The window is **30 days** by default, with 7 and 90 available on the page.
 
 **At most 12 Fighters are drawn per player**, the ones fielded most, and the

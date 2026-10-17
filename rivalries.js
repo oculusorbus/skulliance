@@ -778,8 +778,17 @@
     mine.sort((a, b) => b.n - a.n || b.won - a.won);
 
     const nemesis = mine.length ? mine[0] : null;
-    const best = mine.filter(m => m.n >= 3).sort((a, b) => (b.won - b.lost) - (a.won - a.lost))[0];
-    const worst = mine.filter(m => m.n >= 3).sort((a, b) => (a.won - a.lost) - (b.won - b.lost))[0];
+    /*
+     * "BEST AGAINST" MUST ACTUALLY BE A WINNING RECORD. Taking the maximum
+     * of (won - lost) returns something even when every record is losing, and
+     * the panel then said "best against oculusorbus at 5-6" -- which is not a
+     * best, it is the least bad. Same the other way for worst.
+     */
+    const deep  = mine.filter(m => m.n >= 3);
+    const best  = deep.filter(m => m.won > m.lost)
+                      .sort((a, b) => (b.won - b.lost) - (a.won - a.lost))[0];
+    const worst = deep.filter(m => m.lost > m.won)
+                      .sort((a, b) => (a.won - a.lost) - (b.won - b.lost))[0];
 
     let h = '<div class="riv-ph">'
       + (n.avatar ? '<img src="' + esc(n.avatar) + '" alt="">' : '')
@@ -802,11 +811,20 @@
       + '</div>';
 
     if (nemesis) {
+      /* Sentences, each starting with a capital -- joined with '. ' these
+         were running on as "11 times. best against...". */
       const bits = [];
-      bits.push('Fights <b>' + esc(nemesis.foe.name) + '</b> most, ' + nemesis.n + ' times');
-      if (best && best.won !== best.lost)  bits.push('best against <b>' + esc(best.foe.name) + '</b> at ' + best.won + '\u2013' + best.lost);
-      if (worst && worst !== best && worst.won !== worst.lost) bits.push('worst against <b>' + esc(worst.foe.name) + '</b> at ' + worst.won + '\u2013' + worst.lost);
-      h += '<p class="riv-empty-note" style="margin:-8px 0 16px">' + bits.join('. ') + '.</p>';
+      bits.push('Fights <b>' + esc(nemesis.foe.name) + '</b> most, ' + nemesis.n
+              + ' time' + (nemesis.n === 1 ? '' : 's') + '.');
+      if (best) {
+        bits.push('Best against <b>' + esc(best.foe.name) + '</b> at '
+                + best.won + '\u2013' + best.lost + '.');
+      }
+      if (worst && worst !== best) {
+        bits.push('Worst against <b>' + esc(worst.foe.name) + '</b> at '
+                + worst.won + '\u2013' + worst.lost + '.');
+      }
+      h += '<p class="riv-empty-note" style="margin:-8px 0 16px">' + bits.join(' ') + '</p>';
     }
 
     h += '<p class="riv-sect">Rivalries</p>';
