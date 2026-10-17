@@ -51,7 +51,8 @@ function nft_dossier($conn, $nft_id) {
 	if (!$base) return null;
 
 	$d = array('nft' => $base[0], 'missions' => array(), 'missions_done' => 0,
-	           'gauntlets' => array(), 'diamond' => null, 'soldier' => null);
+	           'gauntlets' => array(), 'diamond' => null, 'soldier' => null,
+	           'raids' => array());
 
 	/* ---- missions. status 0 is in progress; anything else has finished. ---- */
 	$d['missions'] = _nftd_rows($conn,
@@ -79,6 +80,42 @@ function nft_dossier($conn, $nft_id) {
 	$ds = _nftd_rows($conn,
 		"SELECT diamond_skull_id FROM diamond_skulls WHERE nft_id = $id LIMIT 1");
 	if ($ds) $d['diamond'] = $ds[0]['diamond_skull_id'];
+
+	/*
+	 * ---- RAIDS, REACHED THROUGH THE SOLDIER ----
+	 *
+	 * raids_soldiers keys on soldier_id, and a soldier keys on nft_id, so an
+	 * NFT's raid history is one join away. Counted over EVERY soldier row for
+	 * this NFT rather than the active one the panel shows below: a soldier can
+	 * be retired and replaced, and the raids it fought still happened.
+	 *
+	 * A WIN DEPENDS ON WHICH SIDE IT WAS ON. raids.outcome is written from the
+	 * ATTACKER's point of view -- '1' means the raid succeeded, '2' that it was
+	 * repelled, '0' that it is still running. So outcome '1' is a win for
+	 * offense and a loss for defense, and counting outcome='1' as a win
+	 * outright would credit every defender for being overrun.
+	 *
+	 * Aggregated in PHP rather than with SUM(CASE...): the row count per NFT is
+	 * tiny, and a GROUP BY here is one more thing ONLY_FULL_GROUP_BY can reject
+	 * on a server whose mode we do not control.
+	 */
+	$d['raids'] = array('total' => 0, 'attack' => 0, 'defend' => 0,
+	                    'won' => 0, 'lost' => 0, 'fell' => 0, 'now' => 0);
+	foreach (_nftd_rows($conn,
+		"SELECT rs.side, rs.dead, r.outcome
+		   FROM raids_soldiers rs
+		   INNER JOIN soldiers s ON s.id = rs.soldier_id
+		   INNER JOIN raids    r ON r.id = rs.raid_id
+		  WHERE s.nft_id = $id") as $r) {
+		$off = ($r['side'] === 'offense');
+		$out = (string)$r['outcome'];
+		$d['raids']['total']++;
+		$d['raids'][$off ? 'attack' : 'defend']++;
+		if (!empty($r['dead'])) $d['raids']['fell']++;
+		if      ($out === '0') $d['raids']['now']++;
+		else if ($out === ($off ? '1' : '2')) $d['raids']['won']++;
+		else if ($out === ($off ? '2' : '1')) $d['raids']['lost']++;
+	}
 
 	/* ---- standing in a realm, which is also how it reaches raids ---- */
 	$sol = _nftd_rows($conn,

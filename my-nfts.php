@@ -938,13 +938,42 @@ if ($filterby != "") {
        + (d.mine ? '' : (n.username ? ' \u00b7 held by ' + esc(n.username) : ''))
        + '</p>';
 
+    /* Older payloads have no raids key; treat that as "never fought" rather
+       than letting every read below throw. */
+    var r = d.raids || {};
+    r.total = r.total || 0;
+
     /* What it earns and what it has done. */
     h += '<div class="nftd-stats">'
        + '<div><b>' + esc(n.rate) + '</b><span>' + esc(n.currency || 'pts') + ' / night</span></div>'
        + '<div><b>' + d.missions.length + '</b><span>On mission</span></div>'
        + '<div><b>' + d.missionsDone + '</b><span>Missions done</span></div>'
        + '<div><b>' + d.gauntlets.length + '</b><span>Gauntlet runs</span></div>'
+       /*
+        * RAIDS FOUGHT, NOT RAIDS WON, as the headline number. A Fighter that
+        * turned out thirty times and lost twenty has done more than one that
+        * won its only raid, and the record is right underneath. Only shown
+        * once it has fought: a "0 raids" tile on an NFT that has never been
+        * in a realm is a column of zeroes rather than information.
+        */
+       + (r.total
+          ? '<div><b>' + r.total + '</b><span>Raid' + (r.total === 1 ? '' : 's')
+            + ' fought</span></div>'
+          : '')
        + '</div>';
+
+    /* The record, in words, because W/L needs saying which is which when the
+       same NFT both attacks and defends. */
+    if (r.total) {
+      var bits = [];
+      if (r.won)  bits.push(r.won + ' won');
+      if (r.lost) bits.push(r.lost + ' lost');
+      if (r.attack && r.defend) bits.push(r.attack + ' attacking, ' + r.defend + ' defending');
+      else if (r.attack) bits.push('always attacking');
+      else if (r.defend) bits.push('always defending');
+      if (r.fell) bits.push('fell ' + r.fell + (r.fell === 1 ? ' time' : ' times'));
+      if (bits.length) h += '<p class="nftd-idle">' + esc(bits.join(' \u00b7 ')) + '</p>';
+    }
 
     /* The artwork's home, which is the thing the save button is about. */
     h += '<p class="nftd-idle">Artwork '
@@ -974,6 +1003,13 @@ if ($filterby != "") {
         + '</span>'
         + '<span class="when">defends against raids</span></li></ul>');
     }
+    if (r.now) {
+      /* Committed to a raid that has not resolved. The soldier line above
+         says where it stands; this says it is not standing there right now. */
+      busy.push('<ul class="nftd-list"><li><b>In a raid</b>'
+        + '<span style="opacity:.6">' + r.now + ' unresolved</span>'
+        + '<span class="when">away until it ends</span></li></ul>');
+    }
     if (d.diamond) {
       busy.push('<ul class="nftd-list"><li><b>Part of a Diamond Skull</b>'
         + '<span style="opacity:.6">' + esc(d.diamond) + '</span></li></ul>');
@@ -993,6 +1029,7 @@ if ($filterby != "") {
     h += '<a href="collections.php">The collection &rsaquo;</a>';
     if (d.missions.length || d.missionsDone) h += '<a href="missions.php">Missions &rsaquo;</a>';
     if (d.soldier) h += '<a href="realms.php">Realms &rsaquo;</a>';
+    if (r.total) h += '<a href="raids.php">Raids &rsaquo;</a>';
     h += '</div>';
 
     body.innerHTML = h;

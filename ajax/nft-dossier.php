@@ -79,6 +79,7 @@ echo json_encode(array(
 	'missions' => $d['missions'],
 	'missionsDone' => $d['missions_done'],
 	'gauntlets'=> $d['gauntlets'],
+	'raids'    => $d['raids'],
 	'diamond'  => $d['diamond'],
 	'soldier'  => $d['soldier'],
 ), JSON_UNESCAPED_SLASHES);
