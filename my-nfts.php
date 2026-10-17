@@ -35,6 +35,32 @@ $mn_pages = (int)ceil($mn_total / $mn_per);
 if ($mn_page > $mn_pages && $mn_pages > 0) $mn_page = $mn_pages;
 $mn_rows = $mn_user ? getNFTsData($conn, $filterby, "", $mn_page, $mn_per) : array();
 
+/*
+ * WHICH OF THESE HAVE A LOCAL COPY, settled before anything is drawn.
+ *
+ * getIPFS() globs the cache directory and returns a /staking/images/nfts/...
+ * path when there is a copy on disk and a gateway URL when there is not, so
+ * it already answers the question -- the resolved URL is kept per row so the
+ * render loop does not glob a second time.
+ *
+ * It is a PRE-PASS rather than something the loop accumulates because the
+ * offer to fetch the missing ones belongs ABOVE the grid, and a count the
+ * loop is still filling in cannot be printed before it.
+ */
+$mn_imgs     = array();
+$mn_uncached = array();
+foreach ($mn_rows as $r) {
+	$id  = (int)$r["nfts_id"];
+	$url = getIPFS($r["ipfs"], $r["collection_id"], $r["project_id"]);
+	$mn_imgs[$id] = $url;
+	if (strpos($url, '/staking/images/nfts/') === 0) continue;   // already local
+	/* An inline SVG data URI IS the picture -- there is no file to fetch and
+	   cacheNFTImage() skips it, so counting it would put a number on the
+	   button that can never come down. */
+	if (strpos((string)$r["ipfs"], 'data:image') !== false) continue;
+	$mn_uncached[] = $id;
+}
+
 /* The daily yield of what is on screen, which the page never said before.
    A collection view that cannot tell you what the collection earns is a
    list of pictures. */
@@ -113,6 +139,40 @@ if ($mn_rows) {
         <?php /* Everything identical across the page, said once. */ ?>
         <p class="mn-ctx"><?php echo htmlspecialchars(implode(' · ', $mn_ctx)); ?></p>
         <?php endif; ?>
+
+        <?php
+          /*
+           * SAVE THE ART THAT IS NOT SAVED YET.
+           *
+           * An NFT whose picture only exists on IPFS loads slowly and depends
+           * on a gateway still serving it. The nightly pass takes a copy of
+           * everything it can, and it does not get everything -- a gateway
+           * timing out at 3am is simply missed. This offers the ones on this
+           * page, and only appears when there are some.
+           *
+           * STRICTLY ONE AT A TIME, and that is the whole design. This
+           * endpoint already had a caller: images that failed to load called
+           * it automatically, and when a lot of them failed at once the
+           * parallel requests saturated PHP-FPM and locked the site, so that
+           * path was cut back to showing a skull (see healNFT in
+           * skulliance.js). What makes this safe where that was not is that
+           * it is bounded by the page size, serial, and something a person
+           * asked for -- never a cascade that fires on its own.
+           */
+          if ($mn_uncached):
+        ?>
+        <p class="mn-cache-wrap">
+          <button type="button" class="mn-btn ghost" id="mn-cache-go"
+                  data-ids="<?php echo htmlspecialchars(implode(',', $mn_uncached)); ?>">
+            Save <?php echo count($mn_uncached); ?> artwork<?php
+              echo count($mn_uncached) === 1 ? '' : 's'; ?> to Skulliance
+          </button>
+          <span class="mn-cache-note" id="mn-cache-note"><?php
+            echo count($mn_uncached); ?> of <?php echo count($mn_rows); ?> on this page
+            load from IPFS. Saving keeps a copy here, so they load faster and
+            survive a gateway going away.</span>
+        </p>
+        <?php endif; ?>
       </div>
       <div class="mn-head-right">
         <?php /* THE FILTER LIVES IN THE MASTHEAD NOW. #filter-nfts carries
@@ -156,6 +216,7 @@ if ($mn_rows) {
           <p><a class="mn-btn ghost" href="collections.php">See what qualifies</a></p>
         </div>
       <?php else: foreach ($mn_rows as $row):
+            $mn_img = $mn_imgs[(int)$row["nfts_id"]];
             /* .nft / .nft-data / .nft-name / .nft-level are KEPT, not
                restyled away: skulliance.js hangs the image auto-heal and
                the upload affordance off them, and renderIPFS() emits into
@@ -165,8 +226,7 @@ if ($mn_rows) {
           <div class="nft-data">
             <a class="nft-art" href="<?php echo nftExplorerUrl($conn, $row["asset_id"], isset($row["blockchain_id"]) ? $row["blockchain_id"] : 1); ?>"
                target="_blank" rel="noopener"><?php
-              echo renderIPFS($row["ipfs"], $row["collection_id"],
-                   getIPFS($row["ipfs"], $row["collection_id"], $row["project_id"]), false, $row["nfts_id"]);
+              echo renderIPFS($row["ipfs"], $row["collection_id"], $mn_img, false, $row["nfts_id"]);
             ?></a>
             <span class="nft-name"><?php echo htmlspecialchars($row["nfts_name"]); ?></span>
             <?php /* Only what differs. When the whole page shares a rate,
@@ -375,6 +435,195 @@ if ($filterby != "") {
 	echo "<script type='text/javascript'>document.getElementById('filterNFTs').value = '".$filterby."';</script>";
 }
 ?>
+<?php if ($mn_uncached): ?>
+<?php
+  /*
+   * A MODAL OF ITS OWN, not #myModal. That one is the visibility
+   * announcement: it carries renderVisibility() inside it and is opened by
+   * its own condition. Borrowing it would mean emptying somebody's consent
+   * prompt to show a progress report.
+   */
+?>
+<div id="mn-cache-veil" class="mn-cache-veil" role="dialog" aria-modal="true"
+     aria-labelledby="mn-cache-title" hidden>
+  <div class="mn-cache-sheet">
+    <button type="button" class="mn-cache-x" id="mn-cache-close" aria-label="Close">&times;</button>
+    <h3 id="mn-cache-title">Saving artwork</h3>
+    <p class="mn-cache-prog" id="mn-cache-prog"></p>
+    <div class="mn-cache-bar"><i id="mn-cache-fill"></i></div>
+    <div id="mn-cache-out"></div>
+  </div>
+</div>
+<style>
+.mn-cache-wrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:10px 0 0}
+.mn-cache-note{font-size:11px;opacity:.6;line-height:1.5;max-width:46ch}
+.mn-cache-veil{position:fixed;inset:0;z-index:9996;background:rgba(3,8,14,.86);
+  display:flex;align-items:flex-start;justify-content:center;overflow:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 6vh) 16px calc(env(safe-area-inset-bottom,0px) + 20px)}
+.mn-cache-veil[hidden]{display:none!important}
+.mn-cache-sheet{position:relative;width:min(620px,100%);background:#0a1929;
+  border:1px solid #1b3346;border-radius:6px;padding:20px 22px 22px;color:#e8eaed;
+  font:13px/1.55 ui-monospace,Menlo,monospace}
+.mn-cache-sheet h3{margin:0 0 10px;font-size:16px}
+.mn-cache-x{position:absolute;top:8px;right:10px;background:none;border:0;color:#7a9eb0;
+  font-size:24px;line-height:1;cursor:pointer;padding:4px 8px}
+.mn-cache-x:hover{color:#e8eaed}
+.mn-cache-prog{margin:0 0 8px;font-size:12px;color:#7a9eb0}
+.mn-cache-bar{height:4px;background:#07111d;border-radius:2px;overflow:hidden;margin:0 0 14px}
+.mn-cache-bar i{display:block;height:100%;width:0;background:#00c8a0;transition:width .2s ease}
+.mn-cache-sum{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
+.mn-cache-sum span{border:1px solid #1b3346;border-radius:3px;padding:4px 9px;font-size:11px}
+.mn-cache-sum b{font-variant-numeric:tabular-nums}
+.mn-cache-sum .ok b{color:#00c8a0}
+.mn-cache-sum .bad b{color:#e0466b}
+.mn-cache-list{margin:0;padding:0;list-style:none;max-height:40vh;overflow:auto}
+.mn-cache-list li{border-top:1px solid #1b3346;padding:6px 0;font-size:11.5px;display:flex;gap:8px}
+.mn-cache-list li i{font-style:normal;flex:0 0 auto;width:62px;letter-spacing:.06em;
+  text-transform:uppercase;font-size:9px;padding-top:3px;opacity:.7}
+.mn-cache-list li.ok i{color:#00c8a0} .mn-cache-list li.bad i{color:#e0466b}
+.mn-cache-why{opacity:.75;word-break:break-word}
+@media (prefers-reduced-motion:reduce){.mn-cache-bar i{transition:none}}
+</style>
+<script>
+(function () {
+  var btn   = document.getElementById('mn-cache-go');
+  var veil  = document.getElementById('mn-cache-veil');
+  var out   = document.getElementById('mn-cache-out');
+  var prog  = document.getElementById('mn-cache-prog');
+  var fill  = document.getElementById('mn-cache-fill');
+  var close = document.getElementById('mn-cache-close');
+  if (!btn || !veil) return;
+
+  function esc(t) {
+    return String(t == null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function shut() { veil.hidden = true; }
+  close.addEventListener('click', shut);
+  veil.addEventListener('click', function (e) { if (e.target === veil) shut(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !veil.hidden) shut();
+  });
+
+  /*
+   * ONE REQUEST IN FLIGHT, ALWAYS.
+   *
+   * The endpoint this calls used to be driven automatically by every image
+   * that failed to load, and a page where many failed at once fired them
+   * together and saturated PHP-FPM until the site stopped answering. The
+   * fix then was to stop calling it at all.
+   *
+   * It is called again here, but the shape is different in the ways that
+   * caused that: the list is bounded by the page, the next request is not
+   * started until the previous one has answered, and a person pressed a
+   * button. Nothing recurses and nothing fans out.
+   *
+   * The endpoint also rate-limits 30 requests a minute per address, which a
+   * page of 24 fits inside -- but a second run straight after will not, so
+   * that reply is reported rather than swallowed.
+   */
+  btn.addEventListener('click', function () {
+    var ids = (btn.getAttribute('data-ids') || '').split(',').filter(Boolean);
+    if (!ids.length) return;
+
+    btn.disabled = true;
+    veil.hidden = false;
+    out.innerHTML = '';
+    fill.style.width = '0%';
+
+    var done = 0;
+    var tally = { cached: 0, exists: 0, skipped: 0, error: 0 };
+    var rows = [];
+
+    function finish() {
+      btn.disabled = false;
+      var saved = tally.cached;
+      prog.textContent = 'Finished. ' + saved + ' of ' + ids.length + ' saved.';
+      var sum = '<div class="mn-cache-sum">'
+        + '<span class="ok"><b>' + tally.cached + '</b> saved</span>'
+        + (tally.exists  ? '<span><b>' + tally.exists + '</b> already had a copy</span>' : '')
+        + (tally.skipped ? '<span><b>' + tally.skipped + '</b> nothing to save</span>' : '')
+        + (tally.error   ? '<span class="bad"><b>' + tally.error + '</b> failed</span>' : '')
+        + '</div>';
+      /* Only the ones that did not work get a line. A list of 24 successes
+         is noise; the reason a particular one failed is the useful part. */
+      var bad = rows.filter(function (r) { return r.cls === 'bad'; });
+      var body = bad.length
+        ? '<ul class="mn-cache-list">' + bad.map(function (r) {
+            return '<li class="' + r.cls + '"><i>' + esc(r.label) + '</i>'
+                 + '<span class="mn-cache-why">' + esc(r.why) + '</span></li>';
+          }).join('') + '</ul>'
+        : '<p class="mn-cache-why" style="margin:0">Every one that could be saved, was.</p>';
+      var again = tally.error
+        ? '<p class="mn-cache-why" style="margin:12px 0 0">A gateway that is slow now is '
+          + 'often fine later, and the nightly pass will try these again. Pressing the '
+          + 'button again is safe.</p>'
+        : '';
+      out.innerHTML = sum + body + again;
+      if (saved) {
+        out.innerHTML += '<p class="mn-cache-why" style="margin:12px 0 0">'
+          + 'Saved artwork is showing now and will load from Skulliance from here on.</p>';
+      }
+    }
+
+    function step() {
+      if (done >= ids.length) { finish(); return; }
+      var id = ids[done];
+      prog.textContent = 'Saving ' + (done + 1) + ' of ' + ids.length + '\u2026';
+
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'ajax/cache-nft-image.php', true);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      /* Comfortably longer than the endpoint's own 15s cap, so a slow one
+         is reported by the server rather than cut off here with no reason. */
+      xhr.timeout = 25000;
+
+      function record(status, label, why, url) {
+        if (tally[status] === undefined) tally.error++; else tally[status]++;
+        var cls = (status === 'cached' || status === 'exists') ? 'ok' : 'bad';
+        rows.push({ cls: cls, label: label, why: why });
+        if (url) {
+          /* Swap the picture in immediately -- the point of the exercise,
+             visible without a reload. */
+          var img = document.querySelector('img[data-nft-id="' + id + '"]');
+          if (img) { img.onerror = null; img.src = url; }
+        }
+        done++;
+        fill.style.width = Math.round(done / ids.length * 100) + '%';
+        step();
+      }
+
+      function nameFor(nid) {
+        var img = document.querySelector('img[data-nft-id="' + nid + '"]');
+        var card = img && img.closest ? img.closest('.nft-data, .nft') : null;
+        var nm = card ? card.querySelector('.nft-name') : null;
+        return nm && nm.textContent ? nm.textContent.trim() : ('NFT ' + nid);
+      }
+
+      xhr.onload = function () {
+        var d = null;
+        try { d = JSON.parse(xhr.responseText); } catch (e) {}
+        if (!d) {
+          record('error', nameFor(id), 'The server replied with something unreadable.');
+          return;
+        }
+        if (d.success) {
+          record(d.status === 'exists' ? 'exists' : 'cached', nameFor(id), '', d.url);
+        } else {
+          record(d.status === 'skipped' ? 'skipped' : 'error', nameFor(id),
+                 d.message || 'Could not be saved.');
+        }
+      };
+      xhr.onerror   = function () { record('error', nameFor(id), 'The request did not reach the server.'); };
+      xhr.ontimeout = function () { record('error', nameFor(id), 'Timed out waiting for a gateway.'); };
+      xhr.send('nft_id=' + encodeURIComponent(id));
+    }
+
+    step();
+  });
+})();
+</script>
+<?php endif; ?>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <?php $conn->close(); ?>
 </html>
