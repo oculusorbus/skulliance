@@ -1239,6 +1239,15 @@ console.log('\n-- clicking a Fighter opens the COLLECTION\'s panel --');
     }
   }
   ok(spanCls.has('art'), 'the portrait box is a span (' + [...spanCls].join(', ') + ')');
+  /* SQUARE in the panel, the way the Collection frames a Fighter. The map
+     clips to a disc because a marker has to read at thirty pixels; a panel
+     opened to look at one properly should not crop its corners. */
+  const artRule = (css2.match(/\.riv-fig \.art\{([^}]*)\}/) || [])[1] || '';
+  ok(artRule !== '', 'the portrait rule is readable');
+  ok(!/border-radius\s*:\s*50%/.test(artRule), 'the panel does not round it into a circle');
+  ok(/aspect-ratio\s*:\s*1/.test(artRule), 'and keeps it square');
+  /* The map's own satellites stay circular -- that is a different job. */
+  ok(/r: fr - 1/.test(rivSrc), 'the map still clips its satellites to a disc');
   for (const cls of spanCls) {
     const rule = (css2.match(new RegExp('\\.[\\w-]*\\s*\\.' + cls + '\\s*\\{([^}]*)\\}')) || [])[1];
     if (!rule) continue;

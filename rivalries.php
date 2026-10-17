@@ -275,8 +275,15 @@ include 'header.php';
    tiles rendered as name and stats with an invisible gap above. .nm and .st
    below got their display:block because they are obviously text; the one
    that is actually a box did not. */
-.riv-fig .art{display:block;position:relative;width:100%;aspect-ratio:1;margin:0 0 6px;overflow:hidden;
-  border-radius:50%;background:#0a1929}
+/*
+ * SQUARE, like the Collection's own card. The map draws a Fighter clipped
+ * to a disc because it is a marker orbiting an avatar and has to read at
+ * thirty pixels; this is the panel you open to look at one properly, and a
+ * circle crops the corners off art that was composed as a square.
+ * dhcgallery.php frames it exactly this way -- aspect-ratio:1, no radius.
+ */
+.riv-fig .art{display:block;position:relative;width:100%;aspect-ratio:1;margin:0 0 6px;
+  overflow:hidden;background:var(--panel2,#0d1e2e)}
 .riv-fig .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .riv-fig .nm{display:block;font-size:10px;line-height:1.3;word-break:break-word}
 .riv-fig .st{display:block;font-size:9px;opacity:.6;margin-top:2px;font-variant-numeric:tabular-nums}
