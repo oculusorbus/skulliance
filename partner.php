@@ -57,9 +57,19 @@ $pt_for = trim(preg_replace('/\s+/', ' ', $pt_for));
 if (mb_strlen($pt_for) > 48) $pt_for = rtrim(mb_substr($pt_for, 0, 48));
 
 $pt_who   = $pt_for !== '' ? $pt_for : 'your project';
+/*
+ * THE TITLE HAS TO SAY WHAT THE PAGE SAYS. The hero and the description were
+ * rewritten to "you have been invited" and this was left reading "Bring X to
+ * Skulliance" -- so the Discord embed led with the old pitch over the new
+ * one. The harness only checked that the title VARIED with ?for=, which it
+ * did, which is why nothing caught it.
+ */
 $pt_title = $pt_for !== ''
-	? 'Bring ' . $pt_for . ' to Skulliance'
-	: 'Bring your project to Skulliance';
+	? $pt_for . ', you have been invited to Skulliance'
+	: 'You have been invited to Skulliance';
+/* header.php renders <title> from this or falls back to a bare "Skulliance",
+   which is what the tab and some crawlers were showing. */
+$page_title_override = $pt_title;
 $pt_desc  = ($pt_for !== '' ? $pt_for . ', you have been invited. ' : 'You have been invited. ')
           . 'Free staking, missions, realms and a dozen games for your collectors. We build all '
           . 'of it: your chain, your collections, your points, your realm, your Monstrocity '
@@ -91,7 +101,8 @@ if ($pt_res) {
 }
 
 /* The artist flyers the homepage shows, from the one file both read. */
-$pt_flyers = require __DIR__ . '/lib/partner-flyers.php';
+$pt_flyers   = require __DIR__ . '/lib/partner-flyers.php';
+$pt_founders = require __DIR__ . '/lib/founding-artists.php';
 
 /* The Monstrocity ask, counted rather than remembered. */
 $pt_mon_chars = count(require __DIR__ . '/monstrocity-default-characters.php');
@@ -113,26 +124,21 @@ $pt_e = function ($s) { return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8')
  * everybody's art, which is the right argument for this page and reads as
  * texture rather than competing with the title X renders beside it.
  *
- * THE WEIGHT. That file is a 4.5MB PNG. Crawlers fetch it on every unfurl
- * and some give up on a large one, so a resized 1200x630 JPEG is preferred
- * WHEN IT EXISTS -- drop images/partner-card.jpg on the server and this
- * switches to it with no code change. Until then the full-size background
- * is served, which is slow but correct; a card pointed at a 404 is worse
- * than a heavy one.
+ * THE WEIGHT, which is what actually broke it. Pointed straight at
+ * skulliancebackground.png the embed rendered NO IMAGE AT ALL in Discord:
+ * that file is a 4.6MB PNG and the embed proxy skips one that large. So the
+ * card is GENERATED -- partner-card.php resizes it once to a 1200x630 JPEG
+ * (~330KB) and caches it, the same arrangement dhc-card.php uses. Images are
+ * deployed to this server by FTP and never committed, so generating from a
+ * file already there is the only way the repo can fix this on its own.
  *
  * THE NAME IS IN THE TITLE, NOT THE IMAGE. There is no TTF in this repo (see
  * dhc-card.php, which went text-free for the same reason) and GD's bitmap
  * fonts at 1200px look like a mistake. X and Discord both render og:title at
  * full size next to the card, so the personalisation lands either way.
  */
-$pt_card_opt = __DIR__ . '/images/partner-card.jpg';
-if (is_file($pt_card_opt)) {
-	$pt_card = 'https://www.skulliance.io/staking/images/partner-card.jpg';
-	$pt_card_w = 1200; $pt_card_h = 630;
-} else {
-	$pt_card = 'https://www.skulliance.io/staking/images/skulliancebackground.png';
-	$pt_card_w = 1920; $pt_card_h = 1080;
-}
+$pt_card   = 'https://www.skulliance.io/staking/partner-card.php';
+$pt_card_w = 1200; $pt_card_h = 630;
 $extra_head = '
   <meta name="description" content="' . $pt_e($pt_desc) . '">
   <meta name="robots" content="index,follow,max-image-preview:large">
@@ -164,7 +170,11 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
 <style>
 #pt{--ink:#07111d;--panel:#0a1929;--panel2:#0d1e2e;--line:#1b3346;--dim:#7a9eb0;
     --ochre:#00c8a0;--bone:#e8eaed;--gold:#f5a623;
-    color:var(--bone);max-width:1040px;margin:0 auto;padding:0 18px 70px}
+    color:var(--bone);max-width:1280px;margin:0 auto;padding:0 22px 70px}
+/* THE CONTAINER IS WIDE, THE PROSE IS NOT. The menu runs the full width of
+   the window, so a 1040px column read as a narrow strip inside it -- but a
+   1280px line of body text is unreadable. Every block of running text caps
+   itself in ch; only the grids and the images use the full width. */
 #pt h1,#pt h2,#pt h3{margin:0;line-height:1.2;text-wrap:balance}
 #pt p{margin:0}
 
@@ -194,6 +204,16 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   padding:16px 16px 17px}
 #pt .pt-build b{display:block;font-size:13px;margin:0 0 6px;color:var(--bone)}
 #pt .pt-build span{font-size:12.5px;line-height:1.6;color:var(--dim)}
+
+/* ---- the six founders ---- */
+#pt .pt-founders{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin:26px 0 0;
+  padding:0;list-style:none}
+#pt .pt-founders a{display:block;text-decoration:none;text-align:center}
+#pt .pt-founders img{width:100%;height:auto;aspect-ratio:1;object-fit:cover;border-radius:6px;
+  border:1px solid var(--line);display:block}
+#pt .pt-founders span{display:block;margin:8px 0 0;font-size:11px;color:var(--dim)}
+#pt .pt-founders a:hover span{color:var(--ochre)}
+@media (max-width:760px){#pt .pt-founders{grid-template-columns:repeat(3,1fr)}}
 
 /* ---- the artist flyers ----
    The homepage's hp-strip pattern, under this page's own prefix: full-bleed
@@ -282,7 +302,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   margin:0 0 12px}
 #pt .pt-spec dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 18px;font-size:13px}
 #pt .pt-spec dt{color:var(--dim);white-space:nowrap}
-#pt .pt-spec dd{margin:0;color:var(--bone)}
+#pt .pt-spec dd{margin:0;color:var(--bone);max-width:80ch}
 #pt .pt-spec dd code{background:var(--ink);border:1px solid var(--line);border-radius:2px;
   padding:1px 6px;font-size:12px}
 
@@ -312,7 +332,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
    contain. Without this wrapper the <b> was its own item: "Monstrocity art"
    wrapped onto two lines of its own column while the rest of the sentence
    sat beside it, and the flex gap opened a space in front of every comma. */
-#pt .pt-ask li > span{flex:1 1 auto;min-width:0}
+#pt .pt-ask li > span{flex:1 1 auto;min-width:0;max-width:86ch}
 #pt .pt-ask b{color:var(--bone)}
 
 /* ---- close ---- */
@@ -373,14 +393,18 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
     <p style="margin-top:14px">It is a small team and a public one. Everyone is reachable, the
       mechanics are all written down in the <a href="skullpaper.php" style="color:var(--ochre)">Skull
       Paper</a>, and nothing about how the platform works is a secret from the people on it.</p>
-    <div class="pt-shots two">
-        <figure><img src="https://www.skulliance.io/staking/images/skulliance-group.jpg"
-          alt="The six founding Skulliance characters" loading="lazy" decoding="async">
-          <figcaption>The six who started it</figcaption></figure>
-        <figure><img src="https://www.skulliance.io/staking/images/screenshots/dashboard.png"
-          alt="Staked NFTs on Skulliance" loading="lazy" decoding="async">
-          <figcaption>What a holder sees</figcaption></figure>
-    </div>
+    <?php /* THE SIX THEMSELVES, the way the homepage shows them, from the
+             one file both read. A platform screenshot here answered a
+             question nobody had asked yet -- this section is about who
+             started it, so it shows them. */ ?>
+    <ul class="pt-founders">
+      <?php foreach ($pt_founders as $fd): list($df, $dn, $du) = $fd; ?>
+        <li><a href="<?php echo $pt_e($du); ?>" target="_blank" rel="noopener">
+          <img src="https://www.skulliance.io/staking/images/projects/<?php echo $pt_e($df); ?>"
+               alt="<?php echo $pt_e($dn); ?>" loading="lazy" decoding="async">
+          <span><?php echo $pt_e($dn); ?></span></a></li>
+      <?php endforeach; ?>
+    </ul>
   </div>
 
   <?php if (count($pt_names) >= 6): ?>

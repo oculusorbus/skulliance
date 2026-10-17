@@ -965,12 +965,12 @@
            their collectors would want to stay. Hold any of their work and it earns from the first
            night, whether or not you ever play anything.</p>
         <ul class="hp-logos hp-founding">
-          <li><a href="https://x.com/SinderSkullz" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/sinderskullz.png" alt="Sinder Skullz" loading="lazy" decoding="async"><span class="hp-logo-name">Sinder Skullz</span></a></li>
-          <li><a href="https://x.com/Nft4R" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/kimosabe.png" alt="Kimosabe Art" loading="lazy" decoding="async"><span class="hp-logo-name">Kimosabe Art</span></a></li>
-          <li><a href="https://x.com/cryptiesnft" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/crypties.png" alt="Crypties" loading="lazy" decoding="async"><span class="hp-logo-name">Crypties</span></a></li>
-          <li><a href="https://x.com/GalacticoNFT" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/galactico.png" alt="Galactico" loading="lazy" decoding="async"><span class="hp-logo-name">Galactico</span></a></li>
-          <li><a href="https://x.com/ohh_meed" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/ohhmeed.png" alt="Ohh Meed" loading="lazy" decoding="async"><span class="hp-logo-name">Ohh Meed</span></a></li>
-          <li><a href="https://x.com/haveyouseenhype" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/hype.png" alt="H.Y.P.E." loading="lazy" decoding="async"><span class="hp-logo-name">H.Y.P.E.</span></a></li>
+        <?php /* The six moved to lib/founding-artists.php so partner.php can
+                 show them too without a second copy of the list. */
+        foreach (require __DIR__ . '/lib/founding-artists.php' as $hp_f):
+            list($hp_ff, $hp_fn, $hp_fu) = $hp_f; ?>
+          <li><a href="<?php echo htmlspecialchars($hp_fu); ?>" target="_blank" rel="noopener"><img src="https://www.skulliance.io/staking/images/projects/<?php echo htmlspecialchars($hp_ff); ?>" alt="<?php echo htmlspecialchars($hp_fn); ?>" loading="lazy" decoding="async"><span class="hp-logo-name"><?php echo htmlspecialchars($hp_fn); ?></span></a></li>
+        <?php endforeach; ?>
         </ul>
       </div>
     </section>

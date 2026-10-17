@@ -147,15 +147,38 @@ echo "\nthe link preview carries the name and real art\n";
 	   anything else; skulliancelogo.png is 700x300 (2.33) and letterboxed. */
 	ok(strpos($clean, 'skulliancelogo.png') === false,
 	   'the card is back to the 700x300 wordmark, which X letterboxes');
-	ok(strpos($clean, 'skulliancebackground.png') !== false,
-	   'the card has no fallback art');
-	/* A 4.5MB PNG is a slow unfurl and some crawlers skip a large image, so
-	   a resized copy wins automatically once it is uploaded -- and the
-	   fallback exists so the card is never pointed at a 404. */
-	ok(strpos($clean, "is_file(\$pt_card_opt)") !== false,
-	   'the optimised card is not preferred when present, or there is no fallback');
-	ok(strpos($clean, 'images/partner-card.jpg') !== false,
-	   'the optimised card path is gone, so uploading one would change nothing');
+	/*
+	 * THE CARD IS GENERATED. Pointed straight at skulliancebackground.png
+	 * the Discord embed rendered NO IMAGE: it is a 4.6MB PNG and the embed
+	 * proxy skips one that large. Images on this server arrive by FTP and
+	 * are never committed, so the repo cannot add a resized one -- it
+	 * generates one from the file already there.
+	 */
+	ok(strpos($clean, 'partner-card.php') !== false,
+	   'og:image points at a static file again; the 4.6MB background does not render in Discord');
+	ok(strpos($clean, 'skulliancebackground.png') === false,
+	   'og:image is back on the full-size background, which Discord skips');
+	$ptc = file_get_contents(__DIR__ . '/partner-card.php');
+	$ptcc = harness_strip_comments($ptc);
+	ok(preg_match('/const PTC_W = 1200;/', $ptcc) === 1 && preg_match('/const PTC_H = 630;/', $ptcc) === 1,
+	   'the generated card is not 1200x630');
+	ok(preg_match('/og:image:width" content="\' \. \(int\)\$pt_card_w/', $clean) === 1,
+	   'the declared card dimensions are not the ones the generator produces');
+	/* Crop then resample: resizing 16:9 straight to 1.91:1 squashes it. */
+	ok(strpos($ptcc, 'imagecopyresampled($card, $src, 0, 0, $cx, $cy') !== false,
+	   'the card resizes without cropping to the target ratio, so the art is squashed');
+	/* Keyed on the SOURCE so replacing the background invalidates it. */
+	ok(strpos($ptcc, 'filemtime($src_abs)') !== false,
+	   'the card cache key ignores the source file, so a new background would never be picked up');
+	/* Atomic, or a half-written file is served as a valid hit for a week. */
+	ok(strpos($ptcc, '@rename($tmp, $cache)') !== false,
+	   'the card is written in place; a half-written one would be cached by the crawler');
+	/* And an unwritable cache dir must not mean no card at all. */
+	ok(substr_count($ptcc, 'imagejpeg(') >= 2,
+	   'there is no fallback path when dhcrenders/ cannot be written');
+	/* No text drawn: there is no TTF in this repo. */
+	ok(strpos($ptcc, 'imagettftext') === false && strpos($ptcc, 'imagestring') === false,
+	   'the card draws text, and there is no TTF in this repo (see dhc-card.php)');
 	ok(strpos($clean, 'og:image:width') !== false && strpos($clean, 'og:image:height') !== false,
 	   'the card declares no dimensions; a crawler that does not fetch the image cannot size it');
 	/* And the NAME has to reach the preview, which is the whole point of
@@ -167,6 +190,21 @@ echo "\nthe link preview carries the name and real art\n";
 	   'the og:title is not the personalised title');
 	ok(strpos($clean, "\$pt_title = \$pt_for !== ''") !== false,
 	   'the title does not vary with ?for=, so every invitation previews identically');
+	/*
+	 * AND IT HAS TO SAY WHAT THE PAGE SAYS. The hero and the description
+	 * were rewritten to "you have been invited" while the title still read
+	 * "Bring X to Skulliance", so the Discord embed led with the old pitch
+	 * over the new one. Checking only that it VARIED is what let that
+	 * through -- it varied perfectly, with the wrong words.
+	 */
+	ok(stripos($clean, 'Bring ') === false,
+	   'the title is back to "Bring X to Skulliance" while the page says they were invited');
+	ok(strpos($clean, 'you have been invited to Skulliance') !== false,
+	   'the title no longer matches the hero');
+	/* header.php renders <title> from $page_title_override or falls back to
+	   a bare "Skulliance", which is what the tab was showing. */
+	ok(strpos($clean, '$page_title_override = $pt_title;') !== false,
+	   'the <title> is left as the generic site title');
 	ok(strpos($clean, "\$pt_desc  = (\$pt_for !== ''") !== false,
 	   'the description does not carry the name');
 	ok(strpos($clean, 'og:image:alt') !== false, 'the card art has no alt text');
@@ -219,6 +257,13 @@ echo "\nit says what Skulliance is before it asks for anything\n";
 	   'the page asks for something before explaining what it is');
 	/* The claims in it are the ones the Skull Paper already makes. */
 	ok(strpos($src, 'Oculus Orbus') !== false, 'the founder is not named');
+	/* The six are SHOWN, not described, and from the shared file -- a
+	   platform screenshot here answered a question nobody had asked yet. */
+	ok(strpos($clean, "require __DIR__ . '/lib/founding-artists.php'") !== false,
+	   'the six founders are not read from the shared list');
+	ok(strpos($clean, 'pt-founders') !== false, 'the six founders are not shown');
+	ok(strpos($clean, 'screenshots/dashboard.png') === false,
+	   'the origin section is back to showing a platform screenshot instead of the six');
 	ok(strpos($src, 'skull art on Cardano') !== false,
 	   'the origin no longer says what the founding artists have in common');
 	/* And it must give the REASON it keeps growing, which is the argument
@@ -299,6 +344,26 @@ echo "\nthe claims match the Skull Paper\n";
 	/* And the page must point at the documentation rather than restating it. */
 	ok(strpos($clean, 'skullpaper.php') !== false,
 	   'the page does not link to the Skull Paper for anyone who wants the detail');
+}
+
+echo "\nthe column is as wide as the menu, and the prose is not\n";
+{
+	/* The public menu runs the full width of the window, so a 1040px column
+	   read as a narrow strip inside it. Widening the container without
+	   capping the text would just make every line unreadable instead. */
+	ok(preg_match('/#pt\{[^}]*max-width:\s*(\d+)px/', $clean, $wm) === 1, 'the page has no width');
+	ok(!empty($wm[1]) && (int)$wm[1] >= 1200,
+	   'the column is ' . (empty($wm[1]) ? '?' : $wm[1]) . 'px, narrower than the menu it sits under');
+	/* `&&` binds tighter than `||`, so the first version of this read as
+	   ($rule && has 'ch}') || has 'ch;' -- and the extracted rule ends
+	   before its brace, so neither ever matched and all five "failed"
+	   against a page that was correct. Match the declaration itself. */
+	foreach (array('.pt-lede', '.pt-sect > p', '.pt-plain p', '.pt-ask li > span', '.pt-spec dd') as $sel) {
+		$at = strpos($clean, '#pt ' . $sel . '{');
+		$rule = $at === false ? '' : substr($clean, $at, strpos($clean, '}', $at) - $at);
+		ok($rule !== '' && preg_match('/max-width:\s*\d+ch/', $rule) === 1,
+		   $sel . ' has no ch cap, so its lines run the full width of a 1280px page');
+	}
 }
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
