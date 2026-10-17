@@ -37,33 +37,9 @@ $SLOT_CAT = array('effects1' => 'effects', 'effects2' => 'effects', 'weaponBack'
 
 require_once __DIR__ . '/dhc-compose.php';
 
-/**
- * A screenshot under a callout card.
- *
- * PREFERS A -sm.jpg IF ONE HAS BEEN UPLOADED. The originals are ~2000px
- * PNGs totalling 5.3MB for three pictures that render about 340px wide --
- * roughly ten times the pixels the card can show. A smaller JPEG beside
- * each is used automatically the moment it exists, with no code change:
- * the same arrangement the hero reel uses for its mp4 and webm.
- *
- * Returns array() when neither file is there, and the caller renders no
- * figure at all rather than a broken frame.
- *
- * Real dimensions come from the file rather than being hardcoded, so
- * width/height stay correct when the -sm version lands and the browser can
- * still reserve the right box before the image arrives.
- */
-function dhc_shot_src($base) {
-	foreach (array($base . '-sm.jpg', $base . '.png') as $f) {
-		$abs = __DIR__ . '/images/' . $f;
-		if (is_file($abs)) {
-			$d = @getimagesize($abs);
-			return array('src' => 'images/' . $f,
-			             'w' => $d ? $d[0] : 0, 'h' => $d ? $d[1] : 0);
-		}
-	}
-	return array();
-}
+/* dhc_shot_src() moved to lib/dhc-shots.php so partner.php can show the
+   same screenshots without a second copy of the -sm.jpg rule. */
+require_once __DIR__ . '/lib/dhc-shots.php';
 
 /**
  * One Fighter's picture.

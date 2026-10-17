@@ -103,6 +103,8 @@ if ($pt_res) {
 /* The artist flyers the homepage shows, from the one file both read. */
 $pt_flyers   = require __DIR__ . '/lib/partner-flyers.php';
 $pt_founders = require __DIR__ . '/lib/founding-artists.php';
+/* Where a DHC screenshot lives, shared with dhcgame.php. */
+require_once __DIR__ . '/lib/dhc-shots.php';
 
 /* The Monstrocity ask, counted rather than remembered. */
 $pt_mon_chars = count(require __DIR__ . '/monstrocity-default-characters.php');
@@ -171,10 +173,11 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
 #pt{--ink:#07111d;--panel:#0a1929;--panel2:#0d1e2e;--line:#1b3346;--dim:#7a9eb0;
     --ochre:#00c8a0;--bone:#e8eaed;--gold:#f5a623;
     color:var(--bone);max-width:1280px;margin:0 auto;padding:0 22px 70px}
-/* THE CONTAINER IS WIDE, THE PROSE IS NOT. The menu runs the full width of
-   the window, so a 1040px column read as a narrow strip inside it -- but a
-   1280px line of body text is unreadable. Every block of running text caps
-   itself in ch; only the grids and the images use the full width. */
+/* TEXT RUNS THE FULL WIDTH, deliberately and against the usual advice. The
+   measure was capped in ch, which left every paragraph hugging the left of a
+   1280px page with half of it empty; laying the prose out in two columns
+   fixed the emptiness and made the page read as two unrelated texts. The
+   call here is the page owner's: full width throughout, nothing capped. */
 #pt h1,#pt h2,#pt h3{margin:0;line-height:1.2;text-wrap:balance}
 #pt p{margin:0}
 
@@ -184,11 +187,13 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   margin:0 0 14px}
 #pt .pt-hero h1{font-size:clamp(30px,5.4vw,52px);font-weight:700;letter-spacing:-.01em}
 #pt .pt-hero h1 em{font-style:normal;color:var(--ochre)}
-#pt .pt-lede{margin:0;font-size:clamp(15px,2vw,18px);line-height:1.65;color:#c7d3dc;max-width:62ch}
-#pt .pt-hero-cols{margin-top:20px}
-#pt .pt-free{display:inline-flex;align-items:center;gap:9px;margin:24px 0 0;padding:9px 15px;
-  border:1px solid var(--ochre);border-radius:3px;font-size:12px;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--ochre)}
+#pt .pt-lede{margin:18px 0 0;font-size:clamp(15px,2vw,18px);line-height:1.65;color:#c7d3dc}
+/* A STATEMENT, NOT A CONTROL. Boxed in a bordered rounded rectangle it read
+   as a button, and clicking it did nothing -- which is worse than not having
+   it. Same words, no box: a rule and a coloured line. */
+#pt .pt-free{display:flex;align-items:center;gap:12px;margin:26px 0 0;font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--ochre)}
+#pt .pt-free::after{content:"";flex:1 1 auto;height:1px;background:var(--line);max-width:260px}
 
 /* ---- sections ---- */
 #pt .pt-sect{padding:40px 0;border-bottom:1px solid var(--line)}
@@ -196,7 +201,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
 #pt .pt-kicker{font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
   margin:0 0 10px}
 #pt .pt-sect h2{font-size:clamp(21px,3vw,28px);font-weight:700}
-#pt .pt-sect > p{margin:14px 0 0;color:#c7d3dc;line-height:1.7;max-width:68ch}
+#pt .pt-sect > p{margin:14px 0 0;color:#c7d3dc;line-height:1.7}
 
 /* ---- the build list: what WE do ---- */
 #pt .pt-build{display:grid;grid-template-columns:repeat(auto-fit,minmax(248px,1fr));gap:12px;
@@ -213,16 +218,6 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
    fill the width themselves; the ones that are ONLY prose need the text laid
    out in two columns, so the measure stays short and the block still spans
    the page. Collapses to one column before the columns get too narrow. */
-/* COLUMNS, NOT A TWO-CELL GRID. A grid puts paragraph three under
-   paragraph one and leaves it stranded beside empty space; CSS columns flow
-   and balance the text so both sides end level, which is the whole reason
-   the block is in two columns at all. break-inside keeps a paragraph from
-   being split across the gap. */
-#pt .pt-cols{columns:2;column-gap:44px;margin:16px 0 0}
-#pt .pt-cols > p{margin:0 0 14px;break-inside:avoid;-webkit-column-break-inside:avoid;
-  max-width:62ch}
-#pt .pt-cols > p:last-child{margin-bottom:0}
-@media (max-width:900px){#pt .pt-cols{columns:1}}
 
 /* ---- the six founders ---- */
 #pt .pt-founders{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin:26px 0 0;
@@ -299,6 +294,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
    above the fold, so none of them should be in the way of the hero. */
 #pt .pt-shots{display:grid;gap:12px;margin:24px 0 0}
 #pt .pt-shots.two{grid-template-columns:1fr 1fr}
+#pt .pt-shots.three{grid-template-columns:repeat(3,1fr)}
 #pt .pt-shots.four{grid-template-columns:repeat(4,1fr)}
 #pt figure{margin:0}
 #pt figure img{display:block;width:100%;height:auto;border:1px solid var(--line);
@@ -308,7 +304,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
    different aspect ratios make the row look broken. */
 #pt .pt-shots.four figure img{aspect-ratio:3/4;object-fit:cover}
 @media (max-width:760px){
-  #pt .pt-shots.two{grid-template-columns:1fr}
+  #pt .pt-shots.two,#pt .pt-shots.three{grid-template-columns:1fr}
   #pt .pt-shots.four{grid-template-columns:1fr 1fr}
 }
 
@@ -319,7 +315,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
 #pt .pt-plain{margin:24px 0 0;padding:20px 22px;background:var(--panel);
   border:1px solid var(--line);border-radius:3px}
 #pt .pt-plain h3{font-size:15px;margin:0 0 10px;color:var(--bone)}
-#pt .pt-plain p{font-size:13.5px;line-height:1.75;color:#c7d3dc;max-width:70ch}
+#pt .pt-plain p{font-size:13.5px;line-height:1.75;color:#c7d3dc}
 #pt .pt-plain p + p{margin-top:12px}
 
 /* ---- the spec box ---- */
@@ -329,7 +325,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   margin:0 0 12px}
 #pt .pt-spec dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:8px 18px;font-size:13px}
 #pt .pt-spec dt{color:var(--dim);white-space:nowrap}
-#pt .pt-spec dd{margin:0;color:var(--bone);max-width:80ch}
+#pt .pt-spec dd{margin:0;color:var(--bone)}
 #pt .pt-spec dd code{background:var(--ink);border:1px solid var(--line);border-radius:2px;
   padding:1px 6px;font-size:12px}
 
@@ -359,7 +355,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
    contain. Without this wrapper the <b> was its own item: "Monstrocity art"
    wrapped onto two lines of its own column while the rest of the sentence
    sat beside it, and the flex gap opened a space in front of every comma. */
-#pt .pt-ask li > span{flex:1 1 auto;min-width:0;max-width:86ch}
+#pt .pt-ask li > span{flex:1 1 auto;min-width:0}
 #pt .pt-ask b{color:var(--bone)}
 
 /* ---- close ---- */
@@ -392,22 +388,19 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
     <h1><?php if ($pt_for !== ''): ?>Welcome, <em><?php echo $pt_e($pt_for); ?></em>.<br>You have been
         invited to join Skulliance.<?php
         else: ?>You have been invited<br>to join <em>Skulliance</em>.<?php endif; ?></h1>
-    <div class="pt-cols pt-hero-cols">
-      <p class="pt-lede">There is no application form and no listing fee, because there is no
-        list to buy your way onto. Projects are here because we went and asked them, and
-        <?php echo $pt_for !== '' ? $pt_e($pt_for) : 'yours'; ?> is one we want.</p>
-      <p class="pt-lede">What that gets you is a home for your collectors: somewhere to stake
-        what they own, earn off-chain points you name, and play a dozen games alongside
-        <?php echo count($pt_names) >= 10 ? count($pt_names) . ' other projects' : 'the other projects already here'; ?>
-        and their communities. You build none of it. We do, and it costs you nothing.</p>
-    </div>
+    <p class="pt-lede">There is no application form and no listing fee, because there is no
+      list to buy your way onto. Projects are here because we went and asked them, and
+      <?php echo $pt_for !== '' ? $pt_e($pt_for) : 'yours'; ?> is one we want.</p>
+    <p class="pt-lede">What that gets you is a home for your collectors: somewhere to stake
+      what they own, earn off-chain points you name, and play a dozen games alongside
+      <?php echo count($pt_names) >= 10 ? count($pt_names) . ' other projects' : 'the other projects already here'; ?>
+      and their communities. You build none of it. We do, and it costs you nothing.</p>
     <p class="pt-free">Free to join &middot; Free to stay</p>
   </div>
 
   <div class="pt-sect">
     <p class="pt-kicker">What this is</p>
     <h2>Six artists built somewhere their collectors would want to stay</h2>
-    <div class="pt-cols">
       <p>Skulliance started as a group of artists specialising in skull art on Cardano, who came
         together under <a href="https://www.x.com/oculusorbus" target="_blank" rel="noopener"
         style="color:var(--ochre)">Oculus Orbus</a> - a collector of their work who also happened
@@ -422,8 +415,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
         bigger, which is why nobody here is competing for the same collectors.</p>
       <p>It is a small team and a public one. Everyone is reachable, the mechanics are all
         written down in the <a href="skullpaper.php" style="color:var(--ochre)">Skull Paper</a>,
-        and nothing about how the platform works is a secret from the people on it.</p>
-    </div>
+      and nothing about how the platform works is a secret from the people on it.</p>
     <?php /* THE SIX THEMSELVES, the way the homepage shows them, from the
              one file both read. A platform screenshot here answered a
              question nobody had asked yet -- this section is about who
@@ -653,19 +645,36 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
         with its own share cards. Your holders' Fighters are a thing they can post, which is
         reach you did not pay for.</span></li>
     </ul>
-    <div class="pt-shots two">
-        <figure><img src="https://www.skulliance.io/staking/images/dhcgame.png" alt="DHC Arena"
-          loading="lazy" decoding="async"><figcaption>DHC Arena, Crew versus Crew</figcaption></figure>
-        <?php /* NOT the Diamond Skulls screenshot that was here: Diamond
-                 Skulls is a separate feature and has nothing to do with
-                 DHC, so it was filler that contradicted the section it sat
-                 in. This is a real trait share card, rendered live by
-                 dhc-card.php -- which also demonstrates the claim in the
-                 card directly above it rather than just asserting it. */ ?>
-        <figure><img src="https://www.skulliance.io/staking/dhc-card.php?trait=headgear:tank-helmet"
-          alt="A DHC trait share card" loading="lazy" decoding="async"><figcaption>A trait, as it
-          posts to X</figcaption></figure>
+    <?php
+    /*
+     * THE REAL DHC SCREENSHOTS, through dhc_shot_src() rather than hardcoded
+     * paths -- dhcgame.php shows the same three and the helper prefers a
+     * -sm.jpg derivative when one is uploaded, which only works while there
+     * is one copy of that rule. A shot that is not on the server yet returns
+     * nothing and renders no figure, so the row shrinks rather than breaking.
+     *
+     * One per claim made above: assembled, fought, public. The trait card
+     * that was here briefly was a picture of a part, not of the thing.
+     */
+    $pt_dhc = array(
+        array('dhcassemble', 'The assembler, ten trait slots'),
+        array('dhcgame',     'DHC Arena, Crew versus Crew'),
+        array('dhcbrowse',   'The Collection, open to everyone'),
+    );
+    $pt_dhc_have = array();
+    foreach ($pt_dhc as $d) {
+        $sh = dhc_shot_src($d[0]);
+        if ($sh) $pt_dhc_have[] = array($sh, $d[1]);
+    }
+    if ($pt_dhc_have): ?>
+    <div class="pt-shots<?php echo count($pt_dhc_have) === 3 ? ' three' : ' two'; ?>">
+      <?php foreach ($pt_dhc_have as $d): list($sh, $cap) = $d; ?>
+        <figure><img src="<?php echo $pt_e($sh['src']); ?>" alt="<?php echo $pt_e($cap); ?>"
+          <?php if ($sh['w']) printf('width="%d" height="%d"', $sh['w'], $sh['h']); ?>
+          loading="lazy" decoding="async"><figcaption><?php echo $pt_e($cap); ?></figcaption></figure>
+      <?php endforeach; ?>
     </div>
+    <?php endif; ?>
     <p style="margin-top:16px">The art is by <a href="https://x.com/MMAXI404" target="_blank"
       rel="noopener" style="color:var(--ochre)">Maxingo</a>, who shared it so this could be built.
       Nothing about DHC asks anything of you - it is simply there, and it is the reason a chunk

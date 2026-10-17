@@ -343,12 +343,24 @@ echo "\nevery picture is of the thing its section is about\n";
 	ok($dhc !== '', 'the DHC section is gone');
 	ok(strpos($dhc, 'diamond-skulls') === false,
 	   'the DHC section shows a Diamond Skulls screenshot, which is a different feature');
-	/* Both its images have to be DHC. */
-	preg_match_all('/<img src="[^"]*\/staking\/([^"?]+)/', $dhc, $im);
-	foreach ($im[1] as $f) {
-		ok(stripos($f, 'dhc') !== false,
-		   'the DHC section shows ' . $f . ', which is not DHC');
+	/*
+	 * AND IT SHOWS THE PAGE'S OWN DHC SCREENSHOTS. It briefly showed a
+	 * generated trait card instead, which is a picture of a PART -- there
+	 * are real screenshots of the assembler, the Arena and the Collection
+	 * and dhcgame.php already uses all three.
+	 */
+	foreach (array('dhcassemble', 'dhcgame', 'dhcbrowse') as $shot) {
+		ok(strpos($dhc, "'" . $shot . "'") !== false,
+		   'the DHC section no longer shows the ' . $shot . ' screenshot');
 	}
+	ok(strpos($dhc, 'dhc-card.php?trait=') === false,
+	   'the DHC section is back to a generated trait card instead of its screenshots');
+	/* Through the shared helper, so an uploaded -sm.jpg is picked up here
+	   as well as on dhcgame.php. */
+	ok(strpos($clean, "require_once __DIR__ . '/lib/dhc-shots.php'") !== false,
+	   'the screenshots are hardcoded instead of resolved by the shared helper');
+	ok(strpos($dhc, 'dhc_shot_src(') !== false,
+	   'the DHC section does not call dhc_shot_src(), so a missing shot renders a broken frame');
 }
 
 echo "\nnothing is wider than the page\n";
@@ -366,6 +378,17 @@ echo "\nnothing is wider than the page\n";
 	ok(stripos($clean, 'overflow-x:hidden') === false
 	   && stripos($clean, 'overflow-x: hidden') === false,
 	   'the page hides horizontal overflow instead of not overflowing; that breaks the sticky nav');
+}
+
+echo "\nnothing that is not a control looks like one\n";
+{
+	/* "Free to join - free to stay" was boxed in a bordered rounded
+	   rectangle, so it read as a button and clicking it did nothing. */
+	$at = strpos($clean, '#pt .pt-free{');
+	$rule = $at === false ? '' : substr($clean, $at, strpos($clean, '}', $at) - $at);
+	ok($rule !== '', 'the free-to-join line has no styling at all');
+	ok(strpos($rule, 'border:') === false && strpos($rule, 'border-radius') === false,
+	   'the free-to-join statement is boxed again, so it reads as a button that does nothing');
 }
 
 echo "\nthe claims match the Skull Paper\n";
@@ -386,24 +409,26 @@ echo "\nthe claims match the Skull Paper\n";
 	   'the page does not link to the Skull Paper for anyone who wants the detail');
 }
 
-echo "\nthe column is as wide as the menu, and the prose is not\n";
+echo "\nthe column is as wide as the menu, and so is the text\n";
 {
 	/* The public menu runs the full width of the window, so a 1040px column
-	   read as a narrow strip inside it. Widening the container without
-	   capping the text would just make every line unreadable instead. */
+	   read as a narrow strip inside it. */
 	ok(preg_match('/#pt\{[^}]*max-width:\s*(\d+)px/', $clean, $wm) === 1, 'the page has no width');
 	ok(!empty($wm[1]) && (int)$wm[1] >= 1200,
 	   'the column is ' . (empty($wm[1]) ? '?' : $wm[1]) . 'px, narrower than the menu it sits under');
-	/* `&&` binds tighter than `||`, so the first version of this read as
-	   ($rule && has 'ch}') || has 'ch;' -- and the extracted rule ends
-	   before its brace, so neither ever matched and all five "failed"
-	   against a page that was correct. Match the declaration itself. */
-	foreach (array('.pt-lede', '.pt-sect > p', '.pt-plain p', '.pt-ask li > span', '.pt-spec dd') as $sel) {
-		$at = strpos($clean, '#pt ' . $sel . '{');
-		$rule = $at === false ? '' : substr($clean, $at, strpos($clean, '}', $at) - $at);
-		ok($rule !== '' && preg_match('/max-width:\s*\d+ch/', $rule) === 1,
-		   $sel . ' has no ch cap, so its lines run the full width of a 1280px page');
-	}
+	/*
+	 * AND THE TEXT USES IT. Capping the measure in ch is the usual advice
+	 * and it was tried: every paragraph then hugged the left of a 1280px
+	 * page with half of it empty, and laying the prose out in two columns
+	 * to fill that made the page read as two unrelated texts. The call is
+	 * the page owner's -- full width, nothing capped -- so the check is
+	 * that neither treatment comes back.
+	 */
+	ok(!preg_match('/max-width:\s*\d+ch/', $clean),
+	   'a ch cap is back, so the text runs in a strip down the left of a 1280px page');
+	ok(strpos($clean, 'pt-cols') === false,
+	   'the two-column prose block is back; it reads as two separate texts');
+	ok(strpos($clean, 'columns:2') === false, 'prose is being laid out in CSS columns again');
 }
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
