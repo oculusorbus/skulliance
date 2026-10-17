@@ -224,7 +224,12 @@ if ($mn_rows) {
                them. */ ?>
         <div class="nft">
           <div class="nft-data">
-            <a class="nft-art" href="<?php echo nftExplorerUrl($conn, $row["asset_id"], isset($row["blockchain_id"]) ? $row["blockchain_id"] : 1); ?>"
+            <?php /* STILL AN ANCHOR TO THE EXPLORER. The panel takes over the
+                     click, but the href stays real so middle-click, "open in
+                     new tab" and a visitor with JavaScript off all still get
+                     somewhere -- and the panel carries the same link on it. */ ?>
+            <a class="nft-art" data-nft-open="<?php echo (int)$row["nfts_id"]; ?>"
+               href="<?php echo nftExplorerUrl($conn, $row["asset_id"], isset($row["blockchain_id"]) ? $row["blockchain_id"] : 1); ?>"
                target="_blank" rel="noopener"><?php
               echo renderIPFS($row["ipfs"], $row["collection_id"], $mn_img, false, $row["nfts_id"]);
             ?></a>
@@ -624,6 +629,194 @@ if ($filterby != "") {
 })();
 </script>
 <?php endif; ?>
+<?php
+  /*
+   * THE NFT PANEL. A card used to go straight out to a block explorer,
+   * which answers "does this exist on chain" and nothing about the thing a
+   * staker actually owns it for -- what it is earning, what it is on, where
+   * it is standing. All of that lives in the platform's own tables and was
+   * not visible anywhere.
+   *
+   * It is also the only place the artwork is bigger than a thumbnail.
+   */
+?>
+<div id="nftd-veil" class="nftd-veil" role="dialog" aria-modal="true"
+     aria-labelledby="nftd-name" hidden>
+  <div class="nftd-sheet">
+    <button type="button" class="nftd-x" id="nftd-close" aria-label="Close">&times;</button>
+    <div id="nftd-body"><p class="nftd-load">Loading&hellip;</p></div>
+  </div>
+</div>
+<style>
+.nftd-veil{position:fixed;inset:0;z-index:9996;background:rgba(3,8,14,.88);
+  display:flex;align-items:flex-start;justify-content:center;overflow:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 4vh) 16px calc(env(safe-area-inset-bottom,0px) + 20px)}
+.nftd-veil[hidden]{display:none!important}
+.nftd-sheet{position:relative;width:min(880px,100%);background:#0a1929;border:1px solid #1b3346;
+  border-radius:6px;padding:20px 22px 24px;color:#e8eaed;font:13px/1.55 ui-monospace,Menlo,monospace}
+.nftd-x{position:absolute;top:8px;right:10px;background:none;border:0;color:#7a9eb0;
+  font-size:26px;line-height:1;cursor:pointer;padding:4px 8px;z-index:2}
+.nftd-x:hover{color:#e8eaed}
+.nftd-load{color:#7a9eb0;margin:0}
+/* THE ART IS THE POINT OF OPENING IT, so it leads and it is big. Capped by
+   viewport height as well as width, or a tall piece pushes everything else
+   off the screen. */
+.nftd-top{display:flex;flex-wrap:wrap;gap:20px}
+.nftd-art{flex:1 1 320px;min-width:0;display:flex;align-items:flex-start;justify-content:center}
+.nftd-art img{max-width:100%;max-height:58vh;width:auto;height:auto;display:block;
+  border-radius:4px;background:#07111d}
+.nftd-side{flex:1 1 300px;min-width:0}
+.nftd-side h2{margin:0 0 2px;font-size:18px;word-break:break-word}
+.nftd-sub{font-size:11px;color:#7a9eb0;margin:0 0 14px}
+.nftd-stats{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.nftd-stats div{border:1px solid #1b3346;border-radius:3px;padding:6px 10px;min-width:78px}
+.nftd-stats b{display:block;font-size:15px;font-variant-numeric:tabular-nums;color:#00c8a0}
+.nftd-stats span{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.55}
+.nftd-sect{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;margin:16px 0 8px}
+.nftd-list{margin:0;padding:0;list-style:none}
+.nftd-list li{border-top:1px solid #1b3346;padding:7px 0;display:flex;gap:10px;
+  align-items:baseline;flex-wrap:wrap}
+.nftd-list li b{font-weight:600}
+.nftd-list .when{margin-left:auto;font-size:10.5px;opacity:.55;white-space:nowrap}
+.nftd-idle{font-size:11.5px;opacity:.6;margin:0}
+.nftd-links{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0;padding-top:14px;
+  border-top:1px solid #1b3346}
+.nftd-links a{font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;
+  color:#7a9eb0;border:1px solid #1b3346;padding:5px 10px;border-radius:3px;text-align:center}
+.nftd-links a:hover{border-color:#00c8a0;color:#00c8a0}
+.nftd-flag{display:inline-block;font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid currentColor;border-radius:3px;padding:2px 6px;margin-left:6px;vertical-align:2px}
+.nftd-flag.on{color:#00c8a0} .nftd-flag.off{color:#e0a800}
+@media (max-width:620px){ .nftd-sheet{padding:16px 14px 18px} .nftd-art img{max-height:42vh} }
+</style>
+<script>
+(function () {
+  var veil = document.getElementById('nftd-veil');
+  var body = document.getElementById('nftd-body');
+  if (!veil || !body) return;
+
+  function esc(t) {
+    return String(t == null ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function shut() { veil.hidden = true; body.innerHTML = '<p class="nftd-load">Loading\u2026</p>'; }
+  document.getElementById('nftd-close').addEventListener('click', shut);
+  veil.addEventListener('click', function (e) { if (e.target === veil) shut(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !veil.hidden) shut();
+  });
+
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+
+  function render(d) {
+    var n = d.nft;
+    var h = '<div class="nftd-top">';
+
+    h += '<div class="nftd-art">'
+       + '<img src="' + esc(d.image) + '" alt="' + esc(n.name) + '"'
+       + ' onerror="this.onerror=null;this.src=\'/staking/icons/skull.png\'">'
+       + '</div>';
+
+    h += '<div class="nftd-side">'
+       + '<h2 id="nftd-name">' + esc(n.name) + '</h2>'
+       + '<p class="nftd-sub">' + esc(n.collection_name)
+       + (n.project_name ? ' \u00b7 ' + esc(n.project_name) : '')
+       + (d.mine ? '' : (n.username ? ' \u00b7 held by ' + esc(n.username) : ''))
+       + '</p>';
+
+    /* What it earns and what it has done. */
+    h += '<div class="nftd-stats">'
+       + '<div><b>' + esc(n.rate) + '</b><span>' + esc(n.currency || 'pts') + ' / night</span></div>'
+       + '<div><b>' + d.missions.length + '</b><span>On mission</span></div>'
+       + '<div><b>' + d.missionsDone + '</b><span>Missions done</span></div>'
+       + '<div><b>' + d.gauntlets.length + '</b><span>Gauntlet runs</span></div>'
+       + '</div>';
+
+    /* The artwork's home, which is the thing the save button is about. */
+    h += '<p class="nftd-idle">Artwork '
+       + (d.cached
+          ? 'is saved on Skulliance<span class="nftd-flag on">saved</span>'
+          : 'loads from IPFS<span class="nftd-flag off">not saved</span>')
+       + '</p>';
+    h += '</div></div>';
+
+    /* ---- what it is doing right now ---- */
+    h += '<p class="nftd-sect">Right now</p>';
+    var busy = [];
+
+    if (d.missions.length) {
+      busy.push('<ul class="nftd-list">' + d.missions.map(function (m) {
+        return '<li><b>' + esc(m.title || 'A mission') + '</b>'
+             + (m.project_name ? '<span style="opacity:.6">' + esc(m.project_name) + '</span>' : '')
+             + (m.reward ? '<span style="opacity:.6">' + esc(m.reward) + ' '
+                         + esc(m.currency || '') + '</span>' : '')
+             + '<span class="when">started ' + esc((m.created_date || '').slice(0, 16)) + '</span></li>';
+      }).join('') + '</ul>');
+    }
+    if (d.soldier && String(d.soldier.active) === '1' && !d.soldier.dead) {
+      busy.push('<ul class="nftd-list"><li><b>Standing in '
+        + esc(d.soldier.realm_name || 'a realm') + '</b>'
+        + '<span style="opacity:.6">' + (String(d.soldier.trained) === '1' ? 'trained' : 'untrained')
+        + '</span>'
+        + '<span class="when">defends against raids</span></li></ul>');
+    }
+    if (d.diamond) {
+      busy.push('<ul class="nftd-list"><li><b>Part of a Diamond Skull</b>'
+        + '<span style="opacity:.6">' + esc(d.diamond) + '</span></li></ul>');
+    }
+
+    h += busy.length ? busy.join('')
+       : '<p class="nftd-idle">Not on a mission, not in a realm. It is earning its nightly '
+         + 'rate and otherwise idle.</p>';
+
+    /* ---- out to the chain and the rest of the platform ---- */
+    h += '<div class="nftd-links">';
+    if (d.explorer) h += '<a href="' + esc(d.explorer) + '" target="_blank" rel="noopener">On chain &rsaquo;</a>';
+    if (n.marketplace_slug) {
+      h += '<a href="https://xrp.cafe/collection/' + encodeURIComponent(n.marketplace_slug)
+         + '" target="_blank" rel="noopener">Marketplace &rsaquo;</a>';
+    }
+    h += '<a href="collections.php">The collection &rsaquo;</a>';
+    if (d.missions.length || d.missionsDone) h += '<a href="missions.php">Missions &rsaquo;</a>';
+    if (d.soldier) h += '<a href="realms.php">Realms &rsaquo;</a>';
+    h += '</div>';
+
+    body.innerHTML = h;
+  }
+
+  /* ONE DELEGATED HANDLER. The grid is re-rendered by pagination, and a
+     listener per card would have to be rebound with it. */
+  document.addEventListener('click', function (e) {
+    var a = e.target && e.target.closest ? e.target.closest('[data-nft-open]') : null;
+    if (!a) return;
+    /* Leave the explorer link working for anyone deliberately opening it
+       elsewhere -- modified clicks and middle-click are not ours to take. */
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    e.preventDefault();
+
+    var id = a.getAttribute('data-nft-open');
+    veil.hidden = false;
+    body.innerHTML = '<p class="nftd-load">Loading\u2026</p>';
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', 'ajax/nft-dossier.php?nft_id=' + encodeURIComponent(id), true);
+    xhr.timeout = 15000;
+    xhr.onload = function () {
+      var d = null;
+      try { d = JSON.parse(xhr.responseText); } catch (err) {}
+      if (!d) { body.innerHTML = '<p class="nftd-load">That came back unreadable.</p>'; return; }
+      if (!d.success) {
+        body.innerHTML = '<p class="nftd-load">' + esc(d.message || 'Could not load it.') + '</p>';
+        return;
+      }
+      render(d);
+    };
+    xhr.onerror   = function () { body.innerHTML = '<p class="nftd-load">That request did not arrive.</p>'; };
+    xhr.ontimeout = function () { body.innerHTML = '<p class="nftd-load">That took too long.</p>'; };
+    xhr.send();
+  });
+})();
+</script>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <?php $conn->close(); ?>
 </html>

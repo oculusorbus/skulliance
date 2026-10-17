@@ -1,0 +1,94 @@
+<?php
+/**
+ * lib/nft-dossier.php -- everything the platform currently knows about one NFT.
+ *
+ * My NFTs used to send a click straight out to a block explorer, which answers
+ * "does this exist on chain" and nothing about the thing the staker actually
+ * owns it for. An NFT here is on missions, in gauntlets, standing in a realm,
+ * part of a diamond skull -- and none of that was visible anywhere.
+ *
+ * ONE READ PER SURFACE, EACH TOLERANT OF ITS TABLE BEING ABSENT. These are
+ * the platform's older tables and not every deployment has every game; a
+ * missing table returns false from query() and is reported as "nothing here"
+ * rather than taking the panel down. The same reason dhca_crew_profiles()
+ * guards its reads.
+ *
+ * READ-ONLY, and owner-checked by the caller. Nothing here writes, and
+ * nothing here decides who may look -- ajax/nft-dossier.php does that, so the
+ * rule lives in one place rather than being re-derived per query.
+ */
+
+/** Rows from a query, or an empty array if the table is not there. */
+function _nftd_rows($conn, $sql) {
+	$res = $conn->query($sql);
+	if (!$res) return array();
+	$out = array();
+	while ($r = $res->fetch_assoc()) $out[] = $r;
+	return $out;
+}
+
+/**
+ * The NFT itself, plus where it currently is.
+ *
+ * Returns null when there is no such NFT. Everything else is always present,
+ * empty rather than missing, so the renderer can loop without checking.
+ */
+function nft_dossier($conn, $nft_id) {
+	$id = (int)$nft_id;
+	if ($id <= 0) return null;
+
+	$base = _nftd_rows($conn,
+		"SELECT n.id, n.asset_id, n.asset_name, n.name, n.ipfs, n.user_id,
+		        n.collection_id, n.blockchain_id,
+		        c.name AS collection_name, c.rate, c.marketplace_slug,
+		        c.project_id, p.name AS project_name, p.currency,
+		        u.username
+		   FROM nfts n
+		   INNER JOIN collections c ON c.id = n.collection_id
+		   INNER JOIN projects    p ON p.id = c.project_id
+		   LEFT  JOIN users       u ON u.id = n.user_id
+		  WHERE n.id = $id LIMIT 1");
+	if (!$base) return null;
+
+	$d = array('nft' => $base[0], 'missions' => array(), 'missions_done' => 0,
+	           'gauntlets' => array(), 'diamond' => null, 'soldier' => null);
+
+	/* ---- missions. status 0 is in progress; anything else has finished. ---- */
+	$d['missions'] = _nftd_rows($conn,
+		"SELECT m.id, m.created_date, q.title, q.duration, q.level,
+		        q.reward, q.currency, pr.name AS project_name
+		   FROM missions_nfts mn
+		   INNER JOIN missions m ON m.id = mn.mission_id
+		   INNER JOIN quests   q ON q.id = m.quest_id
+		   LEFT  JOIN projects pr ON pr.id = q.project_id
+		  WHERE mn.nft_id = $id AND m.status = '0'
+		  ORDER BY m.created_date DESC");
+
+	$done = _nftd_rows($conn,
+		"SELECT COUNT(*) AS n FROM missions_nfts mn
+		   INNER JOIN missions m ON m.id = mn.mission_id
+		  WHERE mn.nft_id = $id AND m.status <> '0'");
+	$d['missions_done'] = $done ? (int)$done[0]['n'] : 0;
+
+	/* ---- gauntlets ---- */
+	$d['gauntlets'] = _nftd_rows($conn,
+		"SELECT grn.run_id FROM gauntlets_nfts grn
+		  WHERE grn.nft_id = $id ORDER BY grn.run_id DESC LIMIT 10");
+
+	/* ---- a diamond skull it is part of ---- */
+	$ds = _nftd_rows($conn,
+		"SELECT diamond_skull_id FROM diamond_skulls WHERE nft_id = $id LIMIT 1");
+	if ($ds) $d['diamond'] = $ds[0]['diamond_skull_id'];
+
+	/* ---- standing in a realm, which is also how it reaches raids ---- */
+	$sol = _nftd_rows($conn,
+		"SELECT s.realm_id, s.location, s.trained, s.dead, s.active,
+		        r.name AS realm_name, r.user_id AS realm_user
+		   FROM soldiers s
+		   LEFT JOIN realms r ON r.id = s.realm_id
+		  WHERE s.nft_id = $id
+		  ORDER BY s.active DESC, s.id DESC LIMIT 1");
+	if ($sol) $d['soldier'] = $sol[0];
+
+	return $d;
+}

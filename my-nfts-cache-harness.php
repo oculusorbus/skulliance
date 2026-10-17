@@ -97,5 +97,75 @@ if (preg_match('/\.mn-cache-veil\{([^}]*)\}/', $src, $vm)) $veilCss = $vm[1];
 preg_match('/z-index:\s*(\d+)/', $veilCss, $zm);
 ok($zm && (int)$zm[1] > 200, 'it clears the navbar (z-index ' . ($zm ? $zm[1] : '?') . ')');
 
+echo "\n-- the NFT panel --\n";
+/*
+ * A card used to go straight to a block explorer. The panel takes the click,
+ * but the anchor and its href must survive: middle-click, "open in new tab"
+ * and a visitor with no JavaScript all still have to land somewhere.
+ */
+ok(strpos($src, 'data-nft-open=') !== false, 'cards are marked as openable');
+/* Read the whole opening tag rather than matching attribute values: the
+   values are PHP echoes containing their own double quotes, so [^"]* stops
+   inside one and the pattern never matches whatever the markup says. */
+$ai = strpos($src, '<a class="nft-art"');
+$aj = strpos($src, 'rel="noopener"', $ai);
+$tag = ($ai !== false && $aj !== false) ? substr($src, $ai, $aj - $ai) : '';
+ok($tag !== '', 'the card anchor is there to read');
+ok(strpos($tag, 'data-nft-open=') !== false, 'it is marked as openable');
+ok(strpos($tag, 'href="') !== false, 'and still carries a real href to the explorer');
+ok(strpos($tag, 'nftExplorerUrl(') !== false, 'built by the chain-aware helper');
+ok(strpos($src, 'nftExplorerUrl(') !== false, 'which is the chain-aware one, not a hardcoded pool.pm');
+$pi = strpos($src, "document.addEventListener('click'");
+$pj = strpos($src, '})();', $pi);
+$panel = substr($src, $pi, $pj - $pi);
+ok($panel !== '', 'the panel handler is there to read');
+ok(strpos($panel, 'e.metaKey || e.ctrlKey || e.shiftKey || e.altKey') !== false,
+   'a modified click is left alone, so open-in-new-tab still works');
+ok(strpos($panel, 'e.button !== 0') !== false, 'and so is a middle click');
+ok(strpos($panel, 'e.preventDefault()') !== false, 'a plain click opens the panel instead');
+ok(strpos($panel, 'closest(') !== false, 'bound once by delegation, not per card');
+
+echo "\n-- it asks the endpoint, which decides who may look --\n";
+ok(strpos($panel, 'ajax/nft-dossier.php?nft_id=') !== false, 'the panel fetches the dossier');
+$dos = file_get_contents(__DIR__ . '/ajax/nft-dossier.php');
+$lib = file_get_contents(__DIR__ . '/lib/nft-dossier.php');
+ok(strpos($dos, "\$_SESSION['userData']['user_id']") !== false, 'the endpoint knows who is asking');
+/*
+ * NOT "the word visibility appears" -- that stayed true with the gate
+ * commented out. What matters is that the not-mine branch actually REFUSES:
+ * a comparison against the public setting, and an exit behind it.
+ */
+$bi = strpos($dos, 'if (!$mine) {');
+$bj = strpos($dos, "\n}", $bi);
+$gate = ($bi !== false && $bj !== false) ? substr($dos, $bi, $bj - $bi) : '';
+ok($gate !== '', 'the not-mine branch is there to read');
+ok(preg_match('/\$vis\s*!=\s*2|\$vis\s*!==\s*2/', $gate),
+   "it compares the owner's visibility against the public setting");
+ok(strpos($gate, 'exit;') !== false, 'and exits rather than falling through');
+ok(preg_match('/\$vis[^;]*\)\s*\{[^}]*exit;/s', $gate),
+   'with the exit INSIDE the check, not merely nearby');
+ok(strpos($gate, 'private') !== false, 'and says why');
+ok(strpos($dos, 'SELECT visibility FROM users') !== false, 'read from the owner, not the caller');
+ok(strpos($lib, 'visibility') === false,
+   'while the library does NOT -- one place decides, so the two cannot disagree');
+ok(strpos($lib, 'INSERT') === false && strpos($lib, 'UPDATE') === false
+   && strpos($lib, 'DELETE') === false, 'and the library only reads');
+/* Every surface the user asked to see. */
+foreach (array('missions_nfts' => 'missions', 'gauntlets_nfts' => 'gauntlets',
+               'diamond_skulls' => 'diamond skulls', 'soldiers' => 'realms') as $tbl => $what) {
+	ok(strpos($lib, $tbl) !== false, "  it reads $what ($tbl)");
+}
+ok(strpos($lib, 'function _nftd_rows') !== false, 'through one guarded reader');
+ok(strpos($lib, 'if (!$res) return array();') !== false,
+   'which survives a table this deployment does not have');
+
+echo "\n-- and it is the big view of the artwork --\n";
+ok(strpos($src, '.nftd-art img{max-width:100%;max-height:58vh') !== false,
+   'the art leads, bounded by the viewport so a tall piece does not push the rest off');
+ok(strpos($panel, 'd.image') === false && strpos($src, 'esc(d.image)') !== false,
+   'drawn from the resolved url the grid uses');
+ok(strpos($src, "this.src=\\'/staking/icons/skull.png\\'") !== false,
+   'with the same skull fallback as everywhere else');
+
 echo "\n" . ($fails ? "$fails FAILED\n" : "all passed\n");
 exit($fails ? 1 : 0);
