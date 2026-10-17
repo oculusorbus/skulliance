@@ -622,6 +622,21 @@ function dhca_finish($conn, &$b) {
 	}
 
 	/*
+	 * THE LEDGER. Six rows saying who was in this battle and what happened to
+	 * each of them.
+	 *
+	 * Nothing recorded Crew composition before this. dhc_arena_battles keeps
+	 * the seed, the moves and the outcome; dhc_arena_state is deleted the
+	 * moment a battle resolves. That is why one corrupted forfeit could not be
+	 * repaired -- there was no record of whose record it was.
+	 *
+	 * The counters above stay exactly as they are, so nothing reading them
+	 * breaks. This accrues alongside and becomes the thing worth trusting,
+	 * because a ledger can be recomputed and a counter cannot.
+	 */
+	dhca_log_participants($conn, $bid, $b, $m);
+
+	/*
 	 * WHY THERE WAS NO TRAIT, not just that there wasn't one.
 	 *
 	 *   'opponent'  this pairing already paid today. One rewarded battle per
@@ -672,6 +687,113 @@ function dhca_finish($conn, &$b) {
 	 * report. The ledger still records the defeat.
 	 */
 	if (empty($b['forfeit'])) dhca_announce($conn, $b, $won, $rewarded);
+}
+
+/**
+ * Write the six participation rows for a finished battle.
+ *
+ * INSERT IGNORE on the (battle_id, fighter_id) key: dhca_finish() already
+ * refuses to settle a battle twice, but a ledger that can double-count is
+ * worse than no ledger, and the guarantee should not rest on a check made
+ * somewhere else.
+ *
+ * The crew outcome is deliberately NOT stored. It is outcome joined against
+ * side, and a second copy of a fact is a fact that can disagree with itself.
+ */
+function dhca_log_participants($conn, $battle_id, $b, $m) {
+	$rows = array();
+	foreach (array(array('mineIds', 'mine', 1), array('foeIds', 'foes', 2)) as $sideSpec) {
+		list($idsKey, $stateKey, $side) = $sideSpec;
+		if (empty($m[$idsKey]) || !is_array($m[$idsKey])) continue;
+		foreach ($m[$idsKey] as $i => $fid) {
+			$f = isset($b[$stateKey][$i]) ? $b[$stateKey][$i] : null;
+			if (!$f) continue;
+			$rows[] = sprintf('(%d,%d,%d,%d,%d,%d)',
+				(int)$battle_id, (int)$fid, $side,
+				isset($f['rank']) ? (int)$f['rank'] : $i,
+				!empty($f['ko']) ? 1 : 0,
+				isset($f['dealt']) ? (int)$f['dealt'] : 0);
+		}
+	}
+	if (!$rows) return;
+	$conn->query('INSERT IGNORE INTO dhc_arena_battle_fighters
+	              (battle_id, fighter_id, side, `rank`, fell, dealt) VALUES ' . implode(',', $rows));
+}
+
+/**
+ * Every per-Fighter number, from the ledger.
+ *
+ * SIX FIGURES, THREE SCOPES. Overall, battles you initiated, and battles the
+ * game made it defend. The split matters because dhca_defenders() fields your
+ * best three automatically -- a strong Fighter's record is mostly matchups
+ * you never saw, and blending them is why the old counter was hard to act on.
+ *
+ * "Survived a win" is the one worth reading. A Fighter can be on the winning
+ * side without having carried it, and a Crew only loses when every Fighter
+ * has fallen -- so survival carries no information in a defeat and all of it
+ * in a victory.
+ *
+ * Returns zeroes for a Fighter with no history, which is a true answer.
+ */
+function dhca_fighter_stats($conn, $fighter_id) {
+	$fid = (int)$fighter_id;
+	$z = array('battles'=>0,'wins'=>0,'losses'=>0,'survived_wins'=>0,'fell_in_wins'=>0,'dealt'=>0);
+	$out = array('all'=>$z, 'attack'=>$z, 'defend'=>$z);
+	$res = $conn->query(
+		"SELECT p.side,
+		        COUNT(*)                                            AS battles,
+		        SUM(b.outcome = p.side)                             AS wins,
+		        SUM(b.outcome <> p.side)                            AS losses,
+		        SUM(b.outcome = p.side AND p.fell = 0)              AS survived_wins,
+		        SUM(b.outcome = p.side AND p.fell = 1)              AS fell_in_wins,
+		        COALESCE(SUM(p.dealt), 0)                           AS dealt
+		   FROM dhc_arena_battle_fighters p
+		   INNER JOIN dhc_arena_battles b ON b.id = p.battle_id
+		  WHERE p.fighter_id = $fid AND b.outcome IN (1,2)
+		  GROUP BY p.side");
+	if (!$res) return $out;
+	/* outcome 1 is an attacker win and side 1 is the attacker, so `outcome =
+	   side` is "this Fighter's Crew won" for both sides at once. */
+	while ($r = $res->fetch_assoc()) {
+		$k = ((int)$r['side'] === 1) ? 'attack' : 'defend';
+		foreach ($z as $f => $_) $out[$k][$f] = (int)$r[$f];
+		foreach ($z as $f => $_) $out['all'][$f] += (int)$r[$f];
+	}
+	return $out;
+}
+
+/** Survived-a-win as a percentage, or null when there is nothing to divide. */
+function dhca_survivability($scope) {
+	$wins = (int)$scope['wins'];
+	if ($wins < 1) return null;
+	return round($scope['survived_wins'] / $wins * 100, 1);
+}
+
+/**
+ * How often this player's Crew has held when attacked.
+ *
+ * Derivable with no new table at all -- dhc_arena_battles has defender_id and
+ * outcome -- and shown nowhere until now. dhca_ladder() joins on attacker_id
+ * only, so no player has ever been able to see how their defence performs,
+ * and for picking an opponent it is the better measure: how often attackers
+ * bounce off a Crew says how hard it is to beat, where someone's attacking
+ * rank says nothing about attacking them.
+ */
+function dhca_defence_record($conn, $user_id) {
+	$uid = (int)$user_id;
+	$out = array('defences' => 0, 'held' => 0, 'lost' => 0);
+	$res = $conn->query(
+		"SELECT COUNT(*) AS defences,
+		        SUM(outcome = 2) AS held,
+		        SUM(outcome = 1) AS lost
+		   FROM dhc_arena_battles
+		  WHERE defender_id = $uid AND outcome IN (1,2)");
+	if ($res && ($r = $res->fetch_assoc())) {
+		$out['defences'] = (int)$r['defences'];
+		$out['held']     = (int)$r['held'];
+		$out['lost']     = (int)$r['lost'];
+	}
+	return $out;
 }
 
 /** Longer bench for a deeper Crew, so depth buys resilience and not immunity. */

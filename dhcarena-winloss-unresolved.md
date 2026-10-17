@@ -1,7 +1,27 @@
 # UNRESOLVED — what a Fighter's win/loss record actually counts
 
-**Status: open. Nothing here is fixed.** Written down mid-conversation so it
-can be picked up cold later.
+**Status: LARGELY RESOLVED.** `dhc_arena_battle_fighters` now records who was
+in every battle, which side they were on, where they stood, whether they fell
+and what they dealt. `dhca_fighter_stats()` derives the six figures a player
+actually wants, split three ways:
+
+| | overall | initiated | defending |
+|---|---|---|---|
+| **W/L** | yes | yes | yes |
+| **win survivability** | yes | yes | yes |
+
+Plus damage dealt per scope, and `dhca_defence_record()` for the player-level
+defensive record that needed no schema change at all.
+
+**The old counters are untouched and still mean what §1 and §2 say.** Nothing
+reading them breaks; the ledger accrues alongside and is the thing worth
+trusting, because a ledger can be recomputed and a counter cannot.
+
+**Not backfillable.** Crew composition was never recorded, so every number
+here starts from the day the table went in. The historical sizing query
+returned **1**, so the corruption §3 describes is a single battle.
+
+What remains open: §1's label on the modal tile, and the Winner/Loser filter.
 
 A Fighter's `wins` / `losses` in `dhc_arena_fighters` do not mean what the
 platform implies they mean, in three separate ways. One of them is already

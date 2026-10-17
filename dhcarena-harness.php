@@ -845,3 +845,216 @@ $ffok(strpos($ffNo, 'Finish it or forfeit it') !== false,
 
 echo ($ff_fail ? "\n$ff_fail forfeit check(s) FAILED\n" : "resume or forfeit: ok\n");
 if ($ff_fail) exit(1);
+
+/* ---------------------------------------------------------------------------
+ * THE PARTICIPATION LEDGER
+ *
+ * Six rows per battle saying who was in it and what happened to them. Nothing
+ * recorded Crew composition before this, which is why one corrupted forfeit
+ * could not be repaired: there was no record of whose record it was.
+ *
+ * Driven against an in-memory stand-in, because the whole value of these
+ * numbers is in one SQL expression -- `b.outcome = p.side` meaning "this
+ * Fighter's Crew won" -- and reading that is not testing it.
+ * ------------------------------------------------------------------------- */
+$pl_fail = 0;
+$plok = function ($cond, $what) use (&$pl_fail) {
+	if (!$cond) { $pl_fail++; echo "  FAIL  $what\n"; }
+};
+
+/* A stand-in that answers the two real queries from arrays, applying the same
+   rules the SQL does. It is not a SQL engine; it implements exactly the
+   grouping and the outcome-vs-side comparison under test. */
+class DhcaLedgerStub {
+	public $rows = array();      // battle_id, fighter_id, side, rank, fell, dealt
+	public $battles = array();   // id => array(outcome, defender_id)
+	public $sqls = array();
+	public function real_escape_string($s) { return $s; }
+	public function query($sql) {
+		$this->sqls[] = $sql;
+		if (strpos($sql, 'INSERT IGNORE INTO dhc_arena_battle_fighters') !== false) {
+			preg_match_all('/\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/', $sql, $m, PREG_SET_ORDER);
+			foreach ($m as $v) {
+				foreach ($this->rows as $ex)      // INSERT IGNORE: the key wins
+					if ($ex['battle_id'] == $v[1] && $ex['fighter_id'] == $v[2]) continue 2;
+				$this->rows[] = array('battle_id'=>(int)$v[1], 'fighter_id'=>(int)$v[2],
+					'side'=>(int)$v[3], 'rank'=>(int)$v[4], 'fell'=>(int)$v[5], 'dealt'=>(int)$v[6]);
+			}
+			return true;
+		}
+		if (strpos($sql, 'FROM dhc_arena_battle_fighters p') !== false) {
+			preg_match('/fighter_id = (\d+)/', $sql, $fm);
+			$fid = (int)$fm[1];
+			/*
+			 * THE STUB OBEYS THE SQL for the expressions under test.
+			 *
+			 * Reimplementing them in PHP meant mutating the query changed
+			 * nothing: inverting `b.outcome = p.side` to `<>` and making
+			 * survived_wins count the FALLEN both passed. A stub that answers
+			 * correctly however it is asked is not testing the caller.
+			 *
+			 * Not a SQL engine -- it reads the comparison out of the three
+			 * expressions whose correctness is the whole point.
+			 */
+			$winOp = preg_match('/SUM\(b\.outcome\s*(=|<>)\s*p\.side\)\s*AS wins/', $sql, $wo)
+			       ? $wo[1] : '?';
+			$survFell = preg_match('/SUM\(b\.outcome\s*(=|<>)\s*p\.side AND p\.fell = (\d)\)\s*AS survived_wins/', $sql, $so)
+			       ? array($so[1], (int)$so[2]) : array('?', -1);
+			$acc = array();
+			foreach ($this->rows as $r) {
+				if ($r['fighter_id'] !== $fid) continue;
+				$bt = isset($this->battles[$r['battle_id']]) ? $this->battles[$r['battle_id']] : null;
+				if (!$bt || !in_array((int)$bt['outcome'], array(1,2), true)) continue;
+				$s = $r['side'];
+				if (!isset($acc[$s])) $acc[$s] = array('side'=>$s,'battles'=>0,'wins'=>0,'losses'=>0,
+					'survived_wins'=>0,'fell_in_wins'=>0,'dealt'=>0);
+				$same = ((int)$bt['outcome'] === $s);
+				$acc[$s]['battles']++;
+				$countsAsWin = ($winOp === '=') ? $same : (($winOp === '<>') ? !$same : false);
+				$acc[$s][$countsAsWin ? 'wins' : 'losses']++;
+				$survSide = ($survFell[0] === '=') ? $same : (($survFell[0] === '<>') ? !$same : false);
+				if ($survSide && (int)$r['fell'] === $survFell[1]) $acc[$s]['survived_wins']++;
+				if ($same && $r['fell']) $acc[$s]['fell_in_wins']++;
+				$acc[$s]['dealt'] += $r['dealt'];
+			}
+			return new DhcaLedgerRes(array_values($acc));
+		}
+		if (strpos($sql, 'FROM dhc_arena_battles') !== false && strpos($sql, 'defender_id =') !== false) {
+			preg_match('/defender_id = (\d+)/', $sql, $dm);
+			$uid = (int)$dm[1]; $d = 0; $h = 0; $l = 0;
+			/* BOTH expressions read from the query, not one derived from the
+			   other: deriving lost as "not held" meant mutating the lost
+			   expression changed nothing. */
+			$heldVal = preg_match('/SUM\(outcome = (\d)\) AS held/', $sql, $hv) ? (int)$hv[1] : -1;
+			$lostVal = preg_match('/SUM\(outcome = (\d)\) AS lost/', $sql, $lv) ? (int)$lv[1] : -1;
+			foreach ($this->battles as $bt) {
+				if ((int)$bt['defender_id'] !== $uid) continue;
+				if (!in_array((int)$bt['outcome'], array(1,2), true)) continue;
+				$d++;
+				if ((int)$bt['outcome'] === $heldVal) $h++;
+				if ((int)$bt['outcome'] === $lostVal) $l++;
+			}
+			return new DhcaLedgerRes(array(array('defences'=>$d,'held'=>$h,'lost'=>$l)));
+		}
+		return new DhcaLedgerRes(array());
+	}
+}
+class DhcaLedgerRes {
+	private $r; private $i = 0;
+	public $num_rows;
+	public function __construct($rows) { $this->r = $rows; $this->num_rows = count($rows); }
+	public function fetch_assoc() { return $this->i < count($this->r) ? $this->r[$this->i++] : null; }
+}
+
+$L = new DhcaLedgerStub();
+/* battle 1: our Crew attacked and WON; fighter 7 fell doing it, 8 and 9 stood. */
+$L->battles[1] = array('outcome' => 1, 'defender_id' => 99);
+dhca_log_participants($L, 1,
+	array('mine' => array(array('rank'=>0,'ko'=>true,'dealt'=>120),
+	                      array('rank'=>1,'ko'=>false,'dealt'=>300),
+	                      array('rank'=>2,'ko'=>false,'dealt'=>80)),
+	      'foes' => array(array('rank'=>0,'ko'=>true,'dealt'=>40),
+	                      array('rank'=>1,'ko'=>true,'dealt'=>50),
+	                      array('rank'=>2,'ko'=>true,'dealt'=>60))),
+	array('mineIds' => array(7, 8, 9), 'foeIds' => array(71, 72, 73)));
+$plok(count($L->rows) === 6, 'a finished battle wrote ' . count($L->rows) . ' rows, not six');
+
+/* battle 2: our Crew attacked and LOST, so every one of ours fell. */
+$L->battles[2] = array('outcome' => 2, 'defender_id' => 99);
+dhca_log_participants($L, 2,
+	array('mine' => array(array('rank'=>0,'ko'=>true,'dealt'=>10),
+	                      array('rank'=>1,'ko'=>true,'dealt'=>20),
+	                      array('rank'=>2,'ko'=>true,'dealt'=>30)),
+	      'foes' => array(array('rank'=>0,'ko'=>false,'dealt'=>200),
+	                      array('rank'=>1,'ko'=>true,'dealt'=>10),
+	                      array('rank'=>2,'ko'=>false,'dealt'=>90))),
+	array('mineIds' => array(7, 8, 9), 'foeIds' => array(71, 72, 73)));
+
+/* battle 3: fighter 7 DEFENDED, and the defence HELD. */
+$L->battles[3] = array('outcome' => 2, 'defender_id' => 5);
+dhca_log_participants($L, 3,
+	array('mine' => array(array('rank'=>0,'ko'=>true,'dealt'=>5),
+	                      array('rank'=>1,'ko'=>true,'dealt'=>5),
+	                      array('rank'=>2,'ko'=>true,'dealt'=>5)),
+	      'foes' => array(array('rank'=>0,'ko'=>false,'dealt'=>400),
+	                      array('rank'=>1,'ko'=>true,'dealt'=>10),
+	                      array('rank'=>2,'ko'=>false,'dealt'=>20))),
+	array('mineIds' => array(31, 32, 33), 'foeIds' => array(7, 8, 9)));
+
+$st = dhca_fighter_stats($L, 7);
+/* Fighter 7: attacked twice (won 1, lost 1), defended once (held). */
+$plok($st['attack']['battles'] === 2, "attack battles {$st['attack']['battles']}, expected 2");
+$plok($st['attack']['wins'] === 1 && $st['attack']['losses'] === 1,
+   "attack record {$st['attack']['wins']}W/{$st['attack']['losses']}L, expected 1W/1L");
+$plok($st['defend']['battles'] === 1 && $st['defend']['wins'] === 1,
+   'the defended battle was not counted as a defensive win');
+$plok($st['all']['battles'] === 3 && $st['all']['wins'] === 2,
+   "overall {$st['all']['wins']}W of {$st['all']['battles']}, expected 2W of 3");
+
+/*
+ * THE NUMBER THIS WAS ALL FOR. Fighter 7 fell during the attacking win and
+ * stood through the defensive one: 1 of 2 wins survived.
+ */
+$plok($st['attack']['survived_wins'] === 0 && $st['attack']['fell_in_wins'] === 1,
+   'fighter 7 fell during an attacking win and it was not recorded as such');
+$plok($st['defend']['survived_wins'] === 1, 'surviving a held defence was not recorded');
+$plok($st['all']['survived_wins'] === 1 && $st['all']['fell_in_wins'] === 1,
+   'the overall survived/fell split across wins is wrong');
+$plok(dhca_survivability($st['all']) === 50.0,
+   'overall win survivability came out ' . var_export(dhca_survivability($st['all']), true) . ', expected 50.0');
+$plok(dhca_survivability($st['attack']) === 0.0, 'attacking win survivability should be 0');
+$plok(dhca_survivability($st['defend']) === 100.0, 'defending win survivability should be 100');
+
+/* A LOSS CARRIES NO SURVIVAL INFORMATION, because a Crew only loses when every
+   Fighter has fallen. Nothing may ever be counted as surviving a defeat. */
+$surviveLoss = 0;
+foreach ($L->rows as $r) {
+	$bt = $L->battles[$r['battle_id']];
+	if ((int)$bt['outcome'] !== $r['side'] && !$r['fell']) $surviveLoss++;
+}
+$plok($surviveLoss === 0,
+   $surviveLoss . ' Fighters are recorded as standing at the end of a battle their Crew lost');
+
+/* Damage follows the Fighter, not the side. */
+$plok($st['attack']['dealt'] === 130 && $st['defend']['dealt'] === 400,
+   "dealt came out {$st['attack']['dealt']} attacking / {$st['defend']['dealt']} defending, "
+ . 'expected 130 / 400');
+
+/* A Fighter nobody has fielded answers honestly rather than dividing by zero. */
+$none = dhca_fighter_stats($L, 4242);
+$plok($none['all']['battles'] === 0, 'an unfought Fighter reports battles');
+$plok(dhca_survivability($none['all']) === null, 'an unfought Fighter got a survivability rate');
+
+/* Settling the same battle twice must not double-count it. */
+$before = count($L->rows);
+dhca_log_participants($L, 1,
+	array('mine' => array(array('rank'=>0,'ko'=>true,'dealt'=>120)),
+	      'foes' => array(array('rank'=>0,'ko'=>true,'dealt'=>40))),
+	array('mineIds' => array(7), 'foeIds' => array(71)));
+$plok(count($L->rows) === $before, 'a battle settled twice wrote its rows twice');
+
+/*
+ * And the player-level defensive record, which needed no new table at all.
+ *
+ * ASYMMETRIC ON PURPOSE. With one held and one lost, swapping which outcome
+ * counts as "held" produces the identical pair of numbers and the mutation
+ * that inverted it passed. Two held against one lost can tell them apart.
+ */
+$L->battles[4] = array('outcome' => 2, 'defender_id' => 99);   // another successful defence
+$dr = dhca_defence_record($L, 99);
+$plok($dr['defences'] === 3 && $dr['held'] === 2 && $dr['lost'] === 1,
+   "defence record {$dr['held']} held / {$dr['lost']} lost of {$dr['defences']}, expected 2/1 of 3");
+$plok(dhca_defence_record($L, 12345)['defences'] === 0, 'a player never attacked shows defences');
+
+/* The writer must be called from the place that settles a battle. */
+$plSrc = preg_replace(array('!^[ \t]*/\*.*?\*/!ms', '~(?<![:/])//[^\n]*~'), '',
+                      file_get_contents(__DIR__ . '/dhcarena-lib.php'));
+$fnAt = strpos($plSrc, 'function dhca_finish(');
+$fnEnd = strpos($plSrc, "\n}", $fnAt);
+$plok(strpos(substr($plSrc, $fnAt, $fnEnd - $fnAt), 'dhca_log_participants(') !== false,
+   'dhca_finish() does not write the ledger, so nothing is ever recorded');
+$plok(strpos($plSrc, 'INSERT IGNORE INTO dhc_arena_battle_fighters') !== false,
+   'the ledger insert is not IGNORE, so a double settle can double-count');
+
+echo ($pl_fail ? "\n$pl_fail ledger check(s) FAILED\n" : "participation ledger: ok\n");
+if ($pl_fail) exit(1);

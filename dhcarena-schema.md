@@ -99,6 +99,58 @@ CREATE TABLE IF NOT EXISTS dhc_arena_fighters (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
+## `dhc_arena_battle_fighters` — who was in it, and what happened to them
+
+One row per Fighter per battle, six per battle. **Nothing recorded which
+Fighters were in a battle until this table.** `dhc_arena_battles` holds the
+seed, the moves and the outcome but not the Crew, and `dhc_arena_state` is
+deleted the moment a battle resolves -- which is why a single corrupted
+forfeit could not be repaired: there was no record of whose record it was.
+
+Counters cannot be audited or fixed. A ledger can be recomputed. Every
+per-Fighter number below is a query against this, not a column that drifts.
+
+```sql
+CREATE TABLE IF NOT EXISTS dhc_arena_battle_fighters (
+	battle_id  INT        NOT NULL,          -- dhc_arena_battles.id
+	fighter_id INT        NOT NULL,          -- dhc_fighters.id
+	side       TINYINT    NOT NULL,          -- 1 attacker, 2 defender
+	rank       TINYINT    NOT NULL,          -- 0 front, 1 mid, 2 back
+	fell       TINYINT(1) NOT NULL,          -- knocked out before the end
+	dealt      INT        NOT NULL DEFAULT 0,-- damage this Fighter dealt
+	PRIMARY KEY (battle_id, fighter_id),
+	INDEX idx_fighter (fighter_id, side),
+	INDEX idx_battle (battle_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### Why `side` is on the row
+
+`dhca_finish()` records BOTH Crews, so a Fighter's old `wins`/`losses` blend
+battles you chose with battles the game chose for you -- and it is weighted
+toward the latter, because `dhca_defenders()` fields your best three
+automatically. A strong Fighter is defending constantly in matchups you never
+saw. With `side` the two separate, which also makes the player-level defensive
+record visible for the first time.
+
+### Why `rank` is on the row
+
+A match of 3 reaches the FRONT rank, so the front Fighter absorbs
+disproportionate damage by design. Survivability compared across positions is
+mostly measuring position. Store it and the comparison can be made fairly.
+
+### Why `dealt` is on the row
+
+Survival is a proxy for contribution. `dealt` is contribution. A Fighter that
+survived a win by doing nothing did not carry it either, which is the question
+this whole table exists to answer.
+
+### The crew outcome is NOT stored
+
+It is `dhc_arena_battles.outcome` joined against `side`: outcome 1 means the
+attacker won, 2 the defender. Denormalising it would be a second copy of a
+fact that can disagree with the first.
+
 ## Why the daily allowance and the per-opponent limit need no columns
 
 Both are counted from `dhc_arena_battles` against `CURDATE()`, the same way the
