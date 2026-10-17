@@ -534,6 +534,9 @@ if ($filterby != "") {
   <div class="mn-cache-sheet">
     <button type="button" class="mn-cache-x" id="mn-cache-close" aria-label="Close">&times;</button>
     <h3 id="mn-cache-title">Saving artwork</h3>
+    <?php /* Always available. A run that cannot be called off is a run
+             somebody has to close the tab to escape. */ ?>
+    <button type="button" class="mn-btn ghost mn-cache-stop" id="mn-cache-stop" hidden>Stop</button>
     <p class="mn-cache-prog" id="mn-cache-prog"></p>
     <div class="mn-cache-bar"><i id="mn-cache-fill"></i></div>
     <div id="mn-cache-out"></div>
@@ -554,6 +557,7 @@ if ($filterby != "") {
   font-size:24px;line-height:1;cursor:pointer;padding:4px 8px}
 .mn-cache-x:hover{color:#e8eaed}
 .mn-cache-prog{margin:0 0 8px;font-size:12px;color:#7a9eb0}
+.mn-cache-stop{position:absolute;top:16px;right:46px;font-size:11px;padding:4px 12px}
 .mn-cache-bar{height:4px;background:#07111d;border-radius:2px;overflow:hidden;margin:0 0 14px}
 .mn-cache-bar i{display:block;height:100%;width:0;background:#00c8a0;transition:width .2s ease}
 .mn-cache-sum{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px}
@@ -577,6 +581,7 @@ if ($filterby != "") {
   var prog  = document.getElementById('mn-cache-prog');
   var fill  = document.getElementById('mn-cache-fill');
   var close = document.getElementById('mn-cache-close');
+  var stopBtn = document.getElementById('mn-cache-stop');
   if (!btn || !veil) return;
 
   function esc(t) {
@@ -619,11 +624,28 @@ if ($filterby != "") {
     var done = 0;
     var tally = { cached: 0, exists: 0, skipped: 0, error: 0 };
     var rows = [];
+    var stopped = false;
+    var streak = 0;        // consecutive failures
 
-    function finish() {
+    /* Stopping is always available. A run that cannot be called off is a run
+       somebody has to close the tab to escape. */
+    stopBtn.hidden = false;
+    stopBtn.onclick = function () { stopped = true; stopBtn.hidden = true; };
+
+    function halt(label, why) {
+      stopped = true;
+      rows.push({ cls: 'bad', label: label, why: why });
+      tally.error++;
+      finish(why);
+    }
+
+    function finish(halted) {
       btn.disabled = false;
+      stopBtn.hidden = true;
       var saved = tally.cached;
-      prog.textContent = 'Finished. ' + saved + ' of ' + ids.length + ' saved.';
+      prog.textContent = (halted ? 'Stopped. ' : (stopped ? 'Stopped. ' : 'Finished. '))
+        + saved + ' of ' + ids.length + ' saved'
+        + (done < ids.length ? ', ' + (ids.length - done) + ' not attempted' : '') + '.';
       var sum = '<div class="mn-cache-sum">'
         + '<span class="ok"><b>' + tally.cached + '</b> saved</span>'
         + (tally.exists  ? '<span><b>' + tally.exists + '</b> already had a copy</span>' : '')
@@ -652,20 +674,43 @@ if ($filterby != "") {
     }
 
     function step() {
+      if (stopped) { finish(); return; }
       if (done >= ids.length) { finish(); return; }
+      /*
+       * THREE FAILURES IN A ROW AND IT STOPS. When a gateway is having a bad
+       * minute every remaining NFT will fail the same way, and grinding
+       * through two dozen of them helps nobody and costs the server two
+       * dozen long requests.
+       */
+      if (streak >= 3) {
+        rows.push({ cls: 'bad', label: 'Stopped',
+                    why: 'Three in a row failed, so the rest were not attempted. '
+                       + 'That usually means the gateways are having a bad moment.' });
+        finish();
+        return;
+      }
       var id = ids[done];
       prog.textContent = 'Saving ' + (done + 1) + ' of ' + ids.length + '\u2026';
 
       var xhr = new XMLHttpRequest();
       xhr.open('POST', 'ajax/cache-nft-image.php', true);
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-      /* Comfortably longer than the endpoint's own 15s cap, so a slow one
-         is reported by the server rather than cut off here with no reason. */
-      xhr.timeout = 25000;
+      /*
+       * LONGER THAN THE SERVER'S OWN CAP, deliberately and by a margin.
+       *
+       * At 25s against a server that could run past it, the browser gave up
+       * on live work and started more -- which is how a serial loop
+       * saturated PHP-FPM. The client must be the LAST thing to give up, so
+       * that in normal operation the server always answers first and the
+       * worker is freed before the next request goes out. A timeout here now
+       * means something is genuinely wrong, which is why it halts the run.
+       */
+      xhr.timeout = 40000;
 
       function record(status, label, why, url) {
         if (tally[status] === undefined) tally.error++; else tally[status]++;
         var cls = (status === 'cached' || status === 'exists') ? 'ok' : 'bad';
+        streak = (cls === 'ok') ? 0 : streak + 1;
         rows.push({ cls: cls, label: label, why: why });
         if (url) {
           /* Swap the picture in immediately -- the point of the exercise,
@@ -699,8 +744,25 @@ if ($filterby != "") {
                  d.message || 'Could not be saved.');
         }
       };
-      xhr.onerror   = function () { record('error', nameFor(id), 'The request did not reach the server.'); };
-      xhr.ontimeout = function () { record('error', nameFor(id), 'Timed out waiting for a gateway.'); };
+      /*
+       * A REQUEST THAT DID NOT ANSWER STOPS THE RUN. It does not advance it.
+       *
+       * This is the bug that mattered. record() moves to the next NFT, and
+       * calling it from ontimeout meant the browser gave up on a request the
+       * SERVER WAS STILL WORKING ON and immediately started another. Thirteen
+       * timeouts left thirteen requests running at once -- the exact pile-up
+       * that took the site down when broken images used to call this endpoint
+       * by themselves, arrived at through the back door of my own timeout.
+       *
+       * Abandoning a request tells us nothing about whether it is finished.
+       * The only safe reading is that work is still in flight, so the run
+       * halts and says so rather than adding to it.
+       */
+      xhr.onerror   = function () { halt(nameFor(id), 'The request did not reach the server.'); };
+      xhr.ontimeout = function () {
+        halt(nameFor(id), 'The server did not answer in ' + (xhr.timeout / 1000)
+           + 's. It may still be working on this one, so the rest were not started.');
+      };
       xhr.send('nft_id=' + encodeURIComponent(id));
     }
 

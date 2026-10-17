@@ -76,6 +76,72 @@ ok(strpos($run, 'Promise.all') === false, 'nothing is run in parallel');
 ok(strpos($run, 'btn.disabled = true') !== false, 'the button disables while it runs');
 ok(strpos($run, 'btn.disabled = false') !== false, '...and comes back afterwards');
 
+echo "\n-- A TIMEOUT STOPS THE RUN. It must never advance it. --\n";
+/*
+ * THIS ONE TOOK THE SITE DOWN, so it is the assertion that matters most in
+ * this file.
+ *
+ * record() moves to the next NFT. Calling it from ontimeout meant the
+ * browser abandoned a request THE SERVER WAS STILL WORKING ON and
+ * immediately started another: thirteen timeouts left thirteen requests
+ * running at once, PHP-FPM ran out of workers, and the site answered 503.
+ * The loop was serial only while the server kept up.
+ *
+ * Abandoning a request says nothing about whether it finished, so the only
+ * safe reading is that work is still in flight -- halt, and say so.
+ */
+ok(strpos($run, 'xhr.ontimeout') !== false, 'a timeout is handled');
+ok(preg_match('/ontimeout\s*=\s*function[^}]*halt\(/s', $run),
+   'and it HALTS');
+ok(!preg_match('/ontimeout\s*=\s*function[^}]*record\(/s', $run),
+   '...it does not record-and-continue, which is what piled requests up');
+ok(preg_match('/onerror\s*=\s*function[^}]*halt\(/s', $run),
+   'a request that never arrived halts too');
+ok(strpos($run, 'function halt(') !== false, 'halt exists');
+ok(preg_match('/function halt\([^)]*\)\s*\{[^}]*stopped = true;/s', $run),
+   'and it sets the stop flag rather than calling step()');
+ok(!preg_match('/function halt\([^)]*\)\s*\{[^}]*step\(\);/s', $run),
+   '...never step()');
+ok(strpos($run, 'if (stopped) { finish(); return; }') !== false,
+   'and step() refuses to run once stopped');
+
+echo "\n-- the client is the LAST thing to give up --\n";
+/* If the browser can time out before the server finishes, abandoning is
+   possible at all. It must not be, in normal operation. */
+preg_match('/xhr\.timeout = (\d+);/', $run, $ct);
+$client_ms = $ct ? (int)$ct[1] : 0;
+$ep2 = file_get_contents(__DIR__ . '/ajax/cache-nft-image.php');
+preg_match('/set_time_limit\((\d+)\)/', $ep2, $sl);
+$server_s = $sl ? (int)$sl[1] : 0;
+preg_match('/^\s*(\d+)\s*\/\/ max_fetch_seconds/m', $ep2, $mf);
+$fetch_s = $mf ? (int)$mf[1] : 0;
+ok($client_ms > 0 && $server_s > 0, "both caps are readable (client {$client_ms}ms, server {$server_s}s)");
+ok($client_ms > $server_s * 1000,
+   "the browser waits longer than the server's cap ({$client_ms}ms > {$server_s}000ms)");
+ok($fetch_s > 0 && $fetch_s < $server_s,
+   "and the fetch budget sits inside it ({$fetch_s}s < {$server_s}s)");
+
+echo "\n-- the server keeps a budget it can actually enforce --\n";
+/* set_time_limit does not count time outside PHP, so neither curl nor
+   Imagick was ever bounded by it. */
+$icl = harness_strip_comments(file_get_contents(__DIR__ . '/lib/image-cache-lib.php'));
+ok(strpos($icl, '$_fetch_started = microtime(true);') !== false,
+   'the library times its own fetch');
+ok(strpos($icl, 'microtime(true) - $_fetch_started) > $budget') !== false,
+   'and checks the budget BEFORE starting Imagick, which set_time_limit cannot bound');
+$ii = strpos($icl, '> $budget');
+$ij = strpos($icl, 'new Imagick()', $ii);
+ok($ii !== false && $ij !== false && $ii < $ij, 'the check comes first');
+ok(strpos(substr($icl, $ii, $ij - $ii), 'file_put_contents') !== false,
+   'and it still writes the bytes rather than giving up -- an unresized copy beats none');
+
+echo "\n-- and it can always be called off --\n";
+ok(strpos($src, 'id="mn-cache-stop"') !== false, 'there is a stop button');
+ok(strpos($run, 'stopBtn.hidden = false;') !== false, 'shown while a run is going');
+ok(strpos($run, 'stopped = true; stopBtn.hidden = true;') !== false, 'and it stops the run');
+ok(strpos($run, 'streak >= 3') !== false,
+   'three consecutive failures also stop it, rather than grinding through two dozen');
+
 echo "\n-- every outcome the endpoint can return is reported --\n";
 /* The endpoint's own statuses, from lib/image-cache-lib.php's contract. */
 foreach (array('cached', 'exists', 'skipped', 'error') as $st) {

@@ -18,10 +18,30 @@ require_once __DIR__ . '/../lib/image-cache-lib.php';
 
 header('Content-Type: application/json');
 
-// Hard cap so a single request can't hang a PHP-FPM worker on a slow gateway.
-// Means some 4everland-style recoveries won't finish in time — that's OK, next
-// visitor tries again after the in-memory lock expires.
-set_time_limit(15);
+/*
+ * TIME BUDGET.
+ *
+ * This was 15 seconds with a 12-second fetch, sized for the old caller: an
+ * image that failed to load kicking this off by itself, where nobody was
+ * waiting and giving up early cost nothing.
+ *
+ * The caller now is a person who pressed a button and is watching a progress
+ * bar, and the two parts of the work do not share a clock. The gateway race
+ * is bounded by max_fetch_seconds below; what follows it is Imagick, which
+ * is unbounded -- a LANCZOS resize of a large PNG, or coalescing an animated
+ * GIF frame by frame, both take real time after the fetch is already done.
+ * At 15s the script was still working when the browser gave up, so the
+ * failure reported was the client's generic timeout rather than whatever the
+ * server would have said.
+ *
+ * set_time_limit also does not count time spent outside PHP on Linux, so it
+ * never cut the curl or the Imagick work off anyway -- it was not the cap it
+ * looked like.
+ *
+ * Holding a worker longer is the cost. It is bounded: the page sends these
+ * strictly one at a time, so a staker occupies one worker, not twenty-four.
+ */
+set_time_limit(30);
 
 // ── IP-based rate limit ──────────────────────────────────────────────────────
 // 30 requests / 60s per IP. File holds newline-separated unix timestamps,
@@ -75,6 +95,7 @@ if (!$row) {
 }
 
 // ── Run the cache attempt ────────────────────────────────────────────────────
+$t0 = microtime(true);
 try {
     $result = cacheNFTImage(
         (string) $row['ipfs'],
@@ -84,8 +105,11 @@ try {
         false,    // not verbose — no stdout in web context
         0,
         null,
-        12        // max_fetch_seconds — leaves headroom for Imagick + network
-                  // inside the client's 20s AJAX timeout
+        18        // max_fetch_seconds, a budget the race ACTUALLY honours.
+                  // Several CIDs that failed at 12s are slow rather than
+                  // gone, and somebody is watching this one. Chosen so the
+                  // fetch plus a heavy Imagick pass still lands inside the
+                  // browser's 40s, with room spare.
     );
 } catch (Throwable $e) {
     ob_clean();
@@ -96,16 +120,22 @@ try {
 $conn->close();
 ob_clean();
 
+/* How long it took, so a caller can tell a slow success from a fast one and
+   show why a run felt long. */
+$ms = (int)round((microtime(true) - $t0) * 1000);
+
 if (in_array($result['status'], ['cached', 'exists'], true) && !empty($result['url'])) {
     echo json_encode([
         'success' => true,
         'status'  => $result['status'],
         'url'     => $result['url'],
+        'ms'      => $ms,
     ]);
 } else {
     echo json_encode([
         'success' => false,
         'status'  => $result['status'],
         'message' => $result['message'] ?: 'Unable to cache image.',
+        'ms'      => $ms,
     ]);
 }

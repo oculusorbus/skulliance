@@ -205,6 +205,7 @@ function _doCacheFetch(
         );
     }
 
+    $_fetch_started = microtime(true);
     $body         = false;
     $content_type = '';
     $http_code    = 0;
@@ -263,6 +264,33 @@ function _doCacheFetch(
     }
 
     $filepath = $dir . $md5 . '.' . $ext;
+
+    /*
+     * A BUDGET THE SERVER CAN ACTUALLY KEEP.
+     *
+     * set_time_limit() does not count time spent outside PHP on Linux, so it
+     * never bounded either half of this: not the curl race, and not Imagick,
+     * which is C and can spend a long time on a LANCZOS resize or coalescing
+     * an animated GIF frame by frame. A request that looked capped at 15
+     * seconds could run far past it, and a caller that gave up at 25 left it
+     * running while starting another -- which is how a strictly serial loop
+     * managed to saturate PHP-FPM.
+     *
+     * So when a budget was given and the fetch has already spent it, the
+     * bytes are written as they came rather than starting work with no
+     * ceiling. An unresized copy is a worse cache entry and a much better
+     * outcome than an unbounded one: it is on disk, it loads locally, and
+     * the nightly pass -- which has no caller waiting and a 45s budget --
+     * will replace it properly.
+     */
+    if ($web_mode && (microtime(true) - $_fetch_started) > $budget) {
+        if (file_put_contents($filepath, $body) !== false) {
+            return ['status' => 'cached', 'url' => $web_base . '.' . $ext,
+                    'message' => $emit("[CACHED] $filepath (unresized: fetch used the budget)")];
+        }
+        return ['status' => 'error', 'url' => null,
+                'message' => $emit("[ERROR] Out of time and could not write $filepath")];
+    }
 
     try {
         $imagick = new Imagick();
