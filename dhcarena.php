@@ -950,6 +950,16 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
  */
 .arena-wrap .a-pf-note{font-size:10px;line-height:1.5;opacity:.55;
   margin:0 0 6px;max-width:72ch}
+/*
+ * WHAT THE FILTER ACTUALLY DOES. The handler toggles this class on a card
+ * and nothing else; without a rule the class went on, came off, and the
+ * grid never changed -- the filter looked inert because visually it was.
+ *
+ * Not prefixed a- like the rest of this page's classes, which is why the
+ * harness check for unstyled classes walked straight past it. It reads
+ * classList.toggle() calls now as well as class attributes.
+ */
+.arena-wrap .a-card.pf-hid{display:none}
 .arena-wrap .a-card .st{display:flex;align-items:center;gap:6px;font-size:9.5px;opacity:.75;
   font-variant-numeric:tabular-nums;margin-top:2px}
 .arena-wrap .a-card .st em{font-style:normal;margin-left:auto;width:13px;height:13px}
@@ -1340,14 +1350,35 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         }
         $pfLabels = array('reliable' => 'Reliable', 'even' => 'Even',
                           'risky' => 'Risky', 'winless' => 'Winless', 'unproven' => 'Unproven');
+        /*
+         * A LINE PER LABEL, and only for labels that are on screen.
+         *
+         * The note used to open by defining "Reliable" whatever the roster
+         * looked like. Nobody has five battles yet, so the only chips
+         * offered are Winless and Unproven and the explanation led with a
+         * word that was nowhere on the page. Built from $pfCounts, it
+         * describes what is there and grows into the rest as the ledger
+         * fills up.
+         */
+        $pfWhat = array(
+          'reliable' => 'Reliable survives most of the battles its Crew wins',
+          'even'     => 'Even survives about half of them',
+          'risky'    => 'Risky falls in more than half',
+          'winless'  => 'Winless has not won one yet',
+          'unproven' => 'Unproven has fought fewer than ' . DHCA_PROFILE_MIN
+                      . ', too few to tell',
+        );
+        $pfNote = array();
+        foreach ($pfWhat as $k => $txt) if (!empty($pfCounts[$k])) $pfNote[] = $txt;
       ?>
       <?php if (count($pfCounts) > 1): ?>
       <?php /* The explanation comes BEFORE the controls it explains, and
                outside the row: it is prose about the filters, not one of
                them, and sitting last in a flex row it read as a very large
                final chip. */ ?>
-      <p class="a-pf-note">Reliable means it survives most of the battles its Crew wins.
-        A Fighter at the front is hit far more often, so read the position in the tooltip.</p>
+      <p class="a-pf-note"><?php echo htmlspecialchars(implode('. ', $pfNote)); ?>.
+        A Fighter at the front is hit far more often than one at the back, so read
+        the position in the tooltip alongside this.</p>
       <div class="a-pf-filter" id="aPfFilter">
         <button type="button" class="on" data-pf="">All <b><?php echo count($crew); ?></b></button>
         <?php foreach ($pfLabels as $k => $lbl): if (empty($pfCounts[$k])) continue; ?>

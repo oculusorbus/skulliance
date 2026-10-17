@@ -1152,8 +1152,9 @@ $csCss = preg_replace('~/\*.*?\*/~s', '', $csCss);
 $csok($csCss !== '', 'the page has a stylesheet to check against');
 $csok(strpos($csCss, 'shipped with no CSS') === false, 'and its comments are stripped from it');
 
-preg_match_all('/class=[\'"]([^\'"<]*)[\'"]/', $csSrc, $cm);
 $csUsed = array();
+/* From the markup. */
+preg_match_all('/class=[\'"]([^\'"<]*)[\'"]/', $csSrc, $cm);
 foreach ($cm[1] as $attr) {
 	foreach (preg_split('/\s+/', $attr) as $c) {
 		$c = trim($c);
@@ -1161,7 +1162,24 @@ foreach ($cm[1] as $attr) {
 		$csUsed[$c] = true;
 	}
 }
-$csok(count($csUsed) > 10, "found this page's own classes (" . count($csUsed) . ')');
+/*
+ * AND FROM THE SCRIPT, which is where the one that mattered came from.
+ *
+ * The reliability filter works by toggling pf-hid on a card. That class had
+ * no rule, so it went on, came off, and the grid never changed -- the filter
+ * looked inert because visually it was. It never appeared in a class
+ * attribute, and it is not a- prefixed, so a check that read only markup and
+ * only a- names walked straight past the live bug while reporting the page
+ * clean.
+ *
+ * A class a script toggles is exactly the kind that has no markup to notice
+ * it is missing from.
+ */
+preg_match_all('/classList\.(?:toggle|add)\(\s*[\'"]([a-z0-9_-]+)[\'"]/i', $csSrc, $jm);
+foreach ($jm[1] as $c) $csUsed[$c] = true;
+$csok(count($jm[1]) > 0, 'found classes the script toggles (' . count($jm[1]) . ')');
+$csok(isset($csUsed['pf-hid']), "including pf-hid, the one that was missed");
+$csok(count($csUsed) > 10, "classes this page is responsible for (" . count($csUsed) . ')');
 $csUnstyled = array();
 foreach (array_keys($csUsed) as $c) {
 	if (strpos($csCss, '.' . $c) === false) $csUnstyled[] = $c;
