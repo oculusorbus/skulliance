@@ -105,7 +105,7 @@ include 'header.php';
      nothing at all. A var() with no fallback referring to a token the
      component does not own is silent, which is what makes it worth a test. */
   --ink:#07111d;--panel:#0a1929;--line:#1b3346;--dim:#7a9eb0;--ochre:#00c8a0;
-  --blood:#e0466b;--bone:#e8eaed}
+  --blood:#e0466b;--bone:#e8eaed;--panel2:#0d1e2e}
 .riv-wrap h1{font-family:"Archivo Black",Impact,sans-serif;font-weight:400;margin:0;font-size:22px}
 /*
  * ONE HEADER ROW. The title, the blurb and the window buttons were three
@@ -260,13 +260,26 @@ include 'header.php';
 .riv-vs th{text-align:left;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
   opacity:.45;font-weight:400;padding:0 8px 6px 0}
 .riv-vs td{padding:5px 8px 5px 0;border-top:1px solid var(--line);vertical-align:middle}
-.riv-vs td.r{text-align:right;font-variant-numeric:tabular-nums}
+/*
+ * ALIGNMENT BELONGS TO THE COLUMN, so the rule names both cell types.
+ *
+ * The markup already marked the numeric headers .r and only td.r was
+ * right-aligned, so every heading sat hard left above a column of
+ * right-aligned figures -- BATTLES floating over nothing while its numbers
+ * lined up four columns away. The header was carrying the right
+ * information and the stylesheet was only listening to half of it.
+ */
+.riv-vs td.r, .riv-vs th.r{text-align:right}
+.riv-vs td.r{font-variant-numeric:tabular-nums}
 .riv-vs .who{display:flex;align-items:center;gap:8px}
 .riv-vs .who img{width:26px;height:26px;border-radius:50%;background:#050c14}
 .riv-vs .won{color:var(--ochre)} .riv-vs .lost{color:var(--blood)}
 /* The full roster, including the Fighters the map had no room to draw. */
 .riv-crew{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
-.riv-fig{background:#050c14;border:1px solid var(--line);border-radius:4px;padding:8px;
+/* --panel2, the platform's raised-surface colour, not the map's ground.
+   #050c14 is the deep backdrop the graph is drawn on; borrowed for a tile
+   sitting on a panel it reads as a black hole punched in the sheet. */
+.riv-fig{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:8px;
   cursor:pointer;text-align:center;font:inherit;color:inherit}
 .riv-fig:hover{border-color:var(--ochre)}
 /* DISPLAY:BLOCK, because it is a <span>. An inline box ignores width,
@@ -283,7 +296,7 @@ include 'header.php';
  * dhcgallery.php frames it exactly this way -- aspect-ratio:1, no radius.
  */
 .riv-fig .art{display:block;position:relative;width:100%;aspect-ratio:1;margin:0 0 6px;
-  overflow:hidden;background:var(--panel2,#0d1e2e)}
+  overflow:hidden;background:var(--ink)}
 .riv-fig .art img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .riv-fig .nm{display:block;font-size:10px;line-height:1.3;word-break:break-word}
 .riv-fig .st{display:block;font-size:9px;opacity:.6;margin-top:2px;font-variant-numeric:tabular-nums}

@@ -1075,6 +1075,25 @@ console.log('\n-- clicking a Fighter opens the COLLECTION\'s panel --');
      which is the one worth reading. */
   ok(html.indexOf('<div class="riv-vswrap"><table class="riv-vs">') > -1,
      'the rivalries table is wrapped in its own horizontal scroller');
+  /*
+   * A COLUMN'S HEADING LINES UP WITH ITS FIGURES. The markup marks the
+   * numeric columns .r in BOTH the header and the body, and only td.r was
+   * right-aligned -- so every heading sat hard left above a column of
+   * right-aligned numbers. Whatever the markup marks, the stylesheet has to
+   * treat the same way in both rows.
+   */
+  const vsPhp = fs.readFileSync(path.join(__dirname, 'rivalries.php'), 'utf8');
+  const vsCss = vsPhp.slice(vsPhp.indexOf('<style>'), vsPhp.indexOf('</style>'))
+                     .replace(/\/\*[\s\S]*?\*\//g, '');
+  const hdrR = (html.match(/<th class="r">/g) || []).length;
+  const cellR = (html.match(/<td class="r[^"]*">/g) || []).length;
+  ok(hdrR > 0 && cellR > 0, `the markup marks both headers and cells .r (${hdrR}/${cellR})`);
+  ok(/\.riv-vs th\.r[^{]*\{[^}]*text-align\s*:\s*right|text-align\s*:\s*right[^}]*\}/.test(
+       (vsCss.match(/[^}]*\.riv-vs th\.r[^{]*\{[^}]*\}/) || [''])[0]),
+     'and the stylesheet right-aligns the headers too, not only the cells');
+  /* The two must not be stated separately, or one can be changed alone. */
+  ok(/\.riv-vs td\.r,\s*\.riv-vs th\.r\s*\{/.test(vsCss),
+     'stated once for both, so the column cannot end up half-aligned');
   ok((html.match(/<\/table><\/div>/g) || []).length === 1, 'and the wrapper is closed');
 
   /* Every rival, from this player's side of the pair. */

@@ -879,6 +879,33 @@ function dhcf_board_html($rows) {
     if (shell) shell.scrollIntoView({ block: 'start' });
   }
 
+  /*
+   * LAND ON THE ANCHOR, AND STILL BE THERE AFTER THE PAGE SETTLES.
+   *
+   * The DHC strip's mobile Games chip points at dhcfighters.php#drops, and
+   * arriving from another page left you at the top of the roster instead of
+   * at the panel. The browser applies a hash once, early, against whatever
+   * height the document has at that moment -- anything that grows above the
+   * target afterwards carries it out from under you.
+   *
+   * This is a MITIGATION, not a diagnosis: I could not reproduce it from
+   * here, so rather than guess at which element grows, the target is simply
+   * re-found once the page has finished loading. Costs nothing when the
+   * browser already got it right, since scrolling to where you already are
+   * is a no-op.
+   */
+  (function () {
+    var hash = window.location.hash;
+    if (!hash || hash.length < 2) return;
+    var el;
+    /* A hash is user-controllable and need not be a valid selector. */
+    try { el = document.querySelector(hash); } catch (e) { return; }
+    if (!el) return;
+    var land = function () { el.scrollIntoView({ block: 'start' }); };
+    land();
+    window.addEventListener('load', land);
+  })();
+
   var rgrid = document.querySelector('.dhcf-roster');
   var rsort = document.getElementById('dhcfSort');
   var SORT_KEY = 'dhcf.roster.sort';
