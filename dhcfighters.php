@@ -879,33 +879,6 @@ function dhcf_board_html($rows) {
     if (shell) shell.scrollIntoView({ block: 'start' });
   }
 
-  /*
-   * LAND ON THE ANCHOR, AND STILL BE THERE AFTER THE PAGE SETTLES.
-   *
-   * The DHC strip's mobile Games chip points at dhcfighters.php#drops, and
-   * arriving from another page left you at the top of the roster instead of
-   * at the panel. The browser applies a hash once, early, against whatever
-   * height the document has at that moment -- anything that grows above the
-   * target afterwards carries it out from under you.
-   *
-   * This is a MITIGATION, not a diagnosis: I could not reproduce it from
-   * here, so rather than guess at which element grows, the target is simply
-   * re-found once the page has finished loading. Costs nothing when the
-   * browser already got it right, since scrolling to where you already are
-   * is a no-op.
-   */
-  (function () {
-    var hash = window.location.hash;
-    if (!hash || hash.length < 2) return;
-    var el;
-    /* A hash is user-controllable and need not be a valid selector. */
-    try { el = document.querySelector(hash); } catch (e) { return; }
-    if (!el) return;
-    var land = function () { el.scrollIntoView({ block: 'start' }); };
-    land();
-    window.addEventListener('load', land);
-  })();
-
   var rgrid = document.querySelector('.dhcf-roster');
   var rsort = document.getElementById('dhcfSort');
   var SORT_KEY = 'dhcf.roster.sort';
@@ -948,6 +921,126 @@ function dhcf_board_html($rows) {
   }
 
   rpaint();
+
+  /*
+   * LAND ON THE ANCHOR, AND STILL BE THERE AFTER THE PAGE SETTLES.
+   *
+   * The DHC strip's mobile Games chip points at dhcfighters.php#drops, and
+   * arriving from another page left you at the top of the page instead of at
+   * the panel. The first attempt at this was honest about being a mitigation
+   * rather than a diagnosis -- I could not reproduce it. Here is the
+   * diagnosis, and it is an ORDERING BUG, which is why it only ever happened
+   * to some people.
+   *
+   * The server renders EVERY roster card. rpaint() then hides all but one
+   * page of 20 (.dhcf-card.off{display:none}), and it runs HERE, well after
+   * the old landing code ran further up this same script. So the landing
+   * measured a document containing the whole roster, scrolled down to where
+   * #drops was in THAT document, and then rpaint() deleted most of the
+   * height above it -- the browser clamps scrollTop to the new maximum and
+   * you arrive at the top.
+   *
+   * With 20 Fighters or fewer nothing is hidden, nothing shrinks, and the
+   * anchor works. That is exactly why it reproduced for a player with a deep
+   * roster and not for me.
+   *
+   * So: land AFTER rpaint(), and then keep landing while the target is still
+   * moving, because the roster art has no intrinsic size and each image that
+   * resolves adds height above the panel. Bounded, and ABANDONED THE MOMENT
+   * THE READER SCROLLS -- a retry loop that fights the person reading the
+   * page is worse than the bug it fixes.
+   */
+  (function () {
+    var hash = window.location.hash;
+    if (!hash || hash.length < 2) return;
+    var el;
+    /* A hash is user-controllable and need not be a valid selector. */
+    try { el = document.querySelector(hash); } catch (e) { return; }
+    if (!el) {
+      /* "The hash was there and the panel was not" is a completely different
+         bug from "the scroll was undone", and telling them apart is the
+         whole point of the readout. */
+      if (window.location.search.indexOf('landdebug=1') > -1) {
+        var miss = document.createElement('div');
+        miss.setAttribute('style', 'position:fixed;left:6px;right:6px;bottom:6px;z-index:99999;'
+          + 'background:#07111d;border:1px solid #e0705f;color:#e0705f;font:11px ui-monospace,'
+          + 'monospace;padding:8px;border-radius:3px');
+        miss.textContent = 'hash ' + JSON.stringify(hash) + ' but no element matches it';
+        document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(miss); });
+      }
+      return;
+    }
+
+    var done = false, until = Date.now() + 2000;
+    function stop() { done = true; }
+    /* Only a scroll the READER started counts. Our own scrollIntoView also
+       fires scroll events, so the flag is set around each one. */
+    var ours = false;
+    window.addEventListener('wheel', stop, { passive: true });
+    window.addEventListener('touchstart', stop, { passive: true });
+    window.addEventListener('keydown', stop);
+    window.addEventListener('scroll', function () { if (!ours) stop(); }, { passive: true });
+
+    function land() {
+      if (done) return;
+      /* Correct only when it has actually drifted, so a frame where nothing
+         moved costs one getBoundingClientRect and no scroll. */
+      if (Math.abs(el.getBoundingClientRect().top) > 2) {
+        ours = true;
+        el.scrollIntoView({ block: 'start' });
+        /* Cleared after the scroll event this generates has been dispatched. */
+        setTimeout(function () { ours = false; }, 0);
+      }
+      /* NO EARLY EXIT ON "it looks right now". The whole failure mode is a
+         layout that is correct at one moment and not at the next, so
+         stopping the moment it looks settled is stopping exactly when the
+         old version did. It runs to the deadline, or until the reader takes
+         over -- about 120 frames of one rect read, which is nothing. */
+      if (Date.now() < until) requestAnimationFrame(land);
+      else stop();
+    }
+    land();
+    /* The watch does NOT depend on this firing: if load has already gone by
+       the time this script runs, the rAF loop above still corrects. That is
+       the difference from the previous version, whose only correction was
+       this listener. */
+    window.addEventListener('load', function () {
+      if (done) return;
+      until = Math.max(until, Date.now() + 400);
+      requestAnimationFrame(land);
+    });
+
+    /*
+     * ?landdebug=1 PRINTS WHAT HAPPENED, because this is the third attempt
+     * at this bug and the first two were reasoned from the source and
+     * shipped wrong. It only ever reproduced on somebody else's phone, and
+     * a phone is where a console is least reachable, so the readout goes on
+     * the page.
+     *
+     * Nothing renders without the parameter, and it reports only geometry.
+     */
+    if (window.location.search.indexOf('landdebug=1') > -1) {
+      var dbg = document.createElement('div');
+      dbg.setAttribute('style', 'position:fixed;left:6px;right:6px;bottom:6px;z-index:99999;'
+        + 'background:#07111d;border:1px solid #2a4a63;color:#c7d3dc;font:11px/1.45 ui-monospace,'
+        + 'monospace;padding:8px;border-radius:3px;white-space:pre-wrap');
+      document.body.appendChild(dbg);
+      var t0 = Date.now();
+      (function tick() {
+        dbg.textContent =
+            'hash ' + JSON.stringify(window.location.hash)
+          + '\ntarget found: yes'
+          + '\nscrollY ' + Math.round(window.pageYOffset)
+          + '  panel top ' + Math.round(el.getBoundingClientRect().top)
+          + '\ndoc height ' + document.documentElement.scrollHeight
+          + '  viewport ' + window.innerHeight
+          + '\nroster cards ' + document.querySelectorAll('.dhcf-card').length
+          + ' of which hidden ' + document.querySelectorAll('.dhcf-card.off').length
+          + '\nwatch ' + (done ? 'stopped' : 'running') + '  t+' + (Date.now() - t0) + 'ms';
+        if (Date.now() - t0 < 8000) setTimeout(tick, 200);
+      })();
+    }
+  })();
 
   var say = document.getElementById('dhcfSay');
   /*
