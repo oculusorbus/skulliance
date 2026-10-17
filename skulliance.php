@@ -995,7 +995,14 @@ if(isset($_POST['remove_nft_id'])){
 	removeDiamondSkullNFT($conn, $_SESSION['userData']['diamond_skull_id'], $nft_id);
 }
 
-function filterNFTs($page, $username="", $method='post'){
+/*
+ * $selected added last and optional, so showcase.php and the rest are
+ * untouched. Without it the control always reads "Project" even when the
+ * page is filtered -- harmless when it was the only dropdown, misleading
+ * the moment My NFTs puts a collection dropdown beside it showing a real
+ * selection.
+ */
+function filterNFTs($page, $username="", $method='post', $selected=""){
 	global $conn;
 	$core_projects = getProjects($conn, "core");
 	$partner_projects = getProjects($conn, "partner");
@@ -1014,14 +1021,16 @@ function filterNFTs($page, $username="", $method='post'){
 		<label for="filterNFTs"><strong>Filter By:</strong></label>
 		<select onchange="javascript:filterNFTs(this.options[this.selectedIndex].value);" name="filterNFTs" id="filterNFTs">
 			<option value="None">Project</option>
-			<option value="None">All</option>
+			<option value="None"'.(($selected === "" || $selected === "None") ? " selected" : "").'>All</option>
 			<optgroup label="Core Projects">';
 			foreach($core_projects AS $id => $project){
-				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+				$sel = ((string)$selected === (string)$id) ? ' selected' : '';
+				echo '<option value="'.$id.'"'.$sel.'>'.$project["name"].'</option>';
 			}
 			echo '</optgroup><optgroup label="Partner Projects">';
 			foreach($partner_projects AS $id => $project){
-				echo '<option value="'.$id.'">'.$project["name"].'</option>';
+				$sel = ((string)$selected === (string)$id) ? ' selected' : '';
+				echo '<option value="'.$id.'"'.$sel.'>'.$project["name"].'</option>';
 			}
 			echo '</optgroup>';
 		echo '

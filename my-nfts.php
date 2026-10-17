@@ -30,10 +30,39 @@ include 'header.php';
 $mn_user = isset($_SESSION['userData']['user_id']);
 $mn_page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
 $mn_per  = 24;
-$mn_total = $mn_user ? countNFTs($conn, $filterby) : 0;
+/*
+ * ?collection=N -- narrowing WITHIN the chosen project.
+ *
+ * Only meaningful once a project is picked, which is also the only time the
+ * control is offered: the list of collections for "all projects" would be
+ * every collection on the platform, which is the thing paging already is.
+ *
+ * VALIDATED AGAINST WHAT THIS STAKER ACTUALLY HOLDS, not just against the
+ * collections table. An id typed into the address bar for a collection they
+ * own nothing in would otherwise produce an empty grid with a filter chip
+ * naming somebody else's collection.
+ */
+$mn_coll  = isset($_GET['collection']) ? (int)$_GET['collection'] : 0;
+$mn_colls = array();
+$mn_proj  = ($filterby !== "" && $filterby !== "None" && $filterby !== "core") ? (int)$filterby : 0;
+if ($mn_user && $mn_proj > 0) {
+	$uid = (int)$_SESSION['userData']['user_id'];
+	$res = $conn->query(
+		"SELECT c.id, c.name, COUNT(*) AS n
+		   FROM nfts n
+		   INNER JOIN collections c ON c.id = n.collection_id
+		  WHERE n.user_id = $uid AND c.project_id = $mn_proj
+		  GROUP BY c.id, c.name
+		  ORDER BY c.name");
+	if ($res) while ($r = $res->fetch_assoc()) $mn_colls[(int)$r['id']] = $r;
+}
+/* Anything not in that list is dropped rather than obeyed. */
+if ($mn_coll > 0 && !isset($mn_colls[$mn_coll])) $mn_coll = 0;
+
+$mn_total = $mn_user ? countNFTs($conn, $filterby, "", $mn_coll) : 0;
 $mn_pages = (int)ceil($mn_total / $mn_per);
 if ($mn_page > $mn_pages && $mn_pages > 0) $mn_page = $mn_pages;
-$mn_rows = $mn_user ? getNFTsData($conn, $filterby, "", $mn_page, $mn_per) : array();
+$mn_rows = $mn_user ? getNFTsData($conn, $filterby, "", $mn_page, $mn_per, $mn_coll) : array();
 
 /*
  * WHICH OF THESE HAVE A LOCAL COPY, settled before anything is drawn.
@@ -181,7 +210,43 @@ if ($mn_rows) {
                  dropped it straight on top of the figures and clipped
                  them. Neutralised in this page's CSS and placed on
                  purpose instead. */ ?>
-        <?php filterNFTs("my-nfts", "", "get"); ?>
+        <?php /* $filterby passed so the control shows what the page is
+                 actually filtered to, rather than always reading
+                 "Project" beside a collection dropdown that does. */ ?>
+        <?php filterNFTs("my-nfts", "", "get", $filterby); ?>
+        <?php
+          /*
+           * DRILL INTO ONE COLLECTION, once a project is chosen.
+           *
+           * Offered only then: the list for "all projects" is every
+           * collection on the platform, which is the thing paging already
+           * is. And only when there is more than one to choose between --
+           * a project where the staker holds a single collection has
+           * nothing to narrow, and a select with one option is furniture.
+           *
+           * Its own form rather than the shared one in filterNFTs(): that
+           * one posts a single `filterby` and is used by three pages, and
+           * widening it to carry a second field would change all of them
+           * to serve this one. A GET form keeps the result linkable.
+           */
+          if (count($mn_colls) > 1):
+        ?>
+        <div id="mn-collfilter">
+          <label for="mn-coll"><strong>Collection:</strong></label>
+          <form method="get" action="my-nfts.php#holdings" id="mn-collform">
+            <input type="hidden" name="filterby" value="<?php echo htmlspecialchars($filterby); ?>">
+            <select name="collection" id="mn-coll" onchange="this.form.submit()">
+              <option value="0">All <?php echo count($mn_colls); ?> collections</option>
+              <?php foreach ($mn_colls as $cid => $c): ?>
+                <option value="<?php echo (int)$cid; ?>" <?php
+                  echo $mn_coll === (int)$cid ? 'selected' : ''; ?>><?php
+                  echo htmlspecialchars($c['name']) . ' (' . (int)$c['n'] . ')'; ?></option>
+              <?php endforeach; ?>
+            </select>
+            <noscript><input type="submit" value="Go"></noscript>
+          </form>
+        </div>
+        <?php endif; ?>
         <?php if ($mn_user && $mn_total > 0): ?>
         <div class="mn-figures">
           <div class="mn-fig"><b><?php echo number_format($mn_total); ?></b><span>Staking</span></div>
@@ -251,10 +316,13 @@ if ($mn_rows) {
       <?php endforeach; endif; ?>
       </div>
 
-      <?php if ($mn_pages > 1): $fb = urlencode($filterby); ?>
+      <?php if ($mn_pages > 1): $fb = urlencode($filterby);
+            /* The collection rides along, or page 2 silently widens back
+               out to the whole project. */
+            $cq = $mn_coll > 0 ? '&collection=' . $mn_coll : ''; ?>
       <div class="nft-pagination">
         <?php if ($mn_page > 1): ?>
-          <a class="page-btn" href="my-nfts.php?filterby=<?php echo $fb; ?>&page=<?php echo $mn_page-1; ?>">&#8592; Prev</a>
+          <a class="page-btn" href="my-nfts.php?filterby=<?php echo $fb . $cq; ?>&page=<?php echo $mn_page-1; ?>">&#8592; Prev</a>
         <?php else: ?><span class="page-btn disabled">&#8592; Prev</span><?php endif; ?>
         <?php $prev = 0;
           for ($p = 1; $p <= $mn_pages; $p++):
@@ -266,7 +334,7 @@ if ($mn_rows) {
             endif;
           endfor; ?>
         <?php if ($mn_page < $mn_pages): ?>
-          <a class="page-btn" href="my-nfts.php?filterby=<?php echo $fb; ?>&page=<?php echo $mn_page+1; ?>">Next &#8594;</a>
+          <a class="page-btn" href="my-nfts.php?filterby=<?php echo $fb . $cq; ?>&page=<?php echo $mn_page+1; ?>">Next &#8594;</a>
         <?php else: ?><span class="page-btn disabled">Next &#8594;</span><?php endif; ?>
         <div class="page-info">Page <?php echo $mn_page; ?> of <?php echo $mn_pages; ?> &nbsp;(<?php echo number_format($mn_total); ?> NFTs)</div>
       </div>
@@ -343,6 +411,18 @@ if ($mn_rows) {
   text-transform: uppercase; color: #7a9eb0; margin-bottom: 4px; }
 #filter-nfts label strong { font-weight: inherit; }
 #filterNFTs { border-radius: 0; height: 38px; }
+
+/* The collection drill-down, matching the project filter beside it rather
+   than inventing a second look. It appears only when a project is chosen
+   and that project holds more than one of the staker's collections. */
+#mn-collfilter { text-align: left; font-size: 1rem; margin: 0; }
+#mn-collfilter label { display: block; font-size: .64rem; letter-spacing: .05em;
+  text-transform: uppercase; color: #7a9eb0; margin-bottom: 4px; }
+#mn-collfilter label strong { font-weight: inherit; }
+#mn-collfilter form { margin: 0; }
+#mn-coll { border-radius: 0; height: 38px; max-width: 260px; }
+/* (.mn-head-right already wraps -- see above. A second rule saying so is a
+   duplicate that reads as a dependency and is not one.) */
 
 /*
  * THE CARD GRID. The platform gives .nft `width: 25%; float: left` -- a

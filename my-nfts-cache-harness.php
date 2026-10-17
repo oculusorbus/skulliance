@@ -205,5 +205,66 @@ foreach ($shared as $fn => $home) {
 	ok($checked > 0, "found $checked callers of $fn() to check");
 }
 
+echo "\n-- drilling into one collection --\n";
+$db = harness_strip_comments(file_get_contents(__DIR__ . '/db.php'));
+
+/* The filter has to reach the QUERY. Narrowing in PHP after the fact would
+   page wrongly: the pager counts rows the query returned. */
+ok(strpos($db, '$collection_id = 0) {') !== false
+   || strpos($db, '$collection_id = 0){') !== false,
+   'getNFTsData takes a collection, last and optional');
+ok(strpos($db, '$collection_id = 0){') !== false
+   || strpos($db, '$collection_id = 0)') !== false,
+   'and so does countNFTs, or the pager offers pages that are not there');
+ok(substr_count($db, 'nfts.collection_id = " . $coll') === 2,
+   'both queries narrow on it (' . substr_count($db, 'nfts.collection_id = " . $coll') . ')');
+/* WHERE "" . " AND x" is a syntax error, not a filter. */
+ok(substr_count($db, '$lead = ($user_filter !== ""') === 2,
+   'and neither can emit a WHERE that opens with AND');
+ok(strpos($src, 'countNFTs($conn, $filterby, "", $mn_coll)') !== false,
+   'the page counts with the same filter it lists with');
+ok(strpos($src, 'getNFTsData($conn, $filterby, "", $mn_page, $mn_per, $mn_coll)') !== false,
+   '...and lists with it');
+
+echo "\n-- the control only appears when it has something to do --\n";
+ok(strpos($src, 'if (count($mn_colls) > 1):') !== false,
+   'hidden unless the project holds more than one of this staker\'s collections');
+ok(strpos($src, '$mn_proj  = ($filterby !== "" && $filterby !== "None"') !== false,
+   'and the list is only built once a project is chosen');
+ok(strpos($src, 'WHERE n.user_id = $uid AND c.project_id = $mn_proj') !== false,
+   'built from what the staker ACTUALLY HOLDS, not every collection in the project');
+ok(strpos($src, 'if ($mn_coll > 0 && !isset($mn_colls[$mn_coll])) $mn_coll = 0;') !== false,
+   'an id they hold nothing in is dropped rather than obeyed');
+ok(strpos($src, "COUNT(*) AS n") !== false, 'each option carries how many they hold');
+
+echo "\n-- it survives paging and does not strand the other filters --\n";
+ok(strpos($src, "\$cq = \$mn_coll > 0 ? '&collection=' . \$mn_coll : '';") !== false,
+   'the collection rides along in the pager');
+ok(substr_count($src, '$fb . $cq') === 2, 'on both Prev and Next');
+ok(strpos($src, 'name="filterby" value="<?php echo htmlspecialchars($filterby); ?>"') !== false,
+   'and the project survives changing the collection');
+ok(strpos($src, 'method="get"') !== false, 'GET, so a drilled-down view is a link');
+/* Changing the project must NOT keep the old collection -- it belongs to a
+   project it is no longer in. The shared form posts only filterby, which is
+   what makes that true, so it is worth pinning. */
+$sk = file_get_contents(__DIR__ . '/skulliance.php');
+$fi = strpos($sk, 'function filterNFTs(');
+$fj = strpos($sk, "\n}", $fi);
+$ff = substr($sk, $fi, $fj - $fi);
+ok(strpos($ff, 'name="collection"') === false,
+   'the project form carries no collection, so switching project clears it');
+/* Not "the variable is mentioned" -- that stayed true with the parameter
+   dropped and a local set to empty. The options have to actually emit
+   `selected` from a comparison against it. */
+ok(strpos($ff, "\$method='post', \$selected=\"\"") !== false,
+   'filterNFTs takes the current selection, last and optional');
+ok(substr_count($ff, "(string)\$selected === (string)\$id") === 2,
+   'both project groups compare against it (' . substr_count($ff, "(string)\$selected === (string)\$id") . ')');
+ok(substr_count($ff, "' selected'") === 2, "and emit ' selected' when it matches");
+ok(strpos($ff, '($selected === "" || $selected === "None") ? " selected" : ""') !== false,
+   'and "All" is selected when nothing is filtered');
+ok(strpos($src, 'filterNFTs("my-nfts", "", "get", $filterby)') !== false,
+   'which this page passes');
+
 echo "\n" . ($fails ? "$fails FAILED\n" : "all passed\n");
 exit($fails ? 1 : 0);

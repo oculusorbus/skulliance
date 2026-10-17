@@ -4200,7 +4200,16 @@ function getNFTAssetIDs($conn, $blockchain_id = 0){
  * Signature mirrors getNFTs()'s leading arguments on purpose -- a caller
  * swapping one for the other should not have to re-read the parameters.
  */
-function getNFTsData($conn, $filterby = "", $advanced_filter = "", $page = 1, $per_page = 0) {
+/*
+ * $collection_id, added last and defaulting to 0, so every existing caller
+ * is untouched -- the same additive pattern this file already uses for
+ * getItemsData() and the missions reads.
+ *
+ * It narrows WITHIN a project rather than replacing the project filter: My
+ * NFTs offers it only once a project is chosen, and a collection belongs to
+ * exactly one project, so the two can only agree or return nothing.
+ */
+function getNFTsData($conn, $filterby = "", $advanced_filter = "", $page = 1, $per_page = 0, $collection_id = 0) {
 	if (!isset($_SESSION['userData']['user_id'])) return array();
 
 	if ($filterby != "None" && $filterby != "" && $filterby != "core") {
@@ -4220,12 +4229,27 @@ function getNFTsData($conn, $filterby = "", $advanced_filter = "", $page = 1, $p
 	}
 	$and = (($filterby != "None" && $filterby != "") && $user_filter != "") ? " AND " : "";
 
+	/*
+	 * Cast, not escaped: it is an id and nothing else should reach the query.
+	 *
+	 * The leading AND is conditional because there is a combination with no
+	 * preceding condition at all -- advanced_filter 'all' with no project --
+	 * and "WHERE  AND collection_id = 9" is a syntax error, not a filter. No
+	 * caller does that today; the next one would have found out the hard way.
+	 */
+	$coll = (int)$collection_id;
+	$coll_sql = '';
+	if ($coll > 0) {
+		$lead = ($user_filter !== "" || $filterby !== "") ? " AND " : "";
+		$coll_sql = $lead . "nfts.collection_id = " . $coll;
+	}
+
 	$limit = "";
 	if ($per_page > 0) {
 		$offset = (max(1, (int)$page) - 1) * (int)$per_page;
 		$limit = " LIMIT " . (int)$per_page . " OFFSET " . (int)$offset;
 	}
-	$sql = "SELECT asset_id, asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.blockchain_id AS blockchain_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby." ORDER BY FIELD(project_id,6,5,4,3,2,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50), collection_id".$limit;
+	$sql = "SELECT asset_id, asset_name, nfts.name AS nfts_name, ipfs, collection_id, nfts.blockchain_id AS blockchain_id, nfts.id AS nfts_id, collections.rate AS rate, projects.currency AS currency, projects.id AS project_id, projects.name AS project_name, collections.name AS collection_name, users.username AS username FROM nfts INNER JOIN users ON users.id = nfts.user_id INNER JOIN collections ON nfts.collection_id = collections.id INNER JOIN projects ON collections.project_id = projects.id WHERE ".$user_filter.$and.$filterby.$coll_sql." ORDER BY FIELD(project_id,6,5,4,3,2,1,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50), collection_id".$limit;
 	$res = $conn->query($sql);
 	$out = array();
 	if ($res) while ($row = $res->fetch_assoc()) $out[] = $row;
@@ -4386,7 +4410,10 @@ function getNFTs($conn, $filterby="", $advanced_filter="", $diamond_skull=false,
 }
 
 // Count NFTs for pagination (mirrors getNFTs WHERE logic)
-function countNFTs($conn, $filterby="", $advanced_filter=""){
+/* $collection_id last and optional, as getNFTsData() -- showcase.php calls
+   this with three arguments and must keep working. The count has to narrow
+   with the list or the pager offers pages that are not there. */
+function countNFTs($conn, $filterby="", $advanced_filter="", $collection_id = 0){
 	if(!isset($_SESSION['userData']['user_id'])) return 0;
 	if($filterby != "None" && $filterby != "" && $filterby != "core"){
 		$filterby_sql = "project_id = '".$filterby."' ";
@@ -4403,11 +4430,18 @@ function countNFTs($conn, $filterby="", $advanced_filter=""){
 		$user_filter = "nfts.user_id = '".$_SESSION['userData']['user_id']."'";
 	}
 	$and = ($filterby_sql != "" && $user_filter != "") ? " AND " : "";
+	/* Conditional AND, for the same reason as getNFTsData(). */
+	$coll = (int)$collection_id;
+	$coll_sql = '';
+	if ($coll > 0) {
+		$lead = ($user_filter !== "" || $filterby_sql !== "") ? " AND " : "";
+		$coll_sql = $lead . "nfts.collection_id = " . $coll;
+	}
 	$sql = "SELECT COUNT(*) AS total FROM nfts
 		INNER JOIN users ON users.id = nfts.user_id
 		INNER JOIN collections ON nfts.collection_id = collections.id
 		INNER JOIN projects ON collections.project_id = projects.id
-		WHERE ".$user_filter.$and.$filterby_sql;
+		WHERE ".$user_filter.$and.$filterby_sql.$coll_sql;
 	$result = $conn->query($sql);
 	if($result && $row = $result->fetch_assoc()){
 		return (int)$row['total'];
