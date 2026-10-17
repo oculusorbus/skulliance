@@ -126,8 +126,9 @@ const rivSrc = fs.readFileSync(path.join(__dirname, 'rivalries.js'), 'utf8');
  * tests could not tell. 160px of page above, a 20px legend and a 44px note
  * below, in a 900px window.
  */
-const FIT = { top: 160, legend: 20, note: 44, winH: 900, pad: 14, box: 18, gap: 6 };
-function draw(layout, winH) {
+const FIT = { top: 160, legend: 20, note: 44, winH: 900, pad: 14, box: 18, gap: 6,
+              boxW: 1600, boxPadX: 8 };
+function draw(layout, winH, boxW) {
   const host = makeEl('div');
   host.closest = () => null;
   host._top = FIT.top;
@@ -138,6 +139,8 @@ function draw(layout, winH) {
   /* The box's own padding and border sit between its edge and the drawing,
      so the room it is given is not the room the drawing gets. */
   host._boxPad = FIT.box / 2 - 1; host._boxBorder = 1;
+  /* The box's inner width, so the fit can tell which axis runs out first. */
+  host.clientWidth = boxW || FIT.boxW;
   const legend = makeEl('p'); legend.offsetHeight = FIT.legend;
   const note   = makeEl('p'); note.offsetHeight   = FIT.note;
   host.nextElementSibling = legend;
@@ -156,6 +159,8 @@ function draw(layout, winH) {
         paddingTop: ((el && el._boxPad) || 0) + 'px',
         borderTopWidth: ((el && el._boxBorder) || 0) + 'px',
         borderBottomWidth: ((el && el._boxBorder) || 0) + 'px',
+        paddingLeft: ((el && el._boxPad !== undefined) ? FIT.boxPadX : 0) + 'px',
+        paddingRight: ((el && el._boxPad !== undefined) ? FIT.boxPadX : 0) + 'px',
       };
     },
   };
@@ -430,24 +435,61 @@ console.log('\n-- the map fits the room actually left in the window --');
  * answer is bounded.
  */
 {
-  const mh = svg.style.maxHeight;
-  ok(!!mh, `the map sets its own max height (${mh})`);
-  ok(/^\d+px$/.test(mh), `and it carries its unit (${mh})`);
-  const px = parseFloat(mh);
-  /* Window less what is above the map, less the legend and the note below it,
-     less a small gap. Each term distinct, so dropping any one shows up. */
-  const want = FIT.winH - FIT.top - FIT.legend - FIT.note - FIT.pad - FIT.box - FIT.gap;
-  ok(px === want, `it takes exactly the room left (${px}, wanted ${want})`);
-  ok(px < FIT.winH - FIT.top, 'which is less than everything below the header');
-  ok(px < FIT.winH - FIT.legend - FIT.note, 'and less than the window minus the footer');
+  /*
+   * THE MAP FILLS THE ROOM, UP OR DOWN. It used to be capped and never
+   * enlarged, on the theory that blowing a drawing up coarsens it -- true of
+   * a photograph, false here. The canvas is sized to its own ink, so a quiet
+   * month draws a small one, and a cap did nothing for it: the live page sat
+   * with 300px of nothing under the legend and a postage-stamp map above it.
+   */
+  const w = parseFloat(svg.style.width), h = parseFloat(svg.style.height);
+  ok(/^\d+px$/.test(svg.style.width) && /^\d+px$/.test(svg.style.height),
+     `both axes are set with units (${svg.style.width} x ${svg.style.height})`);
+  const availH = FIT.winH - FIT.top - FIT.legend - FIT.note - FIT.pad - FIT.box - FIT.gap;
+  const availW = FIT.boxW - FIT.boxPadX * 2;
+  const natW = parseFloat(svg.attrs.width), natH = parseFloat(svg.attrs.height);
+  ok(natH < availH, `the natural canvas is SHORTER than the room (${natH} < ${availH}), so this tests upscaling`);
+  const scale = Math.min(availW / natW, availH / natH);
+  ok(scale > 1, `which means it must scale UP (x${scale.toFixed(2)})`);
+  ok(Math.abs(h - Math.floor(natH * scale)) <= 1, `height fills the room (${h}, wanted ${Math.floor(natH * scale)})`);
+  ok(Math.abs(w - Math.floor(natW * scale)) <= 1, `width scaled to match (${w})`);
+  /* Aspect preserved, or the map is stretched. */
+  ok(Math.abs((w / h) - (natW / natH)) < 0.01,
+     `the aspect ratio is preserved (${(w / h).toFixed(3)} vs ${(natW / natH).toFixed(3)})`);
+  ok(h <= availH + 1, `and it does not exceed the room (${h} <= ${availH})`);
+  ok(w <= availW + 1, `nor the column (${w} <= ${availW})`);
+
+  /*
+   * A NARROW COLUMN, where the WIDTH runs out first.
+   *
+   * In the wide case above the height binds, so every width term could be
+   * deleted and the answer stayed right -- dropping the width axis entirely,
+   * and ignoring the box's side padding, both passed. Which axis binds has
+   * to be exercised both ways or half the calculation is untested.
+   */
+  const NARROW = 500;
+  const narrow = draw(LAYOUTS.busy, undefined, NARROW);
+  const nsvg = narrow.children[0];
+  const nw = parseFloat(nsvg.style.width), nh = parseFloat(nsvg.style.height);
+  const nNatW = parseFloat(nsvg.attrs.width), nNatH = parseFloat(nsvg.attrs.height);
+  const nAvailW = NARROW - FIT.boxPadX * 2;
+  ok(nAvailW / nNatW < availH / nNatH, 'in the narrow column the width is the binding axis');
+  ok(nw <= nAvailW + 1, `so the map fits the column (${nw} <= ${nAvailW})`);
+  ok(nh < availH, `and comes out shorter than the room, not taller (${nh} < ${availH})`);
+  ok(Math.abs((nw / nh) - (nNatW / nNatH)) < 0.01, 'aspect still preserved');
+  ok(Math.abs(nw - Math.floor(nNatW * (nAvailW / nNatW))) <= 1,
+     'and the width is exactly the column less its padding');
 
   /* A SHORT WINDOW HITS THE FLOOR. Below it, scrolling beats squinting. */
   const cramped = draw(LAYOUTS.busy, 420);
   const csvg = cramped.children[0];
-  const cpx = parseFloat(csvg.style.maxHeight);
+  const ch = parseFloat(csvg.style.height);
   ok(420 - FIT.top - FIT.legend - FIT.note - FIT.pad - FIT.box - FIT.gap < 320,
      'the cramped window would compute below the floor');
-  ok(cpx === 320, `so the floor holds it at 320 (${cpx})`);
+  const cNatW = parseFloat(csvg.attrs.width), cNatH = parseFloat(csvg.attrs.height);
+  const cScale = Math.min(availW / cNatW, 320 / cNatH);
+  ok(Math.abs(ch - Math.floor(cNatH * cScale)) <= 1,
+     `so the floor sets the scale instead (${ch})`);
 }
 
 console.log('\n-- the Crew faces outward, away from the chords --');

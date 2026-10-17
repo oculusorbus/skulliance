@@ -609,10 +609,35 @@
     const bs   = window.getComputedStyle(host);
     const box  = num(bs.paddingTop) + num(bs.paddingBottom)
                + num(bs.borderTopWidth) + num(bs.borderBottomWidth);
-    const avail = window.innerHeight - host.getBoundingClientRect().top
-                - after - pad - box - 6;
-    /* A floor, because below it scrolling beats squinting. */
-    svg.style.maxHeight = Math.max(320, Math.floor(avail)) + 'px';
+    const availH = Math.max(320, window.innerHeight - host.getBoundingClientRect().top
+                                 - after - pad - box - 6);
+    const availW = host.clientWidth - num(bs.paddingLeft) - num(bs.paddingRight);
+
+    /*
+     * ---- SCALE TO FIT, IN BOTH DIRECTIONS, INCLUDING UPWARDS ----
+     *
+     * This was max-height alone, with width:auto and a rule against ever
+     * enlarging past the natural size. The reasoning was that blowing a
+     * drawing up to fill a wide column coarsens it -- which is true of a
+     * photograph and false of this. The canvas is sized to its own ink, so a
+     * quiet month draws a SMALL one: 961x720 on the live map. Capping that at
+     * a 1072px allowance changes nothing, and the page sat with three hundred
+     * pixels of nothing under the legend while the map stayed postage-sized
+     * in the middle of it.
+     *
+     * Nothing here loses by being enlarged. The shapes and the type are
+     * vector. The only raster is the Fighter portraits, drawn from 250px
+     * masters at radii of 15 to 30 -- so even at four times they are still
+     * sampling below source resolution.
+     *
+     * So the scale is whichever axis runs out first, applied to both, which
+     * preserves the aspect exactly and fills the space in either direction.
+     */
+    const natW = parseFloat(svg.getAttribute('width'))  || 1;
+    const natH = parseFloat(svg.getAttribute('height')) || 1;
+    const scale = Math.min(availW / natW, availH / natH);
+    svg.style.width  = Math.floor(natW * scale) + 'px';
+    svg.style.height = Math.floor(natH * scale) + 'px';
   }
   fit();
   /* Re-fit on resize, and once more after layout settles -- web fonts land
