@@ -981,6 +981,12 @@ console.log('\n-- clicking a Fighter opens the COLLECTION\'s panel --');
   ok(html.indexOf('>' + n1.battles.toLocaleString() + '<') > -1, `and their battle count (${n1.battles})`);
   ok(html.indexOf(n1.wins + '\u2013' + n1.losses) > -1, `and their record (${n1.wins}-${n1.losses})`);
   ok(html.indexOf('dhcgallery.php?owner=' + n1.id) > -1, 'and links to their Fighters in the Collection');
+  /* THE TABLE IS IN A SCROLLER. Five columns do not fit a phone and the
+     right-hand ones were cut off the edge of the sheet -- the record column,
+     which is the one worth reading. */
+  ok(html.indexOf('<div class="riv-vswrap"><table class="riv-vs">') > -1,
+     'the rivalries table is wrapped in its own horizontal scroller');
+  ok((html.match(/<\/table><\/div>/g) || []).length === 1, 'and the wrapper is closed');
 
   /* Every rival, from this player's side of the pair. */
   const rivals = LAYOUTS.crowded.pairs.filter(p => String(p.lo) === '1' || String(p.hi) === '1');

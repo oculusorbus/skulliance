@@ -30,6 +30,10 @@ if (!preg_match_all('#<script[^>]*>(.*?)</script>#s', $html, $m) || !$m[1]) {
 	exit(2);
 }
 file_put_contents($dir . '/modal.js', implode("\n;\n", $m[1]));
+/* The whole rendered template too: dhcgallery-strip-harness.js checks that
+   no CSS escaped its <style> block, which it cannot do from the script
+   alone -- a rule emitted as body text is invisible to every other test. */
+file_put_contents($dir . '/modal.html', $html);
 
 $pax = array();
 foreach (dhca_proven_axes() as $k => $meta) {

@@ -312,5 +312,27 @@ if (preg_match('/\.riv-map\{([^}]*)\}/', $css, $bm)) $boxRule = $bm[1];
 ok(strpos($boxRule, 'justify-content:center') !== false, 'the container centres it');
 ok(strpos($boxRule, 'display:flex') !== false, '...as a flex row, not with margin:auto');
 
+echo "\n-- the player panel stacks above the navbar, below the Fighter panel --\n";
+/*
+ * At z-index 70 this sat UNDER the site navbar (200) and the burger button
+ * floated over the open sheet. The Fighter panel has always used 9998; the
+ * player panel must clear the chrome the same way, and sit just BELOW the
+ * Fighter panel so a Fighter opened from the roster layers on top of the
+ * player it belongs to rather than behind them.
+ */
+$veil = '';
+if (preg_match('/\.riv-veil\{([^}]*)\}/', $css, $vm)) $veil = $vm[1];
+ok($veil !== '', 'the player veil has a rule');
+preg_match('/z-index:\s*(\d+)/', $veil, $zm);
+$z = $zm ? (int)$zm[1] : 0;
+ok($z > 200, "it clears the navbar's z-index of 200 (got $z)");
+$fm = file_get_contents(__DIR__ . '/dhc-fighter-modal.php');
+preg_match('/#dhcg-veil\{[^}]*z-index:\s*(\d+)/', $fm, $fz);
+$fzi = $fz ? (int)$fz[1] : 0;
+ok($fzi > 0, "the Fighter panel declares one too ($fzi)");
+ok($z < $fzi, "and the player panel sits below it ($z < $fzi), so a Fighter opens on top");
+ok(strpos($veil, 'safe-area-inset-top') !== false,
+   'and it pads for the safe area, as the Fighter panel does');
+
 echo "\n" . ($fails ? "$fails FAILED\n" : "all passed\n");
 exit($fails ? 1 : 0);

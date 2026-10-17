@@ -153,8 +153,7 @@ if (!defined('DHCM_RENDERED')) {
 #dhcg-rank b{display:block;font-size:16px;font-variant-numeric:tabular-nums;color:var(--ochre,#00c8a0)}
 #dhcg-rank span{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.55}
 #dhcg-rank .of{border:0;padding:0 0 6px;font-size:9.5px;letter-spacing:.08em;
-  text-transform:uppercase;opacity:.45;min-width:0}</style>
-
+  text-transform:uppercase;opacity:.45;min-width:0}
 /* The proven strip: the same tiles, plus a line under each saying where the
    traits put the same Fighter. Tinted away from the ochre of the claimed
    strip so the two are not mistaken for one row of eight numbers. */
@@ -167,6 +166,8 @@ if (!defined('DHCM_RENDERED')) {
 #dhcg-proven em.dn{color:#e0466b;opacity:.95}
 #dhcg-proven .hd{border:0;padding:0 0 6px;font-size:9.5px;letter-spacing:.08em;opacity:.5}
 #dhcg-proven .of{border:0;padding:0 0 6px;font-size:9.5px;letter-spacing:.08em;opacity:.5}
+</style>
+
 <div id="dhcg-veil" role="dialog" aria-modal="true" aria-labelledby="dhcg-name">
   <div id="dhcg-panel">
     <div class="big" id="dhcg-big"></div>

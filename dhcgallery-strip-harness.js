@@ -21,6 +21,36 @@ try { execFileSync('php', [path.join(__dirname, 'dhcgallery-strip-render.php'), 
 catch (e) { console.log('FAIL  cannot render the modal: ' + (e.stderr || e.message)); process.exit(2); }
 
 const js = fs.readFileSync(path.join(tmp, 'modal.js'), 'utf8');
+
+console.log('\n-- no CSS escapes its <style> block --');
+/*
+ * THIS SHIPPED. A block of rules was inserted one line past </style> and the
+ * whole lot printed onto the DHC Fighters page as body text -- selectors,
+ * braces and a comment, in the middle of the page. PHP was happy, the JS was
+ * happy, and every test here passed, because nothing was looking at what the
+ * template actually emits.
+ *
+ * The check is on the rendered HTML with every <style> element removed: what
+ * is left must not contain a CSS rule.
+ */
+{
+  const html = fs.readFileSync(path.join(tmp, 'modal.html'), 'utf8');
+  const open = (html.match(/<style\b/g) || []).length;
+  const close = (html.match(/<\/style>/g) || []).length;
+  ok(open === close, `style tags balance (${open} open, ${close} close)`);
+  ok(open > 0, 'and the modal ships some');
+  const outside = html.replace(/<style[\s\S]*?<\/style>/g, '')
+                      .replace(/<script[\s\S]*?<\/script>/g, '');
+  const stray = outside.match(/[#.][a-zA-Z][\w-]*\s*\{[^}]*:[^}]*\}/);
+  ok(!stray, 'no CSS rule appears outside a style block'
+     + (stray ? ' (found "' + stray[0].slice(0, 70) + '")' : ''));
+  const strayComment = outside.match(/\/\*[\s\S]{0,60}\*\//);
+  ok(!strayComment, 'nor a stray CSS comment'
+     + (strayComment ? ' (found "' + strayComment[0].slice(0, 60) + '")' : ''));
+  /* And the strip's own rules did make it in. */
+  const css = (html.match(/<style[\s\S]*?<\/style>/g) || []).join('');
+  ok(css.indexOf('#dhcg-proven{') > -1, 'the proven strip is styled, inside the block');
+}
 const START = "var pel = document.getElementById('dhcg-proven');";
 const END   = "' Fighters with a record</div>';";
 const i = js.indexOf(START), j = js.indexOf(END, i);

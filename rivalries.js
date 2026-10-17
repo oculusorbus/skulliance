@@ -831,8 +831,11 @@
     if (!mine.length) {
       h += '<p class="riv-empty-note">No settled battles against anyone in this window.</p>';
     } else {
-      h += '<table class="riv-vs"><thead><tr><th>Opponent</th><th class="r">Battles</th>'
-         + '<th class="r">They started</th><th class="r">Were attacked</th><th class="r">Record</th>'
+      /* Shorter headers than "They started" / "Were attacked": those wrapped
+         to two lines each and pushed the record column off a phone. */
+      h += '<div class="riv-vswrap"><table class="riv-vs"><thead><tr>'
+         + '<th>Opponent</th><th class="r">Battles</th>'
+         + '<th class="r">Started</th><th class="r">Attacked</th><th class="r">Record</th>'
          + '</tr></thead><tbody>';
       for (const m of mine) {
         const cls = m.won > m.lost ? 'won' : (m.won < m.lost ? 'lost' : '');
@@ -846,7 +849,7 @@
           + '<td class="r ' + cls + '">' + m.won + '\u2013' + m.lost + '</td>'
           + '</tr>';
       }
-      h += '</tbody></table>';
+      h += '</tbody></table></div>';
     }
 
     /*

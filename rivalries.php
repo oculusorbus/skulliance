@@ -191,8 +191,14 @@ include 'header.php';
    Deliberately NOT a second Fighter panel. This one answers "who is this
    person and who do they fight"; a Fighter is the Collection's panel, opened
    through its own file. */
-.riv-veil{position:fixed;inset:0;z-index:70;background:rgba(3,8,14,.82);
-  display:flex;align-items:flex-start;justify-content:center;padding:4vh 16px;overflow:auto}
+/* z-index AND SAFE-AREA PADDING COPIED FROM THE FIGHTER PANEL, because they
+   are the same kind of thing and were not behaving like it: at 70 this sat
+   UNDER the navbar (200) and the burger button floated over the sheet. 9997
+   is deliberately one below the Fighter panel's 9998, so a Fighter opened
+   from the roster below layers on top of the player it belongs to. */
+.riv-veil{position:fixed;inset:0;z-index:9997;background:rgba(3,8,14,.86);
+  display:flex;align-items:flex-start;justify-content:center;overflow:auto;
+  padding:calc(env(safe-area-inset-top,0px) + 4vh) 16px calc(env(safe-area-inset-bottom,0px) + 20px)}
 .riv-veil[hidden]{display:none!important}
 .riv-sheet{position:relative;width:min(960px,100%);background:var(--panel);
   border:1px solid var(--line);border-radius:6px;padding:20px 22px 22px}
@@ -213,7 +219,12 @@ include 'header.php';
 .riv-stats span{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.55}
 .riv-sect{font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;opacity:.5;
   margin:0 0 8px;padding-top:4px}
-.riv-vs{width:100%;border-collapse:collapse;font-size:11.5px;margin:0 0 18px}
+/* THE TABLE SCROLLS IN ITS OWN BOX. Five columns do not fit a phone, and
+   without this the right-hand ones were simply cut off the edge of the
+   sheet -- the record column, which is the one worth reading. A table is one
+   of the few things allowed to scroll sideways; the page still must not. */
+.riv-vswrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 0 18px}
+.riv-vs{width:100%;border-collapse:collapse;font-size:11.5px;margin:0;min-width:430px}
 .riv-vs th{text-align:left;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
   opacity:.45;font-weight:400;padding:0 8px 6px 0}
 .riv-vs td{padding:5px 8px 5px 0;border-top:1px solid var(--line);vertical-align:middle}
