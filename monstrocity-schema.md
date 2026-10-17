@@ -95,6 +95,39 @@ CREATE TABLE IF NOT EXISTS monstrocity_theme_collections (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
+### The override cuts both ways
+
+Because ticking anything replaces the string **wholesale**, attaching
+collections is the one edit in this form that can make a theme stop matching
+NFTs it matched yesterday. Two ways:
+
+- **A ticked collection with an empty `collections.policy`** contributes
+  nothing. `monstrocity_theme_policies()` filters it out (`WHERE c.policy <> ''`)
+  and `ajax/get-nft-assets.php` matches on `collections.policy IN (...)`, which
+  can never match `''`. Tick only collections like that and the derived set is
+  empty, the legacy string is still ignored, and the theme offers the default
+  characters only.
+- **A collection that was never ticked.** The theme's `project_id` narrows the
+  checkbox list by default, so a collection filed under a *different* project is
+  hidden until "Show every project's collections" is checked. If the hardcoded
+  policy belonged to one of those, it is simply not in the derived set.
+
+The admin page now warns on both after saving, and the checkbox labels a
+policy-less collection as such instead of rendering a bare ellipsis. To see
+what a theme is actually asking for, and what a given player owns under it:
+
+```
+php monstrocity-theme-check.php                             # every theme, one line each
+php monstrocity-theme-check.php <slug>                      # attached collections, derived vs legacy
+php monstrocity-theme-check.php <slug> <username>           # and what that player would be handed
+```
+
+`orientations` is also **positional** against the policy list. One value
+applies to every policy (the client special-cases a single entry), but two or
+more were written for the order and length of the legacy string, so a derived
+list of a different shape silently reassigns which way each collection faces.
+The check script reports that mismatch too.
+
 ### Which themes could be linked today
 
 This lists every theme whose hardcoded policy ids already exist as collections,

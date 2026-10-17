@@ -24,7 +24,7 @@ require_once __DIR__ . '/monstrocity-themes-lib.php';
 require_once __DIR__ . '/monstrocity-art-lib.php';   // the logo box
 require_once __DIR__ . '/lib/ipfs-gateways.php';
 
-$msgs = array('err' => array(), 'ok' => array());
+$msgs = array('err' => array(), 'warn' => array(), 'ok' => array());
 $edit_id = isset($_GET['edit']) ? (int)$_GET['edit'] : 0;
 $creating = isset($_GET['new']);
 
@@ -200,6 +200,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 		foreach ($links as $i => $cid)
 			$conn->query('INSERT INTO monstrocity_theme_collections (theme_id, collection_id, sort_order) VALUES ('
 				. (int)$id . ',' . (int)$cid . ',' . (int)$i . ')');
+
+		/*
+		 * SAY WHEN ATTACHING COLLECTIONS TOOK POLICIES AWAY.
+		 *
+		 * Ticking anything overrides the legacy string wholesale, which is the
+		 * feature -- but it is also the one way this form can make a working
+		 * theme stop matching anybody's NFTs, and it does it silently. Two
+		 * cases: a ticked collection with no policy id of its own, and a
+		 * policy that was in the string and is not in any ticked collection.
+		 * Reported, never refused: dropping a policy on purpose is a normal
+		 * edit, and the admin is the one who knows which it is.
+		 */
+		if ($links) {
+			$now    = monstrocity_theme_policies($conn);
+			$have   = isset($now[$id]) && $now[$id] !== '' ? explode(',', $now[$id]) : array();
+			$legacy = array_filter(array_map('trim', explode(',', (string)$t['policy_ids'])));
+			$lost   = array_values(array_diff($legacy, $have));
+
+			$blank = array();
+			foreach ($links as $cid) {
+				$r = $conn->query('SELECT name, policy FROM collections WHERE id = ' . (int)$cid);
+				$c = $r ? $r->fetch_assoc() : null;
+				if ($c && trim((string)$c['policy']) === '') $blank[] = $c['name'];
+			}
+			if ($blank)
+				$msgs['warn'][] = count($blank) . ' ticked collection' . (count($blank) === 1 ? ' has' : 's have')
+				                . ' no policy id, so ' . (count($blank) === 1 ? 'it adds' : 'they add')
+				                . ' no NFTs: ' . htmlspecialchars(implode(', ', $blank)) . '.';
+			if (!$have)
+				$msgs['warn'][] = 'None of the ticked collections has a policy id, so this theme now '
+				                . 'matches no NFTs at all. Untick them to go back to the list below.';
+			else if ($lost)
+				$msgs['warn'][] = 'The policy id list is no longer used, and ' . count($lost) . ' of its '
+				                . 'policies is not covered by any ticked collection, so NFTs under '
+				                . (count($lost) === 1 ? 'it' : 'them') . ' will stop appearing: '
+				                . htmlspecialchars(implode(', ', $lost)) . '.';
+		}
 
 		/* Folders first, so an upload never fails on a missing directory and
 		   so Phase 3 has somewhere to put things. */
@@ -428,7 +465,13 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
               <input type="checkbox" name="collections[]" value="<?php echo (int)$c['id']; ?>" <?php echo $on ? 'checked' : ''; ?>>
               <span><?php echo htmlspecialchars($c['name']); ?>
                 <?php if ($c['project']): ?><span class="pol">&middot; <?php echo htmlspecialchars($c['project']); ?></span><?php endif; ?>
-                <br><span class="pol"><?php echo htmlspecialchars(substr((string)$c['policy'], 0, 32)); ?>&hellip;</span></span>
+                <?php /* A COLLECTION WITH NO POLICY ID CONTRIBUTES NOTHING. It used to
+                         render as a bare ellipsis, which looks like a policy that is merely
+                         shortened -- so ticking it, and only it, silently replaced the legacy
+                         string with an empty set and the theme offered nobody their NFTs. */ ?>
+                <br><span class="pol"><?php echo trim((string)$c['policy']) === ''
+                     ? 'no policy id, cannot match NFTs'
+                     : htmlspecialchars(substr((string)$c['policy'], 0, 32)) . '&hellip;'; ?></span></span>
             </label>
           <?php endforeach; ?>
         </div>

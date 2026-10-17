@@ -19,6 +19,9 @@
 .adm-msg{margin:12px 0;padding:11px 14px;border-left:3px solid;font-size:.88rem}
 .adm-msg.bad{border-color:#e0705f;background:rgba(224,112,95,.1);color:#e0705f}
 .adm-msg.good{border-color:#00c8a0;background:rgba(0,200,160,.1);color:#00c8a0}
+/* A SAVE THAT WORKED AND STILL NEEDS READING. Amber, not red: nothing was
+   refused, but something about what was saved will surprise you later. */
+.adm-msg.warn{border-color:#e8b24a;background:rgba(232,178,74,.1);color:#e8b24a}
 .adm-pick{display:flex;gap:10px;align-items:center;margin:0 0 18px;flex-wrap:wrap}
 .adm-pick label{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:#5a7888}
 /* INSURANCE, AND THE REASON THE PANEL WAS INVISIBLE. dist/flexbox.css

@@ -895,6 +895,9 @@ function admin_chrome($active) {
 
 function admin_flash($msgs) {
 	foreach ($msgs['err'] as $m) echo '<p class="adm-msg bad">' . $m . '</p>';
+	/* 'warn' is optional, because most admin pages have no use for it and
+	   every one of them calls this function. */
+	if (!empty($msgs['warn'])) foreach ($msgs['warn'] as $m) echo '<p class="adm-msg warn">' . $m . '</p>';
 	foreach ($msgs['ok']  as $m) echo '<p class="adm-msg good">' . $m . '</p>';
 }
 

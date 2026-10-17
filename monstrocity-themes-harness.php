@@ -594,6 +594,53 @@ ok($bad === 0, $bad . ' query(...) calls interpolate $_POST or $_GET directly');
 ok(substr_count($apNo, 'real_escape_string') >= 1, 'no string is escaped anywhere, which cannot be right');
 ok(preg_match('/\$esc\s*=\s*function/', $apNo) === 1, 'the per-value escaper is gone');
 
+/*
+ * A TICKED COLLECTION WITH NO POLICY ID MUST SAY SO.
+ *
+ * Attaching collections overrides the legacy policy_ids string wholesale, so
+ * a collection whose own policy is empty does not merely add nothing -- it
+ * helps replace a working string with a narrower set, and the theme quietly
+ * stops matching NFTs it matched yesterday. The checkbox used to render that
+ * collection as a bare "&hellip;", indistinguishable from a policy that was
+ * simply shortened for the label.
+ *
+ * The TERNARY ITSELF IS EXECUTED, both ways, rather than grepped for: a
+ * check that the file mentions 'no policy id' passes just as well if the
+ * branch is wired to the wrong side of the comparison.
+ */
+if (preg_match('/echo (trim\(\(string\)\$c\[\x27policy\x27\]\).*?)\s*;\s*\?>/s', $ap, $lm)) {
+	$label = eval('return function ($c) { return ' . $lm[1] . '; };');
+	$blank = $label(array('policy' => ''));
+	$real  = $label(array('policy' => str_repeat('b3', 28)));
+	ok(strpos($blank, 'no policy id') !== false,
+	   'a collection with no policy id is labelled "' . $blank . '", which reads as a real policy');
+	ok(strpos($blank, '&hellip;') === false,
+	   'the empty-policy label still carries the ellipsis that made it look truncated');
+	ok(strpos($real, 'b3b3b3') === 0 && substr($real, -8) === '&hellip;',
+	   'a real policy is no longer shown on the checkbox: "' . $real . '"');
+} else {
+	ok(false, 'the collection checkbox no longer labels the policy at all');
+}
+
+/*
+ * AND THE SAVE MUST REPORT WHAT THE OVERRIDE TOOK AWAY. Three distinct
+ * cases, each its own message: a ticked collection with no policy, a ticked
+ * set with no policies at all, and a legacy policy no ticked collection
+ * covers. The last is the one the user hit, so array_diff against the legacy
+ * string is the property -- a page that only counted blanks would have said
+ * nothing at all about a policy that moved out of scope.
+ */
+ok(strpos($apNo, 'monstrocity_theme_policies($conn)') !== false,
+   'the save never re-reads the derived policies, so it cannot know what it changed');
+ok(preg_match('/array_diff\(\$legacy, \$have\)/', $apNo) === 1,
+   'nothing compares the new derived set against the policy_ids string it just overrode');
+ok(substr_count($apNo, "\$msgs['warn'][]") === 3,
+   'the three override warnings are not all there (found ' . substr_count($apNo, "\$msgs['warn'][]") . ')');
+/* The warnings must not be errors: dropping a policy on purpose is a normal
+   edit and refusing it would make the form unusable. */
+ok(strpos($apNo, "\$msgs['err'][] = count(\$blank)") === false,
+   'the empty-policy notice was raised to an error, which refuses a legitimate edit');
+
 /* An edit must not be able to move a theme's folder out from under its art. */
 ok(strpos($apNo, "\$was['slug'] !== \$t['slug']") !== false,
    'the slug can be changed on an existing theme, orphaning everything already uploaded');
