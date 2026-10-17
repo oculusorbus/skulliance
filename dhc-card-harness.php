@@ -42,7 +42,11 @@ if (!function_exists('imagecreatetruecolor')) {
 } else {
 	echo "\nnothing is cropped off the Fighter\n";
 	/* The real block, from the canvas to the sharp copy. */
-	$a = strpos($clean, '$card = imagecreatetruecolor(DHCC_W, DHCC_H);');
+	/* FROM THE CROP, not from the canvas. The trait branch crops the source
+	   to its own ink and then re-reads $sw/$sh, and both of those decide
+	   where the art lands -- lifting only from the canvas down left the one
+	   step that was actually wrong outside the test. */
+	$a = strpos($clean, "if (\$traitq !== '' && function_exists('imagecropauto')) {");
 	ok($a !== false, 'the compositing block moved; this check is now blind');
 	$b = strpos($clean, 'imagecopyresampled($card, $src, (int)((DHCC_W - $fw)');
 	$b = strpos($clean, ";\n", $b);
@@ -83,6 +87,10 @@ if (!function_exists('imagecreatetruecolor')) {
 	imagefilledrectangle($src, 0, 0, $sw, 6, imagecolorallocate($src, 0, 255, 0));
 	imagefilledrectangle($src, 0, $sh - 6, $sw, $sh, imagecolorallocate($src, 0, 0, 255));
 
+	/* A FIGHTER, so no crop: the render fills its canvas and cropping it
+	   would do nothing. The branch is what decides that, and it reads
+	   $traitq, so this run has to say which kind it is. */
+	$traitq = '';
 	eval($block);
 
 	ok(imagesx($card) === $W && imagesy($card) === $H,
@@ -143,6 +151,197 @@ if (!function_exists('imagecreatetruecolor')) {
 	}
 	$avg = $lum / max(1, $n);
 	ok($avg < 70, sprintf('the backdrop averages %.0f/255 luminance; that competes with the Fighter', $avg));
+
+	/*
+	 * A TRAIT IS NOT A FIGHTER, AND THAT IS THE WHOLE DIFFICULTY.
+	 *
+	 * A Fighter render fills its 1000x1000 canvas. A trait layer does not: it
+	 * is drawn at the position it occupies ON a body, so a belt is a band
+	 * across the lower third of an otherwise empty square. The first version
+	 * of the trait card fitted that whole square to the card height, and the
+	 * belt arrived small, low, and sitting on a near-black wash -- technically
+	 * the trait, visibly nothing. I only saw it by looking at a real render.
+	 *
+	 * The fixture is that shape exactly: transparent, with one opaque band.
+	 * Two things have to be true of where it lands, and they fail to
+	 * OPPOSITE mutations, which is why both are here:
+	 *
+	 *   drop the crop          -> the band is scaled by 594/1000 and lands
+	 *                             small and off-centre, as it shipped
+	 *   drop the width bound   -> the cropped band is scaled by 594/180 and
+	 *                             runs off both edges of the card
+	 */
+	echo "\na trait fills the card instead of floating in it\n";
+
+	/*
+	 * BOTH COLOUR MODELS, because a trait PNG can be either and the crop
+	 * behaves differently in each.
+	 *
+	 * IMG_CROP_TRANSPARENT -- what this shipped with -- compares every pixel
+	 * against imagecolortransparent(), a SINGLE palette index, and 22 of the
+	 * 235 trait PNGs do not carry a usable one: 18 are truecolor with an
+	 * alpha channel (no index at all), and four are palette files whose index
+	 * is not the colour their border uses. IMG_CROP_SIDES decides from the
+	 * corner colours instead and handles all of them, which is why it now
+	 * runs first.
+	 *
+	 * Both synthetic fixtures below fail if the SIDES mode goes, and the
+	 * check after them runs the shipped crop over the REAL art, which is the
+	 * only thing that can speak for 235 files.
+	 */
+	$band = function ($palette) {
+		$im = imagecreatetruecolor(1000, 1000);
+		imagesavealpha($im, true);
+		imagealphablending($im, false);
+		imagefilledrectangle($im, 0, 0, 1000, 1000, imagecolorallocatealpha($im, 0, 0, 0, 127));
+		/* Full width, a fifth of the height, low down: a belt. */
+		imagefilledrectangle($im, 0, 700, 999, 879, imagecolorallocate($im, 40, 220, 90));
+		imagealphablending($im, true);
+		if (!$palette) return $im;
+		/* Round-tripped through a real PNG, which is how the shipped code
+		   gets its source -- imagecreatefrompng() is what decides whether a
+		   transparent index exists, and building the palette in memory does
+		   not reproduce that. */
+		$f = tempnam(sys_get_temp_dir(), 'dhcc') . '.png';
+		imagetruecolortopalette($im, false, 255);
+		imagecolortransparent($im, imagecolorexact($im, 0, 0, 0));
+		imagepng($im, $f);
+		$back = imagecreatefrompng($f);
+		@unlink($f);
+		return $back;
+	};
+
+	/* Where the ink actually is in the finished card. The backdrop is the
+	   same art blurred and dimmed by DHCC_DIM, so only the sharp copy can
+	   still be this bright. */
+	$isInk = function ($c) {
+		return (($c >> 8) & 255) > 170 && (($c >> 16) & 255) < 130;
+	};
+
+	foreach (array('palette, with a transparent index' => true,
+	               'truecolor, with an alpha channel'  => false) as $what => $pal) {
+		$src = $band($pal);
+		$sw = imagesx($src); $sh = imagesy($src);
+		$traitq = 'weapon:annihilation-belt';
+		eval($block);
+
+		/* The band's own rows first, THEN its extent along one of them. A
+		   horizontal scan down the middle row reported "not in the card at
+		   all" for the uncropped case, where the band is really present and
+		   merely small and low -- a true failure with a misleading reason is
+		   the next bug to chase. */
+		$top2 = -1; $bot2 = -1;
+		for ($y = 0; $y < $H; $y++) {
+			if ($isInk(imagecolorat($card, (int)($W / 2), $y))) { if ($top2 < 0) $top2 = $y; $bot2 = $y; }
+		}
+		$left = -1; $right = -1;
+		if ($top2 >= 0) {
+			$row = (int)(($top2 + $bot2) / 2);
+			for ($x = 0; $x < $W; $x++) {
+				if ($isInk(imagecolorat($card, $x, $row))) { if ($left < 0) $left = $x; $right = $x; }
+			}
+		}
+		ok($left >= 0 && $top2 >= 0, "the trait is not in the card at all ($what)");
+		if ($left < 0 || $top2 < 0) continue;
+
+		$drawn = $right - $left + 1;
+		ok($drawn > 1000,
+		   "the trait is only {$drawn}px wide on a {$W}px card ($what); it is being fitted "
+		 . 'as if it filled its canvas, which is how the belt shipped small and low');
+		/* And not so wide that it leaves. A share card with the subject
+		   bleeding off both sides is the other half of the same mistake. */
+		ok($left >= 20 && $right <= $W - 20,
+		   "the trait runs from x={$left} to x={$right} on a {$W}px card ($what); the width no longer bounds the fit");
+		/* Centred, which the uncropped version was not: the ink sat in the
+		   lower third of a centred square. */
+		$mid = ($top2 + $bot2) / 2;
+		ok(abs($mid - $H / 2) < 8,
+		   sprintf('the trait centres on y=%.0f, not %d (%s); it is sitting where it would on a body',
+		           $mid, $H / 2, $what));
+	}
+
+	/*
+	 * AND NOW THE REAL ART, all of it.
+	 *
+	 * The fixtures prove the geometry; only the files can prove the crop
+	 * reaches them. The shipped $cropped helper is lifted out and run over
+	 * every trait PNG in the repo, asserting three things: the known-sparse
+	 * traits shrink (these are the ones that rendered as a speck), nothing
+	 * degenerates to a sliver, and art that fills its canvas on purpose is
+	 * left alone.
+	 *
+	 * Named files rather than a count, because a count passes while the
+	 * wrong 22 are cropped. Each name below is a trait a player can be
+	 * holding right now, and tank-helmet and axe are specifically the two
+	 * that IMG_CROP_TRANSPARENT could never touch.
+	 */
+	$artdir = '';
+	foreach (array('web', 'dhc', 'dhc/web', 'traits') as $cand) {
+		if (is_dir(__DIR__ . '/' . $cand . '/1000')) { $artdir = __DIR__ . '/' . $cand . '/1000'; break; }
+	}
+	if ($artdir === '') {
+		echo "\n  (no trait art in this checkout -- real-art crop not run)\n";
+	} else {
+		echo "\nevery sparse trait actually crops\n";
+		$ca = strpos($clean, '$cropped = function ($im, $mode) {');
+		$cb = strpos($clean, "\n\t};", $ca);
+		ok($ca !== false && $cb !== false, 'the crop helper moved; the real-art check is blind');
+		eval(substr($clean, $ca, $cb - $ca + 4));
+		/* The real chain, in the real order, read out of the file so a
+		   reordering here is not a second opinion about it. */
+		preg_match_all('/\$cropped\(\$src, (IMG_CROP_[A-Z]+)\)/', $clean, $modes);
+		ok(count($modes[1]) >= 1, 'nothing calls the crop helper any more');
+
+		$crop_real = function ($file) use ($cropped, $modes) {
+			$im = @imagecreatefrompng($file);
+			if (!$im) return null;
+			foreach ($modes[1] as $mode) {
+				$c = $cropped($im, constant($mode));
+				if ($c !== null) return array(imagesx($c), imagesy($c), imagesx($im), imagesy($im));
+			}
+			return array(imagesx($im), imagesy($im), imagesx($im), imagesy($im));
+		};
+
+		/* Sparse art: a weapon, a helmet, a companion, a neck filler. Mixed
+		   palette and truecolor on purpose. */
+		foreach (array('weapon/annihilation-belt', 'weapon/axe', 'weapon/bioweapon',
+		               'headgear/tank-helmet', 'headgear/dh-samurai-helmet',
+		               'companion/demon-companion', 'neckfill/neckfill') as $rel) {
+			$f = $artdir . '/' . $rel . '.png';
+			if (!is_file($f)) continue;
+			$r = $crop_real($f);
+			ok($r !== null && ($r[0] < $r[2] || $r[1] < $r[3]),
+			   $rel . ' is not cropped to its ink (' . ($r ? $r[0] . 'x' . $r[1] : 'unreadable')
+			 . '); its card renders the trait as a speck low on a dark slab');
+		}
+
+		/* Nothing may come back a sliver, on any file. */
+		$slivers = array();
+		foreach (glob($artdir . '/*/*.png') as $f) {
+			$r = $crop_real($f);
+			if ($r !== null && ($r[0] <= 8 || $r[1] <= 8))
+				$slivers[] = basename(dirname($f)) . '/' . basename($f) . ' ' . $r[0] . 'x' . $r[1];
+		}
+		ok(!$slivers, count($slivers) . ' trait(s) crop to a sliver: ' . implode(', ', array_slice($slivers, 0, 4)));
+
+		/* And the flat colour swatches, which are entirely one colour, must
+		   come through untouched rather than crop to nothing. */
+		foreach (array('background/black', 'background/white') as $rel) {
+			$f = $artdir . '/' . $rel . '.png';
+			if (!is_file($f)) continue;
+			$r = $crop_real($f);
+			ok($r !== null && $r[0] === $r[2] && $r[1] === $r[3],
+			   $rel . ' was cropped (' . ($r ? $r[0] . 'x' . $r[1] : '?') . '); a flat background has no ink to crop to');
+		}
+	}
+
+	/* A FIGHTER MUST NOT BE CROPPED. Its render fills the canvas, so there is
+	   nothing to trim -- but IMG_CROP_SIDES decides from corner colour, and a
+	   Fighter on a flat-coloured background has uniform corners. Dropping the
+	   $traitq guard would start trimming the background off Fighter cards,
+	   which is a silent change to every share that already works. */
+	ok(preg_match("/if \\(\\\$traitq !== '' && function_exists\\('imagecropauto'\\)\\)/", $clean) === 1,
+	   'the crop is no longer gated on the trait branch, so Fighter cards get cropped too');
 }
 
 echo "\nit draws through the one renderer, and only for saved Fighters\n";
@@ -238,6 +437,40 @@ ok(strpos($g, "isset(\$_GET['fighter'])") !== false, 'the per-Fighter branch is 
    unfurl. */
 ok(preg_match('/FROM dhc_fighters f\s*\n?\s*LEFT JOIN users/', $g) === 1,
    'the per-Fighter lookup scans the page rows instead of querying; a shared Fighter outside the current filter would not unfurl');
+
+/*
+ * AND AT THE TRAIT, which is what the drop modal posts.
+ *
+ * A trait share is a link to dhcgallery.php?trait=, and everything the post
+ * looks like comes from that page's head: the card, the headline X renders
+ * above it, and the sentence under that. Without the trait branch the page
+ * served the Collection's own title, so a post about a single legendary
+ * trait unfurled as "The Fighter Collection" over a picture of the trait --
+ * the two halves describing different things.
+ */
+ok(strpos($g, 'dhc-card.php?trait=') !== false,
+   'the gallery does not declare a card for a trait, so a shared drop carries the house logo');
+ok(preg_match("/if \\(\\\$dhcg_trait !== ''\\) \\{\s*\n\s*list\\(\\\$tcat0/", $g) === 1,
+   'the trait branch is gone from the head builder');
+/* The branch exists for the two strings in it. Asserting only that it is
+   there passed with the title line deleted, which is the exact bug: a card
+   of one trait under a headline about the whole Collection. */
+ok(preg_match('/\\$dhcg_title = \\$tname0 \\./', $g) === 1,
+   'the trait view has no title of its own; a shared trait unfurls as the whole Collection');
+ok(preg_match('/\\$dhcg_desc\\s*= \\$tname0 \\./', $g) === 1,
+   'the trait view has no description of its own; X renders the Collection blurb under the trait');
+/* The order is the property: the general case sets the title, the trait
+   case overrides it, and the single-Fighter case overrides that. Put the
+   trait block last and a shared Fighter would unfurl as a trait. */
+$tAt = strpos($g, 'if ($dhcg_trait !== \'\') {');
+$gAt = strpos($g, '$dhcg_title = ($dhcg_tier');
+$fAt = strpos($g, "\$dhcg_canonical = 'https://www.skulliance.io/staking/dhcgallery.php?fighter='");
+ok($gAt !== false && $tAt !== false && $fAt !== false && $gAt < $tAt && $tAt < $fAt,
+   'the title cases are out of order; general, then trait, then the single Fighter');
+/* The canonical has to name the trait too, or every trait share points
+   search engines and X's cache at the same unfiltered page. */
+ok(strpos($g, "\$dhcg_canonical .= '?trait=' . rawurlencode(\$dhcg_trait);") !== false,
+   'a shared trait is canonicalised to the whole Collection, so every trait shares one cached card');
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

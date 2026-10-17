@@ -376,6 +376,35 @@ $dhcg_desc  = $dhcg_what.' assembled on Skulliance, browsable by anyone. '
             . 'piece from a shared set of parts — and no two the same. See what every '
             . 'trait is worth, what it does in a fight, and who built it.';
 /*
+ * A TRAIT VIEW IS ABOUT THE TRAIT, so it says so. This is the URL a drop
+ * share posts, and the card beside it is the trait's own picture -- a title
+ * reading "The Fighter Collection" under it would describe the wrong thing.
+ * Set after the general case so it overrides, and before the single-Fighter
+ * block below, which is more specific still and overrides this.
+ */
+if ($dhcg_trait !== '') {
+	list($tcat0, $tslug0) = explode(':', $dhcg_trait, 2);
+	$tname0 = dhcf_trait_name($tcat0, $tslug0);
+	/* No null guard: dhcf_trait_filter() only returns a pair dhcf_trait_info()
+	   already answered for, so $dhcg_trait being non-empty IS that guarantee.
+	   A defensive ternary here would only ever emit a double space. */
+	$tinfo0 = dhcf_trait_info($tcat0, $tslug0);
+	$dhcg_title = $tname0 . ' — DHC Fighters | Skulliance';
+	/* "an uncommon", "an epic". Two of the five tiers start with a vowel and
+	   the article sits in front of the tier, so a fixed "a" is wrong 40% of
+	   the time on a string X renders under the card. */
+	$tart0 = strpos('aeiou', substr($tinfo0[0], 0, 1)) !== false ? 'an' : 'a';
+	$dhcg_desc  = $tname0 . ', ' . $tart0 . ' ' . $tinfo0[0] . ' ' . $tcat0 . ' trait for DHC Fighters. '
+	            /* "Worn by none" rather than "by 0": a mythic means the art
+	               exists and no minted Fighter uses it, which is the
+	               interesting fact about it, not a zero. */
+	            . ((int)$tinfo0[1] > 0
+	                ? 'Worn by ' . number_format((int)$tinfo0[1]) . ' of the 226 original Fighters.'
+	                : 'Worn by none of the 226 original Fighters.')
+	            . ' Earned by playing games on Skulliance.';
+	$dhcg_canonical .= '?trait=' . rawurlencode($dhcg_trait);
+}
+/*
  * ?fighter=SERIAL MAKES THIS A PAGE ABOUT ONE FIGHTER, as far as X and every
  * other crawler is concerned. Without per-Fighter tags a shared link carries
  * the generic collection image, which is the same picture for all 108 of
@@ -436,13 +465,21 @@ if (isset($_GET['fighter']) && (int)$_GET['fighter'] > 0) {
 }
 
 $page_title_override = $dhcg_title;
-/* One Fighter gets its own card; the collection keeps the house image. */
-$dhcg_card_img = $dhcg_one
-    ? 'https://www.skulliance.io/staking/dhc-card.php?serial=' . (int)$dhcg_one['serial']
-    : 'https://www.skulliance.io/staking/images/og.jpg';
-$dhcg_card_alt = $dhcg_one
-    ? $dhcg_one['display'] . ', a DHC Fighter assembled on Skulliance'
-    : 'The DHC Fighter Collection - characters assembled from a shared set of traits';
+/* One Fighter gets its own card. So does one TRAIT -- this is the URL a
+   drop share points at, and a share whose picture is the house logo is a
+   share of the house logo. Everything else keeps that logo. */
+if ($dhcg_one) {
+	$dhcg_card_img = 'https://www.skulliance.io/staking/dhc-card.php?serial=' . (int)$dhcg_one['serial'];
+	$dhcg_card_alt = $dhcg_one['display'] . ', a DHC Fighter assembled on Skulliance';
+} else if ($dhcg_trait !== '') {
+	list($ocat, $oslug) = explode(':', $dhcg_trait, 2);
+	$dhcg_card_img = 'https://www.skulliance.io/staking/dhc-card.php?trait='
+	               . rawurlencode($dhcg_trait);
+	$dhcg_card_alt = dhcf_trait_name($ocat, $oslug) . ', a DHC Fighter trait';
+} else {
+	$dhcg_card_img = 'https://www.skulliance.io/staking/images/og.jpg';
+	$dhcg_card_alt = 'The DHC Fighter Collection - characters assembled from a shared set of traits';
+}
 
 $extra_head = '
 <meta name="description" content="'.htmlspecialchars($dhcg_desc).'">

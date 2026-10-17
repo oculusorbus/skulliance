@@ -601,5 +601,110 @@ console.log('\nthe modal shows where it places');
 	ok(occurrences === 1, 'dhcf_rank_pool() is called ' + occurrences + ' times; it belongs outside the row loop');
 }
 
+console.log('\nthe drop modal shares the trait, not a screenshot of it');
+{
+	/*
+	 * THE THIRD SHARE BUTTON, and the reason it exists: players were
+	 * screenshotting the drop modal and posting that -- phone status bar,
+	 * Android nav buttons and all -- because there was nothing else to post.
+	 *
+	 * The same two traps as the other two. X counts ANY url as 23 characters
+	 * and cuts the overflow off the END, which is where the handle and the
+	 * artist credit live; and the url has to be the page that declares an
+	 * og:image of the trait, or the post carries no picture at all and the
+	 * screenshot was strictly better.
+	 */
+	const drop = fs.readFileSync(path.join(__dirname, 'dhc-dropmodal.php'), 'utf8');
+
+	const da = drop.indexOf('  function shareText(d) {');
+	const db = drop.indexOf('  window.__shareText');
+	ok(da > -1 && db > da, 'shareText()/shareHref() are gone from dhc-dropmodal.php');
+
+	/* The tail is read out of the file for the same reason X_HANDLE is: a
+	   stubbed one is shorter than the real one, and every budget assertion
+	   below would then be measuring a post that does not ship. */
+	const tailMatch = drop.match(/var X_TAIL = '([^']+)';/);
+	if (!tailMatch) { console.log('  FAIL  X_TAIL is gone from dhc-dropmodal.php'); fail++; }
+	const dctx = { X_TAIL: tailMatch ? unescapeJs(tailMatch[1]) : '@skulliance',
+	               encodeURIComponent: encodeURIComponent };
+	vm.createContext(dctx);
+	vm.runInContext(strip(drop.slice(da, db)), dctx);
+
+	const dropOf = (over) => Object.assign({
+		name: 'Bioweapon', tier: 'legendary', category: 'weapon',
+		slug: 'bioweapon', worn: 2,
+	}, over || {});
+
+	const t = dctx.shareText(dropOf());
+	ok(/Bioweapon/.test(t), 'the post does not name the trait: ' + t);
+	ok(/a legendary weapon trait/.test(t), 'the post does not say how rare it is: ' + t);
+	/* "an uncommon", "an epic" -- two of the five tiers start with a vowel and
+	   the article sits in front of the tier, so a fixed "a" is wrong on 40% of
+	   the drops. */
+	ok(/an uncommon weapon trait/.test(dctx.shareText(dropOf({ tier: 'uncommon' }))),
+	   'the post reads "a uncommon"');
+	ok(/an epic weapon trait/.test(dctx.shareText(dropOf({ tier: 'epic' }))),
+	   'the post reads "a epic"');
+	ok(/2 of the 226 original DHC Fighters/.test(t),
+	   'the post drops the provenance, which is the interesting half of a rare trait: ' + t);
+	ok(t.indexOf('@skulliance') > -1, 'the post does not tag the account, which is the point of posting it');
+	ok(/Art by @MMAXI404/.test(t), 'the trait goes out uncredited');
+	ok(fits(t), 'the post is ' + t.length + ' characters plus a url; X will cut the handle off the end');
+
+	/* A trait nobody wears is the interesting case, not an error case: mythic
+	   means the art exists and no minted Fighter uses it. */
+	const none = dctx.shareText(dropOf({ tier: 'mythic', worn: 0 }));
+	ok(/none of the 226/.test(none), 'a mythic reads as "worn by 0", not as the fact it is: ' + none);
+
+	/*
+	 * AND THE TRIM MUST EAT THE SENTENCE, NOT THE TAIL. A trait name is
+	 * content, not a constant, so nothing stops a long one.
+	 *
+	 * A NAME WITH SPACES IN IT, which took two goes to get right. The first
+	 * fixture was 'A'.repeat(300) -- one unbroken token, so the trim's
+	 * word-boundary rule threw the whole thing away and left "Earned …",
+	 * 100 characters, which fits however wrong the budget is. Dropping the
+	 * 24-character url cost passed against it. A realistic long name trims
+	 * to just under the limit, which is exactly where the url cost decides
+	 * whether the handle survives.
+	 */
+	const longName = dctx.shareText(dropOf({ name: 'Annihilation Belt '.repeat(20).trim() }));
+	ok(fits(longName), 'a long trait name pushes the post to ' + longName.length
+	 + ' characters plus a url; X will cut the credit off the end');
+	ok(longName.indexOf('@skulliance') > -1 && /Art by @MMAXI404$/.test(longName),
+	   'the trim ate the handle or the credit instead of the sentence');
+	/* The single-token case still has to come out as something, not as a
+	   bare ellipsis with no trait in it. */
+	const oneWord = dctx.shareText(dropOf({ name: 'A'.repeat(300) }));
+	ok(fits(oneWord), 'an unbroken 300-character name overflows: ' + oneWord.length);
+
+	/*
+	 * THE LINK IS THE PICTURE. x.com/intent/post cannot attach a file, so
+	 * the only image the post carries is whatever the shared url declares --
+	 * and only dhcgallery.php?trait= declares a card of the trait.
+	 */
+	const href = dctx.shareHref(dropOf());
+	ok(href.indexOf('x.com/intent/post') > -1, 'the share no longer opens an X post');
+	ok(/dhcgallery\.php%3Ftrait%3Dweapon%3Abioweapon$/.test(href),
+	   'the post does not link to the trait, so X has no card to render: ' + href);
+	ok(href.indexOf('&url=') > -1, 'the url is not passed as url=, so X counts its real length');
+	/* Category AND slug: nine slugs exist in two categories at once and are
+	   different traits with different art. */
+	ok(href.indexOf('weapon%3A') > -1, 'the link names the slug without its category');
+
+	/* A near miss and a spent daily cap both set .miss, and neither has a
+	   trait to share -- the card would point at something never awarded. */
+	ok(/#dhcdrop-veil\.miss #dhcdrop-share\{display:none ?!important\}/.test(drop),
+	   'the share button still shows on a near miss, linking to a trait that was not awarded');
+	/* Set per drop, inside show(). A single assignment at load time would
+	   post the first trait of the session for every later one. */
+	const showBody = drop.slice(drop.indexOf('  function show(d) {'), drop.indexOf('  function showCapped(d) {'));
+	ok(showBody.indexOf("document.getElementById('dhcdrop-share').href = shareHref(d);") > -1,
+	   'the share href is not rebuilt per drop, so it posts whichever trait came first');
+	/* And it has to be a real target, or the player loses their game. */
+	ok(/<a id="dhcdrop-share"[^>]*target="_blank"[^>]*rel="noopener"/.test(drop),
+	   'Share on X navigates the game page away, or opens without rel="noopener"');
+}
+
 console.log('\n' + (fail ? fail + ' FAILED\n' : 'all good\n'));
 process.exit(fail ? 1 : 0);

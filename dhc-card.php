@@ -70,9 +70,52 @@ function dhcc_fail($code = 404) {
 	exit;
 }
 
+/*
+ * TWO SUBJECTS, ONE CARD.
+ *
+ *     dhc-card.php?serial=528              a Fighter
+ *     dhc-card.php?trait=weapon:bioweapon  a single trait
+ *
+ * The trait came second and shares everything below: the 2:1 frame, the
+ * blurred-copy backdrop, the fit, the atomic cache. Only the source picture
+ * and the cache key differ, which is why those are settled here and nothing
+ * further down knows which kind it is drawing.
+ *
+ * Players were screenshotting the drop modal and posting that -- phone
+ * status bar, Android nav buttons and all -- because there was nothing to
+ * share. A trait is a thing worth showing off; it should have a picture of
+ * its own.
+ */
 $serial = isset($_GET['serial']) ? (int)$_GET['serial'] : 0;
-if ($serial <= 0) dhcc_fail(400);
-if (!function_exists('imagecreatetruecolor') || !function_exists('dhcf_render_fighter')) dhcc_fail(503);
+$traitq = isset($_GET['trait']) ? trim((string)$_GET['trait']) : '';
+if ($serial <= 0 && $traitq === '') dhcc_fail(400);
+if (!function_exists('imagecreatetruecolor')) dhcc_fail(503);
+
+if ($traitq !== '') {
+	/*
+	 * A TRAIT NEEDS NO DATABASE AND NO RENDERER -- the art is a file on
+	 * disk. What it does need is validation, because the two halves become
+	 * a path: dhcf_trait_info() returns nothing for a category or slug the
+	 * platform does not know, so anything invented is refused before it can
+	 * be concatenated. The character class is a second gate, not the only
+	 * one; a slug is lower-case, digits and hyphens by construction.
+	 */
+	$parts = explode(':', $traitq, 2);
+	if (count($parts) !== 2) dhcc_fail(400);
+	list($tcat, $tslug) = $parts;
+	if (!preg_match('/^[a-z0-9-]{1,48}$/', $tcat) || !preg_match('/^[a-z0-9-]{1,64}$/', $tslug)) {
+		dhcc_fail(400);
+	}
+	if (!function_exists('dhcf_trait_info') || !dhcf_trait_info($tcat, $tslug)) dhcc_fail();
+
+	$base = function_exists('dhcf_art_dir') ? dhcf_art_dir() : 'web';
+	$src_abs = __DIR__ . '/' . $base . '/1000/' . $tcat . '/' . $tslug . '.png';
+	if (!is_file($src_abs)) dhcc_fail();
+
+	$key   = substr(md5('trait|' . $tcat . '|' . $tslug . '|' . DHCC_W . 'x' . DHCC_H), 0, 24);
+	$dir   = __DIR__ . '/dhcrenders';
+	$cache = $dir . '/card-' . $key . '.jpg';
+} else {
 
 /* $conn->query(), not prepare()+get_result(): mysqli_stmt::get_result()
    needs mysqlnd and this server's mysqli is not built against it, so the
@@ -93,6 +136,7 @@ if (!is_array($traits) || !$traits) dhcc_fail();
 $key   = substr(md5(($row['traits_hash'] ?: md5($row['traits'])) . '|' . DHCC_W . 'x' . DHCC_H), 0, 24);
 $dir   = __DIR__ . '/dhcrenders';
 $cache = $dir . '/card-' . $key . '.jpg';
+}
 
 function dhcc_send($file) {
 	/* Immutable: the filename changes when the Fighter does, so this copy
@@ -110,13 +154,69 @@ if (is_file($cache) && filesize($cache) > 0) dhcc_send($cache);
    the Arena, Discord and this -- a second opinion about the armless-torso
    swap or the single-arm clip is the bug class that has already cost this
    codebase twice. */
-$url = dhcf_render_fighter($traits, $serial, 1000);
-if ($url === '') dhcc_fail(503);
-$src_abs = $dir . '/' . basename(parse_url($url, PHP_URL_PATH));
-if (!is_file($src_abs)) dhcc_fail(503);
+if ($traitq === '') {
+	if (!function_exists('dhcf_render_fighter')) dhcc_fail(503);
+	$url = dhcf_render_fighter($traits, $serial, 1000);
+	if ($url === '') dhcc_fail(503);
+	$src_abs = $dir . '/' . basename(parse_url($url, PHP_URL_PATH));
+	if (!is_file($src_abs)) dhcc_fail(503);
+}
 
 $src = @imagecreatefrompng($src_abs);
 if (!$src) dhcc_fail(503);
+
+/*
+ * A TRAIT IS CROPPED TO ITS OWN INK FIRST.
+ *
+ * A Fighter render fills its canvas. A trait layer does not: it is drawn on
+ * the full 1000x1000 body canvas at the position it occupies ON a Fighter,
+ * so a belt is a band across the lower third of an otherwise empty square.
+ * Fitting that whole square to the card's height put the belt small and low
+ * with a nearly black wash behind it -- technically the trait, visibly
+ * nothing.
+ *
+ * imagecropauto does the bounding box in C. It can legitimately return
+ * false (a layer with no opaque pixel at all), and a crop smaller than a
+ * few pixels is not worth trusting, so both fall back to the uncropped
+ * image rather than failing the card.
+ *
+ * IMG_CROP_SIDES, NOT IMG_CROP_TRANSPARENT, which is what this shipped with
+ * and what silently did nothing to 22 of the 235 trait PNGs. GD's
+ * transparent mode compares every pixel against imagecolortransparent(),
+ * a SINGLE palette index, and the art does not all carry one:
+ *
+ *   - 18 files are truecolor with an alpha channel, so there is no index at
+ *     all (-1) and nothing ever matches.
+ *   - Four more are palette files whose index is not the colour their
+ *     border actually uses -- axe, scythe, skull-krusher, tank-helmet.
+ *
+ * Every one of those is sparse art, and every one of them came out small
+ * and low on a near-black card -- technically the trait, visibly nothing.
+ * IMG_CROP_SIDES decides from the corner colours instead, which is what a
+ * transparent border looks like whatever the file's colour model.
+ *
+ * MEASURED OVER THE WHOLE SET before swapping them round: sides crops the
+ * 22 that transparent misses, is never SMALLER than transparent on the 213
+ * where both work, and never degenerates. Transparent stays behind it for
+ * art whose corners are not uniform but which does carry a working index.
+ *
+ * Art that legitimately fills its canvas -- backgrounds, full-body effects,
+ * the flat colour swatches -- shrinks under neither, which is right. The
+ * shrink test is what separates "nothing to crop" from "the mode found
+ * nothing", and only the second tries the next one.
+ */
+if ($traitq !== '' && function_exists('imagecropauto')) {
+	$cropped = function ($im, $mode) {
+		$c = @imagecropauto($im, $mode);
+		if ($c === false || imagesx($c) <= 8 || imagesy($c) <= 8) return null;
+		if (imagesx($c) >= imagesx($im) && imagesy($c) >= imagesy($im)) return null;
+		return $c;
+	};
+	$crop = $cropped($src, IMG_CROP_SIDES);
+	if ($crop === null) $crop = $cropped($src, IMG_CROP_TRANSPARENT);
+	if ($crop !== null) $src = $crop;
+}
+
 $sw = imagesx($src); $sh = imagesy($src);
 
 $card = imagecreatetruecolor(DHCC_W, DHCC_H);
@@ -163,9 +263,12 @@ if (function_exists('imagefilter')) {
 	@imagefilter($card, IMG_FILTER_COLORIZE, 0, 6, 18, 0);
 }
 
-/* THE FIGHTER, WHOLE. Fit to the height with a little air top and bottom, so
-   nothing is cropped -- the entire point of not handing X a square. */
-$fit = (DHCC_H - 36) / $sh;
+/* THE SUBJECT, WHOLE. Fit to the height with a little air top and bottom, so
+   nothing is cropped -- the entire point of not handing X a square. A trait
+   is wider than it is tall as often as not, so the width has to bound it
+   too or a belt cropped to its ink would be scaled until it ran off both
+   sides. */
+$fit = min((DHCC_H - 36) / $sh, (DHCC_W - 120) / $sw);
 $fw = (int)round($sw * $fit); $fh = (int)round($sh * $fit);
 imagecopyresampled($card, $src, (int)((DHCC_W - $fw) / 2), (int)((DHCC_H - $fh) / 2), 0, 0, $fw, $fh, $sw, $sh);
 

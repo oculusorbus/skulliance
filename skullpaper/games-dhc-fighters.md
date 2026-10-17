@@ -453,6 +453,16 @@ whoever reads it to come and build one of their own.
 Sharing is only offered on Fighters you built. Posting someone else's assembly
 in your own voice is not a share.
 
+**A trait you just won has its own Share on X**, on the drop itself. The
+moment a trait lands, the panel that reveals it carries the button next to
+*Close* and *Open assembler*, and the post names the trait, its tier, and how
+many of the 226 original Fighters wear it. It carries a picture of the trait
+and links to that trait in the Collection, so whoever clicks it lands on every
+Fighter built with the piece. Players were already screenshotting that panel
+and posting the photo, phone status bar and all; this is the same moment
+without the furniture. Nothing is offered on a near miss or once the daily
+limit is spent, because there is no trait to show.
+
 The one exception is the Skulliance account itself, which can share and
 download any Fighter in the Collection - that is how a build ends up on the
 Skulliance X feed. When it posts a Fighter it did not build, the wording

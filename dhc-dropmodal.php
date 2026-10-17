@@ -125,7 +125,7 @@ define('DHC_DROPMODAL_LOADED', true);
  * own controls, scoped under its id, and the alternative is losing a
  * specificity race against nine stylesheets that will keep changing.
  */
-#dhcdrop-actions{display:flex;gap:8px;padding:15px;margin:0}
+#dhcdrop-actions{display:flex;flex-wrap:wrap;gap:8px;padding:15px;margin:0}
 #dhcdrop-actions a,#dhcdrop-actions button{
   flex:1 1 0 !important;
   display:block !important;
@@ -156,6 +156,31 @@ define('DHC_DROPMODAL_LOADED', true);
   color:#07111d !important;
   font-weight:700 !important;
 }
+/*
+ * SHARE GETS ITS OWN ROW, AND X'S OWN COLOURS.
+ *
+ * Three controls on one row inside a 348px box leaves each about 100px, and
+ * "Open assembler" alone is wider than that at this type size -- so the row
+ * wraps and share takes the full width above the pair. order:-1 rather than
+ * markup order, so the DOM keeps Close first for anyone tabbing through.
+ *
+ * Black on white is X's own look, which makes it read as neither the mint
+ * primary nor the outlined secondary. That matters: a player who just pulled
+ * a legendary has two real next actions, bragging and building, and painting
+ * both mint would have made the box argue with itself.
+ */
+#dhcdrop-actions a#dhcdrop-share{
+  flex:1 1 100% !important;
+  order:-1;
+  background:#000 !important;
+  border-color:#3a4a56 !important;
+  color:#fff !important;
+  font-weight:700 !important;
+}
+#dhcdrop-actions a#dhcdrop-share:hover{border-color:#fff !important}
+/* Nothing to brag about on a near miss or a spent daily cap, and the card
+   would point at a trait that was never awarded. */
+#dhcdrop-veil.miss #dhcdrop-share{display:none !important}
 #dhcdrop-actions button:hover{border-color:#00c8a0 !important;color:#00c8a0 !important}
 #dhcdrop-actions a.go:hover{filter:brightness(1.12)}
 #dhcdrop-actions a:focus-visible,#dhcdrop-actions button:focus-visible{
@@ -183,6 +208,7 @@ define('DHC_DROPMODAL_LOADED', true);
     <div id="dhcdrop-actions">
       <button type="button" id="dhcdrop-close">Close</button>
       <a class="go" href="dhcfighters.php">Open assembler</a>
+      <a id="dhcdrop-share" href="dhcgallery.php" target="_blank" rel="noopener">Share on X</a>
     </div>
   </div>
 </div>
@@ -209,6 +235,65 @@ define('DHC_DROPMODAL_LOADED', true);
   ?>;
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var timers = [];
+
+  /*
+   * THE SHARE TAIL, same shape as the Collection modal's X_HANDLE: invite,
+   * then credit. A bare @skulliance says who made the thing and nothing about
+   * why a stranger should turn up, and the art is the reason any of this is
+   * worth posting at all.
+   *
+   * Its own constant here rather than a require of db.php's shareOnXUrl():
+   * this file is deliberately standalone -- no framework, no platform CSS, no
+   * platform PHP -- because it has to sit on top of nine game interfaces. The
+   * budget arithmetic below is the part that must not drift, and
+   * dhc-share-harness.js reads this literal out of the file and asserts on it
+   * for exactly that reason.
+   */
+  var X_TAIL = 'Join @skulliance to earn traits by playing and assemble your own Fighter!\n\nArt by @MMAXI404';
+
+  /**
+   * What the post says. One sentence: what dropped, how rare it is, and how
+   * many of the original Fighters wear it -- which is the detail that makes a
+   * mythic interesting rather than just coloured.
+   */
+  function shareText(d) {
+    var worn = d.worn > 0
+      ? ', worn by ' + d.worn + ' of the 226 original DHC Fighters'
+      : ', worn by none of the 226 original DHC Fighters';
+    /* "an uncommon", "an epic". Two of the five tiers start with a vowel and
+       the article sits in front of the tier. */
+    var art = 'aeiou'.indexOf(String(d.tier).charAt(0)) > -1 ? 'an' : 'a';
+    var body = 'Earned ' + d.name + ' - ' + art + ' ' + d.tier + ' ' + d.category + ' trait' + worn + '.';
+    /*
+     * X counts ANY url as 23 characters however long it really is, and cuts
+     * whatever does not fit off the END -- which is where the handle and the
+     * credit live. Budget for the url here so an over-long trait name trims
+     * the sentence instead of silently costing the post its reach.
+     */
+    var limit = 280 - 24 - ('\n\n' + X_TAIL).length;
+    if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '…';
+    return body + '\n\n' + X_TAIL;
+  }
+
+  /*
+   * The link names the TRAIT, so the post lands on that trait in the
+   * Collection -- and dhcgallery.php answers ?trait= with an og:image of
+   * dhc-card.php?trait=, which is the only way the art gets into the post.
+   * x.com/intent/post cannot attach a file. A screenshot is what players were
+   * doing instead, and this is the same picture without the browser chrome.
+   */
+  function shareHref(d) {
+    /* Not encodeURIComponent'd here: the whole url is encoded as the url=
+       parameter below, and encoding twice sends X "%253A" -- which still
+       resolves, but means the link in the post is not the link anyone would
+       type. Category and slug are [a-z0-9-] by construction; dhc-card.php
+       refuses anything else before it touches a path. */
+    var url = 'https://skulliance.io/staking/dhcgallery.php?trait='
+            + d.category + ':' + d.slug;
+    return 'https://x.com/intent/post?text=' + encodeURIComponent(shareText(d))
+         + '&url=' + encodeURIComponent(url);
+  }
+  window.__shareText = shareText; window.__shareHref = shareHref;   // harness hooks
 
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
   /*
@@ -247,6 +332,7 @@ define('DHC_DROPMODAL_LOADED', true);
     document.getElementById('dhcdrop-img').src = base + '/250/' + d.category + '/' + d.slug + '.png';
     document.getElementById('dhcdrop-name').textContent = d.name;
     document.getElementById('dhcdrop-tier').textContent = d.tier;
+    document.getElementById('dhcdrop-share').href = shareHref(d);
 
     // The provenance is the interesting part of a rare drop: not just "mythic"
     // but "no minted Fighter wears this".
