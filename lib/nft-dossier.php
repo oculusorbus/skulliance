@@ -76,10 +76,25 @@ function nft_dossier($conn, $nft_id) {
 		"SELECT grn.run_id FROM gauntlets_nfts grn
 		  WHERE grn.nft_id = $id ORDER BY grn.run_id DESC LIMIT 10");
 
-	/* ---- a diamond skull it is part of ---- */
+	/*
+	 * ---- a diamond skull it is part of ----
+	 *
+	 * diamond_skulls.diamond_skull_id IS ITSELF AN nfts.id -- the Skull this
+	 * one is delegated to is another NFT, which gallery.php already relies on.
+	 * So the row carries everything needed to show it properly; returning the
+	 * bare id, as this did, put a raw number on the panel where a name and a
+	 * picture belong. The ipfs/collection/project columns come back raw and
+	 * the CALLER resolves them, the same split the main image uses: getIPFS()
+	 * lives in db.php and this library does not include it.
+	 */
 	$ds = _nftd_rows($conn,
-		"SELECT diamond_skull_id FROM diamond_skulls WHERE nft_id = $id LIMIT 1");
-	if ($ds) $d['diamond'] = $ds[0]['diamond_skull_id'];
+		"SELECT ds.diamond_skull_id, dn.name, dn.asset_name, dn.ipfs,
+		        dn.collection_id, dc.project_id
+		   FROM diamond_skulls ds
+		   INNER JOIN nfts        dn ON dn.id = ds.diamond_skull_id
+		   LEFT  JOIN collections dc ON dc.id = dn.collection_id
+		  WHERE ds.nft_id = $id LIMIT 1");
+	if ($ds) $d['diamond'] = $ds[0];
 
 	/*
 	 * ---- RAIDS, REACHED THROUGH THE SOLDIER ----
@@ -119,8 +134,10 @@ function nft_dossier($conn, $nft_id) {
 
 	/* ---- standing in a realm, which is also how it reaches raids ---- */
 	$sol = _nftd_rows($conn,
+		/* theme_id IS the realm's picture: images/themes/{theme_id}.jpg, the
+		   same file realms.php and the raid cards draw. */
 		"SELECT s.realm_id, s.location, s.trained, s.dead, s.active,
-		        r.name AS realm_name, r.user_id AS realm_user
+		        r.name AS realm_name, r.user_id AS realm_user, r.theme_id
 		   FROM soldiers s
 		   LEFT JOIN realms r ON r.id = s.realm_id
 		  WHERE s.nft_id = $id

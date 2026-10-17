@@ -148,6 +148,78 @@ echo "\nit reaches raids through the soldier, over every soldier row\n";
 	   'a raids_soldiers row with no surviving raid is counted, with no outcome to score it by');
 }
 
+echo "\nthe realm and the Diamond Skull are shown, not just named\n";
+{
+	$clean = harness_strip_comments($src);
+	$page  = file_get_contents(__DIR__ . '/my-nfts.php');
+	$ep    = file_get_contents(__DIR__ . '/ajax/nft-dossier.php');
+
+	/* The realm's picture IS its theme file, so the query has to bring the id
+	   back. Without it the row renders a name and no picture, silently. */
+	ok(strpos($clean, 'r.theme_id') !== false,
+	   'the soldier query no longer selects the realm theme, so the realm has no picture');
+	ok(strpos($page, "images/themes/'") !== false
+	   || strpos($page, 'images/themes/') !== false,
+	   'the realm row does not draw the theme image');
+	/* A realm with no theme must show no thumbnail rather than a broken one. */
+	ok(strpos($page, 'd.soldier.theme_id') !== false,
+	   'the realm thumbnail is drawn unconditionally; a realm with no theme gets a broken image');
+
+	/*
+	 * diamond_skulls.diamond_skull_id IS ITSELF AN nfts.id -- gallery.php has
+	 * relied on that for as long as the feature has existed. Returning the
+	 * bare id put a row number on the panel that the owner has never seen
+	 * anywhere else.
+	 */
+	ok(preg_match('/INNER JOIN nfts\s+dn ON dn\.id = ds\.diamond_skull_id/', $clean) === 1,
+	   'the diamond skull is not joined to nfts, so it has neither a name nor a picture');
+	ok(strpos($page, 'ds.name || ds.asset_name') !== false,
+	   'the diamond skull row still renders the raw id instead of its name');
+	/*
+	 * WHETHER THE PICTURES ACTUALLY RENDER IS NOT A QUESTION SOURCE TEXT CAN
+	 * ANSWER. A structural check for "this block mentions ds.image and an
+	 * img tag" passed with the thumbnail wired to `false`, because the
+	 * string still appeared further down the same ternary. So the real
+	 * render() is EXECUTED, in nft-panel-harness.js, and reported here as
+	 * one assertion -- the same arrangement digest-harness.php uses for its
+	 * geometry.
+	 */
+	$out = array(); $rc = 0;
+	exec('node ' . escapeshellarg(__DIR__ . '/nft-panel-harness.js') . ' 2>&1', $out, $rc);
+	if ($rc !== 0) {
+		echo "  --- nft-panel-harness.js ---\n";
+		foreach ($out as $line) if (strpos($line, 'FAIL') !== false) echo "  $line\n";
+	}
+	ok($rc === 0, 'nft-panel-harness.js failed: render() does not produce what the panel needs');
+	/* The image is resolved by the CALLER, the same split the main image
+	   uses: getIPFS() is db.php's and the library does not include it. */
+	ok(strpos($clean, 'getIPFS(') === false,
+	   'the dossier library calls getIPFS(), which it does not include; the endpoint resolves images');
+	ok(strpos($ep, "\$d['diamond']['image'] = getIPFS(") !== false,
+	   'the endpoint does not resolve the diamond skull image, so the panel gets a raw CID');
+	/* And the raw CID must not go out with it. */
+	ok(strpos($ep, "unset(\$d['diamond']['ipfs'])") !== false,
+	   'the diamond skull\'s raw ipfs value is still sent to the browser');
+}
+
+echo "\nthe raid line says which stat it is about\n";
+{
+	$page = file_get_contents(__DIR__ . '/my-nfts.php');
+	/*
+	 * It shipped as a bare .nftd-idle under a FIVE-TILE grid, so "8 won, 5
+	 * lost" could have been qualifying missions, gauntlets or the nightly
+	 * rate. A stat line with no label is a different number depending on who
+	 * reads it.
+	 */
+	ok(strpos($page, '<p class="nftd-note"><b>Raids</b>') !== false,
+	   'the raid record has no label, so it reads as a comment on whichever tile is nearest');
+	/* And the label needs a rule, or it is just more body text. */
+	ok(preg_match('/\.nftd-note b\s*\{/', $page) === 1,
+	   'the record label has no styling, so it does not read as a label');
+	ok(preg_match('/\.nftd-note \+ \.nftd-idle\s*\{/', $page) === 1,
+	   'nothing separates the record from the artwork note; they render as one block');
+}
+
 echo "\nthe panel only shows a record once there is one\n";
 {
 	$page = file_get_contents(__DIR__ . '/my-nfts.php');

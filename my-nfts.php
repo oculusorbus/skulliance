@@ -893,6 +893,27 @@ if ($filterby != "") {
 .nftd-list li b{font-weight:600}
 .nftd-list .when{margin-left:auto;font-size:10.5px;opacity:.55;white-space:nowrap}
 .nftd-idle{font-size:11.5px;opacity:.6;margin:0}
+/*
+ * A STAT LINE HAS TO NAME ITS STAT. The raid record shipped as a bare
+ * .nftd-idle under a five-tile grid, so "3 won, 1 lost" could have been
+ * qualifying missions, gauntlets or the nightly rate -- the reader had no way
+ * to know which. The label is part of the line, not a section heading: one
+ * more heading between the grid and the artwork note would outweigh the
+ * sentence it introduces.
+ */
+.nftd-note{font-size:11.5px;opacity:.75;margin:12px 0 0;display:flex;gap:8px;align-items:baseline}
+/* .nftd-idle is margin:0 because it is used as a standalone paragraph
+   elsewhere; the gap belongs to this pairing, not to either rule. */
+.nftd-note + .nftd-idle{margin-top:10px}
+.nftd-note b{flex:0 0 auto;font-size:9.5px;font-weight:600;letter-spacing:.14em;
+  text-transform:uppercase;opacity:.55}
+.nftd-note span{opacity:.75}
+/* The realm and the Diamond Skull are PICTURES, and a list row that names one
+   without showing it is the same miss the panel started as. Square, because
+   both sources are square: theme art and NFT art. */
+.nftd-list li img.thumb{flex:0 0 auto;width:34px;height:34px;border-radius:3px;object-fit:cover;
+  background:var(--panel2,#0d1e2e);border:1px solid #1b3346}
+.nftd-list li.has-thumb{align-items:center}
 .nftd-links{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0;padding-top:14px;
   border-top:1px solid #1b3346}
 .nftd-links a{font-size:10px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;
@@ -972,7 +993,8 @@ if ($filterby != "") {
       else if (r.attack) bits.push('always attacking');
       else if (r.defend) bits.push('always defending');
       if (r.fell) bits.push('fell ' + r.fell + (r.fell === 1 ? ' time' : ' times'));
-      if (bits.length) h += '<p class="nftd-idle">' + esc(bits.join(' \u00b7 ')) + '</p>';
+      if (bits.length) h += '<p class="nftd-note"><b>Raids</b><span>'
+                          + esc(bits.join(' \u00b7 ')) + '</span></p>';
     }
 
     /* The artwork's home, which is the thing the save button is about. */
@@ -997,7 +1019,16 @@ if ($filterby != "") {
       }).join('') + '</ul>');
     }
     if (d.soldier && String(d.soldier.active) === '1' && !d.soldier.dead) {
-      busy.push('<ul class="nftd-list"><li><b>Standing in '
+      /* The realm's picture is its theme: images/themes/{theme_id}.jpg, the
+         same file realms.php draws. A realm with no theme shows no thumbnail
+         rather than a broken one. */
+      var rimg = d.soldier.theme_id
+        ? '<img class="thumb" alt="" src="images/themes/'
+          + encodeURIComponent(d.soldier.theme_id) + '.jpg"'
+          + ' onerror="this.remove()">'
+        : '';
+      busy.push('<ul class="nftd-list"><li' + (rimg ? ' class="has-thumb"' : '') + '>' + rimg
+        + '<b>Standing in '
         + esc(d.soldier.realm_name || 'a realm') + '</b>'
         + '<span style="opacity:.6">' + (String(d.soldier.trained) === '1' ? 'trained' : 'untrained')
         + '</span>'
@@ -1011,8 +1042,17 @@ if ($filterby != "") {
         + '<span class="when">away until it ends</span></li></ul>');
     }
     if (d.diamond) {
-      busy.push('<ul class="nftd-list"><li><b>Part of a Diamond Skull</b>'
-        + '<span style="opacity:.6">' + esc(d.diamond) + '</span></li></ul>');
+      /* d.diamond is the OTHER NFT this one is delegated to, so it has a name
+         and a picture. It used to render as the bare row id, which told the
+         owner a number they have never seen anywhere else. */
+      var ds = d.diamond, dname = ds.name || ds.asset_name || 'a Diamond Skull';
+      var dimg = ds.image
+        ? '<img class="thumb" alt="" src="' + esc(ds.image) + '"'
+          + ' onerror="this.onerror=null;this.src=\'/staking/icons/skull.png\'">'
+        : '';
+      busy.push('<ul class="nftd-list"><li' + (dimg ? ' class="has-thumb"' : '') + '>' + dimg
+        + '<b>Part of a Diamond Skull</b>'
+        + '<span style="opacity:.6">' + esc(dname) + '</span></li></ul>');
     }
 
     h += busy.length ? busy.join('')

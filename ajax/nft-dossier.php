@@ -67,6 +67,18 @@ if (!$mine) {
 $img    = getIPFS($d['nft']['ipfs'], $d['nft']['collection_id'], $d['nft']['project_id']);
 $cached = (strpos($img, '/staking/images/nfts/') === 0);
 
+/*
+ * The Diamond Skull is another NFT, so its picture resolves exactly like the
+ * main one -- local copy first, gateway otherwise. Done here rather than in
+ * the library for the same reason the main image is: getIPFS() is db.php's.
+ */
+if (!empty($d['diamond'])) {
+	$d['diamond']['image'] = getIPFS($d['diamond']['ipfs'],
+	                                 (int)$d['diamond']['collection_id'],
+	                                 (int)$d['diamond']['project_id']);
+	unset($d['diamond']['ipfs']);     // the panel has no use for the raw CID
+}
+
 ob_clean();
 echo json_encode(array(
 	'success'  => true,

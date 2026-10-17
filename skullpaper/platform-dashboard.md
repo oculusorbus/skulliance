@@ -15,7 +15,7 @@ Clicking an NFT no longer sends you off to a block explorer. It opens a panel ab
 * **On mission** and **missions done** - see [[missions]].
 * **Gauntlet runs** - see [[missions-consumable-items]] and [[realms-raids]].
 * **Raids fought**, with the record underneath: how many won, how many lost, how many attacking versus defending, and how many times it fell. A win is counted from your NFT's own side, so holding your realm against an attacker counts as a win for the defender.
-* **Right now** - the missions it is on, the realm it is standing in and whether it is trained, whether it is away in a raid that has not resolved yet, and whether it is part of a Diamond Skull.
+* **Right now** - the missions it is on, the realm it is standing in and whether it is trained, whether it is away in a raid that has not resolved yet, and whether it is part of a Diamond Skull. The realm and the Diamond Skull are shown with their artwork, not just named.
 * Links out to the chain, the marketplace, the collection, and whichever parts of the platform it is actually involved in.
 
 An NFT that is doing nothing says so plainly rather than showing a column of zeroes.
