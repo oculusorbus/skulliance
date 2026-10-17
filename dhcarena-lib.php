@@ -27,7 +27,8 @@ define('DHCA_DAILY_BATTLES',  6);     // equal for everyone -- see dhcarena.md Â
 define('DHCA_BENCH_BASE_H',   4);     // flat, after any battle
 define('DHCA_BENCH_LOSS_MIN', 4);     // extra hours on a loss at the 3-Fighter floor
 define('DHCA_BENCH_LOSS_MAX', 12);    // ...rising to this for a deep Crew
-define('DHCA_STALE_H',        6);     // an untouched battle is forfeited after this
+/* DHCA_STALE_H is gone: nothing is forfeited on a clock. An open battle waits
+   for the player to resume or forfeit it. See dhca_sweep_stale() below. */
 
 function dhca_season() { return date('Y-m'); }
 
@@ -175,8 +176,11 @@ function dhca_entry_block($conn, $user_id) {
 	 * dhca_sweep_stale() above has already forfeited anything genuinely stuck,
 	 * so this can never lock somebody out of the Arena for good.
 	 */
+	/* Resumable for as long as they like -- the board is waiting exactly as
+	   they left it, so there is nothing to gain by stalling and nothing to
+	   lose by stopping. The page turns this into a resume-or-forfeit choice. */
 	if (dhca_open_battle($conn, $user_id))
-		return 'You are in the middle of a battle. Finish it and the Arena reopens.';
+		return 'You have a battle in progress. Finish it or forfeit it, and the Arena reopens.';
 	return '';
 }
 
@@ -193,31 +197,68 @@ function dhca_open_battle($conn, $user_id) {
 }
 
 /**
- * A battle nobody has touched in DHCA_STALE_H hours is FORFEITED -- resolved as
- * a defeat, with the bench and the record that a defeat carries.
+ * NOTHING IS FORFEITED ON A CLOCK ANY MORE.
  *
- * Not deleted, and not left open. Deleting it would hand back the free
- * abandonment that dhca_entry_block() exists to prevent; leaving it open would
- * mean one dropped connection locks a player out of the Arena permanently. A
- * forfeit is what actually happened: they walked away from a battle, so they
- * lost it -- and they waited six hours to find that out, which is worse than
- * simply losing and strictly better than being stuck.
+ * A battle used to be resolved as a defeat after six hours untouched.
+ * That rule was doing almost no work. The thing that prevents free abandonment
+ * is ONE BATTLE AT A TIME (see dhca_entry_block): the board lives in
+ * dhc_arena_state, so coming back a week later puts you on the same damaged
+ * Crew in the same losing position. Waiting buys nothing.
+ *
+ * What the timer uniquely did was decide FOR the player, silently, after an
+ * arbitrary interval -- and because the sweep only ran when that same player
+ * next opened the Arena, they discovered a loss they had no say in, whenever
+ * they happened to return. The old comment here conceded as much.
+ *
+ * An open battle is now resumed or forfeited BY A PERSON. dhca_forfeit() is
+ * the deliberate act, and it records what actually happened.
+ *
+ * This still exists for ONE case: a ledger row open with no state behind it.
+ * That cannot be resumed and cannot be judged -- there is no board to judge --
+ * and leaving it would lock the player out for good, which is the one outcome
+ * worth avoiding automatically. It is not reachable in normal play; state is
+ * deleted only when a battle resolves.
  */
 function dhca_sweep_stale($conn, $user_id) {
 	$open = dhca_open_battle($conn, $user_id);
-	if (!$open || $open['age'] < DHCA_STALE_H * 3600) return false;
+	if (!$open) return false;
+	$b = dhca_load($conn, $open['battle_id'], $user_id);
+	if ($b) return false;          // resumable: leave it for the player to decide
+	$conn->query("UPDATE dhc_arena_battles SET outcome = 2, ended_at = NOW()
+	              WHERE id = ".$open['battle_id']." AND outcome = 0");
+	return true;
+}
+
+/**
+ * Give up an open battle, deliberately.
+ *
+ * EVERY FIGHTER ON THE FORFEITING SIDE IS MARKED AS FALLEN, which the old
+ * automatic forfeit did not do: it ran the normal finish, so any Fighter still
+ * standing banked a SURVIVAL in a battle the code itself called a defeat. A
+ * Crew that gives up has not held the line, and a survival record that counts
+ * walking away as surviving is not measuring anything.
+ *
+ * That also restores the invariant the per-Fighter numbers depend on -- a
+ * defeat means every Fighter fell -- which is what makes "fell during a win"
+ * derivable at all.
+ */
+function dhca_forfeit($conn, $user_id) {
+	$open = dhca_open_battle($conn, $user_id);
+	if (!$open) return array(false, 'Nothing in progress.');
 	$b = dhca_load($conn, $open['battle_id'], $user_id);
 	if (!$b) {
-		// state gone but the ledger row still open: close it without a payout
+		/* No board to resolve. Close the row rather than strand the player. */
 		$conn->query("UPDATE dhc_arena_battles SET outcome = 2, ended_at = NOW()
-		              WHERE id = ".$open['battle_id']." AND outcome = 0");
-		return true;
+		              WHERE id = ".(int)$open['battle_id']." AND outcome = 0");
+		return array(true, 'That battle could not be restored, so it has been closed.');
 	}
+	/* Giving up IS falling. Marked before dhca_finish() reads the ko flags. */
+	foreach ($b['mine'] as $i => $f) $b['mine'][$i]['ko'] = true;
 	$b['over']    = 'foes';
 	$b['forfeit'] = true;          // no Discord post: see dhca_finish()
-	$b['log'][]   = 'Abandoned â€” forfeited after '.DHCA_STALE_H.' hours.';
+	$b['log'][]   = 'Forfeited.';
 	dhca_finish($conn, $b);
-	return true;
+	return array(true, 'Battle forfeited.');
 }
 
 /**

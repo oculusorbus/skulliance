@@ -40,6 +40,14 @@ Crew composition**, and `dhc_arena_state` is cleared when a battle resolves.
 
 ## 3. Forfeits corrupt it — two different ways
 
+> **RESOLVED for new battles.** There is no six-hour forfeit any more: an open
+> battle waits indefinitely and the player chooses to resume or forfeit it.
+> `dhca_forfeit()` marks every Fighter on the forfeiting side as FALLEN before
+> `dhca_finish()` reads the flags, so 3a cannot happen again, and nothing
+> closes a battle automatically except a ledger row with no state behind it,
+> which narrows 3b to that one case. **Rows written before this stay wrong** —
+> the sizing query below still measures the historical damage.
+
 `dhca_sweep_stale()` closes a battle abandoned for `DHCA_STALE_H` (6) hours.
 
 **3a. The forfeiting side's survivors are credited with wins.** It sets

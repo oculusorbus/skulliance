@@ -83,4 +83,13 @@ if ($do === 'resume') {
 	dhca_out(true, '', array('battle_id' => (int)$b['meta']['battle_id'], 'state' => dhca_public($b)));
 }
 
+if ($do === 'forfeit') {
+	/* Deliberate, and the only way a battle ends without being played out.
+	   Marks every Fighter on this side as fallen -- giving up is not holding
+	   the line, and the per-Fighter survival record depends on that being
+	   true. See dhca_forfeit(). */
+	list($ok, $msg) = dhca_forfeit($conn, $user_id);
+	dhca_out($ok, $msg);
+}
+
 dhca_out(false, 'Unknown action.');

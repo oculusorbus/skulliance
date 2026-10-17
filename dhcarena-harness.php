@@ -759,3 +759,89 @@ $btok(strpos($btNo, "\$('legend').innerHTML") !== false,
 
 echo ($bt_fail ? "\n$bt_fail board-tooltip check(s) FAILED\n" : "board tooltips: ok\n");
 if ($bt_fail) exit(1);
+
+/* ---------------------------------------------------------------------------
+ * AN OPEN BATTLE IS RESUMED OR FORFEITED BY A PERSON
+ *
+ * A battle untouched for six hours used to be resolved as a defeat. That rule
+ * was doing almost no work: the board lives in dhc_arena_state, so coming
+ * back a week later puts you on the same damaged Crew in the same losing
+ * position, and ONE BATTLE AT A TIME is what actually prevents free
+ * abandonment. What the timer uniquely did was decide for the player,
+ * silently, and because the sweep only ran when that same player next opened
+ * the Arena they discovered a loss they had no say in.
+ * ------------------------------------------------------------------------- */
+$ff_fail = 0;
+$ffok = function ($cond, $what) use (&$ff_fail) {
+	if (!$cond) { $ff_fail++; echo "  FAIL  $what\n"; }
+};
+$ffSrc = file_get_contents(__DIR__ . '/dhcarena-lib.php');
+$ffNo  = preg_replace(array('!^[ \t]*/\*.*?\*/!ms', '~(?<![:/])//[^\n]*~'), '', $ffSrc);
+
+/* The clock is gone, not merely lengthened. */
+$ffok(preg_match('/define\(\s*\x27DHCA_STALE_H\x27/', $ffNo) !== 1,
+   'DHCA_STALE_H is still defined, so something can still forfeit on a timer');
+$ffok(strpos($ffNo, "age'] < DHCA_STALE_H") === false && strpos($ffNo, 'STALE_H * 3600') === false,
+   'the sweep still compares a battle age against a deadline');
+
+/* The sweep must leave a resumable battle alone. That is the whole change:
+   previously it loaded the state and finished it as a defeat. */
+$swAt = strpos($ffNo, 'function dhca_sweep_stale(');
+$swEnd = strpos($ffNo, "\n}", $swAt);
+$sw = $swAt === false ? '' : substr($ffNo, $swAt, $swEnd - $swAt);
+$ffok($sw !== '', 'dhca_sweep_stale() is gone entirely; the orphaned-row case still needs it');
+$ffok(strpos($sw, 'if ($b) return false;') !== false,
+   'the sweep still acts on a battle it was able to load, so an abandoned battle is still '
+ . 'forfeited without the player being asked');
+$ffok(strpos($sw, 'dhca_finish(') === false,
+   'the sweep still finishes a battle, which is the automatic defeat being removed');
+/* But an unloadable row must still be closed, or one lost state locks the
+   player out of the Arena for good. */
+$ffok(strpos($sw, 'outcome = 2') !== false,
+   'a ledger row with no state behind it is left open, which locks that player out permanently');
+
+/* The deliberate act exists, and marks the whole Crew as fallen. */
+$ffok(strpos($ffNo, 'function dhca_forfeit(') !== false, 'there is no way to forfeit deliberately');
+$fAt = strpos($ffNo, 'function dhca_forfeit(');
+$fEnd = strpos($ffNo, "\n}", $fAt);
+$fn = $fAt === false ? '' : substr($ffNo, $fAt, $fEnd - $fAt);
+/*
+ * THE PART THAT MATTERS FOR THE PER-FIGHTER RECORD. The old automatic forfeit
+ * ran the normal finish, so any Fighter still standing banked a SURVIVAL in a
+ * battle the code itself called a defeat -- and the survival record depends on
+ * "a defeat means every Fighter fell" to be worth anything.
+ */
+$ffok(preg_match('/foreach \(\$b\[\x27mine\x27\] as \$i => \$f\) \$b\[\x27mine\x27\]\[\$i\]\[\x27ko\x27\] = true;/', $fn) === 1,
+   'forfeiting does not mark the Crew as fallen, so walking away still counts as surviving');
+$koAt = strpos($fn, "['ko'] = true");
+$fiAt = strpos($fn, 'dhca_finish(');
+$ffok($koAt !== false && $fiAt !== false && $koAt < $fiAt,
+   'the Crew is marked fallen AFTER dhca_finish() has already read the ko flags');
+$ffok(strpos($fn, "\$b['over']    = 'foes';") !== false, 'a forfeit does not resolve as a defeat');
+$ffok(strpos($fn, "\$b['forfeit'] = true;") !== false,
+   'a forfeit is announced to Discord; nobody played it, and the call is on a page-load path');
+
+/* The endpoint exposes it, and the page offers the choice. */
+$ffAct = file_get_contents(__DIR__ . '/ajax/dhcarena-action.php');
+$ffok(strpos($ffAct, "\$do === 'forfeit'") !== false, 'the action endpoint has no forfeit');
+$ffok(strpos($ffAct, 'dhca_forfeit($conn, $user_id)') !== false,
+   'the endpoint does not call dhca_forfeit()');
+$ffPage = file_get_contents(__DIR__ . '/dhcarena.php');
+$ffok(strpos($ffPage, 'id="aForfeit"') !== false, 'the page offers no way to forfeit');
+$ffok(strpos($ffPage, 'id="aResumeBlocked"') !== false,
+   'the page offers no way to resume from the block, which is the option that should be taken');
+/* THE GUARD, not the word. `if (false && !confirm(...))` keeps every string
+   a presence check looks for while letting the forfeit straight through. */
+$ffok(strpos($ffPage, "if (!confirm('Forfeit this battle?") !== false,
+   'forfeiting is not guarded by a bare `if (!confirm(...))`, and it is the only control here '
+ . 'that records a defeat without a move being played');
+$cfAt = strpos($ffPage, "if (!confirm('Forfeit this battle?");
+$pfAt = strpos($ffPage, "post({ do: 'forfeit' }");
+$ffok($cfAt !== false && $pfAt !== false && $cfAt < $pfAt,
+   'the forfeit is posted before the confirmation is asked for');
+/* And the refusal must describe both options rather than just saying no. */
+$ffok(strpos($ffNo, 'Finish it or forfeit it') !== false,
+   'the entry block still tells the player only that they are stuck');
+
+echo ($ff_fail ? "\n$ff_fail forfeit check(s) FAILED\n" : "resume or forfeit: ok\n");
+if ($ff_fail) exit(1);

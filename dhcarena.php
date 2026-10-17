@@ -896,7 +896,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--dim);
   font-variant-numeric:tabular-nums}
 .arena-wrap .lclock.low{border-color:var(--blood);color:var(--blood)}
-.arena-wrap .a-block{border:1px solid var(--ochre);background:rgba(0,200,160,.07);
+.arena-wrap .a-block-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+	.arena-wrap .a-block-note{font-size:11px;color:#5a7888;line-height:1.5}
+	.arena-wrap .a-block{border:1px solid var(--ochre);background:rgba(0,200,160,.07);
   border-radius:3px;padding:9px 12px;font-size:12px;margin-bottom:14px}
 .arena-wrap .a-block a{color:var(--ochre)}
 .arena-wrap .a-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
@@ -1219,6 +1221,26 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   <div class="a-block"><?php echo htmlspecialchars($block); ?>
     <?php if (count($crew) < DHCA_CREW_SIZE): ?>
       Build them in <a href="dhcfighters.php">DHC Fighters</a>.
+    <?php endif; ?>
+    <?php
+      /*
+       * RESUME OR FORFEIT, AND THE PLAYER DECIDES.
+       *
+       * A battle no longer times out. The board is kept exactly as it was
+       * left, so there is nothing to gain by stalling -- which means there is
+       * no reason to take the choice away. Previously the Arena resolved it
+       * as a defeat after six hours and the player found out whenever they
+       * next came back, with no say in it.
+       */
+      $openNow = $user_id ? dhca_open_battle($conn, $user_id) : null;
+      if ($openNow):
+    ?>
+      <div class="a-block-acts">
+        <button class="btn go" id="aResumeBlocked" type="button">Resume it</button>
+        <button class="btn" id="aForfeit" type="button">Forfeit it</button>
+        <span class="a-block-note">Resuming puts you back on the same board, exactly as you
+          left it. Forfeiting records a defeat.</span>
+      </div>
     <?php endif; ?>
   </div>
 <?php endif; ?>
@@ -1589,6 +1611,35 @@ var ARENA_BANDS = <?php echo json_encode(dhca_reward_bands()); ?>;
 /* Why the player cannot enter, if they cannot. The server decides this again on
    every start -- this only keeps the button honest. */
 var BLOCKED = <?php echo json_encode($block); ?>;
+
+/*
+ * The resume-or-forfeit choice on the entry block.
+ *
+ * Both buttons act on the battle the server already knows about, so neither
+ * needs a battle id. Forfeit confirms first: it is the only control on this
+ * page that records a defeat without a move being played.
+ */
+(function () {
+  var rb = document.getElementById('aResumeBlocked'),
+      fb = document.getElementById('aForfeit');
+  if (rb) rb.addEventListener('click', function () {
+    rb.disabled = true;
+    post({ do: 'resume' }, function (res) {
+      if (!res || !res.ok) { rb.disabled = false; alert((res && res.message) || 'Could not resume.'); return; }
+      openBattle(res, !res.state.moves);
+    });
+  });
+  if (fb) fb.addEventListener('click', function () {
+    if (!confirm('Forfeit this battle? It is recorded as a defeat, and every Fighter in the '
+               + 'Crew is treated as having fallen. Resuming instead costs you nothing — the '
+               + 'board is exactly as you left it.')) return;
+    fb.disabled = true;
+    post({ do: 'forfeit' }, function (res) {
+      if (!res || !res.ok) { fb.disabled = false; alert((res && res.message) || 'Could not forfeit.'); return; }
+      location.reload();
+    });
+  });
+})();
 /* Nobody is signed in. Everything ranked is unreachable for this visitor -- the
    Crew picker, the rival list, resume, the ladder position -- and practice is
    the whole page. */

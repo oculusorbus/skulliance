@@ -21,7 +21,7 @@
  * It also has to stay out of the ranked rules' way: dhca_open_battle() and
  * dhca_sweep_stale() key on dhc_arena_state.user_id with outcome = 0, so a live
  * battle stored there would block the player's real battle AND be force-
- * forfeited as a DEFEAT after six hours, benching Fighters over a match that
+ * resolved as a DEFEAT when abandoned, benching Fighters over a match that
  * carried no stake.
  *
  * Reads from the ranked lib (crews, identities, the fiercest Fighter, the

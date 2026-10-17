@@ -48,10 +48,18 @@ formation order, and clicking one there drops it.
 
 **One battle at a time.** You cannot start another while one is still going —
 walking away from a battle you were losing would otherwise skip recovery
-entirely, which is the only real cost in the game. A battle nobody has touched
-for **six hours** is forfeited: it resolves as a defeat, with the recovery and
-the record a defeat carries, so a dropped connection can never lock you out of
-the Arena for good.
+entirely, which is the only real cost in the game.
+
+**A battle waits for you, for as long as you like.** There is no clock on it.
+Close the tab, come back next week, and the board is exactly as you left it:
+the same Crew, the same damage, the same position. Stalling gains you nothing,
+which is precisely why nothing needs to be taken away from you for doing it.
+
+When you return, the Arena offers the choice: **resume it** and pick up where
+you stopped, or **forfeit it** and start fresh. Forfeiting is recorded as a
+defeat and every Fighter in that Crew is treated as having fallen, with the
+recovery that carries — giving up is not holding the line. Resuming costs you
+nothing at all.
 
 **Your defence is your three strongest, arranged for you.** Not your three
 rarest — rarity score is close to unrelated to how a Fighter actually performs,
