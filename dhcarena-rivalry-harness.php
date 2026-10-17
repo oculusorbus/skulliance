@@ -252,5 +252,35 @@ $arena = file_get_contents(__DIR__ . '/dhcarena.php');
 ok(strpos($arena, 'rivalries.php') === false,
    'the Arena does not carry its own second link to Rivalries');
 
+echo "\n-- the page declares every custom property it uses --\n";
+/*
+ * A SILENT FAILURE WORTH A TEST. rivalries.php is a scoped component: it
+ * declares its own palette on .riv-wrap, the way .arena-wrap and .dhcg-wrap
+ * do. Reach for a token a sibling component owns -- --bone, in this case --
+ * and `background: var(--bone)` is invalid at computed-value time, so the
+ * property is simply dropped. The legend's two line swatches vanished and the
+ * key read as a pair of captions with nothing beside them. No error, no
+ * warning, and it looks fine in any preview that happens to load a stylesheet
+ * which does declare it.
+ *
+ * A fallback -- var(--bone, #e8eaed) -- is equally acceptable: the rule is
+ * that the page must not depend on a token it neither declares nor defaults.
+ */
+$rivsrc = file_get_contents(__DIR__ . '/rivalries.php');
+$cssAt  = strpos($rivsrc, '<style>');
+$css    = substr($rivsrc, $cssAt, strpos($rivsrc, '</style>') - $cssAt);
+preg_match_all('/(--[a-z0-9-]+)\s*:/', $css, $dm);
+$declared = array_flip($dm[1]);
+ok(count($declared) >= 6, 'the page declares a palette of its own (' . count($declared) . ' tokens)');
+ok(isset($declared['--bone']), '--bone among them, since the legend swatches are drawn in it');
+preg_match_all('/var\(\s*(--[a-z0-9-]+)\s*(,?)/', $css, $um, PREG_SET_ORDER);
+ok(count($um) > 0, 'and it uses them');
+$orphans = array();
+foreach ($um as $u) {
+	if (!isset($declared[$u[1]]) && $u[2] !== ',') $orphans[$u[1]] = true;
+}
+ok(!$orphans, 'no token is used without either being declared here or carrying a fallback'
+   . ($orphans ? ' (' . implode(', ', array_keys($orphans)) . ')' : ''));
+
 echo "\n" . ($fails ? "$fails FAILED\n" : "all passed\n");
 exit($fails ? 1 : 0);

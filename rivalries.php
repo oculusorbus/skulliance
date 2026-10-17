@@ -98,7 +98,14 @@ include 'header.php';
 <style>
 .riv-wrap{padding:14px;max-width:100%;margin:0 auto;overflow-x:clip;
   color:var(--bone,#e8eaed);font:14px/1.5 "JetBrains Mono",ui-monospace,Menlo,monospace;
-  --ink:#07111d;--panel:#0a1929;--line:#1b3346;--dim:#7a9eb0;--ochre:#00c8a0;--blood:#e0466b}
+  /* EVERY TOKEN THIS PAGE USES IS DECLARED HERE. --bone was not, and nothing
+     declares it globally -- .arena-wrap declares its own. So `background:
+     var(--bone)` was an invalid value and the legend's line swatches simply
+     did not paint: the key said "runs both ways" and "one-sided" next to
+     nothing at all. A var() with no fallback referring to a token the
+     component does not own is silent, which is what makes it worth a test. */
+  --ink:#07111d;--panel:#0a1929;--line:#1b3346;--dim:#7a9eb0;--ochre:#00c8a0;
+  --blood:#e0466b;--bone:#e8eaed}
 .riv-wrap h1{font-family:"Archivo Black",Impact,sans-serif;font-weight:400;margin:0;font-size:22px}
 .riv-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;margin:0 0 6px}
 .riv-head .sub{font-size:12px;opacity:.65}
