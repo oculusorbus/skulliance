@@ -1012,35 +1012,11 @@
         // Each track holds its list twice for the seamless -50% translate
         // loop (second pass aria-hidden). Image filenames live under
         // /staking/images/projects/.
-        $hp_partners = [
-            ['nemonium.jpg',     'Omen',                    'https://x.com/Omen4Omen'],
-            ['discosolaris.png', 'Disco Solaris',           'https://x.com/discosolaris'],
-            ['danketsu.png',     'Danketsu',                'https://x.com/DanketsuNFT'],
-            ['squashua.jpg',     'Squashua',                'https://x.com/Joshua_Squashua'],
-            ['netanelcohen.png', 'Netanel Cohen',           'https://x.com/netanelchn'],
-            ['maxingo.png',      'Maxingo',                 'https://x.com/madmaxi__'],
-            ['pendulum.jpg',     'Pendulum',                'https://x.com/Pendulum_NFT'],
-            ['aeoniumsky.jpg',   'Aeoniumsky',              'https://x.com/aeoniumsky'],
-            ['havocworlds.jpg',  'Havoc Worlds',            'https://x.com/havocworlds'],
-            ['goattribe.jpg',    'Goat Tribe',              'https://x.com/adaGOATS'],
-            ['threefoldbold.png','Threefold Bold',          'https://x.com/Threefoldbold'],
-            ['bungking.jpg',     'Bungking',                'https://x.com/Fiqhi_Alfani'],
-            ['darkula.jpg',      'Darkula',                 'https://x.com/darkula__'],
-            ['heistonalpha.jpg', 'Heist on Alpha',          'https://x.com/heistonalpha'],
-            ['apprentices.png',  'Apprentices',             'https://x.com/ApprenticesCNFT'],
-            ['deadpophell.png',  'Dead Pop Hell',           'https://x.com/deadpophell'],
-            ['fart.jpg',         'f.ART',                   'https://x.com/cnftfart'],
-            ['muses.jpg',        'Muses of the Multiverse', 'https://x.com/joshuahoward'],
-            ['cardanocamera.jpg','Cardano Camera',          'https://x.com/cardanocamera'],
-            ['oldmoney.jpg',     'Old Money',               'https://x.com/OldMoneyNFT'],
-            ['jordi.png',        'Jordi',                   'https://x.com/JordiLeitao'],
-            ['ascenderone.jpg',  'Ascender One',            'https://x.com/AscenderOne'],
-            ['ritual.png',       'Ritual',                  'https://x.com/thecgritual'],
-            ['mipatoys.jpg',     'Mipa Toys',               'https://x.com/MipaToys'],
-            ['stagwolf.jpg',     'Stagwolf',                'https://x.com/stagwolf'],
-            ['grey.png',         'Grey',                    'https://x.com/diexgrey'],
-            ['skowl.jpg',        'Skowl',                   'https://x.com/skowllwoks'],
-        ];
+        /* THE ROSTER MOVED to lib/partner-flyers.php so partner.php can show
+           the same artists without a second copy of the list -- two copies
+           of something that grows every time somebody joins means one of
+           them is wrong, and it is always the page nobody opened recently. */
+        $hp_partners = require __DIR__ . '/lib/partner-flyers.php';
         $hp_img_base = 'https://www.skulliance.io/staking/images/projects/';
         $hp_rows = array_chunk($hp_partners, (int)ceil(count($hp_partners) / 2));
         foreach ($hp_rows as $hp_row_index => $hp_row): ?>
