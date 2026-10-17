@@ -569,6 +569,58 @@
   host.appendChild(svg);
 
   /*
+   * ---- FIT THE MAP TO WHAT IS ACTUALLY LEFT ON SCREEN ----
+   *
+   * The stylesheet caps the map at `calc(100vh - 330px)`, which is a guess at
+   * how much page sits above and below it, and a guess is wrong twice: too
+   * small and the map runs off the bottom, too large and it leaves a band of
+   * dead space under the legend. 330 was too large, by about the height of
+   * the legend again.
+   *
+   * Nothing has to guess. The map's own top edge says how much page is above
+   * it, and its following siblings say how much is below -- the legend, and
+   * the note about missing Fighters, which is there on some days and not
+   * others. The leftover is the answer, and it is re-taken on resize.
+   *
+   * The CSS cap stays as the pre-script value so the box is never briefly
+   * taller than the window before this runs.
+   */
+  function fit() {
+    let after = 0;
+    for (let el = host.nextElementSibling; el; el = el.nextElementSibling) {
+      const st = window.getComputedStyle(el);
+      after += el.offsetHeight + parseFloat(st.marginTop || 0) + parseFloat(st.marginBottom || 0);
+    }
+    /*
+     * TWO MORE TERMS, BOTH FOUND BY MEASURING THE REAL PAGE rather than
+     * reasoning about it, and each one produced its own small scrollbar:
+     *
+     *   the wrapper's bottom padding, which sits below the last sibling and
+     *   so is invisible to the loop above -- 14px;
+     *
+     *   the map box's own padding and border, which sit BETWEEN the box edge
+     *   and the drawing. The space measured here belongs to the box, but the
+     *   cap is set on the svg inside it, so the box ends up that much taller
+     *   than the room it was given -- another 12px.
+     */
+    const num  = (v) => parseFloat(v || 0) || 0;
+    const wrap = host.parentElement;
+    const pad  = wrap ? num(window.getComputedStyle(wrap).paddingBottom) : 0;
+    const bs   = window.getComputedStyle(host);
+    const box  = num(bs.paddingTop) + num(bs.paddingBottom)
+               + num(bs.borderTopWidth) + num(bs.borderBottomWidth);
+    const avail = window.innerHeight - host.getBoundingClientRect().top
+                - after - pad - box - 6;
+    /* A floor, because below it scrolling beats squinting. */
+    svg.style.maxHeight = Math.max(320, Math.floor(avail)) + 'px';
+  }
+  fit();
+  /* Re-fit on resize, and once more after layout settles -- web fonts land
+     after first paint and change how tall the heading and legend are. */
+  window.addEventListener('resize', fit);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+
+  /*
    * HOVER A CLUSTER, LIGHT ITS GRUDGES. On a graph this dense the lines are
    * the hard part to read -- which of these strands is mine -- and dimming
    * everything else answers it without a click. Driven by a class on the

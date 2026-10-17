@@ -147,10 +147,13 @@ include 'header.php';
  * enlarging a 1500px drawing to fill a 2000px column only makes the type
  * coarse.
  *
- * The subtraction in max-height is the page above and below it -- navbar, DHC
- * strip, heading, blurb, the window buttons and the legend. The max() floor
- * stops a short window from squeezing the map into a stamp; below that it is
- * better to scroll.
+ * The max-height here is only the PRE-SCRIPT value, so the box is never
+ * briefly taller than the window before rivalries.js runs. Its subtraction is
+ * a guess at the page above and below, and a guess is wrong twice -- too
+ * small and the map overflows, too large and it leaves a dead band under the
+ * legend, which is what 330 did. The script measures the real leftover and
+ * overrides this; see fit() there. The max() floor stops a short window from
+ * squeezing the map into a stamp.
  *
  * Centred by the flex container rather than by margin:auto, which only
  * centres a block whose width is resolved -- and this one's is deliberately

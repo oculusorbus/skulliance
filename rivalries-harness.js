@@ -28,6 +28,15 @@ function makeEl(tag) {
        and the first call throws. */
     removeChild(c) { const i = this.children.indexOf(c); if (i > -1) this.children.splice(i, 1); return c; },
     addEventListener() {},
+    /* Enough layout API for the fit pass. The numbers are deliberately
+       plausible rather than zero: the map measures its own top edge and its
+       siblings' heights, and a stub that answers 0 to everything would let a
+       broken calculation look fine. */
+    style: {},
+    nextElementSibling: null,
+    offsetHeight: 0,
+    getBoundingClientRect() { return { top: this._top || 0, left: 0, bottom: 0, right: 0,
+                                       width: 0, height: 0 }; },
     set textContent(v) { this._text = String(v); },
     get textContent() { return this._text; },
     /*
@@ -109,11 +118,47 @@ const LAYOUTS = JSON.parse(fs.readFileSync(path.join(tmp, 'layouts.json'), 'utf8
 const kitSrc = fs.readFileSync(path.join(__dirname, 'map-kit.js'), 'utf8');
 const rivSrc = fs.readFileSync(path.join(__dirname, 'rivalries.js'), 'utf8');
 
-function draw(layout) {
+/*
+ * REAL NUMBERS FOR THE FIT. The map sizes itself from its own top edge and
+ * the heights of whatever follows it -- legend, and the note about missing
+ * Fighters. A stub answering 0 to both makes every term in that subtraction
+ * vanish, so dropping any of them still produced the right answer and the
+ * tests could not tell. 160px of page above, a 20px legend and a 44px note
+ * below, in a 900px window.
+ */
+const FIT = { top: 160, legend: 20, note: 44, winH: 900, pad: 14, box: 18, gap: 6 };
+function draw(layout, winH) {
   const host = makeEl('div');
   host.closest = () => null;
+  host._top = FIT.top;
+  /* The wrapper's bottom padding sits below the last sibling, so the loop
+     over siblings cannot see it -- missing it overflowed the real page by
+     exactly 14px. */
+  host.parentElement = { _pad: FIT.pad };
+  /* The box's own padding and border sit between its edge and the drawing,
+     so the room it is given is not the room the drawing gets. */
+  host._boxPad = FIT.box / 2 - 1; host._boxBorder = 1;
+  const legend = makeEl('p'); legend.offsetHeight = FIT.legend;
+  const note   = makeEl('p'); note.offsetHeight   = FIT.note;
+  host.nextElementSibling = legend;
+  legend.nextElementSibling = note;
   nodes['riv-map'] = host;
-  global.window = { RIVALRY_DATA: layout };
+  /* The map sizes itself to the room left in the window, so the stub has to
+     have a window with a height and a way to listen for resizes. */
+  global.window = {
+    RIVALRY_DATA: layout,
+    innerHeight: winH || FIT.winH,
+    addEventListener() {},
+    getComputedStyle(el) {
+      return {
+        marginTop: '0', marginBottom: '0',
+        paddingBottom: ((el && el._pad) || (el && el._boxPad) || 0) + 'px',
+        paddingTop: ((el && el._boxPad) || 0) + 'px',
+        borderTopWidth: ((el && el._boxBorder) || 0) + 'px',
+        borderBottomWidth: ((el && el._boxBorder) || 0) + 'px',
+      };
+    },
+  };
   new Function('document', 'window', kitSrc + '\n' + rivSrc)(global.document, global.window);
   return host;
 }
@@ -373,6 +418,36 @@ for (const ln of lineEls) {
     const id = ref.replace(/^url\(#|\)$/g, '');
     ok(mids.has(id), `  line references marker #${id}, which is defined`);
   }
+}
+
+console.log('\n-- the map fits the room actually left in the window --');
+/*
+ * The stylesheet's cap is a guess at how much page sits above and below the
+ * map, and a guess is wrong twice: too small and the map runs off the bottom,
+ * too large and it leaves a band of dead space under the legend. The script
+ * measures instead -- its own top edge for what is above, its siblings for
+ * what is below -- so what is checked here is that it DOES, and that the
+ * answer is bounded.
+ */
+{
+  const mh = svg.style.maxHeight;
+  ok(!!mh, `the map sets its own max height (${mh})`);
+  ok(/^\d+px$/.test(mh), `and it carries its unit (${mh})`);
+  const px = parseFloat(mh);
+  /* Window less what is above the map, less the legend and the note below it,
+     less a small gap. Each term distinct, so dropping any one shows up. */
+  const want = FIT.winH - FIT.top - FIT.legend - FIT.note - FIT.pad - FIT.box - FIT.gap;
+  ok(px === want, `it takes exactly the room left (${px}, wanted ${want})`);
+  ok(px < FIT.winH - FIT.top, 'which is less than everything below the header');
+  ok(px < FIT.winH - FIT.legend - FIT.note, 'and less than the window minus the footer');
+
+  /* A SHORT WINDOW HITS THE FLOOR. Below it, scrolling beats squinting. */
+  const cramped = draw(LAYOUTS.busy, 420);
+  const csvg = cramped.children[0];
+  const cpx = parseFloat(csvg.style.maxHeight);
+  ok(420 - FIT.top - FIT.legend - FIT.note - FIT.pad - FIT.box - FIT.gap < 320,
+     'the cramped window would compute below the floor');
+  ok(cpx === 320, `so the floor holds it at 320 (${cpx})`);
 }
 
 console.log('\n-- the Crew faces outward, away from the chords --');
