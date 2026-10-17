@@ -29,7 +29,23 @@ include 'header.php';
 
 $mn_user = isset($_SESSION['userData']['user_id']);
 $mn_page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
-$mn_per  = 24;
+/*
+ * 27 a page: three full rows of nine.
+ *
+ * 24 left a three-card hole in the last row on a wide screen, because the
+ * grid is auto-fill at minmax(190px, 1fr) and lands on nine columns there --
+ * 9 + 9 + 6. 27 divides by nine exactly.
+ *
+ * It only divides evenly at nine columns (and three), so a narrower window
+ * still ends on a partial row; no single number fills every width when the
+ * column count follows the viewport. This one is chosen for the wide case,
+ * which is where the gap was conspicuous.
+ *
+ * It is also the ceiling on what the save-artwork button attempts in one
+ * run, which is why the endpoint's rate-limit reply is treated as a pause
+ * rather than a failure.
+ */
+$mn_per  = 27;
 /*
  * ?collection=N -- narrowing WITHIN the chosen project.
  *
@@ -779,10 +795,22 @@ if ($filterby != "") {
          * retrying costs nothing. Once -- then it goes back in the queue as
          * untried rather than being hammered.
          */
-        if (d.status === 'busy' && !retried[id]) {
+        /*
+         * BUSY and RATE-LIMITED are both the server saying "not now", not
+         * "never". Counting either as a failure burns the attempt and trips
+         * the three-strikes breaker on a queue that is simply moving faster
+         * than the limits allow -- which a page of 48 makes easy.
+         *
+         * The rate limit is a 60-second window, so backing off for a couple
+         * of seconds is not enough to clear it; it waits longer.
+         */
+        if ((d.status === 'busy' || d.status === 'ratelimited') && !retried[id]) {
           retried[id] = true;
-          prog.textContent = 'Waiting for a free slot\u2026';
-          setTimeout(step, 2500);
+          var wait = d.status === 'ratelimited' ? 20000 : 2500;
+          prog.textContent = (d.status === 'ratelimited'
+            ? 'Going too fast \u2014 pausing '
+            : 'Waiting for a free slot ') + (wait / 1000) + 's\u2026';
+          setTimeout(step, wait);
           return;
         }
         record(d.status === 'skipped' ? 'skipped' : 'error', nameFor(id),

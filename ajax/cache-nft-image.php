@@ -106,7 +106,12 @@ if (file_exists($rl_path)) {
 }
 if (count($timestamps) >= $rl_max) {
     ob_clean();
-    echo json_encode(['success' => false, 'message' => 'Rate limit: try again in a moment.']);
+    /* A STATUS, so a caller can tell this apart from a real failure. Without
+       one the client counted it as an error, and three in a row tripped its
+       breaker on a queue that was merely going too fast -- which a page of
+       48 makes easy to hit. */
+    echo json_encode(['success' => false, 'status' => 'ratelimited',
+        'message' => 'Going too fast. Pausing for a moment.']);
     exit;
 }
 $timestamps[] = $now;
