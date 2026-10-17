@@ -234,6 +234,26 @@ STORE.PHP IS PAGE TWO, same pattern: getItemsData() added (identical filter, que
 - **A FAILED OR MISSING LINK TABLE MUST NOT BLANK THE POLICIES.** A theme with no policy ids
   matches nobody's NFTs and silently stops recognising holdings. The override only applies when
   the derived list is non-empty, and the harness drives a connection that fails just that query.
+- **NOTHING IN THE CODEBASE CREATES `monstrocity_theme_collections`** -- it is a manual step out
+  of monstrocity-schema.md, and that is the whole feature's silent failure mode. Until it is run,
+  mysqli returns false for every query against it WITHOUT THROWING: the admin's DELETE and INSERT
+  both fail, the page still says "Saved.", and every tick is discarded with the boxes empty on
+  reopen. Combined with clearing the policy_ids textarea -- the natural thing to do once you
+  believe the collections have taken over -- the theme matches nobody and says nothing about why.
+  `monstrocity_theme_links_table()` (a cached `SHOW TABLES LIKE`) now gates it, and the admin
+  reports it ON THE FORM as well as on the save, so the edit is not made twice. A PARTIAL write
+  is reported too: a derived list that is a SUBSET of what was ticked reads on the game as "some
+  of my NFTs are missing", which is harder to diagnose than none of them.
+- **`c.policy IS NOT NULL AND c.policy <> ''`, both stated.** `x <> ''` evaluates to NULL for a
+  NULL row, which is not TRUE, so a NULL policy was already excluded -- by three-valued logic
+  rather than by statement, and reading the query it looked like only the empty string was. They
+  are different mistakes with different fixes; monstrocity-theme-check.php reports them apart.
+- `monstrocity-theme-check.php` is the diagnostic: per theme, the attached collections and each
+  one's policy, derived versus legacy, **what the shipped `monstrocity_themes()` actually hands
+  the game** (not a second opinion about it), and -- given a username -- how many NFTs that player
+  would be offered next to where the rest of their NFTs really live. It also flags orientations,
+  which are POSITIONAL against the policy list and silently reassign when the derived list is a
+  different length from the string they were written for.
 - **TWO QUERIES, NOT A GROUP_CONCAT.** A GROUP_CONCAT join needs a GROUP BY that ONLY_FULL_GROUP_BY
   can reject, and truncates at group_concat_max_len (1024, about 17 policies) SILENTLY. Two plain
   reads merged in PHP have neither failure mode.

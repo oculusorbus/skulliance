@@ -196,10 +196,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 
 		/* Links are replaced wholesale: the form submits the complete set, so
 		   a diff would only be a way to get it subtly wrong. */
-		$conn->query('DELETE FROM monstrocity_theme_collections WHERE theme_id = ' . (int)$id);
-		foreach ($links as $i => $cid)
-			$conn->query('INSERT INTO monstrocity_theme_collections (theme_id, collection_id, sort_order) VALUES ('
-				. (int)$id . ',' . (int)$cid . ',' . (int)$i . ')');
+		if (!monstrocity_theme_links_table($conn)) {
+			/*
+			 * SAY IT INSTEAD OF SWALLOWING IT. Nothing in the codebase
+			 * creates this table -- it is a manual step out of
+			 * monstrocity-schema.md -- and without it these two queries fail,
+			 * mysqli does not throw, and the page reports "Saved." while every
+			 * tick is discarded. Reopen the form and the boxes are empty, with
+			 * no explanation anywhere. Everything else about the theme did
+			 * save, so this is a warning on a real save, not an error.
+			 */
+			$msgs['warn'][] = 'The collection links were NOT saved: the table '
+			                . '<code>monstrocity_theme_collections</code> does not exist on this '
+			                . 'database. Until it is created, this theme uses the policy id list '
+			                . 'below. Create it with the statement in '
+			                . '<code>monstrocity-schema.md</code>.';
+		} else {
+			$conn->query('DELETE FROM monstrocity_theme_collections WHERE theme_id = ' . (int)$id);
+			$wrote = 0;
+			foreach ($links as $i => $cid)
+				if ($conn->query('INSERT INTO monstrocity_theme_collections (theme_id, collection_id, sort_order) VALUES ('
+					. (int)$id . ',' . (int)$cid . ',' . (int)$i . ')')) $wrote++;
+			/* A write that half worked is worse than one that did not: the
+			   derived policy list would be a SUBSET of what was ticked, which
+			   reads on the game as "some of my NFTs are missing". */
+			if ($wrote !== count($links))
+				$msgs['warn'][] = 'Only ' . $wrote . ' of ' . count($links) . ' collection links were '
+				                . 'saved (' . htmlspecialchars($conn->error) . '). This theme is now '
+				                . 'narrower than what you ticked.';
+		}
 
 		/*
 		 * SAY WHEN ATTACHING COLLECTIONS TOOK POLICIES AWAY.
@@ -212,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded) {
 		 * Reported, never refused: dropping a policy on purpose is a normal
 		 * edit, and the admin is the one who knows which it is.
 		 */
-		if ($links) {
+		if ($links && monstrocity_theme_links_table($conn)) {
 			$now    = monstrocity_theme_policies($conn);
 			$have   = isset($now[$id]) && $now[$id] !== '' ? explode(',', $now[$id]) : array();
 			$legacy = array_filter(array_map('trim', explode(',', (string)$t['policy_ids'])));
@@ -452,6 +477,16 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
         <h3>Which NFTs this theme is for</h3>
         <p class="lead">Tick collections and the policy ids come from them, so a policy is changed
            in one place. Tick none and the list underneath is used as-is.</p>
+        <?php if (!monstrocity_theme_links_table($conn)): ?>
+          <?php /* BEFORE THE SAVE, NOT AFTER IT. The ticks below cannot be stored at all
+                   without this table, and finding that out from a warning on the way back
+                   means having made the edit twice. */ ?>
+          <p class="adm-msg bad" style="margin:0 0 12px">Ticking does nothing yet: the table
+             <code>monstrocity_theme_collections</code> does not exist on this database, so
+             these boxes cannot be saved. Create it with the statement in
+             <code>monstrocity-schema.md</code>, then come back. Until then, use the policy id
+             list at the bottom of this section.</p>
+        <?php endif; ?>
         <div class="mt-colbar">
           <label class="mt-check" style="margin:0">
             <input type="checkbox" id="mt-allcols"> <span>Show every project's collections</span>

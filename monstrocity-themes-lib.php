@@ -34,13 +34,41 @@
  * Returns array(theme_id => 'policy,policy,...'); themes with nothing attached
  * are simply absent.
  */
+/**
+ * Does the link table exist?
+ *
+ * ASKED OUT LOUD because NOTHING IN THE CODEBASE CREATES IT -- it is a manual
+ * step out of monstrocity-schema.md, and until somebody runs it every query
+ * against it returns false. mysqli does not throw for that, so the whole
+ * feature degrades to silence: monstrocity_theme_policies() returns nothing
+ * and the legacy string stands, the admin's DELETE and INSERT both fail, and
+ * the ticks the admin just made vanish with the page reporting "Saved."
+ *
+ * Combined with clearing the policy_ids textarea -- the natural thing to do
+ * once you believe the collections have taken over -- that is a theme which
+ * matches no NFTs at all and says nothing about why.
+ */
+function monstrocity_theme_links_table($conn) {
+	static $have = null;
+	if ($have === null) {
+		$r = $conn->query("SHOW TABLES LIKE 'monstrocity_theme_collections'");
+		$have = (bool)($r && $r->num_rows);
+	}
+	return $have;
+}
+
 function monstrocity_theme_policies($conn) {
 	$out = array();
 	$res = $conn->query(
+		/* IS NOT NULL as well as <> '': a NULL policy makes `c.policy <> ''`
+		   evaluate to NULL, which is not TRUE, so the row drops out anyway --
+		   but silently, and reading the query it looks like only the empty
+		   string is being excluded. Both stated, so the next person does not
+		   have to remember three-valued logic to know what this returns. */
 		'SELECT tc.theme_id, c.policy
 		   FROM monstrocity_theme_collections tc
 		   JOIN collections c ON c.id = tc.collection_id
-		  WHERE c.policy <> \'\'
+		  WHERE c.policy IS NOT NULL AND c.policy <> \'\'
 		  ORDER BY tc.theme_id ASC, tc.sort_order ASC, c.id ASC');
 	if (!$res) return $out;                 // table not there yet: legacy strings stand
 	while ($r = $res->fetch_assoc()) {

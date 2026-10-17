@@ -85,6 +85,16 @@ A theme covers zero or more collections. Zero means "use the legacy
 these collections". Nothing is attached at migration time, so every theme keeps
 the exact policy string it had.
 
+> **Run the CREATE below before using the checkboxes.** Nothing in the codebase
+> creates this table. Until it exists, mysqli returns `false` for every query
+> against it without throwing, so the admin's `DELETE` and `INSERT` both fail,
+> the page still reports *Saved.*, and every tick is discarded. Reopen the form
+> and the boxes are empty. `monstrocity_theme_policies()` returns nothing, so
+> each theme falls back to its `policy_ids` string -- and a theme whose string
+> was cleared, in the belief the collections had taken over, then matches no
+> NFTs at all. The admin now says so on the form and on the save, and
+> `php monstrocity-theme-check.php` leads with it.
+
 ```sql
 CREATE TABLE IF NOT EXISTS monstrocity_theme_collections (
 	theme_id      INT NOT NULL,

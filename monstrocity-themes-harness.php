@@ -634,8 +634,46 @@ ok(strpos($apNo, 'monstrocity_theme_policies($conn)') !== false,
    'the save never re-reads the derived policies, so it cannot know what it changed');
 ok(preg_match('/array_diff\(\$legacy, \$have\)/', $apNo) === 1,
    'nothing compares the new derived set against the policy_ids string it just overrode');
-ok(substr_count($apNo, "\$msgs['warn'][]") === 3,
-   'the three override warnings are not all there (found ' . substr_count($apNo, "\$msgs['warn'][]") . ')');
+/* Each branch named, not counted: a count breaks every time a warning is
+   added and says nothing about which one went. */
+foreach (array(
+	'if ($blank)'                   => 'a ticked collection with no policy id goes unmentioned',
+	'if (!$have)'                   => 'a ticked set with no policies at all goes unmentioned',
+	'else if ($lost)'               => 'a policy the ticked collections do not cover goes unmentioned',
+	'$wrote !== count($links)'      => 'a half-written link set goes unmentioned, so the theme is '
+	                                 . 'silently narrower than what was ticked',
+) as $needle => $why) {
+	ok(strpos($apNo, $needle) !== false, $why);
+}
+ok(substr_count($apNo, "\$msgs['warn'][]") >= 4,
+   'the override warnings are not all raised as warnings (found '
+ . substr_count($apNo, "\$msgs['warn'][]") . ')');
+
+/*
+ * AND THE MISSING TABLE MUST BE SAID OUT LOUD, TWICE.
+ *
+ * NOTHING IN THE CODEBASE CREATES monstrocity_theme_collections -- it is a
+ * manual step out of monstrocity-schema.md. Until it is run, the DELETE and
+ * the INSERTs below both fail, mysqli does not throw, and the page reports
+ * "Saved." while every tick is discarded. Reopen the form and the boxes are
+ * empty with no explanation anywhere, and a theme whose policy_ids were
+ * cleared in the belief the collections had taken over now matches nobody.
+ *
+ * On the FORM, so the edit is not made twice, and on the SAVE, because a
+ * form rendered before the table was dropped is still open somewhere.
+ */
+ok(strpos($apNo, 'if (!monstrocity_theme_links_table($conn)) {') !== false,
+   'the save writes links without checking the table exists, so every tick is discarded in silence');
+ok(substr_count($apNo, 'monstrocity_theme_links_table($conn)') >= 3,
+   'the missing table is not reported on the form as well as the save, so the edit gets made twice');
+/* And the probe itself has to actually ask the database. */
+$libNo = harness_strip_comments($libSrc);
+ok(preg_match("/SHOW TABLES LIKE 'monstrocity_theme_collections'/", $libNo) === 1,
+   'monstrocity_theme_links_table() does not ask the database whether the table is there');
+/* NULL is not the empty string, and `x <> \'\'` is NULL for a NULL row --
+   excluded, but by accident rather than by statement. */
+ok(strpos(str_replace('\\', '', $libNo), "c.policy IS NOT NULL AND c.policy <> ''") !== false,
+   'the policy query relies on three-valued logic to drop NULL policies instead of saying so');
 /* The warnings must not be errors: dropping a policy on purpose is a normal
    edit and refusing it would make the form unusable. */
 ok(strpos($apNo, "\$msgs['err'][] = count(\$blank)") === false,

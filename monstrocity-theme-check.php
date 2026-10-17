@@ -41,7 +41,36 @@ if ($user !== '') {
 	echo "Player: $user (user_id $uid)\n\n";
 }
 
+/*
+ * THE TABLE FIRST, because without it every other number below is a
+ * consequence rather than a cause. Nothing in the codebase creates it.
+ */
+if (!monstrocity_theme_links_table($conn)) {
+	echo "*** monstrocity_theme_collections DOES NOT EXIST on this database. ***\n\n"
+	   . "Every collection you tick in the admin is discarded on save (mysqli does not\n"
+	   . "throw, so the page still says Saved), monstrocity_theme_policies() returns\n"
+	   . "nothing, and every theme falls back to its policy_ids string. If you also\n"
+	   . "cleared that string, the theme now matches no NFTs at all.\n\n"
+	   . "Create it, then re-tick the collections:\n\n"
+	   . "  CREATE TABLE IF NOT EXISTS monstrocity_theme_collections (\n"
+	   . "    theme_id      INT NOT NULL,\n"
+	   . "    collection_id INT NOT NULL,\n"
+	   . "    sort_order    INT NOT NULL DEFAULT 0,\n"
+	   . "    PRIMARY KEY (theme_id, collection_id),\n"
+	   . "    INDEX idx_theme (theme_id, sort_order)\n"
+	   . "  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;\n\n";
+}
+
 $derived = monstrocity_theme_policies($conn);
+
+/*
+ * WHAT THE GAME ACTUALLY SEES, from the shipped function rather than from a
+ * second opinion about it. monstrocity.php renders its picker through
+ * monstrocity_themes(), so this is the policy_ids string the browser is
+ * handed -- derived, legacy, or empty -- with no reasoning in between.
+ */
+$live_rows = array();
+foreach (monstrocity_themes($conn) as $r) $live_rows[(int)$r['id']] = $r;
 
 $res = $conn->query('SELECT id, slug, title, project_id, project_name, policy_ids, orientations, active
                        FROM monstrocity_themes ORDER BY slug ASC');
@@ -82,9 +111,16 @@ foreach ($themes as $t) {
 	                 ORDER BY tc.sort_order ASC, c.id ASC');
 	if ($r) while ($x = $r->fetch_assoc()) $links[] = $x;
 
+	/* The shipped function's answer, which is the only one that matters. A
+	   theme the picker never shows (active = 0) is absent from it. */
+	$shipped = isset($live_rows[$id]) ? (string)$live_rows[$id]['policy_ids'] : null;
+	$shipped_n = $shipped === null ? 0
+	           : count(array_filter(array_map('trim', explode(',', $shipped))));
+
 	if ($slug === '') {
-		printf("%-22s %-13s %2d policies  %2d attached%s\n",
+		printf("%-22s %-13s %2d policies  %2d attached  game sees %s%s\n",
 			$t['slug'], $source, count($live), count($links),
+			$shipped === null ? 'nothing (inactive)' : $shipped_n,
 			$uid ? '  ' . mtc_owned($conn, $uid, $live) . ' owned' : '');
 		continue;
 	}
@@ -95,12 +131,29 @@ foreach ($themes as $t) {
 	   . ' (project_id ' . (int)$t['project_id'] . ")\n";
 	echo 'Policies in use: ' . count($live) . ' from the ' . $source . "\n\n";
 
+	if ($shipped === null) {
+		echo "*** monstrocity_themes() does not return this theme at all, so the picker\n"
+		   . "    never shows it. active = " . (int)$t['active'] . ".\n\n";
+	} else if ($shipped_n === 0) {
+		echo "*** The game is handed an EMPTY policy list for this theme, so it offers the\n"
+		   . "    default characters and nothing of yours.\n\n";
+	} else {
+		echo 'The game is handed ' . $shipped_n . " policy id(s).\n\n";
+	}
+
 	echo "Attached collections (" . count($links) . "):\n";
 	foreach ($links as $c) {
-		$pol = trim((string)$c['policy']);
+		/* NULL AND '' REPORTED SEPARATELY. They behave identically here -- the
+		   query's `c.policy <> ''` is NULL for a NULL, which is not TRUE, so
+		   the row drops out either way -- but they are different mistakes with
+		   different fixes, and a reader checking the column in phpMyAdmin needs
+		   to know which one they are looking at. */
+		$raw = $c['policy'];
+		$pol = trim((string)$raw);
 		echo '  #' . $c['id'] . '  ' . $c['name']
 		   . '  [' . ($c['project'] !== null ? $c['project'] : 'no project') . ']'
-		   . "\n      policy: " . ($pol === '' ? '*** EMPTY -- contributes nothing ***' : $pol);
+		   . "\n      policy: " . ($raw === null ? '*** NULL -- contributes nothing ***'
+		                         : ($pol === ''  ? '*** EMPTY -- contributes nothing ***' : $pol));
 		if ($uid) echo '   you own ' . mtc_owned($conn, $uid, array($pol)) . ' here';
 		echo "\n";
 	}
