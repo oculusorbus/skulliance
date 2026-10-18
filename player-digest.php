@@ -260,21 +260,62 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '…';
     return body + tail;
   }
-  function shareHref(d) {
+  function shareHref(d, url) {
     return 'https://x.com/intent/post?text=' + encodeURIComponent(shareText(d))
-         + '&url=' + encodeURIComponent('https://skulliance.io/staking/');
+         + '&url=' + encodeURIComponent(url || 'https://skulliance.io/staking/');
+  }
+
+  /*
+   * ONE CLICK, PICTURE INCLUDED.
+   *
+   * x.com/intent/post cannot attach a file, so the poster is STORED FIRST
+   * and the link points at digest.php?d=<token>, a public page whose
+   * og:image is that stored file. X fetches it from there.
+   *
+   * THE TAB IS OPENED ON THE CLICK, NOT AFTER THE UPLOAD. A window.open()
+   * from a promise callback is no longer user-initiated and every browser
+   * blocks it -- so a blank tab is opened immediately and pointed at X once
+   * the poster has landed.
+   *
+   * If the upload fails it still goes to X, with the platform link instead
+   * of the poster: a share button that does nothing is worse than a post
+   * without a picture.
+   */
+  function share(d) {
+    var note = document.getElementById('pdg-note');
+    var tab  = window.open('', '_blank', 'noopener');
+    note.textContent = 'Preparing your image\u2026';
+
+    var done = function (url) {
+      var href = shareHref(d, url);
+      if (tab && !tab.closed) tab.location = href;
+      else window.location.href = href;
+      note.textContent = url
+        ? 'Posted with your image.'
+        : 'Shared \u2014 the image could not be uploaded, so the post carries the site card.';
+    };
+
+    var cv = document.getElementById('pdg-shot');
+    try {
+      /* toBlob throws on a tainted canvas; the post still goes out. */
+      cv.toBlob(function (b) {
+        if (!b) return done(null);
+        var fd = new FormData();
+        fd.append('poster', b, 'digest.png');
+        fetch('ajax/digest-share.php', { method: 'POST', credentials: 'same-origin', body: fd })
+          .then(function (r) { return r.json(); })
+          .then(function (j) { done(j && j.ok && j.url ? j.url : null); })
+          .catch(function () { done(null); });
+      }, 'image/png');
+    } catch (e) { done(null); }
   }
 
   document.getElementById('pdg-save').addEventListener('click', function () {
     if (D) saveImage(D);
   });
   document.getElementById('pdg-share').addEventListener('click', function () {
-    if (!D) return;
-    var w = window.open(shareHref(D), '_blank', 'noopener');
-    saveImage(D, function () {
-      document.getElementById('pdg-note').textContent =
-        'Image saved — attach it to the post. X cannot pick it up on its own.';
-    });
+    if (D) share(D);
+  });
     if (!w) window.location.href = shareHref(D);
   });
 

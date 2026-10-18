@@ -127,7 +127,12 @@ echo "\nthe post keeps its invitation and its credit\n";
 {
 	/* Run the real shareText() over a day big enough to need trimming. */
 	$a = strpos($mod, '  function shareText(d) {');
-	$b = strpos($mod, '  function shareHref(d) {');
+	/* Anchored on the NAME, not the full signature: shareHref grew a url
+	   parameter and the exact-match anchor silently found nothing, so the
+	   slice came back empty and node died on the first call rather than
+	   reporting anything useful. Same trap dhc-share-harness.js carries a
+	   note about. */
+	$b = strpos($mod, '  function shareHref(');
 	ok($a !== false && $b > $a, 'shareText() is gone from the modal');
 	$src = substr($mod, $a, $b - $a);
 
@@ -163,9 +168,75 @@ echo "\nthe post keeps its invitation and its credit\n";
 		ok(strpos($posts[1], 'days in a row') === false,
 		   'a streak of 1 is announced as a streak: ' . $posts[1]);
 	}
-	/* X cannot attach a file, so the image is saved and the player told. */
-	ok(strpos($modc, 'saveImage(D, function () {') !== false,
-	   'sharing does not save the image, so there is nothing to attach');
+	/*
+	 * ONE CLICK. X cannot attach a file, so the poster is stored first and
+	 * the post links to digest.php?d=<token>, whose og:image is that file.
+	 */
+	ok(strpos($modc, "fetch('ajax/digest-share.php'") !== false,
+	   'sharing no longer stores the poster, so the post has no picture');
+	ok(strpos($modc, 'shareHref(d, url)') !== false,
+	   'the post url is fixed; it cannot point at the stored poster');
+	/*
+	 * THE TAB OPENS ON THE CLICK. A window.open() from a promise callback
+	 * is not user-initiated any more and every browser blocks it, so the
+	 * share would silently do nothing.
+	 */
+	$sAt = strpos($modc, 'function share(d) {');
+	$body = substr($modc, $sAt, strpos($modc, "\n  }", $sAt) - $sAt);
+	$openAt  = strpos($body, 'window.open(');
+	$fetchAt = strpos($body, 'fetch(');
+	ok($openAt !== false && $fetchAt !== false && $openAt < $fetchAt,
+	   'the share tab is opened after the upload, where the browser blocks it as a popup');
+	/* And a failed upload must still post. */
+	ok(strpos($body, 'done(null)') !== false,
+	   'a failed upload leaves the share doing nothing at all');
+}
+
+echo "\nthe stored poster cannot be used to write anywhere\n";
+{
+	$up  = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/digest-share.php'));
+	$shl = harness_strip_comments(file_get_contents(__DIR__ . '/lib/digest-share-lib.php'));
+	$pg  = harness_strip_comments(file_get_contents(__DIR__ . '/digest.php'));
+
+	/* The filename is DERIVED. A client-chosen name is a file write
+	   wherever they like. */
+	ok(strpos($up, 'dsh_token($uid, $day)') !== false,
+	   'the stored filename is not derived from the session user and the server day');
+	ok(strpos($up, "\$_FILES['poster']['name']") === false,
+	   'the uploaded filename is used; that is an arbitrary file write');
+	ok(strpos($up, "\$_GET") === false && strpos($up, "\$_POST['user']") === false,
+	   'the upload endpoint takes a parameter it should not');
+	/* Checked as an image, bounded, and RE-ENCODED rather than stored as
+	   sent -- whatever was hidden in those bytes does not survive being
+	   turned into pixels. */
+	ok(strpos($up, 'getimagesize(') !== false && strpos($up, 'IMAGETYPE_PNG') !== false,
+	   'the upload is not checked to be a PNG before it is read as one');
+	ok(strpos($up, 'imagecreatefrompng(') !== false && strpos($up, 'imagejpeg(') !== false,
+	   'the bytes are stored as sent rather than decoded and re-encoded');
+	ok(strpos($up, '> 2400') !== false || strpos($up, '> 3000') !== false,
+	   'there is no dimension cap; a 30000x30000 PNG is small on disk and gigabytes decoded');
+	ok(strpos($up, '4 * 1024 * 1024') !== false, 'there is no byte cap on the upload');
+	ok(strpos($up, '@rename($tmp, $path)') !== false,
+	   'the poster is written in place; two taps on Share would race');
+	ok(strpos($up, 'is_uploaded_file(') !== false,
+	   'the endpoint trusts a path it was handed rather than a real upload');
+
+	/* The public page must not be able to read outside the directory. */
+	ok(strpos($pg, 'dsh_valid_token($dg_token)') !== false,
+	   'the token is not shape-checked before it is put in a path');
+	ok(preg_match("/preg_match\('\/\^\[0-9a-f\]\{20\}\\$\/'/", $shl) === 1,
+	   'the token pattern is not 20 hex characters, so a path could walk out of the directory');
+	/* And it must be reachable by a crawler. */
+	ok(strpos($pg, 'skulliance.php') === false,
+	   'the share page includes the login gate; X would cache a card of error.php');
+	ok(strpos($pg, 'summary_large_image') !== false, 'the share page declares no large card');
+	ok(strpos($pg, 'site-header.php') !== false,
+	   'a stranger arriving from the post gets no navigation at all');
+	/* Shared posters are pruned, or the directory grows for ever. */
+	ok(strpos($shl, 'function dsh_prune') !== false && strpos($up, 'dsh_prune(') !== false,
+	   'nothing ever deletes an old shared poster');
+	ok(strpos($shl, '$limit = 40') !== false,
+	   'the prune is unbounded; one unlucky request would pay for a year of backlog');
 }
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");

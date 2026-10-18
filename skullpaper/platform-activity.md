@@ -53,7 +53,8 @@ You can **download** it, **share it on X**, or close it. It asks once a day and 
 Two things worth knowing:
 
 * **A quiet day shows nothing at all.** If you did not do anything yesterday, there is no modal - a poster announcing that you did nothing is not worth drawing.
-* **Sharing saves the image first.** X cannot attach a picture to a post written for you, so the image is downloaded and you attach it. The post stands on its own if you would rather not.
+* **Sharing is one click and the picture comes with it.** X cannot attach a file to a post written for you, so the poster is saved on Skulliance first and the post links to it - X reads the image from there. Nothing to attach by hand.
+* **A shared poster is public, and only if you share it.** Pressing Share publishes that one image at its own link; closing the modal or downloading it publishes nothing. Shared posters are kept for about four months and then removed.
 
 It is built from the same record the feed is, so it shows what was announced - the same limit described under *History*.
 
