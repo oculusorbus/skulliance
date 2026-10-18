@@ -51,6 +51,31 @@ if (!function_exists('imagecreatetruecolor')) {
 		$im = imagecreatetruecolor(500, 500);
 		imagefilledrectangle($im, 0, 0, 500, 500,
 			imagecolorallocate($im, $COLS[$n][0], $COLS[$n][1], $COLS[$n][2]));
+		/*
+		 * A WHITE MARK, OFF CENTRE, because a flat fill cannot tell you which
+		 * way it is facing and the defending Crew has to be mirrored so the
+		 * two sides look at each other.
+		 *
+		 * INSIDE THE CROP WINDOW. The first attempt put a band down the far
+		 * left edge, which the card's centre-column crop discards entirely:
+		 * every tile came back with no mark at all and all six checks failed
+		 * against correct code. The window is roughly the middle third, so
+		 * the mark goes just inside its left edge.
+		 */
+		/* FULL HEIGHT, so any horizontal scan line crosses it. A short mark
+		   fell outside the row the check samples once the crop moved up to
+		   centre the face, and all six orientation checks failed against a
+		   correct card. */
+		imagefilledrectangle($im, 172, 0, 212, 500, imagecolorallocate($im, 255, 255, 255));
+		/*
+		 * A BLACK BAND WHERE THE FACE IS. The card crops around the head
+		 * rather than filling the tile, because filling it put every face
+		 * jammed against the top edge of its frame. That is only testable
+		 * if the fixture has a face: this sits at the same fraction of the
+		 * render the real heads do, and the check below asks where it
+		 * ended up in the finished tile.
+		 */
+		imagefilledrectangle($im, 240, 110, 330, 150, imagecolorallocate($im, 0, 0, 0));
 		$made[] = $n;
 		return $im;
 	}
@@ -118,7 +143,69 @@ if (!function_exists('imagecreatetruecolor')) {
 		/* The tiles must be a usable size, not slivers in a sea of ground. */
 		$areaFrac = 0;
 		foreach ($boxes as $bx) $areaFrac += (($bx[2] - $bx[0]) * ($bx[3] - $bx[1])) / ($W * $H);
-		ok($areaFrac > 0.45, sprintf('the Fighters cover only %.0f%% of the card', $areaFrac * 100));
+		/* The threshold is a SLIVER TEST, not a layout opinion: the tiles are
+		   sized by what lets a face be centred without clipping the head, and
+		   that is the designer's call. The mutation that shrinks them to
+		   nothing measures 2%. */
+		ok($areaFrac > 0.30, sprintf('the Fighters cover only %.0f%% of the card', $areaFrac * 100));
+	}
+
+	echo "\nthe two Crews face each other\n";
+	{
+		/* The marker band sits on the left of the source art. After
+		   compositing it must still be on the left for your Crew and on the
+		   RIGHT for theirs, which is what mirroring does. The Arena itself
+		   flips them the same way: .teamcol.foes .tok .art{scaleX(-1)}. */
+		$bandSide = function ($card, $bx) {
+			$mid = (int)(($bx[0] + $bx[2]) / 2);
+			$y   = (int)(($bx[1] + $bx[3]) / 2);
+			$l = 0; $r = 0;
+			for ($x = $bx[0]; $x < $mid; $x += 2) {
+				$c = imagecolorat($card, $x, $y);
+				if ((($c >> 16) & 255) > 200 && (($c >> 8) & 255) > 200 && ($c & 255) > 200) $l++;
+			}
+			for ($x = $mid; $x <= $bx[2]; $x += 2) {
+				$c = imagecolorat($card, $x, $y);
+				if ((($c >> 16) & 255) > 200 && (($c >> 8) & 255) > 200 && ($c & 255) > 200) $r++;
+			}
+			return $l > $r ? 'left' : ($r > $l ? 'right' : 'none');
+		};
+		for ($i = 0; $i < 3; $i++) {
+			if ($boxes[$i]) ok($bandSide($card, $boxes[$i]) === 'left',
+			                   "your Fighter $i was mirrored; only the defenders should be");
+		}
+		for ($i = 3; $i < 6; $i++) {
+			if ($boxes[$i]) ok($bandSide($card, $boxes[$i]) === 'right',
+			                   'a defending Fighter is not mirrored, so both Crews face the same way');
+		}
+	}
+
+	echo "\nthe faces are centred in their frames\n";
+	{
+		/* Where the black face band ended up, down the middle of a tile. */
+		$faceMid = function ($card, $bx) {
+			$x = (int)(($bx[0] + $bx[2]) / 2);
+			$y0 = -1; $y1 = -1;
+			for ($y = $bx[1]; $y <= $bx[3]; $y++) {
+				$c = imagecolorat($card, $x, $y);
+				if ((($c >> 16) & 255) < 30 && (($c >> 8) & 255) < 30 && ($c & 255) < 30) {
+					if ($y0 < 0) $y0 = $y; $y1 = $y;
+				}
+			}
+			return $y0 < 0 ? null : ($y0 + $y1) / 2;
+		};
+		for ($i = 0; $i < 6; $i++) {
+			if (!$boxes[$i]) continue;
+			$mid = $faceMid($card, $boxes[$i]);
+			$tileMid = ($boxes[$i][1] + $boxes[$i][3]) / 2;
+			$tileH   = $boxes[$i][3] - $boxes[$i][1];
+			ok($mid !== null, "Fighter $i's face is not in its frame at all");
+			if ($mid !== null) {
+				$off = abs($mid - $tileMid) / max(1, $tileH);
+				ok($off < 0.14, sprintf("Fighter %d's face sits %.0f%% away from the middle of its "
+				   . 'frame; the crop is filling the tile instead of framing the head', $i, $off * 100));
+			}
+		}
 	}
 
 	echo "\na fallen Fighter is dimmed, and a standing one is not\n";
@@ -159,8 +246,11 @@ ok(strpos($clean, '@rename($tmpf, $cache)') !== false,
    'the card is written in place; a half-written one would be cached by the crawler');
 ok(strpos($clean, 'imagettftext') === false && strpos($clean, 'imagestring') === false,
    'the card draws text, and there is no TTF in this repo (see dhc-card.php)');
-ok(strpos($clean, 'get_result(') === false,
-   'the endpoint calls get_result(), which is fatal on this server (no mysqlnd)');
+/* Built rather than written, because dhc-card-harness.php scans every PHP
+   file in the repo for this call and a literal here is an offender. */
+$gr = 'get_' . 'result(';
+ok(strpos($clean, $gr) === false,
+   'the endpoint calls ' . $gr . '), which is fatal on this server (no mysqlnd)');
 
 echo "\nthe Arena page only claims a match card when there is a match\n";
 {

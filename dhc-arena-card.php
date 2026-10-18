@@ -109,7 +109,7 @@ imagefilledrectangle($card, 0, 0, DAC_W, DAC_H, imagecolorallocate($card, 7, 17,
  * vertical figure, so a portrait window uses the card's height instead of
  * wasting it.
  */
-$TW = 164; $TH = 470; $GAP = 18; $EDGE = 40;
+$TW = 170; $TH = 300; $GAP = 15; $EDGE = 40;
 $top = (int)((DAC_H - $TH) / 2);
 $line = imagecolorallocate($card, 27, 51, 70);
 
@@ -135,15 +135,40 @@ foreach (array('mine' => true, 'foes' => false) as $side => $isLeft) {
 		if (!$art) continue;
 		$aw = imagesx($art); $ah = imagesy($art);
 
-		/* Fill the tile from a centre window of the square render. */
-		$scale = max($TW / $aw, $TH / $ah);
-		$sw2   = (int)round($TW / $scale);
-		$sh2   = (int)round($TH / $scale);
-		$sx    = (int)(($aw - $sw2) / 2);
-		$sy    = (int)(($ah - $sh2) / 2);
+		/*
+		 * CROPPED AROUND THE FACE, not around the middle of the picture.
+		 *
+		 * Filling the tile from a centred window shows the whole body, and
+		 * since a Fighter's head sits in the top quarter of its render, every
+		 * face ended up jammed against the top edge of its frame. A portrait
+		 * of six fighters should look at you.
+		 *
+		 * DHCA_FACE_Y is where a head sits in the canonical render -- the art
+		 * is composed to a fixed body layout, which is the whole reason
+		 * dhcf_layers() can stack traits at all, so this is a property of the
+		 * collection rather than a guess about one Fighter. The window is
+		 * centred on it and clamped inside the source.
+		 */
+		$faceY  = (int)round($ah * 0.26);
+		$winH   = (int)round($ah * 0.62);
+		$winW   = (int)round($winH * ($TW / $TH));
+		if ($winW > $aw) { $winW = $aw; $winH = (int)round($winW * ($TH / $TW)); }
+		$sw2 = $winW;
+		$sh2 = $winH;
+		$sx  = (int)max(0, min($aw - $sw2, ($aw - $sw2) / 2));
+		$sy  = (int)max(0, min($ah - $sh2, $faceY - $sh2 / 2));
 
 		$tile = imagecreatetruecolor($TW, $TH);
 		imagecopyresampled($tile, $art, 0, 0, $sx, $sy, $TW, $TH, $sw2, $sh2);
+
+		/*
+		 * THE DEFENDERS FACE LEFT, so the two Crews look at each other
+		 * instead of all six marching the same way. The Arena itself does
+		 * exactly this -- .teamcol.foes .tok .art{transform:scaleX(-1)} --
+		 * and a card of a fight where nobody is facing anybody is a card of
+		 * six portraits.
+		 */
+		if (!$isLeft && function_exists('imageflip')) imageflip($tile, IMG_FLIP_HORIZONTAL);
 
 		/*
 		 * A FALLEN FIGHTER IS DIMMED, NOT HIDDEN -- leaving it out would make

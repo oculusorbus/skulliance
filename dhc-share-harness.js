@@ -721,13 +721,17 @@ console.log('\nthe Arena share says who you beat');
 	ok(a > -1 && b > a, 'shareLink() is gone from dhcarena.php');
 	const src = arena.slice(a, b);
 
-	const post = (S, won, standing, practice) => {
+	const post = (S, won, standing, practice, battleId) => {
 		let href = '';
+		/* battleId is a page-level variable the function closes over; without
+		   it in the context the lift throws a ReferenceError and the whole
+		   suite dies rather than failing an assertion. */
 		const ctx = { $: () => ({ set href(v) { href = v; } }), practice: !!practice, S,
-		              encodeURIComponent };
+		              battleId: battleId === undefined ? 0 : battleId, encodeURIComponent };
 		vm.createContext(ctx);
 		vm.runInContext(src, ctx);
 		ctx.shareLink(won, standing);
+		post.lastHref = href;
 		return decodeURIComponent(href.split('text=')[1].split('&url=')[0]);
 	};
 	const crew = (alive) => Array.from({ length: 3 },
@@ -769,6 +773,20 @@ console.log('\nthe Arena share says who you beat');
 	const long = post(S({ meta: { defenderName: 'x'.repeat(90) } }), true, 2);
 	ok(fits(long), 'a long opponent name pushes the post to ' + long.length + ' characters');
 	ok(/Art by @MMAXI404$/.test(long), 'the trim ate the credit instead of the sentence');
+
+	/*
+	 * THE LINK NAMES THE BATTLE, which is the only reason the post gets a
+	 * picture of the match rather than the site's stock card -- dhcarena.php
+	 * swaps og:image when it sees ?battle=.
+	 */
+	post(S(), true, 2, false, 4812);
+	ok(/dhcarena\.php%3Fbattle%3D4812/.test(post.lastHref),
+	   'the shared url does not name the battle, so the post gets the generic card: '
+	 + post.lastHref);
+	/* And a practice run, which has no battle row, must not invent one. */
+	post(S(), true, 2, true, 0);
+	ok(/dhcarena\.php(&|$)/.test(post.lastHref) && !/battle%3D/.test(post.lastHref),
+	   'a battle-less result still puts ?battle= in the url');
 
 	/* "(Practice)" goes in FRONT, because the trim takes from the end: a
 	   long name could otherwise drop it and leave a practice result
