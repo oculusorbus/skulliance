@@ -1959,6 +1959,35 @@
         minimapPoints[bk] = { mx: minimapPoints[bk].mx + bpx * BUMP_AMOUNT * bw, my: minimapPoints[bk].my + bpy * BUMP_AMOUNT * bw };
       }
 
+      // THE MAP WAS MIRRORED -- a player noticed before we did: "the map
+      // orientation in game [doesn't] match the same direction when
+      // turning. Currently flipped."
+      //
+      // Why: heading 0 points along +z, and z was mapped straight onto the
+      // SVG's y, which grows DOWNWARD. So the car travels down the screen,
+      // and when it takes a right-hand bend (curve is positive for a right
+      // bend -- same sign render() shifts the road by) the dot veers to the
+      // screen's right. Driving down the page, the screen's right is the
+      // driver's LEFT. Every turn read backwards.
+      //
+      // Fixed by reflecting the finished geometry about the viewBox's
+      // middle, so the path runs UP the screen and screen-right is the
+      // driver's right.
+      //
+      // DONE HERE, LAST, AND DELIBERATELY SO. The hand-tuned bump above was
+      // measured in this space, and a reflection is an isometry -- every
+      // distance and every crossing survives it unchanged -- so flipping
+      // after the bump keeps that fix working exactly as it was tuned.
+      // Flipping earlier would reverse the perpendicular the bump pushes
+      // along and could undo it.
+      //
+      // For the same reason this does NOT explain the self-intersections
+      // that were so much trouble to begin with: a mirror cannot create or
+      // remove a crossing. Those were two genuinely adjacent stretches of
+      // road, and the bump is still what deals with them.
+      for (n = 0 ; n < minimapPoints.length ; n++)
+        minimapPoints[n] = { mx: minimapPoints[n].mx, my: 100 - minimapPoints[n].my };
+
       var outline = []; // decimated (1-in-4) numeric {mx,my}, thousands of segments is needlessly heavy for an SVG attribute -- built from minimapPoints AFTER the bump above, so the drawn line and the dot's position always agree
       for (n = 0 ; n < minimapPoints.length ; n += 4) outline.push(minimapPoints[n]);
 
