@@ -783,6 +783,22 @@ console.log('\nthe Arena share says who you beat');
 	ok(/dhcarena\.php%3Fbattle%3D4812/.test(post.lastHref),
 	   'the shared url does not name the battle, so the post gets the generic card: '
 	 + post.lastHref);
+	/*
+	 * A PRACTICE RUN CLAIMED A REAL OPPONENT. Practice builds its battle
+	 * from a generated spec with no meta, so the name is absent and the
+	 * nameless branch posted "(Practice) My Crew went down to a real
+	 * opponent" -- untrue, and contradicting its own first word.
+	 */
+	const prLoss = post(S({ meta: {} }), false, 0, true, 0);
+	ok(!/a real opponent/.test(prLoss),
+	   'a practice result claims a real opponent: ' + prLoss);
+	ok(/a practice Crew/.test(prLoss), 'a practice result does not say what it fought: ' + prLoss);
+	/* A ranked battle with no name -- resumed from before defenderName was
+	   carried -- is the one case where "a real opponent" is right. */
+	const anonRanked = post(S({ meta: {} }), true, 2, false, 991);
+	ok(/a real opponent/.test(anonRanked),
+	   'a nameless ranked result lost its fallback: ' + anonRanked);
+
 	/* And a practice run, which has no battle row, must not invent one. */
 	post(S(), true, 2, true, 0);
 	ok(/dhcarena\.php(&|$)/.test(post.lastHref) && !/battle%3D/.test(post.lastHref),

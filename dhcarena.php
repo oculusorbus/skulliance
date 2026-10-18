@@ -2655,7 +2655,19 @@ function shareLink(won, standing){
    * credits a Fighter's builder the same way and for the same reason.
    */
   var foe = (S && S.meta && S.meta.defenderName) ? String(S.meta.defenderName) : '';
-  var vs  = foe ? foe + "'s Crew" : 'a real opponent';
+  /*
+   * PRACTICE HAS NO OPPONENT, so it must not claim one. A practice battle is
+   * built from a generated spec with no meta at all -- the board is never
+   * stored server-side -- so the name is simply absent, and the first
+   * version fell through to "a real opponent" and posted "(Practice) My Crew
+   * went down to a real opponent", which is both untrue and contradicts its
+   * own first word.
+   *
+   * The remaining nameless case is a ranked battle resumed from before
+   * defenderName was carried, where "a real opponent" is accurate.
+   */
+  var vs = practice ? 'a practice Crew'
+         : (foe ? foe + "'s Crew" : 'a real opponent');
 
   /* The Fighters that did it, by first name -- the same shorthand the end
      card uses, so the post matches the screen it was shared from. */
