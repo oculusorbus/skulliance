@@ -32,6 +32,25 @@ ob_end_clean();
 const DAC_W = 1200;
 const DAC_H = 630;
 
+/*
+ * WHERE A HEAD IS ON THE CANVAS, measured across all 71 head and headgear
+ * layers rather than guessed. The art is composed to a fixed body layout --
+ * that is the whole reason dhcf_layers() can stack traits at all -- so these
+ * are properties of the collection, not of one Fighter.
+ *
+ *   heads span y 0.072 .. 0.650   -> centre 0.360
+ *   heads span x 0.330 .. 0.880   -> centre 0.605, NOT the middle
+ *
+ * A ROBUST SPAN, not the absolute one: head/ and headgear/ also hold a few
+ * full-canvas layers, so the true min and max are 0 and 1 and would say
+ * "crop nothing". The 10th and 90th percentiles are the real head.
+ *
+ * The window is a little larger than that so no horn touches an edge.
+ */
+const DAC_HEAD_X = 0.605;
+const DAC_HEAD_Y = 0.360;
+const DAC_HEAD_H = 0.702;
+
 function dac_fail($code = 404) {
 	http_response_code($code);
 	header('Content-Type: text/plain; charset=utf-8');
@@ -132,7 +151,22 @@ imagefilledrectangle($card, 0, 0, DAC_W, DAC_H, imagecolorallocate($card, 7, 17,
  * vertical figure, so a portrait window uses the card's height instead of
  * wasting it.
  */
-$TW = 170; $TH = 300; $GAP = 15; $EDGE = 40;
+/*
+ * TILE SHAPE IS DECIDED BY THE HEAD, not chosen and then cropped to.
+ *
+ * MEASURED, not guessed: scanning all 71 head and headgear layers, a head
+ * spans y 0.072 to 0.645 of the canvas and x 0.330 to 0.807 -- so its centre
+ * is (0.569, 0.358) and it is 0.477 of the canvas wide. It is NOT centred
+ * horizontally. The first version guessed 0.26 for the centre and assumed
+ * 0.5 across, which is why faces came out high and three-quarters cropped.
+ *
+ * A window that holds all of that with a little air is 0.55 wide by 0.665
+ * tall, so the tile has to be about 0.83 as wide as it is tall. A taller,
+ * narrower tile cannot contain a horned head and centre it at the same
+ * time -- that is arithmetic, not taste -- and three across caps the width
+ * at ~172. Hence these numbers.
+ */
+$TW = 180; $TH = 218; $GAP = 10; $EDGE = 30;
 $top = (int)((DAC_H - $TH) / 2);
 $line = imagecolorallocate($card, 27, 51, 70);
 
@@ -172,14 +206,16 @@ foreach (array('mine' => true, 'foes' => false) as $side => $isLeft) {
 		 * collection rather than a guess about one Fighter. The window is
 		 * centred on it and clamped inside the source.
 		 */
-		$faceY  = (int)round($ah * 0.26);
-		$winH   = (int)round($ah * 0.62);
-		$winW   = (int)round($winH * ($TW / $TH));
+		$winH = (int)round($ah * DAC_HEAD_H);
+		$winW = (int)round($winH * ($TW / $TH));
 		if ($winW > $aw) { $winW = $aw; $winH = (int)round($winW * ($TH / $TW)); }
 		$sw2 = $winW;
 		$sh2 = $winH;
-		$sx  = (int)max(0, min($aw - $sw2, ($aw - $sw2) / 2));
-		$sy  = (int)max(0, min($ah - $sh2, $faceY - $sh2 / 2));
+		/* Centred on the head, then clamped -- and the clamp should never
+		   fire at these proportions, which is the point of deriving them
+		   from the measurement rather than trimming until it looks right. */
+		$sx = (int)max(0, min($aw - $sw2, $aw * DAC_HEAD_X - $sw2 / 2));
+		$sy = (int)max(0, min($ah - $sh2, $ah * DAC_HEAD_Y - $sh2 / 2));
 
 		$tile = imagecreatetruecolor($TW, $TH);
 		imagecopyresampled($tile, $art, 0, 0, $sx, $sy, $TW, $TH, $sw2, $sh2);

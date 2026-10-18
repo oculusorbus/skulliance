@@ -34,8 +34,16 @@ ok($W === 1200 && $H === 630, "the card is {$W}x{$H}; summary_large_image wants 
 if (!function_exists('imagecreatetruecolor')) {
 	echo "\n  (GD not available -- geometry not run)\n";
 } else {
-	if (!defined('DAC_W')) define('DAC_W', $W);
-	if (!defined('DAC_H')) define('DAC_H', $H);
+	/* EVERY DAC_ CONSTANT, READ OUT OF THE FILE. Defining just W and H by
+	   hand meant adding the measured head constants to the page fataled the
+	   harness -- a test that breaks when the code grows is a test people
+	   start skipping. */
+	if (preg_match_all('/const (DAC_[A-Z_]+)\s*=\s*(-?[\d.]+);/', $clean, $cm, PREG_SET_ORDER)) {
+		foreach ($cm as $c) {
+			if (!defined($c[1])) define($c[1], strpos($c[2], '.') !== false ? (float)$c[2] : (int)$c[2]);
+		}
+	}
+	ok(defined('DAC_W') && defined('DAC_H'), 'the card constants are gone');
 
 	/*
 	 * A FLAT COLOUR PER FIGHTER, so a tile can be identified by what is in
@@ -75,7 +83,13 @@ if (!function_exists('imagecreatetruecolor')) {
 		 * render the real heads do, and the check below asks where it
 		 * ended up in the finished tile.
 		 */
-		imagefilledrectangle($im, 240, 110, 330, 150, imagecolorallocate($im, 0, 0, 0));
+		/* At the MEASURED head centre -- x 0.569, y 0.358 of the canvas --
+		   x 0.605, y 0.360 -- not the 0.26 and 0.5 guessed first. These numbers are the
+		   fact about the art; the constants in the card claim to encode
+		   them, and the block below checks that claim separately against
+		   the real PNGs, so this fixture is not just agreeing with the
+		   code by construction. */
+		imagefilledrectangle($im, 270, 160, 335, 200, imagecolorallocate($im, 0, 0, 0));
 		$made[] = $n;
 		return $im;
 	}
@@ -147,7 +161,15 @@ if (!function_exists('imagecreatetruecolor')) {
 		   sized by what lets a face be centred without clipping the head, and
 		   that is the designer's call. The mutation that shrinks them to
 		   nothing measures 2%. */
-		ok($areaFrac > 0.30, sprintf('the Fighters cover only %.0f%% of the card', $areaFrac * 100));
+		/*
+		 * A SLIVER TEST, NOT A LAYOUT OPINION. The tile shape is fixed by
+		 * arithmetic -- a head is 0.477 of the canvas wide and 0.573 tall,
+		 * so a tile that contains one and centres it must be about 0.83 as
+		 * wide as it is tall, and three across caps the width. Six of those
+		 * cover roughly a third of the card and that is simply what the
+		 * constraint produces. The shrink mutation measures 2%.
+		 */
+		ok($areaFrac > 0.20, sprintf('the Fighters cover only %.0f%% of the card', $areaFrac * 100));
 	}
 
 	echo "\nthe two Crews face each other\n";
@@ -235,6 +257,77 @@ if (!function_exists('imagecreatetruecolor')) {
 	$avg = $sum / max(1, $seen);
 	ok($avg > 24, sprintf('the fallen Crew averages %.0f/255; it has gone black', $avg));
 	ok($avg < 150, sprintf('the fallen Crew averages %.0f/255; it is not dimmed at all', $avg));
+}
+
+echo "\nthe head constants match the actual art\n";
+{
+	/*
+	 * THE CROP IS ONLY RIGHT IF THESE NUMBERS ARE. DAC_HEAD_X/Y/H say where
+	 * a head sits on the canvas, and the first version of the card guessed
+	 * 0.26 for the vertical centre and assumed the horizontal one was 0.5 --
+	 * which is why faces came out high and three-quarters cropped. They are
+	 * measurable, so they are measured: if Maxingo ever recomposes the body
+	 * layout, this fails rather than the cards quietly going wrong.
+	 *
+	 * A sample, not all 71, because this runs on every pass.
+	 */
+	$dir0 = '';
+	foreach (array('dhc/web', 'web', 'dhc', 'traits') as $cand) {
+		if (is_dir(__DIR__ . '/' . $cand . '/1000/head')) { $dir0 = __DIR__ . '/' . $cand . '/1000'; break; }
+	}
+	if ($dir0 === '') {
+		echo "  (no trait art in this checkout -- head constants not measured)\n";
+	} else {
+		/* EVERY layer, not a sample. A 20-file subset put the 90th
+		   percentile of the right edge at 0.876 where the full set has it
+		   at 0.880 -- close, but the check is a boundary and a sample that
+		   moves it is a check that passes or fails by luck. */
+		$files = array_merge(glob($dir0 . '/head/*.png'), glob($dir0 . '/headgear/*.png'));
+		$tops = array(); $bots = array(); $ls = array(); $rs = array();
+		foreach ($files as $f) {
+			$im = @imagecreatefrompng($f);
+			if (!$im) continue;
+			/* Most trait PNGs are PALETTE: imagecolorat returns an index
+			   there, so the alpha shift is meaningless until this. */
+			if (!imageistruecolor($im)) imagepalettetotruecolor($im);
+			$w = imagesx($im); $h = imagesy($im);
+			$t = -1; $bm = -1; $l = -1; $r = -1;
+			for ($y = 0; $y < $h; $y += 6) for ($x = 0; $x < $w; $x += 6) {
+				if (((imagecolorat($im, $x, $y) >> 24) & 0x7F) < 64) {
+					if ($t < 0) $t = $y; $bm = $y;
+					if ($l < 0 || $x < $l) $l = $x;
+					if ($x > $r) $r = $x;
+				}
+			}
+			if ($t < 0) continue;
+			$tops[] = $t / $h; $bots[] = $bm / $h; $ls[] = $l / $w; $rs[] = $r / $w;
+		}
+		ok(count($tops) >= 5, 'could not read enough head layers to measure anything');
+		if (count($tops) >= 5) {
+			sort($tops); sort($bots); sort($ls); sort($rs);
+			$q = function ($a, $f) { return $a[min(count($a) - 1, (int)(count($a) * $f))]; };
+			$top = $q($tops, 0.1); $bot = $q($bots, 0.9);
+			$lft = $q($ls, 0.1);   $rgt = $q($rs, 0.9);
+
+			/* The window the card crops, from its own constants. */
+			$wy0 = DAC_HEAD_Y - DAC_HEAD_H / 2;
+			$wy1 = DAC_HEAD_Y + DAC_HEAD_H / 2;
+			$ww  = DAC_HEAD_H * (180 / 218);          /* window aspect = tile aspect */
+			$wx0 = DAC_HEAD_X - $ww / 2;
+			$wx1 = DAC_HEAD_X + $ww / 2;
+
+			ok($wy0 <= $top && $wy1 >= $bot,
+			   sprintf('the crop window (y %.3f..%.3f) does not contain the heads (y %.3f..%.3f)',
+			           $wy0, $wy1, $top, $bot));
+			ok($wx0 <= $lft && $wx1 >= $rgt,
+			   sprintf('the crop window (x %.3f..%.3f) does not contain the heads (x %.3f..%.3f) '
+			         . '-- this is what cropped three-quarters of every face', $wx0, $wx1, $lft, $rgt));
+			/* And it must stay inside the canvas, or the clamp silently
+			   un-centres everything. */
+			ok($wy0 >= 0 && $wy1 <= 1 && $wx0 >= 0 && $wx1 <= 1,
+			   'the crop window runs off the canvas, so the clamp moves the head off centre');
+		}
+	}
 }
 
 echo "\nit reads the record that survives the battle\n";
