@@ -72,6 +72,29 @@ require_once __DIR__ . '/dhcarena-lib.php';
  */
 $dhca_canonical = 'https://www.skulliance.io/staking/dhcarena.php';
 $dhca_og_image  = 'https://www.skulliance.io/staking/images/og.jpg';
+
+/*
+ * ?battle=N MAKES THE UNFURL ABOUT THAT MATCH.
+ *
+ * A shared result carried this page's generic card -- the same picture for
+ * every result anybody has ever posted -- so the post said "I won" over a
+ * stock image. With a battle named, og:image becomes dhc-arena-card.php,
+ * which draws the six Fighters that actually fought with the fallen dimmed.
+ *
+ * THE PAGE ITSELF IS UNCHANGED. This only rewrites meta: the visitor still
+ * lands on the playable Arena, which is the point of sharing it. The
+ * canonical stays the bare page too, so every shared match consolidates
+ * onto one indexable URL instead of spawning thousands.
+ *
+ * Validated as an integer and nothing more -- the card endpoint decides
+ * whether that battle exists, and a bad number there is a 404, not a page
+ * that fails to render.
+ */
+$dhca_share_battle = isset($_GET['battle']) ? (int)$_GET['battle'] : 0;
+if ($dhca_share_battle > 0) {
+	$dhca_og_image = 'https://www.skulliance.io/staking/dhc-arena-card.php?battle='
+	               . $dhca_share_battle;
+}
 $dhca_title     = 'DHC Arena — free Crew vs Crew puzzle battler | Skulliance';
 $dhca_desc      = 'Three Fighters against three on one shared board. Match a Fighter\'s '
                 . 'gem to make them act, and match size is reach: three touches their '
@@ -90,7 +113,9 @@ $extra_head = '
 <meta property="og:title" content="'.htmlspecialchars($dhca_title).'">
 <meta property="og:description" content="'.htmlspecialchars($dhca_desc).'">
 <meta property="og:image" content="'.$dhca_og_image.'">
-<meta property="og:image:alt" content="DHC Arena - a Crew of three Fighters facing three more across a gem board">
+<meta property="og:image:alt" content="'.($dhca_share_battle ? 'The two Crews from this DHC Arena match, the fallen Fighters dimmed' : 'DHC Arena - a Crew of three Fighters facing three more across a gem board').'">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="'.htmlspecialchars($dhca_title).'">
@@ -2665,8 +2690,13 @@ function shareLink(won, standing){
      which is where the invitation and the credit live. Budget for it. */
   var limit = 280 - 24 - tail.length;
   if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '…';
+  /* The link names the BATTLE, which is what gives the post a picture of
+     the match instead of the site's stock card. It still opens the playable
+     Arena; only the meta differs. */
+  var url = 'https://skulliance.io/staking/dhcarena.php'
+          + (battleId > 0 ? '?battle=' + battleId : '');
   el.href = 'https://x.com/intent/post?text=' + encodeURIComponent(body + tail)
-          + '&url=' + encodeURIComponent('https://skulliance.io/staking/dhcarena.php');
+          + '&url=' + encodeURIComponent(url);
 }
 function showEnd(res){
   var won = res.over === 'mine';
