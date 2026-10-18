@@ -1018,6 +1018,18 @@ function dhca_public(&$b) {
 		// that has not started from one being picked back up -- the first gets
 		// an entrance, the second must not.
 		'moves'=>isset($b['meta']['moves']) ? count($b['meta']['moves']) : 0,
+		/*
+		 * WHO YOU ARE FIGHTING. meta is deliberately NOT sent -- it holds
+		 * the Fighter ids and the move list, which the client has no
+		 * business knowing -- so the share text read S.meta.defenderName and
+		 * found nothing, every time, and posted "a real opponent" for
+		 * everybody. The name itself is public: it is on the rival card the
+		 * player clicked to start the battle.
+		 *
+		 * A practice battle has no meta at all, so this is absent there and
+		 * the share says "a practice Crew" rather than inventing a rival.
+		 */
+		'defenderName'=>isset($b['meta']['defenderName']) ? (string)$b['meta']['defenderName'] : '',
 	);
 }
 

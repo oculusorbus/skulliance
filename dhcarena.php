@@ -2654,7 +2654,10 @@ function shareLink(won, standing){
    * tag whichever stranger holds that name over there. dhc-fighter-modal.php
    * credits a Fighter's builder the same way and for the same reason.
    */
-  var foe = (S && S.meta && S.meta.defenderName) ? String(S.meta.defenderName) : '';
+  /* S.defenderName, not S.meta.defenderName: dhca_public() does not send
+     meta -- it holds the Fighter ids and the move list -- so reading it
+     there found nothing every time and every post said "a real opponent". */
+  var foe = (S && S.defenderName) ? String(S.defenderName) : '';
   /*
    * PRACTICE HAS NO OPPONENT, so it must not claim one. A practice battle is
    * built from a generated spec with no meta at all -- the board is never

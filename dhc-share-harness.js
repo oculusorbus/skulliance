@@ -736,7 +736,14 @@ console.log('\nthe Arena share says who you beat');
 	};
 	const crew = (alive) => Array.from({ length: 3 },
 		(_, i) => ({ name: 'Fighter' + i + ' Surname', ko: i >= alive }));
-	const S = (over) => Object.assign({ meta: { defenderName: 'Ohh Meed' },
+	/*
+	 * THE SHAPE dhca_public() ACTUALLY SENDS. The first fixture nested the
+	 * name under meta, which is where the server keeps it -- but meta is
+	 * never sent to the client, so the real S has never had it and every
+	 * post said "a real opponent". The fixture encoded my assumption and
+	 * passed while production was wrong.
+	 */
+	const S = (over) => Object.assign({ defenderName: 'Ohh Meed',
 		mine: crew(2), foes: crew(0), stats: { best: 4 } }, over || {});
 
 	const win = post(S(), true, 2);
@@ -744,6 +751,25 @@ console.log('\nthe Arena share says who you beat');
 	ok(/Fighter0 and Fighter1/.test(win), 'the post does not name the Fighters that won it');
 	ok(/Best chain x4/.test(win), 'the chain is gone from the post');
 	ok(fits(win), 'the post is ' + win.length + ' characters plus a url');
+
+	/*
+	 * AND IT HAS TO BE WHERE THE SERVER PUTS IT. The name is read off the
+	 * state the client is handed, and dhca_public() is what decides what
+	 * that contains -- it strips meta. Asserting against the projection
+	 * rather than against a hand-built object is the only way this fixture
+	 * cannot drift back into testing an assumption.
+	 */
+	const eng = fs.readFileSync(path.join(__dirname, 'dhcarena-engine.php'), 'utf8');
+	ok(/'defenderName'=>isset\(\$b\['meta'\]\['defenderName'\]\)/.test(eng),
+	   'dhca_public() does not forward defenderName, so the client never sees it and every '
+	 + 'post says "a real opponent"');
+	/* COMMENTS STRIPPED: the fix's own comment explains that reading
+	   S.meta.defenderName found nothing, and a bare match hit that sentence
+	   rather than the code. Fifth time this pattern has bitten in this
+	   codebase -- assert on what runs, not on what explains it. */
+	const arenaCode = arena.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+	ok(!/S\.meta\.defenderName/.test(arenaCode),
+	   'the share reads S.meta.defenderName; meta is not sent to the client');
 
 	/* NAMED, NEVER @-TAGGED: that is a Discord username and the platform
 	   stores no X handle for anybody, so an @ would tag a stranger. */
@@ -756,7 +782,7 @@ console.log('\nthe Arena share says who you beat');
 
 	/* A battle resumed before defenderName existed, or a practice run with
 	   no defender, must still produce a sentence. */
-	const anon = post(S({ meta: {} }), true, 2);
+	const anon = post(S({ defenderName: '' }), true, 2);
 	ok(!/undefined|null|'s Crew in the DHC Arena with/.test(anon.slice(0, 20)),
 	   'a missing opponent name leaks into the post: ' + anon);
 	ok(/a real opponent/.test(anon), 'there is no fallback when the opponent is unknown');
@@ -770,7 +796,7 @@ console.log('\nthe Arena share says who you beat');
 	 * whatever somebody typed into Discord -- so a long one must trim the
 	 * sentence rather than the invitation and the credit off the end.
 	 */
-	const long = post(S({ meta: { defenderName: 'x'.repeat(90) } }), true, 2);
+	const long = post(S({ defenderName: 'x'.repeat(90) }), true, 2);
 	ok(fits(long), 'a long opponent name pushes the post to ' + long.length + ' characters');
 	ok(/Art by @MMAXI404$/.test(long), 'the trim ate the credit instead of the sentence');
 
@@ -789,13 +815,13 @@ console.log('\nthe Arena share says who you beat');
 	 * nameless branch posted "(Practice) My Crew went down to a real
 	 * opponent" -- untrue, and contradicting its own first word.
 	 */
-	const prLoss = post(S({ meta: {} }), false, 0, true, 0);
+	const prLoss = post(S({ defenderName: '' }), false, 0, true, 0);
 	ok(!/a real opponent/.test(prLoss),
 	   'a practice result claims a real opponent: ' + prLoss);
 	ok(/a practice Crew/.test(prLoss), 'a practice result does not say what it fought: ' + prLoss);
 	/* A ranked battle with no name -- resumed from before defenderName was
 	   carried -- is the one case where "a real opponent" is right. */
-	const anonRanked = post(S({ meta: {} }), true, 2, false, 991);
+	const anonRanked = post(S({ defenderName: '' }), true, 2, false, 991);
 	ok(/a real opponent/.test(anonRanked),
 	   'a nameless ranked result lost its fallback: ' + anonRanked);
 
@@ -807,7 +833,7 @@ console.log('\nthe Arena share says who you beat');
 	/* "(Practice)" goes in FRONT, because the trim takes from the end: a
 	   long name could otherwise drop it and leave a practice result
 	   reading as a ranked one. */
-	const prac = post(S({ meta: { defenderName: 'x'.repeat(90) } }), true, 2, true);
+	const prac = post(S({ defenderName: 'x'.repeat(90) }), true, 2, true);
 	ok(prac.indexOf('(Practice)') === 0,
 	   'the practice marker is not at the front, so a long name can truncate it away');
 }

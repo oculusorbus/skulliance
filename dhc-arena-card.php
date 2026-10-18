@@ -52,21 +52,44 @@ if ($battle <= 0) dac_fail(400);
 if (!function_exists('imagecreatetruecolor')) dac_fail(503);
 
 /*
- * THE SAVED STATE IS THE WHOLE RECORD. dhc_arena_state holds the engine's own
- * $b for the battle, and every Fighter in it already carries its traits and
- * its ko flag -- so there is no second read of dhc_fighters and no chance of
- * the card disagreeing with the match it is a picture of.
+ * THE LEDGER, NOT THE LIVE STATE.
+ *
+ * dhc_arena_state is the IN-PROGRESS store and is DELETED the moment a
+ * battle resolves -- and a result is only ever shared after it resolves, so
+ * reading it meant this endpoint 404'd for every single match anybody
+ * posted. It did exactly that in production before anyone noticed, because
+ * a missing og:image is a card with no picture rather than an error.
+ *
+ * dhc_arena_battle_fighters is the durable record: six rows saying who was
+ * in the battle, which side, and whether they fell. Traits come from
+ * dhc_fighters, which is where they live anyway.
+ *
+ * side 1 is the attacker, 2 the defender -- see dhca_log_participants().
  *
  * $conn->query(), not prepare()+get_result(): this server's mysqli has no
- * mysqlnd, so get_result() is a fatal there and php -l cannot see it.
+ * mysqlnd, so get_result() is fatal there and php -l cannot see it.
  */
-$res = $conn->query("SELECT state FROM dhc_arena_state WHERE battle_id = $battle
-                     ORDER BY updated_at DESC LIMIT 1");
+$res = $conn->query(
+	"SELECT bf.side, bf.fell, bf.`rank`, f.id, f.serial, f.traits
+	   FROM dhc_arena_battle_fighters bf
+	   INNER JOIN dhc_fighters f ON f.id = bf.fighter_id
+	  WHERE bf.battle_id = $battle
+	  ORDER BY bf.side ASC, bf.`rank` ASC, bf.fighter_id ASC");
 if (!$res) dac_fail(503);
-$row = $res->fetch_assoc();
-if (!$row) dac_fail();
-$b = json_decode($row['state'], true);
-if (!is_array($b) || empty($b['mine']) || empty($b['foes'])) dac_fail();
+
+$b = array('mine' => array(), 'foes' => array());
+while ($r = $res->fetch_assoc()) {
+	$traits = json_decode($r['traits'], true);
+	if (!is_array($traits)) continue;
+	$b[(int)$r['side'] === 1 ? 'mine' : 'foes'][] = array(
+		'traits' => $traits,
+		/* The SERIAL keys the render cache, so this card and the Fighter's
+		   own share card reuse one file rather than drawing it twice. */
+		'uid'    => (int)$r['serial'],
+		'ko'     => !empty($r['fell']),
+	);
+}
+if (!$b['mine'] || !$b['foes']) dac_fail();
 
 /* Keyed on the battle AND on how it ended, so a card rendered mid-match is
    replaced once the result is in rather than cached for a week. */

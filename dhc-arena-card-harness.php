@@ -237,6 +237,40 @@ if (!function_exists('imagecreatetruecolor')) {
 	ok($avg < 150, sprintf('the fallen Crew averages %.0f/255; it is not dimmed at all', $avg));
 }
 
+echo "\nit reads the record that survives the battle\n";
+{
+	/*
+	 * THE BUG THIS EXISTS FOR. The card first read dhc_arena_state, which is
+	 * the IN-PROGRESS store and is DELETED the moment a battle resolves --
+	 * and a result is only ever shared after it resolves. So the endpoint
+	 * 404'd for every single match anybody posted, and nobody could tell,
+	 * because a missing og:image is a card with no picture rather than an
+	 * error.
+	 *
+	 * dhc_arena_battle_fighters is the ledger that survives: who was in it,
+	 * which side, whether they fell.
+	 */
+	ok(strpos($clean, 'dhc_arena_battle_fighters') !== false,
+	   'the card does not read the ledger, so it cannot describe a finished battle');
+	ok(strpos($clean, 'FROM dhc_arena_state') === false,
+	   'the card reads dhc_arena_state, which is deleted the moment a battle ends -- every '
+	 . 'shared result would 404');
+	/* And the table it reads really is the one that outlives a battle. */
+	$lib = file_get_contents(__DIR__ . '/dhcarena-lib.php');
+	ok(strpos($lib, 'DELETE FROM dhc_arena_state WHERE battle_id') !== false,
+	   'dhcarena-lib.php no longer deletes the live state; if that changed, revisit which '
+	 . 'table this card should read');
+	ok(strpos($lib, 'INSERT IGNORE INTO dhc_arena_battle_fighters') !== false,
+	   'nothing writes the ledger any more, so there is nothing for the card to read');
+	/* side 1 is the attacker, 2 the defender -- dhca_log_participants(). */
+	ok(strpos($clean, "(int)\$r['side'] === 1 ? 'mine' : 'foes'") !== false,
+	   'the card does not split the two Crews by the ledger\'s side column');
+	/* Traits come from dhc_fighters; a row whose Fighter is gone must not
+	   land on the card as a blank tile. */
+	ok(strpos($clean, 'INNER JOIN dhc_fighters f ON f.id = bf.fighter_id') !== false,
+	   'the join to dhc_fighters is gone or is a LEFT JOIN; a deleted Fighter would draw blank');
+}
+
 echo "\nthe cache follows the result, and the write is atomic\n";
 /* Keyed on the KO flags as well as the battle: a card rendered mid-match
    would otherwise be served for a week after the match ended. */
