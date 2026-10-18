@@ -2186,4 +2186,7 @@
  * guards itself, so those pages including it directly stays harmless.
  */
 if (is_file(__DIR__ . '/dhc-dropmodal.php')) include __DIR__ . '/dhc-dropmodal.php';
+/* Yesterday's summary, once a day, for a signed-in player. It returns
+   immediately for anyone else and renders nothing when they did nothing. */
+if (is_file(__DIR__ . '/player-digest.php')) include __DIR__ . '/player-digest.php';
 ?>

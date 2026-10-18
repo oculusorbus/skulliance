@@ -579,6 +579,100 @@ function activity_digest($conn, $day) {
 	return $out;
 }
 
+define('ACTIVITY_PDIGEST_ART', 12);   // art tiles on a player's own poster
+
+/**
+ * ONE PLAYER'S DAY, for the modal they get on their next visit.
+ *
+ * The platform digest answers "what happened yesterday"; this answers "what
+ * did YOU do yesterday", and it reads the same table for the same reason:
+ * activity is written from the ANNOUNCEMENT, so every feature that announces
+ * is already in it and a feature that starts announcing tomorrow is in this
+ * tomorrow with nothing added here. Per-feature tables would be eight joins
+ * across eight unrelated schemas, several of which never kept the picture.
+ *
+ * Returns total 0 when they did nothing, which is the caller's signal to
+ * show no modal at all. A poster saying "you did nothing yesterday" is worse
+ * than silence.
+ *
+ * $day is a Y-m-d string and is pattern-checked before it reaches SQL.
+ */
+function activity_player_digest($conn, $user_id, $day) {
+	$out = array('day' => $day, 'total' => 0, 'channels' => array(), 'art' => array(),
+	             'name' => '', 'avatar' => '', 'streak' => 0, 'best' => null);
+	$user_id = (int) $user_id;
+	if (!($conn instanceof mysqli) || $user_id <= 0) return $out;
+	if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) $day)) return $out;
+
+	$d = $conn->real_escape_string($day);
+	/* A half-open range on created_at, never DATE(created_at) = -- the
+	   function form cannot use idx_created and would read the whole table.
+	   Same reason activity_digest() does it this way. */
+	$win = "a.created_at >= '$d 00:00:00'
+	        AND a.created_at < DATE_ADD('$d 00:00:00', INTERVAL 1 DAY)
+	        AND a.user_id = $user_id";
+
+	$r = @$conn->query("SELECT a.channel, COUNT(*) AS n FROM activity a
+	                     WHERE $win GROUP BY a.channel ORDER BY n DESC");
+	if ($r) while ($row = $r->fetch_assoc()) {
+		$n = (int) $row['n'];
+		$out['total'] += $n;
+		$out['channels'][] = array(
+			'key'   => (string) $row['channel'],
+			'label' => activity_channel_label((string) $row['channel']),
+			'n'     => $n,
+		);
+	}
+	if (!$out['total']) return $out;
+
+	/* Who they are, for the poster. Canonical from users, not from whatever
+	   an embed's author line happened to say -- see activity_digest()'s note
+	   on why that line is not the person. */
+	$r = @$conn->query("SELECT username, discord_id, avatar, streak
+	                      FROM users WHERE id = $user_id LIMIT 1");
+	if ($r && ($u = $r->fetch_assoc())) {
+		$out['name']   = (string) $u['username'];
+		$out['streak'] = (int) $u['streak'];
+		$av = ((string) $u['discord_id'] !== '' && (string) $u['avatar'] !== '')
+			? avatar_url($u['discord_id'], $u['avatar']) : '';
+		$out['avatar'] = activity_digest_src($av);
+	}
+
+	/*
+	 * THEIR OWN PICTURES, with the same exclusions the platform collage
+	 * uses and for the same reasons: /icons/ is ornament, /250/ is a bare
+	 * trait on a flat ground, /racing/images/ is AI-generated box art
+	 * beside hand-drawn work. All three are still COUNTED above -- hidden
+	 * from the pictures, not from the day.
+	 */
+	$r = @$conn->query("SELECT a.image_url, MIN(a.id) AS first_id, MIN(a.channel) AS channel,
+	                           MIN(a.title) AS title
+	                      FROM activity a
+	                     WHERE $win AND a.image_url != ''
+	                       AND a.image_url NOT LIKE '%/icons/%'
+	                       AND a.image_url NOT LIKE '%/250/%'
+	                       AND a.image_url NOT LIKE '%/racing/images/%'
+	                  GROUP BY a.image_url
+	                  ORDER BY first_id ASC
+	                     LIMIT " . ACTIVITY_PDIGEST_ART);
+	if ($r) while ($row = $r->fetch_assoc()) {
+		$src = activity_digest_src((string) $row['image_url']);
+		if ($src === '') continue;
+		$out['art'][] = array(
+			'src'   => $src,
+			'label' => activity_channel_label((string) $row['channel']),
+			'title' => (string) $row['title'],
+		);
+	}
+
+	/* The headline: whichever feature they did most of. The poster leads
+	   with it and the share text quotes it, so a day reads as a thing they
+	   did rather than a number. */
+	if ($out['channels']) $out['best'] = $out['channels'][0];
+
+	return $out;
+}
+
 /*
  * Make a stored image url safe for a CANVAS to draw.
  *

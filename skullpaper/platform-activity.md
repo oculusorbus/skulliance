@@ -43,3 +43,17 @@ Activity also feeds a poster. In the admin area, **Daily Digest** turns one day 
 The arrangement is seeded by the date, so the same day always draws the same poster and no two days look alike - the shape of it is dictated by what people did. Pick a day, pick a shape (wide, tall or square), and download the PNG.
 
 It can only show what was announced, for the same reason the feed can: see *History* above.
+
+## Your own day
+
+The first time you open Skulliance on a new day, you get a small poster of the day before: how much you got through, which features it was, the pictures your activity produced, and your login streak if you have one going.
+
+You can **download** it, **share it on X**, or close it. It asks once a day and nothing happens if you say no.
+
+Two things worth knowing:
+
+* **A quiet day shows nothing at all.** If you did not do anything yesterday, there is no modal - a poster announcing that you did nothing is not worth drawing.
+* **Sharing saves the image first.** X cannot attach a picture to a post written for you, so the image is downloaded and you attach it. The post stands on its own if you would rather not.
+
+It is built from the same record the feed is, so it shows what was announced - the same limit described under *History*.
+
