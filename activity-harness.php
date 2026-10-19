@@ -724,6 +724,56 @@ ok('the option list is styled too',
    strpos($p, '#ac-filters select option { background-color: #0d1e2e') !== false);
 
 restore_error_handler();
+section('Skull Racer counts, but never shows');
+{
+	/*
+	 * THE OWNER'S CALL, and it cuts two ways: Skull Racer earns its place
+	 * in the tally when the volume is there, and its box art stays out of
+	 * both collages because those three images are AI-generated where
+	 * everything else on the poster is Maxingo's hand-drawn work.
+	 *
+	 * So this is not one rule but two opposed ones, and a later tidy-up
+	 * that "unifies the exclusions" would quietly break whichever half it
+	 * touched. Both are pinned.
+	 */
+	$lib = file_get_contents(__DIR__ . '/activity-lib.php');
+
+	/* The ART queries exclude it. */
+	ok('the platform collage leaves out the racing box art',
+	   substr_count($lib, "image_url NOT LIKE '%/racing/images/%'") >= 1);
+	ok('the player collage leaves it out too',
+	   substr_count($lib, "NOT LIKE '%/racing/images/%'") >= 2);
+
+	/*
+	 * The TALLY queries must not. A channel filter on either of these is
+	 * what would drop Skull Racer out of the numbers.
+	 */
+	/*
+	 * ANCHORED ON THE DIGEST'S OWN WHERE CLAUSE. "SELECT channel, COUNT(*)
+	 * AS n FROM activity" also matches a channel-LIST helper elsewhere in
+	 * this file, whose WHERE channel != '' legitimately drops blanks -- so
+	 * the loose anchor found that one and failed on correct code.
+	 */
+	foreach (array('WHERE $win GROUP BY channel ORDER BY n DESC',
+	               'WHERE $win GROUP BY a.channel ORDER BY n DESC') as $q) {
+		$at = strpos($lib, $q);
+		ok('the digest tally is still there: ' . substr($q, 6, 22), $at !== false);
+		if ($at === false) continue;
+		/* The SQL STRING, not 260 bytes of whatever follows it: the
+		   window overran into the comment explaining why the racing art
+		   is excluded and failed on correct code. */
+		$beg = strrpos(substr($lib, 0, $at), 'SELECT');
+		$end = strpos($lib, '");', $at);
+		$sql = substr($lib, $beg, ($end === false ? $at + 200 : $end) - $beg);
+		ok('it counts every channel, so Skull Racer is in the numbers: ' . substr($q, 6, 22),
+		   stripos($sql, 'racing') === false && stripos($sql, 'skullracer') === false
+		   && stripos($sql, 'channel NOT IN') === false && stripos($sql, 'channel !=') === false);
+	}
+
+	/* And it is labelled, or the tally reads "Skullracer". */
+	ok('Skull Racer has a proper label', activity_channel_label('skullracer') === 'Skull Racer');
+}
+
 section('one picture, once -- activity_art_key() and the fold');
 {
 	/*

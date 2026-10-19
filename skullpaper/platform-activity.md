@@ -42,6 +42,11 @@ Activity also feeds a poster. In the admin area, **Daily Digest** turns one day 
 
 The arrangement is seeded by the date, so the same day always draws the same poster and no two days look alike - the shape of it is dictated by what people did. Pick a day, pick a shape (wide, tall or square), and download the PNG.
 
+Skull Racer counts in the tallies like everything else, but its box art is
+left out of the pictures: those three images are AI-generated where the rest
+of the poster is hand-drawn work, and side by side the difference is the
+first thing you see.
+
 It can only show what was announced, for the same reason the feed can: see *History* above.
 
 ## Your own day

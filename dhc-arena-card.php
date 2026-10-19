@@ -46,10 +46,26 @@ const DAC_H = 630;
  * "crop nothing". The 10th and 90th percentiles are the real head.
  *
  * The window is a little larger than that so no horn touches an edge.
+ *
+ * THE WINDOW NOW TAKES THE WHOLE HEIGHT OF THE ART, which is what makes the
+ * tiles tall: the render is a SQUARE 500px card, so the window's height is
+ * all there is to take and its WIDTH is then fixed by the tile's aspect at
+ * TW/TH. Centre 0.5 follows from height 1.0 -- anything else would hang the
+ * window off the top or bottom of the canvas and the clamp would quietly
+ * slide it back.
+ *
+ * That turns the tile height into the only free number, and it is bounded
+ * on BOTH sides:
+ *
+ *   TH >= 228   or the window is wider than the canvas and gets clamped
+ *   TH <= 327   or the window is narrower than 0.330..0.880 and clips horns
+ *
+ * 310 sits inside that with room, and is as tall as a tile can be while
+ * still showing the full height of the art and the whole of a head.
  */
 const DAC_HEAD_X = 0.605;
-const DAC_HEAD_Y = 0.360;
-const DAC_HEAD_H = 0.702;
+const DAC_HEAD_Y = 0.500;
+const DAC_HEAD_H = 1.000;
 
 function dac_fail($code = 404) {
 	http_response_code($code);
@@ -161,12 +177,18 @@ imagefilledrectangle($card, 0, 0, DAC_W, DAC_H, imagecolorallocate($card, 7, 17,
  * 0.5 across, which is why faces came out high and three-quarters cropped.
  *
  * A window that holds all of that with a little air is 0.55 wide by 0.665
- * tall, so the tile has to be about 0.83 as wide as it is tall. A taller,
- * narrower tile cannot contain a horned head and centre it at the same
- * time -- that is arithmetic, not taste -- and three across caps the width
- * at ~172. Hence these numbers.
+ * tall. Three across caps the width at ~180, and the HEIGHT is then the
+ * only number left to choose.
+ *
+ * AS TALL AS THE ART ALLOWS. The render is square, so once the window
+ * takes the full height of it the window's width is TW/TH and nothing
+ * else -- a taller tile is a NARROWER slice of the same picture, and past
+ * TH 327 the slice is narrower than a head. 310 is the tallest that still
+ * holds one, and it is 42% more picture than the 218 it replaces. Beyond
+ * that the card can only be filled with something other than these six
+ * portraits.
  */
-$TW = 180; $TH = 218; $GAP = 10; $EDGE = 30;
+$TW = 180; $TH = 310; $GAP = 10; $EDGE = 30;
 $top = (int)((DAC_H - $TH) / 2);
 $line = imagecolorallocate($card, 27, 51, 70);
 

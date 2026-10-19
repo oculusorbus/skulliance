@@ -262,6 +262,56 @@ if (!function_exists('imagecreatetruecolor')) {
 echo "\nthe head constants match the actual art\n";
 {
 	/*
+	 * THE SAME CHECK WITHOUT THE ART, so it runs in every checkout.
+	 *
+	 * The measurement below needs the trait PNGs, which are deployed by
+	 * FTP and are not in the repo -- so on a laptop it prints a note and
+	 * checks nothing, and the tile height could be changed to anything at
+	 * all with a green harness. These are the numbers that measurement
+	 * recorded, written down, so the geometry is still guarded here.
+	 */
+	{
+		$HEAD_X0 = 0.330; $HEAD_X1 = 0.880;   /* 10th/90th percentile, 71 layers */
+		$HEAD_Y0 = 0.072; $HEAD_Y1 = 0.650;
+		preg_match('/\$TW = (\d+); \$TH = (\d+); \$GAP = (\d+); \$EDGE = (\d+);/', $src, $tm);
+		ok($tm, 'the tile geometry could not be read out of the card');
+		if ($tm) {
+			list(, $tw, $th, $gap, $edge) = array_map('intval', $tm);
+			$ww = DAC_HEAD_H * ($tw / $th);
+			$x0 = DAC_HEAD_X - $ww / 2; $x1 = DAC_HEAD_X + $ww / 2;
+			$y0 = DAC_HEAD_Y - DAC_HEAD_H / 2; $y1 = DAC_HEAD_Y + DAC_HEAD_H / 2;
+
+			/* THE TILE ASPECT IS THE WINDOW WIDTH, because the render is
+			   square and the window takes its full height -- so a TALLER
+			   tile is a NARROWER slice, and past a point it is narrower
+			   than a head. That is the trap in making these bigger. */
+			ok($x0 <= $HEAD_X0 && $x1 >= $HEAD_X1,
+			   sprintf('a %dx%d tile crops x %.3f..%.3f, which slices the recorded heads '
+			         . '(%.3f..%.3f) -- a taller tile is a narrower slice',
+			           $tw, $th, $x0, $x1, $HEAD_X0, $HEAD_X1));
+			ok($y0 <= $HEAD_Y0 && $y1 >= $HEAD_Y1,
+			   sprintf('the window crops y %.3f..%.3f, above the recorded heads (%.3f..%.3f)',
+			           $y0, $y1, $HEAD_Y0, $HEAD_Y1));
+			ok($x0 >= 0 && $x1 <= 1 && $y0 >= 0 && $y1 <= 1,
+			   sprintf('the window (%.3f..%.3f x %.3f..%.3f) runs off the square render, so the '
+			         . 'clamp slides it and nothing is centred any more', $x0, $x1, $y0, $y1));
+
+			/* And the tiles have to fit the card they are drawn on. */
+			$top = (int) ((DAC_H - $th) / 2);
+			ok($top >= 0 && $top + $th <= DAC_H,
+			   sprintf('a %dpx tile does not fit a %dpx card', $th, DAC_H));
+			ok($edge + 3 * $tw + 2 * $gap < DAC_W / 2,
+			   'three tiles a side no longer fit without crossing the seam');
+			/* It is meant to be MOST of the card now, not a strip in the
+			   middle of it -- that is the whole point of the height. */
+			$fill = (6 * $tw * $th) / (DAC_W * DAC_H);
+			ok($fill > 0.40,
+			   sprintf('the six portraits cover only %.0f%% of the card; the rest is empty ink',
+			           $fill * 100));
+		}
+	}
+
+	/*
 	 * THE CROP IS ONLY RIGHT IF THESE NUMBERS ARE. DAC_HEAD_X/Y/H say where
 	 * a head sits on the canvas, and the first version of the card guessed
 	 * 0.26 for the vertical centre and assumed the horizontal one was 0.5 --
@@ -312,7 +362,17 @@ echo "\nthe head constants match the actual art\n";
 			/* The window the card crops, from its own constants. */
 			$wy0 = DAC_HEAD_Y - DAC_HEAD_H / 2;
 			$wy1 = DAC_HEAD_Y + DAC_HEAD_H / 2;
-			$ww  = DAC_HEAD_H * (180 / 218);          /* window aspect = tile aspect */
+			/*
+			 * THE TILE ASPECT, READ OUT OF THE CARD, not typed here. It
+			 * was hardcoded 180/218, so making the tiles taller would have
+			 * left this measuring a window the card no longer crops -- it
+			 * would have gone on passing while every horn got sliced off.
+			 */
+			ok(preg_match('/\$TW = (\d+); \$TH = (\d+);/', $src, $tm) === 1,
+			   'the tile size could not be read out of dhc-arena-card.php');
+			$tw = $tm ? (int) $tm[1] : 180;
+			$th = $tm ? (int) $tm[2] : 218;
+			$ww  = DAC_HEAD_H * ($tw / $th);          /* window aspect = tile aspect */
 			$wx0 = DAC_HEAD_X - $ww / 2;
 			$wx1 = DAC_HEAD_X + $ww / 2;
 
