@@ -50,6 +50,44 @@ console.log('\n-- no CSS escapes its <style> block --');
   /* And the strip's own rules did make it in. */
   const css = (html.match(/<style[\s\S]*?<\/style>/g) || []).join('');
   ok(css.indexOf('#dhcg-proven{') > -1, 'the proven strip is styled, inside the block');
+
+  /*
+   * THE STRIP IS A GRID, AND auto-FILL RATHER THAN auto-fit.
+   *
+   * It was a wrapping flex row, and three separate things went wrong on
+   * a real Fighter once the tiles grew a second line: align-items at the
+   * end left a row of tiles sitting at different heights; the heading
+   * and the count were ordinary flex items, so a wrap put them halfway
+   * up the middle of the strip; and making the tiles grow left a single
+   * leftover tile stretched across the full width on its own.
+   *
+   * auto-fit COLLAPSES the empty tracks, which brings that last problem
+   * straight back -- a lone tile on the final row stretches to fill. The
+   * difference is one word and it is the whole fix.
+   */
+  for (const id of ['#dhcg-rank', '#dhcg-proven']) {
+    const m = css.match(new RegExp(id.replace('#', '\\#') + '\\{([^}]*)\\}'));
+    ok(!!m, id + ' has no rule at all');
+    if (!m) continue;
+    const rule = m[1];
+    ok(/display:\s*grid/.test(rule), id + ' is not a grid: ' + rule.slice(0, 60));
+    ok(/auto-fill/.test(rule), id + ' uses auto-fit, so a lone tile stretches across the row');
+    ok(!/flex-wrap/.test(rule), id + ' is still a wrapping flex row');
+  }
+  /* The heading and the count span the whole strip and are pinned to the
+     ends, or a wrap drops them between the tiles. */
+  for (const sel of ['#dhcg-rank .of', '#dhcg-proven .hd', '#dhcg-proven .of']) {
+    const m = css.match(new RegExp(sel.replace(/[#.]/g, (c) => '\\' + c) + '\\{([^}]*)\\}'));
+    ok(!!m, sel + ' has no rule');
+    if (!m) continue;
+    ok(/grid-column:\s*1\/-1/.test(m[1]),
+       sel + ' does not span the strip, so it sits in a tile-sized slot mid-row');
+    /* A BOUNDARY, because "border:0" contains "order:0" and a bare search
+       for it matched the border declaration sitting right beside it --
+       so this assertion could not fail. */
+    ok(/(^|;)\s*order:\s*\d/.test(m[1]),
+       sel + ' has no order, so a wrap lands it wherever it was built');
+  }
 }
 const START = "var pel = document.getElementById('dhcg-proven');";
 const END   = "' Fighters with a record</div>';";

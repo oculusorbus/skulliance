@@ -148,24 +148,47 @@ if (!defined('DHCM_RENDERED')) {
 #dhcg-share:hover{background:var(--ochre,#00c8a0);color:var(--ink,#07111d)}
 /* The four ranks, ahead of the raw stats: where it places is the headline,
    what it is made of is the detail. */
-#dhcg-rank{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;align-items:flex-end}
-#dhcg-rank div{border:1px solid var(--line,#1b3346);padding:6px 10px;min-width:74px}
+/*
+ * A GRID, NOT A WRAPPING FLEX ROW, and auto-FILL rather than auto-fit.
+ *
+ * Three things went wrong with flex here. Tiles grew a second line (the
+ * "under its build" note) and align-items:flex-end left the rest of the
+ * row sitting at odd heights. The heading and the count queued up as
+ * ordinary items and landed wherever the wrap put them -- halfway up the
+ * middle of the strip. And making the tiles grow to share the row left a
+ * single leftover tile stretched across the full width on its own.
+ *
+ * A grid fixes all three: equal columns, rows that stretch together, and
+ * -- because auto-FILL keeps the empty tracks that auto-fit would
+ * collapse -- a last row with one tile in it stays one tile wide.
+ */
+#dhcg-rank{display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));
+  gap:8px;margin:0 0 12px}
+#dhcg-rank div{border:1px solid var(--line,#1b3346);padding:6px 10px;min-width:0}
 #dhcg-rank b{display:block;font-size:16px;font-variant-numeric:tabular-nums;color:var(--ochre,#00c8a0)}
 #dhcg-rank span{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.55}
-#dhcg-rank .of{border:0;padding:0 0 6px;font-size:9.5px;letter-spacing:.08em;
-  text-transform:uppercase;opacity:.45;min-width:0}
+/* A WHOLE LINE OF ITS OWN, and last whatever order it was built in. */
+#dhcg-rank .of{grid-column:1/-1;order:9;border:0;padding:0;margin:-2px 0 0;
+  font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.45;min-width:0}
 /* The proven strip: the same tiles, plus a line under each saying where the
    traits put the same Fighter. Tinted away from the ochre of the claimed
    strip so the two are not mistaken for one row of eight numbers. */
-#dhcg-proven{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 12px;align-items:flex-end}
-#dhcg-proven div{border:1px solid rgba(0,200,160,.22);padding:6px 10px;min-width:74px}
+#dhcg-proven{display:grid;grid-template-columns:repeat(auto-fill,minmax(146px,1fr));
+  gap:8px;margin:0 0 12px}
+#dhcg-proven div{border:1px solid rgba(0,200,160,.22);padding:6px 10px;min-width:0}
 #dhcg-proven b{display:block;font-size:16px;font-variant-numeric:tabular-nums;color:#e6b800}
 #dhcg-proven span{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.55;display:block}
 #dhcg-proven em{font-style:normal;font-size:8.5px;letter-spacing:.06em;opacity:.5;display:block;margin-top:3px}
 #dhcg-proven em.up{color:#00c8a0;opacity:.95}
 #dhcg-proven em.dn{color:#e0466b;opacity:.95}
-#dhcg-proven .hd{border:0;padding:0 0 6px;font-size:9.5px;letter-spacing:.08em;opacity:.5}
-#dhcg-proven .of{border:0;padding:0 0 6px;font-size:9.5px;letter-spacing:.08em;opacity:.5}
+/* The heading above and the count below, each on its own line, with
+   order so neither can be dragged into the middle of the tiles by a
+   wrap. This block is built by string concatenation and the heading is
+   emitted first, but order is what actually holds it there. */
+#dhcg-proven .hd{grid-column:1/-1;order:0;border:0;padding:0;margin:0 0 -2px;
+  font-size:9.5px;letter-spacing:.08em;opacity:.5}
+#dhcg-proven .of{grid-column:1/-1;order:9;border:0;padding:0;margin:-2px 0 0;
+  font-size:9.5px;letter-spacing:.08em;opacity:.5}
 </style>
 
 <div id="dhcg-veil" role="dialog" aria-modal="true" aria-labelledby="dhcg-name">
