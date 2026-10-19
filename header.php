@@ -2186,6 +2186,15 @@
  * guards itself, so those pages including it directly stays harmless.
  */
 if (is_file(__DIR__ . '/dhc-dropmodal.php')) include __DIR__ . '/dhc-dropmodal.php';
+/*
+ * Getting a picture out of a page: the daily digest's poster and the
+ * Rivalries map both want it, and the iOS handling in it is subtle enough
+ * that two copies would drift. Loaded here, once, for every page that
+ * carries this header.
+ */
+?>
+<script src="/staking/js/save-image.js?v=<?php echo @filemtime(__DIR__ . '/js/save-image.js') ?: 1; ?>"></script>
+<?php
 /* Yesterday's summary, once a day, for a signed-in player. It returns
    immediately for anyone else and renders nothing when they did nothing. */
 if (is_file(__DIR__ . '/player-digest.php')) include __DIR__ . '/player-digest.php';

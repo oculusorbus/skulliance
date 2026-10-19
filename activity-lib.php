@@ -523,8 +523,15 @@ function activity_digest($conn, $day) {
 		  AND image_url NOT LIKE '%/racing/images/%'
 		GROUP BY image_url
 		ORDER BY first_id ASC
-		LIMIT " . ACTIVITY_DIGEST_ART);
-	if ($r) while ($row = $r->fetch_assoc()) {
+		/* OVER-FETCHED, because the fold below is what actually decides
+		   how many pictures there are: grouping on the url alone leaves
+		   the same picture in more than once (see activity_art_key), and
+		   trimming those after a tight LIMIT would hand back a short
+		   collage instead of a full one. */
+		LIMIT " . (ACTIVITY_DIGEST_ART * 4));
+	$rows = array();
+	if ($r) while ($row = $r->fetch_assoc()) $rows[] = $row;
+	foreach (activity_art_dedupe($rows, ACTIVITY_DIGEST_ART) as $row) {
 		$src = activity_digest_src((string) $row['image_url']);
 		if ($src === '') continue;
 		$out['art'][] = array(
@@ -654,8 +661,12 @@ function activity_player_digest($conn, $user_id, $day) {
 	                       AND a.image_url NOT LIKE '%/racing/images/%'
 	                  GROUP BY a.image_url
 	                  ORDER BY first_id ASC
-	                     LIMIT " . ACTIVITY_PDIGEST_ART);
-	if ($r) while ($row = $r->fetch_assoc()) {
+	                  /* Over-fetched for the fold below, exactly as the
+	                     platform collage is. */
+	                     LIMIT " . (ACTIVITY_PDIGEST_ART * 4));
+	$rows = array();
+	if ($r) while ($row = $r->fetch_assoc()) $rows[] = $row;
+	foreach (activity_art_dedupe($rows, ACTIVITY_PDIGEST_ART) as $row) {
 		$src = activity_digest_src((string) $row['image_url']);
 		if ($src === '') continue;
 		$out['art'][] = array(
@@ -699,6 +710,77 @@ function activity_player_digest($conn, $user_id, $day) {
  *     send CORS headers taints the canvas and costs the whole poster, and
  *     there is no way to find that out before drawing it.
  */
+/**
+ * One key per PICTURE, not per url.
+ *
+ * GROUP BY image_url IS NOT ENOUGH and the collage showed it: the same
+ * Fighter appeared twice in one strip. A locally cached NFT is served as
+ * /staking/images/nfts/<project>/<collection>/<md5 of the ipfs value>.<ext>
+ * WITH A ?v=<mtime> CACHE-BUSTER on the end (see getIPFS() in db.php), so
+ * re-uploading the art gives the identical file two urls and two rows, and
+ * the group keeps both. The same NFT announced before and after it was
+ * cached is worse still: once as a gateway url and once as a local path,
+ * which have nothing textually in common at all.
+ *
+ * So: drop the query string, and reduce both forms to the hash the cache
+ * keys on. getIPFS() hashes nfts.ipfs AS STORED, which may or may not
+ * carry an "ipfs/" prefix that the gateway url has had stripped -- so a
+ * gateway url yields BOTH candidate hashes and either one matching a
+ * cached path is the same picture.
+ *
+ * Returns a string to group on. Anything it does not recognise keys on its
+ * own url, which is the behaviour it replaces.
+ */
+function activity_art_key($url) {
+	$u = trim((string) $url);
+	if ($u === '') return '';
+	/* The cache-buster is not part of the picture. */
+	$q = strpos($u, '?');
+	if ($q !== false) $u = substr($u, 0, $q);
+
+	/* A cached NFT: .../images/nfts/<project>/<collection>/<hash>.<ext> */
+	if (preg_match('~/images/nfts/\d+/\d+/([0-9a-f]{32})\.[a-z0-9]+$~i', $u, $m)) {
+		return 'nft:' . strtolower($m[1]);
+	}
+
+	/* A gateway url: the last path segment is the CID. Both hashings,
+	   because the stored value may have carried an "ipfs/" prefix. */
+	if (preg_match('~^https?://~i', $u) && preg_match('~/([A-Za-z0-9]{40,})/?$~', $u, $m)) {
+		/* BOTH alternatives carry the prefix. Without it the second one
+		   is a bare hash while a cached path keys as "nft:<hash>", so it
+		   could never match and half the gateway/cached pairs stayed
+		   duplicated -- which the harness caught and I had not. */
+		return 'nft:' . md5($m[1]) . '|nft:' . md5('ipfs/' . $m[1]);
+	}
+
+	return strtolower($u);
+}
+
+/**
+ * Fold a list of rows down to one per picture, keeping the first of each.
+ *
+ * The keys from activity_art_key() can be ALTERNATIVES ("a|b"), because a
+ * gateway url cannot know which way its CID was hashed into the cache. Two
+ * rows match when they share any alternative, so a seen-set of individual
+ * alternatives is what this tracks rather than the whole key.
+ */
+function activity_art_dedupe($rows, $limit) {
+	$seen = array();
+	$out  = array();
+	foreach ($rows as $row) {
+		$key = activity_art_key(isset($row['image_url']) ? $row['image_url'] : '');
+		if ($key === '') continue;
+		$alts = explode('|', $key);
+		$hit  = false;
+		foreach ($alts as $a) if (isset($seen[$a])) { $hit = true; break; }
+		if ($hit) continue;
+		foreach ($alts as $a) $seen[$a] = true;
+		$out[] = $row;
+		if (count($out) >= $limit) break;
+	}
+	return $out;
+}
+
 function activity_digest_src($url) {
 	$url = trim((string) $url);
 	if ($url === '') return '';

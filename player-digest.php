@@ -366,44 +366,21 @@ if (!isset($_SESSION['userData']['user_id'])) return;
   function filename(d) { return 'skulliance-' + (d.name || 'day') + '-' + d.day + '.png'; }
 
   /*
-   * The canvas as a Blob, SYNCHRONOUSLY.
+   * SAVE THE PICTURE, through js/save-image.js.
    *
-   * toBlob() is asynchronous, and on iOS that is fatal here: navigator.share()
-   * has to be called while the click's transient activation is still alive,
-   * and a promise callback is a later task with no activation left. Safari
-   * answers NotAllowedError and the button looks broken. toDataURL() and
-   * atob() are both synchronous, so the whole chain stays inside the
-   * handler. Throws on a tainted canvas, same as toBlob would.
-   */
-  function canvasBlob(cv) {
-    var url = cv.toDataURL('image/png');
-    var bin = atob(url.slice(url.indexOf(',') + 1));
-    var u8  = new Uint8Array(bin.length);
-    for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    return new Blob([u8], { type: 'image/png' });
-  }
-
-  /*
-   * SAVE THE PICTURE.
-   *
-   * <a download> DOES NOT WORK ON AN iPHONE and never did. iOS Safari
-   * ignores the download attribute on a blob: url -- it navigates to the
-   * blob instead, which takes the player off the page and away from the
-   * modal, and nothing reaches the camera roll. Reported exactly that way:
-   * "Safari would say it is downloading but it never showed up", and then
-   * the digest was gone because the page had changed.
-   *
-   * The supported path on iOS is the Web Share API with a file, which opens
-   * the native sheet where Save Image puts it in Photos. It is also the
-   * better answer on Android. Desktop browsers mostly do not accept files
-   * through it, so they keep the anchor, which is where the anchor works.
+   * The iOS handling used to live here: <a download> does nothing on an
+   * iPhone, the share sheet is the only route to the camera roll, and
+   * gating that on canShare() alone opens a sheet on the desktop too.
+   * All of that is in one file now, loaded by header.php, because the
+   * Rivalries map wanted exactly the same three paragraphs and this
+   * platform has twice shipped a bug by having two copies of something.
    */
   function saveImage(d, then) {
     var cv   = document.getElementById('pdg-shot');
     var note = document.getElementById('pdg-note');
     var blob;
     try {
-      blob = canvasBlob(cv);
+      blob = window.sklImage.canvasBlob(cv);
     } catch (e) {
       note.textContent =
         'The image could not be saved: one of yesterday\u2019s pictures came from a host that ' +
@@ -411,40 +388,10 @@ if (!isset($_SESSION['userData']['user_id'])) return;
       if (then) then();
       return;
     }
-
-    /*
-     * THE SHARE SHEET IS FOR iOS ONLY, and gating it on canShare() alone
-     * was wrong: desktop Chrome and Safari answer yes too, so a button
-     * labelled Download image opened a sheet offering to message the
-     * picture to somebody's contacts. Everywhere an anchor works, use the
-     * anchor -- that is what the button says it does.
-     *
-     * UA SNIFFING, DELIBERATELY, because the thing that needs detecting
-     * cannot be feature-detected: iOS Safari reports 'download' in an
-     * anchor and then ignores it. iPadOS reports itself as MacIntel, so
-     * the touch-point count is what separates it from a desktop Mac.
-     */
-    var ua = navigator.userAgent || '';
-    var isIOS = /iP(hone|ad|od)/.test(ua)
-             || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-    var file = null;
-    try { file = new File([blob], filename(d), { type: 'image/png' }); } catch (e) { /* older browser */ }
-    if (isIOS && file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
-      navigator.share({ files: [file] })
-        /* A cancelled sheet is not a failure and must not say so. */
-        .then(function () { note.textContent = 'Saved.'; })
-        .catch(function () {})
-        .then(function () { if (then) then(); });
-      return;
-    }
-
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = filename(d);
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-    if (then) then();
+    window.sklImage.save(blob, filename(d)).then(function (msg) {
+      if (msg) note.textContent = msg;
+      if (then) then();
+    });
   }
 
   /*

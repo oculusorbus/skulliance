@@ -724,8 +724,66 @@ ok('the option list is styled too',
    strpos($p, '#ac-filters select option { background-color: #0d1e2e') !== false);
 
 restore_error_handler();
+section('one picture, once -- activity_art_key() and the fold');
+{
+	/*
+	 * THE SAME FIGHTER APPEARED TWICE in a real collage. GROUP BY
+	 * image_url is not a group by picture: getIPFS() serves a cached NFT
+	 * as .../images/nfts/<p>/<c>/<md5>.<ext>?v=<mtime>, so re-uploading
+	 * the art gives one file two urls, and the same NFT announced before
+	 * and after it was cached appears once as a gateway url and once as a
+	 * local path with nothing textually in common.
+	 */
+	$a = '/staking/images/nfts/12/34/0123456789abcdef0123456789abcdef.png?v=1700';
+	$b = '/staking/images/nfts/12/34/0123456789abcdef0123456789abcdef.png?v=1899';
+	$c = '/staking/images/nfts/12/34/0123456789abcdef0123456789abcdef.png';
+	ok('a cache-buster does not make it a different picture',
+	   activity_art_key($a) === activity_art_key($b));
+	ok('and neither does having no buster at all', activity_art_key($a) === activity_art_key($c));
+	ok('a different nft is a different picture',
+	   activity_art_key($a) !== activity_art_key(
+	       '/staking/images/nfts/12/34/ffffffffffffffffffffffffffffffff.png'));
+	ok('an empty url keys to nothing', activity_art_key('') === '');
+
+	/* A gateway url and the cached copy of the SAME cid fold together,
+	   whichever way the stored value was hashed. */
+	$cid = 'QmZ4tDuvesekSs4qM5ZBKpXiZGun7S2CYtEZRB3DYXkjGx';
+	$gw  = 'https://gateway.pinata.cloud/ipfs/' . $cid;
+	foreach (array(md5($cid), md5('ipfs/' . $cid)) as $h) {
+		$local = '/staking/images/nfts/7/9/' . $h . '.png?v=12';
+		$rows  = array(array('image_url' => $gw), array('image_url' => $local));
+		ok('a gateway url and its cached copy (' . substr($h, 0, 6) . ') are one picture',
+		   count(activity_art_dedupe($rows, 10)) === 1);
+	}
+
+	/* The fold keeps the FIRST of each and respects the limit. */
+	$rows = array(
+		array('image_url' => $a, 'tag' => 'first'),
+		array('image_url' => $b, 'tag' => 'dup'),
+		array('image_url' => '/staking/images/dhcrenders/x.png', 'tag' => 'second'),
+		array('image_url' => '/staking/images/dhcrenders/y.png', 'tag' => 'third'),
+	);
+	$got = activity_art_dedupe($rows, 10);
+	ok('the duplicate is dropped', count($got) === 3);
+	ok('the first of a pair is the one kept', $got[0]['tag'] === 'first');
+	ok('the limit is honoured', count(activity_art_dedupe($rows, 2)) === 2);
+	ok('an empty url is skipped rather than kept as a blank tile',
+	   count(activity_art_dedupe(array(array('image_url' => '')), 5)) === 0);
+
+	/* And both digests must OVER-FETCH, or folding after a tight limit
+	   hands back a short collage instead of a full one. */
+	$lib = file_get_contents(__DIR__ . '/activity-lib.php');
+	ok('the platform collage over-fetches before folding',
+	   strpos($lib, '(ACTIVITY_DIGEST_ART * 4)') !== false);
+	ok('the player collage over-fetches before folding',
+	   strpos($lib, '(ACTIVITY_PDIGEST_ART * 4)') !== false);
+	ok('the platform collage folds', strpos($lib, 'activity_art_dedupe($rows, ACTIVITY_DIGEST_ART)') !== false);
+	ok('the player collage folds', strpos($lib, 'activity_art_dedupe($rows, ACTIVITY_PDIGEST_ART)') !== false);
+}
+
 echo "\n-------------------------------------------\n";
 echo "pass: $pass   fail: $fail\n";
 if ($notices) { echo "NOTICES:\n"; foreach (array_unique($notices) as $n) echo "  $n\n"; }
-if ($fails) { echo "failed:\n"; foreach ($fails as $f) echo "  - $f\n"; }
+if ($fails) { echo "failed:\n"; foreach ($fails as $f) 
+echo "  - $f\n"; }
 exit($fail || $notices ? 1 : 0);

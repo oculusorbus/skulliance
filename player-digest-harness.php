@@ -122,7 +122,10 @@ echo "\nthe canvas cannot be tainted, and a failure is explained\n";
 	   'a picture that fails to load rejects instead of being dropped, losing the whole poster');
 	ok(strpos($modc, 'cv.toBlob(') !== false && strpos($modc, 'try {') !== false,
 	   'toBlob is called without a try; a tainted canvas would make the button do nothing');
-	ok(strpos($modc, 'URL.revokeObjectURL') !== false, 'the object url is never revoked');
+	/* The object url and its revoke moved into js/save-image.js with the
+	   rest of the save; save-image-harness.js drives the real function and
+	   asserts the revoke actually happens, rather than that the words are
+	   present somewhere. */
 }
 
 echo "\nit asks once, and costs nothing after that\n";
@@ -392,102 +395,36 @@ echo "\nthe stored poster cannot be used to write anywhere\n";
 	   'the prune is unbounded; one unlucky request would pay for a year of backlog');
 }
 
-echo "\nDownload means download, except where it cannot\n";
+echo "\nthe picture is saved through the shared helper\n";
 {
 	/*
-	 * <a download> DOES NOT WORK ON AN iPHONE -- Safari ignores the
-	 * attribute on a blob: url -- so the picture goes through the share
-	 * sheet there, which is the only route to the camera roll.
-	 *
-	 * BUT ONLY THERE. Gated on canShare() alone, desktop Chrome and
-	 * Safari answer yes as well, and a button labelled Download image
-	 * opened a sheet offering to message the picture to somebody's
-	 * contacts. Reported exactly that way.
+	 * THE iOS HANDLING LIVES IN js/save-image.js NOW, and is driven there
+	 * by save-image-harness.js under six stubbed platforms. What matters
+	 * here is only that this page goes through it rather than growing a
+	 * second copy -- which is how the invite url ended up assembled in two
+	 * places with one of them forgetting the referral code.
 	 */
-	ok(strpos($modc, 'navigator.share') !== false, 'the iOS path is gone; Download does nothing there');
-	ok(strpos($modc, 'isIOS') !== false,
-	   'the share sheet is not gated on iOS, so Download opens a share menu on the desktop');
-	$sh = strpos($modc, 'navigator.canShare({ files: [file] })');
-	$g  = strpos($modc, 'isIOS && file');
-	ok($sh !== false && $g !== false && $g < $sh,
-	   'the capability check runs before the platform check, which is how every browser that '
-	 . 'can share got the sheet');
-	ok(strpos($modc, "a.download = filename(d)") !== false,
-	   'the ordinary download path is gone, so desktop cannot save the picture at all');
-	/* iPadOS reports MacIntel, so touch points are what tell it from a Mac. */
-	ok(strpos($modc, 'maxTouchPoints') !== false,
-	   'iPadOS is treated as a desktop Mac, where the anchor it is given does nothing');
-	/* And the blob is built synchronously or iOS refuses the share.
-	   Matched with a boundary: 'function canvasBlob' is a substring of
-	   'function canvasBlobX', so the loose check could not fail. */
-	ok(preg_match('/function canvasBlob\s*\(/', $modc) === 1
-	   && preg_match('/\bcanvasBlob\(cv\)/', $modc) === 1,
-	   'the blob is built asynchronously again, which loses the activation share() needs');
-	ok(strpos($modc, 'toDataURL') !== false, 'the synchronous canvas export is gone');
+	ok(strpos($modc, 'window.sklImage.save(') !== false,
+	   'the digest saves its poster itself instead of through the shared helper');
+	ok(strpos($modc, 'window.sklImage.canvasBlob(') !== false,
+	   'the digest builds its own blob again');
+	/* No second copy of any of it. */
+	ok(strpos($modc, 'navigator.share') === false && strpos($modc, 'isIOS') === false,
+	   'the iOS routing is back in player-digest.php as a second copy');
+	ok(strpos($modc, 'a.download') === false,
+	   'player-digest.php builds its own download anchor again');
 
-	/*
-	 * RUN IT, per platform. Everything above reads the source; this drives
-	 * saveImage() under six user agents against a stub canvas and records
-	 * which route it actually takes. Reading the source is what let a
-	 * share sheet ship to the desktop in the first place.
-	 */
-	$a = strpos($mod, '  function canvasBlob(');
-	$b = strpos($mod, '  function shareText(');
-	ok($a !== false && $b > $a, 'saveImage() could not be lifted');
-	$tmp = sys_get_temp_dir() . '/pdg-save-' . getmypid() . '.js';
-	file_put_contents($tmp, substr($mod, $a, $b - $a) . "\n"
-		. "var out = {};\n"
-		. "var UAS = [\n"
-		. "  ['desktop Chrome','Mozilla/5.0 (Macintosh; Intel Mac OS X) Chrome/130','MacIntel',0],\n"
-		. "  ['desktop Safari','Mozilla/5.0 (Macintosh; Intel Mac OS X) Safari/17','MacIntel',0],\n"
-		. "  ['Windows Chrome','Mozilla/5.0 (Windows NT 10.0) Chrome/130','Win32',0],\n"
-		. "  ['iPhone','Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Safari','iPhone',5],\n"
-		. "  ['iPad','Mozilla/5.0 (Macintosh; Intel Mac OS X) Safari/17','MacIntel',5],\n"
-		. "  ['Android','Mozilla/5.0 (Linux; Android 14) Chrome/130','Linux armv8l',5]\n"
-		. "];\n"
-		. "for (var i = 0; i < UAS.length; i++) {\n"
-		. "  var route = 'nothing';\n"
-		/* defineProperty, NOT assignment: node has its own read-only
-		   navigator, so `global.navigator = {...}` is silently ignored and
-		   every platform in this table sees node's user agent instead of
-		   the one under test -- which reported the desktop answer for all
-		   six and looked like a real bug in the page. */
-		. "  Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {\n"
-		. "    userAgent: UAS[i][1], platform: UAS[i][2], maxTouchPoints: UAS[i][3],\n"
-		. "    canShare: function () { return true; },\n"
-		. "    share: function () { route = 'sheet'; return Promise.resolve(); } } });\n"
-		. "  global.document = {\n"
-		. "    getElementById: function (id) { return id === 'pdg-shot'\n"
-		. "      ? { toDataURL: function () { return 'data:image/png;base64,aGk='; } }\n"
-		. "      : { textContent: '' }; },\n"
-		. "    createElement: function () { return { click: function () { route = 'download'; },\n"
-		. "      remove: function () {} }; },\n"
-		. "    body: { appendChild: function () {} } };\n"
-		. "  global.atob = function (x) { return Buffer.from(x, 'base64').toString('binary'); };\n"
-		. "  global.Blob = function () {}; global.File = function () {};\n"
-		. "  global.URL = { createObjectURL: function () { return 'blob:x'; },\n"
-		. "                 revokeObjectURL: function () {} };\n"
-		. "  global.setTimeout = function () {};\n"
-		. "  global.filename = function () { return 'x.png'; };\n"
-		. "  saveImage({ name: 'x', day: '2026-10-17' });\n"
-		. "  out[UAS[i][0]] = route;\n"
-		. "}\n"
-		. "console.log(JSON.stringify(out));\n");
-	$routes = json_decode(trim((string) @shell_exec('node ' . escapeshellarg($tmp) . ' 2>&1')), true);
-	@unlink($tmp);
-	ok(is_array($routes), 'saveImage() could not be driven');
-	if (is_array($routes)) {
-		foreach (array('desktop Chrome', 'desktop Safari', 'Windows Chrome', 'Android') as $plat) {
-			ok(($routes[$plat] ?? '') === 'download',
-			   $plat . ' gets "' . ($routes[$plat] ?? '?') . '" from a button labelled Download '
-			 . 'image; it must save a file');
-		}
-		foreach (array('iPhone', 'iPad') as $plat) {
-			ok(($routes[$plat] ?? '') === 'sheet',
-			   $plat . ' gets "' . ($routes[$plat] ?? '?') . '", and an anchor download there '
-			 . 'navigates to the blob and saves nothing');
-		}
-	}
+	/* And the shared file is actually loaded, for every page carrying the
+	   header -- the digest is included from there and so is Rivalries. */
+	$hdr = harness_strip_comments(file_get_contents(__DIR__ . '/header.php'));
+	ok(strpos($hdr, 'js/save-image.js') !== false,
+	   'header.php does not load js/save-image.js, so every Save and Copy on the platform '
+	 . 'throws on click');
+	$at  = strpos($hdr, 'js/save-image.js');
+	$dig = strpos($hdr, "player-digest.php')) include");
+	ok($at !== false && $dig !== false && $at < $dig,
+	   'the helper is loaded after the digest that calls into it');
+	ok(is_file(__DIR__ . '/js/save-image.js'), 'js/save-image.js is missing');
 }
 
 echo "\nthe page the invite actually lands on\n";
@@ -564,7 +501,10 @@ echo "\nthe page the invite actually lands on\n";
 	   ($all - $esc - $ctrl) . ' of the ' . $all . ' uses of the sender\'s name are printed '
 	 . 'without escaping; a username is whatever Discord let them call themselves');
 	/* No mysqlnd on this host. */
-	ok(strpos($pg2, 'get_result(') === false, 'digest.php calls get_result(), which is fatal here');
+	/* Split, or dhc-card-harness.php's platform-wide scan counts this
+	   file as an offender for naming the thing it is checking for. */
+	$gr = 'get_' . 'result(';
+	ok(strpos($pg2, $gr) === false, 'digest.php calls ' . $gr . '), which is fatal here');
 	ok(strpos($pg2, '(int) $dg_inviter') !== false, 'the inviter id reaches the query uncast');
 
 	/*

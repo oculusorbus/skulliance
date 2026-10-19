@@ -474,6 +474,20 @@ them and sharing their colour.
 | A thicker line | A deeper rivalry, more battles between the pair |
 | A solid line with two arrowheads | It runs both ways. A real feud |
 | A dashed line with one arrowhead | One-sided. Somebody is doing the attacking |
+
+### Taking a picture of it
+
+Under the map there are **Download image** and **Copy image**. Both make a
+PNG of the whole map at twice the size it is drawn on screen, so it stays
+sharp when somebody opens it, and neither needs a screenshot.
+
+* **Download image** saves the file. On an iPhone it opens the usual share
+  sheet instead, where **Save Image** puts it in your camera roll.
+* **Copy image** puts it straight on your clipboard, ready to paste into
+  Discord or a post. It is hidden in browsers that will not take an image on
+  the clipboard, which today means Firefox.
+* If a picture in the map could not be fetched, it is left out rather than
+  drawn as a broken frame, and the button tells you how many were missed.
 | A red ring | Mostly attacking |
 | A teal ring | Mostly being attacked |
 | A slow pulse around an avatar | That is you |

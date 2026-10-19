@@ -188,9 +188,19 @@ ok('the name and avatar come from the users table, canonically',
 ok('rows with no actor are excluded', strpos($sql, 'a.user_id > 0') !== false, $sql);
 ok('players are ranked by how much they did',
    strpos($sql, 'ORDER BY n DESC, u.username ASC') !== false, $sql);
+/*
+ * THE ART POOL IS CAPPED ABOVE WHAT THE POSTER SHOWS, deliberately.
+ * GROUP BY image_url is not a group by picture -- a cached NFT carries a
+ * ?v=<mtime> buster and the same art can also appear as a gateway url --
+ * so activity_art_dedupe() folds the rows afterwards, and folding after a
+ * tight LIMIT would hand back a short collage. The fold is what enforces
+ * ACTIVITY_DIGEST_ART; the query only has to fetch enough to fold.
+ */
 ok('both pools are capped',
-   strpos($sql, 'LIMIT ' . ACTIVITY_DIGEST_ART) !== false
+   strpos($sql, 'LIMIT ' . (ACTIVITY_DIGEST_ART * 4)) !== false
    && strpos($sql, 'LIMIT ' . ACTIVITY_DIGEST_PLAYERS) !== false, $sql);
+ok('the art pool is over-fetched so the fold can still fill the poster',
+   strpos($sql, 'LIMIT ' . (ACTIVITY_DIGEST_ART * 4)) !== false, $sql);
 /* Stable art ordering, so the same day draws the same poster. */
 ok('art keeps a stable order across runs',
    strpos($sql, 'ORDER BY first_id ASC') !== false, $sql);

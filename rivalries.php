@@ -164,6 +164,13 @@ include 'header.php';
   padding:8px;-webkit-overflow-scrolling:touch}
 .riv-map svg{display:block;width:auto;height:auto;
   max-width:100%;max-height:max(420px, calc(100vh - 330px))}
+.riv-shot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 0}
+.riv-shot button{font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  font-family:inherit;padding:6px 12px;border-radius:3px;border:1px solid var(--line);
+  background:transparent;color:var(--bone)}
+.riv-shot button:hover{border-color:var(--ochre);color:var(--ochre)}
+.riv-shot button[hidden]{display:none}
+#riv-shot-note{font-size:10px;color:var(--dim);letter-spacing:.04em}
 .riv-key{display:flex;flex-wrap:wrap;gap:6px 16px;margin:10px 0 0;
   font-size:9.5px;letter-spacing:.06em;color:var(--dim)}
 .riv-key span{display:flex;align-items:center;gap:6px}
@@ -344,6 +351,17 @@ include 'header.php';
 
     <div id="riv-map" class="riv-map"></div>
 
+    <?php /* A picture of the map, without resorting to a screenshot. Both
+             buttons are hidden until the script has the map, because a
+             button that cannot work yet is worse than one that is not
+             there; Copy hides itself for good where the clipboard will not
+             take an image, which today is Firefox. */ ?>
+    <div class="riv-shot">
+      <button type="button" id="riv-download">Download image</button>
+      <button type="button" id="riv-copy">Copy image</button>
+      <span id="riv-shot-note"></span>
+    </div>
+
     <p class="riv-key">
       <span><i class="k-solid"></i> runs both ways</span>
       <span><i class="k-dash"></i> one-sided</span>
@@ -424,6 +442,9 @@ window.RIVALRY_CREW_MAX  = <?php echo (int)RIV_CREW_SHOWN; ?>;
    pulses yours. 0 for a guest, which pulses nothing. */
 window.RIVALRY_ME        = <?php echo (int)$riv_user; ?>;
 </script>
+<?php /* js/save-image.js is NOT loaded here: header.php already carries
+         it for every page, and a second tag would fetch the same file
+         twice on the one page that happens to need it most. */ ?>
 <script src="map-kit.js?var=<?php echo rand(0,999); ?>"></script>
 <script src="rivalries.js?var=<?php echo rand(0,999); ?>"></script>
 <?php endif; ?>
