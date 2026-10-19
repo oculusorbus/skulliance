@@ -210,15 +210,28 @@ function dropshipOddsPanel($conn) {
 	$out = '';
 	if (!$css_done) {
 		$css_done = true;
+		/*
+		 * TEXT-ALIGN IS RE-STATED ON EVERY LINE, and it is not redundant.
+		 * dist/flexbox.css centres text globally, and a flex child stretched
+		 * to full width inherits that -- so the first row sat left (flex puts
+		 * it at flex-start) while every line under it centred, which is
+		 * exactly how this first shipped.
+		 *
+		 * #00c8a0 is the platform accent the Squad heading above already
+		 * uses. The first version was lime, which belonged to nothing.
+		 */
 		$out .= '<style>'
-		  . '.ds-odds{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;'
-		  . 'margin:0 0 14px;padding:10px 14px;border:1px solid rgba(255,255,255,.14);'
-		  . 'border-radius:4px;background:rgba(0,0,0,.28);line-height:1.5}'
-		  . '.ds-odds-pct{font-size:1.6rem;font-weight:bold;color:#7CFC00}'
-		  . '.ds-odds-lbl{font-size:.82rem;opacity:.85}'
-		  . '.ds-odds-typ{flex:1 1 100%;font-size:.86rem}'
-		  . '.ds-odds-next{flex:1 1 100%;font-size:.82rem;color:#ffd47a}'
-		  . '.ds-odds-note{flex:1 1 100%;font-size:.72rem;opacity:.6}'
+		  . '.ds-odds{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 10px;'
+		  . 'margin:0 0 14px;padding:11px 14px;border:1px solid rgba(255,255,255,.12);'
+		  . 'border-radius:4px;background:rgba(0,0,0,.28);line-height:1.5;text-align:left}'
+		  . '.ds-odds>span{text-align:left}'
+		  . '.ds-odds-pct{font-size:1.55rem;font-weight:bold;color:#00c8a0;letter-spacing:.01em}'
+		  . '.ds-odds-lbl{font-size:.82rem;color:#e8eaed;opacity:.8}'
+		  . '.ds-odds-typ{flex:1 1 100%;font-size:.86rem;color:#e8eaed}'
+		  . '.ds-odds-typ b{color:#00c8a0}'
+		  . '.ds-odds-next{flex:1 1 100%;font-size:.82rem;color:#e8eaed;opacity:.75}'
+		  . '.ds-odds-next b{color:#00c8a0;opacity:1}'
+		  . '.ds-odds-note{flex:1 1 100%;font-size:.72rem;color:#e8eaed;opacity:.5}'
 		  . '@media(max-width:480px){.ds-odds-pct{font-size:1.3rem}}'
 		  . '</style>';
 	}
@@ -233,14 +246,76 @@ function dropshipOddsPanel($conn) {
 		$out .= '</span>';
 	}
 	if ($next !== null) {
-		$out .= '<span class="ds-odds-next">' . $h($next[0]) . ' would make it '
-		      . $h($next[1]) . '%';
-		if ($next[2] !== null) $out .= ' and round ' . $h($next[2]);
+		$out .= '<span class="ds-odds-next">' . $h($next[0]) . ' would make it <b>'
+		      . $h($next[1]) . '%</b>';
+		if ($next[2] !== null) $out .= ' and round <b>' . $h($next[2]) . '</b>';
 		$out .= '</span>';
 	}
 	/* Honest about what the figure leaves out, in the place it is read. */
-	$out .= '<span class="ds-odds-note">Drop Box, Radio and Jet Pack are not counted '
-	      . '&mdash; they only push it further.</span>';
+	/* Plain hyphen, not an em dash, in copy a player reads. */
+	$out .= '<span class="ds-odds-note">Drop Box, Radio and Jet Pack are not counted. '
+	      . 'They only push it further.</span>';
 	$out .= '</div>';
 	return $out;
+}
+
+/**
+ * What one shop item would do to the odds, as a line for its listing.
+ *
+ * WHY THE SHOP AND NOT JUST THE SQUAD PANEL: the squad panel answers "how
+ * good am I", which is a status. The question a player has with their finger
+ * over a Buy button is "how much better would THIS make me", which is a
+ * decision, and the two are not the same number. An item that costs real
+ * scrip should say what the scrip buys.
+ *
+ * MEASURED AGAINST THE LOADOUT THEY ARE ACTUALLY HOLDING, so a Ballistic
+ * Shield reads as a big jump to a bare squad and as nothing at all to someone
+ * already in a Mech Suit -- which is the truth, because the suits override
+ * each other rather than stacking.
+ *
+ * SILENT WHERE IT CANNOT MEASURE. The item name is matched against the same
+ * session key the run uses, and anything not recognised returns null rather
+ * than a guess: weapons, Radar and Night Vision Goggles decorate a round that
+ * was already survived and change no odds this file can see. A made-up
+ * number on a price tag is worse than no number.
+ *
+ * $name is the raw items.name; the run turns it into a session key with the
+ * same strtolower/underscore rule, so they cannot drift apart.
+ */
+function dropshipItemOddsNote($name, $f) {
+	$key = strtolower(str_replace(' ', '_', (string)$name));
+
+	$now  = dropshipSurvivalPct(dropshipThreshold($f));
+	$life = isset($f['extra_lives']) ? (int)$f['extra_lives'] : 0;
+
+	/* The four suits set the per-round roll outright. */
+	if (in_array($key, array('mech_suit', 'exo_suit', 'quantum_stealth', 'ballistic_shield'), true)) {
+		if (!empty($f[$key])) return 'Carried &middot; ' . $now . '% per round';
+		$try = $f; $try[$key] = true;
+		$then = dropshipSurvivalPct(dropshipThreshold($try));
+		if ($then > $now) return 'Survival ' . $now . '% &rarr; <b>' . $then . '%</b> per round';
+		/* NO DOWNGRADE BRANCH, because there is no downgrade to report:
+		   adding a suit can only move you UP the override chain or leave you
+		   where you are. Checked over all 256 loadouts x 4 suits, zero cases
+		   lower the odds. A Ballistic Shield bought over a Mech Suit is "no
+		   change", which is the honest thing to tell a shopper and is what
+		   stops them buying it. */
+		return 'No change &middot; already at ' . $now . '%';
+	}
+
+	/* A Medkit does not change the roll, it buys a second run at it. */
+	if ($key === 'medkit') {
+		$a = dropshipTypicalRound($now, $life);
+		$b = dropshipTypicalRound($now, $life + 1);
+		if ($a === null || $b === null) return null;
+		return 'An extra life &middot; typical round ' . $a . ' &rarr; <b>' . $b . '</b>';
+	}
+
+	/* One-shot escapes on a failed roll. They skip the counter forward rather
+	   than changing the odds, so they are named and explicitly excluded. */
+	if (in_array($key, array('drop_box', 'radio', 'jet_pack'), true)) {
+		return 'One escape from a failed round &middot; not counted in the odds';
+	}
+
+	return null;
 }

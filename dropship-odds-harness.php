@@ -167,5 +167,83 @@ ok(substr_count($run, '88.9') === 0,
 ok(strpos($run, "\$extralife = 'true';") !== false,
    'the Skulliance promo gear grant was moved or lost with the arithmetic');
 
+echo "\nthe shop says what the scrip buys\n";
+/*
+ * The squad panel answers "how good am I". A shopper with a finger over Buy
+ * is asking "how much better would THIS make me", which is a different
+ * number, measured against the loadout they are actually holding.
+ */
+$bare = array('extra_lives' => 0);
+$held = array('heavy' => true, 'medium' => true, 'extra_lives' => 0);
+$note = dropshipItemOddsNote('Mech Suit', $held);
+ok(strpos($note, '77%') !== false && strpos($note, '89%') !== false,
+   'a Mech Suit does not quote the jump against the squad being held: ' . $note);
+/*
+ * THE SUITS OVERRIDE, so a cheaper one bought over a better one is worth
+ * exactly nothing, and saying so is the point -- it is what stops the
+ * purchase. "No change" rather than "worse": adding a suit can only move a
+ * player UP the chain, verified over all 256 loadouts x 4 suits with zero
+ * cases lowering the odds, so the note has no downgrade branch to hit.
+ */
+$worn = array('mech_suit' => true, 'extra_lives' => 0);
+ok(strpos(dropshipItemOddsNote('Ballistic Shield', $worn), 'No change') === 0,
+   'a pointless purchase is not called out: ' . dropshipItemOddsNote('Ballistic Shield', $worn));
+$never = 0;
+$keys = array('mech_suit', 'exo_suit', 'quantum_stealth', 'ballistic_shield', 'heavy', 'medium', 'light', 'base');
+for ($m = 0; $m < 256; $m++) {
+	$f = array('extra_lives' => 0);
+	foreach ($keys as $i => $k) $f[$k] = (bool)($m & (1 << $i));
+	$base_pct = dropshipSurvivalPct(dropshipThreshold($f));
+	foreach (array_slice($keys, 0, 4) as $suit) {
+		$t = $f; $t[$suit] = true;
+		if (dropshipSurvivalPct(dropshipThreshold($t)) < $base_pct) $never++;
+	}
+}
+ok($never === 0, $never . ' loadouts get WORSE from buying a suit, so the note needs a downgrade branch');
+ok(strpos(dropshipItemOddsNote('Mech Suit', $worn), 'Carried') === 0,
+   'a suit already carried is still being sold as an upgrade');
+/* A Medkit changes no roll; it buys a second run at the same one. */
+$m = dropshipItemOddsNote('Medkit', $held);
+ok(strpos($m, 'extra life') !== false && strpos($m, 'per round') === false,
+   'a Medkit is described as changing the per-round odds, which it does not: ' . $m);
+/* The escapes are named and excluded, matching the panel's own footnote. */
+foreach (array('Drop Box', 'Radio', 'Jet Pack') as $n) {
+	ok(strpos(dropshipItemOddsNote($n, $held), 'not counted in the odds') !== false,
+	   "$n does not say it is outside the odds");
+}
+/*
+ * SILENT WHERE IT CANNOT MEASURE. Weapons, Radar and Night Vision Goggles
+ * decorate a round that was already survived. A number on their price tag
+ * would be invented, and invented is worse than absent.
+ */
+foreach (array('Sniper Rifle', 'Radar', 'Night Vision Goggles', 'Tactical Katana', '') as $n) {
+	ok(dropshipItemOddsNote($n, $held) === null, "an odds claim was invented for '$n'");
+}
+/* Name to session key uses the run's own rule, or the two drift. */
+ok(dropshipItemOddsNote('Mech Suit', $bare) === dropshipItemOddsNote('mech suit', $bare),
+   'the item name is not normalised the way the run normalises it');
+/* And the shop has to actually print it, once per item, reading flags once. */
+$db = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
+ok(strpos($db, 'dropshipItemOddsNote($row["name"], $odds_flags)') !== false,
+   'the shop listing never calls the per-item note');
+ok(preg_match('/\$odds_flags = dropshipOddsFlags\(\$conn\);\s*\n.*?while\(\$row = \$result->fetch_assoc/s', $db) === 1,
+   'the shop reads the loadout inside the item loop, which is a query per item');
+
+echo "\nthe panel survives the stylesheet it renders inside\n";
+/*
+ * dist/flexbox.css CENTRES TEXT GLOBALLY. A flex child stretched to full
+ * width inherits that, so the first row sat left (flex puts it at
+ * flex-start) and every line under it centred. That is how this shipped the
+ * first time; it is pinned rather than remembered.
+ */
+$odds_src = file_get_contents(__DIR__ . '/dropship/dropship-odds.php');
+ok(substr_count($odds_src, 'text-align:left') >= 2,
+   'the panel does not re-state text-align, so flexbox.css centres half of it');
+ok(strpos($odds_src, '#00c8a0') !== false,
+   'the panel is off the platform accent the Squad heading beside it uses');
+ok(stripos($odds_src, '#7CFC00') === false, 'the lime is back');
+/* Plain hyphens in copy a player reads. */
+ok(strpos($odds_src, '&mdash;') === false, 'an em dash is back in the player-facing copy');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);

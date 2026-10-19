@@ -1644,6 +1644,9 @@ function loadItems($conn, $type, $heavy_armor, $medium_armor, $light_armor, $bas
 	$scrip = str_replace(',', '', $scrip);
 
 	if ($result->num_rows > 0) {
+	  /* The loadout the shopper is actually holding, read ONCE for the whole
+	     list rather than per item -- this runs for every type on the page. */
+	  $odds_flags = dropshipOddsFlags($conn);
 	  // output data of each row
 	  echo "<ul>";
 	  while($row = $result->fetch_assoc()) {
@@ -1687,6 +1690,15 @@ function loadItems($conn, $type, $heavy_armor, $medium_armor, $light_armor, $bas
 				}
 				echo "</td>
 			</tr>";
+			/* WHAT THE SCRIP BUYS. The Avg Score below is this player's own
+			   history with the item, which is empty for anyone new and noisy
+			   for everyone else. This is what the item does to the odds right
+			   now, from the same function the run rolls against. Silent for
+			   items whose effect is not in the roll. */
+			$odds_note = dropshipItemOddsNote($row["name"], $odds_flags);
+			if($odds_note !== null){
+				echo "<tr class='item-stats item-odds'><td colspan='3'>".$odds_note."</td></tr>";
+			}
 			if(isset($_SESSION['userData']['dropship_user_id'])){
 				$sql = "SELECT AVG(results.score) AS score_avg FROM items INNER JOIN results_items ON results_items.item_id = items.id INNER JOIN results ON results.id = results_items.result_id WHERE type='".$type."' AND items.id='".$row['id']."' AND results.user_id='".$_SESSION['userData']['dropship_user_id']."' AND results.project_id = '".$_SESSION['userData']['dropship_project_id']."'";
 				$avg_result = $conn->query($sql);
