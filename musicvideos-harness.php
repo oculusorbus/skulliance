@@ -261,9 +261,14 @@ echo "\nthe page is public and cheap to open\n";
 	 * half matters as much as the opening one: a paused video that still
 	 * has a src keeps its buffer, and on some browsers keeps filling it.
 	 */
+	/* To the END of the script block, not a fixed number of bytes: a
+	   2200-character window was enough until the sizing function was
+	   added, and then six assertions started failing on correct code
+	   because the close handler had moved past the end of the window. */
 	$pl = strpos($rawpg, "var veil = document.getElementById('mvp-veil')");
 	ok($pl !== false, 'the player script is gone');
-	$player = $pl === false ? '' : substr($rawpg, $pl, 2200);
+	$pe = $pl === false ? false : strpos($rawpg, '</script>', $pl);
+	$player = ($pl === false || $pe === false) ? '' : substr($rawpg, $pl, $pe - $pl);
 	ok(strpos($player, "vid.removeAttribute('src')") !== false,
 	   'closing the player leaves the src in place, so the film keeps downloading');
 	ok(strpos($player, 'vid.load()') !== false,
@@ -282,6 +287,18 @@ echo "\nthe page is public and cheap to open\n";
 	/* Autoplay is attempted but never assumed. */
 	ok(strpos($player, 'p.catch') !== false,
 	   'a refused autoplay throws an unhandled rejection into the console on every open');
+
+	/* The size rule is driven in musicvideos-fit-harness.js: shown at the
+	   film's own resolution, scaled down only when it will not fit. */
+	$node = trim((string) @shell_exec('command -v node 2>/dev/null'));
+	if ($node === '') {
+		echo "  --   node not found; run musicvideos-fit-harness.js separately\n";
+	} else {
+		$res = trim((string) @shell_exec(escapeshellcmd($node) . ' '
+		     . escapeshellarg(__DIR__ . '/musicvideos-fit-harness.js') . ' 2>&1'));
+		ok(substr($res, -8) === 'all good',
+		   'the player sizes a film wrongly: ' . substr($res, 0, 220));
+	}
 
 	/* The menu has to point at it. */
 	$hdr = harness_strip_comments(file_get_contents(__DIR__ . '/header.php'));

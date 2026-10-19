@@ -18,7 +18,9 @@ a **public page** - no login, because the point of a music video is being
 watched - and it is ordered by project name.
 
 Each one is a tile showing that project's **realm theme** artwork. Press it and
-the video opens over the page; press Escape or click outside it to close. The
+the video opens over the page at its own resolution - never blown up larger
+than it was made - and shrunk to fit only if your window is too small for it.
+Press Escape or click outside it to close. The
 films are only downloaded when you open one, so the page itself is light.
 
 Tiles are captioned with that project's Monstrocity theme logo where it has

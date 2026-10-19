@@ -132,15 +132,19 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
   background:rgba(4,12,22,.92);
   padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
 #mvp-veil.on{display:flex}
-/* SQUARE, like the films. The width follows the available HEIGHT as well
-   as the width, so the square never overflows the viewport and the box
-   never has to fight its own aspect-ratio with a max-height. */
+/* A STARTING SIZE ONLY. Once the film reports its own dimensions the
+   script sets an exact pixel width here, so it is shown at its real
+   resolution and never blown up. This is what it looks like in the
+   moment before that, and on a browser where metadata never arrives. */
 #mvp-box{width:min(760px,calc(100vh - 170px),100%);display:flex;flex-direction:column;gap:10px}
 #mvp-head{display:flex;align-items:center;gap:12px}
 #mvp-title{flex:1 1 auto;font-size:14px;color:#e8eaed;letter-spacing:.03em}
 #mvp-close{font:inherit;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
   padding:7px 14px;border-radius:3px;border:1px solid #1b3346;background:transparent;color:#e8eaed}
 #mvp-close:hover{border-color:#00c8a0;color:#00c8a0}
+/* 1/1 is the shape of the films there are today; the script replaces it
+   with whatever the file actually reports, so a non-square one later is
+   not stretched into a square. */
 #mvp-video{display:block;width:100%;aspect-ratio:1/1;
   background:#06101a;border:1px solid #1b3346;border-radius:4px}
 </style>
@@ -226,11 +230,41 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
   var veil = document.getElementById('mvp-veil');
   var vid  = document.getElementById('mvp-video');
   var ttl  = document.getElementById('mvp-title');
+  var box  = document.getElementById('mvp-box');
   var shut = document.getElementById('mvp-close');
   var tiles = document.querySelectorAll('.mv-item');
-  if (!veil || !vid || !tiles.length) return;
+  if (!veil || !vid || !box || !tiles.length) return;
 
   var opener = null;
+
+  /*
+   * SHOWN AT ITS OWN SIZE, NEVER BLOWN UP.
+   *
+   * A 600px film stretched across a 760px box is a 600px film with soft
+   * edges -- upscaling cannot add anything, it only makes the compression
+   * visible. So the box is set to the video's INTRINSIC width, and scaled
+   * DOWN only when the window is too small to hold it.
+   *
+   * Math.min(1, ...) is the whole rule: the scale never goes above 1.
+   *
+   * The aspect comes from the file too. Today every one of them is
+   * square, and hardcoding that would quietly stretch the first one that
+   * is not.
+   */
+  function fit() {
+    var w = vid.videoWidth, h = vid.videoHeight;
+    if (!w || !h || veil.hidden) return;
+    var head = document.getElementById('mvp-head');
+    /* What the veil leaves once its padding and the title row are out. */
+    var availW = veil.clientWidth - 32;
+    var availH = veil.clientHeight - 32 - (head ? head.offsetHeight : 0) - 10;
+    var scale  = Math.min(1, availW / w, availH / h);
+    if (!isFinite(scale) || scale <= 0) scale = 1;
+    box.style.width = Math.round(w * scale) + 'px';
+    vid.style.aspectRatio = w + ' / ' + h;
+  }
+  vid.addEventListener('loadedmetadata', fit);
+  window.addEventListener('resize', fit);
 
   function open(btn) {
     opener = btn;
@@ -253,6 +287,10 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
     vid.removeAttribute('src');
     try { vid.load(); } catch (e) {}   /* drops the buffer and the request */
     ttl.textContent = '';
+    /* Cleared, or the next film opens at the last one's width before its
+       own metadata arrives. */
+    box.style.width = '';
+    vid.style.aspectRatio = '';
     if (opener) { opener.focus(); opener = null; }
   }
 
