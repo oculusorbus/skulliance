@@ -129,10 +129,12 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
 <?php foreach ($mv_list as $v): ?>
     <div class="mv-item">
       <?php /* preload="metadata" so twelve videos cost twelve headers rather
-               than twelve films, and #t=0.5 so the browser shows a frame
-               instead of a black rectangle -- there are no poster images and
-               nothing here can make one. playsinline keeps an iPhone from
-               taking over the whole screen the moment it is tapped. */ ?>
+               than twelve films. #t=0.5 is the floor: with no JavaScript at
+               all it still shows a frame rather than a black rectangle. The
+               script below moves that to the MIDPOINT once the duration is
+               known, because half a second in is usually a fade from black.
+               playsinline keeps an iPhone from taking over the whole screen
+               the moment it is tapped. */ ?>
       <video controls preload="metadata" playsinline
              src="<?php echo $e($v['file']); ?>#t=0.5"></video>
       <div class="mv-cap">
@@ -157,6 +159,44 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
 <?php endif; ?>
 </div>
 
+<script>
+/*
+ * THE STILL IS A FRAME FROM THE MIDDLE OF THE FILM.
+ *
+ * There are no poster images and nothing on this server can make one --
+ * pulling a frame out of an mp4 needs ffmpeg, and these arrive by FTP as
+ * finished files. So the browser makes the poster: seek the video to its
+ * own midpoint and the frame it lands on is what is painted until somebody
+ * presses play. Half a second in, which is all the #t= fragment can ask
+ * for without knowing the duration, is usually still a fade from black.
+ *
+ * COSTS A RANGE REQUEST EACH, not a download: the server answers 206 for
+ * these (checked), so seeking fetches the chunk around the midpoint and
+ * nothing else.
+ *
+ * AND PLAY STILL STARTS AT THE BEGINNING. The seek leaves currentTime in
+ * the middle, so without this the first press of play would drop the
+ * viewer halfway through the video they just chose to watch. Rewound once,
+ * and only if they have not seeked somewhere themselves in the meantime.
+ */
+(function () {
+  var vids = document.querySelectorAll('.mv-item video');
+  for (var i = 0; i < vids.length; i++) (function (v) {
+    var mid = null;
+    v.addEventListener('loadedmetadata', function () {
+      if (mid !== null || !isFinite(v.duration) || v.duration <= 0) return;
+      mid = Math.min(v.duration / 2, Math.max(0, v.duration - 0.1));
+      /* Throws on a browser that will not seek before it has buffered;
+         the #t= frame then stands, which is the whole point of keeping it. */
+      try { v.currentTime = mid; } catch (e) { mid = null; }
+    });
+    v.addEventListener('play', function () {
+      if (mid !== null && Math.abs(v.currentTime - mid) < 0.4) v.currentTime = 0;
+      mid = null;                       /* once only: after this it is theirs */
+    });
+  })(vids[i]);
+})();
+</script>
 </body>
 <script type="text/javascript" src="skulliance.js?var=<?php echo rand(0,999); ?>"></script>
 <?php $conn->close(); ?>

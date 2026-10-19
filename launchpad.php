@@ -106,6 +106,7 @@ $lp_sections = array(
 			array('collections.php',     '📚', 'Collections',     'Every supported project'),
 			array('diamond-skulls.php',  '💎', 'Diamond Skulls',  'Delegation rewards'),
 			array('skulliverse.php',     '🌌', 'Skulliverse',     'The wider universe'),
+			array('musicvideos.php',     '🎬', 'Music Videos',    'Made with the projects\' art'),
 		),
 	),
 	'Progress' => array(

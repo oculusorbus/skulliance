@@ -239,6 +239,28 @@ echo "\nthe page is public and cheap to open\n";
 	ok(strpos($hdr, 'musicvideos.php') !== false, 'nothing in the NFTs menu links to the page');
 }
 
+echo "\nthe midpoint still, driven\n";
+{
+	/*
+	 * Shelled out to musicvideos-still-harness.js so there is one copy of
+	 * those cases. It exists because the page has no poster images --
+	 * nothing on this server can pull a frame out of an mp4 -- so the
+	 * browser makes the poster by seeking each video to its own midpoint,
+	 * and the easy thing to get wrong is that the seek leaves currentTime
+	 * in the middle: without a rewind, the first press of play drops the
+	 * viewer halfway through the film they just chose to watch.
+	 */
+	$node = trim((string) @shell_exec('command -v node 2>/dev/null'));
+	if ($node === '') {
+		echo "  --   node not found; run musicvideos-still-harness.js separately\n";
+	} else {
+		$res = trim((string) @shell_exec(escapeshellcmd($node) . ' '
+		     . escapeshellarg(__DIR__ . '/musicvideos-still-harness.js') . ' 2>&1'));
+		ok(substr($res, -8) === 'all good',
+		   'the midpoint still misbehaves: ' . substr($res, 0, 200));
+	}
+}
+
 /* tidy */
 foreach (glob($root . '/videos/*') as $f) @unlink($f);
 foreach (glob($root . '/icons/*') as $f) @unlink($f);
