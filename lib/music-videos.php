@@ -28,6 +28,123 @@ $GLOBALS['MV_ALIASES'] = array(
 	'projectvenus' => 'f.ART',
 );
 
+/**
+ * How big an mp4 actually is, read out of its own header.
+ *
+ * WHY THE SERVER HAS TO KNOW. The player is sized to the film's real
+ * resolution, and if that only arrives with loadedmetadata the modal
+ * opens at a guess and then visibly jumps to the right size. Knowing it
+ * before the page is printed means it opens correct and never moves.
+ *
+ * The width and height are the LAST EIGHT BYTES of the tkhd box, as two
+ * 16.16 fixed-point numbers -- which is true for both versions of tkhd,
+ * so this does not have to care which it is looking at. Walks the atom
+ * tree rather than scanning for bytes, because 'moov' and 'trak' appear
+ * inside compressed data often enough that a scan finds the wrong one.
+ *
+ * Returns array(w, h), or array(0, 0) for anything it cannot read -- the
+ * caller falls back to sizing from the browser, which is where it was.
+ */
+function mv_video_dims($abs) {
+	$fh = @fopen($abs, 'rb');
+	if (!$fh) return array(0, 0);
+	$res = mv_find_tkhd($fh, 0, filesize($abs));
+	fclose($fh);
+	return $res ? $res : array(0, 0);
+}
+
+/** Walk one level of atoms between $pos and $end, descending where useful. */
+function mv_find_tkhd($fh, $pos, $end, $depth = 0) {
+	if ($depth > 4) return null;
+	while ($pos + 8 <= $end) {
+		if (fseek($fh, $pos) !== 0) return null;
+		$hdr = fread($fh, 8);
+		if (strlen($hdr) < 8) return null;
+		$u = unpack('Nsize/a4type', $hdr);
+		$size = $u['size'];
+		$head = 8;
+		/* size 1 means a 64-bit length follows; size 0 means "to the end". */
+		if ($size === 1) {
+			$ext = fread($fh, 8);
+			if (strlen($ext) < 8) return null;
+			$p = unpack('Nhi/Nlo', $ext);
+			$size = $p['hi'] * 4294967296 + $p['lo'];
+			$head = 16;
+		} elseif ($size === 0) {
+			$size = $end - $pos;
+		}
+		if ($size < $head) return null;                 /* malformed */
+
+		if ($u['type'] === 'tkhd') {
+			/* The last eight bytes: width and height, 16.16 fixed. */
+			if (fseek($fh, $pos + $size - 8) !== 0) return null;
+			$wh = fread($fh, 8);
+			if (strlen($wh) < 8) return null;
+			$v = unpack('Nw/Nh', $wh);
+			$w = (int) round($v['w'] / 65536);
+			$h = (int) round($v['h'] / 65536);
+			if ($w > 0 && $h > 0) return array($w, $h);
+		} elseif ($u['type'] === 'moov' || $u['type'] === 'trak') {
+			$in = mv_find_tkhd($fh, $pos + $head, $pos + $size, $depth + 1);
+			if ($in) return $in;
+		}
+		$pos += $size;
+	}
+	return null;
+}
+
+/**
+ * A small copy of a big image, made once and kept.
+ *
+ * THE REALM THEME ART IS 2000x1500 AND UP TO 1.4MB. Twelve of those behind
+ * a 380px tile is ten megabytes to look at a grid: the page sat spinning,
+ * and -- worse -- the video a visitor then clicked had to queue behind
+ * them for one of the browser's six connections, so it looked like the
+ * films were broken when they were only waiting.
+ *
+ * GENERATED FROM A FILE ALREADY ON THE SERVER, which is the only kind of
+ * image this repo can make: the originals arrive by FTP and nothing here
+ * can add one. Written once and reused; if the source is ever replaced,
+ * a newer mtime rebuilds it.
+ *
+ * ANY FAILURE RETURNS THE ORIGINAL. An unwritable directory, no GD, a
+ * corrupt jpeg -- none of those should cost the page its picture, they
+ * should only cost it the saving.
+ */
+function mv_thumb($webroot, $rel, $maxw = 620) {
+	$root = rtrim($webroot, '/');
+	$src  = $root . '/' . $rel;
+	if (!is_file($src) || !function_exists('imagecreatefromjpeg')) return $rel;
+
+	$dir = $root . '/images/themes/thumbs';
+	if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) return $rel;
+
+	$out    = $dir . '/' . basename($rel);
+	$relOut = 'images/themes/thumbs/' . basename($rel);
+	/* Fresh enough? The source changing is the only thing that invalidates
+	   it, and comparing mtimes is cheaper than any other answer. */
+	if (is_file($out) && @filemtime($out) >= @filemtime($src)) return $relOut;
+
+	$d = @getimagesize($src);
+	if (!$d || $d[0] <= 0) return $rel;
+	/* Already small enough: copying it would be work for nothing. */
+	if ($d[0] <= $maxw) return $rel;
+
+	$im = @imagecreatefromjpeg($src);
+	if (!$im) return $rel;
+	$w = $maxw;
+	$h = (int) round($d[1] * ($maxw / $d[0]));
+	$tn = @imagecreatetruecolor($w, $h);
+	if (!$tn) return $rel;
+	imagecopyresampled($tn, $im, 0, 0, 0, 0, $w, $h, $d[0], $d[1]);
+	/* Written to a temp name and renamed, because two visitors can arrive
+	   at once and a half-written jpeg is worse than a big one. */
+	$tmp = $out . '.' . getmypid() . '.tmp';
+	$okw = @imagejpeg($tn, $tmp, 82) && @rename($tmp, $out);
+	if (!$okw) { @unlink($tmp); return $rel; }
+	return $relOut;
+}
+
 /** Where the videos live. Relative: the page is the only thing that reads it. */
 function mv_dir() { return 'videos'; }
 
@@ -37,8 +154,9 @@ function mv_slug($s) { return preg_replace('/[^a-z0-9]/', '', strtolower((string
 /**
  * Every video on disk, newest knowledge of the projects attached.
  *
- * Returns a list of array('file', 'title', 'project_id', 'logo', 'icon',
- * 'poster'), ordered by the title shown.
+ * Returns a list of array('file', 'w', 'h', 'title', 'project_id', 'logo',
+ * 'icon', 'poster'), ordered by the title shown. 'w' and 'h' come from the
+ * mp4's own header and are 0 when it could not be read.
  *
  * 'poster' is the project's REALM THEME image, images/themes/<project
  * id>.jpg -- realms.php picks a theme by project id, so the file is
@@ -124,8 +242,14 @@ function mv_videos($conn, $webroot) {
 		if (!$pid && isset($byName[$slug])) $pid = $byName[$slug];
 		if (!$pid && isset($byCur[$slug]))  $pid = $byCur[$slug];
 
+		/* Read once per page from the file's own header, so the player can
+		   open at the right size instead of jumping to it. */
+		$dim = mv_video_dims($f);
+
 		$out[] = array(
 			'file'       => mv_dir() . '/' . basename($f),
+			'w'          => $dim[0],
+			'h'          => $dim[1],
 			/* Unmatched: the filename, spaced out, rather than nothing. */
 			'title'      => $pid ? $names[$pid] : ucwords(preg_replace('/[-_]+/', ' ', $base)),
 			'project_id' => $pid,
@@ -134,8 +258,9 @@ function mv_videos($conn, $webroot) {
 			/* Checked on disk like the rest: a project with no realm
 			   theme gets no tile image and the page draws a plain panel
 			   rather than a broken frame. */
+			/* The tile art, shrunk to something a tile actually needs. */
 			'poster'     => ($pid && is_file(rtrim($webroot, '/') . '/images/themes/' . $pid . '.jpg'))
-			                ? 'images/themes/' . $pid . '.jpg' : '',
+			                ? mv_thumb($webroot, 'images/themes/' . $pid . '.jpg') : '',
 		);
 	}
 

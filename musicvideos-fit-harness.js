@@ -46,7 +46,7 @@ function run(videoW, videoH, veilW, veilH, headH) {
   vm.runInContext(src, sandbox);
   /* fire loadedmetadata the way the browser would */
   (handlers['loadedmetadata'] || []).forEach(f => f());
-  return { width: box.style.width, aspect: vid.style.aspectRatio };
+  return { width: box.style.width, aspect: vid.style.aspectRatio, handlers, byId, tiles };
 }
 
 let fail = 0;
@@ -84,5 +84,29 @@ console.log('\nno metadata, no resizing');
   ok(r.width === '' || r.width == null, 'sized to ' + r.width + ' with no dimensions known');
   console.log('  0x0 -> width "' + r.width + '" (css default stands)');
 }
+console.log('\nit opens at the right size, without a jump');
+{
+  /*
+   * THE DIMENSIONS COME FROM THE SERVER, off the mp4's own header, so
+   * the box is set BEFORE the film has said anything. Sizing only on
+   * loadedmetadata meant the modal opened at the CSS default and then
+   * visibly snapped to the real size -- 760px down to 560.
+   */
+  const page = fs.readFileSync(path.join(__dirname, 'musicvideos.php'), 'utf8');
+  ok(/data-w="<\?php echo \(int\) \$v\['w'\]/.test(page),
+     'the tile does not carry the film size, so the player cannot open at it');
+  const open = page.slice(page.indexOf('function open(btn)'));
+  const atFit = open.indexOf('fit(parseInt(btn.getAttribute');
+  ok(atFit >= 0 && atFit < open.indexOf('function close'),
+     'opening the player does not size it from the tile, so it opens at a guess and jumps');
+
+  const lib = fs.readFileSync(path.join(__dirname, 'lib', 'music-videos.php'), 'utf8');
+  /* The call form, not the name: 'function mv_video_dims' is a
+     substring of 'function mv_video_dimsX'. */
+  ok(/function mv_video_dims\s*\(/.test(lib) && /mv_video_dims\(\$f\)/.test(lib),
+     'nothing reads the size out of the mp4');
+  ok(/'w'\s*=>\s*\$dim\[0\]/.test(lib), 'the size is read but never returned');
+}
+
 console.log(fail ? '\n' + fail + ' FAILED' : '\nall good');
 process.exit(fail ? 1 : 0);

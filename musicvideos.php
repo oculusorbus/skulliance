@@ -162,7 +162,8 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
     <?php /* A BUTTON, so it is reachable by keyboard and announced as
              something you can press. The whole tile is the target. */ ?>
     <button type="button" class="mv-item" data-src="<?php echo $e($v['file']); ?>"
-            data-title="<?php echo $e($v['title']); ?>">
+            data-title="<?php echo $e($v['title']); ?>"
+            data-w="<?php echo (int) $v['w']; ?>" data-h="<?php echo (int) $v['h']; ?>">
       <span class="mv-shot">
 <?php if ($v['poster'] !== ''): ?>
         <img src="<?php echo $e($v['poster']); ?>" alt=""
@@ -251,8 +252,9 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
    * square, and hardcoding that would quietly stretch the first one that
    * is not.
    */
-  function fit() {
-    var w = vid.videoWidth, h = vid.videoHeight;
+  function fit(w, h) {
+    w = w || vid.videoWidth;
+    h = h || vid.videoHeight;
     if (!w || !h || veil.hidden) return;
     var head = document.getElementById('mvp-head');
     /* What the veil leaves once its padding and the title row are out. */
@@ -263,8 +265,11 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
     box.style.width = Math.round(w * scale) + 'px';
     vid.style.aspectRatio = w + ' / ' + h;
   }
-  vid.addEventListener('loadedmetadata', fit);
-  window.addEventListener('resize', fit);
+  /* Both of these call it with no arguments, so it falls back to the
+     element's own dimensions -- which by then are known and authoritative
+     if the header said something different. */
+  vid.addEventListener('loadedmetadata', function () { fit(); });
+  window.addEventListener('resize', function () { fit(); });
 
   function open(btn) {
     opener = btn;
@@ -272,6 +277,14 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
     vid.src = btn.getAttribute('data-src');
     veil.hidden = false;
     veil.classList.add('on');
+    /*
+     * SIZED BEFORE IT IS SEEN. The dimensions come from the mp4's own
+     * header, read server-side, so the box opens at the film's size
+     * rather than at a CSS guess that visibly snaps to the right one the
+     * moment loadedmetadata arrives. Without this the modal opened at
+     * 760px and jumped to 560.
+     */
+    fit(parseInt(btn.getAttribute('data-w'), 10), parseInt(btn.getAttribute('data-h'), 10));
     if (shut) shut.focus();
     /* Autoplay with sound is refused by every browser, and rightly. The
        press on the tile is the gesture, so this usually succeeds -- and
