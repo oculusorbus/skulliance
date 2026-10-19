@@ -353,7 +353,7 @@ function dhcf_draw($category, $tiers) {
  * $info is dhcf_trait_info()'s [tier, worn, rate]; passed in when the caller
  * already has it, looked up when it does not.
  */
-function dhcf_drop_payload($conn, $user_id, $cat, $slug, $info = null) {
+function dhcf_drop_payload($conn, $user_id, $cat, $slug, $info = null, $source = '') {
 	if ($info === null) $info = dhcf_trait_info($cat, $slug);
 	if (!$info) return null;
 	return array(
@@ -365,6 +365,23 @@ function dhcf_drop_payload($conn, $user_id, $cat, $slug, $info = null) {
 		'points'   => dhcf_trait_points($info[2]),
 		'name'     => dhcf_trait_name($cat, $slug),
 		'is_new'   => dhcf_count_owned($conn, $user_id, $slug) <= 1,
+		/*
+		 * WHERE IT CAME FROM, carried on the payload rather than looked up by
+		 * whoever renders it. This payload is the ONE shape a drop takes --
+		 * the modal reveals it, the held queue stores it across page loads,
+		 * and the X post is built from it -- so a field it does not carry is
+		 * a field the share cannot mention.
+		 *
+		 * 'from' is resolved here and not in the browser because the phrasing
+		 * lives in the registry next to the label, and three of the sources
+		 * are not games and need their own wording.
+		 */
+		'source'   => (string)$source,
+		'from'     => $source !== '' ? dhcf_earned_from($source) : '',
+		/* The game's own X account, for the post only -- the reveal shows the
+		   plain name. Empty for everything Skulliance makes itself, whose
+		   post already tags @skulliance in its tail. */
+		'tag'      => $source !== '' ? dhcf_earned_tag($source) : '',
 	);
 }
 
@@ -477,7 +494,7 @@ function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_
 		return null;
 	}
 
-	$drop = dhcf_drop_payload($conn, $user_id, $cat, $slug, $info);
+	$drop = dhcf_drop_payload($conn, $user_id, $cat, $slug, $info, $source);
 
 	/*
 	 * HELD FOR REVEAL. A trait is awarded by this function, not by the modal --

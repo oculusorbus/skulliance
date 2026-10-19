@@ -227,7 +227,9 @@ function ref_replay($conn, $user_id, $prev_login) {
 	while ($row = $r->fetch_assoc()) {
 		/* Shaped exactly as the drop modal expects, through the one function
 		   that builds that payload, so this cannot drift from a real drop. */
-		$d = dhcf_drop_payload($conn, $user_id, $row['category'], $row['slug']);
+		/* 'referral' so the reveal and the X post can say where it came
+		   from, the same as a drop that came out of a game. */
+		$d = dhcf_drop_payload($conn, $user_id, $row['category'], $row['slug'], null, 'referral');
 		if ($d) { $d['why'] = 'invite'; $out[] = $d; }
 	}
 	return $out;

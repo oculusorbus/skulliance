@@ -51,6 +51,11 @@ background at minimum, so no single game can dress one on its own.
 | Oculus Lounge | **any trait** | taking or tying the lead of the current game |
 | Daily Reward Streak | **any trait** | claiming day 7 of 7 |
 
+When a trait drops, the reveal says **where it came from** - the game, the
+streak, the invite, whatever earned it - and the Share on X button carries that
+into the post. A trait out of Drop Ship or Oculus Lounge also tags the people
+behind those games, since neither is ours.
+
 **Drop Ship and Oculus Lounge work differently to everything else here.**
 Nowhere else does placing badly cost you the drop: in the other games a
 genuine attempt qualifies and your result only decides the odds. On these two

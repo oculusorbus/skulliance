@@ -100,6 +100,9 @@ define('DHC_DROPMODAL_LOADED', true);
 #dhcdrop-tier{font-size:10px;letter-spacing:.22em;text-transform:uppercase;padding:2px 0 0;color:var(--dt);
   text-shadow:0 0 calc(var(--glow) * 16px) var(--dt)}
 #dhcdrop-meta{font-size:10.5px;color:#7a9eb0;padding:7px 14px 0;line-height:1.6}
+/* The provenance line. Brighter than the rest of the meta because it is the
+   part a player is most likely to be telling somebody about. */
+#dhcdrop-from{color:#9fd6c4}
 #dhcdrop-new,#dhcdrop-dupe{display:inline-block;margin:9px 0 0;font-size:9px;letter-spacing:.16em;
   text-transform:uppercase;border-radius:999px;padding:3px 9px}
 #dhcdrop-new{border:1px solid #00c8a0;color:#00c8a0}
@@ -256,6 +259,12 @@ define('DHC_DROPMODAL_LOADED', true);
    * many of the original Fighters wear it -- which is the detail that makes a
    * mythic interesting rather than just coloured.
    */
+  function escHtml(v) {
+    return String(v).replace(/[&<>"']/g, function (c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
   function shareText(d) {
     var worn = d.worn > 0
       ? ', worn by ' + d.worn + ' of the 226 original DHC Fighters'
@@ -265,14 +274,39 @@ define('DHC_DROPMODAL_LOADED', true);
     var art = 'aeiou'.indexOf(String(d.tier).charAt(0)) > -1 ? 'an' : 'a';
     var body = 'Earned ' + d.name + ' - ' + art + ' ' + d.tier + ' ' + d.category + ' trait' + worn + '.';
     /*
+     * HOW IT WAS EARNED, and it is the half of the post worth protecting.
+     * "an epic weapon trait" is a fact about the trait; "Dropped from Crypt
+     * Crawl" is the only part that says anything about the player, which is
+     * what makes the post worth reading.
+     *
+     * So it is held OUT of the trimming below and appended after it. The old
+     * code trimmed one string from the end, and appending first would have
+     * made this clause the first thing cut from exactly the posts about the
+     * rarest traits, whose names are the longest.
+     */
+    /*
+     * TAGGED WHERE THE GAME IS SOMEBODY ELSE'S. Drop Ship and Oculus Lounge
+     * are not Skulliance's own, so a post about a trait that fell out of one
+     * credits the people behind it and reaches their followers. The tail
+     * below still credits @MMAXI404, whose art every trait is, and
+     * @skulliance -- this is the game, not the trait.
+     *
+     * Parenthesised rather than "by", which would read as a claim about who
+     * drew the TRAIT. The modal shows the plain name without any of this: a
+     * handle means nothing outside X.
+     */
+    var from = d.from
+      ? ' Dropped from ' + d.from + (d.tag ? ' (' + d.tag + ')' : '') + '.'
+      : '';
+    /*
      * X counts ANY url as 23 characters however long it really is, and cuts
      * whatever does not fit off the END -- which is where the handle and the
      * credit live. Budget for the url here so an over-long trait name trims
      * the sentence instead of silently costing the post its reach.
      */
-    var limit = 280 - 24 - ('\n\n' + X_TAIL).length;
+    var limit = 280 - 24 - ('\n\n' + X_TAIL).length - from.length;
     if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '…';
-    return body + '\n\n' + X_TAIL;
+    return body + from + '\n\n' + X_TAIL;
   }
 
   /*
@@ -339,9 +373,18 @@ define('DHC_DROPMODAL_LOADED', true);
     var worn = d.worn > 0
       ? d.worn + ' of the 226 original Fighters wear this'
       : 'No minted Fighter wears this';
+    /* HOW IT WAS EARNED. Resolved server-side (dhcf_earned_from) and carried
+       on the payload, so the held queue reveals it hours later with the same
+       wording, and the X post below can quote it. Escaped even though it
+       comes from our own registry: everything else on this line is a number
+       or a fixed label, and this is the first free-text field to reach
+       innerHTML here. */
+    var fromLine = d.from
+      ? '<br><span id="dhcdrop-from">Dropped from ' + escHtml(d.from) + '</span>'
+      : '';
     document.getElementById('dhcdrop-meta').innerHTML =
       worn + '<br>' + d.rate + '% drop &middot; ' + d.points + ' pts' +
-      (d.band ? ' &middot; ' + d.band : '') +
+      (d.band ? ' &middot; ' + d.band : '') + fromLine +
       (d.is_new ? '<br><span id="dhcdrop-new">New to you</span>'
                 : '<br><span id="dhcdrop-dupe">Duplicate &mdash; lets you build a second</span>');
 

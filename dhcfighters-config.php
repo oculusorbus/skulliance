@@ -1048,11 +1048,11 @@ $GLOBALS['DHCF_GAMES'] = array(
 	 * any category at all, which is the right shape for a prize you only get
 	 * by being top of the board.
 	 */
-	'dropship'       => array('label' => 'Drop Ship', 'url' => 'dropship/dashboard.php?project_id=1',
+	'dropship'       => array('label' => 'Drop Ship', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=1',
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
 	                          'limit_note' => 'only when you take the lead'),
-	'oculuslounge'   => array('label' => 'Oculus Lounge', 'url' => 'dropship/dashboard.php?project_id=4',
+	'oculuslounge'   => array('label' => 'Oculus Lounge', 'x_tag' => '@oculuslounge', 'url' => 'dropship/dashboard.php?project_id=4',
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
 	                          'limit_note' => 'only when you take the lead'),
@@ -1071,7 +1071,7 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// 'limit_note' replaces the "N of N left today" line where a daily count
 	// does not describe the real limit. The streak pays once per seven days by
 	// definition, so quoting a daily cap implies three are available today.
-	'dailystreak'    => array('label' => 'Daily Reward Streak', 'url' => 'launchpad.php', 'category' => 'wildcard',
+	'dailystreak'    => array('label' => 'Daily Reward Streak', 'earned_from' => 'a 7-day reward streak', 'url' => 'launchpad.php', 'category' => 'wildcard',
 	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3',
 	                          'cap' => 1, 'limit_note' => 'once per 7-day streak',
 	                          'unlisted' => true),
@@ -1091,7 +1091,7 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// person arriving, so 60 is about twenty invites in a day. That is
 	// effectively no limit for anyone honest and still a wall for a script --
 	// which is what this ceiling is for, per dhcf_cap()'s own note.
-	'referral'       => array('label' => 'Invite a friend', 'url' => 'launchpad.php', 'category' => 'wildcard',
+	'referral'       => array('label' => 'Invite a friend', 'earned_from' => 'inviting a friend', 'url' => 'launchpad.php', 'category' => 'wildcard',
 	                          'trigger' => 'a friend joins or returns through your link',
 	                          'base' => 'placement_3', 'cap' => 60,
 	                          'limit_note' => 'three traits per friend who turns up',
@@ -1110,7 +1110,7 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// Cap 3, which is one cache. Once a day is enforced by the roll being
 	// decided by the DAY rather than by chance per request -- see
 	// dhcf_cache_day() -- so the cap here is a backstop, not the rule.
-	'digestcache'    => array('label' => 'Digest cache', 'url' => 'launchpad.php', 'category' => 'wildcard',
+	'digestcache'    => array('label' => 'Digest cache', 'earned_from' => 'a cache in the daily digest', 'url' => 'launchpad.php', 'category' => 'wildcard',
 	                          'trigger' => 'open your daily digest and get lucky',
 	                          'base' => 'placement_3', 'cap' => 3,
 	                          'limit_note' => 'some days, not most',
@@ -1171,6 +1171,46 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'dropship'      => 0,      // taking the lead is the gate; a score floor would only shut out the first player in a new game
 	'oculuslounge'  => 0,      // same
 );
+
+/**
+ * How a trait was earned, as a phrase that reads after "Dropped from".
+ *
+ * THE LABEL IS THE ANSWER FOR EVERY GAME -- "Dropped from Realm Guardians"
+ * says it. It is the three sources that are NOT games that need their own
+ * wording: "Dropped from Invite a friend" is not a sentence, and the triggers
+ * next door are no help either because they are written as instructions
+ * ("clear 12 of the 15 crypts"), not as a description of what someone did.
+ *
+ * Falls back to the label, then to the key, so a source added later reads
+ * sensibly without anyone remembering this function exists.
+ */
+function dhcf_earned_from($key) {
+	$g = dhcf_game($key);
+	if (!$g) return (string)$key;
+	if (!empty($g['earned_from'])) return $g['earned_from'];
+	return !empty($g['label']) ? $g['label'] : (string)$key;
+}
+
+/**
+ * The X account to tag when a drop from this source is posted, or ''.
+ *
+ * NOT THE SAME THING AS THE TRAIT'S ARTIST. Every trait is @MMAXI404's work
+ * and the post already credits them in its tail. This is the account behind
+ * the GAME the trait fell out of, so a post about a Drop Ship drop reaches
+ * the people who made and play Drop Ship.
+ *
+ * THESE ARE REAL ACCOUNTS AND A WRONG ONE TAGS A STRANGER, in public, from a
+ * player's own timeline. Both were given by the owner rather than found in
+ * the codebase, which holds Discord ids for these people but no X handles.
+ * If either is wrong this is the one line to change.
+ *
+ * Only the two specialty games have one. The rest are Skulliance's own, and
+ * the tail already tags @skulliance.
+ */
+function dhcf_earned_tag($key) {
+	$g = dhcf_game($key);
+	return ($g && !empty($g['x_tag'])) ? $g['x_tag'] : '';
+}
 
 function dhcf_floor($game) {
 	return isset($GLOBALS['DHCF_FLOORS'][$game]) ? $GLOBALS['DHCF_FLOORS'][$game] : 0;
