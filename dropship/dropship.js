@@ -279,11 +279,13 @@ function displayRound(project_id) {
 		if(currentRound == lastRound-1){
 			//configureAudio(2, "deathcontra");
 			configureAudio(1, "gameover");
-			if(document.getElementById('disableMessage').innerHTML == "true"){
-				document.getElementById("viewResults").innerHTML = "Refresh";
-			}else{
-				document.getElementById("viewResults").innerHTML = "Send Results to Discord";
-			}
+			/* ALWAYS "Refresh". This button used to read "Send Results to
+			   Discord", because its reload was what actually reached the
+			   announcement in dashboard.php -- so a player who closed the tab
+			   before the last round never posted their run. The announcement
+			   fires when the score is logged now, so the button does nothing
+			   but return to the results and should not claim otherwise. */
+			document.getElementById("viewResults").innerHTML = "Refresh";
 		}
 	}
 	currentRound++;

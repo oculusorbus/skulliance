@@ -178,27 +178,92 @@ ok(substr_count($awardSrc, 'ob_start()') === substr_count($awardSrc, 'ob_end_cle
    || substr_count($awardSrc, 'ob_end_clean()') > substr_count($awardSrc, 'ob_start()'),
    'the award opens more buffers than it closes');
 
-echo "\nthe notifier is suppressed, and that is a fatal if it is not\n";
+echo "\nthe drop announces in DHC Fighters without colliding\n";
 /*
- * THE SHARPEST EDGE IN THIS CHANGE. dashboard.php includes db.php, then
- * dropship.php (where the score is written, so where the award happens), THEN
- * its own webhooks.php. Neither webhooks.php guards its discordmsg()
- * declaration. If the award loads the platform notifier it defines the
- * platform's discordmsg() first, and Drop Ship's include on the next line is
- * a fatal "cannot redeclare" -- the dashboard, not just the drop.
+ * THE SHARPEST EDGE IN THIS CHANGE, and the reason the platform sender was
+ * split in two.
+ *
+ * dashboard.php includes db.php, then dropship.php (where the score is
+ * written, so where the award fires), THEN its own webhooks.php. discordmsg()
+ * is the ONLY name that collides between the two apps -- Drop Ship's takes a
+ * project id where the platform's takes a link -- and neither declaration was
+ * guarded. Announcing from inside the award means loading the platform's
+ * webhooks.php there, which used to declare discordmsg() and make Drop Ship's
+ * next include a fatal, taking the dashboard down rather than just the drop.
+ *
+ * Guarding both declarations would have been worse: Drop Ship's own calls
+ * would land on the platform function and post a project id as a title link.
+ * So webhooks.php defines skl_discordmsg() and only aliases the bare name
+ * when SKL_WEBHOOKS_NO_ALIAS is unset.
  */
-ok(strpos($src, "define('DHCF_NO_NOTIFY', true)") !== false,
-   'the award does not suppress the notifier; loading it would fatal the dashboard');
-$defAt = strpos($src, "define('DHCF_NO_NOTIFY', true)");
+ok(strpos($src, "define('SKL_WEBHOOKS_NO_ALIAS', true)") !== false,
+   'the award does not suppress the alias; announcing would fatal the dashboard');
+$defAt = strpos($src, "define('SKL_WEBHOOKS_NO_ALIAS', true)");
 $reqAt = strpos($src, "require_once __DIR__ . '/../dhcfighters-lib.php'");
 ok($defAt !== false && $reqAt !== false && $defAt < $reqAt,
-   'DHCF_NO_NOTIFY is defined after the library loads, which is too late');
+   'SKL_WEBHOOKS_NO_ALIAS is defined after the library loads, which is too late');
+/* And it must no longer suppress the announcement itself. */
+ok(strpos($src, 'DHCF_NO_NOTIFY') === false,
+   'the award still suppresses the notifier, so the drop is silent in DHC Fighters');
 $lib = file_get_contents(__DIR__ . '/dhcfighters-lib.php');
-ok(strpos($lib, "if (!defined('DHCF_NO_NOTIFY') && is_file(__DIR__ . '/dhcfighters-notify.php'))") !== false,
-   'dhcf_award() ignores DHCF_NO_NOTIFY, so suppressing it does nothing');
-/* And the suppression must be opt-in, or every other caller goes silent. */
-ok(strpos($lib, "define('DHCF_NO_NOTIFY'") === false,
-   'the platform defines DHCF_NO_NOTIFY itself, which would silence all nine games');
+ok(preg_match("/if \(is_file\(__DIR__ \. '\/dhcfighters-notify\.php'\)\) \{/", $lib) === 1,
+   'dhcf_award() no longer announces unconditionally');
+
+/*
+ * RUN IT. The collision is a fatal, and no amount of reading the source
+ * proves its absence -- so this loads the notifier exactly as the award does
+ * and then loads Drop Ship's webhooks.php exactly as dashboard.php does, in a
+ * subprocess because a fatal would take this harness with it.
+ */
+$probe = tempnam(sys_get_temp_dir(), 'dsx') . '.php';
+file_put_contents($probe, '<?php $R = ' . var_export(__DIR__, true) . ";\n"
+  /* A checkout has no webhook credentials and display_errors is on, so the
+     include warns; that noise is not what is being measured here. */
+  . "ini_set('display_errors','0'); error_reporting(0);\n"
+  . "define('SKL_WEBHOOKS_NO_ALIAS', true);\n"
+  . "require_once \$R . '/dhcfighters-notify.php';\n"
+  . "\$a = function_exists('skl_discordmsg') ? 1 : 0;\n"
+  . "\$b = function_exists('discordmsg') ? 1 : 0;\n"
+  . "include \$R . '/dropship/webhooks.php';\n"
+  . "\$c = (new ReflectionFunction('discordmsg'))->getNumberOfParameters();\n"
+  . "echo \"OK \$a \$b \$c\";\n");
+$out = trim((string)shell_exec('php ' . escapeshellarg($probe) . ' 2>/dev/null'));
+@unlink($probe);
+$parts = explode(' ', $out);
+ok(isset($parts[0]) && $parts[0] === 'OK',
+   'loading the notifier then Drop Ship\'s webhooks.php is still fatal: ' . $out);
+ok(isset($parts[1]) && $parts[1] === '1', 'the platform sender did not load under the alias guard');
+ok(isset($parts[2]) && $parts[2] === '0',
+   'the platform still declared the bare discordmsg(), which is the fatal');
+ok(isset($parts[3]) && $parts[3] === '5',
+   "Drop Ship's own discordmsg() is not the one in scope afterwards; its calls would misroute");
+
+echo "\nand the platform itself is unchanged\n";
+/* 150-odd call sites use the bare name. The alias has to still be there for
+   every ordinary request, or every announcement on the platform goes silent. */
+$probe = tempnam(sys_get_temp_dir(), 'dsy') . '.php';
+file_put_contents($probe, '<?php $R = ' . var_export(__DIR__, true) . ";\n"
+  . "ini_set('display_errors','0'); error_reporting(0);\n"
+  . "require_once \$R . '/dhcfighters-notify.php';\n"
+  . "\$r = new ReflectionFunction('discordmsg');\n"
+  . "echo 'OK ' . (int)\$r->isVariadic() . ' '\n"
+  . "   . (new ReflectionFunction('skl_discordmsg'))->getNumberOfParameters();\n");
+$out = trim((string)shell_exec('php ' . escapeshellarg($probe) . ' 2>/dev/null'));
+@unlink($probe);
+$parts = explode(' ', $out);
+ok(isset($parts[0]) && $parts[0] === 'OK',
+   'an ordinary platform request can no longer load the notifier: ' . $out);
+ok(isset($parts[1]) && $parts[1] === '1',
+   'discordmsg() is not the variadic alias, so arguments may not reach the sender intact');
+ok(isset($parts[2]) && $parts[2] === '12',
+   'skl_discordmsg() lost parameters; the alias forwards positionally and would shift them');
+/* The notifier must ask for the prefixed name, or from Drop Ship it finds
+   Drop Ship's and posts a trait into the wrong channel with the wrong args. */
+$nt = file_get_contents(__DIR__ . '/dhcfighters-notify.php');
+ok(strpos($nt, "function_exists('skl_discordmsg')") !== false,
+   'the notifier still guards on the bare name, which Drop Ship also defines');
+ok(preg_match('/\n\t\tdiscordmsg\(/', $nt) !== 1,
+   'the notifier still calls the bare discordmsg(), which may be another app\'s');
 
 echo "\nlogScore reads before the delete and awards after the insert\n";
 /*
@@ -228,6 +293,49 @@ ok($awdAt !== false && $elseAt !== false && $awdAt < $elseAt,
 ok(strpos($ds, '// Delete previous result for current game, if it exists') !== false
    && $delAt !== false,
    'logScore() no longer replaces the previous result unconditionally');
+
+echo "\nevery run reaches Discord, not just the patient ones\n";
+/*
+ * THE OLD BEHAVIOUR: the announcement sat inside the game-over panel, which
+ * only renders once `current_score` is set -- and checkScore() sets that at
+ * the BOTTOM of dashboard.php, so on the request that logs the run it still
+ * holds the previous value. The post therefore waited for a LATER request,
+ * and the thing that produced one was a button labelled "Send Results to
+ * Discord" at the end of the replay. Anyone who closed the tab posted
+ * nothing.
+ */
+$dash = file_get_contents(__DIR__ . '/dropship/dashboard.php');
+$js   = file_get_contents(__DIR__ . '/dropship/dropship.js');
+ok(strpos($ds, "\$_SESSION['userData']['run_logged'] = \"true\";") !== false,
+   'logScore() does not flag the run, so the announcement still waits for a later request');
+ok(strpos($dash, "\$ds_just_ran") !== false,
+   'dashboard.php never checks whether a run was just logged');
+/* It must be OUTSIDE the game-over panel, or hoisting it achieved nothing.
+   The panel opens at the `current_score && checkSquadCount` test. */
+$annAt  = strpos($dash, '$ds_just_ran  = isset(');
+$panelAt = strpos($dash, "<?php if(isset(\$_SESSION['userData']['current_score']) && checkSquadCount(\$conn) < 1) { ?>");
+ok($annAt !== false && $panelAt !== false && $annAt < $panelAt,
+   'the announcement is still inside the game-over panel, so it waits on current_score');
+/* ONCE. run_logged is consumed before the send, and 'notification' still
+   guards the game-over path, so a reload cannot repeat the post. */
+ok(strpos($dash, "unset(\$_SESSION['userData']['run_logged']);") !== false,
+   'run_logged is never cleared, so every later request re-announces the same run');
+$unsetAt = strpos($dash, "unset(\$_SESSION['userData']['run_logged']);");
+$ifAt    = strpos($dash, 'if(($ds_just_ran || $ds_game_over)');
+ok($unsetAt !== false && $ifAt !== false && $unsetAt < $ifAt,
+   'run_logged is cleared after the send rather than before, so an early return leaves it set');
+ok(strpos($dash, "!isset(\$_SESSION['userData']['notification'])") !== false,
+   'the notification guard is gone, so one run can post twice');
+ok(strpos($ds, "unset(\$_SESSION['userData']['notification']);") !== false,
+   'logScore() does not clear the notification guard, so only the first run of a session posts');
+/* discordmsg() is Drop Ship's and loads AFTER dropship.php, so the send must
+   be guarded rather than assumed. */
+ok(strpos($dash, "function_exists('discordmsg')") !== false,
+   'the announcement assumes discordmsg() is loaded; webhooks.php is included after dropship.php');
+/* And the button must stop claiming to do the thing it no longer does. */
+ok(strpos($js, 'Send Results to Discord') === false,
+   'the button still says "Send Results to Discord", which is no longer what it does');
+ok(strpos($js, '"Refresh"') !== false, 'the end-of-replay button lost its label entirely');
 
 echo "\nboth games are registered\n";
 require_once __DIR__ . '/dhcfighters-config.php';

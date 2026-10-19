@@ -37,7 +37,19 @@ require_once __DIR__ . '/avatar-lib.php';
  * definitions plus an include_once of its credentials -- no side effects, and
  * include_once here makes a double load harmless.
  */
-if (!function_exists('discordmsg') && is_file(__DIR__ . '/webhooks.php')) {
+/*
+ * skl_discordmsg(), NOT discordmsg(). They are the same sender -- webhooks.php
+ * defines the first and aliases the second onto it -- but only the prefixed
+ * name is guaranteed to be THIS app's.
+ *
+ * Drop Ship runs on this box with its own discordmsg() taking a project id
+ * where ours takes a link, and it is the only name that collides between the
+ * two. A Drop Ship request that awards a DHC Fighter trait loads this file to
+ * announce it, and checking the bare name would find Drop Ship's, or define
+ * ours and make Drop Ship's own later include a fatal. Asking for the
+ * prefixed name sidesteps both: see the note above skl_discordmsg().
+ */
+if (!function_exists('skl_discordmsg') && is_file(__DIR__ . '/webhooks.php')) {
 	include_once __DIR__ . '/webhooks.php';
 }
 
@@ -121,7 +133,7 @@ function dhcf_author_block($conn, $user_id) {
  */
 function dhcf_notify_drop($conn, $user_id, $drop, $game_key) {
 	try {
-		if (!function_exists('discordmsg') || empty($drop)) return;
+		if (!function_exists('skl_discordmsg') || empty($drop)) return;
 
 		list($author, $name, $mention) = dhcf_author_block($conn, $user_id);
 		$game  = dhcf_game($game_key);
@@ -136,7 +148,7 @@ function dhcf_notify_drop($conn, $user_id, $drop, $game_key) {
 		      . $drop['rate'] . '% drop chance · ' . $drop['points'] . ' pts'
 		      . (empty($drop['is_new']) ? "\n_Duplicate — lets them build a second._" : '');
 
-		discordmsg(
+		skl_discordmsg(
 			$name . ' found ' . $drop['name'],
 			$desc,
 			dhcf_art_base() . '/250/' . $drop['category'] . '/' . $drop['slug'] . '.png',
@@ -312,7 +324,7 @@ function dhcf_render_fighter($traits, $serial, $size = 500) {
 /** Announce a saved Fighter, with a flattened render when one can be made. */
 function dhcf_notify_fighter($conn, $user_id, $row) {
 	try {
-		if (!function_exists('discordmsg') || empty($row)) return;
+		if (!function_exists('skl_discordmsg') || empty($row)) return;
 
 		list($author, $name, $mention) = dhcf_author_block($conn, $user_id);
 		$traits = isset($row['traits']) ? $row['traits'] : array();
@@ -339,7 +351,7 @@ function dhcf_notify_fighter($conn, $user_id, $row) {
 		   See the note there. */
 		$render = dhcf_render_fighter($traits, $row['serial']);
 
-		discordmsg(
+		skl_discordmsg(
 			$name . ' assembled ' . $row['display'],
 			$desc,
 			$render,

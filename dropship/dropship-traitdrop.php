@@ -132,12 +132,23 @@ function dropshipDropAward($ctx) {
 	 */
 	ob_start();
 	try {
-		/* MUST BE SET BEFORE THE LIBRARY LOADS. Without it dhcf_award() pulls
-		   in the platform's notifier, which defines the platform's
-		   discordmsg() -- and dashboard.php includes Drop Ship's own on the
-		   line after the one that got us here, which would be a fatal
-		   "cannot redeclare". The drop is silent on Discord as a result. */
-		if (!defined('DHCF_NO_NOTIFY')) define('DHCF_NO_NOTIFY', true);
+		/*
+		 * MUST BE SET BEFORE THE PLATFORM LIBRARY LOADS.
+		 *
+		 * Awarding posts the drop in the DHC Fighters channel, which means
+		 * loading the platform's webhooks.php from inside a Drop Ship
+		 * request. That file normally declares discordmsg(), and Drop Ship
+		 * declares its own a moment later -- dashboard.php loads db.php, then
+		 * dropship.php (where the score is written, so where we are now),
+		 * then its own webhooks.php -- which would be a fatal "cannot
+		 * redeclare" and would take the dashboard down, not just the drop.
+		 *
+		 * SKL_WEBHOOKS_NO_ALIAS skips that declaration, so the platform's
+		 * sender arrives only as skl_discordmsg() -- a name Drop Ship does
+		 * not use -- and Drop Ship's own discordmsg() still loads normally
+		 * afterwards. It is the only name that collides between the two apps.
+		 */
+		if (!defined('SKL_WEBHOOKS_NO_ALIAS')) define('SKL_WEBHOOKS_NO_ALIAS', true);
 		require_once __DIR__ . '/../dhcfighters-lib.php';
 		if (!function_exists('dhcf_award')) return null;
 
@@ -155,6 +166,8 @@ function dropshipDropAward($ctx) {
 		}
 
 		$detail = $source . ' ' . $score . ' (lead)';
+		/* Announced in the DHC Fighters channel like every other drop:
+		   dhcf_award() calls the notifier itself. */
 		$drop = dhcf_award($sk, $uid, 'wildcard', $source, $detail, DHCF_TIERS['placement_1']);
 		$sk->close();
 	} catch (Throwable $e) {

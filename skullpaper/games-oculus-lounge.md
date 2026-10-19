@@ -65,3 +65,13 @@ and no single score keeps it forever.
 
 Bear in mind that your latest run replaces your previous one, so playing again
 always risks the position you already hold. See [[games-dhc-fighters]].
+
+Drops are announced in the DHC Fighters Discord channel, the same as every
+other trait.
+
+## Results in Discord
+
+Every run posts to Discord on its own - how the run ended, and the standings
+afterwards. This used to wait for you to sit through the whole replay and
+press a button, so runs went unreported whenever somebody closed the tab. The
+button at the end of the replay now just refreshes the page.

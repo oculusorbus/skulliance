@@ -99,7 +99,32 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
     define('SKL_EMBED_FOOTER_MAX', 2048);
     define('SKL_EMBED_TOTAL_MAX', 6000);
 
-    function discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null, $footer=null, $content="", $actor_id=null, $actor_id2=0) {
+    /*
+     * THE REAL SENDER IS skl_discordmsg(). discordmsg() below is a thin alias
+     * onto it, and the split exists for exactly one reason.
+     *
+     * Drop Ship (dropship/) is a separate app on this box with its OWN
+     * discordmsg($title, $description, $imageurl, $project_id, $url) -- five
+     * parameters, with a project id where this one takes a link. It is the
+     * ONLY name that collides between the two apps (checked across
+     * webhooks.php, activity-lib.php, avatar-lib.php and
+     * dhcfighters-notify.php against every file in dropship/).
+     *
+     * So a Drop Ship request that needs to post HERE -- a DHC Fighter trait
+     * dropping out of a Drop Ship run -- cannot simply include this file:
+     * dashboard.php loads db.php, then dropship.php (where the score is
+     * written, so where the drop happens), then its own webhooks.php, and
+     * declaring discordmsg() here first makes that last include a fatal
+     * "cannot redeclare". Guarding BOTH declarations with function_exists
+     * would be worse: Drop Ship's own calls would silently land on this
+     * function and post a project id into the title-link slot.
+     *
+     * Defining SKL_WEBHOOKS_NO_ALIAS before including this file skips the
+     * alias, so a foreign app gets the sender under a name that cannot clash
+     * and keeps its own discordmsg(). Every one of the 150-odd callers in
+     * this app is unaffected: the alias is defined exactly as before.
+     */
+    function skl_discordmsg($title, $description, $imageurl, $url="", $channel="", $thumbnail="", $color="000000", $author=null, $footer=null, $content="", $actor_id=null, $actor_id2=0) {
         /*
          * $actor_id / $actor_id2 exist ONLY for the Activity feed -- neither
          * touches the Discord payload. Both are optional and additive, so
@@ -373,6 +398,12 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
                 }
             }
         }
+    }
+
+    /* The name 150-odd call sites use. Variadic so every default stays with
+       skl_discordmsg() and an omitted argument behaves identically. */
+    if (!defined('SKL_WEBHOOKS_NO_ALIAS') && !function_exists('discordmsg')) {
+        function discordmsg(...$args) { return skl_discordmsg(...$args); }
     }
 
     // Operational alert to the team, pinging $discordid_oculusorbus so it

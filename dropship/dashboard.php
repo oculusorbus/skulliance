@@ -409,13 +409,39 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 				if((isset($_POST['run']) || isset($_POST['instant_replay'])) && $_SESSION['userData']['dropship_project_id'] == 4) {
 					$image_wrap = "class='image-wrap'";
 				}?>
-				<div id="results" <?php echo $image_wrap;?>>
-					<div id="results-image"></div>
-					<?php if(isset($_SESSION['userData']['current_score']) && checkSquadCount($conn) < 1) { ?>
-						<script>document.getElementById("results-image").style.backgroundImage = "url('<?php echo $prefix; ?>images/gameover.gif')";</script>
-						<?php 
-						// Send message to Discord channel with round death information only when there is an active score AND a notification hasn't already been sent.
-						if(!isset($_SESSION['userData']['notification']) && isset($_SESSION['userData']['score'])) {
+				<?php
+				/*
+				 * ANNOUNCE EVERY RUN.
+				 *
+				 * This lived inside the game-over panel below, which only
+				 * renders once `current_score` is set -- and checkScore()
+				 * sets that at the BOTTOM of this page, so on the request
+				 * that actually logs the run it still holds the previous
+				 * value. The announcement therefore waited for the NEXT
+				 * request, and the only thing that reliably produced one was
+				 * the player stepping through every round of the replay and
+				 * pressing a button labelled "Send Results to Discord". Close
+				 * the tab early and the channel never heard about that run.
+				 *
+				 * logScore() now sets run_logged the moment a score is on the
+				 * board, so a run announces exactly once whatever the player
+				 * does next. The old game-over condition is kept as a second
+				 * trigger so a run logged before this change still posts when
+				 * its results are next opened.
+				 *
+				 * HERE AND NOT IN logScore() because discordmsg() is Drop
+				 * Ship's own and webhooks.php is included AFTER dropship.php,
+				 * so at the point the score is written it does not exist yet.
+				 * function_exists() guards that ordering rather than trusting
+				 * it.
+				 */
+				$ds_just_ran  = isset($_SESSION['userData']['run_logged']);
+				$ds_game_over = isset($_SESSION['userData']['current_score']) && checkSquadCount($conn) < 1;
+				unset($_SESSION['userData']['run_logged']);
+				if(($ds_just_ran || $ds_game_over)
+				   && !isset($_SESSION['userData']['notification'])
+				   && isset($_SESSION['userData']['score'])
+				   && function_exists('discordmsg')) {
 							$title = "Dead on Round ".$_SESSION['userData']['score'];
 							ob_start(); // Start output buffering
 							checkPlayerItems($conn);
@@ -447,9 +473,15 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 									discordmsg("📊 ".getProjectName($conn)." Leaderboard", $leaderboard_list, $leaderboard_imageurl, $_SESSION['userData']['dropship_project_id']);
 								}
 							}
-						}
-						?>
-						<!--<img class="rounded" src='gameover.gif'/>-->
+				}
+				?>
+				<div id="results" <?php echo $image_wrap;?>>
+					<div id="results-image"></div>
+					<?php if(isset($_SESSION['userData']['current_score']) && checkSquadCount($conn) < 1) { ?>
+						<script>document.getElementById("results-image").style.backgroundImage = "url('<?php echo $prefix; ?>images/gameover.gif')";</script>
+						<!-- The Discord announcement used to live here; it is above now,
+						     so that it fires on the run rather than on whatever request
+						     happens to render this panel. -->
 					<?php } else { ?>
 						<?php if(isset($_POST['run'])) { ?>
 							<script>document.getElementById("results-image").style.backgroundImage = "url('<?php echo $prefix; ?>images/reset/intro.jpg')";</script>

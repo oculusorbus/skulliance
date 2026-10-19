@@ -520,22 +520,15 @@ function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_
 	// no matter which caller made it. The ledger row is already written; the
 	// notifier swallows its own failures and never reaches back into this.
 	/*
-	 * DHCF_NO_NOTIFY LETS A CALLER OUTSIDE THIS APP AWARD WITHOUT ANNOUNCING,
-	 * and it is not a preference -- it is the difference between working and
-	 * a fatal.
-	 *
-	 * Drop Ship (dropship/) is a separate app with its OWN discordmsg(), and
-	 * NEITHER webhooks.php guards its declaration. Loading the notifier from
-	 * inside a Drop Ship request would include THIS app's webhooks.php and
-	 * define discordmsg() with this app's signature; dashboard.php then
-	 * includes Drop Ship's own on its very next line and the request dies on
-	 * "cannot redeclare discordmsg()". Its include order is
-	 * db.php -> dropship.php (where the score is written) -> webhooks.php, so
-	 * the award happens BEFORE the guard would be in place.
-	 *
-	 * Undefined for every caller in this app, so their behaviour is unchanged.
+	 * EVERY CALLER ANNOUNCES, INCLUDING DROP SHIP. This used to be skippable
+	 * via a DHCF_NO_NOTIFY constant, because loading the notifier from inside
+	 * a Drop Ship request declared this app's discordmsg() and made Drop
+	 * Ship's own include a fatal "cannot redeclare". That is fixed at the
+	 * source now: webhooks.php defines skl_discordmsg() and only aliases the
+	 * bare name when SKL_WEBHOOKS_NO_ALIAS is not set, so a foreign app gets
+	 * the sender without the collision and the flag is gone.
 	 */
-	if (!defined('DHCF_NO_NOTIFY') && is_file(__DIR__ . '/dhcfighters-notify.php')) {
+	if (is_file(__DIR__ . '/dhcfighters-notify.php')) {
 		// Buffered around the REQUIRE as well as the call: loading the notifier
 		// pulls in webhooks.php, which pulls in its credentials file, and any
 		// warning from that chain would land in the middle of an AJAX endpoint's

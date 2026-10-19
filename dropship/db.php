@@ -1277,6 +1277,28 @@ function logScore($conn, $replay) {
 			/* PART TWO, and only now: awarding before the insert succeeded
 			   would pay out for a score that was never saved. */
 			dropshipDropAward($ds_drop_ctx);
+
+			/*
+			 * THE RUN IS ON THE BOARD, SO DISCORD HEARS ABOUT IT.
+			 *
+			 * The announcement used to wait for the player to step through
+			 * every round of the replay and press a button labelled "Send
+			 * Results to Discord" -- it was that button's reload, not the run
+			 * itself, that reached the notify block in dashboard.php. Anyone
+			 * who closed the tab, walked away, or just did not finish
+			 * watching posted nothing, so the channel only ever saw the runs
+			 * of players patient enough to sit through the replay.
+			 *
+			 * The flag is read in dashboard.php rather than the message being
+			 * sent from here, for one reason: Drop Ship's discordmsg() is not
+			 * loaded yet. dashboard.php includes db.php, then dropship.php
+			 * (which is what called this), THEN webhooks.php.
+			 *
+			 * 'notification' is cleared alongside it so a fresh run always
+			 * announces, which is what the flag it guards is for.
+			 */
+			$_SESSION['userData']['run_logged'] = "true";
+			unset($_SESSION['userData']['notification']);
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}
