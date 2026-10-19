@@ -139,6 +139,63 @@ $dash = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.
 ok(preg_match("/dropship_project_id'\] == 1 &&.*?addDefaultSoldiers/s", $dash) === 1,
    'free soldiers are no longer gated to Drop Ship, so the Lounge would get grunts too');
 
+echo "\nthe Barracks filter finds the kit it displays\n";
+/*
+ * The filter runs in SQL against armor/gear, which for a grunt still read
+ * None -- so filtering by Heavy hid Hagar while his card showed Heavy. The
+ * fragment is built from the SAME kit table the cards are drawn from, so the
+ * filter cannot disagree with what it is filtering.
+ */
+foreach (dropshipGruntKits() as $asset => $kit) {
+	foreach (array('armor', 'gear') as $field) {
+		if ($kit[$field] === 'None') continue;
+		$sql = dropshipGruntFilterSql($field, $kit[$field]);
+		ok(strpos($sql, "'" . $asset . "'") !== false,
+		   "filtering by {$kit[$field]} does not find $asset, which displays it");
+	}
+}
+/* Exactly one grunt per tier, so a filter never pulls in a second. */
+foreach (array('Heavy', 'Medium', 'Light', 'Base') as $tier) {
+	ok(substr_count(dropshipGruntFilterSql('armor', $tier), 'GRUNT') === 1,
+	   "the $tier filter matches more than one grunt");
+}
+/* Sektr carries no gear, so no gear filter may produce him. */
+foreach (array('Medkit', 'Demolition', 'Melee') as $g) {
+	ok(strpos(dropshipGruntFilterSql('gear', $g), 'GRUNT004') === false,
+	   "the $g filter pulls in Sektr, who carries nothing");
+}
+/* Nothing qualifies -> no fragment, rather than a broken IN (). */
+ok(dropshipGruntFilterSql('armor', 'Nonesuch') === '', 'an unmatched filter emits SQL anyway');
+/*
+ * A FIELD OUTSIDE armor/gear MUST BE REFUSED BEFORE THE LOOKUP, not merely
+ * come back empty. Without the guard the kit lookup reads a key that is not
+ * there, and display_errors is on platform-wide, so the warning prints into
+ * the Barracks. Checking only the return value passes either way -- that
+ * mutation got through the first version of this check.
+ */
+$warnings = 0;
+set_error_handler(function () use (&$warnings) { $warnings++; return true; });
+$bad = dropshipGruntFilterSql('level', 'Heavy');
+restore_error_handler();
+ok($bad === '', 'a column outside armor/gear is accepted');
+ok($warnings === 0,
+   'the filter raised ' . $warnings . ' warning(s) on an unknown column, which print into the page');
+/* Rank-guarded, so an NFT with a colliding asset_name is not swept in. */
+foreach (array('armor', 'gear') as $field) {
+	foreach (array('Heavy', 'Medkit') as $v) {
+		$sql = dropshipGruntFilterSql($field, $v);
+		if ($sql !== '') ok(strpos($sql, "rank = 'Grunt'") !== false,
+		   "the $v filter fragment is not guarded on rank");
+	}
+}
+/* And the listing has to use it, inside the parenthesised clause -- an
+   unbracketed OR would widen the whole WHERE and return every soldier. */
+$dbq = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
+ok(strpos($dbq, "\"AND (armor = '\".\$filterby.\"'\".dropshipGruntFilterSql('armor', \$filterby).\") \"") !== false,
+   'the armor filter does not bracket the grunt OR, so it widens the whole query');
+ok(strpos($dbq, "\"AND (gear = '\".\$filterby.\"'\".dropshipGruntFilterSql('gear', \$filterby).\") \"") !== false,
+   'the gear filter does not bracket the grunt OR');
+
 echo "\nthe copy no longer tells players to send them one at a time\n";
 /*
  * The instructions said each Grunt "carries full Super Soldier Squad power"

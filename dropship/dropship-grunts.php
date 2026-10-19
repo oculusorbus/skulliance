@@ -57,6 +57,29 @@ function dropshipGruntKits() {
 }
 
 /**
+ * A SQL fragment matching the grunts whose loaner kit has this armor or gear.
+ *
+ * The Barracks filter runs in SQL against the stored columns, which for a
+ * grunt are still None/None -- so filtering by Heavy hid Hagar even though
+ * his card reads Heavy. Built from the same kit table the cards are drawn
+ * from, so the filter cannot disagree with what it is filtering.
+ *
+ * Returns '' when no grunt qualifies, which keeps the caller's clause
+ * unchanged rather than bolting on an empty IN ().
+ */
+function dropshipGruntFilterSql($field, $value) {
+	if ($field !== 'armor' && $field !== 'gear') return '';
+	$names = array();
+	foreach (dropshipGruntKits() as $asset => $kit) {
+		if ($kit[$field] === $value) $names[] = "'" . $asset . "'";
+	}
+	/* Kit values and asset names are literals in this file, never user input,
+	   so there is nothing here to escape -- but the keys are constrained to
+	   the known set anyway so a future edit cannot widen that. */
+	return $names ? " OR (rank = 'Grunt' AND asset_name IN (" . implode(',', $names) . "))" : '';
+}
+
+/**
  * One soldier row with the loaner kit applied, if it is a grunt.
  *
  * Takes and returns a row rather than writing anywhere, so the SAME call

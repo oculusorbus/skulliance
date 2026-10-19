@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/dropship-grunts.php';   // the four free soldiers' loaner kit
+require_once __DIR__ . '/dropship-odds.php';     // loadItems() quotes the odds per item
 include 'credentials/db_credentials.php';
 
 ini_set('display_errors', 1);
@@ -1014,10 +1015,15 @@ function deploySoldier($conn, $id, $active){
 function getSoldiers($conn, $active, $filterby="", $all=false){
 	global $prefix;
 	if($filterby != "None"){
+		/* A GRUNT'S KIT IS NOT IN ITS ROW. The columns still read None/None
+		   and only dropshipGruntLoadout() fills them in, so filtering on the
+		   column alone hid Hagar from a Heavy filter while his card showed
+		   Heavy. The grunts matching the filter are added by asset_name,
+		   from the same kit table the cards are drawn from. */
 		if($filterby == "Heavy" || $filterby == "Medium" || $filterby == "Light" || $filterby == "Base"){
-			$filterby = "AND armor = '".$filterby."' ";
+			$filterby = "AND (armor = '".$filterby."'".dropshipGruntFilterSql('armor', $filterby).") ";
 		}else if($filterby == "Medkit" || $filterby == "Demolition" || $filterby == "Melee"){
-			$filterby = "AND gear = '".$filterby."' ";
+			$filterby = "AND (gear = '".$filterby."'".dropshipGruntFilterSql('gear', $filterby).") ";
 		}
 	}else{
 		$filterby = "";
