@@ -146,15 +146,32 @@ $foesList  = $user_id ? dhca_opponents($conn, $user_id) : array();
  * ordering it jumps is by rarity_score, which the comment on dhca_defenders()
  * measures at +0.04 correlation with combat strength.
  */
-$nemesis = $user_id ? dhca_nemesis($conn, $user_id) : null;
-if ($nemesis) {
-	$nid = (int)$nemesis['user_id'];
-	foreach ($foesList as $i => $o) {
-		if ((int)$o['user_id'] === $nid) { unset($foesList[$i]); break; }
-	}
-	array_unshift($foesList, $nemesis);
-	$foesList = array_values($foesList);
+/*
+ * THREE FLAGS, NOT ONE, and the same hoisting argument covers all of them:
+ * dhca_opponents() is the two dozen highest-rarity players for everybody,
+ * so the people you actually have a history with are very often not on
+ * the screen at all.
+ *
+ * ONE PERSON CAN WEAR TWO, and usually does -- whoever you fight most is
+ * whoever you have the most record against. They are merged onto one card
+ * rather than listed twice, which is why $standTags is keyed by user id.
+ */
+$standouts = $user_id ? dhca_standouts($conn, $user_id) : array();
+$standTags = array();
+foreach (array('nemesis', 'tormentor', 'duck') as $sk) {
+	if (empty($standouts[$sk])) continue;
+	$sid = (int)$standouts[$sk]['user_id'];
+	if (!isset($standTags[$sid])) $standTags[$sid] = array('row' => $standouts[$sk], 'tags' => array());
+	$standTags[$sid]['tags'][] = $sk;
 }
+/* Hoisted in the order they were found, so the nemesis stays first. */
+foreach (array_reverse($standTags, true) as $sid => $st) {
+	foreach ($foesList as $i => $o) {
+		if ((int)$o['user_id'] === $sid) { unset($foesList[$i]); break; }
+	}
+	array_unshift($foesList, $st['row']);
+}
+$foesList = array_values($foesList);
 /* Which of them have already paid out today -- one query for the whole
    list, the same fact dhca_already_rewarded() checks per battle. */
 $paidToday = $user_id ? dhca_paid_today($conn, $user_id) : array();
@@ -1129,9 +1146,31 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    reported. White needs a DARKER fill to work at all: white on #e0466b is
    3.99:1 and actually worse. White on #a31f42 is 7.42:1, and the extra half
    pixel of size with less tracking does the rest. */
-.arena-wrap .a-foe .nemtag{position:absolute;top:-7px;right:9px;font-size:9px;letter-spacing:.04em;
+/*
+ * THE CHIPS. One per flag, each keeping its OWN colour -- a card can wear
+ * two (whoever you fight most is usually whoever you have the most record
+ * against) and blending purple with red gives maroon, which reads as
+ * neither of them. Two chips, two colours, one meaning each.
+ *
+ * A row rather than a single absolutely-positioned tag, so a second chip
+ * has somewhere to go instead of landing on top of the first.
+ */
+.arena-wrap .a-foe .nemtags{position:absolute;top:-7px;right:9px;display:flex;gap:4px;
+  flex-wrap:wrap;justify-content:flex-end;max-width:calc(100% - 18px)}
+.arena-wrap .a-foe .nemtag{position:static;font-size:9px;letter-spacing:.04em;
   text-transform:uppercase;font-weight:700;color:#fff;background:#a31f42;
-  padding:1.5px 6px;border-radius:2px}
+  padding:1.5px 6px;border-radius:2px;white-space:nowrap}
+/* Purple: you two fight constantly. A volume fact, not a warning. */
+.arena-wrap .a-foe .nemtag.t-nemesis{background:#7a3ed8}
+/* Red: they beat you. This one is meant to give somebody pause. */
+.arena-wrap .a-foe .nemtag.t-tormentor{background:#c42348}
+/* Yellow: you beat them. Dark text, because white on yellow is unreadable
+   -- #e0b500 against #07111d is the only pairing here that needs it. */
+.arena-wrap .a-foe .nemtag.t-duck{background:#e0b500;color:#2a1d00}
+/* The card follows whichever chip should change what you do next. */
+.arena-wrap .a-foe.lead-nemesis{border-color:rgba(122,62,216,.55);background:rgba(122,62,216,.07)}
+.arena-wrap .a-foe.lead-tormentor{border-color:rgba(196,35,72,.6);background:rgba(196,35,72,.07)}
+.arena-wrap .a-foe.lead-duck{border-color:rgba(224,181,0,.5);background:rgba(224,181,0,.06)}
 /* EVERY NUMBER CARRIES ITS SUBJECT. This was "21-10", then "Won 21 · Lost
    10", and neither said WHOSE -- reported twice. The labels are quiet and
    the figures are loud, so it scans as three facts rather than a sentence.
@@ -1551,12 +1590,39 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                  and a player may well want the rematch -- but say so before
                  the battle rather than after it. */
               $paid = isset($paidToday[(int)$o['user_id']]); ?>
-        <?php /* The nemesis row carries its own history; no other row has
+        <?php /* A flagged row carries its own history; no other row has
                  these keys at all. */
-              $nem = isset($o['battles']); ?>
-        <div class="a-foe<?php echo $paid ? ' paid' : ''; ?><?php echo $nem ? ' nem' : ''; ?>" data-uid="<?php echo (int)$o['user_id']; ?>"
+              $nem = isset($o['battles']);
+              $tags = isset($standTags[(int)$o['user_id']])
+                      ? $standTags[(int)$o['user_id']]['tags'] : array();
+              /* THE CARD TAKES THE RECORD LABEL'S COLOUR, not the
+                 nemesis's, when it wears both. Tormentor and Sitting duck
+                 are the ones that should change what you do next; the
+                 nemesis is a volume fact. Blending the two colours was the
+                 other option and a blend means neither of the things it is
+                 made of -- nobody can read maroon as "purple and red". */
+              $lead = in_array('tormentor', $tags, true) ? 'tormentor'
+                    : (in_array('duck', $tags, true) ? 'duck'
+                    : (in_array('nemesis', $tags, true) ? 'nemesis' : '')); ?>
+        <div class="a-foe<?php echo $paid ? ' paid' : ''; ?><?php echo $nem ? ' nem' : ''; ?><?php
+             echo $lead !== '' ? ' lead-' . $lead : ''; ?>" data-uid="<?php echo (int)$o['user_id']; ?>"
              data-best="<?php echo (int)$o['best']; ?>">
-          <?php if ($nem): ?><span class="nemtag">Arch nemesis</span><?php endif; ?>
+          <?php if ($tags): ?>
+            <span class="nemtags">
+<?php         $tagText = array('nemesis' => 'Arch nemesis', 'tormentor' => 'Tormentor',
+                               'duck'    => 'Sitting duck');
+              /* THE RECORD ONCE, on the last chip. The word alone does not
+                 make anybody pause -- 11-12 does -- but both chips on a
+                 card describe the SAME opponent, so printing it on each
+                 was the same two numbers twice. */
+              $lastTag = $tags[count($tags) - 1];
+              foreach ($tags as $t): ?>
+              <span class="nemtag t-<?php echo $t; ?>"><?php echo $tagText[$t];
+                echo $t === $lastTag
+                     ? ' ' . (int)$o['my_wins'] . '-' . (int)$o['their_wins'] : ''; ?></span>
+<?php         endforeach; ?>
+            </span>
+          <?php endif; ?>
           <?php /* NO INLINE onerror. It used to hide the image, which takes the
                    refresh's turn away: header.php's listener asks Discord for the
                    current hash and swaps it in, and an element that has already

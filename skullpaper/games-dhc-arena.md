@@ -377,6 +377,28 @@ the arena's name** there and it tells you what it is doing to the fight.
 
 ---
 
+## Three rivals the picker points out
+
+Once you have fought someone **three times or more**, the Arena flags up to
+three of your opponents and pins them to the top of the rival list, each with
+your record against them.
+
+| Chip | Who it is | Colour |
+|---|---|---|
+| **Arch nemesis** | Who you are most locked with | Purple |
+| **Tormentor** | Who beats you. Think twice | Red |
+| **Sitting duck** | Who you beat | Yellow |
+
+**Tormentor and Sitting duck need a one-sided record.** Being 6-5 against
+somebody is neither; you have to actually be behind to have a tormentor and
+actually be ahead to have a sitting duck. So the same person can never wear
+both.
+
+**The nemesis often wears a second chip**, because whoever you fight most is
+usually whoever you have the most record against. The card shows both, each
+keeping its own colour, and takes its border from the record one - that is the
+chip that should change what you do next.
+
 ## Your arch nemesis
 
 Once you have fought someone **three times or more**, the Arena works out who you are most locked with and pins them to the top of the rival list, marked **Arch nemesis**, with your record against them.

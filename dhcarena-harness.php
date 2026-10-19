@@ -458,9 +458,9 @@ $arok(strpos($nem_sql, "< DHCA_CREW_SIZE) return null") !== false,
 /* PINNED, NOT JUST STYLED. dhca_opponents() is ORDER BY best DESC LIMIT 24 --
    the same two dozen for everyone -- so the nemesis is usually absent, and a
    highlight on a card that never renders is the feature failing silently. */
-$arok(strpos($ar_src, 'array_unshift($foesList, $nemesis);') !== false,
+$arok(strpos($ar_src, 'array_unshift($foesList, $st[\'row\']);') !== false,
    'the nemesis is not inserted into the rival list');
-$arok(preg_match('/if \(\(int\)\$o\[.user_id.\] === \$nid\) \{ unset\(\$foesList\[\$i\]\); break; \}/', $ar_src) === 1,
+$arok(preg_match('/if \(\(int\)\$o\[.user_id.\] === \$sid\) \{ unset\(\$foesList\[\$i\]\); break; \}/', $ar_src) === 1,
    'a nemesis already in the top 24 is listed twice');
 $arok(strpos($ar_src, "\$nem = isset(\$o['battles']);") !== false,
    'the card cannot tell the nemesis row from an ordinary rival');
@@ -541,18 +541,31 @@ $arok($nemtag !== '' && strpos($nemtag, 'color:#fff') !== false
    'the Arch nemesis badge is not white on the darker fill, so it is under 5:1');
 $arok($nemtag !== '' && strpos($nemtag, 'font-size:8.5px') === false,
    'the badge is back to 8.5px, which no contrast ratio rescues');
-/* Right-aligned: on the left it sat directly over the avatar. */
-$arok($nemtag !== '' && strpos($nemtag, 'right:9px') !== false
-   && strpos($nemtag, 'left:9px') === false,
-   'the Arch nemesis badge is not right-aligned');
+/*
+ * Right-aligned: on the left it sat directly over the avatar.
+ *
+ * POSITIONED ON THE ROW, NOT THE CHIP, since a card can wear two chips --
+ * whoever you fight most is usually whoever you have the most record
+ * against. .nemtags is the positioned strip and .nemtag is static inside
+ * it; two absolutely-positioned chips would land on top of each other.
+ */
+$nts_at  = strpos($ar_css, '.arena-wrap .a-foe .nemtags{');
+$nemtags = $nts_at === false ? '' : substr($ar_css, $nts_at, strpos($ar_css, '}', $nts_at) - $nts_at);
+$arok($nemtags !== '' && strpos($nemtags, 'right:9px') !== false
+   && strpos($nemtags, 'left:9px') === false,
+   'the rival chips are not right-aligned');
+$arok($nemtags !== '' && strpos($nemtags, 'display:flex') !== false,
+   'the chips are not laid out in a row, so a second one has nowhere to go');
+$arok($nemtag !== '' && strpos($nemtag, 'position:static') !== false,
+   'a chip is absolutely positioned, so two of them stack on the same spot');
 /* The tab hangs at top:-7px, OUTSIDE its row, and .a-foes is a scrollport
    with overflow:auto -- which clips to its padding box. With no padding-top
    the tab on the first row was sliced in half, and the nemesis is always the
    first row. */
 $arok($foes_d !== '' && strpos($foes_d, 'padding-top:9px') !== false,
    'the rival scroller has no padding-top, so the Arch nemesis tab is clipped by it');
-$arok($nemtag !== '' && strpos($nemtag, 'top:-7px') !== false,
-   'the tab no longer hangs above the row, so the scroller padding is now dead space');
+$arok($nemtags !== '' && strpos($nemtags, 'top:-7px') !== false,
+   'the tabs no longer hang above the row, so the scroller padding is now dead space');
 /* Each stat is one nowrap unit, so the line breaks BETWEEN stats and never
    strands a number -- "They started" / "19" on two lines was reported. */
 $arok(strpos($ar_css, '.arena-wrap .a-foe .nemrec em{font-style:normal;white-space:nowrap}') !== false,

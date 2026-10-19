@@ -302,6 +302,134 @@ function dhca_hms($secs) {
 /* ---------- opponents ------------------------------------------------------- */
 
 /**
+ * The three opponents worth flagging in the picker, from ONE query.
+ *
+ *   nemesis    who you fight most -- volume, and the closest of the
+ *              high-volume pairings, which is dhca_nemesis()'s ordering.
+ *   tormentor  who beats you. A WARNING: the point of it is to make
+ *              somebody pause before attacking.
+ *   duck       who you beat. The opposite.
+ *
+ * A RECORD HAS TO BE ONE-SIDED TO EARN EITHER WORD. tormentor requires
+ * losses > wins and duck requires wins > losses, so a 6-5 pairing is
+ * neither -- without that the "worst" of a set of winning records gets
+ * called a tormentor, which is the same trap the rivalry panel hit when
+ * 'best against' was taken as the max of (won - lost) and a 5-6 record
+ * came back as a best. It also makes the two mutually exclusive by
+ * construction: nobody can be above and below you at once.
+ *
+ * The nemesis CAN also be one of the other two, and usually is -- the
+ * person you fight most is the person you have the most record against.
+ * The caller shows both chips rather than picking one.
+ *
+ * Returns array('nemesis'=>row|null, 'tormentor'=>row|null, 'duck'=>row|null)
+ * where a row is the shape dhca_nemesis() returns, so the picker renders
+ * them with the template it already has.
+ */
+function dhca_standouts($conn, $user_id) {
+	$out = array('nemesis' => null, 'tormentor' => null, 'duck' => null);
+	$uid = (int)$user_id;
+	if ($uid <= 0) return $out;
+	$min = (int)DHCA_NEMESIS_MIN;
+
+	/* The same aggregate dhca_nemesis() runs, without the LIMIT, so three
+	   flags cost one query rather than three. */
+	$sql = "SELECT t.other AS user_id, u.username, u.discord_id, u.avatar,
+	               SUM(t.n)          AS battles,
+	               SUM(t.mine)       AS my_wins,
+	               SUM(t.theirs)     AS their_wins,
+	               SUM(t.they_came)  AS they_attacked,
+	               MAX(t.last_at)    AS last_at
+	        FROM (
+	              SELECT defender_id AS other, 1 AS n,
+	                     (outcome = 1) AS mine, (outcome = 2) AS theirs,
+	                     0 AS they_came, started_at AS last_at
+	              FROM dhc_arena_battles
+	              WHERE attacker_id = $uid AND defender_id <> $uid AND outcome <> 0
+	              UNION ALL
+	              SELECT attacker_id AS other, 1 AS n,
+	                     (outcome = 2) AS mine, (outcome = 1) AS theirs,
+	                     1 AS they_came, started_at AS last_at
+	              FROM dhc_arena_battles
+	              WHERE defender_id = $uid AND attacker_id <> $uid AND outcome <> 0
+	             ) t
+	        INNER JOIN users u ON u.id = t.other
+	        GROUP BY t.other, u.username, u.discord_id, u.avatar
+	        HAVING battles >= $min";
+	$res = $conn->query($sql);
+	if (!$res) return $out;                       // table not there yet
+
+	$rows = array();
+	while ($r = $res->fetch_assoc()) {
+		$r['battles']    = (int)$r['battles'];
+		$r['my_wins']    = (int)$r['my_wins'];
+		$r['their_wins'] = (int)$r['their_wins'];
+		$r['net']        = $r['my_wins'] - $r['their_wins'];
+		$rows[] = $r;
+	}
+	if (!$rows) return $out;
+
+	foreach ($rows as $r) {
+		/* Nemesis: the ORDER BY dhca_nemesis() uses, in php. */
+		$score = $r['battles'] - abs($r['net']);
+		$cur   = $out['nemesis'];
+		if (!$cur || $score > $cur['_score']
+		    || ($score === $cur['_score'] && $r['battles'] > $cur['battles'])) {
+			$out['nemesis'] = $r + array('_score' => $score);
+			$out['nemesis']['_score'] = $score;
+		}
+		/* Tormentor: the deepest losing record. Ties broken by volume, so
+		   the one you have lost to most often wins the word. */
+		if ($r['net'] < 0 && (!$out['tormentor']
+		    || $r['net'] < $out['tormentor']['net']
+		    || ($r['net'] === $out['tormentor']['net']
+		        && $r['battles'] > $out['tormentor']['battles']))) {
+			$out['tormentor'] = $r;
+		}
+		/* Sitting duck: the deepest winning record. */
+		if ($r['net'] > 0 && (!$out['duck']
+		    || $r['net'] > $out['duck']['net']
+		    || ($r['net'] === $out['duck']['net']
+		        && $r['battles'] > $out['duck']['battles']))) {
+			$out['duck'] = $r;
+		}
+	}
+
+	/* Fighters and best rarity, for the card template -- and the same bar
+	   dhca_opponents() applies: fewer Fighters than a Crew needs and there
+	   is nothing to pin, because they cannot be fielded. One query for all
+	   three, which are usually two distinct people. */
+	$ids = array();
+	foreach ($out as $r) if ($r) $ids[(int)$r['user_id']] = true;
+	if (!$ids) return $out;
+	$crew = array();
+	$c = $conn->query("SELECT user_id, COUNT(*) AS fighters, MAX(rarity_score) AS best
+	                     FROM dhc_fighters WHERE user_id IN (" . implode(',', array_keys($ids)) . ")
+	                    GROUP BY user_id");
+	if ($c) while ($cr = $c->fetch_assoc()) $crew[(int)$cr['user_id']] = $cr;
+
+	foreach ($out as $k => $r) {
+		if (!$r) continue;
+		$id = (int)$r['user_id'];
+		$f  = isset($crew[$id]) ? (int)$crew[$id]['fighters'] : 0;
+		if ($f < DHCA_CREW_SIZE) { $out[$k] = null; continue; }
+		$out[$k] = array(
+			'user_id'       => $id,
+			'username'      => $r['username'],
+			'discord_id'    => $r['discord_id'],
+			'avatar'        => $r['avatar'],
+			'fighters'      => $f,
+			'best'          => (int)$crew[$id]['best'],
+			'battles'       => $r['battles'],
+			'my_wins'       => $r['my_wins'],
+			'their_wins'    => $r['their_wins'],
+			'they_attacked' => (int)$r['they_attacked'],
+		);
+	}
+	return $out;
+}
+
+/**
  * Who can be challenged: anyone else with at least a full Crew saved. Their
  * Fighters are NOT checked for availability -- a defender is never benched by
  * someone else's attack, and defending costs them nothing.
