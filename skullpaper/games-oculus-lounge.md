@@ -49,3 +49,19 @@ Track your ranks for the current game, all time high scores, and by levels and X
 ## VIPs
 
 View a showcase of VIPs who have connected their wallets to Oculus Lounge and participated in games.
+
+## Trait drops
+
+Taking the lead pays a **DHC Fighter trait**, and nothing else does.
+
+If a run puts you top of the game currently running - or level with whoever is
+top - and it also beats your own previous score in that game, it drops a
+trait, rolled on the best odds table on the platform. Finishing second pays
+nothing, and neither does a run that fails to improve on your own.
+
+The first player into a fresh game clears both conditions by default. A new
+game starts on a fixed cadence, so the lead comes back up for grabs every time
+and no single score keeps it forever.
+
+Bear in mind that your latest run replaces your previous one, so playing again
+always risks the position you already hold. See [[games-dhc-fighters]].

@@ -47,7 +47,26 @@ background at minimum, so no single game can dress one on its own.
 | Maxingo Missions | **any trait** | completing one — deeper levels roll better |
 | Realm Raids | **any trait** | winning a raid, or repelling one |
 | DHC Arena | **any trait** | winning a battle with a Crew of Fighters |
+| Drop Ship | **any trait** | taking or tying the lead of the current game |
+| Oculus Lounge | **any trait** | taking or tying the lead of the current game |
 | Daily Reward Streak | **any trait** | claiming day 7 of 7 |
+
+**Drop Ship and Oculus Lounge work differently to everything else here.**
+Nowhere else does placing badly cost you the drop: in the other games a
+genuine attempt qualifies and your result only decides the odds. On these two
+nothing drops at all unless your run **takes or ties the lead** of the game
+currently running, and then it rolls the best table in the game.
+
+Two things have to be true. Your score has to reach the top of the current
+board, and it has to beat **your own** previous score in that game. The first
+player into a fresh game clears both by default, which is the point: on a
+quiet board, turning up first is worth something. A new game starts on a fixed
+cadence, so the lead is always back up for grabs and no one score locks it
+away.
+
+A run that replaces your score with a worse one pays nothing. That is not a
+penalty so much as the shape of the game: Drop Ship keeps your latest run, not
+your best, so playing again always puts your position at risk.
 
 You do not have to play a game at all. Completing a full seven-day daily
 reward streak pays a wildcard on the day you claim it, and so does completing

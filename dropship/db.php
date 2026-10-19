@@ -1255,6 +1255,14 @@ function logScore($conn, $replay) {
 	// Check for the off chance that someone ran an inactive game right after a game was deactivated
 	checkGame($conn);
 	if(isset($_SESSION['userData']['game_id'])) {
+		/* TRAIT DROP, PART ONE: read the scores the rule needs while they
+		   still exist. deleteResult() below destroys this player's previous
+		   score for the game, which is one of the two numbers that decides
+		   whether this run earns a trait. Fail-quiet by contract -- it cannot
+		   stop a score being saved. See dropship-traitdrop.php. */
+		require_once __DIR__ . '/dropship-traitdrop.php';
+		$ds_drop_ctx = dropshipDropContext($conn);
+
 		// Delete previous result for current game, if it exists
 		deleteResult($conn);
 		$sql = "INSERT INTO results (game_id, user_id, score, replay, project_id)
@@ -1266,6 +1274,9 @@ function logScore($conn, $replay) {
 			removeInventory($conn);
 			checkActiveSoldiers($conn);
 			killSquad($conn);
+			/* PART TWO, and only now: awarding before the insert succeeded
+			   would pay out for a score that was never saved. */
+			dropshipDropAward($ds_drop_ctx);
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;
 		}

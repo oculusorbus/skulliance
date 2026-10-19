@@ -1014,6 +1014,49 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'gated' => true, 'base' => 'run',
 	                          'bands' => array(1 => 'placement_10', 3 => 'placement_3', 6 => 'placement_1')),
 
+	/*
+	 * THE TWO SPECIALTY GAMES, AND THE ONE RULE HERE THAT IS NOT LIKE THE
+	 * OTHERS.
+	 *
+	 * Everywhere else on this list a genuine attempt qualifies and PLACEMENT
+	 * ONLY DRIVES QUALITY -- see the note above DHCF_TIERS, which is explicit
+	 * that making placement drive the RATE lets strong players compound away
+	 * from everyone else. These two invert that on purpose: nothing drops
+	 * unless the run TAKES OR TIES THE LEAD of the current weekly game, and
+	 * then it pays the first-place table.
+	 *
+	 * The owner's call, and the reasoning is specific to these two: they are
+	 * niche boards with a handful of regulars, where the problem is not
+	 * runaway winners but silence. Rewarding the EVENT (the lead changing)
+	 * rather than the STATE (being good) is what makes a quiet board worth
+	 * opening, and it pays fastest to whoever turns up first in a new game.
+	 *
+	 * WHY IT CANNOT RUN AWAY: the lead is scoped to one game_id, and
+	 * dropship/automate.php closes each game and opens the next on a cron, so
+	 * the board empties on a fixed cadence and no single score can freeze the
+	 * reward. A second gate -- the run must also beat that player's own
+	 * previous score in the same game -- stops the leader farming by beating
+	 * themselves. See dropship/dropship-traitdrop.php, which is where both
+	 * gates actually live, because only Drop Ship can see those scores.
+	 *
+	 * FLOOR 0, deliberately. Every other floor is a score threshold; here the
+	 * lead IS the threshold, and a number on top of it would do nothing but
+	 * shut out the first player in a fresh game.
+	 *
+	 * 'wildcard' because all eight trait slots are already spoken for by the
+	 * eight games above -- and it suits these two anyway: a wildcard can be
+	 * any category at all, which is the right shape for a prize you only get
+	 * by being top of the board.
+	 */
+	'dropship'       => array('label' => 'Drop Ship', 'url' => 'dropship/dashboard.php?project_id=1',
+	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
+	                          'base' => 'placement_1',
+	                          'limit_note' => 'only when you take the lead'),
+	'oculuslounge'   => array('label' => 'Oculus Lounge', 'url' => 'dropship/dashboard.php?project_id=4',
+	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
+	                          'base' => 'placement_1',
+	                          'limit_note' => 'only when you take the lead'),
+
 	// NOT A GAME, and 'unlisted' is what that now costs it. It stays in
 	// DHCF_GAMES because everything functional reads this array -- dhcf_award(),
 	// the daily cap, the claim endpoint, the notifier -- and taking it out would
@@ -1125,6 +1168,8 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'maxingo'       => 1,      // any completed Maxingo mission; level sets the odds
 	'raids'         => 0,      // the decided raid itself qualifies, won or repelled
 	'arena'         => 0,      // the win itself qualifies; the bands grade the gap
+	'dropship'      => 0,      // taking the lead is the gate; a score floor would only shut out the first player in a new game
+	'oculuslounge'  => 0,      // same
 );
 
 function dhcf_floor($game) {
