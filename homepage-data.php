@@ -220,6 +220,52 @@ function hp_chains($fallback = array()) {
 	return is_array($list) ? $list : $fallback;
 }
 
+/**
+ * The project currency icons, for a marquee of who stakes here.
+ *
+ * THE ICONS, NOT THE FLYERS. A wall of partner flyers is the obvious thing
+ * to put here and it costs 42MB: those files are 1-3MB each at 1500px, and
+ * a marquee renders them into 148px tiles. homepage.php pulled its own
+ * flyer wall above the fold for exactly this reason and left a note saying
+ * to bring it back only with resized sources. The currency icons are 6-8KB
+ * each, white on transparent, and 150px is the size they are specified at
+ * -- they are the asset this is for.
+ *
+ * DIAMOND and CARBON are the platform's own currencies rather than a
+ * partner's, so they are left out of a strip that is about who joined;
+ * skullswap.php excludes them from its tile set on the same grounds.
+ *
+ * Returns array of array('currency' => ..., 'name' => ...). The caller
+ * builds the url, because the path is the caller's business and this is
+ * the file that knows the query.
+ */
+function hp_project_icons($fallback = array()) {
+	$raw = hp_cached('projecticons', function ($c) {
+		$r = @$c->query(
+			"SELECT LOWER(currency) AS currency, MIN(name) AS name
+			   FROM projects
+			  WHERE currency NOT IN ('DIAMOND','CARBON') AND currency != ''
+			  GROUP BY LOWER(currency)
+			  ORDER BY currency ASC");
+		if (!$r) return null;
+		$out = array();
+		while ($row = $r->fetch_assoc()) {
+			/* The currency becomes a FILENAME, so anything that is not a
+			   plain token is dropped rather than escaped -- an icon path is
+			   not the place to find out a currency had a slash in it. */
+			$cur = preg_replace('/[^a-z0-9_-]/', '', strtolower((string)$row['currency']));
+			if ($cur === '') continue;
+			$out[] = array('currency' => $cur, 'name' => (string)$row['name']);
+		}
+		/* null, not '[]', so a failed query keeps the last good list rather
+		   than caching an empty strip over it for five minutes. */
+		return $out ? json_encode($out) : null;
+	}, '');
+
+	$list = (is_string($raw) && $raw !== '') ? json_decode($raw, true) : null;
+	return is_array($list) ? $list : $fallback;
+}
+
 /** Wallets linked, across every chain. */
 function hp_stat_wallets($fallback = 0) {
 	return (int)hp_cached('wallets', function ($c) {
