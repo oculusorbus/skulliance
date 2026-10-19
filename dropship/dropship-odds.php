@@ -137,10 +137,18 @@ function dropshipTypicalRound($pct, $extra_lives = 0) {
 function dropshipOddsFlags($conn) {
 	$f = array('mech_suit' => false, 'exo_suit' => false, 'quantum_stealth' => false,
 	           'ballistic_shield' => false, 'heavy' => false, 'medium' => false,
-	           'light' => false, 'base' => false, 'extra_lives' => 0);
+	           'light' => false, 'base' => false, 'extra_lives' => 0,
+	           /* The roster itself, not just the flags. The flags answer "is
+	              there any Heavy armour", which is all the ROLL needs; the
+	              build guide has to know that two soldiers are wearing it. */
+	           'roster' => array());
 
 	/* Purchased items live on the session, exactly as the run reads them. */
 	foreach (array('mech_suit', 'exo_suit', 'quantum_stealth', 'ballistic_shield') as $k) {
+		if (isset($_SESSION['userData'][$k]) && $_SESSION['userData'][$k] === 'true') $f[$k] = true;
+	}
+	/* Weapons too, so the shop can say which one would actually fire. */
+	foreach (array_keys(dropshipWeaponDelays()) as $k) {
 		if (isset($_SESSION['userData'][$k]) && $_SESSION['userData'][$k] === 'true') $f[$k] = true;
 	}
 	if (isset($_SESSION['userData']['medkit']) && $_SESSION['userData']['medkit'] === 'true') {
@@ -173,8 +181,114 @@ function dropshipOddsFlags($conn) {
 			case 'Base':   $f['base']   = true; break;
 		}
 		if ($row['gear'] === 'Medkit') $f['extra_lives']++;
+		$f['roster'][] = array('armor' => (string)$row['armor'],
+		                       'gear'  => (string)$row['gear']);
 	}
 	return $f;
+}
+
+/** The four armour tiers, best first. Order is the threshold chain's own. */
+function dropshipArmorTiers() { return array('Heavy', 'Medium', 'Light', 'Base'); }
+/** The three gear types the run actually reads. */
+function dropshipGearTypes() { return array('Melee', 'Demolition', 'Medkit'); }
+
+/**
+ * HOW TO BUILD A SUPER SOLDIER SQUAD, one step at a time.
+ *
+ * Four slots, four armour tiers, three gear types. The roll only reads
+ * ARMOUR -- the best tier worn sets the floor and every lower tier adds its
+ * credit on top, which is why a mixed squad beats four of the same thing and
+ * why the complete set is 74+3+2+1 = 80. Gear does not touch the roll at
+ * all; it buys an extra life and the melee and demolition chains.
+ *
+ * WHY THIS PANE AND NOT THE SHOP: a player staring at a half-built squad
+ * needs to know what to put in the next slot, not which suit to buy. Items
+ * are a different decision and they now carry their own numbers on the shop
+ * listing, where somebody is already deciding to spend.
+ *
+ * Returns array(headline, detail) of already-escaped strings, or null when
+ * there is nothing useful to say.
+ */
+function dropshipSquadAdvice($f) {
+	$roster = isset($f['roster']) ? $f['roster'] : array();
+	$slots  = count($roster);
+	if ($slots === 0) return null;                 /* nothing deployed; nothing to advise */
+
+	$tiers = dropshipArmorTiers();
+	$gears = dropshipGearTypes();
+
+	/* How many soldiers wear each tier, so a duplicate can be named. */
+	$worn = array_fill_keys($tiers, 0);
+	$held = array_fill_keys($gears, 0);
+	foreach ($roster as $r) {
+		if (isset($worn[$r['armor']])) $worn[$r['armor']]++;
+		if (isset($held[$r['gear']]))  $held[$r['gear']]++;
+	}
+	$missing_tiers = array();
+	foreach ($tiers as $t) if ($worn[$t] === 0) $missing_tiers[] = $t;
+	$missing_gear = array();
+	foreach ($gears as $g) if ($held[$g] === 0) $missing_gear[] = $g;
+
+	$now = dropshipSurvivalPct(dropshipThreshold($f));
+
+	/* COMPLETE. Say so plainly and stop advising. */
+	if (empty($missing_tiers)) {
+		if (empty($missing_gear)) {
+			return array('Super Soldier Squad', 'Every armor tier and all three gear types. '
+			           . 'This is the best squad in the game at ' . $now . '% a round.');
+		}
+		return array('Every armor tier covered &middot; ' . $now . '% a round',
+		             'Still missing ' . dropshipJoinWords($missing_gear)
+		           . '. Gear does not change the odds, but it buys '
+		           . (in_array('Medkit', $missing_gear, true) ? 'an extra life and ' : '')
+		           . 'the melee and demolition chains.');
+	}
+
+	/* ROOM LEFT. Recommend the single best tier to add next, by what it is
+	   actually worth rather than by where it sits in the list. */
+	if ($slots < 4) {
+		$best = null; $best_pct = $now;
+		foreach ($missing_tiers as $t) {
+			$try = $f; $try[strtolower($t)] = true;
+			$p = dropshipSurvivalPct(dropshipThreshold($try));
+			if ($best === null || $p > $best_pct) { $best = $t; $best_pct = $p; }
+		}
+		if ($best === null) $best = $missing_tiers[0];
+		$gear_hint = $missing_gear ? ' carrying ' . $missing_gear[0] : '';
+		$gain = $best_pct > $now ? ' &rarr; <b>' . $best_pct . '%</b>' : '';
+		return array('Next: a soldier in <b>' . $best . '</b> armor' . $gear_hint . $gain,
+		             $slots . ' of 4 slots filled. Still missing '
+		           . dropshipJoinWords($missing_tiers) . ' armor.');
+	}
+
+	/* FULL, AND STILL NOT A SUPER SOLDIER SQUAD. Name the duplicate, because
+	   "add Base armour" is useless advice when there is nowhere to put it. */
+	$dupes = array();
+	foreach ($tiers as $t) if ($worn[$t] > 1) $dupes[] = $worn[$t] . ' wear ' . $t;
+	$why = $dupes
+		? dropshipJoinWords($dupes) . ' armor, so no one is in '
+		  . dropshipJoinWords($missing_tiers)
+		: 'No one is wearing ' . dropshipJoinWords($missing_tiers) . ' armor';
+	$swap = null;
+	foreach ($tiers as $t) if ($worn[$t] > 1) { $swap = $t; break; }
+	$fix = $swap
+		? 'Swap a <b>' . $swap . '</b> soldier for <b>' . $missing_tiers[0] . '</b>'
+		: 'Swap one soldier for <b>' . $missing_tiers[0] . '</b>';
+	$try = $f;
+	foreach ($missing_tiers as $t) $try[strtolower($t)] = true;
+	$could = dropshipSurvivalPct(dropshipThreshold($try));
+	return array($fix . ($could > $now ? ' &rarr; <b>' . $could . '%</b>' : ''),
+	             'Your squad is full but not a Super Soldier Squad. ' . $why . '.');
+}
+
+/** "Heavy, Medium and Light" -- a list a person would read aloud. */
+function dropshipJoinWords($words) {
+	$words = array_values($words);
+	$n = count($words);
+	if ($n === 0) return '';
+	if ($n === 1) return $words[0];
+	$last = array_pop($words);
+	return implode(', ', $words) . ' and ' . $last;
 }
 
 /**
@@ -190,16 +304,16 @@ function dropshipOddsPanel($conn) {
 	$life = (int)$f['extra_lives'];
 	$typ  = dropshipTypicalRound($pct, $life);
 
-	/* The best thing not already carried, and what it would be worth. */
-	$next = null;
-	foreach (array('mech_suit' => 'a Mech Suit', 'exo_suit' => 'an Exo Suit',
-	               'quantum_stealth' => 'Quantum Stealth', 'ballistic_shield' => 'a Ballistic Shield')
-	         as $k => $label) {
-		if (!empty($f[$k])) break;                    /* already carrying this or better */
-		$try = $f; $try[$k] = true;
-		$trypct = dropshipSurvivalPct(dropshipThreshold($try));
-		if ($trypct > $pct) { $next = array($label, $trypct, dropshipTypicalRound($trypct, $life)); break; }
-	}
+	/*
+	 * NO ITEMS IN HERE. This pane used to finish with "a Mech Suit would make
+	 * it 89%" and a footnote about Drop Box, Radio and Jet Pack, which is a
+	 * spending decision put in front of somebody who is still assembling a
+	 * foundation. Those numbers now sit on the shop listing itself, under
+	 * each item, where a player is already choosing what to buy. What belongs
+	 * here is the build: what is in the four slots and what goes in the next
+	 * one.
+	 */
+	$advice = dropshipSquadAdvice($f);
 
 	$h = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES); };
 
@@ -229,9 +343,10 @@ function dropshipOddsPanel($conn) {
 		  . '.ds-odds-lbl{font-size:.82rem;color:#e8eaed;opacity:.8}'
 		  . '.ds-odds-typ{flex:1 1 100%;font-size:.86rem;color:#e8eaed}'
 		  . '.ds-odds-typ b{color:#00c8a0}'
-		  . '.ds-odds-next{flex:1 1 100%;font-size:.82rem;color:#e8eaed;opacity:.75}'
-		  . '.ds-odds-next b{color:#00c8a0;opacity:1}'
-		  . '.ds-odds-note{flex:1 1 100%;font-size:.72rem;color:#e8eaed;opacity:.5}'
+		  . '.ds-odds-step{flex:1 1 100%;font-size:.9rem;color:#e8eaed;margin-top:5px;'
+		  . 'padding-top:7px;border-top:1px solid rgba(255,255,255,.1)}'
+		  . '.ds-odds-step b{color:#00c8a0}'
+		  . '.ds-odds-why{flex:1 1 100%;font-size:.8rem;color:#e8eaed;opacity:.7}'
 		  . '@media(max-width:480px){.ds-odds-pct{font-size:1.3rem}}'
 		  . '</style>';
 	}
@@ -245,16 +360,12 @@ function dropshipOddsPanel($conn) {
 		}
 		$out .= '</span>';
 	}
-	if ($next !== null) {
-		$out .= '<span class="ds-odds-next">' . $h($next[0]) . ' would make it <b>'
-		      . $h($next[1]) . '%</b>';
-		if ($next[2] !== null) $out .= ' and round <b>' . $h($next[2]) . '</b>';
-		$out .= '</span>';
+	/* The build step. Already escaped by dropshipSquadAdvice(), which emits
+	   only its own markup around values from a fixed list of tiers. */
+	if ($advice !== null) {
+		$out .= '<span class="ds-odds-step">' . $advice[0] . '</span>';
+		$out .= '<span class="ds-odds-why">' . $advice[1] . '</span>';
 	}
-	/* Honest about what the figure leaves out, in the place it is read. */
-	/* Plain hyphen, not an em dash, in copy a player reads. */
-	$out .= '<span class="ds-odds-note">Drop Box, Radio and Jet Pack are not counted. '
-	      . 'They only push it further.</span>';
 	$out .= '</div>';
 	return $out;
 }
@@ -317,5 +428,70 @@ function dropshipItemOddsNote($name, $f) {
 		return 'One escape from a failed round &middot; not counted in the odds';
 	}
 
+	/*
+	 * WEAPONS ADD ROUNDS, they do not change the roll. On a failed round the
+	 * melee chain can fire, and weapondelay() pushes the counter forward by
+	 * a fixed amount per weapon -- and the counter at death IS the score.
+	 *
+	 * WHICH WEAPON FIRES IS NOT THE BEST ONE YOU OWN. setWeapons() is a
+	 * chain of non-exclusive ifs that each overwrite the choice, so the LAST
+	 * one checked wins, and Tactical Katana (+1) is checked last. Owning a
+	 * Rocket Launcher and a Katana fires the Katana. That is reported rather
+	 * than smoothed over: a shop that tells someone a Rocket Launcher is
+	 * worth +5 while the run gives them +1 is lying to them.
+	 */
+	$delays = dropshipWeaponDelays();
+	if (isset($delays[$key])) {
+		$active = dropshipActiveWeapon($f);
+		$n = $delays[$key];
+		$plus = '+' . $n . ' round' . ($n === 1 ? '' : 's') . ' when the melee chain fires';
+		if ($active === null || $active === $key) return $plus;
+		$an = $delays[$active];
+		if ($an >= $n) return $plus . ' &middot; your ' . dropshipWeaponLabel($active) . ' fires instead';
+		return $plus . ' &middot; <b>but your ' . dropshipWeaponLabel($active) . ' (+' . $an
+		     . ') fires instead</b>';
+	}
+
 	return null;
+}
+
+/**
+ * Every weapon's round bonus, IN THE ORDER setWeapons() CHECKS THEM.
+ *
+ * The order is load-bearing, not cosmetic: that function overwrites its
+ * choice on each match, so the last entry here that a player owns is the one
+ * that actually fires. Keep this list in setWeapons()'s order or the shop
+ * starts naming the wrong weapon.
+ */
+function dropshipWeaponDelays() {
+	return array(
+		'rocket_launcher' => 5,
+		'flamethrower'    => 4,
+		'machine_gun'     => 3,
+		'smoke_bomb'      => 2,
+		'grenade'         => 2,
+		'sniper_rifle'    => 1,
+		'tactical_katana' => 1,
+	);
+}
+
+/** Human label for a weapon key. */
+function dropshipWeaponLabel($key) {
+	return ucwords(str_replace('_', ' ', $key));
+}
+
+/**
+ * The weapon that would actually fire, or null if none is owned.
+ *
+ * LAST OWNED WINS, mirroring setWeapons(). Reads the session the same way
+ * the run does.
+ */
+function dropshipActiveWeapon($f = null) {
+	$active = null;
+	foreach (dropshipWeaponDelays() as $key => $delay) {
+		$owned = isset($f[$key]) ? !empty($f[$key])
+		       : (isset($_SESSION['userData'][$key]) && $_SESSION['userData'][$key] === 'true');
+		if ($owned) $active = $key;
+	}
+	return $active;
 }

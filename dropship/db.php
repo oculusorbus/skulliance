@@ -1696,15 +1696,6 @@ function loadItems($conn, $type, $heavy_armor, $medium_armor, $light_armor, $bas
 				}
 				echo "</td>
 			</tr>";
-			/* WHAT THE SCRIP BUYS. The Avg Score below is this player's own
-			   history with the item, which is empty for anyone new and noisy
-			   for everyone else. This is what the item does to the odds right
-			   now, from the same function the run rolls against. Silent for
-			   items whose effect is not in the roll. */
-			$odds_note = dropshipItemOddsNote($row["name"], $odds_flags);
-			if($odds_note !== null){
-				echo "<tr class='item-stats item-odds'><td colspan='3'>".$odds_note."</td></tr>";
-			}
 			if(isset($_SESSION['userData']['dropship_user_id'])){
 				$sql = "SELECT AVG(results.score) AS score_avg FROM items INNER JOIN results_items ON results_items.item_id = items.id INNER JOIN results ON results.id = results_items.result_id WHERE type='".$type."' AND items.id='".$row['id']."' AND results.user_id='".$_SESSION['userData']['dropship_user_id']."' AND results.project_id = '".$_SESSION['userData']['dropship_project_id']."'";
 				$avg_result = $conn->query($sql);
@@ -1724,6 +1715,16 @@ function loadItems($conn, $type, $heavy_armor, $medium_armor, $light_armor, $bas
 				}
 			}
 			echo "<tr class='item-description'><td colspan='3'><i>".evaluateText($row["description"])."</i></td></tr>";
+			/* WHAT THE SCRIP BUYS, under the description that says what the
+			   item is -- read what it does, then what it is worth. Avg Score
+			   above is this player's own history, which is empty for anyone
+			   new; this is the item's effect right now, from the same
+			   function the run rolls against. Silent for anything whose
+			   effect is not in the run's own math. */
+			$odds_note = dropshipItemOddsNote($row["name"], $odds_flags);
+			if($odds_note !== null){
+				echo "<tr class='item-stats item-odds'><td colspan='3'>".$odds_note."</td></tr>";
+			}
 		echo"</table>
 		</li>";
 	  }

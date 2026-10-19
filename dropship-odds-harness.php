@@ -216,7 +216,9 @@ foreach (array('Drop Box', 'Radio', 'Jet Pack') as $n) {
  * decorate a round that was already survived. A number on their price tag
  * would be invented, and invented is worse than absent.
  */
-foreach (array('Sniper Rifle', 'Radar', 'Night Vision Goggles', 'Tactical Katana', '') as $n) {
+/* Weapons DO have a measurable effect and now carry it; what stays silent is
+   anything that only decorates a round already survived. */
+foreach (array('Radar', 'Night Vision Goggles', 'Reinforcements', '') as $n) {
 	ok(dropshipItemOddsNote($n, $held) === null, "an odds claim was invented for '$n'");
 }
 /* Name to session key uses the run's own rule, or the two drift. */
@@ -226,8 +228,102 @@ ok(dropshipItemOddsNote('Mech Suit', $bare) === dropshipItemOddsNote('mech suit'
 $db = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
 ok(strpos($db, 'dropshipItemOddsNote($row["name"], $odds_flags)') !== false,
    'the shop listing never calls the per-item note');
+/* BELOW THE DESCRIPTION. Read what the item is, then what it is worth --
+   and it is where a player looks for it. */
+$desc_at = strpos($db, "item-description");
+$note_at = strpos($db, 'dropshipItemOddsNote($row["name"]');
+ok($desc_at !== false && $note_at > $desc_at,
+   'the odds line sits above the item description instead of under it');
 ok(preg_match('/\$odds_flags = dropshipOddsFlags\(\$conn\);\s*\n.*?while\(\$row = \$result->fetch_assoc/s', $db) === 1,
    'the shop reads the loadout inside the item loop, which is a query per item');
+
+echo "\nweapons say what they are worth, and which one actually fires\n";
+/*
+ * Weapons add rounds rather than changing the roll: on a failed round the
+ * melee chain can fire and weapondelay() pushes the counter forward, and the
+ * counter at death IS the score.
+ *
+ * THE ONE THAT FIRES IS NOT THE BEST ONE OWNED. setWeapons() is a chain of
+ * non-exclusive ifs that each overwrite the choice, so the LAST checked wins
+ * -- and Tactical Katana, the weakest at +1, is checked last. A shop that
+ * quotes +5 for a Rocket Launcher while the run gives +1 is lying.
+ */
+$none = array('extra_lives' => 0);
+ok(strpos(dropshipItemOddsNote('Rocket Launcher', $none), '+5 rounds') !== false,
+   'a Rocket Launcher does not quote its round bonus');
+ok(strpos(dropshipItemOddsNote('Tactical Katana', $none), '+1 round ') !== false,
+   'a Tactical Katana does not quote its bonus, or pluralises 1');
+$both = array('extra_lives' => 0, 'rocket_launcher' => true, 'tactical_katana' => true);
+ok(strpos(dropshipItemOddsNote('Rocket Launcher', $both), 'fires instead') !== false,
+   'the shop does not warn that a weaker weapon overrides the Rocket Launcher: '
+ . dropshipItemOddsNote('Rocket Launcher', $both));
+ok(strpos(dropshipItemOddsNote('Tactical Katana', $both), 'fires instead') === false,
+   'the weapon that actually fires is told it is being overridden');
+/* The selection order IS setWeapons()'s, and the harness reads it from there
+   rather than trusting the table. */
+$runsrc = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship.php'));
+$order = array();
+if (preg_match('/function setWeapons.*?\n\}/s', $runsrc, $m)) {
+	preg_match_all("/userData'\]\['([a-z_]+)'\]/", $m[0], $mm);
+	foreach ($mm[1] as $k) if (!in_array($k, $order, true)) $order[] = $k;
+}
+ok($order === array_keys(dropshipWeaponDelays()),
+   'the weapon table is out of step with setWeapons(), so the wrong weapon is named: '
+ . implode(',', $order));
+ok(dropshipActiveWeapon($both) === 'tactical_katana',
+   'the active weapon is not the last one setWeapons() checks');
+ok(dropshipActiveWeapon(array()) === null, 'a weapon fires when none is owned');
+
+echo "\nthe squad pane guides the build and stops selling items\n";
+/*
+ * This pane is for somebody with a half-built squad deciding what goes in
+ * the next slot. Suits and escapes are a different decision and now carry
+ * their own numbers in the shop, where a player is already spending.
+ */
+$panel_src = file_get_contents(__DIR__ . '/dropship/dropship-odds.php');
+ok(strpos($panel_src, 'ds-odds-next') === false || strpos($panel_src, 'would make it') === false,
+   'the squad pane still upsells a suit instead of guiding the build');
+ok(strpos($panel_src, 'Drop Box, Radio and Jet Pack are not counted') === false,
+   'the squad pane still carries the item footnote');
+/* Step by step, from whatever they have now. */
+$r = function ($list) {
+	$f = array('extra_lives' => 0, 'roster' => array());
+	foreach ($list as $pair) {
+		list($a, $g) = $pair;
+		$f['roster'][] = array('armor' => $a, 'gear' => $g);
+		$f[strtolower($a)] = true;
+		if ($g === 'Medkit') $f['extra_lives']++;
+	}
+	return $f;
+};
+$one = dropshipSquadAdvice($r(array(array('Heavy', 'Melee'))));
+ok($one !== null && strpos($one[0], 'Next:') === 0,
+   'a one-soldier squad gets no next step: ' . json_encode($one));
+ok(strpos($one[1], '1 of 4 slots') !== false, 'the advice does not say how many slots are filled');
+ok(strpos($one[0], 'Medium') !== false || strpos($one[0], 'Light') !== false
+   || strpos($one[0], 'Base') !== false, 'the next step names no armor tier: ' . $one[0]);
+/* FULL BUT NOT SUPER: say why, and what to swap. */
+$dupe = dropshipSquadAdvice($r(array(array('Heavy','Melee'), array('Medium','Demolition'),
+                                     array('Medium','Medkit'), array('Light','None'))));
+ok(strpos($dupe[1], 'full but not a Super Soldier Squad') !== false,
+   'a full non-super squad is not told why: ' . $dupe[1]);
+ok(strpos($dupe[1], 'Medium') !== false && strpos($dupe[1], 'Base') !== false,
+   'the reason names neither the duplicate nor the gap: ' . $dupe[1]);
+/* IT MUST NAME THE SOLDIER TO SWAP OUT, not just the gap. "Swap one soldier
+   for Base" is useless when the player has to work out which one; naming the
+   duplicated tier is the whole advice. A looser check passed a mutation that
+   dropped exactly that. */
+ok(strpos($dupe[0], 'Swap a <b>Medium</b>') === 0,
+   'the swap does not name the duplicated tier to drop: ' . $dupe[0]);
+ok(strpos($dupe[0], 'Base') !== false, 'the swap does not name the missing tier: ' . $dupe[0]);
+/* COMPLETE: say so and stop advising. */
+$full = dropshipSquadAdvice($r(array(array('Heavy','Melee'), array('Medium','Demolition'),
+                                     array('Light','Medkit'), array('Base','None'))));
+ok($full[0] === 'Super Soldier Squad', 'a complete squad is not recognised: ' . $full[0]);
+ok(strpos($full[0], 'Next:') === false && strpos($full[0], 'Swap') === false,
+   'a complete squad is still being given advice');
+/* An empty squad has nothing to advise on. */
+ok(dropshipSquadAdvice(array('roster' => array())) === null, 'an empty squad is given advice');
 
 echo "\nthe panel survives the stylesheet it renders inside\n";
 /*
