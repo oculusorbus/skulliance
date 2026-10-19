@@ -185,7 +185,7 @@ echo "\nthe post keeps its invitation and its credit\n";
 			ok(mb_strlen($t) + 24 <= 280,
 			   'post ' . $i . ' is ' . mb_strlen($t) . ' characters plus a url');
 			ok(strpos($t, '@skulliance') !== false, 'post ' . $i . ' does not invite anyone');
-			ok(substr($t, -strlen('Art by @MMAXI404')) === 'Art by @MMAXI404',
+			ok(substr($t, -strlen('Trait art by @MMAXI404')) === 'Trait art by @MMAXI404',
 			   'post ' . $i . ' lost the artist credit off the end');
 		}
 		/*
@@ -196,13 +196,20 @@ echo "\nthe post keeps its invitation and its credit\n";
 		 * Their own numbers are the part nobody else can post.
 		 */
 		foreach ($posts as $i => $t) {
-			ok(preg_match('/^\d/', $t) === 1,
+			/* FIRST PERSON AND THEIR OWN NUMBER. "I did 14 things" is a
+			   person talking; it also guarantees the post opens on the
+			   half nobody else can write. */
+			ok(preg_match('/^I did \d/', $t) === 1,
 			   'post ' . $i . ' does not open with the player\'s own numbers: '
 			 . substr($t, 0, 50));
 		}
+		/* The claim line has to name the handle AND point at the link,
+		   which a bare @skulliance on its own line did not. */
+		ok(strpos($posts[0], 'Claim your 3 traits from @skulliance below.') !== false,
+		   'the post does not tell the reader what the link below it is');
 		/* And the ask still has to be in there, with who qualifies and why
 		   it is worth anything. */
-		ok(stripos($posts[0], '3 DHC traits') !== false, 'the post does not say what is on offer');
+		ok(stripos($posts[0], '3 DHC Fighter traits') !== false, 'the post does not say what is on offer');
 		ok(preg_match('/new (here|to Skulliance)/i', $posts[0]) === 1
 		   && stripos($posts[0], 'month') !== false,
 		   'the post does not say who qualifies, so every active follower clicks for nothing');
@@ -214,9 +221,22 @@ echo "\nthe post keeps its invitation and its credit\n";
 		 * nine days -- the owner asked what his own post meant. It is the
 		 * LOGIN streak, which is what the poster calls it.
 		 */
-		ok(strpos($posts[0], '9 day login streak') !== false, 'the streak is missing from the card');
+		ok(strpos($posts[0], '9 day daily reward streak') !== false, 'the streak is missing from the card');
 		ok(preg_match('/\d+ days running/', $posts[0]) === 0,
 		   'the streak is named as a bare run of days, which reads as the activity repeating');
+		/*
+		 * AND IT NAMES THE RIGHT FEATURE. users.streak is the daily reward
+		 * claim streak -- getCurrentDailyRewardStreak() in db.php, which
+		 * also resets it to 0 at seven, so it never reads above 6.
+		 * Calling it a login streak was simply the wrong mechanic.
+		 */
+		ok(stripos($posts[0], 'login streak') === false,
+		   'the post calls it a login streak; users.streak is the daily reward claim streak');
+		/* The STRIPPED source: the comment explaining why it is no longer
+		   called a login streak contains the words "login streak", so
+		   searching the raw file finds my own note and fails forever. */
+		ok(stripos($modc, 'login streak') === false,
+		   'the poster still calls it a login streak');
 		ok(strpos($posts[1], 'days running') === false,
 		   'a streak of 1 is announced as a streak: ' . $posts[1]);
 	}
@@ -393,7 +413,7 @@ echo "\nthe page the invite actually lands on\n";
 		ok($cta !== false && $shot !== false && $cta < $shot,
 		   'an invited arrival gets the poster before the buttons, which puts them off the '
 		 . 'bottom of a phone');
-		ok(strpos($branch, 'Three DHC traits') !== false,
+		ok(strpos($branch, 'Three DHC Fighter traits') !== false,
 		   'the page the post promised three traits on does not mention them');
 	}
 	/* A visitor who was NOT invited still gets the picture first: for them

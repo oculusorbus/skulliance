@@ -76,6 +76,15 @@ else if (!empty($_COOKIE[REF_COOKIE]) && ref_decode($_COOKIE[REF_COOKIE]) > 0)
 $ix_invited = $ix_ref !== '' && !$ix_signed_in;
 
 /*
+ * NAME THEM. The code decodes to exactly one account and it is the account
+ * that will actually be paid, so "whoever sent you" was being coy about
+ * something the page already knew. No ownership check is needed here, the
+ * way digest.php needs one: there is no poster on this page to mismatch,
+ * and the claim being made is simply who ref_credit() will pay.
+ */
+$ix_from = $ix_invited ? hp_username(ref_decode($ix_ref)) : '';
+
+/*
  * The figures, live. A zero means the query failed and no stale value was
  * cached, so the tile is dropped rather than printed: "0 NFTs staked" on the
  * page that exists to say this is a going concern is worse than one fewer
@@ -100,6 +109,19 @@ $ix_push(hp_stat_chains(),      'chain',       'chains');
  */
 if ($ix_staked <= 0 || count($ix_stats) < 2) $ix_stats = array();
 
+require_once __DIR__ . '/lib/dhc-shots.php';
+/* The same three shots partner.php uses, through the same resolver, so a
+   -sm.jpg dropped on the server later is picked up here too. */
+$ix_dhc = array(
+	array('dhcgame',     'Earn them by playing',
+	      'Every game pays a different part of a Fighter, so no single one can dress a whole one. '
+	    . 'Traits turn up as you play whatever you already enjoy.'),
+	array('dhcassemble', 'Assemble them',
+	      'Ten slots: torso, head, background, effects, arms, weapon, headgear, a companion. '
+	    . 'Build what you like out of what you have earned and save it.'),
+	array('dhcbrowse',   'Then see where you stand',
+	      'Your best Fighter\'s rarity score is your place on the board. The rarest Fighter wins.'),
+);
 $ix_projects = hp_stat_artists();
 $ix_icons    = hp_project_icons();
 $ix_founders = require __DIR__ . '/lib/founding-artists.php';
@@ -132,6 +154,11 @@ $ix_games = array(
   <title>Skulliance | Stake your NFTs, then go and play with them</title>
   <meta name="description" content="A free staking platform and games arcade for <?php echo $e($ix_projects ? $ix_projects . ' NFT projects' : 'NFT projects'); ?>. Sign in with Discord.">
   <meta name="theme-color" content="#0e0f13">
+  <link rel="apple-touch-icon" sizes="180x180" href="/staking/pwa/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/staking/pwa/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/staking/pwa/favicon-16.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/staking/pwa/icon-192.png">
+  <link rel="shortcut icon" href="/staking/pwa/favicon-32.png">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Skulliance">
   <meta property="og:title" content="Stake your NFTs, then go and play with them">
@@ -176,14 +203,20 @@ a{color:var(--ix-accent)}
   border:1px solid rgba(0,200,160,.4);border-radius:12px;background:rgba(0,200,160,.08);max-width:62ch}
 .ix-invited strong{color:var(--ix-accent)}
 .ix-invited span{color:var(--ix-text);font-size:15px}
+.ix-invited a{color:var(--ix-accent);text-decoration:underline;text-underline-offset:2px}
+/* The button is inline-flex, so it sits in an anonymous line box whose
+   leading eats into the space under it and the note below ends up tight
+   against the button however much margin the note asks for. A block
+   wrapper gives the gap somewhere to live. */
+.ix-act{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:0 0 20px}
 .ix-cta{display:inline-flex;align-items:center;gap:11px;background:var(--ix-discord);color:#fff;
   font-size:18px;font-weight:700;text-decoration:none;padding:16px 28px;border-radius:12px;
   border:0;transition:filter .15s ease,transform .15s ease}
 .ix-cta:hover{filter:brightness(1.12);transform:translateY(-1px)}
 .ix-cta svg{width:24px;height:24px;flex:0 0 auto;fill:currentColor}
-.ix-cta-note{color:var(--ix-dim);font-size:14px;margin:14px 0 0;max-width:52ch}
+.ix-cta-note{color:var(--ix-dim);font-size:14px;margin:0;max-width:52ch}
 .ix-cta-note a{color:var(--ix-dim)}
-.ix-second{display:block;margin:16px 0 0;font-size:14px;color:var(--ix-dim)}
+.ix-second{display:block;font-size:14px;color:var(--ix-dim)}
 
 /* ---- numbers ---- */
 .ix-stats{display:flex;flex-wrap:wrap;gap:10px;margin:34px 0 0;padding:0;list-style:none}
@@ -241,6 +274,8 @@ a{color:var(--ix-accent)}
 /* ---- points ---- */
 .ix-points{background:var(--ix-panel);border:1px solid var(--ix-line);border-radius:14px;padding:clamp(20px,3vw,32px)}
 .ix-points ul{margin:0;padding-left:22px;color:var(--ix-dim)}
+.ix-points a{color:var(--ix-accent)}
+.ix-points strong{color:var(--ix-text)}
 .ix-points li{margin:0 0 7px}
 .ix-points li:last-child{margin:0}
 
@@ -269,15 +304,16 @@ $ix_note = 'Signing in is Discord only and takes one click. You connect a wallet
 
 /* Written once and printed twice, top and bottom. */
 $ix_button = function () use ($ix_oauth, $ix_signed_in, $e) {
+	echo '<div class="ix-act">';
 	if ($ix_signed_in) {
 		echo '<a class="ix-cta" href="dashboard.php">Continue to your dashboard</a>';
 		echo '<span class="ix-second">Not you, or signed in somewhere else? '
-		   . '<a href="' . $e($ix_oauth) . '">Sign in with Discord again</a>.</span>';
+		   . '<a href="' . $e($ix_oauth) . '">Sign in with Discord again</a>.</span></div>';
 		return;
 	}
 	echo '<a class="ix-cta" href="' . $e($ix_oauth) . '">'
 	   . '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.3.6a14.6 14.6 0 0 1 4.3 1.4 14.4 14.4 0 0 0-10.8 0A14.6 14.6 0 0 1 12.9 3.6L12.6 3A19.8 19.8 0 0 0 7.7 4.4C4.6 9 3.8 13.5 4.2 18a19.9 19.9 0 0 0 6 3l.8-1.2a13 13 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 9.1 0l.5.4a13 13 0 0 1-2 1l.8 1.2a19.9 19.9 0 0 0 6-3c.5-5.2-.8-9.7-3.6-13.6ZM9.7 15.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm4.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>'
-	   . 'Login with Discord</a>';
+	   . 'Login with Discord</a></div>';
 };
 ?>
 
@@ -287,10 +323,14 @@ $ix_button = function () use ($ix_oauth, $ix_signed_in, $e) {
     <h1>Stake your NFTs, then go and play with them.</h1>
 <?php if ($ix_invited): ?>
     <div class="ix-invited">
-      <span><strong>You were invited.</strong> <?php echo (int) REF_ARRIVAL_DRAWS; ?> DHC traits are
-      waiting on the other side of that button, drawn on better odds than an ordinary drop. Whoever
-      sent you gets <?php echo (int) REF_INVITER_DRAWS; ?> as well, which is the point of them
-      bothering.</span>
+      <span><strong><?php echo $ix_from !== ''
+          ? $e($ix_from) . ' invited you.'
+          : 'You were invited.'; ?></strong>
+      <?php echo (int) REF_ARRIVAL_DRAWS; ?> <a href="#traits">DHC Fighter traits</a> are waiting on
+      the other side of that button, drawn on better odds than an ordinary drop.
+      <?php echo $ix_from !== '' ? $e($ix_from) : 'Whoever sent you'; ?> gets
+      <?php echo (int) REF_INVITER_DRAWS; ?> as well, which is the point of them bothering.
+      <a href="#traits">What is a DHC Fighter trait?</a></span>
     </div>
 <?php endif; ?>
 <?php
@@ -411,6 +451,41 @@ $ix_line = implode(', ', $ix_names) . ' and ' . $ix_last;
    that reads as a typo on the one line naming the founders. */
 echo $e(substr($ix_line, -1) === '.' ? $ix_line : $ix_line . '.');
 ?></p>
+  </div>
+</section>
+
+<section class="ix-sec" id="traits">
+  <div class="ix-wrap">
+    <h2 class="ix-h2">What is a DHC Fighter trait?</h2>
+    <p class="ix-lead">Fair question, and nobody should have to already know. DHC is
+    <strong>Digital Hell Citizens</strong>, a collection by the artist
+    <a href="https://x.com/MMAXI404" target="_blank" rel="noopener noreferrer">Maxingo</a>, who let
+    Skulliance use the artwork from <em>Digital Hell Citizens 2: Fighters</em> to build a game out
+    of it. A trait is one piece of a fighter: a head, a weapon, a backdrop, a companion.</p>
+    <div class="ix-grid">
+<?php foreach ($ix_dhc as $d): $sh = dhc_shot_src($d[0]); ?>
+      <article class="ix-card">
+<?php if (!empty($sh['src'])): ?>
+        <img src="<?php echo $e($sh['src']); ?>" alt="<?php echo $e($d[1]); ?>" loading="lazy" decoding="async">
+<?php endif; ?>
+        <div class="ix-card-b">
+          <h3><?php echo $e($d[1]); ?></h3>
+          <p><?php echo $e($d[2]); ?></p>
+        </div>
+      </article>
+<?php endforeach; ?>
+    </div>
+    <div class="ix-points" style="margin-top:20px">
+      <ul>
+        <li><strong>A trait is not an NFT.</strong> It cannot be minted, and earning one gives you
+        no ownership of the artwork. It is a game piece.</li>
+        <li>The genuine, ownable Fighters are
+        <a href="https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5" target="_blank" rel="noopener noreferrer">the Digital Hell Citizens 2 collection on wayup</a>.
+        If the art is what grabs you, that is where to go.</li>
+        <li>Traits are free. You earn them by playing, and the three waiting for you are the same
+        ones everybody else has to play for.</li>
+      </ul>
+    </div>
   </div>
 </section>
 

@@ -92,13 +92,56 @@ echo "\nthe call to action is still the Discord button\n";
 	   'something other than the Discord button is styled as the primary action');
 }
 
+echo "\nthe page looks like Skulliance in a tab\n";
+{
+	$html = render();
+	ok(strpos($html, 'rel="shortcut icon"') !== false || strpos($html, 'rel="icon"') !== false,
+	   'the page has no favicon, so it is a blank sheet in the tab bar');
+	ok(strpos($html, '/staking/pwa/favicon-32.png') !== false,
+	   'the favicon is not the one every other page on the platform uses');
+	ok(strpos($html, 'apple-touch-icon') !== false,
+	   'there is no touch icon, so saving it to a phone home screen gives a screenshot');
+}
+
 echo "\nan invited arrival is told what is waiting\n";
 {
 	require_once __DIR__ . '/lib/referral-lib.php';
 	$good = render(array('r' => ref_code(4821)));
 	ok(strpos($good, 'You were invited') !== false, 'an invited arrival is not told they were invited');
-	ok(strpos($good, (string) REF_ARRIVAL_DRAWS . ' DHC traits') !== false,
+	/*
+	 * Read as TEXT, not as markup: the offer now links the jargon, so the
+	 * words a reader sees are split across an anchor and a substring
+	 * search for them finds nothing however right the page is.
+	 */
+	$plain = preg_replace('/\s+/', ' ', strip_tags($good));
+	ok(strpos($plain, (string) REF_ARRIVAL_DRAWS . ' DHC Fighter traits') !== false,
 	   'the offer does not name the ' . REF_ARRIVAL_DRAWS . ' traits the code actually pays');
+
+	/*
+	 * "DHC" MEANS NOTHING TO SOMEBODY WHO HAS NEVER HEARD OF IT, and the
+	 * people this page is written for are exactly those people. The offer
+	 * is the first time they meet the term, so it has to be a link to
+	 * somewhere that explains it, and that somewhere has to be on the page.
+	 */
+	ok(strpos($good, 'href="#traits"') !== false,
+	   'the offer uses the word DHC without linking anywhere that explains it');
+	ok(strpos($good, 'id="traits"') !== false,
+	   'the explainer the offer links to is not on the page, so the link goes nowhere');
+	ok(strpos($plain, 'Digital Hell Citizens') !== false,
+	   'the explainer never says what DHC stands for');
+	ok(strpos($plain, 'not an NFT') !== false,
+	   'the explainer does not say a trait is not an NFT, which is the first thing anyone asks');
+	ok(strpos($good, 'MMAXI404') !== false, 'the artist is not credited on the explainer');
+	/* Bare "DHC traits" is the name we stopped using. */
+	ok(preg_match('/DHC traits/', $plain) === 0,
+	   'the page still calls them DHC traits rather than DHC Fighter traits');
+
+	/* And the person who sent them is named, for the same reason
+	   digest.php names them: the code says exactly who gets paid. */
+	$named = render(array('r' => ref_code(4821)));
+	ok(strpos($named, '$ix_from') === false, 'a raw variable leaked into the page');
+	ok(strpos($ix ?? file_get_contents(__DIR__ . '/index.php'), 'hp_username(') !== false,
+	   'the landing page never looks up who sent the invite');
 	/* The number comes from the constant. A 3 typed into the copy goes on
 	   promising three the day REF_ARRIVAL_DRAWS becomes anything else. */
 	ok(strpos($src, 'REF_ARRIVAL_DRAWS') !== false && strpos($src, 'REF_INVITER_DRAWS') !== false,

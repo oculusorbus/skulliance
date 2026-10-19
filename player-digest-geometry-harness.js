@@ -148,7 +148,7 @@ function overlaps(a, b) {
 
 let cases = 0, worstOut = null, worstHit = null;
 const restore = instrument();
-for (const nArt of [0, 1, 2, 3, 4, 5, 6, 7, 8]) {
+for (const nArt of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12]) {
 	for (const nChan of [1, 2, 3, 4, 5, 6, 8]) {
 		for (const total of [1, 9, 112, 9999]) {
 			for (const streak of [0, 1, 4, 148]) {
@@ -211,6 +211,31 @@ ok(!worstOut, worstOut && ('something is drawn outside the card: "' + worstOut.t
    + ' card, with ' + worstOut.nArt + ' pictures and ' + worstOut.nChan + ' rows'));
 ok(!worstHit, worstHit && ('text is drawn on top of something: "' + worstHit.t + '" with '
    + worstHit.nArt + ' pictures, ' + worstHit.nChan + ' rows, streak ' + worstHit.streak));
+
+/*
+ * A FULL GRID AT THE CAP. The poster draws at most nine pictures, and nine
+ * is chosen because it fills a 3x3 exactly at the same tile size eight
+ * gets -- eight is 3/3/2 with a hole in the last row for nothing. If the
+ * cap and the grid maths ever drift apart, the busiest posters are the
+ * ones that look unfinished.
+ */
+{
+	const capMatch = /\.slice\(0, (\d+)\)/.exec(
+		fs.readFileSync(path.join(__dirname, 'player-digest.php'), 'utf8')
+		  .split('images.art.filter(Boolean)')[1] || '');
+	const cap = capMatch ? parseInt(capMatch[1], 10) : 0;
+	ok(cap > 0, 'the art cap could not be read out of draw()');
+	if (cap > 0) {
+		/* Same panel the layout uses: the column is 430 wide at PAD 44,
+		   so the art panel is what is left of 1200 by 630. */
+		const RX = 44 + 430 + 36, RW = W - 44 - RX, RH = H - 88, gap = 12;
+		const g = ctx.gridFit(cap, RW, RH, gap);
+		ok(g.cols * g.rows === cap,
+		   'at its cap of ' + cap + ' pictures the poster draws a ' + g.cols + 'x' + g.rows
+		 + ' grid with ' + (g.cols * g.rows - cap) + ' empty slot(s), so the busiest day looks '
+		 + 'like the one that ran out of pictures');
+	}
+}
 
 /* THE CARD SHAPE IS THE POINT. X crops summary_large_image to about 1.91:1,
    so a portrait card loses its middle band -- which is how the whole art

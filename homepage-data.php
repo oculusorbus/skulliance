@@ -266,6 +266,33 @@ function hp_project_icons($fallback = array()) {
 	return is_array($list) ? $list : $fallback;
 }
 
+/**
+ * One player's display name, for a page that has been handed their id.
+ *
+ * NOT CACHED, deliberately. hp_cached() keeps one file per key and this key
+ * would be a user id, so caching it would scatter a file per invite code
+ * that ever gets clicked. It is a primary-key lookup behind a condition
+ * that is false for almost every visitor -- only an arrival carrying a
+ * referral code reaches it at all.
+ *
+ * Returns '' when there is no such user or no database, and the caller
+ * falls back to wording that names nobody.
+ */
+function hp_username($user_id) {
+	$user_id = (int) $user_id;
+	if ($user_id <= 0) return '';
+	try {
+		$c = hp_db();
+		if ($c === null) return '';
+		/* No mysqlnd on this host: query() and fetch_assoc(), never
+		   get_result(). The id is cast above. */
+		$r = @$c->query('SELECT username FROM users WHERE id = ' . $user_id . ' LIMIT 1');
+		if (!$r || !$r->num_rows) return '';
+		$row = $r->fetch_assoc();
+		return trim((string) $row['username']);
+	} catch (Throwable $e) { return ''; }
+}
+
 /** Wallets linked, across every chain. */
 function hp_stat_wallets($fallback = 0) {
 	return (int)hp_cached('wallets', function ($c) {

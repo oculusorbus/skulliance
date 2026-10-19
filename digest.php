@@ -137,6 +137,7 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
 #dg .offer{background:#0d1e2e;border:1px solid #1b3346;border-left:3px solid #00c8a0;
   border-radius:3px;padding:16px 18px;text-align:left;margin-top:22px}
 #dg .offer b{color:#00c8a0}
+#dg .offer a{color:#00c8a0}
 </style>
 <?php
 /*
@@ -173,11 +174,12 @@ $dg_shot = function () use ($dg_token, $dg_w, $dg_h, $e) { ?>
     <h1><?php echo $dg_from !== ''
            ? $e($dg_from) . ' invited you to Skulliance'
            : 'You have been invited to Skulliance'; ?></h1>
-    <p class="offer"><b>Three DHC traits are waiting for you.</b> Sign in through this link and
-      they are yours - drawn on better odds than an ordinary drop, with a real chance at a
-      legendary. <?php echo $dg_from !== ''
+    <p class="offer"><b>Three DHC Fighter traits are waiting for you.</b> Sign in through this
+      link and they are yours - drawn on better odds than an ordinary drop, with a real chance at
+      a legendary. <?php echo $dg_from !== ''
         ? $e($dg_from) . ' gets three as well, which is why they sent it.'
-        : 'Whoever shared this gets three as well.'; ?></p>
+        : 'Whoever shared this gets three as well.'; ?>
+      <a href="index.php#traits">What is a DHC Fighter trait?</a></p>
     <?php $dg_cta(); ?>
     <p>Free to join, nothing to install, and you do not need a wallet to start.</p>
     <?php $dg_shot(); ?>

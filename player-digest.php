@@ -251,7 +251,15 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     c.fillStyle = INK; c.fillRect(0, 0, W, H);
 
     var PAD = 44;
-    var art = images.art.filter(Boolean).slice(0, 8);
+    /*
+     * NINE, NOT EIGHT. Nine fills a 3x3 exactly, and at the same 173px
+     * tile that eight gets -- eight is simply 3/3/2 with a hole in the
+     * last row for no gain. The server already fetches up to
+     * ACTIVITY_PDIGEST_ART (12) of them, so the ninth picture was being
+     * thrown away here rather than never collected. Twelve would tile
+     * cleanly too, at 4x3, but the tiles drop to 153px.
+     */
+    var art = images.art.filter(Boolean).slice(0, 9);
 
     /* With pictures the column sits left and the art takes the rest. With
        none, the same column is centred rather than left in a field of
@@ -304,7 +312,7 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     /* ---- streak and footer, both pinned to the bottom of the column ---- */
     if (d.streak > 1) {
       c.fillStyle = MUTE; c.font = '500 18px ui-monospace, monospace';
-      c.fillText(d.streak + ' day login streak', colX, 566);
+      c.fillText(d.streak + ' day daily reward streak', colX, 566);
     }
     c.fillStyle = MUTE; c.font = '500 18px ui-monospace, monospace';
     c.fillText('skulliance.io', colX, 598);
@@ -438,18 +446,16 @@ if (!isset($_SESSION['userData']['user_id'])) return;
    */
   /*
    * KEPT CLOSE IN LENGTH, deliberately. Everything after the ask is fixed
-   * cost -- the odds line, the handle, the artist credit, 24 for the url --
-   * so the longest ask sets how much is left for the player's own numbers.
-   * At 93 characters the longest one left 81, and the login streak was
-   * being trimmed off a quarter of all posts to make room. Shortening the
-   * asks buys that back without touching the odds claim, which is the part
-   * doing the actual persuading.
+   * cost -- the claim line, the artist credit, 24 for the url -- so the
+   * longest ask sets how much is left for the player's own numbers. The
+   * owner's own rewrite of this post came to 362 characters against a 280
+   * limit, and almost all of the excess was here.
    */
   var ASKS = [
-    'Help me get 3 DHC traits - 3 for you too if you are new here or a month away.',
-    'Worth 3 DHC traits to me if you look, and 3 to you if you are new or a month away.',
-    'New to Skulliance, or not been on in a month? 3 DHC traits for you, and 3 for me.',
-    'Fancy 3 DHC traits? Yours if you are new here or a month away. I get 3 too.'
+    'Help me get 3 DHC Fighter traits. Grab 3 if you are new or a month away, better odds.',
+    'Grab 3 DHC Fighter traits on better odds if you are new or a month away. I get 3 too.',
+    'New here, or away a month? 3 DHC Fighter traits on better odds, and 3 for me.',
+    'Fancy 3 DHC Fighter traits on better odds? New here or a month away, and I get 3 too.'
   ];
 
   function shareText(d) {
@@ -457,41 +463,52 @@ if (!isset($_SESSION['userData']['user_id'])) return;
      * Their day, which no one else can post -- and the reason every one of
      * these is a different piece of text.
      *
-     * THE LABEL IS A CHANNEL NAME, NOT A COUNTABLE NOUN. This read
-     * "including 4 skull swap", "including 1 raids" and "including 5 dhc
-     * fighters": the labels are Missions, Raids, Monstrocity, Skull Swap,
-     * DHC Fighters, Crypt Crawl, so putting a bare number in front of one
-     * is grammatical for about a third of them and broken for the rest.
-     * "4 of them in Skull Swap" works for every label in the map, and the
-     * capitals stay -- toLowerCase() was turning DHC Fighters into "dhc
-     * fighters" in a post that is meant to be advertising it.
+     * FIRST PERSON, because it is their post. "I did 112 things" is a
+     * person talking; "112 things on Skulliance yesterday" is a bot.
+     *
+     * THE LABEL IS A CHANNEL NAME, NOT A COUNTABLE NOUN. This once read
+     * "including 4 skull swap" and "including 1 raids": the labels are
+     * Missions, Raids, Monstrocity, Skull Swap, DHC Fighters, so a bare
+     * number in front of one is grammatical for about a third of them.
+     * "29 of them in Monstrocity" works for every label in the map.
+     *
+     * The owner would rather it read "29 Monstrocity levels", and it
+     * should -- but that needs a unit noun per channel, and the code has
+     * no such thing. Inventing one per channel means asserting what each
+     * feature's announcements represent, and a wrong guess is a false
+     * claim in a public post. The neutral form is true everywhere.
      */
-    var things = d.total + ' thing' + (d.total === 1 ? '' : 's') + ' on Skulliance yesterday';
+    var things = 'I did ' + d.total + ' thing' + (d.total === 1 ? '' : 's')
+               + ' on Skulliance yesterday';
     var card;
     if (!d.best)                  card = things + '.';
-    else if (d.total === 1)       card = things + ', in ' + d.best.label + '.';
-    else if (d.best.n >= d.total) card = things + ', all of them in ' + d.best.label + '.';
+    else if (d.best.n >= d.total) card = things + ', all of it in ' + d.best.label + '.';
     else card = things + ', ' + d.best.n + ' of them in ' + d.best.label + '.';
 
     /*
      * A separate clause, because the trim below DROPS it whole rather than
      * cutting it in half. "148 days running." became "148\u2026".
      *
-     * AND IT SAYS WHAT IT IS A STREAK OF. "4 days running." sat directly
-     * after "112 things on Skulliance yesterday" and read as 112 things a
-     * day for four days; the owner asked what his own post meant. It is
-     * users.streak, the LOGIN streak, which is what the poster has always
-     * called it -- the post just did not.
+     * AND IT IS THE DAILY REWARD STREAK, which is what users.streak has
+     * always been -- getCurrentDailyRewardStreak() in db.php. The post
+     * said "4 days running", which reads as that much activity every day
+     * for four days, and then said "login streak", which was simply the
+     * wrong feature. It also resets to 0 at seven (db.php's
+     * incrementDailyRewardStreak), so it never reads higher than 6.
      */
-    var streak = d.streak > 1 ? ' ' + d.streak + ' day login streak.' : '';
+    var streak = d.streak > 1 ? ' ' + d.streak + ' day daily reward streak.' : '';
 
     /* Rotated on the sharer and the date, so one person's posts differ over
-       time and two people posting on the same day usually differ too. */
+       time and two people posting on the same day usually differ too --
+       near-identical text across many accounts is what X's spam policy
+       covers, and it would be the players' accounts actioned. */
     var seed = 0, k = String(d.ref || '') + String(d.day || '');
     for (var i = 0; i < k.length; i++) seed = (seed * 31 + k.charCodeAt(i)) >>> 0;
-    var ask = ASKS[seed % ASKS.length] + ' Better odds on the rare ones than a normal drop.';
+    var ask = ASKS[seed % ASKS.length];
 
-    var tail = '\n\n@skulliance\n\nArt by @MMAXI404';
+    /* The claim line names the handle AND says what the link below is,
+       which a bare @skulliance did not. */
+    var tail = '\n\nClaim your 3 traits from @skulliance below.\n\nTrait art by @MMAXI404';
     /* X counts ANY url as 23 characters and cuts the overflow off the END,
        where the handle and the credit live. The ask is the functional half,
        so the report card is what gives way if something has to. */
@@ -610,7 +627,7 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     var link = inviteUrl(d);
     return 'Been playing this thing called Skulliance - staking, missions, realms and a stack '
          + 'of games, all free in the browser.\n\n'
-         + 'If you sign in with this link you get 3 DHC traits to build a Fighter with, and I '
+         + 'If you sign in with this link you get 3 DHC Fighter traits to build a fighter with, and I '
          + 'get 3 as well. Only works if you are new or have not been on in a month.\n\n'
          + link;
   }
