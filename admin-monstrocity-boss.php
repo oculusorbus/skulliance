@@ -398,6 +398,15 @@ table.mb tr.gap td { border-top:1px solid rgba(0,200,160,.22); padding-top:11px 
                       text-transform:none; text-align:left }
 .adm .mb-cols label input { margin:1px 0 0; width:auto }
 .mb-cols .pol { font-family:ui-monospace,Menlo,monospace; color:#5a7888; font-size:10px }
+.adm .mb-cols label.hid { display:none }
+.mb-colbar { display:flex; align-items:center; flex-wrap:wrap; gap:4px 10px; font-size:11px;
+             color:#7a9eb0; margin:0 0 8px }
+.mb-colbar-l { letter-spacing:.06em; text-transform:uppercase; color:#5a7888 }
+.adm .mb-colbar label { display:flex; flex-direction:row; align-items:center; gap:5px; margin:0;
+                        font-size:11px; letter-spacing:0; text-transform:none; text-align:left;
+                        color:#7a9eb0 }
+.adm .mb-colbar label input { width:auto; margin:0 }
+#mb-colcount { margin-left:auto; color:#5a7888; font-family:ui-monospace,Menlo,monospace }
 .mb-check { display:flex; align-items:center; gap:7px; font-size:12px; color:#e8eaed; margin:9px 0 0 }
 .mb-back { font-size:12px; display:inline-block; margin:0 0 12px; text-align:left }
 .mb-actions { display:flex; gap:9px; margin-top:12px }
@@ -790,14 +799,22 @@ table.mb-tune tr.mb-run td span { color:#5a7888; text-transform:none; letter-spa
                exist on this database, so nothing ticked here can be saved. Create it with the
                statement in <code>monstrocity-schema.md</code>.</p>
           <?php endif; ?>
-          <div class="mb-cols">
+          <div class="mb-colbar">
+            <span class="mb-colbar-l">Show</span>
+            <label><input type="radio" name="_mbcolfilter" id="mb-colmine" checked>
+              <span>this project's</span></label>
+            <label><input type="radio" name="_mbcolfilter" id="mb-allcols">
+              <span>every project's</span></label>
+            <span id="mb-colcount"></span>
+          </div>
+          <div class="mb-cols" id="mb-cols">
             <?php if (!$collections): ?><em style="color:#5a7888;font-size:11px">No collections on the platform.</em><?php endif; ?>
             <?php foreach ($collections as $c): $on = in_array((int)$c['id'], $rowBossLinks, true); ?>
-              <label>
+              <label data-project="<?php echo (int)$c['project_id']; ?>">
                 <input type="checkbox" name="boss_collections[]" value="<?php echo (int)$c['id']; ?>" <?php echo $on ? 'checked' : ''; ?>>
                 <span><?php echo htmlspecialchars($c['name']); ?>
-                  <?php if (!empty($c['chain'])): ?><span class="pol">&middot; <?php echo htmlspecialchars($c['chain']); ?></span><?php endif; ?>
                   <?php if (!empty($c['project'])): ?><span class="pol">&middot; <?php echo htmlspecialchars($c['project']); ?></span><?php endif; ?>
+                  <?php if (!empty($c['chain'])): ?><span class="pol">&middot; <?php echo htmlspecialchars($c['chain']); ?></span><?php endif; ?>
                 </span>
               </label>
             <?php endforeach; ?>
@@ -907,6 +924,48 @@ table.mb-tune tr.mb-run td span { color:#5a7888; text-transform:none; letter-spa
   }
   proj.addEventListener('change', filter);
   filter();
+
+  /*
+   * THE SAME NARROWING FOR THE EXTRA COLLECTIONS. This list was every
+   * collection on the platform, which on this database is hundreds of rows
+   * for a field whose whole purpose is "the same project's other chains".
+   *
+   * A TICKED ROW IS NEVER HIDDEN, for the same reason the dropdown never
+   * hides the chosen option: you cannot untick what you cannot see, and a
+   * hidden tick still posts, so the boss would keep accepting a collection
+   * with nothing on screen saying so.
+   *
+   * With no project picked yet, narrowing to it would empty the list
+   * entirely, so everything shows.
+   */
+  var cols = document.getElementById('mb-cols');
+  var mine = document.getElementById('mb-colmine');
+  var every = document.getElementById('mb-allcols');
+  if (!cols || !mine || !every) return;
+  var rows = Array.prototype.slice.call(cols.querySelectorAll('label[data-project]'));
+  var count = document.getElementById('mb-colcount');
+  function filterCols() {
+    var pid = proj.value, showAll = every.checked || !pid || pid === '0';
+    var shown = 0, ticked = 0;
+    rows.forEach(function (r) {
+      var box = r.querySelector('input[type=checkbox]');
+      var on = box && box.checked;
+      if (on) ticked++;
+      var keep = showAll || r.getAttribute('data-project') === pid || on;
+      r.classList.toggle('hid', !keep);
+      if (keep) shown++;
+    });
+    if (count) count.textContent = shown + ' shown, ' + ticked + ' ticked';
+  }
+  proj.addEventListener('change', filterCols);
+  mine.addEventListener('change', filterCols);
+  every.addEventListener('change', filterCols);
+  /* Re-run on tick so the count stays honest and a row ticked while "every
+     project's" is on does not vanish when you switch back. */
+  cols.addEventListener('change', function (e) {
+    if (e.target && e.target.type === 'checkbox') filterCols();
+  });
+  filterCols();
 })();
 </script>
 
