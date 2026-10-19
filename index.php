@@ -114,8 +114,8 @@ require_once __DIR__ . '/lib/dhc-shots.php';
    -sm.jpg dropped on the server later is picked up here too. */
 $ix_dhc = array(
 	array('dhcgame',     'Earn them by playing',
-	      'Every game pays a different part of a Fighter, so no single one can dress a whole one. '
-	    . 'Traits turn up as you play whatever you already enjoy.'),
+	      'Every game pays a different part of a Fighter, so no one game can finish one. '
+	    . 'Traits turn up as you play.'),
 	array('dhcassemble', 'Assemble them',
 	      'Ten slots: torso, head, background, effects, arms, weapon, headgear, a companion. '
 	    . 'Build what you like out of what you have earned and save it.'),
@@ -130,7 +130,7 @@ $ix_founders = require __DIR__ . '/lib/founding-artists.php';
 $ix_platform = array(
 	array('missions.png',    'Missions',     'Send your NFTs out on timed missions and they come back with points. Longer missions pay more, and the ones you have staked longest can reach the better tiers.'),
 	array('realms.png',      'Realms and raids', 'Build a realm, garrison it with your NFTs, then raid somebody else or hold yours against them. Your NFTs carry a record of every raid they have fought.'),
-	array('leaderboard.png', 'Leaderboards', 'Every game and most of the platform ranks, so there is something to be the best at whichever part of this you like.'),
+	array('leaderboard.png', 'Leaderboards', 'Every game has a leaderboard, and so does most of the rest of the platform.'),
 	array('store.png',       'The store',    'Spend what you earn. Projects put real NFTs and merch in there, and claims are handled by hand so nothing is minted into the void.'),
 );
 
@@ -189,18 +189,20 @@ a{color:var(--ix-accent)}
 .ix-sec+.ix-sec{border-top:1px solid var(--ix-line)}
 .ix-h2{font-size:clamp(25px,3.6vw,40px);line-height:1.15;font-weight:800;letter-spacing:-.02em;
   margin:0 0 12px;text-wrap:balance}
-.ix-lead{color:var(--ix-dim);font-size:clamp(16px,1.6vw,18px);margin:0 0 30px;max-width:66ch}
+.ix-lead{color:var(--ix-dim);font-size:clamp(16px,1.6vw,18px);margin:0 0 30px}
 .ix-eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ix-accent);
   font-weight:700;margin:0 0 14px}
+.ix-logo{width:260px;max-width:62%;height:auto;margin:0 0 20px;
+  filter:drop-shadow(0 10px 30px rgba(0,0,0,.6))}
 
 /* ---- hero ---- */
 .ix-hero{padding-block:clamp(40px,6vw,76px) clamp(36px,5vw,60px);
   background:radial-gradient(900px 420px at 50% -10%,rgba(0,200,160,.14),transparent 70%)}
 .ix-hero h1{font-size:clamp(33px,6vw,62px);line-height:1.04;font-weight:800;letter-spacing:-.03em;
-  margin:0 0 18px;text-wrap:balance;max-width:19ch}
-.ix-hero p{color:var(--ix-dim);font-size:clamp(17px,1.9vw,20px);margin:0 0 30px;max-width:60ch}
+  margin:0 0 18px;text-wrap:balance}
+.ix-hero p{color:var(--ix-dim);font-size:clamp(17px,1.9vw,20px);margin:0 0 30px}
 .ix-invited{display:flex;gap:12px;align-items:flex-start;margin:0 0 26px;padding:14px 18px;
-  border:1px solid rgba(0,200,160,.4);border-radius:12px;background:rgba(0,200,160,.08);max-width:62ch}
+  border:1px solid rgba(0,200,160,.4);border-radius:12px;background:rgba(0,200,160,.08)}
 .ix-invited strong{color:var(--ix-accent)}
 .ix-invited span{color:var(--ix-text);font-size:15px}
 .ix-invited a{color:var(--ix-accent);text-decoration:underline;text-underline-offset:2px}
@@ -214,7 +216,7 @@ a{color:var(--ix-accent)}
   border:0;transition:filter .15s ease,transform .15s ease}
 .ix-cta:hover{filter:brightness(1.12);transform:translateY(-1px)}
 .ix-cta svg{width:24px;height:24px;flex:0 0 auto;fill:currentColor}
-.ix-cta-note{color:var(--ix-dim);font-size:14px;margin:0;max-width:52ch}
+.ix-cta-note{color:var(--ix-dim);font-size:14px;margin:0}
 .ix-cta-note a{color:var(--ix-dim)}
 .ix-second{display:block;font-size:14px;color:var(--ix-dim)}
 
@@ -282,6 +284,10 @@ a{color:var(--ix-accent)}
 /* ---- closing ---- */
 .ix-end{text-align:center;background:radial-gradient(760px 320px at 50% 110%,rgba(0,200,160,.13),transparent 70%)}
 .ix-end .ix-h2{max-width:24ch;margin-inline:auto}
+/* The wrapper that gives the button room below it is a flex row, and a
+   flex row ignores the section's text-align, so the closing button went
+   hard left in a centred section. */
+.ix-end .ix-act{justify-content:center}
 .ix-end .ix-lead{margin-inline:auto}
 .ix-foot{border-top:1px solid var(--ix-line);padding:26px 0 36px;color:var(--ix-dim);font-size:13.5px;text-align:center}
 .ix-foot a{color:var(--ix-dim);margin:0 9px}
@@ -299,8 +305,57 @@ $sh_links = array(
 );
 include __DIR__ . '/site-header.php';
 
-$ix_note = 'Signing in is Discord only and takes one click. You connect a wallet later, when '
-        . 'you actually want to stake something.';
+$ix_note = 'Sign in with Discord. One click, and no wallet needed until you stake something.';
+
+/*
+ * THE EXPLAINER IS PLACED, NOT FIXED.
+ *
+ * An invited arrival is here for the traits -- that is the whole of their
+ * motivation for clicking -- so being told what a DHC Fighter trait is
+ * has to come straight after the button, not five sections down past the
+ * staking pitch. Somebody who arrived cold has no such motivation yet:
+ * for them "what is a DHC Fighter trait" before "what is Skulliance" is
+ * an answer to a question they have not asked, so it stays in place.
+ *
+ * One copy, called from one of two positions, so the two orderings cannot
+ * drift apart.
+ */
+$ix_traits = function () use ($ix_dhc, $e) { ?>
+<section class="ix-sec" id="traits">
+  <div class="ix-wrap">
+    <h2 class="ix-h2">What is a DHC Fighter trait?</h2>
+    <p class="ix-lead">DHC is <strong>Digital Hell Citizens</strong>, a collection by
+    <a href="https://x.com/MMAXI404" target="_blank" rel="noopener noreferrer">Maxingo</a>. He let
+    Skulliance use the artwork from <em>Digital Hell Citizens 2: Fighters</em> to build a game out
+    of it. A trait is one piece of a fighter: a head, a weapon, a backdrop, a companion.</p>
+    <div class="ix-grid">
+<?php foreach ($ix_dhc as $d): $sh = dhc_shot_src($d[0]); ?>
+      <article class="ix-card">
+<?php if (!empty($sh['src'])): ?>
+        <img src="<?php echo $e($sh['src']); ?>" alt="<?php echo $e($d[1]); ?>" loading="lazy" decoding="async">
+<?php endif; ?>
+        <div class="ix-card-b">
+          <h3><?php echo $e($d[1]); ?></h3>
+          <p><?php echo $e($d[2]); ?></p>
+        </div>
+      </article>
+<?php endforeach; ?>
+    </div>
+    <div class="ix-points" style="margin-top:20px">
+      <ul>
+        <li><strong>A trait is not an NFT.</strong> It cannot be minted, and earning one gives you
+        no ownership of the artwork. It is a game piece.</li>
+        <li>The genuine, ownable Fighters are
+        <a href="https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5" target="_blank" rel="noopener noreferrer">the Digital Hell Citizens 2 collection on wayup</a>.
+        If the art is what grabs you, that is where to go.</li>
+        <li>Traits are free. You earn them by playing, and the three waiting for you are the same
+        ones everybody else has to play for.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<?php };
 
 /* Written once and printed twice, top and bottom. */
 $ix_button = function () use ($ix_oauth, $ix_signed_in, $e) {
@@ -319,17 +374,22 @@ $ix_button = function () use ($ix_oauth, $ix_signed_in, $e) {
 
 <section class="ix-hero">
   <div class="ix-wrap">
-    <p class="ix-eyebrow">Skulliance</p>
+    <?php /* The wordmark, not the word. 700x300 on the server, drawn at
+             260 wide, so width/height are stated to stop it shoving the
+             headline down as it loads. */ ?>
+    <img class="ix-logo" src="images/skulliancelogo.png" alt="Skulliance"
+         width="700" height="300" fetchpriority="high" decoding="async">
     <h1>Stake your NFTs, then go and play with them.</h1>
 <?php if ($ix_invited): ?>
     <div class="ix-invited">
       <span><strong><?php echo $ix_from !== ''
           ? $e($ix_from) . ' invited you.'
           : 'You were invited.'; ?></strong>
-      <?php echo (int) REF_ARRIVAL_DRAWS; ?> <a href="#traits">DHC Fighter traits</a> are waiting on
-      the other side of that button, drawn on better odds than an ordinary drop.
-      <?php echo $ix_from !== '' ? $e($ix_from) : 'Whoever sent you'; ?> gets
-      <?php echo (int) REF_INVITER_DRAWS; ?> as well, which is the point of them bothering.
+      Somebody wanted you to see this. <?php echo (int) REF_ARRIVAL_DRAWS; ?>
+      <a href="#traits">DHC Fighter traits</a> are yours when you sign in, on better odds than an
+      ordinary drop, and
+      <?php echo $ix_from !== '' ? $e($ix_from) : 'whoever sent you'; ?> gets
+      <?php echo (int) REF_INVITER_DRAWS; ?> for bringing you in.
       <a href="#traits">What is a DHC Fighter trait?</a></span>
     </div>
 <?php endif; ?>
@@ -345,10 +405,10 @@ $ix_button = function () use ($ix_oauth, $ix_signed_in, $e) {
  */
 if ($ix_invited) { $ix_button(); echo '<p class="ix-cta-note">' . $ix_note . '</p>'; }
 ?>
-    <p>Skulliance is a free staking platform and an arcade<?php
+    <p class="ix-pitch">Free staking and about a dozen games<?php
       if ($ix_projects > 0) echo ', shared by ' . (int) $ix_projects . ' NFT projects'; ?>.
-    Your collection earns every night it is staked, and everything it earns is spendable on
-    missions, realms, raids, a store and about a dozen games that take your NFTs as the pieces.</p>
+    Your collection earns points every night it is staked. Spend them on missions, realms, raids,
+    the store, and games that use your NFTs as the pieces.</p>
 <?php if (!$ix_invited) { $ix_button(); echo '<p class="ix-cta-note">' . $ix_note . '</p>'; } ?>
 <?php if ($ix_stats): ?>
     <ul class="ix-stats">
@@ -360,11 +420,12 @@ if ($ix_invited) { $ix_button(); echo '<p class="ix-cta-note">' . $ix_note . '</
   </div>
 </section>
 
+<?php if ($ix_invited) $ix_traits(); ?>
+
 <section class="ix-sec">
   <div class="ix-wrap">
     <h2 class="ix-h2">Staking is where it starts, not where it stops</h2>
-    <p class="ix-lead">Plenty of places will pay you to lock an NFT away and look at a number going
-    up. The reason this exists is everything that happens after that.</p>
+    <p class="ix-lead">Most staking stops at a number going up. Here is what the points are for.</p>
     <div class="ix-grid ix-two">
 <?php foreach ($ix_platform as $p): ?>
       <article class="ix-card">
@@ -382,9 +443,8 @@ if ($ix_invited) { $ix_button(); echo '<p class="ix-cta-note">' . $ix_note . '</
 <section class="ix-sec" id="games">
   <div class="ix-wrap">
     <h2 class="ix-h2">And then there are the games</h2>
-    <p class="ix-lead">All of them free, all of them built here, and most of them played with the
-    NFTs you already own. Skull Swap and Monstrocity you can play right now without an account, so
-    you can see what the rest are like before you sign in to anything.</p>
+    <p class="ix-lead">All free, all built here, most of them played with the NFTs you already
+    own. Skull Swap and Monstrocity need no account. Play them right now.</p>
     <div class="ix-grid">
 <?php foreach ($ix_games as $g): ?>
       <article class="ix-card">
@@ -407,9 +467,8 @@ if ($ix_invited) { $ix_button(); echo '<p class="ix-cta-note">' . $ix_note . '</
 <section class="ix-sec">
   <div class="ix-wrap">
     <h2 class="ix-h2"><?php echo $ix_projects > 0 ? (int) $ix_projects . ' projects' : 'The projects'; ?>, and the artists behind them</h2>
-    <p class="ix-lead">Skulliance was started by six artists who wanted somewhere their collectors
-    would want to stay. It is selective about who is invited, and it is still artists who bring the
-    next one in.</p>
+    <p class="ix-lead">Six artists started Skulliance. Everyone since was invited, and it is still
+    artists who bring in the next one.</p>
   </div>
 <?php
 /*
@@ -454,52 +513,17 @@ echo $e(substr($ix_line, -1) === '.' ? $ix_line : $ix_line . '.');
   </div>
 </section>
 
-<section class="ix-sec" id="traits">
-  <div class="ix-wrap">
-    <h2 class="ix-h2">What is a DHC Fighter trait?</h2>
-    <p class="ix-lead">Fair question, and nobody should have to already know. DHC is
-    <strong>Digital Hell Citizens</strong>, a collection by the artist
-    <a href="https://x.com/MMAXI404" target="_blank" rel="noopener noreferrer">Maxingo</a>, who let
-    Skulliance use the artwork from <em>Digital Hell Citizens 2: Fighters</em> to build a game out
-    of it. A trait is one piece of a fighter: a head, a weapon, a backdrop, a companion.</p>
-    <div class="ix-grid">
-<?php foreach ($ix_dhc as $d): $sh = dhc_shot_src($d[0]); ?>
-      <article class="ix-card">
-<?php if (!empty($sh['src'])): ?>
-        <img src="<?php echo $e($sh['src']); ?>" alt="<?php echo $e($d[1]); ?>" loading="lazy" decoding="async">
-<?php endif; ?>
-        <div class="ix-card-b">
-          <h3><?php echo $e($d[1]); ?></h3>
-          <p><?php echo $e($d[2]); ?></p>
-        </div>
-      </article>
-<?php endforeach; ?>
-    </div>
-    <div class="ix-points" style="margin-top:20px">
-      <ul>
-        <li><strong>A trait is not an NFT.</strong> It cannot be minted, and earning one gives you
-        no ownership of the artwork. It is a game piece.</li>
-        <li>The genuine, ownable Fighters are
-        <a href="https://www.wayup.io/collection/b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5" target="_blank" rel="noopener noreferrer">the Digital Hell Citizens 2 collection on wayup</a>.
-        If the art is what grabs you, that is where to go.</li>
-        <li>Traits are free. You earn them by playing, and the three waiting for you are the same
-        ones everybody else has to play for.</li>
-      </ul>
-    </div>
-  </div>
-</section>
+<?php if (!$ix_invited) $ix_traits(); ?>
 
 <section class="ix-sec">
   <div class="ix-wrap">
     <h2 class="ix-h2">Points are not a token</h2>
-    <p class="ix-lead">This matters enough to say plainly rather than bury, because it is the first
-    thing anyone sensible asks.</p>
     <div class="ix-points">
       <ul>
         <li>Points are kept off chain, in a database. There is no contract.</li>
         <li>They are not a coin, not a token and not tradeable. There is no pool, no listing and no price.</li>
         <li>They have no value anywhere except here, where they buy missions, upgrades, store items and entries.</li>
-        <li>Nothing asks you to buy anything to take part, and staking never moves your NFTs out of your wallet.</li>
+        <li>Nothing here costs money, and staking never moves your NFTs out of your wallet.</li>
       </ul>
     </div>
   </div>

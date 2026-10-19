@@ -172,12 +172,12 @@ $dg_shot = function () use ($dg_token, $dg_w, $dg_h, $e) { ?>
 <div id="dg">
   <?php if ($dg_ok && $dg_ref): ?>
     <h1><?php echo $dg_from !== ''
-           ? $e($dg_from) . ' invited you to Skulliance'
-           : 'You have been invited to Skulliance'; ?></h1>
+           ? $e($dg_from) . ' wants you to see this'
+           : 'Somebody wants you to see this'; ?></h1>
     <p class="offer"><b>Three DHC Fighter traits are waiting for you.</b> Sign in through this
       link and they are yours - drawn on better odds than an ordinary drop, with a real chance at
       a legendary. <?php echo $dg_from !== ''
-        ? $e($dg_from) . ' gets three as well, which is why they sent it.'
+        ? $e($dg_from) . ' gets three for bringing you in.'
         : 'Whoever shared this gets three as well.'; ?>
       <a href="index.php#traits">What is a DHC Fighter trait?</a></p>
     <?php $dg_cta(); ?>

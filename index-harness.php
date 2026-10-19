@@ -66,6 +66,14 @@ echo "the page renders at all\n";
 	   && stripos($html, 'Notice:') === false,
 	   'php complained while rendering: ' . substr(strstr($html, 'rror') ?: $html, 0, 140));
 	ok(substr_count($html, 'Login with Discord') >= 1, 'the call to action is gone');
+	/* The wordmark, not the word: a text eyebrow reading SKULLIANCE on the
+	   page that is somebody's first sight of Skulliance. */
+	ok(strpos($html, 'class="ix-logo"') !== false, 'the Skulliance logo is gone from the hero');
+	ok(strpos($html, 'skulliancelogo.png') !== false,
+	   'the hero does not use the platform wordmark');
+	/* Stated dimensions, or it shoves the headline down as it loads. */
+	ok(preg_match('/class="ix-logo"[^>]*width="\d+"[^>]*height="\d+"/', $html) === 1,
+	   'the logo has no width and height, so the headline jumps when it loads');
 }
 
 echo "\nthe call to action is still the Discord button\n";
@@ -127,6 +135,31 @@ echo "\nan invited arrival is told what is waiting\n";
 	   'the offer uses the word DHC without linking anywhere that explains it');
 	ok(strpos($good, 'id="traits"') !== false,
 	   'the explainer the offer links to is not on the page, so the link goes nowhere');
+
+	/*
+	 * AND IT COMES STRAIGHT AFTER THE BUTTON FOR THEM. The traits are the
+	 * whole of an invited arrival's motivation for clicking, so being told
+	 * what one is cannot sit five sections down past the staking pitch.
+	 * Somebody who arrived cold has not asked the question yet, so for
+	 * them it stays in place, after the pitch.
+	 */
+	$tAt = strpos($good, 'id="traits"');
+	$sAt = strpos($good, 'Staking is where it starts');
+	ok($tAt !== false && $sAt !== false && $tAt < $sAt,
+	   'an invited arrival has to scroll past the whole pitch to find out what a trait is');
+	$uninvited = render();
+	$ct = strpos($uninvited, 'id="traits"');
+	$cs = strpos($uninvited, 'Staking is where it starts');
+	ok($ct !== false && $cs !== false && $cs < $ct,
+	   'a cold visitor is told what a DHC Fighter trait is before being told what Skulliance is');
+	/* One copy, placed twice. */
+	ok(substr_count($good, 'id="traits"') === 1 && substr_count($uninvited, 'id="traits"') === 1,
+	   'the explainer is rendered twice, so the anchor is ambiguous');
+
+	/* The closing button is in a centred section, and a flex wrapper
+	   ignores text-align. */
+	ok(strpos($good, '.ix-end .ix-act{justify-content:center}') !== false,
+	   'the closing button sits hard left in a centred section');
 	ok(strpos($plain, 'Digital Hell Citizens') !== false,
 	   'the explainer never says what DHC stands for');
 	ok(strpos($plain, 'not an NFT') !== false,
@@ -154,19 +187,19 @@ echo "\nan invited arrival is told what is waiting\n";
 	 * phone. Everyone else gets the pitch first, because for them the
 	 * button is a question nobody has asked yet.
 	 */
-	$pitch = strpos($good, 'Skulliance is a free staking platform');
+	$pitch = strpos($good, 'class="ix-pitch"');
 	$cta   = strpos($good, 'class="ix-cta"');
 	ok($cta !== false && $pitch !== false && $cta < $pitch,
 	   'an invited arrival has to read the pitch before reaching the button');
 	$cold  = render();
-	$cpit  = strpos($cold, 'Skulliance is a free staking platform');
+	$cpit  = strpos($cold, 'class="ix-pitch"');
 	$ccta  = strpos($cold, 'class="ix-cta"');
 	ok($ccta !== false && $cpit !== false && $cpit < $ccta,
 	   'a cold visitor is asked to sign in before being told what this is');
 	/* Either way the note travels with the button rather than being
 	   orphaned halfway up the page. */
-	ok(substr_count($good, 'Signing in is Discord only') === 1,
-	   'the sign-in note is printed ' . substr_count($good, 'Signing in is Discord only') . ' times');
+	ok(substr_count($good, 'class="ix-cta-note"') === 1,
+	   'the sign-in note is printed ' . substr_count($good, 'class="ix-cta-note"') . ' times');
 
 	/*
 	 * AND THE COOKIE COUNTS, NOT ONLY ?r=. The invite posted on X points at
@@ -180,7 +213,7 @@ echo "\nan invited arrival is told what is waiting\n";
 	   'an arrival carrying the invite cookie is not told what is waiting, which is everyone '
 	 . 'who clicked through from the shared poster');
 	$cc = strpos($viaCookie, 'class="ix-cta"');
-	$cp = strpos($viaCookie, 'Skulliance is a free staking platform');
+	$cp = strpos($viaCookie, 'class="ix-pitch"');
 	ok($cc !== false && $cp !== false && $cc < $cp,
 	   'the cookie arrival has to read the pitch before reaching the button');
 	ok(strpos(render(array(), array('skl_ref' => 'zzzz')), 'You were invited') === false,

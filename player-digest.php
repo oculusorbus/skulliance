@@ -43,7 +43,19 @@ if (!isset($_SESSION['userData']['user_id'])) return;
 @keyframes pdg-in{from{transform:scale(.92) translateY(12px);opacity:0}to{transform:none;opacity:1}}
 #pdg-kicker{font-size:9px;letter-spacing:.24em;text-transform:uppercase;padding:14px 0 0;color:#7a9eb0}
 #pdg-shot{display:block;width:100%;height:auto;margin:12px 0 0;background:#06101a}
-#pdg-note{font-size:11px;color:#7a9eb0;padding:10px 16px 0;line-height:1.6}
+/*
+ * THE OFFER IS NOT THE STATUS LINE.
+ *
+ * The reason to press Share used to live in #pdg-note, which is also
+ * where "Preparing your image..." and "Saved." land -- so the one line
+ * explaining what the player gets was overwritten by housekeeping the
+ * moment they touched anything. It has its own element, and it is the
+ * brightest text under the picture, because it is the only part of this
+ * modal that asks for something.
+ */
+#pdg-offer{font-size:12.5px;color:#cfe7df;line-height:1.65;padding:14px 16px 0;margin:0}
+#pdg-offer b{color:#00c8a0}
+#pdg-note{font-size:11px;color:#7a9eb0;padding:8px 16px 0;line-height:1.6;margin:0}
 /* The controls defend themselves: this sits on every page on the site and
    cannot know what each one does to a button. Same reasoning, and the same
    !important, as dhc-dropmodal.php's actions row. */
@@ -85,6 +97,18 @@ if (!isset($_SESSION['userData']['user_id'])) return;
   <div id="pdg-box">
     <div id="pdg-kicker">Your day on Skulliance</div>
     <canvas id="pdg-shot" width="1200" height="630"></canvas>
+    <?php
+    /* STRAIGHT FROM THE CONSTANTS ref_credit() PAYS ON. A 3 typed into the
+       copy goes on promising three the day REF_ARRIVAL_DRAWS changes, and
+       this is the sentence the whole feature rests on. */
+    $pdg_inv = defined('REF_INVITER_DRAWS') ? (int) REF_INVITER_DRAWS : 3;
+    $pdg_arr = defined('REF_ARRIVAL_DRAWS') ? (int) REF_ARRIVAL_DRAWS : 3;
+    $pdg_dor = defined('REF_DORMANT_DAYS')  ? (int) REF_DORMANT_DAYS  : 30;
+    ?>
+    <p id="pdg-offer"><b>Posting this is also your invite.</b>
+      <?php echo $pdg_inv; ?> DHC Fighter traits for you every time somebody new signs in through
+      it, and <?php echo $pdg_arr; ?> for them, on better odds than an ordinary drop. Anyone who
+      has not played in <?php echo $pdg_dor; ?> days counts as new.</p>
     <p id="pdg-note"></p>
     <?php /*
      * THE OTHER WAY TO INVITE, folded away.
@@ -388,9 +412,25 @@ if (!isset($_SESSION['userData']['user_id'])) return;
       return;
     }
 
+    /*
+     * THE SHARE SHEET IS FOR iOS ONLY, and gating it on canShare() alone
+     * was wrong: desktop Chrome and Safari answer yes too, so a button
+     * labelled Download image opened a sheet offering to message the
+     * picture to somebody's contacts. Everywhere an anchor works, use the
+     * anchor -- that is what the button says it does.
+     *
+     * UA SNIFFING, DELIBERATELY, because the thing that needs detecting
+     * cannot be feature-detected: iOS Safari reports 'download' in an
+     * anchor and then ignores it. iPadOS reports itself as MacIntel, so
+     * the touch-point count is what separates it from a desktop Mac.
+     */
+    var ua = navigator.userAgent || '';
+    var isIOS = /iP(hone|ad|od)/.test(ua)
+             || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
     var file = null;
     try { file = new File([blob], filename(d), { type: 'image/png' }); } catch (e) { /* older browser */ }
-    if (file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+    if (isIOS && file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
       navigator.share({ files: [file] })
         /* A cancelled sheet is not a failure and must not say so. */
         .then(function () { note.textContent = 'Saved.'; })
@@ -591,7 +631,7 @@ if (!isset($_SESSION['userData']['user_id'])) return;
       else window.location.href = href;
       note.textContent = url
         ? 'Posted with your image.'
-        : 'Shared \u2014 the image could not be uploaded, so the post carries the site card.';
+        : 'Shared. The image could not be uploaded, so the post carries the site card.';
     };
 
     var cv = document.getElementById('pdg-shot');
@@ -657,11 +697,17 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     Promise.all([load(d.avatar)].concat(d.art.map(function (a) { return load(a.src); })))
       .then(function (ims) {
         draw(d, { avatar: ims[0], art: ims.slice(1) });
+        /*
+         * WHY THEY SHOULD DO ANYTHING WITH THIS. The line here used to
+         * read "keep it, post it, or close this", which is instructions
+         * for dismissing a box, not a reason to act on one. The reason is
+         * that the post IS the invite and it pays in traits, both ways.
+         */
         /* A cache is a surprise, so it is the first thing the line says. */
         document.getElementById('pdg-note').textContent = (d.cache > 0)
           ? 'A cache fell out of today\u2019s digest: ' + d.cache
             + ' traits, revealed once you close this.'
-          : 'Keep it, post it, or close this \u2014 it will not ask again today.';
+          : 'It will not ask again today once you close it.';
         veil.classList.add('on');
       });
   }
