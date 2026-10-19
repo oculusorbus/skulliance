@@ -61,6 +61,34 @@ $dg_img  = $dg_ok ? DSH_BASE . DSH_DIR . '/' . $dg_token . '.jpg' : DSH_BASE . '
 $dg_dim = $dg_ok ? @getimagesize(__DIR__ . '/' . DSH_DIR . '/' . $dg_token . '.jpg') : false;
 $dg_w   = ($dg_dim && $dg_dim[0] > 0) ? (int) $dg_dim[0] : 1200;
 $dg_h   = ($dg_dim && $dg_dim[1] > 0) ? (int) $dg_dim[1] : 630;
+
+/*
+ * WE KNOW WHO SENT THEM, SO SAY SO.
+ *
+ * This page said "whoever shared this gets three as well" while their
+ * username and their avatar were drawn into the picture directly above the
+ * sentence. ?r= decodes to exactly one user id, which is the account that
+ * will actually be paid, so being coy about it was pretending not to know
+ * something the page was already showing.
+ *
+ * NAMED ONLY WHEN THE POSTER IS REALLY THEIRS -- see
+ * dsh_token_belongs_to(), which is why that check is a function and not
+ * three lines here. Where it says no, the generic wording stands.
+ *
+ * NOTHING NEW IS DISCLOSED. The name is already in the image, and the
+ * image only exists because its owner pressed Share.
+ */
+$dg_from = '';
+if ($dg_ok && $dg_ref) {
+	$dg_inviter = ref_decode($_GET['r']);
+	if (dsh_token_belongs_to($dg_token, $dg_inviter) && isset($conn) && $conn instanceof mysqli) {
+		/* No mysqlnd on this host: query() and fetch_assoc(), never
+		   get_result(). The id came out of ref_decode() as an int. */
+		$dg_r = @$conn->query('SELECT username FROM users WHERE id = '
+		                      . (int) $dg_inviter . ' LIMIT 1');
+		if ($dg_r && ($dg_u = $dg_r->fetch_assoc())) $dg_from = trim((string) $dg_u['username']);
+	}
+}
 $dg_url  = DSH_BASE . 'digest.php' . ($dg_ok ? '?d=' . $dg_token : '');
 $dg_t    = 'A day on Skulliance';
 $dg_d    = 'Stake your NFTs, run missions, hold a realm and play a dozen games, free and in '
@@ -142,15 +170,21 @@ $dg_shot = function () use ($dg_token, $dg_w, $dg_h, $e) { ?>
 ?>
 <div id="dg">
   <?php if ($dg_ok && $dg_ref): ?>
-    <h1>You have been invited to Skulliance</h1>
+    <h1><?php echo $dg_from !== ''
+           ? $e($dg_from) . ' invited you to Skulliance'
+           : 'You have been invited to Skulliance'; ?></h1>
     <p class="offer"><b>Three DHC traits are waiting for you.</b> Sign in through this link and
       they are yours - drawn on better odds than an ordinary drop, with a real chance at a
-      legendary. Whoever shared this gets three as well.</p>
+      legendary. <?php echo $dg_from !== ''
+        ? $e($dg_from) . ' gets three as well, which is why they sent it.'
+        : 'Whoever shared this gets three as well.'; ?></p>
     <?php $dg_cta(); ?>
     <p>Free to join, nothing to install, and you do not need a wallet to start.</p>
     <?php $dg_shot(); ?>
-    <p>This is their day on Skulliance, drawn the morning after. Yours starts the night you
-      stake something.</p>
+    <p><?php echo $dg_from !== ''
+         ? 'This is ' . $e($dg_from) . '&rsquo;s day on Skulliance, drawn the morning after.'
+         : 'This is their day on Skulliance, drawn the morning after.'; ?>
+      Yours starts the night you stake something.</p>
   <?php elseif ($dg_ok): ?>
     <h1>A day on Skulliance</h1>
     <p>Somebody&rsquo;s day of missions, raids, realms and games &mdash; drawn the morning after.</p>

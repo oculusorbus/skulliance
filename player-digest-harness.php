@@ -420,6 +420,57 @@ echo "\nthe page the invite actually lands on\n";
 	ok(strpos($pg2, 'getimagesize(') !== false,
 	   'the stored poster is not measured, so old and new posters cannot both be right');
 
+	/*
+	 * AND IT NAMES THE PERSON WHO SENT THEM.
+	 *
+	 * This said "whoever shared this gets three as well" while their
+	 * username and avatar were drawn into the picture directly above the
+	 * sentence. ?r= decodes to exactly one user id -- the account that
+	 * will actually be paid -- so the coyness was pretending not to know
+	 * something the page was already showing.
+	 */
+	ok(strpos($pg2, '$dg_from') !== false, 'the page does not name who sent the invite');
+	ok(strpos($pg2, 'Whoever shared this') !== false,
+	   'there is no wording left for when the sender cannot be established');
+	/*
+	 * EVERY use of the name, not just one. The name is printed in three
+	 * places, so "is $e($dg_from) present anywhere" passes with two of the
+	 * three escaped -- which is exactly how an unescaped one survives.
+	 * Count instead: every mention is either a control use (assignment or
+	 * a comparison) or an escaped print, and nothing else.
+	 */
+	$all  = preg_match_all('/\$dg_from/', $pg2);
+	$esc  = preg_match_all('/\$e\(\$dg_from\)/', $pg2);
+	$ctrl = preg_match_all('/\$dg_from\s*(?:=[^=]|!==)/', $pg2);
+	ok($all === $esc + $ctrl,
+	   ($all - $esc - $ctrl) . ' of the ' . $all . ' uses of the sender\'s name are printed '
+	 . 'without escaping; a username is whatever Discord let them call themselves');
+	/* No mysqlnd on this host. */
+	ok(strpos($pg2, 'get_result(') === false, 'digest.php calls get_result(), which is fatal here');
+	ok(strpos($pg2, '(int) $dg_inviter') !== false, 'the inviter id reaches the query uncast');
+
+	/*
+	 * NAMED ONLY WHEN THE POSTER IS REALLY THEIRS. ?d= and ?r= are
+	 * independent, so a hand-made url can pair one person's artwork with
+	 * another person's code -- and that would caption a stranger's day
+	 * with whatever name the url asked for.
+	 */
+	ok(strpos($pg2, 'dsh_token_belongs_to(') !== false,
+	   'the sender is named without checking the poster is theirs, so any url can put any '
+	 . 'name on anybody\'s day');
+	/* Run it, rather than read it. */
+	require_once __DIR__ . '/lib/digest-share-lib.php';
+	$tk = dsh_token(4821, date('Y-m-d', strtotime('-1 day')));
+	ok(dsh_token_belongs_to($tk, 4821) === true, 'a player is not recognised as owning their own poster');
+	ok(dsh_token_belongs_to($tk, 99) === false, 'somebody else is credited with this poster');
+	ok(dsh_token_belongs_to($tk, 0) === false && dsh_token_belongs_to($tk, -1) === false,
+	   'a non-user owns a poster');
+	ok(dsh_token_belongs_to('../../etc/passwd', 4821) === false, 'a non-token is accepted');
+	ok(dsh_token_belongs_to(dsh_token(4821, date('Y-m-d', strtotime('-' . DSH_KEEP_DAYS . ' day'))), 4821)
+	   === true, 'a poster still inside the keep window is not recognised as its owner\'s');
+	ok(dsh_token_belongs_to(dsh_token(4821, date('Y-m-d', strtotime('-400 day'))), 4821) === false,
+	   'the ownership scan runs far past the keep window, which is work for nothing');
+
 	/* The code has to survive the hop to index.php: the cookie is already
 	   set, but a browser that refused it still has the query string. */
 	ok(strpos($pg2, "'index.php?r=' . rawurlencode") !== false,

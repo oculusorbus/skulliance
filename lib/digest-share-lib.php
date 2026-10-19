@@ -38,6 +38,31 @@ function dsh_token($user_id, $day) {
 	return substr(sha1('skulliance-digest|' . (int) $user_id . '|' . $day), 0, 20);
 }
 
+/**
+ * Does this poster belong to this player?
+ *
+ * ?d= and ?r= ARE TWO INDEPENDENT PARAMETERS. Nothing stops a hand-made
+ * url pairing one person's poster with another person's referral code, so
+ * anything that puts a NAME on a shared poster has to establish that the
+ * name belongs to it -- otherwise a stranger's day gets captioned with
+ * whoever the url says, from a link anybody can type.
+ *
+ * dsh_token() is a plain hash of the user id and the day, so the claim is
+ * checkable without storing anything: recompute it for every day a poster
+ * could still exist for and see whether any of them match. That is
+ * DSH_KEEP_DAYS hashes, about 0.07ms, and it needs no table.
+ *
+ * A couple of days of slack past the keep window covers a server timezone
+ * either side of the day the poster was drawn for.
+ */
+function dsh_token_belongs_to($token, $user_id) {
+	if (!dsh_valid_token($token) || (int) $user_id <= 0) return false;
+	for ($i = 0; $i <= DSH_KEEP_DAYS + 2; $i++) {
+		if (dsh_token($user_id, date('Y-m-d', strtotime('-' . $i . ' day'))) === $token) return true;
+	}
+	return false;
+}
+
 /** Is this a token shape, rather than something walking out of the directory? */
 function dsh_valid_token($t) {
 	return is_string($t) && preg_match('/^[0-9a-f]{20}$/', $t) === 1;
