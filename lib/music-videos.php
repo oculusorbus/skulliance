@@ -37,8 +37,13 @@ function mv_slug($s) { return preg_replace('/[^a-z0-9]/', '', strtolower((string
 /**
  * Every video on disk, newest knowledge of the projects attached.
  *
- * Returns a list of array('file', 'title', 'project_id', 'logo', 'icon'),
- * ordered by the title shown.
+ * Returns a list of array('file', 'title', 'project_id', 'logo', 'icon',
+ * 'poster'), ordered by the title shown.
+ *
+ * 'poster' is the project's REALM THEME image, images/themes/<project
+ * id>.jpg -- realms.php picks a theme by project id, so the file is
+ * already keyed exactly the way this needs it. It is the tile the grid
+ * shows; the video itself is only fetched when somebody opens it.
  *
  * THREE WAYS TO LABEL A VIDEO, in descending order of how much it looks
  * like the project's own mark:
@@ -74,17 +79,35 @@ function mv_videos($conn, $webroot) {
 		}
 	}
 
-	/* A project's Monstrocity theme, through the collections it covers. */
+	/*
+	 * A project's Monstrocity theme.
+	 *
+	 * STRAIGHT OFF monstrocity_themes.project_id, which is the column the
+	 * admin writes. The first version went the long way round --
+	 * monstrocity_theme_collections -> collections -> projects -- and on
+	 * the live site exactly ONE of twelve videos found a logo that way.
+	 * That link table is sparse: it is the newer per-collection mapping
+	 * and most themes have no rows in it at all, so the join quietly
+	 * returned nothing for eleven projects and they all fell through to
+	 * their points icon. Nothing looked broken, which is the problem.
+	 *
+	 * Active themes first, so a live theme beats a draft for the same
+	 * project; within that, the admin's own ordering.
+	 */
 	$logos = array();
 	$r = $conn ? @$conn->query(
-		'SELECT DISTINCT c.project_id, t.slug
-		   FROM monstrocity_theme_collections tc
-		   JOIN collections c ON c.id = tc.collection_id
-		   JOIN monstrocity_themes t ON t.id = tc.theme_id') : null;
+		'SELECT project_id, slug
+		   FROM monstrocity_themes
+		  WHERE project_id IS NOT NULL AND project_id > 0
+		  ORDER BY active DESC, sort_order ASC, id ASC') : null;
 	if ($r) while ($t = $r->fetch_assoc()) {
-		$pid = (int) $t['project_id'];
-		if (isset($logos[$pid])) continue;
-		$path = 'images/monstrocity/' . $t['slug'] . '/logo.png';
+		$pid  = (int) $t['project_id'];
+		$slug = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $t['slug']);
+		if ($pid <= 0 || $slug === '' || isset($logos[$pid])) continue;
+		/* CHECKED ON DISK. A theme row is not a promise that anybody drew
+		   a logo for it; without this a themed project with no logo.png
+		   prints a broken frame instead of falling back to its icon. */
+		$path = 'images/monstrocity/' . $slug . '/logo.png';
 		if (is_file(rtrim($webroot, '/') . '/' . $path)) $logos[$pid] = $path;
 	}
 
@@ -108,6 +131,11 @@ function mv_videos($conn, $webroot) {
 			'project_id' => $pid,
 			'logo'       => ($pid && isset($logos[$pid])) ? $logos[$pid] : '',
 			'icon'       => ($pid && isset($icons[$pid])) ? $icons[$pid] : '',
+			/* Checked on disk like the rest: a project with no realm
+			   theme gets no tile image and the page draws a plain panel
+			   rather than a broken frame. */
+			'poster'     => ($pid && is_file(rtrim($webroot, '/') . '/images/themes/' . $pid . '.jpg'))
+			                ? 'images/themes/' . $pid . '.jpg' : '',
 		);
 	}
 

@@ -64,7 +64,7 @@ class MvConn {
 			}
 			return new MvRes($out);
 		}
-		if (strpos($sql, 'monstrocity_theme_collections') !== false) return new MvRes($this->themes);
+		if (strpos($sql, 'FROM monstrocity_themes') !== false) return new MvRes($this->themes);
 		return false;
 	}
 }
@@ -191,18 +191,39 @@ echo "\nthe page is public and cheap to open\n";
 	   'a stranger lands with no navigation at all');
 	/* TWELVE VIDEOS, NOT TWELVE DOWNLOADS. */
 	/*
-	 * ANCHORED ON THE TAG. harness_strip_comments() leaves <?php /* ... *<?php ?>/ ?>
-	 * blocks alone, so the comment ABOVE the video element -- which
-	 * explains why preload and playsinline are set -- satisfied a bare
-	 * search for either word, and the assertion could not fail.
+	 * ONE VIDEO ELEMENT ON THE PAGE, in the player. The grid used to be
+	 * twelve of them, each asking for metadata and seeking to its own
+	 * midpoint for a still: that opened more connections than a browser
+	 * allows per host, and on the live page most tiles sat on a spinner
+	 * showing nothing at all. The tiles are images now.
+	 *
+	 * Counted on the RAW file, because harness_strip_comments() leaves
+	 * <?php /* ... *<?php ?>/ ?> blocks alone and the comments here
+	 * discuss <video at length.
 	 */
-	ok(preg_match('/<video[^>]*preload="metadata"/', $pg) === 1,
-	   'the videos preload themselves, so opening the page pulls every film');
-	ok(preg_match('/<video[^>]*playsinline/', $pg) === 1,
-	   'tapping a video on an iPhone takes over the whole screen');
-	ok(preg_match('/<video[^>]*controls/', $pg) === 1, 'the videos have no controls');
-	ok(strpos($pg, 'aspect-ratio:16/9') !== false,
-	   'no space is reserved, so the page jumps about as each video reports its size');
+	$rawpg = file_get_contents(__DIR__ . '/musicvideos.php');
+	/* A real TAG -- <video followed by an attribute. Counting the bare
+	   string finds the two comments that talk about "<video> elements". */
+	$nvid = preg_match_all('/<video\s+[a-z]+=/i', $rawpg);
+	ok($nvid === 1,
+	   $nvid . ' video elements on the page; twelve of them loading at once is what filled the '
+	 . 'grid with spinners');
+	ok(preg_match('/<video[^>]*id="mvp-video"/', $rawpg) === 1, 'the player has no video element');
+	ok(preg_match('/<video[^>]*playsinline/', $rawpg) === 1,
+	   'playing a video on an iPhone takes over the whole screen');
+	ok(preg_match('/<video[^>]*controls/', $rawpg) === 1, 'the player has no controls');
+	/* No src in the markup, or it downloads before anybody asks. */
+	ok(preg_match('/<video[^>]*\ssrc=/', $rawpg) === 0,
+	   'the player carries a src in the markup, so one film downloads on every page load');
+
+	/* THE TILES ARE IMAGES, and the space they take is reserved. */
+	ok(strpos($pg, 'aspect-ratio:4/3') !== false,
+	   'the tile reserves no space, so the grid jumps about as the theme images arrive');
+	ok(strpos($pg, 'aspect-ratio:1/1') !== false,
+	   'the player is not square, and the films are');
+	ok(preg_match('/<img[^>]*loading="lazy"/', $rawpg) === 1
+	   || strpos($rawpg, "'eager' : 'lazy'") !== false,
+	   'every theme image loads at once; they are up to 1.4MB each');
 	/*
 	 * THE CARD. This page is meant to be shared -- that is most of why it
 	 * is public -- and a link with no card is a grey rectangle with a url
@@ -234,31 +255,37 @@ echo "\nthe page is public and cheap to open\n";
 	   && strpos($raw, '<meta property="og:image:height" content="1113">') !== false,
 	   'the card states a size images/og.jpg does not have');
 
+	/*
+	 * THE PLAYER. The whole reason the grid is images is that the film
+	 * should not be fetched until somebody asks for it -- so the closing
+	 * half matters as much as the opening one: a paused video that still
+	 * has a src keeps its buffer, and on some browsers keeps filling it.
+	 */
+	$pl = strpos($rawpg, "var veil = document.getElementById('mvp-veil')");
+	ok($pl !== false, 'the player script is gone');
+	$player = $pl === false ? '' : substr($rawpg, $pl, 2200);
+	ok(strpos($player, "vid.removeAttribute('src')") !== false,
+	   'closing the player leaves the src in place, so the film keeps downloading');
+	ok(strpos($player, 'vid.load()') !== false,
+	   'the src is dropped but load() is not called, so the buffer survives');
+	ok(strpos($player, "vid.pause()") !== false, 'closing the player does not stop playback');
+	ok(strpos($player, "e.key === 'Escape'") !== false, 'Escape does not close the player');
+	ok(strpos($player, 'e.target === veil') !== false,
+	   'clicking the video itself closes the player');
+	ok(strpos($player, 'opener.focus()') !== false,
+	   'closing drops keyboard focus, so a keyboard user is dumped at the top of the page');
+	/* A tile is a button, or it cannot be reached without a mouse. */
+	ok(preg_match('/<button[^>]*class="mv-item"/', $rawpg) === 1,
+	   'the tiles are not buttons, so none of this is reachable by keyboard');
+	ok(strpos($rawpg, 'data-src=') !== false && strpos($player, "getAttribute('data-src')") !== false,
+	   'the tile does not carry the film it opens');
+	/* Autoplay is attempted but never assumed. */
+	ok(strpos($player, 'p.catch') !== false,
+	   'a refused autoplay throws an unhandled rejection into the console on every open');
+
 	/* The menu has to point at it. */
 	$hdr = harness_strip_comments(file_get_contents(__DIR__ . '/header.php'));
 	ok(strpos($hdr, 'musicvideos.php') !== false, 'nothing in the NFTs menu links to the page');
-}
-
-echo "\nthe midpoint still, driven\n";
-{
-	/*
-	 * Shelled out to musicvideos-still-harness.js so there is one copy of
-	 * those cases. It exists because the page has no poster images --
-	 * nothing on this server can pull a frame out of an mp4 -- so the
-	 * browser makes the poster by seeking each video to its own midpoint,
-	 * and the easy thing to get wrong is that the seek leaves currentTime
-	 * in the middle: without a rewind, the first press of play drops the
-	 * viewer halfway through the film they just chose to watch.
-	 */
-	$node = trim((string) @shell_exec('command -v node 2>/dev/null'));
-	if ($node === '') {
-		echo "  --   node not found; run musicvideos-still-harness.js separately\n";
-	} else {
-		$res = trim((string) @shell_exec(escapeshellcmd($node) . ' '
-		     . escapeshellarg(__DIR__ . '/musicvideos-still-harness.js') . ' 2>&1'));
-		ok(substr($res, -8) === 'all good',
-		   'the midpoint still misbehaves: ' . substr($res, 0, 200));
-	}
 }
 
 /* tidy */

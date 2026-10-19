@@ -17,8 +17,10 @@ music videos made using art from the projects and artists in Skulliance. It is
 a **public page** - no login, because the point of a music video is being
 watched - and it is ordered by project name.
 
-Each video is captioned with that project's Monstrocity theme logo where it has
-one, and with its points icon and name where it does not. The still you see before
-pressing play is a frame from the middle of that video, picked by your browser -
-there are no separate thumbnail images. Playing it still starts at the beginning. New videos appear as
+Each one is a tile showing that project's **realm theme** artwork. Press it and
+the video opens over the page; press Escape or click outside it to close. The
+films are only downloaded when you open one, so the page itself is light.
+
+Tiles are captioned with that project's Monstrocity theme logo where it has
+one, and with its points icon and name where it does not. New videos appear as
 soon as they are uploaded; nothing has to be added to a list.

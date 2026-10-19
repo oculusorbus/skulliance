@@ -104,9 +104,9 @@ $lp_sections = array(
 			array('raffles.php',         '🎟️', 'Raffles',         'Ticketed draws'),
 			array('gallery.php',         '🖼️', 'Gallery',         'Browse the collections'),
 			array('collections.php',     '📚', 'Collections',     'Every supported project'),
+			array('musicvideos.php',     '🎬', 'Music Videos',    'Made with the projects\' art'),
 			array('diamond-skulls.php',  '💎', 'Diamond Skulls',  'Delegation rewards'),
 			array('skulliverse.php',     '🌌', 'Skulliverse',     'The wider universe'),
-			array('musicvideos.php',     '🎬', 'Music Videos',    'Made with the projects\' art'),
 		),
 	),
 	'Progress' => array(

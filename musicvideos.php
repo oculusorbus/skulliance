@@ -99,22 +99,50 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
 .mv-wrap{max-width:1180px;margin:0 auto;padding:20px}
 .mv-wrap h1{font-family:"Archivo Black",Impact,sans-serif;font-weight:400;margin:0 0 6px;font-size:24px}
 .mv-intro{color:#7a9eb0;font-size:13px;line-height:1.7;margin:0 0 22px}
-.mv-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
+.mv-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))}
+
+/* A TILE IS A BUTTON, not a video. Twelve <video> elements all asking for
+   metadata at once opened more connections than the browser allows per
+   host, and most of the page sat on a spinner showing nothing. The grid
+   is images now and the film is fetched when somebody asks for it. */
 .mv-item{background:#0a1929;border:1px solid #1b3346;border-radius:5px;overflow:hidden;
-  display:flex;flex-direction:column}
-/* 16:9 reserved up front, so twelve of these do not shunt the page around
-   as each one's metadata arrives. */
-.mv-item video{display:block;width:100%;aspect-ratio:16/9;background:#06101a}
+  display:flex;flex-direction:column;padding:0;cursor:pointer;text-align:left;
+  font:inherit;color:inherit;width:100%}
+.mv-item:hover,.mv-item:focus-visible{border-color:#00c8a0;outline:none}
+.mv-shot{position:relative;display:block;aspect-ratio:4/3;background:#06101a}
+.mv-shot img{display:block;width:100%;height:100%;object-fit:cover}
+.mv-item:hover .mv-shot img{opacity:.82}
+/* The play badge, drawn rather than an image file. */
+.mv-play{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  pointer-events:none}
+.mv-play i{display:block;width:62px;height:62px;border-radius:50%;background:rgba(6,16,26,.62);
+  border:2px solid rgba(255,255,255,.85);position:relative;transition:background .15s ease}
+.mv-play i::after{content:"";position:absolute;top:50%;left:54%;transform:translate(-50%,-50%);
+  border-style:solid;border-width:11px 0 11px 18px;border-color:transparent transparent transparent #fff}
+.mv-item:hover .mv-play i{background:rgba(0,200,160,.85)}
 .mv-cap{padding:10px 14px;display:flex;align-items:center;gap:10px;min-height:66px}
-/* A height band rather than a fixed height: these logos are every shape
-   there is, and a stacked wordmark capped at a one-line height shrinks to
-   something nobody can read. The width cap keeps a long horizontal one
-   from pushing the row around. */
 .mv-cap img{display:block;max-height:46px;max-width:100%;width:auto;height:auto}
 .mv-cap img.mv-ico{max-height:28px;flex:0 0 auto}
 .mv-cap span{font-size:13.5px;color:#e8eaed;letter-spacing:.02em}
 .mv-none{color:#7a9eb0;font-size:13px;border:1px dashed #1b3346;border-radius:5px;padding:26px;
   text-align:center}
+
+/* ---- the player ---- */
+#mvp-veil{position:fixed;inset:0;z-index:9996;display:none;align-items:center;justify-content:center;
+  background:rgba(4,12,22,.92);
+  padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
+#mvp-veil.on{display:flex}
+/* SQUARE, like the films. The width follows the available HEIGHT as well
+   as the width, so the square never overflows the viewport and the box
+   never has to fight its own aspect-ratio with a max-height. */
+#mvp-box{width:min(760px,calc(100vh - 170px),100%);display:flex;flex-direction:column;gap:10px}
+#mvp-head{display:flex;align-items:center;gap:12px}
+#mvp-title{flex:1 1 auto;font-size:14px;color:#e8eaed;letter-spacing:.03em}
+#mvp-close{font:inherit;font-size:11px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+  padding:7px 14px;border-radius:3px;border:1px solid #1b3346;background:transparent;color:#e8eaed}
+#mvp-close:hover{border-color:#00c8a0;color:#00c8a0}
+#mvp-video{display:block;width:100%;aspect-ratio:1/1;
+  background:#06101a;border:1px solid #1b3346;border-radius:4px}
 </style>
 
 <div class="mv-wrap">
@@ -126,18 +154,20 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
   <p class="mv-none">No videos have been uploaded yet.</p>
 <?php else: ?>
   <div class="mv-grid">
-<?php foreach ($mv_list as $v): ?>
-    <div class="mv-item">
-      <?php /* preload="metadata" so twelve videos cost twelve headers rather
-               than twelve films. #t=0.5 is the floor: with no JavaScript at
-               all it still shows a frame rather than a black rectangle. The
-               script below moves that to the MIDPOINT once the duration is
-               known, because half a second in is usually a fade from black.
-               playsinline keeps an iPhone from taking over the whole screen
-               the moment it is tapped. */ ?>
-      <video controls preload="metadata" playsinline
-             src="<?php echo $e($v['file']); ?>#t=0.5"></video>
-      <div class="mv-cap">
+<?php foreach ($mv_list as $k => $v): ?>
+    <?php /* A BUTTON, so it is reachable by keyboard and announced as
+             something you can press. The whole tile is the target. */ ?>
+    <button type="button" class="mv-item" data-src="<?php echo $e($v['file']); ?>"
+            data-title="<?php echo $e($v['title']); ?>">
+      <span class="mv-shot">
+<?php if ($v['poster'] !== ''): ?>
+        <img src="<?php echo $e($v['poster']); ?>" alt=""
+             width="2000" height="1500"
+             loading="<?php echo $k < 3 ? 'eager' : 'lazy'; ?>" decoding="async">
+<?php endif; ?>
+        <span class="mv-play"><i></i></span>
+      </span>
+      <span class="mv-cap">
 <?php if ($v['logo'] !== ''): ?>
         <img src="<?php echo $e($v['logo']); ?>" alt="<?php echo $e($v['title']); ?>"
              loading="lazy" decoding="async">
@@ -152,49 +182,89 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
 <?php else: ?>
         <span><?php echo $e($v['title']); ?></span>
 <?php endif; ?>
-      </div>
-    </div>
+      </span>
+    </button>
 <?php endforeach; ?>
   </div>
 <?php endif; ?>
 </div>
 
+<?php if ($mv_list): ?>
+<div id="mvp-veil" role="dialog" aria-modal="true" aria-labelledby="mvp-title" hidden>
+  <div id="mvp-box">
+    <div id="mvp-head">
+      <span id="mvp-title"></span>
+      <button type="button" id="mvp-close">Close</button>
+    </div>
+    <?php /* ONE video element for the whole page, given a src when a tile
+             is pressed and stripped of it again on close. Twelve elements
+             that each know their own film is what filled the page with
+             spinners; one that knows nothing until asked downloads
+             nothing until asked. */ ?>
+    <video id="mvp-video" controls playsinline preload="auto"></video>
+  </div>
+</div>
+<?php endif; ?>
+
 <script>
 /*
- * THE STILL IS A FRAME FROM THE MIDDLE OF THE FILM.
+ * ONE PLAYER, OPENED FROM A TILE.
  *
- * There are no poster images and nothing on this server can make one --
- * pulling a frame out of an mp4 needs ffmpeg, and these arrive by FTP as
- * finished files. So the browser makes the poster: seek the video to its
- * own midpoint and the frame it lands on is what is painted until somebody
- * presses play. Half a second in, which is all the #t= fragment can ask
- * for without knowing the duration, is usually still a fade from black.
+ * The grid used to be twelve <video> elements, each asking for metadata
+ * and then seeking to its own midpoint for a still. On the real page that
+ * opened more connections than the browser allows per host: most tiles
+ * sat on a spinner, four got as far as the midpoint without painting a
+ * frame, and one worked. The tiles are realm theme images now -- which
+ * the platform already keys by project id -- and the film is fetched only
+ * when somebody presses one.
  *
- * COSTS A RANGE REQUEST EACH, not a download: the server answers 206 for
- * these (checked), so seeking fetches the chunk around the midpoint and
- * nothing else.
- *
- * AND PLAY STILL STARTS AT THE BEGINNING. The seek leaves currentTime in
- * the middle, so without this the first press of play would drop the
- * viewer halfway through the video they just chose to watch. Rewound once,
- * and only if they have not seeked somewhere themselves in the meantime.
+ * THE SRC IS REMOVED ON CLOSE, not just paused. A paused video with a src
+ * keeps its buffer and, on some browsers, keeps filling it; clearing the
+ * source and calling load() is what actually stops the download.
  */
 (function () {
-  var vids = document.querySelectorAll('.mv-item video');
-  for (var i = 0; i < vids.length; i++) (function (v) {
-    var mid = null;
-    v.addEventListener('loadedmetadata', function () {
-      if (mid !== null || !isFinite(v.duration) || v.duration <= 0) return;
-      mid = Math.min(v.duration / 2, Math.max(0, v.duration - 0.1));
-      /* Throws on a browser that will not seek before it has buffered;
-         the #t= frame then stands, which is the whole point of keeping it. */
-      try { v.currentTime = mid; } catch (e) { mid = null; }
-    });
-    v.addEventListener('play', function () {
-      if (mid !== null && Math.abs(v.currentTime - mid) < 0.4) v.currentTime = 0;
-      mid = null;                       /* once only: after this it is theirs */
-    });
-  })(vids[i]);
+  var veil = document.getElementById('mvp-veil');
+  var vid  = document.getElementById('mvp-video');
+  var ttl  = document.getElementById('mvp-title');
+  var shut = document.getElementById('mvp-close');
+  var tiles = document.querySelectorAll('.mv-item');
+  if (!veil || !vid || !tiles.length) return;
+
+  var opener = null;
+
+  function open(btn) {
+    opener = btn;
+    ttl.textContent = btn.getAttribute('data-title') || '';
+    vid.src = btn.getAttribute('data-src');
+    veil.hidden = false;
+    veil.classList.add('on');
+    if (shut) shut.focus();
+    /* Autoplay with sound is refused by every browser, and rightly. The
+       press on the tile is the gesture, so this usually succeeds -- and
+       where it does not the controls are right there. */
+    var p = vid.play();
+    if (p && p.catch) p.catch(function () {});
+  }
+
+  function close() {
+    veil.classList.remove('on');
+    veil.hidden = true;
+    try { vid.pause(); } catch (e) {}
+    vid.removeAttribute('src');
+    try { vid.load(); } catch (e) {}   /* drops the buffer and the request */
+    ttl.textContent = '';
+    if (opener) { opener.focus(); opener = null; }
+  }
+
+  for (var i = 0; i < tiles.length; i++) {
+    tiles[i].addEventListener('click', function () { open(this); });
+  }
+  if (shut) shut.addEventListener('click', close);
+  /* The backdrop closes it; the box itself must not. */
+  veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && !veil.hidden) close();
+  });
 })();
 </script>
 </body>

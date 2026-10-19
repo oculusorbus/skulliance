@@ -489,10 +489,10 @@
 		      <a href="auctions.php">Auctions</a>
 		      <a href="raffles.php">Raffles</a>
 		      <a href="collections.php">Collections</a>
+		      <a href="musicvideos.php">Music Videos</a>
 		      <a href="gallery.php">Gallery</a>
 		      <a href="diamond-skulls.php">Diamond Skulls</a>
 		      <a href="skulliverse.php">Skulliverse</a>
-		      <a href="musicvideos.php">Music Videos</a>
 		    </div>
 		  </div>
 
