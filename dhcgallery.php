@@ -86,9 +86,24 @@ $dhcg_trait = isset($_GET['trait']) ? dhcf_trait_filter($_GET['trait']) : '';
  * records clear DHCA_PROFILE_MIN and the win rates differ by DHCA_EDGE_PCT or
  * more, so an even Fighter is in neither bucket and an unproven one is in no
  * bucket at all.
+ *
+ * THE PROFILE WORDS ARE THE ARENA'S OWN. reliable / even / risky / winless
+ * are what the Fighter picker has always called these Fighters, and until
+ * now this page could not filter on any of them -- it had the GATE
+ * (`proven`, which is just DHCA_PROFILE_MIN battles) and the side split,
+ * and nothing about how a Fighter actually comes out of the wins it is in.
+ * Somebody reading "Reliable" in the Arena and then looking for it here
+ * found nothing, which is a discrepancy in the pages rather than in the
+ * ledger: both read the same rows.
+ *
+ * They come from dhca_fighter_profile() rather than being re-derived, so
+ * DHCA_RELIABLE_PCT and DHCA_RISKY_PCT stay defined in exactly one place.
+ * Two pages each with their own copy of "70" is the drift this platform
+ * keeps paying for.
  */
 $dhcg_perf_f = isset($_GET['perf']) ? preg_replace('/[^a-z]/', '', $_GET['perf']) : '';
-if (!in_array($dhcg_perf_f, array('attack', 'defend', 'proven'), true)) $dhcg_perf_f = '';
+if (!in_array($dhcg_perf_f, array('attack', 'defend', 'proven',
+                                  'reliable', 'even', 'risky', 'winless'), true)) $dhcg_perf_f = '';
 
 $order = 'f.rarity_score DESC, f.created_at DESC';
 if ($dhcg_sort === 'newest')  $order = 'f.created_at DESC';
@@ -246,12 +261,20 @@ foreach ($dhcg_all as $i => $row) {
  * the record chips are drawn only where there is something to drive them, and
  * they appear on their own as the ledger fills up.
  */
-$dhcg_pcounts = array('proven' => 0, 'attack' => 0, 'defend' => 0);
-foreach ($dhcg_all as $r) {
+$dhcg_pcounts = array('proven' => 0, 'attack' => 0, 'defend' => 0,
+                      'reliable' => 0, 'even' => 0, 'risky' => 0, 'winless' => 0);
+foreach ($dhcg_all as $i => $r) {
 	if (empty($r['perf']['all']['proven'])) continue;
 	$dhcg_pcounts['proven']++;
 	if ($r['perf']['edge'] === 'attack') $dhcg_pcounts['attack']++;
 	if ($r['perf']['edge'] === 'defend') $dhcg_pcounts['defend']++;
+	/* COMPUTED ONCE AND KEPT ON THE ROW. The filter below needs the same
+	   answer, and asking twice means the count in a chip and the number of
+	   Fighters behind it could disagree -- which is the one bug a count on
+	   a filter chip exists to make impossible. */
+	$pf = dhca_fighter_profile($r['perf']);
+	$dhcg_all[$i]['pkey'] = $pf['key'];
+	if (isset($dhcg_pcounts[$pf['key']])) $dhcg_pcounts[$pf['key']]++;
 }
 
 /*
@@ -309,6 +332,10 @@ $dhcg_rows  = array_values(array_filter($dhcg_all, function ($r) use ($dhcg_tier
 	if ($dhcg_perf_f === 'proven' && empty($r['perf']['all']['proven'])) return false;
 	if ($dhcg_perf_f === 'attack' && (!$r['perf'] || $r['perf']['edge'] !== 'attack')) return false;
 	if ($dhcg_perf_f === 'defend' && (!$r['perf'] || $r['perf']['edge'] !== 'defend')) return false;
+	/* The Arena's own words. 'pkey' is only set on a Fighter that cleared
+	   the gate, so an unproven one falls out of all four by having none. */
+	if (in_array($dhcg_perf_f, array('reliable', 'even', 'risky', 'winless'), true)
+	    && (empty($r['pkey']) || $r['pkey'] !== $dhcg_perf_f)) return false;
 	return true;
 }));
 if ($dhcg_sort === 'traits') {
@@ -697,6 +724,32 @@ include 'header.php';
            href="<?php echo htmlspecialchars(dhcg_url(array('perf' => 'defend'))); ?>">Defenders <?php
            echo $dhcg_pcounts['defend']; ?></a>
       <?php endif; ?>
+      <?php
+      /*
+       * THE SAME WORDS THE ARENA PICKER USES, so a player who reads
+       * "Reliable" when choosing a Crew can come here and see all of them.
+       * The wording of each tooltip is the Arena's too.
+       *
+       * EACH ONE HIDES WHEN ITS COUNT IS ZERO, like Attackers and Defenders
+       * above and for the same reason: a chip that leads to an empty grid
+       * reads as a broken page rather than a young ledger. Early on only
+       * Winless and Unproven can exist at all, so this row fills in as
+       * people fight.
+       */
+      $dhcg_pwords = array(
+        'reliable' => array('Reliable', 'Survives ' . DHCA_RELIABLE_PCT
+                            . '% or more of the battles its Crew wins'),
+        'even'     => array('Even',     'Survives about half of the battles its Crew wins'),
+        'risky'    => array('Risky',    'Falls in more than half of the battles its Crew wins'),
+        'winless'  => array('Winless',  'Has fought enough to judge, and has not won yet'),
+      );
+      foreach ($dhcg_pwords as $pk => $pw):
+        if (!$dhcg_pcounts[$pk]) continue; ?>
+        <a class="<?php echo $dhcg_perf_f === $pk ? 'on' : ''; ?>"
+           title="<?php echo htmlspecialchars($pw[1]); ?>"
+           href="<?php echo htmlspecialchars(dhcg_url(array('perf' => $pk))); ?>"><?php
+           echo htmlspecialchars($pw[0]); ?> <?php echo $dhcg_pcounts[$pk]; ?></a>
+      <?php endforeach; ?>
     <?php endif; ?>
 
     <span class="sep"></span>

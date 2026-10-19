@@ -141,5 +141,110 @@ if ($fbx === false) {
 	}
 }
 
+echo "\nthe Collection filters on the same words the Arena uses\n";
+{
+	/*
+	 * THE DISCREPANCY THIS CLOSES. The Arena's Fighter picker labels every
+	 * Fighter Reliable / Even / Risky / Winless / Unproven, and this page
+	 * could filter on none of them -- it had the GATE ('proven', which is
+	 * only DHCA_PROFILE_MIN battles) and the attack/defend split, which is
+	 * a different axis entirely: survival inside wins versus win rate by
+	 * side. Somebody reading "Reliable" in the Arena and looking for it
+	 * here found nothing.
+	 *
+	 * ONE DEFINITION. The page calls dhca_fighter_profile() rather than
+	 * re-deriving the thresholds, so DHCA_RELIABLE_PCT and DHCA_RISKY_PCT
+	 * stay in one file; two copies of "70" is the drift this platform
+	 * keeps paying for.
+	 */
+	require_once __DIR__ . '/dhcarena-lib.php';
+	$g = file_get_contents(__DIR__ . '/dhcgallery.php');
+
+	/* THE WHITELIST ITSELF. That list of four words also appears in the
+	   filter closure further down, so a bare search for it passed with
+	   the validation narrowed back to 'proven' alone. */
+	ok(preg_match("/!in_array\\(\\\$dhcg_perf_f,\\s*array\\([^)]*'reliable'[^)]*'winless'/s", $g) === 1,
+	   'the profile words are rejected by the ?perf= whitelist, so the chips fall back to Any');
+	ok(strpos($g, 'dhca_fighter_profile($r[\'perf\'])') !== false,
+	   'the page derives the words itself instead of asking the Arena library');
+	foreach (array('DHCA_RELIABLE_PCT', 'DHCA_RISKY_PCT') as $c) {
+		ok(substr_count($g, $c) <= 1 || strpos($g, 'define(' . $c) === false,
+		   $c . ' looks redefined here; it belongs to dhcarena-lib.php alone');
+	}
+	/* A hardcoded threshold is the thing that drifts. */
+	ok(preg_match('/>=\s*70\b/', $g) === 0 && preg_match('/<\s*40\b/', $g) === 0,
+	   'a survival threshold is written as a number in dhcgallery.php');
+
+	/*
+	 * THE COUNT ON A CHIP AND THE GRID BEHIND IT MUST AGREE. They are
+	 * computed in two different loops, which is exactly how a chip comes
+	 * to promise four Fighters and show three.
+	 */
+	$mk = function ($b, $w, $sw, $edge = null) {
+		return array('perf' => array(
+			'all'  => array('battles' => $b, 'wins' => $w, 'survived_wins' => $sw,
+			                'dealt' => 0, 'proven' => ($b >= DHCA_PROFILE_MIN)),
+			'edge' => $edge));
+	};
+	$all = array($mk(0,0,0), $mk(4,2,2), $mk(5,0,0), $mk(9,5,5),
+	             $mk(20,10,7,'attack'), $mk(20,10,6), $mk(20,10,3,'defend'),
+	             $mk(30,12,12), $mk(6,1,0), $mk(0,0,0));
+
+	$counts = array('proven'=>0,'attack'=>0,'defend'=>0,
+	                'reliable'=>0,'even'=>0,'risky'=>0,'winless'=>0);
+	foreach ($all as $i => $r) {
+		if (empty($r['perf']['all']['proven'])) continue;
+		$counts['proven']++;
+		if ($r['perf']['edge'] === 'attack') $counts['attack']++;
+		if ($r['perf']['edge'] === 'defend') $counts['defend']++;
+		$pf = dhca_fighter_profile($r['perf']);
+		$all[$i]['pkey'] = $pf['key'];
+		if (isset($counts[$pf['key']])) $counts[$pf['key']]++;
+	}
+	foreach (array_keys($counts) as $f) {
+		$n = 0;
+		foreach ($all as $r) {
+			if ($f === 'proven' && empty($r['perf']['all']['proven'])) continue;
+			if ($f === 'attack' && (!$r['perf'] || $r['perf']['edge'] !== 'attack')) continue;
+			if ($f === 'defend' && (!$r['perf'] || $r['perf']['edge'] !== 'defend')) continue;
+			if (in_array($f, array('reliable','even','risky','winless'), true)
+			    && (empty($r['pkey']) || $r['pkey'] !== $f)) continue;
+			$n++;
+		}
+		ok($n === $counts[$f],
+		   'the ' . $f . ' chip says ' . $counts[$f] . ' and the grid behind it has ' . $n);
+	}
+	/* Every proven Fighter is in exactly ONE word -- no gaps between the
+	   thresholds and no Fighter counted twice. */
+	$sum = $counts['reliable'] + $counts['even'] + $counts['risky'] + $counts['winless'];
+	ok($sum === $counts['proven'],
+	   'the four words hold ' . $sum . ' Fighters but ' . $counts['proven'] . ' are proven, so '
+	 . 'some fall between the thresholds or are counted twice');
+	/* And an unproven one is in none of them. Checked in the simulation
+	   above AND in the page, because the simulation is a copy of the
+	   page's loop and a copy proves nothing about the original: the gate
+	   has to come first there too. */
+	ok(empty($all[0]['pkey']) && empty($all[1]['pkey']),
+	   'a Fighter under the gate was given a profile word, so it would show under one');
+	$gate = strpos($g, "if (empty(\$r['perf']['all']['proven'])) continue;");
+	$set  = strpos($g, "\$dhcg_all[\$i]['pkey'] =");
+	ok($gate !== false && $set !== false && $gate < $set,
+	   'the page labels a Fighter before checking it cleared the gate, so an unproven one '
+	 . 'lands in Reliable or Even on four battles');
+
+	/* The boundaries themselves, read off the shipping function. */
+	$k = function ($b, $w, $sw) use ($mk) { $p = dhca_fighter_profile($mk($b,$w,$sw)['perf']); return $p['key']; };
+	ok($k(20, 10, 7) === 'reliable', 'exactly ' . DHCA_RELIABLE_PCT . '% is not Reliable');
+	ok($k(20, 10, 6) === 'even',     'just under ' . DHCA_RELIABLE_PCT . '% is not Even');
+	ok($k(20, 10, 4) === 'even',     'exactly ' . DHCA_RISKY_PCT . '% is not Even');
+	ok($k(20, 10, 3) === 'risky',    'under ' . DHCA_RISKY_PCT . '% is not Risky');
+	ok($k(DHCA_PROFILE_MIN, 0, 0) === 'winless', 'the gate with no wins is not Winless');
+	ok($k(DHCA_PROFILE_MIN - 1, 1, 1) === 'unproven', 'one battle under the gate is not Unproven');
+
+	/* Each chip hides when empty, like Attackers and Defenders. */
+	ok(strpos($g, 'if (!$dhcg_pcounts[$pk]) continue;') !== false,
+	   'a word with no Fighters still draws a chip, which leads to an empty grid');
+}
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all gallery checks passed\n");
 exit($fail ? 1 : 0);

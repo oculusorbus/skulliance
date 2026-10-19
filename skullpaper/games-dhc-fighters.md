@@ -291,6 +291,13 @@ filter names the slot as well as the trait, because nine traits share a name
 across two slots: the **MK100** head and the **MK100** torso are different
 pieces with different art, and the Collection will not mix them.
 
+Once a Fighter has fought, the **Record** filters appear, and they use the
+same words the Arena's own picker does: **Reliable**, **Even**, **Risky** and
+**Winless**, alongside **Proven** (five or more battles, so its rates mean
+something) and the **Attackers** / **Defenders** split. A word only appears
+once some Fighter actually qualifies for it, so the row fills in as the ledger
+does.
+
 Filters are carried in the link, so a particular view is something you can send
 to someone — and now to anyone, not only to another staker. A shared link
 carries its own title and preview: *"Mythic Fighters"* posts as exactly that.
