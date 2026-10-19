@@ -246,6 +246,80 @@ echo "\nthe Collection filters on the same words the Arena uses\n";
 	   'a word with no Fighters still draws a chip, which leads to an empty grid');
 }
 
+echo "\nthe two tally functions return the same shape\n";
+{
+	/*
+	 * THE BUG THIS EXISTS FOR, and it reached a live page.
+	 *
+	 * dhcarena-lib.php has two functions that both return "a Fighter's
+	 * tallies": dhca_fighter_stats() for one Fighter and
+	 * dhca_performance() in bulk. They returned DIFFERENT SHAPES -- the
+	 * bulk one had no losses, survived_wins or fell_in_wins -- and
+	 * nothing anywhere said so. Code written against either works
+	 * against the other right up until it reads a column only the long
+	 * shape has, and then it prints an undefined-key warning into the
+	 * page, because display_errors is on on this host.
+	 *
+	 * That is what the Record filters and the Winningest sort did on
+	 * their first day: dhca_fighter_profile() reads survived_wins, the
+	 * sort reads losses, and the Collection feeds both from the bulk
+	 * function.
+	 *
+	 * READ OUT OF THE SOURCE, both of them, because the whole failure is
+	 * that the shapes can drift apart and no fixture notices.
+	 */
+	$lib = file_get_contents(__DIR__ . '/dhcarena-lib.php');
+	$keys = function ($fn) use ($lib) {
+		$a = strpos($lib, 'function ' . $fn . '(');
+		if ($a === false) return array();
+		$end = strpos($lib, "\n}", $a);
+		$body = substr($lib, $a, $end - $a);
+		/* The zero row is what every consumer can rely on being present. */
+		if (!preg_match('/\$z\s*=\s*array\(([^;]*)\);/s', $body, $m)) return array();
+		preg_match_all("/'(\w+)'\s*=>/", $m[1], $k);
+		sort($k[1]);
+		return $k[1];
+	};
+	$bulk = $keys('dhca_performance');
+	$one  = $keys('dhca_fighter_stats');
+	ok($bulk, 'could not read the zero row out of dhca_performance()');
+	ok($one,  'could not read the zero row out of dhca_fighter_stats()');
+
+	/* Everything the single-Fighter shape has, the bulk one must have --
+	   the bulk one may carry extras (it adds `survived`). */
+	$missing = array_diff($one, $bulk);
+	ok(!$missing,
+	   'dhca_performance() does not return ' . implode(', ', $missing)
+	 . ' -- anything reading those off a bulk row prints a warning onto a live page');
+
+	/* And the query actually selects what the zero row promises, or the
+	   key exists as a 0 that is never filled and every number is wrong
+	   in silence, which is worse than a warning. */
+	$a = strpos($lib, 'function dhca_performance(');
+	$body = substr($lib, $a, strpos($lib, "\n}", $a) - $a);
+	preg_match_all('/AS (\w+)/', $body, $sel);
+	foreach ($bulk as $k) {
+		ok(in_array($k, $sel[1], true),
+		   'dhca_performance() zeroes ' . $k . ' but never selects it, so it stays 0 forever');
+	}
+
+	/* The consumers, named, so adding a third reader of a missing column
+	   fails here rather than in production. */
+	$prof = substr($lib, strpos($lib, 'function dhca_fighter_profile('));
+	$prof = substr($prof, 0, strpos($prof, "\n}"));
+	preg_match_all("/\\\$all\['(\w+)'\]/", $prof, $pk);
+	foreach (array_unique($pk[1]) as $k) {
+		ok(in_array($k, $bulk, true),
+		   'dhca_fighter_profile() reads ' . $k . ', which a bulk row does not have');
+	}
+	$g = file_get_contents(__DIR__ . '/dhcgallery.php');
+	preg_match_all("/\\\$all\['(\w+)'\]/", $g, $gk);
+	foreach (array_unique($gk[1]) as $k) {
+		ok(in_array($k, $bulk, true),
+		   'dhcgallery.php reads ' . $k . ' off a bulk row, which does not have it');
+	}
+}
+
 echo "\nWinningest is a power board, not a volume board\n";
 {
 	/*
