@@ -1053,8 +1053,19 @@
     return;
   }
 
-  /* Warmed on idle so a click has it ready. */
-  (window.requestIdleCallback || window.setTimeout)(() => { build().catch(() => {}); }, 1200);
+  /*
+   * Warmed on idle so a click has it ready.
+   *
+   * THE TWO APIS DO NOT TAKE THE SAME SECOND ARGUMENT, and conflating
+   * them threw: requestIdleCallback's second parameter is an
+   * IdleRequestOptions object, so passing setTimeout's milliseconds is a
+   * TypeError. It fired synchronously, right here, and took the rest of
+   * this function with it -- so the two click handlers below were never
+   * attached and both buttons silently did nothing.
+   */
+  const warm = () => { build().catch(() => {}); };
+  if (typeof window.requestIdleCallback === 'function') window.requestIdleCallback(warm, { timeout: 2500 });
+  else window.setTimeout(warm, 1200);
 
   const fname = () => 'skulliance-rivalries-' + new Date().toISOString().slice(0, 10) + '.png';
   const say = (m) => { const n = document.getElementById('riv-shot-note'); if (n) n.textContent = m; };

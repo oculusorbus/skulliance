@@ -80,6 +80,9 @@ function makeEl(tag) {
       };
     },
     querySelectorAll(sel) { return all(this).filter(e => matches(e, sel)); },
+    /* The export asks the host for its svg. */
+    querySelector(sel) { return all(this).filter(e => matches(e, sel))[0] || null; },
+    cloneNode() { return this; },
   };
   return el;
 }
@@ -119,7 +122,16 @@ function inkBounds(svg) {
 }
 
 const nodes = {};
+/* The two picture buttons the page renders under the map. They exist here
+   so the export block can find them -- and so this harness can check that
+   it actually got as far as wiring them up. */
+['riv-download', 'riv-copy', 'riv-shot-note'].forEach((id) => {
+	nodes[id] = makeEl('button');
+	nodes[id].id = id;
+});
 global.document = {
+  /* The export resolves relative image hrefs against the page url. */
+  baseURI: 'https://www.skulliance.io/staking/rivalries.php',
   createElementNS: (ns, tag) => makeEl(tag),
   createElement: (tag) => makeEl(tag),
   getElementById: (id) => nodes[id] || null,
@@ -180,6 +192,33 @@ function draw(layout, winH, boxW, me) {
     RIVALRY_ME: me || 0,
     innerHeight: winH || FIT.winH,
     addEventListener() {},
+    /*
+     * ENOUGH OF A BROWSER FOR THE EXPORT BLOCK TO RUN, because the thing
+     * that broke was not inside the export at all -- it was a line BEFORE
+     * the click handlers, which threw and took them with it, so both
+     * buttons silently did nothing.
+     *
+     * requestIdleCallback IS STRICT ON PURPOSE. Its second argument is an
+     * IdleRequestOptions object, not setTimeout's milliseconds, and the
+     * real one throws on a number. A lenient stub here would have let the
+     * exact shipped bug pass.
+     */
+    requestIdleCallback(fn, opts) {
+      if (opts !== undefined && (typeof opts !== 'object' || opts === null)) {
+        throw new TypeError("Failed to execute 'requestIdleCallback' on 'Window': "
+          + 'The provided value is not of type IdleRequestOptions.');
+      }
+      return 1;   /* never actually run: the export needs a network */
+    },
+    setTimeout(fn, ms) {
+      if (typeof ms !== 'number' && ms !== undefined) throw new TypeError('bad delay');
+      return 1;
+    },
+    XMLSerializer: function () { this.serializeToString = () => '<svg/>'; },
+    FileReader: function () {},
+    fetch: () => Promise.resolve({ ok: false, status: 0 }),
+    sklImage: { canvasBlob: () => ({}), save: () => Promise.resolve(''),
+                copy: () => Promise.resolve(''), canCopy: () => true },
     getComputedStyle(el) {
       return {
         marginTop: '0', marginBottom: '0',
@@ -194,6 +233,40 @@ function draw(layout, winH, boxW, me) {
   };
   new Function('document', 'window', kitSrc + '\n' + rivSrc)(global.document, global.window);
   return host;
+}
+
+console.log('-- the picture buttons are actually wired --');
+{
+	/*
+	 * THE BUG THIS EXISTS FOR did not live in the export at all. The line
+	 * that warms the blob called requestIdleCallback with setTimeout's
+	 * millisecond argument, which the real one rejects as not an
+	 * IdleRequestOptions -- so it threw synchronously, the rest of the
+	 * function never ran, and the two click handlers below it were never
+	 * attached. Both buttons did nothing, with no visible error, and
+	 * every other check in this file still passed because the map itself
+	 * was already built by then.
+	 *
+	 * So: run the whole script and ask the BUTTONS whether anybody is
+	 * listening. Anything that throws between the map and the handlers
+	 * fails here.
+	 */
+	draw(LAYOUTS.busy, FIT.winH, FIT.boxW, 0);
+	for (const id of ['riv-download', 'riv-copy']) {
+		const b = nodes[id];
+		const listeners = (b && b._on && b._on.click) ? b._on.click.length : 0;
+		ok(listeners === 1,
+		   id + ' has ' + listeners + ' click handlers after the script runs; anything that '
+		 + 'throws between building the map and wiring the buttons leaves them dead');
+	}
+	/* And a click must reach the shared saver rather than throwing. */
+	let threw = null;
+	try { nodes['riv-download'].fire('click'); } catch (e) { threw = e.message; }
+	ok(threw === null, 'clicking Download threw synchronously: ' + threw);
+	/* The note is set before any await, so a live click says SOMETHING
+	   immediately rather than looking inert while the picture is built. */
+	ok((nodes['riv-shot-note']._text || '') !== '',
+	   'Download says nothing at all when pressed, which is indistinguishable from a dead button');
 }
 
 console.log('-- the page and the renderer agree on the Crew cap --');
