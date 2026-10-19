@@ -1,11 +1,16 @@
 <?php
 /*
- * musicvideos.php -- the music videos artists have made for their projects.
+ * musicvideos.php -- music videos made using art from the projects and
+ * artists in Skulliance.
  *
- * PUBLIC, like the Skull Paper and partner.php. These are the artists'
- * own films and the point of them is being seen; putting them behind a
- * login would be the one place on the platform where the art is harder to
- * reach than the staking.
+ * NOT "films the artists made for their own collections", which is what
+ * this said first and is not true: the art is theirs, the videos are made
+ * with it. A page about somebody's work is the wrong place to be loose
+ * about whose work it is.
+ *
+ * PUBLIC, like the Skull Paper and partner.php. The point of a music
+ * video is being watched; behind a login it would be the one thing on the
+ * platform harder to reach than the staking.
  *
  * THE FOLDER IS THE LIST. See lib/music-videos.php: videos arrive by FTP
  * and a hardcoded roster would mean a deploy to publish one. Whatever is
@@ -57,9 +62,9 @@ $page_title_override = 'Music Videos | Skulliance';
 $mv_canon = 'https://www.skulliance.io/staking/musicvideos.php';
 $mv_og    = 'https://www.skulliance.io/staking/images/og.jpg';
 $mv_desc  = count($mv_list)
-	? count($mv_list) . ' music videos made by the artists and projects on Skulliance, '
-	  . 'for their own collections.'
-	: 'Music videos made by the artists and projects on Skulliance.';
+	? count($mv_list) . ' music videos made using art from the projects and artists '
+	  . 'in Skulliance.'
+	: 'Music videos made using art from the projects and artists in Skulliance.';
 $mv_alt   = 'Skulliance - NFT staking, games and the artists behind them';
 
 $extra_head = '
@@ -114,8 +119,8 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
 
 <div class="mv-wrap">
   <h1>Music Videos</h1>
-  <p class="mv-intro">Films made by the artists and projects on Skulliance, for their own
-    collections. <?php echo count($mv_list) ? (int) count($mv_list) . ' of them so far.' : ''; ?></p>
+  <p class="mv-intro">Music videos made using art from the projects and artists in
+    Skulliance.<?php echo count($mv_list) ? ' ' . (int) count($mv_list) . ' of them so far.' : ''; ?></p>
 
 <?php if (!$mv_list): ?>
   <p class="mv-none">No videos have been uploaded yet.</p>

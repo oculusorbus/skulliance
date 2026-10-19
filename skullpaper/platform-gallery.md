@@ -12,10 +12,10 @@ The Gallery is a good way to see which collections are active, spot Diamond Skul
 
 ## Music Videos
 
-Separately from the Gallery, **Music Videos** under the NFTs menu collects the
-films artists have made for their own collections. It is a **public page** - no
-login, because the point of a music video is being watched - and it is ordered
-by project name.
+Separately from the Gallery, **Music Videos** under the NFTs menu collects
+music videos made using art from the projects and artists in Skulliance. It is
+a **public page** - no login, because the point of a music video is being
+watched - and it is ordered by project name.
 
 Each video is captioned with that project's Monstrocity theme logo where it has
 one, and with its points icon and name where it does not. New videos appear as
