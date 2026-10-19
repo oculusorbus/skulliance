@@ -69,6 +69,7 @@ $ss_short     = 'A free browser match 3 puzzle game with bombs, cascades, and a 
 <!doctype html>
 <html lang="en">
 <head>
+<?php include __DIR__ . '/lib/favicon-head.php'; ?>
   <title><?php echo htmlspecialchars($ss_title); ?></title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">

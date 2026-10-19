@@ -130,6 +130,7 @@ $href_gallery   = 'dhcgallery.php';
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?php include __DIR__ . '/lib/favicon-head.php'; ?>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo htmlspecialchars($page_title); ?></title>

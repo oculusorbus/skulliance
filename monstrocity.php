@@ -65,6 +65,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<?php require_once __DIR__ . '/lib/game-exit.php'; ?>
+<?php include __DIR__ . '/lib/favicon-head.php'; ?>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Monstrocity | Free Online Match 3 RPG Game | No Download</title>
@@ -134,45 +136,6 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       filter: drop-shadow(2px 5px 10px #000);
     }
 
-    /* Floating exit button — Monstrocity doesn't include header.php so the
-       burger menu is unavailable. Without this button users (especially in
-       PWA standalone mode where there's no browser back) get trapped here. */
-    #monstrocity-exit {
-      position: fixed;
-      top: calc(env(safe-area-inset-top, 0px) + 8px);
-      left: calc(env(safe-area-inset-left, 0px) + 8px);
-      z-index: 99990;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 12px;
-      min-height: 36px;
-      background: rgba(18, 18, 18, 0.85);
-      color: #e8eaed;
-      border: 1px solid rgba(0, 200, 160, 0.45);
-      border-radius: 999px;
-      text-decoration: none;
-      font-size: 0.82rem;
-      font-weight: 600;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      transition: background 0.15s, border-color 0.15s;
-    }
-    #monstrocity-exit:hover,
-    #monstrocity-exit:active {
-      background: rgba(0, 200, 160, 0.18);
-      border-color: #00c8a0;
-    }
-    #monstrocity-exit .mx-arrow {
-      font-size: 1.05rem;
-      line-height: 1;
-      color: #00c8a0;
-    }
-    @media (max-width: 480px) {
-      #monstrocity-exit .mx-label { display: none; }
-      #monstrocity-exit { padding: 8px 10px; }
-    }
 
     .turn-indicator {
       font-size: 1.2em;
@@ -1139,8 +1102,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     #theme-select-container h2,
     #boss-select-container h2,
     .theme-group h3,
-    #game-over,
-    #monstrocity-exit .mx-arrow {
+    #game-over {
       color: #00c8a0 !important;
     }
     /* Secondary metadata text (card paragraphs, attribute labels) softened
@@ -1169,10 +1131,12 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     #progress-resume {
       color: #0a0a0a !important;
     }
-    /* Secondary buttons — off-white on neutral */
+    /* Secondary buttons — off-white on neutral.
+       The exit control is NOT in this list any more: it is the platform's
+       solid teal button now (lib/game-exit.php) and wants dark text on it,
+       so an off-white !important here would make it unreadable. */
     #progress-start-fresh,
-    #theme-close-button,
-    #monstrocity-exit {
+    #theme-close-button {
       color: #e8eaed !important;
     }
 
@@ -1736,7 +1700,9 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 </head>
 <body>
   <?php if ($user_id): ?>
-  <a id="monstrocity-exit" href="launchpad.php" aria-label="Exit Monstrocity and return to the Skulliance Launchpad"><span class="mx-arrow">&larr;</span><span class="mx-label">Exit</span></a>
+  <?php game_exit_button(array(
+      'label' => 'Exit',
+      'aria'  => 'Exit Monstrocity and return to the Skulliance Launchpad')); ?>
   <?php endif; ?>
   <div class="game-container">
     <div id="game-over-container">

@@ -154,11 +154,7 @@ $ix_games = array(
   <title>Skulliance | Stake your NFTs, then go and play with them</title>
   <meta name="description" content="A free staking platform and games arcade for <?php echo $e($ix_projects ? $ix_projects . ' NFT projects' : 'NFT projects'); ?>. Sign in with Discord.">
   <meta name="theme-color" content="#0e0f13">
-  <link rel="apple-touch-icon" sizes="180x180" href="/staking/pwa/apple-touch-icon.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/staking/pwa/favicon-32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/staking/pwa/favicon-16.png">
-  <link rel="icon" type="image/png" sizes="192x192" href="/staking/pwa/icon-192.png">
-  <link rel="shortcut icon" href="/staking/pwa/favicon-32.png">
+<?php include __DIR__ . '/lib/favicon-head.php'; ?>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Skulliance">
   <meta property="og:title" content="Stake your NFTs, then go and play with them">

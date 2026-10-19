@@ -103,6 +103,7 @@ $my_user_json = json_encode($my_user_id);
 <!doctype html>
 <html lang="en">
 <head>
+<?php include __DIR__ . '/lib/favicon-head.php'; ?>
   <title>Skulliance Gallery</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
