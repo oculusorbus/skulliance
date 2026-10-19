@@ -67,6 +67,7 @@ The link your digest shares is also your invite. Anyone who signs in through it 
 * The traits are drawn on the **same odds a seven-day streak pays**, not the ordinary drop table: 25% common instead of 55%, and a real chance at a legendary.
 * **Once per person.** The same friend coming back next month does not pay again.
 * Nothing is paid for posting. The traits land when somebody actually signs in.
+* **The link has to be the one Skulliance gave you.** Your invite only counts if they arrive through your own link - retyping the address without it, or sharing a screenshot of it, credits nobody.
 
 Your three arrive as the usual trait reveal the next time you open the site, and the bot sends you a message when it happens so you know even if you are away.
 

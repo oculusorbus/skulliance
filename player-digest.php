@@ -377,9 +377,24 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     return body + tail;
   }
 
+  /*
+   * THE ONE PLACE THE BARE INVITE URL IS BUILT.
+   *
+   * It was built twice -- once for the Discord message, once as the share's
+   * fallback -- and the FALLBACK FORGOT THE ?r=. So a post that had to fall
+   * back, which is every tainted canvas and every failed upload, went out
+   * carrying a link that credited nobody: the sharer did the work, somebody
+   * signed in through it, and neither of them was paid. Two copies of one
+   * url is exactly how that happens, so now there is one.
+   */
+  function inviteUrl(d) {
+    var r = String((d && d.ref) || '');
+    return 'https://skulliance.io/staking/' + (r ? '?r=' + encodeURIComponent(r) : '');
+  }
+
   function shareHref(d, url) {
     return 'https://x.com/intent/post?text=' + encodeURIComponent(shareText(d))
-         + '&url=' + encodeURIComponent(url || 'https://skulliance.io/staking/');
+         + '&url=' + encodeURIComponent(url || inviteUrl(d));
   }
 
   /*
@@ -442,7 +457,7 @@ if (!isset($_SESSION['userData']['user_id'])) return;
    * instant the modal opens.
    */
   function dmText(d) {
-    var link = 'https://skulliance.io/staking/?r=' + encodeURIComponent(d.ref || '');
+    var link = inviteUrl(d);
     return 'Been playing this thing called Skulliance - staking, missions, realms and a stack '
          + 'of games, all free in the browser.\n\n'
          + 'If you sign in with this link you get 3 DHC traits to build a Fighter with, and I '

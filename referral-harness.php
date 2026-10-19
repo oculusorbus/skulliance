@@ -166,6 +166,78 @@ echo "\nnothing is paid for posting\n";
 	   'the credit is not on the login path');
 }
 
+echo "\nthe code survives the landing\n";
+{
+	/*
+	 * EVERY INVITE LANDS ON /staking/, WHICH IS index.php, and index.php had
+	 * no PHP in it at all -- so ref_capture() never ran there, the cookie
+	 * was never set, and by the time the arrival returned from Discord's
+	 * OAuth hop nothing recorded who had invited them. The arrival signed in
+	 * perfectly normally and the invite paid nobody, with no error anywhere.
+	 * db.php does this for every other page; this one does not include it.
+	 */
+	$idx = file_get_contents(__DIR__ . '/index.php');
+	ok(strpos($idx, 'ref_capture();') !== false,
+	   'the staking root does not capture ?r=, so no invite landing there can ever pay');
+	ok(strpos($idx, "require_once __DIR__ . '/lib/referral-lib.php'") !== false,
+	   'index.php calls ref_capture() without loading the library that defines it');
+	/* And BEFORE the first byte: setcookie() after output returns quietly. */
+	$cap = strpos($idx, 'ref_capture();');
+	$out = strpos($idx, '<!doctype');
+	ok($cap !== false && $out !== false && $cap < $out,
+	   'the capture runs after output has begun, so the cookie is silently never set');
+	ok(strpos(substr($idx, 0, $cap), 'echo') === false
+	   && strpos(substr($idx, 0, $cap), 'print ') === false,
+	   'something prints before the capture, which stops the cookie being set');
+
+	/*
+	 * AND THE LINK HAS TO CARRY THE CODE. The bare invite url was built in
+	 * TWO places -- the Discord message and the share's fallback -- and the
+	 * fallback omitted ?r= entirely, so every post that fell back (a
+	 * tainted canvas, a failed upload) credited nobody.
+	 */
+	$mod = file_get_contents(__DIR__ . '/player-digest.php');
+	ok(preg_match_all("~'https://skulliance\.io/staking/~", $mod) === 1,
+	   'the bare invite url is built in ' . preg_match_all("~'https://skulliance\.io/staking/~", $mod)
+	 . ' places; one of them will forget the ?r= again');
+	ok(strpos($mod, 'function inviteUrl(') !== false, 'there is no single invite-url builder');
+	ok(strpos($mod, 'url || inviteUrl(d)') !== false,
+	   'the share fallback does not fall back to the invite, so a failed upload credits nobody');
+
+	/* Run it, rather than read it. */
+	$a = strpos($mod, '  var ASKS = [');
+	$b = strpos($mod, '  function share(d) {');
+	ok($a !== false && $b > $a, 'inviteUrl() could not be lifted out of the modal');
+	$tmp = sys_get_temp_dir() . '/ref-invite-' . getmypid() . '.js';
+	file_put_contents($tmp, substr($mod, $a, $b - $a) . "\n"
+		. "var d = { total: 9, streak: 0, best: { n: 4, label: 'Skull Swap' },\n"
+		. "          ref: '3px83', day: '2026-10-17' };\n"
+		. "console.log(JSON.stringify({\n"
+		. "  dm: inviteUrl(d),\n"
+		. "  none: inviteUrl({}),\n"
+		. "  fallback: decodeURIComponent(String(shareHref(d, null)).split('&url=')[1] || ''),\n"
+		. "  normal: decodeURIComponent(String(shareHref(d, 'https://x/digest.php?d=a&r=3px83')).split('&url=')[1] || '')\n"
+		. "}));\n");
+	$r = json_decode(trim((string) @shell_exec('node ' . escapeshellarg($tmp) . ' 2>&1')), true);
+	@unlink($tmp);
+	ok(is_array($r), 'inviteUrl() could not be run');
+	if (is_array($r)) {
+		ok(strpos($r['dm'], '?r=3px83') !== false,
+		   'the Discord message link carries no code: ' . $r['dm']);
+		ok(strpos($r['fallback'], '?r=3px83') !== false,
+		   'a failed upload posts a link that credits nobody: ' . $r['fallback']);
+		/* A player with no code must not get a dangling ?r=. */
+		ok(strpos($r['none'], '?r=') === false, 'a missing code still produces ?r=: ' . $r['none']);
+		/* And a normal share must still point at the poster, not the root. */
+		ok(strpos($r['normal'], 'digest.php') !== false,
+		   'a successful share no longer links to the poster: ' . $r['normal']);
+	}
+
+	/* The landing's code must be the shape ref_decode accepts -- a cookie
+	   set from a url the modal built has to survive ref_decode(). */
+	ok(ref_decode('3px83') > 0, 'the code the modal puts in its links does not decode');
+}
+
 echo "\nthe cache rewards the habit, not the post\n";
 {
 	$ep   = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/player-digest.php'));
