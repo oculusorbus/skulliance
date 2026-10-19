@@ -358,15 +358,54 @@ if ($dhcg_sort === 'might')  usort($dhcg_rows, function($a,$b){ return $b['might
  * Within the block the order is left alone, so it keeps whatever the SQL
  * ORDER BY gave it rather than inventing a ranking from no data.
  */
-$dhcg_paxis = array('preal' => 'real', 'plive' => 'live', 'pdmg' => 'dmg');
+/*
+ * WINNINGEST IS NOT ONE OF dhca_proven_axes() AND MUST NOT BE.
+ *
+ * Each of those three is a CLAIM the traits make, measured against the
+ * ledger -- the panel sets "#4 deadliest proven" beside "#19 deadliest
+ * claimed" and the gap is the finding. There is no claimed win rate; no
+ * arrangement of traits predicts how often a Crew wins. Adding wins to
+ * that array would put a fourth chip in the Fighter panel with nothing
+ * on the other side of the comparison.
+ *
+ * SORTED ON WINS LESS LOSSES, which is the whole decision here.
+ *
+ * Measured against four real shapes of record:
+ *
+ *   by win RATE    5W 0L (100%) tops it over 40W 30L. A board led by
+ *                  somebody who played five games is not a board; the
+ *                  gate is only DHCA_PROFILE_MIN battles.
+ *   by TOTAL wins  8W 32L (20%) ranks above 5W 0L, because eight is more
+ *                  than five. A Fighter that loses four out of five
+ *                  standing over an undefeated one is not a power board.
+ *   by NET         22W 8L, then 40W 30L, then 5W 0L, then 8W 32L. Volume
+ *                  counts, losing costs, and five games cannot top it.
+ *
+ * So net. It is the only one of the three that cannot be farmed by
+ * playing a lot or by barely playing at all.
+ *
+ * AND IT IS THE CREW'S RECORD, not the Fighter's alone: three Fighters
+ * win or lose together. The other three axes measure what this Fighter
+ * itself did -- damage it dealt, whether it survived -- so this one is
+ * labelled for what it actually is rather than left to imply the same
+ * kind of evidence.
+ */
+$dhcg_paxis = array('preal' => 'real', 'plive' => 'live', 'pdmg' => 'dmg', 'pwin' => '');
 if (isset($dhcg_paxis[$dhcg_sort])) {
 	$pa = $dhcg_paxis[$dhcg_sort];
-	usort($dhcg_rows, function ($a, $b) use ($pa) {
+	/* 'pwin' is derived rather than stored, so it is a closure over the
+	   row instead of a field name -- the other three read straight off
+	   dhca_performance_score()'s output. */
+	$val = function ($r) use ($pa) {
+		$all = $r['perf']['all'];
+		return $pa === '' ? (int) $all['wins'] - (int) $all['losses'] : $all[$pa];
+	};
+	usort($dhcg_rows, function ($a, $b) use ($val) {
 		$ap = !empty($a['perf']['all']['proven']);
 		$bp = !empty($b['perf']['all']['proven']);
 		if ($ap !== $bp) return $bp <=> $ap;          // proven ahead of unproven
 		if (!$ap) return 0;
-		return $b['perf']['all'][$pa] <=> $a['perf']['all'][$pa];
+		return $val($b) <=> $val($a);
 	});
 }
 
@@ -668,6 +707,14 @@ include 'header.php';
            href="<?php echo htmlspecialchars(dhcg_url(array('sort' => 'p' . $pk))); ?>"><?php
            echo htmlspecialchars($pm['label']); ?></a>
       <?php endforeach; ?>
+      <?php /* Beside the three, not among them -- see $dhcg_paxis. The
+               title says whose record it is, because a Fighter does not
+               win on its own. */ ?>
+      <a class="<?php echo $dhcg_sort === 'pwin' ? 'on' : ''; ?>"
+         title="Wins less losses, over <?php echo DHCA_PROFILE_MIN; ?>+ battles. A Crew wins
+                together, so this is the record of the Crews this Fighter was in rather than
+                of the Fighter on its own."
+         href="<?php echo htmlspecialchars(dhcg_url(array('sort' => 'pwin'))); ?>">Winningest</a>
     <?php endif; ?>
 
     <span class="sep"></span>

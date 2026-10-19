@@ -291,6 +291,16 @@ filter names the slot as well as the trait, because nine traits share a name
 across two slots: the **MK100** head and the **MK100** torso are different
 pieces with different art, and the Collection will not mix them.
 
+Once a Fighter has fought, a **Winningest** sort appears beside the proven
+ones. It orders by **wins less losses** over five or more battles, which is
+the only reading of "winningest" that works as a board: sorting by win rate
+puts a Fighter that went 5-0 above one that went 40-30, and sorting by total
+wins puts one that went 8-32 above the undefeated one. A Crew wins together,
+so this is the record of the Crews a Fighter was in rather than of the Fighter
+on its own - which is why it sits beside Deadliest, Toughest and Hardest
+hitting rather than among them. Those three measure what the Fighter itself
+did.
+
 Once a Fighter has fought, the **Record** filters appear, and they use the
 same words the Arena's own picker does: **Reliable**, **Even**, **Risky** and
 **Winless**, alongside **Proven** (five or more battles, so its rates mean

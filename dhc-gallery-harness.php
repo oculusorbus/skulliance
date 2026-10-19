@@ -246,5 +246,86 @@ echo "\nthe Collection filters on the same words the Arena uses\n";
 	   'a word with no Fighters still draws a chip, which leads to an empty grid');
 }
 
+echo "\nWinningest is a power board, not a volume board\n";
+{
+	/*
+	 * THE THREE WAYS TO SORT THIS AND WHY ONLY ONE WORKS. Measured on
+	 * four real shapes of record:
+	 *
+	 *   win RATE    5W 0L (100%) beats 40W 30L. The gate is only
+	 *               DHCA_PROFILE_MIN battles, so the top of the board is
+	 *               whoever played least.
+	 *   TOTAL wins  8W 32L (20%) beats 5W 0L, because eight is more than
+	 *               five. A Fighter losing four of five above an
+	 *               undefeated one is not a power board.
+	 *   NET         22W 8L, 40W 30L, 5W 0L, 8W 32L. Volume counts, losing
+	 *               costs, five games cannot top it.
+	 *
+	 * The page sorts on net. This fails if it ever goes back to either of
+	 * the others, which both look reasonable in a diff.
+	 */
+	$g = file_get_contents(__DIR__ . '/dhcgallery.php');
+	ok(strpos($g, "'pwin' => ''") !== false, 'the Winningest sort is gone');
+	ok(strpos($g, "(int) \$all['wins'] - (int) \$all['losses']") !== false,
+	   'Winningest no longer sorts on wins less losses');
+	ok(strpos($g, "\$all['winpct']") === false,
+	   'it sorts on the win RATE, so five unbeaten battles tops the board');
+
+	$z = array('battles'=>0,'wins'=>0,'losses'=>0,'survived'=>0,
+	           'survived_wins'=>0,'fell_in_wins'=>0,'dealt'=>0);
+	$mk = function ($n, $b, $w) use ($z) {
+		$one  = array_merge($z, array('battles'=>$b, 'wins'=>$w, 'losses'=>$b-$w,
+		                              'survived'=>$w, 'survived_wins'=>$w, 'dealt'=>$b*100));
+		$half = array_merge($z, array('battles'=>intdiv($b,2), 'wins'=>intdiv($w,2),
+		        'losses'=>intdiv($b-$w,2), 'survived'=>intdiv($w,2),
+		        'survived_wins'=>intdiv($w,2), 'dealt'=>intdiv($b*100,2)));
+		return array('name'=>$n,
+		             'perf'=>dhca_performance_score(array('all'=>$one,'attack'=>$half,'defend'=>$half)));
+	};
+	$rows = array($mk('five-oh',5,5), $mk('grinder',70,40), $mk('solid',30,22),
+	              $mk('loser',40,8), $mk('unfought',0,0));
+	/* The page's own comparator. */
+	$val = function ($r) { $a = $r['perf']['all']; return (int)$a['wins'] - (int)$a['losses']; };
+	usort($rows, function ($a, $b) use ($val) {
+		$ap = !empty($a['perf']['all']['proven']); $bp = !empty($b['perf']['all']['proven']);
+		if ($ap !== $bp) return $bp <=> $ap;
+		if (!$ap) return 0;
+		return $val($b) <=> $val($a);
+	});
+	$order = array();
+	foreach ($rows as $r) $order[] = $r['name'];
+	ok($order === array('solid', 'grinder', 'five-oh', 'loser', 'unfought'),
+	   'Winningest ordered them ' . implode(' > ', $order));
+	/* The two specific inversions the other measures produce. */
+	ok(array_search('grinder', $order) < array_search('five-oh', $order),
+	   'a 5-0 Fighter outranks one that has won forty, which is the win-rate board');
+	ok(array_search('five-oh', $order) < array_search('loser', $order),
+	   'a Fighter losing four of five outranks an undefeated one, which is the total-wins board');
+	/* And a Fighter nobody has fielded is last, never treated as a zero
+	   mixed in with the records. */
+	ok(end($order) === 'unfought', 'an unfought Fighter is interleaved with the proven ones');
+	/* And in the PAGE, not only in the copy of the comparator above: an
+	   unproven Fighter has no evidence, and sorting it as a zero would
+	   bury it under one that has demonstrably never landed a hit. */
+	ok(preg_match('/if \(\$ap !== \$bp\) return \$bp <=> \$ap;/', $g) === 1,
+	   'the page no longer floats proven Fighters above unproven ones, so "no record" sorts '
+	 . 'as if it were a record of zero');
+
+	/*
+	 * NOT ONE OF dhca_proven_axes(). Each of those is a claim the traits
+	 * make, measured -- the panel sets proven rank beside claimed rank and
+	 * the gap is the finding. No arrangement of traits predicts a win
+	 * rate, so adding it there would put a fourth chip in the Fighter
+	 * panel with nothing on the other side of the comparison.
+	 */
+	$axes = dhca_proven_axes();
+	ok(!isset($axes['win']) && !isset($axes['wins']),
+	   'wins was added to the proven axes, which gives the Fighter panel a rank with no claim '
+	 . 'to compare it against');
+	foreach ($axes as $k => $meta) {
+		ok(!empty($meta['claim']), 'proven axis ' . $k . ' has no claimed counterpart');
+	}
+}
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all gallery checks passed\n");
 exit($fail ? 1 : 0);
