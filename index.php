@@ -385,7 +385,7 @@ $ix_button = function () use ($ix_oauth, $ix_signed_in, $e) {
       <span><strong><?php echo $ix_from !== ''
           ? $e($ix_from) . ' invited you.'
           : 'You were invited.'; ?></strong>
-      Somebody wanted you to see this. <?php echo (int) REF_ARRIVAL_DRAWS; ?>
+      <?php echo (int) REF_ARRIVAL_DRAWS; ?>
       <a href="#traits">DHC Fighter traits</a> are yours when you sign in, on better odds than an
       ordinary drop, and
       <?php echo $ix_from !== '' ? $e($ix_from) : 'whoever sent you'; ?> gets
