@@ -99,7 +99,14 @@ if (!$wrote) dsh_out(false, array('message' => 'Could not store the image.'));
 
 dsh_prune($dir);
 
+/* THE SHARE URL IS THE INVITE. Whoever clicks it and signs in, new or back
+   after a month, pays three traits to each of them -- so the link a player
+   posts is worth something to a stranger, not just a picture of someone
+   else's day. */
+require_once __DIR__ . '/../lib/referral-lib.php';
+$ref = ref_code($uid);
+
 dsh_out(true, array(
-	'url'   => DSH_BASE . 'digest.php?d=' . $token,
+	'url'   => DSH_BASE . 'digest.php?d=' . $token . ($ref !== '' ? '&r=' . $ref : ''),
 	'image' => DSH_BASE . DSH_DIR . '/' . $token . '.jpg',
 ));

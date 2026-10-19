@@ -1032,6 +1032,27 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'trigger' => 'complete a 7-day streak', 'base' => 'placement_3',
 	                          'cap' => 1, 'limit_note' => 'once per 7-day streak',
 	                          'unlisted' => true),
+
+	// Bringing somebody back. Not a game either, and unlisted for the same
+	// reason the streak is -- it has no page to send anybody to.
+	//
+	// placement_3, NOT 'run'. The whole complaint about an ordinary drop as a
+	// reward is that 'run' is 55% common, so three of them is three commons
+	// and the effort buys disappointment. placement_3 is 25/30/27/15/3, which
+	// is the table a seven-day streak pays -- the right comparison, because
+	// bringing a player back is worth about what a week of showing up is.
+	// placement_1 stays reserved for topping a board; spending it here would
+	// quietly devalue the thing it exists for.
+	//
+	// The cap counts DRAWS, and an invite is three of them plus one for the
+	// person arriving, so 60 is about twenty invites in a day. That is
+	// effectively no limit for anyone honest and still a wall for a script --
+	// which is what this ceiling is for, per dhcf_cap()'s own note.
+	'referral'       => array('label' => 'Invite a friend', 'url' => 'launchpad.php', 'category' => 'wildcard',
+	                          'trigger' => 'a friend joins or returns through your link',
+	                          'base' => 'placement_3', 'cap' => 60,
+	                          'limit_note' => 'three traits per friend who turns up',
+	                          'unlisted' => true),
 );
 
 function dhcf_game($key) {

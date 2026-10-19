@@ -58,3 +58,17 @@ Two things worth knowing:
 
 It is built from the same record the feed is, so it shows what was announced - the same limit described under *History*.
 
+## Inviting someone
+
+The link your digest shares is also your invite. Anyone who signs in through it gets **3 DHC traits**, and so do you.
+
+* It pays for people who are **new to Skulliance, or who have not been on in a month**. An active player following your link is just a visit - nothing is owed for that.
+* The traits are drawn on the **same odds a seven-day streak pays**, not the ordinary drop table: 25% common instead of 55%, and a real chance at a legendary.
+* **Once per person.** The same friend coming back next month does not pay again.
+* Nothing is paid for posting. The traits land when somebody actually signs in.
+
+Your three arrive as the usual trait reveal the next time you open the site, and the bot sends you a message when it happens so you know even if you are away.
+
+If you would rather not post publicly, the modal has a ready-written Discord message with your link in it - for someone you actually know. A cold message to a stranger is what Discord suspends accounts over, and that is your account, not ours.
+
+

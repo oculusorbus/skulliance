@@ -34,6 +34,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	if ($name !== null && $dg_did && $dg_av) $avatar_url = avatar_url($dg_did, $dg_av);
 }
 
+/* An invite rode in on the link. db.php has already stored it in a cookie;
+   this only decides whether the page says so. */
+$dg_ref = false;
+if (is_file(__DIR__ . '/lib/referral-lib.php')) {
+	require_once __DIR__ . '/lib/referral-lib.php';
+	$dg_ref = !empty($_GET['r']) && ref_decode($_GET['r']) > 0
+	          && empty($_SESSION['userData']['user_id']);
+}
+
 $dg_token = isset($_GET['d']) ? trim((string) $_GET['d']) : '';
 /* Shape-checked before it touches a path. The token is 20 hex characters
    and nothing else, so no ../ and no absolute path can survive this. */
@@ -86,6 +95,9 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
 #dg .cta a.go{background:#00c8a0;border-color:#00c8a0;color:#07111d;font-weight:700}
 #dg .cta a:hover{border-color:#00c8a0;color:#00c8a0}
 #dg .cta a.go:hover{filter:brightness(1.1);color:#07111d}
+#dg .offer{background:#0d1e2e;border:1px solid #1b3346;border-left:3px solid #00c8a0;
+  border-radius:3px;padding:16px 18px;text-align:left;margin-top:22px}
+#dg .offer b{color:#00c8a0}
 </style>
 <div id="dg">
   <?php if ($dg_ok): ?>
@@ -93,13 +105,23 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
     <p>Somebody&rsquo;s day of missions, raids, realms and games &mdash; drawn the morning after.</p>
     <img class="shot" src="<?php echo $e(DSH_DIR . '/' . $dg_token . '.jpg'); ?>"
          alt="One player's day on Skulliance" width="1080" height="1350">
-    <p>Every staker here gets one of these. Stake an NFT and yours starts tomorrow.</p>
+    <?php if ($dg_ref): ?>
+      <?php /* THE POST PROMISED THREE TRAITS, so the page it lands on says so.
+               Arriving on a stranger's poster with no mention of the offer that
+               brought you is the quickest way to make the post look like bait. */ ?>
+      <p class="offer"><b>Three DHC traits are waiting for you.</b> Sign in through this link and
+        they are yours - drawn on better odds than an ordinary drop, with a real chance at a
+        legendary. Whoever shared this gets three as well.</p>
+      <p>Free to join, nothing to install, and you do not need a wallet to start.</p>
+    <?php else: ?>
+      <p>Every staker here gets one of these. Stake an NFT and yours starts tomorrow.</p>
+    <?php endif; ?>
   <?php else: ?>
     <h1>That day is no longer here</h1>
     <p>Shared posters are kept for a few months and this one has gone. The platform has not.</p>
   <?php endif; ?>
   <div class="cta">
-    <a class="go" href="index.php">Start staking</a>
+    <a class="go" href="index.php"><?php echo $dg_ref ? 'Claim your traits' : 'Start staking'; ?></a>
     <a href="dhcgallery.php">See the Collection</a>
     <a href="skullpaper.php">How it all works</a>
   </div>

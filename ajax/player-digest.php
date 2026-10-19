@@ -57,5 +57,13 @@ $d   = activity_player_digest($conn, $uid, $day);
 ob_clean();
 if (!$d['total']) { echo json_encode(array('show' => false, 'day' => $day)); exit; }
 
+/* Their own invite code travels with the digest, so the Share button can
+   put it on the link without a second request. Derived from the user id --
+   no column, nothing to migrate. */
+if (is_file(__DIR__ . '/../lib/referral-lib.php')) {
+	require_once __DIR__ . '/../lib/referral-lib.php';
+	$d['ref'] = ref_code($uid);
+}
+
 echo json_encode(array('show' => true, 'digest' => $d), JSON_UNESCAPED_SLASHES);
 $conn->close();

@@ -47,6 +47,23 @@ if (!isset($_SESSION['userData']['user_id'])) return;
 /* The controls defend themselves: this sits on every page on the site and
    cannot know what each one does to a button. Same reasoning, and the same
    !important, as dhc-dropmodal.php's actions row. */
+#pdg-dm{margin:14px 14px 0;text-align:left;border:1px solid #1b3346;border-radius:3px;
+  background:#0d1e2e}
+#pdg-dm summary{cursor:pointer;padding:10px 12px;font-size:11px;letter-spacing:.08em;
+  text-transform:uppercase;color:#7a9eb0;list-style:none}
+#pdg-dm summary::-webkit-details-marker{display:none}
+#pdg-dm summary::before{content:"+ ";color:#00c8a0}
+#pdg-dm[open] summary::before{content:"\2212 "}
+#pdg-dm summary:hover{color:#00c8a0}
+.pdg-dm-hint{margin:0;padding:0 12px 8px;font-size:11px;line-height:1.55;color:#7a9eb0}
+#pdg-dm textarea{display:block;width:calc(100% - 24px);margin:0 12px;background:#07111d;
+  color:#c7d3dc;border:1px solid #1b3346;border-radius:2px;padding:9px;resize:vertical;
+  font-family:inherit;font-size:11.5px;line-height:1.55}
+#pdg-dm button{margin:10px 12px 12px !important;padding:8px 14px !important;font-size:10px !important;
+  letter-spacing:.1em !important;text-transform:uppercase !important;cursor:pointer !important;
+  background:transparent !important;border:1px solid #2a4a63 !important;color:#c7d3dc !important;
+  border-radius:2px !important;font-family:inherit !important}
+#pdg-dm button:hover{border-color:#00c8a0 !important;color:#00c8a0 !important}
 #pdg-actions{display:flex;flex-wrap:wrap;gap:8px;padding:14px;margin:0}
 #pdg-actions button{
   flex:1 1 0 !important;display:block !important;width:auto !important;min-width:0 !important;
@@ -69,6 +86,30 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     <div id="pdg-kicker">Your day on Skulliance</div>
     <canvas id="pdg-shot" width="1080" height="1350"></canvas>
     <p id="pdg-note"></p>
+    <?php /*
+     * THE OTHER WAY TO INVITE, folded away.
+     *
+     * Not everyone wants to post publicly, and a message to somebody you
+     * actually know converts far better than a broadcast. This hands over
+     * the text and the link and does nothing else: no bot sends it, nobody
+     * is assigned to anybody, and nothing is tracked -- the link is the
+     * attribution, exactly as it is for the post.
+     *
+     * COLLAPSED BY DEFAULT because it is the minority path and the modal
+     * already has three buttons. <details> rather than script, so it works
+     * before any JS has run.
+     *
+     * "Someone you know" is in the copy on purpose. An unsolicited DM from
+     * an account with no history with you is what Discord actions people
+     * for, and that risk lands on the player's account, not ours.
+     */ ?>
+    <details id="pdg-dm">
+      <summary>Or send it to a friend on Discord</summary>
+      <p class="pdg-dm-hint">Someone you actually know &mdash; a cold message from a stranger is
+        what Discord suspends accounts over.</p>
+      <textarea id="pdg-dm-text" readonly rows="5"></textarea>
+      <button type="button" id="pdg-dm-copy">Copy message</button>
+    </details>
     <div id="pdg-actions">
       <button type="button" id="pdg-share">Share on X</button>
       <button type="button" id="pdg-save">Download image</button>
@@ -247,19 +288,69 @@ if (!isset($_SESSION['userData']['user_id'])) return;
    * an accolade, and it ends by inviting the reader rather than only naming
    * the platform.
    */
+  /*
+   * REPORT CARD FIRST, INVITE SECOND.
+   *
+   * The invite used to lead, and every player's post then opened with the
+   * same byte-identical sentence. X's spam policy covers near-identical
+   * content posted across many accounts, and the accounts that get actioned
+   * would be the players', not ours. Their own numbers are the one part
+   * nobody else can post, so they go first and every post is different from
+   * the first character.
+   *
+   * It also just reads better: a result somebody earned, then an ask --
+   * rather than an ad with a postscript.
+   *
+   * THE ASK STATES WHO QUALIFIES, and that is not fine print. Only new
+   * players and ones away a month pay out, so without it every existing
+   * follower clicks, gets nothing, and the post reads as bait to exactly
+   * the people most likely to say so publicly.
+   *
+   * THE ODDS ARE NAMED because they are the real difference: these draw
+   * from the table a seven-day streak pays, 25% common against an ordinary
+   * drop's 55%. "Three traits" alone sounds like three commons.
+   *
+   * NOTHING IS PAID FOR THE POST. The traits land when somebody signs in,
+   * which is a conversion on our own platform -- not a like, a repost or a
+   * follow. That line is what keeps this clear of X's rule against paying
+   * for engagement, and it is worth not crossing later.
+   */
+  var ASKS = [
+    'Help me get 3 DHC traits - grab 3 yourself if you are new here or have not played in a month.',
+    'Worth 3 DHC traits to me if you take a look - and 3 to you, if you are new or a month away.',
+    'New to Skulliance, or not been on in a month? 3 DHC traits for you, and 3 for me.',
+    'Fancy 3 DHC traits? Yours if you are new here or have been away a month. I get 3 too.'
+  ];
+
   function shareText(d) {
+    /* Their day, which no one else can post -- and the reason every one of
+       these is a different piece of text. */
     var best = d.best ? (d.best.n + ' ' + String(d.best.label).toLowerCase()) : '';
-    var body = 'Yesterday on Skulliance I got through ' + d.total + ' thing'
-             + (d.total === 1 ? '' : 's') + (best ? ' - ' + best + ' among them' : '') + '.';
-    if (d.streak > 1) body += ' ' + d.streak + ' days in a row now.';
-    var tail = '\n\nStake your NFTs, run missions, hold a realm and play a dozen games free at '
-             + '@skulliance.\n\nArt by @MMAXI404';
+    var card = d.total + ' thing' + (d.total === 1 ? '' : 's') + ' on Skulliance yesterday'
+             + (best ? ', including ' + best : '') + '.';
+    if (d.streak > 1) card += ' ' + d.streak + ' days running.';
+
+    /* Rotated on the sharer and the date, so one person's posts differ over
+       time and two people posting on the same day usually differ too. */
+    var seed = 0, k = String(d.ref || '') + String(d.day || '');
+    for (var i = 0; i < k.length; i++) seed = (seed * 31 + k.charCodeAt(i)) >>> 0;
+    var ask = ASKS[seed % ASKS.length] + ' Better odds on the rare ones than a normal drop.';
+
+    var tail = '\n\n@skulliance\n\nArt by @MMAXI404';
     /* X counts ANY url as 23 characters and cuts the overflow off the END,
-       which is where the invitation and the credit live. */
+       where the handle and the credit live. The ask is the functional half,
+       so the report card is what gives way if something has to. */
     var limit = 280 - 24 - tail.length;
-    if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '…';
+    var body  = card + '\n\n' + ask;
+    if (body.length > limit) {
+      var room = limit - (ask.length + 2);
+      card = room > 20 ? card.slice(0, room - 1).replace(/\s+\S*$/, '') + '\u2026' : '';
+      body = (card ? card + '\n\n' : '') + ask;
+    }
+    if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '\u2026';
     return body + tail;
   }
+
   function shareHref(d, url) {
     return 'https://x.com/intent/post?text=' + encodeURIComponent(shareText(d))
          + '&url=' + encodeURIComponent(url || 'https://skulliance.io/staking/');
@@ -319,8 +410,44 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     if (!w) window.location.href = shareHref(D);
   });
 
+  /*
+   * THE DM TEXT. Plainer than the post: no handles, no credit line, no
+   * hashtags -- those read as marketing in a one-to-one message and are the
+   * fastest way to make a friend ignore it. The link is the bare invite
+   * rather than the digest, because it needs no upload and works the
+   * instant the modal opens.
+   */
+  function dmText(d) {
+    var link = 'https://skulliance.io/staking/?r=' + encodeURIComponent(d.ref || '');
+    return 'Been playing this thing called Skulliance - staking, missions, realms and a stack '
+         + 'of games, all free in the browser.\n\n'
+         + 'If you sign in with this link you get 3 DHC traits to build a Fighter with, and I '
+         + 'get 3 as well. Only works if you are new or have not been on in a month.\n\n'
+         + link;
+  }
+
+  var dmCopy = document.getElementById('pdg-dm-copy');
+  if (dmCopy) dmCopy.addEventListener('click', function () {
+    var ta = document.getElementById('pdg-dm-text');
+    /* The clipboard API needs a secure context and permission; selecting the
+       text always works, so that is the fallback rather than a dead button. */
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(ta.value).then(function () {
+          dmCopy.textContent = 'Copied';
+          setTimeout(function () { dmCopy.textContent = 'Copy message'; }, 2000);
+        });
+        return;
+      }
+    } catch (e) {}
+    ta.focus(); ta.select();
+    dmCopy.textContent = 'Press Ctrl+C';
+  });
+
   function show(d) {
     D = d;
+    var ta = document.getElementById('pdg-dm-text');
+    if (ta) ta.value = dmText(d);
     Promise.all([load(d.avatar)].concat(d.art.map(function (a) { return load(a.src); })))
       .then(function (ims) {
         draw(d, { avatar: ims[0], art: ims.slice(1) });

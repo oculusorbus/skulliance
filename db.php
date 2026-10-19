@@ -22,6 +22,21 @@ if (isset($_COOKIE[session_name()]) || isset($_COOKIE['SessionCookie'])) {
     session_start();
 }
 
+/*
+ * An invite link on the way in. Here, and not in header.php, because it
+ * sets a cookie and db.php is included before anything has been output --
+ * and because the link can land on any page at all. It does nothing
+ * without a ?r= on the request.
+ *
+ * A COOKIE RATHER THAN THE QUERY STRING: signing in leaves for Discord and
+ * returns through process-oauth.php, so a parameter on the landing page is
+ * gone by the time anyone is logged in to credit.
+ */
+if (isset($_GET['r']) && is_file(__DIR__ . '/lib/referral-lib.php')) {
+    require_once __DIR__ . '/lib/referral-lib.php';
+    ref_capture();
+}
+
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL ^ E_NOTICE);  

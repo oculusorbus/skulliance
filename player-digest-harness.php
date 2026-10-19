@@ -126,7 +126,10 @@ echo "\nit asks once, and costs nothing after that\n";
 echo "\nthe post keeps its invitation and its credit\n";
 {
 	/* Run the real shareText() over a day big enough to need trimming. */
-	$a = strpos($mod, '  function shareText(d) {');
+	/* From the ASKS table, not from the function: shareText() closes over it
+	   and a slice starting at the function leaves it undefined, so node dies
+	   on the first call instead of reporting anything. */
+	$a = strpos($mod, '  var ASKS = [');
 	/* Anchored on the NAME, not the full signature: shareHref grew a url
 	   parameter and the exact-match anchor silently found nothing, so the
 	   slice came back empty and node died on the first call rather than
@@ -140,18 +143,20 @@ echo "\nthe post keeps its invitation and its credit\n";
 	file_put_contents($tmp,
 		$src . "\n" .
 		"var out = [];\n" .
-		"out.push(shareText({ total: 14, streak: 9, best: { n: 6, label: 'Missions' } }));\n" .
-		"out.push(shareText({ total: 1, streak: 1, best: null }));\n" .
-		/* A LABEL WITH SPACES IN IT. 'X'.repeat(200) is one unbroken token,
-		   so the trim's word-boundary rule throws the whole clause away and
-		   the post comes out short however wrong the budget is -- the same
-		   trap that let a missing url allowance through on partner.php. */
+		"out.push(shareText({ total: 14, streak: 9, best: { n: 6, label: 'Missions' }, " .
+		"ref: '3px83', day: '2026-10-17' }));\n" .
+		"out.push(shareText({ total: 1, streak: 1, best: null, ref: '3px83', day: '2026-10-17' }));\n" .
 		"out.push(shareText({ total: 999, streak: 400, " .
-		"best: { n: 900, label: 'Long Feature Name '.repeat(12) } }));\n" .
-		"console.log(JSON.stringify(out));\n");
+		"best: { n: 900, label: 'Long Feature Name '.repeat(12) }, ref: 'zz9', day: '2026-10-18' }));\n" .
+		/* Four different sharers on one day, to prove the ask rotates. */
+		"var asks = ['a','b','c','d','e','f'].map(function (r) {\n" .
+		"  return shareText({ total: 3, streak: 0, best: null, ref: r, day: '2026-10-17' })" .
+		".split('\\n\\n')[1]; });\n" .
+		"console.log(JSON.stringify({ posts: out, asks: asks }));\n");
 	$raw = @shell_exec('node ' . escapeshellarg($tmp) . ' 2>&1');
 	@unlink($tmp);
-	$posts = json_decode(trim((string) $raw), true);
+	$res   = json_decode(trim((string) $raw), true);
+	$posts = is_array($res) && isset($res['posts']) ? $res['posts'] : null;
 	ok(is_array($posts) && count($posts) === 3,
 	   'shareText() could not be run: ' . substr((string) $raw, 0, 120));
 	if (is_array($posts) && count($posts) === 3) {
@@ -162,12 +167,35 @@ echo "\nthe post keeps its invitation and its credit\n";
 			ok(substr($t, -strlen('Art by @MMAXI404')) === 'Art by @MMAXI404',
 			   'post ' . $i . ' lost the artist credit off the end');
 		}
-		ok(strpos($posts[0], '6 missions') !== false,
-		   'the post does not name what they actually did: ' . $posts[0]);
-		ok(strpos($posts[0], '9 days in a row') !== false, 'the streak is not mentioned');
-		ok(strpos($posts[1], 'days in a row') === false,
+		/*
+		 * THE REPORT CARD LEADS. The invite used to, which meant every
+		 * player's post opened with the same byte-identical sentence --
+		 * near-identical content across many accounts is what X's spam
+		 * policy covers, and it would be the players' accounts actioned.
+		 * Their own numbers are the part nobody else can post.
+		 */
+		foreach ($posts as $i => $t) {
+			ok(preg_match('/^\d/', $t) === 1,
+			   'post ' . $i . ' does not open with the player\'s own numbers: '
+			 . substr($t, 0, 50));
+		}
+		/* And the ask still has to be in there, with who qualifies and why
+		   it is worth anything. */
+		ok(stripos($posts[0], '3 DHC traits') !== false, 'the post does not say what is on offer');
+		ok(preg_match('/new (here|to Skulliance)/i', $posts[0]) === 1
+		   && stripos($posts[0], 'month') !== false,
+		   'the post does not say who qualifies, so every active follower clicks for nothing');
+		ok(stripos($posts[0], 'odds') !== false,
+		   'the post does not say the odds are better, so three traits reads as three commons');
+		ok(strpos($posts[0], '9 days running') !== false, 'the streak is missing from the card');
+		ok(strpos($posts[1], 'days running') === false,
 		   'a streak of 1 is announced as a streak: ' . $posts[1]);
 	}
+	/* The ask rotates, or six sharers on one day post six identical lines. */
+	$asks = is_array($res) && isset($res['asks']) ? $res['asks'] : array();
+	ok(count(array_unique($asks)) > 1,
+	   'every sharer gets the same ask on the same day; that is the duplicate-content pattern');
+
 	/*
 	 * ONE CLICK. X cannot attach a file, so the poster is stored first and
 	 * the post links to digest.php?d=<token>, whose og:image is that file.

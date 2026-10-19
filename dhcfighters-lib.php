@@ -340,6 +340,34 @@ function dhcf_draw($category, $tiers) {
  * $source_detail free text for the audit trail ('won', 'wave 41', boss name)
  * $tierTable     which tier weights to roll on
  */
+/**
+ * What the reveal modal is handed for one trait.
+ *
+ * SPLIT OUT OF dhcf_award() so a drop replayed from the ledger is the same
+ * shape as one just awarded. The referral payout happens during the
+ * ARRIVING player's request, so the inviter's reveal has to be rebuilt on
+ * their next login from dhc_trait_drops -- and a second opinion about this
+ * shape is exactly the bug class that has cost this codebase twice already.
+ * One builder, both callers.
+ *
+ * $info is dhcf_trait_info()'s [tier, worn, rate]; passed in when the caller
+ * already has it, looked up when it does not.
+ */
+function dhcf_drop_payload($conn, $user_id, $cat, $slug, $info = null) {
+	if ($info === null) $info = dhcf_trait_info($cat, $slug);
+	if (!$info) return null;
+	return array(
+		'category' => $cat,
+		'slug'     => $slug,
+		'tier'     => $info[0],
+		'worn'     => $info[1],
+		'rate'     => $info[2],
+		'points'   => dhcf_trait_points($info[2]),
+		'name'     => dhcf_trait_name($cat, $slug),
+		'is_new'   => dhcf_count_owned($conn, $user_id, $slug) <= 1,
+	);
+}
+
 function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $tierTable = null) {
 	$user_id = (int)$user_id;
 	if ($user_id <= 0) return null;
@@ -449,16 +477,7 @@ function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_
 		return null;
 	}
 
-	$drop = array(
-		'category' => $cat,
-		'slug'     => $slug,
-		'tier'     => $info[0],
-		'worn'     => $info[1],
-		'rate'     => $info[2],
-		'points'   => dhcf_trait_points($info[2]),
-		'name'     => dhcf_trait_name($cat, $slug),
-		'is_new'   => dhcf_count_owned($conn, $user_id, $slug) <= 1,
-	);
+	$drop = dhcf_drop_payload($conn, $user_id, $cat, $slug, $info);
 
 	/*
 	 * HELD FOR REVEAL. A trait is awarded by this function, not by the modal --
@@ -489,7 +508,12 @@ function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_
 		}
 		// Bounded: a reveal queue is a nicety, not a ledger. The ledger is the
 		// database, and it already has every one of these.
-		if (count($_SESSION['dhcf_unseen']) < 5) $_SESSION['dhcf_unseen'][] = $drop;
+		//
+		// NINE, NOT FIVE. An invite pays three traits at once and a player can
+		// have two land between one visit and the next, which is six -- at five
+		// the last one was silently not revealed. The trait was still theirs;
+		// they just never saw it, which is the part that matters.
+		if (count($_SESSION['dhcf_unseen']) < 9) $_SESSION['dhcf_unseen'][] = $drop;
 	}
 
 	// Announced from here rather than from the endpoint, so every award posts

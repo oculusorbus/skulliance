@@ -91,7 +91,52 @@ checkUser($conn);
 // Update last_login at most once per day to avoid writing on every page load
 if (!empty($_SESSION['userData']['discord_id'])) {
 	$did = mysqli_real_escape_string($conn, $_SESSION['userData']['discord_id']);
+
+	/*
+	 * READ IT BEFORE WRITING IT, and only once.
+	 *
+	 * Two things downstream need last_login AS IT WAS when this request
+	 * started: whether an arrival is a dormant player an invite should pay
+	 * for, and which referral traits were granted while the inviter was
+	 * away. Asking after the UPDATE below makes every returning player look
+	 * active and every invite look already-seen -- a feature that quietly
+	 * does nothing, with no error anywhere.
+	 *
+	 * The guard on the UPDATE is `last_login < NOW() - INTERVAL 1 DAY`, so
+	 * on a second page load the same day this value is still yesterday's,
+	 * which is what both callers want.
+	 */
+	$skl_prev_login = null;
+	$plr = mysqli_query($conn, "SELECT last_login FROM users WHERE discord_id = '$did' LIMIT 1");
+	if ($plr && ($plrow = mysqli_fetch_assoc($plr))) $skl_prev_login = $plrow['last_login'];
+
 	mysqli_query($conn, "UPDATE users SET last_login = NOW() WHERE discord_id = '$did' AND (last_login IS NULL OR last_login < NOW() - INTERVAL 1 DAY)");
+
+	/*
+	 * An invite pays out here because this is the one place every arrival
+	 * passes through, signed in, with the previous login still readable.
+	 * Both calls are no-ops unless there is something to do.
+	 */
+	if (is_file(__DIR__ . '/lib/referral-lib.php')) {
+		require_once __DIR__ . '/lib/referral-lib.php';
+		if (!empty($_SESSION['userData']['user_id'])) {
+			ref_credit($conn, (int)$_SESSION['userData']['user_id'], $skl_prev_login);
+
+			/* Traits earned while they were away. dhcf_award() does not queue
+			   a reveal for a user who was not the one making the request, so
+			   the inviter's modal is replayed from the ledger here. */
+			$skl_owed = ref_replay($conn, (int)$_SESSION['userData']['user_id'], $skl_prev_login);
+			if ($skl_owed) {
+				if (!isset($_SESSION['dhcf_unseen']) || !is_array($_SESSION['dhcf_unseen'])) {
+					$_SESSION['dhcf_unseen'] = array();
+					$_SESSION['dhcf_unseen_at'] = time();
+				}
+				foreach ($skl_owed as $skl_d) {
+					if (count($_SESSION['dhcf_unseen']) < 9) $_SESSION['dhcf_unseen'][] = $skl_d;
+				}
+			}
+		}
+	}
 }
 
 // Realm Location Upgrades
