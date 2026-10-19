@@ -2444,10 +2444,30 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       var out = [];
       if (config && config.localUrl) out.push(config.localUrl);
       if (config && config.ipfs) {
-        MONSTROCITY_GATEWAYS.forEach(function (g) {
-          if (MONSTROCITY_DEAD_GATEWAYS.some(function (d) { return g.indexOf(d) !== -1; })) return;
-          out.push(g + config.ipfs);
-        });
+        /*
+         * AN ABSOLUTE URL IS THE PICTURE, NOT A CID TO HANG OFF A GATEWAY.
+         *
+         * nfts.ipfs holds a bare CID for every Cardano and XRPL row, but a
+         * whole https URL for a collection that hosts its own art (Solana's
+         * OMEN serves from omenati.com) and a data: URI for an inline SVG.
+         * Prepending a gateway to either built
+         * "https://gateway/ipfs/https://omenati.com/art/01998.jpg" -- every
+         * candidate in the chain dead, so the card fell through to the skull
+         * and the stats were the only thing that worked.
+         *
+         * Same split getIPFS() makes in db.php for My NFTs, which is why
+         * those images were fine while the game's were not. The local cache
+         * above still wins when it has a copy: it keys on md5(ipfs), which
+         * works for either form.
+         */
+        if (/^(https?:\/\/|data:)/i.test(config.ipfs)) {
+          out.push(config.ipfs);
+        } else {
+          MONSTROCITY_GATEWAYS.forEach(function (g) {
+            if (MONSTROCITY_DEAD_GATEWAYS.some(function (d) { return g.indexOf(d) !== -1; })) return;
+            out.push(g + config.ipfs);
+          });
+        }
       }
       out.push('icons/skull.png');
       return out;

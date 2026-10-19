@@ -1,6 +1,7 @@
 <?php
 // Include dependencies
 include '../db.php';
+require_once __DIR__ . '/../lib/monstrocity-stats-lib.php';
 
 // Lightweight session restore — intentionally do NOT include skulliance.php (the
 // login gate). Same fix as get-monstrocity-assets.php: including it made the
@@ -130,56 +131,17 @@ if (isset($_SESSION['userData']['user_id'])) {
                 continue;
             }
 
-            // Extract unique string from asset_id by removing "asset" prefix
-            if (strpos($asset_id, 'asset') !== 0) {
-                error_log("get-nft-assets: Invalid asset_id format: $asset_id for name=$name, policy_id=$policy");
+            /* Stats are hashed from the identifier -- any chain's, see
+               lib/monstrocity-stats-lib.php. This used to demand a Cardano
+               `asset1...` fingerprint and drop everything else. */
+            $stats = monstrocity_nft_stats($asset_id);
+            if ($stats === null) {
+                error_log("get-nft-assets: No asset_id to derive stats from for name=$name, policy_id=$policy");
                 if ($is_debug) {
-                    echo "Error: Invalid asset_id format: $asset_id\n";
+                    echo "Error: No asset_id for name=$name\n";
                 }
                 continue;
             }
-            $unique_id = substr($asset_id, 5); // Remove "asset" prefix
-            if (empty($unique_id)) {
-                error_log("get-nft-assets: Empty unique_id after removing prefix for name=$name, policy_id=$policy");
-                if ($is_debug) {
-                    echo "Error: Empty unique_id for name=$name\n";
-                }
-                continue;
-            }
-
-            // Calculate attributes based on unique_id
-            $length = strlen($unique_id);
-            $char_sum = 0;
-            for ($i = 0; $i < $length; $i++) {
-                $char_sum += ord($unique_id[$i]);
-            }
-            $strength = ($char_sum % 8) + 1;
-			if($strength < 4){
-				$strength = $strength*2;
-			}
-
-            $speed_sum = 0;
-            for ($i = 0; $i < min(10, $length); $i++) {
-                $speed_sum += ord($unique_id[$i]);
-            }
-            $speed = ($speed_sum % 7) + 1;
-
-            $tactics_sum = 0;
-            for ($i = max(0, $length - 10); $i < $length; $i++) {
-                $tactics_sum += ord($unique_id[$i]);
-            }
-            $tactics = ($tactics_sum % 7) + 1;
-
-			$size_map = ['Small', 'Medium', 'Large'];
-			$hash = crc32($unique_id); // Compute hash
-			$size = $size_map[$hash % 3]; // Use hash to pick size
-
-            $type_map = ['Base', 'Leader', 'Battle Damaged'];
-            $hash = crc32($unique_id);
-            $type = $type_map[$hash % 3];
-
-            $powerup_map = ['Minor Regen', 'Regenerate', 'Boost Attack', 'Heal'];
-            $powerup = $powerup_map[ord($unique_id[$length - 1]) % 4];
 
             // Look for a locally-cached image at the deterministic path
             // produced by lib/image-cache-lib.php's cacheNFTImage(). Only
@@ -206,12 +168,12 @@ if (isset($_SESSION['userData']['user_id'])) {
                 'ipfs' => $ipfs,
                 'localUrl' => $local_url,
                 'policyId' => $policy,
-                'strength' => $strength,
-                'speed' => $speed,
-                'tactics' => $tactics,
-                'size' => $size,
-                'type' => $type,
-                'powerup' => $powerup,
+                'strength' => $stats['strength'],
+                'speed' => $stats['speed'],
+                'tactics' => $stats['tactics'],
+                'size' => $stats['size'],
+                'type' => $stats['type'],
+                'powerup' => $stats['powerup'],
                 'theme' => $theme
             ];
             $index++;

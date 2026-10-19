@@ -4,7 +4,7 @@ Monstrocity is Skulliance's **Match 3 RPG** - a single-player campaign that pair
 
 ## Playing
 
-* Choose a **character theme** from one of 35+ skins drawn from Cardano NFT collections (core artists, partners, and bonus themes). Themes are cosmetic - no specific NFT is required to play.
+* Choose a **character theme** from one of 35+ skins drawn from NFT collections across every chain Skulliance supports (core artists, partners, and bonus themes). Themes are cosmetic - no specific NFT is required to play.
 * Progress through a **28-level campaign** of escalating difficulty.
 * Each level is a match-3 battle: you and an AI opponent alternate turns on a shared board, and the board state persists between turns.
 * Win a level by draining the opponent's health before yours runs out.
@@ -15,6 +15,13 @@ Each character carries combat stats: **health, strength, speed, tactics, size, a
 
 * **Speed** decides turn order (ties broken by strength).
 * **Size** is a trade-off: larger characters gain health but lose tactics; smaller characters lose health but gain tactics.
+* **Type** sets base health: Leader 100, Base 85, Battle Damaged 70. Size then scales it.
+
+### Playing your own NFTs
+
+If you own NFTs from the collections behind a theme, they show up as characters you can field alongside the default roster, on **Cardano, Solana, XRPL and Polygon** alike.
+
+Stats for those characters are worked out from the NFT's own on-chain identifier, so every NFT always has the same stats and no two holders can argue about it. Traits and rarity do not feed into it. The original **Monstrocity** collection is the exception: its stats were written into the NFTs when they were minted, and the game reads those directly.
 
 ## Progress & Scoring
 
