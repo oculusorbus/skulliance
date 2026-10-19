@@ -250,6 +250,9 @@ $sh_links = array(
 );
 include __DIR__ . '/site-header.php';
 
+$ix_note = 'Signing in is Discord only and takes one click. You connect a wallet later, when '
+        . 'you actually want to stake something.';
+
 /* Written once and printed twice, top and bottom. */
 $ix_button = function () use ($ix_oauth, $ix_signed_in, $e) {
 	if ($ix_signed_in) {
@@ -276,13 +279,23 @@ $ix_button = function () use ($ix_oauth, $ix_signed_in, $e) {
       bothering.</span>
     </div>
 <?php endif; ?>
+<?php
+/*
+ * AN INVITED ARRIVAL GETS THE BUTTON FIRST.
+ *
+ * They have already been sold -- somebody they know sent them, and the
+ * ribbon above says what is waiting. Making them read the pitch before
+ * they can see the button puts the one thing they came to do below the
+ * fold on a phone. Anybody else gets the pitch first, because for them
+ * the button is a question they have not been asked yet.
+ */
+if ($ix_invited) { $ix_button(); echo '<p class="ix-cta-note">' . $ix_note . '</p>'; }
+?>
     <p>Skulliance is a free staking platform and an arcade<?php
       if ($ix_projects > 0) echo ', shared by ' . (int) $ix_projects . ' NFT projects'; ?>.
     Your collection earns every night it is staked, and everything it earns is spendable on
     missions, realms, raids, a store and about a dozen games that take your NFTs as the pieces.</p>
-<?php $ix_button(); ?>
-    <p class="ix-cta-note">Signing in is Discord only and takes one click. You connect a wallet
-    later, when you actually want to stake something.</p>
+<?php if (!$ix_invited) { $ix_button(); echo '<p class="ix-cta-note">' . $ix_note . '</p>'; } ?>
 <?php if ($ix_stats): ?>
     <ul class="ix-stats">
 <?php foreach ($ix_stats as $s): ?>

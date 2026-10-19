@@ -84,7 +84,7 @@ if (!isset($_SESSION['userData']['user_id'])) return;
 <div id="pdg-veil" role="dialog" aria-modal="true" aria-labelledby="pdg-kicker">
   <div id="pdg-box">
     <div id="pdg-kicker">Your day on Skulliance</div>
-    <canvas id="pdg-shot" width="1080" height="1350"></canvas>
+    <canvas id="pdg-shot" width="1200" height="630"></canvas>
     <p id="pdg-note"></p>
     <?php /*
      * THE OTHER WAY TO INVITE, folded away.
@@ -124,7 +124,20 @@ if (!isset($_SESSION['userData']['user_id'])) return;
   var veil = document.getElementById('pdg-veil');
   if (!veil) return;
 
-  var W = 1080, H = 1350;
+  /*
+   * 1200x630, WHICH IS THE SHAPE X ACTUALLY SHOWS.
+   *
+   * This was a 1080x1350 portrait poster and it read beautifully as a
+   * download. A summary_large_image card crops to about 1.91:1, so what
+   * went out on X was a horizontal band through the middle of it: the
+   * header, the name and the ENTIRE art collage were cut, which is the one
+   * part anybody wanted to look at. Reported from a real post.
+   *
+   * Landscape is therefore not a style preference, it is the card format.
+   * The art takes the larger half, because the art is why a post gets
+   * looked at; the numbers are why it gets believed.
+   */
+  var W = 1200, H = 630;
   var INK = '#06101a', PANEL = '#0d1e2e', ACCENT = '#00c8a0', TEXT = '#e6f1f7', MUTE = '#8fa6b8';
   var D = null;
 
@@ -144,7 +157,26 @@ if (!isset($_SESSION['userData']['user_id'])) return;
   function seen(k) { try { return localStorage.getItem(k) === '1'; } catch (e) { return false; } }
   function markSeen(k) { try { localStorage.setItem(k, '1'); } catch (e) {} }
 
-  function close() { veil.classList.remove('on'); }
+  /*
+   * DISMISSED, NOT MERELY SEEN.
+   *
+   * markSeen() used to run the moment the digest was shown, so anything
+   * that took the player off the page before they had finished with it --
+   * which on an iPhone was the Download button itself, see saveImage() --
+   * burned the digest for the day and it could not be got back. Reported
+   * exactly that way: "that took me away from the dialog and now it's
+   * gone."
+   *
+   * The keys are held until Close, which is also what the modal's own note
+   * promises: keep it, post it, or close this. Share and Download
+   * deliberately do NOT dismiss, so a player can do both.
+   */
+  var PENDING = [];
+  function close() {
+    veil.classList.remove('on');
+    for (var i = 0; i < PENDING.length; i++) markSeen(PENDING[i]);
+    PENDING = [];
+  }
   document.getElementById('pdg-close').addEventListener('click', close);
   veil.addEventListener('click', function (e) { if (e.target === veil) close(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
@@ -182,100 +214,189 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     return parseInt(p[2], 10) + ' ' + M[parseInt(p[1], 10) - 1] + ' ' + p[0];
   }
 
+  /** Trim text to fit a width, with an ellipsis. */
+  function fit(c, t, maxW) {
+    t = String(t == null ? '' : t);
+    if (c.measureText(t).width <= maxW) return t;
+    while (t.length > 1 && c.measureText(t + '\u2026').width > maxW) t = t.slice(0, -1);
+    return t + '\u2026';
+  }
+
+  /*
+   * The squarest grid that fits n pictures in the panel, tiles as large as
+   * the panel allows. Driven by BOTH dimensions: picking columns off the
+   * width alone makes two rows that overflow the bottom the moment there
+   * are five pictures rather than four.
+   */
+  function gridFit(n, RW, RH, gap) {
+    var best = null;
+    for (var cols = 1; cols <= Math.min(4, n); cols++) {
+      var rows = Math.ceil(n / cols);
+      var tw = Math.min((RW - gap * (cols - 1)) / cols, (RH - gap * (rows - 1)) / rows);
+      /* A GAP IN THE LAST ROW COSTS SOMETHING. Eight pictures fit three
+         across at a slightly larger tile than four, but that is 3/3/2 with
+         a hole in it where 4/4 is a block. Each empty slot is worth about
+         7% of tile size, so a full grid wins unless the ragged one is
+         meaningfully bigger -- and five pictures, which cannot be square
+         at all, still gets the best shape available. */
+      var score = tw * (1 - 0.07 * (cols * rows - n));
+      if (!best || score > best.score) best = { cols: cols, rows: rows, tw: tw, score: score };
+    }
+    return best;
+  }
+
   function draw(d, images) {
     var cv = document.getElementById('pdg-shot');
     var c  = cv.getContext('2d');
     c.fillStyle = INK; c.fillRect(0, 0, W, H);
 
+    var PAD = 44;
+    var art = images.art.filter(Boolean).slice(0, 8);
+
+    /* With pictures the column sits left and the art takes the rest. With
+       none, the same column is centred rather than left in a field of
+       empty ink. */
+    var colW = art.length ? 430 : 620;
+    var colX = art.length ? PAD : Math.round((W - colW) / 2);
+
     /* ---- header ---- */
-    c.textAlign = 'center';
-    c.fillStyle = MUTE; c.font = '500 26px ui-monospace, monospace';
-    c.fillText('YOUR DAY ON SKULLIANCE', W / 2, 74);
-    c.fillStyle = TEXT; c.font = '700 44px ui-monospace, monospace';
-    c.fillText(prettyDay(d.day), W / 2, 130);
+    c.textAlign = 'left';
+    c.fillStyle = MUTE; c.font = '500 18px ui-monospace, monospace';
+    c.fillText('YOUR DAY ON SKULLIANCE', colX, 66);
+    c.fillStyle = TEXT; c.font = '700 28px ui-monospace, monospace';
+    c.fillText(fit(c, prettyDay(d.day), colW), colX, 102);
 
     /* ---- who ---- */
-    var cy = 236;
+    var ax = colX + 34, ay = 158, ar = 34;
     if (images.avatar) {
-      c.save(); c.beginPath(); c.arc(W / 2, cy, 64, 0, Math.PI * 2); c.closePath(); c.clip();
-      c.drawImage(images.avatar, W / 2 - 64, cy - 64, 128, 128); c.restore();
+      c.save(); c.beginPath(); c.arc(ax, ay, ar, 0, Math.PI * 2); c.closePath(); c.clip();
+      c.drawImage(images.avatar, ax - ar, ay - ar, ar * 2, ar * 2); c.restore();
       c.strokeStyle = ACCENT; c.lineWidth = 3;
-      c.beginPath(); c.arc(W / 2, cy, 64, 0, Math.PI * 2); c.stroke();
+      c.beginPath(); c.arc(ax, ay, ar, 0, Math.PI * 2); c.stroke();
     }
-    c.fillStyle = TEXT; c.font = '700 40px ui-monospace, monospace';
-    c.fillText(d.name || 'A staker', W / 2, cy + 112);
+    c.fillStyle = TEXT; c.font = '700 26px ui-monospace, monospace';
+    var nx = images.avatar ? colX + 82 : colX;
+    c.fillText(fit(c, d.name || 'A staker', colX + colW - nx), nx, ay + 10);
 
     /* ---- the headline number ---- */
-    c.fillStyle = ACCENT; c.font = '700 140px ui-monospace, monospace';
-    c.fillText(String(d.total), W / 2, cy + 268);
-    c.fillStyle = MUTE; c.font = '500 26px ui-monospace, monospace';
-    c.fillText(d.total === 1 ? 'THING DONE' : 'THINGS DONE', W / 2, cy + 308);
+    c.fillStyle = ACCENT; c.font = '700 88px ui-monospace, monospace';
+    c.fillText(String(d.total), colX, 292);
+    c.fillStyle = MUTE; c.font = '500 18px ui-monospace, monospace';
+    c.fillText(d.total === 1 ? 'THING DONE' : 'THINGS DONE', colX, 322);
 
-    /* ---- the tally ---- */
-    var ty = cy + 372, rows = d.channels.slice(0, 6);
-    c.textAlign = 'left';
+    /* ---- the tally. Five rows, because the sixth would land on the
+           footer: the height is fixed now and cannot grow to take it. ---- */
+    var ty = 368, rows = d.channels.slice(0, 5);
     for (var i = 0; i < rows.length; i++) {
-      var y = ty + i * 46;
-      c.fillStyle = PANEL; roundRect(c, 110, y - 28, W - 220, 38, 4); c.fill();
-      c.fillStyle = TEXT; c.font = '500 24px ui-monospace, monospace';
-      c.fillText(rows[i].label, 128, y);
+      var y = ty + i * 38;
+      c.fillStyle = PANEL; roundRect(c, colX, y - 24, colW, 32, 4); c.fill();
+      c.fillStyle = TEXT; c.font = '500 19px ui-monospace, monospace';
+      var nTxt = String(rows[i].n);
       c.textAlign = 'right';
-      c.fillStyle = ACCENT; c.font = '700 24px ui-monospace, monospace';
-      c.fillText(String(rows[i].n), W - 128, y);
+      c.fillStyle = ACCENT; c.font = '700 19px ui-monospace, monospace';
+      c.fillText(nTxt, colX + colW - 14, y);
+      var numW = c.measureText(nTxt).width;
       c.textAlign = 'left';
+      c.fillStyle = TEXT; c.font = '500 19px ui-monospace, monospace';
+      c.fillText(fit(c, rows[i].label, colW - 36 - numW), colX + 14, y);
     }
 
-    /* ---- their pictures from the day ---- */
-    var gy = ty + rows.length * 46 + 26;
-    var art = images.art.filter(Boolean).slice(0, 8);
-    if (art.length) {
-      var cols = art.length <= 4 ? art.length : 4;
-      var rowsN = Math.ceil(art.length / cols);
-      var gap = 14, pad = 110;
-      var tw = (W - pad * 2 - gap * (cols - 1)) / cols;
-      for (var k = 0; k < art.length; k++) {
-        var cx2 = pad + (k % cols) * (tw + gap);
-        var cy2 = gy + Math.floor(k / cols) * (tw + gap);
-        cover(c, art[k], cx2, cy2, tw, tw);
-      }
-      gy += rowsN * (tw + gap);
-    }
-
-    /* ---- streak, only when it is worth saying ---- */
-    c.textAlign = 'center';
+    /* ---- streak and footer, both pinned to the bottom of the column ---- */
     if (d.streak > 1) {
-      c.fillStyle = MUTE; c.font = '500 26px ui-monospace, monospace';
-      c.fillText(d.streak + ' day login streak', W / 2, Math.min(gy + 36, H - 120));
+      c.fillStyle = MUTE; c.font = '500 18px ui-monospace, monospace';
+      c.fillText(d.streak + ' day login streak', colX, 566);
     }
+    c.fillStyle = MUTE; c.font = '500 18px ui-monospace, monospace';
+    c.fillText('skulliance.io', colX, 598);
 
-    /* ---- footer ---- */
-    c.fillStyle = MUTE; c.font = '500 24px ui-monospace, monospace';
-    c.fillText('skulliance.io', W / 2, H - 56);
+    /* ---- their pictures from the day, in the larger half ---- */
+    if (art.length) {
+      var RX = colX + colW + 36, RY = PAD;
+      var RW = W - PAD - RX, RH = H - PAD * 2;
+      var gap = 12, g = gridFit(art.length, RW, RH, gap);
+      var gh = g.rows * g.tw + gap * (g.rows - 1);
+      var y0 = RY + (RH - gh) / 2;
+      for (var k = 0; k < art.length; k++) {
+        var r = Math.floor(k / g.cols);
+        /* A short final row is CENTRED under the ones above it, so five
+           pictures read as a deliberate arrangement rather than a grid
+           that ran out. */
+        var inRow = Math.min(g.cols, art.length - r * g.cols);
+        var rowW  = inRow * g.tw + gap * (inRow - 1);
+        cover(c, art[k],
+              RX + (RW - rowW) / 2 + (k % g.cols) * (g.tw + gap),
+              y0 + r * (g.tw + gap),
+              g.tw, g.tw);
+      }
+    }
   }
 
   function filename(d) { return 'skulliance-' + (d.name || 'day') + '-' + d.day + '.png'; }
 
+  /*
+   * The canvas as a Blob, SYNCHRONOUSLY.
+   *
+   * toBlob() is asynchronous, and on iOS that is fatal here: navigator.share()
+   * has to be called while the click's transient activation is still alive,
+   * and a promise callback is a later task with no activation left. Safari
+   * answers NotAllowedError and the button looks broken. toDataURL() and
+   * atob() are both synchronous, so the whole chain stays inside the
+   * handler. Throws on a tainted canvas, same as toBlob would.
+   */
+  function canvasBlob(cv) {
+    var url = cv.toDataURL('image/png');
+    var bin = atob(url.slice(url.indexOf(',') + 1));
+    var u8  = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return new Blob([u8], { type: 'image/png' });
+  }
+
+  /*
+   * SAVE THE PICTURE.
+   *
+   * <a download> DOES NOT WORK ON AN iPHONE and never did. iOS Safari
+   * ignores the download attribute on a blob: url -- it navigates to the
+   * blob instead, which takes the player off the page and away from the
+   * modal, and nothing reaches the camera roll. Reported exactly that way:
+   * "Safari would say it is downloading but it never showed up", and then
+   * the digest was gone because the page had changed.
+   *
+   * The supported path on iOS is the Web Share API with a file, which opens
+   * the native sheet where Save Image puts it in Photos. It is also the
+   * better answer on Android. Desktop browsers mostly do not accept files
+   * through it, so they keep the anchor, which is where the anchor works.
+   */
   function saveImage(d, then) {
-    var cv = document.getElementById('pdg-shot');
-    /* toBlob throws on a tainted canvas. Everything above is built to stop
-       that, but if it ever happens the player needs to know why rather than
-       watch a button do nothing. */
+    var cv   = document.getElementById('pdg-shot');
+    var note = document.getElementById('pdg-note');
+    var blob;
     try {
-      cv.toBlob(function (b) {
-        if (!b) { if (then) then(); return; }
-        var a = document.createElement('a');
-        a.href = URL.createObjectURL(b);
-        a.download = filename(d);
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
-        if (then) then();
-      }, 'image/png');
+      blob = canvasBlob(cv);
     } catch (e) {
-      document.getElementById('pdg-note').textContent =
-        'The image could not be saved: one of yesterday’s pictures came from a host that ' +
+      note.textContent =
+        'The image could not be saved: one of yesterday\u2019s pictures came from a host that ' +
         'does not allow it to be read back. Nothing is wrong with your day.';
       if (then) then();
+      return;
     }
+
+    var file = null;
+    try { file = new File([blob], filename(d), { type: 'image/png' }); } catch (e) { /* older browser */ }
+    if (file && navigator.canShare && navigator.share && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file] })
+        /* A cancelled sheet is not a failure and must not say so. */
+        .then(function () { note.textContent = 'Saved.'; })
+        .catch(function () {})
+        .then(function () { if (then) then(); });
+      return;
+    }
+
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename(d);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    if (then) then();
   }
 
   /*
@@ -315,11 +436,20 @@ if (!isset($_SESSION['userData']['user_id'])) return;
    * follow. That line is what keeps this clear of X's rule against paying
    * for engagement, and it is worth not crossing later.
    */
+  /*
+   * KEPT CLOSE IN LENGTH, deliberately. Everything after the ask is fixed
+   * cost -- the odds line, the handle, the artist credit, 24 for the url --
+   * so the longest ask sets how much is left for the player's own numbers.
+   * At 93 characters the longest one left 81, and the login streak was
+   * being trimmed off a quarter of all posts to make room. Shortening the
+   * asks buys that back without touching the odds claim, which is the part
+   * doing the actual persuading.
+   */
   var ASKS = [
-    'Help me get 3 DHC traits - grab 3 yourself if you are new here or have not played in a month.',
-    'Worth 3 DHC traits to me if you take a look - and 3 to you, if you are new or a month away.',
+    'Help me get 3 DHC traits - 3 for you too if you are new here or a month away.',
+    'Worth 3 DHC traits to me if you look, and 3 to you if you are new or a month away.',
     'New to Skulliance, or not been on in a month? 3 DHC traits for you, and 3 for me.',
-    'Fancy 3 DHC traits? Yours if you are new here or have been away a month. I get 3 too.'
+    'Fancy 3 DHC traits? Yours if you are new here or a month away. I get 3 too.'
   ];
 
   function shareText(d) {
@@ -343,9 +473,17 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     else if (d.best.n >= d.total) card = things + ', all of them in ' + d.best.label + '.';
     else card = things + ', ' + d.best.n + ' of them in ' + d.best.label + '.';
 
-    /* A separate clause, because the trim below DROPS it whole rather than
-       cutting it in half. "148 days running." became "148\u2026". */
-    var streak = d.streak > 1 ? ' ' + d.streak + ' days running.' : '';
+    /*
+     * A separate clause, because the trim below DROPS it whole rather than
+     * cutting it in half. "148 days running." became "148\u2026".
+     *
+     * AND IT SAYS WHAT IT IS A STREAK OF. "4 days running." sat directly
+     * after "112 things on Skulliance yesterday" and read as 112 things a
+     * day for four days; the owner asked what his own post meant. It is
+     * users.streak, the LOGIN streak, which is what the poster has always
+     * called it -- the post just did not.
+     */
+    var streak = d.streak > 1 ? ' ' + d.streak + ' day login streak.' : '';
 
     /* Rotated on the sharer and the date, so one person's posts differ over
        time and two people posting on the same day usually differ too. */
@@ -409,13 +547,25 @@ if (!isset($_SESSION['userData']['user_id'])) return;
    * blocks it -- so a blank tab is opened immediately and pointed at X once
    * the poster has landed.
    *
+   * AND IT IS OPENED WITHOUT 'noopener', WHICH IS THE WHOLE TRICK WORKING
+   * OR NOT. window.open(url, name, 'noopener') RETURNS NULL -- that is what
+   * noopener means: the opener is given no handle on the new window. So the
+   * handle this design depends on never existed, the blank tab sat on
+   * about:blank forever, and the code fell through to navigating the page
+   * the player was already on. Reported exactly that way: a blank window
+   * that never loaded, and the share dialog only after going back.
+   *
+   * The security property is kept by severing opener on the handle instead,
+   * which is the same protection with a handle left over to point.
+   *
    * If the upload fails it still goes to X, with the platform link instead
    * of the poster: a share button that does nothing is worse than a post
    * without a picture.
    */
   function share(d) {
     var note = document.getElementById('pdg-note');
-    var tab  = window.open('', '_blank', 'noopener');
+    var tab  = window.open('', '_blank');
+    if (tab) { try { tab.opener = null; } catch (e) { /* cross-origin, already safe */ } }
     note.textContent = 'Preparing your image\u2026';
 
     var done = function (url) {
@@ -520,8 +670,9 @@ if (!isset($_SESSION['userData']['user_id'])) return;
         }
         var k = seenKey(j.digest.day, j.digest.name || 'me');
         if (seen(k)) return;
-        markSeen(k);
-        markSeen(seenKey(j.digest.day, 'me'));
+        /* Queued, not written -- see close(). Until it is dismissed the
+           digest is still owed to them and comes back on the next page. */
+        PENDING = [k, seenKey(j.digest.day, 'me')];
         show(j.digest);
       })
       .catch(function () { /* a missed digest must never break a page */ });

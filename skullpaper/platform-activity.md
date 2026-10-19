@@ -54,7 +54,10 @@ Worth knowing:
 
 * **A quiet day shows nothing at all.** If you did not do anything yesterday, there is no modal - a poster announcing that you did nothing is not worth drawing.
 * **Sharing is one click and the picture comes with it.** X cannot attach a file to a post written for you, so the poster is saved on Skulliance first and the post links to it - X reads the image from there. Nothing to attach by hand.
+* **Saving it on a phone goes through the share sheet.** On an iPhone, Download opens the usual sheet where **Save Image** puts it in your camera roll. On a computer it saves as a file the normal way.
+* **It waits until you close it.** Sharing or saving does not dismiss it, so you can do both. If you wander off to another page without closing it, it comes back - it only stops asking once you have actually closed it.
 * **A shared poster is public, and only if you share it.** Pressing Share publishes that one image at its own link; closing the modal or downloading it publishes nothing. Shared posters are kept for about four months and then removed.
+* **The post names your login streak as a login streak.** It used to say "4 days running", which read as though you had done that much every day for four days.
 * **Some days there is a cache in it.** Roughly one day in twelve, opening your digest drops **3 DHC traits** on the better odds - the same draw an invite pays, 25% common instead of 55%. Which day it falls on is decided by the day itself, so reloading will not change the answer, and it lands once. You do not have to share anything to get it; opening the digest is enough, and you only have a digest to open if you did something the day before.
 
 It is built from the same record the feed is, so it shows what was announced - the same limit described under *History*.

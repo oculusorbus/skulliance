@@ -102,6 +102,27 @@ echo "\nan invited arrival is told what is waiting\n";
 	ok(strpos($src, 'REF_ARRIVAL_DRAWS') !== false && strpos($src, 'REF_INVITER_DRAWS') !== false,
 	   'the traits on offer are hardcoded in the copy rather than read from the constants');
 
+	/*
+	 * AND THE BUTTON COMES BEFORE THE PITCH FOR THEM. An invited arrival
+	 * has already been sold by whoever sent them; making them read the
+	 * paragraph first puts the thing they came to do below the fold on a
+	 * phone. Everyone else gets the pitch first, because for them the
+	 * button is a question nobody has asked yet.
+	 */
+	$pitch = strpos($good, 'Skulliance is a free staking platform');
+	$cta   = strpos($good, 'class="ix-cta"');
+	ok($cta !== false && $pitch !== false && $cta < $pitch,
+	   'an invited arrival has to read the pitch before reaching the button');
+	$cold  = render();
+	$cpit  = strpos($cold, 'Skulliance is a free staking platform');
+	$ccta  = strpos($cold, 'class="ix-cta"');
+	ok($ccta !== false && $cpit !== false && $cpit < $ccta,
+	   'a cold visitor is asked to sign in before being told what this is');
+	/* Either way the note travels with the button rather than being
+	   orphaned halfway up the page. */
+	ok(substr_count($good, 'Signing in is Discord only') === 1,
+	   'the sign-in note is printed ' . substr_count($good, 'Signing in is Discord only') . ' times');
+
 	ok(strpos(render(), 'You were invited') === false,
 	   'every visitor is told they were invited, including the ones who were not');
 	ok(strpos(render(array('r' => 'zzzz')), 'You were invited') === false,

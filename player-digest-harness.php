@@ -208,7 +208,15 @@ echo "\nthe post keeps its invitation and its credit\n";
 		   'the post does not say who qualifies, so every active follower clicks for nothing');
 		ok(stripos($posts[0], 'odds') !== false,
 		   'the post does not say the odds are better, so three traits reads as three commons');
-		ok(strpos($posts[0], '9 days running') !== false, 'the streak is missing from the card');
+		/*
+		 * AND IT SAYS WHAT IT IS A STREAK OF. "9 days running." sat right
+		 * after the activity count and read as that many things a day for
+		 * nine days -- the owner asked what his own post meant. It is the
+		 * LOGIN streak, which is what the poster calls it.
+		 */
+		ok(strpos($posts[0], '9 day login streak') !== false, 'the streak is missing from the card');
+		ok(preg_match('/\d+ days running/', $posts[0]) === 0,
+		   'the streak is named as a bare run of days, which reads as the activity repeating');
 		ok(strpos($posts[1], 'days running') === false,
 		   'a streak of 1 is announced as a streak: ' . $posts[1]);
 	}
@@ -362,6 +370,28 @@ echo "\nthe stored poster cannot be used to write anywhere\n";
 	   'nothing ever deletes an old shared poster');
 	ok(strpos($shl, '$limit = 40') !== false,
 	   'the prune is unbounded; one unlucky request would pay for a year of backlog');
+}
+
+echo "\nthe poster's geometry, driven\n";
+{
+	/*
+	 * Shelled out to player-digest-geometry-harness.js so there is one copy
+	 * of those cases. It exists because this poster shipped with the footer
+	 * and the streak printed ON TOP of the bottom row of artwork, on a real
+	 * post, where a player saw it before I did -- the old layout grew
+	 * downwards and clamped the footer back up into the art when it ran out
+	 * of canvas, which guarantees a collision rather than an overflow.
+	 * Reported as skipped, not failed, when node is not on this machine.
+	 */
+	$node = trim((string) @shell_exec('command -v node 2>/dev/null'));
+	if ($node === '') {
+		echo "  --   node not found; run player-digest-geometry-harness.js separately\n";
+	} else {
+		$res = trim((string) @shell_exec(escapeshellcmd($node) . ' '
+		     . escapeshellarg(__DIR__ . '/player-digest-geometry-harness.js') . ' 2>&1'));
+		ok(strpos($res, 'OK') === 0,
+		   'the poster\'s layout collides or overflows: ' . substr($res, 0, 200));
+	}
 }
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
