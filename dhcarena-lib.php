@@ -1318,11 +1318,30 @@ function dhca_ladder($conn, $season = null, $limit = 25) {
  */
 function dhca_performance($conn) {
 	$out = array();
+	/*
+	 * THE SAME COLUMNS dhca_fighter_stats() READS, and that is the point.
+	 *
+	 * This one built a SHORTER row -- battles, wins, survived, dealt --
+	 * and the single-Fighter query next to it built a longer one. Both
+	 * are "a Fighter's tallies", so anything written against one of them
+	 * works against the other right up until it touches a column only
+	 * the long shape has, and then it emits an undefined-key warning on
+	 * a live page with display_errors on. That is exactly what happened
+	 * the moment the Collection started calling dhca_fighter_profile(),
+	 * which needs survived_wins.
+	 *
+	 * losses and fell_in_wins come along for the same reason: one shape,
+	 * so the next thing written against either function cannot find a
+	 * hole. The cost is two more SUMs over rows already being grouped.
+	 */
 	$res = $conn->query(
 		"SELECT p.fighter_id, p.side,
 		        COUNT(*)                                  AS battles,
 		        SUM(b.outcome = p.side)                   AS wins,
+		        SUM(b.outcome <> p.side)                  AS losses,
 		        SUM(p.fell = 0)                           AS survived,
+		        SUM(b.outcome = p.side AND p.fell = 0)    AS survived_wins,
+		        SUM(b.outcome = p.side AND p.fell = 1)    AS fell_in_wins,
 		        COALESCE(SUM(p.dealt), 0)                 AS dealt
 		   FROM dhc_arena_battle_fighters p
 		   INNER JOIN dhc_arena_battles b ON b.id = p.battle_id
@@ -1333,7 +1352,8 @@ function dhca_performance($conn) {
 	   battle is ever logged. */
 	if (!$res) return $out;
 
-	$z = array('battles'=>0,'wins'=>0,'survived'=>0,'dealt'=>0);
+	$z = array('battles'=>0,'wins'=>0,'losses'=>0,'survived'=>0,
+	           'survived_wins'=>0,'fell_in_wins'=>0,'dealt'=>0);
 	while ($r = $res->fetch_assoc()) {
 		$fid = (int)$r['fighter_id'];
 		if (!isset($out[$fid])) $out[$fid] = array('all'=>$z, 'attack'=>$z, 'defend'=>$z);
