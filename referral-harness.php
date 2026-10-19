@@ -151,8 +151,9 @@ echo "\nnothing is paid for posting\n";
 	 * X's platform-manipulation rules prohibit incentivising engagement --
 	 * likes, reposts, follows, replies. This pays for a SIGN-IN on our own
 	 * platform, which is a different thing, and it is worth not crossing
-	 * later: the Mallard Order scheme pays for exactly that and verifies it
-	 * by making players paste the permalink of their own comment.
+	 * later: a scheme that pays for the post itself, and proves it by making
+	 * players paste the permalink of their own comment, is on the other side
+	 * of that line.
 	 */
 	$mod = harness_strip_comments(file_get_contents(__DIR__ . '/player-digest.php'));
 	ok(strpos($mod, 'dhcf_award') === false && strpos($mod, 'award') === false,
