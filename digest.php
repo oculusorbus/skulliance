@@ -50,6 +50,17 @@ $dg_ok   = dsh_valid_token($dg_token)
         && is_file(__DIR__ . '/' . DSH_DIR . '/' . $dg_token . '.jpg');
 
 $dg_img  = $dg_ok ? DSH_BASE . DSH_DIR . '/' . $dg_token . '.jpg' : DSH_BASE . 'images/og.jpg';
+/*
+ * MEASURED, NOT ASSUMED. The img carried width="1080" height="1350", which
+ * is what the poster used to be. It is 1200x630 now, and every poster
+ * shared before the change is still the old shape and still being served,
+ * so neither number is right for both -- and a wrong pair reserves a box
+ * of the wrong shape and shoves everything below it down the page while
+ * the image loads. The file is on this disk; ask it.
+ */
+$dg_dim = $dg_ok ? @getimagesize(__DIR__ . '/' . DSH_DIR . '/' . $dg_token . '.jpg') : false;
+$dg_w   = ($dg_dim && $dg_dim[0] > 0) ? (int) $dg_dim[0] : 1200;
+$dg_h   = ($dg_dim && $dg_dim[1] > 0) ? (int) $dg_dim[1] : 630;
 $dg_url  = DSH_BASE . 'digest.php' . ($dg_ok ? '?d=' . $dg_token : '');
 $dg_t    = 'A day on Skulliance';
 $dg_d    = 'Stake your NFTs, run missions, hold a realm and play a dozen games, free and in '
@@ -99,32 +110,58 @@ if (!isset($name)) include __DIR__ . '/site-header.php';
   border-radius:3px;padding:16px 18px;text-align:left;margin-top:22px}
 #dg .offer b{color:#00c8a0}
 </style>
-<div id="dg">
-  <?php if ($dg_ok): ?>
-    <h1>A day on Skulliance</h1>
-    <p>Somebody&rsquo;s day of missions, raids, realms and games &mdash; drawn the morning after.</p>
-    <img class="shot" src="<?php echo $e(DSH_DIR . '/' . $dg_token . '.jpg'); ?>"
-         alt="One player's day on Skulliance" width="1080" height="1350">
-    <?php if ($dg_ref): ?>
-      <?php /* THE POST PROMISED THREE TRAITS, so the page it lands on says so.
-               Arriving on a stranger's poster with no mention of the offer that
-               brought you is the quickest way to make the post look like bait. */ ?>
-      <p class="offer"><b>Three DHC traits are waiting for you.</b> Sign in through this link and
-        they are yours - drawn on better odds than an ordinary drop, with a real chance at a
-        legendary. Whoever shared this gets three as well.</p>
-      <p>Free to join, nothing to install, and you do not need a wallet to start.</p>
-    <?php else: ?>
-      <p>Every staker here gets one of these. Stake an NFT and yours starts tomorrow.</p>
-    <?php endif; ?>
-  <?php else: ?>
-    <h1>That day is no longer here</h1>
-    <p>Shared posters are kept for a few months and this one has gone. The platform has not.</p>
-  <?php endif; ?>
+<?php
+/*
+ * THE BUTTONS GO ABOVE THE POSTER FOR SOMEBODY WHO WAS INVITED.
+ *
+ * The poster is a full-width image on a 760px column, so on a phone it is
+ * most of a screen on its own -- and the offer and the buttons sat
+ * underneath it. An arrival from X landed on a stranger's artwork with
+ * nothing to press anywhere in sight, which is the one thing this page
+ * exists to avoid. Reported exactly that way.
+ *
+ * A visitor who was NOT invited still gets the poster first: for them it
+ * is the interesting thing on the page and the ask has not been set up
+ * yet. Written once and placed twice rather than duplicated.
+ */
+$dg_cta = function () use ($dg_ref, $e) { ?>
   <div class="cta">
-    <a class="go" href="index.php"><?php echo $dg_ref ? 'Claim your traits' : 'Start staking'; ?></a>
+    <a class="go" href="<?php echo $e($dg_ref && !empty($_GET['r'])
+          ? 'index.php?r=' . rawurlencode((string) $_GET['r']) : 'index.php'); ?>"><?php
+       echo $dg_ref ? 'Claim your traits' : 'Start staking'; ?></a>
     <a href="dhcgallery.php">See the Collection</a>
     <a href="skullpaper.php">How it all works</a>
   </div>
+<?php };
+
+$dg_shot = function () use ($dg_token, $dg_w, $dg_h, $e) { ?>
+    <img class="shot" src="<?php echo $e(DSH_DIR . '/' . $dg_token . '.jpg'); ?>"
+         alt="One player's day on Skulliance"
+         width="<?php echo (int) $dg_w; ?>" height="<?php echo (int) $dg_h; ?>">
+<?php };
+?>
+<div id="dg">
+  <?php if ($dg_ok && $dg_ref): ?>
+    <h1>You have been invited to Skulliance</h1>
+    <p class="offer"><b>Three DHC traits are waiting for you.</b> Sign in through this link and
+      they are yours - drawn on better odds than an ordinary drop, with a real chance at a
+      legendary. Whoever shared this gets three as well.</p>
+    <?php $dg_cta(); ?>
+    <p>Free to join, nothing to install, and you do not need a wallet to start.</p>
+    <?php $dg_shot(); ?>
+    <p>This is their day on Skulliance, drawn the morning after. Yours starts the night you
+      stake something.</p>
+  <?php elseif ($dg_ok): ?>
+    <h1>A day on Skulliance</h1>
+    <p>Somebody&rsquo;s day of missions, raids, realms and games &mdash; drawn the morning after.</p>
+    <?php $dg_shot(); ?>
+    <p>Every staker here gets one of these. Stake an NFT and yours starts tomorrow.</p>
+    <?php $dg_cta(); ?>
+  <?php else: ?>
+    <h1>That day is no longer here</h1>
+    <p>Shared posters are kept for a few months and this one has gone. The platform has not.</p>
+    <?php $dg_cta(); ?>
+  <?php endif; ?>
 </div>
 
 <!-- Footer -->

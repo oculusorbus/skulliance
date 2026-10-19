@@ -372,6 +372,66 @@ echo "\nthe stored poster cannot be used to write anywhere\n";
 	   'the prune is unbounded; one unlucky request would pay for a year of backlog');
 }
 
+echo "\nthe page the invite actually lands on\n";
+{
+	/*
+	 * THE POST LINKS TO digest.php, NOT TO /staking/. That is the page an
+	 * arrival from X meets, and its buttons sat UNDERNEATH a full-width
+	 * poster -- which on a phone is most of a screen on its own. The
+	 * arrival landed on a stranger's artwork with nothing to press
+	 * anywhere in sight, on the one page that exists to convert them.
+	 */
+	$pg2 = harness_strip_comments(file_get_contents(__DIR__ . '/digest.php'));
+	$inv = strpos($pg2, '$dg_ok && $dg_ref');
+	$els = strpos($pg2, 'elseif ($dg_ok)');
+	ok($inv !== false && $els !== false && $inv < $els,
+	   'the invited branch is gone from digest.php');
+	if ($inv !== false && $els !== false) {
+		$branch = substr($pg2, $inv, $els - $inv);
+		$cta  = strpos($branch, '$dg_cta()');
+		$shot = strpos($branch, '$dg_shot()');
+		ok($cta !== false && $shot !== false && $cta < $shot,
+		   'an invited arrival gets the poster before the buttons, which puts them off the '
+		 . 'bottom of a phone');
+		ok(strpos($branch, 'Three DHC traits') !== false,
+		   'the page the post promised three traits on does not mention them');
+	}
+	/* A visitor who was NOT invited still gets the picture first: for them
+	   it is the interesting thing and no ask has been set up. */
+	$rest = $els !== false ? substr($pg2, $els) : '';
+	$rc = strpos($rest, '$dg_cta()'); $rs = strpos($rest, '$dg_shot()');
+	ok($rc !== false && $rs !== false && $rs < $rc,
+	   'an ordinary visitor is asked to sign up before being shown anything');
+
+	/* Written once, placed twice. Two copies is how one of them drifts. */
+	ok(substr_count($pg2, 'class="cta"') === 1,
+	   'the button row is duplicated in digest.php rather than printed from one place');
+	ok(substr_count($pg2, 'class="shot"') === 1, 'the poster img is duplicated');
+
+	/*
+	 * AND THE IMG IS MEASURED, NOT ASSUMED. It carried width="1080"
+	 * height="1350", which is what the poster used to be; it is 1200x630
+	 * now and every poster shared before the change is still the old
+	 * shape and still served. A wrong pair reserves a box of the wrong
+	 * shape and shoves the page around as the image arrives.
+	 */
+	ok(strpos($pg2, 'width="1080" height="1350"') === false,
+	   'the poster img still hardcodes the old portrait dimensions');
+	ok(strpos($pg2, 'getimagesize(') !== false,
+	   'the stored poster is not measured, so old and new posters cannot both be right');
+
+	/* The code has to survive the hop to index.php: the cookie is already
+	   set, but a browser that refused it still has the query string. */
+	ok(strpos($pg2, "'index.php?r=' . rawurlencode") !== false,
+	   'the claim button drops the referral code on the way to the landing page');
+	/* And the landing page has to recognise the cookie, because after that
+	   hop the query string is all there is to lose. */
+	$ix = harness_strip_comments(file_get_contents(__DIR__ . '/index.php'));
+	ok(strpos($ix, 'REF_COOKIE') !== false,
+	   'index.php keys the invite on ?r= alone, so an arrival who clicked through from the '
+	 . 'poster is never told what they were promised');
+}
+
 echo "\nthe poster's geometry, driven\n";
 {
 	/*

@@ -57,9 +57,23 @@ $ix_oauth = 'https://discord.com/api/oauth2/authorize?client_id=1007909434141462
    the only recovery is the same button. */
 $ix_signed_in = !empty($_SESSION['userData']['user_id']);
 
-/* An invited arrival gets told what is waiting, in the number the code
-   actually pays -- REF_ARRIVAL_DRAWS, not a 3 typed into the copy. */
-$ix_invited = !empty($_GET['r']) && ref_decode($_GET['r']) > 0 && !$ix_signed_in;
+/*
+ * An invited arrival gets told what is waiting, in the number the code
+ * actually pays -- REF_ARRIVAL_DRAWS, not a 3 typed into the copy.
+ *
+ * THE COOKIE COUNTS, NOT ONLY ?r=. The invite posted on X points at
+ * digest.php, and its button brings the arrival here -- one hop, after
+ * which the query string is gone while the cookie ref_capture() set is
+ * still there. Keying the offer on ?r= alone meant the person who came the
+ * normal way was the one who never saw it mentioned, on the page that
+ * exists to convert them. The cookie is what ref_credit() will actually
+ * pay on, so it is the right thing to ask.
+ */
+$ix_ref = '';
+if (!empty($_GET['r']) && ref_decode($_GET['r']) > 0)              $ix_ref = (string) $_GET['r'];
+else if (!empty($_COOKIE[REF_COOKIE]) && ref_decode($_COOKIE[REF_COOKIE]) > 0)
+	$ix_ref = (string) $_COOKIE[REF_COOKIE];
+$ix_invited = $ix_ref !== '' && !$ix_signed_in;
 
 /*
  * The figures, live. A zero means the query failed and no stale value was

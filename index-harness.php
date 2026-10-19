@@ -35,8 +35,10 @@ $raw = $src;
 $src = harness_strip_comments($src);
 
 /** Render index.php in a fresh process with $_GET set, and return the html. */
-function render($get = array()) {
-	$boot = '$_GET = ' . var_export($get, true) . '; include ' . var_export(__DIR__ . '/index.php', true) . ';';
+function render($get = array(), $cookie = array()) {
+	$boot = '$_GET = ' . var_export($get, true) . '; '
+	      . '$_COOKIE = ' . var_export($cookie, true) . '; '
+	      . 'include ' . var_export(__DIR__ . '/index.php', true) . ';';
 	$tmp  = sys_get_temp_dir() . '/ix-boot-' . getmypid() . '-' . mt_rand() . '.php';
 	file_put_contents($tmp, "<?php\n" . $boot . "\n");
 	$out = (string) @shell_exec('php ' . escapeshellarg($tmp) . ' 2>&1');
@@ -122,6 +124,24 @@ echo "\nan invited arrival is told what is waiting\n";
 	   orphaned halfway up the page. */
 	ok(substr_count($good, 'Signing in is Discord only') === 1,
 	   'the sign-in note is printed ' . substr_count($good, 'Signing in is Discord only') . ' times');
+
+	/*
+	 * AND THE COOKIE COUNTS, NOT ONLY ?r=. The invite posted on X points at
+	 * digest.php, whose button brings them here -- one hop, after which
+	 * the query string is gone and only the cookie ref_capture() set
+	 * remains. Keying the offer on ?r= alone meant the arrival who came
+	 * the normal way was the one never told what they had been promised.
+	 */
+	$viaCookie = render(array(), array('skl_ref' => ref_code(4821)));
+	ok(strpos($viaCookie, 'You were invited') !== false,
+	   'an arrival carrying the invite cookie is not told what is waiting, which is everyone '
+	 . 'who clicked through from the shared poster');
+	$cc = strpos($viaCookie, 'class="ix-cta"');
+	$cp = strpos($viaCookie, 'Skulliance is a free staking platform');
+	ok($cc !== false && $cp !== false && $cc < $cp,
+	   'the cookie arrival has to read the pitch before reaching the button');
+	ok(strpos(render(array(), array('skl_ref' => 'zzzz')), 'You were invited') === false,
+	   'a junk cookie promises traits that will never arrive');
 
 	ok(strpos(render(), 'You were invited') === false,
 	   'every visitor is told they were invited, including the ones who were not');
