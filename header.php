@@ -492,6 +492,7 @@
 		      <a href="gallery.php">Gallery</a>
 		      <a href="diamond-skulls.php">Diamond Skulls</a>
 		      <a href="skulliverse.php">Skulliverse</a>
+		      <a href="musicvideos.php">Music Videos</a>
 		    </div>
 		  </div>
 
