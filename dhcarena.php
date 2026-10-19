@@ -1222,6 +1222,45 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap #arenaBattle{display:none;margin-top:12px}
 .arena-wrap #arenaBattle.on{display:block}
 .arena-wrap .a-busy{opacity:.55;pointer-events:none}
+
+/* ---- the Guide ----
+ *
+ * Scoped to #ag-veil rather than hung off .arena-wrap: it is a fixed
+ * overlay and belongs to the page, not to the board. The prose inside is
+ * rendered from skullpaper/games-dhc-arena.md, so the selectors have to
+ * cover whatever Markdown produces -- h2/h3/p/ul/ol/table/blockquote --
+ * rather than classes this file controls.
+ */
+#ag-veil{position:fixed;inset:0;z-index:9997;display:none;align-items:center;justify-content:center;
+  background:rgba(4,12,22,.88);
+  padding:calc(env(safe-area-inset-top,0px) + 18px) 18px calc(env(safe-area-inset-bottom,0px) + 18px)}
+#ag-veil.on{display:flex}
+#ag-box{width:min(760px,100%);max-height:100%;display:flex;flex-direction:column;
+  background:#0a1929;border:1px solid #1b3346;border-radius:5px;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+#ag-head{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid #1b3346;
+  flex:0 0 auto}
+#ag-head h2{margin:0;font-size:15px;letter-spacing:.04em;flex:1 1 auto;color:#e8eaed}
+#ag-body{overflow:auto;padding:4px 20px 20px;-webkit-overflow-scrolling:touch;color:#c7d3dc;
+  font-size:13.5px;line-height:1.72}
+#ag-body h2{font-size:15px;color:#00c8a0;margin:22px 0 6px;letter-spacing:.03em}
+#ag-body h3{font-size:13px;color:#e8eaed;margin:16px 0 4px}
+#ag-body h2:first-child{margin-top:14px}
+#ag-body p,#ag-body ul,#ag-body ol{margin:0 0 10px}
+#ag-body ul,#ag-body ol{padding-left:20px}
+#ag-body li{margin:0 0 4px}
+#ag-body strong{color:#e8eaed}
+#ag-body a{color:#00c8a0}
+#ag-body code{background:#071320;border:1px solid #1b3346;border-radius:2px;padding:1px 4px;font-size:12px}
+#ag-body blockquote{margin:0 0 10px;padding:8px 12px;border-left:2px solid #00c8a0;
+  background:#071320;color:#9fb6c4}
+#ag-body blockquote p:last-child{margin:0}
+/* A rules table is the one thing here that can be wider than the panel. */
+#ag-body table{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:12.5px;display:block;
+  overflow-x:auto}
+#ag-body th,#ag-body td{border:1px solid #1b3346;padding:5px 8px;text-align:left;vertical-align:top}
+#ag-body th{color:#e8eaed;background:#071320;white-space:nowrap}
+#ag-foot{flex:0 0 auto;padding:11px 16px;border-top:1px solid #1b3346;font-size:11px;color:#7a9eb0}
+#ag-foot a{color:#00c8a0}
 </style>
 
   <!-- One masthead row: the blurb takes what it needs and the counts sit hard
@@ -1641,6 +1680,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
            are playing and neither is needed then, so they hide together and
            come back together. Nothing is deleted. -->
       <button class="btn" id="howto" title="Show the title and how it works">?</button>
+      <?php /* The rules, on the page they are the rules of. Not phone-only:
+               the question "what does a bomb do" is asked at a desk too. */ ?>
+      <button class="btn" id="aGuide" title="How the Arena works">Guide</button>
       <span class="turnflag" id="flag">—</span>
       <span class="lclock" id="lclock" hidden></span>
       <span class="sub" style="margin:0" id="round"></span>
@@ -1703,6 +1745,53 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   </div>
 
 </div>
+
+<?php
+/*
+ * THE GUIDE, RENDERED FROM THE SKULL PAPER.
+ *
+ * Not a second copy of the rules. An in-game guide and the documentation
+ * say the same things, and the moment they are two pieces of text one of
+ * them is wrong -- which here would be the one players read while
+ * playing. doc_sections() takes the sections of
+ * skullpaper/games-dhc-arena.md that are about PLAYING and leaves out the
+ * ones about getting in, the ladder and the map.
+ *
+ * ORDERED FOR SOMEBODY LOOKING AT THE BOARD: what is in front of them
+ * first, then whose turn it is, then the Fighters, then how to pick and
+ * place a Crew, and the rewards last. The documentation is ordered for
+ * somebody reading it start to finish, which is a different job.
+ *
+ * A renamed heading comes back in 'missing' and the harness fails on it,
+ * rather than the guide quietly losing a section.
+ */
+require_once __DIR__ . '/lib/doc-sections.php';
+$ag = doc_sections('games-dhc-arena', array(
+	'The board',
+	'Every piece does something',
+	'Whose move it is',
+	'Fighters',
+	'Reading a Fighter before you field it',
+	'Where to put them',
+	'Your arch nemesis',
+	'The trait drop',
+));
+if ($ag['html'] !== ''):
+?>
+<div id="ag-veil" role="dialog" aria-modal="true" aria-labelledby="ag-title" hidden>
+  <div id="ag-box">
+    <div id="ag-head">
+      <h2 id="ag-title">How the Arena works</h2>
+      <button class="btn" id="ag-close" type="button">Close</button>
+    </div>
+    <div id="ag-body"><?php echo $ag['html']; ?></div>
+    <div id="ag-foot">
+      This is the <a href="skullpaper.php?page=games-dhc-arena">Arena page of the Skull Paper</a>,
+      which has the rest of it: getting in, the ladder, and the rivalry map.
+    </div>
+  </div>
+</div>
+<?php endif; ?>
 
 <script>
 /* ============================================================================
@@ -3500,6 +3589,34 @@ $('ecAgain').addEventListener('click', function(){
 });
 
 $('howto').addEventListener('click', function(){ wrap.classList.toggle('showintro'); });
+
+/*
+ * THE GUIDE. Rendered server-side from the Skull Paper, so there is
+ * nothing to fetch and nothing to build -- this only shows and hides it.
+ *
+ * GUARDED ON THE ELEMENTS EXISTING, because the panel is not printed at
+ * all when doc_sections() comes back empty (a missing or unreadable
+ * markdown file). A listener bound to null throws, and a throw here takes
+ * every handler registered after it with it -- which is exactly how both
+ * Rivalries buttons shipped dead.
+ */
+(function(){
+  var veil = document.getElementById('ag-veil');
+  var btn  = document.getElementById('aGuide');
+  if (!veil || !btn) { if (btn) btn.hidden = true; return; }
+  var body = document.getElementById('ag-body');
+  var shut = document.getElementById('ag-close');
+  function open(){ veil.hidden = false; veil.classList.add('on'); if (body) body.scrollTop = 0;
+                   if (shut) shut.focus(); }
+  function close(){ veil.classList.remove('on'); veil.hidden = true; btn.focus(); }
+  btn.addEventListener('click', open);
+  if (shut) shut.addEventListener('click', close);
+  /* The backdrop closes it; the panel itself must not. */
+  veil.addEventListener('click', function(e){ if (e.target === veil) close(); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !veil.hidden) close();
+  });
+})();
 
 var muteBtn = $('mute');
 function paintMute(){

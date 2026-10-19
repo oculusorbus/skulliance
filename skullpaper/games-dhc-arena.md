@@ -217,6 +217,11 @@ was damaging them.
 
 ## The board
 
+> There is a **Guide** button in the Arena itself, next to Leave. It shows the
+> playing sections of this page over the board, so you never have to leave a
+> match to look a rule up.
+
+
 Five kinds of gem on a 7x7 board:
 
 | Gem | What it is |
