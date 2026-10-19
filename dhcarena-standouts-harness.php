@@ -171,6 +171,80 @@ echo "\nthree flags, one query\n";
 	ok($hits === 1, 'the battle aggregate runs ' . $hits . ' times; once is enough for all three');
 }
 
+echo "\nflags are highlighted in place, not clustered at the top\n";
+{
+	/*
+	 * THE LIST'S OWN ORDER IS THE ONE A PLAYER READS IT IN. Hoisting
+	 * three cards to the front to cluster the labels reorders everybody
+	 * else for the sake of a mark on a card.
+	 *
+	 * BUT A FLAG ON A CARD THAT NEVER RENDERS IS THE FEATURE FAILING
+	 * SILENTLY, which is why the nemesis was hoisted originally:
+	 * dhca_opponents() is ORDER BY best DESC LIMIT 24, so the person you
+	 * have a history with is very often not on the screen at all. A
+	 * flagged rival who is missing still has to be inserted -- at the
+	 * place their own rarity puts them.
+	 *
+	 * The placement block is LIFTED OUT OF THE PAGE and run, rather than
+	 * reasoned about: it is the only part of this that reorders a list.
+	 */
+	$src = file_get_contents(__DIR__ . '/dhcarena.php');
+	$a = strpos($src, 'foreach ($standTags as $sid => $st) {');
+	$b = strpos($src, '$foesList = array_values($foesList);', $a);
+	ok($a !== false && $b !== false, 'the placement block could not be lifted from the page');
+	$block = ($a === false || $b === false) ? ''
+	       : substr($src, $a, $b - $a + strlen('$foesList = array_values($foesList);'));
+
+	$base = array();
+	foreach (array(900, 800, 700, 600, 500) as $i => $bst) {
+		$base[] = array('user_id' => 10 + $i, 'best' => $bst);
+	}
+	$ids = function ($l) {
+		$o = array();
+		foreach ($l as $r) $o[] = (int)$r['user_id'];
+		return $o;
+	};
+	$run = function ($tags) use ($base, $block) {
+		$foesList = $base; $standTags = $tags;
+		eval($block);
+		return $foesList;
+	};
+
+	/* Already in the list: nothing moves. */
+	$got = $run(array(
+		11 => array('row' => array('user_id'=>11,'best'=>800,'battles'=>9,'my_wins'=>5,'their_wins'=>4),
+		            'tags' => array('nemesis')),
+		13 => array('row' => array('user_id'=>13,'best'=>600,'battles'=>9,'my_wins'=>8,'their_wins'=>1),
+		            'tags' => array('duck')),
+	));
+	ok($ids($got) === array(10, 11, 12, 13, 14),
+	   'flagged rivals were moved; the list reads ' . implode(' ', $ids($got))
+	 . ' instead of its own rarity order');
+	/* And the flagged card carries the record, or the chip has no numbers. */
+	ok(isset($got[1]['battles']) && (int)$got[1]['battles'] === 9,
+	   'the card kept its position but not the history, so its chip cannot print a record');
+	ok(!isset($got[0]['battles']), 'an unflagged card was given a history it does not have');
+
+	/* Missing from the top 24: inserted, by rarity. */
+	foreach (array(array(1000, 0), array(650, 3), array(100, 5)) as $case) {
+		list($best, $want) = $case;
+		$got = $run(array(99 => array(
+			'row'  => array('user_id'=>99,'best'=>$best,'battles'=>9,'my_wins'=>2,'their_wins'=>7),
+			'tags' => array('tormentor'))));
+		$at = array_search(99, $ids($got), true);
+		ok(count($got) === 6, 'a flagged rival outside the top 24 was not added at all');
+		ok($at === $want,
+		   'a flagged rival with rarity ' . $best . ' landed at position ' . var_export($at, true)
+		 . ', not ' . $want . ' -- it should sit where its own rarity puts it');
+	}
+	/* Specifically: never pinned to the front just for being flagged. */
+	$got = $run(array(99 => array(
+		'row'  => array('user_id'=>99,'best'=>100,'battles'=>9,'my_wins'=>2,'their_wins'=>7),
+		'tags' => array('tormentor'))));
+	ok((int)$got[0]['user_id'] === 10,
+	   'the least rare rival was hoisted to the front because it carries a flag');
+}
+
 echo "\nthe page shows every flag, in its own colour\n";
 {
 	$p = file_get_contents(__DIR__ . '/dhcarena.php');

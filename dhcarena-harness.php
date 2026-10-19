@@ -455,13 +455,15 @@ $arok(strpos($nem_sql, 'season') === false,
 $arok(strpos($nem_sql, "< DHCA_CREW_SIZE) return null") !== false,
    'a nemesis who can no longer field a Crew is still pinned');
 
-/* PINNED, NOT JUST STYLED. dhca_opponents() is ORDER BY best DESC LIMIT 24 --
-   the same two dozen for everyone -- so the nemesis is usually absent, and a
-   highlight on a card that never renders is the feature failing silently. */
-$arok(strpos($ar_src, 'array_unshift($foesList, $st[\'row\']);') !== false,
-   'the nemesis is not inserted into the rival list');
-$arok(preg_match('/if \(\(int\)\$o\[.user_id.\] === \$sid\) \{ unset\(\$foesList\[\$i\]\); break; \}/', $ar_src) === 1,
-   'a nemesis already in the top 24 is listed twice');
+/* ADDED, NOT JUST STYLED. dhca_opponents() is ORDER BY best DESC LIMIT 24 --
+   the same two dozen for everyone -- so a flagged rival is often absent, and a
+   highlight on a card that never renders is the feature failing silently.
+   The resulting ORDER is dhcarena-standouts-harness.php's job: it runs this
+   block for real. Here, only the two moves it is built out of. */
+$arok(strpos($ar_src, 'array_splice($foesList, $at, 0, array($st[\'row\']));') !== false,
+   'a flagged rival missing from the top 24 is never added to the list');
+$arok(preg_match('/\$o\[.user_id.\] !== \$sid\) continue;.*?\$foesList\[\$i\] = \$st\[.row.\];/s', $ar_src) === 1,
+   'a flagged rival already in the list keeps the row that has no record on it');
 $arok(strpos($ar_src, "\$nem = isset(\$o['battles']);") !== false,
    'the card cannot tell the nemesis row from an ordinary rival');
 /*

@@ -380,8 +380,12 @@ the arena's name** there and it tells you what it is doing to the fight.
 ## Three rivals the picker points out
 
 Once you have fought someone **three times or more**, the Arena flags up to
-three of your opponents and pins them to the top of the rival list, each with
-your record against them.
+three of your opponents in the rival list, each with your record against them.
+
+**The list keeps its own order.** A flagged rival stays on the card they were
+already on, so the picker still reads from rarest Crew down and you find people
+where you left them. The only one that moves is a rival the list did not have
+room for, and they slot in where their own Crew puts them.
 
 | Chip | Who it is | Colour |
 |---|---|---|
@@ -401,7 +405,7 @@ chip that should change what you do next.
 
 ## Your arch nemesis
 
-Once you have fought someone **three times or more**, the Arena works out who you are most locked with and pins them to the top of the rival list, marked **Arch nemesis**, with your record against them.
+Once you have fought someone **three times or more**, the Arena works out who you are most locked with and marks them **Arch nemesis** in the rival list, with your record against them.
 
 It is not whoever beats you most — that is a wall, not a rival. It is the opponent with the most battles and the *least* settled between you: ten fought at five apiece outranks ten you swept. The grudge is all-time and does not reset with the monthly season, because one that did would not be a grudge.
 

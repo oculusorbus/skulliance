@@ -147,10 +147,21 @@ $foesList  = $user_id ? dhca_opponents($conn, $user_id) : array();
  * measures at +0.04 correlation with combat strength.
  */
 /*
- * THREE FLAGS, NOT ONE, and the same hoisting argument covers all of them:
- * dhca_opponents() is the two dozen highest-rarity players for everybody,
- * so the people you actually have a history with are very often not on
- * the screen at all.
+ * THREE FLAGS, HIGHLIGHTED WHERE THEY STAND.
+ *
+ * NOT hoisted to the front. The list is ordered by rarity and that order
+ * is the one a player reads it in, so pulling three cards out of it to
+ * cluster at the top reorders everybody else's position for the sake of
+ * a label. A flag is a mark on a rival, not a ranking of its own.
+ *
+ * BUT A FLAG ON A CARD THAT NEVER RENDERS IS THE WHOLE FEATURE FAILING
+ * SILENTLY, and that is why the nemesis was hoisted in the first place:
+ * dhca_opponents() is ORDER BY best DESC LIMIT 24, the same two dozen
+ * highest-rarity players for everybody, so the person you actually have
+ * a history with is very often not on the screen at all. So a flagged
+ * rival who is missing is still INSERTED -- just at the place their own
+ * rarity puts them rather than at the top, which is where they would
+ * have been if the list were not cut at 24.
  *
  * ONE PERSON CAN WEAR TWO, and usually does -- whoever you fight most is
  * whoever you have the most record against. They are merged onto one card
@@ -164,12 +175,25 @@ foreach (array('nemesis', 'tormentor', 'duck') as $sk) {
 	if (!isset($standTags[$sid])) $standTags[$sid] = array('row' => $standouts[$sk], 'tags' => array());
 	$standTags[$sid]['tags'][] = $sk;
 }
-/* Hoisted in the order they were found, so the nemesis stays first. */
-foreach (array_reverse($standTags, true) as $sid => $st) {
+foreach ($standTags as $sid => $st) {
+	$have = false;
 	foreach ($foesList as $i => $o) {
-		if ((int)$o['user_id'] === $sid) { unset($foesList[$i]); break; }
+		if ((int)$o['user_id'] !== $sid) continue;
+		/* ALREADY THERE: leave the card exactly where it is, but take the
+		   row with the history on it -- the ordinary rows carry no record
+		   at all, and the chip needs one to print. */
+		$foesList[$i] = $st['row'];
+		$have = true;
+		break;
 	}
-	array_unshift($foesList, $st['row']);
+	if ($have) continue;
+	/* Missing from the top 24: slotted in by rarity, so the list still
+	   reads in one order. */
+	$at = count($foesList);
+	foreach ($foesList as $i => $o) {
+		if ((int)$st['row']['best'] > (int)$o['best']) { $at = $i; break; }
+	}
+	array_splice($foesList, $at, 0, array($st['row']));
 }
 $foesList = array_values($foesList);
 /* Which of them have already paid out today -- one query for the whole
