@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/dropship-odds.php';   // dropshipThreshold(), shared with the dashboard readout
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
@@ -861,77 +862,41 @@ if(isset($_POST['run'])){
 				$mech_suit = $_SESSION['userData']['mech_suit'];
 			}
 			
-			$heavy_threshold = 74;
-			$medium_threshold = 72;
-			$light_threshold = 65.66;
-			$base_thresold = 50;
-			$medium_credit = 3;
-			$light_credit = 2;
-			$base_credit = 1;
-			
-			if($mech_suit == 'true') {
-				$threshold = 88.9;
-			} else if($exo_suit == 'true') {
-				$threshold = 87.5;
-			} else if($quantum_stealth == 'true') {
-				$threshold = 85.7;
-			} else if($ballistic_shield == 'true') {
-				$threshold = 83.3;
-			}else if($heavy == 'true' || $_SESSION['userData']['heavy_armor'] == "true") {
-				if($medium == 'true' || $_SESSION['userData']['medium_armor'] == "true") {
-					if($light == "true" || $_SESSION['userData']['light_armor'] == "true"){
-						if($base == "true" || $_SESSION['userData']['base_armor'] == "true"){
-							$threshold = $heavy_threshold+$medium_credit+$light_credit+$base_credit;
-						}else{
-							$threshold = $heavy_threshold+$medium_credit+$light_credit;
-						}
-					}else if($base == "true" || $_SESSION['userData']['base_armor'] == "true"){
-						$threshold = $heavy_threshold+$medium_credit+$base_credit;
-					}else{
-						$threshold = $heavy_threshold+$medium_credit;
-					}
-				}else if($light == "true" || $_SESSION['userData']['light_armor'] == "true"){
-					if($base == "true" || $_SESSION['userData']['base_armor'] == "true"){
-						$threshold = $heavy_threshold+$light_credit+$base_credit;
-					}else{
-						$threshold = $heavy_threshold+$light_credit;
-					}
-				}else if($base == "true" || $_SESSION['userData']['base_armor'] == "true"){
-					$threshold = $heavy_threshold+$base_credit;
-				}else{
-					$threshold = $heavy_threshold;
-				}
-			} else if($medium == 'true' || $_SESSION['userData']['medium_armor'] == "true") {
-				if($light == "true" || $_SESSION['userData']['light_armor'] == "true"){
-					if($base == "true" || $_SESSION['userData']['base_armor'] == "true"){
-						$threshold = $medium_threshold+$light_credit+$base_credit;
-					}else{
-						$threshold = $medium_threshold+$light_credit;
-					}
-				}else if($base == "true" || $_SESSION['userData']['base_armor'] == "true"){
-					$threshold = $medium_threshold+$base_credit;
-				}else{
-					$threshold = $medium_threshold;
-				}
-			} else if($light == 'true' || $_SESSION['userData']['light_armor'] == "true") {
-				if($base == "true" || $_SESSION['userData']['base_armor'] == "true"){
-					$threshold = $light_threshold+$base_credit;
-				}else{
-					$threshold = $light_threshold;
-				}
-			} else if($base == 'true' || $_SESSION['userData']['base_armor'] == "true") {
-				$threshold = $base_thresold;
-			} 
-			// Disabling all gear for grunts
-			// Enabling all gear for grunts
-			else {
+			/*
+			 * THE ODDS LIVE IN ONE PLACE NOW (dropship-odds.php), because the
+			 * dashboard shows them to the player before they spend on a
+			 * loadout. Two copies of this chain would mean the screen
+			 * promising one number and the run rolling against another, which
+			 * is worse than showing nothing.
+			 *
+			 * Only the arithmetic moved. The no-armour branch below still
+			 * grants the Skulliance promo gear, which is a side effect on the
+			 * run and not part of the odds.
+			 */
+			$threshold = dropshipThreshold(array(
+				'mech_suit'        => ($mech_suit == 'true'),
+				'exo_suit'         => ($exo_suit == 'true'),
+				'quantum_stealth'  => ($quantum_stealth == 'true'),
+				'ballistic_shield' => ($ballistic_shield == 'true'),
+				'heavy'  => ($heavy  == 'true' || $_SESSION['userData']['heavy_armor']  == "true"),
+				'medium' => ($medium == 'true' || $_SESSION['userData']['medium_armor'] == "true"),
+				'light'  => ($light  == 'true' || $_SESSION['userData']['light_armor']  == "true"),
+				'base'   => ($base   == 'true' || $_SESSION['userData']['base_armor']   == "true"),
+			));
+
+			if ($mech_suit != 'true' && $exo_suit != 'true' && $quantum_stealth != 'true'
+			    && $ballistic_shield != 'true'
+			    && $heavy  != 'true' && $_SESSION['userData']['heavy_armor']  != "true"
+			    && $medium != 'true' && $_SESSION['userData']['medium_armor'] != "true"
+			    && $light  != 'true' && $_SESSION['userData']['light_armor']  != "true"
+			    && $base   != 'true' && $_SESSION['userData']['base_armor']   != "true") {
 				// Skulliance promo overrides
 				$extralife = 'true';
 				$demolition = 'true';
 				$melee = 'true';
 				// End Skulliance promo overrides
 			}
-			
+
 			/* // Append additional armor to threshold
 			if($mech_suit == 'true') {
 				$threshold += 8.9;

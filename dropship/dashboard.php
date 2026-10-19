@@ -790,6 +790,14 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 			<?php if(checkSquadCount($conn) > 0){?>
 			    <div class="content" id="squad-panel">
 				<h2 id="squad">Squad</h2>
+				<?php
+				/* WHAT THIS SQUAD IS ACTUALLY WORTH. Drop Ship decides the
+				   whole run before you press Run, so this screen is where the
+				   only real decision happens -- and it had no numbers on it.
+				   The figure comes from dropshipThreshold(), the same
+				   function the run rolls against. */
+				echo dropshipOddsPanel($conn);
+				?>
 					<div id="nfts" class="nfts">
 						<?php
 						getSoldiers($conn, 1); 
