@@ -21,6 +21,7 @@
  * whole point: a predicted number that does not match the roll is worse than
  * no number at all.
  */
+require_once __DIR__ . '/dropship-grunts.php';
 
 /**
  * The survival threshold for a loadout. Mirrors nothing -- it IS the rule.
@@ -157,11 +158,14 @@ function dropshipOddsFlags($conn) {
 	}
 	$uid = (int)$_SESSION['userData']['dropship_user_id'];
 	$pid = (int)$_SESSION['userData']['dropship_project_id'];
-	$res = $conn->query("SELECT armor, gear FROM soldiers
+	$res = $conn->query("SELECT asset_name, rank, armor, gear FROM soldiers
 	                      WHERE user_id = $uid AND active = 1 AND project_id = $pid
 	                        AND deceased = 0");
 	if (!$res) return $f;
 	while ($row = $res->fetch_assoc()) {
+		/* The same loaner kit the run will field, or this readout would quote
+		   odds for a squad that does not exist. */
+		$row = dropshipGruntLoadout($row);
 		switch ($row['armor']) {
 			case 'Heavy':  $f['heavy']  = true; break;
 			case 'Medium': $f['medium'] = true; break;

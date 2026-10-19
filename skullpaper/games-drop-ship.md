@@ -15,6 +15,26 @@ Drop Ship allows holders of the NFT collection to send their soldiers to battle 
 
 Send Drop Ship NFTs in squads of up to 4 into battle and browse consumables such as armor, weapons, and items that can be purchased to improve probabilities of getting higher scores. A squad with all armor, weapons, and item types is considered a Super Soldier Squad and has the best probability within the game.
 
+## The four free soldiers
+
+Every Drop Ship player is given four Grunts - **Hagar, Delay, Blood Bag and
+Sektr** - with no NFT required. Each carries a loaner kit, and the four of them
+together cover every armor tier and three of the gear types, which is exactly a
+**Super Soldier Squad**.
+
+| Grunt | Armor | Gear |
+|---|---|---|
+| Hagar | Heavy | Melee |
+| Delay | Medium | Demolition |
+| Blood Bag | Light | Medkit |
+| Sektr | Base | none |
+
+**Deploy all four together.** Sent on their own they bring only their own kit,
+so a single Grunt is much weaker than the squad. The loan is armor and gear
+only: Grunts stay level 0 and keep their rank.
+
+Grunts are a Drop Ship feature. Oculus Lounge has no equivalent.
+
 ## Leaderboards
 
 Track your ranks for the current game, all time high scores, and by levels and XP.

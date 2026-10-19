@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/dropship-grunts.php';   // the four free soldiers' loaner kit
 include 'credentials/db_credentials.php';
 
 ini_set('display_errors', 1);
@@ -1046,6 +1047,8 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 	  // output data of each row
 	  $troopcounter = 0;
 	  foreach($rows as $row){
+		/* Show the loaner kit, not the None/None the row is stored with. */
+		$row = dropshipGruntLoadout($row);
 		$troopcounter++;
 	    echo "<div class='nft'><div class='nft-data ".(($row["deceased"]==1)?"deceased":"")."'>";
 	substr("abcdef", -3, 1);
@@ -1124,6 +1127,10 @@ function setSquad($conn){
 // Set global NFT attribute variables based on the current status of the user's squad
 function setSquadAttributes($row){
 	global $heavy, $medium, $light, $base, $extralife, $demolition, $melee, $roleMarkup;
+	/* A grunt's loaner kit, before anything reads armor or gear. The four
+	   free soldiers are stored as None/None and would otherwise fall to the
+	   promo branch, which paid MORE than real armour. See dropship-grunts.php. */
+	$row = dropshipGruntLoadout($row);
 	// Set NFT attribute global variables for current squad
 	if($row["armor"] == "Heavy"){
 	    $heavy = 'true';

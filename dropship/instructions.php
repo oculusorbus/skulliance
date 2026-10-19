@@ -132,14 +132,19 @@ include 'header.php';
 					</div>
 					<?php } ?>
 
+					<?php /* DROP SHIP ONLY. addDefaultSoldiers() is gated on project 1,
+					         so every other project was being promised four free
+					         soldiers it never receives. */ ?>
+					<?php if($_SESSION['userData']['dropship_project_id'] == 1){ ?>
 					<div class="instr-section">
 						<h3>Play for Free</h3>
 						<div class="instr-row">
 							<img class="instr-icon" src="icons/<?php echo evaluateText("supersoldier");?>.png" alt=""/>
-							<span>Every player gets <strong>4 free <?php echo evaluateText("Grunt");?> <?php echo strtolower(evaluateText("Soldiers"));?></strong> automatically &mdash; no NFT required, and each one carries full <?php echo evaluateText("Super Soldier");?> Squad power regardless of traits.</span>
+							<span>Every player gets <strong>4 free <?php echo evaluateText("Grunt");?> <?php echo strtolower(evaluateText("Soldiers"));?></strong> automatically, no NFT required. Each one carries a loaner kit, and together the four of them make a full <?php echo evaluateText("Super Soldier");?> Squad.</span>
 						</div>
-						<p>Send them in one at a time for full effect &mdash; that's 4 separate chances at winning, no purchase necessary. If you already hold <?php echo evaluateText("Drop Ship");?> NFTs, you'll still want to form your own <?php echo evaluateText("Super Soldier");?> Squad from them for the full item benefits above.</p>
+						<p>Deploy all four at once for the best odds. Between them they cover every armor tier and carry a Medkit, Melee and Demolition, which is the whole set. Sent one at a time they only bring their own kit, so a lone <?php echo evaluateText("Grunt");?> is far weaker than the four together. Check the Barracks to see what each one carries. If you already hold <?php echo evaluateText("Drop Ship");?> NFTs, you'll still want to form your own <?php echo evaluateText("Super Soldier");?> Squad from them for the full item benefits above.</p>
 					</div>
+					<?php } ?>
 
 					<div class="instr-section">
 						<h3>Scoring</h3>
