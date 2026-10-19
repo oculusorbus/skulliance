@@ -29,7 +29,28 @@ $ep   = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/player-digest.
 $mod  = file_get_contents(__DIR__ . '/player-digest.php');
 $modc = harness_strip_comments($mod);
 
-echo "it can only ever show you your own day\n";
+echo "the script in the page actually parses\n";
+{
+	/*
+	 * php -l CANNOT SEE INSIDE A <script> BLOCK, and this file is mostly
+	 * one. An edit left two orphan lines from a replaced handler in the
+	 * middle of the JS -- `php -l` was clean, the modal was dead, and the
+	 * only symptom would have been a silent failure on every page of the
+	 * site, because header.php includes this everywhere.
+	 */
+	$a = strpos($mod, '<script>');
+	$b = strrpos($mod, '</script>');
+	ok($a !== false && $b > $a, 'the modal has no script block');
+	$js  = substr($mod, $a + 8, $b - $a - 8);
+	$tmp = sys_get_temp_dir() . '/pdg-parse-' . getmypid() . '.js';
+	file_put_contents($tmp, $js);
+	$out = array(); $rc = 0;
+	exec('node --check ' . escapeshellarg($tmp) . ' 2>&1', $out, $rc);
+	@unlink($tmp);
+	ok($rc === 0, 'the modal\'s JavaScript does not parse: ' . implode(' ', array_slice($out, 0, 3)));
+}
+
+echo "\nit can only ever show you your own day\n";
 {
 	/* The session decides whose digest this is. Nothing else may. */
 	ok(strpos($ep, "\$_SESSION['userData']['user_id']") !== false,

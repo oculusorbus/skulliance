@@ -407,8 +407,6 @@ if (!isset($_SESSION['userData']['user_id'])) return;
   document.getElementById('pdg-share').addEventListener('click', function () {
     if (D) share(D);
   });
-    if (!w) window.location.href = shareHref(D);
-  });
 
   /*
    * THE DM TEXT. Plainer than the post: no handles, no credit line, no
@@ -451,8 +449,11 @@ if (!isset($_SESSION['userData']['user_id'])) return;
     Promise.all([load(d.avatar)].concat(d.art.map(function (a) { return load(a.src); })))
       .then(function (ims) {
         draw(d, { avatar: ims[0], art: ims.slice(1) });
-        document.getElementById('pdg-note').textContent =
-          'Keep it, post it, or close this — it will not ask again today.';
+        /* A cache is a surprise, so it is the first thing the line says. */
+        document.getElementById('pdg-note').textContent = (d.cache > 0)
+          ? 'A cache fell out of today\u2019s digest: ' + d.cache
+            + ' traits, revealed once you close this.'
+          : 'Keep it, post it, or close this \u2014 it will not ask again today.';
         veil.classList.add('on');
       });
   }

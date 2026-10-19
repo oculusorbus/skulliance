@@ -65,5 +65,50 @@ if (is_file(__DIR__ . '/../lib/referral-lib.php')) {
 	$d['ref'] = ref_code($uid);
 }
 
+/*
+ * SOME DAYS A CACHE FALLS OUT.
+ *
+ * The habit this is buying is opening the digest, which already requires
+ * having played the day before -- there is no digest on a quiet day. It is
+ * deliberately NOT hung on the Share button: a reward for sharing is a
+ * reward for posting on X, and that is the one thing that would put the
+ * invite scheme on the wrong side of the rule against paying for
+ * engagement.
+ *
+ * AWARDED HERE, SERVER-SIDE. The once-a-day marker the modal uses is
+ * localStorage, which is the right tool for "do not show me this twice"
+ * and no kind of guard on a payout.
+ *
+ * The reveal needs no special handling: this runs in the player's OWN
+ * request, so dhcf_award() queues it the way it does for any other drop
+ * and the modal fires once the digest is closed.
+ */
+$d['cache'] = 0;
+/*
+ * THE LIBRARY IS LOADED BEFORE IT IS ASKED ANYTHING. dhcf_cache_day() lives
+ * in dhcfighters-config.php, which nothing in this endpoint's include chain
+ * pulls in -- db.php only requires it from inside a function. Calling it
+ * first and requiring afterwards is a fatal, and the shutdown handler above
+ * turns a fatal into {show:false}, so the symptom would not be a missing
+ * cache: it would be NO DIGEST AT ALL, for everybody, silently.
+ */
+if (is_file(__DIR__ . '/../dhcfighters-lib.php')) {
+	require_once __DIR__ . '/../dhcfighters-lib.php';   /* which loads the config */
+}
+if (function_exists('dhcf_cache_day') && dhcf_cache_day($uid, $day)) {
+	/* Belt and braces on top of the day-hash: if a cache is somehow already
+	   recorded for today, nothing more is drawn. The hash makes this
+	   unreachable; it costs one indexed read to be certain. */
+	$had = $conn->query("SELECT 1 FROM dhc_trait_drops
+	                      WHERE user_id = $uid AND source = 'digestcache'
+	                        AND awarded_at >= CURDATE() LIMIT 1");
+	if (!($had && $had->num_rows)) {
+		$tbl = dhcf_table_for('digestcache');
+		for ($i = 0; $i < DHCF_CACHE_DRAWS; $i++) {
+			if (dhcf_award($conn, $uid, 'wildcard', 'digestcache', $day, $tbl)) $d['cache']++;
+		}
+	}
+}
+
 echo json_encode(array('show' => true, 'digest' => $d), JSON_UNESCAPED_SLASHES);
 $conn->close();

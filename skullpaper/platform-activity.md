@@ -50,11 +50,12 @@ The first time you open Skulliance on a new day, you get a small poster of the d
 
 You can **download** it, **share it on X**, or close it. It asks once a day and nothing happens if you say no.
 
-Two things worth knowing:
+Worth knowing:
 
 * **A quiet day shows nothing at all.** If you did not do anything yesterday, there is no modal - a poster announcing that you did nothing is not worth drawing.
 * **Sharing is one click and the picture comes with it.** X cannot attach a file to a post written for you, so the poster is saved on Skulliance first and the post links to it - X reads the image from there. Nothing to attach by hand.
 * **A shared poster is public, and only if you share it.** Pressing Share publishes that one image at its own link; closing the modal or downloading it publishes nothing. Shared posters are kept for about four months and then removed.
+* **Some days there is a cache in it.** Roughly one day in twelve, opening your digest drops **3 DHC traits** on the better odds - the same draw an invite pays, 25% common instead of 55%. Which day it falls on is decided by the day itself, so reloading will not change the answer, and it lands once. You do not have to share anything to get it; opening the digest is enough, and you only have a digest to open if you did something the day before.
 
 It is built from the same record the feed is, so it shows what was announced - the same limit described under *History*.
 

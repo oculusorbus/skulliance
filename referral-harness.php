@@ -25,6 +25,7 @@ function ok($cond, $what) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $
 
 require_once __DIR__ . '/harness-strip.php';
 require_once __DIR__ . '/lib/referral-lib.php';
+require_once __DIR__ . '/dhcfighters-config.php';
 $lib  = harness_strip_comments(file_get_contents(__DIR__ . '/lib/referral-lib.php'));
 $skl  = harness_strip_comments(file_get_contents(__DIR__ . '/skulliance.php'));
 $dbp  = harness_strip_comments(file_get_contents(__DIR__ . '/db.php'));
@@ -74,7 +75,6 @@ echo "\nonly a new or long-gone arrival pays out\n";
 
 echo "\nit pays three each, on the better table\n";
 {
-	require_once __DIR__ . '/dhcfighters-config.php';
 	ok(REF_INVITER_DRAWS === 3, 'the inviter gets ' . REF_INVITER_DRAWS . ', not 3');
 	/* The arrival's three are the OFFER, not generosity -- the post says
 	   "get 3 yourself", so anything less makes the post a lie. */
@@ -164,6 +164,118 @@ echo "\nnothing is paid for posting\n";
 	ok(strpos($lib, 'function ref_credit') !== false
 	   && strpos($skl, 'ref_credit($conn') !== false,
 	   'the credit is not on the login path');
+}
+
+echo "\nthe cache rewards the habit, not the post\n";
+{
+	$ep   = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/player-digest.php'));
+	$cfgc = harness_strip_comments($cfg);
+	$shr  = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/digest-share.php'));
+
+	/*
+	 * IT HANGS ON OPENING THE DIGEST, which already requires having done
+	 * something the day before. Hanging it on Share would be paying for a
+	 * post on X, the one thing that puts this whole scheme on the wrong
+	 * side of the platform-manipulation rule the block above tests for.
+	 */
+	ok(strpos($ep, 'dhcf_cache_day(') !== false,
+	   'the digest endpoint never rolls for a cache');
+
+	/*
+	 * AND THE LIBRARY IS LOADED BEFORE IT IS ASKED. dhcf_cache_day() is
+	 * defined in dhcfighters-config.php, and NOTHING in this endpoint's
+	 * include chain pulls that in -- db.php requires it only from inside a
+	 * function. Calling it before the require is a fatal, and the
+	 * endpoint's own shutdown handler converts a fatal into {show:false},
+	 * so the symptom is not a missing cache: it is NO DIGEST AT ALL, for
+	 * every player, with nothing in the response to say why. This is how
+	 * it was first written.
+	 */
+	$req  = strpos($ep, "require_once __DIR__ . '/../dhcfighters-lib.php'");
+	$call = strpos($ep, 'dhcf_cache_day(');
+	ok($req !== false, 'the endpoint never loads the library that defines the roll');
+	ok($req !== false && $call !== false && $req < $call,
+	   'dhcf_cache_day() is called before the file defining it is loaded, which fatals the '
+	 . 'whole endpoint and shows nobody a digest');
+	/* And the config is what actually defines it, so requiring the lib has
+	   to be enough -- the lib requires the config at its top level. */
+	ok(strpos($dfl, "require_once __DIR__ . '/dhcfighters-config.php'") !== false,
+	   'dhcfighters-lib.php no longer loads the config, so requiring the lib does not '
+	 . 'define dhcf_cache_day()');
+	ok(strpos($shr, 'digestcache') === false && strpos($shr, 'dhcf_cache_day') === false,
+	   'the cache is awarded on Share, which is paying for a post on X');
+
+	/*
+	 * DECIDED BY THE DAY, NOT BY A DIE ROLL. The seen-once marker is in
+	 * localStorage, so a per-request random roll could be re-rolled by
+	 * clearing site data and reloading until it paid out.
+	 */
+	$fn = strpos($cfgc, 'function dhcf_cache_day');
+	ok($fn !== false, 'dhcf_cache_day is gone, so nothing decides the cache day');
+	if ($fn !== false) {
+		$body = substr($cfgc, $fn, strpos($cfgc, "\n}", $fn) - $fn);
+		foreach (array('rand', 'random_int', 'random_bytes', 'shuffle', 'uniqid',
+		               'microtime', 'time()', 'lcg_value') as $w) {
+			ok(strpos($body, $w) === false,
+			   "the cache roll calls $w(), so reloading can re-roll it until it pays");
+		}
+	}
+
+	/* Same answer for the same player and day, however often it is asked. */
+	$drift = 0;
+	for ($u = 1; $u <= 200; $u++) {
+		$first = dhcf_cache_day($u, '2026-10-18');
+		for ($n = 0; $n < 3; $n++) if (dhcf_cache_day($u, '2026-10-18') !== $first) $drift++;
+	}
+	ok($drift === 0, "a player's cache day changed under $drift repeat calls");
+
+	/*
+	 * RARE, BUT NOT A FIXED LUCKY FEW. Two separate failures look identical
+	 * from one day's numbers: odds set so wide nobody ever gets one, and a
+	 * hash of the user alone, which would hand the same players a cache
+	 * every single day and never pay anyone else.
+	 */
+	$day_a = $day_b = array();
+	for ($u = 1; $u <= 2400; $u++) {
+		if (dhcf_cache_day($u, '2026-10-18')) $day_a[] = $u;
+		if (dhcf_cache_day($u, '2026-10-19')) $day_b[] = $u;
+	}
+	$hits = count($day_a);
+	ok($hits > 2400 / (DHCF_CACHE_ODDS * 2) && $hits < 2400 / (DHCF_CACHE_ODDS / 2),
+	   sprintf('%d of 2400 players get a cache, nowhere near the 1-in-%d intended',
+	           $hits, DHCF_CACHE_ODDS));
+	/*
+	 * AND THE ODDS THEMSELVES HAVE TO BE REACHABLE. The bounds above only
+	 * check the hash matches whatever DHCF_CACHE_ODDS says, so they pass
+	 * just as happily at 1-in-500 -- once every sixteen months of daily
+	 * opens, which is a feature nobody ever sees. "Some days, not most."
+	 */
+	ok(DHCF_CACHE_ODDS >= 4 && DHCF_CACHE_ODDS <= 40,
+	   'a cache lands once every ' . DHCF_CACHE_ODDS . ' days of opening the digest, which is '
+	 . (DHCF_CACHE_ODDS < 4 ? 'most days, not a surprise' : 'too rare to build a habit on'));
+	ok($day_a !== $day_b,
+	   'the same players get a cache every day, because the day is not in the hash');
+	ok(count(array_intersect($day_a, $day_b)) < $hits,
+	   'every one of yesterday\'s winners wins again today');
+
+	/* A cache is DHCF_CACHE_DRAWS traits, so the cap cannot sit below it. */
+	ok(DHCF_CACHE_DRAWS > 0, 'a cache pays ' . DHCF_CACHE_DRAWS . ' traits');
+	ok(dhcf_cap('digestcache') >= DHCF_CACHE_DRAWS,
+	   'the cap is ' . dhcf_cap('digestcache') . ', below the '
+	   . DHCF_CACHE_DRAWS . ' a cache pays, so a cache can never land in full');
+	/* The modal says "better odds on the rare ones" -- the same claim the
+	   invite post makes, so it has to draw on the same table, not on run. */
+	$ct = dhcf_table_for('digestcache');
+	ok($ct === $t, 'a cache draws on worse odds than an invite, which the modal denies');
+	ok(is_array($ct) && $ct['common'] <= 30,
+	   'a cache is ' . ($ct['common'] ?? '?') . '% common, which is the ordinary drop');
+
+	/*
+	 * ONE CACHE A DAY even if the roll is ever changed to something less
+	 * stable -- the endpoint runs on every open of the modal, not once.
+	 */
+	ok(strpos($ep, "source = 'digestcache'") !== false && strpos($ep, 'CURDATE()') !== false,
+	   'nothing in the endpoint stops a second cache the same day');
 }
 
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
