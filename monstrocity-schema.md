@@ -152,6 +152,46 @@ SELECT t.slug, t.title, c.id AS collection_id, c.name AS collection_name, c.poli
  ORDER BY t.sort_order, c.name;
 ```
 
+## Boss collections
+
+`bosses.collection_id` is a single column, so a boss drew its roster from
+exactly one collection. That was fine while a project had one collection on one
+chain. Projects now hold collections on Cardano, Solana, XRPL and Polygon, and
+a holder on the wrong chain could not fight their own project's boss at all:
+`canFight` tested one policy and the roster fetch posted one policy, so the
+answer was *"No qualifying NFT characters available for this boss."*
+
+**Many collections, so a join table, not a column** - the same shape and the
+same reasoning as `monstrocity_theme_collections` above. One boss keeps **one
+shared health pool and one bounty**, which is the point of a boss. The
+alternative was a duplicate boss per chain: same art, separate pools, separate
+leaderboard rows.
+
+- **`bosses.collection_id` stays and is always accepted.**
+  `monstrocity_boss_policy_list()` puts it at the front of the list at read
+  time, whatever is attached, so a boss cannot be made unfightable by its own
+  holders through a half-finished edit, and **a boss with nothing attached
+  behaves exactly as it did before**. This migration is additive: no existing
+  boss changes until somebody ticks a box.
+- **A ticked collection with an empty `collections.policy` contributes
+  nothing.** `monstrocity_boss_policies()` filters it out, and
+  `ajax/get-nft-assets.php` matches on `collections.policy IN (...)`, which can
+  never match `''`.
+- **Nothing in the codebase creates this table.** Same as the theme one: until
+  the statement below is run, every query against it returns false, mysqli does
+  not throw, and the admin's ticks are discarded. The boss form says so on the
+  form and on the save, and does not redirect away from the warning.
+
+```sql
+CREATE TABLE IF NOT EXISTS boss_collections (
+	boss_id       INT NOT NULL,
+	collection_id INT NOT NULL,
+	sort_order    INT NOT NULL DEFAULT 0,
+	PRIMARY KEY (boss_id, collection_id),
+	INDEX idx_boss (boss_id, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
 ## Seed: the 49 themes exactly as they were in the code
 
 ```sql

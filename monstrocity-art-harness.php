@@ -762,10 +762,17 @@ ok($hdAt !== false && $hdAt < strpos($bp, "include 'header.php'"),
 /*
  * AND ONLY ON A CLEAN SAVE. If the art was refused the message is the only
  * way to find out, and redirecting past it loses it.
+ *
+ * A WARNING COUNTS AS NOT CLEAN. This used to test for err alone, which was
+ * right when err was the only kind of message the form produced. The boss
+ * form now warns when the boss_collections links could not be written -- the
+ * boss itself saved, so it is a warning and not an error -- and redirecting
+ * past that shows the admin "Saved." while every tick was discarded, which is
+ * the precise failure the warning exists to prevent.
  */
-ok(strpos($bp, "if (!\$msgs['err'] && !empty(\$_POST['after']))") !== false,
-   'save-and-continue redirects even when something failed, throwing away the only '
- . 'explanation of what went wrong');
+ok(strpos($bp, "if (!\$msgs['err'] && empty(\$msgs['warn']) && !empty(\$_POST['after']))") !== false,
+   'save-and-continue redirects even when something failed or warned, throwing away the '
+ . 'only explanation of what went wrong');
 
 /* ---- a dropdown must never lie about what is stored --------------------- */
 echo "\nselects reflect the database\n";

@@ -1,6 +1,7 @@
 <?php
 include '../db.php';
 include '../skulliance.php';
+require_once __DIR__ . '/../lib/monstrocity-boss-lib.php';
 
 function getBosses($conn) {
     // Set JSON header
@@ -126,6 +127,10 @@ function getBosses($conn) {
         }
         $nftsStmt->close();
 
+        /* Which collections each boss accepts beyond its own. Absent for a
+           boss with nothing attached, which then behaves exactly as before. */
+        $bossPolicies = monstrocity_boss_policies($conn);
+
         // Process results
         $bosses = [];
         foreach ($results as $row) {
@@ -142,8 +147,17 @@ function getBosses($conn) {
             );
             $slugifiedName = trim($slugifiedName, '-');
 
-            // Check if player can fight (owns matching NFT)
-            $canFight = in_array($row['policy'], $userPolicies);
+            /*
+             * ANY OF THE BOSS'S COLLECTIONS, NOT JUST ITS OWN. bosses has a
+             * single collection_id, so a holder whose NFTs sat in the same
+             * project's collection on another chain could not fight their own
+             * project's boss. The boss's own policy is always in this list,
+             * so a boss with nothing attached is unchanged.
+             */
+            $policies = monstrocity_boss_policy_list(
+                $row['policy'],
+                isset($bossPolicies[(int)$row['id']]) ? $bossPolicies[(int)$row['id']] : array());
+            $canFight = (bool)array_intersect($policies, $userPolicies);
 
             // Get player health (null if no record, to be set by NFT selection)
             $playerHealth = isset($healthMap[$row['id']]) ? $healthMap[$row['id']] : null;
@@ -151,7 +165,10 @@ function getBosses($conn) {
             $bosses[] = [
                 'id' => (int)$row['id'],
                 'projectName' => $row['project_name'],
+                /* `policy` kept for anything still reading one; `policies`
+                   is what the roster fetch posts. */
                 'policy' => $row['policy'],
+                'policies' => $policies,
                 'name' => $row['boss_name'],
                 'health' => (int)$row['health'],
                 'maxHealth' => (int)$row['max_health'],

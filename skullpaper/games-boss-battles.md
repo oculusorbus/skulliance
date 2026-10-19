@@ -5,6 +5,7 @@ Boss Battles are co-op PvE encounters built on the Monstrocity combat engine. In
 ## Playing
 
 * You can only fight bosses tied to **NFT collections you own** - boss eligibility is gated by collection policy.
+* A boss can accept fighters from **more than one collection**, including the same project's collections on other chains. If a project holds NFTs on Cardano and Solana, holders on either side fight the same boss, against **one shared health pool and one bounty**. Your fighters come from whichever of those collections you actually hold.
 * Each encounter starts your health fresh, but the **boss's health persists** across all players and all of your attempts. Damage you deal carries over toward defeating it.
 * Combat uses the same turn-based match-3 system as the Monstrocity campaign. See [[games-monstrocity]].
 

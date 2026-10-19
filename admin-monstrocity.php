@@ -56,8 +56,15 @@ function mon_links($conn, $theme_id) {
 }
 function mon_collections($conn) {
 	$out = array();
-	$r = $conn->query('SELECT c.id, c.name, c.policy, c.project_id, p.name AS project
-	                     FROM collections c LEFT JOIN projects p ON p.id = c.project_id
+	/* THE CHAIN NAME COMES FROM THE TABLE, not a map in this file. The one
+	   in admin-collections.php is hardcoded and already stale -- it stops at
+	   Solana and has never listed Polygon. A LEFT JOIN so a collection whose
+	   blockchain_id points nowhere still lists, just unlabelled. */
+	$r = $conn->query('SELECT c.id, c.name, c.policy, c.project_id, p.name AS project,
+	                          c.blockchain_id, b.name AS chain
+	                     FROM collections c
+	                     LEFT JOIN projects p ON p.id = c.project_id
+	                     LEFT JOIN blockchains b ON b.id = c.blockchain_id
 	                    ORDER BY p.name ASC, c.name ASC');
 	if ($r) while ($x = $r->fetch_assoc()) $out[] = $x;
 	return $out;
@@ -575,6 +582,9 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
               <input type="checkbox" name="collections[]" value="<?php echo (int)$c['id']; ?>" <?php echo $on ? 'checked' : ''; ?>>
               <span><?php echo htmlspecialchars($c['name']); ?>
                 <?php if ($c['project']): ?><span class="pol">&middot; <?php echo htmlspecialchars($c['project']); ?></span><?php endif; ?>
+                <?php /* THE CHAIN, because one project now has same-named collections on
+                         several of them and the rows were indistinguishable. */ ?>
+                <?php if (!empty($c['chain'])): ?><span class="pol">&middot; <?php echo htmlspecialchars($c['chain']); ?></span><?php endif; ?>
                 <?php /* A COLLECTION WITH NO POLICY ID CONTRIBUTES NOTHING. It used to
                          render as a bare ellipsis, which looks like a policy that is merely
                          shortened -- so ticking it, and only it, silently replaced the legacy

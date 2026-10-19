@@ -2223,7 +2223,15 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                  if (!isPlayerDead && !isBossDead) {
 	                      option.addEventListener('click', () => {
 	                          console.log(`Boss selected: ${boss.name} (ID: ${boss.id})`);
-	                          console.log(`Fetching NFT characters for policy: ${boss.policy}`);
+	                          /* EVERY COLLECTION THE BOSS ACCEPTS. This posted
+	                             one policy, so a holder whose NFTs are in the
+	                             same project's collection on another chain got
+	                             "No qualifying NFT characters" for their own
+	                             project's boss. Older payloads have no
+	                             `policies`, so fall back to the single one. */
+	                          const bossPolicies = (boss.policies && boss.policies.length)
+	                              ? boss.policies : [boss.policy];
+	                          console.log(`Fetching NFT characters for policies: ${bossPolicies.join(', ')}`);
 
 	                          container.style.display = 'none';
 
@@ -2235,7 +2243,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	                              method: 'POST',
 	                              headers: { 'Content-Type': 'application/json' },
 	                              body: JSON.stringify({
-	                                  policyIds: [boss.policy],
+	                                  policyIds: bossPolicies,
 	                                  theme: game.theme
 	                              })
 	                          })

@@ -20,8 +20,9 @@ include 'skulliance.php';
 require_once __DIR__ . '/admin-lib.php';
 admin_require();
 require_once __DIR__ . '/monstrocity-art-lib.php';
+require_once __DIR__ . '/lib/monstrocity-boss-lib.php';
 
-$msgs = array('err' => array(), 'ok' => array());
+$msgs = array('err' => array(), 'warn' => array(), 'ok' => array());
 $edit_id  = isset($_GET['edit']) ? (int)$_GET['edit'] : 0;
 $creating = isset($_GET['new']);
 
@@ -48,8 +49,15 @@ function mb_themes($conn) {
 }
 function mb_collections($conn) {
 	$out = array();
-	$r = $conn->query('SELECT c.id, c.name, c.project_id, p.name AS project
-	                     FROM collections c LEFT JOIN projects p ON p.id = c.project_id
+	/* THE CHAIN NAME COMES FROM THE TABLE, not a map in this file. The one
+	   in admin-collections.php is hardcoded and already stale -- it stops at
+	   Solana and has never listed Polygon. A LEFT JOIN so a collection whose
+	   blockchain_id points nowhere still lists, just unlabelled. */
+	$r = $conn->query('SELECT c.id, c.name, c.project_id, p.name AS project,
+	                          c.blockchain_id, b.name AS chain
+	                     FROM collections c
+	                     LEFT JOIN projects p ON p.id = c.project_id
+	                     LEFT JOIN blockchains b ON b.id = c.blockchain_id
 	                    ORDER BY p.name ASC, c.name ASC');
 	if ($r) while ($x = $r->fetch_assoc()) $out[] = $x;
 	return $out;
@@ -170,8 +178,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded && !isset($_POST['
 	foreach (mb_all($conn) as $o) if ((int)$o['id'] !== $id) $taken[] = monstrocity_boss_slug($o['name']);
 	$errs = monstrocity_validate_boss($b, $taken, array_keys($themes));
 
+	$links_post = array();
+	foreach ((array)($_POST['boss_collections'] ?? array()) as $cid)
+		if ((int)$cid > 0) $links_post[] = (int)$cid;
+	$links_post = array_values(array_unique($links_post));
+
 	if ($errs) {
 		$msgs['err'] = $errs; $edit_id = $id; $creating = !$id; $repost = $b;
+		$repost_links = $links_post;
 	} else {
 		$slug = monstrocity_boss_slug($b['name']);
 		$esc = function ($v) use ($conn) { return "'" . $conn->real_escape_string($v) . "'"; };
@@ -208,6 +222,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded && !isset($_POST['
 			$msgs['ok'][] = 'Created "' . htmlspecialchars($b['name']) . '".';
 		}
 
+		/*
+		 * THE EXTRA COLLECTIONS. Written after the insert because a new boss
+		 * has no id until then.
+		 *
+		 * The boss's OWN collection_id is never written here -- it is added
+		 * at read time by monstrocity_boss_policy_list(), so ticking it as
+		 * well is harmless and leaving it unticked cannot orphan the boss.
+		 */
+		if (!monstrocity_boss_links_table($conn)) {
+			/* SAY SO. Everything else about the boss did save, so this is a
+			   warning on a real save -- and without it the ticks vanish with
+			   the page reporting "Saved.", which is exactly the failure the
+			   theme form was shipped with. */
+			if ($links_post)
+				$msgs['warn'][] = 'The extra collections were NOT saved: the table '
+				                . '<code>boss_collections</code> does not exist on this database. '
+				                . 'This boss still accepts its own collection only. Create the '
+				                . 'table with the statement in <code>monstrocity-schema.md</code>.';
+		} else {
+			$conn->query('DELETE FROM boss_collections WHERE boss_id = ' . (int)$id);
+			$wrote = 0;
+			foreach ($links_post as $i => $cid)
+				if ($conn->query('INSERT INTO boss_collections (boss_id, collection_id, sort_order) VALUES ('
+					. (int)$id . ',' . (int)$cid . ',' . (int)$i . ')')) $wrote++;
+			/* A half-written set is worse than none: the boss would accept a
+			   SUBSET of what was ticked, which reads to a player as "my NFTs
+			   are missing" with nothing anywhere saying why. */
+			if ($wrote !== count($links_post))
+				$msgs['warn'][] = 'Only ' . $wrote . ' of ' . count($links_post) . ' extra collections '
+				                . 'were saved (' . htmlspecialchars($conn->error) . '). This boss now '
+				                . 'accepts fewer collections than you ticked.';
+		}
+
 		if (isset($_FILES['art']) && $_FILES['art']['error'] !== UPLOAD_ERR_NO_FILE) {
 			if ($_FILES['art']['error'] !== UPLOAD_ERR_OK) {
 				$msgs['err'][] = 'Art: upload failed (code ' . (int)$_FILES['art']['error'] . ').';
@@ -232,7 +279,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$post_discarded && !isset($_POST['
 		 * Only on a clean save. If anything went wrong -- the art was
 		 * refused, say -- staying put is the only way to see why.
 		 */
-		if (!$msgs['err'] && !empty($_POST['after'])) {
+		/* A WARNING COUNTS AS SOMETHING GOING WRONG. Redirecting on a save
+		   that only warned -- the collection links could not be written, say
+		   -- throws the warning away and the admin sees nothing but "Saved",
+		   which is the whole failure mode the warning exists to prevent. */
+		if (!$msgs['err'] && empty($msgs['warn']) && !empty($_POST['after'])) {
 			$to = $_POST['after'] === 'copy'
 			    ? 'admin-monstrocity-boss.php?new=1&from=' . (int)$id
 			    : 'admin-monstrocity-boss.php?new=1';
@@ -279,6 +330,19 @@ if ($creating && !$row) {
 if (isset($repost)) $row = array_merge((array)$row, $repost);
 
 /*
+ * WHICH EXTRA COLLECTIONS ARE TICKED. From the posted values when a save was
+ * rejected -- otherwise a validation error on the name silently clears every
+ * tick, and the admin re-saves a boss narrower than the one they opened.
+ */
+$rowBossLinks = isset($repost_links)
+	? $repost_links
+	: ($row && (int)$row['id'] ? monstrocity_boss_links($conn, (int)$row['id']) : array());
+/* A duplicate inherits them: the copy is for the same project, so the same
+   collections apply, and re-ticking by hand is the step that gets forgotten. */
+if (isset($from) && $from && $creating && !isset($repost_links))
+	$rowBossLinks = monstrocity_boss_links($conn, (int)$from);
+
+/*
  * A theme's bosses, in the order the game will present them -- through the
  * SAME function the game's SQL mirrors, not a second sort that drifts.
  *
@@ -323,6 +387,17 @@ table.mb tr.gap td { border-top:1px solid rgba(0,200,160,.22); padding-top:11px 
   width:100%; box-sizing:border-box; background:#07111d; color:#e8eaed;
   border:1px solid rgba(255,255,255,.14); border-radius:3px; padding:7px 9px; font-size:12px }
 .mb-field .hint { font-size:11px; color:#5a7888; margin:5px 0 0; line-height:1.45 }
+.mb-cols { max-height:220px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:3px;
+           padding:8px; background:#07111d }
+/* Scoped under .adm for the same reason the theme picker's rule is: admin-css.php
+   is included after this block and sets `.adm label{display:flex;flex-direction:column}`,
+   so an equal-specificity rule here loses the tie and every collection sits with its
+   checkbox on the line above its name. */
+.adm .mb-cols label { display:flex; flex-direction:row; gap:7px; align-items:flex-start;
+                      margin:0 0 7px; color:#e8eaed; font-size:11px; letter-spacing:0;
+                      text-transform:none; text-align:left }
+.adm .mb-cols label input { margin:1px 0 0; width:auto }
+.mb-cols .pol { font-family:ui-monospace,Menlo,monospace; color:#5a7888; font-size:10px }
 .mb-check { display:flex; align-items:center; gap:7px; font-size:12px; color:#e8eaed; margin:9px 0 0 }
 .mb-back { font-size:12px; display:inline-block; margin:0 0 12px; text-align:left }
 .mb-actions { display:flex; gap:9px; margin-top:12px }
@@ -701,11 +776,35 @@ table.mb-tune tr.mb-run td span { color:#5a7888; text-transform:none; letter-spa
             <?php foreach ($collections as $c): ?>
               <option value="<?php echo (int)$c['id']; ?>" data-project="<?php echo (int)$c['project_id']; ?>"
                 <?php echo (int)$row['collection_id'] === (int)$c['id'] ? ' selected' : ''; ?>>
-                <?php echo htmlspecialchars($c['name']); ?></option>
+                <?php echo htmlspecialchars($c['name']);
+                      echo !empty($c['chain']) ? ' (' . htmlspecialchars($c['chain']) . ')' : ''; ?></option>
             <?php endforeach; ?>
           </select>
           <p class="hint"><b>Both are required.</b> The game inner-joins them, so a boss missing
              either does not error &mdash; it just never appears.</p>
+        </div>
+        <div class="mb-field">
+          <label>Also accepts fighters from</label>
+          <?php if (!monstrocity_boss_links_table($conn)): ?>
+            <p class="hint" style="color:#e8a0b0">The table <code>boss_collections</code> does not
+               exist on this database, so nothing ticked here can be saved. Create it with the
+               statement in <code>monstrocity-schema.md</code>.</p>
+          <?php endif; ?>
+          <div class="mb-cols">
+            <?php if (!$collections): ?><em style="color:#5a7888;font-size:11px">No collections on the platform.</em><?php endif; ?>
+            <?php foreach ($collections as $c): $on = in_array((int)$c['id'], $rowBossLinks, true); ?>
+              <label>
+                <input type="checkbox" name="boss_collections[]" value="<?php echo (int)$c['id']; ?>" <?php echo $on ? 'checked' : ''; ?>>
+                <span><?php echo htmlspecialchars($c['name']); ?>
+                  <?php if (!empty($c['chain'])): ?><span class="pol">&middot; <?php echo htmlspecialchars($c['chain']); ?></span><?php endif; ?>
+                  <?php if (!empty($c['project'])): ?><span class="pol">&middot; <?php echo htmlspecialchars($c['project']); ?></span><?php endif; ?>
+                </span>
+              </label>
+            <?php endforeach; ?>
+          </div>
+          <p class="hint">The collection above is always accepted; these are extra. Tick the same
+             project's collections on other chains so a holder there can fight this boss, against
+             <b>one shared health pool</b> instead of a duplicate boss per chain.</p>
         </div>
       </div>
     </div>
