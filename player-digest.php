@@ -323,12 +323,29 @@ if (!isset($_SESSION['userData']['user_id'])) return;
   ];
 
   function shareText(d) {
-    /* Their day, which no one else can post -- and the reason every one of
-       these is a different piece of text. */
-    var best = d.best ? (d.best.n + ' ' + String(d.best.label).toLowerCase()) : '';
-    var card = d.total + ' thing' + (d.total === 1 ? '' : 's') + ' on Skulliance yesterday'
-             + (best ? ', including ' + best : '') + '.';
-    if (d.streak > 1) card += ' ' + d.streak + ' days running.';
+    /*
+     * Their day, which no one else can post -- and the reason every one of
+     * these is a different piece of text.
+     *
+     * THE LABEL IS A CHANNEL NAME, NOT A COUNTABLE NOUN. This read
+     * "including 4 skull swap", "including 1 raids" and "including 5 dhc
+     * fighters": the labels are Missions, Raids, Monstrocity, Skull Swap,
+     * DHC Fighters, Crypt Crawl, so putting a bare number in front of one
+     * is grammatical for about a third of them and broken for the rest.
+     * "4 of them in Skull Swap" works for every label in the map, and the
+     * capitals stay -- toLowerCase() was turning DHC Fighters into "dhc
+     * fighters" in a post that is meant to be advertising it.
+     */
+    var things = d.total + ' thing' + (d.total === 1 ? '' : 's') + ' on Skulliance yesterday';
+    var card;
+    if (!d.best)                  card = things + '.';
+    else if (d.total === 1)       card = things + ', in ' + d.best.label + '.';
+    else if (d.best.n >= d.total) card = things + ', all of them in ' + d.best.label + '.';
+    else card = things + ', ' + d.best.n + ' of them in ' + d.best.label + '.';
+
+    /* A separate clause, because the trim below DROPS it whole rather than
+       cutting it in half. "148 days running." became "148\u2026". */
+    var streak = d.streak > 1 ? ' ' + d.streak + ' days running.' : '';
 
     /* Rotated on the sharer and the date, so one person's posts differ over
        time and two people posting on the same day usually differ too. */
@@ -341,12 +358,21 @@ if (!isset($_SESSION['userData']['user_id'])) return;
        where the handle and the credit live. The ask is the functional half,
        so the report card is what gives way if something has to. */
     var limit = 280 - 24 - tail.length;
-    var body  = card + '\n\n' + ask;
-    if (body.length > limit) {
-      var room = limit - (ask.length + 2);
-      card = room > 20 ? card.slice(0, room - 1).replace(/\s+\S*$/, '') + '\u2026' : '';
-      body = (card ? card + '\n\n' : '') + ask;
+
+    /*
+     * TRIM BY DROPPING A WHOLE CLAUSE, never by cutting one. The ask is the
+     * functional half, so everything else gives way first, in order of how
+     * little it costs to lose: the streak, then the feature breakdown, then
+     * the report card entirely. Each fallback is still a sentence.
+     */
+    var tries = [card + streak, card, things + '.', ''];
+    var body = '';
+    for (var t = 0; t < tries.length; t++) {
+      body = (tries[t] ? tries[t] + '\n\n' : '') + ask;
+      if (body.length <= limit) break;
     }
+    /* Only reachable if the ask alone overruns, which no entry in ASKS
+       does -- a cut word beats a post that X silently rejects. */
     if (body.length > limit) body = body.slice(0, limit - 1).replace(/\s+\S*$/, '') + '\u2026';
     return body + tail;
   }

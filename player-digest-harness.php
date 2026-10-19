@@ -212,6 +212,82 @@ echo "\nthe post keeps its invitation and its credit\n";
 		ok(strpos($posts[1], 'days running') === false,
 		   'a streak of 1 is announced as a streak: ' . $posts[1]);
 	}
+	/*
+	 * EVERY REAL CHANNEL LABEL, read out of activity_channel_label() rather
+	 * than typed here, so a channel added later is covered the day it
+	 * appears.
+	 *
+	 * THE BUG THIS EXISTS FOR: the card read "including N " + label
+	 * .toLowerCase(), and best.label is a CHANNEL NAME. That is grammatical
+	 * for Missions and Raids and nonsense for most of the map -- "including
+	 * 4 skull swap", "including 1 raids", "including 5 dhc fighters" were
+	 * all real output, in a post whose job is advertising those features by
+	 * name. So: a number is never left sitting directly in front of a
+	 * label, and a label keeps the capitals it was given.
+	 */
+	preg_match('/function activity_channel_label.*?\);/s',
+	           file_get_contents(__DIR__ . '/activity-lib.php'), $mm);
+	preg_match_all("/=>\s*'([^']+)'/", $mm ? $mm[0] : '', $lm);
+	$labels = $lm ? $lm[1] : array();
+	ok(count($labels) > 15, 'the channel label map could not be read; only ' . count($labels) . ' found');
+
+	$cases = array();
+	foreach ($labels as $L) {
+		/* Worst case for the budget: the longest ask, a four-figure day and
+		   a three-figure streak, which is where the trim has to fire. */
+		$cases[] = array('total' => 14,   'n' => 6,   'streak' => 9,   'label' => $L);
+		$cases[] = array('total' => 1,    'n' => 1,   'streak' => 0,   'label' => $L);
+		$cases[] = array('total' => 6,    'n' => 6,   'streak' => 0,   'label' => $L);
+		$cases[] = array('total' => 1480, 'n' => 998, 'streak' => 365, 'label' => $L);
+	}
+	$tmp = sys_get_temp_dir() . '/pdg-labels-' . getmypid() . '.js';
+	$js  = $src . "\nvar C = " . json_encode($cases) . ", out = [];\n"
+	     /* Every ask, not just the one this seed happens to pick -- the
+	        budget has to hold for the longest of them. */
+	     . "for (var i = 0; i < C.length; i++) for (var k = 0; k < ASKS.length; k++) {\n"
+	     . "  var saved = ASKS.slice(); ASKS.length = 0; ASKS.push(saved[k]);\n"
+	     . "  out.push({ label: C[i].label, n: C[i].n,\n"
+	     . "             t: shareText({ total: C[i].total, streak: C[i].streak,\n"
+	     . "               best: { n: C[i].n, label: C[i].label }, ref: 'q7x', day: '2026-10-17' }) });\n"
+	     . "  ASKS.length = 0; for (var z = 0; z < saved.length; z++) ASKS.push(saved[z]);\n"
+	     . "}\nconsole.log(JSON.stringify(out));\n";
+	file_put_contents($tmp, $js);
+	$rows = json_decode(trim((string) @shell_exec('node ' . escapeshellarg($tmp) . ' 2>&1')), true);
+	@unlink($tmp);
+	ok(is_array($rows) && count($rows) === count($cases) * 4,
+	   'the label sweep did not run: got ' . (is_array($rows) ? count($rows) : 'nothing'));
+	if (is_array($rows) && $rows) {
+		$long = $bare = $flat = $cut = 0; $worst = ''; $egBare = $egFlat = $egCut = '';
+		foreach ($rows as $r) {
+			$head = explode("\n\n", $r['t']);
+			$head = $head[0];
+			if (mb_strlen($r['t']) + 24 > 280) { $long++; $worst = $r['t']; }
+			/* A number directly in front of the label, in any casing. */
+			if (stripos($head, $r['n'] . ' ' . $r['label']) !== false) {
+				$bare++; $egBare = $head;
+			}
+			/* And the label as given, not flattened. */
+			if (strpos($head, $r['label']) === false
+			    && stripos($head, $r['label']) !== false) { $flat++; $egFlat = $head; }
+			/*
+			 * AND IT MUST STILL BE A SENTENCE. The budget check above
+			 * passes a post cut off mid-clause -- "148 days running."
+			 * trimmed to "148\u2026" was under 280 and read as a
+			 * typo. The trim drops whole clauses, so every card ends
+			 * in a full stop or is not there at all.
+			 */
+			if (strpos($r['t'], "\xe2\x80\xa6") !== false
+			    || ($head !== '' && substr($head, -1) !== '.')) { $cut++; $egCut = $head; }
+		}
+		ok($long === 0, $long . ' of ' . count($rows) . ' posts overrun 280: ' . mb_strlen($worst)
+		   . ' chars plus a url, e.g. ' . substr($worst, 0, 70));
+		ok($bare === 0, $bare . ' posts put a bare count in front of a channel name, e.g. "'
+		   . $egBare . '"');
+		ok($flat === 0, $flat . ' posts flatten a channel name\'s capitals, e.g. "' . $egFlat . '"');
+		ok($cut === 0, $cut . ' posts are cut off mid-sentence instead of dropping a clause, e.g. "'
+		   . $egCut . '"');
+	}
+
 	/* The ask rotates, or six sharers on one day post six identical lines. */
 	$asks = is_array($res) && isset($res['asks']) ? $res['asks'] : array();
 	ok(count(array_unique($asks)) > 1,
