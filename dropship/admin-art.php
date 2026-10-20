@@ -75,7 +75,30 @@ $theme  = $pid ? dropshipThemeConfig($conn, $pid) : null;
  * there is nothing to manage, and saying so beats guessing a path.
  */
 $slug = $theme ? $theme['slug'] : '';
-$ext  = $theme && !empty($theme['extension']) ? strtolower($theme['extension']) : 'gif';
+$theme_ext = $theme && !empty($theme['extension']) ? strtolower($theme['extension']) : 'gif';
+/*
+ * WHICH SET OF ART THIS PAGE IS MANAGING.
+ *
+ * A theme can ship two: the one its extension names, and a gif set the
+ * player can switch on when it exists. Both are real art that somebody
+ * has to upload, and this page could only ever see the first -- so the
+ * second had to be FTPed by hand, which is the gap the whole panel exists
+ * to close.
+ *
+ * NOT THE SAME SWITCH AS THE PLAYER'S. Theirs chooses what the game
+ * renders and is gated on the files existing; this one chooses what the
+ * ADMIN is looking at, and has to work when the set is EMPTY -- otherwise
+ * there is no way to create it in the first place.
+ *
+ * Validated against the two real answers, never taken off the query
+ * string: $ext reaches the filesystem through the manifest.
+ */
+$ext = $theme_ext;
+if (isset($_GET['format']) && $_GET['format'] === 'gif') $ext = 'gif';
+if (isset($_POST['format']) && $_POST['format'] === 'gif') $ext = 'gif';
+/* A gif theme has nothing to switch to; the two sets would be one. */
+$can_switch = ($theme_ext !== 'gif');
+if (!$can_switch) $ext = $theme_ext;
 $root = $slug === '' ? null : dropshipArtRoot($slug);
 $base = $root === null ? null : rtrim(__DIR__, '/') . '/' . $root;
 
@@ -273,6 +296,17 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 /* DROP TARGET. The whole card lights up, not just the file input, because
    the card is what somebody aims at -- and the outline is drawn inside the
    border so the grid does not shift by a pixel as it appears. */
+/* WHICH SET OF ART IS BEING MANAGED. Two sets exist for a still theme --
+   its own, and the gif set the player's Animation switch turns on -- and
+   this page could only ever see the first. */
+.dsart .formats{margin:0 0 12px;display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.dsart .fmt{display:inline-flex;align-items:center;gap:6px;text-decoration:none;
+  border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:5px 10px;
+  font-size:13px;color:#7a9eb0;background:rgba(0,0,0,.25)}
+.dsart .fmt.on{border-color:#00c8a0;color:#07111d;background:#00c8a0;font-weight:bold}
+.dsart .fmt .n{font-size:11px;opacity:.85;font-variant-numeric:tabular-nums}
+.dsart .fmt.on .tag{color:#07111d;border-color:rgba(7,17,29,.4)}
+.dsart .formats .why{font-size:11.5px;color:#7a9eb0;flex:1 1 260px;min-width:0;text-align:left}
 .dsart .slot.over{border-color:#00c8a0;background:rgba(0,200,160,.12);
   outline:2px dashed rgba(0,200,160,.55);outline-offset:-4px}
 .dsart .slot.over *{pointer-events:none}
@@ -308,6 +342,34 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	<b><?php echo $h($theme['slug']); ?></b>
 	<?php if ($missing): ?>&middot; <span style="color:#e8a0b0"><?php echo $missing; ?> missing</span><?php endif; ?>
 	&middot; media extension <code>.<?php echo $h($ext); ?></code></p>
+
+	<?php if ($can_switch):
+		/* How much of the OTHER set is there, so the switch says what it
+		   leads to rather than making somebody click to find out. */
+		$other = ($ext === 'gif') ? $theme_ext : 'gif';
+		$o_man = dropshipArtManifest($other);
+		$o_have = 0;
+		foreach ($o_man as $r) if (is_file($base . $r)) $o_have++;
+	?>
+	<p class="formats">
+		<?php foreach (array($theme_ext, 'gif') as $f):
+			$on = ($f === $ext);
+			$n = ($f === $ext) ? count($manifest) - $missing : $o_have;
+			$t = ($f === $ext) ? count($manifest) : count($o_man); ?>
+			<a class="fmt<?php echo $on ? ' on' : ''; ?>"
+			   href="admin-art.php?project_id=<?php echo $pid; ?>&amp;format=<?php echo $h($f); ?>">
+				.<?php echo $h($f); ?>
+				<?php if ($f === $theme_ext): ?><span class="tag">default</span><?php endif; ?>
+				<span class="n"><?php echo $n; ?>/<?php echo $t; ?></span>
+			</a>
+		<?php endforeach; ?>
+		<span class="why">Two sets of art, both managed here. The
+		<b>.<?php echo $h($theme_ext); ?></b> set is what this theme renders;
+		the <b>.gif</b> set is what the Animation switch turns on for players,
+		and it only appears for them once the first and last rounds are both
+		there.</span>
+	</p>
+	<?php endif; ?>
 
 	<p class="note"><b>Drag an image onto any slot to replace it</b> &mdash; or pick
 	a file, which uploads straight away. Nothing reloads, so you keep your place.<br>
@@ -406,8 +468,9 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		<?php else: ?>
 			<span class="dims"><?php echo $here ? $dims
 				: ($is_icon ? 'the page will ask for this' : 'the run will ask for this'); ?></span>
-			<form method="post" enctype="multipart/form-data" action="admin-art.php?project_id=<?php echo $pid; ?>">
+			<form method="post" enctype="multipart/form-data" action="admin-art.php?project_id=<?php echo $pid; ?>&amp;format=<?php echo $h($ext); ?>">
 				<input type="hidden" name="project_id" value="<?php echo $pid; ?>">
+				<input type="hidden" name="format" value="<?php echo $h($ext); ?>">
 				<input type="hidden" name="slot" value="<?php echo $h($rel); ?>">
 				<input type="file" name="art" accept="<?php echo $is_icon ? 'image/png' : 'image/*'; ?>" required>
 				<?php if ($is_bgs): ?><span class="dims">scaled to fit <?php
@@ -424,8 +487,9 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 			 * shared folder with orphans.
 			 */
 			if ($is_icon && !$here && $slot['safe'] && $icon_files): ?>
-			<form method="post" action="admin-art.php?project_id=<?php echo $pid; ?>" class="ren">
+			<form method="post" action="admin-art.php?project_id=<?php echo $pid; ?>&amp;format=<?php echo $h($ext); ?>" class="ren">
 				<input type="hidden" name="project_id" value="<?php echo $pid; ?>">
+				<input type="hidden" name="format" value="<?php echo $h($ext); ?>">
 				<input type="hidden" name="rename_to" value="<?php echo $h($slot['name']); ?>">
 				<label>or rename one already on the server</label>
 				<select name="rename_from">

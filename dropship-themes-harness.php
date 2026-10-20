@@ -1218,16 +1218,35 @@ echo "\nanimation can be switched on for a still theme that has gifs\n";
  * calling itself a dimension, and it dragged two blanket str_replace
  * passes over stored replay markup with it -- but it took that with it.
  */
+/*
+ * THE PROBES COME FROM THE MANIFEST, NOT FROM A GUESS. The first version
+ * of this hardcoded images/drop/1.gif -- a path that has never existed,
+ * because that folder holds drop.gif and team.gif rather than numbered
+ * frames -- so the check was false for every theme and the Animation
+ * switch never appeared at all. The harness guessed the same way, so it
+ * agreed with the bug.
+ */
+$probes = dropshipThemeGifProbes();
+ok(count($probes) === 2, 'the gif check no longer probes two files: ' . count($probes));
+require_once __DIR__ . '/dropship/dropship-art.php';
+$all_gif = array_values(array_filter(dropshipArtManifest('gif'),
+	function ($r) { return substr($r, -4) === '.gif'; }));
+foreach ($probes as $probe) {
+	ok(in_array($probe, $all_gif, true),
+	   "the gif probe '$probe' is not in the manifest, so it can never be found");
+}
+ok($probes[0] === $all_gif[0] && $probes[1] === $all_gif[count($all_gif) - 1],
+   'the probes are not the first and last gif, so a half-uploaded set reads as finished');
+
 $bgdir = __DIR__ . '/dropship/harness-anim-test';
-@mkdir($bgdir . '/images/drop', 0777, true);
-@mkdir($bgdir . '/images/live/beach', 0777, true);
-ok(is_dir($bgdir . '/images/live/beach'), 'could not build a throwaway theme to probe');
+foreach ($probes as $probe) @mkdir($bgdir . '/' . dirname($probe), 0777, true);
+ok(is_dir($bgdir . '/' . dirname($probes[0])), 'could not build a throwaway theme to probe');
 ok(!dropshipThemeHasGifArt('harness-anim-test'),
    'a theme with no gifs on disk is reported as animated');
-file_put_contents($bgdir . '/images/drop/1.gif', 'x');
+file_put_contents($bgdir . '/' . $probes[0], 'x');
 ok(!dropshipThemeHasGifArt('harness-anim-test'),
    'ONE stray gif makes a still theme advertise itself as animated');
-file_put_contents($bgdir . '/images/live/beach/1.gif', 'x');
+file_put_contents($bgdir . '/' . $probes[1], 'x');
 ok(dropshipThemeHasGifArt('harness-anim-test'), 'a theme with gifs on disk is not found');
 /* The preference is only honoured when the files are there, so a stale
    session flag can never make a theme ask for art it does not have. */
@@ -1280,8 +1299,16 @@ ok(dropshipMediaExtension() === 'gif', 'an already-animated theme is changed by 
 unset($_SESSION['userData']['animation'], $GLOBALS['slug']);
 $GLOBALS['__ext'] = 'gif';
 
-foreach (array($bgdir . '/images/drop/1.gif', $bgdir . '/images/live/beach/1.gif') as $f) @unlink($f);
-foreach (array('/images/live/beach', '/images/live', '/images/drop', '/images', '') as $d) @rmdir($bgdir . $d);
+foreach ($probes as $probe) @unlink($bgdir . '/' . $probe);
+/* Deepest first, or the parents are never empty. */
+$dirs = array();
+foreach ($probes as $probe) {
+	$d = dirname($probe);
+	while ($d !== '.' && $d !== '') { $dirs[$d] = strlen($d); $d = dirname($d); }
+}
+arsort($dirs);
+foreach (array_keys($dirs) as $d) @rmdir($bgdir . '/' . $d);
+@rmdir($bgdir);
 ok(!is_dir($bgdir), 'the harness left its throwaway theme behind');
 /* The endpoint must not store anything but the two values it means --
    unlike toggle-audio.php next door, which writes $_GET straight in. */

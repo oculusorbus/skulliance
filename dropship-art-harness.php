@@ -550,6 +550,52 @@ ok(strpos($adm4, "\$aico = strpos(\$rel, 'icons/') === 0;") !== false,
 ok(strpos($adm4, "(\$aico ? '/staking/dropship/' : \$aweb)") !== false,
    'the in-place reply builds one url for both icons and theme art');
 
+echo "\nboth sets of a theme's art can be managed here\n";
+/*
+ * A still theme ships TWO sets: the one its extension names, and the gif
+ * set the player's Animation switch turns on. This page could only ever
+ * see the first, so the second had to be FTPed by hand -- which is the
+ * gap the whole panel exists to close.
+ */
+$adm7 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-art.php'));
+ok(strpos($adm7, "\$theme_ext = \$theme && !empty(\$theme['extension'])") !== false,
+   'the page no longer remembers which format is the theme\'s own');
+/* NEVER taken off the query string as-is: $ext builds the manifest, which
+   becomes filesystem paths. Only the two real answers. */
+ok(strpos($adm7, "if (isset(\$_GET['format']) && \$_GET['format'] === 'gif') \$ext = 'gif';") !== false,
+   'the format is read from the query string without being checked');
+ok(strpos($adm7, '$ext = $_GET') === false && strpos($adm7, '$ext = $_POST') === false,
+   'the format is assigned straight from the request');
+/* A gif theme has nothing to switch to. */
+ok(strpos($adm7, "\$can_switch = (\$theme_ext !== 'gif');") !== false,
+   'the switch is offered on a gif theme, where both sets would be one');
+ok(strpos($adm7, 'if (!$can_switch) $ext = $theme_ext;') !== false,
+   'a gif theme can still be forced onto another set by hand');
+/*
+ * IT HAS TO WORK WHEN THE SET IS EMPTY, unlike the player's switch, which
+ * is gated on the files existing. Otherwise there is no way to create the
+ * second set in the first place -- and the count is shown on the tab so
+ * the switch says what it leads to rather than making somebody click.
+ */
+ok(strpos($adm7, 'dropshipThemeHasGifArt') === false,
+   'the admin switch is gated on the gifs existing, so an empty set cannot be built');
+ok(strpos($adm7, '$o_man = dropshipArtManifest($other);') !== false,
+   'the other set is not counted, so the switch does not say what it leads to');
+/* The chosen format must survive every round trip, or an upload lands in
+   the set you were not looking at. */
+ok(substr_count($adm7, 'name="format"') === 2,
+   'the upload and rename forms do not carry the format, so uploads land in the wrong set');
+ok(strpos($adm7, 'format=<?php echo $h($ext); ?>') !== false
+   || strpos($adm7, 'format=') !== false,
+   'the form actions drop the format');
+ok(strpos($adm7, "if (isset(\$_POST['format']) && \$_POST['format'] === 'gif') \$ext = 'gif';") !== false,
+   'a posted format is ignored, so an in-place upload reverts to the default set');
+/* The manifest and the plan both have to follow the chosen format. */
+ok(strpos($adm7, 'dropshipArtPlan($conn, $pid, $ext, $slug)') !== false,
+   'the slot list ignores the chosen format');
+ok(substr_count($adm7, 'dropshipArtManifest($ext)') === 2,
+   'the upload validator and the status bar disagree about which set is being managed');
+
 echo "\na file in the wrong format is converted, not refused\n";
 /*
  * The run asks for its art by filename, extension included --

@@ -494,10 +494,38 @@ function dropshipThemeBackground($slug) {
 function dropshipThemeHasGifArt($slug) {
 	$dir = dropshipThemeRoot($slug);
 	if ($dir === null) return false;
-	foreach (array('images/drop/1.gif', 'images/live/beach/1.gif') as $probe) {
+	foreach (dropshipThemeGifProbes() as $probe) {
 		if (!is_file(rtrim(__DIR__, '/') . '/' . $dir . $probe)) return false;
 	}
 	return true;
+}
+
+/**
+ * The two files that stand for "this theme has an animated set".
+ *
+ * TAKEN FROM THE MANIFEST, NOT WRITTEN DOWN. The first version of this
+ * guessed at images/drop/1.gif -- a path that has never existed, because
+ * that folder holds drop.gif and team.gif rather than numbered frames --
+ * so the check returned false for every theme and the Animation switch
+ * never appeared at all. The manifest is the list of what the run asks
+ * for; anything else is a second copy of it that can be wrong.
+ *
+ * FIRST AND LAST of the gif entries, so a theme part-way through having
+ * its animated set uploaded does not advertise itself as finished. Only
+ * .gif entries: the manifest carries a .jpg intro frame in every format.
+ */
+function dropshipThemeGifProbes() {
+	static $probes = null;
+	if ($probes !== null) return $probes;
+	$probes = array();
+	require_once __DIR__ . '/dropship-art.php';
+	$gifs = array();
+	foreach (dropshipArtManifest('gif') as $rel) {
+		if (substr($rel, -4) === '.gif') $gifs[] = $rel;
+	}
+	if (!$gifs) return $probes;
+	$probes = array_values(array_unique(array($gifs[0], $gifs[count($gifs) - 1])));
+	return $probes;
 }
 
 /**
