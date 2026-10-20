@@ -1,6 +1,6 @@
 <?php
 /**
- * WHY A THEME LOADS NO NFTs -- answered, instead of guessed.
+ * WHETHER A THEME IS ACTUALLY PLAYABLE -- answered, instead of guessed.
  *
  * Both pipelines fail SILENTLY and in several different places: no wallet
  * connected, Koios unreachable, nothing held under the project's policy,
@@ -79,6 +79,48 @@ function dropshipNftProbe($conn, $project_id, $discord_id) {
 		}
 		$sk->close();
 	}
+
+	/*
+	 * AN ACTIVE GAME, because without one the theme cannot be played at
+	 * all and nothing else on this list matters. Only automate.php creates
+	 * them, and it is weekly -- a theme switched on mid-week has none until
+	 * somebody runs `automate.php automate=1 project_id=N`.
+	 *
+	 * Asked directly rather than through checkGame(), which writes to the
+	 * session; this page is a read-only check and must not change which
+	 * game the admin is considered to be in.
+	 */
+	$g = @$conn->query("SELECT COUNT(*) AS n FROM games WHERE active = 1 AND project_id = "
+	                   . (int)$project_id);
+	$ngame = ($g && ($row = $g->fetch_assoc())) ? (int)$row['n'] : 0;
+	$add('An active game to play', $ngame,
+	     $ngame ? '' : 'Nothing to play. Run: php automate.php automate=1 project_id=' . (int)$project_id);
+
+	/*
+	 * A DISCORD CHANNEL, so results and trait drops are announced
+	 * somewhere. A missing webhook is filtered out rather than erroring,
+	 * so this fails as silence -- the game plays, and nothing is ever
+	 * posted. Never prints the URL, only whether there is one.
+	 */
+	if (function_exists('getWebhook')) {
+		$hook = (string)@getWebhook($project_id);
+		$add('A Discord channel for this project', $hook !== '' ? 1 : 0,
+		     $hook !== '' ? 'configured'
+		       : 'No webhook, so every result and trait drop for this theme is posted nowhere. '
+		       . 'It fails as silence, not as an error.');
+	} else {
+		$add('A Discord channel for this project', null, 'getWebhook() is not loaded here.');
+	}
+	/* The Skulliance-side mirror is a second, separate channel, and only
+	   projects 1 and 4 have ever had one. */
+	$mirror = array(1 => 'getSkullianceDropShipWebhook', 4 => 'getSkullianceOculusLoungeWebhook');
+	$add('...mirrored into a Skulliance channel',
+	     (isset($mirror[$project_id]) && function_exists($mirror[$project_id])) ? 1 : 0,
+	     isset($mirror[$project_id])
+	       ? (function_exists($mirror[$project_id]) ? 'yes' : 'the function for it is not defined')
+	       : 'No Skulliance channel for this theme. Its own channel still gets everything; '
+	         . 'this mirror is extra, and wiring one up means a new credential plus a branch '
+	         . 'in dropship/webhooks.php.');
 
 	/* KOIOS source, step for step as dashboard.php runs it. */
 	$addresses = function_exists('dropshipConnectedStakeAddresses')

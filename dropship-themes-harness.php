@@ -977,6 +977,52 @@ ok(strpos($adm5, "=== 'skulliance'\n\t\t                                   ? 'sk
    || strpos($adm5, "? 'skulliance' : 'koios'") !== false,
    'the admin writes the posted trait source straight through without checking it');
 
+echo "\nthe theme check covers what actually stops a theme working\n";
+/*
+ * Every one of these fails as SILENCE -- no NFTs, no game, no Discord post
+ * -- and they look identical from outside: a theme that just does not
+ * work. Filthy Mermaid hit three of them in a row, each found only by
+ * reading source. The check is read-only and runs behind a GET.
+ */
+$probe_src = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-nft-probe.php'));
+/* An active game. Only the weekly cron makes one, so a theme switched on
+   mid-week has none and cannot be played at all. */
+ok(strpos($probe_src, 'FROM games WHERE active = 1 AND project_id = ') !== false,
+   'the check never asks whether there is a game to play');
+ok(strpos($probe_src, 'php automate.php automate=1 project_id=') !== false,
+   'it says there is no game without saying how to make one');
+/* ASKED DIRECTLY, not through checkGame(), which WRITES to the session --
+   a read-only check must not change which game the admin is in. */
+ok(strpos($probe_src, 'checkGame(') === false,
+   'the check calls checkGame(), which rewrites the session game id as a side effect');
+/* A Discord channel, and never the URL itself. */
+ok(strpos($probe_src, 'getWebhook($project_id)') !== false,
+   'the check never asks whether this project has a Discord channel');
+ok(strpos($probe_src, "\$hook !== '' ? 1 : 0") !== false,
+   'the webhook check does not reduce to present-or-absent');
+ok(strpos($probe_src, '$add(\'A Discord channel for this project\', $hook') === false
+   || strpos($probe_src, '$hook . ') === false,
+   'the webhook URL is printed into the page');
+/* function_exists first: getWebhook lives in a credentials file that is
+   not in the repo, so a checkout without it must not fatal the page. */
+ok(strpos($probe_src, "if (function_exists('getWebhook'))") !== false,
+   'the check calls getWebhook() unguarded, so a missing credentials file fatals the admin');
+foreach (array('getSkullianceDropShipWebhook', 'getSkullianceOculusLoungeWebhook') as $fn) {
+	ok(strpos($probe_src, $fn) !== false, "the mirror check does not know about $fn");
+}
+/* TWICE: once deciding the count, once wording the detail. A presence
+   check passed with the COUNT's guard removed, because the detail line
+   still mentioned it. */
+ok(substr_count($probe_src, 'function_exists($mirror[$project_id])') === 2,
+   'the mirror count no longer checks the function is defined, only the detail text does');
+/* Both sources, always, whichever the theme is set to. */
+ok(substr_count($probe_src, 'SKULLIANCE:') >= 3 && substr_count($probe_src, 'KOIOS:') >= 3,
+   'the check no longer reports both NFT sources');
+/* The admin must actually offer it. */
+ok(strpos($adm2, "probe=1") !== false, 'the admin has no way to run the theme check');
+ok(strpos($adm2, "isset(\$_GET['probe'])") !== false,
+   'the check is not behind a GET, so it runs on every page view');
+
 echo "\nthe weekly cycle runs for every live theme\n";
 /*
  * automate.php is the cron that ends the week's game, posts the final

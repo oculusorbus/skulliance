@@ -236,8 +236,8 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
 			<option value="koios"<?php echo $ts !== 'skulliance' ? ' selected' : ''; ?>>Koios &mdash; read the player&rsquo;s wallets</option>
 			<option value="skulliance"<?php echo $ts === 'skulliance' ? ' selected' : ''; ?>>Skulliance &mdash; use holdings already synced</option>
 		</select></div>
-	<div><label>NFT check</label>
-		<a class="btn" href="admin-themes.php?project_id=<?php echo (int)$edit_pid; ?>&amp;probe=1">Why no NFTs?</a></div>
+	<div><label>Is it working?</label>
+		<a class="btn" href="admin-themes.php?project_id=<?php echo (int)$edit_pid; ?>&amp;probe=1">Check this theme</a></div>
 	<div><label>Active</label>
 		<select name="active">
 			<option value="0"<?php echo ($theme && !$theme['active']) ? ' selected' : ''; ?>>no</option>
@@ -256,9 +256,9 @@ if ($edit_pid && isset($_GET['probe'])):
 	$probe = dropshipNftProbe($conn, $edit_pid,
 		isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '');
 ?>
-<h3>NFT check</h3>
-<p class="note">Each step as the dashboard runs it, for your own account.
-<b>The first zero is the answer.</b></p>
+<h3>Theme check</h3>
+<p class="note">Everything that has to be true before this theme can be played,
+checked for your own account. <b>Any zero is a reason it is not working.</b></p>
 <table>
 	<tr><th style="width:320px">Step</th><th style="width:70px">Found</th><th>&nbsp;</th></tr>
 	<?php foreach ($probe as $row): ?>
