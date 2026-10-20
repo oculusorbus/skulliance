@@ -1056,6 +1056,14 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
 	                          'limit_note' => 'only when you take the lead'),
+	// Ohh Meed's too, so the same @ohh_meed credit as Drop Ship. The KEY is
+	// the Drop Ship theme slug with the hyphens taken out, because that is
+	// what dropshipDropAward() derives -- 'filthy-mermaid' -> 'filthymermaid'.
+	// Get that wrong and the drop silently posts as Drop Ship instead.
+	'filthymermaid'  => array('label' => 'Filthy Mermaid', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=3',
+	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
+	                          'base' => 'placement_1',
+	                          'limit_note' => 'only when you take the lead'),
 
 	// NOT A GAME, and 'unlisted' is what that now costs it. It stays in
 	// DHCF_GAMES because everything functional reads this array -- dhcf_award(),
@@ -1170,6 +1178,7 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'arena'         => 0,      // the win itself qualifies; the bands grade the gap
 	'dropship'      => 0,      // taking the lead is the gate; a score floor would only shut out the first player in a new game
 	'oculuslounge'  => 0,      // same
+	'filthymermaid' => 0,      // same
 );
 
 /**

@@ -977,6 +977,44 @@ ok(strpos($adm5, "=== 'skulliance'\n\t\t                                   ? 'sk
    || strpos($adm5, "? 'skulliance' : 'koios'") !== false,
    'the admin writes the posted trait source straight through without checking it');
 
+echo "\nthe weekly cycle runs for every live theme\n";
+/*
+ * automate.php is the cron that ends the week's game, posts the final
+ * board, and opens the next one with its prize name. It listed projects 1
+ * and 4 only, so a newly activated theme had no weekly cycle at all --
+ * its game would simply never end.
+ */
+$auto = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/automate.php'));
+foreach (array(1, 3, 4) as $pid) {
+	ok(strpos($auto, "automate(\$conn, $pid);") !== false,
+	   "project $pid has no weekly cycle, so its game never ends and no new one opens");
+}
+/* Drop Ship (1) is deliberately absent from the prefix branch -- it is the
+   default, because its art is flat rather than nested. */
+ok(strpos($auto, '$prefix = "filthy-mermaid";') !== false,
+   'Filthy Mermaid has no art prefix, so its announcement image 404s');
+/*
+ * DEFAULTED BEFORE THE BRANCH. Both were only assigned inside the if/else,
+ * so a project nobody had listed created a NAMELESS game and built its
+ * image path from an empty prefix.
+ */
+ok(strpos($auto, "\t\$prefix = \"drop-ship\";\n\t\$prizes = \"1K, 500, 250 DREAD\";\n\tif(\$project_id == 3)") !== false,
+   'the prefix and prize name are not defaulted before the branch');
+/*
+ * games.prizes IS A COUNT, not a prize list -- checkLeaderboard() cuts the
+ * board at `$counter > $row["prizes"]` and dashboard.php's own field is
+ * labelled "Number of Prizes". So createGame($conn, $prizes, 3) passes the
+ * NAME then the count, which reads wrong and is right. Pinned because it
+ * looks exactly like an argument-order bug and I called it one once.
+ */
+ok(strpos($auto, 'createGame($conn, $prizes, 3);') !== false,
+   'the weekly game is no longer created with three prize places');
+$dbsrc6 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
+ok(strpos($dbsrc6, 'function createGame($conn, $name, $prizes)') !== false,
+   'createGame\'s signature changed; check automate.php still passes name then count');
+ok(strpos($dbsrc6, 'if($counter > $row["prizes"])') !== false,
+   'games.prizes is no longer the number of winning places, so the call above is now wrong');
+
 echo "\nthe trait drop credits the theme, not a project id\n";
 /*
  * $source is a key into the game registry in dhcfighters-config.php, which
@@ -998,8 +1036,19 @@ foreach (array('oculus-lounge' => 'oculuslounge', 'drop-ship' => 'dropship') as 
 	   "'$slug' does not resolve to a registered game, so the derivation is wrong");
 	ok(str_replace('-', '', $slug) === $key, "'$slug' does not de-hyphenate to '$key'");
 }
-ok(dhcf_game('filthymermaid') === null,
-   'filthy-mermaid is registered now, so the unregistered fallback below is untested');
+/* Filthy Mermaid IS registered now, and its key is the slug with the
+   hyphens out -- get that wrong and its drops silently post as Drop Ship. */
+ok(dhcf_game('filthymermaid') !== null,
+   'filthy-mermaid is not registered, so its drops credit Drop Ship instead');
+ok(dhcf_earned_tag('filthymermaid') === '@ohh_meed',
+   'Filthy Mermaid drops do not tag @ohh_meed, who made it');
+ok(dhcf_earned_from('filthymermaid') === 'Filthy Mermaid',
+   'Filthy Mermaid drops do not read as being from Filthy Mermaid');
+ok(isset($GLOBALS['DHCF_FLOORS']['filthymermaid']) && $GLOBALS['DHCF_FLOORS']['filthymermaid'] === 0,
+   'Filthy Mermaid has no floor of 0, so the first player in a new game is shut out');
+/* The unregistered fallback still needs SOMETHING unregistered to test. */
+ok(dhcf_game('notarealtheme') === null,
+   'every key resolves, so the unregistered fallback below is untested');
 /* An unregistered theme must fall back rather than post a drop crediting a
    key with no label, no tag and no link. */
 ok(strpos($td, "if (\$source !== 'dropship'") !== false

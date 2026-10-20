@@ -8,13 +8,26 @@ if(isset($argv)){
 // Validate cron job execution
 if(isset($_GET['automate'])){	
 	automate($conn, 1);
+	automate($conn, 3);
 	automate($conn, 4);
 }
 
 function automate($conn, $project_id){
-	if($project_id == 1){
-		$prefix = "drop-ship";
-		$prizes = "1K, 500, 250 DREAD";
+	/*
+	 * $prizes IS THE GAME'S NAME, not a payout. games.prizes is the NUMBER
+	 * of winning places -- checkLeaderboard() cuts the board at
+	 * `$counter > $row["prizes"]` and dashboard.php's own form calls the
+	 * field "Number of Prizes" -- so createGame($conn, $prizes, 3) below
+	 * reads oddly but is right: this string is the name, 3 is the count.
+	 *
+	 * DEFAULTED, because an unlisted project used to leave both undefined:
+	 * the new game would be created nameless and the announcement would
+	 * point at an image path built from an empty prefix.
+	 */
+	$prefix = "drop-ship";
+	$prizes = "1K, 500, 250 DREAD";
+	if($project_id == 3){
+		$prefix = "filthy-mermaid";
 	}else if($project_id == 4){
 		$prefix = "oculus-lounge";
 		$prizes = "1K, 500, 250 MOON";

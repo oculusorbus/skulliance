@@ -804,6 +804,51 @@ function dropshipLocalNftImages($asset_names, $policy = '') {
 	return $images;
 }
 
+/**
+ * Armor and gear for a collection we have no trait mapping for.
+ *
+ * WHY THIS EXISTS. discosolarisArmorTier()/discosolarisGear() read Disco
+ * Solaris trait NAMES -- Outerwear, Headphones, Glasses. Run them over any
+ * other collection and every single trait lookup misses, so every soldier
+ * comes out Base/None: Filthy Mermaid synced 55 soldiers that were all
+ * "Boxer Briefs / None", which reads on screen as the stat filter being
+ * broken when it is the data that is uniform.
+ *
+ * DERIVED FROM THE ASSET NAME, NOT RANDOM. The Koios path uses rand(), and
+ * it gets away with it because it only ever runs for a soldier that does
+ * not exist yet. This path UPDATEs armor and gear on every sync, so rand()
+ * here would reshuffle everybody's squad each time the page triggered one.
+ * crc32 of the asset name gives the same spread and never moves.
+ *
+ * A PLACEHOLDER, AND IT SHOULD BE REPLACED. It distributes evenly rather
+ * than meaning anything: a theme that wants its stats to follow its own
+ * traits needs a mapping of its own, the way Disco Solaris has one.
+ */
+function dropshipStatsFromAssetName($asset_name) {
+	$armor = array("Base", "Light", "Medium", "Heavy");
+	$gear  = array("None", "Melee", "Demolition", "Medkit");
+	$h = crc32((string)$asset_name);
+	return array(
+		'armor' => $armor[$h % 4],
+		/* A SECOND, SALTED HASH. Keying gear off the same number would tie
+		   it to armor forever -- every Heavy would carry a Medkit. */
+		'gear'  => $gear[crc32('gear:' . $asset_name) % 4],
+	);
+}
+
+/**
+ * Does this collection's metadata carry the traits the Disco Solaris
+ * mapping reads? Asked per NFT, so a collection with mixed data still
+ * gets the real mapping wherever the traits are actually there.
+ */
+function dropshipHasDiscosolarisTraits($attrs) {
+	foreach (array('Outerwear', 'Special', 'Hat', 'Headphones', 'Glasses',
+	               'Necklace', 'Earrings') as $k) {
+		if (isset($attrs[$k])) return true;
+	}
+	return false;
+}
+
 // Maps a Disco Solaris on-chain "Outerwear" trait value to a Drop Ship armor
 // tier, by garment formality/coverage -- full research, reasoning, and the
 // real-collection population counts behind these buckets are in
@@ -938,8 +983,17 @@ function dropshipSyncFromSkulliance($conn, $discord_id, $policy = '') {
 	foreach ($nft_rows as $asset_name => $row) {
 		$asset_names[] = $asset_name;
 		$attrs = isset($attributes_by_asset[$asset_name]) ? $attributes_by_asset[$asset_name] : array();
-		$armor_final = discosolarisArmorTier(isset($attrs['Outerwear']) ? $attrs['Outerwear'] : null);
-		$gear_final = discosolarisGear($attrs);
+		if (dropshipHasDiscosolarisTraits($attrs)) {
+			$armor_final = discosolarisArmorTier(isset($attrs['Outerwear']) ? $attrs['Outerwear'] : null);
+			$gear_final = discosolarisGear($attrs);
+		} else {
+			/* No traits this mapping can read -- otherwise EVERY soldier in
+			   the collection comes out Base/None and the stat filter looks
+			   broken because there is only ever one answer. */
+			$fallback = dropshipStatsFromAssetName($asset_name);
+			$armor_final = $fallback['armor'];
+			$gear_final = $fallback['gear'];
+		}
 		$level = $armor_weight[$armor_final] + $gear_weight[$gear_final];
 
 		if (!checkSoldier($conn, $asset_name)) {

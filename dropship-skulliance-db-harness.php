@@ -128,6 +128,54 @@ ok(strpos($files['dropship-traitdrop.php'], 'dropshipSkullianceDb()') !== false,
 ok(strpos($files['db.php'], "require_once __DIR__ . '/dropship-skulliance-db.php'") !== false,
    'db.php does not load the helper it calls');
 
+echo "\na collection with no trait mapping still gets a spread\n";
+/*
+ * discosolarisArmorTier()/discosolarisGear() read Disco Solaris trait NAMES.
+ * Over any other collection every lookup misses and every soldier comes out
+ * Base/None -- Filthy Mermaid synced 55 soldiers that were all "Boxer
+ * Briefs / None", which reads on screen as the stat filter being broken
+ * when the data is simply uniform.
+ */
+eval(preg_replace('/^<\?php/', '', (function () {
+	$src = file_get_contents(__DIR__ . '/dropship/db.php');
+	preg_match('/function dropshipStatsFromAssetName.*?\n}/s', $src, $a);
+	preg_match('/function dropshipHasDiscosolarisTraits.*?\n}/s', $src, $b);
+	return $a[0] . "\n" . $b[0];
+})()));
+$armor = array(); $gear = array();
+for ($i = 1; $i <= 400; $i++) {
+	$r = dropshipStatsFromAssetName('SHORTY' . str_pad($i, 4, '0', STR_PAD_LEFT));
+	$armor[$r['armor']] = (isset($armor[$r['armor']]) ? $armor[$r['armor']] : 0) + 1;
+	$gear[$r['gear']]   = (isset($gear[$r['gear']]) ? $gear[$r['gear']] : 0) + 1;
+}
+ok(count($armor) === 4, 'the fallback produces ' . count($armor) . ' armor tiers, not four');
+ok(count($gear) === 4, 'the fallback produces ' . count($gear) . ' gear types, not four');
+ok(min($armor) > 300 / 4, 'one armor tier is starved: ' . json_encode($armor));
+/*
+ * STABLE, NOT RANDOM. This path UPDATEs armor and gear on every sync, so
+ * rand() here would reshuffle everybody's squad each time a page triggered
+ * one. The Koios path gets away with rand() because it only runs for a
+ * soldier that does not exist yet.
+ */
+ok(dropshipStatsFromAssetName('SHORTY0001') === dropshipStatsFromAssetName('SHORTY0001'),
+   'the fallback is not stable, so every sync reshuffles the squad');
+ok(strpos($files['db.php'], 'crc32') !== false, 'the fallback is not derived from the asset name');
+/* Armor and gear must not be the same hash, or every Heavy carries a Medkit. */
+$pairs = array();
+for ($i = 1; $i <= 200; $i++) {
+	$r = dropshipStatsFromAssetName('X' . $i);
+	$pairs[$r['armor'] . '/' . $r['gear']] = true;
+}
+ok(count($pairs) > 8, 'armor and gear move together; only ' . count($pairs) . ' combinations occur');
+/* The real mapping still wins wherever the traits are actually present. */
+ok(dropshipHasDiscosolarisTraits(array('Outerwear' => 'Solar Jacket')), 'a Disco Solaris NFT is not recognised');
+ok(dropshipHasDiscosolarisTraits(array('Headphones' => 'x')), 'a gear-only Disco Solaris NFT is not recognised');
+ok(!dropshipHasDiscosolarisTraits(array('Tail' => 'Mermaid', 'Hair' => 'Green')),
+   'a collection with unrelated traits is run through the Disco Solaris mapping anyway');
+ok(!dropshipHasDiscosolarisTraits(array()), 'an NFT with no traits is run through the Disco Solaris mapping');
+ok(strpos($files['db.php'], 'if (dropshipHasDiscosolarisTraits($attrs)) {') !== false,
+   'the sync does not choose between the two mappings');
+
 echo "\nit fails quiet, because every caller is an enhancement\n";
 /*
  * Driven for real. A checkout has no credentials file, which is the same
