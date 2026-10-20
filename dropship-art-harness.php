@@ -835,5 +835,116 @@ ok(strpos($art2, "foreach (\$r['icons'] as \$term)") !== false,
 ok(strpos($art2, "'label'  => \$r['label']") !== false,
    "the icon list shows only the filename, so 'heavy-armor' appears with nothing saying it is Heavy");
 
+
+/* ------------------------------------------------------------------ */
+/*
+ * A PRESENT FILE IS NOT A THEMED ONE.
+ *
+ * Every reskin's folder was seeded by copying Drop Ship's, so the art page
+ * counted a slot as done whether it held this theme's picture or the
+ * original game's. Reported from Discord: a Dread City run posted Drop
+ * Ship's animated death. The url was right -- dread-city/images/die/1.gif
+ * -- and the file was there; it is byte-for-byte dropship/images/die/1.gif.
+ * Dread City's own art is the .jpg set beside it, and its whole .gif set
+ * is Drop Ship's.
+ */
+echo "\nart that is still Drop Ship's is counted as such\n";
+
+$cp_tag  = 'harness-copy-' . getmypid();
+$cp_rel  = 'images/' . $cp_tag . '.bin';          /* a name no theme asks for */
+$cp_slug = $cp_tag . '-theme';
+$cp_own  = __DIR__ . '/dropship/' . $cp_rel;
+$cp_dir  = __DIR__ . '/dropship/' . $cp_slug;
+$cp_them = $cp_dir . '/' . $cp_rel;
+
+/* UNIQUELY NAMED AND REMOVED AFTER. dropship/images/ is the live art
+   folder on the server; a probe file in it must be impossible to confuse
+   with art and must not survive the run. */
+$cp_ok = @mkdir(dirname($cp_own), 0777, true) || is_dir(dirname($cp_own));
+$cp_ok = $cp_ok && @mkdir(dirname($cp_them), 0777, true);
+ok($cp_ok, 'could not build the probe files, so nothing below is proving anything');
+if ($cp_ok) {
+	file_put_contents($cp_own,  str_repeat('A', 4096));
+	file_put_contents($cp_them, str_repeat('A', 4096));
+	ok(dropshipArtIsDropShipCopy($cp_them, $cp_rel) === true,
+	   "a reskin's file that IS Drop Ship's file is not reported as borrowed");
+
+	/* Same length, different bytes -- the case the cheap size test lets
+	   through and the hash has to catch. */
+	file_put_contents($cp_them, str_repeat('B', 4096));
+	ok(dropshipArtIsDropShipCopy($cp_them, $cp_rel) === false,
+	   'a different picture of the same size is reported as Drop Ship\'s');
+
+	/* Different length -- answered without hashing anything. */
+	file_put_contents($cp_them, str_repeat('A', 4097));
+	ok(dropshipArtIsDropShipCopy($cp_them, $cp_rel) === false,
+	   'a file of a different size is reported as Drop Ship\'s');
+
+	/* Drop Ship's own art is Drop Ship's art; there is nothing to report,
+	   and without this every slot on project 1 would be flagged. */
+	ok(dropshipArtIsDropShipCopy($cp_own, $cp_rel) === false,
+	   "Drop Ship's own slots are all reported as borrowed from itself");
+
+	unlink($cp_them);
+	/*
+	 * SILENT ON A MISSING FILE. The answer is false either way -- filesize()
+	 * and md5_file() both return false for a path that is not there -- so
+	 * what the is_file() guard actually buys is that nothing is PRINTED.
+	 * display_errors is on platform-wide and this runs seventy times on one
+	 * admin page, so without the guard a theme mid-upload would paper the
+	 * art page in filesize() warnings.
+	 */
+	ob_start();
+	$cp_ans = dropshipArtIsDropShipCopy($cp_them, $cp_rel);
+	$cp_noise = ob_get_clean();
+	ok($cp_ans === false, 'a missing file is reported as a copy');
+	ok($cp_noise === '',
+	   'a missing file raises a warning, which display_errors prints onto the art page');
+	unlink($cp_own);
+	@rmdir(dirname($cp_them));
+	@rmdir($cp_dir);
+}
+ok(!file_exists($cp_own), 'the probe file was left behind in the live art folder');
+
+/*
+ * THE SIZE TEST IS A COST GUARD, NOT A CORRECTNESS ONE, and an EQUIVALENT
+ * MUTANT: deleting it leaves md5_file() to give the same answers, slowly.
+ * Asserted at the source because the thing it protects is not in the
+ * return value -- Drop Ship's art runs to 8MB a file and this is asked
+ * about seventy slots on a single page load, so two pictures that merely
+ * weigh different amounts must never be hashed.
+ */
+ok(preg_match('/\$a !== \$b\) return false;\s*\n\s*return md5_file/', $art2) === 1,
+   'the size comparison no longer short-circuits the hash, so every slot is hashed in full');
+
+/* AND IT IS ACTUALLY SHOWN. A detector nothing calls answers nothing. */
+$adm = file_get_contents(__DIR__ . '/dropship/admin-art.php');
+ok(substr_count($adm, 'dropshipArtIsDropShipCopy(') >= 2,
+   'the art page does not say which slots are still Drop Ship\'s');
+ok(strpos($adm, "still Drop Ship's") !== false,
+   'the header count does not separate borrowed art from missing art');
+ok(strpos($adm, '.dsart .slot.borrowed') !== false,
+   'a borrowed slot looks exactly like a finished one');
+/* COUNTED APART FROM MISSING, because they are different jobs: one is art
+   nobody has made, the other is art nobody has replaced. */
+ok(preg_match('/\$missing\+\+;\s*continue;/', $adm) === 1,
+   'a missing file is also counted as borrowed, or the two counts overlap');
+
+/*
+ * THE DEATH IMAGE DISCORD POSTS asks for the theme's own format, and does
+ * NOT fall back to the .gif set -- for Dread City that set is Drop Ship's
+ * copies, so the fallback reproduces the bug it sits under.
+ */
+$dash = file_get_contents(__DIR__ . '/dropship/dashboard.php');
+$die_at = strpos($dash, "'images/die/'.\$ds_die");
+ok($die_at !== false, 'the death image no longer resolves through the theme');
+if ($die_at !== false) {
+	$die_block = substr($dash, $die_at, 400);
+	ok(strpos($die_block, 'dropshipMediaExtension()') !== false,
+	   "the death image does not use the theme's own extension");
+	ok(strpos($die_block, "'.gif'") === false,
+	   "the death image still falls back to the .gif set, which is Drop Ship's art");
+}
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);

@@ -125,6 +125,39 @@ function dropshipArtRoot($slug) {
 }
 
 /**
+ * Is this file in a reskin's folder just Drop Ship's own file, copied?
+ *
+ * A PRESENT FILE IS NOT THE SAME AS A THEMED ONE, and the art page could
+ * not tell the difference -- a slot showed green whether it held this
+ * theme's picture or Drop Ship's, so "68 of 70 in place" read as finished
+ * when most of it was the original game.
+ *
+ * REPORTED FROM DISCORD: a Dread City run posted Drop Ship's animated
+ * death. The url was right (dread-city/images/die/1.gif) and the file was
+ * there; it is a byte-for-byte copy of dropship/images/die/1.gif. Dread
+ * City's real art is the .jpg set beside it, and its whole .gif set is
+ * Drop Ship's.
+ *
+ * SIZE FIRST, HASH ONLY ON A TIE. Drop Ship's art runs to 8MB a file and
+ * this is asked about seventy slots on one page load; two different
+ * pictures almost never weigh exactly the same, so the hash is paid for
+ * only by the files that are actually suspect.
+ */
+function dropshipArtIsDropShipCopy($abs, $rel) {
+	$own = rtrim(__DIR__, '/') . '/' . ltrim($rel, '/');
+	/* Drop Ship's own art IS Drop Ship's art; there is nothing to report. */
+	if (realpath($abs) === realpath($own)) return false;
+	/* NOT @-SUPPRESSED BELOW. display_errors is on platform-wide, so a
+	   warning raised here prints into the art page -- which is the whole
+	   reason this guard is a guard and not a silencer. */
+	if (!is_file($abs) || !is_file($own)) return false;
+	$a = filesize($abs);
+	$b = filesize($own);
+	if ($a === false || $b === false || $a !== $b) return false;
+	return md5_file($abs) === md5_file($own);
+}
+
+/**
  * Audit one theme. Returns array(present, missing, checked, mode).
  *
  * Prefers the local disk, because on the server that is instant and exact.

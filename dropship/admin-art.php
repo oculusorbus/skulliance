@@ -260,6 +260,11 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .slot form{margin-top:auto}
 .dsart .slot .ren{margin-top:6px}
 .dsart .slot.gap{border-color:rgba(224,70,107,.45)}
+/* AMBER, NOT RED. A borrowed slot is not broken -- the game renders it and
+   nothing 404s -- it is just the wrong game's picture, which is a different
+   job from art that was never made. */
+.dsart .slot.borrowed{border-color:rgba(232,192,112,.5)}
+.dsart .slot .borrow{display:block;margin-top:4px;font-size:11px;color:#e8c070;line-height:1.35}
 .dsart .shot{width:100%;height:110px;background:#07111d;border-radius:3px;overflow:hidden;
   display:flex;align-items:center;justify-content:center;margin:0 0 6px;flex:none}
 .dsart .shot img{max-width:100%;max-height:110px;width:auto;margin:0}
@@ -335,12 +340,24 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 <?php else:
 	$manifest = dropshipArtManifest($ext);
 	$missing  = 0;
-	foreach ($manifest as $rel) if (!is_file($base . $rel)) $missing++;
+	/*
+	 * A PRESENT FILE IS NOT A THEMED ONE. Every reskin's folder was seeded
+	 * by copying Drop Ship's, so a slot read as done whether it held this
+	 * theme's picture or the original game's -- and the first anybody knew
+	 * was a Dread City death posting Drop Ship's animated gif to Discord.
+	 * Counted separately from missing, because they need different work:
+	 * one is art nobody has made, the other is art nobody has replaced.
+	 */
+	$borrowed = 0;
+	foreach ($manifest as $rel) {
+		if (!is_file($base . $rel)) { $missing++; continue; }
+		if (dropshipArtIsDropShipCopy($base . $rel, $rel)) $borrowed++;
+	}
 ?>
-	<p class="bar"><b><?php echo count($manifest) - $missing; ?></b> of
-	<b><?php echo count($manifest); ?></b> files in place for
-	<b><?php echo $h($theme['slug']); ?></b>
+	<p class="bar"><b><?php echo count($manifest) - $missing - $borrowed; ?></b> of
+	<b><?php echo count($manifest); ?></b> files are this theme's own
 	<?php if ($missing): ?>&middot; <span style="color:#e8a0b0"><?php echo $missing; ?> missing</span><?php endif; ?>
+	<?php if ($borrowed): ?>&middot; <span style="color:#e8c070"><?php echo $borrowed; ?> still Drop Ship's</span><?php endif; ?>
 	&middot; media extension <code>.<?php echo $h($ext); ?></code></p>
 
 	<?php if ($can_switch):
@@ -429,6 +446,9 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		$src  = $beside ? '/staking/dropship/' . $rel : $web . $rel;
 		$here = is_file($abs);
 		$dims = '';
+		/* Present, but whose? Only round art can be a copy -- an icon is one
+		   shared folder by design and a background is named per theme. */
+		$borrowed_slot = ($here && !$beside && dropshipArtIsDropShipCopy($abs, $rel));
 		if ($here) {
 			$i = @getimagesize($abs);
 			$dims = ($i ? $i[0] . '&times;' . $i[1] : '?') . ' &middot; '
@@ -439,7 +459,7 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		         (width:40px, for the little images in the nav and on cards), so
 		         naming the modifier 'icon' collapsed every icon slot to 55px and
 		         wrapped its text one character per line. */ ?>
-		<div class="slot <?php echo $here ? '' : 'gap'; ?><?php echo $is_icon ? ' is-icon' : ''; ?>">
+		<div class="slot <?php echo $here ? '' : 'gap'; ?><?php echo $is_icon ? ' is-icon' : ''; ?><?php echo $borrowed_slot ? ' borrowed' : ''; ?>">
 			<div class="shot">
 			<?php if ($here): ?>
 				<img src="<?php echo $h($src); ?>?v=<?php echo @filemtime($abs); ?>" alt="" loading="lazy">
@@ -462,6 +482,10 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 			<?php endforeach; endif; ?>
 		<?php endif; ?>
 			<span class="path"><?php echo $h($rel); ?></span>
+		<?php if ($borrowed_slot): ?>
+			<span class="borrow">This is Drop Ship's file, not this theme's. Players see
+			the original game's picture here.</span>
+		<?php endif; ?>
 		<?php if ($is_icon && !$slot['safe']): ?>
 			<span class="warn">That word cannot be a filename, so the page will ask
 			for something it can never find. Change the wording.</span>

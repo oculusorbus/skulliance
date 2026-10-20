@@ -976,16 +976,26 @@ if(isset($_SESSION['userData']['dropship_project_id'])){
 							   and all. */
 							$list = dropshipCapture(function () use ($conn) { checkPlayerItems($conn); });
 							$description = $_SESSION['userData']['name']." died during Round ".$_SESSION['userData']['score']."\n".evaluateText($list);
-							/* ONE ROLL, THE THEME'S OWN FORMAT. The extension was
-							   hardcoded .gif while the game itself asks for
-							   evaluateText("gif"), so a theme whose art is png would
-							   have had Discord fetch a file the run never uses. Falls
-							   back to gif on the same frame rather than re-rolling,
-							   because a theme can ship both sets. */
+							/*
+							 * THE THEME'S OWN FORMAT. This was hardcoded .gif while
+							 * the game itself asks for evaluateText("gif"), and Dread
+							 * City is a jpg theme -- so a Dread City death posted
+							 * dread-city/images/die/N.gif, which on the server is a
+							 * byte-for-byte COPY of Drop Ship's animated death. That
+							 * is the "I got a drop ship animated gif death" report:
+							 * the path was the theme's, the picture inside it was
+							 * not.
+							 *
+							 * AND NO FALLBACK TO .gif WHEN THE FILE IS MISSING. The
+							 * first version of this fell back on the same frame,
+							 * reasoning that a theme can ship both sets -- but the
+							 * set it would fall back TO is the one full of Drop
+							 * Ship's copies, so the fallback reproduces exactly the
+							 * bug it sits under. No picture beats another theme's.
+							 */
 							$ds_die = rand(1,3);
 							$ds_pid = $_SESSION['userData']['dropship_project_id'];
 							$imageurl = dropshipThemeImageUrl($conn, $ds_pid, 'images/die/'.$ds_die.'.'.dropshipMediaExtension());
-							if ($imageurl === '') $imageurl = dropshipThemeImageUrl($conn, $ds_pid, 'images/die/'.$ds_die.'.gif');
 							discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
 							$_SESSION['userData']['notification'] = "true";
 
