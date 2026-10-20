@@ -583,6 +583,39 @@ function dropshipThemeArtFile($slug, $stem, $ext) {
 }
 
 /**
+ * Does this theme have EVERY frame in a numbered range, in one format?
+ *
+ * FOR A BAND OF ART THAT CAN BE ABSENT. The bunker is the only stage with
+ * two: scenes 1-6 carry rounds 13 to 15 and 7-12 carry round 16 and
+ * beyond. The second band was asked for by the run and declared by
+ * nothing for a long time, so a theme can easily have the first six and
+ * not the rest -- Dread City renders jpg and has jpgs for 1-6 only, which
+ * is a blank frame for anybody who gets that deep.
+ *
+ * ALL OR NOTHING, because a partial band is the bug rather than a
+ * half-fix: Dread City's gif set has 7 and 8 and stops, so "has some"
+ * would still blank rounds that landed on 9 through 12. The caller falls
+ * back to the first band, which is art every theme has.
+ *
+ * CACHED PER REQUEST. This is asked once a round inside the run loop, and
+ * the answer cannot change while a page is being built.
+ */
+function dropshipThemeHasFrames($slug, $stem, $from, $to, $ext) {
+	static $seen = array();
+	$ext = strtolower((string)$ext);
+	$key = $slug . '|' . $stem . '|' . $from . '-' . $to . '|' . $ext;
+	if (isset($seen[$key])) return $seen[$key];
+
+	$root = dropshipThemeRoot($slug);
+	if ($root === null || $ext === '') return $seen[$key] = false;
+	$base = rtrim(__DIR__, '/') . '/' . $root . $stem;
+	for ($i = (int)$from; $i <= (int)$to; $i++) {
+		if (!is_file($base . $i . '.' . $ext)) return $seen[$key] = false;
+	}
+	return $seen[$key] = true;
+}
+
+/**
  * A theme's copy of one asset, as an absolute url, or '' when it has none.
  *
  * FOR DISCORD, which cannot be handed a relative path and cannot be told

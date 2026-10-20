@@ -421,7 +421,9 @@ $bunker_exo_random = 2;
 
 // Handle player survival for various scenes
 function live($dropshipMarkup, $counter) {
-	global $beach_random, $hill_random, $bunker_random, $beach_exo_random, $hill_exo_random, $bunker_exo_random, $prefix, $conn;
+	/* $slug joins the list for the bunker's second band: whether a theme
+	   has that art is a question about the theme's own folder. */
+	global $beach_random, $hill_random, $bunker_random, $beach_exo_random, $hill_exo_random, $bunker_exo_random, $prefix, $conn, $slug;
 	/* Shuffled or in order, per theme. Read once per round rather than in
 	   each of the seven branches below, so they cannot disagree. */
 	$ds_order = function_exists('dropshipThemeStageOrder')
@@ -472,7 +474,27 @@ function live($dropshipMarkup, $counter) {
 			$dropshipMarkup.="<div class='round' id='".$counter."'><h3>Round ".$counter." - ".evaluateText("Exo Suit")."</h3>";
 			$dropshipMarkup.="<img src='".$prefix."images/live/bunker/exo/".$random.".".evaluateText("gif")."?var=123'/></div>";
 		}else{
-			if($counter < 16){
+			/*
+			 * THE SECOND BAND ONLY IF THE THEME HAS ALL OF IT.
+			 *
+			 * Rounds 16 and beyond draw from bunker scenes 7-12, which is
+			 * art a theme can easily not have yet: the manifest declared
+			 * six for a long time, so nothing listed 7-12 and nobody could
+			 * upload them. Dread City renders jpg and has jpgs for 1-6
+			 * only, which is a blank frame for anybody who gets that deep.
+			 *
+			 * ALL SIX OR NONE. Dread City's gif set has 7 and 8 and stops,
+			 * so accepting a partial band would still blank the rounds that
+			 * landed on 9 through 12. Falling back to the first band shows
+			 * art every theme has -- a repeated scene is a small thing next
+			 * to an empty pane, and Theme Art still lists the six as
+			 * missing so the gap stays visible to whoever can fix it.
+			 */
+			$ds_deep = ($counter >= 16)
+			        && function_exists('dropshipThemeHasFrames')
+			        && dropshipThemeHasFrames($slug, 'images/live/bunker/', 7, 12,
+			                                  dropshipMediaExtension());
+			if(!$ds_deep){
 				$random = dropshipStageFrame(1, 6, $bunker_random, $ds_order);
 			}else{
 				$random = dropshipStageFrame(7, 12, $bunker_random, $ds_order);

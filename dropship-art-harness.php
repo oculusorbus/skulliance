@@ -1157,5 +1157,105 @@ foreach ($asks as $key => $r) {
 	}
 }
 
+
+/* ------------------------------------------------------------------ */
+/*
+ * A THEME WITHOUT THE SECOND BAND FALLS BACK TO THE FIRST.
+ *
+ * Declaring bunker frames 7-12 gives them a slot; it does not put art in
+ * it. Dread City renders jpg and has jpgs for 1-6 only, so until somebody
+ * uploads six more a run past round 15 would still be staring at an empty
+ * pane. A repeated scene is a small thing next to a blank one.
+ */
+echo "\na theme with no second bunker band repeats the first\n";
+
+$bb_slug = 'harness-band-' . getmypid();
+$bb_dir  = __DIR__ . '/dropship/' . $bb_slug . '/images/live/bunker';
+$bb_made = @mkdir($bb_dir, 0777, true);
+ok($bb_made, 'could not build a throwaway theme, so the checks below prove nothing');
+if ($bb_made) {
+	for ($i = 1; $i <= 12; $i++) file_put_contents($bb_dir . '/' . $i . '.jpg', 'x');
+	ok(dropshipThemeHasFrames($bb_slug, 'images/live/bunker/', 7, 12, 'jpg') === true,
+	   'a theme with all six second-band frames is told it has none');
+	/* THE FORMAT IT RENDERS, not whatever is lying about. Dread City's gif
+	   set runs to 8 while its jpg set stops at 6, and it renders jpg. */
+	ok(dropshipThemeHasFrames($bb_slug, 'images/live/bunker/', 7, 12, 'gif') === false,
+	   'the band is checked in a format the theme does not render');
+
+	/* PARTIAL IS NOT ENOUGH, which is the Dread City gif case exactly:
+	   7 and 8 present, the rest not, so rounds landing on 9-12 blank. */
+	$bb_part = 'harness-part-' . getmypid();
+	$bb_pdir = __DIR__ . '/dropship/' . $bb_part . '/images/live/bunker';
+	@mkdir($bb_pdir, 0777, true);
+	for ($i = 1; $i <= 8; $i++) file_put_contents($bb_pdir . '/' . $i . '.jpg', 'x');
+	ok(dropshipThemeHasFrames($bb_part, 'images/live/bunker/', 7, 12, 'jpg') === false,
+	   'a half-uploaded band counts as present, so the rounds past it still blank');
+	/* AND THE CACHE DOES NOT BLEED. Asked after the full theme above, so a
+	   static keyed on anything less than the whole question answers true. */
+	ok(dropshipThemeHasFrames($bb_slug, 'images/live/bunker/', 7, 12, 'jpg') === true,
+	   'the per-request cache returned another theme\'s answer');
+	foreach (glob($bb_pdir . '/*') as $f) unlink($f);
+	@rmdir($bb_pdir); @rmdir(dirname($bb_pdir)); @rmdir(dirname(dirname($bb_pdir)));
+	@rmdir(__DIR__ . '/dropship/' . $bb_part);
+
+	foreach (glob($bb_dir . '/*') as $f) unlink($f);
+	@rmdir($bb_dir); @rmdir(dirname($bb_dir)); @rmdir(dirname(dirname($bb_dir)));
+	@rmdir(__DIR__ . '/dropship/' . $bb_slug);
+}
+ok(!is_dir(__DIR__ . '/dropship/' . $bb_slug), 'the throwaway theme was left behind');
+/*
+ * AN UNUSABLE SLUG MUST NOT FALL THROUGH TO DROP SHIP'S OWN FOLDER.
+ * dropshipThemeRoot() answers null for one, and without that guard $base
+ * becomes the dropship directory itself -- every theme would be told it
+ * has whatever the original game has. PROBED AGAINST FILES THAT EXIST
+ * THERE, because asserting false about a path with nothing at either end
+ * passes however broken the function is; the repo carries no art, so the
+ * probe makes its own, under an extension no image could be mistaken for.
+ */
+$bb_flat = __DIR__ . '/dropship/images/live/bunker';
+$bb_fok  = is_dir($bb_flat) || @mkdir($bb_flat, 0777, true);
+ok($bb_fok, 'could not place the flat probe, so the slug guard is untested');
+if ($bb_fok) {
+	for ($i = 7; $i <= 12; $i++) file_put_contents($bb_flat . '/' . $i . '.hqz', 'x');
+	ok(dropshipThemeHasFrames('drop-ship', 'images/live/bunker/', 7, 12, 'hqz') === true,
+	   "Drop Ship's own flat art stopped resolving");
+	ok(dropshipThemeHasFrames('', 'images/live/bunker/', 7, 12, 'hqz') === false,
+	   "a theme with no usable slug is told it has the band, off Drop Ship's own folder");
+	ok(dropshipThemeHasFrames('   ', 'images/live/bunker/', 7, 12, 'hqz') === false,
+	   "a blank slug is told it has the band, off Drop Ship's own folder");
+	for ($i = 7; $i <= 12; $i++) @unlink($bb_flat . '/' . $i . '.hqz');
+}
+ok(!glob($bb_flat . '/*.hqz'), 'the flat probes were left behind in the live art folder');
+/*
+ * EQUIVALENT MUTANT, recorded rather than chased: deleting the `$ext ===
+ * ''` guard changes no answer, because is_file('.../7.') is false anyway.
+ * It is there so the reason for the early return is legible, not because
+ * the result differs.
+ */
+ok(dropshipThemeHasFrames('drop-ship', 'images/live/bunker/', 7, 12, '') === false,
+   'an empty extension is treated as a format that exists');
+
+/* AND live() ASKS. The whole helper is pointless if the run does not
+   consult it before reaching for the second band. */
+$live_code = preg_replace(array('#/\*.*?\*/#s', '#(^|\s)//[^\n]*#'), ' ', $live);
+ok(strpos($live_code, 'dropshipThemeHasFrames($slug') !== false,
+   'live() reaches for the second bunker band without checking the theme has it');
+ok(strpos($live_code, "'images/live/bunker/', 7, 12") !== false,
+   'live() checks some other range than the second band');
+ok(strpos($live_code, 'dropshipMediaExtension()') !== false,
+   "live() checks the band in a fixed format rather than the one the theme renders");
+ok(strpos($live_code, 'if(!$ds_deep){') !== false
+   && strpos($live_code, 'dropshipStageFrame(1, 6, $bunker_random') > strpos($live_code, 'if(!$ds_deep){'),
+   'the fallback does not land on the first band');
+/* $slug has to be in scope, or the check silently asks about nothing --
+   and dropshipThemeRoot(null) is null, so it would answer false forever
+   and the second band would never show for ANY theme. */
+ok(preg_match('/global [^;]*\$slug[^;]*;/', $live) === 1,
+   'live() does not import $slug, so the band check asks about an empty theme');
+/* THE SLOTS STAY LISTED EITHER WAY. The fallback is a runtime kindness,
+   not a reason to stop asking for the art. */
+ok(in_array('images/live/bunker/12.gif', dropshipArtManifest('gif'), true),
+   'the fallback took the second band out of the manifest, so the gap is invisible again');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);
