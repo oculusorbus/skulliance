@@ -546,18 +546,12 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 					echo $view_results;
 					echo "<script type='text/javascript'>document.getElementById('disableMessage').innerHTML = 'true';</script>";
 					$dropshipMarkup = getReplay($conn, $_POST['result_id']);
-					// 3D Swapping
-					if($_SESSION['userData']['dropship_project_id'] == 4){
-						if(isset($_SESSION['userData']['3d'])){
-							if($_SESSION['userData']['3d'] == "true"){
-								$dropshipMarkup = str_replace("png", "gif", $dropshipMarkup);
-							}else if($_SESSION['userData']['3d'] == "false"){
-								$dropshipMarkup = str_replace("gif", "png", $dropshipMarkup);
-							}
-						}else{
-							$dropshipMarkup = str_replace("gif", "png", $dropshipMarkup);
-						}
-					}
+					/* 3D RETIRED. A stored replay used to have its extension
+					   rewritten here to match a per-player toggle, with a
+					   blanket str_replace over the whole markup -- which also
+					   caught the word anywhere else in it. The extension is a
+					   property of the theme now (dropship_themes.extension),
+					   so a replay is served exactly as it was recorded. */
 				}  
 				if(!isset($_POST['instant_replay']) && isset($_SESSION['userData']['current_score']) && isset($_SESSION['userData']['game_id']) && !isset($_POST['deactivate']) && !isset($_POST['newgame'])){
 					// Old instant replay by user id only, disabled until or if this can be figured out with result id.
@@ -640,25 +634,7 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 						</label>
 					</li>
 					<?php
-					if($_SESSION['userData']['dropship_project_id'] == 4){ 
-						if(isset($_SESSION['userData']['3d'])){
-							if($_SESSION['userData']['3d'] == "true"){
-								$dimension_checked = "checked";
-							}else{
-								$dimension_checked = "";
-							}
-						}else{
-							$dimension_checked = "";
-						}?>
-					<li class="role"><img class="icon" id="3d-icon" src="icons/3d.png"/>3D
-						&nbsp;
-						<!-- Rounded switch -->
-						<label class="switch">
-						  <input onchange="javascript:toggle3D(this.checked);" type="checkbox" <?php echo $dimension_checked; ?>>
-						  <span class="slider rounded"></span>
-						</label>
-					</li>
-					<?php } ?>
+/* 3D toggle retired. */ ?>
 					<li class="role"><img class="icon" src="icons/level.png"/>Level <?php echo (!empty($data))?$data['level']:"0"; ?></li>
 					<?php if($hideLeaderboard == "false") { 
 						if(!empty($data)){

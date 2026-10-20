@@ -80,6 +80,23 @@ function evaluateText($text){
 	 * failure returns null rather than an error.
 	 */
 	global $conn;
+
+	/*
+	 * THE ANIMATION EXTENSION IS A PROPERTY OF THE THEME, and is answered
+	 * from dropship_themes.extension rather than stored as a text override.
+	 *
+	 * It used to be a per-player 3D toggle, which is why it was a
+	 * conditional 'gif' => 'png' pair in the chain below. That toggle is
+	 * retired, but the pair still must not become a seeded row: a theme's
+	 * extension is one value on one column, and duplicating it into the
+	 * dictionary would leave two places to change it.
+	 */
+	if ($text === 'gif' && isset($_SESSION['userData']['dropship_project_id'])
+	    && function_exists('dropshipThemeConfig')) {
+		$cfg = dropshipThemeConfig($conn, $_SESSION['userData']['dropship_project_id']);
+		if ($cfg && !empty($cfg['extension'])) return $cfg['extension'];
+	}
+
 	if (isset($_SESSION['userData']['dropship_project_id']) && function_exists('dropshipThemeText')) {
 		$themed = dropshipThemeText($conn, $_SESSION['userData']['dropship_project_id'], $text);
 		if ($themed !== null) return $themed;
@@ -142,13 +159,11 @@ function evaluateText($text){
 				$replacements['Registered Soldiers'] = 'Oculus Lounge VIPs';
 				$replacements['Beach Secured'] = 'Approach Stage';
 				$replacements['Hill Secured'] = 'Enter VIP';
-				if(isset($_SESSION['userData']['3d'])){
-					if($_SESSION['userData']['3d'] == "false"){
-						$replacements['gif'] = 'png';
-					}
-				}else{
-					$replacements['gif'] = 'png';
-				}
+				/* The Lounge's art is png. This was conditional on a per-player
+				   3D toggle, which is retired; the extension is a property of
+				   the theme now and dropship_themes.extension carries it once
+				   a theme is configured. */
+				$replacements['gif'] = 'png';
 			}
 			
 			$replacements['SCRIP'] = 'TIDDIES';

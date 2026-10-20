@@ -48,19 +48,10 @@ function replaceAll(string, search, replace) {
   return string.split(search).join(replace);
 }
 
-// Toggle 3D On & Off
-function toggle3D(status){
-	var xhttp = new XMLHttpRequest();
-	xhttp.open('GET', 'ajax/toggle-3d.php?status='+status, true);
-	xhttp.send();
-	if(status){
-		document.getElementById("results-image").style.backgroundImage = document.getElementById("results-image").style.backgroundImage.replace("png", "gif");
-		document.getElementById("hidden-results").innerHTML = replaceAll(document.getElementById("hidden-results").innerHTML, "png", "gif");
-	}else{
-		document.getElementById("results-image").style.backgroundImage = document.getElementById("results-image").style.backgroundImage.replace("gif", "png");
-		document.getElementById("hidden-results").innerHTML = replaceAll(document.getElementById("hidden-results").innerHTML, "gif", "png");
-	}
-}
+/* toggle3D() retired along with the feature. It rewrote "png" to "gif"
+   across the whole of #hidden-results with a blanket replace, so it also
+   caught the word anywhere else in that markup. The extension is a property
+   of the theme now (dropship_themes.extension). */
 
 // Check DISCOIN transaction
 function checkTransaction(){

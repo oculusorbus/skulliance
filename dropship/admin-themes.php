@@ -18,6 +18,7 @@
 include 'db.php';
 include 'webhooks.php';          // the $discordid_* globals the gate reads
 include 'dropship.php';
+require_once 'dropship-theme-vocab.php';
 include 'header.php';
 
 /* The page chrome closes the same way every Drop Ship page does; there is no
@@ -82,12 +83,24 @@ if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST') {
 			$finds = (array)($_POST['find'] ?? array());
 			$reps  = (array)($_POST['replacement'] ?? array());
 			$types = (array)($_POST['match_type'] ?? array());
+			$keeps = (array)($_POST['keep'] ?? array());
 			$conn->query("DELETE FROM dropship_theme_text WHERE theme_id = $theme_id");
 			$wrote = 0; $wanted = 0;
 			foreach ($finds as $i => $find) {
 				$find = trim((string)$find);
 				$rep  = isset($reps[$i]) ? trim((string)$reps[$i]) : '';
 				if ($find === '') continue;              /* a blank row is a deleted row */
+				/*
+				 * "KEEP" IS A DECISION AND IS STORED AS ONE, as a row whose
+				 * replacement equals its find. An empty box means "not looked
+				 * at yet", a ticked box means "this theme uses the Drop Ship
+				 * word on purpose", and the two have to be distinguishable or
+				 * the list stops being a checklist. The row is a no-op at
+				 * lookup time, which is the point: it costs nothing and it
+				 * remembers the answer.
+				 */
+				if (!empty($keeps[$i])) $rep = $find;
+				if ($rep === '') continue;               /* undecided; no row */
 				$wanted++;
 				$type = (isset($types[$i]) && $types[$i] === 'description') ? 'description' : 'exact';
 				if ($conn->query("INSERT INTO dropship_theme_text
@@ -137,6 +150,12 @@ $val = function ($k, $d = '') use ($theme, $h) {
 .dsa .msg.bad{background:rgba(224,70,107,.12);color:#e8a0b0}
 .dsa .msg.good{background:rgba(0,200,160,.12);color:#00c8a0}
 .dsa .note{font-size:12px;color:#7a9eb0;line-height:1.6}
+.dsa h4{color:#e8eaed;font-size:13px;margin:16px 0 4px;text-align:left;
+  text-transform:uppercase;letter-spacing:.07em;opacity:.8}
+.dsa .ico{font-size:10px;color:#ffd47a;border:1px solid rgba(255,212,122,.4);
+  border-radius:3px;padding:0 4px;margin-left:5px}
+.dsa .all{font-size:10px;color:#00c8a0;margin-left:5px}
+.dsa code{color:#e8eaed}
 .dsa button,.dsa .btn{background:#00c8a0;color:#07111d;border:0;border-radius:4px;
   padding:8px 15px;font-weight:bold;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
 </style>
@@ -208,14 +227,75 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
 </div>
 
 <h3>Wording</h3>
-<p class="note"><b>Exact</b> replaces a whole label and nothing else, so
-&ldquo;Soldiers&rdquo; becomes &ldquo;Citizens&rdquo; but &ldquo;Soldiers of
-fortune&rdquo; is untouched. <b>Description</b> rewrites the word wherever it
-appears in a sentence, and only runs when no exact match was found. Clear the
-left box to delete a row.</p>
+<?php
+/*
+ * THE GUIDE. Every Drop Ship word the existing themes had to answer for,
+ * prefilled, so reworking a theme is a form to fill in rather than a blank
+ * box to speculate into. Terms already saved for this theme carry their
+ * value; the rest are blank and count as undecided.
+ */
+$vocab = dropshipThemeVocabulary();
+$have  = array();                       /* find => replacement, already saved */
+foreach ($pairs as $pr) $have[$pr['match_type'] . '|' . $pr['find']] = $pr['replacement'];
+$known = array();
+foreach ($vocab as $rows) foreach ($rows as $r) $known[$r['type'] . '|' . $r['find']] = true;
+$decided = 0; $total = 0;
+foreach ($vocab as $rows) foreach ($rows as $r) {
+	$total++;
+	if (isset($have[$r['type'] . '|' . $r['find']])) $decided++;
+}
+$i = 0;
+?>
+<p class="note"><b><?php echo $decided; ?> of <?php echo $total; ?></b> terms decided.
+Fill in a replacement, or tick <b>Keep</b> to say this theme uses the Drop Ship word
+on purpose. Anything left blank is simply undecided and changes nothing.<br>
+<b>Exact</b> replaces a whole label and nothing else, so &ldquo;Soldiers&rdquo;
+becomes &ldquo;Citizens&rdquo; but &ldquo;Soldiers of fortune&rdquo; is untouched.
+<b>Description</b> rewrites the word wherever it appears in a sentence, and only
+runs when no exact match was found.<br>
+A term marked <span class="ico">icon</span> is a <b>filename</b>: renaming it means
+the page asks for <code>icons/your-new-name.png</code>, so you owe an icon by that
+name.</p>
+
+<?php foreach ($vocab as $group => $rows): ?>
+<h4><?php echo $h($group); ?></h4>
+<table>
+	<tr><th style="width:230px">Drop Ship word</th><th>This theme says</th><th style="width:70px">Keep</th></tr>
+	<?php foreach ($rows as $r):
+		$key = $r['type'] . '|' . $r['find'];
+		$cur = isset($have[$key]) ? $have[$key] : '';
+		$kept = ($cur !== '' && $cur === $r['find']);
+		$i++; ?>
+	<tr>
+		<td>
+			<input type="hidden" name="match_type[]" value="<?php echo $h($r['type']); ?>">
+			<input type="hidden" name="find[]" value="<?php echo $h($r['find']); ?>">
+			<code><?php echo $h($r['find']); ?></code>
+			<?php if ($r['icon']): ?><span class="ico">icon</span><?php endif; ?>
+			<?php if ($r['themes'] >= 3): ?><span class="all">all themes</span><?php endif; ?>
+		</td>
+		<td><input type="text" name="replacement[]"
+		           value="<?php echo $kept ? '' : $h($cur); ?>"
+		           placeholder="<?php echo $h($r['find']); ?>"></td>
+		<td style="text-align:center"><input type="checkbox" name="keep[<?php echo $i - 1; ?>]" value="1"
+		           <?php echo $kept ? 'checked' : ''; ?>></td>
+	</tr>
+	<?php endforeach; ?>
+</table>
+<?php endforeach; ?>
+
+<h4>Anything else</h4>
+<p class="note">The list above is a guide, not a limit. Add a row for a word it
+does not cover.</p>
 <table id="dsa-pairs">
 	<tr><th style="width:150px">Match</th><th>Replace this</th><th>With this</th></tr>
-	<?php foreach (array_merge($pairs, array(null, null, null)) as $pr): ?>
+	<?php
+	/* Saved pairs that are not in the vocabulary, plus blanks for new ones. */
+	$extra = array();
+	foreach ($pairs as $pr) {
+		if (!isset($known[$pr['match_type'] . '|' . $pr['find']])) $extra[] = $pr;
+	}
+	foreach (array_merge($extra, array(null, null)) as $pr): ?>
 	<tr>
 		<td><select name="match_type[]">
 			<option value="exact"<?php echo ($pr && $pr['match_type'] === 'exact') ? ' selected' : ''; ?>>Exact</option>

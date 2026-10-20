@@ -60,9 +60,9 @@ function dropshipArtEquipment() {
 /**
  * Every image a theme needs, as paths relative to the theme root.
  *
- * $ext is the animation extension: 'gif' everywhere except where a theme
- * overrides it (Oculus Lounge serves png when its 3D mode is off, which
- * evaluateText() does by swapping the literal 'gif').
+ * $ext is the animation extension, which is a property of the theme:
+ * 'gif' for most, 'png' for Oculus Lounge. It used to be a per-player 3D
+ * toggle; that is retired and the value lives on dropship_themes.extension.
  */
 function dropshipArtManifest($ext = 'gif') {
 	$m = array();
@@ -112,7 +112,7 @@ function dropshipArtThemes() {
 		1 => array('slug' => 'drop-ship',      'name' => 'Drop Ship',      'ext' => 'gif'),
 		2 => array('slug' => 'dread-city',     'name' => 'Dread City',     'ext' => 'gif'),
 		3 => array('slug' => 'filthy-mermaid', 'name' => 'Filthy Mermaid', 'ext' => 'gif'),
-		/* The Lounge serves png when 3D is off, which is its default. */
+		/* The Lounge's art is png. */
 		4 => array('slug' => 'oculus-lounge',  'name' => 'Oculus Lounge',  'ext' => 'png'),
 	);
 }
