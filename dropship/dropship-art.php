@@ -66,6 +66,14 @@ function dropshipArtManifest($ext = 'gif') {
 	/* Deaths: three generic, plus one per stage-specific ending. */
 	for ($i = 1; $i <= 3; $i++) $m[] = "images/die/$i.$ext";
 	foreach (array('beach', 'landmine', 'bunker') as $d) $m[] = "images/die/$d.$ext";
+	/* The end-of-run screen, which sits on the results pane until the next
+	   game. It was asked for as a hardcoded images/gameover.gif and so was
+	   never listed here at all -- no slot, no upload, no way to give a
+	   theme its own, which is exactly how all four came to be showing Drop
+	   Ship's. LISTED HERE, not with the chrome at the end, because the
+	   probe that decides whether a theme has animated art takes the last
+	   gif in this list and that should stay a round frame. */
+	$m[] = "images/gameover.$ext";
 
 	/* The extra life. */
 	for ($i = 1; $i <= 2; $i++) $m[] = "images/1up/$i.$ext";
@@ -271,8 +279,9 @@ function dropshipArtGroups($ext = 'gif') {
 		                        'match' => '#^images/live/hill/#'),
 		'The bunker'   => array('note' => 'Round 13 on. No cleared frame: the bunker ends the run.',
 		                        'match' => '#^images/live/bunker/#'),
-		'Deaths'       => array('note' => 'Three generic, plus one per place a run can end.',
-		                        'match' => '#^images/die/#'),
+		'Deaths'       => array('note' => 'Three generic, plus one per place a run can end, '
+		                                . 'and the screen that stays up afterwards.',
+		                        'match' => '#^images/(die/|gameover\.)#'),
 		'Extra life'   => array('note' => 'Shown when a Medkit saves a failed round.',
 		                        'match' => '#^images/1up/#'),
 		'Weapons'      => array('note' => 'Frames of the weapon chain. A rocket launcher runs to five.',
@@ -529,6 +538,7 @@ function dropshipArtTitle($rel) {
 		return $stage . $exo . ', scene ' . $m[3] . ' of ' . $of;
 	}
 
+	if (strpos($rel, 'images/gameover.') === 0) return 'Game over, until the next game';
 	if (preg_match('#^images/die/([a-z0-9]+)\.#', $rel, $m)) {
 		if (ctype_digit($m[1])) return 'Death, scene ' . $m[1] . ' of 3';
 		if ($m[1] === 'landmine') return 'Death by landmine';

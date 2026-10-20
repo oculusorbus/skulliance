@@ -946,5 +946,115 @@ if ($die_at !== false) {
 	   "the death image still falls back to the .gif set, which is Drop Ship's art");
 }
 
+
+/* ------------------------------------------------------------------ */
+/*
+ * THE GAME OVER SCREEN.
+ *
+ * The still that sits on the results pane once your last soldier is gone,
+ * until the next game starts. It was asked for as a hardcoded
+ * images/gameover.gif, so it was never in the manifest -- no slot, no
+ * upload, no way to give a theme its own -- and all four folders hold the
+ * same file. Reported as both halves of that: "I still don't see that
+ * ability to specify the gameover image" and "it's bringing in the
+ * animated gif even when not in animated mode", the second because Dread
+ * City is a jpg theme being handed a .gif by name.
+ */
+echo "\nthe game over screen is a slot, and it follows the theme\n";
+require_once __DIR__ . '/dropship/dropship-themes.php';
+
+foreach (array('gif', 'jpg', 'png') as $e) {
+	ok(in_array("images/gameover.$e", dropshipArtManifest($e), true),
+	   "images/gameover.$e is not in the .$e manifest, so there is no slot to upload it to");
+}
+$go_groups = dropshipArtGroups('png');
+$go_where = '';
+foreach ($go_groups as $gn => $gg) {
+	if (in_array('images/gameover.png', $gg['files'], true)) $go_where = $gn;
+}
+ok($go_where !== '', 'the game over slot is in no group, so the page never renders it');
+ok($go_where !== 'Everything else',
+   'the game over slot is in the leftovers bin rather than with the deaths it follows');
+ok(dropshipArtTitle('images/gameover.png') !== 'Gameover',
+   'the game over slot is labelled by its filename');
+
+/*
+ * IT MUST NOT BECOME A GIF PROBE. The probes are the first and last gif
+ * the manifest varies by extension, and they decide whether a theme
+ * advertises animated art at all. gameover.gif is now one of those
+ * entries, so WHERE it was inserted matters: appended at the end it would
+ * have taken over as the second probe and the Animation switch would have
+ * started asking about the end screen instead of a round frame.
+ */
+$probes = dropshipThemeGifProbes();
+ok(!in_array('images/gameover.gif', $probes, true),
+   'the game over screen decides whether a theme counts as animated');
+ok($probes === array('images/live/beach/1.gif', 'images/equipment/reinforcements.gif'),
+   'the gif probes moved: ' . implode(', ', $probes));
+
+/* dropshipThemeArtFile() ON REAL FILES: the theme's own format first, the
+   gif only while it has no still. */
+$go_slug = 'harness-over-' . getmypid();
+$go_dir  = __DIR__ . '/dropship/' . $go_slug . '/images';
+$go_made = @mkdir($go_dir, 0777, true);
+ok($go_made, 'could not build a throwaway theme, so the checks below prove nothing');
+if ($go_made) {
+	file_put_contents($go_dir . '/gameover.gif', 'g');
+	ok(dropshipThemeArtFile($go_slug, 'images/gameover', 'jpg') === 'images/gameover.gif',
+	   'a theme with only the gif loses its game over screen entirely');
+	file_put_contents($go_dir . '/gameover.jpg', 'j');
+	ok(dropshipThemeArtFile($go_slug, 'images/gameover', 'jpg') === 'images/gameover.jpg',
+	   "a still theme is handed the animated file even though it has its own");
+	/* THE PLAYER'S ANIMATION SWITCH comes through this argument, so asking
+	   as gif has to find the gif even when a still sits beside it. */
+	ok(dropshipThemeArtFile($go_slug, 'images/gameover', 'gif') === 'images/gameover.gif',
+	   'turning animation on does not bring the animated game over back');
+	ok(dropshipThemeArtFile($go_slug, 'images/gameover', 'JPG') === 'images/gameover.jpg',
+	   'an extension recorded in capitals finds nothing');
+	ok(dropshipThemeArtFile($go_slug, 'images/no-such-thing', 'jpg') === '',
+	   'a slot the theme has in neither format still returns a path, which 404s');
+	unlink($go_dir . '/gameover.gif');
+	unlink($go_dir . '/gameover.jpg');
+	@rmdir($go_dir);
+	@rmdir(dirname($go_dir));
+}
+/*
+ * AN UNUSABLE SLUG MUST NOT FALL THROUGH TO DROP SHIP'S OWN FOLDER.
+ * dropshipThemeRoot() returns null for one, and without the guard $base
+ * becomes the dropship directory itself -- so every lookup would answer
+ * with the original game's file, flat, which is the bug this whole pass is
+ * about. Probed against a file that EXISTS there, because asserting ''
+ * against a path with nothing at either end passes however broken the
+ * function is. The repo carries no art (it is FTPed), so the probe has to
+ * make its own, uniquely named and removed again.
+ */
+$fl_tag = 'harness-flat-' . getmypid();
+$fl_own = __DIR__ . '/dropship/images/' . $fl_tag . '.gif';
+$fl_ok  = is_dir(dirname($fl_own)) || @mkdir(dirname($fl_own), 0777, true);
+ok($fl_ok, 'could not place the flat probe, so the slug guard is untested');
+if ($fl_ok) {
+	file_put_contents($fl_own, 'x');
+	ok(dropshipThemeArtFile('drop-ship', 'images/' . $fl_tag, 'gif') === 'images/' . $fl_tag . '.gif',
+	   "Drop Ship's own flat art stopped resolving");
+	ok(dropshipThemeArtFile('', 'images/' . $fl_tag, 'gif') === '',
+	   "a theme with no usable slug is served Drop Ship's own file instead of nothing");
+	ok(dropshipThemeArtFile('   ', 'images/' . $fl_tag, 'gif') === '',
+	   "a blank slug is served Drop Ship's own file instead of nothing");
+	unlink($fl_own);
+}
+ok(!file_exists($fl_own), 'the flat probe was left behind in the live art folder');
+
+/* AND THE PAGE ASKS THAT WAY. */
+$dash2 = file_get_contents(__DIR__ . '/dropship/dashboard.php');
+$dash2_code = preg_replace(array('#/\*.*?\*/#s', '#(^|\s)//[^\n]*#'), ' ', $dash2);
+ok(strpos($dash2_code, "images/gameover.gif") === false,
+   'the results pane still hardcodes the animated game over');
+ok(strpos($dash2_code, "dropshipThemeArtFile(\$slug, 'images/gameover', dropshipMediaExtension())") !== false,
+   "the game over screen does not follow the theme's format or the animation switch");
+/* An empty answer must print no rule at all, not url('') -- which paints
+   the pane with a broken background rather than leaving the stylesheet's. */
+ok(preg_match("/\\\$ds_over !== ''\\)\\s*:/", $dash2_code) === 1,
+   'a theme with no game over screen gets backgroundImage: url(), which blanks the pane');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);

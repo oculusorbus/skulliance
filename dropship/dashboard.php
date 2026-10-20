@@ -449,7 +449,26 @@ $characters = evaluateText("Troops");
 				<div id="results" <?php echo $image_wrap;?>>
 					<div id="results-image"></div>
 					<?php if(isset($_SESSION['userData']['current_score']) && checkSquadCount($conn) < 1) { ?>
-						<script>document.getElementById("results-image").style.backgroundImage = "url('<?php echo $prefix; ?>images/gameover.gif')";</script>
+						<?php
+						/*
+						 * THE GAME OVER SCREEN FOLLOWS THE THEME, like every
+						 * other frame. This was hardcoded images/gameover.gif,
+						 * which is why Dread City -- a jpg theme -- showed an
+						 * animated game over with animation switched off, and
+						 * why the animation it showed was Drop Ship's: that
+						 * file is byte-for-byte the one in dropship/images/.
+						 *
+						 * dropshipMediaExtension() is the same call the rest of
+						 * the run makes, so the player's animation switch moves
+						 * this with everything else. It falls back to the gif
+						 * while a theme has no still, because right now none of
+						 * them do; theme art lists the still as missing until
+						 * one is uploaded.
+						 */
+						$ds_over = dropshipThemeArtFile($slug, 'images/gameover', dropshipMediaExtension());
+						if ($ds_over !== ''): ?>
+						<script>document.getElementById("results-image").style.backgroundImage = "url('<?php echo $prefix . $ds_over; ?>')";</script>
+						<?php endif; ?>
 						<!-- The Discord announcement used to live here; it is above now,
 						     so that it fires on the run rather than on whatever request
 						     happens to render this panel. -->

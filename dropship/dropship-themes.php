@@ -553,6 +553,36 @@ function dropshipArtBackgroundSlot($slug) {
 }
 
 /**
+ * The file a theme actually has for one art slot: its format, else the gif.
+ *
+ * FOR THE SLOTS THE PAGE ASKS FOR BY STEM, not by filename -- the game
+ * over screen is the one of these. It was hardcoded images/gameover.gif,
+ * so Dread City, which is a jpg theme, showed an animated game over even
+ * with animation off, and the file it showed is byte-for-byte Drop Ship's.
+ *
+ * THE GIF IS A FALLBACK HERE AND NOT ELSEWHERE, deliberately. For the
+ * death images the themed file already existed and falling back could only
+ * ever regress to Drop Ship's copies, so there is no fallback there. No
+ * theme has a non-gif game over AT ALL yet -- all four folders hold only
+ * gameover.gif -- so asking strictly for the theme's extension would blank
+ * the end-of-run screen everywhere the moment this shipped. It stays on
+ * the gif until somebody uploads the still, and theme art shows the still
+ * as missing until they do.
+ *
+ * Returns the path relative to the theme folder, or '' if it has neither.
+ */
+function dropshipThemeArtFile($slug, $stem, $ext) {
+	$root = dropshipThemeRoot($slug);
+	if ($root === null) return '';
+	$base = rtrim(__DIR__, '/') . '/' . $root;
+	foreach (array(strtolower($ext), 'gif') as $try) {
+		if ($try === '') continue;
+		if (is_file($base . $stem . '.' . $try)) return $stem . '.' . $try;
+	}
+	return '';
+}
+
+/**
  * A theme's copy of one asset, as an absolute url, or '' when it has none.
  *
  * FOR DISCORD, which cannot be handed a relative path and cannot be told
