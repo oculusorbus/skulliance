@@ -141,6 +141,7 @@
 		           security, so admin-themes.php gates again on arrival. */ ?>
 		  <?php if(function_exists('dropshipThemeAdmin') && dropshipThemeAdmin()){ ?>
 		  <a href="admin-themes.php">Themes</a>
+		  <a href="admin-art.php">Theme art</a>
 		  <?php } ?>
 		  <!-- The LAUNCHPAD, not the dashboard. Every other game on the platform
 		       exits to launchpad.php (Monstrocity, Skull Swap, Match 3), because

@@ -1,15 +1,5 @@
 <?php
 /**
- * GROUNDWORK, NOT YET WIRED TO ANYTHING. Nothing requires this file and no
- * page calls it. It is the first piece of a Drop Ship theme admin -- parked
- * here deliberately while the shape of that tool is still being decided, so
- * that it is under version control rather than loose in a working tree.
- *
- * What it still needs before it is useful: a CLI or admin page that calls
- * dropshipArtAudit() per theme and prints the result, and a harness pinning
- * the stage counts below against dropship.php's own initialisers. Both were
- * in progress and neither exists.
- *
  * WHAT A DROP SHIP THEME IS MADE OF.
  *
  * A reskin is about seventy image files in a fixed tree, and the only record
@@ -171,4 +161,185 @@ function dropshipArtAudit($slug, $ext, $base_dir = null, $base_url = null) {
 
 	return array('mode' => 'http', 'checked' => count($manifest),
 	             'missing' => $missing, 'present' => count($manifest) - count($missing));
+}
+
+/* ------------------------------------------------------------------ *
+ * THE IMAGE MANAGER
+ * ------------------------------------------------------------------ */
+
+/**
+ * How big a round image ever needs to be.
+ *
+ * MEASURED FROM THE STYLESHEET, not guessed. .container caps at 1400px, the
+ * results column is flex 67% of it, and #results img caps height at 650px.
+ * So anything wider than about 940 or taller than 650 is pixels the browser
+ * throws away on every single view.
+ */
+function dropshipArtMaxWidth()  { return 940; }
+function dropshipArtMaxHeight() { return 650; }
+
+/**
+ * The manifest, grouped the way somebody filling it in would want to read it.
+ *
+ * Same list dropshipArtManifest() returns -- derived from it, so the two
+ * cannot drift -- just sorted into sections with a line saying what each one
+ * is for. A flat list of seventy paths is a wall; this is a checklist.
+ */
+function dropshipArtGroups($ext = 'gif') {
+	$all = dropshipArtManifest($ext);
+	$groups = array(
+		'The drop'     => array('note' => 'Rounds 0 to 2. Never rolled for, so every run opens with these.',
+		                        'match' => '#^images/(reset|drop)/#'),
+		'The beach'    => array('note' => 'Rounds 3 to 7, plus the frame shown on clearing it.',
+		                        'match' => '#^images/live/beach/#'),
+		'The hill'     => array('note' => 'Rounds 8 to 12, plus the frame shown on clearing it.',
+		                        'match' => '#^images/live/hill/#'),
+		'The bunker'   => array('note' => 'Round 13 on. No cleared frame: the bunker ends the run.',
+		                        'match' => '#^images/live/bunker/#'),
+		'Deaths'       => array('note' => 'Three generic, plus one per place a run can end.',
+		                        'match' => '#^images/die/#'),
+		'Extra life'   => array('note' => 'Shown when a Medkit saves a failed round.',
+		                        'match' => '#^images/1up/#'),
+		'Weapons'      => array('note' => 'Frames of the weapon chain. A rocket launcher runs to five.',
+		                        'match' => '#^images/weapons/#'),
+		'Equipment'    => array('note' => 'One frame each, shown when the item fires.',
+		                        'match' => '#^images/equipment/#'),
+	);
+	$out = array();
+	$taken = array();
+	foreach ($groups as $name => $g) {
+		$rows = array();
+		foreach ($all as $rel) {
+			if (preg_match($g['match'], $rel)) { $rows[] = $rel; $taken[$rel] = true; }
+		}
+		if ($rows) $out[$name] = array('note' => $g['note'], 'files' => $rows);
+	}
+	/* Anything the patterns did not claim still has to appear, or a file
+	   added to the manifest would silently never be manageable. */
+	$rest = array();
+	foreach ($all as $rel) if (!isset($taken[$rel])) $rest[] = $rel;
+	if ($rest) $out['Everything else'] = array('note' => 'Page furniture and placeholders.', 'files' => $rest);
+	return $out;
+}
+
+/**
+ * Is this an animated gif?
+ *
+ * Read from the bytes, because the extension is a claim and this decides
+ * whether the file can safely be resized at all.
+ */
+function dropshipArtIsAnimatedGif($path) {
+	$fh = @fopen($path, 'rb');
+	if (!$fh) return false;
+	$count = 0; $chunk = '';
+	while (!feof($fh) && $count < 2) {
+		$chunk .= fread($fh, 1024 * 100);
+		$count = preg_match_all('#\x00\x21\xF9\x04#s', $chunk);
+		$chunk = substr($chunk, -16);              /* keep a boundary overlap */
+	}
+	fclose($fh);
+	return $count > 1;                             /* more than one frame block */
+}
+
+/**
+ * Store an uploaded image into a theme slot, scaled to fit the pane.
+ *
+ * Returns array(ok, message).
+ *
+ * REFUSES TO FLATTEN AN ANIMATED GIF. GD cannot resize one -- it reads the
+ * first frame and writes a still -- so on a box without Imagick an animated
+ * upload is stored AT ITS ORIGINAL SIZE rather than silently turned into a
+ * single frame. A slightly oversized animation is a bandwidth cost; a
+ * flattened one is the theme broken in a way nobody would notice until a
+ * player mentions the animations stopped.
+ */
+function dropshipArtStore($tmp_path, $dest_abs, $declared_ext) {
+	$max_w = dropshipArtMaxWidth();
+	$max_h = dropshipArtMaxHeight();
+
+	$info = @getimagesize($tmp_path);
+	if (!$info) return array(false, 'That file is not an image this server can read.');
+	list($w, $h) = $info;
+
+	$allowed = array(IMAGETYPE_GIF => 'gif', IMAGETYPE_PNG => 'png',
+	                 IMAGETYPE_JPEG => 'jpg', IMAGETYPE_WEBP => 'webp');
+	if (!isset($allowed[$info[2]])) return array(false, 'Only gif, png, jpg and webp can be uploaded.');
+	$actual = $allowed[$info[2]];
+	$want   = strtolower($declared_ext) === 'jpeg' ? 'jpg' : strtolower($declared_ext);
+	if ($actual !== $want) {
+		return array(false, "This slot is a .$want and that file is a $actual. "
+		                  . 'The game asks for the slot by name, so the format has to match.');
+	}
+
+	$dir = dirname($dest_abs);
+	if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
+		return array(false, 'Could not create ' . $dir . '. Check the folder is writable.');
+	}
+	if (!is_writable($dir)) return array(false, $dir . ' is not writable by the web user.');
+
+	$animated = ($actual === 'gif') && dropshipArtIsAnimatedGif($tmp_path);
+	$fits     = ($w <= $max_w && $h <= $max_h);
+
+	if ($fits) {
+		return @move_uploaded_file($tmp_path, $dest_abs) || @rename($tmp_path, $dest_abs)
+			? array(true, "Stored at {$w}x{$h}, already within {$max_w}x{$max_h}.")
+			: array(false, 'Could not write ' . basename($dest_abs) . '.');
+	}
+
+	if ($animated && !class_exists('Imagick')) {
+		$ok = @move_uploaded_file($tmp_path, $dest_abs) || @rename($tmp_path, $dest_abs);
+		return $ok
+			? array(true, "Stored at {$w}x{$h} WITHOUT resizing: this gif is animated and "
+			            . 'Imagick is not available, and GD would flatten it to one frame.')
+			: array(false, 'Could not write ' . basename($dest_abs) . '.');
+	}
+
+	/* Fit inside the pane, never enlarge. */
+	$scale = min($max_w / $w, $max_h / $h, 1);
+	$nw = max(1, (int)round($w * $scale));
+	$nh = max(1, (int)round($h * $scale));
+
+	if (class_exists('Imagick')) {
+		try {
+			$im = new Imagick($tmp_path);
+			if ($animated) {
+				$im = $im->coalesceImages();                 /* or frames corrupt each other */
+				foreach ($im as $frame) $frame->thumbnailImage($nw, $nh);
+				$im = $im->deconstructImages();
+				$im->writeImages($dest_abs, true);
+			} else {
+				$im->thumbnailImage($nw, $nh);
+				$im->writeImage($dest_abs);
+			}
+			$im->clear();
+			return array(true, "Scaled {$w}x{$h} to {$nw}x{$nh}.");
+		} catch (Throwable $e) {
+			return array(false, 'Imagick could not process that file: ' . $e->getMessage());
+		}
+	}
+
+	/* GD, stills only -- the animated case returned above. */
+	$src = null;
+	if ($actual === 'png')  $src = @imagecreatefrompng($tmp_path);
+	if ($actual === 'jpg')  $src = @imagecreatefromjpeg($tmp_path);
+	if ($actual === 'gif')  $src = @imagecreatefromgif($tmp_path);
+	if ($actual === 'webp' && function_exists('imagecreatefromwebp')) $src = @imagecreatefromwebp($tmp_path);
+	if (!$src) return array(false, 'This server cannot resize a ' . $actual . '.');
+
+	$dst = imagecreatetruecolor($nw, $nh);
+	if ($actual === 'png' || $actual === 'gif' || $actual === 'webp') {
+		imagealphablending($dst, false);
+		imagesavealpha($dst, true);
+		imagefill($dst, 0, 0, imagecolorallocatealpha($dst, 0, 0, 0, 127));
+	}
+	imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
+	$ok = false;
+	if ($actual === 'png')  $ok = imagepng($dst, $dest_abs);
+	if ($actual === 'jpg')  $ok = imagejpeg($dst, $dest_abs, 90);
+	if ($actual === 'gif')  $ok = imagegif($dst, $dest_abs);
+	if ($actual === 'webp' && function_exists('imagewebp')) $ok = imagewebp($dst, $dest_abs, 90);
+	imagedestroy($src); imagedestroy($dst);
+
+	return $ok ? array(true, "Scaled {$w}x{$h} to {$nw}x{$nh}.")
+	           : array(false, 'Could not write ' . basename($dest_abs) . '.');
 }
