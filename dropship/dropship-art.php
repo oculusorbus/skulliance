@@ -107,9 +107,15 @@ function dropshipArtThemes() {
 	);
 }
 
-/** Theme root, relative to the dropship directory. '' for Drop Ship itself. */
+/**
+ * Theme root, relative to the dropship directory. '' for Drop Ship itself.
+ *
+ * Delegates: the rule lives in dropship-themes.php, which the game loads
+ * and this file does not get loaded by. Four copies of it had accumulated.
+ */
 function dropshipArtRoot($slug) {
-	return $slug === 'drop-ship' ? '' : $slug . '/';
+	$root = dropshipThemeRoot($slug);
+	return $root === null ? '' : $root;
 }
 
 /**

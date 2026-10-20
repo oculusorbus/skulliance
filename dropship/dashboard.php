@@ -668,7 +668,34 @@ $characters = evaluateText("Troops");
 						</label>
 					</li>
 					<?php
-/* 3D toggle retired. */ ?>
+/*
+ * ANIMATION, for a still theme that ships gifs anyway.
+ *
+ * This is what the 3D toggle actually was. Retiring 3D was right -- it
+ * was a second format calling itself a dimension, and it dragged two
+ * blanket str_replace passes over stored replay markup with it -- but it
+ * also took away the only way to see Oculus Lounge's animated set.
+ *
+ * SHOWN ONLY WHEN IT WOULD DO SOMETHING: the theme is a still AND the
+ * gifs are on disk. A theme already set to gif has nothing to switch, and
+ * a still theme with no gifs would switch to 404s.
+ */
+$ds_can_animate = function_exists('dropshipThemeHasGifArt')
+	&& dropshipMediaExtension() !== 'gif'
+	&& dropshipThemeHasGifArt($slug);
+if ($ds_can_animate):
+	$anim_on = dropshipAnimationOn($slug);
+?>
+					<li class="role"><img class="icon" src="icons/<?php
+						echo evaluateText('dropship'); ?>.png"/>Animation
+						&nbsp;
+						<label class="switch">
+						  <input onchange="javascript:toggleAnimation(this.checked);" type="checkbox"
+						         <?php echo $anim_on ? 'checked' : ''; ?>>
+						  <span class="slider rounded"></span>
+						</label>
+					</li>
+<?php endif; ?>
 					<li class="role"><img class="icon" src="icons/level.png"/>Level <?php echo (!empty($data))?$data['level']:"0"; ?></li>
 					<?php if($hideLeaderboard == "false") { 
 						if(!empty($data)){

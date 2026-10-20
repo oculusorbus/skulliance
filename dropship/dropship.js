@@ -11,6 +11,30 @@ var lastRound = 0;
 });
 
 // Toggle Audio On & Off
+/*
+ * Animation on/off for a still theme that also ships gifs.
+ *
+ * RELOADS, where toggleAudio() does not. Audio is a client-side property
+ * of elements already on the page; this decides which FILES the server
+ * renders into the markup -- the round art, and whether the Ken Burns pan
+ * is laid over it -- so nothing changes until the page is drawn again.
+ * Waiting for the request to land first, or the reload races the session
+ * write and the page comes back with the old setting.
+ */
+function toggleAnimation(status){
+	var want = status ? "true" : "false";
+	var done = function(){ window.location.reload(); };
+	if (window.fetch) {
+		fetch("ajax/toggle-animation.php?status=" + want, { credentials: "same-origin" })
+			.then(done, done);
+	} else {
+		var x = new XMLHttpRequest();
+		x.open("GET", "ajax/toggle-animation.php?status=" + want, true);
+		x.onloadend = done;
+		x.send();
+	}
+}
+
 function toggleAudio(status){
 	audio1 = document.getElementById("audio1");
 	audio2 = document.getElementById("audio2");

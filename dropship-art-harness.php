@@ -265,10 +265,21 @@ ok(!isset(dropshipArtPlan($cz, 1, 'gif', '')['The page background']),
    independently, and a mutation breaking one left the other passing. */
 $th3 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-themes.php'));
 $art5 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-art.php'));
-ok(substr_count($th3 . $art5, "=== 'drop-ship') ? '' :") === 1,
-   'the flat-vs-nested background rule is written in more than one place again');
+/*
+ * ONE DEFINITION of "Drop Ship is flat, every reskin nests". It had reached
+ * four copies -- the background lookup, the background slot, the gif probe
+ * and dropshipArtRoot() -- and a mutation breaking one left the rest
+ * passing, which is how the duplication surfaced.
+ */
+ok(substr_count($th3 . $art5, "'drop-ship' ? '' :") === 1,
+   'the flat-vs-nested rule is written in more than one place again');
+ok(strpos($th3, 'function dropshipThemeRoot') !== false,
+   'the shared root helper is gone, so every caller decides for itself again');
 ok(strpos($art5, 'function dropshipArtBackgroundSlot') === false,
    'the slot builder is back in dropship-art.php, which the game pages do not load');
+/* dropshipArtRoot() must keep returning '' rather than null, because it is
+   concatenated straight into paths by callers that never checked. */
+ok(dropshipArtRoot('') === '', 'dropshipArtRoot() stopped returning a string for an unknown theme');
 
 /* It is set ONCE, in the header every page includes. */
 $hdr2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/header.php'));

@@ -232,7 +232,26 @@ function dropshipThemeIconLabel($term) {
 function dropshipMediaExtension() {
 	if (!function_exists('evaluateText')) return 'gif';
 	$ext = evaluateText('gif');
-	return $ext !== '' ? strtolower($ext) : 'gif';
+	$ext = $ext !== '' ? strtolower($ext) : 'gif';
+
+	/*
+	 * THE PLAYER CAN TURN ANIMATION ON FOR A STILL THEME THAT HAS GIFS.
+	 *
+	 * dropship_themes.extension is what a theme is SET to, which is not
+	 * the same as what it has: Oculus Lounge ships both, and the old 3D
+	 * toggle was the only way to see the animated set. Retiring 3D took
+	 * that with it. This puts it back as what it always really was -- an
+	 * animation switch -- rather than a second format pretending to be a
+	 * dimension.
+	 *
+	 * Gated on the files EXISTING, so a leftover session flag can never
+	 * make a theme ask for art it does not have. A theme already set to
+	 * gif has nothing to turn on.
+	 */
+	if ($ext !== 'gif' && isset($GLOBALS['slug']) && dropshipAnimationOn($GLOBALS['slug'])) {
+		return 'gif';
+	}
+	return $ext;
 }
 
 /**
@@ -385,6 +404,24 @@ function dropshipThemeTraitSource($conn, $project_id) {
 }
 
 /**
+ * A theme's folder under dropship/, relative. '' for Drop Ship itself.
+ *
+ * ONE DEFINITION. Drop Ship's art is flat and every reskin nests under its
+ * own slug, and that rule had started appearing in a new function each
+ * time something needed a path -- the background lookup, the background
+ * slot, the gif probe, dropshipArtRoot(). A mutation breaking one of them
+ * left the others passing, which is how the duplication got noticed.
+ *
+ * Lives here rather than in dropship-art.php because the GAME needs it
+ * too, and dropship-art.php is only loaded by the admin.
+ */
+function dropshipThemeRoot($slug) {
+	$slug = dropshipThemeSlug($slug);
+	if ($slug === '') return null;
+	return $slug === 'drop-ship' ? '' : $slug . '/';
+}
+
+/**
  * A theme's page background, or '' when it has none.
  *
  * THREE BUGS IN ONE LINE, which is why this is a function now. The markup
@@ -417,10 +454,9 @@ function dropshipThemeTraitSource($conn, $project_id) {
  * extension when there is not, so the slot can be rendered either way.
  */
 function dropshipArtBackgroundSlot($slug) {
-	$slug = dropshipThemeSlug($slug);
-	if ($slug === '') return null;
-	$dir  = ($slug === 'drop-ship') ? '' : $slug . '/';
-	$stem = str_replace('-', '', $slug) . 'background';
+	$dir = dropshipThemeRoot($slug);
+	if ($dir === null) return null;
+	$stem = str_replace('-', '', dropshipThemeSlug($slug)) . 'background';
 	$hits = @glob(rtrim(__DIR__, '/') . '/' . $dir . $stem . '.{jpg,jpeg,png,gif,webp}', GLOB_BRACE);
 	$have = $hits ? basename($hits[0]) : '';
 	return array(
@@ -440,4 +476,39 @@ function dropshipThemeBackground($slug) {
 	return ($slot && $slot['exists'])
 		? '/staking/dropship/' . $slot['rel']
 		: '';
+}
+
+/**
+ * Does this theme actually have animated art on disk?
+ *
+ * A theme whose extension is 'png' may still ship gifs -- the extension
+ * records what it is SET to, not what exists -- and if it does, a player
+ * should be able to turn the animation on. Asking costs two stat calls:
+ * the manifest is seventy files and checking all of them on every page
+ * load, to answer a yes/no, would be seventy.
+ *
+ * TWO PROBES, NOT ONE. The first round of art and the first beach frame
+ * come from different folders, so a theme that happens to have one stray
+ * gif in an otherwise still set does not advertise itself as animated.
+ */
+function dropshipThemeHasGifArt($slug) {
+	$dir = dropshipThemeRoot($slug);
+	if ($dir === null) return false;
+	foreach (array('images/drop/1.gif', 'images/live/beach/1.gif') as $probe) {
+		if (!is_file(rtrim(__DIR__, '/') . '/' . $dir . $probe)) return false;
+	}
+	return true;
+}
+
+/**
+ * Has the player turned animation on for a still theme?
+ *
+ * Only ever true when the theme is a still AND it has gifs to show, so a
+ * stale session flag cannot make a png theme ask for files that are not
+ * there. The flag is a preference, not a fact about the theme.
+ */
+function dropshipAnimationOn($slug) {
+	if (empty($_SESSION['userData']['animation'])) return false;
+	if ($_SESSION['userData']['animation'] !== 'true') return false;
+	return dropshipThemeHasGifArt($slug);
 }

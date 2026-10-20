@@ -1210,6 +1210,99 @@ ok(strpos($td, "if (\$source !== 'dropship'") !== false
 ok(strpos($td, 'dhcfighters-lib.php') < strpos($td, "!dhcf_game(\$source)"),
    'the registry check runs before dhcfighters-lib.php loads, so it always falls back');
 
+echo "\nanimation can be switched on for a still theme that has gifs\n";
+/*
+ * dropship_themes.extension is what a theme is SET to, not what it HAS:
+ * Oculus Lounge ships both sets, and the old 3D toggle was the only way to
+ * see the animated one. Retiring 3D was right -- it was a second format
+ * calling itself a dimension, and it dragged two blanket str_replace
+ * passes over stored replay markup with it -- but it took that with it.
+ */
+$bgdir = __DIR__ . '/dropship/harness-anim-test';
+@mkdir($bgdir . '/images/drop', 0777, true);
+@mkdir($bgdir . '/images/live/beach', 0777, true);
+ok(is_dir($bgdir . '/images/live/beach'), 'could not build a throwaway theme to probe');
+ok(!dropshipThemeHasGifArt('harness-anim-test'),
+   'a theme with no gifs on disk is reported as animated');
+file_put_contents($bgdir . '/images/drop/1.gif', 'x');
+ok(!dropshipThemeHasGifArt('harness-anim-test'),
+   'ONE stray gif makes a still theme advertise itself as animated');
+file_put_contents($bgdir . '/images/live/beach/1.gif', 'x');
+ok(dropshipThemeHasGifArt('harness-anim-test'), 'a theme with gifs on disk is not found');
+/* The preference is only honoured when the files are there, so a stale
+   session flag can never make a theme ask for art it does not have. */
+$_SESSION['userData']['animation'] = 'true';
+ok(dropshipAnimationOn('harness-anim-test'), 'the preference is ignored when the gifs exist');
+ok(!dropshipAnimationOn('no-such-theme'),
+   'the preference is honoured for a theme with no gifs, which would ask for 404s');
+$_SESSION['userData']['animation'] = 'false';
+ok(!dropshipAnimationOn('harness-anim-test'), 'turning it off does not turn it off');
+unset($_SESSION['userData']['animation']);
+ok(!dropshipAnimationOn('harness-anim-test'), 'animation is on by default, changing every theme');
+/* Anything other than the literal 'true' is off -- the value decides which
+   FILES the run asks for. */
+foreach (array('1', 'yes', 'TRUE', 'on', 1, true) as $junk) {
+	$_SESSION['userData']['animation'] = $junk;
+	ok(!dropshipAnimationOn('harness-anim-test'),
+	   'a loose value (' . var_export($junk, true) . ') counts as animation on');
+}
+unset($_SESSION['userData']['animation']);
+
+/*
+ * DRIVEN THROUGH THE REAL RESOLVER, which is the only thing that matters:
+ * every caller asks dropshipMediaExtension(), so a preference the helpers
+ * agree on but the resolver ignores changes nothing on screen. Asserting
+ * the pieces separately let exactly that mutation live.
+ */
+if (!function_exists('evaluateText')) {
+	function evaluateText($t) { return $t === 'gif' ? $GLOBALS['__ext'] : $t; }
+}
+$GLOBALS['slug'] = 'harness-anim-test';
+$GLOBALS['__ext'] = 'png';
+$_SESSION['userData']['animation'] = 'true';
+ok(dropshipMediaExtension() === 'gif',
+   'animation is on and the gifs exist, but the run still asks for stills');
+/* ...and the pan has to come off with it, or a 40s drift is dragged across
+   art that is already moving. */
+ok(dropshipMediaIsStill() === false, 'the Ken Burns pan is still laid over the animated set');
+$_SESSION['userData']['animation'] = 'false';
+ok(dropshipMediaExtension() === 'png', 'turning animation off does not go back to the stills');
+ok(dropshipMediaIsStill() === true, 'the pan does not come back when animation is off');
+/* A theme with no gifs cannot be switched, however the flag is set. */
+$GLOBALS['slug'] = 'no-such-theme';
+$_SESSION['userData']['animation'] = 'true';
+ok(dropshipMediaExtension() === 'png',
+   'a theme with no gifs on disk is switched to gif anyway, so every frame 404s');
+/* A theme already set to gif is unaffected either way. */
+$GLOBALS['slug'] = 'harness-anim-test';
+$GLOBALS['__ext'] = 'gif';
+ok(dropshipMediaExtension() === 'gif', 'an already-animated theme is changed by the preference');
+unset($_SESSION['userData']['animation'], $GLOBALS['slug']);
+$GLOBALS['__ext'] = 'gif';
+
+foreach (array($bgdir . '/images/drop/1.gif', $bgdir . '/images/live/beach/1.gif') as $f) @unlink($f);
+foreach (array('/images/live/beach', '/images/live', '/images/drop', '/images', '') as $d) @rmdir($bgdir . $d);
+ok(!is_dir($bgdir), 'the harness left its throwaway theme behind');
+/* The endpoint must not store anything but the two values it means --
+   unlike toggle-audio.php next door, which writes $_GET straight in. */
+$tog = (string)file_get_contents(__DIR__ . '/dropship/ajax/toggle-animation.php');
+ok(strpos($tog, "\$_GET['status'] === 'true' ? 'true' : 'false'") !== false,
+   'the animation endpoint stores whatever it is given');
+/* The switch is only offered when it would do something. */
+$dash6 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(strpos($dash6, "dropshipMediaExtension() !== 'gif'") !== false,
+   'the switch is offered on a theme that is already animated');
+ok(strpos($dash6, 'dropshipThemeHasGifArt($slug)') !== false,
+   'the switch is offered on a theme with no gifs, so it would switch to 404s');
+ok(strpos($dash6, 'toggleAnimation(this.checked)') !== false, 'the switch is not wired up');
+/* It has to reload: the extension decides what the SERVER renders. */
+$js2 = (string)file_get_contents(__DIR__ . '/dropship/dropship.js');
+ok(strpos($js2, 'function toggleAnimation') !== false, 'there is no client handler');
+ok(strpos($js2, 'window.location.reload()') !== false,
+   'the page is not redrawn, so the art does not actually change');
+ok(strpos($js2, '.then(done, done)') !== false,
+   'the reload does not wait for the write, so it races the session and comes back unchanged');
+
 echo "\nthe media extension decides the motion\n";
 /*
  * A gif animates itself; a still needs the Ken Burns pan (.image-wrap, a 40s
