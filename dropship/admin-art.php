@@ -122,7 +122,11 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['art'])) {
 	$manifest = dropshipArtManifest($ext);
 	$icon_names = array();
 	foreach (dropshipThemeIconSlots($conn, $pid) as $ic) if ($ic['safe']) $icon_names[] = $ic['rel'];
-	$valid = in_array($slot, $manifest, true) || in_array($slot, $icon_names, true);
+	/* The page background is its own slot: not under images/, one per
+	   theme, and scaled to the viewport rather than to a pane. */
+	$bg_slot = dropshipArtBackgroundSlot($slug);
+	$is_bg   = ($bg_slot && $slot === $bg_slot['rel']);
+	$valid = $is_bg || in_array($slot, $manifest, true) || in_array($slot, $icon_names, true);
 	$is_icon = in_array($slot, $icon_names, true);
 
 	if (!$valid) {
@@ -131,12 +135,22 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['art'])) {
 		$msg['err'][] = 'Upload failed (code ' . (int)$_FILES['art']['error'] . ').';
 	} else {
 		$slot_ext = strtolower(pathinfo($slot, PATHINFO_EXTENSION));
+		if ($is_bg) {
+			/* Keeps whatever extension was uploaded and clears the others,
+			   because the lookup globs and would otherwise pick between a
+			   .jpg and a .png by alphabet. */
+			$up_ext = strtolower(pathinfo((string)$_FILES['art']['name'], PATHINFO_EXTENSION));
+			$why = dropshipArtStoreBackground($_FILES['art']['tmp_name'], $slug, $up_ext);
+			if ($why === '') $msg['ok'][] = 'Background replaced.';
+			else             $msg['err'][] = 'Background &mdash; ' . htmlspecialchars($why);
+		} else {
 		/* An icon is shared, so it is written beside the page rather than
 		   inside the theme folder. */
 		$dest = ($is_icon ? rtrim(__DIR__, '/') . '/' : $base) . $slot;
 		list($ok, $why) = dropshipArtStore($_FILES['art']['tmp_name'], $dest, $slot_ext);
 		if ($ok) $msg['ok'][] = $slot . ' &mdash; ' . $why;
 		else     $msg['err'][] = $slot . ' &mdash; ' . $why;
+		}
 	}
 }
 
@@ -310,7 +324,7 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	 * it to, because a reskin is decided one object at a time.
 	 */
 	$icon_files = dropshipArtIconFiles();
-	foreach (dropshipArtPlan($conn, $pid, $ext) as $group => $g): ?>
+	foreach (dropshipArtPlan($conn, $pid, $ext, $slug) as $group => $g): ?>
 	<h4><?php echo $h($group); ?></h4>
 	<p class="note"><?php echo $h($g['note']); ?></p>
 	<?php foreach ($g['rows'] as $row): ?>
@@ -332,13 +346,17 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	<div class="slots">
 	<?php foreach ($row['slots'] as $slot):
 		$is_icon = ($slot['kind'] === 'icon');
+		$is_bgs  = ($slot['kind'] === 'bg');
 		$rel     = $slot['rel'];
 		/* Icons are ONE SHARED FOLDER for every theme -- the page asks for
 		   icons/<name>.png and all four projects are served from the same
 		   place -- so they are addressed from here, not from the theme's
 		   own folder. */
-		$abs  = $is_icon ? rtrim(__DIR__, '/') . '/' . $rel : $base . $rel;
-		$src  = $is_icon ? '/staking/dropship/' . $rel : $web . $rel;
+		/* A background and an icon both sit beside the page rather than
+		   inside the theme's images/ folder. */
+		$beside = ($is_icon || $is_bgs);
+		$abs  = $beside ? rtrim(__DIR__, '/') . '/' . $rel : $base . $rel;
+		$src  = $beside ? '/staking/dropship/' . $rel : $web . $rel;
 		$here = is_file($abs);
 		$dims = '';
 		if ($here) {
@@ -357,7 +375,9 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 				<img src="<?php echo $h($src); ?>?v=<?php echo @filemtime($abs); ?>" alt="" loading="lazy">
 			<?php else: ?><span class="none">missing</span><?php endif; ?>
 			</div>
-		<?php if ($is_icon): ?>
+		<?php if ($is_bgs): ?>
+			<span class="name">Background</span>
+		<?php elseif ($is_icon): ?>
 			<?php /* The thing's name is on the row header; the card only has
 			         to say which of the row's pictures this one is. */ ?>
 			<span class="name">Icon</span>
@@ -382,6 +402,8 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 				<input type="hidden" name="project_id" value="<?php echo $pid; ?>">
 				<input type="hidden" name="slot" value="<?php echo $h($rel); ?>">
 				<input type="file" name="art" accept="<?php echo $is_icon ? 'image/png' : 'image/*'; ?>" required>
+				<?php if ($is_bgs): ?><span class="dims">scaled to fit <?php
+					echo dropshipArtMaxBackgroundWidth(); ?>px wide</span><?php endif; ?>
 				<button type="submit"><?php echo $here ? 'Replace' : 'Upload'; ?></button>
 			</form>
 			<?php

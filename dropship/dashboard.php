@@ -848,12 +848,10 @@ if($filterby != ""){
 if(isset($_SESSION['userData']['dropship_project_id'])){
 	echo "<script type='text/javascript'>document.getElementById('projects').value = '".$_SESSION['userData']['dropship_project_id']."';</script>";
 }
-if($_SESSION['userData']['dropship_project_id'] == 3){?>
-	<script type='text/javascript'>document.body.style.backgroundImage = "url('/filthy-mermaid/filthymermaidbackground.jpg')";</script>
-<?php }
-if($_SESSION['userData']['dropship_project_id'] == 4){?>
-	<script type='text/javascript'>document.body.style.backgroundImage = "url('/staking/dropship/oculus-lounge/oculusloungebackground.png')";</script>
-<?php }
+/* The page background is set once in header.php, which every page
+   includes -- these two copies only ran on the dashboard, and the Filthy
+   Mermaid one was missing the /staking/dropship prefix every other path
+   on the page carries, so it 404'd while the file sat there. */
 ?>
 <!-- wallet.js no longer loaded -- its connectWallet()/sendAddress() drove the
      removed "Connect a wallet" UI, dead now that wallet connection is

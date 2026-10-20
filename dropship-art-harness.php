@@ -192,6 +192,124 @@ ok(strpos($adm2, 'dropshipArtTitle($rel)') !== false, 'the page does not show sl
 ok(strpos($adm2, 'dropshipArtSlotMapping($conn, $pid, $rel)') !== false,
    'the page does not show what the theme calls each thing');
 
+echo "\nthe page background is found, not hardcoded\n";
+/*
+ * THREE WAYS TO GET THIS WRONG AND IT MANAGED TWO. The markup was repeated
+ * per project id: header.php handled project 4 only, dashboard.php had a
+ * second copy for 3 and 4, and the Filthy Mermaid one read
+ * url('/filthy-mermaid/filthymermaidbackground.jpg') -- missing the
+ * /staking/dropship prefix every other path on the page carries -- so it
+ * 404'd while the file sat on the server. Even fixed, the dashboard copy
+ * would have left every other page bare.
+ */
+ok(dropshipArtBackgroundSlot('') === null, 'a theme with no slug still gets a background path');
+$fm = dropshipArtBackgroundSlot('filthy-mermaid');
+ok($fm['dir'] === 'filthy-mermaid/', 'a reskin background is not looked for under its own slug');
+ok($fm['stem'] === 'filthymermaidbackground', 'the background stem is not the slug with hyphens removed');
+/* Drop Ship's art is flat, so its background is too. */
+$ds = dropshipArtBackgroundSlot('drop-ship');
+ok($ds['dir'] === '', "Drop Ship's background is looked for in a subfolder it does not have");
+ok($ds['stem'] === 'dropshipbackground', "Drop Ship's background stem is wrong");
+/* The slug is concatenated into a path, so it is rebuilt, never trusted. */
+$esc = dropshipArtBackgroundSlot('../../etc');
+ok($esc === null || strpos($esc['dir'], '..') === false,
+   'a slug can walk out of the dropship folder');
+
+/*
+ * DRIVEN FOR REAL against a throwaway theme folder, because the extension
+ * genuinely varies -- Oculus Lounge is .png, Filthy Mermaid is .jpg -- so
+ * the file is FOUND rather than assumed, and that is the part worth
+ * testing rather than asserting.
+ */
+$tdir = __DIR__ . '/dropship/harness-bg-test';
+$made = @mkdir($tdir);
+if ($made) {
+	ok(dropshipThemeBackground('harness-bg-test') === '',
+	   'a theme with no background file still returns a url, which renders as a broken one');
+	file_put_contents($tdir . '/harnessbgtestbackground.png', 'x');
+	ok(dropshipThemeBackground('harness-bg-test') === '/staking/dropship/harness-bg-test/harnessbgtestbackground.png',
+	   'a .png background is not found: ' . var_export(dropshipThemeBackground('harness-bg-test'), true));
+	@unlink($tdir . '/harnessbgtestbackground.png');
+	file_put_contents($tdir . '/harnessbgtestbackground.jpg', 'x');
+	ok(dropshipThemeBackground('harness-bg-test') === '/staking/dropship/harness-bg-test/harnessbgtestbackground.jpg',
+	   'a .jpg background is not found, so the extension is being assumed');
+	/* It must carry the prefix. That one missing segment is the whole bug. */
+	ok(strpos(dropshipThemeBackground('harness-bg-test'), '/staking/dropship/') === 0,
+	   'the background url is missing the /staking/dropship prefix, exactly as before');
+	/* A file that is not an image must not be picked up as one. */
+	@unlink($tdir . '/harnessbgtestbackground.jpg');
+	file_put_contents($tdir . '/harnessbgtestbackground.txt', 'x');
+	ok(dropshipThemeBackground('harness-bg-test') === '',
+	   'a non-image is served as the page background');
+	@unlink($tdir . '/harnessbgtestbackground.txt');
+	@rmdir($tdir);
+	ok(!is_dir($tdir), 'the harness left its throwaway theme folder behind');
+} else {
+	ok(false, 'could not create a throwaway theme folder, so the lookup was never driven');
+}
+
+/* The plan must actually carry it, or there is no upload control at all. */
+$bgplan = dropshipArtPlan($cz, 1, 'gif', 'filthy-mermaid');
+ok(isset($bgplan['The page background']), 'the art page has no background slot');
+ok(array_key_first($bgplan) === 'The page background',
+   'the background is not the first thing on the page, though it is the first thing seen');
+$bgslots = $bgplan['The page background']['rows'][0]['slots'];
+ok(count($bgslots) === 1 && $bgslots[0]['kind'] === 'bg',
+   'the background row does not hold exactly one background slot');
+ok($bgslots[0]['rel'] === 'filthy-mermaid/filthymermaidbackground.jpg',
+   'the background slot points somewhere unexpected: ' . $bgslots[0]['rel']);
+/* A theme with no slug gets no background group rather than a broken one. */
+ok(!isset(dropshipArtPlan($cz, 1, 'gif', '')['The page background']),
+   'a theme with no slug still gets a background slot');
+/* ONE copy of the flat-vs-nested rule. Two functions decided it
+   independently, and a mutation breaking one left the other passing. */
+$th3 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-themes.php'));
+$art5 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-art.php'));
+ok(substr_count($th3 . $art5, "=== 'drop-ship') ? '' :") === 1,
+   'the flat-vs-nested background rule is written in more than one place again');
+ok(strpos($art5, 'function dropshipArtBackgroundSlot') === false,
+   'the slot builder is back in dropship-art.php, which the game pages do not load');
+
+/* It is set ONCE, in the header every page includes. */
+$hdr2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/header.php'));
+ok(strpos($hdr2, 'dropshipThemeBackground($slug)') !== false,
+   'the header does not look the background up, so only hardcoded themes get one');
+ok(strpos($hdr2, 'oculusloungebackground') === false,
+   'the header still hardcodes one theme\'s background');
+$dash5 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(strpos($dash5, 'backgroundImage') === false
+   || strpos($dash5, 'results-image') !== false,
+   'the dashboard sets the page background again, so it differs from every other page');
+ok(strpos($dash5, 'filthymermaidbackground') === false,
+   'the dashboard still hardcodes the Filthy Mermaid background');
+/* $slug has to exist by the time the header runs, on EVERY page. */
+foreach (glob(__DIR__ . '/dropship/*.php') as $page) {
+	$psrc = (string)file_get_contents($page);
+	$at_hdr = strpos($psrc, "include 'header.php'");
+	if ($at_hdr === false) continue;
+	$at_ds = strpos($psrc, "include 'dropship.php'");
+	ok($at_ds !== false && $at_ds < $at_hdr,
+	   basename($page) . ' includes header.php before dropship.php, so $slug is undefined there');
+}
+
+/* A background is scaled to the VIEWPORT, not to a pane. */
+ok(dropshipArtMaxBackgroundWidth() > dropshipArtMaxWidth(),
+   'the background is capped at the round-art size, which is visibly soft full-screen');
+$art4 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-art.php'));
+ok(strpos($art4, 'function dropshipArtStore($tmp_path, $dest_abs, $declared_ext, $max_w = 0, $max_h = 0)') !== false,
+   'the store cannot be given a different maximum, so the background shares the pane cap');
+ok(strpos($art4, 'if ($max_w <= 0) $max_w = dropshipArtMaxWidth();') !== false,
+   'omitting the maximum no longer falls back to the pane-derived default');
+/* One background per theme: the old extension has to go, or the glob picks
+   between a .jpg and a .png by alphabet. */
+ok(strpos($art4, 'if (realpath($old) !== realpath($dest)) @unlink($old);') !== false,
+   'replacing a background with a different extension leaves both files behind');
+$adm5 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-art.php'));
+ok(strpos($adm5, 'dropshipArtStoreBackground($_FILES[\'art\'][\'tmp_name\'], $slug, $up_ext)') !== false,
+   'the art admin cannot replace the background');
+ok(strpos($adm5, '$is_bg   = ($bg_slot && $slot === $bg_slot[\'rel\']);') !== false,
+   'the background is not recognised as a valid upload slot');
+
 echo "\nthe base game's slug maps to the flat folder\n";
 /*
  * Project 1 is seeded with slug 'drop-ship' so the base game can be
@@ -330,7 +448,7 @@ ok(count($rowsBy('Armor')) === 8, 'the Armor group does not hold all eight worn 
 
 /* The page must render the one merged list, not the two it replaced. */
 $adm3 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-art.php'));
-ok(strpos($adm3, 'dropshipArtPlan($conn, $pid, $ext)') !== false,
+ok(strpos($adm3, 'dropshipArtPlan($conn, $pid, $ext, $slug)') !== false,
    'the page does not render the merged plan');
 ok(strpos($adm3, '<h3>Icons</h3>') === false,
    'the separate Icons block is back, so an icon is away from the art it belongs with');
@@ -386,8 +504,12 @@ ok(strpos($adm4, "echo json_encode(array('ok' => false, 'note' => 'Not yours to 
  * same validation, same slot-from-the-manifest rule -- and the forms are
  * ordinary POSTs that still work with the script absent.
  */
-ok(strpos($adm4, '$valid = in_array($slot, $manifest, true) || in_array($slot, $icon_names, true);') !== false,
+ok(strpos($adm4, '$valid = $is_bg || in_array($slot, $manifest, true) || in_array($slot, $icon_names, true);') !== false,
    'the in-place path skipped the slot validation');
+/* The background is a slot like any other, so it must be validated the
+   same way rather than trusted because it came from a different branch. */
+ok(strpos($adm4, "\$is_bg   = (\$bg_slot && \$slot === \$bg_slot['rel']);") !== false,
+   'the background upload target is taken from the form rather than computed');
 ok(strpos($adm4, 'ev.preventDefault()') !== false, 'the script never intercepts the submit');
 ok(strpos($adm4, "data.append('ajax', '1')") !== false,
    'the script posts without the flag, so it gets a whole page back');

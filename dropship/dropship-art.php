@@ -200,6 +200,13 @@ function dropshipArtAudit($slug, $ext, $base_dir = null, $base_url = null) {
  */
 function dropshipArtMaxWidth()  { return 1080; }
 function dropshipArtMaxHeight() { return 1080; }
+/* The page background is painted with `background-size: cover` and
+   `background-attachment: fixed` on the body, so it is scaled to the
+   VIEWPORT, not to a pane -- 1080 would be visibly soft on any normal
+   desktop. 1920 covers the common widths; `cover` stretches past that
+   gently, and the two that exist today are 1000 and 2000 wide. */
+function dropshipArtMaxBackgroundWidth()  { return 1920; }
+function dropshipArtMaxBackgroundHeight() { return 1920; }
 
 /**
  * The manifest, grouped the way somebody filling it in would want to read it.
@@ -276,9 +283,16 @@ function dropshipArtIsAnimatedGif($path) {
  * flattened one is the theme broken in a way nobody would notice until a
  * player mentions the animations stopped.
  */
-function dropshipArtStore($tmp_path, $dest_abs, $declared_ext) {
-	$max_w = dropshipArtMaxWidth();
-	$max_h = dropshipArtMaxHeight();
+function dropshipArtStore($tmp_path, $dest_abs, $declared_ext, $max_w = 0, $max_h = 0) {
+	/*
+	 * THE PAGE BACKGROUND NEEDS MORE ROOM THAN ROUND ART. Round art is
+	 * capped at the pane it is painted into; a background is
+	 * `background-size: cover` on the whole viewport, so the limit is the
+	 * widest screen rather than a box on the page. Callers pass their own
+	 * maximum; everything else keeps the pane-derived default.
+	 */
+	if ($max_w <= 0) $max_w = dropshipArtMaxWidth();
+	if ($max_h <= 0) $max_h = dropshipArtMaxHeight();
 
 	$info = @getimagesize($tmp_path);
 	if (!$info) return array(false, 'That file is not an image this server can read.');
@@ -600,7 +614,7 @@ function dropshipArtThingLabels() {
  * not a picture of a nameable thing -- beach frames, deaths -- and is
  * rendered as a plain band with no header.
  */
-function dropshipArtPlan($conn, $project_id, $ext = 'gif') {
+function dropshipArtPlan($conn, $project_id, $ext = 'gif', $project_slug = '') {
 	$icons = array();
 	foreach (dropshipThemeIconSlots($conn, $project_id) as $ic) $icons[$ic['term']] = $ic;
 	$labels = dropshipArtThingLabels();
@@ -622,6 +636,21 @@ function dropshipArtPlan($conn, $project_id, $ext = 'gif') {
 			}
 		}
 		$out[$name] = array('note' => $g['note'], 'rows' => dropshipArtRowList($rows, $labels, $conn, $project_id));
+	}
+
+	/*
+	 * THE PAGE BACKGROUND, first, because it is the one image somebody
+	 * notices before anything else on the page.
+	 */
+	$bg = dropshipArtBackgroundSlot($project_slug);
+	if ($bg) {
+		$out = array('The page background' => array(
+			'note' => 'Behind every page of this theme. Scaled to the viewport, not to a pane, '
+			        . 'so it is allowed to be bigger than the round art.',
+			'rows' => array(array('label' => 'Page background', 'said' => '', 'slots' => array(
+				array('kind' => 'bg', 'rel' => $bg['rel'], 'exists' => $bg['exists']),
+			))),
+		)) + $out;
 	}
 
 	/*
@@ -730,6 +759,38 @@ function dropshipArtIconRename($conn, $from, $to, $project_id) {
 	}
 	if (!@rename($dir . '/' . $from . '.png', $dir . '/' . $to . '.png')) {
 		return "Could not rename icons/$from.png. Check the folder is writable.";
+	}
+	return '';
+}
+
+/* dropshipArtBackgroundSlot() lives in dropship-themes.php, which every
+   Drop Ship page loads -- the game needs the background too, not just
+   this admin, and two copies of the flat-vs-nested rule is one too many. */
+
+
+/**
+ * Replace a theme's background, whatever extension it had.
+ *
+ * ONE BACKGROUND PER THEME, so the old file is removed rather than left
+ * beside the new one: the lookup globs for <stem>.* and would otherwise
+ * pick between a .jpg and a .png by alphabet, which is not a decision
+ * anybody made. Returns '' on success, else why not.
+ */
+function dropshipArtStoreBackground($tmp_path, $slug, $declared_ext) {
+	$slot = dropshipArtBackgroundSlot($slug);
+	if (!$slot) return 'That theme has no slug, so there is nowhere to put it.';
+	$ext = strtolower($declared_ext);
+	if (!in_array($ext, array('jpg', 'jpeg', 'png', 'gif', 'webp'), true)) {
+		return 'A background has to be a jpg, png, gif or webp.';
+	}
+	$dest = rtrim(__DIR__, '/') . '/' . $slot['dir'] . $slot['stem'] . '.' . $ext;
+	list($ok, $why) = dropshipArtStore($tmp_path, $dest, $ext,
+		dropshipArtMaxBackgroundWidth(), dropshipArtMaxBackgroundHeight());
+	if (!$ok) return $why;
+	/* Drop the other extensions, or the glob chooses between them. */
+	foreach ((array)@glob(rtrim(__DIR__, '/') . '/' . $slot['dir'] . $slot['stem']
+	                      . '.{jpg,jpeg,png,gif,webp}', GLOB_BRACE) as $old) {
+		if (realpath($old) !== realpath($dest)) @unlink($old);
 	}
 	return '';
 }

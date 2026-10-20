@@ -383,3 +383,61 @@ function dropshipThemeTraitSource($conn, $project_id) {
 	}
 	return ((int)$project_id === 4) ? 'skulliance' : 'koios';
 }
+
+/**
+ * A theme's page background, or '' when it has none.
+ *
+ * THREE BUGS IN ONE LINE, which is why this is a function now. The markup
+ * was repeated per project id and Filthy Mermaid's copy read
+ * url('/filthy-mermaid/filthymermaidbackground.jpg') -- missing the
+ * /staking/dropship prefix every other path on the page carries, so it
+ * 404'd while the file sat there. The copy in dashboard.php only runs on
+ * the dashboard, so even fixed it would have left every other page bare.
+ * And header.php's copy handled project 4 and nothing else, so no new
+ * theme could ever have one without an edit here.
+ *
+ * NAMED BY CONVENTION AND VERIFIED ON DISK: <slug>/<slug minus
+ * hyphens>background.<ext>, with Drop Ship's own flat the way the rest of
+ * its art is. The extension genuinely varies -- Oculus Lounge is .png,
+ * Filthy Mermaid is .jpg -- so it is found rather than assumed, and a
+ * theme with no file gets '' and keeps the stylesheet's own background
+ * instead of a broken url().
+ */
+/**
+ * The page background as an uploadable slot: dir, stem and current file.
+ *
+ * NOT IN THE MANIFEST, because the manifest describes what the RUN asks
+ * for -- round art under images/ -- and this is page furniture that sits
+ * beside it. It still has to be managed somewhere, and hand-FTPing one
+ * file while every other image has an upload button is the kind of gap
+ * that leaves a theme half-finished.
+ *
+ * Returns array('rel', 'abs', 'stem', 'dir', 'exists'), where 'rel' is the
+ * CURRENT file when there is one and the stem plus the conventional
+ * extension when there is not, so the slot can be rendered either way.
+ */
+function dropshipArtBackgroundSlot($slug) {
+	$slug = dropshipThemeSlug($slug);
+	if ($slug === '') return null;
+	$dir  = ($slug === 'drop-ship') ? '' : $slug . '/';
+	$stem = str_replace('-', '', $slug) . 'background';
+	$hits = @glob(rtrim(__DIR__, '/') . '/' . $dir . $stem . '.{jpg,jpeg,png,gif,webp}', GLOB_BRACE);
+	$have = $hits ? basename($hits[0]) : '';
+	return array(
+		'dir'    => $dir,
+		'stem'   => $stem,
+		'rel'    => $dir . ($have !== '' ? $have : $stem . '.jpg'),
+		'abs'    => rtrim(__DIR__, '/') . '/' . $dir . $have,
+		'exists' => $have !== '',
+	);
+}
+
+function dropshipThemeBackground($slug) {
+	/* ONE RULE, ONE PLACE. This and the slot builder both decided whether a
+	   theme nests, and a mutation that broke the rule in one of them left
+	   the other passing. */
+	$slot = dropshipArtBackgroundSlot($slug);
+	return ($slot && $slot['exists'])
+		? '/staking/dropship/' . $slot['rel']
+		: '';
+}

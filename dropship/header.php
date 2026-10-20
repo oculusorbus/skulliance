@@ -216,8 +216,20 @@
 		})();
 		</script>
 		<button onclick="topFunction()" id="back-to-top-button" title="Go to top">^</button>
-<?php 
-if($_SESSION['userData']['dropship_project_id'] == 4){?>
-	<script type='text/javascript'>document.body.style.backgroundImage = "url('/staking/dropship/oculus-lounge/oculusloungebackground.png')";</script>
-<?php }
-?>
+<?php
+/*
+ * THE THEME'S PAGE BACKGROUND, for every theme and on every page.
+ *
+ * This was `if project_id == 4` here plus a second copy in dashboard.php
+ * for projects 3 and 4, and the Filthy Mermaid copy was missing the
+ * /staking/dropship prefix, so it 404'd while the file sat on the server.
+ * Three ways to get it wrong and it managed two of them. One lookup now,
+ * in the header every page already includes, so a theme gets its
+ * background everywhere rather than only on the dashboard.
+ */
+$ds_bg = function_exists('dropshipThemeBackground') && isset($slug)
+       ? dropshipThemeBackground($slug) : '';
+if ($ds_bg !== ''): ?>
+	<script type='text/javascript'>document.body.style.backgroundImage = "url('<?php
+		echo htmlspecialchars($ds_bg, ENT_QUOTES); ?>')";</script>
+<?php endif; ?>
