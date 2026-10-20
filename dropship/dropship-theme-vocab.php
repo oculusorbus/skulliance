@@ -37,7 +37,12 @@
 function dropshipThemeVocabulary() {
 	return array(
 		'Identity' => array(
-			array('label' => 'Drop Ship', 'exact' => array('Drop Ship'), 'desc' => array(), 'icons' => array('drop-ship'), 'themes' => 2),
+			/* NO ICON. The old chain carried a 'drop-ship' entry, but nothing has
+			   ever rendered icons/drop-ship.png -- every other use of that string
+			   is the art FOLDER slug. Project 1 had been asking for a 404 since
+			   before any of this, and claiming it here would put a permanently
+			   missing slot on the art page and demand three files nobody uses. */
+			array('label' => 'Drop Ship', 'exact' => array('Drop Ship'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
 			array('label' => 'Drop Ship Initiating', 'exact' => array('Drop Ship Initiating'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
 			array('label' => 'Drop Ship Landed', 'exact' => array('Drop Ship Landed'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
 			array('label' => 'SCRIP', 'exact' => array('SCRIP'), 'desc' => array(), 'icons' => array(), 'themes' => 3),

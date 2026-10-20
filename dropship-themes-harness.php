@@ -320,8 +320,15 @@ foreach (array('Stormed the Beach', 'Climbed the Hill', 'Entered the Bunker') as
  */
 ok($bylabel['Super Soldier']['icons'] === array('dropship', 'supersoldier'),
    "'dropship' is not Super Soldier's icon -- both themes send it to 'vip', as they do 'supersoldier'");
-ok($bylabel['Drop Ship']['icons'] === array('drop-ship'),
-   "the Drop Ship family claims an icon that is not its own");
+/* ...and Drop Ship has NO icon. The chain carried a 'drop-ship' entry, but
+   nothing renders icons/drop-ship.png -- every other use of that string is
+   the art folder slug -- so project 1 had been asking for a 404 since long
+   before any of this. Claiming it would put a permanently missing slot on
+   the art page and demand three files nobody uses. */
+ok($bylabel['Drop Ship']['icons'] === array(),
+   'the Drop Ship family claims an icon, but icons/drop-ship.png has never existed');
+ok(dropshipThemeIconLabel('drop-ship') === null,
+   "'drop-ship' is still treated as an icon filename");
 foreach ($vocab as $rows) foreach ($rows as $r) {
 	foreach ($r['icons'] as $ic) {
 		ok(preg_match('/^[a-z0-9-]+$/', $ic) === 1,
