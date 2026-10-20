@@ -138,7 +138,9 @@ $val = function ($k, $d = '') use ($theme, $h) {
 };
 ?>
 <style>
-.dsa{max-width:960px;text-align:left}
+/* FULL WIDTH of the content pane -- a capped column here is just empty
+   screen beside the form. */
+.dsa{text-align:left}
 .dsa h2,.dsa h3{color:#00c8a0;text-align:left}
 .dsa table{width:100%;border-collapse:collapse;margin:0 0 14px}
 .dsa td,.dsa th{padding:5px 7px;text-align:left;font-size:13px;

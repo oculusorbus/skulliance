@@ -466,6 +466,20 @@ $ci = new TConn(array(40 => array('id' => 4, 'project_id' => 40, 'slug' => 'ol')
                                  pair('exact', 'Heavy', 'Smoking Jacket'),
                                  pair('exact', 'Super Soldier', 'VIP'),
                                  pair('exact', 'Barracks', 'Green Room'))));
+/*
+ * A STALE STORED ROW MUST NOT WIN. Themes saved before the icon name became
+ * derived still carry icon rows, and the live data proved why that matters:
+ * Oculus Lounge kept answering 'robe' for heavy-armor long after the file
+ * was renamed smoking-jacket.png, so the shop asked for a picture that no
+ * longer existed. Deriving BEFORE the dictionary makes the leftovers inert
+ * whether or not anybody deletes them.
+ */
+$cs = new TConn(array(42 => array('id' => 6, 'project_id' => 42, 'slug' => 'ol2')),
+                array(6 => array(pair('exact', 'Heavy', 'Smoking Jacket'),
+                                 pair('exact', 'heavy-armor', 'robe'))));
+ok(dropshipThemeText($cs, 42, 'heavy-armor') === 'smoking-jacket',
+   "a leftover icon row still wins: '" . dropshipThemeText($cs, 42, 'heavy-armor') . "'");
+
 ok(dropshipThemeText($ci, 40, 'medkit') === 'sexy-nurse',
    "the Medkit icon does not follow the word: '" . dropshipThemeText($ci, 40, 'medkit') . "'");
 ok(dropshipThemeText($ci, 40, 'heavy-armor') === 'smoking-jacket',

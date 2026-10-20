@@ -121,7 +121,9 @@ $h = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES); };
 $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 ?>
 <style>
-.dsart{max-width:1100px;text-align:left}
+/* FULL WIDTH of the content pane. A capped measure here just leaves empty
+   screen beside a grid that would happily show two more columns. */
+.dsart{text-align:left}
 .dsart h2,.dsart h3{color:#00c8a0;text-align:left}
 .dsart h4{color:#e8eaed;font-size:13px;margin:18px 0 2px;text-transform:uppercase;
   letter-spacing:.07em;opacity:.8;text-align:left}
@@ -130,12 +132,18 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .msg.bad{background:rgba(224,70,107,.12);color:#e8a0b0}
 .dsart .msg.good{background:rgba(0,200,160,.12);color:#00c8a0}
 .dsart .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:10px}
+/* A COLUMN, so the upload control sits on the floor of every card. The
+   cards carry different numbers of lines -- a mapping, a warning, a rename
+   -- and with the default stretch the buttons landed at a different height
+   in every one, which is what made a row of them look broken. */
 .dsart .slot{border:1px solid rgba(255,255,255,.12);border-radius:4px;padding:8px;
-  background:rgba(0,0,0,.25)}
+  background:rgba(0,0,0,.25);display:flex;flex-direction:column}
+.dsart .slot form{margin-top:auto}
+.dsart .slot .ren{margin-top:6px}
 .dsart .slot.gap{border-color:rgba(224,70,107,.45)}
 .dsart .shot{width:100%;height:110px;background:#07111d;border-radius:3px;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;margin:0 0 6px}
-.dsart .shot img{max-width:100%;max-height:110px}
+  display:flex;align-items:center;justify-content:center;margin:0 0 6px;flex:none}
+.dsart .shot img{max-width:100%;max-height:110px;width:auto;margin:0}
 .dsart .shot .none{font-size:11px;color:#e8a0b0}
 .dsart .name{font-size:12px;color:#e8eaed;display:block;font-weight:bold;margin:0 0 2px}
 .dsart .maps{font-size:10.5px;color:#7a9eb0;display:block}
@@ -149,7 +157,17 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
   font-weight:bold;font-size:11px;cursor:pointer;margin-top:5px}
 .dsart .pick a{display:inline-block;margin:0 8px 8px 0;font-size:13px}
 .dsart .bar{font-size:12px;color:#7a9eb0;margin:0 0 14px}
-.dsart .slot.icon{background:rgba(0,200,160,.05)}
+/* An icon is a small square next to landscape frames, so it is shown at its
+   own size on a checked ground rather than stretched to fill the box -- these
+   are transparent PNGs and a flat dark panel hides their edges. */
+.dsart .slot.is-icon{background:rgba(0,200,160,.05)}
+/* SAME HEIGHT as an art slot, so the title line lands at the same place
+   right across a row; only the image inside is capped. */
+.dsart .slot.is-icon .shot{background-color:#0b1724;
+  background-image:linear-gradient(45deg,rgba(255,255,255,.04) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.04) 75%),
+                   linear-gradient(45deg,rgba(255,255,255,.04) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.04) 75%);
+  background-size:14px 14px;background-position:0 0,7px 7px}
+.dsart .slot.is-icon .shot img{max-height:64px;max-width:64px}
 .dsart .tag{font-size:9.5px;color:#00c8a0;border:1px solid rgba(0,200,160,.4);
   border-radius:3px;padding:0 4px;margin-left:4px;vertical-align:1px;font-weight:normal}
 .dsart .ren{margin-top:6px;border-top:1px solid rgba(255,255,255,.08);padding-top:6px}
@@ -225,7 +243,11 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 			      . round(@filesize($abs) / 1024) . 'KB';
 		}
 	?>
-		<div class="slot <?php echo $here ? '' : 'gap'; ?><?php echo $is_icon ? ' icon' : ''; ?>">
+		<?php /* is-icon, NOT icon: .icon is a GLOBAL class in dist/flexbox.css
+		         (width:40px, for the little images in the nav and on cards), so
+		         naming the modifier 'icon' collapsed every icon slot to 55px and
+		         wrapped its text one character per line. */ ?>
+		<div class="slot <?php echo $here ? '' : 'gap'; ?><?php echo $is_icon ? ' is-icon' : ''; ?>">
 			<div class="shot">
 			<?php if ($here): ?>
 				<img src="<?php echo $h($src); ?>?v=<?php echo @filemtime($abs); ?>" alt="" loading="lazy">

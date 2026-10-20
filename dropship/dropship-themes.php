@@ -142,10 +142,17 @@ function dropshipThemeText($conn, $project_id, $text) {
 	$d = dropshipThemeDictionaries($conn, $project_id);
 	if ($d === null) return null;
 
-	if (isset($d['exact'][$text])) return $d['exact'][$text];
-
 	/*
 	 * AN ICON NAME IS DERIVED, NEVER STORED.
+	 *
+	 * BEFORE THE DICTIONARY, NOT AFTER. A theme saved before this change
+	 * still HAS icon rows, and a stored row that wins is a stored row that
+	 * can be stale -- which is exactly what happened: Oculus Lounge kept
+	 * answering 'robe' for heavy-armor after the file became
+	 * smoking-jacket.png, so the shop asked for a picture that had been
+	 * renamed out from under it. Deriving first makes those leftover rows
+	 * harmless whether or not anybody deletes them, and the chain in db.php
+	 * already orders it this way.
 	 *
 	 * The markup asks for the icon by its Drop Ship filename -- the shop
 	 * renders icons/<?= evaluateText('medkit') ?>.png -- and the answer is
@@ -169,6 +176,8 @@ function dropshipThemeText($conn, $project_id, $text) {
 		   pass returns an untouched string rather than null. */
 		return $text;
 	}
+
+	if (isset($d['exact'][$text])) return $d['exact'][$text];
 
 	foreach ($d['description'] as $find => $replacement) {
 		if ($find !== '' && str_contains($text, $find)) {
