@@ -57,7 +57,7 @@ An earlier cut of this table carried `currency`, `squad_label` and
 `character_label`. They were the same three words the wording already owns -
 `SCRIP`, `Super Soldier`, `Troops` - and holding them twice meant a theme
 could rename SCRIP in its wording and still read "SCRIP" on the dashboard,
-with nothing in the admin saying why. They are rows in `dropship_theme_text`
+with nothing in the admin saying why. They are rows in `theme_text`
 now, and `dashboard.php` reads them through `evaluateText()` like every other
 label on the page.
 
@@ -73,7 +73,7 @@ which is what the column existed to replace.
 ## Tables
 
 ```sql
-CREATE TABLE IF NOT EXISTS dropship_themes (
+CREATE TABLE IF NOT EXISTS themes (
 	id               INT AUTO_INCREMENT PRIMARY KEY,
 	project_id       INT          NOT NULL,            -- projects.id
 	slug             VARCHAR(64)  NOT NULL,            -- image folder under dropship/
@@ -99,7 +99,7 @@ CREATE TABLE IF NOT EXISTS dropship_themes (
 	UNIQUE KEY uniq_slug (slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS dropship_theme_text (
+CREATE TABLE IF NOT EXISTS theme_text (
 	id          INT AUTO_INCREMENT PRIMARY KEY,
 	theme_id    INT          NOT NULL,
 	match_type  ENUM('exact','description') NOT NULL DEFAULT 'exact',
@@ -162,6 +162,22 @@ thing reading it is: under a case-insensitive column two rows differing only
 by case would be one row in the database and two in the dictionary, whether
 or not today's data happens to contain such a pair.
 
+### Renaming from the old `dropship_` prefix
+
+The tables were `dropship_themes` and `dropship_theme_text`. Nothing else
+in this database carries that prefix - it is Drop Ship's own database, so
+the prefix said nothing the schema did not already say. On a database that
+still has the old names:
+
+```sql
+RENAME TABLE dropship_themes     TO themes,
+             dropship_theme_text TO theme_text;
+```
+
+One statement, both tables, no data copied. Run it before deploying the
+code, or run the seed below instead, which creates them under the new
+names from scratch.
+
 ### The one file to run
 
 `dropship-themes-seed.sql` is self-contained: it DROPS both tables, creates
@@ -176,7 +192,7 @@ place instead.
 ### If the table already exists
 
 ```sql
-ALTER TABLE dropship_theme_text
+ALTER TABLE theme_text
   MODIFY find VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;
 ```
 
@@ -184,8 +200,8 @@ That rebuilds `uniq_pair` with the new collation. A seed that failed part way
 leaves rows behind, so clear both tables before re-running it:
 
 ```sql
-DELETE FROM dropship_theme_text;
-DELETE FROM dropship_themes;
+DELETE FROM theme_text;
+DELETE FROM themes;
 ```
 
 ### If the table already has the label columns
@@ -194,7 +210,7 @@ They were dropped once the wording took over (see above). Nothing reads
 them, so this is safe to run at any time:
 
 ```sql
-ALTER TABLE dropship_themes
+ALTER TABLE themes
   DROP COLUMN currency,
   DROP COLUMN squad_label,
   DROP COLUMN character_label;

@@ -73,11 +73,11 @@ if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		$existing = dropshipThemeConfig($conn, $pid);
 		if ($existing) {
-			$ok = $conn->query("UPDATE dropship_themes SET $cols, updated_at = NOW()
+			$ok = $conn->query("UPDATE themes SET $cols, updated_at = NOW()
 			                     WHERE id = " . (int)$existing['id']);
 			$theme_id = (int)$existing['id'];
 		} else {
-			$ok = $conn->query("INSERT INTO dropship_themes SET $cols, created_at = NOW()");
+			$ok = $conn->query("INSERT INTO themes SET $cols, created_at = NOW()");
 			$theme_id = (int)$conn->insert_id;
 		}
 		if (!$ok) {
@@ -104,7 +104,7 @@ if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST') {
 					'replacement' => isset($reps[$i]) ? trim((string)$reps[$i]) : '',
 				);
 			}
-			$conn->query("DELETE FROM dropship_theme_text WHERE theme_id = $theme_id");
+			$conn->query("DELETE FROM theme_text WHERE theme_id = $theme_id");
 			$wrote = 0; $wanted = 0;
 			foreach ($rows as $row) {
 				$find = $row['find'];
@@ -113,7 +113,7 @@ if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST') {
 				if ($rep === '') continue;               /* no override; no row */
 				$wanted++;
 				$type = $row['type'];
-				if ($conn->query("INSERT INTO dropship_theme_text
+				if ($conn->query("INSERT INTO theme_text
 				                  (theme_id, match_type, find, replacement, sort_order)
 				                  VALUES ($theme_id, '$type', '" . $e($find) . "', '"
 				                . $e($rep) . "', $wanted)")) $wrote++;
@@ -135,7 +135,7 @@ $edit_pid = (int)($_GET['project_id'] ?? ($_POST['project_id'] ?? 0));
 $theme    = $have_tables && $edit_pid ? dropshipThemeConfig($conn, $edit_pid) : null;
 $pairs    = array();
 if ($theme) {
-	$r = $conn->query("SELECT match_type, find, replacement FROM dropship_theme_text
+	$r = $conn->query("SELECT match_type, find, replacement FROM theme_text
 	                    WHERE theme_id = " . (int)$theme['id'] . "
 	                    ORDER BY match_type ASC, sort_order ASC, id ASC");
 	if ($r) while ($row = $r->fetch_assoc()) $pairs[] = $row;
@@ -192,8 +192,8 @@ $val = function ($k, $d = '') use ($theme, $h) {
 <h2>Themes</h2>
 
 <?php if (!$have_tables): ?>
-	<div class="msg bad">The tables <code>dropship_themes</code> and
-	<code>dropship_theme_text</code> do not exist on this database. Nothing here can
+	<div class="msg bad">The tables <code>themes</code> and
+	<code>theme_text</code> do not exist on this database. Nothing here can
 	be saved until they are created with the statements in
 	<code>dropship-themes-schema.md</code>.</div>
 <?php endif; ?>

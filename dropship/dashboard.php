@@ -411,7 +411,7 @@ if($_SESSION['userData']['dropship_project_id'] == 1 && isset($_SESSION['userDat
 /*
  * THE SAME WORD MAPPING AS EVERY OTHER LABEL ON THE PAGE.
  *
- * These three were a hardcoded chain on project id, and dropship_themes
+ * These three were a hardcoded chain on project id, and themes
  * carried currency/squad_label/character_label columns that duplicated it
  * -- a theme that renamed SCRIP in its wording still read "SCRIP" here
  * unless somebody also filled in the column, and nothing in the admin said
@@ -587,7 +587,7 @@ $characters = evaluateText("Troops");
 					   rewritten here to match a per-player toggle, with a
 					   blanket str_replace over the whole markup -- which also
 					   caught the word anywhere else in it. The extension is a
-					   property of the theme now (dropship_themes.extension),
+					   property of the theme now (themes.extension),
 					   so a replay is served exactly as it was recorded. */
 				}  
 				if(!isset($_POST['instant_replay']) && isset($_SESSION['userData']['current_score']) && isset($_SESSION['userData']['game_id']) && !isset($_POST['deactivate']) && !isset($_POST['newgame'])){

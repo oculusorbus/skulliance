@@ -38,11 +38,11 @@ class TConn {
 	}
 	public function query($sql) {
 		$this->queries++;
-		if (strpos($sql, 'SHOW TABLES') !== false) return new TRes(array(array('t' => 'dropship_themes')));
-		if (strpos($sql, 'SELECT project_id, active FROM dropship_themes') !== false) {
+		if (strpos($sql, 'SHOW TABLES') !== false) return new TRes(array(array('t' => 'themes')));
+		if (strpos($sql, 'SELECT project_id, active FROM themes') !== false) {
 			return new TRes(array_values($this->themes));
 		}
-		if (strpos($sql, 'FROM dropship_themes WHERE project_id') !== false) {
+		if (strpos($sql, 'FROM themes WHERE project_id') !== false) {
 			preg_match('/project_id = (\d+)/', $sql, $m);
 			$pid = (int)$m[1];
 			return new TRes(isset($this->themes[$pid]) ? array($this->themes[$pid]) : array());
@@ -66,7 +66,7 @@ class TConn {
 			}
 			return new TRes($rows);
 		}
-		if (strpos($sql, 'FROM dropship_theme_text') !== false) {
+		if (strpos($sql, 'FROM theme_text') !== false) {
 			preg_match('/theme_id = (\d+)/', $sql, $m);
 			$tid = (int)$m[1];
 			return new TRes(isset($this->text[$tid]) ? $this->text[$tid] : array());
@@ -218,7 +218,7 @@ $adm = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-theme
 ok(strpos($adm, 'dropshipThemeAdmin()') !== false, 'the admin page is not gated');
 /* REPLACED WHOLESALE. The form posts the complete set, so a row cleared in
    the browser has to vanish -- merging would make deletion impossible. */
-ok(strpos($adm, 'DELETE FROM dropship_theme_text WHERE theme_id') !== false,
+ok(strpos($adm, 'DELETE FROM theme_text WHERE theme_id') !== false,
    'the admin merges overrides instead of replacing them, so a row can never be deleted');
 ok(strpos($adm, 'part-translated') !== false,
    'a partial write reports success, leaving a theme speaking two languages');
@@ -257,7 +257,7 @@ $dbsrc = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'))
 ok(strpos($dbsrc, "\$text === 'gif'") !== false,
    'evaluateText() no longer answers the extension from the theme row');
 ok(strpos($dbsrc, "\$cfg['extension']") !== false,
-   'the extension does not come from dropship_themes.extension');
+   'the extension does not come from themes.extension');
 $ext_at   = strpos($dbsrc, "\$text === 'gif'");
 $table_at = strpos($dbsrc, 'dropshipThemeText($conn');
 ok($ext_at !== false && $table_at !== false && $ext_at < $table_at,
@@ -278,30 +278,30 @@ $seed = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
  * old table and fails on duplicate keys, and without the collation it fails
  * the way it originally did, on "#1062 Duplicate entry".
  */
-foreach (array('DROP TABLE IF EXISTS dropship_theme_text;',
-               'DROP TABLE IF EXISTS dropship_themes;',
-               'CREATE TABLE dropship_themes (',
-               'CREATE TABLE dropship_theme_text (') as $ddl) {
+foreach (array('DROP TABLE IF EXISTS theme_text;',
+               'DROP TABLE IF EXISTS themes;',
+               'CREATE TABLE themes (',
+               'CREATE TABLE theme_text (') as $ddl) {
 	ok(strpos($seed, $ddl) !== false, 'the seed cannot rebuild from scratch: no "' . $ddl . '"');
 }
 /* The child goes first, and both go before anything is written. */
-ok(strpos($seed, 'DROP TABLE IF EXISTS dropship_theme_text;')
-   < strpos($seed, 'DROP TABLE IF EXISTS dropship_themes;'),
+ok(strpos($seed, 'DROP TABLE IF EXISTS theme_text;')
+   < strpos($seed, 'DROP TABLE IF EXISTS themes;'),
    'the seed drops the parent table before the child');
-ok(strpos($seed, 'CREATE TABLE dropship_theme_text (')
-   < strpos($seed, 'INSERT INTO dropship_themes'),
+ok(strpos($seed, 'CREATE TABLE theme_text (')
+   < strpos($seed, 'INSERT INTO themes'),
    'the seed inserts before it has finished creating the tables');
 /* The collation, in the seed's OWN create -- the schema doc is checked
    separately and the two can drift. */
-ok(preg_match('/CREATE TABLE dropship_theme_text \(.*?COLLATE utf8mb4_bin.*?\n\) ENGINE/s', $seed) === 1,
+ok(preg_match('/CREATE TABLE theme_text \(.*?COLLATE utf8mb4_bin.*?\n\) ENGINE/s', $seed) === 1,
    "the seed's own CREATE lets the default collation decide, which is the #1062 bug again");
 ok(preg_match('/\n\tfind\s+VARCHAR\(190\)[^\n]*COLLATE utf8mb4_bin/', $seed) === 1,
    "it is not the find column in the seed's CREATE that is case sensitive");
 ok(strpos($seed, 'DESTRUCTIVE') !== false,
    'the seed drops tables without saying so at the top of the file');
 ok(strpos($seed, "'exact', 'gif'") === false,
-   'the seed carries a gif override, which would fight dropship_themes.extension');
-ok(substr_count($seed, 'INSERT INTO dropship_themes') === 4,
+   'the seed carries a gif override, which would fight themes.extension');
+ok(substr_count($seed, 'INSERT INTO themes') === 4,
    'the seed does not create all four themes');
 /*
  * PROJECT 1 GETS A ROW BUT NO TEXT. It used to get neither, on the grounds
@@ -352,7 +352,7 @@ foreach (array('exact|SCRIP', 'exact|Barracks', 'exact|Heavy', 'exact|Medkit',
 }
 /* 'gif' must NOT be offered: the extension is a column, not an override. */
 ok(!isset($terms['exact|gif']),
-   'the vocabulary offers gif as an override, which would fight dropship_themes.extension');
+   'the vocabulary offers gif as an override, which would fight themes.extension');
 /*
  * ONE BOX PER THING, in all four ways the game asks for it: the bare label,
  * the shop item, the word mid-sentence, and the icon filename. If those were
@@ -418,7 +418,7 @@ $seed = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
    belongs to is the block it sits in -- split on the marker rather than
    looking for an id that is not in the text. */
 $blocks = array();
-foreach (preg_split('/SET @t := \(SELECT id FROM dropship_themes WHERE project_id = (\d+)\);/',
+foreach (preg_split('/SET @t := \(SELECT id FROM themes WHERE project_id = (\d+)\);/',
                     $seed, -1, PREG_SPLIT_DELIM_CAPTURE) as $k => $part) {
 	if ($k % 2 === 1) $pid = $part; else if ($k > 0) $blocks[$pid] = $part;
 }
@@ -526,7 +526,7 @@ ok(dropshipThemeText($c9, 90, 'Barracks') === 'Barracks',
 
 echo "\nmaking a theme active is what puts it in front of players\n";
 /*
- * dropship_themes.active was written by the admin and read by nothing, so
+ * themes.active was written by the admin and read by nothing, so
  * ticking it did nothing: which projects a player saw was two names
  * hardcoded in getProjects(). That list is also what dropship.php validates
  * ?project_id against before the value reaches SQL, so the flag has to
@@ -731,7 +731,7 @@ foreach (array('medkit', 'heavy-armor', 'drop-box', 'quantum-stealth') as $term)
 
 echo "\nthe wording owns the labels, so there are no label columns\n";
 /*
- * dropship_themes used to carry currency, squad_label and character_label.
+ * themes used to carry currency, squad_label and character_label.
  * They held the same three words the wording already owns -- SCRIP, Super
  * Soldier, Troops -- so a theme could rename SCRIP in its wording and the
  * dashboard would still say "SCRIP", with nothing in the admin saying why.
@@ -744,12 +744,12 @@ $seedsql = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
    explains why these columns are gone, and a bare substring search found
    that prose and reported the column as still present. */
 foreach (array('currency', 'squad_label', 'character_label') as $col) {
-	ok(strpos($adm2, $col) === false, "the admin still writes dropship_themes.$col");
-	ok(!preg_match('/^\t' . $col . '\s/m', $schema), "the schema still creates dropship_themes.$col");
+	ok(strpos($adm2, $col) === false, "the admin still writes themes.$col");
+	ok(!preg_match('/^\t' . $col . '\s/m', $schema), "the schema still creates themes.$col");
 	ok(!preg_match('/^\s*\(project_id[^)]*\b' . $col . '\b/m', $seedsql),
-	   "the seed still fills dropship_themes.$col");
+	   "the seed still fills themes.$col");
 	ok(!preg_match('/^\t' . $col . '\s/m', $seedsql),
-	   "the seed's own CREATE still has dropship_themes.$col");
+	   "the seed's own CREATE still has themes.$col");
 }
 /* The dashboard reads all three through the same path as every other word. */
 foreach (array('$currency   = evaluateText("SCRIP")',
@@ -1488,7 +1488,7 @@ ok(strpos($td, 'dhcfighters-lib.php') < strpos($td, "!dhcf_game(\$source)"),
 
 echo "\nanimation can be switched on for a still theme that has gifs\n";
 /*
- * dropship_themes.extension is what a theme is SET to, not what it HAS:
+ * themes.extension is what a theme is SET to, not what it HAS:
  * Oculus Lounge ships both sets, and the old 3D toggle was the only way to
  * see the animated one. Retiring 3D was right -- it was a second format
  * calling itself a dimension, and it dragged two blanket str_replace
@@ -1691,6 +1691,47 @@ $adm3 = file_get_contents(__DIR__ . '/dropship/admin-themes.php');
 ok(strpos($adm3, 'Media extension') !== false, 'the admin does not call it the media extension');
 ok(strpos($adm3, 'Animation extension') === false, 'the old label is back');
 
+echo "\nnothing still looks for the old table names\n";
+/*
+ * The tables were dropship_themes and dropship_theme_text. Nothing else in
+ * Drop Ship's database carries that prefix -- it IS Drop Ship's database --
+ * so the prefix said nothing the schema did not. A rename is cheap to get
+ * 95% right and expensive to get 95% right: one missed query is a feature
+ * that silently stops working, because every lookup here is written to
+ * fall back quietly when the tables are absent.
+ */
+foreach (array('dropship/dropship-themes.php', 'dropship/admin-themes.php',
+               'dropship/db.php', 'dropship/dashboard.php', 'dropship/dropship-art.php',
+               'dropship/dropship-theme-vocab.php', 'dropship/dropship-nft-probe.php',
+               'dropship/dropship-themes-seed.sql') as $f) {
+	$fsrc = (string)@file_get_contents(__DIR__ . '/' . $f);
+	/* The seed and the schema name the old tables on purpose, in the
+	   migration note -- but only ever in a comment. */
+	$code = preg_replace('/^\s*--.*$/m', '', $fsrc);
+	ok(strpos($code, 'dropship_theme') === false,
+	   "$f still refers to the old table name outside a comment");
+}
+/*
+ * The schema doc is the ONE place that should still name the old tables,
+ * because it carries the migration -- so it is checked the other way
+ * round: the old names must appear ONLY inside the RENAME statement, and
+ * never in a CREATE or a query somebody might copy.
+ */
+$sch = (string)file_get_contents(__DIR__ . '/dropship/dropship-themes-schema.md');
+ok(strpos($sch, 'RENAME TABLE dropship_themes     TO themes,') !== false,
+   'the schema does not say how to rename an existing database');
+ok(preg_match('/^\s*CREATE TABLE[^\n]*dropship_theme/m', $sch) !== 1,
+   'the schema still CREATEs a table under the old name');
+ok(preg_match('/(?:FROM|INTO|UPDATE)\s+dropship_theme/', $sch) !== 1,
+   'the schema still shows a query against the old table names');
+/* The new names must be what the code actually asks for. */
+$lib = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-themes.php'));
+ok(strpos($lib, "SHOW TABLES LIKE 'themes'") !== false,
+   'the table check still probes for the old name, so every theme silently falls back');
+foreach (array('FROM themes WHERE project_id', 'FROM theme_text') as $frag) {
+	ok(strpos($lib, $frag) !== false, "the library no longer queries: $frag");
+}
+
 echo "\nthe find column is case sensitive, because the lookup is\n";
 /*
  * WHY THIS IS STILL utf8mb4_bin NOW THAT THE SEED HAS NO CASE-ONLY PAIRS.
@@ -1728,15 +1769,15 @@ $schema_src = file_get_contents(__DIR__ . '/dropship/dropship-themes-schema.md')
  * is exactly how the first version of this check missed a mutation that
  * stripped the collation from the CREATE itself.
  */
-$ct = strpos($schema_src, 'CREATE TABLE IF NOT EXISTS dropship_theme_text');
-ok($ct !== false, 'the schema has no CREATE for dropship_theme_text');
+$ct = strpos($schema_src, 'CREATE TABLE IF NOT EXISTS theme_text');
+ok($ct !== false, 'the schema has no CREATE for theme_text');
 $create_block = $ct === false ? ''
     : substr($schema_src, $ct, strpos($schema_src, 'ENGINE=InnoDB', $ct) - $ct);
 ok(strpos($create_block, 'COLLATE utf8mb4_bin') !== false,
    'the CREATE lets the default collation decide, which makes Medkit and medkit one row');
 ok(preg_match('/find\s+VARCHAR\(190\)[^,]*COLLATE utf8mb4_bin/', $create_block) === 1,
    'it is not the find column in the CREATE that is case sensitive');
-ok(strpos($schema_src, 'ALTER TABLE dropship_theme_text') !== false,
+ok(strpos($schema_src, 'ALTER TABLE theme_text') !== false,
    'there is no ALTER for a table that already exists with the wrong collation');
 $seed_src = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
 ok(strpos($seed_src, 'utf8mb4_bin') !== false,
@@ -1751,7 +1792,7 @@ ok(dropshipThemeText($cc, 80, 'medkit') === 'sexy-nurse',
 
 echo "\nthe migration is written down\n";
 $schema = file_get_contents(__DIR__ . '/dropship/dropship-themes-schema.md');
-foreach (array('dropship_themes', 'dropship_theme_text') as $t) {
+foreach (array('themes', 'theme_text') as $t) {
 	ok(strpos($schema, 'CREATE TABLE IF NOT EXISTS ' . $t) !== false,
 	   "the schema has no CREATE for $t, so nobody can create it");
 }

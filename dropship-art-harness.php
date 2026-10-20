@@ -353,9 +353,9 @@ class TConnArt {
 	public function __construct($said) { $this->said = $said; }
 	public function query($sql) {
 		if (strpos($sql, 'SHOW TABLES') !== false) return new TResArt(array(array('t' => 'x')));
-		if (strpos($sql, 'FROM dropship_themes WHERE project_id') !== false)
+		if (strpos($sql, 'FROM themes WHERE project_id') !== false)
 			return new TResArt(array(array('id' => 9, 'project_id' => 55, 'slug' => 'z')));
-		if (strpos($sql, 'FROM dropship_theme_text') !== false) {
+		if (strpos($sql, 'FROM theme_text') !== false) {
 			$rows = array();
 			foreach ($this->said as $find => $rep) {
 				$rows[] = array('match_type' => 'exact', 'find' => $find, 'replacement' => $rep);

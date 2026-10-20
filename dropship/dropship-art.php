@@ -52,7 +52,7 @@ function dropshipArtEquipment() {
  *
  * $ext is the media extension, which is a property of the theme:
  * 'gif' for most, 'png' for Oculus Lounge. It used to be a per-player 3D
- * toggle; that is retired and the value lives on dropship_themes.extension.
+ * toggle; that is retired and the value lives on themes.extension.
  */
 function dropshipArtManifest($ext = 'gif') {
 	$m = array();

@@ -7,7 +7,7 @@
  * was never the mechanism, it was that the dictionaries were an if/else
  * chain on project_id, 202 lines of it, so a new theme meant a code change
  * and a deploy. These functions read the same two dictionaries out of
- * dropship_theme_text instead.
+ * theme_text instead.
  *
  * ADDITIVE, AND SILENT UNTIL USED. Every lookup falls back to the hardcoded
  * chain when the tables are missing or the theme has no rows, so the schema
@@ -84,7 +84,7 @@ function dropshipThemesTable($conn) {
 	if (!is_object($conn)) return false;
 	$k = spl_object_id($conn);
 	if (!array_key_exists($k, $have)) {
-		$r = @$conn->query("SHOW TABLES LIKE 'dropship_themes'");
+		$r = @$conn->query("SHOW TABLES LIKE 'themes'");
 		$have[$k] = (bool)($r && $r->num_rows);
 	}
 	return $have[$k];
@@ -104,7 +104,7 @@ function dropshipThemeConfig($conn, $project_id) {
 	$cache[$pid] = null;
 	if ($pid <= 0 || !dropshipThemesTable($conn)) return null;
 
-	$r = @$conn->query("SELECT * FROM dropship_themes WHERE project_id = $pid LIMIT 1");
+	$r = @$conn->query("SELECT * FROM themes WHERE project_id = $pid LIMIT 1");
 	if ($r && $r->num_rows) $cache[$pid] = $r->fetch_assoc();
 	return $cache[$pid];
 }
@@ -127,7 +127,7 @@ function dropshipThemeDictionaries($conn, $project_id) {
 	if (!$theme) return null;
 
 	$tid = (int)$theme['id'];
-	$r = @$conn->query("SELECT match_type, find, replacement FROM dropship_theme_text
+	$r = @$conn->query("SELECT match_type, find, replacement FROM theme_text
 	                     WHERE theme_id = $tid ORDER BY sort_order ASC, id ASC");
 	if (!$r) return null;
 
@@ -226,7 +226,7 @@ function dropshipThemeIconLabel($term) {
  *
  * Asked through evaluateText() rather than the theme row directly, because
  * that is the one accessor that works both before and after a theme is
- * migrated: it answers from dropship_themes.extension when there is a row
+ * migrated: it answers from themes.extension when there is a row
  * and from the built-in chain when there is not.
  */
 /**
@@ -251,7 +251,7 @@ function dropshipMediaExtension() {
 	/*
 	 * THE PLAYER CAN TURN ANIMATION ON FOR A STILL THEME THAT HAS GIFS.
 	 *
-	 * dropship_themes.extension is what a theme is SET to, which is not
+	 * themes.extension is what a theme is SET to, which is not
 	 * the same as what it has: Oculus Lounge ships both, and the old 3D
 	 * toggle was the only way to see the animated set. Retiring 3D took
 	 * that with it. This puts it back as what it always really was -- an
@@ -311,8 +311,8 @@ function dropshipThemeAll($conn) {
 	if (!dropshipThemesTable($conn)) return array();
 	$out = array();
 	$r = @$conn->query("SELECT t.*, p.name AS project_name,
-	                           (SELECT COUNT(*) FROM dropship_theme_text x WHERE x.theme_id = t.id) AS text_count
-	                      FROM dropship_themes t
+	                           (SELECT COUNT(*) FROM theme_text x WHERE x.theme_id = t.id) AS text_count
+	                      FROM themes t
 	                      LEFT JOIN projects p ON p.id = t.project_id
 	                     ORDER BY t.project_id ASC");
 	if ($r) while ($row = $r->fetch_assoc()) $out[] = $row;
@@ -380,7 +380,7 @@ function dropshipProjectPolicy($conn, $project_id) {
 /**
  * The project ids a player may enter, or NULL to let the old rule decide.
  *
- * dropship_themes.active was written by the admin and read by nothing, so
+ * themes.active was written by the admin and read by nothing, so
  * ticking it did nothing at all; which projects a player saw was a pair of
  * names hardcoded in getProjects(). This is what makes the flag mean what
  * the column comment always said it meant.
@@ -400,7 +400,7 @@ function dropshipActiveProjectIds($conn) {
 	   just did, on the very page whose job is changing this flag. */
 	if (!is_object($conn) || !dropshipThemesTable($conn)) return null;
 
-	$r = @$conn->query("SELECT project_id, active FROM dropship_themes");
+	$r = @$conn->query("SELECT project_id, active FROM themes");
 	if (!$r) return null;
 	$ids = array(); $any = false;
 	while ($row = $r->fetch_assoc()) {

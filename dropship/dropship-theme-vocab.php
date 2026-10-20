@@ -125,7 +125,7 @@ function dropshipThemeVocabulary() {
 }
 
 /**
- * TURN WHAT THE WORDING FORM POSTS INTO dropship_theme_text ROWS.
+ * TURN WHAT THE WORDING FORM POSTS INTO theme_text ROWS.
  *
  * The form shows one box per family; the database wants one row per word
  * per match type, plus one per icon filename. This is where the one becomes

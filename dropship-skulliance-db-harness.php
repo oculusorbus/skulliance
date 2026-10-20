@@ -74,7 +74,7 @@ ok(empty($builders), 'other files still build their own connection: ' . implode(
 echo "\nevery crossing goes through the helper\n";
 /* dropshipSyncFromSkulliance was dropshipSyncOculusLounge. It is the
    generic "read holdings from the already-synced nfts table" pipeline that
-   dropship_themes.trait_source selects, so naming it after the one theme
+   themes.trait_source selects, so naming it after the one theme
    that first used it was the thing stopping a second theme choosing it. */
 /* dropshipLocalNftImages was dropshipOculusLoungeLocalImages. It maps a
    collection's asset names to Skulliance's locally cached art, and it had

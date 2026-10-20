@@ -70,7 +70,7 @@ function evaluateText($text){
 	/*
 	 * THE TABLE FIRST, THE CHAIN AS FALLBACK.
 	 *
-	 * dropship_theme_text holds the same two dictionaries this function has
+	 * theme_text holds the same two dictionaries this function has
 	 * always applied, so a theme can be added or edited without a deploy.
 	 * dropshipThemeText() returns null whenever the tables are missing or
 	 * the theme has no rows, and then everything below runs exactly as it
@@ -85,7 +85,7 @@ function evaluateText($text){
 
 	/*
 	 * THE MEDIA EXTENSION IS A PROPERTY OF THE THEME, and is answered
-	 * from dropship_themes.extension rather than stored as a text override.
+	 * from themes.extension rather than stored as a text override.
 	 *
 	 * It used to be a per-player 3D toggle, which is why it was a
 	 * conditional 'gif' => 'png' pair in the chain below. That toggle is
@@ -149,7 +149,7 @@ function evaluateText($text){
 				$replacements['Hill Secured'] = 'Enter VIP';
 				/* The Lounge's art is png. This was conditional on a per-player
 				   3D toggle, which is retired; the extension is a property of
-				   the theme now and dropship_themes.extension carries it once
+				   the theme now and themes.extension carries it once
 				   a theme is configured. */
 				$replacements['gif'] = 'png';
 			}

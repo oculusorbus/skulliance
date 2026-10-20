@@ -1,3 +1,9 @@
+-- RENAMED FROM dropship_themes / dropship_theme_text. Nothing else in this
+-- database carries that prefix -- it is Drop Ship's own database -- so the
+-- prefix said nothing the schema did not. To keep existing data instead of
+-- re-seeding:
+--   RENAME TABLE dropship_themes TO themes, dropship_theme_text TO theme_text;
+--
 -- ===========================================================================
 -- DESTRUCTIVE. This DROPS both theme tables and rebuilds them from scratch.
 -- Running it discards every theme and every word anybody has saved in the
@@ -23,21 +29,21 @@
 -- name, the key naming which game a Discord trait drop came from. This one
 -- picks between two real NFT-loading pipelines and nothing derives it.
 --
--- REQUIRES dropship_theme_text.find TO BE utf8mb4_bin. The seed carries
+-- REQUIRES theme_text.find TO BE utf8mb4_bin. The seed carries
 -- case-only pairs on purpose -- 'Medkit' is the word a player reads and
 -- 'medkit' is the icon filename -- and MySQL's default collation treats
 -- them as one value, so a case-insensitive column rejects the second with
 -- "#1062 Duplicate entry ... for key 'uniq_pair'". See the schema doc.
 -- Project 1 (Drop Ship) is the base and has no overrides, so it has no rows.
 -- The 'gif' pair is deliberately absent: a theme's animation extension is one
--- value on dropship_themes.extension, and duplicating it into the dictionary
+-- value on themes.extension, and duplicating it into the dictionary
 -- would leave two places to change it. (It used to be a per-player 3D toggle,
 -- now retired.)
 
-DROP TABLE IF EXISTS dropship_theme_text;
-DROP TABLE IF EXISTS dropship_themes;
+DROP TABLE IF EXISTS theme_text;
+DROP TABLE IF EXISTS themes;
 
-CREATE TABLE dropship_themes (
+CREATE TABLE themes (
 	id               INT AUTO_INCREMENT PRIMARY KEY,
 	project_id       INT          NOT NULL,            -- projects.id
 	slug             VARCHAR(64)  NOT NULL,            -- image folder under dropship/
@@ -63,7 +69,7 @@ CREATE TABLE dropship_themes (
 	UNIQUE KEY uniq_slug (slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE dropship_theme_text (
+CREATE TABLE theme_text (
 	id          INT AUTO_INCREMENT PRIMARY KEY,
 	theme_id    INT          NOT NULL,
 	match_type  ENUM('exact','description') NOT NULL DEFAULT 'exact',
@@ -81,18 +87,18 @@ CREATE TABLE dropship_theme_text (
 -- exists so the base game can be reskinned like the rest, and so the art
 -- admin can manage its files -- dropshipArtRoot() maps the 'drop-ship' slug
 -- to the FLAT folder, which is where Drop Ship's own art actually lives.
-INSERT INTO dropship_themes
+INSERT INTO themes
   (project_id, slug, active, extension, trait_source, stage_order, ken_burns, created_at)
 VALUES
   (1, 'drop-ship', 1, 'gif', 'koios', 'random', 'auto', NOW());
 
 -- ---------- project 2: dread-city (31 exact, 3 description)
-INSERT INTO dropship_themes
+INSERT INTO themes
   (project_id, slug, active, extension, trait_source, stage_order, ken_burns, created_at)
 VALUES
   (2, 'dread-city', 0, 'gif', 'koios', 'random', 'auto', NOW());
-SET @t := (SELECT id FROM dropship_themes WHERE project_id = 2);
-INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
+SET @t := (SELECT id FROM themes WHERE project_id = 2);
+INSERT INTO theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
   (@t, 'exact', 'SCRIP', 'DREAD', 1),
   (@t, 'exact', 'Barracks', 'Hideout', 2),
   (@t, 'exact', 'Base', 'Leather Jacket', 3),
@@ -119,12 +125,12 @@ INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_o
   (@t, 'exact', 'Troops', 'Henchmen', 24);
 
 -- ---------- project 3: filthy-mermaid (78 exact, 29 description)
-INSERT INTO dropship_themes
+INSERT INTO themes
   (project_id, slug, active, extension, trait_source, stage_order, ken_burns, created_at)
 VALUES
   (3, 'filthy-mermaid', 0, 'gif', 'koios', 'random', 'auto', NOW());
-SET @t := (SELECT id FROM dropship_themes WHERE project_id = 3);
-INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
+SET @t := (SELECT id FROM themes WHERE project_id = 3);
+INSERT INTO theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
   (@t, 'exact', 'Drop Ship', 'Filthy Mermaid', 1),
   (@t, 'exact', 'Drop Ship Initiating', 'Filthy Mermaid Entrance', 2),
   (@t, 'exact', 'Drop Ship Landed', 'Filthy Mermaid Doorway', 3),
@@ -209,12 +215,12 @@ INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_o
   (@t, 'exact', 'Troops', 'Perverts', 82);
 
 -- ---------- project 4: oculus-lounge (82 exact, 29 description)
-INSERT INTO dropship_themes
+INSERT INTO themes
   (project_id, slug, active, extension, trait_source, stage_order, ken_burns, created_at)
 VALUES
   (4, 'oculus-lounge', 1, 'png', 'skulliance', 'random', 'auto', NOW());
-SET @t := (SELECT id FROM dropship_themes WHERE project_id = 4);
-INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
+SET @t := (SELECT id FROM themes WHERE project_id = 4);
+INSERT INTO theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
   (@t, 'exact', 'Drop Ship', 'Oculus Lounge', 1),
   (@t, 'exact', 'Drop Ship Initiating', 'Oculus Lounge Entrance', 2),
   (@t, 'exact', 'Drop Ship Landed', 'Oculus Lounge Hallway', 3),
