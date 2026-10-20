@@ -170,13 +170,36 @@ function dropshipArtAudit($slug, $ext, $base_dir = null, $base_url = null) {
 /**
  * How big a round image ever needs to be.
  *
- * MEASURED FROM THE STYLESHEET, not guessed. .container caps at 1400px, the
- * results column is flex 67% of it, and #results img caps height at 650px.
- * So anything wider than about 940 or taller than 650 is pixels the browser
- * throws away on every single view.
+ * DERIVED FROM THE STYLESHEET AND THE KEN BURNS KEYFRAMES, not picked:
+ *
+ *   .container          max-width 1400
+ *   .main               flex 67%        -> 938
+ *   .main               padding 20px    -> 898 of content
+ *   #results            min-height AND max-height 898, so the box is 898 square
+ *   #results-image      background-size: contain, inside that box
+ *   @keyframes move     scale(1.0) -> scale(1.2) over 40s
+ *
+ * So the widest any art is ever DRAWN is 898 x 1.2 = 1078. Round to 1080.
+ *
+ * THE ZOOM IS WHY THIS IS NOT 898. Ken Burns scales the element, and the
+ * background scales with it, so at the end of the pan the image is painted
+ * at 1.2x the pane. Capping at the pane size would look right on the first
+ * frame and soften over the next forty seconds -- the one thing a pan makes
+ * obvious, because the viewer is staring at the same image the whole time.
+ *
+ * SQUARE, because the box is square and background-size: contain fits by
+ * whichever side is limiting -- a portrait image is held by its height and
+ * needs the same 1078 there. An earlier version used 940 x 650, taking the
+ * 650 from "#results img { max-height: 650px }". That rule governs the
+ * replay's <img> frames, which never pan; it says nothing about the
+ * background the Ken Burns is applied to, and using it would have upscaled
+ * a tall still by about 1.7x at full zoom.
+ *
+ * Going higher costs load for nothing: 1400 wide would be 68% more pixels
+ * than the browser can ever show.
  */
-function dropshipArtMaxWidth()  { return 940; }
-function dropshipArtMaxHeight() { return 650; }
+function dropshipArtMaxWidth()  { return 1080; }
+function dropshipArtMaxHeight() { return 1080; }
 
 /**
  * The manifest, grouped the way somebody filling it in would want to read it.

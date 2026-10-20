@@ -54,14 +54,37 @@ ok(!in_array('images/live/beach/1.gif', $png, true), 'a png theme is still offer
 /* intro.jpg is a jpg whatever the theme is, and must not be rewritten. */
 ok(in_array('images/reset/intro.jpg', $png, true), 'intro.jpg was renamed by the extension');
 
-echo "\nthe pane size comes from the stylesheet\n";
-/* .container caps at 1400, the results column is flex 67%, #results img caps
-   height at 650. Scaling past those is bytes thrown away on every view. */
-ok(dropshipArtMaxWidth() > 600 && dropshipArtMaxWidth() <= 1400,
-   'the max width is ' . dropshipArtMaxWidth() . ', which is not the results pane');
+echo "\nthe scale target is derived, not picked\n";
+/*
+ * .container 1400 -> .main flex 67% = 938 -> minus 20px padding each side =
+ * 898 of content. #results pins min-height AND max-height to 898, so the box
+ * is square, and #results-image is background-size: contain inside it. Ken
+ * Burns then scales the element 1.0 -> 1.2, so the widest the art is ever
+ * PAINTED is 898 x 1.2 = 1078.
+ *
+ * Capping at the pane size instead would look right on the first frame and
+ * soften over the next forty seconds, which a pan makes obvious because the
+ * viewer stares at one image the whole time.
+ */
 $css = file_get_contents(__DIR__ . '/dropship/dist/flexbox.css');
-ok(strpos($css, 'max-height: 650px') !== false,
-   'the stylesheet no longer caps images at 650, so the scale target is stale');
+ok(strpos($css, 'max-width: 1400px') !== false, 'the container no longer caps at 1400');
+ok(preg_match('/\.main\s*\{[^}]*flex:\s*67%/s', $css) === 1, 'the results column is no longer flex 67%');
+ok(preg_match('/#results\s*\{[^}]*max-height:\s*898px/s', $css) === 1,
+   'the results box is no longer pinned at 898, so the scale target is stale');
+ok(strpos($css, 'background-size: contain') !== false,
+   'the art is no longer contained in the box, so the derivation does not hold');
+ok(strpos($css, 'scale(1.2)') !== false, 'the Ken Burns zoom is no longer 1.2x');
+$peak = (int)round(898 * 1.2);
+ok(dropshipArtMaxWidth() >= $peak,
+   'the max width is ' . dropshipArtMaxWidth() . ' but Ken Burns paints up to ' . $peak
+ . ', so the art is upscaled at full zoom');
+ok(dropshipArtMaxWidth() <= $peak + 60,
+   'the max width is ' . dropshipArtMaxWidth() . ', well past the ' . $peak
+ . ' the browser can show; that is load time for pixels nobody sees');
+/* SQUARE, because contain fits by whichever side is limiting and the box is
+   square -- a portrait still needs the same headroom as a landscape one. */
+ok(dropshipArtMaxHeight() === dropshipArtMaxWidth(),
+   'the height cap is lower than the width cap, so a tall image is upscaled by the zoom');
 
 echo "\nthe upload slot cannot come from the form\n";
 /*

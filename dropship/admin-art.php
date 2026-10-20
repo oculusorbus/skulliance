@@ -136,8 +136,11 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	&middot; media extension <code>.<?php echo $h($ext); ?></code></p>
 
 	<p class="note">Uploads are scaled to fit <b><?php echo dropshipArtMaxWidth(); ?>&times;<?php
-	echo dropshipArtMaxHeight(); ?></b>, which is the widest the results pane ever
-	draws them. Anything already smaller is left alone, and nothing is enlarged.
+	echo dropshipArtMaxHeight(); ?></b>. That is the pane at <b>898px</b> times the
+	<b>1.2&times;</b> the Ken Burns pan zooms to, so art stays sharp at the end of the
+	drift rather than only at the start. Anything already smaller is left alone and
+	nothing is enlarged, so an existing 1024px file is kept as it is &mdash; it ends
+	up about 5% soft at full zoom, which is not worth re-cutting for.
 	An animated gif is only resized where Imagick is available, because the
 	alternative flattens it to a single frame.</p>
 
