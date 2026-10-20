@@ -1296,6 +1296,40 @@ ok(dropshipMediaExtension() === 'png',
 $GLOBALS['slug'] = 'harness-anim-test';
 $GLOBALS['__ext'] = 'gif';
 ok(dropshipMediaExtension() === 'gif', 'an already-animated theme is changed by the preference');
+
+/*
+ * THE SWITCH MUST SURVIVE BEING USED. "Can this theme be animated" is a
+ * property of the THEME; "is it animated right now" is a property of the
+ * session. Asking the resolved extension for the first question meant the
+ * control vanished the moment it was turned on -- it reports 'gif' once
+ * animation is active -- and there was no way back to the stills.
+ */
+$GLOBALS['__ext'] = 'png';
+$_SESSION['userData']['animation'] = 'true';
+ok(dropshipThemeMediaExtension() === 'png',
+   'the theme extension follows the player preference, so the switch hides itself once used');
+ok(dropshipMediaExtension() === 'gif', 'the resolved extension ignores the preference');
+/* The dashboard's own gate, evaluated exactly as it is written. */
+$gate = function () {
+	return function_exists('dropshipThemeHasGifArt')
+		&& dropshipThemeMediaExtension() !== 'gif'
+		&& dropshipThemeHasGifArt($GLOBALS['slug']);
+};
+ok($gate(), 'the Animation switch disappears once it is switched ON, and cannot be reverted');
+$_SESSION['userData']['animation'] = 'false';
+ok($gate(), 'the Animation switch is missing when it is switched off');
+/* ...and a theme that IS a gif still never offers it. */
+$GLOBALS['__ext'] = 'gif';
+ok(!$gate(), 'an already-animated theme is offered a switch that would do nothing');
+$GLOBALS['__ext'] = 'png';
+$dash7 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(strpos($dash7, "dropshipThemeMediaExtension() !== 'gif'") !== false,
+   'the dashboard gate asks the resolved extension again, so the switch hides itself');
+ok(strpos($dash7, "&& dropshipMediaExtension() !== 'gif'") === false,
+   'the old self-hiding condition is back');
+/* The control keeps the icon the 3D toggle had -- this is what that was. */
+ok(strpos($dash7, 'src="icons/3d.png"') !== false,
+   'the Animation switch lost the 3D icon that belongs to it');
 unset($_SESSION['userData']['animation'], $GLOBALS['slug']);
 $GLOBALS['__ext'] = 'gif';
 
@@ -1317,7 +1351,7 @@ ok(strpos($tog, "\$_GET['status'] === 'true' ? 'true' : 'false'") !== false,
    'the animation endpoint stores whatever it is given');
 /* The switch is only offered when it would do something. */
 $dash6 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
-ok(strpos($dash6, "dropshipMediaExtension() !== 'gif'") !== false,
+ok(strpos($dash6, "dropshipThemeMediaExtension() !== 'gif'") !== false,
    'the switch is offered on a theme that is already animated');
 ok(strpos($dash6, 'dropshipThemeHasGifArt($slug)') !== false,
    'the switch is offered on a theme with no gifs, so it would switch to 404s');

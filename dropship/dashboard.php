@@ -680,14 +680,18 @@ $characters = evaluateText("Troops");
  * gifs are on disk. A theme already set to gif has nothing to switch, and
  * a still theme with no gifs would switch to 404s.
  */
+/* THE THEME'S extension, not the resolved one. Asking the resolved one
+   meant the switch vanished the moment it was turned on -- it reports
+   'gif' once animation is active -- with no way back to the stills. */
 $ds_can_animate = function_exists('dropshipThemeHasGifArt')
-	&& dropshipMediaExtension() !== 'gif'
+	&& dropshipThemeMediaExtension() !== 'gif'
 	&& dropshipThemeHasGifArt($slug);
 if ($ds_can_animate):
 	$anim_on = dropshipAnimationOn($slug);
 ?>
-					<li class="role"><img class="icon" src="icons/<?php
-						echo evaluateText('dropship'); ?>.png"/>Animation
+					<?php /* The 3D toggle's own icon, back where it was -- this
+					         control is what that one actually did. */ ?>
+					<li class="role"><img class="icon" id="animation-icon" src="icons/3d.png"/>Animation
 						&nbsp;
 						<label class="switch">
 						  <input onchange="javascript:toggleAnimation(this.checked);" type="checkbox"

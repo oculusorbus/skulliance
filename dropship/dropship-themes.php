@@ -229,10 +229,24 @@ function dropshipThemeIconLabel($term) {
  * migrated: it answers from dropship_themes.extension when there is a row
  * and from the built-in chain when there is not.
  */
-function dropshipMediaExtension() {
+/**
+ * The theme's OWN media extension, before the player has any say.
+ *
+ * Separate from dropshipMediaExtension() because the two answer different
+ * questions and conflating them broke the Animation switch: the control
+ * was shown only when the extension was not 'gif', but turning it ON makes
+ * the resolved extension 'gif' -- so the switch hid itself on first use
+ * and there was no way back. "Can this theme be animated" is a property of
+ * the THEME; "is it animated right now" is a property of the session.
+ */
+function dropshipThemeMediaExtension() {
 	if (!function_exists('evaluateText')) return 'gif';
 	$ext = evaluateText('gif');
-	$ext = $ext !== '' ? strtolower($ext) : 'gif';
+	return $ext !== '' ? strtolower($ext) : 'gif';
+}
+
+function dropshipMediaExtension() {
+	$ext = dropshipThemeMediaExtension();
 
 	/*
 	 * THE PLAYER CAN TURN ANIMATION ON FOR A STILL THEME THAT HAS GIFS.
