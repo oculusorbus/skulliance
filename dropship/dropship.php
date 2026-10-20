@@ -57,6 +57,30 @@ if($ds_requested !== null){
 		if(!isset($_SESSION['userData']['dropship_project_id'])
 		   || $project_id != $_SESSION['userData']['dropship_project_id']){
 			$project_id_changed = "true";
+			/*
+			 * A NEW THEME IS A NEW GAME, so the state that belongs to the
+			 * OLD one has to go with it. Every key below is scoped to a
+			 * project in the database -- results, games and soldiers all
+			 * carry a project_id -- but they were being carried across the
+			 * switch on the session.
+			 *
+			 * current_score was the one that showed: the dashboard renders
+			 * the Instant Replay button from it, looking the result up
+			 * with checkMaxScoreResultID() filtered to the NEW project. A
+			 * score from the old theme matches nothing there, so the
+			 * button rendered with an EMPTY result_id, getReplay('')
+			 * returned nothing, and the replay played its audio over no
+			 * rounds at all. It fixed itself on the next page load because
+			 * checkScore() runs further down and corrects the session --
+			 * which is exactly why changing theme, refreshing, and only
+			 * then hitting replay worked.
+			 */
+			unset($_SESSION['userData']['current_score'],
+			      $_SESSION['userData']['score'],
+			      $_SESSION['userData']['game_id'],
+			      $_SESSION['userData']['battle_id'],
+			      $_SESSION['userData']['notification'],
+			      $_SESSION['userData']['run_logged']);
 		}
 		$_SESSION['userData']['dropship_project_id'] = $project_id;
 	}

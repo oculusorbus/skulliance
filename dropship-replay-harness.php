@@ -84,6 +84,56 @@ ok(substr_count($js, 'function showRound(') === 1, 'there is no single round pai
 ok(substr_count($js, 'showRound(currentRound)') === 2,
    'only one of the two branches paints through it');
 
+echo "\nchanging theme does not leave the old theme's state behind\n";
+/*
+ * THE ACTUAL BUG, and the user found it by noticing the shape: select a
+ * theme and hit Instant Replay and nothing plays, but change theme,
+ * refresh the dashboard, THEN hit replay and it works.
+ *
+ * Switching set dropship_project_id and cleared nothing else. The
+ * dashboard renders the Instant Replay button from current_score,
+ * resolving it with checkMaxScoreResultID() filtered to the NEW project
+ * -- so a score carried over from the old theme matched no row, the
+ * button rendered with an EMPTY result_id, getReplay('') returned
+ * nothing, and the stepper walked zero rounds while the audio branches,
+ * which compare round NUMBERS and never touch the DOM, carried on
+ * playing. Audio advancing over a frozen screen, exactly as reported.
+ *
+ * It fixed itself on the next load because checkScore() runs at
+ * dashboard.php:610 -- AFTER the button is rendered at 596.
+ */
+$ds = rcode('dropship/dropship.php');
+$at = strpos($ds, '$project_id_changed = "true";');
+ok($at !== false, 'the project-change branch moved');
+$branch = substr($ds, $at, 700);
+foreach (array('current_score', 'score', 'game_id', 'battle_id', 'notification', 'run_logged') as $key) {
+	ok(strpos($branch, "\$_SESSION['userData']['" . $key . "']") !== false,
+	   "changing theme carries the old theme's $key across, which is project-scoped in the database");
+}
+ok(strpos($branch, 'unset(') !== false, 'nothing is cleared when the project changes');
+/* Cleared only ON A CHANGE -- unsetting on every request would wipe the
+   score of somebody who never switched. */
+ok(strpos($ds, "\$project_id_changed = \"true\";\n\t\t\t") !== false
+   || strpos($branch, 'unset(') < strpos($branch, '$_SESSION[\'userData\'][\'dropship_project_id\'] = $project_id;'),
+   'the clear happens outside the changed branch, so it runs on every request');
+
+/* AND THE BUTTON REFUSES TO RENDER WITHOUT A REPLAY. Belt and braces: the
+   lookup can come back empty for reasons other than a theme switch, and a
+   control that cannot work should not be offered. */
+$dbsrc = rcode('dropship/db.php');
+ok(strpos($dbsrc, "if (\$result_id === null || \$result_id === '' || (int)\$result_id <= 0) return;") !== false,
+   'the replay button still renders with an empty result_id');
+$fnAt = strpos($dbsrc, 'function instantReplayButton');
+$guardAt = strpos($dbsrc, "if (\$result_id === null", $fnAt);
+$echoAt = strpos($dbsrc, 'echo \'<form action="dashboard.php"', $fnAt);
+ok($guardAt !== false && $echoAt !== false && $guardAt < $echoAt,
+   'the guard runs after the form has already been echoed');
+/* checkMaxScoreResultID() really can return nothing -- that is what makes
+   the guard necessary rather than decorative. */
+ok(preg_match('/function checkMaxScoreResultID.*?\n\}/s', $dbsrc, $mm) === 1, 'the lookup moved');
+ok(strpos($mm[0], 'return null') === false && substr_count($mm[0], 'return') === 1,
+   'the lookup now returns something explicit on a miss; the guard may need revisiting');
+
 echo "\na javascript fix actually reaches the browser\n";
 /*
  * THIS IS WHY A FIX CAME AND WENT. dashboard.php asked for

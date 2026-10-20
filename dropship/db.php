@@ -2188,6 +2188,14 @@ function checkResultsItems($conn, $result_id, $clean) {
 
 // Generate instant replay button for a specific user
 function instantReplayButton($result_id, $small_button){
+	/*
+	 * NO BUTTON WITHOUT A REPLAY TO SHOW. checkMaxScoreResultID() returns
+	 * nothing when it finds no row, and this rendered that as
+	 * value="" -- a button that posts an empty result_id, fetches no
+	 * markup, and then steps through zero rounds playing audio over a
+	 * blank screen. A control that cannot work should not be offered.
+	 */
+	if ($result_id === null || $result_id === '' || (int)$result_id <= 0) return;
 	$button = "";
 	$value = "";
 	if($small_button == true){
