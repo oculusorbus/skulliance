@@ -55,6 +55,32 @@ $ext  = $theme && !empty($theme['extension']) ? strtolower($theme['extension']) 
 $root = $slug === '' ? null : dropshipArtRoot($slug);
 $base = $root === null ? null : rtrim(__DIR__, '/') . '/' . $root;
 
+/* ---------------------------------------------------------------- rename - */
+/*
+ * Renaming an icon already on the server, rather than making somebody find
+ * and re-upload the same picture under its new name.
+ *
+ * THE TARGET IS NEVER TAKEN FROM THE FORM. rename_to is checked against the
+ * names THIS theme actually asks for, exactly as an upload slot is -- the
+ * name is about to be a filesystem path, and a posted one would let a file
+ * be moved anywhere the web user can reach.
+ */
+if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rename_from'])) {
+	$to   = (string)($_POST['rename_to'] ?? '');
+	$from = (string)($_POST['rename_from'] ?? '');
+	$want = array();
+	foreach (dropshipThemeIconSlots($conn, $pid) as $ic) if ($ic['safe']) $want[] = $ic['name'];
+	if ($from === '') {
+		$msg['err'][] = 'Pick the file to rename.';
+	} elseif (!in_array($to, $want, true)) {
+		$msg['err'][] = 'That is not an icon this theme asks for.';
+	} else {
+		$err = dropshipArtIconRename($conn, $from, $to, $pid);
+		if ($err === '') $msg['ok'][] = 'Renamed to icons/' . htmlspecialchars($to) . '.png.';
+		else             $msg['err'][] = htmlspecialchars($err);
+	}
+}
+
 /* ---------------------------------------------------------------- upload - */
 if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['art'])) {
 	$slot = (string)($_POST['slot'] ?? '');
@@ -123,6 +149,13 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
   font-weight:bold;font-size:11px;cursor:pointer;margin-top:5px}
 .dsart .pick a{display:inline-block;margin:0 8px 8px 0;font-size:13px}
 .dsart .bar{font-size:12px;color:#7a9eb0;margin:0 0 14px}
+.dsart .slot.icon{background:rgba(0,200,160,.05)}
+.dsart .tag{font-size:9.5px;color:#00c8a0;border:1px solid rgba(0,200,160,.4);
+  border-radius:3px;padding:0 4px;margin-left:4px;vertical-align:1px;font-weight:normal}
+.dsart .ren{margin-top:6px;border-top:1px solid rgba(255,255,255,.08);padding-top:6px}
+.dsart .ren label{display:block;font-size:10.5px;color:#7a9eb0;margin:0 0 3px;text-align:left}
+.dsart .ren select{width:100%;box-sizing:border-box;background:#07111d;color:#e8eaed;
+  border:1px solid rgba(255,255,255,.16);border-radius:3px;padding:4px;font-size:11px}
 </style>
 <div class="row"><div class="main"><div class="content dsart">
 <h2>Theme art</h2>
@@ -162,12 +195,28 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	An animated gif is only resized where Imagick is available, because the
 	alternative flattens it to a single frame.</p>
 
-	<?php foreach (dropshipArtGroups($ext) as $group => $g): ?>
+	<?php
+	/*
+	 * ONE LIST, ART AND ICONS TOGETHER. images/weapons/rocket-launcher3.gif
+	 * and icons/rocket-launcher.png are two pictures of one object, and the
+	 * only reason they used to sit on opposite halves of this page is that
+	 * they live in different folders. dropshipArtPlan() puts the icon in
+	 * after the last frame of the thing it belongs to.
+	 */
+	$icon_files = dropshipArtIconFiles();
+	foreach (dropshipArtPlan($conn, $pid, $ext) as $group => $g): ?>
 	<h4><?php echo $h($group); ?></h4>
 	<p class="note"><?php echo $h($g['note']); ?></p>
 	<div class="slots">
-	<?php foreach ($g['files'] as $rel):
-		$abs  = $base . $rel;
+	<?php foreach ($g['slots'] as $slot):
+		$is_icon = ($slot['kind'] === 'icon');
+		$rel     = $slot['rel'];
+		/* Icons are ONE SHARED FOLDER for every theme -- the page asks for
+		   icons/<name>.png and all four projects are served from the same
+		   place -- so they are addressed from here, not from the theme's
+		   own folder. */
+		$abs  = $is_icon ? rtrim(__DIR__, '/') . '/' . $rel : $base . $rel;
+		$src  = $is_icon ? '/staking/dropship/' . $rel : $web . $rel;
 		$here = is_file($abs);
 		$dims = '';
 		if ($here) {
@@ -176,77 +225,64 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 			      . round(@filesize($abs) / 1024) . 'KB';
 		}
 	?>
-		<div class="slot <?php echo $here ? '' : 'gap'; ?>">
+		<div class="slot <?php echo $here ? '' : 'gap'; ?><?php echo $is_icon ? ' icon' : ''; ?>">
 			<div class="shot">
 			<?php if ($here): ?>
-				<img src="<?php echo $h($web . $rel); ?>?v=<?php echo @filemtime($abs); ?>" alt="" loading="lazy">
+				<img src="<?php echo $h($src); ?>?v=<?php echo @filemtime($abs); ?>" alt="" loading="lazy">
 			<?php else: ?><span class="none">missing</span><?php endif; ?>
 			</div>
+		<?php if ($is_icon): ?>
+			<span class="name"><?php echo $h($slot['label']); ?> <span class="tag">icon</span></span>
+			<?php if ($slot['name'] !== $slot['term']): ?>
+				<span class="maps">this theme calls it <b><?php echo $h($slot['name']); ?></b></span>
+			<?php endif; ?>
+		<?php else: ?>
 			<span class="name"><?php echo $h(dropshipArtTitle($rel)); ?></span>
 			<?php foreach (dropshipArtSlotMapping($conn, $pid, $rel) as $mp): ?>
 				<span class="maps"><?php echo $h($mp['from']); ?> &rarr; <b><?php
 					echo $h($mp['to']); ?></b></span>
 			<?php endforeach; ?>
+		<?php endif; ?>
 			<span class="path"><?php echo $h($rel); ?></span>
-			<span class="dims"><?php echo $here ? $dims : 'the run will ask for this'; ?></span>
+		<?php if ($is_icon && !$slot['safe']): ?>
+			<span class="warn">That word cannot be a filename, so the page will ask
+			for something it can never find. Change the wording.</span>
+		<?php else: ?>
+			<span class="dims"><?php echo $here ? $dims
+				: ($is_icon ? 'the page will ask for this' : 'the run will ask for this'); ?></span>
 			<form method="post" enctype="multipart/form-data" action="admin-art.php?project_id=<?php echo $pid; ?>">
 				<input type="hidden" name="project_id" value="<?php echo $pid; ?>">
 				<input type="hidden" name="slot" value="<?php echo $h($rel); ?>">
-				<input type="file" name="art" accept="image/*" required>
+				<input type="file" name="art" accept="<?php echo $is_icon ? 'image/png' : 'image/*'; ?>" required>
 				<button type="submit"><?php echo $here ? 'Replace' : 'Upload'; ?></button>
 			</form>
+			<?php
+			/*
+			 * RENAME, NOT RE-UPLOAD. When the wording changes, the picture
+			 * the theme wants is usually already on the server under the
+			 * name it used to ask for -- icons/nurse.png when it now wants
+			 * icons/sexy-nurse.png. Making somebody find and re-upload that
+			 * file is busywork, and leaving it behind quietly fills the
+			 * shared folder with orphans.
+			 */
+			if ($is_icon && !$here && $slot['safe'] && $icon_files): ?>
+			<form method="post" action="admin-art.php?project_id=<?php echo $pid; ?>" class="ren">
+				<input type="hidden" name="project_id" value="<?php echo $pid; ?>">
+				<input type="hidden" name="rename_to" value="<?php echo $h($slot['name']); ?>">
+				<label>or rename one already on the server</label>
+				<select name="rename_from">
+					<option value="">pick a file&hellip;</option>
+					<?php foreach ($icon_files as $f): ?>
+					<option value="<?php echo $h($f); ?>"><?php echo $h($f); ?>.png</option>
+					<?php endforeach; ?>
+				</select>
+				<button type="submit">Rename</button>
+			</form>
+			<?php endif; ?>
+		<?php endif; ?>
 		</div>
 	<?php endforeach; ?>
 	</div>
 	<?php endforeach; ?>
-
-	<?php $icons = dropshipThemeIconSlots($conn, $pid);
-	      $icon_missing = 0;
-	      foreach ($icons as $ic) if (!$ic['exists']) $icon_missing++; ?>
-	<h3>Icons</h3>
-	<p class="note"><b><?php echo count($icons) - $icon_missing; ?></b> of
-	<b><?php echo count($icons); ?></b> in place.
-	Icons are <b>one shared folder</b> for every theme, not one folder each &mdash; the
-	page asks for <code>icons/&lt;name&gt;.png</code> and all four projects are served
-	from the same place. A theme does not get its own copy of
-	<code>medkit.png</code>; it renames the thing under <a href="admin-themes.php">Wording</a>
-	and ships a file under the new name. <b>Renaming is what creates the obligation</b>,
-	and nothing else in the system will tell you.<br>
-	Because the folder is shared, two themes that choose the same name share one file.</p>
-	<div class="slots">
-	<?php foreach ($icons as $ic):
-		$iabs = rtrim(__DIR__, '/') . '/' . $ic['rel'];
-		$idim = $ic['exists'] ? round(@filesize($iabs) / 1024) . 'KB' : ''; ?>
-		<div class="slot <?php echo $ic['exists'] ? '' : 'gap'; ?>">
-			<div class="shot">
-			<?php if ($ic['exists']): ?>
-				<img src="/staking/dropship/<?php echo $h($ic['rel']); ?>?v=<?php
-					echo @filemtime($iabs); ?>" alt="" loading="lazy">
-			<?php else: ?><span class="none">missing</span><?php endif; ?>
-			</div>
-			<?php /* The THING, not the filename. 'heavy-armor' as a heading
-			         above 'heavy-armor -> robe' said the same word twice and
-			         never said it was the Heavy tier. */ ?>
-			<span class="name"><?php echo $h($ic['label']); ?></span>
-			<?php if ($ic['name'] !== $ic['term']): ?>
-				<span class="maps">this theme calls it <b><?php
-					echo $h($ic['name']); ?></b></span>
-			<?php endif; ?>
-			<span class="path"><?php echo $h($ic['rel']); ?></span>
-			<?php if (!$ic['safe']): ?>
-				<span class="warn">That name cannot be a filename, so the page will
-				ask for something it can never find. Fix it under Wording.</span>
-			<?php else: ?>
-				<span class="dims"><?php echo $ic['exists'] ? $idim : 'the page will ask for this'; ?></span>
-				<form method="post" enctype="multipart/form-data" action="admin-art.php?project_id=<?php echo $pid; ?>">
-					<input type="hidden" name="project_id" value="<?php echo $pid; ?>">
-					<input type="hidden" name="slot" value="<?php echo $h($ic['rel']); ?>">
-					<input type="file" name="art" accept="image/png" required>
-					<button type="submit"><?php echo $ic['exists'] ? 'Replace' : 'Upload'; ?></button>
-				</form>
-			<?php endif; ?>
-		</div>
-	<?php endforeach; ?>
-	</div>
 <?php endif; ?>
 <?php dsaArtClose($conn); ?>

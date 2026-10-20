@@ -226,10 +226,13 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
  * families; this form shows the family, and dropshipThemeVocabExpand()
  * writes every word in it.
  *
- * NOTHING IS SHOWN THAT CAN BE WORKED OUT. The icon filenames are the
- * theme's own word, slugified, in 51 of the 64 cases the existing themes
- * cover, so the icon box starts empty and shows the derived name as its
- * placeholder. Fill it in only to point at a different file.
+ * NOTHING IS SHOWN THAT CAN BE WORKED OUT. An icon filename is the theme's
+ * own word slugified -- dropshipThemeText() derives it on the way out -- so
+ * it is not a field here and not a row in the table. It was both, briefly,
+ * and that was the same fact in two places: rename Medkit and the icon row
+ * still said 'nurse' until somebody edited it too, with nothing on screen
+ * saying that was why the shop had the wrong picture. The FILE is managed on
+ * the art screen, next to the art for the same thing.
  */
 $vocab = dropshipThemeVocabulary();
 $have  = array();                       /* find => replacement, already saved */
@@ -254,31 +257,25 @@ foreach ($vocab as $rows) foreach ($rows as $r) { $total++; if ($said($r) !== ''
 theme&rsquo;s own word. Leave a box empty and the theme keeps the Drop Ship word, so
 you only fill in what you actually want to change.<br>
 One box covers every way the game asks for that thing: the label on its own, the
-item in the shop, the word in the middle of a results line, and the icon file.<br>
-The icon is named after your word, so &ldquo;Smoking Jacket&rdquo; means the page
-asks for <code>icons/smoking-jacket.png</code> and you owe an icon by that name.
-Type in the icon box to point at a different file instead.</p>
+item in the shop, and the word in the middle of a results line.<br>
+It names the icon too. Call something &ldquo;Smoking Jacket&rdquo; and the page
+asks for <code>icons/smoking-jacket.png</code> - you never type that, and there
+is nowhere here to change it. The picture itself lives on
+<a href="admin-art.php?project_id=<?php echo (int)$edit_pid; ?>">Theme art</a>,
+beside the rest of the art for the same thing.</p>
 
 <?php foreach ($vocab as $group => $rows): ?>
 <h4><?php echo $h($group); ?></h4>
 <table>
-	<tr><th style="width:240px">Drop Ship word</th><th>This theme says</th>
-	    <th style="width:190px">Icon file</th></tr>
+	<tr><th style="width:240px">Drop Ship word</th><th>This theme says</th></tr>
 	<?php foreach ($rows as $r):
 		$say  = $said($r);
-		$icon = ($r['icons'] && isset($have['exact|' . $r['icons'][0]]))
-		      ? $have['exact|' . $r['icons'][0]] : '';
-		/* An icon name that is just the slug of the word is the derived
-		   default, so show it as a placeholder rather than filling the box
-		   -- otherwise reloading quietly turns a derivation into a typed-in
-		   value that stops following the word. */
-		$derived = $say !== '' ? dropshipThemeSlug($say) : '';
-		if ($icon !== '' && $icon === $derived) $icon = '';
 		/* What else this one box covers, so it is clear why there is only
 		   one. The label itself is always in there, so it is not repeated. */
 		$also = array();
 		foreach ($r['exact'] as $w) if ($w !== $r['label']) $also[] = $w;
-		if ($r['desc']) $also[] = 'in a sentence';
+		if ($r['desc'])  $also[] = 'in a sentence';
+		if ($r['icons']) $also[] = 'its icon';
 		?>
 	<tr>
 		<td>
@@ -289,15 +286,7 @@ Type in the icon box to point at a different file instead.</p>
 				<?php echo $h(implode(', ', $also)); ?></span><?php endif; ?>
 		</td>
 		<td><input type="text" name="fam_say[]" value="<?php echo $h($say); ?>"
-		           placeholder="<?php echo $h($r['label']); ?>"
-		           <?php if ($r['icons']): ?>oninput="dsaIcon(this)"<?php endif; ?>></td>
-		<td><?php if ($r['icons']): ?>
-			<input type="text" name="fam_icon[]" value="<?php echo $h($icon); ?>"
-			       data-stem="<?php echo $h($r['icons'][0]); ?>"
-			       placeholder="<?php echo $h($derived !== '' ? $derived : $r['icons'][0]); ?>">
-		<?php else: ?>
-			<input type="hidden" name="fam_icon[]" value="">
-		<?php endif; ?></td>
+		           placeholder="<?php echo $h($r['label']); ?>"></td>
 	</tr>
 	<?php endforeach; ?>
 </table>
@@ -329,16 +318,6 @@ does not cover.</p>
 <button type="submit">Save theme</button>
 </form>
 <script>
-/* The icon file is named after the word, so show the name the word will
-   produce as you type it -- the box stays empty unless you want a different
-   file, and an empty box means "follow the word". */
-function dsaIcon(el){
-	var row = el.parentNode.parentNode;
-	var box = row.querySelector('input[name="fam_icon[]"]');
-	if (!box || box.type === 'hidden') return;
-	var slug = el.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-	box.placeholder = slug || box.getAttribute('data-stem') || '';
-}
 function dsaAddRow(){
 	var t = document.getElementById('dsa-pairs');
 	var r = t.insertRow(-1);

@@ -132,29 +132,15 @@ function evaluateText($text){
 			$replacements['Jet Pack'] = 'Helicopter';
 			$replacements['Drop Box'] = 'Loot Crate';
 
-			$replacements['tactical-katana'] = 'machete';
-			$replacements['base-armor'] = 'leather-jacket';
-			$replacements['light-armor'] = 'bulletproof-vest';
-			$replacements['medium-armor'] = 'steel-armor';
-			$replacements['heavy-armor'] = 'titanium-armor';
-			$replacements['quantum-stealth'] = 'hoodie';
-			$replacements['exo-suit'] = 'suv';
-			$replacements['mech-suit'] = 'hummer';
-			$replacements['night-vision-goggles'] = 'flashlight';
-			$replacements['radar'] = 'gps';
-			$replacements['jet-pack'] = 'helicopter';
-			$replacements['drop-box'] = 'crate';
 		} else if($_SESSION['userData']['dropship_project_id'] == 3 || $_SESSION['userData']['dropship_project_id'] == 4){
 			if($_SESSION['userData']['dropship_project_id'] == 3){
 				$replacements['Drop Ship'] = 'Filthy Mermaid';
 				$replacements['Drop Ship Initiating'] = 'Filthy Mermaid Entrance';
 				$replacements['Drop Ship Landed'] = 'Filthy Mermaid Doorway';
-				$replacements['drop-ship'] = 'filthy-mermaid';
 			}else{
 				$replacements['Drop Ship'] = 'Oculus Lounge';
 				$replacements['Drop Ship Initiating'] = 'Oculus Lounge Entrance';
 				$replacements['Drop Ship Landed'] = 'Oculus Lounge Hallway';
-				$replacements['drop-ship'] = 'oculus-lounge';
 				$replacements['Soldiers'] = 'Citizens';
 				$replacements['Registered Soldiers'] = 'Oculus Lounge VIPs';
 				$replacements['Beach Secured'] = 'Approach Stage';
@@ -167,10 +153,8 @@ function evaluateText($text){
 			}
 			
 			$replacements['SCRIP'] = 'TIDDIES';
-			$replacements['supersoldier'] = 'vip';
 			$replacements['Super Soldier'] = 'VIP';
 			$replacements['Grunt'] = 'Sex Slave';
-			$replacements['dropship'] = 'vip';
 			
 			if($_SESSION['userData']['dropship_project_id'] == 3){
 				$replacements['Barracks'] = 'Hideout';
@@ -244,15 +228,6 @@ function evaluateText($text){
 			$replacements_description['Flamethrower'] = 'Candle';
 			$replacements_description['Rocket Launcher'] = 'Double Dildo';
 
-			$replacements['tactical-katana'] = 'dildo';
-	    	$replacements['sniper-rifle'] = 'butt-plug';
-	    	$replacements['melee'] = 'vibrator';
-	    	$replacements['grenade'] = 'anal-beads';
-			$replacements['demolition'] = 'paddle';
-			$replacements['smoke-bomb'] = 'whip';
-			$replacements['machine-gun'] = 'money-gun';
-			$replacements['flamethrower'] = 'candle';
-			$replacements['rocket-launcher'] = 'double-dildo';
 
 			$replacements['Night Vision Goggles'] = 'Fuzzy Handcuffs';
 			$replacements['Radar'] = 'Ball Gag';
@@ -273,23 +248,24 @@ function evaluateText($text){
 			$replacements_description['Drop Box'] = 'Grab Bag';
 			$replacements_description['Medkit'] = 'Sexy Nurse';
 
-			$replacements['night-vision-goggles'] = 'handcuffs';
-			$replacements['radar'] = 'ball-gag';
-			$replacements['radio'] = 'atm';
-			$replacements['jet-pack'] = 'drugs';
-			$replacements['drop-box'] = 'grab-bag';
-			$replacements['medkit'] = 'nurse';
 
-			$replacements['base-armor'] = 'boxers';
-			$replacements['light-armor'] = 'basketball-shorts';
-			$replacements['medium-armor'] = 'sweat-pants';
-			$replacements['heavy-armor'] = 'robe';
-			$replacements['ballistic-shield'] = 'fur-coat';
-			$replacements['quantum-stealth'] = 'pimp-suit';
-			$replacements['exo-suit'] = 'trench-coat';
-			$replacements['mech-suit'] = 'cake';
 		}
 	}
+	/*
+	 * AN ICON NAME IS DERIVED, NEVER LISTED -- here as well as in the
+	 * theme tables. The markup asks for the icon by its Drop Ship filename
+	 * (icons/<?= evaluateText('medkit') ?>.png) and the answer is just this
+	 * project's own word for the thing, made into a filename. Spelling that
+	 * out cost 39 lines in the chain above that could disagree with the
+	 * word directly beside them, and 13 of them did.
+	 */
+	$icon_label = dropshipThemeIconLabel($text);
+	if ($icon_label !== null) {
+		return isset($replacements[$icon_label])
+		     ? dropshipThemeSlug($replacements[$icon_label])
+		     : $text;
+	}
+
 	if(isset($replacements[$text])){
 		$text = $replacements[$text];
 	}else{

@@ -138,7 +138,6 @@ function dropshipThemeVocabExpand($post) {
 	}
 	$labels = (array)(isset($post['fam_label']) ? $post['fam_label'] : array());
 	$says   = (array)(isset($post['fam_say'])   ? $post['fam_say']   : array());
-	$icons  = (array)(isset($post['fam_icon'])  ? $post['fam_icon']  : array());
 	$out = array();
 	foreach ($labels as $i => $label) {
 		$label = trim((string)$label);
@@ -153,19 +152,13 @@ function dropshipThemeVocabExpand($post) {
 			$out[] = array('type' => 'description', 'find' => $w, 'replacement' => $say);
 		}
 		/*
-		 * THE ICON NAME IS A FILENAME, so it is slugified whichever way it
-		 * arrives, and it is derived from the theme's own word unless the
-		 * admin typed something shorter.
+		 * NO ICON ROWS. The icon filename is the word made into a filename,
+		 * and dropshipThemeText() derives it on the way out. Writing it here
+		 * too would be the same fact in two rows, free to disagree: rename
+		 * Medkit and the stored icon row would still say 'nurse' until
+		 * somebody edited it as well. The FILE is managed on the art screen,
+		 * next to the art it belongs with; the name is never typed.
 		 */
-		if ($fam['icons']) {
-			$ov   = trim((string)(isset($icons[$i]) ? $icons[$i] : ''));
-			$name = dropshipThemeSlug($ov !== '' ? $ov : $say);
-			if ($name !== '') {
-				foreach ($fam['icons'] as $ic) {
-					$out[] = array('type' => 'exact', 'find' => $ic, 'replacement' => $name);
-				}
-			}
-		}
 	}
 	return $out;
 }

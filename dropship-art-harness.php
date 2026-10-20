@@ -192,6 +192,101 @@ ok(strpos($adm2, 'dropshipArtTitle($rel)') !== false, 'the page does not show sl
 ok(strpos($adm2, 'dropshipArtSlotMapping($conn, $pid, $rel)') !== false,
    'the page does not show what the theme calls each thing');
 
+echo "\nan icon sits with the art of the same thing\n";
+/*
+ * images/weapons/rocket-launcher3.gif and icons/rocket-launcher.png are two
+ * pictures of one object. They were managed on opposite halves of this page
+ * for no reason but that they live in different folders, so replacing "the
+ * rocket launcher" meant finding five frames in one place and the icon in
+ * another, below every other icon in the game.
+ */
+$cz   = new class { public function query($q) { return false; } };
+$plan = dropshipArtPlan($cz, 1, 'gif');
+$kinds = function ($group) use ($plan) {
+	$o = array();
+	foreach ($plan[$group]['slots'] as $s) $o[] = $s['kind'] === 'icon' ? $s['rel'] : $s['rel'];
+	return $o;
+};
+ok(isset($plan['Weapons']), 'the plan has no Weapons group');
+$w = $kinds('Weapons');
+$i = array_search('icons/rocket-launcher.png', $w, true);
+ok($i !== false, 'the rocket launcher icon is not in the Weapons group with its frames');
+ok($w[$i - 1] === 'images/weapons/rocket-launcher5.gif',
+   'the icon does not follow the LAST frame of the thing, so it splits the run');
+ok($w[$i + 1] === 'images/weapons/smoke-bomb1.gif',
+   'the icon is not immediately before the next thing');
+/* 'demo' is 'demolition' typed short. A prefix rule would also pair
+   'drop-box' with 'drop-ship', so the alias is declared. */
+ok(dropshipArtIconTerm('images/weapons/demo2.gif') === 'demolition',
+   'the demo frames are not paired with the demolition icon');
+ok(dropshipArtIconTerm('images/equipment/drop-box.gif') === 'drop-box',
+   'drop-box art is not paired with its own icon');
+ok(dropshipArtIconTerm('images/live/beach/3.gif') === null,
+   'a beach frame is treated as a picture of a nameable thing');
+ok(dropshipArtIconTerm('images/die/1.gif') === null, 'a death frame is paired with an icon');
+/* Every icon must land somewhere, or one quietly becomes unmanageable. */
+$placed = array();
+foreach ($plan as $g) foreach ($g['slots'] as $sl) if ($sl['kind'] === 'icon') $placed[$sl['term']] = true;
+$want = array();
+foreach (dropshipThemeIconSlots($cz, 1) as $ic) $want[$ic['term']] = true;
+ok(count($want) > 20, 'only ' . count($want) . ' icons were found, so this check proves little');
+ok(count($placed) === count($want),
+   count($want) - count($placed) . ' icons are in no group at all, so they cannot be replaced');
+/* ...and nothing may be listed twice, or two upload forms write one file. */
+$seen = array();
+foreach ($plan as $gname => $g) foreach ($g['slots'] as $sl) {
+	ok(!isset($seen[$sl['rel']]), $sl['rel'] . ' appears in two groups');
+	$seen[$sl['rel']] = $gname;
+}
+/* The icons with no round art of their own still get a home, named for what
+   they are rather than dumped in a leftovers bin. */
+foreach (array('Armor' => 'icons/heavy-armor.png', 'Identity' => 'icons/supersoldier.png',
+               'Items' => 'icons/medkit.png') as $group => $rel) {
+	ok(isset($seen[$rel]) && $seen[$rel] === $group,
+	   $rel . ' is filed under ' . ($seen[$rel] ?? 'nothing') . ' rather than ' . $group);
+}
+ok(!isset($plan['Armor']) || count($plan['Armor']['slots']) === 8,
+   'the Armor group does not hold all eight worn things');
+/* The page must render the one merged list, not the two it replaced. */
+$adm3 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-art.php'));
+ok(strpos($adm3, 'dropshipArtPlan($conn, $pid, $ext)') !== false,
+   'the page does not render the merged plan');
+ok(strpos($adm3, '<h3>Icons</h3>') === false,
+   'the separate Icons block is back, so an icon is away from the art it belongs with');
+
+echo "\na file already on the server can be renamed, not re-uploaded\n";
+/*
+ * When the wording changes, the picture the theme wants is usually already
+ * on the server under the name it used to ask for. Re-uploading it is
+ * busywork and leaves an orphan behind in a folder every theme shares.
+ *
+ * THE SHARED FOLDER IS THE WHOLE RISK: a rename is not a private edit, and
+ * a missing icon is not an error, just a gap nobody notices for a week.
+ */
+$art3 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-art.php'));
+ok(strpos($art3, 'function dropshipArtIconRename') !== false, 'there is no rename at all');
+/* Both names rebuilt, never trusted: they become a filesystem path. */
+ok(substr_count($art3, 'dropshipThemeSlug($from)') === 1
+   && substr_count($art3, 'dropshipThemeSlug($to)') === 1,
+   'a posted name reaches the filesystem without being rebuilt');
+ok(strpos($art3, 'if (file_exists($dir') !== false,
+   'a rename can overwrite an existing icon, silently covering up another theme');
+ok(strpos($art3, 'foreach (dropshipThemeAll($conn) as $t)') !== false,
+   'a rename does not check whether another theme still asks for that file');
+/* The target must be one THIS theme asks for, checked in the page. */
+ok(strpos($adm3, "in_array(\$to, \$want, true)") !== false,
+   'the rename target comes off the form, so a file could be moved anywhere');
+$err = dropshipArtIconRename($cz, 'nurse', 'nurse', 1);
+ok($err !== '', 'renaming a file to its own name is allowed');
+ok(dropshipArtIconRename($cz, '', 'sexy-nurse', 1) !== '', 'an empty source is allowed');
+ok(dropshipArtIconRename($cz, 'does-not-exist-here', 'sexy-nurse', 1) !== '',
+   'renaming a file that is not there reports success');
+/* Listing the folder is what makes the rename possible without FTP. */
+ok(strpos($art3, 'function dropshipArtIconFiles') !== false,
+   'nothing lists what is actually in the icons folder');
+ok(strpos($adm3, 'dropshipArtIconFiles()') !== false,
+   'the page never offers the files already on the server');
+
 echo "\nicons are shared, and named by the wording\n";
 /*
  * ONE FOLDER FOR EVERY THEME. The markup asks for icons/<name>.png relative

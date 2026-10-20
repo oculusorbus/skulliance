@@ -371,10 +371,9 @@ echo "\na blank box means the Drop Ship word, and writes nothing\n";
  * record that somebody had looked at it. That was a checkbox column on every
  * row of the form, bought with nothing. Only overrides override.
  */
-$one = function ($label, $say, $icon = null) {
+$one = function ($label, $say) {
 	return dropshipThemeVocabExpand(array(
-		'fam_label' => array($label), 'fam_say' => array($say),
-		'fam_icon'  => array($icon === null ? '' : $icon)));
+		'fam_label' => array($label), 'fam_say' => array($say)));
 };
 $flat = function ($rows) {
 	$o = array();
@@ -390,20 +389,20 @@ ok(($g['exact|Heavy Armor'] ?? null) === 'Smoking Jacket',
    'the shop item is not written, so the shop keeps the Drop Ship name');
 ok(($g['description|Heavy Armor'] ?? null) === 'Smoking Jacket',
    'the mid-sentence form is not written, so results lines keep the Drop Ship name');
-ok(($g['exact|heavy-armor'] ?? null) === 'smoking-jacket',
-   'the icon filename is not derived from the word');
-ok(count($g) === 4, 'the Heavy family wrote ' . count($g) . ' rows rather than 4');
-/* A family with two icons writes both. */
-$g2 = $flat($one('Super Soldier', 'VIP'));
-ok(($g2['exact|dropship'] ?? null) === 'vip' && ($g2['exact|supersoldier'] ?? null) === 'vip',
-   'a family with two icon files does not write both');
-/* An override wins, because 13 of the 64 real cases are shortenings. */
-$g3 = $flat($one('Medkit', 'Sexy Nurse', 'nurse'));
-ok($g3['exact|Medkit'] === 'Sexy Nurse', 'the word is not written when the icon is overridden');
-ok($g3['exact|medkit'] === 'nurse', 'an overridden icon filename is ignored');
-/* An override is a filename too, however it is typed. */
-$g4 = $flat($one('Medkit', 'Sexy Nurse', 'Sexy Nurse!'));
-ok($g4['exact|medkit'] === 'sexy-nurse', 'an icon override is not slugified into a filename');
+/*
+ * AND NO ICON ROW. The icon filename is the word made into a filename, and
+ * dropshipThemeText() derives it on the way out -- writing it here too
+ * would be the same fact in two rows, free to disagree, which is exactly
+ * what the live data did: 13 of 64 stored icon names had stopped matching
+ * the word beside them.
+ */
+ok(!isset($g['exact|heavy-armor']),
+   'the expansion still writes an icon row, so the name can drift from the word again');
+ok(count($g) === 3, 'the Heavy family wrote ' . count($g) . ' rows rather than 3');
+foreach ($g as $k => $v) {
+	ok(strpos($k, '|heavy-armor') === false && strpos($k, '|medkit') === false,
+	   "the expansion wrote an icon row: $k");
+}
 /* A description-only family stays a description, and invents no icon. */
 $g5 = $one('beach', 'lobby');
 ok(count($g5) === 1 && $g5[0]['type'] === 'description' && $g5[0]['find'] === 'beach',
@@ -426,7 +425,7 @@ ok(dropshipThemeVocabExpand(array('fam_label' => array('Heavy'), 'fam_say' => ar
 $adm2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));
 ok(strpos($adm2, 'dropshipThemeVocabExpand($_POST)') !== false,
    'the admin does not expand the families it posts');
-foreach (array('fam_label[]', 'fam_say[]', 'fam_icon[]') as $field) {
+foreach (array('fam_label[]', 'fam_say[]') as $field) {
 	ok(strpos($adm2, 'name="' . $field . '"') !== false,
 	   "the form does not post $field, which the expansion reads");
 }
@@ -434,15 +433,83 @@ ok(strpos($adm2, "\$_POST['keep']") === false, 'the admin still reads the Keep c
 ok(strpos($adm2, 'name="keep[') === false, 'the form still renders Keep checkboxes');
 ok(strpos($adm2, "if (\$rep === '') continue;") !== false, 'a blank box is written as a row');
 ok(strpos($adm2, 'dropshipThemeVocabulary()') !== false, 'the admin does not render the guide');
-/* Every family must post an index-aligned icon field, even the ones with no
-   icon, or one iconless family shifts every icon after it onto another row. */
-ok(strpos($adm2, '<input type="hidden" name="fam_icon[]" value="">') !== false,
-   'an iconless family posts no fam_icon, so the icon fields fall out of step with the labels');
+/* There is nowhere to type an icon name, because there is nothing to type. */
+ok(strpos($adm2, 'fam_icon') === false,
+   'the wording form still has an icon field, which is the filename spelled out again');
+ok(strpos($adm2, 'admin-art.php') !== false,
+   'the wording form does not say where the picture is actually managed');
 /* An identity row must be harmless at lookup: replacing a word with itself. */
 $c9 = new TConn(array(90 => array('id' => 9, 'project_id' => 90, 'slug' => 'k')),
                 array(9 => array(pair('exact', 'Barracks', 'Barracks'))));
 ok(dropshipThemeText($c9, 90, 'Barracks') === 'Barracks',
    'a word replaced by itself does not come back unchanged');
+
+echo "\nan icon filename is derived from the word, never stored\n";
+/*
+ * The markup asks for the icon by its Drop Ship filename -- the shop renders
+ * icons/<?= evaluateText('medkit') ?>.png -- so the lookup is where the
+ * derivation has to happen. It used to be a stored row AND a field in the
+ * wording form, which is the same fact in two places: rename the Medkit and
+ * the icon row still said 'nurse' until somebody edited that too, with
+ * nothing on screen saying that was why the shop had the wrong picture.
+ * 13 of the 64 live icon names had already drifted that way.
+ */
+$ci = new TConn(array(40 => array('id' => 4, 'project_id' => 40, 'slug' => 'ol')),
+                array(4 => array(pair('exact', 'Medkit', 'Sexy Nurse'),
+                                 pair('exact', 'Heavy', 'Smoking Jacket'),
+                                 pair('exact', 'Super Soldier', 'VIP'),
+                                 pair('exact', 'Barracks', 'Green Room'))));
+ok(dropshipThemeText($ci, 40, 'medkit') === 'sexy-nurse',
+   "the Medkit icon does not follow the word: '" . dropshipThemeText($ci, 40, 'medkit') . "'");
+ok(dropshipThemeText($ci, 40, 'heavy-armor') === 'smoking-jacket',
+   'the armor icon does not follow the word');
+/* Both of Super Soldier's files follow the one word. */
+ok(dropshipThemeText($ci, 40, 'supersoldier') === 'vip'
+   && dropshipThemeText($ci, 40, 'dropship') === 'vip',
+   'a family with two icon files does not point both at the word');
+/* A thing the theme did not rename keeps the Drop Ship filename -- and must
+   NOT come back null, because null means "use the chain" and the chain is
+   another theme's answer. */
+ok(dropshipThemeText($ci, 40, 'radar') === 'radar',
+   "an unrenamed icon does not keep its own filename: "
+   . var_export(dropshipThemeText($ci, 40, 'radar'), true));
+/* The word itself is untouched by any of this. */
+ok(dropshipThemeText($ci, 40, 'Medkit') === 'Sexy Nurse', 'the display word stopped resolving');
+ok(dropshipThemeText($ci, 40, 'Barracks') === 'Green Room', 'a plain word stopped resolving');
+/* A themed word that is not a filename still becomes one. */
+/* A DIFFERENT project id, deliberately: dropshipThemeDictionaries() caches
+   per request by pid, so reusing 40 here silently tested the theme above. */
+$cj = new TConn(array(41 => array('id' => 5, 'project_id' => 41, 'slug' => 'dc')),
+                array(5 => array(pair('exact', 'Quantum Stealth', 'Mask & Hoodie'))));
+ok(dropshipThemeText($cj, 41, 'quantum-stealth') === 'mask-hoodie',
+   'a word with punctuation does not become a usable filename');
+/* No theme at all still falls back to the chain, which is what keeps the
+   schema a no-op until somebody saves a theme. */
+$ck = new TConn(array(), array());
+ok(dropshipThemeText($ck, 99, 'medkit') === null,
+   'an unthemed project no longer falls back to the chain');
+/* The reverse map has to know every icon and nothing else, or a word would
+   be mistaken for a filename and resolved twice. */
+ok(dropshipThemeIconLabel('heavy-armor') === 'Heavy', "'heavy-armor' is not mapped to Heavy");
+ok(dropshipThemeIconLabel('dropship') === 'Super Soldier',
+   "'dropship' is not mapped to Super Soldier");
+foreach (array('Medkit', 'Heavy', 'beach', 'Barracks', 'SCRIP') as $word) {
+	ok(dropshipThemeIconLabel($word) === null, "'$word' is treated as an icon filename");
+}
+/* No family label may itself be an icon term, or the derivation recurses. */
+foreach ($vocab as $rows) foreach ($rows as $r) {
+	ok(dropshipThemeIconLabel($r['label']) === null,
+	   "family label '" . $r['label'] . "' is also an icon term, which would recurse");
+}
+/* The legacy chain derives the same way, so a renamed file is right on both
+   paths. 39 lines of chain said it separately and 13 of them disagreed. */
+$dbsrc = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
+ok(strpos($dbsrc, 'dropshipThemeIconLabel($text)') !== false,
+   'the legacy chain does not derive icon names, so it still answers the old filenames');
+foreach (array('medkit', 'heavy-armor', 'drop-box', 'quantum-stealth') as $term) {
+	ok(strpos($dbsrc, "\$replacements['" . $term . "']") === false,
+	   "the chain still spells out the '$term' icon, which can disagree with the word beside it");
+}
 
 echo "\nthe wording owns the labels, so there are no label columns\n";
 /*

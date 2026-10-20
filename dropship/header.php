@@ -172,13 +172,17 @@
 		     server at all, so $_SERVER['PHP_SELF'] alone can't tell
 		     "#barracks" apart from plain dashboard.php. -->
 		<?php
-		// Oculus Lounge-specific icon swaps -- not routed through
-		// evaluateText() since these are generic UI/nav icons, not
-		// in-game item names, so there's no existing replacement entry
-		// for them. Curl-verified all three live before using them.
+		// Oculus Lounge-specific icon swaps. These are nav furniture, not
+		// in-game item names, so there is no wording entry for them and the
+		// choice is made here. Curl-verified all three live before using them.
 		$is_oculus_lounge = ($_SESSION['userData']['dropship_project_id'] == 4);
 		$qm_game_icon = $is_oculus_lounge ? 'money-gun' : 'dropship';
-		$qm_barracks_icon = $is_oculus_lounge ? 'nurse' : 'supersoldier';
+		// ...with ONE exception. The barracks icon is literally the Medkit
+		// picture, which was written here as 'nurse' -- a second copy of a
+		// filename the wording owns, and it broke the moment that file was
+		// renamed to follow the word. Asking for it is the same thing and
+		// cannot drift.
+		$qm_barracks_icon = $is_oculus_lounge ? evaluateText('medkit') : 'supersoldier';
 		$qm_armory_icon = $is_oculus_lounge ? 'grab-bag' : 'shield';
 		?>
 		<div id="quick-menu">

@@ -1,5 +1,9 @@
 .DS_Store
 *.sql
+# ...but the theme seed is source, not a dump: it is generated from the old
+# evaluateText() chain and the harness asserts against it. Blanket-ignored,
+# it existed only on one laptop.
+!dropship/dropship-themes-seed.sql
 .claude/settings.local.json
 
 # cardano.org submission assets (belong in the cardano-org fork, not here)

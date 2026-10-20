@@ -143,12 +143,62 @@ function dropshipThemeText($conn, $project_id, $text) {
 	if ($d === null) return null;
 
 	if (isset($d['exact'][$text])) return $d['exact'][$text];
+
+	/*
+	 * AN ICON NAME IS DERIVED, NEVER STORED.
+	 *
+	 * The markup asks for the icon by its Drop Ship filename -- the shop
+	 * renders icons/<?= evaluateText('medkit') ?>.png -- and the answer is
+	 * just the theme's own word made into a filename. Storing it as well
+	 * meant the same fact in two rows: rename Medkit to "Sexy Nurse" and
+	 * the icon row still said 'nurse' until somebody edited it too, and
+	 * nothing on the screen said that was why the shop showed the wrong
+	 * picture. The art screen is where the FILE is managed; the name it
+	 * asks for comes from here.
+	 */
+	$label = dropshipThemeIconLabel($text);
+	if ($label !== null) {
+		$word = dropshipThemeText($conn, $project_id, $label);
+		if ($word !== null && $word !== '' && $word !== $label) {
+			return dropshipThemeSlug($word);
+		}
+		/* NOT null. Null means "this theme has nothing to say, use the
+		   chain", and the chain still holds the OLD icon names -- so a
+		   theme that keeps the Drop Ship word would be handed Dread City's
+		   filename. Unchanged is the answer, exactly as the description
+		   pass returns an untouched string rather than null. */
+		return $text;
+	}
+
 	foreach ($d['description'] as $find => $replacement) {
 		if ($find !== '' && str_contains($text, $find)) {
 			$text = str_replace($find, $replacement, $text);
 		}
 	}
 	return $text;
+}
+
+/**
+ * The family word an icon filename belongs to, or null if it is not one.
+ *
+ * 'heavy-armor' -> 'Heavy', 'dropship' -> 'Super Soldier'. Built once from
+ * the vocabulary: this sits on the path of every label on every page, so it
+ * must not cost a scan per call.
+ */
+function dropshipThemeIconLabel($term) {
+	static $map = null;
+	if ($map === null) {
+		$map = array();
+		require_once __DIR__ . '/dropship-theme-vocab.php';
+		if (function_exists('dropshipThemeVocabulary')) {
+			foreach (dropshipThemeVocabulary() as $rows) {
+				foreach ($rows as $r) {
+					foreach ($r['icons'] as $ic) $map[$ic] = $r['label'];
+				}
+			}
+		}
+	}
+	return isset($map[$term]) ? $map[$term] : null;
 }
 
 /**

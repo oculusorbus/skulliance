@@ -430,19 +430,25 @@ function dropshipArtTitle($rel) {
  * `icons/<name>.png` RELATIVE to the page, and every project is served from
  * /staking/dropship/, so there is a single pool. Themes do not get their own
  * copy of medkit.png -- they rename the thing and ship a file under the new
- * name, which is why Oculus Lounge asks for icons/nurse.png.
+ * name, which is why Oculus Lounge asks for icons/sexy-nurse.png.
  *
- * That makes the wording admin and the art admin two halves of one job:
- * renaming 'medkit' to 'nurse' is what creates the obligation to upload
- * icons/nurse.png, and nothing else in the system will tell you that.
+ * THE NAME IS NOT STORED ANYWHERE. It is the theme's own word made into a
+ * filename, derived in dropshipThemeText(), so calling the Medkit a "Sexy
+ * Nurse" IS the instruction to supply icons/sexy-nurse.png. Nothing else in
+ * the system will tell you that, which is why this list exists and why it
+ * sits beside the art for the same thing rather than in a block of its own.
  *
  * Returns array of array(term, name, path, exists) -- term is the Drop Ship
  * word, name is what this theme calls it.
  */
 function dropshipThemeIconSlots($conn, $project_id) {
-	if (!function_exists('dropshipThemeVocabulary')) return array();
+	/* REQUIRED, not probed. This returning an empty list because a file
+	   happened not to be loaded would read on screen as "this theme asks
+	   for no icons", which is never true and is not an error anybody would
+	   investigate. */
+	require_once __DIR__ . '/dropship-theme-vocab.php';
 	$out = array();
-	foreach (dropshipThemeVocabulary() as $rows) {
+	foreach (dropshipThemeVocabulary() as $group => $rows) {
 		foreach ($rows as $r) {
 			foreach ($r['icons'] as $term) {
 				$name = $term;
@@ -462,6 +468,7 @@ function dropshipThemeIconSlots($conn, $project_id) {
 					   actually looking for -- 'heavy-armor' is a filename,
 					   'Heavy' is the word on the screen. */
 					'label'  => $r['label'],
+					'group'  => $group,
 					'name'   => $name,
 					'rel'    => $rel,
 					'safe'   => $safe,
@@ -532,4 +539,148 @@ function dropshipArtSlotMapping($conn, $project_id, $rel) {
 		$out[] = array('from' => $t['find'], 'to' => $said);
 	}
 	return $out;
+}
+
+/**
+ * The icon filename a piece of round art is the same thing as.
+ *
+ * images/weapons/rocket-launcher3.gif and icons/rocket-launcher.png are two
+ * pictures of one object, and the only reason they were managed on separate
+ * halves of the screen is that they live in different folders. The stem of
+ * the file IS the icon term, bar one shortening.
+ *
+ * Returns the icon term, or null when the art is not of a nameable thing
+ * (a beach frame, a death, the extra-life card).
+ */
+function dropshipArtIconTerm($rel) {
+	/* 'demo' is just 'demolition' typed short in the art folder. Declared,
+	   not guessed: a prefix rule would also pair 'drop-box' with
+	   'drop-ship', which are different objects. */
+	static $alias = array('demo' => 'demolition');
+	if (!preg_match('#^images/(?:weapons|equipment)/([a-z-]+?)[0-9]*\.#', $rel, $m)) return null;
+	$stem = $m[1];
+	return isset($alias[$stem]) ? $alias[$stem] : $stem;
+}
+
+/**
+ * Every slot for a theme, art and icons together, grouped by the thing.
+ *
+ * WHY THIS EXISTS. The art screen used to be two lists: round art grouped by
+ * folder, then every icon in one block at the bottom. So replacing "the
+ * rocket launcher" meant finding five frames in one place and its icon in
+ * another, and the icon block was the only thing on the page that was not
+ * about a theme's own art at all. They are the same job.
+ *
+ * Returns group => array('note', 'slots'), where a slot is
+ * array('kind' => 'art'|'icon', ...) -- an art slot carries 'rel' under the
+ * theme folder, an icon slot carries what dropshipThemeIconSlots() returns.
+ */
+function dropshipArtPlan($conn, $project_id, $ext = 'gif') {
+	$icons = array();
+	foreach (dropshipThemeIconSlots($conn, $project_id) as $ic) $icons[$ic['term']] = $ic;
+
+	$out = array();
+	foreach (dropshipArtGroups($ext) as $name => $g) {
+		$slots  = array();
+		$placed = array();
+		$files  = array_values($g['files']);
+		foreach ($files as $i => $rel) {
+			$slots[] = array('kind' => 'art', 'rel' => $rel);
+			/* The icon closes the run rather than splitting it: it goes in
+			   after the LAST frame of the thing, which is the frame whose
+			   successor is something else. */
+			$term = dropshipArtIconTerm($rel);
+			if ($term === null || isset($placed[$term]) || !isset($icons[$term])) continue;
+			$next = isset($files[$i + 1]) ? dropshipArtIconTerm($files[$i + 1]) : null;
+			if ($next === $term) continue;
+			$slots[] = array('kind' => 'icon') + $icons[$term];
+			$placed[$term] = true;
+		}
+		$out[$name] = array('note' => $g['note'], 'slots' => $slots);
+		foreach ($placed as $term => $_) unset($icons[$term]);
+	}
+
+	/*
+	 * WHAT IS LEFT HAS NO ROUND ART -- armour, the suits, the Medkit, the
+	 * squad marks. They are still a theme's pictures, so they get their own
+	 * sections named after the vocabulary group they came from rather than
+	 * one undifferentiated block of leftovers.
+	 */
+	$notes = array(
+		'Armor'    => 'Worn on a soldier card and in the shop. No round art: armour is never a frame.',
+		'Items'    => 'Carried gear that has no frame of its own.',
+		'Identity' => 'The squad marks, used in the nav and on the scoreboard.',
+	);
+	foreach ($icons as $term => $ic) {
+		$name = isset($notes[$ic['group']]) ? $ic['group'] : 'Everything else';
+		if (!isset($out[$name])) {
+			$out[$name] = array('note' => isset($notes[$name]) ? $notes[$name]
+			                            : 'Icons with no round art of their own.',
+			                    'slots' => array());
+		}
+		$out[$name]['slots'][] = array('kind' => 'icon') + $ic;
+	}
+	return $out;
+}
+
+/**
+ * The files actually sitting in the shared icons folder.
+ *
+ * Needed because a theme can ask for a name nothing is stored under yet,
+ * while the picture it wants IS on the server under an older name -- which
+ * is exactly what happens the first time a theme's wording changes. Listing
+ * them is what makes the rename possible without an FTP client.
+ */
+function dropshipArtIconFiles() {
+	$dir = rtrim(__DIR__, '/') . '/icons';
+	if (!is_dir($dir)) return array();
+	$out = array();
+	foreach ((array)@scandir($dir) as $f) {
+		if (substr($f, -4) === '.png' && is_file($dir . '/' . $f)) $out[] = substr($f, 0, -4);
+	}
+	sort($out);
+	return $out;
+}
+
+/**
+ * Rename an icon on the server. Returns '' on success, else why not.
+ *
+ * THE SHARED FOLDER IS THE WHOLE RISK. There is one icons/ for every theme,
+ * so a rename is not a private edit: another theme asking for the old name,
+ * or a page with the name written into it, loses its picture silently -- a
+ * missing icon is not an error, it is just a gap nobody notices for a week.
+ * So this refuses to move a file any OTHER theme still asks for, and refuses
+ * to overwrite one that already exists.
+ *
+ * Both names are rebuilt from scratch rather than trusted: they arrive from
+ * a form, and they are about to be concatenated into a filesystem path.
+ */
+function dropshipArtIconRename($conn, $from, $to, $project_id) {
+	$from = dropshipThemeSlug($from);
+	$to   = dropshipThemeSlug($to);
+	if ($from === '' || $to === '')   return 'Both names are required.';
+	if ($from === $to)                return 'Those are the same name.';
+
+	$dir = rtrim(__DIR__, '/') . '/icons';
+	if (!is_file($dir . '/' . $from . '.png')) return "There is no icons/$from.png to rename.";
+	if (file_exists($dir . '/' . $to . '.png'))
+		return "icons/$to.png already exists. Replace it with an upload instead, "
+		     . 'so you can see what you are covering up.';
+
+	/* Who else is using it. A rename that silently blanks another theme's
+	   shop is worse than making somebody do it twice. */
+	foreach (dropshipThemeAll($conn) as $t) {
+		if ((int)$t['project_id'] === (int)$project_id) continue;
+		foreach (dropshipThemeIconSlots($conn, (int)$t['project_id']) as $ic) {
+			if ($ic['name'] === $from) {
+				return 'Cannot rename: ' . htmlspecialchars((string)$t['slug'])
+				     . " also asks for icons/$from.png. Upload a copy under the new "
+				     . 'name instead.';
+			}
+		}
+	}
+	if (!@rename($dir . '/' . $from . '.png', $dir . '/' . $to . '.png')) {
+		return "Could not rename icons/$from.png. Check the folder is writable.";
+	}
+	return '';
 }
