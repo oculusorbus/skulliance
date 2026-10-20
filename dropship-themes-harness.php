@@ -315,6 +315,50 @@ $c9 = new TConn(array(90 => array('id' => 9, 'project_id' => 90, 'slug' => 'k'))
 ok(dropshipThemeText($c9, 90, 'Barracks') === 'Barracks',
    'a kept term does not come back unchanged');
 
+echo "\ncase-only pairs are real rows, and the column must allow them\n";
+/*
+ * 'Medkit' is the word a player reads; 'medkit' is the icon filename. They
+ * need different replacements, so they are different rows -- but MySQL's
+ * DEFAULT COLLATION IS CASE INSENSITIVE and treats them as one, which
+ * rejected the seed with "#1062 Duplicate entry '1-exact-melee'". Found by
+ * the seed failing to load, not by review.
+ */
+$pairs_ci = array();
+foreach ($vocab as $rows) foreach ($rows as $r) {
+	$k = $r['type'] . '|' . strtolower($r['find']);
+	$pairs_ci[$k] = isset($pairs_ci[$k]) ? $pairs_ci[$k] + 1 : 1;
+}
+$collide = array_filter($pairs_ci, function ($n) { return $n > 1; });
+ok(!empty($collide),
+   'no case-only pairs in the vocabulary, so this check is no longer proving anything');
+$schema_src = file_get_contents(__DIR__ . '/dropship/dropship-themes-schema.md');
+/*
+ * SCOPED TO THE CREATE BLOCK. A bare search for the collation anywhere in
+ * the file also matches the ALTER statement and the prose below it, which
+ * is exactly how the first version of this check missed a mutation that
+ * stripped the collation from the CREATE itself.
+ */
+$ct = strpos($schema_src, 'CREATE TABLE IF NOT EXISTS dropship_theme_text');
+ok($ct !== false, 'the schema has no CREATE for dropship_theme_text');
+$create_block = $ct === false ? ''
+    : substr($schema_src, $ct, strpos($schema_src, 'ENGINE=InnoDB', $ct) - $ct);
+ok(strpos($create_block, 'COLLATE utf8mb4_bin') !== false,
+   'the CREATE lets the default collation decide, which makes Medkit and medkit one row');
+ok(preg_match('/find\s+VARCHAR\(190\)[^,]*COLLATE utf8mb4_bin/', $create_block) === 1,
+   'it is not the find column in the CREATE that is case sensitive');
+ok(strpos($schema_src, 'ALTER TABLE dropship_theme_text') !== false,
+   'there is no ALTER for a table that already exists with the wrong collation');
+$seed_src = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
+ok(strpos($seed_src, 'utf8mb4_bin') !== false,
+   'the seed does not say it needs a case-sensitive column, so it fails with no explanation');
+/* And the lookup side was always case sensitive -- assert it still is. */
+$cc = new TConn(array(80 => array('id' => 8, 'project_id' => 80, 'slug' => 'j')),
+                array(8 => array(pair('exact', 'Medkit', 'Sexy Nurse'),
+                                 pair('exact', 'medkit', 'sexy-nurse'))));
+ok(dropshipThemeText($cc, 80, 'Medkit') === 'Sexy Nurse', 'the display word resolves wrongly');
+ok(dropshipThemeText($cc, 80, 'medkit') === 'sexy-nurse',
+   'the icon filename resolves to the display word, so the page asks for the wrong file');
+
 echo "\nthe migration is written down\n";
 $schema = file_get_contents(__DIR__ . '/dropship/dropship-themes-schema.md');
 foreach (array('dropship_themes', 'dropship_theme_text') as $t) {

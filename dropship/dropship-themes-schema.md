@@ -60,12 +60,55 @@ CREATE TABLE IF NOT EXISTS dropship_theme_text (
 	id          INT AUTO_INCREMENT PRIMARY KEY,
 	theme_id    INT          NOT NULL,
 	match_type  ENUM('exact','description') NOT NULL DEFAULT 'exact',
-	find        VARCHAR(190) NOT NULL,
+	-- utf8mb4_bin: `find` is CASE SENSITIVE. See the note below; the default
+	-- collation makes 'Medkit' and 'medkit' the same row and they are not.
+	find        VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
 	replacement VARCHAR(255) NOT NULL,
 	sort_order  INT          NOT NULL DEFAULT 0,
 	UNIQUE KEY uniq_pair (theme_id, match_type, find),
 	INDEX idx_theme (theme_id, match_type, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+## `find` has to be case sensitive
+
+MySQL's default collation is case **in**sensitive, so `'Medkit'` and
+`'medkit'` are the same value to a `UNIQUE` key. They are not the same thing
+here:
+
+| Term | What it is | A theme might say |
+|---|---|---|
+| `Medkit` | the word a player reads | Sexy Nurse |
+| `medkit` | the **icon filename** | sexy-nurse |
+
+Seven of these pairs exist in Oculus Lounge and Filthy Mermaid alone
+(`Melee`, `Grenade`, `Demolition`, `Flamethrower`, `Radar`, `Radio`,
+`Medkit`), and Dread City has one. Without `utf8mb4_bin` the second of each
+pair is rejected with
+
+```
+#1062 - Duplicate entry '1-exact-melee' for key 'uniq_pair'
+```
+
+which is how this was found: the seed would not load.
+
+The lookup side was always case sensitive -- `dropshipThemeDictionaries()`
+keys a PHP array, and PHP array keys are byte-compared -- so only the column
+needed fixing, not the code.
+
+### If the table already exists
+
+```sql
+ALTER TABLE dropship_theme_text
+  MODIFY find VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL;
+```
+
+That rebuilds `uniq_pair` with the new collation. A seed that failed part way
+leaves rows behind, so clear both tables before re-running it:
+
+```sql
+DELETE FROM dropship_theme_text;
+DELETE FROM dropship_themes;
 ```
 
 ## `slug` is stored, never derived
