@@ -19,6 +19,7 @@ include 'db.php';
 include 'webhooks.php';          // the $discordid_* globals the gate reads
 include 'dropship.php';
 require_once 'dropship-theme-vocab.php';
+require_once 'dropship-nft-probe.php';
 include 'header.php';
 
 /* The page chrome closes the same way every Drop Ship page does; there is no
@@ -168,6 +169,8 @@ $val = function ($k, $d = '') use ($theme, $h) {
   word-break:break-all;padding:6px 8px;background:#07111d;border-radius:3px;
   border:1px solid rgba(255,255,255,.16);text-align:left}
 .dsa .pol.none{font-family:inherit;color:#e8a0b0;border-color:rgba(224,70,107,.45)}
+.dsa .good-n{color:#00c8a0;font-weight:bold}
+.dsa .bad-n{color:#e8a0b0;font-weight:bold}
 .dsa code{color:#e8eaed}
 .dsa button,.dsa .btn{background:#00c8a0;color:#07111d;border:0;border-radius:4px;
   padding:8px 15px;font-weight:bold;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
@@ -233,12 +236,42 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
 			<option value="koios"<?php echo $ts !== 'skulliance' ? ' selected' : ''; ?>>Koios &mdash; read the player&rsquo;s wallets</option>
 			<option value="skulliance"<?php echo $ts === 'skulliance' ? ' selected' : ''; ?>>Skulliance &mdash; use holdings already synced</option>
 		</select></div>
+	<div><label>NFT check</label>
+		<a class="btn" href="admin-themes.php?project_id=<?php echo (int)$edit_pid; ?>&amp;probe=1">Why no NFTs?</a></div>
 	<div><label>Active</label>
 		<select name="active">
 			<option value="0"<?php echo ($theme && !$theme['active']) ? ' selected' : ''; ?>>no</option>
 			<option value="1"<?php echo ($theme && $theme['active']) ? ' selected' : ''; ?>>yes</option>
 		</select></div>
 </div>
+
+<?php
+/*
+ * WHY NO NFTs -- on demand, because both pipelines fail silently and in
+ * several different places, and every one of them looks identical from the
+ * outside: an empty barracks and no error. Behind a GET so it only runs
+ * when asked; it writes nothing.
+ */
+if ($edit_pid && isset($_GET['probe'])):
+	$probe = dropshipNftProbe($conn, $edit_pid,
+		isset($_SESSION['userData']['discord_id']) ? $_SESSION['userData']['discord_id'] : '');
+?>
+<h3>NFT check</h3>
+<p class="note">Each step as the dashboard runs it, for your own account.
+<b>The first zero is the answer.</b></p>
+<table>
+	<tr><th style="width:320px">Step</th><th style="width:70px">Found</th><th>&nbsp;</th></tr>
+	<?php foreach ($probe as $row): ?>
+	<tr>
+		<td><?php echo $h($row['step']); ?></td>
+		<td><?php if ($row['count'] === null): ?><span class="bad-n">failed</span>
+		    <?php else: ?><span class="<?php echo $row['count'] ? 'good-n' : 'bad-n'; ?>"><?php
+		    echo (int)$row['count']; ?></span><?php endif; ?></td>
+		<td class="pol" style="border:0;background:none;padding:0"><?php echo $h($row['detail']); ?></td>
+	</tr>
+	<?php endforeach; ?>
+</table>
+<?php endif; ?>
 
 <h3>Wording</h3>
 <?php
