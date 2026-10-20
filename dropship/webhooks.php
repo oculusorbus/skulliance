@@ -125,6 +125,14 @@ include('credentials/webhooks_credentials.php');
 			curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
 			curl_setopt( $ch, CURLOPT_HEADER, 0);
 			curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
+			/* A DISCORD POST MUST NEVER HOLD A PAGE OPEN. There was no
+			   timeout here at all, so a slow or rate-limited webhook stalled
+			   whatever request made the call for as long as Discord felt
+			   like -- and when that call moved onto the run request, the
+			   page stopped rendering part-way and players lost the replay
+			   below it. An announcement is never worth a broken page. */
+			curl_setopt( $ch, CURLOPT_CONNECTTIMEOUT, 2);
+			curl_setopt( $ch, CURLOPT_TIMEOUT, 4);
 
 			$response = curl_exec( $ch );
 			// If you need to debug, or find out why you can't send message uncomment line below, and execute script.

@@ -409,72 +409,6 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 				if((isset($_POST['run']) || isset($_POST['instant_replay'])) && $_SESSION['userData']['dropship_project_id'] == 4) {
 					$image_wrap = "class='image-wrap'";
 				}?>
-				<?php
-				/*
-				 * ANNOUNCE EVERY RUN.
-				 *
-				 * This lived inside the game-over panel below, which only
-				 * renders once `current_score` is set -- and checkScore()
-				 * sets that at the BOTTOM of this page, so on the request
-				 * that actually logs the run it still holds the previous
-				 * value. The announcement therefore waited for the NEXT
-				 * request, and the only thing that reliably produced one was
-				 * the player stepping through every round of the replay and
-				 * pressing a button labelled "Send Results to Discord". Close
-				 * the tab early and the channel never heard about that run.
-				 *
-				 * logScore() now sets run_logged the moment a score is on the
-				 * board, so a run announces exactly once whatever the player
-				 * does next. The old game-over condition is kept as a second
-				 * trigger so a run logged before this change still posts when
-				 * its results are next opened.
-				 *
-				 * HERE AND NOT IN logScore() because discordmsg() is Drop
-				 * Ship's own and webhooks.php is included AFTER dropship.php,
-				 * so at the point the score is written it does not exist yet.
-				 * function_exists() guards that ordering rather than trusting
-				 * it.
-				 */
-				$ds_just_ran  = isset($_SESSION['userData']['run_logged']);
-				$ds_game_over = isset($_SESSION['userData']['current_score']) && checkSquadCount($conn) < 1;
-				unset($_SESSION['userData']['run_logged']);
-				if(($ds_just_ran || $ds_game_over)
-				   && !isset($_SESSION['userData']['notification'])
-				   && isset($_SESSION['userData']['score'])
-				   && function_exists('discordmsg')) {
-							$title = "Dead on Round ".$_SESSION['userData']['score'];
-							ob_start(); // Start output buffering
-							checkPlayerItems($conn);
-							$list = ob_get_contents(); // Store buffer in variable
-							ob_end_clean(); // End buffering and clean up
-							$description = $_SESSION['userData']['name']." died during Round ".$_SESSION['userData']['score']."\n".evaluateText($list);
-							$imageurl = "https://skulliance.io".$prefix."images/die/".rand(1,3).".gif";
-							discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
-							$_SESSION['userData']['notification'] = "true";
-
-							// Current leaderboard standings, posted automatically after
-							// every run -- replaces the old /leaderboard Discord bot
-							// command (per the user, no longer reliable). Same
-							// output-buffered checkLeaderboard() capture automate.php
-							// already uses for its own leaderboard posts, just fired
-							// per-run instead of on a cron cadence. Scoped to Drop Ship
-							// and Oculus Lounge specifically (what was asked for) --
-							// Dread City/Filthy Mermaid are still a work in progress.
-							// discordmsg()'s own $project_id routing (see webhooks.php)
-							// already sends this to the right Skulliance channel, no
-							// extra wiring needed here.
-							if(isset($_SESSION['userData']['game_id']) && ($_SESSION['userData']['dropship_project_id'] == 1 || $_SESSION['userData']['dropship_project_id'] == 4)){
-								ob_start();
-								checkLeaderboard($conn, "true");
-								$leaderboard_list = ob_get_contents();
-								ob_end_clean();
-								if($leaderboard_list != ""){
-									$leaderboard_imageurl = "https://skulliance.io".$prefix."images/dropship.jpg";
-									discordmsg("📊 ".getProjectName($conn)." Leaderboard", $leaderboard_list, $leaderboard_imageurl, $_SESSION['userData']['dropship_project_id']);
-								}
-							}
-				}
-				?>
 				<div id="results" <?php echo $image_wrap;?>>
 					<div id="results-image"></div>
 					<?php if(isset($_SESSION['userData']['current_score']) && checkSquadCount($conn) < 1) { ?>
@@ -918,4 +852,88 @@ if($_SESSION['userData']['dropship_project_id'] == 4){?>
      read from Skulliance's own account instead. File left in place,
      unreferenced, rather than deleted outright. -->
 <script type="text/javascript" src="dropship.js?var=<?php echo rand(0,999); ?>"></script>
+<?php
+/*
+ * ANNOUNCE THE RUN, AFTER THE PAGE IS ALREADY ON THE WIRE.
+ *
+ * This ran just above <div id="results">, which put two synchronous Discord
+ * posts in front of everything below it -- including #hidden-results, where
+ * the replay frames live. discordmsg() had NO TIMEOUT AT ALL, so a slow or
+ * rate-limited webhook stalled the response part-way through: players got a
+ * page with no animation and then an error, while their score had already
+ * been written by logScore() earlier in the same request. Reported live on
+ * mobile for both Drop Ship and Oculus Lounge, which is where a stalled
+ * response shows up first.
+ *
+ * Down here every byte of the page has already been sent, so nothing a
+ * player sees depends on this finishing. discordmsg() is capped as well now
+ * (2s connect, 4s total): the cap stops the hang, the placement stops a
+ * hang mattering.
+ */
+
+				/*
+				 * ANNOUNCE EVERY RUN.
+				 *
+				 * This lived inside the game-over panel below, which only
+				 * renders once `current_score` is set -- and checkScore()
+				 * sets that at the BOTTOM of this page, so on the request
+				 * that actually logs the run it still holds the previous
+				 * value. The announcement therefore waited for the NEXT
+				 * request, and the only thing that reliably produced one was
+				 * the player stepping through every round of the replay and
+				 * pressing a button labelled "Send Results to Discord". Close
+				 * the tab early and the channel never heard about that run.
+				 *
+				 * logScore() now sets run_logged the moment a score is on the
+				 * board, so a run announces exactly once whatever the player
+				 * does next. The old game-over condition is kept as a second
+				 * trigger so a run logged before this change still posts when
+				 * its results are next opened.
+				 *
+				 * HERE AND NOT IN logScore() because discordmsg() is Drop
+				 * Ship's own and webhooks.php is included AFTER dropship.php,
+				 * so at the point the score is written it does not exist yet.
+				 * function_exists() guards that ordering rather than trusting
+				 * it.
+				 */
+				$ds_just_ran  = isset($_SESSION['userData']['run_logged']);
+				$ds_game_over = isset($_SESSION['userData']['current_score']) && checkSquadCount($conn) < 1;
+				unset($_SESSION['userData']['run_logged']);
+				if(($ds_just_ran || $ds_game_over)
+				   && !isset($_SESSION['userData']['notification'])
+				   && isset($_SESSION['userData']['score'])
+				   && function_exists('discordmsg')) {
+							$title = "Dead on Round ".$_SESSION['userData']['score'];
+							ob_start(); // Start output buffering
+							checkPlayerItems($conn);
+							$list = ob_get_contents(); // Store buffer in variable
+							ob_end_clean(); // End buffering and clean up
+							$description = $_SESSION['userData']['name']." died during Round ".$_SESSION['userData']['score']."\n".evaluateText($list);
+							$imageurl = "https://skulliance.io".$prefix."images/die/".rand(1,3).".gif";
+							discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
+							$_SESSION['userData']['notification'] = "true";
+
+							// Current leaderboard standings, posted automatically after
+							// every run -- replaces the old /leaderboard Discord bot
+							// command (per the user, no longer reliable). Same
+							// output-buffered checkLeaderboard() capture automate.php
+							// already uses for its own leaderboard posts, just fired
+							// per-run instead of on a cron cadence. Scoped to Drop Ship
+							// and Oculus Lounge specifically (what was asked for) --
+							// Dread City/Filthy Mermaid are still a work in progress.
+							// discordmsg()'s own $project_id routing (see webhooks.php)
+							// already sends this to the right Skulliance channel, no
+							// extra wiring needed here.
+							if(isset($_SESSION['userData']['game_id']) && ($_SESSION['userData']['dropship_project_id'] == 1 || $_SESSION['userData']['dropship_project_id'] == 4)){
+								ob_start();
+								checkLeaderboard($conn, "true");
+								$leaderboard_list = ob_get_contents();
+								ob_end_clean();
+								if($leaderboard_list != ""){
+									$leaderboard_imageurl = "https://skulliance.io".$prefix."images/dropship.jpg";
+									discordmsg("📊 ".getProjectName($conn)." Leaderboard", $leaderboard_list, $leaderboard_imageurl, $_SESSION['userData']['dropship_project_id']);
+								}
+							}
+				}
+?>
 </html>

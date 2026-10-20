@@ -310,12 +310,24 @@ ok(strpos($ds, "\$_SESSION['userData']['run_logged'] = \"true\";") !== false,
    'logScore() does not flag the run, so the announcement still waits for a later request');
 ok(strpos($dash, "\$ds_just_ran") !== false,
    'dashboard.php never checks whether a run was just logged');
-/* It must be OUTSIDE the game-over panel, or hoisting it achieved nothing.
-   The panel opens at the `current_score && checkSquadCount` test. */
-$annAt  = strpos($dash, '$ds_just_ran  = isset(');
-$panelAt = strpos($dash, "<?php if(isset(\$_SESSION['userData']['current_score']) && checkSquadCount(\$conn) < 1) { ?>");
-ok($annAt !== false && $panelAt !== false && $annAt < $panelAt,
-   'the announcement is still inside the game-over panel, so it waits on current_score');
+/*
+ * IT MUST RUN AFTER THE WHOLE PAGE IS ON THE WIRE, which is a stronger rule
+ * than "outside the game-over panel" and replaces it.
+ *
+ * The first version put it just above <div id="results">, which is above
+ * #hidden-results where the replay frames live -- and discordmsg() had no
+ * timeout, so a slow webhook stalled the response part-way and players got
+ * a page with no animation and then an error, with the score already saved.
+ * Reported live on mobile. Anywhere above the last byte of the page can do
+ * that again, so the assertion is positional, not structural.
+ */
+$annAt    = strpos($dash, '$ds_just_ran  = isset(');
+$replayAt = strpos($dash, 'id="hidden-results"');
+$panelAt  = strpos($dash, "<?php if(isset(\$_SESSION['userData']['current_score']) && checkSquadCount(\$conn) < 1) { ?>");
+ok($annAt !== false && $panelAt !== false && $annAt > $panelAt,
+   'the announcement is back inside the game-over panel, where it waits on current_score');
+ok($annAt !== false && $replayAt !== false && $annAt > $replayAt,
+   'the announcement runs before the replay markup; a slow Discord post truncates the page');
 /* ONCE. run_logged is consumed before the send, and 'notification' still
    guards the game-over path, so a reload cannot repeat the post. */
 ok(strpos($dash, "unset(\$_SESSION['userData']['run_logged']);") !== false,
@@ -332,6 +344,13 @@ ok(strpos($ds, "unset(\$_SESSION['userData']['notification']);") !== false,
    be guarded rather than assumed. */
 ok(strpos($dash, "function_exists('discordmsg')") !== false,
    'the announcement assumes discordmsg() is loaded; webhooks.php is included after dropship.php');
+/* AND IT MUST NEVER HOLD THE PAGE OPEN. There was no timeout on the Discord
+   post at all, which is what turned a slow webhook into a broken page. */
+$wh = file_get_contents(__DIR__ . '/dropship/webhooks.php');
+ok(strpos($wh, 'CURLOPT_TIMEOUT') !== false,
+   'the Discord post has no timeout, so a slow webhook can stall a page again');
+ok(strpos($wh, 'CURLOPT_CONNECTTIMEOUT') !== false,
+   'the Discord post has no connect timeout');
 /* And the button must stop claiming to do the thing it no longer does. */
 ok(strpos($js, 'Send Results to Discord') === false,
    'the button still says "Send Results to Discord", which is no longer what it does');
