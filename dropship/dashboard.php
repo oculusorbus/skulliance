@@ -936,6 +936,24 @@ if(isset($_SESSION['userData']['dropship_project_id'])){
      removed "Connect a wallet" UI, dead now that wallet connection is
      read from Skulliance's own account instead. File left in place,
      unreferenced, rather than deleted outright. -->
+<?php
+/*
+ * WHICH SOUND EACH ROUND PLAYS, resolved here rather than in the browser.
+ *
+ * displayRound() carried thirty-four if-branches of caption text against
+ * sound filenames, and every reskin's own words were in there beside Drop
+ * Ship's -- Vibrator, Whip, Paddle, Ball Gag -- all of which the wording
+ * table already holds. The wording lives on this side and so does the
+ * filesystem, so the answer is worked out here and the browser walks a
+ * list. See dropship/dropship-audio.php.
+ *
+ * ORDER MATTERS AND IS PRESERVED: the match is a substring of the
+ * caption, so "Smoke Bomb" also matches "Pull Smoke Bomb Pin" and the pin
+ * has to come first. json_encode keeps the array's order.
+ */
+?>
+<script>window.dsAudio = <?php echo json_encode(dropshipAudioPayload($conn, $_SESSION['userData']['dropship_project_id']),
+	JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE); ?>;</script>
 <script type="text/javascript" src="<?php echo dropshipAsset('dropship.js'); ?>"></script>
 <?php
 /*

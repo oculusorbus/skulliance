@@ -599,8 +599,12 @@ ok(strpos($adm7, '$o_man = dropshipArtManifest($other);') !== false,
    'the other set is not counted, so the switch does not say what it leads to');
 /* The chosen format must survive every round trip, or an upload lands in
    the set you were not looking at. */
-ok(substr_count($adm7, 'name="format"') === 2,
-   'the upload and rename forms do not carry the format, so uploads land in the wrong set');
+/* THREE NOW: the upload form, the rename form, and the audio form that
+   joined them. Counted rather than merely present, because the failure
+   this guards is one form losing it and quietly writing into the set you
+   were not looking at. */
+ok(substr_count($adm7, 'name="format"') === 3,
+   'the upload, rename and audio forms do not all carry the format, so a write lands in the wrong set');
 ok(strpos($adm7, 'format=<?php echo $h($ext); ?>') !== false
    || strpos($adm7, 'format=') !== false,
    'the form actions drop the format');

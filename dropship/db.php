@@ -4,6 +4,7 @@ require_once __DIR__ . '/../lib/koios.php';        // one copy of the Koios toke
 require_once __DIR__ . '/dropship-skulliance-db.php'; // the ONE place Skulliance's credentials are read
 require_once __DIR__ . '/dropship-grunts.php';   // the four free soldiers' loaner kit
 require_once __DIR__ . '/dropship-themes.php';   // theme overrides as data, see dropship-themes-schema.md
+require_once __DIR__ . '/dropship-audio.php';    // which sound a round plays, derived from the wording
 require_once __DIR__ . '/dropship-odds.php';     // loadItems() quotes the odds per item
 include 'credentials/db_credentials.php';
 

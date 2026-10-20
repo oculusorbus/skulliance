@@ -215,6 +215,93 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST'
 	}
 }
 
+/* ----------------------------------------------------------------- audio - */
+/*
+ * THE SOUND A ROUND PLAYS, managed beside the picture it belongs to.
+ *
+ * The filename is the wording, exactly as it is for an icon: Oculus
+ * Lounge calling the Melee a "Vibrator" IS the instruction to supply
+ * sounds/vibrator.mp3. Nothing is stored; see dropship-audio.php.
+ *
+ * THE WARNING IS THE POINT OF THIS HANDLER. sounds/ is ONE FOLDER for
+ * every theme, so writing melee.mp3 because Drop Ship's melee needs
+ * replacing also replaces it for every other theme whose word slugs to
+ * the same name, and for every event that falls back to it. The icon
+ * rename can refuse, because a rename has somewhere to leave the file;
+ * an upload has nowhere, so this refuses ONCE, says exactly who else is
+ * listening to that file, and goes ahead when told again.
+ */
+$dsaAudioSlotFor = function ($term) use ($conn, $pid) {
+	foreach (dropshipAudioEvents() as $e) {
+		if ($e['term'] !== $term) continue;
+		return dropshipAudioSlot($conn, $pid, $e);
+	}
+	if ($term === 'Opening') return dropshipAudioOpenSlot($conn, $pid);
+	return null;
+};
+if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['audio_term'])) {
+	$a_slot = $dsaAudioSlotFor((string)$_POST['audio_term']);
+	$a_dir  = rtrim(__DIR__, '/') . '/sounds/';
+	if (!$a_slot || $a_slot['stem'] === '') {
+		$msg['err'][] = 'That is not a sound this theme asks for.';
+	} else {
+		$a_dest = $a_dir . $a_slot['stem'] . '.mp3';
+		/*
+		 * WHO ELSE IS LISTENING. Asked before the write and shown once;
+		 * a second post with confirm set goes ahead. Only counts OTHER
+		 * claims, or replacing a theme's own sound would nag about
+		 * itself.
+		 */
+		$a_claims = dropshipAudioClaims($conn, $a_slot['stem'], $pid, $a_slot['term']);
+		$a_overwrite = is_file($a_dest);
+		$a_go = (!$a_overwrite || !$a_claims || !empty($_POST['confirm']));
+
+		/* USE ONE ALREADY ON THE SERVER. The same picker the icons have,
+		   except an icon is RENAMED and a sound is COPIED -- the file it
+		   came from is still being asked for under its own name. */
+		$a_use = isset($_POST['audio_use']) ? basename((string)$_POST['audio_use']) : '';
+		if ($a_use !== '' && !in_array($a_use, dropshipAudioFiles(), true)) {
+			$msg['err'][] = 'That is not a sound on the server.';
+		} elseif (!$a_go) {
+			$msg['err'][] = 'That would also change ' . htmlspecialchars(implode(', ', $a_claims))
+			              . '. Press again to go ahead.';
+			$msg['warn'] = true;
+		} elseif ($a_use !== '') {
+			if ($a_dir . $a_use === $a_dest) {
+				$msg['err'][] = 'That is already the file this asks for.';
+			} elseif (!@copy($a_dir . $a_use, $a_dest)) {
+				$msg['err'][] = 'Could not copy that sound.';
+			} else {
+				dropshipArtReadable($a_dest);
+				$msg['ok'][] = $a_slot['stem'] . '.mp3 now plays ' . htmlspecialchars($a_use) . '.';
+			}
+		} elseif (isset($_FILES['audio']) && $_FILES['audio']['error'] === UPLOAD_ERR_OK) {
+			/*
+			 * MP3 ONLY, and checked by its BYTES. There is no ffmpeg
+			 * here, so unlike a picture a sound cannot be converted into
+			 * the format the slot needs -- the honest answer is to
+			 * refuse rather than to store something the browser will not
+			 * play. An ID3 tag or a bare frame header are both valid
+			 * starts to an mp3.
+			 */
+			$a_head = (string)@file_get_contents($_FILES['audio']['tmp_name'], false, null, 0, 3);
+			$a_ismp3 = (substr($a_head, 0, 3) === 'ID3')
+			        || (strlen($a_head) >= 2 && (ord($a_head[0]) === 0xFF) && ((ord($a_head[1]) & 0xE0) === 0xE0));
+			if (!$a_ismp3) {
+				$msg['err'][] = 'That is not an mp3, and this server has no way to convert one.';
+			} elseif (!@move_uploaded_file($_FILES['audio']['tmp_name'], $a_dest)
+			          && !@rename($_FILES['audio']['tmp_name'], $a_dest)) {
+				$msg['err'][] = 'Could not write ' . $a_slot['stem'] . '.mp3.';
+			} else {
+				dropshipArtReadable($a_dest);
+				$msg['ok'][] = $a_slot['stem'] . '.mp3 replaced.';
+			}
+		} else {
+			$msg['err'][] = 'Pick an mp3, or a sound already on the server.';
+		}
+	}
+}
+
 /* ---------------------------------------------------------------- upload - */
 if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['art'])) {
 	$slot = (string)($_POST['slot'] ?? '');
@@ -438,6 +525,24 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .lightbox .cap b{color:#00c8a0}
 .dsart .lightbox .cap code{color:#9fb3c8;font-size:12px}
 .dsart .lightbox .hint{color:#6f8296;font-size:11px}
+/* SOUND, beside the pictures of the same thing. One shared folder for
+   every theme, so the row says who else is listening before you replace
+   anything. */
+.dsart .snd{margin-top:8px;padding:8px;border:1px dashed rgba(255,255,255,.14);
+  border-radius:4px;background:rgba(255,255,255,.02)}
+.dsart .snd .ev{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;
+  font-size:12px;color:#c6d2de;padding:5px 0}
+.dsart .snd .ev + .ev{border-top:1px solid rgba(255,255,255,.07)}
+.dsart .snd .ev b{color:#e8eaed}
+.dsart .snd .ev .said{color:#00c8a0}
+.dsart .snd .ev code{color:#9fb3c8;font-size:11px}
+.dsart .snd .ev audio{height:28px;max-width:200px}
+.dsart .snd .ev .gapn{color:#e8a0b0}
+.dsart .snd .ev .fell{color:#e8c070}
+.dsart .snd .ev .claim{flex-basis:100%;color:#e8c070;font-size:11px}
+.dsart .snd form{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0}
+.dsart .snd select,.dsart .snd input[type=file]{font-size:11px;max-width:190px}
+.dsart .snd .delay{color:#6f8296;font-size:11px}
 .dsart .inplace{display:block;font-size:10.5px;margin-top:4px;text-align:left}
 .dsart .inplace.good{color:#00c8a0}
 .dsart .inplace.bad{color:#e8a0b0}
@@ -538,7 +643,89 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	 * it to, because a reskin is decided one object at a time.
 	 */
 	$icon_files = dropshipArtIconFiles();
-	foreach (dropshipArtPlan($conn, $pid, $ext, $slug) as $group => $g): ?>
+	/*
+	 * SOUNDS, BUCKETED BY THE THING THEY BELONG TO, so each one renders
+	 * under the pictures of the same object -- the rocket launcher's five
+	 * frames, its icon and its four sounds in one row. Whatever belongs to
+	 * no object gets its own section at the end, the way icons with no
+	 * round art do.
+	 */
+	$snd_files = dropshipAudioFiles();
+	/* THE PLAN ONCE, because the sounds have to be bucketed against the
+	   rows that will actually render -- see dropshipAudioFamily()'s own
+	   note on why the longest-matching family is the wrong answer. */
+	$art_plan = dropshipArtPlan($conn, $pid, $ext, $slug);
+	$row_labels = array();
+	foreach ($art_plan as $g) foreach ($g['rows'] as $r) {
+		if ($r['label'] !== '') $row_labels[] = $r['label'];
+	}
+	$snd_by_thing = array();
+	$snd_loose = array();
+	foreach (dropshipAudioSlots($conn, $pid) as $as) {
+		$fam = dropshipAudioFamily($as['term'], $row_labels);
+		if ($fam !== '' && in_array($fam, $row_labels, true)) $snd_by_thing[$fam][] = $as;
+		else                                                  $snd_loose[] = $as;
+	}
+	$snd_loose[] = dropshipAudioOpenSlot($conn, $pid);
+
+	/* One renderer for both places, or the row and the section drift. */
+	$sndRow = function ($as) use ($h, $snd_files, $conn, $pid) {
+		$claims = dropshipAudioClaims($conn, $as['stem'], $pid, $as['term']);
+		/* WHAT IS ACTUALLY PLAYING, which is not always what it asks for:
+		   a theme with no file of its own falls back to Drop Ship's, and
+		   Drop Ship's own files are still on their old sound-named paths
+		   until they are renamed onto the wording. */
+		$playing = $as['exists'] ? $as['rel']
+		         : ($as['base_has'] ? $as['base_rel']
+		         : ($as['legacy_has'] ? 'sounds/' . $as['legacy'] . '.mp3' : ''));
+		?>
+		<div class="ev">
+			<b><?php echo $h($as['term']); ?></b>
+			<?php if ($as['said'] !== $as['term'] && $as['said'] !== ''): ?>
+				<span class="arrow">&rarr;</span><span class="said"><?php echo $h($as['said']); ?></span>
+			<?php endif; ?>
+			<code><?php echo $h($as['rel'] !== '' ? $as['rel'] : 'no usable filename'); ?></code>
+			<?php if ($as['delay']): ?><span class="delay">after <?php
+				echo (int)$as['delay']; ?>ms</span><?php endif; ?>
+			<?php if ($as['exists']): ?>
+				<?php /* nothing to say: it is playing its own file */ ?>
+			<?php elseif ($playing !== ''): ?>
+				<span class="fell">playing <?php echo $h(basename($playing)); ?></span>
+			<?php else: ?>
+				<span class="gapn">silent</span>
+			<?php endif; ?>
+			<?php if ($playing !== ''): ?>
+				<audio controls preload="none" src="<?php echo $h(dropshipAudioUrl($playing)); ?>"></audio>
+			<?php endif; ?>
+			<?php if ($as['stem'] !== ''): ?>
+			<form method="post" enctype="multipart/form-data"
+			      action="admin-art.php?project_id=<?php echo $pid; ?>&amp;format=<?php echo $h($ext); ?>">
+				<input type="hidden" name="project_id" value="<?php echo $pid; ?>">
+				<input type="hidden" name="format" value="<?php echo $h($ext); ?>">
+				<input type="hidden" name="audio_term" value="<?php echo $h($as['term']); ?>">
+				<?php /* A SECOND PRESS IS THE CONFIRMATION. The handler
+				         refuses once and says who else is listening; this
+				         carries the answer back. */ ?>
+				<input type="hidden" name="confirm" value="<?php echo !empty($_POST['confirm'])
+					|| (isset($_POST['audio_term']) && $_POST['audio_term'] === $as['term']) ? '1' : ''; ?>">
+				<input type="file" name="audio" accept="audio/mpeg,.mp3">
+				<select name="audio_use">
+					<option value="">or use one already here</option>
+					<?php foreach ($snd_files as $f): ?>
+						<option value="<?php echo $h($f); ?>"><?php echo $h($f); ?></option>
+					<?php endforeach; ?>
+				</select>
+				<button class="button" type="submit">Set</button>
+			</form>
+			<?php endif; ?>
+			<?php if ($claims): ?>
+				<span class="claim">Shared: <?php echo $h(implode(', ', $claims)); ?>
+					&mdash; replacing this file changes it for them too.</span>
+			<?php endif; ?>
+		</div>
+	<?php };
+
+	foreach ($art_plan as $group => $g): ?>
 	<h4><?php echo $h($group); ?></h4>
 	<p class="note"><?php echo $h($g['note']); ?></p>
 	<?php foreach ($g['rows'] as $row): ?>
@@ -656,9 +843,37 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		</div>
 	<?php endforeach; ?>
 	</div>
+	<?php /* THE SOUNDS OF THIS THING, under its pictures. A reskin is
+	         decided one object at a time and the answer is frames, an
+	         icon and whatever it sounds like; those were on three
+	         different parts of the screen and the sounds on none of
+	         them. */
+	if ($row['label'] !== '' && !empty($snd_by_thing[$row['label']])): ?>
+	<div class="snd">
+		<?php foreach ($snd_by_thing[$row['label']] as $as) $sndRow($as); ?>
+	</div>
+	<?php unset($snd_by_thing[$row['label']]); endif; ?>
 	</div>
 	<?php endforeach; ?>
 	<?php endforeach; ?>
+
+	<?php /* WHAT BELONGS TO NO OBJECT: the opening, a cleared stage, a
+	         round survived, the extra life. Same renderer, own section,
+	         exactly the way icons with no round art get one. And anything
+	         whose thing has no art row at all lands here rather than
+	         vanishing. */
+	foreach ($snd_by_thing as $leftover) foreach ($leftover as $as) $snd_loose[] = $as;
+	if ($snd_loose): ?>
+	<h4>Sound</h4>
+	<p class="note">The rest of the audio: what a run opens on, a stage cleared, a
+	round survived. The file a sound asks for is its WORDING, the same way an icon
+	filename is &mdash; rename the thing and it asks for a file under the new name.
+	One sounds/ folder serves every theme, so a row says who else is listening
+	before you replace anything.</p>
+	<div class="thing"><div class="snd">
+		<?php foreach ($snd_loose as $as) $sndRow($as); ?>
+	</div></div>
+	<?php endif; ?>
 <?php endif; ?>
 
 <script>

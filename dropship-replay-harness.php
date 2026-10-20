@@ -77,8 +77,15 @@ ok(strpos($js, 'return img ? img.src : \'\';') !== false,
    'an unreadable round still dereferences null for its image');
 ok(strpos($js, 'var prev = roundEl(currentRound-1);') !== false,
    'hiding the previous round can still throw on a missing element');
-ok(strpos($js, 'return roundCaption(currentRound).includes(terms);') !== false,
+/* THE AUDIO MATCH MOVED. evaluateAudio() is gone -- the caption-to-sound
+   chain is a table from the server now, see dropship-audio.php -- but
+   the thing this was protecting is the same: whatever picks the sound
+   reads the caption through roundCaption(), which answers '' for a round
+   it cannot read, rather than reaching into the element itself. */
+ok(strpos($js, 'var cap = roundCaption(round);') !== false,
    'the audio match still reaches into the element itself and can throw');
+ok(strpos($js, "if (cap === '') return;") !== false,
+   'an unreadable round is not skipped by the audio, so it matches on nothing');
 /* One painter, not the same two lines in both branches. */
 ok(substr_count($js, 'function showRound(') === 1, 'there is no single round painter');
 ok(substr_count($js, 'showRound(currentRound)') === 2,

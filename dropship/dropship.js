@@ -134,30 +134,10 @@ function checkTransaction(){
 	xhttp.send();
 }
 
-// Evaluate whether term is in results text
-function evaluateAudio(currentRound, terms) {
-	/* Reads the SAME caption the display does, so it has to survive the
-	   same way: an unreadable round matches nothing rather than throwing
-	   and taking the rest of the step with it. */
-	return roundCaption(currentRound).includes(terms);
-}
-
-// Evaluate current round enumeration
-function evaluateRoundAudio(currentRound, round, operator){
-	if (typeof operator !== 'undefined') {
-		if(currentRound != round){
-			return true;
-		}else{
-			return false;
-		}
-	}else{
-		if(currentRound == round){
-			return true;
-		}else{
-			return false;
-		}
-	}
-}
+/* evaluateAudio() and evaluateRoundAudio() lived here. They existed only
+   to drive the caption-to-sound chain in displayRound(), which is a table
+   from the server now -- see playRoundAudio() and
+   dropship/dropship-audio.php. Nothing else ever called them. */
 
 // Configure audio, supporting optional time delays
 function configureAudio(source, sound, milliseconds) {
@@ -168,6 +148,60 @@ function configureAudio(source, sound, milliseconds) {
 	}else{
 		loadAudio(String(source), sound);
 	}
+}
+
+/*
+ * WHICH SOUND A ROUND PLAYS, from a table the server resolved.
+ *
+ * This was thirty-four if-branches matching caption text against sound
+ * filenames, and every reskin's own words sat in there beside Drop
+ * Ship's -- "Vibrator", "Whip", "Paddle", "Ball Gag" -- which are all
+ * words the wording table already holds. The branches were the wording
+ * table written a second time, in a file no admin page can reach. See
+ * dropship/dropship-audio.php for the mapping.
+ *
+ * FIRST MATCH WINS, AND ORDER IS THE RULE. The match is a substring of
+ * the caption, so "Smoke Bomb" also matches "Pull Smoke Bomb Pin" and the
+ * pin has to be tested first or it never fires. The server sends the rows
+ * in that order and this walks them in order; it is the same rule the
+ * branch order used to carry.
+ *
+ * A theme with no file for an event simply has no row, which is how the
+ * `project_id != 3 && project_id != 4` guards are expressed now.
+ */
+function playRoundAudio(round) {
+	if (!window.dsAudio || !dsAudio.rows) return;
+	var cap = roundCaption(round);
+	if (cap === '') return;
+	for (var i = 0; i < dsAudio.rows.length; i++) {
+		var r = dsAudio.rows[i];
+		/* EMPTY MATCH TEXT MATCHES EVERYTHING, because indexOf('') is 0
+		   on any string -- so a theme that renamed a thing to nothing
+		   would have its first row answer every round. The server does
+		   not send one; this is the half that does not depend on that. */
+		if (!r || !r.m) continue;
+		if (cap.indexOf(r.m) === -1) continue;
+		if (r.d) { (function (f) { setTimeout(function () { loadFile(2, f); }, r.d); })(r.f); }
+		else     { loadFile(2, r.f); }
+		return;
+	}
+}
+
+/*
+ * Play a file by its path, rather than by a bare stem glued to "sounds/".
+ * The path is resolved server-side now -- a theme's own file, or Drop
+ * Ship's when it has none -- so the browser is handed the answer.
+ */
+function loadFile(source, path){
+	var el = document.getElementById('audioSource'+source);
+	var au = document.getElementById('audio'+source);
+	if (!el || !au) return;
+	/* filemtime, not rand(0,999): the server sends the buster with the
+	   path. A random one collides against a week-long max-age, which is
+	   what made dropship.js itself serve stale copies. */
+	el.src = path;
+	au.load();
+	au.play();
 }
 
 // Load audio file and autoplay
@@ -200,13 +234,12 @@ function displayRound(project_id) {
 		document.getElementById('audio1').play();
 		// Extra function call to try and force music to play
 		loadAudio(1, "8bit"+randomInt(1, 5));
-		if(project_id == 1){
-			loadAudio(2, "alarm");
-		}else if(project_id == 3){
-			loadAudio(2, "crowd");
-		}else if(project_id == 4){
-			loadAudio(2, "flyingcar");
-		}
+		/* THE OPENING SOUND IS THE THEME'S, by the same rule as every
+		   other: it was a project_id ladder (1 alarm, 3 crowd, 4
+		   flyingcar), which is a per-theme file chosen in code. The table
+		   carries it under the key "open" now, so a new theme gets one by
+		   putting a file on the server. */
+		if (window.dsAudio && dsAudio.open) loadFile(2, dsAudio.open);
 		//roundEl(currentRound).style.visibility = "visible";
 //		document.getElementById("results").innerHTML = roundEl(currentRound).innerHTML;
 		showRound(currentRound);
@@ -218,123 +251,7 @@ function displayRound(project_id) {
 //			document.getElementById("results").innerHTML = roundEl(currentRound).innerHTML;
 			showRound(currentRound);
 			
-			if(evaluateAudio(currentRound, "Melee")){
-				configureAudio(2, "melee");
-			}else if(evaluateAudio(currentRound, "Vibrator")){
-				configureAudio(2, "vibrator");
-			}else if(evaluateAudio(currentRound, "Tactical Katana")){
-				configureAudio(2, "melee", 1000);
-			}else if(evaluateAudio(currentRound, "Dildo")){
-				configureAudio(2, "melee", 1000);
-			}else if(evaluateAudio(currentRound, "Extra Life")){
-				configureAudio(2, "extralife");
-			}else if(evaluateAudio(currentRound, "Pull Smoke Bomb Pin")){
-				configureAudio(2, "grenadepin", 600);
-			}else if(evaluateAudio(currentRound, "Pull Out Whip")){
-				configureAudio(2, "spankme");
-			}else if(evaluateAudio(currentRound, "Smoke Bomb")){
-				configureAudio(2, "grenadecontra");
-			}else if(evaluateAudio(currentRound, "Whip")){
-				configureAudio(2, "spank");
-			}else if(evaluateAudio(currentRound, "Pull Grenade")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "grenadepin", 600);
-				}
-			}else if(evaluateAudio(currentRound, "Throw Grenade")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "grenadecontra");
-				}
-			}else if(evaluateAudio(currentRound, "Insert Anal Beads")){
-				configureAudio(2, "analbeadsinsertion");
-			}else if(evaluateAudio(currentRound, "Remove Anal Beads")){
-				configureAudio(2, "analbeadsremoval", 1200);
-			}else if(evaluateAudio(currentRound, "Ball Gag")){
-				configureAudio(2, "ballgag");
-			}else if(evaluateAudio(currentRound, "Butt Plug")){
-				configureAudio(2, "ballgag");
-			}else if(evaluateAudio(currentRound, "Load Machine Gun")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "loading");
-				}
-			}else if(evaluateAudio(currentRound, "Machine Gun")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "gunfirecontra");
-				}
-			}else if(evaluateAudio(currentRound, "Flamethrower Ignition")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "flamethrower1");
-				}
-			}else if(evaluateAudio(currentRound, "Flamethrower Spray")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "flamethrower2");
-				}
-			}else if(evaluateAudio(currentRound, "Flamethrower Flames")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "flamethrower3");
-				}
-			}else if(evaluateAudio(currentRound, "Flamethrower Fire")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "flamethrower4");
-				}
-			}else if(evaluateAudio(currentRound, "Load Rocket Launcher")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "helicopter");
-				}
-			}else if(evaluateAudio(currentRound, "Rocket Launcher Gunfire")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "gunfirecontra");
-				}
-			}else if(evaluateAudio(currentRound, "Rocket Launcher")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "rocketlaunchercontra");
-				}
-			}else if(evaluateAudio(currentRound, "Rocket Launcher Explosion")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "massexplosioncontra");
-				}
-			}else if(evaluateAudio(currentRound, "Demolition")){
-				configureAudio(2, "demo");
-			}else if(evaluateAudio(currentRound, "Paddle")){
-				configureAudio(2, "spankme");
-			}else if(evaluateAudio(currentRound, "Explosion")){
-				configureAudio(2, "explosioncontra");
-			}else if(evaluateAudio(currentRound, "Spank")){
-				configureAudio(2, "spank", 1500);
-			}else if(evaluateAudio(currentRound, "Sniper")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "sniper", 1000);
-				}
-			}else if(evaluateAudio(currentRound, "Pilot")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "loading");
-				}
-			}else if(evaluateAudio(currentRound, "Air Strike")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "massexplosioncontra", 2000);
-				}
-			}else if(evaluateAudio(currentRound, "Exo")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "exo", 300);
-				}
-			}else if(evaluateAudio(currentRound, "Secured")){
-				configureAudio(2, "success");
-			}else if(evaluateRoundAudio(currentRound, 1)){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "dropshipcontra");
-				}else if(project_id == 3){
-					configureAudio(2, "door");
-				}
-			}else if(evaluateRoundAudio(currentRound, 2)){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "gunfirecontra");
-				}else if(project_id == 3){
-					configureAudio(2, "stairs");
-				}
-			}else if(evaluateRoundAudio(currentRound, lastRound-1, "!=")){
-				if(project_id != 3 && project_id != 4){
-					configureAudio(2, "enemyguncontra");
-				}
-			}
+			playRoundAudio(currentRound);
 		}else{
 			if(document.getElementById('disableMessage').innerHTML == "true"){
 				window.location.href = 'dashboard.php';
