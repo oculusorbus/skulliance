@@ -87,6 +87,18 @@ function dropshipNftProbe($conn, $project_id, $discord_id) {
 	     $addresses ? '' : 'Koios reads your wallets, so with none connected it is skipped entirely and nothing happens.');
 	if (!$addresses) return $out;
 
+	/* One malformed address makes Koios 500 the WHOLE batch, so the count
+	   that matters is how many are usable, not how many exist. */
+	$usable = koios_filter_stake_addresses($addresses);
+	$bad = array();
+	foreach ($addresses as $a) if (!koios_valid_stake_address($a)) $bad[] = (trim((string)$a) === '' ? '(empty)' : substr(trim((string)$a), 0, 24));
+	$add('KOIOS: ...that Koios can read', count($usable),
+	     $bad ? count($bad) . ' rejected before sending (' . implode(', ', array_slice($bad, 0, 4))
+	            . '). Left in, any one of these makes Koios answer 500 for every wallet at once.'
+	          : '');
+	if (!$usable) return $out;
+	$addresses = $usable;
+
 	$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null");
 	/* THE SAME REQUEST THE DASHBOARD MAKES, headers and body. A probe that
 	   asks a different question answers a different question: this one

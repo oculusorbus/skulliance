@@ -699,11 +699,26 @@ function dropshipConnectedStakeAddresses($discord_id) {
 		return $addresses; // fail quiet, same as the old checkAddress() did for "nothing on file"
 	}
 	$discord_id_esc = $skulliance_conn->real_escape_string($discord_id);
+	/*
+	 * CARDANO WALLETS ONLY. blockchain_id 1 is Cardano; Skulliance also
+	 * holds Solana, EVM and XRPL addresses in this same column, and the
+	 * only consumer of this list is a Koios call. Koios answers the WHOLE
+	 * batch with HTTP 500 -- "Failed to decode Bech32 string" -- if one
+	 * entry is not a Cardano address, and the 500 body is not JSON, so the
+	 * caller's is_array() check drops it without a word. One Solana wallet
+	 * connected therefore blanked every Cardano wallet the player had.
+	 *
+	 * Measured: ten valid addresses 200, nine valid plus one malformed 500.
+	 * Batching every wallet into one call is what turned a one-wallet
+	 * problem into an all-wallets one. The shape filter at the call site
+	 * stays as well, for rows that are Cardano-labelled but malformed.
+	 */
 	$result = $skulliance_conn->query("
 		SELECT w.stake_address
 		FROM wallets w
 		INNER JOIN users u ON u.id = w.user_id
 		WHERE u.discord_id = '$discord_id_esc' AND w.stake_address != ''
+		  AND w.blockchain_id = 1
 	");
 	if ($result) {
 		while ($row = $result->fetch_assoc()) {

@@ -776,6 +776,96 @@ foreach ($blocks as $pid => $sql) {
 	   "project $pid has duplicate sort_order values in the seed");
 }
 
+echo "\nthe Koios batch survives one bad wallet\n";
+require_once __DIR__ . '/lib/koios.php';
+/*
+ * MEASURED AGAINST THE REAL API, not assumed: ten valid stake addresses
+ * answer 200, nine valid plus one malformed answer HTTP 500 "Failed to
+ * decode Bech32 string", and nine valid plus one empty string answer 500
+ * too. Every wallet goes in ONE account_utxos call, so one bad row costs
+ * all of them -- and a 500 body is not JSON, so the caller's is_array()
+ * check drops it without a word. Batching the wallets is what turned a
+ * one-wallet problem into an all-wallets one.
+ */
+$good = 'stake1uyqszvt8ck9fhem3z63cj5zdhdqznwhkns5dx75c3cp0zgs084u8j';
+ok(koios_valid_stake_address($good), 'a real stake address is rejected');
+foreach (array('' => 'an empty string', '   ' => 'whitespace',
+               'stake1_not_a_real_address' => 'an underscore, which Bech32 has no character for',
+               'stake1short' => 'something far too short',
+               'addr1qykk9ue0wmnk8m0sq6l4q9j5v6vmz5qz7x9h3c8v2n4m6p8r0t2w4y6' => 'a payment address',
+               ) as $bad => $what) {
+	ok(!koios_valid_stake_address($bad), "$what is sent to Koios, which 500s the whole batch");
+}
+/* b, i and o are not in the Bech32 alphabet at all. */
+ok(!koios_valid_stake_address(substr($good, 0, -1) . 'b'), 'a character outside Bech32 is accepted');
+ok(koios_filter_stake_addresses(array($good, '', 'bad', $good)) === array($good),
+   'the filter does not drop the bad rows and de-duplicate the good ones');
+ok(koios_filter_stake_addresses(array()) === array(), 'an empty wallet list does not come back empty');
+$dash4 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(strpos($dash4, 'koios_filter_stake_addresses($addresses)') !== false,
+   'the dashboard still posts unfiltered wallets, so one bad row blanks them all');
+/* ...and the list should not contain them in the first place. Skulliance
+   keeps Solana, EVM and XRPL addresses in the same column, and the only
+   consumer of this one is Koios. */
+$dbsrc5 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
+ok(strpos($dbsrc5, 'w.blockchain_id = 1') !== false,
+   'the wallet list is not restricted to Cardano, so a Solana wallet 500s every Koios lookup');
+foreach (array('7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU' => 'a Solana address',
+               '0x742d35Cc6634C0532925a3b844Bc454e4438f44e'   => 'an EVM address',
+               'rPdvC6ccq8hCdPKSPJkPmyZ4Mi1oG2FFkT'           => 'an XRPL address') as $a => $what) {
+	ok(!koios_valid_stake_address($a), "$what would be sent to Koios");
+}
+
+echo "\nthe token is in one place, and is dropped once it expires\n";
+/*
+ * dropship/dashboard.php carried a bearer that expired 2024-12-20 while the
+ * rest of the platform had moved to a current one, and nothing compared
+ * them. An EXPIRED token is worse than none: Koios answers 403 with a
+ * sentence where an anonymous call answers 200, and json_decode() of a
+ * sentence is null, which is_array() drops silently.
+ */
+$koios_src = harness_strip_comments(file_get_contents(__DIR__ . '/lib/koios.php'));
+ok(koios_token_expires_in() > 0,
+   'the Koios token has expired; renew it in lib/koios.php (every lookup is silently doing nothing)');
+$hdr = koios_headers();
+ok(count(array_filter($hdr, function ($h) { return stripos($h, 'authorization:') === 0; })) === 1,
+   'the bearer is not being sent while the token is valid');
+/* An expired token must be left out entirely rather than sent. */
+$dead = 'a.' . rtrim(strtr(base64_encode('{"exp":1}'), '+/', '-_'), '=') . '.c';
+ok(koios_token_expires_in($dead) < 0, 'an expired token does not read as expired');
+ok(koios_token_expires_in('not-a-jwt') === null, 'a token with no segments does not read as unreadable');
+/* JWT-SHAPED BUT UNREADABLE, which exits further in than the one above --
+   a token that merely lacks dots never reaches the claims branch, so it
+   left that branch untested and a mutation there passed. */
+$noclaims = 'a.' . rtrim(strtr(base64_encode('not json at all'), '+/', '-_'), '=') . '.c';
+ok(koios_token_expires_in($noclaims) === null, 'a token with unreadable claims is treated as valid');
+$noexp = 'a.' . rtrim(strtr(base64_encode('{"tier":1}'), '+/', '-_'), '=') . '.c';
+ok(koios_token_expires_in($noexp) === null, 'a token with no exp claim is treated as valid');
+/* ...and unreadable must mean NOT SENT, because a token we cannot vouch
+   for is exactly the 403 that started this. */
+ok(strpos($koios_src, '$left !== null && $left > 0') !== false,
+   'an unreadable expiry still attaches the bearer');
+ok(strpos($koios_src, 'if ($left !== null && $left > 0) $h[] = ') !== false,
+   'the bearer is attached without checking the expiry first');
+/* ONE copy. Drop Ship having its own was the entire bug. */
+ok(strpos($dash4, 'authorization: Bearer') === false,
+   'the dashboard still hardcodes a token of its own, which is how they drifted apart');
+ok(strpos($dash4, 'koios_headers()') !== false, 'the dashboard does not use the shared headers');
+
+echo "\nchanging the trait source resyncs\n";
+/*
+ * The sync only fired on a wallet-set change or a project switch, so
+ * flipping a theme between Koios and Skulliance and reloading did nothing:
+ * setting saved, page correct, barracks still empty. That reads as "the
+ * other option does not work either", which is what it looked like.
+ */
+ok(strpos($dash4, '$_SESSION[\'userData\'][\'trait_source_key\'] !== $ds_source_key') !== false,
+   'a trait source change is not noticed, so switching it never resyncs');
+ok(substr_count($dash4, '|| $source_changed == "true"') === 2,
+   'only one of the two pipelines resyncs when the source changes');
+ok(strpos($dash4, '$_SESSION[\'userData\'][\'trait_source_key\'] = $ds_source_key;') !== false,
+   'the source that ran is never remembered, so it resyncs on every single load');
+
 echo "\na project with no collection says so\n";
 /*
  * EVERY way of loading a player's NFTs runs through projects.policy_id: the
@@ -852,7 +942,8 @@ ok(dropshipThemeTraitSource(new TConn(), 1) === 'koios',
    'an unseeded project no longer gets the Koios pipeline');
 /* The dashboard must ask, not test an id. */
 $dash3 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
-ok(strpos($dash3, "dropshipThemeTraitSource(\$conn, \$_SESSION['userData']['dropship_project_id']) === 'skulliance'") !== false,
+ok(strpos($dash3, "\$ds_source = dropshipThemeTraitSource(\$conn, \$_SESSION['userData']['dropship_project_id'])") !== false
+   && strpos($dash3, "if(\$ds_source === 'skulliance')") !== false,
    'the dashboard still picks the pipeline itself');
 ok(preg_match("/dropship_project_id'\] == 4\)\{\s*\n\s*if\(\(\\\$address_changed/", $dash3) !== 1,
    'the hardcoded project 4 pipeline test is back');

@@ -58,3 +58,35 @@ function koios_headers($extra = array()) {
 	if ($left !== null && $left > 0) $h[] = 'authorization: Bearer ' . koios_token();
 	return $h;
 }
+
+/**
+ * Is this a stake address Koios will accept?
+ *
+ * ONE BAD ADDRESS POISONS THE WHOLE BATCH. account_utxos takes every
+ * connected wallet in a single call, and Koios answers the entire request
+ * with HTTP 500 -- "Failed to decode Bech32 string" -- if any one entry is
+ * malformed. So a player with ten wallets and one bad row gets nothing from
+ * any of them, and the 500 body is not JSON, so the caller's is_array()
+ * check drops it silently. Measured: ten valid addresses 200, nine valid
+ * plus one malformed 500, nine valid plus one empty string 500.
+ *
+ * Before the wallets were batched into one call this cost that wallet only;
+ * batching is what made it cost all of them.
+ *
+ * Checks the shape, not the checksum: prefix, Bech32's own alphabet (no
+ * 1, b, i or o) and a plausible length. That is enough to keep a malformed
+ * row out of the request, which is the whole job -- a well-formed address
+ * that simply holds nothing is answered normally by Koios.
+ */
+function koios_valid_stake_address($addr) {
+	$a = trim((string)$addr);
+	if ($a === '') return false;
+	return (bool)preg_match('/^stake(_test)?1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{50,70}$/', $a);
+}
+
+/** Keep only the addresses Koios can read. Values, re-indexed for json_encode. */
+function koios_filter_stake_addresses($addresses) {
+	$ok = array();
+	foreach ((array)$addresses as $a) if (koios_valid_stake_address($a)) $ok[] = trim((string)$a);
+	return array_values(array_unique($ok));
+}

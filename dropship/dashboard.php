@@ -168,14 +168,31 @@ $_SESSION['userData']['addresses'] = $addresses;
 // trigger: a wallet-set change is still a reasonable signal to re-check,
 // since Skulliance's nfts.user_id reflects whichever wallets are connected
 // to that account -- the same wallets $addresses is built from.
-if(dropshipThemeTraitSource($conn, $_SESSION['userData']['dropship_project_id']) === 'skulliance'){
-	if(($address_changed == "true") || $project_id_changed == "true"){
+/*
+ * CHANGING THE TRAIT SOURCE HAS TO COUNT AS A CHANGE.
+ *
+ * The sync only ever fired on a wallet-set change or a project switch, so
+ * flipping a theme between Koios and Skulliance in the admin and reloading
+ * did nothing at all -- the setting was saved, the page looked right, and
+ * the barracks stayed empty, which reads as "that option does not work
+ * either". Remembering which source last ran for this project makes the
+ * switch itself a trigger. Also fires once after deploy, which is harmless
+ * and is exactly what a theme that has never synced needs.
+ */
+$ds_source = dropshipThemeTraitSource($conn, $_SESSION['userData']['dropship_project_id']);
+$ds_source_key = $_SESSION['userData']['dropship_project_id'] . ':' . $ds_source;
+$source_changed = (!isset($_SESSION['userData']['trait_source_key'])
+                   || $_SESSION['userData']['trait_source_key'] !== $ds_source_key) ? "true" : "false";
+$_SESSION['userData']['trait_source_key'] = $ds_source_key;
+
+if($ds_source === 'skulliance'){
+	if(($address_changed == "true") || $project_id_changed == "true" || $source_changed == "true"){
 		dropshipSyncFromSkulliance($conn, $_SESSION['userData']['discord_id'], $policy_id);
 		$ranks["VIP"] = true;
 		$_SESSION['userData']['rank'] = "";
 		storeRank($ranks);
 	}
-}elseif(($address_changed == "true") || $project_id_changed == "true"){
+}elseif(($address_changed == "true") || $project_id_changed == "true" || $source_changed == "true"){
 	if(!empty($addresses)){
 		$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null");
 		// koios_headers(): the token this file carried expired 2024-12-20 and
@@ -192,7 +209,13 @@ if(dropshipThemeTraitSource($conn, $_SESSION['userData']['dropship_project_id'])
 		// asset from every wallet flows into the same $response the code
 		// below already loops over per-account, so no downstream logic
 		// (soldier creation, rank counting) needed to change at all.
-		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode(array("_stake_addresses" => $addresses, "_extended" => true)));
+		// FILTERED, because one malformed row kills the whole batch: Koios
+		// answers the entire request with HTTP 500 ("Failed to decode Bech32
+		// string") if any single address is bad, and the 500 body is not
+		// JSON so is_array() below drops it without a word. Ten wallets, one
+		// bad row, nothing loads. Batching every wallet into one call is
+		// what turned a one-wallet problem into an all-wallets one.
+		curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode(array("_stake_addresses" => koios_filter_stake_addresses($addresses), "_extended" => true)));
 		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
 		curl_setopt( $ch, CURLOPT_HEADER, 0);
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
