@@ -985,10 +985,49 @@ echo "\nthe weekly cycle runs for every live theme\n";
  * its game would simply never end.
  */
 $auto = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/automate.php'));
+ok(preg_match('/\$all = array\(([0-9, ]+)\);/', $auto, $am) === 1,
+   'the cron no longer declares which projects it runs');
+$cron_pids = array_map('intval', explode(',', $am[1]));
 foreach (array(1, 3, 4) as $pid) {
-	ok(strpos($auto, "automate(\$conn, $pid);") !== false,
+	ok(in_array($pid, $cron_pids, true),
 	   "project $pid has no weekly cycle, so its game never ends and no new one opens");
 }
+/*
+ * ONE PROJECT ON REQUEST. Switching a theme on mid-week needs it given a
+ * game, and the only way to do that was to run the whole cron -- which
+ * also ENDS whatever games the other themes are in the middle of.
+ */
+ok(strpos($auto, "\$only = isset(\$_GET['project_id']) ? (int)\$_GET['project_id'] : 0;") !== false,
+   'the cron cannot be run for a single project, so giving one theme a game ends the others');
+ok(strpos($auto, 'in_array($only, $all, true)') !== false,
+   'a project_id off the command line is not checked against the known list');
+ok(strpos($auto, 'foreach ($only ? array($only) : $all as $ds_pid)') !== false,
+   'without project_id the cron no longer runs every project');
+/*
+ * AND IT MUST NOT "END" A GAME THAT IS NOT THERE. checkGame() unsets
+ * game_id when a project has no active game, and everything after it
+ * assumed one: deactivateGame() would UPDATE ... WHERE id='' after
+ * pointlessly logging balances and resetting soldiers, and Discord would
+ * get a Game Over post with an empty board for a game that never existed.
+ * That is precisely the state a theme is in the first time it is enabled.
+ */
+ok(strpos($auto, "checkGame(\$conn);
+	if (isset(\$_SESSION['userData']['game_id'])) {") !== false,
+   'the weekly run ends a game without checking there is one');
+/*
+ * PRESENCE FIRST, THEN ORDER. Anchored on CODE rather than a comment,
+ * because harness_strip_comments() removes the marker this first used --
+ * and strpos() returns FALSE, which compares as 0, so an ordering check
+ * passes whenever either side is simply MISSING. The same trap caught
+ * this check twice: once on the deleted comment, once on a mutation that
+ * removed deactivateGame() altogether.
+ */
+$at_close  = strpos($auto, 'deactivateGame($conn);');
+$at_create = strpos($auto, 'createGame($conn, $prizes, 3);');
+ok($at_close !== false, 'the weekly run no longer closes the old game at all');
+ok($at_create !== false, 'the weekly run no longer opens a new game at all');
+ok($at_close !== false && $at_create !== false && $at_close < $at_create,
+   'the new game is created before the old one is closed');
 /* Drop Ship (1) is deliberately absent from the prefix branch -- it is the
    default, because its art is flat rather than nested. */
 ok(strpos($auto, '$prefix = "filthy-mermaid";') !== false,
