@@ -30,7 +30,19 @@ function dropshipArtStages() {
 		'hill'   => array('plain' => 6, 'exo' => 2, 'secured' => 'hill-secured'),
 		/* The bunker has no "secured" frame: it is the last stage, and
 		   clearing it is the end of the run rather than a transition. */
-		'bunker' => array('plain' => 6, 'exo' => 2, 'secured' => null),
+		/*
+		 * TWELVE, NOT SIX. live() asks for 1-6 while the round counter is
+		 * under 16 and 7-12 from 16 on -- deeper into the bunker, the only
+		 * stage with two bands -- and this said 6, so frames 7 to 12 were
+		 * asked for by the run and listed by nothing. No slot, no upload,
+		 * and no way to see they were absent: reported as a blank frame on
+		 * a long Dread City run, inspected as bunker/11.
+		 *
+		 * Drop Ship, Filthy Mermaid and Oculus Lounge all have the full
+		 * twelve on disk in the format they render. Dread City renders jpg
+		 * and has jpgs for 1-6 only, which is why it is the one that broke.
+		 */
+		'bunker' => array('plain' => 12, 'exo' => 2, 'secured' => null),
 	);
 }
 
@@ -279,7 +291,9 @@ function dropshipArtGroups($ext = 'gif') {
 		                        'match' => '#^images/live/beach/#'),
 		'The hill'     => array('note' => 'Rounds 8 to 12, plus the frame shown on clearing it.',
 		                        'match' => '#^images/live/hill/#'),
-		'The bunker'   => array('note' => 'Round 13 on. No cleared frame: the bunker ends the run.',
+		'The bunker'   => array('note' => 'Round 13 on, in two bands: scenes 1 to 6 carry rounds 13 '
+		                                . 'to 15 and 7 to 12 carry round 16 and beyond. No cleared '
+		                                . 'frame: the bunker ends the run.',
 		                        'match' => '#^images/live/bunker/#'),
 		'Deaths'       => array('note' => 'Three generic, plus one per place a run can end, '
 		                                . 'and the screen that stays up afterwards.',
@@ -545,6 +559,16 @@ function dropshipArtTitle($rel) {
 		$exo   = $m[2] !== '' ? ' in an Exo Suit' : '';
 		if (!ctype_digit($m[3])) return $stage . ' cleared';
 		$of = $m[2] !== '' ? $stages[$m[1]]['exo'] : $stages[$m[1]]['plain'];
+		/* THE BUNKER HAS TWO BANDS and they are not interchangeable: 1-6
+		   are rounds 13 to 15, 7-12 are round 16 and beyond. "Scene 11 of
+		   12" says nothing about which; a run that gets that deep is rare
+		   and these are the frames most likely to be the ones missing. */
+		if ($m[1] === 'bunker' && $m[2] === '' && (int)$m[3] >= 7) {
+			return 'Bunker, round 16 and beyond, scene ' . ((int)$m[3] - 6) . ' of 6';
+		}
+		if ($m[1] === 'bunker' && $m[2] === '') {
+			return 'Bunker, rounds 13 to 15, scene ' . $m[3] . ' of 6';
+		}
 		return $stage . $exo . ', scene ' . $m[3] . ' of ' . $of;
 	}
 

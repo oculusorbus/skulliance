@@ -1056,5 +1056,106 @@ ok(strpos($dash2_code, "dropshipThemeArtFile(\$slug, 'images/gameover', dropship
 ok(preg_match("/\\\$ds_over !== ''\\)\\s*:/", $dash2_code) === 1,
    'a theme with no game over screen gets backgroundImage: url(), which blanks the pane');
 
+
+/* ------------------------------------------------------------------ */
+/*
+ * THE MANIFEST HAS TO COVER WHAT THE RUN ACTUALLY ASKS FOR.
+ *
+ * It did not. live() in dropship.php picks a bunker frame from 1-6 while
+ * the round counter is under 16 and from 7-12 from 16 on -- the only
+ * stage with two bands -- while dropshipArtStages() declared six. So
+ * frames 7 to 12 were requested by the game and listed by nothing: no
+ * slot, no upload, and no way to see they were missing. Reported as a
+ * blank frame on a long Dread City run, inspected as bunker/11, and
+ * Dread City is the one that broke because it renders jpg and only has
+ * jpgs for 1-6.
+ *
+ * READ OFF THE GAME, NOT RESTATED. A second hand-written list of the
+ * ranges would be the same mistake again: the whole failure was two
+ * copies of one fact disagreeing. These are the real arguments to the
+ * real calls, scraped from the source, so widening a range in the game
+ * and forgetting the manifest fails here.
+ */
+echo "\nthe manifest covers every frame the run can ask for\n";
+
+$live_src = file_get_contents(__DIR__ . '/dropship/dropship.php');
+$live_at  = strpos($live_src, 'function live(');
+ok($live_at !== false, 'live() could not be found, so nothing below is proving anything');
+$live_end = strpos($live_src, "\n}", $live_at);
+$live = ($live_at === false) ? '' : substr($live_src, $live_at, $live_end - $live_at);
+
+/* Each branch is a dropshipStageFrame(min, max, ...) followed by the path
+   it writes. Pair them up by position. */
+preg_match_all('/dropshipStageFrame\(\s*(\d+)\s*,\s*(\d+)/', $live, $calls, PREG_OFFSET_CAPTURE);
+$asks = array();
+foreach ($calls[0] as $i => $c) {
+	$tail = substr($live, $c[1], 500);
+	if (!preg_match('#images/live/([a-z]+)/(exo/)?"#', $tail, $pm)) continue;
+	/* isset FIRST. An optional group that did not participate is UNSET,
+	   not '' -- `$pm[2] !== ''` is true of null, so every plain branch
+	   was filed under the exo key and the two ranges merged. */
+	$key = $pm[1] . (isset($pm[2]) && $pm[2] !== '' ? '/exo' : '');
+	$lo  = (int)$calls[1][$i][0];
+	$hi  = (int)$calls[2][$i][0];
+	if (!isset($asks[$key])) $asks[$key] = array('lo' => $lo, 'hi' => $hi);
+	$asks[$key]['lo'] = min($asks[$key]['lo'], $lo);
+	$asks[$key]['hi'] = max($asks[$key]['hi'], $hi);
+}
+ok(count($asks) === 6,
+   'found ' . count($asks) . ' stage branches in live(), not the six that are there');
+/* THE BUNKER'S SECOND BAND SPECIFICALLY, named rather than left to the
+   loop -- it is the one that was missing and the one a future edit is
+   most likely to widen again. */
+ok(isset($asks['bunker']) && $asks['bunker']['hi'] >= 12,
+   'live() no longer asks for bunker frames up to 12; this check has gone stale');
+
+$stages = dropshipArtStages();
+foreach ($asks as $key => $r) {
+	$parts = explode('/', $key);
+	$stage = $parts[0];
+	$have  = isset($parts[1]) ? (int)$stages[$stage]['exo'] : (int)$stages[$stage]['plain'];
+	ok($r['lo'] >= 1, "live() asks for $key frame {$r['lo']}, below 1");
+	ok($have >= $r['hi'],
+	   "live() asks for $key frames up to {$r['hi']} but the manifest declares only $have, "
+	 . 'so the rest have no slot and a run that reaches them shows a blank');
+	/* AND NOT THE OTHER WAY EITHER: a manifest that declares frames the
+	   run never asks for sends somebody off to draw art for nothing. */
+	ok($have === $r['hi'],
+	   "the manifest declares $have $key frames but the run only ever asks for {$r['hi']}");
+}
+
+/*
+ * AND THE TWO BANDS READ AS TWO BANDS. They are not interchangeable --
+ * 1-6 carry rounds 13 to 15, 7-12 carry round 16 and beyond -- and a card
+ * labelled "scene 11 of 6" is worse than no label: it says the frame is
+ * spare when it is the one a long run reaches.
+ */
+ok(strpos(dropshipArtTitle('images/live/bunker/6.gif'), 'rounds 13 to 15') !== false,
+   "the bunker's first band does not say which rounds it covers: "
+ . dropshipArtTitle('images/live/bunker/6.gif'));
+ok(strpos(dropshipArtTitle('images/live/bunker/11.gif'), 'round 16') !== false,
+   "the bunker's second band is not distinguished from the first: "
+ . dropshipArtTitle('images/live/bunker/11.gif'));
+/* Numbered WITHIN its band, or the count contradicts itself. */
+ok(strpos(dropshipArtTitle('images/live/bunker/11.gif'), 'scene 5 of 6') !== false,
+   'the second band is numbered against the whole stage: '
+ . dropshipArtTitle('images/live/bunker/11.gif'));
+ok(strpos(dropshipArtTitle('images/live/bunker/exo/2.gif'), 'Exo Suit') !== false,
+   'the exo frames lost their own label to the bunker banding');
+/* The other stages have one band each and must not have grown one. */
+ok(strpos(dropshipArtTitle('images/live/hill/3.gif'), 'Hill, scene 3 of 6') !== false,
+   'the hill picked up the bunker banding: ' . dropshipArtTitle('images/live/hill/3.gif'));
+
+/* Every one of those paths is really in the manifest, spelled the way the
+   game spells it -- the check above compares counts, this compares
+   strings, and a path is what actually 404s. */
+$man_gif = array_flip(dropshipArtManifest('gif'));
+foreach ($asks as $key => $r) {
+	for ($i = $r['lo']; $i <= $r['hi']; $i++) {
+		$rel = 'images/live/' . $key . '/' . $i . '.gif';
+		ok(isset($man_gif[$rel]), "$rel is asked for by the run and is not in the manifest");
+	}
+}
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);
