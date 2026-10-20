@@ -756,14 +756,24 @@ function dropshipConnectedStakeAddresses($discord_id) {
 // successor for backfilling that gap in bulk (TODO: rename/rescope that
 // script to this policy instead of project_id=2, now that the real
 // collection is known).
-function dropshipOculusLoungeLocalImages($asset_names) {
+function dropshipLocalNftImages($asset_names, $policy = '') {
 	$images = array();
 	if (empty($asset_names)) return $images;
+
+	/*
+	 * THE POLICY COMES FROM THE PROJECT. It was hardcoded to Disco Solaris,
+	 * so this only ever found art for Oculus Lounge -- every other theme
+	 * reading its NFTs out of Skulliance matched nothing here and fell
+	 * through to hotlinking jpg.store, which is why Filthy Mermaid loaded
+	 * its soldiers with no pictures. Same mistake as the sync had.
+	 */
+	$policy = trim((string)$policy);
+	if ($policy === '') return $images;
 
 	$skulliance_conn = dropshipSkullianceDb();
 	if (!$skulliance_conn) return $images; // fail quiet -- callers fall back to jpgstoreapis.com
 
-	$policy_esc = $skulliance_conn->real_escape_string('d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779');
+	$policy_esc = $skulliance_conn->real_escape_string($policy);
 	$in_list = implode(',', array_map(function($name) use ($skulliance_conn) {
 		return "'" . $skulliance_conn->real_escape_string($name) . "'";
 	}, $asset_names));
@@ -1100,12 +1110,15 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 	if ($result->num_rows > 0) {
 	  // Buffered into an array (not the usual while/fetch_assoc streaming)
 	  // so the Oculus Lounge asset_names are known BEFORE rendering starts --
-	  // dropshipOculusLoungeLocalImages() needs the whole list up front to do one
+	  // dropshipLocalNftImages() needs the whole list up front to do one
 	  // batch query instead of one per soldier.
 	  $rows = $result->fetch_all(MYSQLI_ASSOC);
+	  /* ANY theme, not just project 4. The images are Skulliance's local
+	     cache of whatever collection the project points at. */
 	  $oculus_lounge_images = array();
-	  if ($_SESSION['userData']['dropship_project_id'] == 4) {
-		  $oculus_lounge_images = dropshipOculusLoungeLocalImages(array_column($rows, 'asset_name'));
+	  if ($_SESSION['userData']['dropship_project_id'] != 1) {
+		  $oculus_lounge_images = dropshipLocalNftImages(array_column($rows, 'asset_name'),
+			  getProjectPolicyId($conn));
 	  }
 	  // output data of each row
 	  $troopcounter = 0;
@@ -2120,12 +2133,13 @@ function getResultsSoldiers($conn, $result_id){
 		$counter = 0;
 		echo "<div class='leaderboard-nfts'>";
 		// Same batch-before-loop shape as getSoldiers() -- see that
-		// function's own comment for why (dropshipOculusLoungeLocalImages()
+		// function's own comment for why (dropshipLocalNftImages()
 		// needs every asset_name up front for one query, not one per row).
 		$rows = $result->fetch_all(MYSQLI_ASSOC);
 		$oculus_lounge_images = array();
-		if ($_SESSION['userData']['dropship_project_id'] == 4) {
-			$oculus_lounge_images = dropshipOculusLoungeLocalImages(array_column($rows, 'asset_name'));
+		if ($_SESSION['userData']['dropship_project_id'] != 1) {
+			$oculus_lounge_images = dropshipLocalNftImages(array_column($rows, 'asset_name'),
+				getProjectPolicyId($conn));
 		}
 		foreach($rows as $row){
 			$counter++;

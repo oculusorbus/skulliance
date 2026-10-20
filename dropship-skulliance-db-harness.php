@@ -76,7 +76,11 @@ echo "\nevery crossing goes through the helper\n";
    generic "read holdings from the already-synced nfts table" pipeline that
    dropship_themes.trait_source selects, so naming it after the one theme
    that first used it was the thing stopping a second theme choosing it. */
-foreach (array('dropshipConnectedStakeAddresses', 'dropshipOculusLoungeLocalImages',
+/* dropshipLocalNftImages was dropshipOculusLoungeLocalImages. It maps a
+   collection's asset names to Skulliance's locally cached art, and it had
+   the Disco Solaris policy written into it -- so every other theme reading
+   its NFTs from Skulliance got soldiers with no pictures. */
+foreach (array('dropshipConnectedStakeAddresses', 'dropshipLocalNftImages',
                'dropshipSyncFromSkulliance') as $fn) {
 	$at = strpos($files['db.php'], 'function ' . $fn);
 	ok($at !== false, "$fn is gone");
@@ -85,6 +89,40 @@ foreach (array('dropshipConnectedStakeAddresses', 'dropshipOculusLoungeLocalImag
 	ok(strpos($body, 'dropshipSkullianceDb()') !== false,
 	   "$fn opens its own Skulliance connection instead of using the helper");
 }
+/*
+ * THE COLLECTION COMES FROM THE PROJECT, in every one of these. Each was
+ * written for Oculus Lounge and carried the Disco Solaris policy as a
+ * literal, so a second theme reading its NFTs out of Skulliance got the
+ * wrong collection or none at all. Filthy Mermaid loaded its soldiers and
+ * showed no pictures for exactly this reason -- the art was cached on
+ * Skulliance the whole time (project 2, collection 9) and nothing looked
+ * for it.
+ */
+ok(strpos($files['db.php'], "function dropshipLocalNftImages(\$asset_names, \$policy = '')") !== false,
+   'the image lookup does not take a policy, so it can only serve one collection');
+ok(strpos($files['db.php'], "'d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779'") === false
+   || substr_count($files['db.php'], "'d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779'") === 1,
+   'the Disco Solaris policy is still written into more than one place in db.php');
+/* ...and it must refuse to guess when it has none, rather than fall back to
+   somebody else's collection. */
+ok(strpos($files['db.php'], "if (\$policy === '') return \$images;") !== false,
+   'the image lookup with no policy falls back to a hardcoded collection');
+/* Both render paths ask for the project's own art, and for every theme
+   except Drop Ship, whose images are genuinely local to it. */
+ok(substr_count($files['db.php'], "dropshipLocalNftImages(array_column(\$rows, 'asset_name'),") === 2,
+   'only one of the two render paths looks up local art');
+ok(substr_count($files['db.php'], "getProjectPolicyId(\$conn));") === 2,
+   'a render path looks up art without the project policy');
+ok(strpos($files['db.php'], "if (\$_SESSION['userData']['dropship_project_id'] == 4) {") === false,
+   'local art is still gated on project 4, so no other theme can ever show a picture');
+/* The bulk pre-cache has to be pointable at a new collection too, or the
+   art a new theme needs is never fetched in the first place. */
+$cache_src = harness_strip_comments(file_get_contents(__DIR__ . '/cache-oculuslounge-art.php'));
+ok(strpos($cache_src, "preg_match('/^[0-9a-f]{56}\$/i', \$a)") !== false,
+   'the art pre-cache cannot be pointed at another collection');
+ok(strpos($cache_src, '$policy = $conn->real_escape_string($policy_in);') !== false,
+   'the pre-cache policy is not the one taken from the command line');
+
 ok(strpos($files['dropship-traitdrop.php'], 'dropshipSkullianceDb()') !== false,
    'the trait award opens its own Skulliance connection');
 ok(strpos($files['db.php'], "require_once __DIR__ . '/dropship-skulliance-db.php'") !== false,

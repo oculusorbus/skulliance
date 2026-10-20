@@ -4,7 +4,7 @@
 // WHY THIS EXISTS
 // Oculus Lounge (a Drop Ship reskin, migrated in from madballs.net) shows
 // each player's Oculus Lounge NFTs as their in-game roster -- see
-// dropshipOculusLoungeLocalImages()/dropshipSyncFromSkulliance() in
+// dropshipLocalNftImages()/dropshipSyncFromSkulliance() in
 // dropship/db.php, which read Skulliance's own already-synced `nfts` data
 // (and its locally-cached images) instead of Drop Ship independently
 // hitting Koios and hotlinking jpgstoreapis.com. Same root problem
@@ -62,11 +62,27 @@ function ol_out($line) {
 }
 
 // Oculus Lounge's actual on-chain policy -- same one
-// dropshipOculusLoungeLocalImages()/dropshipSyncFromSkulliance() use, and the
+// dropshipLocalNftImages()/dropshipSyncFromSkulliance() use, and the
 // same value monstrocity.php's own project config lists for
 // value="oculuslounge". Looked up by policy, not project_id/collection
 // name, since that's the one unambiguous key across both DBs.
-$policy = $conn->real_escape_string('d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779');
+/*
+ * ANY COLLECTION, not just this one. The policy was hardcoded, so the only
+ * art ever pre-cached was Oculus Lounge's -- and dropshipLocalNftImages()
+ * then found nothing for every other theme reading its NFTs out of
+ * Skulliance, which is why Filthy Mermaid loaded soldiers with no pictures.
+ *
+ *   php cache-oculuslounge-art.php                 # Oculus Lounge, as before
+ *   php cache-oculuslounge-art.php <policy_hex>    # any other collection
+ *
+ * Takes it from argv rather than a constant so caching a new theme's art is
+ * a command, not an edit and a deploy.
+ */
+$policy_in = 'd0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779';
+foreach (array_slice($argv, 1) as $a) {
+	if (preg_match('/^[0-9a-f]{56}$/i', $a)) { $policy_in = strtolower($a); break; }
+}
+$policy = $conn->real_escape_string($policy_in);
 
 $result = $conn->query("
 	SELECT n.id, n.ipfs, n.collection_id, c.project_id, c.name AS collection_name
@@ -85,7 +101,7 @@ $total = 0; $already = 0; $missing = 0;
 $todo = [];
 while ($row = $result->fetch_assoc()) {
 	$total++;
-	// Same on-disk lookup getIPFS()/dropshipOculusLoungeLocalImages() use, so
+	// Same on-disk lookup getIPFS()/dropshipLocalNftImages() use, so
 	// "already cached" here means exactly what the game means by it.
 	if (cryptconquestHasLocalArt($row['ipfs'], $row['collection_id'], $row['project_id'])) {
 		$already++;
