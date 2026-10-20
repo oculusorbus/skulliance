@@ -54,11 +54,13 @@ if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$cols = "project_id = $pid"
 		      . ", slug = '"            . $e($slug) . "'"
 		      . ", active = "           . (empty($_POST['active']) ? 0 : 1)
-		      . ", extension = '"       . $e($_POST['extension'] ?? 'gif') . "'"
-		      . ", currency = '"        . $e($_POST['currency'] ?? 'SCRIP') . "'"
-		      . ", squad_label = '"     . $e($_POST['squad_label'] ?? '') . "'"
-		      . ", character_label = '" . $e($_POST['character_label'] ?? '') . "'"
-		      . ", trait_source = '"    . $e($_POST['trait_source'] ?? 'koios') . "'";
+		      . ", extension = '"       . $e($_POST['extension'] ?? 'gif') . "'";
+		/* NO LABEL COLUMNS. Currency, squad and character were the words
+		   SCRIP, Super Soldier and Troops, which the wording below already
+		   owns -- two places to change one word, and the dashboard read the
+		   column, so renaming SCRIP in the wording changed nothing there.
+		   Trait source was a key into the registry in dhcfighters-config.php,
+		   and that is the slug with the hyphens out. */
 
 		$existing = dropshipThemeConfig($conn, $pid);
 		if ($existing) {
@@ -203,20 +205,6 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
 		<input type="text" name="slug" value="<?php echo $val('slug'); ?>" placeholder="oculus-lounge"></div>
 	<div><label>Media extension</label>
 		<input type="text" name="extension" value="<?php echo $val('extension', 'gif'); ?>"></div>
-	<div><label>Currency</label>
-		<input type="text" name="currency" value="<?php echo $val('currency', 'SCRIP'); ?>"></div>
-	<div><label>Squad label</label>
-		<input type="text" name="squad_label" value="<?php echo $val('squad_label', 'Super Soldier'); ?>"></div>
-	<div><label>Character label</label>
-		<input type="text" name="character_label" value="<?php echo $val('character_label', 'Troops'); ?>"></div>
-	<div><label>Trait source</label>
-		<select name="trait_source">
-			<?php foreach (array('koios' => 'Koios (the usual path)',
-			                     'lounge' => 'Oculus Lounge sync') as $k => $lbl): ?>
-			<option value="<?php echo $k; ?>"<?php
-				echo ($theme && $theme['trait_source'] === $k) ? ' selected' : ''; ?>><?php echo $lbl; ?></option>
-			<?php endforeach; ?>
-		</select></div>
 	<div><label>Active</label>
 		<select name="active">
 			<option value="0"<?php echo ($theme && !$theme['active']) ? ' selected' : ''; ?>>no</option>

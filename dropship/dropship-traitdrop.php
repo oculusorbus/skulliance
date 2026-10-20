@@ -108,8 +108,37 @@ function dropshipDropAward($ctx) {
 	$score = isset($_SESSION['userData']['score']) ? (int)$_SESSION['userData']['score'] : 0;
 	if (!dropshipDropEarned($ctx, $score)) return null;
 
+	/*
+	 * WHICH GAME THE DROP CAME FROM, read off the theme rather than off a
+	 * project id. $source is a key into the registry in
+	 * dhcfighters-config.php, which supplies the label, the X tag and the
+	 * link -- and those keys are the theme slug with the hyphens taken out
+	 * ('oculus-lounge' -> 'oculuslounge'). Deriving it means a new theme
+	 * gets its own credit by being registered, with no edit here; a theme
+	 * nobody registered falls back to Drop Ship, which is both true and the
+	 * only safe answer, since an unknown key would credit nobody.
+	 */
+	/*
+	 * WHICH GAME THE DROP CAME FROM, read off the theme rather than off a
+	 * project id. $source is a key into the game registry in
+	 * dhcfighters-config.php, which supplies the label, the X tag and the
+	 * link, and those keys are the theme slug with the hyphens taken out
+	 * ('oculus-lounge' -> 'oculuslounge'). Deriving it means a new theme is
+	 * credited by being registered there, with no edit here.
+	 *
+	 * CHECKED AGAINST THE REGISTRY BELOW, once it is loaded -- an unknown
+	 * key would post a drop crediting nobody, and the per-source daily cap
+	 * is keyed on this too.
+	 */
 	$project = (int)$_SESSION['userData']['dropship_project_id'];
-	$source  = ($project === 4) ? 'oculuslounge' : 'dropship';
+	$source  = 'dropship';
+	if (function_exists('dropshipThemeConfig') && isset($GLOBALS['conn'])) {
+		$cfg = dropshipThemeConfig($GLOBALS['conn'], $project);
+		if ($cfg && !empty($cfg['slug'])) {
+			$slug = str_replace('-', '', dropshipThemeSlug($cfg['slug']));
+			if ($slug !== '') $source = $slug;
+		}
+	}
 
 	/* The Skulliance user id, straight off the shared session: Drop Ship runs
 	   on the same session as the platform (see the restore at the top of
@@ -151,6 +180,15 @@ function dropshipDropAward($ctx) {
 		if (!defined('SKL_WEBHOOKS_NO_ALIAS')) define('SKL_WEBHOOKS_NO_ALIAS', true);
 		require_once __DIR__ . '/../dhcfighters-lib.php';
 		if (!function_exists('dhcf_award')) return null;
+
+		/* The registry is loaded now, so the derived key can be checked.
+		   A theme nobody has registered posts as Drop Ship: the drop still
+		   lands, and crediting the game this one is a skin of is truer than
+		   crediting a key with no label, no tag and no link. */
+		if ($source !== 'dropship'
+		    && (!function_exists('dhcf_game') || !dhcf_game($source))) {
+			$source = 'dropship';
+		}
 
 		/* The platform database. Drop Ship's $conn is a different one
 		   entirely, and dropshipSkullianceDb() is the only place the

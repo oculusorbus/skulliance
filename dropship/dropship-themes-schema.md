@@ -33,9 +33,21 @@ path filters a player's wallet against it. A theme is a skin over a
 collection somebody else minted, and several themes can share one. That
 binding stays where it is; this schema owns presentation only.
 
-The one exception is Oculus Lounge, whose traits come from a different source
-than the generic Koios path. `trait_source` records which path a theme uses
-so that stays configuration rather than a function named after one theme.
+## Why there are no label columns
+
+An earlier cut of this table carried `currency`, `squad_label` and
+`character_label`. They were the same three words the wording already owns -
+`SCRIP`, `Super Soldier`, `Troops` - and holding them twice meant a theme
+could rename SCRIP in its wording and still read "SCRIP" on the dashboard,
+with nothing in the admin saying why. They are rows in `dropship_theme_text`
+now, and `dashboard.php` reads them through `evaluateText()` like every other
+label on the page.
+
+`trait_source` went the same way. It named which path a theme's traits come
+from, which is a key into the registry in `dhcfighters-config.php` - and that
+registry is keyed by the theme's own slug with the hyphens taken out
+(`oculus-lounge` -> `oculuslounge`). A theme with no entry there posts its
+drops as Drop Ship, which is the right fallback and needs no column.
 
 ## Tables
 
@@ -48,10 +60,6 @@ CREATE TABLE IF NOT EXISTS dropship_themes (
 	-- MEDIA extension: 'gif' (animates itself) or a still like 'png',
 	-- which gets the Ken Burns pan instead. See the note below.
 	extension        VARCHAR(8)   NOT NULL DEFAULT 'gif',
-	currency         VARCHAR(32)  NOT NULL DEFAULT 'SCRIP',
-	squad_label      VARCHAR(64)  NOT NULL DEFAULT 'Super Soldier',
-	character_label  VARCHAR(64)  NOT NULL DEFAULT 'Troops',
-	trait_source     VARCHAR(32)  NOT NULL DEFAULT 'koios',
 	created_at       DATETIME     NOT NULL,
 	updated_at       DATETIME     DEFAULT NULL,
 	UNIQUE KEY uniq_project (project_id),
@@ -127,6 +135,19 @@ leaves rows behind, so clear both tables before re-running it:
 ```sql
 DELETE FROM dropship_theme_text;
 DELETE FROM dropship_themes;
+```
+
+### If the table already has the label columns
+
+They were dropped once the wording took over (see above). Nothing reads
+them, so this is safe to run at any time:
+
+```sql
+ALTER TABLE dropship_themes
+  DROP COLUMN currency,
+  DROP COLUMN squad_label,
+  DROP COLUMN character_label,
+  DROP COLUMN trait_source;
 ```
 
 ## `slug` is stored, never derived

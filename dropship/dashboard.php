@@ -375,27 +375,21 @@ if($_SESSION['userData']['dropship_project_id'] == 1 && isset($_SESSION['userDat
 	storeRank($dropship_ranks);
 }
 
-if($_SESSION['userData']['dropship_project_id'] == 1){
-	$currency = "SCRIP";
-	$squad = "Super Soldier";
-	$characters = "Troops";
-}else if($_SESSION['userData']['dropship_project_id'] == 2){
-	$currency = "DREAD";
-	$squad = "Elite";
-	$characters = "Henchmen";
-}else if($_SESSION['userData']['dropship_project_id'] == 3){
-	$currency = "TIDDIES";
-	$squad = "VIP";
-	$characters = "Perverts";
-}else if($_SESSION['userData']['dropship_project_id'] == 4){
-	$currency = "TIDDIES";
-	$squad = "VIP";
-	$characters = "Neo Miami Citizens";
-}else{
-	$currency = "SCRIP";
-	$squad = "Super Soldier";
-	$characters = "Troops";	
-}
+/*
+ * THE SAME WORD MAPPING AS EVERY OTHER LABEL ON THE PAGE.
+ *
+ * These three were a hardcoded chain on project id, and dropship_themes
+ * carried currency/squad_label/character_label columns that duplicated it
+ * -- a theme that renamed SCRIP in its wording still read "SCRIP" here
+ * unless somebody also filled in the column, and nothing in the admin said
+ * so. Two places to change one word is one place too many, so the columns
+ * are gone and these go through evaluateText() like everything else.
+ * A project with no theme gets the Drop Ship word back, which is what the
+ * chain's else branch did.
+ */
+$currency   = evaluateText("SCRIP");
+$squad      = evaluateText("Super Soldier");
+$characters = evaluateText("Troops");
 ?>
 		<a name="dashboard" id="dashboard"></a>
 		<!-- The flexible grid (content) -->

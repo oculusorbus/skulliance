@@ -444,6 +444,83 @@ $c9 = new TConn(array(90 => array('id' => 9, 'project_id' => 90, 'slug' => 'k'))
 ok(dropshipThemeText($c9, 90, 'Barracks') === 'Barracks',
    'a word replaced by itself does not come back unchanged');
 
+echo "\nthe wording owns the labels, so there are no label columns\n";
+/*
+ * dropship_themes used to carry currency, squad_label and character_label.
+ * They held the same three words the wording already owns -- SCRIP, Super
+ * Soldier, Troops -- so a theme could rename SCRIP in its wording and the
+ * dashboard would still say "SCRIP", with nothing in the admin saying why.
+ * One word, one place.
+ */
+$dash   = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+$schema = file_get_contents(__DIR__ . '/dropship/dropship-themes-schema.md');
+$seedsql = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
+foreach (array('currency', 'squad_label', 'character_label', 'trait_source') as $col) {
+	ok(strpos($adm2, $col) === false, "the admin still writes dropship_themes.$col");
+	ok(!preg_match('/^\t' . $col . '\s/m', $schema), "the schema still creates dropship_themes.$col");
+	ok(strpos($seedsql, $col . ',') === false, "the seed still fills dropship_themes.$col");
+}
+/* The dashboard reads all three through the same path as every other word. */
+foreach (array('$currency   = evaluateText("SCRIP")',
+               '$squad      = evaluateText("Super Soldier")',
+               '$characters = evaluateText("Troops")') as $line) {
+	ok(strpos($dash, $line) !== false, 'the dashboard does not read a label through the wording: ' . $line);
+}
+ok(strpos($dash, '$currency = "DREAD"') === false,
+   'the hardcoded currency chain is back, so a theme cannot rename its own money');
+ok(strpos($dash, '$characters = "Neo Miami Citizens"') === false,
+   'the hardcoded character chain is back');
+/* Troops had no dictionary rows at all, because it lived in the column. It
+   has to be a family or the dashboard loses the word entirely. */
+ok(isset($bylabel['Troops']), "'Troops' is not in the vocabulary, so no theme can rename its own people");
+/* ...and the three themes that had a character_label must now say it as a row. */
+foreach (array(2 => 'Henchmen', 3 => 'Perverts', 4 => 'Neo Miami Citizens') as $pid => $word) {
+	ok(strpos($blocks[$pid], "'exact', 'Troops', '" . $word . "'") !== false,
+	   "project $pid no longer calls its people $word");
+}
+ok(strpos($blocks[2], "'exact', 'Super Soldier', 'Elite'") !== false,
+   'project 2 no longer calls its squad Elite, which the squad_label column used to say');
+/* Every seed block must number its rows once, or a re-run writes two rows
+   claiming the same position. */
+foreach ($blocks as $pid => $sql) {
+	preg_match_all("/, (\d+)\)[,;]/", $sql, $m);
+	ok(count($m[1]) === count(array_unique($m[1])),
+	   "project $pid has duplicate sort_order values in the seed");
+}
+
+echo "\nthe trait drop credits the theme, not a project id\n";
+/*
+ * $source is a key into the game registry in dhcfighters-config.php, which
+ * supplies the label, the X tag and the link on the drop post. It used to be
+ * ($project === 4) ? 'oculuslounge' : 'dropship', so a new theme could never
+ * be credited without editing this file -- which is the opposite of themes
+ * being data. The keys are the slug with the hyphens out.
+ */
+$td = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-traitdrop.php'));
+ok(strpos($td, "(\$project === 4) ? 'oculuslounge'") === false,
+   'the trait drop still decides the credit from a hardcoded project id');
+ok(strpos($td, "str_replace('-', '', dropshipThemeSlug(\$cfg['slug']))") !== false,
+   'the trait drop does not derive its credit from the theme slug');
+/* The registry keys really are the de-hyphenated slugs, which is the whole
+   premise. Checked against the registry, not asserted. */
+require_once __DIR__ . '/dhcfighters-config.php';
+foreach (array('oculus-lounge' => 'oculuslounge', 'drop-ship' => 'dropship') as $slug => $key) {
+	ok(dhcf_game(str_replace('-', '', $slug)) !== null,
+	   "'$slug' does not resolve to a registered game, so the derivation is wrong");
+	ok(str_replace('-', '', $slug) === $key, "'$slug' does not de-hyphenate to '$key'");
+}
+ok(dhcf_game('filthymermaid') === null,
+   'filthy-mermaid is registered now, so the unregistered fallback below is untested');
+/* An unregistered theme must fall back rather than post a drop crediting a
+   key with no label, no tag and no link. */
+ok(strpos($td, "if (\$source !== 'dropship'") !== false
+   && strpos($td, "!dhcf_game(\$source)") !== false,
+   'an unregistered theme is not checked, so its drop would credit nobody');
+/* ...and the check has to sit AFTER the registry is loaded, or it always
+   fails and every theme posts as Drop Ship. */
+ok(strpos($td, 'dhcfighters-lib.php') < strpos($td, "!dhcf_game(\$source)"),
+   'the registry check runs before dhcfighters-lib.php loads, so it always falls back');
+
 echo "\nthe media extension decides the motion\n";
 /*
  * A gif animates itself; a still needs the Ken Burns pan (.image-wrap, a 40s

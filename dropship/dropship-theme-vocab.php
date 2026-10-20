@@ -43,6 +43,10 @@ function dropshipThemeVocabulary() {
 			array('label' => 'SCRIP', 'exact' => array('SCRIP'), 'desc' => array(), 'icons' => array(), 'themes' => 3),
 			array('label' => 'Grunt', 'exact' => array('Grunt'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
 			array('label' => 'Soldiers', 'exact' => array('Soldiers'), 'desc' => array(), 'icons' => array(), 'themes' => 1),
+			/* The word for one member of the squad. It had no dictionary rows
+			   because the dashboard used to read it off a character_label
+			   column instead; that column is gone and this is the word. */
+			array('label' => 'Troops', 'exact' => array('Troops'), 'desc' => array(), 'icons' => array(), 'themes' => 3),
 			array('label' => 'Registered Soldiers', 'exact' => array('Registered Soldiers'), 'desc' => array(), 'icons' => array(), 'themes' => 1),
 			array('label' => 'Super Soldier', 'exact' => array('Super Soldier'), 'desc' => array(), 'icons' => array('dropship', 'supersoldier'), 'themes' => 2),
 			array('label' => 'Pilot', 'exact' => array('Pilot'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
