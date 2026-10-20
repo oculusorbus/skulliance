@@ -156,6 +156,143 @@ ok(strpos($dash, "unset(\$_SESSION['userData']['VIP'])") === false,
    'the recheck can now REVOKE access; an outage would lock out a player '
  . 'who was already in the game');
 
+
+/* ------------------------------------------------------------------ */
+/*
+ * WHO MAY PLAY FILTHY MERMAID.
+ *
+ * It was nobody. The gate read
+ *
+ *     if (pid == 3 && $patron == "true") {          // the 5+ NFT role
+ *         if (discord_id is one of two hardcoded ids) play;
+ *         else "Cannot Play Until Fully Developed";
+ *     }
+ *     ...
+ *     else if (pid == 3) "You Must Have 5+ NFTs to Play";
+ *     ...
+ *     else if (pid != 3) play;
+ *
+ * so the refusal everybody read named a number that would not have let
+ * them in either -- no branch reached the play button without one of two
+ * Discord ids -- and a Patron saw BOTH messages, because the first block
+ * has no else before the chain that follows it. Per the owner: the Shorty
+ * Verse NFTs are expensive, holding one is already the hard part, so one
+ * qualifying NFT is the whole gate.
+ */
+echo "\nFilthy Mermaid gates on holding an NFT, like the other themes\n";
+
+/* THE PLAY-GATE REGION ONLY. The dashboard tests project 3 all over the
+   place for art, audio and captions, and every one of those is fine; the
+   question is whether the GATE still does. */
+$gate_from = strpos($dash, 'if(checkSquadCount($conn) >= 1) { ?>');
+ok($gate_from !== false, 'the play gate could not be located, so nothing below is proving anything');
+$gate = $gate_from === false ? '' : substr($dash, $gate_from, 4000);
+$gate_end = strpos($gate, 'Assemble Squad of');
+ok($gate_end !== false, 'the end of the play gate could not be located');
+if ($gate_end !== false) $gate = substr($gate, 0, $gate_end);
+/*
+ * COMMENTS STRIPPED FIRST. The note explaining the change quotes the copy
+ * that was removed -- "Cannot Play Until Fully Developed", "5+ NFTs" -- so
+ * every check below was satisfied by the comment and would have passed
+ * with the refusal still in place. This has caught the harness out before.
+ */
+$gate = preg_replace(array('#/\*.*?\*/#s', '#(^|\s)//[^\n]*#'), ' ', $gate);
+ok(strpos($gate, '$play_button') !== false,
+   'stripping the comments took the code with it');
+
+ok(strpos($gate, 'Cannot Play Until Fully Developed') === false,
+   'the play gate still refuses Filthy Mermaid as unfinished');
+ok(strpos($gate, '5+ NFTs') === false,
+   'the play gate still demands 5 NFTs, which no branch ever accepted anyway');
+ok(strpos($gate, '772831523899965440') === false && strpos($gate, '897218513024974879') === false,
+   'the play gate still lets two hardcoded Discord ids in and nobody else');
+ok(strpos($gate, '== 3') === false && strpos($gate, '!= 3') === false,
+   'the play gate still special-cases project 3');
+/* AND THE BUTTON IS STILL REACHED. A gate that refuses nobody and offers
+   nothing would pass every check above. */
+ok(preg_match('/\}else\{\s*\n\s*echo \$play_button;/', $gate) === 1,
+   'nothing falls through to the play button, so the themes that could play now cannot');
+/* Oculus Lounge is untouched: it gates on the Discord role, not on
+   holdings, and that is a different question. */
+ok(strpos($gate, "dropship_project_id'] == 4 && \$vip == \"true\"") !== false,
+   "Oculus Lounge's VIP gate was removed along with Filthy Mermaid's");
+ok(strpos($gate, 'oculusVipLinks(') !== false,
+   "Oculus Lounge's refusal no longer tells a player how to get in");
+
+/*
+ * WHERE TO BUY ONE, in the theme's own collection.
+ *
+ * instructions.php sent every project except Oculus Lounge to Drop Ship's
+ * wayup.io collection, so a Dread City or Filthy Mermaid player following
+ * "where to buy" was pointed at a different game's NFTs -- and that reader
+ * is by definition the one who does not yet know what the qualifying NFT
+ * is. Built from the policy id the projects table already holds.
+ */
+echo "\nthe collection link is the theme's own\n";
+require_once __DIR__ . '/dropship/dropship-themes.php';
+class VRes { public $num_rows; private $r; private $i = 0;
+	public function __construct($r) { $this->r = $r; $this->num_rows = count($r); }
+	public function fetch_assoc() { return $this->i < count($this->r) ? $this->r[$this->i++] : null; } }
+class VConn { public $policies;
+	public function __construct($p) { $this->policies = $p; }
+	public function query($sql) {
+		if (strpos($sql, 'SELECT policy_id FROM projects WHERE id') !== false) {
+			preg_match('/id = (\d+)/', $sql, $m); $pid = (int)$m[1];
+			return new VRes(isset($this->policies[$pid])
+				? array(array('policy_id' => $this->policies[$pid])) : array());
+		}
+		return new VRes(array());
+	} }
+$shorty = '0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c';
+$vc = new VConn(array(
+	3 => $shorty,
+	5 => '',                                   /* no policy recorded */
+	6 => substr($shorty, 0, 54),               /* hex, two characters short */
+	7 => str_repeat('z', 56),                  /* right length, not hex */
+	8 => strtoupper($shorty),                  /* same policy, shouted */
+));
+ok(dropshipCollectionUrl($vc, 3) === 'https://www.wayup.io/collection/' . $shorty,
+   'the collection url is not the prefix plus the policy id');
+ok(dropshipCollectionUrl($vc, 8) === 'https://www.wayup.io/collection/' . $shorty,
+   'an uppercase policy id produces a different url for the same collection');
+ok(dropshipCollectionUrl($vc, 5) === '',
+   'a project with no policy still gets a collection url, which is a dead link');
+ok(dropshipCollectionUrl($vc, 6) === '',
+   'a policy id of the wrong length is handed to a player as a url');
+ok(dropshipCollectionUrl($vc, 7) === '',
+   'a policy id that is not hex is handed to a player as a url');
+ok(dropshipCollectionUrl($vc, 0) === '' && dropshipCollectionUrl(null, 3) === '',
+   'the url builder does not survive being asked with nothing');
+
+$link = dropshipCollectionLink($vc, 3, '<strong>Intro.</strong>', 'Filthy Mermaid');
+ok(strpos($link, 'https://www.wayup.io/collection/' . $shorty) !== false,
+   'the rendered link does not carry the collection url');
+ok(strpos($link, 'Filthy Mermaid NFTs') !== false,
+   "the link is not named in the theme's own words");
+ok(strpos($link, '<strong>Intro.</strong>') !== false,
+   "the calling page's own copy is dropped");
+ok(strpos($link, 'rel="noopener"') !== false,
+   'an external link opens in a new tab with no noopener');
+ok(dropshipCollectionLink($vc, 5) === '',
+   'a project with no policy renders a link to nowhere rather than nothing');
+/* The name is page copy but it reaches the markup, and a theme is renamed
+   by hand in an admin field. */
+ok(strpos(dropshipCollectionLink($vc, 3, '', 'A<b>B'), 'A<b>B') === false,
+   "the theme's name is written into the markup unescaped");
+
+$inst = file_get_contents(__DIR__ . '/dropship/instructions.php');
+ok(strpos($inst, 'dropshipCollectionLink($conn') !== false,
+   'the instructions page does not ask for the theme\'s own collection');
+ok(preg_match('/4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c/', $inst) === 1,
+   "Drop Ship's own collection is no longer there as the fallback");
+$dash_shop = substr($dash, strpos($dash, 'Assemble Squad of'), 900);
+ok(strpos($dash_shop, 'dropshipCollectionLink($conn') !== false,
+   'the Play refusal does not say where to get a qualifying NFT');
+/* HOLDINGS, NOT DEPLOYMENT. This refusal also catches a player who owns a
+   squad and has not deployed it, and sending them shopping is wrong. */
+ok(strpos($dash_shop, 'dropshipSoldierCount($conn) < 1') !== false,
+   'the shop link is shown to a player who already owns soldiers');
+
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
 echo "all dropship VIP checks passed\n";

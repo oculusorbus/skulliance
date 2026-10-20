@@ -230,9 +230,24 @@ include 'header.php';
 					// Same three links as the Play gate, from vip-links.php.
 					echo oculusVipLinks();
 					?>
-					<?php } else { ?>
-					<p><a href="https://www.wayup.io/collection/4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c" target="_blank">wayup.io</a></p>
-					<?php } ?>
+					<?php } else {
+					/*
+					 * THE THEME'S OWN COLLECTION, not Drop Ship's.
+					 *
+					 * This was one hardcoded link for every project except
+					 * Oculus Lounge, and it was Drop Ship's -- so a Dread City
+					 * or Filthy Mermaid player reading "where to buy" was sent
+					 * to a different game's NFTs. Built from the policy id the
+					 * projects table already holds, so a new theme needs
+					 * nothing added here.
+					 *
+					 * The old link stands when there is no usable policy, which
+					 * is the only case it was ever right for.
+					 */
+					$ds_shop = dropshipCollectionLink($conn, $_SESSION['userData']['dropship_project_id']);
+					echo $ds_shop !== '' ? $ds_shop
+					   : '<p><a href="https://www.wayup.io/collection/4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c" target="_blank">wayup.io</a></p>';
+					} ?>
 
 					<p style="text-align:center;margin-top:20px;"><strong>Let the games begin. And remember, no one survives <?php echo evaluateText("Drop Ship");?>.</strong></p>
 

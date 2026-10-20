@@ -205,6 +205,11 @@ foreach ($roles as $key => $roleData) {
 		$dropship = 'true';
 		$features = $features + 1;
 		break;
+	  /* NO LONGER A GATE. This is Shorty Verse's Patron role (5+ NFTs) and
+	     it was the Filthy Mermaid play gate, which refused everybody: see
+	     dashboard.php's own note. Kept so the role id stays written down
+	     next to the others, and because $patron is still initialised above;
+	     nothing reads it now. */
 	  case "984224392114495539":
 		$patron = 'true';
 		break;

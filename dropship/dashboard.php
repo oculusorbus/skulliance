@@ -515,19 +515,33 @@ $characters = evaluateText("Troops");
 						</form>';
 						?>
 						<?php if(checkSquadCount($conn) >= 1) { ?>
-							<?php if($_SESSION['userData']['dropship_project_id'] == 3 && $patron == "true"){
-								if($_SESSION["userData"]["discord_id"] == "772831523899965440" || $_SESSION["userData"]["discord_id"] == "897218513024974879"){ 
-									echo $play_button;
-								}else{
-									echo "Cannot Play Until Fully Developed";
-								}
-							}if($_SESSION['userData']['dropship_project_id'] == 4 && $vip == "true"){
+							<?php
+							/*
+							 * ONE QUALIFYING NFT IS THE WHOLE GATE, bar Oculus
+							 * Lounge's Discord role.
+							 *
+							 * Filthy Mermaid was refused outright and the copy
+							 * did not describe the code: holding the Patron role
+							 * (5+ NFTs) got "Cannot Play Until Fully Developed"
+							 * unless you were one of two hardcoded Discord ids,
+							 * and everyone else got "You Must Have 5+ NFTs to
+							 * Play" -- a number that would not have let anybody
+							 * in either, because no branch reached the play
+							 * button. Per the owner: the Shorty Verse NFTs are
+							 * expensive, getting one is already the hard part,
+							 * so anybody who has one plays.
+							 *
+							 * checkSquadCount() above IS that test. A soldier
+							 * exists only because a qualifying NFT was synced
+							 * off the wallet, so an assembled squad is proof of
+							 * holding, and Filthy Mermaid now gates exactly the
+							 * way Drop Ship and Dread City do.
+							 */
+							if($_SESSION['userData']['dropship_project_id'] == 4 && $vip == "true"){
 								echo '<form action="dashboard.php" method="post">
 								  <input type="hidden" id="run" name="run" value="true">
 								  <input class="button" type="submit" value="Play XXX Game'.$battle.'">
 								</form>';
-							}else if($_SESSION['userData']['dropship_project_id'] == 3){ 
-								echo "<p><strong>You Must Have 5+ NFTs to Play</strong></p>";
 							}else if($_SESSION['userData']['dropship_project_id'] == 4){
 									// The refusal used to be one link to the marketplace, which
 									// leaves out the step the gate actually tests: the Discord
@@ -535,12 +549,24 @@ $characters = evaluateText("Troops");
 									// way to find out why. See dropship/vip-links.php.
 									echo oculusVipLinks('<strong>You need VIP access to play.</strong>');
 									echo "<p><a href='discoin.php'>Or buy a temporary VIP pass with DISCOIN</a></p>";
-							}else if($_SESSION['userData']['dropship_project_id'] != 3){ 
+							}else{
 								echo $play_button;
  							} ?>
 						<?php 
 						} else {
 							echo "<p><strong>Assemble Squad of ".$characters." to Play</strong></p>";
+							/*
+							 * WHERE TO GET ONE, but only for somebody who has
+							 * none. This refusal also catches a player holding a
+							 * squad they simply have not deployed yet, and
+							 * "here is where to buy NFTs" is the wrong answer to
+							 * that -- their NFTs are three clicks away on this
+							 * same page. dropshipSoldierCount() is holdings,
+							 * checkSquadCount() is deployment.
+							 */
+							if(dropshipSoldierCount($conn) < 1){
+								echo dropshipCollectionLink($conn, $_SESSION['userData']['dropship_project_id']);
+							}
 						}?>
 					<?php
 					// Display game status or Drop Ship Results

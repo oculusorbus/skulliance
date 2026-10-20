@@ -35,6 +35,29 @@ only: Grunts stay level 0 and keep their rank.
 
 Grunts are a Drop Ship feature. Oculus Lounge has no equivalent.
 
+## The other themes, and who can play them
+
+The same game runs under several skins, each with its own collection, art,
+wording and leaderboard: **Drop Ship**, **Dread City**, **Filthy Mermaid** and
+[[games-oculus-lounge]]. Pick one from the Select Project dropdown on the
+dashboard.
+
+**One qualifying NFT is the gate.** Hold a single NFT from a theme's collection
+and that theme is playable: the NFT becomes a soldier, and a deployed squad is
+all the Play button asks for. Drop Ship is the one that needs nothing at all,
+because of the four free Grunts above.
+
+Filthy Mermaid used to say it needed five. It no longer does. The Shorty Verse
+NFTs are expensive and getting hold of one is already the hard part.
+
+Oculus Lounge is the exception, and not on holdings: it gates on a Discord role
+that holding the VIP token does not grant by itself. See
+[[games-oculus-lounge]].
+
+If you have no soldiers for the theme you picked, the dashboard links straight
+to that collection on Wayup, so you can see what is for sale before you commit
+to anything.
+
 ## Leaderboards
 
 Track your ranks for the current game, all time high scores, and by levels and XP.

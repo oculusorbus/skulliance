@@ -378,6 +378,55 @@ function dropshipProjectPolicy($conn, $project_id) {
 }
 
 /**
+ * Where to go and buy into this theme's collection, or '' if unknown.
+ *
+ * ONE LINK PREFIX PLUS THE POLICY ID, which the projects table already
+ * holds for every theme because Koios is queried with it. Nothing new to
+ * configure and nothing to keep in step: a theme that can be played has a
+ * policy, and a policy is a Wayup collection.
+ *
+ * THE REASON IT IS DERIVED. instructions.php hardcoded Drop Ship's own
+ * collection for every project except Oculus Lounge, so a Dread City or
+ * Filthy Mermaid player following "where to buy" was sent to a different
+ * game's NFTs. These are the people who have arrived at a game they cannot
+ * play yet and do not know what the qualifying NFT even is, which is the
+ * worst moment to be pointed somewhere else.
+ *
+ * SHAPE-CHECKED. A policy id is 28 bytes, so 56 hex characters, and it is
+ * about to be the path of a url the page hands a player. An empty or
+ * malformed column gets '' and the caller renders nothing, rather than a
+ * link to a collection page that does not exist.
+ */
+function dropshipCollectionUrl($conn, $project_id) {
+	$policy = function_exists('dropshipProjectPolicy')
+	        ? dropshipProjectPolicy($conn, $project_id) : '';
+	$policy = strtolower(trim((string)$policy));
+	if (strlen($policy) !== 56 || !ctype_xdigit($policy)) return '';
+	return 'https://www.wayup.io/collection/' . $policy;
+}
+
+/**
+ * That link as a sentence, named in the theme's own words.
+ *
+ * $intro is the calling page's copy, in front of the link -- the Play gate
+ * says you have nothing to play with, the instructions page says nothing
+ * at all. HTML, because it is the page's own text and never user input.
+ */
+function dropshipCollectionLink($conn, $project_id, $intro = '', $name = '') {
+	$url = dropshipCollectionUrl($conn, $project_id);
+	if ($url === '') return '';
+	/* The theme's word for itself: "Filthy Mermaid NFTs", not "Drop Ship
+	   NFTs", on a page that has renamed everything else. */
+	if ($name === '' && function_exists('evaluateText')) $name = (string)evaluateText('Drop Ship');
+	$h = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); };
+	return '<p class="ds-collection">'
+	     . ($intro !== '' ? $intro . ' ' : '')
+	     . '<a href="' . $h($url) . '" target="_blank" rel="noopener">See what '
+	     . ($name !== '' ? $h($name) . ' NFTs' : 'NFTs')
+	     . ' are for sale on Wayup</a>.</p>';
+}
+
+/**
  * The project ids a player may enter, or NULL to let the old rule decide.
  *
  * themes.active was written by the admin and read by nothing, so
