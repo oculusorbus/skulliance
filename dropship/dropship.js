@@ -10,6 +10,49 @@ var lastRound = 0;
   lastRound++;
 });
 
+/*
+ * A ROUND, FOUND BY POSITION RATHER THAN BY BARE NUMERIC ID.
+ *
+ * Every round div carries id='0', '1', '2' ... and displayRound() used to
+ * reach them with document.getElementById(n). Those ids are not unique on
+ * this page: the Armory, the soldier cards and the results tables all
+ * render elements whose id is a small database integer, and every one of
+ * them appears BEFORE #hidden-results in the document -- so getElementById
+ * returns whichever came first. Land on one of those and it has no <h3>
+ * and no <img>, the lookup throws, and the handler dies partway through:
+ * the caption and the picture stop updating while whatever already started
+ * playing carries on. Which ids collide depends on how many items and
+ * soldiers a theme renders, which is why it looked different per theme.
+ *
+ * The rounds are emitted in order inside #hidden-results, so position IS
+ * the round number, and scoping the lookup there cannot collide with
+ * anything outside it.
+ */
+function roundEl(n) {
+  var box = document.getElementById('hidden-results');
+  if (!box) return null;
+  return box.querySelectorAll('.round')[n] || null;
+}
+
+/*
+ * ...AND THE READS DEGRADE RATHER THAN THROW. Scoping the lookup removes
+ * the collision, but a round that is missing for any other reason would
+ * then be a null dereference in the same place -- which is the failure
+ * being fixed, wearing a different hat. A round that cannot be read now
+ * leaves the display alone and lets the rest of the handler run, so the
+ * button stays usable instead of dying mid-step.
+ */
+function roundCaption(n) {
+  var el = roundEl(n);
+  var h3 = el ? el.getElementsByTagName('h3')[0] : null;
+  return h3 ? h3.innerHTML : '';
+}
+function roundImage(n) {
+  var el = roundEl(n);
+  var img = el ? el.getElementsByTagName('img')[0] : null;
+  return img ? img.src : '';
+}
+
 // Toggle Audio On & Off
 /*
  * Animation on/off for a still theme that also ships gifs.
@@ -93,11 +136,10 @@ function checkTransaction(){
 
 // Evaluate whether term is in results text
 function evaluateAudio(currentRound, terms) {
-	if(document.getElementById(currentRound).getElementsByTagName('h3')[0].innerHTML.includes(terms)){
-		return true;
-	}else{
-		return false;
-	}
+	/* Reads the SAME caption the display does, so it has to survive the
+	   same way: an unreadable round matches nothing rather than throwing
+	   and taking the rest of the step with it. */
+	return roundCaption(currentRound).includes(terms);
 }
 
 // Evaluate current round enumeration
@@ -141,6 +183,16 @@ function randomInt(min, max) {
 }
 
 
+/* One painter for both branches: they had the same two lines twice. */
+function showRound(n) {
+  var cap = roundCaption(n);
+  var src = roundImage(n);
+  var box = document.getElementById("resultsText");
+  if (box && cap !== '') box.innerHTML = "<h3>" + cap + "</h3>";
+  var img = document.getElementById("results-image");
+  if (img && src !== '') img.style.backgroundImage = "url('" + src + "')";
+}
+
 // Cycle through each round and plug the inner HTML into the display box upon button press.
 function displayRound(project_id) {
 	if(currentRound == 0){
@@ -155,17 +207,16 @@ function displayRound(project_id) {
 		}else if(project_id == 4){
 			loadAudio(2, "flyingcar");
 		}
-		//document.getElementById(currentRound).style.visibility = "visible";
-//		document.getElementById("results").innerHTML = document.getElementById(currentRound).innerHTML;
-		document.getElementById("resultsText").innerHTML = "<h3>"+document.getElementById(currentRound).getElementsByTagName('h3')[0].innerHTML+"</h3>";
-		document.getElementById("results-image").style.backgroundImage = "url('"+document.getElementById(currentRound).getElementsByTagName('img')[0].src+"')";
+		//roundEl(currentRound).style.visibility = "visible";
+//		document.getElementById("results").innerHTML = roundEl(currentRound).innerHTML;
+		showRound(currentRound);
 	}else{
 		if(currentRound != lastRound){
-			document.getElementById(currentRound-1).style.visibility = "hidden";
-			//document.getElementById(currentRound).style.visibility = "visible";
-//			document.getElementById("results").innerHTML = document.getElementById(currentRound).innerHTML;
-			document.getElementById("resultsText").innerHTML = "<h3>"+document.getElementById(currentRound).getElementsByTagName('h3')[0].innerHTML+"</h3>";
-			document.getElementById("results-image").style.backgroundImage = "url('"+document.getElementById(currentRound).getElementsByTagName('img')[0].src+"')";
+			var prev = roundEl(currentRound-1);
+			if (prev) prev.style.visibility = "hidden";
+			//roundEl(currentRound).style.visibility = "visible";
+//			document.getElementById("results").innerHTML = roundEl(currentRound).innerHTML;
+			showRound(currentRound);
 			
 			if(evaluateAudio(currentRound, "Melee")){
 				configureAudio(2, "melee");

@@ -1408,7 +1408,26 @@ function logScore($conn, $replay) {
 		// Delete previous result for current game, if it exists
 		deleteResult($conn);
 		$sql = "INSERT INTO results (game_id, user_id, score, replay, project_id)
-		VALUES ('".$_SESSION['userData']['game_id']."', '".$_SESSION['userData']['dropship_user_id']."', '".$_SESSION['userData']['score']."', '".htmlspecialchars($replay)."', '".$_SESSION['userData']['dropship_project_id']."')";
+		/*
+		 * ESCAPED FOR SQL, AND THE ENTITY FLAGS SAID OUT LOUD.
+		 *
+		 * This was htmlspecialchars($replay) alone, interpolated straight
+		 * into the statement. The markup is full of single quotes --
+		 * <div class='round' id='0'> -- so the only reason it did not
+		 * truncate every replay at the first one is that PHP 8.1 changed
+		 * htmlspecialchars()'s DEFAULT to include ENT_QUOTES. On 8.0 the
+		 * default is ENT_COMPAT, which leaves ' alone, and this server runs
+		 * cPanel with a per-domain PHP version that somebody can change
+		 * from a dropdown. An html escaper is not an SQL escaper; it was
+		 * standing in for one by accident.
+		 *
+		 * The flags are explicit on BOTH sides now, because the pair has to
+		 * agree: encoding with ENT_QUOTES and decoding with ENT_COMPAT
+		 * leaves every quote in the markup as a literal &#039;, which is a
+		 * replay full of broken attributes. Storing identically to before,
+		 * so existing rows read back unchanged.
+		 */
+		VALUES ('".$_SESSION['userData']['game_id']."', '".$_SESSION['userData']['dropship_user_id']."', '".$_SESSION['userData']['score']."', '".$conn->real_escape_string(htmlspecialchars($replay, ENT_QUOTES))."', '".$_SESSION['userData']['dropship_project_id']."')";
 
 		if ($conn->query($sql) === TRUE) {
 		  //echo "New record created successfully";
@@ -1537,7 +1556,9 @@ function getReplay($conn, $result_id) {
 	
 	if ($result->num_rows > 0) {
 		while($row = $result->fetch_assoc()) {
-			return htmlspecialchars_decode($row["replay"]);
+			/* ENT_QUOTES to match the encode: the defaults agree on this
+			   PHP and the pair must not depend on that. */
+			return htmlspecialchars_decode($row["replay"], ENT_QUOTES);
 		}
 	}
 }
