@@ -802,8 +802,6 @@ $characters = evaluateText("Troops");
   </div>
 </body>
 <?php
-// Close DB Connection
-$conn->close();
 if($heavy == "true" && $medium == "true" && $light == "true" && $base == "true" && $extralife == "true" && $demolition == "true" && $melee == "true") { ?>
 	<script type="text/javascript">
 	document.getElementById('super-soldier').style.display = "flex";
@@ -915,5 +913,18 @@ if($_SESSION['userData']['dropship_project_id'] == 4){?>
 								}
 							}
 				}
+
+/*
+ * CLOSE LAST, AND NOTHING AFTER IT.
+ *
+ * This used to sit immediately after </body>, which was fine until the run
+ * announcement moved down here: everything below it needs $conn --
+ * checkSquadCount(), checkPlayerItems(), checkLeaderboard() and
+ * getProjectName() -- and a closed mysqli is a FATAL on first use, not a
+ * failed query. It fired for anybody with a score in session, which is every
+ * player who had just finished a run: the score was written, then the page
+ * died on the way to announcing it.
+ */
+$conn->close();
 ?>
 </html>
