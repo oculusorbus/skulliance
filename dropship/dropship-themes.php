@@ -554,3 +554,44 @@ function dropshipAnimationOn($slug) {
 	if ($_SESSION['userData']['animation'] !== 'true') return false;
 	return dropshipThemeHasGifArt($slug);
 }
+
+/**
+ * Does this theme show its stage art in order, or shuffled?
+ *
+ * 'random' is what Drop Ship has always done: every round picks a frame
+ * from the scene's set, never the same one twice running. That suits art
+ * where the frames are interchangeable takes on "you survived the beach".
+ * It is wrong for a theme whose frames tell a sequence, where shuffling
+ * reads as the story jumping about.
+ *
+ * Defaults to 'random' so nothing changes for a theme that has not chosen.
+ */
+function dropshipThemeStageOrder($conn, $project_id) {
+	$cfg = dropshipThemeConfig($conn, $project_id);
+	if ($cfg && !empty($cfg['stage_order'])) {
+		return $cfg['stage_order'] === 'linear' ? 'linear' : 'random';
+	}
+	return 'random';
+}
+
+/**
+ * The next stage frame, honouring the theme's order.
+ *
+ * Takes the same (min, max, previous) verifyRandom() takes, because the
+ * caller tracks "previous" either way -- random uses it to avoid a repeat,
+ * linear uses it to know where it was.
+ *
+ * WRAPS, AND CLAMPS INTO RANGE. The bunker shares one counter across two
+ * ranges (1-6 early, 7-12 late), so stepping from 4 into the 7-12 range
+ * would land on 5, a frame that range does not own. Anything outside the
+ * range restarts at its first frame, which is also what makes the opening
+ * round work: every scene seeds "previous" with its LAST frame, so the
+ * first step wraps neatly round to 1.
+ */
+function dropshipStageFrame($min, $max, $previous, $order = 'random') {
+	if ($max <= $min) return $min;
+	if ($order !== 'linear') return verifyRandom($min, $max, $previous);
+	$next = (int)$previous + 1;
+	if ($next < $min || $next > $max) $next = $min;
+	return $next;
+}

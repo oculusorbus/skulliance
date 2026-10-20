@@ -57,7 +57,9 @@ if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		      . ", active = "           . (empty($_POST['active']) ? 0 : 1)
 		      . ", extension = '"       . $e($_POST['extension'] ?? 'gif') . "'"
 		      . ", trait_source = '"    . (($_POST['trait_source'] ?? '') === 'skulliance'
-		                                   ? 'skulliance' : 'koios') . "'";
+		                                   ? 'skulliance' : 'koios') . "'"
+		      . ", stage_order = '"     . (($_POST['stage_order'] ?? '') === 'linear'
+		                                   ? 'linear' : 'random') . "'";
 		/* NO LABEL COLUMNS. Currency, squad and character were the words
 		   SCRIP, Super Soldier and Troops, which the wording below already
 		   owns -- two places to change one word, and the dashboard read the
@@ -230,6 +232,12 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
 			<b>either</b> setting below, with no error anywhere. Set
 			<code>projects.policy_id</code> for this project first.</div>
 		<?php endif; ?></div>
+	<div><label>Stage art order</label>
+		<?php $so = $theme && !empty($theme['stage_order']) ? $theme['stage_order'] : 'random'; ?>
+		<select name="stage_order">
+			<option value="random"<?php echo $so !== 'linear' ? ' selected' : ''; ?>>Shuffled &mdash; a different frame each round</option>
+			<option value="linear"<?php echo $so === 'linear' ? ' selected' : ''; ?>>In order &mdash; 1, 2, 3 through the scene</option>
+		</select></div>
 	<div><label>NFT holdings from</label>
 		<select name="trait_source">
 			<?php $ts = $theme && !empty($theme['trait_source']) ? $theme['trait_source'] : 'koios'; ?>

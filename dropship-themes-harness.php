@@ -566,7 +566,10 @@ ok(dropshipActiveProjectIds($mk(array(1 => '1', 2 => '0'))) === array(1),
  * re-seeding silently opens a work-in-progress theme to players or shuts a
  * live one.
  */
-preg_match_all("/\((\d+), '[a-z-]+', (\d), '\w+', '\w+', NOW\(\)\)/", $seed, $sm, PREG_SET_ORDER);
+/* Matched loosely on the trailing columns, because every new theme-level
+   setting adds one and pinning the exact count here means this breaks for
+   a reason that has nothing to do with what it checks. */
+preg_match_all("/\((\d+), '[a-z-]+', (\d), '\w+'(?:, '\w+')*, NOW\(\)\)/", $seed, $sm, PREG_SET_ORDER);
 ok(count($sm) === 4, 'the seed no longer declares four themes');
 $seed_active = array();
 foreach ($sm as $row) if ($row[2] === '1') $seed_active[] = (int)$row[1];
@@ -1088,6 +1091,80 @@ foreach (array('dropship/automate.php', 'dropship/dashboard.php') as $f) {
 	   "$f still hand-rolls a capture that can carry a warning into Discord");
 	ok(strpos($fsrc, 'dropshipCapture(') !== false, "$f does not use the safe capture");
 }
+
+echo "\nstage art runs in order when the theme asks for it\n";
+/*
+ * Shuffling suits frames that are interchangeable takes on one scene --
+ * "you survived the beach" -- and reads as the story jumping about when
+ * they are a sequence. Per theme, defaulting to the original behaviour.
+ */
+if (!function_exists('verifyRandom')) {
+	/* Stand in for the run's own, so 'random' is distinguishable. */
+	function verifyRandom($min, $max, $prev) { return -1; }
+}
+ok(dropshipStageFrame(1, 7, 3, 'random') === -1, 'random no longer goes through verifyRandom');
+ok(dropshipStageFrame(1, 7, 3) === -1, 'the default is not random, which changes every existing theme');
+ok(dropshipStageFrame(1, 7, 3, 'nonsense') === -1, 'an unrecognised order is not treated as random');
+/*
+ * EVERY SCENE SEEDS "previous" WITH ITS LAST FRAME, so the first linear
+ * step has to wrap round to the first.
+ */
+ok(dropshipStageFrame(1, 7, 7, 'linear') === 1, 'the opening round does not start at frame 1');
+$seq = array(); $p = 7;
+for ($i = 0; $i < 9; $i++) { $p = dropshipStageFrame(1, 7, $p, 'linear'); $seq[] = $p; }
+ok($seq === array(1, 2, 3, 4, 5, 6, 7, 1, 2),
+   'the beach does not run 1-7 and wrap: ' . implode(',', $seq));
+/*
+ * THE BUNKER SHARES ONE COUNTER ACROSS TWO RANGES -- 1-6 early, 7-12
+ * late -- so stepping out of the first into the second would land on a
+ * frame the second range does not own.
+ */
+ok(dropshipStageFrame(7, 12, 4, 'linear') === 7,
+   'entering the late bunker from an early frame lands outside its range');
+ok(dropshipStageFrame(7, 12, 12, 'linear') === 7, 'the late bunker does not wrap');
+/* A two-frame scene alternates rather than sticking. */
+$alt = array(); $p = 2;
+for ($i = 0; $i < 4; $i++) { $p = dropshipStageFrame(1, 2, $p, 'linear'); $alt[] = $p; }
+ok($alt === array(1, 2, 1, 2), 'a two-frame exo scene does not alternate: ' . implode(',', $alt));
+/* A one-frame range cannot shuffle or advance. */
+ok(dropshipStageFrame(3, 3, 3, 'linear') === 3, 'a single-frame scene moves off its only frame');
+ok(dropshipStageFrame(3, 3, 3, 'random') === 3, 'a single-frame scene is shuffled into a loop');
+/* The setting is read from the theme, and anything odd is random. */
+/* KEYED AT THE PID BEING ASKED ABOUT. The first version built every stub
+   at project 80 and then queried 81, 82, 83 -- which have no theme row, so
+   every one fell through to the default and agreed with whatever the code
+   did. dropshipThemeConfig() also caches per pid, so each case needs its
+   own. */
+$cso = function ($pid, $val) {
+	$row = array('id' => 8, 'project_id' => $pid, 'slug' => 'so');
+	if ($val !== null) $row['stage_order'] = $val;
+	return new TConn(array($pid => $row), array(8 => array(pair('exact', 'A', 'B'))));
+};
+ok(dropshipThemeStageOrder($cso(80, 'linear'), 80) === 'linear', 'a linear theme is shuffled anyway');
+ok(dropshipThemeStageOrder($cso(81, 'random'), 81) === 'random', 'a random theme is not random');
+ok(dropshipThemeStageOrder($cso(82, 'sideways'), 82) === 'random',
+   'an unknown order is not treated as random: ' . dropshipThemeStageOrder($cso(82, 'sideways'), 82));
+ok(dropshipThemeStageOrder($cso(83, ''), 83) === 'random', 'an empty order is not treated as random');
+ok(dropshipThemeStageOrder($cso(85, null), 85) === 'random', 'a theme with no setting is not random');
+ok(dropshipThemeStageOrder(new TConn(), 84) === 'random', 'an unthemed project is not random');
+/* The run must ask, and every branch must get the same answer. */
+$ds2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship.php'));
+ok(strpos($ds2, '$ds_order = function_exists(\'dropshipThemeStageOrder\')') !== false,
+   'the run never asks which order this theme wants');
+ok(substr_count($ds2, 'verifyRandom(') === 1,
+   'a stage branch still calls verifyRandom() directly, so it ignores the setting');
+ok(substr_count($ds2, ', $ds_order)') === 7,
+   'only ' . substr_count($ds2, ', $ds_order)') . ' of the 7 stage branches honour the setting');
+/* The column has to exist for any of it to be settable. */
+ok(preg_match('/^\tstage_order\s+VARCHAR/m', $schema) === 1, 'the schema does not create stage_order');
+ok(preg_match('/^\tstage_order\s+VARCHAR/m', $seedsql) === 1, "the seed's CREATE has no stage_order");
+ok(substr_count($seedsql, "'random', NOW())") === 4,
+   'the seeded themes do not all keep the original shuffled behaviour');
+$adm8 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));
+ok(strpos($adm8, 'name="stage_order"') !== false, 'the admin cannot set the stage order');
+ok(strpos($adm8, "=== 'linear'\n		                                   ? 'linear' : 'random'") !== false
+   || strpos($adm8, "? 'linear' : 'random'") !== false,
+   'the admin writes the posted order through without checking it');
 
 echo "\nthe weekly cycle runs for every live theme\n";
 /*

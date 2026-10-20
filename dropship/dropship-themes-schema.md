@@ -85,6 +85,11 @@ CREATE TABLE IF NOT EXISTS dropship_themes (
 	-- player's connected wallets live, 'skulliance' reads the already
 	-- synced nfts table. A real choice; nothing derives it.
 	trait_source     VARCHAR(16)  NOT NULL DEFAULT 'koios',
+	-- Stage art in order ('linear') or shuffled ('random', the original
+	-- behaviour). Shuffling suits frames that are interchangeable takes
+	-- on one scene; it reads as the story jumping about when they are a
+	-- sequence.
+	stage_order      VARCHAR(8)   NOT NULL DEFAULT 'random',
 	created_at       DATETIME     NOT NULL,
 	updated_at       DATETIME     DEFAULT NULL,
 	UNIQUE KEY uniq_project (project_id),

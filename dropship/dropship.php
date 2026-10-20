@@ -392,7 +392,12 @@ $bunker_exo_random = 2;
 
 // Handle player survival for various scenes
 function live($dropshipMarkup, $counter) {
-	global $beach_random, $hill_random, $bunker_random, $beach_exo_random, $hill_exo_random, $bunker_exo_random, $prefix;
+	global $beach_random, $hill_random, $bunker_random, $beach_exo_random, $hill_exo_random, $bunker_exo_random, $prefix, $conn;
+	/* Shuffled or in order, per theme. Read once per round rather than in
+	   each of the seven branches below, so they cannot disagree. */
+	$ds_order = function_exists('dropshipThemeStageOrder')
+		? dropshipThemeStageOrder($conn, $_SESSION['userData']['dropship_project_id'] ?? 0)
+		: 'random';
 	if(isset($_SESSION['userData']['exo_suit'])){
 		$exo_suit = $_SESSION['userData']['exo_suit'];
 	}
@@ -400,12 +405,12 @@ function live($dropshipMarkup, $counter) {
 	if ($counter <= 7) {
 		if ($counter != 7) {
 			if($exo_suit == "true"){
-				$random = verifyRandom(1, 2, $beach_exo_random);
+				$random = dropshipStageFrame(1, 2, $beach_exo_random, $ds_order);
 				$beach_exo_random = $random;
 				$dropshipMarkup.="<div class='round' id='".$counter."'><h3>Round ".$counter." - ".evaluateText("Exo Suit")."</h3>";
 				$dropshipMarkup.="<img src='".$prefix."images/live/beach/exo/".$random.".".evaluateText("gif")."?var=123'/></div>";
 			}else{
-				$random = verifyRandom(1, 7, $beach_random);
+				$random = dropshipStageFrame(1, 7, $beach_random, $ds_order);
 				$beach_random = $random;
 				$dropshipMarkup.="<div class='round' id='".$counter."'><h3>Round ".$counter." - Survived</h3>";
 				$dropshipMarkup.="<img src='".$prefix."images/live/beach/".$random.".".evaluateText("gif")."?var=123'/></div>";
@@ -417,12 +422,12 @@ function live($dropshipMarkup, $counter) {
 	} else if ($counter <= 12) {
 		if ($counter != 12) {
 			if($exo_suit == "true"){
-				$random = verifyRandom(1, 2, $hill_exo_random);
+				$random = dropshipStageFrame(1, 2, $hill_exo_random, $ds_order);
 				$hill_exo_random = $random;
 				$dropshipMarkup.="<div class='round' id='".$counter."'><h3>Round ".$counter." - ".evaluateText("Exo Suit")."</h3>";
 				$dropshipMarkup.="<img src='".$prefix."images/live/hill/exo/".$random.".".evaluateText("gif")."?var=123'/></div>";
 			}else{
-				$random = verifyRandom(1, 6, $hill_random);
+				$random = dropshipStageFrame(1, 6, $hill_random, $ds_order);
 				$hill_random = $random;
 				$dropshipMarkup.="<div class='round' id='".$counter."'><h3>Round ".$counter." - Survived</h3>";
 				$dropshipMarkup.="<img src='".$prefix."images/live/hill/".$random.".".evaluateText("gif")."'/></div>";
@@ -433,15 +438,15 @@ function live($dropshipMarkup, $counter) {
 		}
 	} else {
 		if($exo_suit == "true"){
-			$random = verifyRandom(1, 2, $bunker_exo_random);
+			$random = dropshipStageFrame(1, 2, $bunker_exo_random, $ds_order);
 			$bunker_exo_random = $random;
 			$dropshipMarkup.="<div class='round' id='".$counter."'><h3>Round ".$counter." - ".evaluateText("Exo Suit")."</h3>";
 			$dropshipMarkup.="<img src='".$prefix."images/live/bunker/exo/".$random.".".evaluateText("gif")."?var=123'/></div>";
 		}else{
 			if($counter < 16){
-				$random = verifyRandom(1, 6, $bunker_random);
+				$random = dropshipStageFrame(1, 6, $bunker_random, $ds_order);
 			}else{
-				$random = verifyRandom(7, 12, $bunker_random);
+				$random = dropshipStageFrame(7, 12, $bunker_random, $ds_order);
 			}
 			$bunker_random = $random;
 			$dropshipMarkup.="<div class='round' id='".$counter."'><h3>Round ".$counter." - Survived</h3>";

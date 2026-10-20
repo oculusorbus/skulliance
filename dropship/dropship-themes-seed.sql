@@ -49,6 +49,11 @@ CREATE TABLE dropship_themes (
 	-- player's connected wallets live, 'skulliance' reads the already
 	-- synced nfts table. A real choice; nothing derives it.
 	trait_source     VARCHAR(16)  NOT NULL DEFAULT 'koios',
+	-- Stage art in order ('linear') or shuffled ('random', the original
+	-- behaviour). Shuffling suits frames that are interchangeable takes
+	-- on one scene; it reads as the story jumping about when they are a
+	-- sequence.
+	stage_order      VARCHAR(8)   NOT NULL DEFAULT 'random',
 	created_at       DATETIME     NOT NULL,
 	updated_at       DATETIME     DEFAULT NULL,
 	UNIQUE KEY uniq_project (project_id),
@@ -74,15 +79,15 @@ CREATE TABLE dropship_theme_text (
 -- admin can manage its files -- dropshipArtRoot() maps the 'drop-ship' slug
 -- to the FLAT folder, which is where Drop Ship's own art actually lives.
 INSERT INTO dropship_themes
-  (project_id, slug, active, extension, trait_source, created_at)
+  (project_id, slug, active, extension, trait_source, stage_order, created_at)
 VALUES
-  (1, 'drop-ship', 1, 'gif', 'koios', NOW());
+  (1, 'drop-ship', 1, 'gif', 'koios', 'random', NOW());
 
 -- ---------- project 2: dread-city (31 exact, 3 description)
 INSERT INTO dropship_themes
-  (project_id, slug, active, extension, trait_source, created_at)
+  (project_id, slug, active, extension, trait_source, stage_order, created_at)
 VALUES
-  (2, 'dread-city', 0, 'gif', 'koios', NOW());
+  (2, 'dread-city', 0, 'gif', 'koios', 'random', NOW());
 SET @t := (SELECT id FROM dropship_themes WHERE project_id = 2);
 INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
   (@t, 'exact', 'SCRIP', 'DREAD', 1),
@@ -112,9 +117,9 @@ INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_o
 
 -- ---------- project 3: filthy-mermaid (78 exact, 29 description)
 INSERT INTO dropship_themes
-  (project_id, slug, active, extension, trait_source, created_at)
+  (project_id, slug, active, extension, trait_source, stage_order, created_at)
 VALUES
-  (3, 'filthy-mermaid', 0, 'gif', 'koios', NOW());
+  (3, 'filthy-mermaid', 0, 'gif', 'koios', 'random', NOW());
 SET @t := (SELECT id FROM dropship_themes WHERE project_id = 3);
 INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
   (@t, 'exact', 'Drop Ship', 'Filthy Mermaid', 1),
@@ -202,9 +207,9 @@ INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_o
 
 -- ---------- project 4: oculus-lounge (82 exact, 29 description)
 INSERT INTO dropship_themes
-  (project_id, slug, active, extension, trait_source, created_at)
+  (project_id, slug, active, extension, trait_source, stage_order, created_at)
 VALUES
-  (4, 'oculus-lounge', 1, 'png', 'skulliance', NOW());
+  (4, 'oculus-lounge', 1, 'png', 'skulliance', 'random', NOW());
 SET @t := (SELECT id FROM dropship_themes WHERE project_id = 4);
 INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
   (@t, 'exact', 'Drop Ship', 'Oculus Lounge', 1),
