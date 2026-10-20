@@ -891,7 +891,7 @@ if(isset($_SESSION['userData']['dropship_project_id'])){
      removed "Connect a wallet" UI, dead now that wallet connection is
      read from Skulliance's own account instead. File left in place,
      unreferenced, rather than deleted outright. -->
-<script type="text/javascript" src="dropship.js?var=<?php echo rand(0,999); ?>"></script>
+<script type="text/javascript" src="<?php echo dropshipAsset('dropship.js'); ?>"></script>
 <?php
 /*
  * ANNOUNCE THE RUN, AFTER THE PAGE IS ALREADY ON THE WIRE.

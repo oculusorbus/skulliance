@@ -84,6 +84,45 @@ ok(substr_count($js, 'function showRound(') === 1, 'there is no single round pai
 ok(substr_count($js, 'showRound(currentRound)') === 2,
    'only one of the two branches paints through it');
 
+echo "\na javascript fix actually reaches the browser\n";
+/*
+ * THIS IS WHY A FIX CAME AND WENT. dashboard.php asked for
+ * "dropship.js?var=" . rand(0, 999) and the server sends
+ * Cache-Control: max-age=604800 -- a thousand urls, each cached for a
+ * WEEK. Every load rolled a die and landed either on a fresh copy or on
+ * one from before the last deploy, so the same code appeared to work,
+ * then not work, with nothing having changed. Every other page asked
+ * with no buster at all and served a week-stale copy outright.
+ *
+ * Observed, not theorised: the live dashboard was running dropship.js
+ * ?var=591 with none of the new functions in it, while the server was
+ * serving the new file correctly.
+ */
+require_once __DIR__ . '/dropship/dropship-themes.php';
+$url = dropshipAsset('dropship.js');
+ok(strpos($url, '?v=') !== false, 'the asset url carries no cache buster at all');
+ok(preg_match('/\?v=\d+$/', $url) === 1, "the buster is not a file timestamp: $url");
+/* THE SAME FILE MUST GIVE THE SAME URL, or every page view is a fresh
+   download and the cache header may as well not exist. */
+ok(dropshipAsset('dropship.js') === $url, 'the url changes between calls, so nothing ever caches');
+/* A missing file must not emit a bare "?v=" and have THAT cached. */
+ok(dropshipAsset('definitely-not-here.js') === 'definitely-not-here.js',
+   'a missing asset emits an empty buster, which then caches forever');
+/* Nothing may ask for it by a random number again, and nothing may ask
+   for it bare. */
+foreach (glob(__DIR__ . '/dropship/*.php') as $page) {
+	$psrc = rsrc('dropship/' . basename($page));
+	if (strpos($psrc, 'dropship.js') === false) continue;
+	/* A bare rand() AS the buster. header.php uses filemtime() with rand()
+	   only as a fallback, and its comment records that the collision was
+	   LIVE-TESTED for the stylesheet -- the same bug, found and fixed
+	   there, and left in place for the javascript. */
+	ok(preg_match('/\?var=<\?php echo rand\(/', $psrc) !== 1,
+	   basename($page) . ' cache-busts with a random number, which collides and serves stale js');
+	ok(strpos($psrc, 'src="dropship.js"') === false,
+	   basename($page) . ' asks for dropship.js with no buster, so it serves a week-stale copy');
+}
+
 echo "\nthe rounds really are emitted in order, so position IS the round\n";
 /*
  * The whole fix rests on this: if the run ever emitted them out of order,

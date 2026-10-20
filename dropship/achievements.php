@@ -26,7 +26,7 @@ include 'header.php';
 // Close DB Connection
 $conn->close();
 ?>
-<script type="text/javascript" src="dropship.js"></script>
+<script type="text/javascript" src="<?php echo dropshipAsset('dropship.js'); ?>"></script>
 <script type="text/javascript">
 // Reorganize achivements with unlocked at top, locked at bottom
 var unlocked = "";

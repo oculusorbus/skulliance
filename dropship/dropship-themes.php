@@ -616,3 +616,28 @@ function dropshipStageFrame($min, $max, $previous, $order = 'random') {
 	if ($next < $min || $next > $max) $next = $min;
 	return $next;
 }
+
+/**
+ * A Drop Ship asset url, cache-busted by the FILE rather than by chance.
+ *
+ * dashboard.php asked for "dropship.js?var=" . rand(0, 999), and the
+ * server sends Cache-Control: max-age=604800. A thousand possible urls,
+ * each cached for a WEEK: every page load rolls a die and lands either on
+ * a fresh copy or on one from before the last deploy. That is why a
+ * javascript fix appeared to work, then not work, then work again, with
+ * nothing having changed -- and why "it was fine earlier" was true.
+ *
+ * Every other page asked for it with no buster at all, so they served a
+ * week-stale copy until the cache expired on its own.
+ *
+ * filemtime() is the whole fix: the url changes if and only if the file
+ * does. Unchanged file, same url, still cached, no extra request; changed
+ * file, new url, every browser fetches it exactly once.
+ */
+function dropshipAsset($file) {
+	$abs = rtrim(__DIR__, '/') . '/' . ltrim($file, '/');
+	$v = @filemtime($abs);
+	/* No mtime means the file is missing or unreadable -- fall back to the
+	   bare name rather than emitting "?v=" and caching that forever. */
+	return $v ? $file . '?v=' . $v : $file;
+}

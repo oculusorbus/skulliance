@@ -29,7 +29,7 @@ function dsaClose($conn) {
 	   . '<div class="footer"><p>Drop Ship | Ohh Meed\'s Shorty Verse<br>Copyright &copy; '
 	   . '<span id="year"></span></div></div></div></body>';
 	if (is_object($conn)) $conn->close();
-	echo '<script type="text/javascript" src="dropship.js"></script></html>';
+	echo '<script type="text/javascript" src="' . dropshipAsset('dropship.js') . '"></script></html>';
 }
 
 if (!dropshipThemeAdmin()) {
