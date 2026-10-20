@@ -1092,6 +1092,47 @@ foreach (array('dropship/automate.php', 'dropship/dashboard.php') as $f) {
 	ok(strpos($fsrc, 'dropshipCapture(') !== false, "$f does not use the safe capture");
 }
 
+echo "\nthe pan can be forced on or off per theme\n";
+/* The same stand-in the media section uses, defined here because this
+   section runs first -- without it dropshipThemeMediaExtension() takes its
+   no-evaluateText() escape hatch and answers 'gif' for everything, which
+   made three of these pass for entirely the wrong reason. */
+if (!function_exists('evaluateText')) {
+	function evaluateText($t) { return $t === 'gif' ? $GLOBALS['__ext'] : $t; }
+}
+$ckb = function ($pid, $val, $ext) {
+	$GLOBALS['__ext'] = $ext;
+	$row = array('id' => 9, 'project_id' => $pid, 'slug' => 'kb');
+	if ($val !== null) $row['ken_burns'] = $val;
+	$GLOBALS['conn'] = new TConn(array($pid => $row), array(9 => array(pair('exact', 'A', 'B'))));
+	$_SESSION['userData']['dropship_project_id'] = $pid;
+	return dropshipMediaIsStill();
+};
+/* auto keeps the original rule, both ways round. */
+ok($ckb(90, 'auto', 'png') === true,  'auto no longer pans a still');
+ok($ckb(91, 'auto', 'gif') === false, 'auto pans a gif, which fights its own animation');
+ok($ckb(92, null, 'png') === true,    'a theme with no setting no longer behaves as auto');
+/* ...and the overrides beat the format in BOTH directions, which is the
+   whole point: either alone could be mistaken for the format rule. */
+ok($ckb(93, 'off', 'png') === false, 'a still forced off is still panned');
+ok($ckb(94, 'on', 'gif') === true,   'a gif forced on is not panned');
+ok($ckb(95, 'on', 'png') === true,   'a still forced on is not panned');
+ok($ckb(96, 'off', 'gif') === false, 'a gif forced off is panned');
+/* Anything unrecognised falls back to auto rather than to a guess. */
+ok($ckb(97, 'sideways', 'png') === true,  'an unknown mode does not fall back to auto on a still');
+ok($ckb(98, 'sideways', 'gif') === false, 'an unknown mode does not fall back to auto on a gif');
+unset($GLOBALS['conn'], $_SESSION['userData']['dropship_project_id']);
+$GLOBALS['__ext'] = 'gif';
+/* The admin must offer it, and must not write a value the lookup rejects. */
+$adm9 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));
+ok(strpos($adm9, 'name="ken_burns"') !== false, 'the admin cannot set the pan');
+ok(strpos($adm9, "in_array(\$_POST['ken_burns'] ?? '', array('on', 'off'), true)") !== false,
+   'the admin writes the posted pan setting through without checking it');
+ok(preg_match('/^\tken_burns\s+VARCHAR/m', $schema) === 1, 'the schema does not create ken_burns');
+ok(preg_match('/^\tken_burns\s+VARCHAR/m', $seedsql) === 1, "the seed's CREATE has no ken_burns");
+ok(substr_count($seedsql, "'auto', NOW())") === 4,
+   'the seeded themes do not all start on auto, so re-seeding changes how they look');
+
 echo "\nstage art runs in order when the theme asks for it\n";
 /*
  * Shuffling suits frames that are interchangeable takes on one scene --
@@ -1158,7 +1199,11 @@ ok(substr_count($ds2, ', $ds_order)') === 7,
 /* The column has to exist for any of it to be settable. */
 ok(preg_match('/^\tstage_order\s+VARCHAR/m', $schema) === 1, 'the schema does not create stage_order');
 ok(preg_match('/^\tstage_order\s+VARCHAR/m', $seedsql) === 1, "the seed's CREATE has no stage_order");
-ok(substr_count($seedsql, "'random', NOW())") === 4,
+/* Matched on the column itself, not on its position at the end of the
+   row -- adding ken_burns after it broke this for a reason that has
+   nothing to do with stage order. */
+ok(substr_count($seedsql, "'random', 'auto', NOW())") === 4
+   || substr_count($seedsql, ", 'random',") === 4,
    'the seeded themes do not all keep the original shuffled behaviour');
 $adm8 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));
 ok(strpos($adm8, 'name="stage_order"') !== false, 'the admin cannot set the stage order');
@@ -1538,6 +1583,14 @@ function media_is_still_for($ext) {
 if (!function_exists('evaluateText')) {
 	function evaluateText($t) { return $t === 'gif' ? $GLOBALS['__ext'] : $t; }
 }
+/*
+ * THE THEME CAN OVERRIDE THE FORMAT. 'auto' is the original rule and what
+ * every theme starts on, so nothing changes until somebody chooses; a
+ * still whose art is already a composed scene does not want drifting, and
+ * a gif whose frames barely move might.
+ *
+ * These run with no theme row, so 'auto' is in force throughout.
+ */
 ok(media_is_still_for('gif') === false, 'a gif theme is given the pan, which fights its own animation');
 ok(media_is_still_for('png') === true, 'a png theme gets no pan, so its art sits dead on the screen');
 ok(media_is_still_for('PNG') === true,

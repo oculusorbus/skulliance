@@ -90,6 +90,9 @@ CREATE TABLE IF NOT EXISTS dropship_themes (
 	-- on one scene; it reads as the story jumping about when they are a
 	-- sequence.
 	stage_order      VARCHAR(8)   NOT NULL DEFAULT 'random',
+	-- Ken Burns pan: 'auto' follows the format (a still drifts, a gif does
+	-- not), 'on' and 'off' override it. See .image-wrap in flexbox.css.
+	ken_burns        VARCHAR(8)   NOT NULL DEFAULT 'auto',
 	created_at       DATETIME     NOT NULL,
 	updated_at       DATETIME     DEFAULT NULL,
 	UNIQUE KEY uniq_project (project_id),

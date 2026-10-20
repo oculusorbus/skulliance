@@ -282,6 +282,27 @@ function dropshipMediaExtension() {
  * have had a pan dragged across its own animation.
  */
 function dropshipMediaIsStill() {
+	/*
+	 * THE THEME CAN OVERRIDE, because the format is a good guess and not
+	 * an answer. 'auto' keeps the original rule -- a still gets the pan, a
+	 * gif does not -- and is what every theme starts on, so nothing
+	 * changes until somebody chooses. 'on' and 'off' say so outright: a
+	 * still whose art is already a composed scene does not want drifting,
+	 * and a gif whose frames barely move might.
+	 */
+	$mode = 'auto';
+	if (function_exists('dropshipThemeConfig') && isset($GLOBALS['conn'])
+	    && isset($_SESSION['userData']['dropship_project_id'])) {
+		$cfg = dropshipThemeConfig($GLOBALS['conn'], $_SESSION['userData']['dropship_project_id']);
+		if ($cfg && !empty($cfg['ken_burns'])) $mode = $cfg['ken_burns'];
+	}
+	/* ONLY THESE TWO OVERRIDE. Anything else -- 'auto', a blank, a value
+	   from a newer admin than this code -- falls through to the format
+	   rule, which is the safe answer rather than a guess. Normalising
+	   $mode before this point added a branch that could not change the
+	   outcome, since both comparisons are already exact. */
+	if ($mode === 'on')  return true;
+	if ($mode === 'off') return false;
 	return dropshipMediaExtension() !== 'gif';
 }
 

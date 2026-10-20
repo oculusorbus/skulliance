@@ -59,7 +59,9 @@ if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		      . ", trait_source = '"    . (($_POST['trait_source'] ?? '') === 'skulliance'
 		                                   ? 'skulliance' : 'koios') . "'"
 		      . ", stage_order = '"     . (($_POST['stage_order'] ?? '') === 'linear'
-		                                   ? 'linear' : 'random') . "'";
+		                                   ? 'linear' : 'random') . "'"
+		      . ", ken_burns = '"       . (in_array($_POST['ken_burns'] ?? '', array('on', 'off'), true)
+		                                   ? $_POST['ken_burns'] : 'auto') . "'";
 		/* NO LABEL COLUMNS. Currency, squad and character were the words
 		   SCRIP, Super Soldier and Troops, which the wording below already
 		   owns -- two places to change one word, and the dashboard read the
@@ -232,6 +234,13 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
 			<b>either</b> setting below, with no error anywhere. Set
 			<code>projects.policy_id</code> for this project first.</div>
 		<?php endif; ?></div>
+	<div><label>Ken Burns pan</label>
+		<?php $kb = $theme && !empty($theme['ken_burns']) ? $theme['ken_burns'] : 'auto'; ?>
+		<select name="ken_burns">
+			<option value="auto"<?php echo !in_array($kb, array('on', 'off'), true) ? ' selected' : ''; ?>>Follow the format &mdash; stills drift, gifs do not</option>
+			<option value="on"<?php echo $kb === 'on' ? ' selected' : ''; ?>>Always on</option>
+			<option value="off"<?php echo $kb === 'off' ? ' selected' : ''; ?>>Always off</option>
+		</select></div>
 	<div><label>Stage art order</label>
 		<?php $so = $theme && !empty($theme['stage_order']) ? $theme['stage_order'] : 'random'; ?>
 		<select name="stage_order">
