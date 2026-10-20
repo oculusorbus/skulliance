@@ -1505,11 +1505,21 @@ echo "\nanimation can be switched on for a still theme that has gifs\n";
 $probes = dropshipThemeGifProbes();
 ok(count($probes) === 2, 'the gif check no longer probes two files: ' . count($probes));
 require_once __DIR__ . '/dropship/dropship-art.php';
+/* ONLY THE ART. A manifest entry spelled the same under gif and under png
+   is chrome asked for by literal name -- images/vip.gif, which every theme
+   needs whatever its art format is -- and it is listed LAST, so taking
+   every .gif made it the second probe and "has this theme animated art"
+   quietly became "has this theme a Discord thumbnail". */
+$fixed_man = array_flip(dropshipArtManifest('png'));
 $all_gif = array_values(array_filter(dropshipArtManifest('gif'),
-	function ($r) { return substr($r, -4) === '.gif'; }));
+	function ($r) use ($fixed_man) {
+		return substr($r, -4) === '.gif' && !isset($fixed_man[$r]);
+	}));
 foreach ($probes as $probe) {
 	ok(in_array($probe, $all_gif, true),
 	   "the gif probe '$probe' is not in the manifest, so it can never be found");
+	ok(!isset($fixed_man[$probe]),
+	   "the gif probe '$probe' is asked for under every format, so it says nothing about animation");
 }
 ok($probes[0] === $all_gif[0] && $probes[1] === $all_gif[count($all_gif) - 1],
    'the probes are not the first and last gif, so a half-uploaded set reads as finished');
@@ -1796,6 +1806,135 @@ foreach (array('themes', 'theme_text') as $t) {
 	ok(strpos($schema, 'CREATE TABLE IF NOT EXISTS ' . $t) !== false,
 	   "the schema has no CREATE for $t, so nobody can create it");
 }
+
+
+/* ------------------------------------------------------------------ */
+/*
+ * THE IMAGE ON A DISCORD POST.
+ *
+ * Reported as "I'm not seeing images attached and when I do, they are drop
+ * ship proper". Both halves were real and they had different causes:
+ *
+ *   NOT ATTACHED -- the embed thumbnail was built from the global $prefix,
+ *   which dropship.php sets and automate.php does not include. automate()
+ *   has a $prefix of its own but it is a LOCAL, so discordmsg()'s
+ *   `global $prefix` found nothing and the weekly Game Over / New Game
+ *   posts went out asking for "https://skulliance.ioimages/vip.gif".
+ *
+ *   DROP SHIP PROPER -- images/vip.gif was not in the art manifest at all,
+ *   so it had no upload slot and no theme could ever have its own; and
+ *   images/dropship.jpg, the big image on every post, was in the manifest
+ *   but parked in the trailing "Everything else / page furniture and
+ *   placeholders" band with no row header, which is why it read as
+ *   something that could not be themed.
+ */
+echo "\nthe discord image is the theme's, and it is manageable\n";
+
+$wh_src = file_get_contents(__DIR__ . '/dropship/webhooks.php');
+ok(strpos($wh_src, 'global $prefix') === false,
+   'discordmsg() still takes its image path off a global that automate.php never sets');
+ok(strpos($wh_src, "dropshipThemeImageUrl(\$GLOBALS['conn'], \$project_id, 'images/vip.gif')") !== false,
+   'the thumbnail is not resolved from the project being announced');
+
+/* NO HAND-BUILT ANNOUNCEMENT PATHS LEFT. Every one of them was a second
+   copy of the flat-vs-nested rule, and the point of the helper is that
+   there is one. */
+foreach (array('dashboard.php', 'automate.php') as $f) {
+	$src = file_get_contents(__DIR__ . '/dropship/' . $f);
+	ok(strpos($src, 'skulliance.io".$prefix') === false,
+	   "$f still builds an announcement image url out of \$prefix by hand");
+	ok(preg_match('/\$(?:leaderboard_)?imageurl = dropshipThemeImageUrl\(/', $src) === 1
+	   || preg_match('/dropshipThemeImageUrl\(/', $src) === 1,
+	   "$f does not resolve its announcement image through the theme");
+}
+
+/* THE EMBED ITSELF, EXECUTED. Discord rejects a whole embed over a url it
+   cannot parse, so "no file for this theme" has to mean the key is absent,
+   not present and empty -- otherwise the fix for a missing picture costs
+   the entire announcement. */
+preg_match('/\/\*\*\n \* The embed Discord is sent.*?\n\}\n/s', $wh_src, $wm);
+ok(!empty($wm), 'the embed builder could not be lifted, so nothing below is proving anything');
+if (!empty($wm)) {
+	eval('?>' . '<?php ' . $wm[0]);
+	$e_both = dropshipDiscordEmbed('T', 'D', 'u', 'ts', 'https://x/i.jpg', 'https://x/v.gif');
+	$e_none = dropshipDiscordEmbed('T', 'D', 'u', 'ts', '', '');
+	$e_img  = dropshipDiscordEmbed('T', 'D', 'u', 'ts', 'https://x/i.jpg', '');
+	ok(isset($e_both['embeds'][0]['image']['url'])
+	   && $e_both['embeds'][0]['image']['url'] === 'https://x/i.jpg',
+	   'the image url given is not the one on the embed');
+	ok(isset($e_both['embeds'][0]['thumbnail']['url'])
+	   && $e_both['embeds'][0]['thumbnail']['url'] === 'https://x/v.gif',
+	   'the thumbnail url given is not the one on the embed');
+	ok(!array_key_exists('image', $e_none['embeds'][0]),
+	   'an embed with no image carries an empty image url, which Discord rejects outright');
+	ok(!array_key_exists('thumbnail', $e_none['embeds'][0]),
+	   'an embed with no thumbnail carries an empty thumbnail url, which Discord rejects outright');
+	ok(!array_key_exists('thumbnail', $e_img['embeds'][0]),
+	   'a theme with art but no thumbnail still gets a thumbnail key');
+	ok(array_key_exists('image', $e_img['embeds'][0]),
+	   'the image is dropped when the thumbnail is missing');
+}
+
+/* dropshipThemeImageUrl() ON REAL FILES. A url for a file that is not
+   there is exactly the bug -- dread-city has no images/vip.gif and still
+   got one -- so the on-disk check is the whole function. */
+require_once __DIR__ . '/dropship/dropship-art.php';
+$ds_dir = __DIR__ . '/dropship';
+$tmp_slug = 'harness-theme-' . getmypid();
+$tmp_root = $ds_dir . '/' . $tmp_slug;
+$built = @mkdir($tmp_root . '/images', 0777, true);
+ok($built, 'could not build a throwaway theme to probe, so the url checks below prove nothing');
+if ($built) {
+	file_put_contents($tmp_root . '/images/dropship.jpg', 'x');
+	$tc = new TConn(array(1091 => array('id' => 1091, 'project_id' => 1091, 'slug' => $tmp_slug),
+	                      1092 => array('id' => 1092, 'project_id' => 1092, 'slug' => 'drop-ship')),
+	                array());
+	ok(dropshipThemeImageUrl($tc, 1091, 'images/dropship.jpg')
+	   === 'https://skulliance.io/staking/dropship/' . $tmp_slug . '/images/dropship.jpg',
+	   'a reskin does not get its own nested folder in the url');
+	/* THE WHOLE POINT. dread-city has no images/vip.gif and still got a url
+	   for it, which Discord answers by dropping the art. */
+	ok(dropshipThemeImageUrl($tc, 1091, 'images/vip.gif') === '',
+	   'a theme with no copy of the file still gets a url for it, which 404s on Discord');
+	/* THE PATH RULE WITHOUT THE DISK, because the art is FTPed and
+	   dropship/images/ is not in the repository -- and a harness that
+	   created it would overwrite the live file if it ran on the server. */
+	ok(dropshipThemeImagePath($tc, 1092, 'images/dropship.jpg') === 'images/dropship.jpg',
+	   "Drop Ship's own art is not flat, so its own posts point into a folder that does not exist");
+	ok(dropshipThemeImagePath($tc, 1091, 'images/dropship.jpg')
+	   === $tmp_slug . '/images/dropship.jpg',
+	   'a reskin does not nest under its slug');
+	/* No theme row at all -- the cron for an unlisted project. Flat, not a
+	   path with an empty folder in the middle of it. */
+	ok(dropshipThemeImagePath($tc, 1099, 'images/dropship.jpg') === 'images/dropship.jpg',
+	   'a project with no theme row gets a path with an empty folder in it');
+	@unlink($tmp_root . '/images/dropship.jpg');
+	@rmdir($tmp_root . '/images');
+	@rmdir($tmp_root);
+}
+
+/* MANAGEABLE, AND FINDABLE. In the manifest so it has an upload slot at
+   all, and in a section named for what it is rather than in the leftovers
+   bin at the bottom of seventy slots. */
+$man = dropshipArtManifest('png');
+foreach (array('images/dropship.jpg', 'images/vip.gif') as $rel) {
+	ok(in_array($rel, $man, true),
+	   "$rel is not in the manifest, so theme art gives it no upload slot");
+}
+$groups = dropshipArtGroups('png');
+$where = '';
+foreach ($groups as $gname => $g) {
+	if (in_array('images/vip.gif', $g['files'], true)) $where = $gname;
+}
+ok($where !== '', 'images/vip.gif is in no art group, so the page never renders it');
+ok($where !== 'Everything else',
+   'the discord art is still in the leftovers bin, which is where nobody found it');
+ok(isset($groups[$where]) && in_array('images/dropship.jpg', $groups[$where]['files'], true),
+   'the two discord images are in different sections, so changing the post means hunting twice');
+ok(dropshipArtTitle('images/vip.gif') !== 'Vip',
+   'the thumbnail slot is labelled by its filename, which says nothing about what it is');
+ok(stripos(dropshipArtTitle('images/dropship.jpg'), 'discord') !== false,
+   'the big slot does not say it is the Discord image');
 
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);

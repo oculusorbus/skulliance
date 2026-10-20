@@ -68,7 +68,7 @@ if($_SESSION['userData']['discord_id'] == "772831523899965440") {
 		/* Same capture, same reason: anything PHP prints while the buffer
 		   is open would be posted into Discord with the leaderboard. */
 		$description = dropshipCapture(function () use ($conn) { checkLeaderboard($conn, "true"); });
-		$imageurl = "https://skulliance.io".$prefix."images/dropship.jpg";
+		$imageurl = dropshipThemeImageUrl($conn, $_SESSION['userData']['dropship_project_id'], 'images/dropship.jpg');
 		discordmsg($title, evaluateText($description), $imageurl, $_SESSION['userData']['dropship_project_id']);
 		deactivateGame($conn);
 	}
@@ -76,7 +76,7 @@ if($_SESSION['userData']['discord_id'] == "772831523899965440") {
 		createGame($conn, $_POST['name'], $_POST['prizes']);
 		$title = "New Game ".$_POST['name'];
 		$description = "A new game of ".getProjectName($conn)." has been created.";
-		$imageurl = "https://skulliance.io".$prefix."images/dropship.jpg";
+		$imageurl = dropshipThemeImageUrl($conn, $_SESSION['userData']['dropship_project_id'], 'images/dropship.jpg');
 		discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
 	}
 }
@@ -950,7 +950,16 @@ if(isset($_SESSION['userData']['dropship_project_id'])){
 							   and all. */
 							$list = dropshipCapture(function () use ($conn) { checkPlayerItems($conn); });
 							$description = $_SESSION['userData']['name']." died during Round ".$_SESSION['userData']['score']."\n".evaluateText($list);
-							$imageurl = "https://skulliance.io".$prefix."images/die/".rand(1,3).".gif";
+							/* ONE ROLL, THE THEME'S OWN FORMAT. The extension was
+							   hardcoded .gif while the game itself asks for
+							   evaluateText("gif"), so a theme whose art is png would
+							   have had Discord fetch a file the run never uses. Falls
+							   back to gif on the same frame rather than re-rolling,
+							   because a theme can ship both sets. */
+							$ds_die = rand(1,3);
+							$ds_pid = $_SESSION['userData']['dropship_project_id'];
+							$imageurl = dropshipThemeImageUrl($conn, $ds_pid, 'images/die/'.$ds_die.'.'.dropshipMediaExtension());
+							if ($imageurl === '') $imageurl = dropshipThemeImageUrl($conn, $ds_pid, 'images/die/'.$ds_die.'.gif');
 							discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
 							$_SESSION['userData']['notification'] = "true";
 
@@ -968,7 +977,7 @@ if(isset($_SESSION['userData']['dropship_project_id'])){
 							if(isset($_SESSION['userData']['game_id']) && ($_SESSION['userData']['dropship_project_id'] == 1 || $_SESSION['userData']['dropship_project_id'] == 4)){
 								$leaderboard_list = dropshipCapture(function () use ($conn) { checkLeaderboard($conn, "true"); });
 								if($leaderboard_list != ""){
-									$leaderboard_imageurl = "https://skulliance.io".$prefix."images/dropship.jpg";
+									$leaderboard_imageurl = dropshipThemeImageUrl($conn, $_SESSION['userData']['dropship_project_id'], 'images/dropship.jpg');
 									discordmsg("📊 ".getProjectName($conn)." Leaderboard", $leaderboard_list, $leaderboard_imageurl, $_SESSION['userData']['dropship_project_id']);
 								}
 							}

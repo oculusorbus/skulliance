@@ -82,8 +82,14 @@ function dropshipArtManifest($ext = 'gif') {
 	}
 	foreach (dropshipArtEquipment() as $e) $m[] = "images/equipment/$e.$ext";
 
-	/* Chrome the pages and the Discord embeds reach for. */
+	/* Chrome the pages and the Discord embeds reach for. Both Discord
+	   files are asked for by LITERAL NAME in the code -- not through the
+	   theme's extension -- so they are listed literally here too. vip.gif
+	   was missing from this list entirely, which is why it could not be
+	   uploaded for a theme: dread-city still has none and its embeds went
+	   out with no thumbnail. */
 	$m[] = 'images/dropship.jpg';
+	$m[] = 'images/vip.gif';
 	$m[] = 'images/nfts/placeholder.jpg';
 
 	return $m;
@@ -240,6 +246,16 @@ function dropshipArtGroups($ext = 'gif') {
 		                        'match' => '#^images/weapons/#'),
 		'Equipment'    => array('note' => 'One frame each, shown when the item fires.',
 		                        'match' => '#^images/equipment/#'),
+		/* ITS OWN SECTION, because these two were the one thing in here
+		   nobody could find. They sat in the trailing "Everything else /
+		   page furniture and placeholders" band, headerless, at the bottom
+		   of seventy slots -- so the image on every Discord post read as
+		   something that could not be themed at all, and stayed Drop
+		   Ship's. */
+		'Discord'      => array('note' => 'What the announcements carry: the big image on every post, '
+		                                . 'and the small thumbnail beside the title. Change these and '
+		                                . 'the Game Over, New Game, death and leaderboard posts all follow.',
+		                        'match' => '#^images/(dropship\.jpg|vip\.gif)$#'),
 	);
 	$out = array();
 	$taken = array();
@@ -500,7 +516,8 @@ function dropshipArtTitle($rel) {
 	}
 
 	if (strpos($rel, 'images/nfts/placeholder') === 0) return 'Empty squad slot';
-	if (strpos($rel, 'images/dropship.') === 0)        return 'The image Discord posts';
+	if ($rel === 'images/vip.gif')                     return 'Discord thumbnail, beside the title';
+	if (strpos($rel, 'images/dropship.') === 0)        return 'Discord image, on every post';
 	return ucwords(str_replace(array('-', '_'), ' ', $name));
 }
 

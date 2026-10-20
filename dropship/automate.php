@@ -71,13 +71,11 @@ function automate($conn, $project_id){
 	   /home/.../db.php on line 2220", absolute server path and all, into a
 	   channel players read. */
 	$description = dropshipCapture(function () use ($conn) { checkLeaderboard($conn, "true"); });
-	// Drop Ship's own assets (prefix "drop-ship") sit flat under
-	// dropship/images/; every other reskin nests under its own
-	// dropship/<prefix>/images/ -- confirmed live via curl, see
-	// dropship.php's own $prefix comment for the full story.
-	$imageurl = ($prefix === "drop-ship")
-		? "https://skulliance.io/staking/dropship/images/dropship.jpg"
-		: "https://skulliance.io/staking/dropship/".$prefix."/images/dropship.jpg";
+	/* The theme's own copy, resolved from its theme row and checked on
+	   disk -- one rule, shared with the dashboard's posts and with the
+	   embed thumbnail. The hand-built path here was right, but it was the
+	   third copy of the flat-vs-nested rule in the file. */
+	$imageurl = dropshipThemeImageUrl($conn, $project_id, 'images/dropship.jpg');
 	discordmsg($title, evaluateText($description), $imageurl, $_SESSION['userData']['dropship_project_id']);
 	deactivateGame($conn);
 	}
@@ -86,13 +84,11 @@ function automate($conn, $project_id){
 	createGame($conn, $prizes, 3);
 	$title = "New Game ".$prizes;
 	$description = "A new game of ".getProjectName($conn)." has been created.";
-	// Drop Ship's own assets (prefix "drop-ship") sit flat under
-	// dropship/images/; every other reskin nests under its own
-	// dropship/<prefix>/images/ -- confirmed live via curl, see
-	// dropship.php's own $prefix comment for the full story.
-	$imageurl = ($prefix === "drop-ship")
-		? "https://skulliance.io/staking/dropship/images/dropship.jpg"
-		: "https://skulliance.io/staking/dropship/".$prefix."/images/dropship.jpg";
+	/* The theme's own copy, resolved from its theme row and checked on
+	   disk -- one rule, shared with the dashboard's posts and with the
+	   embed thumbnail. The hand-built path here was right, but it was the
+	   third copy of the flat-vs-nested rule in the file. */
+	$imageurl = dropshipThemeImageUrl($conn, $project_id, 'images/dropship.jpg');
 	discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
 }
 ?>

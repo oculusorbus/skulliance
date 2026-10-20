@@ -3,34 +3,18 @@ include('credentials/webhooks_credentials.php');
 //
 //-- https://gist.github.com/Mo45/cb0813cb8a6ebcd6524f6a36d4f8862c
 //
-    function discordmsg($title, $description, $imageurl, $project_id, $url="") {
-		global $prefix;
-		// Delay execution by 1 minute to allow the player to finish their game before sending results to Discord
-		if($url == ""){
-			// dashboard.php, not index.php -- index.php is just a redirect
-			// into Skulliance's login now, a dead end as a Discord embed link.
-			$url = "https://skulliance.io/staking/dropship/dashboard.php";
-		}
-		/*
-		 * DROP SHIP'S OWN ACCESSOR, by whichever name it has.
-		 *
-		 * Both apps' credentials files declare a getWebhook(): Skulliance's
-		 * takes no arguments, Drop Ship's takes a project id. They are
-		 * different functions with one name, so whichever file loads second
-		 * is a fatal "cannot redeclare" -- which is what killed the play
-		 * page the first time a trait drop fired, because awarding one
-		 * loads the platform's webhooks.php before this file is included.
-		 *
-		 * dropshipGetWebhook() is the way out: rename the function in
-		 * dropship/credentials/webhooks_credentials.php and the clash is
-		 * gone for good. This prefers it and falls back, so the rename can
-		 * happen on the server without the code having to land first.
-		 */
-		$webhook = function_exists('dropshipGetWebhook')
-			? dropshipGetWebhook($project_id)
-			: getWebhook($project_id);
-	    $timestamp = date("c", strtotime("now"));
-	    $msg = json_encode([
+/**
+ * The embed Discord is sent, as a value.
+ *
+ * SEPARATE SO IT CAN BE CHECKED. The image and the thumbnail are attached
+ * only when there is a url for them, because Discord answers an embed it
+ * cannot parse by rejecting the whole post -- an empty "url" would have
+ * cost the announcement, not just the picture -- and that rule was buried
+ * inside a function that also reads credentials and makes curl calls, so
+ * nothing could execute it.
+ */
+function dropshipDiscordEmbed($title, $description, $url, $timestamp, $imageurl, $thumburl) {
+	$embed = [
 	    // Message
 	    //"content" => "",
 
@@ -75,15 +59,10 @@ include('credentials/webhooks_credentials.php');
 		                "icon_url" => "https://skulliance.io/staking/dropship/images/vip.gif"
 		            ],*/
 
-		            // Embed image
-		            "image" => [
-		                "url" => $imageurl
-		            ],
-
-		            // thumbnail
-		            "thumbnail" => [
-		                "url" => "https://skulliance.io".$prefix."images/vip.gif"
-		            ],
+		            /* image and thumbnail are ATTACHED BELOW, not here --
+		               Discord rejects the whole embed over a url it cannot
+		               parse, and an empty string is one of those. A post with
+		               no art beats no post at all. */
 
 		            // Author name & url
 					/*
@@ -111,7 +90,69 @@ include('credentials/webhooks_credentials.php');
 		            ]*/
 		        ]
 		    ]
-		], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+	];
+
+	/* A url only, never an empty key: Discord answers an unparseable
+	   url by rejecting the WHOLE embed, so an empty string here loses the
+	   post as well as the picture. No art beats no announcement. */
+	if ($imageurl !== '' && $imageurl !== null) {
+		$embed["embeds"][0]["image"] = ["url" => $imageurl];
+	}
+	if ($thumburl !== '') {
+		$embed["embeds"][0]["thumbnail"] = ["url" => $thumburl];
+	}
+
+	return $embed;
+}
+
+    function discordmsg($title, $description, $imageurl, $project_id, $url="") {
+		// Delay execution by 1 minute to allow the player to finish their game before sending results to Discord
+		if($url == ""){
+			// dashboard.php, not index.php -- index.php is just a redirect
+			// into Skulliance's login now, a dead end as a Discord embed link.
+			$url = "https://skulliance.io/staking/dropship/dashboard.php";
+		}
+		/*
+		 * DROP SHIP'S OWN ACCESSOR, by whichever name it has.
+		 *
+		 * Both apps' credentials files declare a getWebhook(): Skulliance's
+		 * takes no arguments, Drop Ship's takes a project id. They are
+		 * different functions with one name, so whichever file loads second
+		 * is a fatal "cannot redeclare" -- which is what killed the play
+		 * page the first time a trait drop fired, because awarding one
+		 * loads the platform's webhooks.php before this file is included.
+		 *
+		 * dropshipGetWebhook() is the way out: rename the function in
+		 * dropship/credentials/webhooks_credentials.php and the clash is
+		 * gone for good. This prefers it and falls back, so the rename can
+		 * happen on the server without the code having to land first.
+		 */
+		$webhook = function_exists('dropshipGetWebhook')
+			? dropshipGetWebhook($project_id)
+			: getWebhook($project_id);
+	    $timestamp = date("c", strtotime("now"));
+
+		/*
+		 * THE THUMBNAIL IS THE THEME'S, FOUND BY PROJECT, NOT BY $prefix.
+		 *
+		 * It was "https://skulliance.io".$prefix."images/vip.gif" off the
+		 * global, which automate.php never sets -- so every Game Over and New
+		 * Game post the weekly cron sent carried a malformed url and Discord
+		 * dropped the art. dropshipThemeImageUrl() reads the slug off the
+		 * theme row for THIS project and checks the file is on disk, so a
+		 * theme with no copy (dread-city has no images/vip.gif) gets no
+		 * thumbnail rather than a broken one or Drop Ship's.
+		 *
+		 * function_exists because announcements.php includes this file on its
+		 * own, without db.php and so without dropship-themes.php.
+		 */
+		$thumburl = '';
+		if (function_exists('dropshipThemeImageUrl') && isset($GLOBALS['conn'])) {
+			$thumburl = dropshipThemeImageUrl($GLOBALS['conn'], $project_id, 'images/vip.gif');
+		}
+
+	    $msg = json_encode(dropshipDiscordEmbed($title, $description, $url, $timestamp, $imageurl, $thumburl),
+	                       JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
 
 		// Mirrored: the existing project webhook (e.g. Ohh Meed's own
 		// server for Drop Ship/Dread City -- unchanged, that's where the

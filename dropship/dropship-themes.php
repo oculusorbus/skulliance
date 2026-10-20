@@ -503,6 +503,65 @@ function dropshipArtBackgroundSlot($slug) {
 	);
 }
 
+/**
+ * A theme's copy of one asset, as an absolute url, or '' when it has none.
+ *
+ * FOR DISCORD, which cannot be handed a relative path and cannot be told
+ * "that one 404'd, use the other". Every announcement built its image url
+ * by hand out of the global $prefix, which meant two separate ways to be
+ * wrong and both of them happened:
+ *
+ *   - $prefix is set by dropship.php, and automate.php -- the weekly cron
+ *     that posts Game Over and New Game -- does not include dropship.php.
+ *     Its own $prefix is a local inside automate(), so discordmsg()'s
+ *     `global $prefix` found nothing and the thumbnail went out as
+ *     "https://skulliance.ioimages/vip.gif". Discord drops an embed image
+ *     it cannot fetch, silently, which is why the posts had no art.
+ *
+ *   - A theme that has no copy of the file still got a url, pointing into
+ *     its own folder, which 404s. dread-city has no images/vip.gif.
+ *
+ * So the slug comes from the THEME ROW for the project being announced --
+ * $project_id is the one thing every discordmsg() call already has -- and
+ * the file is checked on disk before its url is handed over. '' means "do
+ * not put an image on this embed", which is the right answer: Drop Ship's
+ * own logo in Dread City's channel is the thing that was complained about.
+ */
+function dropshipThemeImageUrl($conn, $project_id, $rel) {
+	$path = dropshipThemeImagePath($conn, $project_id, $rel);
+	if ($path === '') return '';
+	if (!is_file(rtrim(__DIR__, '/') . '/' . $path)) return '';
+	return 'https://skulliance.io/staking/dropship/' . $path;
+}
+
+/**
+ * Where that asset would live, whether or not it is there.
+ *
+ * SPLIT FROM THE URL so the path rule can be checked on its own. The art
+ * is FTPed and is not in the repository, so the only way to exercise the
+ * flat-vs-nested rule off the server is to ask for the path without the
+ * on-disk test -- and the alternative, having a harness write into
+ * dropship/images/, would overwrite the live file if it were ever run
+ * there.
+ *
+ * Returns a path relative to the dropship directory, or '' if the slug
+ * cannot be made into one.
+ */
+function dropshipThemeImagePath($conn, $project_id, $rel) {
+	$slug = '';
+	if (is_object($conn) && function_exists('dropshipThemeConfig')) {
+		$cfg = dropshipThemeConfig($conn, $project_id);
+		if ($cfg && !empty($cfg['slug'])) $slug = $cfg['slug'];
+	}
+	/* No theme row means Drop Ship's own flat art -- the cron can run for a
+	   project that has none, and an empty slug would put an empty folder in
+	   the middle of the url. */
+	if ($slug === '') $slug = 'drop-ship';
+	$root = dropshipThemeRoot($slug);
+	if ($root === null) return '';
+	return $root . ltrim($rel, '/');
+}
+
 function dropshipThemeBackground($slug) {
 	/* ONE RULE, ONE PLACE. This and the slot builder both decided whether a
 	   theme nests, and a mutation that broke the rule in one of them left
@@ -554,9 +613,21 @@ function dropshipThemeGifProbes() {
 	if ($probes !== null) return $probes;
 	$probes = array();
 	require_once __DIR__ . '/dropship-art.php';
+	/*
+	 * THE ANIMATED SET IS WHAT CHANGES WITH THE EXTENSION, nothing else.
+	 * Taking every .gif in the manifest also took the chrome that is asked
+	 * for by literal name -- images/vip.gif is a .gif under a png theme
+	 * too -- and because it is listed LAST it became the second probe, so
+	 * "does this theme have animated art" started answering "does it have
+	 * a Discord thumbnail". An entry that is spelled the same in the gif
+	 * manifest and the png one is not part of either set.
+	 */
+	$fixed = array_flip(dropshipArtManifest('png'));
 	$gifs = array();
 	foreach (dropshipArtManifest('gif') as $rel) {
-		if (substr($rel, -4) === '.gif') $gifs[] = $rel;
+		if (substr($rel, -4) !== '.gif') continue;
+		if (isset($fixed[$rel])) continue;
+		$gifs[] = $rel;
 	}
 	if (!$gifs) return $probes;
 	$probes = array_values(array_unique(array($gifs[0], $gifs[count($gifs) - 1])));
