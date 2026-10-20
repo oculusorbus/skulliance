@@ -35,10 +35,32 @@
  * Deliberately NOT the Skulliance admin_require(): this is a different app
  * with its own session shape, and pulling admin-lib.php in to reuse one
  * boolean would drag the platform's own db.php behind it.
+ *
+ * DROP SHIP USER 1 IS A VALID KEY, which is worth saying because it looks
+ * like it should not be. The Drop Ship users table carries NO project_id --
+ * checkUser() matches on discord_id alone and there is one row per person
+ * for the whole app -- so an id is a stable global identity here, not a
+ * per-project counter that means a different person on each theme.
  */
 function dropshipThemeAdmin() {
-	if (empty($_SESSION['userData']['discord_id'])) return false;
-	$me = (string)$_SESSION['userData']['discord_id'];
+	$ud = isset($_SESSION['userData']) ? $_SESSION['userData'] : array();
+
+	/*
+	 * The owner, by Drop Ship user id.
+	 *
+	 * ctype_digit BEFORE the cast, because PHP reads (int)'1x' as 1 and that
+	 * would admit anything merely starting with the digit. checkUser() always
+	 * writes a clean strval() of the row id, so a non-numeric value here only
+	 * ever arrives from a restored session -- exactly the case worth being
+	 * strict about.
+	 */
+	if (isset($ud['dropship_user_id'])) {
+		$uid = $ud['dropship_user_id'];
+		if ((is_int($uid) || ctype_digit((string)$uid)) && (int)$uid === 1) return true;
+	}
+
+	if (empty($ud['discord_id'])) return false;
+	$me = (string)$ud['discord_id'];
 	$allowed = array('772831523899965440');          /* same id dashboard.php gates on */
 	foreach (array('discordid_oculusorbus', 'discordid_ohhmeed', 'discordid_kryptman') as $g) {
 		if (!empty($GLOBALS[$g])) $allowed[] = (string)$GLOBALS[$g];

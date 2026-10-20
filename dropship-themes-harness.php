@@ -132,6 +132,25 @@ ok(dropshipThemeAdmin() === true, 'the admin cannot edit themes');
 $GLOBALS['discordid_ohhmeed'] = '424242';
 $_SESSION['userData'] = array('discord_id' => '424242');
 ok(dropshipThemeAdmin() === true, 'the credential globals are not honoured');
+/*
+ * DROP SHIP USER 1 IS THE OWNER. Sound as a key because the Drop Ship users
+ * table has no project_id -- checkUser() matches on discord_id alone, one
+ * row per person for the whole app -- so an id is a stable identity here
+ * rather than a per-project counter meaning someone different on each theme.
+ * Compared as an integer because the session stores it as a string.
+ */
+$_SESSION['userData'] = array('dropship_user_id' => '1');
+ok(dropshipThemeAdmin() === true, 'Drop Ship user 1 cannot edit themes');
+$_SESSION['userData'] = array('dropship_user_id' => 1);
+ok(dropshipThemeAdmin() === true, 'user 1 fails when the id is an int rather than a string');
+/* AND NOBODY ELSE RIDES IN ON IT. An off-by-one here hands the whole admin
+   to every registered player, which is why the ids either side are tested
+   and not just the happy path. */
+foreach (array('2', 2, '', '0', 'x', '1x', '-1') as $other) {
+	$_SESSION['userData'] = array('dropship_user_id' => $other);
+	ok(dropshipThemeAdmin() === false,
+	   'dropship_user_id ' . var_export($other, true) . ' was granted admin');
+}
 
 echo "\nevaluateText asks the table first and falls back\n";
 $db = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
@@ -148,6 +167,16 @@ ok(strpos($db, "function_exists('dropshipThemeText')") !== false,
    'evaluateText() assumes the library is loaded, so any page missing it fatals');
 ok(strpos($db, "require_once __DIR__ . '/dropship-themes.php'") !== false,
    'db.php does not load the theme library it calls');
+
+echo "\nthe nav link is gated the same way the page is\n";
+/* A link nobody else can see is convenience, not security -- the page must
+   still refuse on arrival, or the URL is the whole lock. */
+$hdr = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/header.php'));
+ok(strpos($hdr, 'admin-themes.php') !== false, 'there is no way to reach the theme admin');
+ok(strpos($hdr, 'dropshipThemeAdmin()') !== false,
+   'the nav link is shown to every player');
+ok(strpos($hdr, "function_exists('dropshipThemeAdmin')") !== false,
+   'the nav assumes the theme library is loaded, so a page without it fatals');
 
 echo "\nthe admin saves what the form shows\n";
 $adm = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));

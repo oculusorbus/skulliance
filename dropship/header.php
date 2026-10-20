@@ -136,6 +136,12 @@
 		  <?php if($_SESSION["userData"]["dropship_project_id"] == 1 || $_SESSION["userData"]["dropship_project_id"] == 2 || $_SESSION["userData"]["dropship_project_id"] == 4){?>
 		  <a href="instructions.php">How to Play</a>
 		  <?php } ?>
+		  <?php /* Staff only, and the check is the same one the page itself
+		           enforces -- a link nobody else can see is convenience, not
+		           security, so admin-themes.php gates again on arrival. */ ?>
+		  <?php if(function_exists('dropshipThemeAdmin') && dropshipThemeAdmin()){ ?>
+		  <a href="admin-themes.php">Themes</a>
+		  <?php } ?>
 		  <!-- The LAUNCHPAD, not the dashboard. Every other game on the platform
 		       exits to launchpad.php (Monstrocity, Skull Swap, Match 3), because
 		       someone leaving a game is usually going to another one, and the
