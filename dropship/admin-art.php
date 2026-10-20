@@ -270,6 +270,12 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .ren label{display:block;font-size:10.5px;color:#7a9eb0;margin:0 0 3px;text-align:left}
 .dsart .ren select{width:100%;box-sizing:border-box;background:#07111d;color:#e8eaed;
   border:1px solid rgba(255,255,255,.16);border-radius:3px;padding:4px;font-size:11px}
+/* DROP TARGET. The whole card lights up, not just the file input, because
+   the card is what somebody aims at -- and the outline is drawn inside the
+   border so the grid does not shift by a pixel as it appears. */
+.dsart .slot.over{border-color:#00c8a0;background:rgba(0,200,160,.12);
+  outline:2px dashed rgba(0,200,160,.55);outline-offset:-4px}
+.dsart .slot.over *{pointer-events:none}
 .dsart .inplace{display:block;font-size:10.5px;margin-top:4px;text-align:left}
 .dsart .inplace.good{color:#00c8a0}
 .dsart .inplace.bad{color:#e8a0b0}
@@ -303,7 +309,9 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	<?php if ($missing): ?>&middot; <span style="color:#e8a0b0"><?php echo $missing; ?> missing</span><?php endif; ?>
 	&middot; media extension <code>.<?php echo $h($ext); ?></code></p>
 
-	<p class="note">Uploads are scaled to fit <b><?php echo dropshipArtMaxWidth(); ?>&times;<?php
+	<p class="note"><b>Drag an image onto any slot to replace it</b> &mdash; or pick
+	a file, which uploads straight away. Nothing reloads, so you keep your place.<br>
+	Uploads are scaled to fit <b><?php echo dropshipArtMaxWidth(); ?>&times;<?php
 	echo dropshipArtMaxHeight(); ?></b>. That is the pane at <b>898px</b> times the
 	<b>1.2&times;</b> the Ken Burns pan zooms to, so art stays sharp at the end of the
 	drift rather than only at the start. Anything already smaller is left alone and
@@ -466,15 +474,20 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		n.className = 'inplace ' + (good ? 'good' : 'bad');
 	}
 
-	root.addEventListener('submit', function (ev) {
-		var form = ev.target;
+	/*
+	 * ONE SEND for the button, the file picker and a dropped file alike.
+	 * `dropped` overrides whatever the form's own input holds, so a drop
+	 * does not have to fake its way into that input first -- which is the
+	 * part that needs DataTransfer and does not exist everywhere.
+	 */
+	function send(form, dropped) {
 		var slot = card(form);
-		if (!slot) return;                      /* not a per-card form */
+		if (!slot) return;
 		var file = form.querySelector('input[type=file]');
-		if (file && !file.value) return;        /* let the browser's own required fire */
-		ev.preventDefault();
+		if (!dropped && file && !file.value) return;
 
 		var data = new FormData(form);
+		if (dropped) data.set('art', dropped);
 		data.append('ajax', '1');
 		var btn = form.querySelector('button');
 		var was = btn ? btn.textContent : '';
@@ -514,6 +527,83 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 				if (btn) { btn.disabled = false; btn.textContent = was; }
 				say(slot, 'could not reach the server; try again', false);
 			});
+	}
+
+	root.addEventListener('submit', function (ev) {
+		if (!card(ev.target)) return;           /* not a per-card form */
+		ev.preventDefault();
+		send(ev.target, null);
+	});
+
+	/*
+	 * PICKING A FILE UPLOADS IT. The Upload button is still there and still
+	 * works, but choosing a file and then pressing a second button is two
+	 * actions for one decision, seventy times over.
+	 */
+	root.addEventListener('change', function (ev) {
+		var input = ev.target;
+		if (!input || input.type !== 'file' || !input.value) return;
+		var form = input.form;
+		if (form && card(form)) send(form, null);
+	});
+
+	/*
+	 * DRAG A FILE ONTO A SLOT AND IT REPLACES IT.
+	 *
+	 * Delegated, so it covers every card including ones that arrive in a
+	 * later render, and it posts through the same send() as the button --
+	 * same validation, same slot-from-the-manifest rule, same in-place
+	 * patch of the card.
+	 */
+	function dropTarget(el) {
+		var slot = card(el);
+		if (!slot) return null;
+		/* A card with no upload form is one the page refuses to write to --
+		   an icon whose name cannot be a filename. Do not pretend. */
+		return slot.querySelector('input[type=file]') ? slot : null;
+	}
+
+	root.addEventListener('dragover', function (ev) {
+		var slot = dropTarget(ev.target);
+		if (!slot) return;
+		ev.preventDefault();                    /* required, or drop never fires */
+		ev.dataTransfer.dropEffect = 'copy';
+		slot.classList.add('over');
+	});
+	root.addEventListener('dragleave', function (ev) {
+		var slot = dropTarget(ev.target);
+		if (slot && !slot.contains(ev.relatedTarget)) slot.classList.remove('over');
+	});
+	root.addEventListener('drop', function (ev) {
+		var slot = dropTarget(ev.target);
+		if (!slot) return;
+		ev.preventDefault();
+		slot.classList.remove('over');
+		var files = ev.dataTransfer && ev.dataTransfer.files;
+		if (!files || !files.length) return;
+		if (files.length > 1) {
+			/* One slot is one picture. Saying so beats silently taking the
+			   first and leaving somebody to wonder where the rest went. */
+			say(slot, 'one file per slot, please', false);
+			return;
+		}
+		if (files[0].type.indexOf('image/') !== 0) {
+			say(slot, 'that is not an image', false);
+			return;
+		}
+		send(slot.querySelector('form'), files[0]);
+	});
+
+	/*
+	 * ...AND NOWHERE ELSE. A file dropped on any other part of the page
+	 * would otherwise be OPENED by the browser, throwing away the page and
+	 * whatever was half-filled on it.
+	 */
+	window.addEventListener('dragover', function (ev) {
+		if (!dropTarget(ev.target)) ev.preventDefault();
+	});
+	window.addEventListener('drop', function (ev) {
+		if (!dropTarget(ev.target)) ev.preventDefault();
 	});
 }());
 </script>

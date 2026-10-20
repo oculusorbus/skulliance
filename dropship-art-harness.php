@@ -539,6 +539,74 @@ ok(strpos($adm4, "\$aico = strpos(\$rel, 'icons/') === 0;") !== false,
 ok(strpos($adm4, "(\$aico ? '/staking/dropship/' : \$aweb)") !== false,
    'the in-place reply builds one url for both icons and theme art');
 
+echo "\ndragging a file onto a slot replaces it\n";
+/*
+ * Seventy images per theme, each needing pick-then-press. Dropping onto
+ * the slot is one action, and it posts through the SAME send() as the
+ * button -- same validation, same slot-from-the-manifest rule, same
+ * in-place patch -- rather than a second upload path that could drift.
+ */
+$adm6 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-art.php'));
+ok(substr_count($adm6, 'function send(form, dropped)') === 1,
+   'there is no single send(), so drop and button can diverge');
+ok(substr_count($adm6, "data.append('ajax', '1')") === 1,
+   'more than one upload path posts to the server');
+ok(strpos($adm6, "if (dropped) data.set('art', dropped);") !== false,
+   'a dropped file does not replace the form\'s own input, so the drop posts nothing');
+/* set(), not append(): appending leaves the empty file input in the body
+   and the server reads whichever came first. */
+ok(strpos($adm6, "data.append('art'") === false,
+   'the dropped file is appended beside the empty input rather than replacing it');
+foreach (array('dragover', 'dragleave', 'drop') as $ev) {
+	ok(strpos($adm6, "root.addEventListener('" . $ev . "'") !== false,
+	   "slots do not handle $ev, so a drop does nothing");
+}
+/*
+ * dragover MUST preventDefault or the drop event never fires at all.
+ *
+ * ANCHORED ON THE SLOT HANDLER. A loose search for "dragover" near a
+ * preventDefault matched the WINDOW handler further down, which has one
+ * for a different reason, so removing it from the slot handler passed.
+ */
+$slot_dragover = strpos($adm6, "root.addEventListener('dragover'");
+ok($slot_dragover !== false, 'the slot dragover handler is gone');
+$body = substr($adm6, $slot_dragover, strpos($adm6, '});', $slot_dragover) - $slot_dragover);
+ok(strpos($body, 'ev.preventDefault()') !== false,
+   'the slot dragover does not preventDefault, so drop never fires on a card');
+ok(strpos($body, "dropEffect = 'copy'") !== false,
+   'the cursor does not say a drop will copy, so it reads as rejected');
+/*
+ * AND THE REST OF THE PAGE MUST SWALLOW DROPS TOO. A file dropped slightly
+ * off a card is otherwise OPENED by the browser, which throws the page
+ * away mid-edit.
+ */
+ok(strpos($adm6, "window.addEventListener('drop'") !== false,
+   'a file dropped off-target navigates away and loses the page');
+ok(strpos($adm6, "window.addEventListener('dragover'") !== false,
+   'the page does not suppress the browser default for an off-target drag');
+/* A card with no upload form is one the page refuses to write to. */
+ok(strpos($adm6, "return slot.querySelector('input[type=file]') ? slot : null;") !== false,
+   'a slot with no upload form still accepts a drop it cannot act on');
+/* One slot is one picture; several files is a mistake worth naming. */
+ok(strpos($adm6, "say(slot, 'one file per slot, please', false)") !== false,
+   'dropping several files silently takes one and discards the rest');
+ok(strpos($adm6, "files[0].type.indexOf('image/') !== 0") !== false,
+   'a non-image is posted to the server rather than refused up front');
+/* Picking a file uploads it: two actions for one decision, seventy times. */
+ok(strpos($adm6, "root.addEventListener('change'") !== false,
+   'choosing a file no longer uploads it');
+ok(strpos($adm6, "if (!input || input.type !== 'file' || !input.value) return;") !== false,
+   'the change handler fires for every control on the page, not just file inputs');
+/* The submit listener must still work -- the button is not going away. */
+ok(strpos($adm6, "root.addEventListener('submit'") !== false, 'the Upload button stopped working');
+/* The highlight must not move the grid, or every card shifts as you drag
+   across it. */
+$css = (string)file_get_contents(__DIR__ . '/dropship/admin-art.php');
+ok(strpos($css, 'outline-offset:-4px') !== false,
+   'the drop highlight is drawn outside the border, so the grid jumps as you drag');
+ok(strpos($css, '.dsart .slot.over *{pointer-events:none}') !== false,
+   'children of a card swallow the drag events, so the highlight flickers');
+
 echo "\na file already on the server can be renamed, not re-uploaded\n";
 /*
  * When the wording changes, the picture the theme wants is usually already
