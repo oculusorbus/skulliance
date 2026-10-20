@@ -27,7 +27,13 @@ ok($hdr !== '', 'dropship/header.php could not be read');
 ok(strpos($hdr, 'id="loading"') === false,
    'the full-screen loading overlay is back in Drop Ship\'s header');
 ok(strpos($hdr, 'id="loading-image"') === false, 'the overlay image is back');
-ok(strpos($hdr, 'images/loading.gif') === false, 'the header still loads the spinner gif');
+/* The header does not RENDER a loader, but it does hand the theme's art
+   folder to JavaScript, which is the one thing the on-demand loader
+   cannot work out for itself -- the reskins nest and Drop Ship's own art
+   is flat. */
+ok(strpos($hdr, "<div id=\"loading\"") === false, 'the header renders a loader element again');
+ok(strpos($hdr, 'data-ds-prefix=') !== false,
+   'the header does not expose the art prefix, so the loader points at the wrong theme');
 
 echo "\nnothing that used it throws without it\n";
 /*
@@ -51,6 +57,46 @@ foreach (array('dropship/dropship.js', 'dropship/wallet.js') as $f) {
 /* jQuery's .hide() on an empty set is a no-op, so that one needs nothing. */
 ok(strpos(src('dropship/dropship.js'), "\$('#loading').hide()") !== false,
    'the jQuery hide-on-load was removed too; it is harmless and costs nothing');
+
+echo "\nthe loader is back, for theme changes and nothing else\n";
+/*
+ * It covered the screen on every navigation and every form post -- most
+ * of what Drop Ship does -- for work that was usually instant. A theme
+ * change is the exception: it re-reads the player's holdings and is the
+ * one request that routinely takes a second or more.
+ *
+ * BUILT AT THE MOMENT OF THE SWITCH, not rendered and hidden. There is no
+ * element for anything else to show, so it cannot come back everywhere by
+ * accident, which is how it got everywhere the first time.
+ */
+$js3 = src('dropship/dropship.js');
+ok(strpos($js3, 'function dsShowLoader(') !== false, 'nothing builds the loader');
+ok(strpos($js3, "wrap.id = 'loading';") !== false,
+   'the built element does not carry the id the shared stylesheet styles');
+ok(strpos($js3, "img.id = 'loading-image';") !== false, 'the loader image is unstyled');
+/* The ONLY caller is the theme switch. */
+/* CALLS, not occurrences: the definition is `dsShowLoader(){` and matches
+   the same substring, so counting those said two and meant one. */
+$calls = substr_count($js3, 'dsShowLoader();');
+ok($calls === 1, "the loader is shown from $calls places, not just the theme switch");
+$sel = strpos($js3, 'function selectProject');
+$selEnd = strpos($js3, "\n}", $sel);
+ok($sel !== false && strpos(substr($js3, $sel, $selEnd - $sel), 'dsShowLoader()') !== false,
+   'the theme switch does not show the loader');
+/* ...and it must go up BEFORE the form is submitted, or it never paints. */
+$body = substr($js3, $sel, $selEnd - $sel);
+ok(strpos($body, 'dsShowLoader()') < strpos($body, 'projectForm'),
+   'the loader is shown after the form submits, which is too late to see');
+/* Idempotent: a second call must not stack a second overlay. */
+ok(strpos($js3, "if (document.getElementById('loading')) return;") !== false,
+   'calling it twice stacks overlays');
+/* The art is the THEME's, from the prefix the page already knows. */
+ok(strpos($js3, "getAttribute('data-ds-prefix')") !== false,
+   'the loader does not use the theme art prefix, so a reskin shows Drop Ship\'s loader or a 404');
+ok(strpos($js3, "pre + 'images/loading.gif'") !== false, 'the loader art path is wrong');
+/* Picking the empty option must not submit anything. */
+ok(preg_match('/alert\("Please select a project from the dropdown\."\);\s*\n\s*return;/', $js3) === 1,
+   'choosing the blank option alerts and then submits it anyway');
 
 echo "\nthe platform's own overlay is untouched\n";
 /*

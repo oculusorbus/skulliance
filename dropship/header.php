@@ -73,7 +73,10 @@
 	  <?php } ?>
   <?php } ?>
 </head>
-<body>
+<?php /* The theme's own art folder, for the one thing JavaScript has to
+         build a path to: the theme-change loader. Every theme ships its
+         own images/loading.gif. */ ?>
+<body data-ds-prefix="<?php echo htmlspecialchars($prefix, ENT_QUOTES); ?>">
 	<?php /* NO FULL-SCREEN LOADING OVERLAY. It covered the page on every
 	         navigation and on every form post, which is most of what you do
 	         here, and it was a full-bleed gif rather than progress -- it

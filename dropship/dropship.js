@@ -362,14 +362,41 @@ function filterTroops(criteria){
 	document.getElementById("filterTroopsForm").submit();
 }
 
+/*
+ * THE LOADER, FOR THEME CHANGES AND NOTHING ELSE.
+ *
+ * It used to be a div on every page that any code could show, and it
+ * covered the screen on every navigation and every form post -- which is
+ * most of what Drop Ship does -- for work that was usually instant. It is
+ * built HERE instead, at the moment of the switch, so it cannot appear
+ * anywhere else: no element exists to show.
+ *
+ * A theme change earns one. It is the request that re-reads the player's
+ * holdings, and the only one that routinely takes a second or more.
+ *
+ * The art is the theme's own -- every theme ships images/loading.gif --
+ * and the path comes from the prefix the page already knows, because the
+ * reskins nest and Drop Ship's own art is flat.
+ */
+function dsShowLoader(){
+	if (document.getElementById('loading')) return;
+	var pre = (document.body && document.body.getAttribute('data-ds-prefix')) || '';
+	var wrap = document.createElement('div');
+	wrap.id = 'loading';
+	var img = document.createElement('img');
+	img.id = 'loading-image';
+	img.alt = 'Loading...';
+	img.src = pre + 'images/loading.gif';
+	wrap.appendChild(img);
+	document.body.appendChild(wrap);
+}
+
 function selectProject(criteria){
 	if(criteria == "none"){
 		alert("Please select a project from the dropdown.");
+		return;
 	}
-	/* The overlay is gone from header.php; guarded so switching project
-	   does not die on a missing element. */
-	var ldg = document.getElementById('loading');
-	if (ldg) ldg.style.display = "block";
+	dsShowLoader();
 	document.getElementById('project_id').value = criteria;
 	document.getElementById("projectForm").submit();
 }
