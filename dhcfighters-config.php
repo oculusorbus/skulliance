@@ -1051,10 +1051,12 @@ $GLOBALS['DHCF_GAMES'] = array(
 	'dropship'       => array('label' => 'Drop Ship', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=1',
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
+	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead'),
 	'oculuslounge'   => array('label' => 'Oculus Lounge', 'x_tag' => '@oculuslounge', 'url' => 'dropship/dashboard.php?project_id=4',
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
+	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead'),
 	// Ohh Meed's too, so the same @ohh_meed credit as Drop Ship. The KEY is
 	// the Drop Ship theme slug with the hyphens taken out, because that is
@@ -1063,11 +1065,13 @@ $GLOBALS['DHCF_GAMES'] = array(
 	'filthymermaid'  => array('label' => 'Filthy Mermaid', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=3',
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
+	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead'),
 	// Ohh Meed's as well -- same Shorty Verse collection Filthy Mermaid uses.
 	'dreadcity'      => array('label' => 'Dread City', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=2',
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
+	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead'),
 
 	// NOT A GAME, and 'unlisted' is what that now costs it. It stays in
@@ -1324,6 +1328,12 @@ define('DHCF_DAILY_CAP', 3);
  * hour, a Monstrocity campaign completes about once a month, and the daily
  * streak pays once a week by definition. It is an anti-abuse ceiling on the
  * few sources that could be ground, not a balancing dial for the rest.
+ *
+ * ZERO MEANS NO DAILY CEILING, and every caller has to read it that way --
+ * `$used >= dhcf_cap($key)` is true of 0 against any count at all, so a
+ * caller that forgets refuses every single draw rather than allowing them.
+ * The Drop Ship family uses it: see their entries for why their own rule is
+ * the limit there.
  */
 function dhcf_cap($key) {
 	$g = dhcf_game($key);

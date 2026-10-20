@@ -43,6 +43,10 @@ if ($value < $floor) {
 }
 
 // Anti-abuse ceiling. Generous enough that no honest player meets it.
+// ZERO MEANS NO CEILING -- `$count >= 0` is true of every count, so without
+// this guard an uncapped source would have every claim refused instead of
+// every claim allowed, which is the exact opposite of what cap 0 says.
+// dhcf_award() has the same guard; see dhcf_cap()'s own note.
 // Tethered second halves excluded, matching dhcf_award()'s own cap. If this
 // counted them it would refuse a claim the award function would have allowed,
 // and the modal would explain a limit the player had not actually reached.
@@ -53,7 +57,7 @@ $sql = sprintf("SELECT COUNT(*) AS c FROM dhc_trait_drops
 // Parenthesised deliberately: && binds tighter than =, so the obvious
 // `if ($res && $row = $res->fetch_assoc() && ...)` assigns the comparison to
 // $row and the check never fires.
-$res = $conn->query($sql);
+$res = dhcf_cap($key) > 0 ? $conn->query($sql) : null;
 if ($res && ($row = $res->fetch_assoc()) && (int)$row['c'] >= dhcf_cap($key)) {
 	// Tell the client what the limit was, so the modal can explain rather than
 	// leaving a player who just won wondering why nothing happened.

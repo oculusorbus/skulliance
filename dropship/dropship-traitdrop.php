@@ -96,9 +96,15 @@ function dropshipDropEarned($ctx, $score) {
 
 	/* AND BEAT THEIR OWN. First run of the game has nothing to beat.
 	   A STANDING LEADER WHO IMPROVES DOES EARN ONE -- they beat the board and
-	   they beat themselves. Three rising runs in a day therefore pay three
-	   times, and the per-source daily cap in dhcf_award() is what bounds
-	   that, not this rule. */
+	   they beat themselves, so a day of rising runs pays every time.
+
+	   NOTHING BOUNDS THAT ANY MORE. These four games carry 'cap' => 0 in
+	   DHCF_GAMES: the games run on a WEEKLY cadence, and a player who holds
+	   enough NFTs to battle it out all day was being left with nothing for
+	   the effort after the third. The owner's call, and it reopens the hole
+	   named above -- score well, tank, score well pays each time, now with
+	   no ceiling behind it -- which is deliberate: the tank costs them their
+	   actual position on a board that stands for a week. */
 	if ($ctx['prev'] !== null && $score <= $ctx['prev']) return false;
 
 	return true;

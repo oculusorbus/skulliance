@@ -367,7 +367,13 @@ ok(strpos($js, '"Refresh"') !== false, 'the end-of-replay button lost its label 
 
 echo "\nboth games are registered\n";
 require_once __DIR__ . '/dhcfighters-config.php';
-foreach (array('dropship' => 'Drop Ship', 'oculuslounge' => 'Oculus Lounge') as $k => $label) {
+/* ALL FOUR, not the two that existed when this was written. Dread City and
+   Filthy Mermaid were registered later and were checked by nothing, which a
+   mutation test found: capping Dread City again survived. */
+foreach (array('dropship'      => 'Drop Ship',
+               'oculuslounge'  => 'Oculus Lounge',
+               'filthymermaid' => 'Filthy Mermaid',
+               'dreadcity'     => 'Dread City') as $k => $label) {
 	$g = dhcf_game($k);
 	ok(is_array($g), "$k is not in DHCF_GAMES, so dhcf_award() will not resolve it");
 	if (!is_array($g)) continue;
@@ -380,7 +386,57 @@ foreach (array('dropship' => 'Drop Ship', 'oculuslounge' => 'Oculus Lounge') as 
 	ok($g['base'] === 'placement_1', "$k does not pay the first-place table");
 	ok($g['category'] === 'wildcard', "$k claims a trait slot; all eight belong to the other games");
 	ok(empty($g['unlisted']), "$k is hidden from the list of where traits drop");
-	ok(dhcf_cap($k) >= 1, "$k has no daily cap, so a see-saw is unbounded");
+	/*
+	 * NO DAILY CEILING, ON PURPOSE. The games run weekly and a player with
+	 * the NFTs to battle all day was left with nothing after the third
+	 * lead. The rule above is the limit now: every drop needs a score that
+	 * beats both the board and your own last one.
+	 *
+	 * ZERO HAS TO BE READ AS "NO CEILING" BY EVERY CALLER, because
+	 * `$used >= 0` is true of any count at all -- a caller that compares
+	 * without guarding refuses every draw instead of allowing them, which
+	 * is how an uncapped game would silently become an unplayable one.
+	 */
+	ok(dhcf_cap($k) === 0, "$k is capped at " . dhcf_cap($k) . " a day again");
+}
+/*
+ * BOTH ENFORCERS, each in its own shape. dhcf_award() reads the cap into
+ * $cap and wraps the whole count in `if ($cap > 0)`; the claim endpoint
+ * skips the query instead. What matters in both is that the comparison
+ * `count >= cap` is UNREACHABLE when the cap is zero -- reached, it is
+ * true of every count, and the uncapped game becomes the unplayable one.
+ */
+$lib_src = (string)@file_get_contents(__DIR__ . '/dhcfighters-lib.php');
+ok($lib_src !== '', 'dhcfighters-lib.php could not be read');
+$lib_at = strpos($lib_src, '$cap = dhcf_cap($source);');
+ok($lib_at !== false, 'dhcf_award() no longer reads the cap where this expects it');
+$lib_guard = $lib_at === false ? '' : substr($lib_src, $lib_at, 1400);
+$lib_g = strpos($lib_guard, 'if ($cap > 0) {');
+$lib_c = strpos($lib_guard, "(int)\$row['c'] >= \$cap");
+ok($lib_g !== false,
+   'dhcf_award() counts against the cap without guarding zero, so an uncapped game refuses every draw');
+ok($lib_g !== false && $lib_c !== false && $lib_c > $lib_g,
+   'the cap comparison in dhcf_award() sits outside the zero guard');
+
+$claim_src = (string)@file_get_contents(__DIR__ . '/ajax/dhc-claim-drop.php');
+ok($claim_src !== '', 'ajax/dhc-claim-drop.php could not be read');
+ok(strpos($claim_src, 'dhcf_cap($key) > 0 ? $conn->query($sql) : null') !== false,
+   'the claim endpoint runs its cap count even when there is no cap, and 0 refuses everything');
+/* And the table says so rather than "none left today", which is what the
+   plain arithmetic produces for a cap of zero. */
+$dhcf_page = (string)@file_get_contents(__DIR__ . '/dhcfighters.php');
+ok(strpos($dhcf_page, '$uncapped = ($cap <= 0);') !== false,
+   'the drops table reads a cap of zero as a game with nothing left today');
+/* The capped games must be untouched: this was a change to four entries,
+   not to the ceiling itself. */
+ok(DHCF_DAILY_CAP === 3, 'the platform-wide daily cap moved; only the four themes were meant to');
+/* NAMED KEYS THAT REALLY EXIST. Written as `if (dhcf_game($k))` around the
+   assertion, a typo in the key skips the check instead of failing it --
+   'realmguardians' is not the key, 'guardians' is, so this proved nothing
+   until a mutation uncapping it survived. */
+foreach (array('guardians', 'skullswap', 'cryptcrawl') as $k) {
+	ok(dhcf_game($k) !== null, "$k is not a registry key, so the check below is skipped");
+	ok(dhcf_cap($k) > 0, "$k lost its daily cap too; only the four themes were meant to");
 }
 /* The two must not share a key, or one board's leads pay out of the other's
    daily allowance. */
@@ -454,3 +510,11 @@ ok(strpos($wh2, 'getWebhook($project_id)') !== false,
 
 
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
+/*
+ * EXIT CODE, which this file never had. It printed its failures and then
+ * returned 0 regardless, so every automated run of the suite reported it
+ * as passing however many checks were red -- found by mutation testing the
+ * daily-cap change, when eight mutants in a row "survived" because nothing
+ * here could ever fail.
+ */
+exit($fail ? 1 : 0);

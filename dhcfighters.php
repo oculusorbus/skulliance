@@ -769,11 +769,16 @@ a.dhcf-stat span{opacity:.85}
             // A source whose real limit is not a daily count says so instead --
             // quoting "3 left today" for the 7-day streak promises three today.
             $note = isset($g['limit_note']) ? $g['limit_note'] : '';
+            // CAP 0 IS NO DAILY CEILING, so $left is 0 and the plain
+            // arithmetic below would read it as "none left today" -- telling
+            // a player the one game with no limit is the one that is out.
+            $uncapped = ($cap <= 0);
           ?>
-          <span class="left<?php echo ($note || $left) ? '' : ' out'; ?>"><?php
-            if ($note)      echo htmlspecialchars($note);
-            elseif ($left)  echo $left . ' of ' . $cap . ' left today';
-            else            echo 'none left today';
+          <span class="left<?php echo ($note || $left || $uncapped) ? '' : ' out'; ?>"><?php
+            if ($note)       echo htmlspecialchars($note);
+            elseif ($uncapped) echo 'no daily limit';
+            elseif ($left)   echo $left . ' of ' . $cap . ' left today';
+            else             echo 'none left today';
           ?></span>
           <span class="bar"><i style="width:<?php echo (int)$pct; ?>%"></i></span>
         </li>
