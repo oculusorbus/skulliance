@@ -341,5 +341,76 @@ ok(stripos($odds_src, '#7CFC00') === false, 'the lime is back');
 /* Plain hyphens in copy a player reads. */
 ok(strpos($odds_src, '&mdash;') === false, 'an em dash is back in the player-facing copy');
 
+echo "\nthe build guide speaks the theme's language\n";
+/*
+ * EVERYTHING ELSE ON THE PAGE RUNS ITS NOUNS THROUGH evaluateText() -- the
+ * soldier cards, the shop, the round captions -- and the build guide did
+ * not, so Filthy Mermaid read "Next: a soldier in Base armor" underneath
+ * a roster of Perverts in Boxer Briefs.
+ */
+if (!function_exists('evaluateText')) {
+	function evaluateText($t) {
+		$map = array('Base' => 'Boxer Briefs', 'Light' => 'Basketball Shorts',
+		             'Medium' => 'Sweat Pants', 'Heavy' => 'Smoking Jacket',
+		             'Medkit' => 'Sexy Nurse', 'Melee' => 'Vibrator',
+		             'Demolition' => 'Paddle', 'Super Soldier' => 'VIP',
+		             'soldier' => 'pervert');
+		return isset($map[$t]) ? $map[$t] : $t;
+	}
+}
+$mkf = function ($rows) {
+	$f = array('roster' => $rows);
+	foreach ($rows as $r) { $f[strtolower($r['armor'])] = true; $f[strtolower($r['gear'])] = true; }
+	return $f;
+};
+$three = $mkf(array(array('armor' => 'Heavy', 'gear' => 'Medkit'),
+                    array('armor' => 'Medium', 'gear' => 'Melee'),
+                    array('armor' => 'Light', 'gear' => 'Demolition')));
+$a = dropshipSquadAdvice($three);
+$joined = strip_tags($a[0] . ' ' . $a[1]);
+ok(strpos($joined, 'Boxer Briefs') !== false, 'the missing tier is still named in Drop Ship words');
+ok(strpos($joined, 'pervert') !== false, 'the squad member is still called a soldier');
+/* AND THE DROP SHIP WORDS MUST BE GONE, not merely joined by the themed
+   ones -- a half-translated sentence is worse than an untranslated one. */
+foreach (array('Base', 'soldier') as $word) {
+	ok(!preg_match('/\b' . preg_quote($word, '/') . '\b/', $joined),
+	   "the untranslated '$word' is still in: " . $joined);
+}
+/* The full-squad and duplicate branches too: they have their own copy. */
+$full = $mkf(array(array('armor' => 'Heavy', 'gear' => 'Medkit'),
+                   array('armor' => 'Heavy', 'gear' => 'Melee'),
+                   array('armor' => 'Medium', 'gear' => 'Demolition'),
+                   array('armor' => 'Light', 'gear' => 'None')));
+$b = strip_tags(implode(' ', dropshipSquadAdvice($full)));
+ok(strpos($b, 'VIP Squad') !== false, 'the full-squad line still says Super Soldier Squad');
+/* THE "N WEAR X" PHRASE SPECIFICALLY. Checking only that 'Smoking Jacket'
+   appeared somewhere passed with the duplicate list untranslated, because
+   the swap line above it already contained the themed word. */
+ok(strpos($b, '2 wear Smoking Jacket') !== false,
+   'the duplicate tier is still named in Drop Ship words: ' . $b);
+ok(!preg_match('/\d wear (Heavy|Medium|Light|Base)\b/', $b),
+   'the duplicate list is untranslated: ' . $b);
+ok(strpos($b, 'Boxer Briefs') !== false, 'the gap is still named in Drop Ship words: ' . $b);
+ok(!preg_match('/\bsoldier\b/', $b), "the swap line still says 'soldier': " . $b);
+$super = $mkf(array(array('armor' => 'Heavy', 'gear' => 'Medkit'),
+                    array('armor' => 'Medium', 'gear' => 'Melee'),
+                    array('armor' => 'Light', 'gear' => 'Demolition'),
+                    array('armor' => 'Base', 'gear' => 'None')));
+$c = strip_tags(implode(' ', dropshipSquadAdvice($super)));
+ok(strpos($c, 'VIP Squad') !== false, 'the completed squad is still called a Super Soldier Squad');
+/* UNTRANSLATED IS THE RIGHT ANSWER WITH NO THEME, and this file is loaded
+   by harnesses that have no database at all. */
+$odds_src = file_get_contents(__DIR__ . '/dropship/dropship-odds.php');
+ok(strpos($odds_src, "function_exists('evaluateText') ? evaluateText(\$term) : \$term") !== false,
+   'dropshipWord() calls evaluateText() unguarded, so a themeless context fatals');
+/* The singular has to be settable, or a theme can never fix it. */
+require_once __DIR__ . '/dropship/dropship-theme-vocab.php';
+$has = false;
+foreach (dropshipThemeVocabulary() as $rows) foreach ($rows as $r) {
+	if ($r['label'] === 'soldier') $has = true;
+}
+ok($has, "'soldier' is not in the vocabulary, so no theme can ever set it");
+
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);

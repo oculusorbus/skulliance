@@ -234,11 +234,12 @@ function dropshipSquadAdvice($f) {
 	/* COMPLETE. Say so plainly and stop advising. */
 	if (empty($missing_tiers)) {
 		if (empty($missing_gear)) {
-			return array('Super Soldier Squad', 'Every armor tier and all three gear types. '
+			return array(dropshipWord('Super Soldier') . ' Squad',
+			             'Every armor tier and all three gear types. '
 			           . 'This is the best squad in the game at ' . $now . '% a round.');
 		}
 		return array('Every armor tier covered &middot; ' . $now . '% a round',
-		             'Still missing ' . dropshipJoinWords($missing_gear)
+		             'Still missing ' . dropshipJoinWords(dropshipWords($missing_gear))
 		           . '. Gear does not change the odds, but it buys '
 		           . (in_array('Medkit', $missing_gear, true) ? 'an extra life and ' : '')
 		           . 'the melee and demolition chains.');
@@ -254,34 +255,62 @@ function dropshipSquadAdvice($f) {
 			if ($best === null || $p > $best_pct) { $best = $t; $best_pct = $p; }
 		}
 		if ($best === null) $best = $missing_tiers[0];
-		$gear_hint = $missing_gear ? ' carrying ' . $missing_gear[0] : '';
+		$gear_hint = $missing_gear ? ' carrying ' . dropshipWord($missing_gear[0]) : '';
 		$gain = $best_pct > $now ? ' &rarr; <b>' . $best_pct . '%</b>' : '';
-		return array('Next: a soldier in <b>' . $best . '</b> armor' . $gear_hint . $gain,
+		return array('Next: a ' . dropshipWord('soldier') . ' in <b>'
+		           . dropshipWord($best) . '</b> armor' . $gear_hint . $gain,
 		             $slots . ' of 4 slots filled. Still missing '
-		           . dropshipJoinWords($missing_tiers) . ' armor.');
+		           . dropshipJoinWords(dropshipWords($missing_tiers)) . ' armor.');
 	}
 
 	/* FULL, AND STILL NOT A SUPER SOLDIER SQUAD. Name the duplicate, because
 	   "add Base armour" is useless advice when there is nowhere to put it. */
 	$dupes = array();
-	foreach ($tiers as $t) if ($worn[$t] > 1) $dupes[] = $worn[$t] . ' wear ' . $t;
+	foreach ($tiers as $t) if ($worn[$t] > 1) $dupes[] = $worn[$t] . ' wear ' . dropshipWord($t);
 	$why = $dupes
 		? dropshipJoinWords($dupes) . ' armor, so no one is in '
-		  . dropshipJoinWords($missing_tiers)
-		: 'No one is wearing ' . dropshipJoinWords($missing_tiers) . ' armor';
+		  . dropshipJoinWords(dropshipWords($missing_tiers))
+		: 'No one is wearing ' . dropshipJoinWords(dropshipWords($missing_tiers)) . ' armor';
 	$swap = null;
 	foreach ($tiers as $t) if ($worn[$t] > 1) { $swap = $t; break; }
 	$fix = $swap
-		? 'Swap a <b>' . $swap . '</b> soldier for <b>' . $missing_tiers[0] . '</b>'
-		: 'Swap one soldier for <b>' . $missing_tiers[0] . '</b>';
+		? 'Swap a <b>' . dropshipWord($swap) . '</b> ' . dropshipWord('soldier')
+		  . ' for <b>' . dropshipWord($missing_tiers[0]) . '</b>'
+		: 'Swap one ' . dropshipWord('soldier') . ' for <b>'
+		  . dropshipWord($missing_tiers[0]) . '</b>';
 	$try = $f;
 	foreach ($missing_tiers as $t) $try[strtolower($t)] = true;
 	$could = dropshipSurvivalPct(dropshipThreshold($try));
 	return array($fix . ($could > $now ? ' &rarr; <b>' . $could . '%</b>' : ''),
-	             'Your squad is full but not a Super Soldier Squad. ' . $why . '.');
+	             'Your squad is full but not a ' . dropshipWord('Super Soldier')
+	           . ' Squad. ' . $why . '.');
 }
 
 /** "Heavy, Medium and Light" -- a list a person would read aloud. */
+/**
+ * A game word, in this theme's language.
+ *
+ * THE BUILD GUIDE WAS THE ONE PLACE STILL SPEAKING DROP SHIP. Everything
+ * else on the page runs its nouns through evaluateText() -- the soldier
+ * cards, the shop, the round captions -- so Filthy Mermaid read "Next: a
+ * soldier in Base armor" underneath a roster of Perverts in Boxer Briefs.
+ *
+ * Guarded because this file is also loaded by harnesses that have no
+ * database and therefore no evaluateText(); untranslated is the right
+ * answer there, and it is what the function already returns for a theme
+ * with no override.
+ */
+function dropshipWord($term) {
+	return function_exists('evaluateText') ? evaluateText($term) : $term;
+}
+
+/** Each of a list of game words, translated. */
+function dropshipWords($words) {
+	$out = array();
+	foreach ((array)$words as $w) $out[] = dropshipWord($w);
+	return $out;
+}
+
 function dropshipJoinWords($words) {
 	$words = array_values($words);
 	$n = count($words);

@@ -1449,6 +1449,22 @@ foreach (array('oculus-lounge' => 'oculuslounge', 'drop-ship' => 'dropship') as 
 }
 /* Filthy Mermaid IS registered now, and its key is the slug with the
    hyphens out -- get that wrong and its drops silently post as Drop Ship. */
+/*
+ * EVERY SEEDED THEME, derived from the seed rather than listed here. I
+ * registered filthy-mermaid by hand and forgot dread-city, so a Dread City
+ * drop posted "Dropped from Drop Ship" -- an unregistered key falls back,
+ * silently and plausibly, which is the worst way for this to fail. A list
+ * in the harness would have had the same gap as the registry.
+ */
+foreach ($sm as $row) {
+	$slug = preg_match("/\((\d+), '([a-z-]+)'/", $row[0], $sl) ? $sl[2] : '';
+	if ($slug === '') continue;
+	$key = str_replace('-', '', $slug);
+	ok(dhcf_game($key) !== null,
+	   "'$slug' is seeded but '$key' is not in DHCF_GAMES, so its drops credit Drop Ship");
+	ok(isset($GLOBALS['DHCF_FLOORS'][$key]) && $GLOBALS['DHCF_FLOORS'][$key] === 0,
+	   "'$key' has no floor of 0, so the first player in a new game is shut out");
+}
 ok(dhcf_game('filthymermaid') !== null,
    'filthy-mermaid is not registered, so its drops credit Drop Ship instead');
 ok(dhcf_earned_tag('filthymermaid') === '@ohh_meed',

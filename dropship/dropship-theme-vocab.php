@@ -48,6 +48,12 @@ function dropshipThemeVocabulary() {
 			array('label' => 'SCRIP', 'exact' => array('SCRIP'), 'desc' => array(), 'icons' => array(), 'themes' => 3),
 			array('label' => 'Grunt', 'exact' => array('Grunt'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
 			array('label' => 'Soldiers', 'exact' => array('Soldiers'), 'desc' => array(), 'icons' => array(), 'themes' => 1),
+			/* ONE member of the squad, lowercase because it is only ever
+			   used mid-sentence -- "Next: a soldier in Heavy armor" in the
+			   build guide. 'Troops' below is the plural the dashboard
+			   shows; this is the singular that reads in a sentence, and
+			   no existing theme had one because nothing asked for it. */
+			array('label' => 'soldier', 'exact' => array('soldier'), 'desc' => array(), 'icons' => array(), 'themes' => 0),
 			/* The word for one member of the squad. It had no dictionary rows
 			   because the dashboard used to read it off a character_label
 			   column instead; that column is gone and this is the word. */

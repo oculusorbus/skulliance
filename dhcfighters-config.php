@@ -1064,6 +1064,11 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
 	                          'limit_note' => 'only when you take the lead'),
+	// Ohh Meed's as well -- same Shorty Verse collection Filthy Mermaid uses.
+	'dreadcity'      => array('label' => 'Dread City', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=2',
+	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
+	                          'base' => 'placement_1',
+	                          'limit_note' => 'only when you take the lead'),
 
 	// NOT A GAME, and 'unlisted' is what that now costs it. It stays in
 	// DHCF_GAMES because everything functional reads this array -- dhcf_award(),
@@ -1179,6 +1184,7 @@ $GLOBALS['DHCF_FLOORS'] = array(
 	'dropship'      => 0,      // taking the lead is the gate; a score floor would only shut out the first player in a new game
 	'oculuslounge'  => 0,      // same
 	'filthymermaid' => 0,      // same
+	'dreadcity'     => 0,      // same
 );
 
 /**
