@@ -568,7 +568,25 @@ function getBattles($conn) {
 
 // Get participating NFT projects
 function getProjects($conn) {
-	$sql = "SELECT id, name FROM projects WHERE name != 'Filthy Mermaid' AND name != 'Dread City'";
+	/*
+	 * WHICH PROJECTS A PLAYER MAY ENTER. Two jobs, deliberately one list:
+	 * this builds the Select Project dropdown on the dashboard AND is the
+	 * allow-list dropship.php validates ?project_id against before that
+	 * value reaches SQL. They must not diverge, or a project hidden from
+	 * the dropdown is still reachable by typing the id into the URL.
+	 *
+	 * THE THEME'S active FLAG DECIDES, once there are themes. It used to be
+	 * two names hardcoded here, so launching a theme meant editing this
+	 * line and the admin's tickbox did nothing. dropshipActiveProjectIds()
+	 * returns null whenever it cannot answer -- no table, no themes, or
+	 * none active -- and then the old list stands, which is what keeps this
+	 * change invisible until somebody saves a theme.
+	 */
+	$allow = function_exists('dropshipActiveProjectIds')
+	       ? dropshipActiveProjectIds($conn) : null;
+	$sql = $allow === null
+	     ? "SELECT id, name FROM projects WHERE name != 'Filthy Mermaid' AND name != 'Dread City'"
+	     : "SELECT id, name FROM projects WHERE id IN (" . implode(',', array_map('intval', $allow)) . ")";
 	$result = $conn->query($sql);
 	$projects = array();
 	if ($result->num_rows > 0) {

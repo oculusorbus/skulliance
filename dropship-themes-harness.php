@@ -36,6 +36,9 @@ class TConn {
 	public function query($sql) {
 		$this->queries++;
 		if (strpos($sql, 'SHOW TABLES') !== false) return new TRes(array(array('t' => 'dropship_themes')));
+		if (strpos($sql, 'SELECT project_id, active FROM dropship_themes') !== false) {
+			return new TRes(array_values($this->themes));
+		}
 		if (strpos($sql, 'FROM dropship_themes WHERE project_id') !== false) {
 			preg_match('/project_id = (\d+)/', $sql, $m);
 			$pid = (int)$m[1];
@@ -502,6 +505,81 @@ $c9 = new TConn(array(90 => array('id' => 9, 'project_id' => 90, 'slug' => 'k'))
                 array(9 => array(pair('exact', 'Barracks', 'Barracks'))));
 ok(dropshipThemeText($c9, 90, 'Barracks') === 'Barracks',
    'a word replaced by itself does not come back unchanged');
+
+echo "\nmaking a theme active is what puts it in front of players\n";
+/*
+ * dropship_themes.active was written by the admin and read by nothing, so
+ * ticking it did nothing: which projects a player saw was two names
+ * hardcoded in getProjects(). That list is also what dropship.php validates
+ * ?project_id against before the value reaches SQL, so the flag has to
+ * drive BOTH or a project hidden from the dropdown stays reachable by
+ * typing the id into the URL.
+ */
+$mk = function ($rows) {
+	$t = array();
+	foreach ($rows as $pid => $act) {
+		$t[$pid] = array('id' => $pid, 'project_id' => $pid, 'slug' => 's' . $pid, 'active' => $act);
+	}
+	return new TConn($t);
+};
+ok(dropshipActiveProjectIds($mk(array(1 => 1, 2 => 0, 3 => 0, 4 => 1))) === array(1, 4),
+   'the active themes are not the ones offered');
+ok(dropshipActiveProjectIds($mk(array(1 => 1, 2 => 1, 3 => 1, 4 => 1))) === array(1, 2, 3, 4),
+   'activating every theme does not offer every theme');
+ok(dropshipActiveProjectIds($mk(array(2 => 1))) === array(2),
+   'a single active theme is not offered on its own');
+/*
+ * NULL IN EVERY DOUBTFUL CASE, so the old list stands rather than an empty
+ * dropdown, which a player cannot tell from an outage.
+ */
+ok(dropshipActiveProjectIds($mk(array())) === null,
+   'an empty themes table hides every project instead of falling back');
+ok(dropshipActiveProjectIds($mk(array(1 => 0, 2 => 0))) === null,
+   'deactivating every theme locks every player out of the game');
+ok(dropshipActiveProjectIds(null) === null, 'a dead connection hides every project');
+/* '0' and 0 both mean inactive; the column is TINYINT but mysqli hands back
+   strings, so a truthiness test on '0' would call it active. */
+ok(dropshipActiveProjectIds($mk(array(1 => '1', 2 => '0'))) === array(1),
+   "a string '0' is treated as active");
+/*
+ * THE SEED MUST REPRODUCE TODAY'S BEHAVIOUR EXACTLY. This is the property
+ * that makes the switch safe to deploy: the themes marked active have to be
+ * precisely the projects the hardcoded exclusion already allowed, or
+ * re-seeding silently opens a work-in-progress theme to players or shuts a
+ * live one.
+ */
+preg_match_all("/\((\d+), '[a-z-]+', (\d), '\w+', NOW\(\)\)/", $seed, $sm, PREG_SET_ORDER);
+ok(count($sm) === 4, 'the seed no longer declares four themes');
+$seed_active = array();
+foreach ($sm as $row) if ($row[2] === '1') $seed_active[] = (int)$row[1];
+sort($seed_active);
+/* What the old rule allowed: everything except Filthy Mermaid (3) and
+   Dread City (2). Read from db.php rather than restated, so renaming a
+   project here is not a quiet way to disagree with the code. */
+$dbsrc3 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
+ok(preg_match("/name != 'Filthy Mermaid' AND name != 'Dread City'/", $dbsrc3) === 1,
+   'the legacy exclusion changed, so the comparison below is against nothing');
+ok($seed_active === array(1, 4),
+   'the seed activates ' . implode(',', $seed_active)
+   . ' but the old rule showed players projects 1 and 4; re-seeding would change who sees what');
+
+/* getProjects() must consult it, and must still carry the old list for the
+   fallback -- that is what keeps this invisible until a theme is saved. */
+ok(strpos($dbsrc3, 'dropshipActiveProjectIds($conn)') !== false,
+   'getProjects() ignores the active flag, so ticking it still does nothing');
+ok(strpos($dbsrc3, "WHERE name != 'Filthy Mermaid' AND name != 'Dread City'") !== false,
+   'the fallback list is gone, so a site with no themes yet shows every project');
+/* The ids are cast before they are concatenated into the IN(). */
+ok(strpos($dbsrc3, "implode(',', array_map('intval', \$allow))") !== false,
+   'project ids reach the IN() clause without being cast to integers');
+/* One list for both jobs. If the dropdown and the guard ever came from
+   different places, a hidden project would still be reachable by URL. */
+$dssrc2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship.php'));
+ok(strpos($dssrc2, '$ds_allowed = getProjects($conn);') !== false,
+   'the ?project_id guard no longer uses the same list as the dropdown');
+$dash2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(strpos($dash2, 'getProjects($conn)') !== false,
+   'the dashboard dropdown no longer uses that list either');
 
 echo "\nthe admin can pick any project, not just the public ones\n";
 /*

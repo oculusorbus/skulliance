@@ -177,8 +177,11 @@ ok($b_at !== false, 'the project-init block moved in dropship/dropship.php');
 $b_end  = strpos($ds_src, "\n}\n", strpos($ds_src, 'if(!isset($_SESSION[\'userData\'][\'dropship_project_id\'])){', $b_at));
 $block  = substr($ds_src, $b_at, $b_end - $b_at + 3);
 
-/* getProjects() excludes Filthy Mermaid and Dread City, so 2 and 3 are not
-   selectable -- the same list the Select Project dropdown is built from. */
+/* getProjects() offers only the projects whose theme is ACTIVE -- 1 and 4 as
+   seeded, with the old name exclusion as the fallback before any theme
+   exists -- so 2 and 3 are not selectable. The same list the Select Project
+   dropdown is built from, which is the point: the dropdown and this guard
+   must never disagree, or a hidden project stays reachable by URL. */
 function getProjects($conn) { return array(1 => 'Drop Ship', 4 => 'Oculus Lounge'); }
 
 function init($post, $get, $session_has = null) {

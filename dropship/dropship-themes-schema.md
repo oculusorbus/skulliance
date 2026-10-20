@@ -33,6 +33,24 @@ path filters a player's wallet against it. A theme is a skin over a
 collection somebody else minted, and several themes can share one. That
 binding stays where it is; this schema owns presentation only.
 
+## `active` is what puts a theme in front of players
+
+Ticking it used to do nothing: which projects a player saw was two names
+hardcoded in `getProjects()`. `dropshipActiveProjectIds()` makes the flag
+real, and `getProjects()` consults it.
+
+That one list does two jobs - it builds the dashboard's Select Project
+dropdown **and** is what `dropship.php` validates `?project_id` against
+before the value reaches SQL - so the flag closes both doors at once. If it
+only drove the dropdown, a hidden theme would still be reachable by typing
+the id into the URL.
+
+It returns `null`, and the old name-exclusion stands, whenever it cannot
+answer: no table, no themes, or no theme active. The first two keep the
+change invisible until somebody saves a theme. The third is a judgement -
+an empty picker is indistinguishable from an outage, and the flag is for
+choosing between themes rather than for closing the game.
+
 ## Why there are no label columns
 
 An earlier cut of this table carried `currency`, `squad_label` and

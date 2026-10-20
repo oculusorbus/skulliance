@@ -288,3 +288,37 @@ function dropshipAdminProjects($conn) {
 	if ($r) while ($row = $r->fetch_assoc()) $out[(int)$row['id']] = $row['name'];
 	return $out;
 }
+
+/**
+ * The project ids a player may enter, or NULL to let the old rule decide.
+ *
+ * dropship_themes.active was written by the admin and read by nothing, so
+ * ticking it did nothing at all; which projects a player saw was a pair of
+ * names hardcoded in getProjects(). This is what makes the flag mean what
+ * the column comment always said it meant.
+ *
+ * NULL, NOT AN EMPTY LIST, IN EVERY DOUBTFUL CASE. Three of them:
+ *  - the table is missing, which is the pre-migration state;
+ *  - the table exists but holds no themes at all;
+ *  - themes exist but not one is active.
+ * The first two keep this additive. The third is a judgement: an empty
+ * picker is indistinguishable from an outage, and the flag is for choosing
+ * BETWEEN themes, not for closing the game. Deactivating everything
+ * therefore leaves the old list rather than locking every player out.
+ */
+function dropshipActiveProjectIds($conn) {
+	/* NOT CACHED. It is one small query a couple of times a request, and a
+	   static would hand admin-themes.php the list from BEFORE the save it
+	   just did, on the very page whose job is changing this flag. */
+	if (!is_object($conn) || !dropshipThemesTable($conn)) return null;
+
+	$r = @$conn->query("SELECT project_id, active FROM dropship_themes");
+	if (!$r) return null;
+	$ids = array(); $any = false;
+	while ($row = $r->fetch_assoc()) {
+		$any = true;
+		if (!empty($row['active'])) $ids[] = (int)$row['project_id'];
+	}
+	if (!$any || !$ids) return null;
+	return $ids;
+}
