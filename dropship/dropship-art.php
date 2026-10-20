@@ -360,6 +360,28 @@ function dropshipArtIsAnimatedGif($path) {
 }
 
 /**
+ * Make a freshly written slot readable by whatever serves it.
+ *
+ * REQUIRED, NOT TIDINESS. dropshipArtStore() MOVES its input when the
+ * file already fits and needs no conversion, and a move preserves the
+ * SOURCE's permissions. An uploaded file comes from PHP's own upload
+ * directory and lands at the umask, but tempnam() creates at 0600 -- so
+ * when the drag-a-slot-onto-another-slot copy started handing the store
+ * a tempnam() file, every copied slot landed unreadable by anything but
+ * the PHP user. On this server static files are served by Apache, not
+ * PHP, so the file stored perfectly, reported its real dimensions, and
+ * showed as a broken image.
+ *
+ * Applied to every write rather than to that one path, because which
+ * branch runs depends on the picture and nobody choosing a slot is
+ * thinking about it.
+ */
+function dropshipArtReadable($path) {
+	@chmod($path, 0644);
+	return $path;
+}
+
+/**
  * Store an uploaded image into a theme slot, scaled to fit the pane.
  *
  * Returns array(ok, message).
@@ -427,13 +449,16 @@ function dropshipArtStore($tmp_path, $dest_abs, $declared_ext, $max_w = 0, $max_
 	/* MOVED ONLY WHEN NOTHING HAS TO CHANGE. A format change always means
 	   a re-encode, however well the image already fits. */
 	if ($fits && !$convert) {
-		return @move_uploaded_file($tmp_path, $dest_abs) || @rename($tmp_path, $dest_abs)
+		$ok = @move_uploaded_file($tmp_path, $dest_abs) || @rename($tmp_path, $dest_abs);
+		if ($ok) dropshipArtReadable($dest_abs);
+		return $ok
 			? array(true, "Stored at {$w}x{$h}, already within {$max_w}x{$max_h}.")
 			: array(false, 'Could not write ' . basename($dest_abs) . '.');
 	}
 
 	if ($animated && $want === 'gif' && !$fits && !class_exists('Imagick')) {
 		$ok = @move_uploaded_file($tmp_path, $dest_abs) || @rename($tmp_path, $dest_abs);
+		if ($ok) dropshipArtReadable($dest_abs);
 		return $ok
 			? array(true, "Stored at {$w}x{$h} WITHOUT resizing: this gif is animated and "
 			            . 'Imagick is not available, and GD would flatten it to one frame.')
@@ -488,6 +513,7 @@ function dropshipArtStore($tmp_path, $dest_abs, $declared_ext, $max_w = 0, $max_
 				$im->writeImage($dest_abs);
 			}
 			$im->clear();
+			dropshipArtReadable($dest_abs);
 			return array(true, $did());
 		} catch (Throwable $e) {
 			return array(false, 'Imagick could not process that file: ' . $e->getMessage());
@@ -526,6 +552,7 @@ function dropshipArtStore($tmp_path, $dest_abs, $declared_ext, $max_w = 0, $max_
 	if (!$ok && $want === 'webp' && !function_exists('imagewebp')) {
 		return array(false, 'This server cannot write webp.');
 	}
+	if ($ok) dropshipArtReadable($dest_abs);
 	return $ok ? array(true, $did())
 	           : array(false, 'Could not write ' . basename($dest_abs) . '.');
 }

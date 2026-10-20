@@ -1316,9 +1316,69 @@ $cp_dst2 = $tmpd . '/moved.gif';
 @unlink($cp_dst2);
 dropshipArtStore($cp_src2, $cp_dst2, 'gif');
 @unlink($cp_dst2); @unlink($cp_src2);
+
+/*
+ * AND THE FILE IT WRITES HAS TO BE READABLE BY WHATEVER SERVES IT.
+ *
+ * The move path preserves the SOURCE's permissions. An upload comes from
+ * PHP's own upload directory at the umask, but tempnam() creates at 0600 --
+ * so the first copies landed 0600, owned by the PHP user, and on this
+ * server static files are served by Apache rather than PHP. They stored
+ * perfectly, reported their real dimensions, and showed as broken images.
+ *
+ * DRIVEN WITH A 0600 SOURCE, which is the exact shape the copy hands it.
+ */
+$perm_of = function ($f) { clearstatcache(true, $f); return fileperms($f) & 0777; };
+$cp_t = tempnam(sys_get_temp_dir(), 'dsperm');
+copy($mk('png'), $cp_t);
+chmod($cp_t, 0600);
+$cp_pd = $tmpd . '/perm.png';
+@unlink($cp_pd);
+list($pok, $pwhy) = dropshipArtStore($cp_t, $cp_pd, 'png');
+ok($pok, 'the store refused the scratch copy: ' . $pwhy);
+ok($pok && $perm_of($cp_pd) === 0644,
+   'a slot written by moving a 0600 scratch file stays 0600, so the web server cannot read it: '
+ . ($pok ? decoct($perm_of($cp_pd)) : 'not written'));
+@unlink($cp_pd);
+/* The re-encode path writes a new file rather than moving one, so it is
+   at the umask -- which on a server with a 027 umask is also unreadable.
+   Same explicit mode either way. */
+$cp_t2 = tempnam(sys_get_temp_dir(), 'dsperm');
+copy($mk('png'), $cp_t2);
+chmod($cp_t2, 0600);
+$cp_pd2 = $tmpd . '/perm.gif';
+@unlink($cp_pd2);
+list($pok2,) = dropshipArtStore($cp_t2, $cp_pd2, 'gif');
+ok($pok2 && $perm_of($cp_pd2) === 0644,
+   'a converted slot is not left world-readable: ' . ($pok2 ? decoct($perm_of($cp_pd2)) : 'not written'));
+@unlink($cp_pd2); @unlink($cp_t); @unlink($cp_t2);
+/*
+ * EVERY SUCCESS PATH, not just the two this box can reach. The store has
+ * four ways to write -- move, animated-gif-without-Imagick, Imagick,
+ * GD -- and which one runs depends on the picture and on what the server
+ * has. This machine has no Imagick, so that branch cannot be driven here
+ * at all; and the GD branch creates its file at the umask, which happens
+ * to be 0644 on this box, so dropping its chmod changes nothing HERE and
+ * everything on a server with a tighter umask. Counted rather than
+ * driven, for the paths the environment hides.
+ */
+$store_src = (string)file_get_contents(__DIR__ . '/dropship/dropship-art.php');
+$store_i   = strpos($store_src, 'function dropshipArtStore(');
+$store_j   = strpos($store_src, "\n}", $store_i);
+$store_fn  = substr($store_src, $store_i, $store_j - $store_i);
+ok(substr_count($store_fn, 'array(true,') === substr_count($store_fn, 'dropshipArtReadable('),
+   'the store has ' . substr_count($store_fn, 'array(true,') . ' ways to succeed but only '
+ . substr_count($store_fn, 'dropshipArtReadable(') . ' of them make the file readable');
+ok(substr_count($store_fn, 'array(true,') >= 4,
+   'the store lost a write path, so the count above is comparing fewer things than it was');
+foreach ((array)glob($tmpd . '/*') as $f) @unlink($f);
 @rmdir($tmpd);
 
 $adm2 = file_get_contents(__DIR__ . '/dropship/admin-art.php');
+/* The card's own message is HTML for the non-JS path; strip_tags() takes
+   tags and leaves entities, so the reply was spelling out "&mdash;". */
+ok(strpos($adm2, 'html_entity_decode(') !== false,
+   'the in-place reply prints HTML entities at the player instead of the characters');
 $cp_at = strpos($adm2, "isset(\$_POST['copy_from'])");
 ok($cp_at !== false, 'the copy handler is gone, so a dragged slot does nothing');
 $cp_block = $cp_at === false ? '' : substr($adm2, $cp_at, 2200);

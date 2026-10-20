@@ -304,7 +304,13 @@ if ($dsa_inplace) {
 	}
 	$body = json_encode(array(
 		'ok'    => empty($msg['err']),
-		'note'  => strip_tags(implode(' ', $msg['err'] ? $msg['err'] : $msg['ok'])),
+		/* DECODED, because these messages are HTML for the non-JS path and
+		   carry &mdash;. strip_tags() removes tags, not entities, so the
+		   card was reporting "bunker/7.jpg &mdash; Stored at 1080x1080"
+		   with the entity spelled out. */
+		'note'  => html_entity_decode(
+			strip_tags(implode(' ', $msg['err'] ? $msg['err'] : $msg['ok'])),
+			ENT_QUOTES, 'UTF-8'),
 		'rel'   => $rel,
 		'src'   => ($abeside ? '/staking/dropship/' : $aweb) . $rel . '?v=' . ($here ? @filemtime($abs) : 0),
 		'here'  => $here,
@@ -417,6 +423,21 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
    that says so, so it is not optional. */
 .dsart .slot .shot img{cursor:grab}
 .dsart .slot .shot img:active{cursor:grabbing}
+/* CLICK TO SEE IT PROPERLY. A 1080px picture shown at 210 tells you which
+   image is in the slot and nothing about whether it is any good. */
+.dsart .lightbox{position:fixed;inset:0;z-index:200;display:flex;align-items:center;
+  justify-content:center;flex-direction:column;gap:10px;padding:24px;
+  background:rgba(4,10,18,.93);cursor:zoom-out}
+.dsart .lightbox img{max-width:min(96vw,1200px);max-height:80vh;width:auto;height:auto;
+  /* The run paints every frame on the game's own dark pane, so a picture
+     with transparency has to be judged against that and not against the
+     overlay, which is darker. */
+  background:#07111d;border:1px solid rgba(255,255,255,.14);border-radius:4px}
+.dsart .lightbox .cap{color:#e8eaed;font-size:13px;text-align:center;line-height:1.5;
+  max-width:min(96vw,1200px)}
+.dsart .lightbox .cap b{color:#00c8a0}
+.dsart .lightbox .cap code{color:#9fb3c8;font-size:12px}
+.dsart .lightbox .hint{color:#6f8296;font-size:11px}
 .dsart .inplace{display:block;font-size:10.5px;margin-top:4px;text-align:left}
 .dsart .inplace.good{color:#00c8a0}
 .dsart .inplace.bad{color:#e8a0b0}
@@ -495,6 +516,7 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	<b>Drag a picture already on this page onto another slot</b> and it lands there
 	too, converted to that slot's format, without going back to your own machine
 	for it. The slot you dragged from keeps its picture.<br>
+	<b>Click a picture to see it full size.</b><br>
 	Uploads are scaled to fit <b><?php echo dropshipArtMaxWidth(); ?>&times;<?php
 	echo dropshipArtMaxHeight(); ?></b>. That is the pane at <b>898px</b> times the
 	<b>1.2&times;</b> the Ken Burns pan zooms to, so art stays sharp at the end of the
@@ -727,6 +749,75 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 				say(slot, 'could not reach the server; try again', false);
 			});
 	}
+
+	/*
+	 * CLICK A PICTURE TO SEE IT FULL SIZE.
+	 *
+	 * The cards are 210px wide and the art is up to 1080, so a thumbnail
+	 * says which image is in the slot and nothing about whether it is the
+	 * right one -- which is the question somebody is on this page to
+	 * answer. Opening the file in a new tab was the alternative and it
+	 * loses your place in seventy slots.
+	 *
+	 * BUILT ON DEMAND and removed on close, so there is no hidden overlay
+	 * sitting over the page waiting to be shown by mistake -- the same
+	 * reason dsShowLoader() builds rather than toggles.
+	 */
+	function lightbox(img, slot) {
+		var box = document.createElement('div');
+		box.className = 'lightbox';
+		var big = document.createElement('img');
+		/* The card's own src, so it carries the same cache buster and a
+		   slot replaced a moment ago shows the NEW picture. */
+		big.src = img.src;
+		big.alt = '';
+		box.appendChild(big);
+
+		var cap = document.createElement('div');
+		cap.className = 'cap';
+		var name = slot.querySelector('.name');
+		var path = slot.querySelector('.path');
+		var dims = slot.querySelector('.dims');
+		/* textContent throughout: these are page-rendered strings, but a
+		   theme names its own icons and that name reaches .name. */
+		var b = document.createElement('b');
+		b.textContent = name ? name.textContent : '';
+		cap.appendChild(b);
+		if (path) {
+			var c = document.createElement('code');
+			c.textContent = ' ' + path.textContent;
+			cap.appendChild(document.createElement('br'));
+			cap.appendChild(c);
+		}
+		if (dims) {
+			var d = document.createElement('span');
+			d.textContent = ' ' + dims.textContent;
+			cap.appendChild(d);
+		}
+		box.appendChild(cap);
+		var hint = document.createElement('div');
+		hint.className = 'hint';
+		hint.textContent = 'click anywhere, or press Escape, to close';
+		box.appendChild(hint);
+
+		function close() {
+			box.remove();
+			document.removeEventListener('keydown', onKey);
+		}
+		function onKey(ev) { if (ev.key === 'Escape') close(); }
+		box.addEventListener('click', close);
+		document.addEventListener('keydown', onKey);
+		document.body.appendChild(box);
+	}
+
+	root.addEventListener('click', function (ev) {
+		var img = ev.target;
+		if (!img || img.tagName !== 'IMG') return;
+		var slot = card(img);
+		if (!slot || !slot.querySelector('.shot').contains(img)) return;
+		ev.preventDefault();
+		lightbox(img, slot);
+	});
 
 	root.addEventListener('submit', function (ev) {
 		if (!card(ev.target)) return;           /* not a per-card form */
