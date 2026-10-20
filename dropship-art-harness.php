@@ -136,5 +136,88 @@ ok(strpos($art, 'min($max_w / $w, $max_h / $h, 1)') !== false,
 ok(strpos($art, '$fits') !== false,
    'an image already within the pane is re-encoded rather than stored as it arrived');
 
+echo "\nevery slot says what it is, in English\n";
+/*
+ * DERIVED FROM THE PATH, so a file added to the manifest gets a name with
+ * nobody maintaining a second table that drifts out of step.
+ */
+require_once __DIR__ . '/dropship/dropship-themes.php';
+require_once __DIR__ . '/dropship/dropship-theme-vocab.php';
+foreach (dropshipArtManifest('gif') as $rel) {
+	$t = dropshipArtTitle($rel);
+	ok($t !== '' && $t !== $rel, "no readable name for $rel");
+	ok(strpos($t, 'images/') === false, "the name for $rel is just its path again");
+}
+/* Numbered stage frames are picked at RANDOM from the set, so frame 3 is not
+   round 3. Calling them scenes is the honest reading; naming them after
+   rounds would be a lie that reads perfectly plausibly. */
+ok(dropshipArtTitle('images/live/beach/3.gif') === 'Beach, scene 3 of 7',
+   'the beach frame is misnamed: ' . dropshipArtTitle('images/live/beach/3.gif'));
+ok(strpos(dropshipArtTitle('images/live/beach/3.gif'), 'round') === false,
+   'a randomly-picked scene is being called a round');
+ok(dropshipArtTitle('images/live/hill/exo/2.gif') === 'Hill in an Exo Suit, scene 2 of 2',
+   'the exo variant is not distinguished');
+ok(dropshipArtTitle('images/weapons/rocket-launcher3.gif') === 'Rocket Launcher, frame 3 of 5',
+   'a weapon frame does not say which of how many');
+ok(dropshipArtTitle('images/live/beach/beach-secured.gif') === 'Beach cleared',
+   'the cleared frame is not distinguished from the scenes');
+
+echo "\nthe art screen shows the wording too\n";
+/*
+ * A slot called rocket-launcher3 only means something if you know what your
+ * theme calls a rocket launcher. Pairing the original with the mapping turns
+ * "replace this file" into a decision.
+ */
+$t = dropshipArtSlotTerms('images/weapons/rocket-launcher3.gif');
+$finds = array_column($t, 'find');
+ok(in_array('Rocket Launcher', $finds, true), 'a weapon slot does not name its display word');
+/* ...but NOT its icon filename. 'rocket-launcher -> strap-on-cannon' sits
+   directly under 'Rocket Launcher -> Strap-On Cannon' and says nothing the
+   line above has not: the same fact, spelled twice. The icons have their
+   own section lower down the page. */
+ok(!in_array('rocket-launcher', $finds, true),
+   'a weapon slot lists its icon filename as well as its word, which is the same fact twice');
+ok(array_column(dropshipArtSlotTerms('images/live/beach/3.gif'), 'find') === array('beach'),
+   'a stage frame does not name the place it shows');
+ok(in_array('Beach Secured', array_column(dropshipArtSlotTerms('images/live/beach/beach-secured.gif'), 'find'), true),
+   'the cleared frame does not name its own label');
+ok(dropshipArtSlotTerms('images/1up/1.gif') === array(),
+   'a slot with no words invents some');
+/* Untouched words must not render as "X -> X" noise. */
+$c = new class { public function query($q) { return false; } };
+ok(dropshipArtSlotMapping($c, 1, 'images/weapons/rocket-launcher3.gif') === array(),
+   'a theme with no overrides still lists mappings');
+$adm2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-art.php'));
+ok(strpos($adm2, 'dropshipArtTitle($rel)') !== false, 'the page does not show slot names');
+ok(strpos($adm2, 'dropshipArtSlotMapping($conn, $pid, $rel)') !== false,
+   'the page does not show what the theme calls each thing');
+
+echo "\nicons are shared, and named by the wording\n";
+/*
+ * ONE FOLDER FOR EVERY THEME. The markup asks for icons/<name>.png relative
+ * to the page and all four projects are served from /staking/dropship/, so
+ * there is no per-theme copy -- a theme renames the thing and ships a file
+ * under the new name. Confirmed live: icons/medkit.png is a 200 and
+ * oculus-lounge/icons/medkit.png is a 404.
+ */
+ok(strpos($adm2, 'dropshipThemeIconSlots($conn, $pid)') !== false,
+   'the page does not list the icons this theme asks for');
+ok(strpos($adm2, "rtrim(__DIR__, '/') . '/'") !== false,
+   'an icon is written into the theme folder rather than the shared one');
+ok(strpos($adm2, '$icon_names') !== false,
+   'an icon upload is not validated against the names this theme asks for');
+$art2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-art.php'));
+ok(strpos($art2, "preg_match('#^[A-Za-z0-9._-]+\$#', \$name)") !== false,
+   'a renamed icon is not checked for being a usable filename');
+/* Resolution has to go through the theme, or the list is just Drop Ship's. */
+ok(strpos($art2, 'dropshipThemeText($conn, $project_id, $term)') !== false,
+   'the icon list is not resolved through the theme, so a rename is invisible');
+/* A family can own more than one icon file -- Super Soldier owns both
+   dropship.png and supersoldier.png -- so the list iterates them. */
+ok(strpos($art2, "foreach (\$r['icons'] as \$term)") !== false,
+   'the icon list takes one file per family, so the second file is never listed');
+ok(strpos($art2, "'label'  => \$r['label']") !== false,
+   "the icon list shows only the filename, so 'heavy-armor' appears with nothing saying it is Heavy");
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);

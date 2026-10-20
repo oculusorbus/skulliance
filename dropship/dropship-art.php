@@ -366,3 +366,170 @@ function dropshipArtStore($tmp_path, $dest_abs, $declared_ext) {
 	return $ok ? array(true, "Scaled {$w}x{$h} to {$nw}x{$nh}.")
 	           : array(false, 'Could not write ' . basename($dest_abs) . '.');
 }
+
+/**
+ * A human name for a slot, worked out from its path.
+ *
+ * DERIVED, NOT A HAND-WRITTEN LIST, so a file added to the manifest gets a
+ * readable name without anyone maintaining a second table that drifts. The
+ * path already says what the thing is; this just says it in English.
+ *
+ * HONEST ABOUT WHAT IT DOES NOT KNOW: the numbered stage frames are picked
+ * at random from the set, so frame 3 is not "round 3". They are called
+ * scenes for that reason -- naming them after rounds would be a lie that
+ * reads perfectly plausibly.
+ */
+function dropshipArtTitle($rel) {
+	$stages = dropshipArtStages();
+	$weapons = dropshipArtWeapons();
+	$name = pathinfo($rel, PATHINFO_FILENAME);
+
+	if ($rel === 'images/reset/reset.gif' || strpos($rel, 'images/reset/reset.') === 0) {
+		return 'Round 0, the ship arriving';
+	}
+	if (strpos($rel, 'images/reset/intro.') === 0)  return 'The still shown before a run';
+	if (strpos($rel, 'images/drop/drop.') === 0)    return 'Round 1, the drop';
+	if (strpos($rel, 'images/drop/team.') === 0)    return 'Round 2, landed';
+
+	if (preg_match('#^images/live/([a-z]+)/(exo/)?([a-z0-9-]+)\.#', $rel, $m)) {
+		$stage = ucfirst($m[1]);
+		$exo   = $m[2] !== '' ? ' in an Exo Suit' : '';
+		if (!ctype_digit($m[3])) return $stage . ' cleared';
+		$of = $m[2] !== '' ? $stages[$m[1]]['exo'] : $stages[$m[1]]['plain'];
+		return $stage . $exo . ', scene ' . $m[3] . ' of ' . $of;
+	}
+
+	if (preg_match('#^images/die/([a-z0-9]+)\.#', $rel, $m)) {
+		if (ctype_digit($m[1])) return 'Death, scene ' . $m[1] . ' of 3';
+		if ($m[1] === 'landmine') return 'Death by landmine';
+		return 'Death on the ' . $m[1];
+	}
+	if (preg_match('#^images/1up/([0-9]+)\.#', $rel, $m)) {
+		return 'Extra life, scene ' . $m[1] . ' of 2';
+	}
+
+	if (preg_match('#^images/weapons/([a-z-]+?)([0-9]*)\.#', $rel, $m)) {
+		$label = ucwords(str_replace('-', ' ', $m[1]));
+		if ($m[2] === '' || !isset($weapons[$m[1]])) return $label;
+		return $label . ', frame ' . $m[2] . ' of ' . $weapons[$m[1]];
+	}
+	if (preg_match('#^images/equipment/([a-z-]+?)([0-9]*)\.#', $rel, $m)) {
+		$label = ucwords(str_replace('-', ' ', $m[1]));
+		return $m[2] === '' ? $label : $label . ', frame ' . $m[2];
+	}
+
+	if (strpos($rel, 'images/nfts/placeholder') === 0) return 'Empty squad slot';
+	if (strpos($rel, 'images/dropship.') === 0)        return 'The image Discord posts';
+	return ucwords(str_replace(array('-', '_'), ' ', $name));
+}
+
+/**
+ * The icons this theme asks for, and what it calls them.
+ *
+ * ICONS ARE ONE SHARED FOLDER, not one per theme. The markup asks for
+ * `icons/<name>.png` RELATIVE to the page, and every project is served from
+ * /staking/dropship/, so there is a single pool. Themes do not get their own
+ * copy of medkit.png -- they rename the thing and ship a file under the new
+ * name, which is why Oculus Lounge asks for icons/nurse.png.
+ *
+ * That makes the wording admin and the art admin two halves of one job:
+ * renaming 'medkit' to 'nurse' is what creates the obligation to upload
+ * icons/nurse.png, and nothing else in the system will tell you that.
+ *
+ * Returns array of array(term, name, path, exists) -- term is the Drop Ship
+ * word, name is what this theme calls it.
+ */
+function dropshipThemeIconSlots($conn, $project_id) {
+	if (!function_exists('dropshipThemeVocabulary')) return array();
+	$out = array();
+	foreach (dropshipThemeVocabulary() as $rows) {
+		foreach ($rows as $r) {
+			foreach ($r['icons'] as $term) {
+				$name = $term;
+				if (function_exists('dropshipThemeText')) {
+					$themed = dropshipThemeText($conn, $project_id, $term);
+					if ($themed !== null && $themed !== '') $name = $themed;
+				}
+				/* The name becomes a filename, so it has to survive being
+				   one. A theme that renames to something with a space or a
+				   slash is a 404 at play time, and saying so here is cheaper
+				   than finding out from a missing icon. */
+				$safe = (preg_match('#^[A-Za-z0-9._-]+$#', $name) === 1);
+				$rel  = 'icons/' . $name . '.png';
+				$out[] = array(
+					'term'   => $term,
+					/* The thing the icon is OF, which is what the admin is
+					   actually looking for -- 'heavy-armor' is a filename,
+					   'Heavy' is the word on the screen. */
+					'label'  => $r['label'],
+					'name'   => $name,
+					'rel'    => $rel,
+					'safe'   => $safe,
+					'exists' => $safe && is_file(__DIR__ . '/' . $rel),
+				);
+			}
+		}
+	}
+	return $out;
+}
+
+/**
+ * The Drop Ship words a slot is a picture OF.
+ *
+ * WHY THE ART SCREEN NEEDS THE WORDING: a slot called
+ * images/weapons/rocket-launcher3 is only meaningful if you know what your
+ * theme calls a rocket launcher. Showing the original beside the mapping
+ * turns "replace this file" into "replace the third frame of the thing your
+ * players know as a Strap-On Cannon", which is the difference between
+ * guessing and deciding.
+ *
+ * Derived from the path, so it needs no second table. Returns the terms as
+ * they appear in the vocabulary, which is what dropshipThemeText() answers
+ * for -- the Title Case display word and, where it exists, the lowercase
+ * filename twin.
+ */
+function dropshipArtSlotTerms($rel) {
+	$terms = array();
+	$add = function ($t, $type) use (&$terms) {
+		foreach ($terms as $e) if ($e['find'] === $t && $e['type'] === $type) return;
+		$terms[] = array('find' => $t, 'type' => $type);
+	};
+
+	/* Stage art: the place, which themes rename as a description. */
+	if (preg_match('#^images/live/([a-z]+)/#', $rel, $m)) {
+		if (preg_match('#/([a-z]+)-secured\.#', $rel, $s)) {
+			$add(ucfirst($s[1]) . ' Secured', 'exact');   /* "Beach Secured" is a label */
+		}
+		$add($m[1], 'description');
+	}
+	/* Deaths name the place they happen in. */
+	if (preg_match('#^images/die/([a-z]+)\.#', $rel, $m) && !ctype_digit($m[1])) {
+		if ($m[1] !== 'landmine') $add($m[1], 'description');
+	}
+	/* Weapons and equipment: the display word and its icon filename. */
+	if (preg_match('#^images/(?:weapons|equipment)/([a-z-]+?)[0-9]*\.#', $rel, $m)) {
+		/* The display word only. The lowercase twin is the ICON FILENAME,
+		   and showing it here would say 'Rocket Launcher -> Strap-On Cannon'
+		   immediately above 'rocket-launcher -> strap-on-cannon' -- the same
+		   fact spelled twice. The icons have their own section. */
+		$add(ucwords(str_replace('-', ' ', $m[1])), 'exact');
+	}
+	return $terms;
+}
+
+/**
+ * Those terms resolved through a theme: original beside what it says.
+ *
+ * Only returns the ones the theme actually answers for, so a slot whose
+ * words are untouched shows nothing rather than a row of "X -> X".
+ */
+function dropshipArtSlotMapping($conn, $project_id, $rel) {
+	$out = array();
+	if (!function_exists('dropshipThemeText')) return $out;
+	foreach (dropshipArtSlotTerms($rel) as $t) {
+		$said = dropshipThemeText($conn, $project_id, $t['find']);
+		if ($said === null || $said === '' || $said === $t['find']) continue;
+		$out[] = array('from' => $t['find'], 'to' => $said);
+	}
+	return $out;
+}

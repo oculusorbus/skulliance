@@ -256,17 +256,23 @@ echo "\nthe admin prefills the words a theme has to answer for\n";
  */
 require_once __DIR__ . '/dropship/dropship-theme-vocab.php';
 $vocab = dropshipThemeVocabulary();
-$terms = array(); $icons = 0;
+$terms = array(); $bylabel = array(); $icons = 0;
 foreach ($vocab as $group => $rows) {
 	ok(!empty($rows), "vocabulary group '$group' is empty");
 	foreach ($rows as $r) {
-		$terms[$r['type'] . '|' . $r['find']] = true;
-		if ($r['icon']) $icons++;
+		foreach ($r['exact'] as $w)  $terms['exact|' . $w] = true;
+		foreach ($r['desc'] as $w)   $terms['description|' . $w] = true;
+		foreach ($r['icons'] as $ic) { $terms['exact|' . $ic] = true; $icons++; }
+		ok($r['exact'] || $r['desc'],
+		   "family '" . $r['label'] . "' names no word at all");
+		ok(in_array($r['label'], $r['exact'], true) || in_array($r['label'], $r['desc'], true),
+		   "family '" . $r['label'] . "' does not include its own label");
+		ok(!isset($bylabel[$r['label']]), "two families are both called '" . $r['label'] . "'");
+		$bylabel[$r['label']] = $r;
 	}
 }
-ok(count($terms) >= 100, 'the vocabulary has only ' . count($terms) . ' terms; it should cover what the themes overrode');
-ok($icons > 0, 'no term is flagged as an icon filename');
-/* The words every reskin had to rename must be in there. */
+ok(count($terms) >= 100, 'the vocabulary covers only ' . count($terms) . ' terms; it should cover what the themes overrode');
+ok($icons > 0, 'no family carries an icon filename');
 foreach (array('exact|SCRIP', 'exact|Barracks', 'exact|Heavy', 'exact|Medkit',
                'exact|Drop Ship', 'exact|Grunt', 'description|beach') as $must) {
 	ok(isset($terms[$must]), "the vocabulary is missing $must, which existing themes override");
@@ -275,45 +281,168 @@ foreach (array('exact|SCRIP', 'exact|Barracks', 'exact|Heavy', 'exact|Medkit',
 ok(!isset($terms['exact|gif']),
    'the vocabulary offers gif as an override, which would fight dropship_themes.extension');
 /*
- * The icon flag must mark the filename forms and not the display words.
- *
- * KEYED BY TYPE AND FIND, not find alone: 'Medkit' exists as both an exact
- * term and a description term, so a find-only key let the second overwrite
- * the first and the check passed against the wrong row. Found by mutation,
- * not by reading.
+ * ONE BOX PER THING, in all four ways the game asks for it: the bare label,
+ * the shop item, the word mid-sentence, and the icon filename. If those were
+ * separate rows the admin would type one answer four times, and four boxes
+ * that must agree are four boxes that can drift.
  */
-$byterm = array();
-foreach ($vocab as $rows) foreach ($rows as $r) $byterm[$r['type'] . '|' . $r['find']] = $r;
-ok(!empty($byterm['exact|medkit']['icon']), "'medkit' is not flagged as an icon filename");
-ok(empty($byterm['exact|Medkit']['icon']), "'Medkit' is wrongly flagged as an icon filename");
-/* Every icon-flagged term must actually look like a filename. */
-foreach ($byterm as $k => $r) {
-	if (empty($r['icon'])) continue;
-	ok(preg_match('/^[a-z0-9-]+$/', $r['find']) === 1,
-	   "'" . $r['find'] . "' is flagged as an icon filename but is not one");
-}
-
-echo "\n\"keep\" is stored as a decision, not as silence\n";
+ok($bylabel['Heavy']['exact'] === array('Heavy', 'Heavy Armor'),
+   "the Heavy family does not cover both 'Heavy' and 'Heavy Armor'");
+ok($bylabel['Heavy']['desc'] === array('Heavy Armor'),
+   'the Heavy family does not cover the mid-sentence form');
+ok($bylabel['Heavy']['icons'] === array('heavy-armor'),
+   "the Heavy family does not carry its icon filename (it is 'heavy-armor', never 'heavy')");
+ok(!isset($bylabel['Heavy Armor']) && !isset($bylabel['heavy-armor']),
+   'a form of Heavy still has a row of its own, so the admin types the answer twice');
 /*
- * An empty box means "not looked at yet" and a ticked one means "this theme
- * uses the Drop Ship word on purpose". If keep wrote nothing, the two would
- * be indistinguishable and the list would stop being a checklist. It is
- * stored as a row whose replacement equals its find -- a no-op at lookup
- * time, which is the point.
+ * NO "DESCRIPTIONS" GROUP. Exact and description are match TYPES. A group
+ * that collects terms by how they are matched says nothing about what is
+ * being renamed, and every term in it was already named above.
  */
+ok(!isset($vocab['Descriptions']),
+   'Descriptions is back as a group, so the same thing is listed twice under two headings');
+$desc_fams = 0;
+foreach ($vocab as $rows) foreach ($rows as $r) if ($r['desc']) $desc_fams++;
+ok($desc_fams > 20, 'only ' . $desc_fams . ' families carry a description form; they have been dropped rather than folded in');
+/* The lone description-only terms belong with the thing they describe. */
+ok(isset($vocab['Locations']['0']) || true, '');
+$loc = array_column($vocab['Locations'], 'label');
+foreach (array('beach', 'hill', 'bunker') as $place) {
+	ok(in_array($place, $loc, true), "'$place' is not filed under Locations");
+}
+$act = array_column($vocab['Actions'], 'label');
+foreach (array('Stormed the Beach', 'Climbed the Hill', 'Entered the Bunker') as $line) {
+	ok(in_array($line, $act, true), "'$line' is not filed under Actions");
+}
+/*
+ * TWO ICON FACTS THAT CAME OUT OF MEASUREMENT, not review, and that a
+ * reasonable guess gets wrong:
+ */
+ok($bylabel['Super Soldier']['icons'] === array('dropship', 'supersoldier'),
+   "'dropship' is not Super Soldier's icon -- both themes send it to 'vip', as they do 'supersoldier'");
+ok($bylabel['Drop Ship']['icons'] === array('drop-ship'),
+   "the Drop Ship family claims an icon that is not its own");
+foreach ($vocab as $rows) foreach ($rows as $r) {
+	foreach ($r['icons'] as $ic) {
+		ok(preg_match('/^[a-z0-9-]+$/', $ic) === 1,
+		   "'" . $ic . "' is carried as an icon filename but is not one");
+	}
+}
+/*
+ * Every word in a family must take the same answer in every theme that has
+ * an opinion, or one box could not speak for all of them. Checked against
+ * the real seed, which is what the live themes load.
+ */
+$seed = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
+/* The seed writes rows against @t, reset once per theme, so the theme a row
+   belongs to is the block it sits in -- split on the marker rather than
+   looking for an id that is not in the text. */
+$blocks = array();
+foreach (preg_split('/SET @t := \(SELECT id FROM dropship_themes WHERE project_id = (\d+)\);/',
+                    $seed, -1, PREG_SPLIT_DELIM_CAPTURE) as $k => $part) {
+	if ($k % 2 === 1) $pid = $part; else if ($k > 0) $blocks[$pid] = $part;
+}
+ok(count($blocks) === 3, 'the seed no longer has three theme blocks; found ' . count($blocks));
+$seen_pairs = 0;
+foreach ($vocab as $rows) foreach ($rows as $r) {
+	$want = array();
+	foreach ($r['exact'] as $w) $want[] = array('exact', $w);
+	foreach ($r['desc'] as $w)  $want[] = array('description', $w);
+	if (count($want) < 2) continue;
+	foreach ($blocks as $pid => $sql) {
+		$vals = array();
+		foreach ($want as $pair) {
+			if (preg_match("/\(\@t, '" . $pair[0] . "', '" . preg_quote($pair[1], '/')
+			               . "', '([^']*)'/", $sql, $m)) $vals[] = $m[1];
+		}
+		if (count($vals) > 1) $seen_pairs++;
+		ok(count(array_unique($vals)) <= 1,
+		   "project $pid gives the words of '" . $r['label'] . "' different answers ("
+		   . implode(' / ', array_unique($vals)) . "), so one box cannot speak for them");
+	}
+}
+ok($seen_pairs > 20,
+   'only ' . $seen_pairs . ' multi-word families were found in the seed, so this check is barely proving anything');
+
+echo "\na blank box means the Drop Ship word, and writes nothing\n";
+/*
+ * evaluateText() already falls through to the original when it finds no row,
+ * so a row replacing a word with itself would be a no-op stored only to
+ * record that somebody had looked at it. That was a checkbox column on every
+ * row of the form, bought with nothing. Only overrides override.
+ */
+$one = function ($label, $say, $icon = null) {
+	return dropshipThemeVocabExpand(array(
+		'fam_label' => array($label), 'fam_say' => array($say),
+		'fam_icon'  => array($icon === null ? '' : $icon)));
+};
+$flat = function ($rows) {
+	$o = array();
+	foreach ($rows as $x) $o[$x['type'] . '|' . $x['find']] = $x['replacement'];
+	return $o;
+};
+ok($one('Heavy', '') === array(), 'a blank box writes a row, so blank and "keep it" differ');
+ok($one('Barracks', '   ') === array(), 'whitespace alone counts as an override');
+/* One box fills every form of the thing. */
+$g = $flat($one('Heavy', 'Smoking Jacket'));
+ok(($g['exact|Heavy'] ?? null) === 'Smoking Jacket', 'the family label is not written');
+ok(($g['exact|Heavy Armor'] ?? null) === 'Smoking Jacket',
+   'the shop item is not written, so the shop keeps the Drop Ship name');
+ok(($g['description|Heavy Armor'] ?? null) === 'Smoking Jacket',
+   'the mid-sentence form is not written, so results lines keep the Drop Ship name');
+ok(($g['exact|heavy-armor'] ?? null) === 'smoking-jacket',
+   'the icon filename is not derived from the word');
+ok(count($g) === 4, 'the Heavy family wrote ' . count($g) . ' rows rather than 4');
+/* A family with two icons writes both. */
+$g2 = $flat($one('Super Soldier', 'VIP'));
+ok(($g2['exact|dropship'] ?? null) === 'vip' && ($g2['exact|supersoldier'] ?? null) === 'vip',
+   'a family with two icon files does not write both');
+/* An override wins, because 13 of the 64 real cases are shortenings. */
+$g3 = $flat($one('Medkit', 'Sexy Nurse', 'nurse'));
+ok($g3['exact|Medkit'] === 'Sexy Nurse', 'the word is not written when the icon is overridden');
+ok($g3['exact|medkit'] === 'nurse', 'an overridden icon filename is ignored');
+/* An override is a filename too, however it is typed. */
+$g4 = $flat($one('Medkit', 'Sexy Nurse', 'Sexy Nurse!'));
+ok($g4['exact|medkit'] === 'sexy-nurse', 'an icon override is not slugified into a filename');
+/* A description-only family stays a description, and invents no icon. */
+$g5 = $one('beach', 'lobby');
+ok(count($g5) === 1 && $g5[0]['type'] === 'description' && $g5[0]['find'] === 'beach',
+   'a description-only family does not write exactly one description row');
+foreach ($one('Barracks', 'Green Room') as $x) {
+	ok($x['find'] === 'Barracks', "an iconless family wrote a row for '" . $x['find'] . "'");
+}
+/*
+ * THE WORDS COME FROM THE VOCABULARY, NEVER FROM THE POST. The form carries
+ * the label, not the list, so a mangled or forged post cannot write a word
+ * this form does not own.
+ */
+ok($one('Not A Real Term', 'Whatever') === array(),
+   'a label that is not in the vocabulary is written anyway');
+ok(dropshipThemeVocabExpand(array('fam_label' => array('Heavy'), 'fam_say' => array('X'),
+                                  'fam_icon' => array(''), 'fam_words' => array('Soldiers'))) === $one('Heavy', 'X'),
+   'the post can smuggle in a word the family does not own');
+/* The form must post what the expansion reads, and must no longer ask the
+   question the blank box already answers. */
 $adm2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));
-ok(strpos($adm2, "\$_POST['keep']") !== false, 'the admin ignores the Keep checkbox');
-ok(strpos($adm2, 'if (!empty($keeps[$i])) $rep = $find;') !== false,
-   'Keep does not store the word as its own replacement');
-ok(strpos($adm2, "if (\$rep === '') continue;") !== false,
-   'an undecided term is written as a row, so blank and Keep become the same thing');
+ok(strpos($adm2, 'dropshipThemeVocabExpand($_POST)') !== false,
+   'the admin does not expand the families it posts');
+foreach (array('fam_label[]', 'fam_say[]', 'fam_icon[]') as $field) {
+	ok(strpos($adm2, 'name="' . $field . '"') !== false,
+	   "the form does not post $field, which the expansion reads");
+}
+ok(strpos($adm2, "\$_POST['keep']") === false, 'the admin still reads the Keep checkbox');
+ok(strpos($adm2, 'name="keep[') === false, 'the form still renders Keep checkboxes');
+ok(strpos($adm2, "if (\$rep === '') continue;") !== false, 'a blank box is written as a row');
 ok(strpos($adm2, 'dropshipThemeVocabulary()') !== false, 'the admin does not render the guide');
-ok(strpos($adm2, 'terms decided') !== false, 'the admin does not show how much of the guide is done');
+/* Every family must post an index-aligned icon field, even the ones with no
+   icon, or one iconless family shifts every icon after it onto another row. */
+ok(strpos($adm2, '<input type="hidden" name="fam_icon[]" value="">') !== false,
+   'an iconless family posts no fam_icon, so the icon fields fall out of step with the labels');
 /* An identity row must be harmless at lookup: replacing a word with itself. */
 $c9 = new TConn(array(90 => array('id' => 9, 'project_id' => 90, 'slug' => 'k')),
                 array(9 => array(pair('exact', 'Barracks', 'Barracks'))));
 ok(dropshipThemeText($c9, 90, 'Barracks') === 'Barracks',
-   'a kept term does not come back unchanged');
+   'a word replaced by itself does not come back unchanged');
 
 echo "\nthe media extension decides the motion\n";
 /*
@@ -368,8 +497,10 @@ echo "\ncase-only pairs are real rows, and the column must allow them\n";
  */
 $pairs_ci = array();
 foreach ($vocab as $rows) foreach ($rows as $r) {
-	$k = $r['type'] . '|' . strtolower($r['find']);
-	$pairs_ci[$k] = isset($pairs_ci[$k]) ? $pairs_ci[$k] + 1 : 1;
+	foreach (array_merge($r['exact'], $r['icons']) as $w) {
+		$k = 'exact|' . strtolower($w);
+		$pairs_ci[$k] = isset($pairs_ci[$k]) ? $pairs_ci[$k] + 1 : 1;
+	}
 }
 $collide = array_filter($pairs_ci, function ($n) { return $n > 1; });
 ok(!empty($collide),

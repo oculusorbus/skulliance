@@ -63,14 +63,28 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['art'])) {
 	 * a filesystem path, and a posted one would let anything be written
 	 * anywhere the web user can reach.
 	 */
+	/*
+	 * Icons live in ONE SHARED FOLDER, not per theme -- the markup asks for
+	 * icons/<name>.png relative to the page and every project is served from
+	 * /staking/dropship/. So an icon slot is validated against the names
+	 * THIS theme asks for, and written to the shared folder.
+	 */
 	$manifest = dropshipArtManifest($ext);
-	if (!in_array($slot, $manifest, true)) {
+	$icon_names = array();
+	foreach (dropshipThemeIconSlots($conn, $pid) as $ic) if ($ic['safe']) $icon_names[] = $ic['rel'];
+	$valid = in_array($slot, $manifest, true) || in_array($slot, $icon_names, true);
+	$is_icon = in_array($slot, $icon_names, true);
+
+	if (!$valid) {
 		$msg['err'][] = 'That is not a slot this theme has.';
 	} elseif ($_FILES['art']['error'] !== UPLOAD_ERR_OK) {
 		$msg['err'][] = 'Upload failed (code ' . (int)$_FILES['art']['error'] . ').';
 	} else {
 		$slot_ext = strtolower(pathinfo($slot, PATHINFO_EXTENSION));
-		list($ok, $why) = dropshipArtStore($_FILES['art']['tmp_name'], $base . $slot, $slot_ext);
+		/* An icon is shared, so it is written beside the page rather than
+		   inside the theme folder. */
+		$dest = ($is_icon ? rtrim(__DIR__, '/') . '/' : $base) . $slot;
+		list($ok, $why) = dropshipArtStore($_FILES['art']['tmp_name'], $dest, $slot_ext);
 		if ($ok) $msg['ok'][] = $slot . ' &mdash; ' . $why;
 		else     $msg['err'][] = $slot . ' &mdash; ' . $why;
 	}
@@ -97,7 +111,11 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
   display:flex;align-items:center;justify-content:center;margin:0 0 6px}
 .dsart .shot img{max-width:100%;max-height:110px}
 .dsart .shot .none{font-size:11px;color:#e8a0b0}
-.dsart .path{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#e8eaed;
+.dsart .name{font-size:12px;color:#e8eaed;display:block;font-weight:bold;margin:0 0 2px}
+.dsart .maps{font-size:10.5px;color:#7a9eb0;display:block}
+.dsart .maps b{color:#00c8a0;font-weight:normal}
+.dsart .warn{font-size:10.5px;color:#e8a0b0;display:block}
+.dsart .path{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#7a9eb0;
   word-break:break-all;display:block}
 .dsart .dims{font-size:10.5px;color:#7a9eb0;display:block;margin:2px 0 5px}
 .dsart input[type=file]{width:100%;font-size:11px;color:#e8eaed}
@@ -164,6 +182,11 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 				<img src="<?php echo $h($web . $rel); ?>?v=<?php echo @filemtime($abs); ?>" alt="" loading="lazy">
 			<?php else: ?><span class="none">missing</span><?php endif; ?>
 			</div>
+			<span class="name"><?php echo $h(dropshipArtTitle($rel)); ?></span>
+			<?php foreach (dropshipArtSlotMapping($conn, $pid, $rel) as $mp): ?>
+				<span class="maps"><?php echo $h($mp['from']); ?> &rarr; <b><?php
+					echo $h($mp['to']); ?></b></span>
+			<?php endforeach; ?>
 			<span class="path"><?php echo $h($rel); ?></span>
 			<span class="dims"><?php echo $here ? $dims : 'the run will ask for this'; ?></span>
 			<form method="post" enctype="multipart/form-data" action="admin-art.php?project_id=<?php echo $pid; ?>">
@@ -176,5 +199,54 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	<?php endforeach; ?>
 	</div>
 	<?php endforeach; ?>
+
+	<?php $icons = dropshipThemeIconSlots($conn, $pid);
+	      $icon_missing = 0;
+	      foreach ($icons as $ic) if (!$ic['exists']) $icon_missing++; ?>
+	<h3>Icons</h3>
+	<p class="note"><b><?php echo count($icons) - $icon_missing; ?></b> of
+	<b><?php echo count($icons); ?></b> in place.
+	Icons are <b>one shared folder</b> for every theme, not one folder each &mdash; the
+	page asks for <code>icons/&lt;name&gt;.png</code> and all four projects are served
+	from the same place. A theme does not get its own copy of
+	<code>medkit.png</code>; it renames the thing under <a href="admin-themes.php">Wording</a>
+	and ships a file under the new name. <b>Renaming is what creates the obligation</b>,
+	and nothing else in the system will tell you.<br>
+	Because the folder is shared, two themes that choose the same name share one file.</p>
+	<div class="slots">
+	<?php foreach ($icons as $ic):
+		$iabs = rtrim(__DIR__, '/') . '/' . $ic['rel'];
+		$idim = $ic['exists'] ? round(@filesize($iabs) / 1024) . 'KB' : ''; ?>
+		<div class="slot <?php echo $ic['exists'] ? '' : 'gap'; ?>">
+			<div class="shot">
+			<?php if ($ic['exists']): ?>
+				<img src="/staking/dropship/<?php echo $h($ic['rel']); ?>?v=<?php
+					echo @filemtime($iabs); ?>" alt="" loading="lazy">
+			<?php else: ?><span class="none">missing</span><?php endif; ?>
+			</div>
+			<?php /* The THING, not the filename. 'heavy-armor' as a heading
+			         above 'heavy-armor -> robe' said the same word twice and
+			         never said it was the Heavy tier. */ ?>
+			<span class="name"><?php echo $h($ic['label']); ?></span>
+			<?php if ($ic['name'] !== $ic['term']): ?>
+				<span class="maps">this theme calls it <b><?php
+					echo $h($ic['name']); ?></b></span>
+			<?php endif; ?>
+			<span class="path"><?php echo $h($ic['rel']); ?></span>
+			<?php if (!$ic['safe']): ?>
+				<span class="warn">That name cannot be a filename, so the page will
+				ask for something it can never find. Fix it under Wording.</span>
+			<?php else: ?>
+				<span class="dims"><?php echo $ic['exists'] ? $idim : 'the page will ask for this'; ?></span>
+				<form method="post" enctype="multipart/form-data" action="admin-art.php?project_id=<?php echo $pid; ?>">
+					<input type="hidden" name="project_id" value="<?php echo $pid; ?>">
+					<input type="hidden" name="slot" value="<?php echo $h($ic['rel']); ?>">
+					<input type="file" name="art" accept="image/png" required>
+					<button type="submit"><?php echo $ic['exists'] ? 'Replace' : 'Upload'; ?></button>
+				</form>
+			<?php endif; ?>
+		</div>
+	<?php endforeach; ?>
+	</div>
 <?php endif; ?>
 <?php dsaArtClose($conn); ?>

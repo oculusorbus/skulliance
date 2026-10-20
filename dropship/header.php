@@ -140,8 +140,14 @@
 		           enforces -- a link nobody else can see is convenience, not
 		           security, so admin-themes.php gates again on arrival. */ ?>
 		  <?php if(function_exists('dropshipThemeAdmin') && dropshipThemeAdmin()){ ?>
-		  <a href="admin-themes.php">Themes</a>
-		  <a href="admin-art.php">Theme art</a>
+		  <!-- Admin -->
+		  <div class="nav-dropdown">
+		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Admin</span>
+		    <div class="nav-dropdown-menu">
+		      <a href="admin-themes.php">Themes</a>
+		      <a href="admin-art.php">Theme art</a>
+		    </div>
+		  </div>
 		  <?php } ?>
 		  <!-- The LAUNCHPAD, not the dashboard. Every other game on the platform
 		       exits to launchpad.php (Monstrocity, Skull Swap, Match 3), because

@@ -1,154 +1,167 @@
 <?php
 /**
- * THE DROP SHIP WORDS A THEME USUALLY HAS TO ANSWER FOR.
+ * THE DROP SHIP WORDS A THEME HAS TO ANSWER FOR, grouped by the THING they
+ * name rather than listed one string at a time.
  *
- * Reworking a theme used to mean guessing which words mattered, or reading
- * the game until you found them all. This is that list, so the admin can
- * present it as a form to fill in rather than a blank box to speculate into.
+ * WHY FAMILIES. The game asks for the same thing in up to four ways: the
+ * soldier card shows the bare tier ("Heavy"), the shop sells the item
+ * ("Heavy Armor"), a results line mentions it mid-sentence (a description
+ * match), and the markup asks for icons/heavy-armor.png. They always take
+ * the same answer -- verified against all three existing themes, 46 of 46
+ * exact/description pairs byte-identical -- so asking four times was
+ * make-work, and four boxes that must agree are four boxes that can drift.
+ * One box fills the family.
  *
- * DERIVED FROM WHAT THE EXISTING THEMES ACTUALLY OVERRODE, not from a trawl
- * of the source: the union of every replacement the if/else chain in db.php
- * held for Dread City, Filthy Mermaid and Oculus Lounge. 'themes' records how
- * many of those three bothered with a term, which is a decent proxy for how
- * load-bearing it is -- a 3 is something every reskin had to rename.
+ * WHY THERE IS NO "DESCRIPTIONS" GROUP. Exact and description are match
+ * TYPES, not categories: every description term is the same thing as a term
+ * already named above, bar the places and the three action lines, which
+ * belong with the places and the action lines. A group that collects terms
+ * by how they are matched tells you nothing about what you are renaming.
  *
- * LOWERCASE-HYPHEN TERMS ARE ICON FILENAMES. Renaming 'medkit' changes which
- * file the page asks for, so a theme that overrides one owes an icon by that
- * name. The admin flags them for exactly that reason.
+ * THE ICON NAME IS DERIVED, NOT TYPED. Icons are filenames, and slugifying
+ * the theme's own word gets it right 51 times out of 64 in the existing
+ * themes. The 13 exceptions are all deliberate shortenings ('Sexy Nurse' ->
+ * nurse, 'Loot Crate' -> crate, 'Birthday Suit' -> cake), so the derived
+ * name is the default and the admin keeps an override.
  *
- * NOT A LIMIT. A theme can override anything; this is the guide, and the
- * admin keeps free-form rows underneath it.
+ * DERIVED BY RUNNING THE OLD evaluateText() CHAIN, not by reading it, and
+ * every family is checked for internal agreement. Two findings came out of
+ * that check rather than out of review: 'dropship' is Super Soldier's icon,
+ * not Drop Ship's (both themes send it to 'vip', with 'supersoldier'), and
+ * the armor icon is 'heavy-armor', never 'heavy'. 'themes' counts how many
+ * of the three bothered with a family, a usable proxy for how load-bearing
+ * it is.
+ *
+ * NOT A LIMIT. The admin keeps free-form rows underneath this.
  */
 function dropshipThemeVocabulary() {
 	return array(
 		'Identity' => array(
-			array('find' => 'Drop Ship', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'drop-ship', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'dropship', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Drop Ship Initiating', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Drop Ship Landed', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'SCRIP', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'Grunt', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Soldiers', 'type' => 'exact', 'themes' => 1, 'icon' => false),
-			array('find' => 'Registered Soldiers', 'type' => 'exact', 'themes' => 1, 'icon' => false),
-			array('find' => 'Super Soldier', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'supersoldier', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Pilot', 'type' => 'exact', 'themes' => 2, 'icon' => false),
+			array('label' => 'Drop Ship', 'exact' => array('Drop Ship'), 'desc' => array(), 'icons' => array('drop-ship'), 'themes' => 2),
+			array('label' => 'Drop Ship Initiating', 'exact' => array('Drop Ship Initiating'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Drop Ship Landed', 'exact' => array('Drop Ship Landed'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'SCRIP', 'exact' => array('SCRIP'), 'desc' => array(), 'icons' => array(), 'themes' => 3),
+			array('label' => 'Grunt', 'exact' => array('Grunt'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Soldiers', 'exact' => array('Soldiers'), 'desc' => array(), 'icons' => array(), 'themes' => 1),
+			array('label' => 'Registered Soldiers', 'exact' => array('Registered Soldiers'), 'desc' => array(), 'icons' => array(), 'themes' => 1),
+			array('label' => 'Super Soldier', 'exact' => array('Super Soldier'), 'desc' => array(), 'icons' => array('dropship', 'supersoldier'), 'themes' => 2),
+			array('label' => 'Pilot', 'exact' => array('Pilot'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
 		),
-		'Places' => array(
-			array('find' => 'Barracks', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'Armory', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Beach Secured', 'type' => 'exact', 'themes' => 1, 'icon' => false),
-			array('find' => 'Hill Secured', 'type' => 'exact', 'themes' => 1, 'icon' => false),
+		'Locations' => array(
+			array('label' => 'Barracks', 'exact' => array('Barracks'), 'desc' => array(), 'icons' => array(), 'themes' => 3),
+			array('label' => 'Armory', 'exact' => array('Armory'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'beach', 'exact' => array(), 'desc' => array('beach'), 'icons' => array(), 'themes' => 3),
+			array('label' => 'hill', 'exact' => array(), 'desc' => array('hill'), 'icons' => array(), 'themes' => 3),
+			array('label' => 'bunker', 'exact' => array(), 'desc' => array('bunker'), 'icons' => array(), 'themes' => 3),
 		),
 		'Armor' => array(
-			array('find' => 'Heavy', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'Heavy Armor', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'heavy-armor', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-			array('find' => 'Medium', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'Medium Armor', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'medium-armor', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-			array('find' => 'Light', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'Light Armor', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'light-armor', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-			array('find' => 'Base', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'Base Armor', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'base-armor', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-		),
-		'Gear' => array(
-			array('find' => 'Medkit', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'medkit', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-			array('find' => 'Demolition', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'demolition', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-			array('find' => 'Melee', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'melee', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-		),
-		'Suits' => array(
-			array('find' => 'Mech Suit', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'mech-suit', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-			array('find' => 'Exo Suit', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'exo-suit', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-			array('find' => 'Quantum Stealth', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'quantum-stealth', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-			array('find' => 'Ballistic Shield', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'ballistic-shield', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-		),
-		'Equipment' => array(
-			array('find' => 'Drop Box', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'drop-box', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-			array('find' => 'Jet Pack', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'jet-pack', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-			array('find' => 'Radar', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'radar', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-			array('find' => 'Radio', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'radio', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-			array('find' => 'Night Vision Goggles', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'night-vision-goggles', 'type' => 'exact', 'themes' => 3, 'icon' => true),
-			array('find' => 'Reinforcements', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Airstrike', 'type' => 'exact', 'themes' => 2, 'icon' => false),
+			array('label' => 'Heavy', 'exact' => array('Heavy', 'Heavy Armor'), 'desc' => array('Heavy Armor'), 'icons' => array('heavy-armor'), 'themes' => 3),
+			array('label' => 'Medium', 'exact' => array('Medium', 'Medium Armor'), 'desc' => array('Medium Armor'), 'icons' => array('medium-armor'), 'themes' => 3),
+			array('label' => 'Light', 'exact' => array('Light', 'Light Armor'), 'desc' => array('Light Armor'), 'icons' => array('light-armor'), 'themes' => 3),
+			array('label' => 'Base', 'exact' => array('Base', 'Base Armor'), 'desc' => array('Base Armor'), 'icons' => array('base-armor'), 'themes' => 3),
+			array('label' => 'Mech Suit', 'exact' => array('Mech Suit'), 'desc' => array('Mech Suit'), 'icons' => array('mech-suit'), 'themes' => 3),
+			array('label' => 'Exo Suit', 'exact' => array('Exo Suit'), 'desc' => array('Exo Suit'), 'icons' => array('exo-suit'), 'themes' => 3),
+			array('label' => 'Quantum Stealth', 'exact' => array('Quantum Stealth'), 'desc' => array('Quantum Stealth'), 'icons' => array('quantum-stealth'), 'themes' => 3),
+			array('label' => 'Ballistic Shield', 'exact' => array('Ballistic Shield'), 'desc' => array('Ballistic Shield'), 'icons' => array('ballistic-shield'), 'themes' => 2),
 		),
 		'Weapons' => array(
-			array('find' => 'Rocket Launcher', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'rocket-launcher', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-			array('find' => 'Flamethrower', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'flamethrower', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-			array('find' => 'Machine Gun', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'machine-gun', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-			array('find' => 'Grenade', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'grenade', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-			array('find' => 'Smoke Bomb', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'smoke-bomb', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-			array('find' => 'Sniper Rifle', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'sniper-rifle', 'type' => 'exact', 'themes' => 2, 'icon' => true),
-			array('find' => 'Tactical Katana', 'type' => 'exact', 'themes' => 3, 'icon' => false),
-			array('find' => 'tactical-katana', 'type' => 'exact', 'themes' => 3, 'icon' => true),
+			array('label' => 'Rocket Launcher', 'exact' => array('Rocket Launcher'), 'desc' => array('Rocket Launcher'), 'icons' => array('rocket-launcher'), 'themes' => 2),
+			array('label' => 'Flamethrower', 'exact' => array('Flamethrower'), 'desc' => array('Flamethrower'), 'icons' => array('flamethrower'), 'themes' => 2),
+			array('label' => 'Machine Gun', 'exact' => array('Machine Gun'), 'desc' => array('Machine Gun'), 'icons' => array('machine-gun'), 'themes' => 2),
+			array('label' => 'Grenade', 'exact' => array('Grenade'), 'desc' => array('Grenade'), 'icons' => array('grenade'), 'themes' => 2),
+			array('label' => 'Smoke Bomb', 'exact' => array('Smoke Bomb'), 'desc' => array('Smoke Bomb'), 'icons' => array('smoke-bomb'), 'themes' => 2),
+			array('label' => 'Sniper Rifle', 'exact' => array('Sniper Rifle'), 'desc' => array('Sniper Rifle'), 'icons' => array('sniper-rifle'), 'themes' => 2),
+			array('label' => 'Tactical Katana', 'exact' => array('Tactical Katana'), 'desc' => array('Tactical Katana'), 'icons' => array('tactical-katana'), 'themes' => 3),
+			array('label' => 'Melee', 'exact' => array('Melee'), 'desc' => array('Melee'), 'icons' => array('melee'), 'themes' => 2),
+			array('label' => 'Demolition', 'exact' => array('Demolition'), 'desc' => array('Demolition'), 'icons' => array('demolition'), 'themes' => 2),
 		),
-		'Action lines' => array(
-			array('find' => 'Explosion', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Flamethrower Fire', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Flamethrower Flame', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Flamethrower Ignition', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Flamethrower Spray', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Jet Pack Fly', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Jet Pack Takeoff', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Load Machine Gun', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Load Rocket Launcher', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Pull Grenade Pin', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Pull Smoke Bomb Pin', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Rocket Launcher Explosion', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Rocket Launcher Gunfire', 'type' => 'exact', 'themes' => 2, 'icon' => false),
-			array('find' => 'Throw Grenade', 'type' => 'exact', 'themes' => 2, 'icon' => false),
+		'Items' => array(
+			array('label' => 'Medkit', 'exact' => array('Medkit'), 'desc' => array('Medkit'), 'icons' => array('medkit'), 'themes' => 2),
+			array('label' => 'Drop Box', 'exact' => array('Drop Box'), 'desc' => array('Drop Box'), 'icons' => array('drop-box'), 'themes' => 3),
+			array('label' => 'Jet Pack', 'exact' => array('Jet Pack'), 'desc' => array('Jet Pack'), 'icons' => array('jet-pack'), 'themes' => 3),
+			array('label' => 'Radar', 'exact' => array('Radar'), 'desc' => array('Radar'), 'icons' => array('radar'), 'themes' => 3),
+			array('label' => 'Radio', 'exact' => array('Radio'), 'desc' => array('Radio'), 'icons' => array('radio'), 'themes' => 3),
+			array('label' => 'Night Vision Goggles', 'exact' => array('Night Vision Goggles'), 'desc' => array('Night Vision Goggles'), 'icons' => array('night-vision-goggles'), 'themes' => 3),
+			array('label' => 'Reinforcements', 'exact' => array('Reinforcements'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Airstrike', 'exact' => array('Airstrike'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
 		),
-		'Descriptions' => array(
-			array('find' => 'beach', 'type' => 'description', 'themes' => 3, 'icon' => false),
-			array('find' => 'bunker', 'type' => 'description', 'themes' => 3, 'icon' => false),
-			array('find' => 'hill', 'type' => 'description', 'themes' => 3, 'icon' => false),
-			array('find' => 'Ballistic Shield', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Base Armor', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Climbed the Hill', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Demolition', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Drop Box', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Entered the Bunker', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Exo Suit', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Flamethrower', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Grenade', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Heavy Armor', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Jet Pack', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Light Armor', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Machine Gun', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Mech Suit', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Medium Armor', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Medkit', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Melee', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Night Vision Goggles', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Quantum Stealth', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Radar', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Radio', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Rocket Launcher', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Smoke Bomb', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Sniper Rifle', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Stormed the Beach', 'type' => 'description', 'themes' => 2, 'icon' => false),
-			array('find' => 'Tactical Katana', 'type' => 'description', 'themes' => 2, 'icon' => false),
+		'Actions' => array(
+			array('label' => 'Stormed the Beach', 'exact' => array(), 'desc' => array('Stormed the Beach'), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Climbed the Hill', 'exact' => array(), 'desc' => array('Climbed the Hill'), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Entered the Bunker', 'exact' => array(), 'desc' => array('Entered the Bunker'), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Beach Secured', 'exact' => array('Beach Secured'), 'desc' => array(), 'icons' => array(), 'themes' => 1),
+			array('label' => 'Hill Secured', 'exact' => array('Hill Secured'), 'desc' => array(), 'icons' => array(), 'themes' => 1),
+			array('label' => 'Explosion', 'exact' => array('Explosion'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Throw Grenade', 'exact' => array('Throw Grenade'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Pull Grenade Pin', 'exact' => array('Pull Grenade Pin'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Pull Smoke Bomb Pin', 'exact' => array('Pull Smoke Bomb Pin'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Load Machine Gun', 'exact' => array('Load Machine Gun'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Load Rocket Launcher', 'exact' => array('Load Rocket Launcher'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Rocket Launcher Explosion', 'exact' => array('Rocket Launcher Explosion'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Rocket Launcher Gunfire', 'exact' => array('Rocket Launcher Gunfire'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Flamethrower Ignition', 'exact' => array('Flamethrower Ignition'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Flamethrower Fire', 'exact' => array('Flamethrower Fire'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Flamethrower Flame', 'exact' => array('Flamethrower Flame'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Flamethrower Spray', 'exact' => array('Flamethrower Spray'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Jet Pack Takeoff', 'exact' => array('Jet Pack Takeoff'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Jet Pack Fly', 'exact' => array('Jet Pack Fly'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
 		),
 	);
+}
+
+/**
+ * TURN WHAT THE WORDING FORM POSTS INTO dropship_theme_text ROWS.
+ *
+ * The form shows one box per family; the database wants one row per word
+ * per match type, plus one per icon filename. This is where the one becomes
+ * the many, and it is a plain function of the post so it can be tested
+ * without a browser or a database.
+ *
+ * BLANK MEANS THE DROP SHIP WORD, and nothing is stored. evaluateText()
+ * already falls through to the original when it finds no row, so a row
+ * replacing a word with itself would be a no-op kept only to record that
+ * somebody had looked at it -- bookkeeping, paid for with a column on every
+ * row of the form. Only overrides override.
+ *
+ * THE WORDS COME FROM THE VOCABULARY, NEVER FROM THE POST. The form carries
+ * the label; the list it expands to is read from here, so a mangled or
+ * forged post cannot write a word this form does not own.
+ */
+function dropshipThemeVocabExpand($post) {
+	$legit = array();
+	foreach (dropshipThemeVocabulary() as $rows) {
+		foreach ($rows as $r) $legit[$r['label']] = $r;
+	}
+	$labels = (array)(isset($post['fam_label']) ? $post['fam_label'] : array());
+	$says   = (array)(isset($post['fam_say'])   ? $post['fam_say']   : array());
+	$icons  = (array)(isset($post['fam_icon'])  ? $post['fam_icon']  : array());
+	$out = array();
+	foreach ($labels as $i => $label) {
+		$label = trim((string)$label);
+		if (!isset($legit[$label])) continue;
+		$fam = $legit[$label];
+		$say = trim((string)(isset($says[$i]) ? $says[$i] : ''));
+		if ($say === '') continue;              /* keeps the Drop Ship word */
+		foreach ($fam['exact'] as $w) {
+			$out[] = array('type' => 'exact', 'find' => $w, 'replacement' => $say);
+		}
+		foreach ($fam['desc'] as $w) {
+			$out[] = array('type' => 'description', 'find' => $w, 'replacement' => $say);
+		}
+		/*
+		 * THE ICON NAME IS A FILENAME, so it is slugified whichever way it
+		 * arrives, and it is derived from the theme's own word unless the
+		 * admin typed something shorter.
+		 */
+		if ($fam['icons']) {
+			$ov   = trim((string)(isset($icons[$i]) ? $icons[$i] : ''));
+			$name = dropshipThemeSlug($ov !== '' ? $ov : $say);
+			if ($name !== '') {
+				foreach ($fam['icons'] as $ic) {
+					$out[] = array('type' => 'exact', 'find' => $ic, 'replacement' => $name);
+				}
+			}
+		}
+	}
+	return $out;
 }
