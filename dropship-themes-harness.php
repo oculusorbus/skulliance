@@ -1010,14 +1010,37 @@ ok(strpos($probe_src, '$add(\'A Discord channel for this project\', $hook') === 
    not in the repo, so a checkout without it must not fatal the page. */
 ok(strpos($probe_src, "if (function_exists('getWebhook'))") !== false,
    'the check calls getWebhook() unguarded, so a missing credentials file fatals the admin');
-foreach (array('getSkullianceDropShipWebhook', 'getSkullianceOculusLoungeWebhook') as $fn) {
-	ok(strpos($probe_src, $fn) !== false, "the mirror check does not know about $fn");
+/*
+ * THE MIRROR ACCESSOR IS DERIVED FROM THE SLUG, not listed. It was
+ * `if project 1 ... elseif project 4`, so adding a Skulliance channel for
+ * a theme meant writing the credential AND editing a branch -- and the
+ * credential alone is what anybody would reasonably expect to be enough.
+ * Every accessor already follows the slug in CamelCase, so the name can
+ * be worked out and function_exists() can decide.
+ */
+$mirror_name = function ($slug) {
+	return 'getSkulliance' . str_replace(' ', '', ucwords(str_replace('-', ' ', $slug))) . 'Webhook';
+};
+foreach (array('drop-ship' => 'getSkullianceDropShipWebhook',
+               'oculus-lounge' => 'getSkullianceOculusLoungeWebhook',
+               'filthy-mermaid' => 'getSkullianceFilthyMermaidWebhook',
+               'dread-city' => 'getSkullianceDreadCityWebhook') as $slug => $want) {
+	ok($mirror_name($slug) === $want, "'$slug' derives '" . $mirror_name($slug) . "', not '$want'");
 }
-/* TWICE: once deciding the count, once wording the detail. A presence
-   check passed with the COUNT's guard removed, because the detail line
-   still mentioned it. */
-ok(substr_count($probe_src, 'function_exists($mirror[$project_id])') === 2,
-   'the mirror count no longer checks the function is defined, only the detail text does');
+$wh3 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/webhooks.php'));
+ok(strpos($wh3, "'getSkulliance'") !== false && strpos($wh3, "ucwords(str_replace('-', ' '") !== false,
+   'discordmsg() does not derive the mirror accessor from the slug');
+ok(strpos($wh3, "\$project_id == 1 && function_exists('getSkullianceDropShipWebhook')") === false,
+   'the mirror is still a hardcoded list of project ids');
+/* Guarded, because these live in a credentials file that is not in the
+   repo and an undefined call fatals every discordmsg(), not just the
+   mirror. */
+ok(strpos($wh3, 'if (function_exists($ds_mirror_fn)) $dropship_webhooks[] = $ds_mirror_fn();') !== false,
+   'the derived accessor is called without checking it exists');
+/* The probe must report the SAME rule, or it describes a channel that
+   will never actually be posted to. */
+ok(strpos($probe_src, "'getSkulliance'") !== false,
+   'the theme check lists mirror accessors instead of deriving them like discordmsg() does');
 /* Both sources, always, whichever the theme is set to. */
 ok(substr_count($probe_src, 'SKULLIANCE:') >= 3 && substr_count($probe_src, 'KOIOS:') >= 3,
    'the check no longer reports both NFT sources');

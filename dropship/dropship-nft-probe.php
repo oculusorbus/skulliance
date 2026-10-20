@@ -111,16 +111,23 @@ function dropshipNftProbe($conn, $project_id, $discord_id) {
 	} else {
 		$add('A Discord channel for this project', null, 'getWebhook() is not loaded here.');
 	}
-	/* The Skulliance-side mirror is a second, separate channel, and only
-	   projects 1 and 4 have ever had one. */
-	$mirror = array(1 => 'getSkullianceDropShipWebhook', 4 => 'getSkullianceOculusLoungeWebhook');
+	/*
+	 * The Skulliance-side mirror is a SECOND, separate channel, found by
+	 * deriving the accessor name from the theme slug -- the same rule
+	 * discordmsg() uses, so this reports what will actually happen rather
+	 * than a list that can drift from it.
+	 */
+	$cfg_m = function_exists('dropshipThemeConfig')
+	       ? dropshipThemeConfig($conn, $project_id) : null;
+	$m_slug = ($cfg_m && !empty($cfg_m['slug'])) ? $cfg_m['slug'] : '';
+	$m_fn = $m_slug === '' ? '' : 'getSkulliance'
+		. str_replace(' ', '', ucwords(str_replace('-', ' ', $m_slug))) . 'Webhook';
 	$add('...mirrored into a Skulliance channel',
-	     (isset($mirror[$project_id]) && function_exists($mirror[$project_id])) ? 1 : 0,
-	     isset($mirror[$project_id])
-	       ? (function_exists($mirror[$project_id]) ? 'yes' : 'the function for it is not defined')
-	       : 'No Skulliance channel for this theme. Its own channel still gets everything; '
-	         . 'this mirror is extra, and wiring one up means a new credential plus a branch '
-	         . 'in dropship/webhooks.php.');
+	     ($m_fn !== '' && function_exists($m_fn)) ? 1 : 0,
+	     $m_fn === '' ? 'No slug, so no accessor name to look for.'
+	       : (function_exists($m_fn) ? $m_fn . '()'
+	          : 'No ' . $m_fn . '() defined. Its own channel still gets everything; this '
+	            . 'mirror is extra, and adding it is just that function in the credentials file.'));
 
 	/* KOIOS source, step for step as dashboard.php runs it. */
 	$addresses = function_exists('dropshipConnectedStakeAddresses')

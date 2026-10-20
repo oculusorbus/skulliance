@@ -128,11 +128,35 @@ include('credentials/webhooks_credentials.php');
 		// guards a brand-new channel with no credential yet -- an
 		// undefined-function call would fatal every discordmsg() call, not
 		// just skip the mirror, if one of these were ever missing.
+		/*
+		 * THE MIRROR IS FOUND BY NAME, NOT BY A LIST OF PROJECT IDS.
+		 *
+		 * This was `if project 1 ... elseif project 4`, so adding a
+		 * Skulliance channel for a theme meant writing the credential AND
+		 * editing this branch -- and the credential alone looks like it
+		 * should be enough, which is exactly what somebody expects.
+		 *
+		 * The accessors are named after the theme slug in CamelCase, which
+		 * every one of them already follows: drop-ship ->
+		 * getSkullianceDropShipWebhook, filthy-mermaid ->
+		 * getSkullianceFilthyMermaidWebhook. So the name is derived and
+		 * function_exists() decides. Write the credential, get the mirror.
+		 *
+		 * STILL GUARDED by function_exists: these live in a credentials
+		 * file that is not in the repo, and an undefined-function call
+		 * would fatal every discordmsg(), not merely skip the mirror.
+		 */
 		$dropship_webhooks = array($webhook);
-		if ($project_id == 1 && function_exists('getSkullianceDropShipWebhook')) {
-			$dropship_webhooks[] = getSkullianceDropShipWebhook();
-		} elseif ($project_id == 4 && function_exists('getSkullianceOculusLoungeWebhook')) {
-			$dropship_webhooks[] = getSkullianceOculusLoungeWebhook();
+		$ds_mirror_slug = '';
+		if (function_exists('dropshipThemeConfig') && isset($GLOBALS['conn'])) {
+			$ds_cfg = dropshipThemeConfig($GLOBALS['conn'], $project_id);
+			if ($ds_cfg && !empty($ds_cfg['slug'])) $ds_mirror_slug = $ds_cfg['slug'];
+		}
+		if ($ds_mirror_slug !== '') {
+			$ds_mirror_fn = 'getSkulliance'
+				. str_replace(' ', '', ucwords(str_replace('-', ' ', $ds_mirror_slug)))
+				. 'Webhook';
+			if (function_exists($ds_mirror_fn)) $dropship_webhooks[] = $ds_mirror_fn();
 		}
 		foreach (array_unique(array_filter($dropship_webhooks)) as $target) {
 			$ch = curl_init( $target );
