@@ -322,3 +322,30 @@ function dropshipActiveProjectIds($conn) {
 	if (!$any || !$ids) return null;
 	return $ids;
 }
+
+/**
+ * Where a theme's NFT holdings come from: 'koios' or 'skulliance'.
+ *
+ * TWO REAL PIPELINES, not a preference. 'koios' reads the player's connected
+ * wallets live through Koios' account_utxos, which is what every theme but
+ * one does. 'skulliance' skips that round trip and reads holdings out of
+ * Skulliance's own already-synced `nfts` table, which is what Oculus Lounge
+ * does and why dropshipSyncFromSkulliance() exists.
+ *
+ * THIS WAS A HARDCODED project_id == 4 IN dashboard.php. The column existed
+ * to replace exactly that and I removed it, on the reasoning that the trait
+ * source was derivable from the slug -- which was true of a DIFFERENT thing
+ * that happens to share the name: $source in dropship-traitdrop.php, the key
+ * naming which GAME a Discord trait drop came from. Two unrelated facts, one
+ * word. This one is a real choice and nothing derives it.
+ *
+ * FALLS BACK TO THE OLD HARDCODE when there is no theme row, so a project
+ * that has not been seeded behaves exactly as it did.
+ */
+function dropshipThemeTraitSource($conn, $project_id) {
+	$cfg = dropshipThemeConfig($conn, $project_id);
+	if ($cfg && !empty($cfg['trait_source'])) {
+		return $cfg['trait_source'] === 'skulliance' ? 'skulliance' : 'koios';
+	}
+	return ((int)$project_id === 4) ? 'skulliance' : 'koios';
+}

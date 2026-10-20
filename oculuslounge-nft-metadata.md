@@ -8,7 +8,7 @@ is not a Skull Paper page). Written up so the deep-research pass behind the even
 
 Oculus Lounge (`dropship_project_id == 4`) plays on the **Disco Solaris** NFT
 collection (policy `d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779`), a
-different collection entirely from Drop Ship's own. `dropshipSyncOculusLounge()` in
+different collection entirely from Drop Ship's own. `dropshipSyncFromSkulliance()` in
 `dropship/db.php` currently assigns each new soldier's `armor`/`gear` with a flat
 random roll:
 
@@ -137,7 +137,7 @@ accessory traits of any kind), not a catch-all gap.
 
 ## Where this integrates (not yet built)
 
-1. `dropshipSyncOculusLounge()` (`dropship/db.php`) would batch a Koios `asset_info`
+1. `dropshipSyncFromSkulliance()` (`dropship/db.php`) would batch a Koios `asset_info`
    call for a player's *own* staked Disco Solaris NFTs only (small subset, not the
    whole collection) and run the mapping above instead of `rand(0,3)`.
 2. A new `soldiers.metadata_verified` flag (or similar) so a soldier is only derived

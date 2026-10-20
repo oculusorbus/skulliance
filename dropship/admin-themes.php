@@ -54,13 +54,17 @@ if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST') {
 		$cols = "project_id = $pid"
 		      . ", slug = '"            . $e($slug) . "'"
 		      . ", active = "           . (empty($_POST['active']) ? 0 : 1)
-		      . ", extension = '"       . $e($_POST['extension'] ?? 'gif') . "'";
+		      . ", extension = '"       . $e($_POST['extension'] ?? 'gif') . "'"
+		      . ", trait_source = '"    . (($_POST['trait_source'] ?? '') === 'skulliance'
+		                                   ? 'skulliance' : 'koios') . "'";
 		/* NO LABEL COLUMNS. Currency, squad and character were the words
 		   SCRIP, Super Soldier and Troops, which the wording below already
 		   owns -- two places to change one word, and the dashboard read the
 		   column, so renaming SCRIP in the wording changed nothing there.
-		   Trait source was a key into the registry in dhcfighters-config.php,
-		   and that is the slug with the hyphens out. */
+		   trait_source is NOT one of those: it picks between two real
+		   NFT-loading pipelines and nothing derives it. It was removed once
+		   by confusing it with the same-named key in dropship-traitdrop.php,
+		   which names the game a Discord drop came from and IS derived. */
 
 		$existing = dropshipThemeConfig($conn, $pid);
 		if ($existing) {
@@ -210,6 +214,12 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
 		<input type="text" name="slug" value="<?php echo $val('slug'); ?>" placeholder="oculus-lounge"></div>
 	<div><label>Media extension</label>
 		<input type="text" name="extension" value="<?php echo $val('extension', 'gif'); ?>"></div>
+	<div><label>NFT holdings from</label>
+		<select name="trait_source">
+			<?php $ts = $theme && !empty($theme['trait_source']) ? $theme['trait_source'] : 'koios'; ?>
+			<option value="koios"<?php echo $ts !== 'skulliance' ? ' selected' : ''; ?>>Koios &mdash; read the player&rsquo;s wallets</option>
+			<option value="skulliance"<?php echo $ts === 'skulliance' ? ' selected' : ''; ?>>Skulliance &mdash; use holdings already synced</option>
+		</select></div>
 	<div><label>Active</label>
 		<select name="active">
 			<option value="0"<?php echo ($theme && !$theme['active']) ? ' selected' : ''; ?>>no</option>

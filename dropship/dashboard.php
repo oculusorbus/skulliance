@@ -156,18 +156,21 @@ if(!isset($_SESSION['userData']['addresses_key']) || $_SESSION['userData']['addr
 }
 $_SESSION['userData']['addresses'] = $addresses;
 
-// Oculus Lounge (project_id 4) carved out of the wallet/Koios pipeline
-// entirely: it doesn't need $addresses at all now, holdings come straight
-// from Skulliance's own already-synced `nfts` table (see
-// dropshipSyncOculusLounge()'s own comment in db.php for why this changed
-// from the Koios round-trip every other reskin still uses). Still gated on
-// the same $address_changed/$project_id_changed trigger, since a wallet-set
-// change is still a reasonable signal to re-check -- Skulliance's own
-// nfts.user_id reflects whichever wallets are connected to that account,
-// same wallets $addresses is built from.
-if($_SESSION['userData']['dropship_project_id'] == 4){
+// WHICH PIPELINE LOADS A PLAYER'S NFTs IS A THEME SETTING, not a project id
+// written in here. 'skulliance' skips the wallet/Koios round trip entirely
+// and reads holdings out of Skulliance's own already-synced `nfts` table
+// (see dropshipSyncFromSkulliance()'s comment in db.php for why Oculus
+// Lounge changed to it); 'koios' is the live wallet read every other theme
+// uses. This was `== 4`, so a second theme wanting the same pipeline meant
+// editing this line.
+//
+// Either way it stays gated on the same $address_changed/$project_id_changed
+// trigger: a wallet-set change is still a reasonable signal to re-check,
+// since Skulliance's nfts.user_id reflects whichever wallets are connected
+// to that account -- the same wallets $addresses is built from.
+if(dropshipThemeTraitSource($conn, $_SESSION['userData']['dropship_project_id']) === 'skulliance'){
 	if(($address_changed == "true") || $project_id_changed == "true"){
-		dropshipSyncOculusLounge($conn, $_SESSION['userData']['discord_id']);
+		dropshipSyncFromSkulliance($conn, $_SESSION['userData']['discord_id'], $policy_id);
 		$ranks["VIP"] = true;
 		$_SESSION['userData']['rank'] = "";
 		storeRank($ranks);

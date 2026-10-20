@@ -16,7 +16,12 @@
 --
 -- NO LABEL COLUMNS. currency, squad_label and character_label held the words
 -- SCRIP, Super Soldier and Troops, which the wording owns; they are rows
--- here now. trait_source is the slug with the hyphens taken out, derived.
+-- here now.
+--
+-- trait_source STAYS. It was briefly removed on the reasoning that it was
+-- derivable from the slug -- which was true of a DIFFERENT thing of the same
+-- name, the key naming which game a Discord trait drop came from. This one
+-- picks between two real NFT-loading pipelines and nothing derives it.
 --
 -- REQUIRES dropship_theme_text.find TO BE utf8mb4_bin. The seed carries
 -- case-only pairs on purpose -- 'Medkit' is the word a player reads and
@@ -40,6 +45,10 @@ CREATE TABLE dropship_themes (
 	-- MEDIA extension: 'gif' (animates itself) or a still like 'png',
 	-- which gets the Ken Burns pan instead.
 	extension        VARCHAR(8)   NOT NULL DEFAULT 'gif',
+	-- Where this theme's NFT holdings come from: 'koios' reads the
+	-- player's connected wallets live, 'skulliance' reads the already
+	-- synced nfts table. A real choice; nothing derives it.
+	trait_source     VARCHAR(16)  NOT NULL DEFAULT 'koios',
 	created_at       DATETIME     NOT NULL,
 	updated_at       DATETIME     DEFAULT NULL,
 	UNIQUE KEY uniq_project (project_id),
@@ -65,15 +74,15 @@ CREATE TABLE dropship_theme_text (
 -- admin can manage its files -- dropshipArtRoot() maps the 'drop-ship' slug
 -- to the FLAT folder, which is where Drop Ship's own art actually lives.
 INSERT INTO dropship_themes
-  (project_id, slug, active, extension, created_at)
+  (project_id, slug, active, extension, trait_source, created_at)
 VALUES
-  (1, 'drop-ship', 1, 'gif', NOW());
+  (1, 'drop-ship', 1, 'gif', 'koios', NOW());
 
 -- ---------- project 2: dread-city (31 exact, 3 description)
 INSERT INTO dropship_themes
-  (project_id, slug, active, extension, created_at)
+  (project_id, slug, active, extension, trait_source, created_at)
 VALUES
-  (2, 'dread-city', 0, 'gif', NOW());
+  (2, 'dread-city', 0, 'gif', 'koios', NOW());
 SET @t := (SELECT id FROM dropship_themes WHERE project_id = 2);
 INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
   (@t, 'exact', 'SCRIP', 'DREAD', 1),
@@ -103,9 +112,9 @@ INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_o
 
 -- ---------- project 3: filthy-mermaid (78 exact, 29 description)
 INSERT INTO dropship_themes
-  (project_id, slug, active, extension, created_at)
+  (project_id, slug, active, extension, trait_source, created_at)
 VALUES
-  (3, 'filthy-mermaid', 0, 'gif', NOW());
+  (3, 'filthy-mermaid', 0, 'gif', 'koios', NOW());
 SET @t := (SELECT id FROM dropship_themes WHERE project_id = 3);
 INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
   (@t, 'exact', 'Drop Ship', 'Filthy Mermaid', 1),
@@ -193,9 +202,9 @@ INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_o
 
 -- ---------- project 4: oculus-lounge (82 exact, 29 description)
 INSERT INTO dropship_themes
-  (project_id, slug, active, extension, created_at)
+  (project_id, slug, active, extension, trait_source, created_at)
 VALUES
-  (4, 'oculus-lounge', 1, 'png', NOW());
+  (4, 'oculus-lounge', 1, 'png', 'skulliance', NOW());
 SET @t := (SELECT id FROM dropship_themes WHERE project_id = 4);
 INSERT INTO dropship_theme_text (theme_id, match_type, find, replacement, sort_order) VALUES
   (@t, 'exact', 'Drop Ship', 'Oculus Lounge', 1),

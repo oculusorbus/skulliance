@@ -829,11 +829,24 @@ function discosolarisGear($attributes) {
 // project changes, not every page load) -- so an existing soldier's
 // old random roll gets corrected to the real value too, not just new ones.
 // rank stays the fixed string "Neo Miami Citizen", same as before.
-function dropshipSyncOculusLounge($conn, $discord_id) {
+function dropshipSyncFromSkulliance($conn, $discord_id, $policy = '') {
 	$skulliance_conn = dropshipSkullianceDb();
 	if (!$skulliance_conn) return;
 
-	$policy = 'd0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779';
+	/*
+	 * THE POLICY COMES FROM THE PROJECT. It was hardcoded to Disco Solaris
+	 * here, which meant this path only ever worked for one theme -- so the
+	 * theme setting that chooses it would have been a lie for every other
+	 * one, quietly syncing somebody else's collection. projects.policy_id
+	 * already holds this; the caller passes it in.
+	 *
+	 * The literal stays as the fallback, and only as that: it is what this
+	 * function did before, so a project whose policy_id is empty keeps
+	 * working rather than silently matching no NFTs at all.
+	 */
+	if ($policy === '' || $policy === null) {
+		$policy = 'd0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779';
+	}
 	$policy_esc = $skulliance_conn->real_escape_string($policy);
 	$discord_id_esc = $skulliance_conn->real_escape_string($discord_id);
 

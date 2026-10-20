@@ -204,7 +204,7 @@ include 'header.php';
 					<?php
 					// Oculus Lounge plays on the Disco Solaris NFT policy, a
 					// different collection entirely from Drop Ship's own -- see
-					// the same policy id used in dropshipSyncOculusLounge() in
+					// the same policy id used in dropshipSyncFromSkulliance() in
 					// db.php. It also has its own separate VIP Token listing
 					// (a specific rarity tier -- "Legendary - VIP" -- within a
 					// different collection, same one dashboard.php's own "You

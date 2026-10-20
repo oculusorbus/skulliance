@@ -72,8 +72,12 @@ unset($builders['db.php'], $builders['dropship-skulliance-db.php']);
 ok(empty($builders), 'other files still build their own connection: ' . implode(', ', array_keys($builders)));
 
 echo "\nevery crossing goes through the helper\n";
+/* dropshipSyncFromSkulliance was dropshipSyncOculusLounge. It is the
+   generic "read holdings from the already-synced nfts table" pipeline that
+   dropship_themes.trait_source selects, so naming it after the one theme
+   that first used it was the thing stopping a second theme choosing it. */
 foreach (array('dropshipConnectedStakeAddresses', 'dropshipOculusLoungeLocalImages',
-               'dropshipSyncOculusLounge') as $fn) {
+               'dropshipSyncFromSkulliance') as $fn) {
 	$at = strpos($files['db.php'], 'function ' . $fn);
 	ok($at !== false, "$fn is gone");
 	if ($at === false) continue;

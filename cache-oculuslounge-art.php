@@ -4,7 +4,7 @@
 // WHY THIS EXISTS
 // Oculus Lounge (a Drop Ship reskin, migrated in from madballs.net) shows
 // each player's Oculus Lounge NFTs as their in-game roster -- see
-// dropshipOculusLoungeLocalImages()/dropshipSyncOculusLounge() in
+// dropshipOculusLoungeLocalImages()/dropshipSyncFromSkulliance() in
 // dropship/db.php, which read Skulliance's own already-synced `nfts` data
 // (and its locally-cached images) instead of Drop Ship independently
 // hitting Koios and hotlinking jpgstoreapis.com. Same root problem
@@ -62,7 +62,7 @@ function ol_out($line) {
 }
 
 // Oculus Lounge's actual on-chain policy -- same one
-// dropshipOculusLoungeLocalImages()/dropshipSyncOculusLounge() use, and the
+// dropshipOculusLoungeLocalImages()/dropshipSyncFromSkulliance() use, and the
 // same value monstrocity.php's own project config lists for
 // value="oculuslounge". Looked up by policy, not project_id/collection
 // name, since that's the one unambiguous key across both DBs.

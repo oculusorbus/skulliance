@@ -61,11 +61,14 @@ with nothing in the admin saying why. They are rows in `dropship_theme_text`
 now, and `dashboard.php` reads them through `evaluateText()` like every other
 label on the page.
 
-`trait_source` went the same way. It named which path a theme's traits come
-from, which is a key into the registry in `dhcfighters-config.php` - and that
-registry is keyed by the theme's own slug with the hyphens taken out
-(`oculus-lounge` -> `oculuslounge`). A theme with no entry there posts its
-drops as Drop Ship, which is the right fallback and needs no column.
+`trait_source` is **not** one of them, though it was removed once by mistake.
+Two different things were called the trait source: this column, which picks
+between two real NFT-loading pipelines, and `$source` in
+`dropship-traitdrop.php`, the key naming which *game* a Discord trait drop
+came from. The second really is the slug with the hyphens taken out and
+really is derived. The first is a choice nothing can infer, and removing it
+left `dashboard.php` picking the pipeline on a hardcoded `project_id == 4`,
+which is what the column existed to replace.
 
 ## Tables
 
@@ -78,6 +81,10 @@ CREATE TABLE IF NOT EXISTS dropship_themes (
 	-- MEDIA extension: 'gif' (animates itself) or a still like 'png',
 	-- which gets the Ken Burns pan instead. See the note below.
 	extension        VARCHAR(8)   NOT NULL DEFAULT 'gif',
+	-- Where this theme's NFT holdings come from: 'koios' reads the
+	-- player's connected wallets live, 'skulliance' reads the already
+	-- synced nfts table. A real choice; nothing derives it.
+	trait_source     VARCHAR(16)  NOT NULL DEFAULT 'koios',
 	created_at       DATETIME     NOT NULL,
 	updated_at       DATETIME     DEFAULT NULL,
 	UNIQUE KEY uniq_project (project_id),
@@ -182,8 +189,7 @@ them, so this is safe to run at any time:
 ALTER TABLE dropship_themes
   DROP COLUMN currency,
   DROP COLUMN squad_label,
-  DROP COLUMN character_label,
-  DROP COLUMN trait_source;
+  DROP COLUMN character_label;
 ```
 
 ## `slug` is stored, never derived

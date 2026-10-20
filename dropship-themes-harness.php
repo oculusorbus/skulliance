@@ -548,7 +548,7 @@ ok(dropshipActiveProjectIds($mk(array(1 => '1', 2 => '0'))) === array(1),
  * re-seeding silently opens a work-in-progress theme to players or shuts a
  * live one.
  */
-preg_match_all("/\((\d+), '[a-z-]+', (\d), '\w+', NOW\(\)\)/", $seed, $sm, PREG_SET_ORDER);
+preg_match_all("/\((\d+), '[a-z-]+', (\d), '\w+', '\w+', NOW\(\)\)/", $seed, $sm, PREG_SET_ORDER);
 ok(count($sm) === 4, 'the seed no longer declares four themes');
 $seed_active = array();
 foreach ($sm as $row) if ($row[2] === '1') $seed_active[] = (int)$row[1];
@@ -722,7 +722,7 @@ $seedsql = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
 /* Matched in a COLUMN LIST, not anywhere in the file: the seed's own header
    explains why these columns are gone, and a bare substring search found
    that prose and reported the column as still present. */
-foreach (array('currency', 'squad_label', 'character_label', 'trait_source') as $col) {
+foreach (array('currency', 'squad_label', 'character_label') as $col) {
 	ok(strpos($adm2, $col) === false, "the admin still writes dropship_themes.$col");
 	ok(!preg_match('/^\t' . $col . '\s/m', $schema), "the schema still creates dropship_themes.$col");
 	ok(!preg_match('/^\s*\(project_id[^)]*\b' . $col . '\b/m', $seedsql),
@@ -757,6 +757,86 @@ foreach ($blocks as $pid => $sql) {
 	ok(count($m[1]) === count(array_unique($m[1])),
 	   "project $pid has duplicate sort_order values in the seed");
 }
+
+echo "\nwhere a theme loads NFTs from is a setting, not a project id\n";
+/*
+ * TWO DIFFERENT THINGS WERE CALLED THE TRAIT SOURCE and I removed the wrong
+ * one. This column picks between two real NFT-loading pipelines: 'koios'
+ * reads the player's connected wallets live, 'skulliance' skips that round
+ * trip and reads Skulliance's already-synced nfts table. $source in
+ * dropship-traitdrop.php is the other one -- the key naming which GAME a
+ * Discord trait drop came from -- and that genuinely is the slug with the
+ * hyphens out. Removing this one left dashboard.php choosing the pipeline
+ * on a hardcoded project_id == 4, which is what the column existed to
+ * replace in the first place.
+ */
+$ct = function ($pid, $src) {
+	$row = array('id' => 7, 'project_id' => $pid, 'slug' => 't', 'active' => 1);
+	if ($src !== null) $row['trait_source'] = $src;
+	return new TConn(array($pid => $row), array(7 => array(pair('exact', 'X', 'Y'))));
+};
+ok(dropshipThemeTraitSource($ct(70, 'skulliance'), 70) === 'skulliance',
+   'a theme set to the Skulliance sync does not get it');
+ok(dropshipThemeTraitSource($ct(71, 'koios'), 71) === 'koios',
+   'a theme set to Koios does not get it');
+/* Any other value is Koios, because an unknown pipeline must not silently
+   become the one that reads a different collection. */
+ok(dropshipThemeTraitSource($ct(72, 'lounge'), 72) === 'koios',
+   "the old 'lounge' value is not treated as Koios");
+ok(dropshipThemeTraitSource($ct(73, 'nonsense'), 73) === 'koios',
+   'an unrecognised trait source is not treated as Koios');
+/* A theme can now choose the Skulliance pipeline WITHOUT being project 4,
+   which is the entire point. */
+ok(dropshipThemeTraitSource($ct(74, 'skulliance'), 74) === 'skulliance',
+   'only project 4 can use the Skulliance sync, so the setting does nothing');
+/*
+ * No theme row at all keeps the old hardcoded behaviour exactly.
+ *
+ * PROJECT 4 IS ONLY EXERCISED HERE, not also with a theme row, because
+ * dropshipThemeConfig() caches per project id for the request -- a second
+ * test on 4 would read the first one's cached answer and pass for the wrong
+ * reason. That a saved row beats the id default is covered by 70-74 above;
+ * in production a request only ever looks at one project anyway.
+ */
+ok(dropshipThemeTraitSource(new TConn(), 4) === 'skulliance',
+   'an unseeded project 4 no longer gets the sync it has always had');
+ok(dropshipThemeTraitSource(new TConn(), 1) === 'koios',
+   'an unseeded project no longer gets the Koios pipeline');
+/* The dashboard must ask, not test an id. */
+$dash3 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(strpos($dash3, "dropshipThemeTraitSource(\$conn, \$_SESSION['userData']['dropship_project_id']) === 'skulliance'") !== false,
+   'the dashboard still picks the pipeline itself');
+ok(preg_match("/dropship_project_id'\] == 4\)\{\s*\n\s*if\(\(\\\$address_changed/", $dash3) !== 1,
+   'the hardcoded project 4 pipeline test is back');
+/* The policy must reach the sync, or it reads somebody else's collection. */
+ok(strpos($dash3, 'dropshipSyncFromSkulliance($conn, $_SESSION[\'userData\'][\'discord_id\'], $policy_id)') !== false,
+   'the sync is called without the project policy, so it would read Disco Solaris for every theme');
+ok(strpos($dash3, '$policy_id = getProjectPolicyId($conn);') !== false,
+   'the policy the sync is handed is no longer read from the project');
+ok(strpos($dash3, '$policy_id = getProjectPolicyId($conn);') < strpos($dash3, 'dropshipSyncFromSkulliance('),
+   'the policy is read after the sync is called, so the sync gets nothing');
+$dbsrc4 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
+ok(strpos($dbsrc4, 'function dropshipSyncFromSkulliance($conn, $discord_id, $policy = \'\')') !== false,
+   'the sync does not take a policy, so it can only ever serve one theme');
+ok(strpos($dbsrc4, 'function dropshipSyncOculusLounge') === false,
+   'the generic pipeline is still named after one theme');
+/* The schema and the seed have to carry the column again. */
+ok(preg_match('/^\ttrait_source\s+VARCHAR/m', $schema) === 1,
+   'the schema no longer creates trait_source');
+ok(preg_match('/^\ttrait_source\s+VARCHAR/m', $seedsql) === 1,
+   "the seed's own CREATE no longer has trait_source");
+ok(strpos($seedsql, "(4, 'oculus-lounge', 1, 'png', 'skulliance'") !== false,
+   'the seed does not put Oculus Lounge on the Skulliance sync, so re-seeding would break it');
+foreach (array("(1, 'drop-ship', 1, 'gif', 'koios'",
+               "(2, 'dread-city', 0, 'gif', 'koios'",
+               "(3, 'filthy-mermaid', 0, 'gif', 'koios'") as $row) {
+	ok(strpos($seedsql, $row) !== false, "the seed moved a theme off Koios: $row");
+}
+$adm5 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));
+ok(strpos($adm5, 'name="trait_source"') !== false, 'the admin cannot set the trait source');
+ok(strpos($adm5, "=== 'skulliance'\n\t\t                                   ? 'skulliance' : 'koios'") !== false
+   || strpos($adm5, "? 'skulliance' : 'koios'") !== false,
+   'the admin writes the posted trait source straight through without checking it');
 
 echo "\nthe trait drop credits the theme, not a project id\n";
 /*
