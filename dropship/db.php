@@ -2426,8 +2426,17 @@ function logBalances($conn) {
 			}else{
 				logCredit($conn, $row["user_id"], $row["id"], 0);
 				
-				// CURL request to update Skulliance DB with DREAD allocations for winners, only execute on live Drop Ship
-				if($_SESSION['userData']['dropship_project_id'] == 1 || $_SESSION['userData']['dropship_project_id'] == 4){
+				/*
+				 * POSTED FOR EVERY GAME; SKULLIANCE DECIDES WHETHER IT PAYS.
+				 *
+				 * This was `== 1 || == 4`, so activating a theme meant
+				 * editing this line as well as the cron -- and Filthy
+				 * Mermaid was given a weekly cycle without one, so it ran
+				 * every week and paid nobody. The map of which game pays
+				 * into which currency lives on the Skulliance side, with
+				 * the currencies; an unmapped game is ignored there.
+				 */
+				if(true){
 					// set post fields
 					$post = [
 					    'discord_id' => $row["discord_id"],

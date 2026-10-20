@@ -1166,6 +1166,72 @@ ok(strpos($adm8, "=== 'linear'\n		                                   ? 'linear' 
    || strpos($adm8, "? 'linear' : 'random'") !== false,
    'the admin writes the posted order through without checking it');
 
+echo "\nevery active game pays into a real currency\n";
+/*
+ * THE MAP LIVES ON THE SKULLIANCE SIDE, with the currencies, and is never
+ * taken from the request -- the endpoint that credits balances has NO
+ * AUTHENTICATION (it runs at db.php include time, so an unsigned POST of
+ * three fields to any url on the platform credits somebody), and letting
+ * the caller name the project would turn "two currencies" into "any
+ * balance on the platform".
+ */
+$skdb = harness_strip_comments(file_get_contents(__DIR__ . '/db.php'));
+ok(strpos($skdb, 'function dropshipRewardProjects()') !== false,
+   'there is no map of which game pays into which currency');
+preg_match_all('/^\t\t(\d+) => (\d+),/m',
+	substr($skdb, strpos($skdb, 'function dropshipRewardProjects()'), 400), $pm, PREG_SET_ORDER);
+$pay = array();
+foreach ($pm as $row) $pay[(int)$row[1]] = (int)$row[2];
+ok($pay === array(1 => 2, 2 => 2, 3 => 2, 4 => 21),
+   'the payout map changed: ' . json_encode($pay));
+/* Chosen HERE, not posted. */
+ok(strpos($skdb, '$ds_map = dropshipRewardProjects();') !== false,
+   'the endpoint no longer uses its own map');
+/* Assigned FROM THE MAP. Checking only that one literal spelling was
+   absent let a cast through -- (int)$_POST['project_id'] is the same
+   mistake wearing a hat. */
+ok(preg_match('/\$project_id = \$ds_map\[\$ds_from\];/', $skdb) === 1,
+   'the target project does not come from the map');
+ok(preg_match("/\\$project_id\s*=\s*[^;\n]*\\$_POST/", $skdb) !== 1,
+   'the target project is taken from the request, so any balance can be credited');
+/* An unmapped game must pay NOTHING rather than fall through with
+   $project_id undefined and credit project 0. */
+ok(strpos($skdb, 'if (isset($ds_map[$ds_from]) && $subtotal > 0) {') !== false,
+   'an unmapped game still reaches updateBalance() with an undefined project');
+/* Drop Ship posts for every game and lets that map decide -- the gate was
+   `== 1 || == 4`, so activating a theme meant editing a second place, and
+   Filthy Mermaid got a weekly cycle without one and paid nobody. */
+/* READ HERE. This referenced $dbsrc6, which is not defined until a later
+   section -- strpos(null, ...) is false, so the check passed whatever the
+   code said, including the exact gate it exists to forbid. */
+$dsdb = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
+ok(strpos($dsdb, "dropship_project_id'] == 1 || \$_SESSION['userData']['dropship_project_id'] == 4") === false,
+   'the payout is still gated on two hardcoded project ids');
+/*
+ * THE INSTRUCTIONS MUST NAME THE SAME CURRENCY THE PAYOUT USES. "MOON" was
+ * the everything-else answer, which was right while only two games paid
+ * and wrong the moment a third did.
+ */
+$instr = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/instructions.php'));
+ok(strpos($instr, "== 1) ? \"DREAD\" : \"MOON\"") === false,
+   'the instructions still call every game but Drop Ship a MOON payout');
+preg_match("/\\\$ds_pays = array\(([^)]*)\)/", $instr, $im);
+ok(!empty($im), 'the instructions no longer name a currency per game');
+$said = array();
+if (!empty($im)) {
+	foreach (explode(',', $im[1]) as $bit) {
+		if (preg_match("/(\d+)\s*=>\s*'(\w+)'/", $bit, $b)) $said[(int)$b[1]] = $b[2];
+	}
+}
+/* Same games, and DREAD exactly where the map says project 2. */
+ok(array_keys($said) === array_keys($pay),
+   'the instructions and the payout map cover different games');
+foreach ($said as $pid => $cur) {
+	$expect = ($pay[$pid] === 2) ? 'DREAD' : 'MOON';
+	ok($cur === $expect,
+	   "the instructions call game $pid a $cur payout but it credits project " . $pay[$pid]);
+}
+
 echo "\nthe weekly cycle runs for every live theme\n";
 /*
  * automate.php is the cron that ends the week's game, posts the final
@@ -1177,9 +1243,14 @@ $auto = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/automate.p
 ok(preg_match('/\$all = array\(([0-9, ]+)\);/', $auto, $am) === 1,
    'the cron no longer declares which projects it runs');
 $cron_pids = array_map('intval', explode(',', $am[1]));
-foreach (array(1, 3, 4) as $pid) {
+foreach (array(1, 2, 3, 4) as $pid) {
 	ok(in_array($pid, $cron_pids, true),
 	   "project $pid has no weekly cycle, so its game never ends and no new one opens");
+}
+/* Every game that PAYS has to have a cycle to pay at the end of. */
+foreach (array_keys($pay) as $pid) {
+	ok(in_array($pid, $cron_pids, true),
+	   "project $pid pays a currency but has no weekly cycle to pay it in");
 }
 /*
  * ONE PROJECT ON REQUEST. Switching a theme on mid-week needs it given a
@@ -1219,14 +1290,21 @@ ok($at_close !== false && $at_create !== false && $at_close < $at_create,
    'the new game is created before the old one is closed');
 /* Drop Ship (1) is deliberately absent from the prefix branch -- it is the
    default, because its art is flat rather than nested. */
-ok(strpos($auto, '$prefix = "filthy-mermaid";') !== false,
-   'Filthy Mermaid has no art prefix, so its announcement image 404s');
+/* Every nested theme needs its own art prefix, or the weekly announcement
+   image is built from the wrong folder and 404s. */
+foreach (array(2 => 'dread-city', 3 => 'filthy-mermaid', 4 => 'oculus-lounge') as $pid => $pfx) {
+	ok(preg_match('/\$project_id == ' . $pid . '\)\{\s*\n\s*\$prefix = "' . $pfx . '";/', $auto) === 1,
+	   "project $pid does not use the $pfx art folder, so its announcement image 404s");
+}
 /*
  * DEFAULTED BEFORE THE BRANCH. Both were only assigned inside the if/else,
  * so a project nobody had listed created a NAMELESS game and built its
  * image path from an empty prefix.
  */
-ok(strpos($auto, "\t\$prefix = \"drop-ship\";\n\t\$prizes = \"1K, 500, 250 DREAD\";\n\tif(\$project_id == 3)") !== false,
+/* Anchored on the DEFAULT, not on whichever project happens to be first
+   in the branch -- adding a game changed that and broke this check for a
+   reason unrelated to what it tests. */
+ok(preg_match('/\t\$prefix = "drop-ship";\n\t\$prizes = "1K, 500, 250 DREAD";\n\tif\(\$project_id ==/', $auto) === 1,
    'the prefix and prize name are not defaulted before the branch');
 /*
  * games.prizes IS A COUNT, not a prize list -- checkLeaderboard() cuts the

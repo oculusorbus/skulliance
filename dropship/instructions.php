@@ -164,11 +164,18 @@ include 'header.php';
 							// balance -- see logBalances() in db.php, which posts to
 							// Skulliance's own db.php and credits project_id 2
 							// (DREAD) for Drop Ship or 21 (MOON) for Oculus Lounge.
-							// Only these two projects are wired to a real Skulliance
-							// currency; Dread City still runs on its own in-game
-							// evaluateText("SCRIP") economy below.
-							$payout_currency = ($_SESSION['userData']['dropship_project_id'] == 1) ? "DREAD" : "MOON";
-							$payout_icon = ($_SESSION['userData']['dropship_project_id'] == 1) ? "/staking/icons/dread.png" : "/staking/icons/moon.png";
+							// Every active game is wired to a real Skulliance
+							// currency now; the in-game evaluateText("SCRIP")
+							// economy below is separate from these prizes.
+							/* MOON WAS THE "EVERYTHING ELSE" ANSWER, which was fine
+							   while only two games paid out and is wrong now:
+							   Dread City and Filthy Mermaid both pay DREAD and
+							   would have read as MOON here. Named per game, from
+							   the same table the payout uses. */
+							$ds_pays = array(1 => 'DREAD', 2 => 'DREAD', 3 => 'DREAD', 4 => 'MOON');
+							$ds_pid = (int)($_SESSION['userData']['dropship_project_id'] ?? 0);
+							$payout_currency = isset($ds_pays[$ds_pid]) ? $ds_pays[$ds_pid] : '';
+							$payout_icon = '/staking/icons/' . strtolower($payout_currency ?: 'dread') . '.png';
 						?>
 						<div class="instr-row">
 							<img class="instr-icon" src="<?php echo $payout_icon;?>" alt=""/>

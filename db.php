@@ -75,7 +75,39 @@ if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
 
-// Handle Drop Ship DREAD AND Oculus Lounge MOON Rewards
+/**
+ * WHICH SKULLIANCE PROJECT'S POINTS A DROP SHIP GAME PAYS INTO.
+ *
+ * Keyed by Drop Ship's project id. It lives HERE, on the side that owns
+ * the currencies, and is deliberately not taken from the request: the
+ * block below has NO AUTHENTICATION -- see its own comment -- so letting
+ * the caller name the target project would turn "credit one of two
+ * balances" into "credit any balance".
+ */
+function dropshipRewardProjects() {
+	return array(
+		1 => 2,     // Drop Ship      -> DREAD
+		2 => 2,     // Dread City     -> DREAD
+		3 => 2,     // Filthy Mermaid -> DREAD
+		4 => 21,    // Oculus Lounge  -> MOON
+	);
+}
+
+/*
+ * Handle Drop Ship DREAD and Oculus Lounge MOON rewards.
+ *
+ * UNAUTHENTICATED, AND THAT IS A KNOWN HOLE. This runs at include time and
+ * db.php is included by every page, so an unsigned POST of three fields to
+ * any url on the platform credits somebody's balance, repeatably. It
+ * predates this comment; it is written down here rather than left for the
+ * next person to find. The fix is a shared secret between the two apps
+ * (they already share credentials/), which is a deploy change and so a
+ * decision rather than a tidy-up.
+ *
+ * Until then: the target project is chosen HERE from the map above, never
+ * from the request, so the blast radius stays two currencies rather than
+ * every project on the platform.
+ */
 if(isset($_POST['discord_id']) && isset($_POST['rank']) && isset($_POST['project_id'])) {
 	// Lookup user by discord id
 	$user_id = getUserIdFromDiscordId($conn, $_POST['discord_id']);
@@ -89,13 +121,15 @@ if(isset($_POST['discord_id']) && isset($_POST['rank']) && isset($_POST['project
 		}else if($_POST['rank'] == 3){
 			$subtotal = 250;
 		}
-		if($_POST['project_id'] == 1){
-			$project_id = 2;
-		}else if($_POST['project_id'] == 4){
-			$project_id = 21;
+		/* An unmapped game pays nothing, rather than falling through with
+		   $project_id undefined and crediting project 0. */
+		$ds_map = dropshipRewardProjects();
+		$ds_from = (int)$_POST['project_id'];
+		if (isset($ds_map[$ds_from]) && $subtotal > 0) {
+			$project_id = $ds_map[$ds_from];
+			updateBalance($conn, $user_id, $project_id, $subtotal);
+			logCredit($conn, $user_id, $subtotal, $project_id);
 		}
-		updateBalance($conn, $user_id, $project_id, $subtotal);
-		logCredit($conn, $user_id, $subtotal, $project_id);
 	}
 }
 
