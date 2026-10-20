@@ -192,6 +192,22 @@ ok(strpos($adm2, 'dropshipArtTitle($rel)') !== false, 'the page does not show sl
 ok(strpos($adm2, 'dropshipArtSlotMapping($conn, $pid, $rel)') !== false,
    'the page does not show what the theme calls each thing');
 
+echo "\nthe base game's slug maps to the flat folder\n";
+/*
+ * Project 1 is seeded with slug 'drop-ship' so the base game can be
+ * reskinned and its files managed here. That only works if the slug maps to
+ * the FLAT folder -- Drop Ship's own art is not nested, every other theme's
+ * is -- or the admin would write into dropship/drop-ship/ and the game
+ * would keep reading from dropship/.
+ */
+ok(dropshipArtRoot('drop-ship') === '',
+   "the 'drop-ship' slug no longer maps to the flat art folder");
+ok(dropshipArtRoot('oculus-lounge') === 'oculus-lounge/',
+   'a reskin no longer nests under its own slug');
+$seedsrc = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
+ok(strpos($seedsrc, "(1, 'drop-ship', 1, 'gif'") !== false,
+   'the seed does not give project 1 the slug the flat mapping needs');
+
 echo "\nan icon sits with the art of the same thing\n";
 /*
  * images/weapons/rocket-launcher3.gif and icons/rocket-launcher.png are two

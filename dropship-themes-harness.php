@@ -236,14 +236,52 @@ echo "\nthe seed matches the chain it was taken from\n";
  * that comparison rather than by eye if the chain is ever edited.
  */
 $seed = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
+/*
+ * THE SEED IS THE RESET. It carries its own DROP and CREATE so one file
+ * gives a clean slate and the schema can never be half a version behind the
+ * data. Both halves have to be there: without the DROP a re-run hits the
+ * old table and fails on duplicate keys, and without the collation it fails
+ * the way it originally did, on "#1062 Duplicate entry".
+ */
+foreach (array('DROP TABLE IF EXISTS dropship_theme_text;',
+               'DROP TABLE IF EXISTS dropship_themes;',
+               'CREATE TABLE dropship_themes (',
+               'CREATE TABLE dropship_theme_text (') as $ddl) {
+	ok(strpos($seed, $ddl) !== false, 'the seed cannot rebuild from scratch: no "' . $ddl . '"');
+}
+/* The child goes first, and both go before anything is written. */
+ok(strpos($seed, 'DROP TABLE IF EXISTS dropship_theme_text;')
+   < strpos($seed, 'DROP TABLE IF EXISTS dropship_themes;'),
+   'the seed drops the parent table before the child');
+ok(strpos($seed, 'CREATE TABLE dropship_theme_text (')
+   < strpos($seed, 'INSERT INTO dropship_themes'),
+   'the seed inserts before it has finished creating the tables');
+/* The collation, in the seed's OWN create -- the schema doc is checked
+   separately and the two can drift. */
+ok(preg_match('/CREATE TABLE dropship_theme_text \(.*?COLLATE utf8mb4_bin.*?\n\) ENGINE/s', $seed) === 1,
+   "the seed's own CREATE lets the default collation decide, which is the #1062 bug again");
+ok(preg_match('/\n\tfind\s+VARCHAR\(190\)[^\n]*COLLATE utf8mb4_bin/', $seed) === 1,
+   "it is not the find column in the seed's CREATE that is case sensitive");
+ok(strpos($seed, 'DESTRUCTIVE') !== false,
+   'the seed drops tables without saying so at the top of the file');
 ok(strpos($seed, "'exact', 'gif'") === false,
    'the seed carries a gif override, which would fight dropship_themes.extension');
-ok(substr_count($seed, 'INSERT INTO dropship_themes') === 3,
-   'the seed does not create exactly the three themes that have overrides');
-/* Project 1 is the base and must NOT be seeded: a row with no text would be
-   harmless, but a row implies it has wording of its own and it does not. */
-ok(strpos($seed, 'VALUES\n  (1,') === false && strpos($seed, "  (1, 'drop-ship'") === false,
-   'the seed creates a theme for Drop Ship, which has no overrides of its own');
+ok(substr_count($seed, 'INSERT INTO dropship_themes') === 4,
+   'the seed does not create all four themes');
+/*
+ * PROJECT 1 GETS A ROW BUT NO TEXT. It used to get neither, on the grounds
+ * that a row implies wording of its own -- but the row is what lets the
+ * base game be reskinned like the rest and what lets the art admin manage
+ * its files. The absence of TEXT rows is the thing that says it has no
+ * overrides, and dropshipThemeDictionaries() returns null for a theme with
+ * none, so the fallback behaves exactly as it did with no row at all.
+ */
+ok(strpos($seed, "  (1, 'drop-ship', 1, 'gif'") !== false,
+   'Drop Ship has no theme row, so the base game cannot be reskinned');
+$p1 = substr($seed, strpos($seed, "(1, 'drop-ship'"));
+$p1 = substr($p1, 0, strpos($p1, 'project 2'));
+ok(strpos($p1, '(@t,') === false, 'the seed gives Drop Ship text rows; it is the base wording');
+
 ok(strpos($seed, "(4, 'oculus-lounge', 1, 'png'") !== false,
    'the Oculus Lounge seed is not active-and-png, which is what it is live');
 
@@ -543,10 +581,16 @@ echo "\nthe wording owns the labels, so there are no label columns\n";
 $dash   = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
 $schema = file_get_contents(__DIR__ . '/dropship/dropship-themes-schema.md');
 $seedsql = file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql');
+/* Matched in a COLUMN LIST, not anywhere in the file: the seed's own header
+   explains why these columns are gone, and a bare substring search found
+   that prose and reported the column as still present. */
 foreach (array('currency', 'squad_label', 'character_label', 'trait_source') as $col) {
 	ok(strpos($adm2, $col) === false, "the admin still writes dropship_themes.$col");
 	ok(!preg_match('/^\t' . $col . '\s/m', $schema), "the schema still creates dropship_themes.$col");
-	ok(strpos($seedsql, $col . ',') === false, "the seed still fills dropship_themes.$col");
+	ok(!preg_match('/^\s*\(project_id[^)]*\b' . $col . '\b/m', $seedsql),
+	   "the seed still fills dropship_themes.$col");
+	ok(!preg_match('/^\t' . $col . '\s/m', $seedsql),
+	   "the seed's own CREATE still has dropship_themes.$col");
 }
 /* The dashboard reads all three through the same path as every other word. */
 foreach (array('$currency   = evaluateText("SCRIP")',
@@ -652,24 +696,36 @@ $adm3 = file_get_contents(__DIR__ . '/dropship/admin-themes.php');
 ok(strpos($adm3, 'Media extension') !== false, 'the admin does not call it the media extension');
 ok(strpos($adm3, 'Animation extension') === false, 'the old label is back');
 
-echo "\ncase-only pairs are real rows, and the column must allow them\n";
+echo "\nthe find column is case sensitive, because the lookup is\n";
 /*
- * 'Medkit' is the word a player reads; 'medkit' is the icon filename. They
- * need different replacements, so they are different rows -- but MySQL's
- * DEFAULT COLLATION IS CASE INSENSITIVE and treats them as one, which
- * rejected the seed with "#1062 Duplicate entry '1-exact-melee'". Found by
- * the seed failing to load, not by review.
+ * WHY THIS IS STILL utf8mb4_bin NOW THAT THE SEED HAS NO CASE-ONLY PAIRS.
+ *
+ * It was originally forced by the data: 'Medkit' was the word a player reads
+ * and 'medkit' the icon filename, two rows that MySQL's DEFAULT CASE
+ * INSENSITIVE COLLATION treats as one, which rejected the seed outright with
+ * "#1062 Duplicate entry '1-exact-melee'". The icon rows are gone -- the
+ * name is derived -- so nothing in the seed collides any more.
+ *
+ * The column must stay case sensitive anyway, because THE LOOKUP IS.
+ * dropshipThemeDictionaries() keys a PHP array and PHP array keys are
+ * byte-compared, so under a case-insensitive column two rows differing only
+ * by case would be one row in the database and two in the dictionary. The
+ * storage has to agree with the thing reading it, whether or not today's
+ * data happens to exercise the difference.
  */
-$pairs_ci = array();
-foreach ($vocab as $rows) foreach ($rows as $r) {
-	foreach (array_merge($r['exact'], $r['icons']) as $w) {
-		$k = 'exact|' . strtolower($w);
-		$pairs_ci[$k] = isset($pairs_ci[$k]) ? $pairs_ci[$k] + 1 : 1;
+$seed_ci = array();
+foreach (array_keys($blocks) as $bpid) {
+	if (preg_match_all("/\(\@t, '(exact|description)', '((?:[^']|\\\\')*)'/", $blocks[$bpid], $m)) {
+		foreach ($m[1] as $k => $t) {
+			$key = $bpid . '|' . $t . '|' . strtolower($m[2][$k]);
+			$seed_ci[$key] = isset($seed_ci[$key]) ? $seed_ci[$key] + 1 : 1;
+		}
 	}
 }
-$collide = array_filter($pairs_ci, function ($n) { return $n > 1; });
-ok(!empty($collide),
-   'no case-only pairs in the vocabulary, so this check is no longer proving anything');
+$collide = array_filter($seed_ci, function ($n) { return $n > 1; });
+ok(empty($collide),
+   'the seed has case-only pairs again (' . implode(', ', array_keys($collide))
+   . '), which is fine for the column but means an icon name is being stored');
 $schema_src = file_get_contents(__DIR__ . '/dropship/dropship-themes-schema.md');
 /*
  * SCOPED TO THE CREATE BLOCK. A bare search for the collation anywhere in

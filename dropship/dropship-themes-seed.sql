@@ -1,5 +1,22 @@
+-- ===========================================================================
+-- DESTRUCTIVE. This DROPS both theme tables and rebuilds them from scratch.
+-- Running it discards every theme and every word anybody has saved in the
+-- admin. That is the point -- it is the one file to run for a clean slate,
+-- so the schema and the data can never be half a version apart -- but it is
+-- not a file to run casually on a theme somebody has been editing.
+-- ===========================================================================
+--
 -- GENERATED from the if/else chain in dropship/db.php by running it,
 -- not by reading it. Regenerate rather than hand-edit.
+--
+-- NO ICON ROWS. An icon filename is the theme's own word made into a
+-- filename and dropshipThemeText() derives it, so storing it would be the
+-- same fact in two places -- which is exactly how 13 of the 64 live icon
+-- names drifted away from the word beside them.
+--
+-- NO LABEL COLUMNS. currency, squad_label and character_label held the words
+-- SCRIP, Super Soldier and Troops, which the wording owns; they are rows
+-- here now. trait_source is the slug with the hyphens taken out, derived.
 --
 -- REQUIRES dropship_theme_text.find TO BE utf8mb4_bin. The seed carries
 -- case-only pairs on purpose -- 'Medkit' is the word a player reads and
@@ -11,6 +28,46 @@
 -- value on dropship_themes.extension, and duplicating it into the dictionary
 -- would leave two places to change it. (It used to be a per-player 3D toggle,
 -- now retired.)
+
+DROP TABLE IF EXISTS dropship_theme_text;
+DROP TABLE IF EXISTS dropship_themes;
+
+CREATE TABLE dropship_themes (
+	id               INT AUTO_INCREMENT PRIMARY KEY,
+	project_id       INT          NOT NULL,            -- projects.id
+	slug             VARCHAR(64)  NOT NULL,            -- image folder under dropship/
+	active           TINYINT(1)   NOT NULL DEFAULT 0,  -- shows in the project picker
+	-- MEDIA extension: 'gif' (animates itself) or a still like 'png',
+	-- which gets the Ken Burns pan instead.
+	extension        VARCHAR(8)   NOT NULL DEFAULT 'gif',
+	created_at       DATETIME     NOT NULL,
+	updated_at       DATETIME     DEFAULT NULL,
+	UNIQUE KEY uniq_project (project_id),
+	UNIQUE KEY uniq_slug (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE dropship_theme_text (
+	id          INT AUTO_INCREMENT PRIMARY KEY,
+	theme_id    INT          NOT NULL,
+	match_type  ENUM('exact','description') NOT NULL DEFAULT 'exact',
+	-- utf8mb4_bin: `find` is CASE SENSITIVE. The default collation makes
+	-- 'Medkit' and 'medkit' one row and they are not the same thing.
+	find        VARCHAR(190) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+	replacement VARCHAR(255) NOT NULL,
+	sort_order  INT          NOT NULL DEFAULT 0,
+	UNIQUE KEY uniq_pair (theme_id, match_type, find),
+	INDEX idx_theme (theme_id, match_type, sort_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ---------- project 1: drop-ship, the base game
+-- No text rows: this IS the wording every other theme overrides. The row
+-- exists so the base game can be reskinned like the rest, and so the art
+-- admin can manage its files -- dropshipArtRoot() maps the 'drop-ship' slug
+-- to the FLAT folder, which is where Drop Ship's own art actually lives.
+INSERT INTO dropship_themes
+  (project_id, slug, active, extension, created_at)
+VALUES
+  (1, 'drop-ship', 1, 'gif', NOW());
 
 -- ---------- project 2: dread-city (31 exact, 3 description)
 INSERT INTO dropship_themes

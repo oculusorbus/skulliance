@@ -122,6 +122,24 @@ The lookup side was always case sensitive -- `dropshipThemeDictionaries()`
 keys a PHP array, and PHP array keys are byte-compared -- so only the column
 needed fixing, not the code.
 
+That is now the *only* reason it is `utf8mb4_bin`. The pairs that forced it
+were the icon filenames, and those are derived rather than stored, so no
+seeded row collides any more. The column stays case sensitive because the
+thing reading it is: under a case-insensitive column two rows differing only
+by case would be one row in the database and two in the dictionary, whether
+or not today's data happens to contain such a pair.
+
+### The one file to run
+
+`dropship-themes-seed.sql` is self-contained: it DROPS both tables, creates
+them, and loads every theme. That is deliberate -- a seed that assumed the
+tables were already right let the schema and the data drift half a version
+apart, which is how a live theme ended up with columns this document had
+already removed. Running that file is the whole operation.
+
+It is destructive by design. Everything below is for repairing a table in
+place instead.
+
 ### If the table already exists
 
 ```sql
