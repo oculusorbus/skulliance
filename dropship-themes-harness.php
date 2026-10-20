@@ -1211,6 +1211,43 @@ ok(strpos($adm8, "=== 'linear'\n		                                   ? 'linear' 
    || strpos($adm8, "? 'linear' : 'random'") !== false,
    'the admin writes the posted order through without checking it');
 
+echo "\nno Koios call can hold a page render open\n";
+/*
+ * NOT ONE of Drop Ship's four Koios calls had a timeout. A slow or
+ * rate-limited reply held the dashboard open until PHP's own
+ * max_execution_time, which is what "changing themes locks up" was.
+ *
+ * It went unnoticed because the expired bearer made every call fail in
+ * MILLISECONDS with a 403. Fixing the token turned a fast failure into a
+ * slow success, and the missing timeout only started costing anything
+ * then -- the bug was always there, the token was hiding it.
+ */
+require_once __DIR__ . '/lib/koios.php';
+ok(function_exists('koios_timeouts'), 'there is no shared timeout helper');
+$ks = harness_strip_comments(file_get_contents(__DIR__ . '/lib/koios.php'));
+foreach (array('CURLOPT_CONNECTTIMEOUT', 'CURLOPT_TIMEOUT') as $opt) {
+	ok(strpos($ks, $opt) !== false, "the helper does not set $opt");
+}
+/* A server that connects and then dribbles bytes satisfies both of those,
+   so the slow-reply case needs its own guard. */
+ok(strpos($ks, 'CURLOPT_LOW_SPEED_LIMIT') !== false && strpos($ks, 'CURLOPT_LOW_SPEED_TIME') !== false,
+   'a connection that stalls mid-reply is still unbounded');
+/* EVERY call site, not just the ones that were slow today. */
+foreach (array('dropship/dashboard.php' => 2, 'dropship/db.php' => 1,
+               'dropship/dropship-nft-probe.php' => 1) as $f => $n) {
+	$fs = harness_strip_comments(file_get_contents(__DIR__ . '/' . $f));
+	$calls = substr_count($fs, 'curl_init("https://api.koios.rest');
+	$bound = substr_count($fs, 'koios_timeouts(');
+	ok($calls === $n, "$f has $calls Koios calls, expected $n");
+	ok($bound >= $calls, "$f bounds only $bound of its $calls Koios calls");
+}
+/* And the page render must survive one timing out: every caller already
+   treats a non-array reply as "nothing to sync", which is the behaviour
+   a timeout needs. */
+$dash8 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(strpos($dash8, 'if(is_array($response)){') !== false,
+   'the wallet read no longer checks the reply shape, so a timeout fatals the page');
+
 echo "\nevery active game pays into a real currency\n";
 /*
  * THE MAP LIVES ON THE SKULLIANCE SIDE, with the currencies, and is never

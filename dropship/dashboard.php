@@ -217,6 +217,8 @@ if($ds_source === 'skulliance'){
 		curl_setopt( $ch, CURLOPT_FOLLOWLOCATION, 1);
 		curl_setopt( $ch, CURLOPT_HEADER, 0);
 		curl_setopt( $ch, CURLOPT_RETURNTRANSFER, 1);
+		// Bounded: an unbounded wallet read holds the whole page render open.
+		koios_timeouts($ch);
 
 		$response = curl_exec( $ch );
 		// If you need to debug, or find out why you can't send message uncomment line below, and execute script.
@@ -251,6 +253,7 @@ if($ds_source === 'skulliance'){
 			curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);
 			curl_setopt( $tokench, CURLOPT_HEADER, 0);
 			curl_setopt( $tokench, CURLOPT_RETURNTRANSFER, 1);
+			koios_timeouts($tokench);
 			
 			$tokenresponse = curl_exec( $tokench );
 			$tokenresponse = json_decode($tokenresponse);

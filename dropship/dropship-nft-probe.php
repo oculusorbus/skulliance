@@ -152,8 +152,10 @@ function dropshipNftProbe($conn, $project_id, $discord_id) {
 		json_encode(array('_stake_addresses' => array_values($addresses), '_extended' => true)));
 	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-	curl_setopt($ch, CURLOPT_TIMEOUT, 20);
+	/* The probe may wait longer than a page render would: it is a
+	   diagnostic somebody is watching, and "it timed out" is itself the
+	   answer it exists to give. */
+	koios_timeouts($ch, 20);
 	$raw  = curl_exec($ch);
 	$code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
 	$cerr = curl_error($ch);

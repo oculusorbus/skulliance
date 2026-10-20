@@ -946,12 +946,16 @@ function dropshipSyncFromSkulliance($conn, $discord_id, $policy = '') {
 			$asset_list[] = array($policy, bin2hex($asset_name));
 		}
 		$ch = curl_init("https://api.koios.rest/api/v1/asset_info");
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-type: application/json'));
+		/* koios_headers(): one copy of the bearer, left out once expired. */
+		curl_setopt($ch, CURLOPT_HTTPHEADER, koios_headers());
 		curl_setopt($ch, CURLOPT_POST, 1);
 		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array("_asset_list" => $asset_list)));
 		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 		curl_setopt($ch, CURLOPT_HEADER, 0);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		/* Bounded: this runs during a page render, and the caller already
+		   treats a bad reply as "no traits this time" and carries on. */
+		koios_timeouts($ch);
 		$response = curl_exec($ch);
 		curl_close($ch);
 		$response = json_decode($response);

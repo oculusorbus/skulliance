@@ -90,3 +90,29 @@ function koios_filter_stake_addresses($addresses) {
 	foreach ((array)$addresses as $a) if (koios_valid_stake_address($a)) $ok[] = trim((string)$a);
 	return array_values(array_unique($ok));
 }
+
+/**
+ * Apply the timeouts every Koios call needs. Returns the handle.
+ *
+ * NOT ONE OF THESE CALLS WAS BOUNDED. Four curl handles across Drop Ship,
+ * none with CURLOPT_TIMEOUT, so a slow or rate-limited Koios held the page
+ * render open until PHP's own max_execution_time -- the player sees the
+ * dashboard hang. It went unnoticed for as long as it did because the
+ * expired bearer made every call fail in milliseconds with a 403: fixing
+ * the token is what turned a fast failure into a slow success, and the
+ * missing timeout only started costing anything then.
+ *
+ * SHORT ON PURPOSE. Every caller already treats a non-array reply as
+ * "nothing to sync" and carries on, which is exactly the right behaviour
+ * for a timeout: the holdings refresh on the next load. A page that
+ * renders without the sync beats a page that does not render.
+ */
+function koios_timeouts($ch, $seconds = 12) {
+	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 4);
+	curl_setopt($ch, CURLOPT_TIMEOUT, (int)$seconds);
+	/* Belt and braces: a server that accepts the connection and then
+	   dribbles bytes forever satisfies both of the above. */
+	curl_setopt($ch, CURLOPT_LOW_SPEED_LIMIT, 64);
+	curl_setopt($ch, CURLOPT_LOW_SPEED_TIME, (int)$seconds);
+	return $ch;
+}
