@@ -545,7 +545,22 @@ function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_
 	 * bare name when SKL_WEBHOOKS_NO_ALIAS is not set, so a foreign app gets
 	 * the sender without the collision and the flag is gone.
 	 */
-	if (is_file(__DIR__ . '/dhcfighters-notify.php')) {
+	/*
+	 * DHCF_NO_NOTIFY IS BACK, and narrower than it was. It was removed once
+	 * discordmsg() stopped colliding, on the understanding that loading the
+	 * notifier inside a foreign app was then safe. It was not: both apps'
+	 * credentials files also declare a getWebhook(), with DIFFERENT
+	 * signatures, so pulling webhooks.php in here made Drop Ship's own
+	 * later include a fatal -- and took its play page down, for every
+	 * project, the moment anybody earned a drop.
+	 *
+	 * The caller sets this only while that clash is still possible. THE
+	 * DROP ITSELF IS UNAFFECTED: it is committed above either way, and what
+	 * is skipped is the announcement, which is the right thing to lose.
+	 */
+	if (defined('DHCF_NO_NOTIFY') && DHCF_NO_NOTIFY) {
+		error_log('dhcf_commit_drop: announcement skipped for ' . $source . ' (DHCF_NO_NOTIFY)');
+	} elseif (is_file(__DIR__ . '/dhcfighters-notify.php')) {
 		// Buffered around the REQUIRE as well as the call: loading the notifier
 		// pulls in webhooks.php, which pulls in its credentials file, and any
 		// warning from that chain would land in the middle of an AJAX endpoint's
@@ -833,7 +848,10 @@ function dhcf_save_fighter($conn, $user_id, $traits, $name = '') {
 				// After the commit, never before: an announcement for a save
 				// that then rolled back would be a lie, and the render is slow
 				// enough to be worth keeping outside the transaction.
-				if (is_file(__DIR__ . '/dhcfighters-notify.php')) {
+				/* Same escape hatch as dhcf_commit_drop()'s: a foreign app
+				   that cannot load the notifier must not be made to. */
+				if (!(defined('DHCF_NO_NOTIFY') && DHCF_NO_NOTIFY)
+				    && is_file(__DIR__ . '/dhcfighters-notify.php')) {
 					ob_start();
 					require_once __DIR__ . '/dhcfighters-notify.php';
 					dhcf_notify_fighter($conn, $user_id, $saved);

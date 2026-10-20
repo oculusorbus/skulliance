@@ -11,7 +11,24 @@ include('credentials/webhooks_credentials.php');
 			// into Skulliance's login now, a dead end as a Discord embed link.
 			$url = "https://skulliance.io/staking/dropship/dashboard.php";
 		}
-		$webhook = getWebhook($project_id);
+		/*
+		 * DROP SHIP'S OWN ACCESSOR, by whichever name it has.
+		 *
+		 * Both apps' credentials files declare a getWebhook(): Skulliance's
+		 * takes no arguments, Drop Ship's takes a project id. They are
+		 * different functions with one name, so whichever file loads second
+		 * is a fatal "cannot redeclare" -- which is what killed the play
+		 * page the first time a trait drop fired, because awarding one
+		 * loads the platform's webhooks.php before this file is included.
+		 *
+		 * dropshipGetWebhook() is the way out: rename the function in
+		 * dropship/credentials/webhooks_credentials.php and the clash is
+		 * gone for good. This prefers it and falls back, so the rename can
+		 * happen on the server without the code having to land first.
+		 */
+		$webhook = function_exists('dropshipGetWebhook')
+			? dropshipGetWebhook($project_id)
+			: getWebhook($project_id);
 	    $timestamp = date("c", strtotime("now"));
 	    $msg = json_encode([
 	    // Message

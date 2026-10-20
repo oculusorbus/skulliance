@@ -178,6 +178,31 @@ function dropshipDropAward($ctx) {
 		 * afterwards. It is the only name that collides between the two apps.
 		 */
 		if (!defined('SKL_WEBHOOKS_NO_ALIAS')) define('SKL_WEBHOOKS_NO_ALIAS', true);
+
+		/*
+		 * AND NO ANNOUNCEMENT WHILE getWebhook() IS STILL SHARED.
+		 *
+		 * SKL_WEBHOOKS_NO_ALIAS solved the discordmsg() collision. It is
+		 * not the only one: BOTH credentials files declare a getWebhook(),
+		 * Skulliance's taking no arguments and Drop Ship's taking a project
+		 * id, and loading the notifier pulls the platform's in. This runs
+		 * during the dropship.php include, which is BEFORE dashboard.php
+		 * includes Drop Ship's own webhooks.php -- so that later include
+		 * became "Cannot redeclare getWebhook()" and took the whole play
+		 * page down with it, for every project, the moment anybody earned
+		 * a drop.
+		 *
+		 * The fix is a rename in dropship/credentials/webhooks_credentials.php
+		 * (to dropshipGetWebhook), which this file cannot make -- credentials
+		 * are not in the repo. So: announce only once that rename has
+		 * happened. The DROP IS STILL AWARDED either way; what is skipped is
+		 * the post in the DHC Fighters channel, which is worth losing and a
+		 * fatal on the play page is not. It starts working by itself the
+		 * moment the rename lands.
+		 */
+		if (!function_exists('dropshipGetWebhook') && !defined('DHCF_NO_NOTIFY')) {
+			define('DHCF_NO_NOTIFY', true);
+		}
 		require_once __DIR__ . '/../dhcfighters-lib.php';
 		if (!function_exists('dhcf_award')) return null;
 

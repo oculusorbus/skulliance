@@ -202,12 +202,21 @@ $defAt = strpos($src, "define('SKL_WEBHOOKS_NO_ALIAS', true)");
 $reqAt = strpos($src, "require_once __DIR__ . '/../dhcfighters-lib.php'");
 ok($defAt !== false && $reqAt !== false && $defAt < $reqAt,
    'SKL_WEBHOOKS_NO_ALIAS is defined after the library loads, which is too late');
-/* And it must no longer suppress the announcement itself. */
-ok(strpos($src, 'DHCF_NO_NOTIFY') === false,
-   'the award still suppresses the notifier, so the drop is silent in DHC Fighters');
+/*
+ * AND THE ANNOUNCEMENT IS SUPPRESSED AGAIN -- CONDITIONALLY, which is the
+ * opposite of what this used to assert and for a reason that only showed
+ * up in production. SKL_WEBHOOKS_NO_ALIAS fixed the discordmsg() half of
+ * the collision, and I took the notify skip out believing that was all of
+ * it. Both credentials files ALSO declare a getWebhook(), with different
+ * signatures, so loading the notifier here made Drop Ship's own later
+ * include a fatal and took the play page down for every project the first
+ * time anybody earned a drop. See the section at the bottom of this file.
+ */
+ok(strpos($src, 'DHCF_NO_NOTIFY') !== false,
+   'nothing stops the notifier loading the platform webhooks into a Drop Ship request');
 $lib = file_get_contents(__DIR__ . '/dhcfighters-lib.php');
-ok(preg_match("/if \(is_file\(__DIR__ \. '\/dhcfighters-notify\.php'\)\) \{/", $lib) === 1,
-   'dhcf_award() no longer announces unconditionally');
+ok(strpos($lib, "elseif (is_file(__DIR__ . '/dhcfighters-notify.php')) {") !== false,
+   'dhcf_award() announces unconditionally again, which fatals a foreign caller');
 
 /*
  * RUN IT. The collision is a fatal, and no amount of reading the source
@@ -378,5 +387,70 @@ foreach (array('dropship' => 'Drop Ship', 'oculuslounge' => 'Oculus Lounge') as 
 ok(dhcf_game('dropship') !== dhcf_game('oculuslounge'),
    'the two specialty games share one registry entry');
 
+
+echo "\ntwo apps, two getWebhook()s, one fatal\n";
+/*
+ * BOTH credentials files declare a getWebhook(): Skulliance's takes no
+ * arguments, Drop Ship's takes a project id. Awarding a drop loads the
+ * platform's webhooks.php, and that happens during the dropship.php
+ * include -- BEFORE dashboard.php includes Drop Ship's own webhooks.php --
+ * so that later include became "Cannot redeclare getWebhook()" and took
+ * the play page down for every project the moment anybody earned a drop.
+ *
+ * SKL_WEBHOOKS_NO_ALIAS fixed the discordmsg() half of this and was
+ * assumed to have fixed all of it. It had not.
+ */
+/* This harness has no shared stripper, and the comments below quote the
+   very names being asserted on -- so strip them here rather than let a
+   paragraph satisfy a check about code. */
+$nocomments = function ($t) {
+	return preg_replace(array('#/\*.*?\*/#s', '#^\s*//.*$#m'), '', (string)$t);
+};
+$td2 = $nocomments(file_get_contents(__DIR__ . '/dropship/dropship-traitdrop.php'));
+ok(strpos($td2, "if (!function_exists('dropshipGetWebhook') && !defined('DHCF_NO_NOTIFY'))") !== false,
+   'the award still loads the platform notifier while getWebhook() is shared');
+ok(strpos($td2, "define('DHCF_NO_NOTIFY', true)") !== false, 'the notify skip is never set');
+/* Set BEFORE the library is required, or the library has already run. */
+ok(strpos($td2, "define('DHCF_NO_NOTIFY', true)") < strpos($td2, "require_once __DIR__ . '/../dhcfighters-lib.php'"),
+   'the skip is defined after the library loads, which is too late');
+/* It must be conditional: the moment the credentials rename lands, the
+   announcement has to come back by itself. */
+ok(strpos($td2, "!function_exists('dropshipGetWebhook')") !== false,
+   'the skip is unconditional, so announcements never return after the rename');
+
+$lib2 = $nocomments(file_get_contents(__DIR__ . '/dhcfighters-lib.php'));
+ok(substr_count($lib2, 'DHCF_NO_NOTIFY') >= 3,
+   'the library ignores the skip, so setting it changes nothing');
+/* THE AWARD ITSELF MUST STILL HAPPEN. Skipping the announcement is the
+   point; skipping the drop would be a silent loss of a prize. */
+/*
+ * dhcf_commit_drop(), NOT dhcf_award(). The announcement lives in the
+ * commit, and slicing the award -- which is what the first version of
+ * this did, and what the code comment beside the guard claimed -- found
+ * neither the notifier nor the guard and failed for the right reason.
+ * Bounded by the NEXT top-level function, because the first bare `}`
+ * lands partway through.
+ */
+$award = substr($lib2, strpos($lib2, 'function dhcf_commit_drop'));
+$nextfn = strpos($award, "\nfunction ", 1);
+if ($nextfn !== false) $award = substr($award, 0, $nextfn);
+ok(strlen($award) > 900 && strpos($award, 'dhcf_notify_drop($conn') !== false,
+   'the dhcf_commit_drop() slice (' . strlen($award) . ' chars) does not reach the announcement');
+ok(strpos($award, 'DHCF_NO_NOTIFY') !== false, 'the commit has no skip at all');
+ok(strpos($award, 'DHCF_NO_NOTIFY') < strpos($award, 'dhcf_notify_drop($conn'),
+   'the skip sits after the announcement, so it never prevents anything');
+ok(strpos($award, 'dhcf_notify_drop($conn') !== false,
+   'the announcement was removed outright rather than made skippable');
+
+/* Drop Ship asks for its own accessor by the unshared name first, so the
+   rename can land on the server without the code having to go first. */
+$wh2 = $nocomments(file_get_contents(__DIR__ . '/dropship/webhooks.php'));
+ok(strpos($wh2, "function_exists('dropshipGetWebhook')") !== false,
+   'Drop Ship does not prefer the unshared accessor name');
+ok(strpos($wh2, 'dropshipGetWebhook($project_id)') !== false,
+   'the renamed accessor is not called with the project id');
+ok(strpos($wh2, 'getWebhook($project_id)') !== false,
+   'the fallback to the old name is gone, so this breaks before the rename');
+
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
-exit($fail ? 1 : 0);
