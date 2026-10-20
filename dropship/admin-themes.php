@@ -173,6 +173,15 @@ $val = function ($k, $d = '') use ($theme, $h) {
   word-break:break-all;padding:6px 8px;background:#07111d;border-radius:3px;
   border:1px solid rgba(255,255,255,.16);text-align:left}
 .dsa .pol.none{font-family:inherit;color:#e8a0b0;border-color:rgba(224,70,107,.45)}
+/* The editor is folded away until asked for: the wording table alone is
+   sixty rows, and the list of themes is what the page is actually for. */
+.dsa details.editor{margin:0 0 14px}
+.dsa details.editor > summary{display:inline-block;cursor:pointer;list-style:none;
+  background:#00c8a0;color:#07111d;border-radius:4px;padding:8px 15px;
+  font-weight:bold;font-size:13px;text-align:left}
+.dsa details.editor > summary::-webkit-details-marker{display:none}
+.dsa details.editor[open] > summary{background:none;color:#00c8a0;padding:0 0 10px;
+  border-bottom:1px solid rgba(0,200,160,.25);border-radius:0;display:block}
 .dsa .good-n{color:#00c8a0;font-weight:bold}
 .dsa .bad-n{color:#e8a0b0;font-weight:bold}
 .dsa code{color:#e8eaed}
@@ -209,8 +218,27 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
 	<?php endforeach; ?>
 </table>
 
+<?php
+/*
+ * FOLDED AWAY UNTIL IT IS WANTED. The wording table alone is sixty rows,
+ * so the page opened on a wall of inputs that is only relevant once you
+ * have decided to change something -- and the list of themes, which is
+ * what you actually came to look at, was pushed off the top.
+ *
+ * OPEN WHEN EDITING, because arriving from an Edit link IS the decision;
+ * making somebody click a second time to see what they asked for would be
+ * worse than the wall.
+ *
+ * <details> rather than a script: it keeps working with JavaScript off,
+ * the browser gives it keyboard and screen-reader behaviour for free, and
+ * there is no state to get out of step with the heading.
+ */
+?>
+<details class="editor"<?php echo $theme ? ' open' : ''; ?>>
+<summary><?php echo $theme
+	? 'Editing ' . $h($theme['slug']) . ' &mdash; hide'
+	: 'Add a theme'; ?></summary>
 <form method="post" action="admin-themes.php">
-<h3><?php echo $theme ? 'Edit theme' : 'Add a theme'; ?></h3>
 <div class="grid">
 	<div><label>Project</label>
 		<select name="project_id">
@@ -395,6 +423,7 @@ does not cover.</p>
 <button type="button" onclick="dsaAddRow()">Add a row</button>
 <button type="submit">Save theme</button>
 </form>
+</details>
 <script>
 function dsaAddRow(){
 	var t = document.getElementById('dsa-pairs');
