@@ -151,6 +151,37 @@ function dropshipThemeText($conn, $project_id, $text) {
 	return $text;
 }
 
+/**
+ * The theme's MEDIA EXTENSION -- what its round art is stored as.
+ *
+ * Asked through evaluateText() rather than the theme row directly, because
+ * that is the one accessor that works both before and after a theme is
+ * migrated: it answers from dropship_themes.extension when there is a row
+ * and from the built-in chain when there is not.
+ */
+function dropshipMediaExtension() {
+	if (!function_exists('evaluateText')) return 'gif';
+	$ext = evaluateText('gif');
+	return $ext !== '' ? strtolower($ext) : 'gif';
+}
+
+/**
+ * Does this theme's art need help moving?
+ *
+ * A gif animates itself, so anything laid over it fights it. A still -- png
+ * for Oculus Lounge -- gets the Ken Burns pan already defined as .image-wrap
+ * in dist/flexbox.css, which is a 40s drift across the frame.
+ *
+ * DRIVEN BY THE FORMAT, NOT BY THE PROJECT. The pan used to be switched on
+ * for project 4 and nothing else, which was only ever right by coincidence:
+ * project 4 is the one that happens to use stills. A new png theme would
+ * have rendered a dead frame, and a gif theme given project 4's id would
+ * have had a pan dragged across its own animation.
+ */
+function dropshipMediaIsStill() {
+	return dropshipMediaExtension() !== 'gif';
+}
+
 /** Every theme row, for the admin list. Empty when the table is missing. */
 function dropshipThemeAll($conn) {
 	if (!dropshipThemesTable($conn)) return array();

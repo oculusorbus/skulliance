@@ -315,6 +315,49 @@ $c9 = new TConn(array(90 => array('id' => 9, 'project_id' => 90, 'slug' => 'k'))
 ok(dropshipThemeText($c9, 90, 'Barracks') === 'Barracks',
    'a kept term does not come back unchanged');
 
+echo "\nthe media extension decides the motion\n";
+/*
+ * A gif animates itself; a still needs the Ken Burns pan (.image-wrap, a 40s
+ * drift in dist/flexbox.css). The pan used to be switched on for project 4
+ * and nothing else, which was right only by coincidence -- that is the theme
+ * that happens to use stills. A new png theme would have rendered a dead
+ * frame, and a gif theme on project 4's id would have had a pan dragged
+ * across its own animation.
+ */
+function media_is_still_for($ext) {
+	/* Drive the real helper by standing in for evaluateText(), which is what
+	   it asks -- that accessor answers from the theme row when one exists and
+	   from the built-in chain when it does not. */
+	$GLOBALS['__ext'] = $ext;
+	return dropshipMediaIsStill();
+}
+if (!function_exists('evaluateText')) {
+	function evaluateText($t) { return $t === 'gif' ? $GLOBALS['__ext'] : $t; }
+}
+ok(media_is_still_for('gif') === false, 'a gif theme is given the pan, which fights its own animation');
+ok(media_is_still_for('png') === true, 'a png theme gets no pan, so its art sits dead on the screen');
+ok(media_is_still_for('PNG') === true,
+   'an uppercase extension is not normalised, so PNG and png behave differently');
+ok(media_is_still_for('GIF') === false, 'an uppercase gif is treated as a still');
+ok(media_is_still_for('jpg') === true, 'a jpg theme gets no pan');
+ok(media_is_still_for('') === false, 'an empty extension is treated as a still rather than falling back to gif');
+
+$dash2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(strpos($dash2, 'dropshipMediaIsStill()') !== false,
+   'the dashboard does not use the media extension to decide the pan');
+ok(preg_match("/image_wrap[^;]*dropship_project_id'\] == 4/", $dash2) !== 1,
+   'the pan is still keyed off project 4 rather than the format');
+ok(strpos($dash2, "class='image-wrap'") !== false, 'the Ken Burns wrapper is gone entirely');
+/* And the effect it switches on must still exist. */
+$css = file_get_contents(__DIR__ . '/dropship/dist/flexbox.css');
+ok(strpos($css, '.image-wrap') !== false, 'the .image-wrap pan is gone from the stylesheet');
+ok(strpos($css, 'animation: move') !== false, 'the Ken Burns keyframes are gone');
+
+/* The label players and the owner read. */
+$adm3 = file_get_contents(__DIR__ . '/dropship/admin-themes.php');
+ok(strpos($adm3, 'Media extension') !== false, 'the admin does not call it the media extension');
+ok(strpos($adm3, 'Animation extension') === false, 'the old label is back');
+
 echo "\ncase-only pairs are real rows, and the column must allow them\n";
 /*
  * 'Medkit' is the word a player reads; 'medkit' is the icon filename. They

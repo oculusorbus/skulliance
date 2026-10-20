@@ -82,7 +82,7 @@ function evaluateText($text){
 	global $conn;
 
 	/*
-	 * THE ANIMATION EXTENSION IS A PROPERTY OF THE THEME, and is answered
+	 * THE MEDIA EXTENSION IS A PROPERTY OF THE THEME, and is answered
 	 * from dropship_themes.extension rather than stored as a text override.
 	 *
 	 * It used to be a per-player 3D toggle, which is why it was a

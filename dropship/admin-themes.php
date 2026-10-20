@@ -203,7 +203,7 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
 		</select></div>
 	<div><label>Slug (image folder)</label>
 		<input type="text" name="slug" value="<?php echo $val('slug'); ?>" placeholder="oculus-lounge"></div>
-	<div><label>Animation extension</label>
+	<div><label>Media extension</label>
 		<input type="text" name="extension" value="<?php echo $val('extension', 'gif'); ?>"></div>
 	<div><label>Currency</label>
 		<input type="text" name="currency" value="<?php echo $val('currency', 'SCRIP'); ?>"></div>

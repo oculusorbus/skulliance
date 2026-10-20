@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS dropship_themes (
 	project_id       INT          NOT NULL,            -- projects.id
 	slug             VARCHAR(64)  NOT NULL,            -- image folder under dropship/
 	active           TINYINT(1)   NOT NULL DEFAULT 0,  -- shows in the project picker
+	-- MEDIA extension: 'gif' (animates itself) or a still like 'png',
+	-- which gets the Ken Burns pan instead. See the note below.
 	extension        VARCHAR(8)   NOT NULL DEFAULT 'gif',
 	currency         VARCHAR(32)  NOT NULL DEFAULT 'SCRIP',
 	squad_label      VARCHAR(64)  NOT NULL DEFAULT 'Super Soldier',
@@ -69,6 +71,22 @@ CREATE TABLE IF NOT EXISTS dropship_theme_text (
 	INDEX idx_theme (theme_id, match_type, sort_order)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
+
+## Media extension decides the motion
+
+`extension` is what a theme's round art is stored as, and it picks the
+treatment:
+
+| Extension | Treatment |
+|---|---|
+| `gif` | none. It animates itself, and a pan laid over it fights it. |
+| anything still (`png`) | the **Ken Burns** pan, `.image-wrap` in `dist/flexbox.css`, a 40s drift across the frame. |
+
+That pan used to be switched on for project 4 and nothing else, which was
+right only by coincidence: Oculus Lounge is the theme that happens to use
+stills. It follows the extension now, so a new `png` theme gets the pan
+without anyone remembering to wire it, and a `gif` theme never has one
+dragged across its own animation.
 
 ## `find` has to be case sensitive
 

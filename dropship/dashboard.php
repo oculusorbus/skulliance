@@ -405,8 +405,18 @@ if($_SESSION['userData']['dropship_project_id'] == 1){
 				<!--<h1>Doc Oc & Ohh Meed's Drop Ship</h1>-->
 			    <!-- Display results of Drop Ship run to user -->
 				<?php 
+				/*
+				 * KEN BURNS ON STILLS ONLY. A gif animates itself and a pan
+				 * laid over it just fights it; a png needs the movement.
+				 *
+				 * This keyed off project 4, which was right only by
+				 * coincidence -- that is the theme that happens to use
+				 * stills. It follows the theme's media extension now, so a
+				 * new png theme gets the pan and a gif one never does.
+				 */
 				$image_wrap = "";
-				if((isset($_POST['run']) || isset($_POST['instant_replay'])) && $_SESSION['userData']['dropship_project_id'] == 4) {
+				if((isset($_POST['run']) || isset($_POST['instant_replay']))
+				   && function_exists('dropshipMediaIsStill') && dropshipMediaIsStill()) {
 					$image_wrap = "class='image-wrap'";
 				}?>
 				<div id="results" <?php echo $image_wrap;?>>
