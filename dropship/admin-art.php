@@ -55,7 +55,7 @@ if (!dropshipThemeAdmin()) {
 		if (is_object($conn)) $conn->close();
 		exit;
 	}
-	echo '<div class="row"><div class="main"><div class="content"><h2>Theme art</h2>'
+	echo '<div class="row"><div class="main"><div class="content"><h2>Theme Art</h2>'
 	   . '<p>Not yours to edit.</p>';
 	dsaArtClose($conn);
 	exit;
@@ -320,7 +320,7 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .inplace.bad{color:#e8a0b0}
 </style>
 <div class="row"><div class="main"><div class="content dsart">
-<h2>Theme art</h2>
+<h2>Theme Art</h2>
 
 <?php foreach ($msg['err'] as $m): ?><div class="msg bad"><?php echo $m; ?></div><?php endforeach; ?>
 <?php foreach ($msg['ok'] as $m): ?><div class="msg good"><?php echo $m; ?></div><?php endforeach; ?>

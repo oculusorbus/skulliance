@@ -77,7 +77,63 @@
          build a path to: the theme-change loader. Every theme ships its
          own images/loading.gif. */ ?>
 <body data-ds-prefix="<?php echo htmlspecialchars($prefix, ENT_QUOTES); ?>">
-	<?php /* NO FULL-SCREEN LOADING OVERLAY. It covered the page on every
+<?php
+/*
+ * THE LOADER BELONGS ON THE PAGE BEING LOADED, NOT THE ONE BEING LEFT.
+ *
+ * dsShowLoader() builds an overlay in dropship.js and then submits the
+ * form, so it lives on the OUTGOING document and dies the instant the
+ * browser swaps in the new one -- which is well before that page's art has
+ * arrived. Reported exactly that way: "it flashes for a second, then the
+ * page displays without all the content rendered."
+ *
+ * The two halves are different documents, so this is the other half: the
+ * arriving page paints its own overlay on the first frame and keeps it up
+ * until the art behind it is actually there. dsShowLoader() still covers
+ * the request itself, so there is no gap between them.
+ *
+ * ONLY ON A THEME CHANGE. $project_id_changed is set in dropship.php when
+ * the requested project differs from the session's, which is the one
+ * request that re-reads the player's holdings and routinely takes a
+ * second. Every other navigation here is fast and an overlay on it was
+ * what made the loader intolerable the first time round.
+ *
+ * window.load, NOT DOMContentLoaded, because "full content" means the
+ * images: load fires once every subresource has finished, including the
+ * ones that failed, so a 404 in a half-uploaded theme cannot strand it.
+ *
+ * NO JQUERY, AND A HARD CAP. jQuery comes from Google's CDN and Brave's
+ * Shields block that host for some stakers -- see the note in the head --
+ * so dropship.js's own $(window).on('load') handler is not something an
+ * overlay covering the whole page may depend on. A loader that never
+ * lifts is far worse than one that lifts early, hence the plain listener
+ * and the timeout behind it.
+ */
+if (isset($project_id_changed) && $project_id_changed === "true"
+    && function_exists('dropshipThemeArtFile')) {
+	$ds_spin = dropshipThemeArtFile($slug, 'images/loading', 'gif');
+	/* No spinner for this theme means no overlay, rather than a black
+	   screen with a broken image on it. */
+	if ($ds_spin !== '') { ?>
+	<div id="loading"><img id="loading-image" alt="Loading..."
+	     src="<?php echo htmlspecialchars($prefix . $ds_spin, ENT_QUOTES); ?>"></div>
+	<script>
+	(function () {
+		var el = document.getElementById('loading');
+		if (!el) return;
+		var lifted = false;
+		function lift() { if (lifted) return; lifted = true; el.style.display = 'none'; }
+		if (document.readyState === 'complete') lift();
+		else window.addEventListener('load', lift);
+		/* Ten seconds is longer than this page has ever taken and shorter
+		   than anybody will sit staring at a spinner wondering if the site
+		   is broken. */
+		setTimeout(lift, 10000);
+	})();
+	</script>
+<?php }
+} ?>
+	<?php /* NO FULL-SCREEN LOADING OVERLAY ON ANY OTHER NAVIGATION. It covered the page on every
 	         navigation and on every form post, which is most of what you do
 	         here, and it was a full-bleed gif rather than progress -- it
 	         never told anybody anything the browser's own loading state did
@@ -153,7 +209,7 @@
 		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Admin</span>
 		    <div class="nav-dropdown-menu">
 		      <a href="admin-themes.php">Themes</a>
-		      <a href="admin-art.php">Theme art</a>
+		      <a href="admin-art.php">Theme Art</a>
 		    </div>
 		  </div>
 		  <?php } ?>

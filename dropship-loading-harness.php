@@ -21,19 +21,66 @@ function ok($cond, $msg) {
 }
 function src($rel) { return (string)@file_get_contents(__DIR__ . '/' . $rel); }
 
-echo "\nDrop Ship no longer renders the overlay\n";
+echo "\nthe overlay renders on a theme change and on nothing else\n";
 $hdr = src('dropship/header.php');
 ok($hdr !== '', 'dropship/header.php could not be read');
-ok(strpos($hdr, 'id="loading"') === false,
-   'the full-screen loading overlay is back in Drop Ship\'s header');
-ok(strpos($hdr, 'id="loading-image"') === false, 'the overlay image is back');
-/* The header does not RENDER a loader, but it does hand the theme's art
-   folder to JavaScript, which is the one thing the on-demand loader
-   cannot work out for itself -- the reskins nest and Drop Ship's own art
-   is flat. */
-ok(strpos($hdr, "<div id=\"loading\"") === false, 'the header renders a loader element again');
+/*
+ * IT USED TO RENDER ON NOTHING AT ALL, and that was right while the only
+ * loader was dsShowLoader(), built in JavaScript on the page being LEFT.
+ * That overlay dies with the document swap, well before the arriving
+ * page's art is there -- "it flashes for a second, then the page displays
+ * without all the content rendered". The two halves are two documents, so
+ * the arriving one paints its own.
+ *
+ * THE CONDITION IS THE WHOLE POINT. An overlay on every navigation is
+ * what made the loader intolerable the first time and got it removed; a
+ * theme change is the one request that re-reads the player's holdings.
+ */
+$ldg_at = strpos($hdr, '<div id="loading"');
+ok($ldg_at !== false, 'the arriving page paints no overlay, so the loader still flashes and goes');
+$ldg_head = $ldg_at === false ? '' : substr($hdr, 0, $ldg_at);
+ok(strpos($ldg_head, '$project_id_changed === "true"') !== false,
+   'the overlay is not gated on the theme actually having changed');
+ok(strpos($hdr, 'id="loading-image"') !== false, 'the overlay has no image in it');
+/* NOT A BLACK SCREEN WITH A BROKEN IMAGE. A theme with no spinner on disk
+   gets no overlay. */
+ok(strpos($ldg_head, "dropshipThemeArtFile(\$slug, 'images/loading', 'gif')") !== false,
+   "the overlay does not resolve the theme's own spinner, or does not check it is there");
+ok(preg_match("/\\\$ds_spin !== ''\)\s*\{/", $ldg_head) === 1,
+   'a theme with no spinner gets a black overlay with a broken image on it');
+/* The header also hands the theme's art folder to JavaScript, which is the
+   one thing dsShowLoader() cannot work out for itself -- the reskins nest
+   and Drop Ship's own art is flat. */
 ok(strpos($hdr, 'data-ds-prefix=') !== false,
    'the header does not expose the art prefix, so the loader points at the wrong theme');
+/* THE LIFT ITSELF is driven for real in dropship-loader-lift-harness.js --
+   it is the half that can strand a page, so it is executed, not grepped. */
+ok(is_file(__DIR__ . '/dropship-loader-lift-harness.js'),
+   'the lift script has no harness, so nothing proves the overlay ever comes down');
+
+echo "\nthe spinner is a slot like every other image\n";
+require_once __DIR__ . '/dropship/dropship-themes.php';
+require_once __DIR__ . '/dropship/dropship-art.php';
+foreach (array('gif', 'jpg', 'png') as $e) {
+	ok(in_array('images/loading.gif', dropshipArtManifest($e), true),
+	   "the spinner is not in the .$e manifest, so there is no slot to upload it to");
+}
+$lg_where = '';
+foreach (dropshipArtGroups('png') as $gn => $gg) {
+	if (in_array('images/loading.gif', $gg['files'], true)) $lg_where = $gn;
+}
+ok($lg_where !== '', 'the spinner is in no art group, so the page never renders it');
+ok($lg_where !== 'Everything else',
+   'the spinner is in the leftovers bin, which is where nobody found the Discord images');
+ok(dropshipArtTitle('images/loading.gif') !== 'Loading',
+   'the spinner slot is labelled by its filename');
+/* IT STAYS A GIF, BY NAME. dropship.js builds the path itself and a still
+   spinner says nothing; it must not start following the theme extension
+   the way the round art does. */
+ok(!in_array('images/loading.png', dropshipArtManifest('png'), true),
+   'the spinner follows the theme extension, so a png theme is asked for a still spinner');
+ok(!in_array('images/loading.gif', dropshipThemeGifProbes(), true),
+   'the spinner decides whether a theme counts as having animated art');
 
 echo "\nnothing that used it throws without it\n";
 /*

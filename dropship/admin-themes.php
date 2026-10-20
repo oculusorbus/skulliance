@@ -367,7 +367,7 @@ item in the shop, and the word in the middle of a results line.<br>
 It names the icon too. Call something &ldquo;Smoking Jacket&rdquo; and the page
 asks for <code>icons/smoking-jacket.png</code> - you never type that, and there
 is nowhere here to change it. The picture itself lives on
-<a href="admin-art.php?project_id=<?php echo (int)$edit_pid; ?>">Theme art</a>,
+<a href="admin-art.php?project_id=<?php echo (int)$edit_pid; ?>">Theme Art</a>,
 beside the rest of the art for the same thing.</p>
 
 <?php foreach ($vocab as $group => $rows): ?>

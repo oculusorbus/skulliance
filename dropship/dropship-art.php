@@ -90,14 +90,16 @@ function dropshipArtManifest($ext = 'gif') {
 	}
 	foreach (dropshipArtEquipment() as $e) $m[] = "images/equipment/$e.$ext";
 
-	/* Chrome the pages and the Discord embeds reach for. Both Discord
-	   files are asked for by LITERAL NAME in the code -- not through the
-	   theme's extension -- so they are listed literally here too. vip.gif
-	   was missing from this list entirely, which is why it could not be
-	   uploaded for a theme: dread-city still has none and its embeds went
-	   out with no thumbnail. */
+	/* Chrome the pages and the Discord embeds reach for. Every one of these
+	   is asked for by LITERAL NAME in the code, not through the theme's
+	   extension, so they are listed literally here too -- and a file that is
+	   not listed here has no upload slot, which is how several of them came
+	   to be the same picture in every theme. loading.gif is built by name in
+	   dropship.js (dsShowLoader) and stays a gif on purpose: it is a spinner,
+	   and a still one would say nothing. */
 	$m[] = 'images/dropship.jpg';
 	$m[] = 'images/vip.gif';
+	$m[] = 'images/loading.gif';
 	$m[] = 'images/nfts/placeholder.jpg';
 
 	return $m;
@@ -294,6 +296,14 @@ function dropshipArtGroups($ext = 'gif') {
 		   of seventy slots -- so the image on every Discord post read as
 		   something that could not be themed at all, and stayed Drop
 		   Ship's. */
+		/* NAMED, NOT LEFT TO THE CATCH-ALL. "Everything else / page furniture
+		   and placeholders" is where the Discord images were, and nobody found
+		   them there; these two are page furniture in the same way and would
+		   have gone the same way. The catch-all stays for anything added later,
+		   it just no longer holds the things we can name. */
+		'Around the game' => array('note' => 'Not part of a run: the spinner shown while a theme '
+		                                   . 'loads, and the picture that fills an empty squad slot.',
+		                        'match' => '#^images/(loading\.gif|nfts/placeholder\.jpg)$#'),
 		'Discord'      => array('note' => 'What the announcements carry: the big image on every post, '
 		                                . 'and the small thumbnail beside the title. Change these and '
 		                                . 'the Game Over, New Game, death and leaderboard posts all follow.',
@@ -558,6 +568,7 @@ function dropshipArtTitle($rel) {
 		return $m[2] === '' ? $label : $label . ', frame ' . $m[2];
 	}
 
+	if ($rel === 'images/loading.gif')                 return 'Spinner, while a theme loads';
 	if (strpos($rel, 'images/nfts/placeholder') === 0) return 'Empty squad slot';
 	if ($rel === 'images/vip.gif')                     return 'Discord thumbnail, beside the title';
 	if (strpos($rel, 'images/dropship.') === 0)        return 'Discord image, on every post';
