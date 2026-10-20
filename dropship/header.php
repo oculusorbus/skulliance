@@ -74,9 +74,14 @@
   <?php } ?>
 </head>
 <body>
-	<div id="loading" <?php echo (isset($_POST['run']) || isset($_POST['instant_replay']))?'style="display:none"':""; ?>>
-	  <img id="loading-image" src="<?php echo $prefix;?>images/loading.gif" alt="Loading..." />
-	</div>
+	<?php /* NO FULL-SCREEN LOADING OVERLAY. It covered the page on every
+	         navigation and on every form post, which is most of what you do
+	         here, and it was a full-bleed gif rather than progress -- it
+	         never told anybody anything the browser's own loading state did
+	         not. The element is simply absent; dropship.js and wallet.js
+	         both check before touching it, so nothing throws.
+	         The PLATFORM keeps its own #loading (skulliance.js uses it) and
+	         the rule in dist/flexbox.css is shared, so neither is removed. */ ?>
 	<div class="container">
 		<div id="burger-menu">
 			<img id="burger-icon" onclick="javascript:toggleMenu();" src="https://www.skulliance.io/staking/images/menu.png"/>

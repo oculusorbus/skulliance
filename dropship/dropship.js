@@ -291,7 +291,10 @@ function selectProject(criteria){
 	if(criteria == "none"){
 		alert("Please select a project from the dropdown.");
 	}
-	document.getElementById('loading').style.display = "block";
+	/* The overlay is gone from header.php; guarded so switching project
+	   does not die on a missing element. */
+	var ldg = document.getElementById('loading');
+	if (ldg) ldg.style.display = "block";
 	document.getElementById('project_id').value = criteria;
 	document.getElementById("projectForm").submit();
 }

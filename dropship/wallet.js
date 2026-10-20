@@ -3,7 +3,8 @@ window.Lucid=Lucid;
 
 async function connectWallet(wallet){
 	if(wallet != "none"){
-		document.getElementById('loading').style.display = "block";
+		var ldg = document.getElementById('loading');
+		if (ldg) ldg.style.display = "block";
 		try{
 			/*
 			 * NO PROVIDER -- same fix as the main platform's wallet.js.
@@ -36,7 +37,8 @@ async function connectWallet(wallet){
 			// Without this the spinner above stayed up forever on any failure.
 			console.error('Wallet connection failed:', e);
 		}
-		document.getElementById('loading').style.display = "none";
+		var ldg2 = document.getElementById('loading');
+		if (ldg2) ldg2.style.display = "none";
 	}
 }
 

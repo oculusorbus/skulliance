@@ -350,7 +350,12 @@ function selectProject(criteria){
 	if(criteria == "none"){
 		alert("Please select a project from the dropdown.");
 	}
-	document.getElementById('loading').style.display = "block";
+	/* GUARDED. No platform page renders #loading -- the rule survives in
+	   dist/flexbox.css and this function is a leftover copy of Drop Ship's,
+	   which nothing here calls -- so this line already threw if it ever ran.
+	   Costs nothing and stops it being a trap if it is ever wired up. */
+	var ldg = document.getElementById('loading');
+	if (ldg) ldg.style.display = "block";
 	document.getElementById('project_id').value = criteria;
 	document.getElementById("projectForm").submit();
 }
