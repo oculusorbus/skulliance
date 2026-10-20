@@ -29,8 +29,9 @@ class TConn {
 	public $themes;   /* project_id => row */
 	public $text;     /* theme_id => rows */
 	public $queries = 0;
-	public function __construct($themes = array(), $text = array()) {
-		$this->themes = $themes; $this->text = $text;
+	public $projects = array();
+	public function __construct($themes = array(), $text = array(), $projects = array()) {
+		$this->themes = $themes; $this->text = $text; $this->projects = $projects;
 	}
 	public function query($sql) {
 		$this->queries++;
@@ -39,6 +40,19 @@ class TConn {
 			preg_match('/project_id = (\d+)/', $sql, $m);
 			$pid = (int)$m[1];
 			return new TRes(isset($this->themes[$pid]) ? array($this->themes[$pid]) : array());
+		}
+		if (strpos($sql, 'FROM projects') !== false) {
+			/* HONOURS THE WHERE, because the thing under test is whether the
+			   admin query still carries getProjects()'s name exclusion. A
+			   stub that returned every row regardless would pass with the
+			   exclusion copied straight back in. */
+			$rows = $this->projects;
+			if (preg_match_all("/name != '([^']*)'/", $sql, $m)) {
+				$rows = array_values(array_filter($rows, function ($r) use ($m) {
+					return !in_array($r['name'], $m[1], true);
+				}));
+			}
+			return new TRes($rows);
 		}
 		if (strpos($sql, 'FROM dropship_theme_text') !== false) {
 			preg_match('/theme_id = (\d+)/', $sql, $m);
@@ -488,6 +502,52 @@ $c9 = new TConn(array(90 => array('id' => 9, 'project_id' => 90, 'slug' => 'k'))
                 array(9 => array(pair('exact', 'Barracks', 'Barracks'))));
 ok(dropshipThemeText($c9, 90, 'Barracks') === 'Barracks',
    'a word replaced by itself does not come back unchanged');
+
+echo "\nthe admin can pick any project, not just the public ones\n";
+/*
+ * The theme admin could not offer Filthy Mermaid or Dread City -- the two
+ * themes most in need of editing -- because it built its dropdown from
+ * getProjects(), which excludes them BY NAME. That is the player-facing
+ * list, and it is also the allow-list dropship.php validates ?project_id
+ * against before the value is interpolated into SQL, so it cannot simply be
+ * widened: that would un-hide work in progress and loosen an injection
+ * guard at the same time. Two questions, two functions.
+ */
+$cp = new TConn(array(), array(), array(
+	array('id' => '1', 'name' => 'Drop Ship'),
+	array('id' => '2', 'name' => 'Dread City'),
+	array('id' => '3', 'name' => 'Filthy Mermaid'),
+	array('id' => '4', 'name' => 'Oculus Lounge'),
+));
+$ap = dropshipAdminProjects($cp);
+ok(count($ap) === 4, 'the admin project list dropped one: ' . implode(', ', $ap));
+foreach (array(1 => 'Drop Ship', 2 => 'Dread City', 3 => 'Filthy Mermaid',
+               4 => 'Oculus Lounge') as $pid => $name) {
+	ok(isset($ap[$pid]) && $ap[$pid] === $name, "the admin cannot pick $name");
+}
+/* Keyed by INT, because the template compares against (int)$theme['project_id']
+   and a string key would never match, silently losing the selected option. */
+foreach (array_keys($ap) as $k) ok(is_int($k), 'the project list is keyed by ' . gettype($k));
+/* ALWAYS an array. getProjects() returns NULL on an empty table -- the
+   foreach that follows would warn, and display_errors is on in production. */
+ok(dropshipAdminProjects(new TConn()) === array(), 'an empty projects table does not give an array');
+ok(dropshipAdminProjects(null) === array(), 'a dead connection does not give an array');
+/* The admin must use it, and must NOT use the player-facing one. */
+$adm4 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));
+ok(strpos($adm4, 'dropshipAdminProjects($conn)') !== false,
+   'the admin does not build its dropdown from every project');
+ok(strpos($adm4, 'getProjects($conn)') === false,
+   'the admin is back on the player-facing list, which hides two of the themes');
+/* ...and the player-facing list must keep its exclusions, because it guards
+   an id that reaches SQL. */
+$dbsrc2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
+ok(strpos($dbsrc2, "WHERE name != 'Filthy Mermaid' AND name != 'Dread City'") !== false,
+   'getProjects() no longer excludes the hidden projects, so players can enter them');
+$dssrc = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship.php'));
+ok(strpos($dssrc, '$ds_allowed = getProjects($conn);') !== false,
+   'the project_id guard no longer validates against the player-facing list');
+ok(strpos($dssrc, 'dropshipAdminProjects') === false,
+   'the project_id guard validates against the ADMIN list, which allows every project');
 
 echo "\nan icon filename is derived from the word, never stored\n";
 /*

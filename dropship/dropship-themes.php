@@ -267,3 +267,24 @@ function dropshipThemeSlug($raw) {
 	$s = preg_replace('/[^a-z0-9]+/', '-', $s);
 	return trim((string)$s, '-');
 }
+
+/**
+ * Every project in the Drop Ship database, for the admin's picker.
+ *
+ * NOT getProjects(). That one is the PLAYER-facing list and it excludes
+ * Filthy Mermaid and Dread City by name, which is why the theme admin could
+ * not select the two themes most in need of editing. It is also the
+ * allow-list dropship.php validates ?project_id against before that value is
+ * interpolated into SQL, so widening it would both un-hide work in progress
+ * and loosen an injection guard. Two different questions; two functions.
+ *
+ * Returns id => name, always an array -- getProjects() returns NULL when the
+ * table is empty, which a foreach then warns on, and display_errors is on.
+ */
+function dropshipAdminProjects($conn) {
+	$out = array();
+	if (!is_object($conn)) return $out;
+	$r = @$conn->query("SELECT id, name FROM projects ORDER BY id ASC");
+	if ($r) while ($row = $r->fetch_assoc()) $out[(int)$row['id']] = $row['name'];
+	return $out;
+}

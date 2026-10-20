@@ -131,7 +131,10 @@ if ($theme) {
 	                    ORDER BY match_type ASC, sort_order ASC, id ASC");
 	if ($r) while ($row = $r->fetch_assoc()) $pairs[] = $row;
 }
-$projects = getProjects($conn);
+/* EVERY project, not getProjects(). That is the player-facing list and it
+   hides Filthy Mermaid and Dread City by name -- the two themes most in
+   need of editing were the two this dropdown could not offer. */
+$projects = dropshipAdminProjects($conn);
 $h = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES); };
 $val = function ($k, $d = '') use ($theme, $h) {
 	return $h($theme && isset($theme[$k]) && $theme[$k] !== '' ? $theme[$k] : $d);
