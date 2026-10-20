@@ -68,15 +68,26 @@ function dropshipThemeAdmin() {
 	return in_array($me, $allowed, true);
 }
 
-/** Do the theme tables exist? Asked once, because nothing creates them. */
+/**
+ * Do the theme tables exist? Asked once per connection, because nothing
+ * creates them and the answer cannot change inside a request.
+ *
+ * PER CONNECTION, NOT ONCE GLOBALLY. It takes a $conn and the answer is a
+ * property OF that connection, so a single static was wrong: the first
+ * caller's answer was handed to every later one regardless of which
+ * database it was asking about. Nothing in production has two Drop Ship
+ * connections today, but the harness does, and a cache that ignores its
+ * own key is a bug waiting for the second one.
+ */
 function dropshipThemesTable($conn) {
-	static $have = null;
-	if ($have === null) {
-		if (!is_object($conn)) return false;
+	static $have = array();
+	if (!is_object($conn)) return false;
+	$k = spl_object_id($conn);
+	if (!array_key_exists($k, $have)) {
 		$r = @$conn->query("SHOW TABLES LIKE 'dropship_themes'");
-		$have = (bool)($r && $r->num_rows);
+		$have[$k] = (bool)($r && $r->num_rows);
 	}
-	return $have;
+	return $have[$k];
 }
 
 /**

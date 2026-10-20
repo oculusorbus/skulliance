@@ -563,62 +563,111 @@ function dropshipArtIconTerm($rel) {
 }
 
 /**
- * Every slot for a theme, art and icons together, grouped by the thing.
+ * The family a piece of art or an icon belongs to: term => display label.
  *
- * WHY THIS EXISTS. The art screen used to be two lists: round art grouped by
- * folder, then every icon in one block at the bottom. So replacing "the
- * rocket launcher" meant finding five frames in one place and its icon in
- * another, and the icon block was the only thing on the page that was not
- * about a theme's own art at all. They are the same job.
+ * Keyed on BOTH the icon filenames and the slug of the label, because the
+ * art folder names a file after the thing ('rocket-launcher3.gif') while
+ * the icon is named after it too, and some things have art but no icon at
+ * all (Airstrike, Reinforcements).
+ */
+function dropshipArtThingLabels() {
+	static $map = null;
+	if ($map === null) {
+		$map = array();
+		require_once __DIR__ . '/dropship-theme-vocab.php';
+		foreach (dropshipThemeVocabulary() as $rows) {
+			foreach ($rows as $r) {
+				$map[dropshipThemeSlug($r['label'])] = $r['label'];
+				foreach ($r['icons'] as $ic) $map[$ic] = $r['label'];
+			}
+		}
+	}
+	return $map;
+}
+
+/**
+ * Every slot for a theme, grouped into the THING each one is a picture of.
  *
- * Returns group => array('note', 'slots'), where a slot is
- * array('kind' => 'art'|'icon', ...) -- an art slot carries 'rel' under the
- * theme folder, an icon slot carries what dropshipThemeIconSlots() returns.
+ * WHY ROWS AND NOT ONE GRID. A reskin is decided one object at a time --
+ * "what is our rocket launcher" -- and the answer is five frames plus an
+ * icon. Flowed into a single grid those six sat wherever the column count
+ * put them, split across lines, with nothing saying they belonged together
+ * or what this theme calls the thing. Each thing gets its own row now,
+ * headed by its name and what the theme renames it to.
+ *
+ * Returns group => array('note', 'rows'), where a row is
+ * array('label', 'said', 'slots'). A row with an empty label is art that is
+ * not a picture of a nameable thing -- beach frames, deaths -- and is
+ * rendered as a plain band with no header.
  */
 function dropshipArtPlan($conn, $project_id, $ext = 'gif') {
 	$icons = array();
 	foreach (dropshipThemeIconSlots($conn, $project_id) as $ic) $icons[$ic['term']] = $ic;
+	$labels = dropshipArtThingLabels();
 
 	$out = array();
 	foreach (dropshipArtGroups($ext) as $name => $g) {
-		$slots  = array();
-		$placed = array();
-		$files  = array_values($g['files']);
-		foreach ($files as $i => $rel) {
-			$slots[] = array('kind' => 'art', 'rel' => $rel);
-			/* The icon closes the run rather than splitting it: it goes in
-			   after the LAST frame of the thing, which is the frame whose
-			   successor is something else. */
+		$rows = array();                 /* term => row, '' => the unnamed band */
+		foreach ($g['files'] as $rel) {
 			$term = dropshipArtIconTerm($rel);
-			if ($term === null || isset($placed[$term]) || !isset($icons[$term])) continue;
-			$next = isset($files[$i + 1]) ? dropshipArtIconTerm($files[$i + 1]) : null;
-			if ($next === $term) continue;
-			$slots[] = array('kind' => 'icon') + $icons[$term];
-			$placed[$term] = true;
+			if ($term === null || !isset($labels[$term])) $term = '';
+			if (!isset($rows[$term])) $rows[$term] = array();
+			$rows[$term][] = array('kind' => 'art', 'rel' => $rel);
 		}
-		$out[$name] = array('note' => $g['note'], 'slots' => $slots);
-		foreach ($placed as $term => $_) unset($icons[$term]);
+		/* The icon closes its own row rather than trailing the group. */
+		foreach (array_keys($rows) as $term) {
+			if ($term !== '' && isset($icons[$term])) {
+				$rows[$term][] = array('kind' => 'icon') + $icons[$term];
+				unset($icons[$term]);
+			}
+		}
+		$out[$name] = array('note' => $g['note'], 'rows' => dropshipArtRowList($rows, $labels, $conn, $project_id));
 	}
 
 	/*
 	 * WHAT IS LEFT HAS NO ROUND ART -- armour, the suits, the Medkit, the
-	 * squad marks. They are still a theme's pictures, so they get their own
-	 * sections named after the vocabulary group they came from rather than
-	 * one undifferentiated block of leftovers.
+	 * squad marks. Still a theme's pictures, so they get sections named for
+	 * what they are rather than a bin of leftovers, one row each.
 	 */
 	$notes = array(
 		'Armor'    => 'Worn on a soldier card and in the shop. No round art: armour is never a frame.',
 		'Items'    => 'Carried gear that has no frame of its own.',
 		'Identity' => 'The squad marks, used in the nav and on the scoreboard.',
 	);
+	/* BY THING, NOT BY FILE. Super Soldier owns two icons (dropship.png and
+	   supersoldier.png) and they are two pictures of one thing, so they
+	   share a row -- a row each listed it twice under the same heading. */
+	$left = array();
 	foreach ($icons as $term => $ic) {
 		$name = isset($notes[$ic['group']]) ? $ic['group'] : 'Everything else';
+		$left[$name][$ic['label']][] = array('kind' => 'icon') + $ic;
+	}
+	foreach ($left as $name => $things) {
 		if (!isset($out[$name])) {
 			$out[$name] = array('note' => isset($notes[$name]) ? $notes[$name]
 			                            : 'Icons with no round art of their own.',
-			                    'slots' => array());
+			                    'rows' => array());
 		}
-		$out[$name]['slots'][] = array('kind' => 'icon') + $ic;
+		$byterm = array();
+		foreach ($things as $label => $slots) $byterm[dropshipThemeSlug($label)] = $slots;
+		$out[$name]['rows'] = array_merge($out[$name]['rows'],
+			dropshipArtRowList($byterm, $labels, $conn, $project_id));
+	}
+	return $out;
+}
+
+/** Turn term => slots into the row shape, resolving what the theme calls it. */
+function dropshipArtRowList($rows, $labels, $conn, $project_id) {
+	$out = array();
+	foreach ($rows as $term => $slots) {
+		$label = ($term !== '' && isset($labels[$term])) ? $labels[$term] : '';
+		$said  = '';
+		if ($label !== '' && function_exists('dropshipThemeText')) {
+			$t = dropshipThemeText($conn, $project_id, $label);
+			/* Only when it actually renames it: "Grenade -> Grenade" is noise. */
+			if ($t !== null && $t !== '' && $t !== $label) $said = $t;
+		}
+		$out[] = array('label' => $label, 'said' => $said, 'slots' => $slots);
 	}
 	return $out;
 }

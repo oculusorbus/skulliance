@@ -16,6 +16,21 @@
  * READS THE SAME MANIFEST THE AUDIT DOES, so a file added to the game shows
  * up here without anybody remembering to add it twice.
  */
+/*
+ * BUFFER BEFORE ANYTHING PRINTS, when this is an in-place upload.
+ *
+ * header.php emits the entire page head and nav as soon as it is included,
+ * so by the time the upload handler runs the response is already most of a
+ * web page. An in-place upload has to answer with JSON and nothing else,
+ * which means capturing all of that and throwing it away -- and the same
+ * buffer catches any warning printed on the way, which matters because
+ * display_errors is on platform-wide and one notice would make the
+ * response unparseable. That reads as "uploads stopped working" rather
+ * than as the notice it is.
+ */
+$dsa_inplace = ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['ajax']));
+if ($dsa_inplace) ob_start();
+
 include 'db.php';
 include 'webhooks.php';
 include 'dropship.php';
@@ -31,6 +46,15 @@ function dsaArtClose($conn) {
 }
 
 if (!dropshipThemeAdmin()) {
+	/* A refused in-place upload must still answer in the shape the page is
+	   waiting for, or it silently does nothing and the card never updates. */
+	if ($dsa_inplace) {
+		while (ob_get_level()) ob_end_clean();
+		header('Content-Type: application/json');
+		echo json_encode(array('ok' => false, 'note' => 'Not yours to edit.'));
+		if (is_object($conn)) $conn->close();
+		exit;
+	}
 	echo '<div class="row"><div class="main"><div class="content"><h2>Theme art</h2>'
 	   . '<p>Not yours to edit.</p>';
 	dsaArtClose($conn);
@@ -116,6 +140,51 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['art'])) {
 	}
 }
 
+/*
+ * ANSWER IN PLACE WHEN THE PAGE ASKS IN PLACE.
+ *
+ * Replacing art is a dozen small edits in a row, and a full reload for each
+ * one threw away the scroll position and flashed a loading bar -- so after
+ * every upload you had to find your way back to the thing you were working
+ * on. The page posts the same form over fetch() and patches the one card.
+ *
+ * NOTHING ABOUT THE UPLOAD ITSELF CHANGES: same handler above, same
+ * validation, same slot-from-the-manifest rule. This only decides how the
+ * result is phrased. Without JavaScript the forms post normally and the
+ * page reloads exactly as it did.
+ *
+ * BUFFERED, because display_errors is on platform-wide and a single warning
+ * printed ahead of this would make the response unparseable -- which would
+ * read as "uploads stopped working" rather than as the warning it is.
+ */
+if ($dsa_inplace) {
+	$rel  = (string)($_POST['slot'] ?? '');
+	$aico = strpos($rel, 'icons/') === 0;
+	$aweb = '/staking/dropship/' . ($slug === 'drop-ship' || $slug === '' ? '' : $slug . '/');
+	$abs  = ($aico ? rtrim(__DIR__, '/') . '/' : (string)$base) . $rel;
+	$here = $rel !== '' && is_file($abs);
+	$dims = '';
+	if ($here) {
+		$i = @getimagesize($abs);
+		$dims = ($i ? $i[0] . '×' . $i[1] : '?') . ' · ' . round(@filesize($abs) / 1024) . 'KB';
+	}
+	$body = json_encode(array(
+		'ok'    => empty($msg['err']),
+		'note'  => strip_tags(implode(' ', $msg['err'] ? $msg['err'] : $msg['ok'])),
+		'rel'   => $rel,
+		'src'   => ($aico ? '/staking/dropship/' : $aweb) . $rel . '?v=' . ($here ? @filemtime($abs) : 0),
+		'here'  => $here,
+		'dims'  => $dims,
+	));
+	/* Everything header.php printed goes in the bin; JSON only. And NOT
+	   dsaArtClose(), which would append the page footer to it. */
+	while (ob_get_level()) ob_end_clean();
+	header('Content-Type: application/json');
+	echo $body;
+	if (is_object($conn)) $conn->close();
+	exit;
+}
+
 $h = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES); };
 /* Browser-facing prefix. Drop Ship's own art is flat; every reskin nests. */
 $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
@@ -132,6 +201,19 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .msg.bad{background:rgba(224,70,107,.12);color:#e8a0b0}
 .dsart .msg.good{background:rgba(0,200,160,.12);color:#00c8a0}
 .dsart .slots{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(210px,100%),1fr));gap:10px}
+/* ONE OBJECT, ONE BORDERED ROW. The frames and the icon of a thing are kept
+   inside it so a reskin reads as "here is our rocket launcher", not as a
+   grid of 30 unrelated pictures. */
+.dsart .thing{border:1px solid rgba(0,200,160,.22);border-radius:6px;padding:10px;
+  margin:0 0 10px;background:rgba(0,200,160,.03)}
+.dsart .thing.bare{border:0;padding:0;background:none}
+.dsart .thing-head{display:flex;align-items:baseline;flex-wrap:wrap;gap:7px;
+  margin:0 0 8px;font-size:13px;text-align:left}
+.dsart .thing-head b{color:#e8eaed}
+.dsart .thing-head .arrow{color:#7a9eb0}
+.dsart .thing-head .said{color:#00c8a0;font-weight:bold}
+.dsart .thing-head .same{color:#7a9eb0;font-size:11px;font-style:italic}
+.dsart .thing-head .count{margin-left:auto;color:#7a9eb0;font-size:11px}
 /* A COLUMN, so the upload control sits on the floor of every card. The
    cards carry different numbers of lines -- a mapping, a warning, a rename
    -- and with the default stretch the buttons landed at a different height
@@ -174,6 +256,9 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .ren label{display:block;font-size:10.5px;color:#7a9eb0;margin:0 0 3px;text-align:left}
 .dsart .ren select{width:100%;box-sizing:border-box;background:#07111d;color:#e8eaed;
   border:1px solid rgba(255,255,255,.16);border-radius:3px;padding:4px;font-size:11px}
+.dsart .inplace{display:block;font-size:10.5px;margin-top:4px;text-align:left}
+.dsart .inplace.good{color:#00c8a0}
+.dsart .inplace.bad{color:#e8a0b0}
 </style>
 <div class="row"><div class="main"><div class="content dsart">
 <h2>Theme art</h2>
@@ -215,18 +300,37 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 
 	<?php
 	/*
-	 * ONE LIST, ART AND ICONS TOGETHER. images/weapons/rocket-launcher3.gif
-	 * and icons/rocket-launcher.png are two pictures of one object, and the
-	 * only reason they used to sit on opposite halves of this page is that
-	 * they live in different folders. dropshipArtPlan() puts the icon in
-	 * after the last frame of the thing it belongs to.
+	 * ONE ROW PER THING. images/weapons/rocket-launcher3.gif and
+	 * icons/rocket-launcher.png are two pictures of one object, and they
+	 * used to sit on opposite halves of this page purely because they live
+	 * in different folders. Flowed into a single grid they were together
+	 * but still split across whatever the column count happened to be,
+	 * with nothing saying the six belonged to each other. Each thing is its
+	 * own bordered row now, headed by its name and what this theme renames
+	 * it to, because a reskin is decided one object at a time.
 	 */
 	$icon_files = dropshipArtIconFiles();
 	foreach (dropshipArtPlan($conn, $pid, $ext) as $group => $g): ?>
 	<h4><?php echo $h($group); ?></h4>
 	<p class="note"><?php echo $h($g['note']); ?></p>
+	<?php foreach ($g['rows'] as $row): ?>
+	<div class="thing<?php echo $row['label'] === '' ? ' bare' : ''; ?>">
+	<?php if ($row['label'] !== ''): ?>
+		<?php /* The name and what this theme calls it, on the row rather than
+		         on every card in it -- the whole row is one object. */ ?>
+		<div class="thing-head">
+			<b><?php echo $h($row['label']); ?></b>
+			<?php if ($row['said'] !== ''): ?>
+				<span class="arrow">&rarr;</span>
+				<span class="said"><?php echo $h($row['said']); ?></span>
+			<?php else: ?>
+				<span class="same">not renamed by this theme</span>
+			<?php endif; ?>
+			<span class="count"><?php echo count($row['slots']); ?></span>
+		</div>
+	<?php endif; ?>
 	<div class="slots">
-	<?php foreach ($g['slots'] as $slot):
+	<?php foreach ($row['slots'] as $slot):
 		$is_icon = ($slot['kind'] === 'icon');
 		$rel     = $slot['rel'];
 		/* Icons are ONE SHARED FOLDER for every theme -- the page asks for
@@ -254,16 +358,18 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 			<?php else: ?><span class="none">missing</span><?php endif; ?>
 			</div>
 		<?php if ($is_icon): ?>
-			<span class="name"><?php echo $h($slot['label']); ?> <span class="tag">icon</span></span>
-			<?php if ($slot['name'] !== $slot['term']): ?>
-				<span class="maps">this theme calls it <b><?php echo $h($slot['name']); ?></b></span>
-			<?php endif; ?>
+			<?php /* The thing's name is on the row header; the card only has
+			         to say which of the row's pictures this one is. */ ?>
+			<span class="name">Icon</span>
 		<?php else: ?>
 			<span class="name"><?php echo $h(dropshipArtTitle($rel)); ?></span>
-			<?php foreach (dropshipArtSlotMapping($conn, $pid, $rel) as $mp): ?>
+			<?php /* An unnamed band has no row header, so the mapping belongs
+			         on the card there and nowhere else. */
+			if ($row['label'] === ''):
+				foreach (dropshipArtSlotMapping($conn, $pid, $rel) as $mp): ?>
 				<span class="maps"><?php echo $h($mp['from']); ?> &rarr; <b><?php
 					echo $h($mp['to']); ?></b></span>
-			<?php endforeach; ?>
+			<?php endforeach; endif; ?>
 		<?php endif; ?>
 			<span class="path"><?php echo $h($rel); ?></span>
 		<?php if ($is_icon && !$slot['safe']): ?>
@@ -305,6 +411,88 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		</div>
 	<?php endforeach; ?>
 	</div>
+	</div>
+	<?php endforeach; ?>
 	<?php endforeach; ?>
 <?php endif; ?>
+
+<script>
+/*
+ * UPLOAD IN PLACE. Replacing art is a dozen small edits in a row, and a
+ * full reload for each one threw away the scroll position and flashed a
+ * loading bar, so after every upload you had to find your way back to the
+ * thing you were working on.
+ *
+ * PROGRESSIVE: the forms are ordinary POSTs and still work with this
+ * script absent or broken. All this does is intercept the submit, send the
+ * same fields with an extra ajax flag, and patch the one card.
+ */
+(function () {
+	var root = document.querySelector('.dsart');
+	if (!root || !window.FormData || !window.fetch) return;
+
+	function card(el) { while (el && !el.classList.contains('slot')) el = el.parentElement; return el; }
+
+	function say(slot, text, good) {
+		var n = slot.querySelector('.inplace');
+		if (!n) {
+			n = document.createElement('span');
+			n.className = 'inplace';
+			slot.appendChild(n);
+		}
+		n.textContent = text;
+		n.className = 'inplace ' + (good ? 'good' : 'bad');
+	}
+
+	root.addEventListener('submit', function (ev) {
+		var form = ev.target;
+		var slot = card(form);
+		if (!slot) return;                      /* not a per-card form */
+		var file = form.querySelector('input[type=file]');
+		if (file && !file.value) return;        /* let the browser's own required fire */
+		ev.preventDefault();
+
+		var data = new FormData(form);
+		data.append('ajax', '1');
+		var btn = form.querySelector('button');
+		var was = btn ? btn.textContent : '';
+		if (btn) { btn.disabled = true; btn.textContent = 'Working'; }
+		say(slot, 'uploading', true);
+
+		fetch(form.action, { method: 'POST', body: data, credentials: 'same-origin' })
+			.then(function (r) { return r.json(); })
+			.then(function (d) {
+				if (btn) { btn.disabled = false; btn.textContent = d.ok ? 'Replace' : was; }
+				say(slot, d.note || (d.ok ? 'saved' : 'failed'), !!d.ok);
+				if (!d.ok) return;
+				/* Swap the picture without touching anything around it. The
+				   src carries the new mtime, so the browser cannot serve the
+				   old file from cache. */
+				var shot = slot.querySelector('.shot');
+				var img  = shot ? shot.querySelector('img') : null;
+				if (d.here && shot) {
+					if (!img) {
+						shot.innerHTML = '';
+						img = document.createElement('img');
+						img.loading = 'lazy';
+						shot.appendChild(img);
+					}
+					img.src = d.src;
+					slot.classList.remove('gap');
+				}
+				var dims = slot.querySelector('.dims');
+				if (dims && d.dims) dims.textContent = d.dims;
+				if (file) file.value = '';
+				/* A rename makes the file exist under the new name, so the
+				   "or rename one already on the server" control is spent. */
+				var ren = slot.querySelector('.ren');
+				if (ren && d.here) ren.remove();
+			})
+			.catch(function () {
+				if (btn) { btn.disabled = false; btn.textContent = was; }
+				say(slot, 'could not reach the server; try again', false);
+			});
+	});
+}());
+</script>
 <?php dsaArtClose($conn); ?>

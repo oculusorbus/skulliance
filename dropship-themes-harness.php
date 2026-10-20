@@ -127,7 +127,16 @@ echo "\nit is read once per theme, not once per label\n";
 $c3 = new TConn(array(30 => array('id' => 4, 'project_id' => 30, 'slug' => 'd')),
                 array(4 => array(pair('exact', 'A', 'B'))));
 for ($i = 0; $i < 50; $i++) dropshipThemeText($c3, 30, 'A');
-ok($c3->queries <= 2, 'the theme was queried ' . $c3->queries . ' times for 50 labels');
+$after50 = $c3->queries;
+for ($i = 0; $i < 500; $i++) dropshipThemeText($c3, 30, 'A');
+/* THE CLAIM IS THAT IT DOES NOT SCALE WITH LABELS, not a magic number.
+   Setup costs a fixed few queries -- SHOW TABLES, the theme row, its text
+   -- and a threshold asserted against that total broke the day the table
+   check started being asked per connection instead of once globally, which
+   was a fix, not a regression. */
+ok($c3->queries === $after50,
+   'ten times the labels cost ' . ($c3->queries - $after50) . ' more queries');
+ok($after50 <= 3, 'reading one theme took ' . $after50 . ' queries before any caching');
 
 echo "\na slug cannot escape the images folder\n";
 /* The slug IS the directory name, concatenated into a path. */
