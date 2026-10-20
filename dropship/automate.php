@@ -63,11 +63,12 @@ function automate($conn, $project_id){
 	checkGame($conn);
 	if (isset($_SESSION['userData']['game_id'])) {
 	$title = "Game Over";
-	ob_start(); // Start output buffering
-	checkLeaderboard($conn, "true");
-	$list = ob_get_contents(); // Store buffer in variable
-	ob_end_clean(); // End buffering and clean up
-	$description = $list;
+	/* Captured WITHOUT its warnings. display_errors is on platform-wide, so
+	   a notice raised while the buffer is open lands in the embed: a real
+	   Game Over post went out carrying "Undefined array key \"game_id\" in
+	   /home/.../db.php on line 2220", absolute server path and all, into a
+	   channel players read. */
+	$description = dropshipCapture(function () use ($conn) { checkLeaderboard($conn, "true"); });
 	// Drop Ship's own assets (prefix "drop-ship") sit flat under
 	// dropship/images/; every other reskin nests under its own
 	// dropship/<prefix>/images/ -- confirmed live via curl, see

@@ -65,11 +65,9 @@ if(isset($_POST['item_id'])) {
 if($_SESSION['userData']['discord_id'] == "772831523899965440") {
 	if(isset($_POST['deactivate']) && isset($_SESSION['userData']['game_id'])) {			
 		$title = "Game Over";
-		ob_start(); // Start output buffering
-		checkLeaderboard($conn, "true");
-		$list = ob_get_contents(); // Store buffer in variable
-		ob_end_clean(); // End buffering and clean up
-		$description = $list;
+		/* Same capture, same reason: anything PHP prints while the buffer
+		   is open would be posted into Discord with the leaderboard. */
+		$description = dropshipCapture(function () use ($conn) { checkLeaderboard($conn, "true"); });
 		$imageurl = "https://skulliance.io".$prefix."images/dropship.jpg";
 		discordmsg($title, evaluateText($description), $imageurl, $_SESSION['userData']['dropship_project_id']);
 		deactivateGame($conn);
@@ -914,10 +912,11 @@ if($_SESSION['userData']['dropship_project_id'] == 4){?>
 				   && isset($_SESSION['userData']['score'])
 				   && function_exists('discordmsg')) {
 							$title = "Dead on Round ".$_SESSION['userData']['score'];
-							ob_start(); // Start output buffering
-							checkPlayerItems($conn);
-							$list = ob_get_contents(); // Store buffer in variable
-							ob_end_clean(); // End buffering and clean up
+							/* Captured without its warnings -- display_errors is on
+							   platform-wide and anything raised inside the buffer
+							   would be posted into Discord verbatim, server paths
+							   and all. */
+							$list = dropshipCapture(function () use ($conn) { checkPlayerItems($conn); });
 							$description = $_SESSION['userData']['name']." died during Round ".$_SESSION['userData']['score']."\n".evaluateText($list);
 							$imageurl = "https://skulliance.io".$prefix."images/die/".rand(1,3).".gif";
 							discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
@@ -935,10 +934,7 @@ if($_SESSION['userData']['dropship_project_id'] == 4){?>
 							// already sends this to the right Skulliance channel, no
 							// extra wiring needed here.
 							if(isset($_SESSION['userData']['game_id']) && ($_SESSION['userData']['dropship_project_id'] == 1 || $_SESSION['userData']['dropship_project_id'] == 4)){
-								ob_start();
-								checkLeaderboard($conn, "true");
-								$leaderboard_list = ob_get_contents();
-								ob_end_clean();
+								$leaderboard_list = dropshipCapture(function () use ($conn) { checkLeaderboard($conn, "true"); });
 								if($leaderboard_list != ""){
 									$leaderboard_imageurl = "https://skulliance.io".$prefix."images/dropship.jpg";
 									discordmsg("📊 ".getProjectName($conn)." Leaderboard", $leaderboard_list, $leaderboard_imageurl, $_SESSION['userData']['dropship_project_id']);

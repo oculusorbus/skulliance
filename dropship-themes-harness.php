@@ -1023,6 +1023,72 @@ ok(strpos($adm2, "probe=1") !== false, 'the admin has no way to run the theme ch
 ok(strpos($adm2, "isset(\$_GET['probe'])") !== false,
    'the check is not behind a GET, so it runs on every page view');
 
+echo "\nno PHP warning can reach a Discord embed\n";
+require_once __DIR__ . '/dropship/dropship-capture.php';
+/*
+ * checkLeaderboard() PRINTS, so the only way to put a board in an embed is
+ * to buffer it -- and display_errors is on platform-wide, so anything
+ * raised while that buffer is open goes out with it. A real Game Over post
+ * went to players reading:
+ *
+ *   Warning: Undefined array key "game_id" in
+ *   /home/jeremiah/skulliance.io/staking/dropship/db.php on line 2220
+ *
+ * absolute server path included.
+ */
+ok(dropshipStripDiagnostics("Warning: Undefined array key \"game_id\" in /home/x/db.php on line 2220\nreal") === 'real',
+   'a plain PHP warning survives into the embed');
+foreach (array('Notice', 'Deprecated', 'Fatal error', 'Parse error') as $kind) {
+	ok(dropshipStripDiagnostics("$kind: something at /home/x.php\nreal") === 'real',
+	   "a PHP $kind survives into the embed");
+}
+/* html_errors wraps them in markup, which a line-based pass cannot see. */
+ok(dropshipStripDiagnostics("<br />\n<b>Warning</b>: Undefined array key in <b>/home/x.php</b> on line <b>9</b><br />\nkept") === 'kept',
+   'an html-formatted warning survives into the embed');
+/* It must not eat the leaderboard itself. */
+$board = "1. alice 42\n2. bob 31\n3. carol 20";
+ok(dropshipStripDiagnostics($board) === $board, 'the stripper is eating real leaderboard lines');
+ok(dropshipStripDiagnostics('') === '', 'an empty board does not come back empty');
+/* Driven for real: the capture returns the output and drops the notice. */
+$got = dropshipCapture(function () { echo "board\n"; $a = array(); echo $a['missing'] ?? ''; });
+ok($got === 'board', "the capture returned '" . $got . "' rather than just the board");
+/*
+ * A throw inside must not take the caller down -- the announcement is a
+ * side effect of a game that has ALREADY ended, so losing the post is
+ * acceptable and losing the cron run is not.
+ *
+ * CAUGHT HERE TOO, or the harness itself dies on the mutation this is
+ * meant to catch and the runner counts zero failures because it greps for
+ * the word FAIL in output that was never printed.
+ */
+$lvl = ob_get_level();
+$threw = false; $safe = null;
+try { $safe = dropshipCapture(function () { echo "before"; throw new Exception('boom'); }); }
+catch (Throwable $e) { $threw = true; }
+ok(!$threw, 'an exception inside the capture escapes and kills the caller');
+ok($safe === 'before', 'output printed before the throw is lost');
+/* ...and the buffer must always be closed, or everything the page prints
+   after this silently disappears into it. */
+ok(ob_get_level() === $lvl, 'the capture leaks an open output buffer when its callback throws');
+/*
+ * display_errors has to be restored. SET TO A KNOWN VALUE FIRST: the CLI
+ * default here is already off, so a before/after comparison passed whether
+ * or not it was ever restored.
+ */
+$before = ini_get('display_errors');
+ini_set('display_errors', '1');
+dropshipCapture(function () { echo 'x'; });
+ok(ini_get('display_errors') === '1', 'display_errors is not restored, so later errors vanish');
+ini_set('display_errors', $before);
+/* Every Discord capture must go through it -- a raw ob_start() feeding an
+   embed is the bug coming back. */
+foreach (array('dropship/automate.php', 'dropship/dashboard.php') as $f) {
+	$fsrc = harness_strip_comments(file_get_contents(__DIR__ . '/' . $f));
+	ok(strpos($fsrc, 'ob_get_contents()') === false,
+	   "$f still hand-rolls a capture that can carry a warning into Discord");
+	ok(strpos($fsrc, 'dropshipCapture(') !== false, "$f does not use the safe capture");
+}
+
 echo "\nthe weekly cycle runs for every live theme\n";
 /*
  * automate.php is the cron that ends the week's game, posts the final
