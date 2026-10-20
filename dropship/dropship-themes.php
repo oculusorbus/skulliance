@@ -1,0 +1,157 @@
+<?php
+/**
+ * THEMES AS DATA, so one can be added or edited without touching PHP.
+ *
+ * evaluateText() has always been a dictionary -- an exact whole-string
+ * lookup, falling through to a substring pass for descriptions. The problem
+ * was never the mechanism, it was that the dictionaries were an if/else
+ * chain on project_id, 202 lines of it, so a new theme meant a code change
+ * and a deploy. These functions read the same two dictionaries out of
+ * dropship_theme_text instead.
+ *
+ * ADDITIVE, AND SILENT UNTIL USED. Every lookup falls back to the hardcoded
+ * chain when the tables are missing or the theme has no rows, so the schema
+ * can sit empty on production and change nothing. A theme goes live when
+ * somebody saves one in the admin and reverts by deleting its rows. That
+ * matters because evaluateText() is on the path of every label on every
+ * page: it cannot be allowed to fail, and it cannot be allowed to start
+ * returning different words than it did yesterday without someone choosing
+ * that.
+ *
+ * CACHED PER REQUEST, which is not optional. evaluateText() is called
+ * hundreds of times rendering a dashboard; a query per call would be worse
+ * than the chain it replaces. Each theme is read once and held.
+ */
+
+/**
+ * Who may edit themes.
+ *
+ * ONE PLACE, because the game controls on dashboard.php gate on a Discord id
+ * written inline and a second copy of that literal is how the two drift
+ * apart. This accepts the same id plus the credential globals Drop Ship
+ * already defines for its own staff checks, so adding somebody is a
+ * credentials change rather than an edit here.
+ *
+ * Deliberately NOT the Skulliance admin_require(): this is a different app
+ * with its own session shape, and pulling admin-lib.php in to reuse one
+ * boolean would drag the platform's own db.php behind it.
+ */
+function dropshipThemeAdmin() {
+	if (empty($_SESSION['userData']['discord_id'])) return false;
+	$me = (string)$_SESSION['userData']['discord_id'];
+	$allowed = array('772831523899965440');          /* same id dashboard.php gates on */
+	foreach (array('discordid_oculusorbus', 'discordid_ohhmeed', 'discordid_kryptman') as $g) {
+		if (!empty($GLOBALS[$g])) $allowed[] = (string)$GLOBALS[$g];
+	}
+	return in_array($me, $allowed, true);
+}
+
+/** Do the theme tables exist? Asked once, because nothing creates them. */
+function dropshipThemesTable($conn) {
+	static $have = null;
+	if ($have === null) {
+		if (!is_object($conn)) return false;
+		$r = @$conn->query("SHOW TABLES LIKE 'dropship_themes'");
+		$have = (bool)($r && $r->num_rows);
+	}
+	return $have;
+}
+
+/**
+ * One theme's configuration row, or null when it has none.
+ *
+ * Null is the signal to fall back, and every caller has to treat it that
+ * way -- a theme that is half in the table and half in the chain would read
+ * as two different games on one page.
+ */
+function dropshipThemeConfig($conn, $project_id) {
+	static $cache = array();
+	$pid = (int)$project_id;
+	if (array_key_exists($pid, $cache)) return $cache[$pid];
+	$cache[$pid] = null;
+	if ($pid <= 0 || !dropshipThemesTable($conn)) return null;
+
+	$r = @$conn->query("SELECT * FROM dropship_themes WHERE project_id = $pid LIMIT 1");
+	if ($r && $r->num_rows) $cache[$pid] = $r->fetch_assoc();
+	return $cache[$pid];
+}
+
+/**
+ * The two dictionaries for a theme, or null to fall back.
+ *
+ * array('exact' => array(find => replace), 'description' => array(...)).
+ * Null when there is no theme row or it carries no text at all -- a theme
+ * configured with labels but no overrides yet should not blank out the
+ * wording the chain was providing.
+ */
+function dropshipThemeDictionaries($conn, $project_id) {
+	static $cache = array();
+	$pid = (int)$project_id;
+	if (array_key_exists($pid, $cache)) return $cache[$pid];
+	$cache[$pid] = null;
+
+	$theme = dropshipThemeConfig($conn, $pid);
+	if (!$theme) return null;
+
+	$tid = (int)$theme['id'];
+	$r = @$conn->query("SELECT match_type, find, replacement FROM dropship_theme_text
+	                     WHERE theme_id = $tid ORDER BY sort_order ASC, id ASC");
+	if (!$r) return null;
+
+	$d = array('exact' => array(), 'description' => array());
+	while ($row = $r->fetch_assoc()) {
+		$type = $row['match_type'] === 'description' ? 'description' : 'exact';
+		$d[$type][$row['find']] = $row['replacement'];
+	}
+	if (!$d['exact'] && !$d['description']) return null;   /* nothing to say; fall back */
+
+	$cache[$pid] = $d;
+	return $d;
+}
+
+/**
+ * Apply a theme's dictionaries to one string, or return null to fall back.
+ *
+ * The ORDER mirrors evaluateText() exactly: exact match wins outright, and
+ * the substring pass only runs when it misses. Reversing that would rewrite
+ * a label that happened to contain a description word.
+ */
+function dropshipThemeText($conn, $project_id, $text) {
+	$d = dropshipThemeDictionaries($conn, $project_id);
+	if ($d === null) return null;
+
+	if (isset($d['exact'][$text])) return $d['exact'][$text];
+	foreach ($d['description'] as $find => $replacement) {
+		if ($find !== '' && str_contains($text, $find)) {
+			$text = str_replace($find, $replacement, $text);
+		}
+	}
+	return $text;
+}
+
+/** Every theme row, for the admin list. Empty when the table is missing. */
+function dropshipThemeAll($conn) {
+	if (!dropshipThemesTable($conn)) return array();
+	$out = array();
+	$r = @$conn->query("SELECT t.*, p.name AS project_name,
+	                           (SELECT COUNT(*) FROM dropship_theme_text x WHERE x.theme_id = t.id) AS text_count
+	                      FROM dropship_themes t
+	                      LEFT JOIN projects p ON p.id = t.project_id
+	                     ORDER BY t.project_id ASC");
+	if ($r) while ($row = $r->fetch_assoc()) $out[] = $row;
+	return $out;
+}
+
+/**
+ * A slug safe to use as a directory name.
+ *
+ * The slug IS the image folder, so it has to survive being concatenated into
+ * a path. dropship.php used to derive it from the project NAME, which meant
+ * a rename moved the whole art directory; it is stored now, and this is what
+ * keeps a typed one from escaping the folder.
+ */
+function dropshipThemeSlug($raw) {
+	$s = strtolower(trim((string)$raw));
+	$s = preg_replace('/[^a-z0-9]+/', '-', $s);
+	return trim((string)$s, '-');
+}

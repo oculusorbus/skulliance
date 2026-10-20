@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/dropship-grunts.php';   // the four free soldiers' loaner kit
+require_once __DIR__ . '/dropship-themes.php';   // theme overrides as data, see dropship-themes-schema.md
 require_once __DIR__ . '/dropship-odds.php';     // loadItems() quotes the odds per item
 include 'credentials/db_credentials.php';
 
@@ -63,6 +64,26 @@ if ($conn->connect_error) {
 }
 
 function evaluateText($text){
+	/*
+	 * THE TABLE FIRST, THE CHAIN AS FALLBACK.
+	 *
+	 * dropship_theme_text holds the same two dictionaries this function has
+	 * always applied, so a theme can be added or edited without a deploy.
+	 * dropshipThemeText() returns null whenever the tables are missing or
+	 * the theme has no rows, and then everything below runs exactly as it
+	 * did -- which is what makes shipping the schema a no-op until somebody
+	 * actually saves a theme.
+	 *
+	 * This is on the path of every label on every page, so it must never
+	 * throw and never go slow: the lookup is cached per request and every
+	 * failure returns null rather than an error.
+	 */
+	global $conn;
+	if (isset($_SESSION['userData']['dropship_project_id']) && function_exists('dropshipThemeText')) {
+		$themed = dropshipThemeText($conn, $_SESSION['userData']['dropship_project_id'], $text);
+		if ($themed !== null) return $themed;
+	}
+
 	// Moving inside function because session doesn't exist until after text evaluation is called
 	$replacements = array();
 	$replacements_description = array();
