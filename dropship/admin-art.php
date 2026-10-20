@@ -128,6 +128,93 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['rename_from
 	}
 }
 
+/*
+ * WHICH SLOTS THIS THEME HAS, and where each one lives on disk.
+ *
+ * Lifted out of the upload handler because the copy below has to answer
+ * exactly the same question about TWO paths, and a second copy of the
+ * rule is how a validated destination ends up beside an unvalidated
+ * source. Returns null for anything that is not a slot of this theme.
+ */
+$dsaSlot = function ($rel) use ($conn, $pid, $ext, $slug, $base) {
+	$rel = (string)$rel;
+	/* No theme means no folder to resolve into. $base is null then, and
+	   concatenating it yields a RELATIVE path -- is_file() against the
+	   working directory, which is nobody's art. */
+	if ($rel === '' || $base === null) return null;
+	$icon_names = array();
+	foreach (dropshipThemeIconSlots($conn, $pid) as $ic) if ($ic['safe']) $icon_names[] = $ic['rel'];
+	$bg_slot = dropshipArtBackgroundSlot($slug);
+	$is_bg   = ($bg_slot && $rel === $bg_slot['rel']);
+	$is_icon = in_array($rel, $icon_names, true);
+	if (!$is_bg && !$is_icon && !in_array($rel, dropshipArtManifest($ext), true)) return null;
+	/* An icon is one shared folder for every theme; a background sits
+	   beside the theme's images/ rather than inside it. Both are addressed
+	   from the dropship directory, round art from the theme's own. */
+	$beside = ($is_icon || $is_bg);
+	return array(
+		'rel'  => $rel,
+		'icon' => $is_icon,
+		'bg'   => $is_bg,
+		'abs'  => ($beside ? rtrim(__DIR__, '/') . '/' : $base) . $rel,
+	);
+};
+
+/* ------------------------------------------------------------------ copy - */
+/*
+ * DRAG A PICTURE FROM ONE SLOT ONTO ANOTHER AND IT LANDS THERE TOO.
+ *
+ * Several slots are the same picture by design -- the two Super Soldier
+ * icons, a weapon whose frames barely move, a theme reusing one death
+ * across all three -- and the only way to say so was to find the file on
+ * your own machine again and upload it a second time. Everything the
+ * upload path does still happens: the destination still comes out of the
+ * manifest, and dropshipArtStore() still converts the format and scales
+ * to the pane, so dragging a .jpg slot onto a .gif one writes a gif.
+ *
+ * THE SOURCE IS VALIDATED EXACTLY LIKE THE DESTINATION. It arrives off
+ * the form and becomes a filesystem path to READ, so an unchecked one is
+ * a file disclosure -- the page would happily copy ../../credentials into
+ * a slot and then serve it. Same $dsaSlot(), same answer.
+ */
+if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST'
+    && !isset($_FILES['art']) && isset($_POST['copy_from'])) {
+	$dest_s = $dsaSlot($_POST['slot'] ?? '');
+	$src_s  = $dsaSlot($_POST['copy_from']);
+	if (!$dest_s || !$src_s) {
+		$msg['err'][] = 'That is not a slot this theme has.';
+	} elseif ($src_s['rel'] === $dest_s['rel']) {
+		$msg['err'][] = 'That is the same slot.';
+	} elseif (!is_file($src_s['abs'])) {
+		$msg['err'][] = 'There is nothing in the slot you dragged from.';
+	} else {
+		/*
+		 * COPIED TO A SCRATCH FILE FIRST. dropshipArtStore() MOVES its
+		 * input when the file already fits and needs no conversion, which
+		 * would empty the slot being dragged FROM -- one picture in two
+		 * places was the whole request.
+		 */
+		$tmp = tempnam(sys_get_temp_dir(), 'dsart');
+		if ($tmp === false || !@copy($src_s['abs'], $tmp)) {
+			if ($tmp !== false) @unlink($tmp);
+			$msg['err'][] = 'Could not read the slot you dragged from.';
+		} else {
+			if ($dest_s['bg']) {
+				$why = dropshipArtStoreBackground($tmp, $slug,
+					strtolower(pathinfo($src_s['rel'], PATHINFO_EXTENSION)));
+				if ($why === '') $msg['ok'][] = 'Background replaced.';
+				else             $msg['err'][] = 'Background &mdash; ' . htmlspecialchars($why);
+			} else {
+				list($ok, $why) = dropshipArtStore($tmp, $dest_s['abs'],
+					strtolower(pathinfo($dest_s['rel'], PATHINFO_EXTENSION)));
+				if ($ok) $msg['ok'][] = $dest_s['rel'] . ' &mdash; ' . $why;
+				else     $msg['err'][] = $dest_s['rel'] . ' &mdash; ' . $why;
+			}
+			@unlink($tmp);
+		}
+	}
+}
+
 /* ---------------------------------------------------------------- upload - */
 if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['art'])) {
 	$slot = (string)($_POST['slot'] ?? '');
@@ -196,9 +283,19 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['art'])) {
  */
 if ($dsa_inplace) {
 	$rel  = (string)($_POST['slot'] ?? '');
-	$aico = strpos($rel, 'icons/') === 0;
+	/*
+	 * RESOLVED THE SAME WAY THE WRITE WAS. This worked out the path a
+	 * second time and only knew about icons, so the BACKGROUND slot -- the
+	 * one whose rel already starts with the theme folder -- came back as
+	 * <slug>/<slug>/..., which exists nowhere: the file saved correctly and
+	 * the card reported it missing. One resolver now answers both.
+	 */
+	$a_s  = $dsaSlot($rel);
+	$aico = $a_s ? $a_s['icon'] : (strpos($rel, 'icons/') === 0);
+	$abeside = $a_s ? ($a_s['icon'] || $a_s['bg']) : $aico;
 	$aweb = '/staking/dropship/' . ($slug === 'drop-ship' || $slug === '' ? '' : $slug . '/');
-	$abs  = ($aico ? rtrim(__DIR__, '/') . '/' : (string)$base) . $rel;
+	$abs  = $a_s ? $a_s['abs']
+	             : (($aico ? rtrim(__DIR__, '/') . '/' : (string)$base) . $rel);
 	$here = $rel !== '' && is_file($abs);
 	$dims = '';
 	if ($here) {
@@ -209,7 +306,7 @@ if ($dsa_inplace) {
 		'ok'    => empty($msg['err']),
 		'note'  => strip_tags(implode(' ', $msg['err'] ? $msg['err'] : $msg['ok'])),
 		'rel'   => $rel,
-		'src'   => ($aico ? '/staking/dropship/' : $aweb) . $rel . '?v=' . ($here ? @filemtime($abs) : 0),
+		'src'   => ($abeside ? '/staking/dropship/' : $aweb) . $rel . '?v=' . ($here ? @filemtime($abs) : 0),
 		'here'  => $here,
 		'dims'  => $dims,
 	));
@@ -315,6 +412,11 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .slot.over{border-color:#00c8a0;background:rgba(0,200,160,.12);
   outline:2px dashed rgba(0,200,160,.55);outline-offset:-4px}
 .dsart .slot.over *{pointer-events:none}
+/* A picture on this page is a drag SOURCE as well as a target: drag it
+   onto another slot and it lands there too. The cursor is the only thing
+   that says so, so it is not optional. */
+.dsart .slot .shot img{cursor:grab}
+.dsart .slot .shot img:active{cursor:grabbing}
 .dsart .inplace{display:block;font-size:10.5px;margin-top:4px;text-align:left}
 .dsart .inplace.good{color:#00c8a0}
 .dsart .inplace.bad{color:#e8a0b0}
@@ -390,6 +492,9 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 
 	<p class="note"><b>Drag an image onto any slot to replace it</b> &mdash; or pick
 	a file, which uploads straight away. Nothing reloads, so you keep your place.<br>
+	<b>Drag a picture already on this page onto another slot</b> and it lands there
+	too, converted to that slot's format, without going back to your own machine
+	for it. The slot you dragged from keeps its picture.<br>
 	Uploads are scaled to fit <b><?php echo dropshipArtMaxWidth(); ?>&times;<?php
 	echo dropshipArtMaxHeight(); ?></b>. That is the pane at <b>898px</b> times the
 	<b>1.2&times;</b> the Ken Burns pan zooms to, so art stays sharp at the end of the
@@ -568,19 +673,25 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	 * does not have to fake its way into that input first -- which is the
 	 * part that needs DataTransfer and does not exist everywhere.
 	 */
-	function send(form, dropped) {
+	function send(form, dropped, copyFrom) {
 		var slot = card(form);
 		if (!slot) return;
 		var file = form.querySelector('input[type=file]');
-		if (!dropped && file && !file.value) return;
+		if (!dropped && !copyFrom && file && !file.value) return;
 
 		var data = new FormData(form);
 		if (dropped) data.set('art', dropped);
+		/* A COPY CARRIES NO FILE AT ALL. The empty file input would arrive
+		   as $_FILES['art'] with UPLOAD_ERR_NO_FILE, and the upload handler
+		   runs on `isset($_FILES['art'])` -- so leaving it in means the
+		   server answers "Upload failed (code 4)" and never looks at the
+		   copy. */
+		if (copyFrom) { data.delete('art'); data.set('copy_from', copyFrom); }
 		data.append('ajax', '1');
 		var btn = form.querySelector('button');
 		var was = btn ? btn.textContent : '';
 		if (btn) { btn.disabled = true; btn.textContent = 'Working'; }
-		say(slot, 'uploading', true);
+		say(slot, copyFrom ? 'copying' : 'uploading', true);
 
 		fetch(form.action, { method: 'POST', body: data, credentials: 'same-origin' })
 			.then(function (r) { return r.json(); })
@@ -651,6 +762,40 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		return slot.querySelector('input[type=file]') ? slot : null;
 	}
 
+	/* Which slot a card IS, read off the hidden field the form already
+	   posts, so the name can never disagree with what gets written. */
+	function relOf(slot) {
+		var f = slot && slot.querySelector('input[name=slot]');
+		return f ? f.value : '';
+	}
+
+	/*
+	 * A PICTURE ALREADY ON THE PAGE IS A DRAG SOURCE TOO.
+	 *
+	 * Several slots are deliberately the same image -- the two Super
+	 * Soldier icons, a weapon whose frames barely move -- and saying so
+	 * meant finding the file on your own machine and uploading it again.
+	 *
+	 * ITS OWN MIME TYPE, not the image's URL. A dragged <img> already
+	 * offers text/uri-list, and reading that back would mean parsing a url
+	 * into a path on the server -- the kind of parsing that ends up
+	 * accepting one it should not. This carries the slot name the form
+	 * itself posts, and anything without it is treated as an outside drag.
+	 */
+	var DS_SLOT = 'application/x-dropship-slot';
+	root.addEventListener('dragstart', function (ev) {
+		var slot = card(ev.target);
+		var img  = slot && slot.querySelector('.shot img');
+		if (!slot || !img || ev.target !== img) return;
+		var rel = relOf(slot);
+		if (!rel) return;
+		ev.dataTransfer.setData(DS_SLOT, rel);
+		/* text/plain as well, or Firefox treats the drag as carrying
+		   nothing and refuses to start it. */
+		ev.dataTransfer.setData('text/plain', rel);
+		ev.dataTransfer.effectAllowed = 'copy';
+	});
+
 	root.addEventListener('dragover', function (ev) {
 		var slot = dropTarget(ev.target);
 		if (!slot) return;
@@ -667,8 +812,17 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		if (!slot) return;
 		ev.preventDefault();
 		slot.classList.remove('over');
-		var files = ev.dataTransfer && ev.dataTransfer.files;
-		if (!files || !files.length) return;
+		var dt = ev.dataTransfer;
+		var files = dt && dt.files;
+		if (!files || !files.length) {
+			/* Not a file from outside, so it may be one of our own slots.
+			   getData() is only readable inside the drop handler. */
+			var from = dt ? dt.getData(DS_SLOT) : '';
+			if (!from) return;
+			if (from === relOf(slot)) { say(slot, 'that is the same slot', false); return; }
+			send(slot.querySelector('form'), null, from);
+			return;
+		}
 		if (files.length > 1) {
 			/* One slot is one picture. Saying so beats silently taking the
 			   first and leaving somebody to wonder where the rest went. */

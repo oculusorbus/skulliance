@@ -96,9 +96,18 @@ $adm = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-art.p
 ok(strpos($adm, 'in_array($slot, $manifest, true)') !== false,
    'the upload slot is not checked against the manifest, so a posted path is written as given');
 $check_at = strpos($adm, 'in_array($slot, $manifest, true)');
-$store_at = strpos($adm, 'dropshipArtStore(');
+/* THE LAST ONE, not the first. The copy handler stores too and sits above
+   the upload, so taking the first occurrence compared the upload's
+   validation against the COPY's write and failed on an ordering that was
+   never wrong. Both writes are checked; this one is about the upload. */
+$store_at = strrpos($adm, 'dropshipArtStore(');
 ok($check_at !== false && $store_at !== false && $check_at < $store_at,
    'the slot is used before it is validated');
+/* And the copy's own write is behind its own validation. */
+$cp_v = strpos($adm, '$src_s  = $dsaSlot(');
+$cp_w = strpos($adm, 'dropshipArtStore(');
+ok($cp_v !== false && $cp_w !== false && $cp_v < $cp_w,
+   'the copy writes before it has checked the slot it was given');
 ok(strpos($adm, 'dropshipThemeAdmin()') !== false, 'the art admin is not gated');
 /* And it must refuse to guess a folder when no theme is configured. */
 ok(strpos($adm, 'No theme is configured') !== false,
@@ -545,10 +554,17 @@ ok(strpos($adm4, "\$rel . '?v=' . (\$here ? @filemtime(\$abs) : 0)") !== false,
    'the replacement image is served without a cache buster');
 /* An icon is written beside the page, not inside the theme folder, and the
    reply has to say so or the card points at a path that does not exist. */
-ok(strpos($adm4, "\$aico = strpos(\$rel, 'icons/') === 0;") !== false,
+/* RESOLVED ONCE, by the same thing that resolved the write. This used to
+   work the path out a second time and knew only about icons, so the
+   BACKGROUND slot -- whose rel already begins with the theme folder --
+   came back as <slug>/<slug>/..., and a saved file reported itself
+   missing. */
+ok(strpos($adm4, '$a_s  = $dsaSlot($rel);') !== false,
    'the in-place reply does not tell an icon from a theme file');
-ok(strpos($adm4, "(\$aico ? '/staking/dropship/' : \$aweb)") !== false,
+ok(strpos($adm4, "(\$abeside ? '/staking/dropship/' : \$aweb)") !== false,
    'the in-place reply builds one url for both icons and theme art');
+ok(strpos($adm4, "\$abeside = \$a_s ? (\$a_s['icon'] || \$a_s['bg'])") !== false,
+   'the reply treats the background as though it sat inside the theme folder');
 
 echo "\nboth sets of a theme's art can be managed here\n";
 /*
@@ -593,7 +609,11 @@ ok(strpos($adm7, "if (isset(\$_POST['format']) && \$_POST['format'] === 'gif') \
 /* The manifest and the plan both have to follow the chosen format. */
 ok(strpos($adm7, 'dropshipArtPlan($conn, $pid, $ext, $slug)') !== false,
    'the slot list ignores the chosen format');
-ok(substr_count($adm7, 'dropshipArtManifest($ext)') === 2,
+/* THREE NOW: the upload validator, the status bar, and the shared slot
+   resolver the copy handler uses. Counted rather than merely present,
+   because the failure this guards against is one of them being pinned to
+   a fixed format while the others follow the switch. */
+ok(substr_count($adm7, 'dropshipArtManifest($ext)') === 3,
    'the upload validator and the status bar disagree about which set is being managed');
 
 echo "\na file in the wrong format is converted, not refused\n";
@@ -715,7 +735,7 @@ echo "\ndragging a file onto a slot replaces it\n";
  * in-place patch -- rather than a second upload path that could drift.
  */
 $adm6 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-art.php'));
-ok(substr_count($adm6, 'function send(form, dropped)') === 1,
+ok(substr_count($adm6, 'function send(form, dropped, copyFrom)') === 1,
    'there is no single send(), so drop and button can diverge');
 ok(substr_count($adm6, "data.append('ajax', '1')") === 1,
    'more than one upload path posts to the server');
@@ -1256,6 +1276,123 @@ ok(preg_match('/global [^;]*\$slug[^;]*;/', $live) === 1,
    not a reason to stop asking for the art. */
 ok(in_array('images/live/bunker/12.gif', dropshipArtManifest('gif'), true),
    'the fallback took the second band out of the manifest, so the gap is invisible again');
+
+
+/* ------------------------------------------------------------------ */
+/*
+ * DRAG A PICTURE FROM ONE SLOT ONTO ANOTHER.
+ *
+ * Several slots are deliberately the same image -- the two Super Soldier
+ * icons, a weapon whose frames barely move, a theme reusing one death --
+ * and saying so meant finding the file on your own machine and uploading
+ * it a second time.
+ */
+echo "\na picture on the page can be dragged into another slot\n";
+
+/*
+ * WHY THE SCRATCH COPY EXISTS, proved rather than asserted. dropshipArtStore()
+ * MOVES its input when the file already fits and needs no conversion, so
+ * handing it the source slot directly would empty the slot being dragged
+ * FROM -- one picture in two places was the entire request. If this ever
+ * stops being true the comment in admin-art.php is stale and should be
+ * read again, which is what the failure means.
+ */
+/* $tmpd was removed at the end of the conversion section above; $mk()
+   writes into it, and GD fails silently into an unreadable file if it is
+   not there. */
+@mkdir($tmpd, 0777, true);
+$cp_src = $mk('png');
+$cp_dst = $tmpd . '/moved.png';
+@unlink($cp_dst);
+list($cok, $cwhy) = dropshipArtStore($cp_src, $cp_dst, 'png');
+ok($cok, 'the store refused a file that needs no conversion: ' . $cwhy);
+ok(!is_file($cp_src),
+   'dropshipArtStore() no longer moves its input, so admin-art.php copies to a scratch file for nothing');
+@unlink($cp_dst);
+/* And with a conversion it does not move it either way -- the point is
+   that the caller cannot know, so it always copies first. */
+$cp_src2 = $mk('png');
+$cp_dst2 = $tmpd . '/moved.gif';
+@unlink($cp_dst2);
+dropshipArtStore($cp_src2, $cp_dst2, 'gif');
+@unlink($cp_dst2); @unlink($cp_src2);
+@rmdir($tmpd);
+
+$adm2 = file_get_contents(__DIR__ . '/dropship/admin-art.php');
+$cp_at = strpos($adm2, "isset(\$_POST['copy_from'])");
+ok($cp_at !== false, 'the copy handler is gone, so a dragged slot does nothing');
+$cp_block = $cp_at === false ? '' : substr($adm2, $cp_at, 2200);
+
+/*
+ * THE SOURCE IS VALIDATED EXACTLY LIKE THE DESTINATION. It arrives off the
+ * form and becomes a path to READ -- unchecked, the page would copy
+ * ../../credentials into a slot and then serve it.
+ */
+ok(strpos($cp_block, '$src_s  = $dsaSlot($_POST[\'copy_from\']);') !== false,
+   'the slot dragged from is not validated, so any readable path can be copied into a slot');
+ok(strpos($cp_block, '$dest_s = $dsaSlot(') !== false,
+   'the destination stopped going through the shared resolver');
+ok(strpos($cp_block, 'if (!$dest_s || !$src_s)') !== false,
+   'an unresolvable slot is not refused before it is used');
+/* ONE RESOLVER, not two. Two copies of "which slots does this theme have"
+   is how a checked destination ends up beside an unchecked source. */
+ok(substr_count($adm2, '$dsaSlot = function') === 1,
+   'the slot resolver is defined more than once');
+ok(substr_count($adm2, '$dsaSlot(') >= 4,
+   'something still works the slot path out for itself instead of asking the resolver');
+
+ok(strpos($cp_block, 'tempnam(') !== false && strpos($cp_block, '@copy($src_s[\'abs\'], $tmp)') !== false,
+   'the copy hands the source slot straight to the store, which MOVES it and empties that slot');
+ok(substr_count($cp_block, '@unlink($tmp)') >= 2,
+   'the scratch file is left behind on one of the paths out');
+ok(strpos($cp_block, "\$src_s['rel'] === \$dest_s['rel']") !== false,
+   'dropping a slot on itself is not refused');
+ok(strpos($cp_block, "!is_file(\$src_s['abs'])") !== false,
+   'copying from an empty slot is not refused, so it writes a zero-byte picture');
+/* THE DESTINATION'S FORMAT, not the source's: dragging a .jpg slot onto a
+   .gif one has to write a gif, or the run 404s on the name it asks for. */
+ok(strpos($cp_block, "pathinfo(\$dest_s['rel'], PATHINFO_EXTENSION)") !== false,
+   "the copy stores in the source's format, so the destination slot holds a file the run cannot read");
+/* THE TWO HANDLERS MUST NOT BOTH FIRE. An empty file input arrives as
+   $_FILES['art'] with UPLOAD_ERR_NO_FILE, and the upload handler runs on
+   isset() alone -- so without this the server answers "Upload failed
+   (code 4)" and never looks at the copy. */
+/* The guard sits in the same if() but BEFORE the copy_from test, so look
+   at the condition rather than the block. */
+$cp_cond = $cp_at === false ? '' : substr($adm2, max(0, $cp_at - 200), 200);
+ok(strpos($cp_cond, "!isset(\$_FILES['art'])") !== false,
+   'the copy runs even when a file was posted, so the two handlers race');
+
+/* AND THE PAGE OFFERS IT. A drag source with no cursor and no sentence
+   telling anybody is a feature nobody finds. */
+ok(strpos($adm2, "ev.dataTransfer.setData(DS_SLOT, rel)") !== false,
+   'a picture on the page is not a drag source, so there is nothing to drag');
+ok(strpos($adm2, "data.delete('art'); data.set('copy_from', copyFrom);") !== false,
+   'the copy posts the empty file input too, which the upload handler answers first');
+ok(strpos($adm2, "dt.getData(DS_SLOT)") !== false,
+   'the drop handler ignores a drag that came from the page itself');
+ok(strpos($adm2, '.dsart .slot .shot img{cursor:grab}') !== false,
+   'nothing on the page says a picture can be dragged');
+ok(strpos($adm2, 'Drag a picture already on this page onto another slot') !== false,
+   'the instructions do not mention dragging between slots');
+/* text/plain alongside the private type: Firefox refuses to start a drag
+   that carries nothing it recognises. */
+ok(strpos($adm2, "ev.dataTransfer.setData('text/plain', rel)") !== false,
+   'the drag carries only a private type, so Firefox will not start it');
+
+/*
+ * AND THE CARD REPORTS THE RIGHT FILE AFTERWARDS. The in-place response
+ * worked the path out a SECOND time and only knew about icons, so the
+ * background slot -- whose rel already starts with the theme folder --
+ * came back as <slug>/<slug>/..., which exists nowhere: the file saved
+ * and the card said it was missing.
+ */
+ok(strpos($adm2, '$a_s  = $dsaSlot($rel);') !== false,
+   'the in-place response resolves the path on its own again');
+ok(strpos($adm2, "\$abs  = \$a_s ? \$a_s['abs']") !== false,
+   'the in-place response does not use the resolved path');
+ok(strpos($adm2, "'src'   => (\$abeside ?") !== false,
+   'the url in the response still assumes only icons sit beside the theme folder');
 
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
 exit($fail ? 1 : 0);
