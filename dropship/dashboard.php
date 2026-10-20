@@ -178,7 +178,13 @@ if(dropshipThemeTraitSource($conn, $_SESSION['userData']['dropship_project_id'])
 }elseif(($address_changed == "true") || $project_id_changed == "true"){
 	if(!empty($addresses)){
 		$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null");
-		curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
+		// koios_headers(): the token this file carried expired 2024-12-20 and
+		// Koios answers an expired subscription with 403 and a sentence, which
+		// json_decode() turns into null and is_array() then drops -- so this
+		// whole block has quietly done nothing since. The rest of the platform
+		// had already moved to a current token; Drop Ship kept the old one
+		// through the migration. One copy now, in lib/koios.php.
+		curl_setopt( $ch, CURLOPT_HTTPHEADER, koios_headers());
 		curl_setopt( $ch, CURLOPT_POST, 1);
 		// All connected wallets in one call -- Koios' account_utxos already
 		// accepts multiple _stake_addresses, so this is the exact same
@@ -218,7 +224,7 @@ if(dropshipThemeTraitSource($conn, $_SESSION['userData']['dropship_project_id'])
 			}
 			
 			$tokench = curl_init("https://api.koios.rest/api/v1/asset_info");
-			curl_setopt( $tokench, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyIjoic3Rha2UxdXlxc3p2dDhjazlmaGVtM3o2M2NqNXpkaGRxem53aGtuczVkeDc1YzNjcDB6Z3MwODR1OGoiLCJleHAiOjE3MzQ3MDc5OTUsInRpZXIiOjEsInByb2pJRCI6InNrdWxsaWFuY2UifQ.eYZU74nwkN_qD8uK0UIv9VLveZLXMfJHznvzPWmnrq0'));
+			curl_setopt( $tokench, CURLOPT_HTTPHEADER, koios_headers());
 			curl_setopt( $tokench, CURLOPT_POST, 1);
 			curl_setopt( $tokench, CURLOPT_POSTFIELDS, json_encode($asset_list));
 			curl_setopt( $tokench, CURLOPT_FOLLOWLOCATION, 1);

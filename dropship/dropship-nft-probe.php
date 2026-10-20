@@ -26,6 +26,14 @@ function dropshipNftProbe($conn, $project_id, $discord_id) {
 		$out[] = array('step' => $step, 'count' => $count, 'detail' => $detail);
 	};
 
+	require_once __DIR__ . '/../lib/koios.php';
+	$left = koios_token_expires_in();
+	$add('Koios token', $left !== null && $left > 0 ? 1 : 0,
+	     $left === null ? 'Unreadable, so it is not sent.'
+	       : ($left > 0 ? 'valid for ' . round($left / 86400) . ' more days'
+	                    : 'EXPIRED ' . round(-$left / 86400) . ' days ago. Koios answers 403 and the reply is '
+	                      . 'not JSON, so every lookup silently does nothing.'));
+
 	$policy = function_exists('dropshipProjectPolicy')
 	        ? dropshipProjectPolicy($conn, $project_id) : '';
 	$add('Collection on the project (projects.policy_id)',
@@ -35,46 +43,59 @@ function dropshipNftProbe($conn, $project_id, $discord_id) {
 
 	$source = function_exists('dropshipThemeTraitSource')
 	        ? dropshipThemeTraitSource($conn, $project_id) : 'koios';
-	$add('Trait source for this theme', 1, $source);
+	$add('Trait source this theme is set to', 1, $source . ' (both are checked below)');
 
-	if ($source === 'skulliance') {
-		/* The same query dropshipSyncFromSkulliance() runs. */
-		$sk = dropshipSkullianceDb();
-		if (!$sk) { $add('Skulliance database', null, 'Could not connect.'); return $out; }
+	/*
+	 * BOTH PATHS, ALWAYS, whichever one the theme is set to. The question
+	 * being asked is "why does neither work", and reporting only the
+	 * configured one answers half of it and invites a second round of
+	 * switching the setting back and forth to see.
+	 */
+	$sk = function_exists('dropshipSkullianceDb') ? dropshipSkullianceDb() : null;
+	if (!$sk) {
+		$add('SKULLIANCE source: database', null, 'Could not connect.');
+	} else {
 		$pe = $sk->real_escape_string($policy);
 		$de = $sk->real_escape_string((string)$discord_id);
-		$r  = $sk->query("SELECT COUNT(*) AS n FROM collections WHERE policy = '$pe'");
-		$ncol = ($r && ($row = $r->fetch_assoc())) ? (int)$row['n'] : 0;
-		$add('That collection exists in Skulliance', $ncol,
-		     $ncol ? '' : 'No collections row with this policy, so no NFT can ever join to it.');
-		$r = $sk->query("SELECT COUNT(*) AS n FROM nfts
-		                 INNER JOIN collections ON collections.id = nfts.collection_id
-		                 WHERE collections.policy = '$pe'");
-		$nall = ($r && ($row = $r->fetch_assoc())) ? (int)$row['n'] : 0;
-		$add('NFTs of that collection synced at all', $nall,
-		     $nall ? '' : 'Skulliance has never synced this collection, so this source cannot work for it.');
-		$r = $sk->query("SELECT COUNT(*) AS n FROM nfts
-		                 INNER JOIN users ON users.id = nfts.user_id
-		                 INNER JOIN collections ON collections.id = nfts.collection_id
-		                 WHERE collections.policy = '$pe' AND users.discord_id = '$de'");
-		$nmine = ($r && ($row = $r->fetch_assoc())) ? (int)$row['n'] : 0;
-		$add('...and held by you', $nmine,
-		     $nmine ? '' : 'You hold none of this collection on your Skulliance account.');
+		$one = function ($sql) use ($sk) {
+			$r = $sk->query($sql);
+			return ($r && ($row = $r->fetch_assoc())) ? (int)$row['n'] : 0;
+		};
+		$ncol = $one("SELECT COUNT(*) AS n FROM collections WHERE policy = '$pe'");
+		$add('SKULLIANCE: collection with this policy', $ncol,
+		     $ncol ? '' : 'Skulliance has no collections row for this policy, so no NFT can join to it and this source can never work for this theme.');
+		if ($ncol) {
+			$nall = $one("SELECT COUNT(*) AS n FROM nfts
+			              INNER JOIN collections ON collections.id = nfts.collection_id
+			              WHERE collections.policy = '$pe'");
+			$add('SKULLIANCE: NFTs of it synced at all', $nall,
+			     $nall ? '' : 'The collection is known but nothing has ever been synced into nfts for it.');
+			$nmine = $one("SELECT COUNT(*) AS n FROM nfts
+			               INNER JOIN users ON users.id = nfts.user_id
+			               INNER JOIN collections ON collections.id = nfts.collection_id
+			               WHERE collections.policy = '$pe' AND users.discord_id = '$de'");
+			$add('SKULLIANCE: ...and held by you', $nmine,
+			     $nmine ? '' : 'You hold none of this collection on your Skulliance account.');
+		}
 		$sk->close();
-		return $out;
 	}
 
-	/* The Koios path, step for step as dashboard.php runs it. */
+	/* KOIOS source, step for step as dashboard.php runs it. */
 	$addresses = function_exists('dropshipConnectedStakeAddresses')
 	           ? dropshipConnectedStakeAddresses($discord_id) : array();
-	$add('Wallets connected to your Skulliance account', count($addresses),
+	$add('KOIOS: wallets connected to your account', count($addresses),
 	     $addresses ? '' : 'Koios reads your wallets, so with none connected it is skipped entirely and nothing happens.');
 	if (!$addresses) return $out;
 
 	$ch = curl_init("https://api.koios.rest/api/v1/account_utxos?select=asset_list&asset_list=not.is.null");
-	curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-type: application/json', 'accept: application/json'));
+	/* THE SAME REQUEST THE DASHBOARD MAKES, headers and body. A probe that
+	   asks a different question answers a different question: this one
+	   first reported a 500 the real pipeline never saw, because it left off
+	   the bearer and _extended. */
+	curl_setopt($ch, CURLOPT_HTTPHEADER, koios_headers());
 	curl_setopt($ch, CURLOPT_POST, 1);
-	curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode(array('_stake_addresses' => array_values($addresses))));
+	curl_setopt($ch, CURLOPT_POSTFIELDS,
+		json_encode(array('_stake_addresses' => array_values($addresses), '_extended' => true)));
 	curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
 	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
@@ -85,12 +106,12 @@ function dropshipNftProbe($conn, $project_id, $discord_id) {
 	curl_close($ch);
 	$resp = json_decode((string)$raw);
 	if (!is_array($resp)) {
-		$add('Koios answered', null,
+		$add('KOIOS: answered', null,
 		     'HTTP ' . $code . ($cerr !== '' ? ' -- ' . $cerr : '')
 		     . '. Reply was not a list, so no token could be read.');
 		return $out;
 	}
-	$add('Koios answered', 1, 'HTTP ' . $code . ', ' . count($resp) . ' utxo group(s)');
+	$add('KOIOS: answered', 1, 'HTTP ' . $code . ', ' . count($resp) . ' utxo group(s)');
 
 	$total = 0; $mine = 0; $policies = array();
 	foreach ($resp as $list) {
@@ -102,12 +123,12 @@ function dropshipNftProbe($conn, $project_id, $discord_id) {
 			if ($p === $policy) $mine++;
 		}
 	}
-	$add('Tokens in those wallets', $total,
+	$add('KOIOS: tokens in those wallets', $total,
 	     $total ? '' : 'The wallets hold no native tokens at all.');
 	arsort($policies);
 	$top = array();
 	foreach (array_slice($policies, 0, 6, true) as $p => $n) $top[] = substr($p, 0, 12) . '... x' . $n;
-	$add('...under THIS collection', $mine,
+	$add('KOIOS: ...under this collection', $mine,
 	     $mine ? '' : 'You hold none of this collection in a connected wallet. Policies actually held: '
 	                . ($top ? implode(', ', $top) : 'none'));
 	return $out;

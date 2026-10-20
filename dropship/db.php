@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../lib/koios.php';        // one copy of the Koios token, see its header
 require_once __DIR__ . '/dropship-skulliance-db.php'; // the ONE place Skulliance's credentials are read
 require_once __DIR__ . '/dropship-grunts.php';   // the four free soldiers' loaner kit
 require_once __DIR__ . '/dropship-themes.php';   // theme overrides as data, see dropship-themes-schema.md
