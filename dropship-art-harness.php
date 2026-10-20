@@ -114,8 +114,19 @@ echo "\nan animated gif is never flattened\n";
 $art = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-art.php'));
 ok(strpos($art, 'dropshipArtIsAnimatedGif') !== false, 'nothing detects an animated gif');
 ok(strpos($art, "class_exists('Imagick')") !== false, 'Imagick is assumed rather than checked');
-ok(preg_match('/\$animated && !class_exists\(.Imagick.\)/', $art) === 1,
-   'there is no path that stores an animated gif unresized when Imagick is missing');
+/*
+ * NARROWER THAN IT WAS, deliberately. "Animated and no Imagick" used to be
+ * enough to store unresized; it now also has to be going to a .gif slot
+ * and actually need resizing. Flattening is unavoidable when the target is
+ * a still, so refusing to resize there just stored an oversized file for
+ * no benefit, and a file that already fits never reaches here at all.
+ *
+ * A SINGLE-QUOTED LITERAL, not a regex: the first version used a
+ * double-quoted pattern, and PHP interpolated $animated and $want out of
+ * it before preg_match ever saw them.
+ */
+ok(strpos($art, '$animated && $want === \'gif\' && !$fits && !class_exists(\'Imagick\')') !== false,
+   'there is no path that stores an oversized animated gif unresized when Imagick is missing');
 ok(strpos($art, 'coalesceImages') !== false,
    'Imagick resizes an animated gif without coalescing, which corrupts the frames');
 ok(strpos($art, 'deconstructImages') !== false, 'the resized gif is not deconstructed again');
@@ -538,6 +549,117 @@ ok(strpos($adm4, "\$aico = strpos(\$rel, 'icons/') === 0;") !== false,
    'the in-place reply does not tell an icon from a theme file');
 ok(strpos($adm4, "(\$aico ? '/staking/dropship/' : \$aweb)") !== false,
    'the in-place reply builds one url for both icons and theme art');
+
+echo "\na file in the wrong format is converted, not refused\n";
+/*
+ * The run asks for its art by filename, extension included --
+ * images/weapons/rocket-launcher1.gif -- so whatever arrives has to end up
+ * in that format. Refusing a mismatch meant exporting again and coming
+ * back, for a conversion the server can do. DRIVEN FOR REAL through GD,
+ * which is what this box has; the Imagick branch is asserted on source.
+ */
+$tmpd = sys_get_temp_dir() . '/dsart-' . getmypid();
+@mkdir($tmpd, 0777, true);
+$mk = function ($fmt, $w = 40, $h = 30, $alpha = false) use ($tmpd) {
+	$im = imagecreatetruecolor($w, $h);
+	if ($alpha) {
+		imagealphablending($im, false); imagesavealpha($im, true);
+		imagefill($im, 0, 0, imagecolorallocatealpha($im, 255, 0, 0, 127));
+	} else {
+		imagefill($im, 0, 0, imagecolorallocate($im, 10, 200, 160));
+	}
+	$f = $tmpd . '/in.' . $fmt;
+	if ($fmt === 'png') imagepng($im, $f);
+	if ($fmt === 'jpg') imagejpeg($im, $f, 90);
+	if ($fmt === 'gif') imagegif($im, $f);
+	imagedestroy($im);
+	return $f;
+};
+$typeof = function ($f) {
+	$i = @getimagesize($f);
+	$map = array(IMAGETYPE_GIF => 'gif', IMAGETYPE_PNG => 'png', IMAGETYPE_JPEG => 'jpg', IMAGETYPE_WEBP => 'webp');
+	return ($i && isset($map[$i[2]])) ? $map[$i[2]] : 'unreadable';
+};
+foreach (array(array('png', 'jpg'), array('jpg', 'png'), array('png', 'gif'),
+               array('gif', 'png'), array('jpg', 'gif')) as $pair) {
+	list($from, $to) = $pair;
+	$src = $mk($from);
+	$dst = $tmpd . '/out.' . $to;
+	@unlink($dst);
+	list($ok, $why) = dropshipArtStore($src, $dst, $to);
+	ok($ok, "a $from on a .$to slot was refused: " . $why);
+	ok($typeof($dst) === $to,
+	   "a $from written to a .$to slot is actually a " . $typeof($dst) . ', so the run 404s on it');
+	ok(strpos($why, "converted $from to $to") !== false,
+	   "the result does not say the $from was converted: " . $why);
+	@unlink($dst);
+}
+/* A file ALREADY in the slot's format is left alone, not re-encoded. */
+$same = $mk('png');
+$dst = $tmpd . '/out.png';
+list($ok, $why) = dropshipArtStore($same, $dst, 'png');
+ok($ok && strpos($why, 'converted') === false,
+   'a file already in the right format is reported as converted: ' . $why);
+@unlink($dst);
+/*
+ * TRANSPARENCY HAS TO LAND ON SOMETHING. A png with alpha encoded as jpeg
+ * renders every transparent pixel BLACK unless it is composited first --
+ * and onto the page's own dark ground, because white would ring every
+ * edge on a dark page.
+ */
+$tr = $mk('png', 20, 20, true);
+$dst = $tmpd . '/alpha.jpg';
+list($ok, $why) = dropshipArtStore($tr, $dst, 'jpg');
+ok($ok, 'a transparent png could not be converted to jpg: ' . $why);
+$im = @imagecreatefromjpeg($dst);
+ok($im !== false, 'the converted jpg is unreadable');
+if ($im) {
+	$rgb = imagecolorat($im, 2, 2);
+	$r = ($rgb >> 16) & 0xFF; $g = ($rgb >> 8) & 0xFF; $b = $rgb & 0xFF;
+	/* #07111d, within jpeg's own slop. */
+	ok(abs($r - 0x07) < 12 && abs($g - 0x11) < 12 && abs($b - 0x1d) < 12,
+	   sprintf('transparency flattened to #%02x%02x%02x, not the page ground #07111d', $r, $g, $b));
+	imagedestroy($im);
+}
+@unlink($dst);
+/*
+ * A slot extension that is not an image format is refused UP FRONT and
+ * says why. Without the guard nothing is written either way -- no encoder
+ * matches, so the outcome is the same -- but the message degrades from
+ * naming the four formats to "Could not write x.php", which reads as a
+ * permissions problem and sends somebody chasing the wrong thing.
+ */
+list($ok, $why) = dropshipArtStore($mk('png'), $tmpd . '/x.php', 'php');
+ok(!$ok, 'a .php slot was accepted');
+ok(strpos($why, 'gif, png, jpg or webp') !== false,
+   'a bad slot extension is not explained, it just fails to write: ' . $why);
+ok(!file_exists($tmpd . '/x.php'), 'a file was written for a non-image slot extension');
+/* Clean up after ourselves. */
+foreach ((array)@glob($tmpd . '/*') as $f) @unlink($f);
+@rmdir($tmpd);
+ok(!is_dir($tmpd), 'the harness left its temp files behind');
+
+/* The lossy cases are named rather than done quietly. */
+$art6 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-art.php'));
+ok(strpos($art6, "its animation was lost, because this slot is a .") !== false,
+   'flattening an animated gif onto a still slot is not reported');
+ok(strpos($art6, 'gif is 256 colours') !== false,
+   'converting a photograph to gif is not reported');
+/* Imagick must not write one file per frame when the target is a still. */
+ok(strpos($art6, "if (\$animated && \$want === 'gif') {") !== false,
+   'Imagick keeps the frames whatever the target is, which writes png-0, png-1, ...');
+ok(strpos($art6, "\$im->setImageFormat(\$want === 'jpg' ? 'jpeg' : \$want);") !== false,
+   'Imagick writes the source format regardless of the slot');
+ok(strpos($art6, "new ImagickPixel('#07111d')") !== false,
+   'Imagick flattens alpha onto the default white rather than the page ground');
+/* GD must key its alpha handling on the TARGET, not the source. */
+ok(strpos($art6, "if (\$want === 'jpg') {") !== false,
+   'GD decides alpha handling from the source format, so a png on a jpg slot goes black');
+ok(strpos($art6, 'if ($want === \'png\')  $ok = imagepng($dst, $dest_abs);') !== false,
+   'GD encodes using the source format rather than the slot format');
+/* A move is only valid when nothing has to change. */
+ok(strpos($art6, 'if ($fits && !$convert) {') !== false,
+   'a file that fits is moved without re-encoding even when the format is wrong');
 
 echo "\ndragging a file onto a slot replaces it\n";
 /*

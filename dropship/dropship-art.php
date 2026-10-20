@@ -309,10 +309,22 @@ function dropshipArtStore($tmp_path, $dest_abs, $declared_ext, $max_w = 0, $max_
 	if (!isset($allowed[$info[2]])) return array(false, 'Only gif, png, jpg and webp can be uploaded.');
 	$actual = $allowed[$info[2]];
 	$want   = strtolower($declared_ext) === 'jpeg' ? 'jpg' : strtolower($declared_ext);
-	if ($actual !== $want) {
-		return array(false, "This slot is a .$want and that file is a $actual. "
-		                  . 'The game asks for the slot by name, so the format has to match.');
+	if (!in_array($want, array('gif', 'png', 'jpg', 'webp'), true)) {
+		return array(false, 'A slot can only be a gif, png, jpg or webp.');
 	}
+	/*
+	 * THE SLOT'S FORMAT WINS, so a mismatch is CONVERTED rather than
+	 * refused. The run asks for its art by filename, extension included --
+	 * images/weapons/rocket-launcher1.gif -- so the file has to end up in
+	 * that format whatever arrived. Refusing meant exporting again in the
+	 * right format and coming back, for a conversion the server can do.
+	 *
+	 * The lossy cases are NAMED in the result rather than done quietly:
+	 * see $notes below. Silently turning a photograph into a 256-colour
+	 * gif, or flattening an animation, is worse than saying so.
+	 */
+	$convert = ($actual !== $want);
+	$notes = array();
 
 	$dir = dirname($dest_abs);
 	if (!is_dir($dir) && !@mkdir($dir, 0755, true)) {
@@ -323,13 +335,22 @@ function dropshipArtStore($tmp_path, $dest_abs, $declared_ext, $max_w = 0, $max_
 	$animated = ($actual === 'gif') && dropshipArtIsAnimatedGif($tmp_path);
 	$fits     = ($w <= $max_w && $h <= $max_h);
 
-	if ($fits) {
+	if ($animated && $want !== 'gif') {
+		$notes[] = 'its animation was lost, because this slot is a .' . $want;
+	}
+	if ($convert && $want === 'gif' && $actual !== 'gif') {
+		$notes[] = 'gif is 256 colours, so a photograph will band';
+	}
+
+	/* MOVED ONLY WHEN NOTHING HAS TO CHANGE. A format change always means
+	   a re-encode, however well the image already fits. */
+	if ($fits && !$convert) {
 		return @move_uploaded_file($tmp_path, $dest_abs) || @rename($tmp_path, $dest_abs)
 			? array(true, "Stored at {$w}x{$h}, already within {$max_w}x{$max_h}.")
 			: array(false, 'Could not write ' . basename($dest_abs) . '.');
 	}
 
-	if ($animated && !class_exists('Imagick')) {
+	if ($animated && $want === 'gif' && !$fits && !class_exists('Imagick')) {
 		$ok = @move_uploaded_file($tmp_path, $dest_abs) || @rename($tmp_path, $dest_abs);
 		return $ok
 			? array(true, "Stored at {$w}x{$h} WITHOUT resizing: this gif is animated and "
@@ -342,20 +363,50 @@ function dropshipArtStore($tmp_path, $dest_abs, $declared_ext, $max_w = 0, $max_
 	$nw = max(1, (int)round($w * $scale));
 	$nh = max(1, (int)round($h * $scale));
 
+	/* What to say at the end, once it has worked. */
+	$did = function () use ($convert, $actual, $want, $w, $h, $nw, $nh, &$notes) {
+		$said = ($nw === $w && $nh === $h)
+			? "Stored at {$w}x{$h}"
+			: "Scaled {$w}x{$h} to {$nw}x{$nh}";
+		if ($convert) $said .= ", converted $actual to $want";
+		$said .= '.';
+		if ($notes) $said .= ' Note: ' . implode('; ', $notes) . '.';
+		return $said;
+	};
+
 	if (class_exists('Imagick')) {
 		try {
 			$im = new Imagick($tmp_path);
-			if ($animated) {
+			/* KEEP THE FRAMES ONLY IF THE TARGET CAN HOLD THEM. Writing a
+			   multi-frame Imagick to a .png produces png-0, png-1, ... one
+			   file per frame, which is not a slot the run ever asks for. */
+			if ($animated && $want === 'gif') {
 				$im = $im->coalesceImages();                 /* or frames corrupt each other */
-				foreach ($im as $frame) $frame->thumbnailImage($nw, $nh);
+				foreach ($im as $frame) {
+					$frame->thumbnailImage($nw, $nh);
+					$frame->setImageFormat($want);
+				}
 				$im = $im->deconstructImages();
 				$im->writeImages($dest_abs, true);
 			} else {
+				if ($animated) $im = $im->coalesceImages();  /* frame 0 alone is not the picture */
+				$im->setFirstIterator();
 				$im->thumbnailImage($nw, $nh);
+				if ($want === 'jpg') {
+					/* Alpha has to land on something. The page is dark, so
+					   white would ring every transparent edge. */
+					$flat = new Imagick();
+					$flat->newImage($nw, $nh, new ImagickPixel('#07111d'));
+					$flat->compositeImage($im, Imagick::COMPOSITE_OVER, 0, 0);
+					$im->clear();
+					$im = $flat;
+					$im->setImageCompressionQuality(90);
+				}
+				$im->setImageFormat($want === 'jpg' ? 'jpeg' : $want);
 				$im->writeImage($dest_abs);
 			}
 			$im->clear();
-			return array(true, "Scaled {$w}x{$h} to {$nw}x{$nh}.");
+			return array(true, $did());
 		} catch (Throwable $e) {
 			return array(false, 'Imagick could not process that file: ' . $e->getMessage());
 		}
@@ -370,20 +421,30 @@ function dropshipArtStore($tmp_path, $dest_abs, $declared_ext, $max_w = 0, $max_
 	if (!$src) return array(false, 'This server cannot resize a ' . $actual . '.');
 
 	$dst = imagecreatetruecolor($nw, $nh);
-	if ($actual === 'png' || $actual === 'gif' || $actual === 'webp') {
+	/* KEYED ON THE TARGET, not the source. A png dropped on a .jpg slot
+	   kept its alpha channel through the resize and then had it discarded
+	   by the jpeg encoder, which renders every transparent pixel black. */
+	if ($want === 'jpg') {
+		/* The page is dark, so flattening onto white rings every edge. */
+		imagefill($dst, 0, 0, imagecolorallocate($dst, 0x07, 0x11, 0x1d));
+		imagealphablending($dst, true);
+	} else {
 		imagealphablending($dst, false);
 		imagesavealpha($dst, true);
 		imagefill($dst, 0, 0, imagecolorallocatealpha($dst, 0, 0, 0, 127));
 	}
 	imagecopyresampled($dst, $src, 0, 0, 0, 0, $nw, $nh, $w, $h);
 	$ok = false;
-	if ($actual === 'png')  $ok = imagepng($dst, $dest_abs);
-	if ($actual === 'jpg')  $ok = imagejpeg($dst, $dest_abs, 90);
-	if ($actual === 'gif')  $ok = imagegif($dst, $dest_abs);
-	if ($actual === 'webp' && function_exists('imagewebp')) $ok = imagewebp($dst, $dest_abs, 90);
+	if ($want === 'png')  $ok = imagepng($dst, $dest_abs);
+	if ($want === 'jpg')  $ok = imagejpeg($dst, $dest_abs, 90);
+	if ($want === 'gif')  $ok = imagegif($dst, $dest_abs);
+	if ($want === 'webp') $ok = function_exists('imagewebp') ? imagewebp($dst, $dest_abs, 90) : false;
 	imagedestroy($src); imagedestroy($dst);
 
-	return $ok ? array(true, "Scaled {$w}x{$h} to {$nw}x{$nh}.")
+	if (!$ok && $want === 'webp' && !function_exists('imagewebp')) {
+		return array(false, 'This server cannot write webp.');
+	}
+	return $ok ? array(true, $did())
 	           : array(false, 'Could not write ' . basename($dest_abs) . '.');
 }
 
