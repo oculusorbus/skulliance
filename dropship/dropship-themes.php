@@ -301,6 +301,29 @@ function dropshipAdminProjects($conn) {
 }
 
 /**
+ * The collection a project draws its NFTs from, or '' if it has none.
+ *
+ * WHY THE ADMIN SHOWS THIS. Every way of loading a player's NFTs runs
+ * through projects.policy_id: the Koios path filters the wallet's tokens by
+ * it, and the Skulliance path queries collections.policy with it. So a
+ * project with no policy set loads nothing on EITHER setting, silently --
+ * no error, just an empty barracks and a theme that looks broken in a way
+ * nothing on screen explains. It cost a debugging session once; the answer
+ * is now printed next to the theme.
+ *
+ * Takes the id rather than reading the session, unlike getProjectPolicyId(),
+ * because the admin is looking at a project it is not playing.
+ */
+function dropshipProjectPolicy($conn, $project_id) {
+	if (!is_object($conn)) return '';
+	$pid = (int)$project_id;
+	if ($pid <= 0) return '';
+	$r = @$conn->query("SELECT policy_id FROM projects WHERE id = $pid LIMIT 1");
+	if ($r && ($row = $r->fetch_assoc())) return (string)$row['policy_id'];
+	return '';
+}
+
+/**
  * The project ids a player may enter, or NULL to let the old rule decide.
  *
  * dropship_themes.active was written by the admin and read by nothing, so

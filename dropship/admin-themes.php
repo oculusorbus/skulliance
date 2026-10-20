@@ -164,6 +164,10 @@ $val = function ($k, $d = '') use ($theme, $h) {
   text-transform:uppercase;letter-spacing:.07em;opacity:.8}
 .dsa .all{font-size:10px;color:#00c8a0;margin-left:5px}
 .dsa .also{font-size:11px;color:#7a9eb0}
+.dsa .pol{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:#7a9eb0;
+  word-break:break-all;padding:6px 8px;background:#07111d;border-radius:3px;
+  border:1px solid rgba(255,255,255,.16);text-align:left}
+.dsa .pol.none{font-family:inherit;color:#e8a0b0;border-color:rgba(224,70,107,.45)}
 .dsa code{color:#e8eaed}
 .dsa button,.dsa .btn{background:#00c8a0;color:#07111d;border:0;border-radius:4px;
   padding:8px 15px;font-weight:bold;cursor:pointer;font-size:13px;text-decoration:none;display:inline-block}
@@ -214,6 +218,15 @@ falls back to the built-in wording, so an empty theme changes nothing.</p>
 		<input type="text" name="slug" value="<?php echo $val('slug'); ?>" placeholder="oculus-lounge"></div>
 	<div><label>Media extension</label>
 		<input type="text" name="extension" value="<?php echo $val('extension', 'gif'); ?>"></div>
+	<div><label>Collection (projects.policy_id)</label>
+		<?php $pol = $edit_pid ? dropshipProjectPolicy($conn, $edit_pid) : ''; ?>
+		<?php if ($pol !== ''): ?>
+			<div class="pol"><?php echo $h($pol); ?></div>
+		<?php else: ?>
+			<div class="pol none">Not set &mdash; this theme will load no NFTs on
+			<b>either</b> setting below, with no error anywhere. Set
+			<code>projects.policy_id</code> for this project first.</div>
+		<?php endif; ?></div>
 	<div><label>NFT holdings from</label>
 		<select name="trait_source">
 			<?php $ts = $theme && !empty($theme['trait_source']) ? $theme['trait_source'] : 'koios'; ?>

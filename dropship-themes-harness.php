@@ -30,8 +30,11 @@ class TConn {
 	public $text;     /* theme_id => rows */
 	public $queries = 0;
 	public $projects = array();
-	public function __construct($themes = array(), $text = array(), $projects = array()) {
-		$this->themes = $themes; $this->text = $text; $this->projects = $projects;
+	public $policies = array();
+	public function __construct($themes = array(), $text = array(), $projects = array(),
+	                            $policies = array()) {
+		$this->themes = $themes; $this->text = $text;
+		$this->projects = $projects; $this->policies = $policies;
 	}
 	public function query($sql) {
 		$this->queries++;
@@ -43,6 +46,12 @@ class TConn {
 			preg_match('/project_id = (\d+)/', $sql, $m);
 			$pid = (int)$m[1];
 			return new TRes(isset($this->themes[$pid]) ? array($this->themes[$pid]) : array());
+		}
+		if (strpos($sql, 'SELECT policy_id FROM projects WHERE id') !== false) {
+			preg_match('/id = (\d+)/', $sql, $m);
+			$pid = (int)$m[1];
+			return new TRes(isset($this->policies[$pid])
+				? array(array('policy_id' => $this->policies[$pid])) : array());
 		}
 		if (strpos($sql, 'FROM projects') !== false) {
 			/* HONOURS THE WHERE, because the thing under test is whether the
@@ -766,6 +775,36 @@ foreach ($blocks as $pid => $sql) {
 	ok(count($m[1]) === count(array_unique($m[1])),
 	   "project $pid has duplicate sort_order values in the seed");
 }
+
+echo "\na project with no collection says so\n";
+/*
+ * EVERY way of loading a player's NFTs runs through projects.policy_id: the
+ * Koios path filters the wallet's tokens by it, the Skulliance path queries
+ * collections.policy with it. So a project with none set loads nothing on
+ * EITHER setting, silently -- no error, just an empty barracks and a theme
+ * that looks broken with nothing on screen explaining why. Filthy Mermaid
+ * hit exactly that, and the two paths failing together is the tell: they
+ * share only this one input.
+ */
+$cpol = new TConn(array(), array(), array(), array(3 => '0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c'));
+ok(dropshipProjectPolicy($cpol, 3) === '0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c',
+   'the admin cannot read a project collection');
+ok(dropshipProjectPolicy($cpol, 2) === '', 'a project with no policy does not come back empty');
+ok(dropshipProjectPolicy($cpol, 0) === '', 'a zero project id still queries');
+ok(dropshipProjectPolicy(null, 3) === '', 'a dead connection does not come back empty');
+/* It must be read for the project being EDITED, not the one being played --
+   getProjectPolicyId() reads the session and would answer about whichever
+   theme the admin happens to have open in the game. */
+$adm6 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));
+ok(strpos($adm6, 'dropshipProjectPolicy($conn, $edit_pid)') !== false,
+   'the admin does not show the collection for the project being edited');
+ok(strpos($adm6, 'getProjectPolicyId(') === false,
+   'the admin reads the policy from the session, so it describes the wrong project');
+ok(strpos($adm6, 'this theme will load no NFTs on') !== false,
+   'a project with no collection is not called out, so the theme just looks broken');
+$lib6 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-themes.php'));
+ok(strpos($lib6, 'SELECT policy_id FROM projects WHERE id = $pid LIMIT 1') !== false,
+   'the policy lookup is not keyed on the project id it was given');
 
 echo "\nwhere a theme loads NFTs from is a setting, not a project id\n";
 /*
