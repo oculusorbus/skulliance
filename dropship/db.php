@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/dropship-skulliance-db.php'; // the ONE place Skulliance's credentials are read
 require_once __DIR__ . '/dropship-grunts.php';   // the four free soldiers' loaner kit
 require_once __DIR__ . '/dropship-themes.php';   // theme overrides as data, see dropship-themes-schema.md
 require_once __DIR__ . '/dropship-odds.php';     // loadItems() quotes the odds per item
@@ -683,9 +684,8 @@ function updateUser($conn) {
 // covering all of them costs nothing extra.
 function dropshipConnectedStakeAddresses($discord_id) {
 	$addresses = array();
-	include __DIR__ . '/../credentials/db_credentials.php';
-	$skulliance_conn = new mysqli($servername, $username, $password, $dbname);
-	if ($skulliance_conn->connect_error) {
+	$skulliance_conn = dropshipSkullianceDb();
+	if (!$skulliance_conn) {
 		return $addresses; // fail quiet, same as the old checkAddress() did for "nothing on file"
 	}
 	$discord_id_esc = $skulliance_conn->real_escape_string($discord_id);
@@ -735,9 +735,8 @@ function dropshipOculusLoungeLocalImages($asset_names) {
 	$images = array();
 	if (empty($asset_names)) return $images;
 
-	include __DIR__ . '/../credentials/db_credentials.php';
-	$skulliance_conn = new mysqli($servername, $username, $password, $dbname);
-	if ($skulliance_conn->connect_error) return $images; // fail quiet -- callers fall back to jpgstoreapis.com
+	$skulliance_conn = dropshipSkullianceDb();
+	if (!$skulliance_conn) return $images; // fail quiet -- callers fall back to jpgstoreapis.com
 
 	$policy_esc = $skulliance_conn->real_escape_string('d0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779');
 	$in_list = implode(',', array_map(function($name) use ($skulliance_conn) {
@@ -822,9 +821,8 @@ function discosolarisGear($attributes) {
 // old random roll gets corrected to the real value too, not just new ones.
 // rank stays the fixed string "Neo Miami Citizen", same as before.
 function dropshipSyncOculusLounge($conn, $discord_id) {
-	include __DIR__ . '/../credentials/db_credentials.php';
-	$skulliance_conn = new mysqli($servername, $username, $password, $dbname);
-	if ($skulliance_conn->connect_error) return;
+	$skulliance_conn = dropshipSkullianceDb();
+	if (!$skulliance_conn) return;
 
 	$policy = 'd0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779';
 	$policy_esc = $skulliance_conn->real_escape_string($policy);

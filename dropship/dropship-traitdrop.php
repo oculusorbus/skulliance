@@ -152,18 +152,13 @@ function dropshipDropAward($ctx) {
 		require_once __DIR__ . '/../dhcfighters-lib.php';
 		if (!function_exists('dhcf_award')) return null;
 
-		/* Our own connection to the platform database. Drop Ship's $conn is a
-		   different database entirely. Same include-the-credentials pattern
-		   dropshipConnectedStakeAddresses() uses a few hundred lines up. */
-		$cred = __DIR__ . '/../credentials/db_credentials.php';
-		if (!is_file($cred)) { ob_end_clean(); return null; }
-		include $cred;
-		$sk = @new mysqli($servername, $username, $password, $dbname);
-		if ($sk->connect_error) {
-			ob_end_clean();
-			error_log('dropship trait drop: platform database unreachable');
-			return null;
-		}
+		/* The platform database. Drop Ship's $conn is a different one
+		   entirely, and dropshipSkullianceDb() is the only place the
+		   Skulliance credentials are read -- see that file for why
+		   including them anywhere else is a trap. */
+		require_once __DIR__ . '/dropship-skulliance-db.php';
+		$sk = dropshipSkullianceDb();
+		if (!$sk) { ob_end_clean(); return null; }
 
 		$detail = $source . ' ' . $score . ' (lead)';
 		/* Announced in the DHC Fighters channel like every other drop:
