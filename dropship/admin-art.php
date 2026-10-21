@@ -511,20 +511,31 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .slot .shot img{cursor:grab}
 .dsart .slot .shot img:active{cursor:grabbing}
 /* CLICK TO SEE IT PROPERLY. A 1080px picture shown at 210 tells you which
-   image is in the slot and nothing about whether it is any good. */
-.dsart .lightbox{position:fixed;inset:0;z-index:200;display:flex;align-items:center;
-  justify-content:center;flex-direction:column;gap:10px;padding:24px;
-  background:rgba(4,10,18,.93);cursor:zoom-out}
-.dsart .lightbox img{max-width:min(96vw,1200px);max-height:80vh;width:auto;height:auto;
+   image is in the slot and nothing about whether it is any good.
+
+   NOT SCOPED TO .dsart, and that is the whole reason the first version
+   was broken. The overlay is appended to <body> -- which is right, a
+   fixed overlay must not sit under an ancestor with a transform or an
+   overflow -- so every `.dsart .lightbox` rule matched nothing. It was
+   an unstyled div at the bottom of the page: not centred, no backdrop,
+   nothing to click outside of, and a fresh one every time. */
+.ds-lightbox{position:fixed;inset:0;z-index:2000;display:flex;align-items:center;
+  justify-content:center;flex-direction:column;gap:12px;padding:28px;
+  background:rgba(4,10,18,.93)}
+.ds-lightbox img{max-width:min(94vw,1200px);max-height:76vh;width:auto;height:auto;
   /* The run paints every frame on the game's own dark pane, so a picture
      with transparency has to be judged against that and not against the
      overlay, which is darker. */
   background:#07111d;border:1px solid rgba(255,255,255,.14);border-radius:4px}
-.dsart .lightbox .cap{color:#e8eaed;font-size:13px;text-align:center;line-height:1.5;
-  max-width:min(96vw,1200px)}
-.dsart .lightbox .cap b{color:#00c8a0}
-.dsart .lightbox .cap code{color:#9fb3c8;font-size:12px}
-.dsart .lightbox .hint{color:#6f8296;font-size:11px}
+.ds-lightbox .cap{color:#e8eaed;font-size:13px;text-align:center;line-height:1.5;
+  max-width:min(94vw,1200px)}
+.ds-lightbox .cap b{color:#00c8a0}
+.ds-lightbox .cap code{color:#9fb3c8;font-size:12px}
+.ds-lightbox .hint{color:#6f8296;font-size:11px}
+.ds-lightbox .x{position:absolute;top:14px;right:18px;width:34px;height:34px;padding:0;
+  border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.4);
+  color:#e8eaed;font-size:18px;line-height:1;cursor:pointer}
+.ds-lightbox .x:hover{background:rgba(255,255,255,.14)}
 /* SOUND, beside the pictures of the same thing.
    A GRID, NOT A FLOW. The first pass let each row wrap on its own, so the
    file input, the picker and the button started at a different x on every
@@ -715,21 +726,18 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		   a theme with no file of its own falls back to Drop Ship's, and
 		   Drop Ship's own files are still on their old sound-named paths
 		   until they are renamed onto the wording. */
-		/* THE SAME RULE THE RUN USES, or the page says one thing and the
-		   game does another. A renamed thing never falls back to Drop
-		   Ship's sound; it is silent until it has one of its own. */
-		$renamed = ($as['said'] !== $as['term']);
-		$playing = $as['exists'] ? $as['rel']
-		         : ($renamed ? ''
-		         : ($as['base_has'] ? $as['base_rel']
-		         : ($as['legacy_has'] ? 'sounds/' . $as['legacy'] . '.mp3' : '')));
-		/* What it WOULD have fallen back to, offered as the one-click
-		   answer: nine times out of ten the right file is already on the
-		   server under its old name. */
+		/* READ, NOT RECOMPUTED. The run's answer is resolved once in
+		   dropshipAudioSlot(); working it out a second time here is how
+		   the page came to tell somebody a theme was fine when it was
+		   silent. */
+		$playing = $as['plays'];
+		/* What Drop Ship uses, offered as the one-click answer: nine
+		   times out of ten the file wanted is already on the server
+		   under its old name. */
 		$suggest = ($playing === '' && $as['legacy_has']) ? $as['legacy'] . '.mp3' : '';
 		?>
 		<div class="ev">
-			<span class="nm"><?php echo $h($as['term']); ?>
+			<span class="nm"><?php echo $h($as['caption']); ?>
 				<?php if ($as['said'] !== $as['term'] && $as['said'] !== ''): ?>
 					<span class="said"><?php echo $h($as['said']); ?></span>
 				<?php endif; ?>
@@ -1062,8 +1070,14 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	 * reason dsShowLoader() builds rather than toggles.
 	 */
 	function lightbox(img, slot) {
+		/* ONE AT A TIME. Every click used to append another overlay, and
+		   with the stylesheet not matching they piled up down the page
+		   rather than covering it. */
+		var old = document.querySelector('.ds-lightbox');
+		if (old) old.remove();
+
 		var box = document.createElement('div');
-		box.className = 'lightbox';
+		box.className = 'ds-lightbox';
 		var big = document.createElement('img');
 		/* The card's own src, so it carries the same cache buster and a
 		   slot replaced a moment ago shows the NEW picture. */
@@ -1078,9 +1092,9 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		var dims = slot.querySelector('.dims');
 		/* textContent throughout: these are page-rendered strings, but a
 		   theme names its own icons and that name reaches .name. */
-		var b = document.createElement('b');
-		b.textContent = name ? name.textContent : '';
-		cap.appendChild(b);
+		var b2 = document.createElement('b');
+		b2.textContent = name ? name.textContent : '';
+		cap.appendChild(b2);
 		if (path) {
 			var c = document.createElement('code');
 			c.textContent = ' ' + path.textContent;
@@ -1095,15 +1109,26 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		box.appendChild(cap);
 		var hint = document.createElement('div');
 		hint.className = 'hint';
-		hint.textContent = 'click anywhere, or press Escape, to close';
+		hint.textContent = 'click the backdrop, press Escape, or use the X';
 		box.appendChild(hint);
+
+		var x = document.createElement('button');
+		x.type = 'button';
+		x.className = 'x';
+		x.setAttribute('aria-label', 'Close');
+		x.innerHTML = '&times;';
+		box.appendChild(x);
 
 		function close() {
 			box.remove();
 			document.removeEventListener('keydown', onKey);
 		}
 		function onKey(ev) { if (ev.key === 'Escape') close(); }
-		box.addEventListener('click', close);
+		/* THE BACKDROP CLOSES, THE PICTURE DOES NOT. Closing on any click
+		   inside meant you could not point at the thing you came to
+		   look at without losing it. */
+		box.addEventListener('click', function (ev) { if (ev.target === box) close(); });
+		x.addEventListener('click', close);
 		document.addEventListener('keydown', onKey);
 		document.body.appendChild(box);
 	}
@@ -1111,14 +1136,18 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	/*
 	 * ONE PLAYER FOR THE WHOLE PAGE.
 	 *
-	 * Twenty-eight <audio controls> elements is twenty-eight light-grey
-	 * widgets on a dark page, each a different width depending on whether
-	 * its file had loaded, shoving every row's controls out of line. One
-	 * Audio object and a small button per row instead -- and one object
-	 * means starting a second sound stops the first, which is what you
-	 * want when comparing two of them rather than hearing both at once.
+	 * Thirty-odd <audio controls> is thirty light-grey widgets on a dark
+	 * page, each a different width depending on whether its file had
+	 * loaded, shoving every row's controls out of line. One Audio object
+	 * and a small button per row instead -- and one object means
+	 * starting a second sound stops the first, which is what you want
+	 * when comparing two of them rather than hearing both at once.
 	 */
 	var sndNow = null, sndBtn = null;
+	function sndStop() {
+		if (sndNow) { sndNow.pause(); sndNow = null; }
+		if (sndBtn) { sndBtn.classList.remove('on'); sndBtn.innerHTML = '&#9654;'; sndBtn = null; }
+	}
 	/* CHOOSING A FILE MAKES THE BUTTON LIVE, including on a row that had
 	   nothing to play at all -- otherwise the one row most in need of an
 	   audition is the one that cannot give you one. */
@@ -1132,10 +1161,7 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 			b.title = 'Preview ' + sel.value; }
 		else if (!b.getAttribute('data-src')) { b.disabled = true; b.classList.remove('cand'); }
 	});
-	function sndStop() {
-		if (sndNow) { sndNow.pause(); sndNow = null; }
-		if (sndBtn) { sndBtn.classList.remove('on'); sndBtn.innerHTML = '&#9654;'; sndBtn = null; }
-	}
+
 	/*
 	 * WHAT THIS BUTTON WOULD PLAY, resolved when it is pressed.
 	 *

@@ -82,10 +82,17 @@ ok(strpos($js, 'var prev = roundEl(currentRound-1);') !== false,
    the thing this was protecting is the same: whatever picks the sound
    reads the caption through roundCaption(), which answers '' for a round
    it cannot read, rather than reaching into the element itself. */
-ok(strpos($js, 'var cap = roundCaption(round);') !== false,
+/* THE AUDIO MATCH MOVED AGAIN, and the thing being protected is the
+   same: whatever picks the sound reads the round through roundImage(),
+   which answers '' for a round it cannot read, rather than reaching
+   into the element itself. It keys on the FRAME now, because two frames
+   of one weapon can share a caption. */
+ok(strpos($js, 'var src = roundImage(round);') !== false,
    'the audio match still reaches into the element itself and can throw');
-ok(strpos($js, "if (cap === '') return;") !== false,
+ok(strpos($js, "if (!src) return '';") !== false,
    'an unreadable round is not skipped by the audio, so it matches on nothing');
+ok(strpos($js, "if (frame === '') return;") !== false,
+   'a round with no resolvable frame still goes looking for a sound');
 /* One painter, not the same two lines in both branches. */
 ok(substr_count($js, 'function showRound(') === 1, 'there is no single round painter');
 ok(substr_count($js, 'showRound(currentRound)') === 2,

@@ -1,13 +1,14 @@
 /**
  * dropship-audio-play-harness.js -- node, no browser, no network.
  *
- * Runs the REAL playRoundAudio() out of dropship.js against a stub.
+ * Runs the REAL roundFrame() and playRoundAudio() out of dropship.js.
  *
- * It replaced thirty-four if-branches, and the thing those branches
- * carried that is easy to lose is ORDER: the match is a substring of the
- * caption, so "Smoke Bomb" also matches "Pull Smoke Bomb Pin" and the pin
- * has to win. First match wins, nothing after it fires, and a delayed row
- * still only fires once.
+ * The sound a round plays is keyed on its FRAME, not its caption.
+ * machine-gun2 and machine-gun3 are both captioned "Machine Gun", as are
+ * rocket-launcher2 and 3, so no amount of reading the words can tell you
+ * which picture is on screen -- and the art already numbers them. That
+ * is what these checks are for, plus the catch-all for a surviving round
+ * which has no moment to name.
  *
  * Usage: node dropship-audio-play-harness.js
  */
@@ -18,99 +19,97 @@ let fails = 0;
 function ok(cond, what) { if (!cond) { fails++; console.log('  FAIL  ' + what); } }
 
 const js = fs.readFileSync(__dirname + '/dropship/dropship.js', 'utf8');
-const m = js.match(/function playRoundAudio\(round\) \{[\s\S]*?\n\}/);
-ok(!!m, 'playRoundAudio() could not be found, so nothing below proves anything');
-const SRC = m ? m[0] : 'function playRoundAudio(){}';
+const mf = js.match(/function roundFrame\(round\) \{[\s\S]*?\n\}/);
+const mp = js.match(/function playRoundAudio\(round\) \{[\s\S]*?\n\}/);
+ok(!!mf && !!mp, 'the audio functions could not be found, so nothing below proves anything');
+const SRC = (mf ? mf[0] : '') + '\n' + (mp ? mp[0] : '');
 
-function run(rows, caption) {
-	const played = [];
-	const timers = [];
-	const sandbox = {
-		window: { dsAudio: rows === null ? null : { rows: rows } },
-		roundCaption: function () { return caption; },
-		loadFile: function (src, path) { played.push({ src: src, path: path, at: 'now' }); },
-		setTimeout: function (fn, ms) { timers.push({ fn: fn, ms: ms }); },
-	};
-	sandbox.dsAudio = sandbox.window.dsAudio;
-	const fn = new Function('window', 'dsAudio', 'roundCaption', 'loadFile', 'setTimeout',
-		SRC + '\nreturn playRoundAudio;')(
-		sandbox.window, sandbox.dsAudio, sandbox.roundCaption, sandbox.loadFile, sandbox.setTimeout);
-	fn(5);
-	return {
-		played: played,
-		timers: timers,
-		fire: function () { timers.forEach(t => { t.fn(); }); },
-	};
+function run(payload, imgSrc) {
+	const played = [], timers = [];
+	const win = { dsAudio: payload };
+	const fn = new Function('window', 'dsAudio', 'roundImage', 'loadFile', 'setTimeout',
+		SRC + '\nreturn {frame: roundFrame, play: playRoundAudio};')(
+		win, payload,
+		function () { return imgSrc; },
+		function (s, p) { played.push(p); },
+		function (f, ms) { timers.push({ f: f, ms: ms }); });
+	return { fn: fn, played: played, timers: timers,
+	         fire: function () { timers.forEach(t => t.f()); } };
 }
 
-const ROWS = [
-	{ m: 'Pull Smoke Bomb Pin', f: 'sounds/pull-smoke-bomb-pin.mp3?v=1', d: 600 },
-	{ m: 'Smoke Bomb',          f: 'sounds/smoke-bomb.mp3?v=1',          d: 0 },
-	{ m: 'Survived',            f: 'sounds/survived.mp3?v=1',            d: 0 },
-];
+/* ---------- the frame comes out of the image --------------------------- */
+const r0 = run({ frames: {} }, 'https://x/staking/dropship/oculus-lounge/images/weapons/demo2.png?v=17');
+ok(r0.fn.frame(5) === 'weapons/demo2',
+   'the frame is not read off the image path: ' + r0.fn.frame(5));
+const flat = run({ frames: {} }, 'https://x/staking/dropship/images/live/beach/3.gif');
+ok(flat.fn.frame(5) === 'live/beach/3',
+   "Drop Ship's own flat art does not resolve: " + flat.fn.frame(5));
+ok(run({ frames: {} }, '').fn.frame(5) === '', 'a round with no image still names a frame');
+ok(run({ frames: {} }, 'https://x/nothing/here.png').fn.frame(5) === '',
+   'a path with no images/ segment still names a frame');
 
-/* THE SHADOWING CASE, which is the whole reason order is in the data. */
-const pin = run(ROWS, 'Round 9 - Pull Smoke Bomb Pin');
-ok(pin.played.length === 0, 'a delayed sound played immediately instead of waiting');
-ok(pin.timers.length === 1 && pin.timers[0].ms === 600,
-   'the pin did not schedule its 600ms wait');
-/* FIRST MATCH WINS AND NOTHING AFTER IT FIRES, counted BEFORE the timer
-   is run: a caption containing the pin also contains "Smoke Bomb", and
-   both firing is two sounds over each other. */
-ok(pin.played.length + pin.timers.length === 1,
-   'more than one row fired for one caption, so two sounds overlap');
-pin.fire();
-ok(pin.played.length === 1 && pin.played[0].path.indexOf('pull-smoke-bomb-pin') !== -1,
-   'the pin played the wrong file: ' + JSON.stringify(pin.played));
+/* ---------- two frames, one caption, two sounds ------------------------ */
+const PAY = { frames: {
+	'weapons/machine-gun2': { f: 'sounds/machine-gun2.mp3', d: 0 },
+	'weapons/machine-gun3': { f: 'sounds/machine-gun3.mp3', d: 0 },
+	'weapons/demo1': { f: 'sounds/paddle1.mp3', d: 0 },
+	'weapons/demo2': { f: 'sounds/paddle2.mp3', d: 600 },
+}, any: [ { p: 'live/', f: 'sounds/survived.mp3', d: 0 } ] };
 
-const bomb = run(ROWS, 'Round 9 - Smoke Bomb');
-ok(bomb.played.length === 1 && bomb.played[0].path.indexOf('smoke-bomb') !== -1,
-   'a plain smoke bomb did not play its own sound');
-ok(bomb.timers.length === 0, 'an undelayed row went through setTimeout');
+const g2 = run(PAY, '/staking/dropship/images/weapons/machine-gun2.gif');
+g2.fn.play(5);
+ok(g2.played.length === 1 && g2.played[0].indexOf('machine-gun2') !== -1,
+   'frame 2 of the machine gun played ' + JSON.stringify(g2.played));
+const g3 = run(PAY, '/staking/dropship/images/weapons/machine-gun3.gif');
+g3.fn.play(5);
+ok(g3.played.length === 1 && g3.played[0].indexOf('machine-gun3') !== -1,
+   'frame 3 played the same file as frame 2, which is what the captions could not separate');
 
-/* THE CATCH-ALL still answers a caption nothing else matches. */
-const surv = run(ROWS, 'Round 4 - Survived');
-ok(surv.played.length === 1 && surv.played[0].path.indexOf('survived') !== -1,
-   'a plain surviving round played nothing');
+/* THE NUMBERED PAIR, which is the whole point: demo1 is the activation
+   and demo2 the explosion, and under a theme that calls it a Paddle
+   those are paddle1 and paddle2. */
+const d1 = run(PAY, '/staking/dropship/oculus-lounge/images/weapons/demo1.png');
+d1.fn.play(5);
+ok(d1.played.length === 1 && d1.played[0] === 'sounds/paddle1.mp3',
+   'the activation frame did not play the first sound: ' + JSON.stringify(d1.played));
+const d2 = run(PAY, '/staking/dropship/oculus-lounge/images/weapons/demo2.png');
+d2.fn.play(5);
+ok(d2.played.length === 0 && d2.timers.length === 1 && d2.timers[0].ms === 600,
+   'the explosion frame did not wait its delay');
+d2.fire();
+ok(d2.played[0] === 'sounds/paddle2.mp3',
+   'the explosion frame played the activation sound: ' + JSON.stringify(d2.played));
 
-/* NOTHING MATCHES: silence, not a throw and not a stray play. */
-const none = run(ROWS, 'Round 4 - Beach Secured');
+/* ---------- the catch-all ---------------------------------------------- */
+const sv = run(PAY, '/staking/dropship/images/live/beach/3.gif');
+sv.fn.play(5);
+ok(sv.played.length === 1 && sv.played[0].indexOf('survived') !== -1,
+   'a surviving round played nothing: ' + JSON.stringify(sv.played));
+/* AN EXACT FRAME BEATS THE CATCH-ALL, or a secured frame gets the
+   gunshot that every other round gets. */
+const PAY2 = { frames: { 'live/beach/beach-secured': { f: 'sounds/beach-secured.mp3', d: 0 } },
+               any: [ { p: 'live/', f: 'sounds/survived.mp3', d: 0 } ] };
+const sec = run(PAY2, '/staking/dropship/images/live/beach/beach-secured.gif');
+sec.fn.play(5);
+ok(sec.played.length === 1 && sec.played[0].indexOf('beach-secured') !== -1,
+   'the catch-all beat an exact frame: ' + JSON.stringify(sec.played));
+
+/* ---------- nothing to play -------------------------------------------- */
+const none = run(PAY, '/staking/dropship/images/die/2.gif');
+none.fn.play(5);
 ok(none.played.length === 0 && none.timers.length === 0,
-   'a caption matching no row still played something');
-
-/*
- * AN EMPTY CAPTION is an unreadable round and must play nothing.
- *
- * EQUIVALENT MUTANT, recorded rather than chased: deleting the explicit
- * `cap === ''` guard changes no answer today, because every row's match
- * text is a real word and ''.indexOf(word) is -1. The guard is there
- * because the danger is the other way round -- a row whose match text
- * were ever empty would match EVERY caption, since indexOf('') is 0 on
- * any string -- so the row below is the one actually worth asserting.
- */
-const empty = run(ROWS, '');
-ok(empty.played.length === 0 && empty.timers.length === 0,
-   'an unreadable round played something');
-const blank = run([{ m: '', f: 'sounds/x.mp3', d: 0 }], 'Round 4 - Survived');
-ok(blank.played.length === 0,
-   'a row with empty match text matched a caption, and it would match every caption');
-
-/* NO TABLE AT ALL: a page that did not emit one must not throw and take
-   the rest of the round with it. */
+   'a frame with no sound and no catch-all played something');
+const empty = run({ frames: {}, any: [] }, '/staking/dropship/images/weapons/demo1.gif');
+empty.fn.play(5);
+ok(empty.played.length === 0, 'an empty table still played something');
 let threw = false;
-try { run(null, 'Round 4 - Survived'); } catch (e) { threw = true; }
+try { run(null, '/staking/dropship/images/weapons/demo1.gif').fn.play(5); } catch (e) { threw = true; }
 ok(!threw, 'playRoundAudio throws when the page emitted no table');
-
-/* THE DELAY IS CARRIED PER ROW, not shared. Two delayed rows in one
-   table must not close over the same file. */
-const two = run([
-	{ m: 'Air Strike', f: 'sounds/air-strike.mp3', d: 2000 },
-	{ m: 'Exo Suit',   f: 'sounds/exo-suit.mp3',   d: 300 },
-], 'Round 14 - Exo Suit');
-ok(two.timers.length === 1 && two.timers[0].ms === 300, 'the wrong row scheduled');
-two.fire();
-ok(two.played.length === 1 && two.played[0].path.indexOf('exo-suit') !== -1,
-   'the delayed row played another row\'s file: ' + JSON.stringify(two.played));
+/* A row with no file must not reach loadFile with an empty src. */
+const blank = run({ frames: { 'weapons/demo1': { f: '', d: 0 } }, any: [] },
+                  '/staking/dropship/images/weapons/demo1.gif');
+blank.fn.play(5);
+ok(blank.played.length === 0, 'a row with no file was played as an empty src');
 
 console.log(fails ? '\n' + fails + ' check(s) FAILED' : '\nall good');
 process.exit(fails ? 1 : 0);

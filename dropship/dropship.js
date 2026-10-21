@@ -153,38 +153,50 @@ function configureAudio(source, sound, milliseconds) {
 /*
  * WHICH SOUND A ROUND PLAYS, from a table the server resolved.
  *
- * This was thirty-four if-branches matching caption text against sound
- * filenames, and every reskin's own words sat in there beside Drop
- * Ship's -- "Vibrator", "Whip", "Paddle", "Ball Gag" -- which are all
- * words the wording table already holds. The branches were the wording
- * table written a second time, in a file no admin page can reach. See
- * dropship/dropship-audio.php for the mapping.
+ * KEYED ON THE FRAME, NOT THE CAPTION. This was thirty-four if-branches
+ * matching caption text, then briefly a list of caption substrings --
+ * and neither can tell machine-gun2 from machine-gun3, which share the
+ * caption "Machine Gun", nor rocket-launcher2 from 3. The frame a round
+ * is showing is a fact about its IMAGE, so that is the key: an exact
+ * lookup, with no order to get wrong and nothing able to shadow
+ * anything else.
  *
- * FIRST MATCH WINS, AND ORDER IS THE RULE. The match is a substring of
- * the caption, so "Smoke Bomb" also matches "Pull Smoke Bomb Pin" and the
- * pin has to be tested first or it never fires. The server sends the rows
- * in that order and this walks them in order; it is the same rule the
- * branch order used to carry.
- *
- * A theme with no file for an event simply has no row, which is how the
- * `project_id != 3 && project_id != 4` guards are expressed now.
+ * See dropship/dropship-audio.php for the table and the naming: the file
+ * is the theme's word for the thing plus the frame number, the same
+ * convention the art itself uses (demo1/demo2 -> demolition1.mp3 and
+ * demolition2.mp3, or paddle1.mp3 and paddle2.mp3 under a theme that
+ * calls it a Paddle).
  */
+function roundFrame(round) {
+	var src = roundImage(round);
+	if (!src) return '';
+	/* Everything after the theme's images/ folder, without the query or
+	   the extension: ".../oculus-lounge/images/weapons/demo2.png?v=1"
+	   becomes "weapons/demo2". */
+	var i = src.indexOf('/images/');
+	if (i === -1) return '';
+	var rel = src.slice(i + 8).split('?')[0].split('#')[0];
+	var dot = rel.lastIndexOf('.');
+	return dot === -1 ? rel : rel.slice(0, dot);
+}
+
 function playRoundAudio(round) {
-	if (!window.dsAudio || !dsAudio.rows) return;
-	var cap = roundCaption(round);
-	if (cap === '') return;
-	for (var i = 0; i < dsAudio.rows.length; i++) {
-		var r = dsAudio.rows[i];
-		/* EMPTY MATCH TEXT MATCHES EVERYTHING, because indexOf('') is 0
-		   on any string -- so a theme that renamed a thing to nothing
-		   would have its first row answer every round. The server does
-		   not send one; this is the half that does not depend on that. */
-		if (!r || !r.m) continue;
-		if (cap.indexOf(r.m) === -1) continue;
-		if (r.d) { (function (f) { setTimeout(function () { loadFile(2, f); }, r.d); })(r.f); }
-		else     { loadFile(2, r.f); }
-		return;
+	if (!window.dsAudio) return;
+	var frame = roundFrame(round);
+	if (frame === '') return;
+	var row = dsAudio.frames ? dsAudio.frames[frame] : null;
+	if (!row) {
+		/* The catch-alls: a surviving round draws one of seven beach
+		   frames and there is no moment to name, so they match on the
+		   START of the path instead. */
+		var any = dsAudio.any || [];
+		for (var i = 0; i < any.length; i++) {
+			if (any[i].p && frame.indexOf(any[i].p) === 0) { row = any[i]; break; }
+		}
 	}
+	if (!row || !row.f) return;
+	if (row.d) { (function (f) { setTimeout(function () { loadFile(2, f); }, row.d); })(row.f); }
+	else       { loadFile(2, row.f); }
 }
 
 /*
