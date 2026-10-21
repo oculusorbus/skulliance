@@ -1292,12 +1292,30 @@ function setSquadAttributes($row){
 }
 
 // Render deploy button for non-deceased soldiers
+/*
+ * THE CARD'S ACTION, as a bar across the foot of it rather than a pill in the
+ * middle. See .nft form in flexbox.css for the width; the two belong together.
+ *
+ * WITHDRAW IS THE OUTLINE ONE. Both were the same solid teal with a different
+ * word in them, so a barracks of four soldiers read as four identical buttons
+ * and you had to read every one to see which were deployed. Deploy is the
+ * thing to do and stays filled; Withdraw is the undo and recedes -- and the
+ * card itself picks the outline up to mark the squad, so the state is legible
+ * without reading at all.
+ *
+ * NO id ATTRIBUTES. These were id='soldier_id' and id='deploy' INSIDE A LOOP,
+ * so a barracks of four emitted each id four times. Nothing reads them --
+ * the form posts by NAME -- but duplicate ids are exactly what broke the
+ * replay: document.getElementById() returns whichever came first, and these
+ * sit on the same page as #hidden-results. Removing them costs nothing.
+ */
 function renderDeployButton($id, $deploy=1){
 	echo "
 	<form action='dashboard.php#barracks' method='post'>
-	  <input type='hidden' id='soldier_id' name='soldier_id' value='".$id."'>
-	  <input type='hidden' id='deploy' name='deploy' value='".$deploy."'>
-	  <input class='small-button' type='submit' value='".(($deploy==1)?"Deploy":"Withdraw")."'>
+	  <input type='hidden' name='soldier_id' value='".$id."'>
+	  <input type='hidden' name='deploy' value='".$deploy."'>
+	  <input class='small-button".(($deploy==1)?"":" secondary")."' type='submit' value='"
+	    .(($deploy==1)?"Deploy":"Withdraw")."'>
 	</form>";
 }
 
@@ -1891,7 +1909,7 @@ function renderBuyButton($id){
 	if(checkSquadCount($conn) > 0){
 		echo "
 		<form action='dashboard.php#armory' method='post'>
-		  <input type='hidden' id='item_id' name='item_id' value='".$id."'>
+		  <input type='hidden' name='item_id' value='".$id."'>
 		  <input class='small-button' type='submit' value='Buy'>
 		</form>";
 	}

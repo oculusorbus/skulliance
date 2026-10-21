@@ -2,6 +2,33 @@
   box-sizing: border-box;
 }
 
+/*
+ * THE SAME TOKENS DHC USES, because the two are one platform and only looked
+ * like two. The colours were already right -- #0a1929 panels, #00c8a0 accent,
+ * #e8eaed text are the values dhcarena.php declares as --panel, --ochre and
+ * --bone -- so what made this app read as the amateur cousin was never the
+ * palette. It was SHAPE: 0.5rem to 2.5rem radii against DHC's 3px, teal 3D
+ * shadows under every button, and one hard offset drop-shadow pasted under
+ * twelve different things.
+ *
+ * Named with a --ds- prefix so nothing here can collide with the platform's
+ * own tokens if the two stylesheets ever meet on one page.
+ */
+:root {
+  --ds-ink:    #07111d;
+  --ds-panel:  #0a1929;
+  --ds-panel2: #0d1e2e;
+  --ds-line:   #1b3346;
+  --ds-bone:   #e8eaed;
+  --ds-dim:    #7a9eb0;
+  --ds-teal:   #00a882;
+  --ds-ochre:  #00c8a0;
+  /* ONE RADIUS for everything structural. The exceptions are the toggle pill
+     and the circular avatars, which are round on purpose and are left alone
+     below -- a pill at 3px is not a pill. */
+  --ds-r: 3px;
+}
+
 html {
   height: 100%;
 }
@@ -77,8 +104,6 @@ a:hover { color: #00a882; }
   display: flex;
   background-color: #040c16;
   font-family: Arial, sans-serif;
-  -webkit-filter: drop-shadow(5px 5px 5px #202225);
-  filter: drop-shadow(5px 5px 5px #202225);
   /* Matches Skulliance's own .navbar exactly -- position+z-index here is
      what actually keeps the dropdown menus above page content (the game
      board), not .nav-dropdown-menu's own z-index:100 alone. Without an
@@ -258,7 +283,7 @@ a:hover { color: #00a882; }
 
 .wallet-connect select {
 	width: 148px;
-    border-radius: 0.5rem;
+    border-radius: var(--ds-r);
     height: 30px;
     font-weight: bold;
     background-color: #0a1929;
@@ -275,11 +300,9 @@ a:hover { color: #00a882; }
 
 #player-stats {
 	background-color: #0a1929;
-    border-radius: 1.5rem;
+    border-radius: var(--ds-r);
     padding: 10px;
     border: 1px solid rgba(0,200,160,0.15);
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
 }
 
 /* Soldiers column */
@@ -319,7 +342,7 @@ a:hover { color: #00a882; }
 
 #filterTroops {
     width: 130px;
-    border-radius: 0.5rem;
+    border-radius: var(--ds-r);
     height: 30px;
     font-weight: bold;
     background-color: #0a1929;
@@ -418,8 +441,6 @@ a:hover { color: #00a882; }
 #transactions .icon {
     width: 25px;
     padding-right: 0px;
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
 }
 
 .credit {
@@ -448,7 +469,7 @@ a:hover { color: #00a882; }
 
 #results {
     background-color: black;
-    border-radius: 25px;
+    border-radius: var(--ds-r);
 	text-align: center;
 	width: 100%;
 	min-height: 898px;
@@ -464,8 +485,6 @@ a:hover { color: #00a882; }
 	
 	border: 5px solid #07111d;
 	
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
 }
 
 #results img {
@@ -483,8 +502,6 @@ a:hover { color: #00a882; }
 	width: 20px;
 	position: relative;
     top: 4px;
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
 }
 
 #leaderboard li {
@@ -501,7 +518,7 @@ a:hover { color: #00a882; }
 
 .inventory-item{
 	background-color: #0a1929;
-    border-radius: 10px;
+    border-radius: var(--ds-r);
     padding: 5px;
 	border: 1px solid rgba(0,200,160,0.15);
 }
@@ -522,8 +539,6 @@ a:hover { color: #00a882; }
 	display: flex;
     flex-direction: row;
     align-items: center;
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
 }
 
 .item-stats{
@@ -533,8 +548,6 @@ a:hover { color: #00a882; }
 .icon {
 	width: 55px;
 	padding-right: 20px;
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
 }
 
 .avatar {
@@ -557,14 +570,21 @@ a:hover { color: #00a882; }
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 16px;
   cursor:pointer;
-  border-radius: 0.5rem;
+  border-radius: var(--ds-r);
   font-weight: bold;
-  font-size: 2rem;
-  box-shadow: 0 6px #007a62;
+  /* 2rem was a 32px label on the Play button. It read as a toy. */
+  font-size: 1.15rem;
+  letter-spacing: .02em;
   width: 100%;
   font-family: Arial, sans-serif;
+  /*
+   * NO 3D SHADOW. `box-shadow: 0 6px #007a62` plus a translateY on :active is
+   * the skeuomorphic pressed-key trick, and it is most of what dated this UI.
+   * A flat fill that darkens is what DHC does and what the rest of the
+   * platform does. The transition is for the colour only -- nothing moves.
+   */
+  transition: background-color .12s ease, border-color .12s ease;
 }
 
 .button:hover {
@@ -572,25 +592,37 @@ a:hover { color: #00a882; }
 }
 
 .button:active {
-  background-color: #00a882;
-  box-shadow: 0 3px #007a62;
-  transform: translateY(3px);
+  background-color: #009774;
+}
+/* A keyboard user has to be able to see where they are. There was no focus
+   style at all, on any control in this app. */
+.button:focus-visible,
+.small-button:focus-visible {
+  outline: 2px solid var(--ds-ochre);
+  outline-offset: 2px;
 }
 
 .small-button {
   background-color: #00c8a0;
   border: none;
   color: #07111d;
-  padding: 3px 10px;
+  /*
+   * BIG ENOUGH TO HIT. This was 3px/10px at 12px type -- a 22px-tall target
+   * under a 165px picture, which is below every touch guideline going and
+   * read as an afterthought next to the thing it acts on. 34px tall is the
+   * usual floor for a primary tap target.
+   */
+  padding: 8px 16px;
+  min-height: 34px;
   text-align: center;
   text-decoration: none;
   display: inline-block;
-  font-size: 12px;
+  font-size: 13px;
   cursor:pointer;
-  border-radius: 0.5rem;
+  border-radius: var(--ds-r);
   font-weight: bold;
-  box-shadow: 0 4px #007a62;
   font-family: Arial, sans-serif;
+  transition: background-color .12s ease, border-color .12s ease;
 }
 
 .small-button:hover {
@@ -598,9 +630,24 @@ a:hover { color: #00a882; }
 }
 
 .small-button:active {
-  background-color: #00a882;
-  box-shadow: 0 2px #007a62;
-  transform: translateY(2px);
+  background-color: #009774;
+}
+/*
+ * THE SECOND ACTION IS AN OUTLINE, NOT A SECOND SOLID FILL. Deploy and
+ * Withdraw were the same teal button with a different word in it, so a squad
+ * of four read as four identical buttons and you had to read every one to
+ * find out what state you were in. Withdraw is the undo, and it should look
+ * like it.
+ */
+.small-button.secondary {
+  background-color: transparent;
+  border: 1px solid var(--ds-line);
+  color: var(--ds-dim);
+}
+.small-button.secondary:hover {
+  background-color: transparent;
+  border-color: var(--ds-ochre);
+  color: var(--ds-ochre);
 }
 /*
 .td3 {
@@ -678,7 +725,7 @@ li form {
 }
 
 .achievement{
-	border-radius: 10px;
+	border-radius: var(--ds-r);
 	margin: 10px;
 	border: 1px solid rgba(0,200,160,0.15);
 	max-width: 660px;
@@ -688,8 +735,6 @@ li form {
 	color: white;
 	height: 100px;
 	background-color: #0a1929;
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
 }
 
 .achievement .icon {
@@ -702,8 +747,6 @@ li form {
     -ms-transform: translateY(-50%);
     transform: translateY(-50%);
     top:50%;
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
 }
 
 .achievement .text {
@@ -725,8 +768,6 @@ li form {
 
 .locked .icon {
 	opacity: 50%;
-	-webkit-filter: drop-shadow(5px 5px 5px #202225);
-    filter: drop-shadow(5px 5px 5px #202225);
 }
 
 .unlocked {
@@ -749,7 +790,7 @@ li form {
 
 .nft {
 	background-color: #0a1929;
-	border-radius: 2.5rem;
+	border-radius: var(--ds-r);
 	float: left;
 	width: 25%;
 	font-size: 12px;
@@ -757,10 +798,12 @@ li form {
 
 .nft-data{
 	background-color: #0a1929;
-	border: 1px solid rgba(0,200,160,0.15);
+	/* var(--ds-line), not a 15%-alpha teal: the same hairline DHC draws every
+	   panel with, so a card and a Fighter card read as the same furniture. */
+	border: 1px solid var(--ds-line);
 	padding: 10px;
 	margin: 10px;
-	border-radius: 10px;
+	border-radius: var(--ds-r);
 	min-height: 300px;
 }
 
@@ -788,15 +831,67 @@ li form {
 }
 
 .nft img {
-	border-radius: 0.5rem;
+	border-radius: var(--ds-r);
 	max-width: 175px;
 	max-height: 165px;
 	width: inherit;
 }
 
-.nft .small-button {
-	margin: 10px;
+/*
+ * THE WHOLE FOOT OF THE CARD IS THE BUTTON.
+ *
+ * It was a pill with `margin: 10px`, floating centred under a 165px picture:
+ * about 60x22px of target for the only thing the card does. Reported as "the
+ * deploy buttons are very tiny".
+ *
+ * A BAR AND NOT A CLICKABLE CARD, which was the other option on the table.
+ * The card is mostly a stat block somebody reads -- rank, armour, gear, level
+ * -- and making the act of reading it also the act of mutating your squad
+ * means every stray tap changes the squad. The bar gets the same reach
+ * without that: it is the full width of the card, 34px tall, and it still
+ * says which of the two things it does.
+ */
+.nft form {
+	width: 100%;
+	margin-top: auto;
 }
+.nft .small-button {
+	width: 100%;
+	margin: 10px 0 0;
+}
+/*
+ * The card is a column so the bar can sit at the bottom of it with
+ * `margin-top:auto` -- cards in a row are different heights (a long rank
+ * name wraps) and a bar that floats at the end of the text leaves a ragged
+ * row of buttons at four different heights.
+ */
+.nft-data {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+.nft-data > span { flex: 0 0 auto; }
+/*
+ * DEPLOYED CARDS READ AS A SET. :has() rather than a class on the card,
+ * because the card is rendered by one function and the state is decided by
+ * another; the outline button IS the state, so the card can just ask. A
+ * browser without :has() gets the old flat look and loses nothing but the
+ * highlight.
+ */
+/*
+ * ONE FRAME, AND IT IS .nft-data's. .nft is the layout cell -- 25% wide, no
+ * padding -- and .nft-data is the box you can see, inset from it by its own
+ * 10px margin. A border on both draws two rectangles 10px apart, which is
+ * what putting it on .nft first produced.
+ */
+.nft-data { transition: border-color .12s ease; }
+.nft:hover .nft-data { border-color: #294a63; }
+.nft-data:has(.secondary) { border-color: var(--ds-ochre); }
+/*
+ * The shop's Buy sits in a 20%-wide table cell, so it takes the full width of
+ * that cell and gives back the horizontal padding it cannot use.
+ */
+.item .small-button { width: 100%; padding-left: 8px; padding-right: 8px; }
 
 .nft-name {
 	font-size: 0.85rem;
@@ -1018,9 +1113,7 @@ input:checked + .slider:before {
   padding-top: 8px;
   padding-right: 10px;
   padding-left: 10px;
-  border-radius: 4px;
-  -webkit-filter: drop-shadow(5px 5px 5px #202225);
-  filter: drop-shadow(5px 5px 5px #202225);
+  border-radius: var(--ds-r);
 }
 
 /* Footer */
@@ -1111,7 +1204,7 @@ input:checked + .slider:before {
 }
 #quick-menu img.selected {
 	border: 1px solid rgba(0,200,160,0.45);
-	border-radius: 8px;
+	border-radius: var(--ds-r);
 }
 
 /* Responsive layout - when the screen is less than 700px wide, make the two columns stack on top of each other instead of next to each other */
@@ -1183,8 +1276,6 @@ input:checked + .slider:before {
 	}
 	#transactions {
 		font-size: 7px;
-		-webkit-filter: drop-shadow(5px 5px 5px #202225);
-	    filter: drop-shadow(5px 5px 5px #202225);
 	}
 	#transactions th, #transactions td {
 		padding: 0px;
@@ -1291,7 +1382,7 @@ input:checked + .slider:before {
 	}
 	.lb-view-switch img.selected {
 		border: 1px solid rgba(0,200,160,0.45);
-		border-radius: 8px;
+		border-radius: var(--ds-r);
 	}
 	.lb-pane.lb-hidden {
 		display: none;
