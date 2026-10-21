@@ -10,6 +10,11 @@
  * that stops a fatal -- is read from source, and each of those says why.
  */
 require_once __DIR__ . '/dropship/dropship-traitdrop.php';
+/* dropshipThemeSlug() is the rule dropshipDropAward() derives a source key
+   with, so the key check below has to call the real one rather than
+   reimplement it. Harmless here: the file declares functions and nothing
+   else, and it is already loaded on any real request. */
+require_once __DIR__ . '/dropship/dropship-themes.php';
 
 $fail = 0;
 function ok($cond, $msg) {
@@ -373,7 +378,8 @@ require_once __DIR__ . '/dhcfighters-config.php';
 foreach (array('dropship'      => 'Drop Ship',
                'oculuslounge'  => 'Oculus Lounge',
                'filthymermaid' => 'Filthy Mermaid',
-               'dreadcity'     => 'Dread City') as $k => $label) {
+               'dreadcity'     => 'Dread City',
+               'dhc2fighters'  => 'DHC2 Fighters') as $k => $label) {
 	$g = dhcf_game($k);
 	ok(is_array($g), "$k is not in DHCF_GAMES, so dhcf_award() will not resolve it");
 	if (!is_array($g)) continue;
@@ -420,6 +426,34 @@ foreach (array('dropship'      => 'Drop Ship',
 	 * is how an uncapped game would silently become an unplayable one.
 	 */
 	ok(dhcf_cap($k) === 0, "$k is capped at " . dhcf_cap($k) . " a day again");
+	/*
+	 * THE KEY IS THE SLUG WITH THE HYPHENS OUT, which is the one thing that
+	 * fails SILENTLY: dropshipDropAward() falls back to 'dropship' for an
+	 * unregistered key, so a mistyped one still pays and simply credits the
+	 * wrong game. Derived here through the same call the award uses rather
+	 * than written out, so a change to the slug rule breaks this and not
+	 * the live credit.
+	 */
+	$slug = array('dropship' => 'drop-ship', 'oculuslounge' => 'oculus-lounge',
+	              'filthymermaid' => 'filthy-mermaid', 'dreadcity' => 'dread-city',
+	              'dhc2fighters' => 'dhc2-fighters');
+	ok(str_replace('-', '', dropshipThemeSlug($slug[$k])) === $k,
+	   "$k is not what dropshipDropAward() derives from the slug {$slug[$k]}");
+	/* AND THE LINK GOES TO THAT GAME. The reveal and the Collection both
+	   send a player to $g['url']; pointing it at another theme is a dead
+	   end that looks like a working link. */
+	$proj = array('dropship' => 1, 'dreadcity' => 2, 'filthymermaid' => 3,
+	              'oculuslounge' => 4, 'dhc2fighters' => 5);
+	ok(strpos($g['url'], 'project_id=' . $proj[$k]) !== false,
+	   "$k links to {$g['url']}, which is not project {$proj[$k]}");
+	/*
+	 * THE X TAG IS A REAL HANDLE SHAPE. A drop shared on X puts this in the
+	 * post, so a malformed or invented one @-tags whoever does hold it --
+	 * the same hazard dhc-fighter-modal.php names about Discord usernames.
+	 * Shape only: nothing here can tell whether an account exists.
+	 */
+	ok(preg_match('/^@[A-Za-z0-9_]{1,15}$/', $g['x_tag']) === 1,
+	   "$k has an x_tag that is not a valid handle: {$g['x_tag']}");
 }
 /*
  * BOTH ENFORCERS, each in its own shape. dhcf_award() reads the cap into

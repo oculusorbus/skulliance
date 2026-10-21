@@ -214,12 +214,29 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 			//   function getGuardiansWebhook(){ return "https://discord.com/api/webhooks/..."; }
 			$webhook = function_exists('getGuardiansWebhook') ? getGuardiansWebhook() : "";
 		}else if($channel == "dhcfighters"){
-			// Same guard as its neighbours. getDHCFightersWebhook() is being
-			// added to credentials/webhooks_credentials.php separately, and a
-			// player earning a trait must never see an error because the
-			// webhook is not wired up yet -- the drop is already in the ledger
-			// by the time this runs.
-			$webhook = function_exists('getDHCFightersWebhook') ? getDHCFightersWebhook() : "";
+			// Same guard as its neighbours. A player earning a trait must
+			// never see an error because the webhook is not wired up yet --
+			// the drop is already in the ledger by the time this runs.
+			//
+			// TWO NAMES ACCEPTED, and the second one is not a typo. The
+			// platform and Drop Ship each load their own
+			// credentials/webhooks_credentials.php, and both files end up in
+			// one PHP namespace on a request that touches both -- that is
+			// already how "Cannot redeclare getWebhook()" took down the play
+			// page (see dropship/dropship-traitdrop.php). Prefixing a
+			// credential with Skulliance is the obvious defence against
+			// that, so a credential written that way is honoured rather than
+			// silently ignored for being spelled defensively.
+			//
+			// Expected in credentials/webhooks_credentials.php as EITHER:
+			//   function getDHCFightersWebhook(){ return "https://discord.com/api/webhooks/..."; }
+			//   function getSkullianceDHCFightersWebhook(){ return "..."; }
+			// The unprefixed name wins if somebody has defined both, because
+			// it is the one every neighbour here uses.
+			$webhook = function_exists('getDHCFightersWebhook')
+				? getDHCFightersWebhook()
+				: (function_exists('getSkullianceDHCFightersWebhook')
+					? getSkullianceDHCFightersWebhook() : "");
 		}else if($channel == "dhcarena"){
 			// Arena battle results. Same guard as its neighbours, and it earns
 			// it twice over: this fires from inside dhca_finish(), AFTER the

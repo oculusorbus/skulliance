@@ -90,11 +90,17 @@ function dropshipRewardProjects() {
 		2 => 2,     // Dread City     -> DREAD
 		3 => 2,     // Filthy Mermaid -> DREAD
 		4 => 21,    // Oculus Lounge  -> MOON
+		5 => 9,     // DHC2 Fighters  -> MAXI (Maxingo)
 	);
 }
 
 /*
- * Handle Drop Ship DREAD and Oculus Lounge MOON rewards.
+ * Handle the weekly Drop Ship theme rewards: DREAD, MOON and MAXI.
+ *
+ * ONE MAP, which is the whole point of dropshipRewardProjects() above. A
+ * theme is paid by adding a row to it and nothing else -- this used to be a
+ * second hardcoded list of project ids, and Filthy Mermaid shipped a weekly
+ * cycle that paid nobody because only one of the two lists was updated.
  *
  * UNAUTHENTICATED, AND THAT IS A KNOWN HOLE. This runs at include time and
  * db.php is included by every page, so an unsigned POST of three fields to

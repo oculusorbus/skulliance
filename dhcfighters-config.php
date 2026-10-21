@@ -1100,6 +1100,28 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead',
 	                          'unlisted' => true),
+	/*
+	 * Maxingo's art, on Digital Hell Citizens 2: Fighters.
+	 *
+	 * THE KEY IS THE SLUG WITH THE HYPHENS TAKEN OUT, because that is what
+	 * dropshipDropAward() derives -- 'dhc2-fighters' -> 'dhc2fighters'. Get
+	 * it wrong and nothing breaks loudly: the drop still lands, credited to
+	 * Drop Ship, because an unregistered key falls back rather than failing.
+	 * That is the right failure and a silent one, so the key was confirmed
+	 * against the theme's actual slug rather than guessed.
+	 *
+	 * @MMAXI404 rather than @ohh_meed: the art is Maxingo's, and the tag is
+	 * what a shared drop credits on X. Taken from the account itself
+	 * (x.com/MMAXI404) rather than guessed from the name -- an @ in a post
+	 * tags whoever actually holds that handle, so a near miss credits a
+	 * stranger. Same rule dhc-fighter-modal.php follows for a builder.
+	 */
+	'dhc2fighters'   => array('label' => 'DHC2 Fighters', 'x_tag' => '@MMAXI404', 'url' => 'dropship/dashboard.php?project_id=5',
+	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
+	                          'base' => 'placement_1',
+	                          'cap' => 0,
+	                          'limit_note' => 'only when you take the lead',
+	                          'unlisted' => true),
 
 	// NOT A GAME, and 'unlisted' is what that now costs it. It stays in
 	// DHCF_GAMES because everything functional reads this array -- dhcf_award(),

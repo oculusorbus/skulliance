@@ -1287,8 +1287,22 @@ preg_match_all('/^\t\t(\d+) => (\d+),/m',
 	substr($skdb, strpos($skdb, 'function dropshipRewardProjects()'), 400), $pm, PREG_SET_ORDER);
 $pay = array();
 foreach ($pm as $row) $pay[(int)$row[1]] = (int)$row[2];
-ok($pay === array(1 => 2, 2 => 2, 3 => 2, 4 => 21),
+ok($pay === array(1 => 2, 2 => 2, 3 => 2, 4 => 21, 5 => 9),
    'the payout map changed: ' . json_encode($pay));
+/*
+ * A THEME THAT PAYS NEEDS A ROW HERE AND NOTHING ELSE, which is why the map
+ * exists: this was a second hardcoded list once and Filthy Mermaid shipped a
+ * weekly cycle that paid nobody because only one of the two was updated.
+ * Every ACTIVE theme should therefore be payable -- checked against the
+ * seed, since the live themes table is not in the repository.
+ */
+preg_match_all("/\\((\\d+),\\s*'[a-z0-9-]+',\\s*(\\d)/",
+               (string)file_get_contents(__DIR__ . '/dropship/dropship-themes-seed.sql'), $seeded);
+foreach ($seeded[1] as $i => $pid) {
+	if ($seeded[2][$i] !== '1') continue;            /* inactive themes pay nothing */
+	ok(isset($pay[(int)$pid]),
+	   "project $pid has an active theme in the seed and no row in the payout map");
+}
 /* Chosen HERE, not posted. */
 ok(strpos($skdb, '$ds_map = dropshipRewardProjects();') !== false,
    'the endpoint no longer uses its own map');
@@ -1375,10 +1389,25 @@ if (!empty($im)) {
 /* Same games, and DREAD exactly where the map says project 2. */
 ok(array_keys($said) === array_keys($pay),
    'the instructions and the payout map cover different games');
+/*
+ * SKULLIANCE PROJECT -> THE CURRENCY IT HOLDS. Written out because the check
+ * is "does the page name the currency the balance is actually credited in",
+ * and that needs the real answer from somewhere. It was `$pay[$pid] === 2 ?
+ * 'DREAD' : 'MOON'`, which quietly called every future currency MOON -- so
+ * adding MAXI made the ternary wrong rather than the code.
+ *
+ * An unknown project fails loudly here instead of being guessed at: a new
+ * currency should cost one deliberate line in this list.
+ */
+$currency_of = array(2 => 'DREAD', 21 => 'MOON', 9 => 'MAXI');
 foreach ($said as $pid => $cur) {
-	$expect = ($pay[$pid] === 2) ? 'DREAD' : 'MOON';
+	ok(isset($currency_of[$pay[$pid]]),
+	   "game $pid credits project " . $pay[$pid] . ", whose currency this harness does not know");
+	if (!isset($currency_of[$pay[$pid]])) continue;
+	$expect = $currency_of[$pay[$pid]];
 	ok($cur === $expect,
-	   "the instructions call game $pid a $cur payout but it credits project " . $pay[$pid]);
+	   "the instructions call game $pid a $cur payout but it credits project " . $pay[$pid]
+	   . ", which holds $expect");
 }
 
 echo "\nthe weekly cycle runs for every live theme\n";

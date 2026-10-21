@@ -78,8 +78,8 @@ Grunts are a Drop Ship feature. Oculus Lounge has no equivalent.
 ## The other themes, and who can play them
 
 The same game runs under several skins, each with its own collection, art,
-wording and leaderboard: **Drop Ship**, **Dread City**, **Filthy Mermaid** and
-[[games-oculus-lounge]]. Press **Select Game** on the dashboard and pick one by
+wording and leaderboard: **Drop Ship**, **Dread City**, **Filthy Mermaid**,
+**DHC2 Fighters** and [[games-oculus-lounge]]. Press **Select Game** on the dashboard and pick one by
 its artwork. The one you are in is marked.
 
 **One qualifying NFT is the gate.** Hold a single NFT from a theme's collection

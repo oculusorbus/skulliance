@@ -172,7 +172,8 @@ include 'header.php';
 							   Dread City and Filthy Mermaid both pay DREAD and
 							   would have read as MOON here. Named per game, from
 							   the same table the payout uses. */
-							$ds_pays = array(1 => 'DREAD', 2 => 'DREAD', 3 => 'DREAD', 4 => 'MOON');
+							$ds_pays = array(1 => 'DREAD', 2 => 'DREAD', 3 => 'DREAD', 4 => 'MOON',
+							                 5 => 'MAXI');
 							$ds_pid = (int)($_SESSION['userData']['dropship_project_id'] ?? 0);
 							$payout_currency = isset($ds_pays[$ds_pid]) ? $ds_pays[$ds_pid] : '';
 							$payout_icon = '/staking/icons/' . strtolower($payout_currency ?: 'dread') . '.png';

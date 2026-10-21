@@ -18,7 +18,7 @@ if(isset($_GET['automate'])){
 	 * END the games the other themes were in the middle of. That is a
 	 * destructive way to ask for one small thing.
 	 */
-	$all = array(1, 2, 3, 4);
+	$all = array(1, 2, 3, 4, 5);
 	$only = isset($_GET['project_id']) ? (int)$_GET['project_id'] : 0;
 	if ($only && !in_array($only, $all, true)) {
 		echo "project_id must be one of: " . implode(', ', $all) . "\n";
