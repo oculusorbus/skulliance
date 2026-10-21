@@ -1265,11 +1265,56 @@ $ar_fail = 0;
 function ar_ok($cond, $msg) { global $ar_fail; if (!$cond) { $ar_fail++; echo "  FAIL  $msg\n"; } }
 $ar = (string)@file_get_contents(__DIR__ . '/dhcarena.php');
 
+/*
+ * IT PARSES. Trivial, and the one thing that catches an unbalanced
+ * if/endif -- which is the shape of mistake hand-editing this template
+ * produces, and the shape a source-reading harness is blind to: every
+ * span is still present and still in the right order, the file just
+ * does not run. The page is 3,000 lines of interleaved PHP and markup
+ * and nothing else here would notice.
+ */
+$lint = (string)shell_exec('php -l ' . escapeshellarg(__DIR__ . '/dhcarena.php') . ' 2>&1');
+ar_ok(strpos($lint, 'No syntax errors') !== false, 'dhcarena.php does not parse: ' . trim($lint));
+
 $i_odds = strpos($ar, '<span class="odds">');
 $i_rec  = strpos($ar, '<span class="nemrec">');
 ar_ok($i_odds !== false && $i_rec !== false, 'the rival row lost one of its two spans');
 ar_ok($i_odds !== false && $i_rec !== false && $i_odds < $i_rec,
    'the odds are written after the history line, which breaks the row and takes them down with it');
+
+/*
+ * AND WHICH SIDE OF THE GUARD EACH ONE IS ON.
+ *
+ * Reordering them by hand put .odds INSIDE `if ($nem)` and left .nemrec
+ * outside it -- so every row without a rivalry lost its percentages
+ * entirely, and every such row then rendered the history block against
+ * keys that are not there. Four "Undefined array key" warnings per row,
+ * printed into the page, because display_errors is on.
+ *
+ * Checking the ORDER of the two spans did not catch that: the order was
+ * right. So this walks the row counting if/endif depth and asks where
+ * each span actually sits.
+ */
+$row_at  = strpos($ar, '<div class="a-foe');
+$row_end = strpos($ar, '<?php endforeach; ?>', $row_at);
+$row = ($row_at === false || $row_end === false) ? '' : substr($ar, $row_at, $row_end - $row_at);
+ar_ok($row !== '', 'the foe row could not be isolated; the checks below prove nothing');
+/* Walk the PHP control structures in order and record the open guards
+   at the point each span is emitted. */
+preg_match_all('/<\?php if \((\$[a-z_]+)\):|<\?php endif;|<span class="(odds|nemrec)"/',
+	$row, $tok, PREG_SET_ORDER);
+$stack = array();
+$under = array();
+foreach ($tok as $t) {
+	if (!empty($t[2])) { $under[$t[2]] = $stack; continue; }
+	if (strpos($t[0], 'endif') !== false) { array_pop($stack); continue; }
+	$stack[] = $t[1];
+}
+ar_ok(isset($under['odds']) && !in_array('$nem', $under['odds'], true),
+   'the odds are inside the rivalry guard, so a row without a rivalry has none at all');
+ar_ok(isset($under['nemrec']) && in_array('$nem', $under['nemrec'], true),
+   'the history line is outside the rivalry guard, so every ordinary row renders it '
+ . 'against keys that do not exist');
 
 /* AND THE HISTORY STILL TAKES ITS OWN LINE, or it would sit inline and
    squeeze the name. */

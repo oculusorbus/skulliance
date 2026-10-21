@@ -1669,26 +1669,34 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <img src="<?php echo htmlspecialchars($av); ?>" alt="">
           <span class="n"><?php echo htmlspecialchars($o['username']); ?></span>
           <span class="m"><?php echo (int)$o['fighters']; ?> Fighters · best <?php echo number_format((int)$o['best']); ?></span>
+          <?php /* Filled by paintOdds() once a Crew is picked: the gap depends
+                   on which Fighters you bring, so it cannot be rendered here.
+
+                   BEFORE THE RECORD, AND NOT INSIDE ITS GUARD. .nemrec is
+                   flex:1 0 100%, so it breaks the line and takes whatever
+                   follows it down with it -- which put these percentages on
+                   a third line, at the left, while every row without a
+                   rivalry kept them at the right of the first. Every row has
+                   this span: it is the one column the whole list is compared
+                   down. */ ?>
+          <span class="odds"></span>
           <?php if ($nem): ?>
-          <?php /* The record first, because it is the claim. Then how many
-                   of those they started -- the half a defender is never
-                   told about, since only the attacker is benched and only
-                   the attacker reaches the ladder.
+          <?php /* The record, which is the claim. Then how many of those
+                   they started -- the half a defender is never told about,
+                   since only the attacker is benched and only the attacker
+                   reaches the ladder.
 
                    LABELLED, NOT A SCORELINE. This read "21-10 over 31
                    battles", and a bare pair does not say whose number is
                    whose -- reported as exactly that. The total went with it:
                    outcome is only ever 1 or 2, so there are no draws and
-                   "over 31" was 21+10 restated. */ ?>
-          <?php /* Each stat is one <em>, and each <em> is nowrap. The line
+                   "over 31" was 21+10 restated.
+
+                   Each stat is one <em>, and each <em> is nowrap. The line
                    itself wraps, but only BETWEEN stats -- otherwise a long
                    row breaks after "They started" and leaves the number
                    stranded on its own line, which is what it did on a
                    phone. */ ?>
-          <span class="odds"></span>
-          <?php endif; ?>
-          <?php /* Filled by paintOdds() once a Crew is picked: the gap depends
-                   on which Fighters you bring, so it cannot be rendered here. */ ?>
           <span class="nemrec"><em>You won <b><?php echo (int)$o['my_wins']; ?></b></em><i>&middot;</i><em>They won <b><?php echo (int)$o['their_wins']; ?></b></em><?php /* A PERCENTAGE, NOT A COUNT. "They started 20" against a 21-11
                    record means adding the two up and comparing, in your head,
                    every time you look at it. The question this stat exists to
@@ -1700,6 +1708,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                    draws. Shown even at 0%, which is itself the answer: you
                    have started every one of them. */
                 $pct = (int)round((int)$o['they_attacked'] / max(1, (int)$o['battles']) * 100); ?><i>&middot;</i><em title="<?php echo (int)$o['they_attacked']; ?> of <?php echo (int)$o['battles']; ?> battles">They started <b><?php echo $pct; ?>%</b></em></span>
+          <?php endif; ?>
           <?php if ($paid): ?><span class="paidtag" title="One trait per opponent per day. A rematch still counts for the ladder.">Beaten today &middot; no trait available</span><?php endif; ?>
         </div>
       <?php endforeach; ?>
