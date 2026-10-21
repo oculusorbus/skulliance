@@ -38,6 +38,12 @@ up and returns the soldiers to the barracks so you can rebuild. While a
 soldier belongs to a saved squad it is not deployed on its own, so a squad
 cannot be taken apart by accident.
 
+Your deployed squad lists the soldiers you added yourself first, in the order
+you added them, and anything that arrived through **Deploy squad** after them
+in armour order. **Withdraw all** clears the whole squad in one press, which
+is what you want when you are setting several squads up back to back: build,
+save, clear, build the next. It never touches a saved squad.
+
 **A soldier belongs to one squad.** If somebody on the field is already in a
 saved squad, saving says so and names them: disperse that squad first, or
 withdraw them. Members are listed heaviest armour first, which is the order

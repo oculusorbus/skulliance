@@ -69,6 +69,8 @@ if (isset($_POST['squad_save'])) {
 	$ds_squad_msg = dropshipSquadDisperse($conn, $_POST['squad_disperse']);
 } elseif (isset($_POST['squad_drop'])) {
 	$ds_squad_msg = dropshipSquadDrop($conn, $_POST['squad_id'] ?? 0, $_POST['squad_drop']);
+} elseif (isset($_POST['squad_clear'])) {
+	$ds_squad_msg = dropshipWithdrawAll($conn);
 }
 
 //Item purchases
@@ -884,10 +886,23 @@ if ($ds_can_animate):
 					 */
 					if (function_exists('dropshipSquadsTable') && dropshipSquadsTable($conn)
 					    && checkSquadCount($conn) > 0): ?>
-					<form class="dssq-save" action="dashboard.php#barracks" method="post">
-						<input type="hidden" name="squad_save" value="1">
-						<input class="small-button" type="submit" value="Save this squad">
-					</form>
+					<div class="dssq-save">
+						<form action="dashboard.php#barracks" method="post">
+							<input type="hidden" name="squad_save" value="1">
+							<input class="small-button" type="submit" value="Save this squad">
+						</form>
+						<?php /* BUILDING IN BATCHES is the reason this is here: set a
+						         squad up, save it, clear it, set up the next. Four
+						         individual Withdraws per squad is sixteen presses to
+						         save four, which is the friction the feature exists
+						         to remove. It empties the FIELD and touches no saved
+						         squad, so clearing to build the next one cannot cost
+						         you the one you just saved. */ ?>
+						<form action="dashboard.php#barracks" method="post">
+							<input type="hidden" name="squad_clear" value="1">
+							<input class="small-button secondary" type="submit" value="Withdraw all">
+						</form>
+					</div>
 					<?php endif; ?>
 				</div>
 			<?php } ?>

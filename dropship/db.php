@@ -1141,11 +1141,19 @@ function deploySoldier($conn, $id, $active){
 		 * is not yours now updates nothing at all, silently, which is the
 		 * right answer to a request that was never legitimate.
 		 */
-		$sql = "UPDATE soldiers SET active = '".$active."' WHERE id = '".$id."' AND user_id = '".$_SESSION['userData']['dropship_user_id']."' AND project_id = '".$_SESSION['userData']['dropship_project_id']."'";
-		if ($conn->query($sql) === TRUE) {
-		  //echo "Record updated successfully";
-		} else {
-		  //echo "Error: " . $sql . "<br>" . $conn->error;
+		/* WHEN, so the field can show them in the order they were added.
+		   Cleared on withdraw rather than left behind: a soldier put back on
+		   the field later belongs at the END of the row, not wherever it sat
+		   the first time. The column is optional at runtime like `ko` is in
+		   the Arena -- see the fallback below. */
+		$stamp = ($active == 1) ? "active_at = NOW()" : "active_at = NULL";
+		$sql = "UPDATE soldiers SET active = '".$active."', ".$stamp." WHERE id = '".$id."' AND user_id = '".$_SESSION['userData']['dropship_user_id']."' AND project_id = '".$_SESSION['userData']['dropship_project_id']."'";
+		/* BEFORE THE ALTER HAS RUN, a deploy must still work. Naming a column
+		   that does not exist FAILS the statement rather than degrading it,
+		   and losing the ordering is worth a retry where losing the deploy is
+		   not -- the same bargain dhca_crew() strikes over its `ko`. */
+		if ($conn->query($sql) !== TRUE) {
+			$conn->query("UPDATE soldiers SET active = '".$active."' WHERE id = '".$id."' AND user_id = '".$_SESSION['userData']['dropship_user_id']."' AND project_id = '".$_SESSION['userData']['dropship_project_id']."'");
 		}
 	}else{
 		echo "<script type='text/javascript'>alert('Your squad is full.');</script>";
@@ -1208,6 +1216,16 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 	  // dropshipLocalNftImages() needs the whole list up front to do one
 	  // batch query instead of one per soldier.
 	  $rows = $result->fetch_all(MYSQLI_ASSOC);
+	  /*
+	   * THE FIELD'S OWN ORDER. The list above is ordered by title and id,
+	   * which is neither the order the player added them nor the order their
+	   * squad card shows -- so four soldiers deployed one at a time came back
+	   * in an order nobody chose. See dropshipFieldOrder().
+	   */
+	  if ($active === 1 && !$all && function_exists('dropshipFieldOrder')) {
+		  $rows = dropshipFieldOrder($rows, dropshipDeployOrder($conn),
+		                             dropshipSquadMembership($conn));
+	  }
 	  /* ANY theme, not just project 4. The images are Skulliance's local
 	     cache of whatever collection the project points at. */
 	  $oculus_lounge_images = array();
@@ -1276,6 +1294,26 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 	} else {
 	  //echo "0 results";
 	}
+}
+
+/**
+ * When each of this player's soldiers was put on the field.
+ *
+ * ONE QUERY for the whole field rather than a column on the listing above,
+ * because that SELECT is shared by the barracks and the public roll and
+ * neither needs it -- and because active_at may not exist yet, which would
+ * fail all three rather than this one.
+ */
+function dropshipDeployOrder($conn) {
+	$uid = (int)($_SESSION['userData']['dropship_user_id'] ?? 0);
+	$pid = (int)($_SESSION['userData']['dropship_project_id'] ?? 0);
+	if ($uid <= 0) return array();
+	$res = @$conn->query("SELECT id, active_at FROM soldiers
+	                       WHERE user_id = $uid AND project_id = $pid AND active = 1");
+	if (!$res) return array();          /* no column yet: everything ties */
+	$out = array();
+	while ($r = $res->fetch_assoc()) $out[(int)$r['id']] = $r['active_at'];
+	return $out;
 }
 
 // Initial squad and set global attributes

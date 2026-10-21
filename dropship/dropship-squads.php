@@ -105,9 +105,21 @@ function dropshipSquadReadiness($states, $room) {
 		             'why' => 'This squad is already deployed.');
 	}
 	if ($n['ready'] > (int)$room) {
+		/*
+		 * ZERO GETS ITS OWN SENTENCE. The arithmetic version read "There is
+		 * only room for 0 more on the field", which is the shape of a string
+		 * built by a loop rather than written by a person -- the number is
+		 * the whole point of the sentence and zero is the one value that
+		 * makes it nonsense. "Full" is the word somebody would actually use.
+		 */
+		if ((int)$room <= 0) {
+			return array('can' => false, 'counts' => $n, 'fix' => 'withdraw',
+			             'why' => 'Your squad is already full. Withdraw somebody first.');
+		}
 		return array('can' => false, 'counts' => $n, 'fix' => 'withdraw',
-		             'why' => 'There is only room for ' . (int)$room . ' more on the field. '
-		                 . 'Withdraw somebody first.');
+		             'why' => 'Your squad has room for only ' . (int)$room . ' more, and this '
+		                 . 'needs ' . dropshipSquadPlural($n['ready'], 'slot')
+		                 . '. Withdraw somebody first.');
 	}
 	return array('can' => true, 'why' => '', 'counts' => $n, 'fix' => 'none');
 }
@@ -144,6 +156,49 @@ function dropshipSquadOrderMembers(&$members) {
 		if ($ra !== $rb) return $ra - $rb;
 		return $a['_at'] - $b['_at'];
 	});
+}
+
+/**
+ * The order the FIELD shows what is standing on it.
+ *
+ * TWO GROUPS, and the owner's rule: what you added yourself comes first, in
+ * the order you added it, and anything that arrived as a saved squad follows
+ * in armour order. Adding soldiers one at a time is a sequence the player
+ * performed and watching it resort itself is disorienting; a squad arrived
+ * all at once and has no order of its own, so it takes the one its own card
+ * uses -- Heavy, Medium, Light, Base.
+ *
+ * WHICH GROUP IS DERIVED, NOT STORED. A soldier in a saved squad has no
+ * individual Deploy button, so if it is on the field it got there through
+ * Deploy squad. There is nothing to record and nothing that can disagree.
+ *
+ * $order is soldier_id => when it was deployed, and $inSquad is the
+ * membership map. Both come from the caller so this stays drivable.
+ */
+function dropshipFieldOrder($rows, $order, $inSquad) {
+	$i = 0;
+	foreach ($rows as $k => $r) $rows[$k]['_seq'] = $i++;
+	usort($rows, function ($a, $b) use ($order, $inSquad) {
+		$ia = (int)$a['soldier_id']; $ib = (int)$b['soldier_id'];
+		$sa = isset($inSquad[$ia]) ? 1 : 0;
+		$sb = isset($inSquad[$ib]) ? 1 : 0;
+		if ($sa !== $sb) return $sa - $sb;                 /* yours first */
+		if ($sa === 1) {                                    /* squad: armour */
+			$ra = dropshipSquadArmorRank(isset($a['armor']) ? $a['armor'] : '');
+			$rb = dropshipSquadArmorRank(isset($b['armor']) ? $b['armor'] : '');
+			if ($ra !== $rb) return $ra - $rb;
+			return $a['_seq'] - $b['_seq'];
+		}
+		/* Yours, in the order you added them. A soldier deployed before this
+		   column existed has no time at all and sorts to the front rather
+		   than to a random place -- it was there first, which is true. */
+		$ta = isset($order[$ia]) && $order[$ia] !== null ? (string)$order[$ia] : '';
+		$tb = isset($order[$ib]) && $order[$ib] !== null ? (string)$order[$ib] : '';
+		if ($ta !== $tb) return strcmp($ta, $tb);
+		return $a['_seq'] - $b['_seq'];
+	});
+	foreach ($rows as $k => $r) unset($rows[$k]['_seq']);
+	return $rows;
 }
 
 /** "1 member" / "3 members", because "1 members" is how a page looks unfinished. */
@@ -457,7 +512,7 @@ function dropshipSquadSave($conn) {
 		                     . implode(',', array_map('intval', $clash)) . ")");
 		if ($res) while ($r = $res->fetch_assoc()) $names[] = (string)$r['name'];
 		return array(false, dropshipSquadPlural(count($clash), 'soldier')
-		           . ' on the field ' . (count($clash) === 1 ? 'is' : 'are')
+		           . ' in your squad ' . (count($clash) === 1 ? 'is' : 'are')
 		           . ' already in a saved squad'
 		           . ($names ? ' (' . implode(', ', $names) . ')' : '')
 		           . '. Disperse that squad first, or withdraw them.');
@@ -511,9 +566,56 @@ function dropshipSquadDeploy($conn, $squad_id) {
 	   it is also testable: a check that the write carries `user_id = $me`
 	   cannot read a statement that is stitched together at runtime. */
 	$list = implode(',', array_map('intval', $ids));
-	@$conn->query("UPDATE soldiers SET active = 1
-	                WHERE id IN ($list) AND user_id = $me AND project_id = $pid AND deceased = 0");
+	/* STAMPED TOO, and all with the same NOW(): they arrived together, so
+	   they tie, and dropshipFieldOrder() falls through to armour order for
+	   them -- which is the order their own squad card shows. The retry is
+	   the same bargain deploySoldier() makes: before the ALTER has run,
+	   losing the ordering beats losing the deployment. */
+	if (@$conn->query("UPDATE soldiers SET active = 1, active_at = NOW()
+	                    WHERE id IN ($list) AND user_id = $me AND project_id = $pid AND deceased = 0") !== true) {
+		@$conn->query("UPDATE soldiers SET active = 1
+		                WHERE id IN ($list) AND user_id = $me AND project_id = $pid AND deceased = 0");
+	}
 	return array(true, $squad['power']['label'] . ' deployed.');
+}
+
+/**
+ * Take everybody off the field at once.
+ *
+ * FOR BUILDING IN BATCHES, which is how squads actually get made: set one up,
+ * save it, clear it, set up the next. Doing that four soldiers at a time
+ * through four individual Withdraws is sixteen presses to save four squads,
+ * and the point of the feature was to remove presses.
+ *
+ * It lives here rather than beside deploySoldier() because it belongs to the
+ * squad-building flow and because the writes in this file are all scoped to
+ * the signed-in player in the statement itself -- which is exactly the guard
+ * deploySoldier() was missing until this week.
+ *
+ * NOT A DISPERSE. Nothing about saved squads changes; this only empties the
+ * deployed squad. A player clearing it to build the next one must not lose
+ * the one they just saved.
+ *
+ * VOCABULARY. The game has always called the deployed set "your squad" --
+ * deploySoldier() says "Your squad is full." -- so every message here says
+ * that too, and a stored grouping is a SAVED squad. "The field" was my word
+ * and nobody else's, and it put a second name on something already named.
+ */
+function dropshipWithdrawAll($conn) {
+	$me  = (int)($_SESSION['userData']['dropship_user_id'] ?? 0);
+	$pid = (int)($_SESSION['userData']['dropship_project_id'] ?? 0);
+	if ($me <= 0 || $pid <= 0) return array(false, 'Not signed in.');
+	/* active_at cleared with it, so the next soldier added starts the order
+	   afresh instead of slotting in behind a timestamp from last time. The
+	   retry is for the window before the ALTER has run. */
+	if (@$conn->query("UPDATE soldiers SET active = 0, active_at = NULL
+	                    WHERE user_id = $me AND project_id = $pid AND active = 1") !== true) {
+		@$conn->query("UPDATE soldiers SET active = 0
+		                WHERE user_id = $me AND project_id = $pid AND active = 1");
+	}
+	$n = (int)$conn->affected_rows;
+	if ($n <= 0) return array(false, 'Your squad is already empty.');
+	return array(true, dropshipSquadPlural($n, 'soldier') . ' withdrawn.');
 }
 
 /**
@@ -676,7 +778,7 @@ function dropshipSquadsPanel($conn) {
 		<?php foreach ($sq['members'] as $m):
 			$row   = $m['row'];
 			$state = $m['state'];
-			$label = array('ready' => 'Ready', 'fielded' => 'On the field',
+			$label = array('ready' => 'Ready', 'fielded' => 'Deployed',
 			               'fallen' => 'Fought this game', 'sold' => 'Not yours',
 			               'gone' => 'Gone');
 			$name  = $row ? (string)$row['name'] : 'Unknown soldier';
@@ -691,7 +793,7 @@ function dropshipSquadsPanel($conn) {
 				<span class="nm" title="<?php echo $h($name); ?>"><?php echo $h($name); ?></span>
 				<span class="st"><?php echo $h($label[$state] ?? $state); ?></span>
 				<?php if ($isShared): ?><span class="sh"
-					title="This soldier is in more than one squad, so only one of those squads can be on the field at a time."
+					title="This soldier is in more than one saved squad, so only one of them can be deployed at a time."
 					>Also in another squad</span><?php endif; ?>
 				<?php /* A member you cannot field is the only one worth
 				         removing on its own -- offering Remove on a healthy

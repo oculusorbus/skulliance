@@ -1464,6 +1464,7 @@ input:checked + .slider:before {
 	flex-wrap: wrap;
 	margin: 10px 0 0;
 }
+.dssq-save form { display: inline; }
 .dssq-save input[type=text] {
 	flex: 1 1 160px;
 	min-width: 0;

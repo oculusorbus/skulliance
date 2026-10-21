@@ -134,3 +134,23 @@ the squad being deployed as a squad, so "runs this squad did" has to mean
 "runs whose fielded set was exactly these members", not "runs any of them
 appeared in". Otherwise a soldier that is in two saved squads credits its
 score to both.
+
+## One more column, on `soldiers`
+
+The field shows what you added yourself first, in the order you added it, and
+anything deployed as a saved squad after it in armour order. Nothing recorded
+*when* a soldier was deployed, so:
+
+```sql
+ALTER TABLE soldiers ADD COLUMN active_at DATETIME DEFAULT NULL;
+```
+
+Optional at runtime, the same bargain `dhca_crew()` strikes over its `ko`
+column: naming a column that does not exist FAILS a statement rather than
+degrading it, so `deploySoldier()` and `dropshipSquadDeploy()` both retry
+without it. Until the ALTER runs, deploying still works and the field simply
+falls back to the order it used before.
+
+Cleared on withdraw rather than left behind, so a soldier put back on the
+field later joins the end of the row instead of returning to where it sat the
+first time.

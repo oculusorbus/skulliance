@@ -115,7 +115,79 @@ echo "\nthe four-soldier ceiling\n";
 $r = dropshipSquadReadiness($four, 2);
 ok($r['can'] === false, 'four ready soldiers deploy into two free slots');
 ok($r['fix'] === 'withdraw', 'a full field does not say to withdraw somebody');
-ok(strpos($r['why'], 'room for 2') !== false, 'the refusal does not say how much room there is');
+ok(strpos($r['why'], 'room for only 2') !== false, 'the refusal does not say how much room there is');
+
+/*
+ * NO ARITHMETIC SENTENCES, and zero is the one that gives it away. The first
+ * version read "There is only room for 0 more on the field", which is the
+ * shape of a string built by a loop rather than written by a person.
+ */
+ok(strpos(dropshipSquadReadiness($four, 0)['why'], 'for 0') === false,
+   'the full-squad refusal still counts down to zero: '
+   . dropshipSquadReadiness($four, 0)['why']);
+ok(strpos(dropshipSquadReadiness($four, 0)['why'], 'already full') !== false,
+   'a full squad does not simply say it is full');
+
+/*
+ * AND IT IS CALLED A SQUAD, because the game has never called it anything
+ * else -- deploySoldier() says "Your squad is full." "The field" was a
+ * second name for a thing that already had one.
+ */
+$sayings = array(
+	dropshipSquadReadiness($four, 0)['why'],
+	dropshipSquadReadiness($four, 2)['why'],
+	dropshipSquadReadiness(array('ready', 'sold'), 4)['why'],
+	dropshipSquadReadiness(array('ready', 'fallen'), 4)['why'],
+	dropshipSquadReadiness(array('sold'), 4)['why'],
+);
+foreach ($sayings as $saying) {
+	ok(stripos($saying, 'the field') === false, "a message still says \"the field\": $saying");
+}
+/*
+ * EVERY player-facing string in the file, not just the ones a pure function
+ * returns. The messages from dropshipSquadSave() and dropshipWithdrawAll()
+ * need a database to produce, and a mutation putting "the field" back into
+ * the save refusal survived a check that only read the readiness ones.
+ * Scanned off the source with comments stripped, since the comments discuss
+ * the phrase on purpose.
+ */
+/*
+ * A PLAIN PHRASE SCAN, after one attempt at something cleverer. Pairing up
+ * quotes to pull out string literals mis-pairs on the first apostrophe
+ * inside a double-quoted string and then reads every quote after it as the
+ * wrong half of a pair -- it found 307 literals and none of the offending
+ * one. The phrase simply does not belong anywhere outside a comment.
+ */
+/* READ HERE. $src is not assigned until a later section, so this scanned an
+   empty string and passed on anything -- the same shape of bug as the
+   dhcarena harness that referenced $dbsrc6 before it existed. */
+$noComments = preg_replace(array('#/\*.*?\*/#s', '#//[^\n]*#'), '',
+                           (string)file_get_contents(__DIR__ . '/dropship/dropship-squads.php'));
+preg_match_all('/.{0,40}the field.{0,40}/i', $noComments, $hits);
+ok($hits[0] === array(),
+   'something outside a comment says "the field" instead of squad: '
+   . implode(' | ', array_map(function ($x) { return trim(preg_replace('/\s+/', ' ', $x)); },
+                              $hits[0])));
+
+echo "\nwithdraw all\n";
+/*
+ * Driven, not read: "0 soldiers withdrawn" on an empty squad is a success
+ * message for something that did not happen, and only running it shows that.
+ */
+class WAConn {
+	public $affected_rows = 0; public $rows = 0;
+	public function __construct($rows) { $this->rows = $rows; }
+	public function real_escape_string($s) { return $s; }
+	public function query($sql) { $this->affected_rows = $this->rows; return true; }
+}
+$_SESSION['userData'] = array('dropship_user_id' => 1, 'dropship_project_id' => 1);
+list($wok, $wmsg) = dropshipWithdrawAll(new WAConn(3));
+ok($wok === true && strpos($wmsg, '3 soldiers') === 0, "withdrawing three said: $wmsg");
+list($wok, $wmsg) = dropshipWithdrawAll(new WAConn(1));
+ok(strpos($wmsg, '1 soldier ') === 0, "withdrawing one is pluralised: $wmsg");
+list($wok, $wmsg) = dropshipWithdrawAll(new WAConn(0));
+ok($wok === false, 'withdrawing from an empty squad reports success');
+ok(strpos($wmsg, '0 ') === false, "an empty squad is told about 0 soldiers: $wmsg");
 ok(dropshipSquadReadiness(array('ready', 'ready'), 2)['can'] === true,
    'two soldiers will not go into exactly two slots');
 /* Already standing there is not a reason to refuse. */
@@ -350,6 +422,39 @@ ok(strpos($saveSrc, 'count($clash) !== count($ids)') === false,
    'the clash check stands down when every member is spoken for, which lets a subset through');
 ok(preg_match('/if \(\$clash\) \{/', $saveSrc) === 1,
    'the clash check is conditional on something other than there being a clash');
+
+echo "\nthe squad shows what you added before what a squad brought\n";
+/*
+ * THE OWNER'S RULE: soldiers you added one at a time keep the order you added
+ * them, and anything that arrived through Deploy squad follows in armour
+ * order. Adding one at a time is a sequence the player performed, and
+ * watching it resort itself is disorienting; a squad arrived all at once and
+ * has no order of its own, so it takes the one its own card uses.
+ */
+function fr($id, $armor) { return array('soldier_id' => $id, 'armor' => $armor); }
+$rows   = array(fr(1,'Base'), fr(2,'Heavy'), fr(3,'Light'), fr(4,'Medium'));
+/* 2 and 4 came from a saved squad; 1 and 3 the player added, 3 before 1. */
+$when   = array(1 => '2026-10-21 10:05:00', 3 => '2026-10-21 10:01:00');
+$insq   = array(2 => array(9), 4 => array(9));
+$out    = dropshipFieldOrder($rows, $when, $insq);
+ok(array_column($out, 'soldier_id') === array(3, 1, 2, 4),
+   'the squad is not ordered yours-then-squad: ' . implode(',', array_column($out, 'soldier_id')));
+/* All individual: purely the order they were added, NOT by armour. */
+$out = dropshipFieldOrder($rows, array(1=>'10:04',2=>'10:01',3=>'10:03',4=>'10:02'), array());
+ok(array_column($out, 'soldier_id') === array(2, 4, 3, 1),
+   'individual adds are being resorted by something other than when they were added');
+/* All from a squad: purely armour, Heavy first. */
+$out = dropshipFieldOrder($rows, array(), array(1=>array(9),2=>array(9),3=>array(9),4=>array(9)));
+ok(array_column($out, 'soldier_id') === array(2, 4, 3, 1),
+   'a deployed squad is not shown heaviest first: ' . implode(',', array_column($out, 'soldier_id')));
+/* A soldier deployed before active_at existed has no time at all. It was
+   there first, so it sorts first rather than anywhere. */
+$out = dropshipFieldOrder(array(fr(1,'Base'), fr(2,'Heavy')), array(2 => '10:00'), array());
+ok(array_column($out, 'soldier_id') === array(1, 2),
+   'a soldier with no deploy time is sorted into the middle of the row');
+/* Stable when everything ties, so the row does not shuffle on every load. */
+$t = dropshipFieldOrder($rows, array(), array());
+ok(array_column($t, 'soldier_id') === array(1, 2, 3, 4), 'an all-tie row reorders itself');
 
 /* ---------- the screen it is wired to -------------------------------------- */
 
