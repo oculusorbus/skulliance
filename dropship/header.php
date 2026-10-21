@@ -4,6 +4,31 @@
   <title>Drop Ship</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <?php
+  /*
+   * THE PLATFORM'S ICON, for cohesion -- Drop Ship is a Skulliance game and
+   * the tab said so nowhere. It had no icon at all, so the tab, the bookmark
+   * and the phone home screen showed the browser's blank page.
+   *
+   * THE SHARED INCLUDE, not a paste. lib/favicon-head.php exists because
+   * these five tags had already been copied into three files and drifted,
+   * and it was written for exactly this case: "every page that skips
+   * header.php had no icon at all". Drop Ship has its own header.php, so it
+   * was one of them.
+   *
+   * ROOT-RELATIVE paths, which is why this works across apps: /staking/pwa/...
+   * resolves the same from /staking/dropship/ as from /staking/, and the
+   * include deliberately avoids absolute hosts because the login cookie is
+   * host-only. ../lib/ is a path Drop Ship already reaches into -- db.php
+   * requires ../lib/koios.php.
+   *
+   * THEME-AGNOSTIC on purpose. Dread City and Filthy Mermaid are Skulliance
+   * games too; a per-theme favicon would be five more files to deploy by FTP
+   * and one more thing to be missing.
+   */
+  $ds_fav = __DIR__ . '/../lib/favicon-head.php';
+  if (is_file($ds_fav)) include $ds_fav;
+  ?>
   <!-- TEMPORARILY reverted to Google's CDN (2026-09-05): a self-hosted
        dist/jquery-3.6.3.min.js reference was live here, but that file was
        never actually uploaded to the server -- 404'd, breaking every

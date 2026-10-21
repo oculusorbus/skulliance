@@ -20,6 +20,42 @@ include 'webhooks.php';          // the $discordid_* globals the gate reads
 include 'dropship.php';
 require_once 'dropship-theme-vocab.php';
 require_once 'dropship-nft-probe.php';
+
+/* ------------------------------------------------------- new project -- */
+/*
+ * A THEME NEEDS A PROJECT TO HANG OFF, and a brand new game has none. The
+ * header above says this page never edits `projects`, which is still true
+ * for EDITING -- several themes share one collection, so a theme must not
+ * own it. Creating the row is the case that boundary did not cover, and
+ * without it a new game still needs a database client, which is the exact
+ * thing this page exists to avoid.
+ *
+ * BEFORE header.php, AND THAT IS THE WHOLE REASON IT IS UP HERE. It answers
+ * with a redirect, header.php prints the page chrome, and a Location after
+ * output is "Cannot modify header information" and no redirect at all --
+ * which is exactly what shipped. Everything above this line is includes that
+ * emit nothing; header.php is the first thing that writes.
+ *
+ * REDIRECTED so the new project arrives as an ordinary ?project_id= page
+ * load with the theme form already pointed at it, and so a refresh does not
+ * offer to make it a second time.
+ *
+ * GATED HERE TOO. The page's own dropshipThemeAdmin() check runs after
+ * header.php, because it renders a styled refusal -- too late to stop a
+ * write. This is the only admin check that matters for the write itself.
+ */
+$ds_new_project_err = null;
+if (isset($_POST['new_project']) && dropshipThemeAdmin()) {
+	list($np_ok, $np_msg, $np_id) = dropshipProjectCreate(
+		$conn, $_POST['new_project_name'] ?? '', $_POST['new_project_policy'] ?? '');
+	if ($np_ok) {
+		header('Location: admin-themes.php?project_id=' . (int)$np_id . '&made=1');
+		if (is_object($conn)) $conn->close();
+		exit;
+	}
+	$ds_new_project_err = $np_msg;
+}
+
 include 'header.php';
 
 /* The page chrome closes the same way every Drop Ship page does; there is no
@@ -42,35 +78,11 @@ if (!dropshipThemeAdmin()) {
 $msg = array('ok' => array(), 'err' => array());
 $have_tables = dropshipThemesTable($conn);
 
-/* ------------------------------------------------------- new project -- */
-/*
- * A THEME NEEDS A PROJECT TO HANG OFF, and a brand new game has none. The
- * header above says this page never edits `projects`, which is still true
- * for EDITING -- several themes share one collection, so a theme must not
- * own it. Creating the row is the case that boundary did not cover, and
- * without it a new game still needs a database client, which is the exact
- * thing this page exists to avoid.
- *
- * ITS OWN POST, handled before the theme save and redirected afterwards, so
- * the new project arrives as a normal ?project_id= page load with the theme
- * form already pointed at it. Falling through into the theme save would try
- * to write a theme out of a form that was never filled in.
- */
-if (isset($_POST['new_project'])) {
-	list($np_ok, $np_msg, $np_id) = dropshipProjectCreate(
-		$conn, $_POST['new_project_name'] ?? '', $_POST['new_project_policy'] ?? '');
-	if ($np_ok) {
-		/* POST, then redirect, so a refresh does not offer to make it twice. */
-		header('Location: admin-themes.php?project_id=' . (int)$np_id . '&made=1');
-		if (is_object($conn)) $conn->close();
-		exit;
-	}
-	$msg['err'][] = $np_msg;
-}
 if (isset($_GET['made'])) {
 	$msg['ok'][] = 'Project created. Give it a slug and some wording below, '
 	             . 'then tick Active when it is ready for players.';
 }
+if (isset($ds_new_project_err)) $msg['err'][] = $ds_new_project_err;
 
 /* ---------------------------------------------------------------- save -- */
 if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['new_project'])) {

@@ -51,16 +51,25 @@ echo "\nevery page a player can land on includes it\n";
  * default -- that is exactly how seven game pages ended up blank -- so this
  * names them and a new one has to be added here deliberately.
  */
+/*
+ * THE VALUE IS THE INCLUDE EXPRESSION, because Drop Ship is one directory
+ * down and reaches the include as ../lib/. It is a separate app with its own
+ * header.php, which is precisely why it was blank: every check here keyed on
+ * the root-relative spelling and could not see it.
+ */
 $pages = array(
-	'header.php',            // every logged-in page
-	'index.php',             // the public landing page
-	'monstrocity.php', 'match3rpg.php', 'skullswap.php', 'dhcgame.php',
-	'skullracergame.php', 'cryptcrawlgame.php', 'cryptconquestgame.php',
-	'guardiansgame.php', 'gallery.php', 'error.php',
+	'header.php'            => '/lib/',   // every logged-in page
+	'index.php'             => '/lib/',   // the public landing page
+	'monstrocity.php'       => '/lib/', 'match3rpg.php'          => '/lib/',
+	'skullswap.php'         => '/lib/', 'dhcgame.php'            => '/lib/',
+	'skullracergame.php'    => '/lib/', 'cryptcrawlgame.php'     => '/lib/',
+	'cryptconquestgame.php' => '/lib/', 'guardiansgame.php'      => '/lib/',
+	'gallery.php'           => '/lib/', 'error.php'              => '/lib/',
+	'dropship/header.php'   => '/../lib/',   // every Drop Ship page
 );
-foreach ($pages as $p) {
+foreach ($pages as $p => $rel) {
 	$src = file_get_contents($root . '/' . $p);
-	$at  = strpos($src, "include __DIR__ . '/lib/favicon-head.php'");
+	$at  = strpos($src, "__DIR__ . '" . $rel . "favicon-head.php'");
 	ok($at !== false, "$p does not include the icon set, so it is blank in the tab");
 	if ($at === false) continue;
 	/* INSIDE THE HEAD. A <link rel=icon> after </head> is parsed into the
@@ -69,7 +78,7 @@ foreach ($pages as $p) {
 	$he = strpos($src, '</head>');
 	ok($hd !== false && $he !== false && $at > $hd && $at < $he,
 	   "$p includes the icon set outside its <head>, where it does nothing");
-	ok(substr_count($src, "include __DIR__ . '/lib/favicon-head.php'") === 1,
+	ok(substr_count($src, "__DIR__ . '" . $rel . "favicon-head.php'") === 1,
 	   "$p includes the icon set more than once");
 }
 
@@ -79,7 +88,7 @@ echo "\nnobody keeps a private copy\n";
  * WordPress includes it from ABSPATH . 'staking/homepage.php' and serves it
  * at the site root, so its head is not ours to normalise.
  */
-foreach ($pages as $p) {
+foreach ($pages as $p => $rel) {
 	$src = file_get_contents($root . '/' . $p);
 	ok(strpos($src, 'apple-touch-icon') === false,
 	   "$p still hardcodes its own icon tags alongside the include");

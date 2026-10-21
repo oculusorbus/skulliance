@@ -1740,6 +1740,11 @@ ok(strpos($dspick, 'object-fit:contain') !== false,
    'the picker crops its art again, which is what the picker exists not to do');
 ok(strpos($dspick, 'object-fit:cover') === false, 'a cover crop came back');
 
+/* THE TAB ICON lives in favicon-harness.php, with the other eleven pages
+   and the explicit list that says a new standalone page has to be added
+   deliberately. A second copy here is the drift that include exists to
+   prevent. */
+
 /* ---------- making a project, for a game that does not exist yet ---------- */
 
 echo "\nmaking a project\n";
@@ -1836,6 +1841,33 @@ ok(strpos($at, "!isset(\$_POST['new_project'])") !== false,
    'creating a project also falls into the theme save, which has no form behind it');
 ok(strpos($at, "header('Location: admin-themes.php?project_id=") !== false,
    'creating a project does not redirect, so refreshing offers to make it twice');
+/*
+ * AND IT RUNS BEFORE ANYTHING IS PRINTED, which is not a style point: this
+ * shipped with the handler AFTER include 'header.php', so the Location came
+ * out as "Cannot modify header information - headers already sent" and the
+ * redirect simply did not happen. The project was created and the admin was
+ * left on a page that said nothing about it.
+ *
+ * header.php is the first include that writes; everything above it emits
+ * nothing. So the test is positional and it is the only one that would have
+ * caught this.
+ */
+$atRaw  = (string)file_get_contents(__DIR__ . '/dropship/admin-themes.php');
+$hdrAt  = strpos($atRaw, "include 'header.php'");
+$postAt = strpos($atRaw, "isset(\$_POST['new_project'])");
+$locAt  = strpos($atRaw, "header('Location: admin-themes.php?project_id=");
+ok($hdrAt !== false && $postAt !== false && $locAt !== false,
+   'the new-project handler or the header include moved; the checks below prove nothing');
+ok($postAt < $hdrAt,
+   'the new-project write runs after header.php has printed, so its redirect cannot work');
+ok($locAt < $hdrAt,
+   'the redirect is issued after output has started: headers already sent');
+/* The page's own admin gate renders a styled refusal, so it runs AFTER
+   header.php -- too late to stop a write. The write needs its own. */
+ok($postAt < strpos($atRaw, 'if (!dropshipThemeAdmin()) {'),
+   'the write happens after the page gate, which only matters if the gate is first');
+ok(strpos(substr($atRaw, $postAt, 120), 'dropshipThemeAdmin()') !== false,
+   'the new-project write is not gated on being an admin');
 
 /*
  * THE SWITCH MUST SURVIVE BEING USED. "Can this theme be animated" is a
