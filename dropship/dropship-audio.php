@@ -223,6 +223,30 @@ function dropshipAudioPayload($conn, $project_id) {
 	);
 }
 
+/**
+ * One slot, found by the frame it belongs to.
+ *
+ * BY THE ART PATH, because that is the only thing that identifies a row.
+ * The admin form posted the FAMILY and the lookup compared it against
+ * $e['term'] -- a key events do not have, they have 'family' -- so it
+ * matched nothing and every Set quietly resolved to null. Even spelled
+ * right the family is ambiguous: Flamethrower is four rows and
+ * Demolition is two, and they must not all answer to one name.
+ *
+ * '' is the opening, which is the one slot with no frame.
+ */
+function dropshipAudioSlotByArt($conn, $project_id, $art) {
+	$art = (string)$art;
+	if ($art === '' || $art === 'Opening') return dropshipAudioOpenSlot($conn, $project_id);
+	foreach (dropshipAudioEvents() as $e) {
+		if ($e['art'] === $art) return dropshipAudioSlot($conn, $project_id, $e);
+	}
+	foreach (dropshipAudioFallbacks() as $e) {
+		if ($e['art'] === $art) return dropshipAudioSlot($conn, $project_id, $e);
+	}
+	return null;
+}
+
 /** Every mp3 in the shared folder, for the "use one already there" picker. */
 function dropshipAudioFiles() {
 	$out = array();
@@ -243,14 +267,17 @@ function dropshipAudioFiles() {
  *
  * Returns a list of "Theme: Term" strings, excluding the one asking.
  */
-function dropshipAudioClaims($conn, $stem, $except_pid = 0, $except_term = '') {
+function dropshipAudioClaims($conn, $stem, $except_pid = 0, $except_art = '') {
 	$out = array();
 	if ($stem === '' || !function_exists('dropshipThemeAll')) return $out;
 	foreach (dropshipThemeAll($conn) as $t) {
 		$pid = (int)$t['project_id'];
 		foreach (dropshipAudioSlots($conn, $pid) as $s) {
 			if ($s['stem'] !== $stem) continue;
-			if ($pid === (int)$except_pid && $s['term'] === $except_term) continue;
+			/* BY ART, not by family: two frames of one thing are two
+			   different files, and excluding by family would hide the
+			   other frame from its own warning. */
+			if ($pid === (int)$except_pid && $s['art'] === $except_art) continue;
 			/* name where the row has one, slug otherwise -- this string
 			   is read by a person deciding whether to overwrite, so it
 			   must never come out blank. */

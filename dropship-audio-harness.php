@@ -204,11 +204,24 @@ if ($made) {
 	foreach ($pay['any'] as $r) ok(!empty($r['p']), 'a catch-all with no prefix');
 
 	/* WHO ELSE IS LISTENING -- the warning the shared folder needs. */
-	$claims = dropshipAudioClaims($c, 'demolition1', 4, 'Demolition');
+	/* EXCLUDED BY ART, not by family: two frames of one thing are two
+	   files, and excluding by family would hide the other frame from its
+	   own warning. */
+	$claims = dropshipAudioClaims($c, 'demolition1', 4, 'weapons/demo1');
 	ok(in_array('Drop Ship: Demolition', $claims, true),
 	   'replacing a shared sound reports nobody else: ' . json_encode($claims));
-	ok(!in_array('Oculus Lounge: Paddle', dropshipAudioClaims($c, 'paddle1', 4, 'Demolition'), true),
-	   'the warning names the theme doing the replacing, so it nags about itself');
+	/* The claim reads as the theme and the word it uses, which is what a
+	   person needs to recognise what they are about to change. */
+	ok(dropshipAudioClaims($c, 'paddle1', 4, 'weapons/demo1') === array(),
+	   'the warning names the theme doing the replacing, so it nags about itself: '
+	 . json_encode(dropshipAudioClaims($c, 'paddle1', 4, 'weapons/demo1')));
+	/* AND THE OTHER FRAME OF THE SAME THING IS NOT EXCLUDED WITH IT.
+	   Excluding by family rather than by frame would have hidden demo1
+	   from demo2's warning, which is the one most easily confused. */
+	ok(in_array('Oculus Lounge: Paddle',
+	            dropshipAudioClaims($c, 'paddle1', 4, 'weapons/demo2'), true),
+	   'excluding one frame hides the other frame of the same thing from its own warning: '
+	 . json_encode(dropshipAudioClaims($c, 'paddle1', 4, 'weapons/demo2')));
 
 	harness_probe_clean();
 }
@@ -236,6 +249,64 @@ ok(isset($fstems['filthy-mermaid']),
 ok($open['legacy'] === '' || $open['legacy'] !== 'alarm',
    "a theme's opening falls back to Drop Ship's");
 
+echo "\nthe Set button finds the row it was pressed on\n";
+/*
+ * REPORTED: picked melee for Dread City's Machete, pressed Set, nothing
+ * happened. The resolver compared $e['term'] against the posted value
+ * and events have no 'term' key -- they have 'family' -- so it matched
+ * nothing, every Set resolved to null and the handler bailed on "that
+ * is not a sound this theme asks for".
+ *
+ * DRIVEN, not grepped. The handler itself needs a request and a
+ * database, but the lookup it depends on is a function now and this
+ * calls it with exactly what the form posts. The old version was
+ * covered by source assertions alone, which is precisely why a dead
+ * array key sat there unnoticed.
+ */
+$sconn = new AConn(
+	array(102 => array('id' => 1020, 'project_id' => 102, 'slug' => 'dread-city', 'name' => 'Dread City')),
+	array(1020 => array(arow('Tactical Katana', 'Machete'), arow('Flamethrower', 'Torch'))));
+$mach = dropshipAudioSlotByArt($sconn, 102, 'weapons/tactical-katana');
+ok($mach !== null, 'the katana row does not resolve, so pressing Set on it does nothing');
+ok($mach && $mach['stem'] === 'machete',
+   'the katana row resolves to ' . ($mach ? $mach['stem'] : 'nothing') . ', not machete');
+/* EVERY ROW THE PAGE RENDERS MUST RESOLVE, with exactly the value the
+   form puts in the field. */
+foreach (dropshipAudioSlots($sconn, 102) as $sl) {
+	$posted = $sl['art'] !== '' ? $sl['art'] : 'Opening';
+	$back = dropshipAudioSlotByArt($sconn, 102, $posted);
+	ok($back !== null, "the row for '$posted' does not resolve, so its Set button does nothing");
+	if ($back) ok($back['stem'] === $sl['stem'],
+		"'$posted' resolves to {$back['stem']} but the row shows {$sl['stem']}");
+}
+$op = dropshipAudioSlotByArt($sconn, 102, 'Opening');
+ok($op !== null && $op['stem'] === 'dread-city-opening', 'the opening row does not resolve');
+ok(dropshipAudioSlotByArt($sconn, 102, 'weapons/not-a-frame') === null,
+   'a frame this theme does not have still resolves, so a posted value reaches the disk');
+
+/* FOUR FRAMES OF ONE THING ARE FOUR ROWS, and the family cannot tell
+   them apart -- which is the other half of why the key is the art. */
+$f = array();
+foreach (array(1,2,3,4) as $n) {
+	$sl = dropshipAudioSlotByArt($sconn, 102, 'weapons/flamethrower' . $n);
+	ok($sl !== null, "flamethrower frame $n does not resolve");
+	if ($sl) $f[$sl['stem']] = true;
+}
+ok(count($f) === 4, 'the four flamethrower frames resolve to ' . count($f) . ' files, not four');
+ok(isset($f['torch3']), 'the third flamethrower frame is not torch3: ' . implode(', ', array_keys($f)));
+
+/* AND THE FORM POSTS THAT KEY. The lookup being right is half of it. */
+$adm_k = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+ok(strpos($adm_k, 'name="audio_art"') !== false,
+   'the form does not post the frame, so the lookup has nothing to find');
+/* ON THE audio_art INPUT ITSELF. The confirm field uses the same
+   expression, so looking for the expression anywhere in the file passes
+   with the posted value swapped back to the family. */
+ok(preg_match('/name="audio_art" value="<\?php echo \$h\(\$as\[\x27art\x27\]/', $adm_k) === 1,
+   'the posted value is not the art path the resolver expects');
+ok(strpos($adm_k, 'dropshipAudioSlotByArt($conn, $pid, (string)$_POST[\'audio_art\'])') !== false,
+   'the handler does not resolve the posted frame');
+
 echo "\nnothing is overwritten without a warning first\n";
 /*
  * The question was exactly this: does picking an existing sound copy it
@@ -248,7 +319,7 @@ echo "\nnothing is overwritten without a warning first\n";
  * you to it, so it has to be copied.
  */
 $adm_w = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
-$a_at  = strpos($adm_w, "isset(\$_POST['audio_term'])");
+$a_at  = strpos($adm_w, "isset(\$_POST['audio_art'])");
 ok($a_at !== false, 'the audio handler is gone; nothing below proves anything');
 $a_blk = $a_at === false ? '' : substr($adm_w, $a_at, 3000);
 
@@ -260,7 +331,7 @@ ok(strpos($a_blk, 'rename(') === false && strpos($a_blk, 'unlink(') === false,
    an upload keeps nothing of whatever the file was called. */
 ok(strpos($a_blk, "\$a_dest = \$a_dir . \$a_slot['stem'] . '.mp3';") !== false,
    'the destination is not the name the wording asks for');
-ok(strpos($a_blk, '$a_slot = $dsaAudioSlotFor((string)$_POST[\'audio_term\'])') !== false,
+ok(strpos($a_blk, "dropshipAudioSlotByArt(\$conn, \$pid, (string)\$_POST['audio_art'])") !== false,
    'the slot is taken off the form without being resolved, so a posted name reaches the disk');
 ok(strpos($a_blk, "basename((string)\$_POST['audio_use'])") !== false,
    'the picked filename is not reduced to a basename, so a path could escape the folder');
@@ -290,12 +361,12 @@ ok(strpos($a_blk, '!$a_overwrite ||') !== false,
  * the post alone it stayed armed after a SUCCESSFUL write, so the next
  * thing done to that row would have overwritten without asking.
  */
-ok(strpos($adm_w, "\$msg['warn'] = \$a_slot['term'];") !== false,
+ok(strpos($adm_w, "\$msg['warn'] = \$a_slot['art'];") !== false,
    'the refusal does not record WHICH row it refused');
-ok(strpos($adm_w, "(!empty(\$msg['warn']) && \$msg['warn'] === \$as['term']) ? '1' : ''") !== false,
+ok(strpos($adm_w, "!empty(\$msg['warn']) && \$msg['warn'] === (\$as['art']") !== false,
    'the confirm is armed by having posted rather than by having been refused');
-ok(strpos($adm_w, "\$_POST['audio_term'] === \$as['term']) ? '1'") === false,
-   'the old arming is still there, so one success leaves the row unguarded');
+ok(strpos($adm_w, "\$_POST['audio_term']") === false,
+   'the old family-keyed field is still there, so the lookup has two masters');
 
 echo "\nthe page says what the run does\n";
 $adm = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');

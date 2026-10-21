@@ -231,16 +231,8 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST'
  * an upload has nowhere, so this refuses ONCE, says exactly who else is
  * listening to that file, and goes ahead when told again.
  */
-$dsaAudioSlotFor = function ($term) use ($conn, $pid) {
-	foreach (dropshipAudioEvents() as $e) {
-		if ($e['term'] !== $term) continue;
-		return dropshipAudioSlot($conn, $pid, $e);
-	}
-	if ($term === 'Opening') return dropshipAudioOpenSlot($conn, $pid);
-	return null;
-};
-if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['audio_term'])) {
-	$a_slot = $dsaAudioSlotFor((string)$_POST['audio_term']);
+if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['audio_art'])) {
+	$a_slot = dropshipAudioSlotByArt($conn, $pid, (string)$_POST['audio_art']);
 	$a_dir  = rtrim(__DIR__, '/') . '/sounds/';
 	if (!$a_slot || $a_slot['stem'] === '') {
 		$msg['err'][] = 'That is not a sound this theme asks for.';
@@ -259,7 +251,7 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['audio_term'
 		 * what they heard. The theme doing the replacing is excluded, or
 		 * every message would nag about itself.
 		 */
-		$a_claims = dropshipAudioClaims($conn, $a_slot['stem'], $pid, $a_slot['term']);
+		$a_claims = dropshipAudioClaims($conn, $a_slot['stem'], $pid, $a_slot['art']);
 		$a_overwrite = is_file($a_dest);
 		$a_go = (!$a_overwrite || !empty($_POST['confirm']));
 
@@ -278,7 +270,7 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['audio_term'
 			              . '. Press Set again to go ahead.';
 			/* Arms the confirm on THIS row only, and only because a
 			   write was refused. */
-			$msg['warn'] = $a_slot['term'];
+			$msg['warn'] = $a_slot['art'];
 		} elseif ($a_use !== '') {
 			if ($a_dir . $a_use === $a_dest) {
 				$msg['err'][] = 'That is already the file this asks for.';
@@ -803,7 +795,7 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 			      action="admin-art.php?project_id=<?php echo $pid; ?>&amp;format=<?php echo $h($ext); ?>">
 				<input type="hidden" name="project_id" value="<?php echo $pid; ?>">
 				<input type="hidden" name="format" value="<?php echo $h($ext); ?>">
-				<input type="hidden" name="audio_term" value="<?php echo $h($as['term']); ?>">
+				<input type="hidden" name="audio_art" value="<?php echo $h($as['art'] !== '' ? $as['art'] : 'Opening'); ?>">
 				<?php /* A SECOND PRESS IS THE CONFIRMATION. The handler refuses
 				         once and says who else is listening; this carries the
 				         answer back. */ ?>
@@ -812,7 +804,7 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 				         SUCCESSFUL write too, so the next thing done to that row
 				         would have overwritten without asking. */ ?>
 				<input type="hidden" name="confirm" value="<?php echo
-					(!empty($msg['warn']) && $msg['warn'] === $as['term']) ? '1' : ''; ?>">
+					(!empty($msg['warn']) && $msg['warn'] === ($as['art'] !== '' ? $as['art'] : 'Opening')) ? '1' : ''; ?>">
 				<span class="pick">
 					<select name="audio_use">
 						<option value="">use one already here&hellip;</option>
