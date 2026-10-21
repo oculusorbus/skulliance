@@ -1628,6 +1628,51 @@ $GLOBALS['__ext'] = 'gif';
 ok(dropshipMediaExtension() === 'gif', 'an already-animated theme is changed by the preference');
 
 /*
+ * THE GAME PICKER, which replaced the Select Project dropdown.
+ */
+echo "\nthe game picker\n";
+$dspick = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+/* Built from the allow-list, never from a literal list of games. A written
+   list offers one the server refuses and misses the next one added -- the
+   same shape as the project-id gates that cost two themes their standings. */
+ok(strpos($dspick, 'foreach (getProjects($conn) as $ds_gid => $ds_gname)') !== false,
+   'the picker builds its tiles from something other than getProjects()');
+foreach (array('Oculus Lounge', 'Filthy Mermaid', 'Dread City') as $named) {
+	ok(strpos($dspick, "'" . $named . "'") === false,
+	   "the picker names $named in its own source, so it is a hand-written list");
+}
+/* Plain anchors: switching survives JS failing and a tile can be opened in a
+   new tab. The dropdown needed a hidden form and a function to submit it. */
+ok(strpos($dspick, 'href="dashboard.php?project_id=<?php echo $g[\'id\']; ?>"') !== false,
+   'the tiles are no longer plain links to a validated project id');
+/* The art is the theme's own, and absent rather than Drop Ship's when it has
+   none -- a fallback would put the wrong picture on the tile that exists to
+   tell them apart. */
+ok(strpos($dspick, "dropshipThemeImagePath(\$conn, \$ds_gid, 'images/dropship.jpg')") !== false,
+   'the tile art is no longer resolved per theme');
+ok(strpos($dspick, "is_file(__DIR__ . '/' . \$ds_rel)") !== false,
+   'a theme with no picture gets a broken image instead of none');
+/* Four hero jpgs run to about a megabyte. They are fetched when the picker is
+   first opened, not on every dashboard load. */
+ok(strpos($dspick, 'img alt="" data-src=') !== false,
+   'the tile art is a plain src, so every dashboard load pays for it');
+ok(strpos($dspick, "imgs[i].src = imgs[i].getAttribute('data-src')") !== false,
+   'nothing swaps data-src in, so the picker opens with four empty tiles');
+/* The veil closes, a click inside it must not. */
+ok(strpos($dspick, 'if (ev.target === veil) hide();') !== false,
+   'clicking inside the picker falls through to the backdrop and closes it');
+ok(strpos($dspick, "ev.key === 'Escape'") !== false, 'Escape does not close the picker');
+/* flexbox.css sets `a {text-align:center; color:#00c8a0}` for every anchor in
+   this app, so a tile that does not restate both is centred and teal. */
+ok(preg_match('/\.dsgame-tile\{[^}]*text-align:left/', $dspick) === 1,
+   'the tile caption inherits the global centre alignment');
+ok(preg_match('/\.dsgame-tile\{[^}]*color:#e8eaed/', $dspick) === 1,
+   'the tile caption inherits the global link colour');
+/* And the picker is a child of <body>: .side would clip a fixed overlay. */
+ok(strpos($dspick, '.side #dsgame') === false && strpos($dspick, '#player-stats #dsgame') === false,
+   'the picker CSS names an ancestor the element does not have, so it applies to nothing');
+
+/*
  * THE SWITCH MUST SURVIVE BEING USED. "Can this theme be animated" is a
  * property of the THEME; "is it animated right now" is a property of the
  * session. Asking the resolved extension for the first question meant the

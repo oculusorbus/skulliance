@@ -121,19 +121,29 @@ ok(strpos($js3, 'function dsShowLoader(') !== false, 'nothing builds the loader'
 ok(strpos($js3, "wrap.id = 'loading';") !== false,
    'the built element does not carry the id the shared stylesheet styles');
 ok(strpos($js3, "img.id = 'loading-image';") !== false, 'the loader image is unstyled');
-/* The ONLY caller is the theme switch. */
-/* CALLS, not occurrences: the definition is `dsShowLoader(){` and matches
-   the same substring, so counting those said two and meant one. */
-$calls = substr_count($js3, 'dsShowLoader();');
-ok($calls === 1, "the loader is shown from $calls places, not just the theme switch");
-$sel = strpos($js3, 'function selectProject');
-$selEnd = strpos($js3, "\n}", $sel);
-ok($sel !== false && strpos(substr($js3, $sel, $selEnd - $sel), 'dsShowLoader()') !== false,
-   'the theme switch does not show the loader');
-/* ...and it must go up BEFORE the form is submitted, or it never paints. */
-$body = substr($js3, $sel, $selEnd - $sel);
-ok(strpos($body, 'dsShowLoader()') < strpos($body, 'projectForm'),
-   'the loader is shown after the form submits, which is too late to see');
+/*
+ * THE ONLY CALLER IS STILL THE GAME SWITCH, but it moved. selectProject()
+ * and the Select Project dropdown are gone; the picker on the dashboard
+ * calls this from its own click handler, so the count has to be taken
+ * across both files or it reads zero and passes for the wrong reason.
+ *
+ * CALLS, not occurrences: the definition is `dsShowLoader(){` and matches
+ * the same substring, so counting those said two and meant one.
+ */
+$dash = src('dropship/dashboard.php');
+ok($dash !== '', 'dropship/dashboard.php could not be read');
+$calls = substr_count($js3, 'dsShowLoader();') + substr_count($dash, 'dsShowLoader();');
+ok($calls === 1, "the loader is shown from $calls places, not just the game switch");
+ok(substr_count($js3, 'dsShowLoader();') === 0,
+   'dropship.js shows the loader again, so something other than the switch can');
+/* It goes up on the TILE CLICK, which is before the browser leaves the page
+   -- the tiles are ordinary links now, so there is no submit to race. */
+$h = strpos($dash, "veil.addEventListener('click', function (ev) {\n\t\tvar a = ev.target.closest");
+ok($h !== false, 'the picker no longer hooks its tiles; the check below proves nothing');
+ok($h !== false && strpos(substr($dash, $h, 400), 'dsShowLoader()') !== false,
+   'the game switch does not show the loader');
+ok($h !== false && strpos(substr($dash, $h, 400), ".closest('.dsgame-tile')") !== false,
+   'the loader goes up for any click in the picker, including the one that closes it');
 /* Idempotent: a second call must not stack a second overlay. */
 ok(strpos($js3, "if (document.getElementById('loading')) return;") !== false,
    'calling it twice stacks overlays');
@@ -141,9 +151,22 @@ ok(strpos($js3, "if (document.getElementById('loading')) return;") !== false,
 ok(strpos($js3, "getAttribute('data-ds-prefix')") !== false,
    'the loader does not use the theme art prefix, so a reskin shows Drop Ship\'s loader or a 404');
 ok(strpos($js3, "pre + 'images/loading.gif'") !== false, 'the loader art path is wrong');
-/* Picking the empty option must not submit anything. */
-ok(preg_match('/alert\("Please select a project from the dropdown\."\);\s*\n\s*return;/', $js3) === 1,
-   'choosing the blank option alerts and then submits it anyway');
+/*
+ * AND THERE IS NO PLACEHOLDER TO GUARD ANY MORE. The dropdown opened on a
+ * "Project" option that meant nothing, so selectProject() had to alert() and
+ * bail when somebody picked it. A grid of four games has no empty option to
+ * choose, which removed the last alert() in the app -- a native modal that
+ * blocks the page and looks like nothing else on it.
+ */
+/* THE DROPDOWN'S alert, specifically. checkTransaction() has its own for a
+   DISCOIN result, which is a different control with a different reason and
+   is none of this change's business -- a blanket "no alert() anywhere" check
+   would have been a check about that instead, and would have failed for a
+   reason unrelated to the thing it is named after. */
+ok(stripos($js3, 'select a project') === false,
+   'the dropdown placeholder alert is still there, so something still submits an empty pick');
+ok(strpos($js3, 'function selectProject') === false,
+   'selectProject() is back; the picker switches game with a plain link');
 
 echo "\nthe platform's own overlay is untouched\n";
 /*
