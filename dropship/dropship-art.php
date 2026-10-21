@@ -547,7 +547,12 @@ function dropshipArtStore($tmp_path, $dest_abs, $declared_ext, $max_w = 0, $max_
 	if ($want === 'jpg')  $ok = imagejpeg($dst, $dest_abs, 90);
 	if ($want === 'gif')  $ok = imagegif($dst, $dest_abs);
 	if ($want === 'webp') $ok = function_exists('imagewebp') ? imagewebp($dst, $dest_abs, 90) : false;
-	imagedestroy($src); imagedestroy($dst);
+	/* imagedestroy() removed: it has done nothing since PHP 8.0 -- a GDImage
+	   is an object and is freed when the last reference goes -- and 8.5
+	   deprecates calling it, which with display_errors on prints a notice
+	   into whatever page resized the art. Unsetting is the honest version
+	   of the same intent. */
+	unset($src, $dst);
 
 	if (!$ok && $want === 'webp' && !function_exists('imagewebp')) {
 		return array(false, 'This server cannot write webp.');

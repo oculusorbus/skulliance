@@ -156,7 +156,7 @@ if(!empty($roles)){
   		  case "949930360681140274":
   			$elite = true;
   			break;
-		  case "949930529841635348";
+		  case "949930529841635348":
 		    $innercircle = true;
 			break;
 		  default:

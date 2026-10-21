@@ -318,7 +318,7 @@ for ($x = 0; $x < MONSTROCITY_LOGO_W; $x++) {
 	if ((($p >> 24) & 0x7F) < 100) { if (!$left) $left = $x; $right = $x; }
 }
 $padL = $left; $padR = MONSTROCITY_LOGO_W - 1 - $right;
-ok(abs($padL - $padR) <= 2, "the artwork is not centred: ${padL}px left, ${padR}px right");
+ok(abs($padL - $padR) <= 2, "the artwork is not centred: {$padL}px left, {$padR}px right");
 
 /* Small art is enlarged rather than left tiny, but the caller is told. */
 $tiny = imagecreatetruecolor(60, 25); imagefill($tiny, 0, 0, 0x00ff00);

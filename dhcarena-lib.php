@@ -1778,7 +1778,13 @@ function dhca_rivalries($conn, $days = DHCA_RIVALRY_DAYS) {
 				   column and every consumer would otherwise repeat the decode
 				   and the empty-array fallback. dhca_rivalry_art() turns it
 				   into layers; nothing sends raw traits to the client. */
-				'traits'  => json_decode($r['traits'], true) ?: array(),
+				/* COALESCED TO A STRING BEFORE DECODING. dhc_fighters.traits is
+				   NOT NULL today, but this row comes through a LEFT-joined
+				   ledger and the harness produced a null on the first run
+				   under 8.5 -- passing null to json_decode() is deprecated,
+				   and with display_errors on platform-wide a deprecation is
+				   a notice printed into the Rivalries page. */
+				'traits'  => json_decode((string)($r['traits'] ?? ''), true) ?: array(),
 				'battles' => (int)$r['n'],
 				'att'     => (int)$r['att'],
 				'def'     => (int)$r['def'],

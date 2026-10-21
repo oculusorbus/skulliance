@@ -675,7 +675,7 @@ $mk = function ($fmt, $w = 40, $h = 30, $alpha = false) use ($tmpd) {
 	if ($fmt === 'png') imagepng($im, $f);
 	if ($fmt === 'jpg') imagejpeg($im, $f, 90);
 	if ($fmt === 'gif') imagegif($im, $f);
-	imagedestroy($im);
+	unset($im);
 	return $f;
 };
 $typeof = function ($f) {
@@ -722,7 +722,7 @@ if ($im) {
 	/* #07111d, within jpeg's own slop. */
 	ok(abs($r - 0x07) < 12 && abs($g - 0x11) < 12 && abs($b - 0x1d) < 12,
 	   sprintf('transparency flattened to #%02x%02x%02x, not the page ground #07111d', $r, $g, $b));
-	imagedestroy($im);
+	unset($im);
 }
 @unlink($dst);
 /*
