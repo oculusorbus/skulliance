@@ -738,10 +738,24 @@ $characters = evaluateText("Troops");
  * gifs are on disk. A theme already set to gif has nothing to switch, and
  * a still theme with no gifs would switch to 404s.
  */
+/*
+ * AND ADMIN ONLY, now that the themes have their own art. The switch was
+ * here because a still theme's gif set was otherwise unreachable; what it
+ * reaches today is a half-finished alternate library that is in places
+ * still Drop Ship's files sitting under another theme's folder, which is
+ * not something to hand a player. Kept for the owner as a way to look
+ * through that library without an FTP client.
+ *
+ * HIDING THE CONTROL IS NOT THE GATE -- dropshipAnimationOn() refuses for
+ * everybody else, so a player who already had it on is not stranded in it
+ * with the switch gone. This line only decides whether the row is drawn.
+ */
 /* THE THEME'S extension, not the resolved one. Asking the resolved one
    meant the switch vanished the moment it was turned on -- it reports
    'gif' once animation is active -- with no way back to the stills. */
 $ds_can_animate = function_exists('dropshipThemeHasGifArt')
+	&& function_exists('dropshipThemeAdmin')
+	&& dropshipThemeAdmin()
 	&& dropshipThemeMediaExtension() !== 'gif'
 	&& dropshipThemeHasGifArt($slug);
 if ($ds_can_animate):
