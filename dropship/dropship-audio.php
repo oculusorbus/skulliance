@@ -58,8 +58,21 @@
  */
 function dropshipAudioEvents() {
 	return array(
-		array('term' => 'Drop Ship Initiating',     'sound' => 'dropshipcontra',       'delay' => 0),
+		/*
+		 * ROUND 0, 1, 2 ARE THREE FRAMES WITH THREE CAPTIONS, and the
+		 * first pass hung round 1's sound on round 0's caption. The
+		 * markup is explicit: round 0 is reset.gif captioned "Drop Ship
+		 * Initiating" and had NO sound; round 1 is drop.gif captioned
+		 * "Drop Ship" and is the one that played dropshipcontra; round 2
+		 * is team.gif captioned "Drop Ship Landed".
+		 *
+		 * "Drop Ship" IS A SUBSTRING OF THE OTHER TWO, so it has to be
+		 * tested after them -- the ordering check in the harness derives
+		 * exactly this and would have caught it the other way round.
+		 */
+		array('term' => 'Drop Ship Initiating',     'sound' => '',                     'delay' => 0),
 		array('term' => 'Drop Ship Landed',         'sound' => 'gunfirecontra',        'delay' => 0),
+		array('term' => 'Drop Ship',                'sound' => 'dropshipcontra',       'delay' => 0),
 		array('term' => 'Melee',                    'sound' => 'melee',                'delay' => 0),
 		array('term' => 'Tactical Katana',          'sound' => 'melee',                'delay' => 1000),
 		array('term' => 'Extra Life',               'sound' => 'extralife',            'delay' => 0),
@@ -73,7 +86,21 @@ function dropshipAudioEvents() {
 		   Lounge never reaches its own Insert Anal Beads sound. */
 		array('term' => 'Pull Grenade Pin',         'sound' => 'grenadepin',           'delay' => 600),
 		array('term' => 'Throw Grenade',            'sound' => 'grenadecontra',        'delay' => 0),
+		/*
+		 * EVERY FRAME IS A MOMENT AND GETS A SLOT, even the ones that
+		 * have never had a sound. demo1 is the activation and demo2 the
+		 * explosion, two frames with two captions and two sounds; these
+		 * five are frames with captions and no sound at all, which is
+		 * not the same as frames that should not have one. Listed with
+		 * an empty default so they are silent exactly as they are today
+		 * and an admin can give them something.
+		 */
 		array('term' => 'Radar',                    'sound' => '',                     'delay' => 0),
+		array('term' => 'Night Vision Goggles',     'sound' => '',                     'delay' => 0),
+		array('term' => 'Radio',                    'sound' => '',                     'delay' => 0),
+		array('term' => 'Reinforcements',           'sound' => '',                     'delay' => 0),
+		array('term' => 'Jet Pack Takeoff',         'sound' => '',                     'delay' => 0),
+		array('term' => 'Drop Box',                 'sound' => '',                     'delay' => 0),
 		array('term' => 'Load Machine Gun',         'sound' => 'loading',              'delay' => 0),
 		array('term' => 'Machine Gun',              'sound' => 'gunfirecontra',        'delay' => 0),
 		array('term' => 'Flamethrower Ignition',    'sound' => 'flamethrower1',        'delay' => 0),
@@ -238,13 +265,20 @@ function dropshipAudioOpenSlot($conn, $project_id) {
 	}
 	$legacy = array(1 => 'alarm', 3 => 'crowd', 4 => 'flyingcar');
 	$dir = rtrim(__DIR__, '/') . '/sounds/';
+	/*
+	 * "-opening", NOT THE BARE SLUG. Filthy Mermaid's word for the round
+	 * 1 caption "Drop Ship" is "Filthy Mermaid", so that event already
+	 * asks for filthy-mermaid.mp3 -- two different sounds would have
+	 * been fighting over one filename.
+	 */
+	$stem = $slug === '' ? '' : $slug . '-opening';
 	return array(
 		'term'       => 'Opening',
 		'said'       => $slug === '' ? '' : str_replace('-', ' ', ucwords($slug, '-')),
 		'delay'      => 0,
-		'stem'       => $slug,
-		'rel'        => $slug === '' ? '' : 'sounds/' . $slug . '.mp3',
-		'exists'     => $slug !== '' && is_file($dir . $slug . '.mp3'),
+		'stem'       => $stem,
+		'rel'        => $stem === '' ? '' : 'sounds/' . $stem . '.mp3',
+		'exists'     => $stem !== '' && is_file($dir . $stem . '.mp3'),
 		'base'       => '',
 		'base_rel'   => '',
 		'base_has'   => false,

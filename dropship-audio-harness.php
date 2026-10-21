@@ -83,6 +83,42 @@ foreach (array(array('Pull Smoke Bomb Pin', 'Smoke Bomb'),
 ok($ev[count($ev) - 1]['term'] === 'Survived',
    'the catch-all is not last, so every round plays it');
 
+echo "\nevery frame the run shows has a sound slot\n";
+/*
+ * EVERY NUMBERED FRAME IS ITS OWN MOMENT. Reported looking at the
+ * Demolition row: demo1 is the activation and demo2 the explosion, two
+ * distinct sounds, and only one was on the page. They are two frames
+ * with two captions -- "Demolition" and "Explosion" -- so the audio was
+ * there; what was missing was a slot for every OTHER frame in that
+ * position. Five of them had none at all (Night Vision Goggles, Radio,
+ * Reinforcements, Jet Pack Takeoff, Drop Box), which is not the same
+ * thing as a frame that should be silent.
+ *
+ * SCRAPED FROM THE GAME, not restated. Each caption is read off the
+ * markup that emits the frame, so a frame added later with a caption
+ * nothing matches fails here.
+ */
+$ds_src = file_get_contents(__DIR__ . '/dropship/dropship.php');
+preg_match_all('/evaluateText\("([^"]+)"\)\."<\/h3>";\s*\n\s*\$dropshipMarkup\.="<img src=.\"\.\$prefix\.\"images\/([a-z0-9\/-]+)\./',
+	$ds_src, $fm, PREG_SET_ORDER);
+ok(count($fm) >= 30, 'only ' . count($fm) . ' captioned frames found; the scrape is broken');
+$terms_in_order = array();
+foreach ($ev as $e) $terms_in_order[] = $e['term'];
+foreach ($fm as $f) {
+	list(, $caption, $frame) = $f;
+	$hit = '';
+	foreach ($terms_in_order as $t) { if (strpos($caption, $t) !== false) { $hit = $t; break; } }
+	ok($hit !== '', "the frame images/$frame is captioned \"$caption\" and no sound event matches it");
+}
+/* AND THE PAIRS THAT PROVE IT IS PER FRAME, not per weapon. */
+foreach (array('Demolition' => 'Explosion',
+               'Pull Smoke Bomb Pin' => 'Smoke Bomb',
+               'Load Machine Gun' => 'Machine Gun',
+               'Pull Grenade Pin' => 'Throw Grenade') as $a => $b) {
+	ok(isset($terms[$a]) && isset($terms[$b]) && $a !== $b,
+	   "$a and $b are not two separate events, so a two-frame weapon has one sound");
+}
+
 echo "\nevery sound the old chain could play is still reachable\n";
 /*
  * THE OLD CHAIN, as it stood, taken from git rather than from memory.
@@ -209,6 +245,31 @@ $by1 = array();
 foreach (dropshipAudioSlots($c, 1) as $s) $by1[$s['term']] = $s;
 ok($by1['Melee']['rel'] === 'sounds/melee.mp3', 'an unrenamed thing does not ask for its own word');
 ok($by1['Smoke Bomb']['said'] === 'Smoke Bomb', 'an unrenamed thing reports a different word');
+
+/*
+ * THE OPENING MUST NOT COLLIDE WITH A CAPTION.
+ *
+ * It is the one slot with no caption to derive from, so it is named
+ * after the theme -- and Filthy Mermaid's word for the round 1 caption
+ * "Drop Ship" is "Filthy Mermaid", which means a bare slug would have
+ * put two different sounds on filthy-mermaid.mp3. Whichever was
+ * uploaded second would silently become both.
+ */
+/* A PROJECT ID NOT USED ABOVE: dropshipThemeConfig() and
+   dropshipThemeDictionaries() both cache per id for the request, so
+   reusing 3 would answer with the dictionary an earlier section set. */
+$fmc = new AConn(
+	array(33 => array('id' => 330, 'project_id' => 33, 'slug' => 'filthy-mermaid', 'name' => 'Filthy Mermaid')),
+	array(330 => array(arow('Drop Ship', 'Filthy Mermaid'))));
+$open3 = dropshipAudioOpenSlot($fmc, 33);
+$stems = array();
+foreach (dropshipAudioSlots($fmc, 33) as $sl) if ($sl['stem'] !== '') $stems[$sl['stem']] = $sl['term'];
+ok($open3['stem'] !== '', 'the opening has no filename at all');
+ok(!isset($stems[$open3['stem']]),
+   'the opening asks for the same file as ' . ($stems[$open3['stem']] ?? '?')
+ . ', so two different sounds fight over one name');
+ok(isset($stems['filthy-mermaid']),
+   'the round 1 caption no longer asks for the theme word, so this check has gone stale');
 
 echo "\nthe delay belongs to the event, not the theme\n";
 /* When a sound lands against the animation is not a thing a reskin
