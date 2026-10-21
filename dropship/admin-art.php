@@ -575,6 +575,14 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
   border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.4);
   color:#e8eaed;font-size:18px;line-height:1;cursor:pointer}
 .ds-lightbox .x:hover{background:rgba(255,255,255,.14)}
+.ds-lightbox .nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:64px;
+  padding:0;border-radius:4px;border:1px solid rgba(255,255,255,.22);background:rgba(0,0,0,.45);
+  color:#e8eaed;font-size:26px;line-height:1;cursor:pointer}
+.ds-lightbox .nav:hover{background:rgba(255,255,255,.14)}
+.ds-lightbox .nav[disabled]{opacity:.2;cursor:default}
+.ds-lightbox .nav.prev{left:12px}
+.ds-lightbox .nav.next{right:12px}
+@media (max-width:700px){ .ds-lightbox .nav{width:36px;height:52px;font-size:20px} }
 /* SOUND, beside the pictures of the same thing.
    A GRID, NOT A FLOW. The first pass let each row wrap on its own, so the
    file input, the picker and the button started at a different x on every
@@ -1168,6 +1176,17 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	 * sitting over the page waiting to be shown by mistake -- the same
 	 * reason dsShowLoader() builds rather than toggles.
 	 */
+	/*
+	 * EVERY PICTURE ON THE PAGE, IN THE ORDER THEY APPEAR.
+	 *
+	 * Read fresh each time the overlay opens rather than cached: an
+	 * upload replaces a card's <img> in place, so a list captured
+	 * earlier would step onto an element no longer in the document.
+	 */
+	function lightboxShots() {
+		return Array.prototype.slice.call(root.querySelectorAll('.slot .shot img'));
+	}
+
 	function lightbox(img, slot) {
 		/* ONE AT A TIME. Every click used to append another overlay, and
 		   with the stylesheet not matching they piled up down the page
@@ -1208,8 +1227,33 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		box.appendChild(cap);
 		var hint = document.createElement('div');
 		hint.className = 'hint';
-		hint.textContent = 'click the backdrop, press Escape, or use the X';
+		var shots = lightboxShots();
+		var at = shots.indexOf(img);
+		hint.textContent = (shots.length > 1 ? 'left and right arrows for the next picture'
+		                                     + (at !== -1 ? '  (' + (at + 1) + ' of ' + shots.length + ')' : '')
+		                                     + '  \u00b7  ' : '')
+		                 + 'click the backdrop, press Escape, or use the X';
 		box.appendChild(hint);
+
+		/*
+		 * ARROWS ON SCREEN TOO. A keyboard-only affordance is one
+		 * nobody finds, and this page is used with a mouse in one hand
+		 * and a folder of art in the other.
+		 */
+		function arrow(dir, glyph) {
+			var b = document.createElement('button');
+			b.type = 'button';
+			b.className = 'nav ' + dir;
+			b.setAttribute('aria-label', dir === 'prev' ? 'Previous picture' : 'Next picture');
+			b.innerHTML = glyph;
+			b.disabled = !shots[at + (dir === 'prev' ? -1 : 1)];
+			b.addEventListener('click', function (ev) {
+				ev.stopPropagation();     /* the backdrop closes; this must not */
+				step(dir === 'prev' ? -1 : 1);
+			});
+			box.appendChild(b);
+		}
+		if (shots.length > 1 && at !== -1) { arrow('prev', '&#8249;'); arrow('next', '&#8250;'); }
 
 		var x = document.createElement('button');
 		x.type = 'button';
@@ -1222,7 +1266,33 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 			box.remove();
 			document.removeEventListener('keydown', onKey);
 		}
-		function onKey(ev) { if (ev.key === 'Escape') close(); }
+		/*
+		 * ARROWS WALK THE PAGE'S OWN ORDER, so left and right move
+		 * through the slots as they are laid out -- across a thing's
+		 * frames, then on to the next thing. Comparing seventy images
+		 * by closing and reopening each one is the thing this is for.
+		 *
+		 * REBUILT, NOT REPLACED: the caption, the dimensions and the
+		 * shot all have to change together, and lightbox() is the one
+		 * place that knows how. It closes itself first, so there is
+		 * never a second overlay or a second keydown listener.
+		 */
+		function step(by) {
+			var shots = lightboxShots();
+			var at = shots.indexOf(img);
+			if (at === -1) return;
+			var next = shots[at + by];
+			if (!next) return;            /* stop at the ends, do not wrap */
+			var nslot = card(next);
+			if (!nslot) return;
+			close();
+			lightbox(next, nslot);
+		}
+		function onKey(ev) {
+			if (ev.key === 'Escape')     { close(); return; }
+			if (ev.key === 'ArrowLeft')  { ev.preventDefault(); step(-1); return; }
+			if (ev.key === 'ArrowRight') { ev.preventDefault(); step(1); }
+		}
 		/* THE BACKDROP CLOSES, THE PICTURE DOES NOT. Closing on any click
 		   inside meant you could not point at the thing you came to
 		   look at without losing it. */

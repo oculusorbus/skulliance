@@ -2,20 +2,15 @@
  * dropship-art-lightbox-harness.js -- node, no browser, no network.
  *
  * Runs the REAL lightbox() out of dropship/admin-art.php against a DOM
- * stub. Clicking a slot on the art page opens the picture full size,
- * because a 1080px frame shown at 210 says which image is in the slot and
- * nothing about whether it is the right one.
+ * stub, together with the two functions it leans on.
  *
- * WHAT IT IS PROTECTING is what happens on CLOSE. The overlay is fixed at
- * z-index 200 over the whole page, and it registers a document-level
- * keydown listener to catch Escape -- so a close that forgets to remove
- * that listener leaves one behind per open, and a close that forgets to
- * remove the node leaves the admin staring at a covered page. Both are
- * invisible until the fiftieth slot.
- *
- * Also pins that the caption is built with textContent. A theme names its
- * own icons and that name reaches the card, so innerHTML there is markup
- * from a database field.
+ * WHAT IT IS PROTECTING is what happens on CLOSE and on STEP. The
+ * overlay is fixed at z-index 2000 over the whole page and registers a
+ * document-level keydown listener, so a close that forgets either
+ * leaves the admin on a covered page or leaks a listener per open --
+ * both invisible until the fiftieth slot. Stepping rebuilds the overlay
+ * rather than swapping the image, because the caption and the
+ * dimensions have to change with it, so every step is also a close.
  *
  * Usage: node dropship-art-lightbox-harness.js
  */
@@ -26,26 +21,28 @@ let fails = 0;
 function ok(cond, what) { if (!cond) { fails++; console.log('  FAIL  ' + what); } }
 
 const php = fs.readFileSync(__dirname + '/dropship/admin-art.php', 'utf8');
-const m = php.match(/\tfunction lightbox\(img, slot\) \{[\s\S]*?\n\t\}\n/);
-ok(!!m, 'lightbox() could not be found in admin-art.php, so nothing below proves anything');
-const SRC = m ? m[0] : 'function lightbox(){}';
+function lift(re, what) {
+	const m = php.match(re);
+	ok(!!m, what + ' could not be lifted from admin-art.php');
+	return m ? m[0] : '';
+}
+const SRC = [
+	lift(/\tfunction card\(el\) \{[^\n]*\n/, 'card()'),
+	lift(/\tfunction lightboxShots\(\) \{[\s\S]*?\n\t\}/, 'lightboxShots()'),
+	lift(/\tfunction lightbox\(img, slot\) \{[\s\S]*?\n\t\}/, 'lightbox()'),
+].join('\n');
 
-/* THE CAPTION carries a theme's own words, so it is textContent. The one
-   innerHTML left is the literal multiplication sign on the close button,
-   which is a constant in this file and not page data. */
-ok(!/innerHTML\s*=\s*[^'"]*(name|path|dims|textContent)/.test(SRC),
+/* The caption carries a theme's own words, so it is textContent. The
+   innerHTML left is for constant glyphs: the close X and two arrows. */
+ok(!/innerHTML\s*=\s*[^;]*(name|path|dims)\b/.test(SRC),
    'the caption is built with innerHTML, and a theme names its own icons');
-ok((SRC.match(/innerHTML/g) || []).length <= 1,
-   'more than one innerHTML in the lightbox; only the close glyph may be one');
 
 /*
  * THE OVERLAY IS APPENDED TO <body>, SO ITS CSS MUST NOT BE SCOPED TO
- * THE PAGE WRAPPER. This is the bug the first version shipped with:
- * every rule was written `.dsart .lightbox` while the element lived on
- * body, so not one of them matched. It was an unstyled div at the foot
- * of the page -- not centred, no backdrop, nothing to click outside of,
- * and a fresh one on every click. A DOM stub cannot see that; the
- * stylesheet can be read.
+ * THE PAGE WRAPPER. The first version wrote `.dsart .lightbox` while
+ * the element lived on body, so not one rule matched: an unstyled div
+ * at the foot of the page, not centred, no backdrop, a fresh one every
+ * click. A DOM stub cannot see that; the stylesheet can be read.
  */
 ok(/document\.body\.appendChild\(box\)/.test(SRC),
    'the overlay is no longer appended to body; the selector check below assumes it is');
@@ -59,9 +56,11 @@ ok(new RegExp('\\.' + cls + '\\{[^}]*position:fixed').test(php),
    'the overlay is not fixed, so it does not cover the page');
 ok(new RegExp('\\.' + cls + '\\{[^}]*justify-content:center').test(php),
    'the overlay does not centre what it shows');
-ok(/big\.src = img\.src/.test(SRC),
-   'the full-size image is not the card\'s own src, so it misses the cache buster '
- + 'and a slot replaced a moment ago shows the old picture');
+/* ON THE RULE THAT POSITIONS THEM, not merely on the selector: a
+   narrow-screen override inside @media uses the same selector and
+   satisfies a bare check while the arrows sit unplaced in the flow. */
+ok(new RegExp('\\.' + cls + '\\s+\\.nav\\{[^}]*position:absolute').test(php),
+   'the step arrows are not positioned, so they land in the flow instead of beside the picture');
 
 /* ---------- the stub ---------------------------------------------------- */
 
@@ -69,127 +68,178 @@ function makeEl(tag) {
 	return {
 		tagName: tag.toUpperCase(),
 		className: '', src: '', alt: '', textContent: '', type: '', innerHTML: '',
-		attrs: {},
+		disabled: false, attrs: {},
+		/* Every real element has one; card() walks up calling
+		   classList.contains and would throw without it. */
+		classList: { contains: () => false },
+		parentElement: null,
+		children: [], parent: null, listeners: {},
 		setAttribute(n, v) { this.attrs[n] = v; },
 		getAttribute(n) { return n in this.attrs ? this.attrs[n] : null; },
-		children: [], parent: null, listeners: {},
 		appendChild(c) { c.parent = this; this.children.push(c); return c; },
 		addEventListener(ev, fn) { (this.listeners[ev] = this.listeners[ev] || []).push(fn); },
 		remove() {
 			this.removed = true;
 			if (this.parent) this.parent.children = this.parent.children.filter(c => c !== this);
 		},
-		fire(ev, target) { (this.listeners[ev] || []).forEach(f => f({ target: target || this })); },
+		fire(ev, target) {
+			(this.listeners[ev] || []).forEach(f => f({
+				target: target || this,
+				stopPropagation() { this.stopped = true; },
+				preventDefault() {},
+			}));
+		},
 		querySelector() { return null; },
 	};
 }
 
-function run() {
+/* A page of three slots, each with one picture, in document order. */
+function makePage() {
+	const slots = [];
+	const shots = [];
+	['bunker/1', 'bunker/2', 'bunker/3'].forEach(function (name, i) {
+		const img = makeEl('img');
+		img.src = '/staking/dropship/images/live/' + name + '.jpg?v=' + (100 + i);
+		const slot = {
+			classList: { contains: c => c === 'slot' },
+			_name: name,
+			querySelector(sel) {
+				const map = { name: 'Bunker, scene ' + (i + 1) + ' of 3',
+				              path: 'images/live/' + name + '.jpg',
+				              dims: '1080x1080 - 200KB' };
+				const key = sel.replace('.', '');
+				if (!(key in map)) return null;
+				const el = makeEl('span');
+				el.textContent = map[key];
+				return el;
+			},
+		};
+		img.parentElement = slot;
+		slot.parentElement = null;
+		slots.push(slot);
+		shots.push(img);
+	});
+	return { slots: slots, shots: shots };
+}
+
+function run(startAt) {
+	const page = makePage();
 	const body = makeEl('body');
 	const docListeners = {};
 	let standing = null;
 	const doc = {
 		body: body,
 		createElement: makeEl,
-		querySelector: function (q) {
-			return (standing && !standing.removed && q.indexOf(standing.className) !== -1)
-				? standing : null;
-		},
+		querySelector: q => (standing && !standing.removed
+			&& q.indexOf(standing.className) !== -1) ? standing : null,
 		addEventListener(ev, fn) { (docListeners[ev] = docListeners[ev] || []).push(fn); },
 		removeEventListener(ev, fn) {
 			docListeners[ev] = (docListeners[ev] || []).filter(f => f !== fn);
 		},
 	};
-	const card = { name: 'Bunker, round 16 and beyond, scene 5 of 6',
-	               path: 'images/live/bunker/11.jpg', dims: '1080×1080 · 222KB' };
-	const slot = {
-		querySelector(sel) {
-			const key = sel.replace('.', '');
-			if (!(key in card)) return null;
-			const el = makeEl('span');
-			el.textContent = card[key];
-			return el;
-		},
-	};
-	const img = makeEl('img');
-	img.src = '/staking/dropship/dread-city/images/live/bunker/11.jpg?v=1771';
-
-	const fn = new Function('document', SRC + '\nreturn lightbox;')(doc);
-	fn(img, slot);
-	standing = body.children[body.children.length - 1] || null;
-	return {
-		open: function () { fn(img, slot); standing = body.children[body.children.length - 1]; },
-		body: body,
-		box: body.children[0],
+	const root = { querySelectorAll: () => page.shots };
+	const fn = new Function('document', 'root', 'Array',
+		SRC + '\nreturn lightbox;')(doc, root, Array);
+	fn(page.shots[startAt], page.slots[startAt]);
+	const api = {
+		page: page, body: body,
+		get box() { return body.children[body.children.length - 1] || null; },
 		keys: () => (docListeners.keydown || []).length,
-		esc: () => (docListeners.keydown || []).slice().forEach(f => f({ key: 'Escape' })),
-		other: () => (docListeners.keydown || []).slice().forEach(f => f({ key: 'a' })),
+		key: k => (docListeners.keydown || []).slice().forEach(f =>
+			f({ key: k, preventDefault() {} })),
 	};
+	Object.defineProperty(api, 'shown', {
+		get() {
+			const b = api.box;
+			const im = b && b.children.filter(c => c.tagName === 'IMG')[0];
+			return im ? im.src : '';
+		},
+	});
+	return api;
 }
 
-/* ---------- what it has to do ------------------------------------------- */
+/* ---------- opening ----------------------------------------------------- */
 
-const a = run();
+const a = run(0);
 ok(!!a.box && a.box.className === 'ds-lightbox', 'no overlay was added to the page');
-const big = a.box && a.box.children[0];
-ok(big && big.tagName === 'IMG' && big.src.indexOf('?v=') !== -1,
-   'the overlay has no image, or it lost the cache buster');
-const cap = a.box && a.box.children[1];
-ok(cap && JSON.stringify(cap.children.map(c => c.textContent)).indexOf('bunker/11.jpg') !== -1,
-   'the caption does not say which slot is being looked at');
+ok(a.shown.indexOf('bunker/1') !== -1, 'the wrong picture opened: ' + a.shown);
 ok(a.keys() === 1, 'Escape is not listened for, or is listened for more than once');
-
-/* THERE IS A CLOSE BUTTON, and it closes. */
 const xb = a.box.children.filter(c => c.className === 'x')[0];
 ok(!!xb, 'there is no close button');
-ok(xb && xb.getAttribute('aria-label') === 'Close', 'the close button has no accessible name');
 xb.fire('click');
-ok(a.box.removed === true, 'the close button does not close it');
+ok(a.body.children.length === 0, 'the close button does not close it');
 ok(a.keys() === 0, 'closing with the button leaves its listener behind');
 
-/* THE BACKDROP CLOSES... */
-const b2 = run();
-b2.box.fire('click', b2.box);
-ok(b2.box.removed === true, 'clicking the backdrop does not close it');
-ok(b2.body.children.length === 0, 'the overlay is left on the page after closing');
-ok(b2.keys() === 0,
-   'the keydown listener outlives the overlay, so one leaks for every picture opened');
+/* ---------- stepping ---------------------------------------------------- */
 
-/* ...AND THE PICTURE DOES NOT. Pointing at the thing you came to look at
-   must not throw it away. */
-const c2 = run();
-c2.box.fire('click', c2.box.children[0]);
-ok(c2.box.removed !== true, 'clicking the picture itself closes the overlay');
-c2.box.fire('click', c2.box);
-ok(c2.box.removed === true, 'the backdrop stopped closing it');
+const b = run(0);
+b.key('ArrowRight');
+ok(b.shown.indexOf('bunker/2') !== -1, 'right arrow did not move on: ' + b.shown);
+ok(b.body.children.length === 1,
+   'stepping stacked a second overlay: ' + b.body.children.length);
+ok(b.keys() === 1, 'stepping leaked a keydown listener: ' + b.keys());
+b.key('ArrowRight');
+ok(b.shown.indexOf('bunker/3') !== -1, 'right arrow did not move on twice');
+/* STOPS AT THE END rather than wrapping: with seventy slots, silently
+   looping to the first is disorienting. */
+b.key('ArrowRight');
+ok(b.shown.indexOf('bunker/3') !== -1, 'the last picture wrapped around to the first');
+ok(b.body.children.length === 1, 'stepping past the end stacked an overlay');
+b.key('ArrowLeft');
+ok(b.shown.indexOf('bunker/2') !== -1, 'left arrow did not move back');
+b.key('ArrowLeft');
+b.key('ArrowLeft');
+ok(b.shown.indexOf('bunker/1') !== -1, 'the first picture wrapped around to the last');
+ok(b.keys() === 1, 'listeners accumulated across steps: ' + b.keys());
+/* THE CAPTION FOLLOWS. Stepping rebuilds rather than swapping the src
+   precisely so the words and dimensions change with the picture. */
+const capb = b.box.children.filter(c => c.className === 'cap')[0];
+ok(capb && JSON.stringify(capb.children.map(c => c.textContent)).indexOf('bunker/1.jpg') !== -1,
+   'the caption still describes the picture that was open before');
 
-/* ESCAPE CLOSES IT TOO, and only Escape. */
-const d2 = run();
-d2.other();
-ok(d2.box.removed !== true, 'any key closes the overlay, not just Escape');
-d2.esc();
-ok(d2.box.removed === true, 'Escape does not close the overlay');
-ok(d2.keys() === 0, 'closing with Escape leaves its own listener behind');
+/* ---------- the arrows on screen ---------------------------------------- */
 
-/* ONE AT A TIME. Every click used to append another, and with the
-   stylesheet not matching they piled up down the page. */
-const e2 = run();
-e2.open();
-ok(e2.body.children.length === 1,
-   'opening a second picture stacks a second overlay: ' + e2.body.children.length);
+const c = run(1);
+const navs = c.box.children.filter(x => x.className && x.className.indexOf('nav') === 0);
+ok(navs.length === 2, 'there are not two arrow buttons: ' + navs.length);
+ok(navs.every(n => n.getAttribute('aria-label')), 'an arrow button has no accessible name');
+navs.filter(n => n.className.indexOf('next') !== -1)[0].fire('click');
+ok(c.shown.indexOf('bunker/3') !== -1, 'the next arrow does not step: ' + c.shown);
+/* AT THE ENDS THEY ARE DISABLED rather than silently inert. */
+const d = run(0);
+const dnav = d.box.children.filter(x => x.className && x.className.indexOf('nav') === 0);
+ok(dnav.filter(n => n.className.indexOf('prev') !== -1)[0].disabled === true,
+   'the back arrow is live on the first picture');
+ok(dnav.filter(n => n.className.indexOf('next') !== -1)[0].disabled === false,
+   'the forward arrow is dead on the first picture');
+/* CLICKING AN ARROW MUST NOT CLOSE. The backdrop closes on click and
+   the arrows sit on it, so the handler has to stop the bubble. */
+ok(/stopPropagation\(\)/.test(SRC),
+   'an arrow click bubbles to the backdrop, which closes the overlay');
 
-/* TWICE IN A ROW, closed properly each time: fifty slots inspected in one
-   sitting is the real usage and a leak only shows at that scale. */
-const f2 = run(); f2.box.fire('click', f2.box);
-const g2 = run(); g2.esc();
-ok(f2.keys() === 0 && g2.keys() === 0, 'listeners accumulate across repeated opens');
+/* ---------- closing ----------------------------------------------------- */
 
-/* A CLOSE THAT RUNS TWICE must not throw -- clicking as Escape is
-   pressed is one gesture a person can actually make. */
+const e = run(0);
+e.box.fire('click', e.box);
+ok(e.box === null || e.body.children.length === 0, 'clicking the backdrop does not close it');
+ok(e.keys() === 0, 'the keydown listener outlives the overlay');
+
+const f = run(0);
+const fimg = f.box.children.filter(x => x.tagName === 'IMG')[0];
+f.box.fire('click', fimg);
+ok(f.body.children.length === 1, 'clicking the picture itself closes the overlay');
+
+const g = run(0);
+g.key('a');
+ok(g.body.children.length === 1, 'any key closes the overlay, not just Escape');
+g.key('Escape');
+ok(g.body.children.length === 0, 'Escape does not close the overlay');
+ok(g.keys() === 0, 'closing with Escape leaves its own listener behind');
+
 let threw = false;
-try { const h2 = run(); h2.box.fire('click', h2.box); h2.esc(); h2.box.fire('click', h2.box); }
+try { const h = run(0); h.box.fire('click', h.box); h.key('Escape'); h.key('ArrowRight'); }
 catch (err) { threw = true; }
-ok(!threw, 'closing an already-closed overlay throws, taking the page scripts with it');
+ok(!threw, 'stepping after the overlay closed throws, taking the page scripts with it');
 
 console.log(fails ? '\n' + fails + ' check(s) FAILED' : '\nall good');
 process.exit(fails ? 1 : 0);
