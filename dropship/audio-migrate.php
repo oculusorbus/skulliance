@@ -57,6 +57,40 @@ $CHAIN = array(
 /* The per-theme opening, which never had a caption to match on. */
 $OPEN = array(1 => 'alarm', 2 => '', 3 => 'crowd', 4 => 'flyingcar');
 
+/*
+ * THE GUARDS, which are half the chain's behaviour and the half a plain
+ * substring table cannot express. A dozen branches were wrapped in
+ * `project_id != 3 && project_id != 4` -- Filthy Mermaid and Oculus
+ * Lounge were SILENT on the whole flamethrower, the machine gun, the
+ * rocket launcher, the sniper and the air strike. Without this the
+ * migration reads "no sound in the chain" as "give it Drop Ship's",
+ * which is the exact leak the rework exists to stop.
+ */
+$GUARDED = array(
+	'Pull Grenade', 'Throw Grenade', 'Load Machine Gun', 'Machine Gun',
+	'Flamethrower Ignition', 'Flamethrower Spray', 'Flamethrower Flames',
+	'Flamethrower Fire', 'Load Rocket Launcher', 'Rocket Launcher Gunfire',
+	'Rocket Launcher', 'Rocket Launcher Explosion', 'Sniper', 'Pilot',
+	'Air Strike', 'Exo',
+	/* The catch-all was guarded too: `evaluateRoundAudio(currentRound,
+	   lastRound-1, "!=")` sat inside the same project_id test, which is
+	   why only Drop Ship and Dread City got a gunshot on every advance.
+	   Every theme calls a surviving round "Survived", so all four ask
+	   for survived.mp3 -- copying anything into it hands the gunshot to
+	   all of them, which is the report that started this. */
+	'Survived',
+);
+/*
+ * ROUNDS 1 AND 2 were keyed on the round NUMBER, not the caption, so
+ * they are not in the chain at all: project 1 and 2 got dropshipcontra
+ * and gunfirecontra, Filthy Mermaid got door and stairs, and Oculus
+ * Lounge got nothing.
+ */
+$ROUNDS = array(
+	'drop/drop' => array(1 => 'dropshipcontra', 2 => 'dropshipcontra', 3 => 'door',   4 => ''),
+	'drop/team' => array(1 => 'gunfirecontra',  2 => 'gunfirecontra',  3 => 'stairs', 4 => ''),
+);
+
 /* ---------------------------------------------------------------- plan - */
 /**
  * Which file each name wants, read off the live wording.
@@ -66,7 +100,7 @@ $OPEN = array(1 => 'alarm', 2 => '', 3 => 'crowd', 4 => 'flyingcar');
  * dropship-audio-migrate-harness.php against a stub, because getting it
  * wrong writes somebody's audio onto the wrong name.
  */
-function dsamPlan($conn, $CHAIN, $OPEN) {
+function dsamPlan($conn, $CHAIN, $OPEN, $GUARDED = array(), $ROUNDS = array()) {
 	$want = array();   /* target file => array('src' => old name, 'why' => who wants it) */
 	$themes = dropshipThemeAll($conn);
 		if (!$themes) return array();
@@ -96,12 +130,30 @@ function dsamPlan($conn, $CHAIN, $OPEN) {
 				if ($c !== null && $c !== '') $cap = $c;
 			}
 			$src = '';
-			foreach ($CHAIN as $term => $snd) {
-				if (strpos($cap, $term) !== false) { $src = $snd; break; }
+			if (isset($ROUNDS[$s['art']])) {
+				$src = isset($ROUNDS[$s['art']][$pid]) ? $ROUNDS[$s['art']][$pid] : '';
+			} else {
+				foreach ($CHAIN as $term => $snd) {
+					if (strpos($cap, $term) === false) continue;
+					/* Guarded off for Filthy Mermaid and Oculus Lounge:
+					   they were silent, and silent is the answer. */
+					if (($pid === 3 || $pid === 4) && in_array($term, $GUARDED, true)) break;
+					$src = $snd;
+					break;
+				}
 			}
-			if ($src === '' && $s['legacy'] !== '') $src = $s['legacy'];
-			if ($src === '' || $src . '.mp3' === $target) continue;
-			if (!isset($want[$target])) $want[$target] = array('src' => $src . '.mp3', 'why' => array());
+			/*
+			 * THE OLD DROP SHIP NAME IS ONLY DROP SHIP'S. Falling back to
+			 * it for any other theme is handing that theme Drop Ship's
+			 * audio, which is the thing being fixed, not a convenience.
+			 */
+			if ($src === '' && $s['is_base'] && $s['legacy'] !== '') $src = $s['legacy'];
+			if ($src . '.mp3' === $target) continue;
+			if (!isset($want[$target])) {
+				$want[$target] = array('src' => '', 'srcs' => array(), 'why' => array(), 'mute' => false);
+			}
+			if ($src === '') $want[$target]['mute'] = true;
+			else { $want[$target]['srcs'][$src . '.mp3'] = true; $want[$target]['src'] = $src . '.mp3'; }
 			$want[$target]['why'][$name . ': ' . $s['caption']] = true;
 		}
 		$open = dropshipAudioOpenSlot($conn, $pid);
@@ -109,11 +161,33 @@ function dsamPlan($conn, $CHAIN, $OPEN) {
 		if ($open['stem'] !== '' && $leg !== '') {
 			$target = $open['stem'] . '.mp3';
 			if ($leg . '.mp3' !== $target && !isset($want[$target])) {
-				$want[$target] = array('src' => $leg . '.mp3', 'why' => array($name . ': Opening' => true));
+				/* Same shape as every other row, or the agreement check
+				   below trips over a half-built one. */
+				$want[$target] = array(
+					'src'  => $leg . '.mp3',
+					'srcs' => array($leg . '.mp3' => true),
+					'mute' => false,
+					'why'  => array($name . ': Opening' => true),
+				);
 			}
 		}
 	}
 	ksort($want);
+	/*
+	 * A SHARED NAME NEEDS ONE AGREED ANSWER.
+	 *
+	 * Several themes use the same word and so ask for the same file --
+	 * every theme calls a surviving round "Survived", so all four want
+	 * survived.mp3. If some of them were silent there, or they had
+	 * different sounds, copying ANYTHING into that name gives it to all
+	 * of them. Dropped with a reason rather than guessed at: the art
+	 * page lists them as silent and they can be set one at a time.
+	 */
+	foreach ($want as $t => $w) {
+		if ($w['src'] === '')                       { $want[$t]['skip'] = 'no source'; continue; }
+		if ($w['mute'])                             { $want[$t]['skip'] = 'shared with a theme that was silent'; continue; }
+		if (count($w['srcs']) > 1)                  { $want[$t]['skip'] = 'shared, and the themes had different sounds'; continue; }
+	}
 	ksort($want);
 	return $want;
 }
@@ -124,7 +198,7 @@ include __DIR__ . '/db.php';
 if (!isset($conn) || !is_object($conn)) exit("no database connection\n");
 $dir = __DIR__ . '/sounds/';
 if (!is_dir($dir)) exit("no sounds folder at $dir\n");
-$want = dsamPlan($conn, $CHAIN, $OPEN);
+$want = dsamPlan($conn, $CHAIN, $OPEN, $GUARDED, $ROUNDS);
 if (!$want) exit("no themes in the database, or nothing to do\n");
 
 /*
@@ -141,7 +215,7 @@ foreach ($want as $target => $w) {
 }
 
 /* ----------------------------------------------------------------- do - */
-$made = $have = $stuck = 0;
+$made = $have = $stuck = $skip = 0;
 echo ($GO ? "COPYING" : "DRY RUN -- nothing is being written. Add --go to apply.") . "\n\n";
 foreach ($want as $target => $w) {
 	$src = $w['src'];
@@ -149,6 +223,11 @@ foreach ($want as $target => $w) {
 	if (is_file($dir . $target)) {
 		$have++;
 		printf("  have  %-28s\n", $target);
+		continue;
+	}
+	if (!empty($w['skip'])) {
+		$skip++;
+		printf("  skip  %-28s %-24s %s\n", $target, $w['skip'], $who);
 		continue;
 	}
 	if (!is_file($dir . $src) && isset($standin[$src])) $src = $standin[$src];
@@ -171,8 +250,33 @@ foreach ($want as $target => $w) {
 	printf("  made  %-28s <- %-24s %s\n", $target, $src, $who);
 }
 
-printf("\n%d to copy, %d already there, %d with no source, %d total\n",
-	$made, $have, $stuck, count($want));
+printf("\n%d to copy, %d already there, %d skipped, %d stuck, %d total\n",
+	$made, $have, $skip, $stuck, count($want));
+
+/*
+ * ONE SOUND SPREAD THIN. Oculus Lounge's five rocket launcher frames all
+ * take melee.mp3, because the old chain tested "Dildo" before it ever
+ * reached the rocket launcher -- so that is honestly what plays today,
+ * and copying it five times is faithful rather than wrong. It is also
+ * obviously not what anybody wants, and it is invisible in a list of
+ * sixty lines unless it is counted.
+ */
+$spread = array();
+foreach ($want as $t => $w) {
+	if (!empty($w['skip']) || $w['src'] === '' || is_file($dir . $t)) continue;
+	$spread[$w['src']][] = $t;
+}
+$noisy = array();
+foreach ($spread as $src => $ts) if (count($ts) >= 3) $noisy[$src] = $ts;
+if ($noisy) {
+	echo "\nWORTH A LOOK -- one sound is about to cover several frames:\n";
+	foreach ($noisy as $src => $ts) {
+		printf("  %-24s -> %s\n", $src, implode(', ', $ts));
+	}
+	echo "  That is what plays today, so copying is faithful. If you would rather\n"
+	   . "  give those frames real sounds, leave them out and the art page will\n"
+	   . "  list them as silent until you do.\n";
+}
 if (!$GO) {
 	echo "\nNothing was written. Run it again with --go to do it.\n";
 } else {
