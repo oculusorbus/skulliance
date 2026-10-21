@@ -1202,6 +1202,16 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    wrapping is better than clipping a number off the end. */
 /* opacity .85, not .7: at .7 the labels land at 7.6:1 and looked washed
    beside figures that were themselves too dim. */
+/*
+ * THE HISTORY TAKES ITS OWN LINE, AND ONLY IT.
+ *
+ * flex:1 0 100% breaks the row, so whatever follows this in the markup
+ * is pushed down with it -- which is how the odds ended up on a third
+ * line, left-aligned, while every other row kept them at the right of
+ * the first. The eye should not have to scan sideways to compare a
+ * column. The odds are ordered BEFORE this now, so the first line of a
+ * rivalry row is laid out exactly like a plain one.
+ */
 .arena-wrap .a-foe .nemrec{flex:1 0 100%;font-size:10.5px;color:var(--bone);opacity:.85;
   font-weight:400;padding-left:38px;line-height:1.35;margin-top:1px}
 .arena-wrap .a-foe .nemrec em{font-style:normal;white-space:nowrap}
@@ -1263,6 +1273,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
      padding that indents it past the avatar in the flex layout would double
      the gap, so both are reset. */
   .arena-wrap .a-foe .nemrec{grid-column:2;padding-left:0;white-space:normal}
+  /* AND THE ODDS, for the same reason -- it was the one child never
+     placed, so it auto-placed into the 28px avatar column and rendered
+     as a crushed stack of single characters. */
+  .arena-wrap .a-foe .odds{grid-column:2;white-space:normal}
 }
 .arena-wrap .a-go{margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 /* The platform's buttons, not the game's. .btn inside #arenaBattle keeps the
@@ -1671,6 +1685,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                    row breaks after "They started" and leaves the number
                    stranded on its own line, which is what it did on a
                    phone. */ ?>
+          <span class="odds"></span>
+          <?php endif; ?>
+          <?php /* Filled by paintOdds() once a Crew is picked: the gap depends
+                   on which Fighters you bring, so it cannot be rendered here. */ ?>
           <span class="nemrec"><em>You won <b><?php echo (int)$o['my_wins']; ?></b></em><i>&middot;</i><em>They won <b><?php echo (int)$o['their_wins']; ?></b></em><?php /* A PERCENTAGE, NOT A COUNT. "They started 20" against a 21-11
                    record means adding the two up and comparing, in your head,
                    every time you look at it. The question this stat exists to
@@ -1682,10 +1700,6 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                    draws. Shown even at 0%, which is itself the answer: you
                    have started every one of them. */
                 $pct = (int)round((int)$o['they_attacked'] / max(1, (int)$o['battles']) * 100); ?><i>&middot;</i><em title="<?php echo (int)$o['they_attacked']; ?> of <?php echo (int)$o['battles']; ?> battles">They started <b><?php echo $pct; ?>%</b></em></span>
-          <?php endif; ?>
-          <?php /* Filled by paintOdds() once a Crew is picked: the gap depends
-                   on which Fighters you bring, so it cannot be rendered here. */ ?>
-          <span class="odds"></span>
           <?php if ($paid): ?><span class="paidtag" title="One trait per opponent per day. A rematch still counts for the ladder.">Beaten today &middot; no trait available</span><?php endif; ?>
         </div>
       <?php endforeach; ?>

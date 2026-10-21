@@ -1248,4 +1248,49 @@ $fsok(strpos($fsSrc, '$pfShow') !== false,
 echo ($fs_fail ? "\n$fs_fail filter-row check(s) FAILED\n" : "one filter row: ok\n");
 
 echo ($cs_fail ? "\n$cs_fail styling check(s) FAILED\n" : "every invented class is styled: ok\n");
-if ($cs_fail || $fs_fail) exit(1);
+
+/* ------------------------------------------------------------------ */
+/*
+ * THE ODDS ARE A COLUMN, so they have to be in the same place on every
+ * row.
+ *
+ * .nemrec is flex:1 0 100%, which breaks the line -- so whatever
+ * follows it in the markup goes down with it. The odds did, landing on
+ * a third line at the LEFT while every row without a rivalry kept
+ * theirs at the right of the first. Reported as exactly that: the eye
+ * should not have to scan sideways to compare a column just because a
+ * row is highlighted.
+ */
+$ar_fail = 0;
+function ar_ok($cond, $msg) { global $ar_fail; if (!$cond) { $ar_fail++; echo "  FAIL  $msg\n"; } }
+$ar = (string)@file_get_contents(__DIR__ . '/dhcarena.php');
+
+$i_odds = strpos($ar, '<span class="odds">');
+$i_rec  = strpos($ar, '<span class="nemrec">');
+ar_ok($i_odds !== false && $i_rec !== false, 'the rival row lost one of its two spans');
+ar_ok($i_odds !== false && $i_rec !== false && $i_odds < $i_rec,
+   'the odds are written after the history line, which breaks the row and takes them down with it');
+
+/* AND THE HISTORY STILL TAKES ITS OWN LINE, or it would sit inline and
+   squeeze the name. */
+ar_ok(preg_match('/\.a-foe \.nemrec\{[^}]*flex:1 0 100%/', $ar) === 1,
+   'the history line no longer spans the row');
+
+/*
+ * AND ON A NARROW SCREEN, where the row becomes a grid, EVERY child
+ * needs an explicit column. One that does not gets auto-placed into the
+ * 28px avatar track and rendered as a crushed stack of single
+ * characters -- the comment in that media query says so about .nemrec,
+ * and .odds was the child it forgot.
+ */
+$mq_at = strpos($ar, '@media (max-width:700px){');
+ar_ok($mq_at !== false, 'the narrow-screen block moved; the checks below prove nothing');
+$mq = $mq_at === false ? '' : substr($ar, $mq_at, strpos($ar, "\n}\n", $mq_at) - $mq_at);
+ar_ok(strpos($mq, 'display:grid') !== false, 'the narrow row is no longer a grid');
+foreach (array('.n', '.m', '.odds', '.nemrec', '.paidtag') as $child) {
+	ar_ok(preg_match('/\.a-foe ' . preg_quote($child, '/') . '\{[^}]*grid-column:2/', $mq) === 1,
+	   "$child has no column in the narrow grid, so it lands in the avatar track");
+}
+
+echo ($ar_fail ? "\n$ar_fail rival-row check(s) FAILED\n" : "the odds line up on every row: ok\n");
+if ($cs_fail || $fs_fail || $ar_fail) exit(1);
