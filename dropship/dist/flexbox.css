@@ -1453,3 +1453,30 @@ input:checked + .slider:before {
 		padding-bottom: 200px;
 	}
 }
+
+/* The save-a-squad row under the deployed field. Its siblings live in
+   dropshipSquadsPanel()'s own <style>; this one is here because the form is
+   rendered by dashboard.php, not by the panel. */
+.dssq-save {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	flex-wrap: wrap;
+	margin: 10px 0 0;
+}
+.dssq-save input[type=text] {
+	flex: 1 1 160px;
+	min-width: 0;
+	padding: 7px 10px;
+	font-size: 13px;
+	color: #e8eaed;
+	background: #07111d;
+	border: 1px solid var(--ds-line);
+	border-radius: var(--ds-r);
+	font-family: Arial, sans-serif;
+}
+.dssq-save input[type=text]::placeholder { color: #7a9eb0; }
+.dssq-save input[type=text]:focus-visible {
+	outline: 2px solid var(--ds-ochre);
+	outline-offset: 1px;
+}

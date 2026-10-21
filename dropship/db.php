@@ -6,6 +6,7 @@ require_once __DIR__ . '/dropship-grunts.php';   // the four free soldiers' loan
 require_once __DIR__ . '/dropship-themes.php';   // theme overrides as data, see dropship-themes-schema.md
 require_once __DIR__ . '/dropship-audio.php';    // which sound a round plays, derived from the wording
 require_once __DIR__ . '/dropship-odds.php';     // loadItems() quotes the odds per item
+require_once __DIR__ . '/dropship-squads.php';  // saved squads, see dropship-squads-schema.md
 include 'credentials/db_credentials.php';
 
 ini_set('display_errors', 1);
@@ -1177,7 +1178,28 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 		$user_clause = "user_id = '".$_SESSION['userData']['dropship_user_id']."' ";
 	}
 
-	$sql = "SELECT name, asset_name, ipfs, rank, armor, gear, level, username, deceased, active, soldiers.id AS soldier_id FROM soldiers INNER JOIN users ON users.id = soldiers.user_id WHERE ".$user_clause.$active_clause.$filterby." AND project_id = '".$_SESSION['userData']['dropship_project_id']."' ORDER BY deceased, title, soldiers.id";
+	/*
+	 * SOLDIERS IN A SAVED SQUAD ARE NOT IN THE LOOSE LIST.
+	 *
+	 * They render inside their squad above, so listing them here as well
+	 * would show the same soldier twice with two different sets of controls
+	 * -- and the second one would be an individual Deploy, which is the thing
+	 * a squad is meant to prevent.
+	 *
+	 * ONLY THE BARRACKS. $active 1 is the FIELD (what is deployed right now)
+	 * and $active 2 is the public Registered Soldiers roll; both want every
+	 * soldier, squad or not. Excluding there would hide half a deployed squad
+	 * from the player looking at it.
+	 */
+	$squad_clause = "";
+	if ($active === 0 && !$all && function_exists('dropshipSquadMembership')) {
+		$in_squads = array_keys(dropshipSquadMembership($conn));
+		if ($in_squads) {
+			$squad_clause = "AND soldiers.id NOT IN (" . implode(',', array_map('intval', $in_squads)) . ") ";
+		}
+	}
+
+	$sql = "SELECT name, asset_name, ipfs, rank, armor, gear, level, username, deceased, active, soldiers.id AS soldier_id FROM soldiers INNER JOIN users ON users.id = soldiers.user_id WHERE ".$user_clause.$active_clause.$filterby.$squad_clause." AND project_id = '".$_SESSION['userData']['dropship_project_id']."' ORDER BY deceased, title, soldiers.id";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {

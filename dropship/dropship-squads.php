@@ -118,6 +118,102 @@ function dropshipSquadPlural($n, $word) {
 	return $n . ' ' . $word . ($n === 1 ? '' : 's');
 }
 
+/**
+ * The armour and gear a squad is carrying, in the shape dropshipThreshold()
+ * reads.
+ *
+ * NO SUITS. A Mech Suit is a purchased item on the session, not a property of
+ * these four soldiers, and the suits OVERRIDE armour in the threshold chain --
+ * fold one in and every squad you own reports the same number, which makes
+ * "order by most powerful" meaningless at exactly the moment a player has
+ * spent money. So this is the squad's own armour, which is the thing that
+ * differs between squads and the thing a player is choosing between.
+ */
+function dropshipSquadFlags($members) {
+	$f = array('mech_suit' => false, 'exo_suit' => false, 'quantum_stealth' => false,
+	           'ballistic_shield' => false, 'heavy' => false, 'medium' => false,
+	           'light' => false, 'base' => false, 'extra_lives' => 0, 'roster' => array());
+	foreach ($members as $m) {
+		$row = isset($m['row']) ? $m['row'] : null;
+		if (!is_array($row)) continue;
+		switch (isset($row['armor']) ? $row['armor'] : '') {
+			case 'Heavy':  $f['heavy']  = true; break;
+			case 'Medium': $f['medium'] = true; break;
+			case 'Light':  $f['light']  = true; break;
+			case 'Base':   $f['base']   = true; break;
+		}
+		if (isset($row['gear']) && $row['gear'] === 'Medkit') $f['extra_lives']++;
+		$f['roster'][] = array('armor' => (string)($row['armor'] ?? ''),
+		                       'gear'  => (string)($row['gear']  ?? ''));
+	}
+	return $f;
+}
+
+/**
+ * What a squad IS, instead of what somebody called it.
+ *
+ * NAMES WERE THE FIRST VERSION AND WERE THE WRONG ANSWER. A squad already has
+ * an identity -- its armour spread and what that is worth per round -- and
+ * asking a player to type one is a step between them and the thing they came
+ * to do. Derived, never stored, for the usual reason: a stored label is a
+ * second copy of a fact and drifts the moment a soldier is swapped out.
+ *
+ * THE SAME dropshipThreshold() THE RUN ROLLS AGAINST, so the figure on the
+ * row and the figure the dice are compared to cannot disagree. 'pct' is the
+ * squad's ARMOUR though, not the player's whole loadout -- see
+ * dropshipSquadFlags() -- so the wording says "from armor" and never implies
+ * it is the number for the next run.
+ */
+function dropshipSquadPower($members) {
+	$f     = dropshipSquadFlags($members);
+	$tiers = 0;
+	foreach (array('heavy', 'medium', 'light', 'base') as $t) if ($f[$t]) $tiers++;
+	$gear  = array();
+	foreach ($f['roster'] as $r) if ($r['gear'] !== '' && $r['gear'] !== 'None') $gear[$r['gear']] = true;
+
+	$pct   = function_exists('dropshipSurvivalPct') && function_exists('dropshipThreshold')
+	       ? (int)dropshipSurvivalPct(dropshipThreshold($f)) : 0;
+	/* A SUPER SOLDIER SQUAD is all four armour tiers AND all three gear
+	   types -- the same test dropshipSquadAdvice() and loadAchievements()
+	   apply, not a second opinion about what "super" means. */
+	$super = ($tiers === 4 && count($gear) === 3);
+
+	if ($super)              $label = dropshipSquadWord('Super Soldier') . ' Squad';
+	elseif ($tiers === 4)    $label = 'Every armor tier';
+	elseif ($tiers === 0)    $label = 'No armor';
+	else                     $label = dropshipSquadPlural($tiers, 'armor tier');
+
+	return array('pct' => $pct, 'super' => $super, 'tiers' => $tiers,
+	             'gear' => count($gear), 'label' => $label, 'flags' => $f);
+}
+
+/** evaluateText() when it is loaded, the plain word when it is not. */
+function dropshipSquadWord($term) {
+	return function_exists('dropshipWord') ? dropshipWord($term)
+	     : (function_exists('evaluateText') ? evaluateText($term) : $term);
+}
+
+/**
+ * Strongest first.
+ *
+ * Armour decides the roll, so it decides the order. Gear breaks a tie because
+ * two squads at 80 are not equal if one of them carries a Medkit, and the
+ * member count breaks that, so the ordering is total and a list does not
+ * reshuffle itself between page loads for no visible reason.
+ */
+function dropshipSquadSort(&$squads) {
+	usort($squads, function ($a, $b) {
+		$pa = $a['power']; $pb = $b['power'];
+		if ($pa['pct']   !== $pb['pct'])   return $pb['pct']   - $pa['pct'];
+		if ($pa['super'] !== $pb['super']) return $pb['super'] ? 1 : -1;
+		if ($pa['gear']  !== $pb['gear'])  return $pb['gear']  - $pa['gear'];
+		if (count($a['members']) !== count($b['members'])) {
+			return count($b['members']) - count($a['members']);
+		}
+		return $a['id'] - $b['id'];
+	});
+}
+
 /* ---------- the database side ---------------------------------------------- */
 
 /**
@@ -133,14 +229,18 @@ function dropshipSquadsAll($conn, $user_id = null, $project_id = null) {
 	$pid = (int)($project_id !== null ? $project_id : ($_SESSION['userData']['dropship_project_id'] ?? 0));
 	if ($me <= 0 || $pid <= 0) return array();
 
-	$res = @$conn->query("SELECT id, name FROM squads
+	/* NO NAME COLUMN. A squad is identified by what it IS -- see
+	   dropshipSquadPower() -- so there is nothing stored to select. The
+	   ordering here is only a stable starting point; dropshipSquadSort()
+	   puts them in strength order once the members are known, which cannot
+	   be done in SQL because the armour lives on the soldiers. */
+	$res = @$conn->query("SELECT id FROM squads
 	                       WHERE user_id = $me AND project_id = $pid
 	                       ORDER BY created_at ASC, id ASC");
 	if (!$res) return array();
 	$squads = array();
 	while ($r = $res->fetch_assoc()) {
-		$squads[(int)$r['id']] = array('id' => (int)$r['id'], 'name' => (string)$r['name'],
-		                               'members' => array());
+		$squads[(int)$r['id']] = array('id' => (int)$r['id'], 'members' => array());
 	}
 	if (!$squads) return array();
 
@@ -173,8 +273,11 @@ function dropshipSquadsAll($conn, $user_id = null, $project_id = null) {
 		$states = array();
 		foreach ($sq['members'] as $m) $states[] = $m['state'];
 		$squads[$sid]['ready'] = dropshipSquadReadiness($states, dropshipSquadRoom($conn));
+		$squads[$sid]['power'] = dropshipSquadPower($sq['members']);
 	}
-	return array_values($squads);
+	$out = array_values($squads);
+	dropshipSquadSort($out);
+	return $out;
 }
 
 /** How many more soldiers the field will take. The ceiling is four. */
@@ -195,13 +298,13 @@ function dropshipSquadMembership($conn, $user_id = null, $project_id = null) {
 	$me  = (int)($user_id    !== null ? $user_id    : ($_SESSION['userData']['dropship_user_id'] ?? 0));
 	$pid = (int)($project_id !== null ? $project_id : ($_SESSION['userData']['dropship_project_id'] ?? 0));
 	if ($me <= 0 || $pid <= 0) return array();
-	$res = @$conn->query("SELECT m.soldier_id, q.id, q.name
+	$res = @$conn->query("SELECT m.soldier_id, q.id
 	                        FROM squad_members m
 	                        INNER JOIN squads q ON q.id = m.squad_id
 	                       WHERE q.user_id = $me AND q.project_id = $pid");
 	$out = array();
 	if ($res) while ($r = $res->fetch_assoc()) {
-		$out[(int)$r['soldier_id']] = array('id' => (int)$r['id'], 'name' => (string)$r['name']);
+		$out[(int)$r['soldier_id']] = (int)$r['id'];
 	}
 	return $out;
 }
@@ -219,19 +322,11 @@ function dropshipSquadMembership($conn, $user_id = null, $project_id = null) {
  *
  * Returns array(ok, message).
  */
-function dropshipSquadSave($conn, $name) {
+function dropshipSquadSave($conn) {
 	if (!dropshipSquadsTable($conn)) return array(false, 'Saved squads are not set up yet.');
 	$me  = (int)($_SESSION['userData']['dropship_user_id'] ?? 0);
 	$pid = (int)($_SESSION['userData']['dropship_project_id'] ?? 0);
 	if ($me <= 0 || $pid <= 0) return array(false, 'Not signed in.');
-
-	/* Trimmed, length-capped and never empty. The column is VARCHAR(40) and
-	   a name longer than that would be silently truncated by MySQL, which is
-	   a squad called something the player did not choose. */
-	$name = trim(preg_replace('/\s+/', ' ', (string)$name));
-	if ($name === '') $name = 'Squad';
-	if (function_exists('mb_substr')) $name = mb_substr($name, 0, 40);
-	else                              $name = substr($name, 0, 40);
 
 	$res = @$conn->query("SELECT id FROM soldiers
 	                       WHERE user_id = $me AND project_id = $pid
@@ -249,12 +344,11 @@ function dropshipSquadSave($conn, $name) {
 		foreach ($sq['members'] as $m) $have[] = (int)$m['soldier_id'];
 		sort($have);
 		$want = $ids; sort($want);
-		if ($have === $want) return array(false, 'That squad is already saved as "' . $sq['name'] . '".');
+		if ($have === $want) return array(false, 'You have already saved this squad.');
 	}
 
-	@$conn->query(sprintf("INSERT INTO squads (user_id, project_id, name, created_at)
-	                       VALUES (%d, %d, '%s', NOW())",
-	                      $me, $pid, $conn->real_escape_string($name)));
+	@$conn->query(sprintf("INSERT INTO squads (user_id, project_id, created_at)
+	                       VALUES (%d, %d, NOW())", $me, $pid));
 	$sid = (int)$conn->insert_id;
 	if ($sid <= 0) return array(false, 'Could not save that squad.');
 
@@ -262,7 +356,7 @@ function dropshipSquadSave($conn, $name) {
 	foreach ($ids as $i => $id) $rows[] = sprintf('(%d,%d,%d)', $sid, $id, $i);
 	@$conn->query('INSERT INTO squad_members (squad_id, soldier_id, slot) VALUES '
 	              . implode(',', $rows));
-	return array(true, 'Saved as "' . $name . '".');
+	return array(true, 'Squad saved.');
 }
 
 /**
@@ -302,7 +396,7 @@ function dropshipSquadDeploy($conn, $squad_id) {
 	$list = implode(',', array_map('intval', $ids));
 	@$conn->query("UPDATE soldiers SET active = 1
 	                WHERE id IN ($list) AND user_id = $me AND project_id = $pid AND deceased = 0");
-	return array(true, '"' . $squad['name'] . '" deployed.');
+	return array(true, $squad['power']['label'] . ' deployed.');
 }
 
 /**
@@ -354,4 +448,158 @@ function dropshipSquadDrop($conn, $squad_id, $soldier_id) {
 		return array(true, 'That was the last member, so the squad has gone too.');
 	}
 	return array(true, 'Removed from the squad.');
+}
+
+/* ---------- the screen ------------------------------------------------------ */
+
+/**
+ * The saved squads, above the loose barracks.
+ *
+ * MARKUP BESIDE THE RULES, the way dropshipOddsPanel() keeps its own. The
+ * states this draws are read from one place and rendered in one place; the
+ * version where the page worked out for itself what a member was is how the
+ * screen and the roll come to disagree.
+ *
+ * COMPACT ROWS, NOT A SECOND GRID OF CARDS. The big card exists to help you
+ * CHOOSE a soldier, which is what the barracks below is for. A saved squad is
+ * a thing you already chose, so what it owes the player is a name, who is in
+ * it, whether it can go, and one button.
+ */
+function dropshipSquadsPanel($conn) {
+	if (!dropshipSquadsTable($conn)) return '';
+	$squads = dropshipSquadsAll($conn);
+	if (!$squads) return '';
+	$h = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES); };
+
+	/* The theme's own word for a soldier, so a reskin does not say "soldier"
+	   in the middle of its own vocabulary. */
+	$t = function ($v) { return function_exists('evaluateText') ? evaluateText($v) : $v; };
+
+	ob_start();
+	?>
+<style>
+/* Unscoped ids, like the game picker: these rules must not name an ancestor
+   the element might not have. */
+.dssq{margin:0 0 14px}
+.dssq-one{border:1px solid var(--ds-line,#1b3346);border-radius:var(--ds-r,3px);
+  background:#0a1929;margin-bottom:10px;overflow:hidden}
+.dssq-one.ready{border-color:#00c8a0}
+.dssq-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 12px;
+  border-bottom:1px solid var(--ds-line,#1b3346)}
+.dssq-head b{font-size:13px;text-align:left}
+.dssq-one.super .dssq-head b{color:#00c8a0}
+.dssq-pct{flex:1 1 auto;text-align:left;font-size:12px;font-variant-numeric:tabular-nums;
+  color:#e8eaed}
+.dssq-pct em{font-style:normal;font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  color:#7a9eb0;margin-left:3px}
+.dssq-head form{display:inline}
+.dssq-why{font-size:11px;color:#7a9eb0;flex:1 1 100%;text-align:left}
+.dssq-one.ready .dssq-why{color:#00c8a0}
+/* FIXED-WIDTH MEMBERS, NOT A FOUR-COLUMN GRID. A grid of 1fr columns makes
+   each face a quarter of the page -- about 370px tall on a desktop -- which
+   is a second barracks, not the compact row this is meant to be. A squad
+   member needs to be recognised, not studied. Four of these plus the gaps
+   come to ~400px, so the row still holds together on a phone. */
+.dssq-men{display:flex;flex-wrap:wrap;gap:10px;padding:10px 12px}
+.dssq-man{flex:0 0 92px;width:92px;text-align:left;font-size:11px;min-width:0}
+.dssq-man img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;
+  border-radius:var(--ds-r,3px);background:#07111d;max-width:100%}
+.dssq-man .nm{display:block;font-weight:bold;margin-top:4px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.dssq-man .st{display:block;color:#7a9eb0;text-transform:uppercase;letter-spacing:.06em;
+  font-size:9.5px;margin-top:1px}
+.dssq-man.sold .st,.dssq-man.gone .st{color:#e8a0b0}
+.dssq-man.fallen .st{color:#f5a623}
+.dssq-man.ready .st{color:#00c8a0}
+.dssq-man.sold img,.dssq-man.gone img,.dssq-man.fallen img{filter:grayscale(1);opacity:.45}
+.dssq-man form{display:block;margin-top:4px}
+.dssq-man .small-button{width:100%;min-height:0;padding:4px 6px;font-size:10px}
+</style>
+<div class="dssq">
+<?php foreach ($squads as $sq):
+	$can = !empty($sq['ready']['can']); ?>
+	<div class="dssq-one<?php echo $can ? ' ready' : ''; ?><?php
+	     echo !empty($sq['power']['super']) ? ' super' : ''; ?>">
+		<div class="dssq-head">
+			<?php /* WHAT IT IS, not what it was called. The percentage is the
+			         squad's armour through the same dropshipThreshold() the run
+			         rolls against, so the two cannot drift; it is labelled
+			         "from armor" because a purchased suit overrides armour in
+			         that chain and this figure deliberately leaves suits out. */ ?>
+			<b><?php echo $h($sq['power']['label']); ?></b>
+			<span class="dssq-pct"><?php echo (int)$sq['power']['pct']; ?>%
+				<em>from armor</em></span>
+			<?php if ($can): ?>
+				<form action="dashboard.php#barracks" method="post">
+					<input type="hidden" name="squad_deploy" value="<?php echo (int)$sq['id']; ?>">
+					<input class="small-button" type="submit" value="Deploy squad">
+				</form>
+			<?php endif; ?>
+			<?php /* Disperse always, including on a squad nothing else can be
+			         done with -- it is the way out, so it is never the thing
+			         that is missing. */ ?>
+			<form action="dashboard.php#barracks" method="post">
+				<input type="hidden" name="squad_disperse" value="<?php echo (int)$sq['id']; ?>">
+				<input class="small-button secondary" type="submit" value="Disperse">
+			</form>
+			<?php if (!$can && $sq['ready']['why'] !== ''): ?>
+				<span class="dssq-why"><?php echo $h($sq['ready']['why']); ?></span>
+			<?php elseif ($can): ?>
+				<span class="dssq-why">Ready.</span>
+			<?php endif; ?>
+		</div>
+		<div class="dssq-men">
+		<?php foreach ($sq['members'] as $m):
+			$row   = $m['row'];
+			$state = $m['state'];
+			$label = array('ready' => 'Ready', 'fielded' => 'On the field',
+			               'fallen' => 'Fought this game', 'sold' => 'Not yours',
+			               'gone' => 'Gone');
+			$name  = $row ? (string)$row['name'] : 'Unknown soldier';
+			?>
+			<span class="dssq-man <?php echo $h($state); ?>">
+				<?php if ($row && !empty($row['asset_name'])): ?>
+					<img loading="lazy" alt=""
+					     src="<?php echo $h(dropshipSquadFace($conn, $row)); ?>"
+					     onerror="this.style.visibility='hidden'">
+				<?php endif; ?>
+				<span class="nm" title="<?php echo $h($name); ?>"><?php echo $h($name); ?></span>
+				<span class="st"><?php echo $h($label[$state] ?? $state); ?></span>
+				<?php /* A member you cannot field is the only one worth
+				         removing on its own -- offering Remove on a healthy
+				         soldier invites somebody to dismantle a squad one
+				         card at a time when Disperse is right there. */ ?>
+				<?php if ($state === 'sold' || $state === 'gone'): ?>
+					<form action="dashboard.php#barracks" method="post">
+						<input type="hidden" name="squad_id" value="<?php echo (int)$sq['id']; ?>">
+						<input type="hidden" name="squad_drop" value="<?php echo (int)$m['soldier_id']; ?>">
+						<input class="small-button secondary" type="submit" value="Remove">
+					</form>
+				<?php endif; ?>
+			</span>
+		<?php endforeach; ?>
+		</div>
+	</div>
+<?php endforeach; ?>
+</div>
+	<?php
+	return ob_get_clean();
+}
+
+/**
+ * The picture for one squad member.
+ *
+ * The same three-way the barracks card uses: Drop Ship's own art is local,
+ * every other theme is Skulliance's cached copy, and anything not cached
+ * falls back to the IPFS optimiser. Looked up per member rather than in one
+ * batch because a squad is four rows, not a roster.
+ */
+function dropshipSquadFace($conn, $row) {
+	$pid = (int)($_SESSION['userData']['dropship_project_id'] ?? 0);
+	if ($pid === 1) return 'images/nfts/' . $row['asset_name'] . '.jpg';
+	if (function_exists('dropshipLocalNftImages') && function_exists('getProjectPolicyId')) {
+		$local = dropshipLocalNftImages(array($row['asset_name']), getProjectPolicyId($conn));
+		if (!empty($local[$row['asset_name']])) return $local[$row['asset_name']];
+	}
+	return 'https://image-optimizer.jpgstoreapis.com/' . $row['ipfs'];
 }

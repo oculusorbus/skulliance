@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS squads (
 	id          INT AUTO_INCREMENT PRIMARY KEY,
 	user_id     INT          NOT NULL,         -- dropship users.id
 	project_id  INT          NOT NULL,         -- projects.id, so a squad belongs to one game
-	name        VARCHAR(40)  NOT NULL,
 	created_at  DATETIME     NOT NULL,
 	INDEX idx_owner (user_id, project_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -21,6 +20,32 @@ CREATE TABLE IF NOT EXISTS squad_members (
 	INDEX idx_soldier (soldier_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
+
+## Already created the tables?
+
+The first version had a `name VARCHAR(40) NOT NULL` on `squads`. Squads are
+identified by what they ARE now -- their armour spread and what it is worth a
+round -- so the column is unused. Drop it:
+
+```sql
+ALTER TABLE squads DROP COLUMN name;
+```
+
+Harmless to leave in place if you would rather not: nothing reads or writes it.
+
+## Why there is no name
+
+A squad already has an identity, and it is a better one than a text field:
+four armour tiers and three gear types is a **Super Soldier Squad**, and
+anything less says what it is worth per round. Asking a player to invent a
+name is a step between them and the thing they came to do, and a typed name
+goes stale the moment a soldier is swapped out.
+
+Derived by `dropshipSquadPower()` from the SAME `dropshipThreshold()` the run
+rolls against, so the figure on the row and the figure the dice meet cannot
+disagree. It is the squad's ARMOUR only: a purchased suit overrides armour in
+that chain, so folding one in would report the same number for every squad a
+player owns, which is exactly when "order by most powerful" needs to work.
 
 ## Why `soldiers.id` and not `asset_name`
 
@@ -68,3 +93,18 @@ game" rather than anything that sounds broken.
 Deploying a squad sets `active = 1` on each member, exactly as the Deploy
 button always did, and `deploySoldier()`'s four-soldier ceiling still applies.
 A saved squad of four cannot be fielded alongside a loose soldier.
+
+## Average depth per squad, which is not built
+
+Raised and deferred by the owner as possibly too much to start. Recording it
+needs no schema change whenever it is wanted: `results_soldiers` already
+stores one row per soldier per run (`result_id`, `soldier_id`, `project_id`)
+and `results.score` is the round the run died on, so a squad's average depth
+is a join from `squad_members` through `results_soldiers` to `results`, over
+runs where every member of the squad was fielded together.
+
+Worth knowing before building it: a soldier can be fielded in a run WITHOUT
+the squad being deployed as a squad, so "runs this squad did" has to mean
+"runs whose fielded set was exactly these members", not "runs any of them
+appeared in". Otherwise a soldier that is in two saved squads credits its
+score to both.

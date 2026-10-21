@@ -185,8 +185,11 @@ $at = strpos($code, 'function dropshipSquadDisperse');
 ok(strpos(substr($code, $at, 900), 'DELETE FROM squads WHERE id = $sid AND user_id = $me') !== false,
    'dispersing can delete a squad that is not yours');
 /* Saving never takes a list of soldiers from the caller. */
-ok(preg_match('/function dropshipSquadSave\(\$conn, \$name\)/', $code) === 1,
-   'dropshipSquadSave() takes soldier ids from its caller, which is the browser');
+/* Takes the connection and NOTHING else: no name (the owner removed those)
+   and, more importantly, no soldier ids. The members are whoever is standing
+   on the field, read from the database at the moment of the save. */
+ok(preg_match('/function dropshipSquadSave\(\$conn\)/', $code) === 1,
+   'dropshipSquadSave() takes an argument it should not, probably soldier ids');
 ok(strpos($code, 'active = 1 AND deceased = 0') !== false,
    'saving does not read the squad off the field');
 
@@ -206,6 +209,129 @@ ok($at !== false, 'deploySoldier() has gone');
 $body = $at === false ? '' : substr($dbsrc, $at, 900);
 ok(strpos($body, "user_id = '\".\$_SESSION['userData']['dropship_user_id'].\"'") !== false,
    'deploySoldier() updates by id alone again, so a guessed id moves somebody else\'s soldier');
+
+/* ---------- what a squad IS, since it has no name -------------------------- */
+
+echo "\na squad is identified by what it carries\n";
+require_once __DIR__ . '/dropship/dropship-odds.php';
+function mem($armor, $gear = 'None') {
+	return array('row' => array('id' => 1, 'user_id' => 1, 'active' => 0, 'deceased' => 0,
+	                            'armor' => $armor, 'gear' => $gear));
+}
+$superSquad = array(mem('Heavy', 'Melee'), mem('Medium', 'Demolition'),
+                    mem('Light', 'Medkit'), mem('Base'));
+$p = dropshipSquadPower($superSquad);
+ok($p['super'] === true, 'four tiers and three gear types is not recognised as super');
+ok(strpos($p['label'], 'Squad') !== false, "the super label lost its noun: {$p['label']}");
+/*
+ * THE SAME THRESHOLD THE RUN ROLLS AGAINST. 74 + 3 + 2 + 1 = 80, and the
+ * point of deriving it rather than storing a number is that these cannot
+ * drift -- a harness that hardcoded 80 here would pass after somebody
+ * retuned the credits and the screen started lying.
+ */
+ok($p['pct'] === (int)dropshipSurvivalPct(dropshipThreshold(dropshipSquadFlags($superSquad))),
+   'the quoted percentage is not the one dropshipThreshold() produces');
+ok($p['pct'] === 80, "a complete squad should read 80, got {$p['pct']}");
+
+/* All four tiers but not all the gear is not super -- the same test
+   dropshipSquadAdvice() applies, not a second opinion. */
+$allArmour = array(mem('Heavy'), mem('Medium'), mem('Light'), mem('Base'));
+$p2 = dropshipSquadPower($allArmour);
+ok($p2['super'] === false, 'armour alone is being called a Super Soldier Squad');
+ok($p2['pct'] === 80, 'gear changed the odds, which it does not');
+ok($p2['label'] !== $p['label'], 'a geared and an ungeared squad read identically');
+
+$weak = array(mem('Base'));
+ok(dropshipSquadPower($weak)['pct'] === 50, 'one Base soldier should be 50');
+ok(dropshipSquadPower(array())['tiers'] === 0, 'an empty squad claims armour');
+/* A member that is gone contributes nothing rather than exploding. */
+ok(dropshipSquadPower(array(array('row' => null), mem('Heavy')))['pct'] === 74,
+   'a missing member breaks the reckoning');
+
+/*
+ * SUITS ARE NOT THE SQUAD'S. They are purchased items on the session and
+ * they OVERRIDE armour in the threshold chain, so folding one in reports the
+ * same number for every squad a player owns -- precisely when ordering by
+ * strength has to work.
+ */
+$f = dropshipSquadFlags($superSquad);
+foreach (array('mech_suit', 'exo_suit', 'quantum_stealth', 'ballistic_shield') as $suit) {
+	ok($f[$suit] === false, "a squad claims to be carrying a $suit");
+}
+
+echo "\nstrongest first\n";
+$list = array(
+	array('id' => 3, 'members' => $weak,       'power' => dropshipSquadPower($weak)),
+	array('id' => 1, 'members' => $superSquad, 'power' => $p),
+	array('id' => 2, 'members' => $allArmour,  'power' => $p2),
+);
+dropshipSquadSort($list);
+ok($list[0]['power']['pct'] === 80 && $list[2]['power']['pct'] === 50,
+   'the list is not in strength order: '
+   . implode(',', array_map(function ($x) { return $x['power']['pct']; }, $list)));
+/* Gear breaks the 80/80 tie, because two squads at the same odds are not
+   equal if one of them carries a Medkit. */
+ok($list[0]['power']['super'] === true, 'the geared squad does not win the tie at 80');
+/* TOTAL, so a list does not reshuffle between page loads for no reason. */
+$again = $list; dropshipSquadSort($again);
+ok(array_column($again, 'id') === array_column($list, 'id'), 'the sort is not stable');
+
+/* ---------- the screen it is wired to -------------------------------------- */
+
+echo "\nthe barracks shows each soldier once\n";
+/*
+ * A SOLDIER IN A SQUAD IS NOT ALSO IN THE LOOSE LIST. It renders inside its
+ * squad, so listing it below as well would show the same soldier twice with
+ * two sets of controls -- and the second would be an individual Deploy,
+ * which is the thing a squad exists to prevent.
+ */
+ok(strpos($dbsrc, 'dropshipSquadMembership($conn)') !== false,
+   'the barracks no longer asks which soldiers are spoken for');
+$gs = strpos($dbsrc, 'function getSoldiers');
+$gsb = $gs === false ? '' : substr($dbsrc, $gs, 3000);
+ok(strpos($gsb, 'soldiers.id NOT IN (') !== false,
+   'squad members are listed loose as well, so they appear twice');
+/*
+ * AND ONLY THERE. $active 1 is the FIELD and 2 is the public Registered
+ * Soldiers roll; both want every soldier, squad or not. Excluding in either
+ * would hide half a deployed squad from the player looking straight at it.
+ */
+ok(strpos($gsb, '$active === 0 && !$all') !== false,
+   'the exclusion is not scoped to the barracks, so the field hides its own squad');
+
+echo "\nthe panel\n";
+$panel = preg_replace(array('#/\*.*?\*/#s'), '', $src);
+/* Disperse is the way out, so it is never the control that is missing --
+   including on a squad whose members are all gone. */
+$dis = substr_count($panel, 'name="squad_disperse"');
+ok($dis === 1, "Disperse is rendered $dis times, so it is conditional on something");
+ok(strpos($panel, "if (\$can): ?>\n\t\t\t\t<form") !== false
+   || preg_match('/\$can \?.*squad_deploy|if \(\$can\)/s', $panel) === 1,
+   'Deploy is offered on a squad that cannot deploy');
+/* Remove belongs only on a member that cannot be fielded. Offering it on a
+   healthy soldier invites dismantling a squad one card at a time when
+   Disperse is right there. */
+/* SINGLE-QUOTED. In a double-quoted PHP string "\$state" is a backslash
+   followed by an interpolated $state -- which is undefined here, so it
+   became an empty string and the pattern matched nothing while reading as
+   though it did. */
+ok(preg_match('/\$state === \'sold\' \|\| \$state === \'gone\'/', $panel) === 1,
+   'Remove is offered on members that are perfectly fine');
+/* The save form carries a name and nothing else. */
+$dash = preg_replace('#/\*.*?\*/#s', '', (string)file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+$sv = strpos($dash, 'class="dssq-save"');
+ok($sv !== false, 'the save-a-squad form has gone');
+$svb = $sv === false ? '' : substr($dash, $sv, 600);
+ok(strpos($svb, 'soldier') === false,
+   'the save form posts soldier ids, which is the browser choosing the members');
+ok(strpos($svb, 'squad_name') === false,
+   'the save form still asks for a name, which the owner removed');
+ok(strpos($svb, 'name="squad_save"') !== false, 'the save form posts nothing');
+/* Squads render BEFORE the loose grid: the owner's order. */
+$pAt = strpos($dash, 'dropshipSquadsPanel($conn)');
+$gAt = strpos($dash, 'getSoldiers($conn, 0, $filterby)');
+ok($pAt !== false && $gAt !== false && $pAt < $gAt,
+   'the loose soldiers render above the saved squads');
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all squad checks passed\n");
 exit($fail ? 1 : 0);

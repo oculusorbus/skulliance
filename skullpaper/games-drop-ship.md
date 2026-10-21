@@ -27,6 +27,23 @@ two soldiers who both carry one. Each failed round spends exactly one of them
 and the run continues. The first roll of a run happens on round 3, so that is
 the single likeliest round to spend one on.
 
+**Save a squad and field it again in one press.** Once soldiers are deployed,
+**Save this squad** keeps that grouping. Saved squads sit above the barracks,
+strongest first, each showing what it is: a full set of four armour tiers and
+all three gear types is a **Super Soldier Squad**, and every squad shows what
+its armour is worth a round. There are no names to invent.
+
+**Deploy squad** fields all of them at once. **Disperse** breaks the grouping
+up and returns the soldiers to the barracks so you can rebuild. While a
+soldier belongs to a saved squad it is not deployed on its own, so a squad
+cannot be taken apart by accident.
+
+A squad only fields once per game, because soldiers who fight are out until
+the next game opens. A squad resting between games says so rather than
+looking broken. If you sell an NFT, the squad tells you which member is no
+longer yours and offers to remove it, and a squad you have sold out of
+entirely can still be seen and still be dispersed.
+
 ## The four free soldiers
 
 Every Drop Ship player is given four Grunts - **Hagar, Delay, Blood Bag and

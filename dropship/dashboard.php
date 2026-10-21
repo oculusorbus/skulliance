@@ -51,6 +51,26 @@ if(isset($_POST['soldier_id'])) {
 		deploySoldier($conn, $_POST['soldier_id'], 0);
 	}
 }
+/*
+ * SAVED SQUADS. Up here with the other post actions, and for the same
+ * reason the comment above gives: every one of these changes what the
+ * barracks is about to render, so it has to happen before a card is drawn.
+ *
+ * ONE MESSAGE, SHOWN WHERE THE SQUADS ARE. Each action returns (ok,
+ * message) rather than echoing -- these run before <html>, so anything
+ * printed here lands above the doctype.
+ */
+$ds_squad_msg = null;
+if (isset($_POST['squad_save'])) {
+	$ds_squad_msg = dropshipSquadSave($conn);
+} elseif (isset($_POST['squad_deploy'])) {
+	$ds_squad_msg = dropshipSquadDeploy($conn, $_POST['squad_deploy']);
+} elseif (isset($_POST['squad_disperse'])) {
+	$ds_squad_msg = dropshipSquadDisperse($conn, $_POST['squad_disperse']);
+} elseif (isset($_POST['squad_drop'])) {
+	$ds_squad_msg = dropshipSquadDrop($conn, $_POST['squad_id'] ?? 0, $_POST['squad_drop']);
+}
+
 //Item purchases
 if(isset($_POST['item_id'])) {
 	// Disable purchasing of items if the game has already been played. This is a fallback error in case someone tried to hack the HTML.
@@ -848,12 +868,48 @@ if ($ds_can_animate):
 						getSoldiers($conn, 1); 
 						?>
 					</div>
+					<?php
+					/*
+					 * SAVE WHAT IS ON THE FIELD, offered here because here is
+					 * where the squad exists. A player has just chosen four
+					 * soldiers and is looking at them; asking them to go to the
+					 * barracks and rebuild the same four to name it would be
+					 * the friction this feature exists to remove.
+					 *
+					 * NOT OFFERED WHEN IT WOULD DO NOTHING: the field has to
+					 * have somebody on it, and the tables have to exist.
+					 * dropshipSquadSave() reads the members off the field
+					 * itself, so this form carries a name and nothing else --
+					 * there is no soldier id here for anybody to tamper with.
+					 */
+					if (function_exists('dropshipSquadsTable') && dropshipSquadsTable($conn)
+					    && checkSquadCount($conn) > 0): ?>
+					<form class="dssq-save" action="dashboard.php#barracks" method="post">
+						<input type="hidden" name="squad_save" value="1">
+						<input class="small-button" type="submit" value="Save this squad">
+					</form>
+					<?php endif; ?>
 				</div>
 			<?php } ?>
 				<a name="barracks" id="barracks"></a>
 				<div class="content" id="barracks-panel">
 				<h2><?php echo evaluateText("Barracks"); ?></h2>
-					<?php filterTroops("dashboard"); ?>
+					<?php
+					/*
+					 * SQUADS FIRST, LOOSE SOLDIERS AFTER, which is the owner's
+					 * order and the right one: a saved squad is a decision
+					 * already made and wants one press, while what is left over
+					 * is the tail that never fitted a Super Soldier Squad and is
+					 * rarely used. getSoldiers() leaves squad members out of the
+					 * list below, so nobody appears twice.
+					 */
+					if (isset($ds_squad_msg)) {
+						echo '<div class="msg ' . ($ds_squad_msg[0] ? 'good' : 'bad') . '">'
+						   . htmlspecialchars($ds_squad_msg[1], ENT_QUOTES) . '</div>';
+					}
+					echo dropshipSquadsPanel($conn);
+					filterTroops("dashboard");
+					?>
 					<div id="nfts" class="nfts">
 						<?php 
 						getSoldiers($conn, 0, $filterby); 
