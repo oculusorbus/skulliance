@@ -559,6 +559,11 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .snd .play.on{background:#00c8a0;color:#06131f}
 .dsart .snd .play[disabled]{opacity:.25;cursor:default;border-color:rgba(255,255,255,.18);
   background:none;color:#6f8296}
+/* DASHED: this one plays something the run will not. Same control, and
+   the difference has to be visible or the button becomes a liar. */
+.dsart .snd .play.cand{border-style:dashed;border-color:rgba(232,192,112,.55);
+  background:none;color:#e8c070}
+.dsart .snd .play.cand:hover{background:rgba(232,192,112,.14)}
 .dsart .snd form{grid-area:act;display:grid;grid-template-columns:1fr auto;gap:6px;
   align-items:center;margin:0}
 .dsart .snd form .pick{display:grid;gap:4px;min-width:0}
@@ -748,9 +753,30 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 				<?php endif; ?>
 				</span>
 			</span>
-			<?php /* One button, one shared player: see the script below. */ ?>
-			<button type="button" class="play" aria-label="Play"
-			        <?php echo $playing === '' ? 'disabled' : 'data-src="' . $h(dropshipAudioUrl($playing)) . '"'; ?>>&#9654;</button>
+			<?php
+			/*
+			 * PLAY IS A PREVIEW, NOT A REPORT.
+			 *
+			 * It used to be disabled whenever the RUN plays nothing here,
+			 * which meant a row reading "silent, Drop Ship uses demo.mp3"
+			 * named a file and then refused to play it. Those are two
+			 * different questions: what the run does is the status text,
+			 * and what you can listen to is anything the row can point
+			 * at. So it falls back to the candidate, and marks itself so
+			 * the two do not get confused.
+			 *
+			 * It also follows the picker -- choose a file in the dropdown
+			 * and the button plays THAT, which is the whole point of
+			 * being offered a list of sounds to choose between.
+			 */
+			$preview = $playing !== '' ? dropshipAudioUrl($playing)
+			         : ($suggest !== '' ? dropshipAudioUrl('sounds/' . $suggest) : '');
+			?>
+			<button type="button" class="play<?php echo $playing === '' && $preview !== '' ? ' cand' : ''; ?>"
+			        title="<?php echo $playing !== '' ? 'Play what this theme plays'
+			               : ($preview !== '' ? 'Not played for this theme &mdash; preview ' . $h($suggest)
+			               : 'Nothing to play'); ?>"
+			        <?php echo $preview === '' ? 'disabled' : 'data-src="' . $h($preview) . '"'; ?>>&#9654;</button>
 			<?php if ($as['stem'] !== ''): ?>
 			<form method="post" enctype="multipart/form-data"
 			      action="admin-art.php?project_id=<?php echo $pid; ?>&amp;format=<?php echo $h($ext); ?>">
@@ -1093,18 +1119,53 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	 * want when comparing two of them rather than hearing both at once.
 	 */
 	var sndNow = null, sndBtn = null;
+	/* CHOOSING A FILE MAKES THE BUTTON LIVE, including on a row that had
+	   nothing to play at all -- otherwise the one row most in need of an
+	   audition is the one that cannot give you one. */
+	root.addEventListener('change', function (ev) {
+		var sel = ev.target;
+		if (!sel || sel.name !== 'audio_use' || !sel.closest) return;
+		var row = sel.closest('.ev');
+		var b = row ? row.querySelector('.play') : null;
+		if (!b) return;
+		if (sel.value) { b.disabled = false; b.classList.add('cand');
+			b.title = 'Preview ' + sel.value; }
+		else if (!b.getAttribute('data-src')) { b.disabled = true; b.classList.remove('cand'); }
+	});
 	function sndStop() {
 		if (sndNow) { sndNow.pause(); sndNow = null; }
 		if (sndBtn) { sndBtn.classList.remove('on'); sndBtn.innerHTML = '&#9654;'; sndBtn = null; }
 	}
+	/*
+	 * WHAT THIS BUTTON WOULD PLAY, resolved when it is pressed.
+	 *
+	 * The picker wins when something is chosen in it: being handed a list
+	 * of sounds to choose between and not being able to hear them is the
+	 * list not doing its job. Otherwise it is whatever the server put on
+	 * the button -- the theme's own sound, or the candidate for a row the
+	 * run plays silent.
+	 */
+	function sndSrc(btn) {
+		var row = btn.closest ? btn.closest('.ev') : null;
+		var sel = row ? row.querySelector('select[name=audio_use]') : null;
+		if (sel && sel.value) {
+			/* No mtime for a file picked in the browser, and it may have
+			   been replaced since the page loaded, so bust it outright --
+			   this is one preview, not a page of art. */
+			return 'sounds/' + sel.value + '?t=' + Date.now();
+		}
+		return btn.getAttribute('data-src') || '';
+	}
 	root.addEventListener('click', function (ev) {
 		var b = ev.target.closest ? ev.target.closest('.snd .play') : null;
-		if (!b || !b.getAttribute('data-src')) return;
+		if (!b) return;
+		var src = sndSrc(b);
+		if (!src) return;
 		ev.preventDefault();
 		var again = (b === sndBtn);
 		sndStop();
 		if (again) return;                      /* pressing it again stops it */
-		sndNow = new Audio(b.getAttribute('data-src'));
+		sndNow = new Audio(src);
 		sndBtn = b;
 		b.classList.add('on');
 		b.innerHTML = '&#9632;';

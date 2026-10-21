@@ -328,6 +328,28 @@ ok(strpos($adm_src, "\$playing = \$as['exists'] ? \$as['rel']") !== false
    is nearly always the one being looked for. */
 ok(strpos($adm_src, "\$suggest = (\$playing === '' && \$as['legacy_has'])") !== false,
    'a silent row does not offer the obvious file, so every fix is a hunt through the dropdown');
+/*
+ * PLAY IS A PREVIEW, NOT A REPORT. It was disabled whenever the RUN
+ * plays nothing, so a row reading "silent, Drop Ship uses demo.mp3"
+ * named a file and then refused to play it. What the run does is the
+ * status text; what you can listen to is anything the row points at.
+ */
+ok(strpos($adm_src, "\$preview = \$playing !== '' ? dropshipAudioUrl(\$playing)") !== false,
+   'the play button is still tied to what the run plays, so a named file cannot be heard');
+/* THE FALLBACK HALF SPECIFICALLY. Without it $preview is just $playing
+   under a new name and the silent row is mute again -- which is the bug,
+   so it needs its own assertion rather than riding on the line above. */
+ok(strpos($adm_src, "(\$suggest !== '' ? dropshipAudioUrl('sounds/' . \$suggest) : '')") !== false,
+   'a row the run plays silent has no candidate to preview, which is the whole report');
+ok(strpos($adm_src, "\$preview === '' ? 'disabled'") !== false,
+   'the button is disabled on something other than having nothing to play');
+/* And the difference is visible, or the button quietly lies about what
+   the theme does. Matched on the RULE BODY, not the selector: a :hover
+   rule for the same class satisfies a bare selector check. */
+ok(strpos($adm_src, "' cand'") !== false,
+   'nothing marks a button that previews a sound the run will not play');
+ok(preg_match('/\.play\.cand\{[^}]*border-style:dashed/', $adm_src) === 1,
+   'a preview of a sound the run will not play looks identical to the real thing');
 
 echo "\nthe panel pairs a sound with the thing it belongs to\n";
 $plan = dropshipArtPlan($c, 1, 'gif', 'drop-ship');
