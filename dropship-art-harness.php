@@ -431,11 +431,39 @@ ok(dropshipArtIconTerm('images/equipment/drop-box.gif') === 'drop-box',
 ok(dropshipArtIconTerm('images/live/beach/3.gif') === null,
    'a beach frame is treated as a picture of a nameable thing');
 ok(dropshipArtIconTerm('images/die/1.gif') === null, 'a death frame is paired with an icon');
-/* Art that is not a picture of a nameable thing stays one unnamed band, so
-   it renders as the plain grid it always was. */
+/*
+ * A STAGE IS TWO ROWS: the plain rotation as one unnamed band, and the
+ * EXO rotation under its own heading.
+ *
+ * Reported as confusing: the suit's frames are not more frames of the
+ * beach, they are what a player wearing it sees INSTEAD, so nine cards
+ * in one band read as a nine-frame beach when it is seven and two
+ * alternates.
+ */
 $br = $rowsBy('The beach');
-ok(count($br) === 1 && isset($br['']), 'the beach frames were split into named rows');
-ok(count($br['']['slots']) === 10, 'the beach band lost frames');
+ok(count($br) === 2, 'the beach has ' . count($br) . ' rows; the exo rotation needs its own');
+ok(isset($br['']), 'the plain beach frames are no longer an unnamed band');
+ok(isset($br['Exo Suit']), 'the exo frames have no row of their own');
+ok(isset($br['']) && count($br['']['slots']) === 8,
+   'the plain beach band has ' . (isset($br['']) ? count($br['']['slots']) : 0)
+ . ' frames, not the seven plus its secured frame');
+ok(isset($br['Exo Suit']) && count($br['Exo Suit']['slots']) === 2,
+   'the exo row does not hold exactly the two alternates');
+/* AND IT MUST NOT STEAL THE EXO ICON from the Armor section, which is
+   what keying the row on the icon term would have done -- the icon is
+   taken out of the pool once a row claims it, so the hill and the
+   bunker would have gone without as well. */
+$ar = $rowsBy('Armor');
+ok(isset($ar['Exo Suit']), 'the Armor section lost its Exo Suit icon to a stage row');
+ok(isset($br['Exo Suit'])
+   && count(array_filter($br['Exo Suit']['slots'], function ($x) { return $x['kind'] === 'icon'; })) === 0,
+   'the stage row pulled an icon in, which removes it from Armor for every other stage');
+foreach (array('The hill', 'The bunker') as $stage) {
+	$sr = $rowsBy($stage);
+	ok(isset($sr['Exo Suit']), "$stage has no exo row");
+	ok(isset($sr['Exo Suit']) && count($sr['Exo Suit']['slots']) === 2,
+	   "$stage's exo row does not hold exactly the two alternates");
+}
 /* A thing with TWO icon files keeps them in ONE row: dropship.png and
    supersoldier.png are two pictures of the same squad mark. */
 $ir = $rowsBy('Identity');

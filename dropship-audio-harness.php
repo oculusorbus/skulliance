@@ -104,6 +104,52 @@ foreach ($fm as $f) {
 		   "images/$art is captioned \"$caption\" but the row says \"{$arts[$art]['caption']}\"");
 	}
 }
+/*
+ * AND THE FRAMES WHOSE NUMBER IS A VARIABLE, which the scrape above
+ * cannot see at all.
+ *
+ * images/live/beach/exo/".$random." has no literal path, so it never
+ * appeared in the exact table -- and the exo rotation lost its sound
+ * silently: it fell through to the surviving-round gunshot instead of
+ * the exo cue the old chain played at 300ms. Every folder the game
+ * addresses with a variable needs either exact rows or a prefix that
+ * catches it.
+ */
+preg_match_all('#images/([a-z0-9/-]+)/"\.#', $ds_src, $vm);
+$folders = array_values(array_unique($vm[1]));
+ok(count($folders) >= 8, 'only ' . count($folders) . ' variable-numbered folders found; the scrape is broken');
+/* Deaths are deliberately silent: the old chain's death cue was
+   commented out years ago and nothing has played over them since. */
+$silent_folders = array('die');
+foreach ($folders as $f) {
+	if (in_array($f, $silent_folders, true)) continue;
+	$covered = isset($arts[$f . '/1']);
+	foreach ($fbk as $fb) {
+		if (strpos($f . '/', $fb['art']) === 0) $covered = true;
+	}
+	ok($covered, "the game draws frames from images/$f/ and no sound row or catch-all covers them");
+}
+/* THE EXO PREFIXES COME FIRST, or 'live/' swallows them and the suit
+   plays the plain surviving-round sound. */
+$order = array();
+foreach ($fbk as $fb) $order[] = $fb['art'];
+$iexo = array_search('live/beach/exo/', $order, true);
+$ilive = array_search('live/', $order, true);
+ok($iexo !== false && $ilive !== false && $iexo < $ilive,
+   'the exo rotation is listed after live/, which matches first and takes its sound');
+foreach (array('live/beach/exo/', 'live/hill/exo/', 'live/bunker/exo/') as $e) {
+	ok(in_array($e, $order, true), "$e has no sound row, so the suit is silent there");
+}
+/* AND THE 300ms WAIT, which is when the cue lands against the suit
+   animation and is the whole reason the delay is a property of the
+   frame rather than of the theme. */
+foreach ($fbk as $fb) {
+	if (strpos($fb['art'], '/exo/') === false) continue;
+	ok($fb['delay'] === 300,
+	   "the exo cue for {$fb['art']} waits {$fb['delay']}ms, not the 300 it always did");
+	ok($fb['sound'] === 'exo', "the exo cue for {$fb['art']} is not the exo sound");
+}
+
 /* AND EVERY ROW IS A FRAME THE MANIFEST HAS, or it asks for art nobody
    ships. */
 $man = dropshipArtManifest('gif');
@@ -521,9 +567,11 @@ ok($orphans === array(),
 $loose = array();
 foreach ($psplit['loose'] as $sl) $loose[] = $sl['art'];
 sort($loose);
-/* Two, not three: the opening is round 0's frame now and sits under a
-   picture like everything else. */
-ok($loose === array('1up/', 'live/'),
+/* FIVE, and every one is a rotation rather than a single picture: the
+   three exo sets, the surviving round and the extra life. The opening
+   is not among them any more -- it is round 0's frame and sits under
+   its own card. */
+ok($loose === array('1up/', 'live/', 'live/beach/exo/', 'live/bunker/exo/', 'live/hill/exo/'),
    'the set of sounds with no frame changed: ' . implode(', ', $loose));
 
 /* AN ICON IS NOT A FRAME. It is one shared file for every theme and has

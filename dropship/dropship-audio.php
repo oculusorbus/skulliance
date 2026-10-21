@@ -133,6 +133,21 @@ function dropshipAudioEvents() {
  */
 function dropshipAudioFallbacks() {
 	return array(
+		/*
+		 * THE EXO ROTATION, BEFORE THE PLAIN ONE. A player in the suit
+		 * sees alternate frames and the old chain played exo.mp3 at
+		 * 300ms over them -- but their paths carry a variable frame
+		 * number, so the scrape that built the exact table never saw
+		 * them and they fell through to the surviving-round gunshot
+		 * instead. Prefixes are walked in order, and 'live/' would
+		 * swallow these if it came first.
+		 */
+		array('art' => 'live/beach/exo/',  'family' => 'Exo Suit', 'n' => 0, 'caption' => 'Exo Suit',
+		      'sound' => 'exo', 'delay' => 300),
+		array('art' => 'live/hill/exo/',   'family' => 'Exo Suit', 'n' => 0, 'caption' => 'Exo Suit',
+		      'sound' => 'exo', 'delay' => 300),
+		array('art' => 'live/bunker/exo/', 'family' => 'Exo Suit', 'n' => 0, 'caption' => 'Exo Suit',
+		      'sound' => 'exo', 'delay' => 300),
 		array('art' => 'live/',  'family' => 'Survived',   'n' => 0, 'caption' => 'Survived',
 		      'sound' => 'enemyguncontra', 'delay' => 0),
 		array('art' => '1up/',   'family' => 'Extra Life', 'n' => 0, 'caption' => 'Extra Life',

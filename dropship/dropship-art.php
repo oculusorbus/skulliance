@@ -812,8 +812,22 @@ function dropshipArtPlan($conn, $project_id, $ext = 'gif', $project_slug = '') {
 	foreach (dropshipArtGroups($ext) as $name => $g) {
 		$rows = array();                 /* term => row, '' => the unnamed band */
 		foreach ($g['files'] as $rel) {
-			$term = dropshipArtIconTerm($rel);
-			if ($term === null || !isset($labels[$term])) $term = '';
+			/*
+			 * THE EXO FRAMES ARE A SEPARATE ROTATION, not more frames of
+			 * the same stage. A player wearing the suit sees these
+			 * INSTEAD of the plain ones, so mixing the two in one band
+			 * reads as a nine-frame beach when it is really seven and
+			 * two alternates. Their own row, headed by whatever the
+			 * theme calls the suit.
+			 *
+			 * KEYED ON A NAME NO ICON USES. The row key doubles as an
+			 * icon lookup further down -- a row called 'exo-suit' would
+			 * pull the Exo Suit icon out of the Armor section and into
+			 * the beach, and then the hill and the bunker would not get
+			 * one either, because it is removed once taken.
+			 */
+			$term = (strpos($rel, '/exo/') !== false) ? '@exo' : dropshipArtIconTerm($rel);
+			if ($term !== '@exo' && ($term === null || !isset($labels[$term]))) $term = '';
 			if (!isset($rows[$term])) $rows[$term] = array();
 			$rows[$term][] = array('kind' => 'art', 'rel' => $rel);
 		}
@@ -878,7 +892,11 @@ function dropshipArtPlan($conn, $project_id, $ext = 'gif', $project_slug = '') {
 function dropshipArtRowList($rows, $labels, $conn, $project_id) {
 	$out = array();
 	foreach ($rows as $term => $slots) {
-		$label = ($term !== '' && isset($labels[$term])) ? $labels[$term] : '';
+		/* '@exo' is not a thing in the vocabulary, it is a row of a
+		   stage -- the alternate rotation a player in the suit sees. It
+		   still gets the theme's word for the suit as its heading. */
+		$label = $term === '@exo' ? 'Exo Suit'
+		       : (($term !== '' && isset($labels[$term])) ? $labels[$term] : '');
 		$said  = '';
 		if ($label !== '' && function_exists('dropshipThemeText')) {
 			$t = dropshipThemeText($conn, $project_id, $label);
