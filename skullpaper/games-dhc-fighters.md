@@ -47,20 +47,24 @@ background at minimum, so no single game can dress one on its own.
 | Maxingo Missions | **any trait** | completing one — deeper levels roll better |
 | Realm Raids | **any trait** | winning a raid, or repelling one |
 | DHC Arena | **any trait** | winning a battle with a Crew of Fighters |
-| Drop Ship | **any trait** | taking or tying the lead of the current game |
-| Oculus Lounge | **any trait** | taking or tying the lead of the current game |
+| Drop Ship | **any trait** | taking or tying the lead of the current game, in any theme |
 | Daily Reward Streak | **any trait** | claiming day 7 of 7 |
+
+Drop Ship has one row because it is one game. **Oculus Lounge, Filthy Mermaid
+and Dread City are themes of it**, switched between from inside it, and each
+has its own board and pays the same drop for taking the lead on it. They used
+to be four rows saying exactly the same thing.
 
 When a trait drops, the reveal says **where it came from** - the game, the
 streak, the invite, whatever earned it - and the Share on X button carries that
-into the post. A trait out of Drop Ship or Oculus Lounge also tags the people
-behind those games, since neither is ours.
+into the post. A Drop Ship trait names the theme it came out of and tags the
+people behind it, since those games are not ours.
 
-**Drop Ship and Oculus Lounge work differently to everything else here.**
+**Drop Ship works differently to everything else here, in every theme.**
 Nowhere else does placing badly cost you the drop: in the other games a
-genuine attempt qualifies and your result only decides the odds. On these two
-nothing drops at all unless your run **takes or ties the lead** of the game
-currently running, and then it rolls the best table in the game.
+genuine attempt qualifies and your result only decides the odds. Here nothing
+drops at all unless your run **takes or ties the lead** of the game currently
+running, and then it rolls the best table in the game.
 
 Two things have to be true. Your score has to reach the top of the current
 board, and it has to beat **your own** previous score in that game. The first

@@ -1048,16 +1048,41 @@ $GLOBALS['DHCF_GAMES'] = array(
 	 * any category at all, which is the right shape for a prize you only get
 	 * by being top of the board.
 	 */
+	/* THE ONE LISTED ROW of the four. "in any theme" is doing real work: the
+	   other three are unlisted (see below), so this line is the only place a
+	   player is told that Oculus Lounge, Filthy Mermaid and Dread City pay
+	   the same drop and are reached from inside this one. */
 	'dropship'       => array('label' => 'Drop Ship', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=1',
-	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
+	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead in any theme',
 	                          'base' => 'placement_1',
 	                          'cap' => 0,
 	                          'limit_note' => 'only when you take the lead'),
+	/*
+	 * THE THREE RESKINS ARE UNLISTED, and for a different reason than the
+	 * streak and the referral below: those are not games, these are the SAME
+	 * game.
+	 *
+	 * Oculus Lounge, Filthy Mermaid and Dread City are Drop Ship themes. You
+	 * switch between them inside it, so four rows on "where traits drop" sent
+	 * a player to four doors into one room -- and because all four are
+	 * 'wildcard', the rows rendered IDENTICALLY: same "any trait", same count
+	 * out of the whole collection, same trigger, same limit note, four times.
+	 * Four sixteenths of a list of games to go and play, all saying one thing.
+	 * Drop Ship's row stands for them, and its trigger is where that is said.
+	 *
+	 * THEY STAY IN DHCF_GAMES, exactly as the streak does, because everything
+	 * functional reads this array: dropshipDropAward() derives these KEYS from
+	 * the theme slug and dhcf_award() resolves the label, the X tag and the
+	 * link from them, so deleting a row would post that theme's drops as Drop
+	 * Ship or as nothing at all. Unlisted hides the row and changes nothing
+	 * else -- they pay, count and cap as they always did.
+	 */
 	'oculuslounge'   => array('label' => 'Oculus Lounge', 'x_tag' => '@oculuslounge', 'url' => 'dropship/dashboard.php?project_id=4',
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
 	                          'cap' => 0,
-	                          'limit_note' => 'only when you take the lead'),
+	                          'limit_note' => 'only when you take the lead',
+	                          'unlisted' => true),
 	// Ohh Meed's too, so the same @ohh_meed credit as Drop Ship. The KEY is
 	// the Drop Ship theme slug with the hyphens taken out, because that is
 	// what dropshipDropAward() derives -- 'filthy-mermaid' -> 'filthymermaid'.
@@ -1066,13 +1091,15 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
 	                          'cap' => 0,
-	                          'limit_note' => 'only when you take the lead'),
+	                          'limit_note' => 'only when you take the lead',
+	                          'unlisted' => true),
 	// Ohh Meed's as well -- same Shorty Verse collection Filthy Mermaid uses.
 	'dreadcity'      => array('label' => 'Dread City', 'x_tag' => '@ohh_meed', 'url' => 'dropship/dashboard.php?project_id=2',
 	                          'category' => 'wildcard', 'trigger' => 'take or tie the lead this game',
 	                          'base' => 'placement_1',
 	                          'cap' => 0,
-	                          'limit_note' => 'only when you take the lead'),
+	                          'limit_note' => 'only when you take the lead',
+	                          'unlisted' => true),
 
 	// NOT A GAME, and 'unlisted' is what that now costs it. It stays in
 	// DHCF_GAMES because everything functional reads this array -- dhcf_award(),

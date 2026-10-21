@@ -385,7 +385,29 @@ foreach (array('dropship'      => 'Drop Ship',
 	   reserved for exactly that. */
 	ok($g['base'] === 'placement_1', "$k does not pay the first-place table");
 	ok($g['category'] === 'wildcard', "$k claims a trait slot; all eight belong to the other games");
-	ok(empty($g['unlisted']), "$k is hidden from the list of where traits drop");
+	/*
+	 * ONE ROW FOR THE FOUR. They are themes of one game, switched between
+	 * from inside it, and all four being 'wildcard' meant the rows rendered
+	 * IDENTICALLY -- same "any trait", same count out of the whole
+	 * collection, same trigger, same limit note, four times in a sixteen-row
+	 * list of games to go and play.
+	 *
+	 * The three reskins are unlisted and DROP SHIP IS NOT, which is the half
+	 * worth pinning: unlisting all four would take the only row that leads
+	 * anywhere, and unlisting none is what shipped.
+	 */
+	if ($k === 'dropship') {
+		ok(empty($g['unlisted']), 'Drop Ship itself is hidden from where traits drop');
+		ok(strpos($g['trigger'], 'any theme') !== false,
+		   "Drop Ship's row no longer says the other themes pay it too, and nothing else does");
+	} else {
+		ok(!empty($g['unlisted']), "$k is listed separately again; it is a Drop Ship theme, not a game");
+	}
+	/* Unlisted is a DISPLAY flag and must stay one: hiding the row must not
+	   touch what the drop pays, what it is called or where it is credited.
+	   Everything else in this loop is asserted for all four either way. */
+	ok(!empty($g['url']) && !empty($g['x_tag']),
+	   "$k lost its link or its credit along with its row");
 	/*
 	 * NO DAILY CEILING, ON PURPOSE. The games run weekly and a player with
 	 * the NFTs to battle all day was left with nothing after the third
