@@ -346,12 +346,47 @@ function dropshipAudioPlanRows($conn, $project_id, $plan) {
 	}
 	$out = array('rows' => array(), 'loose' => array());
 	foreach (dropshipAudioSlots($conn, $project_id) as $as) {
+		$at = null;
 		if ($as['art'] !== '' && isset($where[$as['art']])) {
-			$as['_at'] = $where[$as['art']][1];
-			$out['rows'][$where[$as['art']][0]][] = $as;
+			$at = $where[$as['art']];
+		} elseif ($as['art'] !== '' && substr($as['art'], -1) === '/') {
+			/*
+			 * A CATCH-ALL STILL BELONGS SOMEWHERE IF ITS FRAMES DO.
+			 *
+			 * These are registered on a PREFIX rather than a frame, because
+			 * they cover a whole rotation: 'live/beach/exo/' is the two exo
+			 * frames of the beach, '1up/' is both extra-life pictures. A
+			 * prefix never equals a frame key, so all five fell past the
+			 * exact lookup above and into the section at the bottom -- the
+			 * Exo Suit rows sitting three pages away from the exo art, and
+			 * the extra-life sound away from the extra-life pictures.
+			 *
+			 * ONLY WHEN THE WHOLE PREFIX IS ONE ROW, which is the line
+			 * between the two kinds. The exo prefixes and '1up/' each cover
+			 * frames that render as a single band, so the sound has one
+			 * honest home. 'live/' covers the beach, the hill AND the
+			 * bunker; it has no single row and stays in the general
+			 * section, which is the truthful answer rather than picking
+			 * whichever band came first.
+			 *
+			 * It sits after the LAST of its own frames, so the sound reads
+			 * as belonging to the pictures above it.
+			 */
+			$rows = array();
+			$last = -1;
+			foreach ($where as $frame => $pos) {
+				if (strpos($frame, $as['art']) !== 0) continue;
+				$rows[$pos[0]] = true;
+				if ($pos[1] > $last) { $last = $pos[1]; $at = array($pos[0], $pos[1]); }
+			}
+			if (count($rows) !== 1) $at = null;
+		}
+		if ($at !== null) {
+			$as['_at'] = $at[1];
+			$out['rows'][$at[0]][] = $as;
 		} else {
-			/* The catch-alls span whole stages rather than sitting on one
-			   frame, so they have no row to live under. */
+			/* No frame at all (the opening), or a catch-all that genuinely
+			   spans more than one band. */
 			$out['loose'][] = $as;
 		}
 	}

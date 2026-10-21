@@ -567,12 +567,58 @@ ok($orphans === array(),
 $loose = array();
 foreach ($psplit['loose'] as $sl) $loose[] = $sl['art'];
 sort($loose);
-/* FIVE, and every one is a rotation rather than a single picture: the
-   three exo sets, the surviving round and the extra life. The opening
-   is not among them any more -- it is round 0's frame and sits under
-   its own card. */
-ok($loose === array('1up/', 'live/', 'live/beach/exo/', 'live/bunker/exo/', 'live/hill/exo/'),
-   'the set of sounds with no frame changed: ' . implode(', ', $loose));
+/*
+ * ONE, and it is the only one that has nowhere honest to go.
+ *
+ * All five of these used to be here, which was the complaint: the three Exo
+ * Suit rows and the Extra Life row sat in the general section at the foot of
+ * the page while their pictures were further up. They are registered on a
+ * PREFIX rather than a frame, so the exact lookup missed them.
+ *
+ * Four of the five have a single home and now live in it. 'live/' covers the
+ * beach, the hill AND the bunker, so it has no one row; leaving it here is
+ * the truthful answer rather than picking whichever band came first, and
+ * pinning that is the point of this check -- the fix must not become "attach
+ * every catch-all to something".
+ */
+ok($loose === array('live/'),
+   'the set of sounds with no row changed: ' . implode(', ', $loose));
+
+/* AND WHERE THE OTHER FOUR WENT. Each under its own pictures, and each after
+   them rather than before -- a sound above the art it belongs to reads as
+   belonging to the row before it. */
+foreach (array('live/beach/exo/'  => 'The beach',
+               'live/hill/exo/'   => 'The hill',
+               'live/bunker/exo/' => 'The bunker',
+               '1up/'             => 'Extra life') as $pre => $band) {
+	$found = null; $pos = null; $n = 0;
+	foreach ($psplit['rows'] as $key => $slots) {
+		foreach ($slots as $sl) {
+			if ($sl['art'] !== $pre) continue;
+			$found = $key; $pos = $sl['_at']; $n++;
+		}
+	}
+	ok($found !== null, "$pre is still in the general section instead of under its own art");
+	ok($found === null || strpos($found, $band . '|') === 0,
+	   "$pre is bucketed under $found, not $band");
+	ok($n <= 1, "$pre was bucketed into $n rows at once");
+	/* The position it sorts at has to be one of the band's own, or the sort
+	   in dropshipAudioPlanRows() puts it somewhere arbitrary. */
+	ok($found === null || (is_int($pos) && $pos >= 0), "$pre has no position to sort by");
+}
+/*
+ * NOT CHECKED, AND THE REASON IS WORTH WRITING DOWN RATHER THAN FAKING.
+ *
+ * The code deliberately attaches a catch-all at the position of the LAST
+ * frame under its prefix, so the sound reads as following its pictures.
+ * Changing that to the FIRST frame is a mutation this suite does not catch,
+ * and that is honest rather than a gap: a row's sounds are sorted among
+ * THEMSELVES, and each of these four bands has exactly one sound in it. With
+ * one item in the list there is no order to get wrong and nothing on the page
+ * moves. It becomes observable the day a band has both a framed sound and a
+ * catch-all, and the check belongs here then, not now against data that
+ * cannot show it.
+ */
 
 /* AN ICON IS NOT A FRAME. It is one shared file for every theme and has
    no moment; counting it would bucket a sound under the wrong row. */
@@ -596,8 +642,10 @@ ok(strpos(file_get_contents(__DIR__ . '/dropship/dropship-audio.php'),
    'the slice assumes an images/ prefix without checking for one');
 foreach ($psplit['rows'] as $key => $slots) {
 	foreach ($slots as $sl) {
-		ok($sl['art'] !== '' && substr($sl['art'], -1) !== '/',
-		   "a sound with no frame was bucketed under $key");
+		/* A PREFIX IS ALLOWED IN A ROW NOW, when every frame under it is in
+		   that one row -- the exo rotations and the extra life. What is
+		   still not allowed is the opening, which has no frame at all. */
+		ok($sl['art'] !== '', "a sound with no frame at all was bucketed under $key");
 	}
 }
 
