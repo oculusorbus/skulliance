@@ -173,9 +173,33 @@ function dropshipAudioTable($conn, $project_id) {
 		 * it happens, rather than everything going quiet until all of
 		 * them are done.
 		 */
-		$file = $s['exists']     ? $s['rel']
+		/*
+		 * AND THE FALLBACK ONLY APPLIES TO A WORD THE THEME HAS NOT
+		 * RENAMED.
+		 *
+		 * Reported looking at Filthy Mermaid: "Demolition -> Paddle,
+		 * playing demo.mp3", "Flamethrower Flames -> Candle Flames,
+		 * playing flamethrower3.mp3". Both true and both wrong -- a
+		 * theme that has given the thing its own name has said this is
+		 * not Drop Ship's object, so Drop Ship's sound is the one answer
+		 * it must not get. It is the same rule the Discord image and the
+		 * bunker art already follow: no sound beats another game's.
+		 *
+		 * It also restores a silence that the project_id guards used to
+		 * provide. Filthy Mermaid was quiet on the whole flamethrower,
+		 * the machine gun and the rocket launcher because a dozen
+		 * branches were wrapped in `project_id != 3 && != 4`; dropping
+		 * those made it play Drop Ship's, which is what this is.
+		 *
+		 * A theme that has NOT renamed the thing is a different case and
+		 * still falls back: it is asking for the same word, so it is
+		 * asking for the same sound.
+		 */
+		$renamed = ($s['said'] !== $s['term']);
+		$file = $s['exists'] ? $s['rel']
+		      : ($renamed ? ''
 		      : ($s['base_has']  ? $s['base_rel']
-		      : ($s['legacy_has'] ? 'sounds/' . $s['legacy'] . '.mp3' : ''));
+		      : ($s['legacy_has'] ? 'sounds/' . $s['legacy'] . '.mp3' : '')));
 		if ($file === '') continue;
 		/* And never a row with nothing to match on: strpos against ''
 		   succeeds at position 0, so such a row would answer every round

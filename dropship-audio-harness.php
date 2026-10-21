@@ -89,12 +89,16 @@ echo "\nevery sound the old chain could play is still reachable\n";
  * Every sound file it could reach has to still be reachable, or this
  * refactor silently dropped one.
  */
-$old = shell_exec('git -C ' . escapeshellarg(__DIR__) . ' show HEAD~1:dropship/dropship.js 2>/dev/null');
-if (!is_string($old) || strpos($old, 'evaluateAudio') === false) {
-	$old = shell_exec('git -C ' . escapeshellarg(__DIR__)
-		. ' log -S"evaluateAudio(currentRound" --format=%H -1 -- dropship/dropship.js 2>/dev/null');
-	$old = $old ? shell_exec('git -C ' . escapeshellarg(__DIR__) . ' show '
-		. trim($old) . ':dropship/dropship.js 2>/dev/null') : '';
+/* THE LAST COMMIT THAT STILL HAD THE CHAIN, found rather than guessed at
+   HEAD~1 -- which stopped being the right commit the moment anything else
+   was committed on top. -S finds the commit that REMOVED it; its parent is
+   the one that still has it. */
+$old = '';
+$cut = trim((string)shell_exec('git -C ' . escapeshellarg(__DIR__)
+	. ' log -S"evaluateAudio(currentRound" --format=%H -- dropship/dropship.js 2>/dev/null | head -1'));
+if ($cut !== '') {
+	$old = (string)shell_exec('git -C ' . escapeshellarg(__DIR__)
+		. ' show ' . escapeshellarg($cut . '^:dropship/dropship.js') . ' 2>/dev/null');
 }
 ok(is_string($old) && strpos($old, 'evaluateAudio') !== false,
    'the old chain could not be read out of git, so the coverage check below proves nothing');
@@ -252,13 +256,26 @@ if ($made) {
 	$sb = $find($rows, 'Smoke Bomb');
 	ok($sb && strpos($sb['f'], 'sounds/smoke-bomb.mp3') === 0,
 	   'renaming a file onto the wording does not take over: ' . ($sb ? $sb['f'] : 'absent'));
-	/* A THEME WITH NO FILE OF ITS OWN falls back to Drop Ship's, which is
-	   what keeps a half-dressed theme audible rather than silent. */
+	/*
+	 * A RENAMED THING NEVER FALLS BACK TO DROP SHIP'S SOUND.
+	 *
+	 * Reported looking at Filthy Mermaid: "Demolition -> Paddle, playing
+	 * demo.mp3". True and wrong -- a theme that has given the thing its
+	 * own name has said it is not Drop Ship's object, so Drop Ship's
+	 * sound is the one answer it must not get. Same rule as the Discord
+	 * image and the bunker art: no sound beats another game's.
+	 */
 	$rows4 = dropshipAudioTable($c, 4);
 	$wh = $find($rows4, 'Whip');
-	ok($wh && strpos($wh['f'], 'sounds/smoke-bomb.mp3') === 0,
-	   "a theme with no file of its own does not fall back to Drop Ship's: "
-	 . ($wh ? $wh['f'] : 'absent'));
+	ok($wh === null,
+	   "a renamed thing falls back to Drop Ship's sound: " . ($wh ? $wh['f'] : ''));
+	/* AND A THING IT HAS NOT RENAMED STILL DOES, or a theme that only
+	   changes a few words goes quiet everywhere else. */
+	$ex = $find(dropshipAudioTable($c, 4), 'Extra Life');
+	$put('extralife');
+	$ex = $find(dropshipAudioTable($c, 4), 'Extra Life');
+	ok($ex && strpos($ex['f'], 'sounds/extralife.mp3') === 0,
+	   'an unrenamed thing stopped falling back too: ' . ($ex ? $ex['f'] : 'absent'));
 	/* And its own file wins once it is there. */
 	$put('whip');
 	$rows4 = dropshipAudioTable($c, 4);
@@ -292,6 +309,25 @@ if ($made) {
 	foreach ($probe as $f) @unlink($f);
 	if (!glob($snd . '/*')) @rmdir($snd);
 }
+
+echo "\nthe panel says what the run does\n";
+/*
+ * THE PAGE WORKS OUT WHAT IS PLAYING SO IT CAN SHOW IT, and that is a
+ * second copy of the resolution -- so it can disagree with the run and
+ * tell somebody their theme is fine when it is silent. Same rule, same
+ * order, asserted on the source because the page cannot be executed
+ * here.
+ */
+$adm_src = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+ok(strpos($adm_src, "\$renamed = (\$as['said'] !== \$as['term']);") !== false,
+   'the art page does not know a renamed thing never falls back, so it reports a sound the run will not play');
+ok(strpos($adm_src, "\$playing = \$as['exists'] ? \$as['rel']") !== false
+   && strpos($adm_src, "(\$renamed ? ''") !== false,
+   'the page resolves what is playing by a different rule from the run');
+/* And when it is silent it offers the file Drop Ship uses, because that
+   is nearly always the one being looked for. */
+ok(strpos($adm_src, "\$suggest = (\$playing === '' && \$as['legacy_has'])") !== false,
+   'a silent row does not offer the obvious file, so every fix is a hunt through the dropdown');
 
 echo "\nthe panel pairs a sound with the thing it belongs to\n";
 $plan = dropshipArtPlan($c, 1, 'gif', 'drop-ship');

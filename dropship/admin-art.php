@@ -525,24 +525,59 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .lightbox .cap b{color:#00c8a0}
 .dsart .lightbox .cap code{color:#9fb3c8;font-size:12px}
 .dsart .lightbox .hint{color:#6f8296;font-size:11px}
-/* SOUND, beside the pictures of the same thing. One shared folder for
-   every theme, so the row says who else is listening before you replace
-   anything. */
-.dsart .snd{margin-top:8px;padding:8px;border:1px dashed rgba(255,255,255,.14);
-  border-radius:4px;background:rgba(255,255,255,.02)}
-.dsart .snd .ev{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;
-  font-size:12px;color:#c6d2de;padding:5px 0}
+/* SOUND, beside the pictures of the same thing.
+   A GRID, NOT A FLOW. The first pass let each row wrap on its own, so the
+   file input, the picker and the button started at a different x on every
+   line and the native <audio> widgets -- light grey, and a different width
+   depending on whether the file had loaded -- shoved the lot around. Four
+   fixed columns: what it is, what it asks for, play, change it. */
+.dsart .snd{margin-top:10px;border:1px solid rgba(255,255,255,.10);border-radius:4px;
+  background:rgba(255,255,255,.02);overflow:hidden}
+.dsart .snd .ev{display:grid;align-items:center;gap:4px 14px;padding:9px 12px;
+  grid-template-columns:minmax(150px,1fr) minmax(190px,1.3fr) 30px minmax(250px,1.1fr);
+  grid-template-areas:'name file play act' 'warn warn warn warn';font-size:12px}
 .dsart .snd .ev + .ev{border-top:1px solid rgba(255,255,255,.07)}
-.dsart .snd .ev b{color:#e8eaed}
-.dsart .snd .ev .said{color:#00c8a0}
-.dsart .snd .ev code{color:#9fb3c8;font-size:11px}
-.dsart .snd .ev audio{height:28px;max-width:200px}
-.dsart .snd .ev .gapn{color:#e8a0b0}
-.dsart .snd .ev .fell{color:#e8c070}
-.dsart .snd .ev .claim{flex-basis:100%;color:#e8c070;font-size:11px}
-.dsart .snd form{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0}
-.dsart .snd select,.dsart .snd input[type=file]{font-size:11px;max-width:190px}
-.dsart .snd .delay{color:#6f8296;font-size:11px}
+.dsart .snd .ev:nth-child(even){background:rgba(255,255,255,.015)}
+.dsart .snd .nm{grid-area:name;color:#e8eaed;font-weight:600;line-height:1.35}
+.dsart .snd .nm .said{display:block;color:#00c8a0;font-weight:400}
+.dsart .snd .fl{grid-area:file;line-height:1.4;min-width:0}
+.dsart .snd .fl code{color:#9fb3c8;font-size:11px}
+/* SPACED FROM THE FILENAME. These two sit on one line to keep the row a
+   single line high, which means the gap has to be put there on purpose --
+   without it the page reads "sounds/dread-city.mp3silent". */
+.dsart .snd .fl .st{font-size:11px;margin-left:9px;white-space:nowrap}
+.dsart .snd .fl .ok2{color:#6f8296}
+.dsart .snd .fl .fell{color:#e8c070}
+.dsart .snd .fl .gapn{color:#e8a0b0}
+.dsart .snd .fl .delay{color:#6f8296}
+/* ONE SMALL DARK BUTTON instead of the browser's own player: the native
+   control is light, 250px wide and resizes itself once the file loads. */
+.dsart .snd .play{grid-area:play;width:28px;height:28px;padding:0;border-radius:50%;
+  border:1px solid rgba(0,200,160,.5);background:rgba(0,200,160,.10);color:#00c8a0;
+  font-size:11px;line-height:1;cursor:pointer}
+.dsart .snd .play:hover{background:rgba(0,200,160,.22)}
+.dsart .snd .play.on{background:#00c8a0;color:#06131f}
+.dsart .snd .play[disabled]{opacity:.25;cursor:default;border-color:rgba(255,255,255,.18);
+  background:none;color:#6f8296}
+.dsart .snd form{grid-area:act;display:grid;grid-template-columns:1fr auto;gap:6px;
+  align-items:center;margin:0}
+.dsart .snd form .pick{display:grid;gap:4px;min-width:0}
+.dsart .snd select,.dsart .snd input[type=file]{font-size:11px;width:100%;min-width:0}
+.dsart .snd form button{padding:5px 12px;font-size:11px;white-space:nowrap}
+/* A CHIP, NOT A LINE. Nearly every sound is shared with something --
+   that is the normal state of one folder serving four themes -- so a
+   full amber sentence per row doubled the height of the table and read
+   as a page full of warnings. The detail is on the chip's tooltip, and
+   the actual refusal still happens at the moment of writing, which is
+   where a warning belongs. */
+.dsart .snd .claim{grid-area:warn;display:none}
+.dsart .snd .chip{display:inline-block;margin-left:6px;padding:0 5px;border-radius:8px;
+  font-size:10px;line-height:15px;color:#e8c070;border:1px solid rgba(232,192,112,.4);
+  cursor:help;vertical-align:1px}
+@media (max-width:860px){
+  .dsart .snd .ev{grid-template-columns:1fr 30px;
+    grid-template-areas:'name play' 'file file' 'act act' 'warn warn'}
+}
 .dsart .inplace{display:block;font-size:10.5px;margin-top:4px;text-align:left}
 .dsart .inplace.good{color:#00c8a0}
 .dsart .inplace.bad{color:#e8a0b0}
@@ -675,53 +710,75 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		   a theme with no file of its own falls back to Drop Ship's, and
 		   Drop Ship's own files are still on their old sound-named paths
 		   until they are renamed onto the wording. */
+		/* THE SAME RULE THE RUN USES, or the page says one thing and the
+		   game does another. A renamed thing never falls back to Drop
+		   Ship's sound; it is silent until it has one of its own. */
+		$renamed = ($as['said'] !== $as['term']);
 		$playing = $as['exists'] ? $as['rel']
+		         : ($renamed ? ''
 		         : ($as['base_has'] ? $as['base_rel']
-		         : ($as['legacy_has'] ? 'sounds/' . $as['legacy'] . '.mp3' : ''));
+		         : ($as['legacy_has'] ? 'sounds/' . $as['legacy'] . '.mp3' : '')));
+		/* What it WOULD have fallen back to, offered as the one-click
+		   answer: nine times out of ten the right file is already on the
+		   server under its old name. */
+		$suggest = ($playing === '' && $as['legacy_has']) ? $as['legacy'] . '.mp3' : '';
 		?>
 		<div class="ev">
-			<b><?php echo $h($as['term']); ?></b>
-			<?php if ($as['said'] !== $as['term'] && $as['said'] !== ''): ?>
-				<span class="arrow">&rarr;</span><span class="said"><?php echo $h($as['said']); ?></span>
-			<?php endif; ?>
-			<code><?php echo $h($as['rel'] !== '' ? $as['rel'] : 'no usable filename'); ?></code>
-			<?php if ($as['delay']): ?><span class="delay">after <?php
-				echo (int)$as['delay']; ?>ms</span><?php endif; ?>
-			<?php if ($as['exists']): ?>
-				<?php /* nothing to say: it is playing its own file */ ?>
-			<?php elseif ($playing !== ''): ?>
-				<span class="fell">playing <?php echo $h(basename($playing)); ?></span>
-			<?php else: ?>
-				<span class="gapn">silent</span>
-			<?php endif; ?>
-			<?php if ($playing !== ''): ?>
-				<audio controls preload="none" src="<?php echo $h(dropshipAudioUrl($playing)); ?>"></audio>
-			<?php endif; ?>
+			<span class="nm"><?php echo $h($as['term']); ?>
+				<?php if ($as['said'] !== $as['term'] && $as['said'] !== ''): ?>
+					<span class="said"><?php echo $h($as['said']); ?></span>
+				<?php endif; ?>
+			</span>
+			<span class="fl">
+				<code><?php echo $h($as['rel'] !== '' ? $as['rel'] : 'no usable filename'); ?></code>
+				<?php if ($claims): ?><span class="chip" title="Also used by <?php
+					echo $h(implode(', ', $claims)); ?>. Replacing this file changes it for them too."
+					>shared &times;<?php echo count($claims); ?></span><?php endif; ?>
+				<span class="st">
+				<?php if ($as['exists']): ?>
+					<span class="ok2">its own file<?php if ($as['delay']): ?>,
+						after <?php echo (int)$as['delay']; ?>ms<?php endif; ?></span>
+				<?php elseif ($playing !== ''): ?>
+					<span class="fell">playing <?php echo $h(basename($playing)); ?></span><?php
+					if ($as['delay']): ?><span class="delay">, after <?php
+						echo (int)$as['delay']; ?>ms</span><?php endif; ?>
+				<?php else: ?>
+					<span class="gapn">silent<?php if ($suggest !== ''): ?> &middot; Drop Ship uses
+						<?php echo $h($suggest); ?><?php endif; ?></span>
+				<?php endif; ?>
+				</span>
+			</span>
+			<?php /* One button, one shared player: see the script below. */ ?>
+			<button type="button" class="play" aria-label="Play"
+			        <?php echo $playing === '' ? 'disabled' : 'data-src="' . $h(dropshipAudioUrl($playing)) . '"'; ?>>&#9654;</button>
 			<?php if ($as['stem'] !== ''): ?>
 			<form method="post" enctype="multipart/form-data"
 			      action="admin-art.php?project_id=<?php echo $pid; ?>&amp;format=<?php echo $h($ext); ?>">
 				<input type="hidden" name="project_id" value="<?php echo $pid; ?>">
 				<input type="hidden" name="format" value="<?php echo $h($ext); ?>">
 				<input type="hidden" name="audio_term" value="<?php echo $h($as['term']); ?>">
-				<?php /* A SECOND PRESS IS THE CONFIRMATION. The handler
-				         refuses once and says who else is listening; this
-				         carries the answer back. */ ?>
-				<input type="hidden" name="confirm" value="<?php echo !empty($_POST['confirm'])
-					|| (isset($_POST['audio_term']) && $_POST['audio_term'] === $as['term']) ? '1' : ''; ?>">
-				<input type="file" name="audio" accept="audio/mpeg,.mp3">
-				<select name="audio_use">
-					<option value="">or use one already here</option>
-					<?php foreach ($snd_files as $f): ?>
-						<option value="<?php echo $h($f); ?>"><?php echo $h($f); ?></option>
-					<?php endforeach; ?>
-				</select>
+				<?php /* A SECOND PRESS IS THE CONFIRMATION. The handler refuses
+				         once and says who else is listening; this carries the
+				         answer back. */ ?>
+				<input type="hidden" name="confirm" value="<?php echo
+					(isset($_POST['audio_term']) && $_POST['audio_term'] === $as['term']) ? '1' : ''; ?>">
+				<span class="pick">
+					<select name="audio_use">
+						<option value="">use one already here&hellip;</option>
+						<?php if ($suggest !== '' && in_array($suggest, $snd_files, true)): ?>
+							<option value="<?php echo $h($suggest); ?>">&#9733; <?php
+								echo $h($suggest); ?> &mdash; what Drop Ship plays</option>
+						<?php endif; ?>
+						<?php foreach ($snd_files as $f): if ($f === $suggest) continue; ?>
+							<option value="<?php echo $h($f); ?>"><?php echo $h($f); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<input type="file" name="audio" accept="audio/mpeg,.mp3">
+				</span>
 				<button class="button" type="submit">Set</button>
 			</form>
-			<?php endif; ?>
-			<?php if ($claims): ?>
-				<span class="claim">Shared: <?php echo $h(implode(', ', $claims)); ?>
-					&mdash; replacing this file changes it for them too.</span>
-			<?php endif; ?>
+			<?php else: ?><span></span><?php endif; ?>
+
 		</div>
 	<?php };
 
@@ -1024,6 +1081,39 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		document.addEventListener('keydown', onKey);
 		document.body.appendChild(box);
 	}
+
+	/*
+	 * ONE PLAYER FOR THE WHOLE PAGE.
+	 *
+	 * Twenty-eight <audio controls> elements is twenty-eight light-grey
+	 * widgets on a dark page, each a different width depending on whether
+	 * its file had loaded, shoving every row's controls out of line. One
+	 * Audio object and a small button per row instead -- and one object
+	 * means starting a second sound stops the first, which is what you
+	 * want when comparing two of them rather than hearing both at once.
+	 */
+	var sndNow = null, sndBtn = null;
+	function sndStop() {
+		if (sndNow) { sndNow.pause(); sndNow = null; }
+		if (sndBtn) { sndBtn.classList.remove('on'); sndBtn.innerHTML = '&#9654;'; sndBtn = null; }
+	}
+	root.addEventListener('click', function (ev) {
+		var b = ev.target.closest ? ev.target.closest('.snd .play') : null;
+		if (!b || !b.getAttribute('data-src')) return;
+		ev.preventDefault();
+		var again = (b === sndBtn);
+		sndStop();
+		if (again) return;                      /* pressing it again stops it */
+		sndNow = new Audio(b.getAttribute('data-src'));
+		sndBtn = b;
+		b.classList.add('on');
+		b.innerHTML = '&#9632;';
+		sndNow.addEventListener('ended', sndStop);
+		/* A file that 404s or will not decode must put the button back,
+		   or the row looks like it is playing something forever. */
+		sndNow.addEventListener('error', sndStop);
+		sndNow.play().catch(sndStop);
+	});
 
 	root.addEventListener('click', function (ev) {
 		var img = ev.target;
