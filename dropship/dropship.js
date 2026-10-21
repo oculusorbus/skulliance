@@ -246,12 +246,12 @@ function displayRound(project_id) {
 		document.getElementById('audio1').play();
 		// Extra function call to try and force music to play
 		loadAudio(1, "8bit"+randomInt(1, 5));
-		/* THE OPENING SOUND IS THE THEME'S, by the same rule as every
-		   other: it was a project_id ladder (1 alarm, 3 crowd, 4
-		   flyingcar), which is a per-theme file chosen in code. The table
-		   carries it under the key "open" now, so a new theme gets one by
-		   putting a file on the server. */
-		if (window.dsAudio && dsAudio.open) loadFile(2, dsAudio.open);
+		/* ROUND 0 IS A SLIDE LIKE ANY OTHER. Its sound used to be a
+		   project_id ladder here (1 alarm, 3 crowd, 4 flyingcar), then
+		   briefly a separate "open" key -- but round 0 shows reset.gif
+		   and has a caption, so it goes through the same lookup every
+		   other round does. */
+		playRoundAudio(currentRound);
 		//roundEl(currentRound).style.visibility = "visible";
 //		document.getElementById("results").innerHTML = roundEl(currentRound).innerHTML;
 		showRound(currentRound);

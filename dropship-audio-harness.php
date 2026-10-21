@@ -193,7 +193,10 @@ if ($made) {
 	/* THE PAYLOAD the browser gets: exact frames, prefix catch-alls, and
 	   nothing with an empty file. */
 	$pay = dropshipAudioPayload($c, 4);
-	ok(isset($pay['frames'], $pay['any'], $pay['open']), 'the payload lost one of its three parts');
+	/* TWO PARTS, not three: the opening used to be a key of its own and
+	   is round 0's frame now, so it travels in 'frames' like the rest. */
+	ok(isset($pay['frames'], $pay['any']) && !isset($pay['open']),
+	   'the payload shape changed: ' . implode(', ', array_keys($pay)));
 	ok(isset($pay['frames']['weapons/demo1']), 'the payload does not key frames by art path');
 	ok(!isset($pay['frames']['weapons/demo2']),
 	   'a frame with no sound was sent to the browser anyway');
@@ -226,282 +229,74 @@ if ($made) {
 	harness_probe_clean();
 }
 
-echo "\nthe opening cannot collide with a frame\n";
+echo "\nthe opening is round 0, not a slot of its own\n";
 /*
- * It is the one slot with no frame to name it, so it is named after the
- * theme -- and Filthy Mermaid's word for the round 1 frame is "Filthy
- * Mermaid", which means a bare slug would have put two different sounds
- * on filthy-mermaid.mp3.
+ * Asked why the opening was not associated with a slide. It should have
+ * been: it plays on round 0 and round 0 IS a slide -- reset.gif, "the
+ * ship arriving", with a caption like every other frame. Modelling it
+ * separately gave it no picture to sit under and forced a
+ * <slug>-opening.mp3 name invented to dodge a collision with the round
+ * 1 frame, whose word for Filthy Mermaid is "Filthy Mermaid".
  */
+ok(!function_exists('dropshipAudioOpenSlot'),
+   'the opening is still a slot of its own, so it has no frame to sit under');
 $fmc = new AConn(
 	array(33 => array('id' => 330, 'project_id' => 33, 'slug' => 'filthy-mermaid', 'name' => 'Filthy Mermaid')),
-	array(330 => array(arow('Drop Ship', 'Filthy Mermaid'))));
-$open = dropshipAudioOpenSlot($fmc, 33);
-$fstems = array();
-foreach (dropshipAudioSlots($fmc, 33) as $sl) if ($sl['stem'] !== '') $fstems[$sl['stem']] = $sl['term'];
-ok($open['stem'] !== '', 'the opening has no filename at all');
-ok(!isset($fstems[$open['stem']]),
-   'the opening asks for the same file as a frame, so two sounds fight over one name');
-ok(isset($fstems['filthy-mermaid']),
-   'the round 1 frame no longer asks for the theme word, so this check has gone stale');
-/* ITS OLD FILE IS ITS OWN, not Drop Ship's: crowd.mp3 was only ever
-   Filthy Mermaid's, so falling back to it borrows nothing. */
-ok($open['legacy'] === '' || $open['legacy'] !== 'alarm',
-   "a theme's opening falls back to Drop Ship's");
-
-echo "\nthe Set button finds the row it was pressed on\n";
-/*
- * REPORTED: picked melee for Dread City's Machete, pressed Set, nothing
- * happened. The resolver compared $e['term'] against the posted value
- * and events have no 'term' key -- they have 'family' -- so it matched
- * nothing, every Set resolved to null and the handler bailed on "that
- * is not a sound this theme asks for".
- *
- * DRIVEN, not grepped. The handler itself needs a request and a
- * database, but the lookup it depends on is a function now and this
- * calls it with exactly what the form posts. The old version was
- * covered by source assertions alone, which is precisely why a dead
- * array key sat there unnoticed.
- */
-$sconn = new AConn(
-	array(102 => array('id' => 1020, 'project_id' => 102, 'slug' => 'dread-city', 'name' => 'Dread City')),
-	array(1020 => array(arow('Tactical Katana', 'Machete'), arow('Flamethrower', 'Torch'))));
-$mach = dropshipAudioSlotByArt($sconn, 102, 'weapons/tactical-katana');
-ok($mach !== null, 'the katana row does not resolve, so pressing Set on it does nothing');
-ok($mach && $mach['stem'] === 'machete',
-   'the katana row resolves to ' . ($mach ? $mach['stem'] : 'nothing') . ', not machete');
-/* EVERY ROW THE PAGE RENDERS MUST RESOLVE, with exactly the value the
-   form puts in the field. */
-foreach (dropshipAudioSlots($sconn, 102) as $sl) {
-	$posted = $sl['art'] !== '' ? $sl['art'] : 'Opening';
-	$back = dropshipAudioSlotByArt($sconn, 102, $posted);
-	ok($back !== null, "the row for '$posted' does not resolve, so its Set button does nothing");
-	if ($back) ok($back['stem'] === $sl['stem'],
-		"'$posted' resolves to {$back['stem']} but the row shows {$sl['stem']}");
+	array(330 => array(arow('Drop Ship', 'Filthy Mermaid'),
+	                   arow('Drop Ship Initiating', 'Filthy Mermaid Entrance'))));
+$r0 = dropshipAudioSlotByArt($fmc, 33, 'reset/reset');
+ok($r0 !== null, 'round 0 has no sound row at all');
+ok($r0 && $r0['stem'] === 'filthy-mermaid-entrance',
+   'round 0 does not take its own caption: ' . ($r0 ? $r0['stem'] : 'nothing'));
+/* AND IT NO LONGER COLLIDES, because it is named by its own caption
+   rather than by the theme. */
+$r1 = dropshipAudioSlotByArt($fmc, 33, 'drop/drop');
+ok($r1 && $r1['stem'] === 'filthy-mermaid', 'round 1 stopped asking for the theme word');
+ok($r0 && $r1 && $r0['stem'] !== $r1['stem'],
+   'rounds 0 and 1 ask for the same file, so two sounds fight over one name');
+/* EACH THEME KEEPS THE OPENING IT ALREADY HAS. Every other row falls
+   back only for Drop Ship, because the old name is Drop Ship's; these
+   three were per-project from the start, so crowd is Filthy Mermaid's
+   own and falling back to it borrows nothing. */
+foreach (array(1 => 'alarm', 3 => 'crowd', 4 => 'flyingcar') as $pid => $want) {
+	$pc = new AConn(array($pid => array('id' => $pid * 10, 'project_id' => $pid,
+	                                    'slug' => 'theme-' . $pid, 'name' => 'T' . $pid)), array());
+	$sl = dropshipAudioSlotByArt($pc, $pid, 'reset/reset');
+	ok($sl && $sl['legacy'] === $want,
+	   "project $pid falls back to " . ($sl ? $sl['legacy'] : '?') . ", not its own $want");
 }
-$op = dropshipAudioSlotByArt($sconn, 102, 'Opening');
-ok($op !== null && $op['stem'] === 'dread-city-opening', 'the opening row does not resolve');
-ok(dropshipAudioSlotByArt($sconn, 102, 'weapons/not-a-frame') === null,
-   'a frame this theme does not have still resolves, so a posted value reaches the disk');
-
-/* FOUR FRAMES OF ONE THING ARE FOUR ROWS, and the family cannot tell
-   them apart -- which is the other half of why the key is the art. */
-$f = array();
-foreach (array(1,2,3,4) as $n) {
-	$sl = dropshipAudioSlotByArt($sconn, 102, 'weapons/flamethrower' . $n);
-	ok($sl !== null, "flamethrower frame $n does not resolve");
-	if ($sl) $f[$sl['stem']] = true;
-}
-ok(count($f) === 4, 'the four flamethrower frames resolve to ' . count($f) . ' files, not four');
-ok(isset($f['torch3']), 'the third flamethrower frame is not torch3: ' . implode(', ', array_keys($f)));
-
-/* AND THE FORM POSTS THAT KEY. The lookup being right is half of it. */
-$adm_k = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
-ok(strpos($adm_k, 'name="audio_art"') !== false,
-   'the form does not post the frame, so the lookup has nothing to find');
-/* ON THE audio_art INPUT ITSELF. The confirm field uses the same
-   expression, so looking for the expression anywhere in the file passes
-   with the posted value swapped back to the family. */
-ok(preg_match('/name="audio_art" value="<\?php echo \$h\(\$as\[\x27art\x27\]/', $adm_k) === 1,
-   'the posted value is not the art path the resolver expects');
-ok(strpos($adm_k, 'dropshipAudioSlotByArt($conn, $pid, (string)$_POST[\'audio_art\'])') !== false,
-   'the handler does not resolve the posted frame');
-
-echo "\nthe row answers where it was pressed\n";
-/*
- * REPORTED TWICE AS "Set does nothing". The second time it was doing
- * something: the handler ran, wrote the file and said so -- at the TOP
- * of a page seventy slots long, which from the row you are looking at
- * is indistinguishable from nothing happening. The art slots have
- * reported in place since they got drag and drop; the sound rows were
- * posting the whole page and trusting you to scroll up.
- */
-$adm_r = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
-ok(strpos($adm_r, "if (isset(\$_POST['audio_art'])) {") !== false
-   && strpos($adm_r, "'state' => \$r_slot ?") !== false,
-   'a sound post is not answered in place, so the result lands at the top of the page');
-/* THE ANSWER IS THE RUN'S OWN, not a second opinion. */
-ok(strpos($adm_r, "\$r_play = \$r_slot ? \$r_slot['plays'] : '';") !== false,
-   'the reply works out what is playing for itself instead of reading the run\'s answer');
-/* INSIDE THE REPLY BLOCK, not anywhere in the file: the handler that
-   writes contains the same call, so a file-wide search passes with the
-   reply resolving some other row entirely. */
-/* At column 0: the admin gate higher up has an indented
-   `if ($dsa_inplace) {` of its own and strpos finds that one first. */
-$r_at  = strpos($adm_r, "\nif (\$dsa_inplace) {");
-$r_blk = $r_at === false ? '' : substr($adm_r, $r_at, 2000);
-ok($r_at !== false, 'the in-place block could not be located');
-ok(strpos($r_blk, "dropshipAudioSlotByArt(\$conn, \$pid, (string)\$_POST['audio_art'])") !== false,
-   'the reply resolves the row differently from the handler that just wrote it');
-/* A REFUSAL IS A QUESTION, so the row has to carry the answer forward.
-   Reloading used to do that; a fetch has to be told. */
-ok(strpos($adm_r, "'warn'  => !empty(\$msg['warn'])") !== false,
-   'the reply does not say it was a refusal, so the second press cannot confirm');
-ok(strpos($adm_r, "c.value = d.warn ? '1' : ''") !== false,
-   'the row does not arm its confirm from the reply, so a warning can never be got past');
-/* AND THE EMPTY FILE INPUT IS DROPPED, or the handler answers "pick an
-   mp3" before it ever looks at the picker. */
-ok(strpos($adm_r, "if (file && !file.value) data.delete('audio');") !== false,
-   'an untouched file input is posted, and UPLOAD_ERR_NO_FILE answers before the picker does');
-/* WITHOUT JAVASCRIPT it still posts normally; the handler is unchanged. */
-ok(strpos($adm_r, 'method="post" enctype="multipart/form-data"') !== false,
-   'the sound form stopped being a real form, so it needs JavaScript to work at all');
-
-echo "\nnothing is overwritten without a warning first\n";
-/*
- * The question was exactly this: does picking an existing sound copy it
- * and leave the original alone, does an upload land on the right name,
- * and does anything that destroys a file say so first.
- *
- * COPY, NOT MOVE, for the picker. An icon with a new name is RENAMED,
- * because the old name is then asked for by nobody; a sound picked from
- * the list is still being asked for under its own name by whoever led
- * you to it, so it has to be copied.
- */
-$adm_w = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
-$a_at  = strpos($adm_w, "isset(\$_POST['audio_art'])");
-ok($a_at !== false, 'the audio handler is gone; nothing below proves anything');
-$a_blk = $a_at === false ? '' : substr($adm_w, $a_at, 3000);
-
-ok(strpos($a_blk, '@copy($a_dir . $a_use, $a_dest)') !== false,
-   'picking an existing sound moves it, which takes it away from whatever else asks for it');
-ok(strpos($a_blk, 'rename(') === false && strpos($a_blk, 'unlink(') === false,
-   'the audio handler can move or delete a file; it must only ever write to the derived name');
-/* THE DESTINATION IS THE DERIVED NAME, never anything off the form --
-   an upload keeps nothing of whatever the file was called. */
-ok(strpos($a_blk, "\$a_dest = \$a_dir . \$a_slot['stem'] . '.mp3';") !== false,
-   'the destination is not the name the wording asks for');
-ok(strpos($a_blk, "dropshipAudioSlotByArt(\$conn, \$pid, (string)\$_POST['audio_art'])") !== false,
-   'the slot is taken off the form without being resolved, so a posted name reaches the disk');
-ok(strpos($a_blk, "basename((string)\$_POST['audio_use'])") !== false,
-   'the picked filename is not reduced to a basename, so a path could escape the folder');
-ok(strpos($a_blk, "in_array(\$a_use, dropshipAudioFiles(), true)") !== false,
-   'the picked file is not checked against the folder, so any readable path could be copied in');
-
-/*
- * ANY OVERWRITE WARNS. The first version asked only when some OTHER
- * theme also wanted the file, so replacing a sound nothing else used
- * happened silently -- and a file gone by accident is a file gone.
- */
-ok(strpos($a_blk, '$a_go = (!$a_overwrite || !empty($_POST[\'confirm\']));') !== false,
-   'an overwrite can still go through unwarned when no other theme shares the file');
-ok(strpos($a_blk, '$a_overwrite = is_file($a_dest);') !== false,
-   'nothing checks whether the destination already exists');
-ok(strpos($a_blk, 'already exists and will be ') !== false,
-   'the refusal does not say that a file is about to be replaced');
-ok(strpos($a_blk, 'which also changes it for ') !== false,
-   'the refusal does not name who else loses the sound they had');
-/* AND A NEW NAME IS NOT A WARNING. Creating a file destroys nothing;
-   asking there would train somebody to click through. */
-ok(strpos($a_blk, '!$a_overwrite ||') !== false,
-   'writing a name that does not exist yet also asks for confirmation');
-
-/*
- * THE CONFIRM IS ARMED BY A REFUSAL, not by having posted. Keyed off
- * the post alone it stayed armed after a SUCCESSFUL write, so the next
- * thing done to that row would have overwritten without asking.
- */
-ok(strpos($adm_w, "\$msg['warn'] = \$a_slot['art'];") !== false,
-   'the refusal does not record WHICH row it refused');
-ok(strpos($adm_w, "!empty(\$msg['warn']) && \$msg['warn'] === (\$as['art']") !== false,
-   'the confirm is armed by having posted rather than by having been refused');
-ok(strpos($adm_w, "\$_POST['audio_term']") === false,
-   'the old family-keyed field is still there, so the lookup has two masters');
-
-echo "\nevery frame's sound sits under that frame\n";
-/*
- * REPORTED looking at THE DROP: Filthy Mermaid has crowd on round 0 and
- * a door on round 1, and neither had a sound row under those cards.
- * The pairing matched a sound's vocabulary FAMILY against the LABELLED
- * art rows -- and the drop rounds, the deaths and the beach frames all
- * render as bands with no label, so nothing could ever attach to them.
- * Those sounds were all falling through to the section at the bottom.
- *
- * A sound belongs to a frame and the frame is in a row, so this is the
- * same lookup the page does now: by art path.
- */
-$pconn = new AConn(
-	array(203 => array('id' => 2030, 'project_id' => 203, 'slug' => 'filthy-mermaid', 'name' => 'Filthy Mermaid')),
-	array(2030 => array()));
-$pplan  = dropshipArtPlan($pconn, 203, 'png', 'filthy-mermaid');
-/* THE PAGE'S OWN BUCKETING, called -- not a second copy of it written
-   out here. A harness that reimplements the lookup it is checking
-   passes while the page is broken, which is how the Set button shipped
-   dead. */
-$psplit = dropshipAudioPlanRows($pconn, 203, $pplan);
-$pwhere = array();
-foreach ($psplit['rows'] as $key => $slots) {
-	foreach ($slots as $sl) $pwhere[$sl['art']] = $key;
+/* AND IT ACTUALLY PLAYS IT. The legacy being recorded is not the same
+   as the run reaching for it: every other row refuses to fall back
+   unless the theme is Drop Ship, and without the own-file exception
+   Filthy Mermaid would go quiet on round 0 the day this shipped. */
+$snd3 = __DIR__ . '/dropship/sounds';
+if (is_dir($snd3) || @mkdir($snd3, 0777, true)) {
+	harness_probe($snd3 . '/crowd.mp3');
+	$pc3 = new AConn(array(3 => array('id' => 31, 'project_id' => 3,
+	                                  'slug' => 'fm-probe', 'name' => 'FM')), array());
+	$s3 = dropshipAudioSlotByArt($pc3, 3, 'reset/reset');
+	ok($s3 && $s3['plays'] === 'sounds/crowd.mp3',
+	   "a theme's own opening is treated as Drop Ship's and refused: "
+	 . ($s3 ? var_export($s3['plays'], true) : '?'));
+	ok($s3 && !empty($s3['legacy_mine']), 'the slot does not mark the old file as the theme\'s own');
+	harness_probe_clean();
 }
 
-/* THE THREE THE REPORT WAS ABOUT: Filthy Mermaid's crowd on round 0 and
-   its door on round 1 had no row under THE DROP to sit in. */
-foreach (array('reset/reset', 'drop/drop', 'drop/team') as $art) {
-	ok(isset($pwhere[$art]), "the sound for $art is not under any art row");
-	if (isset($pwhere[$art])) ok(strpos($pwhere[$art], 'The drop|') === 0,
-		"$art is bucketed under {$pwhere[$art]}, not The drop");
-}
-/* ONE ROW, not three: those four cards are a single unlabelled band, so
-   the three sounds belong together under it. */
-ok(count(array_unique(array($pwhere['reset/reset'] ?? 'a', $pwhere['drop/drop'] ?? 'b',
-                            $pwhere['drop/team'] ?? 'c'))) === 1,
-   'the drop sounds are split across rows that render as one band');
+/* DREAD CITY NEVER HAD AN OPENING and must not acquire one: it is not
+   in the per-project list, and the row carries no shared old name for
+   it to fall back to instead. */
+$dc = new AConn(array(2 => array('id' => 20, 'project_id' => 2, 'slug' => 'dread-city',
+                                 'name' => 'Dread City')), array());
+$dcs = dropshipAudioSlotByArt($dc, 2, 'reset/reset');
+ok($dcs && $dcs['legacy'] === '',
+   'Dread City picked up an opening it never had: ' . ($dcs ? $dcs['legacy'] : '?'));
+ok($dcs && $dcs['plays'] === '', 'Dread City plays something on round 0 that it did not before');
 
-/* AND EVERY OTHER FRAME WITH A SOUND, so a band that is not labelled
-   cannot quietly orphan its audio again. */
-$orphans = array();
-foreach ($psplit['loose'] as $sl) {
-	if ($sl['art'] === '') continue;                 /* the opening */
-	if (substr($sl['art'], -1) === '/') continue;    /* the catch-alls */
-	$orphans[] = $sl['art'];
-}
-ok($orphans === array(),
-   'these frames have a sound and no row to show it under: ' . implode(', ', $orphans));
-
-/* WHAT IS ALLOWED TO BE LOOSE, pinned so it stays a decision: the two
-   catch-alls, which span whole stages, and the opening, which has no
-   frame at all. */
-$loose = array();
-foreach ($psplit['loose'] as $sl) $loose[] = $sl['art'] === '' ? 'Opening' : $sl['art'];
-sort($loose);
-ok($loose === array('1up/', 'Opening', 'live/'),
-   'the set of sounds with no frame changed: ' . implode(', ', $loose));
-
-/* AN ICON IS NOT A FRAME. It is one shared file for every theme and has
-   no moment; counting it would bucket a sound under the wrong row. */
-$icon_rows = 0;
-foreach ($pplan as $gname => $g) {
-	foreach ($g['rows'] as $ri => $r) {
-		foreach ($r['slots'] as $sl) if ($sl['kind'] === 'icon') $icon_rows++;
-	}
-}
-ok($icon_rows > 0, 'the plan has no icons, so the check below proves nothing');
-/*
- * EQUIVALENT MUTANT, recorded rather than chased: deleting the
- * kind !== 'art' test changes no answer, because an icon's rel is
- * icons/<name>.png and a background's is <slug>/<slug>background.jpg --
- * neither begins with images/, so neither can ever produce a key a
- * frame also produces. It is a guard on the SLICE below, which assumes
- * that prefix, and the prefix test beside it says so outright.
- */
-ok(strpos(file_get_contents(__DIR__ . '/dropship/dropship-audio.php'),
-          "strpos(\$sl['rel'], 'images/') !== 0") !== false,
-   'the slice assumes an images/ prefix without checking for one');
-foreach ($psplit['rows'] as $key => $slots) {
-	foreach ($slots as $sl) {
-		ok($sl['art'] !== '' && substr($sl['art'], -1) !== '/',
-		   "a sound with no frame was bucketed under $key");
-	}
-}
-
-/* AND THE PAGE USES THIS LOOKUP, not the family it used to. */
-$adm_p = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
-ok(strpos($adm_p, 'dropshipAudioPlanRows($conn, $pid, $art_plan)') !== false,
-   'the page does not bucket sounds by the frame they belong to');
-/* COMMENTS STRIPPED: the note explaining the change names the function
-   it replaced, which a bare search counts as a call. */
-ok(strpos(harness_strip_comments($adm_p), 'dropshipAudioFamily(') === false,
-   'the family-label pairing is still called, and it cannot reach an unlabelled band');
+/* And nothing else in the table has a per-project file: that exception
+   exists for one row and must not spread. */
+$byproj = 0;
+foreach (dropshipAudioEvents() as $e) if (!empty($e['legacy_by'])) $byproj++;
+ok($byproj === 1, "$byproj rows carry a per-project fallback; only round 0 should");
 
 echo "\nthe page says what the run does\n";
 $adm = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');

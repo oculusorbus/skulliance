@@ -37,6 +37,16 @@ function run(payload, imgSrc) {
 	         fire: function () { timers.forEach(t => t.f()); } };
 }
 
+/* ROUND 0 GOES THROUGH THE SAME PATH. Its sound used to be a project_id
+   ladder in displayRound, then briefly a separate "open" key; round 0
+   shows reset.gif and has a caption, so it is looked up like any other
+   round. The call site is in displayRound, which needs the whole page
+   to run, so it is read rather than driven. */
+ok(/currentRound == 0\)\{[\s\S]{0,900}?playRoundAudio\(currentRound\);/.test(js),
+   'round 0 no longer asks for its sound, so a run opens in silence');
+ok(!/dsAudio\.open/.test(js),
+   'the separate opening key is still there, and it has no frame to sit under');
+
 /* ---------- the frame comes out of the image --------------------------- */
 const r0 = run({ frames: {} }, 'https://x/staking/dropship/oculus-lounge/images/weapons/demo2.png?v=17');
 ok(r0.fn.frame(5) === 'weapons/demo2',

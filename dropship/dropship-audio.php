@@ -89,7 +89,26 @@ function dropshipAudioEvents() {
 		array('art' => 'equipment/airstrike2', 'family' => 'Airstrike', 'n' => 2, 'caption' => 'Air Strike', 'sound' => 'massexplosioncontra', 'delay' => 2000),
 		array('art' => 'equipment/jet-pack1', 'family' => 'Jet Pack', 'n' => 1, 'caption' => 'Jet Pack Takeoff', 'sound' => '', 'delay' => 0),
 		array('art' => 'equipment/drop-box', 'family' => 'Drop Box', 'n' => 0, 'caption' => 'Drop Box', 'sound' => '', 'delay' => 0),
-		array('art' => 'reset/reset', 'family' => 'Drop Ship Initiating', 'n' => 0, 'caption' => 'Drop Ship Initiating', 'sound' => '', 'delay' => 0),
+		/* ROUND 0 IS A SLIDE LIKE ANY OTHER, and this is its sound. It
+		   used to be modelled twice: once here with no sound, and once
+		   as an "Opening" slot with no frame -- two halves of one thing,
+		   which is why the opening had nothing to sit under on the art
+		   page. The old per-project files (alarm, crowd, flyingcar) were
+		   this frame's all along; 'alarm' is Drop Ship's, and every
+		   other theme reaches its own through its own wording. */
+		array('art' => 'reset/reset', 'family' => 'Drop Ship Initiating', 'n' => 0, 'caption' => 'Drop Ship Initiating', 'sound' => '', 'delay' => 0,
+		      /* NO SHARED OLD NAME, because there never was one: this
+		         row's fallback is per project and legacy_by carries all
+		         of it, so 'sound' above would be a second answer to a
+		         question that already has one.
+
+		         EACH THEME'S OWN OLD FILE, not a borrow. Every other row
+		         falls back to Drop Ship's name and only Drop Ship may use
+		         it; these three were per-project from the start -- crowd
+		         was only ever Filthy Mermaid's and flyingcar only ever
+		         Oculus Lounge's -- so each theme keeps the opening it
+		         already had until the file is renamed onto its wording. */
+		      'legacy_by' => array(1 => 'alarm', 3 => 'crowd', 4 => 'flyingcar')),
 		array('art' => 'drop/drop', 'family' => 'Drop Ship', 'n' => 0, 'caption' => 'Drop Ship', 'sound' => 'dropshipcontra', 'delay' => 0),
 		array('art' => 'drop/team', 'family' => 'Drop Ship Landed', 'n' => 0, 'caption' => 'Drop Ship Landed', 'sound' => 'gunfirecontra', 'delay' => 0),
 	);
@@ -166,7 +185,16 @@ function dropshipAudioSlot($conn, $project_id, $event) {
 	 */
 	$base = dropshipAudioIsBase($conn, $project_id);
 	$has  = $stem !== '' && is_file($dir . $stem . '.mp3');
-	$leg  = $event['sound'] !== '' && is_file($dir . $event['sound'] . '.mp3');
+	/* A row may name a file PER PROJECT -- see reset/reset. Where it
+	   does, that file is the theme's own and falling back to it borrows
+	   nothing, so the base-only rule does not apply. */
+	$legname = $event['sound'];
+	$legmine = false;
+	if (!empty($event['legacy_by']) && isset($event['legacy_by'][(int)$project_id])) {
+		$legname = $event['legacy_by'][(int)$project_id];
+		$legmine = true;
+	}
+	$leg  = $legname !== '' && is_file($dir . $legname . '.mp3');
 	return array(
 		'art'        => $event['art'],
 		'term'       => $event['family'],
@@ -177,12 +205,17 @@ function dropshipAudioSlot($conn, $project_id, $event) {
 		'stem'       => $stem,
 		'rel'        => $stem === '' ? '' : 'sounds/' . $stem . '.mp3',
 		'exists'     => $has,
-		'legacy'     => $event['sound'],
+		'legacy'     => $legname,
 		'legacy_has' => $leg,
+		/* Is that old file this theme's OWN, rather than Drop Ship's? Only
+		   round 0 is, and only because its files were per-project from the
+		   start. Callers that refuse to borrow Drop Ship's audio need to
+		   know the difference. */
+		'legacy_mine' => $legmine,
 		'is_base'    => $base,
 		/* What the run will actually play, by the rule above. */
 		'plays'      => $has ? 'sounds/' . $stem . '.mp3'
-		              : (($base && $leg) ? 'sounds/' . $event['sound'] . '.mp3' : ''),
+		              : ((($base || $legmine) && $leg) ? 'sounds/' . $legname . '.mp3' : ''),
 	);
 }
 
@@ -215,12 +248,7 @@ function dropshipAudioPayload($conn, $project_id) {
 		if ($s['plays'] === '') continue;
 		$any[] = array('p' => $e['art'], 'f' => dropshipAudioUrl($s['plays']), 'd' => $s['delay']);
 	}
-	$open = dropshipAudioOpenSlot($conn, $project_id);
-	return array(
-		'frames' => $exact,
-		'any'    => $any,
-		'open'   => $open['plays'],
-	);
+	return array('frames' => $exact, 'any' => $any);
 }
 
 /**
@@ -237,7 +265,9 @@ function dropshipAudioPayload($conn, $project_id) {
  */
 function dropshipAudioSlotByArt($conn, $project_id, $art) {
 	$art = (string)$art;
-	if ($art === '' || $art === 'Opening') return dropshipAudioOpenSlot($conn, $project_id);
+	/* 'Opening' was a slot of its own once; anything still posting it
+	   means a page cached before that was folded into round 0. */
+	if ($art === '' || $art === 'Opening') return null;
 	foreach (dropshipAudioEvents() as $e) {
 		if ($e['art'] === $art) return dropshipAudioSlot($conn, $project_id, $e);
 	}
@@ -297,7 +327,6 @@ function dropshipAudioPlanRows($conn, $project_id, $plan) {
 			$out['loose'][] = $as;
 		}
 	}
-	$out['loose'][] = dropshipAudioOpenSlot($conn, $project_id);
 	return $out;
 }
 
@@ -355,55 +384,14 @@ function dropshipAudioUrl($rel) {
 	return $v ? $rel . '?v=' . $v : $rel;
 }
 
-/**
- * The sound a theme opens on: the one slot with no frame to name it.
- *
- * It was a project_id ladder in dropship.js -- 1 alarm, 3 crowd, 4
- * flyingcar, and Dread City silent because nobody wrote a branch for it.
- * Those filenames are named after the sound; everything else here is
- * named after the word, so this asks for sounds/<theme slug>-opening.mp3
- * and a new theme gets an opening by putting a file there.
- *
- * "-opening", NOT THE BARE SLUG: Filthy Mermaid's word for the round 1
- * caption "Drop Ship" is "Filthy Mermaid", so that frame already asks
- * for filthy-mermaid.mp3 and two different sounds would have been
- * fighting over one filename.
+/*
+ * dropshipAudioOpenSlot() lived here. The sound a run opens on is round
+ * 0's, and round 0 is reset.gif -- a frame, with a caption, like every
+ * other. Modelling it separately gave it no picture to sit under on the
+ * art page and forced a <slug>-opening.mp3 name that had to dodge a
+ * collision with the round 1 frame. It is just the reset/reset row now.
  */
-function dropshipAudioOpenSlot($conn, $project_id) {
-	$slug = '';
-	if (function_exists('dropshipThemeConfig')) {
-		$cfg = dropshipThemeConfig($conn, $project_id);
-		if ($cfg && !empty($cfg['slug'])) $slug = dropshipThemeSlug($cfg['slug']);
-	}
-	$legacy = array(1 => 'alarm', 3 => 'crowd', 4 => 'flyingcar');
-	$dir  = rtrim(__DIR__, '/') . '/sounds/';
-	$stem = $slug === '' ? '' : $slug . '-opening';
-	$leg  = isset($legacy[(int)$project_id]) ? $legacy[(int)$project_id] : '';
-	$has  = $stem !== '' && is_file($dir . $stem . '.mp3');
-	/*
-	 * THE EXCEPTION TO "NO THEME PLAYS DROP SHIP'S SOUND", and it is not
-	 * one: crowd.mp3 was only ever Filthy Mermaid's and flyingcar.mp3
-	 * only ever Oculus Lounge's. These are each theme's OWN file under
-	 * an old name, so falling back to one borrows nothing.
-	 */
-	$lhas = $leg !== '' && is_file($dir . $leg . '.mp3');
-	return array(
-		'art'        => '',
-		'term'       => 'Opening',
-		'caption'    => 'Opening',
-		'said'       => $slug === '' ? '' : str_replace('-', ' ', ucwords($slug, '-')),
-		'n'          => 0,
-		'delay'      => 0,
-		'stem'       => $stem,
-		'rel'        => $stem === '' ? '' : 'sounds/' . $stem . '.mp3',
-		'exists'     => $has,
-		'legacy'     => $leg,
-		'legacy_has' => $lhas,
-		'is_base'    => dropshipAudioIsBase($conn, $project_id),
-		'plays'      => $has  ? dropshipAudioUrl('sounds/' . $stem . '.mp3')
-		              : ($lhas ? dropshipAudioUrl('sounds/' . $leg . '.mp3') : ''),
-	);
-}
+
 
 /*
  * dropshipAudioFamily() lived here. It matched a sound's vocabulary

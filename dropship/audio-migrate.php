@@ -147,7 +147,10 @@ function dsamPlan($conn, $CHAIN, $OPEN, $GUARDED = array(), $ROUNDS = array()) {
 			 * it for any other theme is handing that theme Drop Ship's
 			 * audio, which is the thing being fixed, not a convenience.
 			 */
-			if ($src === '' && $s['is_base'] && $s['legacy'] !== '') $src = $s['legacy'];
+			if ($src === '' && $s['legacy'] !== ''
+			    && ($s['is_base'] || !empty($s['legacy_mine']))) {
+				$src = $s['legacy'];
+			}
 			if ($src . '.mp3' === $target) continue;
 			if (!isset($want[$target])) {
 				$want[$target] = array('src' => '', 'srcs' => array(), 'why' => array(), 'mute' => false);
@@ -156,21 +159,10 @@ function dsamPlan($conn, $CHAIN, $OPEN, $GUARDED = array(), $ROUNDS = array()) {
 			else { $want[$target]['srcs'][$src . '.mp3'] = true; $want[$target]['src'] = $src . '.mp3'; }
 			$want[$target]['why'][$name . ': ' . $s['caption']] = true;
 		}
-		$open = dropshipAudioOpenSlot($conn, $pid);
-		$leg  = isset($OPEN[$pid]) ? $OPEN[$pid] : '';
-		if ($open['stem'] !== '' && $leg !== '') {
-			$target = $open['stem'] . '.mp3';
-			if ($leg . '.mp3' !== $target && !isset($want[$target])) {
-				/* Same shape as every other row, or the agreement check
-				   below trips over a half-built one. */
-				$want[$target] = array(
-					'src'  => $leg . '.mp3',
-					'srcs' => array($leg . '.mp3' => true),
-					'mute' => false,
-					'why'  => array($name . ': Opening' => true),
-				);
-			}
-		}
+		/* The opening used to be handled separately here. It is round
+		   0's frame now and comes through the loop above like every other
+		   row, with its per-project old file reached through
+		   legacy_mine. $OPEN is only kept for the comment it carries. */
 	}
 	ksort($want);
 	/*

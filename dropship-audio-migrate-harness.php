@@ -68,7 +68,10 @@ $conn = new MConn(
 	      4 => array('id' => 40, 'project_id' => 4, 'slug' => 'oculus-lounge', 'name' => 'Oculus Lounge')),
 	array(40 => array(mrow('Demolition', 'Paddle'), mrow('Explosion', 'Spank'),
 	                  mrow('Melee', 'Vibrator'), mrow('Smoke Bomb', 'Whip'),
-	                  mrow('Pull Smoke Bomb Pin', 'Pull Out Whip'), mrow('Radar', 'Ball Gag'))));
+	                  mrow('Pull Smoke Bomb Pin', 'Pull Out Whip'), mrow('Radar', 'Ball Gag'),
+	                  /* Round 0 is a frame now, so its name comes from its
+	                     caption the way every other one does. */
+	                  mrow('Drop Ship Initiating', 'Oculus Lounge Entrance'))));
 $plan = dsamPlan($conn, $CHAIN, $OPEN, $GUARDED, $ROUNDS);
 ok(count($plan) > 20, 'the plan is only ' . count($plan) . ' files; something did not resolve');
 
@@ -80,7 +83,7 @@ foreach (array('demolition1.mp3' => 'demo.mp3',
                'machine-gun2.mp3' => 'gunfirecontra.mp3',
                'machine-gun3.mp3' => 'gunfirecontra.mp3',
                'survived.mp3' => 'enemyguncontra.mp3',
-               'drop-ship-opening.mp3' => 'alarm.mp3') as $t => $s) {
+               'drop-ship-initiating.mp3' => 'alarm.mp3') as $t => $s) {
 	ok(isset($plan[$t]), "$t is not in the plan at all");
 	if (isset($plan[$t])) ok($plan[$t]['src'] === $s,
 		"$t should come from $s, plan says " . $plan[$t]['src']);
@@ -97,7 +100,7 @@ foreach (array('paddle1.mp3' => 'spankme.mp3',
                'whip2.mp3' => 'spank.mp3',
                'vibrator.mp3' => 'vibrator.mp3',
                'ball-gag.mp3' => 'ballgag.mp3',
-               'oculus-lounge-opening.mp3' => 'flyingcar.mp3') as $t => $s) {
+               'oculus-lounge-entrance.mp3' => 'flyingcar.mp3') as $t => $s) {
 	if ($t === 'vibrator.mp3') {  /* already correctly named: nothing to do */
 		ok(!isset($plan[$t]), 'a file already on the right name is scheduled for a pointless copy');
 		continue;
