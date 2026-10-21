@@ -888,7 +888,7 @@ $cp_ok = @mkdir(dirname($cp_own), 0777, true) || is_dir(dirname($cp_own));
 $cp_ok = $cp_ok && @mkdir(dirname($cp_them), 0777, true);
 ok($cp_ok, 'could not build the probe files, so nothing below is proving anything');
 if ($cp_ok) {
-	file_put_contents($cp_own,  str_repeat('A', 4096));
+	harness_probe($cp_own, str_repeat('A', 4096));
 	file_put_contents($cp_them, str_repeat('A', 4096));
 	ok(dropshipArtIsDropShipCopy($cp_them, $cp_rel) === true,
 	   "a reskin's file that IS Drop Ship's file is not reported as borrowed");
@@ -1240,14 +1240,14 @@ $bb_flat = __DIR__ . '/dropship/images/live/bunker';
 $bb_fok  = is_dir($bb_flat) || @mkdir($bb_flat, 0777, true);
 ok($bb_fok, 'could not place the flat probe, so the slug guard is untested');
 if ($bb_fok) {
-	for ($i = 7; $i <= 12; $i++) file_put_contents($bb_flat . '/' . $i . '.hqz', 'x');
+	for ($i = 7; $i <= 12; $i++) harness_probe($bb_flat . '/' . $i . '.hqz');
 	ok(dropshipThemeHasFrames('drop-ship', 'images/live/bunker/', 7, 12, 'hqz') === true,
 	   "Drop Ship's own flat art stopped resolving");
 	ok(dropshipThemeHasFrames('', 'images/live/bunker/', 7, 12, 'hqz') === false,
 	   "a theme with no usable slug is told it has the band, off Drop Ship's own folder");
 	ok(dropshipThemeHasFrames('   ', 'images/live/bunker/', 7, 12, 'hqz') === false,
 	   "a blank slug is told it has the band, off Drop Ship's own folder");
-	for ($i = 7; $i <= 12; $i++) @unlink($bb_flat . '/' . $i . '.hqz');
+	harness_probe_clean();
 }
 ok(!glob($bb_flat . '/*.hqz'), 'the flat probes were left behind in the live art folder');
 /*

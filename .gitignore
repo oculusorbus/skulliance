@@ -44,3 +44,12 @@ dhc/web/*
 dhcrenders/
 # Marquee-sized derivatives of those, for digihellcorps.php. Same rule.
 images/dhc-fighters/
+
+# Drop Ship art and audio live on the server, not in the repo -- see
+# images-deployed-via-ftp. The harnesses plant probe files in these
+# folders to drive the real code and remove them again; a fatal mid-run
+# once left one behind and `git add -A` committed it, which then broke
+# `git pull` on the live server because the real file was sitting there
+# untracked.
+dropship/sounds/
+dropship/images/

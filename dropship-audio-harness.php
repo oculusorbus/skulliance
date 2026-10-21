@@ -23,6 +23,7 @@ if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 $fail = 0;
 function ok($cond, $msg) { global $fail; if (!$cond) { $fail++; echo "  FAIL  $msg\n"; } }
 
+require_once __DIR__ . '/harness-strip.php';   // harness_probe(): cleans up on a fatal too
 require_once __DIR__ . '/dropship/dropship-themes.php';
 require_once __DIR__ . '/dropship/dropship-art.php';
 require_once __DIR__ . '/dropship/dropship-audio.php';
@@ -163,11 +164,10 @@ $snd = __DIR__ . '/dropship/sounds';
 $made = is_dir($snd) || @mkdir($snd, 0777, true);
 ok($made, 'could not make a sounds folder to probe, so the checks below prove nothing');
 if ($made) {
-	$probe = array();
-	$put = function ($n) use ($snd, &$probe) {
-		$f = $snd . '/' . $n . '.mp3';
-		if (!is_file($f)) { file_put_contents($f, 'x'); $probe[] = $f; }
-	};
+	/* harness_probe(), not a local unlink list: a fatal partway through
+	   skipped the cleanup once and the leftover went into a commit,
+	   which then broke `git pull` on the live server. */
+	$put = function ($n) use ($snd) { harness_probe($snd . '/' . $n . '.mp3'); };
 	/* Only the old Drop Ship names exist. */
 	$put('demo'); $put('enemyguncontra');
 	$ds = $by($c, 1); $ol = $by($c, 4);
@@ -210,8 +210,7 @@ if ($made) {
 	ok(!in_array('Oculus Lounge: Paddle', dropshipAudioClaims($c, 'paddle1', 4, 'Demolition'), true),
 	   'the warning names the theme doing the replacing, so it nags about itself');
 
-	foreach ($probe as $f) @unlink($f);
-	if (!glob($snd . '/*')) @rmdir($snd);
+	harness_probe_clean();
 }
 
 echo "\nthe opening cannot collide with a frame\n";

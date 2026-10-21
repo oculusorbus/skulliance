@@ -27,3 +27,37 @@ function harness_strip_comments($src) {
 	$src = preg_replace('~(?<![:/])//[^\n]*~', '', $src);
 	return $src;
 }
+
+/*
+ * PROBE FILES THAT CANNOT SURVIVE THE RUN.
+ *
+ * Several harnesses drive the real code by planting a file where the
+ * real art and audio live -- dropship/sounds/, dropship/images/ -- and
+ * removing it afterwards. "Afterwards" is not good enough: a fatal
+ * partway through skips the cleanup, and the next `git add -A` commits
+ * the leftover. That happened: dropship/sounds/grenadecontra.mp3 went
+ * into a commit and broke `git pull` on the live server, because the
+ * real file was sitting there untracked and could not be overwritten.
+ *
+ * Registered at creation and removed on shutdown, which runs for a
+ * fatal and an exit() alike. Those folders are also in .gitignore now;
+ * this is the other half, so a probe does not linger locally either.
+ */
+$GLOBALS['harness_probes'] = array();
+function harness_probe($path, $contents = 'x') {
+	$dir = dirname($path);
+	if (!is_dir($dir)) @mkdir($dir, 0777, true);
+	file_put_contents($path, $contents);
+	$GLOBALS['harness_probes'][] = $path;
+	return $path;
+}
+function harness_probe_clean() {
+	foreach (array_reverse($GLOBALS['harness_probes']) as $p) @unlink($p);
+	/* Walk the empty parents back out, but never past the repo. */
+	foreach (array_reverse($GLOBALS['harness_probes']) as $p) {
+		$d = dirname($p);
+		while ($d !== __DIR__ && strpos($d, __DIR__) === 0 && @rmdir($d)) $d = dirname($d);
+	}
+	$GLOBALS['harness_probes'] = array();
+}
+register_shutdown_function('harness_probe_clean');
