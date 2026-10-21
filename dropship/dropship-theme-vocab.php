@@ -96,6 +96,20 @@ function dropshipThemeVocabulary() {
 			array('label' => 'Melee', 'exact' => array('Melee'), 'desc' => array('Melee'), 'icons' => array('melee'), 'themes' => 2),
 			array('label' => 'Demolition', 'exact' => array('Demolition'), 'desc' => array('Demolition'), 'icons' => array('demolition'), 'themes' => 2),
 		),
+		'Ranks' => array(
+			/* THE RANK PRINTED ON A SOLDIER CARD. "Neo Miami Citizen" is the
+			   fixed string createSoldier() stores for any collection whose
+			   metadata carries no rank of its own -- it is Oculus Lounge's
+			   word and it was leaking onto every other theme's cards,
+			   because rank was the one stat the card printed raw. Listed
+			   here so a theme can rename it in the admin like anything
+			   else. Drop Ship's own soldiers carry real ranks from their
+			   metadata and are not affected. */
+			array('label' => 'Neo Miami Citizen', 'exact' => array('Neo Miami Citizen'),
+			      'desc' => array('Neo Miami Citizen'), 'icons' => array(), 'themes' => 2),
+			array('label' => 'Rank', 'exact' => array('Rank'),
+			      'desc' => array('Rank'), 'icons' => array(), 'themes' => 2),
+		),
 		'Items' => array(
 			array('label' => 'Medkit', 'exact' => array('Medkit'), 'desc' => array('Medkit'), 'icons' => array('medkit'), 'themes' => 2),
 			array('label' => 'Drop Box', 'exact' => array('Drop Box'), 'desc' => array('Drop Box'), 'icons' => array('drop-box'), 'themes' => 3),

@@ -1252,7 +1252,12 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 		}else{
 			echo "<span class='nft-image'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
 		}
-		echo "<span class='nft-rank'><strong>Rank</strong><br>".$row["rank"]."</span>
+		/* THEMED, like armor and gear beside it. Rank was the one stat printed
+		   raw, so every reskin showed "Neo Miami Citizen" -- Oculus Lounge's
+		   word -- because that is the fixed string createSoldier() stores for
+		   any collection whose metadata carries no rank. A theme can rename
+		   it in the admin now; one that has not still reads as it always did. */
+		echo "<span class='nft-rank'><strong>".evaluateText("Rank")."</strong><br>".evaluateText($row["rank"])."</span>
 		<span class='nft-armor'><strong>Armor</strong><br>".evaluateText($row["armor"])."</span>
 		<span class='nft-gear'><strong>Gear</strong><br>".evaluateText($row["gear"])."</span>
 		<span class='nft-level'><strong>Level</strong><br>".$row["level"]."</span>";

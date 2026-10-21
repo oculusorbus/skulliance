@@ -1745,6 +1745,34 @@ ok(strpos($dspick, 'object-fit:cover') === false, 'a cover crop came back');
    deliberately. A second copy here is the drift that include exists to
    prevent. */
 
+echo "\nrank is themed like every other stat on the card\n";
+/*
+ * Reported: every theme showed Rank "Neo Miami Citizen", which is Oculus
+ * Lounge's word. Two causes, and only fixing one would have left it half
+ * wrong: createSoldier() stores that fixed string for ANY collection whose
+ * metadata carries no rank, and the soldier card printed rank RAW while
+ * printing armor and gear through evaluateText() right beside it.
+ */
+$dbSrc = (string)file_get_contents(__DIR__ . '/dropship/db.php');
+ok(strpos($dbSrc, 'evaluateText($row["rank"])') !== false,
+   'the soldier card prints rank raw again, so one theme\'s word shows on all of them');
+/* The card's other two stats were already themed; rank must not drift back
+   out of step with them. */
+foreach (array('armor', 'gear') as $stat) {
+	ok(strpos($dbSrc, 'evaluateText($row["' . $stat . '"])') !== false,
+	   "the card stopped theming $stat, which rank was just brought into line with");
+}
+/* And it is offered in the admin, or a theme cannot rename what it now
+   renders -- a themeable string nobody can reach is not themeable. */
+$vocab = dropshipThemeVocabulary();
+$found = false;
+foreach ($vocab as $group => $terms) {
+	foreach ($terms as $t) {
+		if (in_array('Neo Miami Citizen', (array)$t['exact'], true)) $found = true;
+	}
+}
+ok($found, 'the default rank is not in the wording table, so no theme can rename it');
+
 /* ---------- making a project, for a game that does not exist yet ---------- */
 
 echo "\nmaking a project\n";

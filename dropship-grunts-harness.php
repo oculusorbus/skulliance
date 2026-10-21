@@ -180,12 +180,21 @@ restore_error_handler();
 ok($bad === '', 'a column outside armor/gear is accepted');
 ok($warnings === 0,
    'the filter raised ' . $warnings . ' warning(s) on an unknown column, which print into the page');
-/* Rank-guarded, so an NFT with a colliding asset_name is not swept in. */
+/*
+ * THE GRUNT TERM IS RANK-GUARDED, so an NFT with a colliding asset_name is
+ * not swept in and handed free armour.
+ *
+ * NARROWED FROM "every non-empty fragment is guarded", which stopped being
+ * the contract when pinned NFTs joined this function: those are real NFTs
+ * with real ranks, so their terms are deliberately NOT rank-guarded, and the
+ * exclusion half can be the only thing a fragment contains. The guard
+ * belongs to the GRUNT names, which is what it was always protecting.
+ */
 foreach (array('armor', 'gear') as $field) {
 	foreach (array('Heavy', 'Medkit') as $v) {
 		$sql = dropshipGruntFilterSql($field, $v);
-		if ($sql !== '') ok(strpos($sql, "rank = 'Grunt'") !== false,
-		   "the $v filter fragment is not guarded on rank");
+		if (strpos($sql, 'GRUNT') !== false) ok(strpos($sql, "rank = 'Grunt'") !== false,
+		   "the $v filter fragment names a grunt without guarding on rank");
 	}
 }
 /* And the listing has to use it, inside the parenthesised clause -- an
@@ -224,4 +233,85 @@ ok(strpos($paper, 'Oculus Lounge has no equivalent') !== false,
    'the Skull Paper does not say grunts are Drop Ship only');
 
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
-exit($fail ? 1 : 0);
+exit($fail ? 1 : 0);/* ---------- pinned NFT loadouts ------------------------------------------- */
+
+echo "\nthe pinned DHC2:F squad\n";
+/*
+ * Drop Ship reads only armor and gear off a soldier, and for a collection it
+ * cannot map both come from dropshipStatsFromAssetName() -- a derivation from
+ * the asset name, not a fact about the art. On DHC2:F that gave two Base
+ * tiers, no Heavy and no Medkit, so the collection could not make a Super
+ * Soldier Squad at all.
+ */
+$pinned = dropshipNftLoadouts();
+ok(count($pinned) === 4, 'the pinned squad is no longer four soldiers');
+$tiers = array(); $gear = array();
+foreach ($pinned as $a => $kit) { $tiers[$kit['armor']] = true; $gear[$kit['gear']] = true; }
+ok(count($tiers) === 4, 'the pinned squad does not cover all four armour tiers: '
+   . implode(',', array_keys($tiers)));
+foreach (array('Melee', 'Demolition', 'Medkit') as $g) {
+	ok(isset($gear[$g]), "the pinned squad carries no $g, so it is not a Super Soldier Squad");
+}
+/* Driven through the real threshold, so the claim is the game's and not
+   mine: 74 + 3 + 2 + 1. */
+$f = array('mech_suit'=>false,'exo_suit'=>false,'quantum_stealth'=>false,'ballistic_shield'=>false,
+           'heavy'=>false,'medium'=>false,'light'=>false,'base'=>false,'extra_lives'=>0,'roster'=>array());
+foreach ($pinned as $kit) {
+	$t = strtolower($kit['armor']);
+	if (array_key_exists($t, $f)) $f[$t] = true;
+	$f['roster'][] = array('armor' => $kit['armor'], 'gear' => $kit['gear']);
+}
+ok(dropshipThreshold($f) == 80, 'the pinned squad does not roll at 80, got ' . dropshipThreshold($f));
+
+/* APPLIED THROUGH THE SAME FUNCTION EVERYTHING ELSE USES, and before the
+   Grunt gate -- these are real NFTs with a real rank, so the rank check
+   would otherwise return them untouched. */
+foreach ($pinned as $asset => $kit) {
+	$row = dropshipGruntLoadout(array('asset_name' => $asset, 'name' => $asset,
+	                                  'rank' => 'Neo Miami Citizen',
+	                                  'armor' => 'Base', 'gear' => 'None', 'level' => 1));
+	ok($row['armor'] === $kit['armor'] && $row['gear'] === $kit['gear'],
+	   "$asset is not overridden: {$row['armor']}/{$row['gear']}");
+	/* Level and rank are the collection's, exactly as for a grunt. */
+	ok((int)$row['level'] === 1 && $row['rank'] === 'Neo Miami Citizen',
+	   "$asset had its level or rank rewritten, which the loan never does");
+}
+/* Matched on the display name too, since the two columns are written from
+   different metadata fields and only one of them was ever verified. */
+$byName = dropshipGruntLoadout(array('asset_name' => 'something-else', 'name' => 'DHC2F088',
+                                     'rank' => 'Neo Miami Citizen', 'armor' => 'Base', 'gear' => 'None'));
+ok($byName['armor'] === 'Heavy', 'the override does not fall back to the display name');
+/* An NFT nobody pinned is untouched. */
+$other = dropshipGruntLoadout(array('asset_name' => 'DHC2F999', 'name' => 'DHC2F999',
+                                    'rank' => 'Neo Miami Citizen', 'armor' => 'Light', 'gear' => 'Melee'));
+ok($other['armor'] === 'Light' && $other['gear'] === 'Melee', 'an unpinned NFT was rewritten');
+/* The grunts still get theirs. */
+$g = dropshipGruntLoadout(array('asset_name' => 'GRUNT003', 'rank' => 'Grunt',
+                                'armor' => 'None', 'gear' => 'None'));
+ok($g['armor'] === 'Heavy', 'the override broke the grunt loaner kit');
+
+echo "\nthe barracks filter agrees with the cards\n";
+/*
+ * BOTH WAYS. A pinned soldier's STORED armor is whatever the sync derived, so
+ * filtering by Heavy hid the card that says Heavy -- and filtering by Base
+ * SHOWED it, because Base is still in the column. Adding it to the right
+ * filter without removing it from the wrong one fixes half and looks done.
+ */
+$heavy = dropshipGruntFilterSql('armor', 'Heavy');
+ok(strpos($heavy, "asset_name IN ('DHC2F088')") !== false,
+   'filtering by Heavy does not include the soldier pinned to Heavy');
+ok(strpos($heavy, "NOT IN ('DHC2F163','DHC2F028','DHC2F133')") !== false,
+   'filtering by Heavy does not exclude the soldiers pinned elsewhere');
+$base = dropshipGruntFilterSql('armor', 'Base');
+ok(strpos($base, "NOT IN") !== false && strpos($base, "'DHC2F088'") !== false,
+   'filtering by Base still shows the soldier whose stored Base was overridden');
+/* The exclusion must come FIRST: the caller wraps this as
+   `AND (armor = 'X' <fragment>)` and AND binds tighter than OR, so a NOT IN
+   placed after the OR terms would swallow them and the filter return nothing. */
+ok(strpos($heavy, ' AND asset_name NOT IN') === 0,
+   'the exclusion is no longer first, so it applies to the OR terms as well');
+$caller = (string)file_get_contents(__DIR__ . '/dropship/db.php');
+ok(strpos($caller, "\"AND (armor = '\".\$filterby.\"'\".dropshipGruntFilterSql('armor', \$filterby).\") \"") !== false,
+   'the caller no longer wraps the fragment in parentheses, which the precedence above depends on');
+
+
