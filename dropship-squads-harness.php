@@ -276,6 +276,81 @@ ok($list[0]['power']['super'] === true, 'the geared squad does not win the tie a
 $again = $list; dropshipSquadSort($again);
 ok(array_column($again, 'id') === array_column($list, 'id'), 'the sort is not stable');
 
+echo "\nheaviest armour first inside a squad\n";
+/* The order dropshipThreshold() builds the squad's number in: the best tier
+   worn is the floor, the lower tiers are credits on top. */
+$mix = array(
+	array('row' => array('armor' => 'Base',   'name' => 'D')),
+	array('row' => array('armor' => 'Light',  'name' => 'C')),
+	array('row' => array('armor' => 'Heavy',  'name' => 'A')),
+	array('row' => array('armor' => 'Medium', 'name' => 'B')),
+);
+dropshipSquadOrderMembers($mix);
+ok(array_column(array_column($mix, 'row'), 'name') === array('A', 'B', 'C', 'D'),
+   'a squad is not ordered heaviest first: '
+   . implode('', array_column(array_column($mix, 'row'), 'name')));
+/* Armour the chain does not recognise, and a member whose row has gone, sort
+   last rather than wherever -- not at the front where they would read as the
+   tier carrying the squad. */
+$odd = array(
+	array('row' => null),
+	array('row' => array('armor' => '',      'name' => 'X')),
+	array('row' => array('armor' => 'Base',  'name' => 'D')),
+	array('row' => array('armor' => 'Heavy', 'name' => 'A')),
+);
+dropshipSquadOrderMembers($odd);
+ok(isset($odd[0]['row']['name']) && $odd[0]['row']['name'] === 'A',
+   'an unarmoured or missing member sorts above the Heavy');
+ok(isset($odd[1]['row']['name']) && $odd[1]['row']['name'] === 'D',
+   'the Base soldier does not follow the Heavy');
+/* The two rankless kinds -- no armour, and no row at all -- both sort after
+   every armoured member. WHICH of the two comes first is not a decision
+   anybody made: they tie and the tie is broken by insertion order, which is
+   stable and is all this needs to promise. Asserting one above the other
+   would pin an accident. */
+$tail = array($odd[2], $odd[3]);
+$names = array();
+foreach ($tail as $x) $names[] = $x['row'] === null ? 'gone' : $x['row']['name'];
+sort($names);
+ok($names === array('X', 'gone'), 'the unarmoured and missing members do not sort last: '
+   . implode(',', $names));
+ok(dropshipSquadArmorRank('Heavy') < dropshipSquadArmorRank('Base'),
+   'the armour ranking is upside down');
+ok(dropshipSquadArmorRank('Nonsense') > dropshipSquadArmorRank('Base'),
+   'an unknown armour outranks Base');
+/* STABLE: two of the same tier must not swap between page loads. */
+$pair = array(array('row' => array('armor' => 'Heavy', 'name' => 'first')),
+              array('row' => array('armor' => 'Heavy', 'name' => 'second')));
+dropshipSquadOrderMembers($pair);
+ok($pair[0]['row']['name'] === 'first', 'two soldiers of the same tier reorder themselves');
+
+echo "\na soldier belongs to one squad\n";
+/*
+ * THE OWNER'S RULE, after the walk harness found that tweaking a deployed
+ * squad and saving quietly put three soldiers in two squads at once.
+ * dropshipSquadShared() is the net under the rule, not the rule itself.
+ */
+ok(dropshipSquadShared(array(
+		array('members' => array(array('soldier_id' => 1), array('soldier_id' => 2))),
+		array('members' => array(array('soldier_id' => 2), array('soldier_id' => 3))),
+	)) === array(2 => 2), 'a soldier in two squads is not reported as shared');
+ok(dropshipSquadShared(array(
+		array('members' => array(array('soldier_id' => 1))),
+		array('members' => array(array('soldier_id' => 2))),
+	)) === array(), 'squads that share nobody are reported as sharing somebody');
+/* The refusal has to come AFTER the duplicate test, or saving the same four
+   twice reports a clash instead of "you already saved this". */
+$saveSrc = substr($code, strpos($code, 'function dropshipSquadSave'), 2600);
+ok(strpos($saveSrc, 'already saved this squad') < strpos($saveSrc, 'already in a saved squad'),
+   'the clash check runs before the duplicate check, so re-saving reports the wrong thing');
+/* ...and it must fire whenever ANY member is spoken for. `count($clash) !==
+   count($ids)` was the first attempt and the walk broke it in eight steps:
+   save {D,E}, withdraw D, save, and {E} slips through as not-a-duplicate. */
+ok(strpos($saveSrc, 'count($clash) !== count($ids)') === false,
+   'the clash check stands down when every member is spoken for, which lets a subset through');
+ok(preg_match('/if \(\$clash\) \{/', $saveSrc) === 1,
+   'the clash check is conditional on something other than there being a clash');
+
 /* ---------- the screen it is wired to -------------------------------------- */
 
 echo "\nthe barracks shows each soldier once\n";

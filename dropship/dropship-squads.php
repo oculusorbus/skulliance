@@ -112,6 +112,40 @@ function dropshipSquadReadiness($states, $room) {
 	return array('can' => true, 'why' => '', 'counts' => $n, 'fix' => 'none');
 }
 
+/**
+ * Heaviest armour first, which is also the order the threshold chain reads.
+ *
+ * dropshipThreshold() takes the best tier worn as the floor and adds the
+ * lower tiers as credits, so Heavy, Medium, Light, Base is not an arbitrary
+ * reading order -- it is the order the squad's own number is built in, and a
+ * player scanning a row sees the tier that is carrying it first. A member
+ * with no armour the chain recognises sorts last rather than anywhere.
+ */
+function dropshipSquadArmorRank($armor) {
+	$order = array('Heavy' => 0, 'Medium' => 1, 'Light' => 2, 'Base' => 3);
+	$a = (string)$armor;
+	return isset($order[$a]) ? $order[$a] : 4;
+}
+
+/**
+ * Put a squad's members in that order.
+ *
+ * SORTED FOR DISPLAY, not stored. squad_members.slot keeps the order they
+ * were saved in and is left alone: armour changes when a soldier is swapped,
+ * and a stored order would then disagree with the card it is drawn on. slot
+ * breaks a tie so two Heavies do not swap places between page loads.
+ */
+function dropshipSquadOrderMembers(&$members) {
+	$i = 0;
+	foreach ($members as $k => $m) { $members[$k]['_at'] = $i++; }
+	usort($members, function ($a, $b) {
+		$ra = dropshipSquadArmorRank(isset($a['row']['armor']) ? $a['row']['armor'] : '');
+		$rb = dropshipSquadArmorRank(isset($b['row']['armor']) ? $b['row']['armor'] : '');
+		if ($ra !== $rb) return $ra - $rb;
+		return $a['_at'] - $b['_at'];
+	});
+}
+
 /** "1 member" / "3 members", because "1 members" is how a page looks unfinished. */
 function dropshipSquadPlural($n, $word) {
 	$n = (int)$n;
@@ -270,6 +304,8 @@ function dropshipSquadsAll($conn, $user_id = null, $project_id = null) {
 		}
 	}
 	foreach ($squads as $sid => $sq) {
+		dropshipSquadOrderMembers($squads[$sid]['members']);
+		$sq = $squads[$sid];
 		$states = array();
 		foreach ($sq['members'] as $m) $states[] = $m['state'];
 		$squads[$sid]['ready'] = dropshipSquadReadiness($states, dropshipSquadRoom($conn));
@@ -302,11 +338,53 @@ function dropshipSquadMembership($conn, $user_id = null, $project_id = null) {
 	                        FROM squad_members m
 	                        INNER JOIN squads q ON q.id = m.squad_id
 	                       WHERE q.user_id = $me AND q.project_id = $pid");
+	/*
+	 * A LIST PER SOLDIER, not one squad. A soldier can be in more than one
+	 * saved squad -- withdraw one member of a deployed squad, put somebody
+	 * else in their place and save, and three soldiers are now in two squads.
+	 * That is allowed (see dropshipSquadShared()), but the map was
+	 * $out[$id] = $squad_id, so the second squad silently overwrote the
+	 * first and anything asking "which squad is this soldier in" got one
+	 * arbitrary answer. Only array_keys() is used today, which is why
+	 * nothing broke; it would have broken the first time somebody asked.
+	 */
 	$out = array();
 	if ($res) while ($r = $res->fetch_assoc()) {
-		$out[(int)$r['soldier_id']] = (int)$r['id'];
+		$out[(int)$r['soldier_id']][] = (int)$r['id'];
 	}
 	return $out;
+}
+
+/**
+ * Which soldiers sit in more than one of these squads.
+ *
+ * NOTHING HERE CAN CREATE ONE ANY MORE -- dropshipSquadSave() refuses a
+ * soldier that is already spoken for, which is the owner's rule. This stays
+ * as the net under it, for two reasons worth writing down.
+ *
+ * The first is history: a squad saved before that rule existed, or a row put
+ * in by hand, is overlap this code did not make and still has to explain.
+ * The second is that an unexplained overlap is the worst failure this screen
+ * has -- two squads that each refuse to deploy while the other is out, with
+ * no visible cause -- so the panel marks it rather than letting somebody
+ * discover it from a refusal.
+ *
+ * dropship-squads-walk-harness.php asserts BOTH halves: that no order of
+ * operations produces an overlap, and that one would be reported if it did.
+ *
+ * Takes the resolved squads and returns soldier_id => how many squads hold
+ * it, counting only those held more than once.
+ */
+function dropshipSquadShared($squads) {
+	$n = array();
+	foreach ($squads as $sq) {
+		foreach ($sq['members'] as $m) {
+			$id = (int)$m['soldier_id'];
+			$n[$id] = isset($n[$id]) ? $n[$id] + 1 : 1;
+		}
+	}
+	foreach ($n as $id => $c) if ($c < 2) unset($n[$id]);
+	return $n;
 }
 
 /* ---------- the four things a player can do -------------------------------- */
@@ -347,6 +425,44 @@ function dropshipSquadSave($conn) {
 		if ($have === $want) return array(false, 'You have already saved this squad.');
 	}
 
+	/*
+	 * A SOLDIER BELONGS TO ONE SQUAD. The owner's rule, and it closes the
+	 * hole this feature actually had: withdraw one member of a deployed
+	 * squad, field somebody else in the gap, save, and three soldiers were
+	 * quietly in two squads at once. Neither squad could then be fielded
+	 * while the other was, and nothing on either row said why.
+	 *
+	 * REFUSED BY NAME, not just refused. The way out is to disperse the
+	 * squad those soldiers are already in, and a player cannot do that
+	 * unless they are told which soldiers and therefore which squad.
+	 *
+	 * AFTER THE DUPLICATE TEST, and the order is load-bearing. Saving the
+	 * exact same four is also a clash, and "you have already saved this" is
+	 * the more useful of the two answers there.
+	 *
+	 * The first version tried to express that as `count($clash) !== count($ids)`
+	 * -- fire only when SOME of the field is spoken for -- and the walk
+	 * harness found the hole in eight steps: save {D,E}, withdraw D, save
+	 * again. The field is {E}, every one of its members is spoken for, so the
+	 * guard stood down, and {E} is not equal to {D,E} so the duplicate test
+	 * let it through. E ended up in two squads. A subset is not a duplicate,
+	 * and "all of them clash" is not "this is the same squad".
+	 */
+	$spoken = dropshipSquadMembership($conn, $me, $pid);
+	$clash  = array();
+	foreach ($ids as $id) if (isset($spoken[$id])) $clash[] = $id;
+	if ($clash) {
+		$names = array();
+		$res = @$conn->query("SELECT name FROM soldiers WHERE id IN ("
+		                     . implode(',', array_map('intval', $clash)) . ")");
+		if ($res) while ($r = $res->fetch_assoc()) $names[] = (string)$r['name'];
+		return array(false, dropshipSquadPlural(count($clash), 'soldier')
+		           . ' on the field ' . (count($clash) === 1 ? 'is' : 'are')
+		           . ' already in a saved squad'
+		           . ($names ? ' (' . implode(', ', $names) . ')' : '')
+		           . '. Disperse that squad first, or withdraw them.');
+	}
+
 	@$conn->query(sprintf("INSERT INTO squads (user_id, project_id, created_at)
 	                       VALUES (%d, %d, NOW())", $me, $pid));
 	$sid = (int)$conn->insert_id;
@@ -356,6 +472,7 @@ function dropshipSquadSave($conn) {
 	foreach ($ids as $i => $id) $rows[] = sprintf('(%d,%d,%d)', $sid, $id, $i);
 	@$conn->query('INSERT INTO squad_members (squad_id, soldier_id, slot) VALUES '
 	              . implode(',', $rows));
+
 	return array(true, 'Squad saved.');
 }
 
@@ -469,6 +586,12 @@ function dropshipSquadsPanel($conn) {
 	if (!dropshipSquadsTable($conn)) return '';
 	$squads = dropshipSquadsAll($conn);
 	if (!$squads) return '';
+	/* THE NET, not an expected state. dropshipSquadSave() refuses a soldier
+	   that is already in a squad, so nothing this code does can produce one
+	   -- but a row from before that rule, or one put in by hand, would
+	   otherwise be two squads that each refuse while the other is out, with
+	   nothing on either saying why. */
+	$shared = dropshipSquadShared($squads);
 	$h = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES); };
 
 	/* The theme's own word for a soldier, so a reskin does not say "soldier"
@@ -512,6 +635,7 @@ function dropshipSquadsPanel($conn) {
 .dssq-man.fallen .st{color:#f5a623}
 .dssq-man.ready .st{color:#00c8a0}
 .dssq-man.sold img,.dssq-man.gone img,.dssq-man.fallen img{filter:grayscale(1);opacity:.45}
+.dssq-man .sh{display:block;font-size:9px;line-height:1.25;margin-top:2px;color:#f5a623}
 .dssq-man form{display:block;margin-top:4px}
 .dssq-man .small-button{width:100%;min-height:0;padding:4px 6px;font-size:10px}
 </style>
@@ -557,7 +681,8 @@ function dropshipSquadsPanel($conn) {
 			               'gone' => 'Gone');
 			$name  = $row ? (string)$row['name'] : 'Unknown soldier';
 			?>
-			<span class="dssq-man <?php echo $h($state); ?>">
+			<?php $isShared = isset($shared[(int)$m['soldier_id']]); ?>
+			<span class="dssq-man <?php echo $h($state); ?><?php echo $isShared ? ' shared' : ''; ?>">
 				<?php if ($row && !empty($row['asset_name'])): ?>
 					<img loading="lazy" alt=""
 					     src="<?php echo $h(dropshipSquadFace($conn, $row)); ?>"
@@ -565,6 +690,9 @@ function dropshipSquadsPanel($conn) {
 				<?php endif; ?>
 				<span class="nm" title="<?php echo $h($name); ?>"><?php echo $h($name); ?></span>
 				<span class="st"><?php echo $h($label[$state] ?? $state); ?></span>
+				<?php if ($isShared): ?><span class="sh"
+					title="This soldier is in more than one squad, so only one of those squads can be on the field at a time."
+					>Also in another squad</span><?php endif; ?>
 				<?php /* A member you cannot field is the only one worth
 				         removing on its own -- offering Remove on a healthy
 				         soldier invites somebody to dismantle a squad one

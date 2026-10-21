@@ -33,6 +33,32 @@ ALTER TABLE squads DROP COLUMN name;
 
 Harmless to leave in place if you would rather not: nothing reads or writes it.
 
+## A soldier belongs to one squad
+
+Enforced in `dropshipSquadSave()`, which refuses when any soldier on the field
+is already in a saved squad and names them, because the way out is to disperse
+that squad and you cannot do that unless you know which one.
+
+It is a real hole rather than a theoretical one. Deploy a saved squad, withdraw
+one member, field somebody else in the gap and save: three soldiers end up in
+two squads, neither squad can be fielded while the other is out, and nothing on
+either row says why. `dropship-squads-walk-harness.php` found it, and then found
+a second way in eight steps after the first fix -- save `{D,E}`, withdraw D,
+save again, and `{E}` slips past a guard that only fired when SOME of the field
+was spoken for. A subset is not a duplicate.
+
+`dropshipSquadShared()` stays as the net under the rule, for a row this code did
+not create. The walk asserts both halves: that no order of operations produces
+an overlap, and that one would still be reported if it did.
+
+## Members are shown heaviest armour first
+
+`dropshipThreshold()` takes the best tier worn as the floor and adds the lower
+tiers as credits, so Heavy, Medium, Light, Base is the order the squad's own
+number is built in. Sorted for display only: `squad_members.slot` keeps the
+order they were saved in, because armour changes when a soldier is swapped and
+a stored order would then disagree with the card it is drawn on.
+
 ## Why there is no name
 
 A squad already has an identity, and it is a better one than a text field:

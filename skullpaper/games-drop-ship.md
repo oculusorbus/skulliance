@@ -38,6 +38,11 @@ up and returns the soldiers to the barracks so you can rebuild. While a
 soldier belongs to a saved squad it is not deployed on its own, so a squad
 cannot be taken apart by accident.
 
+**A soldier belongs to one squad.** If somebody on the field is already in a
+saved squad, saving says so and names them: disperse that squad first, or
+withdraw them. Members are listed heaviest armour first, which is the order
+the squad's odds are built in.
+
 A squad only fields once per game, because soldiers who fight are out until
 the next game opens. A squad resting between games says so rather than
 looking broken. If you sell an NFT, the squad tells you which member is no
