@@ -684,23 +684,35 @@ $characters = evaluateText("Troops");
 					<?php
 					$projects = getProjects($conn);
 					?>
+					<?php
+					/*
+					 * SELECT GAME, not a dropdown.
+					 *
+					 * This was a <select> labelled "Select Project": two clicks
+					 * to reach a list of four words, and a word is the worst way
+					 * to tell somebody Dread City is not the game they just
+					 * played. The button opens a picker showing each game's own
+					 * art -- the same two clicks, for something you recognise
+					 * rather than read.
+					 *
+					 * "Game" and not "Theme" deliberately. They share an engine,
+					 * but they are four different games to a player, and a
+					 * control called Change Theme invites the assumption that it
+					 * is a reskin of the one they have already finished.
+					 *
+					 * Only when there is more than one to pick. The picker
+					 * itself is at the foot of this page: it has to be a child
+					 * of <body>, because this panel is inside .side and would
+					 * clip a fixed overlay.
+					 */
+					if (count($projects) > 1): ?>
 					<div class="wallet-connect select-project">
 					<li class="role"><img class="icon" src="icons/cardano.png"/>
-						<label for="projects"><strong>Select</strong>&nbsp;</label>
-						<select onchange="javascript:selectProject(this.options[this.selectedIndex].value);" name="projects" id="projects">
-							<option value="none">Project</option>
-							<?php
-								foreach($projects AS $id => $project){
-									echo "<option value='".$id."'>".$project."</option>";
-								}
-							?>
-						</select>
-						<form id="projectForm" action="dashboard.php" method="post">
-						  <input type="hidden" id="project_id" name="project_id" value="">
-						  <input type="submit" value="Submit" style="display:none;">
-						</form>
+						<button type="button" class="small-button" id="dsgame-open"
+						        aria-haspopup="dialog">Select Game</button>
 					</li>
 					</div>
+					<?php endif; ?>
 					<?php
 					$checked = "checked";
 					$audio = "on";
@@ -919,6 +931,156 @@ if ($ds_can_animate):
 		</div>
 	</div>
   </div>
+
+<?php
+/*
+ * THE GAME PICKER.
+ *
+ * A CHILD OF <body>, not of the panel its button sits in. .side is a flex
+ * column with its own background and the stats list lives inside .content;
+ * a fixed overlay rendered in there is still laid out by that subtree, and
+ * anything that establishes a containing block above it (a transform, a
+ * filter, an overflow) crops the veil to the sidebar. Rendering it here is
+ * the only placement that cannot be clipped by a panel.
+ *
+ * BUILT FROM getProjects(), which is the allow-list dropship.php validates
+ * ?project_id against. A hand-written list of four would offer a game the
+ * server then refuses, and would miss the fifth on the day there is one --
+ * the same gate-written-as-a-list that cost Dread City and Filthy Mermaid
+ * their Discord standings.
+ *
+ * LINKS, NOT A SCRIPTED FORM. ?project_id is accepted and validated exactly
+ * like the POST was, so a tile is an ordinary anchor: it survives JavaScript
+ * failing, it can be opened in a new tab, and the browser shows where it
+ * goes. The old dropdown needed selectProject() to submit a hidden form.
+ */
+$ds_games = array();
+foreach (getProjects($conn) as $ds_gid => $ds_gname) {
+	/* The theme's OWN picture, and nothing if it has none -- the fallback
+	   would be Drop Ship's, which is the one thing a picker exists to tell
+	   apart. dropshipThemeImagePath() gives the path whether or not the file
+	   is there, so existence is tested here, the same way
+	   dropshipThemeImageUrl() does it for the Discord post. */
+	$ds_rel = function_exists('dropshipThemeImagePath')
+	        ? dropshipThemeImagePath($conn, $ds_gid, 'images/dropship.jpg') : '';
+	$ds_games[] = array(
+		'id'   => (int)$ds_gid,
+		'name' => (string)$ds_gname,
+		'src'  => ($ds_rel !== '' && is_file(__DIR__ . '/' . $ds_rel))
+		          ? '/staking/dropship/' . $ds_rel : '',
+	);
+}
+$ds_now = isset($_SESSION['userData']['dropship_project_id'])
+        ? (int)$_SESSION['userData']['dropship_project_id'] : 0;
+if (count($ds_games) > 1):
+?>
+<style>
+/*
+ * UNSCOPED IDS, on purpose. These rules were nearly written as
+ * `.side #dsgame`, which would have styled nothing: the element is a child
+ * of <body>. A selector that names an ancestor the element does not have is
+ * a stylesheet that silently does not apply, and the Theme Art lightbox
+ * shipped exactly that bug once.
+ */
+#dsgame{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;
+  justify-content:center;padding:16px;background:rgba(4,10,18,.82)}
+#dsgame[hidden]{display:none}
+#dsgame-box{position:relative;width:100%;max-width:720px;max-height:100%;
+  overflow-y:auto;background:#0a1929;border:1px solid #163047;border-radius:10px;
+  padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.55);
+  padding-top:calc(18px + env(safe-area-inset-top, 0px));
+  padding-bottom:calc(18px + env(safe-area-inset-bottom, 0px))}
+#dsgame-box h3{margin:0 34px 4px 0;font-weight:300;font-size:1.4rem;color:#00c8a0}
+#dsgame-box p.sub{margin:0 0 14px;font-size:12px;color:#7a9eb0}
+#dsgame-x{position:absolute;top:10px;right:10px;width:30px;height:30px;padding:0;
+  line-height:28px;font-size:20px;background:none;border:1px solid #163047;
+  border-radius:6px;color:#9fb6c4;cursor:pointer}
+#dsgame-x:hover{color:#e8eaed;border-color:#00c8a0}
+#dsgame-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+/* One column only where two would make the name unreadable, not at the
+   usual phone width -- the four-up shape is the point of the picker. */
+@media (max-width:359px){#dsgame-grid{grid-template-columns:minmax(0,1fr)}}
+/* text-align RESTATED, not inherited. flexbox.css sets `a {text-align:center}`
+   globally, so every anchor on this app is centred unless it says otherwise,
+   and a caption under a picture wants its own edge. Same for the colour: the
+   global rule paints links teal. */
+.dsgame-tile{display:block;text-align:left;text-decoration:none;color:#e8eaed;
+  background:#07111d;border:1px solid #163047;border-radius:8px;overflow:hidden}
+.dsgame-tile:hover,.dsgame-tile:focus-visible{border-color:#00c8a0}
+.dsgame-tile .art{display:block;width:100%;aspect-ratio:16/9;background:#071826}
+.dsgame-tile .art img{display:block;width:100%;height:100%;object-fit:cover;max-width:100%}
+.dsgame-tile b{display:block;padding:8px 10px 2px;font-size:13px}
+.dsgame-tile em{display:block;padding:0 10px 9px;font-style:normal;font-size:10px;
+  letter-spacing:.08em;text-transform:uppercase;color:#7a9eb0}
+.dsgame-tile.on{border-color:#00c8a0}
+.dsgame-tile.on em{color:#00c8a0}
+</style>
+<div id="dsgame" hidden>
+  <div id="dsgame-box" role="dialog" aria-modal="true" aria-labelledby="dsgame-h" tabindex="-1">
+    <button type="button" id="dsgame-x" aria-label="Close">&times;</button>
+    <h3 id="dsgame-h">Select Game</h3>
+    <p class="sub">Four games on one engine. Each keeps its own board, its own
+      squad and its own prizes.</p>
+    <div id="dsgame-grid">
+      <?php foreach ($ds_games as $g): $on = ($g['id'] === $ds_now); ?>
+      <a class="dsgame-tile<?php echo $on ? ' on' : ''; ?>"
+         href="dashboard.php?project_id=<?php echo $g['id']; ?>">
+        <span class="art"><?php if ($g['src'] !== ''): ?><?php /* data-src, swapped
+          when the picker is first opened: four hero jpgs is most of a megabyte
+          and nobody should pay for it to sit behind a button they never press. */ ?>
+          <img alt="" data-src="<?php echo htmlspecialchars($g['src'], ENT_QUOTES); ?>">
+        <?php endif; ?></span>
+        <b><?php echo htmlspecialchars($g['name'], ENT_QUOTES); ?></b>
+        <em><?php echo $on ? 'Playing now' : 'Play'; ?></em>
+      </a>
+      <?php endforeach; ?>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+	var veil = document.getElementById('dsgame');
+	var open = document.getElementById('dsgame-open');
+	var box  = document.getElementById('dsgame-box');
+	if (!veil || !open || !box) return;
+	var last = null, loaded = false;
+
+	function show() {
+		/* THE PICTURES ARE FETCHED ON FIRST OPEN. They are hero jpgs and
+		   there are four of them; loading="lazy" does not help, because a
+		   hidden image is loaded or not at the browser's discretion. */
+		if (!loaded) {
+			loaded = true;
+			var imgs = veil.querySelectorAll('img[data-src]');
+			for (var i = 0; i < imgs.length; i++) imgs[i].src = imgs[i].getAttribute('data-src');
+		}
+		last = document.activeElement;
+		veil.hidden = false;
+		box.focus();
+	}
+	function hide() {
+		veil.hidden = true;
+		if (last && last.focus) last.focus();
+	}
+
+	open.addEventListener('click', show);
+	document.getElementById('dsgame-x').addEventListener('click', hide);
+	/* The veil closes, the box does not -- a click inside must not fall
+	   through to the backdrop and shut the thing being clicked. */
+	veil.addEventListener('click', function (ev) { if (ev.target === veil) hide(); });
+	document.addEventListener('keydown', function (ev) {
+		if (!veil.hidden && (ev.key === 'Escape' || ev.key === 'Esc')) hide();
+	});
+	/* Switching game is a full page load that re-reads the squad, the board
+	   and the art, so it is not instant -- the dropdown showed the loader for
+	   the same reason. */
+	veil.addEventListener('click', function (ev) {
+		var a = ev.target.closest ? ev.target.closest('.dsgame-tile') : null;
+		if (a && typeof dsShowLoader === 'function') dsShowLoader();
+	});
+}());
+</script>
+<?php endif; ?>
 </body>
 <?php
 if($heavy == "true" && $medium == "true" && $light == "true" && $base == "true" && $extralife == "true" && $demolition == "true" && $melee == "true") { ?>
@@ -934,9 +1096,11 @@ if(isset($_SESSION["userData"]["wallet"])){
 if($filterby != ""){
 	echo "<script type='text/javascript'>document.getElementById('filterTroops').value = '".$filterby."';</script>";
 }
-if(isset($_SESSION['userData']['dropship_project_id'])){
-	echo "<script type='text/javascript'>document.getElementById('projects').value = '".$_SESSION['userData']['dropship_project_id']."';</script>";
-}
+/* The dropdown that this selected into is gone -- the picker marks the
+   current game on the tile itself, so there is no control to pre-set. Left
+   as a note rather than deleted silently, because the line threw a null
+   dereference the moment the <select> went and stopped the three scripts
+   after it from running. */
 /* The page background is set once in header.php, which every page
    includes -- these two copies only ran on the dashboard, and the Filthy
    Mermaid one was missing the /staking/dropship prefix every other path

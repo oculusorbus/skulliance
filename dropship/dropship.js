@@ -320,15 +320,13 @@ function dsShowLoader(){
 	document.body.appendChild(wrap);
 }
 
-function selectProject(criteria){
-	if(criteria == "none"){
-		alert("Please select a project from the dropdown.");
-		return;
-	}
-	dsShowLoader();
-	document.getElementById('project_id').value = criteria;
-	document.getElementById("projectForm").submit();
-}
+/*
+ * selectProject() is gone with the Select Project dropdown it submitted.
+ * The game picker on the dashboard uses plain links -- ?project_id is
+ * validated against getProjects() exactly as the POST was -- so there is no
+ * hidden form to fill in and nothing to script. It called alert() on the
+ * placeholder option, which was the only modal dialog left in the app.
+ */
 
 function toggleArmory(pane, tab){
 	document.getElementById('inventory').style.display='none';
