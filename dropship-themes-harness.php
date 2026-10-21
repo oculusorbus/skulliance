@@ -1578,16 +1578,6 @@ ok(!dropshipThemeHasGifArt('harness-anim-test'),
    'ONE stray gif makes a still theme advertise itself as animated');
 file_put_contents($bgdir . '/' . $probes[1], 'x');
 ok(dropshipThemeHasGifArt('harness-anim-test'), 'a theme with gifs on disk is not found');
-/*
- * ADMIN ONLY. The switch is the owner's way into the gif library now, not a
- * player setting -- the themes have their own art and the alternate set is
- * half-finished. Everything below runs as the owner; the non-admin case gets
- * its own block further down, because "a player cannot turn it on" and "a
- * player who already had it on is let out of it" are two different claims.
- */
-$_SESSION['userData']['dropship_user_id'] = '1';
-ok(dropshipThemeAdmin(), 'the harness session is not an admin, so the checks below prove nothing');
-
 /* The preference is only honoured when the files are there, so a stale
    session flag can never make a theme ask for art it does not have. */
 $_SESSION['userData']['animation'] = 'true';
@@ -1636,45 +1626,6 @@ ok(dropshipMediaExtension() === 'png',
 $GLOBALS['slug'] = 'harness-anim-test';
 $GLOBALS['__ext'] = 'gif';
 ok(dropshipMediaExtension() === 'gif', 'an already-animated theme is changed by the preference');
-
-/*
- * AND NOW AS A PLAYER, which is the half worth testing hardest.
- *
- * THE FLAG IS ALREADY SET when we drop the admin identity -- deliberately.
- * Hiding the control on dashboard.php does not clear a session that already
- * turned animation on, so the only thing standing between those players and
- * being stranded in the gif set with no switch is dropshipAnimationOn()
- * refusing. A gate that lived only on the control would pass a test that
- * started from a clean session and fail every real one.
- */
-$GLOBALS['__ext'] = 'png';
-$GLOBALS['slug'] = 'harness-anim-test';
-$_SESSION['userData']['animation'] = 'true';
-$ds_admin_keep = $_SESSION['userData']['dropship_user_id'];
-unset($_SESSION['userData']['dropship_user_id'], $_SESSION['userData']['discord_id']);
-ok(!dropshipThemeAdmin(), 'dropping the admin identity still leaves an admin session');
-ok(!dropshipAnimationOn('harness-anim-test'),
-   'a player with the flag still set stays in the gif set with no way out');
-ok(dropshipMediaExtension() === 'png',
-   'and the run still serves them gifs, which is the whole point of gating here');
-ok(dropshipMediaIsStill() === true, 'the pan does not come back for them either');
-$_SESSION['userData']['dropship_user_id'] = $ds_admin_keep;
-ok(dropshipAnimationOn('harness-anim-test'), 'the owner lost the library along with the players');
-unset($_SESSION['userData']['animation']);
-
-/*
- * THE CONTROL IS HIDDEN TOO. Refusing the preference without hiding the
- * switch leaves a toggle on every player's dashboard that does nothing,
- * which reads as a broken control rather than a removed one.
- */
-$dsdash2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
-$ca = strpos($dsdash2, '$ds_can_animate =');
-ok($ca !== false, 'the animation control moved; the checks below prove nothing');
-$caBlock = $ca === false ? '' : substr($dsdash2, $ca, 320);
-ok(strpos($caBlock, 'dropshipThemeAdmin()') !== false,
-   'the Animation row is drawn for every player again');
-ok(strpos($caBlock, 'dropshipThemeHasGifArt($slug)') !== false,
-   'the row no longer checks the gifs are on disk, so it offers 404s');
 
 /*
  * THE SWITCH MUST SURVIVE BEING USED. "Can this theme be animated" is a

@@ -747,31 +747,15 @@ function dropshipThemeGifProbes() {
 }
 
 /**
- * Has animation been turned on for a still theme?
+ * Has the player turned animation on for a still theme?
  *
  * Only ever true when the theme is a still AND it has gifs to show, so a
  * stale session flag cannot make a png theme ask for files that are not
  * there. The flag is a preference, not a fact about the theme.
- *
- * ADMIN ONLY NOW. The switch existed because a still theme's gif set was
- * otherwise unreachable, and the themes have moved on: their own art is the
- * art to show, and a player flipping to the gif library sees a half-finished
- * alternate set that is in several places still Drop Ship's files under
- * another theme's folder. It stays for the owner, as a way to look through
- * that library without an FTP client.
- *
- * THE GATE IS HERE AND NOT ONLY ON THE CONTROL, which is the part that
- * matters. dashboard.php hides the switch, but hiding a switch does not
- * clear the flag it already set -- a player who had animation on when this
- * shipped would have been left in it with no way back, which is the exact
- * failure the comment above dashboard.php's own gate already warns about.
- * Refusing here means those sessions fall back to the theme's real art on
- * their next request.
  */
 function dropshipAnimationOn($slug) {
 	if (empty($_SESSION['userData']['animation'])) return false;
 	if ($_SESSION['userData']['animation'] !== 'true') return false;
-	if (!dropshipThemeAdmin()) return false;
 	return dropshipThemeHasGifArt($slug);
 }
 
