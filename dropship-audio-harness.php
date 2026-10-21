@@ -682,7 +682,11 @@ ok(strpos($dash_a, '$audio2 = "splash"') === false,
    'the hardcoded per-project ladder is still there, so the slot cannot change it');
 
 /* EVERY CARD IN THE DROP NOW HAS ONE, which is what was being counted
-   when this was reported. */
+   when this was reported.
+   THREE, NOT FOUR, SINCE THE INTRO STILL MOVED OUT. It is not a round and
+   it was sitting between Round 0 and Round 1; it has its own section above
+   THE DROP now, checked separately below. The count here dropping to three
+   is the point of that change, not a regression in it. */
 $drop_cards = $drop_snd = 0;
 foreach ($pplan as $gname => $g) {
 	if ($gname !== 'The drop') continue;
@@ -692,7 +696,7 @@ foreach ($pplan as $gname => $g) {
 		           ? count($psplit['rows']['The drop|' . $ri]) : 0;
 	}
 }
-ok($drop_cards === 4, "THE DROP has $drop_cards cards, not the four being counted");
+ok($drop_cards === 3, "THE DROP has $drop_cards cards; it is rounds 0 to 2 and nothing else");
 ok($drop_snd === $drop_cards,
    "THE DROP has $drop_cards pictures and $drop_snd sounds; every one of them plays");
 /*
@@ -706,8 +710,42 @@ foreach ($psplit['rows'] as $k => $slots) {
 	if (strpos($k, 'The drop|') !== 0) continue;
 	foreach ($slots as $sl) $drop_order[] = $sl['art'];
 }
-ok($drop_order === array('reset/reset', 'reset/intro', 'drop/drop', 'drop/team'),
+ok($drop_order === array('reset/reset', 'drop/drop', 'drop/team'),
    'the drop sounds are not in the order their pictures are: ' . implode(', ', $drop_order));
+
+/*
+ * AND THE STILL IS ABOVE THEM, ON ITS OWN, WITH ITS SOUND.
+ *
+ * The reorganisation is only worth anything if the sound row travelled with
+ * the picture. dropshipArtPlan() builds the rows per group off the same
+ * files list, so it should -- but "should" is how the registry came to
+ * disagree with the page the first time, and the whole point of the section
+ * above is that intro.jpg DOES have something playing over it.
+ */
+$before_cards = $before_snd = 0; $before_art = array();
+foreach ($pplan as $gname => $g) {
+	if ($gname !== 'Before a run') continue;
+	foreach ($g['rows'] as $ri => $r) {
+		foreach ($r['slots'] as $sl) if ($sl['kind'] === 'art') { $before_cards++; }
+		if (isset($psplit['rows']['Before a run|' . $ri])) {
+			foreach ($psplit['rows']['Before a run|' . $ri] as $sl) {
+				$before_snd++; $before_art[] = $sl['art'];
+			}
+		}
+	}
+}
+ok($before_cards === 1, "the pre-run still has $before_cards cards in its own section, not one");
+ok($before_snd === 1,   "the still has $before_snd sound rows; its sound did not travel with it");
+ok($before_art === array('reset/intro'),
+   'the sound under the still is for something else: ' . implode(', ', $before_art));
+
+/* AND IT SITS ABOVE THE DROP, which is the thing that was actually asked
+   for -- a section that renders after it reads as the same mistake. */
+$order_names = array_keys($pplan);
+$bi = array_search('Before a run', $order_names, true);
+$di = array_search('The drop', $order_names, true);
+ok($bi !== false && $di !== false && $bi < $di,
+   "the still's section renders at $bi and THE DROP at $di, so it is not above it");
 /* The cards themselves, so the comparison above is against something
    real rather than against a list I typed out. */
 $drop_cards_order = array();

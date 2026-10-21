@@ -285,8 +285,32 @@ function dropshipArtMaxBackgroundHeight() { return 1920; }
 function dropshipArtGroups($ext = 'gif') {
 	$all = dropshipArtManifest($ext);
 	$groups = array(
+		/*
+		 * THE INTRO STILL IS NOT A ROUND, and it was sitting in the middle
+		 * of the ones that are. The manifest lists it second -- reset.png,
+		 * intro.jpg, drop.png, team.png -- so THE DROP rendered as
+		 * "Round 0, the still shown before a run, Round 1, Round 2", with
+		 * the one card that is not a round wedged between 0 and 1 and the
+		 * numbers reading 0, 1, 2 only if you skipped the second card.
+		 * Its sound row sat in the same place for the same reason.
+		 *
+		 * Its own section, ahead of THE DROP, because it is shown BEFORE a
+		 * run rather than during one. Ordering here is what fixes the sound
+		 * rows too: dropshipArtPlan() builds those per group from this same
+		 * files list, so the audio follows the picture without being
+		 * moved separately.
+		 */
+		'Before a run' => array('note' => 'The still on the dashboard before anybody presses start. '
+		                                . 'Not a round, so it is never rolled for and never appears mid-run.',
+		                        'match' => '#^images/reset/intro\.#'),
+		/*
+		 * NARROWED from '#^images/(reset|drop)/#'. The claim loop below does
+		 * not skip a file another group already took -- it sets $taken but
+		 * only reads it for the catch-all -- so a pattern that still matched
+		 * intro would list it in both sections rather than moving it.
+		 */
 		'The drop'     => array('note' => 'Rounds 0 to 2. Never rolled for, so every run opens with these.',
-		                        'match' => '#^images/(reset|drop)/#'),
+		                        'match' => '#^images/(reset/reset|drop/)#'),
 		'The beach'    => array('note' => 'Rounds 3 to 7, plus the frame shown on clearing it.',
 		                        'match' => '#^images/live/beach/#'),
 		'The hill'     => array('note' => 'Rounds 8 to 12, plus the frame shown on clearing it.',
