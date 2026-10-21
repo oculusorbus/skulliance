@@ -1312,6 +1312,50 @@ ok(strpos($skdb, 'if (isset($ds_map[$ds_from]) && $subtotal > 0) {') !== false,
 $dsdb = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
 ok(strpos($dsdb, "dropship_project_id'] == 1 || \$_SESSION['userData']['dropship_project_id'] == 4") === false,
    'the payout is still gated on two hardcoded project ids');
+
+/*
+ * AND THE SAME GATE ON THE LADDER POST, which is where that pattern was
+ * still alive. Every run posts its result to Discord and then the current
+ * standings as a second message, and the second one was wrapped in
+ * `project_id == 1 || project_id == 4` with a comment calling Dread City
+ * and Filthy Mermaid a work in progress -- so two live themes announced a
+ * death and no board, and nothing anywhere said why.
+ *
+ * Checked on the STRIPPED source, because the comment above the gate now
+ * quotes the gate to explain it, and a check its own explanation satisfies
+ * is not a check.
+ */
+$dsdash = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(strpos($dsdash, 'Leaderboard"') !== false,
+   'the per-run leaderboard post moved; the checks below prove nothing');
+ok(strpos($dsdash, "dropship_project_id'] == 1 || \$_SESSION['userData']['dropship_project_id'] == 4") === false,
+   'the ladder post is still gated on two hardcoded project ids');
+
+/*
+ * SCOPED TO THE LADDER BLOCK, not the file. dashboard.php compares
+ * dropship_project_id against a literal in eight other places and most of
+ * them are honest -- the VIP door is Oculus Lounge's, the Grunts are Drop
+ * Ship's. What must not come back is a theme LIST deciding whether the
+ * standings get announced, including the same list written as a cast or an
+ * in_array().
+ */
+$lbAt   = strpos($dsdash, 'Leaderboard"');
+$lbFrom = $lbAt === false ? false
+        : strrpos(substr($dsdash, 0, $lbAt), "if(isset(\$_SESSION['userData']['game_id'])){");
+ok($lbFrom !== false, 'the ladder post is no longer gated on there being a game at all');
+$lbBlock = $lbFrom === false ? '' : substr($dsdash, $lbFrom, $lbAt - $lbFrom);
+ok($lbBlock !== '' && preg_match("/dropship_project_id'\]\s*==\s*[0-9]/", $lbBlock) !== 1,
+   'the ladder post compares the project against a literal id again');
+ok($lbBlock !== '' && strpos($lbBlock, 'in_array') === false,
+   'the ladder post is gated on a list of themes again');
+/* The board still has to have something on it, or every run posts an empty
+   embed to every theme -- which is the cost of removing the gate carelessly. */
+ok(strpos($lbBlock, '$leaderboard_list != ""') !== false,
+   'an empty board would now be posted as an empty embed');
+/* And the picture is the THEME's, resolved the way everything else is.
+   Hardcoding Drop Ship's here is how Dread City posted Drop Ship's art. */
+ok(strpos($lbBlock, 'dropshipThemeImageUrl($conn, $_SESSION[\'userData\'][\'dropship_project_id\']') !== false,
+   'the ladder image is no longer resolved through the theme');
 /*
  * THE INSTRUCTIONS MUST NAME THE SAME CURRENCY THE PAYOUT USES. "MOON" was
  * the everything-else answer, which was right while only two games paid

@@ -1046,18 +1046,35 @@ if(isset($_SESSION['userData']['dropship_project_id'])){
 							discordmsg($title, $description, $imageurl, $_SESSION['userData']['dropship_project_id']);
 							$_SESSION['userData']['notification'] = "true";
 
-							// Current leaderboard standings, posted automatically after
-							// every run -- replaces the old /leaderboard Discord bot
-							// command (per the user, no longer reliable). Same
-							// output-buffered checkLeaderboard() capture automate.php
-							// already uses for its own leaderboard posts, just fired
-							// per-run instead of on a cron cadence. Scoped to Drop Ship
-							// and Oculus Lounge specifically (what was asked for) --
-							// Dread City/Filthy Mermaid are still a work in progress.
-							// discordmsg()'s own $project_id routing (see webhooks.php)
-							// already sends this to the right Skulliance channel, no
-							// extra wiring needed here.
-							if(isset($_SESSION['userData']['game_id']) && ($_SESSION['userData']['dropship_project_id'] == 1 || $_SESSION['userData']['dropship_project_id'] == 4)){
+							/*
+							 * Current leaderboard standings, posted automatically after
+							 * every run -- replaces the old /leaderboard Discord bot
+							 * command (no longer reliable). Same output-buffered
+							 * checkLeaderboard() capture automate.php already uses for
+							 * its own leaderboard posts, just fired per-run instead of
+							 * on a cron cadence. discordmsg()'s own $project_id routing
+							 * (see webhooks.php) sends it to the right channel.
+							 *
+							 * EVERY THEME, NOT A LIST OF PROJECT IDS. This read
+							 * `project_id == 1 || project_id == 4` with a note that
+							 * Dread City and Filthy Mermaid were a work in progress --
+							 * which is "these two post no ladder" spelled as a hardcoded
+							 * id check, so the work never got finished and nothing said
+							 * so. It is the same gate dropship/db.php's payout carried
+							 * until a theme got a weekly cycle and paid nobody;
+							 * dropship-themes-harness.php forbids it there and now here.
+							 *
+							 * NOTHING IN HERE IS THEME-SPECIFIC, which is why the list
+							 * was never needed: checkLeaderboard() already scopes itself
+							 * to the session's own game_id and project_id,
+							 * getProjectName() names the theme, and
+							 * dropshipThemeImageUrl() resolves the theme's OWN picture
+							 * and returns '' when it has none -- which discordmsg()
+							 * omits -- rather than falling back to Drop Ship's. So the
+							 * two real conditions are the ones stated: a game, for there
+							 * to be a board at all, and something on it.
+							 */
+							if(isset($_SESSION['userData']['game_id'])){
 								$leaderboard_list = dropshipCapture(function () use ($conn) { checkLeaderboard($conn, "true"); });
 								if($leaderboard_list != ""){
 									$leaderboard_imageurl = dropshipThemeImageUrl($conn, $_SESSION['userData']['dropship_project_id'], 'images/dropship.jpg');

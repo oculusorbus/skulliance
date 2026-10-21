@@ -104,4 +104,8 @@ afterwards. This used to wait for you to sit through the whole replay and
 press a button, so runs went unreported whenever somebody closed the tab. The
 button at the end of the replay now just refreshes the page.
 
+Both posts go out for **every theme**, each to its own channel and with its own
+artwork. Dread City and Filthy Mermaid used to announce the death and not the
+standings.
+
 Play Drop Ship from the site nav's Play menu, or head straight to [dropship/dashboard.php](dropship/dashboard.php) - signing in to Skulliance is required now.
