@@ -83,6 +83,13 @@ CREATE TABLE IF NOT EXISTS dhc_arena_state (
 CREATE TABLE IF NOT EXISTS dhc_arena_fighters (
 	fighter_id    INT          NOT NULL PRIMARY KEY,   -- dhc_fighters.id
 	user_id       INT          NOT NULL,
+	-- WRITTEN AND READ BY MYSQL, NEVER BY PHP. dhca_bench() stores
+	-- DATE_ADD(NOW(), ...) and dhca_crew() asks for the remainder with
+	-- TIMESTAMPDIFF(SECOND, NOW(), benched_until). MySQL's zone on this
+	-- host runs behind php.ini's UTC and nothing sets either, so reading
+	-- this with strtotime() and comparing it to time() takes hours off
+	-- every cooldown -- which is exactly what made a Fighter that won and
+	-- survived available again the moment it was benched.
 	benched_until DATETIME     DEFAULT NULL,       -- unavailable until this time
 	ko            TINYINT(1)   NOT NULL DEFAULT 0, -- did it FALL, or only fight?
 	-- OPEN ISSUE: these do not count what they look like they count.

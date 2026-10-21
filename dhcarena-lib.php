@@ -42,6 +42,38 @@ function dhca_crew($conn, $user_id) {
 	$user_id = (int)$user_id;
 	$rows = array();
 	/*
+	 * HOW LONG IS LEFT IS ASKED OF MYSQL, and it is the whole of a reported
+	 * bug: a Fighter that won and SURVIVED was available again immediately,
+	 * while a Fighter that fell was correctly unavailable for hours. Every
+	 * overlay in the Crew picker said resurrecting; none ever said recovering.
+	 *
+	 * TWO CLOCKS. dhca_bench() writes benched_until with MySQL's
+	 * DATE_ADD(NOW(), ...). This read it back with PHP's strtotime() and
+	 * compared it against PHP's time() -- and the two do not have to agree.
+	 * Nothing on this platform calls date_default_timezone_set(), so PHP takes
+	 * php.ini's zone (UTC on this host) while MySQL takes the host's, which is
+	 * BEHIND it: the newest dhc_fighters.created_at, written by MySQL NOW(),
+	 * reads four and a half hours in the past against the web server's own
+	 * clock on a Fighter assembled minutes earlier.
+	 *
+	 * So benched_until came back hours earlier than it was written, and
+	 * DHCA_BENCH_BASE_H is 4: a survivor's bench expired the moment it was
+	 * stored, while a fallen Fighter's 8-to-16 hours outlasted the shortfall.
+	 *
+	 * Same clock writes it, same clock reads it, and the offset cannot matter
+	 * -- which is also how the rest of the platform does a cooldown. See the
+	 * soldier training and resurrection sweeps in db.php: the whole comparison
+	 * happens in SQL.
+	 */
+	$sql = "SELECT f.id, f.serial, f.name, f.traits, f.rarity_score,
+	               a.benched_until, a.ko, a.wins, a.losses, a.season_wins, a.season_losses,
+	               GREATEST(0, COALESCE(TIMESTAMPDIFF(SECOND, NOW(), a.benched_until), 0)) AS bench_left
+	        FROM dhc_fighters f
+	        LEFT JOIN dhc_arena_fighters a ON a.fighter_id = f.id
+	        WHERE f.user_id = $user_id
+	        ORDER BY f.rarity_score DESC, f.id DESC";
+	$res = $conn->query($sql);
+	/*
 	 * THE `ko` COLUMN IS OPTIONAL AT RUNTIME, and that is deliberate.
 	 *
 	 * It was added after release, and this platform is updated by pulling the
@@ -54,21 +86,13 @@ function dhca_crew($conn, $user_id) {
 	 *
 	 * A missing label is worth a retry. A missing Arena is not.
 	 */
-	$sql = "SELECT f.id, f.serial, f.name, f.traits, f.rarity_score,
-	               a.benched_until, a.ko, a.wins, a.losses, a.season_wins, a.season_losses
-	        FROM dhc_fighters f
-	        LEFT JOIN dhc_arena_fighters a ON a.fighter_id = f.id
-	        WHERE f.user_id = $user_id
-	        ORDER BY f.rarity_score DESC, f.id DESC";
-	$res = $conn->query($sql);
 	if (!$res) $res = $conn->query(str_replace('a.ko, ', '', $sql));
 	if (!$res) return $rows;
-	$now = time();
 	while ($r = $res->fetch_assoc()) {
-		$until = $r['benched_until'] ? strtotime($r['benched_until']) : 0;
+		$left = (int)$r['bench_left'];
 		$r['traits']    = json_decode($r['traits'], true) ?: array();
-		$r['available'] = ($until <= $now);
-		$r['bench_left']= max(0, $until - $now);
+		$r['available'] = ($left <= 0);
+		$r['bench_left']= $left;
 		/* FELL, not merely fought. A Fighter that was knocked out is being
 		   brought back; one that walked off the board is only catching its
 		   breath. The player sees two different words for it, so the two states
@@ -1088,7 +1112,7 @@ function dhca_bench_loss_hours($depth) {
 }
 
 function dhca_bench($conn, $user_id, $fighter_id, $hours, $won) {
-	$conn->query(sprintf(
+	$ok = $conn->query(sprintf(
 		"INSERT INTO dhc_arena_fighters
 		   (fighter_id,user_id,benched_until,ko,wins,losses,season_wins,season_losses,season)
 		 VALUES (%d,%d,DATE_ADD(NOW(), INTERVAL %d MINUTE),%d,%d,%d,%d,%d,'%s')
@@ -1106,7 +1130,14 @@ function dhca_bench($conn, $user_id, $fighter_id, $hours, $won) {
 	if ($ok) return;
 	/* Same reason as dhca_crew(): before the ALTER has run, a battle must still
 	   be able to END. Losing the ko flag costs a label; losing this write costs
-	   the whole result -- the Fighters would never be marked unavailable. */
+	   the whole result -- the Fighters would never be marked unavailable.
+
+	   ONLY WHEN THE FIRST ONE FAILED. $ok was never assigned, so this ran after
+	   every single bench -- a second ON DUPLICATE KEY UPDATE that incremented
+	   wins and losses again. Every Fighter's record was double-counted from the
+	   day the fallback was added: Manta Ray Pilot's one battle read as 2 wins.
+	   The ledger in dhc_arena_battle_fighters is unaffected and still says 1,
+	   which is exactly why it exists. */
 	$conn->query(sprintf(
 		"INSERT INTO dhc_arena_fighters
 		   (fighter_id,user_id,benched_until,wins,losses,season_wins,season_losses,season)
