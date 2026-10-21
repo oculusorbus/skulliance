@@ -236,6 +236,67 @@ ok(isset($fstems['filthy-mermaid']),
 ok($open['legacy'] === '' || $open['legacy'] !== 'alarm',
    "a theme's opening falls back to Drop Ship's");
 
+echo "\nnothing is overwritten without a warning first\n";
+/*
+ * The question was exactly this: does picking an existing sound copy it
+ * and leave the original alone, does an upload land on the right name,
+ * and does anything that destroys a file say so first.
+ *
+ * COPY, NOT MOVE, for the picker. An icon with a new name is RENAMED,
+ * because the old name is then asked for by nobody; a sound picked from
+ * the list is still being asked for under its own name by whoever led
+ * you to it, so it has to be copied.
+ */
+$adm_w = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+$a_at  = strpos($adm_w, "isset(\$_POST['audio_term'])");
+ok($a_at !== false, 'the audio handler is gone; nothing below proves anything');
+$a_blk = $a_at === false ? '' : substr($adm_w, $a_at, 3000);
+
+ok(strpos($a_blk, '@copy($a_dir . $a_use, $a_dest)') !== false,
+   'picking an existing sound moves it, which takes it away from whatever else asks for it');
+ok(strpos($a_blk, 'rename(') === false && strpos($a_blk, 'unlink(') === false,
+   'the audio handler can move or delete a file; it must only ever write to the derived name');
+/* THE DESTINATION IS THE DERIVED NAME, never anything off the form --
+   an upload keeps nothing of whatever the file was called. */
+ok(strpos($a_blk, "\$a_dest = \$a_dir . \$a_slot['stem'] . '.mp3';") !== false,
+   'the destination is not the name the wording asks for');
+ok(strpos($a_blk, '$a_slot = $dsaAudioSlotFor((string)$_POST[\'audio_term\'])') !== false,
+   'the slot is taken off the form without being resolved, so a posted name reaches the disk');
+ok(strpos($a_blk, "basename((string)\$_POST['audio_use'])") !== false,
+   'the picked filename is not reduced to a basename, so a path could escape the folder');
+ok(strpos($a_blk, "in_array(\$a_use, dropshipAudioFiles(), true)") !== false,
+   'the picked file is not checked against the folder, so any readable path could be copied in');
+
+/*
+ * ANY OVERWRITE WARNS. The first version asked only when some OTHER
+ * theme also wanted the file, so replacing a sound nothing else used
+ * happened silently -- and a file gone by accident is a file gone.
+ */
+ok(strpos($a_blk, '$a_go = (!$a_overwrite || !empty($_POST[\'confirm\']));') !== false,
+   'an overwrite can still go through unwarned when no other theme shares the file');
+ok(strpos($a_blk, '$a_overwrite = is_file($a_dest);') !== false,
+   'nothing checks whether the destination already exists');
+ok(strpos($a_blk, 'already exists and will be ') !== false,
+   'the refusal does not say that a file is about to be replaced');
+ok(strpos($a_blk, 'which also changes it for ') !== false,
+   'the refusal does not name who else loses the sound they had');
+/* AND A NEW NAME IS NOT A WARNING. Creating a file destroys nothing;
+   asking there would train somebody to click through. */
+ok(strpos($a_blk, '!$a_overwrite ||') !== false,
+   'writing a name that does not exist yet also asks for confirmation');
+
+/*
+ * THE CONFIRM IS ARMED BY A REFUSAL, not by having posted. Keyed off
+ * the post alone it stayed armed after a SUCCESSFUL write, so the next
+ * thing done to that row would have overwritten without asking.
+ */
+ok(strpos($adm_w, "\$msg['warn'] = \$a_slot['term'];") !== false,
+   'the refusal does not record WHICH row it refused');
+ok(strpos($adm_w, "(!empty(\$msg['warn']) && \$msg['warn'] === \$as['term']) ? '1' : ''") !== false,
+   'the confirm is armed by having posted rather than by having been refused');
+ok(strpos($adm_w, "\$_POST['audio_term'] === \$as['term']) ? '1'") === false,
+   'the old arming is still there, so one success leaves the row unguarded');
+
 echo "\nthe page says what the run does\n";
 $adm = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
 ok(strpos($adm, "\$as['plays']") !== false,

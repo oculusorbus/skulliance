@@ -247,14 +247,21 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['audio_term'
 	} else {
 		$a_dest = $a_dir . $a_slot['stem'] . '.mp3';
 		/*
-		 * WHO ELSE IS LISTENING. Asked before the write and shown once;
-		 * a second post with confirm set goes ahead. Only counts OTHER
-		 * claims, or replacing a theme's own sound would nag about
-		 * itself.
+		 * ANY OVERWRITE IS WARNED, not only a shared one.
+		 *
+		 * The first version asked only when some OTHER theme also wanted
+		 * the file, so replacing a sound nothing else used happened
+		 * silently -- and "I replaced my own file by accident" is still
+		 * a file gone. Writing to a name that does not exist yet creates
+		 * something and destroys nothing, so that goes straight through.
+		 *
+		 * The claims only change the WORDING: who else stops hearing
+		 * what they heard. The theme doing the replacing is excluded, or
+		 * every message would nag about itself.
 		 */
 		$a_claims = dropshipAudioClaims($conn, $a_slot['stem'], $pid, $a_slot['term']);
 		$a_overwrite = is_file($a_dest);
-		$a_go = (!$a_overwrite || !$a_claims || !empty($_POST['confirm']));
+		$a_go = (!$a_overwrite || !empty($_POST['confirm']));
 
 		/* USE ONE ALREADY ON THE SERVER. The same picker the icons have,
 		   except an icon is RENAMED and a sound is COPIED -- the file it
@@ -263,9 +270,15 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['audio_term'
 		if ($a_use !== '' && !in_array($a_use, dropshipAudioFiles(), true)) {
 			$msg['err'][] = 'That is not a sound on the server.';
 		} elseif (!$a_go) {
-			$msg['err'][] = 'That would also change ' . htmlspecialchars(implode(', ', $a_claims))
-			              . '. Press again to go ahead.';
-			$msg['warn'] = true;
+			$msg['err'][] = htmlspecialchars($a_slot['stem'] . '.mp3') . ' already exists and will be '
+			              . 'replaced'
+			              . ($a_claims
+			                 ? ', which also changes it for ' . htmlspecialchars(implode(', ', $a_claims))
+			                 : '')
+			              . '. Press Set again to go ahead.';
+			/* Arms the confirm on THIS row only, and only because a
+			   write was refused. */
+			$msg['warn'] = $a_slot['term'];
 		} elseif ($a_use !== '') {
 			if ($a_dir . $a_use === $a_dest) {
 				$msg['err'][] = 'That is already the file this asks for.';
@@ -794,8 +807,12 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 				<?php /* A SECOND PRESS IS THE CONFIRMATION. The handler refuses
 				         once and says who else is listening; this carries the
 				         answer back. */ ?>
+				<?php /* ARMED ONLY BY A REFUSAL, and only on the row that was
+				         refused. Keyed off the post alone it stayed armed after a
+				         SUCCESSFUL write too, so the next thing done to that row
+				         would have overwritten without asking. */ ?>
 				<input type="hidden" name="confirm" value="<?php echo
-					(isset($_POST['audio_term']) && $_POST['audio_term'] === $as['term']) ? '1' : ''; ?>">
+					(!empty($msg['warn']) && $msg['warn'] === $as['term']) ? '1' : ''; ?>">
 				<span class="pick">
 					<select name="audio_use">
 						<option value="">use one already here&hellip;</option>
