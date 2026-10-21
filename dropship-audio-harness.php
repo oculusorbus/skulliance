@@ -120,7 +120,7 @@ if (is_string($old) && strpos($old, 'evaluateAudio') !== false) {
 		                  arow('Smoke Bomb', 'Whip'), arow('Pull Smoke Bomb Pin', 'Pull Out Whip'),
 		                  arow('Explosion', 'Spank'), arow('Demolition', 'Paddle'),
 		                  arow('Radar', 'Ball Gag'), arow('Sniper Rifle', 'Butt Plug'),
-		                  arow('Pull Grenade', 'Insert Anal Beads'),
+		                  arow('Pull Grenade Pin', 'Insert Anal Beads'),
 		                  arow('Throw Grenade', 'Remove Anal Beads')),
 		      30 => array(arow('Drop Ship Initiating', 'Filthy Mermaid Entrance'),
 		                  arow('Drop Ship Landed', 'Filthy Mermaid Doorway'))));
@@ -138,6 +138,17 @@ if (is_string($old) && strpos($old, 'evaluateAudio') !== false) {
 	 * quietly excluded, so the day somebody renames them this check
 	 * fails and says the note is spent.
 	 */
+	/*
+	 * THE TERM IS THE WORDING TABLE'S, NOT THE OLD CHAIN'S. The chain
+	 * matched "Pull Grenade" because a substring of the caption was all
+	 * it needed; the lookup here is by the whole term, and the wording
+	 * row is "Pull Grenade Pin". The short form resolves to nothing, so
+	 * Oculus Lounge would never reach its own sound for it.
+	 */
+	$pgp = false;
+	foreach ($ev as $e) if ($e['term'] === 'Pull Grenade Pin') $pgp = true;
+	ok($pgp, 'the grenade pin event is not named the way the wording table names it');
+
 	$moved = array(
 		/* Filthy Mermaid's opening two rounds. Its words are "Filthy
 		   Mermaid Entrance" and "... Doorway". */

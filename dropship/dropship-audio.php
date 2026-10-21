@@ -65,7 +65,13 @@ function dropshipAudioEvents() {
 		array('term' => 'Extra Life',               'sound' => 'extralife',            'delay' => 0),
 		array('term' => 'Pull Smoke Bomb Pin',      'sound' => 'grenadepin',           'delay' => 600),
 		array('term' => 'Smoke Bomb',               'sound' => 'grenadecontra',        'delay' => 0),
-		array('term' => 'Pull Grenade',             'sound' => 'grenadepin',           'delay' => 600),
+		/* "Pull Grenade PIN", which is the word the wording table holds and
+		   the caption actually says. The old chain matched on the shorter
+		   "Pull Grenade" -- harmless there, because a substring of the
+		   caption was all it needed, but fatal here: the lookup is by the
+		   whole term, so the short form resolves to nothing and Oculus
+		   Lounge never reaches its own Insert Anal Beads sound. */
+		array('term' => 'Pull Grenade Pin',         'sound' => 'grenadepin',           'delay' => 600),
 		array('term' => 'Throw Grenade',            'sound' => 'grenadecontra',        'delay' => 0),
 		array('term' => 'Radar',                    'sound' => '',                     'delay' => 0),
 		array('term' => 'Load Machine Gun',         'sound' => 'loading',              'delay' => 0),
