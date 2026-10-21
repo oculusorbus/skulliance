@@ -1053,6 +1053,8 @@ foreach (getProjects($conn) as $ds_gid => $ds_gname) {
 		          ? '/staking/dropship/' . $ds_rel : '',
 	);
 }
+/* The picker's own order, not the query's -- see dropshipGameOrder(). */
+$ds_games = dropshipGameOrderSort($ds_games);
 $ds_now = isset($_SESSION['userData']['dropship_project_id'])
         ? (int)$_SESSION['userData']['dropship_project_id'] : 0;
 /*
@@ -1086,10 +1088,20 @@ if ($ds_count > 1):
 #dsgame{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;
   justify-content:center;padding:16px;background:rgba(4,10,18,.82)}
 #dsgame[hidden]{display:none}
-/* 560, not 720: a square tile is as tall as the column is wide, so two rows
-   of them plus the heading is about 710px at this width and still clears a
-   laptop. At 720 the picker needed scrolling to see its own fourth game. */
-#dsgame-box{position:relative;width:100%;max-width:560px;max-height:100%;
+/*
+ * 780 NOW, AND THAT IS THE SAME HEIGHT ARGUMENT, NOT A REVERSAL OF IT.
+ *
+ * It was 560 because a square tile is as tall as its column is wide, so a
+ * WIDER box meant TALLER rows. That held while the grid was two across: at
+ * 560 four games were two rows of ~262px tiles, about 710px all in.
+ *
+ * The fifth game broke it. Two across made three rows -- roughly 1050px --
+ * and the picker scrolled on a laptop, which is what it was widened to
+ * avoid. Three across at 780 is two rows of ~240px tiles, about 690px: the
+ * tiles get SMALLER as the box gets wider, because the column count went up
+ * faster than the width did. Six games still fit in those two rows.
+ */
+#dsgame-box{position:relative;width:100%;max-width:780px;max-height:100%;
   overflow-y:auto;background:#0a1929;border:1px solid #163047;border-radius:10px;
   padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.55);
   padding-top:calc(18px + env(safe-area-inset-top, 0px));
@@ -1100,10 +1112,33 @@ if ($ds_count > 1):
   line-height:28px;font-size:20px;background:none;border:1px solid #163047;
   border-radius:6px;color:#9fb6c4;cursor:pointer}
 #dsgame-x:hover{color:#e8eaed;border-color:#00c8a0}
-#dsgame-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+/*
+ * FLEX, NOT GRID, AND ONLY FOR THE LAST ROW.
+ *
+ * Five games in three columns leaves two on the second row. CSS Grid has no
+ * way to centre a partial final row -- the items are placed on tracks, and
+ * the empty third track still takes its share -- so the orphans sit left
+ * with a hole beside them. A centred flex wrap has no tracks: a full row of
+ * three consumes the width exactly and shows no centring at all, and a
+ * short row splits the leftover evenly. It is right for any number of
+ * games rather than tuned to five, which matters because the count is now
+ * whatever getProjects() returns.
+ *
+ * --cols IS CAPPED BY THE GAME COUNT, set inline from PHP. Without it two
+ * games would each take a third of a 780px box and sit marooned in the
+ * middle of it. The media queries below set --cols rather than --maxcols,
+ * so they still win on a narrow screen: an inline style only raises the
+ * ceiling, it does not pin the value.
+ */
+#dsgame-grid{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;
+  --maxcols:3;--cols:var(--maxcols)}
+#dsgame-grid .dsgame-tile{flex:0 0 calc((100% - (var(--cols) - 1) * 12px) / var(--cols));
+  max-width:calc((100% - (var(--cols) - 1) * 12px) / var(--cols))}
+/* Two across once three would squeeze the tiles below a readable name. */
+@media (max-width:700px){#dsgame-grid{--cols:min(2,var(--maxcols))}}
 /* One column only where two would make the name unreadable, not at the
-   usual phone width -- the four-up shape is the point of the picker. */
-@media (max-width:359px){#dsgame-grid{grid-template-columns:minmax(0,1fr)}}
+   usual phone width -- the multi-up shape is the point of the picker. */
+@media (max-width:359px){#dsgame-grid{--cols:1}}
 /* text-align RESTATED, not inherited. flexbox.css sets `a {text-align:center}`
    globally, so every anchor on this app is centred unless it says otherwise,
    and a caption under a picture wants its own edge. Same for the colour: the
@@ -1143,7 +1178,7 @@ if ($ds_count > 1):
     <h3 id="dsgame-h">Select Game</h3>
     <p class="sub"><?php echo $ds_count_word; ?> games on one engine. Each keeps
       its own board, its own squad and its own prizes.</p>
-    <div id="dsgame-grid">
+    <div id="dsgame-grid" style="--maxcols:<?php echo min(3, $ds_count); ?>">
       <?php foreach ($ds_games as $g): $on = ($g['id'] === $ds_now); ?>
       <a class="dsgame-tile<?php echo $on ? ' on' : ''; ?>"
          href="dashboard.php?project_id=<?php echo $g['id']; ?>">

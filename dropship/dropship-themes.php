@@ -1016,3 +1016,40 @@ function dropshipRewardPrizeName($project_id) {
 function dropshipRewardPlaces() {
 	return count(dropshipRewardAmounts());
 }
+
+/**
+ * THE ORDER THE GAME PICKER INTRODUCES THE GAMES IN.
+ *
+ * Not getProjects()' order, which is the database's, and not anything that
+ * can be derived -- not id, not name, not when a theme was added. It is a
+ * judgement about which games a player should meet first, so it is written
+ * down as a judgement rather than dressed up as a rule.
+ *
+ * A THEME NOT LISTED HERE STILL APPEARS, at the end, ordered by id. That is
+ * the whole reason this is a sort key and not a hand-built list of games:
+ * the picker renders whatever getProjects() returns, so forgetting to add a
+ * new theme here costs it a good position and never its place in the grid.
+ */
+function dropshipGameOrder() {
+	return array(1, 2, 5, 3, 4);   /* Drop Ship, Dread City, DHC2 Fighters, Filthy Mermaid, Oculus Lounge */
+}
+
+/**
+ * Sort rows carrying an 'id' into dropshipGameOrder(), unlisted ones last.
+ *
+ * Takes and returns the array rather than sorting in place, so it can be
+ * tested on its own -- the picker's order was previously an accident of the
+ * query and there was nothing to assert against.
+ */
+function dropshipGameOrderSort($games) {
+	$order = array_flip(dropshipGameOrder());
+	usort($games, function ($a, $b) use ($order) {
+		$ia = isset($order[$a['id']]) ? $order[$a['id']] : PHP_INT_MAX;
+		$ib = isset($order[$b['id']]) ? $order[$b['id']] : PHP_INT_MAX;
+		/* Tie means both are unlisted; id keeps that deterministic rather
+		   than leaving it to the sort's own handling of equal keys. */
+		if ($ia === $ib) return $a['id'] - $b['id'];
+		return $ia - $ib;
+	});
+	return $games;
+}

@@ -1465,6 +1465,46 @@ foreach ($said as $pid => $cur) {
 	   . ", which holds $expect");
 }
 
+echo "\nthe game picker's own order\n";
+/*
+ * The picker renders whatever getProjects() returns, in whatever order the
+ * query hands them over. The order players actually see is a judgement --
+ * which games to meet first -- so it is stated in dropshipGameOrder() and
+ * applied as a SORT KEY rather than as a hand-built list of games. The
+ * distinction is the point of these checks: a theme missing from the order
+ * must lose its position and keep its place in the grid.
+ */
+$pick = function ($ids) {
+	$rows = array();
+	foreach ($ids as $i) $rows[] = array('id' => $i);
+	$out = array();
+	foreach (dropshipGameOrderSort($rows) as $r) $out[] = $r['id'];
+	return $out;
+};
+ok($pick(array(1, 2, 3, 4, 5)) === array(1, 2, 5, 3, 4),
+   'the picker order changed: ' . implode(',', $pick(array(1, 2, 3, 4, 5))));
+/* The same answer whatever order the database hands them over in, which is
+   the thing that was previously left to chance. */
+ok($pick(array(5, 3, 1, 4, 2)) === $pick(array(1, 2, 3, 4, 5)),
+   'the picker order depends on the order the query returns rows in');
+/* AN UNLISTED THEME STILL APPEARS. Forgetting to add a new theme to the
+   order must cost it a position, never its place in the picker. */
+ok($pick(array(1, 2, 3, 4, 5, 6)) === array(1, 2, 5, 3, 4, 6),
+   'a theme missing from the order does not fall to the end: ' . implode(',', $pick(array(1, 2, 3, 4, 5, 6))));
+ok($pick(array(9, 6, 1)) === array(1, 6, 9),
+   'two unlisted themes are not ordered deterministically');
+/* And nothing is ever lost or duplicated by the sort itself. */
+foreach (array(array(1,2,3,4,5), array(1,2,3,4,5,6), array(9,6,1), array(3)) as $set) {
+	$got = $pick($set); sort($got); $want = $set; sort($want);
+	ok($got === $want, 'the sort loses or duplicates a game for [' . implode(',', $set) . ']');
+}
+/* Every theme that has a game should have a place in the order, or it is
+   introduced last by accident rather than by decision. */
+foreach (array_keys(dropshipRewardTokens()) as $tp) {
+	ok(in_array($tp, dropshipGameOrder(), true),
+	   "theme $tp pays a currency but has no place in the picker order");
+}
+
 echo "\nthe weekly cycle runs for every live theme\n";
 /*
  * automate.php is the cron that ends the week's game, posts the final
