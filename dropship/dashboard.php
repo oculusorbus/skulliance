@@ -1055,7 +1055,25 @@ foreach (getProjects($conn) as $ds_gid => $ds_gname) {
 }
 $ds_now = isset($_SESSION['userData']['dropship_project_id'])
         ? (int)$_SESSION['userData']['dropship_project_id'] : 0;
-if (count($ds_games) > 1):
+/*
+ * THE COUNT COMES OFF THE LIST, not out of a sentence somebody typed.
+ *
+ * The sub-heading named the number of games in words and had been wrong
+ * since DHC2 Fighters made it five. The grid below it has always been built
+ * from getProjects(), so the picker and the sentence introducing the picker
+ * were drawn from two different sources, and only one of them got updated
+ * when a theme was added. The sixth would have broken it again.
+ *
+ * Spelled out, because the sentence is prose and a digit there reads like a
+ * stat line. Past twelve it falls back to digits, which reads fine and is
+ * one less table to keep right.
+ */
+$ds_count = count($ds_games);
+$ds_numbers = array(2 => 'Two', 3 => 'Three', 4 => 'Four', 5 => 'Five', 6 => 'Six',
+                    7 => 'Seven', 8 => 'Eight', 9 => 'Nine', 10 => 'Ten',
+                    11 => 'Eleven', 12 => 'Twelve');
+$ds_count_word = isset($ds_numbers[$ds_count]) ? $ds_numbers[$ds_count] : (string)$ds_count;
+if ($ds_count > 1):
 ?>
 <style>
 /*
@@ -1123,8 +1141,8 @@ if (count($ds_games) > 1):
   <div id="dsgame-box" role="dialog" aria-modal="true" aria-labelledby="dsgame-h" tabindex="-1">
     <button type="button" id="dsgame-x" aria-label="Close">&times;</button>
     <h3 id="dsgame-h">Select Game</h3>
-    <p class="sub">Four games on one engine. Each keeps its own board, its own
-      squad and its own prizes.</p>
+    <p class="sub"><?php echo $ds_count_word; ?> games on one engine. Each keeps
+      its own board, its own squad and its own prizes.</p>
     <div id="dsgame-grid">
       <?php foreach ($ds_games as $g): $on = ($g['id'] === $ds_now); ?>
       <a class="dsgame-tile<?php echo $on ? ' on' : ''; ?>"
