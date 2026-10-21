@@ -985,7 +985,10 @@ if (count($ds_games) > 1):
 #dsgame{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;
   justify-content:center;padding:16px;background:rgba(4,10,18,.82)}
 #dsgame[hidden]{display:none}
-#dsgame-box{position:relative;width:100%;max-width:720px;max-height:100%;
+/* 560, not 720: a square tile is as tall as the column is wide, so two rows
+   of them plus the heading is about 710px at this width and still clears a
+   laptop. At 720 the picker needed scrolling to see its own fourth game. */
+#dsgame-box{position:relative;width:100%;max-width:560px;max-height:100%;
   overflow-y:auto;background:#0a1929;border:1px solid #163047;border-radius:10px;
   padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.55);
   padding-top:calc(18px + env(safe-area-inset-top, 0px));
@@ -1007,8 +1010,26 @@ if (count($ds_games) > 1):
 .dsgame-tile{display:block;text-align:left;text-decoration:none;color:#e8eaed;
   background:#07111d;border:1px solid #163047;border-radius:8px;overflow:hidden}
 .dsgame-tile:hover,.dsgame-tile:focus-visible{border-color:#00c8a0}
-.dsgame-tile .art{display:block;width:100%;aspect-ratio:16/9;background:#071826}
-.dsgame-tile .art img{display:block;width:100%;height:100%;object-fit:cover;max-width:100%}
+/*
+ * THE WHOLE PICTURE, NOT A CROP OF IT.
+ *
+ * This was a 16/9 box with object-fit:cover, which is the right pairing for
+ * art cut to a known shape and the wrong one here. MEASURED, because the
+ * four are nothing alike: Drop Ship is 745x850, Dread City 1038x1080, Oculus
+ * Lounge 891x891 and Filthy Mermaid 480x356. Three are portrait and one is
+ * landscape, so a 16/9 crop took the middle band out of three of them and
+ * threw away the faces -- on a picker whose entire job is telling four games
+ * apart by looking at them.
+ *
+ * A SQUARE BOX AND contain. Square because three of the four are within 13%
+ * of it, so the bars are small where they appear at all; contain because
+ * with ratios this far apart nothing else shows every image whole. The box
+ * is the tile's own ink, so a letterboxed edge reads as the tile rather than
+ * as a grey slab -- which matters most for Filthy Mermaid, whose art is a
+ * white logo on black and simply continues into it.
+ */
+.dsgame-tile .art{display:block;width:100%;aspect-ratio:1/1;background:var(--ds-ink,#07111d)}
+.dsgame-tile .art img{display:block;width:100%;height:100%;object-fit:contain;max-width:100%}
 .dsgame-tile b{display:block;padding:8px 10px 2px;font-size:13px}
 .dsgame-tile em{display:block;padding:0 10px 9px;font-style:normal;font-size:10px;
   letter-spacing:.08em;text-transform:uppercase;color:#7a9eb0}

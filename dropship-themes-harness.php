@@ -1673,6 +1673,74 @@ ok(strpos($dspick, '.side #dsgame') === false && strpos($dspick, '#player-stats 
    'the picker CSS names an ancestor the element does not have, so it applies to nothing');
 
 /*
+ * THE CHROME, where a regression is silent: CSS does not throw and php -l
+ * does not read it. Each of these was arrived at by measuring something.
+ */
+echo "\nthe stylesheet keeps the decisions that were measured\n";
+$css = (string)file_get_contents(__DIR__ . '/dropship/dist/flexbox.css');
+$cssCode = preg_replace('#/\*.*?\*/#s', '', $css);
+
+/* THE BARRACKS IS A GRID. Floated cards catch on the tallest box to their
+   left, so a collection whose cards differ in height left holes in the second
+   row -- which is what a float does and no amount of width tuning fixes. */
+ok(preg_match('/\.nfts\s*\{[^}]*display:\s*grid/s', $cssCode) === 1,
+   'the barracks stopped being a grid, so cards will snag on each other again');
+ok(preg_match('/\.nft\s*\{[^}]*float/s', $cssCode) !== 1,
+   'the cards float again');
+ok(preg_match('/\.nfts\s*\{[^}]*repeat\(4,/s', $cssCode) === 1,
+   'the barracks is no longer four across at full width');
+foreach (array(2, 1) as $cols) {
+	$want = $cols === 1 ? 'grid-template-columns: minmax(0, 1fr);'
+	                    : 'grid-template-columns: repeat(2, minmax(0, 1fr));';
+	ok(strpos($cssCode, $want) !== false,
+	   "the $cols-column breakpoint is gone, so narrow screens keep four across");
+}
+
+/* NO 3D BUTTONS AND NO PASTED DROP SHADOW. Both were the reported look. */
+ok(preg_match('/box-shadow:\s*0 \d+px #007a62/', $cssCode) !== 1,
+   'the teal 3D button shadow is back');
+ok(strpos($cssCode, 'drop-shadow(5px 5px 5px #202225)') === false,
+   'the pasted offset drop-shadow is back');
+/* Round on purpose, and only these. */
+foreach (array('.rounded', '.slider.rounded') as $pill) {
+	/* ANCHORED. Without the (^|[\s,}]) in front, '.rounded' also matches
+	   inside '.slider.rounded', so squaring .rounded off left the check
+	   passing on its neighbour's radius -- a mutation that survived until
+	   the anchor went in. */
+	/* \s*+ POSSESSIVE, and that is the whole reason this check works. With a
+	   plain \s* the engine matches ZERO whitespace, lands on the space after
+	   the colon, and (?!var) is satisfied because the next three characters
+	   are " va" -- so the check passed on `border-radius: var(--ds-r)`, which
+	   is exactly the value it exists to reject. */
+	ok(preg_match('/(^|[\s,}])' . preg_quote($pill, '/') . '\s*\{[^}]*border-radius:\s*+(?!var)/s',
+	              $cssCode) === 1,
+	   "$pill lost its own radius and became a 3px rectangle");
+}
+
+/*
+ * THE LEDGER STRIPES HAVE TO OUT-SPECIFY `#transactions td`, which carries
+ * `border-color: ... !important` with an id in it. A `.credit td:first-child`
+ * rule is two classes and loses to one id even though both are !important --
+ * the first version of this painted no stripe at all and only the wash
+ * showed. Qualifying with the id is the fix and the thing to pin.
+ */
+foreach (array('credit', 'winner') as $kind) {
+	ok(strpos($cssCode, '#transactions .' . $kind . ' td:first-child') !== false,
+	   "the $kind stripe is not qualified with #transactions, so the id rule overrides it");
+}
+ok(preg_match('/\.(credit|winner)\s*\{[^}]*background-color:\s*#[0-9a-f]{6}/is', $cssCode) !== 1,
+   'a ledger row is a flat saturated fill again');
+
+/* THE PICKER SHOWS WHOLE PICTURES. Measured: the four hero images are
+   745x850, 1038x1080, 480x356 and 891x891 -- three portrait and one
+   landscape -- so a 16/9 cover crop cut the middle out of three of them. */
+ok(strpos($dspick, 'aspect-ratio:1/1') !== false,
+   'the picker tile is not a square box, so the art is cropped to fit');
+ok(strpos($dspick, 'object-fit:contain') !== false,
+   'the picker crops its art again, which is what the picker exists not to do');
+ok(strpos($dspick, 'object-fit:cover') === false, 'a cover crop came back');
+
+/*
  * THE SWITCH MUST SURVIVE BEING USED. "Can this theme be animated" is a
  * property of the THEME; "is it animated right now" is a property of the
  * session. Asking the resolved extension for the first question meant the

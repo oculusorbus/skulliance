@@ -425,7 +425,10 @@ a:hover { color: #00a882; }
 	border-left: 1px;
 	border-right: 1px;
 	border-style: solid;
-	border-color: rgba(0,200,160,0.15) !important;
+	/* --ds-line, the hairline every DHC panel is drawn with, rather than a
+	   15% teal -- a tinted grid on every cell of a 20-row table is a lot of
+	   green for furniture nobody is meant to look at. */
+	border-color: var(--ds-line) !important;
 }
 
 #transactions th {
@@ -443,17 +446,50 @@ a:hover { color: #00a882; }
     padding-right: 0px;
 }
 
-.credit {
-	background-color: #256839;
-}
+/*
+ * THE LEDGER'S ROW STATES, which were three saturated fills.
+ *
+ * #256839 green, #243e66 blue and #502466 purple, each painted edge to edge
+ * across the row. On a #0a1929 ground that is three bright blocks competing
+ * with the text on top of them, and the purple is a hue the platform does
+ * not use anywhere else.
+ *
+ * A TINT AND A STRIPE INSTEAD, which is how DHC marks a row: the ledger
+ * stays on its own ground, a 7% wash separates the kinds at a glance, and
+ * the meaning is carried by a 3px edge rather than by flooding the row. The
+ * numbers stay the brightest thing in the table, which is what somebody
+ * reading a ledger is actually looking for.
+ *
+ * SPENDING GETS NO COLOUR AT ALL. It is most of the rows and it is the
+ * unremarkable case; banding it was what made the table look like three
+ * tables stacked. The minus glyph already says it.
+ *
+ * Amber for a win, and it is the one borrowed hue -- dhcarena.php's battle
+ * scope declares --ochre:#f5a623 for exactly this, something earned rather
+ * than something paid. Teal would have read as another credit, since teal
+ * and the accent green are the same family here.
+ */
+/*
+ * SPECIFICITY, and it is not academic here: `#transactions th, #transactions
+ * td` above sets `border-color: ... !important`, which is (1,0,1) with an
+ * id in it. A `.credit td:first-child` stripe is (0,2,1) and loses to it
+ * even though both are !important, so the first attempt painted no stripe at
+ * all and only the wash showed. Qualifying with the id puts these at (1,2,1).
+ */
+#transactions .credit { background-color: rgba(0, 200, 160, 0.10); }
+#transactions .credit td:first-child { border-left: 3px solid #00a882 !important; }
 
-.debit {
-	background-color: #243e66;
-}
+#transactions .debit { background-color: transparent; }
+#transactions .debit td:first-child { border-left: 3px solid transparent !important; }
 
-.winner {
-	background-color: #502466;
-}
+#transactions .winner { background-color: rgba(245, 166, 35, 0.10); }
+#transactions .winner td:first-child { border-left: 3px solid #f5a623 !important; }
+
+/* The old flat fills, kept as the fallback for any other table that uses
+   these three class names without the #transactions id around them. */
+.credit { background-color: rgba(0, 200, 160, 0.10); }
+.debit  { background-color: transparent; }
+.winner { background-color: rgba(245, 166, 35, 0.10); }
 
 /*
 .main img {
@@ -779,8 +815,30 @@ li form {
 	padding-right: 20px;
 }
 
+/*
+ * A GRID, BECAUSE FLOATS SNAG.
+ *
+ * The cards were `float:left; width:25%`, and a floated box does not clear
+ * the one above it -- it catches on the tallest thing to its left. Cards are
+ * not the same height (a deceased soldier has a Status line and no Deploy
+ * bar, a long rank name wraps), so a collection whose cards differ by a few
+ * pixels left holes in the second row and pushed cards out of column.
+ * Reported on a collection with disparate NFT heights, which is the case
+ * that makes it obvious rather than the case that causes it.
+ *
+ * Grid rows are as tall as their tallest item and every cell starts in its
+ * own column, so there is nothing to snag on. It also makes the Deploy bars
+ * line up across a row, because a stretched grid item gives .nft-data a
+ * height to fill and `margin-top:auto` on the form something to push against.
+ *
+ * The column counts are the ones the float breakpoints already used: four,
+ * then two under 1200px, then one under 700px.
+ */
 .nfts {
 	color: #e8eaed;
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	align-items: stretch;
 }
 
 .nfts label {
@@ -791,8 +849,8 @@ li form {
 .nft {
 	background-color: #0a1929;
 	border-radius: var(--ds-r);
-	float: left;
-	width: 25%;
+	/* The grid places it; width and float would both fight that. */
+	display: flex;
 	font-size: 12px;
 }
 
@@ -868,7 +926,9 @@ li form {
 .nft-data {
 	display: flex;
 	flex-direction: column;
-	height: 100%;
+	/* flex:1, not height:100%. The box carries a 10px margin, so a full
+	   height plus that margin overflows the cell by 20px. */
+	flex: 1;
 }
 .nft-data > span { flex: 0 0 auto; }
 /*
@@ -1132,8 +1192,8 @@ input:checked + .slider:before {
 	}
 }
 @media screen and (max-width: 1200px) {
-	.nft {
-		width: 50%;
+	.nfts {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 	.nft img {
 	    max-width: 175px;
@@ -1296,8 +1356,8 @@ input:checked + .slider:before {
 	.navbar a {
 	    border-bottom: 1px solid rgba(0,200,160,0.15);
 	}
-	.nft {
-		width: 100%;
+	.nfts {
+		grid-template-columns: minmax(0, 1fr);
 	}
 	.current-address {
 		display: none;
