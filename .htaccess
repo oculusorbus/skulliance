@@ -1,0 +1,28 @@
+# Debug sinks are not content.
+#
+# There was no .htaccess under /staking at all; the 403 on error_log comes
+# from a rule further up the host's config, and it matches that one name.
+# Everything else a script dropped next to itself was served as content:
+#
+#   /staking/request.txt          curl -v trace of a Discord bot API call,
+#   /staking/ajax/request.txt     including the Authorization: Bot header
+#   /staking/ajax/debug.log       5.7MB of Monstrocity saves since 2025-04
+#   /staking/ajax/nft_debug.log   NFT metadata dumps
+#
+# The code that wrote all four is fixed -- message.php no longer points
+# curl's verbose stream at a file, and the Monstrocity endpoints log through
+# error_log(). This is the backstop for the next one, because the failure
+# mode is a script writing beside itself and nobody noticing for a year.
+#
+# Checked before adding: no live page or endpoint serves a .txt or .log to a
+# browser. The only .txt paths in the tree are harness temp files, and
+# skullpaper/*.md is read off disk by skullpaper.php rather than fetched.
+<FilesMatch "\.(log|txt)$">
+	<IfModule mod_authz_core.c>
+		Require all denied
+	</IfModule>
+	<IfModule !mod_authz_core.c>
+		Order allow,deny
+		Deny from all
+	</IfModule>
+</FilesMatch>

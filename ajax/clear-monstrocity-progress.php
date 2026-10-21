@@ -3,11 +3,21 @@ header('Content-Type: application/json');
 include '../db.php';
 include '../skulliance.php';
 
-// Set up logging to a file
-$log_file = __DIR__ . '/debug.log';
+/*
+ * THIS GOES TO THE ERROR LOG, NOT TO A FILE BESIDE THIS SCRIPT.
+ *
+ * It used to append to debug.log in this directory, which is inside the
+ * document root and so was served to anyone who requested it -- 5.7MB of it,
+ * appended on every save since April 2025, with no rotation and nothing ever
+ * reading it. The contents were only levels and scores, but the shape of the
+ * mistake is the one that also leaked a Discord token out of request.txt:
+ * a debug sink written to a web-served path.
+ *
+ * error_log() lands in the same error_log the host already denies over HTTP,
+ * so the call sites below keep working and stop being public.
+ */
 function log_message($message) {
-  global $log_file;
-  file_put_contents($log_file, date('Y-m-d H:i:s') . " - " . $message . "\n", FILE_APPEND);
+  error_log('monstrocity-progress: ' . $message);
 }
 
 log_message("Starting clear-monstrocity-progress.php");

@@ -16,7 +16,6 @@ function MakeRequest($endpoint, $data) {
 
     # Initialize new curl request
     $ch = curl_init();
-    $f = fopen('request.txt', 'w');
 
     # Set headers, data etc..
     curl_setopt_array($ch, array(
@@ -28,10 +27,28 @@ function MakeRequest($endpoint, $data) {
         ),
         CURLOPT_RETURNTRANSFER => 1,
         CURLOPT_FOLLOWLOCATION => 1,
-        CURLOPT_VERBOSE        => 1,
+        /*
+         * VERBOSE STAYS OFF, AND NOTHING HERE OPENS A FILE UNDER THE WEB ROOT.
+         *
+         * This was CURLOPT_VERBOSE => 1 with CURLOPT_STDERR pointed at a
+         * handle for a file called request.txt. curl's verbose stream prints
+         * the request headers, and the first header on this call carries
+         * 'Authorization: Bot <token>' -- so every DM and channel post wrote
+         * the live bot token into that file.
+         *
+         * The path was relative, so it landed in the CALLING script's
+         * directory: one copy beside the root pages, one beside the ajax
+         * endpoints. Both sat inside the document root and both returned 200
+         * to anyone who asked; the host's deny rule covers 'error_log' by
+         * name, not .txt. Two distinct tokens were recoverable that way, one
+         * current and one from before a rotation.
+         *
+         * Debug a request here with error_log() and curl_getinfo(), which go
+         * to the error log the server already refuses to serve.
+         */
+        CURLOPT_VERBOSE        => 0,
         CURLOPT_SSL_VERIFYPEER => 0,
         CURLOPT_POSTFIELDS => $data,
-        CURLOPT_STDERR         => $f,
     ));
     $request   = curl_exec($ch);
     $http_code = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
