@@ -374,6 +374,40 @@ if ($theme && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['art'])) {
  * read as "uploads stopped working" rather than as the warning it is.
  */
 if ($dsa_inplace) {
+	/*
+	 * A SOUND ROW ANSWERS WHERE IT WAS PRESSED.
+	 *
+	 * Reported as "Set does nothing". The handler ran and said what it
+	 * had done -- at the TOP of a page seventy slots long, which from
+	 * the row you were looking at is indistinguishable from nothing
+	 * happening. The art slots have reported in place since the day
+	 * they got drag and drop; the sound rows were posting the whole
+	 * page and trusting you to scroll.
+	 */
+	if (isset($_POST['audio_art'])) {
+		$r_slot = dropshipAudioSlotByArt($conn, $pid, (string)$_POST['audio_art']);
+		$r_play = $r_slot ? $r_slot['plays'] : '';
+		$r_sug  = ($r_slot && $r_play === '' && $r_slot['legacy_has'])
+		        ? $r_slot['legacy'] . '.mp3' : '';
+		$body = json_encode(array(
+			'ok'    => empty($msg['err']),
+			'note'  => html_entity_decode(strip_tags(implode(' ',
+				$msg['err'] ? $msg['err'] : $msg['ok'])), ENT_QUOTES, 'UTF-8'),
+			/* The refusal is not a failure, it is a question -- the row
+			   has to know, or a second press would be needed to re-arm
+			   what the reload used to carry. */
+			'warn'  => !empty($msg['warn']),
+			'state' => $r_slot ? ($r_slot['exists'] ? 'own' : ($r_play !== '' ? 'fell' : 'gap')) : 'gap',
+			'file'  => $r_play === '' ? '' : basename($r_play),
+			'src'   => $r_play === '' ? '' : dropshipAudioUrl($r_play),
+			'sug'   => $r_sug,
+		));
+		while (ob_get_level()) ob_end_clean();
+		header('Content-Type: application/json');
+		echo $body;
+		if (is_object($conn)) $conn->close();
+		exit;
+	}
 	$rel  = (string)($_POST['slot'] ?? '');
 	/*
 	 * RESOLVED THE SAME WAY THE WRITE WAS. This worked out the path a
@@ -592,6 +626,10 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
    the actual refusal still happens at the moment of writing, which is
    where a warning belongs. */
 .dsart .snd .claim{grid-area:warn;display:none}
+.dsart .snd .said-note{grid-area:warn;font-size:11px;line-height:1.4;padding-top:3px}
+.dsart .snd .said-note.good{color:#00c8a0}
+.dsart .snd .said-note.bad{color:#e8a0b0}
+.dsart .snd .said-note.warn{color:#e8c070}
 .dsart .snd .chip{display:inline-block;margin-left:6px;padding:0 5px;border-radius:8px;
   font-size:10px;line-height:15px;color:#e8c070;border:1px solid rgba(232,192,112,.4);
   cursor:help;vertical-align:1px}
@@ -821,6 +859,9 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 				<button class="button" type="submit">Set</button>
 			</form>
 			<?php else: ?><span></span><?php endif; ?>
+			<?php /* Where the answer lands, so pressing Set reports next to
+			         the row rather than at the top of seventy slots. */ ?>
+			<span class="said-note" hidden></span>
 
 		</div>
 	<?php };
@@ -1220,7 +1261,76 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		lightbox(img, slot);
 	});
 
+	/*
+	 * A SOUND ROW POSTS WHERE IT STANDS.
+	 *
+	 * Reported as "Set does nothing". It did: the page reloaded and said
+	 * so at the top, which from a row two thousand pixels down is
+	 * indistinguishable from nothing at all. Same fetch the art slots
+	 * use, same handler on the server, the answer just lands on the row.
+	 *
+	 * Without JavaScript the form posts normally and the page reloads
+	 * exactly as it did, message and all.
+	 */
+	function sndRowOf(el) {
+		while (el && !(el.classList && el.classList.contains('ev'))) el = el.parentElement;
+		return el;
+	}
+	function sndSay(row, text, kind) {
+		var n = row.querySelector('.said-note');
+		if (!n) return;
+		n.textContent = text;
+		n.className = 'said-note ' + kind;
+		n.hidden = (text === '');
+	}
 	root.addEventListener('submit', function (ev) {
+		var row = sndRowOf(ev.target);
+		if (row && ev.target.tagName === 'FORM') {
+			ev.preventDefault();
+			var data = new FormData(ev.target);
+			var file = ev.target.querySelector('input[type=file]');
+			/* An untouched file input arrives as UPLOAD_ERR_NO_FILE and
+			   the handler would answer "pick an mp3" before looking at
+			   the picker. */
+			if (file && !file.value) data.delete('audio');
+			data.append('ajax', '1');
+			var btn = ev.target.querySelector('button[type=submit]');
+			if (btn) btn.disabled = true;
+			sndSay(row, 'working', 'warn');
+			fetch(ev.target.action, { method: 'POST', body: data, credentials: 'same-origin' })
+				.then(function (r) { return r.json(); })
+				.then(function (d) {
+					if (btn) btn.disabled = false;
+					sndSay(row, d.note || (d.ok ? 'saved' : 'failed'),
+						d.warn ? 'warn' : (d.ok ? 'good' : 'bad'));
+					/* A refusal is a question: carry the answer so the
+					   next press is the confirmation, the way the reload
+					   used to. */
+					var c = ev.target.querySelector('input[name=confirm]');
+					if (c) c.value = d.warn ? '1' : '';
+					var st = row.querySelector('.st');
+					if (st && d.state) {
+						st.innerHTML = '';
+						var sp = document.createElement('span');
+						sp.className = d.state === 'own' ? 'ok2' : (d.state === 'fell' ? 'fell' : 'gapn');
+						sp.textContent = d.state === 'own' ? 'its own file'
+							: (d.state === 'fell' ? 'playing ' + d.file
+							: 'silent' + (d.sug ? ' \u00b7 Drop Ship uses ' + d.sug : ''));
+						st.appendChild(sp);
+					}
+					var pb = row.querySelector('.play');
+					if (pb && d.src) {
+						pb.disabled = false;
+						pb.setAttribute('data-src', d.src);
+						if (d.state === 'own') pb.classList.remove('cand');
+					}
+				})
+				.catch(function () {
+					if (btn) btn.disabled = false;
+					sndSay(row, 'could not reach the server; try again', 'bad');
+				});
+			return;
+		}
 		if (!card(ev.target)) return;           /* not a per-card form */
 		ev.preventDefault();
 		send(ev.target, null);

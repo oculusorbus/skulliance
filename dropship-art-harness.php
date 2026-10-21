@@ -509,8 +509,13 @@ ok($ob < strpos($adm4, "include 'db.php'"),
    'buffering starts after the includes have had a chance to print');
 ok(strpos($adm4, 'while (ob_get_level()) ob_end_clean();') !== false,
    'the captured page is not discarded, so it is prepended to the JSON');
-ok(substr_count($adm4, 'while (ob_get_level()) ob_end_clean();') === 2,
-   'only one of the two in-place exits discards the buffer');
+/* THREE EXITS NOW: the art slot, the audio row, and the failure path.
+   Every one of them has to bin the captured page or the JSON arrives
+   with the whole admin page in front of it, which reads as "uploads
+   stopped working" rather than as the warning it is. */
+ok(substr_count($adm4, 'while (ob_get_level()) ob_end_clean();') === 3,
+   'one of the in-place exits does not discard the buffer: found '
+ . substr_count($adm4, 'while (ob_get_level()) ob_end_clean();'));
 ok(strpos($adm4, "header('Content-Type: application/json')") !== false,
    'the in-place reply is not declared as JSON');
 /* dsaArtClose() prints the page footer, so it must not run on this path. */
@@ -741,8 +746,12 @@ echo "\ndragging a file onto a slot replaces it\n";
 $adm6 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-art.php'));
 ok(substr_count($adm6, 'function send(form, dropped, copyFrom)') === 1,
    'there is no single send(), so drop and button can diverge');
-ok(substr_count($adm6, "data.append('ajax', '1')") === 1,
-   'more than one upload path posts to the server');
+/* TWO POSTING PATHS, and they are different jobs: send() carries art
+   (a file, a drop, a slot copy) and the sound row carries audio. A
+   THIRD would be one of them drifting. */
+ok(substr_count($adm6, "data.append('ajax', '1')") === 2,
+   'the number of in-place posting paths changed: found '
+ . substr_count($adm6, "data.append('ajax', '1')"));
 ok(strpos($adm6, "if (dropped) data.set('art', dropped);") !== false,
    'a dropped file does not replace the form\'s own input, so the drop posts nothing');
 /* set(), not append(): appending leaves the empty file input in the body

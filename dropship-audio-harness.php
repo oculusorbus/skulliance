@@ -307,6 +307,46 @@ ok(preg_match('/name="audio_art" value="<\?php echo \$h\(\$as\[\x27art\x27\]/', 
 ok(strpos($adm_k, 'dropshipAudioSlotByArt($conn, $pid, (string)$_POST[\'audio_art\'])') !== false,
    'the handler does not resolve the posted frame');
 
+echo "\nthe row answers where it was pressed\n";
+/*
+ * REPORTED TWICE AS "Set does nothing". The second time it was doing
+ * something: the handler ran, wrote the file and said so -- at the TOP
+ * of a page seventy slots long, which from the row you are looking at
+ * is indistinguishable from nothing happening. The art slots have
+ * reported in place since they got drag and drop; the sound rows were
+ * posting the whole page and trusting you to scroll up.
+ */
+$adm_r = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+ok(strpos($adm_r, "if (isset(\$_POST['audio_art'])) {") !== false
+   && strpos($adm_r, "'state' => \$r_slot ?") !== false,
+   'a sound post is not answered in place, so the result lands at the top of the page');
+/* THE ANSWER IS THE RUN'S OWN, not a second opinion. */
+ok(strpos($adm_r, "\$r_play = \$r_slot ? \$r_slot['plays'] : '';") !== false,
+   'the reply works out what is playing for itself instead of reading the run\'s answer');
+/* INSIDE THE REPLY BLOCK, not anywhere in the file: the handler that
+   writes contains the same call, so a file-wide search passes with the
+   reply resolving some other row entirely. */
+/* At column 0: the admin gate higher up has an indented
+   `if ($dsa_inplace) {` of its own and strpos finds that one first. */
+$r_at  = strpos($adm_r, "\nif (\$dsa_inplace) {");
+$r_blk = $r_at === false ? '' : substr($adm_r, $r_at, 2000);
+ok($r_at !== false, 'the in-place block could not be located');
+ok(strpos($r_blk, "dropshipAudioSlotByArt(\$conn, \$pid, (string)\$_POST['audio_art'])") !== false,
+   'the reply resolves the row differently from the handler that just wrote it');
+/* A REFUSAL IS A QUESTION, so the row has to carry the answer forward.
+   Reloading used to do that; a fetch has to be told. */
+ok(strpos($adm_r, "'warn'  => !empty(\$msg['warn'])") !== false,
+   'the reply does not say it was a refusal, so the second press cannot confirm');
+ok(strpos($adm_r, "c.value = d.warn ? '1' : ''") !== false,
+   'the row does not arm its confirm from the reply, so a warning can never be got past');
+/* AND THE EMPTY FILE INPUT IS DROPPED, or the handler answers "pick an
+   mp3" before it ever looks at the picker. */
+ok(strpos($adm_r, "if (file && !file.value) data.delete('audio');") !== false,
+   'an untouched file input is posted, and UPLOAD_ERR_NO_FILE answers before the picker does');
+/* WITHOUT JAVASCRIPT it still posts normally; the handler is unchanged. */
+ok(strpos($adm_r, 'method="post" enctype="multipart/form-data"') !== false,
+   'the sound form stopped being a real form, so it needs JavaScript to work at all');
+
 echo "\nnothing is overwritten without a warning first\n";
 /*
  * The question was exactly this: does picking an existing sound copy it
