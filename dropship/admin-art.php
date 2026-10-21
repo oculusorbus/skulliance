@@ -630,6 +630,10 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 .dsart .snd .said-note.good{color:#00c8a0}
 .dsart .snd .said-note.bad{color:#e8a0b0}
 .dsart .snd .said-note.warn{color:#e8c070}
+/* Why a picture in this row has no sound row. Quiet, because it is an
+   explanation and not a problem. */
+.dsart .snd .nosnd{padding:8px 12px;font-size:11px;color:#6f8296;line-height:1.4;
+  border-top:1px solid rgba(255,255,255,.07)}
 .dsart .snd .chip{display:inline-block;margin-left:6px;padding:0 5px;border-radius:8px;
   font-size:10px;line-height:15px;color:#e8c070;border:1px solid rgba(232,192,112,.4);
   cursor:help;vertical-align:1px}
@@ -994,9 +998,33 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	         different parts of the screen and the sounds on none of
 	         them. */
 	$row_key = $group . '|' . $row_i;
-	if (!empty($snd_by_row[$row_key])): ?>
+	if (!empty($snd_by_row[$row_key])):
+		/*
+		 * WHICH CARDS IN THIS ROW HAVE NO SOUND, said out loud.
+		 *
+		 * Asked why four pictures in THE DROP had only three sound
+		 * rows. Three is right -- the fourth is the still shown on the
+		 * results pane before a run, which is never a round and so has
+		 * no moment to play over -- but counting cards against rows and
+		 * finding a gap is not something anybody should have to do, nor
+		 * guess the reason for.
+		 */
+		$row_heard = array();
+		foreach ($snd_by_row[$row_key] as $as) $row_heard[$as['art']] = true;
+		$row_mute = array();
+		foreach ($row['slots'] as $sl) {
+			if ($sl['kind'] !== 'art' || strpos($sl['rel'], 'images/') !== 0) continue;
+			$k = preg_replace('/\.[a-z0-9]+$/', '', substr($sl['rel'], 7));
+			if (!isset($row_heard[$k])) $row_mute[] = dropshipArtTitle($sl['rel']);
+		}
+	?>
 	<div class="snd">
 		<?php foreach ($snd_by_row[$row_key] as $as) $sndRow($as); ?>
+		<?php if ($row_mute): ?>
+		<div class="nosnd">No sound of its own: <?php echo $h(implode(', ', $row_mute)); ?>
+			&mdash; the run never plays over <?php
+			echo count($row_mute) === 1 ? 'it' : 'them'; ?>.</div>
+		<?php endif; ?>
 	</div>
 	<?php unset($snd_by_row[$row_key]); endif; ?>
 	</div>

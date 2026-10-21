@@ -298,6 +298,291 @@ $byproj = 0;
 foreach (dropshipAudioEvents() as $e) if (!empty($e['legacy_by'])) $byproj++;
 ok($byproj === 1, "$byproj rows carry a per-project fallback; only round 0 should");
 
+echo "\nthe Set button finds the row it was pressed on\n";
+/*
+ * REPORTED: picked melee for Dread City's Machete, pressed Set, nothing
+ * happened. The resolver compared $e['term'] against the posted value
+ * and events have no 'term' key -- they have 'family' -- so it matched
+ * nothing, every Set resolved to null and the handler bailed on "that
+ * is not a sound this theme asks for".
+ *
+ * DRIVEN, not grepped. The handler itself needs a request and a
+ * database, but the lookup it depends on is a function now and this
+ * calls it with exactly what the form posts. The old version was
+ * covered by source assertions alone, which is precisely why a dead
+ * array key sat there unnoticed.
+ */
+$sconn = new AConn(
+	array(102 => array('id' => 1020, 'project_id' => 102, 'slug' => 'dread-city', 'name' => 'Dread City')),
+	array(1020 => array(arow('Tactical Katana', 'Machete'), arow('Flamethrower', 'Torch'))));
+$mach = dropshipAudioSlotByArt($sconn, 102, 'weapons/tactical-katana');
+ok($mach !== null, 'the katana row does not resolve, so pressing Set on it does nothing');
+ok($mach && $mach['stem'] === 'machete',
+   'the katana row resolves to ' . ($mach ? $mach['stem'] : 'nothing') . ', not machete');
+/* EVERY ROW THE PAGE RENDERS MUST RESOLVE, with exactly the value the
+   form puts in the field. */
+foreach (dropshipAudioSlots($sconn, 102) as $sl) {
+	$posted = $sl['art'];
+	$back = dropshipAudioSlotByArt($sconn, 102, $posted);
+	ok($back !== null, "the row for '$posted' does not resolve, so its Set button does nothing");
+	if ($back) ok($back['stem'] === $sl['stem'],
+		"'$posted' resolves to {$back['stem']} but the row shows {$sl['stem']}");
+}
+/* 'Opening' was a slot of its own before it was folded into round 0; a
+   page cached from then would still post it, and it must resolve to
+   nothing rather than to some arbitrary row. */
+ok(dropshipAudioSlotByArt($sconn, 102, 'Opening') === null,
+   'a stale Opening post resolves to a row and would write over it');
+ok(dropshipAudioSlotByArt($sconn, 102, 'weapons/not-a-frame') === null,
+   'a frame this theme does not have still resolves, so a posted value reaches the disk');
+
+/* FOUR FRAMES OF ONE THING ARE FOUR ROWS, and the family cannot tell
+   them apart -- which is the other half of why the key is the art. */
+$f = array();
+foreach (array(1,2,3,4) as $n) {
+	$sl = dropshipAudioSlotByArt($sconn, 102, 'weapons/flamethrower' . $n);
+	ok($sl !== null, "flamethrower frame $n does not resolve");
+	if ($sl) $f[$sl['stem']] = true;
+}
+ok(count($f) === 4, 'the four flamethrower frames resolve to ' . count($f) . ' files, not four');
+ok(isset($f['torch3']), 'the third flamethrower frame is not torch3: ' . implode(', ', array_keys($f)));
+
+/* AND THE FORM POSTS THAT KEY. The lookup being right is half of it. */
+$adm_k = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+ok(strpos($adm_k, 'name="audio_art"') !== false,
+   'the form does not post the frame, so the lookup has nothing to find');
+/* ON THE audio_art INPUT ITSELF. The confirm field uses the same
+   expression, so looking for the expression anywhere in the file passes
+   with the posted value swapped back to the family. */
+ok(preg_match('/name="audio_art" value="<\?php echo \$h\(\$as\[\x27art\x27\]/', $adm_k) === 1,
+   'the posted value is not the art path the resolver expects');
+ok(strpos($adm_k, 'dropshipAudioSlotByArt($conn, $pid, (string)$_POST[\'audio_art\'])') !== false,
+   'the handler does not resolve the posted frame');
+
+echo "\nthe row answers where it was pressed\n";
+/*
+ * REPORTED TWICE AS "Set does nothing". The second time it was doing
+ * something: the handler ran, wrote the file and said so -- at the TOP
+ * of a page seventy slots long, which from the row you are looking at
+ * is indistinguishable from nothing happening. The art slots have
+ * reported in place since they got drag and drop; the sound rows were
+ * posting the whole page and trusting you to scroll up.
+ */
+$adm_r = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+ok(strpos($adm_r, "if (isset(\$_POST['audio_art'])) {") !== false
+   && strpos($adm_r, "'state' => \$r_slot ?") !== false,
+   'a sound post is not answered in place, so the result lands at the top of the page');
+/* THE ANSWER IS THE RUN'S OWN, not a second opinion. */
+ok(strpos($adm_r, "\$r_play = \$r_slot ? \$r_slot['plays'] : '';") !== false,
+   'the reply works out what is playing for itself instead of reading the run\'s answer');
+/* INSIDE THE REPLY BLOCK, not anywhere in the file: the handler that
+   writes contains the same call, so a file-wide search passes with the
+   reply resolving some other row entirely. */
+/* At column 0: the admin gate higher up has an indented
+   `if ($dsa_inplace) {` of its own and strpos finds that one first. */
+$r_at  = strpos($adm_r, "\nif (\$dsa_inplace) {");
+$r_blk = $r_at === false ? '' : substr($adm_r, $r_at, 2000);
+ok($r_at !== false, 'the in-place block could not be located');
+ok(strpos($r_blk, "dropshipAudioSlotByArt(\$conn, \$pid, (string)\$_POST['audio_art'])") !== false,
+   'the reply resolves the row differently from the handler that just wrote it');
+/* A REFUSAL IS A QUESTION, so the row has to carry the answer forward.
+   Reloading used to do that; a fetch has to be told. */
+ok(strpos($adm_r, "'warn'  => !empty(\$msg['warn'])") !== false,
+   'the reply does not say it was a refusal, so the second press cannot confirm');
+ok(strpos($adm_r, "c.value = d.warn ? '1' : ''") !== false,
+   'the row does not arm its confirm from the reply, so a warning can never be got past');
+/* AND THE EMPTY FILE INPUT IS DROPPED, or the handler answers "pick an
+   mp3" before it ever looks at the picker. */
+ok(strpos($adm_r, "if (file && !file.value) data.delete('audio');") !== false,
+   'an untouched file input is posted, and UPLOAD_ERR_NO_FILE answers before the picker does');
+/* WITHOUT JAVASCRIPT it still posts normally; the handler is unchanged. */
+ok(strpos($adm_r, 'method="post" enctype="multipart/form-data"') !== false,
+   'the sound form stopped being a real form, so it needs JavaScript to work at all');
+
+echo "\nnothing is overwritten without a warning first\n";
+/*
+ * The question was exactly this: does picking an existing sound copy it
+ * and leave the original alone, does an upload land on the right name,
+ * and does anything that destroys a file say so first.
+ *
+ * COPY, NOT MOVE, for the picker. An icon with a new name is RENAMED,
+ * because the old name is then asked for by nobody; a sound picked from
+ * the list is still being asked for under its own name by whoever led
+ * you to it, so it has to be copied.
+ */
+$adm_w = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+$a_at  = strpos($adm_w, "isset(\$_POST['audio_art'])");
+ok($a_at !== false, 'the audio handler is gone; nothing below proves anything');
+$a_blk = $a_at === false ? '' : substr($adm_w, $a_at, 3000);
+
+ok(strpos($a_blk, '@copy($a_dir . $a_use, $a_dest)') !== false,
+   'picking an existing sound moves it, which takes it away from whatever else asks for it');
+ok(strpos($a_blk, 'rename(') === false && strpos($a_blk, 'unlink(') === false,
+   'the audio handler can move or delete a file; it must only ever write to the derived name');
+/* THE DESTINATION IS THE DERIVED NAME, never anything off the form --
+   an upload keeps nothing of whatever the file was called. */
+ok(strpos($a_blk, "\$a_dest = \$a_dir . \$a_slot['stem'] . '.mp3';") !== false,
+   'the destination is not the name the wording asks for');
+ok(strpos($a_blk, "dropshipAudioSlotByArt(\$conn, \$pid, (string)\$_POST['audio_art'])") !== false,
+   'the slot is taken off the form without being resolved, so a posted name reaches the disk');
+ok(strpos($a_blk, "basename((string)\$_POST['audio_use'])") !== false,
+   'the picked filename is not reduced to a basename, so a path could escape the folder');
+ok(strpos($a_blk, "in_array(\$a_use, dropshipAudioFiles(), true)") !== false,
+   'the picked file is not checked against the folder, so any readable path could be copied in');
+
+/*
+ * ANY OVERWRITE WARNS. The first version asked only when some OTHER
+ * theme also wanted the file, so replacing a sound nothing else used
+ * happened silently -- and a file gone by accident is a file gone.
+ */
+ok(strpos($a_blk, '$a_go = (!$a_overwrite || !empty($_POST[\'confirm\']));') !== false,
+   'an overwrite can still go through unwarned when no other theme shares the file');
+ok(strpos($a_blk, '$a_overwrite = is_file($a_dest);') !== false,
+   'nothing checks whether the destination already exists');
+ok(strpos($a_blk, 'already exists and will be ') !== false,
+   'the refusal does not say that a file is about to be replaced');
+ok(strpos($a_blk, 'which also changes it for ') !== false,
+   'the refusal does not name who else loses the sound they had');
+/* AND A NEW NAME IS NOT A WARNING. Creating a file destroys nothing;
+   asking there would train somebody to click through. */
+ok(strpos($a_blk, '!$a_overwrite ||') !== false,
+   'writing a name that does not exist yet also asks for confirmation');
+
+/*
+ * THE CONFIRM IS ARMED BY A REFUSAL, not by having posted. Keyed off
+ * the post alone it stayed armed after a SUCCESSFUL write, so the next
+ * thing done to that row would have overwritten without asking.
+ */
+ok(strpos($adm_w, "\$msg['warn'] = \$a_slot['art'];") !== false,
+   'the refusal does not record WHICH row it refused');
+ok(strpos($adm_w, "!empty(\$msg['warn']) && \$msg['warn'] === (\$as['art']") !== false,
+   'the confirm is armed by having posted rather than by having been refused');
+ok(strpos($adm_w, "\$_POST['audio_term']") === false,
+   'the old family-keyed field is still there, so the lookup has two masters');
+
+echo "\nevery frame's sound sits under that frame\n";
+/*
+ * REPORTED looking at THE DROP: Filthy Mermaid has crowd on round 0 and
+ * a door on round 1, and neither had a sound row under those cards.
+ * The pairing matched a sound's vocabulary FAMILY against the LABELLED
+ * art rows -- and the drop rounds, the deaths and the beach frames all
+ * render as bands with no label, so nothing could ever attach to them.
+ * Those sounds were all falling through to the section at the bottom.
+ *
+ * A sound belongs to a frame and the frame is in a row, so this is the
+ * same lookup the page does now: by art path.
+ */
+$pconn = new AConn(
+	array(203 => array('id' => 2030, 'project_id' => 203, 'slug' => 'filthy-mermaid', 'name' => 'Filthy Mermaid')),
+	array(2030 => array()));
+$pplan  = dropshipArtPlan($pconn, 203, 'png', 'filthy-mermaid');
+/* THE PAGE'S OWN BUCKETING, called -- not a second copy of it written
+   out here. A harness that reimplements the lookup it is checking
+   passes while the page is broken, which is how the Set button shipped
+   dead. */
+$psplit = dropshipAudioPlanRows($pconn, 203, $pplan);
+$pwhere = array();
+foreach ($psplit['rows'] as $key => $slots) {
+	foreach ($slots as $sl) $pwhere[$sl['art']] = $key;
+}
+
+/* THE THREE THE REPORT WAS ABOUT: Filthy Mermaid's crowd on round 0 and
+   its door on round 1 had no row under THE DROP to sit in. */
+foreach (array('reset/reset', 'drop/drop', 'drop/team') as $art) {
+	ok(isset($pwhere[$art]), "the sound for $art is not under any art row");
+	if (isset($pwhere[$art])) ok(strpos($pwhere[$art], 'The drop|') === 0,
+		"$art is bucketed under {$pwhere[$art]}, not The drop");
+}
+/* ONE ROW, not three: those four cards are a single unlabelled band, so
+   the three sounds belong together under it. */
+ok(count(array_unique(array($pwhere['reset/reset'] ?? 'a', $pwhere['drop/drop'] ?? 'b',
+                            $pwhere['drop/team'] ?? 'c'))) === 1,
+   'the drop sounds are split across rows that render as one band');
+
+/* AND EVERY OTHER FRAME WITH A SOUND, so a band that is not labelled
+   cannot quietly orphan its audio again. */
+$orphans = array();
+foreach ($psplit['loose'] as $sl) {
+	if ($sl['art'] === '') continue;                 /* the opening */
+	if (substr($sl['art'], -1) === '/') continue;    /* the catch-alls */
+	$orphans[] = $sl['art'];
+}
+ok($orphans === array(),
+   'these frames have a sound and no row to show it under: ' . implode(', ', $orphans));
+
+/* WHAT IS ALLOWED TO BE LOOSE, pinned so it stays a decision: the two
+   catch-alls, which span whole stages, and the opening, which has no
+   frame at all. */
+$loose = array();
+foreach ($psplit['loose'] as $sl) $loose[] = $sl['art'];
+sort($loose);
+/* Two, not three: the opening is round 0's frame now and sits under a
+   picture like everything else. */
+ok($loose === array('1up/', 'live/'),
+   'the set of sounds with no frame changed: ' . implode(', ', $loose));
+
+/* AN ICON IS NOT A FRAME. It is one shared file for every theme and has
+   no moment; counting it would bucket a sound under the wrong row. */
+$icon_rows = 0;
+foreach ($pplan as $gname => $g) {
+	foreach ($g['rows'] as $ri => $r) {
+		foreach ($r['slots'] as $sl) if ($sl['kind'] === 'icon') $icon_rows++;
+	}
+}
+ok($icon_rows > 0, 'the plan has no icons, so the check below proves nothing');
+/*
+ * EQUIVALENT MUTANT, recorded rather than chased: deleting the
+ * kind !== 'art' test changes no answer, because an icon's rel is
+ * icons/<name>.png and a background's is <slug>/<slug>background.jpg --
+ * neither begins with images/, so neither can ever produce a key a
+ * frame also produces. It is a guard on the SLICE below, which assumes
+ * that prefix, and the prefix test beside it says so outright.
+ */
+ok(strpos(file_get_contents(__DIR__ . '/dropship/dropship-audio.php'),
+          "strpos(\$sl['rel'], 'images/') !== 0") !== false,
+   'the slice assumes an images/ prefix without checking for one');
+foreach ($psplit['rows'] as $key => $slots) {
+	foreach ($slots as $sl) {
+		ok($sl['art'] !== '' && substr($sl['art'], -1) !== '/',
+		   "a sound with no frame was bucketed under $key");
+	}
+}
+
+/*
+ * A CARD WITH NO SOUND SAYS SO. Asked why four pictures in THE DROP had
+ * three sound rows. Three is right -- images/reset/intro.jpg is the
+ * still shown on the results pane before a run, never a round, so
+ * nothing ever plays over it -- but counting cards against rows and
+ * then guessing at the gap is not a thing to leave somebody doing.
+ */
+$intro_heard = false;
+foreach ($psplit['rows'] as $slots) {
+	foreach ($slots as $sl) if ($sl['art'] === 'reset/intro') $intro_heard = true;
+}
+ok(!$intro_heard, 'the pre-run still has a sound row, and nothing ever plays over it');
+ok(dropshipArtTitle('images/reset/intro.jpg') === 'The still shown before a run',
+   'the pre-run still is named something else now, so the note will read oddly');
+$adm_n = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+ok(strpos($adm_n, 'No sound of its own:') !== false,
+   'a picture with no sound row is left unexplained, so the gap reads as a bug');
+ok(strpos($adm_n, "\$row_mute[] = dropshipArtTitle(\$sl['rel']);") !== false,
+   'the note does not name the pictures it is about');
+/* IT MUST ONLY NAME CARDS, not icons or backgrounds, and only ones
+   genuinely without a row. */
+ok(strpos($adm_n, "if (\$sl['kind'] !== 'art' || strpos(\$sl['rel'], 'images/') !== 0) continue;") !== false,
+   'the note counts icons and backgrounds as pictures that should have sounds');
+ok(strpos($adm_n, "if (!isset(\$row_heard[\$k])) \$row_mute[] =") !== false,
+   'the note lists pictures that do have a sound row');
+
+/* AND THE PAGE USES THIS LOOKUP, not the family it used to. */
+$adm_p = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+ok(strpos($adm_p, 'dropshipAudioPlanRows($conn, $pid, $art_plan)') !== false,
+   'the page does not bucket sounds by the frame they belong to');
+/* COMMENTS STRIPPED: the note explaining the change names the function
+   it replaced, which a bare search counts as a call. */
+ok(strpos(harness_strip_comments($adm_p), 'dropshipAudioFamily(') === false,
+   'the family-label pairing is still called, and it cannot reach an unlabelled band');
+
 echo "\nthe page says what the run does\n";
 $adm = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
 ok(strpos($adm, "\$as['plays']") !== false,
