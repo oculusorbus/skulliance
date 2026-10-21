@@ -929,3 +929,90 @@ function dropshipAsset($file) {
 	   bare name rather than emitting "?v=" and caching that forever. */
 	return $v ? $file . '?v=' . $v : $file;
 }
+
+/**
+ * WHAT A THEME PAYS ITS TOP THREE, as a currency symbol.
+ *
+ * This fact was written down in three places and they had already drifted:
+ *
+ *   db.php (Skulliance)      dropshipRewardProjects(), theme -> project id,
+ *                            which is what the payout actually credits
+ *   instructions.php         $ds_pays, theme -> symbol, for the prize table
+ *   automate.php             an if/else ladder building the game's NAME
+ *
+ * automate.php's ladder had no branch for theme 5, so a DHC2 Fighters game
+ * would have been created called "1K, 500, 250 DREAD" and announced that way
+ * in a channel whose players are paid MAXI. instructions.php had the right
+ * symbol in its map and the wrong gate above it -- `project_id == 1 || == 4`
+ * -- so Dread City, Filthy Mermaid and DHC2 Fighters were all told they win
+ * SCRIP when the weekly cycle credits them real currency.
+ *
+ * db.php's own comment already warned about exactly this: "this used to be a
+ * second hardcoded list of project ids, and Filthy Mermaid shipped a weekly
+ * cycle that paid nobody because only one of the two lists was updated."
+ *
+ * TWO MAPS REMAIN, NOT ONE, and that is deliberate: this one lives in Drop
+ * Ship and dropshipRewardProjects() lives in Skulliance, two apps with
+ * separate databases and no shared include. They hold different facts -- a
+ * symbol here, a project id there. What keeps them honest is a harness check
+ * that both cover the same theme ids, so adding a sixth theme to one and not
+ * the other fails a test instead of shipping a game that pays nobody.
+ *
+ * AN UNMAPPED THEME RETURNS '', meaning "pays no real currency". Callers
+ * treat that as the in-game SCRIP economy rather than guessing a default,
+ * which is how MOON became the "everything else" answer once before.
+ */
+function dropshipRewardTokens() {
+	return array(
+		1 => 'DREAD',   // Drop Ship       -> Skulliance project 2
+		2 => 'DREAD',   // Dread City      -> Skulliance project 2
+		3 => 'DREAD',   // Filthy Mermaid  -> Skulliance project 2
+		4 => 'MOON',    // Oculus Lounge   -> Skulliance project 21
+		5 => 'MAXI',    // DHC2 Fighters   -> Skulliance project 9
+	);
+}
+
+function dropshipRewardToken($project_id) {
+	$m = dropshipRewardTokens();
+	$k = (int)$project_id;
+	return isset($m[$k]) ? $m[$k] : '';
+}
+
+/**
+ * The three weekly places, as the amounts actually credited.
+ *
+ * THE NUMBERS LIVE IN SKULLIANCE, in the handler at the top of its db.php:
+ * rank 1 is 1000, rank 2 is 500, rank 3 is 250, and they are the same for
+ * every theme -- only the currency changes. They are repeated here because
+ * Drop Ship cannot see that file, and dropship-themes-harness.php reads the
+ * real handler and asserts these three agree with it.
+ */
+function dropshipRewardAmounts() {
+	return array(1000, 500, 250);
+}
+
+/**
+ * The name a new game is given, which is also what Discord announces.
+ *
+ * "1K, 500, 250 MAXI" -- the established shape, built rather than typed so a
+ * new theme cannot be announced in another theme's currency. Returns '' for
+ * a theme that pays no real currency, which automate.php refuses to create a
+ * game for rather than naming it after nothing.
+ */
+function dropshipRewardPrizeName($project_id) {
+	$token = dropshipRewardToken($project_id);
+	if ($token === '') return '';
+	$a = dropshipRewardAmounts();
+	/* 1000 reads as 1K in the name and as 1,000 in the prize table; both are
+	   the same number and this is the only place that spelling is decided. */
+	$first = ($a[0] % 1000 === 0) ? ($a[0] / 1000) . 'K' : (string)$a[0];
+	return $first . ', ' . $a[1] . ', ' . $a[2] . ' ' . $token;
+}
+
+/**
+ * How many places pay out. The three above, and createGame()'s second
+ * argument, which checkLeaderboard() cuts the board at.
+ */
+function dropshipRewardPlaces() {
+	return count(dropshipRewardAmounts());
+}

@@ -18,7 +18,10 @@ if(isset($_GET['automate'])){
 	 * END the games the other themes were in the middle of. That is a
 	 * destructive way to ask for one small thing.
 	 */
-	$all = array(1, 2, 3, 4, 5);
+	/* THE SAME LIST THE CURRENCIES COME FROM. This was array(1,2,3,4,5)
+	   typed out, a fourth copy of "which themes are there" that a sixth
+	   theme would have had to be added to by hand. */
+	$all = array_keys(dropshipRewardTokens());
 	$only = isset($_GET['project_id']) ? (int)$_GET['project_id'] : 0;
 	if ($only && !in_array($only, $all, true)) {
 		echo "project_id must be one of: " . implode(', ', $all) . "\n";
@@ -39,15 +42,26 @@ function automate($conn, $project_id){
 	 * the new game would be created nameless and the announcement would
 	 * point at an image path built from an empty prefix.
 	 */
-	$prefix = "drop-ship";
-	$prizes = "1K, 500, 250 DREAD";
-	if($project_id == 2){
-		$prefix = "dread-city";
-	}else if($project_id == 3){
-		$prefix = "filthy-mermaid";
-	}else if($project_id == 4){
-		$prefix = "oculus-lounge";
-		$prizes = "1K, 500, 250 MOON";
+	/*
+	 * THE NAME IS BUILT FROM WHAT THE THEME PAYS, not from a ladder.
+	 *
+	 * This was an if/else chain over project ids with no branch for theme
+	 * 5, so a DHC2 Fighters game would have been created called
+	 * "1K, 500, 250 DREAD" and announced that way to a channel whose
+	 * players are credited MAXI. The sixth theme would have done the same.
+	 *
+	 * $prefix went with it: it was assigned in all four branches and read
+	 * in none, dead since dropshipThemeImageUrl() replaced the hand-built
+	 * image path below.
+	 */
+	$prizes = dropshipRewardPrizeName($project_id);
+	if ($prizes === '') {
+		/* REFUSE RATHER THAN GUESS. A theme with no currency would other-
+		   wise get a game named after nothing and a Discord post to match;
+		   the old default quietly named it after DREAD instead. */
+		echo "project " . (int)$project_id . " has no reward currency. "
+		   . "Add it to dropshipRewardTokens() in dropship-themes.php first.\n";
+		return;
 	}
 	$_SESSION['userData']['dropship_project_id'] = $project_id;
 	
@@ -81,7 +95,7 @@ function automate($conn, $project_id){
 	}
 
 	// Automatically create new game
-	createGame($conn, $prizes, 3);
+	createGame($conn, $prizes, dropshipRewardPlaces());
 	$title = "New Game ".$prizes;
 	$description = "A new game of ".getProjectName($conn)." has been created.";
 	/* The theme's own copy, resolved from its theme row and checked on

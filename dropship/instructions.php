@@ -159,36 +159,45 @@ include 'header.php';
 					<div class="instr-section">
 						<h3>Weekly Prizes</h3>
 						<p>Every Thursday at 4pm CST, the top 3 players for the week are locked in.</p>
-						<?php if($_SESSION['userData']['dropship_project_id'] == 1 || $_SESSION['userData']['dropship_project_id'] == 4){
-							// Real currency conversion into the player's Skulliance
-							// balance -- see logBalances() in db.php, which posts to
-							// Skulliance's own db.php and credits project_id 2
-							// (DREAD) for Drop Ship or 21 (MOON) for Oculus Lounge.
-							// Every active game is wired to a real Skulliance
-							// currency now; the in-game evaluateText("SCRIP")
-							// economy below is separate from these prizes.
-							/* MOON WAS THE "EVERYTHING ELSE" ANSWER, which was fine
-							   while only two games paid out and is wrong now:
-							   Dread City and Filthy Mermaid both pay DREAD and
-							   would have read as MOON here. Named per game, from
-							   the same table the payout uses. */
-							$ds_pays = array(1 => 'DREAD', 2 => 'DREAD', 3 => 'DREAD', 4 => 'MOON',
-							                 5 => 'MAXI');
-							$ds_pid = (int)($_SESSION['userData']['dropship_project_id'] ?? 0);
-							$payout_currency = isset($ds_pays[$ds_pid]) ? $ds_pays[$ds_pid] : '';
-							$payout_icon = '/staking/icons/' . strtolower($payout_currency ?: 'dread') . '.png';
+						<?php
+						/*
+						 * SHOWN WHEN THE THEME PAYS, not for a pair of ids.
+						 *
+						 * The gate read `project_id == 1 || == 4` while the
+						 * map below it had listed all five themes for a
+						 * while. Dread City, Filthy Mermaid and DHC2
+						 * Fighters therefore fell to the else branch and
+						 * told their players the top three win SCRIP, when
+						 * the weekly cycle credits them real DREAD, DREAD
+						 * and MAXI. The map was kept current and the gate
+						 * in front of it was not.
+						 *
+						 * Both now come from dropshipRewardToken(), so a
+						 * theme that pays cannot be gated out of saying so.
+						 */
+						$ds_pid = (int)($_SESSION['userData']['dropship_project_id'] ?? 0);
+						$payout_currency = dropshipRewardToken($ds_pid);
+						$ds_amounts = dropshipRewardAmounts();
+						if($payout_currency !== ''){
+							/* Real currency into the player's Skulliance balance --
+							   see logBalances() in db.php, which posts to
+							   Skulliance's own db.php and credits the project
+							   dropshipRewardProjects() maps this theme to. The
+							   in-game evaluateText("SCRIP") economy below is
+							   separate from these prizes. */
+							$payout_icon = '/staking/icons/' . strtolower($payout_currency) . '.png';
 						?>
 						<div class="instr-row">
 							<img class="instr-icon" src="<?php echo $payout_icon;?>" alt=""/>
-							<span><strong>1st Place</strong> &mdash; 1,000 <?php echo $payout_currency;?></span>
+							<span><strong>1st Place</strong> &mdash; <?php echo number_format($ds_amounts[0]);?> <?php echo $payout_currency;?></span>
 						</div>
 						<div class="instr-row">
 							<img class="instr-icon" src="<?php echo $payout_icon;?>" alt=""/>
-							<span><strong>2nd Place</strong> &mdash; 500 <?php echo $payout_currency;?></span>
+							<span><strong>2nd Place</strong> &mdash; <?php echo number_format($ds_amounts[1]);?> <?php echo $payout_currency;?></span>
 						</div>
 						<div class="instr-row">
 							<img class="instr-icon" src="<?php echo $payout_icon;?>" alt=""/>
-							<span><strong>3rd Place</strong> &mdash; 250 <?php echo $payout_currency;?></span>
+							<span><strong>3rd Place</strong> &mdash; <?php echo number_format($ds_amounts[2]);?> <?php echo $payout_currency;?></span>
 						</div>
 						<p>This isn't <?php echo evaluateText("SCRIP");?> &mdash; it's a direct <strong><?php echo $payout_currency;?></strong> credit to your real Skulliance balance, converted automatically the moment the week closes. Landing in the top 3 trades that round's <?php echo evaluateText("SCRIP");?> for the bigger, platform-wide payout instead.</p>
 						<?php }else{ ?>

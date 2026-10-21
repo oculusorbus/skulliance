@@ -8,8 +8,20 @@ Drop Ship allows holders of the NFT collection to send their soldiers to battle 
 
 * **SCRIP** - in-game points rewarded to runner-ups that don't finish in the top 3 on the leaderboard
   * Amount is based on the participant's score
-* **DREAD** - Skulliance staking platform points for Ohh Meed awarded to the top 3 winners
-  * 1K, 500, 250 DREAD
+* **Theme currency** - Skulliance staking platform points awarded to the top 3 winners
+  * 1,000 to 1st, 500 to 2nd, 250 to 3rd. The amounts are the same for every theme; only the currency changes.
+  * Credited automatically the moment the week closes, on top of the in-game SCRIP economy.
+
+| Theme | Pays |
+| --- | --- |
+| Drop Ship | DREAD |
+| Dread City | DREAD |
+| Filthy Mermaid | DREAD |
+| Oculus Lounge | MOON |
+| DHC2 Fighters | MAXI |
+
+Each theme keeps its own board, its own squad and its own weekly cycle, so the
+currency a player wins is the one belonging to the theme they played.
 
 ## Squads/Consumables
 

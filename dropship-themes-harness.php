@@ -1303,6 +1303,49 @@ foreach ($seeded[1] as $i => $pid) {
 	ok(isset($pay[(int)$pid]),
 	   "project $pid has an active theme in the seed and no row in the payout map");
 }
+/*
+ * AND THE TWO SIDES COVER THE SAME THEMES.
+ *
+ * Drop Ship holds the currency SYMBOL (dropshipRewardTokens()) and
+ * Skulliance holds the project ID it is credited to (dropshipRewardProjects()).
+ * Two apps, two databases, no shared include, so they cannot be one map --
+ * but a theme added to one and not the other is the exact failure the
+ * comment above describes, and it has happened. The pair is checked here
+ * because this harness is the only thing that reads both files.
+ */
+$tok = dropshipRewardTokens();
+ok(array_keys($tok) === array_keys($pay),
+   'the two reward maps disagree on which themes pay: Drop Ship has '
+   . implode(',', array_keys($tok)) . ' and Skulliance has ' . implode(',', array_keys($pay)));
+foreach ($tok as $tp => $sym) {
+	ok($sym !== '', "theme $tp is in the token map with an empty symbol");
+	ok(isset($pay[$tp]), "theme $tp has a currency symbol and nothing to credit it to");
+}
+/* Themes paid into the SAME Skulliance project must name the SAME currency;
+   1, 2 and 3 all credit project 2 and must all say DREAD. */
+$by_project = array();
+foreach ($tok as $tp => $sym) if (isset($pay[$tp])) $by_project[$pay[$tp]][$sym] = true;
+foreach ($by_project as $sk => $syms) {
+	ok(count($syms) === 1,
+	   "Skulliance project $sk is named by more than one currency: " . implode(',', array_keys($syms)));
+}
+/*
+ * AND THE AMOUNTS AGREE WITH THE HANDLER THAT PAYS THEM. Drop Ship prints
+ * 1,000 / 500 / 250 on the instructions page and builds the game's name
+ * from the same three, but the credit is issued in Skulliance's db.php. The
+ * numbers are read back out of that handler rather than trusted.
+ */
+preg_match_all('/[$]_POST\[.rank.\] == (\\d).*?[$]subtotal = (\\d+);/s', $skdb, $am, PREG_SET_ORDER);
+$real = array();
+foreach ($am as $row) $real[(int)$row[1]] = (int)$row[2];
+ksort($real);
+ok(array_values($real) === dropshipRewardAmounts(),
+   'the prize amounts Drop Ship advertises are not what Skulliance credits: '
+   . json_encode(array_values($real)) . ' vs ' . json_encode(dropshipRewardAmounts()));
+ok(dropshipRewardPlaces() === count($real),
+   'a new game is created with ' . dropshipRewardPlaces() . ' paying places and '
+   . count($real) . ' ranks are actually credited');
+
 /* Chosen HERE, not posted. */
 ok(strpos($skdb, '$ds_map = dropshipRewardProjects();') !== false,
    'the endpoint no longer uses its own map');
@@ -1378,15 +1421,27 @@ ok(strpos($lbBlock, 'dropshipThemeImageUrl($conn, $_SESSION[\'userData\'][\'drop
 $instr = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/instructions.php'));
 ok(strpos($instr, "== 1) ? \"DREAD\" : \"MOON\"") === false,
    'the instructions still call every game but Drop Ship a MOON payout');
-preg_match("/\\\$ds_pays = array\(([^)]*)\)/", $instr, $im);
-ok(!empty($im), 'the instructions no longer name a currency per game');
-$said = array();
-if (!empty($im)) {
-	foreach (explode(',', $im[1]) as $bit) {
-		if (preg_match("/(\d+)\s*=>\s*'(\w+)'/", $bit, $b)) $said[(int)$b[1]] = $b[2];
-	}
-}
-/* Same games, and DREAD exactly where the map says project 2. */
+/*
+ * THE PAGE NO LONGER CARRIES ITS OWN MAP.
+ *
+ * It had $ds_pays listing all five themes behind a gate that read
+ * `project_id == 1 || == 4`, so Dread City, Filthy Mermaid and DHC2
+ * Fighters fell to the else branch and told their players the top three
+ * win SCRIP, while the weekly cycle credited them real DREAD, DREAD and
+ * MAXI. The map was kept current and the gate in front of it was not,
+ * which is the same failure the payout map's own comment warns about.
+ */
+ok(strpos($instr, '$ds_pays') === false,
+   'the instructions still keep their own copy of which game pays what');
+ok(strpos($instr, 'dropshipRewardToken($ds_pid)') !== false,
+   'the instructions no longer name a currency per game');
+ok(preg_match('/dropship_project_id.\] == 1 \|\|/', $instr) !== 1,
+   'the prize table is gated on a pair of ids again rather than on whether the theme pays');
+/* The amounts come from the same place too, so the table cannot advertise
+   a number the handler does not credit. */
+ok(strpos($instr, 'number_format($ds_amounts[0])') !== false,
+   'the instructions print a hardcoded first-place amount');
+$said = dropshipRewardTokens();
 ok(array_keys($said) === array_keys($pay),
    'the instructions and the payout map cover different games');
 /*
@@ -1418,9 +1473,12 @@ echo "\nthe weekly cycle runs for every live theme\n";
  * its game would simply never end.
  */
 $auto = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/automate.php'));
-ok(preg_match('/\$all = array\(([0-9, ]+)\);/', $auto, $am) === 1,
-   'the cron no longer declares which projects it runs');
-$cron_pids = array_map('intval', explode(',', $am[1]));
+/* DERIVED, NOT TYPED. This was array(1, 2, 3, 4, 5) spelled out: a fourth
+   copy of "which themes exist" that theme 6 would have had to be added to
+   by hand, and the reason a newly activated theme once had no cycle. */
+ok(strpos($auto, '$all = array_keys(dropshipRewardTokens());') !== false,
+   'the cron no longer takes its project list from the reward map');
+$cron_pids = array_keys(dropshipRewardTokens());
 foreach (array(1, 2, 3, 4) as $pid) {
 	ok(in_array($pid, $cron_pids, true),
 	   "project $pid has no weekly cycle, so its game never ends and no new one opens");
@@ -1461,29 +1519,41 @@ ok(strpos($auto, "checkGame(\$conn);
  * removed deactivateGame() altogether.
  */
 $at_close  = strpos($auto, 'deactivateGame($conn);');
-$at_create = strpos($auto, 'createGame($conn, $prizes, 3);');
+$at_create = strpos($auto, 'createGame($conn, $prizes, dropshipRewardPlaces());');
 ok($at_close !== false, 'the weekly run no longer closes the old game at all');
 ok($at_create !== false, 'the weekly run no longer opens a new game at all');
 ok($at_close !== false && $at_create !== false && $at_close < $at_create,
    'the new game is created before the old one is closed');
-/* Drop Ship (1) is deliberately absent from the prefix branch -- it is the
-   default, because its art is flat rather than nested. */
-/* Every nested theme needs its own art prefix, or the weekly announcement
-   image is built from the wrong folder and 404s. */
-foreach (array(2 => 'dread-city', 3 => 'filthy-mermaid', 4 => 'oculus-lounge') as $pid => $pfx) {
-	ok(preg_match('/\$project_id == ' . $pid . '\)\{\s*\n\s*\$prefix = "' . $pfx . '";/', $auto) === 1,
-	   "project $pid does not use the $pfx art folder, so its announcement image 404s");
-}
 /*
- * DEFAULTED BEFORE THE BRANCH. Both were only assigned inside the if/else,
- * so a project nobody had listed created a NAMELESS game and built its
- * image path from an empty prefix.
+ * THE ART FOLDER IS NO LONGER A LADDER HERE EITHER.
+ *
+ * This asserted a `$prefix = "dread-city"` branch per theme, because the
+ * announcement image was built by hand from that prefix. Both the prefix
+ * and the branches are gone: dropshipThemeImageUrl() resolves the image
+ * from the theme's own row and checks it on disk, the same rule the
+ * dashboard's posts and the embed thumbnail use. A per-theme branch here
+ * would now be the bug, so that is what is checked.
  */
-/* Anchored on the DEFAULT, not on whichever project happens to be first
-   in the branch -- adding a game changed that and broke this check for a
-   reason unrelated to what it tests. */
-ok(preg_match('/\t\$prefix = "drop-ship";\n\t\$prizes = "1K, 500, 250 DREAD";\n\tif\(\$project_id ==/', $auto) === 1,
-   'the prefix and prize name are not defaulted before the branch');
+ok(strpos($auto, '$prefix') === false,
+   'automate() is building an art path out of $prefix again');
+ok(substr_count($auto, 'dropshipThemeImageUrl($conn, $project_id,') === 2,
+   'the Game Over and New Game posts do not both resolve the image from the theme row');
+/*
+ * AND A THEME THAT PAYS NOTHING IS REFUSED, not named after a default.
+ *
+ * $prizes defaulted to "1K, 500, 250 DREAD" before the branch, so a theme
+ * nobody had listed got a game announced in DREAD whatever it really paid.
+ * That is exactly what theme 5 would have got, in a channel whose players
+ * are credited MAXI.
+ */
+ok(strpos($auto, '$prizes = dropshipRewardPrizeName($project_id);') !== false,
+   'the game name is not built from what the theme pays');
+ok(strpos($auto, "if (\$prizes === '') {") !== false,
+   'a theme with no reward currency is not refused, so it gets a game named after nothing');
+foreach (dropshipRewardTokens() as $rp => $rsym) {
+	ok(strpos(dropshipRewardPrizeName($rp), $rsym) !== false,
+	   "project $rp would be announced without its own currency");
+}
 /*
  * games.prizes IS A COUNT, not a prize list -- checkLeaderboard() cuts the
  * board at `$counter > $row["prizes"]` and dashboard.php's own field is
@@ -1491,8 +1561,8 @@ ok(preg_match('/\t\$prefix = "drop-ship";\n\t\$prizes = "1K, 500, 250 DREAD";\n\
  * NAME then the count, which reads wrong and is right. Pinned because it
  * looks exactly like an argument-order bug and I called it one once.
  */
-ok(strpos($auto, 'createGame($conn, $prizes, 3);') !== false,
-   'the weekly game is no longer created with three prize places');
+ok(strpos($auto, 'createGame($conn, $prizes, dropshipRewardPlaces());') !== false,
+   'the weekly game is no longer created with the number of places the map pays');
 $dbsrc6 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/db.php'));
 ok(strpos($dbsrc6, 'function createGame($conn, $name, $prizes)') !== false,
    'createGame\'s signature changed; check automate.php still passes name then count');
