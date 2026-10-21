@@ -228,3 +228,33 @@ so renaming a project silently moves its whole image directory. Storing the
 slug breaks that link, which is the entire reason it is a column. Drop Ship's
 own art sits flat under `dropship/` rather than in a slug folder, which the
 prefix logic already special-cases.
+
+
+## Making a project from the admin
+
+A theme hangs off a `projects` row, and a brand new game has none. **New
+project** on `admin-themes.php` creates one (`dropshipProjectCreate()`), which
+is the one thing that still needed a database client.
+
+That page's header says it never edits `projects`, and that is still true of
+EDITING: more than one theme can share a collection, so a theme must not own
+one. Creating the row is the case the boundary did not cover.
+
+**A project on its own reaches nobody.** `getProjects()` is built from
+`dropshipActiveProjectIds()`, which lists only the projects that have an
+ACTIVE theme, and it is also the allow-list `?project_id=` is validated
+against. So a new project is invisible to players, to the game picker and to
+the URL until somebody saves a theme for it and ticks Active. The message
+says so at the moment of creating, because an admin who does not know that has
+just made something they believe is public.
+
+**The columns are inspected, not assumed.** `projects` predates all of this
+and has no schema of its own written down here, so the insert runs
+`SHOW COLUMNS`, fills `name` and `policy_id`, and refuses by NAMING any other
+column that is NOT NULL with no default rather than failing with a MySQL
+error. If you see that message, either give the column a default or add the
+row by hand.
+
+`policy_id` may be left blank, for a project whose collection is not minted
+yet, but is otherwise required to be 56 hex characters: it is interpolated
+into every NFT lookup.

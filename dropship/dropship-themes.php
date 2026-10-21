@@ -355,6 +355,94 @@ function dropshipAdminProjects($conn) {
 }
 
 /**
+ * Make a project, because a theme needs one to hang off and there was no way
+ * to create one without a database client.
+ *
+ * admin-themes.php's own header says it never edits `projects`, and that was
+ * the right boundary for editing: several themes legitimately share one
+ * collection, so a theme must not own the collection. CREATING one is the
+ * case the boundary did not cover -- a brand new game has no project at all,
+ * and the whole point of the theme admin is that a reskin needs no PHP.
+ *
+ * INERT UNTIL A THEME IS SAVED AND TICKED. getProjects() is built from
+ * dropshipActiveProjectIds(), which lists only the projects that have an
+ * ACTIVE theme, so a project made here is invisible to players, to the game
+ * picker and to the ?project_id validator until somebody deliberately
+ * activates a theme for it. Adding one cannot put a half-built game in front
+ * of anybody.
+ *
+ * THE COLUMNS ARE INSPECTED, NOT ASSUMED. This table predates everything
+ * here, there is no schema doc for it, and a hardcoded INSERT that omits
+ * somebody's NOT NULL column fails with a message nobody reads. So: ask
+ * MySQL what the table wants, fill what we know, and if anything else is
+ * required say which column rather than failing with a MySQL error.
+ *
+ * Returns array(ok, message, new_id).
+ */
+function dropshipProjectCreate($conn, $name, $policy_id) {
+	if (!is_object($conn)) return array(false, 'No database.', 0);
+
+	$name = trim(preg_replace('/\s+/', ' ', (string)$name));
+	if ($name === '') return array(false, 'A project needs a name.', 0);
+	if (function_exists('mb_strlen') ? mb_strlen($name) > 64 : strlen($name) > 64) {
+		return array(false, 'That name is too long.', 0);
+	}
+	/* A policy id is 56 hex characters. Allowed to be blank -- a project can
+	   be created before its collection is minted -- but not to be nonsense,
+	   because every NFT lookup interpolates it. */
+	$policy_id = trim((string)$policy_id);
+	if ($policy_id !== '' && !preg_match('/^[0-9a-f]{56}$/i', $policy_id)) {
+		return array(false, 'A policy id is 56 hexadecimal characters. Leave it blank '
+		           . 'to fill in later.', 0);
+	}
+
+	$e = $conn->real_escape_string($name);
+	$r = @$conn->query("SELECT id FROM projects WHERE name = '$e' LIMIT 1");
+	if ($r && $r->num_rows) {
+		$row = $r->fetch_assoc();
+		return array(false, 'There is already a project called "' . $name . '" (#'
+		           . (int)$row['id'] . ').', 0);
+	}
+
+	/* What the table actually wants. */
+	$have = array('name' => $name, 'policy_id' => $policy_id);
+	$cols = array(); $vals = array(); $needed = array();
+	$c = @$conn->query("SHOW COLUMNS FROM projects");
+	if (!$c) return array(false, 'Could not read the projects table.', 0);
+	while ($col = $c->fetch_assoc()) {
+		$f = $col['Field'];
+		if (array_key_exists($f, $have)) {
+			$cols[] = '`' . $f . '`';
+			$vals[] = "'" . $conn->real_escape_string((string)$have[$f]) . "'";
+			continue;
+		}
+		/* Anything else has to be able to look after itself: auto_increment,
+		   nullable, or carrying a default. */
+		$auto     = strpos((string)$col['Extra'], 'auto_increment') !== false;
+		$nullable = (string)$col['Null'] === 'YES';
+		$hasDef   = $col['Default'] !== null;
+		if (!$auto && !$nullable && !$hasDef) $needed[] = $f;
+	}
+	if ($needed) {
+		return array(false, 'The projects table also requires '
+		           . implode(', ', $needed) . ', which this form does not set. '
+		           . 'Add the row by hand, or give '
+		           . (count($needed) === 1 ? 'that column' : 'those columns')
+		           . ' a default.', 0);
+	}
+	if (!$cols) return array(false, 'The projects table has no name column.', 0);
+
+	if (!@$conn->query('INSERT INTO projects (' . implode(',', $cols) . ') VALUES ('
+	                   . implode(',', $vals) . ')')) {
+		return array(false, 'Could not create that project: ' . $conn->error, 0);
+	}
+	$id = (int)$conn->insert_id;
+	if ($id <= 0) return array(false, 'The project was not created.', 0);
+	return array(true, '"' . $name . '" created as project #' . $id
+	           . '. It is not playable until a theme is saved and ticked active.', $id);
+}
+
+/**
  * The collection a project draws its NFTs from, or '' if it has none.
  *
  * WHY THE ADMIN SHOWS THIS. Every way of loading a player's NFTs runs

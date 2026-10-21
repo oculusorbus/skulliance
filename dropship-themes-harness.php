@@ -1740,6 +1740,103 @@ ok(strpos($dspick, 'object-fit:contain') !== false,
    'the picker crops its art again, which is what the picker exists not to do');
 ok(strpos($dspick, 'object-fit:cover') === false, 'a cover crop came back');
 
+/* ---------- making a project, for a game that does not exist yet ---------- */
+
+echo "\nmaking a project\n";
+class PjRes {
+	private $r; public $num_rows;
+	public function __construct($r) { $this->r = $r; $this->num_rows = count($r); }
+	public function fetch_assoc() { return array_shift($this->r); }
+}
+class PjConn {
+	public $insert_id = 7; public $error = ''; public $sql = '';
+	private $cols; private $dupe; private $failInsert;
+	public function __construct($cols, $dupe = false, $failInsert = false) {
+		$this->cols = $cols; $this->dupe = $dupe; $this->failInsert = $failInsert;
+	}
+	public function real_escape_string($s) { return addslashes($s); }
+	public function query($q) {
+		if (strpos($q, 'SELECT id FROM projects') !== false) {
+			return new PjRes($this->dupe ? array(array('id' => 3)) : array());
+		}
+		if (strpos($q, 'SHOW COLUMNS') !== false) return new PjRes($this->cols);
+		if (strpos($q, 'INSERT INTO projects') !== false) {
+			$this->sql = $q;
+			if ($this->failInsert) { $this->error = 'Duplicate entry'; return false; }
+			return true;
+		}
+		return new PjRes(array());
+	}
+}
+function pjcol($f, $null = 'YES', $def = null, $extra = '') {
+	return array('Field' => $f, 'Null' => $null, 'Default' => $def, 'Extra' => $extra);
+}
+$pjSimple = array(pjcol('id', 'NO', null, 'auto_increment'), pjcol('name', 'NO'), pjcol('policy_id'));
+
+$c = new PjConn($pjSimple);
+list($o, $m, $id) = dropshipProjectCreate($c, 'Dread City', '');
+ok($o === true && $id === 7, "a plain project was not created: $m");
+ok(strpos($c->sql, '`name`') !== false, 'the insert does not set the name');
+/*
+ * IT MUST SAY IT IS NOT LIVE. getProjects() is built from the themes that
+ * are ticked Active, so a project with no theme reaches nobody -- but an
+ * admin who does not know that has just made something they think is
+ * public, which is the one thing worth saying at the moment of making it.
+ */
+ok(stripos($m, 'not playable') !== false, "creating a project does not say it is inert: $m");
+
+/* A policy id is 56 hex characters and goes straight into every NFT lookup. */
+$c = new PjConn($pjSimple);
+list($o, $m) = dropshipProjectCreate($c, 'Neon Harbor', str_repeat('ab', 28));
+ok($o === true, "a valid policy id was refused: $m");
+ok(strpos($c->sql, str_repeat('ab', 28)) !== false, 'the policy id is not stored');
+list($o, $m) = dropshipProjectCreate(new PjConn($pjSimple), 'X', 'nope');
+ok($o === false && stripos($m, '56') !== false, "a junk policy id was accepted: $m");
+list($o, $m) = dropshipProjectCreate(new PjConn($pjSimple), 'X', str_repeat('z', 56));
+ok($o === false, 'a 56-character non-hex policy id was accepted');
+/* Blank is allowed: a project can exist before its collection is minted. */
+ok(dropshipProjectCreate(new PjConn($pjSimple), 'Later', '')[0] === true,
+   'a project cannot be made before its collection exists');
+
+list($o, $m) = dropshipProjectCreate(new PjConn($pjSimple), '   ', '');
+ok($o === false, 'a nameless project was created');
+list($o, $m) = dropshipProjectCreate(new PjConn($pjSimple, true), 'Dread City', '');
+ok($o === false && strpos($m, '#3') !== false, "a duplicate name was allowed: $m");
+
+/*
+ * THE COLUMNS ARE INSPECTED, NOT ASSUMED, and this is the check that matters
+ * most: `projects` predates all of this, there is no schema doc for it, and
+ * nobody writing this could see the live table. A hardcoded INSERT that
+ * misses somebody's NOT NULL column fails with a MySQL error in a page
+ * nobody reads, so the form names the column instead.
+ */
+$pjNeeds = array_merge($pjSimple, array(pjcol('currency', 'NO')));
+list($o, $m) = dropshipProjectCreate(new PjConn($pjNeeds), 'Y', '');
+ok($o === false, 'a required column the form cannot fill was ignored');
+ok(strpos($m, 'currency') !== false, "the missing column is not named: $m");
+/* ...but a NOT NULL column WITH a default looks after itself. */
+$pjDef = array_merge($pjSimple, array(pjcol('currency', 'NO', 'MOON')));
+ok(dropshipProjectCreate(new PjConn($pjDef), 'Z', '')[0] === true,
+   'a column with a default is treated as missing');
+/* ...and so does a nullable one. */
+$pjNull = array_merge($pjSimple, array(pjcol('note', 'YES')));
+ok(dropshipProjectCreate(new PjConn($pjNull), 'Z2', '')[0] === true,
+   'a nullable column is treated as missing');
+
+/* A failed insert reports what the database said rather than shrugging. */
+list($o, $m) = dropshipProjectCreate(new PjConn($pjSimple, false, true), 'Boom', '');
+ok($o === false && strpos($m, 'Duplicate entry') !== false,
+   "a failed insert hides the database's reason: $m");
+
+/* The page posts it separately and redirects, so a refresh cannot make two. */
+$at = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));
+ok(strpos($at, "isset(\$_POST['new_project'])") !== false,
+   'the admin page no longer handles the new-project post');
+ok(strpos($at, "!isset(\$_POST['new_project'])") !== false,
+   'creating a project also falls into the theme save, which has no form behind it');
+ok(strpos($at, "header('Location: admin-themes.php?project_id=") !== false,
+   'creating a project does not redirect, so refreshing offers to make it twice');
+
 /*
  * THE SWITCH MUST SURVIVE BEING USED. "Can this theme be animated" is a
  * property of the THEME; "is it animated right now" is a property of the

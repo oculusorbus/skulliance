@@ -42,8 +42,38 @@ if (!dropshipThemeAdmin()) {
 $msg = array('ok' => array(), 'err' => array());
 $have_tables = dropshipThemesTable($conn);
 
+/* ------------------------------------------------------- new project -- */
+/*
+ * A THEME NEEDS A PROJECT TO HANG OFF, and a brand new game has none. The
+ * header above says this page never edits `projects`, which is still true
+ * for EDITING -- several themes share one collection, so a theme must not
+ * own it. Creating the row is the case that boundary did not cover, and
+ * without it a new game still needs a database client, which is the exact
+ * thing this page exists to avoid.
+ *
+ * ITS OWN POST, handled before the theme save and redirected afterwards, so
+ * the new project arrives as a normal ?project_id= page load with the theme
+ * form already pointed at it. Falling through into the theme save would try
+ * to write a theme out of a form that was never filled in.
+ */
+if (isset($_POST['new_project'])) {
+	list($np_ok, $np_msg, $np_id) = dropshipProjectCreate(
+		$conn, $_POST['new_project_name'] ?? '', $_POST['new_project_policy'] ?? '');
+	if ($np_ok) {
+		/* POST, then redirect, so a refresh does not offer to make it twice. */
+		header('Location: admin-themes.php?project_id=' . (int)$np_id . '&made=1');
+		if (is_object($conn)) $conn->close();
+		exit;
+	}
+	$msg['err'][] = $np_msg;
+}
+if (isset($_GET['made'])) {
+	$msg['ok'][] = 'Project created. Give it a slug and some wording below, '
+	             . 'then tick Active when it is ready for players.';
+}
+
 /* ---------------------------------------------------------------- save -- */
-if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['new_project'])) {
 	$pid  = (int)($_POST['project_id'] ?? 0);
 	$slug = dropshipThemeSlug($_POST['slug'] ?? '');
 	$e    = function ($v) use ($conn) { return $conn->real_escape_string((string)$v); };
@@ -157,6 +187,14 @@ $val = function ($k, $d = '') use ($theme, $h) {
 .dsa table{width:100%;border-collapse:collapse;margin:0 0 14px}
 .dsa td,.dsa th{padding:5px 7px;text-align:left;font-size:13px;
   border-bottom:1px solid rgba(255,255,255,.08)}
+/* The new-project row. Its own block rather than the page's table styling,
+   because it is three controls on one line and a table would give it
+   borders it does not want. */
+.dsa-newproj{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin:0 0 16px}
+.dsa-newproj label{display:flex;flex-direction:column;gap:3px;flex:1 1 220px;min-width:0;
+  font-size:12px;color:#7a9eb0}
+.dsa-newproj .opt{color:#55707f;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase}
+.dsa-newproj .btn{flex:0 0 auto}
 .dsa input[type=text],.dsa select{width:100%;box-sizing:border-box;background:#07111d;
   color:#e8eaed;border:1px solid rgba(255,255,255,.16);border-radius:3px;padding:6px 8px;font-size:13px}
 .dsa label{display:block;font-size:11px;color:#7a9eb0;margin:0 0 3px;text-align:left}
@@ -204,6 +242,24 @@ $val = function ($k, $d = '') use ($theme, $h) {
 NFTs come from is <b>not</b> set here &mdash; that is <code>projects.policy_id</code>,
 and more than one theme can share a collection. A theme with no overrides saved
 falls back to the built-in wording, so an empty theme changes nothing.</p>
+
+<h3>New project</h3>
+<p class="note">For a game that does not exist yet. A project on its own is
+<b>not playable</b> and does not appear in the game picker: the player-facing
+list is built from the themes that are ticked Active, so nothing here reaches
+anybody until you save a theme for it and tick that box. The policy id can be
+left blank and filled in later.</p>
+<form method="post" class="dsa-newproj">
+	<input type="hidden" name="new_project" value="1">
+	<label>Name
+		<input type="text" name="new_project_name" maxlength="64" placeholder="Dread City">
+	</label>
+	<label>Collection policy id <span class="opt">optional</span>
+		<input type="text" name="new_project_policy" maxlength="56" spellcheck="false"
+		       placeholder="56 hex characters">
+	</label>
+	<button class="btn" type="submit">Create project</button>
+</form>
 
 <table>
 	<tr><th>Project</th><th>Slug</th><th>Active</th><th>Overrides</th><th></th></tr>
