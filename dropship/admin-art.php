@@ -745,22 +745,26 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	 * round art do.
 	 */
 	$snd_files = dropshipAudioFiles();
-	/* THE PLAN ONCE, because the sounds have to be bucketed against the
-	   rows that will actually render -- see dropshipAudioFamily()'s own
-	   note on why the longest-matching family is the wrong answer. */
 	$art_plan = dropshipArtPlan($conn, $pid, $ext, $slug);
-	$row_labels = array();
-	foreach ($art_plan as $g) foreach ($g['rows'] as $r) {
-		if ($r['label'] !== '') $row_labels[] = $r['label'];
-	}
-	$snd_by_thing = array();
-	$snd_loose = array();
-	foreach (dropshipAudioSlots($conn, $pid) as $as) {
-		$fam = dropshipAudioFamily($as['term'], $row_labels);
-		if ($fam !== '' && in_array($fam, $row_labels, true)) $snd_by_thing[$fam][] = $as;
-		else                                                  $snd_loose[] = $as;
-	}
-	$snd_loose[] = dropshipAudioOpenSlot($conn, $pid);
+	/*
+	 * BUCKETED BY THE FRAME, NOT BY THE THING'S NAME.
+	 *
+	 * Reported looking at THE DROP: Filthy Mermaid has crowd on round 0
+	 * and a door on round 1, and neither had a sound row under those
+	 * cards. The pairing matched a sound's vocabulary FAMILY against the
+	 * labelled art rows -- and the drop rounds, the deaths, the beach
+	 * frames and every other band of art that is not a picture of a
+	 * nameable object render with no label at all, so nothing could ever
+	 * attach to them. Those sounds were all falling through to the
+	 * section at the bottom.
+	 *
+	 * A sound belongs to a FRAME and the frame is in a row, so the row
+	 * is found by the art path. Exact, works for an unlabelled band, and
+	 * dropshipAudioFamily() is no longer in it.
+	 */
+	$snd_split  = dropshipAudioPlanRows($conn, $pid, $art_plan);
+	$snd_by_row = $snd_split['rows'];
+	$snd_loose  = $snd_split['loose'];
 
 	/* One renderer for both places, or the row and the section drift. */
 	$sndRow = function ($as) use ($h, $snd_files, $conn, $pid) {
@@ -869,7 +873,7 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	foreach ($art_plan as $group => $g): ?>
 	<h4><?php echo $h($group); ?></h4>
 	<p class="note"><?php echo $h($g['note']); ?></p>
-	<?php foreach ($g['rows'] as $row): ?>
+	<?php foreach ($g['rows'] as $row_i => $row): ?>
 	<div class="thing<?php echo $row['label'] === '' ? ' bare' : ''; ?>">
 	<?php if ($row['label'] !== ''): ?>
 		<?php /* The name and what this theme calls it, on the row rather than
@@ -989,11 +993,12 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	         icon and whatever it sounds like; those were on three
 	         different parts of the screen and the sounds on none of
 	         them. */
-	if ($row['label'] !== '' && !empty($snd_by_thing[$row['label']])): ?>
+	$row_key = $group . '|' . $row_i;
+	if (!empty($snd_by_row[$row_key])): ?>
 	<div class="snd">
-		<?php foreach ($snd_by_thing[$row['label']] as $as) $sndRow($as); ?>
+		<?php foreach ($snd_by_row[$row_key] as $as) $sndRow($as); ?>
 	</div>
-	<?php unset($snd_by_thing[$row['label']]); endif; ?>
+	<?php unset($snd_by_row[$row_key]); endif; ?>
 	</div>
 	<?php endforeach; ?>
 	<?php endforeach; ?>
@@ -1003,7 +1008,7 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 	         exactly the way icons with no round art get one. And anything
 	         whose thing has no art row at all lands here rather than
 	         vanishing. */
-	foreach ($snd_by_thing as $leftover) foreach ($leftover as $as) $snd_loose[] = $as;
+	foreach ($snd_by_row as $leftover) foreach ($leftover as $as) $snd_loose[] = $as;
 	if ($snd_loose): ?>
 	<h4>Sound</h4>
 	<p class="note">The rest of the audio: what a run opens on, a stage cleared, a

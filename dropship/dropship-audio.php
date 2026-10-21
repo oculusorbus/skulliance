@@ -247,6 +247,60 @@ function dropshipAudioSlotByArt($conn, $project_id, $art) {
 	return null;
 }
 
+/**
+ * The sounds of a theme, bucketed under the art rows they belong to.
+ *
+ * BY THE FRAME, NOT BY THE THING'S NAME. The first version matched a
+ * sound's vocabulary family against the LABELLED art rows -- and the
+ * drop rounds, the deaths and the beach frames all render as bands with
+ * no label, so nothing could ever attach to them. Filthy Mermaid's
+ * crowd on round 0 and its door on round 1 were both sitting in the
+ * section at the bottom of the page instead of under the pictures they
+ * play against, which is exactly the thing being asked for: it is hard
+ * to tell where audio goes if it is not paired with the imagery.
+ *
+ * A sound belongs to a frame and the frame is in a row, so the row is
+ * found by the art path. Exact, and it works for an unlabelled band.
+ *
+ * IN HERE RATHER THAN IN THE PAGE so it can be driven. The same lookup
+ * written out twice -- once in the page, once in a harness asserting
+ * the page -- is a test that passes while the page is broken, which is
+ * how the Set button shipped dead.
+ *
+ * Returns array('rows' => "group|index" => slots, 'loose' => slots).
+ */
+function dropshipAudioPlanRows($conn, $project_id, $plan) {
+	$where = array();
+	foreach ($plan as $gname => $g) {
+		foreach ($g['rows'] as $ri => $r) {
+			foreach ($r['slots'] as $sl) {
+				/* Only round art is a frame. An icon is one shared file
+				   for every theme and a background is page furniture;
+				   neither is a moment with a sound -- and neither path
+				   begins with images/, which the slice below assumes. */
+				if (!isset($sl['kind']) || $sl['kind'] !== 'art') continue;
+				if (strpos($sl['rel'], 'images/') !== 0) continue;
+				/* images/weapons/demo1.png -> weapons/demo1, which is how
+				   the registry names a frame. */
+				$k = preg_replace('/\.[a-z0-9]+$/', '', substr($sl['rel'], 7));
+				$where[$k] = $gname . '|' . $ri;
+			}
+		}
+	}
+	$out = array('rows' => array(), 'loose' => array());
+	foreach (dropshipAudioSlots($conn, $project_id) as $as) {
+		if ($as['art'] !== '' && isset($where[$as['art']])) {
+			$out['rows'][$where[$as['art']]][] = $as;
+		} else {
+			/* The catch-alls span whole stages rather than sitting on one
+			   frame, so they have no row to live under. */
+			$out['loose'][] = $as;
+		}
+	}
+	$out['loose'][] = dropshipAudioOpenSlot($conn, $project_id);
+	return $out;
+}
+
 /** Every mp3 in the shared folder, for the "use one already there" picker. */
 function dropshipAudioFiles() {
 	$out = array();
@@ -351,20 +405,12 @@ function dropshipAudioOpenSlot($conn, $project_id) {
 	);
 }
 
-/**
- * Which thing on the art page a frame's sound belongs beside.
- *
- * Trivial now: the event IS a frame of a thing, so the family is the
- * thing. Kept as a function because the art page asks per row and a
- * theme may use a word the vocabulary does not list.
+/*
+ * dropshipAudioFamily() lived here. It matched a sound's vocabulary
+ * family against the LABELLED art rows, which could never attach a
+ * sound to a band of art that has no label -- the drop rounds, the
+ * deaths, the beach frames. The art page buckets by the frame's own
+ * path now, which is exact and works for an unlabelled band, and
+ * nothing else ever called this.
  */
-function dropshipAudioFamily($term, $prefer = null) {
-	require_once __DIR__ . '/dropship-art.php';
-	$labels = dropshipArtThingLabels();
-	$k = dropshipThemeSlug($term);
-	if ($k !== '' && isset($labels[$k])
-	    && ($prefer === null || in_array($labels[$k], $prefer, true))) {
-		return $labels[$k];
-	}
-	return '';
-}
+

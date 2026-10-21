@@ -408,11 +408,106 @@ ok(strpos($adm_w, "!empty(\$msg['warn']) && \$msg['warn'] === (\$as['art']") !==
 ok(strpos($adm_w, "\$_POST['audio_term']") === false,
    'the old family-keyed field is still there, so the lookup has two masters');
 
+echo "\nevery frame's sound sits under that frame\n";
+/*
+ * REPORTED looking at THE DROP: Filthy Mermaid has crowd on round 0 and
+ * a door on round 1, and neither had a sound row under those cards.
+ * The pairing matched a sound's vocabulary FAMILY against the LABELLED
+ * art rows -- and the drop rounds, the deaths and the beach frames all
+ * render as bands with no label, so nothing could ever attach to them.
+ * Those sounds were all falling through to the section at the bottom.
+ *
+ * A sound belongs to a frame and the frame is in a row, so this is the
+ * same lookup the page does now: by art path.
+ */
+$pconn = new AConn(
+	array(203 => array('id' => 2030, 'project_id' => 203, 'slug' => 'filthy-mermaid', 'name' => 'Filthy Mermaid')),
+	array(2030 => array()));
+$pplan  = dropshipArtPlan($pconn, 203, 'png', 'filthy-mermaid');
+/* THE PAGE'S OWN BUCKETING, called -- not a second copy of it written
+   out here. A harness that reimplements the lookup it is checking
+   passes while the page is broken, which is how the Set button shipped
+   dead. */
+$psplit = dropshipAudioPlanRows($pconn, 203, $pplan);
+$pwhere = array();
+foreach ($psplit['rows'] as $key => $slots) {
+	foreach ($slots as $sl) $pwhere[$sl['art']] = $key;
+}
+
+/* THE THREE THE REPORT WAS ABOUT: Filthy Mermaid's crowd on round 0 and
+   its door on round 1 had no row under THE DROP to sit in. */
+foreach (array('reset/reset', 'drop/drop', 'drop/team') as $art) {
+	ok(isset($pwhere[$art]), "the sound for $art is not under any art row");
+	if (isset($pwhere[$art])) ok(strpos($pwhere[$art], 'The drop|') === 0,
+		"$art is bucketed under {$pwhere[$art]}, not The drop");
+}
+/* ONE ROW, not three: those four cards are a single unlabelled band, so
+   the three sounds belong together under it. */
+ok(count(array_unique(array($pwhere['reset/reset'] ?? 'a', $pwhere['drop/drop'] ?? 'b',
+                            $pwhere['drop/team'] ?? 'c'))) === 1,
+   'the drop sounds are split across rows that render as one band');
+
+/* AND EVERY OTHER FRAME WITH A SOUND, so a band that is not labelled
+   cannot quietly orphan its audio again. */
+$orphans = array();
+foreach ($psplit['loose'] as $sl) {
+	if ($sl['art'] === '') continue;                 /* the opening */
+	if (substr($sl['art'], -1) === '/') continue;    /* the catch-alls */
+	$orphans[] = $sl['art'];
+}
+ok($orphans === array(),
+   'these frames have a sound and no row to show it under: ' . implode(', ', $orphans));
+
+/* WHAT IS ALLOWED TO BE LOOSE, pinned so it stays a decision: the two
+   catch-alls, which span whole stages, and the opening, which has no
+   frame at all. */
+$loose = array();
+foreach ($psplit['loose'] as $sl) $loose[] = $sl['art'] === '' ? 'Opening' : $sl['art'];
+sort($loose);
+ok($loose === array('1up/', 'Opening', 'live/'),
+   'the set of sounds with no frame changed: ' . implode(', ', $loose));
+
+/* AN ICON IS NOT A FRAME. It is one shared file for every theme and has
+   no moment; counting it would bucket a sound under the wrong row. */
+$icon_rows = 0;
+foreach ($pplan as $gname => $g) {
+	foreach ($g['rows'] as $ri => $r) {
+		foreach ($r['slots'] as $sl) if ($sl['kind'] === 'icon') $icon_rows++;
+	}
+}
+ok($icon_rows > 0, 'the plan has no icons, so the check below proves nothing');
+/*
+ * EQUIVALENT MUTANT, recorded rather than chased: deleting the
+ * kind !== 'art' test changes no answer, because an icon's rel is
+ * icons/<name>.png and a background's is <slug>/<slug>background.jpg --
+ * neither begins with images/, so neither can ever produce a key a
+ * frame also produces. It is a guard on the SLICE below, which assumes
+ * that prefix, and the prefix test beside it says so outright.
+ */
+ok(strpos(file_get_contents(__DIR__ . '/dropship/dropship-audio.php'),
+          "strpos(\$sl['rel'], 'images/') !== 0") !== false,
+   'the slice assumes an images/ prefix without checking for one');
+foreach ($psplit['rows'] as $key => $slots) {
+	foreach ($slots as $sl) {
+		ok($sl['art'] !== '' && substr($sl['art'], -1) !== '/',
+		   "a sound with no frame was bucketed under $key");
+	}
+}
+
+/* AND THE PAGE USES THIS LOOKUP, not the family it used to. */
+$adm_p = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+ok(strpos($adm_p, 'dropshipAudioPlanRows($conn, $pid, $art_plan)') !== false,
+   'the page does not bucket sounds by the frame they belong to');
+/* COMMENTS STRIPPED: the note explaining the change names the function
+   it replaced, which a bare search counts as a call. */
+ok(strpos(harness_strip_comments($adm_p), 'dropshipAudioFamily(') === false,
+   'the family-label pairing is still called, and it cannot reach an unlabelled band');
+
 echo "\nthe page says what the run does\n";
 $adm = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
 ok(strpos($adm, "\$as['plays']") !== false,
    'the art page works out what is playing by its own rule instead of reading the run\'s answer');
-ok(strpos($adm, 'dropshipAudioSlots($conn, $pid)') !== false,
+ok(strpos($adm, 'dropshipAudioPlanRows($conn, $pid, $art_plan)') !== false,
    'the art page does not list the sound slots at all');
 
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
