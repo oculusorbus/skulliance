@@ -184,6 +184,21 @@ function dropshipOddsFlags($conn) {
 		$f['roster'][] = array('armor' => (string)$row['armor'],
 		                       'gear'  => (string)$row['gear']);
 	}
+
+	/*
+	 * THE PROMO LIFE COUNTS, because the run really spends it.
+	 *
+	 * dropship.php hands a loadout with no armour and no suit a free Medkit,
+	 * Melee and Demolition -- the same branch that puts a bare squad at 79.
+	 * This readout counted only carried and purchased Medkits, so it told a
+	 * bare squad it had no extra life while the run gave it one, and the
+	 * typical round it quoted was a round and a half short.
+	 */
+	if (!$f['mech_suit'] && !$f['exo_suit'] && !$f['quantum_stealth']
+	    && !$f['ballistic_shield'] && !$f['heavy'] && !$f['medium']
+	    && !$f['light'] && !$f['base']) {
+		$f['extra_lives']++;
+	}
 	return $f;
 }
 

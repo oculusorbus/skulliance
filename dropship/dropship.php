@@ -690,7 +690,26 @@ function setWeapons($enuWeapon){
 }
 
 // Handle player's extra life or lack of an extra life
-function extralife($dropshipMarkup, $counter, $extralife, $dead, $melee, $demolition, $dropbox) {
+/*
+ * ONE LIFE PER FAILED ROLL, not every life you own at once.
+ *
+ * $lives REPLACED a single true/false. The old test was
+ *
+ *     if ($extralife == 'true' || $_SESSION['userData']['medkit'] == "true")
+ *
+ * and the branch then cleared BOTH -- so a player carrying a Medkit soldier
+ * AND holding a bought Medkit spent the pair on the first failure and got one
+ * extra round for two Medkits. Two Medkit soldiers in a squad were the same
+ * story. dropshipOddsFlags() has always COUNTED them (one per Medkit in the
+ * roster, plus the purchased one), the Squad pane quotes a typical round from
+ * that count, and the shop's Medkit listing prices itself on "+1 life" -- so
+ * the screen was selling a second life the run could not give.
+ *
+ * Reported as a Medkit being spent on round 3 over and over: round 3 is the
+ * first roll of the run, so it is the single likeliest round to fail on, and
+ * the life bought to cover the SECOND failure was already gone.
+ */
+function extralife($dropshipMarkup, $counter, $lives, $dead, $melee, $demolition, $dropbox) {
 	global $MeleeDelay, $DemoDelay, $enuWeapon, $prefix;
 	$tactical_katana = "false";
 	$sniper_rifle = "false";
@@ -699,10 +718,18 @@ function extralife($dropshipMarkup, $counter, $extralife, $dead, $melee, $demoli
 	$flamethrower = "false";
 	$rocket_launcher = "false";
 	$enuWeapon = setWeapons($enuWeapon);
-	if ($extralife == 'true' || $_SESSION['userData']['medkit'] == "true") {
-		$dropshipMarkup.="<div class='round' id='".$counter."'><h3>Round ".$counter." - Extra Life</h3>";
+	$lives = (int)$lives;
+	if ($lives > 0) {
+		/* evaluateText(), like every other caption. This was the one round
+		   whose words were not themed, so a reskin announced Drop Ship's
+		   "Extra Life" in the middle of its own vocabulary. */
+		$dropshipMarkup.="<div class='round' id='".$counter."'><h3>Round ".$counter." - ".evaluateText("Extra Life")."</h3>";
 		$dropshipMarkup.="<img src='".$prefix."images/1up/".rand(1,2).".".evaluateText("gif")."?var=123'/></div>";
-		$extralife = 'false';
+		$lives--;
+		/* The session flag is this request's copy of the purchased Medkit.
+		   The row itself is deactivated by removeInventory() after the score
+		   is logged whether or not a life was spent, so clearing it here only
+		   stops the rest of the request thinking the item is still held. */
 		$_SESSION['userData']['medkit'] = "false";
 	} else {
 		if ($melee == "true" || $_SESSION['userData']['melee'] == "true") {
@@ -762,7 +789,7 @@ function extralife($dropshipMarkup, $counter, $extralife, $dead, $melee, $demoli
 		}	
 	}
 	$results = array();
-	$results['extralife'] = strval($extralife);
+	$results['lives'] = $lives;
 	$results['dead'] = strval($dead);
 	$results['markup'] = $dropshipMarkup;
 	$results['counter'] = $counter;
@@ -953,6 +980,39 @@ if(isset($_POST['run'])){
 				// End Skulliance promo overrides
 			}
 
+			/*
+			 * HOW MANY EXTRA LIVES, counted ONCE and by the same function the
+			 * Squad pane and the shop quote from -- dropshipOddsFlags(). The
+			 * run used to carry a single true/false here and spend every
+			 * Medkit on one failure; see extralife() for what that cost.
+			 *
+			 * Read before killSquad() runs, so the roster is still standing.
+			 * The promo life is inside that count now, and the fallback below
+			 * covers the only way the two can disagree: a session whose
+			 * soldier rows the readout's own query cannot see.
+			 */
+			$ds_lives = 0;
+			if (function_exists('dropshipOddsFlags')) {
+				$ds_of    = dropshipOddsFlags($conn);
+				$ds_lives = (int)$ds_of['extra_lives'];
+			}
+			if ($extralife == 'true' && $ds_lives < 1) $ds_lives = 1;
+
+			/*
+			 * WHAT THE RUN ACTUALLY ROLLED, stored with the replay.
+			 *
+			 * A replay exists so a disputed outcome is checkable, and until
+			 * now it recorded every picture and not one of the numbers behind
+			 * them -- so "the odds feel wrong" could only ever be answered by
+			 * reading the code and quoting a probability back at the player,
+			 * which is not an answer. The threshold and every roll go in an
+			 * HTML comment at the end of the markup: invisible on the page,
+			 * ignored by dropship.js (it matches .round elements, and a
+			 * comment is not an element), and about sixty bytes.
+			 */
+			$ds_rolls = array();
+			$ds_of_lives_start = $ds_lives;
+
 			/* // Append additional armor to threshold
 			if($mech_suit == 'true') {
 				$threshold += 8.9;
@@ -983,6 +1043,7 @@ if(isset($_POST['run'])){
 					$counter++;
 				} else {
 					$probability = rand(0,99);
+					$ds_rolls[] = $probability;
 					if ($probability < $threshold) {
 						if($counter == 8 && $_SESSION['userData']['radar'] == "true"){
 							$dropshipMarkup = radar($dropshipMarkup, $counter);
@@ -1034,8 +1095,8 @@ if(isset($_POST['run'])){
 							$counter++;
 						}
 						// Extra life 
-						$results = extralife($dropshipMarkup, $counter, $extralife, $dead, $melee, $demolition, $dropbox);
-						$extralife = $results['extralife'];
+						$results = extralife($dropshipMarkup, $counter, $ds_lives, $dead, $melee, $demolition, $dropbox);
+						$ds_lives = $results['lives'];
 						$dead = $results['dead'];
 						$dropshipMarkup = $results['markup'];
 						$counter = $results['counter'];
@@ -1045,6 +1106,11 @@ if(isset($_POST['run'])){
 					$counter++;
 				}	
 			}
+			/* Survive on strictly less than the threshold -- the same
+			   comparison the loop above makes, written out so the numbers can
+			   be read without the code. */
+			$dropshipMarkup .= "\n<!-- run: survive<" . $threshold . " lives=" . $ds_of_lives_start
+			                 . " rolls=" . implode(',', $ds_rolls) . " -->";
 			if(isset($dropshipMarkup)){
 				// Log game score if no battle is active
 				if(!isset($_SESSION['userData']['battle_id'])){

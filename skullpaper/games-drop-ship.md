@@ -15,6 +15,18 @@ Drop Ship allows holders of the NFT collection to send their soldiers to battle 
 
 Send Drop Ship NFTs in squads of up to 4 into battle and browse consumables such as armor, weapons, and items that can be purchased to improve probabilities of getting higher scores. A squad with all armor, weapons, and item types is considered a Super Soldier Squad and has the best probability within the game.
 
+**Armor sets the odds. Gear does not.** Only the armor your squad is wearing
+decides the roll each round: the best tier worn sets the floor and every lower
+tier adds a little on top, which is why a mixed squad of four beats four of the
+same thing. The Squad panel shows the figure before you deploy, and it is the
+same number the run rolls against.
+
+**Every Medkit is one extra life, and they stack.** A Medkit carried by a
+soldier and a Medkit bought from the store are two separate lives, and so are
+two soldiers who both carry one. Each failed round spends exactly one of them
+and the run continues. The first roll of a run happens on round 3, so that is
+the single likeliest round to spend one on.
+
 ## The four free soldiers
 
 Every Drop Ship player is given four Grunts - **Hagar, Delay, Blood Bag and
