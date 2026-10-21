@@ -203,8 +203,21 @@ function dropshipDropAward($ctx) {
 		 * are not in the repo. So: announce only once that rename has
 		 * happened. The DROP IS STILL AWARDED either way; what is skipped is
 		 * the post in the DHC Fighters channel, which is worth losing and a
-		 * fatal on the play page is not. It starts working by itself the
-		 * moment the rename lands.
+		 * fatal on the play page is not.
+		 *
+		 * THE RENAME HAS LANDED. dropshipGetWebhook() is in the credentials
+		 * now, so this condition is false and Drop Ship trait drops announce
+		 * for the first time. The check STAYS: credentials are per-server
+		 * and not in the repository, so a fresh deploy or a restored backup
+		 * can arrive without it, and the answer then has to be a quiet drop
+		 * rather than a dead play page.
+		 *
+		 * WHAT IT DOES NOT DO is configure the channel. The announcement
+		 * goes out through the platform's 'dhcfighters' webhook, which is a
+		 * SEPARATE credential (getDHCFightersWebhook in the platform's own
+		 * credentials file) and is guarded in webhooks.php the same way. No
+		 * credential there means the post is silently skipped -- which looks
+		 * identical to this gate still being closed.
 		 */
 		if (!function_exists('dropshipGetWebhook') && !defined('DHCF_NO_NOTIFY')) {
 			define('DHCF_NO_NOTIFY', true);

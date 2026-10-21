@@ -77,18 +77,17 @@ ok($still <= count($historic),
    'the historic list has grown, which means an unguarded call was added to it rather than guarded');
 
 /*
- * THE DHC FIGHTERS CHANNEL ACCEPTS TWO SPELLINGS, and the prefixed one is
- * deliberate rather than a typo: the platform and Drop Ship each load their
- * own credentials file and both land in one PHP namespace on a request that
- * touches both, which is how "Cannot redeclare getWebhook()" once took down
- * the play page. Prefixing with Skulliance is the defence, so a credential
- * written that way must be honoured and not silently ignored.
+ * ONE SPELLING. A Skulliance-prefixed alias was supported here briefly and
+ * then removed once dropshipGetWebhook() landed in Drop Ship's own
+ * credentials -- the collision it was defending against was specifically
+ * getWebhook(), and it is solved at the source. A second accepted name with
+ * nothing behind it is a second thing to keep right.
  */
-echo "\nthe DHC Fighters credential, either spelling\n";
-foreach (array('getDHCFightersWebhook', 'getSkullianceDHCFightersWebhook') as $n) {
-	ok(strpos($src, "function_exists('" . $n . "')") !== false,
-	   "webhooks.php no longer looks for $n, so a credential of that name is ignored");
-}
+echo "\nthe DHC Fighters credential\n";
+ok(strpos($src, "function_exists('getDHCFightersWebhook')") !== false,
+   'webhooks.php no longer looks for getDHCFightersWebhook, so that credential is ignored');
+ok(strpos($src, 'getSkullianceDHCFightersWebhook') === false,
+   'the prefixed alias is back, with no credential behind it');
 
 /* RESOLVED, not read. The branch is lifted and run with only the prefixed
    name defined -- the case that prompted this -- because a fallback chain
@@ -112,21 +111,16 @@ function resolve_with($blk, $defs) {
 	@unlink($tmp);
 	return $out === null ? '' : trim($out);
 }
-$plain    = 'function getDHCFightersWebhook(){ return "PLAIN"; }';
-$prefixed = 'function getSkullianceDHCFightersWebhook(){ return "PREFIXED"; }';
+$plain = 'function getDHCFightersWebhook(){ return "PLAIN"; }';
 
-/* Nothing defined: silent, never a fatal. That is the whole guard. */
+/*
+ * Nothing defined: silent, never a fatal. That is the whole guard, and it is
+ * also why a MISNAMED credential is so easy to miss -- it looks exactly like
+ * an unconfigured one, which is what happened when this channel was first
+ * wired up under a prefixed name.
+ */
 ok(resolve_with($blk, '') === '', 'an unconfigured channel no longer resolves to empty');
-/* THE CASE THAT PROMPTED THIS. A fallback chain written the wrong way round
-   reads perfectly and returns "", which is indistinguishable from the
-   credential not being there at all. */
-ok(resolve_with($blk, $prefixed) === 'PREFIXED',
-   'a credential named with the Skulliance prefix is ignored, which looks identical to it being missing');
-ok(resolve_with($blk, $plain) === 'PLAIN', 'the unprefixed credential is ignored');
-/* Both defined: the unprefixed one wins, because it is what every
-   neighbouring channel uses. */
-ok(resolve_with($blk, $plain . $prefixed) === 'PLAIN',
-   'with both spellings defined the prefixed one wins, which is the surprising answer');
+ok(resolve_with($blk, $plain) === 'PLAIN', 'the credential is ignored when it IS defined');
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all webhook name checks passed\n");
 exit($fail ? 1 : 0);
