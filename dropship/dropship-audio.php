@@ -89,6 +89,14 @@ function dropshipAudioEvents() {
 		array('art' => 'equipment/airstrike2', 'family' => 'Airstrike', 'n' => 2, 'caption' => 'Air Strike', 'sound' => 'massexplosioncontra', 'delay' => 2000),
 		array('art' => 'equipment/jet-pack1', 'family' => 'Jet Pack', 'n' => 1, 'caption' => 'Jet Pack Takeoff', 'sound' => '', 'delay' => 0),
 		array('art' => 'equipment/drop-box', 'family' => 'Drop Box', 'n' => 0, 'caption' => 'Drop Box', 'sound' => '', 'delay' => 0),
+		/* THE TITLE CARD, shown the moment Play is pressed and before
+		   the first round. Its sound is the one audio2 autoplays as the
+		   results pane renders -- loading, or splash, or laughing -- a
+		   per-project ladder in dashboard.php that nothing here knew
+		   about, which is why this picture had no row while every other
+		   one did. Per-project files again, and each is the theme's own. */
+		array('art' => 'reset/intro', 'family' => 'Drop Ship Intro', 'n' => 0, 'caption' => '', 'sound' => '', 'delay' => 0,
+		      'legacy_by' => array(1 => 'loading', 2 => 'loading', 3 => 'splash', 4 => 'laughing')),
 		/* ROUND 0 IS A SLIDE LIKE ANY OTHER, and this is its sound. It
 		   used to be modelled twice: once here with no sound, and once
 		   as an "Opening" slot with no frame -- two halves of one thing,
@@ -301,6 +309,7 @@ function dropshipAudioSlotByArt($conn, $project_id, $art) {
  */
 function dropshipAudioPlanRows($conn, $project_id, $plan) {
 	$where = array();
+	$n = 0;
 	foreach ($plan as $gname => $g) {
 		foreach ($g['rows'] as $ri => $r) {
 			foreach ($r['slots'] as $sl) {
@@ -313,19 +322,27 @@ function dropshipAudioPlanRows($conn, $project_id, $plan) {
 				/* images/weapons/demo1.png -> weapons/demo1, which is how
 				   the registry names a frame. */
 				$k = preg_replace('/\.[a-z0-9]+$/', '', substr($sl['rel'], 7));
-				$where[$k] = $gname . '|' . $ri;
+				/* The slot's position too, so a row's sounds come out in
+				   the order its pictures do -- four cards and three
+				   sounds underneath in some other order is a puzzle. */
+				$where[$k] = array($gname . '|' . $ri, $n++);
 			}
 		}
 	}
 	$out = array('rows' => array(), 'loose' => array());
 	foreach (dropshipAudioSlots($conn, $project_id) as $as) {
 		if ($as['art'] !== '' && isset($where[$as['art']])) {
-			$out['rows'][$where[$as['art']]][] = $as;
+			$as['_at'] = $where[$as['art']][1];
+			$out['rows'][$where[$as['art']][0]][] = $as;
 		} else {
 			/* The catch-alls span whole stages rather than sitting on one
 			   frame, so they have no row to live under. */
 			$out['loose'][] = $as;
 		}
+	}
+	foreach ($out['rows'] as $k => $rows) {
+		usort($rows, function ($a, $b) { return $a['_at'] - $b['_at']; });
+		$out['rows'][$k] = $rows;
 	}
 	return $out;
 }

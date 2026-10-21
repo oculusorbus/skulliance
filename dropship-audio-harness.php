@@ -294,9 +294,14 @@ ok($dcs && $dcs['plays'] === '', 'Dread City plays something on round 0 that it 
 
 /* And nothing else in the table has a per-project file: that exception
    exists for one row and must not spread. */
-$byproj = 0;
-foreach (dropshipAudioEvents() as $e) if (!empty($e['legacy_by'])) $byproj++;
-ok($byproj === 1, "$byproj rows carry a per-project fallback; only round 0 should");
+/* TWO ROWS, and only these two: the title card and round 0, whose old
+   files were per-project from the start. The exemption must not spread
+   to a row whose old name is Drop Ship's. */
+$byproj = array();
+foreach (dropshipAudioEvents() as $e) if (!empty($e['legacy_by'])) $byproj[] = $e['art'];
+sort($byproj);
+ok($byproj === array('reset/intro', 'reset/reset'),
+   'the rows with a per-project fallback are: ' . implode(', ', $byproj));
 
 echo "\nthe Set button finds the row it was pressed on\n";
 /*
@@ -555,14 +560,78 @@ foreach ($psplit['rows'] as $key => $slots) {
  * nothing ever plays over it -- but counting cards against rows and
  * then guessing at the gap is not a thing to leave somebody doing.
  */
+/*
+ * THE TITLE CARD HAS A SOUND, and I said it did not.
+ *
+ * audio2 autoplays a per-project file as the results pane renders --
+ * loading, splash or laughing -- which is exactly when intro.jpg is on
+ * screen. The registry knew nothing about it, so that card was the only
+ * one in THE DROP without a row and the page explained the absence
+ * confidently and wrongly.
+ */
 $intro_heard = false;
 foreach ($psplit['rows'] as $slots) {
 	foreach ($slots as $sl) if ($sl['art'] === 'reset/intro') $intro_heard = true;
 }
-ok(!$intro_heard, 'the pre-run still has a sound row, and nothing ever plays over it');
+ok($intro_heard, 'the title card has no sound row, and something plays over it');
 ok(dropshipArtTitle('images/reset/intro.jpg') === 'The still shown before a run',
    'the pre-run still is named something else now, so the note will read oddly');
+/* AND THE PAGE PLAYS WHAT THE REGISTRY SAYS, rather than a ladder of
+   its own. */
+$dash_a = (string)@file_get_contents(__DIR__ . '/dropship/dashboard.php');
+ok(strpos($dash_a, "dropshipAudioSlotByArt(\$conn,") !== false
+   && strpos($dash_a, "'reset/intro')") !== false,
+   'the dashboard still picks the title card sound with its own project_id ladder');
+ok(strpos($dash_a, '$audio2 = "splash"') === false,
+   'the hardcoded per-project ladder is still there, so the slot cannot change it');
+
+/* EVERY CARD IN THE DROP NOW HAS ONE, which is what was being counted
+   when this was reported. */
+$drop_cards = $drop_snd = 0;
+foreach ($pplan as $gname => $g) {
+	if ($gname !== 'The drop') continue;
+	foreach ($g['rows'] as $ri => $r) {
+		foreach ($r['slots'] as $sl) if ($sl['kind'] === 'art') $drop_cards++;
+		$drop_snd += isset($psplit['rows']['The drop|' . $ri])
+		           ? count($psplit['rows']['The drop|' . $ri]) : 0;
+	}
+}
+ok($drop_cards === 4, "THE DROP has $drop_cards cards, not the four being counted");
+ok($drop_snd === $drop_cards,
+   "THE DROP has $drop_cards pictures and $drop_snd sounds; every one of them plays");
+/*
+ * AND IN THE ORDER THE PICTURES ARE IN. Four cards with their sounds
+ * listed underneath in registry order rather than card order is a
+ * puzzle you have to solve by reading filenames -- which is what was
+ * confusing about this block.
+ */
+$drop_order = array();
+foreach ($psplit['rows'] as $k => $slots) {
+	if (strpos($k, 'The drop|') !== 0) continue;
+	foreach ($slots as $sl) $drop_order[] = $sl['art'];
+}
+ok($drop_order === array('reset/reset', 'reset/intro', 'drop/drop', 'drop/team'),
+   'the drop sounds are not in the order their pictures are: ' . implode(', ', $drop_order));
+/* The cards themselves, so the comparison above is against something
+   real rather than against a list I typed out. */
+$drop_cards_order = array();
+foreach ($pplan as $gname => $g) {
+	if ($gname !== 'The drop') continue;
+	foreach ($g['rows'] as $r) foreach ($r['slots'] as $sl) {
+		if ($sl['kind'] === 'art') {
+			$drop_cards_order[] = preg_replace('/\.[a-z0-9]+$/', '', substr($sl['rel'], 7));
+		}
+	}
+}
+ok($drop_order === $drop_cards_order,
+   'the sounds are in a different order from the cards above them');
 $adm_n = (string)@file_get_contents(__DIR__ . '/dropship/admin-art.php');
+/* THE ROW IS NAMED AFTER ITS PICTURE. "Drop Ship Initiating" and
+   "Round 0, the ship arriving" are the same frame, and a block of
+   sounds labelled with words that appear on none of the cards above is
+   a puzzle rather than a list. */
+ok(strpos($adm_n, "dropshipArtTitle('images/' . \$as['art'] . '.gif')") !== false,
+   'a sound row is labelled with something that does not appear on its card');
 ok(strpos($adm_n, 'No sound of its own:') !== false,
    'a picture with no sound row is left unexplained, so the gap reads as a bug');
 ok(strpos($adm_n, "\$row_mute[] = dropshipArtTitle(\$sl['rel']);") !== false,

@@ -788,8 +788,24 @@ $web = '/staking/dropship/' . ($slug === 'drop-ship' ? '' : $slug . '/');
 		$suggest = ($playing === '' && $as['legacy_has']) ? $as['legacy'] . '.mp3' : '';
 		?>
 		<div class="ev">
-			<span class="nm"><?php echo $h($as['caption']); ?>
-				<?php if ($as['said'] !== $as['term'] && $as['said'] !== ''): ?>
+			<?php
+			/*
+			 * NAMED AFTER THE PICTURE, not after the caption.
+			 *
+			 * Four cards and three sounds under them, each labelled with
+			 * a caption that does not appear on any card, is a puzzle:
+			 * "Drop Ship Initiating" and "Round 0, the ship arriving"
+			 * are the same frame and read as two different things. The
+			 * row says exactly what its card says, so they line up by
+			 * eye, and the theme's own word goes underneath where it is
+			 * useful rather than where it has to be decoded.
+			 */
+			$as_pic = $as['art'] !== ''
+			        ? dropshipArtTitle('images/' . $as['art'] . '.gif')
+			        : $as['caption'];
+			?>
+			<span class="nm"><?php echo $h($as_pic !== '' ? $as_pic : $as['caption']); ?>
+				<?php if ($as['said'] !== '' && $as['said'] !== $as_pic): ?>
 					<span class="said"><?php echo $h($as['said']); ?></span>
 				<?php endif; ?>
 			</span>

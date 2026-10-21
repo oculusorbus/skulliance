@@ -43,6 +43,12 @@ function dropshipThemeVocabulary() {
 			   before any of this, and claiming it here would put a permanently
 			   missing slot on the art page and demand three files nobody uses. */
 			array('label' => 'Drop Ship', 'exact' => array('Drop Ship'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
+			/* The title card shown the moment you press Play, before the
+			   first round. It has no caption on screen -- it is a picture
+			   and a sound and nothing else -- but it needs a word here so
+			   a theme can name its own file for it, the same as any other
+			   thing. */
+			array('label' => 'Drop Ship Intro', 'exact' => array('Drop Ship Intro'), 'desc' => array(), 'icons' => array(), 'themes' => 0),
 			array('label' => 'Drop Ship Initiating', 'exact' => array('Drop Ship Initiating'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
 			array('label' => 'Drop Ship Landed', 'exact' => array('Drop Ship Landed'), 'desc' => array(), 'icons' => array(), 'themes' => 2),
 			array('label' => 'SCRIP', 'exact' => array('SCRIP'), 'desc' => array(), 'icons' => array(), 'themes' => 3),

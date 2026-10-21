@@ -483,12 +483,22 @@ $characters = evaluateText("Troops");
 				</div>
 				
 				<?php
-				$audio2 = "loading";
-				if($_SESSION["userData"]["dropship_project_id"] == 3){
-					$audio2 = "splash";
-				}else if($_SESSION["userData"]["dropship_project_id"] == 4){
-					$audio2 = "laughing";
-				}
+				/*
+				 * THE SOUND OVER THE TITLE CARD, which is a slot like any
+				 * other now.
+				 *
+				 * This was a project_id ladder -- 1 and 2 loading, 3
+				 * splash, 4 laughing -- autoplayed by audio2 as the
+				 * results pane renders, which is exactly when
+				 * images/reset/intro.jpg is on screen. Nothing in the
+				 * audio registry knew about it, so that picture was the
+				 * one card in THE DROP with no sound row while every
+				 * other had one, and the page said so wrongly.
+				 */
+				$ds_intro = dropshipAudioSlotByArt($conn,
+					$_SESSION["userData"]["dropship_project_id"], 'reset/intro');
+				$audio2 = ($ds_intro && $ds_intro['plays'] !== '')
+				        ? $ds_intro['plays'] : '';
 				$muted = "";
 				if(isset($_SESSION['userData']['audio']) && $_SESSION['userData']['audio'] == "false"){
 					$muted = "muted";
@@ -505,7 +515,7 @@ $characters = evaluateText("Troops");
 				Your browser does not support the audio element.
 				</audio>
 				<audio '.$muted.' id="audio2" controls autoplay style="display:none">
-				  <source id="audioSource2" src="sounds/'.$audio2.'.mp3" type="audio/mpeg">
+				  <source id="audioSource2" src="'.($audio2 !== '' ? dropshipAudioUrl($audio2) : '').'" type="audio/mpeg">
 				Your browser does not support the audio element.
 				</audio>';
 				?>
