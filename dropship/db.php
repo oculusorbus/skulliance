@@ -1126,8 +1126,21 @@ function addDefaultSoldiers($conn){
 function deploySoldier($conn, $id, $active){
 	// Check to see if squad is full or not
 	if((checkSquadCount($conn) < 4 && $active==1) || $active==0){
-		// NEED TO CHECK IF PLAYER OWNS SOLDIER BEFORE UPDATING, A HACKER COULD BRUTE FORCE THE SOLDIER ID IN THE FORM AND DEPLOY/WITHDRAW ANOTHER PLAYER'S SOLDIER
-		$sql = "UPDATE soldiers SET active = '".$active."' WHERE id = '".$id."' AND project_id = '".$_SESSION['userData']['dropship_project_id']."'";
+		/*
+		 * SCOPED TO THE PLAYER, which the comment that used to sit here said
+		 * out loud was missing: "NEED TO CHECK IF PLAYER OWNS SOLDIER BEFORE
+		 * UPDATING, A HACKER COULD BRUTE FORCE THE SOLDIER ID IN THE FORM AND
+		 * DEPLOY/WITHDRAW ANOTHER PLAYER'S SOLDIER". The form posts a bare
+		 * soldier_id and nothing between here and the database cared whose it
+		 * was, so counting up through the ids withdrew other people's squads.
+		 *
+		 * IN THE STATEMENT, not in a SELECT above it. A check and then a write
+		 * is two statements a guessed id can slip between, and the one-line
+		 * version cannot be forgotten by whoever edits this next. An id that
+		 * is not yours now updates nothing at all, silently, which is the
+		 * right answer to a request that was never legitimate.
+		 */
+		$sql = "UPDATE soldiers SET active = '".$active."' WHERE id = '".$id."' AND user_id = '".$_SESSION['userData']['dropship_user_id']."' AND project_id = '".$_SESSION['userData']['dropship_project_id']."'";
 		if ($conn->query($sql) === TRUE) {
 		  //echo "Record updated successfully";
 		} else {
