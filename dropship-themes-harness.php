@@ -1762,13 +1762,39 @@ foreach (array('armor', 'gear') as $stat) {
 	ok(strpos($dbSrc, 'evaluateText($row["' . $stat . '"])') !== false,
 	   "the card stopped theming $stat, which rank was just brought into line with");
 }
-/* And it is offered in the admin, or a theme cannot rename what it now
-   renders -- a themeable string nobody can reach is not themeable. */
-$vocab = dropshipThemeVocabulary();
+/*
+ * AND THE CANONICAL IS THE GAME'S WORD, NOT ONE THEME'S. It was "Neo Miami
+ * Citizen" -- Oculus Lounge's -- stored for every collection, so every other
+ * theme had to override a term belonging to a game it has nothing to do
+ * with. Oculus Lounge overrides it now, which is the right way round.
+ */
+ok(defined('DROPSHIP_DEFAULT_RANK'), 'there is no canonical default rank');
+ok(stripos(DROPSHIP_DEFAULT_RANK, 'miami') === false
+   && stripos(DROPSHIP_DEFAULT_RANK, 'henchmen') === false,
+   'the default rank is a theme-specific word again: ' . DROPSHIP_DEFAULT_RANK);
+/* Both sync paths use it; neither may go back to a literal. */
+foreach (array('dropship/db.php', 'dropship/dashboard.php') as $f) {
+	$src = harness_strip_comments((string)file_get_contents(__DIR__ . '/' . $f));
+	ok(strpos($src, 'DROPSHIP_DEFAULT_RANK') !== false, "$f no longer uses the canonical rank");
+	/* THE SOLDIER'S RANK, not the player's. dashboard.php also maps Discord
+	   roles to a PLAYER rank and "Henchmen" is one of those -- a blanket
+	   search for the word caught that instead and failed for a reason
+	   unrelated to its own name. Only `$rank = "..."` is this. */
+	ok(preg_match('/\$rank\s*=\s*["\']/', $src) !== 1,
+	   "$f assigns a soldier rank from a literal again");
+}
+/* THE PROJECT-ID LADDER IS GONE. It gave 2 and 3 "Henchmen", 4 "Neo Miami
+   Citizen", and left $rank UNDEFINED for anything else -- so a new theme got
+   whatever the previous loop iteration held. Fourth ladder of this shape. */
+$dashSrc = harness_strip_comments((string)file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(preg_match("/dropship_project_id'\]\s*==\s*\d\s*\)\s*\{\s*\\$rank/", $dashSrc) !== 1,
+   'the rank is chosen by a project-id ladder again');
+/* It is offered in the admin, or a theme cannot rename what it renders --
+   a themeable string nobody can reach is not themeable. */
 $found = false;
-foreach ($vocab as $group => $terms) {
+foreach (dropshipThemeVocabulary() as $group => $terms) {
 	foreach ($terms as $t) {
-		if (in_array('Neo Miami Citizen', (array)$t['exact'], true)) $found = true;
+		if (in_array(DROPSHIP_DEFAULT_RANK, (array)$t['exact'], true)) $found = true;
 	}
 }
 ok($found, 'the default rank is not in the wording table, so no theme can rename it');

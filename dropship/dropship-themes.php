@@ -24,6 +24,23 @@
  */
 
 /**
+ * THE RANK A SOLDIER GETS WHEN ITS COLLECTION DOES NOT SUPPLY ONE.
+ *
+ * Drop Ship's own NFTs carry real ranks in their metadata. Every other
+ * collection gets this, and it has to be the GAME'S word rather than any one
+ * theme's: it was "Neo Miami Citizen", which is Oculus Lounge's, so every
+ * other theme had to override a term belonging to a game it has nothing to
+ * do with before it could say anything at all.
+ *
+ * Rendered through evaluateText(), so a theme renames it in the admin
+ * alongside SCRIP and Medkit. It lives in this file because it is a
+ * VOCABULARY default and this file owns the wording -- it sat in
+ * dropship-grunts.php first, which is about what a soldier is issued with,
+ * and which the theme harness does not load.
+ */
+if (!defined('DROPSHIP_DEFAULT_RANK')) define('DROPSHIP_DEFAULT_RANK', 'Soldier');
+
+/**
  * Who may edit themes.
  *
  * ONE PLACE, because the game controls on dashboard.php gate on a Discord id

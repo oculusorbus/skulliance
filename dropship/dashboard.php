@@ -333,11 +333,23 @@ if($ds_source === 'skulliance'){
 									if(!isset($nft_data->summary)){
 										$nft_data->summary = null;
 									}
-									if($_SESSION['userData']['dropship_project_id'] == 2 || $_SESSION['userData']['dropship_project_id'] == 3){
-										$rank = "Henchmen";
-									}else if($_SESSION['userData']['dropship_project_id'] == 4){
-										$rank = "Neo Miami Citizen";
-									}
+									/*
+									 * ONE NEUTRAL RANK, THEMED LIKE EVERY OTHER WORD.
+									 *
+									 * This was a project-id ladder -- 2 and 3 got "Henchmen",
+									 * 4 got "Neo Miami Citizen" -- which is the fourth of
+									 * these we have pulled out, and the worst behaved: a
+									 * project not on the list left $rank UNDEFINED, so a new
+									 * theme got whatever the previous loop iteration held, or
+									 * a warning printed into the page.
+									 *
+									 * Worse than untidy, it made one theme's vocabulary the
+									 * base string every other theme had to override. Oculus
+									 * Lounge's word is Oculus Lounge's; the canonical is the
+									 * game's own noun, and a theme renames it in the admin
+									 * exactly like SCRIP or Medkit.
+									 */
+									$rank = DROPSHIP_DEFAULT_RANK;
 									createSoldier($conn, $nft_data->AssetName, $nft_data->name, $nft_data->summary, $rank, $armor_final, $gear_final, $level, $ipfs);
 								}
 							} // End if

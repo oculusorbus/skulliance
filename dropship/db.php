@@ -902,7 +902,10 @@ function discosolarisGear($attributes) {
 // asset every time this function runs (gated by dashboard.php on wallet/
 // project changes, not every page load) -- so an existing soldier's
 // old random roll gets corrected to the real value too, not just new ones.
-// rank stays the fixed string "Neo Miami Citizen", same as before.
+// rank is DROPSHIP_DEFAULT_RANK, the game's own neutral noun, which a theme
+// renames in the admin. It used to be the fixed string "Neo Miami Citizen" --
+// Oculus Lounge's word, stored for every collection, so every other theme had
+// to override one theme's vocabulary to say anything at all.
 function dropshipSyncFromSkulliance($conn, $discord_id, $policy = '') {
 	$skulliance_conn = dropshipSkullianceDb();
 	if (!$skulliance_conn) return;
@@ -1004,7 +1007,7 @@ function dropshipSyncFromSkulliance($conn, $discord_id, $policy = '') {
 		$level = $armor_weight[$armor_final] + $gear_weight[$gear_final];
 
 		if (!checkSoldier($conn, $asset_name)) {
-			createSoldier($conn, $asset_name, $row['name'], null, "Neo Miami Citizen", $armor_final, $gear_final, $level, $row['ipfs']);
+			createSoldier($conn, $asset_name, $row['name'], null, DROPSHIP_DEFAULT_RANK, $armor_final, $gear_final, $level, $row['ipfs']);
 		} else {
 			$asset_name_esc = $conn->real_escape_string($asset_name);
 			$armor_esc = $conn->real_escape_string($armor_final);

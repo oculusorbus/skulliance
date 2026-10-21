@@ -97,16 +97,16 @@ function dropshipThemeVocabulary() {
 			array('label' => 'Demolition', 'exact' => array('Demolition'), 'desc' => array('Demolition'), 'icons' => array('demolition'), 'themes' => 2),
 		),
 		'Ranks' => array(
-			/* THE RANK PRINTED ON A SOLDIER CARD. "Neo Miami Citizen" is the
-			   fixed string createSoldier() stores for any collection whose
-			   metadata carries no rank of its own -- it is Oculus Lounge's
-			   word and it was leaking onto every other theme's cards,
-			   because rank was the one stat the card printed raw. Listed
-			   here so a theme can rename it in the admin like anything
-			   else. Drop Ship's own soldiers carry real ranks from their
-			   metadata and are not affected. */
-			array('label' => 'Neo Miami Citizen', 'exact' => array('Neo Miami Citizen'),
-			      'desc' => array('Neo Miami Citizen'), 'icons' => array(), 'themes' => 2),
+			/* THE RANK PRINTED ON A SOLDIER CARD, for any collection whose
+			   metadata carries no rank of its own. The canonical is the
+			   game's own noun: it used to be "Neo Miami Citizen", which is
+			   Oculus Lounge's word, so every other theme had to override a
+			   term belonging to a game it has nothing to do with. Drop
+			   Ship's own soldiers carry real ranks and are unaffected.
+			   Oculus Lounge keeps its word by overriding this, which is
+			   the right way round. */
+			array('label' => 'Soldier', 'exact' => array('Soldier'),
+			      'desc' => array('Soldier'), 'icons' => array(), 'themes' => 2),
 			array('label' => 'Rank', 'exact' => array('Rank'),
 			      'desc' => array('Rank'), 'icons' => array(), 'themes' => 2),
 		),

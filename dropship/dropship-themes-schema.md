@@ -258,3 +258,35 @@ row by hand.
 `policy_id` may be left blank, for a project whose collection is not minted
 yet, but is otherwise required to be 56 hex characters: it is interpolated
 into every NFT lookup.
+
+## Normalising the stored soldier rank
+
+`createSoldier()` used to store `"Neo Miami Citizen"` for any collection whose
+metadata carries no rank, and `dashboard.php` chose between that and
+`"Henchmen"` on a project-id ladder. Both are theme words, so every OTHER
+theme had to override one of them to say anything at all. The canonical is
+`DROPSHIP_DEFAULT_RANK` now, and a theme renames it in the admin.
+
+New soldiers get the neutral word. Existing rows keep what they were given,
+because the sync only ever updates `armor`, `gear` and `level`:
+
+```sql
+UPDATE soldiers SET rank = 'Soldier'
+ WHERE rank IN ('Neo Miami Citizen', 'Henchmen');
+```
+
+**The `IN` list is doing real work.** Drop Ship's own soldiers carry genuine
+ranks from their metadata and must not be flattened; only the two hardcoded
+strings are rewritten.
+
+Then give the themes that want their old word back an override, in the admin
+under Ranks, or directly:
+
+```sql
+INSERT INTO theme_text (theme_id, match_type, find, replacement, sort_order)
+SELECT id, 'exact', 'Soldier', 'Neo Miami Citizen', 1 FROM themes WHERE slug = 'oculus-lounge';
+INSERT INTO theme_text (theme_id, match_type, find, replacement, sort_order)
+SELECT id, 'exact', 'Soldier', 'Henchmen', 1 FROM themes WHERE slug = 'dread-city';
+INSERT INTO theme_text (theme_id, match_type, find, replacement, sort_order)
+SELECT id, 'exact', 'Soldier', 'Henchmen', 1 FROM themes WHERE slug = 'filthy-mermaid';
+```
