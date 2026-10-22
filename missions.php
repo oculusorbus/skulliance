@@ -630,6 +630,43 @@ define('MS_FIELD_CAP', 24);
 .ms-d-art:has(video) { height: 320px; }
 @media (max-width: 620px) { .ms-d-art:has(video) { height: 240px; } }
 .ms-d-art img, .ms-d-art video { width: 100%; height: 100%; object-fit: contain; display: block; }
+/*
+ * THE ART IS WORTH LOOKING AT, AND THE DRAWER SHOWS A THIRD OF IT.
+ *
+ * Mission art is 600x600; this box is 260px tall, so better than half the
+ * detail never reaches the screen. The image was already the full file --
+ * nothing is served as a thumbnail -- so the only thing missing was a way
+ * to open it.
+ *
+ * ONLY THE STILLS GET THE POINTER. A video mission already has transport
+ * controls in that box, and a click target over the top of them fights
+ * the play button.
+ */
+.ms-d-art img { cursor: zoom-in; }
+.ms-d-art { position: relative; }
+.ms-d-zoom { position: absolute; right: 10px; bottom: 10px; pointer-events: none;
+  background: rgba(7,17,29,.82); border: 1px solid rgba(0,200,160,.3); color: #9fb6c4;
+  font-size: .62rem; letter-spacing: .09em; text-transform: uppercase; padding: 4px 8px;
+  opacity: 0; transition: opacity .14s; }
+.ms-d-art:hover .ms-d-zoom { opacity: 1; }
+/* NO HOVER ON TOUCH, so the hint would never appear -- show it there
+   instead of hiding the only affordance the feature has. */
+@media (hover: none) { .ms-d-zoom { opacity: 1; } }
+
+/* THE LIGHTBOX SITS ABOVE THE DRAWER, which is z-index 1001. */
+.ms-lb { position: fixed; inset: 0; z-index: 2000; background: rgba(0,0,0,.93);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  cursor: zoom-out; }
+.ms-lb[hidden] { display: none; }
+/* UP TO ITS OWN SIZE AND NO FURTHER. Blowing a 600px image up to fill a
+   27in display is a soft mess; capping at the natural width keeps it
+   sharp and still shows 2.3x what the drawer did. */
+.ms-lb img { max-width: min(96vw, 600px); max-height: 92vh; width: auto; height: auto;
+  display: block; image-rendering: auto; }
+.ms-lb .x { position: absolute; top: 14px; right: 16px; width: 34px; height: 34px;
+  padding: 0; line-height: 32px; font-size: 20px; background: none; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.18); color: #cfd8e3; }
+.ms-lb .x:hover { color: #fff; border-color: #00c8a0; }
 .ms-d-main { padding: 16px 18px; text-align: left; }
 .ms-d-main h3 { margin: 0; color: #e8eaed; font-size: 1.15rem; text-transform: none; }
 .ms-d-sub { font-size: .74rem; color: #7a9eb0; margin: 2px 0 10px; }
@@ -1063,6 +1100,14 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	</div>
 
 	<?php /* ---- the launch drawer ---- */ ?>
+	<?php /* THE LIGHTBOX LIVES OUTSIDE THE DRAWER, not inside it. The
+	         drawer's own box clips its overflow and sets a stacking
+	         context, so a child could not cover the page however high its
+	         z-index went. */ ?>
+	<div id="ms-lb" class="ms-lb" hidden>
+		<button type="button" class="x" id="ms-lb-x" aria-label="Close">&times;</button>
+		<img id="ms-lb-img" src="" alt="">
+	</div>
 	<div id="ms-drawer" class="ms-drawer" hidden>
 		<div class="ms-drawer-box" role="dialog" aria-modal="true" aria-labelledby="ms-d-title">
 			<?php /* CLOSE GETS ITS OWN ROW. It used to be absolutely positioned
@@ -1493,6 +1538,43 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	 * can keep its audio going until it is collected, so emptying the
 	 * body on its own is not a fix either.
 	 */
+	/*
+	 * FULL-SIZE ART, because the drawer only ever showed a third of it.
+	 *
+	 * The source was always the whole 600x600 file -- nothing is served
+	 * as a thumbnail -- so this adds no loading and no second request:
+	 * the browser already has the image decoded and the lightbox points
+	 * at the same URL.
+	 *
+	 * THE DRAWER'S VIDEO IS PAUSED WHILE IT IS OPEN. Only stills are
+	 * clickable, so this is for the case where a video mission's poster
+	 * is showing; leaving it running behind an opaque overlay is work
+	 * nobody can see.
+	 */
+	var lb    = document.getElementById('ms-lb');
+	var lbImg = document.getElementById('ms-lb-img');
+
+	function msOpenLightbox(src) {
+		if (!lb || !src) return;
+		lbImg.src = src;
+		lb.hidden = false;
+		drawerBody.querySelectorAll('video').forEach(function (v) { try { v.pause(); } catch (e) {} });
+		var x = document.getElementById('ms-lb-x');
+		if (x) x.focus();
+	}
+	function msCloseLightbox() {
+		if (!lb) return;
+		lb.hidden = true;
+		/* The src is dropped so a very large gif stops decoding behind the
+		   scenes, and so the next open cannot flash the previous mission. */
+		lbImg.removeAttribute('src');
+	}
+	if (lb) {
+		/* Anywhere on the backdrop, the image included -- the whole overlay
+		   is cursor: zoom-out, so every part of it should honour that. */
+		lb.addEventListener('click', msCloseLightbox);
+	}
+
 	function msStopMedia() {
 		drawerBody.querySelectorAll('video, audio').forEach(function (m) {
 			try { m.pause(); m.currentTime = 0; } catch (e) {}
@@ -1500,12 +1582,19 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	}
 
 	window.msCloseDrawer = function () {
+		/* Or the overlay is left covering the page with nothing behind it
+		   and no obvious way back -- the drawer it belonged to has gone. */
+		msCloseLightbox();
 		msStopMedia();
 		drawerBody.innerHTML = '';
 		drawer.hidden = true; LO = null; picked = {}; items = {}; shedByItem = {}; target = 100;
 	};
 	drawer.addEventListener('click', function (e) { if (e.target === drawer) msCloseDrawer(); });
 	document.addEventListener('keydown', function (e) {
+		/* THE LIGHTBOX EATS ESCAPE FIRST. It opened from the drawer and
+		   sits on top of it, so one press should step back one layer --
+		   closing both at once loses the mission the player was reading. */
+		if (e.key === 'Escape' && lb && !lb.hidden) { msCloseLightbox(); return; }
 		if (e.key === 'Escape' && !drawer.hidden) msCloseDrawer();
 	});
 
@@ -1552,7 +1641,8 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			: '<p class="ms-d-desc">No items in your pack yet. They drop from completed missions.</p>';
 
 		drawerBody.innerHTML =
-			'<div class="ms-d-art">' + art + '</div>'
+			'<div class="ms-d-art">' + art
+			+ (LO.video ? '' : '<span class="ms-d-zoom">Click to enlarge</span>') + '</div>'
 			+ '<div class="ms-d-scroll"><div class="ms-d-main">'
 			+ '<h3 id="ms-d-title">' + esc(LO.title) + '</h3>'
 			+ '<p class="ms-d-sub">' + esc(LO.project) + ' &middot; Level ' + LO.level
@@ -1732,6 +1822,8 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			go.setAttribute('data-retreat', '1');
 		}
 
+		var artImg = drawerBody.querySelector('.ms-d-art img');
+		if (artImg) artImg.addEventListener('click', function () { msOpenLightbox(artImg.src); });
 		drawerBody.querySelectorAll('.ms-d-retreat').forEach(function (b) {
 			b.addEventListener('click', function () { retreatFromDrawer(b); });
 		});
