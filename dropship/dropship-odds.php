@@ -253,6 +253,36 @@ function dropshipGearTypes() { return array('Melee', 'Demolition', 'Medkit'); }
  * missing soldier, and the one that explains why there is no single
  * soldier to name.
  */
+/**
+ * A LIST OF PURCHASES, said once.
+ *
+ * One NFT carries one item and wears one tier, so a gap of several needs
+ * several -- and naming only the first is what made both tiers of advice
+ * read as generic. Shared so there is one sentence shape rather than a
+ * copy per caller, and so the "an NFT ... one ... one" de-duplication is
+ * written in a single place.
+ */
+function dropshipShopList($conn, $wants) {
+	$lines = array();
+	foreach ($wants as $g) {
+		$one = dropshipShopHint($conn, $g);
+		if ($one === '') continue;
+		/* The hint is a whole sentence; a list wants the phrase, so the
+		   lead-in is said once at the front. */
+		$lines[] = preg_replace('/^Look for /', '', rtrim($one, '.'));
+	}
+	if (!$lines) return '';
+	if (count($lines) === 1) return 'Look for ' . $lines[0] . '.';
+	/* Every hint opens with "an NFT", whichever collection wrote it, so
+	   the rest become "one" instead of three sentences in one coat. */
+	foreach ($lines as $k => $ln) {
+		if ($k > 0) $lines[$k] = preg_replace('/^an NFT /', 'one ', $ln);
+	}
+	$last = array_pop($lines);
+	return 'It needs ' . (count($lines) + 1) . ': look for ' . implode(', ', $lines)
+	     . ', and ' . $last . '.';
+}
+
 function dropshipShopHint($conn, $gap) {
 	if (!is_array($gap) || !isset($gap['armor'], $gap['gear'])) return '';
 	if (!function_exists('getProjectPolicyId')) return '';
@@ -349,14 +379,28 @@ function dropshipSquadAdvice($f, $conn = null) {
 		if ($short) {
 			$detail .= 'Another needs ' . dropshipJoinWords(dropshipWords($short))
 			        . ' armor, and you have none spare.';
-			/* The same shopping advice as above, for the first gap. */
-			$gap = array('armor' => $short[0], 'gear' => 'None');
+			/*
+			 * ONE NFT PER MISSING TIER, NOT JUST THE FIRST.
+			 *
+			 * This named $short[0] however long $short was, so a player
+			 * two tiers short of another squad was told to buy one
+			 * soldier -- which is the same half-answer the per-squad
+			 * advice gave, and the reason both read as generic.
+			 *
+			 * The items the leftovers do not already carry are spread
+			 * across those purchases, since the new squad has to cover
+			 * all three between its four members.
+			 */
 			$held = array();
 			foreach ($plan['leftover'] as $lr) $held[(string)$lr['gear']] = true;
-			foreach (dropshipPlanItems() as $it) {
-				if (!isset($held[$it])) { $gap['gear'] = $it; break; }
+			$want_items = array();
+			foreach (dropshipPlanItems() as $it) if (!isset($held[$it])) $want_items[] = $it;
+			$wants = array();
+			foreach ($short as $k => $t) {
+				$wants[] = array('armor' => $t,
+				                 'gear'  => isset($want_items[$k]) ? $want_items[$k] : 'None');
 			}
-			$detail .= ' ' . dropshipShopHint($conn, $gap);
+			$detail .= ' ' . dropshipShopList($conn, $wants);
 		} else {
 			$detail .= 'More ' . dropshipWord('soldier') . 's would build more.';
 		}

@@ -866,50 +866,13 @@ function dropshipGapAdvice($conn, $roster) {
 		$want[] = array('armor' => $armor, 'gear' => isset($miss_i[$k]) ? $miss_i[$k] : 'None');
 	}
 
-	if ($want && function_exists('dropshipShopHint')) {
-		$lines = array();
-		foreach ($want as $g) {
-			$one = dropshipShopHint($conn, $g);
-			/* dropshipShopHint() returns a whole sentence; the list wants
-			   the phrase, so the lead-in is said once. */
-			$one = preg_replace('/^Look for /', '', rtrim($one, '.'));
-			if ($one !== '') $lines[] = $one;
-		}
-		if (count($lines) === 1) {
-			$body .= 'Look for ' . $lines[0] . '.';
-		} elseif ($lines) {
-			/* "an NFT ... and an NFT ... and an NFT" is three sentences
-			   wearing one coat. Every hint opens with "an NFT", whichever
-			   collection wrote it, so the rest become "one". */
-			foreach ($lines as $k => $ln) {
-				if ($k > 0) $lines[$k] = preg_replace('/^an NFT /', 'one ', $ln);
-			}
-			$last = array_pop($lines);
-			$body .= 'It needs ' . count($want) . ': look for ' . implode(', ', $lines)
-			       . ', and ' . $last . '.';
-		}
+	if ($want && function_exists('dropshipShopList')) {
+		/* Same sentence shape as the collection advice above it -- see
+		   dropshipShopList(), which both callers share so the two tiers
+		   cannot phrase the same thing two ways. */
+		$body .= dropshipShopList($conn, $want);
 	}
-	/*
-	 * BUYING AN NFT IS NOT THE ONLY WAY TO FIX A SQUAD.
-	 *
-	 * The Armory sells the armour tiers and the three items outright, and
-	 * dropshipOddsFlags() reads those session flags exactly as it reads a
-	 * soldier's own kit -- so a bought Heavy Armor raises the roll just as
-	 * a Heavy soldier would. Advice that only ever says "go and buy an
-	 * NFT" is telling a player to spend money outside the game when the
-	 * thing they need is on sale inside it.
-	 *
-	 * AND IT SAYS WHICH IS WHICH, because they are not equivalent.
-	 * removeInventory() deactivates the lot once a run is scored, so a
-	 * purchase covers ONE run; the NFT is the squad's for good. A player
-	 * choosing between them deserves to know that rather than discover it
-	 * when the second run starts.
-	 *
-	 * THE NAMES ARE THEMED. 'Base Armor' is 'Boxer Briefs' on Filthy
-	 * Mermaid and the Armory itself is the Sex Shop on Oculus Lounge, so
-	 * every noun goes through the same evaluateText() the shop renders
-	 * with -- a half-translated sentence is worse than an untranslated one.
-	 */
+
 	$need_names = array();
 	foreach ($miss_t as $t) $need_names[] = $t . ' Armor';
 	foreach ($miss_i as $i) $need_names[] = $i;
