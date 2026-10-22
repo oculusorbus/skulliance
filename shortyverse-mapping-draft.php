@@ -66,32 +66,53 @@ foreach ($T as $asset => $r) {
 	$score = svScarcity($r['edition'], $maxEd) * 3        /* scarcity dominates */
 	       + svHits($txt, $KW['armour']) * 1.5;           /* station adds to it */
 	/*
-	 * ENGAGED IS NOT A WEAPON. It appears in 130 of 381 summaries because
-	 * it marks an EDITION ("ENGAGED EDITION"), not a fighting stance, and
-	 * reading it as Melee put 128 soldiers in one bucket and left Medkit
-	 * on 20 -- which capped the whole collection at 20 complete squads
-	 * against 80 under the hash. A word that common is describing the
-	 * mint, not the character.
+	 * ENGAGED MEANS ARMED -- IT JUST DOES NOT SAY WITH WHAT.
 	 *
-	 * SO GEAR COMES OFF THE EDITION INDEX, with keywords only breaking in
-	 * when they are genuinely specific. TRUST001, TRUST002 and TRUST003
-	 * are three prints of one character and nothing in the metadata
-	 * separates them, so the print number is the only honest
-	 * distinguisher -- and it spreads the three items evenly by
-	 * construction rather than by luck.
+	 * It appears in 130 of 381 summaries, and the first draft read that
+	 * frequency as noise and dropped it. Wrong: the word marks a fighter
+	 * in action, typically wielding a weapon and sometimes an explosive.
+	 * It is the strongest gear signal the collection has. What it is NOT
+	 * is a choice between melee and demolition, and reading it as Melee
+	 * put 128 soldiers in one bucket and capped the collection at 20
+	 * complete squads.
+	 *
+	 * So it decides WHETHER there is a weapon, and the print number
+	 * decides WHICH. Nothing in the metadata separates TRUST001 from
+	 * TRUST003 -- same name, same image, same summary -- so the print is
+	 * the only honest distinguisher between prints of one character, and
+	 * it splits the two weapons evenly by construction.
+	 *
+	 * DISENGAGED IS CHECKED FIRST, because it contains ENGAGED as a
+	 * substring and a plain strpos() would call every stood-down fighter
+	 * armed.
 	 */
-	$g = array('Melee' => svHits($txt, $KW['melee']),
-	           'Demolition' => svHits($txt, $KW['demo']),
-	           'Medkit' => svHits($txt, $KW['medkit']));
-	arsort($g);
-	$top = key($g); $best = current($g); next($g);
-	$gear = ($best <= 0 || current($g) === $best) ? '' : $top;
-	if ($gear === '') {
-		/* Print number within the character's run, 1-based. */
-		$idx = (int)preg_replace('/\D/', '', substr($asset, strlen($r['base'])));
-		if ($idx < 1) $idx = 1 + (crc32($asset) % 4);
-		$rot = array('Melee','Demolition','Medkit','None');
-		$gear = $rot[($idx - 1) % 4];
+	$print = (int)preg_replace('/\D/', '', substr($asset, strlen($r['base'])));
+	if ($print < 1) $print = 1 + (crc32($asset) % 4);
+
+	$disengaged = strpos($txt, 'DISENGAGED') !== false;
+	$engaged    = !$disengaged && strpos($txt, 'ENGAGED') !== false;
+
+	$heal = svHits($txt, $KW['medkit']);
+	$mel  = svHits($txt, $KW['melee']);
+	$dem  = svHits($txt, $KW['demo']);
+
+	if ($heal > 0 && $heal >= $mel && $heal >= $dem) {
+		$gear = 'Medkit';                    /* a medic is a medic, armed or not */
+	} elseif ($engaged) {
+		/* Armed. Which weapon is the print's to decide, unless the
+		   summary is explicit about it. */
+		if ($mel > $dem)      $gear = 'Melee';
+		elseif ($dem > $mel)  $gear = 'Demolition';
+		else                  $gear = ($print % 2) ? 'Melee' : 'Demolition';
+	} elseif ($disengaged) {
+		$gear = 'None';                      /* stood down, carrying nothing */
+	} else {
+		if ($mel > $dem && $mel > $heal)      $gear = 'Melee';
+		elseif ($dem > $mel && $dem > $heal)  $gear = 'Demolition';
+		else {
+			$rot  = array('Melee','Demolition','Medkit','None');
+			$gear = $rot[($print - 1) % 4];
+		}
 	}
 	$scored[] = array('id' => ++$i, 'asset' => $asset, 'score' => $score, 'gear' => $gear);
 }
