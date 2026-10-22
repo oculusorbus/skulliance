@@ -503,6 +503,22 @@ ok(preg_match("/fix.*?===\s*'withdraw'/", $dep) === 1,
 ok(substr_count($dep, 'dropshipSquadsAll($conn, $me, $pid)') >= 2,
    'the squad is not re-read after the field is cleared, so its readiness is stale');
 /* Clearing a field that is already THIS squad is not a swap. */
+/*
+ * AND THE BUTTON MUST STILL BE THERE TO PRESS. Hiding Deploy on a full
+ * field is the one thing that makes the swap unreachable: every other
+ * squad loses its control and the player is back to clearing by hand,
+ * which is what the swap removed.
+ */
+$panel_src = $code;
+ok(strpos($panel_src, '$swaps = !$can &&') !== false,
+   'the panel no longer works out whether a squad can swap in');
+ok(strpos($panel_src, 'if ($offer):') !== false,
+   'the deploy button is gated on $can again, so a full field hides every other squad\'s button');
+ok(strpos($panel_src, "'Swap in'") !== false,
+   'the button still says Deploy squad when it will first clear the field');
+ok(strpos($panel_src, 'Swapping in withdraws your current squad') !== false,
+   'the reason text still tells the player to withdraw next to a button that withdraws for them');
+
 ok(strpos($dep, '$holding') !== false,
    'it withdraws even when the field is already this squad, undoing what is done');
 

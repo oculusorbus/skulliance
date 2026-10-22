@@ -797,7 +797,22 @@ function dropshipSquadsPanel($conn) {
 </style>
 <div class="dssq">
 <?php foreach ($squads as $sq):
-	$can = !empty($sq['ready']['can']); ?>
+	$can = !empty($sq['ready']['can']);
+	/*
+	 * A FULL FIELD IS NOT A REASON TO HIDE THE BUTTON ANY MORE.
+	 *
+	 * Deploying a second squad swaps it in rather than refusing, so
+	 * withholding the control is the one thing that makes the swap
+	 * unreachable: once anything is fielded every OTHER squad loses its
+	 * button and the player is back to clearing the field by hand, which
+	 * is exactly what the swap removed.
+	 *
+	 * ONLY FOR ROOM. dropshipSquadReadiness() tags that case
+	 * 'fix' => 'withdraw'; a squad whose members fought, died or were sold
+	 * still has no button, because pressing it could not work.
+	 */
+	$swaps = !$can && ($sq['ready']['fix'] ?? '') === 'withdraw';
+	$offer = $can || $swaps; ?>
 	<div class="dssq-one<?php echo $can ? ' ready' : ''; ?><?php
 	     echo !empty($sq['power']['super']) ? ' super' : ''; ?>">
 		<div class="dssq-head">
@@ -822,10 +837,15 @@ function dropshipSquadsPanel($conn) {
 			         something is deployed, so it is always there on the way
 			         back from this particular form. Withdraw all keeps
 			         #barracks: that panel is gone by the time it lands. */ ?>
-			<?php if ($can): ?>
+			<?php if ($offer): ?>
 				<form action="dashboard.php#squad" method="post">
 					<input type="hidden" name="squad_deploy" value="<?php echo (int)$sq['id']; ?>">
-					<input class="small-button" type="submit" value="Deploy squad">
+					<?php /* SAY WHICH IT IS. "Deploy squad" on a squad that
+					         will first clear the field reads as if it adds
+					         to what is already out there, and the field
+					         holds four. */ ?>
+					<input class="small-button<?php echo $swaps ? ' secondary' : ''; ?>"
+					       type="submit" value="<?php echo $swaps ? 'Swap in' : 'Deploy squad'; ?>">
 				</form>
 			<?php endif; ?>
 			<?php /* NO DISPERSE. Squads are generated from what the player
@@ -834,7 +854,14 @@ function dropshipSquadsPanel($conn) {
 			         soldiers in it are not trapped: Withdraw all clears the
 			         field, and anyone not in a complete squad is in one of
 			         the lower-tier squads below it. */ ?>
-			<?php if (!$can && $sq['ready']['why'] !== ''): ?>
+			<?php /* THE REASON HAS TO AGREE WITH THE BUTTON. "Your squad is
+			         already full. Withdraw somebody first." sat next to a
+			         control that does exactly that for you, which reads as
+			         the game arguing with itself. A squad that can swap says
+			         what swapping costs instead. */ ?>
+			<?php if ($swaps): ?>
+				<span class="dssq-why">Ready. Swapping in withdraws your current squad.</span>
+			<?php elseif (!$can && $sq['ready']['why'] !== ''): ?>
 				<span class="dssq-why"><?php echo $h($sq['ready']['why']); ?></span>
 			<?php elseif ($can): ?>
 				<span class="dssq-why">Ready.</span>
