@@ -416,14 +416,21 @@ function dropshipOddsPanel($conn) {
 
 	/*
 	 * NO ITEMS IN HERE. This pane used to finish with "a Mech Suit would make
-	 * it 89%" and a footnote about Drop Box, Radio and Jet Pack, which is a
-	 * spending decision put in front of somebody who is still assembling a
-	 * foundation. Those numbers now sit on the shop listing itself, under
-	 * each item, where a player is already choosing what to buy. What belongs
-	 * here is the build: what is in the four slots and what goes in the next
-	 * one.
+	 * it 89%", which is a spending decision put in front of somebody still
+	 * assembling a foundation; those numbers sit on the shop listing now,
+	 * where a player is already choosing what to buy.
+	 *
+	 * WHAT IS HERE IS THIS SQUAD'S OWN GAP, spelled out rather than folded
+	 * away. The barracks cards collapse theirs because a list of fourteen
+	 * wants scanning; the one squad actually on the field is the one being
+	 * decided about, so it reads straight.
+	 *
+	 * NOT THE COLLECTION-WIDE ADVICE IT USED TO CARRY. That answered "what
+	 * should I buy next" on a pane that prices the four soldiers in front
+	 * of you, and it did not change when you swapped squads.
 	 */
-	$advice = dropshipSquadAdvice($f, $conn);
+	$advice = function_exists('dropshipGapAdvice')
+		? dropshipGapAdvice($conn, isset($f['roster']) ? $f['roster'] : array()) : null;
 
 	$h = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES); };
 
@@ -470,9 +477,19 @@ function dropshipOddsPanel($conn) {
 		}
 		$out .= '</span>';
 	}
-	/* The build step. Already escaped by dropshipSquadAdvice(), which emits
-	   only its own markup around values from a fixed list of tiers. */
+	/*
+	 * THE ADVICE IS NOT HERE ANY MORE. This pane prices the squad ON THE
+	 * FIELD; the advice is about the whole collection and does not change
+	 * when you swap squads, so it reads as part of the wrong thing.
+	 *
+	 * It lives in the barracks panel now, expandable, where it is visible
+	 * whether or not anything is deployed. Keeping a copy here meant the
+	 * barracks one had to be suppressed while a squad was out -- which is
+	 * most of the time, so the expandable version was effectively hidden.
+	 */
 	if ($advice !== null) {
+		/* Already escaped by dropshipGapAdvice(), which emits only its own
+		   <b> around values from fixed lists. */
 		$out .= '<span class="ds-odds-step">' . $advice[0] . '</span>';
 		$out .= '<span class="ds-odds-why">' . $advice[1] . '</span>';
 	}

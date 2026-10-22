@@ -724,6 +724,116 @@ function dropshipSquadDrop($conn, $squad_id, $soldier_id) {
  * a thing you already chose, so what it owes the player is a name, who is in
  * it, whether it can go, and one button.
  */
+/**
+ * WHAT THIS SQUAD IS SHORT OF, and what would fix it.
+ *
+ * The collection-wide advice answered "what should I buy next", which is
+ * one sentence for a barracks of fourteen squads and says nothing about
+ * the one a player is looking at. A squad either is a Super Soldier Squad
+ * or is missing something specific, and that is the question being asked
+ * while scrolling the list.
+ *
+ * MISSING MEANS MISSING FROM THIS SQUAD, not from the collection: four
+ * armour tiers between four soldiers, and all three items between them.
+ * The odds only read armour -- see dropshipThreshold() -- so a squad short
+ * only an item still rolls the same, and the wording says so rather than
+ * implying a lost percentage.
+ *
+ * Returns array(summary, body) of already-escaped markup, or null when the
+ * squad is complete and there is nothing to say.
+ */
+function dropshipSquadGapAdvice($conn, $members) {
+	$roster = array();
+	foreach ($members as $m) {
+		$row = isset($m['row']) ? $m['row'] : null;
+		if (!is_array($row)) continue;
+		$roster[] = array('armor' => (string)($row['armor'] ?? ''),
+		                  'gear'  => (string)($row['gear']  ?? ''));
+	}
+	return dropshipGapAdvice($conn, $roster);
+}
+
+/**
+ * The same question asked of a plain roster, which is what the odds pane
+ * holds for the squad currently on the field.
+ */
+function dropshipGapAdvice($conn, $roster) {
+	$tiers = function_exists('dropshipArmorTiers')
+		? dropshipArmorTiers() : array('Heavy', 'Medium', 'Light', 'Base');
+	$items = function_exists('dropshipPlanItems')
+		? dropshipPlanItems() : array('Medkit', 'Melee', 'Demolition');
+
+	if (!$roster) return null;
+	$has_t = array(); $has_i = array();
+	foreach ($roster as $row) {
+		$has_t[(string)($row['armor'] ?? '')] = true;
+		$has_i[(string)($row['gear']  ?? '')] = true;
+	}
+	$miss_t = array(); foreach ($tiers as $t) if (empty($has_t[$t])) $miss_t[] = $t;
+	$miss_i = array(); foreach ($items as $i) if (empty($has_i[$i])) $miss_i[] = $i;
+	if (!$miss_t && !$miss_i) return null;
+
+	$w  = function ($v) { return function_exists('dropshipWord') ? dropshipWord($v) : $v; };
+	$jw = function ($a) use ($w) {
+		$a = array_map($w, $a);
+		if (count($a) <= 1) return (string)($a[0] ?? '');
+		$last = array_pop($a);
+		return implode(', ', $a) . ' and ' . $last;
+	};
+
+	$bits = array();
+	if ($miss_t) $bits[] = '<b>' . $jw($miss_t) . '</b> armor';
+	if ($miss_i) $bits[] = '<b>' . $jw($miss_i) . '</b>';
+	$summary = 'Missing ' . implode(' and ', $bits);
+
+	$body = '';
+	/* ARMOUR IS THE ONLY HALF THAT MOVES THE ODDS. Saying a squad is
+	   "missing" an item without that caveat reads as a lost percentage. */
+	if ($miss_t) {
+		$body .= 'Armor sets the odds, so another tier here would raise this squad. ';
+	} else {
+		$body .= 'The odds are already the best this squad can roll -- armor is all they read. ';
+	}
+	if ($miss_i) {
+		$body .= 'One of each item fires per squad, so this squad has no '
+		       . $jw($miss_i) . '. ';
+	}
+
+	/*
+	 * A FULL SQUAD CANNOT GAIN A SOLDIER, IT CAN ONLY SWAP ONE.
+	 *
+	 * The first version always told the player to go and buy a soldier of
+	 * some tier -- and when all four tiers were already present it named
+	 * one at random, advising a Base soldier to a squad that already has
+	 * one. There is no fifth slot. What that squad needs is a REPLACEMENT
+	 * for whichever member is carrying nothing useful, in the same tier so
+	 * the odds do not drop.
+	 *
+	 * The member to replace is the one whose gear is not one of the three
+	 * -- a None, or a duplicate of something already covered.
+	 */
+	$replace = null;
+	if (!$miss_t && $miss_i) {
+		$covered = array();
+		foreach ($roster as $row) {
+			$g = (string)($row['gear'] ?? '');
+			if (in_array($g, $items, true) && !isset($covered[$g])) { $covered[$g] = true; continue; }
+			if ($replace === null) $replace = (string)($row['armor'] ?? '');
+		}
+	}
+	if (function_exists('dropshipShopHint')) {
+		$gear = $miss_i ? $miss_i[0] : 'None';
+		if ($miss_t) {
+			$body .= dropshipShopHint($conn, array('armor' => $miss_t[0], 'gear' => $gear));
+		} elseif ($replace !== null) {
+			$body .= 'Swap your <b>' . $w($replace) . '</b> soldier for one carrying '
+			       . '<b>' . $w($gear) . '</b>. '
+			       . dropshipShopHint($conn, array('armor' => $replace, 'gear' => $gear));
+		}
+	}
+	return array($summary, trim($body));
+}
+
 function dropshipSquadsPanel($conn) {
 	if (!dropshipSquadsTable($conn)) return '';
 	$squads = dropshipSquadsAll($conn);
@@ -750,15 +860,15 @@ function dropshipSquadsPanel($conn) {
    odds pane carries it the rest of the time and two copies on one screen
    is worse than none. Same ink as a squad card so it reads as part of the
    panel rather than a notice bolted above it. */
-.dssq-advice{border:1px solid var(--ds-line,#1b3346);border-radius:var(--ds-r,3px);
-  background:var(--ds-ink,#07111d);margin:0 0 12px}
+.dssq-advice{flex:1 1 100%;border:1px solid var(--ds-line,#1b3346);
+  border-radius:var(--ds-r,3px);background:var(--ds-ink,#07111d);margin:6px 0 0}
 /* COLLAPSED BY DEFAULT, because the headline is the glanceable half and
    the shopping advice is two lines nobody needs on every load. <details>
    rather than a script: it works with the page's JS off, it is keyboard
    and screen-reader navigable for free, and this panel already had one
    control too many. */
-.dssq-advice summary{list-style:none;cursor:pointer;padding:10px 12px;
-  font-size:13px;font-weight:bold;color:#00c8a0;display:flex;align-items:center;gap:8px}
+.dssq-advice summary{list-style:none;cursor:pointer;padding:7px 10px;
+  font-size:11px;font-weight:normal;color:#7a9eb0;display:flex;align-items:center;gap:8px}
 .dssq-advice summary::-webkit-details-marker{display:none}
 /* The caret is drawn rather than a glyph, so it cannot fall back to a box
    on a device without the character. */
@@ -767,7 +877,7 @@ function dropshipSquadsPanel($conn) {
   transform:rotate(45deg);transition:transform .15s}
 .dssq-advice[open] summary::after{transform:rotate(-135deg)}
 .dssq-advice summary:hover{color:#e8eaed}
-.dssq-advice .body{padding:0 12px 11px;font-size:11px;color:#7a9eb0;line-height:1.45}
+.dssq-advice .body{padding:0 10px 9px;font-size:11px;color:#7a9eb0;line-height:1.45}
 @media (prefers-reduced-motion:reduce){.dssq-advice summary::after{transition:none}}
 .dssq-one{border:1px solid var(--ds-line,#1b3346);border-radius:var(--ds-r,3px);
   background:#0a1929;margin-bottom:10px;overflow:hidden}
@@ -818,31 +928,6 @@ function dropshipSquadsPanel($conn) {
 .dssq-man form{display:block;margin-top:4px}
 .dssq-man .small-button{width:100%;min-height:0;padding:4px 6px;font-size:10px}
 </style>
-<?php
-/*
- * WITHOUT HAVING TO DEPLOY TO SEE IT.
- *
- * The advice lives in the odds pane, which only exists once a squad is
- * fielded -- so the one moment a player cannot read what their collection
- * is missing is while they are deciding what to field. It is about the
- * COLLECTION, not the squad on the field, so the barracks is where it
- * belongs anyway.
- *
- * ONLY WHEN NOTHING IS OUT, because the odds pane is already showing it
- * otherwise and the same paragraph twice on one screen reads as a bug.
- */
-$ds_adv = (function_exists('dropshipSquadAdvice') && function_exists('checkSquadCount')
-           && (int)checkSquadCount($conn) === 0)
-	? dropshipSquadAdvice(array('roster' => array()), $conn) : null;
-if ($ds_adv !== null): ?>
-	<?php /* ALREADY ESCAPED by dropshipSquadAdvice(), which emits its own
-	         <b> around values from fixed lists -- the same contract the
-	         odds pane relies on. */ ?>
-	<details class="dssq-advice">
-		<summary><?php echo $ds_adv[0]; ?></summary>
-		<div class="body"><?php echo $ds_adv[1]; ?></div>
-	</details>
-<?php endif; ?>
 <div class="dssq">
 <?php foreach ($squads as $sq):
 	$can = !empty($sq['ready']['can']);
@@ -907,12 +992,31 @@ if ($ds_adv !== null): ?>
 			         control that does exactly that for you, which reads as
 			         the game arguing with itself. A squad that can swap says
 			         what swapping costs instead. */ ?>
+			<?php
+			/*
+			 * WHAT IS WRONG WITH THIS SQUAD, one click away.
+			 *
+			 * Per squad rather than per collection: "buy a Base soldier"
+			 * is one sentence for a barracks of fourteen and says nothing
+			 * about the card being looked at. Collapsed, because a
+			 * complete squad has nothing to say and an incomplete one is
+			 * still only worth reading when you reach it.
+			 */
+			$gap = function_exists('dropshipSquadGapAdvice')
+				? dropshipSquadGapAdvice($conn, $sq['members']) : null;
+			?>
 			<?php if ($swaps): ?>
 				<span class="dssq-why">Ready. Swapping in withdraws your current squad.</span>
 			<?php elseif (!$can && $sq['ready']['why'] !== ''): ?>
 				<span class="dssq-why"><?php echo $h($sq['ready']['why']); ?></span>
 			<?php elseif ($can): ?>
 				<span class="dssq-why">Ready.</span>
+			<?php endif; ?>
+			<?php if ($gap !== null): ?>
+				<details class="dssq-advice">
+					<summary><?php echo $gap[0]; ?></summary>
+					<div class="body"><?php echo $gap[1]; ?></div>
+				</details>
 			<?php endif; ?>
 		</div>
 		<div class="dssq-men">
