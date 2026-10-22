@@ -937,7 +937,12 @@ if ($ds_can_animate):
 					 * rarely used. getSoldiers() leaves squad members out of the
 					 * list below, so nobody appears twice.
 					 */
-					if (isset($ds_squad_msg)) {
+					/* An EMPTY message prints nothing. A no-op is not a
+					   failure and does not want a red banner: pressing
+					   Deploy on the squad already standing on the field is
+					   the squad being where you wanted it, and its own card
+					   says so. */
+					if (isset($ds_squad_msg) && $ds_squad_msg[1] !== '') {
 						echo '<div class="msg ' . ($ds_squad_msg[0] ? 'good' : 'bad') . '">'
 						   . htmlspecialchars($ds_squad_msg[1], ENT_QUOTES) . '</div>';
 					}

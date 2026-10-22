@@ -592,7 +592,13 @@ function dropshipSquadDeploy($conn, $squad_id) {
 			}
 		}
 	}
-	if (empty($squad['ready']['can'])) return array(false, $squad['ready']['why']);
+	if (empty($squad['ready']['can'])) {
+		/* 'none' is the no-op case -- the squad is already on the field.
+		   Nothing went wrong, nothing changed, and the card under the
+		   button already says it, so there is no banner to raise. */
+		$quiet = ($squad['ready']['fix'] ?? '') === 'none';
+		return array(false, $quiet ? '' : $squad['ready']['why']);
+	}
 
 	$ids = array();
 	foreach ($squad['members'] as $m) {
@@ -978,6 +984,16 @@ function dropshipSquadsPanel($conn) {
 <style>
 /* Unscoped ids, like the game picker: these rules must not name an ancestor
    the element might not have. */
+/* .msg HAD NO RULES ANYWHERE -- not here, not in flexbox.css -- so it
+   rendered as bare text inheriting the global centring, which is why a
+   one-line result read as a stray caption floating over the panel. It is
+   the result of something the player just pressed, so it belongs with the
+   panel and reads left like everything else in it. */
+.msg{border:1px solid var(--ds-line,#1b3346);border-radius:var(--ds-r,3px);
+  background:var(--ds-ink,#07111d);padding:8px 12px;margin:0 0 12px;
+  font-size:12px;text-align:left;color:#9fb6c4}
+.msg.good{border-color:rgba(0,200,160,.45);color:#00c8a0}
+.msg.bad{border-color:rgba(232,160,176,.45);color:#e8a0b0}
 .dssq{margin:0 0 14px}
 /* The collection advice, shown here only when nothing is fielded -- the
    odds pane carries it the rest of the time and two copies on one screen
