@@ -1266,7 +1266,7 @@ Skulliance is offering a promotional incentive to participate in realms. Stakers
 				</div>
 				<div style="background:rgba(255,150,50,0.07);border:1px solid rgba(255,150,50,0.2);border-radius:8px;padding:14px 16px;">
 					<div style="font-weight:600;color:#ff9632;margin-bottom:6px;">&#9876;&#65039; Raids</div>
-					<p style="margin:0 0 8px;opacity:0.8;">Send soldiers through your Portal to raid other realms. Win to loot points from their realm. Lose and risk your soldiers' lives: and take a hit to your own locations.</p>
+					<p style="margin:0 0 8px;opacity:0.8;">Send soldiers through your Portal to raid other realms. Win to loot points from their realm. Lose and your soldiers can fall, and your own locations take damage.</p>
 					<p style="margin:0;opacity:0.8;">Each raid pits your squad against the defender's Tower garrison. Gear levels and consumables tip the odds. Soldiers who die go to the Crypt and must wait to be resurrected before fighting again.</p>
 				</div>
 				<div style="background:rgba(180,100,255,0.07);border:1px solid rgba(180,100,255,0.2);border-radius:8px;padding:14px 16px;">

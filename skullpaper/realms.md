@@ -4,9 +4,58 @@
 
 Realms is intended to be a fun and engaging gamification experience for stakers on the platform.
 
-## Disclaimer
+## What a raid can actually cost you
 
-By creating your realm, you agree to being vulnerable to raids from other realm owners who may attack your realm, damage your locations, and steal a small percentage of your points from a random project. You can raid other realms but raid failures also result in damage to your locations. If you anticipate that you are not going to be dedicated to protecting your realm and upgrading/raiding on a regular basis, don't feel obligated to create a realm. Abandoned realms are a prime target for looting and continual damage. Please note that all realms are susceptible to damage or theft. Your defense level just augments those odds, but no realm is impenetrable. Strategic decision-making about which realms to raid can spell the difference between success and defeat.
+Realms is player versus player, so it is worth being plain about the stakes
+rather than leaving you to imagine them.
+
+**A successful raid against you takes points from one project, and it is
+capped.** The raider gets 1% of that project's balance per level their
+offense sits above your defense, up to **500 points** - doubled only if they
+spent a Double Rewards item. One project, never your whole balance, and only
+projects holding at least 100 points can be targeted at all. Your locations
+take damage too, and repairing them is part of the loop.
+
+**Soldiers who die come back.** Death is a timeout, not a loss. A fallen
+soldier goes to your Crypt and resurrects on its own, keeping its training.
+You never lose the NFT. The gear it was carrying does go, but gear wears out
+with use anyway - dying spends it sooner rather than costing you something
+you would otherwise have kept.
+
+The wait is set by your Crypt: **11 days minus its level**, so it starts
+long and an upgraded Crypt brings it down to a day. A Fast Forward item
+halves whatever that wait is. Armor decides who ends up there in the first
+place - an unarmored soldier on a failed raid dies about 70% of the time,
+and every level of armor takes five points off that, down to a floor of 5%.
+
+**Nothing outside your realm is reachable.** Raids cannot touch your staking
+rewards, missions, Drop Ship or anything else you play. The only points at
+risk are the ones in the balance a raid draws from.
+
+**You can only be raided by realms near your level.** A raider whose offense
+is more than three levels above your defense gets "Out of Range" where your
+realm would be - they cannot attack you at all. This is the part that matters
+if you are worried about being farmed: a small realm is only ever visible to
+small raiders, and the level gap is what sets the loot, so a close match pays
+very little.
+
+**A brand new realm cannot be raided.** Until you have built any defense, your
+realm reads "Establishing Realm" to everyone else.
+
+**And nobody can farm you on repeat.** A raider cannot hit the same realm
+again until they have raided elsewhere, with the number of raids in between
+set by their Portal level.
+
+Raiding costs you something too: a failed raid damages your own locations, so
+picking targets badly is its own punishment.
+
+### Do you have to play often?
+
+No. The level matching means an unattended realm settles into a quiet corner
+rather than becoming a target - it stays low, so only low realms can see it,
+and what they can take is small. Build it, garrison it and come back when you
+feel like it. Playing regularly makes you stronger and opens up bigger targets;
+it is not the price of admission.
 
 ## Creation
 
