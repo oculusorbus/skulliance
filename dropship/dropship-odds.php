@@ -237,6 +237,42 @@ function dropshipGearTypes() { return array('Melee', 'Demolition', 'Medkit'); }
  * Returns array(headline, detail) of already-escaped strings, or null when
  * there is nothing useful to say.
  */
+/**
+ * WHAT TO GO AND BUY, in the collection's own language.
+ *
+ * "A Base soldier carrying a Medkit" is only checkable by buying one; a
+ * marketplace filter is not. Each collection translates that gap into
+ * something a listing can be searched for.
+ *
+ * ROUTED ON THE POLICY, NOT A PROJECT ID, so any theme on a collection
+ * gets its advice and none can inherit another's -- which is what makes
+ * one Shorty Verse lookup serve both Dread City and Filthy Mermaid. A
+ * collection with no mapping says nothing rather than guessing.
+ *
+ * Shared by both branches of the advice: the one that names a single
+ * missing soldier, and the one that explains why there is no single
+ * soldier to name.
+ */
+function dropshipShopHint($conn, $gap) {
+	if (!is_array($gap) || !isset($gap['armor'], $gap['gear'])) return '';
+	if (!function_exists('getProjectPolicyId')) return '';
+	$pol  = (string)@getProjectPolicyId($conn);
+	$hint = null;
+	$routes = array(
+		'dropshipDiscosolarisPolicy' => 'discosolarisTraitHints',
+		'dropshipShortyversePolicy'  => 'shortyverseTraitHints',
+		'dropshipOwnPolicy'          => 'dropshipOwnTraitHints',
+		'dropshipDhc2Policy'         => 'dhc2TraitHints',
+	);
+	foreach ($routes as $policy_fn => $hint_fn) {
+		if (!function_exists($policy_fn) || !function_exists($hint_fn)) continue;
+		if ($pol !== $policy_fn()) continue;
+		$hint = $hint_fn($gap['armor'], $gap['gear']);
+		break;
+	}
+	return ($hint !== null && $hint !== '') ? 'Look for ' . $hint . '.' : '';
+}
+
 function dropshipSquadAdvice($f, $conn = null) {
 	/*
 	 * THE ADVICE IS ABOUT THE COLLECTION NOW, NOT THE SQUAD ON THE FIELD.
@@ -288,36 +324,42 @@ function dropshipSquadAdvice($f, $conn = null) {
 		$detail = 'One more <b>' . dropshipWord($need['armor']) . '</b> '
 		        . dropshipWord('soldier') . $carry . ' would make it '
 		        . ($n + 1) . '.';
-		/*
-		 * AND WHAT TO GO AND BUY, where the collection says enough to name
-		 * it. "A Base soldier carrying a Medkit" is only checkable by
-		 * buying one; a marketplace filter is not.
-		 *
-		 * GATED ON THE COLLECTION'S POLICY, NOT A PROJECT ID, so any theme
-		 * on that policy gets it and no other can inherit it -- which is
-		 * what makes one Shorty Verse lookup serve both Dread City and
-		 * Filthy Mermaid. Drop Ship needs no lookup at all: its armour and
-		 * gear ARE the card's traits, so the gap names itself.
-		 */
-		$hint = null;
-		if (function_exists('getProjectPolicyId')) {
-			$pol = (string)@getProjectPolicyId($conn);
-			if (function_exists('dropshipDiscosolarisPolicy') && $pol === dropshipDiscosolarisPolicy()
-			    && function_exists('discosolarisTraitHints')) {
-				$hint = discosolarisTraitHints($need['armor'], $need['gear']);
-			} elseif (function_exists('dropshipShortyversePolicy') && $pol === dropshipShortyversePolicy()
-			          && function_exists('shortyverseTraitHints')) {
-				$hint = shortyverseTraitHints($need['armor'], $need['gear']);
-			} elseif (function_exists('dropshipOwnPolicy') && $pol === dropshipOwnPolicy()
-			          && function_exists('dropshipOwnTraitHints')) {
-				$hint = dropshipOwnTraitHints($need['armor'], $need['gear']);
-			}
-		}
-		if ($hint !== null && $hint !== '') $detail .= ' Look for ' . $hint . '.';
+		$detail .= ' ' . dropshipShopHint($conn, $need);
 		$detail .= ' Squads are built for you from everything you own.';
 	} elseif ($n > 0) {
-		$detail = 'Every ' . $super . ' your collection can make is already built. '
-		        . 'More ' . dropshipWord('soldier') . 's would build more.';
+		/*
+		 * ALREADY MAXED, SO SAY WHAT IS ACTUALLY MISSING.
+		 *
+		 * $need is null when no SINGLE soldier would add a squad, which is
+		 * the normal state for anybody with a real collection -- another
+		 * squad wants one of every tier. "More soldiers would build more"
+		 * is true and useless; the leftovers say exactly which tiers have
+		 * nobody spare, and those are the ones to go and buy.
+		 */
+		$spare = array();
+		foreach (dropshipArmorTiers() as $t) $spare[$t] = 0;
+		foreach ($plan['leftover'] as $lr) {
+			$t = (string)$lr['armor'];
+			if (isset($spare[$t])) $spare[$t]++;
+		}
+		$short = array();
+		foreach ($spare as $t => $c) if ($c === 0) $short[] = $t;
+
+		$detail = 'Every ' . $super . ' your collection can make is already built. ';
+		if ($short) {
+			$detail .= 'Another needs ' . dropshipJoinWords(dropshipWords($short))
+			        . ' armor, and you have none spare.';
+			/* The same shopping advice as above, for the first gap. */
+			$gap = array('armor' => $short[0], 'gear' => 'None');
+			$held = array();
+			foreach ($plan['leftover'] as $lr) $held[(string)$lr['gear']] = true;
+			foreach (dropshipPlanItems() as $it) {
+				if (!isset($held[$it])) { $gap['gear'] = $it; break; }
+			}
+			$detail .= ' ' . dropshipShopHint($conn, $gap);
+		} else {
+			$detail .= 'More ' . dropshipWord('soldier') . 's would build more.';
+		}
 	} else {
 		$detail = 'A ' . $super . ' needs all four armor tiers and all three items. '
 		        . 'More ' . dropshipWord('soldier') . 's would get you there.';

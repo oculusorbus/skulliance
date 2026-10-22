@@ -926,6 +926,45 @@ function dropshipOwnTraitHints($armor, $gear) {
 	return $p;
 }
 
+/** One spelling of the Digital Hell Citizens 2: Fighters policy. */
+function dropshipDhc2Policy() {
+	return 'b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5';
+}
+
+/**
+ * DHC2 FIGHTERS, READ BACKWARDS.
+ *
+ * Armour there is a rarity-weighted score over torso, headgear and arms,
+ * ranked into quartiles -- so it is not one trait a buyer can filter on,
+ * it is HOW MUCH FIGHTER there is. A mech torso under a helmet with
+ * augmented limbs ranks top; something that is barely more than a body
+ * ranks bottom. Described that way rather than naming values, because
+ * naming one of twenty-four torsos would be advice that is usually wrong.
+ *
+ * GEAR IS NAMEABLE, because it comes off the weapon and companion slots
+ * and those read plainly: a scythe or an axe is Melee, a blaster or a
+ * cannon is Demolition, a companion or a recovery effect is Medkit.
+ */
+function dhc2TraitHints($armor, $gear) {
+	$build = array(
+		'Heavy'  => 'heavily built -- a mech or armoured torso, a helmet and augmented limbs',
+		'Medium' => 'well equipped -- an armoured torso and either a helmet or augmented limbs',
+		'Light'  => 'lightly equipped -- a torso and little else',
+		'Base'   => 'barely equipped -- little more than a body',
+	);
+	$kit = array(
+		'Melee'      => 'a blade, an axe or a scythe',
+		'Demolition' => 'a blaster, a cannon or a bioweapon',
+		'Medkit'     => 'a companion, or a recovery effect',
+		'None'       => '',
+	);
+	if (!isset($build[$armor])) return null;
+	/* One finished phrase -- see the note in shortyverseTraitHints(). */
+	$p = 'an NFT that is <b>' . $build[$armor] . '</b>';
+	if (!empty($kit[$gear])) $p .= ', carrying <b>' . $kit[$gear] . '</b>';
+	return $p;
+}
+
 /** One spelling of the Shorty Verse policy -- Dread City and Filthy Mermaid. */
 function dropshipShortyversePolicy() {
 	return '0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c';
