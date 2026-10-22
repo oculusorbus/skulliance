@@ -2741,7 +2741,27 @@ function logBalances($conn) {
 			if($previous_score != $row["score"]){
 				$counter++;
 			}
-			// Check to see if score position is greater than counter. This ensures prize winners don't get $SCRIP rewards.
+			/*
+			 * THE TOP 3 TAKE CURRENCY AND NO SCRIP, AND THAT IS A RUBBER
+			 * BAND RATHER THAN AN OVERSIGHT.
+			 *
+			 * Items are consumed every run -- removeInventory() clears the
+			 * lot once a score is logged -- so SCRIP is the only way to
+			 * restock. Paying the winner SCRIP equal to their score, which
+			 * is by definition the highest, would let them buy the best
+			 * items, post a higher score, and earn more SCRIP again. The
+			 * leader would compound away from the field.
+			 *
+			 * Withholding it runs their stock down while everyone below
+			 * them restocks, which is what keeps the board winnable. The
+			 * cost of winning is that you cannot shop that week.
+			 *
+			 * WRITTEN DOWN BECAUSE IT READS LIKE A BUG. A winner sees a 0
+			 * in their history next to the word "Winner" and reports a
+			 * missing payment -- the owner did, two years after designing
+			 * it. Do not "fix" this without deciding you want the leader
+			 * compounding.
+			 */
 			if($counter > $row["prizes"]){
 				logBalance($conn, $row["user_id"], $row["score"]);
 				logCredit($conn, $row["user_id"], $row["id"], $row["score"]);
@@ -2916,7 +2936,10 @@ function transactionHistory($conn) {
 				}else{
 					echo ($row["amount"] == "0")?$xp:$scrip;
 					echo "</td><td>";
-					echo ($row["amount"] == "0") ? "Winner" : "Reward";
+					/* "Winner" beside a 0 reads as a payment that failed.
+					   Say what was paid instead, since it is the better
+					   prize and the whole reason the SCRIP is withheld. */
+					echo ($row["amount"] == "0") ? "Winner - paid in platform currency" : "Reward";
 					echo "</td><td align='center'>".$row["score"]."</td>";
 				}
 			}else if ($row["type"] == "debit"){

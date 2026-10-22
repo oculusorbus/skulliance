@@ -6,11 +6,20 @@ Drop Ship allows holders of the NFT collection to send their soldiers to battle 
 
 ## Rewards
 
-* **SCRIP** - in-game points rewarded to runner-ups that don't finish in the top 3 on the leaderboard
-  * Amount is based on the participant's score
+* **SCRIP** - in-game points, used to buy armor, weapons and items in the Armory
+  * You earn SCRIP equal to your score for the week, **unless you finish in the top 3**
+  * The top 3 are paid in real platform currency instead - see below
 * **Theme currency** - Skulliance staking platform points awarded to the top 3 winners
   * 1,000 to 1st, 500 to 2nd, 250 to 3rd. The amounts are the same for every theme; only the currency changes.
-  * Credited automatically the moment the week closes, on top of the in-game SCRIP economy.
+  * Credited automatically the moment the week closes.
+
+**Winning pays currency instead of SCRIP, on purpose.** The top 3 take the
+platform payout and earn no SCRIP that week, which is why a winning week shows
+as a 0 in your Drop Ship history: it is not a missed payment, it is the trade.
+Items are spent every run, so a player who wins every week gradually runs their
+stock down while the field restocks - the board stays winnable instead of the
+leader compounding better items into a bigger lead. If you want to shop, the
+SCRIP is in 4th place and below.
 
 | Theme | Pays |
 | --- | --- |
