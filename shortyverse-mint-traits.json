@@ -1,0 +1,2675 @@
+{
+ "assets": 381,
+ "characters": 161,
+ "note": "Shorty Verse CIP-25 (721) metadata via Koios policy_asset_info, flattened. \"edition\" is how many assets share the asset-name stem, which is the only scarcity signal the collection carries -- every token is total_supply 1. Used by Dread City (project 2) and Filthy Mermaid (project 3), which both derive stats from a crc32 today.",
+ "policy": "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
+ "traits": {
+  "ACE": {
+   "base": "ACE",
+   "desc": "Little is known about ACE or why  those close to him call him Th e PROPHET. While TRUST was doing research on SLICE he noticed a  photograph of ACE and SLICE together in the same orphanage. ACE  has no recorded criminal history or known violent tendencies. Hi s last sighting was in 2021 where he was",
+   "edition": 1,
+   "name": "ACE",
+   "summary": "ACE THE PROPHET"
+  },
+  "AGENT": {
+   "base": "AGENT",
+   "desc": "AGENT was a former resistance fighter and long time \"spy\" for hire. Known for his skills as a saboteur, AGENT is able to disrupt organizations from the inside without anyone knowing he was there. AGENT found his way to DREAD CITY after he was hired by -REDACTED- to infiltrate a criminal organization",
+   "edition": 1,
+   "name": "AGENT",
+   "summary": "AGENT"
+  },
+  "AGENTENGAGED001": {
+   "base": "AGENTENGAGED",
+   "desc": "AGENT was a former resistance fighter and long time \"spy\" for hire. Known for his skills as a saboteur, AGENT is able to disrupt organizations from the inside without anyone knowing he was there. AGENT found his way to DREAD CITY after he was hired by -REDACTED- to infiltrate a criminal organization",
+   "edition": 4,
+   "name": "AGENT ENGAGED #001",
+   "summary": "AGENT ENGAGED"
+  },
+  "AGENTENGAGED002": {
+   "base": "AGENTENGAGED",
+   "desc": "AGENT was a former resistance fighter and long time \"spy\" for hire. Known for his skills as a saboteur, AGENT is able to disrupt organizations from the inside without anyone knowing he was there. AGENT found his way to DREAD CITY after he was hired by -REDACTED- to infiltrate a criminal organization",
+   "edition": 4,
+   "name": "AGENT ENGAGED #001",
+   "summary": "AGENT ENGAGED"
+  },
+  "AGENTENGAGED003": {
+   "base": "AGENTENGAGED",
+   "desc": "AGENT was a former resistance fighter and long time \"spy\" for hire. Known for his skills as a saboteur, AGENT is able to disrupt organizations from the inside without anyone knowing he was there. AGENT found his way to DREAD CITY after he was hired by -REDACTED- to infiltrate a criminal organization",
+   "edition": 4,
+   "name": "AGENT ENGAGED #001",
+   "summary": "AGENT ENGAGED"
+  },
+  "AGENTENGAGED004": {
+   "base": "AGENTENGAGED",
+   "desc": "AGENT was a former resistance fighter and long time \"spy\" for hire. Known for his skills as a saboteur, AGENT is able to disrupt organizations from the inside without anyone knowing he was there. AGENT found his way to DREAD CITY after he was hired by -REDACTED- to infiltrate a criminal organization",
+   "edition": 4,
+   "name": "AGENT ENGAGED #001",
+   "summary": "AGENT ENGAGED"
+  },
+  "ANGEL": {
+   "base": "ANGEL",
+   "desc": "This is a character card from the short comics created by Ohh_me ed",
+   "edition": 1,
+   "name": "ANGEL",
+   "summary": "ANGEL POST FIGHT"
+  },
+  "ANGELAUTODISENGAGED001": {
+   "base": "ANGELAUTODISENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his targets. Growing up on the streets of -REDACTED- he fell into a life of crime and petty theft in order to survive the harsh environments. After witnessing the murder of his only friend at the hands of a local gang leader for stealing food",
+   "edition": 4,
+   "name": "ANGEL AUTO DISENGAGED #001",
+   "summary": "ANGEL AUTO DISENGAGED"
+  },
+  "ANGELAUTODISENGAGED002": {
+   "base": "ANGELAUTODISENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his targets. Growing up on the streets of -REDACTED- he fell into a life of crime and petty theft in order to survive the harsh environments. After witnessing the murder of his only friend at the hands of a local gang leader for stealing food",
+   "edition": 4,
+   "name": "ANGEL AUTO DISENGAGED #001",
+   "summary": "ANGEL AUTO DISENGAGED"
+  },
+  "ANGELAUTODISENGAGED003": {
+   "base": "ANGELAUTODISENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his targets. Growing up on the streets of -REDACTED- he fell into a life of crime and petty theft in order to survive the harsh environments. After witnessing the murder of his only friend at the hands of a local gang leader for stealing food",
+   "edition": 4,
+   "name": "ANGEL AUTO DISENGAGED #001",
+   "summary": "ANGEL AUTO DISENGAGED"
+  },
+  "ANGELAUTODISENGAGED004": {
+   "base": "ANGELAUTODISENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his targets. Growing up on the streets of -REDACTED- he fell into a life of crime and petty theft in order to survive the harsh environments. After witnessing the murder of his only friend at the hands of a local gang leader for stealing food",
+   "edition": 4,
+   "name": "ANGEL AUTO DISENGAGED #001",
+   "summary": "ANGEL AUTO DISENGAGED"
+  },
+  "ANGELCLEAN001": {
+   "base": "ANGELCLEAN",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his targets. Growing up on the streets of -REDACTED- he fell into a life of crime and petty theft in order to survive the harsh environments. After witnessing the murder of his only friend at the hands of a local gang leader for stealing food",
+   "edition": 2,
+   "name": "ANGEL CLEAN #001",
+   "summary": "ANGEL NO BLOOD"
+  },
+  "ANGELCLEAN002": {
+   "base": "ANGELCLEAN",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his targets. Growing up on the streets of -REDACTED- he fell into a life of crime and petty theft in order to survive the harsh environments. After witnessing the murder of his only friend at the hands of a local gang leader for stealing food",
+   "edition": 2,
+   "name": "ANGEL CLEAN #001",
+   "summary": "ANGEL NO BLOOD"
+  },
+  "ANGELENGAGED001": {
+   "base": "ANGELENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his ta rgets. Growing up on the streets of -REDACTED- he fell into a li fe of crime and petty theft in order to survive the harsh enviro nments. After witnessing the murder of his only friend at the ha nds of a local gang leader for stealing ",
+   "edition": 6,
+   "name": "ANGEL ENGAGED #001",
+   "summary": "ANGEL ENGAGED"
+  },
+  "ANGELENGAGED002": {
+   "base": "ANGELENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his ta rgets. Growing up on the streets of -REDACTED- he fell into a li fe of crime and petty theft in order to survive the harsh enviro nments. After witnessing the murder of his only friend at the ha nds of a local gang leader for stealing ",
+   "edition": 6,
+   "name": "ANGEL ENGAGED #001",
+   "summary": "ANGEL ENGAGED"
+  },
+  "ANGELENGAGED003": {
+   "base": "ANGELENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his ta rgets. Growing up on the streets of -REDACTED- he fell into a li fe of crime and petty theft in order to survive the harsh enviro nments. After witnessing the murder of his only friend at the ha nds of a local gang leader for stealing ",
+   "edition": 6,
+   "name": "ANGEL ENGAGED #001",
+   "summary": "ANGEL ENGAGED"
+  },
+  "ANGELENGAGED004": {
+   "base": "ANGELENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his ta rgets. Growing up on the streets of -REDACTED- he fell into a li fe of crime and petty theft in order to survive the harsh enviro nments. After witnessing the murder of his only friend at the ha nds of a local gang leader for stealing ",
+   "edition": 6,
+   "name": "ANGEL ENGAGED #001",
+   "summary": "ANGEL ENGAGED"
+  },
+  "ANGELENGAGED005": {
+   "base": "ANGELENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his ta rgets. Growing up on the streets of -REDACTED- he fell into a li fe of crime and petty theft in order to survive the harsh enviro nments. After witnessing the murder of his only friend at the ha nds of a local gang leader for stealing ",
+   "edition": 6,
+   "name": "ANGEL ENGAGED #001",
+   "summary": "ANGEL ENGAGED"
+  },
+  "ANGELENGAGED006": {
+   "base": "ANGELENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his ta rgets. Growing up on the streets of -REDACTED- he fell into a li fe of crime and petty theft in order to survive the harsh enviro nments. After witnessing the murder of his only friend at the ha nds of a local gang leader for stealing ",
+   "edition": 6,
+   "name": "ANGEL ENGAGED #001",
+   "summary": "ANGEL ENGAGED"
+  },
+  "ANGELGANGMEMBER001": {
+   "base": "ANGELGANGMEMBER",
+   "desc": "This is a soldier from ANGEL's gang, the \"Angels\". These soldiers are typically recruited off the streets at a young age and are usually homeless and survive off thieving. The gang offers them shelter, protection, training, and a way to earn money. Due to the older member being soldiers since childh",
+   "edition": 3,
+   "name": "ANGEL GANG MEMBER #001",
+   "summary": "ANGEL GANG MEMBER FOR FACTION WARS"
+  },
+  "ANGELGANGMEMBER002": {
+   "base": "ANGELGANGMEMBER",
+   "desc": "This is a soldier from ANGEL's gang, the \"Angels\". These soldiers are typically recruited off the streets at a young age and are usually homeless and survive off thieving. The gang offers them shelter, protection, training, and a way to earn money. Due to the older member being soldiers since childh",
+   "edition": 3,
+   "name": "ANGEL GANG MEMBER #001",
+   "summary": "ANGEL GANG MEMBER FOR FACTION WARS"
+  },
+  "ANGELGANGMEMBER003": {
+   "base": "ANGELGANGMEMBER",
+   "desc": "This is a soldier from ANGEL's gang, the \"Angels\". These soldiers are typically recruited off the streets at a young age and are usually homeless and survive off thieving. The gang offers them shelter, protection, training, and a way to earn money. Due to the older member being soldiers since childh",
+   "edition": 3,
+   "name": "ANGEL GANG MEMBER #001",
+   "summary": "ANGEL GANG MEMBER FOR FACTION WARS"
+  },
+  "ANGELREENGAGED": {
+   "base": "ANGELREENGAGED",
+   "desc": "ANGEL is an assassin who uses a sledgehammer to pulverize his targets. Growing up on the streets of -REDACTED- he fell into a life of crime and petty theft in order to survive the harsh environments. After witnessing the murder of his only friend at the hands of a local gang leader for stealing food",
+   "edition": 1,
+   "name": "ANGEL RE ENGAGED",
+   "summary": "ANGEL RE ENGAGED"
+  },
+  "BAGBOIENGAGED001": {
+   "base": "BAGBOIENGAGED",
+   "desc": "BAG BOI was born into one of the 5 wealthiest families in DC, meaning he was protected and connected. Whenever he found himself in trouble his family was always there to bail him out or buy him out. Because of his upbringing, BB never excelled at anything and found it hard to fit in with his peers. ",
+   "edition": 3,
+   "name": "BAG BOI ENGAGED #001",
+   "summary": "BAG BOI ENGAGED"
+  },
+  "BAGBOIENGAGED002": {
+   "base": "BAGBOIENGAGED",
+   "desc": "BAG BOI was born into one of the 5 wealthiest families in DC, meaning he was protected and connected. Whenever he found himself in trouble his family was always there to bail him out or buy him out. Because of his upbringing, BB never excelled at anything and found it hard to fit in with his peers. ",
+   "edition": 3,
+   "name": "BAG BOI ENGAGED #001",
+   "summary": "BAG BOI ENGAGED"
+  },
+  "BAGBOIENGAGED003": {
+   "base": "BAGBOIENGAGED",
+   "desc": "BAG BOI was born into one of the 5 wealthiest families in DC, meaning he was protected and connected. Whenever he found himself in trouble his family was always there to bail him out or buy him out. Because of his upbringing, BB never excelled at anything and found it hard to fit in with his peers. ",
+   "edition": 3,
+   "name": "BAG BOI ENGAGED #001",
+   "summary": "BAG BOI ENGAGED"
+  },
+  "BANDIT": {
+   "base": "BANDIT",
+   "desc": "Bandit is the right hand man to \"Boss\" and a professional hit ma n with a legendary list of \"accomplishments\". Bandit has encount ered Nomad on more than one occasion and has walked away the vic tor every time. Unfortunately for him, other players seem to get  in the way of him finishing off Nomad. ",
+   "edition": 1,
+   "name": "BANDIT",
+   "summary": "BANDIT POST NOMAD"
+  },
+  "BANDITCHECKMATE": {
+   "base": "BANDITCHECKMATE",
+   "desc": "After learning that he and his crew were used as bait by BOSS to draw out his enemies, BANDIT swore vengeance and plotted alongside BLOOD BAG on how to eliminate BOSS and his new army. Knowing he'd be walking head first into the belly of the beast, BANDIT armed himself with heavy weaponry, and strap",
+   "edition": 1,
+   "name": "BANDIT CHECKMATE",
+   "summary": "BANDIT CHECKMATE"
+  },
+  "BANDITENGAGED001": {
+   "base": "BANDITENGAGED",
+   "desc": "Bandit is the right hand man to \"Boss\" and a professional hit ma n with a legendary list of \"accomplishments\". Bandit has encount ered Nomad on more than one occasion and has walked away the vic tor every time. Unfortunately for him, other players seem to get  in the way of him finishing off Nomad. ",
+   "edition": 3,
+   "name": "BANDIT ENGAGED #001",
+   "summary": "BANDIT ENGAGED"
+  },
+  "BANDITENGAGED002": {
+   "base": "BANDITENGAGED",
+   "desc": "Bandit is the right hand man to \"Boss\" and a professional hit ma n with a legendary list of \"accomplishments\". Bandit has encount ered Nomad on more than one occasion and has walked away the vic tor every time. Unfortunately for him, other players seem to get  in the way of him finishing off Nomad. ",
+   "edition": 3,
+   "name": "BANDIT ENGAGED #001",
+   "summary": "BANDIT ENGAGED"
+  },
+  "BANDITENGAGED003": {
+   "base": "BANDITENGAGED",
+   "desc": "Bandit is the right hand man to \"Boss\" and a professional hit ma n with a legendary list of \"accomplishments\". Bandit has encount ered Nomad on more than one occasion and has walked away the vic tor every time. Unfortunately for him, other players seem to get  in the way of him finishing off Nomad. ",
+   "edition": 3,
+   "name": "BANDIT ENGAGED #001",
+   "summary": "BANDIT ENGAGED"
+  },
+  "BANDITREENGAGED001": {
+   "base": "BANDITREENGAGED",
+   "desc": "Bandit is the right hand man to \"Boss\" and a professional hit man with a legendary list of \"accomplishments\". Bandit has encountered Nomad on more than one occasion and has walked away the victor every time. Unfortunately for him, other players seem to get in the way of him finishing off Nomad. He i",
+   "edition": 3,
+   "name": "BANDIT RE-ENGAGED #001",
+   "summary": "BANDIT RE ENGAGED"
+  },
+  "BANDITREENGAGED002": {
+   "base": "BANDITREENGAGED",
+   "desc": "Bandit is the right hand man to \"Boss\" and a professional hit man with a legendary list of \"accomplishments\". Bandit has encountered Nomad on more than one occasion and has walked away the victor every time. Unfortunately for him, other players seem to get in the way of him finishing off Nomad. He i",
+   "edition": 3,
+   "name": "BANDIT RE-ENGAGED #001",
+   "summary": "BANDIT RE ENGAGED"
+  },
+  "BANDITREENGAGED003": {
+   "base": "BANDITREENGAGED",
+   "desc": "Bandit is the right hand man to \"Boss\" and a professional hit man with a legendary list of \"accomplishments\". Bandit has encountered Nomad on more than one occasion and has walked away the victor every time. Unfortunately for him, other players seem to get in the way of him finishing off Nomad. He i",
+   "edition": 3,
+   "name": "BANDIT RE-ENGAGED #001",
+   "summary": "BANDIT RE ENGAGED"
+  },
+  "BANDITSEDATED": {
+   "base": "BANDITSEDATED",
+   "desc": "Bandit is the right hand man to \"Boss\" and a professional hit man with a legendary list of \"accomplishments\". Bandit has encountered Nomad on more than one occasion and has walked away the victor every time. Unfortunately for him, other players seem to get in the way of him finishing off Nomad. He i",
+   "edition": 1,
+   "name": "BANDIT SEDATED",
+   "summary": "BANDIT SEDATED"
+  },
+  "BESTBUDSV1": {
+   "base": "BESTBUDSV",
+   "desc": "Two power houses from Dread City would cross paths one final time... in the afterlife...In the end... they settled their differences and connected over the fact that they shared a certain favorite recreational activity, one that would ease the pain, and make everything a lot better...",
+   "edition": 1,
+   "name": "BEST BUDS V1",
+   "summary": "BEST BUDS V1 ANGEL X DEATH"
+  },
+  "BIGKEV": {
+   "base": "BIGKEV",
+   "desc": "BIG KEV was an underboss to VANCE's organization before VANCE found himself in prison.  While VANCE was away, BIG KEV and another underboss named DOC OC remained loyal to the organization and attempted to keep the business running during their leader's absence. Unfortunately they were cast out and t",
+   "edition": 1,
+   "name": "BIG KEV",
+   "summary": "BIG KEV ENGAGED"
+  },
+  "BIKERGANGMEMBER001": {
+   "base": "BIKERGANGMEMBER",
+   "desc": "This is a Biker Gang member part of LAZLO's gang. These bikers are nomadic criminals known for traveling long distances for contracts. They have no place to call home and are therefore hard to track. They specialize in car bombings, drive by assassinations, and fear tactics. They're known for accept",
+   "edition": 3,
+   "name": "BIKER GANG MEMBER #001",
+   "summary": "BIKER GANG MEMBER FOR FACTION WARS"
+  },
+  "BIKERGANGMEMBER002": {
+   "base": "BIKERGANGMEMBER",
+   "desc": "This is a Biker Gang member part of LAZLO's gang. These bikers are nomadic criminals known for traveling long distances for contracts. They have no place to call home and are therefore hard to track. They specialize in car bombings, drive by assassinations, and fear tactics. They're known for accept",
+   "edition": 3,
+   "name": "BIKER GANG MEMBER #001",
+   "summary": "BIKER GANG MEMBER FOR FACTION WARS"
+  },
+  "BIKERGANGMEMBER003": {
+   "base": "BIKERGANGMEMBER",
+   "desc": "This is a Biker Gang member part of LAZLO's gang. These bikers are nomadic criminals known for traveling long distances for contracts. They have no place to call home and are therefore hard to track. They specialize in car bombings, drive by assassinations, and fear tactics. They're known for accept",
+   "edition": 3,
+   "name": "BIKER GANG MEMBER #001",
+   "summary": "BIKER GANG MEMBER FOR FACTION WARS"
+  },
+  "BLOODBAGENGAGED001": {
+   "base": "BLOODBAGENGAGED",
+   "desc": "BLOOD BAG was a member of the paper bag gang led by BOSS and his organization. BLOOD BAG woke to find his comrades slain around him. His vision was blurry and his body felt weak. He could see smoke and bright reds leaking from holes all over his body. He coughed. Gun shots were heard in the room acr",
+   "edition": 3,
+   "name": "BLOOD BAG ENGAGED #001",
+   "summary": "BLOOD BAG ENGAGED"
+  },
+  "BLOODBAGENGAGED002": {
+   "base": "BLOODBAGENGAGED",
+   "desc": "BLOOD BAG was a member of the paper bag gang led by BOSS and his organization. BLOOD BAG woke to find his comrades slain around him. His vision was blurry and his body felt weak. He could see smoke and bright reds leaking from holes all over his body. He coughed. Gun shots were heard in the room acr",
+   "edition": 3,
+   "name": "BLOOD BAG ENGAGED #001",
+   "summary": "BLOOD BAG ENGAGED"
+  },
+  "BLOODBAGENGAGED003": {
+   "base": "BLOODBAGENGAGED",
+   "desc": "BLOOD BAG was a member of the paper bag gang led by BOSS and his organization. BLOOD BAG woke to find his comrades slain around him. His vision was blurry and his body felt weak. He could see smoke and bright reds leaking from holes all over his body. He coughed. Gun shots were heard in the room acr",
+   "edition": 3,
+   "name": "BLOOD BAG ENGAGED #001",
+   "summary": "BLOOD BAG ENGAGED"
+  },
+  "BOSS": {
+   "base": "BOSS",
+   "desc": "- CLASSIFIED -",
+   "edition": 1,
+   "name": "BOSS",
+   "summary": "BOSS"
+  },
+  "BOSSCHECKMATE": {
+   "base": "BOSSCHECKMATE",
+   "desc": "CLASSIFIED",
+   "edition": 1,
+   "name": "BOSS CHECKMATE",
+   "summary": "BOSS CHECKMATE"
+  },
+  "BOSSENGAGED": {
+   "base": "BOSSENGAGED",
+   "desc": "CLASSIFIED",
+   "edition": 1,
+   "name": "BOSS ENGAGED",
+   "summary": "BOSS ENGAGED"
+  },
+  "BOSSHOLIDAZED001": {
+   "base": "BOSSHOLIDAZED",
+   "desc": "MERRY CHRISTMAS 2022",
+   "edition": 6,
+   "name": "BOSS HOLIDAZED #001",
+   "summary": "BOSS HOLIDAZED"
+  },
+  "BOSSHOLIDAZED002": {
+   "base": "BOSSHOLIDAZED",
+   "desc": "MERRY CHRISTMAS 2022",
+   "edition": 6,
+   "name": "BOSS HOLIDAZED #001",
+   "summary": "BOSS HOLIDAZED"
+  },
+  "BOSSHOLIDAZED003": {
+   "base": "BOSSHOLIDAZED",
+   "desc": "MERRY CHRISTMAS 2022",
+   "edition": 6,
+   "name": "BOSS HOLIDAZED #001",
+   "summary": "BOSS HOLIDAZED"
+  },
+  "BOSSHOLIDAZED004": {
+   "base": "BOSSHOLIDAZED",
+   "desc": "MERRY CHRISTMAS 2022",
+   "edition": 6,
+   "name": "BOSS HOLIDAZED #001",
+   "summary": "BOSS HOLIDAZED"
+  },
+  "BOSSHOLIDAZED005": {
+   "base": "BOSSHOLIDAZED",
+   "desc": "MERRY CHRISTMAS 2022",
+   "edition": 6,
+   "name": "BOSS HOLIDAZED #001",
+   "summary": "BOSS HOLIDAZED"
+  },
+  "BOSSHOLIDAZED006": {
+   "base": "BOSSHOLIDAZED",
+   "desc": "MERRY CHRISTMAS 2022",
+   "edition": 6,
+   "name": "BOSS HOLIDAZED #001",
+   "summary": "BOSS HOLIDAZED"
+  },
+  "BROMAD001": {
+   "base": "BROMAD",
+   "desc": "Nomad is the main character of my short story comics (as seen on  IG) in the version he's sporting his traditional plate carrier,  battle wounds, and ripped shirt, in addition to a bro hat.",
+   "edition": 1,
+   "name": "BROMAD #001",
+   "summary": "NOMAD BRO-EDITION"
+  },
+  "CANON": {
+   "base": "CANON",
+   "desc": "CANON was an inmate on death-row and met DIEGO while in prison. He aided in DIEGO's escaped and in turn was offered a position as a soldier for \"BOSS\". CANON carries a desert eagle and i known for executing his targets at close range.",
+   "edition": 1,
+   "name": "CANON",
+   "summary": "CANON"
+  },
+  "CANONENGAGED001": {
+   "base": "CANONENGAGED",
+   "desc": "CANON was an inmate on death-row and met DIEGO while in prison. He aided in DIEGO's escape and in turn was offered a position as a soldier for \"BOSS\". CANON carries a desert eagle and is known for executing his targets at close range.",
+   "edition": 5,
+   "name": "CANON ENGAGED #001",
+   "summary": "CANON ENGAGED"
+  },
+  "CANONENGAGED002": {
+   "base": "CANONENGAGED",
+   "desc": "CANON was an inmate on death-row and met DIEGO while in prison. He aided in DIEGO's escape and in turn was offered a position as a soldier for \"BOSS\". CANON carries a desert eagle and is known for executing his targets at close range.",
+   "edition": 5,
+   "name": "CANON ENGAGED #001",
+   "summary": "CANON ENGAGED"
+  },
+  "CANONENGAGED003": {
+   "base": "CANONENGAGED",
+   "desc": "CANON was an inmate on death-row and met DIEGO while in prison. He aided in DIEGO's escape and in turn was offered a position as a soldier for \"BOSS\". CANON carries a desert eagle and is known for executing his targets at close range.",
+   "edition": 5,
+   "name": "CANON ENGAGED #001",
+   "summary": "CANON ENGAGED"
+  },
+  "CANONENGAGED004": {
+   "base": "CANONENGAGED",
+   "desc": "CANON was an inmate on death-row and met DIEGO while in prison. He aided in DIEGO's escape and in turn was offered a position as a soldier for \"BOSS\". CANON carries a desert eagle and is known for executing his targets at close range.",
+   "edition": 5,
+   "name": "CANON ENGAGED #001",
+   "summary": "CANON ENGAGED"
+  },
+  "CANONENGAGED005": {
+   "base": "CANONENGAGED",
+   "desc": "CANON was an inmate on death-row and met DIEGO while in prison. He aided in DIEGO's escape and in turn was offered a position as a soldier for \"BOSS\". CANON carries a desert eagle and is known for executing his targets at close range.",
+   "edition": 5,
+   "name": "CANON ENGAGED #001",
+   "summary": "CANON ENGAGED"
+  },
+  "CAPTAINCHANSENGAGED001": {
+   "base": "CAPTAINCHANSENGAGED",
+   "desc": "CAPTAIN CHANS was the head of the squad of detectives assigned with bringing down BOSS and his organization. For years CHANS worked his way through the ranks bringing in many high level targets. During his time as captain, he recruited three of the best detectives in his field, HONOR, VALOR, and TRU",
+   "edition": 2,
+   "name": "CAPTAIN CHANS ENGAGED #001",
+   "summary": "CHANS ENGAGED"
+  },
+  "CAPTAINCHANSENGAGED002": {
+   "base": "CAPTAINCHANSENGAGED",
+   "desc": "CAPTAIN CHANS was the head of the squad of detectives assigned with bringing down BOSS and his organization. For years CHANS worked his way through the ranks bringing in many high level targets. During his time as captain, he recruited three of the best detectives in his field, HONOR, VALOR, and TRU",
+   "edition": 2,
+   "name": "CAPTAIN CHANS ENGAGED #001",
+   "summary": "CHANS ENGAGED"
+  },
+  "CHIEF001": {
+   "base": "CHIEF",
+   "desc": "CHIEF was a retired police chief for DREAD CITY, who was fired for accepting bribes from BOSS. Upon his termination CHIEF found himself in a state of depression which led to many drunken nights, fights, and regrets. One night he was approached by BOSS and, due to their physical similarities, was off",
+   "edition": 2,
+   "name": "CHIEF #001",
+   "summary": "CHIEF"
+  },
+  "CHIEF002": {
+   "base": "CHIEF",
+   "desc": "CHIEF was a retired police chief for DREAD CITY, who was fired for accepting bribes from BOSS. Upon his termination CHIEF found himself in a state of depression which led to many drunken nights, fights, and regrets. One night he was approached by BOSS and, due to their physical similarities, was off",
+   "edition": 2,
+   "name": "CHIEF #001",
+   "summary": "CHIEF"
+  },
+  "CHIEFAUTOMATED001": {
+   "base": "CHIEFAUTOMATED",
+   "desc": "CHIEF was a retired police chief for DREAD CITY, who was fired for accepting bribes from BOSS. Upon his termination CHIEF found himself in a state of depression which led to many drunken nights, fights, and regrets. One night he was approached by BOSS and, due to their physical similarities, was off",
+   "edition": 2,
+   "name": "CHIEF AUTOMATED #001",
+   "summary": "CHIEF AUTOMATED"
+  },
+  "CHIEFAUTOMATED002": {
+   "base": "CHIEFAUTOMATED",
+   "desc": "CHIEF was a retired police chief for DREAD CITY, who was fired for accepting bribes from BOSS. Upon his termination CHIEF found himself in a state of depression which led to many drunken nights, fights, and regrets. One night he was approached by BOSS and, due to their physical similarities, was off",
+   "edition": 2,
+   "name": "CHIEF AUTOMATED #001",
+   "summary": "CHIEF AUTOMATED"
+  },
+  "COLONELENGAGED": {
+   "base": "COLONELENGAGED",
+   "desc": "A decorated war hero and original member of the united special forces group, Colonel spent most of his military career on the front lines. However, after a failed mission which resulted with him and his team being captured,  Colonel would become a prisoner of war and sustain an injury to his leg tha",
+   "edition": 1,
+   "name": "COLONEL ENGAGED",
+   "summary": "COLONEL ENGAGED"
+  },
+  "COMBATMEDIC": {
+   "base": "COMBATMEDIC",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD and his team on the battlefield on more than one occasion. He is responsible for saving MANIC's life after being wounded by small arms fire and can be credited for protecting the team as they made their escape from an \"un-winnable\" sit",
+   "edition": 1,
+   "name": "COMBAT MEDIC",
+   "summary": "COMBAT MEDIC"
+  },
+  "COMBATMEDICENGAGED": {
+   "base": "COMBATMEDICENGAGED",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD and his team on the battlefield on more than one occasion. He is responsible for saving MANIC's life after being wounded by small arms fire and can be credited for protecting the team as they made their escape from an \"un-winnable\" sit",
+   "edition": 1,
+   "name": "COMBAT MEDIC ENGAGED",
+   "summary": "COMBAT MEDIC ENGAGED"
+  },
+  "DAGAR7ENGAGED": {
+   "base": "DAGAR7ENGAGED",
+   "desc": "DAGAR 7 was a special forces operator assigned to DAGAR TEAM.Trained by COLONEL, DAGAR 7 specialized in survival tactics,and jungle warfare. DAGAR TEAM was known for their unorthodox approach to conventional operations, and would often be reprimanded for their use of excessive force and unneeded blo",
+   "edition": 1,
+   "name": "DAGAR 7 ENGAGED",
+   "summary": "DAGAR 7 ENGAGED"
+  },
+  "DAGAR7STATIC": {
+   "base": "DAGAR7STATIC",
+   "desc": "DAGAR 7 was a special forces operator assigned to DAGAR TEAM. Trained by COLONEL, DAGAR  7 specialized in survival tactics, and jungle warfare. DAGAR TEAM was known for their unorthodox approach to conventional operations, and would often be reprimanded for their use of excessive force and unneeded ",
+   "edition": 1,
+   "name": "DAGAR 7 STATIC",
+   "summary": "DAGAR 7 STATIC"
+  },
+  "DAGARMOTHERENGAGED": {
+   "base": "DAGARMOTHERENGAGED",
+   "desc": "MOTHER AKA DAGAR MOTHER AKA DAGAR LEAD, was the first member of the special operations force team known as DAGAR. Trained by COLONEL and supported by the black ops division of the military, MOTHER was an extremely deadly, well equipped,  and highly funded instrument of war. She was said to be a woma",
+   "edition": 1,
+   "name": "DAGAR MOTHER ENGAGED",
+   "summary": "DAGAR MOTHER ENGAGED"
+  },
+  "DEATH001": {
+   "base": "DEATH",
+   "desc": "DEATH was the fourth member of a group of special forces soldier s turned criminals led by SAINT. DEATH was the saboteur on the t eam and was responsible for setting traps, deploying IEDs, and s taging assassinations that were made to look like \"accidents\". A lthough he is the largest and tallest me",
+   "edition": 4,
+   "name": "DEATH #001",
+   "summary": "DEATH"
+  },
+  "DEATH002": {
+   "base": "DEATH",
+   "desc": "DEATH was the fourth member of a group of special forces soldier s turned criminals led by SAINT. DEATH was the saboteur on the t eam and was responsible for setting traps, deploying IEDs, and s taging assassinations that were made to look like \"accidents\". A lthough he is the largest and tallest me",
+   "edition": 4,
+   "name": "DEATH #001",
+   "summary": "DEATH"
+  },
+  "DEATH003": {
+   "base": "DEATH",
+   "desc": "DEATH was the fourth member of a group of special forces soldier s turned criminals led by SAINT. DEATH was the saboteur on the t eam and was responsible for setting traps, deploying IEDs, and s taging assassinations that were made to look like \"accidents\". A lthough he is the largest and tallest me",
+   "edition": 4,
+   "name": "DEATH #001",
+   "summary": "DEATH"
+  },
+  "DEATH004": {
+   "base": "DEATH",
+   "desc": "DEATH was the fourth member of a group of special forces soldier s turned criminals led by SAINT. DEATH was the saboteur on the t eam and was responsible for setting traps, deploying IEDs, and s taging assassinations that were made to look like \"accidents\". A lthough he is the largest and tallest me",
+   "edition": 4,
+   "name": "DEATH #001",
+   "summary": "DEATH"
+  },
+  "DEATHASCENDED": {
+   "base": "DEATHASCENDED",
+   "desc": "DEATH, after accepting his demise, has awoken in a futuristic \"arena\". Across from him, stood what appeared to be an exact clone of himself only his eyes were glowing. DEATH scanned his surroundings and saw an audience watching the two of them in anticipation. A sword materialized in front of each o",
+   "edition": 1,
+   "name": "DEATH ASCENDED",
+   "summary": "DEATH ASCENDED"
+  },
+  "DEATHDISENGAGED001": {
+   "base": "DEATHDISENGAGED",
+   "desc": "DEATH was the fourth member of a group of special forces soldiers turned criminals led by SAINT. DEATH was the saboteur on the team and was responsible for setting traps, deploying IEDs, and staging assassinations that were made to look like \"accidents\". Although he is the largest and tallest member",
+   "edition": 5,
+   "name": "DEATH DISENGAGED #001",
+   "summary": "DEATH DISENGAGED"
+  },
+  "DEATHDISENGAGED002": {
+   "base": "DEATHDISENGAGED",
+   "desc": "DEATH was the fourth member of a group of special forces soldiers turned criminals led by SAINT. DEATH was the saboteur on the team and was responsible for setting traps, deploying IEDs, and staging assassinations that were made to look like \"accidents\". Although he is the largest and tallest member",
+   "edition": 5,
+   "name": "DEATH DISENGAGED #001",
+   "summary": "DEATH DISENGAGED"
+  },
+  "DEATHDISENGAGED003": {
+   "base": "DEATHDISENGAGED",
+   "desc": "DEATH was the fourth member of a group of special forces soldiers turned criminals led by SAINT. DEATH was the saboteur on the team and was responsible for setting traps, deploying IEDs, and staging assassinations that were made to look like \"accidents\". Although he is the largest and tallest member",
+   "edition": 5,
+   "name": "DEATH DISENGAGED #001",
+   "summary": "DEATH DISENGAGED"
+  },
+  "DEATHDISENGAGED004": {
+   "base": "DEATHDISENGAGED",
+   "desc": "DEATH was the fourth member of a group of special forces soldiers turned criminals led by SAINT. DEATH was the saboteur on the team and was responsible for setting traps, deploying IEDs, and staging assassinations that were made to look like \"accidents\". Although he is the largest and tallest member",
+   "edition": 5,
+   "name": "DEATH DISENGAGED #001",
+   "summary": "DEATH DISENGAGED"
+  },
+  "DEATHDISENGAGED005": {
+   "base": "DEATHDISENGAGED",
+   "desc": "DEATH was the fourth member of a group of special forces soldiers turned criminals led by SAINT. DEATH was the saboteur on the team and was responsible for setting traps, deploying IEDs, and staging assassinations that were made to look like \"accidents\". Although he is the largest and tallest member",
+   "edition": 5,
+   "name": "DEATH DISENGAGED #001",
+   "summary": "DEATH DISENGAGED"
+  },
+  "DEATHDROPSHIPEDITION": {
+   "base": "DEATHDROPSHIPEDITION",
+   "desc": "NAME--- DEATH\r\nCLASS--- INFANTRY\r\nSKILL--- ASSAULT FORCE\r\nDROP SHIP--- FRIGATE  CLASS\r\nARMOR RATING--- LIGHT - MEDIUM \r\nBIO---\r\nInfantry troopers make up the majority of the alliance fighting force. They are known to eliminate their enemies using advanced firepower and overwhelming numbers. Troopers",
+   "edition": 1,
+   "name": "DEATH DROP SHIP EDITION",
+   "summary": "DEATH DROP SHIP EDITION"
+  },
+  "DEATHENGAGED001": {
+   "base": "DEATHENGAGED",
+   "desc": "DEATH was the fourth member of a group of special forces soldiers turned criminals led by SAINT. DEATH was the saboteur on the team and was responsible for setting traps, deploying IEDs, and staging assassinations that were made to look like \"accidents\". Although he is the largest and tallest member",
+   "edition": 3,
+   "name": "DEATH ENGAGED #001",
+   "summary": "DEATH ENGAGED"
+  },
+  "DEATHENGAGED002": {
+   "base": "DEATHENGAGED",
+   "desc": "DEATH was the fourth member of a group of special forces soldiers turned criminals led by SAINT. DEATH was the saboteur on the team and was responsible for setting traps, deploying IEDs, and staging assassinations that were made to look like \"accidents\". Although he is the largest and tallest member",
+   "edition": 3,
+   "name": "DEATH ENGAGED #001",
+   "summary": "DEATH ENGAGED"
+  },
+  "DEATHENGAGED003": {
+   "base": "DEATHENGAGED",
+   "desc": "DEATH was the fourth member of a group of special forces soldiers turned criminals led by SAINT. DEATH was the saboteur on the team and was responsible for setting traps, deploying IEDs, and staging assassinations that were made to look like \"accidents\". Although he is the largest and tallest member",
+   "edition": 3,
+   "name": "DEATH ENGAGED #001",
+   "summary": "DEATH ENGAGED"
+  },
+  "DEATHLEGALIZED": {
+   "base": "DEATHLEGALIZED",
+   "desc": "DEATH was the fourth member of a group of special forces soldiers turned criminals led by SAINT. DEATH was the saboteur on the team and was responsible for setting traps, deploying IEDs, and staging assassinations that were made to look like \"accidents\". Although he is the largest and tallest member",
+   "edition": 1,
+   "name": "DEATH LEGALIZED",
+   "summary": "DEATH LEGALIZED EDITION"
+  },
+  "DELAY001": {
+   "base": "DELAY",
+   "desc": "DELAY, is a well established criminal who, along with his partner DIEGO, carries out assignments for BOSS. DELAY started as a driver for the don of a crime syndicate when he was a teenager. One day while driving the don to a meeting his car was ambushed by a lone gunman wearing a paper bag over his ",
+   "edition": 6,
+   "name": "DELAY #001",
+   "summary": "DELAY"
+  },
+  "DELAY002": {
+   "base": "DELAY",
+   "desc": "DELAY, is a well established criminal who, along with his partner DIEGO, carries out assignments for BOSS. DELAY started as a driver for the don of a crime syndicate when he was a teenager. One day while driving the don to a meeting his car was ambushed by a lone gunman wearing a paper bag over his ",
+   "edition": 6,
+   "name": "DELAY #001",
+   "summary": "DELAY"
+  },
+  "DELAY003": {
+   "base": "DELAY",
+   "desc": "DELAY, is a well established criminal who, along with his partner DIEGO, carries out assignments for BOSS. DELAY started as a driver for the don of a crime syndicate when he was a teenager. One day while driving the don to a meeting his car was ambushed by a lone gunman wearing a paper bag over his ",
+   "edition": 6,
+   "name": "DELAY #001",
+   "summary": "DELAY"
+  },
+  "DELAY004": {
+   "base": "DELAY",
+   "desc": "DELAY, is a well established criminal who, along with his partner DIEGO, carries out assignments for BOSS. DELAY started as a driver for the don of a crime syndicate when he was a teenager. One day while driving the don to a meeting his car was ambushed by a lone gunman wearing a paper bag over his ",
+   "edition": 6,
+   "name": "DELAY #001",
+   "summary": "DELAY"
+  },
+  "DELAY005": {
+   "base": "DELAY",
+   "desc": "DELAY, is a well established criminal who, along with his partner DIEGO, carries out assignments for BOSS. DELAY started as a driver for the don of a crime syndicate when he was a teenager. One day while driving the don to a meeting his car was ambushed by a lone gunman wearing a paper bag over his ",
+   "edition": 6,
+   "name": "DELAY #001",
+   "summary": "DELAY"
+  },
+  "DELAY006": {
+   "base": "DELAY",
+   "desc": "DELAY, is a well established criminal who, along with his partner DIEGO, carries out assignments for BOSS. DELAY started as a driver for the don of a crime syndicate when he was a teenager. One day while driving the don to a meeting his car was ambushed by a lone gunman wearing a paper bag over his ",
+   "edition": 6,
+   "name": "DELAY #001",
+   "summary": "DELAY"
+  },
+  "DELAYAUTOMATED001": {
+   "base": "DELAYAUTOMATED",
+   "desc": "DELAY, is a well established criminal who, along with his partner DIEGO, carries out assignments for BOSS. DELAY started as a driver for the don of a crime syndicate when he was a teenager. One day while driving the don to a meeting his car was ambushed by a lone gunman wearing a paper bag over his ",
+   "edition": 2,
+   "name": "DELAY AUTOMATED #001",
+   "summary": "DELAY AUTOMATED"
+  },
+  "DELAYAUTOMATED002": {
+   "base": "DELAYAUTOMATED",
+   "desc": "DELAY, is a well established criminal who, along with his partner DIEGO, carries out assignments for BOSS. DELAY started as a driver for the don of a crime syndicate when he was a teenager. One day while driving the don to a meeting his car was ambushed by a lone gunman wearing a paper bag over his ",
+   "edition": 2,
+   "name": "DELAY AUTOMATED #001",
+   "summary": "DELAY AUTOMATED"
+  },
+  "DEMBOIIS001": {
+   "base": "DEMBOIIS",
+   "desc": "This is a Paper Bag Soldier, that works for BOSS's organization. Typically consisting of escaped convicts or recently released criminals, Paper Bag soldiers are low level thugs with nothing to lose but everything to gain. They operate in a hierarchy system and report directly to underbosses like DIE",
+   "edition": 3,
+   "name": "DEM BOIIS #001",
+   "summary": "DEM BOIIS ENGAGED"
+  },
+  "DEMBOIIS002": {
+   "base": "DEMBOIIS",
+   "desc": "This is a Paper Bag Soldier, that works for BOSS's organization. Typically consisting of escaped convicts or recently released criminals, Paper Bag soldiers are low level thugs with nothing to lose but everything to gain. They operate in a hierarchy system and report directly to underbosses like DIE",
+   "edition": 3,
+   "name": "DEM BOIIS #001",
+   "summary": "DEM BOIIS ENGAGED"
+  },
+  "DEMBOIIS003": {
+   "base": "DEMBOIIS",
+   "desc": "This is a Paper Bag Soldier, that works for BOSS's organization. Typically consisting of escaped convicts or recently released criminals, Paper Bag soldiers are low level thugs with nothing to lose but everything to gain. They operate in a hierarchy system and report directly to underbosses like DIE",
+   "edition": 3,
+   "name": "DEM BOIIS #001",
+   "summary": "DEM BOIIS ENGAGED"
+  },
+  "DIEGO001": {
+   "base": "DIEGO",
+   "desc": "DIEGO, is a well established criminal who carries out deadly assignments for BOSS alongside his partner DELAY. DIEGO was a small time criminal as a teenager known for stick up jobs and purse snatching. His friend DELAY turned him onto an opportunity to rob a bank with a two other low level thieves a",
+   "edition": 4,
+   "name": "DIEGO #001",
+   "summary": "DIEGO"
+  },
+  "DIEGO002": {
+   "base": "DIEGO",
+   "desc": "DIEGO, is a well established criminal who carries out deadly assignments for BOSS alongside his partner DELAY. DIEGO was a small time criminal as a teenager known for stick up jobs and purse snatching. His friend DELAY turned him onto an opportunity to rob a bank with a two other low level thieves a",
+   "edition": 4,
+   "name": "DIEGO #001",
+   "summary": "DIEGO"
+  },
+  "DIEGO003": {
+   "base": "DIEGO",
+   "desc": "DIEGO, is a well established criminal who carries out deadly assignments for BOSS alongside his partner DELAY. DIEGO was a small time criminal as a teenager known for stick up jobs and purse snatching. His friend DELAY turned him onto an opportunity to rob a bank with a two other low level thieves a",
+   "edition": 4,
+   "name": "DIEGO #001",
+   "summary": "DIEGO"
+  },
+  "DIEGO004": {
+   "base": "DIEGO",
+   "desc": "DIEGO, is a well established criminal who carries out deadly assignments for BOSS alongside his partner DELAY. DIEGO was a small time criminal as a teenager known for stick up jobs and purse snatching. His friend DELAY turned him onto an opportunity to rob a bank with a two other low level thieves a",
+   "edition": 4,
+   "name": "DIEGO #001",
+   "summary": "DIEGO"
+  },
+  "DIEGOANDDELAYDROPSHIPEDITION001": {
+   "base": "DIEGOANDDELAYDROPSHIPEDITION",
+   "desc": "NAME--- DIEGO & DELAY\r\nCLASS--- RECON SQUAD\r\nSKILL--- SCOUTING\r\nDROPSHIP--- FERRY CLASS\r\nARMOR RATING--- LT - MED\r\nBIO-- Reconnaissance squads are responsible for observing enemy positions while in complete concealment to avoid detection from the enemy. Their purpose is to report their findings back",
+   "edition": 2,
+   "name": "DIEGO AND DELAY DROP SHIP EDITION #001",
+   "summary": "DIEGO AND DELAY DROP SHIP EDITION"
+  },
+  "DIEGOANDDELAYDROPSHIPEDITION002": {
+   "base": "DIEGOANDDELAYDROPSHIPEDITION",
+   "desc": "NAME--- DIEGO & DELAY\r\nCLASS--- RECON SQUAD\r\nSKILL--- SCOUTING\r\nDROPSHIP--- FERRY CLASS\r\nARMOR RATING--- LT - MED\r\nBIO-- Reconnaissance squads are responsible for observing enemy positions while in complete concealment to avoid detection from the enemy. Their purpose is to report their findings back",
+   "edition": 2,
+   "name": "DIEGO AND DELAY DROP SHIP EDITION #001",
+   "summary": "DIEGO AND DELAY DROP SHIP EDITION"
+  },
+  "DIEGOANDDELAYENGAGED001": {
+   "base": "DIEGOANDDELAYENGAGED",
+   "desc": "DIEGO AND DELAY, career criminals with raps sheets as long as their tempers. Known for kidnapping, murder, extortion, grand theft auto, and armed robbery, these two are the best at being the worst.",
+   "edition": 3,
+   "name": "DIEGO AND DELAY ENGAGED #001",
+   "summary": "DIEGO AND DELAY ENGAGED EDITION"
+  },
+  "DIEGOANDDELAYENGAGED002": {
+   "base": "DIEGOANDDELAYENGAGED",
+   "desc": "DIEGO AND DELAY, career criminals with raps sheets as long as their tempers. Known for kidnapping, murder, extortion, grand theft auto, and armed robbery, these two are the best at being the worst.",
+   "edition": 3,
+   "name": "DIEGO AND DELAY ENGAGED #001",
+   "summary": "DIEGO AND DELAY ENGAGED EDITION"
+  },
+  "DIEGOANDDELAYENGAGED003": {
+   "base": "DIEGOANDDELAYENGAGED",
+   "desc": "DIEGO AND DELAY, career criminals with raps sheets as long as their tempers. Known for kidnapping, murder, extortion, grand theft auto, and armed robbery, these two are the best at being the worst.",
+   "edition": 3,
+   "name": "DIEGO AND DELAY ENGAGED #001",
+   "summary": "DIEGO AND DELAY ENGAGED EDITION"
+  },
+  "DIEGOSACREDHEARTHEIST": {
+   "base": "DIEGOSACREDHEARTHEIST",
+   "desc": "DIEGO, is a well established criminal who carries out deadly assignments for BOSS alongside his partner DELAY. DIEGO was a small time criminal as a teenager known for stick up jobs and purse snatching. His friend DELAY turned him onto an opportunity to rob a bank with a two other low level thieves a",
+   "edition": 1,
+   "name": "DIEGO SACRED HEART HEIST",
+   "summary": "DIEGO SACRED HEART HEIST"
+  },
+  "DOCOC": {
+   "base": "DOCOC",
+   "desc": "DOC OC was an underboss to VANCE's organization before VANCE found himself in prison. While VANCE was away, DOC OC and another underboss named -REDACTED- remained loyal to the organization and attempted to keep the business running during their leader's absence. Unfortunately they were cast out and ",
+   "edition": 1,
+   "name": "DOC OC",
+   "summary": "DOC OC VIP"
+  },
+  "DRAGONAUTOMATED001": {
+   "base": "DRAGONAUTOMATED",
+   "desc": "DRAGON was an orphan who was always big for his age. He stayed in the group home till he was 18 then he was out on the streets of Vice City with only his younger brother, LAZLO, in tow. Together, they learned how to defend themselves and make a name for themselves. They founded the HOUNDS OF HELL bi",
+   "edition": 2,
+   "name": "DRAGON AUTOMATED #001",
+   "summary": "DRAGON AUTOMATED"
+  },
+  "DRAGONAUTOMATED002": {
+   "base": "DRAGONAUTOMATED",
+   "desc": "DRAGON was an orphan who was always big for his age. He stayed in the group home till he was 18 then he was out on the streets of Vice City with only his younger brother, LAZLO, in tow. Together, they learned how to defend themselves and make a name for themselves. They founded the HOUNDS OF HELL bi",
+   "edition": 2,
+   "name": "DRAGON AUTOMATED #001",
+   "summary": "DRAGON AUTOMATED"
+  },
+  "DREADCITYGENERALS": {
+   "base": "DREADCITYGENERALS",
+   "desc": "BOSS and his most trusted under bosses, featuring DIEGO, DELAY, MR. DELTA, and CANON. Together this team of heavy hitters took over Dread City and turned fear into profits. Each one of these criminals was responsible for their own territories and soldiers, and managed many highly profitable business",
+   "edition": 1,
+   "name": "DREAD CITY GENERALS",
+   "summary": "DREAD CITY GENERALS"
+  },
+  "DREAM001": {
+   "base": "DREAM",
+   "desc": "DREAM is a low level gun for hire known specifically for heist sand robberies. He is often seen carrying out jobs alongside his partner in crime and brother, FEVER. The brothers have often been enlisted for large scale robberies as extra guns. Although skilled gunmen, they both tend to get carried a",
+   "edition": 2,
+   "name": "DREAM #001",
+   "summary": "DREAM"
+  },
+  "DREAM002": {
+   "base": "DREAM",
+   "desc": "DREAM is a low level gun for hire known specifically for heist sand robberies. He is often seen carrying out jobs alongside his partner in crime and brother, FEVER. The brothers have often been enlisted for large scale robberies as extra guns. Although skilled gunmen, they both tend to get carried a",
+   "edition": 2,
+   "name": "DREAM #001",
+   "summary": "DREAM"
+  },
+  "DREAMENGAGED001": {
+   "base": "DREAMENGAGED",
+   "desc": "DREAM is a low level gun for hire known specifically for heists and robberies. He is often seen carrying out jobs alongside his parter in crime and brother, FEVER.  The brothers have often been enlisted for large scale robberies as extra guns. Although skilled gunmen, they both tend to get carried a",
+   "edition": 3,
+   "name": "DREAM ENGAGED #001",
+   "summary": "DREAM ENGAGED"
+  },
+  "DREAMENGAGED002": {
+   "base": "DREAMENGAGED",
+   "desc": "DREAM is a low level gun for hire known specifically for heists and robberies. He is often seen carrying out jobs alongside his parter in crime and brother, FEVER.  The brothers have often been enlisted for large scale robberies as extra guns. Although skilled gunmen, they both tend to get carried a",
+   "edition": 3,
+   "name": "DREAM ENGAGED #001",
+   "summary": "DREAM ENGAGED"
+  },
+  "DREAMENGAGED003": {
+   "base": "DREAMENGAGED",
+   "desc": "DREAM is a low level gun for hire known specifically for heists and robberies. He is often seen carrying out jobs alongside his parter in crime and brother, FEVER.  The brothers have often been enlisted for large scale robberies as extra guns. Although skilled gunmen, they both tend to get carried a",
+   "edition": 3,
+   "name": "DREAM ENGAGED #001",
+   "summary": "DREAM ENGAGED"
+  },
+  "DROPSHIPFIELDCOMMISSIONER001": {
+   "base": "DROPSHIPFIELDCOMMISSIONER",
+   "desc": "FIELD COMMISSIONERs are battle hardened grunts who's sole purpose is to motive the soldiers on the battlefield. They are the contingency squad leader, should all other leadership die in battle. FCs know tactics, squad movement, positions, and advanced weapons, making them ideal candidates for promot",
+   "edition": 5,
+   "name": "DROP SHIP FIELD COMMISSIONER #001",
+   "summary": "DROP SHIP FIELD COMMISSIONER"
+  },
+  "DROPSHIPFIELDCOMMISSIONER002": {
+   "base": "DROPSHIPFIELDCOMMISSIONER",
+   "desc": "FIELD COMMISSIONERs are battle hardened grunts who's sole purpose is to motive the soldiers on the battlefield. They are the contingency squad leader, should all other leadership die in battle. FCs know tactics, squad movement, positions, and advanced weapons, making them ideal candidates for promot",
+   "edition": 5,
+   "name": "DROP SHIP FIELD COMMISSIONER #001",
+   "summary": "DROP SHIP FIELD COMMISSIONER"
+  },
+  "DROPSHIPFIELDCOMMISSIONER003": {
+   "base": "DROPSHIPFIELDCOMMISSIONER",
+   "desc": "FIELD COMMISSIONERs are battle hardened grunts who's sole purpose is to motive the soldiers on the battlefield. They are the contingency squad leader, should all other leadership die in battle. FCs know tactics, squad movement, positions, and advanced weapons, making them ideal candidates for promot",
+   "edition": 5,
+   "name": "DROP SHIP FIELD COMMISSIONER #001",
+   "summary": "DROP SHIP FIELD COMMISSIONER"
+  },
+  "DROPSHIPFIELDCOMMISSIONER004": {
+   "base": "DROPSHIPFIELDCOMMISSIONER",
+   "desc": "FIELD COMMISSIONERs are battle hardened grunts who's sole purpose is to motive the soldiers on the battlefield. They are the contingency squad leader, should all other leadership die in battle. FCs know tactics, squad movement, positions, and advanced weapons, making them ideal candidates for promot",
+   "edition": 5,
+   "name": "DROP SHIP FIELD COMMISSIONER #001",
+   "summary": "DROP SHIP FIELD COMMISSIONER"
+  },
+  "DROPSHIPFIELDCOMMISSIONER005": {
+   "base": "DROPSHIPFIELDCOMMISSIONER",
+   "desc": "FIELD COMMISSIONERs are battle hardened grunts who's sole purpose is to motive the soldiers on the battlefield. They are the contingency squad leader, should all other leadership die in battle. FCs know tactics, squad movement, positions, and advanced weapons, making them ideal candidates for promot",
+   "edition": 5,
+   "name": "DROP SHIP FIELD COMMISSIONER #001",
+   "summary": "DROP SHIP FIELD COMMISSIONER"
+  },
+  "ECHISENGAGED": {
+   "base": "ECHISENGAGED",
+   "desc": "ECHIS, a born klepto, had a rough childhood along with her sister CHERRY. After a traumatic event causing the girls to flee from home, their father put a mass search out to bring the girls back dead or alive. While hiding out in Morocco, under the care of smuggler BELLIX, ECHIS learned pick pocketin",
+   "edition": 1,
+   "name": "ECHIS ENGAGED",
+   "summary": "ECHIS ENGAGED"
+  },
+  "ELDERNOMAD": {
+   "base": "ELDERNOMAD",
+   "desc": "\"CANON TBD as story is on-going at the time of this creation\" Years after the events of \"The Siege of Dread City\", NOMAD found himself without purpose and without a home. He traveled between countries as a \"gun for hire\" capitalizing on his most valuable skill set. He was never able to settle down i",
+   "edition": 1,
+   "name": "ELDER NOMAD",
+   "summary": "ELDER NOMAD"
+  },
+  "EVILNOMAD": {
+   "base": "EVILNOMAD",
+   "desc": "After dying in combat in 2012, EVIL NOMAD woke to a land of fire and flames. As he rose to his feet, a voice called out to him and told him of five lives he must take in order to save his soul. DEATH, SAINT, MANIC, MEDIC, and -REDACTED-. EVIL NOMAD accepted the offer, and with this deal, giant horns",
+   "edition": 1,
+   "name": "EVIL NOMAD",
+   "summary": "EVIL NOMAD"
+  },
+  "FACESOFDREAD": {
+   "base": "FACESOFDREAD",
+   "desc": "Dread City is home to notorious criminals, thieves, and assassins. A den of unregulated, unsupervised, and unrestricted demons, that are able to thrive off their self serving actions. Dread City is currently ran by the kingpin \"BOSS\", who has an army of thugs who will kill and steal at his command. ",
+   "edition": 1,
+   "name": "FACES OF DREAD",
+   "summary": "FACES OF DREAD"
+  },
+  "FEVER001": {
+   "base": "FEVER",
+   "desc": "FEVER is a low level criminal that has performed numerous odd jo bs for \"BOSS\". He, alongside his brother \"DREAM\" were tasked wit h apprehending \"MANIC\" and bringing him in alive to see BOSS. Un fortunately both FEVER and DREAM (as well as other gang members)  were gunned down by MANIC as he attempt",
+   "edition": 3,
+   "name": "FEVER #001",
+   "summary": "FEVER"
+  },
+  "FEVER002": {
+   "base": "FEVER",
+   "desc": "FEVER is a low level criminal that has performed numerous odd jo bs for \"BOSS\". He, alongside his brother \"DREAM\" were tasked wit h apprehending \"MANIC\" and bringing him in alive to see BOSS. Un fortunately both FEVER and DREAM (as well as other gang members)  were gunned down by MANIC as he attempt",
+   "edition": 3,
+   "name": "FEVER #001",
+   "summary": "FEVER"
+  },
+  "FEVER003": {
+   "base": "FEVER",
+   "desc": "FEVER is a low level criminal that has performed numerous odd jo bs for \"BOSS\". He, alongside his brother \"DREAM\" were tasked wit h apprehending \"MANIC\" and bringing him in alive to see BOSS. Un fortunately both FEVER and DREAM (as well as other gang members)  were gunned down by MANIC as he attempt",
+   "edition": 3,
+   "name": "FEVER #001",
+   "summary": "FEVER"
+  },
+  "FEVERBMF": {
+   "base": "FEVERBMF",
+   "desc": "FEVER has been crowned the BADDEST MFR in all of Dread City through votes cast by its loyal citizens. The master of chaos, and prince of terror has struck fear into the hearts of those who dared to cross his path. FEVER, although dead, will never be dethroned from his position as BMF and will foreve",
+   "edition": 1,
+   "name": "FEVER BMF",
+   "summary": "FEVER BMF"
+  },
+  "FEVERDISENGAGED001": {
+   "base": "FEVERDISENGAGED",
+   "desc": "FEVER is a low level criminal that has performed numerous odd jobs for \"BOSS\". He, alongside his brother \"DREAM\" were tasked with apprehending \"MANIC\" and bringing him in alive to see BOSS. Unfortunately both FEVER and DREAM (as well as other gang members) were gunned down by MANIC as he attempted t",
+   "edition": 2,
+   "name": "FEVER DISENGAGED #001",
+   "summary": "FEVER DISENGAGED"
+  },
+  "FEVERDISENGAGED002": {
+   "base": "FEVERDISENGAGED",
+   "desc": "FEVER is a low level criminal that has performed numerous odd jobs for \"BOSS\". He, alongside his brother \"DREAM\" were tasked with apprehending \"MANIC\" and bringing him in alive to see BOSS. Unfortunately both FEVER and DREAM (as well as other gang members) were gunned down by MANIC as he attempted t",
+   "edition": 2,
+   "name": "FEVER DISENGAGED #001",
+   "summary": "FEVER DISENGAGED"
+  },
+  "FEVERDROPSHIPEDITION001": {
+   "base": "FEVERDROPSHIPEDITION",
+   "desc": "NAME--- FEVER\r\nCLASS--- BERSERKER\r\nSKILL--- INTIMIDATION\r\nDROPSHIP--- FRIGATE CLASS\r\nARMOR RATING---BASE / LIGHT\r\nBIO--- BERSERKERS are often utilized to dishearten the enemy and test their defenses prior to sending in the main fighting force. Under armed and armored, Berserkers operate on psychotro",
+   "edition": 2,
+   "name": "FEVER DROP SHIP EDITION #001",
+   "summary": "FEVER DROP SHIP EDITION"
+  },
+  "FEVERDROPSHIPEDITION002": {
+   "base": "FEVERDROPSHIPEDITION",
+   "desc": "NAME--- FEVER\r\nCLASS--- BERSERKER\r\nSKILL--- INTIMIDATION\r\nDROPSHIP--- FRIGATE CLASS\r\nARMOR RATING---BASE / LIGHT\r\nBIO--- BERSERKERS are often utilized to dishearten the enemy and test their defenses prior to sending in the main fighting force. Under armed and armored, Berserkers operate on psychotro",
+   "edition": 2,
+   "name": "FEVER DROP SHIP EDITION #001",
+   "summary": "FEVER DROP SHIP EDITION"
+  },
+  "FEVERENGAGED001": {
+   "base": "FEVERENGAGED",
+   "desc": "FEVER is a low level criminal that has performed numerous odd jobs for \"BOSS\". He, alongside his brother \"DREAM\" were tasked with apprehending \"MANIC\" and bringing him in alive to see BOSS. Unfortunately both FEVER and DREAM (as well as other gang members) were gunned down by MANIC as he attempted t",
+   "edition": 3,
+   "name": "FEVER ENGAGED #001",
+   "summary": "FEVER ENGAGED"
+  },
+  "FEVERENGAGED002": {
+   "base": "FEVERENGAGED",
+   "desc": "FEVER is a low level criminal that has performed numerous odd jobs for \"BOSS\". He, alongside his brother \"DREAM\" were tasked with apprehending \"MANIC\" and bringing him in alive to see BOSS. Unfortunately both FEVER and DREAM (as well as other gang members) were gunned down by MANIC as he attempted t",
+   "edition": 3,
+   "name": "FEVER ENGAGED #001",
+   "summary": "FEVER ENGAGED"
+  },
+  "FEVERENGAGED003": {
+   "base": "FEVERENGAGED",
+   "desc": "FEVER is a low level criminal that has performed numerous odd jobs for \"BOSS\". He, alongside his brother \"DREAM\" were tasked with apprehending \"MANIC\" and bringing him in alive to see BOSS. Unfortunately both FEVER and DREAM (as well as other gang members) were gunned down by MANIC as he attempted t",
+   "edition": 3,
+   "name": "FEVER ENGAGED #001",
+   "summary": "FEVER ENGAGED"
+  },
+  "FORTE": {
+   "base": "FORTE",
+   "desc": "FORTE is an international arms dealer and works closely with \"BOSS\" on procuring lethal weaponry. FORTE is not violent by nature and is known to talk his way out of hostile situations. Although he chooses the path of the peaceful warrior, FORTE is very capable of dealing destruction as he was forced",
+   "edition": 1,
+   "name": "FORTE",
+   "summary": "FORTE"
+  },
+  "FORTEENGAGED001": {
+   "base": "FORTEENGAGED",
+   "desc": "FORTE is an international arms dealer and works closely with\"BOSS\" on procuring lethal weaponry. FORTE is not violent by nature and is known to talk his way out of hostile situations.Although he chooses the path of the peaceful warrior, FORTE is very capable of dealing destruction as he was forced i",
+   "edition": 2,
+   "name": "FORTE ENGAGED #001",
+   "summary": "FORTE ENGAGED"
+  },
+  "FORTEENGAGED002": {
+   "base": "FORTEENGAGED",
+   "desc": "FORTE is an international arms dealer and works closely with\"BOSS\" on procuring lethal weaponry. FORTE is not violent by nature and is known to talk his way out of hostile situations.Although he chooses the path of the peaceful warrior, FORTE is very capable of dealing destruction as he was forced i",
+   "edition": 2,
+   "name": "FORTE ENGAGED #001",
+   "summary": "FORTE ENGAGED"
+  },
+  "FRANK": {
+   "base": "FRANK",
+   "desc": "FRANK was a local gun for hire who had experience as a personal body guard for many celebrities. He specializes in urban combat tactics and is known for his ability to guide his targets out of dangerous situations. FRANK was in charge of protecting a famous singer known as K8TEE, when a gang of ANGE",
+   "edition": 1,
+   "name": "FRANK",
+   "summary": "FRANK"
+  },
+  "FRANKENGAGED": {
+   "base": "FRANKENGAGED",
+   "desc": "FRANK was a local gun for hire who had experience as a personal body guard for many celebrities. He specializes in urban combat tactics and is known for his ability to guide his targets out of dangerous situations. FRANK was in charge of protecting a famous singer known as K8TEE, when a gang of ANGE",
+   "edition": 1,
+   "name": "FRANK ENGAGED",
+   "summary": "FRANK ENGAGED"
+  },
+  "FRANKSLASTSTAND001": {
+   "base": "FRANKSLASTSTAND",
+   "desc": "FRANK, assigned with protecting NOMAD's family alongside THE ALLIES, would find himself in an un-winnable situation. Bleeding from more holes than he could count, outnumbered and out-gunned, FRANK would be given one last opportunity to show his enemies why he was the one assigned such a high priorit",
+   "edition": 3,
+   "name": "FRANKS LAST STAND #001",
+   "summary": "FRANKS LAST STAND"
+  },
+  "FRANKSLASTSTAND002": {
+   "base": "FRANKSLASTSTAND",
+   "desc": "FRANK, assigned with protecting NOMAD's family alongside THE ALLIES, would find himself in an un-winnable situation. Bleeding from more holes than he could count, outnumbered and out-gunned, FRANK would be given one last opportunity to show his enemies why he was the one assigned such a high priorit",
+   "edition": 3,
+   "name": "FRANKS LAST STAND #001",
+   "summary": "FRANKS LAST STAND"
+  },
+  "FRANKSLASTSTAND003": {
+   "base": "FRANKSLASTSTAND",
+   "desc": "FRANK, assigned with protecting NOMAD's family alongside THE ALLIES, would find himself in an un-winnable situation. Bleeding from more holes than he could count, outnumbered and out-gunned, FRANK would be given one last opportunity to show his enemies why he was the one assigned such a high priorit",
+   "edition": 3,
+   "name": "FRANKS LAST STAND #001",
+   "summary": "FRANKS LAST STAND"
+  },
+  "GENERALSCRIP": {
+   "base": "GENERALSCRIP",
+   "desc": "CONSCRIPT, or SCRIP, is the leader of the largest private military organization in the country. Funded by -REDACTED- Scrip operates above and beyond the law. He and his small army of assassins, are typically assigned clean up jobs to make things appear as if they never happened. Scrip won't hesitate",
+   "edition": 1,
+   "name": "GENERAL SCRIP",
+   "summary": "GENERAL SCRIP"
+  },
+  "GLENN": {
+   "base": "GLENN",
+   "desc": "GLENN was a bouncer at a local Dread City nightclub until he was recruited by SLICE to act as muscle. Due to his size, he rarely had to get into any physical altercations and relied on intimidation and fear to disarm his enemies. He had minimal experience with firearms and was known for his skills w",
+   "edition": 1,
+   "name": "GLENN",
+   "summary": "GLENN STATIC"
+  },
+  "GORDO001": {
+   "base": "GORDO",
+   "desc": "GORDO was a long time leader of a criminal empire in DREAD CITY known as \"THE SMOKES\". GORDO was known for his extreme brutality to his own men and no nonsense decision making. He and THE SMOKES would go on to break a long standing peace agreement with his DREAD CITY rival BOSS and attempt a full sc",
+   "edition": 2,
+   "name": "GORDO #001",
+   "summary": "GORDO"
+  },
+  "GORDO002": {
+   "base": "GORDO",
+   "desc": "GORDO was a long time leader of a criminal empire in DREAD CITY known as \"THE SMOKES\". GORDO was known for his extreme brutality to his own men and no nonsense decision making. He and THE SMOKES would go on to break a long standing peace agreement with his DREAD CITY rival BOSS and attempt a full sc",
+   "edition": 2,
+   "name": "GORDO #001",
+   "summary": "GORDO"
+  },
+  "GORDOENGAGED001": {
+   "base": "GORDOENGAGED",
+   "desc": "GORDO was a long time leader of a criminal empire in DREAD CITY known as \"THE SMOKES\". GORDO was known for his extreme brutality to his own men and no nonsense decision making. He and THE SMOKES would go on to break a long standing peace agreement with his DREAD CITY rival BOSS and attempt a full sc",
+   "edition": 2,
+   "name": "GORDO ENGAGED #001",
+   "summary": "GORDO ENGAGED"
+  },
+  "GORDOENGAGED002": {
+   "base": "GORDOENGAGED",
+   "desc": "GORDO was a long time leader of a criminal empire in DREAD CITY known as \"THE SMOKES\". GORDO was known for his extreme brutality to his own men and no nonsense decision making. He and THE SMOKES would go on to break a long standing peace agreement with his DREAD CITY rival BOSS and attempt a full sc",
+   "edition": 2,
+   "name": "GORDO ENGAGED #001",
+   "summary": "GORDO ENGAGED"
+  },
+  "GUNFIGHTER": {
+   "base": "GUNFIGHTER",
+   "desc": "GUNFIGHTER is a world class assassin, ranked within the top 5 deadliest assassins in the criminal community. She is known for carrying as many as 12 handguns into battle and is notorious for winning situations where she has the disadvantage. She is not without honor, and often challenges her targets",
+   "edition": 4,
+   "name": "GUNFIGHTER",
+   "summary": "GUNFIGHTER"
+  },
+  "GUNFIGHTER001": {
+   "base": "GUNFIGHTER",
+   "desc": "GUNFIGHTER is a world class assassin, ranked within the top 5 deadliest assassins in the criminal community. She is known for carrying as many as 12 handguns into battle and is notorious for winning situations where she has the disadvantage. She is not without honor, and often challenges her targets",
+   "edition": 4,
+   "name": "GUNFIGHTER #001",
+   "summary": "GUNFIGHTER ENGAGED"
+  },
+  "GUNFIGHTER002": {
+   "base": "GUNFIGHTER",
+   "desc": "GUNFIGHTER is a world class assassin, ranked within the top 5 deadliest assassins in the criminal community. She is known for carrying as many as 12 handguns into battle and is notorious for winning situations where she has the disadvantage. She is not without honor, and often challenges her targets",
+   "edition": 4,
+   "name": "GUNFIGHTER #001",
+   "summary": "GUNFIGHTER ENGAGED"
+  },
+  "GUNFIGHTER003": {
+   "base": "GUNFIGHTER",
+   "desc": "GUNFIGHTER is a world class assassin, ranked within the top 5 deadliest assassins in the criminal community. She is known for carrying as many as 12 handguns into battle and is notorious for winning situations where she has the disadvantage. She is not without honor, and often challenges her targets",
+   "edition": 4,
+   "name": "GUNFIGHTER #001",
+   "summary": "GUNFIGHTER ENGAGED"
+  },
+  "GUNFIGHTERAUTOMATED": {
+   "base": "GUNFIGHTERAUTOMATED",
+   "desc": "GUNFIGHTER is a world class assassin, ranked within the top 5 deadliest assassins in the criminal community. She is known for carrying as many as 12 handguns into battle and is notorious for winning situations where she has the disadvantage. She is not without honor, and often challenges her targets",
+   "edition": 1,
+   "name": "GUNFIGHTER AUTOMATED",
+   "summary": "GUNFIGHTER AUTOMATED"
+  },
+  "HAGARTHEHOMIE001": {
+   "base": "HAGARTHEHOMIE",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 3,
+   "name": "HAGAR THE HOMIE #001",
+   "summary": ""
+  },
+  "HAGARTHEHOMIE002": {
+   "base": "HAGARTHEHOMIE",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 3,
+   "name": "HAGAR THE HOMIE #001",
+   "summary": ""
+  },
+  "HAGARTHEHOMIE003": {
+   "base": "HAGARTHEHOMIE",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 3,
+   "name": "HAGAR THE HOMIE #001",
+   "summary": ""
+  },
+  "HAGARTHEHOMIEENGAGED001": {
+   "base": "HAGARTHEHOMIEENGAGED",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 9,
+   "name": "HAGAR THE HOMIE ENGAGED #001",
+   "summary": "HAGAR THE HOMIE ENGAGED"
+  },
+  "HAGARTHEHOMIEENGAGED002": {
+   "base": "HAGARTHEHOMIEENGAGED",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 9,
+   "name": "HAGAR THE HOMIE ENGAGED #001",
+   "summary": "HAGAR THE HOMIE ENGAGED"
+  },
+  "HAGARTHEHOMIEENGAGED003": {
+   "base": "HAGARTHEHOMIEENGAGED",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 9,
+   "name": "HAGAR THE HOMIE ENGAGED #001",
+   "summary": "HAGAR THE HOMIE ENGAGED"
+  },
+  "HAGARTHEHOMIEENGAGED004": {
+   "base": "HAGARTHEHOMIEENGAGED",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 9,
+   "name": "HAGAR THE HOMIE ENGAGED #001",
+   "summary": "HAGAR THE HOMIE ENGAGED"
+  },
+  "HAGARTHEHOMIEENGAGED005": {
+   "base": "HAGARTHEHOMIEENGAGED",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 9,
+   "name": "HAGAR THE HOMIE ENGAGED #001",
+   "summary": "HAGAR THE HOMIE ENGAGED"
+  },
+  "HAGARTHEHOMIEENGAGED006": {
+   "base": "HAGARTHEHOMIEENGAGED",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 9,
+   "name": "HAGAR THE HOMIE ENGAGED #001",
+   "summary": "HAGAR THE HOMIE ENGAGED"
+  },
+  "HAGARTHEHOMIEENGAGED007": {
+   "base": "HAGARTHEHOMIEENGAGED",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 9,
+   "name": "HAGAR THE HOMIE ENGAGED #001",
+   "summary": "HAGAR THE HOMIE ENGAGED"
+  },
+  "HAGARTHEHOMIEENGAGED008": {
+   "base": "HAGARTHEHOMIEENGAGED",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 9,
+   "name": "HAGAR THE HOMIE ENGAGED #001",
+   "summary": "HAGAR THE HOMIE ENGAGED"
+  },
+  "HAGARTHEHOMIEENGAGED009": {
+   "base": "HAGARTHEHOMIEENGAGED",
+   "desc": "HAGAR \"THE HOMIE\" is a vigilante known for coming to aid those in need when they're backed into a corner. Typically showing up to help those outnumbered, outmatched, and outgunned HAGAR ensures fights are fair. A beast standing at 7feet tall while wielding a giant crowbar as his weapon of choice, HA",
+   "edition": 9,
+   "name": "HAGAR THE HOMIE ENGAGED #001",
+   "summary": "HAGAR THE HOMIE ENGAGED"
+  },
+  "HONOR": {
+   "base": "HONOR",
+   "desc": "Honor was a surveillance officer for the local investigative bureau. He, along side TRUST and VALOR spent years infiltrating, analyzing, and dismantling BOSS's organization. Their team was preparing for an operation on a rooftop adjacent to BOSS's factory when SAINT unwittingly barged into their sta",
+   "edition": 1,
+   "name": "HONOR",
+   "summary": "HONOR"
+  },
+  "HONORENGAGED001": {
+   "base": "HONORENGAGED",
+   "desc": "Honor was a surveillance officer for the local Dread City investigative bureau. His skill set involved him blending in with the crowd and capturing information about his targets without being recognized. He was considered one of the brightest in his training academy and is responsible for developing",
+   "edition": 3,
+   "name": "HONOR ENGAGED #001",
+   "summary": "HONOR ENGAGED"
+  },
+  "HONORENGAGED002": {
+   "base": "HONORENGAGED",
+   "desc": "Honor was a surveillance officer for the local Dread City investigative bureau. His skill set involved him blending in with the crowd and capturing information about his targets without being recognized. He was considered one of the brightest in his training academy and is responsible for developing",
+   "edition": 3,
+   "name": "HONOR ENGAGED #001",
+   "summary": "HONOR ENGAGED"
+  },
+  "HONORENGAGED003": {
+   "base": "HONORENGAGED",
+   "desc": "Honor was a surveillance officer for the local Dread City investigative bureau. His skill set involved him blending in with the crowd and capturing information about his targets without being recognized. He was considered one of the brightest in his training academy and is responsible for developing",
+   "edition": 3,
+   "name": "HONOR ENGAGED #001",
+   "summary": "HONOR ENGAGED"
+  },
+  "JUDGEENGAGED": {
+   "base": "JUDGEENGAGED",
+   "desc": "Judge - was  Sheriff of Dread City County from 1991 to 1995. While serving as sheriff, Judge made national headlines by refusing to execute foreclosure orders on several unemployed homeowners, many of whom had been left out of work. This endeared him to the local population, which was dealing with a",
+   "edition": 1,
+   "name": "JUDGE ENGAGED",
+   "summary": "JUDGE ENGAGED"
+  },
+  "KINGGEORGE": {
+   "base": "KINGGEORGE",
+   "desc": "KING GEORGE is a notorious gang leader from BLOOD TOWN who is most known for his \"shoot first ask later\" mentality. KING GEORGE found it mutually beneficial to ally himself with BOSS as their interests aligned and they posed no direct threat to each other. While the alliance is \"shaky\" at best, BOSS",
+   "edition": 1,
+   "name": "KING GEORGE",
+   "summary": "KING GEORGE ENGAGED"
+  },
+  "KLENR": {
+   "base": "KLENR",
+   "desc": "Need to make it look like something never happened? Call KLENR... Need to make someone forget they saw what they saw? Call KLENR... Need to make certain people disappear? Call KLENR. Little is known about KLENR's background as he has no known affiliations with any gangs or organizations. His motivat",
+   "edition": 1,
+   "name": "KLENR",
+   "summary": "KLENR"
+  },
+  "KLENRDROPSHIPEDITION001": {
+   "base": "KLENRDROPSHIPEDITION",
+   "desc": "NAME--- KLENR\r\nCLASS--- COMMANDO\r\nSKILL--- INFILTRATION \r\nDROP SHIP--- FERRY CLASS\r\nARMOR RATING--- N/A\r\nBIO---\r\nCommandos are the special operations fighting force of the alliance, and are known for their ability to sabotage and disorient their enemies. They do not drop with Infantry class troopers",
+   "edition": 5,
+   "name": "KLENR DROP SHIP EDITION #001",
+   "summary": "KLENR DROP SHIP EDITION"
+  },
+  "KLENRDROPSHIPEDITION002": {
+   "base": "KLENRDROPSHIPEDITION",
+   "desc": "NAME--- KLENR\r\nCLASS--- COMMANDO\r\nSKILL--- INFILTRATION \r\nDROP SHIP--- FERRY CLASS\r\nARMOR RATING--- N/A\r\nBIO---\r\nCommandos are the special operations fighting force of the alliance, and are known for their ability to sabotage and disorient their enemies. They do not drop with Infantry class troopers",
+   "edition": 5,
+   "name": "KLENR DROP SHIP EDITION #001",
+   "summary": "KLENR DROP SHIP EDITION"
+  },
+  "KLENRDROPSHIPEDITION003": {
+   "base": "KLENRDROPSHIPEDITION",
+   "desc": "NAME--- KLENR\r\nCLASS--- COMMANDO\r\nSKILL--- INFILTRATION \r\nDROP SHIP--- FERRY CLASS\r\nARMOR RATING--- N/A\r\nBIO---\r\nCommandos are the special operations fighting force of the alliance, and are known for their ability to sabotage and disorient their enemies. They do not drop with Infantry class troopers",
+   "edition": 5,
+   "name": "KLENR DROP SHIP EDITION #001",
+   "summary": "KLENR DROP SHIP EDITION"
+  },
+  "KLENRDROPSHIPEDITION004": {
+   "base": "KLENRDROPSHIPEDITION",
+   "desc": "NAME--- KLENR\r\nCLASS--- COMMANDO\r\nSKILL--- INFILTRATION \r\nDROP SHIP--- FERRY CLASS\r\nARMOR RATING--- N/A\r\nBIO---\r\nCommandos are the special operations fighting force of the alliance, and are known for their ability to sabotage and disorient their enemies. They do not drop with Infantry class troopers",
+   "edition": 5,
+   "name": "KLENR DROP SHIP EDITION #001",
+   "summary": "KLENR DROP SHIP EDITION"
+  },
+  "KLENRDROPSHIPEDITION005": {
+   "base": "KLENRDROPSHIPEDITION",
+   "desc": "NAME--- KLENR\r\nCLASS--- COMMANDO\r\nSKILL--- INFILTRATION \r\nDROP SHIP--- FERRY CLASS\r\nARMOR RATING--- N/A\r\nBIO---\r\nCommandos are the special operations fighting force of the alliance, and are known for their ability to sabotage and disorient their enemies. They do not drop with Infantry class troopers",
+   "edition": 5,
+   "name": "KLENR DROP SHIP EDITION #001",
+   "summary": "KLENR DROP SHIP EDITION"
+  },
+  "KLENRENGAGED001": {
+   "base": "KLENRENGAGED",
+   "desc": "Need to make it look like something never happened? Call KLENR... Need to make someone forget they saw what they saw? Call KLENR... Need to make certain people disappear? Call KLENR. Little is known about KLENR's background as he has no known affiliations with any gangs or organizations. His motivat",
+   "edition": 3,
+   "name": "KLENR ENGAGED #001",
+   "summary": "KLENR ENGAGED"
+  },
+  "KLENRENGAGED002": {
+   "base": "KLENRENGAGED",
+   "desc": "Need to make it look like something never happened? Call KLENR... Need to make someone forget they saw what they saw? Call KLENR... Need to make certain people disappear? Call KLENR. Little is known about KLENR's background as he has no known affiliations with any gangs or organizations. His motivat",
+   "edition": 3,
+   "name": "KLENR ENGAGED #001",
+   "summary": "KLENR ENGAGED"
+  },
+  "KLENRENGAGED003": {
+   "base": "KLENRENGAGED",
+   "desc": "Need to make it look like something never happened? Call KLENR... Need to make someone forget they saw what they saw? Call KLENR... Need to make certain people disappear? Call KLENR. Little is known about KLENR's background as he has no known affiliations with any gangs or organizations. His motivat",
+   "edition": 3,
+   "name": "KLENR ENGAGED #001",
+   "summary": "KLENR ENGAGED"
+  },
+  "KNUCKLEBONE001": {
+   "base": "KNUCKLEBONE",
+   "desc": "KNUCKLEBONE is a retired prize fighter turned mob enforcer for an international syndicate. He comes from a family of renown fighters who's name rings fear into those who know. Upon getting word that his younger brother went missing in Dread City after failing to take dive, KNUCKLEBONE, against his B",
+   "edition": 3,
+   "name": "KNUCKLE BONE #001",
+   "summary": "KNUCKLEBONE"
+  },
+  "KNUCKLEBONE002": {
+   "base": "KNUCKLEBONE",
+   "desc": "KNUCKLEBONE is a retired prize fighter turned mob enforcer for an international syndicate. He comes from a family of renown fighters who's name rings fear into those who know. Upon getting word that his younger brother went missing in Dread City after failing to take dive, KNUCKLEBONE, against his B",
+   "edition": 3,
+   "name": "KNUCKLE BONE #001",
+   "summary": "KNUCKLEBONE"
+  },
+  "KNUCKLEBONE003": {
+   "base": "KNUCKLEBONE",
+   "desc": "KNUCKLEBONE is a retired prize fighter turned mob enforcer for an international syndicate. He comes from a family of renown fighters who's name rings fear into those who know. Upon getting word that his younger brother went missing in Dread City after failing to take dive, KNUCKLEBONE, against his B",
+   "edition": 3,
+   "name": "KNUCKLE BONE #001",
+   "summary": "KNUCKLEBONE"
+  },
+  "KRYPTMANENGAGED": {
+   "base": "KRYPTMANENGAGED",
+   "desc": "KRYPTMAN is the owner and operator of a Dread City bar called \"The Krypt\" - the best source of weapons and info around.  Operating as a neutral zone, any transgressions taking place within the bar are swiftly and brutally dealt with.  KRYPTMAN can most often be seen carrying his hand cannon Dirge wi",
+   "edition": 1,
+   "name": "KRYPTMAN ENGAGED",
+   "summary": "KRYPTMAN ENGAGED"
+  },
+  "LAZLO": {
+   "base": "LAZLO",
+   "desc": "LAZLO, is the last living member of an outlaw biker gang known as the --REDACTED-- After a deal with \"BOSS\" went south, he and his fellow gang members were gunned down in cold blood and left for dead. LAZLO was shot twelve times and woke hours later surrounded by his slain comrades. Fueled by rage, ",
+   "edition": 1,
+   "name": "LAZLO",
+   "summary": "LAZLO"
+  },
+  "LAZLOAUTOMATED001": {
+   "base": "LAZLOAUTOMATED",
+   "desc": "LAZLO, is the last living member of an outlaw biker gang known as the --REDACTED-- After a deal with \"BOSS\" went south, he and his fellow gang members were gunned down in cold blood and left for dead. LAZLO was shot twelve times and woke hours later surrounded by his slain comrades. Fueled by rage, ",
+   "edition": 2,
+   "name": "LAZLO AUTOMATED #001",
+   "summary": "LAZLO AUTOMATED"
+  },
+  "LAZLOAUTOMATED002": {
+   "base": "LAZLOAUTOMATED",
+   "desc": "LAZLO, is the last living member of an outlaw biker gang known as the --REDACTED-- After a deal with \"BOSS\" went south, he and his fellow gang members were gunned down in cold blood and left for dead. LAZLO was shot twelve times and woke hours later surrounded by his slain comrades. Fueled by rage, ",
+   "edition": 2,
+   "name": "LAZLO AUTOMATED #001",
+   "summary": "LAZLO AUTOMATED"
+  },
+  "LAZLOENGAGED001": {
+   "base": "LAZLOENGAGED",
+   "desc": "LAZLO, is the last living member of an outlaw biker gang known as the --REDACTED-- After a deal with \"BOSS\" went south, he and his fellow gang members were gunned down in cold blood and left for dead. LAZLO was shot twelve times and woke hours later surrounded by his slain comrades. Fueled by rage, ",
+   "edition": 2,
+   "name": "LAZLO ENGAGED #001",
+   "summary": "LAZLO ENGAGED"
+  },
+  "LAZLOENGAGED002": {
+   "base": "LAZLOENGAGED",
+   "desc": "LAZLO, is the last living member of an outlaw biker gang known as the --REDACTED-- After a deal with \"BOSS\" went south, he and his fellow gang members were gunned down in cold blood and left for dead. LAZLO was shot twelve times and woke hours later surrounded by his slain comrades. Fueled by rage, ",
+   "edition": 2,
+   "name": "LAZLO ENGAGED #001",
+   "summary": "LAZLO ENGAGED"
+  },
+  "MANIC001": {
+   "base": "MANIC",
+   "desc": "Manic is part of a group of ex-military turned criminals being h unted by a crime organization ran by \"Boss\". He along with Nomad , Saint, and Death, carried out a dangerous task that earned bou nties worth their live to be place on them. Manic is a breacher  and is known for kicking in doors withou",
+   "edition": 2,
+   "name": "MANIC #001",
+   "summary": "MANIC FROM THE SHORTIES"
+  },
+  "MANIC002": {
+   "base": "MANIC",
+   "desc": "Manic is part of a group of ex-military turned criminals being h unted by a crime organization ran by \"Boss\". He along with Nomad , Saint, and Death, carried out a dangerous task that earned bou nties worth their live to be place on them. Manic is a breacher  and is known for kicking in doors withou",
+   "edition": 2,
+   "name": "MANIC #001",
+   "summary": "MANIC FROM THE SHORTIES"
+  },
+  "MANICASCENDED001": {
+   "base": "MANICASCENDED",
+   "desc": "MANIC from VIPER team after embracing his death and being transported to the next plane, has awaken with unnatural abilities in a world he no longer recognizes. He was greeted by a parade of otherworldly beings who praised his \"return\". MANIC was showered with riches and trinkets and set atop an ast",
+   "edition": 4,
+   "name": "MANIC ASCENDED #001",
+   "summary": "MANIC ASCENDED"
+  },
+  "MANICASCENDED002": {
+   "base": "MANICASCENDED",
+   "desc": "MANIC from VIPER team after embracing his death and being transported to the next plane, has awaken with unnatural abilities in a world he no longer recognizes. He was greeted by a parade of otherworldly beings who praised his \"return\". MANIC was showered with riches and trinkets and set atop an ast",
+   "edition": 4,
+   "name": "MANIC ASCENDED #001",
+   "summary": "MANIC ASCENDED"
+  },
+  "MANICASCENDED003": {
+   "base": "MANICASCENDED",
+   "desc": "MANIC from VIPER team after embracing his death and being transported to the next plane, has awaken with unnatural abilities in a world he no longer recognizes. He was greeted by a parade of otherworldly beings who praised his \"return\". MANIC was showered with riches and trinkets and set atop an ast",
+   "edition": 4,
+   "name": "MANIC ASCENDED #001",
+   "summary": "MANIC ASCENDED"
+  },
+  "MANICASCENDED004": {
+   "base": "MANICASCENDED",
+   "desc": "MANIC from VIPER team after embracing his death and being transported to the next plane, has awaken with unnatural abilities in a world he no longer recognizes. He was greeted by a parade of otherworldly beings who praised his \"return\". MANIC was showered with riches and trinkets and set atop an ast",
+   "edition": 4,
+   "name": "MANIC ASCENDED #001",
+   "summary": "MANIC ASCENDED"
+  },
+  "MANICAUTOMATED001": {
+   "base": "MANICAUTOMATED",
+   "desc": "Manic is part of a group of ex-military turned criminals being hunted by a crime organization ran by \"Boss\". He along with Nomad, Saint, and Death, carried out a dangerous task that earned bounties worth their live to be place on them. Manic is a breacher and is known for kicking in doors without he",
+   "edition": 2,
+   "name": "MANIC AUTOMATED #001",
+   "summary": "MANIC AUTOMATED"
+  },
+  "MANICAUTOMATED002": {
+   "base": "MANICAUTOMATED",
+   "desc": "Manic is part of a group of ex-military turned criminals being hunted by a crime organization ran by \"Boss\". He along with Nomad, Saint, and Death, carried out a dangerous task that earned bounties worth their live to be place on them. Manic is a breacher and is known for kicking in doors without he",
+   "edition": 2,
+   "name": "MANIC AUTOMATED #001",
+   "summary": "MANIC AUTOMATED"
+  },
+  "MANICENGAGED": {
+   "base": "MANICENGAGED",
+   "desc": "Manic from the shorties series in his combat gear after dispatch ing his enemies.",
+   "edition": 1,
+   "name": "MANIC ENGAGED",
+   "summary": "MANIC IN COMBAT GEAR"
+  },
+  "MANICSACREDHEARTHEIST001": {
+   "base": "MANICSACREDHEARTHEIST",
+   "desc": "SAINT: \"Nomad we're pinned down, snap out of it!\"\r\nNOMAD: \"...\"\r\nSAINT: \"Nomad, don't do this right now man, we need you to detonate the door charges!\"\r\nMANIC: \"Don't worry little brother, I got this!\"\r\n*Manic bounds between corridors, evading incoming fire, snatches the detonator from Nomad, and se",
+   "edition": 8,
+   "name": "MANIC SACRED HEART HEIST #001",
+   "summary": "MANIC SACRED HEART HEIST"
+  },
+  "MANICSACREDHEARTHEIST002": {
+   "base": "MANICSACREDHEARTHEIST",
+   "desc": "SAINT: \"Nomad we're pinned down, snap out of it!\"\r\nNOMAD: \"...\"\r\nSAINT: \"Nomad, don't do this right now man, we need you to detonate the door charges!\"\r\nMANIC: \"Don't worry little brother, I got this!\"\r\n*Manic bounds between corridors, evading incoming fire, snatches the detonator from Nomad, and se",
+   "edition": 8,
+   "name": "MANIC SACRED HEART HEIST #001",
+   "summary": "MANIC SACRED HEART HEIST"
+  },
+  "MANICSACREDHEARTHEIST003": {
+   "base": "MANICSACREDHEARTHEIST",
+   "desc": "SAINT: \"Nomad we're pinned down, snap out of it!\"\r\nNOMAD: \"...\"\r\nSAINT: \"Nomad, don't do this right now man, we need you to detonate the door charges!\"\r\nMANIC: \"Don't worry little brother, I got this!\"\r\n*Manic bounds between corridors, evading incoming fire, snatches the detonator from Nomad, and se",
+   "edition": 8,
+   "name": "MANIC SACRED HEART HEIST #001",
+   "summary": "MANIC SACRED HEART HEIST"
+  },
+  "MANICSACREDHEARTHEIST004": {
+   "base": "MANICSACREDHEARTHEIST",
+   "desc": "SAINT: \"Nomad we're pinned down, snap out of it!\"\r\nNOMAD: \"...\"\r\nSAINT: \"Nomad, don't do this right now man, we need you to detonate the door charges!\"\r\nMANIC: \"Don't worry little brother, I got this!\"\r\n*Manic bounds between corridors, evading incoming fire, snatches the detonator from Nomad, and se",
+   "edition": 8,
+   "name": "MANIC SACRED HEART HEIST #001",
+   "summary": "MANIC SACRED HEART HEIST"
+  },
+  "MANICSACREDHEARTHEIST005": {
+   "base": "MANICSACREDHEARTHEIST",
+   "desc": "SAINT: \"Nomad we're pinned down, snap out of it!\"\r\nNOMAD: \"...\"\r\nSAINT: \"Nomad, don't do this right now man, we need you to detonate the door charges!\"\r\nMANIC: \"Don't worry little brother, I got this!\"\r\n*Manic bounds between corridors, evading incoming fire, snatches the detonator from Nomad, and se",
+   "edition": 8,
+   "name": "MANIC SACRED HEART HEIST #001",
+   "summary": "MANIC SACRED HEART HEIST"
+  },
+  "MANICSACREDHEARTHEIST006": {
+   "base": "MANICSACREDHEARTHEIST",
+   "desc": "SAINT: \"Nomad we're pinned down, snap out of it!\"\r\nNOMAD: \"...\"\r\nSAINT: \"Nomad, don't do this right now man, we need you to detonate the door charges!\"\r\nMANIC: \"Don't worry little brother, I got this!\"\r\n*Manic bounds between corridors, evading incoming fire, snatches the detonator from Nomad, and se",
+   "edition": 8,
+   "name": "MANIC SACRED HEART HEIST #001",
+   "summary": "MANIC SACRED HEART HEIST"
+  },
+  "MANICSACREDHEARTHEIST007": {
+   "base": "MANICSACREDHEARTHEIST",
+   "desc": "SAINT: \"Nomad we're pinned down, snap out of it!\"\r\nNOMAD: \"...\"\r\nSAINT: \"Nomad, don't do this right now man, we need you to detonate the door charges!\"\r\nMANIC: \"Don't worry little brother, I got this!\"\r\n*Manic bounds between corridors, evading incoming fire, snatches the detonator from Nomad, and se",
+   "edition": 8,
+   "name": "MANIC SACRED HEART HEIST #001",
+   "summary": "MANIC SACRED HEART HEIST"
+  },
+  "MANICSACREDHEARTHEIST008": {
+   "base": "MANICSACREDHEARTHEIST",
+   "desc": "SAINT: \"Nomad we're pinned down, snap out of it!\"\r\nNOMAD: \"...\"\r\nSAINT: \"Nomad, don't do this right now man, we need you to detonate the door charges!\"\r\nMANIC: \"Don't worry little brother, I got this!\"\r\n*Manic bounds between corridors, evading incoming fire, snatches the detonator from Nomad, and se",
+   "edition": 8,
+   "name": "MANIC SACRED HEART HEIST #001",
+   "summary": "MANIC SACRED HEART HEIST"
+  },
+  "MANICWILDWEST": {
+   "base": "MANICWILDWEST",
+   "desc": "Manic is part of a group of ex-military turned criminals being hunted by a crime organization ran by \"Boss\". He along with Nomad, Saint, and Death, carried out a dangerous task that earned bounties worth their live to be place on them. Manic is a breacher and is known for kicking in doors without he",
+   "edition": 1,
+   "name": "MANIC WILD WEST",
+   "summary": "MANIC WILD WEST EDITION"
+  },
+  "MAYORENGAGED": {
+   "base": "MAYORENGAGED",
+   "desc": "The Mayor of Dread City has a violent past as an assassin. When first arriving, he showed no mercy to the other inhabitants. He quickly established dominance by stealing whatever he fancied and bragging about his acquisitions. He also sent his henchman Doc Oc to instigate altercations with Big Kev a",
+   "edition": 1,
+   "name": "MAYOR ENGAGED",
+   "summary": "MAYOR ENGAGED"
+  },
+  "MEDIC001": {
+   "base": "MEDIC",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD and his team on the battlefield on more than one occasion. He is responsible for saving MANIC's life after being wounded by small arms fire and can be credited for protecting the team as they made their escape from an \"un-winnable\" sit",
+   "edition": 3,
+   "name": "MEDIC #001",
+   "summary": "MEDIC"
+  },
+  "MEDIC002": {
+   "base": "MEDIC",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD and his team on the battlefield on more than one occasion. He is responsible for saving MANIC's life after being wounded by small arms fire and can be credited for protecting the team as they made their escape from an \"un-winnable\" sit",
+   "edition": 3,
+   "name": "MEDIC #001",
+   "summary": "MEDIC"
+  },
+  "MEDIC003": {
+   "base": "MEDIC",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD and his team on the battlefield on more than one occasion. He is responsible for saving MANIC's life after being wounded by small arms fire and can be credited for protecting the team as they made their escape from an \"un-winnable\" sit",
+   "edition": 3,
+   "name": "MEDIC #001",
+   "summary": "MEDIC"
+  },
+  "MEDICAUTOMATED": {
+   "base": "MEDICAUTOMATED",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD and his team on the battlefield on more than one occasion. He is responsible for saving MANIC's life after being wounded by small arms fire and can be credited for protecting the team as they made their escape from an \"un-winnable\" sit",
+   "edition": 1,
+   "name": "MEDIC AUTOMATED",
+   "summary": "MEDIC AUTOMATED"
+  },
+  "MEDICDISENGAGED001": {
+   "base": "MEDICDISENGAGED",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD and his team on the battlefield on more than one occasion. He is responsible for saving MANIC's life after being wounded by small arms fire and can be credited for protecting the team as they made their escape from an \"un-winnable\" sit",
+   "edition": 3,
+   "name": "MEDIC DISENGAGED #001",
+   "summary": "MEDIC DISENGAGED"
+  },
+  "MEDICDISENGAGED002": {
+   "base": "MEDICDISENGAGED",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD and his team on the battlefield on more than one occasion. He is responsible for saving MANIC's life after being wounded by small arms fire and can be credited for protecting the team as they made their escape from an \"un-winnable\" sit",
+   "edition": 3,
+   "name": "MEDIC DISENGAGED #001",
+   "summary": "MEDIC DISENGAGED"
+  },
+  "MEDICDISENGAGED003": {
+   "base": "MEDICDISENGAGED",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD and his team on the battlefield on more than one occasion. He is responsible for saving MANIC's life after being wounded by small arms fire and can be credited for protecting the team as they made their escape from an \"un-winnable\" sit",
+   "edition": 3,
+   "name": "MEDIC DISENGAGED #001",
+   "summary": "MEDIC DISENGAGED"
+  },
+  "MEDICENGAGED001": {
+   "base": "MEDICENGAGED",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD  and his team on the battlefield on more than one occasion. He i s responsible for saving MANIC's life after being wounded by sma ll arms fire and can be credited for protecting the team as they  made their escape from an \"un-winnable\"",
+   "edition": 3,
+   "name": "MEDIC ENGAGED #001",
+   "summary": "MEDIC ENGAGED"
+  },
+  "MEDICENGAGED002": {
+   "base": "MEDICENGAGED",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD  and his team on the battlefield on more than one occasion. He i s responsible for saving MANIC's life after being wounded by sma ll arms fire and can be credited for protecting the team as they  made their escape from an \"un-winnable\"",
+   "edition": 3,
+   "name": "MEDIC ENGAGED #001",
+   "summary": "MEDIC ENGAGED"
+  },
+  "MEDICENGAGED003": {
+   "base": "MEDICENGAGED",
+   "desc": "MEDIC was a former Air Force pararescueman who encountered NOMAD  and his team on the battlefield on more than one occasion. He i s responsible for saving MANIC's life after being wounded by sma ll arms fire and can be credited for protecting the team as they  made their escape from an \"un-winnable\"",
+   "edition": 3,
+   "name": "MEDIC ENGAGED #001",
+   "summary": "MEDIC ENGAGED"
+  },
+  "MRDELTA001": {
+   "base": "MRDELTA",
+   "desc": "\"MR DELTA\" was an international hit man for \"BOSS\". He spent many years in different countries and cities carrying out assassinations in the name of the DREAD CITY crime syndicate. \"MR DELTA\" carries two .45 caliber pistols and is known all over the world as one of the fastest gunfighters of his tim",
+   "edition": 2,
+   "name": "MR DELTA #001",
+   "summary": "MR DELTA"
+  },
+  "MRDELTA002": {
+   "base": "MRDELTA",
+   "desc": "\"MR DELTA\" was an international hit man for \"BOSS\". He spent many years in different countries and cities carrying out assassinations in the name of the DREAD CITY crime syndicate. \"MR DELTA\" carries two .45 caliber pistols and is known all over the world as one of the fastest gunfighters of his tim",
+   "edition": 2,
+   "name": "MR DELTA #001",
+   "summary": "MR DELTA"
+  },
+  "MRDELTAENGAGED001": {
+   "base": "MRDELTAENGAGED",
+   "desc": "\"MR DELTA\" was an international hit man for \"BOSS\". He spent many years in different countries and cities carrying out assassinations in the name of the DREAD CITY crime syndicate. \"MR DELTA\" carries two .45 caliber pistols and is known all over the world as one of the fastest gunfighters of his tim",
+   "edition": 3,
+   "name": "MR DELTA ENGAGED #001",
+   "summary": "MR DELTA ENGAGED"
+  },
+  "MRDELTAENGAGED002": {
+   "base": "MRDELTAENGAGED",
+   "desc": "\"MR DELTA\" was an international hit man for \"BOSS\". He spent many years in different countries and cities carrying out assassinations in the name of the DREAD CITY crime syndicate. \"MR DELTA\" carries two .45 caliber pistols and is known all over the world as one of the fastest gunfighters of his tim",
+   "edition": 3,
+   "name": "MR DELTA ENGAGED #001",
+   "summary": "MR DELTA ENGAGED"
+  },
+  "MRDELTAENGAGED003": {
+   "base": "MRDELTAENGAGED",
+   "desc": "\"MR DELTA\" was an international hit man for \"BOSS\". He spent many years in different countries and cities carrying out assassinations in the name of the DREAD CITY crime syndicate. \"MR DELTA\" carries two .45 caliber pistols and is known all over the world as one of the fastest gunfighters of his tim",
+   "edition": 3,
+   "name": "MR DELTA ENGAGED #001",
+   "summary": "MR DELTA ENGAGED"
+  },
+  "NIGHTSHADE": {
+   "base": "NIGHTSHADE",
+   "desc": "NIGHTSHADE, is a local assassin for hire that dwells in the depths of Dread City. He is not known to hold any allegiances and will tend to play warring parties against each other to side with the highest bidder. He is  often utilized to solve issues when negotiations between to organizations fail, a",
+   "edition": 1,
+   "name": "NIGHTSHADE",
+   "summary": "NIGHTSHADE"
+  },
+  "NOMAD": {
+   "base": "NOMAD",
+   "desc": "Nomad is the main protagonist of the shorty-verse. An anti-hero  with self serving motivations, he will do, and risk anything to  get ahead and stay ahead of everyone else. He's only shown loyal ty to those he served with during his time in the military and h is immediate family. During his time in ",
+   "edition": 1,
+   "name": "NOMAD",
+   "summary": "NOMAD V.2"
+  },
+  "NOMADAUTO": {
+   "base": "NOMADAUTO",
+   "desc": "Nomad is the main protagonist of the shorty-verse. An anti-hero with self serving motivations, he will do, and risk anything to get ahead and stay ahead of everyone else. He's only shown loyalty to those he served with during his time in the military and his immediate family. During his time in ----",
+   "edition": 1,
+   "name": "NOMAD AUTO",
+   "summary": "NOMAD AUTOMATED"
+  },
+  "NOMADCHECKMATE": {
+   "base": "NOMADCHECKMATE",
+   "desc": "NOMAD... an ex special forces soldier, the last living member of VIPER Team, father to a kidnapped son, and a husband to a missing wife. A notorious heist man, wanted by the police for armed robbery and wanted by many criminals for double crossing them. He's been shot, stabbed, and beaten more times",
+   "edition": 1,
+   "name": "NOMAD CHECKMATE",
+   "summary": "NOMAD CHECKMATE"
+  },
+  "NOMADDROPSHIPEDITION": {
+   "base": "NOMADDROPSHIPEDITION",
+   "desc": "NAME--- NOMAD\r\nCLASS--- BATTLE CAPTAIN\r\nSKILL--- FIELD LEADERSHIP\r\nDROPSHIP--- FRIGATE CLASS\r\nARMOR RATING--- MEDIUM\r\nBIO--- BATTLE CAPTAINS are assigned as many as 200 troopers to command on the battlefield. Their purpose is to ensure the mission is executed to perfection, adapt to changes in the t",
+   "edition": 1,
+   "name": "NOMAD DROP SHIP EDITION",
+   "summary": "NOMAD DROP SHIP EDITION"
+  },
+  "NOMADENGAGED": {
+   "base": "NOMADENGAGED",
+   "desc": "Nomad is the main protagonist of the shorty-verse. An anti-hero  with self serving motivations, he will do, and risk anything to  get ahead and stay ahead of everyone else. He's only shown loyal ty to those he served with during his time in the military and h is immediate family. During his time in ",
+   "edition": 1,
+   "name": "NOMAD ENGAGED",
+   "summary": "NOMAD ENGAGED VERSION 1 OF 1"
+  },
+  "NOMADPRESS": {
+   "base": "NOMADPRESS",
+   "desc": "Nomad is the main protagonist of the shorty-verse. An anti-hero with self serving motivations, he will do, and risk anything to get ahead and stay ahead of everyone else. He's only shown loyalty to those he served with during his time in the military and his immediate family. During his time in ----",
+   "edition": 1,
+   "name": "NOMAD PRESS",
+   "summary": "NOMAD COMBAT CORRESPONDER EDITION"
+  },
+  "NOMADTEEDUP": {
+   "base": "NOMADTEEDUP",
+   "desc": "Nomad is the main protagonist of the shorty-verse. An anti-hero with self serving motivations, he will do, and risk anything to get ahead and stay ahead of everyone else. He's only shown loyalty to those he served with during his time in the military and his immediate family. During his time in ----",
+   "edition": 1,
+   "name": "NOMAD TEED UP",
+   "summary": "NOMAD WITHOUT ARMOR"
+  },
+  "NOMADTHEMADDOG001": {
+   "base": "NOMADTHEMADDOG",
+   "desc": "During his time as a VIPER TEAM operator fighting foreign wars, NOMAD was separated from his team during a dangerous fire fight. Alone and outnumbered by the enemy, NOMAD fought to survive without any support for almost 3 nights. On the third night, MEDIC along with VIPER TEAM, found NOMAD fighting ",
+   "edition": 2,
+   "name": "NOMAD THE MAD DOG #001",
+   "summary": "NOMAD THE MAD DOG"
+  },
+  "NOMADTHEMADDOG002": {
+   "base": "NOMADTHEMADDOG",
+   "desc": "During his time as a VIPER TEAM operator fighting foreign wars, NOMAD was separated from his team during a dangerous fire fight. Alone and outnumbered by the enemy, NOMAD fought to survive without any support for almost 3 nights. On the third night, MEDIC along with VIPER TEAM, found NOMAD fighting ",
+   "edition": 2,
+   "name": "NOMAD THE MAD DOG #001",
+   "summary": "NOMAD THE MAD DOG"
+  },
+  "OMEEDENGAGED": {
+   "base": "OMEEDENGAGED",
+   "desc": "FILE REDACTED - WITNESS PROTECTION ACT FILE REDACTED - FAMILY HISTORY FILE REDACTED - MILITARY HISTORY FILE REDACTED - NAME --------- AGE ----------- INFO ---------- CAO 2042",
+   "edition": 1,
+   "name": "OMEED ENGAGED",
+   "summary": "OMEED ENGAGED"
+  },
+  "OMEGADAGARAUTO": {
+   "base": "OMEGADAGARAUTO",
+   "desc": "OMEGA DAGAR was a special forces soldier assigned to the infamous DAGAR Team.  He specialized in close quarters combat and blade fighting. OMEGA DAGAR believed gunfighting was a coward's way to take an enemy combatant's life, and vowed to only use bladed weaponry when he was called to action.  He pe",
+   "edition": 1,
+   "name": "OMEGA DAGAR AUTO",
+   "summary": "OMEGA DAGAR AUTOMATED"
+  },
+  "PAPERBAGSOLDIER001": {
+   "base": "PAPERBAGSOLDIER",
+   "desc": "This is a Paper Bag Soldier, that works for BOSS's organization. Typically consisting of escaped convicts or recently released criminals, Paper Bag soldiers are low level thugs with nothing to lose but everything to gain. They operate in a hierarchy system and report directly to underbosses like DIE",
+   "edition": 3,
+   "name": "PAPER BAG SOLDIER #001",
+   "summary": "PAPER BAG SOLDIER FOR FACTION WARS"
+  },
+  "PAPERBAGSOLDIER002": {
+   "base": "PAPERBAGSOLDIER",
+   "desc": "This is a Paper Bag Soldier, that works for BOSS's organization. Typically consisting of escaped convicts or recently released criminals, Paper Bag soldiers are low level thugs with nothing to lose but everything to gain. They operate in a hierarchy system and report directly to underbosses like DIE",
+   "edition": 3,
+   "name": "PAPER BAG SOLDIER #001",
+   "summary": "PAPER BAG SOLDIER FOR FACTION WARS"
+  },
+  "PAPERBAGSOLDIER003": {
+   "base": "PAPERBAGSOLDIER",
+   "desc": "This is a Paper Bag Soldier, that works for BOSS's organization. Typically consisting of escaped convicts or recently released criminals, Paper Bag soldiers are low level thugs with nothing to lose but everything to gain. They operate in a hierarchy system and report directly to underbosses like DIE",
+   "edition": 3,
+   "name": "PAPER BAG SOLDIER #001",
+   "summary": "PAPER BAG SOLDIER FOR FACTION WARS"
+  },
+  "PROTO001": {
+   "base": "PROTO",
+   "desc": "Proto is an unused character i created for my short story comics  on IG. He was intended to be a low level hit man with a long hi story of petty theft. His demise was meant to met at the hands o f Nomad.",
+   "edition": 3,
+   "name": "PROTO #001",
+   "summary": "PROTO BLOOD VERSION"
+  },
+  "PROTO002": {
+   "base": "PROTO",
+   "desc": "Proto is an unused character i created for my short story comics  on IG. He was intended to be a low level hit man with a long hi story of petty theft. His demise was meant to met at the hands o f Nomad.",
+   "edition": 3,
+   "name": "PROTO #001",
+   "summary": "PROTO BLOOD VERSION"
+  },
+  "PROTO003": {
+   "base": "PROTO",
+   "desc": "Proto is an unused character i created for my short story comics  on IG. He was intended to be a low level hit man with a long hi story of petty theft. His demise was meant to met at the hands o f Nomad.",
+   "edition": 3,
+   "name": "PROTO #001",
+   "summary": "PROTO BLOOD VERSION"
+  },
+  "PROTOCLEAN001": {
+   "base": "PROTOCLEAN",
+   "desc": "Proto is an un-used character from the short stories by ohhmeed.  Although un-used, that doesnt mean he won't make a grand entran ce at some point in the future.",
+   "edition": 10,
+   "name": "PROTO CLEAN #001",
+   "summary": "PROTO PRE BLOOD BATH"
+  },
+  "PROTOCLEAN002": {
+   "base": "PROTOCLEAN",
+   "desc": "Proto is an un-used character from the short stories by ohhmeed.  Although un-used, that doesnt mean he won't make a grand entran ce at some point in the future.",
+   "edition": 10,
+   "name": "PROTO CLEAN #001",
+   "summary": "PROTO PRE BLOOD BATH"
+  },
+  "PROTOCLEAN003": {
+   "base": "PROTOCLEAN",
+   "desc": "Proto is an un-used character from the short stories by ohhmeed.  Although un-used, that doesnt mean he won't make a grand entran ce at some point in the future.",
+   "edition": 10,
+   "name": "PROTO CLEAN #001",
+   "summary": "PROTO PRE BLOOD BATH"
+  },
+  "PROTOCLEAN004": {
+   "base": "PROTOCLEAN",
+   "desc": "Proto is an un-used character from the short stories by ohhmeed.  Although un-used, that doesnt mean he won't make a grand entran ce at some point in the future.",
+   "edition": 10,
+   "name": "PROTO CLEAN #001",
+   "summary": "PROTO PRE BLOOD BATH"
+  },
+  "PROTOCLEAN005": {
+   "base": "PROTOCLEAN",
+   "desc": "Proto is an un-used character from the short stories by ohhmeed.  Although un-used, that doesnt mean he won't make a grand entran ce at some point in the future.",
+   "edition": 10,
+   "name": "PROTO CLEAN #001",
+   "summary": "PROTO PRE BLOOD BATH"
+  },
+  "PROTOCLEAN006": {
+   "base": "PROTOCLEAN",
+   "desc": "Proto is an un-used character from the short stories by ohhmeed.  Although un-used, that doesnt mean he won't make a grand entran ce at some point in the future.",
+   "edition": 10,
+   "name": "PROTO CLEAN #001",
+   "summary": "PROTO PRE BLOOD BATH"
+  },
+  "PROTOCLEAN007": {
+   "base": "PROTOCLEAN",
+   "desc": "Proto is an un-used character from the short stories by ohhmeed.  Although un-used, that doesnt mean he won't make a grand entran ce at some point in the future.",
+   "edition": 10,
+   "name": "PROTO CLEAN #001",
+   "summary": "PROTO PRE BLOOD BATH"
+  },
+  "PROTOCLEAN008": {
+   "base": "PROTOCLEAN",
+   "desc": "Proto is an un-used character from the short stories by ohhmeed.  Although un-used, that doesnt mean he won't make a grand entran ce at some point in the future.",
+   "edition": 10,
+   "name": "PROTO CLEAN #001",
+   "summary": "PROTO PRE BLOOD BATH"
+  },
+  "PROTOCLEAN009": {
+   "base": "PROTOCLEAN",
+   "desc": "Proto is an un-used character from the short stories by ohhmeed.  Although un-used, that doesnt mean he won't make a grand entran ce at some point in the future.",
+   "edition": 10,
+   "name": "PROTO CLEAN #001",
+   "summary": "PROTO PRE BLOOD BATH"
+  },
+  "PROTOCLEAN010": {
+   "base": "PROTOCLEAN",
+   "desc": "Proto is an un-used character from the short stories by ohhmeed.  Although un-used, that doesnt mean he won't make a grand entran ce at some point in the future.",
+   "edition": 10,
+   "name": "PROTO CLEAN #001",
+   "summary": "PROTO PRE BLOOD BATH"
+  },
+  "PUNCH": {
+   "base": "PUNCH",
+   "desc": "PUNCH was a former prize fighter and heavy weight boxing champion who, due to \"too many hits to the head\" was forced to retire. PUNCH fell on hard times after his career ended and found himself fighting in underground rings to make ends meet. With the underground fighting came fixed fights, heavy ga",
+   "edition": 1,
+   "name": "PUNCH",
+   "summary": "PUNCH STATIC"
+  },
+  "PUNCHENGAGED001": {
+   "base": "PUNCHENGAGED",
+   "desc": "PUNCH was a former prize fighter and heavy weight boxing champion who, due to \"too many hits to the head\" was forced to retire. PUNCH fell on hard times after his career ended and found himself fighting in underground rings to make ends meet. With the underground fighting came fixed fights, heavy ga",
+   "edition": 2,
+   "name": "PUNCH ENGAGED #001",
+   "summary": "PUNCH ENGAGED"
+  },
+  "PUNCHENGAGED002": {
+   "base": "PUNCHENGAGED",
+   "desc": "PUNCH was a former prize fighter and heavy weight boxing champion who, due to \"too many hits to the head\" was forced to retire. PUNCH fell on hard times after his career ended and found himself fighting in underground rings to make ends meet. With the underground fighting came fixed fights, heavy ga",
+   "edition": 2,
+   "name": "PUNCH ENGAGED #001",
+   "summary": "PUNCH ENGAGED"
+  },
+  "PURENOMAD": {
+   "base": "PURENOMAD",
+   "desc": "Nomad is the main protagonist of the shorty-verse. An anti-hero with self serving motivations, he will do, and risk anything to get ahead and stay ahead of everyone else. He's only shown loyalty to those he served with during his time in the military and his immediate family. During his time in ----",
+   "edition": 1,
+   "name": "PURE NOMAD",
+   "summary": "PURE NOMAD"
+  },
+  "RED": {
+   "base": "RED",
+   "desc": "RED is a former British Special Forces operator and decorated helicopter pilot known for his accomplished history of leading countless successful missions. He is a lone wolf with a wide variety of skills and a witty sense of humor. RED, being the perfect soldier for his country, was the ideal candid",
+   "edition": 1,
+   "name": "RED",
+   "summary": "RED ENGAGED"
+  },
+  "SAINT": {
+   "base": "SAINT",
+   "desc": "SAINT ~~is a former special forces team lead known for his affil iation with a rogue criminal cell. His name and personal informa tion has been buried by the government for his involvement with  REDACTED ....... ----- Additionally ----- information omitted -- --  ~\r\n FOR THE SAFETY OF MEMBERS OF ...",
+   "edition": 4,
+   "name": "SAINT",
+   "summary": "SAINT FROM THE SHORTY VERSE"
+  },
+  "SAINT001": {
+   "base": "SAINT",
+   "desc": "SAINT ~~is a former special forces team lead known for his affil iation with a rogue criminal cell. His name and personal informa tion has been buried by the government for his involvement with  REDACTED ....... ----- Additionally ----- information omitted -- -- ~ FOR THE SAFETY OF MEMBERS OF ......",
+   "edition": 4,
+   "name": "SAINT #001",
+   "summary": "SAINT FROM THE SHORTY VERSE"
+  },
+  "SAINT002": {
+   "base": "SAINT",
+   "desc": "SAINT ~~is a former special forces team lead known for his affil iation with a rogue criminal cell. His name and personal informa tion has been buried by the government for his involvement with  REDACTED ....... ----- Additionally ----- information omitted -- -- ~ FOR THE SAFETY OF MEMBERS OF ......",
+   "edition": 4,
+   "name": "SAINT #001",
+   "summary": "SAINT FROM THE SHORTY VERSE"
+  },
+  "SAINT003": {
+   "base": "SAINT",
+   "desc": "SAINT ~~is a former special forces team lead known for his affil iation with a rogue criminal cell. His name and personal informa tion has been buried by the government for his involvement with  REDACTED ....... ----- Additionally ----- information omitted -- -- ~ FOR THE SAFETY OF MEMBERS OF ......",
+   "edition": 4,
+   "name": "SAINT #001",
+   "summary": "SAINT FROM THE SHORTY VERSE"
+  },
+  "SAINTAUTOMATEDDISENGAGED": {
+   "base": "SAINTAUTOMATEDDISENGAGED",
+   "desc": "SAINT ~~is a former special forces team lead known for his affiliation with a rogue criminal cell. His name and personal information has been buried by the government for his involvement with REDACTED ....... ----- Additionally ----- information omitted ---- ~ FOR THE SAFETY OF MEMBERS OF ..........",
+   "edition": 1,
+   "name": "SAINT AUTOMATED - DISENGAGED",
+   "summary": "SAINT AUTOMATED - DISENGAGED"
+  },
+  "SAINTDROPSHIPEDITION001": {
+   "base": "SAINTDROPSHIPEDITION",
+   "desc": "NAME--- SAINT\r\nCLASS--- JUGGERNAUT\r\nSKILL--- DEVASTATION\r\nDROPSHIP--- FERRY CLASS\r\nARMOR RATING--- HEAVY +\r\nBIO--\r\nThe Juggernaut armor class is assigned to high ranking Drop Ship Troopers who have completed rigorous heavy armor training and have received a daily weapons qualification in plasma weap",
+   "edition": 3,
+   "name": "SAINT DROP SHIP EDITION #001",
+   "summary": "SAINT DROP SHIP EDITION"
+  },
+  "SAINTDROPSHIPEDITION002": {
+   "base": "SAINTDROPSHIPEDITION",
+   "desc": "NAME--- SAINT\r\nCLASS--- JUGGERNAUT\r\nSKILL--- DEVASTATION\r\nDROPSHIP--- FERRY CLASS\r\nARMOR RATING--- HEAVY +\r\nBIO--\r\nThe Juggernaut armor class is assigned to high ranking Drop Ship Troopers who have completed rigorous heavy armor training and have received a daily weapons qualification in plasma weap",
+   "edition": 3,
+   "name": "SAINT DROP SHIP EDITION #001",
+   "summary": "SAINT DROP SHIP EDITION"
+  },
+  "SAINTDROPSHIPEDITION003": {
+   "base": "SAINTDROPSHIPEDITION",
+   "desc": "NAME--- SAINT\r\nCLASS--- JUGGERNAUT\r\nSKILL--- DEVASTATION\r\nDROPSHIP--- FERRY CLASS\r\nARMOR RATING--- HEAVY +\r\nBIO--\r\nThe Juggernaut armor class is assigned to high ranking Drop Ship Troopers who have completed rigorous heavy armor training and have received a daily weapons qualification in plasma weap",
+   "edition": 3,
+   "name": "SAINT DROP SHIP EDITION #001",
+   "summary": "SAINT DROP SHIP EDITION"
+  },
+  "SAINTENGAGED001": {
+   "base": "SAINTENGAGED",
+   "desc": "SAINT ~~is a former special forces team lead known for his affiliation with a rogue criminal cell. His name and personal information has been buried by the government for his involvement with REDACTED ....... ----- Additionally ----- information omitted ---- ~ FOR THE SAFETY OF MEMBERS OF ..........",
+   "edition": 4,
+   "name": "SAINT ENGAGED #001",
+   "summary": "SAINT ENGAGED"
+  },
+  "SAINTENGAGED002": {
+   "base": "SAINTENGAGED",
+   "desc": "SAINT ~~is a former special forces team lead known for his affiliation with a rogue criminal cell. His name and personal information has been buried by the government for his involvement with REDACTED ....... ----- Additionally ----- information omitted ---- ~ FOR THE SAFETY OF MEMBERS OF ..........",
+   "edition": 4,
+   "name": "SAINT ENGAGED #001",
+   "summary": "SAINT ENGAGED"
+  },
+  "SAINTENGAGED003": {
+   "base": "SAINTENGAGED",
+   "desc": "SAINT ~~is a former special forces team lead known for his affiliation with a rogue criminal cell. His name and personal information has been buried by the government for his involvement with REDACTED ....... ----- Additionally ----- information omitted ---- ~ FOR THE SAFETY OF MEMBERS OF ..........",
+   "edition": 4,
+   "name": "SAINT ENGAGED #001",
+   "summary": "SAINT ENGAGED"
+  },
+  "SAINTENGAGED004": {
+   "base": "SAINTENGAGED",
+   "desc": "SAINT ~~is a former special forces team lead known for his affiliation with a rogue criminal cell. His name and personal information has been buried by the government for his involvement with REDACTED ....... ----- Additionally ----- information omitted ---- ~ FOR THE SAFETY OF MEMBERS OF ..........",
+   "edition": 4,
+   "name": "SAINT ENGAGED #001",
+   "summary": "SAINT ENGAGED"
+  },
+  "SAINTFILE": {
+   "base": "SAINTFILE",
+   "desc": "SAINT ~~is a former special forces team lead known for his affiliation with a rogue criminal cell. His name and personal information has been buried by the government for his involvement with REDACTED ....... ----- Additionally ----- information omitted ---- ~ FOR THE SAFETY OF MEMBERS OF ..........",
+   "edition": 1,
+   "name": "SAINT FILE",
+   "summary": "SAINT FILE"
+  },
+  "SAINTNIGHTMARE": {
+   "base": "SAINTNIGHTMARE",
+   "desc": "Doctor: it's the same dream again?\r\nSaint: yeah... i mean, this one was different somehow... it felt real...\r\nDoctor: real?\r\nSaint: I woke up outside this time...\r\nDoctor: alone?\r\nSaint: I'm not sure\r\nDoctor: when was the last time you were sure of anything?\r\nSaint: w...what?\r\nDoctor: are you sure y",
+   "edition": 1,
+   "name": "SAINT NIGHTMARE",
+   "summary": "SAINT NIGHTMARE"
+  },
+  "SAINTNINJA": {
+   "base": "SAINTNINJA",
+   "desc": "SAINT ~~is a former special forces team lead known for his affiliation with a rogue criminal cell. His name and personal information has been buried by the government for his involvement with REDACTED ....... ----- Additionally ----- information omitted ---- ~ FOR THE SAFETY OF MEMBERS OF ..........",
+   "edition": 1,
+   "name": "SAINT NINJA",
+   "summary": "SAINT NINJA EDITION"
+  },
+  "SAINTSHELLSHOCKED": {
+   "base": "SAINTSHELLSHOCKED",
+   "desc": "SAINT during his time as ------ REDACTED ------ \r\nFollowing the  completion of operation ........ NO INFORMATION PROVIDED.......\r \nREDACTED\r\nREDACTED\r\nREDACTED\r\nsigned, [NULL]",
+   "edition": 1,
+   "name": "SAINT SHELL SHOCKED",
+   "summary": "SAINT FROM THE SHORTY VERSE"
+  },
+  "SCRIP": {
+   "base": "SCRIP",
+   "desc": "CONSCRIPT, or SCRIP, is the leader of the largest private military organization in the country. Funded by -REDACTED- Scrip operates above and beyond the law. He and his small army of assassins, are typically assigned clean up jobs to make things appear as if they never happened. Scrip won't hesitate",
+   "edition": 1,
+   "name": "SCRIP",
+   "summary": "SCRIP"
+  },
+  "SCRIPSCONTRACTORS001": {
+   "base": "SCRIPSCONTRACTORS",
+   "desc": "This is a private military contractor working for \"SCRIP\". These contractors are battle hardened mercenaries with a bottomless pit of funding to support their wars. Known for village clearing ops, urban warfare, and large scale combat, these contractors are one decision away from over-throwing an es",
+   "edition": 3,
+   "name": "SCRIPS CONTRACTORS #001",
+   "summary": "SCRIPS CONTRACTORS FOR FACTION WARS"
+  },
+  "SCRIPSCONTRACTORS002": {
+   "base": "SCRIPSCONTRACTORS",
+   "desc": "This is a private military contractor working for \"SCRIP\". These contractors are battle hardened mercenaries with a bottomless pit of funding to support their wars. Known for village clearing ops, urban warfare, and large scale combat, these contractors are one decision away from over-throwing an es",
+   "edition": 3,
+   "name": "SCRIPS CONTRACTORS #001",
+   "summary": "SCRIPS CONTRACTORS FOR FACTION WARS"
+  },
+  "SCRIPSCONTRACTORS003": {
+   "base": "SCRIPSCONTRACTORS",
+   "desc": "This is a private military contractor working for \"SCRIP\". These contractors are battle hardened mercenaries with a bottomless pit of funding to support their wars. Known for village clearing ops, urban warfare, and large scale combat, these contractors are one decision away from over-throwing an es",
+   "edition": 3,
+   "name": "SCRIPS CONTRACTORS #001",
+   "summary": "SCRIPS CONTRACTORS FOR FACTION WARS"
+  },
+  "SCRIPWARFIGHTERENGAGED001": {
+   "base": "SCRIPWARFIGHTERENGAGED",
+   "desc": "CONSCRIPT, or SCRIP, is the leader of the largest private military organization in the country. Funded by -REDACTED- Scrip operates above and beyond the law. He and his small army of assassins, are typically assigned clean up jobs to make things appear as if they never happened. Scrip won't hesitate",
+   "edition": 8,
+   "name": "SCRIP WARFIGHTER ENGAGED #001",
+   "summary": "SCRIP WARFIGHTER ENGAGED"
+  },
+  "SCRIPWARFIGHTERENGAGED002": {
+   "base": "SCRIPWARFIGHTERENGAGED",
+   "desc": "CONSCRIPT, or SCRIP, is the leader of the largest private military organization in the country. Funded by -REDACTED- Scrip operates above and beyond the law. He and his small army of assassins, are typically assigned clean up jobs to make things appear as if they never happened. Scrip won't hesitate",
+   "edition": 8,
+   "name": "SCRIP WARFIGHTER ENGAGED #001",
+   "summary": "SCRIP WARFIGHTER ENGAGED"
+  },
+  "SCRIPWARFIGHTERENGAGED003": {
+   "base": "SCRIPWARFIGHTERENGAGED",
+   "desc": "CONSCRIPT, or SCRIP, is the leader of the largest private military organization in the country. Funded by -REDACTED- Scrip operates above and beyond the law. He and his small army of assassins, are typically assigned clean up jobs to make things appear as if they never happened. Scrip won't hesitate",
+   "edition": 8,
+   "name": "SCRIP WARFIGHTER ENGAGED #001",
+   "summary": "SCRIP WARFIGHTER ENGAGED"
+  },
+  "SCRIPWARFIGHTERENGAGED004": {
+   "base": "SCRIPWARFIGHTERENGAGED",
+   "desc": "CONSCRIPT, or SCRIP, is the leader of the largest private military organization in the country. Funded by -REDACTED- Scrip operates above and beyond the law. He and his small army of assassins, are typically assigned clean up jobs to make things appear as if they never happened. Scrip won't hesitate",
+   "edition": 8,
+   "name": "SCRIP WARFIGHTER ENGAGED #001",
+   "summary": "SCRIP WARFIGHTER ENGAGED"
+  },
+  "SCRIPWARFIGHTERENGAGED005": {
+   "base": "SCRIPWARFIGHTERENGAGED",
+   "desc": "CONSCRIPT, or SCRIP, is the leader of the largest private military organization in the country. Funded by -REDACTED- Scrip operates above and beyond the law. He and his small army of assassins, are typically assigned clean up jobs to make things appear as if they never happened. Scrip won't hesitate",
+   "edition": 8,
+   "name": "SCRIP WARFIGHTER ENGAGED #001",
+   "summary": "SCRIP WARFIGHTER ENGAGED"
+  },
+  "SCRIPWARFIGHTERENGAGED006": {
+   "base": "SCRIPWARFIGHTERENGAGED",
+   "desc": "CONSCRIPT, or SCRIP, is the leader of the largest private military organization in the country. Funded by -REDACTED- Scrip operates above and beyond the law. He and his small army of assassins, are typically assigned clean up jobs to make things appear as if they never happened. Scrip won't hesitate",
+   "edition": 8,
+   "name": "SCRIP WARFIGHTER ENGAGED #001",
+   "summary": "SCRIP WARFIGHTER ENGAGED"
+  },
+  "SCRIPWARFIGHTERENGAGED007": {
+   "base": "SCRIPWARFIGHTERENGAGED",
+   "desc": "CONSCRIPT, or SCRIP, is the leader of the largest private military organization in the country. Funded by -REDACTED- Scrip operates above and beyond the law. He and his small army of assassins, are typically assigned clean up jobs to make things appear as if they never happened. Scrip won't hesitate",
+   "edition": 8,
+   "name": "SCRIP WARFIGHTER ENGAGED #001",
+   "summary": "SCRIP WARFIGHTER ENGAGED"
+  },
+  "SCRIPWARFIGHTERENGAGED008": {
+   "base": "SCRIPWARFIGHTERENGAGED",
+   "desc": "CONSCRIPT, or SCRIP, is the leader of the largest private military organization in the country. Funded by -REDACTED- Scrip operates above and beyond the law. He and his small army of assassins, are typically assigned clean up jobs to make things appear as if they never happened. Scrip won't hesitate",
+   "edition": 8,
+   "name": "SCRIP WARFIGHTER ENGAGED #001",
+   "summary": "SCRIP WARFIGHTER ENGAGED"
+  },
+  "SEVERENGAGED001": {
+   "base": "SEVERENGAGED",
+   "desc": "SEVER was a well decorated special forces operator who spent many years augmenting for the famed TIGRE team. Luckily he was on another assignment on the day TIGRE team was defeated, which he took as a sign to leave the life of a soldier. SEVER went on to become an advisor for many high level militar",
+   "edition": 3,
+   "name": "SEVER ENGAGED #001",
+   "summary": "SEVER ENGAGED"
+  },
+  "SEVERENGAGED002": {
+   "base": "SEVERENGAGED",
+   "desc": "SEVER was a well decorated special forces operator who spent many years augmenting for the famed TIGRE team. Luckily he was on another assignment on the day TIGRE team was defeated, which he took as a sign to leave the life of a soldier. SEVER went on to become an advisor for many high level militar",
+   "edition": 3,
+   "name": "SEVER ENGAGED #001",
+   "summary": "SEVER ENGAGED"
+  },
+  "SEVERENGAGED003": {
+   "base": "SEVERENGAGED",
+   "desc": "SEVER was a well decorated special forces operator who spent many years augmenting for the famed TIGRE team. Luckily he was on another assignment on the day TIGRE team was defeated, which he took as a sign to leave the life of a soldier. SEVER went on to become an advisor for many high level militar",
+   "edition": 3,
+   "name": "SEVER ENGAGED #001",
+   "summary": "SEVER ENGAGED"
+  },
+  "SKULLIANCE001": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE002": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE003": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE004": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE005": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE006": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE007": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE008": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE009": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE010": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE011": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE012": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE013": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE014": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE015": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE016": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE017": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SKULLIANCE018": {
+   "base": "SKULLIANCE",
+   "desc": "Follow Sinder Skullz, Crypties, Galactico, Kimosabe, H.Y.P.E. and Omeed as they band together to form Skulliance.",
+   "edition": 18,
+   "name": "SKULLIANCE #001",
+   "summary": "SKULLIANCE"
+  },
+  "SLICE": {
+   "base": "SLICE",
+   "desc": "SLICE is the owner and operator of THE HOTEL, a place where shady activities occur regularly. Little is known of SLICE's past life before arriving to DREAD CITY. However, he has been said to have a tattoo that is only given to members of an elite group of assassins known as THE FIRST ONES. Years ago",
+   "edition": 1,
+   "name": "SLICE",
+   "summary": "SLICE ENGAGED"
+  },
+  "SLICEENGAGED": {
+   "base": "SLICEENGAGED",
+   "desc": "SLICE is the owner and operator of THE HOTEL, a place where shady activities occur regularly. Little is known of SLICE's past life before arriving to DREAD CITY. However, he has been said to have a tattoo that is only given to members of an elite group of assassins known as THE FIRST ONES. Years ago",
+   "edition": 1,
+   "name": "SLICE ENGAGED",
+   "summary": "SLICE ENGAGED"
+  },
+  "SWEETENGAGED001": {
+   "base": "SWEETENGAGED",
+   "desc": "SWEET is a high ranking member of the \"Bikers\" who moved into Dread City after the \"incident\" with LAZLO and BOSS took place. He was tasked with rebuilding the gangs network and seeking vengeance for the cold blooded murder of his fellow brothers. SWEET acts as the gang's judge, jury, and executione",
+   "edition": 4,
+   "name": "SWEET ENGAGED #001",
+   "summary": "SWEET ENGAGED"
+  },
+  "SWEETENGAGED002": {
+   "base": "SWEETENGAGED",
+   "desc": "SWEET is a high ranking member of the \"Bikers\" who moved into Dread City after the \"incident\" with LAZLO and BOSS took place. He was tasked with rebuilding the gangs network and seeking vengeance for the cold blooded murder of his fellow brothers. SWEET acts as the gang's judge, jury, and executione",
+   "edition": 4,
+   "name": "SWEET ENGAGED #001",
+   "summary": "SWEET ENGAGED"
+  },
+  "SWEETENGAGED003": {
+   "base": "SWEETENGAGED",
+   "desc": "SWEET is a high ranking member of the \"Bikers\" who moved into Dread City after the \"incident\" with LAZLO and BOSS took place. He was tasked with rebuilding the gangs network and seeking vengeance for the cold blooded murder of his fellow brothers. SWEET acts as the gang's judge, jury, and executione",
+   "edition": 4,
+   "name": "SWEET ENGAGED #001",
+   "summary": "SWEET ENGAGED"
+  },
+  "SWEETENGAGED004": {
+   "base": "SWEETENGAGED",
+   "desc": "SWEET is a high ranking member of the \"Bikers\" who moved into Dread City after the \"incident\" with LAZLO and BOSS took place. He was tasked with rebuilding the gangs network and seeking vengeance for the cold blooded murder of his fellow brothers. SWEET acts as the gang's judge, jury, and executione",
+   "edition": 4,
+   "name": "SWEET ENGAGED #001",
+   "summary": "SWEET ENGAGED"
+  },
+  "THEENDLESS": {
+   "base": "THEENDLESS",
+   "desc": "Two protagonists from the SHORTY VERSE clash in a head to head \"who wins the duel\" scenario featuring LAZLO and NOMAD. --- Nomad an expert in hand to hand combat faces off against Lazlo the cutthroat leader of the Dread City biker gang. Both men have been called \"un-killable\" and \"relentless\" thus l",
+   "edition": 1,
+   "name": "THE ENDLESS",
+   "summary": "THE ENDLESS"
+  },
+  "THEFEDS001": {
+   "base": "THEFEDS",
+   "desc": "This is a federal agent that works for the city, state, and nation when needed. Their reach knows no limits, and their pursuit of justice can only be slowed if the bribe is right. These agents are highly trained, analytical, tough as nails, \"problem eliminators\". The are patient, tactical, and very ",
+   "edition": 3,
+   "name": "THE FEDS #001",
+   "summary": "THE FEDS FOR FACTION WARS"
+  },
+  "THEFEDS002": {
+   "base": "THEFEDS",
+   "desc": "This is a federal agent that works for the city, state, and nation when needed. Their reach knows no limits, and their pursuit of justice can only be slowed if the bribe is right. These agents are highly trained, analytical, tough as nails, \"problem eliminators\". The are patient, tactical, and very ",
+   "edition": 3,
+   "name": "THE FEDS #001",
+   "summary": "THE FEDS FOR FACTION WARS"
+  },
+  "THEFEDS003": {
+   "base": "THEFEDS",
+   "desc": "This is a federal agent that works for the city, state, and nation when needed. Their reach knows no limits, and their pursuit of justice can only be slowed if the bribe is right. These agents are highly trained, analytical, tough as nails, \"problem eliminators\". The are patient, tactical, and very ",
+   "edition": 3,
+   "name": "THE FEDS #001",
+   "summary": "THE FEDS FOR FACTION WARS"
+  },
+  "THEFLOODENGAGED": {
+   "base": "THEFLOODENGAGED",
+   "desc": "Born from the destruction and pain of Dread City, the entity known as THE FLOOD remained a mystery to most, until now. Sightings that were once deemed \"hallucinations\" and \"the ravings of madmen\" are becoming more and more frequent, as the violence escalates. THE FLOOD has been observing, collecting",
+   "edition": 1,
+   "name": "THE FLOOD ENGAGED",
+   "summary": "THE FLOOD ENGAGED"
+  },
+  "THEINFAMOUSVIPERTEAM": {
+   "base": "THEINFAMOUSVIPERTEAM",
+   "desc": "V.I.P.E.R. team, was a group of special forces soldiers turned criminals that was made up of four members. SAINT (team leader and sniper), MANIC (breacher and close quarters specialist), DEATH (saboteur and covert operative), and NOMAD (reconnaissance and communications expert). They worked well tog",
+   "edition": 1,
+   "name": "THE INFAMOUS VIPER TEAM",
+   "summary": "THE INFAMOUS VIPER TEAM"
+  },
+  "THERING": {
+   "base": "THERING",
+   "desc": "The RING is the street name for the boss's underground network of criminal under-bosses. Consisting of leaders of allied gangs, organizations, and networks, the ring operates with and within itself to thrive. Like a well oiled machine, BOSS keeps all the pieces in line to maintain efficient function",
+   "edition": 1,
+   "name": "THE RING",
+   "summary": "THE RING ENGAGED"
+  },
+  "THESACREDHEARTHEISTCREW001": {
+   "base": "THESACREDHEARTHEISTCREW",
+   "desc": "THE SHHC, was assembled by BOSS and was ordered to carry out an attack on a classified federal SAFE HOUSE located in the basement of DREAD CITY's SACRED HEART HOSPITAL. The members of the crew included VIPER team, DIEGO & DELAY, and BANDIT. VIPER team's job was to infiltrate the safe house and elimi",
+   "edition": 3,
+   "name": "THE SACRED HEART HEIST CREW #001",
+   "summary": "THE SACRED HEART HEIST CREW"
+  },
+  "THESACREDHEARTHEISTCREW002": {
+   "base": "THESACREDHEARTHEISTCREW",
+   "desc": "THE SHHC, was assembled by BOSS and was ordered to carry out an attack on a classified federal SAFE HOUSE located in the basement of DREAD CITY's SACRED HEART HOSPITAL. The members of the crew included VIPER team, DIEGO & DELAY, and BANDIT. VIPER team's job was to infiltrate the safe house and elimi",
+   "edition": 3,
+   "name": "THE SACRED HEART HEIST CREW #001",
+   "summary": "THE SACRED HEART HEIST CREW"
+  },
+  "THESACREDHEARTHEISTCREW003": {
+   "base": "THESACREDHEARTHEISTCREW",
+   "desc": "THE SHHC, was assembled by BOSS and was ordered to carry out an attack on a classified federal SAFE HOUSE located in the basement of DREAD CITY's SACRED HEART HOSPITAL. The members of the crew included VIPER team, DIEGO & DELAY, and BANDIT. VIPER team's job was to infiltrate the safe house and elimi",
+   "edition": 3,
+   "name": "THE SACRED HEART HEIST CREW #001",
+   "summary": "THE SACRED HEART HEIST CREW"
+  },
+  "THESIEGEOFDREADCITY001": {
+   "base": "THESIEGEOFDREADCITY",
+   "desc": "PART 1: MANIC and DEATH were dispatched by SAINT to secure District 4, while SAINT and NOMAD conducted a separate operation. DEATH cut power to the district and commenced a raid of all of the paper bag soldier strongholds. Placing the area in a state of disarray, the city began to riot as it citizen",
+   "edition": 3,
+   "name": "THE SIEGE OF DREAD CITY #001",
+   "summary": "THE SIEGE OF DREAD CITY"
+  },
+  "THESIEGEOFDREADCITY002": {
+   "base": "THESIEGEOFDREADCITY",
+   "desc": "PART 1: MANIC and DEATH were dispatched by SAINT to secure District 4, while SAINT and NOMAD conducted a separate operation. DEATH cut power to the district and commenced a raid of all of the paper bag soldier strongholds. Placing the area in a state of disarray, the city began to riot as it citizen",
+   "edition": 3,
+   "name": "THE SIEGE OF DREAD CITY #001",
+   "summary": "THE SIEGE OF DREAD CITY"
+  },
+  "THESIEGEOFDREADCITY003": {
+   "base": "THESIEGEOFDREADCITY",
+   "desc": "PART 1: MANIC and DEATH were dispatched by SAINT to secure District 4, while SAINT and NOMAD conducted a separate operation. DEATH cut power to the district and commenced a raid of all of the paper bag soldier strongholds. Placing the area in a state of disarray, the city began to riot as it citizen",
+   "edition": 3,
+   "name": "THE SIEGE OF DREAD CITY #001",
+   "summary": "THE SIEGE OF DREAD CITY"
+  },
+  "TRUST001": {
+   "base": "TRUST",
+   "desc": "Trust is a detective in the short stories by Ohh_meed responsibl e for arriving on scene after the events of part 1 in the shorty  verse. Fate unknown",
+   "edition": 3,
+   "name": "TRUST #001",
+   "summary": "DETECTIVE TRUST"
+  },
+  "TRUST002": {
+   "base": "TRUST",
+   "desc": "Trust is a detective in the short stories by Ohh_meed responsibl e for arriving on scene after the events of part 1 in the shorty  verse. Fate unknown",
+   "edition": 3,
+   "name": "TRUST #001",
+   "summary": "DETECTIVE TRUST"
+  },
+  "TRUST003": {
+   "base": "TRUST",
+   "desc": "Trust is a detective in the short stories by Ohh_meed responsibl e for arriving on scene after the events of part 1 in the shorty  verse. Fate unknown",
+   "edition": 3,
+   "name": "TRUST #001",
+   "summary": "DETECTIVE TRUST"
+  },
+  "TRUSTENGAGED001": {
+   "base": "TRUSTENGAGED",
+   "desc": "TRUST is a police detective responsible for investigating violen t crimes. Born into a family of police officers, (his mother and  both older brothers) TRUST knew that he would become a cop at a  young age. Having only worked the \"beat\" for two months after j oining, TRUST apprehended five high leve",
+   "edition": 4,
+   "name": "TRUST ENGAGED #001",
+   "summary": "DETECTIVE TRUST ENGAGED VERSION"
+  },
+  "TRUSTENGAGED002": {
+   "base": "TRUSTENGAGED",
+   "desc": "TRUST is a police detective responsible for investigating violen t crimes. Born into a family of police officers, (his mother and  both older brothers) TRUST knew that he would become a cop at a  young age. Having only worked the \"beat\" for two months after j oining, TRUST apprehended five high leve",
+   "edition": 4,
+   "name": "TRUST ENGAGED #001",
+   "summary": "DETECTIVE TRUST ENGAGED VERSION"
+  },
+  "TRUSTENGAGED003": {
+   "base": "TRUSTENGAGED",
+   "desc": "TRUST is a police detective responsible for investigating violen t crimes. Born into a family of police officers, (his mother and  both older brothers) TRUST knew that he would become a cop at a  young age. Having only worked the \"beat\" for two months after j oining, TRUST apprehended five high leve",
+   "edition": 4,
+   "name": "TRUST ENGAGED #001",
+   "summary": "DETECTIVE TRUST ENGAGED VERSION"
+  },
+  "TRUSTENGAGED004": {
+   "base": "TRUSTENGAGED",
+   "desc": "TRUST is a police detective responsible for investigating violen t crimes. Born into a family of police officers, (his mother and  both older brothers) TRUST knew that he would become a cop at a  young age. Having only worked the \"beat\" for two months after j oining, TRUST apprehended five high leve",
+   "edition": 4,
+   "name": "TRUST ENGAGED #001",
+   "summary": "DETECTIVE TRUST ENGAGED VERSION"
+  },
+  "TRUSTREENGAGED001": {
+   "base": "TRUSTREENGAGED",
+   "desc": "TRUST is a police detective responsible for investigating violent crimes. Born into a family of police officers, (his mother and both older brothers) TRUST knew that he would become a cop at a young age. Having only worked the \"beat\" for two months after joining, TRUST apprehended five high level de",
+   "edition": 2,
+   "name": "TRUST RE ENGAGED #001",
+   "summary": "TRUST RE ENGAGED"
+  },
+  "TRUSTREENGAGED002": {
+   "base": "TRUSTREENGAGED",
+   "desc": "TRUST is a police detective responsible for investigating violent crimes. Born into a family of police officers, (his mother and both older brothers) TRUST knew that he would become a cop at a young age. Having only worked the \"beat\" for two months after joining, TRUST apprehended five high level de",
+   "edition": 2,
+   "name": "TRUST RE ENGAGED #001",
+   "summary": "TRUST RE ENGAGED"
+  },
+  "UPTOWN": {
+   "base": "UPTOWN",
+   "desc": "Uptown is thoroughly connected but with no true allegiances except to the almighty dollar. At the top of Dread City\u2019s urban jungle he operates \u201cThe Canopy,\u201d a high-rise casino he uses as a front for his illegal counterfeit and money laundering activities. Need quick cash for a job? See Uptown. Need ",
+   "edition": 1,
+   "name": "UPTOWN",
+   "summary": "UPTOWN"
+  },
+  "VALOR": {
+   "base": "VALOR",
+   "desc": "VALOR was a surveillance officer for the local investigative bureau. He, along side TRUST and HONOR spent years infiltrating, analyzing, and dismantling BOSS's organization. Their team was preparing for an operation on a rooftop adjacent to BOSS's factory when SAINT unwittingly barged into their sta",
+   "edition": 1,
+   "name": "VALOR",
+   "summary": "VALOR"
+  },
+  "VALORAUTOMATED": {
+   "base": "VALORAUTOMATED",
+   "desc": "VALOR was a surveillance officer for the local investigative bureau. He, along side TRUST and HONOR spent years infiltrating, analyzing, and dismantling BOSS's organization. Their team was preparing for an operation on a rooftop adjacent to BOSS's factory when SAINT unwittingly barged into their sta",
+   "edition": 1,
+   "name": "VALOR AUTOMATED",
+   "summary": "VALOR AUTOMATED"
+  },
+  "VANCE": {
+   "base": "VANCE",
+   "desc": "VANCE was a high level kingpin in his city. He ran a large empire that profited off of smuggling, extortion, and murders. He was arrested for tax evasion after twenty years of \"flying high\" as a career criminal. However, after three months in prison, he escaped and moved to a new city. Looking to st",
+   "edition": 1,
+   "name": "VANCE",
+   "summary": "VANCE"
+  },
+  "VANCEAUTOMATED001": {
+   "base": "VANCEAUTOMATED",
+   "desc": "VANCE was a high level kingpin in his city. He ran a large empire that profited off of smuggling, extortion, and murders. He was arrested for tax evasion after twenty years of \"flying high\" as a career criminal. However, after three months in prison, he escaped and moved to a new city. Looking to st",
+   "edition": 3,
+   "name": "VANCE AUTOMATED #001",
+   "summary": "VANCE AUTOMATED"
+  },
+  "VANCEAUTOMATED002": {
+   "base": "VANCEAUTOMATED",
+   "desc": "VANCE was a high level kingpin in his city. He ran a large empire that profited off of smuggling, extortion, and murders. He was arrested for tax evasion after twenty years of \"flying high\" as a career criminal. However, after three months in prison, he escaped and moved to a new city. Looking to st",
+   "edition": 3,
+   "name": "VANCE AUTOMATED #001",
+   "summary": "VANCE AUTOMATED"
+  },
+  "VANCEAUTOMATED003": {
+   "base": "VANCEAUTOMATED",
+   "desc": "VANCE was a high level kingpin in his city. He ran a large empire that profited off of smuggling, extortion, and murders. He was arrested for tax evasion after twenty years of \"flying high\" as a career criminal. However, after three months in prison, he escaped and moved to a new city. Looking to st",
+   "edition": 3,
+   "name": "VANCE AUTOMATED #001",
+   "summary": "VANCE AUTOMATED"
+  },
+  "VANCECHECKMATE": {
+   "base": "VANCECHECKMATE",
+   "desc": "VANCE... a gun for hire turned mob boss who fell from grace under suspicious circumstance has arrived to Dread City with vengeance on his mind. His lax demeanor has been said to be unsettling to friends and foes a like as they never know if a simple conversation will end in words or war. He, alongsi",
+   "edition": 1,
+   "name": "VANCE CHECKMATE",
+   "summary": "VANCE CHECKMATE"
+  },
+  "VANCEENGAGED001": {
+   "base": "VANCEENGAGED",
+   "desc": "VANCE was a high level kingpin in his city. He ran a large empire that profited off of smuggling, extortion, and murders. He was arrested for tax evasion after twenty years of \"flying high\" as a career criminal. However, after three months in prison, he escaped and moved to a new city. Looking to st",
+   "edition": 2,
+   "name": "VANCE ENGAGED #001",
+   "summary": "VANCE ENGAGED"
+  },
+  "VANCEENGAGED002": {
+   "base": "VANCEENGAGED",
+   "desc": "VANCE was a high level kingpin in his city. He ran a large empire that profited off of smuggling, extortion, and murders. He was arrested for tax evasion after twenty years of \"flying high\" as a career criminal. However, after three months in prison, he escaped and moved to a new city. Looking to st",
+   "edition": 2,
+   "name": "VANCE ENGAGED #001",
+   "summary": "VANCE ENGAGED"
+  },
+  "VANCEXNOMAD001": {
+   "base": "VANCEXNOMAD",
+   "desc": "After rumors circulated about his rival's assassination, VANCE sought out the man who carried out the hit. He was informed that a man named NOMAD operated with a group of criminals to cross VANCE's rival (BOSS) and could be currently involved in the middle of a large scale gang war.  Upon learning o",
+   "edition": 3,
+   "name": "VANCE X NOMAD #001",
+   "summary": "VANCE X NOMAD"
+  },
+  "VANCEXNOMAD002": {
+   "base": "VANCEXNOMAD",
+   "desc": "After rumors circulated about his rival's assassination, VANCE sought out the man who carried out the hit. He was informed that a man named NOMAD operated with a group of criminals to cross VANCE's rival (BOSS) and could be currently involved in the middle of a large scale gang war.  Upon learning o",
+   "edition": 3,
+   "name": "VANCE X NOMAD #001",
+   "summary": "VANCE X NOMAD"
+  },
+  "VANCEXNOMAD003": {
+   "base": "VANCEXNOMAD",
+   "desc": "After rumors circulated about his rival's assassination, VANCE sought out the man who carried out the hit. He was informed that a man named NOMAD operated with a group of criminals to cross VANCE's rival (BOSS) and could be currently involved in the middle of a large scale gang war.  Upon learning o",
+   "edition": 3,
+   "name": "VANCE X NOMAD #001",
+   "summary": "VANCE X NOMAD"
+  },
+  "VIPCOIN001": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN002": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN003": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN004": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN005": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN006": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN007": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN008": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN009": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN010": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN011": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN012": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN013": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN014": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN015": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN016": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN017": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN018": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN019": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPCOIN020": {
+   "base": "VIPCOIN",
+   "desc": "A COIN FOR ENTRY INTO THE DREAD CITY VIP LOUNGE",
+   "edition": 20,
+   "name": "VIP COIN #001",
+   "summary": "VIP COIN SERIES 1"
+  },
+  "VIPERALLY001": {
+   "base": "VIPERALLY",
+   "desc": "This is an ally to VIPER TEAM. Typically made up of ex-military special forces personnel, these soldiers are readily available when called upon by any member of VIPER TEAM. The allies have years of collective combat experience ranging from one man sabotage ops to squad based tactical engagements. Ea",
+   "edition": 3,
+   "name": "VIPER ALLY #001",
+   "summary": "VIPER TEAM ALLY FOR FACTION WARS"
+  },
+  "VIPERALLY002": {
+   "base": "VIPERALLY",
+   "desc": "This is an ally to VIPER TEAM. Typically made up of ex-military special forces personnel, these soldiers are readily available when called upon by any member of VIPER TEAM. The allies have years of collective combat experience ranging from one man sabotage ops to squad based tactical engagements. Ea",
+   "edition": 3,
+   "name": "VIPER ALLY #001",
+   "summary": "VIPER TEAM ALLY FOR FACTION WARS"
+  },
+  "VIPERALLY003": {
+   "base": "VIPERALLY",
+   "desc": "This is an ally to VIPER TEAM. Typically made up of ex-military special forces personnel, these soldiers are readily available when called upon by any member of VIPER TEAM. The allies have years of collective combat experience ranging from one man sabotage ops to squad based tactical engagements. Ea",
+   "edition": 3,
+   "name": "VIPER ALLY #001",
+   "summary": "VIPER TEAM ALLY FOR FACTION WARS"
+  },
+  "VIPERTEAMALLIES001": {
+   "base": "VIPERTEAMALLIES",
+   "desc": "This is an ally to VIPER TEAM. Typically made up of ex-military special forces personnel, these soldiers are readily available when called upon by any member of VIPER TEAM. The allies have years of collective combat experience ranging from one man sabotage ops to squad based tactical engagements. Ea",
+   "edition": 2,
+   "name": "VIPER TEAM ALLIES #001",
+   "summary": "VIPER TEAM ALLIES ENGAGED"
+  },
+  "VIPERTEAMALLIES002": {
+   "base": "VIPERTEAMALLIES",
+   "desc": "This is an ally to VIPER TEAM. Typically made up of ex-military special forces personnel, these soldiers are readily available when called upon by any member of VIPER TEAM. The allies have years of collective combat experience ranging from one man sabotage ops to squad based tactical engagements. Ea",
+   "edition": 2,
+   "name": "VIPER TEAM ALLIES #001",
+   "summary": "VIPER TEAM ALLIES ENGAGED"
+  },
+  "VIPERTEAMENGAGED": {
+   "base": "VIPERTEAMENGAGED",
+   "desc": "V.I.P.E.R. team, was a group of special forces soldiers turned criminals that was made up of four members. SAINT (team leader and sniper), MANIC (breacher and close quarters specialist), DEATH (saboteur and covert operative), and NOMAD (reconnaissance and communications expert). They worked well tog",
+   "edition": 1,
+   "name": "VIPER TEAM ENGAGED",
+   "summary": "VIPER TEAM ENGAGED EDITION"
+  },
+  "VYKE": {
+   "base": "VYKE",
+   "desc": "Vyke is a retired high level Dread City assassin who specializes in close quarters combat. Often seen carrying a sword and dagger combo, Vyke is no stranger to getting \"up close and personal\" to dispatch his enemies. Known as a man of little words, Vyke is often described as stoic in nature. He is r",
+   "edition": 1,
+   "name": "VYKE",
+   "summary": "VYKE"
+  },
+  "WOLFE": {
+   "base": "WOLFE",
+   "desc": "WOLFE is a \"gun for hire\" known specifically for carrying out \"hostage rescue\" operations. Operating as a one man army, WOLFE possesses a wide variety of skills that make him an effective mercenary. Due to him being capable of carrying out tasks typically assigned for small teams, WOLFE is one of th",
+   "edition": 1,
+   "name": "WOLFE",
+   "summary": "WOLFE"
+  },
+  "WOLFEENGAGED001": {
+   "base": "WOLFEENGAGED",
+   "desc": "WOLFE is a \"gun for hire\" known specifically for carrying out \"hostage rescue\" operations. Operating as a one man army, WOLFE possesses a wide variety of skills that make him an effective mercenary. Due to him being capable of carrying out tasks typically assigned for small teams, WOLFE is one of th",
+   "edition": 4,
+   "name": "WOLFE ENGAGED #001",
+   "summary": "WOLFE ENGAGED"
+  },
+  "WOLFEENGAGED002": {
+   "base": "WOLFEENGAGED",
+   "desc": "WOLFE is a \"gun for hire\" known specifically for carrying out \"hostage rescue\" operations. Operating as a one man army, WOLFE possesses a wide variety of skills that make him an effective mercenary. Due to him being capable of carrying out tasks typically assigned for small teams, WOLFE is one of th",
+   "edition": 4,
+   "name": "WOLFE ENGAGED #001",
+   "summary": "WOLFE ENGAGED"
+  },
+  "WOLFEENGAGED003": {
+   "base": "WOLFEENGAGED",
+   "desc": "WOLFE is a \"gun for hire\" known specifically for carrying out \"hostage rescue\" operations. Operating as a one man army, WOLFE possesses a wide variety of skills that make him an effective mercenary. Due to him being capable of carrying out tasks typically assigned for small teams, WOLFE is one of th",
+   "edition": 4,
+   "name": "WOLFE ENGAGED #001",
+   "summary": "WOLFE ENGAGED"
+  },
+  "WOLFEENGAGED004": {
+   "base": "WOLFEENGAGED",
+   "desc": "WOLFE is a \"gun for hire\" known specifically for carrying out \"hostage rescue\" operations. Operating as a one man army, WOLFE possesses a wide variety of skills that make him an effective mercenary. Due to him being capable of carrying out tasks typically assigned for small teams, WOLFE is one of th",
+   "edition": 4,
+   "name": "WOLFE ENGAGED #001",
+   "summary": "WOLFE ENGAGED"
+  },
+  "YOUNGGUNFIGHTER": {
+   "base": "YOUNGGUNFIGHTER",
+   "desc": "After surviving the massacre of her family at the hands of VANCE, BOSS, and GORDO, Gunfighter fled to the streets and attempted to survive on her own at a very young age. She was recruited by ANGEL and taken under his wing as an understudy and trained in the art of assassination. She carried out sma",
+   "edition": 1,
+   "name": "YOUNG GUNFIGHTER",
+   "summary": "YOUNG GUNFIGHTER"
+  }
+ }
+}
