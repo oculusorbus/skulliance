@@ -33,11 +33,13 @@ tier adds a little on top, which is why a mixed squad of four beats four of the
 same thing. The Squad panel shows the figure before you deploy, and it is the
 same number the run rolls against.
 
-**Every Medkit is one extra life, and they stack.** A Medkit carried by a
-soldier and a Medkit bought from the store are two separate lives, and so are
-two soldiers who both carry one. Each failed round spends exactly one of them
-and the run continues. The first roll of a run happens on round 3, so that is
-the single likeliest round to spend one on.
+**One of each item fires per squad.** A Medkit is one extra life no matter how
+many of them you send: a second Medkit in the same squad is a duplicate and
+does nothing. The same goes for Melee and Demolition. That is why the fourth
+soldier in a complete squad is better off carrying **none** than carrying a
+spare, and why a duplicate is a soldier you could have put in another squad.
+The first roll of a run happens on round 3, so that is the single likeliest
+round to spend your extra life on.
 
 **Save a squad and field it again in one press.** Once soldiers are deployed,
 **Save this squad** keeps that grouping. Saved squads sit above the barracks,

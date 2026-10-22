@@ -230,12 +230,28 @@ $f = dsr_flags($super);
 ok(dropshipThreshold($f) == 80, 'a Super Soldier Squad rolls at 80, got ' . dropshipThreshold($f));
 ok($f['extra_lives'] === 1, 'and carries one life, got ' . $f['extra_lives']);
 
-/* THE DEFECT, as the readout saw it: squad Medkit plus a bought one is two. */
+/*
+ * ONE OF EACH ITEM FIRES PER SQUAD, AND MEDKITS DO NOT STACK.
+ *
+ * This harness used to assert the opposite, because the fix it was written
+ * for went the wrong way. The reported symptom was the readout promising
+ * two lives and the run spending one; the run was right and the readout was
+ * over-counting, and making the run match the readout quietly rebalanced
+ * the game. A duplicate item is the whole reason a fourth soldier carrying
+ * None beats one carrying a spare Medkit.
+ */
 $f2 = dsr_flags($super, array('medkit' => 'true'));
-ok($f2['extra_lives'] === 2, 'buying a Medkit on top of the squad one is two lives, got ' . $f2['extra_lives']);
+ok($f2['extra_lives'] === 1,
+   'a bought Medkit stacks on the squad one, got ' . $f2['extra_lives'] . ' lives');
+$f3 = dsr_flags(array(array('A','Heavy','Medkit'), array('B','Medium','Medkit'),
+                      array('C','Light','Medkit'), array('D','Base','Medkit')));
+ok($f3['extra_lives'] === 1,
+   'four Medkit carriers are ' . $f3['extra_lives'] . ' lives, so stacking pays');
+ok(dropshipThreshold($f3) == 80,
+   'four Medkits across four tiers still rolls at 80, got ' . dropshipThreshold($f3));
 $seen = array();
 for ($i = 0; $i < 3000; $i++) $seen[substr_count(dsr_run(80, $f2['extra_lives'])['markup'], '- {Extra Life}')] = true;
-ok(array_keys($seen) === array(2), 'and the run spends both of them, one per failure');
+ok(array_keys($seen) === array(1), 'the run spends more than the one life it has');
 
 /* THE PROMO LIFE IS A LIFE. A bare squad gets a free Medkit from the run's
    no-armour branch, and the readout used to leave it out. */

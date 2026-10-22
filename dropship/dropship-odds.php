@@ -151,8 +151,19 @@ function dropshipOddsFlags($conn) {
 	foreach (array_keys(dropshipWeaponDelays()) as $k) {
 		if (isset($_SESSION['userData'][$k]) && $_SESSION['userData'][$k] === 'true') $f[$k] = true;
 	}
+	/*
+	 * ONE OF EACH ITEM FIRES IN A SQUAD, SO EXTRA LIVES CAP AT ONE.
+	 *
+	 * This counted one per Medkit -- carried, purchased and promo -- and the
+	 * run was changed to spend them all. That was the wrong half to change.
+	 * The game has always fired one of each item per squad; a second Medkit
+	 * is a duplicate that does nothing, which is exactly why a fourth
+	 * soldier carrying None is worth more than one carrying a spare Medkit.
+	 * Counting them made a stacked squad strictly better and quietly
+	 * rebalanced the run. The readout was over-counting; the run was right.
+	 */
 	if (isset($_SESSION['userData']['medkit']) && $_SESSION['userData']['medkit'] === 'true') {
-		$f['extra_lives']++;
+		$f['extra_lives'] = 1;
 	}
 	/* And the armour flags the run also accepts from the session. */
 	foreach (array('heavy' => 'heavy_armor', 'medium' => 'medium_armor',
@@ -180,7 +191,9 @@ function dropshipOddsFlags($conn) {
 			case 'Light':  $f['light']  = true; break;
 			case 'Base':   $f['base']   = true; break;
 		}
-		if ($row['gear'] === 'Medkit') $f['extra_lives']++;
+		/* Capped, not counted: see the note above. A roster of four Medkits
+		   is one extra life, the same as a roster of one. */
+		if ($row['gear'] === 'Medkit') $f['extra_lives'] = 1;
 		$f['roster'][] = array('armor' => (string)$row['armor'],
 		                       'gear'  => (string)$row['gear']);
 	}
@@ -197,7 +210,7 @@ function dropshipOddsFlags($conn) {
 	if (!$f['mech_suit'] && !$f['exo_suit'] && !$f['quantum_stealth']
 	    && !$f['ballistic_shield'] && !$f['heavy'] && !$f['medium']
 	    && !$f['light'] && !$f['base']) {
-		$f['extra_lives']++;
+		$f['extra_lives'] = 1;
 	}
 	return $f;
 }
