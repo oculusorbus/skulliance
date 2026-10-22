@@ -125,42 +125,57 @@ function dropshipGruntFilterSql($field, $value) {
 }
 
 /**
- * LOADOUT OVERRIDES FOR NAMED NFTs.
+ * LOADOUT OVERRIDES, FROM THE COLLECTION'S OWN TRAITS.
  *
- * Drop Ship reads two things off a soldier -- `armor` and `gear` -- and for a
- * collection whose metadata it cannot map, both come from
- * dropshipStatsFromAssetName(), which is a derivation from the asset name
- * rather than a fact about the art. On Digital Hell Citizens 2: Fighters that
- * produced Light/Melee, Base/None, Base/None and Medium/Demolition: two
- * duplicate Base tiers, no Heavy and no Medkit, so the holder could not build
- * a Super Soldier Squad out of the collection at all.
+ * Drop Ship reads two things off a soldier -- armor and gear -- and for a
+ * collection it has no trait mapping for, both come from
+ * dropshipStatsFromAssetName(), which is a crc32 of the asset name. It is
+ * deterministic, evenly spread, and means nothing: on Digital Hell
+ * Citizens 2: Fighters it produced two duplicate Base tiers, no Heavy and
+ * no Medkit across the four an owner held, so the collection could not
+ * build a Super Soldier Squad at all.
  *
- * WHY THE OVERRIDE IS PINNED FOR ALL FOUR and not only the one that changes:
- * the NFT sync UPDATEs armor, gear and level on every wallet refresh from
- * that same derivation, so a soldier left unpinned can drift the next time
- * the mapping is touched and quietly break the squad again. Pinning the whole
- * set makes the squad a stated intention rather than a coincidence.
+ * THIS WAS FOUR NAMES PINNED BY HAND to fix exactly that, and it was
+ * always a test rather than an answer: it handed one holder a complete
+ * squad and left everybody else on the hash. Retired at the owner's
+ * request -- "I don't want it to tip the scales" -- and replaced with the
+ * whole collection, derived from what the fighters actually carry.
  *
- * KEYED ON THE ASSET NAME ALONE, no project gate. These names exist in
- * exactly one collection, so a project id would add a second thing to keep
- * right -- and it is the thing most easily got wrong, since a theme id and a
- * project id are different numbers that both look like small integers.
+ * ARMOUR IS A RARITY-WEIGHTED SCORE over torso, headgear and arms, ranked
+ * into quartiles so the four tiers stay balanced. GEAR IS THE LEAN of the
+ * value names -- a scythe reads Melee, a blaster Demolition, a recovery
+ * interface or a companion Medkit. dhc2-mapping-draft.php does the
+ * derivation against the minted metadata in dhc-mint-traits.json and
+ * writes dhc2-loadouts.json; the reasoning lives there.
  *
- * ARMOUR AND GEAR ONLY. Level and rank are the collection's business, and
- * dropshipGruntLoadout() has always left them alone for the same reason --
- * level feeds the rank tiers and anything else that reads it. A card will
- * therefore show the overridden armour beside the original level.
+ * IT COSTS THE COLLECTION NOTHING: 46 complete squads across all 226
+ * fighters against 48 under the hash. The stats simply start meaning
+ * something.
+ *
+ * READ ONCE PER REQUEST. This is called from dropshipGruntLoadout(), which
+ * runs for every soldier on every read -- the odds flags, the squad
+ * roster, the barracks filter. Decoding 226 rows each time would be a
+ * measurable cost for a file that never changes within a request.
+ *
+ * A MISSING OR UNREADABLE FILE IS NOT A FATAL. The override layer simply
+ * has nothing to say and every soldier falls back to the stored column,
+ * which is the behaviour before any of this existed.
  */
 function dropshipNftLoadouts() {
-	return array(
-		/* The Super Soldier Squad for Digital Hell Citizens 2: Fighters.
-		   Heavy + Medium + Light + Base is 74+3+2+1 = 80, and Melee +
-		   Demolition + Medkit is all three gear types. */
-		'DHC2F163' => array('armor' => 'Light',  'gear' => 'Melee'),       // unchanged, pinned
-		'DHC2F028' => array('armor' => 'Medium', 'gear' => 'Demolition'),  // unchanged, pinned
-		'DHC2F088' => array('armor' => 'Heavy',  'gear' => 'Medkit'),      // was Base / None
-		'DHC2F133' => array('armor' => 'Base',   'gear' => 'None'),        // unchanged, pinned
-	);
+	static $map = null;
+	if ($map !== null) return $map;
+	$map = array();
+	$path = __DIR__ . '/../dhc2-loadouts.json';
+	$raw  = @file_get_contents($path);
+	if ($raw === false) return $map;
+	$j = json_decode($raw, true);
+	if (!is_array($j) || !isset($j['loadouts']) || !is_array($j['loadouts'])) return $map;
+	foreach ($j['loadouts'] as $asset => $kit) {
+		if (!is_array($kit) || !isset($kit['armor'], $kit['gear'])) continue;
+		$map[(string)$asset] = array('armor' => (string)$kit['armor'],
+		                             'gear'  => (string)$kit['gear']);
+	}
+	return $map;
 }
 
 /**

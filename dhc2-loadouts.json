@@ -1,0 +1,911 @@
+{
+    "policy": "b31a34ca2b08bfc905d2b630c9317d148554303fa7f0d605fd651cb5",
+    "note": "Armour and gear for Digital Hell Citizens 2: Fighters, derived from the minted CIP-25 traits in dhc-mint-traits.json by dhc2-mapping-draft.php. Armour is a rarity-weighted score over torso/headgear/arms ranked into quartiles; gear is the lean of the value names. Regenerate with that script if the weights change -- do not hand-edit.",
+    "generated": "2026-10-22T02:46:03+00:00",
+    "loadouts": {
+        "DHC2F001": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F002": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F003": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F004": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F007": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F008": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F010": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "DHC2F011": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F013": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F014": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F015": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F016": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F018": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F020": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F021": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F022": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F023": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F025": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F026": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F027": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F028": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F030": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F031": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F032": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "DHC2F037": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F038": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DHC2F043": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F047": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F049": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F050": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F052": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F055": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F058": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "DHC2F059": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F062": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F064": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F065": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F066": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F067": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DHC2F069": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "DHC2F073": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F076": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F077": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F079": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F080": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F081": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F083": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F087": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DHC2F088": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F090": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F093": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "DHC2F095": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F097": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F098": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F099": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F100": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F101": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F102": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F103": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F107": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F108": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F109": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F111": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F112": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "DHC2F114": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F116": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F117": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F120": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F121": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F122": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F125": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F126": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "DHC2F127": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F128": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F130": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F131": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F133": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DHC2F135": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DHC2F137": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F138": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F141": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F143": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "DHC2F144": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DHC2F146": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F149": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F152": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F154": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F155": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F156": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F157": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F159": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F160": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F162": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F163": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "DHC2F165": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DHC2F166": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F167": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F168": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F169": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F170": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F172": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F173": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F174": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F175": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F176": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F177": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F178": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F179": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F181": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F182": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F183": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F184": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DHC2F185": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F189": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F190": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F193": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F198": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F199": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DHC2F203": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F204": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F205": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F206": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F207": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F209": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F211": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F212": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F213": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DHC2F214": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F218": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F219": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F220": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F221": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F223": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F224": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F226": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F227": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F228": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F229": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F231": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F237": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F239": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F240": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F241": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "DHC2F247": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F252": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F253": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F255": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F257": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F262": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F264": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F265": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DHC2F267": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F272": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DHC2F274": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F276": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F277": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F279": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F283": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F284": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F285": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F289": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DHC2F291": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F293": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F294": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DHC2F297": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F300": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DHC2F304": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F305": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F309": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F311": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DHC2F314": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F316": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F319": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F321": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F322": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F323": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F325": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F326": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F327": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F328": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DHC2F331": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F337": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F338": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F341": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DHC2F342": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "DHC2F343": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F344": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F345": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F351": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "DHC2F352": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DHC2F354": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F356": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F360": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F361": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F362": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F363": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F364": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F365": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "DHC2F366": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F369": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F372": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DHC2F373": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DHC2F375": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F379": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F380": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F382": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DHC2F384": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F385": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "DHC2F388": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F389": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F390": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F391": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F392": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F394": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F396": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F398": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F401": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F402": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F403": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F405": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F406": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F408": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "DHC2F414": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F416": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DHC2F418": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DHC2F420": {
+            "armor": "Base",
+            "gear": "None"
+        }
+    }
+}

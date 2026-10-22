@@ -232,8 +232,21 @@ foreach (array('Hagar', 'Delay', 'Blood Bag', 'Sektr') as $n) {
 ok(strpos($paper, 'Oculus Lounge has no equivalent') !== false,
    'the Skull Paper does not say grunts are Drop Ship only');
 
-echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
-exit($fail ? 1 : 0);/* ---------- pinned NFT loadouts ------------------------------------------- */
+/* ---------- pinned NFT loadouts ------------------------------------------- */
+/*
+ * THIS BLOCK NEVER RAN. The summary and exit() below used to sit HERE, with
+ * the section header concatenated onto the same line as the exit:
+ *
+ *   exit($fail ? 1 : 0);/* ---------- pinned NFT loadouts ---------- *\/
+ *
+ * so every assertion from this point to the end of the file was dead from
+ * the moment it was written, and the harness reported "all good" without
+ * executing any of it. It was only noticed when the loadouts changed from
+ * four hand-pinned names to 226 derived ones and NOTHING went red.
+ *
+ * The summary now lives at the end of the file, which is the only place it
+ * can be without silently truncating the suite again.
+ */
 
 echo "\nthe pinned DHC2:F squad\n";
 /*
@@ -244,7 +257,13 @@ echo "\nthe pinned DHC2:F squad\n";
  * Soldier Squad at all.
  */
 $pinned = dropshipNftLoadouts();
-ok(count($pinned) === 4, 'the pinned squad is no longer four soldiers');
+/* THE WHOLE COLLECTION, NOT FOUR NAMES. The four hand-pins were a test
+   that handed one holder a squad; the table is now every minted fighter,
+   derived from its traits. Asserted as "most of the collection" rather
+   than an exact count, so regenerating the mapping does not fail this. */
+ok(count($pinned) > 200, 'the loadout table is not the whole collection, got ' . count($pinned));
+ok(count($pinned) === count(dropshipNftLoadouts()),
+   'the loadout table is not stable between calls, so it is being re-read per soldier');
 $tiers = array(); $gear = array();
 foreach ($pinned as $a => $kit) { $tiers[$kit['armor']] = true; $gear[$kit['gear']] = true; }
 ok(count($tiers) === 4, 'the pinned squad does not cover all four armour tiers: '
@@ -256,7 +275,12 @@ foreach (array('Melee', 'Demolition', 'Medkit') as $g) {
    mine: 74 + 3 + 2 + 1. */
 $f = array('mech_suit'=>false,'exo_suit'=>false,'quantum_stealth'=>false,'ballistic_shield'=>false,
            'heavy'=>false,'medium'=>false,'light'=>false,'base'=>false,'extra_lives'=>0,'roster'=>array());
-foreach ($pinned as $kit) {
+/* ONE SQUAD'S WORTH, not all 226 -- feeding the whole collection in sets
+   every flag true and proves nothing. One fighter per tier, taken from
+   the table itself. */
+$one_each = array();
+foreach ($pinned as $kit) if (!isset($one_each[$kit['armor']])) $one_each[$kit['armor']] = $kit;
+foreach ($one_each as $kit) {
 	$t = strtolower($kit['armor']);
 	if (array_key_exists($t, $f)) $f[$t] = true;
 	$f['roster'][] = array('armor' => $kit['armor'], 'gear' => $kit['gear']);
@@ -278,9 +302,12 @@ foreach ($pinned as $asset => $kit) {
 }
 /* Matched on the display name too, since the two columns are written from
    different metadata fields and only one of them was ever verified. */
-$byName = dropshipGruntLoadout(array('asset_name' => 'something-else', 'name' => 'DHC2F088',
+$probe_asset = 'DHC2F088';
+$probe_kit   = $pinned[$probe_asset];
+$byName = dropshipGruntLoadout(array('asset_name' => 'something-else', 'name' => $probe_asset,
                                      'rank' => 'Neo Miami Citizen', 'armor' => 'Base', 'gear' => 'None'));
-ok($byName['armor'] === 'Heavy', 'the override does not fall back to the display name');
+ok($byName['armor'] === $probe_kit['armor'],
+   'the override does not fall back to the display name');
 /* An NFT nobody pinned is untouched. */
 $other = dropshipGruntLoadout(array('asset_name' => 'DHC2F999', 'name' => 'DHC2F999',
                                     'rank' => 'Neo Miami Citizen', 'armor' => 'Light', 'gear' => 'Melee'));
@@ -297,11 +324,27 @@ echo "\nthe barracks filter agrees with the cards\n";
  * SHOWED it, because Base is still in the column. Adding it to the right
  * filter without removing it from the wrong one fixes half and looks done.
  */
+/* NAMED FROM THE TABLE, not written out. The fragment now carries every
+   fighter in the collection, so a literal list would be 226 names long
+   and wrong the next time the mapping is regenerated. What matters is
+   the SHAPE: a Heavy fighter is added back, and one that is Heavy only
+   in the stored column is taken out. */
 $heavy = dropshipGruntFilterSql('armor', 'Heavy');
-ok(strpos($heavy, "asset_name IN ('DHC2F088')") !== false,
-   'filtering by Heavy does not include the soldier pinned to Heavy');
-ok(strpos($heavy, "NOT IN ('DHC2F163','DHC2F028','DHC2F133')") !== false,
-   'filtering by Heavy does not exclude the soldiers pinned elsewhere');
+$a_heavy = null; $a_other = null;
+foreach ($pinned as $a => $kit) {
+	if ($a_heavy === null && $kit['armor'] === 'Heavy')  $a_heavy = $a;
+	if ($a_other === null && $kit['armor'] !== 'Heavy')  $a_other = $a;
+	if ($a_heavy !== null && $a_other !== null) break;
+}
+ok($a_heavy !== null && strpos($heavy, "'" . $a_heavy . "'") !== false,
+   "filtering by Heavy does not include $a_heavy, which the table says is Heavy");
+$drop_at = strpos($heavy, 'NOT IN');
+ok($drop_at !== false && strpos(substr($heavy, $drop_at), "'" . $a_other . "'") !== false,
+   "filtering by Heavy does not exclude $a_other, which is pinned elsewhere");
+/* And the exclusion still comes FIRST -- see the precedence note above. */
+$add_at = strpos($heavy, ' OR asset_name IN (');
+ok($drop_at !== false && ($add_at === false || $drop_at < $add_at),
+   'the NOT IN no longer precedes the OR terms, so it swallows them');
 $base = dropshipGruntFilterSql('armor', 'Base');
 ok(strpos($base, "NOT IN") !== false && strpos($base, "'DHC2F088'") !== false,
    'filtering by Base still shows the soldier whose stored Base was overridden');
@@ -314,4 +357,5 @@ $caller = (string)file_get_contents(__DIR__ . '/dropship/db.php');
 ok(strpos($caller, "\"AND (armor = '\".\$filterby.\"'\".dropshipGruntFilterSql('armor', \$filterby).\") \"") !== false,
    'the caller no longer wraps the fragment in parentheses, which the precedence above depends on');
 
-
+echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
+exit($fail ? 1 : 0);
