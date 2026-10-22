@@ -769,8 +769,21 @@ function dropshipSquadsPanel($conn) {
 			<b><?php echo $h($sq['power']['label']); ?></b>
 			<span class="dssq-pct"><?php echo (int)$sq['power']['pct']; ?>%
 				<em>from armor</em></span>
+			<?php /* LANDS ON THE SQUAD, NOT THE BARRACKS. This posted to
+			         #barracks like every other form here, and the barracks
+			         anchor sits BELOW the squad panel in the document -- so
+			         deploying scrolled the player straight past the thing
+			         they had just done. On a phone that is the whole screen:
+			         you press Deploy squad and nothing appears to happen,
+			         because the squad you fielded and the odds for it are
+			         above the fold you were returned to.
+
+			         #squad is the heading of the panel that only exists once
+			         something is deployed, so it is always there on the way
+			         back from this particular form. Withdraw all keeps
+			         #barracks: that panel is gone by the time it lands. */ ?>
 			<?php if ($can): ?>
-				<form action="dashboard.php#barracks" method="post">
+				<form action="dashboard.php#squad" method="post">
 					<input type="hidden" name="squad_deploy" value="<?php echo (int)$sq['id']; ?>">
 					<input class="small-button" type="submit" value="Deploy squad">
 				</form>
