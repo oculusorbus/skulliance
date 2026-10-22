@@ -761,13 +761,12 @@ function dropshipSquadsPanel($conn) {
 					<input class="small-button" type="submit" value="Deploy squad">
 				</form>
 			<?php endif; ?>
-			<?php /* Disperse always, including on a squad nothing else can be
-			         done with -- it is the way out, so it is never the thing
-			         that is missing. */ ?>
-			<form action="dashboard.php#barracks" method="post">
-				<input type="hidden" name="squad_disperse" value="<?php echo (int)$sq['id']; ?>">
-				<input class="small-button secondary" type="submit" value="Disperse">
-			</form>
+			<?php /* NO DISPERSE. Squads are generated from what the player
+			         owns, so taking one apart would last until the next time
+			         the roster changed and the engine put it back. The
+			         soldiers in it are not trapped: Withdraw all clears the
+			         field, and anyone not in a complete squad is in one of
+			         the lower-tier squads below it. */ ?>
 			<?php if (!$can && $sq['ready']['why'] !== ''): ?>
 				<span class="dssq-why"><?php echo $h($sq['ready']['why']); ?></span>
 			<?php elseif ($can): ?>
@@ -795,17 +794,12 @@ function dropshipSquadsPanel($conn) {
 				<?php if ($isShared): ?><span class="sh"
 					title="This soldier is in more than one saved squad, so only one of them can be deployed at a time."
 					>Also in another squad</span><?php endif; ?>
-				<?php /* A member you cannot field is the only one worth
-				         removing on its own -- offering Remove on a healthy
-				         soldier invites somebody to dismantle a squad one
-				         card at a time when Disperse is right there. */ ?>
-				<?php if ($state === 'sold' || $state === 'gone'): ?>
-					<form action="dashboard.php#barracks" method="post">
-						<input type="hidden" name="squad_id" value="<?php echo (int)$sq['id']; ?>">
-						<input type="hidden" name="squad_drop" value="<?php echo (int)$m['soldier_id']; ?>">
-						<input class="small-button secondary" type="submit" value="Remove">
-					</form>
-				<?php endif; ?>
+				<?php /* NO REMOVE EITHER. A sold or vanished member used to
+				         need clearing out by hand; the engine now notices the
+				         same thing -- the owned set and the assigned set stop
+				         agreeing -- and rebuilds every squad on the next load.
+				         By the time a player could press this, it has already
+				         happened. */ ?>
 			</span>
 		<?php endforeach; ?>
 		</div>
@@ -832,4 +826,101 @@ function dropshipSquadFace($conn, $row) {
 		if (!empty($local[$row['asset_name']])) return $local[$row['asset_name']];
 	}
 	return 'https://image-optimizer.jpgstoreapis.com/' . $row['ipfs'];
+}
+
+/**
+ * Every soldier the player owns in this game, as the planner needs them.
+ *
+ * ACTIVE AND DECEASED ARE DELIBERATELY IGNORED. A squad is a grouping, not
+ * a deployment: fielding four soldiers does not change what the player
+ * owns, and a fallen soldier is coming back. Reading either here would
+ * reshuffle somebody's squads every time they pressed Deploy.
+ *
+ * dropshipGruntLoadout() is applied on the way out so the plan is built
+ * from the kit the run will actually field -- the four Grunts' loaner gear
+ * and the pinned NFT overrides -- rather than from the stored columns,
+ * which for a Grunt are still None/None.
+ */
+function dropshipSquadsRoster($conn, $me, $pid) {
+	$me = (int)$me; $pid = (int)$pid;
+	if ($me <= 0 || $pid <= 0) return array();
+	$res = @$conn->query("SELECT id, asset_name, name, rank, armor, gear
+	                        FROM soldiers WHERE user_id = $me AND project_id = $pid");
+	if (!$res) return array();
+	$out = array();
+	while ($r = $res->fetch_assoc()) {
+		$r = dropshipGruntLoadout($r);
+		$r['id'] = (int)$r['id'];
+		$out[] = $r;
+	}
+	return $out;
+}
+
+/**
+ * KEEP THE PLAYER'S SQUADS CORRECT WITHOUT THEM EVER MANAGING THEM.
+ *
+ * Squads are generated, not saved. The player opens the game and their
+ * collection is already arranged into the best squads it can make; they
+ * pick one and deploy it. There is nothing to assemble, nothing to name,
+ * nothing to disperse.
+ *
+ * REBUILT ON OWNERSHIP, AND ON NOTHING ELSE. Buying or selling an NFT
+ * changes what can be built; deploying, dying, resurrecting and
+ * withdrawing do not. Rebuilding on any of those would pull a squad apart
+ * underneath somebody mid-session for no gain.
+ *
+ * THE TEST IS THE MEMBERSHIP ITSELF, which is why this needs no new column
+ * and no stored hash to go stale. The arrangement is current exactly when
+ * every owned soldier sits in exactly one squad: a newly bought soldier is
+ * in none, and a sold one leaves a squad a member short. Both show up as
+ * the owned set and the assigned set disagreeing, and nothing else does.
+ *
+ * REBUILDING DOES NOT WITHDRAW ANYONE. soldiers.active is untouched here,
+ * so a squad regrouped while its members are in the field stays in the
+ * field; only the grouping changes.
+ */
+function dropshipSquadsAutoSync($conn, $user_id = null, $project_id = null) {
+	if (!dropshipSquadsTable($conn)) return array('changed' => false, 'reason' => 'no table');
+	$me  = (int)($user_id    !== null ? $user_id    : ($_SESSION['userData']['dropship_user_id'] ?? 0));
+	$pid = (int)($project_id !== null ? $project_id : ($_SESSION['userData']['dropship_project_id'] ?? 0));
+	if ($me <= 0 || $pid <= 0) return array('changed' => false, 'reason' => 'no player');
+
+	$roster = dropshipSquadsRoster($conn, $me, $pid);
+	$owned  = array();
+	foreach ($roster as $r) $owned[(int)$r['id']] = true;
+
+	$assigned = dropshipSquadMembership($conn, $me, $pid);
+	$a_ids = array_map('intval', array_keys($assigned));
+	$o_ids = array_keys($owned);
+	sort($a_ids); sort($o_ids);
+	if ($a_ids === $o_ids) {
+		return array('changed' => false, 'reason' => 'in sync', 'owned' => count($o_ids));
+	}
+
+	/* Out of date. Everything goes and is rebuilt, because the best
+	   arrangement of a changed roster is not the old one with a patch. */
+	@$conn->query("DELETE m FROM squad_members m
+	                 JOIN squads s ON m.squad_id = s.id
+	                WHERE s.user_id = $me AND s.project_id = $pid");
+	@$conn->query("DELETE FROM squads WHERE user_id = $me AND project_id = $pid");
+
+	$built = 0; $complete = 0;
+	foreach (dropshipSquadPlanAll($roster) as $squad) {
+		$members = $squad['members'];
+		if (!$members) continue;
+		/* Heaviest armour first, the order the panel already shows. */
+		dropshipSquadOrderMembers($members);
+		@$conn->query(sprintf("INSERT INTO squads (user_id, project_id, created_at)
+		                       VALUES (%d, %d, NOW())", $me, $pid));
+		$sid = (int)$conn->insert_id;
+		if ($sid <= 0) continue;
+		$rows = array();
+		foreach ($members as $i => $m) $rows[] = sprintf('(%d,%d,%d)', $sid, (int)$m['id'], $i);
+		@$conn->query('INSERT INTO squad_members (squad_id, soldier_id, slot) VALUES '
+		              . implode(',', $rows));
+		$built++;
+		if (!empty($squad['complete'])) $complete++;
+	}
+	return array('changed' => true, 'reason' => 'ownership changed',
+	             'owned' => count($o_ids), 'squads' => $built, 'complete' => $complete);
 }

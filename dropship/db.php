@@ -6,6 +6,7 @@ require_once __DIR__ . '/dropship-grunts.php';   // the four free soldiers' loan
 require_once __DIR__ . '/dropship-themes.php';   // theme overrides as data, see dropship-themes-schema.md
 require_once __DIR__ . '/dropship-audio.php';    // which sound a round plays, derived from the wording
 require_once __DIR__ . '/dropship-odds.php';     // loadItems() quotes the odds per item
+require_once __DIR__ . '/dropship-squad-plan.php'; // the best squads a roster can field (pure)
 require_once __DIR__ . '/dropship-squads.php';  // saved squads, see dropship-squads-schema.md
 include 'credentials/db_credentials.php';
 

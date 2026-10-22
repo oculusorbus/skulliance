@@ -61,14 +61,15 @@ if(isset($_POST['soldier_id'])) {
  * printed here lands above the doctype.
  */
 $ds_squad_msg = null;
-if (isset($_POST['squad_save'])) {
-	$ds_squad_msg = dropshipSquadSave($conn);
-} elseif (isset($_POST['squad_deploy'])) {
+/*
+ * SAVE, DISPERSE AND REMOVE ARE GONE. Squads are built by
+ * dropshipSquadsAutoSync() from what the player owns, so there is nothing
+ * to assemble and nothing to take apart -- and a disperse would simply be
+ * undone by the engine on the next load. What is left is the two things
+ * that are still the player's: field a squad, and clear the field.
+ */
+if (isset($_POST['squad_deploy'])) {
 	$ds_squad_msg = dropshipSquadDeploy($conn, $_POST['squad_deploy']);
-} elseif (isset($_POST['squad_disperse'])) {
-	$ds_squad_msg = dropshipSquadDisperse($conn, $_POST['squad_disperse']);
-} elseif (isset($_POST['squad_drop'])) {
-	$ds_squad_msg = dropshipSquadDrop($conn, $_POST['squad_id'] ?? 0, $_POST['squad_drop']);
 } elseif (isset($_POST['squad_clear'])) {
 	$ds_squad_msg = dropshipWithdrawAll($conn);
 }
@@ -398,6 +399,25 @@ if($ds_source === 'skulliance'){
 		//renderNFT($nft_data, $ipfs);
 	}*/
 }
+
+/*
+ * SQUADS LOOK AFTER THEMSELVES FROM HERE.
+ *
+ * Placed after the holdings sync above and before anything is drawn,
+ * because this is the first moment the soldiers table is current: run it
+ * earlier and a freshly bought NFT would not be in a squad until the next
+ * page load.
+ *
+ * ONLY THE GROUPING IS AUTOMATIC. Deploying, buying and running are still
+ * the player's, and this touches none of them -- it writes squads and
+ * squad_members and nothing else. soldiers.active is not read or written,
+ * so a squad in the field stays in the field.
+ *
+ * IT USUALLY DOES NOTHING. The arrangement is current exactly when every
+ * owned soldier sits in one squad, which is one SELECT to establish; the
+ * rebuild only runs when an NFT has arrived or gone.
+ */
+if (function_exists('dropshipSquadsAutoSync')) dropshipSquadsAutoSync($conn);
 
 // Assign default soldiers to players for Drop Ship
 if($_SESSION['userData']['dropship_project_id'] == 1 && isset($_SESSION['userData']['dropship_user_id'])){
@@ -884,32 +904,19 @@ if ($ds_can_animate):
 					</div>
 					<?php
 					/*
-					 * SAVE WHAT IS ON THE FIELD, offered here because here is
-					 * where the squad exists. A player has just chosen four
-					 * soldiers and is looking at them; asking them to go to the
-					 * barracks and rebuild the same four to name it would be
-					 * the friction this feature exists to remove.
+					 * NOTHING TO SAVE ANY MORE. "Save this squad" lived here
+					 * because this was where a hand-built squad existed.
+					 * dropshipSquadsAutoSync() now arranges the whole roster
+					 * into the best squads it can make whenever the holdings
+					 * change, so a squad is never assembled by hand and there
+					 * is nothing to name or keep.
 					 *
-					 * NOT OFFERED WHEN IT WOULD DO NOTHING: the field has to
-					 * have somebody on it, and the tables have to exist.
-					 * dropshipSquadSave() reads the members off the field
-					 * itself, so this form carries a name and nothing else --
-					 * there is no soldier id here for anybody to tamper with.
+					 * WITHDRAW ALL STAYS, because clearing the field is still
+					 * the player's: it is how you take one squad off and put
+					 * another on. It empties the field and touches no squad.
 					 */
-					if (function_exists('dropshipSquadsTable') && dropshipSquadsTable($conn)
-					    && checkSquadCount($conn) > 0): ?>
+					if (checkSquadCount($conn) > 0): ?>
 					<div class="dssq-save">
-						<form action="dashboard.php#barracks" method="post">
-							<input type="hidden" name="squad_save" value="1">
-							<input class="small-button" type="submit" value="Save this squad">
-						</form>
-						<?php /* BUILDING IN BATCHES is the reason this is here: set a
-						         squad up, save it, clear it, set up the next. Four
-						         individual Withdraws per squad is sixteen presses to
-						         save four, which is the friction the feature exists
-						         to remove. It empties the FIELD and touches no saved
-						         squad, so clearing to build the next one cannot cost
-						         you the one you just saved. */ ?>
 						<form action="dashboard.php#barracks" method="post">
 							<input type="hidden" name="squad_clear" value="1">
 							<input class="small-button secondary" type="submit" value="Withdraw all">

@@ -41,11 +41,26 @@ spare, and why a duplicate is a soldier you could have put in another squad.
 The first roll of a run happens on round 3, so that is the single likeliest
 round to spend your extra life on.
 
-**Save a squad and field it again in one press.** Once soldiers are deployed,
-**Save this squad** keeps that grouping. Saved squads sit above the barracks,
-strongest first, each showing what it is: a full set of four armour tiers and
-all three gear types is a **Super Soldier Squad**, and every squad shows what
-its armour is worth a round. There are no names to invent.
+**Your squads build themselves.** You do not assemble, save, name or disperse
+anything. Open the game and your whole collection is already arranged into the
+best squads it can make, sitting above the barracks, strongest first. Each one
+shows what its armour is worth a round, and a full set of four armour tiers
+with all three items is a **Super Soldier Squad**.
+
+The arrangement is the best one that exists, not a good guess at it: the game
+works out the most complete squads your holdings can possibly produce. That is
+not the same as grouping them by eye, because the three items have to come from
+three different armour tiers - a collection with plenty of every tier still
+builds no second squad if every Medkit in it is Heavy.
+
+Whatever is left after the complete squads is arranged into the best remaining
+squads rather than left loose, so everything you own is in something. Squads
+are rebuilt only when your holdings change - buying or selling an NFT. Playing,
+deploying, losing soldiers and getting them back never reshuffle anything.
+
+**Deploying is still yours.** Pick a squad and send it. Strongest first is the
+obvious line; sending the weak ones out early to see if they get lucky is also
+a strategy, and the game takes no view on it.
 
 **Deploy squad** fields all of them at once. **Disperse** breaks the grouping
 up and returns the soldiers to the barracks so you can rebuild. While a
