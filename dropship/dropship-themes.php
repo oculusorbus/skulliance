@@ -1031,7 +1031,7 @@ function dropshipRewardPlaces() {
  * new theme here costs it a good position and never its place in the grid.
  */
 function dropshipGameOrder() {
-	return array(1, 2, 5, 3, 4);   /* Drop Ship, Dread City, DHC2 Fighters, Filthy Mermaid, Oculus Lounge */
+	return array(1, 2, 3, 5, 4);   /* Drop Ship, Dread City, Filthy Mermaid, DHC2 Fighters, Oculus Lounge */
 }
 
 /**

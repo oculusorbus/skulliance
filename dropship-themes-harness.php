@@ -1481,7 +1481,7 @@ $pick = function ($ids) {
 	foreach (dropshipGameOrderSort($rows) as $r) $out[] = $r['id'];
 	return $out;
 };
-ok($pick(array(1, 2, 3, 4, 5)) === array(1, 2, 5, 3, 4),
+ok($pick(array(1, 2, 3, 4, 5)) === array(1, 2, 3, 5, 4),
    'the picker order changed: ' . implode(',', $pick(array(1, 2, 3, 4, 5))));
 /* The same answer whatever order the database hands them over in, which is
    the thing that was previously left to chance. */
@@ -1489,7 +1489,7 @@ ok($pick(array(5, 3, 1, 4, 2)) === $pick(array(1, 2, 3, 4, 5)),
    'the picker order depends on the order the query returns rows in');
 /* AN UNLISTED THEME STILL APPEARS. Forgetting to add a new theme to the
    order must cost it a position, never its place in the picker. */
-ok($pick(array(1, 2, 3, 4, 5, 6)) === array(1, 2, 5, 3, 4, 6),
+ok($pick(array(1, 2, 3, 4, 5, 6)) === array(1, 2, 3, 5, 4, 6),
    'a theme missing from the order does not fall to the end: ' . implode(',', $pick(array(1, 2, 3, 4, 5, 6))));
 ok($pick(array(9, 6, 1)) === array(1, 6, 9),
    'two unlisted themes are not ordered deterministically');
