@@ -889,6 +889,36 @@ function dropshipGapAdvice($conn, $roster) {
 			       . ', and ' . $last . '.';
 		}
 	}
+	/*
+	 * BUYING AN NFT IS NOT THE ONLY WAY TO FIX A SQUAD.
+	 *
+	 * The Armory sells the armour tiers and the three items outright, and
+	 * dropshipOddsFlags() reads those session flags exactly as it reads a
+	 * soldier's own kit -- so a bought Heavy Armor raises the roll just as
+	 * a Heavy soldier would. Advice that only ever says "go and buy an
+	 * NFT" is telling a player to spend money outside the game when the
+	 * thing they need is on sale inside it.
+	 *
+	 * AND IT SAYS WHICH IS WHICH, because they are not equivalent.
+	 * removeInventory() deactivates the lot once a run is scored, so a
+	 * purchase covers ONE run; the NFT is the squad's for good. A player
+	 * choosing between them deserves to know that rather than discover it
+	 * when the second run starts.
+	 *
+	 * THE NAMES ARE THEMED. 'Base Armor' is 'Boxer Briefs' on Filthy
+	 * Mermaid and the Armory itself is the Sex Shop on Oculus Lounge, so
+	 * every noun goes through the same evaluateText() the shop renders
+	 * with -- a half-translated sentence is worse than an untranslated one.
+	 */
+	$buy = array();
+	foreach ($miss_t as $t) $buy[] = '<b>' . $w($t . ' Armor') . '</b>';
+	foreach ($miss_i as $i) $buy[] = '<b>' . $w($i) . '</b>';
+	if ($buy) {
+		$last = array_pop($buy);
+		$body .= ' Or buy ' . ($buy ? implode(', ', $buy) . ' and ' : '') . $last
+		       . ' in the ' . $w('Armory') . ', which lasts one run.';
+	}
+
 	return array($summary, trim($body));
 }
 
