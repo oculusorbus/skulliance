@@ -3186,7 +3186,55 @@ $conn->close();
 				el.classList.remove('rla-realm-win','rla-realm-lose','rla-glow-green','rla-glow-red');
 			});
 			if (fn) fn(html);
+			/*
+			 * AND REPAINT THE LOCATIONS, because a resolved raid is the
+			 * one thing that changes them without the player touching
+			 * anything.
+			 *
+			 * Reported: you open Realms, the panel says your locations
+			 * are fine, a raid resolves in front of you, and the damage
+			 * only appears after a reload -- so the page shows a state
+			 * that stopped being true while you were reading it.
+			 *
+			 * ajax/get-locations.php already existed for exactly this and
+			 * nothing had ever called it. The server-side ordering was
+			 * right (resolution runs before the panel renders on load),
+			 * so the hole was only ever the raids that land AFTER the
+			 * page is already up.
+			 */
+			refreshLocationsPanel();
 		}
+	}
+
+	/*
+	 * THE WHOLE PANEL, FROM THE ONE ENDPOINT THAT RENDERS IT.
+	 *
+	 * Not a patch of the levels: a raid can change location levels, the
+	 * consumables stocked in them, whether anything is repairable and
+	 * whether the Manage controls apply -- and realms-locations.php
+	 * decides all of that together. Replacing the fragment keeps the page
+	 * and its refresh incapable of disagreeing, which is the reason that
+	 * partial was factored out in the first place.
+	 *
+	 * SILENT ON FAILURE. This fires after an animation the player is
+	 * already watching; a stale panel is what they had before, and an
+	 * error toast over a raid result would be worse than the staleness.
+	 */
+	function refreshLocationsPanel() {
+		var host = document.getElementById('locations');
+		if (!host) return;
+		fetch('ajax/get-locations.php', {credentials: 'same-origin'})
+			.then(function (r) { return r.ok ? r.text() : null; })
+			.then(function (html) {
+				if (html === null || html === '') return;
+				host.innerHTML = html;
+				/* The modal reads its contents from the panel it was opened
+				   from, so if one is open it has just gone stale too. */
+				if (window._currentLocModal && typeof refreshLocationModal === 'function') {
+					refreshLocationModal();
+				}
+			})
+			.catch(function () {});
 	}
 
 	function dismissRaidAnimation() {
