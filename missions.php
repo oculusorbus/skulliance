@@ -633,6 +633,25 @@ define('MS_FIELD_CAP', 24);
    Spanning every track also means the grid is one short row instead of a
    210px scroller with three words in it. */
 .ms-d-crew .ms-d-desc { grid-column: 1 / -1; margin: 0; }
+/* THE SAME SPAN FOR THE HOLDING LIST, and for the same reason: it is
+   rendered into the crew grid, so without it each row becomes one 62px
+   column of wrapped fragments. */
+.ms-d-crew .ms-d-holding { grid-column: 1 / -1; margin: 10px 0 0; }
+.ms-d-hold { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 7px 10px; border: 1px solid rgba(255,255,255,.07); background: #07111d;
+  font-size: .78rem; color: #8fa8b8; text-align: left; }
+.ms-d-hold + .ms-d-hold { border-top: 0; }
+.ms-d-hold > span { flex: 1 1 auto; min-width: 0; }
+.ms-d-hold em { font-style: normal; color: #5f7d90; margin-left: 6px; }
+.ms-d-hold.ready b { color: #00c8a0; font-size: .74rem; text-transform: uppercase;
+  letter-spacing: .06em; }
+.ms-d-retreat { flex: 0 0 auto; background: none; color: #9fb6c4; cursor: pointer;
+  border: 1px solid rgba(255,255,255,.14); padding: 4px 10px; font-size: .74rem;
+  text-transform: uppercase; letter-spacing: .06em; }
+.ms-d-retreat:hover:not(:disabled) { color: #e8eaed; border-color: #00c8a0; }
+.ms-d-retreat:disabled { opacity: .5; cursor: default; }
+.ms-d-retreat em { font-style: normal; color: #5f7d90; margin-left: 4px;
+  text-transform: none; letter-spacing: 0; }
 .ms-d-nft { position: relative; background: #07111d; border: 1px solid rgba(255,255,255,.07);
   padding: 0; cursor: pointer; border-radius: 0; overflow: hidden; }
 .ms-d-nft img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; opacity: .45;
@@ -1474,8 +1493,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			   of the project's NFTs are still home. Holding them back is
 			   what buys the right to spend the item; once everything is out
 			   you are locked out until it comes back. */
-			: '<p class="ms-d-desc">Every NFT you own for this project is out on a mission.'
-			  + ' Some have to be home before you can send another, even with an item.</p>';
+			: emptyCrew();
 
 		var pack = LO.items.length
 			? LO.items.map(function (it) {
@@ -1530,6 +1548,90 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			+   '</div>'
 			+ '</div>';
 
+	/*
+	 * RETREAT WITHOUT LEAVING THE DRAWER.
+	 *
+	 * The loop this removes: scroll the board for a mission of this
+	 * project, retreat it, reload the page, scroll back, open the mission
+	 * you wanted. Everything here already knows the mission id, so the
+	 * only parts that were missing were the call and the refresh.
+	 *
+	 * CONFIRMED FIRST, because it is destructive in a way nothing else in
+	 * this drawer is: the mission's progress is gone. The cost comes back
+	 * and the items come back, which is what the wording says, and it is
+	 * the same promise skulliance.js makes on the board's own button.
+	 *
+	 * REOPENS THE DRAWER RATHER THAN PATCHING IT. msOpenDrawer() re-fetches
+	 * the load-out, so the freed crew, the balance the refund just changed,
+	 * and the holding list all come back from the server together. Patching
+	 * three of them by hand is how two of them drift.
+	 */
+	function retreatFromDrawer(btn) {
+		var mid = btn.getAttribute('data-m');
+		var qid = btn.getAttribute('data-q');
+		if (!mid || !qid) return;
+		/* READ BEFORE THE REOPEN, not during it: msOpenDrawer() sets LO to
+		   null on the way in, so reading LO.quest_id inside the callback
+		   reopens undefined and the drawer dies on an empty load-out. */
+		var backTo = LO ? LO.quest_id : 0;
+		var ask = 'Retreat this mission to bring your crew home?\r\n\r\n'
+		        + 'The cost of that mission will be refunded and any items used '
+		        + 'will be restored, but its progress is lost.';
+		var go = function () {
+			btn.disabled = true;
+			btn.textContent = 'Retreating…';
+			fetch('ajax/retreat-mission.php?mission_id=' + encodeURIComponent(mid)
+			      + '&quest_id=' + encodeURIComponent(qid), {credentials: 'same-origin'})
+				.then(function () {
+					/* The board behind the drawer is now stale too -- that
+					   mission has gone from the field. */
+					if (typeof refreshField === 'function') refreshField();
+					if (backTo) window.msOpenDrawer(backTo);
+				})
+				.catch(function () {
+					btn.disabled = false;
+					btn.textContent = 'Retreat';
+				});
+		};
+		if (typeof window.openConfirm === 'function') window.openConfirm(ask, go);
+		else if (window.confirm(ask)) go();
+	}
+
+		/*
+		 * NOBODY HOME: SAY WHO HAS THEM, AND OFFER THE WAY OUT.
+		 *
+		 * This was one flat sentence and a dead button, which left the
+		 * player to scroll the whole board looking for a mission of this
+		 * project, retreat it, reload, and come back. Every fact needed to
+		 * skip all of that is already in the load-out.
+		 *
+		 * A FINISHED MISSION IS NEVER OFFERED A RETREAT. Retreating
+		 * refunds the cost and forfeits the reward, so doing it to one
+		 * that is ready to claim is the only genuinely costly mistake
+		 * available here. Those say so instead, and claiming frees the
+		 * crew anyway.
+		 */
+		function emptyCrew() {
+			var h = LO.holding || [];
+			var out = '<p class="ms-d-desc">Every NFT you own for this project is out on a mission.'
+			        + ' Some have to be home before you can send another, even with an item.</p>';
+			if (!h.length) return out;
+			out += '<div class="ms-d-holding">' + h.map(function (m) {
+				var who = esc(m.title) + ' <em>' + m.nfts
+				        + (m.nfts === 1 ? ' NFT' : ' NFTs') + '</em>';
+				if (m.ready) {
+					return '<div class="ms-d-hold ready"><span>' + who + '</span>'
+					     + '<b>Ready to claim</b></div>';
+				}
+				return '<div class="ms-d-hold"><span>' + who + '</span>'
+				     + '<button type="button" class="ms-d-retreat" data-m="' + m.mission_id
+				     + '" data-q="' + m.quest_id + '">Retreat'
+				     + (m.days_left > 0 ? ' <em>' + m.days_left + 'd left</em>' : '')
+				     + '</button></div>';
+			}).join('') + '</div>';
+			return out;
+		}
+
 		/*
 		 * A MISSION YOU CANNOT STAFF STILL OPENS -- you came to read it and
 		 * look at the art. So the blocker is stated here, up front, instead
@@ -1542,13 +1644,22 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		   rung underneath. mission_launch() refuses it too, whoever asks. */
 		if (LO.locked)             stop = 'Locked - inspection only';
 		else if (!LO.affordable)   stop = 'You need ' + n(LO.cost - LO.balance) + ' more ' + LO.currency;
-		else if (!LO.squad.length) stop = 'Nothing home to send';
+		else if (!LO.squad.length) {
+			/* The button names the next step rather than restating the
+			   problem; the list above it is where that step happens. */
+			stop = (LO.holding && LO.holding.length)
+				? 'Retreat a mission to free your crew'
+				: 'Nothing home to send';
+		}
 		if (stop) {
 			var go = document.getElementById('ms-d-go');
 			go.disabled = true;
 			go.textContent = stop;
 		}
 
+		drawerBody.querySelectorAll('.ms-d-retreat').forEach(function (b) {
+			b.addEventListener('click', function () { retreatFromDrawer(b); });
+		});
 		drawerBody.querySelectorAll('.ms-d-nft').forEach(function (b) {
 			b.addEventListener('click', function () { toggleNft(b); });
 		});

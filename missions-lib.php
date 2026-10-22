@@ -580,6 +580,60 @@ function mission_loadout($conn, $quest_id) {
 	$br = $conn->query("SELECT balance FROM balances WHERE user_id = '$uid' AND project_id = '$pid' LIMIT 1");
 	if ($br && $br->num_rows) $balance = (float)$br->fetch_assoc()['balance'];
 
+	/*
+	 * WHO IS HOLDING THE CREW, when nobody is home.
+	 *
+	 * The crew query below excludes every NFT on an active mission, so a
+	 * player whose whole roster is deployed sees an empty drawer and a
+	 * dead button. The fix for that is not better wording: it is telling
+	 * them WHICH missions have their soldiers, so they can retreat one
+	 * from here instead of scrolling the board hunting for it, retreating,
+	 * and reloading the page.
+	 *
+	 * READY IS COMPUTED THE SAME WAY mission_active() COMPUTES IT --
+	 * created_date plus duration, pulled forward by a Fast Forward item --
+	 * because a mission that has FINISHED must never be offered a retreat
+	 * button. Retreating refunds the cost and forfeits the reward, so
+	 * doing it to a claimable mission is the one genuinely destructive
+	 * thing a player could do from this drawer by accident.
+	 */
+	$holding = array();
+	$hr = $conn->query(
+		"SELECT m.id AS mission_id, m.quest_id, m.created_date, q.title, q.duration,
+		        COUNT(DISTINCT mn.nft_id) AS nfts
+		 FROM missions m
+		 INNER JOIN quests q ON q.id = m.quest_id
+		 INNER JOIN missions_nfts mn ON mn.mission_id = m.id
+		 INNER JOIN nfts n ON n.id = mn.nft_id
+		 INNER JOIN collections c ON c.id = n.collection_id
+		 WHERE m.status = '0' AND m.user_id = '$uid' AND c.project_id = '$pid'
+		 GROUP BY m.id ORDER BY m.created_date ASC");
+	if ($hr) {
+		$ff = array();
+		$fr = $conn->query(
+			"SELECT mc.mission_id FROM missions_consumables mc
+			 INNER JOIN missions m ON m.id = mc.mission_id
+			 WHERE m.status = '0' AND m.user_id = '$uid'
+			   AND mc.consumable_id = '" . (int)MISSION_ITEM_FAST_FORWARD . "'");
+		if ($fr) while ($f = $fr->fetch_assoc()) $ff[(int)$f['mission_id']] = true;
+		while ($r = $hr->fetch_assoc()) {
+			$mid     = (int)$r['mission_id'];
+			$started = strtotime($r['created_date']);
+			if (isset($ff[$mid])) {
+				$started = strtotime('-' . ceil((int)$r['duration'] / 2) . ' day', $started);
+			}
+			$due = strtotime('+' . (int)$r['duration'] . ' day', $started);
+			$holding[] = array(
+				'mission_id' => $mid,
+				'quest_id'   => (int)$r['quest_id'],
+				'title'      => $r['title'],
+				'nfts'       => (int)$r['nfts'],
+				'ready'      => ($due - time() <= 0),
+				'days_left'  => max(0, (int)ceil(($due - time()) / 86400)),
+			);
+		}
+	}
+
 	/* The idle roster for this project, in the order the old inventory used
 	   so the default selection is the same one stakers are used to. */
 	$squad = array();
@@ -702,6 +756,7 @@ function mission_loadout($conn, $quest_id) {
 		'balance'     => $balance,
 		'affordable'  => ((float)$q['cost'] <= 0 || $balance >= (float)$q['cost']),
 		'squad'       => $squad,
+		'holding'     => $holding,
 		'items'       => $items,
 		'idle_rate'   => $idle_rate,
 		'out_rate'    => $out_rate,
