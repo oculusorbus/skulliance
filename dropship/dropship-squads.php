@@ -552,6 +552,46 @@ function dropshipSquadDeploy($conn, $squad_id) {
 	   belonging to this player and this project, so a guessed id falls out
 	   here rather than being checked for separately and forgotten. */
 	if (!$squad) return array(false, 'That is not your squad.');
+
+	/*
+	 * PICKING A DIFFERENT SQUAD SWAPS, IT DOES NOT REFUSE.
+	 *
+	 * Deploying while something is already fielded used to answer "Your
+	 * squad is already full. Withdraw somebody first." -- an error telling
+	 * the player to do the obvious thing themselves. Nobody presses Deploy
+	 * squad on a second squad meaning "but only if the field happens to be
+	 * empty"; they mean field this one instead.
+	 *
+	 * ONLY WHEN ROOM IS THE BLOCKER. dropshipSquadReadiness() already tags
+	 * that case 'fix' => 'withdraw', so every other refusal stands: a squad
+	 * whose members fought this game, or died, or were sold, still says so
+	 * rather than clearing the field for a deployment that cannot happen.
+	 *
+	 * The field is cleared and the squad RE-READ, because readiness is
+	 * computed against the room available at the time it was loaded -- the
+	 * stale copy still believes the field is full.
+	 */
+	$swapped = 0;
+	if (empty($squad['ready']['can']) && ($squad['ready']['fix'] ?? '') === 'withdraw') {
+		$mine = array();
+		foreach ($squad['members'] as $m) $mine[(int)$m['soldier_id']] = true;
+		$holding = false;
+		$res = @$conn->query("SELECT id FROM soldiers
+		                       WHERE user_id = $me AND project_id = $pid AND active = 1");
+		if ($res) while ($r = $res->fetch_assoc()) if (!isset($mine[(int)$r['id']])) $holding = true;
+		/* Nothing to gain from clearing a field made of THIS squad already:
+		   that is not a swap, and withdrawing would undo what the player
+		   can see is already done. */
+		if ($holding) {
+			list($ok_w, ) = dropshipWithdrawAll($conn);
+			if ($ok_w) {
+				$swapped = 1;
+				$squad = null;
+				foreach (dropshipSquadsAll($conn, $me, $pid) as $sq) if ($sq['id'] === $sid) $squad = $sq;
+				if (!$squad) return array(false, 'That is not your squad.');
+			}
+		}
+	}
 	if (empty($squad['ready']['can'])) return array(false, $squad['ready']['why']);
 
 	$ids = array();
@@ -576,7 +616,7 @@ function dropshipSquadDeploy($conn, $squad_id) {
 		@$conn->query("UPDATE soldiers SET active = 1
 		                WHERE id IN ($list) AND user_id = $me AND project_id = $pid AND deceased = 0");
 	}
-	return array(true, $squad['power']['label'] . ' deployed.');
+	return array(true, $squad['power']['label'] . ($swapped ? ' swapped in.' : ' deployed.'));
 }
 
 /**

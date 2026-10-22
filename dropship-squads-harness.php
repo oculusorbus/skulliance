@@ -237,7 +237,26 @@ ok(strpos($code, '$_GET') === false,  'the squad library reads $_GET directly');
 foreach (array('dropshipSquadDeploy', 'dropshipSquadDisperse', 'dropshipSquadDrop') as $fn) {
 	$at = strpos($code, 'function ' . $fn);
 	ok($at !== false, "$fn has gone");
-	$body = $at === false ? '' : substr($code, $at, 1600);
+	/*
+	 * THE WHOLE FUNCTION, BY BRACE MATCHING. This took a fixed 1600-char
+	 * window from the function start, which is fine until the function
+	 * grows past it -- and then the UPDATE falls outside the window, no
+	 * write statements are found, and the per-statement scope checks pass
+	 * by having nothing to check. The "writes > 0" guard below caught it,
+	 * which is the only reason it was not silent, but the window itself is
+	 * the bug. Same shape as the exit() that killed a whole block of
+	 * dropship-grunts-harness.php.
+	 */
+	$body = '';
+	if ($at !== false) {
+		$open = strpos($code, '{', $at);
+		$depth = 0;
+		for ($i = $open; $i !== false && $i < strlen($code); $i++) {
+			if ($code[$i] === '{') $depth++;
+			elseif ($code[$i] === '}') { $depth--; if ($depth === 0) { $i++; break; } }
+		}
+		$body = substr($code, $at, $i - $at);
+	}
 	preg_match_all('/\b(UPDATE|DELETE)\b.*?(?=\'\)|";|\')/s', $body, $stmts);
 	$writes = 0;
 	foreach ($stmts[0] as $st) {
@@ -457,6 +476,35 @@ $t = dropshipFieldOrder($rows, array(), array());
 ok(array_column($t, 'soldier_id') === array(1, 2, 3, 4), 'an all-tie row reorders itself');
 
 /* ---------- the screen it is wired to -------------------------------------- */
+
+echo "\npicking a different squad swaps\n";
+/*
+ * Deploying while something is fielded used to answer "Your squad is
+ * already full. Withdraw somebody first." Nobody presses Deploy squad on a
+ * second squad meaning "but only if the field is empty"; they mean field
+ * this one instead.
+ *
+ * THE SAFETY PROPERTY IS THAT IT ONLY CLEARS FOR ROOM.
+ * dropshipSquadReadiness() tags the full-field case 'fix' => 'withdraw',
+ * and every other refusal -- members who fought this game, died, or were
+ * sold -- must still stand rather than emptying the field for a deployment
+ * that cannot happen anyway.
+ */
+$dep_at = strpos($code, 'function dropshipSquadDeploy');
+$dep = substr($code, $dep_at, 2600);
+ok(strpos($dep, 'dropshipWithdrawAll($conn)') !== false,
+   'deploying a second squad no longer clears the field, so it refuses again');
+ok(preg_match("/fix.*?===\s*'withdraw'/", $dep) === 1,
+   'the auto-withdraw is not gated on room being the blocker, so it clears the field '
+ . 'for squads that cannot deploy anyway');
+/* AND IT RE-READS THE SQUAD. Readiness was computed against the room
+   available when the squad was loaded; the stale copy still believes the
+   field is full, so deploying would refuse immediately after clearing. */
+ok(substr_count($dep, 'dropshipSquadsAll($conn, $me, $pid)') >= 2,
+   'the squad is not re-read after the field is cleared, so its readiness is stale');
+/* Clearing a field that is already THIS squad is not a swap. */
+ok(strpos($dep, '$holding') !== false,
+   'it withdraws even when the field is already this squad, undoing what is done');
 
 echo "\nthere is no barracks any more\n";
 /*
