@@ -552,6 +552,11 @@ define('MS_FIELD_CAP', 24);
   display: flex; flex-direction: column; overflow: hidden; }
 #ms-drawer-body { display: contents; }
 .ms-d-scroll { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+/* A DISABLED PRIMARY BUTTON HAS TO LOOK DISABLED. Every other button on
+   this page dims at .45-.5 when it cannot be pressed (.ms-daily,
+   .ms-deploy-buttons); this one did not, so "You need 300 more BAT" and
+   "Locked - inspection only" rendered as solid teal calls to action. */
+.ms-d-foot .button:disabled { opacity: .4; cursor: default; }
 .ms-d-foot { flex: 0 0 auto; border-top: 1px solid rgba(0,200,160,.18);
   background: #0a1929; padding: 12px 18px; text-align: left; }
 /* A row of its own, so nothing the browser or the OS paints on top of a
@@ -1644,17 +1649,45 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		   rung underneath. mission_launch() refuses it too, whoever asks. */
 		if (LO.locked)             stop = 'Locked - inspection only';
 		else if (!LO.affordable)   stop = 'You need ' + n(LO.cost - LO.balance) + ' more ' + LO.currency;
-		else if (!LO.squad.length) {
-			/* The button names the next step rather than restating the
-			   problem; the list above it is where that step happens. */
-			stop = (LO.holding && LO.holding.length)
-				? 'Retreat a mission to free your crew'
-				: 'Nothing home to send';
+		else if (!LO.squad.length) stop = 'Nothing home to send';
+
+		/*
+		 * THE BIG BUTTON DOES THE OBVIOUS THING, OR IT LOOKS DISABLED.
+		 *
+		 * It read "Retreat a mission to free your crew" while being
+		 * disabled and styled exactly like a live primary button --
+		 * reported by the owner, who pressed it, got nothing, and then
+		 * went hunting for the real control halfway up the modal. A
+		 * control that looks pressable and is not is worse than no
+		 * control.
+		 *
+		 * WITH ONE MISSION HOLDING THE CREW there is no ambiguity about
+		 * which to retreat, so the footer button becomes that action and
+		 * names it. That is the common case and the one in the report.
+		 *
+		 * WITH SEVERAL, picking one for the player would be guessing, so
+		 * the button stays dead -- and now looks it -- and says where the
+		 * choice is. The rows each have their own Retreat.
+		 */
+		var retreatable = (LO.holding || []).filter(function (m) { return !m.ready; });
+		var soloRetreat = null;
+		if (stop === 'Nothing home to send' && retreatable.length === 1) {
+			soloRetreat = retreatable[0];
+			stop = '';
+		} else if (stop === 'Nothing home to send' && retreatable.length > 1) {
+			stop = 'Choose a mission to retreat above';
 		}
+
+		var go = document.getElementById('ms-d-go');
 		if (stop) {
-			var go = document.getElementById('ms-d-go');
 			go.disabled = true;
 			go.textContent = stop;
+		} else if (soloRetreat) {
+			go.disabled = false;
+			go.textContent = 'Retreat ' + soloRetreat.title;
+			go.setAttribute('data-m', soloRetreat.mission_id);
+			go.setAttribute('data-q', soloRetreat.quest_id);
+			go.setAttribute('data-retreat', '1');
 		}
 
 		drawerBody.querySelectorAll('.ms-d-retreat').forEach(function (b) {
@@ -1677,7 +1710,13 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 				refit();
 			});
 		});
-		document.getElementById('ms-d-go').addEventListener('click', launch);
+		/* One button, two jobs: launching, or clearing the way to launch.
+		   Which one is settled above and marked on the element, so the
+		   handler cannot disagree with the label the player read. */
+		document.getElementById('ms-d-go').addEventListener('click', function (e) {
+			if (e.currentTarget.getAttribute('data-retreat') === '1') retreatFromDrawer(e.currentTarget);
+			else launch();
+		});
 	}
 
 	/* Hand-picking is never blocked -- the note says when a selection is
