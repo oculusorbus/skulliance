@@ -910,13 +910,85 @@ function dropshipGapAdvice($conn, $roster) {
 	 * every noun goes through the same evaluateText() the shop renders
 	 * with -- a half-translated sentence is worse than an untranslated one.
 	 */
+	$need_names = array();
+	foreach ($miss_t as $t) $need_names[] = $t . ' Armor';
+	foreach ($miss_i as $i) $need_names[] = $i;
 	$buy = array();
-	foreach ($miss_t as $t) $buy[] = '<b>' . $w($t . ' Armor') . '</b>';
-	foreach ($miss_i as $i) $buy[] = '<b>' . $w($i) . '</b>';
+	foreach ($need_names as $nm) $buy[] = '<b>' . $w($nm) . '</b>';
 	if ($buy) {
 		$last = array_pop($buy);
 		$body .= ' Or buy ' . ($buy ? implode(', ', $buy) . ' and ' : '') . $last
 		       . ' in the ' . $w('Armory') . ', which lasts one run.';
+	}
+
+	/*
+	 * AND WHETHER THEY CAN ACTUALLY AFFORD IT.
+	 *
+	 * Naming a shelf of items to somebody with eleven SCRIP is the same
+	 * failure as naming one NFT for three gaps: true, and not about them.
+	 * The balance and the prices are both already here -- checkBalance()
+	 * and items.cost -- so the sentence can say which of the two answers
+	 * applies: go and buy it, or go and earn it.
+	 *
+	 * EARNING IS A DEEPER RUN, not a vaguer "play more". logBalance() adds
+	 * the run's SCORE to the balance, so the thing that raises it is
+	 * getting further, which is the thing the rest of this advice is
+	 * about. The loop closes.
+	 *
+	 * THE QUERY USES CANONICAL NAMES. items.name stores 'Heavy Armor'
+	 * whatever the theme calls it -- the renaming happens in
+	 * evaluateText() on the way to the screen -- so the lookup must not
+	 * use the themed words, and the sentence must.
+	 */
+	if ($need_names && is_object($conn) && function_exists('checkBalance')) {
+		$esc = array();
+		foreach ($need_names as $nm) $esc[] = "'" . $conn->real_escape_string($nm) . "'";
+		$res = @$conn->query('SELECT name, cost FROM items WHERE name IN (' . implode(',', $esc) . ')');
+		$cost = array();
+		if ($res) while ($r = $res->fetch_assoc()) $cost[(string)$r['name']] = (float)$r['cost'];
+		if ($cost) {
+			$bal   = (float)str_replace(',', '', (string)checkBalance($conn));
+			$total = 0; $cheapest = null;
+			foreach ($need_names as $nm) {
+				if (!isset($cost[$nm])) continue;
+				$total += $cost[$nm];
+				if ($cheapest === null || $cost[$nm] < $cost[$cheapest]) $cheapest = $nm;
+			}
+			/*
+			 * CUMULATIVE, NOT ITEM BY ITEM. This tested each price against
+			 * the whole balance on its own, so 200 SCRIP was "enough for
+			 * Base Armor and Medkit" when those are 100 and 150 -- each
+			 * affordable alone, 250 together. Telling somebody they can
+			 * afford a basket they cannot is worse than saying nothing.
+			 *
+			 * Cheapest first, because that is the most things the balance
+			 * can actually cover.
+			 */
+			$order = array();
+			foreach ($need_names as $nm) if (isset($cost[$nm])) $order[$nm] = $cost[$nm];
+			asort($order);
+			$afford = array(); $spent = 0;
+			foreach ($order as $nm => $c) {
+				if ($spent + $c > $bal) break;
+				$spent += $c;
+				$afford[] = $nm;
+			}
+			$scrip = $w('SCRIP');
+			$n_bal = '<b>' . number_format($bal) . '</b> ' . $scrip;
+			if ($total > 0 && $bal >= $total) {
+				$body .= ' You have ' . $n_bal . ', enough for all of it.';
+			} elseif ($afford) {
+				$names = array();
+				foreach ($afford as $nm) $names[] = '<b>' . $w($nm) . '</b>';
+				$lastn = array_pop($names);
+				$body .= ' You have ' . $n_bal . ', enough for '
+				       . ($names ? implode(', ', $names) . ' and ' : '') . $lastn . '.';
+			} elseif ($cheapest !== null) {
+				$body .= ' You have ' . $n_bal . ' and the cheapest of those is <b>'
+				       . number_format($cost[$cheapest]) . '</b>. A deeper run earns more: '
+				       . 'your score is added to your balance.';
+			}
+		}
 	}
 
 	return array($summary, trim($body));
