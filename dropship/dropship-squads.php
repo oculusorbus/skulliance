@@ -800,14 +800,20 @@ function dropshipGapAdvice($conn, $roster) {
 	}
 
 	/*
-	 * A FULL SQUAD CANNOT GAIN A SOLDIER, IT CAN ONLY SWAP ONE.
+	 * A FULL SQUAD CANNOT GAIN A SOLDIER, SO THE TIER TO ASK FOR IS THE ONE
+	 * ALREADY WASTED.
 	 *
-	 * The first version always told the player to go and buy a soldier of
-	 * some tier -- and when all four tiers were already present it named
-	 * one at random, advising a Base soldier to a squad that already has
-	 * one. There is no fifth slot. What that squad needs is a REPLACEMENT
-	 * for whichever member is carrying nothing useful, in the same tier so
-	 * the odds do not drop.
+	 * With all four tiers present and an item missing, the first version
+	 * named a tier at random and advised buying a Base soldier to a squad
+	 * that already had one. There is no fifth slot: the soldier that would
+	 * help is a same-tier replacement for whoever is carrying nothing
+	 * useful, so the odds hold and the item lands.
+	 *
+	 * IT DOES NOT TELL THE PLAYER TO SWAP ANYBODY. Nobody can: squads are
+	 * generated, there is no manual editing left, and asking for a swap is
+	 * asking for something the screen does not offer. They buy the NFT and
+	 * dropshipSquadsAutoSync() rebuilds around it on the next load. The
+	 * tier is worked out here only so the description is the right one.
 	 *
 	 * The member to replace is the one whose gear is not one of the three
 	 * -- a None, or a duplicate of something already covered.
@@ -826,9 +832,7 @@ function dropshipGapAdvice($conn, $roster) {
 		if ($miss_t) {
 			$body .= dropshipShopHint($conn, array('armor' => $miss_t[0], 'gear' => $gear));
 		} elseif ($replace !== null) {
-			$body .= 'Swap your <b>' . $w($replace) . '</b> soldier for one carrying '
-			       . '<b>' . $w($gear) . '</b>. '
-			       . dropshipShopHint($conn, array('armor' => $replace, 'gear' => $gear));
+			$body .= dropshipShopHint($conn, array('armor' => $replace, 'gear' => $gear));
 		}
 	}
 	return array($summary, trim($body));
@@ -878,6 +882,13 @@ function dropshipSquadsPanel($conn) {
 .dssq-advice[open] summary::after{transform:rotate(-135deg)}
 .dssq-advice summary:hover{color:#e8eaed}
 .dssq-advice .body{padding:0 10px 9px;font-size:11px;color:#7a9eb0;line-height:1.45}
+/* THE COLLECTION-WIDE ONE SITS ABOVE THE LIST, not inside a card, so it
+   carries the weight the per-card notes deliberately do not: it is the
+   thing a player reads before deciding anything. */
+.dssq-advice.top{margin:0 0 12px}
+.dssq-advice.top summary{padding:10px 12px;font-size:13px;font-weight:bold;color:#00c8a0}
+.dssq-advice.top summary:hover{color:#e8eaed}
+.dssq-advice.top .body{padding:0 12px 11px}
 @media (prefers-reduced-motion:reduce){.dssq-advice summary::after{transition:none}}
 .dssq-one{border:1px solid var(--ds-line,#1b3346);border-radius:var(--ds-r,3px);
   background:#0a1929;margin-bottom:10px;overflow:hidden}
@@ -928,6 +939,32 @@ function dropshipSquadsPanel($conn) {
 .dssq-man form{display:block;margin-top:4px}
 .dssq-man .small-button{width:100%;min-height:0;padding:4px 6px;font-size:10px}
 </style>
+<?php
+/*
+ * TWO TIERS OF ADVICE, AND THEY ANSWER DIFFERENT QUESTIONS.
+ *
+ * This one is the collection: how do I get MORE squads. It names the one
+ * soldier that would add another, or what is standing in the way when no
+ * single soldier would. Each card below answers the other question --
+ * what is wrong with THIS squad -- and the two are deliberately not the
+ * same sentence: fixing a squad's missing Medkit does not add a squad,
+ * and buying the soldier that adds one does not fix anybody's gap.
+ *
+ * SHOWN WHETHER OR NOT ANYTHING IS DEPLOYED. It was gated on an empty
+ * field while the odds pane carried a copy; the odds pane now answers for
+ * the squad ON the field instead, so there is nothing to collide with and
+ * no reason to hide the one piece of advice a player reads before
+ * deciding anything.
+ */
+$ds_adv = function_exists('dropshipSquadAdvice')
+	? dropshipSquadAdvice(array('roster' => array()), $conn) : null;
+if ($ds_adv !== null): ?>
+	<?php /* Already escaped by dropshipSquadAdvice(). */ ?>
+	<details class="dssq-advice top">
+		<summary><?php echo $ds_adv[0]; ?></summary>
+		<div class="body"><?php echo $ds_adv[1]; ?></div>
+	</details>
+<?php endif; ?>
 <div class="dssq">
 <?php foreach ($squads as $sq):
 	$can = !empty($sq['ready']['can']);
