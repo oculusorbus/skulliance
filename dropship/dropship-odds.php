@@ -289,28 +289,31 @@ function dropshipSquadAdvice($f, $conn = null) {
 		        . dropshipWord('soldier') . $carry . ' would make it '
 		        . ($n + 1) . '.';
 		/*
-		 * AND WHAT TO LOOK FOR, where the stats come from real traits.
+		 * AND WHAT TO GO AND BUY, where the collection says enough to name
+		 * it. "A Base soldier carrying a Medkit" is only checkable by
+		 * buying one; a marketplace filter is not.
 		 *
-		 * "A Base soldier carrying a Medkit" is only checkable by buying
-		 * one. On Disco Solaris the tier IS the Outerwear trait and the
-		 * item IS the Hat or Headphones, so the same gap can be stated as
-		 * a marketplace filter.
-		 *
-		 * GATED ON THE COLLECTION, NOT ON A PROJECT ID. Any theme sitting
-		 * on this policy gets the hint and no other theme can accidentally
-		 * inherit it -- every other collection derives its stats from a
-		 * crc32 of the asset name, which is not a trait and has no shape
-		 * to point a player at.
+		 * GATED ON THE COLLECTION'S POLICY, NOT A PROJECT ID, so any theme
+		 * on that policy gets it and no other can inherit it -- which is
+		 * what makes one Shorty Verse lookup serve both Dread City and
+		 * Filthy Mermaid. Drop Ship needs no lookup at all: its armour and
+		 * gear ARE the card's traits, so the gap names itself.
 		 */
-		if (function_exists('discosolarisTraitHints') && function_exists('getProjectPolicyId')
-		    && function_exists('dropshipDiscosolarisPolicy')
-		    && (string)@getProjectPolicyId($conn) === dropshipDiscosolarisPolicy()) {
-			$hint = discosolarisTraitHints($need['armor'], $need['gear']);
-			if ($hint) {
-				$detail .= ' Look for one with <b>' . $hint['outerwear'] . '</b>'
-				        . ($hint['item'] !== '' ? ' and <b>' . $hint['item'] . '</b>' : '') . '.';
+		$hint = null;
+		if (function_exists('getProjectPolicyId')) {
+			$pol = (string)@getProjectPolicyId($conn);
+			if (function_exists('dropshipDiscosolarisPolicy') && $pol === dropshipDiscosolarisPolicy()
+			    && function_exists('discosolarisTraitHints')) {
+				$hint = discosolarisTraitHints($need['armor'], $need['gear']);
+			} elseif (function_exists('dropshipShortyversePolicy') && $pol === dropshipShortyversePolicy()
+			          && function_exists('shortyverseTraitHints')) {
+				$hint = shortyverseTraitHints($need['armor'], $need['gear']);
+			} elseif (function_exists('dropshipOwnPolicy') && $pol === dropshipOwnPolicy()
+			          && function_exists('dropshipOwnTraitHints')) {
+				$hint = dropshipOwnTraitHints($need['armor'], $need['gear']);
 			}
 		}
+		if ($hint !== null && $hint !== '') $detail .= ' Look for ' . $hint . '.';
 		$detail .= ' Squads are built for you from everything you own.';
 	} elseif ($n > 0) {
 		$detail = 'Every ' . $super . ' your collection can make is already built. '

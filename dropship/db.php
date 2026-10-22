@@ -881,10 +881,103 @@ function discosolarisTraitHints($armor, $gear) {
 		'Melee'      => 'Glasses, a Necklace or Earrings',
 		'None'       => '',
 	);
-	$a = isset($outer[$armor]) ? $outer[$armor] : null;
-	if ($a === null) return null;
-	$g = isset($item[$gear]) ? $item[$gear] : '';
-	return array('outerwear' => $a, 'item' => $g);
+	if (!isset($outer[$armor])) return null;
+	/* One finished phrase -- see the note in shortyverseTraitHints(). */
+	$p = 'an NFT with <b>' . $outer[$armor] . '</b>';
+	if (!empty($item[$gear])) $p .= ' and <b>' . $item[$gear] . '</b>';
+	return $p;
+}
+
+/** One spelling of Drop Ship's own collection. */
+function dropshipOwnPolicy() {
+	return '4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c';
+}
+
+/**
+ * DROP SHIP NEEDS NO TRANSLATION, WHICH IS THE WHOLE POINT OF IT.
+ *
+ * Every other theme derives its stats from something that is not a stat
+ * -- an Outerwear value, a torso, an edition size -- so the advice has to
+ * be translated back into something a buyer can filter on. Drop Ship's
+ * cards carry armour and gear as REAL TRAITS, and its soldiers rows were
+ * preseeded from exactly those, so the gap names itself: a soldier short
+ * of a Medkit needs a card that says Medkit.
+ *
+ * This exists anyway rather than letting the caller special-case it,
+ * because the sentence should read the same on every theme. The words go
+ * through dropshipWord() like every other noun so a reskin on this policy
+ * still speaks its own vocabulary.
+ */
+function dropshipOwnTraitHints($armor, $gear) {
+	$tiers = array('Heavy' => 1, 'Medium' => 1, 'Light' => 1, 'Base' => 1);
+	if (!isset($tiers[$armor])) return null;
+	$w = function_exists('dropshipWord') ? 'dropshipWord' : null;
+	$a = $w ? $w($armor) : $armor;
+	$p = 'an NFT with <b>' . $a . '</b> armor';
+	/* 'None' is a real gear value and not a missing one: the fourth slot
+	   of a squad wants a soldier carrying nothing, so say so plainly. */
+	if ($gear === 'None') {
+		$p .= ' carrying <b>nothing</b>';
+	} elseif ($gear !== '') {
+		/* No article: the gear names are used bare everywhere else in the
+		   game ("Gear: Melee"), and "a Demolition" reads wrong. */
+		$p .= ' carrying <b>' . ($w ? $w($gear) : $gear) . '</b>';
+	}
+	return $p;
+}
+
+/** One spelling of the Shorty Verse policy -- Dread City and Filthy Mermaid. */
+function dropshipShortyversePolicy() {
+	return '0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c';
+}
+
+/**
+ * SHORTY VERSE, READ BACKWARDS -- what to go and buy.
+ *
+ * That collection has no traits, so its stats come from two things a
+ * buyer can actually see on a listing: how big the edition is, and
+ * whether the card shows the character fighting.
+ *
+ * THE EDITION RANGES ARE MEASURED, NOT GUESSED. Armour is the scarcity
+ * ranking cut into quartiles, so the tiers land on real boundaries:
+ * every 1/1 and most 1/2s are Heavy, 1/3 is mostly Medium, 1/4 and 1/5
+ * are Light, and anything from 1/8 up is Base. Counted off
+ * shortyverse-loadouts.json rather than reasoned about, because the
+ * boundaries move if the mapping is ever regenerated with new weights.
+ *
+ * GEAR IS WHAT THE CARD SHOWS. An ENGAGED card is a fighter engaged in
+ * violence and always carries a weapon -- Melee or Demolition, decided by
+ * the print number, which a buyer cannot choose. So the honest advice for
+ * either weapon is the same: buy an ENGAGED card. A DISENGAGED one
+ * carries nothing unless the character is a medic, and the medics are
+ * named as medics.
+ */
+function shortyverseTraitHints($armor, $gear) {
+	$edition = array(
+		'Heavy'  => 'a 1 of 1, or a 1 of 2',
+		'Medium' => 'a 1 of 3',
+		'Light'  => 'a 1 of 4 or 1 of 5',
+		'Base'   => 'a big edition, 1 of 8 or more',
+	);
+	$shows = array(
+		/* Both weapons come from the same kind of card; the print decides
+		   which, and nobody buying can pick the print. Saying "an ENGAGED
+		   card" is the whole of the honest advice. */
+		'Melee'      => 'a card showing them ENGAGED',
+		'Demolition' => 'a card showing them ENGAGED',
+		'Medkit'     => 'a medic -- MEDIC, ANGEL, SAINT or DOC',
+		'None'       => 'a DISENGAGED card',
+	);
+	if (!isset($edition[$armor])) return null;
+	/* ONE FINISHED PHRASE, not two fragments for the caller to glue. The
+	   two collections describe themselves in different shapes -- "with a
+	   Denim Jacket" against "that is a 1 of 1" -- and a shared joiner
+	   produced "an NFT that is a 1 of 1, a medic". */
+	$p = 'an NFT that is <b>' . $edition[$armor] . '</b>';
+	if (isset($shows[$gear]) && $shows[$gear] !== '') {
+		$p .= ', and <b>' . $shows[$gear] . '</b>';
+	}
+	return $p;
 }
 
 /**
