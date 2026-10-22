@@ -1,4 +1,37 @@
 <?php
+/*
+ * THE PLATFORM'S DAY STARTS AT MIDNIGHT CENTRAL, AND PHP HAS TO KNOW THAT.
+ *
+ * Nothing here called date_default_timezone_set(), so PHP took php.ini's
+ * zone, which is UTC on this host -- while MySQL stamps every date_created
+ * with the host clock, which is Central. The platform therefore ran two
+ * calendars five hours apart, and between 19:00 Central and midnight they
+ * disagreed about what day it was.
+ *
+ * That window was a live economy exploit. getDailyRewardEligibility()
+ * compared a MySQL-written date against a PHP-computed "yesterday": claim
+ * at 19:15 Central and MySQL writes the 21st, PHP already believes it is
+ * the 22nd, so the claim reads as yesterday's and the button comes straight
+ * back. Not once -- EVERY time, because the comparison is date against
+ * date, so each new claim lands on a date PHP has already moved past.
+ * Unlimited claims, five hours a night. The same skew showed the player
+ * digest a day early and put the Next Reward countdown five hours out.
+ *
+ * php.ini IS NOT IN THIS REPOSITORY AND CHANGES WHEN THE PHP VERSION DOES
+ * -- a cPanel version switch hands the domain a fresh ini -- so the zone is
+ * pinned here, where it is version-controlled and survives the next
+ * upgrade. Central because that is what the platform already says it runs
+ * on: Drop Ship locks its week in "Thursday at 4pm CST".
+ *
+ * IT DOES NOT MAKE THE SQL COMPARISONS SAFE, and must not be relied on for
+ * that. A date written by one clock and read by another is wrong whenever
+ * the two are configured apart, which is a thing an ini edit can do again
+ * at any time. Cooldowns and day boundaries are compared IN SQL -- see
+ * verifyYesterdaysRewards() below, the soldier sweeps, and dhca_crew() in
+ * dhcarena-lib.php, which is where this was first diagnosed.
+ */
+date_default_timezone_set('America/Chicago');
+
 include 'credentials/db_credentials.php';
 include_once 'role.php';
 /* avatar_url(): one spelling of a Discord avatar URL for the whole platform.
@@ -847,40 +880,74 @@ function resetDailyRewardStreak($conn) {
 	}
 }
 
-// Determine if eligible for daily reward
+/*
+ * Has this player already claimed today?
+ *
+ * ASKED ENTIRELY OF MYSQL, because the row it is asking about was written
+ * by MySQL. This used to read date_created back and compare it against a
+ * PHP-computed "yesterday", and the two clocks are not required to agree --
+ * php.ini said UTC while the host said Central, so for the five hours
+ * between 19:00 Central and midnight PHP was already on tomorrow's date.
+ *
+ * A claim made in that window was stamped with today's Central date, read
+ * as yesterday's by PHP, and the button came back. Not once but EVERY
+ * time: the comparison is date against date, so every fresh claim landed
+ * on a date PHP had already moved past. Unlimited daily rewards, five
+ * hours a night, bounded only by how fast the page could be refreshed.
+ *
+ * db.php now pins the zone, which closes the gap -- and this still does
+ * not depend on it. php.ini is not in the repository and a cPanel PHP
+ * version switch replaces it, so an eligibility test that is only correct
+ * while two config files agree is one bad upgrade from being an exploit
+ * again. CURDATE() is MySQL's own idea of today, compared against a value
+ * MySQL wrote: one clock, no gap to open.
+ *
+ * NULL means no bonus transaction has ever been written, which is a first
+ * claim rather than an error, so it is eligible. A missing session user is
+ * NOT -- it used to fall through the same branch and hand out a reward
+ * that updateBalance() then credited to user id 0.
+ */
 function getDailyRewardEligibility($conn){
-	$eligibility = false;
-	$date_created = getMaxDateCreated($conn);
-	if(isset($date_created)){
-		// If max date less than or equal to yesterday's date, eligible. If max date greater than yesterday's date, not elibible.
-		if (strtotime(date('Y-m-d 00:00:00', strtotime($date_created))) <= strtotime(date('Y-m-d 00:00:00', strtotime('-1 day')))) {
-		    $eligibility = true;
-		}else{
-			$eligibility = false;
-		}
-	}else{
-		$eligibility = true;
-	}
-	return $eligibility;
+	$uid = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
+	if ($uid <= 0) return false;
+	$sql = "SELECT MAX(date_created) AS last_claim,
+	               MAX(date_created) >= CURDATE() AS claimed_today
+	        FROM transactions WHERE user_id = " . $uid . " AND bonus = '1'";
+	$result = $conn->query($sql);
+	/* A failed query must not read as "never claimed". */
+	if (!$result) return false;
+	$row = $result->fetch_assoc();
+	if (!$row || $row['last_claim'] === null) return true;   /* first ever claim */
+	return !((int)$row['claimed_today'] === 1);
 }
 
-// Get maximum date created for bonus transaction
+/*
+ * The most recent daily-reward claim, or null if there has never been one.
+ *
+ * THE OLD QUERY DID NOT COMPUTE A MAXIMUM. It was
+ *
+ *   SELECT id, MAX(date_created) ... GROUP BY id
+ *
+ * and id is the primary key, so every row is its own group and MAX() is a
+ * no-op over one value. It returned EVERY bonus transaction the player has
+ * ever had, one per row, and the loop below simply kept whichever came
+ * last. That only happened to be the newest because nothing had yet made
+ * the server return them in another order; no ORDER BY was ever present to
+ * say so. MySQL dropped GROUP BY's implicit sort in 8.0, and the row order
+ * is the optimiser's to choose either way.
+ *
+ * Grouping removed, so one row comes back and MAX() means what it says.
+ */
 function getMaxDateCreated($conn){
-	$date_created = "";
-	$sql = "SELECT id, MAX(date_created) AS date_created FROM transactions WHERE user_id='".$_SESSION['userData']['user_id']."' AND bonus = '1' GROUP BY id";
+	$uid = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
+	if ($uid <= 0) return null;
+	$sql = "SELECT MAX(date_created) AS date_created FROM transactions
+	        WHERE user_id = " . $uid . " AND bonus = '1'";
 	$result = $conn->query($sql);
-
-	if ($result->num_rows > 0) {
-	  // output data of each row
-	  while($row = $result->fetch_assoc()) {
-	    //echo "id: " . $row["id"]. " - Discord ID: " . $row["discord_id"]. " Username: " . $row["username"]. "<br>";
-    	$date_created = $row["date_created"];
-	  }
-	  return $date_created;
-	} else {
-	  //echo "0 results";
-      return null;
-	}
+	if (!$result) return null;
+	$row = $result->fetch_assoc();
+	/* MAX() over no rows is one row holding NULL, not zero rows. */
+	return ($row && $row['date_created'] !== null) ? $row['date_created'] : null;
 }
 
 // Get random daily reward for user
