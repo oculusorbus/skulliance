@@ -1711,9 +1711,14 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		   null on the way in, so reading LO.quest_id inside the callback
 		   reopens undefined and the drawer dies on an empty load-out. */
 		var backTo = LO ? LO.quest_id : 0;
-		var ask = 'Retreat this mission to bring your crew home?\r\n\r\n'
-		        + 'The cost of that mission will be refunded and any items used '
-		        + 'will be restored, but its progress is lost.';
+		/* THE CONFIRM NAMES THE MISSION, which is what lets the button
+		   above it stay short. Two missions are in play here -- the one
+		   on screen and the one holding the crew -- so the one being
+		   ended has to be said out loud before it happens. */
+		var title = btn.getAttribute('data-title') || '';
+		var ask = (title ? 'Retreat "' + title + '"?' : 'Retreat this mission?')
+		        + '\r\n\r\nYour crew comes home. The cost is refunded and any items '
+		        + 'used are restored, but the mission\'s progress is lost.';
 		var go = function () {
 			btn.disabled = true;
 			btn.textContent = 'Retreating…';
@@ -1762,7 +1767,7 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 				}
 				return '<div class="ms-d-hold"><span>' + who + '</span>'
 				     + '<button type="button" class="ms-d-retreat" data-m="' + m.mission_id
-				     + '" data-q="' + m.quest_id + '">Retreat'
+				     + '" data-q="' + m.quest_id + '" data-title="' + esc(m.title) + '">Retreat'
 				     + (m.days_left > 0 ? ' <em>' + m.days_left + 'd left</em>' : '')
 				     + '</button></div>';
 			}).join('') + '</div>';
@@ -1815,10 +1820,27 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 			go.disabled = true;
 			go.textContent = stop;
 		} else if (soloRetreat) {
+			/*
+			 * NAMES THE EFFECT, NOT THE MISSION.
+			 *
+			 * It read "Retreat Solve the Enigma of Aeoniumsky", and
+			 * mission titles are imperative sentences -- so the label was
+			 * two verbs fighting, and long ones ran the width of the
+			 * footer in caps.
+			 *
+			 * "Retreat this mission" is the obvious alternative and it is
+			 * WRONG: the modal is open on a different mission, the one
+			 * being launched, so "this" points at the wrong thing. The
+			 * crew count is short whatever the title, cannot be confused
+			 * with the mission on screen, and is the thing the player
+			 * actually wants. The confirm names the mission.
+			 */
 			go.disabled = false;
-			go.textContent = 'Retreat ' + soloRetreat.title;
+			go.textContent = 'Retreat to free ' + soloRetreat.nfts
+			               + (soloRetreat.nfts === 1 ? ' NFT' : ' NFTs');
 			go.setAttribute('data-m', soloRetreat.mission_id);
 			go.setAttribute('data-q', soloRetreat.quest_id);
+			go.setAttribute('data-title', soloRetreat.title);
 			go.setAttribute('data-retreat', '1');
 		}
 
