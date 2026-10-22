@@ -1417,7 +1417,23 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 	/* THE OVERRIDE. skulliance.js defines loadCurrentMissions() against the
 	   old #current-missions-container; the bulk launchers and retreat() both
 	   call it on completion. Repointing it keeps those working untouched. */
-	window.loadCurrentMissions = refreshField;
+	/*
+	 * THE FIELD AND THE LAUNCHERS, because every caller of this frees
+	 * NFTs.
+	 *
+	 * skulliance.js calls loadCurrentMissions() after a retreat and after
+	 * other actions that put soldiers back in the barracks, and this page
+	 * pointed it at refreshField() alone -- so the field updated and the
+	 * launchers went on insisting everything was still out. Claiming had
+	 * the same hole and is where it was reported.
+	 *
+	 * Both from one entry point rather than remembering to pair them at
+	 * each call site, which is how three of them ended up unpaired.
+	 */
+	window.loadCurrentMissions = function () {
+		refreshField();
+		refreshDeploy();
+	};
 	window.currentMissionsLoaded = true;
 
 	/* Claiming still goes through skulliance.js's completeMissions(), which
@@ -1428,7 +1444,24 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 		btn.disabled = true;
 		btn.textContent = 'Collecting…';
 		completeMissions(missionIds, questIds);
-		setTimeout(refreshField, 6000);
+		/*
+		 * AND THE LAUNCHERS TOO, which is the whole of a reported bug:
+		 * claim everything, then have to reload the page before Auto
+		 * would send them back out.
+		 *
+		 * Claiming is the one action that frees NFTs in bulk, so it is
+		 * the one that most changes what the launchers should offer --
+		 * and it was the only path that refreshed the field without
+		 * them. The slot renders server-side from what is idle, so
+		 * before this it kept saying "Everything you own is already out
+		 * on a mission" about soldiers standing in the barracks.
+		 *
+		 * skulliance.js tries to help here by setting the two forms to
+		 * display:block, which does nothing on this page: when there was
+		 * nothing to send, the slot holds a sentence and those forms do
+		 * not exist to be shown. Re-fetching is what works.
+		 */
+		setTimeout(window.loadCurrentMissions, 6000);
 	};
 
 	/* ---------- the project picker ------------------------------------ */
@@ -1727,7 +1760,9 @@ function ms_e($v) { return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 				.then(function () {
 					/* The board behind the drawer is now stale too -- that
 					   mission has gone from the field. */
-					if (typeof refreshField === 'function') refreshField();
+					/* Field AND launchers: a retreat frees crew, so the
+					   bulk buttons may have just become available. */
+					window.loadCurrentMissions();
 					if (backTo) window.msOpenDrawer(backTo);
 				})
 				.catch(function () {
