@@ -237,81 +237,89 @@ function dropshipGearTypes() { return array('Melee', 'Demolition', 'Medkit'); }
  * Returns array(headline, detail) of already-escaped strings, or null when
  * there is nothing useful to say.
  */
-function dropshipSquadAdvice($f) {
-	$roster = isset($f['roster']) ? $f['roster'] : array();
-	$slots  = count($roster);
-	if ($slots === 0) return null;                 /* nothing deployed; nothing to advise */
-
-	$tiers = dropshipArmorTiers();
-	$gears = dropshipGearTypes();
-
-	/* How many soldiers wear each tier, so a duplicate can be named. */
-	$worn = array_fill_keys($tiers, 0);
-	$held = array_fill_keys($gears, 0);
-	foreach ($roster as $r) {
-		if (isset($worn[$r['armor']])) $worn[$r['armor']]++;
-		if (isset($held[$r['gear']]))  $held[$r['gear']]++;
+function dropshipSquadAdvice($f, $conn = null) {
+	/*
+	 * THE ADVICE IS ABOUT THE COLLECTION NOW, NOT THE SQUAD ON THE FIELD.
+	 *
+	 * This used to read "Swap a Sweat Pants soldier for Smoking Jacket ->
+	 * 80%", and before that it walked somebody through filling four slots
+	 * one at a time. Both are answers to a question nobody is asked any
+	 * more: dropshipSquadsAutoSync() arranges the whole roster, so there is
+	 * no slot to fill and nothing to swap. Telling a player to improve a
+	 * squad the game built for them is worse than saying nothing.
+	 *
+	 * WHAT IS STILL ACTIONABLE IS WHAT THEY OWN. More NFTs means more
+	 * complete squads -- and the planner already knows exactly which one
+	 * would do it, because dropshipSquadPlan() tests every kind of soldier
+	 * against the arrangement and reports the one that buys another squad.
+	 * "A Base soldier carrying a Medkit" is a thing somebody can go and
+	 * look for; "buy more NFTs" is not.
+	 *
+	 * NEEDS THE WHOLE ROSTER, not $f['roster'], which is only what is
+	 * deployed. Without a connection there is nothing useful to say, so it
+	 * says nothing rather than falling back to advice about the field.
+	 */
+	if (!is_object($conn) || !function_exists('dropshipSquadsRoster')
+	    || !function_exists('dropshipSquadPlan')) {
+		return null;
 	}
-	$missing_tiers = array();
-	foreach ($tiers as $t) if ($worn[$t] === 0) $missing_tiers[] = $t;
-	$missing_gear = array();
-	foreach ($gears as $g) if ($held[$g] === 0) $missing_gear[] = $g;
+	$me  = (int)($_SESSION['userData']['dropship_user_id'] ?? 0);
+	$pid = (int)($_SESSION['userData']['dropship_project_id'] ?? 0);
+	if ($me <= 0 || $pid <= 0) return null;
 
-	$now = dropshipSurvivalPct(dropshipThreshold($f));
+	$roster = dropshipSquadsRoster($conn, $me, $pid);
+	if (!$roster) return null;
 
-	/* COMPLETE. Say so plainly and stop advising. */
-	if (empty($missing_tiers)) {
-		if (empty($missing_gear)) {
-			return array(dropshipWord('Super Soldier') . ' Squad',
-			             'Every armor tier and all three gear types. '
-			           . 'This is the best squad in the game at ' . $now . '% a round.');
+	$plan  = dropshipSquadPlan($roster);
+	$n     = (int)$plan['count'];
+	$super = dropshipWord('Super Soldier') . ' Squad';
+
+	$headline = $n > 0
+		? $n . ' ' . $super . ($n === 1 ? '' : 's')
+		: 'No ' . $super . ' yet';
+
+	$need = $plan['need'];
+	if ($need !== null) {
+		/* A free fourth slot is any soldier of that tier, so naming a gear
+		   it does not need would send somebody hunting for the wrong one. */
+		$carry = ($need['gear'] !== 'None')
+			? ' carrying <b>' . dropshipWord($need['gear']) . '</b>'
+			: '';
+		$detail = 'One more <b>' . dropshipWord($need['armor']) . '</b> '
+		        . dropshipWord('soldier') . $carry . ' would make it '
+		        . ($n + 1) . '.';
+		/*
+		 * AND WHAT TO LOOK FOR, where the stats come from real traits.
+		 *
+		 * "A Base soldier carrying a Medkit" is only checkable by buying
+		 * one. On Disco Solaris the tier IS the Outerwear trait and the
+		 * item IS the Hat or Headphones, so the same gap can be stated as
+		 * a marketplace filter.
+		 *
+		 * GATED ON THE COLLECTION, NOT ON A PROJECT ID. Any theme sitting
+		 * on this policy gets the hint and no other theme can accidentally
+		 * inherit it -- every other collection derives its stats from a
+		 * crc32 of the asset name, which is not a trait and has no shape
+		 * to point a player at.
+		 */
+		if (function_exists('discosolarisTraitHints') && function_exists('getProjectPolicyId')
+		    && function_exists('dropshipDiscosolarisPolicy')
+		    && (string)@getProjectPolicyId($conn) === dropshipDiscosolarisPolicy()) {
+			$hint = discosolarisTraitHints($need['armor'], $need['gear']);
+			if ($hint) {
+				$detail .= ' Look for one with <b>' . $hint['outerwear'] . '</b>'
+				        . ($hint['item'] !== '' ? ' and <b>' . $hint['item'] . '</b>' : '') . '.';
+			}
 		}
-		return array('Every armor tier covered &middot; ' . $now . '% a round',
-		             'Still missing ' . dropshipJoinWords(dropshipWords($missing_gear))
-		           . '. Gear does not change the odds, but it buys '
-		           . (in_array('Medkit', $missing_gear, true) ? 'an extra life and ' : '')
-		           . 'the melee and demolition chains.');
+		$detail .= ' Squads are built for you from everything you own.';
+	} elseif ($n > 0) {
+		$detail = 'Every ' . $super . ' your collection can make is already built. '
+		        . 'More ' . dropshipWord('soldier') . 's would build more.';
+	} else {
+		$detail = 'A ' . $super . ' needs all four armor tiers and all three items. '
+		        . 'More ' . dropshipWord('soldier') . 's would get you there.';
 	}
-
-	/* ROOM LEFT. Recommend the single best tier to add next, by what it is
-	   actually worth rather than by where it sits in the list. */
-	if ($slots < 4) {
-		$best = null; $best_pct = $now;
-		foreach ($missing_tiers as $t) {
-			$try = $f; $try[strtolower($t)] = true;
-			$p = dropshipSurvivalPct(dropshipThreshold($try));
-			if ($best === null || $p > $best_pct) { $best = $t; $best_pct = $p; }
-		}
-		if ($best === null) $best = $missing_tiers[0];
-		$gear_hint = $missing_gear ? ' carrying ' . dropshipWord($missing_gear[0]) : '';
-		$gain = $best_pct > $now ? ' &rarr; <b>' . $best_pct . '%</b>' : '';
-		return array('Next: a ' . dropshipWord('soldier') . ' in <b>'
-		           . dropshipWord($best) . '</b> armor' . $gear_hint . $gain,
-		             $slots . ' of 4 slots filled. Still missing '
-		           . dropshipJoinWords(dropshipWords($missing_tiers)) . ' armor.');
-	}
-
-	/* FULL, AND STILL NOT A SUPER SOLDIER SQUAD. Name the duplicate, because
-	   "add Base armour" is useless advice when there is nowhere to put it. */
-	$dupes = array();
-	foreach ($tiers as $t) if ($worn[$t] > 1) $dupes[] = $worn[$t] . ' wear ' . dropshipWord($t);
-	$why = $dupes
-		? dropshipJoinWords($dupes) . ' armor, so no one is in '
-		  . dropshipJoinWords(dropshipWords($missing_tiers))
-		: 'No one is wearing ' . dropshipJoinWords(dropshipWords($missing_tiers)) . ' armor';
-	$swap = null;
-	foreach ($tiers as $t) if ($worn[$t] > 1) { $swap = $t; break; }
-	$fix = $swap
-		? 'Swap a <b>' . dropshipWord($swap) . '</b> ' . dropshipWord('soldier')
-		  . ' for <b>' . dropshipWord($missing_tiers[0]) . '</b>'
-		: 'Swap one ' . dropshipWord('soldier') . ' for <b>'
-		  . dropshipWord($missing_tiers[0]) . '</b>';
-	$try = $f;
-	foreach ($missing_tiers as $t) $try[strtolower($t)] = true;
-	$could = dropshipSurvivalPct(dropshipThreshold($try));
-	return array($fix . ($could > $now ? ' &rarr; <b>' . $could . '%</b>' : ''),
-	             'Your squad is full but not a ' . dropshipWord('Super Soldier')
-	           . ' Squad. ' . $why . '.');
+	return array($headline, $detail);
 }
 
 /** "Heavy, Medium and Light" -- a list a person would read aloud. */
@@ -370,7 +378,7 @@ function dropshipOddsPanel($conn) {
 	 * here is the build: what is in the four slots and what goes in the next
 	 * one.
 	 */
-	$advice = dropshipSquadAdvice($f);
+	$advice = dropshipSquadAdvice($f, $conn);
 
 	$h = function ($v) { return htmlspecialchars((string)$v, ENT_QUOTES); };
 

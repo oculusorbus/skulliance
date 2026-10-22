@@ -10,6 +10,20 @@
  */
 require_once __DIR__ . '/dropship/dropship-odds.php';
 require_once __DIR__ . '/harness-fixtures/dropship-threshold-original.php';
+/* dropshipSquadAdvice() reads the whole roster now, which lives in
+   dropship-squads.php, and plans it with dropship-squad-plan.php. db.php
+   requires all three in order at runtime; this harness loads only the odds,
+   so without these the advice guard returns null and every assertion about
+   it passes by saying nothing. */
+require_once __DIR__ . '/dropship/dropship-grunts.php';
+require_once __DIR__ . '/dropship/dropship-squad-plan.php';
+/* NO evaluateText() STUB HERE. Defining a passthrough at load time wins
+   over the theme fixture this harness sets up further down, so every
+   themed word came back untranslated and five assertions about the
+   vocabulary failed for a reason that had nothing to do with the code.
+   dropship-squads.php only calls it inside functions, so it loads fine
+   without one. */
+require_once __DIR__ . '/dropship/dropship-squads.php';
 
 $fail = 0;
 function ok($cond, $msg) {
@@ -296,34 +310,78 @@ $r = function ($list) {
 	}
 	return $f;
 };
-$one = dropshipSquadAdvice($r(array(array('Heavy', 'Melee'))));
-ok($one !== null && strpos($one[0], 'Next:') === 0,
-   'a one-soldier squad gets no next step: ' . json_encode($one));
-ok(strpos($one[1], '1 of 4 slots') !== false, 'the advice does not say how many slots are filled');
-ok(strpos($one[0], 'Medium') !== false || strpos($one[0], 'Light') !== false
-   || strpos($one[0], 'Base') !== false, 'the next step names no armor tier: ' . $one[0]);
-/* FULL BUT NOT SUPER: say why, and what to swap. */
-$dupe = dropshipSquadAdvice($r(array(array('Heavy','Melee'), array('Medium','Demolition'),
-                                     array('Medium','Medkit'), array('Light','None'))));
-ok(strpos($dupe[1], 'full but not a Super Soldier Squad') !== false,
-   'a full non-super squad is not told why: ' . $dupe[1]);
-ok(strpos($dupe[1], 'Medium') !== false && strpos($dupe[1], 'Base') !== false,
-   'the reason names neither the duplicate nor the gap: ' . $dupe[1]);
-/* IT MUST NAME THE SOLDIER TO SWAP OUT, not just the gap. "Swap one soldier
-   for Base" is useless when the player has to work out which one; naming the
-   duplicated tier is the whole advice. A looser check passed a mutation that
-   dropped exactly that. */
-ok(strpos($dupe[0], 'Swap a <b>Medium</b>') === 0,
-   'the swap does not name the duplicated tier to drop: ' . $dupe[0]);
-ok(strpos($dupe[0], 'Base') !== false, 'the swap does not name the missing tier: ' . $dupe[0]);
-/* COMPLETE: say so and stop advising. */
-$full = dropshipSquadAdvice($r(array(array('Heavy','Melee'), array('Medium','Demolition'),
-                                     array('Light','Medkit'), array('Base','None'))));
-ok($full[0] === 'Super Soldier Squad', 'a complete squad is not recognised: ' . $full[0]);
-ok(strpos($full[0], 'Next:') === false && strpos($full[0], 'Swap') === false,
-   'a complete squad is still being given advice');
-/* An empty squad has nothing to advise on. */
-ok(dropshipSquadAdvice(array('roster' => array())) === null, 'an empty squad is given advice');
+/*
+ * THE ADVICE IS ABOUT THE COLLECTION NOW.
+ *
+ * It used to walk a player through filling four slots and then suggest a
+ * swap -- "Swap a Sweat Pants soldier for Smoking Jacket -> 80%". Squads
+ * are generated, so there is no slot to fill and nothing to swap, and
+ * every assertion about that wording went with it. What it says now is
+ * how many complete squads the COLLECTION makes and which single soldier
+ * would make one more, which is the only thing still actionable.
+ *
+ * It needs the whole roster, so it needs a connection. Faked here.
+ */
+class OddsAdviceConn {
+	public $rows = array();
+	function query($sql) {
+		if (strpos($sql, 'FROM soldiers') === false) return false;
+		$out = array();
+		foreach ($this->rows as $i => $r) {
+			$out[] = array('id' => $i + 1, 'asset_name' => 'A' . ($i + 1), 'name' => 'A' . ($i + 1),
+			               'rank' => 'NFT', 'armor' => $r[0], 'gear' => $r[1]);
+		}
+		return new OddsAdviceRes($out);
+	}
+}
+class OddsAdviceRes {
+	public $rows; public $num_rows;
+	function __construct($r) { $this->rows = $r; $this->num_rows = count($r); }
+	function fetch_assoc() { return array_shift($this->rows); }
+}
+$_SESSION['userData']['dropship_user_id']    = 1;
+$_SESSION['userData']['dropship_project_id'] = 1;
+$advise = function ($rows) {
+	$c = new OddsAdviceConn(); $c->rows = $rows;
+	return dropshipSquadAdvice(array('roster' => array()), $c);
+};
+
+/* WITHOUT A CONNECTION IT SAYS NOTHING, rather than falling back to advice
+   about whatever happens to be deployed. */
+ok(dropshipSquadAdvice(array('roster' => array())) === null,
+   'advice is given with no connection, so it is talking about the field again');
+
+/* One short of a complete squad: it must name the soldier that would finish
+   it, not merely say "buy more". */
+$short = $advise(array(array('Heavy','Medkit'), array('Medium','Melee'), array('Light','Demolition')));
+ok($short !== null, 'a collection one soldier short gets no advice at all');
+$short_txt = strip_tags($short[0] . ' ' . $short[1]);
+ok(strpos($short_txt, 'Base') !== false || strpos($short_txt, 'Boxer Briefs') !== false,
+   'the advice does not name the missing armor tier: ' . $short_txt);
+ok(strpos($short[0], '0') === 0 || strpos($short_txt, 'No') !== false,
+   'a collection with no complete squad does not say so: ' . $short_txt);
+
+/* A complete one, and one more would make two. */
+$oneSquad = $advise(array(array('Heavy','Medkit'), array('Medium','Melee'),
+                          array('Light','Demolition'), array('Base','None')));
+$txt1 = strip_tags($oneSquad[0] . ' ' . $oneSquad[1]);
+ok(strpos($oneSquad[0], '1 ') === 0, 'one complete squad is not counted: ' . $oneSquad[0]);
+
+/* THE RECOMMENDED SOLDIER MUST ACTUALLY BUY A SQUAD. Driven through the
+   planner rather than read off the sentence: add what it asked for and the
+   count has to go up by exactly one. */
+$base = array(array('Heavy','Medkit'), array('Medium','Melee'), array('Light','Demolition'));
+$roster = array();
+foreach ($base as $i => $bpair) $roster[] = array('id' => $i + 1, 'armor' => $bpair[0], 'gear' => $bpair[1]);
+if (function_exists('dropshipSquadPlan')) {
+	$pl = dropshipSquadPlan($roster);
+	if ($pl['need'] !== null) {
+		$roster[] = array('id' => 99, 'armor' => $pl['need']['armor'], 'gear' => $pl['need']['gear']);
+		$after = dropshipSquadPlan($roster);
+		ok($after['count'] === $pl['count'] + 1,
+		   'the soldier the advice recommends does not actually complete a squad');
+	}
+}
 
 echo "\nthe panel survives the stylesheet it renders inside\n";
 /*
@@ -358,46 +416,37 @@ if (!function_exists('evaluateText')) {
 		return isset($map[$t]) ? $map[$t] : $t;
 	}
 }
-$mkf = function ($rows) {
-	$f = array('roster' => $rows);
-	foreach ($rows as $r) { $f[strtolower($r['armor'])] = true; $f[strtolower($r['gear'])] = true; }
-	return $f;
+/*
+ * THE ADVICE STILL SPEAKS THE THEME'S WORDS.
+ *
+ * It says different things than it used to -- how many squads the
+ * collection makes and which soldier would make another -- but every noun
+ * in it still goes through dropshipWord(), and a half-translated sentence
+ * is worse than an untranslated one. Driven through the same faked
+ * connection as above, because the advice reads the whole roster now.
+ */
+$themed = function ($rows) use ($advise) {
+	$a = $advise($rows);
+	return $a === null ? '' : strip_tags($a[0] . ' ' . $a[1]);
 };
-$three = $mkf(array(array('armor' => 'Heavy', 'gear' => 'Medkit'),
-                    array('armor' => 'Medium', 'gear' => 'Melee'),
-                    array('armor' => 'Light', 'gear' => 'Demolition')));
-$a = dropshipSquadAdvice($three);
-$joined = strip_tags($a[0] . ' ' . $a[1]);
-ok(strpos($joined, 'Boxer Briefs') !== false, 'the missing tier is still named in Drop Ship words');
-ok(strpos($joined, 'pervert') !== false, 'the squad member is still called a soldier');
+/* One short of a squad, so the missing tier gets named. */
+$t1 = $themed(array(array('Heavy','Medkit'), array('Medium','Melee'), array('Light','Demolition')));
+ok($t1 !== '', 'the advice went silent, so the wording below is untested');
+ok(strpos($t1, 'Boxer Briefs') !== false,
+   'the missing tier is still named in Drop Ship words: ' . $t1);
+ok(strpos($t1, 'pervert') !== false,
+   'the squad member is still called a soldier: ' . $t1);
 /* AND THE DROP SHIP WORDS MUST BE GONE, not merely joined by the themed
-   ones -- a half-translated sentence is worse than an untranslated one. */
+   ones. */
 foreach (array('Base', 'soldier') as $word) {
-	ok(!preg_match('/\b' . preg_quote($word, '/') . '\b/', $joined),
-	   "the untranslated '$word' is still in: " . $joined);
+	ok(!preg_match('/\b' . preg_quote($word, '/') . '\b/', $t1),
+	   "the untranslated '$word' is still in: " . $t1);
 }
-/* The full-squad and duplicate branches too: they have their own copy. */
-$full = $mkf(array(array('armor' => 'Heavy', 'gear' => 'Medkit'),
-                   array('armor' => 'Heavy', 'gear' => 'Melee'),
-                   array('armor' => 'Medium', 'gear' => 'Demolition'),
-                   array('armor' => 'Light', 'gear' => 'None')));
-$b = strip_tags(implode(' ', dropshipSquadAdvice($full)));
-ok(strpos($b, 'VIP Squad') !== false, 'the full-squad line still says Super Soldier Squad');
-/* THE "N WEAR X" PHRASE SPECIFICALLY. Checking only that 'Smoking Jacket'
-   appeared somewhere passed with the duplicate list untranslated, because
-   the swap line above it already contained the themed word. */
-ok(strpos($b, '2 wear Smoking Jacket') !== false,
-   'the duplicate tier is still named in Drop Ship words: ' . $b);
-ok(!preg_match('/\d wear (Heavy|Medium|Light|Base)\b/', $b),
-   'the duplicate list is untranslated: ' . $b);
-ok(strpos($b, 'Boxer Briefs') !== false, 'the gap is still named in Drop Ship words: ' . $b);
-ok(!preg_match('/\bsoldier\b/', $b), "the swap line still says 'soldier': " . $b);
-$super = $mkf(array(array('armor' => 'Heavy', 'gear' => 'Medkit'),
-                    array('armor' => 'Medium', 'gear' => 'Melee'),
-                    array('armor' => 'Light', 'gear' => 'Demolition'),
-                    array('armor' => 'Base', 'gear' => 'None')));
-$c = strip_tags(implode(' ', dropshipSquadAdvice($super)));
-ok(strpos($c, 'VIP Squad') !== false, 'the completed squad is still called a Super Soldier Squad');
+/* A complete squad names the thing it completed. */
+$t2 = $themed(array(array('Heavy','Medkit'), array('Medium','Melee'),
+                    array('Light','Demolition'), array('Base','None')));
+ok(strpos($t2, 'VIP Squad') !== false,
+   'the completed squad is still called a Super Soldier Squad: ' . $t2);
 /* UNTRANSLATED IS THE RIGHT ANSWER WITH NO THEME, and this file is loaded
    by harnesses that have no database at all. */
 $odds_src = file_get_contents(__DIR__ . '/dropship/dropship-odds.php');

@@ -458,26 +458,43 @@ ok(array_column($t, 'soldier_id') === array(1, 2, 3, 4), 'an all-tie row reorder
 
 /* ---------- the screen it is wired to -------------------------------------- */
 
-echo "\nthe barracks shows each soldier once\n";
+echo "\nthere is no barracks any more\n";
 /*
- * A SOLDIER IN A SQUAD IS NOT ALSO IN THE LOOSE LIST. It renders inside its
- * squad, so listing it below as well would show the same soldier twice with
- * two sets of controls -- and the second would be an individual Deploy,
- * which is the thing a squad exists to prevent.
+ * EVERYTHING IS SQUAD BASED. The loose grid and its attribute filter were
+ * how a player picked soldiers one at a time and hunted for the pieces of
+ * a Super Soldier Squad by hand. dropshipSquadsAutoSync() arranges the
+ * whole roster, so every soldier is already in a squad and there is
+ * nothing loose left to list -- the grid would have rendered empty, and
+ * the filter would have been filtering nothing.
+ *
+ * A single soldier is still reachable: the plan runs past the complete
+ * squads into threes, twos and ones, so the dregs are a squad like any
+ * other and deploy in one press.
  */
-ok(strpos($dbsrc, 'dropshipSquadMembership($conn)') !== false,
-   'the barracks no longer asks which soldiers are spoken for');
+$dash = preg_replace('#/\*.*?\*/#s', '', (string)file_get_contents(__DIR__ . '/dropship/dashboard.php'));
+ok(strpos($dash, 'filterTroops("dashboard")') === false,
+   'the attribute filter is back on the dashboard, filtering a list that no longer exists');
+ok(strpos($dash, 'getSoldiers($conn, 0, $filterby)') === false,
+   'the loose barracks grid is back, and every soldier in it is already in a squad above');
+/*
+ * AND THE SCRIPT THAT DROVE IT IS GONE TOO. getElementById() on a removed
+ * id returns null, and reading .value off null throws -- taking every
+ * script after it on the page with it. Removing a control means removing
+ * what talks to it.
+ */
+ok(strpos($dash, "getElementById('filterTroops')") === false,
+   'a script still sets a value on the filter element, which no longer exists');
+
+/*
+ * getSoldiers() KEEPS NO SQUAD EXCLUSION. It had one for the barracks, to
+ * stop a soldier appearing both in their squad and loose below it. With no
+ * loose list there is nothing to exclude from, and $active 1 (the field)
+ * and $active 2 (the public roll) always wanted every soldier anyway.
+ */
 $gs = strpos($dbsrc, 'function getSoldiers');
 $gsb = $gs === false ? '' : substr($dbsrc, $gs, 3000);
-ok(strpos($gsb, 'soldiers.id NOT IN (') !== false,
-   'squad members are listed loose as well, so they appear twice');
-/*
- * AND ONLY THERE. $active 1 is the FIELD and 2 is the public Registered
- * Soldiers roll; both want every soldier, squad or not. Excluding in either
- * would hide half a deployed squad from the player looking straight at it.
- */
-ok(strpos($gsb, '$active === 0 && !$all') !== false,
-   'the exclusion is not scoped to the barracks, so the field hides its own squad');
+ok(strpos($gsb, 'soldiers.id NOT IN (') === false,
+   'the squad exclusion is back in getSoldiers, and nothing renders a list for it to filter');
 
 echo "\nthe panel\n";
 $panel = preg_replace(array('#/\*.*?\*/#s'), '', $src);
@@ -526,11 +543,10 @@ ok($upd === false || $upd < $sync,
 $panelAt = strpos($dash, 'dropshipSquadsPanel($conn)');
 ok($sync !== false && $panelAt !== false && $sync < $panelAt,
    'the squads are drawn before the engine has arranged them');
-/* Squads render BEFORE the loose grid: the owner's order. */
-$pAt = strpos($dash, 'dropshipSquadsPanel($conn)');
-$gAt = strpos($dash, 'getSoldiers($conn, 0, $filterby)');
-ok($pAt !== false && $gAt !== false && $pAt < $gAt,
-   'the loose soldiers render above the saved squads');
+/* There is no longer a loose grid to render squads above; the panel is
+   the whole of it. What still matters is that it renders at all. */
+ok(strpos($dash, 'dropshipSquadsPanel($conn)') !== false,
+   'nothing draws the squads, so the barracks is now an empty heading');
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all squad checks passed\n");
 exit($fail ? 1 : 0);

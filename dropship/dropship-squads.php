@@ -720,14 +720,28 @@ function dropshipSquadsPanel($conn) {
 .dssq-head form{display:inline}
 .dssq-why{font-size:11px;color:#7a9eb0;flex:1 1 100%;text-align:left}
 .dssq-one.ready .dssq-why{color:#00c8a0}
-/* FIXED-WIDTH MEMBERS, NOT A FOUR-COLUMN GRID. A grid of 1fr columns makes
-   each face a quarter of the page -- about 370px tall on a desktop -- which
-   is a second barracks, not the compact row this is meant to be. A squad
-   member needs to be recognised, not studied. Four of these plus the gaps
-   come to ~400px, so the row still holds together on a phone. */
-.dssq-men{display:flex;flex-wrap:wrap;gap:10px;padding:10px 12px}
-.dssq-man{flex:0 0 92px;width:92px;text-align:left;font-size:11px;min-width:0}
-.dssq-man img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;
+/*
+ * FOUR COLUMNS ACROSS THE PANEL, which is the opposite of what this said.
+ *
+ * It was a fixed 92px per member, argued for on the grounds that full-width
+ * faces would be "a second barracks, not the compact row this is meant to
+ * be". That was true while the barracks existed. It does not now: the loose
+ * grid is gone, every soldier lives in a squad, and this panel is the only
+ * place a player ever sees the art they own. Shrinking it to a thumbnail
+ * because something else used to show it properly is the wrong trade.
+ *
+ * CONTAIN, NOT COVER. At 92px a crop was unnoticeable; at a quarter of the
+ * panel it takes the top off a portrait. The same call the game picker
+ * already made -- the box is the tile's own ink, so the letterboxed edge
+ * reads as the card rather than as a grey slab.
+ *
+ * TWO COLUMNS ON A PHONE. Four across a 360px screen is 80px a face, which
+ * is smaller than what this replaced.
+ */
+.dssq-men{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:10px 12px}
+@media (max-width:560px){.dssq-men{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dssq-man{text-align:left;font-size:11px;min-width:0}
+.dssq-man img{display:block;width:100%;aspect-ratio:1/1;object-fit:contain;
   border-radius:var(--ds-r,3px);background:#07111d;max-width:100%}
 .dssq-man .nm{display:block;font-weight:bold;margin-top:4px;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap}

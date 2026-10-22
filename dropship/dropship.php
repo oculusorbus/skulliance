@@ -332,6 +332,21 @@ if(isset($_POST['filterby'])){
 
 // Extracted this function from dashboard so that it can be used on other pages
 function filterTroops($page){
+	/*
+	 * STILL HERE, AND IT DOES A DIFFERENT JOB THAN IT USED TO.
+	 *
+	 * Its original purpose is obsolete: filtering by Heavy or Medkit was
+	 * how a player hunted for the pieces of a Super Soldier Squad by hand,
+	 * and dropshipSquadsAutoSync() does that now -- better than the filter
+	 * ever allowed, since the three items have to come from three
+	 * DIFFERENT armour tiers and no one-attribute filter shows that.
+	 *
+	 * But the barracks went the other way at the same time. It used to hide
+	 * squad members, and now that every soldier is in a squad it lists the
+	 * whole collection instead of nothing -- which is what makes deploying
+	 * a single leftover possible. Finding one soldier in forty is exactly
+	 * what this control is for, so it is more useful than it was, not less.
+	 */
 	$barracks = "";
 	if($page == "dashboard"){
 		$barracks = "#barracks";
@@ -356,6 +371,7 @@ function filterTroops($page){
 		</form>
 	</div>';
 }
+
 
 // Call initial DB functions
 checkUser($conn);

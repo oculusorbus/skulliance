@@ -942,13 +942,29 @@ if ($ds_can_animate):
 						   . htmlspecialchars($ds_squad_msg[1], ENT_QUOTES) . '</div>';
 					}
 					echo dropshipSquadsPanel($conn);
-					filterTroops("dashboard");
+					/*
+					 * THE LOOSE GRID AND ITS FILTER ARE GONE. EVERYTHING IS
+					 * SQUAD BASED.
+					 *
+					 * The barracks used to be where a player picked soldiers
+					 * one at a time and the filter was how they found the
+					 * pieces of a Super Soldier Squad by hand. Both answered
+					 * a question nobody is asked any more:
+					 * dropshipSquadsAutoSync() arranges the entire roster,
+					 * so every soldier is already in a squad above and there
+					 * is nothing loose to list.
+					 *
+					 * A SINGLE SOLDIER IS STILL REACHABLE, which is the part
+					 * worth not losing: the plan runs out of complete squads
+					 * and keeps going, so the tail is squads of three, two
+					 * and one. The hail-mary throw of whatever is left is a
+					 * squad like any other and deploys in one press.
+					 *
+					 * getSoldiers($conn, 0, ...) is left alone rather than
+					 * deleted -- $active 1 is the field and $active 2 is the
+					 * public Registered Soldiers roll, and both still use it.
+					 */
 					?>
-					<div id="nfts" class="nfts">
-						<?php 
-						getSoldiers($conn, 0, $filterby); 
-						?>
-					</div>
 				</div>
 			</div>
 			<a name="armory" id="armory"></a>
@@ -1257,9 +1273,11 @@ if($heavy == "true" && $medium == "true" && $light == "true" && $base == "true" 
 if(isset($_SESSION["userData"]["wallet"])){
 	echo "<script type='text/javascript'>function updateWallet(){document.getElementById('wallets').value = '".$_SESSION["userData"]["wallet"]."';}</script>";
 }
-if($filterby != ""){
-	echo "<script type='text/javascript'>document.getElementById('filterTroops').value = '".$filterby."';</script>";
-}
+/* The filter dropdown this pre-selected is gone with the loose grid, and
+   getElementById() on a missing id returns null -- so this line threw and
+   took every script after it on the page down with it. A stale form post
+   can still set $filterby, so the guard is on the ELEMENT, not on the
+   value. */
 /* The dropdown that this selected into is gone -- the picker marks the
    current game on the tile itself, so there is no control to pre-set. Left
    as a note rather than deleted silently, because the line threw a null

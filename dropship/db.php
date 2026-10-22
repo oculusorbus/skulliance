@@ -841,6 +841,53 @@ function dropshipStatsFromAssetName($asset_name) {
 }
 
 /**
+ * THE DISCO SOLARIS MAPPING, READ BACKWARDS.
+ *
+ * discosolarisArmorTier() and discosolarisGear() turn on-chain traits into
+ * a tier and an item. Run the other way they answer the question a player
+ * with a gap actually has: not "you need a Base soldier carrying a Medkit",
+ * which they can only check by buying one, but "look for a Tracksuit with a
+ * Hat", which is a filter on a marketplace.
+ *
+ * ONE EXAMPLE PER TRAIT, NOT THE WHOLE BUCKET. Heavy has nine qualifying
+ * Outerwear values and listing them is a wall; the commonest one is a
+ * search somebody can actually run. The full buckets live in the functions
+ * above, and the research behind them in oculuslounge-nft-metadata.md.
+ *
+ * BASE IS AN ABSENCE for about 8% of the collection -- no Outerwear at all
+ * -- so it is described rather than named.
+ *
+ * ONLY FOR THIS COLLECTION. Every other theme derives its stats from
+ * dropshipStatsFromAssetName(), a crc32 of the asset name, which is not a
+ * trait and has no readable shape to point at. Returning null there is the
+ * honest answer; the caller falls back to naming the tier.
+ */
+/* One spelling of the collection this mapping is for. The id was written
+   out in two places; a third would be the one that drifts. */
+function dropshipDiscosolarisPolicy() {
+	return 'd0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779';
+}
+
+function discosolarisTraitHints($armor, $gear) {
+	$outer = array(
+		'Heavy'  => 'a Formal Jacket',
+		'Medium' => 'a Moss Jacket',
+		'Light'  => 'a Denim Jacket',
+		'Base'   => 'no jacket, or a Tracksuit or Sweatshirt',
+	);
+	$item = array(
+		'Medkit'     => 'a Hat or a Special',
+		'Demolition' => 'Headphones',
+		'Melee'      => 'Glasses, a Necklace or Earrings',
+		'None'       => '',
+	);
+	$a = isset($outer[$armor]) ? $outer[$armor] : null;
+	if ($a === null) return null;
+	$g = isset($item[$gear]) ? $item[$gear] : '';
+	return array('outerwear' => $a, 'item' => $g);
+}
+
+/**
  * Does this collection's metadata carry the traits the Disco Solaris
  * mapping reads? Asked per NFT, so a collection with mixed data still
  * gets the real mapping wherever the traits are actually there.
@@ -923,7 +970,7 @@ function dropshipSyncFromSkulliance($conn, $discord_id, $policy = '') {
 	 * working rather than silently matching no NFTs at all.
 	 */
 	if ($policy === '' || $policy === null) {
-		$policy = 'd0112837f8f856b2ca14f69b375bc394e73d146fdadcc993bb993779';
+		$policy = dropshipDiscosolarisPolicy();
 	}
 	$policy_esc = $skulliance_conn->real_escape_string($policy);
 	$discord_id_esc = $skulliance_conn->real_escape_string($discord_id);
@@ -1191,27 +1238,25 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 	}
 
 	/*
-	 * SOLDIERS IN A SAVED SQUAD ARE NOT IN THE LOOSE LIST.
+	 * THE BARRACKS LISTS EVERY SOLDIER, INCLUDING THE ONES IN SQUADS.
 	 *
-	 * They render inside their squad above, so listing them here as well
-	 * would show the same soldier twice with two different sets of controls
-	 * -- and the second one would be an individual Deploy, which is the thing
-	 * a squad is meant to prevent.
+	 * It used to exclude squad members, because back when squads were built
+	 * by hand a soldier appearing both inside their squad and loose below it
+	 * offered an individual Deploy that undermined the squad.
 	 *
-	 * ONLY THE BARRACKS. $active 1 is the FIELD (what is deployed right now)
-	 * and $active 2 is the public Registered Soldiers roll; both want every
-	 * soldier, squad or not. Excluding there would hide half a deployed squad
-	 * from the player looking at it.
+	 * THAT EXCLUSION EMPTIES THE BARRACKS NOW. dropshipSquadsAutoSync() puts
+	 * EVERY owned soldier into a squad -- the complete ones first and the
+	 * remainder into lower-tier squads -- so "not in a squad" matches nobody
+	 * and the grid rendered blank. The filter above it was filtering an
+	 * empty list.
+	 *
+	 * And the duplication is the point now rather than the bug: a player who
+	 * has run every squad and wants to throw individual leftovers at one
+	 * more round needs somewhere to pick them from. Squads above are the one
+	 * press; the barracks is where single soldiers still come from.
 	 */
-	$squad_clause = "";
-	if ($active === 0 && !$all && function_exists('dropshipSquadMembership')) {
-		$in_squads = array_keys(dropshipSquadMembership($conn));
-		if ($in_squads) {
-			$squad_clause = "AND soldiers.id NOT IN (" . implode(',', array_map('intval', $in_squads)) . ") ";
-		}
-	}
 
-	$sql = "SELECT name, asset_name, ipfs, rank, armor, gear, level, username, deceased, active, soldiers.id AS soldier_id FROM soldiers INNER JOIN users ON users.id = soldiers.user_id WHERE ".$user_clause.$active_clause.$filterby.$squad_clause." AND project_id = '".$_SESSION['userData']['dropship_project_id']."' ORDER BY deceased, title, soldiers.id";
+	$sql = "SELECT name, asset_name, ipfs, rank, armor, gear, level, username, deceased, active, soldiers.id AS soldier_id FROM soldiers INNER JOIN users ON users.id = soldiers.user_id WHERE ".$user_clause.$active_clause.$filterby." AND project_id = '".$_SESSION['userData']['dropship_project_id']."' ORDER BY deceased, title, soldiers.id";
 	$result = $conn->query($sql);
 
 	if ($result->num_rows > 0) {
@@ -1274,7 +1319,18 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 				}
 			}else{
 				if(!$all){
-					renderDeployButton($row["soldier_id"], 0);
+					/*
+					 * NO INDIVIDUAL WITHDRAW. A squad goes out in one press
+					 * and comes back the same way.
+					 *
+					 * Pulling one soldier off a fielded squad could only ever
+					 * make the field worse: the squad was the best arrangement
+					 * of those four, and there is nothing to put in the gap
+					 * because every other soldier is already in a squad of
+					 * their own. It left a broken field with no way to repair
+					 * it short of clearing and starting again -- which is
+					 * what Withdraw all is for, and it is still there.
+					 */
 					setSquadAttributes($row);
 				}else{
 					echo "<span class='status'><strong>Status</strong><br>Deployed</span>";
