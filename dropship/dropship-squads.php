@@ -908,7 +908,49 @@ function dropshipSquadsAutoSync($conn, $user_id = null, $project_id = null) {
 	$o_ids = array_keys($owned);
 	sort($a_ids); sort($o_ids);
 	if ($a_ids === $o_ids) {
-		return array('changed' => false, 'reason' => 'in sync', 'owned' => count($o_ids));
+		/*
+		 * THE SAME SOLDIERS DOES NOT MEAN THE SAME SQUADS.
+		 *
+		 * Membership answers "has anything been bought or sold", which is
+		 * the common case and the cheap one. It cannot see a soldier whose
+		 * ARMOUR OR GEAR CHANGED while they stayed in the collection --
+		 * and that is exactly what a trait remapping does. Every id would
+		 * still match, so the engine would sit still while every squad on
+		 * the platform was built from stats that no longer exist.
+		 *
+		 * So ask the other question: do they still have as many complete
+		 * squads as their collection can make? A player's arrangement can
+		 * never beat the maximum, so fewer means the arrangement has gone
+		 * stale and is worth rebuilding -- whatever moved the stats. It
+		 * self-heals rather than depending on somebody remembering to
+		 * force a rebuild after a mapping change.
+		 *
+		 * AND IT STAYS QUIET WHEN THE COUNT HOLDS. A remap that happens
+		 * not to cost anybody a squad rebuilds nobody, which is right: the
+		 * arrangement is still optimal and churn with no gain is the thing
+		 * this engine exists to avoid.
+		 */
+		$cur = array();
+		$res = @$conn->query("SELECT m.squad_id, m.soldier_id
+		                        FROM squad_members m
+		                        INNER JOIN squads q ON q.id = m.squad_id
+		                       WHERE q.user_id = $me AND q.project_id = $pid");
+		if ($res) {
+			$by_id = array();
+			foreach ($roster as $r) $by_id[(int)$r['id']] = $r;
+			while ($row = $res->fetch_assoc()) {
+				$sid = (int)$row['squad_id']; $sol = (int)$row['soldier_id'];
+				if (isset($by_id[$sol])) $cur[$sid][] = $by_id[$sol];
+			}
+		}
+		$have = 0;
+		foreach ($cur as $members) if (dropshipPlanIsComplete($members)) $have++;
+		$best = dropshipPlanMax($roster);
+		if ($have >= $best) {
+			return array('changed' => false, 'reason' => 'in sync',
+			             'owned' => count($o_ids), 'complete' => $have);
+		}
+		/* Falls through to the rebuild below. */
 	}
 
 	/* Out of date. Everything goes and is rebuilt, because the best
@@ -935,6 +977,6 @@ function dropshipSquadsAutoSync($conn, $user_id = null, $project_id = null) {
 		$built++;
 		if (!empty($squad['complete'])) $complete++;
 	}
-	return array('changed' => true, 'reason' => 'ownership changed',
+	return array('changed' => true, 'reason' => 'holdings or stats changed',
 	             'owned' => count($o_ids), 'squads' => $built, 'complete' => $complete);
 }

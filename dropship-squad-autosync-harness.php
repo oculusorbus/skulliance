@@ -61,10 +61,19 @@ class FakeDb {
 		   assignments survived every rebuild. The fake was wrong, not the
 		   engine, which is its own reminder to make the fake fail too. */
 		if (strpos($sql, 'DELETE m FROM squad_members') !== false) { $this->members = array(); return true; }
-		if (strpos($sql, 'SELECT m.soldier_id') !== false) {
+		/* BOTH READS OF squad_members, answered by one branch. The engine
+		   asks twice with different column lists -- membership ("which
+		   soldiers are spoken for") and composition ("which soldiers are
+		   in which squad") -- and a matcher keyed to one of them answered
+		   the other with an empty set, which read as "no complete squads"
+		   and rebuilt on every visit. Every key both callers use is
+		   returned, so neither can be starved. */
+		if (strpos($sql, 'SELECT m.') === 0 && strpos($sql, 'squad_members') !== false) {
 			$out = array();
 			foreach ($this->members as $sid => $ids) {
-				foreach ($ids as $id) $out[] = array('soldier_id' => $id, 'id' => $sid);
+				foreach ($ids as $id) {
+					$out[] = array('soldier_id' => $id, 'squad_id' => $sid, 'id' => $sid);
+				}
 			}
 			return new FakeRes($out);
 		}
@@ -146,6 +155,90 @@ unset($db->soldiers[2]);
 $r = dropshipSquadsAutoSync($db, 1, 1);
 ok($r['changed'] === true, 'selling an NFT did not trigger a rebuild');
 ok($db->assigned() === $db->owned(), 'a sold soldier is still sitting in a squad');
+
+echo "\na remapped stat is not an ownership change, and still rebuilds\n";
+/*
+ * THE CASE THAT MOTIVATED THIS. A trait mapping changes armour and gear on
+ * soldiers the player already owns. Every id still matches, so the
+ * membership test sees nothing -- and without a second question every
+ * squad on the platform would stay built from stats that no longer exist.
+ */
+$db2 = new FakeDb(); $nid2 = 1;
+$add2 = function ($armor, $gear) use (&$db2, &$nid2) {
+	$db2->soldiers[$nid2] = array('id' => $nid2, 'asset_name' => 'N' . $nid2,
+	                              'armor' => $armor, 'gear' => $gear, 'active' => 0, 'deceased' => 0);
+	return $nid2++;
+};
+$a1 = $add2('Heavy','Medkit'); $a2 = $add2('Medium','Melee');
+$a3 = $add2('Light','Demolition'); $a4 = $add2('Base','None');
+$r = dropshipSquadsAutoSync($db2, 1, 1);
+ok($r['changed'] === true && $r['complete'] === 1, 'the first build did not find the complete squad');
+$r = dropshipSquadsAutoSync($db2, 1, 1);
+ok($r['changed'] === false, 'a settled collection rebuilt for no reason');
+
+/* Remap: the Base soldier becomes a second Heavy. Same four ids, but the
+   squad is no longer complete and no arrangement can make one. */
+$db2->soldiers[$a4]['armor'] = 'Heavy';
+$r = dropshipSquadsAutoSync($db2, 1, 1);
+ok($r['changed'] === false, 'it rebuilt when no better arrangement exists, which is churn');
+
+/* Put it back. The existing grouping becomes complete again all by
+   itself -- same four soldiers, same squad -- so there is correctly
+   nothing to do. Asserting a rebuild here was a bug in this harness, not
+   in the engine: the arrangement was already optimal. */
+$db2->soldiers[$a4]['armor'] = 'Base';
+$r = dropshipSquadsAutoSync($db2, 1, 1);
+ok($r['changed'] === false, 'it rebuilt a grouping that had become complete on its own');
+
+/*
+ * THE CASE THAT REALLY NEEDS IT: a grouping that is no longer optimal
+ * while every id stays put.
+ *
+ * Remapping a stat often repairs itself -- the four soldiers already
+ * sitting together simply become a complete squad. What cannot repair
+ * itself is a grouping that now needs members swapped BETWEEN squads,
+ * and that is what a stat change can leave behind. Simulated by writing
+ * a deliberately bad grouping over the engine's own, which is exactly
+ * the state a remap produces.
+ */
+$db3 = new FakeDb(); $nid3 = 1;
+$add3 = function ($armor, $gear) use (&$db3, &$nid3) {
+	$db3->soldiers[$nid3] = array('id' => $nid3, 'asset_name' => 'M' . $nid3,
+	                              'armor' => $armor, 'gear' => $gear, 'active' => 0, 'deceased' => 0);
+	return $nid3++;
+};
+/* Two of every tier, gear spread so two complete squads are possible. */
+$ids = array();
+foreach (array(array('Heavy','Medkit'), array('Medium','Melee'), array('Light','Demolition'), array('Base','None'),
+               array('Heavy','Melee'), array('Medium','Demolition'), array('Light','Medkit'), array('Base','None')) as $sp) {
+	$ids[] = $add3($sp[0], $sp[1]);
+}
+$r = dropshipSquadsAutoSync($db3, 1, 1);
+ok($r['complete'] === 2, 'the engine did not find both squads to begin with: ' . $r['complete']);
+$r = dropshipSquadsAutoSync($db3, 1, 1);
+ok($r['changed'] === false, 'an optimal arrangement did not settle');
+
+/* Now wreck the grouping without touching ownership: tiers paired up, so
+   neither squad is complete even though the collection still makes two. */
+$db3->members = array(1 => array($ids[0], $ids[4], $ids[1], $ids[5]),   /* H H M M */
+                      2 => array($ids[2], $ids[6], $ids[3], $ids[7]));  /* L L B B */
+$db3->squads  = array(1 => true, 2 => true);
+$r = dropshipSquadsAutoSync($db3, 1, 1);
+ok($r['changed'] === true,
+   'a grouping that is no longer optimal was left alone, so the stats moved and the squads did not');
+ok($r['complete'] === 2, 'and it did not rebuild both squads: ' . $r['complete']);
+ok($db3->assigned() === $db3->owned(), 'the rebuild lost somebody');
+
+/* AND IT STAYS QUIET WHEN THE COUNT HOLDS. Swapping two soldiers' gear
+   between them changes the stats but not how many squads are possible, so
+   rebuilding would be churn with nothing to show for it. */
+$before = $db2->members;
+$g1 = $db2->soldiers[$a2]['gear'];
+$db2->soldiers[$a2]['gear'] = $db2->soldiers[$a3]['gear'];
+$db2->soldiers[$a3]['gear'] = $g1;
+$r = dropshipSquadsAutoSync($db2, 1, 1);
+ok($r['changed'] === false,
+   'a stat change that costs nobody a squad still rebuilt, which is churn');
 
 echo "\nit survives a random life\n";
 mt_srand(31337);
