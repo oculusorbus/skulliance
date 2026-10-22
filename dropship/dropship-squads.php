@@ -774,17 +774,36 @@ function dropshipGapAdvice($conn, $roster) {
 	if (!$miss_t && !$miss_i) return null;
 
 	$w  = function ($v) { return function_exists('dropshipWord') ? dropshipWord($v) : $v; };
-	$jw = function ($a) use ($w) {
+	/*
+	 * TWO JOINERS, BECAUSE A NEGATIVE TAKES "OR".
+	 *
+	 * "this squad has no Medkit and Melee" reads as though it is short of
+	 * the pair and might hold one of them; the sentence means it holds
+	 * neither. "Missing Medkit and Melee" is the positive form and keeps
+	 * "and". English, not a tidy-up: one of these is wrong out loud.
+	 */
+	$join = function ($a, $word) use ($w) {
 		$a = array_map($w, $a);
 		if (count($a) <= 1) return (string)($a[0] ?? '');
 		$last = array_pop($a);
-		return implode(', ', $a) . ' and ' . $last;
+		return implode(', ', $a) . ' ' . $word . ' ' . $last;
 	};
+	$jw  = function ($a) use ($join) { return $join($a, 'and'); };
+	$jor = function ($a) use ($join) { return $join($a, 'or'); };
 
+	/*
+	 * ONE LIST, JOINED ONCE. This built two phrases that each already
+	 * contained "and" and then joined THOSE with "and", so a squad short a
+	 * tier and two items read "Missing Base armor and Medkit and Melee".
+	 * The armour tiers stay grouped under one "armor" -- "Light and Base
+	 * armor" rather than "Light armor, Base armor" -- and then every piece
+	 * goes into a single list.
+	 */
 	$bits = array();
 	if ($miss_t) $bits[] = '<b>' . $jw($miss_t) . '</b> armor';
-	if ($miss_i) $bits[] = '<b>' . $jw($miss_i) . '</b>';
-	$summary = 'Missing ' . implode(' and ', $bits);
+	foreach ($miss_i as $i) $bits[] = '<b>' . $w($i) . '</b>';
+	$last = array_pop($bits);
+	$summary = 'Missing ' . ($bits ? implode(', ', $bits) . ' and ' : '') . $last;
 
 	$body = '';
 	/* ARMOUR IS THE ONLY HALF THAT MOVES THE ODDS. Saying a squad is
@@ -796,7 +815,7 @@ function dropshipGapAdvice($conn, $roster) {
 	}
 	if ($miss_i) {
 		$body .= 'One of each item fires per squad, so this squad has no '
-		       . $jw($miss_i) . '. ';
+		       . $jor($miss_i) . '. ';
 	}
 
 	/*
