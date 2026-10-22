@@ -746,6 +746,29 @@ function dropshipSquadsPanel($conn) {
 /* Unscoped ids, like the game picker: these rules must not name an ancestor
    the element might not have. */
 .dssq{margin:0 0 14px}
+/* The collection advice, shown here only when nothing is fielded -- the
+   odds pane carries it the rest of the time and two copies on one screen
+   is worse than none. Same ink as a squad card so it reads as part of the
+   panel rather than a notice bolted above it. */
+.dssq-advice{border:1px solid var(--ds-line,#1b3346);border-radius:var(--ds-r,3px);
+  background:var(--ds-ink,#07111d);margin:0 0 12px}
+/* COLLAPSED BY DEFAULT, because the headline is the glanceable half and
+   the shopping advice is two lines nobody needs on every load. <details>
+   rather than a script: it works with the page's JS off, it is keyboard
+   and screen-reader navigable for free, and this panel already had one
+   control too many. */
+.dssq-advice summary{list-style:none;cursor:pointer;padding:10px 12px;
+  font-size:13px;font-weight:bold;color:#00c8a0;display:flex;align-items:center;gap:8px}
+.dssq-advice summary::-webkit-details-marker{display:none}
+/* The caret is drawn rather than a glyph, so it cannot fall back to a box
+   on a device without the character. */
+.dssq-advice summary::after{content:'';width:6px;height:6px;margin-left:auto;
+  border-right:1.5px solid #7a9eb0;border-bottom:1.5px solid #7a9eb0;
+  transform:rotate(45deg);transition:transform .15s}
+.dssq-advice[open] summary::after{transform:rotate(-135deg)}
+.dssq-advice summary:hover{color:#e8eaed}
+.dssq-advice .body{padding:0 12px 11px;font-size:11px;color:#7a9eb0;line-height:1.45}
+@media (prefers-reduced-motion:reduce){.dssq-advice summary::after{transition:none}}
 .dssq-one{border:1px solid var(--ds-line,#1b3346);border-radius:var(--ds-r,3px);
   background:#0a1929;margin-bottom:10px;overflow:hidden}
 .dssq-one.ready{border-color:#00c8a0}
@@ -795,6 +818,31 @@ function dropshipSquadsPanel($conn) {
 .dssq-man form{display:block;margin-top:4px}
 .dssq-man .small-button{width:100%;min-height:0;padding:4px 6px;font-size:10px}
 </style>
+<?php
+/*
+ * WITHOUT HAVING TO DEPLOY TO SEE IT.
+ *
+ * The advice lives in the odds pane, which only exists once a squad is
+ * fielded -- so the one moment a player cannot read what their collection
+ * is missing is while they are deciding what to field. It is about the
+ * COLLECTION, not the squad on the field, so the barracks is where it
+ * belongs anyway.
+ *
+ * ONLY WHEN NOTHING IS OUT, because the odds pane is already showing it
+ * otherwise and the same paragraph twice on one screen reads as a bug.
+ */
+$ds_adv = (function_exists('dropshipSquadAdvice') && function_exists('checkSquadCount')
+           && (int)checkSquadCount($conn) === 0)
+	? dropshipSquadAdvice(array('roster' => array()), $conn) : null;
+if ($ds_adv !== null): ?>
+	<?php /* ALREADY ESCAPED by dropshipSquadAdvice(), which emits its own
+	         <b> around values from fixed lists -- the same contract the
+	         odds pane relies on. */ ?>
+	<details class="dssq-advice">
+		<summary><?php echo $ds_adv[0]; ?></summary>
+		<div class="body"><?php echo $ds_adv[1]; ?></div>
+	</details>
+<?php endif; ?>
 <div class="dssq">
 <?php foreach ($squads as $sq):
 	$can = !empty($sq['ready']['can']);
