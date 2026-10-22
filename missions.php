@@ -479,6 +479,48 @@ define('MS_FIELD_CAP', 24);
 .ms-mcard-bar { height: 3px; background: rgba(255,255,255,.07); margin: 0 -12px; }
 .ms-mcard-bar i { display: block; height: 100%; background: #00c8a0; }
 
+/*
+ * SCROLLBARS, BECAUSE THE DEFAULT ONE IS A LIGHT GREY SLAB ON A DARK PAGE.
+ *
+ * Every scrolling region on this page had the browser's own, which reads
+ * as a bright bar bolted to the side of a navy panel -- reported on the
+ * project rail, but .ms-projects, .ms-d-scroll, .ms-d-crew and the drawer
+ * backdrop all had it, so they are done together rather than one at a
+ * time until somebody notices the next one.
+ *
+ * THE COLOUR IS THE PLATFORM'S, NOT A NEW ONE. #2a4050 is the thumb
+ * profile.php already uses; the teal hover is the same rgba(0,200,160)
+ * the drawer borders and Monstrocity's own scrollbar use. Three
+ * treatments existed and none of them was light grey.
+ *
+ * BOTH SYNTAXES. scrollbar-width/scrollbar-color is the standard and the
+ * only thing Firefox reads; ::-webkit-scrollbar is what Safari and Chrome
+ * honour, and Chrome prefers the standard properties when both are
+ * present, so the webkit block is for Safari in practice.
+ *
+ * color-scheme: dark is the belt and braces -- it tells a browser that
+ * ignores both to paint its native scrollbar dark instead of light.
+ */
+.ms-projects, .ms-d-scroll, .ms-d-crew, .ms-drawer {
+  color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: #2a4050 transparent;
+}
+.ms-projects::-webkit-scrollbar, .ms-d-scroll::-webkit-scrollbar,
+.ms-d-crew::-webkit-scrollbar, .ms-drawer::-webkit-scrollbar { width: 8px; height: 8px; }
+.ms-projects::-webkit-scrollbar-track, .ms-d-scroll::-webkit-scrollbar-track,
+.ms-d-crew::-webkit-scrollbar-track, .ms-drawer::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ms-projects::-webkit-scrollbar-thumb, .ms-d-scroll::-webkit-scrollbar-thumb,
+.ms-d-crew::-webkit-scrollbar-thumb, .ms-drawer::-webkit-scrollbar-thumb {
+  background: #2a4050; border-radius: 4px;
+}
+.ms-projects::-webkit-scrollbar-thumb:hover, .ms-d-scroll::-webkit-scrollbar-thumb:hover,
+.ms-d-crew::-webkit-scrollbar-thumb:hover, .ms-drawer::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,200,160,.55);
+}
+
 /* ---- launch: projects + ladder ---------------------------------------- */
 .ms-launch { display: grid; grid-template-columns: 250px 1fr; gap: 14px; align-items: start; }
 .ms-projects { display: flex; flex-direction: column; gap: 4px; max-height: 620px;
