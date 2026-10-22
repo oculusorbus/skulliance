@@ -819,39 +819,74 @@ function dropshipGapAdvice($conn, $roster) {
 	}
 
 	/*
-	 * A FULL SQUAD CANNOT GAIN A SOLDIER, SO THE TIER TO ASK FOR IS THE ONE
-	 * ALREADY WASTED.
+	 * EVERY NFT THE SQUAD NEEDS, NOT THE FIRST ONE.
 	 *
-	 * With all four tiers present and an item missing, the first version
-	 * named a tier at random and advised buying a Base soldier to a squad
-	 * that already had one. There is no fifth slot: the soldier that would
-	 * help is a same-tier replacement for whoever is carrying nothing
-	 * useful, so the odds hold and the item lands.
+	 * This named a single purchase however many gaps there were, so a
+	 * squad short a tier AND two items was told to buy one Medkit soldier
+	 * -- which closes two of the three gaps and leaves the third
+	 * unmentioned. Advice that stops halfway reads as generic, because the
+	 * one thing it did not do was account for the squad in front of it.
 	 *
-	 * IT DOES NOT TELL THE PLAYER TO SWAP ANYBODY. Nobody can: squads are
-	 * generated, there is no manual editing left, and asking for a swap is
-	 * asking for something the screen does not offer. They buy the NFT and
-	 * dropshipSquadsAutoSync() rebuilds around it on the next load. The
-	 * tier is worked out here only so the description is the right one.
+	 * ONE NFT CARRIES ONE ITEM AND WEARS ONE TIER, so a purchase can close
+	 * at most one of each: the number needed is the larger of the two
+	 * shortfalls, and the pairs are built by taking a missing tier and a
+	 * missing item together wherever both remain.
 	 *
-	 * The member to replace is the one whose gear is not one of the three
-	 * -- a None, or a duplicate of something already covered.
+	 * THERE IS NO FIFTH SLOT. Once all four tiers are present, a purchase
+	 * is a same-tier replacement for whoever is carrying nothing useful --
+	 * a None, or a duplicate of an item already covered -- so the odds hold
+	 * and the item lands. Those are the tiers asked for when the tiers
+	 * themselves are fine.
+	 *
+	 * IT NEVER TELLS THE PLAYER TO SWAP ANYBODY. Nobody can: squads are
+	 * generated and there is no manual editing left. They buy, and
+	 * dropshipSquadsAutoSync() rebuilds around it on the next load.
 	 */
-	$replace = null;
-	if (!$miss_t && $miss_i) {
-		$covered = array();
-		foreach ($roster as $row) {
-			$g = (string)($row['gear'] ?? '');
-			if (in_array($g, $items, true) && !isset($covered[$g])) { $covered[$g] = true; continue; }
-			if ($replace === null) $replace = (string)($row['armor'] ?? '');
-		}
+	$wasted = array();
+	$covered = array();
+	foreach ($roster as $row) {
+		$g = (string)($row['gear'] ?? '');
+		if (in_array($g, $items, true) && !isset($covered[$g])) { $covered[$g] = true; continue; }
+		$wasted[] = (string)($row['armor'] ?? '');
 	}
-	if (function_exists('dropshipShopHint')) {
-		$gear = $miss_i ? $miss_i[0] : 'None';
-		if ($miss_t) {
-			$body .= dropshipShopHint($conn, array('armor' => $miss_t[0], 'gear' => $gear));
-		} elseif ($replace !== null) {
-			$body .= dropshipShopHint($conn, array('armor' => $replace, 'gear' => $gear));
+
+	$want = array();
+	$n = max(count($miss_t), count($miss_i));
+	for ($k = 0; $k < $n; $k++) {
+		if (isset($miss_t[$k])) {
+			$armor = $miss_t[$k];
+		} else {
+			/* No tier to fix, so replace a wasted slot in its own tier.
+			   Falls back to the squad's own first tier rather than
+			   inventing one if every member is already pulling weight. */
+			$wi = $k - count($miss_t);
+			$armor = isset($wasted[$wi]) ? $wasted[$wi]
+			       : (isset($roster[0]['armor']) ? (string)$roster[0]['armor'] : $tiers[0]);
+		}
+		$want[] = array('armor' => $armor, 'gear' => isset($miss_i[$k]) ? $miss_i[$k] : 'None');
+	}
+
+	if ($want && function_exists('dropshipShopHint')) {
+		$lines = array();
+		foreach ($want as $g) {
+			$one = dropshipShopHint($conn, $g);
+			/* dropshipShopHint() returns a whole sentence; the list wants
+			   the phrase, so the lead-in is said once. */
+			$one = preg_replace('/^Look for /', '', rtrim($one, '.'));
+			if ($one !== '') $lines[] = $one;
+		}
+		if (count($lines) === 1) {
+			$body .= 'Look for ' . $lines[0] . '.';
+		} elseif ($lines) {
+			/* "an NFT ... and an NFT ... and an NFT" is three sentences
+			   wearing one coat. Every hint opens with "an NFT", whichever
+			   collection wrote it, so the rest become "one". */
+			foreach ($lines as $k => $ln) {
+				if ($k > 0) $lines[$k] = preg_replace('/^an NFT /', 'one ', $ln);
+			}
+			$last = array_pop($lines);
+			$body .= 'It needs ' . count($want) . ': look for ' . implode(', ', $lines)
+			       . ', and ' . $last . '.';
 		}
 	}
 	return array($summary, trim($body));
@@ -891,7 +926,8 @@ function dropshipSquadsPanel($conn) {
    and screen-reader navigable for free, and this panel already had one
    control too many. */
 .dssq-advice summary{list-style:none;cursor:pointer;padding:7px 10px;
-  font-size:11px;font-weight:normal;color:#7a9eb0;display:flex;align-items:center;gap:8px}
+  font-size:11px;font-weight:normal;color:#7a9eb0;display:flex;align-items:center;gap:8px;
+  text-align:left}
 .dssq-advice summary::-webkit-details-marker{display:none}
 /* The caret is drawn rather than a glyph, so it cannot fall back to a box
    on a device without the character. */
@@ -900,14 +936,19 @@ function dropshipSquadsPanel($conn) {
   transform:rotate(45deg);transition:transform .15s}
 .dssq-advice[open] summary::after{transform:rotate(-135deg)}
 .dssq-advice summary:hover{color:#e8eaed}
-.dssq-advice .body{padding:0 10px 9px;font-size:11px;color:#7a9eb0;line-height:1.45}
+/* TEXT-ALIGN RESTATED, NOT INHERITED. flexbox.css centres text at several
+   levels and this block sits inside .dssq-head, which is a centred flex
+   row -- so the paragraph came out centre-aligned, which reads as a
+   banner rather than a note. The same trap the squad captions hit. */
+.dssq-advice .body{padding:0 10px 9px;font-size:11px;color:#7a9eb0;line-height:1.45;
+  text-align:left}
 /* THE COLLECTION-WIDE ONE SITS ABOVE THE LIST, not inside a card, so it
    carries the weight the per-card notes deliberately do not: it is the
    thing a player reads before deciding anything. */
 .dssq-advice.top{margin:0 0 12px}
 .dssq-advice.top summary{padding:10px 12px;font-size:13px;font-weight:bold;color:#00c8a0}
 .dssq-advice.top summary:hover{color:#e8eaed}
-.dssq-advice.top .body{padding:0 12px 11px}
+.dssq-advice.top .body{padding:0 12px 11px;text-align:left}
 @media (prefers-reduced-motion:reduce){.dssq-advice summary::after{transition:none}}
 .dssq-one{border:1px solid var(--ds-line,#1b3346);border-radius:var(--ds-r,3px);
   background:#0a1929;margin-bottom:10px;overflow:hidden}
