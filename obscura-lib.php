@@ -704,8 +704,27 @@ function obscuraGuess($conn, $user_id, $collection_id) {
 		obscuraAnnounceRunEnd($conn, $user_id, $streak, $run_solves,
 			intval($run['best_streak']), $reveal, $name,
 			array('wrong' => $wrong, 'options' => $offered_opts, 'answer_id' => $answer));
+		/*
+		 * THE SOLVE COUNT GOES BACK TO THE BROWSER, because the trait drop
+		 * is decided there and it was counting for itself.
+		 *
+		 * obscura.php kept `var runSolves = 0` and incremented it per
+		 * solve, then paid the Background trait on a run of 10+. That
+		 * counter lives in the PAGE: refresh mid-run -- which the PWA
+		 * update banner actively invites -- and it restarts at zero while
+		 * the run carries on server-side. A player who refreshed at a
+		 * streak of 18 and then lost was handed a 10+ run by every
+		 * measure the server keeps, and no trait, because the tab had
+		 * only watched the last few.
+		 *
+		 * Reported exactly that way, and the Discord embed proved it: the
+		 * post said "Solved this run: 18" from $run_solves while the drop
+		 * saw something smaller. One number, from the side that cannot
+		 * forget it.
+		 */
 		return array('result'=>'failed', 'answer_id'=>$answer, 'answer_name'=>$name,
-		             'reveal'=>$reveal, 'streak'=>0, 'best'=>intval($run['best_streak']));
+		             'reveal'=>$reveal, 'streak'=>0, 'best'=>intval($run['best_streak']),
+		             'solves'=>intval($run_solves));
 	}
 
 	$conn->query("UPDATE obscura_runs SET attempts_used = $used,

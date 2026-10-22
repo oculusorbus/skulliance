@@ -515,8 +515,17 @@ $ob_state = $ob_uid > 0 ? obscuraState($conn, $ob_uid) : array('error' => 'not_l
          * reveal of the artwork they missed lands first; that reveal is the
          * point of the loss screen.
          */
+        /*
+         * THE SERVER'S COUNT, NOT THIS TAB'S. runSolves only knows what
+         * this page watched; the run lives in obscura_runs and survives a
+         * refresh, so a player who reloaded mid-run lost the trait their
+         * streak had earned. d.solves is the same number the Discord post
+         * prints. The local counter stays as a fallback for a response
+         * from before this field existed.
+         */
         if (window.DHC_DROP) {
-          DHC_DROP({ game: 'obscura', value: runSolves, unit: 'solves', delay: 1800 });
+          var solved = (typeof d.solves === 'number') ? d.solves : runSolves;
+          DHC_DROP({ game: 'obscura', value: solved, unit: 'solves', delay: 1800 });
         }
         runSolves = 0;
       }
