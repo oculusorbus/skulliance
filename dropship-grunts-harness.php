@@ -262,6 +262,62 @@ $pinned = dropshipNftLoadouts();
    derived from its traits. Asserted as "most of the collection" rather
    than an exact count, so regenerating the mapping does not fail this. */
 ok(count($pinned) > 200, 'the loadout table is not the whole collection, got ' . count($pinned));
+/*
+ * THE TABLES MUST STAY DISJOINT. They are keyed on asset name alone --
+ * dropshipGruntLoadout() matches on that and the soldiers row carries no
+ * policy -- so two collections minting the same ascii name would share a
+ * loadout and one live theme's stats would quietly become another's.
+ * dropshipNftLoadouts() keeps the first on a clash rather than merging;
+ * this is what notices the clash exists.
+ */
+$seen_keys = array(); $clash = array();
+foreach (dropshipLoadoutTables() as $f) {
+	$raw = @file_get_contents(__DIR__ . '/' . $f);
+	ok($raw !== false, "the loadout table $f is missing, so a live theme falls back to the hash");
+	if ($raw === false) continue;
+	$j = json_decode($raw, true);
+	ok(is_array($j) && !empty($j['loadouts']), "$f has no loadouts in it");
+	foreach (array_keys((array)($j['loadouts'] ?? array())) as $k) {
+		if (isset($seen_keys[$k])) $clash[] = $k;
+		$seen_keys[$k] = $f;
+	}
+}
+ok(!$clash, 'two loadout tables claim the same asset name: ' . implode(',', array_slice($clash, 0, 5)));
+ok(count($seen_keys) === count($pinned),
+   'the merged table lost entries: ' . count($seen_keys) . ' in the files, ' . count($pinned) . ' loaded');
+
+/*
+ * AND NOTHING IN HERE MAY TOUCH DROP SHIP.
+ *
+ * Project 1's soldiers rows were PRESEEDED with the collection's own
+ * metadata -- armor and gear on those cards are the real traits, which is
+ * why dashboard.php gates its rand() on `project_id != 1` and why
+ * dropshipThemeTraitSource() keeps project 1 on koios, away from the
+ * UPDATE in dropshipSyncFromSkulliance(). That seed exists only in the
+ * database; there is no copy of it in this repository to restore from.
+ *
+ * These tables never WRITE, so they cannot corrupt the rows -- but an
+ * entry for a Drop Ship asset would silently override what the seed says
+ * everywhere the game reads a soldier, which is the same thing from a
+ * player's seat. A regenerated table that widened its policy is exactly
+ * how that would arrive, so it is asserted rather than remembered.
+ */
+$dropship_policy = '4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c';
+foreach (dropshipLoadoutTables() as $f) {
+	$j = json_decode((string)@file_get_contents(__DIR__ . '/' . $f), true);
+	ok(isset($j['policy']) && $j['policy'] !== $dropship_policy,
+	   "$f is built from Drop Ship's own policy, which is preseeded and must never be overridden");
+}
+/* DROPSHIP FOLLOWED BY DIGITS AND NOTHING ELSE, which is how that
+   collection names its assets (DROPSHIP012). A bare prefix test is wrong
+   and this check caught itself making that mistake: Shorty Verse mints
+   DROPSHIPFIELDCOMMISSIONER001, a perfectly legitimate Dread City card
+   that merely starts with the same letters. */
+$ds_named = array();
+foreach (array_keys($seen_keys) as $k) {
+	if (preg_match('/^DROPSHIP\d+$/i', $k)) $ds_named[] = $k;
+}
+ok(!$ds_named, 'a loadout table carries Drop Ship asset names: ' . implode(',', array_slice($ds_named, 0, 5)));
 ok(count($pinned) === count(dropshipNftLoadouts()),
    'the loadout table is not stable between calls, so it is being re-read per soldier');
 $tiers = array(); $gear = array();

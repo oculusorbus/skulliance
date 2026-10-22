@@ -27,6 +27,15 @@ currency a player wins is the one belonging to the theme they played.
 
 Send Drop Ship NFTs in squads of up to 4 into battle and browse consumables such as armor, weapons, and items that can be purchased to improve probabilities of getting higher scores. A squad with all armor, weapons, and item types is considered a Super Soldier Squad and has the best probability within the game.
 
+**Where a soldier's armor and gear come from.** Each theme reads its own
+collection. Drop Ship's cards carry armor and gear as real traits, so what the
+card says is what the soldier is. Oculus Lounge reads its Outerwear and
+accessories. DHC2 Fighters reads the fighter's torso, headgear, arms and
+weapon, with rarer traits counting for more. Dread City and Filthy Mermaid
+share one collection whose cards carry no traits at all, so armor comes from
+how scarce the card is - a 1 of 1 is the best armored thing in the game - and
+gear from whether the card shows the character fighting.
+
 **Armor sets the odds. Gear does not.** Only the armor your squad is wearing
 decides the roll each round: the best tier worn sets the floor and every lower
 tier adds a little on top, which is why a mixed squad of four beats four of the

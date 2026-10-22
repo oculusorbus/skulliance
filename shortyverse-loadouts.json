@@ -1,0 +1,1531 @@
+{
+    "policy": "0d7c69f8e7d1e80f4380446a74737eebb6e89c56440f3f167e4e231c",
+    "note": "Armour and gear for SHORTY VERSE, used by Dread City (project 2) and Filthy Mermaid (project 3). Derived from shortyverse-mint-traits.json by shortyverse-mapping-draft.php: armour is edition scarcity (how many assets share the name stem) ranked into quartiles, gear is ENGAGED/DISENGAGED plus the print number plus summary keywords. Regenerate with that script -- do not hand-edit.",
+    "generated": "2026-10-22T02:56:38+00:00",
+    "loadouts": {
+        "ACE": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "AGENT": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "AGENTENGAGED001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "AGENTENGAGED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "AGENTENGAGED003": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "AGENTENGAGED004": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "ANGEL": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "ANGELAUTODISENGAGED001": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "ANGELAUTODISENGAGED002": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "ANGELAUTODISENGAGED003": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "ANGELAUTODISENGAGED004": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "ANGELCLEAN001": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "ANGELCLEAN002": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "ANGELENGAGED001": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "ANGELENGAGED002": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "ANGELENGAGED003": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "ANGELENGAGED004": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "ANGELENGAGED005": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "ANGELENGAGED006": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "ANGELGANGMEMBER001": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "ANGELGANGMEMBER002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "ANGELGANGMEMBER003": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "ANGELREENGAGED": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "BAGBOIENGAGED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BAGBOIENGAGED002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "BAGBOIENGAGED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BANDIT": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "BANDITCHECKMATE": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "BANDITENGAGED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BANDITENGAGED002": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BANDITENGAGED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BANDITREENGAGED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BANDITREENGAGED002": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BANDITREENGAGED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BANDITSEDATED": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "BESTBUDSV1": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "BIGKEV": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "BIKERGANGMEMBER001": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "BIKERGANGMEMBER002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "BIKERGANGMEMBER003": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "BLOODBAGENGAGED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BLOODBAGENGAGED002": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BLOODBAGENGAGED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BOSS": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "BOSSCHECKMATE": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "BOSSENGAGED": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "BOSSHOLIDAZED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BOSSHOLIDAZED002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "BOSSHOLIDAZED003": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "BOSSHOLIDAZED004": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "BOSSHOLIDAZED005": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "BOSSHOLIDAZED006": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "BROMAD001": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "CANON": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "CANONENGAGED001": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "CANONENGAGED002": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "CANONENGAGED003": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "CANONENGAGED004": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "CANONENGAGED005": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "CAPTAINCHANSENGAGED001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "CAPTAINCHANSENGAGED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "CHIEF001": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "CHIEF002": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "CHIEFAUTOMATED001": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "CHIEFAUTOMATED002": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "COLONELENGAGED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "COMBATMEDIC": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "COMBATMEDICENGAGED": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DAGAR7ENGAGED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DAGAR7STATIC": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DAGARMOTHERENGAGED": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "DEATH001": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DEATH002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DEATH003": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DEATH004": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DEATHASCENDED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DEATHDISENGAGED001": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DEATHDISENGAGED002": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DEATHDISENGAGED003": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DEATHDISENGAGED004": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DEATHDISENGAGED005": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DEATHDROPSHIPEDITION": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DEATHENGAGED001": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DEATHENGAGED002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DEATHENGAGED003": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DEATHLEGALIZED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "DELAY001": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "DELAY002": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DELAY003": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "DELAY004": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "DELAY005": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "DELAY006": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "DELAYAUTOMATED001": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DELAYAUTOMATED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DEMBOIIS001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DEMBOIIS002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DEMBOIIS003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DIEGO001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DIEGO002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DIEGO003": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DIEGO004": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DIEGOANDDELAYDROPSHIPEDITION001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DIEGOANDDELAYDROPSHIPEDITION002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DIEGOANDDELAYENGAGED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DIEGOANDDELAYENGAGED002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DIEGOANDDELAYENGAGED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DIEGOSACREDHEARTHEIST": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DOCOC": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DRAGONAUTOMATED001": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DRAGONAUTOMATED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DREADCITYGENERALS": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "DREAM001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "DREAM002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "DREAMENGAGED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DREAMENGAGED002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DREAMENGAGED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "DROPSHIPFIELDCOMMISSIONER001": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "DROPSHIPFIELDCOMMISSIONER002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "DROPSHIPFIELDCOMMISSIONER003": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "DROPSHIPFIELDCOMMISSIONER004": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "DROPSHIPFIELDCOMMISSIONER005": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "ECHISENGAGED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "ELDERNOMAD": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "EVILNOMAD": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "FACESOFDREAD": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "FEVER001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "FEVER002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "FEVER003": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "FEVERBMF": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "FEVERDISENGAGED001": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "FEVERDISENGAGED002": {
+            "armor": "Medium",
+            "gear": "None"
+        },
+        "FEVERDROPSHIPEDITION001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "FEVERDROPSHIPEDITION002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "FEVERENGAGED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "FEVERENGAGED002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "FEVERENGAGED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "FORTE": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "FORTEENGAGED001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "FORTEENGAGED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "FRANK": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "FRANKENGAGED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "FRANKSLASTSTAND001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "FRANKSLASTSTAND002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "FRANKSLASTSTAND003": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "GENERALSCRIP": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "GLENN": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "GORDO001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "GORDO002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "GORDOENGAGED001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "GORDOENGAGED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "GUNFIGHTER": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "GUNFIGHTER001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "GUNFIGHTER002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "GUNFIGHTER003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "GUNFIGHTERAUTOMATED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "HAGARTHEHOMIE001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "HAGARTHEHOMIE002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "HAGARTHEHOMIE003": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "HAGARTHEHOMIEENGAGED001": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "HAGARTHEHOMIEENGAGED002": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "HAGARTHEHOMIEENGAGED003": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "HAGARTHEHOMIEENGAGED004": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "HAGARTHEHOMIEENGAGED005": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "HAGARTHEHOMIEENGAGED006": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "HAGARTHEHOMIEENGAGED007": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "HAGARTHEHOMIEENGAGED008": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "HAGARTHEHOMIEENGAGED009": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "HONOR": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "HONORENGAGED001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "HONORENGAGED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "HONORENGAGED003": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "JUDGEENGAGED": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "KINGGEORGE": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "KLENR": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "KLENRDROPSHIPEDITION001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "KLENRDROPSHIPEDITION002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "KLENRDROPSHIPEDITION003": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "KLENRDROPSHIPEDITION004": {
+            "armor": "Light",
+            "gear": "None"
+        },
+        "KLENRDROPSHIPEDITION005": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "KLENRENGAGED001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "KLENRENGAGED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "KLENRENGAGED003": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "KNUCKLEBONE001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "KNUCKLEBONE002": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "KNUCKLEBONE003": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "KRYPTMANENGAGED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "LAZLO": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "LAZLOAUTOMATED001": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "LAZLOAUTOMATED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "LAZLOENGAGED001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "LAZLOENGAGED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "MANIC001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "MANIC002": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "MANICASCENDED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "MANICASCENDED002": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "MANICASCENDED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "MANICASCENDED004": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "MANICAUTOMATED001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "MANICAUTOMATED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "MANICENGAGED": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "MANICSACREDHEARTHEIST001": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "MANICSACREDHEARTHEIST002": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "MANICSACREDHEARTHEIST003": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "MANICSACREDHEARTHEIST004": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "MANICSACREDHEARTHEIST005": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "MANICSACREDHEARTHEIST006": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "MANICSACREDHEARTHEIST007": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "MANICSACREDHEARTHEIST008": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "MANICWILDWEST": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "MAYORENGAGED": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "MEDIC001": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "MEDIC002": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "MEDIC003": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "MEDICAUTOMATED": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "MEDICDISENGAGED001": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "MEDICDISENGAGED002": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "MEDICDISENGAGED003": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "MEDICENGAGED001": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "MEDICENGAGED002": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "MEDICENGAGED003": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "MRDELTA001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "MRDELTA002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "MRDELTAENGAGED001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "MRDELTAENGAGED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "MRDELTAENGAGED003": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "NIGHTSHADE": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "NOMAD": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "NOMADAUTO": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "NOMADCHECKMATE": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "NOMADDROPSHIPEDITION": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "NOMADENGAGED": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "NOMADPRESS": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "NOMADTEEDUP": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "NOMADTHEMADDOG001": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "NOMADTHEMADDOG002": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "OMEEDENGAGED": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "OMEGADAGARAUTO": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "PAPERBAGSOLDIER001": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "PAPERBAGSOLDIER002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "PAPERBAGSOLDIER003": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "PROTO001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "PROTO002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "PROTO003": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "PROTOCLEAN001": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "PROTOCLEAN002": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "PROTOCLEAN003": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "PROTOCLEAN004": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "PROTOCLEAN005": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "PROTOCLEAN006": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "PROTOCLEAN007": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "PROTOCLEAN008": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "PROTOCLEAN009": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "PROTOCLEAN010": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "PUNCH": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "PUNCHENGAGED001": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "PUNCHENGAGED002": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "PURENOMAD": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "RED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "SAINT": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "SAINT001": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "SAINT002": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "SAINT003": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "SAINTAUTOMATEDDISENGAGED": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "SAINTDROPSHIPEDITION001": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "SAINTDROPSHIPEDITION002": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "SAINTDROPSHIPEDITION003": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "SAINTENGAGED001": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "SAINTENGAGED002": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "SAINTENGAGED003": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "SAINTENGAGED004": {
+            "armor": "Light",
+            "gear": "Medkit"
+        },
+        "SAINTFILE": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "SAINTNIGHTMARE": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "SAINTNINJA": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "SAINTSHELLSHOCKED": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "SCRIP": {
+            "armor": "Heavy",
+            "gear": "None"
+        },
+        "SCRIPSCONTRACTORS001": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "SCRIPSCONTRACTORS002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "SCRIPSCONTRACTORS003": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "SCRIPWARFIGHTERENGAGED001": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "SCRIPWARFIGHTERENGAGED002": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "SCRIPWARFIGHTERENGAGED003": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "SCRIPWARFIGHTERENGAGED004": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "SCRIPWARFIGHTERENGAGED005": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "SCRIPWARFIGHTERENGAGED006": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "SCRIPWARFIGHTERENGAGED007": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "SCRIPWARFIGHTERENGAGED008": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "SEVERENGAGED001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "SEVERENGAGED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "SEVERENGAGED003": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "SKULLIANCE001": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "SKULLIANCE002": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "SKULLIANCE003": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "SKULLIANCE004": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "SKULLIANCE005": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "SKULLIANCE006": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "SKULLIANCE007": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "SKULLIANCE008": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "SKULLIANCE009": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "SKULLIANCE010": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "SKULLIANCE011": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "SKULLIANCE012": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "SKULLIANCE013": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "SKULLIANCE014": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "SKULLIANCE015": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "SKULLIANCE016": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "SKULLIANCE017": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "SKULLIANCE018": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "SLICE": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "SLICEENGAGED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "SWEETENGAGED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "SWEETENGAGED002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "SWEETENGAGED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "SWEETENGAGED004": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "THEENDLESS": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "THEFEDS001": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "THEFEDS002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "THEFEDS003": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "THEFLOODENGAGED": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "THEINFAMOUSVIPERTEAM": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        },
+        "THERING": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "THESACREDHEARTHEISTCREW001": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "THESACREDHEARTHEISTCREW002": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "THESACREDHEARTHEISTCREW003": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "THESIEGEOFDREADCITY001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "THESIEGEOFDREADCITY002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "THESIEGEOFDREADCITY003": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "TRUST001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "TRUST002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "TRUST003": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "TRUSTENGAGED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "TRUSTENGAGED002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "TRUSTENGAGED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "TRUSTENGAGED004": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "TRUSTREENGAGED001": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "TRUSTREENGAGED002": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "UPTOWN": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "VALOR": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "VALORAUTOMATED": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "VANCE": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "VANCEAUTOMATED001": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "VANCEAUTOMATED002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "VANCEAUTOMATED003": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "VANCECHECKMATE": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "VANCEENGAGED001": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "VANCEENGAGED002": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "VANCEXNOMAD001": {
+            "armor": "Medium",
+            "gear": "Melee"
+        },
+        "VANCEXNOMAD002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "VANCEXNOMAD003": {
+            "armor": "Medium",
+            "gear": "Medkit"
+        },
+        "VIPCOIN001": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "VIPCOIN002": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "VIPCOIN003": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "VIPCOIN004": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "VIPCOIN005": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "VIPCOIN006": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "VIPCOIN007": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "VIPCOIN008": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "VIPCOIN009": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "VIPCOIN010": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "VIPCOIN011": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "VIPCOIN012": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "VIPCOIN013": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "VIPCOIN014": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "VIPCOIN015": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "VIPCOIN016": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "VIPCOIN017": {
+            "armor": "Base",
+            "gear": "Melee"
+        },
+        "VIPCOIN018": {
+            "armor": "Base",
+            "gear": "Demolition"
+        },
+        "VIPCOIN019": {
+            "armor": "Base",
+            "gear": "Medkit"
+        },
+        "VIPCOIN020": {
+            "armor": "Base",
+            "gear": "None"
+        },
+        "VIPERALLY001": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "VIPERALLY002": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "VIPERALLY003": {
+            "armor": "Medium",
+            "gear": "Demolition"
+        },
+        "VIPERTEAMALLIES001": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "VIPERTEAMALLIES002": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "VIPERTEAMENGAGED": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "VYKE": {
+            "armor": "Heavy",
+            "gear": "Melee"
+        },
+        "WOLFE": {
+            "armor": "Heavy",
+            "gear": "Demolition"
+        },
+        "WOLFEENGAGED001": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "WOLFEENGAGED002": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "WOLFEENGAGED003": {
+            "armor": "Light",
+            "gear": "Melee"
+        },
+        "WOLFEENGAGED004": {
+            "armor": "Light",
+            "gear": "Demolition"
+        },
+        "YOUNGGUNFIGHTER": {
+            "armor": "Heavy",
+            "gear": "Medkit"
+        }
+    }
+}

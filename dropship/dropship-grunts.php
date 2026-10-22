@@ -141,6 +141,11 @@ function dropshipGruntFilterSql($field, $value) {
  * request -- "I don't want it to tip the scales" -- and replaced with the
  * whole collection, derived from what the fighters actually carry.
  *
+ * TWO COLLECTIONS ARE MAPPED NOW. Digital Hell Citizens 2: Fighters off
+ * its minted traits, and SHORTY VERSE -- which Dread City and Filthy
+ * Mermaid both sit on -- off edition scarcity, since that collection has
+ * no traits at all beyond a name and a one-line summary.
+ *
  * ARMOUR IS A RARITY-WEIGHTED SCORE over torso, headgear and arms, ranked
  * into quartiles so the four tiers stay balanced. GEAR IS THE LEAN of the
  * value names -- a scythe reads Melee, a blaster Demolition, a recovery
@@ -161,19 +166,42 @@ function dropshipGruntFilterSql($field, $value) {
  * has nothing to say and every soldier falls back to the stored column,
  * which is the behaviour before any of this existed.
  */
+/** The generated tables, one per collection that has a real mapping. */
+function dropshipLoadoutTables() {
+	return array(
+		'dhc2-loadouts.json',        /* Digital Hell Citizens 2: Fighters -- theme 5 */
+		'shortyverse-loadouts.json', /* Shorty Verse -- Dread City and Filthy Mermaid */
+	);
+}
+
 function dropshipNftLoadouts() {
 	static $map = null;
 	if ($map !== null) return $map;
 	$map = array();
-	$path = __DIR__ . '/../dhc2-loadouts.json';
-	$raw  = @file_get_contents($path);
-	if ($raw === false) return $map;
-	$j = json_decode($raw, true);
-	if (!is_array($j) || !isset($j['loadouts']) || !is_array($j['loadouts'])) return $map;
-	foreach ($j['loadouts'] as $asset => $kit) {
-		if (!is_array($kit) || !isset($kit['armor'], $kit['gear'])) continue;
-		$map[(string)$asset] = array('armor' => (string)$kit['armor'],
-		                             'gear'  => (string)$kit['gear']);
+	foreach (dropshipLoadoutTables() as $file) {
+		$raw = @file_get_contents(__DIR__ . '/../' . $file);
+		if ($raw === false) continue;
+		$j = json_decode($raw, true);
+		if (!is_array($j) || !isset($j['loadouts']) || !is_array($j['loadouts'])) continue;
+		foreach ($j['loadouts'] as $asset => $kit) {
+			if (!is_array($kit) || !isset($kit['armor'], $kit['gear'])) continue;
+			$a = (string)$asset;
+			/*
+			 * FIRST TABLE WINS, AND A CLASH IS A BUG RATHER THAN A MERGE.
+			 *
+			 * The tables are keyed on asset name and nothing else, because
+			 * that is what dropshipGruntLoadout() has to match on -- the
+			 * soldiers row carries no policy. Two collections minting the
+			 * same ascii name would therefore silently share a loadout.
+			 * It cannot happen today (DHC2F* against Shorty Verse's own
+			 * names) and the harness asserts the tables stay disjoint, so
+			 * this keeps the first rather than letting the later file
+			 * quietly rewrite a live theme's stats.
+			 */
+			if (isset($map[$a])) continue;
+			$map[$a] = array('armor' => (string)$kit['armor'],
+			                 'gear'  => (string)$kit['gear']);
+		}
 	}
 	return $map;
 }
