@@ -573,4 +573,33 @@ echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall good\n");
  * daily-cap change, when eight mutants in a row "survived" because nothing
  * here could ever fail.
  */
+/*
+ * AND THE SENDER EXISTS BY THE TIME THE DROP ASKS FOR IT.
+ *
+ * dropship-traitdrop.php decides whether to announce by testing
+ * function_exists('dropshipGetWebhook'), and that function comes from
+ * dropship/webhooks.php. A run EXECUTES while dropship.php is being
+ * included -- the loop is top level -- so if webhooks.php is included
+ * after it, the test is false on every run whatever the credentials
+ * hold, DHCF_NO_NOTIFY goes up, and every Drop Ship trait drop commits
+ * in silence while every other game announces.
+ *
+ * That is exactly what shipped, for months, with a comment in
+ * dropship-traitdrop.php claiming the opposite. It is an ORDERING bug and
+ * nothing in the file itself can show it, so it is pinned here.
+ */
+echo "\nthe sender is loaded before a run can award a drop\n";
+$dash = (string)@file_get_contents(__DIR__ . '/dropship/dashboard.php');
+$at_hooks = strpos($dash, "include 'webhooks.php'");
+$at_run   = strpos($dash, "include 'dropship.php'");
+ok($at_hooks !== false, 'dashboard.php no longer includes webhooks.php at all');
+ok($at_run   !== false, 'dashboard.php no longer includes dropship.php at all');
+ok($at_hooks !== false && $at_run !== false && $at_hooks < $at_run,
+   'webhooks.php is included AFTER dropship.php again, so dropshipGetWebhook() does not '
+ . 'exist when a run awards a drop and every Drop Ship trait drop goes unannounced');
+/* The constraint the old ordering comment named, still true. */
+$at_role = strpos($dash, "require_once 'role.php'");
+ok($at_role === false || $at_hooks < $at_role,
+   'webhooks.php no longer precedes role.php, which reads $bot_token from it');
+
 exit($fail ? 1 : 0);

@@ -1,7 +1,30 @@
 <?php
 include 'db.php';
-include 'dropship.php';
+/*
+ * WEBHOOKS BEFORE THE RUN, NOT AFTER IT.
+ *
+ * This sat below dropship.php, and dropship.php is where a run actually
+ * EXECUTES -- the loop is top level, so including it plays the game,
+ * logs the score and awards the trait drop. Everything that wanted to
+ * announce during that was therefore reaching for a sender that did not
+ * exist yet.
+ *
+ * logScore() already knew and worked around it, parking a run_logged
+ * flag for dashboard.php to post from later. The trait drop had no such
+ * workaround: dropship-traitdrop.php tests function_exists('dropshipGetWebhook')
+ * to decide whether announcing is safe, that test ran here on line 3 of
+ * the page, and it was false every single time -- so DHCF_NO_NOTIFY went
+ * up and every Drop Ship trait drop was committed in silence. The
+ * credentials rename it was waiting for had landed months ago; the check
+ * was simply being asked too early.
+ *
+ * Safe to move: webhooks.php includes only its own credentials file and
+ * shares no function name with dropship.php, and the one ordering
+ * constraint it has -- $bot_token before role.php reads it -- still
+ * holds, since role.php is below.
+ */
 include 'webhooks.php';           // $bot_token -- must precede role.php's use of it
+include 'dropship.php';
 require_once 'role.php';          // dropshipMemberHasRole(), for the VIP recheck below
 require_once 'vip-links.php';     // oculusVipLinks(), for the Play gate below
 include 'header.php';
