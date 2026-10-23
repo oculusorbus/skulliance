@@ -676,9 +676,38 @@ function dhca_start($conn, $user_id, $defender_id, $fighter_ids) {
 	$dq = $conn->query("SELECT username FROM users WHERE id = " . (int)$defender_id . " LIMIT 1");
 	if ($dq && ($drow = $dq->fetch_assoc())) $dname = (string)$drow['username'];
 
+	/*
+	 * WHAT THIS OPPONENT IS TO THE ATTACKER, for the share text.
+	 *
+	 * A player hand-edited his own post to read "Swept (my tormentor)
+	 * @oculusorbus's Crew" -- reaching for a relationship the game already
+	 * tracks and the share never offered. dhca_standouts() has computed it
+	 * for the rivalry panel all along.
+	 *
+	 * TORMENTOR AND NEMESIS ONLY, NEVER DUCK. The third standout is the
+	 * person you BEAT, and "(my sitting duck)" on a public timeline names
+	 * and humiliates somebody who did not post it. The two that ship are
+	 * the ones where the joke lands on the POSTER -- which is why the
+	 * hand-written version was funny and its mirror image would not be.
+	 *
+	 * DECIDED ONCE, HERE, rather than in dhca_public(): that runs on every
+	 * poll of a live battle and has neither $conn nor $user_id in scope.
+	 * A standing is a fact about the pairing before the fight, so freezing
+	 * it at the start is also more truthful than recomputing it after the
+	 * result has moved the record.
+	 */
+	$dtag = '';
+	if (function_exists('dhca_standouts')) {
+		$st = dhca_standouts($conn, (int)$user_id);
+		foreach (array('tormentor', 'nemesis') as $sk) {
+			if (!empty($st[$sk]) && (int)$st[$sk]['user_id'] === (int)$defender_id) { $dtag = $sk; break; }
+		}
+	}
+
 	$b['meta'] = array(
 		'attacker'=>$user_id, 'defender'=>$defender_id,
 		'defenderName'=>$dname,
+		'defenderTag'=>$dtag,
 		'mineIds'=>array_map(function($f){ return (int)$f['id']; }, $mine),
 		'foeIds' =>array_map(function($f){ return (int)$f['id']; }, $foes),
 		'moves'=>array(),

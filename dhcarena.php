@@ -2871,8 +2871,28 @@ function shareLink(won, standing){
    * The remaining nameless case is a ranked battle resumed from before
    * defenderName was carried, where "a real opponent" is accurate.
    */
+  /*
+   * AND WHAT THEY ARE TO YOU, when the game already knows.
+   *
+   * Lifted from a player who hand-edited his own post to read "Swept (my
+   * tormentor) @oculusorbus's Crew". The Arena has tracked that standing
+   * since the rivalry panel shipped; the share simply never offered it,
+   * so he typed it himself.
+   *
+   * ONLY THE TWO THAT POINT AT THE POSTER. defenderTag is 'tormentor' or
+   * 'nemesis' and never 'duck' -- the server will not send the third,
+   * because "(my sitting duck)" names and humiliates somebody who did not
+   * write the post. These two read as the poster admitting something.
+   *
+   * IN FRONT OF THE NAME, where it reads as an aside rather than a title,
+   * and inside the budget trim below like everything else.
+   */
+  var tagWord = (S && S.defenderTag) ? String(S.defenderTag) : '';
+  var aside = (tagWord === 'tormentor') ? '(my tormentor) '
+            : (tagWord === 'nemesis')   ? '(my nemesis) '
+            : '';
   var vs = practice ? 'a practice Crew'
-         : (foe ? foe + "'s Crew" : 'a real opponent');
+         : (foe ? aside + foe + "'s Crew" : 'a real opponent');
 
   /* The Fighters that did it, by first name -- the same shorthand the end
      card uses, so the post matches the screen it was shared from. */

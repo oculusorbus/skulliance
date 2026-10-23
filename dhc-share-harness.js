@@ -838,5 +838,49 @@ console.log('\nthe Arena share says who you beat');
 	   'the practice marker is not at the front, so a long name can truncate it away');
 }
 
+console.log('\nthe rivalry aside, and the one it must never use');
+/*
+ * THE RIVALRY ASIDE, AND THE ONE IT MUST NEVER USE.
+ *
+ * Taken from a player who hand-edited his own post to "Swept (my
+ * tormentor) @oculusorbus's Crew" -- the Arena already knew the
+ * standing, the share just never offered it.
+ *
+ * dhca_standouts() computes three: tormentor (who beats you), nemesis
+ * (who you fight most) and DUCK (who you beat). Only the first two may
+ * ever reach a post. "(my sitting duck)" names and humiliates a player
+ * who did not write the tweet, and the whole reason the hand-written
+ * version landed is that the joke was on the poster.
+ *
+ * Guarded in BOTH places and asserted in both: dhcarena-lib.php refuses
+ * to send 'duck', and the client maps only the two it knows.
+ */
+(function () {
+  var libSrc = require('fs').readFileSync(__dirname + '/dhcarena-lib.php', 'utf8');
+  var tagBlock = libSrc.slice(libSrc.indexOf('$dtag = '), libSrc.indexOf("'defenderTag'=>$dtag"));
+  ok(/array\('tormentor', 'nemesis'\)/.test(tagBlock),
+     'the server no longer restricts defenderTag to tormentor and nemesis');
+  ok(tagBlock.indexOf("'duck'") === -1,
+     "the server can send 'duck', which would post \"(my sitting duck)\" about a named player");
+
+  var pageSrc = require('fs').readFileSync(__dirname + '/dhcarena.php', 'utf8');
+  var share = pageSrc.slice(pageSrc.indexOf('var tagWord'), pageSrc.indexOf('var vs = practice'));
+  ok(share.indexOf("'(my tormentor) '") !== -1, 'the tormentor aside has gone from the share');
+  ok(share.indexOf("'(my nemesis) '") !== -1,   'the nemesis aside has gone from the share');
+  ok(share.indexOf('duck') === -1,
+     'the share text knows the word duck, so a server change could start posting it');
+
+  /* And the mapping itself, run rather than read. */
+  function aside(tagWord) {
+    return (tagWord === 'tormentor') ? '(my tormentor) '
+         : (tagWord === 'nemesis')   ? '(my nemesis) '
+         : '';
+  }
+  ok(aside('tormentor') === '(my tormentor) ', 'tormentor does not label');
+  ok(aside('nemesis')   === '(my nemesis) ',   'nemesis does not label');
+  ok(aside('duck')      === '',  'duck produces a label, which humiliates a named player');
+  ok(aside('')          === '',  'an unranked opponent produces a label');
+})();
 console.log('\n' + (fail ? fail + ' FAILED\n' : 'all good\n'));
 process.exit(fail ? 1 : 0);
+

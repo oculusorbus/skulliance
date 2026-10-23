@@ -1030,6 +1030,24 @@ function dhca_public(&$b) {
 		 * the share says "a practice Crew" rather than inventing a rival.
 		 */
 		'defenderName'=>isset($b['meta']['defenderName']) ? (string)$b['meta']['defenderName'] : '',
+		/*
+		 * AND WHAT THEY ARE TO YOU, for the share text.
+		 *
+		 * A player hand-edited his own post to read "Swept (my tormentor)
+		 * @oculusorbus's Crew" -- reaching for a relationship the game
+		 * already tracks and the share never offered. dhca_standouts()
+		 * has computed exactly this for the rivalry panel all along.
+		 *
+		 * TORMENTOR AND NEMESIS ONLY, NEVER DUCK. The third standout is
+		 * the person you BEAT, and "(my sitting duck)" on somebody else's
+		 * timeline is a post that humiliates a named player. The two that
+		 * ship are the ones where the poster is the underdog or the equal
+		 * -- the joke lands on them, which is why fomz's version was
+		 * funny and the mirror image would not be.
+		 *
+		 * EMPTY FOR A PRACTICE BATTLE, which has no defender to rank.
+		 */
+		'defenderTag'=>isset($b['meta']['defenderTag']) ? (string)$b['meta']['defenderTag'] : '',
 	);
 }
 
