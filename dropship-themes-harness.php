@@ -864,13 +864,26 @@ echo "\nchanging the trait source resyncs\n";
  */
 ok(strpos($dash4, '$_SESSION[\'userData\'][\'trait_source_key\'] !== $ds_source_key') !== false,
    'a trait source change is not noticed, so switching it never resyncs');
-/* THREE PIPELINES NOW: koios, skulliance, and fighters -- the last
-   fields a player's ASSEMBLED DHC Fighters as soldiers. Every one of
-   them has to resync when the source changes, or switching a theme over
-   saves the setting and leaves the barracks holding the old
-   collection. */
+/* THREE RESYNC GATES: koios, skulliance, and the Fighter pull. Every one
+   has to fire when the source changes, or switching a theme over saves
+   the setting and leaves the barracks holding the old collection. */
 ok(substr_count($dash4, '|| $source_changed == "true"') === 3,
-   'one of the three pipelines does not resync when the source changes');
+   'one of the three resync gates does not fire when the source changes');
+/*
+ * AND FIGHTERS MUST NOT REPLACE THE COLLECTION. The first version made
+ * it a third EXCLUSIVE source, so selecting it turned the real NFTs off
+ * and a holder lost their soldiers the moment the theme switched over.
+ * The Fighter pull runs in its own block BEFORE the NFT chain, so the
+ * koios elseif still catches a 'fighters' theme and syncs the wallet.
+ */
+ok(strpos($dash4, "if(\$ds_source === 'fighters'){") === false,
+   'the Fighter pull is an exclusive branch again, which turns the real collection off');
+ok(strpos($dash4, '$ds_fighters = ($ds_source === \'fighters\');') !== false,
+   'the Fighter pull is no longer its own gate');
+$f_at = strpos($dash4, 'dropshipSyncFighters(');
+$s_at = strpos($dash4, "if(\$ds_source === 'skulliance'){");
+ok($f_at !== false && $s_at !== false && $f_at < $s_at,
+   'the Fighter pull runs inside or after the NFT chain, so one excludes the other');
 ok(strpos($dash4, '$_SESSION[\'userData\'][\'trait_source_key\'] = $ds_source_key;') !== false,
    'the source that ran is never remembered, so it resyncs on every single load');
 

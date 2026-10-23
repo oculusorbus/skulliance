@@ -349,12 +349,13 @@ left blank and filled in later.</p>
 			<?php $ts = $theme && !empty($theme['trait_source']) ? $theme['trait_source'] : 'koios'; ?>
 			<option value="koios"<?php echo $ts !== 'skulliance' ? ' selected' : ''; ?>>Koios &mdash; read the player&rsquo;s wallets</option>
 			<option value="skulliance"<?php echo $ts === 'skulliance' ? ' selected' : ''; ?>>Skulliance &mdash; use holdings already synced</option>
-			<?php /* NOT A COLLECTION AT ALL. This one fields the player's
-			         ASSEMBLED DHC Fighters as soldiers, with armour and gear
-			         derived live from their traits -- see
-			         dropship-fighters.php. A theme on this source ignores
-			         policy_id entirely. */ ?>
-			<option value="fighters"<?php echo $ts === 'fighters' ? ' selected' : ''; ?>>DHC Fighters &mdash; the player&rsquo;s assembled Fighters</option>
+			<?php /* AN ADDITION, NOT A REPLACEMENT. This fields the player's
+			         ASSEMBLED DHC Fighters alongside the real collection --
+			         the wallet read still happens, so a holder gets what
+			         they bought AND what they built. Armour and gear for an
+			         assembled Fighter are derived live from its traits; see
+			         dropship-fighters.php. */ ?>
+			<option value="fighters"<?php echo $ts === 'fighters' ? ' selected' : ''; ?>>Koios + DHC Fighters &mdash; wallets AND assembled Fighters</option>
 		</select></div>
 	<div><label>Is it working?</label>
 		<a class="btn" href="admin-themes.php?project_id=<?php echo (int)$edit_pid; ?>&amp;probe=1">Check this theme</a></div>

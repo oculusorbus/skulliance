@@ -1249,9 +1249,9 @@ function dropshipSquadFace($conn, $row) {
 		$local = dropshipLocalNftImages(array($row['asset_name']), getProjectPolicyId($conn));
 		if (!empty($local[$row['asset_name']])) return $local[$row['asset_name']];
 	}
-	return function_exists('dropshipSoldierImage')
-		? dropshipSoldierImage($row['ipfs'])
-		: 'https://image-optimizer.jpgstoreapis.com/' . $row['ipfs'];
+	/* No jpg.store fallback: that host is gone and answers 403. An
+	   unavailable helper means no picture, which the card handles. */
+	return function_exists('dropshipSoldierImage') ? dropshipSoldierImage($row['ipfs']) : '';
 }
 
 /**

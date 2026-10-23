@@ -229,17 +229,28 @@ $source_changed = (!isset($_SESSION['userData']['trait_source_key'])
                    || $_SESSION['userData']['trait_source_key'] !== $ds_source_key) ? "true" : "false";
 $_SESSION['userData']['trait_source_key'] = $ds_source_key;
 
-if($ds_source === 'fighters'){
-	/* ASSEMBLED FIGHTERS, NOT A MINTED COLLECTION. Same trigger as the
-	   other two -- only when the wallet set, the project or the source
-	   changed -- so a page load that changed nothing does no work. */
+/*
+ * FIGHTERS ARE AN ADDITION, NOT A REPLACEMENT.
+ *
+ * The first version made 'fighters' a third exclusive source, so
+ * selecting it turned the real collection OFF -- a holder of DHC2
+ * Fighters NFTs would have lost their soldiers the moment the theme was
+ * switched over. Wrong: a player should field what they BOUGHT and what
+ * they BUILT, together.
+ *
+ * So this runs first and the NFT pipeline below still runs after it.
+ * Both write to the same soldiers table with distinct asset names --
+ * minted rows are DHC2F*, assembled ones are DHCFA* -- so neither can
+ * overwrite the other, and updateSoldiers() is called by each with its
+ * own list.
+ */
+$ds_fighters = ($ds_source === 'fighters');
+if($ds_fighters){
 	if(($address_changed == "true") || $project_id_changed == "true" || $source_changed == "true"){
 		dropshipSyncFighters($conn, $_SESSION['userData']['discord_id']);
-		$ranks["VIP"] = true;
-		$_SESSION['userData']['rank'] = "";
-		storeRank($ranks);
 	}
-}elseif($ds_source === 'skulliance'){
+}
+if($ds_source === 'skulliance'){
 	if(($address_changed == "true") || $project_id_changed == "true" || $source_changed == "true"){
 		dropshipSyncFromSkulliance($conn, $_SESSION['userData']['discord_id'], $policy_id);
 		$ranks["VIP"] = true;

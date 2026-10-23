@@ -757,7 +757,7 @@ function dropshipConnectedStakeAddresses($discord_id) {
 //
 // Returns a map: asset_name => local image URL (already glob-verified to
 // exist on disk, same check getIPFS() does). Callers fall back to
-// jpgstoreapis.com for anything missing -- see cache-ohhmeed-art.php's
+// the IPFS gateway for anything missing -- see cache-ohhmeed-art.php's
 // successor for backfilling that gap in bulk (TODO: rename/rescope that
 // script to this policy instead of project_id=2, now that the real
 // collection is known).
@@ -776,7 +776,7 @@ function dropshipLocalNftImages($asset_names, $policy = '') {
 	if ($policy === '') return $images;
 
 	$skulliance_conn = dropshipSkullianceDb();
-	if (!$skulliance_conn) return $images; // fail quiet -- callers fall back to jpgstoreapis.com
+	if (!$skulliance_conn) return $images; // fail quiet -- callers fall back to the IPFS gateway
 
 	$policy_esc = $skulliance_conn->real_escape_string($policy);
 	$in_list = implode(',', array_map(function($name) use ($skulliance_conn) {
@@ -1428,7 +1428,7 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 			echo "<span class='nft-image'><img src='images/nfts/".$row["asset_name"].".jpg'/></span>";
 		}elseif(isset($oculus_lounge_images[$row["asset_name"]])){
 			// Cached locally on Skulliance -- Ohh Meed NFT Skulliance already
-			// has synced and cached. Falls through to jpgstoreapis.com below
+			// has synced and cached. Falls through to the IPFS gateway below
 			// for any Oculus Lounge asset_name Skulliance doesn't have (yet).
 			echo "<span class='nft-image'><img src='".$oculus_lounge_images[$row["asset_name"]]."'/></span>";
 		}else{
@@ -1608,7 +1608,23 @@ function dropshipSoldierImage($ipfs) {
 	$ipfs = (string)$ipfs;
 	if ($ipfs === '') return '';
 	if (strncmp($ipfs, 'http://', 7) === 0 || strncmp($ipfs, 'https://', 8) === 0) return $ipfs;
-	return 'https://image-optimizer.jpgstoreapis.com/' . $ipfs;
+	/*
+	 * JPG.STORE IS GONE, AND SO WERE THESE PICTURES.
+	 *
+	 * Every soldier image went through
+	 * image-optimizer.jpgstoreapis.com, which now 301s to
+	 * ipfs5.jpgstoreapis.com and answers 403. Measured, not assumed --
+	 * so every IPFS-backed soldier card has been rendering a broken
+	 * image, silently, since the marketplace shut down.
+	 *
+	 * The platform already decided the replacement: getIPFS() in the
+	 * root db.php falls back to IPFS_FALLBACK_GATEWAY. The value is
+	 * repeated rather than the constant read, for the same reason the
+	 * local-image glob in this file is repeated -- including the
+	 * platform's db.php here is the fatal-redeclare risk the whole file
+	 * is written around. KEEP IN SYNC BY HAND if that constant moves.
+	 */
+	return 'https://ipfs.filebase.io/ipfs/' . $ipfs;
 }
 
 // Check if soldier already exists
