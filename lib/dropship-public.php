@@ -239,7 +239,7 @@ function dropshipPublicArt($limit = 24) {
 	 * the SELECTION changes and you want the fix visible now rather than
 	 * an hour from now, which is why it is at 3.
 	 */
-	$cf = sys_get_temp_dir() . '/skl-dsart3-' . md5($dir . '|' . $key) . '.json';
+	$cf = sys_get_temp_dir() . '/skl-dsart6-' . md5($dir . '|' . $key) . '.json';
 	if (is_file($cf) && (time() - (int)@filemtime($cf)) < 3600) {
 		$hit = json_decode((string)@file_get_contents($cf), true);
 		/* AND VALIDATED ANYWAY, because a version in the key only helps
@@ -250,11 +250,22 @@ function dropshipPublicArt($limit = 24) {
 
 	$files = @glob($dir . '/*.jpg');
 	if (!$files) return $cache[$key];
+	/*
+	 * FURNITURE IS NOT A SOLDIER. nfts/placeholder.jpg is the picture
+	 * the game shows for an EMPTY squad slot -- dropship-art.php files
+	 * it under "Around the game" alongside the loading spinner -- and it
+	 * sits in this same directory, so a plain glob picked it up and put
+	 * a grey "placeholder" tile in the middle of the strip. Named
+	 * explicitly rather than pattern-matched, because an exclusion that
+	 * guesses will eventually eat a real soldier.
+	 */
+	$furniture = array('placeholder', 'loading');
 	$assets = array();
 	foreach ($files as $f) {
 		if (@filesize($f) < 1) continue;        /* a half-written file is a dead frame */
 		$n = basename($f, '.jpg');
 		if (stripos($n, 'GRUNT') === 0) continue;
+		if (in_array(strtolower($n), $furniture, true)) continue;
 		$assets[] = $n;
 	}
 	if (!$assets) return $cache[$key];
@@ -274,56 +285,88 @@ function dropshipPublicArt($limit = 24) {
 	$label = array();
 	$db = dropshipPublicDb();
 	if ($db) {
-		$r = @$db->query("SELECT asset_name, name FROM soldiers
+		$r = @$db->query("SELECT asset_name, name, armor, gear FROM soldiers
 		                   WHERE project_id = 1 AND name <> ''");
 		if ($r) while ($row = $r->fetch_assoc()) {
-			$label[(string)$row['asset_name']] = (string)$row['name'];
+			$label[(string)$row['asset_name']] = array(
+				'name'  => (string)$row['name'],
+				'armor' => (string)$row['armor'],
+				'gear'  => (string)$row['gear'],
+			);
 		}
 	}
 
 	/*
-	 * ONE PER CHARACTER FIRST, WHICH A STRIDE CANNOT DO.
+	 * SPREAD ACROSS WHAT THEY LOOK LIKE, WHICH IS ARMOR AND GEAR.
 	 *
-	 * This took every Nth file, which sounds like variety and is not:
-	 * the collection runs sixteen variants of each character in a block
-	 * (ANGEL #01..#16, then BANDIT, then BOSS), and with roughly 320
-	 * files and 40 tiles the stride came out at exactly 8. Eight divides
-	 * sixteen, so every tile landed on #01 or #09 of its character --
-	 * forty pictures and twenty characters, each shown twice. The names
-	 * were right; the sampling was aliasing against the collection's own
-	 * period, which is invisible until you read the captions.
+	 * Two sampling bugs preceded this one and both came from picking on
+	 * the wrong axis. A stride every Nth file aliased against the
+	 * sixteen-variants-per-character blocks and returned #01 and #09 of
+	 * everybody. Grouping by character fixed the names and left the
+	 * PICTURES nearly identical, because a character's variants mostly
+	 * share a silhouette -- forty tiles of the same armor and the same
+	 * weapon.
 	 *
-	 * Grouped by the name before the "#" and taken round robin instead,
-	 * so the first forty tiles are forty different characters and no two
-	 * repeat until every one has appeared. Deterministic, so the strip
-	 * does not reshuffle on every load.
+	 * Armor and gear are what the art actually differs by, and for Drop
+	 * Ship they are seeded to match the card rather than rolled at sync
+	 * time, so they are a true description of the picture. Bucketing on
+	 * the pair and taking round robin fills the strip with sixteen
+	 * visibly different loadouts before it repeats one.
 	 *
-	 * A SOLDIER WITH NO ROW falls back to its asset name and becomes its
-	 * own group, which is right: nothing is known about it to group on.
+	 * CHARACTER IS THE TIE-BREAK, not the key. Within a bucket the
+	 * entries are ordered by name, so consecutive picks from the same
+	 * loadout are still different characters.
+	 *
+	 * A soldier with no row has neither, so it buckets under its own
+	 * name and simply takes its turn.
 	 */
-	$groups = array();
+	$buckets = array();
 	foreach ($assets as $a) {
-		$nm = isset($label[$a]) && trim($label[$a]) !== '' ? trim($label[$a]) : $a;
-		/* "ANGEL #01" -> "ANGEL". A name with no # is its own group. */
-		$hash = strpos($nm, '#');
-		$key_g = $hash === false ? $nm : rtrim(substr($nm, 0, $hash));
-		if ($key_g === '') $key_g = $a;
-		$groups[$key_g][] = array('url' => dropshipPublicArtUrl($a), 'name' => $nm);
+		$meta  = isset($label[$a]) ? $label[$a] : null;
+		$nm    = ($meta && trim($meta['name']) !== '') ? trim($meta['name']) : $a;
+		$armor = $meta ? trim($meta['armor']) : '';
+		$gear  = $meta ? trim($meta['gear'])  : '';
+		$bk    = ($armor === '' && $gear === '') ? 'zz|' . $nm : $armor . '|' . $gear;
+		$buckets[$bk][] = array('url' => dropshipPublicArtUrl($a), 'name' => $nm, 'sort' => $nm);
 	}
-	ksort($groups);
+	ksort($buckets);
+	foreach ($buckets as $bk => $rows) {
+		usort($buckets[$bk], function ($x, $y) { return strcmp($x['sort'], $y['sort']); });
+	}
 
+	/*
+	 * EACH BUCKET STARTS AT A DIFFERENT PLACE IN ITS OWN LIST.
+	 *
+	 * Taking index $round from every bucket sorted the same way means
+	 * every bucket leads with whoever is alphabetically first -- sixteen
+	 * different loadouts and the first sixteen tiles all ANGEL. Correct
+	 * on the axis I had just fixed and wrong on the one I had fixed
+	 * before it, which is how the second bug hid behind the first.
+	 *
+	 * Offsetting by the bucket's position walks each one in from a
+	 * different point, so the strip varies by loadout AND by character
+	 * at the same time. Still deterministic.
+	 */
 	$limit = (int)$limit;
+	$taken = array();
 	$round = 0;
-	while (count($cache[$key]) < $limit) {
+	$guard = 0;
+	while (count($cache[$key]) < $limit && $guard++ < 1000) {
 		$added = false;
-		foreach ($groups as $g) {
-			if (!isset($g[$round])) continue;
-			$cache[$key][] = $g[$round];
+		$b = 0;
+		foreach ($buckets as $rows) {
+			$n_b = count($rows);
+			if ($n_b === 0) { $b++; continue; }
+			if ($round >= $n_b) { $b++; continue; }
+			$pick = $rows[($round + $b) % $n_b];
+			$b++;
+			if (isset($taken[$pick['url']])) continue;
+			$taken[$pick['url']] = true;
+			$cache[$key][] = array('url' => $pick['url'], 'name' => $pick['name']);
 			$added = true;
 			if (count($cache[$key]) >= $limit) break;
 		}
-		/* Every group exhausted before the limit: take what there is. */
-		if (!$added) break;
+		if (!$added) break;     /* every bucket exhausted before the limit */
 		$round++;
 	}
 

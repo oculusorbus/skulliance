@@ -422,12 +422,48 @@ ok(max($per) <= $ideal,
 ok(max($per) - min($per) <= 1,
    'the spread across characters runs from ' . min($per) . ' to ' . max($per) . ' tiles');
 
+/*
+ * AND FURNITURE IS NOT A SOLDIER. nfts/placeholder.jpg is what the game
+ * draws in an EMPTY squad slot, and it lives in the same directory the
+ * strip is globbed from -- so it turned up as a grey tile captioned
+ * "placeholder" between two real soldiers.
+ */
+$lib3 = harness_strip_comments(file_get_contents(__DIR__ . '/lib/dropship-public.php'));
+ok(strpos($lib3, "'placeholder'") !== false,
+   'the empty-slot placeholder is back in the soldier strip');
+ok(strpos($lib3, "in_array(strtolower(\$n), \$furniture, true)") !== false,
+   'the furniture exclusion is gone or has become a loose pattern match');
+/* Named, not guessed: a pattern would eventually eat a real soldier. */
+ok(strpos($lib3, 'stripos($n, \'placeholder\')') === false,
+   'furniture is excluded by substring, which will one day match a real card');
+
+/*
+ * AND THE STRIP VARIES BY WHAT THE SOLDIERS LOOK LIKE. Grouping by
+ * character fixed the NAMES and left the pictures nearly identical,
+ * because a character's sixteen variants mostly share a silhouette --
+ * forty tiles of the same armor and weapon. Armor and gear are what the
+ * art differs by, and for Drop Ship they are seeded to match the card.
+ */
+$lib4 = harness_strip_comments(file_get_contents(__DIR__ . '/lib/dropship-public.php'));
+ok(strpos($lib4, "\$armor . '|' . \$gear") !== false,
+   'the strip no longer buckets on armor and gear, so it fills with lookalikes');
+ok(strpos($lib4, 'armor, gear FROM soldiers') !== false,
+   'the loadout is not read, so there is nothing to spread across');
+/* Each bucket enters its list at a different offset, or every bucket
+   leads with whoever sorts first and the strip is sixteen loadouts of
+   one character. */
+ok(strpos($lib4, '($round + $b) % $n_b') !== false,
+   'every bucket starts at the same index, so the strip leads with one character sixteen times');
+ok(strpos($lib4, '$taken[$pick[\'url\']]') !== false,
+   'the rotation can hand back the same soldier twice');
+
 /* And the library really groups, rather than striding. */
 $lib2 = harness_strip_comments(file_get_contents(__DIR__ . '/lib/dropship-public.php'));
 ok(strpos($lib2, "floor(\$i * \$n / \$take)") === false,
    'the stride is back, and it will alias against the collection again');
-ok(strpos($lib2, 'ksort($groups)') !== false,
-   'the art is no longer grouped by character before it is picked');
+ok(strpos($lib2, 'ksort($buckets)') !== false,
+   'the art is no longer bucketed and sorted before it is picked, so the order is whatever '
+ . 'the filesystem returned');
 
 echo "\nthe link is public, and carries no run id\n";
 /*

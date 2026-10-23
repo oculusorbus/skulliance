@@ -214,6 +214,22 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 
 /* Everything else is scoped to .dsg-, so it cannot reach site-header.php. */
 .dsg-wrap { max-width: 1100px; margin: 0 auto; padding: 8px 16px 60px; color: #e8eaed; }
+/*
+ * LINK COLOURS, STATED. This page carries no platform stylesheet -- it
+ * includes site-header.php and nothing else -- so a plain anchor in body
+ * copy fell through to the browser default and rendered as unreadable
+ * purple on the dark ground once it had been visited. The CTAs and the
+ * footer set their own colours and so looked fine, which is why it only
+ * showed on the one inline link.
+ *
+ * :visited is set to the same value deliberately: on a page whose links
+ * go to a marketplace and an artist's profile, "already clicked" is not
+ * worth a colour, and the default for it is the unreadable one.
+ */
+.dsg-wrap a:not(.dsg-cta) { color: #00c8a0; text-decoration: underline;
+  text-underline-offset: 2px; }
+.dsg-wrap a:not(.dsg-cta):visited { color: #00c8a0; }
+.dsg-wrap a:not(.dsg-cta):hover { color: #4fe3c1; }
 .dsg-hero { text-align: center; }
 /* CONTAINED AND CAPPED. The art is portrait (745x850) and the other
    four themes are each a different shape again, so it is fitted rather
@@ -321,9 +337,9 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
   text-align: center; color: #8a96a3; font-size: .86rem; }
 .dsg-foot a { color: #8a96a3; }
 .dsg-foot a:hover { color: #00c8a0; }
-/* The artist credit, under the soldiers it belongs to. */
+/* The artist credit, under the soldiers it belongs to. Colour comes
+   from the scoped anchor rule above. */
 .dsg-credit { margin-top: 10px; font-size: .82rem; color: #7a9eb0; }
-.dsg-credit a { color: #00c8a0; }
 
 .dsg-foot .also { margin-top: 8px; font-size: .8rem; color: #5f7d90; }
 
