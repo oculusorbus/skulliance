@@ -7971,7 +7971,11 @@ function skullswapShareText($score, $is_high = false) {
 function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 	// Which sources count as "a game". Everything else -- daily claims,
 	// missions, raids -- is platform activity but not playing a game.
-	$game_sources = array('skullswap','gauntlet','crawl','conquest','racer','boss','monstrocity','obscura','guardians');
+	/* 'arena' is a game and belongs here. 'fighter' is NOT -- assembling a
+	   Fighter is a creative act in the Collection, not a round of
+	   anything, so it counts as platform activity and sits out of the
+	   games-only view. */
+	$game_sources = array('skullswap','gauntlet','crawl','conquest','racer','boss','monstrocity','obscura','guardians','arena');
 	// MIGRATIONS DONE -- this block used to say cryptcrawls and cryptconquests
 	// each still needed a date_created column added before 'crawl' and
 	// 'conquest' could work for monthly/weekly. Both were run; verified

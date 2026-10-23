@@ -65,7 +65,7 @@ function activity_sources($since = '') {
 	   all different and all easy to get wrong. */
 	$f = function ($col) use ($d) { return $d === '' ? '' : "AND $col >= $d"; };
 
-	$w_t  = $f('date_created');       // transactions
+	$w_t  = $f('date_created');       // transactions -- see 'daily' below
 	$w_m  = $f('created_date');       // missions
 	$w_ge = $f('ge.resolved_date');   // gauntlets_encounters
 	$w_r  = $f('r.created_date');     // raids
@@ -77,6 +77,8 @@ function activity_sources($since = '') {
 	$w_sr = $f('created_at');         // skull_racer_runs -- NOT date_created
 	$w_ob = $f('date_created');       // obscura_scores
 	$w_gd = $f('date_created');       // guardians_scores
+	$w_ab = $f('started_at');         // dhc_arena_battles -- NOT date_created
+	$w_df = $f('created_at');         // dhc_fighters
 
 	/*
 	 * ONE DEFINITION OF A PLAY. Completed runs only for the two card
@@ -86,6 +88,17 @@ function activity_sources($since = '') {
 	 * once now.
 	 */
 	return array(
+		/*
+		 * A COMPLETED STREAK, NOT A CLAIM. `amount = 30` is tier 7 of
+		 * getRewardTiers() -- 1, 3, 5, 10, 15, 20, 30 -- so this counts
+		 * the seventh day and nothing before it. Somebody who claims six
+		 * days running scores zero here, which is the intent: the daily
+		 * reward is the habit and finishing the streak is the
+		 * achievement.
+		 *
+		 * It was labelled "Daily claims" on the Activity page, which is
+		 * what the query looks like at a glance and not what it does.
+		 */
 		'daily'       => array("SELECT user_id, COUNT(*) AS cnt FROM transactions WHERE bonus = 1 AND amount = 30 $w_t GROUP BY user_id", 1),
 		'mission'     => array("SELECT user_id, COUNT(*) AS cnt FROM missions WHERE status IN (1,2) $w_m GROUP BY user_id", 5),
 		'skullswap'   => array("SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 0 $w_ss GROUP BY user_id", 5),
@@ -98,16 +111,41 @@ function activity_sources($since = '') {
 		'raid'        => array("SELECT re.user_id, COUNT(*) AS cnt FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $w_r GROUP BY re.user_id", 15),
 		'boss'        => array("SELECT user_id, COUNT(*) AS cnt FROM encounters WHERE 1=1 $w_e GROUP BY user_id", 25),
 		'monstrocity' => array("SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id", 50),
+		/*
+		 * THE TWO DHC BOARDS WERE SIMPLY MISSING.
+		 *
+		 * Not a decision -- Activity predates both, and the analytics
+		 * trends picked them up (ajax/analytics-trends.php has 'dhcarena'
+		 * and 'dhcfighters') while this list never did. So the most
+		 * visibly active thing on the platform counted for nothing here.
+		 *
+		 * ARENA CREDITS THE ATTACKER ONLY, matching 'raid' above, which
+		 * credits the offense realm and not the defender. A defender's
+		 * Crew is garrisoned and fights without them choosing to, so
+		 * paying both sides would reward being attacked. FINISHED
+		 * BATTLES ONLY: outcome 0 is still running.
+		 *
+		 * WEIGHT 5, the ordinary "played something" rate -- a battle is
+		 * one sitting, like a race or a run.
+		 *
+		 * A FIGHTER IS WORTH MORE because assembling one is deliberate
+		 * and permanent, and invalid ones are excluded: a Fighter
+		 * stranded by a later rules change was still built, but counting
+		 * it would let a rules change inflate everyone's history.
+		 */
+		'arena'       => array("SELECT attacker_id AS user_id, COUNT(*) AS cnt FROM dhc_arena_battles WHERE outcome != 0 $w_ab GROUP BY attacker_id", 5),
+		'fighter'     => array("SELECT user_id, COUNT(*) AS cnt FROM dhc_fighters WHERE invalid = 0 $w_df GROUP BY user_id", 15),
 	);
 }
 
 /** Human labels for the sources, for a legend or a tooltip. */
 function activity_labels() {
 	return array(
-		'daily' => 'Daily claims', 'mission' => 'Missions', 'skullswap' => 'Skull Swap',
+		'daily' => 'Daily streaks', 'mission' => 'Missions', 'skullswap' => 'Skull Swap',
 		'gauntlet' => 'Gauntlets', 'crawl' => 'Crypt Crawl', 'conquest' => 'Crypt Conquest',
 		'racer' => 'Skull Racer', 'obscura' => 'Obscura', 'guardians' => 'Realm Guardians',
 		'raid' => 'Raids', 'boss' => 'Boss Battles', 'monstrocity' => 'Monstrocity',
+		'arena' => 'DHC Arena', 'fighter' => 'Fighters built',
 	);
 }
 
