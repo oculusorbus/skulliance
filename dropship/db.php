@@ -1265,15 +1265,22 @@ function dropshipSoldierCount($conn){
 }
 
 /**
- * Should the Armory be on screen at all?
+ * Has this player met the theme's entry requirements?
  *
- * TWO THEMES REFUSE ENTRY, AND THE SHOP WAS NOT LISTENING. Filthy
+ * NAMED FOR THE QUESTION, NOT THE FIRST CALLER. This started as
+ * dropshipArmoryVisible() and now gates the Armory, the Achievements
+ * page and How to Play -- three things that are all the same question
+ * asked three times, and a name that says "armory" would have grown a
+ * second copy the moment somebody needed it for a fourth.
+ *
+ * TWO THEMES REFUSE ENTRY, AND THE REST OF THE PAGE WAS NOT LISTENING. Filthy
  * Mermaid wants a Shorty Verse NFT and Oculus Lounge wants a Disco
- * Solaris NFT plus VIP, but the Armory rendered for everybody -- so
- * somebody who cannot play was shown a shop full of things to buy for a
- * game they cannot enter, priced in a currency they cannot earn. The
- * Play gate already tells them what they need; the shop just made the
- * refusal confusing.
+ * Solaris NFT plus VIP, but the shop, the achievement list and the rules
+ * rendered for everybody -- so somebody who cannot play was shown goods
+ * to buy in a currency they cannot earn, a board of achievements they
+ * cannot unlock, and instructions for a game that will not open. The
+ * Play gate already tells them what they need; the rest of it just made
+ * the refusal confusing.
  *
  * HOLDINGS ARE PROVEN BY A SOLDIER ROW. A soldier exists in these
  * projects only because an NFT under the theme's own policy was synced
@@ -1292,9 +1299,9 @@ function dropshipSoldierCount($conn){
  * about who may shop. When those gates become theme columns, this reads
  * them instead.
  */
-function dropshipArmoryVisible($conn, $project_id, $vip) {
+function dropshipThemeUnlocked($conn, $project_id, $vip) {
 	$pid = (int)$project_id;
-	/* Every other theme is open, and its shop with it. */
+	/* Every other theme is open, and all of it with them. */
 	if ($pid !== 3 && $pid !== 4) return true;
 	if (dropshipSoldierCount($conn) < 1) return false;
 	if ($pid === 4 && $vip !== 'true') return false;

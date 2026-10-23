@@ -3,6 +3,25 @@ include 'db.php';
 include 'webhooks.php';
 include 'dropship.php';
 require_once 'vip-links.php';     // oculusVipLinks(), for the Where to Buy section
+
+/*
+ * THE LINK BEING HIDDEN IS NOT THE GATE. header.php stops offering this
+ * page to somebody the theme will not admit, which is convenience; the
+ * URL still works, and anybody who has bookmarked it or switched themes
+ * with the page open would walk straight in. So it is checked on
+ * arrival too, exactly as admin-themes.php gates again after the nav
+ * has already hidden its own link.
+ *
+ * BEFORE header.php, because a redirect after output is a notice and a
+ * page that renders anyway. Sent to the dashboard rather than refused,
+ * because the dashboard is where the Play gate explains what the theme
+ * actually wants.
+ */
+if (function_exists('dropshipThemeUnlocked')
+    && !dropshipThemeUnlocked($conn, $_SESSION['userData']['dropship_project_id'] ?? 0, $vip ?? 'false')) {
+	header('Location: dashboard.php');
+	exit;
+}
 include 'header.php';
 ?>
 		<!-- Page-local styling only -- icon-led rows and card-style section

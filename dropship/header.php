@@ -210,7 +210,15 @@ if (isset($project_id_changed) && $project_id_changed === "true"
 		    <span class="nav-dropdown-trigger" onclick="toggleDropdown(this)">Stats</span>
 		    <div class="nav-dropdown-menu">
 		      <a href="leaderboards.php">Leaderboards</a>
+		      <?php /* ACHIEVEMENTS FOLLOW THE DOOR. A theme that will not let
+		               this player in has no achievements for them to unlock, so
+		               a board of locked padlocks is just the refusal restated at
+		               length. Leaderboards stay: those are everybody's, and
+		               seeing who is winning is a reason to get in. */ ?>
+		      <?php if (!function_exists('dropshipThemeUnlocked')
+		                || dropshipThemeUnlocked($conn, $_SESSION['userData']['dropship_project_id'] ?? 0, $vip ?? 'false')): ?>
 		      <a href="achievements.php">Achievements</a>
+		      <?php endif; ?>
 		    </div>
 		  </div>
 
@@ -222,7 +230,13 @@ if (isset($project_id_changed) && $project_id_changed === "true"
 		    </div>
 		  </div>
 
-		  <?php if($_SESSION["userData"]["dropship_project_id"] == 1 || $_SESSION["userData"]["dropship_project_id"] == 2 || $_SESSION["userData"]["dropship_project_id"] == 4){?>
+		  <?php /* AND SO DO THE RULES. The theme list here was already a
+		           hardcoded 1/2/4; the second test is the entry gate, so Oculus
+		           Lounge stops explaining itself to somebody it will not admit.
+		           Filthy Mermaid was never on this list to begin with. */ ?>
+		  <?php if(($_SESSION["userData"]["dropship_project_id"] == 1 || $_SESSION["userData"]["dropship_project_id"] == 2 || $_SESSION["userData"]["dropship_project_id"] == 4)
+		           && (!function_exists('dropshipThemeUnlocked')
+		               || dropshipThemeUnlocked($conn, $_SESSION['userData']['dropship_project_id'] ?? 0, $vip ?? 'false'))){?>
 		  <a href="instructions.php">How to Play</a>
 		  <?php } ?>
 		  <?php /* Staff only, and the check is the same one the page itself

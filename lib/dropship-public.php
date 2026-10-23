@@ -148,105 +148,98 @@ function dropshipPublicSkullianceDb() {
 	return $c;
 }
 
+/** The four Grunts, and what each one carries. */
+function dropshipPublicGrunts() {
+	/*
+	 * NOT A DESCRIPTION OF THE LOADOUT -- the real one, from
+	 * dropshipGruntKits() in dropship/dropship-grunts.php. The four are
+	 * built to be exactly one Super Soldier Squad between them (Heavy
+	 * through Base, three gear types and a deliberate gap), which is the
+	 * single most persuasive thing this page can say, so it must not
+	 * drift from what the game actually hands out.
+	 */
+	return array(
+		array('asset' => 'GRUNT003', 'name' => 'Hagar',     'armor' => 'Heavy',  'gear' => 'Melee',
+		      'note'  => 'The one who wades in.'),
+		array('asset' => 'GRUNT002', 'name' => 'Delay',     'armor' => 'Medium', 'gear' => 'Demolition',
+		      'note'  => 'A delay is a demolition fuse.'),
+		array('asset' => 'GRUNT001', 'name' => 'Blood Bag', 'armor' => 'Light',  'gear' => 'Medkit',
+		      'note'  => 'The medic, and the obvious one.'),
+		array('asset' => 'GRUNT004', 'name' => 'Sektr',     'armor' => 'Base',   'gear' => 'None',
+		      'note'  => 'Carries nothing, and that is the point.'),
+	);
+}
+
+/** Where Drop Ship keeps its own soldier art, as a public URL. */
+function dropshipPublicArtUrl($asset) {
+	return 'https://skulliance.io/staking/dropship/images/nfts/' . rawurlencode($asset) . '.jpg';
+}
+
 /**
  * Real soldier art for the public page, as a flat list of image URLs.
  *
- * FROM THE LOCAL CACHE, NEVER AN IPFS GATEWAY. Every one of these is a
- * file already sitting on this server under
- * images/nfts/<project>/<collection>/<md5 of the cid>.<ext> -- the same
- * convention getIPFS() and dropshipLocalNftImages() use. That matters
- * more here than anywhere else on the platform: this page is the first
- * thing a stranger sees, a gateway timeout is a wall of broken frames,
- * and jpg.store going dark already proved how quietly that happens.
+ * READ STRAIGHT OUT OF DROP SHIP'S OWN FOLDER. The first version of this
+ * went the long way round -- join the Skulliance collections table on
+ * the theme's policy, then glob the platform's NFT image cache at
+ * images/nfts/<project>/<collection>/<md5 of the cid> -- which is how
+ * every OTHER theme's art is stored, and is wrong for this one. Drop
+ * Ship's cards live at dropship/images/nfts/<ASSET_NAME>.jpg and always
+ * have: dropshipSquadFace() special-cases project 1 to exactly that
+ * path. Going through the cache produced a wall with eleven dead frames
+ * in it, because the two stores do not hold the same set.
  *
- * READ OFF THE DISK, not out of the nfts table. The question being asked
- * is "which pictures exist", and the filesystem is the only thing that
- * actually knows -- a row whose art was never cached would be a broken
- * frame, and checking each one would be a query per tile.
+ * So: no database, no cross-database join, no md5, no gateway. One
+ * directory listing of files that are already served from this host.
  *
- * NO NAMES, NO OWNERS, NO TOKEN IDS. This is a wall of art and nothing
- * else. The art is already public on the collection pages; who holds
- * which soldier is not this page's business.
+ * GRUNTS ARE EXCLUDED HERE because they get their own section with
+ * their names and kit on it; loose in a mosaic they are four soldiers
+ * nobody can tell from the rest.
  */
-function dropshipPublicArt($limit = 24, $only_slug = 'drop-ship') {
+function dropshipPublicArt($limit = 24) {
 	static $cache = array();
-	$key = (int)$limit . '|' . (string)$only_slug;
+	$key = (int)$limit;
 	if (isset($cache[$key])) return $cache[$key];
 	$cache[$key] = array();
 
+	$dir = __DIR__ . '/../dropship/images/nfts';
+	if (!is_dir($dir)) return $cache[$key];
+
 	/*
-	 * CACHED TO DISK FOR AN HOUR, because this is the public front door
-	 * and the answer changes about as often as somebody mints. Without
-	 * it every hit -- every crawler, every share unfurl -- costs a
-	 * database round trip and a glob over a directory holding a whole
-	 * collection. The page is meant to be linked from the homepage, so
-	 * that is the traffic to design for rather than today's.
-	 *
-	 * A failed read or write is simply a cache miss: the list is
-	 * recomputed and the page is identical, just slower.
+	 * CACHED TO DISK FOR AN HOUR. This is the public front door and the
+	 * answer changes about as often as somebody mints, so every crawler
+	 * and every share unfurl should not cost a directory listing. A
+	 * failed read or write is a miss: same page, slightly slower.
 	 */
-	$cf = sys_get_temp_dir() . '/skl-dsart-' . md5($key) . '.json';
+	$cf = sys_get_temp_dir() . '/skl-dsart-' . md5($dir . '|' . $key) . '.json';
 	if (is_file($cf) && (time() - (int)@filemtime($cf)) < 3600) {
 		$hit = json_decode((string)@file_get_contents($cf), true);
 		if (is_array($hit)) { $cache[$key] = $hit; return $cache[$key]; }
 	}
 
-	$themes = dropshipPublicThemes();
-	if (!$themes) return $cache[$key];
-	$sk = dropshipPublicSkullianceDb();
-	if (!$sk) return $cache[$key];
-
-	/* ONE COLLECTION FOR NOW, at the owner's direction: Drop Ship's own
-	   soldiers and Drop Ship's own icons. Five collections of art on one
-	   page is a mosaic of five different styles fighting each other, and
-	   this page is a pitch for a game rather than a gallery. The filter
-	   is a parameter and not a hardcode, so the wall can widen later
-	   without this function changing. */
-	if ($only_slug !== '') {
-		$themes = isset($themes[$only_slug]) ? array($themes[$only_slug]) : array();
+	$files = @glob($dir . '/*.jpg');
+	if (!$files) return $cache[$key];
+	$names = array();
+	foreach ($files as $f) {
+		if (@filesize($f) < 1) continue;        /* a half-written file is a dead frame */
+		$n = basename($f, '.jpg');
+		if (stripos($n, 'GRUNT') === 0) continue;
+		$names[] = $n;
 	}
-	$per_theme = $themes ? max(1, (int)ceil($limit / count($themes))) : 0;
+	if (!$names) return $cache[$key];
+	sort($names);
 
-	foreach ($themes as $t) {
-		$policy = isset($t['policy']) ? trim((string)$t['policy']) : '';
-		/* A policy id is hex. Shape-checked because it reaches a query and,
-		   through the ids it returns, a directory path. */
-		if ($policy === '' || !preg_match('/^[0-9a-f]{40,80}$/i', $policy)) continue;
-		$r = @$sk->query("SELECT c.id, c.project_id FROM collections c
-		                   WHERE c.policy = '" . $sk->real_escape_string($policy) . "' LIMIT 1");
-		if (!$r || !($row = $r->fetch_assoc())) continue;
-
-		$dir = __DIR__ . '/../images/nfts/' . (int)$row['project_id'] . '/' . (int)$row['id'];
-		if (!is_dir($dir)) continue;
-		$files = @glob($dir . '/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE);
-		if (!$files) continue;
-		/*
-		 * SPREAD ACROSS THE COLLECTION RATHER THAN THE FIRST N, which
-		 * would be whichever eight happen to sort first and tend to look
-		 * alike. Deterministic, so the wall does not reshuffle on every
-		 * page load and the browser cache is worth something.
-		 */
-		sort($files);
-		$n = count($files);
-		$take = min((int)$per_theme, $n);
-		for ($i = 0; $i < $take; $i++) {
-			$f = $files[(int)floor($i * $n / $take)];
-			$cache[$key][] = array(
-				'url'   => 'https://skulliance.io/staking/images/nfts/' . (int)$row['project_id']
-				         . '/' . (int)$row['id'] . '/' . rawurlencode(basename($f)),
-				'theme' => $t['name'],
-			);
-		}
+	/* SPREAD ACROSS THE COLLECTION rather than the first N, which would
+	   be whichever sort first and tend to look alike. Deterministic, so
+	   the wall does not reshuffle every load and the browser cache is
+	   worth something. */
+	$n = count($names);
+	$take = min((int)$limit, $n);
+	for ($i = 0; $i < $take; $i++) {
+		$cache[$key][] = dropshipPublicArtUrl($names[(int)floor($i * $n / $take)]);
 	}
-	/* Trim to the asked-for total: the per-theme share rounds up. */
-	if (count($cache[$key]) > (int)$limit) $cache[$key] = array_slice($cache[$key], 0, (int)$limit);
-	/* Written through a temp name: two crawlers arriving together must not
-	   leave each other half a file to decode. */
-	if ($cache[$key]) {
-		$tmp = $cf . '.' . getmypid() . '.tmp';
-		if (@file_put_contents($tmp, json_encode($cache[$key])) !== false) {
-			if (!@rename($tmp, $cf)) @unlink($tmp);
-		}
+	$tmp = $cf . '.' . getmypid() . '.tmp';
+	if (@file_put_contents($tmp, json_encode($cache[$key])) !== false) {
+		if (!@rename($tmp, $cf)) @unlink($tmp);
 	}
 	return $cache[$key];
 }

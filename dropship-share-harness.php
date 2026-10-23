@@ -281,8 +281,36 @@ ok(strpos($pg, 'dropshipThemeClaims(') !== false,
    'dropshipgame.php no longer asks what the theme actually gives');
 ok(strpos($pg, '>Free to play<') === false,
    'the Free to play badge is unconditional again, which is false on Oculus Lounge');
-ok(preg_match('/\$ds_grunts \|\| \$ds_one === null/', $pg) === 1,
-   'the four-free-soldiers paragraph is unconditional again, and it is Drop Ship only');
+/*
+ * ANCHORED ON THE CONCEPT, NOT ON A VARIABLE NAME. This used to grep
+ * for "$ds_grunts || $ds_one === null" and went red the moment that
+ * variable was renamed -- which it had to be, because the same name was
+ * holding both the four soldiers and the boolean saying whether this
+ * theme hands them out, and the claim was overwriting the array. Same
+ * stale-anchor failure verify-polygon-harness.php sat red with for
+ * weeks. 'free_squad' is the key dropshipThemeClaims() actually
+ * returns, so it survives a rename of anything around it.
+ */
+$h_free = strpos($pg, 'Four soldiers, free, waiting for you');
+ok($h_free !== false, 'the four-free-soldiers section is gone from the page');
+/*
+ * THE CONDITION ITSELF, not merely that the words appear somewhere
+ * above. A first attempt asserted free_squad showed up before the
+ * heading, which it does no matter what -- the variable is assigned two
+ * hundred lines earlier -- so deleting the guard left the check green.
+ * This reads the nearest enclosing if() and looks inside it.
+ */
+$guard = '';
+if ($h_free !== false) {
+	$if_at = strrpos(substr($pg, 0, $h_free), '<?php if (');
+	if ($if_at !== false) {
+		$end = strpos($pg, '): ?>', $if_at);
+		if ($end !== false) $guard = substr($pg, $if_at, $end - $if_at);
+	}
+}
+ok(strpos($guard, 'free_squad') !== false,
+   'the four-free-soldiers section is guarded by "' . trim($guard) . '", which never asks '
+ . 'whether this theme actually hands them out -- they are Drop Ship only');
 
 echo "\nthe link is public, and carries no run id\n";
 /*

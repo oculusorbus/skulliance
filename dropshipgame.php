@@ -47,7 +47,8 @@ $ds_themes = dropshipPublicThemes();
  * dropshipPublicArt() returns only files that exist on this server, so a
  * dead gateway cannot turn this into a wall of broken frames.
  */
-$ds_art = dropshipPublicArt(36, 'drop-ship');
+$ds_art    = dropshipPublicArt(40);
+$ds_crew   = dropshipPublicGrunts();
 $ds_canonical = 'https://www.skulliance.io/staking/dropshipgame.php';
 
 /* The shared theme, when there is one. Validated against the live list, so
@@ -69,7 +70,11 @@ $ds_claims = dropshipThemeClaims($ds_one ? $ds_one['project_id'] : 0);
 /* With no theme named this is the whole family, where "free to play" is
    true of four of the five and the Lounge is called out on its own tile. */
 $ds_open  = $ds_one ? $ds_claims['open'] : true;
-$ds_grunts = $ds_one ? $ds_claims['free_squad'] : false;
+/* NAMED APART ON PURPOSE. These two were both $ds_grunts for a while:
+   the four soldiers, and whether this theme hands them out. The claim
+   overwrote the array, so the section foreach'd a boolean -- which with
+   display_errors on prints a PHP warning into the page. */
+$ds_free_squad = $ds_one ? $ds_claims['free_squad'] : false;
 
 $ds_og_image = $ds_slug !== ''
 	? 'https://www.skulliance.io/staking/dropship-card.php?theme=' . rawurlencode($ds_slug)
@@ -171,24 +176,21 @@ $ds_short = $ds_name !== ''
 </script>
 <style>
 /*
- * THE PAGE PAINTS ITS OWN GROUND, which this shipped without and a
- * screenshot caught immediately: the body stayed white while every colour
- * here assumed the dark site, so the whole page was pale grey text on
- * white and only the cards were readable. These pages are standalone --
- * they include site-header.php and nothing else -- so nothing upstream
- * sets a background for them. Same line guardiansgame.php carries.
+ * THE PAGE PAINTS ITS OWN GROUND. These pages include site-header.php
+ * and nothing else, so nothing upstream sets a background -- without
+ * this the whole thing renders as pale grey text on white.
  */
 body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
   Cantarell, sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
 
 /* Everything else is scoped to .dsg-, so it cannot reach site-header.php. */
-.dsg-wrap { max-width: 1100px; margin: 0 auto; padding: 28px 16px 60px; color: #e8eaed; }
+.dsg-wrap { max-width: 1100px; margin: 0 auto; padding: 8px 16px 60px; color: #e8eaed; }
 .dsg-hero { text-align: center; }
 .dsg-hero h1 { margin: 0 0 6px; font-size: clamp(1.9rem, 5vw, 3rem); text-wrap: balance; }
 .dsg-sub { display: block; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase;
   color: #00c8a0; margin-top: 8px; }
-.dsg-lead { max-width: none; margin: 16px 0 22px; font-size: 1.02rem; line-height: 1.6; color: #c6d4dd; }
+.dsg-lead { margin: 16px 0 22px; font-size: 1.02rem; line-height: 1.6; color: #c6d4dd; }
 .dsg-cta { display: inline-block; margin: 0 6px 10px; padding: 12px 26px; background: #00c8a0;
   color: #06222b; font-weight: 700; text-decoration: none; border: 1px solid #00c8a0; }
 .dsg-cta.alt { background: transparent; color: #00c8a0; }
@@ -204,8 +206,63 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 .dsg-card { background: #07111d; border: 1px solid rgba(255,255,255,.07); padding: 16px; }
 .dsg-card h3 { margin: 0 0 7px; font-size: 1rem; color: #00c8a0; }
 .dsg-card p { margin: 0; font-size: .9rem; }
-/* The theme wall: the same art the picker shows, whole and uncropped --
-   object-fit:contain, because the five are nothing alike in shape. */
+
+/*
+ * THE MARQUEE. Two counter-scrolling rows, each holding its list TWICE
+ * so the -50% translate loops seamlessly -- the same technique
+ * dhcgame.php and the homepage partner strip use, which is what the
+ * owner meant by "double auto scroll like other pages". The first
+ * version was a plain overflow-x box, so it sat still with a scrollbar
+ * under it and looked like a bug.
+ */
+.dsg-strip { width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
+  overflow: hidden; padding: 14px 0;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%); }
+.dsg-strip + .dsg-strip { padding-top: 0; }
+.dsg-track { display: flex; align-items: center; gap: 14px; width: max-content;
+  animation: dsg-scroll 70s linear infinite; will-change: transform; }
+.dsg-track.rev { animation-direction: reverse; animation-duration: 84s; }
+.dsg-track:hover { animation-play-state: paused; }
+@keyframes dsg-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) { .dsg-track { animation: none; } }
+.dsg-track img { flex: 0 0 auto; width: 124px; height: 124px; object-fit: cover; display: block;
+  border: 1px solid rgba(255,255,255,.10); background: #07111d; }
+
+/* The four Grunts, named. */
+.dsg-crew { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;
+  margin-top: 18px; }
+.dsg-crew figure { margin: 0; background: #07111d; border: 1px solid rgba(255,255,255,.08); }
+.dsg-crew img { display: block; width: 100%; aspect-ratio: 1/1; object-fit: cover; background: #07111d; }
+.dsg-crew figcaption { padding: 10px 12px 12px; }
+.dsg-crew b { display: block; font-size: .96rem; }
+.dsg-crew .kit { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: .74rem;
+  color: #00c8a0; letter-spacing: .04em; text-transform: uppercase; }
+.dsg-crew .kit img { width: 22px; height: 22px; object-fit: contain; border: 0; display: inline-block; }
+.dsg-crew .note { margin: 6px 0 0; font-size: .78rem; color: #7a9eb0; }
+
+/* The kit strip and the shelves: the game's own icons, labelled. */
+.dsg-kit { margin: 16px 0 4px; display: flex; flex-direction: column; gap: 10px; }
+.dsg-kit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.dsg-kit-label { font-size: .7rem; letter-spacing: .12em; text-transform: uppercase;
+  color: #00c8a0; width: 52px; flex: 0 0 auto; }
+.dsg-kit-item { display: flex; align-items: center; gap: 7px; }
+.dsg-kit-item img { width: 40px; height: 40px; object-fit: contain; }
+.dsg-kit-item em { font-style: normal; font-size: .82rem; color: #c6d4dd; }
+
+.dsg-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px;
+  margin-top: 14px; }
+.dsg-shelf span { display: flex; flex-direction: column; align-items: center; gap: 6px;
+  text-align: center; font-size: .72rem; color: #8fa8b8; }
+.dsg-shelf img { width: 44px; height: 44px; object-fit: contain; }
+
+/* The mosaic. */
+.dsg-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px; margin-top: 18px; }
+.dsg-wall img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;
+  background: #07111d; border: 1px solid rgba(255,255,255,.07); }
+
+/* The theme wall: whole art, uncropped -- the five are nothing alike in shape. */
 .dsg-themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;
   margin-top: 18px; }
 .dsg-theme { background: #07111d; border: 1px solid #163047; overflow: hidden; }
@@ -214,58 +271,49 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 .dsg-theme b { display: block; padding: 9px 11px 11px; font-size: .9rem; }
 .dsg-theme.on { border-color: #00c8a0; }
 
-/*
- * THE SOLDIER STRIP. A single row above the fold that scrolls sideways
- * on a phone and fans out on a desktop -- the fastest way to say "this
- * game is made of hundreds of pieces of art" without a hero screenshot
- * that would only ever show one of the five games.
- */
-.dsg-strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 10px;
-  margin: 0 0 18px; scrollbar-width: thin; }
-.dsg-strip img { flex: 0 0 auto; width: 104px; height: 104px; object-fit: cover;
-  border: 1px solid rgba(255,255,255,0.10); background: #07111d; }
-@media (min-width: 760px) { .dsg-strip img { width: 128px; height: 128px; } }
-
-/* The wall: everything, as a mosaic. */
-.dsg-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 6px; margin-top: 18px; }
-.dsg-wall img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;
-  background: #07111d; border: 1px solid rgba(255,255,255,0.07); }
-
-/* The kit strip: the game's own icons, labelled. */
-.dsg-kit { margin: 16px 0 4px; display: flex; flex-direction: column; gap: 10px; }
-.dsg-kit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
-.dsg-kit-label { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
-  color: #00c8a0; width: 52px; flex: 0 0 auto; }
-.dsg-kit-item { display: flex; align-items: center; gap: 7px; }
-.dsg-kit-item img { width: 40px; height: 40px; object-fit: contain; }
-.dsg-kit-item em { font-style: normal; font-size: 0.82rem; color: #c6d4dd; }
-
 .dsg-faq { margin-top: 18px; }
-.dsg-faq details { border-top: 1px solid rgba(255,255,255,0.08); padding: 11px 0; }
-.dsg-faq summary { cursor: pointer; font-weight: bold; font-size: 0.95rem; list-style: none; }
+.dsg-faq details { border-top: 1px solid rgba(255,255,255,.08); padding: 11px 0; }
+.dsg-faq summary { cursor: pointer; font-weight: bold; font-size: .95rem; list-style: none; }
 .dsg-faq summary::-webkit-details-marker { display: none; }
 .dsg-faq summary::after { content: ' +'; color: #00c8a0; }
 .dsg-faq details[open] summary::after { content: ' \2212'; }
-.dsg-faq p { margin: 8px 0 0; font-size: 0.9rem; }
+.dsg-faq p { margin: 8px 0 0; font-size: .9rem; }
 </style>
 </head>
 <body>
 <?php include __DIR__ . '/site-header.php'; ?>
 
-<div class="dsg-wrap">
-
-	<?php if ($ds_art): ?>
-	<?php /* ABOVE THE HEADLINE, because it is the argument. Every other
-	         game page opens with a screenshot of one board; this game is
-	         five collections of art, and showing it beats describing it. */ ?>
-	<div class="dsg-strip" aria-label="Soldiers registered in the game">
-		<?php foreach (array_slice($ds_art, 0, 14) as $a): ?>
-		<img src="<?php echo htmlspecialchars($a['url'], ENT_QUOTES); ?>" alt=""
-		     loading="eager" decoding="async" width="128" height="128">
-		<?php endforeach; ?>
+<?php if ($ds_art): ?>
+<?php
+/*
+ * TWO COUNTER-SCROLLING ROWS, each holding its half TWICE so the -50%
+ * translate loops with no seam. Split down the middle rather than both
+ * rows showing the same soldiers, and the second pass is aria-hidden so
+ * a screen reader meets each one once.
+ *
+ * THE REPEAT COUNT MUST BE EVEN or the two halves differ and the loop
+ * visibly jumps. At 124px plus a 14px gap, sixteen tiles is 2208px,
+ * which clears a wide display; fewer leaves a gap at the turn that
+ * reads as a broken page.
+ */
+$ds_rows = array_chunk($ds_art, max(1, (int)ceil(count($ds_art) / 2)));
+?>
+<?php foreach ($ds_rows as $ri => $ds_row): if (!$ds_row) continue;
+      $ds_passes = max(2, 2 * (int)ceil(16 / max(1, count($ds_row)))); ?>
+<div class="dsg-strip">
+	<div class="dsg-track<?php echo $ri % 2 ? ' rev' : ''; ?>">
+		<?php for ($pass = 0; $pass < $ds_passes; $pass++): foreach ($ds_row as $u): ?>
+		<img src="<?php echo htmlspecialchars($u, ENT_QUOTES); ?>" alt=""
+		     loading="eager" decoding="async" width="124" height="124"
+		     <?php if ($pass) echo 'aria-hidden="true"'; ?>
+		     onerror="this.remove()">
+		<?php endforeach; endfor; ?>
 	</div>
-	<?php endif; ?>
+</div>
+<?php endforeach; ?>
+<?php endif; ?>
+
+<div class="dsg-wrap">
 
 	<header class="dsg-hero">
 		<h1><?php echo htmlspecialchars($ds_name !== '' ? $ds_name : 'Drop Ship'); ?></h1>
@@ -300,10 +348,10 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 		/*
 		 * THE GAME'S OWN ICONS, not a description of them. These are the
 		 * exact files the barracks and the shop draw, so a stranger has
-		 * already met the vocabulary before they open the game. Every one
-		 * verified live before being pointed at -- images ship by FTP and
-		 * are not in the repo, so a filename here is a claim about the
-		 * server, not about this checkout.
+		 * already met the vocabulary before they open the game. Every
+		 * filename below was verified 200 on the server before being
+		 * pointed at -- images ship by FTP, so a name here is a claim
+		 * about the server and not about this checkout.
 		 */
 		$ds_ico   = 'https://skulliance.io/staking/dropship/icons/';
 		$ds_armor = array('heavy-armor' => 'Heavy', 'medium-armor' => 'Medium',
@@ -349,6 +397,87 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 		</div>
 	</section>
 
+	<?php /* THE FREE SQUAD IS DROP SHIP ONLY. addDefaultSoldiers() is gated
+	         on project 1, so a section headed "four soldiers, free, waiting
+	         for you" on a Dread City or Oculus Lounge page is a promise the
+	         game does not keep. Shown on Drop Ship and on the untargeted
+	         page, which is about the family. */ ?>
+	<?php if ($ds_crew && ($ds_free_squad || $ds_one === null)): ?>
+	<section class="dsg-sec">
+		<h2>Four soldiers, free, waiting for you</h2>
+		<p>You do not need to own anything to take a real run.
+			<?php echo $ds_free_squad ? 'Every player is handed these four' : 'Every Drop Ship player is handed these four'; ?>,
+			and they are not filler: between them they carry all four armor tiers and three gear
+			types, which is one complete squad. Sektr carrying nothing is deliberate, because there are
+			three gear types and four soldiers.</p>
+		<div class="dsg-crew">
+			<?php foreach ($ds_crew as $g): ?>
+			<figure>
+				<img src="<?php echo htmlspecialchars(dropshipPublicArtUrl($g['asset']), ENT_QUOTES); ?>"
+				     alt="<?php echo htmlspecialchars($g['name'], ENT_QUOTES); ?>"
+				     loading="lazy" decoding="async" onerror="this.remove()">
+				<figcaption>
+					<b><?php echo htmlspecialchars($g['name'], ENT_QUOTES); ?></b>
+					<span class="kit">
+						<img src="<?php echo $ds_ico . strtolower($g['armor']); ?>-armor.png" alt=""
+						     loading="lazy" width="22" height="22"><?php echo htmlspecialchars($g['armor']); ?>
+						<?php if ($g['gear'] !== 'None'): ?>
+						<img src="<?php echo $ds_ico . strtolower($g['gear']); ?>.png" alt=""
+						     loading="lazy" width="22" height="22"><?php echo htmlspecialchars($g['gear']); ?>
+						<?php else: ?>&middot; no gear<?php endif; ?>
+					</span>
+					<p class="note"><?php echo htmlspecialchars($g['note'], ENT_QUOTES); ?></p>
+				</figcaption>
+			</figure>
+			<?php endforeach; ?>
+		</div>
+	</section>
+	<?php endif; ?>
+
+	<section class="dsg-sec">
+		<h2>The Armory</h2>
+		<p>SCRIP earned from runs buys gear, and gear changes the odds the run rolls against. Weapons,
+			armor and equipment are all bought the same way and all fire once per squad.</p>
+		<?php
+		/* The shop's real inventory icons. Three shelves, named exactly as
+		   the Armory names them. All verified live. */
+		$ds_shelves = array(
+			'Weapons'   => array('tactical-katana' => 'Tactical Katana', 'sniper-rifle' => 'Sniper Rifle',
+			                     'machine-gun' => 'Machine Gun', 'rocket-launcher' => 'Rocket Launcher',
+			                     'flamethrower' => 'Flamethrower', 'grenade' => 'Grenade'),
+			'Armor'     => array('ballistic-shield' => 'Ballistic Shield', 'exo-suit' => 'Exo Suit',
+			                     'mech-suit' => 'Mech Suit', 'quantum-stealth' => 'Quantum Stealth'),
+			'Equipment' => array('radar' => 'Radar', 'radio' => 'Radio', 'jet-pack' => 'Jet Pack',
+			                     'night-vision-goggles' => 'Night Vision', 'smoke-bomb' => 'Smoke Bomb',
+			                     'drop-box' => 'Drop Box'),
+		);
+		foreach ($ds_shelves as $label => $items): ?>
+		<h3 style="font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:#00c8a0;margin:22px 0 0;">
+			<?php echo $label; ?></h3>
+		<div class="dsg-shelf">
+			<?php foreach ($items as $f => $n): ?>
+			<span><img src="<?php echo $ds_ico . $f; ?>.png" alt="" loading="lazy"
+				width="44" height="44" onerror="this.parentNode.remove()"><?php echo htmlspecialchars($n); ?></span>
+			<?php endforeach; ?>
+		</div>
+		<?php endforeach; ?>
+	</section>
+
+	<section class="dsg-sec">
+		<h2>How far did you get</h2>
+		<p>The run has landmarks before it has a score. Reach them and they stay on your record, along
+			with the rounds you survived and the SCRIP you earned.</p>
+		<div class="dsg-shelf">
+			<?php foreach (array('beach' => 'Stormed the Beach', 'hill' => 'Climbed the Hill',
+			                     'bunker' => 'Entered the Bunker', '20' => 'Survived 20',
+			                     '30' => 'Survived 30', '40' => 'Survived 40', '50' => 'Survived 50',
+			                     'scrip' => 'SCRIP earned', 'trophy' => 'Won an NFT') as $f => $n): ?>
+			<span><img src="<?php echo $ds_ico . $f; ?>.png" alt="" loading="lazy"
+				width="44" height="44" onerror="this.parentNode.remove()"><?php echo htmlspecialchars($n); ?></span>
+			<?php endforeach; ?>
+		</div>
+	</section>
+
 	<?php if ($ds_themes): ?>
 	<section class="dsg-sec">
 		<h2><?php echo count($ds_themes) === 1 ? 'The game' : 'Five games, one engine'; ?></h2>
@@ -368,17 +497,19 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 	</section>
 	<?php endif; ?>
 
-	<?php if (count($ds_art) > 14): ?>
+	<?php if (count($ds_art) > 12): ?>
 	<section class="dsg-sec">
 		<h2>Every one of these is somebody's soldier</h2>
-		<p>Drop Ship does not draw its own characters. It reads the collections people already hold and
-			turns each card into a soldier, carrying the armor and gear its art says it has. These are
-			real ones, pulled straight from the barracks.</p>
+		<p>Drop Ship does not draw its own characters. It reads the cards people already hold and turns
+			each one into a soldier, carrying the armor and gear its art says it has. These are real
+			ones, pulled straight from the barracks.</p>
+		<?php /* onerror removes the tile rather than leaving a bordered hole:
+		         a wall with gaps in it reads as a broken page, and that is
+		         exactly what the first version shipped with. */ ?>
 		<div class="dsg-wall">
-			<?php foreach ($ds_art as $a): ?>
-			<img src="<?php echo htmlspecialchars($a['url'], ENT_QUOTES); ?>"
-			     alt="<?php echo htmlspecialchars($a['theme'] . ' soldier', ENT_QUOTES); ?>"
-			     loading="lazy" decoding="async">
+			<?php foreach ($ds_art as $u): ?>
+			<img src="<?php echo htmlspecialchars($u, ENT_QUOTES); ?>" alt=""
+			     loading="lazy" decoding="async" onerror="this.remove()">
 			<?php endforeach; ?>
 		</div>
 	</section>
@@ -388,8 +519,8 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 		<h2>Questions</h2>
 		<div class="dsg-faq">
 			<details open><summary>Is it free?</summary>
-				<p>Yes, and you do not need to own anything. Four soldiers are waiting in your Drop Ship
-					barracks and the four of them make one complete squad. Oculus Lounge is the one theme
+				<p>Yes, and you do not need to own anything. The four soldiers above are waiting in your
+					Drop Ship barracks and they make one complete squad. Oculus Lounge is the one theme
 					that is not open to everybody.</p></details>
 			<details><summary>How long is a run?</summary>
 				<p>A couple of minutes. Pick a squad, deploy, and watch it play out round by round. The
@@ -407,20 +538,12 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 	</section>
 
 	<section class="dsg-sec">
-		<h2>Start without owning anything</h2>
-		<?php /* THE FREE SQUAD IS DROP SHIP ONLY. addDefaultSoldiers() is gated
-		         on project 1, so claiming it on a Dread City or Oculus Lounge
-		         page is a promise the game does not keep. */ ?>
-		<?php if ($ds_grunts || $ds_one === null): ?>
-		<p><?php echo $ds_grunts ? 'Every player is given' : 'In Drop Ship every player is given'; ?>
-			four free soldiers, and they are not filler: Hagar, Delay, Blood Bag and Sektr carry Heavy,
-			Medium, Light and Base armor with a Melee, a Demolition and a Medkit between them, which is a
-			complete squad. You can take a real run before you own a single NFT.</p>
-		<?php endif; ?>
-		<p>In DHC2 Fighters you can go further. Assemble a Fighter out of traits earned anywhere on the
-			platform and it drops straight into your barracks as a soldier, scored on its own traits
-			alongside the minted collection. Assembling costs nothing, so that theme is open to anyone
-			who builds.</p>
+		<h2>Bring your own</h2>
+		<p>NFTs you hold become soldiers alongside the free four, carrying the armor and gear their art
+			says they have. In DHC2 Fighters you can go further: assemble a Fighter out of traits earned
+			anywhere on the platform and it drops straight into your barracks as a soldier, scored on its
+			own traits alongside the minted collection. Assembling costs nothing, so that theme is open
+			to anyone who builds.</p>
 		<?php if (!$ds_open): ?>
 		<p><?php echo htmlspecialchars($ds_name); ?> is the one that is not open to everybody: it wants the
 			VIP role, or a temporary pass bought with DISCOIN.</p>
