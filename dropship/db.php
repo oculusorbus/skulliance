@@ -1650,7 +1650,45 @@ function createSoldier($conn, $asset_name, $name, $title, $rank, $armor, $gear, 
 }
 
 // Assign soldiers to users based on NFT holdings
+/**
+ * Every asset name a holdings source has claimed for this player, this request.
+ *
+ * WHY THIS EXISTS. updateSoldiers() DETACHES THE PLAYER'S WHOLE ROSTER
+ * before it re-attaches, and that clear is load-bearing: it is how a sold
+ * NFT lets go of its soldier. Correct for one source and wrong for two.
+ * DHC2 Fighters pulls minted NFTs AND assembled Fighters, so whichever
+ * pipeline ran second wiped the first one's work -- the Fighters synced,
+ * created their soldier rows, were attached, and were detached again a
+ * line later by the Koios pass. The barracks showed four NFTs and no
+ * Fighters, with nothing in the log, because every query succeeded.
+ *
+ * So the clear stays and the attach became cumulative: each call
+ * re-attaches the union of everything reported so far. That makes the
+ * outcome independent of call order, and identical to today for a theme
+ * with a single source. Per request and never persisted, so a name no
+ * source reports any more is simply absent next page load -- which is the
+ * detach, still working.
+ */
+function dropshipClaimedSoldiers($add = null) {
+	static $claimed = array();
+	if (is_array($add)) {
+		foreach ($add as $n) {
+			$n = trim((string)$n);
+			if ($n !== '') $claimed[$n] = true;
+		}
+	}
+	return array_keys($claimed);
+}
+
 function updateSoldiers($conn, $asset_names) {
+	/* Callers pass their list pre-joined for the IN (), which is the shape
+	   all three call sites have always used. Split back apart so the union
+	   is over names rather than over fragments of SQL, and escaped on the
+	   way back in -- the old line interpolated raw. */
+	$names = dropshipClaimedSoldiers(explode("', '", (string)$asset_names));
+	$in = array();
+	foreach ($names as $n) $in[] = $conn->real_escape_string($n);
+
 	// Clear out all NFT associations for user
 	$sql = "UPDATE soldiers SET user_id = 0 WHERE user_id = '".$_SESSION['userData']['dropship_user_id']."' AND project_id = '".$_SESSION['userData']['dropship_project_id']."' AND rank != 'GRUNT'";
 	if ($conn->query($sql) === TRUE) {
@@ -1659,7 +1697,7 @@ function updateSoldiers($conn, $asset_names) {
 	  //echo "Error: " . $sql . "<br>" . $conn->error;
 	}
 	// Re-establish all NFT associations for user
-	$sql = "UPDATE soldiers SET user_id = '".$_SESSION['userData']['dropship_user_id']."' WHERE asset_name IN ('".$asset_names."') AND project_id = '".$_SESSION['userData']['dropship_project_id']."'";
+	$sql = "UPDATE soldiers SET user_id = '".$_SESSION['userData']['dropship_user_id']."' WHERE asset_name IN ('".implode("', '", $in)."') AND project_id = '".$_SESSION['userData']['dropship_project_id']."'";
 	if ($conn->query($sql) === TRUE) {
 	  //echo "New record created successfully";
 	} else {

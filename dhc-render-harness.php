@@ -210,7 +210,16 @@ foreach (array('SKL_EMBED_TITLE_MAX', 'SKL_EMBED_DESC_MAX',
 }
 if (!function_exists('skl_embed_trim')) eval(be2($wh, 'function skl_embed_trim('));
 
-$fn = be2($wh, 'function discordmsg(');
+/*
+ * BOTH HALVES. discordmsg() became a thin wrapper that forwards to
+ * skl_discordmsg() in 31fd2501, and the body -- webhook selection,
+ * payload, attachment -- went with it. Lifting only the wrapper left this
+ * harness calling an undefined function: a FATAL that killed the run at
+ * the first discordmsg() and took every check after it, including the
+ * traversal guard that stops a source file being uploaded to Discord.
+ * Three commits with the guard not actually running.
+ */
+$fn = be2($wh, 'function skl_discordmsg(') . "\n" . be2($wh, 'function discordmsg(');
 /* EVERY assignment, and matched loosely: discordmsg picks its webhook
    through ~24 branches and several are ternaries
    (function_exists('getXWebhook') ? getXWebhook() : ""), so a pattern for

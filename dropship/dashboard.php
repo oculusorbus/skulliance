@@ -241,8 +241,15 @@ $_SESSION['userData']['trait_source_key'] = $ds_source_key;
  * So this runs first and the NFT pipeline below still runs after it.
  * Both write to the same soldiers table with distinct asset names --
  * minted rows are DHC2F*, assembled ones are DHCFA* -- so neither can
- * overwrite the other, and updateSoldiers() is called by each with its
- * own list.
+ * overwrite the other's ROW.
+ *
+ * OWNERSHIP WAS A DIFFERENT STORY, and this comment used to claim it was
+ * fine because "updateSoldiers() is called by each with its own list".
+ * That was the bug: updateSoldiers() detaches the player's entire roster
+ * before re-attaching its list, so the Koios pass below undid this one a
+ * few hundred lines later. Four NFTs, no Fighters, no error. It is
+ * cumulative now -- see dropshipClaimedSoldiers() in db.php -- so the
+ * order of these two blocks no longer decides who keeps their soldiers.
  */
 $ds_fighters = ($ds_source === 'fighters');
 if($ds_fighters){

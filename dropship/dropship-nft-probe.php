@@ -43,7 +43,10 @@ function dropshipNftProbe($conn, $project_id, $discord_id) {
 
 	$source = function_exists('dropshipThemeTraitSource')
 	        ? dropshipThemeTraitSource($conn, $project_id) : 'koios';
-	$add('Trait source this theme is set to', 1, $source . ' (both are checked below)');
+	$add('Trait source this theme is set to', 1,
+	     $source === 'fighters'
+	       ? 'fighters -- assembled DHC Fighters PLUS the Koios wallet read, both checked below'
+	       : $source . ' (both NFT sources are checked below)');
 
 	/*
 	 * BOTH PATHS, ALWAYS, whichever one the theme is set to. The question
@@ -76,6 +79,51 @@ function dropshipNftProbe($conn, $project_id, $discord_id) {
 			               WHERE collections.policy = '$pe' AND users.discord_id = '$de'");
 			$add('SKULLIANCE: ...and held by you', $nmine,
 			     $nmine ? '' : 'You hold none of this collection on your Skulliance account.');
+		}
+
+		/*
+		 * FIGHTERS, which are a third source and were invisible here --
+		 * the line above said "both are checked below" and then checked
+		 * the two NFT paths only. Switching DHC2 Fighters over and getting
+		 * no Fighters was therefore undiagnosable from this page, which is
+		 * the one job it has.
+		 *
+		 * Reported for every theme, like the other two, but only the theme
+		 * set to 'fighters' actually syncs them -- said in the detail so a
+		 * non-zero count on some other theme is not read as a fault.
+		 */
+		if ($source === 'fighters') {
+			$nf = $one("SELECT COUNT(*) AS n FROM dhc_fighters f
+			            INNER JOIN users u ON u.id = f.user_id
+			            WHERE u.discord_id = '$de' AND f.invalid = 0
+			              AND f.disassembled_at IS NULL");
+			$add('FIGHTERS: assembled by you, still intact', $nf,
+			     $nf ? '' : 'You have built none, or they are all disassembled. '
+			              . 'Build one at dhcfighters.php and reload this theme.');
+			if ($nf) {
+				/* The soldier rows live in the DROP SHIP database, not this
+				   one, so this half is asked of $conn -- and it is the half
+				   that shows whether the sync ran at all. */
+				$pfx = $conn->real_escape_string(
+					function_exists('dropshipFighterPrefix') ? dropshipFighterPrefix() : 'DHCFA');
+				$q = @$conn->query("SELECT COUNT(*) AS n,
+				                      SUM(user_id = '" . (int)($_SESSION['userData']['dropship_user_id'] ?? 0) . "') AS mine
+				                    FROM soldiers
+				                    WHERE project_id = " . (int)$project_id . "
+				                      AND asset_name LIKE '$pfx%'");
+				$row = ($q && ($r2 = $q->fetch_assoc())) ? $r2 : array('n' => 0, 'mine' => 0);
+				$nrow  = (int)$row['n'];
+				$nmine2 = (int)$row['mine'];
+				$add('FIGHTERS: ...synced into soldiers', $nrow,
+				     $nrow ? '' : 'The sync has never run for you on this theme. It only fires when the '
+				                . 'wallet set, the project or the trait source CHANGES -- switch the theme '
+				                . 'away and back, or reconnect a wallet, to trigger it.');
+				$add('FIGHTERS: ...and attached to you', $nmine2,
+				     $nmine2 ? '' : 'The rows exist but belong to nobody, which means something detached '
+				                  . 'them after the sync. updateSoldiers() clears the whole roster before '
+				                  . 'it re-attaches; it is cumulative now, so a stale deploy is the first '
+				                  . 'thing to check.');
+			}
 		}
 		$sk->close();
 	}

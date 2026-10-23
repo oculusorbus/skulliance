@@ -141,6 +141,11 @@ function dhc2FighterStats($traits) {
  * but reads dhc_fighters instead of nfts, and derives the loadout from
  * the Fighter's own traits rather than a policy's metadata.
  *
+ * THE OWNERSHIP PASS IS SHARED WITH THE NFT PIPELINE, which is the whole
+ * reason dropshipClaimedSoldiers() exists: updateSoldiers() detaches the
+ * player's entire roster before re-attaching, so running this and then
+ * the Koios sync used to leave only the Koios half. See that function.
+ *
  * INVALID FIGHTERS ARE SKIPPED. A Fighter stranded by a later rules
  * change cannot be fielded in the Arena either; fielding it here would
  * make Drop Ship the place broken builds go to be useful.
@@ -156,11 +161,18 @@ function dropshipSyncFighters($conn, $discord_id) {
 	$sk = dropshipSkullianceDb();
 	if (!$sk) return;
 	$did = $sk->real_escape_string((string)$discord_id);
+	/* DISASSEMBLED FIGHTERS ARE GONE, and this missed them. Taking a
+	   Fighter apart returns its traits to the player to build with, so the
+	   build no longer exists -- dhcf_fighters() has always filtered on this
+	   and the Arena reads through it. Without the filter a player could
+	   disassemble a Fighter, spend its traits on a second one, and field
+	   both. */
 	$res = @$sk->query(
 		"SELECT f.id, f.serial, f.name, f.traits
 		   FROM dhc_fighters f
 		   INNER JOIN users u ON u.id = f.user_id
 		  WHERE u.discord_id = '$did' AND f.invalid = 0
+		    AND f.disassembled_at IS NULL
 		  ORDER BY f.serial ASC");
 	$rows = array();
 	if ($res) while ($r = $res->fetch_assoc()) $rows[] = $r;

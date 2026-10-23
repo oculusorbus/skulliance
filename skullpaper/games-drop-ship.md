@@ -45,6 +45,16 @@ share one collection whose cards carry no traits at all, so armor comes from
 how scarce the card is - a 1 of 1 is the best armored thing in the game - and
 gear from whether the card shows the character fighting.
 
+**DHC2 Fighters fields what you built, not only what you bought.** Every
+Fighter you have assembled on the platform shows up as a soldier in that
+theme alongside your minted DHC2 Fighters NFTs, and the two sit in the same
+barracks. Armor and gear are read from the Fighter's own traits against the
+minted collection, so an assembled Fighter is scored on the same curve as a
+card and a rare trait counts for more. Assembling is free, so the theme is
+open to anyone who builds. Disassembling a Fighter to get its traits back
+takes its soldier off your roster, which is the trade: you can field the
+build or spend the parts, not both. See [[games-dhc-fighters]].
+
 **Armor sets the odds. Gear does not.** Only the armor your squad is wearing
 decides the roll each round: the best tier worn sets the floor and every lower
 tier adds a little on top, which is why a mixed squad of four beats four of the
