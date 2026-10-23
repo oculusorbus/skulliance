@@ -235,9 +235,11 @@ function dropshipPublicArt($limit = 24) {
 	 * feeding strings to code that now subscripts them. In PHP 8 that is
 	 * an uncaught TypeError, "Cannot access offset of type string on
 	 * string", and the public page simply stopped rendering half way
-	 * down. BUMP THIS whenever the shape of an entry changes.
+	 * down. BUMP THIS whenever the shape of an entry changes -- or when
+	 * the SELECTION changes and you want the fix visible now rather than
+	 * an hour from now, which is why it is at 3.
 	 */
-	$cf = sys_get_temp_dir() . '/skl-dsart2-' . md5($dir . '|' . $key) . '.json';
+	$cf = sys_get_temp_dir() . '/skl-dsart3-' . md5($dir . '|' . $key) . '.json';
 	if (is_file($cf) && (time() - (int)@filemtime($cf)) < 3600) {
 		$hit = json_decode((string)@file_get_contents($cf), true);
 		/* AND VALIDATED ANYWAY, because a version in the key only helps
@@ -279,21 +281,52 @@ function dropshipPublicArt($limit = 24) {
 		}
 	}
 
-	/* SPREAD ACROSS THE COLLECTION rather than the first N, which would
-	   be whichever sort first and tend to look alike. Deterministic, so
-	   the strip does not reshuffle every load and the browser cache is
-	   worth something. */
-	$n = count($assets);
-	$take = min((int)$limit, $n);
-	for ($i = 0; $i < $take; $i++) {
-		$a = $assets[(int)floor($i * $n / $take)];
-		/* A soldier with no row still gets a tile; its asset name is a
-		   duller label than a real one but it is not a blank. */
-		$cache[$key][] = array(
-			'url'  => dropshipPublicArtUrl($a),
-			'name' => isset($label[$a]) && trim($label[$a]) !== '' ? trim($label[$a]) : $a,
-		);
+	/*
+	 * ONE PER CHARACTER FIRST, WHICH A STRIDE CANNOT DO.
+	 *
+	 * This took every Nth file, which sounds like variety and is not:
+	 * the collection runs sixteen variants of each character in a block
+	 * (ANGEL #01..#16, then BANDIT, then BOSS), and with roughly 320
+	 * files and 40 tiles the stride came out at exactly 8. Eight divides
+	 * sixteen, so every tile landed on #01 or #09 of its character --
+	 * forty pictures and twenty characters, each shown twice. The names
+	 * were right; the sampling was aliasing against the collection's own
+	 * period, which is invisible until you read the captions.
+	 *
+	 * Grouped by the name before the "#" and taken round robin instead,
+	 * so the first forty tiles are forty different characters and no two
+	 * repeat until every one has appeared. Deterministic, so the strip
+	 * does not reshuffle on every load.
+	 *
+	 * A SOLDIER WITH NO ROW falls back to its asset name and becomes its
+	 * own group, which is right: nothing is known about it to group on.
+	 */
+	$groups = array();
+	foreach ($assets as $a) {
+		$nm = isset($label[$a]) && trim($label[$a]) !== '' ? trim($label[$a]) : $a;
+		/* "ANGEL #01" -> "ANGEL". A name with no # is its own group. */
+		$hash = strpos($nm, '#');
+		$key_g = $hash === false ? $nm : rtrim(substr($nm, 0, $hash));
+		if ($key_g === '') $key_g = $a;
+		$groups[$key_g][] = array('url' => dropshipPublicArtUrl($a), 'name' => $nm);
 	}
+	ksort($groups);
+
+	$limit = (int)$limit;
+	$round = 0;
+	while (count($cache[$key]) < $limit) {
+		$added = false;
+		foreach ($groups as $g) {
+			if (!isset($g[$round])) continue;
+			$cache[$key][] = $g[$round];
+			$added = true;
+			if (count($cache[$key]) >= $limit) break;
+		}
+		/* Every group exhausted before the limit: take what there is. */
+		if (!$added) break;
+		$round++;
+	}
+
 	$tmp = $cf . '.' . getmypid() . '.tmp';
 	if (@file_put_contents($tmp, json_encode($cache[$key])) !== false) {
 		if (!@rename($tmp, $cf)) @unlink($tmp);

@@ -356,6 +356,79 @@ $pg2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropshipgame.php'));
 ok(strpos($pg2, 'dropshipArtListOk($ds_art)') !== false,
    'dropshipgame.php trusts the library and will fatal on a bad list rather than drawing nothing');
 
+echo "\nthe strip shows characters, not the same two variants of each\n";
+/*
+ * A STRIDE ALIASED AGAINST THE COLLECTION'S OWN PERIOD. The art runs
+ * sixteen variants of each character in a block -- ANGEL #01..#16, then
+ * BANDIT -- and taking every Nth file across ~320 of them for 40 tiles
+ * made the step exactly 8. Eight divides sixteen, so every tile landed
+ * on #01 or #09 of its character. Forty pictures, twenty characters,
+ * each shown twice, and nothing about the code looked wrong: the names
+ * were correct, the spread was even, the tiles were all different
+ * files. Only reading the captions showed it.
+ *
+ * Driven over a stand-in of the real collection, because the shape of
+ * the collection IS the bug and a fixture without that period would
+ * prove nothing.
+ */
+$chars = array('ANGEL','BANDIT','BOSS','CANON','DEATH','DELAY','DELTA','DIEGO','FEVER','HAGAR',
+               'LAZLO','MANIC','MEDIC','NOMAD','SAINT','SCRIP','TRUST','VALVE','VANCE','WOLFE');
+$sim = array();
+foreach ($chars as $c) for ($v = 1; $v <= 16; $v++) $sim[] = sprintf('%s #%02d', $c, $v);
+
+/* The shipped grouping, lifted so this tests the real rule. */
+$groups = array();
+foreach ($sim as $nm) {
+	$hash = strpos($nm, '#');
+	$g = $hash === false ? $nm : rtrim(substr($nm, 0, $hash));
+	$groups[$g][] = $nm;
+}
+ksort($groups);
+$picked = array(); $round = 0;
+while (count($picked) < 40) {
+	$added = false;
+	foreach ($groups as $g) {
+		if (!isset($g[$round])) continue;
+		$picked[] = $g[$round]; $added = true;
+		if (count($picked) >= 40) break;
+	}
+	if (!$added) break;
+	$round++;
+}
+$seen_chars = array(); $seen_suffix = array();
+foreach ($picked as $nm) {
+	$seen_chars[substr($nm, 0, strpos($nm, ' '))] = true;
+	$seen_suffix[substr($nm, -3)] = true;
+}
+ok(count($picked) === 40, 'the strip came back with ' . count($picked) . ' tiles, not 40');
+ok(count(array_unique($picked)) === 40, 'the same soldier appears twice in one pass');
+ok(count($seen_chars) === count($chars),
+   'only ' . count($seen_chars) . ' of ' . count($chars) . ' characters are shown; a stride that '
+ . 'divides the 16-per-character block repeats the same few forever');
+/*
+ * NOT "more than two variants" -- that was my own bad assertion and it
+ * failed on correct output. Forty tiles over twenty characters IS two
+ * variants each, and that is the best possible answer. The property
+ * worth pinning is EVENNESS: nobody appears a third time until
+ * everybody has appeared twice.
+ */
+$per = array_count_values(array_map(function ($nm) {
+	return substr($nm, 0, strpos($nm, ' '));
+}, $picked));
+$ideal = (int)ceil(40 / count($chars));
+ok(max($per) <= $ideal,
+   'one character appears ' . max($per) . ' times against an even share of ' . $ideal
+ . ', so the picking is lopsided');
+ok(max($per) - min($per) <= 1,
+   'the spread across characters runs from ' . min($per) . ' to ' . max($per) . ' tiles');
+
+/* And the library really groups, rather than striding. */
+$lib2 = harness_strip_comments(file_get_contents(__DIR__ . '/lib/dropship-public.php'));
+ok(strpos($lib2, "floor(\$i * \$n / \$take)") === false,
+   'the stride is back, and it will alias against the collection again');
+ok(strpos($lib2, 'ksort($groups)') !== false,
+   'the art is no longer grouped by character before it is picked');
+
 echo "\nthe link is public, and carries no run id\n";
 /*
  * BOTH HALVES MATTER. A link behind the login serves X's crawler a redirect

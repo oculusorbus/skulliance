@@ -56,6 +56,26 @@ $ds_art    = dropshipPublicArt(40);
 if (!dropshipArtListOk($ds_art)) $ds_art = array();
 $ds_crew   = dropshipPublicGrunts();
 $ds_canonical = 'https://www.skulliance.io/staking/dropshipgame.php';
+/*
+ * WHERE THE SOLDIERS COME FROM. One constant, used by the body and the
+ * footer, so the two cannot drift. Supplied by the owner; wayup answered
+ * 429 to my check rather than 404, so this is "not a dead link" rather
+ * than "verified", and worth a click before it goes on the homepage.
+ */
+$ds_market = 'https://www.wayup.io/collection/4478c708183e95340d0582419a2d6bc93d57657895c19802546d396c';
+/*
+ * THE ARTIST, CREDITED BY NAME. Every soldier on this page is Ohh
+ * Meed's work and the page is largely made of it, so the credit is
+ * owed. The handle is the one already in the owner's x_tag registry for
+ * Drop Ship, not one I guessed -- a wrong handle credits a stranger.
+ *
+ * Note this is a CREDIT, which is why it is here and not in the run
+ * share: a share fires every time anybody finishes a game, and pointing
+ * that volume at a person's mentions is a different thing from naming
+ * them on the page about their work.
+ */
+$ds_artist      = '@ohh_meed';
+$ds_artist_link = 'https://x.com/ohh_meed';
 
 /* The shared theme, when there is one. Validated against the live list, so
    an invented slug falls back to the generic page rather than 404ing
@@ -301,6 +321,10 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
   text-align: center; color: #8a96a3; font-size: .86rem; }
 .dsg-foot a { color: #8a96a3; }
 .dsg-foot a:hover { color: #00c8a0; }
+/* The artist credit, under the soldiers it belongs to. */
+.dsg-credit { margin-top: 10px; font-size: .82rem; color: #7a9eb0; }
+.dsg-credit a { color: #00c8a0; }
+
 .dsg-foot .also { margin-top: 8px; font-size: .8rem; color: #5f7d90; }
 
 /* The rank ladder: a name and the number of soldiers it wants. */
@@ -373,6 +397,11 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 		<p>Drop Ship does not draw its own characters. It reads the NFTs people already hold and turns
 			each one into a soldier, carrying the armor and gear its art says it has. These are real
 			ones, pulled straight from the barracks.</p>
+		<p class="dsg-credit">Art by
+			<a href="<?php echo htmlspecialchars($ds_artist_link, ENT_QUOTES); ?>"
+			   target="_blank" rel="noopener"><?php echo htmlspecialchars($ds_artist); ?></a>
+			&middot; <a href="<?php echo htmlspecialchars($ds_market, ENT_QUOTES); ?>"
+			   target="_blank" rel="noopener">the collection is on wayup</a></p>
 	</section>
 	<?php
 	/*
@@ -647,8 +676,9 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 
 	<section class="dsg-sec">
 		<h2>Bring your own</h2>
-		<p>NFTs you hold become soldiers alongside the free four, carrying the armor and gear their art
-			says they have. In DHC2 Fighters you can go further: assemble a Fighter out of traits earned
+		<p><a href="<?php echo htmlspecialchars($ds_market, ENT_QUOTES); ?>"
+			target="_blank" rel="noopener">Drop Ship NFTs</a> you hold become soldiers alongside the
+			free four, carrying the armor and gear their art says they have. In DHC2 Fighters you can go further: assemble a Fighter out of traits earned
 			anywhere on the platform and it drops straight into your barracks as a soldier, scored on its
 			own traits alongside the minted collection. Assembling costs nothing, so that theme is open
 			to anyone who builds.</p>
@@ -662,8 +692,11 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 
 
 	<footer class="dsg-foot">
-		<p>Part of <a href="https://www.skulliance.io/">Skulliance</a>, an NFT platform on Cardano with
-			a dozen games on it.</p>
+		<p>Drop Ship is drawn by
+			<a href="<?php echo htmlspecialchars($ds_artist_link, ENT_QUOTES); ?>"
+			   target="_blank" rel="noopener"><?php echo htmlspecialchars($ds_artist); ?></a>
+			and runs on <a href="https://www.skulliance.io/">Skulliance</a>, an NFT platform on Cardano
+			with a dozen games on it.</p>
 		<p class="also">Also try
 			<a href="dhcgame.php">DHC Fighters</a>,
 			<a href="guardiansgame.php">Realm Guardians</a>,
@@ -675,7 +708,9 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 		         host they are not signed in on. The Skulliance link above is
 		         the exception, and deliberately -- it is the marketing site,
 		         not a page anybody is signed in to. */ ?>
-		<p class="also"><a href="skullpaper.php?page=games-drop-ship">Read the rules in full</a></p>
+		<p class="also"><a href="skullpaper.php?page=games-drop-ship">Read the rules in full</a>
+			&middot; <a href="<?php echo htmlspecialchars($ds_market, ENT_QUOTES); ?>"
+			target="_blank" rel="noopener">Drop Ship on wayup</a></p>
 	</footer>
 
 </div>
