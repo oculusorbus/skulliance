@@ -440,25 +440,54 @@ echo "\nthrough the real processNFT, into the column\n";
  * THE STUB ABOVE IS NOT THE WRITER. Every check so far has handed its
  * image to a processNFT() defined in this file, which records whatever it
  * is given -- so it could not possibly catch the value being the wrong
- * SHAPE for the real one. The real processNFT() strips seven characters
- * off anything that is not an absolute URL, and that is a contract
- * between two files with nothing enforcing it.
+ * SHAPE for the real one. What verify.php computes as $ipfs is literally
+ * what lands in nfts.ipfs, and that is a contract between two files with
+ * nothing enforcing it.
  *
- * So the real branch is lifted out of verify.php and run. What it
- * computes as $ipfs is literally what lands in nfts.ipfs.
+ * So the real chain is lifted out of verify.php and run.
+ *
+ * THE EXTRACTION USED TO ANCHOR ON ONE LINE OF CODE AND THAT WAS WRONG.
+ * It searched for the literal `$ipfs = substr($image, 7, strlen($image));`
+ * to find the end of the chain. That line was later narrowed to
+ * `substr($image, 7)` and guarded behind a stripos() -- a real fix, for a
+ * real bug, where a bare CID was having seven characters eaten off the
+ * front -- and this harness went red and STAYED red for every run since,
+ * all five checks cascading from one missing string. Five permanently
+ * failing assertions are five nobody reads.
+ *
+ * It walks the braces now. The chain ends at the first `}` at depth zero
+ * that is not followed by `else`, so branches can be added, removed or
+ * rewritten and this still finds the end of it.
  */
 $vsrc = file_get_contents(__DIR__ . '/verify.php');
 $pat  = "if(str_contains(\$image, \"data:image/svg+xml;base64\")){";
 $at   = strpos($vsrc, $pat);
 ok($at !== false, "processNFT()'s image branch is gone from verify.php");
-/* To the END of the chain, not to the first `}else{`. The clause that
-   matters is the LAST one -- the substr($image, 7) -- and an extraction
-   that stops at the first else drops exactly the behaviour under test,
-   leaving $ipfs unset and every assertion comparing against null. */
-$tail = strpos($vsrc, '$ipfs = substr($image, 7, strlen($image));', $at);
-ok($tail !== false, 'the substr(7) clause is gone from processNFT()');
-$end  = strpos($vsrc, '}', $tail) + 1;
-$branch = substr($vsrc, $at, $end - $at);
+
+function poly_chain_end($src, $at) {
+	$n = strlen($src);
+	$i = strpos($src, '{', $at);
+	if ($i === false) return false;
+	$depth = 0;
+	for (; $i < $n; $i++) {
+		if ($src[$i] === '{') { $depth++; continue; }
+		if ($src[$i] !== '}') continue;
+		$depth--;
+		if ($depth > 0) continue;
+		/* Depth zero. Another else keeps the chain going. */
+		$j = $i + 1;
+		while ($j < $n && ctype_space($src[$j])) $j++;
+		if (substr($src, $j, 4) === 'else') { $i = $j + 3; continue; }
+		return $i + 1;
+	}
+	return false;
+}
+$end = ($at === false) ? false : poly_chain_end($vsrc, $at);
+ok($end !== false, "the end of processNFT()'s image chain cannot be found");
+$branch = ($at === false || $end === false) ? '$ipfs = null;' : substr($vsrc, $at, $end - $at);
+/* The whole chain, not one arm of it: an extraction that stops early
+   leaves $ipfs unset and every assertion below compares against null. */
+ok(substr_count($branch, 'else') >= 1, 'only one arm of the chain was lifted');
 
 function stored_ipfs($image, $branch) {
 	$ipfs = null;
@@ -467,13 +496,33 @@ function stored_ipfs($image, $branch) {
 }
 ok(stored_ipfs(poly_storable_image($DANK), $branch) === $CIDPATH,
    'the Danketsu image lands in nfts.ipfs as ' . var_export(stored_ipfs(poly_storable_image($DANK), $branch), true)
- . ', not the CID -- processNFT() strips seven characters and this value was already stripped');
+ . ', not the CID');
 ok(stored_ipfs(poly_storable_image('ipfs://' . $CIDONLY), $branch) === $CIDONLY,
-   'a plain CID does not survive the round trip');
+   'an ipfs:// CID does not survive the round trip');
 /* And the OMEN shape must still come out whole, because the same branch
    serves Solana and an absolute URL must NOT be chopped. */
 ok(stored_ipfs(poly_storable_image('https://omenati.com/art/01998.jpg'), $branch)
    === 'https://omenati.com/art/01998.jpg', "OMEN's URL is being chopped on the way into the column");
+/*
+ * A BARE CID SURVIVES WHOLE, which is the bug the chain grew a branch
+ * for: CIP-25 permits metadata to carry a CID with no ipfs:// in front,
+ * several older collections do exactly that, and the old unconditional
+ * substr(7) ate the first seven characters of it. Found on the Happy
+ * Hoppers Club Posters. Nothing was testing it, because the harness that
+ * should have been could no longer read the file.
+ */
+/* FED STRAIGHT IN, NOT THROUGH poly_storable_image(), which normalises
+   everything to ipfs:// or an absolute URL and so can never produce this
+   shape. The branch exists for CARDANO metadata reaching the same
+   function, and routing the test through the Polygon normaliser would
+   quietly exercise a different arm of the chain. */
+ok(stored_ipfs($CIDONLY, $branch) === $CIDONLY,
+   'a bare CID with no ipfs:// prefix is still being chopped: '
+ . var_export(stored_ipfs($CIDONLY, $branch), true));
+/* An SVG data URI is stored whole too -- Digi Monks are on-chain. */
+$svg = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0i';
+ok(stored_ipfs(poly_storable_image($svg), $branch) === $svg,
+   'an on-chain SVG is no longer stored whole');
 /* The cache's own floor: under 46 characters it refuses the value as a
    malformed CID, so what we store has to clear it. */
 ok(strlen(stored_ipfs(poly_storable_image($DANK), $branch)) >= 46,

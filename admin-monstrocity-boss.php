@@ -383,9 +383,15 @@ table.mb tr.gap td { border-top:1px solid rgba(0,200,160,.22); padding-top:11px 
 .mb-sect > .lead { margin:0 0 14px; font-size:11px; color:#5a7888; line-height:1.5 }
 .mb-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,280px)); gap:14px 20px; justify-content:start }
 .mb-field label { display:block; font-size:11px; color:#7a9eb0; margin:0 0 4px; text-align:left }
+/* NO RADIUS. admin-css.php already squares every .adm input, select and
+   textarea; this rule sat on top of it and put 3px back, which left the
+   last rounded dropdowns on the platform sitting on two admin pages.
+   Dropping the override rather than exempting the <select> alone, so the
+   text fields beside it match too -- half a squared form is worse than
+   either. dropdowns-harness.php sweeps for this. */
 .mb-field input[type=text], .mb-field input[type=number], .mb-field select, .mb-field input[type=file] {
   width:100%; box-sizing:border-box; background:#07111d; color:#e8eaed;
-  border:1px solid rgba(255,255,255,.14); border-radius:3px; padding:7px 9px; font-size:12px }
+  border:1px solid rgba(255,255,255,.14); padding:7px 9px; font-size:12px }
 .mb-field .hint { font-size:11px; color:#5a7888; margin:5px 0 0; line-height:1.45 }
 .mb-cols { max-height:220px; overflow:auto; border:1px solid rgba(255,255,255,.12); border-radius:3px;
            padding:8px; background:#07111d }
@@ -418,7 +424,7 @@ table.mb-tune input.n { width:52px; text-align:center; background:#07111d; color
   font-family:ui-monospace,Menlo,monospace }
 table.mb-tune input.n.wide { width:74px }
 table.mb-tune select { background:#07111d; color:#e8eaed; border:1px solid rgba(255,255,255,.14);
-  border-radius:3px; padding:5px 6px; font-size:11px }
+  padding:5px 6px; font-size:11px }
 .mb-bar { height:8px; background:#07111d; border:1px solid rgba(255,255,255,.1); border-radius:999px; overflow:hidden }
 .mb-bar span { display:block; height:100%; background:linear-gradient(90deg,#00a882,#00c8a0);
                 transition:width .18s ease }

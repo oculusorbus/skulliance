@@ -397,9 +397,15 @@ table.mt a.slug { font-family:ui-monospace,Menlo,monospace; text-align:left; col
 .mt-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,320px)); gap:14px 22px;
            justify-content:start }
 .mt-field label { display:block; font-size:11px; color:#7a9eb0; margin:0 0 4px; text-align:left }
+/* NO RADIUS. admin-css.php already squares every .adm input, select and
+   textarea; this rule sat on top of it and put 3px back, which left the
+   last rounded dropdowns on the platform sitting on two admin pages.
+   Dropping the override rather than exempting the <select> alone, so the
+   text fields beside it match too -- half a squared form is worse than
+   either. dropdowns-harness.php sweeps for this. */
 .mt-field input[type=text], .mt-field select, .mt-field textarea, .mt-field input[type=file] {
   width:100%; box-sizing:border-box; background:#07111d; color:#e8eaed;
-  border:1px solid rgba(255,255,255,.14); border-radius:3px; padding:7px 9px; font-size:12px }
+  border:1px solid rgba(255,255,255,.14); padding:7px 9px; font-size:12px }
 .mt-field textarea { min-height:64px; font-family:ui-monospace,Menlo,monospace; font-size:11px }
 .mt-field .hint { font-size:11px; color:#5a7888; margin:5px 0 0; line-height:1.45 }
 .mt-field.wide { grid-column:1/-1 }
