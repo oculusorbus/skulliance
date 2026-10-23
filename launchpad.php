@@ -162,6 +162,59 @@ if ($lp_streak === 0) {
 if ($lp_balance === 0) {
     $lp_todo[] = array('skullracer.php', 'Play a game', 'Skull Racer pays CARBON for finishing a race, win or lose.');
 }
+
+/*
+ * ONE SUGGESTION A DAY, FOR PLAYERS RUNNING ONE LOOP.
+ *
+ * Start Here above is ONBOARDING -- no wallet, no streak, no points --
+ * and it disappears the moment an account is set up. This is the opposite
+ * end: somebody long past setup who has settled into Missions and the
+ * daily claim and never found the other dozen things.
+ *
+ * NOT AIMED AT QUIET PLAYERS. Reading the Activity wall, the narrowest
+ * accounts include some of the busiest on the platform -- ninth by
+ * weighted score, three sources touched. Ranking by score would miss
+ * every one of them and pester the people who have already tried
+ * everything. The test is breadth, never volume. See lib/nudge-lib.php.
+ *
+ * NEVER BOTH AT ONCE. A new account has enough to read already, so this
+ * waits until Start Here is done.
+ */
+$lp_nudge = null;
+if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
+	require_once __DIR__ . '/lib/nudge-lib.php';
+	$lp_uid = (int)$_SESSION['userData']['user_id'];
+	/* One indexed read, and on most loads it ends here. */
+	if (!nudge_quiet($conn, $lp_uid)) {
+		$lp_print = nudge_footprint($conn, $lp_uid);
+		if (nudge_breadth($lp_print) <= NUDGE_NARROW_MAX) {
+			$lp_facts = array(
+				'has_realm'   => function_exists('checkRealm') ? (bool)checkRealm($conn) : true,
+				'fighters'    => isset($lp_print['fighter']) ? (int)$lp_print['fighter'] : 0,
+				'free_traits' => 0,
+			);
+			/* Unused traits, which is the strongest nudge we can make
+			   because the number comes off their own account. */
+			if (function_exists('dhcf_available')) {
+				foreach (dhcf_available($conn, $lp_uid) as $cat => $traits) {
+					foreach ($traits as $t) $lp_facts['free_traits'] += (int)$t['free'];
+				}
+			}
+			$lp_nudge = nudge_pick(nudge_candidates($lp_print, $lp_facts),
+			                       nudge_history($conn, $lp_uid));
+			if ($lp_nudge) {
+				$lp_nudge['head'] = nudge_headline($lp_print);
+				/* Logged as shown BEFORE it renders, so a reload does not
+				   count twice and does not offer a second one today. */
+				nudge_log($conn, $lp_uid, $lp_nudge['key'], 'shown');
+			}
+		} else {
+			/* Broad already. Record it so the fifteen queries do not run
+			   again today just to reach the same answer. */
+			nudge_log($conn, $lp_uid, 'broad', 'shown');
+		}
+	}
+}
 ?>
 
 <!-- col1of3 with the flex override is the site's full-width centred column --
@@ -195,6 +248,49 @@ if ($lp_balance === 0) {
 			</a>
 		<?php endforeach; ?>
 	</div>
+	<?php endif; ?>
+
+	<?php if ($lp_nudge): ?>
+	<?php /* ITS OWN LOOK, not Start Here's teal. Start Here is a checklist
+	         of things that are wrong; this is an invitation, and a player
+	         who sees the same box for both learns to skim both. */ ?>
+	<div class="lp-nudge" id="lp-nudge">
+		<h3>Something else to try</h3>
+		<p class="lp-nudge-head"><?php echo htmlspecialchars($lp_nudge['head']); ?></p>
+		<a class="lp-nudge-item" href="<?php echo htmlspecialchars($lp_nudge['url']); ?>"
+		   data-key="<?php echo htmlspecialchars($lp_nudge['key']); ?>">
+			<span class="lp-nudge-title"><?php echo htmlspecialchars($lp_nudge['title']); ?></span>
+			<span class="lp-nudge-why"><?php echo htmlspecialchars($lp_nudge['why']); ?></span>
+			<span class="lp-nudge-cta"><?php echo htmlspecialchars($lp_nudge['cta']); ?> &rarr;</span>
+		</a>
+		<button type="button" class="lp-nudge-off" id="lp-nudge-off">Not now, and not for a week</button>
+	</div>
+	<script>
+	(function () {
+		var box = document.getElementById('lp-nudge');
+		if (!box) return;
+		var key = box.querySelector('.lp-nudge-item').getAttribute('data-key');
+		function tell(action, then) {
+			/* keepalive so the click-through is recorded even though the
+			   browser is already navigating away from this page. */
+			try {
+				fetch('ajax/nudge.php', {
+					method: 'POST', keepalive: true,
+					headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+					body: 'action=' + encodeURIComponent(action) + '&key=' + encodeURIComponent(key)
+				}).then(then || function () {}, then || function () {});
+			} catch (e) { if (then) then(); }
+		}
+		box.querySelector('.lp-nudge-item').addEventListener('click', function () { tell('clicked'); });
+		document.getElementById('lp-nudge-off').addEventListener('click', function () {
+			/* Hidden immediately. The write is the server's problem and a
+			   failed one must not leave the box sitting there looking
+			   like the button is broken. */
+			box.hidden = true;
+			tell('snoozed');
+		});
+	}());
+	</script>
 	<?php endif; ?>
 
 	<?php foreach ($lp_sections as $lp_name => $lp_sec): ?>
@@ -240,6 +336,35 @@ if ($lp_balance === 0) {
 .lp-todo-title { display: block; font-weight: bold; font-size: 0.92rem; }
 .lp-todo-title::after { content: ' \2192'; color: #00c8a0; }
 .lp-todo-why  { display: block; font-size: 0.76rem; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+/* The nudge. Ochre rather than teal: Start Here is a checklist and this
+   is an invitation, and two boxes that look identical get skimmed alike. */
+.lp-nudge {
+	background: rgba(214,158,46,0.07);
+	border: 1px solid rgba(214,158,46,0.32);
+	border-radius: 8px;
+	padding: 14px 16px;
+	margin-bottom: 34px;
+}
+.lp-nudge h3 { margin: 0 0 4px; font-size: 0.8rem; letter-spacing: 0.14em;
+	text-transform: uppercase; color: #d69e2e; }
+.lp-nudge-head { margin: 0 0 10px; font-size: 0.8rem; color: rgba(255,255,255,0.55); }
+/* text-align RESTATED, not inherited. flexbox.css sets `a {text-align:center}`
+   globally, so this anchor came out centred under a left-aligned headline
+   and above a left-aligned button -- the card disagreeing with itself.
+   Caught in a render, not in review. */
+.lp-nudge-item { display: block; padding: 10px 0; text-decoration: none; color: inherit;
+	text-align: left; border-top: 1px solid rgba(255,255,255,0.07); }
+.lp-nudge-title { display: block; font-weight: bold; font-size: 0.98rem; }
+.lp-nudge-why { display: block; font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-top: 3px; }
+.lp-nudge-cta { display: inline-block; margin-top: 8px; font-size: 0.78rem; font-weight: bold;
+	letter-spacing: 0.04em; color: #d69e2e; }
+/* A button, not a link: it performs an action on this page and goes
+   nowhere, and flexbox.css paints every bare anchor teal. */
+.lp-nudge-off { display: block; margin: 10px 0 0; padding: 0; background: none; border: 0;
+	font: inherit; font-size: 0.74rem; color: rgba(255,255,255,0.38); cursor: pointer;
+	text-align: left; }
+.lp-nudge-off:hover { color: rgba(255,255,255,0.7); text-decoration: underline; }
 
 .lp-section { margin-bottom: 38px; }
 .lp-section-head {

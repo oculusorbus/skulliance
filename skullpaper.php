@@ -40,6 +40,7 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 // Navigation tree: each section is a page in its own right; children nest under it.
 $skullpaper_nav = [
 	['slug' => 'overview', 'title' => 'Overview', 'emoji' => '📖', 'children' => []],
+	['slug' => 'daily-nudge', 'title' => 'The Daily Nudge', 'emoji' => '💡', 'children' => []],
 	['slug' => 'staking', 'title' => 'Staking', 'emoji' => '💰', 'children' => [
 		['slug' => 'staking-membership',         'title' => 'Membership',          'emoji' => '🎟️'],
 		['slug' => 'staking-daily-rewards',      'title' => 'Daily Rewards',       'emoji' => '📅'],
