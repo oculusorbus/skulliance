@@ -343,8 +343,60 @@ function dhcf_notify_fighter($conn, $user_id, $row) {
 		$lines = array();
 		foreach (array_slice($parts, 0, 10) as $p) $lines[] = $p['line'];
 
+		/*
+		 * WHERE THIS FIGHTER LANDS, not just what it cost.
+		 *
+		 * The post said "1,247 pts" and listed the traits, which tells a
+		 * reader the Fighter is rare and nothing about whether it can
+		 * fight -- to learn that they had to go and find it in the
+		 * Collection. The four axes the Collection sorts on are the
+		 * answer, and dhcf_rank_build() already computes them.
+		 *
+		 * ONE DEFINITION. dhc-ranks.php is shared with the Collection's
+		 * sort buttons and the assembler's live preview, so "Deadliest"
+		 * cannot mean one thing here and another there -- which is the
+		 * failure dhcf_rank_axes() exists to prevent.
+		 *
+		 * THE FIGHTER IS EXCLUDED FROM ITS OWN POOL. This fires AFTER the
+		 * save, so the row is already in the pool; without the exclude it
+		 * is counted twice and "of N" is one too many. Passing its own
+		 * values removes exactly one copy, and 'of' adds it back.
+		 *
+		 * BEST OF cannot ship: a rank only means something against the
+		 * whole collection, and a Fighter nobody can beat on any axis is
+		 * still interesting. All four, always.
+		 *
+		 * GUARDED AND BOXED. This is a Discord notification firing after
+		 * a save that has already succeeded -- the pool reads the whole
+		 * dhc_fighters table and builds every Fighter, so a failure here
+		 * must cost the post its stats line, never the post.
+		 */
+		$ranks = '';
+		try {
+			if (is_file(__DIR__ . '/dhc-ranks.php') && $traits) {
+				require_once __DIR__ . '/dhc-ranks.php';
+				if (function_exists('dhcf_rank_build')) {
+					$own = dhcf_rank_values($traits, (int)$row['score']);
+					$rb  = dhcf_rank_build($conn, $traits, $own);
+					$bits = array();
+					foreach ($rb['axes'] as $ax) {
+						$bits[] = $ax['label'] . ' **#' . number_format((int)$ax['rank']) . '**';
+					}
+					if ($bits) {
+						/* THE POOL SIZE LEADS. Trailing it -- "... Hardest
+						   hitting #41 of 226" -- reads as though only the
+						   last axis is ranked against anything. */
+						$ranks = 'Among ' . number_format((int)$rb['axes']['rarest']['of'])
+						       . ' Fighters — ' . implode(' · ', $bits) . "\n";
+					}
+				}
+			}
+		} catch (Throwable $e) {
+			error_log('dhcf_notify_fighter ranks: ' . $e->getMessage());
+		}
+
 		$desc = '**' . number_format((int)$row['score']) . ' pts** · '
-		      . count($traits) . ' traits' . "\n" . implode("\n", $lines);
+		      . count($traits) . ' traits' . "\n" . $ranks . implode("\n", $lines);
 
 		/* discordmsg() uploads this rather than linking it -- the URL is on
 		   our own server, so it resolves the file and attaches the bytes.
