@@ -76,8 +76,9 @@ echo "\nthe suggestion is one they can act on today\n";
  * Fighters, so they know the assembler exists -- what they may not know
  * is that they are sitting on parts for more.
  */
-$facts = array('has_realm' => false, 'fighters' => 2, 'free_traits' => 31);
-$pick  = nudge_pick(nudge_candidates($narrow['bigredcrypto'], $facts), array());
+/* cobreean.pxlz has never built one, so the parts are the whole story. */
+$facts = array('has_realm' => true, 'fighters' => 0, 'free_traits' => 31);
+$pick  = nudge_pick(nudge_candidates($narrow['cobreean.pxlz'], $facts), array());
 ok($pick && $pick['key'] === 'fighter', 'unused traits did not win: ' . ($pick ? $pick['key'] : 'nothing'));
 ok($pick && strpos($pick['why'], '31') !== false,
    'the reason does not name their own trait count: ' . ($pick ? $pick['why'] : ''));
@@ -110,6 +111,43 @@ ok(!in_array('arena', $k2, true), 'a player with 2 Fighters is sent to the Arena
 $three = nudge_candidates(array('mission' => 10), array('has_realm' => true, 'fighters' => 3, 'free_traits' => 0));
 $k3 = array(); foreach ($three as $c) $k3[] = $c['key'];
 ok(in_array('arena', $k3, true), 'a player with 3 Fighters is not offered the Arena');
+
+echo "\nnothing offered is ever something they already do\n";
+/*
+ * THE INVARIANT, swept rather than spot-checked, because it was a
+ * per-candidate guard and one candidate was missing it. The Fighter
+ * suggestion tested whether the player had the PARTS and not whether
+ * they already build -- so bigredcrypto, who has built two and holds
+ * spare traits, was shown "Assemble a Fighter" under a heading reading
+ * "Something else to try". Every other candidate was guarded, which is
+ * exactly why reviewing them one at a time missed it.
+ *
+ * Checked over every target footprint, with the facts set deliberately
+ * generous so every candidate that CAN appear does.
+ */
+$rich = array('has_realm' => true, 'fighters' => 9, 'free_traits' => 99);
+foreach ($narrow as $who => $fp) {
+	$bad = array();
+	foreach (nudge_candidates($fp, $rich) as $c) {
+		if (!empty($fp[$c['key']])) $bad[] = $c['key'];
+	}
+	if (!ok(!$bad, "$who is offered things they already do: " . implode(', ', $bad))) break;
+}
+/* And with the opposite facts, so the realm-gated branches are covered too. */
+$poor = array('has_realm' => false, 'fighters' => 0, 'free_traits' => 0);
+foreach ($narrow as $who => $fp) {
+	$bad = array();
+	foreach (nudge_candidates($fp, $poor) as $c) {
+		if (!empty($fp[$c['key']])) $bad[] = $c['key'];
+	}
+	if (!ok(!$bad, "$who (no holdings) is offered things they already do: " . implode(', ', $bad))) break;
+}
+/* The specific regression, named. */
+$bigred = array('mission' => 1840, 'daily' => 12, 'fighter' => 2);
+$cands  = nudge_candidates($bigred, array('has_realm' => false, 'fighters' => 2, 'free_traits' => 31));
+$ck = array(); foreach ($cands as $c) $ck[] = $c['key'];
+ok(!in_array('fighter', $ck, true),
+   'a player who already builds Fighters is told to assemble a Fighter');
 
 echo "\nthe same card is not shown forever\n";
 /*
@@ -204,12 +242,48 @@ ok(strpos($src, "SHOW TABLES LIKE 'nudges'") !== false,
 $lp = harness_strip_comments(file_get_contents(__DIR__ . '/launchpad.php'));
 ok(strpos($lp, 'empty($lp_todo)') !== false,
    'the nudge no longer waits for Start Here, so a new account gets both boxes');
-ok(strpos($lp, 'nudge_quiet($conn') !== false,
-   'the once-a-day gate is gone, so fifteen queries run on every launchpad load');
-/* The gate must come BEFORE the expensive part. */
-$q = strpos($lp, 'nudge_quiet($conn');
+ok(strpos($lp, 'nudge_state($conn') !== false,
+   'the gate is gone, so fifteen queries run on every launchpad load');
+/*
+ * THE GATE MUST COME BEFORE THE EXPENSIVE PART, and the ordering is the
+ * only thing worth asserting -- reversing it costs fifteen queries per
+ * page view and changes nothing a reviewer would see.
+ */
+$q = strpos($lp, 'nudge_state($conn');
 $f = strpos($lp, 'nudge_footprint($conn');
 ok($q !== false && $f !== false && $q < $f, 'the footprint is computed before the gate that avoids it');
+
+/*
+ * AND THE GATE HAS TO CLOSE EVEN WHEN THERE IS NOTHING TO SAY. With
+ * nothing pickable no row was written, so nudge_state() kept answering
+ * "no recent nudge" and the fifteen queries plus the trait count ran on
+ * every single Launchpad load until a candidate aged out. 'none' is a
+ * separate action from 'shown' so it does not count against the fatigue
+ * rule -- we did not actually ask them anything.
+ */
+ok(strpos($lp, "'none', 'none'") !== false,
+   'nothing is recorded when there is no suggestion, so the gate never closes');
+$nl_q = harness_strip_comments(file_get_contents(__DIR__ . '/lib/nudge-lib.php'));
+ok(strpos($nl_q, "action IN ('shown','none')") !== false,
+   "the gate ignores 'none' rows, so writing them achieves nothing");
+
+echo "\nand it stops asking when the answer is plainly no\n";
+/*
+ * Nothing here used to stop on its own: a player who stayed narrow got a
+ * card every three days forever. Ten offers inside two months with not
+ * one click is an answer, and an eleventh is not a nudge.
+ */
+ok(nudge_fatigued(array('shown' => NUDGE_FATIGUE_SHOWN, 'clicked' => 0)),
+   'ten ignored suggestions is not enough to stop');
+ok(!nudge_fatigued(array('shown' => NUDGE_FATIGUE_SHOWN, 'clicked' => 1)),
+   'one click does not reset it, so an engaged player gets cut off');
+ok(!nudge_fatigued(array('shown' => NUDGE_FATIGUE_SHOWN - 1, 'clicked' => 0)),
+   'it gives up before ' . NUDGE_FATIGUE_SHOWN . ' tries');
+ok(NUDGE_REST_DAYS > NUDGE_FATIGUE_DAYS,
+   'the rest is shorter than the window that triggers it, so it retriggers immediately');
+$nl2 = harness_strip_comments(file_get_contents(__DIR__ . '/lib/nudge-lib.php'));
+ok(strpos($nl2, "action = 'rested'") !== false, 'resting is not honoured by the gate');
+ok(strpos($lp, 'nudge_fatigued($lp_state)') !== false, 'the launchpad never checks for fatigue');
 
 echo "\nthe endpoint cannot be used on somebody else\n";
 $ep = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/nudge.php'));

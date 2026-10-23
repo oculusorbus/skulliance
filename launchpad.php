@@ -185,7 +185,19 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 	require_once __DIR__ . '/lib/nudge-lib.php';
 	$lp_uid = (int)$_SESSION['userData']['user_id'];
 	/* One indexed read, and on most loads it ends here. */
-	if (!nudge_quiet($conn, $lp_uid)) {
+	$lp_state = nudge_state($conn, $lp_uid);
+	if ($lp_state['snoozed'] || $lp_state['resting'] || $lp_state['recent']) {
+		/* Nothing to do. */
+	} elseif (nudge_fatigued($lp_state)) {
+		/*
+		 * TEN OFFERS, NOT ONE TAKEN. That is an answer, and asking an
+		 * eleventh time is not a nudge. Recorded with its own expiry so
+		 * it lifts by itself in a quarter rather than needing anybody to
+		 * remember it exists.
+		 */
+		nudge_log($conn, $lp_uid, 'rest', 'rested',
+		          date('Y-m-d H:i:s', strtotime('+' . NUDGE_REST_DAYS . ' days')));
+	} else {
 		$lp_print = nudge_footprint($conn, $lp_uid);
 		if (nudge_breadth($lp_print) <= NUDGE_NARROW_MAX) {
 			$lp_facts = array(
@@ -205,8 +217,19 @@ if (empty($lp_todo) && isset($_SESSION['userData']['user_id'])) {
 			if ($lp_nudge) {
 				$lp_nudge['head'] = nudge_headline($lp_print);
 				/* Logged as shown BEFORE it renders, so a reload does not
-				   count twice and does not offer a second one today. */
+				   count twice and does not offer another inside the gap. */
 				nudge_log($conn, $lp_uid, $lp_nudge['key'], 'shown');
+			} else {
+				/*
+				 * NOTHING LEFT TO SUGGEST, AND THAT HAS TO BE RECORDED.
+				 * Without this the gate never closes: no row is written,
+				 * nudge_state() keeps answering "no recent nudge", and
+				 * the fifteen activity queries plus the trait count run
+				 * again on every single Launchpad load until a candidate
+				 * frees up. 'none' is not 'shown', so it does not count
+				 * against the fatigue rule -- we did not ask.
+				 */
+				nudge_log($conn, $lp_uid, 'none', 'none');
 			}
 		} else {
 			/* Broad already. Record it so the fifteen queries do not run

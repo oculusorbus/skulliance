@@ -40,14 +40,22 @@ least friction to most:
    and the four of them make a complete squad.
 5. **A game that needs nothing but a browser**, if none of the above applies.
 
-It never suggests something you already do, and it will not send you somewhere
-that would turn you away. Two spare traits is not enough to build a Fighter, so
+It never suggests something you already do, including the ones you only do
+occasionally, and it will not send you somewhere that would turn you away. Two spare traits is not enough to build a Fighter, so
 it does not offer.
 
 ## Making it go away
 
 **Not now, and not for a week** hides it for seven days, which is longer than
-the normal gap. Anything you have
+the normal gap.
+
+It also stops asking by itself. If you are offered ten different things over
+two months and take up none of them, that is an answer, and it goes quiet for
+three months rather than carrying on. Clicking any suggestion resets that, so
+only someone who never engages at all is ever rested.
+
+And it goes quiet permanently the moment you are no longer narrow. Try enough
+different things and you drop out of the group it talks to. Anything you have
 already been shown will not come back for a month, so ignoring a suggestion
 gets you a different one next time rather than the same card again. Once
 everything has been offered recently, it stops on its own.

@@ -60,6 +60,27 @@ if (!defined('NUDGE_SNOOZE_DAYS')) define('NUDGE_SNOOZE_DAYS', 7);
  * instead of a burst and a drought.
  */
 if (!defined('NUDGE_GAP_DAYS')) define('NUDGE_GAP_DAYS', 3);
+
+/*
+ * WHEN TO ACCEPT THE ANSWER IS NO.
+ *
+ * Nothing here ever stopped on its own. A player who stays narrow gets a
+ * card every three days forever, and "forever" is the correct answer
+ * only while they might still say yes. Somebody who has been offered ten
+ * different things over two months and clicked none of them has
+ * answered, and asking an eleventh time is not a nudge any more.
+ *
+ * Shown without a single click inside the window means rest for a
+ * quarter. One click of any kind resets it -- the point is distinguishing
+ * "has not got round to it" from "is not interested", and a click is the
+ * only evidence of the first.
+ *
+ * This is why nudge_log() records 'clicked' at all. It was built for
+ * measurement; it turns out to be the off switch.
+ */
+if (!defined('NUDGE_FATIGUE_DAYS'))  define('NUDGE_FATIGUE_DAYS', 60);
+if (!defined('NUDGE_FATIGUE_SHOWN')) define('NUDGE_FATIGUE_SHOWN', 10);
+if (!defined('NUDGE_REST_DAYS'))     define('NUDGE_REST_DAYS', 90);
 /* A suggestion they clicked is not repeated for a month -- they have seen
    it, and repeating it is how a nudge becomes nagging. */
 if (!defined('NUDGE_REPEAT_DAYS')) define('NUDGE_REPEAT_DAYS', 30);
@@ -82,26 +103,59 @@ function nudge_table($conn) {
 }
 
 /**
+ * Everything the gate needs, in one read.
+ *
+ * One query rather than four, because this runs on every Launchpad load
+ * for every signed-in player and three of the four answers are usually
+ * "no". Counts rather than rows, so it is an index scan and a sum.
+ */
+function nudge_state($conn, $user_id) {
+	$out = array('snoozed' => false, 'resting' => false, 'recent' => false,
+	             'shown' => 0, 'clicked' => 0);
+	if (!nudge_table($conn)) return $out;
+	$uid = (int)$user_id;
+	if ($uid <= 0) return $out;
+	$gap = max(1, (int)NUDGE_GAP_DAYS);
+	$fat = max(1, (int)NUDGE_FATIGUE_DAYS);
+	$r = @$conn->query(
+		"SELECT
+		   SUM(action = 'snoozed' AND until IS NOT NULL AND until > NOW()) AS snoozed,
+		   SUM(action = 'rested'  AND until IS NOT NULL AND until > NOW()) AS resting,
+		   SUM(action IN ('shown','none') AND created_at > DATE_SUB(NOW(), INTERVAL $gap DAY)) AS recent,
+		   SUM(action = 'shown'   AND created_at > DATE_SUB(NOW(), INTERVAL $fat DAY)) AS shown_n,
+		   SUM(action = 'clicked' AND created_at > DATE_SUB(NOW(), INTERVAL $fat DAY)) AS clicked_n
+		 FROM nudges WHERE user_id = $uid");
+	if ($r && ($row = $r->fetch_assoc())) {
+		$out['snoozed'] = !empty($row['snoozed']);
+		$out['resting'] = !empty($row['resting']);
+		$out['recent']  = !empty($row['recent']);
+		$out['shown']   = (int)$row['shown_n'];
+		$out['clicked'] = (int)$row['clicked_n'];
+	}
+	return $out;
+}
+
+/**
+ * Offered plenty and never once taken up? Then stop asking.
+ *
+ * Pure, so the rule can be read and tested without a database.
+ */
+function nudge_fatigued($state) {
+	return empty($state['clicked'])
+	    && (int)$state['shown'] >= NUDGE_FATIGUE_SHOWN;
+}
+
+/**
  * Should this player be left alone right now?
  *
- * True when they have snoozed, or have been shown one inside the last
- * NUDGE_GAP_DAYS. One query, and it is the gate in front of everything
- * expensive.
+ * True when they have snoozed, are resting after ignoring a run of
+ * suggestions, or have been shown one inside the last NUDGE_GAP_DAYS.
+ * The gate in front of everything expensive.
  */
 function nudge_quiet($conn, $user_id) {
 	if (!nudge_table($conn)) return true;
-	$uid = (int)$user_id;
-	if ($uid <= 0) return true;
-	$gap = max(1, (int)NUDGE_GAP_DAYS);
-	$r = @$conn->query(
-		"SELECT 1 FROM nudges
-		  WHERE user_id = $uid
-		    AND (
-		          (action = 'snoozed' AND until IS NOT NULL AND until > NOW())
-		       OR (action = 'shown'   AND created_at > DATE_SUB(NOW(), INTERVAL $gap DAY))
-		        )
-		  LIMIT 1");
-	return !$r || $r->num_rows > 0;
+	$st = nudge_state($conn, $user_id);
+	return $st['snoozed'] || $st['resting'] || $st['recent'];
 }
 
 /** Suggestions this player has already been sent, and when. */
@@ -178,10 +232,21 @@ function nudge_candidates($footprint, $facts) {
 	$did = function ($k) use ($footprint) { return !empty($footprint[$k]); };
 	$out = array();
 
-	/* 1. SOMETHING THEY ALREADY OWN AND HAVE NOT USED. The strongest
-	      nudge on the platform: no cost, no learning, and the reason is a
-	      number from their own account. */
-	if (!empty($facts['free_traits']) && $facts['free_traits'] >= 3) {
+	/*
+	 * 1. SOMETHING THEY ALREADY OWN AND HAVE NOT USED. The strongest
+	 *    nudge on the platform: no cost, no learning, and the reason is a
+	 *    number from their own account.
+	 *
+	 *    !$did('fighter') IS NOT OPTIONAL, and this shipped without it.
+	 *    Every other candidate here is guarded; this one checked whether
+	 *    they had the PARTS and forgot to check whether they already do
+	 *    it. bigredcrypto -- one of the accounts this feature was built
+	 *    for -- has built two Fighters and holds spare traits, so the
+	 *    card headed "Something else to try" offered them the thing they
+	 *    already do. The whole point is widening a footprint, and a
+	 *    suggestion inside it widens nothing.
+	 */
+	if (!$did('fighter') && !empty($facts['free_traits']) && $facts['free_traits'] >= 3) {
 		$out[] = array(
 			'key'    => 'fighter',
 			'title'  => 'Assemble a Fighter',
