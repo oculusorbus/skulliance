@@ -5,7 +5,7 @@ DHC Arena (`dhcarena-schema.md`) and DHC Fighters (`dhcfighters-schema.md`).
 
 One table. Until it exists the feature is **inert, not broken**: `activity_log()`
 suppresses the failed insert, so every Discord announce still posts exactly as
-it always has, and `activity.php` renders an empty wall.
+it always has, and `feed.php` renders an empty wall.
 
 ## Why a log table and not a query across the existing tables
 

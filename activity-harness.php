@@ -625,8 +625,8 @@ ok('Activity sits next to Launchpad in the nav',
    preg_match('~<a href="launchpad\.php">Launchpad</a>.{0,600}<a href="activity\.php">Activity</a>~s', $hdr) === 1);
 
 /* The page must not be reachable without the login gate -- it names players. */
-$p = file_get_contents(__DIR__ . '/activity.php');
-ok('activity.php is behind the login gate', strpos($p, "include 'skulliance.php'") !== false);
+$p = file_get_contents(__DIR__ . '/feed.php');
+ok('feed.php is behind the login gate', strpos($p, "include 'skulliance.php'") !== false);
 ok('scope from the querystring is whitelisted, never passed through',
    strpos($p, "in_array(\$ac_scope, array('all', 'mine', 'involving'), true)") !== false);
 ok('a guest is pinned to the all scope', strpos($p, 'if ($me <= 0) $ac_scope = \'all\';') !== false);

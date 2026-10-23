@@ -440,7 +440,7 @@ function activity_format($text, $names = array()) {
 /* Art small enough to be an ornament is not art. /icons/ is the platform's
    ornament directory -- currency marks, chain marks -- and a 128px glyph
    blown up into a collage tile is the same mistake the feed already made
-   once. See the .ac-shot.is-mark note in activity.php. */
+   once. See the .ac-shot.is-mark note in feed.php. */
 define('ACTIVITY_DIGEST_ART',     48);   // art tiles offered to the canvas
 define('ACTIVITY_DIGEST_PLAYERS', 24);   // players offered for shout-outs
 

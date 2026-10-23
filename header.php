@@ -410,11 +410,18 @@
 		       burying it in a menu would defeat the point of it existing. -->
 		  <a href="launchpad.php">Launchpad</a>
 
-		  <!-- Activity: top-level alongside Launchpad for the same reason it is.
-		       It is the answer to "what is everyone doing", which is a question
-		       you ask on arrival, not one you go hunting through a menu for.
-		       Mirrors what Skull Bot announces to Discord -- see activity.php. -->
+		  <!-- Activity and Feed: top-level alongside Launchpad for the same
+		       reason it is. Both answer "what is everyone doing", which is a
+		       question you ask on arrival rather than hunt through a menu for,
+		       and they answer it two ways -- Activity ranks the PEOPLE by how
+		       much they have done, Feed is the running commentary of what
+		       Skull Bot announces to Discord. Adjacent because picking between
+		       them only makes sense if you can see both.
+
+		       Feed WAS activity.php; the name moved when the ranking page
+		       took it. -->
 		  <a href="activity.php">Activity</a>
+		  <a href="feed.php">Feed</a>
 
 		  <!-- Play -->
 		  <div class="nav-dropdown navbar-first">
