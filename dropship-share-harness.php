@@ -225,6 +225,65 @@ foreach (array('drop-ship', 'dread-city', 'filthy-mermaid', 'dhc2-fighters') as 
 ok(dropshipThemeHandle('../evil') === '' && dropshipThemeHandle('') === '',
    'an unknown slug produces a handle');
 
+echo "\nthe post only claims what the theme actually gives\n";
+/*
+ * CAUGHT BY THE OWNER, TWICE, ON ONE SENTENCE. "Oculus Lounge entails a
+ * squad of four soldiers ... Free to play, and your first squad is free
+ * too" is wrong three ways, and all three are the same mistake: writing
+ * one pitch for five different games.
+ *
+ *   THE LOUNGE IS NOT FREE. It wants the VIP role or a pass bought with
+ *   DISCOIN -- the gate is project 4 in dashboard.php.
+ *
+ *   THE FREE SQUAD IS DROP SHIP ONLY. addDefaultSoldiers() is gated on
+ *   project 1, so four of the five themes hand out no grunts at all.
+ *   dropship-grunts.php opens "Every Drop Ship player is given four free
+ *   soldiers" and says DROP SHIP ONLY twelve lines down.
+ *
+ *   AND THE LOUNGE HAS NO SOLDIERS. Every theme renames what a squad is
+ *   made of; the dashboard reads that word as evaluateText("Troops").
+ *
+ * A post is a public claim to strangers who will turn up and check.
+ */
+$ocu = dropshipShareText(dropshipShareFacts(board(), 1, 22), 'Oculus Lounge', 'Round', 'oculus-lounge', 4, 'Patrons');
+ok(stripos($ocu, 'free to play') === false, 'the Oculus Lounge post says free to play: ' . $ocu);
+ok(stripos($ocu, 'free') === false, 'the Oculus Lounge post still says free somewhere: ' . $ocu);
+ok(stripos($ocu, 'soldier') === false, "the Oculus Lounge post talks about soldiers: " . $ocu);
+ok(stripos($ocu, 'VIP') !== false, 'the Oculus Lounge post never mentions the VIP gate: ' . $ocu);
+ok(strpos($ocu, 'Patrons') !== false, "the Oculus Lounge post ignores the theme's own word: " . $ocu);
+
+/* THE FREE SQUAD, named by exactly one theme. */
+foreach (array(1 => true, 2 => false, 3 => false, 4 => false, 5 => false) as $pid => $want) {
+	$t = dropshipShareText(dropshipShareFacts(board(), 1, 22), 'A Theme', 'Round', '', $pid, 'Troops');
+	$says = (stripos($t, 'first squad is free') !== false);
+	if (!ok($says === $want,
+	        "project $pid " . ($says ? 'claims' : 'does not claim') . ' a free first squad; expected '
+	        . ($want ? 'it to' : 'not to') . ": $t")) break;
+}
+ok(dropshipThemeClaims(1) === array('free_squad' => true, 'open' => true), 'Drop Ship claims changed');
+ok(dropshipThemeClaims(4) === array('free_squad' => false, 'open' => false), 'Oculus Lounge claims changed');
+
+/* AND THE NOUN IS THE THEME'S, not Drop Ship's. */
+foreach (array('Henchmen', 'Patrons', 'Fighters', 'Citizens') as $word) {
+	$t = dropshipShareText(dropshipShareFacts(board(), 1, 22), 'A Theme', 'Round', '', 2, $word);
+	if (!ok(strpos($t, 'four ' . $word) !== false, "the pitch ignores the theme's word $word: $t")) break;
+	if (!ok(stripos($t, 'soldier') === false, "the pitch says soldiers anyway: $t")) break;
+}
+/* An empty word must not produce "a squad of four ,". */
+$t = dropshipShareText(dropshipShareFacts(board(), 1, 22), 'A Theme', 'Round', '', 2, '');
+ok(strpos($t, 'four ,') === false && strpos($t, 'four Soldiers') !== false,
+   'a theme with no word for its troops produces broken copy: ' . $t);
+
+echo "\nand the public page agrees with the post that sent them there\n";
+/* The page made both of the same claims. One rule, one function. */
+$pg = harness_strip_comments(file_get_contents(__DIR__ . '/dropshipgame.php'));
+ok(strpos($pg, 'dropshipThemeClaims(') !== false,
+   'dropshipgame.php no longer asks what the theme actually gives');
+ok(strpos($pg, '>Free to play<') === false,
+   'the Free to play badge is unconditional again, which is false on Oculus Lounge');
+ok(preg_match('/\$ds_grunts \|\| \$ds_one === null/', $pg) === 1,
+   'the four-free-soldiers paragraph is unconditional again, and it is Drop Ship only');
+
 echo "\nthe link is public, and carries no run id\n";
 /*
  * BOTH HALVES MATTER. A link behind the login serves X's crawler a redirect

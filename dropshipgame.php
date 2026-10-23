@@ -44,17 +44,32 @@ $ds_one  = isset($_GET['theme']) ? dropshipPublicTheme($_GET['theme']) : null;
 $ds_slug = $ds_one ? $ds_one['slug'] : '';
 $ds_name = $ds_one ? $ds_one['name'] : '';
 
+/*
+ * WHAT THIS THEME MAY CLAIM. The page said "Free to play" and "every
+ * player is given four free soldiers" for whichever theme it was showing,
+ * and both are false somewhere: Oculus Lounge needs VIP, and the four
+ * grunts are Drop Ship only (addDefaultSoldiers() is gated on project 1).
+ * Same rule the share post uses, from the same function, because the post
+ * is what sends people here and the two must not disagree.
+ */
+$ds_claims = dropshipThemeClaims($ds_one ? $ds_one['project_id'] : 0);
+/* With no theme named this is the whole family, where "free to play" is
+   true of four of the five and the Lounge is called out on its own tile. */
+$ds_open  = $ds_one ? $ds_claims['open'] : true;
+$ds_grunts = $ds_one ? $ds_claims['free_squad'] : false;
+
 $ds_og_image = $ds_slug !== ''
 	? 'https://www.skulliance.io/staking/dropship-card.php?theme=' . rawurlencode($ds_slug)
 	: 'https://www.skulliance.io/staking/dropship-card.php?theme=drop-ship';
 
 $ds_title = $ds_name !== ''
-	? $ds_name . ' - Free Weekly NFT Squad Battler | Play in Your Browser'
+	? $ds_name . ($ds_open ? ' - Free' : ' -') . ' Weekly NFT Squad Battler | Play in Your Browser'
 	: 'Drop Ship - Free Weekly NFT Squad Battler, Five Games on One Engine | Skulliance';
 $ds_desc  = $ds_name !== ''
-	? 'Play ' . $ds_name . ' free on Skulliance. Send a squad of four into a run that gets harder every round, '
-	. 'see how far they get, and take your place on a leaderboard that resets every week. Your squads build '
-	. 'themselves from what you hold, so there is nothing to manage before you play.'
+	? 'Play ' . $ds_name . ' on Skulliance' . ($ds_open ? ', free' : ' with VIP access') . '. Send a squad of '
+	. 'four into a run that gets harder every round, see how far they get, and take your place on a leaderboard '
+	. 'that resets every week. Your squads build themselves from what you hold, so there is nothing to manage '
+	. 'before you play.'
 	: 'Play Drop Ship free on Skulliance. Send a squad of four into a run that gets harder every round and '
 	. 'climb a leaderboard that resets every week. Five games share one engine, each with its own board, its '
 	. 'own squad and its own prizes. Your squads build themselves, so there is nothing to manage before you play.';
@@ -160,7 +175,9 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 			echo $ds_one ? '?project_id=' . (int)$ds_one['project_id'] : ''; ?>">Play now</a>
 		<a class="dsg-cta alt" href="#dsg-how">How it works</a>
 		<div class="dsg-badges">
-			<span class="dsg-badge">Free to play</span>
+			<?php /* NOT "Free to play" on a theme that is not. Oculus Lounge
+			         wants the VIP role or a pass bought with DISCOIN. */ ?>
+			<span class="dsg-badge"><?php echo $ds_open ? 'Free to play' : 'VIP access'; ?></span>
 			<span class="dsg-badge">No download</span>
 			<span class="dsg-badge">Weekly reset</span>
 			<span class="dsg-badge">Squads build themselves</span>
@@ -217,12 +234,23 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 
 	<section class="dsg-sec">
 		<h2>Start without owning anything</h2>
-		<p>Every player is given four free soldiers, and they are not filler: Hagar, Delay, Blood Bag and
-			Sektr carry Heavy, Medium, Light and Base armor with a Melee, a Demolition and a Medkit
-			between them, which is a complete squad. You can take a real run before you own a single NFT.</p>
+		<?php /* THE FREE SQUAD IS DROP SHIP ONLY. addDefaultSoldiers() is gated
+		         on project 1, so claiming it on a Dread City or Oculus Lounge
+		         page is a promise the game does not keep. */ ?>
+		<?php if ($ds_grunts || $ds_one === null): ?>
+		<p><?php echo $ds_grunts ? 'Every player is given' : 'In Drop Ship every player is given'; ?>
+			four free soldiers, and they are not filler: Hagar, Delay, Blood Bag and Sektr carry Heavy,
+			Medium, Light and Base armor with a Melee, a Demolition and a Medkit between them, which is a
+			complete squad. You can take a real run before you own a single NFT.</p>
+		<?php endif; ?>
 		<p>In DHC2 Fighters you can go further. Assemble a Fighter out of traits earned anywhere on the
 			platform and it drops straight into your barracks as a soldier, scored on its own traits
-			alongside the minted collection.</p>
+			alongside the minted collection. Assembling costs nothing, so that theme is open to anyone
+			who builds.</p>
+		<?php if (!$ds_open): ?>
+		<p><?php echo htmlspecialchars($ds_name); ?> is the one that is not open to everybody: it wants the
+			VIP role, or a temporary pass bought with DISCOIN.</p>
+		<?php endif; ?>
 		<p><a class="dsg-cta" href="dropship/dashboard.php<?php
 			echo $ds_one ? '?project_id=' . (int)$ds_one['project_id'] : ''; ?>">Play now</a></p>
 	</section>

@@ -26,6 +26,11 @@
  */
 
 require_once __DIR__ . '/../lib/share-x.php';
+/* dropshipThemeClaims(). In lib/ because dropshipgame.php makes the same
+   two claims to the same strangers and must not disagree with the post
+   that sent them there. That file defines functions and nothing else, so
+   loading it here opens no connection. */
+require_once __DIR__ . '/../lib/dropship-public.php';
 
 /**
  * Where a shared run lands. PUBLIC, or X's crawler sees a login redirect.
@@ -191,11 +196,12 @@ function dropshipShareLimit() {
 	return 280 - 24;
 }
 
-function dropshipShareText($facts, $theme, $rounds_word = 'Round', $slug = '') {
+function dropshipShareText($facts, $theme, $rounds_word = 'Round', $slug = '', $project_id = 0,
+                           $troops_word = 'Soldiers') {
 	$f = $facts;
 	if (!$f['rank']) {
-		return 'Playing ' . $theme . ' on Skulliance. A squad of four soldiers, one run, and a '
-		     . 'leaderboard that resets every week. Free to play, and your first squad is free too.';
+		return 'Playing ' . $theme . ' on Skulliance. A squad of four, one run, and a '
+		     . 'leaderboard that resets every week.';
 	}
 
 	$score = (int)$f['score'];
@@ -264,13 +270,36 @@ function dropshipShareText($facts, $theme, $rounds_word = 'Round', $slug = '') {
 	 * A claim in a public post has to be one somebody can turn up and
 	 * check.
 	 */
-	$free  = 'Free to play, and your first squad is free too.';
+	$claims = dropshipThemeClaims($project_id);
+	/* The one sentence that differs, and the reason this is a function
+	   argument rather than a constant. */
+	if (!$claims['open'])            $terms = 'VIP access, or a temporary pass with DISCOIN.';
+	elseif ($claims['free_squad'])   $terms = 'Free to play, and your first squad is free too.';
+	else                             $terms = 'Free to play.';
+
+	/*
+	 * OCULUS LOUNGE HAS NO SOLDIERS. Five themes share this engine and
+	 * each renames what a squad is made of -- the dashboard reads that
+	 * word as evaluateText("Troops") and has done all along. The pitch
+	 * said "four soldiers" on all five, so the Lounge was advertised in
+	 * another game's vocabulary to people who have never played either.
+	 *
+	 * Passed in rather than looked up, like $rounds_word, so this file
+	 * still touches no session. 'Squad' itself is NOT in the theme
+	 * dictionary -- checked, not assumed -- so it stays as written.
+	 *
+	 * Capitalised mid-sentence because that is how the game says it:
+	 * "Assemble Squad of <Troops> to Play" on the dashboard. The shorter
+	 * rungs drop the noun entirely, which is safe in every theme.
+	 */
+	$troops = trim((string)$troops_word);
+	if ($troops === '') $troops = 'Soldiers';
+	$body  = 'a squad of four ' . $troops . ', one run, and a leaderboard that resets every week. ';
 	$rungs = array(
-		$theme . ' entails a squad of four soldiers, one run, and a leaderboard that '
-		       . 'resets every week. ' . $free,
-		'A squad of four soldiers, one run, and a leaderboard that resets every week. ' . $free,
-		'A squad of four, one run, and a leaderboard that resets every week. Free to play.',
-		$free,
+		$theme . ' entails ' . $body . $terms,
+		ucfirst($body) . $terms,
+		'A squad of four, one run, and a leaderboard that resets every week. ' . $terms,
+		$terms,
 		'',
 	);
 

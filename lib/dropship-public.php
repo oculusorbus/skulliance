@@ -87,3 +87,37 @@ function dropshipPublicTheme($slug) {
 	$all = dropshipPublicThemes();
 	return isset($all[$slug]) ? $all[$slug] : null;
 }
+
+/**
+ * What a theme's post is allowed to claim, because the two things the
+ * pitch wants to say are not true of every theme.
+ *
+ * THIS IS WHY. The pitch said "Free to play, and your first squad is free
+ * too" on all five, and both halves were wrong somewhere:
+ *
+ *   THE FREE SQUAD IS DROP SHIP ONLY. addDefaultSoldiers() is gated on
+ *   project_id 1 in dashboard.php, so the four grunts do not exist in
+ *   Dread City, Filthy Mermaid, DHC2 Fighters or Oculus Lounge. The
+ *   docblock in dropship-grunts.php opens "Every Drop Ship player is
+ *   given four free soldiers" and says DROP SHIP ONLY twelve lines later;
+ *   reading the first line and stopping is how this shipped.
+ *
+ *   OCULUS LOUNGE IS NOT FREE TO PLAY. It needs the VIP role or a
+ *   temporary pass bought with DISCOIN -- the gate is project_id 4 in
+ *   dashboard.php, next to the Play button.
+ *
+ * A post is a public claim to strangers. One that overstates what they
+ * get is worse than no post, because they turn up and find out.
+ *
+ * PROJECT IDS, WHICH IS AN ANTI-PATTERN THIS CODEBASE KEEPS REMOVING --
+ * but both gates it mirrors are themselves written that way, and a second
+ * opinion about who gets grunts is worse than a hardcoded id in one
+ * place. When either gate becomes a themes column, this reads it instead.
+ */
+function dropshipThemeClaims($project_id) {
+	$pid = (int)$project_id;
+	return array(
+		'free_squad' => ($pid === 1),   // addDefaultSoldiers(), dashboard.php
+		'open'       => ($pid !== 4),   // the VIP gate, dashboard.php
+	);
+}

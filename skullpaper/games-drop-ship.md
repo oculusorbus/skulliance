@@ -59,6 +59,13 @@ Then what the game is, for whoever is reading it who has never played, and a
 line asking them to join. Oculus Lounge tags its own account; the rest name the
 game in plain text.
 
+The middle part is written per theme, because the five do not offer the same
+thing. It uses your theme's own word for what a squad is made of, it only says
+"free to play" where that is true, and it only mentions the four free soldiers
+in Drop Ship, which is the only theme that hands them out. Oculus Lounge says
+what it actually wants instead: the VIP role, or a temporary pass bought with
+DISCOIN.
+
 Only two people can ever be named in it. Whoever this run overtook, and the
 player at the top. Nobody is named as having beaten you, and no label describes
 another player. If the run passed nobody and beat your own previous score, it
