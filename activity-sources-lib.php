@@ -141,11 +141,11 @@ function activity_sources($since = '') {
 /** Human labels for the sources, for a legend or a tooltip. */
 function activity_labels() {
 	return array(
-		'daily' => 'Daily streaks', 'mission' => 'Missions', 'skullswap' => 'Skull Swap',
+		'daily' => 'Daily Streaks', 'mission' => 'Missions', 'skullswap' => 'Skull Swap',
 		'gauntlet' => 'Gauntlets', 'crawl' => 'Crypt Crawl', 'conquest' => 'Crypt Conquest',
 		'racer' => 'Skull Racer', 'obscura' => 'Obscura', 'guardians' => 'Realm Guardians',
 		'raid' => 'Raids', 'boss' => 'Boss Battles', 'monstrocity' => 'Monstrocity',
-		'arena' => 'DHC Arena', 'fighter' => 'Fighters built',
+		'arena' => 'DHC Arena', 'fighter' => 'Fighters Built',
 	);
 }
 
