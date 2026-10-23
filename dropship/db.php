@@ -8,6 +8,7 @@ require_once __DIR__ . '/dropship-audio.php';    // which sound a round plays, d
 require_once __DIR__ . '/dropship-odds.php';     // loadItems() quotes the odds per item
 require_once __DIR__ . '/dropship-squad-plan.php'; // the best squads a roster can field (pure)
 require_once __DIR__ . '/dropship-squads.php';  // saved squads, see dropship-squads-schema.md
+require_once __DIR__ . '/dropship-fighters.php'; // assembled DHC Fighters as soldiers
 include 'credentials/db_credentials.php';
 
 ini_set('display_errors', 1);
@@ -1431,7 +1432,7 @@ function getSoldiers($conn, $active, $filterby="", $all=false){
 			// for any Oculus Lounge asset_name Skulliance doesn't have (yet).
 			echo "<span class='nft-image'><img src='".$oculus_lounge_images[$row["asset_name"]]."'/></span>";
 		}else{
-			echo "<span class='nft-image'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
+			echo "<span class='nft-image'><img src='".dropshipSoldierImage($row["ipfs"])."'/></span>";
 		}
 		/* THEMED, like armor and gear beside it. Rank was the one stat printed
 		   raw, so every reskin showed "Neo Miami Citizen" -- Oculus Lounge's
@@ -1587,6 +1588,27 @@ function renderDeployButton($id, $deploy=1){
 	  <input class='small-button".(($deploy==1)?"":" secondary")."' type='submit' value='"
 	    .(($deploy==1)?"Deploy":"Withdraw")."'>
 	</form>";
+}
+
+/**
+ * A SOLDIER'S PICTURE, WHEREVER IT COMES FROM.
+ *
+ * soldiers.ipfs holds a bare CID for every NFT collection, and the four
+ * places that render a soldier each pasted the jpg.store optimizer in
+ * front of it by hand. An assembled DHC Fighter has no CID and never
+ * will -- it is not minted -- but dhcf_render_fighter() writes a real
+ * PNG to dhcrenders/ and hands back an absolute skulliance.io URL.
+ *
+ * So the column carries either, and this decides which: anything that
+ * already looks like a URL is used as-is, and everything else is a CID
+ * for the optimizer. No new column, no migration, and every existing
+ * row keeps working untouched.
+ */
+function dropshipSoldierImage($ipfs) {
+	$ipfs = (string)$ipfs;
+	if ($ipfs === '') return '';
+	if (strncmp($ipfs, 'http://', 7) === 0 || strncmp($ipfs, 'https://', 8) === 0) return $ipfs;
+	return 'https://image-optimizer.jpgstoreapis.com/' . $ipfs;
 }
 
 // Check if soldier already exists
@@ -2525,7 +2547,7 @@ function getResultsSoldiers($conn, $result_id){
 			}elseif(isset($oculus_lounge_images[$row["asset_name"]])){
 				echo "<span class='leaderboard-nft'><img src='".$oculus_lounge_images[$row["asset_name"]]."'/></span>";
 			}else{
-				echo "<span class='leaderboard-nft'><img src='https://image-optimizer.jpgstoreapis.com/".$row["ipfs"]."'/></span>";
+				echo "<span class='leaderboard-nft'><img src='".dropshipSoldierImage($row["ipfs"])."'/></span>";
 			}
 		}
 		for($i=1; $i<=(4-$counter); $i++){

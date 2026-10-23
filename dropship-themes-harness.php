@@ -864,8 +864,13 @@ echo "\nchanging the trait source resyncs\n";
  */
 ok(strpos($dash4, '$_SESSION[\'userData\'][\'trait_source_key\'] !== $ds_source_key') !== false,
    'a trait source change is not noticed, so switching it never resyncs');
-ok(substr_count($dash4, '|| $source_changed == "true"') === 2,
-   'only one of the two pipelines resyncs when the source changes');
+/* THREE PIPELINES NOW: koios, skulliance, and fighters -- the last
+   fields a player's ASSEMBLED DHC Fighters as soldiers. Every one of
+   them has to resync when the source changes, or switching a theme over
+   saves the setting and leaves the barracks holding the old
+   collection. */
+ok(substr_count($dash4, '|| $source_changed == "true"') === 3,
+   'one of the three pipelines does not resync when the source changes');
 ok(strpos($dash4, '$_SESSION[\'userData\'][\'trait_source_key\'] = $ds_source_key;') !== false,
    'the source that ran is never remembered, so it resyncs on every single load');
 
@@ -976,9 +981,22 @@ foreach (array("(1, 'drop-ship', 1, 'gif', 'koios'",
 }
 $adm5 = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/admin-themes.php'));
 ok(strpos($adm5, 'name="trait_source"') !== false, 'the admin cannot set the trait source');
-ok(strpos($adm5, "=== 'skulliance'\n\t\t                                   ? 'skulliance' : 'koios'") !== false
-   || strpos($adm5, "? 'skulliance' : 'koios'") !== false,
+/*
+ * WHITELISTED, NOT PASSED THROUGH. This used to be a ternary against
+ * 'skulliance' and the check looked for that exact shape; with a third
+ * source it is an in_array, so the check tests the PROPERTY instead --
+ * the posted value must be compared against a fixed list before it
+ * reaches the UPDATE, and anything unrecognised must land on koios.
+ */
+/* SINGLE-QUOTED. In a double-quoted PHP string "$_POST" interpolates --
+   to nothing useful -- and the needle silently becomes a pattern that
+   matches the wrong thing. Third time tonight. */
+ok(strpos($adm5, "in_array(\$_POST['trait_source']") !== false,
    'the admin writes the posted trait source straight through without checking it');
+ok(strpos($adm5, "'skulliance', 'fighters'") !== false,
+   'the whitelist no longer names both non-default sources');
+ok(strpos($adm5, ": 'koios'") !== false,
+   'an unrecognised trait source does not fall back to koios');
 
 echo "\nthe theme check covers what actually stops a theme working\n";
 /*

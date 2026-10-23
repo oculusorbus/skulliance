@@ -585,9 +585,19 @@ function dropshipActiveProjectIds($conn) {
  * that has not been seeded behaves exactly as it did.
  */
 function dropshipThemeTraitSource($conn, $project_id) {
+	/*
+	 * THREE SOURCES NOW. 'fighters' reads a player's ASSEMBLED DHC
+	 * Fighters out of the platform database and fields them as soldiers
+	 * -- see dropship-fighters.php. It is a theme setting like the other
+	 * two rather than a project-id check, so switching DHC2 Fighters
+	 * over is a row edit and switching it back costs nothing.
+	 */
 	$cfg = dropshipThemeConfig($conn, $project_id);
 	if ($cfg && !empty($cfg['trait_source'])) {
-		return $cfg['trait_source'] === 'skulliance' ? 'skulliance' : 'koios';
+		$ts = $cfg['trait_source'];
+		if ($ts === 'skulliance') return 'skulliance';
+		if ($ts === 'fighters')   return 'fighters';
+		return 'koios';
 	}
 	return ((int)$project_id === 4) ? 'skulliance' : 'koios';
 }

@@ -131,7 +131,7 @@ function renderNFT($nft_data, $ipfs){
 	echo "<div class='nft'><div class='nft-data'>
 	<span class='nft-name'>".$nft_data->name."</span>";
 //	echo "<span class='nft-image'><img src='https://cloudflare-ipfs.com/ipfs/".$ipfs."'/></span>";
-	echo "<span class='nft-image'><img src='https://image-optimizer.jpgstoreapis.com/".$ipfs."'/></span>";
+	echo "<span class='nft-image'><img src='".dropshipSoldierImage($ipfs)."'/></span>";
 	/*
 	<span class='nft-rank'><strong>Rank: </strong>".$nft_data->Rank."</span>
 	<span class='nft-armor'><strong>Armor: </strong>".$nft_data->Armor."</span>
@@ -229,7 +229,17 @@ $source_changed = (!isset($_SESSION['userData']['trait_source_key'])
                    || $_SESSION['userData']['trait_source_key'] !== $ds_source_key) ? "true" : "false";
 $_SESSION['userData']['trait_source_key'] = $ds_source_key;
 
-if($ds_source === 'skulliance'){
+if($ds_source === 'fighters'){
+	/* ASSEMBLED FIGHTERS, NOT A MINTED COLLECTION. Same trigger as the
+	   other two -- only when the wallet set, the project or the source
+	   changed -- so a page load that changed nothing does no work. */
+	if(($address_changed == "true") || $project_id_changed == "true" || $source_changed == "true"){
+		dropshipSyncFighters($conn, $_SESSION['userData']['discord_id']);
+		$ranks["VIP"] = true;
+		$_SESSION['userData']['rank'] = "";
+		storeRank($ranks);
+	}
+}elseif($ds_source === 'skulliance'){
 	if(($address_changed == "true") || $project_id_changed == "true" || $source_changed == "true"){
 		dropshipSyncFromSkulliance($conn, $_SESSION['userData']['discord_id'], $policy_id);
 		$ranks["VIP"] = true;

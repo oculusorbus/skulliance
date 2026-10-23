@@ -98,8 +98,9 @@ if ($have_tables && $_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['new_
 		      . ", slug = '"            . $e($slug) . "'"
 		      . ", active = "           . (empty($_POST['active']) ? 0 : 1)
 		      . ", extension = '"       . $e($_POST['extension'] ?? 'gif') . "'"
-		      . ", trait_source = '"    . (($_POST['trait_source'] ?? '') === 'skulliance'
-		                                   ? 'skulliance' : 'koios') . "'"
+		      . ", trait_source = '"    . (in_array($_POST['trait_source'] ?? '',
+		                                   array('skulliance', 'fighters'), true)
+		                                   ? $_POST['trait_source'] : 'koios') . "'"
 		      . ", stage_order = '"     . (($_POST['stage_order'] ?? '') === 'linear'
 		                                   ? 'linear' : 'random') . "'"
 		      . ", ken_burns = '"       . (in_array($_POST['ken_burns'] ?? '', array('on', 'off'), true)
@@ -348,6 +349,12 @@ left blank and filled in later.</p>
 			<?php $ts = $theme && !empty($theme['trait_source']) ? $theme['trait_source'] : 'koios'; ?>
 			<option value="koios"<?php echo $ts !== 'skulliance' ? ' selected' : ''; ?>>Koios &mdash; read the player&rsquo;s wallets</option>
 			<option value="skulliance"<?php echo $ts === 'skulliance' ? ' selected' : ''; ?>>Skulliance &mdash; use holdings already synced</option>
+			<?php /* NOT A COLLECTION AT ALL. This one fields the player's
+			         ASSEMBLED DHC Fighters as soldiers, with armour and gear
+			         derived live from their traits -- see
+			         dropship-fighters.php. A theme on this source ignores
+			         policy_id entirely. */ ?>
+			<option value="fighters"<?php echo $ts === 'fighters' ? ' selected' : ''; ?>>DHC Fighters &mdash; the player&rsquo;s assembled Fighters</option>
 		</select></div>
 	<div><label>Is it working?</label>
 		<a class="btn" href="admin-themes.php?project_id=<?php echo (int)$edit_pid; ?>&amp;probe=1">Check this theme</a></div>
