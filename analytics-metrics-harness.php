@@ -138,10 +138,24 @@ printf("  %d game boards, %d exempt\n",
  * A trend counts the same thing the Activity board counts.
  * ---------------------------------------------------------------- */
 echo "\na trend counts what the Activity board counts\n";
-$s_at  = strpos($db_src, "\t\t'daily'       => [");
-ok($s_at !== false, 'the Activity $sources array moved; this check is now blind');
-$s_end = strpos($db_src, "\n\t];", $s_at);
-$sources = no_comments(substr($db_src, $s_at, $s_end - $s_at));
+/*
+ * THE MAP MOVED, AND THIS CHECK SAID SO RATHER THAN GOING QUIET.
+ *
+ * It used to read the $sources literal out of db.php. That literal is now
+ * in activity-sources-lib.php, shared with the Activity leaderboard and
+ * the admin Activity page so there is one definition instead of the three
+ * this harness exists to keep in step. The check reads it from its new
+ * home; the cross-check against the trend queries is unchanged.
+ *
+ * Worth keeping the old failure text in mind: "this check is now blind"
+ * is why the move was noticed at all.
+ */
+$src_lib = (string)@file_get_contents(__DIR__ . '/activity-sources-lib.php');
+ok($src_lib !== '', 'activity-sources-lib.php is gone; this check is now blind');
+$s_at  = strpos($src_lib, "'daily'       => array(");
+ok($s_at !== false, 'the Activity source map moved again; this check is now blind');
+$s_end = $s_at === false ? 0 : strpos($src_lib, "\n\t);", $s_at);
+$sources = $s_at === false ? '' : no_comments(substr($src_lib, $s_at, $s_end - $s_at));
 
 /* metric key => [Activity source key, fragments that must appear in both] */
 $mirrors = array(

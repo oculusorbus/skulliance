@@ -7999,87 +7999,30 @@ function checkActivityLeaderboard($conn, $period = 'ath', $scope = 'all') {
 	// below), so a missing column shows up as all-time looking fine while
 	// monthly/weekly quietly report zero -- worth knowing when a count looks
 	// wrong on two views out of three.
-	// Build date filters per period
-	if ($period === 'monthly') {
-		$dt   = date('Y-m-01');
-		$w_t  = "AND date_created  >= '$dt'";
-		$w_m  = "AND created_date  >= '$dt'";
-		$w_ge = "AND ge.resolved_date >= '$dt'";
-		$w_r  = "AND r.created_date >= '$dt'";
-		$w_e  = "AND date_created  >= '$dt'";
-		$w_ss = "AND date_created  >= '$dt'";
-		$w_s  = "AND date_created  >= '$dt'";
-		$w_cc = "AND date_created  >= '$dt'";
-		$w_cq = "AND date_created  >= '$dt'";
-		// skull_racer_runs names its date column created_at, not date_created
-		// like most tables here -- hence its own filter rather than reusing
-		// one above. It has ALWAYS had the column (it's in the table's
-		// original CREATE, see the SKULL RACER block at the end of this
-		// file), so unlike 'crawl' and 'conquest' this source needs no
-		// migration before monthly/weekly work.
-		$w_sr = "AND created_at     >= '$dt'";
-		$w_ob = "AND date_created  >= '$dt'";
-		$w_gd = "AND date_created  >= '$dt'";
-	} elseif ($period === 'weekly') {
-		$ws   = $conn->real_escape_string(gauntletGetWeekStart());
-		$w_t  = "AND date_created  >= '$ws'";
-		$w_m  = "AND created_date  >= '$ws'";
-		$w_ge = "AND ge.resolved_date >= '$ws'";
-		$w_r  = "AND r.created_date >= '$ws'";
-		$w_e  = "AND date_created  >= '$ws'";
-		$w_ss = "AND date_created  >= '$ws'";
-		$w_s  = "AND date_created  >= '$ws'";
-		$w_cc = "AND date_created  >= '$ws'";
-		$w_cq = "AND date_created  >= '$ws'";
-		$w_sr = "AND created_at     >= '$ws'";
-		$w_ob = "AND date_created  >= '$ws'";
-		$w_gd = "AND date_created  >= '$ws'";
-	} else {
-		$w_t = $w_m = $w_ge = $w_r = $w_e = $w_ss = $w_s = $w_cc = $w_cq = $w_sr = $w_ob = $w_gd = '';
-	}
-
-	// Run each source as its own fast GROUP BY query, then merge in PHP.
-	// Avoids cross-table joins on the massive transactions table.
-	$sources = [
-		'daily'       => ["SELECT user_id, COUNT(*) AS cnt FROM transactions WHERE bonus = 1 AND amount = 30 $w_t GROUP BY user_id",                                                                1],
-		'mission'     => ["SELECT user_id, COUNT(*) AS cnt FROM missions WHERE status IN (1,2) $w_m GROUP BY user_id",                                                                             5],
-		'skullswap'   => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 0 $w_ss GROUP BY user_id",                                                                         5],
-		'gauntlet'    => ["SELECT g.user_id, COUNT(*) AS cnt FROM gauntlets_encounters ge INNER JOIN gauntlets g ON g.id = ge.run_id WHERE ge.outcome != 'pending' $w_ge GROUP BY g.user_id",     5],
-		// Completed delves only (won or lost -- an abandon is recorded as a
-		// loss, same as everywhere else Crypt Crawl counts "completed"), not
-		// every in-progress row -- matches checkCryptCrawlLeaderboard()'s own
-		// definition and avoids rewarding Activity points for runs someone
-		// starts and never finishes. Weighted with mission/skullswap/gauntlet
-		// -- a delve is roughly that same class of single-session attempt.
-		'crawl'       => ["SELECT user_id, COUNT(*) AS cnt FROM cryptcrawls WHERE status IN ('won','lost') $w_cc GROUP BY user_id",                                                                5],
-		// Same "completed runs only" definition as 'crawl' above, same weight.
-		'conquest'    => ["SELECT user_id, COUNT(*) AS cnt FROM cryptconquests WHERE status IN ('won','lost') $w_cq GROUP BY user_id",                                                             5],
-		// Every row in skull_racer_runs is already a COMPLETED race -- there is
-		// no in-progress state to exclude, because skullRacerFinalizeRun() only
-		// inserts once a race finishes AND passes its sanity floors (3 laps,
-		// minimum total/lap times). So no status filter here, unlike the two
-		// above; the table simply has nothing else in it. Guests never reach it
-		// either -- a logged-out race finishes and shows a result but is never
-		// saved. Weighted with crawl/conquest/mission: a race is that same
-		// class of single completed session.
-		'racer'       => ["SELECT user_id, COUNT(*) AS cnt FROM skull_racer_runs WHERE 1=1 $w_sr GROUP BY user_id",                                                                                5],
-		// COMPLETED runs only (active = 0), same definition as crawl/conquest --
-		// an in-progress streak is on Obscura's own board, but it is not a
-		// finished session and should not count as activity until it ends.
-		// Counting RUNS rather than solves on purpose: a solve is a ~15 second
-		// unit and counting them would let Obscura outweigh every other game by
-		// sheer volume. A run is the same class of single session as a delve or
-		// a race, so it carries the same weight.
-		'obscura'     => ["SELECT user_id, COUNT(*) AS cnt FROM obscura_scores WHERE active = 0 $w_ob GROUP BY user_id",                                                                           5],
-		// One row per FALLEN siege, which is the only way a Guardians run ends
-		// -- there is no win condition, every realm eventually falls. Weighted
-		// with crawl/conquest/racer/obscura: a siege is that same class of
-		// single completed session, and a long one at that.
-		'guardians'   => ["SELECT user_id, COUNT(*) AS cnt FROM guardians_scores WHERE 1=1 $w_gd GROUP BY user_id",                                                                                5],
-		'raid'        => ["SELECT re.user_id, COUNT(*) AS cnt FROM raids r INNER JOIN realms re ON re.id = r.offense_id WHERE r.outcome IN (1,2) $w_r GROUP BY re.user_id",                      15],
-		'boss'        => ["SELECT user_id, COUNT(*) AS cnt FROM encounters WHERE 1=1 $w_e GROUP BY user_id",                                                                                     25],
-		'monstrocity' => ["SELECT user_id, SUM(attempts) AS cnt FROM scores WHERE project_id = 36 $w_s GROUP BY user_id",                                                                        50],
-	];
+	/*
+	 * THE DEFINITION OF A PLAY LIVES IN activity-sources-lib.php NOW.
+	 *
+	 * This function had the whole source map written out once per period
+	 * -- monthly, weekly, all-time -- which is three copies of twelve
+	 * queries whose column names are all different and none guessable
+	 * (skull_racer_runs uses created_at, gauntlets ge.resolved_date,
+	 * raids r.created_date). It was also copied into the two analytics
+	 * endpoints, and MAINTENANCE.md records the rule that kept them
+	 * honest: change one, change all three.
+	 *
+	 * The admin Activity page wanted the same map and would have been a
+	 * fourth copy. One definition, one cutoff parameter, and the periods
+	 * below just decide which date to pass.
+	 */
+	require_once __DIR__ . '/activity-sources-lib.php';
+	/* THE SAME TWO BOUNDARIES AS BEFORE, and weekly is gauntletGetWeekStart()
+	   rather than a plain "monday" -- the platform's week starts where that
+	   function says it does, and inventing a Monday here would quietly move
+	   the public weekly board. */
+	if ($period === 'monthly')      $since = date('Y-m-01');
+	elseif ($period === 'weekly')   $since = gauntletGetWeekStart();
+	else                            $since = '';
+	$sources = activity_sources($since);
 
 	// Game Master runs the same sources with the non-game ones removed. Doing
 	// it here rather than with a separate $sources array means a source added
