@@ -35,6 +35,19 @@
 require_once __DIR__ . '/lib/dropship-public.php';
 
 $ds_themes = dropshipPublicThemes();
+/*
+ * REAL SOLDIERS, OFF THE LOCAL CACHE. The page had no picture above the
+ * fold at all -- every sibling game page opens with one -- and the one
+ * thing this game has more of than any other here is art: hundreds of
+ * cards already registered as soldiers.
+ *
+ * DROP SHIP'S OWN ONLY, at the owner's direction for this pass. Five
+ * collections on one page is five art styles fighting each other, and
+ * this is a pitch rather than a gallery.
+ * dropshipPublicArt() returns only files that exist on this server, so a
+ * dead gateway cannot turn this into a wall of broken frames.
+ */
+$ds_art = dropshipPublicArt(36, 'drop-ship');
 $ds_canonical = 'https://www.skulliance.io/staking/dropshipgame.php';
 
 /* The shared theme, when there is one. Validated against the live list, so
@@ -109,6 +122,53 @@ $ds_short = $ds_name !== ''
 <meta name="twitter:description" content="<?php echo htmlspecialchars($ds_short); ?>">
 <meta name="twitter:image" content="<?php echo htmlspecialchars($ds_og_image); ?>">
 <meta name="twitter:image:alt" content="<?php echo htmlspecialchars(($ds_name !== '' ? $ds_name : 'Drop Ship') . ' cover art'); ?>">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "VideoGame",
+      "name": <?php echo json_encode($ds_name !== '' ? $ds_name : 'Drop Ship'); ?>,
+      "alternateName": ["Skulliance Drop Ship", "Drop Ship NFT Battler"],
+      "url": "<?php echo $ds_canonical; ?>",
+      "image": "<?php echo htmlspecialchars($ds_og_image); ?>",
+      "screenshot": "<?php echo htmlspecialchars($ds_og_image); ?>",
+      "description": <?php echo json_encode($ds_short); ?>,
+      "genre": ["Strategy", "Roguelike", "Collectible"],
+      "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
+      "playMode": "SinglePlayer",
+      "applicationCategory": "Game",
+      "operatingSystem": "Any",
+      "inLanguage": "en",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" },
+      "publisher": { "@type": "Organization", "name": "Skulliance", "url": "https://www.skulliance.io/" },
+      "potentialAction": { "@type": "PlayAction", "target": "<?php echo $ds_canonical; ?>" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Skulliance", "item": "https://www.skulliance.io/" },
+        { "@type": "ListItem", "position": 2, "name": "Drop Ship - Free Weekly NFT Squad Battler", "item": "<?php echo $ds_canonical; ?>" }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        { "@type": "Question", "name": "Is Drop Ship free to play?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. It runs in your browser with no download. Drop Ship gives every player four free soldiers, and those four make one complete squad, so you can take a real run before you own anything. Oculus Lounge is the one theme that is not open to everybody." } },
+        { "@type": "Question", "name": "Do I need an NFT to play Drop Ship?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Four free soldiers are waiting in your barracks. NFTs you hold become extra soldiers, and in DHC2 Fighters a Fighter you assemble out of earned traits also fields as one." } },
+        { "@type": "Question", "name": "How long does a run take?",
+          "acceptedAnswer": { "@type": "Answer", "text": "A couple of minutes. You pick a squad, deploy, and watch the run play out round by round. The round you reach is your score for the week." } },
+        { "@type": "Question", "name": "Do I have to manage squads?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Squads are generated from what you hold, arranged into the best combinations available, every time your collection changes. There is nothing to name, save or take apart." } },
+        { "@type": "Question", "name": "What are the five games?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Drop Ship, Dread City, Filthy Mermaid, DHC2 Fighters and Oculus Lounge. They share one engine but keep their own board, their own squad, their own art and their own prizes." } }
+      ]
+    }
+  ]
+}
+</script>
 <style>
 /*
  * THE PAGE PAINTS ITS OWN GROUND, which this shipped without and a
@@ -153,12 +213,59 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 .dsg-theme .art img { display: block; width: 100%; height: 100%; object-fit: contain; max-width: 100%; }
 .dsg-theme b { display: block; padding: 9px 11px 11px; font-size: .9rem; }
 .dsg-theme.on { border-color: #00c8a0; }
+
+/*
+ * THE SOLDIER STRIP. A single row above the fold that scrolls sideways
+ * on a phone and fans out on a desktop -- the fastest way to say "this
+ * game is made of hundreds of pieces of art" without a hero screenshot
+ * that would only ever show one of the five games.
+ */
+.dsg-strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 10px;
+  margin: 0 0 18px; scrollbar-width: thin; }
+.dsg-strip img { flex: 0 0 auto; width: 104px; height: 104px; object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.10); background: #07111d; }
+@media (min-width: 760px) { .dsg-strip img { width: 128px; height: 128px; } }
+
+/* The wall: everything, as a mosaic. */
+.dsg-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px; margin-top: 18px; }
+.dsg-wall img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;
+  background: #07111d; border: 1px solid rgba(255,255,255,0.07); }
+
+/* The kit strip: the game's own icons, labelled. */
+.dsg-kit { margin: 16px 0 4px; display: flex; flex-direction: column; gap: 10px; }
+.dsg-kit-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+.dsg-kit-label { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: #00c8a0; width: 52px; flex: 0 0 auto; }
+.dsg-kit-item { display: flex; align-items: center; gap: 7px; }
+.dsg-kit-item img { width: 40px; height: 40px; object-fit: contain; }
+.dsg-kit-item em { font-style: normal; font-size: 0.82rem; color: #c6d4dd; }
+
+.dsg-faq { margin-top: 18px; }
+.dsg-faq details { border-top: 1px solid rgba(255,255,255,0.08); padding: 11px 0; }
+.dsg-faq summary { cursor: pointer; font-weight: bold; font-size: 0.95rem; list-style: none; }
+.dsg-faq summary::-webkit-details-marker { display: none; }
+.dsg-faq summary::after { content: ' +'; color: #00c8a0; }
+.dsg-faq details[open] summary::after { content: ' \2212'; }
+.dsg-faq p { margin: 8px 0 0; font-size: 0.9rem; }
 </style>
 </head>
 <body>
 <?php include __DIR__ . '/site-header.php'; ?>
 
 <div class="dsg-wrap">
+
+	<?php if ($ds_art): ?>
+	<?php /* ABOVE THE HEADLINE, because it is the argument. Every other
+	         game page opens with a screenshot of one board; this game is
+	         five collections of art, and showing it beats describing it. */ ?>
+	<div class="dsg-strip" aria-label="Soldiers registered in the game">
+		<?php foreach (array_slice($ds_art, 0, 14) as $a): ?>
+		<img src="<?php echo htmlspecialchars($a['url'], ENT_QUOTES); ?>" alt=""
+		     loading="eager" decoding="async" width="128" height="128">
+		<?php endforeach; ?>
+	</div>
+	<?php endif; ?>
 
 	<header class="dsg-hero">
 		<h1><?php echo htmlspecialchars($ds_name !== '' ? $ds_name : 'Drop Ship'); ?></h1>
@@ -189,6 +296,35 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 		<h2>How a run works</h2>
 		<p>You field a squad of four. Each round the run rolls against your squad's armor, and when it
 			rolls badly somebody dies. Get far enough and the round number is your score for the week.</p>
+		<?php
+		/*
+		 * THE GAME'S OWN ICONS, not a description of them. These are the
+		 * exact files the barracks and the shop draw, so a stranger has
+		 * already met the vocabulary before they open the game. Every one
+		 * verified live before being pointed at -- images ship by FTP and
+		 * are not in the repo, so a filename here is a claim about the
+		 * server, not about this checkout.
+		 */
+		$ds_ico   = 'https://skulliance.io/staking/dropship/icons/';
+		$ds_armor = array('heavy-armor' => 'Heavy', 'medium-armor' => 'Medium',
+		                  'light-armor' => 'Light', 'base-armor' => 'Base');
+		$ds_gear  = array('medkit' => 'Medkit', 'melee' => 'Melee', 'demolition' => 'Demolition');
+		?>
+		<div class="dsg-kit">
+			<div class="dsg-kit-row"><span class="dsg-kit-label">Armor</span>
+				<?php foreach ($ds_armor as $f => $n): ?>
+				<span class="dsg-kit-item"><img src="<?php echo $ds_ico . $f; ?>.png" alt=""
+					loading="lazy" width="40" height="40"><em><?php echo $n; ?></em></span>
+				<?php endforeach; ?>
+			</div>
+			<div class="dsg-kit-row"><span class="dsg-kit-label">Gear</span>
+				<?php foreach ($ds_gear as $f => $n): ?>
+				<span class="dsg-kit-item"><img src="<?php echo $ds_ico . $f; ?>.png" alt=""
+					loading="lazy" width="40" height="40"><em><?php echo $n; ?></em></span>
+				<?php endforeach; ?>
+				<span class="dsg-kit-item"><em>or none</em></span>
+			</div>
+		</div>
 		<div class="dsg-grid">
 			<div class="dsg-card">
 				<h3>Armor sets the odds</h3>
@@ -231,6 +367,44 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 		</div>
 	</section>
 	<?php endif; ?>
+
+	<?php if (count($ds_art) > 14): ?>
+	<section class="dsg-sec">
+		<h2>Every one of these is somebody's soldier</h2>
+		<p>Drop Ship does not draw its own characters. It reads the collections people already hold and
+			turns each card into a soldier, carrying the armor and gear its art says it has. These are
+			real ones, pulled straight from the barracks.</p>
+		<div class="dsg-wall">
+			<?php foreach ($ds_art as $a): ?>
+			<img src="<?php echo htmlspecialchars($a['url'], ENT_QUOTES); ?>"
+			     alt="<?php echo htmlspecialchars($a['theme'] . ' soldier', ENT_QUOTES); ?>"
+			     loading="lazy" decoding="async">
+			<?php endforeach; ?>
+		</div>
+	</section>
+	<?php endif; ?>
+
+	<section class="dsg-sec">
+		<h2>Questions</h2>
+		<div class="dsg-faq">
+			<details open><summary>Is it free?</summary>
+				<p>Yes, and you do not need to own anything. Four soldiers are waiting in your Drop Ship
+					barracks and the four of them make one complete squad. Oculus Lounge is the one theme
+					that is not open to everybody.</p></details>
+			<details><summary>How long is a run?</summary>
+				<p>A couple of minutes. Pick a squad, deploy, and watch it play out round by round. The
+					round you reach is your score for the week.</p></details>
+			<details><summary>Do I have to manage squads?</summary>
+				<p>No. They are generated from what you hold and rebuilt whenever your collection changes.
+					Nothing to name, save or take apart.</p></details>
+			<details><summary>What happens to a soldier that dies?</summary>
+				<p>Nothing permanent. Death is a timeout: they can be resurrected after a short wait, and
+					your NFT is never at risk. Weapons degrade over time anyway.</p></details>
+			<details><summary>What are the five games?</summary>
+				<p>Drop Ship, Dread City, Filthy Mermaid, DHC2 Fighters and Oculus Lounge. One engine, but
+					each keeps its own board, squad, art and prizes.</p></details>
+		</div>
+	</section>
 
 	<section class="dsg-sec">
 		<h2>Start without owning anything</h2>
