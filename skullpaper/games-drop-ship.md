@@ -45,6 +45,16 @@ share one collection whose cards carry no traits at all, so armor comes from
 how scarce the card is - a 1 of 1 is the best armored thing in the game - and
 gear from whether the card shows the character fighting.
 
+## The Armory
+
+Filthy Mermaid and Oculus Lounge do not let everybody in, and the shop follows
+the same rule as the door. You will not see an Armory in those two until you
+can actually play them: Filthy Mermaid wants a Shorty Verse NFT, and Oculus
+Lounge wants a Disco Solaris NFT **and** VIP, either the Discord role or a
+temporary pass bought with DISCOIN.
+
+Every other theme is open to everybody, so its Armory always is.
+
 ## Sharing a run
 
 When a run ends, **Share on X** sits under Instant Replay. It writes the post

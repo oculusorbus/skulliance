@@ -1264,6 +1264,43 @@ function dropshipSoldierCount($conn){
 	return 0;
 }
 
+/**
+ * Should the Armory be on screen at all?
+ *
+ * TWO THEMES REFUSE ENTRY, AND THE SHOP WAS NOT LISTENING. Filthy
+ * Mermaid wants a Shorty Verse NFT and Oculus Lounge wants a Disco
+ * Solaris NFT plus VIP, but the Armory rendered for everybody -- so
+ * somebody who cannot play was shown a shop full of things to buy for a
+ * game they cannot enter, priced in a currency they cannot earn. The
+ * Play gate already tells them what they need; the shop just made the
+ * refusal confusing.
+ *
+ * HOLDINGS ARE PROVEN BY A SOLDIER ROW. A soldier exists in these
+ * projects only because an NFT under the theme's own policy was synced
+ * off the player's wallet -- dropshipSyncFromSkulliance() and the Koios
+ * pass both key on projects.policy_id. The four free Grunts cannot
+ * create a false positive: addDefaultSoldiers() is gated on project 1.
+ *
+ * $vip COVERS BOTH DOORS. The Discord role and the temporary pass bought
+ * with DISCOIN both end up as 'true' by the time dashboard.php reads it
+ * -- see dropship.php's note on the session flag, which exists precisely
+ * so a player who has just paid is not refused until they log out.
+ *
+ * PROJECT IDS, which this codebase keeps deleting, and deliberately so
+ * here: both gates being mirrored are themselves written that way a few
+ * hundred lines up. One hardcoded id in one place beats a second opinion
+ * about who may shop. When those gates become theme columns, this reads
+ * them instead.
+ */
+function dropshipArmoryVisible($conn, $project_id, $vip) {
+	$pid = (int)$project_id;
+	/* Every other theme is open, and its shop with it. */
+	if ($pid !== 3 && $pid !== 4) return true;
+	if (dropshipSoldierCount($conn) < 1) return false;
+	if ($pid === 4 && $vip !== 'true') return false;
+	return true;
+}
+
 function checkSquadCount($conn){
 	$sql = "SELECT COUNT(id) AS total FROM soldiers WHERE user_id='".$_SESSION['userData']['dropship_user_id']."' AND active = '1' AND deceased = '0' AND project_id = '".$_SESSION['userData']['dropship_project_id']."'";
 	$result = $conn->query($sql);

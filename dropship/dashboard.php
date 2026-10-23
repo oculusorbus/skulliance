@@ -1062,6 +1062,11 @@ if ($ds_can_animate):
 					?>
 				</div>
 			</div>
+			<?php /* THE SHOP IS PART OF THE GATE. Filthy Mermaid and Oculus
+			         Lounge refuse players without the holdings, so showing them
+			         an Armory is offering goods for a game they cannot open.
+			         See dropshipArmoryVisible() for what each one tests. */ ?>
+			<?php if (dropshipArmoryVisible($conn, $_SESSION['userData']['dropship_project_id'], $vip)): ?>
 			<a name="armory" id="armory"></a>
 			<div class="col1of3">
 				<h2><?php echo evaluateText("Armory"); ?></h2>
@@ -1105,6 +1110,7 @@ if ($ds_can_animate):
 					?>
 				 </div>
 			</div>
+			<?php endif; ?>
 		</div>
 		<?php } ?>
 		<!-- Footer -->
