@@ -152,5 +152,29 @@ ok(strpos($probe, 'FIGHTERS: ...synced into soldiers') !== false
    && strpos($probe, 'FIGHTERS: ...and attached to you') !== false,
    'the probe reports Fighters built but not whether they synced and attached');
 
+echo "\nthe Play menu points at it\n";
+/*
+ * Its own entry, because the theme is the third thing a player's Fighters
+ * do and the two Drop Ship links at the bottom of that menu are a
+ * different proposition. The id matters as much as the link: all the
+ * themes are one codebase switched by a session value, so a link without
+ * ?project_id=5 opens whichever theme the session was last left on.
+ */
+$hdr = harness_strip_comments(file_get_contents(__DIR__ . '/header.php'));
+ok(strpos($hdr, '>DHC Drop Ship<') !== false,
+   'the Play menu has no DHC Drop Ship entry');
+ok(preg_match('~href="dropship/dashboard\.php\?project_id=5"[^>]*>DHC Drop Ship<~', $hdr) === 1,
+   'DHC Drop Ship does not carry ?project_id=5, so it opens the last theme used');
+/* RELATIVE, never absolute: the login cookie is host-only, so an absolute
+   link to one host signs out anybody who arrived on the other. */
+ok(strpos($hdr, 'href="https://skulliance.io/staking/dropship/dashboard.php?project_id=5"') === false,
+   'the DHC Drop Ship link is absolute, which drops the session across hosts');
+/* Below DHC Arena, which is below DHC Fighters. */
+$at_f = strpos($hdr, '>DHC Fighters<');
+$at_a = strpos($hdr, '>DHC Arena<');
+$at_d = strpos($hdr, '>DHC Drop Ship<');
+ok($at_f !== false && $at_a !== false && $at_d !== false && $at_f < $at_a && $at_a < $at_d,
+   'DHC Drop Ship is not listed directly after DHC Fighters and DHC Arena');
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all passed\n");
 exit($fail ? 1 : 0);

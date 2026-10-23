@@ -100,18 +100,42 @@ ok($lounge !== null && stripos($lounge[3], 'NSFW') !== false,
    'the Oculus Lounge description no longer says NSFW: "' . ($lounge[3] ?? '') . '"');
 
 /* ---------------------------------------------------------------- *
- * The Play menu in the nav carries the same pair, pinned the same way.
+ * The Play menu in the nav pins its Drop Ship links the same way.
+ *
+ * NOT A COUNT ANY MORE. This asserted exactly two and broke the moment a
+ * third theme was listed -- DHC Drop Ship, which sits up with DHC Fighters
+ * and DHC Arena rather than down with the other two, because a player
+ * picking it is picking DHC. A count makes adding a theme look like a
+ * regression; what actually matters is that EVERY one of these links
+ * carries an id, so none of them opens whichever theme the session was
+ * last left on. That is checked per link below, however many there are.
  * ---------------------------------------------------------------- */
 echo "\nthe Play menu pins them too\n";
 $hdr = file_get_contents($root . '/header.php');
 preg_match_all('#<a href="(dropship/dashboard\.php[^"]*)"[^>]*>(.*?)</a>#', $hdr, $nav);
-ok(count($nav[1]) === 2, 'expected two Drop Ship links in header.php, found ' . count($nav[1]));
+ok(count($nav[1]) >= 2, 'expected at least two Drop Ship links in header.php, found ' . count($nav[1]));
+$nav_ids = array();
 foreach ($nav[1] as $i => $href) {
 	$text = trim(strip_tags($nav[2][$i]));
 	ok(strpos($href, 'project_id=') !== false,
 	   "the nav's \"$text\" link has no project_id, so it opens whichever game the session was last on");
+	if (preg_match('/project_id=(\d+)/', $href, $m)) $nav_ids[$text] = (int)$m[1];
 }
-ok(strpos($hdr, 'dropship/dashboard.php?project_id=4') !== false, 'Oculus Lounge is not in the Play menu');
+/* Each by name, so a reshuffle that swaps two hrefs is caught rather than
+   averaged out by a count. */
+ok(($nav_ids['Drop Ship'] ?? 0) === 1, 'the Play menu\'s Drop Ship no longer pins project 1');
+ok(($nav_ids['Oculus Lounge'] ?? 0) === 4, 'Oculus Lounge is not in the Play menu, or no longer pins project 4');
+ok(($nav_ids['DHC Drop Ship'] ?? 0) === 5, 'DHC Drop Ship is not in the Play menu, or no longer pins project 5');
+
+/*
+ * DHC Drop Ship IS NOT ON THE LAUNCHPAD, which is a decision rather than
+ * an oversight: the owner asked for the nav entry only. Noted and not
+ * asserted -- the two surfaces are otherwise kept in step by this file,
+ * so the next reader would fairly call the gap a bug, but a check on the
+ * ABSENCE of a tile reports a failure on the day somebody adds one, which
+ * is backwards. If it gets a tile, it goes in the DHC group next to
+ * Fighters and Arena and pins project_id=5.
+ */
 /* NO NSFW IN THE MENU, deliberately -- the nav is a plain list of game names
    and the label went in the launchpad description instead, which is the one
    place with room to say it. Asserted so it does not drift back in: this is

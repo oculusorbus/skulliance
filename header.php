@@ -456,6 +456,17 @@
 		           state and pays nothing, so a player finding it would only be
 		           confused about which one counts. See dhcarena.md. -->
 		      <a href="dhcarena.php">DHC Arena</a>
+		      <!-- WITH THE OTHER TWO DHC ENTRIES, not down with the Drop Ship
+		           themes, because what a player is picking here is DHC and not
+		           a battler. Every Fighter they have assembled fields in this
+		           one as a soldier, so it is the third thing their Fighters do
+		           and it belongs next to the first two.
+
+		           ?project_id=5 for the same reason the two below carry one:
+		           all three Drop Ship themes are one codebase switched by a
+		           session value, so without it the link opens whichever theme
+		           the session was last left on. -->
+		      <a href="dropship/dashboard.php?project_id=5">DHC Drop Ship</a>
 		      <a href="cryptcrawl.php">Crypt Crawl</a>
 		      <a href="cryptconquest.php">Crypt Conquest</a>
 		      <a href="monstrocity.php">Monstrocity</a>
@@ -475,9 +486,10 @@
 		           turning into every page that mentions a Fighter. -->
 		      <!-- ?project_id= on both: Drop Ship and Oculus Lounge are one
 		           codebase switched by a session value, so without it each
-		           link opens whichever of the two the session was last left
-		           on. dropship/dropship.php validates the id against
-		           getProjects() before storing it. -->
+		           link opens whichever theme the session was last left on.
+		           DHC Drop Ship is a third one, listed up with DHC Fighters
+		           and DHC Arena rather than here. dropship/dropship.php
+		           validates the id against getProjects() before storing it. -->
 		      <a href="dropship/dashboard.php?project_id=1">Drop Ship</a>
 		      <a href="dropship/dashboard.php?project_id=4">Oculus Lounge</a>
 		    </div>
