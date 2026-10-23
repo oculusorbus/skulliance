@@ -187,6 +187,13 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 /* Everything else is scoped to .dsg-, so it cannot reach site-header.php. */
 .dsg-wrap { max-width: 1100px; margin: 0 auto; padding: 8px 16px 60px; color: #e8eaed; }
 .dsg-hero { text-align: center; }
+/* CONTAINED AND CAPPED. The art is portrait (745x850) and the other
+   four themes are each a different shape again, so it is fitted rather
+   than cropped and bounded by HEIGHT -- a width cap would let the
+   landscape one tower over the headline it is supposed to introduce. */
+.dsg-cover { display: block; margin: 0 auto 14px; width: auto; height: auto;
+  max-width: min(100%, 340px); max-height: 300px; object-fit: contain; }
+@media (min-width: 760px) { .dsg-cover { max-height: 360px; max-width: min(100%, 400px); } }
 .dsg-hero h1 { margin: 0 0 6px; font-size: clamp(1.9rem, 5vw, 3rem); text-wrap: balance; }
 .dsg-sub { display: block; font-size: .8rem; letter-spacing: .12em; text-transform: uppercase;
   color: #00c8a0; margin-top: 8px; }
@@ -284,6 +291,16 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 <div class="dsg-wrap">
 
 	<header class="dsg-hero">
+		<?php /* THE COVER, above the name. The theme's own where one is
+		         named, Drop Ship's otherwise -- a Dread City share landing
+		         under Drop Ship's art would be advertising the wrong game.
+		         Dimensions are stated because the file is 745x850 and
+		         without them the headline jumps down the page the moment it
+		         decodes. */ ?>
+		<img class="dsg-cover" src="<?php echo htmlspecialchars(dropshipPublicCover($ds_slug), ENT_QUOTES); ?>"
+		     alt="<?php echo htmlspecialchars(($ds_name !== '' ? $ds_name : 'Drop Ship') . ' cover art', ENT_QUOTES); ?>"
+		     width="745" height="850" loading="eager" fetchpriority="high" decoding="async"
+		     onerror="this.remove()">
 		<h1><?php echo htmlspecialchars($ds_name !== '' ? $ds_name : 'Drop Ship'); ?></h1>
 		<span class="dsg-sub">Free weekly squad battler</span>
 		<p class="dsg-lead">Send four into a run that gets harder every round and see how far they get.

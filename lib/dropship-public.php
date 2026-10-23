@@ -243,3 +243,24 @@ function dropshipPublicArt($limit = 24) {
 	}
 	return $cache[$key];
 }
+
+/**
+ * A theme's cover art, as a public URL.
+ *
+ * SAME CONVENTION dropshipThemeImagePath() USES, which is "drop-ship is
+ * flat and everything else nests under its slug" -- the flat art
+ * predates the themes table and never moved. Repeated here rather than
+ * required, because that function lives behind Drop Ship's own db.php,
+ * which IS the login gate, and this is read by pages with no session.
+ *
+ * NOT CHECKED FOR EXISTENCE. The caller hands it to an <img> with an
+ * onerror, which is the only check that matters for a file served by
+ * another host's filesystem: is_file() here would pass for a theme
+ * whose art was deleted by FTP between the check and the request.
+ */
+function dropshipPublicCover($slug = '') {
+	$slug = strtolower(trim((string)$slug));
+	if ($slug === '' || !preg_match('/^[a-z0-9-]{1,48}$/', $slug)) $slug = 'drop-ship';
+	$rel = ($slug === 'drop-ship') ? 'images/dropship.jpg' : $slug . '/images/dropship.jpg';
+	return 'https://skulliance.io/staking/dropship/' . $rel;
+}
