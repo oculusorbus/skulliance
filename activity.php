@@ -54,10 +54,26 @@ foreach ($ac_rows as $r) {
 include 'header.php';
 ?>
 <div class="row">
-	<div class="content">
+	<div class="aca">
 		<h2>Activity</h2>
 <style>
-/* Scoped to .aca so nothing here can reach the rest of the admin. */
+/*
+ * FULL WIDTH, EXPLICITLY.
+ *
+ * .row is display:flex, so a single child sizes to its content rather
+ * than filling the line -- the page rendered as a narrow column down the
+ * left with two thirds of the screen empty. feed.php solves the same
+ * problem the same way on #ac-wrap, which is the page this one sits
+ * beside in the nav.
+ *
+ * The wrapper also carries its own padding and card look rather than
+ * borrowing .content's, because .content is a card baseline meant for
+ * panels inside a layout and this IS the layout.
+ */
+.aca { width: 100%; padding: 20px; }
+.aca h2 { margin: 0 0 16px; }
+
+/* Scoped to .aca so nothing here can reach the rest of the page. */
 .aca-tools { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:0 0 16px; }
 .aca-range { display:flex; gap:0; }
 .aca-range a { padding:7px 14px; font-size:.76rem; letter-spacing:.07em; text-transform:uppercase;
@@ -106,7 +122,6 @@ include 'header.php';
 }
 </style>
 
-<div class="aca">
 	<div class="aca-tools">
 		<?php /* Rolling windows, not calendar periods -- see the file header. */ ?>
 		<div class="aca-range">
@@ -176,7 +191,5 @@ include 'header.php';
 		<?php endforeach; ?>
 	</div>
 <?php endif; ?>
-</div>
-
 	</div>
 </div>
