@@ -220,6 +220,10 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
           mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%); }
 .dsg-strip + .dsg-strip { padding-top: 0; }
+/* The heading sits right on top of the rows now, so it keeps its space
+   above and gives it all back below. */
+.dsg-sec-tight { margin-bottom: 0; }
+.dsg-sec-tight + .dsg-strip { padding-top: 4px; }
 .dsg-track { display: flex; align-items: center; gap: 14px; width: max-content;
   animation: dsg-scroll 70s linear infinite; will-change: transform; }
 .dsg-track.rev { animation-direction: reverse; animation-duration: 84s; }
@@ -256,12 +260,6 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
   text-align: center; font-size: .72rem; color: #8fa8b8; }
 .dsg-shelf img { width: 44px; height: 44px; object-fit: contain; }
 
-/* The mosaic. */
-.dsg-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 6px; margin-top: 18px; }
-.dsg-wall img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block;
-  background: #07111d; border: 1px solid rgba(255,255,255,.07); }
-
 /* The theme wall: whole art, uncropped -- the five are nothing alike in shape. */
 .dsg-themes { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px;
   margin-top: 18px; }
@@ -282,36 +280,6 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 </head>
 <body>
 <?php include __DIR__ . '/site-header.php'; ?>
-
-<?php if ($ds_art): ?>
-<?php
-/*
- * TWO COUNTER-SCROLLING ROWS, each holding its half TWICE so the -50%
- * translate loops with no seam. Split down the middle rather than both
- * rows showing the same soldiers, and the second pass is aria-hidden so
- * a screen reader meets each one once.
- *
- * THE REPEAT COUNT MUST BE EVEN or the two halves differ and the loop
- * visibly jumps. At 124px plus a 14px gap, sixteen tiles is 2208px,
- * which clears a wide display; fewer leaves a gap at the turn that
- * reads as a broken page.
- */
-$ds_rows = array_chunk($ds_art, max(1, (int)ceil(count($ds_art) / 2)));
-?>
-<?php foreach ($ds_rows as $ri => $ds_row): if (!$ds_row) continue;
-      $ds_passes = max(2, 2 * (int)ceil(16 / max(1, count($ds_row)))); ?>
-<div class="dsg-strip">
-	<div class="dsg-track<?php echo $ri % 2 ? ' rev' : ''; ?>">
-		<?php for ($pass = 0; $pass < $ds_passes; $pass++): foreach ($ds_row as $u): ?>
-		<img src="<?php echo htmlspecialchars($u, ENT_QUOTES); ?>" alt=""
-		     loading="eager" decoding="async" width="124" height="124"
-		     <?php if ($pass) echo 'aria-hidden="true"'; ?>
-		     onerror="this.remove()">
-		<?php endforeach; endfor; ?>
-	</div>
-</div>
-<?php endforeach; ?>
-<?php endif; ?>
 
 <div class="dsg-wrap">
 
@@ -339,6 +307,48 @@ $ds_rows = array_chunk($ds_art, max(1, (int)ceil(count($ds_art) / 2)));
 			<span class="dsg-badge">Mobile &amp; desktop</span>
 		</div>
 	</header>
+
+	<?php if ($ds_art): ?>
+	<?php /* STRAIGHT UNDER THE CALL TO ACTION, at the owner's direction.
+	         This was two things in two places: a silent strip above the
+	         headline and a static mosaic most of a page further down. The
+	         mosaic was the better pitch and the strip was in the better
+	         spot, so they are one section now -- the claim, and then the
+	         soldiers moving under it. */ ?>
+	<section class="dsg-sec dsg-sec-tight">
+		<h2>Every one of these is somebody's soldier</h2>
+		<p>Drop Ship does not draw its own characters. It reads the cards people already hold and turns
+			each one into a soldier, carrying the armor and gear its art says it has. These are real
+			ones, pulled straight from the barracks.</p>
+	</section>
+	<?php
+	/*
+	 * TWO COUNTER-SCROLLING ROWS, each holding its half TWICE so the -50%
+	 * translate loops with no seam. Split down the middle rather than both
+	 * rows showing the same soldiers, and the second pass is aria-hidden so
+	 * a screen reader meets each one once.
+	 *
+	 * THE REPEAT COUNT MUST BE EVEN or the two halves differ and the loop
+	 * visibly jumps. At 124px plus a 14px gap, sixteen tiles is 2208px,
+	 * which clears a wide display; fewer leaves a gap at the turn that
+	 * reads as a broken page.
+	 */
+	$ds_rows = array_chunk($ds_art, max(1, (int)ceil(count($ds_art) / 2)));
+	?>
+	<?php foreach ($ds_rows as $ri => $ds_row): if (!$ds_row) continue;
+	      $ds_passes = max(2, 2 * (int)ceil(16 / max(1, count($ds_row)))); ?>
+	<div class="dsg-strip">
+		<div class="dsg-track<?php echo $ri % 2 ? ' rev' : ''; ?>">
+			<?php for ($pass = 0; $pass < $ds_passes; $pass++): foreach ($ds_row as $u): ?>
+			<img src="<?php echo htmlspecialchars($u, ENT_QUOTES); ?>" alt=""
+			     loading="eager" decoding="async" width="124" height="124"
+			     <?php if ($pass) echo 'aria-hidden="true"'; ?>
+			     onerror="this.remove()">
+			<?php endforeach; endfor; ?>
+		</div>
+	</div>
+	<?php endforeach; ?>
+	<?php endif; ?>
 
 	<section class="dsg-sec" id="dsg-how">
 		<h2>How a run works</h2>
@@ -497,23 +507,6 @@ $ds_rows = array_chunk($ds_art, max(1, (int)ceil(count($ds_art) / 2)));
 	</section>
 	<?php endif; ?>
 
-	<?php if (count($ds_art) > 12): ?>
-	<section class="dsg-sec">
-		<h2>Every one of these is somebody's soldier</h2>
-		<p>Drop Ship does not draw its own characters. It reads the cards people already hold and turns
-			each one into a soldier, carrying the armor and gear its art says it has. These are real
-			ones, pulled straight from the barracks.</p>
-		<?php /* onerror removes the tile rather than leaving a bordered hole:
-		         a wall with gaps in it reads as a broken page, and that is
-		         exactly what the first version shipped with. */ ?>
-		<div class="dsg-wall">
-			<?php foreach ($ds_art as $u): ?>
-			<img src="<?php echo htmlspecialchars($u, ENT_QUOTES); ?>" alt=""
-			     loading="lazy" decoding="async" onerror="this.remove()">
-			<?php endforeach; ?>
-		</div>
-	</section>
-	<?php endif; ?>
 
 	<section class="dsg-sec">
 		<h2>Questions</h2>
