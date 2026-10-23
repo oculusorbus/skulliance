@@ -10,6 +10,7 @@
  * Usage: php dropship-squads-harness.php
  */
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+require __DIR__ . '/harness-strip.php';
 require __DIR__ . '/dropship/dropship-squads.php';
 
 $fail = 0;
@@ -611,6 +612,79 @@ ok($sync !== false && $panelAt !== false && $sync < $panelAt,
    the whole of it. What still matters is that it renders at all. */
 ok(strpos($dash, 'dropshipSquadsPanel($conn)') !== false,
    'nothing draws the squads, so the barracks is now an empty heading');
+
+/* ---------- the picture ----------------------------------------------------- */
+
+/*
+ * EVERY COLUMN THE FACE READS HAS TO BE IN THE SELECT THAT BUILT THE ROW.
+ *
+ * dropshipSquadsAll() did not select s.ipfs, and nothing noticed for
+ * months: dropshipSquadFace() only falls through to that column when the
+ * local image cache misses, and for an NFT theme it never misses.
+ * Assembled Fighters are not NFTs and have no cached copy, so they were
+ * the first rows ever to reach the line -- and with display_errors on,
+ * PHP printed "Undefined array key" INSIDE the src attribute, which the
+ * browser rendered as a broken image with a file path under it.
+ */
+echo "\nthe squad face\n";
+
+/*
+ * LIFTED FIRST, and that order is the whole test. dropshipSoldierImage()
+ * lives in dropship/db.php, which opens a connection at file scope, so it
+ * is pulled out by source. It has to exist BEFORE the call below: the old
+ * line was `function_exists(...) ? dropshipSoldierImage($row['ipfs']) : ''`
+ * and PHP short-circuits the ternary, so with the function absent the bad
+ * subscript is never evaluated and the check passes on broken code. It
+ * did, the first time this was written.
+ */
+$db_src = file_get_contents(__DIR__ . '/dropship/db.php');
+$at = strpos($db_src, 'function dropshipSoldierImage(');
+$fn = null;
+if ($at !== false) {
+	$depth = 0;
+	for ($j = strpos($db_src, '{', $at); $j < strlen($db_src); $j++) {
+		if ($db_src[$j] === '{') $depth++;
+		elseif ($db_src[$j] === '}') { $depth--; if (!$depth) { $fn = substr($db_src, $at, $j - $at + 1); break; } }
+	}
+}
+if (!ok($fn !== null, 'dropshipSoldierImage() is gone from dropship/db.php')) {
+	echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all squad checks passed\n");
+	exit(1);
+}
+if (!function_exists('dropshipSoldierImage')) eval($fn);
+
+$url = 'https://skulliance.io/staking/dhcrenders/f421-abcd1234.png';
+ok(dropshipSoldierImage($url) === $url,
+   'a rendered Fighter URL is being rewritten as an IPFS path');
+ok(dropshipSoldierImage('QmSomeCid') === 'https://ipfs.filebase.io/ipfs/QmSomeCid',
+   'a bare CID is no longer sent to the filebase gateway');
+ok(dropshipSoldierImage('') === '', 'an empty ipfs value produces a gateway URL to nothing');
+
+/*
+ * COMMENTS STRIPPED. The first version of this searched the raw source
+ * near the query and was satisfied by the comment above the query, which
+ * names the column it is checking for -- a check that matches its own
+ * explanation. Removing s.ipfs from the SELECT left it passing.
+ */
+$sq_clean = harness_strip_comments(file_get_contents(__DIR__ . '/dropship/dropship-squads.php'));
+$sel_at = strpos($sq_clean, 'FROM squad_members m');
+$sel    = $sel_at === false ? '' : substr($sq_clean, max(0, $sel_at - 500), 500);
+ok($sel !== '' && strpos($sel, 's.ipfs') !== false,
+   'dropshipSquadsAll() stopped selecting s.ipfs, so every soldier without a '
+ . 'cached image prints a PHP warning into its own src attribute');
+
+/*
+ * And the guard, RUN rather than read. A notice inside an attribute is
+ * the failure mode, so the test is that calling it with the column absent
+ * raises nothing -- not that the source contains an isset().
+ */
+$raised = '';
+set_error_handler(function ($no, $str) use (&$raised) { $raised = $str; return true; });
+$_SESSION['userData']['dropship_project_id'] = 3;
+$face = dropshipSquadFace(null, array('asset_name' => 'DHCFA9'));
+restore_error_handler();
+ok($raised === '', 'a row with no ipfs column raises: ' . $raised);
+ok($face === '', 'a row with no ipfs column returns something other than no picture');
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all squad checks passed\n");
 exit($fail ? 1 : 0);

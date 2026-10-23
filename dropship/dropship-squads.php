@@ -336,9 +336,16 @@ function dropshipSquadsAll($conn, $user_id = null, $project_id = null) {
 	$ids = implode(',', array_map('intval', array_keys($squads)));
 	/* LEFT JOIN, so a member whose soldier row has gone still comes back as a
 	   row with nulls and is labelled 'gone' rather than silently dropped. */
+	/* s.ipfs IS NOT OPTIONAL, and its absence was invisible for months.
+	   dropshipSquadFace() falls through to it only when the local image
+	   cache misses, and for every NFT theme the cache hits -- so the
+	   undefined key was never reached until assembled Fighters, which are
+	   not NFTs and have no cached copy. display_errors is on here, so the
+	   notice printed INSIDE the src attribute. */
 	$res = @$conn->query("SELECT m.squad_id, m.soldier_id, m.slot,
 	                             s.id, s.user_id, s.name, s.asset_name, s.rank,
-	                             s.armor, s.gear, s.level, s.active, s.deceased
+	                             s.armor, s.gear, s.level, s.active, s.deceased,
+	                             s.ipfs
 	                        FROM squad_members m
 	                        LEFT JOIN soldiers s ON s.id = m.soldier_id
 	                       WHERE m.squad_id IN ($ids)
@@ -1250,8 +1257,14 @@ function dropshipSquadFace($conn, $row) {
 		if (!empty($local[$row['asset_name']])) return $local[$row['asset_name']];
 	}
 	/* No jpg.store fallback: that host is gone and answers 403. An
-	   unavailable helper means no picture, which the card handles. */
-	return function_exists('dropshipSoldierImage') ? dropshipSoldierImage($row['ipfs']) : '';
+	   unavailable helper means no picture, which the card handles.
+	   GUARDED ON THE KEY, not just the function: this runs inside an
+	   src="" attribute with display_errors on, so a row that arrives
+	   without the column renders its own warning as the picture. The
+	   caller's SELECT is the fix; this is the thing that makes the next
+	   one a missing image instead of a page full of file paths. */
+	if (!function_exists('dropshipSoldierImage') || !isset($row['ipfs'])) return '';
+	return dropshipSoldierImage($row['ipfs']);
 }
 
 /**
