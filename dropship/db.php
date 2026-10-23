@@ -1824,6 +1824,18 @@ function logScore($conn, $replay) {
 			 * announces, which is what the flag it guards is for.
 			 */
 			$_SESSION['userData']['run_logged'] = "true";
+			/*
+			 * THE SCORE THIS RUN REPLACED, carried forward for the share.
+			 *
+			 * deleteResult() above destroyed the row, so by the time the
+			 * page renders there is no way to ask what the player had
+			 * before -- and "who did this run pass" cannot be answered
+			 * without it. dropshipDropContext() already read it a few lines
+			 * up for the trait rule, so this costs nothing but a session
+			 * key. Null is meaningful and kept as null: entering the board
+			 * for the first time passes nobody, however high the score.
+			 */
+			$_SESSION['userData']['prev_score'] = $ds_drop_ctx['prev'];
 			unset($_SESSION['userData']['notification']);
 		} else {
 		  //echo "Error: " . $sql . "<br>" . $conn->error;

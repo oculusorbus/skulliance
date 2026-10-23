@@ -1,0 +1,173 @@
+<?php
+/**
+ * dropship-share-harness.php — a shared run must not claim what it did not do.
+ *
+ * Run: php dropship-share-harness.php
+ *
+ * THE POST IS A PUBLIC CLAIM ABOUT OTHER PEOPLE. "Passed fomz into 2nd" is
+ * either true or it is a lie with somebody's name attached, so the facts are
+ * driven over real boards rather than described: the actual
+ * dropshipShareFacts() and dropshipShareText(), over standings this file
+ * builds, with the awkward cases written out one at a time.
+ *
+ * THE RULE, from the owner: name whoever this run PASSED, and if it passed
+ * nobody, name the leader being chased. Nobody is ever named as having
+ * beaten the sharer.
+ */
+require_once __DIR__ . '/harness-strip.php';
+require_once __DIR__ . '/dropship/dropship-share.php';
+
+$fail = 0;
+function ok($cond, $msg) {
+	global $fail;
+	if ($cond) { echo "  ok    $msg\n"; return true; }
+	$fail++; echo "  FAIL  $msg\n"; return false;
+}
+/** A board, highest first. ME is user 1. */
+function board() {
+	return array(
+		array('user_id' => 9, 'username' => 'fomz',     'score' => 51),
+		array('user_id' => 3, 'username' => 'Scorba',   'score' => 40),
+		array('user_id' => 1, 'username' => 'me',       'score' => 34),
+		array('user_id' => 7, 'username' => 'kryptman', 'score' => 22),
+		array('user_id' => 5, 'username' => 'maxi',     'score' => 12),
+	);
+}
+
+echo "\nwhere you stand\n";
+$f = dropshipShareFacts(board(), 1, null);
+ok($f['rank'] === 3,  'the rank is ' . $f['rank'] . ', not 3rd');
+ok($f['field'] === 5, 'the field is ' . $f['field'] . ', not 5');
+ok($f['score'] === 34, 'the score read back as ' . $f['score']);
+ok($f['leader'] === 'fomz' && $f['behind'] === 17,
+   'the leader and the gap are wrong: ' . $f['leader'] . ' / ' . $f['behind']);
+
+echo "\nentering the board passes nobody\n";
+/*
+ * THE ONE CLAIM THAT IS EASY TO CATCH AND IMPOSSIBLE TO WALK BACK. A first
+ * run lands above two players, and saying it "passed" them is a lie -- they
+ * were never ahead of anything. prev = null is the whole test.
+ */
+ok($f['passed'] === '' && $f['passed_n'] === 0,
+   'a first run claims to have passed ' . $f['passed_n'] . ' player(s)');
+ok(strpos(dropshipShareText($f, 'Dread City'), 'Passed') === false,
+   'the post for a first run says Passed');
+ok(strpos(dropshipShareText($f, 'Dread City'), 'behind fomz') !== false,
+   'a run with nobody passed does not name the leader it is chasing');
+
+echo "\nand a run that passed somebody names them\n";
+$f = dropshipShareFacts(board(), 1, 22);   // was level with kryptman, now above
+ok($f['passed'] === 'kryptman' && $f['passed_n'] === 1,
+   'expected to have passed kryptman alone, got ' . $f['passed_n'] . ' (' . $f['passed'] . ')');
+$f2 = dropshipShareFacts(board(), 1, 10);  // was below both
+ok($f2['passed_n'] === 2 && $f2['passed'] === 'kryptman',
+   'the highest player passed is not the one named: ' . $f2['passed'] . ' of ' . $f2['passed_n']);
+ok(strpos(dropshipShareText($f2, 'Drop Ship'), 'Passed kryptman and 1 more into 3rd of 5.') !== false,
+   'the overtake sentence changed: ' . dropshipShareText($f2, 'Drop Ship'));
+
+echo "\na run that went nowhere claims nothing\n";
+/* Scores are the LATEST, not the best -- logScore() deletes and reinserts --
+   so a worse run than last time is normal and must not boast. */
+$f = dropshipShareFacts(board(), 1, 34);
+ok($f['passed_n'] === 0, 'an unchanged score claims an overtake');
+ok($f['personal_best'] === false, 'an unchanged score reads as a personal best');
+$f = dropshipShareFacts(board(), 1, 48);
+ok($f['passed_n'] === 0, 'a WORSE run than last week claims to have passed people');
+ok($f['personal_best'] === false, 'a worse run reads as a personal best');
+ok(strpos(dropshipShareText($f, 'Drop Ship'), 'personal best') === false,
+   'the post for a worse run still says personal best');
+
+echo "\nnobody is named as having beaten you\n";
+/*
+ * Only two names can ever reach the text: somebody this run went past, and
+ * the leader. Scorba is directly above and is neither, so a post that
+ * mentions them is naming a player who beat the sharer.
+ */
+foreach (array(null, 0, 10, 22, 34, 48) as $prev) {
+	$t = dropshipShareText(dropshipShareFacts(board(), 1, $prev), 'Drop Ship');
+	if (!ok(strpos($t, 'Scorba') === false,
+	        'prev=' . var_export($prev, true) . ' names a player who is ahead: ' . $t)) break;
+}
+
+echo "\nout in front\n";
+$lead = array(array('user_id' => 1, 'username' => 'me', 'score' => 61),
+              array('user_id' => 9, 'username' => 'fomz', 'score' => 51));
+$f = dropshipShareFacts($lead, 1, 40);
+ok($f['first'] === true && $f['clear'] === 10, 'leading by ' . $f['clear'] . ', expected 10');
+ok(strpos(dropshipShareText($f, 'Dread City'), 'Passed fomz into 1st of 2.') !== false,
+   'taking the lead does not say who was overtaken: ' . dropshipShareText($f, 'Dread City'));
+$alone = array(array('user_id' => 1, 'username' => 'me', 'score' => 61));
+$f = dropshipShareFacts($alone, 1, null);
+ok(dropshipShareText($f, 'Drop Ship') === 'Survived to round 61 in Drop Ship. Top of the board.',
+   'the only player on the board gets: ' . dropshipShareText($f, 'Drop Ship'));
+
+echo "\nnot on the board at all\n";
+$f = dropshipShareFacts(board(), 999, null);
+ok($f['rank'] === 0, 'a player with no row has a rank');
+ok(dropshipShareText($f, 'Drop Ship') === 'Just played Drop Ship on Skulliance.',
+   'a player with no row gets a post full of zeroes: ' . dropshipShareText($f, 'Drop Ship'));
+ok(dropshipShareFacts(array(), 1, 5)['rank'] === 0, 'an empty board produces a rank');
+
+echo "\nordinals\n";
+foreach (array(1 => '1st', 2 => '2nd', 3 => '3rd', 4 => '4th', 11 => '11th',
+               12 => '12th', 13 => '13th', 21 => '21st', 22 => '22nd', 101 => '101st') as $n => $want) {
+	if (!ok(dropshipOrdinal($n) === $want,
+	        "$n reads as " . dropshipOrdinal($n) . ', not ' . $want)) break;
+}
+
+echo "\nthe theme is named, because five games share this engine\n";
+ok(strpos(dropshipShareText(dropshipShareFacts(board(), 1, null), 'Oculus Lounge'), 'Oculus Lounge') !== false,
+   'the post does not say which game it was');
+/* Themes rename the word too. */
+ok(strpos(dropshipShareText(dropshipShareFacts(board(), 1, null), 'Oculus Lounge', 'Floor'), 'floor 34') !== false,
+   "a theme's own word for a round is ignored");
+
+echo "\nthe link is public, and carries no run id\n";
+/*
+ * BOTH HALVES MATTER. A link behind the login serves X's crawler a redirect
+ * to error.php and the post unfurls as a bare URL -- that is why there was
+ * no Drop Ship share before this. And ?run=<result_id> would let anyone
+ * read any player's score by changing a number.
+ */
+$page = dropshipSharePage('dhc2-fighters');
+ok($page === 'dropshipgame.php?theme=dhc2-fighters', 'the share target moved: ' . $page);
+ok(strpos($page, 'run=') === false, 'the share URL carries a run id, which is enumerable');
+ok(strpos($page, 'dashboard.php') === false, 'the share points behind the login gate');
+ok(dropshipSharePage('../../etc') === 'dropshipgame.php?theme=drop-ship',
+   'a bad slug is passed through instead of falling back');
+ok(dropshipSharePage('') === 'dropshipgame.php?theme=drop-ship', 'an empty slug is not defaulted');
+
+echo "\nthe post fits in a post\n";
+/* X counts any URL as 23 characters and the handle is appended after the
+   body, so the budget is not 280. shareOnXUrl() owns that; this checks the
+   worst realistic case survives it with the interesting half intact. */
+$long = dropshipShareText(dropshipShareFacts(board(), 1, 10), 'A Theme With A Very Long Name Indeed');
+$url  = shareOnXUrl($long, dropshipSharePage('dhc2-fighters'));
+parse_str(parse_url($url, PHP_URL_QUERY), $q);
+ok(mb_strlen($q['text']) <= 280 - 24, 'the body is ' . mb_strlen($q['text']) . ' chars, over budget');
+ok(strpos($q['text'], '@skulliance') !== false, 'the post lost the @skulliance tail');
+ok(strpos($q['text'], 'Passed kryptman') !== false,
+   'a trim ate the overtake, which is the reason to post at all');
+
+echo "\nthe public page and the card exist and stay public\n";
+foreach (array('dropshipgame.php', 'dropship-card.php') as $f_) {
+	ok(is_file(__DIR__ . '/' . $f_), "$f_ is missing");
+	$c = harness_strip_comments(file_get_contents(__DIR__ . '/' . $f_));
+	/* skulliance.php is the login gate. Either file including it serves X a
+	   redirect, which is the exact failure this feature exists to fix. */
+	ok(strpos($c, "skulliance.php") === false, "$f_ includes the login gate");
+	ok(strpos($c, "dropship/db.php") === false, "$f_ includes Drop Ship's db.php, which IS the gate");
+}
+$card = harness_strip_comments(file_get_contents(__DIR__ . '/dropship-card.php'));
+ok(preg_match('/\^\[a-z0-9-\]\{1,48\}\$/', $card) === 1,
+   'the theme slug is no longer validated before becoming a path');
+ok(strpos($card, 'imagedestroy') === false,
+   'imagedestroy() is back; it is deprecated in 8.5 and prints in front of the JPEG header');
+$page_src = harness_strip_comments(file_get_contents(__DIR__ . '/dropshipgame.php'));
+ok(strpos($page_src, 'summary_large_image') !== false, 'the page no longer declares a large card');
+ok(strpos($page_src, 'dropship-card.php?theme=') !== false, 'og:image no longer points at the card');
+ok(strpos($page_src, 'href="dropship/dashboard.php') !== false,
+   'the play link is absolute, which drops a host-only session');
+
+echo "\n" . ($fail ? "$fail FAILED\n" : "all passed\n");
+exit($fail ? 1 : 0);

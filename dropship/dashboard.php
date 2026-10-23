@@ -754,6 +754,41 @@ $characters = evaluateText("Troops");
 					// Old instant replay by user id only, disabled until or if this can be figured out with result id.
 					echo "<br>";
 					instantReplayButton(checkMaxScoreResultID($conn, $_SESSION['userData']['dropship_user_id'], $_SESSION['userData']['current_score']), false);
+					/*
+					 * SHARE ON X, next to the replay because this is the one
+					 * moment the player is looking at their own result.
+					 *
+					 * The post is built from the BOARD, not the score: a 34
+					 * is a boast or a shrug depending on who else played, so
+					 * dropshipShareFacts() reads the standings and says only
+					 * what they support. It lands on dropshipgame.php, which
+					 * is public -- a link behind this login would serve X's
+					 * crawler a redirect to error.php and unfurl as a bare
+					 * blue link, which is why Drop Ship had no share before
+					 * there was a public page to point at.
+					 *
+					 * Wrapped so a share can never cost somebody their
+					 * result: everything below is decoration on a run that
+					 * is already saved and already announced.
+					 */
+					try {
+						require_once __DIR__ . '/dropship-share.php';
+						$ds_pid_s  = (int)$_SESSION['userData']['dropship_project_id'];
+						$ds_board  = dropshipShareBoard($conn, $_SESSION['userData']['game_id'], $ds_pid_s);
+						$ds_facts  = dropshipShareFacts($ds_board,
+							$_SESSION['userData']['dropship_user_id'],
+							isset($_SESSION['userData']['prev_score']) ? $_SESSION['userData']['prev_score'] : null);
+						if ($ds_facts['rank'] > 0) {
+							$ds_cfg_s  = function_exists('dropshipThemeConfig')
+								? dropshipThemeConfig($conn, $ds_pid_s) : null;
+							$ds_slug_s = ($ds_cfg_s && !empty($ds_cfg_s['slug'])) ? $ds_cfg_s['slug'] : 'drop-ship';
+							$ds_body   = dropshipShareText($ds_facts, getProjectName($conn), evaluateText('Round'));
+							echo '&nbsp;' . shareOnXButton($ds_body,
+								dropshipSharePage($ds_slug_s), 'small-button secondary');
+						}
+					} catch (Throwable $e) {
+						error_log('dropship share: ' . $e->getMessage());
+					}
 				}
 				?>
 				

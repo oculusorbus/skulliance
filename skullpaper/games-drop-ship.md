@@ -45,6 +45,25 @@ share one collection whose cards carry no traits at all, so armor comes from
 how scarce the card is - a 1 of 1 is the best armored thing in the game - and
 gear from whether the card shows the character fighting.
 
+## Sharing a run
+
+When a run ends, **Share on X** sits next to Instant Replay. It writes the post
+for you from the board as it stands: the round you reached, where that puts you
+this week, and either the player you went past or the leader you are chasing.
+
+Only two people can ever be named in it. Whoever this run overtook, and the
+player at the top. Nobody is named as having beaten you, and no label describes
+another player. If the run passed nobody and beat your own previous score, it
+says that instead.
+
+A first run of the week passes nobody, however high it lands, because there was
+nothing of yours on the board to move past. The post says where you placed
+instead.
+
+The link lands on the public Drop Ship page carrying that theme's cover art, so
+the post shows the game rather than a bare link. Nothing about your run is in
+the link itself.
+
 **DHC2 Fighters fields what you built, not only what you bought.** Every
 Fighter you have assembled on the platform shows up as a soldier in that
 theme alongside your minted DHC2 Fighters NFTs, and the two sit in the same
