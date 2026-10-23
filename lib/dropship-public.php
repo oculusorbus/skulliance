@@ -192,8 +192,10 @@ function dropshipPublicArtUrl($asset) {
  * directory listing of files that are already served from this host.
  *
  * GRUNTS ARE EXCLUDED HERE because they get their own section with
- * their names and kit on it; loose in a mosaic they are four soldiers
+ * their names and kit on it; loose in the strip they are four soldiers
  * nobody can tell from the rest.
+ *
+ * Returns array('url', 'name') per tile.
  */
 function dropshipPublicArt($limit = 24) {
 	static $cache = array();
@@ -218,24 +220,51 @@ function dropshipPublicArt($limit = 24) {
 
 	$files = @glob($dir . '/*.jpg');
 	if (!$files) return $cache[$key];
-	$names = array();
+	$assets = array();
 	foreach ($files as $f) {
 		if (@filesize($f) < 1) continue;        /* a half-written file is a dead frame */
 		$n = basename($f, '.jpg');
 		if (stripos($n, 'GRUNT') === 0) continue;
-		$names[] = $n;
+		$assets[] = $n;
 	}
-	if (!$names) return $cache[$key];
-	sort($names);
+	if (!$assets) return $cache[$key];
+	sort($assets);
+
+	/*
+	 * THE NAMES THEY WERE REGISTERED UNDER, which is the difference
+	 * between a contact sheet and a roll call. One query for the whole
+	 * project rather than one per tile, and the result is cached with
+	 * the art list, so the cost is once an hour.
+	 *
+	 * ASSET NAMES, NOT OWNERS. soldiers.user_id is deliberately not
+	 * selected and never will be: the art and the card's name are
+	 * already public on the collection pages, and who holds which one is
+	 * not this page's business.
+	 */
+	$label = array();
+	$db = dropshipPublicDb();
+	if ($db) {
+		$r = @$db->query("SELECT asset_name, name FROM soldiers
+		                   WHERE project_id = 1 AND name <> ''");
+		if ($r) while ($row = $r->fetch_assoc()) {
+			$label[(string)$row['asset_name']] = (string)$row['name'];
+		}
+	}
 
 	/* SPREAD ACROSS THE COLLECTION rather than the first N, which would
 	   be whichever sort first and tend to look alike. Deterministic, so
-	   the wall does not reshuffle every load and the browser cache is
+	   the strip does not reshuffle every load and the browser cache is
 	   worth something. */
-	$n = count($names);
+	$n = count($assets);
 	$take = min((int)$limit, $n);
 	for ($i = 0; $i < $take; $i++) {
-		$cache[$key][] = dropshipPublicArtUrl($names[(int)floor($i * $n / $take)]);
+		$a = $assets[(int)floor($i * $n / $take)];
+		/* A soldier with no row still gets a tile; its asset name is a
+		   duller label than a real one but it is not a blank. */
+		$cache[$key][] = array(
+			'url'  => dropshipPublicArtUrl($a),
+			'name' => isset($label[$a]) && trim($label[$a]) !== '' ? trim($label[$a]) : $a,
+		);
 	}
 	$tmp = $cf . '.' . getmypid() . '.tmp';
 	if (@file_put_contents($tmp, json_encode($cache[$key])) !== false) {
@@ -263,4 +292,32 @@ function dropshipPublicCover($slug = '') {
 	if ($slug === '' || !preg_match('/^[a-z0-9-]{1,48}$/', $slug)) $slug = 'drop-ship';
 	$rel = ($slug === 'drop-ship') ? 'images/dropship.jpg' : $slug . '/images/dropship.jpg';
 	return 'https://skulliance.io/staking/dropship/' . $rel;
+}
+
+/**
+ * Drop Ship's rank ladder, lowest first, as rank => soldiers needed.
+ *
+ * TRANSCRIBED FROM dashboard.php's own chain, which is a hardcoded
+ * if/else on dropshipSoldierCount() gated to project 1. There is no
+ * table behind it to read, so this is a copy and the only honest thing
+ * to do is say so: if that chain changes, change this. The harness pins
+ * the two against each other rather than trusting the comment.
+ *
+ * COUNTED ON SOLDIERS HELD, not on anything earned -- the ladder is a
+ * collection size, which is worth being plain about on a page whose
+ * whole pitch is that you can start with nothing.
+ */
+function dropshipPublicRanks() {
+	return array(
+		'Private'                =>  1,
+		'Specialist'             =>  3,
+		'Corporal'               =>  5,
+		'Sergeant'               =>  8,
+		'Staff Sergeant'         => 12,
+		'Sergeant First Class'   => 17,
+		'Master Sergeant'        => 23,
+		'First Sergeant'         => 30,
+		'Sergeant Major'         => 40,
+		'Command Sergeant Major' => 55,
+	);
 }

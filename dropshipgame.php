@@ -140,8 +140,8 @@ $ds_short = $ds_name !== ''
       "screenshot": "<?php echo htmlspecialchars($ds_og_image); ?>",
       "description": <?php echo json_encode($ds_short); ?>,
       "genre": ["Strategy", "Roguelike", "Collectible"],
+      "playMode": ["SinglePlayer", "MultiPlayer"],
       "gamePlatform": ["Web Browser", "Mobile", "Tablet", "Desktop"],
-      "playMode": "SinglePlayer",
       "applicationCategory": "Game",
       "operatingSystem": "Any",
       "inLanguage": "en",
@@ -167,6 +167,8 @@ $ds_short = $ds_name !== ''
           "acceptedAnswer": { "@type": "Answer", "text": "A couple of minutes. You pick a squad, deploy, and watch the run play out round by round. The round you reach is your score for the week." } },
         { "@type": "Question", "name": "Do I have to manage squads?",
           "acceptedAnswer": { "@type": "Answer", "text": "No. Squads are generated from what you hold, arranged into the best combinations available, every time your collection changes. There is nothing to name, save or take apart." } },
+        { "@type": "Question", "name": "Can I play against another player?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Drop Ship has PvP battles: put up a SCRIP wager and any player who can match it may accept. You both make a run, and whoever reaches the deeper round takes both stakes. A tie returns both wagers." } },
         { "@type": "Question", "name": "What are the five games?",
           "acceptedAnswer": { "@type": "Answer", "text": "Drop Ship, Dread City, Filthy Mermaid, DHC2 Fighters and Oculus Lounge. They share one engine but keep their own board, their own squad, their own art and their own prizes." } }
       ]
@@ -231,14 +233,20 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
    above and gives it all back below. */
 .dsg-sec-tight { margin-bottom: 0; }
 .dsg-sec-tight + .dsg-strip { padding-top: 4px; }
-.dsg-track { display: flex; align-items: center; gap: 14px; width: max-content;
+.dsg-track { display: flex; align-items: flex-start; gap: 14px; width: max-content;
   animation: dsg-scroll 70s linear infinite; will-change: transform; }
 .dsg-track.rev { animation-direction: reverse; animation-duration: 84s; }
 .dsg-track:hover { animation-play-state: paused; }
 @keyframes dsg-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 @media (prefers-reduced-motion: reduce) { .dsg-track { animation: none; } }
-.dsg-track img { flex: 0 0 auto; width: 124px; height: 124px; object-fit: cover; display: block;
+.dsg-track figure { flex: 0 0 auto; width: 124px; margin: 0; }
+.dsg-track img { width: 124px; height: 124px; object-fit: cover; display: block;
   border: 1px solid rgba(255,255,255,.10); background: #07111d; }
+/* ONE LINE, CLIPPED. A long card name must not widen its tile: the -50%
+   loop depends on both halves of the track measuring the same, and a
+   single wrapped caption would desynchronise the whole row. */
+.dsg-track figcaption { margin-top: 5px; font-size: .68rem; line-height: 1.3; color: #7a9eb0;
+  text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* The four Grunts, named. */
 .dsg-crew { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px;
@@ -261,6 +269,11 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 .dsg-kit-item img { width: 40px; height: 40px; object-fit: contain; }
 .dsg-kit-item em { font-style: normal; font-size: .82rem; color: #c6d4dd; }
 
+/* A shelf heading wears its own tab icon. */
+.dsg-shelf-head { display: flex; align-items: center; gap: 8px; margin: 24px 0 0;
+  font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: #00c8a0; }
+.dsg-shelf-head img { width: 26px; height: 26px; object-fit: contain; }
+
 .dsg-shelf { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 10px;
   margin-top: 14px; }
 .dsg-shelf span { display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -275,6 +288,23 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 .dsg-theme .art img { display: block; width: 100%; height: 100%; object-fit: contain; max-width: 100%; }
 .dsg-theme b { display: block; padding: 9px 11px 11px; font-size: .9rem; }
 .dsg-theme.on { border-color: #00c8a0; }
+
+/* The footer. Every sibling game page carries one, and a page the
+   homepage links to needs a way back out of it. */
+.dsg-foot { margin-top: 46px; padding: 26px 0 0; border-top: 1px solid rgba(255,255,255,.07);
+  text-align: center; color: #8a96a3; font-size: .86rem; }
+.dsg-foot a { color: #8a96a3; }
+.dsg-foot a:hover { color: #00c8a0; }
+.dsg-foot .also { margin-top: 8px; font-size: .8rem; color: #5f7d90; }
+
+/* The rank ladder: a name and the number of soldiers it wants. */
+.dsg-ranks { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px;
+  margin-top: 14px; }
+.dsg-ranks span { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  padding: 7px 10px; background: #07111d; border: 1px solid rgba(255,255,255,.06); }
+.dsg-ranks b { font-size: .84rem; font-weight: 600; }
+.dsg-ranks em { font-style: normal; font-size: .76rem; color: #00c8a0;
+  font-variant-numeric: tabular-nums; }
 
 .dsg-faq { margin-top: 18px; }
 .dsg-faq details { border-top: 1px solid rgba(255,255,255,.08); padding: 11px 0; }
@@ -356,11 +386,18 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 	      $ds_passes = max(2, 2 * (int)ceil(16 / max(1, count($ds_row)))); ?>
 	<div class="dsg-strip">
 		<div class="dsg-track<?php echo $ri % 2 ? ' rev' : ''; ?>">
-			<?php for ($pass = 0; $pass < $ds_passes; $pass++): foreach ($ds_row as $u): ?>
-			<img src="<?php echo htmlspecialchars($u, ENT_QUOTES); ?>" alt=""
-			     loading="eager" decoding="async" width="124" height="124"
-			     <?php if ($pass) echo 'aria-hidden="true"'; ?>
-			     onerror="this.remove()">
+			<?php /* NAMED ON EVERY PASS, not just the first: the repeats are
+			         what is on screen most of the time, and a strip of mostly
+			         unlabelled tiles with the occasional name reads as a bug.
+			         The duplicate FIGURE is aria-hidden, so a screen reader
+			         still meets each soldier once. */ ?>
+			<?php for ($pass = 0; $pass < $ds_passes; $pass++): foreach ($ds_row as $a): ?>
+			<figure<?php if ($pass) echo ' aria-hidden="true"'; ?>>
+				<img src="<?php echo htmlspecialchars($a['url'], ENT_QUOTES); ?>" alt=""
+				     loading="eager" decoding="async" width="124" height="124"
+				     onerror="this.closest('figure').remove()">
+				<figcaption><?php echo htmlspecialchars($a['name'], ENT_QUOTES); ?></figcaption>
+			</figure>
 			<?php endforeach; endfor; ?>
 		</div>
 	</div>
@@ -464,23 +501,31 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 	<section class="dsg-sec">
 		<h2>The Armory</h2>
 		<p>SCRIP earned from runs buys gear, and gear changes the odds the run rolls against. Weapons,
-			armor and equipment are all bought the same way and all fire once per squad.</p>
+			armor and equipment are all bought the same way and all fire once per squad. What you own
+			sits in your inventory until you send it out with a squad.</p>
 		<?php
 		/* The shop's real inventory icons. Three shelves, named exactly as
 		   the Armory names them. All verified live. */
+		/* HEADED BY THE ARMORY'S OWN TAB ICONS -- the same four the game
+		   puts across the top of that panel, so the three shelves below
+		   are recognisable before a player has ever opened it. */
 		$ds_shelves = array(
-			'Weapons'   => array('tactical-katana' => 'Tactical Katana', 'sniper-rifle' => 'Sniper Rifle',
+			'Weapons'   => array('icon' => 'weapons', 'items' => array(
+			                     'tactical-katana' => 'Tactical Katana', 'sniper-rifle' => 'Sniper Rifle',
 			                     'machine-gun' => 'Machine Gun', 'rocket-launcher' => 'Rocket Launcher',
-			                     'flamethrower' => 'Flamethrower', 'grenade' => 'Grenade'),
-			'Armor'     => array('ballistic-shield' => 'Ballistic Shield', 'exo-suit' => 'Exo Suit',
-			                     'mech-suit' => 'Mech Suit', 'quantum-stealth' => 'Quantum Stealth'),
-			'Equipment' => array('radar' => 'Radar', 'radio' => 'Radio', 'jet-pack' => 'Jet Pack',
+			                     'flamethrower' => 'Flamethrower', 'grenade' => 'Grenade')),
+			'Armor'     => array('icon' => 'shield', 'items' => array(
+			                     'ballistic-shield' => 'Ballistic Shield', 'exo-suit' => 'Exo Suit',
+			                     'mech-suit' => 'Mech Suit', 'quantum-stealth' => 'Quantum Stealth')),
+			'Equipment' => array('icon' => 'equipment', 'items' => array(
+			                     'radar' => 'Radar', 'radio' => 'Radio', 'jet-pack' => 'Jet Pack',
 			                     'night-vision-goggles' => 'Night Vision', 'smoke-bomb' => 'Smoke Bomb',
-			                     'drop-box' => 'Drop Box'),
+			                     'drop-box' => 'Drop Box')),
 		);
-		foreach ($ds_shelves as $label => $items): ?>
-		<h3 style="font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:#00c8a0;margin:22px 0 0;">
-			<?php echo $label; ?></h3>
+		foreach ($ds_shelves as $label => $shelf): $items = $shelf['items']; ?>
+		<h3 class="dsg-shelf-head">
+			<img src="<?php echo $ds_ico . $shelf['icon']; ?>.png" alt="" loading="lazy"
+			     width="26" height="26" onerror="this.remove()"><?php echo $label; ?></h3>
 		<div class="dsg-shelf">
 			<?php foreach ($items as $f => $n): ?>
 			<span><img src="<?php echo $ds_ico . $f; ?>.png" alt="" loading="lazy"
@@ -488,6 +533,50 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 			<?php endforeach; ?>
 		</div>
 		<?php endforeach; ?>
+	</section>
+
+	<section class="dsg-sec">
+		<h2>Or wager it on somebody</h2>
+		<p>The weekly board is not the only thing to play for. Put up a SCRIP wager, and anyone with the
+			balance to match it can take the battle. You both make a run, and whoever got deeper takes
+			both stakes. A tie gives everyone their SCRIP back.</p>
+		<p>It is the same run either way, so a battle costs you nothing but the wager, and there is no
+			queue to wait in: open battles sit on the board until somebody accepts one.</p>
+		<div class="dsg-shelf">
+			<?php foreach (array('dropship' => 'Create a battle', 'scrip' => 'Name your wager',
+			                     'locked' => 'Wait for a taker', 'average' => 'Both make a run',
+			                     'trophy' => 'Deeper run takes both') as $f => $n): ?>
+			<span><img src="<?php echo $ds_ico . $f; ?>.png" alt="" loading="lazy"
+				width="44" height="44" onerror="this.parentNode.remove()"><?php echo htmlspecialchars($n); ?></span>
+			<?php endforeach; ?>
+		</div>
+	</section>
+
+	<section class="dsg-sec">
+		<h2>What the game keeps on you</h2>
+		<p>Every run feeds a record: how many you have played, what you average, your best, the SCRIP
+			you have banked and the XP that moves you up a level.</p>
+		<div class="dsg-shelf">
+			<?php foreach (array('scoreboard' => 'Games played', 'average' => 'Average score',
+			                     'trophy' => 'Top score', 'level' => 'Level', 'xp' => 'XP',
+			                     'progress' => 'Progress', 'rank' => 'Rank',
+			                     'scrip' => 'SCRIP') as $f => $n): ?>
+			<span><img src="<?php echo $ds_ico . $f; ?>.png" alt="" loading="lazy"
+				width="44" height="44" onerror="this.parentNode.remove()"><?php echo htmlspecialchars($n); ?></span>
+			<?php endforeach; ?>
+		</div>
+
+		<?php /* THE LADDER IS COLLECTION SIZE, and saying so is better than
+		         letting somebody assume it is skill. It is also the one
+		         number on this page that rewards owning more, which is worth
+		         being straight about rather than burying. */ ?>
+		<h3 style="font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:#00c8a0;margin:26px 0 0;">
+			Ranks, by soldiers held</h3>
+		<div class="dsg-ranks">
+			<?php foreach (dropshipPublicRanks() as $rank => $need): ?>
+			<span><b><?php echo htmlspecialchars($rank); ?></b><em><?php echo (int)$need; ?></em></span>
+			<?php endforeach; ?>
+		</div>
 	</section>
 
 	<section class="dsg-sec">
@@ -541,6 +630,9 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 			<details><summary>What happens to a soldier that dies?</summary>
 				<p>Nothing permanent. Death is a timeout: they can be resurrected after a short wait, and
 					your NFT is never at risk. Weapons degrade over time anyway.</p></details>
+			<details><summary>Can I play against someone?</summary>
+				<p>Yes. Put up a SCRIP wager and anyone who can match it may accept. You both make a run
+					and the deeper one takes both stakes; a tie returns them.</p></details>
 			<details><summary>What are the five games?</summary>
 				<p>Drop Ship, Dread City, Filthy Mermaid, DHC2 Fighters and Oculus Lounge. One engine, but
 					each keeps its own board, squad, art and prizes.</p></details>
@@ -561,6 +653,24 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 		<p><a class="dsg-cta" href="dropship/dashboard.php<?php
 			echo $ds_one ? '?project_id=' . (int)$ds_one['project_id'] : ''; ?>">Play now</a></p>
 	</section>
+
+
+	<footer class="dsg-foot">
+		<p>Part of <a href="https://www.skulliance.io/">Skulliance</a>, an NFT platform on Cardano with
+			a dozen games on it.</p>
+		<p class="also">Also try
+			<a href="dhcgame.php">DHC Fighters</a>,
+			<a href="guardiansgame.php">Realm Guardians</a>,
+			<a href="cryptcrawlgame.php">Crypt Crawl</a>,
+			<a href="cryptconquestgame.php">Crypt Conquest</a> and
+			<a href="skullracergame.php">Skull Racer</a>.</p>
+		<?php /* RELATIVE, like every other link out of here: the login cookie
+		         is host-only, so an absolute one can drop a visitor onto the
+		         host they are not signed in on. The Skulliance link above is
+		         the exception, and deliberately -- it is the marketing site,
+		         not a page anybody is signed in to. */ ?>
+		<p class="also"><a href="skullpaper.php?page=games-drop-ship">Read the rules in full</a></p>
+	</footer>
 
 </div>
 </body>
