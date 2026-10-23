@@ -42,6 +42,24 @@ if (!defined('NUDGE_NARROW_MAX'))  define('NUDGE_NARROW_MAX', 4);
 if (!defined('NUDGE_WINDOW_DAYS')) define('NUDGE_WINDOW_DAYS', 60);
 /* "Not now" means not for a week. */
 if (!defined('NUDGE_SNOOZE_DAYS')) define('NUDGE_SNOOZE_DAYS', 7);
+/*
+ * DAYS BETWEEN SUGGESTIONS, and this is not 1 on purpose.
+ *
+ * At one a day the rotation is real -- a different card every morning,
+ * never a repeat -- and it is still a card every morning for ten days
+ * running, then twenty days of nothing, then the same burst again. A
+ * simulated fortnight made that obvious in a way the code did not: the
+ * two suggestions with a personal reason behind them ("you have 31
+ * unused traits") are spent inside 48 hours and the rest arrives as a
+ * checklist of games to try.
+ *
+ * Three days gives a suggestion room to be acted on before the next one
+ * lands, and it is deliberately NUDGE_REPEAT_DAYS / 10 -- ten candidates
+ * at three days each is thirty, so the rotation comes round exactly as
+ * the repeat guard expires. One nudge every few days, indefinitely,
+ * instead of a burst and a drought.
+ */
+if (!defined('NUDGE_GAP_DAYS')) define('NUDGE_GAP_DAYS', 3);
 /* A suggestion they clicked is not repeated for a month -- they have seen
    it, and repeating it is how a nudge becomes nagging. */
 if (!defined('NUDGE_REPEAT_DAYS')) define('NUDGE_REPEAT_DAYS', 30);
@@ -66,19 +84,21 @@ function nudge_table($conn) {
 /**
  * Should this player be left alone right now?
  *
- * True when they have snoozed, or have already been shown one today. One
- * query, and it is the gate in front of everything expensive.
+ * True when they have snoozed, or have been shown one inside the last
+ * NUDGE_GAP_DAYS. One query, and it is the gate in front of everything
+ * expensive.
  */
 function nudge_quiet($conn, $user_id) {
 	if (!nudge_table($conn)) return true;
 	$uid = (int)$user_id;
 	if ($uid <= 0) return true;
+	$gap = max(1, (int)NUDGE_GAP_DAYS);
 	$r = @$conn->query(
 		"SELECT 1 FROM nudges
 		  WHERE user_id = $uid
 		    AND (
 		          (action = 'snoozed' AND until IS NOT NULL AND until > NOW())
-		       OR (action = 'shown'   AND DATE(created_at) = CURDATE())
+		       OR (action = 'shown'   AND created_at > DATE_SUB(NOW(), INTERVAL $gap DAY))
 		        )
 		  LIMIT 1");
 	return !$r || $r->num_rows > 0;

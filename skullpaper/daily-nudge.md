@@ -6,6 +6,15 @@ somebody ends up never discovering the one they would have loved.
 
 So once a day, on the Launchpad, you may get a single suggestion.
 
+## How often
+
+Once every three days at most, and never twice running with the same
+suggestion. It works through everything you have not tried, one at a time, and
+comes back round about a month later with whatever you still have not done.
+
+A different card every single morning would be a different card every single
+morning for ten days, then three weeks of nothing. This is a trickle instead.
+
 ## When it appears
 
 Only when your recent activity covers **four or fewer** of the platform's
@@ -37,7 +46,8 @@ it does not offer.
 
 ## Making it go away
 
-**Not now, and not for a week** hides it for seven days. Anything you have
+**Not now, and not for a week** hides it for seven days, which is longer than
+the normal gap. Anything you have
 already been shown will not come back for a month, so ignoring a suggestion
 gets you a different one next time rather than the same card again. Once
 everything has been offered recently, it stops on its own.

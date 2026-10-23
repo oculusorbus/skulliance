@@ -132,6 +132,58 @@ $all = array();
 foreach ($cands as $c) $all[$c['key']] = date('Y-m-d H:i:s');
 ok(nudge_pick($cands, $all) === null, 'with everything offered this week it repeats instead of stopping');
 
+echo "\nand it does not arrive every morning\n";
+/*
+ * A SIMULATED FORTNIGHT IS WHAT CAUGHT THIS. At one a day the rotation
+ * is real -- a different card every morning, never a repeat -- and it is
+ * still a card every morning for ten days running, then twenty days of
+ * silence, then the same burst again. The code looked fine; the sequence
+ * did not.
+ *
+ * So the whole forty days are run here rather than described, and what
+ * is asserted is the SHAPE: spaced out, never twice in a row, and coming
+ * back round as the repeat guard expires rather than in a lump.
+ */
+ok(defined('NUDGE_GAP_DAYS') && NUDGE_GAP_DAYS > 1,
+   'the gap is gone, so a narrow player gets a card every single morning');
+ok(NUDGE_REPEAT_DAYS % NUDGE_GAP_DAYS === 0,
+   'the gap no longer divides the repeat window, so the rotation drifts against it');
+
+$sim_fp    = array('mission' => 597, 'daily' => 13);
+$sim_facts = array('has_realm' => false, 'fighters' => 0, 'free_traits' => 0);
+$sim_cands = nudge_candidates($sim_fp, $sim_facts);
+$hist = array(); $last = null; $seq = array(); $t0 = time();
+for ($d = 1; $d <= 40; $d++) {
+	$t = $t0 + ($d - 1) * 86400;
+	/* The same test nudge_quiet() makes against the log. */
+	if ($last !== null && ($t - $last) < NUDGE_GAP_DAYS * 86400) continue;
+	$p = nudge_pick($sim_cands, $hist, $t);
+	if (!$p) continue;
+	$seq[$d] = $p['key'];
+	$hist[$p['key']] = date('Y-m-d H:i:s', $t);
+	$last = $t;
+}
+ok(count($seq) > 5 && count($seq) <= 40 / NUDGE_GAP_DAYS + 1,
+   'over 40 days the player sees ' . count($seq) . ' nudges, which is not a steady trickle');
+$prev = null; $repeat_in_a_row = false;
+foreach ($seq as $k) { if ($k === $prev) $repeat_in_a_row = true; $prev = $k; }
+ok(!$repeat_in_a_row, 'the same suggestion arrived twice running');
+ok(count(array_unique(array_slice(array_values($seq), 0, 10))) === 10,
+   'the first ten suggestions are not ten different things: ' . implode(', ', array_slice(array_values($seq), 0, 10)));
+/* THE ROTATION COMES ROUND, rather than stopping dead for three weeks. */
+$days = array_keys($seq);
+$gaps = array();
+for ($i = 1; $i < count($days); $i++) $gaps[] = $days[$i] - $days[$i - 1];
+ok($gaps && max($gaps) <= NUDGE_GAP_DAYS,
+   'there is a ' . ($gaps ? max($gaps) : 0) . '-day drought in the middle of the cycle');
+ok(count($seq) > 10, 'the cycle never comes back round, so it goes quiet forever after ten');
+
+/* AND THE GATE READS THE GAP, not the calendar day. */
+$nl = harness_strip_comments(file_get_contents(__DIR__ . '/lib/nudge-lib.php'));
+ok(strpos($nl, 'DATE(created_at) = CURDATE()') === false,
+   'nudge_quiet() is back to once a day, which is the burst this fixed');
+ok(strpos($nl, 'INTERVAL $gap DAY') !== false, 'nudge_quiet() no longer honours NUDGE_GAP_DAYS');
+
 echo "\nthe headline names what they DO\n";
 /* "You have been deep in Missions" reads as being noticed. "You have not
    played 12 games" reads as a telling off, and one of those gets clicked. */
