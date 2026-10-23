@@ -913,7 +913,7 @@ function dropbox($dropshipMarkup, $counter, $items, $melee, $demolition, $conn) 
 	}
 	
 	$dropshipMarkup.="<div class='round' id='".$counter."'><h3>Round ".$counter." - ".evaluateText("Drop Box")." - ".evaluateText(trim($item_name))."</h3>";
-	$dropshipMarkup.="<img src='icons/".evaluateText(str_replace("_", "-", $items[$random_index])).".png'/></div>";
+	$dropshipMarkup.=dropshipIconImg($items[$random_index], '')."</div>";
 	
 	// Lookup item id based on reformatted item name
 	$item_id = checkItemID ($conn, trim($item_name));

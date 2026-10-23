@@ -2038,7 +2038,7 @@ function loadAchievements($conn, $heavy_armor, $medium_armor, $light_armor, $bas
 			}
 			// Ignoring base NFT attribute achievements because they are always in flux now
 			if($row["name"] != "Heavy Armor" && $row["name"] != "Medium Armor" && $row["name"] != "Light Armor" && $row["name"] != "Base Armor" && $row["name"] != "Melee" && $row["name"] != "Demolition" && $row["name"] != "Medkit"){
-				loadAchievement($status, evaluateText(strtolower(str_replace(" ", "-", $row["name"]))), evaluateText($row["name"]));
+				loadAchievement($status, $row["name"], evaluateText($row["name"]));
 			}
 	  }
 	} else {
@@ -2065,11 +2065,11 @@ function loadAchievements($conn, $heavy_armor, $medium_armor, $light_armor, $bas
 			$all = false;
 		}
 		if($index == 7){
-			loadAchievement($status, evaluateText("beach"), evaluateText("Stormed the Beach"));
+			loadAchievement($status, "beach", evaluateText("Stormed the Beach"));
 		}else if($index == 12){
-			loadAchievement($status, evaluateText("hill"), evaluateText("Climbed the Hill"));
+			loadAchievement($status, "hill", evaluateText("Climbed the Hill"));
 		}else if($index == 17){
-			loadAchievement($status, evaluateText("bunker"), evaluateText("Entered the Bunker"));
+			loadAchievement($status, "bunker", evaluateText("Entered the Bunker"));
 		}
 	}
 	
@@ -2150,9 +2150,75 @@ function loadAchievements($conn, $heavy_armor, $medium_armor, $light_armor, $bas
 	loadAchievement($status, "trophy", "All Achievements");
 }
 
+/** A filename, from anything: lowercase, and one hyphen per run of junk. */
+function dropshipIconSlug($s) {
+	$s = strtolower(trim((string)$s));
+	$s = preg_replace('/[^a-z0-9]+/', '-', $s);
+	return trim((string)$s, '-');
+}
+
+/**
+ * The icon file behind a name, themed where the theme has the art.
+ *
+ * THE LABEL IS WORDS AND THE ICON IS ART, and they were being themed as
+ * if they were the same thing. evaluateText() renamed "Stormed the Beach"
+ * to "Landed the Eon Raider" -- correct -- and then the same translation
+ * was used as the FILENAME, so the page asked for icons/eon-raider.png,
+ * which nobody had drawn. Three broken images on DHC2 Fighters, and the
+ * same trap armed for every theme anybody adds: naming a place in the
+ * admin silently created a demand for a PNG.
+ *
+ * So the themed name is a preference, not a requirement. A theme that
+ * ships its own art gets it; a theme that does not falls back to the base
+ * icon, which is the art the achievement has always had. Nothing to
+ * upload, and the admin stops being able to break the page by renaming a
+ * thing.
+ *
+ * BOTH SPELLINGS OF THE THEMED KEY ARE TRIED, because the two callers
+ * disagreed: the scene achievements looked up 'beach', the item ones
+ * looked up 'heavy-armor' (slugified BEFORE translating). Whichever a
+ * theme's dictionary is keyed on still resolves.
+ *
+ * NOTHING AT ALL IS A VALID ANSWER. If neither file exists the caller
+ * draws no <img> rather than a broken one -- icons/extra-life.png has
+ * never existed, so that case is live today.
+ */
+function dropshipIconSrc($name, $dir = null) {
+	/* $dir is a seam for the harness, which needs a directory whose
+	   contents it controls -- the real icons are deployed by FTP and are
+	   not in the repo, so a test against __DIR__ would assert nothing.
+	   Cached per directory, or the two would share answers. */
+	$dir = ($dir === null) ? __DIR__ . '/icons' : rtrim((string)$dir, '/');
+	static $seen = array();
+	$base = dropshipIconSlug($name);
+	$tries = array();
+	if (function_exists('evaluateText')) {
+		$tries[] = dropshipIconSlug(evaluateText($base));
+		$tries[] = dropshipIconSlug(evaluateText($name));
+	}
+	$tries[] = $base;
+	foreach ($tries as $slug) {
+		if ($slug === '') continue;
+		$k = $dir . '|' . $slug;
+		if (!isset($seen[$k])) $seen[$k] = is_file($dir . '/' . $slug . '.png');
+		if ($seen[$k]) return 'icons/' . $slug . '.png';
+	}
+	return '';
+}
+
+/** The whole <img>, or nothing at all when there is no art for it. */
+function dropshipIconImg($name, $class = 'icon', $dir = null) {
+	$src = dropshipIconSrc($name, $dir);
+	if ($src === '') return '';
+	$c = ($class === '' || $class === null) ? '' : " class='".$class."'";
+	return "<img".$c." src='".$src."'/>";
+}
+
 function loadAchievement($status, $icon, $title){
+	$src = dropshipIconSrc($icon);
 	echo "<div class='achievement ".strtolower($status)."'><div class='text'>";
-    echo "<img class='icon' src='icons/".$icon.".png'/>";
+	if ($src !== '') echo "<img class='icon' src='".$src."'/>";
+	/* The lock is the platform's own art and is never themed. */
 	echo "<span class='title'>".$title."</span>&nbsp;<span class='status'><img class='icon' src='icons/".strtolower($status).".png'/></span></div>";
 	echo "</div>";
 }
@@ -2172,7 +2238,7 @@ function loadItems($conn, $type, $heavy_armor, $medium_armor, $light_armor, $bas
 	  echo "<ul>";
 	  while($row = $result->fetch_assoc()) {
 	    echo "<li class='item'>
-	    <img class='icon' src='icons/".evaluateText(strtolower(str_replace(" ", "-", $row["name"]))).".png'/>
+	    ".dropshipIconImg($row["name"])."
 		<table class='inventory-item' width='100%'>
 			<tr>
 				<td width='50%' vertical-align='center' class='td1 align='left''>
@@ -2471,7 +2537,7 @@ function checkInventory($conn) {
 		  	echo "<ul>";
 		  	while($row = $result->fetch_assoc()) {
 				if($row["active"] == "1") {
-		    		echo "<li class='role'><img class='icon' src='icons/".evaluateText(strtolower(str_replace(" ", "-", $row["name"]))).".png'/><strong>".evaluateText($row["name"])."</strong></li>";
+		    		echo "<li class='role'>".dropshipIconImg($row["name"])."<strong>".evaluateText($row["name"])."</strong></li>";
 					// Add active item to session
 					$_SESSION['userData'][strtolower(str_replace(" ", "_", $row["name"]))] = "true";
 					$item_count++;
@@ -2540,7 +2606,7 @@ function checkResultsItems($conn, $result_id, $clean) {
 			if($clean == "true"){
 				$item_names[] = $row["name"];
 			}else{
-				echo "&nbsp;<img class='icon' src='icons/".evaluateText(strtolower(str_replace(" ", "-", $row["name"]))).".png'/>";
+				echo "&nbsp;".dropshipIconImg($row["name"]);
 			}	    	
 	  	}
 		if($clean == "true" && count($item_names) > 0){
@@ -3030,7 +3096,7 @@ function transactionHistory($conn) {
 					}
 					echo "<td align='center'>".$loss."</td><td>".$username."</td><td align='center'>".$score."</td>";
 				}else{
-					echo "<td align='center'><img class='icon' src='icons/".evaluateText(strtolower(str_replace(" ", "-", $row["name"]))).".png'/></td><td>".evaluateText($row["name"])."</td><td>&nbsp;</td>";
+					echo "<td align='center'>".dropshipIconImg($row["name"])."</td><td>".evaluateText($row["name"])."</td><td>&nbsp;</td>";
 				}
 			}
 			echo "</tr>";

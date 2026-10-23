@@ -923,7 +923,7 @@ if ($ds_can_animate):
 							<?php echo "<strong>".$_SESSION["userData"]["rank"]."</strong>";?>
 						</li>
 					<?php } ?>
-				    <?php echo "<li class='role' id='super-soldier'><img class='icon' src='icons/".evaluateText("supersoldier").".png'/><strong>".evaluateText("Super Soldier")."</strong></li>"; ?>
+				    <?php echo "<li class='role' id='super-soldier'>".dropshipIconImg("supersoldier")."<strong>".evaluateText("Super Soldier")."</strong></li>"; ?>
 					<?php $scrip=number_format(checkBalance($conn)); ?>
 					<li class="role"><img class="icon" src="icons/scrip.png"/>
 						<?php echo $scrip; ?> <?php echo "$".$currency ?>
