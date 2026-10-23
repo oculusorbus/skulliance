@@ -170,6 +170,22 @@ function dropshipPublicGrunts() {
 	);
 }
 
+/**
+ * Is this the shape dropshipPublicArt() returns?
+ *
+ * Every entry an array carrying a url and a name. Used on the way out
+ * of the cache and by the page before it draws, so neither a stale file
+ * nor a half-written one can take a public page down.
+ */
+function dropshipArtListOk($list) {
+	if (!is_array($list) || !$list) return false;
+	foreach ($list as $row) {
+		if (!is_array($row) || !isset($row['url'], $row['name'])) return false;
+		if (!is_string($row['url']) || !is_string($row['name'])) return false;
+	}
+	return true;
+}
+
 /** Where Drop Ship keeps its own soldier art, as a public URL. */
 function dropshipPublicArtUrl($asset) {
 	return 'https://skulliance.io/staking/dropship/images/nfts/' . rawurlencode($asset) . '.jpg';
@@ -183,7 +199,7 @@ function dropshipPublicArtUrl($asset) {
  * the theme's policy, then glob the platform's NFT image cache at
  * images/nfts/<project>/<collection>/<md5 of the cid> -- which is how
  * every OTHER theme's art is stored, and is wrong for this one. Drop
- * Ship's cards live at dropship/images/nfts/<ASSET_NAME>.jpg and always
+ * Ship's NFTs live at dropship/images/nfts/<ASSET_NAME>.jpg and always
  * have: dropshipSquadFace() special-cases project 1 to exactly that
  * path. Going through the cache produced a wall with eleven dead frames
  * in it, because the two stores do not hold the same set.
@@ -212,10 +228,22 @@ function dropshipPublicArt($limit = 24) {
 	 * and every share unfurl should not cost a directory listing. A
 	 * failed read or write is a miss: same page, slightly slower.
 	 */
-	$cf = sys_get_temp_dir() . '/skl-dsart-' . md5($dir . '|' . $key) . '.json';
+	/*
+	 * THE VERSION IN THE KEY IS NOT DECORATION. This cache went out
+	 * holding a flat list of URL strings, and the next change made every
+	 * entry an array of url+name -- same key, so an hour-old file kept
+	 * feeding strings to code that now subscripts them. In PHP 8 that is
+	 * an uncaught TypeError, "Cannot access offset of type string on
+	 * string", and the public page simply stopped rendering half way
+	 * down. BUMP THIS whenever the shape of an entry changes.
+	 */
+	$cf = sys_get_temp_dir() . '/skl-dsart2-' . md5($dir . '|' . $key) . '.json';
 	if (is_file($cf) && (time() - (int)@filemtime($cf)) < 3600) {
 		$hit = json_decode((string)@file_get_contents($cf), true);
-		if (is_array($hit)) { $cache[$key] = $hit; return $cache[$key]; }
+		/* AND VALIDATED ANYWAY, because a version in the key only helps
+		   for the change you remembered to bump it for. A payload that is
+		   not the shape this function returns is a miss, not a crash. */
+		if (dropshipArtListOk($hit)) { $cache[$key] = $hit; return $cache[$key]; }
 	}
 
 	$files = @glob($dir . '/*.jpg');

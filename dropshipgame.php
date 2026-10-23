@@ -39,7 +39,7 @@ $ds_themes = dropshipPublicThemes();
  * REAL SOLDIERS, OFF THE LOCAL CACHE. The page had no picture above the
  * fold at all -- every sibling game page opens with one -- and the one
  * thing this game has more of than any other here is art: hundreds of
- * cards already registered as soldiers.
+ * NFTs already registered as soldiers.
  *
  * DROP SHIP'S OWN ONLY, at the owner's direction for this pass. Five
  * collections on one page is five art styles fighting each other, and
@@ -48,6 +48,12 @@ $ds_themes = dropshipPublicThemes();
  * dead gateway cannot turn this into a wall of broken frames.
  */
 $ds_art    = dropshipPublicArt(40);
+/* A PUBLIC PAGE MUST NOT DIE ON A CACHE ARTIFACT. This did: the art
+   list changed shape, a stale cache kept serving the old one, and
+   subscripting a string is a fatal in PHP 8 -- the page rendered down
+   to the marquee and stopped. Checked here as well as inside the
+   library, because this file is the thing that subscripts it. */
+if (!dropshipArtListOk($ds_art)) $ds_art = array();
 $ds_crew   = dropshipPublicGrunts();
 $ds_canonical = 'https://www.skulliance.io/staking/dropshipgame.php';
 
@@ -364,7 +370,7 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 	         soldiers moving under it. */ ?>
 	<section class="dsg-sec dsg-sec-tight">
 		<h2>Every one of these is somebody's soldier</h2>
-		<p>Drop Ship does not draw its own characters. It reads the cards people already hold and turns
+		<p>Drop Ship does not draw its own characters. It reads the NFTs people already hold and turns
 			each one into a soldier, carrying the armor and gear its art says it has. These are real
 			ones, pulled straight from the barracks.</p>
 	</section>

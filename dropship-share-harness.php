@@ -312,6 +312,50 @@ ok(strpos($guard, 'free_squad') !== false,
    'the four-free-soldiers section is guarded by "' . trim($guard) . '", which never asks '
  . 'whether this theme actually hands them out -- they are Drop Ship only');
 
+echo "\na stale cache must not take the public page down\n";
+/*
+ * IT DID. dropshipPublicArt() cached a flat list of URL strings; the
+ * next change made every entry an array of url+name and left the cache
+ * key alone, so an hour-old file kept feeding strings into code that
+ * subscripts them. In PHP 8 that is an uncaught TypeError -- "Cannot
+ * access offset of type string on string" -- and the page rendered down
+ * to the marquee and stopped dead. Nothing in the markup looked wrong,
+ * because the markup was never reached.
+ */
+require_once __DIR__ . '/lib/dropship-public.php';
+/*
+ * CALLED THROUGH A CATCH, because a validator that THROWS on malformed
+ * input is as broken as one that waves it through -- and it kills the
+ * harness rather than failing a check, which reports nothing at all.
+ * Removing the is_array() guard inside it does exactly that.
+ */
+function art_ok($v) {
+	try { return dropshipArtListOk($v) === true ? 'yes' : 'no'; }
+	catch (Throwable $e) { return 'THREW ' . get_class($e); }
+}
+ok(art_ok(array(array('url' => 'https://x/a.jpg', 'name' => 'Ash'))) === 'yes',
+   'the current shape is rejected by its own validator');
+ok(art_ok(array('https://x/a.jpg')) === 'no',
+   'THE EXACT STALE PAYLOAD: validator said ' . art_ok(array('https://x/a.jpg'))
+ . ', so the page fatals again');
+ok(art_ok(array(array('url' => 'https://x/a.jpg'))) === 'no', 'an entry with no name passes');
+foreach (array(null, '', array(), 42, array(array())) as $junk) {
+	if (!ok(art_ok($junk) === 'no', 'junk payload ' . var_export($junk, true)
+	        . ': validator said ' . art_ok($junk))) break;
+}
+
+$lib = harness_strip_comments(file_get_contents(__DIR__ . '/lib/dropship-public.php'));
+/* The key carries a version, so a shape change invalidates by itself
+   rather than relying on somebody remembering this failure. */
+ok(preg_match('/skl-dsart\d+-/', $lib) === 1,
+   'the art cache key carries no version, so the next shape change breaks the page the same way');
+ok(strpos($lib, 'dropshipArtListOk($hit)') !== false,
+   'the cache is read back without validating its shape');
+/* And the page checks too, because the page is what subscripts it. */
+$pg2 = harness_strip_comments(file_get_contents(__DIR__ . '/dropshipgame.php'));
+ok(strpos($pg2, 'dropshipArtListOk($ds_art)') !== false,
+   'dropshipgame.php trusts the library and will fatal on a bad list rather than drawing nothing');
+
 echo "\nthe link is public, and carries no run id\n";
 /*
  * BOTH HALVES MATTER. A link behind the login serves X's crawler a redirect
