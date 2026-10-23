@@ -285,6 +285,37 @@ $nl2 = harness_strip_comments(file_get_contents(__DIR__ . '/lib/nudge-lib.php'))
 ok(strpos($nl2, "action = 'rested'") !== false, 'resting is not honoured by the gate');
 ok(strpos($lp, 'nudge_fatigued($lp_state)') !== false, 'the launchpad never checks for fatigue');
 
+echo "\nthe admin preview looks without touching\n";
+/*
+ * THE OWNER CANNOT SEE THIS FEATURE. It only speaks to accounts touching
+ * four or fewer things and his touches all fifteen, so the one person
+ * who has to judge whether the suggestions are any good is the one
+ * account guaranteed never to get one. admin-nudges.php is how he reads
+ * them.
+ *
+ * AND IT MUST NOT WRITE. A 'shown' row from the preview would consume
+ * that player's next nudge and restart their three-day gap -- opening
+ * the page to check the targeting list would silence the entire list,
+ * and nothing about the page would look wrong.
+ */
+ok(is_file(__DIR__ . '/admin-nudges.php'), 'the admin preview is missing');
+$ad = harness_strip_comments(file_get_contents(__DIR__ . '/admin-nudges.php'));
+ok(strpos($ad, 'nudge_log(') === false,
+   'the admin preview writes to the nudges log, so opening it silences everyone on it');
+ok(strpos($ad, 'admin_require()') !== false, 'the preview is not behind the admin gate');
+/* It must agree with the Launchpad, not re-derive the rules. */
+foreach (array('nudge_breadth(', 'nudge_candidates(', 'nudge_pick(') as $fn) {
+	if (!ok(strpos($ad, $fn) !== false,
+	        "the preview does not call $fn so it can disagree with what players see")) break;
+}
+ok(strpos($ad, 'NUDGE_NARROW_MAX') !== false,
+   'the preview hardcodes the threshold instead of reading it');
+/* One pass over the sources, not fifteen queries per player. */
+ok(strpos($ad, 'activity_totals(') !== false,
+   'the preview runs the activity queries per player, which is hundreds of round trips');
+$t = harness_strip_comments(file_get_contents(__DIR__ . '/admin-lib.php'));
+ok(strpos($t, "'nudges'") !== false, 'the Nudges tab is not in the admin nav');
+
 echo "\nthe endpoint cannot be used on somebody else\n";
 $ep = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/nudge.php'));
 ok(strpos($ep, "\$_POST['user") === false && strpos($ep, "\$_GET['user") === false,
