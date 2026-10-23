@@ -685,6 +685,38 @@ a:hover { color: #00a882; }
   border-color: var(--ds-ochre);
   color: var(--ds-ochre);
 }
+
+/*
+ * THE SAME IDEA AT FULL WIDTH. .small-button had a secondary and .button
+ * did not, so a second full-width action had to be either another solid
+ * teal slab -- the four-identical-buttons problem noted above -- or a
+ * small pill sitting under a full-width button, which is what Share
+ * Result shipped as and read as an afterthought stuck to the bottom of
+ * Instant Replay.
+ *
+ * The margin is on this rule rather than inline because the pairing is
+ * the point: a full-width secondary always follows a full-width primary,
+ * and they must not touch.
+ */
+.button.secondary {
+  background-color: transparent;
+  border: 1px solid var(--ds-line);
+  color: var(--ds-dim);
+  /* .button has no border and is an <input> where this is an <a>, so the
+     two do not line up by themselves. MEASURED: at 15px padding the
+     outlined anchor came out 54px against the input's 52. Pinned to the
+     same box instead of nudged -- line-height is stated because an
+     inline-block anchor inherits the page's and an input does not. */
+  padding: 0 32px;
+  min-height: 52px;
+  line-height: 50px;
+  margin-top: 14px;
+}
+.button.secondary:hover {
+  background-color: transparent;
+  border-color: var(--ds-ochre);
+  color: var(--ds-ochre);
+}
 /*
 .td3 {
 	text-align: right;

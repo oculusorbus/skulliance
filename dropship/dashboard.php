@@ -783,8 +783,11 @@ $characters = evaluateText("Troops");
 								? dropshipThemeConfig($conn, $ds_pid_s) : null;
 							$ds_slug_s = ($ds_cfg_s && !empty($ds_cfg_s['slug'])) ? $ds_cfg_s['slug'] : 'drop-ship';
 							$ds_body   = dropshipShareText($ds_facts, getProjectName($conn), evaluateText('Round'));
-							echo '&nbsp;' . shareOnXButton($ds_body,
-								dropshipSharePage($ds_slug_s), 'small-button secondary');
+							/* Full width, matching Instant Replay above it, and
+							   outlined so the primary action stays the primary
+							   one. .button.secondary carries the gap. */
+							echo shareOnXButton($ds_body,
+								dropshipSharePage($ds_slug_s), 'button secondary');
 						}
 					} catch (Throwable $e) {
 						error_log('dropship share: ' . $e->getMessage());

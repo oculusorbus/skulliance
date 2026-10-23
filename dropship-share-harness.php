@@ -98,14 +98,18 @@ ok(strpos(dropshipShareText($f, 'Dread City'), 'Passed fomz into 1st of 2.') !==
    'taking the lead does not say who was overtaken: ' . dropshipShareText($f, 'Dread City'));
 $alone = array(array('user_id' => 1, 'username' => 'me', 'score' => 61));
 $f = dropshipShareFacts($alone, 1, null);
-ok(dropshipShareText($f, 'Drop Ship') === 'Survived to round 61 in Drop Ship. Top of the board.',
-   'the only player on the board gets: ' . dropshipShareText($f, 'Drop Ship'));
+$t = dropshipShareText($f, 'Drop Ship');
+ok(strpos($t, 'Survived to round 61 in Drop Ship. Top of the board.') === 0,
+   'the only player on the board gets: ' . $t);
+ok(strpos($t, 'clear of second') === false, 'a one-player board boasts about a gap to nobody');
 
 echo "\nnot on the board at all\n";
 $f = dropshipShareFacts(board(), 999, null);
 ok($f['rank'] === 0, 'a player with no row has a rank');
-ok(dropshipShareText($f, 'Drop Ship') === 'Just played Drop Ship on Skulliance.',
-   'a player with no row gets a post full of zeroes: ' . dropshipShareText($f, 'Drop Ship'));
+$t = dropshipShareText($f, 'Drop Ship');
+ok(strpos($t, 'round 0') === false && strpos($t, '0th') === false,
+   'a player with no row gets a post full of zeroes: ' . $t);
+ok(strpos($t, 'Drop Ship') !== false, 'a player with no row is not even told which game: ' . $t);
 ok(dropshipShareFacts(array(), 1, 5)['rank'] === 0, 'an empty board produces a rank');
 
 echo "\nordinals\n";
@@ -121,6 +125,53 @@ ok(strpos(dropshipShareText(dropshipShareFacts(board(), 1, null), 'Oculus Lounge
 /* Themes rename the word too. */
 ok(strpos(dropshipShareText(dropshipShareFacts(board(), 1, null), 'Oculus Lounge', 'Floor'), 'floor 34') !== false,
    "a theme's own word for a round is ignored");
+
+echo "\nthe post sells the game, not just the score\n";
+/*
+ * THE FIRST VERSION WAS A REPORT CARD. "Survived to round 28 in DHC2
+ * Fighters. Top of the board, 13 clear of second." is true and tells a
+ * stranger scrolling past nothing: not what the game is, not that it
+ * costs nothing, not why they would click. A share is free reach and
+ * that spent it on a number. Every post now carries a pitch and an
+ * invitation as well as the result.
+ */
+$shapes = array(
+	'leading'  => array(array(array('user_id' => 1, 'username' => 'me', 'score' => 28),
+	                          array('user_id' => 9, 'username' => 'fomz', 'score' => 15)), 1, 20),
+	'overtook' => array(board(), 1, 22),
+	'chasing'  => array(board(), 1, null),
+	'worse'    => array(board(), 1, 48),
+);
+foreach ($shapes as $name => $c) {
+	$t = dropshipShareText(dropshipShareFacts($c[0], $c[1], $c[2]), 'Dread City');
+	if (!ok(stripos($t, 'free') !== false, "the $name post never says the game is free: $t")) break;
+	if (!ok(substr_count($t, "\n\n") >= 2, "the $name post is not three parts: $t")) break;
+	/* The result leads, because it is why they pressed the button and
+	   because a trim cuts from the end. */
+	if (!ok(stripos($t, 'round 28') === 0 || stripos($t, 'Survived') === 0
+	        || stripos($t, 'New personal best') === 0, "the $name post does not lead with the result: $t")) break;
+	if (!ok(mb_strlen($t) <= dropshipShareLimit(),
+	        "the $name post is " . mb_strlen($t) . ' chars, over the ' . dropshipShareLimit() . ' budget')) break;
+}
+
+echo "\nand the pitch is dropped before the result ever is\n";
+/*
+ * shareOnXUrl() cuts from the END, so an over-long post would lose the
+ * call to action and then the pitch -- the exact half this exists to
+ * add. The text is assembled against the real budget instead, shortening
+ * the pitch rather than letting anything be cut mid-word.
+ */
+$big = array();
+for ($i = 1; $i <= 40; $i++) $big[] = array('user_id' => 100 + $i, 'username' => 'player_number_' . $i, 'score' => 500 - $i);
+$big[] = array('user_id' => 1, 'username' => 'me', 'score' => 455);
+usort($big, function ($a, $b) { return $b['score'] - $a['score']; });
+$t = dropshipShareText(dropshipShareFacts($big, 1, 400), 'Neo Miami Nightlife Extravaganza Deluxe Edition Theme Name');
+ok(mb_strlen($t) <= dropshipShareLimit(),
+   'the worst case is ' . mb_strlen($t) . ' chars, over the ' . dropshipShareLimit() . ' budget');
+ok(strpos($t, 'Free weekly squad battler. Your first squad is free.') !== false,
+   'the short pitch never fires, so a long theme name loses the marketing instead: ' . $t);
+ok(strpos($t, 'round 455') !== false, 'the worst case lost the score itself: ' . $t);
+ok(substr($t, -28) === 'Going back for the top spot.', 'the worst case lost the call to action: ' . $t);
 
 echo "\nthe link is public, and carries no run id\n";
 /*

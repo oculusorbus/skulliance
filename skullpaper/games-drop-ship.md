@@ -47,9 +47,13 @@ gear from whether the card shows the character fighting.
 
 ## Sharing a run
 
-When a run ends, **Share on X** sits next to Instant Replay. It writes the post
-for you from the board as it stands: the round you reached, where that puts you
-this week, and either the player you went past or the leader you are chasing.
+When a run ends, **Share on X** sits under Instant Replay. It writes the post
+for you in three parts: your result, what the game is, and a line inviting
+somebody to come and beat it.
+
+The result is the round you reached, where that puts you this week, and either
+the player you went past or the leader you are chasing. It always comes first,
+because that is the part you pressed the button for.
 
 Only two people can ever be named in it. Whoever this run overtook, and the
 player at the top. Nobody is named as having beaten you, and no label describes

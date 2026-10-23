@@ -124,37 +124,93 @@ function dropshipOrdinal($n) {
 }
 
 /**
- * The post, as the player would write it if they were bothered.
+ * THE POST IS AN ADVERT THAT HAPPENS TO CONTAIN A SCORE.
  *
- * Short declaratives, the theme named because five games share this engine
- * and "Drop Ship" alone would be wrong for four of them, and no sentence
- * that comments on itself. shareOnXUrl() handles the 280 budget and the
- * @skulliance tail, so length is its problem and not this function's --
- * but the interesting half is put FIRST so a trim never eats it.
+ * The first version read "Survived to round 28 in DHC2 Fighters. Top of
+ * the board, 13 clear of second." -- true, and a report card. It tells a
+ * stranger scrolling past nothing about what the game is, that it costs
+ * nothing, or why they would click. A share is reach we are given for
+ * free and that one spent it on a number.
+ *
+ * So the post is three parts and only the first is about the player:
+ *
+ *   THE RESULT   what they did, and who they went past -- the reason they
+ *                pressed the button, so it leads and it never gets cut.
+ *   THE PITCH    what the game IS, to somebody who has never heard of it.
+ *                Free, four soldiers, a board that wipes weekly.
+ *   THE CALL     one line that invites a reply. Different when you are
+ *                defending the top than when you are climbing.
+ *
+ * THE BUDGET IS SPENT DELIBERATELY, NOT TRIMMED. shareOnXUrl() cuts from
+ * the END, which on a long theme name would eat the call to action and
+ * then the pitch -- exactly the half this rewrite exists to add. So the
+ * pitch has a short form, and the text is assembled against the real
+ * limit: 280, minus 23 for the link (X counts every URL as 23 whatever it
+ * is), minus one for the separator, minus the @skulliance tail.
  */
+
+/** The limit shareOnXUrl() will apply, worked out the same way it does. */
+function dropshipShareLimit() {
+	$tail = "\n\n" . (defined('SKULLIANCE_X_HANDLE') ? SKULLIANCE_X_HANDLE : '@skulliance');
+	return 280 - 24 - mb_strlen($tail);
+}
+
 function dropshipShareText($facts, $theme, $rounds_word = 'Round') {
 	$f = $facts;
-	if (!$f['rank']) return 'Just played ' . $theme . ' on Skulliance.';
+	if (!$f['rank']) {
+		return 'Playing ' . $theme . ' on Skulliance. Free weekly squad battler, four soldiers a run, '
+		     . 'and the board wipes every week.';
+	}
 
 	$score = (int)$f['score'];
-	$lines = array();
-	/* A PERSONAL BEST IS ONLY NEWS WHEN THE OVERTAKE ISN'T. Beating your own
-	   score and going past somebody are usually the same run, and leading
-	   with the smaller of the two claims wastes the first line. */
+	$round = strtolower($rounds_word);
+
+	/* --- the result ------------------------------------------------- */
+	/* A PERSONAL BEST IS ONLY NEWS WHEN THE OVERTAKE ISN'T. Beating your
+	   own score and going past somebody are usually the same run, and
+	   leading with the smaller of the two claims wastes the first line. */
 	$lead = ($f['personal_best'] && $f['passed'] === '') ? 'New personal best: survived' : 'Survived';
-	$lines[] = $lead . ' to ' . strtolower($rounds_word) . ' ' . $score . ' in ' . $theme . '.';
+	$result = $lead . ' to ' . $round . ' ' . $score . ' in ' . $theme . '.';
 
 	if ($f['passed'] !== '') {
 		$also = $f['passed_n'] > 1 ? ' and ' . ($f['passed_n'] - 1) . ' more' : '';
-		$lines[] = 'Passed ' . $f['passed'] . $also . ' into '
+		$result .= ' Passed ' . $f['passed'] . $also . ' into '
 		         . dropshipOrdinal($f['rank']) . ' of ' . $f['field'] . '.';
 	} elseif ($f['first']) {
-		$lines[] = $f['clear'] > 0
-			? 'Top of the board, ' . $f['clear'] . ' clear of second.'
-			: 'Top of the board.';
+		$result .= $f['clear'] > 0
+			? ' Top of the board, ' . $f['clear'] . ' clear of second.'
+			: ' Top of the board.';
 	} else {
-		$lines[] = dropshipOrdinal($f['rank']) . ' of ' . $f['field']
+		$result .= ' ' . dropshipOrdinal($f['rank']) . ' of ' . $f['field']
 		         . ', ' . $f['behind'] . ' behind ' . $f['leader'] . '.';
 	}
-	return implode(' ', $lines);
+
+	/* --- the call ----------------------------------------------------- */
+	/* Addressed to a stranger, not to the board: "come take it" works on
+	   somebody who has never played, where "@fomz get me back" does not. */
+	if ($f['first'])            $call = 'Come take it off me.';
+	elseif ($f['passed'] !== '') $call = "Who's next?";
+	else                        $call = 'Going back for the top spot.';
+
+	/* --- the pitch ---------------------------------------------------- */
+	/* VERIFIED, not sold: every player really is given four soldiers, and
+	   the four really do make one complete squad -- see
+	   dropship/dropship-grunts.php. A claim in a public post has to be one
+	   somebody can turn up and check. */
+	$long  = 'Four soldiers, one run, and a board that wipes every week. Free to play, '
+	       . 'and your first squad is free too.';
+	$short = 'Free weekly squad battler. Your first squad is free.';
+
+	$limit = dropshipShareLimit();
+	foreach (array($long, $short, '') as $pitch) {
+		$parts = array($result);
+		if ($pitch !== '') $parts[] = $pitch;
+		$parts[] = $call;
+		$text = implode("\n\n", $parts);
+		if (mb_strlen($text) <= $limit) return $text;
+	}
+	/* Even the result alone is over budget -- a theme with an absurd name
+	   and a four-digit score. Hand it over and let shareOnXUrl() cut it;
+	   there is nothing left here worth protecting. */
+	return $result;
 }
