@@ -650,11 +650,10 @@ if (!isset($_SESSION['userData']['user_id'])) return;
          * for dismissing a box, not a reason to act on one. The reason is
          * that the post IS the invite and it pays in traits, both ways.
          */
-        /* A cache is a surprise, so it is the first thing the line says. */
-        document.getElementById('pdg-note').textContent = (d.cache > 0)
-          ? 'A cache fell out of today\u2019s digest: ' + d.cache
-            + ' traits, revealed once you close this.'
-          : 'It will not ask again today once you close it.';
+        /* The digest cache is gone -- d.cache no longer exists and this
+           line no longer has two states. See ajax/player-digest.php. */
+        document.getElementById('pdg-note').textContent =
+          'It will not ask again today once you close it.';
         veil.classList.add('on');
       });
   }

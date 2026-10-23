@@ -37,12 +37,18 @@ foreach (array_keys($GLOBALS['DHCF_GAMES']) as $key) {
 	ok(substr($from, -1) !== '.', "$key's phrase ends in a full stop, so the post reads \"$from.\"");
 }
 
-echo "\nthe three sources that are not games say something else\n";
+echo "\nthe sources that are not games say something else\n";
 /*
  * These are the whole reason the function exists. "Dropped from Invite a
- * friend" and "Dropped from Digest cache" are not sentences.
+ * friend" is not a sentence.
+ *
+ * THERE WERE THREE. digestcache was the other, and it is gone -- it paid
+ * traits for opening the daily digest on a lucky day, the only source in
+ * the collection that paid for showing up rather than for doing
+ * something and succeeding. See referral-harness.php for why that
+ * mattered and why it is pinned rather than quietly deleted.
  */
-foreach (array('dailystreak', 'referral', 'digestcache') as $key) {
+foreach (array('dailystreak', 'referral') as $key) {
 	$g = dhcf_game($key);
 	ok(!empty($g['earned_from']),
 	   "$key has no wording of its own, so the post reads \"Dropped from " . $g['label'] . '"');

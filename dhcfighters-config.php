@@ -1173,38 +1173,9 @@ $GLOBALS['DHCF_GAMES'] = array(
 	// X, which is the one thing that would put the invite scheme on the
 	// wrong side of X's rule against paying for engagement.
 	//
-	// Cap 3, which is one cache. Once a day is enforced by the roll being
-	// decided by the DAY rather than by chance per request -- see
-	// dhcf_cache_day() -- so the cap here is a backstop, not the rule.
-	'digestcache'    => array('label' => 'Digest cache', 'earned_from' => 'a cache in the daily digest', 'url' => 'launchpad.php', 'category' => 'wildcard',
-	                          'trigger' => 'open your daily digest and get lucky',
-	                          'base' => 'placement_3', 'cap' => 3,
-	                          'limit_note' => 'some days, not most',
-	                          'unlisted' => true),
 );
 
-/* How often a cache falls out. One day in twelve. */
-define('DHCF_CACHE_ODDS', 12);
-/** How many traits a cache is worth. */
-define('DHCF_CACHE_DRAWS', 3);
 
-/**
- * Is today one of this player's cache days?
- *
- * DECIDED BY THE DAY, NOT BY A DIE ROLL. The digest is fetched once a day
- * per browser, and that guard is localStorage -- so a random roll per
- * request could simply be re-rolled by clearing site data and reloading
- * until it paid. Hashing the user and the date means reloading changes
- * nothing: it is a cache day or it is not, and no amount of asking alters
- * the answer.
- *
- * Guessable, and that does not matter -- knowing which Tuesday is yours
- * does not let you move it.
- */
-function dhcf_cache_day($user_id, $day) {
-	$h = substr(sha1('skulliance-digest-cache|' . (int)$user_id . '|' . $day), 0, 8);
-	return (hexdec($h) % DHCF_CACHE_ODDS) === 0;
-}
 
 function dhcf_game($key) {
 	return isset($GLOBALS['DHCF_GAMES'][$key]) ? $GLOBALS['DHCF_GAMES'][$key] : null;

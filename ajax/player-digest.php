@@ -83,31 +83,29 @@ if (is_file(__DIR__ . '/../lib/referral-lib.php')) {
  * request, so dhcf_award() queues it the way it does for any other drop
  * and the modal fires once the digest is closed.
  */
-$d['cache'] = 0;
 /*
- * THE LIBRARY IS LOADED BEFORE IT IS ASKED ANYTHING. dhcf_cache_day() lives
- * in dhcfighters-config.php, which nothing in this endpoint's include chain
- * pulls in -- db.php only requires it from inside a function. Calling it
- * first and requiring afterwards is a fatal, and the shutdown handler above
- * turns a fatal into {show:false}, so the symptom would not be a missing
- * cache: it would be NO DIGEST AT ALL, for everybody, silently.
+ * THE DIGEST CACHE IS GONE, AND THE LIBRARY STILL LOADS.
+ *
+ * It paid 3 traits on roughly one open in twelve -- the only source in
+ * the collection that paid for SHOWING UP rather than for doing
+ * something and succeeding. Every other trait says its holder cleared
+ * twelve crypts, took a lead, won a battle or held a streak; this one
+ * said they loaded a page on a lucky day, which made the claim behind
+ * all the others a little less true.
+ *
+ * The daily habit it was built to reward already had dailystreak, which
+ * asks for seven consecutive days and was there first.
+ *
+ * TRAITS ALREADY AWARDED STAY. The ledger rows are real and people keep
+ * what they got; only the faucet is closed.
+ *
+ * The require stays because the digest's own reveal path needs the
+ * library, and because loading it late here was once a fatal that the
+ * shutdown handler turned into {show:false} -- no digest at all, for
+ * everybody, silently.
  */
 if (is_file(__DIR__ . '/../dhcfighters-lib.php')) {
-	require_once __DIR__ . '/../dhcfighters-lib.php';   /* which loads the config */
-}
-if (function_exists('dhcf_cache_day') && dhcf_cache_day($uid, $day)) {
-	/* Belt and braces on top of the day-hash: if a cache is somehow already
-	   recorded for today, nothing more is drawn. The hash makes this
-	   unreachable; it costs one indexed read to be certain. */
-	$had = $conn->query("SELECT 1 FROM dhc_trait_drops
-	                      WHERE user_id = $uid AND source = 'digestcache'
-	                        AND awarded_at >= CURDATE() LIMIT 1");
-	if (!($had && $had->num_rows)) {
-		$tbl = dhcf_table_for('digestcache');
-		for ($i = 0; $i < DHCF_CACHE_DRAWS; $i++) {
-			if (dhcf_award($conn, $uid, 'wildcard', 'digestcache', $day, $tbl)) $d['cache']++;
-		}
-	}
+	require_once __DIR__ . '/../dhcfighters-lib.php';
 }
 
 echo json_encode(array('show' => true, 'digest' => $d), JSON_UNESCAPED_SLASHES);
