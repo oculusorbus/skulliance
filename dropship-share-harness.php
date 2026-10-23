@@ -148,30 +148,82 @@ foreach ($shapes as $name => $c) {
 	if (!ok(substr_count($t, "\n\n") >= 2, "the $name post is not three parts: $t")) break;
 	/* The result leads, because it is why they pressed the button and
 	   because a trim cuts from the end. */
-	if (!ok(stripos($t, 'round 28') === 0 || stripos($t, 'Survived') === 0
-	        || stripos($t, 'New personal best') === 0, "the $name post does not lead with the result: $t")) break;
+	if (!ok(stripos($t, 'Survived') === 0 || stripos($t, 'Personal best') === 0,
+	        "the $name post does not lead with the result: $t")) break;
 	if (!ok(mb_strlen($t) <= dropshipShareLimit(),
 	        "the $name post is " . mb_strlen($t) . ' chars, over the ' . dropshipShareLimit() . ' budget')) break;
 }
 
-echo "\nand the pitch is dropped before the result ever is\n";
+echo "\nand the pitch is dropped last, not first\n";
 /*
  * shareOnXUrl() cuts from the END, so an over-long post would lose the
- * call to action and then the pitch -- the exact half this exists to
- * add. The text is assembled against the real budget instead, shortening
- * the pitch rather than letting anything be cut mid-word.
+ * call to action and then the pitch -- the exact half the rewrite exists
+ * to add. The text is assembled against the real budget instead, so what
+ * gets dropped is chosen rather than whatever happened to be last.
  */
 $big = array();
 for ($i = 1; $i <= 40; $i++) $big[] = array('user_id' => 100 + $i, 'username' => 'player_number_' . $i, 'score' => 500 - $i);
 $big[] = array('user_id' => 1, 'username' => 'me', 'score' => 455);
 usort($big, function ($a, $b) { return $b['score'] - $a['score']; });
-$t = dropshipShareText(dropshipShareFacts($big, 1, 400), 'Neo Miami Nightlife Extravaganza Deluxe Edition Theme Name');
+$bf = dropshipShareFacts($big, 1, 400);
+
+/* THE LONGEST REAL THEME NAME. Filthy Mermaid is 14 characters and the
+   worst standing is a personal best on a 41-player board -- if the pitch
+   cannot survive that, it never ships, and the whole rewrite is theatre. */
+$t = dropshipShareText($bf, 'Filthy Mermaid', 'Round', 'filthy-mermaid');
 ok(mb_strlen($t) <= dropshipShareLimit(),
-   'the worst case is ' . mb_strlen($t) . ' chars, over the ' . dropshipShareLimit() . ' budget');
-ok(strpos($t, 'Free weekly squad battler. Your first squad is free.') !== false,
-   'the short pitch never fires, so a long theme name loses the marketing instead: ' . $t);
-ok(strpos($t, 'round 455') !== false, 'the worst case lost the score itself: ' . $t);
-ok(substr($t, -28) === 'Going back for the top spot.', 'the worst case lost the call to action: ' . $t);
+   'the worst REAL case is ' . mb_strlen($t) . ' chars, over the ' . dropshipShareLimit() . ' budget');
+ok(stripos($t, 'free to play') !== false,
+   'the worst real case drops the pitch, so most posts would ship without one: ' . $t);
+ok(substr_count($t, "\n\n") === 2, 'the worst real case is not three parts: ' . $t);
+
+/* AND AN ABSURD ONE, to pin the ORDER things are given up in. */
+$t = dropshipShareText($bf, 'Neo Miami Nightlife Extravaganza Deluxe Edition Theme Name');
+ok(mb_strlen($t) <= dropshipShareLimit(),
+   'the absurd case is ' . mb_strlen($t) . ' chars, over the ' . dropshipShareLimit() . ' budget');
+ok(strpos($t, 'round 455') !== false, 'the absurd case lost the score itself: ' . $t);
+ok(strpos($t, 'Join ') !== false,
+   'the absurd case dropped the call to action before the pitch, which is backwards: ' . $t);
+
+echo "\nthe account is mentioned once, inside a sentence\n";
+/*
+ * The call names @skulliance, so shareOnXUrl() must stop appending its
+ * own tail -- two mentions is 13 wasted characters out of a very tight
+ * 280 and reads as a handle dangling under the post.
+ */
+$t = dropshipShareText(dropshipShareFacts(board(), 1, 22), 'Dread City', 'Round', 'dread-city');
+ok(substr_count($t, '@skulliance') === 1, 'the body mentions @skulliance ' . substr_count($t, '@skulliance') . ' times');
+$u = shareOnXUrl($t, dropshipSharePage('dread-city'));
+parse_str(parse_url($u, PHP_URL_QUERY), $q);
+ok(substr_count($q['text'], '@skulliance') === 1,
+   'the posted text mentions @skulliance ' . substr_count($q['text'], '@skulliance') . ' times');
+ok(mb_strlen($q['text']) + 24 <= 280,
+   'the posted length is ' . (mb_strlen($q['text']) + 24) . ', over 280');
+/* And a caller that does NOT name it still gets the tail. */
+parse_str(parse_url(shareOnXUrl('A result with no handle in it.', 'x.php'), PHP_URL_QUERY), $q2);
+ok(strpos($q2['text'], '@skulliance') !== false,
+   'suppressing the tail broke every other game, which relies on it');
+
+echo "\nOculus Lounge tags its own account, and nothing tags a person\n";
+/*
+ * REAL ACCOUNTS. A wrong handle tags a stranger from a player's own
+ * timeline, so these come from the owner's own x_tag registry and are
+ * shape-checked. @ohh_meed and @MMAXI404 are in that registry too and are
+ * PEOPLE -- a run share fires every time anybody finishes a game, and
+ * that volume is not pointed at someone's mentions unasked.
+ */
+ok(dropshipThemeHandle('oculus-lounge') === '@oculuslounge',
+   'Oculus Lounge no longer tags its own account');
+$t = dropshipShareText(dropshipShareFacts(board(), 1, 22), 'Oculus Lounge', 'Round', 'oculus-lounge');
+ok(strpos($t, 'play @oculuslounge.') !== false, 'the Oculus Lounge call does not tag it: ' . $t);
+foreach (array('drop-ship', 'dread-city', 'filthy-mermaid', 'dhc2-fighters') as $sl) {
+	if (!ok(dropshipThemeHandle($sl) === '', "$sl tags an account nobody asked for: " . dropshipThemeHandle($sl))) break;
+	$t = dropshipShareText(dropshipShareFacts(board(), 1, 22), 'A Theme', 'Round', $sl);
+	if (!ok(strpos($t, '@ohh_meed') === false && strpos($t, '@MMAXI404') === false,
+	        "$sl tags a person on every single run: $t")) break;
+}
+ok(dropshipThemeHandle('../evil') === '' && dropshipThemeHandle('') === '',
+   'an unknown slug produces a handle');
 
 echo "\nthe link is public, and carries no run id\n";
 /*

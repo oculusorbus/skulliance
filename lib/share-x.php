@@ -41,7 +41,15 @@ if (!defined('SKULLIANCE_X_HANDLE')) define('SKULLIANCE_X_HANDLE', '@skulliance'
 
 if (!function_exists('shareOnXUrl')) {
 function shareOnXUrl($body, $page_path) {
-	$tail = "\n\n" . SKULLIANCE_X_HANDLE;
+	/*
+	 * NOT TWICE. The tail exists so the main account is notified and can
+	 * repost, and for most games the body never names it -- but a post
+	 * whose own call to action reads "Join @skulliance and play X" has
+	 * already done that job, and appending the handle again spends 13 of
+	 * a very tight 280 saying Skulliance a second time. A body that
+	 * carries the mention keeps the mention and loses the tail.
+	 */
+	$tail = (stripos($body, SKULLIANCE_X_HANDLE) !== false) ? '' : "\n\n" . SKULLIANCE_X_HANDLE;
 
 	// X counts ANY url as 23 characters (t.co wraps them all), regardless of
 	// how long the real one is, and the url= param below is appended to the

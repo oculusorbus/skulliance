@@ -115,6 +115,34 @@ function dropshipShareFacts($board, $user_id, $prev = null) {
 	return $f;
 }
 
+/**
+ * The X account behind a theme, where it has one of its own.
+ *
+ * REAL ACCOUNTS, AND A WRONG ONE TAGS A STRANGER IN PUBLIC from a
+ * player's own timeline -- so these are copied from the handles the owner
+ * already supplied for trait-drop shares (the x_tag entries in
+ * dhcfighters-config.php), never guessed from a theme name.
+ *
+ * ONLY OCULUS LOUNGE, DELIBERATELY. The registry also holds @ohh_meed and
+ * @MMAXI404, and those are PEOPLE. A trait drop is occasional; a run
+ * share fires every time anybody finishes a game, and pointing that
+ * volume at a person's mentions is not a thing to switch on without being
+ * asked for it. @oculuslounge is the game's own account and was asked
+ * for. Adding the others is one line each when the owner says so.
+ *
+ * Not required from the platform's copy because Drop Ship cannot include
+ * dhcfighters-config.php -- different database, different db.php. Kept in
+ * step by hand, and there is exactly one value in it.
+ */
+function dropshipThemeHandle($slug) {
+	$map = array('oculus-lounge' => '@oculuslounge');
+	$slug = strtolower(trim((string)$slug));
+	if (!isset($map[$slug])) return '';
+	/* Shape-checked on the way out, because this string becomes a public
+	   mention: letters, digits and underscore after the @, as X allows. */
+	return preg_match('/^@[A-Za-z0-9_]{1,15}$/', $map[$slug]) ? $map[$slug] : '';
+}
+
 /** 1st, 2nd, 3rd, 4th. */
 function dropshipOrdinal($n) {
 	$n = (int)$n;
@@ -149,17 +177,25 @@ function dropshipOrdinal($n) {
  * is), minus one for the separator, minus the @skulliance tail.
  */
 
-/** The limit shareOnXUrl() will apply, worked out the same way it does. */
+/**
+ * The limit shareOnXUrl() will apply, worked out the same way it does.
+ *
+ * 280, less 23 for the link (X counts every URL as 23 whatever it is) and
+ * one for the space in front of it. NO TAIL ALLOWANCE: every post this
+ * file builds names @skulliance inside its call to action, and
+ * shareOnXUrl() appends nothing when the body already carries the
+ * mention. Budgeting for a tail that never arrives cost 13 characters and
+ * pushed the pitch down a rung for no reason.
+ */
 function dropshipShareLimit() {
-	$tail = "\n\n" . (defined('SKULLIANCE_X_HANDLE') ? SKULLIANCE_X_HANDLE : '@skulliance');
-	return 280 - 24 - mb_strlen($tail);
+	return 280 - 24;
 }
 
-function dropshipShareText($facts, $theme, $rounds_word = 'Round') {
+function dropshipShareText($facts, $theme, $rounds_word = 'Round', $slug = '') {
 	$f = $facts;
 	if (!$f['rank']) {
-		return 'Playing ' . $theme . ' on Skulliance. Free weekly squad battler, four soldiers a run, '
-		     . 'and the board wipes every week.';
+		return 'Playing ' . $theme . ' on Skulliance. A squad of four soldiers, one run, and a '
+		     . 'leaderboard that resets every week. Free to play, and your first squad is free too.';
 	}
 
 	$score = (int)$f['score'];
@@ -169,7 +205,9 @@ function dropshipShareText($facts, $theme, $rounds_word = 'Round') {
 	/* A PERSONAL BEST IS ONLY NEWS WHEN THE OVERTAKE ISN'T. Beating your
 	   own score and going past somebody are usually the same run, and
 	   leading with the smaller of the two claims wastes the first line. */
-	$lead = ($f['personal_best'] && $f['passed'] === '') ? 'New personal best: survived' : 'Survived';
+	/* "New personal best" said New twice over; a personal best is new by
+	   definition. Four characters, and this budget is counted in them. */
+	$lead = ($f['personal_best'] && $f['passed'] === '') ? 'Personal best: survived' : 'Survived';
 	$result = $lead . ' to ' . $round . ' ' . $score . ' in ' . $theme . '.';
 
 	if ($f['passed'] !== '') {
@@ -178,7 +216,8 @@ function dropshipShareText($facts, $theme, $rounds_word = 'Round') {
 		         . dropshipOrdinal($f['rank']) . ' of ' . $f['field'] . '.';
 	} elseif ($f['first']) {
 		$result .= $f['clear'] > 0
-			? ' Top of the board, ' . $f['clear'] . ' clear of second.'
+			/* "clear of second" -- of second what else, on a board? */
+			? ' Top of the board, ' . $f['clear'] . ' clear.'
 			: ' Top of the board.';
 	} else {
 		$result .= ' ' . dropshipOrdinal($f['rank']) . ' of ' . $f['field']
@@ -186,23 +225,57 @@ function dropshipShareText($facts, $theme, $rounds_word = 'Round') {
 	}
 
 	/* --- the call ----------------------------------------------------- */
-	/* Addressed to a stranger, not to the board: "come take it" works on
-	   somebody who has never played, where "@fomz get me back" does not. */
-	if ($f['first'])            $call = 'Come take it off me.';
-	elseif ($f['passed'] !== '') $call = "Who's next?";
-	else                        $call = 'Going back for the top spot.';
+	/*
+	 * ONE LINE, AND IT RECRUITS. This had three situational taunts --
+	 * "Come take it off me", "Who's next?", "Going back for the top spot"
+	 * -- which are written at the board. The board is already here. The
+	 * person worth writing to is the stranger who has never played, and
+	 * what they need is an instruction, so the owner replaced all three
+	 * with this.
+	 *
+	 * THE MENTION LIVES HERE, which is why shareOnXUrl() stops appending
+	 * its own: one "@skulliance" that reads as a sentence beats a handle
+	 * dangling under the post, and it buys back 13 characters.
+	 */
+	/* A theme with its own account is NAMED by it -- "play @oculuslounge"
+	   reads as the game's name and tags it in the same breath, where the
+	   name plus a trailing handle would cost more and read as two. */
+	$handle = dropshipThemeHandle($slug);
+	$call = 'Join ' . (defined('SKULLIANCE_X_HANDLE') ? SKULLIANCE_X_HANDLE : '@skulliance')
+	      . ' and play ' . ($handle !== '' ? $handle : $theme) . '.';
 
 	/* --- the pitch ---------------------------------------------------- */
-	/* VERIFIED, not sold: every player really is given four soldiers, and
-	   the four really do make one complete squad -- see
-	   dropship/dropship-grunts.php. A claim in a public post has to be one
-	   somebody can turn up and check. */
-	$long  = 'Four soldiers, one run, and a board that wipes every week. Free to play, '
-	       . 'and your first squad is free too.';
-	$short = 'Free weekly squad battler. Your first squad is free.';
+	/*
+	 * THE OWNER'S WORDING, AND THEN THE SAME THING SHORTER.
+	 *
+	 * His sentence is the first rung. It does not always fit: with a
+	 * personal best, a long theme name and a full standing it came to 288
+	 * against a 243 budget, so a ladder is not optional -- the question is
+	 * only what gets dropped, and it must never be the meaning.
+	 *
+	 * The second rung drops the theme name, which costs nothing: the
+	 * result line already says which game this was and the call says it
+	 * again, so naming it here is the third mention in three sentences.
+	 * That is the rung most posts will actually use.
+	 *
+	 * VERIFIED, NOT SOLD. Every player really is given four soldiers and
+	 * the four really do make one complete squad -- Hagar, Delay, Blood
+	 * Bag and Sektr, Heavy through Base, see dropship/dropship-grunts.php.
+	 * A claim in a public post has to be one somebody can turn up and
+	 * check.
+	 */
+	$free  = 'Free to play, and your first squad is free too.';
+	$rungs = array(
+		$theme . ' entails a squad of four soldiers, one run, and a leaderboard that '
+		       . 'resets every week. ' . $free,
+		'A squad of four soldiers, one run, and a leaderboard that resets every week. ' . $free,
+		'A squad of four, one run, and a leaderboard that resets every week. Free to play.',
+		$free,
+		'',
+	);
 
 	$limit = dropshipShareLimit();
-	foreach (array($long, $short, '') as $pitch) {
+	foreach ($rungs as $pitch) {
 		$parts = array($result);
 		if ($pitch !== '') $parts[] = $pitch;
 		$parts[] = $call;

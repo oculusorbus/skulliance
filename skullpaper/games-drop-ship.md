@@ -55,6 +55,10 @@ The result is the round you reached, where that puts you this week, and either
 the player you went past or the leader you are chasing. It always comes first,
 because that is the part you pressed the button for.
 
+Then what the game is, for whoever is reading it who has never played, and a
+line asking them to join. Oculus Lounge tags its own account; the rest name the
+game in plain text.
+
 Only two people can ever be named in it. Whoever this run overtook, and the
 player at the top. Nobody is named as having beaten you, and no label describes
 another player. If the run passed nobody and beat your own previous score, it
