@@ -138,6 +138,58 @@ function activity_sources($since = '') {
 	);
 }
 
+/**
+ * DROP SHIP, WHICH IS IN A DIFFERENT DATABASE AND HAS NO DATES.
+ *
+ * It cannot be one of the $sources above for two reasons: it lives
+ * behind dropShipDbConnection() rather than the platform's $conn, so no
+ * single statement can reach it; and `results` carries no date column at
+ * all -- a run is filed against a game ROUND, which is why analytics
+ * gives the two specialty games "This Round / All Time" instead of a
+ * trend.
+ *
+ * THE DATE IS ON transactions, NOT results. Drop Ship's logCredit()
+ * writes one credit row per player per completed game, carrying
+ * result_id, and transactions.date_created is real -- it is what the
+ * in-game history renders. Joining back through result_id gives a dated
+ * record of participation without touching results at all.
+ *
+ * SO THE UNIT IS A GAME, NOT A RUN, and the label says so. Runs are not
+ * countable even in principle: logScore() REPLACES a player's row rather
+ * than appending, so only their latest survives.
+ *
+ * KEYED ON discord_id, the only identifier the two databases share --
+ * Drop Ship's user ids are its own. That is the same key the weekly
+ * payout POST uses to find a Skulliance account.
+ *
+ * SILENT WHEN UNREACHABLE. dropShipDbConnection() returns null if the
+ * credentials are missing or the host is down, and this returns an empty
+ * map -- the Activity page then shows everything else rather than
+ * failing. A missing specialty game is a worse page; an error is a dead
+ * one.
+ */
+function activity_dropship($days = 30) {
+	if (!function_exists('dropShipDbConnection')) return array();
+	$ds = dropShipDbConnection();
+	if (!$ds) return array();
+	$days  = max(1, (int)$days);
+	$since = date('Y-m-d', strtotime('-' . $days . ' day'));
+	$res = @$ds->query(
+		"SELECT u.discord_id, COUNT(*) AS cnt
+		   FROM transactions t
+		   INNER JOIN users u ON u.id = t.user_id
+		  WHERE t.result_id > 0 AND t.type = 'credit'
+		    AND t.date_created >= '" . $ds->real_escape_string($since) . "'
+		    AND u.discord_id <> ''
+		  GROUP BY u.discord_id");
+	if (!$res) return array();
+	$out = array();
+	while ($r = $res->fetch_assoc()) {
+		$out[(string)$r['discord_id']] = (int)$r['cnt'];
+	}
+	return $out;
+}
+
 /** Human labels for the sources, for a legend or a tooltip. */
 function activity_labels() {
 	return array(
@@ -146,6 +198,7 @@ function activity_labels() {
 		'racer' => 'Skull Racer', 'obscura' => 'Obscura', 'guardians' => 'Realm Guardians',
 		'raid' => 'Raids', 'boss' => 'Boss Battles', 'monstrocity' => 'Monstrocity',
 		'arena' => 'DHC Arena', 'fighter' => 'Fighters Built',
+		'dropship' => 'Drop Ship Games',
 	);
 }
 
@@ -164,7 +217,11 @@ function activity_totals($conn, $days = 30) {
 	$since = date('Y-m-d', strtotime('-' . $days . ' day'));
 	$src   = activity_sources($since);
 
+	/* 'dropship' is not in $src -- it comes from another database -- but it
+	   has to exist in every row's breakdown or a card would show it for
+	   some players and omit it for others. */
 	$blank = array_fill_keys(array_keys($src), 0);
+	$blank['dropship'] = 0;
 	$rows  = array();
 	foreach ($src as $key => $q) {
 		$res = @$conn->query($q[0]);
@@ -176,6 +233,30 @@ function activity_totals($conn, $days = 30) {
 			$n = (int)$r['cnt'];
 			$rows[$uid]['by'][$key] += $n;
 			$rows[$uid]['total']    += $n * $q[1];
+		}
+	}
+	/*
+	 * DROP SHIP IS MERGED BY discord_id, AFTER the platform sources.
+	 *
+	 * It is the only identifier the two databases share, so the user
+	 * lookup below has to happen first -- and a player who has ONLY
+	 * played Drop Ship has no row yet, which is exactly the person this
+	 * was added for. Their id is found by the same discord_id and a row
+	 * is created for them.
+	 */
+	$ds_counts = function_exists('activity_dropship') ? activity_dropship($days) : array();
+	if ($ds_counts) {
+		$esc = array();
+		foreach (array_keys($ds_counts) as $did) $esc[] = "'" . $conn->real_escape_string($did) . "'";
+		$dr = @$conn->query("SELECT id, discord_id FROM users WHERE discord_id IN (" . implode(',', $esc) . ")");
+		if ($dr) while ($d = $dr->fetch_assoc()) {
+			$uid = (int)$d['id'];
+			$n   = (int)$ds_counts[(string)$d['discord_id']];
+			if ($n <= 0) continue;
+			if (!isset($rows[$uid])) $rows[$uid] = array('by' => $blank, 'total' => 0);
+			$rows[$uid]['by']['dropship'] += $n;
+			/* Weight 5, the ordinary "played something" rate. */
+			$rows[$uid]['total']          += $n * 5;
 		}
 	}
 	if (!$rows) return array();
