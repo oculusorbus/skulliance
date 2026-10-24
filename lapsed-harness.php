@@ -127,6 +127,21 @@ ok(substr_count($src, 'FROM dhc_fighters') <= 1,
 ok(preg_match('~\$al_back\[\(int\)\$x\[.user_id.\]\] = \$x~', $src) === 1,
    'the returns list is not keyed by user id, so the Fighter and login lookups cannot match it');
 
+/*
+ * ONE CLOCK. awarded_at and last_login are both written with MySQL's
+ * NOW(), and this server runs MySQL and PHP on different clocks --
+ * subtracting a stored timestamp from PHP's time() rendered "-1 days
+ * ago" for a member who had returned that morning, and shifts every
+ * row in the lapsed list by the skew. Any age shown on this page is
+ * asked of the database.
+ */
+ok(strpos($src, 'DATEDIFF(NOW(), MIN(awarded_at))') !== false,
+   'the return age is not measured by the database, so it drifts with the PHP/MySQL clock skew');
+ok(strpos($src, 'DATEDIFF(NOW(), last_login)') !== false,
+   'the lapsed age is not measured by the database, so every row can be a day out');
+ok(strpos($src, 'time()') === false,
+   'this page is mixing PHP wall-clock time with MySQL timestamps again');
+
 echo "\nread only\n";
 /* It is a list to work from. Nothing is marked, nothing is sent. */
 foreach (array('INSERT', 'UPDATE ', 'DELETE') as $w) {

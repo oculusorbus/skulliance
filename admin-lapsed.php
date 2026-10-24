@@ -47,7 +47,16 @@ $al_view = (isset($_GET['view']) && $_GET['view'] === 'back') ? 'back' : 'lapsed
  * had to be recorded to measure this.
  */
 $al_back = array();
-$q = @$conn->query("SELECT user_id, COUNT(*) AS traits, MIN(awarded_at) AS back_at
+/*
+ * DAYS COUNTED BY MYSQL, NOT BY PHP. awarded_at is written with MySQL's
+ * NOW(), and this box runs MySQL and PHP on different clocks -- the
+ * first version subtracted one from the other and rendered "-1 days
+ * ago" for somebody who had returned that morning. Anything comparing
+ * a stored timestamp against the current time has to ask the database,
+ * which is the only clock that wrote it.
+ */
+$q = @$conn->query("SELECT user_id, COUNT(*) AS traits, MIN(awarded_at) AS back_at,
+                           DATEDIFF(NOW(), MIN(awarded_at)) AS days_ago
                       FROM dhc_trait_drops WHERE source = 'returngift'
                      GROUP BY user_id ORDER BY back_at DESC");
 if ($q) while ($x = $q->fetch_assoc()) $al_back[(int)$x['user_id']] = $x;
@@ -81,12 +90,13 @@ if ($al_back) {
 $al_n_back = count($al_back);
 $al_n_week = $al_n_built = $al_n_again = 0;
 foreach ($al_back as $uid => $b) {
-	$t = strtotime($b['back_at']);
-	if ($t && $t > time() - 7 * 86400) $al_n_week++;
-	if (!empty($al_built[$uid]))       $al_n_built++;
-	/* last_login is written at most once a day, so "came back on a later
-	   day" is the honest reading of a login newer than the package. */
-	if (isset($al_bu[$uid]) && $t && strtotime($al_bu[$uid]['last_login']) > $t + 86400) $al_n_again++;
+	if ((int)$b['days_ago'] <= 7)  $al_n_week++;
+	if (!empty($al_built[$uid]))   $al_n_built++;
+	/* Both sides of THIS comparison are MySQL timestamps, so the offset
+	   cancels and strtotime is safe here. last_login is written at most
+	   once a day, so "came back on a later day" is the honest reading. */
+	if (isset($al_bu[$uid])
+	    && strtotime($al_bu[$uid]['last_login']) > strtotime($b['back_at']) + 86400) $al_n_again++;
 }
 
 /* Both in the query string so a view can be linked or bookmarked. */
@@ -114,7 +124,12 @@ $al_sort  = (isset($_GET['sort']) && in_array($_GET['sort'], $al_sorts, true))
  * if you ask per row.
  */
 $al_rows = array();
-$al_sql = "SELECT id, username, discord_id, avatar, last_login, date_created
+/* DATEDIFF for the same reason as the returns query: last_login is
+   written with MySQL's NOW() and this box runs the two clocks apart,
+   so subtracting it from PHP's time() is off by the skew -- which at a
+   day boundary is off by a whole day on every row. */
+$al_sql = "SELECT id, username, discord_id, avatar, last_login, date_created,
+                  DATEDIFF(NOW(), last_login) AS gone_days
              FROM users
             WHERE discord_id IS NOT NULL AND discord_id <> ''
               AND last_login IS NOT NULL
@@ -295,8 +310,11 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	<?php foreach ($al_back as $uid => $b):
 		$bu   = isset($al_bu[$uid]) ? $al_bu[$uid] : null;
 		$bt   = strtotime($b['back_at']);
-		$days = $bt ? (int)floor((time() - $bt) / 86400) : 0;
-		$seen = ($bu && $bt && strtotime($bu['last_login']) > $bt + 86400);
+		/* From the database, for the reason in the query's own note.
+		   Clamped anyway: a clock that drifts the other way must not
+		   render a negative. */
+		$days = max(0, (int)$b['days_ago']);
+		$seen = ($bu && strtotime($bu['last_login']) > $bt + 86400);
 	?>
 	<tr>
 		<td>
@@ -311,7 +329,9 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 			</div>
 		</td>
 		<td class="lap-gone">
-			<b><?php echo $days === 0 ? 'today' : number_format($days) . ' days ago'; ?></b>
+			<b><?php
+				echo $days === 0 ? 'today'
+				   : ($days === 1 ? 'yesterday' : number_format($days) . ' days ago'); ?></b>
 			<span><?php echo htmlspecialchars(date('j M Y', $bt)); ?></span>
 		</td>
 		<td class="lap-gone"><b><?php echo (int)$b['traits']; ?></b> traits</td>
@@ -372,7 +392,7 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	</tr></thead>
 	<tbody>
 	<?php foreach ($al_rows as $uid => $u):
-		$gone = (int)floor((time() - strtotime($u['last_login'])) / 86400);
+		$gone = max(0, (int)$u['gone_days']);
 		$did  = isset($al_did[$uid]) ? $al_did[$uid] : null;
 		$bits = array();
 		if ($did) {
