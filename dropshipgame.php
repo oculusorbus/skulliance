@@ -208,6 +208,9 @@ $ds_short = $ds_name !== ''
  * and nothing else, so nothing upstream sets a background -- without
  * this the whole thing renders as pale grey text on white.
  */
+/* BOTH, not just body: overflow-x on body alone is widely unreliable,
+   and this page has a full-bleed element in the middle of it. */
+html { overflow-x: hidden; }
 body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
   Cantarell, sans-serif; overflow-x: hidden; -webkit-font-smoothing: antialiased; }
@@ -266,8 +269,7 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
  * version was a plain overflow-x box, so it sat still with a scrollbar
  * under it and looked like a bug.
  */
-.dsg-strip { width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
-  overflow: hidden; padding: 14px 0;
+.dsg-strip { overflow: hidden; padding: 14px 0;
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%);
           mask-image: linear-gradient(to right, transparent 0, #000 6%, #000 94%, transparent 100%); }
 .dsg-strip + .dsg-strip { padding-top: 0; }
@@ -275,6 +277,9 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
    above and gives it all back below. */
 .dsg-sec-tight { margin-bottom: 0; }
 .dsg-sec-tight + .dsg-strip { padding-top: 4px; }
+/* The column reopens after the full-bleed rows, so it must not add the
+   top padding it already spent above them. */
+.dsg-wrap-resume { padding-top: 0; }
 .dsg-track { display: flex; align-items: flex-start; gap: 14px; width: max-content;
   animation: dsg-scroll 70s linear infinite; will-change: transform; }
 .dsg-track.rev { animation-direction: reverse; animation-duration: 84s; }
@@ -309,6 +314,14 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
   color: #00c8a0; width: 52px; flex: 0 0 auto; }
 .dsg-kit-item { display: flex; align-items: center; gap: 7px; }
 .dsg-kit-item img { width: 40px; height: 40px; object-fit: contain; }
+@media (max-width: 520px) {
+  /* The label stops holding a column of its own and the icons shrink,
+     so Armor fits on one line instead of stranding Base on a second. */
+  .dsg-kit-row { gap: 10px; }
+  .dsg-kit-label { width: auto; flex-basis: 100%; }
+  .dsg-kit-item img { width: 30px; height: 30px; }
+  .dsg-kit-item em { font-size: .76rem; }
+}
 .dsg-kit-item em { font-style: normal; font-size: .82rem; color: #c6d4dd; }
 
 /* A shelf heading wears its own tab icon. */
@@ -433,6 +446,15 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 	 */
 	$ds_rows = array_chunk($ds_art, max(1, (int)ceil(count($ds_art) / 2)));
 	?>
+	<?php /* OUT OF THE WRAPPER, NOT FAKING IT. These were full bleed via
+	         width:100vw and a negative margin, and 100vw INCLUDES the
+	         vertical scrollbar -- so on any screen with one the strip was
+	         a dozen pixels wider than the page and the whole document
+	         scrolled sideways. body{overflow-x:hidden} did not save it,
+	         because that rule is unreliable unless html carries it too.
+	         Closing the centred column and reopening it after costs one
+	         pair of tags and cannot overflow by construction. */ ?>
+	</div>
 	<?php foreach ($ds_rows as $ri => $ds_row): if (!$ds_row) continue;
 	      $ds_passes = max(2, 2 * (int)ceil(16 / max(1, count($ds_row)))); ?>
 	<div class="dsg-strip">
@@ -453,6 +475,7 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 		</div>
 	</div>
 	<?php endforeach; ?>
+	<div class="dsg-wrap dsg-wrap-resume">
 	<?php endif; ?>
 
 	<section class="dsg-sec" id="dsg-how">

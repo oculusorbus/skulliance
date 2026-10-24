@@ -457,6 +457,33 @@ ok(strpos($lib4, '($round + $b) % $n_b') !== false,
 ok(strpos($lib4, '$taken[$pick[\'url\']]') !== false,
    'the rotation can hand back the same soldier twice');
 
+/*
+ * NO FAKE FULL BLEED. The marquee rows were width:100vw with a negative
+ * margin, and 100vw INCLUDES the vertical scrollbar -- so on any screen
+ * that has one, the strip is a dozen pixels wider than the page and the
+ * whole document scrolls sideways. body{overflow-x:hidden} is the usual
+ * patch and is unreliable without html carrying it too.
+ *
+ * Checked in the source because I cannot check it in a browser: a
+ * control render of guardiansgame.php, which is known good on a phone,
+ * clips exactly the same way at 390px, so the local headless harness is
+ * laying out wider than the window and cropping. A screenshot that
+ * cannot tell a good page from a bad one is not evidence.
+ */
+$pg3 = harness_strip_comments(file_get_contents(__DIR__ . '/dropshipgame.php'));
+ok(strpos($pg3, '100vw') === false,
+   'the page uses 100vw again, which overflows by the width of the scrollbar');
+ok(strpos($pg3, 'calc(50% - 50vw)') === false,
+   'the negative-margin full-bleed trick is back');
+ok(strpos($pg3, 'html { overflow-x: hidden; }') !== false,
+   'overflow-x is on body alone, which is the half that does not work');
+/* The strip has to sit OUTSIDE the centred column, which means the
+   column closes before it and reopens after. */
+ok(substr_count($pg3, 'class="dsg-wrap') === 2,
+   'the centred column is not reopened after the full-bleed rows, so either the strip is '
+ . 'back inside it or the markup is unbalanced');
+ok(strpos($pg3, 'dsg-wrap-resume') !== false, 'the reopened column has no class to kill its top padding');
+
 /* And the library really groups, rather than striding. */
 $lib2 = harness_strip_comments(file_get_contents(__DIR__ . '/lib/dropship-public.php'));
 ok(strpos($lib2, "floor(\$i * \$n / \$take)") === false,

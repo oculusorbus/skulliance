@@ -19,11 +19,21 @@
  * this protects against -- a commented-out gate like a slashed-out
  * admin_require() -- is always line-opening.
  *
+ * ONE EXCEPTION, AND IT IS EVERYWHERE: `<?php /* ... *\/ ?>`, which is how
+ * every template on this platform comments its markup. The opener is not
+ * first on its line -- `<?php ` is -- so these survived, and a harness that
+ * greps stripped source then matches its own explanation. That cost three
+ * false passes and one false FAIL in a single session: a check asserting
+ * the page no longer uses 100vw found the phrase in the comment saying so.
+ *
+ * Still safe against the MIME wildcard, because the opener must be preceded
+ * by `<?php` and nothing else: `accept="image/*"` cannot reach it.
+ *
  * The line-comment rule keeps its lookbehind, so a URL's double slash and a
  * path like image/png are left alone.
  */
 function harness_strip_comments($src) {
-	$src = preg_replace('~^[ \t]*/\*.*?\*/~ms', '', $src);
+	$src = preg_replace('~^[ \t]*(?:<\?php\s+)?/\*.*?\*/~ms', '', $src);
 	$src = preg_replace('~(?<![:/])//[^\n]*~', '', $src);
 	return $src;
 }
