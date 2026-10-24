@@ -137,6 +137,58 @@ if (!empty($_SESSION['userData']['discord_id'])) {
 			}
 		}
 	}
+
+	/*
+	 * WELCOME BACK. Somebody returning after a month away gets a
+	 * background, a torso and a head -- exactly the three slots a legal
+	 * Fighter needs -- so there is something to DO on the page they
+	 * land on rather than a dashboard of things they have forgotten.
+	 *
+	 * NOT TIED TO BEING INVITED. The owner's lapsed panel is for
+	 * deciding who to write to personally; this fires for everyone who
+	 * comes back on their own, which is most of them. The admin preview
+	 * and this grant are the same calculation, so a DM promising a
+	 * package cannot disagree with what arrives.
+	 *
+	 * THE CHEAP TEST IS INLINE AND FIRST. return-gift.php pulls in
+	 * dhcfighters-lib.php, and this file is included on every signed-in
+	 * page load on the platform -- loading the Fighter library for the
+	 * 99% of arrivals who were here yesterday is a cost for nothing.
+	 * The date arithmetic below is free and false almost always.
+	 *
+	 * THE 30 HERE MUST MATCH RETURN_GIFT_DAYS, and cannot reference it:
+	 * the constant lives in the file this gate exists to avoid loading.
+	 * A duplicated number that silently disables a feature is the worst
+	 * kind, so lapsed-harness.php reads both and fails if they drift --
+	 * lower the constant without lowering this and nobody qualifies,
+	 * with nothing in any log to say why.
+	 */
+	if (!empty($_SESSION['userData']['user_id']) && !empty($skl_prev_login)
+	    && is_file(__DIR__ . '/lib/return-gift.php')) {
+		$skl_was = strtotime((string)$skl_prev_login);
+		if ($skl_was && (time() - $skl_was) >= 30 * 86400) {
+			/* Buffered: this reaches the Discord notifier and the
+			   credentials chain behind it, and skulliance.php is included
+			   by AJAX endpoints where a stray warning is broken JSON. */
+			ob_start();
+			try {
+				require_once __DIR__ . '/lib/return-gift.php';
+				if (return_gift_due($conn, (int)$_SESSION['userData']['user_id'], $skl_prev_login)) {
+					return_gift_grant($conn, (int)$_SESSION['userData']['user_id'],
+					                  $_SESSION['userData']['discord_id']);
+				}
+			} catch (Throwable $skl_e) {
+				/* A present is never worth a white page. This file is on
+				   every signed-in request on the platform, so anything
+				   thrown in here would take out the Launchpad, the games
+				   and every AJAX endpoint at once. */
+				error_log('return-gift: ' . $skl_e->getMessage());
+			}
+			/* Outside the catch: the buffer has to close on both paths or
+			   the rest of the page is swallowed. */
+			ob_end_clean();
+		}
+	}
 }
 
 // Realm Location Upgrades

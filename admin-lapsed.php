@@ -28,6 +28,9 @@ require_once __DIR__ . '/admin-lib.php';
 admin_require();   // before any output, and before header.php
 require_once __DIR__ . '/avatar-lib.php';
 require_once __DIR__ . '/activity-sources-lib.php';
+/* For the gift column. Pulls in dhcfighters-lib.php, which is fine on an
+   admin page nobody loads in a loop. */
+require_once __DIR__ . '/lib/return-gift.php';
 
 /* Both in the query string so a view can be linked or bookmarked. */
 $al_days = isset($_GET['days']) ? (int)$_GET['days'] : 90;
@@ -135,6 +138,14 @@ admin_chrome('lapsed');
 .lap-has { font-size:.74rem; white-space:nowrap; }
 .lap-has b { color:#00c8a0; font-variant-numeric:tabular-nums; }
 .lap-has .none { color:#4f7488; }
+/* The gift thumbnail. The art is transparent PNG over nothing, so it
+   needs its own ground or it reads as a hole in the row. flexbox.css
+   centres and teals every bare <a>, which would drag the picture off
+   its cell -- block display pins it back. */
+.lap-gift { width:60px; }
+.lap-gift a { display:block; width:52px; line-height:0; }
+.lap-gift img { width:52px; height:52px; object-fit:cover; border-radius:4px;
+                background:#0d2030; display:block; }
 .lap-warm { color:#d69e2e; font-weight:bold; }
 </style>
 
@@ -175,7 +186,7 @@ admin_chrome('lapsed');
 <table class="lap-t">
 	<thead><tr>
 		<th>Member</th><th>Last seen</th><th>Played</th><th>What they played</th>
-		<th>Still waiting</th>
+		<th>Still waiting</th><th>Waiting for them</th>
 	</tr></thead>
 	<tbody>
 	<?php foreach ($al_rows as $uid => $u):
@@ -224,6 +235,31 @@ admin_chrome('lapsed');
 		<td class="lap-has"><?php
 			echo $has ? implode(' · ', $has) : '<span class="none">nothing</span>';
 		?></td>
+		<?php /*
+		 * THE PACKAGE THEY WOULD WALK INTO, rendered as the Fighter it
+		 * makes rather than three trait names, because the picture is
+		 * the thing that goes in the DM.
+		 *
+		 * LAZY AND VIA AN ENDPOINT, not dhcf_render_fighter() inline.
+		 * Compositing a stack of thousand-pixel layers per row would
+		 * make a four-hundred-row list take minutes to open; this way
+		 * only the rows actually scrolled to are ever built, once each.
+		 *
+		 * THE LINK IS THE PUBLIC URL AND THE IMG IS THE ADMIN ONE. The
+		 * endpoint is behind the admin gate, so pasting its address
+		 * into a DM would show the recipient "Not found." Loading the
+		 * img is what causes the render to exist; the href is where it
+		 * then lives, which is the address to paste. Right-click the
+		 * picture, Copy Image Address, and the redirect means you get
+		 * the public one either way.
+		 */ ?>
+		<td class="lap-gift">
+			<a href="<?php echo htmlspecialchars(return_gift_url($u['discord_id']), ENT_QUOTES); ?>"
+			   target="_blank" rel="noopener" title="Open the full-size picture to paste into a DM">
+				<img loading="lazy" alt="welcome-back package"
+				     src="return-gift-card.php?d=<?php echo htmlspecialchars($u['discord_id'], ENT_QUOTES); ?>">
+			</a>
+		</td>
 	</tr>
 	<?php endforeach; ?>
 	</tbody>

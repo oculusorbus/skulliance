@@ -118,6 +118,26 @@ it costs three assembled Fighters, so a category it held hostage would be a
 category you needed Fighters to earn and Fighters to spend. It pays a wildcard,
 banded by how much stronger the Crew you beat was.
 
+### Coming back after a month away
+
+Signing in after **30 days or more** away hands over three traits at once: a
+background, a torso and a head. That is exactly the minimum a legal Fighter
+needs, so a returning player can build one on the page they land on rather than
+starting from an empty tray.
+
+It arrives the usual way, as three reveals and three Discord announcements, and
+the traits are ordinary stock that goes into the same inventory as everything
+else. They are drawn from the **common and uncommon** tiers only. A present for
+turning up must not out-rank what people earned by playing.
+
+The package is **the same three traits every time** for a given member, worked
+out from their Discord ID rather than rolled and stored. Nothing is reserved and
+nothing expires, so the welcome-back picture in an invitation still matches what
+arrives weeks later.
+
+**Once ever**, not once per absence, so the window cannot be farmed by going
+quiet on purpose.
+
 ### Raids pay both sides
 
 Raids are the only drop source that is not a solo game — the trait comes out of
