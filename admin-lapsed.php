@@ -144,15 +144,30 @@ admin_chrome('lapsed');
    its cell -- block display pins it back. */
 .lap-gift { width:60px; }
 .lap-gift a { display:block; width:52px; line-height:0; }
-.lap-gift img { width:52px; height:52px; object-fit:cover; border-radius:4px;
-                background:#0d2030; display:block; }
+/* No frame of its own either: the art already fills the square, so a
+   background only shows as a rim when the aspect is not exactly 1:1. */
+td.lap-gift img { width:52px; height:52px; object-fit:cover; display:block;
+                  border:0; background:none; border-radius:3px; }
 .lap-warm { color:#d69e2e; font-weight:bold; }
 
 /* ---- the package modal ---------------------------------------- *
    Its own element rather than a link to the PNG, because the job is
    not "look at a picture" -- it is read the traits, copy the link,
    write the DM. All three in one place.                            */
-.lap-giftbtn { padding:0; border:0; background:none; cursor:zoom-in; line-height:0; display:block; }
+/* NEUTRALISED EXPLICITLY, NOT LEFT TO THE DEFAULTS. A <button> carries
+   a background, a border and padding from the UA stylesheet before any
+   of this platform's five stylesheets get a say, and the owner saw a
+   bright teal frame around every thumbnail that none of them reproduce
+   locally. So every property that can draw a box is set to nothing
+   here, and the selector is specific enough to outrank a bare
+   `button` rule from anywhere. */
+td.lap-gift button.lap-giftbtn {
+  display:block; padding:0; margin:0; border:0; outline:0;
+  background:none; background-color:transparent; background-image:none;
+  box-shadow:none; border-radius:0; -webkit-appearance:none; appearance:none;
+  cursor:zoom-in; line-height:0; font:inherit; color:inherit; width:auto;
+}
+td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outline-offset:2px; }
 .lap-mw { position:fixed; inset:0; z-index:9000; display:flex; align-items:center;
   justify-content:center; padding:20px; background:rgba(3,10,16,.86); }
 .lap-mw[hidden] { display:none !important; }
