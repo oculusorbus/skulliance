@@ -423,9 +423,46 @@ ok(count($ALL_ADMIN) >= 8,
    'only ' . count($ALL_ADMIN) . ' admin pages found; the sweep below is not covering the panel');
 
 $tabsNow = admin_tabs();
+/*
+ * TWO KINDS OF ADMIN FILE, AND ONLY ONE OF THEM DRAWS ANYTHING.
+ *
+ * admin-guild-refresh.php takes a POST, does one thing and redirects.
+ * It has no layout to open and must not have one -- a chrome call in
+ * front of a Location header is a page of markup where a redirect
+ * should be. Swept in as a panel page it was told off for exactly the
+ * thing that would be a bug if it did it.
+ *
+ * Told apart STRUCTURALLY rather than by a name list, so the next
+ * action endpoint is classified the day it exists and a real panel
+ * cannot opt out of the layout checks by being added to an array: an
+ * endpoint is a file that redirects and never pulls in header.php.
+ * The rights check below applies to both -- that is the half that
+ * matters most on an endpoint, since nothing it does is visible.
+ */
+$isEndpoint = array();
+foreach ($ALL_ADMIN as $apName => $apBody) {
+	$redirects = (strpos($apBody, "header('Location:") !== false
+	           || strpos($apBody, 'header("Location:') !== false);
+	$draws     = (strpos($apBody, "header.php'") !== false
+	           || strpos($apBody, 'header.php"') !== false);
+	$isEndpoint[$apName] = ($redirects && !$draws);
+}
+ok(count(array_filter($isEndpoint)) < count($ALL_ADMIN),
+   'every admin file now looks like a redirect endpoint, so the layout checks are testing nothing');
+
 foreach ($ALL_ADMIN as $apName => $apBody) {
 	ok(strpos($apBody, 'admin_require()') !== false,
 	   "$apName does not call admin_require(), so its rights check is its own");
+	if ($isEndpoint[$apName]) {
+		/* An endpoint must do its work behind the gate, not before it. */
+		$g = strpos($apBody, 'admin_require()');
+		$l = strpos($apBody, 'Location:');
+		ok($g !== false && $l !== false && $g < $l,
+		   "$apName redirects before it checks rights");
+		ok(strpos($apBody, 'admin_chrome(') === false,
+		   "$apName is a redirect endpoint but opens the admin layout, so it renders a page instead");
+		continue;
+	}
 	ok(strpos($apBody, 'admin_chrome(') !== false, "$apName does not open the admin layout");
 	/*
 	 * AND IT MUST HIGHLIGHT ITSELF. A page may legitimately borrow another's

@@ -31,6 +31,15 @@ require_once __DIR__ . '/activity-sources-lib.php';
 /* For the gift column. Pulls in dhcfighters-lib.php, which is fine on an
    admin page nobody loads in a loop. */
 require_once __DIR__ . '/lib/return-gift.php';
+/* Who can still be reached. Read from a cache file; nothing here calls
+   Discord, which is why refreshing it is a separate endpoint. */
+require_once __DIR__ . '/lib/guild-members.php';
+$al_guild = guild_members_load();
+$al_gmsg  = null;
+if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['lap_guild_msg'])) {
+	$al_gmsg = $_SESSION['lap_guild_msg'];
+	unset($_SESSION['lap_guild_msg']);     /* shown once, not on every reload */
+}
 
 /*
  * TWO VIEWS OFF ONE PAGE. "Who should I write to" and "did writing to
@@ -344,6 +353,15 @@ admin_chrome('lapsed');
 td.lap-gift img { width:52px; height:52px; object-fit:cover; display:block;
                   border:0; background:none; border-radius:3px; }
 .lap-warm { color:#d69e2e; font-weight:bold; }
+.lap-dc { font-size:.72rem; white-space:nowrap; }
+.lap-in { color:#00c8a0; }
+.lap-out { color:#c2566a; }
+.lap-guild { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:0 0 16px;
+  font-size:.76rem; color:#8fa8b8; }
+.lap-guild b { color:#e8eaed; }
+.lap-gok { color:#00c8a0; }
+.lap-gbad { color:#d69e2e; }
+.lap-guild .lap-mc { margin-top:0; }
 
 /* ---- the package modal ---------------------------------------- *
    Its own element rather than a link to the PNG, because the job is
@@ -525,13 +543,30 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	</div>
 </div>
 
+<?php /* THE ROSTER, and how old it is. Membership drifts slowly, so a
+         day-old answer is fine and a six-month-old one is not. */ ?>
+<form class="lap-guild" method="post" action="admin-guild-refresh.php">
+	<?php if ($al_gmsg): ?>
+		<span class="<?php echo $al_gmsg[0] === 'ok' ? 'lap-gok' : 'lap-gbad'; ?>"><?php
+			echo htmlspecialchars($al_gmsg[1], ENT_QUOTES); ?></span>
+	<?php elseif (!$al_guild): ?>
+		<span class="lap-gbad">Discord membership has never been read, so every row says unknown.</span>
+	<?php else: ?>
+		<span><b><?php echo number_format((int)$al_guild['count']); ?></b> in the server,
+		read <?php echo guild_members_stale($al_guild)
+			? '<b class="lap-gbad">' . htmlspecialchars(date('j M', (int)$al_guild['at'])) . '</b>'
+			: htmlspecialchars(date('j M, H:i', (int)$al_guild['at'])); ?>.</span>
+	<?php endif; ?>
+	<button type="submit" class="lap-mc lap-mc2">Refresh from Discord</button>
+</form>
+
 <?php if (!$al_rows): ?>
 <p style="color:#8fa8b8">Nobody has been away that long.</p>
 <?php else: ?>
 <table class="lap-t">
 	<thead><tr>
 		<th>Member</th><th>Last seen</th><th>Played</th><th>What they played</th>
-		<th>Still waiting</th><th>Waiting for them</th>
+		<th>Still waiting</th><th>Discord</th><th>Waiting for them</th>
 	</tr></thead>
 	<tbody>
 	<?php foreach ($al_rows as $uid => $u):
@@ -598,6 +633,20 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		 * picture, Copy Image Address, and the redirect means you get
 		 * the public one either way.
 		 */ ?>
+		<?php /* CAN THEY EVEN BE REACHED. A DM to somebody who has left
+		         the server is refused outright -- Discord answers "send a
+		         friend request first", because you no longer share a
+		         guild. No point writing the message.
+
+		         THREE STATES, NOT TWO. With no cache the honest answer is
+		         "unknown", and rendering that as "left" would write off
+		         the entire list on a cache that was never built. */ ?>
+		<td class="lap-dc"><?php
+			$in = guild_member_in($al_guild, $u['discord_id']);
+			if ($in === true)       echo '<span class="lap-in">in server</span>';
+			elseif ($in === false)  echo '<span class="lap-out">left</span>';
+			else                    echo '<span class="none">unknown</span>';
+		?></td>
 		<?php
 			/* Derived once per row: return_gift_url() calls the same
 			   derivation internally, so asking twice doubles the hashing
