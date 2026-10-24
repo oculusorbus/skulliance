@@ -262,6 +262,7 @@ a{color:var(--ix-accent)}
 .ix-second-cta svg{width:15px;height:15px;flex:0 0 auto;fill:currentColor;
   position:relative;top:1px}
 /* Why the second button did nothing for them, when it did nothing. */
+.ix-xwhy{display:block;margin-top:5px;font-size:12px;color:#b89a5e;font-family:ui-monospace,Menlo,monospace}
 .ix-xnote{margin:0 0 18px;padding:11px 14px;border:1px solid rgba(214,158,46,.35);
   background:rgba(214,158,46,.07);color:#e0c07a;font-size:14px;border-radius:8px;max-width:620px}
 
@@ -408,7 +409,14 @@ $ix_button = function () use ($ix_oauth, $ix_signed_in, $e, $ix_xnote, $ix_xsaid
 	   one page reads as two different problems. */
 	static $noted = false;
 	if (!$noted && $ix_xnote !== '' && isset($ix_xsaid[$ix_xnote])) {
-		echo '<p class="ix-xnote">' . $e($ix_xsaid[$ix_xnote]) . '</p>';
+		/* X'S OWN WORDS, when it gave any. Three rounds of this were
+		   spent guessing at a status code that X had already sent and
+		   nobody could see without an SSH session. Escaped on the way
+		   out -- it arrives in a query string. */
+		$why = isset($_GET['xw']) ? substr((string)$_GET['xw'], 0, 120) : '';
+		echo '<p class="ix-xnote">' . $e($ix_xsaid[$ix_xnote])
+		   . ($why !== '' ? ' <span class="ix-xwhy">X said: ' . $e($why) . '</span>' : '')
+		   . '</p>';
 		$noted = true;
 	}
 	echo '<div class="ix-act">';

@@ -37,6 +37,21 @@ if (!defined('X_TOKEN_URL'))     define('X_TOKEN_URL',     'https://api.x.com/2/
 if (!defined('X_ME_URL'))        define('X_ME_URL',        'https://api.x.com/2/users/me');
 
 /**
+ * The HTTP status of the last call out to X, and a short reason.
+ *
+ * SO THE PAGE CAN SAY IT. Three rounds of "something upstream broke"
+ * were spent guessing -- project enrolment, scopes, access level --
+ * when X had already answered in a number nobody could see without SSH
+ * and a log hunt. The status is not sensitive: the secret goes up in a
+ * header and never comes back.
+ */
+function x_oauth_last($set = null) {
+	static $last = '';
+	if ($set !== null) $last = (string)$set;
+	return $last;
+}
+
+/**
  * Client id and secret, or null when the credentials are not installed.
  *
  * Read INSIDE the function. Every credentials file on this platform is
@@ -185,13 +200,23 @@ function x_oauth_exchange($code, $verifier, $redirect_uri) {
 	$code_http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
 	$err = curl_error($ch);
 	curl_close($ch);
-	if ($body === false) { error_log('x-oauth: token request failed -- ' . $err); return ''; }
+	if ($body === false) {
+		x_oauth_last('curl: ' . $err);
+		error_log('x-oauth: token request failed -- ' . $err);
+		return '';
+	}
 	$j = json_decode((string)$body, true);
 	if (!is_array($j) || empty($j['access_token'])) {
 		/* The body carries X's reason and no secret of ours -- the secret
 		   went up in a header, not back down. Worth logging verbatim:
 		   this step fails on a redirect_uri mismatch by one character. */
-		error_log('x-oauth: token exchange HTTP ' . $code_http . ' -- ' . substr((string)$body, 0, 300));
+		$why = '';
+		if (is_array($j)) {
+			if (!empty($j['error_description'])) $why = (string)$j['error_description'];
+			elseif (!empty($j['error']))         $why = (string)$j['error'];
+		}
+		x_oauth_last('HTTP ' . $code_http . ($why !== '' ? ': ' . $why : ''));
+		error_log('x-oauth: token exchange HTTP ' . $code_http . ' -- ' . substr((string)$body, 0, 400));
 		return '';
 	}
 	return (string)$j['access_token'];
@@ -216,10 +241,25 @@ function x_oauth_me($access_token) {
 	$http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
 	$err  = curl_error($ch);
 	curl_close($ch);
-	if ($body === false) { error_log('x-oauth: users/me failed -- ' . $err); return null; }
+	if ($body === false) {
+		x_oauth_last('curl: ' . $err);
+		error_log('x-oauth: users/me failed -- ' . $err);
+		return null;
+	}
 	$j = json_decode((string)$body, true);
 	if (!is_array($j) || empty($j['data']['id'])) {
-		error_log('x-oauth: users/me HTTP ' . $http . ' -- ' . substr((string)$body, 0, 300));
+		/* X names its own faults in the body -- title, detail, or an
+		   errors array. Carried to the page so the next attempt is a
+		   diagnosis rather than another guess. */
+		$why = '';
+		if (is_array($j)) {
+			if (!empty($j['title']))             $why = (string)$j['title'];
+			elseif (!empty($j['error']))         $why = (string)$j['error'];
+			elseif (!empty($j['errors'][0]['message'])) $why = (string)$j['errors'][0]['message'];
+			elseif (!empty($j['detail']))        $why = (string)$j['detail'];
+		}
+		x_oauth_last('HTTP ' . $http . ($why !== '' ? ': ' . $why : ''));
+		error_log('x-oauth: users/me HTTP ' . $http . ' -- ' . substr((string)$body, 0, 400));
 		return null;
 	}
 	$d = $j['data'];

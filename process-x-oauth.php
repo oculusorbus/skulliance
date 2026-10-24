@@ -57,10 +57,14 @@ include 'db.php';
 require_once __DIR__ . '/lib/x-oauth.php';
 
 /** Leave, with a short reason for the destination page to render. */
-function xcb_go($where, $note = '') {
+function xcb_go($where, $note = '', $why = '') {
 	while (ob_get_level() > 0) ob_end_clean();
 	$sep = (strpos($where, '?') === false) ? '?' : '&';
-	header('Location: ' . $where . ($note !== '' ? $sep . 'x=' . rawurlencode($note) : ''));
+	$q = ($note !== '') ? $sep . 'x=' . rawurlencode($note) : '';
+	/* X's own words, carried through so the page can show them. Capped
+	   and escaped on arrival; it is a status line, not markup. */
+	if ($why !== '') $q .= ($q === '' ? $sep : '&') . 'xw=' . rawurlencode(substr($why, 0, 120));
+	header('Location: ' . $where . $q);
 	exit;
 }
 
@@ -92,10 +96,10 @@ $back = ($flow['mode'] === 'connect') ? 'wallets.php' : 'index.php';
 if (!x_oauth_config())      xcb_go($back, 'unavailable');
 
 $token = x_oauth_exchange($code, $flow['verifier'], $flow['uri']);
-if ($token === '')          xcb_go($back, 'notoken');
+if ($token === '')          xcb_go($back, 'notoken', x_oauth_last());
 
 $me = x_oauth_me($token);
-if (!$me)                   xcb_go($back, 'noprofile');
+if (!$me)                   xcb_go($back, 'noprofile', x_oauth_last());
 
 $x_id     = $conn->real_escape_string($me['id']);
 $x_handle = $conn->real_escape_string($me['username']);

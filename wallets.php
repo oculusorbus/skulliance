@@ -74,6 +74,11 @@ $wx_said = array(
 							<strong>X account</strong><br>
 							<?php if ($wx_note !== '' && isset($wx_said[$wx_note])): ?>
 								<span style="color:#00c8a0;font-size:.85rem"><?php echo htmlspecialchars($wx_said[$wx_note]); ?></span><br>
+								<?php /* What X actually said, when it said anything. */
+								$wx_why = isset($_GET['xw']) ? substr((string)$_GET['xw'], 0, 120) : '';
+								if ($wx_why !== ''): ?>
+								<span style="color:#b89a5e;font-size:.76rem;font-family:ui-monospace,Menlo,monospace">X said: <?php echo htmlspecialchars($wx_why); ?></span><br>
+								<?php endif; ?>
 							<?php endif; ?>
 							<?php if ($wx_handle !== ''): ?>
 								Connected as <strong>@<?php echo htmlspecialchars($wx_handle); ?></strong>.
