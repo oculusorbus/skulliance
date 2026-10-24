@@ -1,11 +1,30 @@
 <?php
+/*
+ * NOTHING ON THIS PAGE MAY PRINT, AND ONE THING DID.
+ *
+ * This opened with print_r($payload) -- left over from building the
+ * flow -- and $payload is the Discord token exchange, which for a
+ * confidential client carries client_secret. Three lines above it,
+ * display_errors was forced ON. So the credential was written into the
+ * body of the OAuth callback on every single login.
+ *
+ * It was latent rather than live: the page ends in a header() redirect,
+ * so any output at all would have broken that too, and login works --
+ * which means output_buffering is on in php.ini and the body was being
+ * discarded. That is not a defence. It is one dropdown in cPanel away
+ * from printing a client secret to every player who signs in, and the
+ * same flip breaks login in the same instant, so the symptom that would
+ * alert anybody arrives at the same moment as the disclosure.
+ *
+ * The buffer is now this file's own rather than the server's, every
+ * error goes to the log instead of the page, and the buffer is thrown
+ * away before the redirect.
+ */
+ob_start();
 include 'credentials/process_oauth_credentials.php';
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
-
-print_r($payload);
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL);          /* still reported -- to error_log, not to the page */
 
 $payload_string = http_build_query($payload);
 $discord_token_url = "https://discordapp.com/api/oauth2/token";
@@ -23,7 +42,10 @@ curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 $result = curl_exec($ch);
 
 if(!$result){
-    echo curl_error($ch);
+    /* LOGGED, NOT ECHOED. A curl error here lands mid-callback and
+       would both break the redirect below and show a visitor the
+       innards of the token exchange. */
+    error_log('process-oauth: token exchange failed -- ' . curl_error($ch));
 }
 
 $result = json_decode($result,true);
@@ -198,5 +220,9 @@ checkUser($conn);
 // Land on the Launchpad, not profile.php. A profile page is what you look at
 // when you already know your way around; the first thing after login should
 // be what the platform actually offers.
+/* Anything that leaked into the buffer goes in the bin, so the redirect
+   cannot be defeated by a stray notice from anywhere in this file or
+   the ones it includes. */
+while (ob_get_level() > 0) ob_end_clean();
 header("location: launchpad.php");
 exit();

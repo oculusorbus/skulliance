@@ -743,7 +743,10 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 							$message .= "Bulk asset info could not be retrieved after ".$max_attempts." attempts for stake address: https://pool.pm/".$address." \r\n";
 							$failed_addresses[] = $address;
 							echo $message;
-							print_r($tokenresponse);
+							/* LOGGED, NOT DUMPED. This is a raw Koios reply and a
+							   player is looking at it. The message above already
+							   says what went wrong in words. */
+							error_log('verify: bulk asset info failed -- ' . print_r($tokenresponse, true));
 							sendDM("772831523899965440", $message);
 							exit();
 						}
@@ -795,7 +798,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 						$message .= "There was no response data for stake address: https://pool.pm/".$address." (HTTP ".$http_code.")\r\n";
 						$failed_addresses[] = $address;
 						echo $message;
-						print_r($response);
+						error_log('verify: no response data -- ' . print_r($response, true));
 						sendDM("772831523899965440", $message);
 						exit();
 					}
@@ -804,7 +807,7 @@ function verifyNFTs($conn, $addresses, $policies, $asset_ids, $nft_owners=array(
 					$message .= "There was no response after ".$max_attempts." attempts for stake address: https://pool.pm/".$address." \r\n";
 					$failed_addresses[] = $address;
 					echo $message;
-					print_r($response);
+					error_log('verify: no response after retries -- ' . print_r($response, true));
 					sendDM("772831523899965440", $message);
 					exit();
 				}

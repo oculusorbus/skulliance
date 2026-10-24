@@ -53,3 +53,9 @@ images/dhc-fighters/
 # untracked.
 dropship/sounds/
 dropship/images/
+
+# Secrets. Untracked was never the same as ignored: one `git add -A`
+# from anybody who has these locally commits every credential on the
+# platform, which is how a stray mp3 got in and broke git pull on the
+# live server.
+credentials/
