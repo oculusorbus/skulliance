@@ -30,6 +30,28 @@
  * has already happened twice.
  */
 
+/*
+ * OFF, AND NOT BECAUSE ANYTHING HERE IS BROKEN.
+ *
+ * The whole flow works: authorize, consent, code exchange, a valid
+ * token. What fails is the one call that says WHO signed in.
+ * GET /2/users/me is a v2 data endpoint, and since X retired the free
+ * tier those answer 403 "Client Forbidden / client-not-enrolled" until
+ * the developer account is enrolled in pay-per-use -- a payment method
+ * on file -- even with the app correctly attached to a Project.
+ *
+ * The OAuth endpoints themselves stayed free, which is the trap: every
+ * step looks healthy right up to the one that matters. A login that
+ * cannot identify the user is not a login.
+ *
+ * So the owner's call is to leave it in stasis rather than attach
+ * billing for a convenience that serves a handful of players today.
+ * Flip this to true the day that changes -- nothing else needs
+ * touching. The columns are inert, the flow is tested, and the only
+ * missing piece is an enrolment form.
+ */
+if (!defined('X_LOGIN_ENABLED')) define('X_LOGIN_ENABLED', false);
+
 /** Scopes. users.read is what /2/users/me needs; tweet.read accompanies it. */
 if (!defined('X_OAUTH_SCOPES')) define('X_OAUTH_SCOPES', 'users.read tweet.read');
 if (!defined('X_AUTHORIZE_URL')) define('X_AUTHORIZE_URL', 'https://x.com/i/oauth2/authorize');

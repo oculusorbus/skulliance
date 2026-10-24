@@ -68,7 +68,8 @@ $wx_said = array(
 						 * Afterwards, signing in with X is a lookup that finds
 						 * this row or finds nothing.
 						 */
-						if (!empty($_SESSION['userData']['user_id'])):
+						require_once __DIR__ . '/lib/x-oauth.php';
+						if (X_LOGIN_ENABLED && !empty($_SESSION['userData']['user_id'])):
 						?>
 						<li class="role" style="border-top:1px solid rgba(255,255,255,.08);margin-top:10px;padding-top:12px">
 							<strong>X account</strong><br>

@@ -55,6 +55,13 @@ function xa_go($where) {
 	exit;
 }
 
+/* HIDDEN MEANS UNREACHABLE, not merely unlinked. A button nobody can
+   see is still a URL anybody can type, and this one would spend a real
+   round trip to X before failing. */
+if (!X_LOGIN_ENABLED) {
+	xa_go(empty($_SESSION['userData']['user_id']) ? 'index.php' : 'wallets.php');
+}
+
 $mode = (isset($_GET['mode']) && $_GET['mode'] === 'connect') ? 'connect' : 'login';
 
 if ($mode === 'connect' && empty($_SESSION['userData']['user_id'])) {

@@ -68,6 +68,7 @@ $ix_signed_in = !empty($_SESSION['userData']['user_id']);
  * phone is an app switch or a password at the exact moment their
  * interest is most fragile.
  */
+require_once __DIR__ . '/lib/x-oauth.php';   // X_LOGIN_ENABLED, and nothing else on this page
 $ix_xnote = isset($_GET['x']) ? (string)$_GET['x'] : '';
 $ix_xsaid = array(
 	'nolink'      => 'No Skulliance account is connected to that X account yet. '
@@ -432,6 +433,9 @@ $ix_button = function () use ($ix_oauth, $ix_signed_in, $e, $ix_xnote, $ix_xsaid
 	/* SECOND, AND QUIETER. Discord is how you join; X is a shortcut
 	   back in for people who have already connected one, so it must not
 	   read as an equal choice to somebody who has never been here. */
+	/* OFF UNTIL X SIGN-IN IS PAID FOR -- see X_LOGIN_ENABLED. An
+	   always-failing door is a worse first impression than no door. */
+	if (!X_LOGIN_ENABLED) { echo '</div>'; return; }
 	/* THE LOGO IS THE WORD. An X glyph beside the words "Sign in with X"
 	   says X twice; the mark stands in for the name, the way the button
 	   reads everywhere else on the web. aria-label carries the full

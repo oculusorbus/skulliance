@@ -184,14 +184,47 @@ ok(strpos($wal, "\$_POST['x_disconnect']") !== false,
 ok(strpos($wal, "\$_GET['x_disconnect']") === false, 'disconnect can be triggered by a GET');
 ok(strpos($wal, 'x-auth.php?mode=connect') !== false, 'the Connect X control is missing from the connections page');
 
-echo "\nthe login page offers it, quietly\n";
+echo "\nthe feature is off, and off means unreachable\n";
+/*
+ * NOT BROKEN -- UNPAID. Authorize, consent and the code exchange all
+ * work; GET /2/users/me answers 403 client-not-enrolled because X
+ * retired the free tier and v2 data endpoints now need pay-per-use
+ * enrolment. The OAuth endpoints stayed free, which is why every step
+ * looked healthy until the one that identifies the user.
+ *
+ * So it is switched off at one constant rather than unpicked, and
+ * these checks pin that the switch actually reaches every surface --
+ * a hidden button is still a URL somebody can type.
+ */
+ok(defined('X_LOGIN_ENABLED'), 'the feature switch is gone');
+/*
+ * THE VALUE IS NOT ASSERTED, ONLY THAT THE SWITCH IS HONOURED.
+ *
+ * I first wrote ok(X_LOGIN_ENABLED === false), which fails the day
+ * somebody enrols and turns it on -- a tripwire that reports a
+ * failure for doing the right thing. Same mistake as the "DHC Drop
+ * Ship is not on the Launchpad" check earlier today, removed for the
+ * same reason: a deployment decision is not a correctness property.
+ *
+ * What IS a correctness property is that every surface reads the
+ * switch, so off is genuinely off and on is genuinely on. Those are
+ * the checks below, and they hold either way.
+ */
+echo '  note  X login is currently ' . (X_LOGIN_ENABLED ? 'ON' : 'OFF') . "\n";
+$ini2 = harness_strip_comments(file_get_contents(__DIR__ . '/x-auth.php'));
+ok(strpos($ini2, 'if (!X_LOGIN_ENABLED)') !== false,
+   'x-auth.php still starts a flow when the feature is off, so the URL is a back door');
 $ix = harness_strip_comments(file_get_contents(__DIR__ . '/index.php'));
-ok(strpos($ix, 'x-auth.php?mode=login') !== false, 'the login page has no X sign-in');
-ok(strpos($ix, 'ix-second-cta') !== false,
-   'the X button uses the primary style, which offers a stranger a door that cannot open for them');
-/* The refusal is the common case for anybody who has not linked, so it
-   has to be explained rather than left as a silent bounce. */
-ok(strpos($ix, 'nolink') !== false, 'the login page cannot explain why X sign-in found nothing');
+ok(strpos($ix, 'if (!X_LOGIN_ENABLED)') !== false, 'the login page shows the X button unconditionally');
+$wal2 = harness_strip_comments(file_get_contents(__DIR__ . '/wallets.php'));
+ok(strpos($wal2, 'X_LOGIN_ENABLED &&') !== false, 'the connections page shows Connect X unconditionally');
+
+/* THE CODE STAYS WHOLE. Switched off is not deleted: the day enrolment
+   happens, one constant brings it all back, so the flow and its
+   surfaces must still be here to bring back. */
+ok(strpos($ix, 'x-auth.php?mode=login') !== false, 'the X sign-in link was deleted rather than gated');
+ok(strpos($wal2, 'x-auth.php?mode=connect') !== false, 'the Connect X control was deleted rather than gated');
+ok(strpos($ix, 'nolink') !== false, 'the refusal copy was deleted rather than gated');
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all X OAuth checks passed\n");
 exit($fail ? 1 : 0);
