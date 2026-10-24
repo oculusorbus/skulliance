@@ -163,6 +163,12 @@ function lap_lift($src, $sig) {
 	}
 	return '';
 }
+/* THE CONSTANT TOO, taken from the page rather than declared here:
+   defining our own value would make the "is this the live invite"
+   check below grade its own homework. */
+if (preg_match("~define\('LAP_DISCORD_INVITE', '([^']+)'\)~", $src, $lm)) define('LAP_DISCORD_INVITE', $lm[1]);
+ok(defined('LAP_DISCORD_INVITE'), 'the invite constant could not be lifted from the page');
+
 $lift_line = lap_lift($src, 'function lap_invite_line(');
 $lift_text = lap_lift($src, 'function lap_invite_text(');
 ok($lift_line !== '' && $lift_text !== '',
@@ -317,8 +323,28 @@ ok(preg_match('~foreach[^;]*outreach_mark\(~', $oe0) !== 1,
 
 /* ---- the filter that makes the list shorter ---- */
 echo "\nthe To write list drops what is not work\n";
-ok(strpos($src, "\$al_shows = array('todo', 'sent', 'all')") !== false,
+ok(strpos($src, "\$al_shows = array('todo', 'sent', 'left', 'all')") !== false,
    'the show filter is gone or no longer whitelisted');
+/*
+ * THE MESSAGE FOR SOMEBODY WHO LEFT HAS TO BE REACHABLE. The invite
+ * line only renders for them, and they are deliberately kept out of
+ * the To write list, so without their own view the only way to find
+ * them was to scroll Everyone.
+ */
+ok(strpos($src, "\$al_show === 'left'") !== false,
+   'people who left the server have no view of their own, so their invite is unreachable');
+ok(strpos($src, 'LAP_DISCORD_INVITE') !== false,
+   'the message carries no way back into Discord');
+ok(strpos($src, 'discord.gg/JqqBZBrph2') !== false,
+   'the Discord invite is not the live SKULLIANCE one');
+/* It must be CONDITIONAL: a current member told they are not in the
+   server reads as a mail merge, which is the thing to avoid. */
+$inv_in  = lap_invite_text($heavy, $LB, false, false);
+$inv_out = lap_invite_text($heavy, $LB, false, true);
+ok(strpos($inv_in, 'discord.gg') === false,
+   'a member still in the server is invited to rejoin it');
+ok(strpos($inv_out, 'discord.gg') !== false,
+   'somebody who left is not given a way back in');
 /* The default is 'all' so an in-progress pass is not renumbered;
    what matters is that it is one of the three and not something the
    whitelist would reject, which would silently show everyone anyway. */

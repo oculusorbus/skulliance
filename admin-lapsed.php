@@ -178,8 +178,14 @@ function lap_invite_line($did, $labels) {
 		: 'I remember you putting some time into ' . $names . '.';
 }
 
+/** The live SKULLIANCE invite, the same one info.php and the homepage
+    carry. Checked against the Discord API when it was put here: it
+    resolves to the SKULLIANCE guild. (discord.gg/skulliance, used in
+    partner.php, does NOT -- Discord answers Unknown Invite.) */
+if (!defined('LAP_DISCORD_INVITE')) define('LAP_DISCORD_INVITE', 'https://discord.gg/JqqBZBrph2');
+
 /** The whole message, ready to paste. */
-function lap_invite_text($did, $labels, $has_realm) {
+function lap_invite_text($did, $labels, $has_realm, $left_server = false) {
 	$line = lap_invite_line($did, $labels);
 	$out  = "Hey! I hope all is well!\n\n";
 	/*
@@ -221,6 +227,24 @@ function lap_invite_text($did, $labels, $has_realm) {
 	 * being signed in on one and signed out on the other.
 	 */
 	$out .= "\n\nhttps://skulliance.io/staking/";
+	/*
+	 * THE WAY BACK INTO DISCORD, only for somebody who has left it.
+	 *
+	 * Worth saying even though most people who left cannot be DMed at
+	 * all: the roster check only knows about THIS guild, so a member
+	 * who left but shares another server with the owner, or is a
+	 * friend, still receives the message -- and for them the invite is
+	 * the difference between logging in and actually being back.
+	 * Discord roles are granted in the guild, so a non-member gets
+	 * none of them however much they stake.
+	 *
+	 * Not shown to current members, for whom it is noise.
+	 */
+	if ($left_server) {
+		$out .= "\n\nLooks like you're not in the Discord server anymore. "
+		      . "Here's an invite if you want to come back to that too:\n"
+		      . LAP_DISCORD_INVITE;
+	}
 	$out .= "\n\nTake care!";
 	return $out;
 }
@@ -233,7 +257,15 @@ function lap_invite_text($did, $labels, $has_realm) {
  * list of things still to do rather than everyone who has ever
  * lapsed.
  */
-$al_shows = array('todo', 'sent', 'all');
+/*
+ * 'left' EXISTS BECAUSE THE MESSAGE NOW HAS SOMETHING TO SAY TO THEM.
+ * They are kept out of 'todo' -- most cannot be DMed at all, and a
+ * worklist full of refusals is not a worklist -- but the roster check
+ * only knows about THIS guild, so the ones who share another server
+ * or are friends do receive it, and their message carries a server
+ * invite. Without this view the only way to reach them was Everyone.
+ */
+$al_shows = array('todo', 'sent', 'left', 'all');
 /* EVERYONE BY DEFAULT, deliberately. Filtering by default would be
    the better list, but it renumbers a run already in progress -- the
    owner was at 68 of 344 when this was built, and changing what the
@@ -331,6 +363,10 @@ if ($al_show !== 'all') {
 	foreach ($al_rows as $uid => $u) {
 		$done = outreach_done($al_sent, $u['discord_id']);
 		if ($al_show === 'sent') { if (!$done) unset($al_rows[$uid]); continue; }
+		if ($al_show === 'left') {
+			if (guild_member_in($al_guild, $u['discord_id']) !== false) unset($al_rows[$uid]);
+			continue;
+		}
 		/* todo: drop the ones already written to, and the ones who
 		   cannot be written to. Unknown stays -- see guild-members.php
 		   on why absence of a roster is not absence from the server. */
@@ -601,7 +637,8 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 </div>
 
 <div class="lap-range lap-views">
-	<?php foreach (array('todo' => 'To write', 'sent' => 'Written', 'all' => 'Everyone') as $k => $label): ?>
+	<?php foreach (array('todo' => 'To write', 'sent' => 'Written',
+	                     'left' => 'Left the server', 'all' => 'Everyone') as $k => $label): ?>
 	<a href="admin-lapsed.php?days=<?php echo $al_days; ?>&amp;sort=<?php echo $al_sort; ?>&amp;show=<?php echo $k; ?>"
 	   class="<?php echo $al_show === $k ? 'on' : ''; ?>"><?php echo $label; ?></a>
 	<?php endforeach; ?>
@@ -757,7 +794,8 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 			        data-who="<?php echo htmlspecialchars($u['username'], ENT_QUOTES); ?>"
 			        data-traits="<?php echo htmlspecialchars(implode("\n", $gift_l), ENT_QUOTES); ?>"
 			        data-msg="<?php echo htmlspecialchars(
-			            lap_invite_text($did, $al_labels, !empty($al_realm[$uid])), ENT_QUOTES); ?>"
+			            lap_invite_text($did, $al_labels, !empty($al_realm[$uid]),
+			                guild_member_in($al_guild, $u['discord_id']) === false), ENT_QUOTES); ?>"
 			        data-did="<?php echo htmlspecialchars($u['discord_id'], ENT_QUOTES); ?>"
 			        data-sent="<?php echo outreach_done($al_sent, $u['discord_id']) ? '1' : ''; ?>"
 			        title="See the package and copy the link">
