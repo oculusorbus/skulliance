@@ -284,6 +284,37 @@ ok(strpos(outreach_path(), '/dhcrenders/') === false,
 ok(preg_match('~^/?data/~m', file_get_contents(__DIR__ . '/.gitignore')) === 1,
    'data/ is not gitignored, so one `git add -A` commits the outreach log');
 
+/* ---- catching up on a batch ---- */
+echo "\nmarking many is one write, and does not lose the others\n";
+/*
+ * ONE WRITE, NOT A LOOP. Seventy eight calls to outreach_mark() is
+ * seventy eight read-modify-write cycles on the same file, and any
+ * two that overlap lose each other -- which is exactly the data this
+ * exists to not lose.
+ */
+outreach_mark('111', true);
+$batch = array();
+for ($i = 1; $i <= 78; $i++) $batch[] = (string)(700000000000000000 + $i);
+ok(outreach_mark_many($batch, true) === 78, 'the batch did not apply every id');
+$lg2 = outreach_load();
+ok(outreach_done($lg2, $batch[0]) && outreach_done($lg2, $batch[77]),
+   'the batch lost ids at one end, so part of the selection was not saved');
+ok(outreach_done($lg2, '111'),
+   'the batch replaced the log instead of merging, wiping everybody marked before it');
+ok(count($lg2) === 80, 'the batch wrote ' . count($lg2) . ' rows, expected 80');
+ok(outreach_mark_many($batch, false) === 78 && count(outreach_load()) === 2,
+   'unmarking a batch does not clear exactly that batch');
+ok(outreach_mark_many(array(), true) === 0, 'an empty batch is reported as work done');
+ok(outreach_mark_many(array('', 'abc'), true) === 0, 'junk ids are written to the log');
+@unlink($op);
+
+/* The endpoint must take the batch as a batch. */
+$oe0 = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/admin-outreach.php'));
+ok(strpos($oe0, 'outreach_mark_many(') !== false,
+   'the endpoint has no batch path, so the browser must send one request per person');
+ok(preg_match('~foreach[^;]*outreach_mark\(~', $oe0) !== 1,
+   'the endpoint loops single marks, which is one file rewrite per person');
+
 /* ---- the filter that makes the list shorter ---- */
 echo "\nthe To write list drops what is not work\n";
 ok(strpos($src, "\$al_shows = array('todo', 'sent', 'all')") !== false,

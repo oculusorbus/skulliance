@@ -51,6 +51,46 @@ function outreach_done($log, $discord_id) {
 }
 
 /**
+ * Record, or clear, many people in ONE write.
+ *
+ * NOT A LOOP OVER outreach_mark(). Marking seventy eight people that
+ * way is seventy eight read-modify-write cycles on the same file, and
+ * any two that overlap lose each other's changes -- the whole point
+ * of a batch is that it is one read and one write.
+ *
+ * Returns the number of ids actually applied, or -1 if the write
+ * failed, so a caller can tell "nothing selected" from "nothing
+ * saved".
+ */
+function outreach_mark_many($ids, $on = true) {
+	if (!is_array($ids)) return 0;
+	$log = outreach_load();
+	$n = 0;
+	foreach ($ids as $raw) {
+		$id = preg_replace('/[^0-9]/', '', (string)$raw);
+		if ($id === '') continue;
+		if ($on) $log[$id] = time();
+		else     unset($log[$id]);
+		$n++;
+	}
+	if ($n === 0) return 0;
+	return outreach_write($log) ? $n : -1;
+}
+
+/** The single write both paths go through. */
+function outreach_write($log) {
+	$path = outreach_path();
+	$dir  = dirname($path);
+	if (!is_dir($dir) && !@mkdir($dir, 0775, true)) return false;
+	/* Temp then rename, so a reader never sees half a log and concludes
+	   nobody has been contacted. */
+	$tmp = $path . '.' . getmypid() . '.tmp';
+	if (@file_put_contents($tmp, json_encode($log)) === false) { @unlink($tmp); return false; }
+	if (!@rename($tmp, $path)) { @unlink($tmp); return false; }
+	return true;
+}
+
+/**
  * Record, or clear, one person. Returns true on a successful write.
  *
  * READ-MODIFY-WRITE EVERY TIME rather than holding the log in memory:
@@ -64,14 +104,5 @@ function outreach_mark($discord_id, $on = true) {
 	$log = outreach_load();
 	if ($on) $log[$id] = time();
 	else     unset($log[$id]);
-
-	$path = outreach_path();
-	$dir  = dirname($path);
-	if (!is_dir($dir) && !@mkdir($dir, 0775, true)) return false;
-	/* Temp then rename, so a reader never sees half a log and concludes
-	   nobody has been contacted. */
-	$tmp = $path . '.' . getmypid() . '.tmp';
-	if (@file_put_contents($tmp, json_encode($log)) === false) { @unlink($tmp); return false; }
-	if (!@rename($tmp, $path)) { @unlink($tmp); return false; }
-	return true;
+	return outreach_write($log);
 }

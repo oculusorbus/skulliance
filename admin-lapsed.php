@@ -407,6 +407,15 @@ td.lap-gift img { width:52px; height:52px; object-fit:cover; display:block;
 .lap-guild .lap-mc { margin-top:0; }
 .lap-prog { font-size:.72rem; color:#5f7d90; margin-left:6px; align-self:center; }
 .lap-prog b { color:#e8eaed; font-variant-numeric:tabular-nums; }
+.lap-ck { width:28px; }
+.lap-ck input { cursor:pointer; }
+.lap-bulk { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:0 0 14px;
+  padding:10px 14px; background:#0d2030; border:1px solid rgba(0,200,160,.35); border-radius:6px;
+  font-size:.78rem; color:#8fa8b8; }
+.lap-bulk[hidden] { display:none !important; }
+.lap-bulk b { color:#00c8a0; font-variant-numeric:tabular-nums; }
+.lap-bulk .lap-mc { margin-top:0; }
+.lap-bulkhint { font-size:.7rem; color:#5f7d90; }
 .lap-giftbtn[data-sent="1"] img { opacity:.4; }
 .lap-mdone { background:#00c8a0; color:#06222b; }
 .lap-mdone[data-on="1"] { background:#123049; color:#9fd8c8; }
@@ -601,6 +610,19 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		<?php echo number_format($al_n_gone); ?> left the server</span>
 </div>
 
+<?php /* THE CATCH-UP BAR. Seventy eight already sent before any of
+         this existed, and ticking them one at a time is the problem
+         this is meant to solve -- so the checkboxes take a shift-click
+         range, which makes "the first 78, in order" two clicks. Hidden
+         until something is selected so it is not permanent furniture. */ ?>
+<div class="lap-bulk" id="lapBulk" hidden>
+	<span><b id="lapBulkN">0</b> selected</span>
+	<button type="button" class="lap-mc" id="lapBulkMark">Mark as written</button>
+	<button type="button" class="lap-mc lap-mc2" id="lapBulkUnmark">Mark as not written</button>
+	<button type="button" class="lap-mc lap-mc2" id="lapBulkClear">Clear</button>
+	<span class="lap-bulkhint">Tip: click one, then shift-click another to take everything between.</span>
+</div>
+
 <?php /* THE ROSTER, and how old it is. Membership drifts slowly, so a
          day-old answer is fine and a six-month-old one is not. */ ?>
 <form class="lap-guild" method="post" action="admin-guild-refresh.php">
@@ -623,6 +645,7 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 <?php else: ?>
 <table class="lap-t">
 	<thead><tr>
+		<th class="lap-ck"><input type="checkbox" id="lapAll" title="Select everything shown"></th>
 		<th>Member</th><th>Last seen</th><th>Played</th><th>What they played</th>
 		<th>Still waiting</th><th>Discord</th><th>Waiting for them</th>
 	</tr></thead>
@@ -645,6 +668,11 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		if (!empty($al_carbon[$uid])) $has[] = '<b>' . number_format($al_carbon[$uid]) . '</b> CARBON';
 	?>
 	<tr>
+		<td class="lap-ck">
+			<input type="checkbox" class="lap-pick"
+			       data-did="<?php echo htmlspecialchars($u['discord_id'], ENT_QUOTES); ?>"
+			       <?php echo outreach_done($al_sent, $u['discord_id']) ? 'checked' : ''; ?>>
+		</td>
 		<td>
 			<div class="lap-who">
 				<img loading="lazy" alt=""
@@ -811,6 +839,91 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	</div>
 </div>
 <script>
+/* ---- the catch-up selection ------------------------------------- *
+   Separate from the modal: it runs on the table whether or not the
+   modal has ever been opened.                                        */
+(function () {
+	var picks = Array.prototype.slice.call(document.querySelectorAll('.lap-pick')),
+	    bar   = document.getElementById('lapBulk'),
+	    nEl   = document.getElementById('lapBulkN'),
+	    allCk = document.getElementById('lapAll'),
+	    anchor = null;                       // last box clicked WITHOUT shift
+	if (!picks.length || !bar) return;
+
+	function chosen() { return picks.filter(function (c) { return c.checked; }); }
+	function sync() {
+		var n = chosen().length;
+		nEl.textContent = n;
+		bar.hidden = (n === 0);
+	}
+
+	picks.forEach(function (c, i) {
+		c.addEventListener('click', function (e) {
+			/*
+			 * SHIFT TAKES THE RANGE, which is the whole point: the first
+			 * seventy eight were done in list order, so click the first,
+			 * shift-click the last, and the work is two clicks instead of
+			 * seventy eight. The range is set to the state of the box just
+			 * clicked, matching how every file manager behaves.
+			 */
+			if (e.shiftKey && anchor !== null && anchor !== i) {
+				var a = Math.min(anchor, i), b = Math.max(anchor, i);
+				for (var j = a; j <= b; j++) picks[j].checked = c.checked;
+			} else {
+				anchor = i;
+			}
+			sync();
+		});
+	});
+
+	if (allCk) allCk.addEventListener('change', function () {
+		picks.forEach(function (c) { c.checked = allCk.checked; });
+		anchor = null;
+		sync();
+	});
+
+	document.getElementById('lapBulkClear').addEventListener('click', function () {
+		picks.forEach(function (c) { c.checked = false; });
+		if (allCk) allCk.checked = false;
+		anchor = null;
+		sync();
+	});
+
+	function send(on, btn) {
+		var sel = chosen();
+		if (!sel.length) return;
+		var ids = sel.map(function (c) { return c.getAttribute('data-did'); }).filter(Boolean),
+		    was = btn.textContent;
+		btn.disabled = true;
+		btn.textContent = 'Saving...';
+		var body = 'ids=' + encodeURIComponent(ids.join(','));
+		if (!on) body += '&off=1';
+		fetch('ajax/admin-outreach.php', {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: body
+		}).then(function (r) { return r.json(); }).then(function (d) {
+			if (!d || !d.ok) throw new Error('refused');
+			/*
+			 * THE PAGE IS RELOADED RATHER THAN PATCHED. The counts at the
+			 * top, the dimming on each thumbnail and the To write filter
+			 * all read this, and keeping four things in step by hand is
+			 * how one of them ends up lying about what was saved.
+			 */
+			location.reload();
+		}).catch(function () {
+			btn.disabled = false;
+			btn.textContent = 'Could not save';
+			setTimeout(function () { btn.textContent = was; }, 2200);
+		});
+	}
+	document.getElementById('lapBulkMark').addEventListener('click', function () { send(true, this); });
+	document.getElementById('lapBulkUnmark').addEventListener('click', function () { send(false, this); });
+
+	sync();
+})();
+
 (function () {
 	var wrap = document.getElementById('lapModal');
 	if (!wrap) return;
