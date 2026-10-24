@@ -353,6 +353,11 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
   max-width:720px; width:100%; max-height:92vh; overflow:auto; padding:18px; }
 .lap-mh { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 0 12px; }
 .lap-mh h3 { margin:0; font-size:1rem; color:#e8eaed; }
+/* Off-screen, not hidden: select() is a no-op on display:none. */
+.lap-offscreen { position:absolute; left:-9999px; width:1px; height:1px; opacity:0; }
+.lap-mname { margin-right:auto; padding:4px 10px; font-size:.64rem; letter-spacing:.07em;
+  text-transform:uppercase; color:#9fd8c8; background:#123049; border:0; border-radius:4px;
+  cursor:pointer; white-space:nowrap; }
 .lap-mx { background:none; border:0; color:#8fa8b8; font-size:1.4rem; line-height:1; cursor:pointer; padding:0 4px; }
 /* ALIGN-ITEMS, NOT STRETCH. A flex row stretches its children to the
    tallest one by default, and the picture has no height of its own, so
@@ -379,6 +384,14 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
    the primary one. The message is the thing being sent; the link is
    support, and should not compete with it. */
 .lap-mc2 { background:#123049; color:#9fd8c8; }
+/* After .lap-mc2 so it is not the one being overridden; the image is a
+   primary action, the link is not. */
+.lap-mcimg { background:#00c8a0; color:#06222b; }
+.lap-mc[disabled] { opacity:.5; cursor:default; }
+.lap-mnav { display:flex; align-items:center; gap:14px; margin-top:16px;
+  padding-top:14px; border-top:1px solid rgba(255,255,255,.1); }
+.lap-mnav span { font-size:.72rem; color:#5f7d90; font-variant-numeric:tabular-nums; }
+.lap-mnav .lap-mc { margin-top:0; }
 @media (max-width:560px) { .lap-mg img { width:100%; } }
 </style>
 
@@ -622,6 +635,12 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	<div class="lap-mb" role="dialog" aria-modal="true" aria-labelledby="lapModalWho">
 		<div class="lap-mh">
 			<h3 id="lapModalWho"></h3>
+			<?php /* The Discord name, one click, because finding them in
+			         Discord is the step before any of the rest of this.
+			         The input is off-screen rather than display:none --
+			         select() does nothing on a hidden field. */ ?>
+			<button type="button" class="lap-mname" id="lapModalCopyName">Copy name</button>
+			<input class="lap-offscreen" id="lapModalName" type="text" readonly aria-hidden="true" tabindex="-1">
 			<button type="button" class="lap-mx" id="lapModalX" aria-label="Close">&times;</button>
 		</div>
 		<div class="lap-mg">
@@ -634,12 +653,29 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 				<textarea class="lap-mu lap-mmsg" id="lapModalMsg" rows="9" readonly></textarea>
 				<button type="button" class="lap-mc" id="lapModalCopyMsg">Copy message</button>
 
-				<label class="lap-ml lap-ml2" for="lapModalUrl">Image link</label>
+				<?php /* THE IMAGE ITSELF, because what gets pasted into the
+				         DM is a picture, not a URL. The link stays below as
+				         a fallback for a browser that cannot write an image
+				         to the clipboard, and is styled down so it does not
+				         compete. */ ?>
+				<button type="button" class="lap-mc lap-mcimg" id="lapModalCopyImg">Copy image</button>
+
+				<label class="lap-ml lap-ml2" for="lapModalUrl">Image link (fallback)</label>
 				<input class="lap-mu" id="lapModalUrl" type="text" readonly>
 				<button type="button" class="lap-mc lap-mc2" id="lapModalCopy">Copy link</button>
 
 				<p class="lap-mt" id="lapModalTraits"></p>
 			</div>
+		</div>
+		<?php /* STEP THROUGH THE LIST WITHOUT LEAVING THE MODAL. With
+		         three hundred people to work through, closing back to the
+		         table between each one is most of the work. Disabled at
+		         the ends rather than wrapping, so it is obvious where you
+		         are in the list. Left and right arrows do the same. */ ?>
+		<div class="lap-mnav">
+			<button type="button" class="lap-mc lap-mc2" id="lapModalPrev">&larr; Prev</button>
+			<span id="lapModalPos"></span>
+			<button type="button" class="lap-mc lap-mc2" id="lapModalNext">Next &rarr;</button>
 		</div>
 	</div>
 </div>
@@ -654,11 +690,27 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	    copy   = document.getElementById('lapModalCopy'),
 	    msg    = document.getElementById('lapModalMsg'),
 	    copyM  = document.getElementById('lapModalCopyMsg'),
+	    copyI  = document.getElementById('lapModalCopyImg'),
+	    name   = document.getElementById('lapModalName'),
+	    copyN  = document.getElementById('lapModalCopyName'),
+	    prevB  = document.getElementById('lapModalPrev'),
+	    nextB  = document.getElementById('lapModalNext'),
+	    posEl  = document.getElementById('lapModalPos'),
+	    /* Snapshotted once: the table does not change under us, and
+	       re-querying on every step would be the slow part of a
+	       three-hundred-row loop. */
+	    all    = Array.prototype.slice.call(document.querySelectorAll('.lap-giftbtn')),
+	    at     = -1,
 	    last   = null;
 
 	function open(btn) {
 		last = btn;
+		at = all.indexOf(btn);
+		posEl.textContent = (at >= 0) ? (at + 1) + ' of ' + all.length : '';
+		prevB.disabled = (at <= 0);
+		nextB.disabled = (at < 0 || at >= all.length - 1);
 		who.textContent    = btn.getAttribute('data-who') || 'Welcome-back package';
+		name.value         = btn.getAttribute('data-who') || '';
 		traits.textContent = btn.getAttribute('data-traits') || '';
 		url.value          = btn.getAttribute('data-url') || '';
 		msg.value          = btn.getAttribute('data-msg') || '';
@@ -669,11 +721,15 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		img.src            = btn.getAttribute('data-img') || '';
 		copy.textContent   = 'Copy link';
 		copyM.textContent  = 'Copy message';
+		copyI.textContent  = 'Copy image';
+		copyI.disabled     = false;
+		copyN.textContent  = 'Copy name';
 		wrap.hidden = false;
 		copyM.focus();
 	}
 	function close() {
 		wrap.hidden = true;
+		at = -1;
 		/* Stop the fetch and release the picture; reopening re-reads it
 		   from cache. */
 		img.removeAttribute('src');
@@ -687,8 +743,26 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		   must not close it. */
 		if (e.target === wrap || e.target.id === 'lapModalX') close();
 	});
+	function step(by) {
+		if (at < 0) return;
+		var n = at + by;
+		if (n < 0 || n >= all.length) return;
+		/* Bring the row into view too, so closing the modal leaves the
+		   table where you were rather than back at the top. */
+		if (all[n].scrollIntoView) all[n].scrollIntoView({ block: 'center' });
+		open(all[n]);
+	}
+	prevB.addEventListener('click', function () { step(-1); });
+	nextB.addEventListener('click', function () { step(1); });
+
 	document.addEventListener('keydown', function (e) {
-		if (e.key === 'Escape' && !wrap.hidden) close();
+		if (wrap.hidden) return;
+		if (e.key === 'Escape') { close(); return; }
+		/* Not while typing or selecting inside a field. */
+		var t = e.target && e.target.tagName;
+		if (t === 'INPUT' || t === 'TEXTAREA') return;
+		if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
+		if (e.key === 'ArrowLeft')  { e.preventDefault(); step(-1); }
 	});
 
 	/* One handler, both fields. execCommand is deprecated but is the
@@ -713,5 +787,56 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	}
 	wire(msg, copyM, 'Copy message');
 	wire(url, copy, 'Copy link');
+	wire(name, copyN, 'Copy name');
+
+	/*
+	 * COPYING THE PICTURE, which is the thing that actually goes in the
+	 * message. Three constraints shape this:
+	 *
+	 * THE PROMISE FORM OF ClipboardItem IS REQUIRED, not a convenience.
+	 * Awaiting the fetch first and then writing loses the user gesture
+	 * in Safari and the write is refused. Handing ClipboardItem the
+	 * unresolved promise keeps the click attached to it.
+	 *
+	 * THE BLOB'S TYPE MUST MATCH THE KEY EXACTLY. A server that labels
+	 * the render anything but image/png would make write() throw, so
+	 * the type is re-stamped with slice(), which does not copy data.
+	 *
+	 * AND IT NEEDS A SECURE CONTEXT. navigator.clipboard is undefined
+	 * on plain http, so the link below stays as the fallback rather
+	 * than the button silently doing nothing.
+	 */
+	copyI.addEventListener('click', function () {
+		/* THE PUBLIC RENDER, NOT THE ENDPOINT. Both are same-origin and
+		   both work, but the dhcrenders file is static, is already in
+		   the browser cache from the picture above, and skips the
+		   redirect and the admin check. The endpoint is the fallback
+		   for the moment before the link is known. */
+		var src = url.value || img.getAttribute('src');
+		if (!src) return;
+		function fail(why) {
+			copyI.textContent = why || 'Could not copy';
+			setTimeout(function () { copyI.textContent = 'Copy image'; }, 2600);
+		}
+		if (!navigator.clipboard || !navigator.clipboard.write || !window.ClipboardItem) {
+			fail('Not supported here');
+			return;
+		}
+		copyI.textContent = 'Copying...';
+		try {
+			var blobP = fetch(src, { credentials: 'same-origin' })
+				.then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.blob(); })
+				.then(function (b) {
+					return b.type === 'image/png' ? b : b.slice(0, b.size, 'image/png');
+				});
+			navigator.clipboard.write([new ClipboardItem({ 'image/png': blobP })]).then(
+				function () {
+					copyI.textContent = 'Copied';
+					setTimeout(function () { copyI.textContent = 'Copy image'; }, 1600);
+				},
+				function () { fail(); }
+			);
+		} catch (e) { fail(); }
+	});
 })();
 </script>
