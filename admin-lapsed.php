@@ -99,7 +99,6 @@ admin_chrome('lapsed');
 .lap-has { font-size:.74rem; white-space:nowrap; }
 .lap-has b { color:#00c8a0; font-variant-numeric:tabular-nums; }
 .lap-has .none { color:#4f7488; }
-.lap-id { font-size:.68rem; color:#4f7488; font-family:ui-monospace,Menlo,monospace; }
 .lap-warm { color:#d69e2e; font-weight:bold; }
 </style>
 
@@ -139,7 +138,7 @@ admin_chrome('lapsed');
 <table class="lap-t">
 	<thead><tr>
 		<th>Member</th><th>Last seen</th><th>What they played</th>
-		<th>Still waiting</th><th>Discord</th>
+		<th>Still waiting</th>
 	</tr></thead>
 	<tbody>
 	<?php foreach ($al_rows as $uid => $u):
@@ -165,7 +164,13 @@ admin_chrome('lapsed');
 				<img loading="lazy" alt=""
 				     src="<?php echo htmlspecialchars(avatar_url($u['discord_id'], $u['avatar'], 64), ENT_QUOTES); ?>"
 				     onerror="this.src='icons/skull.png'">
-				<span><?php echo htmlspecialchars($u['username'], ENT_QUOTES); ?></span>
+				<?php /* THE ID IS ON HOVER, NOT IN A COLUMN. A column of raw
+				         snowflakes is noise -- you find people by name in
+				         Discord. But a display name can change and the id
+				         cannot, so it stays reachable for the one case where
+				         the name no longer finds them. */ ?>
+				<span title="<?php echo htmlspecialchars($u['discord_id'], ENT_QUOTES); ?>"><?php
+					echo htmlspecialchars($u['username'], ENT_QUOTES); ?></span>
 			</div>
 		</td>
 		<td class="lap-gone">
@@ -179,7 +184,6 @@ admin_chrome('lapsed');
 		<td class="lap-has"><?php
 			echo $has ? implode(' · ', $has) : '<span class="none">nothing</span>';
 		?></td>
-		<td class="lap-id"><?php echo htmlspecialchars($u['discord_id'], ENT_QUOTES); ?></td>
 	</tr>
 	<?php endforeach; ?>
 	</tbody>
