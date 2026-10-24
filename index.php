@@ -58,6 +58,29 @@ $ix_oauth = 'https://discord.com/api/oauth2/authorize?client_id=1007909434141462
 $ix_signed_in = !empty($_SESSION['userData']['user_id']);
 
 /*
+ * X SIGN-IN IS A SECOND DOOR TO AN EXISTING ACCOUNT, never a way to
+ * make one. It finds the member who connected that X account and signs
+ * them in; if nobody has, it sends them back here with ?x=nolink and
+ * the line below explains what to do. Discord stays the way in.
+ *
+ * Why it is worth having at all: somebody arriving from a shared run is
+ * on X already and one tap from being recognised, where Discord on a
+ * phone is an app switch or a password at the exact moment their
+ * interest is most fragile.
+ */
+$ix_xnote = isset($_GET['x']) ? (string)$_GET['x'] : '';
+$ix_xsaid = array(
+	'nolink'      => 'No Skulliance account is connected to that X account yet. '
+	               . 'Sign in with Discord, then connect X from your Wallets page.',
+	'cancelled'   => 'Cancelled at X. Nothing changed.',
+	'expired'     => 'That took too long. Try again.',
+	'failed'      => 'X did not complete the sign-in. Try again, or use Discord.',
+	'nocode'      => 'X did not send us anything to work with. Try again.',
+	'signin'      => 'Sign in with Discord first, then you can connect X.',
+	'unavailable' => 'X sign-in is not configured yet.',
+);
+
+/*
  * An invited arrival gets told what is waiting, in the number the code
  * actually pays -- REF_ARRIVAL_DRAWS, not a 3 typed into the copy.
  *
@@ -215,6 +238,21 @@ a{color:var(--ix-accent)}
 .ix-cta-note{color:var(--ix-dim);font-size:14px;margin:0}
 .ix-cta-note a{color:var(--ix-dim)}
 .ix-second{display:block;font-size:14px;color:var(--ix-dim)}
+/*
+ * THE SECOND DOOR, AND IT LOOKS LIKE ONE. Discord is how you join; X
+ * only works for somebody who has already connected one, so matching
+ * the primary button would offer a stranger a choice that cannot work
+ * for them. Outlined, smaller, same height so the pair still line up.
+ */
+.ix-second-cta{display:inline-flex;align-items:center;gap:9px;background:transparent;
+  color:var(--ix-dim);font-size:15px;font-weight:600;text-decoration:none;
+  padding:15px 22px;border-radius:12px;border:1px solid rgba(255,255,255,.18);
+  transition:border-color .15s ease,color .15s ease}
+.ix-second-cta:hover{border-color:rgba(255,255,255,.4);color:#fff}
+.ix-second-cta svg{width:18px;height:18px;flex:0 0 auto;fill:currentColor}
+/* Why the second button did nothing for them, when it did nothing. */
+.ix-xnote{margin:0 0 18px;padding:11px 14px;border:1px solid rgba(214,158,46,.35);
+  background:rgba(214,158,46,.07);color:#e0c07a;font-size:14px;border-radius:8px;max-width:620px}
 
 /* ---- numbers ---- */
 .ix-stats{display:flex;flex-wrap:wrap;gap:10px;margin:34px 0 0;padding:0;list-style:none}
@@ -354,7 +392,14 @@ $ix_traits = function () use ($ix_dhc, $e) { ?>
 <?php };
 
 /* Written once and printed twice, top and bottom. */
-$ix_button = function () use ($ix_oauth, $ix_signed_in, $e) {
+$ix_button = function () use ($ix_oauth, $ix_signed_in, $e, $ix_xnote, $ix_xsaid) {
+	/* PRINTED ONCE, at the top pair only. The same explanation twice on
+	   one page reads as two different problems. */
+	static $noted = false;
+	if (!$noted && $ix_xnote !== '' && isset($ix_xsaid[$ix_xnote])) {
+		echo '<p class="ix-xnote">' . $e($ix_xsaid[$ix_xnote]) . '</p>';
+		$noted = true;
+	}
 	echo '<div class="ix-act">';
 	if ($ix_signed_in) {
 		echo '<a class="ix-cta" href="dashboard.php">Continue to your dashboard</a>';
@@ -364,7 +409,13 @@ $ix_button = function () use ($ix_oauth, $ix_signed_in, $e) {
 	}
 	echo '<a class="ix-cta" href="' . $e($ix_oauth) . '">'
 	   . '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.3.6a14.6 14.6 0 0 1 4.3 1.4 14.4 14.4 0 0 0-10.8 0A14.6 14.6 0 0 1 12.9 3.6L12.6 3A19.8 19.8 0 0 0 7.7 4.4C4.6 9 3.8 13.5 4.2 18a19.9 19.9 0 0 0 6 3l.8-1.2a13 13 0 0 1-2-1l.5-.4a14.2 14.2 0 0 0 9.1 0l.5.4a13 13 0 0 1-2 1l.8 1.2a19.9 19.9 0 0 0 6-3c.5-5.2-.8-9.7-3.6-13.6ZM9.7 15.3c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Zm4.6 0c-1 0-1.8-.9-1.8-2s.8-2 1.8-2 1.8.9 1.8 2-.8 2-1.8 2Z"/></svg>'
-	   . 'Login with Discord</a></div>';
+	   . 'Login with Discord</a>';
+	/* SECOND, AND QUIETER. Discord is how you join; X is a shortcut
+	   back in for people who have already connected one, so it must not
+	   read as an equal choice to somebody who has never been here. */
+	echo '<a class="ix-second-cta" href="x-auth.php?mode=login">'
+	   . '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.3L2.4 2h6.4l4.4 5.9ZM17.8 20.1h1.7L7.9 3.8H6.1Z"/></svg>'
+	   . 'Sign in with X</a></div>';
 };
 ?>
 

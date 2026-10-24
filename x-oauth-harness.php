@@ -123,5 +123,48 @@ $_SERVER['HTTP_HOST'] = 'evil.example.com';
 ok(strpos(x_oauth_redirect_uri(), 'evil') === false,
    'an attacker-supplied Host header reaches the redirect_uri');
 
+echo "\nconnect cannot be started by a stranger\n";
+$ini = harness_strip_comments(file_get_contents(__DIR__ . '/x-auth.php'));
+/*
+ * The session is the ONLY evidence of which account an X id belongs
+ * to. Starting a connect without one would arrive at the callback with
+ * nothing to attach it to -- or worse, whatever session happened to
+ * exist by then.
+ */
+/*
+ * SINGLE-QUOTED, AND THAT IS NOT A STYLE CHOICE. All three checks here
+ * first used DOUBLE quotes around a pattern containing $mode, so PHP
+ * interpolated the variable away and they searched for text that could
+ * never appear -- three failures against correct code. Fourth time
+ * this session. Any assertion holding a $ gets single quotes.
+ */
+ok(preg_match('~\$mode === .connect. && empty\(\$_SESSION~', $ini) === 1,
+   'x-auth.php starts a connect flow without requiring a signed-in session');
+/* And the mode is remembered server-side, not carried where the caller
+   can rewrite it on the way back. */
+ok(strpos($ini, 'x_oauth_begin($mode)') !== false, 'the mode is not passed to x_oauth_begin()');
+ok(preg_match('~\x27mode\x27\s*=>\s*\$mode~', $lib) === 1,
+   'the mode is not stored in the session beside the state');
+ok(strpos($cb, '$_GET[\'mode\']') === false,
+   'the callback reads the mode from the query string, so a login can be turned into a connect');
+
+echo "\ndisconnecting is a POST\n";
+$wal = harness_strip_comments(file_get_contents(__DIR__ . '/wallets.php'));
+/* A GET would let an <img src> in a Discord message unlink somebody's
+   X account with no interaction at all. */
+ok(strpos($wal, "\$_POST['x_disconnect']") !== false,
+   'disconnect is not read from POST');
+ok(strpos($wal, "\$_GET['x_disconnect']") === false, 'disconnect can be triggered by a GET');
+ok(strpos($wal, 'x-auth.php?mode=connect') !== false, 'the Connect X control is missing from the connections page');
+
+echo "\nthe login page offers it, quietly\n";
+$ix = harness_strip_comments(file_get_contents(__DIR__ . '/index.php'));
+ok(strpos($ix, 'x-auth.php?mode=login') !== false, 'the login page has no X sign-in');
+ok(strpos($ix, 'ix-second-cta') !== false,
+   'the X button uses the primary style, which offers a stranger a door that cannot open for them');
+/* The refusal is the common case for anybody who has not linked, so it
+   has to be explained rather than left as a silent bounce. */
+ok(strpos($ix, 'nolink') !== false, 'the login page cannot explain why X sign-in found nothing');
+
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all X OAuth checks passed\n");
 exit($fail ? 1 : 0);

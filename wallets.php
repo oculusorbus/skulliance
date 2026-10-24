@@ -9,6 +9,40 @@ include 'header.php';
 if(isset($_POST['wallet_id'])){
 	setPrimaryWallet($conn, $_POST['wallet_id']);
 }
+
+/*
+ * DISCONNECTING X IS A POST, NOT A LINK. A GET would let an <img src>
+ * in a Discord message unlink somebody's X account without them
+ * touching anything.
+ *
+ * Nothing else is cleared: x_linked_at stays as a record that it once
+ * happened, and the row keeps every other thing about the member.
+ */
+$wx_note = isset($_GET['x']) ? (string)$_GET['x'] : '';
+if (isset($_POST['x_disconnect']) && !empty($_SESSION['userData']['user_id'])) {
+	$wx_uid = (int)$_SESSION['userData']['user_id'];
+	@$conn->query("UPDATE users SET x_id = NULL, x_username = NULL WHERE id = $wx_uid");
+	unset($_SESSION['userData']['x_username']);
+	$wx_note = 'disconnected';
+}
+
+/* What is attached right now, read fresh rather than trusted from the
+   session -- this page is where somebody comes to check. */
+$wx_handle = '';
+if (!empty($_SESSION['userData']['user_id'])) {
+	$wx_r = @$conn->query("SELECT x_username FROM users WHERE id = "
+	                      . (int)$_SESSION['userData']['user_id'] . " LIMIT 1");
+	if ($wx_r && ($wx_row = $wx_r->fetch_assoc())) $wx_handle = (string)$wx_row['x_username'];
+}
+$wx_said = array(
+	'linked'      => 'Connected. You can sign in with X from now on.',
+	'disconnected'=> 'Disconnected. Signing in with X will no longer find this account.',
+	'taken'       => 'That X account is already connected to a different Skulliance account.',
+	'cancelled'   => 'Cancelled at X. Nothing changed.',
+	'failed'      => 'X did not complete the connection. Nothing changed.',
+	'expired'     => 'That took too long. Start again.',
+	'unavailable' => 'X sign-in is not configured yet.',
+);
 ?>
 		<div class="row" id="row4">
 			<div class="col1of3">
@@ -18,6 +52,42 @@ if(isset($_POST['wallet_id'])){
 						renderVisibility("wallets");
 						renderWalletConnection("wallets"); ?>
 						<li class="role">You can connect as many wallets as you want and set your primary address for staking store claims.</li>
+						<?php
+						/*
+						 * X SITS HERE BECAUSE THIS IS THE CONNECTIONS PAGE --
+						 * the one place you attach something external to your
+						 * account. It is not a wallet and does not pretend to
+						 * be: no staking, no holdings, nothing financial.
+						 *
+						 * CONNECTING IS THE ONLY WAY AN x_id IS EVER WRITTEN.
+						 * X and Discord share no identifier, so this -- a
+						 * member signed in with Discord, choosing -- is the
+						 * single moment the two can be linked with certainty.
+						 * Afterwards, signing in with X is a lookup that finds
+						 * this row or finds nothing.
+						 */
+						if (!empty($_SESSION['userData']['user_id'])):
+						?>
+						<li class="role" style="border-top:1px solid rgba(255,255,255,.08);margin-top:10px;padding-top:12px">
+							<strong>X account</strong><br>
+							<?php if ($wx_note !== '' && isset($wx_said[$wx_note])): ?>
+								<span style="color:#00c8a0;font-size:.85rem"><?php echo htmlspecialchars($wx_said[$wx_note]); ?></span><br>
+							<?php endif; ?>
+							<?php if ($wx_handle !== ''): ?>
+								Connected as <strong>@<?php echo htmlspecialchars($wx_handle); ?></strong>.
+								You can sign in with either X or Discord.
+								<form action="wallets.php" method="post" style="display:inline">
+									<input type="hidden" name="x_disconnect" value="1">
+									<input class="small-button secondary" type="submit" value="Disconnect">
+								</form>
+							<?php else: ?>
+								Not connected. Connecting lets you sign in with X as well as Discord,
+								which is one tap from a post rather than a password, and lets your
+								shared runs carry your handle.
+								<a class="small-button" href="x-auth.php?mode=connect">Connect X</a>
+							<?php endif; ?>
+						</li>
+						<?php endif; ?>
 						<?php
 						if(isset($_SESSION['userData']['user_id'])){ 
 							$wallets = getWallets($conn);
