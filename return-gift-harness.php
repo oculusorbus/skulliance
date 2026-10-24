@@ -451,6 +451,24 @@ ok(count($resume) === count($full) - 3,
 ok(!array_intersect(array_keys($resume), array('background', 'torso', 'head')),
    'the grant handed over categories the member already had, so returning twice duplicates traits');
 
+/*
+ * A TRAIT THAT DID NOT COMMIT IS NOT GIVEN. dhcf_commit_drop() returns
+ * null when its INSERT fails, and the first version ignored that and
+ * recorded the trait as handed over regardless -- so a column that
+ * would not take 'returngift' would have produced a Discord post
+ * announcing eight traits nobody received, under a picture promising
+ * them. The stub below accepts the SELECT and refuses every INSERT.
+ */
+class RGFailWrite extends RGConn {
+	public function query($sql) {
+		if (stripos($sql, 'INSERT') === 0) return false;
+		return parent::query($sql);
+	}
+}
+$cf = new RGFailWrite();
+ok(return_gift_grant($cf, 7, $ids[0]) === array(),
+   'traits whose INSERT failed are still reported as given, so the announcement promises what was never granted');
+
 /* ---------------------------------------------------------------- *
  * THE TWO COPIES OF THE WINDOW
  * ---------------------------------------------------------------- */

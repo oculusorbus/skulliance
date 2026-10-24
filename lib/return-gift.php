@@ -376,10 +376,30 @@ function return_gift_grant($conn, $user_id, $discord_id) {
 		   false suppresses the PER-TRAIT Discord post only: eight of them
 		   in a row is a wall, and one post with the assembled Fighter
 		   goes out below instead. */
-		if (function_exists('dhcf_commit_drop')) {
-			dhcf_commit_drop($conn, $uid, $cat, $slug, $info, 'returngift', 'welcome back', false);
+		/*
+		 * THE RETURN VALUE DECIDES, not the fact that we called it.
+		 * dhcf_commit_drop() returns null when its INSERT fails -- a
+		 * column that will not take 'returngift', a dead connection --
+		 * and the first version recorded the trait as given anyway.
+		 * That is the one failure that actively lies: the member gets
+		 * nothing, and Discord announces the package they did not get,
+		 * under a picture promising it.
+		 */
+		if (!function_exists('dhcf_commit_drop')) continue;
+		$drop = dhcf_commit_drop($conn, $uid, $cat, $slug, $info, 'returngift', 'welcome back', false);
+		if ($drop === null) {
+			error_log('return-gift: could not commit ' . $cat . '/' . $slug . ' for user ' . $uid);
+			continue;
 		}
 		$given[$cat] = $slug;
+	}
+
+	/* Loud, because a short package is invisible otherwise: the member
+	   gets some of it, the post lists some of it, and everything looks
+	   deliberate. */
+	if (count($given) !== count($traits)) {
+		error_log('return-gift: only ' . count($given) . ' of ' . count($traits)
+		        . ' traits committed for user ' . $uid);
 	}
 
 	/* After the loop, so the post describes what was actually committed
