@@ -880,6 +880,7 @@ function admin_tabs() {
 		'digest'      => array('admin-digest.php',      'Daily Digest'),
 		'flyers'      => array('admin-flyers.php',      'Flyers'),
 		'nudges'      => array('admin-nudges.php',      'Nudges'),
+		'lapsed'      => array('admin-lapsed.php',      'Lapsed'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
 }

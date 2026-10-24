@@ -410,7 +410,13 @@ ok(strpos($lib_src, "include __DIR__ . '/header.php'") === false,
 $ALL_ADMIN = array();
 foreach (glob(__DIR__ . '/admin-*.php') as $apf) {
 	$bn = basename($apf);
-	if (in_array($bn, array('admin-lib.php', 'admin-css.php', 'admin-harness.php'), true)) continue;
+	if (in_array($bn, array('admin-lib.php', 'admin-css.php'), true)) continue;
+	/* A HARNESS IS NOT AN ADMIN PAGE. This excluded admin-harness.php by
+	   name, which worked until a harness FOR an admin page was written
+	   and matched the glob -- it was then told off for not opening the
+	   admin layout, which is exactly what a CLI test file should not do.
+	   Matched on the suffix so the next one cannot trip it either. */
+	if (substr($bn, -12) === '-harness.php') continue;
 	$ALL_ADMIN[$bn] = harness_strip_comments(file_get_contents($apf));
 }
 ok(count($ALL_ADMIN) >= 8,
@@ -790,6 +796,7 @@ ok(strpos($sk, 'fill out all the fields in the item submission form') !== false,
 
 /* And no admin page may post the full store field set by accident. */
 foreach (glob(__DIR__ . '/admin-*.php') as $afFile) {
+	if (substr(basename($afFile), -12) === '-harness.php') continue;
 	$afSrc = file_get_contents($afFile);
 	$hasAll = true;
 	foreach (array('name', 'image_url', 'price', 'quantity') as $afF)
