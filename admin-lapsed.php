@@ -193,7 +193,24 @@ function lap_invite_text($did, $labels, $has_realm) {
 	if ($has_realm) $out .= "\n\nYour realm is still standing, by the way.";
 	$out .= "\n\nIf you decide to login and check it out, this fighter assembly will be "
 	      . "ready and waiting for you. It's a collection of traits you can use to build "
-	      . "however you want.\n\nTake care!";
+	      . "however you want.";
+	/*
+	 * THE WAY IN, on its own line so Discord renders it as a link.
+	 * Somebody who has been away a year may not remember the URL, and
+	 * a message that asks them to go and find it is a message they do
+	 * not act on.
+	 *
+	 * TRAILING SLASH: /staking 301s to /staking/, so without it every
+	 * click pays a redirect.
+	 *
+	 * AND THE BARE HOST, NOT www. Both serve the site, but the login
+	 * cookie has no domain set, so a session started on one host does
+	 * not exist on the other. Picking one and always sending that one
+	 * is what keeps a member who follows two different invites from
+	 * being signed in on one and signed out on the other.
+	 */
+	$out .= "\n\nhttps://skulliance.io/staking/";
+	$out .= "\n\nTake care!";
 	return $out;
 }
 

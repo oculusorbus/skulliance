@@ -222,6 +222,18 @@ foreach (array('miss seeing you', 'last time we', 'good to hear', 'as always') a
 	if (!ok(stripos($all, $phrase) === false,
 	        'the invite implies a conversation that never happened: "' . $phrase . '"')) break;
 }
+/*
+ * THE WAY IN. A message that asks somebody to remember a URL is a
+ * message they do not act on. Checked for the trailing slash too,
+ * because /staking 301s to /staking/ -- and for the bare host,
+ * because the login cookie has no domain and a session on www is not
+ * a session on skulliance.io.
+ */
+ok(strpos($all, 'https://skulliance.io/staking/') !== false,
+   'the invite does not tell them where to go');
+ok(stripos($all, 'www.skulliance.io') === false,
+   'the invite sends them to www, which does not share a login session with the bare host');
+
 /* And it must describe the gift as traits, not as a finished Fighter,
    because traits are what lands. */
 ok(stripos($all, 'collection of traits') !== false,
