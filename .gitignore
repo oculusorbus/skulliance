@@ -59,3 +59,8 @@ dropship/images/
 # platform, which is how a stray mp3 got in and broke git pull on the
 # live server.
 credentials/
+
+# Operational state that belongs to one install, not to the repo:
+# the outreach log is a record of messages actually sent, so unlike
+# dhcrenders/ it must not be somewhere anybody would think to empty.
+data/

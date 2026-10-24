@@ -35,6 +35,8 @@ require_once __DIR__ . '/lib/return-gift.php';
    Discord, which is why refreshing it is a separate endpoint. */
 require_once __DIR__ . '/lib/guild-members.php';
 $al_guild = guild_members_load();
+require_once __DIR__ . '/lib/outreach-log.php';
+$al_sent = outreach_load();
 $al_gmsg  = null;
 if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['lap_guild_msg'])) {
 	$al_gmsg = $_SESSION['lap_guild_msg'];
@@ -223,6 +225,23 @@ function lap_invite_text($did, $labels, $has_realm) {
 	return $out;
 }
 
+/*
+ * WHAT TO SHOW. Three hundred names is a grind mostly because two
+ * large slices of it are not work: people who have already had their
+ * invite, and people who left the server and cannot be sent one at
+ * all. "todo" removes both and is the default, so the list is the
+ * list of things still to do rather than everyone who has ever
+ * lapsed.
+ */
+$al_shows = array('todo', 'sent', 'all');
+/* EVERYONE BY DEFAULT, deliberately. Filtering by default would be
+   the better list, but it renumbers a run already in progress -- the
+   owner was at 68 of 344 when this was built, and changing what the
+   page shows underneath that is worse than an extra click. One word
+   here flips it to 'todo' once a pass is finished. */
+$al_show  = (isset($_GET['show']) && in_array($_GET['show'], $al_shows, true))
+          ? $_GET['show'] : 'all';
+
 /* Both in the query string so a view can be linked or bookmarked. */
 $al_days = isset($_GET['days']) ? (int)$_GET['days'] : 90;
 if (!in_array($al_days, array(30, 90, 180, 365), true)) $al_days = 90;
@@ -295,6 +314,30 @@ $al_labels = activity_labels();
  *
  * The recency sorts stay in SQL, where last_login already lives.
  */
+/*
+ * FILTERED IN PHP, AFTER THE QUERY. Neither fact lives in the
+ * database -- the outreach log is a file and the roster is a cache --
+ * so there is nothing to put in a WHERE clause. The counts are taken
+ * before the filter, because "142 still to write to" is only
+ * meaningful next to the total.
+ */
+$al_total = count($al_rows);
+$al_n_sent = $al_n_gone = 0;
+foreach ($al_rows as $uid => $u) {
+	if (outreach_done($al_sent, $u['discord_id']))        $al_n_sent++;
+	if (guild_member_in($al_guild, $u['discord_id']) === false) $al_n_gone++;
+}
+if ($al_show !== 'all') {
+	foreach ($al_rows as $uid => $u) {
+		$done = outreach_done($al_sent, $u['discord_id']);
+		if ($al_show === 'sent') { if (!$done) unset($al_rows[$uid]); continue; }
+		/* todo: drop the ones already written to, and the ones who
+		   cannot be written to. Unknown stays -- see guild-members.php
+		   on why absence of a roster is not absence from the server. */
+		if ($done || guild_member_in($al_guild, $u['discord_id']) === false) unset($al_rows[$uid]);
+	}
+}
+
 if ($al_sort === 'active' || $al_sort === 'quiet') {
 	$al_dir = ($al_sort === 'active') ? -1 : 1;
 	uasort($al_rows, function ($a, $b) use ($al_did, $al_dir) {
@@ -362,6 +405,11 @@ td.lap-gift img { width:52px; height:52px; object-fit:cover; display:block;
 .lap-gok { color:#00c8a0; }
 .lap-gbad { color:#d69e2e; }
 .lap-guild .lap-mc { margin-top:0; }
+.lap-prog { font-size:.72rem; color:#5f7d90; margin-left:6px; align-self:center; }
+.lap-prog b { color:#e8eaed; font-variant-numeric:tabular-nums; }
+.lap-giftbtn[data-sent="1"] img { opacity:.4; }
+.lap-mdone { background:#00c8a0; color:#06222b; }
+.lap-mdone[data-on="1"] { background:#123049; color:#9fd8c8; }
 
 /* ---- the package modal ---------------------------------------- *
    Its own element rather than a link to the PNG, because the job is
@@ -543,6 +591,16 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	</div>
 </div>
 
+<div class="lap-range lap-views">
+	<?php foreach (array('todo' => 'To write', 'sent' => 'Written', 'all' => 'Everyone') as $k => $label): ?>
+	<a href="admin-lapsed.php?days=<?php echo $al_days; ?>&amp;sort=<?php echo $al_sort; ?>&amp;show=<?php echo $k; ?>"
+	   class="<?php echo $al_show === $k ? 'on' : ''; ?>"><?php echo $label; ?></a>
+	<?php endforeach; ?>
+	<span class="lap-prog"><b><?php echo number_format($al_n_sent); ?></b> written ·
+		<b><?php echo number_format(count($al_rows)); ?></b> showing ·
+		<?php echo number_format($al_n_gone); ?> left the server</span>
+</div>
+
 <?php /* THE ROSTER, and how old it is. Membership drifts slowly, so a
          day-old answer is fine and a six-month-old one is not. */ ?>
 <form class="lap-guild" method="post" action="admin-guild-refresh.php">
@@ -672,6 +730,8 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 			        data-traits="<?php echo htmlspecialchars(implode("\n", $gift_l), ENT_QUOTES); ?>"
 			        data-msg="<?php echo htmlspecialchars(
 			            lap_invite_text($did, $al_labels, !empty($al_realm[$uid])), ENT_QUOTES); ?>"
+			        data-did="<?php echo htmlspecialchars($u['discord_id'], ENT_QUOTES); ?>"
+			        data-sent="<?php echo outreach_done($al_sent, $u['discord_id']) ? '1' : ''; ?>"
 			        title="See the package and copy the link">
 				<img loading="lazy" alt="welcome-back package for <?php
 				     echo htmlspecialchars($u['username'], ENT_QUOTES); ?>"
@@ -741,6 +801,11 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		<div class="lap-mnav">
 			<button type="button" class="lap-mc lap-mc2" id="lapModalPrev">&larr; Prev</button>
 			<span id="lapModalPos"></span>
+			<?php /* THE ONE THAT ENDS THE GRIND: ticks this person off and
+			         moves on in a single press, so the loop is copy, copy,
+			         copy, paste, done. Marking is also what makes stopping
+			         safe -- the list is shorter when you come back. */ ?>
+			<button type="button" class="lap-mc lap-mdone" id="lapModalDone">Mark written &amp; next</button>
 			<button type="button" class="lap-mc lap-mc2" id="lapModalNext">Next &rarr;</button>
 		</div>
 	</div>
@@ -762,6 +827,7 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	    prevB  = document.getElementById('lapModalPrev'),
 	    nextB  = document.getElementById('lapModalNext'),
 	    posEl  = document.getElementById('lapModalPos'),
+	    doneB  = document.getElementById('lapModalDone'),
 	    /* Snapshotted once: the table does not change under us, and
 	       re-querying on every step would be the slow part of a
 	       three-hundred-row loop. */
@@ -775,6 +841,10 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		posEl.textContent = (at >= 0) ? (at + 1) + ' of ' + all.length : '';
 		prevB.disabled = (at <= 0);
 		nextB.disabled = (at < 0 || at >= all.length - 1);
+		var sent = btn.getAttribute('data-sent') === '1';
+		doneB.setAttribute('data-on', sent ? '1' : '');
+		doneB.textContent = sent ? 'Written (undo)' : 'Mark written & next';
+		doneB.disabled = false;
 		who.textContent    = btn.getAttribute('data-who') || 'Welcome-back package';
 		name.value         = btn.getAttribute('data-who') || '';
 		traits.textContent = btn.getAttribute('data-traits') || '';
@@ -818,6 +888,38 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		if (all[n].scrollIntoView) all[n].scrollIntoView({ block: 'center' });
 		open(all[n]);
 	}
+	/*
+	 * MARK, THEN MOVE. The row is only updated once the server has
+	 * confirmed the write -- showing it as done before that would
+	 * quietly lose people from a list whose whole job is not losing
+	 * anybody. Advancing is also skipped on failure, so the error is
+	 * in front of you rather than two rows back.
+	 */
+	doneB.addEventListener('click', function () {
+		if (at < 0 || !last) return;
+		var btn = last,
+		    turningOff = btn.getAttribute('data-sent') === '1',
+		    body = 'discord_id=' + encodeURIComponent(btn.getAttribute('data-did') || '');
+		if (turningOff) body += '&off=1';
+		doneB.disabled = true;
+		doneB.textContent = 'Saving...';
+		fetch('ajax/admin-outreach.php', {
+			method: 'POST',
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: body
+		}).then(function (r) { return r.json(); }).then(function (d) {
+			if (!d || !d.ok) throw new Error('refused');
+			btn.setAttribute('data-sent', turningOff ? '' : '1');
+			if (turningOff) { open(btn); return; }          // stay put, just flip the label
+			if (at < all.length - 1) step(1); else close();
+		}).catch(function () {
+			doneB.disabled = false;
+			doneB.textContent = 'Could not save';
+			setTimeout(function () { if (last) open(last); }, 2200);
+		});
+	});
+
 	prevB.addEventListener('click', function () { step(-1); });
 	nextB.addEventListener('click', function () { step(1); });
 
@@ -829,6 +931,8 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		if (t === 'INPUT' || t === 'TEXTAREA') return;
 		if (e.key === 'ArrowRight') { e.preventDefault(); step(1); }
 		if (e.key === 'ArrowLeft')  { e.preventDefault(); step(-1); }
+		/* d for done, so the loop never needs the mouse. */
+		if (e.key === 'd' || e.key === 'D') { e.preventDefault(); doneB.click(); }
 	});
 
 	/* One handler, both fields. execCommand is deprecated but is the

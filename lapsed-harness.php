@@ -239,6 +239,76 @@ ok(stripos($all, 'www.skulliance.io') === false,
 ok(stripos($all, 'collection of traits') !== false,
    'the invite does not say the gift is traits, so it promises a built Fighter');
 
+/* ---------------------------------------------------------------- *
+ * THE OUTREACH LOG
+ * ---------------------------------------------------------------- */
+echo "\nwho has been written to survives closing the page\n";
+require_once __DIR__ . '/lib/outreach-log.php';
+/* The live log is a real file; move it aside for the run. */
+$op = outreach_path(); $osave = $op . '.harness-save'; $ohad = is_file($op);
+if ($ohad) @rename($op, $osave);
+register_shutdown_function(function () use ($op, $osave, $ohad) {
+	@unlink($op);
+	if ($ohad && is_file($osave)) @rename($osave, $op);
+});
+
+/*
+ * NO LOG MEANS NOBODY HAS BEEN WRITTEN TO. The inversion -- an
+ * unreadable log reading as "everybody done" -- would empty the To
+ * write list and look like finishing.
+ */
+@unlink($op);
+ok(outreach_load() === array(), 'a missing outreach log does not read as empty');
+ok(outreach_done(outreach_load(), '123') === false,
+   'with no log everybody reads as already written to, which empties the list');
+
+ok(outreach_mark('123', true) === true, 'marking somebody failed');
+ok(outreach_done(outreach_load(), '123') === true, 'the mark did not survive a reload');
+ok(outreach_done(outreach_load(), '456') === false, 'marking one person marked everybody');
+/* Two in a row must both stick -- a write that replaces rather than
+   merges would silently undo the previous one. */
+outreach_mark('456', true);
+$lg = outreach_load();
+ok(outreach_done($lg, '123') && outreach_done($lg, '456'),
+   'a second mark overwrote the first, so the log only ever holds one person');
+ok(outreach_mark('123', false) === true && outreach_done(outreach_load(), '123') === false,
+   'unmarking does not clear the row');
+ok(outreach_done(outreach_load(), '456') === true, 'unmarking one person cleared everybody');
+/* Junk cannot poison the file. */
+ok(outreach_mark('', true) === false, 'an empty id is written to the log');
+/* NOT IN THE RENDER CACHE. dhcrenders/ is emptied whenever a picture
+   looks wrong, and this is a record of messages actually sent -- the
+   one file here that must not sit somewhere disposable. */
+ok(strpos(outreach_path(), '/dhcrenders/') === false,
+   'the outreach log lives in the render cache, where clearing stale images deletes it');
+ok(preg_match('~^/?data/~m', file_get_contents(__DIR__ . '/.gitignore')) === 1,
+   'data/ is not gitignored, so one `git add -A` commits the outreach log');
+
+/* ---- the filter that makes the list shorter ---- */
+echo "\nthe To write list drops what is not work\n";
+ok(strpos($src, "\$al_shows = array('todo', 'sent', 'all')") !== false,
+   'the show filter is gone or no longer whitelisted');
+/* The default is 'all' so an in-progress pass is not renumbered;
+   what matters is that it is one of the three and not something the
+   whitelist would reject, which would silently show everyone anyway. */
+ok(preg_match("~\\? \\\$_GET\['show'\] : '(todo|sent|all)'~", $src) === 1,
+   'the default view is not one of the three the filter accepts');
+/*
+ * UNKNOWN MUST STAY IN THE LIST. Dropping it alongside "left" would
+ * hide everybody whenever the roster cache is missing -- the same
+ * failure guild-members.php guards against, one layer up.
+ */
+ok(strpos($src, "guild_member_in(\$al_guild, \$u['discord_id']) === false) unset") !== false,
+   'the todo filter drops rows on anything other than a confirmed "left the server"');
+
+/* ---- the endpoint ---- */
+$oe = harness_strip_comments(file_get_contents(__DIR__ . '/ajax/admin-outreach.php'));
+ok(strpos($oe, "!== 'POST'") !== false, 'the outreach endpoint accepts GET');
+$og = strpos($oe, 'adminRights()');
+$ow = strpos($oe, 'outreach_mark(');
+ok($og !== false && $ow !== false && $og < $ow,
+   'the outreach endpoint writes before it checks who is asking');
+
 echo "\nread only\n";
 /* It is a list to work from. Nothing is marked, nothing is sent. */
 foreach (array('INSERT', 'UPDATE ', 'DELETE') as $w) {
