@@ -28,13 +28,32 @@ function ok($cond, $what) {
 $src = harness_strip_comments(file_get_contents(__DIR__ . '/admin-lapsed.php'));
 
 echo "\nwarmest first, and that is the default\n";
-ok(strpos($src, "\$_GET['sort'] === 'coldest'") !== false, 'the sort cannot be flipped');
+/*
+ * ANCHORED ON THE PROPERTIES, NOT THE SPELLING. The first version of
+ * these greped for the exact two-option ternary and went red the
+ * moment two more sorts were added -- correct code, failing checks,
+ * for the third time in this session. What matters is that the
+ * choice is whitelisted, that warmest is the fallback, and that
+ * warmest really is least-time-away.
+ */
+ok(preg_match('~in_array\(\$_GET\[.sort.\], \$al_sorts, true\)~', $src) === 1,
+   'the sort parameter is not whitelisted');
+foreach (array('warmest', 'coldest', 'active', 'quiet') as $k) {
+	if (!ok(strpos($src, "'" . $k . "'") !== false, "the $k sort is missing")) break;
+}
+ok(preg_match("~\\? \\\$_GET\['sort'\] : 'warmest'~", $src) === 1,
+   'warmest is not the fallback when no sort is given');
 /* DESC on last_login is most-recent-login first, which is least time
    away. Getting this backwards is the one bug that would look fine. */
 ok(strpos($src, "(\$al_sort === 'coldest' ? 'ASC' : 'DESC')") !== false,
    'the ordering is not last_login DESC for warmest -- the list is upside down');
-ok(preg_match("~\\\$al_sort = .*'coldest'.*\\? 'coldest' : 'warmest'~", $src) === 1,
-   'the default sort is not warmest');
+/* The activity sorts cannot be done in SQL -- the weighted total is
+   assembled in PHP from fifteen sources -- so they are a uasort, and
+   the direction has to be right in both. */
+ok(strpos($src, "\$al_dir = (\$al_sort === 'active') ? -1 : 1;") !== false,
+   'the active/quiet sort direction is gone or inverted');
+ok(strpos($src, 'uasort($al_rows') !== false,
+   'the activity sort does not preserve the id keys, so every lookup by user id breaks');
 
 echo "\nonly people who have actually gone quiet\n";
 ok(strpos($src, 'last_login < NOW() - INTERVAL') !== false, 'the cutoff is missing');

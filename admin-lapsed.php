@@ -32,7 +32,21 @@ require_once __DIR__ . '/activity-sources-lib.php';
 /* Both in the query string so a view can be linked or bookmarked. */
 $al_days = isset($_GET['days']) ? (int)$_GET['days'] : 90;
 if (!in_array($al_days, array(30, 90, 180, 365), true)) $al_days = 90;
-$al_sort = (isset($_GET['sort']) && $_GET['sort'] === 'coldest') ? 'coldest' : 'warmest';
+/*
+ * FOUR WAYS TO WORK THE LIST, because "who should I message" has more
+ * than one right answer.
+ *
+ *   warmest  least time away -- still remembers their password
+ *   coldest  longest away -- deciding who is never coming back
+ *   active   did the most while they were here. Somebody with two
+ *            thousand missions behind them has a reason to look at
+ *            what has been built since; somebody who played twice
+ *            does not.
+ *   quiet    barely engaged, for working out what put them off
+ */
+$al_sorts = array('warmest', 'coldest', 'active', 'quiet');
+$al_sort  = (isset($_GET['sort']) && in_array($_GET['sort'], $al_sorts, true))
+          ? $_GET['sort'] : 'warmest';
 
 /*
  * ONE PASS EACH, not one query per player. Four hundred members and a
@@ -72,6 +86,28 @@ foreach (activity_totals($conn, 36500) as $a) {
 	$al_did[(int)$a['user_id']] = $a;
 }
 $al_labels = activity_labels();
+
+/*
+ * THE ACTIVITY SORTS HAPPEN HERE, NOT IN SQL, because the number being
+ * sorted on does not exist in the database -- it is the weighted total
+ * across fifteen sources, assembled a few lines up. Four hundred rows
+ * in PHP is nothing; a sort key that disagrees with the column beside
+ * it would be worse than slow.
+ *
+ * The recency sorts stay in SQL, where last_login already lives.
+ */
+if ($al_sort === 'active' || $al_sort === 'quiet') {
+	$al_dir = ($al_sort === 'active') ? -1 : 1;
+	uasort($al_rows, function ($a, $b) use ($al_did, $al_dir) {
+		$ta = isset($al_did[(int)$a['id']]) ? (int)$al_did[(int)$a['id']]['total'] : 0;
+		$tb = isset($al_did[(int)$b['id']]) ? (int)$al_did[(int)$b['id']]['total'] : 0;
+		if ($ta === $tb) {
+			/* Ties broken by recency, so the second axis is still useful. */
+			return strcmp((string)$b['last_login'], (string)$a['last_login']);
+		}
+		return ($ta < $tb ? -1 : 1) * $al_dir;
+	});
+}
 
 include 'header.php';
 admin_chrome('lapsed');
@@ -122,13 +158,14 @@ admin_chrome('lapsed');
 		<?php endforeach; ?>
 	</div>
 	<div class="lap-range">
-		<?php /* WARMEST FIRST IS THE DEFAULT, because that is the order you
-		         would work the list in. Coldest is there for the opposite
-		         job: deciding who is never coming back. */ ?>
-		<a href="admin-lapsed.php?days=<?php echo $al_days; ?>&amp;sort=warmest"
-		   class="<?php echo $al_sort === 'warmest' ? 'on' : ''; ?>">Warmest first</a>
-		<a href="admin-lapsed.php?days=<?php echo $al_days; ?>&amp;sort=coldest"
-		   class="<?php echo $al_sort === 'coldest' ? 'on' : ''; ?>">Coldest first</a>
+		<?php /* WARMEST IS THE DEFAULT, because that is the order you would
+		         work a list you intend to message. The other three are
+		         different questions asked of the same people. */
+		foreach (array('warmest' => 'Warmest', 'coldest' => 'Coldest',
+		               'active'  => 'Most active', 'quiet' => 'Least active') as $k => $label): ?>
+		<a href="admin-lapsed.php?days=<?php echo $al_days; ?>&amp;sort=<?php echo $k; ?>"
+		   class="<?php echo $al_sort === $k ? 'on' : ''; ?>"><?php echo $label; ?></a>
+		<?php endforeach; ?>
 	</div>
 </div>
 
@@ -137,7 +174,7 @@ admin_chrome('lapsed');
 <?php else: ?>
 <table class="lap-t">
 	<thead><tr>
-		<th>Member</th><th>Last seen</th><th>What they played</th>
+		<th>Member</th><th>Last seen</th><th>Played</th><th>What they played</th>
 		<th>Still waiting</th>
 	</tr></thead>
 	<tbody>
@@ -177,6 +214,9 @@ admin_chrome('lapsed');
 			<b class="<?php echo $gone < 180 ? 'lap-warm' : ''; ?>"><?php echo number_format($gone); ?> days</b>
 			<span><?php echo htmlspecialchars(date('j M Y', strtotime($u['last_login']))); ?></span>
 		</td>
+		<?php /* THE NUMBER THE ACTIVE SORTS ORDER BY. Without it on screen
+		         those two orderings look arbitrary. */ ?>
+		<td class="lap-gone"><b><?php echo $did ? number_format((int)$did['total']) : '0'; ?></b></td>
 		<td class="lap-did"><?php
 			echo $bits ? htmlspecialchars(implode(' · ', $bits), ENT_QUOTES)
 			           : '<span style="color:#4f7488">never played anything</span>';
