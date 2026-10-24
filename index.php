@@ -75,6 +75,13 @@ $ix_xsaid = array(
 	'cancelled'   => 'Cancelled at X. Nothing changed.',
 	'expired'     => 'That took too long. Try again.',
 	'failed'      => 'X did not complete the sign-in. Try again, or use Discord.',
+	/* Deliberately specific. These three are the only ways to get past
+	   the consent screen and still not reach the lookup, and each has a
+	   different cause, so saying which one saves reading a log. */
+	'notoken'     => 'X would not complete the sign-in step. This is a setup problem on our side, '
+	               . 'not yours. Use Discord for now.',
+	'noprofile'   => 'X signed you in but would not tell us who you are. This is a setup problem on '
+	               . 'our side, not yours. Use Discord for now.',
 	'nocode'      => 'X did not send us anything to work with. Try again.',
 	'signin'      => 'Sign in with Discord first, then you can connect X.',
 	'unavailable' => 'X sign-in is not configured yet.',

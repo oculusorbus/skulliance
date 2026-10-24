@@ -73,15 +73,29 @@ $flow = x_oauth_take_state(isset($_GET['state']) ? (string)$_GET['state'] : '');
 if (!$flow)                 xcb_go('index.php', 'expired');
 /* The user declining at X's end arrives here with ?error= and no code.
    That is a normal outcome, not a fault. */
-if (!empty($_GET['error'])) xcb_go($flow['mode'] === 'connect' ? 'profile.php' : 'index.php', 'cancelled');
+if (!empty($_GET['error'])) xcb_go(($flow['mode'] === 'connect') ? 'wallets.php' : 'index.php', 'cancelled');
 $code = isset($_GET['code']) ? (string)$_GET['code'] : '';
 if ($code === '')           xcb_go('index.php', 'nocode');
 
+/*
+ * THREE OUTCOMES, NOT ONE "failed".
+ *
+ * This said "X did not complete the sign-in" for every upstream
+ * problem, which is useless to a player and worse to whoever is
+ * debugging it -- the whole point of reaching this page is to find out
+ * which half broke. The credentials being unreadable, X refusing the
+ * code, and X refusing to say who you are are three different faults
+ * with three different fixes, and the page now distinguishes them
+ * without anybody opening a log.
+ */
+$back = ($flow['mode'] === 'connect') ? 'wallets.php' : 'index.php';
+if (!x_oauth_config())      xcb_go($back, 'unavailable');
+
 $token = x_oauth_exchange($code, $flow['verifier'], $flow['uri']);
-if ($token === '')          xcb_go($flow['mode'] === 'connect' ? 'profile.php' : 'index.php', 'failed');
+if ($token === '')          xcb_go($back, 'notoken');
 
 $me = x_oauth_me($token);
-if (!$me)                   xcb_go($flow['mode'] === 'connect' ? 'profile.php' : 'index.php', 'failed');
+if (!$me)                   xcb_go($back, 'noprofile');
 
 $x_id     = $conn->real_escape_string($me['id']);
 $x_handle = $conn->real_escape_string($me['username']);

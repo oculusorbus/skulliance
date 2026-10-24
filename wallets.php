@@ -40,6 +40,8 @@ $wx_said = array(
 	'taken'       => 'That X account is already connected to a different Skulliance account.',
 	'cancelled'   => 'Cancelled at X. Nothing changed.',
 	'failed'      => 'X did not complete the connection. Nothing changed.',
+	'notoken'     => 'X would not complete the sign-in step, so nothing was connected. Setup problem our end.',
+	'noprofile'   => 'X would not tell us who you are, so nothing was connected. Setup problem our end.',
 	'expired'     => 'That took too long. Start again.',
 	'unavailable' => 'X sign-in is not configured yet.',
 );
