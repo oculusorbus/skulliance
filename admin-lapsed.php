@@ -354,15 +354,23 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 .lap-mh { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 0 12px; }
 .lap-mh h3 { margin:0; font-size:1rem; color:#e8eaed; }
 .lap-mx { background:none; border:0; color:#8fa8b8; font-size:1.4rem; line-height:1; cursor:pointer; padding:0 4px; }
-.lap-mg { display:flex; gap:18px; flex-wrap:wrap; }
-.lap-mg img { width:300px; max-width:100%; border-radius:6px; background:#0d2030; display:block; }
+/* ALIGN-ITEMS, NOT STRETCH. A flex row stretches its children to the
+   tallest one by default, and the picture has no height of its own, so
+   it was being pulled to the height of the message column beside it
+   and rendered distorted. Only visible once the text column grew
+   taller than 300px, which is why a preview with a short column
+   looked perfectly fine. */
+.lap-mg { display:flex; gap:18px; flex-wrap:wrap; align-items:flex-start; }
+.lap-mg img { width:300px; max-width:100%; height:auto; aspect-ratio:1/1;
+  object-fit:contain; align-self:flex-start; border-radius:6px;
+  background:#0d2030; display:block; }
 .lap-mi { flex:1; min-width:230px; }
 .lap-mt { font-size:.78rem; color:#8fa8b8; line-height:1.7; margin:0 0 14px; white-space:pre-line; }
 .lap-ml { font-size:.68rem; letter-spacing:.09em; text-transform:uppercase; color:#5f7d90;
   display:block; margin:0 0 5px; }
 .lap-mu { width:100%; font-size:.72rem; padding:7px 8px; color:#e8eaed; background:#06151e;
   border:1px solid rgba(255,255,255,.14); border-radius:4px; font-family:monospace; }
-.lap-mmsg { resize:vertical; line-height:1.55; font-family:inherit; min-height:215px; }
+.lap-mmsg { resize:vertical; line-height:1.55; font-family:inherit; min-height:252px; }
 .lap-ml2 { margin-top:16px; }
 .lap-mc { margin-top:9px; padding:8px 15px; font-size:.74rem; letter-spacing:.06em;
   text-transform:uppercase; color:#06222b; background:#00c8a0; border:0; border-radius:4px; cursor:pointer; }
