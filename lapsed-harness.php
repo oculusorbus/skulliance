@@ -199,6 +199,22 @@ $fb = lap_invite_line(array('by' => array('fighter' => 80)), $LB);
 ok(strpos($fb, 'Fighters Built') === false && strpos($fb, 'building Fighters') !== false,
    'the Fighters Built label is dropped into the sentence raw: ' . $fb);
 
+/*
+ * AND NOTHING THAT ADMITS TO A BATCH. "I'm reaching out to folks who
+ * haven't been around" tells the reader they are one of a list, which
+ * is the opposite of what a personal invitation is for -- worse than
+ * saying nothing about their absence. Swept for, because the natural
+ * way to write a fallback for "no history" is exactly that sentence.
+ */
+$both = lap_invite_text($heavy, $LB, true)
+      . lap_invite_text(array('by' => array()), $LB, false)
+      . lap_invite_text(array('by' => array('skullswap' => 2)), $LB, false);
+foreach (array('folks', 'everyone who', 'members who', 'anyone who',
+               'all of you', 'people who hav') as $batch) {
+	if (!ok(stripos($both, $batch) === false,
+	        'the invite reads as a batch send: "' . $batch . '"')) break;
+}
+
 /* No invented history: these go to people the owner has never
    messaged. */
 $all = lap_invite_text($heavy, $LB, true) . lap_invite_text(array('by' => array()), $LB, false);

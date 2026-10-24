@@ -176,10 +176,18 @@ function lap_invite_text($did, $labels, $has_realm) {
 	 * there are a lot of new features" is the same sentence twice, and
 	 * saying it twice is what makes copy read as generated.
 	 */
+	/*
+	 * NOTHING THAT ADMITS TO A BATCH. The fallback used to open "I'm
+	 * reaching out to folks who haven't been around in a while", which
+	 * tells the reader they are one of a list -- the exact opposite of
+	 * what a personal invitation is for, and worse than saying nothing
+	 * about their absence at all. When there is no history worth
+	 * naming, the message simply addresses them and gets to the point.
+	 */
 	$out .= ($line !== '')
 		? $line . " Skulliance has a TON of new features since then."
-		: "I'm reaching out to folks who haven't been around in a while. "
-		. "Skulliance has a TON of new features to check out.";
+		: "I wanted to let you know that Skulliance has a TON of new features "
+		. "since you were last around.";
 	/* Only when it is true, and it is the single strongest reason to
 	   come back, so it gets its own line. */
 	if ($has_realm) $out .= "\n\nYour realm is still standing, by the way.";
