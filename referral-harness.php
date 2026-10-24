@@ -134,9 +134,16 @@ echo "\nthe inviter finds out\n";
 	 . 'the inviter\'s traits');
 	ok(strpos($lib, 'function ref_replay') !== false, 'there is no replay, so the inviter sees nothing');
 	ok(strpos($lib, 'sendDM(') !== false, 'the inviter is not told while they are away');
-	/* Three at once must all be revealable. */
-	ok(strpos($dfl, "count(\$_SESSION['dhcf_unseen']) < 9") !== false,
-	   'the reveal queue is still bounded below 9, so a triple invite loses one');
+	/* Three at once must all be revealable. ANCHORED ON THE SIZE, NOT THE
+	   SPELLING: this greped for a literal 9 and went red the moment the
+	   cap became a named constant, which is correct code failing a check.
+	   What matters is that the bound is big enough for a triple invite to
+	   land on top of whatever else the arrival is owed. */
+	ok(strpos($dfl, "count(\$_SESSION['dhcf_unseen']) < DHCF_UNSEEN_MAX") !== false,
+	   'the reveal queue is no longer bounded by DHCF_UNSEEN_MAX');
+	ok(defined('DHCF_UNSEEN_MAX') && DHCF_UNSEEN_MAX >= 11,
+	   'the reveal queue is smaller than a welcome-back package (8) plus a triple invite (3), '
+	 . 'so a returning invitee silently never sees some of their traits');
 	/* The replayed payload must be built by the SAME function a live drop
 	   uses, or the two drift. */
 	ok(strpos($dfl, 'function dhcf_drop_payload') !== false,

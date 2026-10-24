@@ -2,10 +2,10 @@
 /**
  * lib/return-gift.php -- a welcome-back package, derived not stored.
  *
- * Three traits for a lapsed member who signs back in: one background,
- * one torso, one head. Those three are the minimum legal Fighter
- * (DHCF_REQUIRED), so the gift is not three nice pictures -- it is
- * exactly enough to assemble something the moment they arrive.
+ * One trait of every category for a lapsed member who signs back in:
+ * background, torso, head, arms, weapon, headgear, effects and a
+ * companion. Not three nice pictures -- a complete, finished Fighter
+ * they can assemble on the page they land on.
  *
  * DERIVED FROM THE DISCORD ID, WHICH IS WHY THERE IS NO TABLE. The
  * package is a pure function of who they are, so it can be previewed
@@ -47,8 +47,22 @@
 
 require_once __DIR__ . '/../dhcfighters-lib.php';
 
-/** The three slots a minimum legal Fighter needs. */
-if (!defined('RETURN_GIFT_SLOTS'))  define('RETURN_GIFT_SLOTS', 'background,torso,head');
+/*
+ * ONE OF EVERY CATEGORY. This started as the three slots a minimum
+ * legal Fighter needs (DHCF_REQUIRED) and was deliberately widened:
+ * the three-trait version got somebody to a plain Fighter, and the
+ * point of the package is that coming back feels like a win. Eight
+ * means they can build a FINISHED one -- armed, with a companion, with
+ * effects -- on the page they land on.
+ *
+ * WRITTEN OUT RATHER THAN READ FROM THE RARITY TABLE, so adding a
+ * ninth category is a decision somebody makes instead of a giveaway
+ * that quietly grows. return-gift-harness.php compares this list
+ * against the rarity table and fails when they diverge, so the
+ * decision cannot be skipped by accident.
+ */
+if (!defined('RETURN_GIFT_SLOTS'))  define('RETURN_GIFT_SLOTS',
+	'background,torso,head,arms,weapon,headgear,effects,companion');
 /** How long away before signing in earns one. */
 if (!defined('RETURN_GIFT_DAYS'))   define('RETURN_GIFT_DAYS', 30);
 /** Tiers a gift may draw from. */
@@ -150,6 +164,51 @@ function return_gift_due($conn, $user_id, $prev_login) {
 }
 
 /**
+ * ONE POST, NOT EIGHT.
+ *
+ * dhcf_commit_drop() announces every trait it commits, which is right
+ * for a drop that fell out of a game and wrong for a package of eight
+ * arriving at once -- that is a wall of embeds, and it reads as a bug
+ * rather than a welcome. So the per-trait announcements are suppressed
+ * and this goes out instead, carrying the assembled package as its
+ * picture. The render is the same file the admin preview links to, so
+ * the post and any DM sent beforehand show the same Fighter.
+ *
+ * Swallows everything. A present is not worth a white page, and the
+ * traits are already committed by the time this runs.
+ */
+function return_gift_announce($conn, $user_id, $traits, $discord_id) {
+	try {
+		if (!function_exists('skl_discordmsg')) return;
+		if (!function_exists('dhcf_author_block')) return;
+		list($author, $name, $mention) = dhcf_author_block($conn, $user_id);
+
+		$lines = array();
+		foreach ($traits as $cat => $slug) {
+			$lines[] = '**' . ucfirst($cat) . '** · ' . dhcf_trait_name($cat, $slug);
+		}
+		$desc = $name . ' has been away a while. Here is a whole Fighter to come back to: '
+		      . 'one trait of every category, ready to assemble.' . "\n\n"
+		      . implode("\n", $lines);
+
+		skl_discordmsg(
+			'Welcome back, ' . $name,
+			$desc,
+			return_gift_url($discord_id),      // the assembled package
+			'https://skulliance.io/staking/dhcfighters.php',
+			'dhcfighters',
+			'',
+			0x00c8a0,
+			$author,
+			array('text' => 'Welcome-back package · ' . count($traits) . ' traits'),
+			$mention
+		);
+	} catch (Throwable $e) {
+		error_log('return-gift announce: ' . $e->getMessage());
+	}
+}
+
+/**
  * Hand it over. Returns the slugs granted, or array().
  *
  * THE LEDGER ROW IS WRITTEN FIRST. If the grant half fails partway,
@@ -169,13 +228,19 @@ function return_gift_grant($conn, $user_id, $discord_id) {
 	foreach ($traits as $cat => $slug) {
 		$info = dhcf_trait_info($cat, $slug);
 		if (!$info) continue;
-		/* The same function every other drop goes through, so the player
-		   gets the usual reveal and the usual announcement rather than
-		   traits appearing silently in their inventory. */
+		/* The same function every other drop goes through, so the ledger
+		   row and the reveal are identical to any other trait. The final
+		   false suppresses the PER-TRAIT Discord post only: eight of them
+		   in a row is a wall, and one post with the assembled Fighter
+		   goes out below instead. */
 		if (function_exists('dhcf_commit_drop')) {
-			dhcf_commit_drop($conn, $uid, $cat, $slug, $info, 'returngift', 'welcome back');
+			dhcf_commit_drop($conn, $uid, $cat, $slug, $info, 'returngift', 'welcome back', false);
 		}
 		$given[$cat] = $slug;
 	}
+
+	/* After the loop, so the post describes what was actually committed
+	   rather than what was intended. */
+	if ($given) return_gift_announce($conn, $uid, $given, $discord_id);
 	return $given;
 }

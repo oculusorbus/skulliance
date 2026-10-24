@@ -21,6 +21,7 @@ function ok($cond, $what) {
 }
 
 require_once __DIR__ . '/lib/return-gift.php';
+require_once __DIR__ . '/harness-strip.php';
 
 /* ---------------------------------------------------------------- *
  * THE DERIVATION
@@ -50,6 +51,25 @@ foreach ($packs as $p) {
 	foreach ($slots as $c) if (!isset($p[$c])) { $short++; break; }
 }
 ok($short === 0, "$short package(s) are missing a slot, so they cannot build a Fighter");
+printf("  %d slots per package: %s\n", count($slots), RETURN_GIFT_SLOTS);
+
+/*
+ * ONE OF EVERY CATEGORY, which is the deal. The list is written out in
+ * the library rather than read from the rarity table so that adding a
+ * ninth category is a decision; this is the check that makes somebody
+ * take it, instead of the giveaway silently growing or silently
+ * missing the new one.
+ */
+$cats_real = array_keys(dhcf_rarity());
+$missing   = array_diff($cats_real, $slots);
+$unreal    = array_diff($slots, $cats_real);
+ok(!$missing, 'the package skips a category that exists: ' . implode(', ', $missing));
+ok(!$unreal,  'the package names a category the rarity table does not have: ' . implode(', ', $unreal));
+
+/* Every reveal has to fit in the session queue or some are never seen. */
+ok(defined('DHCF_UNSEEN_MAX') && DHCF_UNSEEN_MAX >= count($slots),
+   'the reveal queue (' . (defined('DHCF_UNSEEN_MAX') ? DHCF_UNSEEN_MAX : '?')
+ . ') is smaller than a package (' . count($slots) . '), so some traits are never shown');
 
 /*
  * TIERS. A welcome-back present that can mint a mythic devalues every
@@ -186,6 +206,34 @@ $out = trim((string)@shell_exec(PHP_BINARY . ' -r ' . $probe . ' 2>/dev/null'));
 ok(substr($out, -2) === 'NO',
    'RETURN_GIFT_ENABLED false still hands out packages (got: ' . $out . ')');
 
+/* ---------------------------------------------------------------- *
+ * THE ANNOUNCEMENT
+ * ---------------------------------------------------------------- */
+echo "\nthe package is announced once, not once per trait\n";
+/*
+ * Eight embeds in a row reads as a bug. The per-trait post is
+ * suppressed at the commit and one post with the assembled Fighter
+ * goes out instead -- and the SUPPRESSION MUST NOT REACH ANY OTHER
+ * CALLER, which is why the flag defaults to true.
+ */
+$rg = harness_strip_comments(file_get_contents(__DIR__ . '/lib/return-gift.php'));
+ok(preg_match("~dhcf_commit_drop\(.*'returngift'.*,\s*false\s*\)~", $rg) === 1,
+   'the grant still posts one Discord embed per trait');
+/* THE CALL, NOT THE DEFINITION. Both of the checks here first matched
+   `return_gift_announce($conn` and `return_gift_url($discord_id)`,
+   which are also the opening lines of those two functions -- so
+   deleting the call sites changed nothing and both mutations passed.
+   Anchored on syntax only a call can have. */
+ok(preg_match('~if \(\$given\) return_gift_announce\(\$conn~', $rg) === 1,
+   'the per-trait posts are suppressed and nothing replaces them, so the package is silent');
+$dfl = harness_strip_comments(file_get_contents(__DIR__ . '/dhcfighters-lib.php'));
+ok(preg_match('~function dhcf_commit_drop\([^)]*\$announce = true~', $dfl) === 1,
+   'the announce flag does not default to true, so every other drop on the platform went quiet');
+/* The picture on the post is the same file the admin preview links to,
+   or the DM and the announcement show different Fighters. */
+ok(preg_match('~return_gift_url\(\$discord_id\),~', $rg) === 1,
+   'the announcement does not carry the assembled package as its image');
+
 /* Serial 0 cannot collide with a saved Fighter. */
 ok((int)RETURN_GIFT_SERIAL === 0,
    'the package serial is not 0, so a preview can overwrite a real Fighter render');
@@ -286,7 +334,6 @@ echo "\nthe preview endpoint is not a public render farm\n";
    below failed on a correct file: the header comment explains why the
    render is on demand and names dhcf_render_fighter() while doing it,
    so the "render" was found above the gate. */
-require_once __DIR__ . '/harness-strip.php';
 $card = harness_strip_comments(file_get_contents(__DIR__ . '/return-gift-card.php'));
 $a_gate = strpos($card, 'admin_require()');
 $a_rend = strpos($card, 'dhcf_render_fighter(');

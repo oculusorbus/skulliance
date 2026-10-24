@@ -132,7 +132,7 @@ if (!empty($_SESSION['userData']['discord_id'])) {
 					$_SESSION['dhcf_unseen_at'] = time();
 				}
 				foreach ($skl_owed as $skl_d) {
-					if (count($_SESSION['dhcf_unseen']) < 9) $_SESSION['dhcf_unseen'][] = $skl_d;
+					if (count($_SESSION['dhcf_unseen']) < DHCF_UNSEEN_MAX) $_SESSION['dhcf_unseen'][] = $skl_d;
 				}
 			}
 		}

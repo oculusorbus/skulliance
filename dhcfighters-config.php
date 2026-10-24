@@ -100,6 +100,15 @@ function dhcf_slot_category($slot) {
 define('DHCF_REQUIRED', array('background', 'torso', 'head'));
 
 /*
+ * How many un-shown reveals are parked in the session at once. Must be
+ * larger than the biggest single payout, which is the welcome-back
+ * package at one of every category (8) -- and that can coincide with an
+ * invite paying three. Twelve covers both with room; see the note in
+ * dhcf_commit_drop() for what going over actually costs.
+ */
+if (!defined('DHCF_UNSEEN_MAX')) define('DHCF_UNSEEN_MAX', 12);
+
+/*
  * The artist, and where to send people who want to see more of the work.
  *
  * ONE DEFINITION because it belongs in every DHC intro -- the assembler, the
@@ -1161,6 +1170,18 @@ $GLOBALS['DHCF_GAMES'] = array(
 	                          'trigger' => 'a friend joins or returns through your link',
 	                          'base' => 'placement_3', 'cap' => 60,
 	                          'limit_note' => 'three traits per friend who turns up',
+	                          'unlisted' => true),
+
+	// Not a game either: the welcome-back package, one trait of every
+	// category, handed over on a sign-in after a month away. Unlisted
+	// because it is not something anybody can go and do -- it appears on
+	// dhcfighters.php as "where traits drop" otherwise, under a heading
+	// telling a signed-in member to go and play it.
+	'returngift'     => array('label' => 'Welcome back', 'earned_from' => 'coming back after a month away',
+	                          'url' => 'dhcfighters.php', 'category' => 'wildcard',
+	                          'trigger' => 'signing in after 30 days away',
+	                          'base' => 'run',
+	                          'limit_note' => 'one of every category, once ever',
 	                          'unlisted' => true),
 
 	// A cache that sometimes falls out of the daily digest. Not a game

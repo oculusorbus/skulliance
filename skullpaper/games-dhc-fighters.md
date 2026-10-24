@@ -120,18 +120,21 @@ banded by how much stronger the Crew you beat was.
 
 ### Coming back after a month away
 
-Signing in after **30 days or more** away hands over three traits at once: a
-background, a torso and a head. That is exactly the minimum a legal Fighter
-needs, so a returning player can build one on the page they land on rather than
-starting from an empty tray.
+Signing in after **30 days or more** away hands over **one trait of every
+category**, all at once: background, torso, head, arms, weapon, headgear,
+effects and a companion. Not the bare minimum a Fighter needs but a finished
+one, buildable on the page they land on rather than starting from an empty tray.
 
-It arrives the usual way, as three reveals and three Discord announcements, and
-the traits are ordinary stock that goes into the same inventory as everything
-else. They are drawn from the **common and uncommon** tiers only. A present for
-turning up must not out-rank what people earned by playing.
+The traits are ordinary stock and go into the same inventory as everything else,
+with the usual reveal for each. They are drawn from the **common and uncommon**
+tiers only. A present for turning up must not out-rank what people earned by
+playing.
 
-The package is **the same three traits every time** for a given member, worked
-out from their Discord ID rather than rolled and stored. Nothing is reserved and
+Discord gets **one post, not eight**: a single welcome-back announcement showing
+the whole package assembled as the Fighter it makes.
+
+The package is **the same traits every time** for a given member, worked out
+from their Discord ID rather than rolled and stored. Nothing is reserved and
 nothing expires, so the welcome-back picture in an invitation still matches what
 arrives weeks later.
 

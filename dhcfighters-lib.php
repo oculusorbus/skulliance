@@ -477,7 +477,16 @@ function dhcf_award($conn, $user_id, $category, $source, $source_detail = '', $t
  * own announcement -- without going back through the draw or the daily cap,
  * neither of which it should pay twice.
  */
-function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_detail = '') {
+/*
+ * $announce FALSE POSTS NOTHING TO DISCORD, and exists for exactly one
+ * caller: the welcome-back package awards one trait of every category
+ * at once, and eight embeds in a row is a wall rather than a welcome.
+ * That caller sends a single post of its own with the assembled
+ * Fighter instead. The LEDGER ROW AND THE REVEAL ARE UNAFFECTED -- only
+ * the announcement is skipped, which is the one part that is safe to
+ * lose. Defaults to true, so every existing caller is unchanged.
+ */
+function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_detail = '', $announce = true) {
 	$sql = sprintf(
 		"INSERT INTO dhc_trait_drops (user_id, category, slug, tier, drop_rate, source, source_detail, awarded_at)
 		 VALUES (%d, '%s', '%s', '%s', %.3f, '%s', '%s', NOW())",
@@ -526,11 +535,15 @@ function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_
 		// Bounded: a reveal queue is a nicety, not a ledger. The ledger is the
 		// database, and it already has every one of these.
 		//
-		// NINE, NOT FIVE. An invite pays three traits at once and a player can
-		// have two land between one visit and the next, which is six -- at five
-		// the last one was silently not revealed. The trait was still theirs;
-		// they just never saw it, which is the part that matters.
-		if (count($_SESSION['dhcf_unseen']) < 9) $_SESSION['dhcf_unseen'][] = $drop;
+		// SIZED TO THE BIGGEST SINGLE PAYOUT PLUS ROOM, and it has been wrong
+		// twice. Five was too small once an invite paid three at a time and two
+		// could land between visits; nine was too small the moment the
+		// welcome-back package started paying one of every category, which is
+		// eight -- and a returning player can be owed invite traits in the same
+		// breath. Over the cap the trait is still theirs and still in the
+		// ledger; they just never see it, which is the part that matters, and
+		// nothing anywhere looks wrong. See DHCF_UNSEEN_MAX.
+		if (count($_SESSION['dhcf_unseen']) < DHCF_UNSEEN_MAX) $_SESSION['dhcf_unseen'][] = $drop;
 	}
 
 	// Announced from here rather than from the endpoint, so every award posts
@@ -558,7 +571,9 @@ function dhcf_commit_drop($conn, $user_id, $cat, $slug, $info, $source, $source_
 	 * DROP ITSELF IS UNAFFECTED: it is committed above either way, and what
 	 * is skipped is the announcement, which is the right thing to lose.
 	 */
-	if (defined('DHCF_NO_NOTIFY') && DHCF_NO_NOTIFY) {
+	if (!$announce) {
+		/* Deliberate, and the caller is posting its own. */
+	} elseif (defined('DHCF_NO_NOTIFY') && DHCF_NO_NOTIFY) {
 		error_log('dhcf_commit_drop: announcement skipped for ' . $source . ' (DHCF_NO_NOTIFY)');
 	} elseif (is_file(__DIR__ . '/dhcfighters-notify.php')) {
 		// Buffered around the REQUIRE as well as the call: loading the notifier
