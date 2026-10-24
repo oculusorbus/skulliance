@@ -3060,10 +3060,29 @@ function createUser($conn) {
 	$sql = "INSERT INTO users (discord_id, avatar, username)
 	VALUES ('".$cu_discord_id."', '".$cu_avatar."', '".$cu_name."')";
 
-	if ($conn->query($sql) === TRUE) {
-	  //echo "New record created successfully";
-	} else {
-	  //echo "Error: " . $sql . "<br>" . $conn->error;
+	if ($conn->query($sql) !== TRUE) {
+		/*
+		 * A DUPLICATE HERE IS NOT AN ERROR, and since users.discord_id
+		 * gained a UNIQUE index it is the expected outcome of a race:
+		 * checkUser() SELECTs, finds nothing, and two simultaneous
+		 * logins both arrive here. Before the index they both inserted
+		 * and the account forked -- an identity bug that would surface
+		 * weeks later as a lost streak. Now the loser fails, falls
+		 * through, and the checkUser() below picks up the row the
+		 * winner wrote. The race resolves to one account by itself.
+		 *
+		 * EVERYTHING ELSE IS WORTH KNOWING ABOUT. This branch used to be
+		 * a commented-out echo, so a genuine failure -- a full disk, a
+		 * dropped connection, a column that stopped accepting what we
+		 * send it -- looked exactly like success and the player got a
+		 * session with no account behind it. Logged, never echoed: this
+		 * runs inside the OAuth callback, where output breaks the
+		 * redirect and leaks whatever was printed.
+		 */
+		$cu_err = $conn->errno;
+		if ($cu_err !== 1062) {          /* 1062 = duplicate key, i.e. the race */
+			error_log('createUser: insert failed (' . $cu_err . ') ' . $conn->error);
+		}
 	}
 	// Immediately check user to set session variable and prevent first run errors
 	checkUser($conn);
