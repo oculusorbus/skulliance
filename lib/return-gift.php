@@ -28,6 +28,12 @@
  * armour curve, and handing them out for signing in would devalue
  * every one somebody actually earned.
  *
+ * A DIFFERENT FIGHTER EACH TIME. The package is salted with how many
+ * the member has already had, so a second lapse is a genuinely new
+ * set rather than eight duplicates of the first. Lapse 0 hashes
+ * exactly as it did before the salt existed, so nothing already
+ * previewed or promised changed.
+ *
  * ONCE PER LAPSE, NOT ONCE EVER, recorded as the trait rows
  * themselves in dhc_trait_drops under source 'returngift' -- no marker
  * row, no new table and no schema change. Signing in sets the distance
@@ -95,8 +101,8 @@ if (!defined('RETURN_GIFT_SIZE'))   define('RETURN_GIFT_SIZE', 500);
  * here becomes a 404 with nothing to notice it. lapsed-harness.php runs
  * both and fails on any disagreement, so the copy cannot rot quietly.
  */
-function return_gift_url($discord_id) {
-	$traits = return_gift_layout(return_gift_traits($discord_id));
+function return_gift_url($discord_id, $lapse = 0) {
+	$traits = return_gift_layout(return_gift_traits($discord_id, $lapse));
 	if (!$traits) return '';
 	$name = 'f' . (int)RETURN_GIFT_SERIAL . '-' . substr(md5(json_encode($traits)), 0, 8)
 	      . (RETURN_GIFT_SIZE === 500 ? '' : '@' . RETURN_GIFT_SIZE) . '.png';
@@ -170,9 +176,19 @@ function return_gift_layout($traits) {
  * Pure. Same answer every time, on any server, with no state read or
  * written. Returns array() if the rarity table cannot be loaded.
  */
-function return_gift_traits($discord_id) {
+function return_gift_traits($discord_id, $lapse = 0) {
 	$id = preg_replace('/[^0-9]/', '', (string)$discord_id);
 	if ($id === '') return array();
+	$lapse = max(0, (int)$lapse);
+	/*
+	 * LAPSE 0 HASHES EXACTLY AS IT ALWAYS DID. The salt is empty for a
+	 * first package, so every preview already sent out -- three hundred
+	 * and forty four of them -- still resolves to the same eight
+	 * traits and the same rendered file. A salt applied unconditionally
+	 * would have invalidated every promise made so far, silently, with
+	 * the images in those DMs still showing the old fighter.
+	 */
+	$salt = $lapse > 0 ? $lapse . '|' : '';
 	$rarity = dhcf_rarity();
 	if (!$rarity) return array();
 
@@ -200,7 +216,7 @@ function return_gift_traits($discord_id) {
 			 * to the head and arms already chosen.
 			 */
 			if (return_gift_clashes($cat, $slug, $out)) continue;
-			$score = hash('sha256', $id . '|' . $cat . '|' . $slug);
+			$score = hash('sha256', $id . '|' . $salt . $cat . '|' . $slug);
 			/* String compare: both are 64 hex chars, so this orders them
 			   exactly as the numbers would, without touching floats. */
 			if ($bestScore === '' || strcmp($score, $bestScore) < 0) {
@@ -252,6 +268,33 @@ function return_gift_granted($conn, $user_id) {
 	return $out;
 }
 
+/**
+ * How many packages this person has had BEFORE the current window.
+ *
+ * COUNTED BY DAY, not by row: one package is eight rows sharing a
+ * timestamp, and dividing by eight would be wrong the moment a grant
+ * is resumed after a partial failure. Two packages are by definition
+ * a month apart, so a distinct date is a distinct package.
+ *
+ * THE CURRENT WINDOW IS EXCLUDED DELIBERATELY. If the package handed
+ * over an hour ago counted, a resumed grant would compute a higher
+ * lapse number than the one it started with and hand over the
+ * remaining categories from a DIFFERENT set -- a fighter assembled
+ * from two different packages.
+ */
+function return_gift_lapse($conn, $user_id) {
+	$uid = (int)$user_id;
+	if ($uid <= 0) return 0;
+	$days = max(1, (int)RETURN_GIFT_DAYS);
+	$r = @$conn->query("SELECT COUNT(DISTINCT DATE(awarded_at)) AS n
+	                      FROM dhc_trait_drops
+	                     WHERE user_id = $uid AND source = 'returngift'
+	                       AND awarded_at <= DATE_SUB(NOW(), INTERVAL $days DAY)");
+	if (!$r) return 0;
+	$row = $r->fetch_assoc();
+	return $row ? max(0, (int)$row['n']) : 0;
+}
+
 /** Has this person already had one during this lapse? */
 function return_gift_claimed($conn, $user_id) {
 	$had = return_gift_granted($conn, $user_id);
@@ -291,7 +334,7 @@ function return_gift_due($conn, $user_id, $prev_login) {
  * Swallows everything. A present is not worth a white page, and the
  * traits are already committed by the time this runs.
  */
-function return_gift_announce($conn, $user_id, $traits, $discord_id) {
+function return_gift_announce($conn, $user_id, $traits, $discord_id, $lapse = 0) {
 	try {
 		/*
 		 * LOAD THE NOTIFIER OURSELVES. It is normally pulled in by
@@ -327,7 +370,7 @@ function return_gift_announce($conn, $user_id, $traits, $discord_id) {
 		skl_discordmsg(
 			'Welcome back, ' . $name,
 			$desc,
-			return_gift_url($discord_id),      // the assembled package
+			return_gift_url($discord_id, $lapse),   // the assembled package
 			'https://skulliance.io/staking/dhcfighters.php',
 			'dhcfighters',
 			'',
@@ -350,7 +393,11 @@ function return_gift_announce($conn, $user_id, $traits, $discord_id) {
  */
 function return_gift_grant($conn, $user_id, $discord_id) {
 	$uid = (int)$user_id;
-	$traits = return_gift_traits($discord_id);
+	/* A different fighter each time somebody comes back. Read before
+	   anything is written, so a resume inside the same window computes
+	   the same number and finishes the package it started. */
+	$lapse  = return_gift_lapse($conn, $uid);
+	$traits = return_gift_traits($discord_id, $lapse);
 	if ($uid <= 0 || !$traits) return array();
 
 	/*
@@ -404,6 +451,6 @@ function return_gift_grant($conn, $user_id, $discord_id) {
 
 	/* After the loop, so the post describes what was actually committed
 	   rather than what was intended. */
-	if ($given) return_gift_announce($conn, $uid, $given, $discord_id);
+	if ($given) return_gift_announce($conn, $uid, $given, $discord_id, $lapse);
 	return $given;
 }

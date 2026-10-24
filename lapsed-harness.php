@@ -98,12 +98,29 @@ echo "\nthe panel can show who actually came back\n";
  * recorded to measure the campaign. Change that source string in
  * lib/return-gift.php and this panel silently reports nobody.
  */
-/* BOTH QUERIES, COUNTED. This checked for the string and passed while
-   one of the two still had it -- changing the source in the returns
-   list alone left the check green and the panel reporting nobody. */
-ok(substr_count($src, "source = 'returngift'") === 2,
-   'the returns list and the Fighter join must both key on the welcome-back package; found '
- . substr_count($src, "source = 'returngift'") . ' of 2');
+/*
+ * EVERY QUERY THAT READS THE LEDGER, not a fixed count of them. This
+ * asserted exactly two and went red the moment a third was added for
+ * the lapse count -- correct code, failing check, which is the same
+ * brittleness as pinning a spelling. The property is that no query
+ * against dhc_trait_drops here reads anything other than the
+ * welcome-back rows; miss the source on one and it silently counts
+ * every trait ever dropped.
+ */
+/* Split rather than matched: the first version of this carried a
+   literal backspace where \b was meant -- inserted through a script
+   that ate the escape -- so the pattern never matched anything and
+   the check passed on every mutation. A substring walk cannot rot
+   that way. */
+$parts = explode('dhc_trait_drops', $src);
+$loose = 0;
+for ($qi = 1; $qi < count($parts); $qi++) {
+	if (strpos(substr($parts[$qi], 0, 300), "source = 'returngift'") === false) $loose++;
+}
+ok(count($parts) - 1 >= 2, 'the ledger queries have gone, so the returns view reads nothing');
+ok($loose === 0,
+   "$loose quer(y/ies) against dhc_trait_drops do not filter on the welcome-back package, "
+ . 'so they count every trait ever dropped');
 ok(strpos($src, "view=back") !== false && strpos($src, "'back'") !== false,
    'there is no way to reach the returns view');
 
@@ -289,6 +306,64 @@ ok(strpos(outreach_path(), '/dhcrenders/') === false,
    'the outreach log lives in the render cache, where clearing stale images deletes it');
 ok(preg_match('~^/?data/~m', file_get_contents(__DIR__ . '/.gitignore')) === 1,
    'data/ is not gitignored, so one `git add -A` commits the outreach log');
+
+/* ---- a different fighter each time they come back ---- */
+echo "\na repeat return is a new package, and the first one did not move\n";
+require_once __DIR__ . '/lib/return-gift.php';
+$rid = '578386308406181918';
+/*
+ * THE REGRESSION THAT WOULD HAVE BEEN SILENT. Three hundred and
+ * forty four previews are already out in DMs, each showing a
+ * rendered file keyed on the traits. Salting lapse 0 would have
+ * changed every one of them while the pictures already sent kept
+ * showing the old fighter, and nothing would have errored.
+ *
+ * These eight are transcribed from the ledger of a member who
+ * actually collected -- the real answer, not this code's answer.
+ */
+$promised = array('background' => 'light-purple', 'torso' => 'c38', 'head' => 'cyborg-stryker-02',
+                  'arms' => 'robo-crusher-arms', 'weapon' => 'annihilation-belt',
+                  'headgear' => 'malware-detecting-mask', 'effects' => 'digital-fire',
+                  'companion' => 'dh-vision-shoulder-cam');
+$first = return_gift_traits($rid, 0);
+ksort($first); ksort($promised);
+ok($first === $promised,
+   'the first package no longer matches what was already promised in DMs');
+ok(return_gift_traits($rid) === return_gift_traits($rid, 0),
+   'the default lapse is not 0, so an un-salted call differs from a first package');
+
+$second = return_gift_traits($rid, 1);
+ok($second !== $first, 'a second lapse hands over the same eight traits again');
+ok(count($second) === count($first), 'a later package is a different size');
+ok(return_gift_traits($rid, 1) === $second, 'the second package is not stable between calls');
+ok(return_gift_url($rid, 1) !== return_gift_url($rid, 0),
+   'both packages render to the same file, so the preview cannot tell them apart');
+
+/* Every rule still holds on a later package, not just the first. */
+$rar = dhcf_rarity();
+$allow2 = array('common' => 1, 'uncommon' => 1);
+$bad2 = array();
+for ($lp = 1; $lp <= 4; $lp++) {
+	$t = return_gift_traits($rid, $lp);
+	if (count($t) !== 8) $bad2[] = "lapse $lp has " . count($t) . ' traits';
+	foreach ($t as $c => $sl) {
+		$tier = isset($rar[$c][$sl][0]) ? $rar[$c][$sl][0] : '?';
+		if (!isset($allow2[$tier])) $bad2[] = "lapse $lp $c/$sl is $tier";
+	}
+	$h = isset($t['head']) ? $t['head'] : ''; $a2 = isset($t['arms']) ? $t['arms'] : '';
+	if (isset($t['headgear'])  && dhcf_headgear_blocked($h, $t['headgear']))  $bad2[] = "lapse $lp headgear clash";
+	if (isset($t['companion']) && dhcf_companion_blocked($h, $t['companion'])) $bad2[] = "lapse $lp companion clash";
+	if (isset($t['weapon'])    && dhcf_arms_weapon_clash($a2, $t['weapon']))   $bad2[] = "lapse $lp weapon clash";
+}
+ok(!$bad2, 'later packages break the rules the first one follows: ' . implode(' | ', array_slice($bad2, 0, 3)));
+
+/* The lapse count must ignore the package being handed over right
+   now, or a resumed grant finishes with traits from a different set. */
+$rgs = harness_strip_comments(file_get_contents(__DIR__ . '/lib/return-gift.php'));
+ok(strpos($rgs, 'awarded_at <= DATE_SUB(NOW(), INTERVAL $days DAY)') !== false,
+   'the lapse count includes the current window, so a resumed grant switches to a different package');
+ok(strpos($rgs, 'COUNT(DISTINCT DATE(awarded_at))') !== false,
+   'packages are counted by row rather than by day, which miscounts any grant that was resumed');
 
 /* ---- catching up on a batch ---- */
 echo "\nmarking many is one write, and does not lose the others\n";

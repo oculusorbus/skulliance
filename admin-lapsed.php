@@ -72,6 +72,20 @@ $q = @$conn->query("SELECT user_id, COUNT(*) AS traits, MIN(awarded_at) AS back_
                      GROUP BY user_id ORDER BY back_at DESC");
 if ($q) while ($x = $q->fetch_assoc()) $al_back[(int)$x['user_id']] = $x;
 
+/*
+ * HOW MANY PACKAGES EACH PERSON HAS ALREADY HAD, so the preview shows
+ * the one they would get NEXT rather than a repeat of their first.
+ * Same window exclusion as return_gift_lapse(): a package handed over
+ * inside the current window is the one in progress, not a past one.
+ */
+$al_lapse = array();
+$q = @$conn->query("SELECT user_id, COUNT(DISTINCT DATE(awarded_at)) AS n
+                      FROM dhc_trait_drops
+                     WHERE source = 'returngift'
+                       AND awarded_at <= DATE_SUB(NOW(), INTERVAL " . (int)RETURN_GIFT_DAYS . " DAY)
+                     GROUP BY user_id");
+if ($q) while ($x = $q->fetch_assoc()) $al_lapse[(int)$x['user_id']] = (int)$x['n'];
+
 $al_bu = $al_built = array();
 if ($al_back) {
 	$bids = implode(',', array_map('intval', array_keys($al_back)));
@@ -777,8 +791,9 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 			/* Derived once per row: return_gift_url() calls the same
 			   derivation internally, so asking twice doubles the hashing
 			   for nothing. */
-			$gift_t  = return_gift_traits($u['discord_id']);
-			$gift_u  = return_gift_url($u['discord_id']);
+			$gift_n  = isset($al_lapse[$uid]) ? (int)$al_lapse[$uid] : 0;
+			$gift_t  = return_gift_traits($u['discord_id'], $gift_n);
+			$gift_u  = return_gift_url($u['discord_id'], $gift_n);
 			$gift_ep = 'return-gift-card.php?d=' . rawurlencode($u['discord_id']);
 			$gift_l  = array();
 			foreach ($gift_t as $gc => $gs) {
@@ -794,7 +809,8 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 			<button type="button" class="lap-giftbtn"
 			        data-img="<?php echo htmlspecialchars($gift_ep, ENT_QUOTES); ?>"
 			        data-url="<?php echo htmlspecialchars($gift_u, ENT_QUOTES); ?>"
-			        data-who="<?php echo htmlspecialchars($u['username'], ENT_QUOTES); ?>"
+			        data-who="<?php echo htmlspecialchars($u['username'], ENT_QUOTES)
+			            . ($gift_n > 0 ? ' (package ' . ($gift_n + 1) . ')' : ''); ?>"
 			        data-traits="<?php echo htmlspecialchars(implode("\n", $gift_l), ENT_QUOTES); ?>"
 			        data-msg="<?php echo htmlspecialchars(
 			            lap_invite_text($did, $al_labels, !empty($al_realm[$uid]),
