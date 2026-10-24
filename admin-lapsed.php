@@ -32,6 +32,63 @@ require_once __DIR__ . '/activity-sources-lib.php';
    admin page nobody loads in a loop. */
 require_once __DIR__ . '/lib/return-gift.php';
 
+/*
+ * TWO VIEWS OFF ONE PAGE. "Who should I write to" and "did writing to
+ * them work" are the same campaign seen from either end, and splitting
+ * them across two admin tabs would mean checking two places to answer
+ * one question.
+ */
+$al_view = (isset($_GET['view']) && $_GET['view'] === 'back') ? 'back' : 'lapsed';
+
+/*
+ * WHO HAS COME BACK. The welcome-back package is the receipt: it is
+ * granted once per lapse on a sign-in after a month away, so a
+ * 'returngift' row IS a returning member, timestamped. Nothing else
+ * had to be recorded to measure this.
+ */
+$al_back = array();
+$q = @$conn->query("SELECT user_id, COUNT(*) AS traits, MIN(awarded_at) AS back_at
+                      FROM dhc_trait_drops WHERE source = 'returngift'
+                     GROUP BY user_id ORDER BY back_at DESC");
+if ($q) while ($x = $q->fetch_assoc()) $al_back[(int)$x['user_id']] = $x;
+
+$al_bu = $al_built = array();
+if ($al_back) {
+	$bids = implode(',', array_map('intval', array_keys($al_back)));
+	$q = @$conn->query("SELECT id, username, discord_id, avatar, last_login
+	                      FROM users WHERE id IN ($bids)");
+	if ($q) while ($x = $q->fetch_assoc()) $al_bu[(int)$x['id']] = $x;
+	/*
+	 * DID THEY BUILD ANYTHING WITH IT. This is the measure that matters:
+	 * the package exists so somebody can assemble a Fighter the moment
+	 * they arrive, so a Fighter dated after the package is the gift
+	 * doing its job. Signing in and leaving again is not a win.
+	 *
+	 * Counted against each member's OWN return date in one query rather
+	 * than one per member.
+	 */
+	$q = @$conn->query(
+		"SELECT f.user_id, COUNT(*) AS n
+		   FROM dhc_fighters f
+		   JOIN (SELECT user_id, MIN(awarded_at) AS back_at FROM dhc_trait_drops
+		          WHERE source = 'returngift' GROUP BY user_id) g ON g.user_id = f.user_id
+		  WHERE f.created_at >= g.back_at
+		  GROUP BY f.user_id");
+	if ($q) while ($x = $q->fetch_assoc()) $al_built[(int)$x['user_id']] = (int)$x['n'];
+}
+
+/* Headline numbers, counted here so the strip reads the same on both views. */
+$al_n_back = count($al_back);
+$al_n_week = $al_n_built = $al_n_again = 0;
+foreach ($al_back as $uid => $b) {
+	$t = strtotime($b['back_at']);
+	if ($t && $t > time() - 7 * 86400) $al_n_week++;
+	if (!empty($al_built[$uid]))       $al_n_built++;
+	/* last_login is written at most once a day, so "came back on a later
+	   day" is the honest reading of a login newer than the package. */
+	if (isset($al_bu[$uid]) && $t && strtotime($al_bu[$uid]['last_login']) > $t + 86400) $al_n_again++;
+}
+
 /* Both in the query string so a view can be linked or bookmarked. */
 $al_days = isset($_GET['days']) ? (int)$_GET['days'] : 90;
 if (!in_array($al_days, array(30, 90, 180, 365), true)) $al_days = 90;
@@ -117,6 +174,14 @@ admin_chrome('lapsed');
 ?>
 <?php include 'admin-css.php'; ?>
 <style>
+/* The scoreboard. Four numbers, not a chart: the question is "is this
+   working", and a sparkline over two data points would be decoration. */
+.lap-score { display:flex; gap:28px; flex-wrap:wrap; margin:0 0 16px; }
+.lap-score div { display:flex; flex-direction:column; }
+.lap-score b { font-size:1.5rem; color:#e8eaed; font-variant-numeric:tabular-nums; line-height:1.1; }
+.lap-score b.lap-good { color:#00c8a0; }
+.lap-score span { font-size:.68rem; letter-spacing:.08em; text-transform:uppercase; color:#5f7d90; margin-top:3px; }
+.lap-views { margin:0 0 16px; }
 .lap-sum { font-size:.8rem; color:#8fa8b8; margin:0 0 14px; }
 .lap-sum b { color:#00c8a0; }
 .lap-tools { display:flex; gap:16px; flex-wrap:wrap; margin:0 0 16px; align-items:center; }
@@ -188,6 +253,83 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
   text-transform:uppercase; color:#06222b; background:#00c8a0; border:0; border-radius:4px; cursor:pointer; }
 @media (max-width:560px) { .lap-mg img { width:100%; } }
 </style>
+
+<?php /* THE SCOREBOARD, on both views, because the reason to work the
+         lapsed list is sitting in these four numbers. "Built a Fighter"
+         is the one that means the campaign worked: the package exists so
+         somebody can assemble one on arrival, and a sign-in that leads
+         nowhere is not a win. */ ?>
+<div class="lap-score">
+	<?php /* THE LOGIN IS THE WIN. Somebody signing in after a personal
+	         invite is the campaign working, whether or not they go on to
+	         build anything, so this is the number that gets the colour. */ ?>
+	<div><b class="<?php echo $al_n_back ? 'lap-good' : ''; ?>"><?php
+		echo number_format($al_n_back); ?></b><span>came back</span></div>
+	<div><b><?php echo number_format($al_n_week); ?></b><span>in the last 7 days</span></div>
+	<div><b><?php echo number_format($al_n_built); ?></b><span>built a Fighter</span></div>
+	<div><b><?php echo number_format($al_n_again); ?></b><span>came back again</span></div>
+</div>
+
+<div class="lap-range lap-views">
+	<a href="admin-lapsed.php?days=<?php echo $al_days; ?>&amp;sort=<?php echo $al_sort; ?>"
+	   class="<?php echo $al_view === 'lapsed' ? 'on' : ''; ?>">Still away</a>
+	<a href="admin-lapsed.php?view=back" class="<?php
+	   echo $al_view === 'back' ? 'on' : ''; ?>">Came back<?php
+	   echo $al_n_back ? ' (' . number_format($al_n_back) . ')' : ''; ?></a>
+</div>
+
+<?php if ($al_view === 'back'): ?>
+<p class="lap-sum">
+	Everyone who signed in after a month away and collected a package.
+	<b><?php echo number_format($al_n_built); ?></b> of
+	<b><?php echo number_format($al_n_back); ?></b> have built a Fighter since.
+</p>
+<?php if (!$al_back): ?>
+<p style="color:#8fa8b8">Nobody has come back yet. The first return will appear here.</p>
+<?php else: ?>
+<table class="lap-t">
+	<thead><tr>
+		<th>Member</th><th>Came back</th><th>Got</th><th>Built since</th><th>Since then</th>
+	</tr></thead>
+	<tbody>
+	<?php foreach ($al_back as $uid => $b):
+		$bu   = isset($al_bu[$uid]) ? $al_bu[$uid] : null;
+		$bt   = strtotime($b['back_at']);
+		$days = $bt ? (int)floor((time() - $bt) / 86400) : 0;
+		$seen = ($bu && $bt && strtotime($bu['last_login']) > $bt + 86400);
+	?>
+	<tr>
+		<td>
+			<div class="lap-who">
+				<?php if ($bu): ?>
+				<img loading="lazy" alt=""
+				     src="<?php echo htmlspecialchars(avatar_url($bu['discord_id'], $bu['avatar'], 64), ENT_QUOTES); ?>"
+				     onerror="this.src='icons/skull.png'">
+				<span title="<?php echo htmlspecialchars($bu['discord_id'], ENT_QUOTES); ?>"><?php
+					echo htmlspecialchars($bu['username'], ENT_QUOTES); ?></span>
+				<?php else: ?><span style="color:#5f7d90">user <?php echo (int)$uid; ?></span><?php endif; ?>
+			</div>
+		</td>
+		<td class="lap-gone">
+			<b><?php echo $days === 0 ? 'today' : number_format($days) . ' days ago'; ?></b>
+			<span><?php echo htmlspecialchars(date('j M Y', $bt)); ?></span>
+		</td>
+		<td class="lap-gone"><b><?php echo (int)$b['traits']; ?></b> traits</td>
+		<td class="lap-has"><?php
+			echo !empty($al_built[$uid])
+				? '<b>' . (int)$al_built[$uid] . '</b> Fighter' . ($al_built[$uid] > 1 ? 's' : '')
+				: '<span class="none">not yet</span>';
+		?></td>
+		<td class="lap-has"><?php
+			echo $seen ? 'signed in again' : '<span class="none">not since</span>';
+		?></td>
+	</tr>
+	<?php endforeach; ?>
+	</tbody>
+</table>
+<?php endif; ?>
+
+<?php else: ?>
 
 <p class="lap-sum">
 	<b><?php echo number_format(count($al_rows)); ?></b> members have not signed in for
@@ -327,6 +469,7 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	</tbody>
 </table>
 <?php endif; ?>
+<?php endif; /* $al_view */ ?>
 </div></div>
 
 <?php /*

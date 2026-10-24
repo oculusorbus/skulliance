@@ -87,6 +87,46 @@ echo "\nwhat they played is all-time, because recent is zero by definition\n";
 ok(strpos($src, 'activity_totals($conn, 36500)') !== false,
    'the activity read is windowed, so every lapsed member shows no history');
 
+/* ---------------------------------------------------------------- *
+ * DID IT WORK -- the second view
+ * ---------------------------------------------------------------- */
+echo "\nthe panel can show who actually came back\n";
+/*
+ * THE WELCOME-BACK PACKAGE IS THE RECEIPT. It is granted once per
+ * lapse on a sign-in after a month away, so a 'returngift' row is a
+ * returning member with a timestamp, and nothing extra had to be
+ * recorded to measure the campaign. Change that source string in
+ * lib/return-gift.php and this panel silently reports nobody.
+ */
+/* BOTH QUERIES, COUNTED. This checked for the string and passed while
+   one of the two still had it -- changing the source in the returns
+   list alone left the check green and the panel reporting nobody. */
+ok(substr_count($src, "source = 'returngift'") === 2,
+   'the returns list and the Fighter join must both key on the welcome-back package; found '
+ . substr_count($src, "source = 'returngift'") . ' of 2');
+ok(strpos($src, "view=back") !== false && strpos($src, "'back'") !== false,
+   'there is no way to reach the returns view');
+
+/*
+ * BUILT SINCE THEY CAME BACK, measured against EACH MEMBER'S OWN
+ * return date. A fixed date, or no date at all, would count Fighters
+ * built years before the invite and report a campaign that worked
+ * when nothing happened -- and it would look entirely plausible.
+ */
+ok(strpos($src, 'f.created_at >= g.back_at') !== false,
+   'Fighters are not counted from each member\'s own return date, so the headline number is meaningless');
+/* One query for everybody, not one per returning member. */
+ok(substr_count($src, 'FROM dhc_fighters') <= 1,
+   'the Fighter count is being asked per member, which is a query per row');
+
+/*
+ * The two views must not share a filter that only makes sense on one
+ * of them: "came back" is not a subset of "still away", and running
+ * the lapsed day-window over it would show an empty page forever.
+ */
+ok(preg_match('~\$al_back\[\(int\)\$x\[.user_id.\]\] = \$x~', $src) === 1,
+   'the returns list is not keyed by user id, so the Fighter and login lookups cannot match it');
+
 echo "\nread only\n";
 /* It is a list to work from. Nothing is marked, nothing is sent. */
 foreach (array('INSERT', 'UPDATE ', 'DELETE') as $w) {
