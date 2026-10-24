@@ -759,7 +759,13 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
     <p class="pt-lede" style="margin:14px auto 0">Send a message and we will take it from there.
       Setup is on us.</p>
     <div class="pt-cta">
-      <a class="go" href="https://discord.gg/skulliance" target="_blank" rel="noopener">Talk to us on Discord</a>
+      <?php /* THE VANITY INVITE IS NOT REAL. This button pointed at the
+         obvious guessable form of the invite, which Discord answers
+         Unknown Invite for -- so the one call to action on the partner
+         page has been sending every prospective partner to an error
+         page. Verified against the Discord API; the code below is the
+         same one info.php, site-header.php and the homepage use. */ ?>
+      <a class="go" href="https://discord.gg/JqqBZBrph2" target="_blank" rel="noopener">Talk to us on Discord</a>
       <a href="https://x.com/skulliance" target="_blank" rel="noopener">@skulliance on X</a>
       <a href="gallery.php">See what is staked</a>
     </div>

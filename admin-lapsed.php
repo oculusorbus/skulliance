@@ -178,10 +178,12 @@ function lap_invite_line($did, $labels) {
 		: 'I remember you putting some time into ' . $names . '.';
 }
 
-/** The live SKULLIANCE invite, the same one info.php and the homepage
-    carry. Checked against the Discord API when it was put here: it
-    resolves to the SKULLIANCE guild. (discord.gg/skulliance, used in
-    partner.php, does NOT -- Discord answers Unknown Invite.) */
+/** The live SKULLIANCE invite, the same one info.php, site-header.php
+    and the homepage carry. Checked against the Discord API rather than
+    copied on faith: it resolves to the SKULLIANCE guild. The vanity
+    form everyone assumes exists does not -- Discord answers Unknown
+    Invite for it, which is how partner.php spent however long sending
+    prospective partners to an error page. */
 if (!defined('LAP_DISCORD_INVITE')) define('LAP_DISCORD_INVITE', 'https://discord.gg/JqqBZBrph2');
 
 /** The whole message, ready to paste. */
@@ -239,12 +241,13 @@ function lap_invite_text($did, $labels, $has_realm, $left_server = false) {
 	 * none of them however much they stake.
 	 *
 	 * Not shown to current members, for whom it is noise.
+	 *
+	 * BARE, WITH NO SENTENCE IN FRONT OF IT. It used to open "Looks
+	 * like you're not in the Discord server anymore", which reads as
+	 * being told off for leaving. A second link under the first needs
+	 * no explaining.
 	 */
-	if ($left_server) {
-		$out .= "\n\nLooks like you're not in the Discord server anymore. "
-		      . "Here's an invite if you want to come back to that too:\n"
-		      . LAP_DISCORD_INVITE;
-	}
+	if ($left_server) $out .= "\n\n" . LAP_DISCORD_INVITE;
 	$out .= "\n\nTake care!";
 	return $out;
 }
