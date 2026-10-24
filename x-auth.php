@@ -23,6 +23,29 @@ ob_start();
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
+/*
+ * THE SESSION IS STARTED HERE, BEFORE db.php, AND THAT IS THE WHOLE
+ * REASON THIS FLOW FAILED FIRST TIME.
+ *
+ * db.php only RESUMES a session, and only when a cookie already
+ * exists -- deliberately, so a cookieless bot does not leave an orphan
+ * session file per request. A signed-out visitor pressing Sign in with
+ * X therefore had no session at all: the state and PKCE verifier went
+ * into an array that evaporated at the end of the request, X sent them
+ * back, nothing was waiting, and they were told the attempt had
+ * expired. Which it had not. It had never been stored.
+ *
+ * process-oauth.php has always done it this way for Discord, and its
+ * own comment says why the order matters: db.php's conditional
+ * session_start() must not fire ahead of the cookie params, or it
+ * undoes them for this exact login.
+ *
+ * One month, matching Discord, so signing in with X does not quietly
+ * produce a shorter-lived session than the other door.
+ */
+session_set_cookie_params(2678400);
+session_start();
+
 include 'db.php';
 require_once __DIR__ . '/lib/x-oauth.php';
 

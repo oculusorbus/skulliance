@@ -148,6 +148,33 @@ ok(preg_match('~\x27mode\x27\s*=>\s*\$mode~', $lib) === 1,
 ok(strpos($cb, '$_GET[\'mode\']') === false,
    'the callback reads the mode from the query string, so a login can be turned into a connect');
 
+echo "\nthe session exists before anything is written to it\n";
+/*
+ * THE BUG THIS FLOW SHIPPED WITH. db.php only RESUMES a session, and
+ * only when a cookie already exists -- deliberately, so a cookieless
+ * bot does not leave an orphan session file per request. A signed-out
+ * visitor pressing Sign in with X therefore had no session at all: the
+ * state and PKCE verifier went into an array that evaporated at the end
+ * of the request, X sent them back, nothing was waiting, and they were
+ * told the attempt had expired. It had not expired. It had never been
+ * stored.
+ *
+ * ORDER IS THE ASSERTION. process-oauth.php has always started its own
+ * session BEFORE including db.php, and its comment says why: db.php's
+ * conditional session_start() must not fire ahead of the cookie params
+ * or it undoes them for that login. Both X files now match.
+ */
+foreach (array('x-auth.php', 'process-x-oauth.php') as $f) {
+	$src = harness_strip_comments(file_get_contents(__DIR__ . '/' . $f));
+	$ss  = strpos($src, 'session_start()');
+	$db  = strpos($src, "include 'db.php'");
+	if (!ok($ss !== false, "$f never starts a session, so a signed-out visitor has nowhere to store the state")) continue;
+	if (!ok($db !== false && $ss < $db,
+	        "$f starts its session AFTER db.php, so db.php's conditional start wins and the cookie params are lost")) continue;
+	ok(strpos($src, 'session_set_cookie_params(') !== false,
+	   "$f does not set the cookie lifetime, so an X sign-in expires sooner than a Discord one");
+}
+
 echo "\ndisconnecting is a POST\n";
 $wal = harness_strip_comments(file_get_contents(__DIR__ . '/wallets.php'));
 /* A GET would let an <img src> in a Discord message unlink somebody's

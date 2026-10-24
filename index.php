@@ -244,12 +244,16 @@ a{color:var(--ix-accent)}
  * the primary button would offer a stranger a choice that cannot work
  * for them. Outlined, smaller, same height so the pair still line up.
  */
-.ix-second-cta{display:inline-flex;align-items:center;gap:9px;background:transparent;
+.ix-second-cta{display:inline-flex;align-items:center;gap:7px;background:transparent;
   color:var(--ix-dim);font-size:15px;font-weight:600;text-decoration:none;
   padding:15px 22px;border-radius:12px;border:1px solid rgba(255,255,255,.18);
   transition:border-color .15s ease,color .15s ease}
 .ix-second-cta:hover{border-color:rgba(255,255,255,.4);color:#fff}
-.ix-second-cta svg{width:18px;height:18px;flex:0 0 auto;fill:currentColor}
+/* Sized to the text it replaces, and nudged to sit on the same optical
+   line -- a cap-height glyph next to lowercase letters reads high
+   otherwise. */
+.ix-second-cta svg{width:15px;height:15px;flex:0 0 auto;fill:currentColor;
+  position:relative;top:1px}
 /* Why the second button did nothing for them, when it did nothing. */
 .ix-xnote{margin:0 0 18px;padding:11px 14px;border:1px solid rgba(214,158,46,.35);
   background:rgba(214,158,46,.07);color:#e0c07a;font-size:14px;border-radius:8px;max-width:620px}
@@ -413,9 +417,14 @@ $ix_button = function () use ($ix_oauth, $ix_signed_in, $e, $ix_xnote, $ix_xsaid
 	/* SECOND, AND QUIETER. Discord is how you join; X is a shortcut
 	   back in for people who have already connected one, so it must not
 	   read as an equal choice to somebody who has never been here. */
-	echo '<a class="ix-second-cta" href="x-auth.php?mode=login">'
-	   . '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.3L2.4 2h6.4l4.4 5.9ZM17.8 20.1h1.7L7.9 3.8H6.1Z"/></svg>'
-	   . 'Sign in with X</a></div>';
+	/* THE LOGO IS THE WORD. An X glyph beside the words "Sign in with X"
+	   says X twice; the mark stands in for the name, the way the button
+	   reads everywhere else on the web. aria-label carries the full
+	   phrase, because a logo is not text to a screen reader. */
+	echo '<a class="ix-second-cta" href="x-auth.php?mode=login" aria-label="Sign in with X">'
+	   . 'Sign in with '
+	   . '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3l-4.9-6.4L6.3 22H3.2l7.3-8.3L2.4 2h6.4l4.4 5.9ZM17.8 20.1h1.7L7.9 3.8H6.1Z"/></svg>'
+	   . '</a></div>';
 };
 ?>
 
