@@ -139,10 +139,12 @@ one in that category is picked instead. A member still gets one of everything.
 Discord gets **one post, not eight**: a single welcome-back announcement showing
 the whole package assembled as the Fighter it makes.
 
-The package is **the same traits every time** for a given member, worked out
-from their Discord ID rather than rolled and stored. Nothing is reserved and
-nothing expires, so the welcome-back picture in an invitation still matches what
-arrives weeks later.
+The package is worked out from the member's Discord ID rather than rolled and
+stored, so **the same return always produces the same traits** however long they
+take to turn up. Nothing is reserved and nothing expires, so the welcome-back
+picture in an invitation still matches what arrives weeks later.
+
+A **second** absence earns a different set, not a repeat of the first.
 
 **Once per absence**, not once ever. Signing in sets the clock back to zero, so
 earning another package means genuinely going another full month without turning

@@ -329,7 +329,11 @@ ok(preg_match('~function dhcf_commit_drop\([^)]*\$announce = true~', $dfl) === 1
    'the announce flag does not default to true, so every other drop on the platform went quiet');
 /* The picture on the post is the same file the admin preview links to,
    or the DM and the announcement show different Fighters. */
-ok(preg_match('~return_gift_url\(\$discord_id\),~', $rg) === 1,
+/* ANCHORED ON THE CALL, NOT ITS ARGUMENT LIST. This required the
+   comma to follow $discord_id directly and went red when the call
+   gained a $lapse argument -- correct code, failing check. What
+   matters is that the image argument IS a return_gift_url() call. */
+ok(preg_match('~return_gift_url\(\$discord_id[^)]*\),~', $rg) === 1,
    'the announcement does not carry the assembled package as its image');
 
 /* Serial 0 cannot collide with a saved Fighter. */
