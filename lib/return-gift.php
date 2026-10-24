@@ -28,10 +28,12 @@
  * armour curve, and handing them out for signing in would devalue
  * every one somebody actually earned.
  *
- * CLAIMED ONCE, EVER, and recorded in the nudges table rather than a
- * new one -- it is already a per-user event log with exactly the right
- * shape. Once-ever also means the eligibility window cannot be farmed
- * by going quiet on purpose.
+ * ONCE PER LAPSE, NOT ONCE EVER, recorded as the trait rows
+ * themselves in dhc_trait_drops under source 'returngift' -- no marker
+ * row, no new table and no schema change. Signing in sets the distance
+ * back to zero, so qualifying again means genuinely going another full
+ * month without turning up; somebody willing to do that repeatedly to
+ * farm common traits has chosen a remarkably slow way to do it.
  *
  * EVERYONE WHO COMES BACK, NOT EVERYONE WHO WAS INVITED. The owner's
  * lapsed panel is a list of people to write to personally; this is not
@@ -40,9 +42,9 @@
  * being fixed is "there is nothing to do on arrival", and that is true
  * whether or not anybody wrote to them.
  *
- * NO TABLE MEANS NO GIFT, deliberately. Every read here fails closed:
- * a missing nudges table reads as already-claimed, so the feature
- * degrades to silence rather than to handing out traits on repeat.
+ * EVERY READ FAILS CLOSED. A question that cannot be answered reads as
+ * already-claimed, so the feature degrades to silence rather than to
+ * handing out traits on repeat.
  */
 
 require_once __DIR__ . '/../dhcfighters-lib.php';
@@ -210,18 +212,53 @@ function return_gift_traits($discord_id) {
 	return $out;
 }
 
-/** Has this person already had one? */
-function return_gift_claimed($conn, $user_id) {
+/**
+ * Which categories this person was given IN THE CURRENT LAPSE, as a
+ * set. Returns null when the question cannot be answered.
+ *
+ * READ FROM THE TRAIT LEDGER, NOT FROM A MARKER ROW. The first version
+ * wrote action = 'claimed' into the nudges table, and that table has
+ * only ever held five values -- shown, clicked, snoozed, rested, none.
+ * If the column is an ENUM of those, a sixth either fails the INSERT
+ * (no gift, ever, silently) or in a non-strict server is coerced to
+ * '' -- and then the claim check never matches and the package is
+ * handed out again on EVERY login, forever. Neither failure announces
+ * itself.
+ *
+ * dhc_trait_drops already records exactly this, in a `source` column
+ * that holds a dozen different free-form values written by code, and
+ * it is the actual evidence rather than a note about it. No new table,
+ * no new column, no schema change anywhere.
+ *
+ * WINDOWED TO RETURN_GIFT_DAYS, WHICH IS WHAT MAKES IT REPEATABLE.
+ * Looking at the whole history would mean one package ever; looking at
+ * the last 30 days means a member who lapses a second time qualifies
+ * again, because a repeat lapse is BY DEFINITION 30 days of not
+ * signing in, so the previous package is necessarily older than the
+ * window. The same read also stops a double grant inside one visit:
+ * the package handed over seconds ago is inside the window, so a
+ * second request in the same session sees it and declines.
+ */
+function return_gift_granted($conn, $user_id) {
 	$uid = (int)$user_id;
-	if ($uid <= 0) return true;
-	/* The nudges table doubles as the per-user event log. No table, no
-	   schema change, and it is already indexed on user_id. */
-	$r = @$conn->query("SELECT 1 FROM nudges
-	                     WHERE user_id = $uid AND nudge_key = 'returngift'
-	                       AND action = 'claimed' LIMIT 1");
-	/* A missing table means we cannot prove they have NOT had one, and
-	   handing out duplicates is worse than handing out none. */
-	return !$r || $r->num_rows > 0;
+	if ($uid <= 0) return null;
+	$days = max(1, (int)RETURN_GIFT_DAYS);
+	$r = @$conn->query("SELECT category FROM dhc_trait_drops
+	                     WHERE user_id = $uid AND source = 'returngift'
+	                       AND awarded_at > DATE_SUB(NOW(), INTERVAL $days DAY)");
+	if (!$r) return null;
+	$out = array();
+	while ($row = $r->fetch_assoc()) $out[$row['category']] = true;
+	return $out;
+}
+
+/** Has this person already had one during this lapse? */
+function return_gift_claimed($conn, $user_id) {
+	$had = return_gift_granted($conn, $user_id);
+	/* Unanswerable means we cannot prove they have NOT had one, and
+	   handing out duplicates forever is worse than handing out none. */
+	if ($had === null) return true;
+	return count($had) > 0;
 }
 
 /**
@@ -316,12 +353,22 @@ function return_gift_grant($conn, $user_id, $discord_id) {
 	$traits = return_gift_traits($discord_id);
 	if ($uid <= 0 || !$traits) return array();
 
-	$ok = @$conn->query("INSERT INTO nudges (user_id, nudge_key, action, until, created_at)
-	                     VALUES ($uid, 'returngift', 'claimed', NULL, NOW())");
-	if (!$ok) { error_log('return-gift: could not record the claim, not granting'); return array(); }
+	/*
+	 * ONLY WHAT THEY HAVE NOT HAD, which makes the grant self-healing:
+	 * if the request died halfway through last time, the next sign-in
+	 * finishes the package instead of either skipping it or starting
+	 * again. Each trait's own ledger row IS the claim, so there is no
+	 * separate marker that can disagree with what was handed over.
+	 */
+	$had = return_gift_granted($conn, $uid);
+	if ($had === null) {
+		error_log('return-gift: cannot read the trait ledger, not granting');
+		return array();
+	}
 
 	$given = array();
 	foreach ($traits as $cat => $slug) {
+		if (isset($had[$cat])) continue;
 		$info = dhcf_trait_info($cat, $slug);
 		if (!$info) continue;
 		/* The same function every other drop goes through, so the ledger

@@ -144,8 +144,9 @@ from their Discord ID rather than rolled and stored. Nothing is reserved and
 nothing expires, so the welcome-back picture in an invitation still matches what
 arrives weeks later.
 
-**Once ever**, not once per absence, so the window cannot be farmed by going
-quiet on purpose.
+**Once per absence**, not once ever. Signing in sets the clock back to zero, so
+earning another package means genuinely going another full month without turning
+up, and after a month away the whole set is what it takes to catch up.
 
 ### Raids pay both sides
 

@@ -341,21 +341,33 @@ ok((int)RETURN_GIFT_SERIAL === 0,
  * ---------------------------------------------------------------- */
 echo "\nthe grant fires for the right people and only once\n";
 
-/* A mysqli stand-in: records writes, answers the claimed-check from
-   whatever we put in it. */
+/* A mysqli stand-in. $had is the set of categories already granted,
+   as the trait ledger would report them; $table false makes every
+   query fail, which is the unreadable-ledger case. */
 class RGConn {
-	public $claimed = false, $writes = array(), $table = true;
+	public $had = array(), $writes = array(), $table = true;
 	public function query($sql) {
 		$this->writes[] = preg_replace('~\s+~', ' ', trim($sql));
 		if (!$this->table) return false;
 		if (stripos($sql, 'SELECT') === 0) {
-			$r = new RGRes(); $r->num_rows = $this->claimed ? 1 : 0; return $r;
+			/* Only the ledger question. dhcf_commit_drop() asks several
+			   others through this same stub, and answering those with
+			   category rows produced a screenful of undefined-key
+			   warnings from real code being fed nonsense. */
+			if (strpos($sql, "'returngift'") === false) return new RGRes();
+			$rows = array();
+			foreach ($this->had as $c) $rows[] = array('category' => $c);
+			return new RGRes($rows);
 		}
 		return true;
 	}
 	public function real_escape_string($s) { return addslashes($s); }
 }
-class RGRes { public $num_rows = 0; public function fetch_assoc() { return null; } }
+class RGRes {
+	public $num_rows = 0; private $rows, $i = 0;
+	public function __construct($rows = array()) { $this->rows = $rows; $this->num_rows = count($rows); }
+	public function fetch_assoc() { return isset($this->rows[$this->i]) ? $this->rows[$this->i++] : null; }
+}
 
 $old = date('Y-m-d H:i:s', time() - 45 * 86400);
 $new = date('Y-m-d H:i:s', time() - 3  * 86400);
@@ -370,26 +382,74 @@ ok(return_gift_due($c, 7, $edge_out) === false, 'the day before the window quali
 ok(return_gift_due($c, 7, null)      === false, 'a member with no previous login is due a package');
 ok(return_gift_due($c, 0, $old)      === false, 'a signed-out request is due a package');
 
-$c->claimed = true;
+$c->had = array('background', 'torso');
 ok(return_gift_due($c, 7, $old) === false, 'somebody who already had one is due another');
 
-/* No table is the degrade-to-silence case. */
+/* An unreadable ledger is the degrade-to-silence case. */
 $c2 = new RGConn(); $c2->table = false;
 ok(return_gift_due($c2, 7, $old) === false,
-   'a missing nudges table hands out packages it cannot record, forever');
+   'an unreadable trait ledger hands out packages it cannot record, forever');
+
+/*
+ * THE CLAIM IS THE TRAIT ROWS, NOT A MARKER. The first version wrote
+ * action = 'claimed' into the nudges table, which has only ever held
+ * shown/clicked/snoozed/rested/none -- an ENUM there would either kill
+ * the feature silently or, on a non-strict server, coerce the value to
+ * '' so the check never matches and the package is re-granted on every
+ * single login. Nothing in this file may touch that table again.
+ */
+$rgsrc = harness_strip_comments(file_get_contents(__DIR__ . '/lib/return-gift.php'));
+ok(stripos($rgsrc, 'nudges') === false,
+   'the gift is writing to the nudges table again, where its action value may not be legal');
+ok(strpos($rgsrc, "source = 'returngift'") !== false,
+   'the claim is no longer read from the trait ledger');
+
+/*
+ * REPEATABLE, NOT ONCE EVER. Signing in sets the distance back to
+ * zero, so qualifying again means genuinely going another full month
+ * without turning up -- and each lapse needs the whole package again
+ * to catch up. A ledger read over ALL history would silently make
+ * this a one-time gift, and nothing on screen would look different.
+ */
+ok(preg_match('~awarded_at > DATE_SUB\(NOW\(\), INTERVAL \$days DAY\)~', $rgsrc) === 1,
+   'the ledger read is not windowed, so the package is once ever instead of once per lapse');
+ok(strpos($rgsrc, '$days = max(1, (int)RETURN_GIFT_DAYS);') !== false,
+   'the claim window is not tied to RETURN_GIFT_DAYS, so the two can drift apart');
+
+/* A member whose previous package has aged past the window qualifies
+   again -- the behavioural half of the same claim. */
+$c_again = new RGConn();
+$c_again->had = array();                 /* older than the window, so not returned */
+ok(return_gift_due($c_again, 7, $old) === true,
+   'a member lapsing a second time does not qualify again');
+$c_now = new RGConn();
+$c_now->had = array('background');       /* inside the window: this visit */
+ok(return_gift_due($c_now, 7, $old) === false,
+   'a second request in the same visit would hand over a second package');
 
 /* ---------------------------------------------------------------- *
  * THE ORDER OF THE WRITE
  * ---------------------------------------------------------------- */
-echo "\nthe claim is recorded before anything is handed over\n";
+echo "\nthe grant finishes a package it started\n";
+/* Unreadable ledger: hand over nothing rather than risk repeating. */
+$c3 = new RGConn(); $c3->table = false;
+ok(return_gift_grant($c3, 7, $ids[0]) === array(),
+   'the grant handed out traits without being able to check what was already given');
+
 /*
- * If the grant runs first and the ledger write fails, the player
- * collects again on every page load until somebody notices. The other
- * way round, the worst case is one person owed three traits.
+ * SELF-HEALING. If the request died partway through last time, the
+ * next sign-in must finish the package -- not skip it (they are short
+ * five traits forever) and not restart it (duplicates every time).
  */
-$c3 = new RGConn(); $c3->table = false;   /* INSERT fails */
-$got = return_gift_grant($c3, 7, $ids[0]);
-ok($got === array(), 'the grant handed out traits after failing to record the claim');
+$c4 = new RGConn();
+$c4->had = array('background', 'torso', 'head');
+$resume = return_gift_grant($c4, 7, $ids[0]);
+$full   = return_gift_traits($ids[0]);
+ok(count($resume) === count($full) - 3,
+   'a half-finished package is not resumed: expected ' . (count($full) - 3)
+ . ' remaining, got ' . count($resume));
+ok(!array_intersect(array_keys($resume), array('background', 'torso', 'head')),
+   'the grant handed over categories the member already had, so returning twice duplicates traits');
 
 /* ---------------------------------------------------------------- *
  * THE TWO COPIES OF THE WINDOW

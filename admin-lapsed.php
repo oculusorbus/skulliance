@@ -147,6 +147,31 @@ admin_chrome('lapsed');
 .lap-gift img { width:52px; height:52px; object-fit:cover; border-radius:4px;
                 background:#0d2030; display:block; }
 .lap-warm { color:#d69e2e; font-weight:bold; }
+
+/* ---- the package modal ---------------------------------------- *
+   Its own element rather than a link to the PNG, because the job is
+   not "look at a picture" -- it is read the traits, copy the link,
+   write the DM. All three in one place.                            */
+.lap-giftbtn { padding:0; border:0; background:none; cursor:zoom-in; line-height:0; display:block; }
+.lap-mw { position:fixed; inset:0; z-index:9000; display:flex; align-items:center;
+  justify-content:center; padding:20px; background:rgba(3,10,16,.86); }
+.lap-mw[hidden] { display:none !important; }
+.lap-mb { background:#0b1b26; border:1px solid rgba(255,255,255,.14); border-radius:8px;
+  max-width:720px; width:100%; max-height:92vh; overflow:auto; padding:18px; }
+.lap-mh { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:0 0 12px; }
+.lap-mh h3 { margin:0; font-size:1rem; color:#e8eaed; }
+.lap-mx { background:none; border:0; color:#8fa8b8; font-size:1.4rem; line-height:1; cursor:pointer; padding:0 4px; }
+.lap-mg { display:flex; gap:18px; flex-wrap:wrap; }
+.lap-mg img { width:300px; max-width:100%; border-radius:6px; background:#0d2030; display:block; }
+.lap-mi { flex:1; min-width:230px; }
+.lap-mt { font-size:.78rem; color:#8fa8b8; line-height:1.7; margin:0 0 14px; white-space:pre-line; }
+.lap-ml { font-size:.68rem; letter-spacing:.09em; text-transform:uppercase; color:#5f7d90;
+  display:block; margin:0 0 5px; }
+.lap-mu { width:100%; font-size:.72rem; padding:7px 8px; color:#e8eaed; background:#06151e;
+  border:1px solid rgba(255,255,255,.14); border-radius:4px; font-family:monospace; }
+.lap-mc { margin-top:9px; padding:8px 15px; font-size:.74rem; letter-spacing:.06em;
+  text-transform:uppercase; color:#06222b; background:#00c8a0; border:0; border-radius:4px; cursor:pointer; }
+@media (max-width:560px) { .lap-mg img { width:100%; } }
 </style>
 
 <p class="lap-sum">
@@ -253,12 +278,34 @@ admin_chrome('lapsed');
 		 * picture, Copy Image Address, and the redirect means you get
 		 * the public one either way.
 		 */ ?>
+		<?php
+			/* Derived once per row: return_gift_url() calls the same
+			   derivation internally, so asking twice doubles the hashing
+			   for nothing. */
+			$gift_t  = return_gift_traits($u['discord_id']);
+			$gift_u  = return_gift_url($u['discord_id']);
+			$gift_ep = 'return-gift-card.php?d=' . rawurlencode($u['discord_id']);
+			$gift_l  = array();
+			foreach ($gift_t as $gc => $gs) {
+				$gift_l[] = ucfirst($gc) . ': ' . dhcf_trait_name($gc, $gs);
+			}
+		?>
 		<td class="lap-gift">
-			<a href="<?php echo htmlspecialchars(return_gift_url($u['discord_id']), ENT_QUOTES); ?>"
-			   target="_blank" rel="noopener" title="Open the full-size picture to paste into a DM">
-				<img loading="lazy" alt="welcome-back package"
-				     src="return-gift-card.php?d=<?php echo htmlspecialchars($u['discord_id'], ENT_QUOTES); ?>">
-			</a>
+			<?php /* A BUTTON, NOT A LINK. It opens the modal rather than
+			         navigating, and the picture it shows is loaded from the
+			         endpoint -- which is what causes the render to exist, so
+			         the public URL beside it is live by the time anyone can
+			         copy it. */ ?>
+			<button type="button" class="lap-giftbtn"
+			        data-img="<?php echo htmlspecialchars($gift_ep, ENT_QUOTES); ?>"
+			        data-url="<?php echo htmlspecialchars($gift_u, ENT_QUOTES); ?>"
+			        data-who="<?php echo htmlspecialchars($u['username'], ENT_QUOTES); ?>"
+			        data-traits="<?php echo htmlspecialchars(implode("\n", $gift_l), ENT_QUOTES); ?>"
+			        title="See the package and copy the link">
+				<img loading="lazy" alt="welcome-back package for <?php
+				     echo htmlspecialchars($u['username'], ENT_QUOTES); ?>"
+				     src="<?php echo htmlspecialchars($gift_ep, ENT_QUOTES); ?>">
+			</button>
 		</td>
 	</tr>
 	<?php endforeach; ?>
@@ -266,3 +313,93 @@ admin_chrome('lapsed');
 </table>
 <?php endif; ?>
 </div></div>
+
+<?php /*
+ * THE PACKAGE MODAL. One element reused by every row rather than one
+ * per row -- four hundred hidden copies of the same markup is a lot of
+ * DOM for a thing you open one at a time.
+ *
+ * The <img> is pointed at the ENDPOINT, not at the public render: the
+ * endpoint is what causes the picture to exist, so by the time it has
+ * drawn, the dhcrenders/ URL in the box beside it is live and safe to
+ * paste. Pointing it straight at the public file would show a broken
+ * image for any row whose thumbnail had not been scrolled into view.
+ */ ?>
+<div class="lap-mw" id="lapModal" hidden>
+	<div class="lap-mb" role="dialog" aria-modal="true" aria-labelledby="lapModalWho">
+		<div class="lap-mh">
+			<h3 id="lapModalWho"></h3>
+			<button type="button" class="lap-mx" id="lapModalX" aria-label="Close">&times;</button>
+		</div>
+		<div class="lap-mg">
+			<img id="lapModalImg" alt="">
+			<div class="lap-mi">
+				<p class="lap-mt" id="lapModalTraits"></p>
+				<label class="lap-ml" for="lapModalUrl">Image link for the invite</label>
+				<input class="lap-mu" id="lapModalUrl" type="text" readonly>
+				<button type="button" class="lap-mc" id="lapModalCopy">Copy link</button>
+			</div>
+		</div>
+	</div>
+</div>
+<script>
+(function () {
+	var wrap = document.getElementById('lapModal');
+	if (!wrap) return;
+	var img    = document.getElementById('lapModalImg'),
+	    who    = document.getElementById('lapModalWho'),
+	    traits = document.getElementById('lapModalTraits'),
+	    url    = document.getElementById('lapModalUrl'),
+	    copy   = document.getElementById('lapModalCopy'),
+	    last   = null;
+
+	function open(btn) {
+		last = btn;
+		who.textContent    = btn.getAttribute('data-who') || 'Welcome-back package';
+		traits.textContent = btn.getAttribute('data-traits') || '';
+		url.value          = btn.getAttribute('data-url') || '';
+		img.alt            = 'Welcome-back package for ' + who.textContent;
+		/* Set last: assigning src starts the fetch, and on a row whose
+		   thumbnail is already cached this completes before the rest of
+		   the dialog would otherwise be filled in. */
+		img.src            = btn.getAttribute('data-img') || '';
+		copy.textContent   = 'Copy link';
+		wrap.hidden = false;
+		copy.focus();
+	}
+	function close() {
+		wrap.hidden = true;
+		/* Stop the fetch and release the picture; reopening re-reads it
+		   from cache. */
+		img.removeAttribute('src');
+		if (last) { last.focus(); last = null; }
+	}
+
+	document.addEventListener('click', function (e) {
+		var btn = e.target.closest ? e.target.closest('.lap-giftbtn') : null;
+		if (btn) { e.preventDefault(); open(btn); return; }
+		/* The backdrop is the wrapper itself; a click inside the panel
+		   must not close it. */
+		if (e.target === wrap || e.target.id === 'lapModalX') close();
+	});
+	document.addEventListener('keydown', function (e) {
+		if (e.key === 'Escape' && !wrap.hidden) close();
+	});
+
+	copy.addEventListener('click', function () {
+		url.select();
+		url.setSelectionRange(0, url.value.length);   // iOS needs the range
+		function done() { copy.textContent = 'Copied'; }
+		/* execCommand is deprecated but is the only thing that works
+		   without a secure context or a permission prompt, so it is the
+		   fallback rather than the first choice. */
+		if (navigator.clipboard && navigator.clipboard.writeText) {
+			navigator.clipboard.writeText(url.value).then(done, function () {
+				try { document.execCommand('copy'); done(); } catch (err) {}
+			});
+		} else {
+			try { document.execCommand('copy'); done(); } catch (err) {}
+		}
+	});
+})();
+</script>
