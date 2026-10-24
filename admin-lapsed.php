@@ -99,6 +99,96 @@ foreach ($al_back as $uid => $b) {
 	    && strtotime($al_bu[$uid]['last_login']) > strtotime($b['back_at']) + 86400) $al_n_again++;
 }
 
+/**
+ * The invite, written from what this member actually did.
+ *
+ * PERSONALISATION OFF REAL NUMBERS, because "I noticed you were big on
+ * Missions" lands and "we miss you" does not. The numbers are already
+ * on the page in the What they played column; this turns the top one
+ * or two into a sentence.
+ *
+ * GRADED BY VOLUME, AND THAT IS THE WHOLE TRICK. Telling somebody with
+ * four missions behind them that they were putting up serious numbers
+ * is worse than saying nothing: it reads as a mail merge, which is
+ * exactly what the personal invite is meant not to be. Below the
+ * bottom threshold the claim is dropped rather than softened.
+ *
+ * NO FABRICATED HISTORY. These go to members the owner knows of but
+ * has never messaged, so nothing here says "I miss you" or implies a
+ * conversation that never happened. It says what the records show.
+ */
+function lap_invite_line($did, $labels) {
+	if (empty($did['by'])) return '';
+	$by = $did['by'];
+	arsort($by);
+	/*
+	 * DAILY STREAKS IS NOT SOMETHING YOU WERE BIG ON. It is a login
+	 * counter, and "I remember you being big on Daily Streaks" is a
+	 * sentence no human has written. Named activities only.
+	 */
+	$skip = array('daily' => 1);
+	/*
+	 * TWO LABELS ARE COUNTS, NOT PLACES. "Fighters Built" and "Drop
+	 * Ship Games" are column headings; dropped into a sentence they
+	 * produce "spending some time in Fighters Built", which is not
+	 * English. Rephrased, not skipped: somebody whose whole thing was
+	 * building Fighters should still get the personal line.
+	 */
+	$say = array('fighter' => 'building Fighters', 'dropship' => 'Drop Ship');
+	$top = array();
+	foreach ($by as $k => $n) {
+		$n = (int)$n;
+		if ($n <= 0 || isset($skip[$k])) continue;
+		$top[] = array(isset($say[$k]) ? $say[$k] : (isset($labels[$k]) ? $labels[$k] : $k), $n);
+		if (count($top) === 2) break;
+	}
+	if (!$top) return '';
+	$n1 = $top[0][1];
+	/*
+	 * GRADED, AND THE BOTTOM TIER SAYS NOTHING. Telling somebody with
+	 * four runs behind them that they were big on a game is worse than
+	 * saying nothing: it reads as a mail merge, which is the one thing
+	 * a personal invite must not do.
+	 */
+	if ($n1 < 10) return '';
+	/* A second name only when it is not a rounding error beside the
+	   first, or the sentence claims an interest they did not have. */
+	$names = $top[0][0];
+	if (count($top) === 2 && $top[1][1] >= max(3, (int)($n1 * 0.25))) {
+		$names .= ' and ' . $top[1][0];
+	}
+	/* "I remember" rather than "the records show": he knows who these
+	   people are, which is true, and it is warm without inventing a
+	   conversation they never had. */
+	/* "on" and "into" both take a game name AND "building Fighters";
+	   "in" does not, which is how the broken version read. */
+	return ($n1 >= 50)
+		? 'I remember you being big on ' . $names . '.'
+		: 'I remember you putting some time into ' . $names . '.';
+}
+
+/** The whole message, ready to paste. */
+function lap_invite_text($did, $labels, $has_realm) {
+	$line = lap_invite_line($did, $labels);
+	$out  = "Hey! I hope all is well!\n\n";
+	/*
+	 * ONE CLAIM ABOUT THE PLATFORM, NOT TWO. "A ton has been built and
+	 * there are a lot of new features" is the same sentence twice, and
+	 * saying it twice is what makes copy read as generated.
+	 */
+	$out .= ($line !== '')
+		? $line . " Skulliance has a TON of new features since then."
+		: "I'm reaching out to folks who haven't been around in a while. "
+		. "Skulliance has a TON of new features to check out.";
+	/* Only when it is true, and it is the single strongest reason to
+	   come back, so it gets its own line. */
+	if ($has_realm) $out .= "\n\nYour realm is still standing, by the way.";
+	$out .= "\n\nIf you decide to login and check it out, this fighter assembly will be "
+	      . "ready and waiting for you. It's a collection of traits you can use to build "
+	      . "however you want.\n\nTake care!";
+	return $out;
+}
+
 /* Both in the query string so a view can be linked or bookmarked. */
 $al_days = isset($_GET['days']) ? (int)$_GET['days'] : 90;
 if (!in_array($al_days, array(30, 90, 180, 365), true)) $al_days = 90;
@@ -264,8 +354,15 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
   display:block; margin:0 0 5px; }
 .lap-mu { width:100%; font-size:.72rem; padding:7px 8px; color:#e8eaed; background:#06151e;
   border:1px solid rgba(255,255,255,.14); border-radius:4px; font-family:monospace; }
+.lap-mmsg { resize:vertical; line-height:1.55; font-family:inherit; min-height:215px; }
+.lap-ml2 { margin-top:16px; }
 .lap-mc { margin-top:9px; padding:8px 15px; font-size:.74rem; letter-spacing:.06em;
   text-transform:uppercase; color:#06222b; background:#00c8a0; border:0; border-radius:4px; cursor:pointer; }
+/* AFTER .lap-mc, not before. Same specificity, so the later rule wins --
+   written above it first, which made the secondary button identical to
+   the primary one. The message is the thing being sent; the link is
+   support, and should not compete with it. */
+.lap-mc2 { background:#123049; color:#9fd8c8; }
 @media (max-width:560px) { .lap-mg img { width:100%; } }
 </style>
 
@@ -478,6 +575,8 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 			        data-url="<?php echo htmlspecialchars($gift_u, ENT_QUOTES); ?>"
 			        data-who="<?php echo htmlspecialchars($u['username'], ENT_QUOTES); ?>"
 			        data-traits="<?php echo htmlspecialchars(implode("\n", $gift_l), ENT_QUOTES); ?>"
+			        data-msg="<?php echo htmlspecialchars(
+			            lap_invite_text($did, $al_labels, !empty($al_realm[$uid])), ENT_QUOTES); ?>"
 			        title="See the package and copy the link">
 				<img loading="lazy" alt="welcome-back package for <?php
 				     echo htmlspecialchars($u['username'], ENT_QUOTES); ?>"
@@ -512,10 +611,18 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		<div class="lap-mg">
 			<img id="lapModalImg" alt="">
 			<div class="lap-mi">
-				<p class="lap-mt" id="lapModalTraits"></p>
-				<label class="lap-ml" for="lapModalUrl">Image link for the invite</label>
+				<?php /* THE MESSAGE FIRST, because it is the thing being
+				         sent. The link and the trait list are supporting
+				         detail for it, not the other way round. */ ?>
+				<label class="lap-ml" for="lapModalMsg">The message</label>
+				<textarea class="lap-mu lap-mmsg" id="lapModalMsg" rows="9" readonly></textarea>
+				<button type="button" class="lap-mc" id="lapModalCopyMsg">Copy message</button>
+
+				<label class="lap-ml lap-ml2" for="lapModalUrl">Image link</label>
 				<input class="lap-mu" id="lapModalUrl" type="text" readonly>
-				<button type="button" class="lap-mc" id="lapModalCopy">Copy link</button>
+				<button type="button" class="lap-mc lap-mc2" id="lapModalCopy">Copy link</button>
+
+				<p class="lap-mt" id="lapModalTraits"></p>
 			</div>
 		</div>
 	</div>
@@ -529,6 +636,8 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 	    traits = document.getElementById('lapModalTraits'),
 	    url    = document.getElementById('lapModalUrl'),
 	    copy   = document.getElementById('lapModalCopy'),
+	    msg    = document.getElementById('lapModalMsg'),
+	    copyM  = document.getElementById('lapModalCopyMsg'),
 	    last   = null;
 
 	function open(btn) {
@@ -536,14 +645,16 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		who.textContent    = btn.getAttribute('data-who') || 'Welcome-back package';
 		traits.textContent = btn.getAttribute('data-traits') || '';
 		url.value          = btn.getAttribute('data-url') || '';
+		msg.value          = btn.getAttribute('data-msg') || '';
 		img.alt            = 'Welcome-back package for ' + who.textContent;
 		/* Set last: assigning src starts the fetch, and on a row whose
 		   thumbnail is already cached this completes before the rest of
 		   the dialog would otherwise be filled in. */
 		img.src            = btn.getAttribute('data-img') || '';
 		copy.textContent   = 'Copy link';
+		copyM.textContent  = 'Copy message';
 		wrap.hidden = false;
-		copy.focus();
+		copyM.focus();
 	}
 	function close() {
 		wrap.hidden = true;
@@ -564,20 +675,27 @@ td.lap-gift button.lap-giftbtn:focus-visible { outline:2px solid #00c8a0; outlin
 		if (e.key === 'Escape' && !wrap.hidden) close();
 	});
 
-	copy.addEventListener('click', function () {
-		url.select();
-		url.setSelectionRange(0, url.value.length);   // iOS needs the range
-		function done() { copy.textContent = 'Copied'; }
-		/* execCommand is deprecated but is the only thing that works
-		   without a secure context or a permission prompt, so it is the
-		   fallback rather than the first choice. */
-		if (navigator.clipboard && navigator.clipboard.writeText) {
-			navigator.clipboard.writeText(url.value).then(done, function () {
+	/* One handler, both fields. execCommand is deprecated but is the
+	   only thing that works without a secure context or a permission
+	   prompt, so it is the fallback rather than the first choice. */
+	function wire(field, btn, label) {
+		btn.addEventListener('click', function () {
+			field.select();
+			field.setSelectionRange(0, field.value.length);   // iOS needs the range
+			function done() {
+				btn.textContent = 'Copied';
+				setTimeout(function () { btn.textContent = label; }, 1600);
+			}
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(field.value).then(done, function () {
+					try { document.execCommand('copy'); done(); } catch (err) {}
+				});
+			} else {
 				try { document.execCommand('copy'); done(); } catch (err) {}
-			});
-		} else {
-			try { document.execCommand('copy'); done(); } catch (err) {}
-		}
-	});
+			}
+		});
+	}
+	wire(msg, copyM, 'Copy message');
+	wire(url, copy, 'Copy link');
 })();
 </script>

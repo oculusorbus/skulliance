@@ -142,6 +142,75 @@ ok(strpos($src, 'DATEDIFF(NOW(), last_login)') !== false,
 ok(strpos($src, 'time()') === false,
    'this page is mixing PHP wall-clock time with MySQL timestamps again');
 
+/* ---------------------------------------------------------------- *
+ * THE INVITE COPY
+ * ---------------------------------------------------------------- */
+echo "\nthe generated invite says only true things\n";
+/*
+ * THIS TEXT GETS PASTED INTO A REAL DM TO A REAL PERSON, so a claim it
+ * invents is a claim the owner makes. Driven through the real
+ * functions rather than grepped.
+ */
+/* Brace-walked out of the page and RUN, the same way admin-harness.php
+   lifts the two naming functions: these are pure, and reading them
+   would not catch a sentence that is grammatical but untrue. */
+function lap_lift($src, $sig) {
+	$at = strpos($src, $sig); if ($at === false) return '';
+	$i = strpos($src, '{', $at); $d = 0;
+	for ($j = $i; $j < strlen($src); $j++) {
+		if ($src[$j] === '{') $d++;
+		elseif ($src[$j] === '}') { $d--; if (!$d) return substr($src, $at, $j - $at + 1); }
+	}
+	return '';
+}
+$lift_line = lap_lift($src, 'function lap_invite_line(');
+$lift_text = lap_lift($src, 'function lap_invite_text(');
+ok($lift_line !== '' && $lift_text !== '',
+   'the invite copy functions could not be lifted, so nothing below ran');
+eval($lift_line);
+eval($lift_text);
+require_once __DIR__ . '/activity-sources-lib.php';
+$LB = activity_labels();
+
+/* A realm is only mentioned when they actually have one -- it is the
+   strongest line in the message and the easiest to disprove. */
+$heavy = array('by' => array('mission' => 900, 'raid' => 240));
+ok(strpos(lap_invite_text($heavy, $LB, true),  'realm is still standing') !== false,
+   'a member with a realm is not told it is still there');
+ok(strpos(lap_invite_text($heavy, $LB, false), 'realm') === false,
+   'the invite claims a realm the member does not have');
+
+/* Somebody with almost no history must not be told they were big on
+   anything. That reads as a mail merge, which is the one thing a
+   personal invite cannot read as. */
+ok(lap_invite_line(array('by' => array('skullswap' => 3)), $LB) === '',
+   'a member with three runs is told they were big on a game');
+ok(strpos(lap_invite_line($heavy, $LB), 'Missions') !== false,
+   'a heavy player gets no personal line at all');
+
+/* Daily Streaks is a login counter. "Big on Daily Streaks" is not a
+   sentence a person writes. */
+ok(strpos(lap_invite_line(array('by' => array('daily' => 400)), $LB), 'Daily') === false,
+   'Daily Streaks is being named as something they played');
+
+/* Two labels are column headings and need rephrasing before they can
+   sit in a sentence. */
+$fb = lap_invite_line(array('by' => array('fighter' => 80)), $LB);
+ok(strpos($fb, 'Fighters Built') === false && strpos($fb, 'building Fighters') !== false,
+   'the Fighters Built label is dropped into the sentence raw: ' . $fb);
+
+/* No invented history: these go to people the owner has never
+   messaged. */
+$all = lap_invite_text($heavy, $LB, true) . lap_invite_text(array('by' => array()), $LB, false);
+foreach (array('miss seeing you', 'last time we', 'good to hear', 'as always') as $phrase) {
+	if (!ok(stripos($all, $phrase) === false,
+	        'the invite implies a conversation that never happened: "' . $phrase . '"')) break;
+}
+/* And it must describe the gift as traits, not as a finished Fighter,
+   because traits are what lands. */
+ok(stripos($all, 'collection of traits') !== false,
+   'the invite does not say the gift is traits, so it promises a built Fighter');
+
 echo "\nread only\n";
 /* It is a list to work from. Nothing is marked, nothing is sent. */
 foreach (array('INSERT', 'UPDATE ', 'DELETE') as $w) {
