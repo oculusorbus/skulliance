@@ -177,7 +177,8 @@ if (!function_exists('imagecreatetruecolor')) {
 	} else {
 		$mismatch = array();
 		foreach (array_slice($ids, 0, 6) as $id) {
-			$rendered = dhcf_render_fighter($packs[$id], RETURN_GIFT_SERIAL, RETURN_GIFT_SIZE);
+			$rendered = dhcf_render_fighter(return_gift_layout($packs[$id]),
+			                                RETURN_GIFT_SERIAL, RETURN_GIFT_SIZE);
 			$claimed  = return_gift_url($id);
 			if ($rendered === '' || $rendered !== $claimed) {
 				$mismatch[] = $id . ': link says ' . basename($claimed)
@@ -205,6 +206,103 @@ $probe = escapeshellarg(
 $out = trim((string)@shell_exec(PHP_BINARY . ' -r ' . $probe . ' 2>/dev/null'));
 ok(substr($out, -2) === 'NO',
    'RETURN_GIFT_ENABLED false still hands out packages (got: ' . $out . ')');
+
+/* ---------------------------------------------------------------- *
+ * WHAT THE RENDERERS ACTUALLY READ
+ * ---------------------------------------------------------------- */
+echo "\nevery piece of the package is in a slot something will draw\n";
+/*
+ * THE BUG THIS EXISTS FOR. The package is keyed by CATEGORY, but
+ * dhcf_clean_traits() and dhcf_layers() both walk dhcf_slots() and
+ * ignore any key that is not a slot -- and there is no slot called
+ * 'effects', only effects1 and effects2. So the effects trait was
+ * granted, written to the ledger correctly, and silently never drawn.
+ * Nothing errored; the picture was just quietly missing a layer.
+ */
+$slot_list = dhcf_slots();
+$bad_slots = array();
+foreach (array_slice($ids, 0, 60) as $id) {
+	foreach (return_gift_layout($packs[$id]) as $slot => $slug) {
+		if (!in_array($slot, $slot_list, true)) $bad_slots[] = $slot;
+	}
+}
+ok(!$bad_slots, 'the package uses keys that are not layer slots, so they are silently never drawn: '
+              . implode(', ', array_unique($bad_slots)));
+/* Named explicitly, because this is the one that was wrong. */
+$lay = return_gift_layout($packs[$ids[0]]);
+ok(isset($lay['effects1']) && !isset($lay['effects']),
+   'the effects trait is not mapped onto the effects1 slot, so it will not render');
+/* And the layout must not lose or invent anything. */
+ok(count($lay) === count($packs[$ids[0]]),
+   'the category-to-slot mapping changed how many traits are in the package');
+
+/*
+ * THE RENDER MUST ACTUALLY CHANGE when the effects layer is removed.
+ * Every check above passes if effects1 is a slot nothing happens to
+ * draw -- which is exactly the failure being fixed, one level down.
+ */
+if (function_exists('imagecreatetruecolor') && is_dir(__DIR__ . '/dhc/web/1000')) {
+	$drawn = 0; $tried = 0;
+	foreach (array_slice($ids, 0, 3) as $id) {
+		$L = return_gift_layout($packs[$id]);
+		if (!isset($L['effects1'])) continue;
+		$tried++;
+		$a = dhcf_render_fighter($L, RETURN_GIFT_SERIAL, RETURN_GIFT_SIZE);
+		$n = $L; unset($n['effects1']);
+		$b = dhcf_render_fighter($n, RETURN_GIFT_SERIAL, RETURN_GIFT_SIZE);
+		if ($a !== '' && $b !== '' && $a !== $b
+		    && @file_get_contents(__DIR__ . '/dhcrenders/' . basename($a))
+		       !== @file_get_contents(__DIR__ . '/dhcrenders/' . basename($b))) $drawn++;
+	}
+	ok($tried > 0 && $drawn === $tried,
+	   "the effects layer changes nothing in the render ($drawn of $tried), so it is still not being drawn");
+} else {
+	echo "  skip  no GD or no master art, cannot prove the effects layer draws\n";
+}
+
+/* ---------------------------------------------------------------- *
+ * PAIRINGS THE PLATFORM REFUSES
+ * ---------------------------------------------------------------- */
+echo "\nno package contains a combination a Fighter could not be saved with\n";
+/*
+ * dhcf_save_fighter() refuses three pairings outright and dhcf_layers()
+ * silently declines to draw the offending piece. A package that ignores
+ * them hands somebody a trait that cannot be worn and does not appear
+ * -- the worst shape of all, because the preview and the inventory both
+ * look fine.
+ *
+ * Checked with the REAL functions over every id, not a restatement of
+ * the lists, which would go stale the first time a head is added.
+ */
+$clashes = array();
+foreach ($packs as $id => $p) {
+	$head = isset($p['head']) ? $p['head'] : '';
+	$arms = isset($p['arms']) ? $p['arms'] : '';
+	if (isset($p['headgear'])  && dhcf_headgear_blocked($head, $p['headgear'])) {
+		$clashes[] = "$head + {$p['headgear']}";
+	}
+	if (isset($p['companion']) && dhcf_companion_blocked($head, $p['companion'])) {
+		$clashes[] = "$head + {$p['companion']}";
+	}
+	if (isset($p['weapon'])    && dhcf_arms_weapon_clash($arms, $p['weapon'])) {
+		$clashes[] = "$arms + {$p['weapon']}";
+	}
+}
+ok(!$clashes, count($clashes) . ' package(s) pair traits that cannot be worn together: '
+            . implode(' | ', array_slice(array_unique($clashes), 0, 3)));
+
+/*
+ * AND THE FILTER MUST BITE. If none of the 400 ids would have hit a
+ * clash anyway, the check above passes on a package that does no
+ * filtering at all. Prove the rule actually rejects something by
+ * offering it a pairing that is known bad.
+ */
+ok(return_gift_clashes('companion', 'demon-companion', array('head' => 'beheaded-cyborg')) === true,
+   'return_gift_clashes() does not reject a pairing dhcf_save_fighter() refuses');
+ok(return_gift_clashes('companion', 'demon-companion', array('head' => 'gas-mask')) === false,
+   'return_gift_clashes() rejects a pairing that is perfectly legal');
+ok(return_gift_clashes('weapon', 'plastic-blaster', array('arms' => 'robo-crusher-arms')) === true,
+   'the arms/weapon clash is not being checked at all');
 
 /* ---------------------------------------------------------------- *
  * THE ANNOUNCEMENT

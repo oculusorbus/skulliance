@@ -130,6 +130,12 @@ with the usual reveal for each. They are drawn from the **common and uncommon**
 tiers only. A present for turning up must not out-rank what people earned by
 playing.
 
+The package **respects the pairing rules**. A head that refuses a piece of
+headgear, a head the Demon cannot hold onto, and a weapon drawn against the
+torso's own arms are all pairings a Fighter cannot be saved with, so no package
+contains one: the offending piece is left out of the running and the next legal
+one in that category is picked instead. A member still gets one of everything.
+
 Discord gets **one post, not eight**: a single welcome-back announcement showing
 the whole package assembled as the Fighter it makes.
 

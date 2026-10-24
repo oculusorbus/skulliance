@@ -94,11 +94,72 @@ if (!defined('RETURN_GIFT_SIZE'))   define('RETURN_GIFT_SIZE', 500);
  * both and fails on any disagreement, so the copy cannot rot quietly.
  */
 function return_gift_url($discord_id) {
-	$traits = return_gift_traits($discord_id);
+	$traits = return_gift_layout(return_gift_traits($discord_id));
 	if (!$traits) return '';
 	$name = 'f' . (int)RETURN_GIFT_SERIAL . '-' . substr(md5(json_encode($traits)), 0, 8)
 	      . (RETURN_GIFT_SIZE === 500 ? '' : '@' . RETURN_GIFT_SIZE) . '.png';
 	return 'https://skulliance.io/staking/dhcrenders/' . $name;
+}
+
+/**
+ * Does $slug in $cat clash with something already allocated?
+ *
+ * ONE HOME FOR EVERY PAIRING RULE, because the platform has three and
+ * they live in three different places -- a head that refuses headgear,
+ * a head that refuses a companion, and a weapon drawn against the
+ * torso's own arms. dhcf_save_fighter() refuses a Fighter on any of
+ * them, and dhcf_layers() silently declines to draw the offending
+ * piece, so a package that ignores them hands somebody a trait that
+ * cannot be worn and does not appear.
+ *
+ * THE REAL FUNCTIONS, NOT A RESTATEMENT OF THE LISTS. Those tables get
+ * edited; a copy of them here would be wrong the first time somebody
+ * adds a head.
+ */
+function return_gift_clashes($cat, $slug, $chosen) {
+	$head = isset($chosen['head']) ? $chosen['head'] : '';
+	$arms = isset($chosen['arms']) ? $chosen['arms'] : '';
+	if ($cat === 'headgear'  && function_exists('dhcf_headgear_blocked')) {
+		return dhcf_headgear_blocked($head, $slug);
+	}
+	if ($cat === 'companion' && function_exists('dhcf_companion_blocked')) {
+		return dhcf_companion_blocked($head, $slug);
+	}
+	if ($cat === 'weapon'    && function_exists('dhcf_arms_weapon_clash')) {
+		return dhcf_arms_weapon_clash($arms, $slug);
+	}
+	return false;
+}
+
+/**
+ * The package keyed by LAYER SLOT rather than by category, which is
+ * what every renderer actually reads.
+ *
+ * THIS IS WHY THE EFFECTS NEVER SHOWED UP. dhcf_slots() has no slot
+ * called 'effects' -- it has effects1 and effects2 -- and both
+ * dhcf_clean_traits() and dhcf_layers() walk the SLOT list and ignore
+ * any key that is not one. So an 'effects' key was granted, written to
+ * the ledger correctly, and then silently dropped by everything that
+ * draws, with no error anywhere.
+ *
+ * Derived from dhcf_slots() rather than written out: a slot whose name
+ * is the category wins (weapon, not weaponBack), otherwise the first
+ * slot of that category (effects1). Add a slot upstream and this
+ * follows.
+ */
+function return_gift_layout($traits) {
+	if (!function_exists('dhcf_slots')) return $traits;
+	$slot_for = array();
+	foreach (dhcf_slots() as $slot) {
+		$cat = dhcf_slot_category($slot);
+		if ($slot === $cat) { $slot_for[$cat] = $slot; continue; }
+		if (!isset($slot_for[$cat])) $slot_for[$cat] = $slot;
+	}
+	$out = array();
+	foreach ($traits as $cat => $slug) {
+		$out[isset($slot_for[$cat]) ? $slot_for[$cat] : $cat] = $slug;
+	}
+	return $out;
 }
 
 /**
@@ -121,6 +182,22 @@ function return_gift_traits($discord_id) {
 		foreach ($rarity[$cat] as $slug => $info) {
 			/* $info is [tier, count, rate]. */
 			if (!isset($tiers[$info[0]])) continue;
+			/*
+			 * A piece that cannot be worn with what is already in the
+			 * package is not a candidate. Dropped from the POOL rather
+			 * than from the package, so the next-best legal piece wins
+			 * and the member still gets one of everything -- the whole
+			 * point of the eight-slot version. A category with no legal
+			 * candidate left is omitted, which is the only case where a
+			 * package comes back short.
+			 *
+			 * ORDER MATTERS AND IS NOT ALPHABETICAL. background, torso
+			 * and head come first in RETURN_GIFT_SLOTS because they are
+			 * DHCF_REQUIRED and must never be the piece that yields;
+			 * headgear, companion and weapon are decoration and give way
+			 * to the head and arms already chosen.
+			 */
+			if (return_gift_clashes($cat, $slug, $out)) continue;
 			$score = hash('sha256', $id . '|' . $cat . '|' . $slug);
 			/* String compare: both are 64 hex chars, so this orders them
 			   exactly as the numbers would, without touching floats. */

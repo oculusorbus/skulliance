@@ -54,7 +54,9 @@ if (!$traits) rgc_fail(503, 'No package (the rarity table did not load).');
  * so f0-* is a namespace nothing else writes into. The traits hash in
  * the filename still keeps two different packages apart.
  */
-$url = dhcf_render_fighter($traits, RETURN_GIFT_SERIAL, RETURN_GIFT_SIZE);
+/* THE LAYOUT, NOT THE CATEGORY MAP: dhcf_layers() walks slots, and
+   'effects' is not one of them -- see return_gift_layout(). */
+$url = dhcf_render_fighter(return_gift_layout($traits), RETURN_GIFT_SERIAL, RETURN_GIFT_SIZE);
 if ($url === '') rgc_fail(503, 'Could not render (no GD, or the art is missing).');
 
 /* 302, not 301: the art behind a slug can be replaced by FTP, and a
