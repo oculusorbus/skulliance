@@ -256,6 +256,25 @@ function return_gift_due($conn, $user_id, $prev_login) {
  */
 function return_gift_announce($conn, $user_id, $traits, $discord_id) {
 	try {
+		/*
+		 * LOAD THE NOTIFIER OURSELVES. It is normally pulled in by
+		 * dhcf_commit_drop()'s announcement branch -- the exact branch
+		 * this package skips by passing $announce false. So on the real
+		 * login path neither skl_discordmsg() nor dhcf_author_block()
+		 * existed, both guards below returned early, and the welcome-back
+		 * post silently never fired. Nothing errored and nothing logged;
+		 * the traits arrived and the announcement did not.
+		 *
+		 * Buffered around the require, because it pulls in webhooks.php
+		 * and its credentials file, and this runs inside skulliance.php
+		 * on every signed-in request including AJAX endpoints.
+		 */
+		if (defined('DHCF_NO_NOTIFY') && DHCF_NO_NOTIFY) return;
+		if (!function_exists('skl_discordmsg') && is_file(__DIR__ . '/../dhcfighters-notify.php')) {
+			ob_start();
+			require_once __DIR__ . '/../dhcfighters-notify.php';
+			ob_end_clean();
+		}
 		if (!function_exists('skl_discordmsg')) return;
 		if (!function_exists('dhcf_author_block')) return;
 		list($author, $name, $mention) = dhcf_author_block($conn, $user_id);

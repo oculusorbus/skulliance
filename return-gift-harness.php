@@ -424,6 +424,59 @@ ok($p_read !== false && $p_write !== false && $p_read < $p_write,
 ok($p_gift !== false && $p_gift > $p_write,
    'the gift check is not on the login path at all');
 
+/*
+ * AND IT MUST NOT BE INSIDE THE REFERRAL BLOCK. The gift sits a few
+ * lines below the invite payout and is indented the same; nesting it
+ * one brace deeper would make the whole feature fire only for people
+ * who arrived through an invite link, which is the opposite of the
+ * intent and would look completely normal in a diff.
+ *
+ * Measured with the tokeniser rather than by reading indentation: if
+ * the brace depth returns to the inside of the discord_id block
+ * between the invite payout and the gift, the referral `if` closed and
+ * the two are siblings.
+ */
+$tk = token_get_all($skl);
+$depth = 0; $seen_ref = false; $min_between = 99; $gift_d = null; $inside = null;
+foreach ($tk as $tok) {
+	if (is_string($tok)) {
+		if ($tok === '{') $depth++; elseif ($tok === '}') $depth--;
+		if ($seen_ref && $gift_d === null) $min_between = min($min_between, $depth);
+		continue;
+	}
+	if (strpos($tok[1], 'discord_id') !== false && $inside === null) $inside = $depth + 1;
+	if ($tok[1] === 'ref_credit') $seen_ref = true;
+	if ($tok[1] === 'return_gift_due' && $gift_d === null) $gift_d = $depth;
+}
+ok($inside !== null && $gift_d !== null && $min_between <= $inside,
+   'the gift is nested inside the referral block, so only invited members get one');
+
+/*
+ * THE ANNOUNCEMENT HAS TO WORK WITH ONLY WHAT THE LOGIN PATH LOADS.
+ * It did not: dhcfighters-notify.php is pulled in by the very branch of
+ * dhcf_commit_drop() that this package skips, so skl_discordmsg() and
+ * dhcf_author_block() were both absent, return_gift_announce() hit its
+ * own guards and returned, and the post silently never fired. The
+ * harness missed it because IT required the notifier at the top.
+ *
+ * Run in a subprocess loading EXACTLY what skulliance.php loads, which
+ * is the only way to see what production sees.
+ */
+$probe = escapeshellarg(
+	"require '" . __DIR__ . "/dhcfighters-lib.php';"
+	. "require '" . __DIR__ . "/lib/return-gift.php';"
+	. "class R { public \$num_rows = 0; function fetch_assoc() { return null; } }"
+	. "class C { function query(\$s) { return new R; } function real_escape_string(\$x) { return \$x; } }"
+	. "@return_gift_announce(new C, 7, array('head' => 'gas-mask'), '931869374661423104');"
+	/* DISTINCT MARKERS, NOT ONE INSIDE THE OTHER. This compared the tail
+	   against 'SENDER' -- and 'NOSENDER' ends in 'SENDER', so the check
+	   passed on the exact failure it was written to catch. */
+	. "echo function_exists('skl_discordmsg') ? 'RG_HASSENDER' : 'RG_MISSING';");
+$out = trim((string)@shell_exec(PHP_BINARY . ' -r ' . $probe . ' 2>/dev/null'));
+ok(substr($out, -12) === 'RG_HASSENDER',
+   'return_gift_announce() cannot reach a Discord sender with only the login path loaded, '
+ . 'so the welcome-back post never fires in production (got: ' . substr($out, -12) . ')');
+
 /* ---------------------------------------------------------------- *
  * THE PREVIEW ENDPOINT
  * ---------------------------------------------------------------- */
