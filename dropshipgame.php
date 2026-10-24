@@ -185,8 +185,10 @@ $ds_short = $ds_name !== ''
     {
       "@type": "FAQPage",
       "mainEntity": [
+        { "@type": "Question", "name": "Do I need an account to play Drop Ship?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes, a free Skulliance account, signed in with Discord. Drop Ship is not playable as a guest the way the browser games are, because it has to know whose soldiers and whose SCRIP are whose." } },
         { "@type": "Question", "name": "Is Drop Ship free to play?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Yes. It runs in your browser with no download. Drop Ship gives every player four free soldiers, and those four make one complete squad, so you can take a real run before you own anything. Oculus Lounge is the one theme that is not open to everybody." } },
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes, with a free Skulliance account. It runs in your browser with no download. Drop Ship gives every player four free soldiers, and those four make one complete squad, so you can take a real run before you own anything. Oculus Lounge is the one theme that is not open to everybody." } },
         { "@type": "Question", "name": "Do I need an NFT to play Drop Ship?",
           "acceptedAnswer": { "@type": "Answer", "text": "No. Four free soldiers are waiting in your barracks. NFTs you hold become extra soldiers, and in DHC2 Fighters a Fighter you assemble out of earned traits also fields as one." } },
         { "@type": "Question", "name": "How long does a run take?",
@@ -249,6 +251,9 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
   color: #06222b; font-weight: 700; text-decoration: none; border: 1px solid #00c8a0; }
 .dsg-cta.alt { background: transparent; color: #00c8a0; }
 .dsg-cta:hover { filter: brightness(1.1); }
+/* The one line that stops Play now being a trapdoor. */
+.dsg-note { margin: 4px auto 0; max-width: 640px; font-size: .82rem; color: #7a9eb0; }
+
 .dsg-badges { margin: 14px 0 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .dsg-badge { font-size: .72rem; letter-spacing: .07em; text-transform: uppercase; color: #8fa8b8;
   border: 1px solid rgba(255,255,255,.14); padding: 5px 10px; }
@@ -403,10 +408,19 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 		<a class="dsg-cta" href="dropship/dashboard.php<?php
 			echo $ds_one ? '?project_id=' . (int)$ds_one['project_id'] : ''; ?>">Play now</a>
 		<a class="dsg-cta alt" href="#dsg-how">How it works</a>
+		<p class="dsg-note">Drop Ship runs on a free Skulliance account, so your soldiers, your squads
+			and your place on the board stay yours. Signing in takes a Discord account and about ten
+			seconds.</p>
 		<div class="dsg-badges">
 			<?php /* NOT "Free to play" on a theme that is not. Oculus Lounge
 			         wants the VIP role or a pass bought with DISCOIN. */ ?>
 			<span class="dsg-badge"><?php echo $ds_open ? 'Free to play' : 'VIP access'; ?></span>
+			<?php /* SAID OUT LOUD. The sibling pages carry "No Signup" because
+			         their games really are playable cold; this one is not, and
+			         leaving the claim off is not the same as disclosing the
+			         opposite. A stranger arriving from a share was being sent
+			         to a Discord login with no warning at all. */ ?>
+			<span class="dsg-badge">Free account</span>
 			<span class="dsg-badge">No download</span>
 			<span class="dsg-badge">Weekly reset</span>
 			<span class="dsg-badge">Squads build themselves</span>
@@ -691,6 +705,10 @@ body { background: #07111d; margin: 0; color: #e8eaed; line-height: 1.55;
 	<section class="dsg-sec">
 		<h2>Questions</h2>
 		<div class="dsg-faq">
+			<details><summary>Do I need an account?</summary>
+				<p>Yes, a free Skulliance one, and you sign in with Discord. Unlike our browser games
+					Drop Ship is not playable as a guest: it has to know whose soldiers are whose, whose
+					SCRIP is whose and who is on the board this week.</p></details>
 			<details open><summary>Is it free?</summary>
 				<p>Yes, and you do not need to own anything. The four soldiers above are waiting in your
 					Drop Ship barracks and they make one complete squad. Oculus Lounge is the one theme
