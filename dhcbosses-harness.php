@@ -530,6 +530,59 @@ foreach (array('dhcb_entry_block(', 'dhcb_runs_today(', 'dhcb_cache_slots(',
 }
 
 /*
+ * THE BOSSES ARE A TAB, NOT A PANEL.
+ *
+ * The Arena carried a card pointing at the other game, which spends a whole
+ * panel in the column where the Crew is picked on a single link. dhc-nav.php
+ * is where a player looks for somewhere else to go, and the strip already
+ * names every other DHC surface.
+ */
+$NAV = file_get_contents(__DIR__ . '/dhc-nav.php');
+ok(preg_match("~'bosses'\s*=> array\('dhcbosses\.php',\s*'Bosses',\s*'battle'~", $NAV) === 1,
+   'the DHC strip has no Bosses tab, so the only way to the page is the platform menu');
+/* BESIDE THE ARENA. What a player is choosing between here is who they are
+   fighting, so the two sit together rather than at opposite ends. */
+$keys = array();
+if (preg_match_all("~^\t'([a-z]+)'\s*=>~m", $NAV, $mm)) $keys = $mm[1];
+$ia = array_search('arena', $keys, true); $ib = array_search('bosses', $keys, true);
+ok($ia !== false && $ib === $ia + 1,
+   'the Bosses tab is not next to the Arena: ' . implode(',', $keys));
+/* AND THE TAB LIGHTS UP ON THE PAGE IT NAMES. Executed in both modes, because
+   a page that hardcodes 'arena' leaves the strip pointing at the wrong tab
+   while you are standing on the Bosses. */
+$navExpr = '';
+if (preg_match('~\$dhcnav_at = (.*?); \$dhcnav_guest~', $ARE, $mm)) $navExpr = $mm[1];
+ok($navExpr !== '', 'dhcarena.php no longer sets $dhcnav_at in one statement');
+foreach (array(false => 'arena', true => 'bosses') as $isb => $want) {
+	$IS_BOSS = (bool)$isb;
+	ok(@eval('return ' . $navExpr . ';') === $want,
+	   'the ' . $want . ' page does not light its own tab');
+}
+/* AND THE PANEL IT REPLACED IS GONE. */
+ok(strpos($ARE, 'Go to the Bosses') === false,
+   'the Arena still carries the pointer panel the tab replaced');
+
+/*
+ * THE SEND BUTTON LOOKS LIKE EVERY OTHER BUTTON ON THE PAGE.
+ *
+ * .btn.go on its own is the loud solid variant; .a-go restyles it as the
+ * quiet outlined control the Arena's own entry button is, AND carries the
+ * only :disabled rule. Outside .a-go the button was a solid green slab that
+ * still looked live with no Crew picked -- the disabled attribute was set
+ * and nothing styled it.
+ */
+$goAt = strpos($ARE, 'id="aBossGo"');
+ok($goAt !== false, 'the send button is gone');
+$before = $goAt !== false ? substr($ARE, 0, $goAt) : '';
+$lastOpen  = strrpos($before, '<div class="a-go">');
+$lastClose = strrpos($before, '</div>');
+ok($lastOpen !== false && ($lastClose === false || $lastClose < $lastOpen),
+   'the send button is outside .a-go, so it renders as a solid slab with no disabled state');
+ok(preg_match('~id="aBossGo" type="button" disabled~', $ARE) === 1,
+   'the send button is not disabled in the markup, so a click between parse and paint '
+ . 'posts an empty Crew');
+
+/*
  * EACH PAGE RESUMES ITS OWN GAME.
  *
  * Both endpoints answer `resume`, and the Arena's was the only one wired. On

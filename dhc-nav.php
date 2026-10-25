@@ -10,7 +10,7 @@
  * ONE FILE, INCLUDED ON EVERY DHC PAGE, so the strip cannot drift into four
  * slightly different strips. Set $dhcnav_at before including:
  *
- *     $dhcnav_at = 'fighters' | 'collection' | 'arena' | 'sandbox';
+ *     $dhcnav_at = 'fighters' | 'collection' | 'arena' | 'bosses' | 'sandbox';
  *     include 'dhc-nav.php';
  *
  * SIGNED OUT, ONE OF THE THREE IS A TRAP. The Arena and the Collection are
@@ -51,6 +51,12 @@ $dhcnav_items = array(
 	'status'     => array('dhcfighters.php#drops', 'Games', 'review', 1, 1),
 	'collection' => array('dhcgallery.php',  'Collection', 'browse', 0, 0),
 	'arena'      => array('dhcarena.php',    'Arena',      'fight',  0, 0),
+	/* NEXT TO THE ARENA, because it is the Arena: dhcbosses.php is the same
+	   file with $DHC_MODE set, and what a player is choosing between here is
+	   who they are fighting, not which game they are opening. It replaced a
+	   pointer panel in the Arena's setup column -- a whole panel spent on one
+	   link, in the column where the Crew is picked. A tab is what it was. */
+	'bosses'     => array('dhcbosses.php',   'Bosses',     'battle', 0, 0),
 	/* Public, like the Arena and the Collection: it is a picture of what the
 	   Arena has been doing, and every name and avatar on it is already on a
 	   leaderboard. Label is the noun and hint the verb, like the rest. */

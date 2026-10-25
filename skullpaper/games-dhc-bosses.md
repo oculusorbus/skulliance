@@ -4,7 +4,7 @@ Three bosses stand up every **Thursday at 4pm CT** with a health bar each, and *
 shares them**. You can send **three Crews a day**; every point of damage anyone
 lands comes off the same three bars, all week.
 
-It has **its own page** at DHC Bosses in the games menu, with its own Crew picker and
+It has **its own page**, the Bosses tab in the DHC strip, with its own Crew picker and
 its own ladder. It is the same engine as [[games-dhc-arena]] underneath, which is why the
 board, the gems, the reach rule and the bombs are identical, but the two are separate
 games in every way that affects you: a separate daily allowance, a separate ladder, and

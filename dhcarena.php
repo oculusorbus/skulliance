@@ -340,7 +340,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 
 <?php /* Build, browse, fight -- one activity across three pages. A guest gets
          the other two pointed at sign-in rather than at error.php. */ ?>
-<?php $dhcnav_at = 'arena'; $dhcnav_guest = $dhca_guest; include 'dhc-nav.php'; ?>
+<?php $dhcnav_at = $IS_BOSS ? 'bosses' : 'arena'; $dhcnav_guest = $dhca_guest;
+      include 'dhc-nav.php'; ?>
 <?php
   /* One typeface for every DHC surface -- the Arena's titles were the
      monospace body face while the Collection's were the display one. */
@@ -1929,26 +1930,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
     </div>
     <?php endif; /* !$IS_BOSS */ ?>
 
-    <?php /* THE ARENA'S POINTER AT THE OTHER GAME. A boss week that nobody on
-             the Arena can see is a boss week nobody turns up to, and the
-             Arena is the page people already have open. One card, the live
-             state in it, and a link -- not the panel, which belongs on the
-             page that can act on it. */ ?>
-    <?php if (!$IS_BOSS && $dhcb_on): $dp = $dhcb_prog; ?>
-    <div class="a-panel">
-      <h2>DHC Bosses</h2>
-      <div class="body">
-        <p class="a-sub" style="margin:0 0 8px">Three bosses, one health bar each, shared
-           by everybody, standing until Thursday 4pm CT. Your Arena Crew is untouched by
-           it: Fighters rest from the Bosses on their own clock.</p>
-        <div class="a-bsum"><b><?php echo round(100 * $dp['pct']); ?>%</b> of the crew is
-           down · <?php echo number_format($dp['dealt']); ?> of
-           <?php echo number_format($dp['max']); ?> damage</div>
-        <a class="btn go" href="dhcbosses.php">Go to the Bosses</a>
-      </div>
-    </div>
-    <?php endif; ?>
-
+    <?php /* NO BOSS PANEL HERE. The Arena carried a card pointing at the
+             other game, which is a whole panel in the column where the Crew
+             is picked, spent on one link. It is a tab in the strip at the top
+             of the page now, beside Arena, which is where a player looks for
+             another place to go. */ ?>
     <?php if ($IS_BOSS && $dhcb_on): $dp = $dhcb_prog; ?>
     <div class="a-panel" id="aBossPanel">
       <h2>The crew this week</h2>
@@ -2037,20 +2023,35 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                    and it lands in the middle of a panel where nothing else
                    has a shadow. The Arena restyled its own controls and this
                    one was written against the platform default. */ ?>
-          <?php /* DISABLED IN THE MARKUP. The gate below runs on the first
-                   paint, but between parse and paint the button is live, and
-                   a click in that window posts an empty Crew. Starting dead
-                   costs nothing -- there is no state in which three Fighters
-                   are already picked when the page loads. */ ?>
-          <button class="btn go" id="aBossGo" type="button" disabled>Send Crew at the Bosses</button>
+          <?php /*
+                 * INSIDE .a-go, WHICH IS WHERE THE BUTTON STYLE LIVES.
+                 *
+                 * .btn.go on its own is the page's loud variant -- solid
+                 * fill, white text -- and it was never meant to be used
+                 * bare: every button on this page sits in .a-go, which
+                 * restyles .go as the quiet outlined control the Arena's
+                 * "Enter the Arena" is, AND carries the :disabled rule.
+                 * Outside it this button was a solid green slab that still
+                 * looked live with no Crew picked, because the only thing
+                 * saying "disabled" was an attribute nothing styled.
+                 *
+                 * DISABLED IN THE MARKUP. The gate below runs on the first
+                 * paint, but between parse and paint the button is live, and
+                 * a click in that window posts an empty Crew. Starting dead
+                 * costs nothing -- there is no state in which three Fighters
+                 * are already picked when the page loads.
+                 *
+                 * #aMsg rides with it for the same reason it does on the
+                 * Arena: the picker writes "Pick one more" into it and the
+                 * start paths write their failures into it.
+                 */ ?>
+          <div class="a-go">
+            <button class="btn go" id="aBossGo" type="button" disabled>Send Crew at the Bosses</button>
+            <span class="a-sub" style="margin:0" id="aMsg"></span>
+          </div>
           <p class="a-sub" style="margin:8px 0 0"><?php
             echo (int)($dhcb_runs); ?> of <?php echo DHCB_DAILY_RUNS; ?> Crews sent today.
             Fighters rest from Bosses only — your Arena Crew is untouched.</p>
-          <?php /* #aMsg lives in the rival panel on the Arena, which this page
-                   does not have. The picker writes "Pick one more" into it and
-                   the start paths write their failures into it, so it has to
-                   exist on both pages or those messages go nowhere. */ ?>
-          <span class="a-sub" style="margin:0" id="aMsg"></span>
         <?php endif; ?>
       </div>
     </div>

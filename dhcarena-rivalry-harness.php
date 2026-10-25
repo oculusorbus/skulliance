@@ -236,14 +236,45 @@ foreach ($m as $hit) $items[$hit[1]] = $hit[2];
 ok(count($items) >= 5, 'the strip lists at least five entries (' . count($items) . ')');
 ok(isset($items['rivalries']), 'Rivalries is one of them');
 ok($items['rivalries'] === 'rivalries.php', 'and points at the right page');
+/*
+ * A PAGE MAY BE SERVED BY ANOTHER PAGE. dhcbosses.php is two statements --
+ * $DHC_MODE = 'bosses' and an include of dhcarena.php -- so the strip, and
+ * the line that decides which chip is lit, live in the file it includes. A
+ * check that only read the file itself called that a missing strip, which is
+ * the opposite of the problem it exists to catch: this entry is a tab, it
+ * does light up, and the shared implementation is the point.
+ *
+ * So the include is followed ONE hop, and only when the file itself has no
+ * strip of its own. Deeper than that and a page is doing something this
+ * check should not be guessing at.
+ */
+function nav_source($dir, $file) {
+	$src = file_get_contents($dir . '/' . $file);
+	if (strpos($src, 'dhcnav_at') !== false) return array($file, $src);
+	if (preg_match('~(?:require|include)(?:_once)?\s*(?:__DIR__\s*\.\s*)?[\'"]/?([a-z0-9_-]+\.php)[\'"]~i',
+	               $src, $m) && is_file($dir . '/' . $m[1])) {
+		$inner = file_get_contents($dir . '/' . $m[1]);
+		if (strpos($inner, 'dhcnav_at') !== false) return array($m[1], $inner);
+	}
+	return array($file, $src);
+}
 foreach ($items as $key => $href) {
 	$file = preg_replace('/#.*$/', '', $href);
 	if (!is_file(__DIR__ . '/' . $file)) { ok(false, "  $key points at a missing file ($file)"); continue; }
-	$src = file_get_contents(__DIR__ . '/' . $file);
-	ok(strpos($src, "dhcnav_at") !== false, "  $file includes the strip");
-	ok(strpos($src, "dhcnav_at = '" . $key . "'") !== false
-	   || strpos($src, '#') !== false && strpos($href, '#') !== false,
-	   "  $file marks itself as '$key', so one chip is highlighted");
+	list($from, $src) = nav_source(__DIR__, $file);
+	$via = ($from === $file) ? '' : " (via $from)";
+	ok(strpos($src, "dhcnav_at") !== false, "  $file includes the strip$via");
+	/*
+	 * THE STATEMENT, NOT A SPELLING. dhcarena.php serves two interfaces and
+	 * picks its chip with a ternary, so pinning "dhcnav_at = 'arena'" failed
+	 * on a page that highlights its tab correctly in both modes. What has to
+	 * be true is that the key is named where the chip is decided.
+	 */
+	$stmt = preg_match('~\$dhcnav_at\s*=\s*(.*?);~s', $src, $mm) ? $mm[1] : '';
+	ok(strpos($stmt, "'" . $key . "'") !== false
+	   || (strpos($href, '#') !== false && strpos($src, '#') !== false),
+	   "  $file never names itself '$key'$via, so its chip is not highlighted: "
+	   . ($stmt === '' ? '(no assignment found)' : trim($stmt)));
 }
 /* And the page it was lifted out of must not also link to it: two routes to
    one page, one of them a whole panel, is how the Arena ended up advertising
