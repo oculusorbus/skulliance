@@ -1004,5 +1004,50 @@ ok(strpos($bp, '<details class="mb-coll" open>') !== false,
 ok(strpos($bp, "\$tree[\$pk][\$ck][] = \$bx;") !== false,
    'the list is not grouped project-then-collection, the way the picker shows them');
 
+/* ---------------------------------------------------------------- *
+ * THE BOSS CARD IMAGES
+ * ---------------------------------------------------------------- */
+echo "\nboss art degrades to something visible, not to a hole\n";
+/*
+ * REPORTED FROM A PHONE: cards rendering with correct stats and a blank
+ * where the art belongs, fixed by switching apps and back. That is a
+ * dropped paint rather than a failed download -- the image had loaded,
+ * because onload had already fired.
+ */
+
+/*
+ * EVERY onerror FALLBACK HAS TO RESOLVE. The boss card pointed at
+ * 'staking/icons/skull.png', and this page is served FROM /staking/,
+ * so it resolved to /staking/staking/icons/skull.png -- a 404, checked
+ * live. Any image that genuinely failed fell back to nothing at all.
+ * The theme logo on the same page had it right, which is how a typo
+ * like this survives: nine lines away sits the correct version.
+ */
+	preg_match_all('~onerror="this\\.src=\\x27([^\\x27]+)\\x27~', $game, $fb);
+$bad_fb = array();
+foreach ($fb[1] as $u) {
+	if (strpos($u, 'staking/') === 0) $bad_fb[] = $u;
+}
+ok(!$bad_fb, 'an image fallback is relative to the site root but the page is served from '
+           . '/staking/, so it 404s: ' . implode(', ', $bad_fb));
+
+/*
+ * THE PLACEHOLDER COLOUR SURVIVES onload. Clearing it was what turned a
+ * dropped paint into a blank card: image reports loaded, placeholder
+ * erased, nothing painted, nothing behind it. The skull going is fine;
+ * the panel going is not.
+ */
+$loaded = substr($game, strpos($game, '.boss-option img.loaded {'));
+$loaded = substr($loaded, 0, strpos($loaded, '}'));
+ok(strpos($loaded, 'background-color') === false,
+   'the loaded rule clears the placeholder colour again, so an unpainted image leaves a hole');
+
+/* Fewer live layers is the main defence against the paint being
+   dropped at all, and nothing here needs every boss decoded at once. */
+ok(strpos($game, 'alt="${boss.name}" loading="lazy"') !== false,
+   'boss images are not lazy, so every boss on the list decodes at once');
+ok(strpos($game, 'transform: translateZ(0);') !== false,
+   'the boss image is no longer promoted to its own layer');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);

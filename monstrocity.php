@@ -1364,14 +1364,31 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
       background-position: center;
       background-repeat: no-repeat;
       border-radius: 6px;
+      /*
+       * ITS OWN COMPOSITING LAYER. On iOS these images report loaded and
+       * then intermittently never paint -- the card renders with correct
+       * stats and a blank where the art should be, and switching apps
+       * (which forces a recomposite) fills it in. That is the signature
+       * of a dropped paint, not a failed download, and promoting the
+       * element is the standard answer. The page already stacks the usual
+       * triggers: aspect-ratio with object-fit on every card, and a
+       * grayscale filter on every defeated boss.
+       */
+      transform: translateZ(0);
     }
-    /* Once the image's onload fires, JS adds .loaded — clear the
-       placeholder bg so it isn't sitting behind a fully-rendered image. */
+    /*
+     * Once onload fires, JS adds .loaded and the skull goes -- but the
+     * PANEL COLOUR STAYS. It used to clear both, and that is what turned
+     * an iOS paint failure into a hole in the card: the image reports
+     * loaded, the placeholder is erased, Safari then fails to paint the
+     * decoded image, and there is nothing at all behind it. Keeping the
+     * colour costs nothing (a painted image covers it completely) and
+     * means the worst case is a dark panel instead of a blank.
+     */
     .character-option img.loaded,
     .character-option video.loaded,
     .boss-option img.loaded {
       background-image: none !important;
-      background-color: transparent !important;
     }
     @media (max-width: 1024px) {
       .character-option,
@@ -2170,7 +2187,8 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 
 	                  option.innerHTML = `
 	                      <p><strong>${boss.name}</strong></p>
-	                      <div><img src="${imageSrc}" alt="${boss.name}" onload="this.classList.add('loaded')" onerror="this.src='staking/icons/skull.png'"></div>
+	                      <div><img src="${imageSrc}" alt="${boss.name}" loading="lazy" decoding="async"
+	                          onload="this.classList.add('loaded')" onerror="this.src='icons/skull.png'"></div>
 	                      <div class="health-bar" style="margin-bottom: 10px;">
 	                          <div class="health" style="width: ${healthPercentage}%; background-color: ${healthColor}; filter: none; border-radius: 5px 0 0 5px;"></div>
 	                      </div>
