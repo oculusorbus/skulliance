@@ -1,8 +1,8 @@
 # DHC Bosses
 
-Three bosses stand up every day with a health bar each, and **everybody shares
-them**. Send a Crew of Fighters as often as your allowance lasts; every point
-of damage anyone lands comes off the same three bars.
+Three bosses stand up every **Monday** with a health bar each, and **everybody
+shares them**. You can send **three Crews a day**; every point of damage anyone
+lands comes off the same three bars, all week.
 
 It is played on the [[games-dhc-arena]] page, in the DHC Bosses panel.
 
@@ -19,6 +19,18 @@ Same board, same matching, same reach, same bombs. What is different is that
 there are three of them at once and their health does not reset when your run
 ends.
 
+## The cache: one trait for every day you turn up
+
+Every day you send a Crew that does real damage banks **one trait**, up to
+seven. Miss Wednesday and you finish the week with six.
+
+Three Crews a day is deliberately too few to bank the week in one sitting, so
+a full cache is seven separate visits. You can see it filling on the Bosses
+panel: seven boxes, one per day, with today's outlined and any day you missed
+dotted out.
+
+The whole cache rolls when the week closes, on the table the community earned.
+
 ## Losing is the normal outcome, and it still pays
 
 A boss has far more health than one Crew can remove, so most runs end with
@@ -28,9 +40,8 @@ near a kill still counts for exactly what it dealt.
 
 ## What the day pays
 
-Everyone who dealt a real amount of damage rolls for one trait when the day
-closes. Which table they roll on depends on how far **the whole community**
-pushed the crew:
+Which table your cache rolls on depends on how far **the whole community**
+pushed the crew over the week:
 
 | Crew damage | Table |
 |---|---|
@@ -59,26 +70,28 @@ ranked battle.
 
 ## How big they are
 
-The crew is sized every morning from how much firepower the platform could
-actually field: how many players have been active, how many Crews they could
-send between them, and how much damage a run is worth. It is locked when the
-crew stands up, so nobody who joins later makes it harder for the people
-already fighting.
+The crew is sized every Monday from how much firepower the platform could
+actually field over a week: how many players have been active, how many Crews
+they could send between them, and how much damage a run is worth. It is locked
+when the crew stands up, so nobody who joins later makes it harder for the
+people already fighting.
 
 A quiet week gets a smaller crew. A busy one gets a bigger crew and the same
-chance of clearing it.
+chance of clearing it. It is never sized beyond what the week can physically
+deliver, so a perfect week always clears it.
 
-## The monthly ladder
+## The weekly ladder
 
 Ranked on **damage per Fighter deployed**, not on total damage. Sending more
 Fighters is not the same as fighting well, and a player with five good
 Fighters should be able to top it. Total damage, Crews sent and Fighters sent
 are all shown; none of them decide the order.
 
-CARBON is paid down the board by rank at the end of the month, the same
-harmonic split every board uses.
+CARBON is paid down the board by rank when the week closes, the same harmonic
+split every board uses.
 
 ## If nobody finishes them
 
-They come back tomorrow at full health. Nothing carries over, and nothing is
-lost: everybody who took part was already paid for the damage they did.
+A new crew stands up on Monday at full health. Nothing carries over, and
+nothing is lost: everybody who took part is paid their cache either way, just
+on a lower table.

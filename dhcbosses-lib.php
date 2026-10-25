@@ -47,7 +47,25 @@ require_once __DIR__ . '/dhcarena-lib.php';
    it, and a curve derived today would be fitted to ten players' worth of
    noise. They are constants so the fitting changes one line. */
 if (!defined('DHCB_CREW_SIZE'))   define('DHCB_CREW_SIZE', DHCA_CREW_SIZE);  // follow the Arena
-if (!defined('DHCB_DAILY_RUNS'))  define('DHCB_DAILY_RUNS', 6);
+/*
+ * THREE A DAY, AND THE WEEK IS WHAT RESETS.
+ *
+ * The cadence and the allowance are separate levers and they fix different
+ * things. The WEEK sets the drama: seven days of participation accumulate
+ * against one crew, so it actually falls, and the fall is an event instead
+ * of a nightly coin-flip. The DAILY CAP sets the fatigue: with the Arena's
+ * six battles already in the day, twelve of the same board was a second
+ * shift, and these two games are mechanically identical by design.
+ *
+ * Three also makes the cache below mean something. A player cannot spend
+ * the week in one sitting, so the only route to a full cache is turning up
+ * on seven separate days -- which is the behaviour this is for.
+ */
+if (!defined('DHCB_DAILY_RUNS'))  define('DHCB_DAILY_RUNS', 3);
+/* How many days of the week can earn a slot. Seven is one per day. If
+   mythics start feeling common, this is the dial -- see dhcbosses.md for
+   the faucet arithmetic. */
+if (!defined('DHCB_CACHE_MAX'))   define('DHCB_CACHE_MAX', 7);
 if (!defined('DHCB_BENCH_H'))     define('DHCB_BENCH_H', 3);   // flat, after any run
 if (!defined('DHCB_BENCH_KO_H'))  define('DHCB_BENCH_KO_H', 6);// extra if it fell
 
@@ -82,8 +100,8 @@ if (!defined('DHCB_DMG_PER_RUN'))  define('DHCB_DMG_PER_RUN', 950);
 if (!defined('DHCB_TARGET_PCT'))   define('DHCB_TARGET_PCT', 0.60);
 /* Floors and ceilings, so a quiet week is not trivial and a surge is not
    impossible. Both are on the CREW total, before the per-boss split. */
-if (!defined('DHCB_HP_MIN'))      define('DHCB_HP_MIN', 9000);
-if (!defined('DHCB_HP_MAX'))      define('DHCB_HP_MAX', 400000);
+if (!defined('DHCB_HP_MIN'))      define('DHCB_HP_MIN', 24000);
+if (!defined('DHCB_HP_MAX'))      define('DHCB_HP_MAX', 1200000);
 /* Who counts as "likely to show up": anybody who played the Arena or the
    Bosses in this window. Lagging on purpose -- a live count would mean a
    player joining today made today's boss harder for everyone already in it. */
@@ -96,14 +114,32 @@ function dhcb_season() { return date('Y-m'); }
  * TODAY, AS MYSQL SEES IT.
  *
  * Not PHP's date(). php.ini is UTC on this host and MySQL is not, and every
- * row this feature writes is stamped by MySQL -- so a day boundary computed
- * in PHP puts runs in one day and the spawn in another for several hours
+ * row this feature writes is stamped by MySQL -- so a boundary computed in
+ * PHP puts runs on one side and the spawn on the other for several hours
  * every night. The Arena's bench column carries the same warning at length.
  */
 function dhcb_day($conn) {
 	$r = @$conn->query("SELECT CURDATE() AS d");
 	if ($r && ($row = $r->fetch_assoc())) return $row['d'];
 	return date('Y-m-d');                      // only if the database is gone
+}
+
+/**
+ * THE WEEK THE CREW BELONGS TO, as the Monday of that week.
+ *
+ * The crew stands up weekly, not daily, so this is the key everything is
+ * stored against -- dhc_boss_day.day holds a Monday and the column name is
+ * now a slight lie that is not worth a migration to fix.
+ *
+ * WEEKDAY() rather than DAYOFWEEK(): the first is 0 for Monday regardless
+ * of the server's first-day-of-week setting, the second is locale-dependent
+ * and would silently shift the boundary.
+ */
+function dhcb_week($conn, $on = null) {
+	$base = ($on === null) ? 'CURDATE()' : "'" . $conn->real_escape_string($on) . "'";
+	$r = @$conn->query("SELECT DATE_SUB($base, INTERVAL WEEKDAY($base) DAY) AS w");
+	if ($r && ($row = $r->fetch_assoc())) return $row['w'];
+	return date('Y-m-d', strtotime('monday this week'));
 }
 
 /* ---------- the crew --------------------------------------------------------
@@ -200,13 +236,36 @@ function dhcb_deployable($conn) {
  */
 function dhcb_crew_budget($conn) {
 	$d = dhcb_deployable($conn);
-	$byAllowance = $d['players']  * (int)DHCB_DAILY_RUNS;
-	$byRoster    = (int)floor($d['fighters'] / max(1, DHCB_CREW_SIZE));
-	$runs        = min($byAllowance, $byRoster);
+	/*
+	 * A WEEK OF RUNS, and the roster cap is per DAY rather than per week:
+	 * a Fighter rests for hours, not days, so the same nine Fighters field
+	 * three Crews every day of the week. Multiplying the roster cap by
+	 * seven as well would double-count the same Fighters seven times over
+	 * and produce a crew nobody could scratch.
+	 */
+	$byAllowanceDay = $d['players'] * (int)DHCB_DAILY_RUNS;
+	$byRosterDay    = (int)floor($d['fighters'] / max(1, DHCB_CREW_SIZE));
+	$runsPerDay     = min($byAllowanceDay, $byRosterDay);
+	$runs           = $runsPerDay * 7;
 	$hp = (int)round($runs * DHCB_DMG_PER_RUN * DHCB_TARGET_PCT);
 	if ($hp < DHCB_HP_MIN) $hp = DHCB_HP_MIN;
 	if ($hp > DHCB_HP_MAX) $hp = DHCB_HP_MAX;
-	return (int)$hp;
+	/*
+	 * AND NEVER MORE THAN THE WEEK CAN PHYSICALLY DELIVER.
+	 *
+	 * The floor is there so a quiet week is not trivial, and it was ABOVE
+	 * reach for a small community: three players with nine Fighters can
+	 * field 21 runs all week, worth about 20,000 damage, against a 24,000
+	 * floor. They could play perfectly, never miss a day, and still watch
+	 * the crew survive every week -- the worst possible failure, because
+	 * nothing on screen would explain it.
+	 *
+	 * 0.85 rather than 1.0 so a clear still needs most of the community
+	 * showing up rather than literally everybody spending every run.
+	 */
+	$reach = (int)round($runs * DHCB_DMG_PER_RUN * 0.85);
+	if ($reach > 0 && $hp > $reach) $hp = $reach;
+	return max(1, (int)$hp);
 }
 
 /**
@@ -218,7 +277,7 @@ function dhcb_crew_budget($conn) {
  * chance of two different health bars for the same boss.
  */
 function dhcb_spawn($conn) {
-	$day = dhcb_day($conn);
+	$day = dhcb_week($conn);
 	$esc = $conn->real_escape_string($day);
 	$r = @$conn->query("SELECT COUNT(*) AS n FROM dhc_boss_day WHERE day = '$esc'");
 	if ($r && ($row = $r->fetch_assoc()) && (int)$row['n'] >= count(dhcb_bosses())) return $day;
@@ -323,14 +382,40 @@ function dhcb_roster($conn, $user_id, $crew = null) {
 	return $crew;
 }
 
-/** Runs started today. Counted, never stored, exactly as the Arena counts. */
-function dhcb_runs_today($conn, $user_id, $day = null) {
-	if ($day === null) $day = dhcb_day($conn);
+/**
+ * Runs started TODAY, which is the allowance. Counted, never stored.
+ *
+ * dhc_boss_runs.day holds the WEEK now, so the day has to come from
+ * started_at -- counting the week's rows here would let one sitting spend
+ * the entire week, which is the thing the daily cap exists to stop.
+ */
+function dhcb_runs_today($conn, $user_id) {
 	$r = @$conn->query("SELECT COUNT(*) AS n FROM dhc_boss_runs
 	                     WHERE user_id = " . (int)$user_id . "
-	                       AND day = '" . $conn->real_escape_string($day) . "'");
+	                       AND DATE(started_at) = CURDATE()");
 	if (!$r || !($x = $r->fetch_assoc())) return 0;
 	return (int)$x['n'];
+}
+
+/**
+ * HOW MANY SEPARATE DAYS THIS PLAYER HAS SHOWN UP THIS WEEK.
+ *
+ * This is the trait cache. One slot per day with a real run on it, capped
+ * at DHCB_CACHE_MAX -- so the cache is a record of turning up rather than
+ * of grinding, and with the daily cap at three there is no way to fill it
+ * except by coming back.
+ *
+ * DISTINCT DATE, not a count of runs: three runs on Monday is one day.
+ */
+function dhcb_cache_days($conn, $user_id, $week = null) {
+	if ($week === null) $week = dhcb_week($conn);
+	$r = @$conn->query("SELECT COUNT(DISTINCT DATE(started_at)) AS n
+	                      FROM dhc_boss_runs
+	                     WHERE user_id = " . (int)$user_id . "
+	                       AND day = '" . $conn->real_escape_string($week) . "'
+	                       AND outcome <> 0 AND dealt >= " . (int)DHCB_MIN_DEALT);
+	if (!$r || !($x = $r->fetch_assoc())) return 0;
+	return min((int)DHCB_CACHE_MAX, (int)$x['n']);
 }
 
 /** A run left unfinished, if any. Resumed rather than abandoned. */
@@ -352,7 +437,8 @@ function dhcb_entry_block($conn, $user_id, $crew = null) {
 	if ($p['cleared']) return 'The crew is down for today. They return tomorrow.';
 	if (dhcb_open_run($conn, $user_id)) return '';          // resume is always allowed
 	if (dhcb_runs_today($conn, $user_id) >= DHCB_DAILY_RUNS)
-		return 'You have sent all ' . DHCB_DAILY_RUNS . ' Crews today.';
+		return 'You have sent all ' . DHCB_DAILY_RUNS . ' Crews today. '
+		     . 'Come back tomorrow for another slot in the cache.';
 	$avail = 0;
 	foreach (dhcb_roster($conn, $user_id, $crew) as $f) if ($f['available']) $avail++;
 	if ($avail < DHCB_CREW_SIZE)
@@ -522,7 +608,7 @@ function dhcb_finish($conn, &$b) {
 	$m   = $b['meta'];
 	$rid = (int)$m['run_id'];
 	$uid = (int)$m['attacker'];
-	$day = isset($m['day']) ? $m['day'] : dhcb_day($conn);
+	$day = isset($m['day']) ? $m['day'] : dhcb_week($conn);
 
 	$r = @$conn->query("SELECT outcome FROM dhc_boss_runs WHERE id = $rid LIMIT 1");
 	if (!$r || !$r->num_rows) return;
@@ -645,8 +731,23 @@ function dhcb_sweep_stale($conn, $user_id) {
 
 /** A run has to be a real attempt to qualify for the day's trait. */
 if (!defined('DHCB_MIN_DEALT'))      define('DHCB_MIN_DEALT', 150);
-if (!defined('DHCB_LADDER_MIN_RUNS'))define('DHCB_LADDER_MIN_RUNS', 5);
-if (!defined('DHCB_CARBON'))         define('DHCB_CARBON', 100000);
+/* Qualifying floor for the weekly board. Three is one full day, so a single
+   lucky run cannot top it and two days of play always qualifies. It was 5
+   against a MONTH of runs, which over a week would have excluded most of
+   the board. */
+if (!defined('DHCB_LADDER_MIN_RUNS'))define('DHCB_LADDER_MIN_RUNS', 3);
+/*
+ * 50,000 A WEEK, which is where Crypt Crawl and Skull Racer sit -- the
+ * flagship weekly rate rather than the 25,000 Skull Swap and Gauntlets pay.
+ * Roughly 217,000 a month, just under DHC Arena's 250,000, which is the
+ * right shape: the Arena is the headline and this is the other thing a
+ * Fighter is for.
+ *
+ * It was 100,000 MONTHLY while the crew reset nightly. A monthly board over
+ * weekly content spends three of its four weeks already decided, and a
+ * ladder nobody can still climb is not a reason to play.
+ */
+if (!defined('DHCB_CARBON'))         define('DHCB_CARBON', 50000);
 
 /**
  * Which table the day rolls on, from how far the whole community got.
@@ -679,8 +780,13 @@ function dhcb_tier_table($progress) {
 function dhcb_participants($conn, $day) {
 	$esc = $conn->real_escape_string($day);
 	$out = array();
+	/* DAYS, not runs, is what the cache is built from -- see
+	   dhcb_cache_days(). Counted here in the same pass so the settle does
+	   not ask once per player. */
+	$min = (int)DHCB_MIN_DEALT;
 	$r = @$conn->query("SELECT user_id, SUM(dealt) AS dealt, COUNT(*) AS runs,
-	                           SUM(crew_size) AS fighters
+	                           SUM(crew_size) AS fighters,
+	                           COUNT(DISTINCT CASE WHEN dealt >= $min THEN DATE(started_at) END) AS days
 	                      FROM dhc_boss_runs
 	                     WHERE day = '$esc' AND outcome <> 0
 	                     GROUP BY user_id");
@@ -688,7 +794,8 @@ function dhcb_participants($conn, $day) {
 	while ($x = $r->fetch_assoc()) {
 		$out[(int)$x['user_id']] = array(
 			'user_id'=>(int)$x['user_id'], 'dealt'=>(int)$x['dealt'],
-			'runs'=>(int)$x['runs'], 'fighters'=>(int)$x['fighters']);
+			'runs'=>(int)$x['runs'], 'fighters'=>(int)$x['fighters'],
+			'days'=>min((int)DHCB_CACHE_MAX, (int)$x['days']));
 	}
 	return $out;
 }
@@ -715,23 +822,73 @@ function dhcb_settle($conn, $day = null, $announce = true) {
 	$table = dhcb_tier_table($prog);
 	$tiers = defined('DHCF_TIERS') && isset(DHCF_TIERS[$table]) ? DHCF_TIERS[$table] : null;
 
-	$paid = 0; $who = array();
+	$paid = 0; $traits = 0; $who = array();
 	foreach (dhcb_participants($conn, $day) as $uid => $p) {
 		if ($p['dealt'] < DHCB_MIN_DEALT) continue;
+		/*
+		 * ONE TRAIT PER DAY THEY TURNED UP, capped. The cache rewards
+		 * coming back rather than grinding: with three runs a day there is
+		 * no way to fill it in one sitting, so a full cache is seven
+		 * separate visits and a player who misses Wednesday collects six.
+		 */
+		$slots = max(1, min((int)DHCB_CACHE_MAX, (int)$p['days']));
 		$ok = @$conn->query(sprintf(
-			"INSERT INTO dhc_boss_payouts (day, user_id, tier_table, dealt, paid_at)
-			 VALUES ('%s', %d, '%s', %d, NOW())",
+			"INSERT INTO dhc_boss_payouts (day, user_id, tier_table, dealt, slots, paid_at)
+			 VALUES ('%s', %d, '%s', %d, %d, NOW())",
 			$conn->real_escape_string($day), (int)$uid,
-			$conn->real_escape_string($table), (int)$p['dealt']));
+			$conn->real_escape_string($table), (int)$p['dealt'], $slots));
 		if (!$ok) continue;                        // already paid, or no table
 		if (function_exists('dhcf_award')) {
-			dhcf_award($conn, (int)$uid, 'wildcard', 'dhcbosses',
-			           'the daily boss crew', $tiers);
+			for ($i = 0; $i < $slots; $i++) {
+				dhcf_award($conn, (int)$uid, 'wildcard', 'dhcbosses',
+				           'the weekly boss crew', $tiers);
+			}
 		}
-		$paid++; $who[] = (int)$uid;
+		$paid++; $traits += $slots; $who[] = (int)$uid;
 	}
-	if ($announce && $paid > 0) dhcb_announce_day($conn, $day, $prog, $table, $paid);
-	return array('paid'=>$paid, 'table'=>$table, 'progress'=>$prog, 'users'=>$who);
+	if ($announce && $paid > 0) dhcb_announce_day($conn, $day, $prog, $table, $paid, $traits);
+	return array('paid'=>$paid, 'traits'=>$traits, 'table'=>$table,
+	             'progress'=>$prog, 'users'=>$who);
+}
+
+/**
+ * The week as seven slots, for the cache the player can see filling up.
+ *
+ * WHICH DAYS, NOT HOW MANY. A number going up is information; seven boxes
+ * with Wednesday visibly empty is a reason to open the game on Wednesday.
+ * The count alone cannot say which day was missed, and the missed day is
+ * the whole motivation.
+ *
+ * Returns seven rows in week order: date, label, state. State is one of
+ *   'filled'  a real run landed that day, the slot is earned
+ *   'today'   today, and still unearned
+ *   'open'    a future day of this week
+ *   'missed'  a past day of this week with nothing on it
+ */
+function dhcb_cache_slots($conn, $user_id, $week = null) {
+	if ($week === null) $week = dhcb_week($conn);
+	$uid  = (int)$user_id;
+	$done = array();
+	$r = @$conn->query("SELECT DISTINCT DATE(started_at) AS d FROM dhc_boss_runs
+	                     WHERE user_id = $uid
+	                       AND day = '" . $conn->real_escape_string($week) . "'
+	                       AND outcome <> 0 AND dealt >= " . (int)DHCB_MIN_DEALT);
+	if ($r) while ($x = $r->fetch_assoc()) $done[$x['d']] = true;
+
+	/* Today from the DATABASE, so the slot that lights up is the same one
+	   the allowance is counted against. */
+	$today = dhcb_day($conn);
+	$out = array();
+	$t0  = strtotime($week);
+	for ($i = 0; $i < 7; $i++) {
+		$d = date('Y-m-d', strtotime("+$i day", $t0));
+		if (isset($done[$d]))   $st = 'filled';
+		elseif ($d === $today)  $st = 'today';
+		elseif ($d < $today)    $st = 'missed';
+		else                    $st = 'open';
+		$out[] = array('date'=>$d, 'label'=>date('D', strtotime($d)), 'state'=>$st);
+	}
+	return $out;
 }
 
 /* ---------- the monthly ladder ---------------------------------------------- */
@@ -750,9 +907,15 @@ function dhcb_settle($conn, $day = null, $announce = true) {
  * creates incentives; a column you display tells a story. Conflating the two
  * is how a leaderboard quietly starts rewarding something nobody intended.
  */
-function dhcb_ladder($conn, $season = null, $limit = 25) {
-	if ($season === null) $season = dhcb_season();
-	$esc = $conn->real_escape_string($season);
+/*
+ * THE WEEK, NOT THE SEASON. dhc_boss_runs.day already holds the Monday the
+ * crew belongs to, so the board groups on that and the CHAR(7) season
+ * column is left to whatever wants a monthly view later. A week of runs is
+ * a complete competition; a month of them is three weeks already decided.
+ */
+function dhcb_ladder($conn, $week = null, $limit = 25) {
+	if ($week === null) $week = dhcb_week($conn);
+	$esc = $conn->real_escape_string($week);
 	$lim = max(1, (int)$limit);
 	$min = max(1, (int)DHCB_LADDER_MIN_RUNS);
 	$sql = "SELECT r.user_id, u.username, u.discord_id, u.avatar,
@@ -760,7 +923,7 @@ function dhcb_ladder($conn, $season = null, $limit = 25) {
 	               SUM(r.crew_size) AS fighters, SUM(r.killed) AS kills
 	          FROM dhc_boss_runs r
 	          INNER JOIN users u ON u.id = r.user_id
-	         WHERE r.season = '$esc' AND r.outcome <> 0
+	         WHERE r.day = '$esc' AND r.outcome <> 0
 	         GROUP BY r.user_id
 	        HAVING runs >= $min AND fighters > 0
 	         ORDER BY (SUM(r.dealt) / SUM(r.crew_size)) DESC, dealt DESC
@@ -853,7 +1016,7 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 	try {
 		$uid   = (int)$b['meta']['attacker'];
 		$me    = dhcb_identity($conn, $uid);
-		$day   = isset($b['meta']['day']) ? $b['meta']['day'] : dhcb_day($conn);
+		$day   = isset($b['meta']['day']) ? $b['meta']['day'] : dhcb_week($conn);
 		$state = dhcb_state($conn, $day);
 		$prog  = dhcb_progress($state);
 
@@ -897,7 +1060,7 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 }
 
 /** The day closed. One post, with what everybody earned. */
-function dhcb_announce_day($conn, $day, $prog, $table, $paid) {
+function dhcb_announce_day($conn, $day, $prog, $table, $paid, $traits = 0) {
 	if (!dhcb_webhooks_loaded()) return;
 	try {
 		$cleared = !empty($prog['cleared']);
@@ -911,10 +1074,11 @@ function dhcb_announce_day($conn, $day, $prog, $table, $paid) {
 				: 'The crew took **' . round(100 * $prog['pct']) . '%** damage and held. '
 				  . 'Everybody who took part rolls on the **' . $tl . '** table.')
 			. "\n\n" . number_format((int)$paid) . ' '
-			. ((int)$paid === 1 ? 'player' : 'players') . ' paid · '
+			. ((int)$paid === 1 ? 'player' : 'players') . ' paid '
+			. number_format((int)$traits) . ' traits between them · '
 			. number_format((int)$prog['dealt']) . ' of '
 			. number_format((int)$prog['max']) . ' damage'
-			. "\n\nThey come back tomorrow.";
+			. "\n\nA new crew stands up on Monday.";
 		ob_start();
 		discordmsg($title, $desc,
 			'https://skulliance.io/staking/' . dhcb_art('d34thbrngr'),

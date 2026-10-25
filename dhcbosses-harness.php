@@ -87,18 +87,72 @@ echo "\nthe crew is sized by runs that can be played, not by roster size\n";
  * Crews, so thirty of them cannot contribute damage. Scaling on the roster
  * makes the boss enormous because somebody owns a lot of art.
  */
+/*
+ * THE REAL dhcb_crew_budget(), NOT A COPY OF IT.
+ *
+ * This was a reimplementation of the formula, and it quietly stopped
+ * testing anything: removing the clamp that stops a crew being sized
+ * beyond what a week can physically deliver changed the library and left
+ * the harness green, because the harness was grading its own arithmetic.
+ * A stub connection answering the one query the real function asks is a
+ * few more lines and actually exercises it.
+ */
+class HBCount {
+	public $players = 0, $fighters = 0;
+	public function real_escape_string($x) { return addslashes((string)$x); }
+	public function query($sql) {
+		if (stripos($sql, 'COUNT(*) AS fighters') !== false)
+			return new HBRes2(array(array('fighters' => $this->fighters, 'players' => $this->players)));
+		return new HBRes2();
+	}
+}
+class HBRes2 {
+	public $num_rows = 0; private $r; private $i = 0;
+	public function __construct($r = array()) { $this->r = $r; $this->num_rows = count($r); }
+	public function fetch_assoc() { return isset($this->r[$this->i]) ? $this->r[$this->i++] : null; }
+}
 function hb_budget($players, $fighters) {
-	$runs = min($players * DHCB_DAILY_RUNS, (int)floor($fighters / DHCB_CREW_SIZE));
-	$hp = (int)round($runs * DHCB_DMG_PER_RUN * DHCB_TARGET_PCT);
-	return max(DHCB_HP_MIN, min(DHCB_HP_MAX, $hp));
+	$c = new HBCount();
+	$c->players = $players; $c->fighters = $fighters;
+	return dhcb_crew_budget($c);
 }
 $deep    = hb_budget(2, 400);     // two players, enormous collection
 $crowd   = hb_budget(20, 60);     // twenty players, one Crew each
 ok($crowd > $deep, 'twenty players field a smaller boss than two hoarders, so the scaling is '
                  . 'measuring collections rather than participation');
-ok(hb_budget(1, 3) === (int)DHCB_HP_MIN, 'a single player does not get the floor');
+/*
+ * THE FLOOR MUST NEVER EXCEED WHAT THE WEEK CAN DELIVER. It did: three
+ * players with nine Fighters can field 21 runs, worth about 20,000 damage,
+ * against a 24,000 floor -- they could play perfectly and still never clear
+ * it, with nothing on screen to explain why.
+ */
+foreach (array(array(1,3), array(2,6), array(3,9), array(4,12)) as $tiny) {
+	list($tp, $tf) = $tiny;
+	$perDay = min($tp * DHCB_DAILY_RUNS, (int)floor($tf / DHCB_CREW_SIZE));
+	$maxDmg = $perDay * 7 * DHCB_DMG_PER_RUN;
+	if (!ok(hb_budget($tp, $tf) <= $maxDmg,
+	        "$tp players with $tf Fighters get a crew of " . number_format(hb_budget($tp, $tf))
+	      . ' they could not clear in a perfect week (' . number_format($maxDmg) . ' is their ceiling)')) break;
+}
 ok(hb_budget(10000, 999999) === (int)DHCB_HP_MAX, 'the ceiling does not hold');
 /* Monotonic in players, which a sane scaling must be. */
+/*
+ * AND IT MUST NOT BE CLEARABLE ON MONDAY.
+ *
+ * The crew stands for a week, so a budget sized against one day's runs
+ * would fall on the first evening and leave six dead days -- the exact
+ * failure weekly was chosen to avoid, and nothing else here would notice,
+ * because a smaller boss breaks no other rule.
+ */
+foreach (array(array(10, 80), array(25, 200), array(5, 20)) as $cw) {
+	list($cp, $cf) = $cw;
+	$perDay = min($cp * DHCB_DAILY_RUNS, (int)floor($cf / DHCB_CREW_SIZE));
+	$oneDay = $perDay * DHCB_DMG_PER_RUN;
+	if (!ok(hb_budget($cp, $cf) > $oneDay * 1.5,
+	        "$cp players with $cf Fighters could clear the week's crew in a day and a half, "
+	      . 'leaving the rest of the week with nothing to fight')) break;
+}
+
 $mono = true; $last = 0;
 for ($p = 1; $p <= 40; $p++) { $v = hb_budget($p, $p * 8); if ($v < $last) $mono = false; $last = $v; }
 ok($mono, 'the budget falls as more players join, which would punish turnout');
@@ -479,6 +533,65 @@ ok(strpos($WH, "function_exists('getDHCBossesWebhook')") !== false,
  . 'rather than silent');
 ok(strpos($WH, 'if($webhook != "")') !== false,
    'an unresolved webhook is no longer guarded, so an empty URL would be curled');
+
+/* ---------------------------------------------------------------- *
+ * WEEKLY, AND THE CACHE
+ * ---------------------------------------------------------------- */
+echo "\nthe crew is weekly and the cache counts days, not runs\n";
+/*
+ * THE ALLOWANCE AND THE RESET ARE DIFFERENT CLOCKS and must stay that way.
+ * dhc_boss_runs.day holds the WEEK now, so counting the allowance against
+ * it would let one sitting spend the entire week -- which is exactly what
+ * the three-a-day cap exists to prevent, and the thing that makes a full
+ * cache mean seven separate visits.
+ */
+$today = substr($LIB, strpos($LIB, 'function dhcb_runs_today'));
+$today = substr($today, 0, strpos($today, "\nfunction "));
+ok(strpos($today, 'DATE(started_at) = CURDATE()') !== false,
+   'the daily allowance is counted against the week, so one sitting can spend all seven days');
+ok(strpos($today, "day = '") === false,
+   'the allowance still filters on the week column');
+
+$slots = substr($LIB, strpos($LIB, 'function dhcb_cache_slots'));
+$slots = substr($slots, 0, strpos($slots, "\nfunction "));
+ok(strpos($slots, 'DISTINCT DATE(started_at)') !== false,
+   'the cache counts runs rather than days, so three Crews on Monday would fill three slots');
+ok(strpos($slots, 'dealt >= ') !== false,
+   'a run that dealt nothing fills a cache slot');
+
+$days = substr($LIB, strpos($LIB, 'function dhcb_cache_days'));
+$days = substr($days, 0, strpos($days, "\nfunction "));
+ok(strpos($days, 'DHCB_CACHE_MAX') !== false, 'the cache is uncapped');
+
+/* The settle pays one trait per day attended, not one per player. */
+$set = substr($LIB, strpos($LIB, 'function dhcb_settle'));
+$set = substr($set, 0, strpos($set, "\nfunction "));
+ok(strpos($set, 'for ($i = 0; $i < $slots; $i++)') !== false,
+   'the settle pays a single trait however many days the player turned up');
+ok(strpos($set, "min((int)DHCB_CACHE_MAX") !== false, 'the payout is not capped at the cache max');
+
+/* Three a day is what makes the cache mean something. */
+ok((int)DHCB_DAILY_RUNS <= 3,
+   'the daily allowance is ' . DHCB_DAILY_RUNS . '; above three a player can bank most of the '
+ . 'week in one sitting and the cache stops rewarding coming back');
+/* And with the Arena's six, the day has to stay reasonable. */
+ok((int)DHCB_DAILY_RUNS + 6 <= 10,
+   'the Arena and the Bosses together now ask for more than ten battles of the same board a day');
+
+/* The board follows the content. */
+$rw = file_get_contents(__DIR__ . '/rewards.php');
+ok(preg_match("~'dhcbosses'\s*=> array\('weekly'~", $rw) === 1,
+   'the ladder is not on the weekly cron, so a weekly crew is ranked on a monthly board');
+ok(preg_match("~'dhcbosses-week'\s*=> array\('weekly'~", $rw) === 1,
+   'the settle is not on the weekly cron');
+ok(strpos($rw, "'daily'") === false,
+   'a daily cadence is still registered but nothing uses it');
+
+/* The visual cache has to show which days, not a number. */
+ok(strpos($ARE, 'a-slot') !== false && strpos($ARE, 'dhcb_cache_slots(') !== false,
+   'the cache is not drawn, so the one thing that rewards coming back is invisible');
+ok(strpos($ARE, 'prefers-reduced-motion') !== false,
+   'the pulsing slot has no reduced-motion escape');
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all DHC Bosses checks passed\n");
 exit($fail ? 1 : 0);

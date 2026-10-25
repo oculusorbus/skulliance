@@ -7,10 +7,10 @@ DHC Fighters and DHC Arena.
 engine, the board, the Fighter art pipeline and the trait tables are the
 Arena's — see `dhcbosses.md` for what is reused and why none of it is copied.
 
-- **`dhc_boss_day`** — one row per boss per day. The shared health bar. This is
-  the only mutable state the whole feature has, and it is written with
-  `GREATEST(0, health - n)` so two players landing damage at the same instant
-  cannot overwrite each other.
+- **`dhc_boss_day`** — one row per boss per WEEK. The shared health bar, and
+  the only mutable state the whole feature has. The column is still called
+  `day` and holds the **Monday** of the week: the crew was daily in the first
+  draft and renaming a column is not worth a migration for a word.
 - **`dhc_boss_runs`** — an append-only record of every Crew sent in. The ledger
   the leaderboard, the reports and the trait distribution are all derived from,
   so every number is a query rather than a counter that can drift.
@@ -25,7 +25,7 @@ Arena's — see `dhcbosses.md` for what is reused and why none of it is copied.
 
 ```sql
 CREATE TABLE IF NOT EXISTS dhc_boss_day (
-	day           DATE         NOT NULL,
+	day           DATE         NOT NULL,       -- the MONDAY of the week
 	boss_key      VARCHAR(32)  NOT NULL,       -- 'cip-666' etc, matches the art slug
 	max_health    INT          NOT NULL,       -- what it spawned with, after scaling
 	health        INT          NOT NULL,       -- what is left
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS dhc_boss_day (
 CREATE TABLE IF NOT EXISTS dhc_boss_runs (
 	id            INT AUTO_INCREMENT PRIMARY KEY,
 	user_id       INT          NOT NULL,
-	day           DATE         NOT NULL,
+	day           DATE         NOT NULL,       -- the MONDAY of the week
 	boss_key      VARCHAR(32)  NOT NULL,
 	seed          INT UNSIGNED NOT NULL,
 	moves         MEDIUMTEXT   DEFAULT NULL,
@@ -88,20 +88,27 @@ CREATE TABLE IF NOT EXISTS dhc_boss_state (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS dhc_boss_payouts (
-	day           DATE         NOT NULL,
+	day           DATE         NOT NULL,       -- the MONDAY of the week
 	user_id       INT          NOT NULL,
 	tier_table    VARCHAR(24)  NOT NULL,       -- which dhcf table it rolled on
 	dealt         INT          NOT NULL DEFAULT 0,
+	slots         TINYINT      NOT NULL DEFAULT 1, -- traits paid: one per day attended
 	paid_at       DATETIME     NOT NULL,
 	PRIMARY KEY (day, user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ```
 
-## Why the daily allowance needs no column
+## Why the allowance and the cache need no columns
 
-Counted from `dhc_boss_runs` against the day, exactly as the Arena counts its
+Both are counted from `dhc_boss_runs`, exactly as the Arena counts its
 allowance from `dhc_arena_battles`. A count is always consistent with the
 ledger; a counter can drift from it.
+
+- **Daily allowance** — `COUNT(*) WHERE user_id = ? AND DATE(started_at) = CURDATE()`.
+  Against `started_at`, not against `day`: `day` is the week now, and counting
+  that would let one sitting spend the whole week.
+- **The trait cache** — `COUNT(DISTINCT DATE(started_at))` for the week, which
+  is how many separate days the player turned up with a real run.
 
 ## Why `dhc_boss_payouts` has a primary key of (day, user_id)
 

@@ -16382,10 +16382,12 @@ function checkDHCArenaLeaderboard($conn, $monthly = false, $rewards = false) {
 /**
  * DHC BOSSES -- the monthly board.
  *
- * 100,000 CARBON down the board by rank, the same harmonic split every other
- * board uses: rank 1 takes the pool, rank 2 half of it, and so on. Sits
- * alongside Missions, Crypt Conquest and DHC Fighters; DHC Arena stays the
- * headline at 250,000.
+ * 50,000 CARBON down the board by rank, the same harmonic split every other
+ * board uses: rank 1 takes the pool, rank 2 half of it, and so on. WEEKLY,
+ * because the crew it ranks is weekly -- a monthly board over weekly content
+ * spends three of its four weeks already decided. Sits with Crypt Crawl and
+ * Skull Racer at the flagship weekly rate, about 217,000 a month; DHC Arena
+ * stays the headline at 250,000 monthly.
  *
  * THE ROWS COME FROM dhcb_ladder(), NOT FROM A QUERY WRITTEN HERE. The
  * ordering is the feature's business and is deliberately not raw damage; a
@@ -16406,12 +16408,19 @@ function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
 		require_once __DIR__ . '/dhcbosses-lib.php';
 	if (!function_exists('dhcb_ladder')) { echo "<p>DHC Bosses is not installed.</p>"; return; }
 
-	/* Settles the month that just closed when paying, and shows the month in
-	   progress otherwise -- equally safe late and equally unsafe twice. */
-	$season = $rewards ? date('Y-m', strtotime('first day of last month')) : dhcb_season();
-	$rows   = dhcb_ladder($conn, $season, 100);
+	/* Settles the WEEK that just closed when paying, and shows the week in
+	   progress otherwise -- equally safe late and equally unsafe twice.
+	   Asked of MySQL, because the two clocks on this host disagree and on a
+	   Monday morning that is the difference between last week and this. */
+	$wk = null;
+	if ($rewards) {
+		$wr = $conn->query("SELECT DATE_SUB(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY),
+		                                    INTERVAL 7 DAY) AS w");
+		$wk = ($wr && ($wx = $wr->fetch_assoc())) ? $wx['w'] : date('Y-m-d', strtotime('monday last week'));
+	}
+	$rows = dhcb_ladder($conn, $wk, 100);
 	if (!$rows) {
-		echo "<p>No Crews have been sent at the Bosses" . ($rewards ? " that month" : " yet") . ".</p>";
+		echo "<p>No Crews have been sent at the Bosses" . ($rewards ? " that week" : " yet") . ".</p>";
 		return;
 	}
 
@@ -16459,8 +16468,8 @@ function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
 		   month's runs can never fall into this month's board however often
 		   this runs -- the one thing to avoid is running it twice for the
 		   SAME month. */
-		$last_month = date('F', strtotime('first day of last month'));
-		discordmsg("\u{1F480} " . $last_month . " DHC Bosses Results", $description, "",
+		discordmsg("\u{1F480} DHC Bosses — week of " . date('j M', strtotime($wk)) . " results",
+		           $description, "",
 		           "https://skulliance.io/staking/leaderboards.php", 'dhcbosses');
 	}
 

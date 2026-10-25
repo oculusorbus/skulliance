@@ -778,9 +778,9 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				            checkDHCArenaLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "dhcbosses"):
-				            checkDHCBossesLeaderboard($conn, false);
-				            break;
-				        case ($filterby == "monthly-dhcbosses"):
+				            /* Weekly, like the crew it ranks. There is no
+				               all-time variant: a board whose content resets
+				               every Monday has no meaningful all-time. */
 				            checkDHCBossesLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "guardians"):

@@ -222,7 +222,7 @@ $ladderAth = dhca_ladder($conn, DHCA_LADDER_ALL_TIME, 10);
  * dhcb_state() returns empty until the migration has been run, which every
  * read below treats as "not switched on yet" rather than as an error.
  */
-$dhcb_on = array(); $dhcb_prog = null; $dhcb_block = ''; $dhcb_runs = 0; $dhcb_av = array();
+$dhcb_on = array(); $dhcb_prog = null; $dhcb_block = ''; $dhcb_runs = 0; $dhcb_av = array(); $dhcb_slots = array();
 if (is_file(__DIR__ . '/dhcbosses-lib.php')) {
 	require_once __DIR__ . '/dhcbosses-lib.php';
 	$dhcb_on = dhcb_state($conn);
@@ -230,6 +230,7 @@ if (is_file(__DIR__ . '/dhcbosses-lib.php')) {
 		$dhcb_prog  = dhcb_progress($dhcb_on);
 		$dhcb_block = $user_id ? dhcb_entry_block($conn, $user_id, $crew) : 'Sign in to send a Crew.';
 		$dhcb_runs  = $user_id ? dhcb_runs_today($conn, $user_id) : 0;
+		$dhcb_slots = $user_id ? dhcb_cache_slots($conn, $user_id) : array();
 		/*
 		 * THE PICKER HAS TO KNOW BOTH CLOCKS.
 		 *
@@ -1143,6 +1144,24 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   color:var(--dim);border:1px solid rgba(255,255,255,.12);text-decoration:none}
 .arena-wrap .a-pmode a + a{border-left:0}
 .arena-wrap .a-pmode a.on{color:#06222b;background:var(--teal);border-color:var(--teal)}
+/* ---- the trait cache ---- */
+.arena-wrap .a-cache{display:flex;gap:4px;margin:0 0 6px}
+.arena-wrap .a-slot{flex:1 1 0;min-width:0;text-align:center}
+.arena-wrap .a-slot i{display:block;height:26px;border-radius:4px;
+  border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03)}
+.arena-wrap .a-slot span{display:block;font-size:8px;letter-spacing:.05em;text-transform:uppercase;
+  color:var(--dim);margin-top:3px}
+.arena-wrap .a-slot.filled i{background:var(--teal);border-color:var(--teal);
+  box-shadow:0 0 7px rgba(0,200,160,.45)}
+.arena-wrap .a-slot.filled span{color:var(--teal)}
+.arena-wrap .a-slot.today i{border-color:var(--ochre);border-style:dashed;
+  animation:aSlotPulse 1.8s ease-in-out infinite}
+.arena-wrap .a-slot.today span{color:var(--ochre)}
+.arena-wrap .a-slot.missed i{background:transparent;border-style:dotted;opacity:.4}
+.arena-wrap .a-slot.missed span{opacity:.4}
+@keyframes aSlotPulse{0%,100%{opacity:.55}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){ .arena-wrap .a-slot.today i{animation:none;opacity:.9} }
+.arena-wrap .a-cachenote{margin-bottom:10px}
 @media (max-width:420px){ .arena-wrap .a-bblurb{display:none} }
 /* Removing is the one destructive affordance on this screen, and --blood is
    the platform's own accent here, so it needs a colour of its own to read as
@@ -1844,9 +1863,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <h2>DHC Bosses</h2>
       <div class="body">
         <p class="a-sub" style="margin:0 0 10px">Three bosses, one health bar each, shared by
-           everybody. Send a Crew as often as your allowance lasts. <b>Every point of damage
-           counts</b> — the trait everyone who takes part rolls for at the end of the day gets
-           better the further the crew falls, and dropping all three unlocks the best table.</p>
+           everybody, standing all week. <b>Every point of damage counts</b> — the traits
+           everyone who takes part rolls for when the week closes get better the further the
+           crew falls, and dropping all three unlocks the best table.</p>
+        <p class="a-sub" style="margin:0 0 10px"><b><?php echo DHCB_DAILY_RUNS; ?> Crews a day</b>,
+           and every day you send one banks another trait. Seven days, seven traits.</p>
 
         <div class="a-bosses">
           <?php foreach ($dhcb_on as $bz):
@@ -1863,6 +1884,35 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           </div>
           <?php endforeach; ?>
         </div>
+
+        <?php if ($dhcb_slots): $filled = 0;
+          foreach ($dhcb_slots as $sl) if ($sl['state'] === 'filled') $filled++; ?>
+        <?php /* THE CACHE, AS SEVEN BOXES RATHER THAN A NUMBER.
+                 A count going up is information; Wednesday sitting visibly
+                 empty is a reason to open the game on Wednesday. One slot
+                 per day you turn up with a real run, and with three Crews a
+                 day there is no way to fill it in one sitting -- the only
+                 route to seven is coming back seven times. */ ?>
+        <div class="a-cache">
+          <?php foreach ($dhcb_slots as $sl): ?>
+          <div class="a-slot <?php echo $sl['state']; ?>"
+               title="<?php echo htmlspecialchars(date('j M', strtotime($sl['date']))) . ' — ' . (
+                 $sl['state'] === 'filled' ? 'earned'
+                 : ($sl['state'] === 'today' ? 'today, still open'
+                 : ($sl['state'] === 'missed' ? 'missed' : 'still to come'))); ?>">
+            <i></i><span><?php echo htmlspecialchars($sl['label']); ?></span>
+          </div>
+          <?php endforeach; ?>
+        </div>
+        <div class="a-bsum a-cachenote">
+          <b><?php echo (int)$filled; ?></b> of <?php echo count($dhcb_slots); ?> traits banked
+          <?php if ($filled < count($dhcb_slots)): ?>
+            · one more for every day you send a Crew
+          <?php else: ?>
+            · a full week
+          <?php endif; ?>
+        </div>
+        <?php endif; ?>
 
         <div class="a-bsum">
           <b><?php echo round(100 * $dp['pct']); ?>%</b> of the crew is down ·
