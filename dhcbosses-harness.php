@@ -530,6 +530,50 @@ foreach (array('dhcb_entry_block(', 'dhcb_runs_today(', 'dhcb_cache_slots(',
 }
 
 /*
+ * EVERY KIND OF BATTLE THE MOVE PATH ROUTES, THE GUARD ABOVE IT KNOWS.
+ *
+ * THE BUG. sendMove() picks an endpoint with a ternary -- live, practice,
+ * bossRun, else a ranked id -- and directly above it sits a guard that
+ * refuses to post "a battle that is not live, not practice and has no id".
+ * That guard was written when there were two kinds. A boss run is the third,
+ * it is identified by run_id and openBattle() is handed battle_id 0 on
+ * purpose, so EVERY move on the boss board was caught, answered with the
+ * no-move sound and the Arena's wording, and never sent. The board looked
+ * alive and did nothing.
+ *
+ * WHY A STRUCTURAL CHECK AND NOT A SPELLING ONE. The ternary fails loudly
+ * when a kind is missing -- the move goes to the wrong endpoint and the
+ * server says so. A NEGATED LIST fails silently: it just refuses. So the two
+ * are compared against each other, and a fourth kind added to the router
+ * without being added to the guard fails here rather than in a battle log.
+ */
+$mvAt = strpos($ARE, 'function sendMove(a, z){');
+ok($mvAt !== false, 'sendMove is gone');
+$mv = $mvAt !== false ? substr($ARE, $mvAt, 2200) : '';
+/* The flags the router actually switches on, read off the ternary arms. */
+$routed = array();
+$tern = substr($mv, strpos($mv, 'var body ='), 420);
+/* Each arm is `<flag>` on one line and `? {...}` on the next, so the flag is
+   whatever sits immediately before a line-leading `?`. The final `:` arm is
+   the ranked default and has no flag, which is why battleId is checked by
+   the guard pattern itself rather than through this list. */
+if (preg_match_all('~([A-Za-z_][A-Za-z0-9_]*)\s*\n\s*\?~', $tern, $rm)) $routed = $rm[1];
+ok(count($routed) >= 3,
+   'the move router no longer reads as a ternary of battle kinds, so this cannot check it: '
+ . implode(',', $routed));
+$guard = preg_match('~if \((![^)]*?battleId > 0\)\)) \{~s', $mv, $gm) ? $gm[1] : '';
+ok($guard !== '', 'the "not connected" guard is gone or no longer one condition');
+foreach ($routed as $flag) {
+	ok(strpos($guard, '!' . $flag) !== false,
+	   'sendMove routes on ' . $flag . ' but the guard above it does not, so every move of '
+	 . 'that kind is refused before it is sent: ' . $guard);
+}
+/* AND THE REFUSAL NAMES THE GAME YOU ARE IN. "Not connected to the Arena"
+   on the Bosses page is how this was reported. */
+ok(strpos($mv, 'BOSS_MODE') !== false,
+   'the refusal message is the Arena\'s on both pages');
+
+/*
  * THE BOSSES ARE A TAB, NOT A PANEL.
  *
  * The Arena carried a card pointing at the other game, which spends a whole

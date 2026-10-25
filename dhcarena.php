@@ -3116,8 +3116,8 @@ function sendMove(a, z){
     ? {do:'move', run_id:bossRun, a:a, z:z}
     : {do:'move', battle_id:battleId, a:a, z:z};
   /*
-   * A BATTLE THAT IS NOT LIVE, NOT PRACTICE AND HAS NO ID IS NOT A
-   * BATTLE, and must not be posted anywhere.
+   * A BATTLE THAT IS NOT LIVE, NOT PRACTICE, NOT A BOSS RUN AND HAS NO
+   * ID IS NOT A BATTLE, and must not be posted anywhere.
    *
    * Reported as "Lost contact with the Arena - that move was not
    * played", over and over, on practice as a guest. The route there:
@@ -3129,11 +3129,23 @@ function sendMove(a, z){
    * drawing bug became a dead board that blamed the network.
    *
    * A ranked battle always has a real id, so this cannot fire on one.
+   *
+   * AND A BOSS RUN IS THE THIRD KIND, which this did not know about.
+   * A run is identified by run_id and openBattle() is handed battle_id 0
+   * deliberately, so every single move on the boss board was caught here,
+   * refused with the Arena's wording and never posted -- the board looked
+   * alive and answered every match with the no-move sound. The ternary
+   * directly above already had the boss arm; this guard, written for the
+   * two kinds that existed then, did not. That is the hazard of a list of
+   * kinds: the ternary fails loudly when a kind is missing and a negated
+   * list fails silently.
    */
-  if (!live && !practice && !(battleId > 0)) {
+  if (!live && !practice && !bossRun && !(battleId > 0)) {
     busy = false;
     paintBoard();
-    logLine('sys','This battle is not connected to the Arena any more — start a new one.');
+    logLine('sys', BOSS_MODE
+      ? 'This run is not connected to the Bosses any more — send a new Crew.'
+      : 'This battle is not connected to the Arena any more — start a new one.');
     sfx('bad');
     return;
   }
@@ -3326,7 +3338,7 @@ function showEnd(res){
       sub += ' They are at ' + Math.round(100 * (1 - res.progress.pct)) + '% and '
            + (res.progress.cleared ? 'all three are down.' : 'still standing.');
     }
-    sub += ' Everyone who takes part is paid when the day closes.';
+    sub += ' Everyone who takes part is paid when the week closes.';
   }
   $('ecSub').textContent = sub;
   $('ecStats').innerHTML =
@@ -3334,7 +3346,8 @@ function showEnd(res){
     + '<span><b>'+S.stats.bombs+'</b>bombs armed</span>'
     + '<span><b>'+S.stats.blasts+'</b>detonated</span>'
     + '<span><b>x'+S.stats.best+'</b>best chain</span>';
-  $('ecAgain').textContent = practice ? 'Practice again' : 'Back to the Arena';
+  $('ecAgain').textContent = practice ? 'Practice again'
+                           : bossRun ? 'Back to the Bosses' : 'Back to the Arena';
   $('ecLeave').hidden = !practice;
   shareLink(won, standing.length);
   /*
