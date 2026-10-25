@@ -464,6 +464,69 @@ foreach (array(array(999999, array('D34THBRNGR','CIP-666','X-K4T'), 1.0, true),
 }
 
 /* ---------------------------------------------------------------- *
+ * THE PAGE DOES NOT CALL A 4PM BLOCK "TODAY"
+ * ---------------------------------------------------------------- */
+echo "\nthe allowance says when it actually resets\n";
+/*
+ * REPORTED AS A BUG, AND THE CODE WAS RIGHT. "I already sent 3 crews in
+ * today, why is it letting me send more and why is it showing 0 of 3 sent?"
+ *
+ * The allowance is a 24-hour block measured from the week's 4pm Thursday
+ * boundary, not a calendar day. Three Crews at 2pm on Sunday, back at half
+ * past four, block turned, fresh three -- exactly as designed. The page
+ * called that block "today", which on a Sunday afternoon is simply false,
+ * so the only thing a player could conclude was that the cap was broken.
+ *
+ * THE ARENA'S "today" IS LEFT ALONE: dhca_battles_today() really does use
+ * DATE(started_at) = CURDATE(), so six a day is six a calendar day. The two
+ * games reset differently and only one of them was lying about it.
+ */
+ok(strpos($LIB, 'function dhcb_block_left(') !== false,
+   'nothing can say when the allowance resets, so the page can only describe it vaguely');
+/* MySQL, like every other clock in this feature -- started_at is written by
+   the database and the two clocks on this host disagree. */
+$bl = substr($LIB, strpos($LIB, 'function dhcb_block_left('), 420);
+ok(strpos($bl, 'skl_week_start_sql()') !== false && strpos($bl, 'NOW()') !== false,
+   'the reset clock is computed in PHP, and PHP and MySQL disagree on this host');
+ok(strpos($bl, 'MOD(') !== false && strpos($bl, '86400') !== false,
+   'the reset clock is not the remainder of a 24-hour block, so it cannot be right at the '
+ . 'boundary');
+
+/*
+ * AND NOTHING IN BOSS MODE CALLS IT A DAY. Checked against the rendered
+ * strings rather than the whole file: the Arena's own copy on this page is
+ * correct and must not be caught by this.
+ */
+$bossPanel = '';
+$bpA = strpos($ARE, '<div class="a-panel" id="aBossPanel">');
+/* To the end of the panel, not a guessed number of characters -- the
+   allowance line is the last thing in it. */
+if ($bpA !== false) {
+	$bpB = strpos($ARE, '<?php endif; ?>', strpos($ARE, 'id="aBossGo"', $bpA));
+	$bossPanel = substr($ARE, $bpA, ($bpB !== false ? $bpB - $bpA : 9000));
+}
+ok($bossPanel !== '', 'the boss panel is gone, so this cannot check its copy');
+foreach (array('Crews sent today', 'Crews a day', 'Crews left today',
+               'every day you send') as $lie) {
+	ok(strpos($ARE, $lie) === false,
+	   'the page still says "' . $lie . '", and the allowance is a 4pm-to-4pm round, not a day');
+}
+ok(strpos($bossPanel, 'Crews sent this round') !== false,
+   'the allowance line does not name the round');
+ok(strpos($bossPanel, 'Rounds turn at 4pm CT') !== false,
+   'the panel never says when the round turns, which is the fact that was missing');
+ok(strpos($bossPanel, 'dhca_hms($dhcb_left)') !== false,
+   'the panel does not show how long is left in the round, so "this round" is still vague');
+/* The refusal has to name it too -- that is the message a capped player
+   reads, and it used to say "come back tomorrow", which is wrong by hours
+   in the wrong direction for most of the afternoon. */
+$eb = substr($LIB, strpos($LIB, 'function dhcb_entry_block('), 1400);
+ok(strpos($eb, 'Come back tomorrow') === false,
+   'the capped message still says "come back tomorrow"; the round turns at 4pm');
+ok(strpos($eb, '4pm CT') !== false && strpos($eb, 'dhcb_block_left($conn)') !== false,
+   'the capped message does not say when the next Crews land');
+
+/* ---------------------------------------------------------------- *
  * THE BOSSES FIGHT SOMEWHERE
  * ---------------------------------------------------------------- */
 echo "\nthe boss crew brings its own ground, and it is real ground\n";
@@ -1034,7 +1097,7 @@ foreach (array('dhca_entry_block($conn', 'dhca_battles_today($conn', 'dhca_oppon
 foreach (array('dhcb_entry_block(', 'dhcb_runs_today(', 'dhcb_cache_slots(',
                'dhcb_cache_days(', 'dhcb_ladder($conn') as $q) {
 	$at = strpos($ARE, $q);
-	ok($at !== false && strpos(substr($ARE, max(0, $at - 400), 400), 'if ($IS_BOSS)') !== false,
+	ok($at !== false && strpos(substr($ARE, max(0, $at - 800), 800), 'if ($IS_BOSS)') !== false,
 	   $q . ' runs on the Arena page, which has no panel to show it in');
 }
 

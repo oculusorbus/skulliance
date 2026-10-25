@@ -1,8 +1,8 @@
 # DHC Bosses
 
 Three bosses stand up every **Thursday at 4pm CT** with a health bar each, and **everybody
-shares them**. You can send **three Crews a day**; every point of damage anyone
-lands comes off the same three bars, all week.
+shares them**. You can send **three Crews a round**, a round being 24 hours from 4pm CT; every
+point of damage anyone lands comes off the same three bars, all week.
 
 It has **its own page**, the Bosses tab in the DHC strip, with its own Crew picker and
 its own ladder. It is the same engine as [[games-dhc-arena]] underneath, which is why the
@@ -63,8 +63,13 @@ and what makes the moment they all fall worth something.
 
 ## The cache: one trait for every day you turn up
 
-Every day you send a Crew that does real damage banks **one trait**, up to
-seven. Miss a day and you finish the week with six.
+Every **round** you send a Crew that does real damage banks **one trait**, up to
+seven. Miss a round and you finish the week with six.
+
+A round is **24 hours from 4pm CT**, the same boundary the week turns on — not a
+calendar day. So your three Crews reset at 4pm, not at midnight, and the Arena's
+six a day (which really is a calendar day) resets at a different time. If you
+send three Crews at two in the afternoon, you get three more at four.
 
 Three Crews a day is deliberately too few to bank the week in one sitting, so
 a full cache is seven separate visits. You can see it filling on the Bosses

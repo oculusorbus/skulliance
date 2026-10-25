@@ -732,6 +732,28 @@ function dhcb_runs_today($conn, $user_id) {
 }
 
 /**
+ * Seconds until the allowance resets, asked of MySQL.
+ *
+ * THE WORD "TODAY" WAS A LIE AND IT READ AS A BUG. The allowance is a
+ * 24-hour block measured from the week's 4pm Thursday boundary, not a
+ * calendar day -- so a player who sent three Crews at 2pm on Sunday came
+ * back at half past four, saw "0 of 3 Crews sent today", and reported that
+ * the page was letting them send more than the rules allow. It was not:
+ * the block had turned at 4pm. The behaviour was right and the sentence
+ * describing it was wrong, which is the worse of the two to ship.
+ *
+ * MySQL, not PHP: started_at is written by the database and the two clocks
+ * on this host disagree, which is the same hazard the cooldowns are
+ * computed in SQL for.
+ */
+function dhcb_block_left($conn) {
+	$r = @$conn->query("SELECT 86400 - MOD(TIMESTAMPDIFF(SECOND, "
+	                 . skl_week_start_sql() . ", NOW()), 86400) AS s");
+	if (!$r || !($x = $r->fetch_assoc())) return 0;
+	return max(0, min(86400, (int)$x['s']));
+}
+
+/**
  * HOW MANY SEPARATE DAYS THIS PLAYER HAS SHOWN UP THIS WEEK.
  *
  * This is the trait cache. One slot per day with a real run on it, capped
@@ -779,9 +801,16 @@ function dhcb_entry_block($conn, $user_id, $crew = null) {
 	 */
 	if ($p['cleared']) return 'The crew is on its way back up. Try again in a moment.';
 	if (dhcb_open_run($conn, $user_id)) return '';          // resume is always allowed
-	if (dhcb_runs_today($conn, $user_id) >= DHCB_DAILY_RUNS)
-		return 'You have sent all ' . DHCB_DAILY_RUNS . ' Crews today. '
-		     . 'Come back tomorrow for another slot in the cache.';
+	if (dhcb_runs_today($conn, $user_id) >= DHCB_DAILY_RUNS) {
+		/* NAME THE RESET, do not say "tomorrow". The allowance turns at 4pm
+		   CT, so for most of the afternoon "tomorrow" is wrong by hours and
+		   in the wrong direction -- it reads as a longer wait than it is. */
+		$left = dhcb_block_left($conn);
+		return 'You have sent all ' . DHCB_DAILY_RUNS . ' Crews for this round. '
+		     . 'The next ' . DHCB_DAILY_RUNS . ' land at 4pm CT'
+		     . ($left > 0 ? ', in ' . dhca_hms($left) : '')
+		     . ', along with another slot in the cache.';
+	}
 	$avail = 0;
 	foreach (dhcb_roster($conn, $user_id, $crew) as $f) if ($f['available']) $avail++;
 	if ($avail < DHCB_CREW_SIZE)

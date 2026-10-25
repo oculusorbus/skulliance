@@ -308,7 +308,7 @@ $ladderAth = dhca_ladder($conn, DHCA_LADDER_ALL_TIME, 10);
  * read below treats as "not switched on yet" rather than as an error.
  */
 $dhcb_on = array(); $dhcb_prog = null; $dhcb_block = ''; $dhcb_runs = 0;
-$dhcb_slots = array(); $dhcb_lad = array(); $dhcb_days = 0;
+$dhcb_slots = array(); $dhcb_lad = array(); $dhcb_days = 0; $dhcb_left = 0;
 if ($dhcb_lib) {
 	$dhcb_on = dhcb_state($conn);
 	if ($dhcb_on) {
@@ -317,6 +317,9 @@ if ($dhcb_lib) {
 			$dhcb_block = $user_id ? dhcb_entry_block($conn, $user_id, $crew) : 'Sign in to send a Crew.';
 			$dhcb_runs  = $user_id ? dhcb_runs_today($conn, $user_id) : 0;
 			$dhcb_slots = $user_id ? dhcb_cache_slots($conn, $user_id) : array();
+			/* When the allowance turns, so the page can say it rather than
+			   calling a 4pm-to-4pm block "today". */
+			$dhcb_left  = dhcb_block_left($conn);
 			$dhcb_days  = $user_id ? dhcb_cache_days($conn, $user_id) : 0;
 			$dhcb_lad   = dhcb_ladder($conn, null, 10);
 		}
@@ -1566,18 +1569,18 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
              with a different number of tiles would collapse it. */ ?>
     <div class="a-stats">
       <?php if ($IS_BOSS && $dhca_guest): ?>
-      <?php /* A guest has no Crew, so "0/3 Crews left today" would be a count
+      <?php /* A guest has no Crew, so a 0-of-3 allowance tile would be a count
                of nothing dressed up as a status. Four tiles either way, since
                the phone breakpoint lays this out as repeat(4,...). */ ?>
       <div class="a-stat"><b><?php echo count($dhcb_on); ?></b><span>Bosses standing</span></div>
       <div class="a-stat"><b><?php echo DHCA_CREW_SIZE; ?></b><span>Per Crew</span></div>
-      <div class="a-stat"><b><?php echo DHCB_DAILY_RUNS; ?></b><span>Crews a day</span></div>
+      <div class="a-stat"><b><?php echo DHCB_DAILY_RUNS; ?></b><span>Crews a round</span></div>
       <div class="a-stat"><b><?php echo DHCB_CACHE_MAX; ?></b><span>Traits a week</span></div>
       <?php elseif ($IS_BOSS): ?>
       <div class="a-stat"><b><?php echo count($crew); ?></b><span>Fighters</span></div>
       <div class="a-stat"><b><?php echo count($available); ?></b><span>Rested</span></div>
       <div class="a-stat"><b><?php echo max(0, DHCB_DAILY_RUNS - $dhcb_runs); ?>/<?php
-        echo DHCB_DAILY_RUNS; ?></b><span>Crews left today</span></div>
+        echo DHCB_DAILY_RUNS; ?></b><span>Crews this round</span></div>
       <div class="a-stat"><b><?php echo (int)$dhcb_days; ?>/<?php
         echo DHCB_CACHE_MAX; ?></b><span>Traits banked</span></div>
       <?php elseif ($dhca_guest): ?>
@@ -2005,8 +2008,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
            everybody, standing all week. <b>Every point of damage counts</b> — the traits
            everyone who takes part rolls for when the week closes get better the further the
            crew falls, and dropping all three unlocks the best table.</p>
-        <p class="a-sub" style="margin:0 0 10px"><b><?php echo DHCB_DAILY_RUNS; ?> Crews a day</b>,
-           and every day you send one banks another trait. Seven days, seven traits.
+        <p class="a-sub" style="margin:0 0 10px"><b><?php echo DHCB_DAILY_RUNS; ?> Crews every
+           24 hours</b>, and every round you send one banks another trait. Seven rounds,
+           seven traits.
+           <?php /* "A DAY" IS NOT TRUE AND IT READ AS A BUG. The round turns at 4pm CT with
+                    the week, so somebody who sent three Crews at 2pm and came back at half
+                    past four was told they had sent none "today" -- and reported the page
+                    was letting them exceed the cap. Say when it turns instead. */ ?>
+           <b>Rounds turn at 4pm CT</b>, same as the week.
            <?php /* NUMBERED, NOT NAMED. The week turns at 4pm Thursday like every
                     other weekly game here, so a "day" runs 4pm to 4pm and straddles
                     two dates -- calling one "Friday" would be wrong by eight hours
@@ -2060,7 +2069,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <div class="a-cache">
           <?php foreach ($dhcb_slots as $sl): ?>
           <div class="a-slot <?php echo $sl['state']; ?>"
-               title="<?php echo 'Day ' . htmlspecialchars($sl['label']) . ' — ' . (
+               title="<?php echo 'Round ' . htmlspecialchars($sl['label']) . ' of 7 — ' . (
                  $sl['state'] === 'filled' ? 'banked'
                  : ($sl['state'] === 'today' ? 'now, still open'
                  : ($sl['state'] === 'missed' ? 'missed' : 'still to come'))); ?>">
@@ -2071,7 +2080,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <div class="a-bsum a-cachenote">
           <b><?php echo (int)$filled; ?></b> of <?php echo count($dhcb_slots); ?> traits banked
           <?php if ($filled < count($dhcb_slots)): ?>
-            · one more for every day you send a Crew
+            · one more for every round you send a Crew
           <?php else: ?>
             · a full week
           <?php endif; ?>
@@ -2133,7 +2142,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
             <span class="a-sub" style="margin:0" id="aMsg"></span>
           </div>
           <p class="a-sub" style="margin:8px 0 0"><?php
-            echo (int)($dhcb_runs); ?> of <?php echo DHCB_DAILY_RUNS; ?> Crews sent today.
+            echo (int)($dhcb_runs); ?> of <?php echo DHCB_DAILY_RUNS; ?> Crews sent this round<?php
+            if ($dhcb_left > 0): ?>, which turns in
+            <b><?php echo dhca_hms($dhcb_left); ?></b><?php endif; ?>.
             Fighters rest from Bosses only — your Arena Crew is untouched.</p>
         <?php endif; ?>
       </div>
