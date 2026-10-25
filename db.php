@@ -16415,10 +16415,24 @@ function checkDHCArenaLeaderboard($conn, $monthly = false, $rewards = false) {
  * -- nothing in this repo schedules anything.
  */
 function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
-	$carbon = defined('DHCB_CARBON') ? (int)DHCB_CARBON : 100000;
+	/*
+	 * THE LIBRARY FIRST, AND THE ORDER WAS A MONEY BUG.
+	 *
+	 * $carbon was read on the line ABOVE this require, so DHCB_CARBON was
+	 * undefined on any page that had not already loaded the library -- which
+	 * is leaderboards.php, and rewards.php on the 'dhcbosses' job, because
+	 * that job runs BEFORE the 'dhcbosses-week' one that pulls the library
+	 * in. The fallback was 100,000. So the board advertised double the real
+	 * pool, and the payout run would have PAID double it.
+	 */
 	if (!function_exists('dhcb_ladder') && is_file(__DIR__ . '/dhcbosses-lib.php'))
 		require_once __DIR__ . '/dhcbosses-lib.php';
 	if (!function_exists('dhcb_ladder')) { echo "<p>DHC Bosses is not installed.</p>"; return; }
+	/* No silent fallback either. A missing constant that money is derived
+	   from is a condition to refuse on, not to guess a number for -- the
+	   guess is exactly what would have paid double. */
+	if (!defined('DHCB_CARBON')) { echo "<p>DHC Bosses is not configured.</p>"; return; }
+	$carbon = (int)DHCB_CARBON;
 
 	/* Settles the WEEK that just closed when paying, and shows the week in
 	   progress otherwise -- equally safe late and equally unsafe twice.
@@ -16460,7 +16474,14 @@ function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
 		$score = (int)$row['per'];
 		$leaderboardCounter++;
 		if ($leaderboardCounter > 3 && $last_score === $score) $leaderboardCounter--;
-		$trophy = ($leaderboardCounter === 1) ? "\u{1F947}" : (($leaderboardCounter === 2) ? "\u{1F948}" : (($leaderboardCounter === 3) ? "\u{1F949}" : ""));
+		/* AN ICON NAME, NOT AN EMOJI. The shared row renderer prints
+		   <img src='/staking/icons/{trophy}.png'>, so an emoji here asks the
+		   browser for an icon file named with a medal character and draws a
+		   broken image beside first place. first/second/third are the files
+		   every other board on this page uses. */
+		$trophy = ($leaderboardCounter === 1) ? 'first'
+		        : (($leaderboardCounter === 2) ? 'second'
+		        : (($leaderboardCounter === 3) ? 'third' : ''));
 
 		$me = isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] === (int)$row['user_id'];
 		if ($me) $fireworks = true;

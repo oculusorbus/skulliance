@@ -277,6 +277,60 @@ ok(strpos($bfn, 'skl_week_start_sql()') !== false,
 ok(strpos($bfn, 'INTERVAL 7 DAY') !== false,
    'the payout run does not step back a week, so it settles the week still being played');
 
+/* ---------------------------------------------------------------- *
+ * A TROPHY IS AN ICON NAME, AND A PRIZE IS NEVER GUESSED
+ * ---------------------------------------------------------------- */
+echo "\nthe medal is a file that exists and the pool is the real one\n";
+/*
+ * TWO BUGS OFF ONE SCREENSHOT OF THE NEW BOARD.
+ *
+ * THE MEDAL. The shared row renderer prints
+ * <img src='/staking/icons/{trophy}.png'>, so 'trophy' is a FILENAME. The
+ * boss board set it to a medal emoji, which asked for an icon file named
+ * with a medal character and drew a broken image beside first place.
+ */
+$icons = array('', 'first', 'second', 'third');
+preg_match_all('~\$trophy\s*=\s*([^;]+);~s', $db, $tm, PREG_SET_ORDER);
+ok(count($tm) > 3, 'no $trophy assignments found, so this check is reading the wrong file');
+foreach ($tm as $hit) {
+	preg_match_all("~'([^']*)'|\"([^\"]*)\"~", $hit[1], $lits, PREG_SET_ORDER);
+	foreach ($lits as $l) {
+		$v = isset($l[2]) && $l[2] !== '' ? $l[2] : $l[1];
+		ok(in_array($v, $icons, true),
+		   'a leaderboard sets its medal to "' . $v . '", and the row renderer turns that into '
+		 . '/staking/icons/' . $v . '.png -- only ' . implode('/', array_slice($icons, 1))
+		 . ' are real files');
+	}
+	ok(preg_match('~[^\x00-\x7F]~', $hit[1]) === 0,
+	   'a $trophy assignment contains a non-ASCII character, which cannot be a filename here: '
+	 . preg_replace('~\s+~', ' ', $hit[1]));
+}
+
+/*
+ * THE PRIZE. $carbon was read on the line ABOVE the require that defines
+ * DHCB_CARBON, so on leaderboards.php -- and on the 'dhcbosses' reward job,
+ * which runs BEFORE the one that pulls the library in -- the constant was
+ * undefined and a hardcoded 100,000 fallback took over. The board
+ * advertised double the pool and the payout run would have PAID double it.
+ *
+ * A number money is derived from must never have a guess behind it.
+ */
+$cfn = brace_extract($db, 'function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false)');
+ok($cfn !== '', 'checkDHCBossesLeaderboard() is gone or its signature changed');
+$reqAt = strpos($cfn, "require_once __DIR__ . '/dhcbosses-lib.php'");
+$useAt = strpos($cfn, '$carbon = ');
+ok($reqAt !== false && $useAt !== false && $reqAt < $useAt,
+   'the prize is read before the library that defines it, so DHCB_CARBON is undefined and '
+ . 'whatever fallback sits there is what gets paid');
+ok(strpos($cfn, '100000') === false,
+   'a hardcoded prize fallback is back in the boss board; that is the number that would be '
+ . 'paid when the constant is missing');
+ok(strpos($cfn, "!defined('DHCB_CARBON')") !== false,
+   'the board does not refuse when the prize constant is missing, so it will invent one');
+/* And it pays the constant, not a literal. */
+ok(strpos($cfn, '$carbon = (int)DHCB_CARBON;') !== false,
+   'the prize is not taken straight from DHCB_CARBON');
+
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
 echo "all leaderboard period checks passed\n";
