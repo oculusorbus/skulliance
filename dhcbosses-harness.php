@@ -106,12 +106,26 @@ class HBCount {
 	   runs is the week-one case, where the budget falls back to the constant
 	   with the human haircut on it. */
 	public $runs = 0, $avgDealt = 0;
+	/* Crews a day this community sends. null means "model it as everybody
+	   spending the full allowance", which is what the budget used to assume
+	   and what the older checks here were written against. */
+	public $rpd = null;
+	/* The boss ledger's own rate: runs over elapsed days. Zero runs is the
+	   week-one case, where the Arena estimate has to answer instead. */
+	public $ledgerRuns = 0, $ledgerSpan = 1;
 	public function real_escape_string($x) { return addslashes((string)$x); }
 	public function query($sql) {
 		if (stripos($sql, 'COUNT(*) AS fighters') !== false)
 			return new HBRes2(array(array('fighters' => $this->fighters, 'players' => $this->players)));
 		if (stripos($sql, 'AVG(dealt)') !== false)
 			return new HBRes2(array(array('n' => $this->runs, 'd' => $this->avgDealt)));
+		/* The boss ledger's own rate. Answered as "not enough yet" unless a
+		   test asks otherwise, so the Arena estimate below is exercised. */
+		if (stripos($sql, 'DATEDIFF(NOW(), MIN(started_at))') !== false)
+			return new HBRes2(array(array('n' => $this->ledgerRuns, 'span' => $this->ledgerSpan)));
+		if (stripos($sql, 'AS rpd') !== false)
+			return new HBRes2(array(array('rpd' => $this->rpd === null
+				? $this->players * DHCB_DAILY_RUNS : $this->rpd)));
 		return new HBRes2();
 	}
 }
@@ -120,14 +134,16 @@ class HBRes2 {
 	public function __construct($r = array()) { $this->r = $r; $this->num_rows = count($r); }
 	public function fetch_assoc() { return isset($this->r[$this->i]) ? $this->r[$this->i++] : null; }
 }
-function hb_conn($players, $fighters, $runs = 0, $avg = 0) {
+function hb_conn($players, $fighters, $runs = 0, $avg = 0, $rpd = null,
+                $ledRuns = 0, $ledSpan = 1) {
 	$c = new HBCount();
 	$c->players = $players; $c->fighters = $fighters;
-	$c->runs = $runs; $c->avgDealt = $avg;
+	$c->runs = $runs; $c->avgDealt = $avg; $c->rpd = $rpd;
+	$c->ledgerRuns = $ledRuns; $c->ledgerSpan = $ledSpan;
 	return $c;
 }
-function hb_budget($players, $fighters, $days = 7, $wave = 1, $runs = 0, $avg = 0) {
-	return dhcb_crew_budget(hb_conn($players, $fighters, $runs, $avg), $days, $wave);
+function hb_budget($players, $fighters, $days = 7, $wave = 1, $runs = 0, $avg = 0, $rpd = null) {
+	return dhcb_crew_budget(hb_conn($players, $fighters, $runs, $avg, $rpd), $days, $wave);
 }
 /*
  * WHAT A RUN IS WORTH, AS THE BUDGET SEES IT. Every ceiling below has to be
@@ -530,6 +546,75 @@ ok(dhcb_dmg_per_run(hb_conn(1, 1, 99, 99999)) <= DHCB_DMG_PER_RUN * 1.10 + 1,
    'a freak average is taken at face value, so one big week makes the crew unclearable');
 
 /*
+ * RUN COUNT IS BEHAVIOUR, NOT HEADCOUNT, and this is the second half of the
+ * same mistake.
+ *
+ * The budget counted everybody who had fought once in the window and assumed
+ * each would send the full allowance every day for seven days. The live
+ * Arena ladder is the counter-example: ten players, the top three are 83% of
+ * all activity, and the bottom five average under a tenth of their
+ * allowance. Ten x three x seven is 210 runs a week; their behaviour says
+ * about 55. The crew was 3.8x too big on this axis, ON TOP of the 1.8x from
+ * the solver's damage figure -- and the reach clamp could not catch either,
+ * because the clamp is built from the same two numbers.
+ */
+ok(strpos($LIB, '$byBehaviourDay = dhcb_runs_per_day($conn)') !== false,
+   'the budget is back on headcount x allowance, which the live ladder says overstates '
+ . 'turnout by nearly four times');
+ok(strpos($LIB, 'players\'] * (int)DHCB_DAILY_RUNS') === false,
+   'headcount x allowance is still in the budget somewhere');
+/*
+ * THE LIVE LADDER, AS A TEST CASE. Monthly battles per player, taken off the
+ * board on 2026-10-25, converted the way the library converts them: the
+ * share of a player's six daily Arena battles they actually use is the best
+ * available guess at the share of their three Crews they will send.
+ */
+$ladderShape = array(122, 131, 73, 37, 13, 9, 4, 1, 2, 2);   // battles in ~25 days
+$rpdReal = 0;
+foreach ($ladderShape as $n) $rpdReal += min(DHCB_DAILY_RUNS, ($n / 25) / 6 * DHCB_DAILY_RUNS);
+ok($rpdReal < count($ladderShape) * DHCB_DAILY_RUNS * 0.5,
+   sprintf('the live ladder models as %.1f Crews a day against an allowance of %d, so this '
+	 . 'case is not actually skewed and proves nothing', $rpdReal,
+	 count($ladderShape) * DHCB_DAILY_RUNS));
+$hpReal  = hb_budget(10, 90, 7, 1, 0, 0, $rpdReal);
+$dayReal = $rpdReal * hb_per_run();
+ok($hpReal / $dayReal <= 6.0,
+   sprintf('on the REAL participation curve the crew takes %.1f days, so nobody ever sees '
+	 . 'it fall: %s health against %s damage a day',
+	 $hpReal / $dayReal, number_format($hpReal), number_format(round($dayReal))));
+ok($hpReal / $dayReal >= 2.0,
+   sprintf('on the real curve the crew falls in %.1f days, leaving the rest of the week '
+	 . 'to waves that are themselves too small to matter', $hpReal / $dayReal));
+/* WEEK ONE HAS NO BOSS LEDGER, so the Arena estimate has to answer. */
+ok(dhcb_runs_per_day(hb_conn(10, 90, 0, 0, 7.9)) === 7.9,
+   'the Arena estimate is ignored, so week one has no run rate at all');
+/* AND THE LEDGER TAKES OVER once there is enough of it -- the real thing
+   beats a model converted out of a different game. */
+$led = dhcb_runs_per_day(hb_conn(10, 90, 0, 0, 7.9, DHCB_CAL_MIN_RUNS * 2, 10));
+ok(abs($led - (DHCB_CAL_MIN_RUNS * 2) / 10) < 0.001,
+   'the boss ledger is ignored in favour of an Arena model, so the rate never becomes the '
+ . 'real one: ' . $led);
+ok(dhcb_runs_per_day(hb_conn(10, 90, 0, 0, 7.9, DHCB_CAL_MIN_RUNS - 1, 10)) === 7.9,
+   'a handful of boss runs overrides the Arena estimate, so one quiet day resizes the week');
+
+/*
+ * THE CONVERSION ITSELF, read off the SQL. The stub above answers with a
+ * canned rate, so it cannot catch the estimate being replaced by a flat
+ * allowance -- which is the exact fiction this is here to remove. The query
+ * has to divide by the window and by the Arena's own allowance, and cap
+ * each player at the boss allowance.
+ */
+$rpdSql = substr($LIB, strpos($LIB, 'AS rpd') - 100, 700);
+ok(strpos($rpdSql, 'LEAST($cap,') !== false,
+   'a player is not capped at the boss allowance, so a heavy Arena player implies more '
+ . 'Crews than the rules permit');
+ok(strpos($rpdSql, 'act.n / $d / $amax') !== false,
+   'the estimate is not a share of what a player actually uses, so it is headcount x '
+ . 'allowance again wearing a different query');
+ok(strpos($rpdSql, 'GROUP BY attacker_id') !== false,
+   'the estimate is not per player, so one heavy player is averaged across everybody');
+
+/*
  * AND THE WHOLE POINT, STATED AS AN OUTCOME: a community that turns up has
  * to put the crew down BEFORE the week ends, or waves are dead content and
  * the best table is unreachable. This is the check that was missing.
@@ -539,6 +624,8 @@ foreach (array(array(10, 90), array(3, 9), array(20, 60), array(6, 54)) as $pop)
 	$perDay = min($pp * DHCB_DAILY_RUNS, (int)floor($pf / DHCB_CREW_SIZE));
 	$dayDmg = $perDay * hb_per_run();
 	$days   = $dayDmg > 0 ? hb_budget($pp, $pf) / $dayDmg : 99;
+	/* Full turnout is the ceiling case; the skewed case is checked above
+	   against the real ladder. */
 	ok($days <= 6.0,
 	   sprintf('%d players with %d Fighters need %.1f days of full turnout to drop the crew, '
 		 . 'so they never see a wave 2 or the best table', $pp, $pf, $days));
@@ -643,14 +730,23 @@ foreach (array(array(10, 90), array(3, 9), array(20, 60)) as $pop) {
  * would be a 24,000 wall in front of a day nobody can finish.
  */
 /*
- * 1.4 DAYS AND WAVE 2 IS THE CASE THAT ACTUALLY TESTS THIS, and the obvious
- * one does not: with half a day left the reach clamp cuts the budget below
- * DHCB_HP_MIN anyway, so the floor could be wrongly applied to every wave
- * and nothing would show. Here the unfloored budget is ~20,300 and reach is
- * ~28,700, so the floor is the only thing that could lift it to 24,000.
+ * THE CASE HAS TO STRADDLE THE FLOOR, and most do not: where the reach clamp
+ * already cuts the budget below DHCB_HP_MIN, the floor could be wrongly
+ * applied to every wave and nothing would show. Two small players over six
+ * days budget to ~3,200 unfloored with reach at ~4,500, so the floor is the
+ * only thing that could lift it to 4,000.
  */
-ok(hb_budget(10, 90, 1.4, 2) < DHCB_HP_MIN,
-   'a late wave is still floored at DHCB_HP_MIN (' . number_format(hb_budget(10, 90, 1.4, 2))
+/* Two small players over five days: wave 1 lands under the floor and gets
+   lifted to it, wave 2 at the same inputs must not be. Checking only that a
+   late wave is "below HP_MIN" passed with the floor wrongly applied, because
+   the reach clamp cut it below HP_MIN anyway. */
+$fl1 = hb_budget(2, 6, 6, 1);
+$fl2 = hb_budget(2, 6, 6, 2);
+ok($fl1 === (int)DHCB_HP_MIN,
+   'wave 1 is not floored at DHCB_HP_MIN where it should be (' . number_format($fl1)
+ . '), so this cannot tell whether later waves are exempt');
+ok($fl2 < $fl1,
+   'a late wave is floored like wave 1 (' . number_format($fl2) . ' vs ' . number_format($fl1)
  . '), which puts a wall in front of days nobody can finish');
 ok(hb_budget(1, 3, 7, 1) >= 1, 'wave 1 can be budgeted to nothing');
 /*

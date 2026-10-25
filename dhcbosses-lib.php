@@ -165,7 +165,20 @@ if (!defined('DHCB_HUMAN_PCT'))   define('DHCB_HUMAN_PCT', 0.55);
 if (!defined('DHCB_CAL_MIN_RUNS')) define('DHCB_CAL_MIN_RUNS', 20);
 /* Floors and ceilings, so a quiet week is not trivial and a surge is not
    impossible. Both are on the CREW total, before the per-boss split. */
-if (!defined('DHCB_HP_MIN'))      define('DHCB_HP_MIN', 24000);
+/*
+ * 24,000 WAS SET WHEN THE BUDGET WAS FICTION. Back then the run count came
+ * from headcount x allowance and the damage from a solver, so the floor only
+ * ever bound for a tiny community. Now that both numbers track behaviour,
+ * a real ten-player week budgets to about 17,000 -- and a 24,000 floor would
+ * be doing the sizing instead of the budget, which is the whole thing this
+ * was supposed to stop.
+ *
+ * Its job is narrower than it looks: keep a crew from being a one-sitting
+ * pushover if the measurements ever come back near zero. Eight Crews' worth
+ * is enough for that, and the reach clamp still cuts it further when even
+ * that is out of range.
+ */
+if (!defined('DHCB_HP_MIN'))      define('DHCB_HP_MIN', 4000);
 if (!defined('DHCB_HP_MAX'))      define('DHCB_HP_MAX', 1200000);
 /* Who counts as "likely to show up": anybody who played the Arena or the
    Bosses in this window. Lagging on purpose -- a live count would mean a
@@ -271,6 +284,58 @@ function dhcb_dmg_per_run($conn) {
 	if ($r && ($x = $r->fetch_assoc()) && (int)$x['n'] >= (int)DHCB_CAL_MIN_RUNS)
 		return max($lo, min($hi, (float)$x['d']));
 	return max($lo, min($hi, $fallback));
+}
+
+/**
+ * How many Crews a day this community actually sends.
+ *
+ * THE ASSUMPTION THIS REPLACES. The budget counted everybody who had fought
+ * once in the window and assumed each of them would send the full allowance
+ * every day for seven days. The Arena ladder says what that is worth: of ten
+ * players counted equally, the top three are 83% of all activity, and the
+ * bottom five average under a tenth of their allowance. Ten players x three
+ * Crews x seven days is 210 runs; their behaviour says about 55. The crew
+ * was 3.8x too big on this axis alone, and the reach clamp could not catch
+ * it because the clamp is built from the same number.
+ *
+ * TWO SOURCES, BEST FIRST.
+ *
+ *   THE BOSS LEDGER, once there is enough of it. Runs per elapsed day is
+ *   the thing itself -- no model, no conversion.
+ *   OTHERWISE THE ARENA, converted per player rather than per head: what
+ *   share of their six daily battles somebody actually uses is the best
+ *   available guess at what share of their three Crews they will send, and
+ *   it is capped at the allowance so a heavy Arena player cannot imply more
+ *   boss runs than the rules permit.
+ *
+ * Elapsed days, never ACTIVE days: a community that plays three days a week
+ * would otherwise look twice as busy as it is.
+ */
+function dhcb_runs_per_day($conn) {
+	$d    = max(1, (int)DHCB_ACTIVE_DAYS);
+	$cap  = (int)DHCB_DAILY_RUNS;
+	$amax = defined('DHCA_DAILY_BATTLES') ? (int)DHCA_DAILY_BATTLES : 6;
+
+	$r = @$conn->query("SELECT COUNT(*) AS n,
+	                           LEAST($d, DATEDIFF(NOW(), MIN(started_at)) + 1) AS span
+	                      FROM dhc_boss_runs
+	                     WHERE outcome <> 0
+	                       AND started_at > DATE_SUB(NOW(), INTERVAL $d DAY)");
+	if ($r && ($x = $r->fetch_assoc()) && (int)$x['n'] >= (int)DHCB_CAL_MIN_RUNS) {
+		$span = max(1, (int)$x['span']);
+		return max(0.0, (float)$x['n'] / $span);
+	}
+
+	/* Only players who still have Fighters can send anything. */
+	$r = @$conn->query("SELECT SUM(LEAST($cap, act.n / $d / $amax * $cap)) AS rpd
+	                      FROM (SELECT attacker_id AS uid, COUNT(*) AS n
+	                              FROM dhc_arena_battles
+	                             WHERE started_at > DATE_SUB(NOW(), INTERVAL $d DAY)
+	                             GROUP BY attacker_id) act
+	                      JOIN (SELECT DISTINCT user_id AS uid FROM dhc_fighters
+	                             WHERE disassembled_at IS NULL) f ON f.uid = act.uid");
+	if ($r && ($x = $r->fetch_assoc()) && $x['rpd'] !== null) return max(0.0, (float)$x['rpd']);
+	return 0.0;
 }
 
 function dhcb_wave_pow($wave) {
@@ -386,9 +451,15 @@ function dhcb_crew_budget($conn, $days = 7, $wave = 1) {
 	 * seven as well would double-count the same Fighters seven times over
 	 * and produce a crew nobody could scratch.
 	 */
-	$byAllowanceDay = $d['players'] * (int)DHCB_DAILY_RUNS;
+	/*
+	 * WHAT THEY WILL ACTUALLY SEND, not what they are allowed to send.
+	 * dhcb_runs_per_day() reads behaviour; the roster is still a hard cap,
+	 * because nine Fighters cannot field four Crews at once however keen
+	 * their owner is.
+	 */
+	$byBehaviourDay = dhcb_runs_per_day($conn);
 	$byRosterDay    = (int)floor($d['fighters'] / max(1, DHCB_CREW_SIZE));
-	$runsPerDay     = min($byAllowanceDay, $byRosterDay);
+	$runsPerDay     = min($byBehaviourDay, $byRosterDay);
 	$runs           = $runsPerDay * $days;
 	/*
 	 * A LATER WAVE HITS HARDER, SO A RUN AGAINST IT DEALS LESS before the
