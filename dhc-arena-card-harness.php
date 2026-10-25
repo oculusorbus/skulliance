@@ -472,8 +472,15 @@ echo "\nand a boss run gets the same card, from the same endpoint\n";
 	   'the card cannot tell a boss from a Fighter, so both get the head-measured crop');
 	ok(strpos($src, '$hx = $isBoss ? 0.5 : DAC_HEAD_X;') !== false,
 	   'a boss is cropped on the Fighter head window, which cuts a third off the figure');
-	ok(strpos($src, 'if (!$isLeft && !$isBoss && function_exists(\'imageflip\'))') !== false,
-	   'a boss is mirrored, which reverses the lettering on its armour');
+	/* BOSSES ARE MIRRORED TOO. They were exempt at first over the lettering
+	   on their armour; the owner called it, and the card agreeing with the
+	   board matters more than text nobody reads at 180px wide. */
+	ok(strpos($src, "if (!\$isLeft && function_exists('imageflip')) imageflip(") !== false,
+	   'the right-hand side is not mirrored, so one Crew is looking away and the card is six '
+	 . 'portraits rather than a fight');
+	ok(strpos($src, '!$isBoss && function_exists(\'imageflip\')') === false,
+	   'the bosses are exempt from the mirror again, so they face away from the Crew '
+	 . 'attacking them');
 	/* KILLS ARE ATTRIBUTED, not assumed: dimming a boss somebody else
 	   finished would be claiming their kill. */
 	ok(strpos($src, 'killed_at IS NOT NULL AND killed_by = $uid') !== false,

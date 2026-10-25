@@ -341,12 +341,18 @@ foreach (array('mine' => true, 'foes' => false) as $side => $isLeft) {
 		 * and a card of a fight where nobody is facing anybody is a card of
 		 * six portraits.
 		 */
-		/* A BOSS IS NOT MIRRORED. The three of them are signed, composed
-		   pieces with lettering on the armour, and flipping one reverses
-		   the text. A Fighter's render is symmetrical enough that nobody
-		   reads it as backwards; a boss is not. */
-		if (!$isLeft && !$isBoss && function_exists('imageflip'))
-			imageflip($tile, IMG_FLIP_HORIZONTAL);
+		/*
+		 * EVERYTHING ON THE RIGHT FACES LEFT, bosses included.
+		 *
+		 * This exempted them at first, because they carry lettering on the
+		 * armour and flipping reverses it. The owner's call, and it is the
+		 * right one: a card of a fight where one side is looking away is a
+		 * card of six portraits, and the reversed text is a detail at
+		 * 180px that nobody reads. The board already mirrors the enemy
+		 * column, so exempting them here made the card disagree with the
+		 * screen it was shared from.
+		 */
+		if (!$isLeft && function_exists('imageflip')) imageflip($tile, IMG_FLIP_HORIZONTAL);
 
 		/*
 		 * A FALLEN FIGHTER IS DIMMED, NOT HIDDEN -- leaving it out would make
