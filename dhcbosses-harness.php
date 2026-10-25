@@ -481,22 +481,6 @@ echo "\nthe allowance says when it actually resets\n";
  * DATE(started_at) = CURDATE(), so six a day is six a calendar day. The two
  * games reset differently and only one of them was lying about it.
  */
-ok(strpos($LIB, 'function dhcb_block_left(') !== false,
-   'nothing can say when the allowance resets, so the page can only describe it vaguely');
-/* MySQL, like every other clock in this feature -- started_at is written by
-   the database and the two clocks on this host disagree. */
-$bl = substr($LIB, strpos($LIB, 'function dhcb_block_left('), 420);
-ok(strpos($bl, 'skl_week_start_sql()') !== false && strpos($bl, 'NOW()') !== false,
-   'the reset clock is computed in PHP, and PHP and MySQL disagree on this host');
-ok(strpos($bl, 'MOD(') !== false && strpos($bl, '86400') !== false,
-   'the reset clock is not the remainder of a 24-hour block, so it cannot be right at the '
- . 'boundary');
-
-/*
- * AND NOTHING IN BOSS MODE CALLS IT A DAY. Checked against the rendered
- * strings rather than the whole file: the Arena's own copy on this page is
- * correct and must not be caught by this.
- */
 $bossPanel = '';
 $bpA = strpos($ARE, '<div class="a-panel" id="aBossPanel">');
 /* To the end of the panel, not a guessed number of characters -- the
@@ -505,25 +489,85 @@ if ($bpA !== false) {
 	$bpB = strpos($ARE, '<?php endif; ?>', strpos($ARE, 'id="aBossGo"', $bpA));
 	$bossPanel = substr($ARE, $bpA, ($bpB !== false ? $bpB - $bpA : 9000));
 }
+
+ok(strpos($LIB, 'function dhcb_round(') !== false,
+   'nothing can say which round it is or when it ends, so the page can only describe the '
+ . 'allowance vaguely');
+/* MySQL, like every other clock in this feature -- started_at is written by
+   the database and the two clocks on this host disagree. */
+/* The function, not a guessed span -- 700 characters reached into the next
+   one and counted its query too. */
+$bl = substr($LIB, strpos($LIB, 'function dhcb_round('));
+$bl = substr($bl, 0, strpos($bl, "\n}") + 2);
+ok(strpos($bl, 'skl_week_start_sql()') !== false && strpos($bl, 'NOW()') !== false,
+   'the round clock is computed in PHP, and PHP and MySQL disagree on this host');
+ok(strpos($bl, 'MOD(') !== false && strpos($bl, '86400') !== false,
+   'the remainder is not of a 24-hour round, so it cannot be right at the boundary');
+ok(substr_count($bl, '$conn->query(') === 1,
+   'the round number and its remainder are two queries; they are the same arithmetic');
+ok(strpos($bl, "'n'") !== false && strpos($bl, "'left'") !== false,
+   'dhcb_round() does not return both the round and what is left of it');
+
+/*
+ * AND THE PAGE SHOWS A CLOCK, not a sentence.
+ *
+ * Renaming "today" to "this round" was not enough and the owner said so:
+ * "I think if there was some countdown on the page to the next day, then it
+ * would be less ambivalent." A boundary nobody can see is still a boundary
+ * nobody can see, however it is worded.
+ */
+ok(strpos($bossPanel, 'class="a-round"') !== false,
+   'the round strip is gone, so nothing states the round at a glance');
+ok(strpos($bossPanel, 'id="aRoundLeft"') !== false
+   && strpos($bossPanel, 'data-left="<?php echo (int)$dhcb_left;') !== false,
+   'the countdown has no element or no server figure to count down from');
+ok(strpos($bossPanel, 'Round <b><?php echo (int)$dhcb_round;') !== false,
+   'the strip does not say WHICH round, so the cache slots have nothing to anchor to');
+/*
+ * IT TICKS, and from the SERVER'S remainder rather than a local clock. The
+ * boundary is 4pm America/Chicago computed in MySQL and the browser may be
+ * in any timezone with any drift -- subtracting elapsed local time from a
+ * server-supplied remainder is right whatever the device thinks the time is.
+ */
+$tickA = strpos($ARE, "var el = document.getElementById('aRoundLeft');");
+ok($tickA !== false, 'nothing ticks the countdown, so it is stale the moment the page settles');
+$tick = $tickA !== false ? substr($ARE, $tickA - 60, 1100) : '';
+ok(strpos($tick, 'setInterval(tick, 1000)') !== false, 'the countdown does not tick every second');
+ok(strpos($tick, 'Date.now() - t0') !== false,
+   'the countdown reads the local clock instead of counting down from the server figure, so a '
+ . 'browser in another timezone shows the wrong boundary');
+/* AND IT MUST NOT RELOAD AT ZERO. The player may be mid-run, and throwing
+   away a board to refresh a counter is a worse bug than the one this fixes. */
+ok(strpos($tick, 'location.reload') === false && strpos($tick, 'location.href') === false,
+   'the countdown reloads the page when the round turns, which would throw away a run in '
+ . 'progress');
+ok(strpos($tick, 'clearInterval(iv)') !== false,
+   'the countdown keeps ticking past zero');
+
+/*
+ * AND NOTHING IN BOSS MODE CALLS IT A DAY. Checked against the rendered
+ * strings rather than the whole file: the Arena's own copy on this page is
+ * correct and must not be caught by this.
+ */
 ok($bossPanel !== '', 'the boss panel is gone, so this cannot check its copy');
 foreach (array('Crews sent today', 'Crews a day', 'Crews left today',
                'every day you send') as $lie) {
 	ok(strpos($ARE, $lie) === false,
 	   'the page still says "' . $lie . '", and the allowance is a 4pm-to-4pm round, not a day');
 }
-ok(strpos($bossPanel, 'Crews sent this round') !== false,
-   'the allowance line does not name the round');
+ok(strpos($bossPanel, 'Crews left</span>') !== false,
+   'the strip does not say how many Crews are left in the round');
 ok(strpos($bossPanel, 'Rounds turn at 4pm CT') !== false,
    'the panel never says when the round turns, which is the fact that was missing');
 ok(strpos($bossPanel, 'dhca_hms($dhcb_left)') !== false,
-   'the panel does not show how long is left in the round, so "this round" is still vague');
+   'the countdown renders nothing server-side, so it is blank until JavaScript runs');
 /* The refusal has to name it too -- that is the message a capped player
    reads, and it used to say "come back tomorrow", which is wrong by hours
    in the wrong direction for most of the afternoon. */
 $eb = substr($LIB, strpos($LIB, 'function dhcb_entry_block('), 1400);
 ok(strpos($eb, 'Come back tomorrow') === false,
    'the capped message still says "come back tomorrow"; the round turns at 4pm');
-ok(strpos($eb, '4pm CT') !== false && strpos($eb, 'dhcb_block_left($conn)') !== false,
+ok(strpos($eb, '4pm CT') !== false && strpos($eb, 'dhcb_round($conn)') !== false,
    'the capped message does not say when the next Crews land');
 
 /* ---------------------------------------------------------------- *

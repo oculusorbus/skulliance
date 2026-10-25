@@ -308,7 +308,7 @@ $ladderAth = dhca_ladder($conn, DHCA_LADDER_ALL_TIME, 10);
  * read below treats as "not switched on yet" rather than as an error.
  */
 $dhcb_on = array(); $dhcb_prog = null; $dhcb_block = ''; $dhcb_runs = 0;
-$dhcb_slots = array(); $dhcb_lad = array(); $dhcb_days = 0; $dhcb_left = 0;
+$dhcb_slots = array(); $dhcb_lad = array(); $dhcb_days = 0; $dhcb_left = 0; $dhcb_round = 1;
 if ($dhcb_lib) {
 	$dhcb_on = dhcb_state($conn);
 	if ($dhcb_on) {
@@ -317,9 +317,12 @@ if ($dhcb_lib) {
 			$dhcb_block = $user_id ? dhcb_entry_block($conn, $user_id, $crew) : 'Sign in to send a Crew.';
 			$dhcb_runs  = $user_id ? dhcb_runs_today($conn, $user_id) : 0;
 			$dhcb_slots = $user_id ? dhcb_cache_slots($conn, $user_id) : array();
-			/* When the allowance turns, so the page can say it rather than
-			   calling a 4pm-to-4pm block "today". */
-			$dhcb_left  = dhcb_block_left($conn);
+			/* Which round, and how long is left of it -- one query, because
+			   the page shows a live countdown to the next one rather than
+			   asking a player to infer an invisible boundary. */
+			$dhcb_rd    = dhcb_round($conn);
+			$dhcb_left  = $dhcb_rd['left'];
+			$dhcb_round = $dhcb_rd['n'];
 			$dhcb_days  = $user_id ? dhcb_cache_days($conn, $user_id) : 0;
 			$dhcb_lad   = dhcb_ladder($conn, null, 10);
 		}
@@ -1283,6 +1286,20 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 @keyframes aSlotPulse{0%,100%{opacity:.55}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){ .arena-wrap .a-slot.today i{animation:none;opacity:.9} }
 .arena-wrap .a-cachenote{margin-bottom:10px}
+/* The round strip. Its own row rather than a clause in a paragraph,
+   because it answers "why can I send more" at a glance and that question
+   was asked twice of a sentence. */
+.arena-wrap .a-round{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;
+  margin:0 0 8px;padding:6px 9px;border:1px solid var(--line);border-radius:3px;
+  background:var(--panel2);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--dim)}
+.arena-wrap .a-round b{font-weight:600;letter-spacing:0;font-size:12px;color:#e8eaed;
+  font-variant-numeric:tabular-nums}
+.arena-wrap .a-round .a-rclk{margin-left:auto}
+.arena-wrap .a-round .a-rclk b{color:var(--ochre)}
+.arena-wrap .a-round.turned{border-color:var(--ochre)}
+.arena-wrap .a-round.turned .a-rclk b{color:var(--teal)}
+@media (max-width:520px){ .arena-wrap .a-round .a-rclk{margin-left:0;width:100%} }
 @media (max-width:420px){ .arena-wrap .a-bblurb{display:none} }
 /* Removing is the one destructive affordance on this screen, and --blood is
    the platform's own accent here, so it needs a colour of its own to read as
@@ -2077,6 +2094,25 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           </div>
           <?php endforeach; ?>
         </div>
+        <?php /*
+               * THE ROUND, STATED, WITH A CLOCK ON IT.
+               *
+               * The allowance turns at 4pm CT with the week, not at
+               * midnight, and an invisible boundary was reported as a
+               * broken cap twice -- three Crews sent at 2pm, three more
+               * owed at 4pm, and nothing on the page saying why. Renaming
+               * "today" to "this round" was not enough on its own: a
+               * boundary you cannot see is still a boundary you cannot
+               * see. So it gets a number, a count and a countdown, next
+               * to the button the question is asked at.
+               */ ?>
+        <div class="a-round">
+          <span>Round <b><?php echo (int)$dhcb_round; ?></b> of <?php echo DHCB_CACHE_MAX; ?></span>
+          <span><b><?php echo max(0, DHCB_DAILY_RUNS - (int)$dhcb_runs); ?></b> of
+            <?php echo DHCB_DAILY_RUNS; ?> Crews left</span>
+          <span class="a-rclk">Next round in <b id="aRoundLeft"
+            data-left="<?php echo (int)$dhcb_left; ?>"><?php echo dhca_hms($dhcb_left); ?></b></span>
+        </div>
         <div class="a-bsum a-cachenote">
           <b><?php echo (int)$filled; ?></b> of <?php echo count($dhcb_slots); ?> traits banked
           <?php if ($filled < count($dhcb_slots)): ?>
@@ -2141,11 +2177,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
             <button class="btn go" id="aBossGo" type="button" disabled>Send Crew at the Bosses</button>
             <span class="a-sub" style="margin:0" id="aMsg"></span>
           </div>
-          <p class="a-sub" style="margin:8px 0 0"><?php
-            echo (int)($dhcb_runs); ?> of <?php echo DHCB_DAILY_RUNS; ?> Crews sent this round<?php
-            if ($dhcb_left > 0): ?>, which turns in
-            <b><?php echo dhca_hms($dhcb_left); ?></b><?php endif; ?>.
-            Fighters rest from Bosses only — your Arena Crew is untouched.</p>
+          <p class="a-sub" style="margin:8px 0 0">Fighters rest from Bosses only — your
+            Arena Crew is untouched.</p>
         <?php endif; ?>
       </div>
     </div>
@@ -3628,6 +3661,48 @@ var BOSS_URL = 'ajax/dhcbosses-action.php';
    cooldown, the one that applies here. It is read only for the few sentences
    the two pages word differently. */
 var BOSS_MODE = <?php echo $IS_BOSS ? 'true' : 'false'; ?>;
+/*
+ * THE ROUND CLOCK, TICKING.
+ *
+ * A server-rendered figure is right for one second and then quietly wrong,
+ * and this page is one people leave open between runs -- which is exactly
+ * the window in which the round turns underneath them and the allowance
+ * appears to break. The number has to move.
+ *
+ * IT COUNTS DOWN FROM THE SERVER'S FIGURE RATHER THAN FROM A LOCAL CLOCK.
+ * The boundary is 4pm America/Chicago computed in MySQL, and the browser
+ * may be in any timezone with any amount of drift; subtracting elapsed
+ * local time from a server-supplied remainder is correct whatever the
+ * device thinks the time is.
+ *
+ * At zero it does NOT reload. The player may be mid-run, and throwing away
+ * a board to refresh a counter would be a worse bug than the one this
+ * fixes. It says the round turned and leaves the choice alone.
+ */
+(function(){
+  var el = document.getElementById('aRoundLeft');
+  if (!el) return;
+  var left = parseInt(el.getAttribute('data-left'), 10);
+  if (!(left > 0)) return;
+  var strip = el.closest ? el.closest('.a-round') : null;
+  var t0 = Date.now();
+  function hms(s){
+    var h = Math.floor(s/3600), m = Math.floor((s%3600)/60), x = s%60;
+    return h ? h+'h '+m+'m' : (m ? m+'m '+x+'s' : x+'s');
+  }
+  function tick(){
+    var s = left - Math.floor((Date.now() - t0) / 1000);
+    if (s <= 0) {
+      el.textContent = 'now — reload for ' + CREW_SIZE + ' more';
+      if (strip) strip.classList.add('turned');
+      clearInterval(iv);
+      return;
+    }
+    el.textContent = hms(s);
+  }
+  var iv = setInterval(tick, 1000);
+  tick();
+}());
 /*
  * WHICH CREW IS ON THE BOARD, for the colour grade. The bosses get back up
  * within the week one wave higher and the grade is how that reads -- the

@@ -67,7 +67,8 @@ Every **round** you send a Crew that does real damage banks **one trait**, up to
 seven. Miss a round and you finish the week with six.
 
 A round is **24 hours from 4pm CT**, the same boundary the week turns on — not a
-calendar day. So your three Crews reset at 4pm, not at midnight, and the Arena's
+calendar day. The page carries a live countdown to the next one, so you never have
+to work out where the boundary is. So your three Crews reset at 4pm, not at midnight, and the Arena's
 six a day (which really is a calendar day) resets at a different time. If you
 send three Crews at two in the afternoon, you get three more at four.
 

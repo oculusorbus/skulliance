@@ -732,25 +732,35 @@ function dhcb_runs_today($conn, $user_id) {
 }
 
 /**
- * Seconds until the allowance resets, asked of MySQL.
+ * Which round of the week we are in, and how long is left of it.
  *
- * THE WORD "TODAY" WAS A LIE AND IT READ AS A BUG. The allowance is a
- * 24-hour block measured from the week's 4pm Thursday boundary, not a
+ * THE WORD "TODAY" WAS A LIE AND IT READ AS A BUG, TWICE. The allowance is
+ * a 24-hour round measured from the week's 4pm Thursday boundary, not a
  * calendar day -- so a player who sent three Crews at 2pm on Sunday came
- * back at half past four, saw "0 of 3 Crews sent today", and reported that
- * the page was letting them send more than the rules allow. It was not:
- * the block had turned at 4pm. The behaviour was right and the sentence
- * describing it was wrong, which is the worse of the two to ship.
+ * back at half past four, saw a fresh allowance, and reported that the page
+ * was letting them exceed the cap. It was not: the round had turned 38
+ * minutes earlier. Renaming it from "today" to "this round" was not enough
+ * on its own, because a boundary nobody can see is still a boundary nobody
+ * can see.
  *
- * MySQL, not PHP: started_at is written by the database and the two clocks
- * on this host disagree, which is the same hazard the cooldowns are
- * computed in SQL for.
+ * So the page shows the clock. The owner's call, and the right one: the
+ * mechanic is sound and what it needed was to be visible, not different.
+ *
+ * ONE QUERY FOR BOTH, because they are the same arithmetic -- the round is
+ * the whole part of the elapsed time and the remainder is what is left --
+ * and because MySQL has to answer it. started_at is written by the database
+ * and the two clocks on this host disagree, which is the same hazard the
+ * cooldowns are computed in SQL for.
  */
-function dhcb_block_left($conn) {
-	$r = @$conn->query("SELECT 86400 - MOD(TIMESTAMPDIFF(SECOND, "
-	                 . skl_week_start_sql() . ", NOW()), 86400) AS s");
-	if (!$r || !($x = $r->fetch_assoc())) return 0;
-	return max(0, min(86400, (int)$x['s']));
+function dhcb_round($conn) {
+	$w = skl_week_start_sql();
+	$r = @$conn->query("SELECT LEAST(6, GREATEST(0, FLOOR(TIMESTAMPDIFF(SECOND, $w, NOW()) / 86400))) AS n,
+	                           86400 - MOD(TIMESTAMPDIFF(SECOND, $w, NOW()), 86400) AS s");
+	if (!$r || !($x = $r->fetch_assoc())) return array('n' => 1, 'left' => 0);
+	return array(
+		'n'    => min(7, max(1, (int)$x['n'] + 1)),          // 1-based, for reading
+		'left' => max(0, min(86400, (int)$x['s'])),
+	);
 }
 
 /**
@@ -805,7 +815,8 @@ function dhcb_entry_block($conn, $user_id, $crew = null) {
 		/* NAME THE RESET, do not say "tomorrow". The allowance turns at 4pm
 		   CT, so for most of the afternoon "tomorrow" is wrong by hours and
 		   in the wrong direction -- it reads as a longer wait than it is. */
-		$left = dhcb_block_left($conn);
+		$rd   = dhcb_round($conn);
+		$left = $rd['left'];
 		return 'You have sent all ' . DHCB_DAILY_RUNS . ' Crews for this round. '
 		     . 'The next ' . DHCB_DAILY_RUNS . ' land at 4pm CT'
 		     . ($left > 0 ? ', in ' . dhca_hms($left) : '')
