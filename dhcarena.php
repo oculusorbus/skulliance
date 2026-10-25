@@ -1,6 +1,11 @@
 <?php
 /**
- * dhcarena.php — DHC Arena.
+ * dhcarena.php — DHC Arena, and DHC Bosses.
+ *
+ * TWO INTERFACES SERVED FROM ONE FILE. dhcbosses.php is `$DHC_MODE = 'bosses'`
+ * and an include of this file: same board, same client, same Crew picker, and a
+ * setup column that branches. See the block above $DHC_MODE for why that shape
+ * and not two pages or one page with both panels.
  *
  * The real thing. dhcarena-prototype.php proved the game; this is it wired to
  * the platform: real Fighters, a real Crew, a real opponent, a server that owns
@@ -56,6 +61,40 @@ if (!$dhca_guest) { include 'verify.php'; include 'skulliance.php'; }
 require_once __DIR__ . '/dhcarena-lib.php';
 
 /*
+ * ============================================================================
+ * TWO INTERFACES, ONE IMPLEMENTATION.
+ * ============================================================================
+ *
+ * dhcbosses.php sets $DHC_MODE = 'bosses' and includes this file. The battle
+ * screen, the board, the engine, the client and the Crew picker are shared;
+ * only the setup column, the ladder and the buttons differ.
+ *
+ * WHY NOT A SECOND PAGE WITH ITS OWN COPY: the client below is two thousand
+ * lines of board, animation, timeline and end-card. A copy of it would be
+ * correct on the day it was made and wrong from the next engine fix onward,
+ * which is the same reasoning that made DHC Bosses an override of the Arena
+ * rather than a second game.
+ *
+ * WHY NOT ONE PAGE WITH BOTH PANELS, which is what shipped first: one Crew
+ * picker serving two games has to show two cooldowns at once, and no amount
+ * of labelling makes that read clearly. Each interface now shows ONE clock,
+ * which is the clock for the game you are on.
+ */
+/* REQUIRED HERE, not down in the setup reads, because the Crew the picker is
+   built from is overlaid with the boss cooldown before anything else touches
+   it, and because the mode itself depends on it. Optional on purpose: this
+   page renders with the library absent, which is what a host looks like
+   between a deploy and the migration. */
+$dhcb_lib = is_file(__DIR__ . '/dhcbosses-lib.php');
+if ($dhcb_lib) require_once __DIR__ . '/dhcbosses-lib.php';
+
+/* THE LIBRARY IS PART OF THE MODE. Boss mode prints DHCB_ constants in the
+   masthead and the ladder, so without the library there is no boss interface
+   to show and the Arena is the honest answer -- a blank page would not be. */
+$DHC_MODE = (isset($DHC_MODE) && $DHC_MODE === 'bosses' && $dhcb_lib) ? 'bosses' : 'arena';
+$IS_BOSS  = ($DHC_MODE === 'bosses');
+
+/*
  * SHAREABLE, which is the point of being public. Without these a link to the
  * Arena posted anywhere renders as a bare URL, and the reason the end-card
  * share button was pulled was precisely that nothing could scrape a card off a
@@ -70,7 +109,8 @@ require_once __DIR__ . '/dhcarena-lib.php';
  * no Arena screenshot on the server yet -- images ship by FTP, not in the repo.
  * Drop one at images/dhcarena.png and change this one line.
  */
-$dhca_canonical = 'https://www.skulliance.io/staking/dhcarena.php';
+$dhca_canonical = 'https://www.skulliance.io/staking/'
+                . ($IS_BOSS ? 'dhcbosses.php' : 'dhcarena.php');
 $dhca_og_image  = 'https://www.skulliance.io/staking/images/og.jpg';
 
 /*
@@ -95,13 +135,29 @@ if ($dhca_share_battle > 0) {
 	$dhca_og_image = 'https://www.skulliance.io/staking/dhc-arena-card.php?battle='
 	               . $dhca_share_battle;
 }
-$dhca_title     = 'DHC Arena — free Crew vs Crew puzzle battler | Skulliance';
-$dhca_desc      = 'Three Fighters against three on one shared board. Match a Fighter\'s '
-                . 'gem to make them act, and match size is reach: three touches their '
-                . 'front rank, five or more reaches the back. Free to play in your '
-                . 'browser, no account and no download.';
-$dhca_short     = 'Three Fighters against three on one shared board. Match a gem to make '
-                . 'that Fighter act. Free, instant, no account.';
+if ($IS_BOSS) {
+	/* ITS OWN CARD, because it is its own game as far as anybody sharing it
+	   is concerned. A link to the boss fight that unfurled as "free Crew vs
+	   Crew puzzle battler" would describe the wrong fight. */
+	$dhca_title = 'DHC Bosses — three bosses, one week, everybody swinging | Skulliance';
+	$dhca_desc  = 'Three bosses with one health bar each, shared by every player and '
+	            . 'standing for a week. Send a Crew of three, chip the bar down, and the '
+	            . 'traits everyone who took part rolls for get better the further the '
+	            . 'crew falls. Same board and same rules as DHC Arena.';
+	$dhca_short = 'Three bosses, one health bar each, shared by everybody for a week. '
+	            . 'Every point of damage counts.';
+} else {
+	$dhca_title = 'DHC Arena — free Crew vs Crew puzzle battler | Skulliance';
+	$dhca_desc  = 'Three Fighters against three on one shared board. Match a Fighter\'s '
+	            . 'gem to make them act, and match size is reach: three touches their '
+	            . 'front rank, five or more reaches the back. Free to play in your '
+	            . 'browser, no account and no download.';
+	$dhca_short = 'Three Fighters against three on one shared board. Match a gem to make '
+	            . 'that Fighter act. Free, instant, no account.';
+}
+$dhca_alt = $IS_BOSS
+	? 'DHC Bosses - three bosses standing against crews of three Fighters'
+	: 'DHC Arena - a Crew of three Fighters facing three more across a gem board';
 $page_title_override = $dhca_title;
 $extra_head = '
 <meta name="description" content="'.htmlspecialchars($dhca_desc).'">
@@ -113,7 +169,7 @@ $extra_head = '
 <meta property="og:title" content="'.htmlspecialchars($dhca_title).'">
 <meta property="og:description" content="'.htmlspecialchars($dhca_desc).'">
 <meta property="og:image" content="'.$dhca_og_image.'">
-<meta property="og:image:alt" content="'.($dhca_share_battle ? 'The two Crews from this DHC Arena match, the fallen Fighters dimmed' : 'DHC Arena - a Crew of three Fighters facing three more across a gem board').'">
+<meta property="og:image:alt" content="'.($dhca_share_battle ? 'The two Crews from this DHC Arena match, the fallen Fighters dimmed' : $dhca_alt).'">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="en_US">
@@ -121,14 +177,31 @@ $extra_head = '
 <meta name="twitter:title" content="'.htmlspecialchars($dhca_title).'">
 <meta name="twitter:description" content="'.htmlspecialchars($dhca_short).'">
 <meta name="twitter:image" content="'.$dhca_og_image.'">
-<meta name="twitter:image:alt" content="DHC Arena - a Crew of three Fighters facing three more across a gem board">
+<meta name="twitter:image:alt" content="'.htmlspecialchars($dhca_alt).'">
 ';
 
 include 'header.php';
 
 $user_id   = isset($_SESSION['userData']['user_id']) ? (int)$_SESSION['userData']['user_id'] : 0;
+/* The picker is shared, so it simply takes whichever roster this page is
+   for -- dhcb_roster() is dhca_crew() with the boss cooldown laid over it,
+   so every card renders identically and `available` means the right thing. */
 $crew      = $user_id ? dhca_crew($conn, $user_id) : array();
+if ($IS_BOSS && $user_id && $dhcb_lib) $crew = dhcb_roster($conn, $user_id, $crew);
 $available = dhca_available($crew);
+/* ARENA-ONLY READS. Each one is a query, and none of them has any meaning
+   on the Bosses page -- there are no rivals to pick from, no six-a-day
+   allowance and no monthly board over there. Skipping them is most of why
+   the Bosses page is the cheaper of the two to render. */
+$block     = '';
+$spent     = 0;
+$foesList  = array();
+$standouts = array();
+$standTags = array();
+$paidToday = array();
+$ladder    = array();
+$ladderAth = array();
+if (!$IS_BOSS) {
 $block     = $user_id ? dhca_entry_block($conn, $user_id) : 'Sign in to enter the Arena.';
 $spent     = $user_id ? dhca_battles_today($conn, $user_id) : 0;
 $foesList  = $user_id ? dhca_opponents($conn, $user_id) : array();
@@ -168,7 +241,6 @@ $foesList  = $user_id ? dhca_opponents($conn, $user_id) : array();
  * rather than listed twice, which is why $standTags is keyed by user id.
  */
 $standouts = $user_id ? dhca_standouts($conn, $user_id) : array();
-$standTags = array();
 foreach (array('nemesis', 'tormentor', 'duck') as $sk) {
 	if (empty($standouts[$sk])) continue;
 	$sid = (int)$standouts[$sk]['user_id'];
@@ -207,44 +279,32 @@ $ladder    = dhca_ladder($conn, null, 10);
    Shorter than monthly on purpose -- it changes slowly, so a long list of it
    is a long list of the same names. */
 $ladderAth = dhca_ladder($conn, DHCA_LADDER_ALL_TIME, 10);
+} /* !$IS_BOSS */
 
 /*
- * DHC BOSSES LIVES ON THIS PAGE ON PURPOSE.
+ * THE BOSSES SIDE OF THE SETUP COLUMN.
  *
- * It is the same engine, the same board, the same Crew and the same client;
- * only the opponents and the settlement differ. A second page would have
- * meant a second copy of two thousand lines of battle client, and the two
- * would have drifted the first time either was touched. So Bosses is a
- * PANEL in the setup column and a MODE in the client, and inherits every
- * fix the Arena ever gets.
+ * Read on BOTH pages, because the Arena still carries a one-line card
+ * pointing at the fight -- a player on the Arena has to be able to find out
+ * a boss week is running. Only the boss page does the expensive reads.
  *
  * Degrades to absent: the library is only required if it is installed, and
  * dhcb_state() returns empty until the migration has been run, which every
  * read below treats as "not switched on yet" rather than as an error.
  */
-$dhcb_on = array(); $dhcb_prog = null; $dhcb_block = ''; $dhcb_runs = 0; $dhcb_av = array(); $dhcb_slots = array();
-if (is_file(__DIR__ . '/dhcbosses-lib.php')) {
-	require_once __DIR__ . '/dhcbosses-lib.php';
+$dhcb_on = array(); $dhcb_prog = null; $dhcb_block = ''; $dhcb_runs = 0;
+$dhcb_slots = array(); $dhcb_lad = array(); $dhcb_days = 0;
+if ($dhcb_lib) {
 	$dhcb_on = dhcb_state($conn);
 	if ($dhcb_on) {
-		$dhcb_prog  = dhcb_progress($dhcb_on);
-		$dhcb_block = $user_id ? dhcb_entry_block($conn, $user_id, $crew) : 'Sign in to send a Crew.';
-		$dhcb_runs  = $user_id ? dhcb_runs_today($conn, $user_id) : 0;
-		$dhcb_slots = $user_id ? dhcb_cache_slots($conn, $user_id) : array();
-		/*
-		 * THE PICKER HAS TO KNOW BOTH CLOCKS.
-		 *
-		 * The cards are rendered from dhca_crew(), so a Fighter resting from
-		 * the Arena showed as unavailable for the Bosses as well -- which is
-		 * precisely the thing the separate cooldown exists to prevent. Both
-		 * sets of availability go onto every card and the picker switches
-		 * between them, rather than the page guessing which game the player
-		 * is about to play.
-		 */
-		if ($user_id) foreach (dhcb_roster($conn, $user_id, $crew) as $bf)
-			$dhcb_av[(int)$bf['id']] = array('ok' => !empty($bf['available']) ? 1 : 0,
-			                                 'left' => (int)$bf['bench_left'],
-			                                 'fell' => !empty($bf['fell']) ? 1 : 0);
+		$dhcb_prog = dhcb_progress($dhcb_on);
+		if ($IS_BOSS) {
+			$dhcb_block = $user_id ? dhcb_entry_block($conn, $user_id, $crew) : 'Sign in to send a Crew.';
+			$dhcb_runs  = $user_id ? dhcb_runs_today($conn, $user_id) : 0;
+			$dhcb_slots = $user_id ? dhcb_cache_slots($conn, $user_id) : array();
+			$dhcb_days  = $user_id ? dhcb_cache_days($conn, $user_id) : 0;
+			$dhcb_lad   = dhcb_ladder($conn, null, 10);
+		}
 	}
 }
 
@@ -1139,13 +1199,6 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-bblurb{font-size:9px;color:var(--dim);margin-top:4px;line-height:1.45}
 .arena-wrap .a-bsum{font-size:11px;color:var(--dim);margin:0 0 6px}
 .arena-wrap .a-bsum b{color:#e8eaed}
-/* Both cooldowns, on every card, always. A = Arena, B = Bosses. */
-.arena-wrap .a-card .avail{position:absolute;left:3px;bottom:3px;display:flex;gap:3px;z-index:2}
-.arena-wrap .a-card .pip{display:inline-flex;align-items:center;gap:2px;padding:1px 4px;
-  font-size:7.5px;font-weight:700;letter-spacing:.04em;border-radius:3px;
-  background:rgba(8,14,20,.88);color:var(--dim);border:1px solid rgba(255,255,255,.14)}
-.arena-wrap .a-card .pip.ok{color:var(--teal);border-color:rgba(0,200,160,.5)}
-.arena-wrap .a-card .pip b{font-weight:400;opacity:.85}
 /* ---- the trait cache ---- */
 .arena-wrap .a-cache{display:flex;gap:4px;margin:0 0 6px}
 .arena-wrap .a-slot{flex:1 1 0;min-width:0;text-align:center}
@@ -1426,8 +1479,14 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
        should not introduce themselves differently. -->
   <div class="a-masthead">
     <div class="a-intro-txt">
-      <div class="a-head"><h1>DHC Arena</h1></div>
-      <?php if ($dhca_guest): ?>
+      <div class="a-head"><h1><?php echo $IS_BOSS ? 'DHC Bosses' : 'DHC Arena'; ?></h1></div>
+      <?php if ($IS_BOSS): ?>
+      <p class="a-sub">Three bosses with one health bar each, shared by every player and
+         standing all week. Send a Crew of <?php echo DHCA_CREW_SIZE; ?> and chip the bar
+         down — <b>every point of damage counts</b>, and the traits everyone who took part
+         rolls for get better the further the crew falls. Same board, same rules, and a
+         recovery clock of its own: your Arena Crew is untouched.</p>
+      <?php elseif ($dhca_guest): ?>
       <p class="a-sub">Three Fighters against three, on a shared board. Each of your
          Crew owns a gem — matching it makes them act, and <b>match size is reach</b>:
          a match of 3 only touches their front rank, 5 or more reaches the back.
@@ -1443,7 +1502,22 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
              breakpoint lays .a-stats out as repeat(4,...), so a guest variant
              with a different number of tiles would collapse it. */ ?>
     <div class="a-stats">
-      <?php if ($dhca_guest): ?>
+      <?php if ($IS_BOSS && $dhca_guest): ?>
+      <?php /* A guest has no Crew, so "0/3 Crews left today" would be a count
+               of nothing dressed up as a status. Four tiles either way, since
+               the phone breakpoint lays this out as repeat(4,...). */ ?>
+      <div class="a-stat"><b><?php echo count($dhcb_on); ?></b><span>Bosses standing</span></div>
+      <div class="a-stat"><b><?php echo DHCA_CREW_SIZE; ?></b><span>Per Crew</span></div>
+      <div class="a-stat"><b><?php echo DHCB_DAILY_RUNS; ?></b><span>Crews a day</span></div>
+      <div class="a-stat"><b><?php echo DHCB_CACHE_MAX; ?></b><span>Traits a week</span></div>
+      <?php elseif ($IS_BOSS): ?>
+      <div class="a-stat"><b><?php echo count($crew); ?></b><span>Fighters</span></div>
+      <div class="a-stat"><b><?php echo count($available); ?></b><span>Rested</span></div>
+      <div class="a-stat"><b><?php echo max(0, DHCB_DAILY_RUNS - $dhcb_runs); ?>/<?php
+        echo DHCB_DAILY_RUNS; ?></b><span>Crews left today</span></div>
+      <div class="a-stat"><b><?php echo (int)$dhcb_days; ?>/<?php
+        echo DHCB_CACHE_MAX; ?></b><span>Traits banked</span></div>
+      <?php elseif ($dhca_guest): ?>
       <div class="a-stat"><b><?php echo DHCA_CREW_SIZE; ?></b><span>Per Crew</span></div>
       <div class="a-stat"><b><?php echo count(dhca_kits()); ?></b><span>Fighting styles</span></div>
       <div class="a-stat"><b>∞</b><span>Practice</span></div>
@@ -1457,7 +1531,20 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
     </div>
   </div>
 
-<?php if ($dhca_guest): ?>
+<?php if ($IS_BOSS): ?>
+  <?php /* THE BOSSES SAY IT IN THEIR OWN PANEL, where the button they are
+           talking about is. dhca_entry_block()'s banner is about the ranked
+           allowance and an open Arena battle, neither of which stops a Crew
+           going at a boss. */ ?>
+  <?php if ($dhca_guest): ?>
+  <div class="a-block">Three bosses, standing until Thursday 4pm CT, and everybody's damage
+    lands on the same health bar. <a href="index.php">Sign in</a> to build Fighters from
+    your own DHC traits and send a Crew at them.</div>
+  <?php elseif (count($crew) < DHCA_CREW_SIZE): ?>
+  <div class="a-block">A Crew is <?php echo DHCA_CREW_SIZE; ?> Fighters and you have
+    <?php echo count($crew); ?>. Build them in <a href="dhcfighters.php">DHC Fighters</a>.</div>
+  <?php endif; ?>
+<?php elseif ($dhca_guest): ?>
   <?php /* A guest is not blocked from anything they came here for, so this is an
            invitation rather than dhca_entry_block()'s refusal. No "build a Crew"
            link: dhcfighters.php is behind the gate this page just stepped around,
@@ -1606,22 +1693,13 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <div class="a-pick">
       <?php foreach ($crew as $f):
         $t = $f['traits']; $ok = $f['available']; ?>
-        <?php
-          $bv  = isset($dhcb_av[(int)$f['id']]) ? $dhcb_av[(int)$f['id']] : null;
-          $bok = $bv ? !empty($bv['ok']) : true;      // no Bosses installed: never blocks
-          /* OUT ONLY WHEN BOTH GAMES ARE RESTING. A Fighter cooling down
-             from a ranked battle is perfectly able to fight a boss, and
-             greying it out said the opposite -- which is what made the
-             send button look broken for no visible reason. */
-          $anyOk = $ok || ($dhcb_on && $bok);
-        ?>
-        <div class="a-card<?php echo $anyOk?'':' out'; ?>" data-fid="<?php echo (int)$f['id']; ?>"
+        <?php /* ONE CLOCK, AND IT IS THIS PAGE'S CLOCK. $crew came from
+                 dhcb_roster() on the Bosses page and dhca_crew() on the
+                 Arena, so `available` already means "ready for the game you
+                 are looking at". The two-pip card this replaces existed only
+                 because one picker was serving both games. */ ?>
+        <div class="a-card<?php echo $ok?'':' out'; ?>" data-fid="<?php echo (int)$f['id']; ?>"
              data-ok="<?php echo $ok?1:0; ?>"
-             data-bok="<?php echo $bv ? (int)$bv['ok'] : 1; ?>"
-             data-bleft="<?php echo $bv ? (int)$bv['left'] : 0; ?>"
-             data-bfell="<?php echo $bv ? (int)$bv['fell'] : 0; ?>"
-             data-aleft="<?php echo (int)$f['bench_left']; ?>"
-             data-afell="<?php echo !empty($f['fell']) ? 1 : 0; ?>"
              data-hp="<?php echo (int)$f['hp']; ?>"
              data-pow="<?php echo (int)$f['pow']; ?>" data-kit="<?php echo htmlspecialchars($f['kit']['id']); ?>"
              data-score="<?php echo (int)$f['rarity_score']; ?>"
@@ -1648,28 +1726,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
               $kc = dhcf_slot_category($k); ?>
               <img loading="lazy" alt="" src="<?php echo $ART; ?>/250/<?php echo $kc; ?>/<?php echo htmlspecialchars($t[$k]); ?>.png" onerror="this.remove()">
             <?php endforeach; ?>
-            <?php /* BOTH CLOCKS, ALWAYS VISIBLE, NAMED.
-                     One Fighter has two independent cooldowns and the first
-                     version showed one of them behind a mode toggle -- so a
-                     Crew that could fight the bosses looked unavailable
-                     because the picker happened to be set to Arena, and the
-                     send button was dead with nothing on screen explaining
-                     it. Two pips cost less room than the toggle did and
-                     there is no state to discover. */ ?>
-            <div class="avail">
-              <span class="pip<?php echo $ok ? ' ok' : ''; ?>"
-                    title="<?php echo $ok ? 'Ready for the Arena'
-                      : (!empty($f['fell']) ? 'Resurrecting' : 'Recovering') . ' — Arena in '
-                        . dhca_hms($f['bench_left']); ?>">A<?php
-                echo $ok ? '' : '<b>' . dhca_hms($f['bench_left']) . '</b>'; ?></span>
-              <?php if ($dhcb_on): ?>
-              <span class="pip<?php echo $bok ? ' ok' : ''; ?>"
-                    title="<?php echo $bok ? 'Ready for the Bosses'
-                      : (!empty($bv['fell']) ? 'Resurrecting' : 'Recovering') . ' — Bosses in '
-                        . dhca_hms($bv ? (int)$bv['left'] : 0); ?>">B<?php
-                echo $bok ? '' : '<b>' . dhca_hms($bv ? (int)$bv['left'] : 0) . '</b>'; ?></span>
-              <?php endif; ?>
-            </div>
+            <?php if (!$ok): ?>
+              <div class="recover<?php echo !empty($f['fell']) ? ' fell' : ''; ?>"><?php
+                echo !empty($f['fell']) ? 'Resurrecting' : 'Recovering'; ?>
+                <b><?php echo dhca_hms($f['bench_left']); ?></b></div>
+            <?php endif; ?>
           </div>
           <div class="nm"><?php echo htmlspecialchars($f['display']); ?></div>
           <div class="st"><span>♥ <?php echo (int)$f['hp']; ?></span><span>⚔ <?php echo (int)$f['pow']; ?></span>
@@ -1713,6 +1774,10 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       </div>
     </div>
 
+    <?php /* ARENA ONLY: there is nobody to choose on the Bosses page, and the
+             two buttons at the bottom of it are the ranked entry and the live
+             challenge, neither of which exists over there. */ ?>
+    <?php if (!$IS_BOSS): ?>
     <div class="a-panel">
       <h2><?php echo $dhca_guest ? 'Play' : 'Choose a rival'; ?></h2>
       <div class="body">
@@ -1862,15 +1927,31 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
       <?php endif; ?>
       </div>
     </div>
+    <?php endif; /* !$IS_BOSS */ ?>
 
-    <?php /* ONE panel, two windows -- the same shape the Fighters page settled
-             on. They are the same five columns of the same table, so two
-             panels side by side would read as two different things and cost a
-             whole column. This month leads because it is the live race; all
-             time sits under it because it is the slower, longer answer. */ ?>
-    <?php if ($dhcb_on): $dp = $dhcb_prog; ?>
-    <div class="a-panel" id="aBossPanel">
+    <?php /* THE ARENA'S POINTER AT THE OTHER GAME. A boss week that nobody on
+             the Arena can see is a boss week nobody turns up to, and the
+             Arena is the page people already have open. One card, the live
+             state in it, and a link -- not the panel, which belongs on the
+             page that can act on it. */ ?>
+    <?php if (!$IS_BOSS && $dhcb_on): $dp = $dhcb_prog; ?>
+    <div class="a-panel">
       <h2>DHC Bosses</h2>
+      <div class="body">
+        <p class="a-sub" style="margin:0 0 8px">Three bosses, one health bar each, shared
+           by everybody, standing until Thursday 4pm CT. Your Arena Crew is untouched by
+           it: Fighters rest from the Bosses on their own clock.</p>
+        <div class="a-bsum"><b><?php echo round(100 * $dp['pct']); ?>%</b> of the crew is
+           down · <?php echo number_format($dp['dealt']); ?> of
+           <?php echo number_format($dp['max']); ?> damage</div>
+        <a class="btn go" href="dhcbosses.php">Go to the Bosses</a>
+      </div>
+    </div>
+    <?php endif; ?>
+
+    <?php if ($IS_BOSS && $dhcb_on): $dp = $dhcb_prog; ?>
+    <div class="a-panel" id="aBossPanel">
+      <h2>The crew this week</h2>
       <div class="body">
         <p class="a-sub" style="margin:0 0 10px">Three bosses, one health bar each, shared by
            everybody, standing all week. <b>Every point of damage counts</b> — the traits
@@ -1965,11 +2046,22 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <p class="a-sub" style="margin:8px 0 0"><?php
             echo (int)($dhcb_runs); ?> of <?php echo DHCB_DAILY_RUNS; ?> Crews sent today.
             Fighters rest from Bosses only — your Arena Crew is untouched.</p>
+          <?php /* #aMsg lives in the rival panel on the Arena, which this page
+                   does not have. The picker writes "Pick one more" into it and
+                   the start paths write their failures into it, so it has to
+                   exist on both pages or those messages go nowhere. */ ?>
+          <span class="a-sub" style="margin:0" id="aMsg"></span>
         <?php endif; ?>
       </div>
     </div>
     <?php endif; ?>
 
+    <?php /* ONE panel, two windows -- the same shape the Fighters page settled
+             on. They are the same five columns of the same table, so two
+             panels side by side would read as two different things and cost a
+             whole column. This month leads because it is the live race; all
+             time sits under it because it is the slower, longer answer. */ ?>
+    <?php if (!$IS_BOSS): ?>
     <div class="a-panel">
       <h2>Ladder</h2>
       <div class="body">
@@ -1985,6 +2077,30 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         </div>
       </div>
     </div>
+    <?php else: ?>
+    <?php /* THE BOSSES' OWN LADDER, and only one window on it. There is no
+             all-time board here on purpose: the ranking is damage per Fighter
+             fielded within one week, and summing that across every week ever
+             would rank the player who sent one perfect Crew in March above
+             somebody who has turned up every day since. The week IS the
+             season, and the CARBON is paid against it. */ ?>
+    <div class="a-panel">
+      <h2>Ladder</h2>
+      <div class="body">
+        <div class="a-lsec">
+          <h3>This week <span>closes Thursday 4pm CT</span></h3>
+          <?php echo dhcb_ladder_html($dhcb_lad, $user_id, $dhca_guest,
+                    'Nobody has finished a Crew against them yet this week. Be first.'); ?>
+        </div>
+        <p class="a-sub" style="margin:0">Ranked on <b>damage per Fighter fielded</b>, so a
+           deep Crew list is an advantage and not a win on its own. A minimum of
+           <?php echo (int)DHCB_LADDER_MIN_RUNS; ?> finished Crews puts you on the board, and
+           <b><?php echo number_format(DHCB_CARBON); ?> CARBON</b> is split down it when the
+           week closes — first place takes the largest share, and each rank below takes
+           the pool divided by its own position.</p>
+      </div>
+    </div>
+    <?php endif; ?>
 
     <?php /* THE MAP MOVED TO ITS OWN PAGE. It lived here first and did not
              survive real data: a ten-player graph in a 450px column is
@@ -3378,15 +3494,11 @@ var picked = [], rival = 0;
    this" gains one more arm and nothing else changes. */
 var bossRun = 0;
 var BOSS_URL = 'ajax/dhcbosses-action.php';
-
-/*
- * NO MODE. One Fighter has two independent cooldowns, and the first version
- * showed one of them behind an Arena/Bosses toggle -- so a Crew perfectly
- * able to fight a boss looked unavailable because the picker happened to be
- * set to Arena, and the send button sat dead with nothing on screen saying
- * why. Both clocks are now printed on every card as two pips, each button
- * reads the one it cares about, and there is no hidden state to discover.
- */
+/* WHICH PAGE THIS IS. Not a toggle the player can flip -- the mode is the URL
+   they are on, so there is no hidden state to discover and the cards carry one
+   cooldown, the one that applies here. It is read only for the few sentences
+   the two pages word differently. */
+var BOSS_MODE = <?php echo $IS_BOSS ? 'true' : 'false'; ?>;
 
 /* ---------------------------------------------------------------- paging ----
    Cards are hidden, never removed: a pick made on page 1 has to survive a walk
@@ -3551,29 +3663,24 @@ function paintPicker(){
    * THE BOSSES NEED A CREW BUT NO RIVAL, so they cannot ride `ready` --
    * that one requires a rival and would keep the button dead forever.
    *
-   * RESTED FOR BOSSES, read from data-bok rather than from data-ok. The
-   * picker swaps data-ok between the two cooldowns, so reading it here
-   * would make the button depend on which mode the picker happens to be
-   * showing, and a Crew perfectly able to fight a boss would look blocked
-   * because the picker was set to Arena.
+   * `resting` above is already the boss cooldown on this page -- the cards
+   * are rendered from dhcb_roster() here -- so there is one clock to read
+   * and no chance of the button disagreeing with the card beside it.
    *
    * The button only exists when the server says entry is open, so there is
    * nothing to check for the allowance or a downed crew.
    */
   var bg = $('aBossGo');
-  if (bg) {
-    var bossResting = picked.filter(function(id){
-      var c = byFid(id); return c && c.getAttribute('data-bok') !== '1';
-    }).length;
-    bg.disabled = (picked.length !== CREW_SIZE) || bossResting > 0;
-  }
+  if (bg) bg.disabled = (picked.length !== CREW_SIZE) || resting > 0;
   var msg = $('aMsg');
   if (!msg) return;
   if (picked.length !== CREW_SIZE) msg.textContent = 'Pick '+(CREW_SIZE - picked.length)+' more.';
-  else if (!rival)                 msg.textContent = 'Now pick a rival.';
-  else if (resting > 0)            msg.textContent = resting === 1
-      ? 'One of them is still recovering — live only.'
-      : resting + ' of them are still recovering — live only.';
+  else if (!rival && !BOSS_MODE)   msg.textContent = 'Now pick a rival.';
+  else if (resting > 0)            msg.textContent = BOSS_MODE
+      ? (resting === 1 ? 'One of them is still recovering from the Bosses.'
+                       : resting + ' of them are still recovering from the Bosses.')
+      : (resting === 1 ? 'One of them is still recovering — live only.'
+                       : resting + ' of them are still recovering — live only.');
   else if (BLOCKED)                msg.textContent = '';
   else                             msg.textContent = '';
 }
@@ -4306,9 +4413,42 @@ if (GUEST) {
      page opens the way the Practice button would, cinematic and all. The setup
      screen is still behind it, and Leave goes back to it.
      No resume: that endpoint is behind the login gate, and a guest has nothing
-     to resume by definition. */
-  $('aMsg').textContent = 'Drawing two Crews…';
-  startPractice(function(msg){ $('aMsg').textContent = msg; });
+     to resume by definition.
+
+     NOT ON THE BOSSES PAGE. A visitor there followed a link about three bosses
+     standing at a particular health, and throwing them into a practice match
+     against two random Crews answers a question they did not ask. The boss
+     panel and the week's board are what that page is; the Arena is one click
+     away and opens playing. */
+  if (!BOSS_MODE) {
+    $('aMsg').textContent = 'Drawing two Crews…';
+    startPractice(function(msg){ $('aMsg').textContent = msg; });
+  }
+} else if (BOSS_MODE) {
+/*
+ * THE BOSS PAGE RESUMES A BOSS RUN, which is a different endpoint and a
+ * different flag. Pointing the Arena's resume at this page would have opened
+ * a ranked battle on the Bosses screen -- same board, same client, and the
+ * next move posted to the wrong game.
+ *
+ * NO LIVE LOBBY POLL EITHER. A live challenge is an Arena thing and this page
+ * has no lobby to paint it into, so the poll would have been a request every
+ * four seconds for a panel that is not here.
+ */
+post({do:'resume'}, function(res){
+  if (!res || !res.ok) return;
+  if (battle.classList.contains('on') || practice || live) return;
+  bossRun = res.run_id || 0;
+  try {
+    openBattle({battle_id:0, state:res.state}, !res.state.moves);
+    logLine('sys', res.state.moves ? 'Picked up where you left off.'
+                                   : 'A run was waiting for you.');
+  } catch (e) {
+    bossRun = 0;
+    $('aMsg').textContent = 'A run is in progress but could not be drawn. Try reloading.';
+    if (window.console) console.error('bosses resume', e);
+  }
+}, function(){ /* nothing in progress is the normal case; stay quiet */ }, BOSS_URL);
 } else {
 /* Is somebody waiting to fight you? Cheap, and it is the only way a challenge
    issued in Discord thirty seconds ago reaches the page you just opened. */

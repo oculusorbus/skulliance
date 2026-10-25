@@ -999,6 +999,43 @@ function dhcb_ladder($conn, $week = null, $limit = 25) {
 
 /* ---------- reports --------------------------------------------------------- */
 
+/*
+ * THE WEEKLY BOARD, RENDERED.
+ *
+ * Same table, same classes and the same empty-state shape as
+ * dhca_ladder_html(), because it sits in the same panel on the same page and
+ * a second visual language for the same object would be a worse board, not a
+ * distinct one. What differs is the columns, and they differ because the
+ * ranking does: the Arena ranks on wins, this ranks on damage per Fighter
+ * fielded, so the number the order is based on has to be ON the board or the
+ * order looks arbitrary.
+ *
+ * CREWS AND FIGHTERS ARE CARRIED EVEN THOUGH THEY DECIDE NOTHING -- turning
+ * up with twenty-one Crews over a week is the thing the cache rewards, and a
+ * board that only showed the award metric would hide the effort entirely.
+ */
+function dhcb_ladder_html($rows, $user_id, $guest, $empty) {
+	if (!$rows) return '<p class="a-sub" style="margin:0">' . htmlspecialchars($empty) . '</p>';
+	$h = '<table class="a-lad"><thead><tr><th>#</th><th>'
+	   . ($guest ? 'Player' : 'Staker')
+	   . '</th><th>Per fighter</th><th>Damage</th><th>Crews</th></tr></thead><tbody>';
+	foreach ($rows as $i => $l) {
+		$me = ((int)$l['user_id'] === (int)$user_id) ? ' class="me"' : '';
+		/* The Fighter count rides the Crews cell rather than taking a sixth
+		   column: the panel is 450px and six columns of figures in it is a
+		   table nobody reads. Crews is the number a player is counting. */
+		$h .= '<tr' . $me . '>'
+		    . '<td class="r">' . ($i + 1) . '</td>'
+		    . '<td>' . htmlspecialchars($l['name']) . '</td>'
+		    . '<td class="r">' . number_format($l['per']) . '</td>'
+		    . '<td class="r">' . number_format($l['dealt']) . '</td>'
+		    . '<td class="r" title="' . (int)$l['fighters'] . ' Fighters fielded">'
+		    . (int)$l['runs'] . '</td>'
+		    . '</tr>';
+	}
+	return $h . '</tbody></table>';
+}
+
 /** Every Crew that went in on a day, newest first. The owner's report. */
 function dhcb_runs_report($conn, $day = null, $limit = 200) {
 	if ($day === null) $day = dhcb_day($conn);

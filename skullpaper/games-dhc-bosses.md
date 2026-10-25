@@ -4,7 +4,12 @@ Three bosses stand up every **Thursday at 4pm CT** with a health bar each, and *
 shares them**. You can send **three Crews a day**; every point of damage anyone
 lands comes off the same three bars, all week.
 
-It is played on the [[games-dhc-arena]] page, in the DHC Bosses panel.
+It has **its own page** at DHC Bosses in the games menu, with its own Crew picker and
+its own ladder. It is the same engine as [[games-dhc-arena]] underneath, which is why the
+board, the gems, the reach rule and the bombs are identical, but the two are separate
+games in every way that affects you: a separate daily allowance, a separate ladder, and
+most importantly **a separate recovery clock**. A Fighter resting from a ranked Arena
+battle can still be sent at the bosses, and the other way round.
 
 ## The crew
 
@@ -26,7 +31,7 @@ seven. Miss a day and you finish the week with six.
 
 Three Crews a day is deliberately too few to bank the week in one sitting, so
 a full cache is seven separate visits. You can see it filling on the Bosses
-panel: seven boxes, numbered 1 to 7, with the current one outlined and any you
+page: seven boxes, numbered 1 to 7, with the current one outlined and any you
 missed dotted out.
 
 The boxes are **numbered rather than named** because the week turns at 4pm, so
@@ -93,6 +98,11 @@ are all shown; none of them decide the order.
 
 CARBON is paid down the board by rank when the week closes on Thursday, the same harmonic
 split every board uses.
+
+There is **no all-time board** here, and that is deliberate: the ranking is damage per
+Fighter within one week, and adding that up across every week ever would put a player who
+sent one perfect Crew in March above somebody who has turned up every day since. The week
+is the season.
 
 ## If nobody finishes them
 

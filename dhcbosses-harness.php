@@ -421,47 +421,163 @@ foreach (array(array(999999, array('D34THBRNGR','CIP-666','X-K4T'), 1.0, true),
 }
 
 /* ---------------------------------------------------------------- *
- * THE PICKER KNOWS BOTH CLOCKS
+ * TWO INTERFACES, ONE IMPLEMENTATION
  * ---------------------------------------------------------------- */
-echo "\nthe Crew picker shows the right cooldown for the game being picked\n";
+echo "\nthe Bosses are their own page without being their own codebase\n";
 /*
- * THE BUG THIS EXISTS FOR. The cards are rendered from dhca_crew(), so a
- * Fighter resting from the Arena showed as unavailable for the Bosses too --
- * which is exactly what the separate cooldown exists to prevent. The player
- * would have been locked out of the boss crew by a ranked battle they fought
- * an hour earlier, and nothing would have looked broken.
+ * THE TWO FAILURES THESE SIT BETWEEN, because they pull in opposite
+ * directions and the design is the point where they cancel:
+ *
+ *   ONE PAGE FOR BOTH GAMES. Shipped first. The cards are rendered from
+ *   dhca_crew(), so a Fighter resting from a ranked battle showed as
+ *   unavailable for the Bosses too -- exactly what the separate cooldown
+ *   exists to prevent -- and the fix for THAT was two badges per card, which
+ *   the owner read as confusing because it is. "This is getting a bit
+ *   confusing" was the report; two addresses with one clock each was the call.
+ *
+ *   TWO PAGES WITH TWO COPIES. The obvious shape, and the one the owner ruled
+ *   out twice in writing: "Don't duplicate arena code as much as you can" and
+ *   "Precisely, it's an override, not a duplication." The client is ~2,000
+ *   lines of board, drag, cascade, timeline and end-card; a copy is correct
+ *   the day it is made and wrong from the next engine fix onward.
  */
 $ARE = file_get_contents(__DIR__ . '/dhcarena.php');
-ok(strpos($ARE, 'data-bok=') !== false && strpos($ARE, 'data-bleft=') !== false,
-   'the Fighter cards carry only one availability, so one of the two games shows the wrong one');
-/* The call, however it is parameterised -- it gained an optional
-   pre-fetched roster and this pinned the old argument list. */
-ok(preg_match('~dhcb_roster\(\$conn, \$user_id~', $ARE) === 1,
-   'the page never reads the boss roster, so the boss availability is guesswork');
+$BOS = file_get_contents(__DIR__ . '/dhcbosses.php');
+
 /*
- * BOTH CLOCKS ON EVERY CARD, WITH NO MODE TO DISCOVER.
+ * dhcbosses.php IS A MODE SWITCH. The check is on SIZE and on ABSENCE,
+ * because duplication does not announce itself -- it arrives as a page that
+ * grew a board of its own. Stripped of comments there is almost nothing in
+ * the file, and none of the Arena's furniture.
+ */
+$bosCode = trim(harness_strip_comments($BOS));
+ok(strlen($bosCode) < 400,
+   'dhcbosses.php has grown real code (' . strlen($bosCode) . ' bytes stripped); it is '
+ . 'supposed to be a mode switch, and the owner ruled out a duplicate twice');
+ok(strpos($bosCode, "\$DHC_MODE = 'bosses'") !== false
+   && preg_match('~(require|include)(_once)?\s*(__DIR__\s*\.\s*)?[\'"/]*dhcarena\.php~', $bosCode) === 1,
+   'dhcbosses.php does not set the mode and include the Arena, so the two have forked');
+foreach (array('a-card', 'class="grid"', 'endcard', 'layerImgs') as $own) {
+	ok(strpos($BOS, $own) === false,
+	   'dhcbosses.php carries its own ' . $own . ', which is the duplication this shape exists to avoid');
+}
+
+/*
+ * THE PAGE HAS A MODE AND THE MODE REACHES THE CLIENT. Without the first
+ * there is one interface again; without the second the handful of sentences
+ * the two pages word differently all read as the Arena's.
+ */
+ok(preg_match('~\$IS_BOSS\s*=\s*\(\$DHC_MODE === \'bosses\'\)~', $ARE) === 1,
+   'dhcarena.php no longer derives $IS_BOSS from $DHC_MODE');
+ok(preg_match('~var BOSS_MODE = <\?php echo \$IS_BOSS~', $ARE) === 1,
+   'the client cannot tell which page it is on');
+
+/*
+ * ONE CLOCK PER CARD, AND IT IS THE CLOCK FOR THAT PAGE.
  *
- * The first version put the two behind an Arena/Bosses toggle, and the
- * owner hit exactly what that costs: a Crew perfectly able to fight a boss
- * looked unavailable because the picker happened to be showing the Arena,
- * and the send button sat dead with nothing on screen saying why. Two pips
- * take less room than the toggle did and there is no hidden state.
+ * This is the whole reason the pages split. The picker is shared, so the
+ * separation has to happen in the ROSTER it is given: dhcb_roster() is
+ * dhca_crew() with the boss bench laid over it, so `available` on a card
+ * means "ready for the game you are looking at" and nothing downstream has
+ * to know which game that is.
  */
+ok(preg_match('~\$IS_BOSS && \$user_id && \$dhcb_lib\) \$crew = dhcb_roster\(\$conn, \$user_id~', $ARE) === 1,
+   'the boss page builds its picker from the Arena roster, so a Fighter resting from a '
+ . 'ranked battle looks unavailable for the Bosses');
+/* AND NO SECOND SOURCE LEFT ON THE CARD. The two-pip card is gone, and it
+   must not come back by halves: a card with one clock and a button reading
+   another is the original bug wearing new names. */
+foreach (array('data-bok', 'data-bleft', 'data-bfell', '$dhcb_av', 'class="pip') as $gone) {
+	ok(strpos($ARE, $gone) === false,
+	   'the two-clock card is back (' . $gone . '); each page shows one clock now');
+}
+ok(preg_match('~class="a-card<\?php echo \$ok\?\'\':\' out\'~', $ARE) === 1,
+   'the card no longer dims on this page\'s own availability');
+/* NO MODE TOGGLE EITHER -- the first attempt at one picker for two games,
+   and the toggle is what made the send button look broken. */
 ok(strpos($ARE, 'applyPickMode') === false && strpos($ARE, 'pickMode') === false,
-   'the picker mode is back; one Fighter has two cooldowns and hiding one behind a toggle '
- . 'is what made the send button look broken');
-ok(substr_count($ARE, 'class="pip') >= 1 && strpos($ARE, '$dhcb_av[(int)$f') !== false,
-   'the cards do not show both cooldowns');
+   'the picker mode toggle is back; the mode is the URL now');
+
 /*
- * AND A CARD IS ONLY DEAD WHEN BOTH GAMES ARE. Greying a Fighter out
- * because it is cooling down from a ranked battle says it cannot fight a
- * boss, which is the opposite of true and the whole reason the second
- * table exists.
+ * BOSS MODE DOES NOT RUN THE ARENA'S QUERIES. Six of them, and none has any
+ * meaning on the boss page -- no rivals to choose, no monthly season, no
+ * ranked allowance. Leaving one outside the guard is a query per page view
+ * that pays for nothing, which is the failure that made the first version of
+ * this page time out.
  */
-ok(strpos($ARE, '$anyOk = $ok || ($dhcb_on && $bok);') !== false,
-   'a Fighter resting from the Arena is greyed out for the Bosses too');
-ok(strpos($ARE, 'echo $anyOk?\'\':\' out\'') !== false,
-   'the card still dims on the Arena cooldown alone');
+$guardA = strpos($ARE, 'if (!$IS_BOSS) {');
+$guardB = strpos($ARE, '} /* !$IS_BOSS */');
+ok($guardA !== false && $guardB !== false && $guardB > $guardA,
+   'the Arena-only setup block is no longer fenced by $IS_BOSS');
+$fenced = ($guardA !== false && $guardB > $guardA) ? substr($ARE, $guardA, $guardB - $guardA) : '';
+/* CALL SITES, hence the '$conn' -- all six take the handle first, and the
+   bare names are all over the page's commentary. A count of the name would
+   pass on prose. */
+foreach (array('dhca_entry_block($conn', 'dhca_battles_today($conn', 'dhca_opponents($conn',
+               'dhca_standouts($conn', 'dhca_paid_today($conn', 'dhca_ladder($conn') as $q) {
+	ok(substr_count($fenced, $q) >= 1
+	   && substr_count($ARE, $q) === substr_count($fenced, $q),
+	   $q . ' runs on the Bosses page too, where its answer is unused');
+}
+/* And the expensive boss reads are equally fenced the other way: the Arena
+   carries a pointer card, not the panel, so it must not pay for the roster,
+   the cache or the board. */
+foreach (array('dhcb_entry_block(', 'dhcb_runs_today(', 'dhcb_cache_slots(',
+               'dhcb_cache_days(', 'dhcb_ladder($conn') as $q) {
+	$at = strpos($ARE, $q);
+	ok($at !== false && strpos(substr($ARE, max(0, $at - 400), 400), 'if ($IS_BOSS)') !== false,
+	   $q . ' runs on the Arena page, which has no panel to show it in');
+}
+
+/*
+ * EACH PAGE RESUMES ITS OWN GAME.
+ *
+ * Both endpoints answer `resume`, and the Arena's was the only one wired. On
+ * the Bosses page that would have reopened a ranked battle -- same board,
+ * same client, bossRun unset -- and the next move would have been posted to
+ * dhcarena-action.php against a run the player was not in.
+ */
+$bootA = strpos($ARE, '} else if (BOSS_MODE) {');
+$bootB = $bootA !== false ? strpos($ARE, "
+} else {", $bootA) : false;
+ok($bootA !== false && $bootB !== false,
+   'the signed-in boot path has no boss arm, so the Bosses page resumes an Arena battle');
+$boot = ($bootA !== false && $bootB !== false) ? substr($ARE, $bootA, $bootB - $bootA) : '';
+ok(preg_match('~post\(\{do:\'resume\'\}.*?BOSS_URL\)~s', $boot) === 1,
+   'the boss resume does not post to the boss endpoint');
+ok(strpos($boot, 'bossRun = res.run_id') !== false,
+   'a resumed run does not set bossRun, so the next move goes to the Arena');
+ok(strpos($boot, 'liveLobbyPoll') === false,
+   'the Bosses page polls the live lobby every four seconds for a panel it does not have');
+
+/*
+ * EACH PAGE HAS ITS OWN LADDER, which is what the owner asked for in the
+ * same breath as the interface: "With its own ladder, etc."
+ */
+ok(strpos($ARE, 'dhcb_ladder_html($dhcb_lad') !== false,
+   'the Bosses page does not render its own board');
+ok(preg_match('~<\?php if \(!\$IS_BOSS\): \?>\s*<div class="a-panel">\s*<h2>Ladder</h2>~', $ARE) === 1,
+   'the Arena ladder is not fenced off the Bosses page, so the boss board sits under a '
+ . 'monthly ranked board that has nothing to do with it');
+/* THE RENDERER, EXECUTED -- not read. Same five-column table and the same
+   empty-state shape as the Arena's, because it lands in the same panel. */
+$ldb = dhcb_ladder_html(array(
+	array('user_id'=>7, 'name'=>'Smoke', 'per'=>4210, 'dealt'=>12630, 'runs'=>3, 'fighters'=>9),
+	array('user_id'=>9, 'name'=>'Ash',   'per'=>3100, 'dealt'=>18600, 'runs'=>6, 'fighters'=>18),
+), 7, false, 'Nobody yet.');
+ok(strpos($ldb, '<table class="a-lad">') === 0,
+   'the boss board is not the same table as the Arena\'s, so it will not inherit its styling');
+ok(substr_count($ldb, '<th>') === 5 && substr_count($ldb, '<tr') === 3,
+   'the boss board is not five columns and two rows: ' . substr_count($ldb, '<th>')
+ . ' columns, ' . (substr_count($ldb, '<tr') - 1) . ' rows');
+ok(strpos($ldb, 'class="me"') !== false,
+   'the board does not mark the reader\'s own row');
+ok(strpos($ldb, '4,210') !== false && strpos($ldb, '12,630') !== false,
+   'the board does not print the figure it is ranked on');
+ok(strpos($ldb, '9 Fighters fielded') !== false,
+   'the Fighter count is nowhere on the board, and turning up is what the cache rewards');
+ok(strpos(dhcb_ladder_html(array(), 7, false, 'Nobody yet.'), 'Nobody yet.') !== false,
+   'an empty week renders no empty state');
 
 /* ---------------------------------------------------------------- *
  * THE ADMIN REPORT

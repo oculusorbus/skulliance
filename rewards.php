@@ -106,9 +106,25 @@ $reward_jobs = array(
 		if (!function_exists('dhcb_settle') && is_file(__DIR__ . '/dhcbosses-lib.php'))
 			require_once __DIR__ . '/dhcbosses-lib.php';
 		if (!function_exists('dhcb_settle')) { echo "DHC Bosses not installed.\n"; return; }
-		$r = $conn->query("SELECT DATE_SUB(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY),
-		                                   INTERVAL 7 DAY) AS w");
-		$week = ($r && ($x = $r->fetch_assoc())) ? $x['w'] : date('Y-m-d', strtotime('monday last week'));
+		/*
+		 * THE WEEK THAT JUST CLOSED, AND IT IS A THURSDAY.
+		 *
+		 * This asked MySQL for last Monday, which is not a date any row in
+		 * dhc_boss_runs carries -- the platform week turns 4pm Thursday and
+		 * `day` holds that Thursday. Settling against a Monday would have
+		 * found no participants, paid nobody, and reported a clean run.
+		 *
+		 * skl_week_start_sql() is the one home for that rule, in MySQL's
+		 * dialect because the clocks on this host disagree and `day` is
+		 * written by the database. Seven days back from the current week's
+		 * boundary IS the week that just ended -- the cron fires after the
+		 * turn, so "now" is already inside the new week.
+		 */
+		require_once __DIR__ . '/lib/week-start.php';
+		$r = $conn->query('SELECT DATE(DATE_SUB(' . skl_week_start_sql()
+		                . ', INTERVAL 7 DAY)) AS w');
+		$week = ($r && ($x = $r->fetch_assoc()))
+		      ? $x['w'] : date('Y-m-d', strtotime('-7 days', strtotime(skl_week_key())));
 		$res  = dhcb_settle($conn, $week, true);
 		printf("DHC Bosses %s: %d players paid %d traits on the %s table (%d%% of the crew down)\n",
 			$week, (int)$res['paid'], (int)$res['traits'], $res['table'],

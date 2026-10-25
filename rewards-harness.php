@@ -38,6 +38,34 @@ function checkGuardiansLeaderboard($c,$m,$r)     { rec('guardians',$m,$r); }
 function checkCryptConquestLeaderboard($c,$m,$r) { rec('cryptconquest',$m,$r); }
 function checkDHCFightersLeaderboard($c,$m,$r)   { rec('dhcfighters',$m,$r); }
 function checkDHCArenaLeaderboard($c,$m,$r)      { rec('dhcarena',$m,$r); }
+function checkDHCBossesLeaderboard($c,$m,$r)     { rec('dhcbosses',$m,$r); }
+
+/*
+ * DHC BOSSES SETTLES ITS OWN WEEK, so that job is not just a board call --
+ * it reads the week out of the DATABASE and hands it to dhcb_settle(). Both
+ * halves are stubbed HERE rather than letting the job require the real
+ * library, because defining dhcb_settle() is exactly what the job's own
+ * function_exists() guard checks: the stub stands in and nothing touches a
+ * live table.
+ */
+$SETTLED = null;
+function dhcb_settle($c, $week, $pay) {
+	global $SETTLED; $SETTLED = $week; rec('settle:' . $week);
+	return array('paid'=>2, 'traits'=>5, 'table'=>'run', 'progress'=>array('pct'=>0.5));
+}
+function dhcb_spawn($c) { rec('spawn'); return array(); }
+
+/*
+ * A HANDLE THAT ANSWERS ONE QUESTION. The jobs took no $conn worth speaking
+ * of until DHC Bosses, which asks the database for the week boundary -- the
+ * clocks on this host disagree, so it has to be MySQL that answers. null
+ * would be a fatal inside the job, which is how this harness went red.
+ */
+class RwRes { public $w; function __construct($w){ $this->w = $w; }
+	function fetch_assoc(){ return array('w' => $this->w); } }
+class RwConn { public $sql = array(); public $week = '2026-10-15';
+	function query($q){ $this->sql[] = $q; return new RwRes($this->week); } }
+$CONN = new RwConn();
 
 /* Pull the job table and the runner out of rewards.php, so this tests the
    shipped file rather than a description of it. */
@@ -45,28 +73,34 @@ $src = file_get_contents(__DIR__ . '/rewards.php');
 $from = strpos($src, '$reward_jobs = array(');
 $to   = strpos($src, "/* Individual flags");
 eval(substr($src, $from, $to - $from));
-ok(isset($reward_jobs) && count($reward_jobs) === 15, 'fifteen jobs defined');
+ok(isset($reward_jobs) && count($reward_jobs) === 17, 'seventeen jobs defined: '
+   . (isset($reward_jobs) ? count($reward_jobs) : 0));
 
 function names($cadence) { global $reward_jobs;
 	$o = array(); foreach ($reward_jobs as $n => $d) if ($d[0] === $cadence) $o[] = $n; return $o; }
-function fire($name) { global $reward_jobs, $CALLS; $CALLS = array(); $reward_jobs[$name][1](null);
+function fire($name) { global $reward_jobs, $CALLS, $CONN; $CALLS = array(); $reward_jobs[$name][1]($CONN);
 	$o = array(); foreach ($CALLS as $c) $o[] = $c[0]; return $o; }
 
 echo "cadences\n";
 $w = names('weekly'); $m = names('monthly');
-ok($w === array('swaps','bosses','gauntlets','cryptcrawl','skullracer','obscura'),
-   'the six weekly boards, and only those');
+ok($w === array('swaps','bosses','gauntlets','cryptcrawl','skullracer','obscura',
+                'dhcbosses','dhcbosses-week'),
+   'the eight weekly boards, and only those: ' . implode(',', $w));
 ok($m === array('missions','streaks','raids','factions','monstrocity','guardians',
                 'cryptconquest','dhcfighters','dhcarena'),
    'the nine monthly boards, and only those');
 ok(!array_intersect($w, $m), 'no board is in both cadences');
-ok(count($w) + count($m) === 15, 'and none is in neither');
+ok(count($w) + count($m) === 17, 'and none is in neither');
 
 echo "\nevery job pays, none displays\n";
 foreach ($reward_jobs as $n => $d) {
-	global $CALLS; $CALLS = array(); $d[1](null);
+	global $CALLS, $CONN; $CALLS = array();
+	ob_start(); $d[1]($CONN); ob_end_clean();
 	foreach ($CALLS as $c) {
-		if (strpos($c[0], 'reset:') === 0) continue;
+		/* reset:, settle: and spawn are not board calls and carry no
+		   monthly/reward pair to check. */
+		if (strpos($c[0], 'reset:') === 0 || strpos($c[0], 'settle:') === 0
+		    || $c[0] === 'spawn') continue;
 		ok(isset($c[2]) && $c[2] === true,  $n . ': called in reward mode');
 		ok(isset($c[1]) && $c[1] === false, $n . ': monthly flag false, so the reward window decides the period');
 	}
@@ -80,22 +114,59 @@ ok(fire('obscura') === array('obscura','reset:obscura'),
 ok(fire('guardians') === array('guardians'),
    'guardians resets itself, so the job must not call a second reset');
 
+echo "\nDHC Bosses settles the week that actually closed\n";
+/*
+ * THE BUG THIS EXISTS FOR, and it would have been silent.
+ *
+ * The job asked MySQL for LAST MONDAY. Nothing in dhc_boss_runs carries a
+ * Monday -- the platform week turns 4pm Thursday and `day` holds that
+ * Thursday -- so dhcb_settle() would have found no participants, paid
+ * nobody, and printed a tidy "0 players paid 0 traits" every week.
+ *
+ * The rule has one home in two dialects, and this checks the job uses the
+ * MySQL one VERBATIM: the clocks on this host disagree and `day` is written
+ * by the database, so asking PHP would be the same class of bug.
+ */
+require_once __DIR__ . '/lib/week-start.php';
+$CONN->sql = array();
+$fired = fire('dhcbosses-week');
+ok(count($CONN->sql) >= 1, 'the settle job asks the database nothing, so it is guessing the week');
+$wsql = isset($CONN->sql[0]) ? $CONN->sql[0] : '';
+ok(strpos($wsql, skl_week_start_sql()) !== false,
+   'the settle job does not use skl_week_start_sql(), so its week is not the platform week');
+/* OUTSIDE THE RULE, NOT INSIDE IT. skl_week_start_sql() carries its own
+   'INTERVAL 7 DAY' -- the Thursday-before-4pm branch -- so looking for that
+   string in the whole query passed on the rule's own text and said nothing
+   about the step back. The rule is removed first and the remainder checked. */
+$outer = str_replace(skl_week_start_sql(), '{WEEK}', $wsql);
+ok(strpos($outer, 'INTERVAL 7 DAY') !== false,
+   'the settle job does not step back a week, so it settles the week still being '
+ . 'played: ' . preg_replace('~\s+~', ' ', $outer));
+ok(strpos($wsql, 'WEEKDAY(CURDATE())') === false && strpos($wsql, 'monday') === false,
+   'the Monday boundary is back; no row in dhc_boss_runs carries a Monday');
+ok($SETTLED === $CONN->week,
+   'the week the database answered with is not the week that got settled: ' . var_export($SETTLED, true));
+ok(in_array('spawn', $fired, true),
+   'the new week\'s crew is not stood up, so the first player of the week pays for the scaling query');
+ok(array_search('spawn', $fired, true) > array_search('settle:' . $CONN->week, $fired, true),
+   'this week\'s crew is spawned BEFORE last week is settled');
+
 echo "\nthe combined runner\n";
 /* run_reward_jobs() came along with the slice above -- it sits between the
    job table and the individual-flag loop -- so it is already defined. */
 ok(function_exists('run_reward_jobs'), 'the runner was read out of rewards.php too');
 
 $CALLS = array();
-ob_start(); $r = run_reward_jobs(null, $reward_jobs, 'weekly'); ob_end_clean();
+ob_start(); $r = run_reward_jobs($CONN, $reward_jobs, 'weekly'); ob_end_clean();
 ok($r['done'] === $w, 'weekly runs exactly the weekly boards, in order');
 ok(!$r['failed'], 'and nothing fails');
 
 $CALLS = array();
-ob_start(); $r = run_reward_jobs(null, $reward_jobs, 'monthly'); ob_end_clean();
+ob_start(); $r = run_reward_jobs($CONN, $reward_jobs, 'monthly'); ob_end_clean();
 ok($r['done'] === $m, 'monthly runs exactly the monthly boards, in order');
 
 echo "\nresuming a half-finished run\n";
-ob_start(); $r = run_reward_jobs(null, $reward_jobs, 'monthly', array('missions','raids')); ob_end_clean();
+ob_start(); $r = run_reward_jobs($CONN, $reward_jobs, 'monthly', array('missions','raids')); ob_end_clean();
 ok($r['skipped'] === array('missions','raids'), 'skip= leaves the named boards alone');
 ok(!in_array('missions', $r['done'], true) && !in_array('raids', $r['done'], true),
    'and they really are not paid');
@@ -105,7 +176,7 @@ echo "\none broken board does not strand the rest\n";
 $boom = $reward_jobs;
 $boom['raids'] = array('monthly', function ($c) { throw new RuntimeException('table gone'); });
 $CALLS = array();
-ob_start(); $r = run_reward_jobs(null, $boom, 'monthly'); $out = ob_get_clean();
+ob_start(); $r = run_reward_jobs($CONN, $boom, 'monthly'); $out = ob_get_clean();
 ok($r['failed'] === array('raids'), 'the failure is reported');
 ok(count($r['done']) === 8, 'and every other board still paid');
 ok(in_array('dhcarena', $r['done'], true), 'including the ones AFTER the failure');

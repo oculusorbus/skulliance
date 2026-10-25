@@ -450,12 +450,33 @@ echo "\nthe Arena page only claims a match card when there is a match\n";
 	   not shares. */
 	ok(strpos($page, 'if ($dhca_share_battle > 0) {') !== false,
 	   'the match card is claimed unconditionally, including on a plain visit');
-	/* THE CANONICAL STAYS THE BARE PAGE. Thousands of shared matches must
-	   consolidate onto one indexable URL rather than spawning one each. */
-	$cpos = strpos($page, "\$dhca_canonical = 'https://www.skulliance.io/staking/dhcarena.php';");
-	ok($cpos !== false, 'the canonical is no longer the bare Arena page');
+	/*
+	 * THE CANONICAL STAYS THE BARE PAGE. Thousands of shared matches must
+	 * consolidate onto one indexable URL rather than spawning one each.
+	 *
+	 * It now varies by INTERFACE -- dhcbosses.php is the same file with
+	 * $DHC_MODE set, and the two pages are genuinely two documents -- so this
+	 * EXECUTES the expression in both modes instead of pinning one spelling.
+	 * What must hold either way: a bare page URL and no query string, whatever
+	 * ?battle= was on the request.
+	 */
+	$cexpr = '';
+	if (preg_match('~\$dhca_canonical = (.*?);\n~s', $page, $mm)) $cexpr = $mm[1];
+	ok($cexpr !== '', 'the canonical is not assigned in one statement any more');
+	foreach (array(false => 'dhcarena.php', true => 'dhcbosses.php') as $isb => $want) {
+		$IS_BOSS = (bool)$isb;
+		$got = @eval('return ' . $cexpr . ';');
+		ok($got === 'https://www.skulliance.io/staking/' . $want,
+		   ($isb ? 'the Bosses' : 'the Arena') . ' canonical is not its own bare page: '
+		 . var_export($got, true));
+		ok(is_string($got) && strpos($got, '?') === false,
+		   ($isb ? 'the Bosses' : 'the Arena') . ' canonical carries a query string, so every '
+		 . 'shared match is its own indexable page');
+	}
 	ok(strpos($page, "\$dhca_canonical .=") === false,
-	   'the canonical now varies per battle, so every shared match is its own indexable page');
+	   'the canonical is appended to, so it can still grow a per-battle tail');
+	ok(strpos($cexpr, 'share_battle') === false && strpos($cexpr, '_GET') === false,
+	   'the canonical is built from the request, so a shared match gets its own URL');
 	/* And the share link has to carry the battle or none of this fires. */
 	ok(strpos($page, "+ (battleId > 0 ? '?battle=' + battleId : '')") !== false,
 	   'the share link does not name the battle, so the post gets the generic card');
