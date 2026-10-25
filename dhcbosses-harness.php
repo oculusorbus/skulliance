@@ -380,7 +380,9 @@ echo "\nthe Crew picker shows the right cooldown for the game being picked\n";
 $ARE = file_get_contents(__DIR__ . '/dhcarena.php');
 ok(strpos($ARE, 'data-bok=') !== false && strpos($ARE, 'data-bleft=') !== false,
    'the Fighter cards carry only one availability, so one of the two games shows the wrong one');
-ok(strpos($ARE, 'dhcb_roster($conn, $user_id)') !== false,
+/* The call, however it is parameterised -- it gained an optional
+   pre-fetched roster and this pinned the old argument list. */
+ok(preg_match('~dhcb_roster\(\$conn, \$user_id~', $ARE) === 1,
    'the page never reads the boss roster, so the boss availability is guesswork');
 ok(strpos($ARE, 'function applyPickMode') !== false,
    'there is no way to switch the picker between the two cooldowns');
@@ -407,6 +409,76 @@ ok(strpos($ADM, 'dhcb_runs_report(') !== false, 'the report does not list the ru
 foreach (array('dhcb_settle(', 'dhcb_spawn(', 'INSERT', 'UPDATE ', 'DELETE') as $w) {
 	if (!ok(strpos($ADM, $w) === false, "the report page can write ($w), and it must not")) break;
 }
+
+/* ---------------------------------------------------------------- *
+ * A WHOLE DAY
+ * ---------------------------------------------------------------- */
+echo "\na day's worth of runs brings the crew down and escalates the table\n";
+/*
+ * The pieces are tested above; this is the loop they actually run in. Runs
+ * are committed one after another against the same three bars, exactly as
+ * separate players would, and the table is read as the damage accumulates.
+ */
+$dc = new HBConn();
+$budget = 9000;                       // the floor, which is a small community
+$split  = array();
+foreach (dhcb_bosses() as $bz) $split[$bz['key']] = (int)round($budget * $bz['hp']);
+$dc->health = $split;
+$maxes = $split;
+
+$tables = array(); $runsUsed = 0; $totalDealt = 0;
+for ($r = 0; $r < 60; $r++) {
+	$left = array_sum($dc->health);
+	if ($left <= 0) break;
+	/* One run's worth of damage, spread over whichever bosses still stand,
+	   the way a real board spreads it. */
+	$per = (int)floor(DHCB_DMG_PER_RUN / max(1, count(array_filter($dc->health))));
+	$snap = array(); $deal = array();
+	foreach ($dc->health as $k => $h) { if ($h <= 0) continue; $snap[$k] = $h; $deal[$k] = $per; }
+	if (!$snap) break;
+	$bb = hb_battle($snap, $deal);
+	dhcb_finish($dc, $bb);
+	$runsUsed++; $totalDealt += (int)$bb['dealtTotal'];
+
+	$state = array();
+	foreach ($dc->health as $k => $h) $state[$k] = array('max_health'=>$maxes[$k], 'health'=>$h, 'dead'=>($h <= 0));
+	$pr = dhcb_progress($state);
+	$tables[] = dhcb_tier_table($pr);
+}
+ok(array_sum($dc->health) === 0, 'the crew never fell in 60 runs against a floor-sized budget');
+ok($runsUsed > 3 && $runsUsed < 40, "the crew fell in $runsUsed runs, which is not a day's work");
+ok($totalDealt === $budget,
+   "the damage recorded ($totalDealt) does not equal the health that came off ($budget) -- "
+ . 'the ledger and the bars disagree, and the leaderboard ranks on the ledger');
+/* The table must climb and never fall back as the day goes on. */
+$ranks = array_map('dhcf_table_rank', $tables);
+$fellBack = false;
+for ($i = 1; $i < count($ranks); $i++) if ($ranks[$i] < $ranks[$i-1]) $fellBack = true;
+ok(!$fellBack, 'the table got worse partway through the day');
+ok(count($tables) && $tables[0] === 'run', 'the first run of the day already pays above the base table');
+$final = end($tables);
+ok($final === 'placement_1', "the cleared crew pays $final rather than the best table");
+printf("  %d runs took a %s-health crew down; table went %s -> %s\n",
+       $runsUsed, number_format($budget), $tables[0], $final);
+
+/* ---------------------------------------------------------------- *
+ * THE WEBHOOK THAT DOES NOT EXIST YET
+ * ---------------------------------------------------------------- */
+echo "\nwith no webhook configured it posts nothing, not to the general channel\n";
+$WH = file_get_contents(__DIR__ . '/webhooks.php');
+/*
+ * Without its own case, 'dhcbosses' falls through to getWebhook() and every
+ * boss run lands in the general channel -- at six runs a day per player that
+ * is the loudest thing on the server, and it would arrive the moment the
+ * feature went live rather than when somebody chose it.
+ */
+ok(strpos($WH, '$channel == "dhcbosses"') !== false,
+   'dhcbosses has no webhook case, so it falls through to the general channel');
+ok(strpos($WH, "function_exists('getDHCBossesWebhook')") !== false,
+   'the boss webhook is not resolved behind function_exists, so a missing credential is fatal '
+ . 'rather than silent');
+ok(strpos($WH, 'if($webhook != "")') !== false,
+   'an unresolved webhook is no longer guarded, so an empty URL would be curled');
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all DHC Bosses checks passed\n");
 exit($fail ? 1 : 0);

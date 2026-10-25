@@ -229,7 +229,7 @@ function dhcb_spawn($conn) {
 		$hp = max(1, (int)round($budget * $b['hp']));
 		$rows[] = sprintf("('%s','%s',%d,%d,%.3f,NOW())",
 			$esc, $conn->real_escape_string($b['key']), $hp, $hp,
-			$budget > 0 ? $budget / max(1, DHCB_HP_MIN) : 1);
+			$budget / max(1, (float)DHCB_HP_MIN));   // how far above the floor it spawned
 	}
 	@$conn->query("INSERT IGNORE INTO dhc_boss_day
 	               (day, boss_key, max_health, health, scale, created_at)
@@ -295,9 +295,16 @@ function dhcb_progress($state) {
  * of MySQL: the two clocks on this host do not agree and a cooldown compared
  * across them is hours out.
  */
-function dhcb_roster($conn, $user_id) {
+function dhcb_roster($conn, $user_id, $crew = null) {
 	$uid  = (int)$user_id;
-	$crew = dhca_crew($conn, $uid);
+	/*
+	 * THE CALLER MAY ALREADY HAVE THE ROSTER. dhca_crew() is not cheap -- it
+	 * joins the Fighter table and then decorates every row with
+	 * dhca_crew_profiles(), which is a second pass over the battle ledger --
+	 * and dhcarena.php has already paid for it before it gets here. Asking
+	 * again doubled the most expensive query on the page for nothing.
+	 */
+	if ($crew === null) $crew = dhca_crew($conn, $uid);
 	if (!$crew) return $crew;
 
 	$bench = array();
@@ -338,7 +345,7 @@ function dhcb_open_run($conn, $user_id) {
 }
 
 /** Why this player cannot send a Crew right now, or '' if they can. */
-function dhcb_entry_block($conn, $user_id) {
+function dhcb_entry_block($conn, $user_id, $crew = null) {
 	$state = dhcb_state($conn);
 	if (!$state) return 'The Bosses are not up yet.';
 	$p = dhcb_progress($state);
@@ -347,7 +354,7 @@ function dhcb_entry_block($conn, $user_id) {
 	if (dhcb_runs_today($conn, $user_id) >= DHCB_DAILY_RUNS)
 		return 'You have sent all ' . DHCB_DAILY_RUNS . ' Crews today.';
 	$avail = 0;
-	foreach (dhcb_roster($conn, $user_id) as $f) if ($f['available']) $avail++;
+	foreach (dhcb_roster($conn, $user_id, $crew) as $f) if ($f['available']) $avail++;
 	if ($avail < DHCB_CREW_SIZE)
 		return 'You need ' . DHCB_CREW_SIZE . ' rested Fighters. ' . $avail . ' ready.';
 	return '';
@@ -378,14 +385,16 @@ function dhcb_entry_block($conn, $user_id) {
  */
 function dhcb_start($conn, $user_id, $fighter_ids) {
 	$uid   = (int)$user_id;
-	$block = dhcb_entry_block($conn, $uid);
+	/* Built once and threaded through: dhca_crew() underneath is the most
+	   expensive query either game makes, and the gate and the validation
+	   both need the same answer. */
+	$roster = dhcb_roster($conn, $uid);
+	$block  = dhcb_entry_block($conn, $uid, $roster);
 	if ($block) return array(false, $block, null);
 
 	$day   = dhcb_spawn($conn);
 	$state = dhcb_state($conn, $day);
 	if (!$state) return array(false, 'The Bosses are not up yet.', null);
-
-	$roster = dhcb_roster($conn, $uid);
 	$byId = array(); foreach ($roster as $f) $byId[(int)$f['id']] = $f;
 	$mine = array();
 	foreach ($fighter_ids as $fid) {

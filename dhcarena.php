@@ -228,7 +228,7 @@ if (is_file(__DIR__ . '/dhcbosses-lib.php')) {
 	$dhcb_on = dhcb_state($conn);
 	if ($dhcb_on) {
 		$dhcb_prog  = dhcb_progress($dhcb_on);
-		$dhcb_block = $user_id ? dhcb_entry_block($conn, $user_id) : 'Sign in to send a Crew.';
+		$dhcb_block = $user_id ? dhcb_entry_block($conn, $user_id, $crew) : 'Sign in to send a Crew.';
 		$dhcb_runs  = $user_id ? dhcb_runs_today($conn, $user_id) : 0;
 		/*
 		 * THE PICKER HAS TO KNOW BOTH CLOCKS.
@@ -240,7 +240,7 @@ if (is_file(__DIR__ . '/dhcbosses-lib.php')) {
 		 * between them, rather than the page guessing which game the player
 		 * is about to play.
 		 */
-		if ($user_id) foreach (dhcb_roster($conn, $user_id) as $bf)
+		if ($user_id) foreach (dhcb_roster($conn, $user_id, $crew) as $bf)
 			$dhcb_av[(int)$bf['id']] = array('ok' => !empty($bf['available']) ? 1 : 0,
 			                                 'left' => (int)$bf['bench_left'],
 			                                 'fell' => !empty($bf['fell']) ? 1 : 0);

@@ -241,6 +241,20 @@ include_once __DIR__ . '/credentials/webhooks_credentials.php';
 			// for the same reason.
 			//   function getDHCArenaWebhook(){ return "https://discord.com/api/webhooks/..."; }
 			$webhook = function_exists('getDHCArenaWebhook') ? getDHCArenaWebhook() : "";
+		}else if($channel == "dhcbosses"){
+			// DHC Bosses, the daily shared-health crew. The credential does
+			// not exist yet and that is the intended state: an unresolved
+			// webhook is "" and the send below is guarded by
+			// `if($webhook != "")`, so the feature simply posts nothing
+			// until the line is added.
+			//
+			// WITHOUT THIS CASE IT WOULD FALL THROUGH TO getWebhook() and
+			// put every boss run in the general channel, which at six runs
+			// a day per player is the loudest thing on the server.
+			//
+			// Expected in credentials/webhooks_credentials.php as:
+			//   function getDHCBossesWebhook(){ return "https://discord.com/api/webhooks/..."; }
+			$webhook = function_exists('getDHCBossesWebhook') ? getDHCBossesWebhook() : "";
 		}else if($channel == "skullracer"){
 			// Same not-yet-configured situation as cryptconquest above --
 			// getSkullRacerWebhook() doesn't exist in
