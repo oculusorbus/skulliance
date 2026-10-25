@@ -208,6 +208,31 @@ $ladder    = dhca_ladder($conn, null, 10);
    is a long list of the same names. */
 $ladderAth = dhca_ladder($conn, DHCA_LADDER_ALL_TIME, 10);
 
+/*
+ * DHC BOSSES LIVES ON THIS PAGE ON PURPOSE.
+ *
+ * It is the same engine, the same board, the same Crew and the same client;
+ * only the opponents and the settlement differ. A second page would have
+ * meant a second copy of two thousand lines of battle client, and the two
+ * would have drifted the first time either was touched. So Bosses is a
+ * PANEL in the setup column and a MODE in the client, and inherits every
+ * fix the Arena ever gets.
+ *
+ * Degrades to absent: the library is only required if it is installed, and
+ * dhcb_state() returns empty until the migration has been run, which every
+ * read below treats as "not switched on yet" rather than as an error.
+ */
+$dhcb_on = array(); $dhcb_prog = null; $dhcb_block = ''; $dhcb_runs = 0;
+if (is_file(__DIR__ . '/dhcbosses-lib.php')) {
+	require_once __DIR__ . '/dhcbosses-lib.php';
+	$dhcb_on = dhcb_state($conn);
+	if ($dhcb_on) {
+		$dhcb_prog  = dhcb_progress($dhcb_on);
+		$dhcb_block = $user_id ? dhcb_entry_block($conn, $user_id) : 'Sign in to send a Crew.';
+		$dhcb_runs  = $user_id ? dhcb_runs_today($conn, $user_id) : 0;
+	}
+}
+
 
 /*
  * WHAT EACH FIGHTER WILL ACTUALLY BE, derived here so the picker can sort and
@@ -1084,6 +1109,22 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   letter-spacing:.1em;text-transform:uppercase;flex:none}
 .arena-wrap .a-picked .chip s{text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .arena-wrap .a-picked .chip i{font-style:normal;opacity:.55;flex:none}
+/* ---- DHC Bosses panel ---- */
+.arena-wrap .a-bosses{display:flex;gap:8px;margin:0 0 10px}
+.arena-wrap .a-boss{flex:1 1 0;min-width:0;text-align:center}
+.arena-wrap .a-boss img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:5px;
+  background:#0d2030;display:block;transform:translateZ(0)}
+.arena-wrap .a-boss.dead img{filter:grayscale(100%);opacity:.45}
+.arena-wrap .a-bname{font-size:9px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ochre);margin:5px 0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arena-wrap .a-bbar{height:5px;border-radius:3px;background:rgba(255,255,255,.10);overflow:hidden}
+.arena-wrap .a-bbar i{display:block;height:100%;background:var(--warn);border-radius:3px}
+.arena-wrap .a-boss.dead .a-bbar i{background:rgba(255,255,255,.18)}
+.arena-wrap .a-bhp{font-size:9px;color:var(--dim);margin-top:3px;font-variant-numeric:tabular-nums}
+.arena-wrap .a-bblurb{font-size:9px;color:var(--dim);margin-top:4px;line-height:1.45}
+.arena-wrap .a-bsum{font-size:11px;color:var(--dim);margin:0 0 6px}
+.arena-wrap .a-bsum b{color:#e8eaed}
+@media (max-width:420px){ .arena-wrap .a-bblurb{display:none} }
 /* Removing is the one destructive affordance on this screen, and --blood is
    the platform's own accent here, so it needs a colour of its own to read as
    "this takes something away". */
@@ -1758,6 +1799,62 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
              panels side by side would read as two different things and cost a
              whole column. This month leads because it is the live race; all
              time sits under it because it is the slower, longer answer. */ ?>
+    <?php if ($dhcb_on): $dp = $dhcb_prog; ?>
+    <div class="a-panel" id="aBossPanel">
+      <h2>DHC Bosses</h2>
+      <div class="body">
+        <p class="a-sub" style="margin:0 0 10px">Three bosses, one health bar each, shared by
+           everybody. Send a Crew as often as your allowance lasts. <b>Every point of damage
+           counts</b> — the trait everyone who takes part rolls for at the end of the day gets
+           better the further the crew falls, and dropping all three unlocks the best table.</p>
+
+        <div class="a-bosses">
+          <?php foreach ($dhcb_on as $bz):
+            $pct = $bz['max_health'] > 0 ? max(0, min(100, round(100 * $bz['health'] / $bz['max_health']))) : 0; ?>
+          <div class="a-boss<?php echo $bz['dead'] ? ' dead' : ''; ?>">
+            <img loading="lazy" alt="<?php echo htmlspecialchars($bz['name']); ?>"
+                 src="<?php echo htmlspecialchars($bz['art']); ?>" onerror="this.remove()">
+            <div class="a-bname"><?php echo htmlspecialchars($bz['name']); ?></div>
+            <div class="a-bbar"><i style="width:<?php echo $pct; ?>%"></i></div>
+            <div class="a-bhp"><?php echo $bz['dead']
+                ? 'down'
+                : number_format($bz['health']) . ' / ' . number_format($bz['max_health']); ?></div>
+            <div class="a-bblurb"><?php echo htmlspecialchars($bz['blurb']); ?></div>
+          </div>
+          <?php endforeach; ?>
+        </div>
+
+        <div class="a-bsum">
+          <b><?php echo round(100 * $dp['pct']); ?>%</b> of the crew is down ·
+          <?php echo number_format($dp['dealt']); ?> of <?php echo number_format($dp['max']); ?> damage
+          <?php if ($dp['dead'] > 0 && !$dp['cleared']): ?>
+            · <b><?php echo (int)$dp['dead']; ?></b> of <?php echo (int)$dp['total']; ?> down
+          <?php endif; ?>
+        </div>
+
+        <?php
+          /* The table everybody is currently on, named in the words the end
+             screen uses, so the panel and the payout cannot disagree. */
+          $tlabels = array('run'=>'standard', 'placement_10'=>'improved',
+                           'placement_3'=>'rare', 'placement_1'=>'best');
+          $tnow = dhcb_tier_table($dp);
+        ?>
+        <div class="a-bsum">Rolling on the <b><?php echo $tlabels[$tnow]; ?></b> table right now.</div>
+
+        <?php if ($dhca_guest): ?>
+          <p class="a-sub" style="margin:10px 0 0">Sign in to send a Crew.</p>
+        <?php elseif ($dhcb_block !== ''): ?>
+          <p class="a-sub" style="margin:10px 0 0"><?php echo htmlspecialchars($dhcb_block); ?></p>
+        <?php else: ?>
+          <button class="button" id="aBossGo" type="button">Send Crew at the Bosses</button>
+          <p class="a-sub" style="margin:8px 0 0"><?php
+            echo (int)($dhcb_runs); ?> of <?php echo DHCB_DAILY_RUNS; ?> Crews sent today.
+            Fighters rest from Bosses only — your Arena Crew is untouched.</p>
+        <?php endif; ?>
+      </div>
+    </div>
+    <?php endif; ?>
+
     <div class="a-panel">
       <h2>Ladder</h2>
       <div class="body">
@@ -2125,6 +2222,8 @@ function gemInfo(side, g){
   return {emoji:'·', name:'—', note:''};
 }
 function artUrl(slot, name, size){ return ART+'/'+size+'/'+slot+'/'+name+'.png'; }
+/* Boss art is a path from the staking root, not from the trait tree. */
+var ART_ROOT = <?php echo json_encode(rtrim(dirname($_SERVER['SCRIPT_NAME'] ?? '/staking/x'), '/') . '/'); ?>;
 function logLine(kind, text){
   var l = $('log'); if (!l) return;
   var d = document.createElement('div'); d.className = 'log-'+kind; d.textContent = text;
@@ -2184,6 +2283,15 @@ var LAYERS_FALLBACK = ['weaponBack','torso','weapon','arms','effects','effects1'
  * effect behind the torso) come along for free.
  */
 function layerImgs(f, tagged){
+  /* A BOSS IS ONE PICTURE. DHC Bosses sends `art` instead of traits, because
+     its opponents are painted collection pieces rather than assembled
+     Fighters. Everything else about them -- stats, ranks, damage, the death
+     animation's data-l hook -- is identical, so this is the only place the
+     Arena has to know bosses exist. */
+  if (f.art) {
+    return '<img'+(tagged ? ' data-l="torso" data-s="boss"' : '')+' loading="lazy" alt="" src="'
+         + ART_ROOT + f.art + '" onerror="this.remove()">';
+  }
   var t = f.traits || {};
   var order = (f.layers && f.layers.length) ? f.layers : LAYERS_FALLBACK;
   return (t.background
@@ -2772,6 +2880,8 @@ function sendMove(a, z){
     ? {do:'move', live:live.id, a:a, z:z}
     : practice
     ? {do:'move', spec:JSON.stringify(practice), a:a, z:z}
+    : bossRun
+    ? {do:'move', run_id:bossRun, a:a, z:z}
     : {do:'move', battle_id:battleId, a:a, z:z};
   /*
    * A BATTLE THAT IS NOT LIVE, NOT PRACTICE AND HAS NO ID IS NOT A
@@ -2829,7 +2939,7 @@ function sendMove(a, z){
     // real one back rather than leaving a slide that did not happen on screen.
     paintBoard();
     logLine('sys','Lost contact with the Arena — that move was not played.');
-  }, live ? LIVE_URL : practice ? PRACTICE_URL : null);
+  }, live ? LIVE_URL : practice ? PRACTICE_URL : bossRun ? BOSS_URL : null);
 }
 
 /* ------------------------------------------------------------ the end ------ */
@@ -2964,6 +3074,27 @@ function showEnd(res){
     sub = practice
       ? 'Your Crew is down. Practice — nothing was at stake, so go again.'
       : 'Your Crew is down. The Fighters you sent are resurrecting — they will be back.';
+  }
+  /*
+   * A BOSS RUN IS NOT WON OR LOST THE WAY A BATTLE IS.
+   *
+   * Most runs end with the Crew wiped and that is the normal, paying
+   * outcome -- the day's trait is decided by damage, not by kills. Saying
+   * "Defeat" and nothing else would tell a player their run was worthless
+   * when it was the entire point of the feature.
+   */
+  if (bossRun) {
+    var dealt = res.dealt || 0;
+    $('ecTitle').textContent = (res.killed && res.killed.length)
+      ? (res.killed.join(' and ') + ' is down')
+      : (won ? 'The crew is down' : 'Crew wiped');
+    card.className = 'endcard ' + ((won || (res.killed && res.killed.length)) ? 'win' : 'lose');
+    sub = dealt.toLocaleString() + ' damage landed on the boss crew.';
+    if (res.progress) {
+      sub += ' They are at ' + Math.round(100 * (1 - res.progress.pct)) + '% and '
+           + (res.progress.cleared ? 'all three are down.' : 'still standing.');
+    }
+    sub += ' Everyone who takes part is paid when the day closes.';
   }
   $('ecSub').textContent = sub;
   $('ecStats').innerHTML =
@@ -3107,6 +3238,12 @@ window.addEventListener('pointerup', function(){ if (drag) release(); });
 
 /* ------------------------------------------------------------- the shell --- */
 var picked = [], rival = 0;
+/* DHC BOSSES IS A MODE, NOT A SECOND CLIENT. bossRun is the id of a run in
+   progress and doubles as the mode flag, exactly as `live` and `practice` do
+   above it -- every branch below that already asks "which kind of battle is
+   this" gains one more arm and nothing else changes. */
+var bossRun = 0;
+var BOSS_URL = 'ajax/dhcbosses-action.php';
 
 /* ---------------------------------------------------------------- paging ----
    Cards are hidden, never removed: a pick made on page 1 has to survive a walk
@@ -3677,7 +3814,7 @@ function startFailed(msg){
 if (startBtn) startBtn.addEventListener('click', function(){
   if (busy) return;
   if (battle.classList.contains('on')) return;   // already in one
-  busy = true; startBtn.disabled = true; practice = null;
+  busy = true; startBtn.disabled = true; practice = null; bossRun = 0;
   $('aMsg').textContent = 'Entering…';
   post({do:'start', defender:rival, fighters:picked}, function(res){
     if (!res || !res.ok) { startFailed((res && res.message) || 'Could not start.'); return; }
@@ -3691,9 +3828,37 @@ if (startBtn) startBtn.addEventListener('click', function(){
     startFailed('The Arena did not answer. Checking whether the battle started…');
   });
 });
+/*
+ * SEND A CREW AT THE BOSSES.
+ *
+ * The same picker, the same three Fighters, the same board. Only the
+ * endpoint and the id differ, which is the whole of what a mode is here.
+ */
+var bossBtn = $('aBossGo');
+if (bossBtn) bossBtn.addEventListener('click', function(){
+  if (busy) return;
+  if (battle.classList.contains('on')) return;
+  if (picked.length !== 3) { $('aMsg').textContent = 'Pick three Fighters first.'; return; }
+  busy = true; bossBtn.disabled = true; practice = null; live = null;
+  $('aMsg').textContent = 'Sending…';
+  post({do:'start', fighters:picked}, function(res){
+    busy = false; bossBtn.disabled = false;
+    if (!res || !res.ok) { $('aMsg').textContent = (res && res.message) || 'Could not send.'; return; }
+    $('aMsg').textContent = '';
+    bossRun = res.run_id || 0;
+    try { openBattle({battle_id:0, state:res.state}, true); }
+    catch (e) { $('aMsg').textContent = 'Could not draw the run. Reload and resume.'; }
+  }, function(){
+    busy = false; bossBtn.disabled = false;
+    $('aMsg').textContent = 'The Bosses did not answer. Reload to see whether the run started.';
+  }, BOSS_URL);
+});
+
 /* Leaving does not abandon anything: a ranked battle is on the server and
    resume picks it up exactly where it was, and a practice battle was never
-   worth keeping. */
+   worth keeping. A boss run is on the server too, and dhcb_sweep_stale()
+   closes it if it is genuinely abandoned -- the damage it already landed
+   stays landed, because it genuinely landed. */
 function leaveBattle(){
   /* Walking out of a live match ends it for both players. There is nothing to
      forfeit and no record to write -- with no stake, "somebody left" is just
@@ -3704,7 +3869,7 @@ function leaveBattle(){
     liveStopPoll(); liveTickStop(); live = null;
     $('lclock').hidden = true;
   }
-  cineStop(); practice = null;
+  cineStop(); practice = null; bossRun = 0;
   $('endcard').hidden = true;
   // hidden by #arenaBattle going away regardless, but leaving it set would be a
   // stale flag waiting to be believed

@@ -101,6 +101,43 @@ $reward_jobs = array(
 	// Settles the season that just closed by NAME rather than by a date range,
 	// so equally safe late and equally unsafe twice.
 	'dhcarena'      => array('monthly', function ($conn) { checkDHCArenaLeaderboard($conn, false, true); }),
+
+	// Ranked on damage per Fighter deployed rather than on total damage, for
+	// the reason checkDHCBossesLeaderboard() documents: the harmonic curve
+	// weights rank 1 at twice rank 2, so a volume board would compound the
+	// largest roster every month.
+	'dhcbosses'     => array('monthly', function ($conn) { checkDHCBossesLeaderboard($conn, false, true); }),
+
+	// ---- DAILY ----
+	// THE BOSS DAY HAS TO BE CLOSED BY SOMETHING. Every other board here is
+	// settled by a period ending; this one is settled by a DAY ending, and
+	// until it runs nobody who fought yesterday has been paid their trait.
+	//
+	// Needs its own crontab line, shortly after midnight in the DATABASE's
+	// zone -- not the web server's, which is hours ahead of it on this host.
+	// dhcb_settle() takes the day explicitly for exactly that reason, and
+	// defaults to MySQL's CURDATE() rather than PHP's.
+	//
+	// SAFE LATE AND SAFE TWICE, unlike every monthly job above:
+	// dhc_boss_payouts is keyed (day, user_id), so a second run inserts
+	// nothing and pays nothing. Running it late pays the right people for
+	// the right day.
+	'dhcbosses-day' => array('daily', function ($conn) {
+		if (!function_exists('dhcb_settle') && is_file(__DIR__ . '/dhcbosses-lib.php'))
+			require_once __DIR__ . '/dhcbosses-lib.php';
+		if (!function_exists('dhcb_settle')) { echo "DHC Bosses not installed.\n"; return; }
+		// Yesterday, in MySQL's zone. The day being closed is the one that
+		// has just ended, not the one that has just begun.
+		$r = $conn->query("SELECT DATE_SUB(CURDATE(), INTERVAL 1 DAY) AS d");
+		$day = ($r && ($x = $r->fetch_assoc())) ? $x['d'] : date('Y-m-d', strtotime('-1 day'));
+		$res = dhcb_settle($conn, $day, true);
+		printf("DHC Bosses %s: %d paid on the %s table (%d%% of the crew down)\n",
+			$day, (int)$res['paid'], $res['table'],
+			(int)round(100 * $res['progress']['pct']));
+		// And stand tomorrow's crew up now, so the first player of the day
+		// is not the one who pays for the scaling query.
+		dhcb_spawn($conn);
+	}),
 );
 
 /*
@@ -177,6 +214,16 @@ foreach ($reward_jobs as $rj_name => $rj_def) {
 $rj_skip = isset($_GET['skip']) ? array_filter(array_map('trim', explode(',', (string)$_GET['skip']))) : array();
 if (isset($_GET['weekly']))  run_reward_jobs($conn, $reward_jobs, 'weekly',  $rj_skip);
 if (isset($_GET['monthly'])) run_reward_jobs($conn, $reward_jobs, 'monthly', $rj_skip);
+/*
+ * DAILY, AND IT IS THE ONE CADENCE THAT IS SAFE TO RE-RUN.
+ *
+ * Every weekly and monthly job above pays from an unflagged set and would
+ * pay again on a second run, which is why the runner prints that warning.
+ * The daily boss settle is keyed (day, user_id) in dhc_boss_payouts, so a
+ * repeat inserts nothing. Run it as often as you like; run it late and it
+ * still pays the right people for the right day.
+ */
+if (isset($_GET['daily']))   run_reward_jobs($conn, $reward_jobs, 'daily',   $rj_skip);
 
 if(isset($_GET['leaderboardsnapshot'])){
 	// Refreshes the hub's champion cards. READ-ONLY as far as players are

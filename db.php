@@ -16379,6 +16379,95 @@ function checkDHCArenaLeaderboard($conn, $monthly = false, $rewards = false) {
 	}
 }
 
+/**
+ * DHC BOSSES -- the monthly board.
+ *
+ * 100,000 CARBON down the board by rank, the same harmonic split every other
+ * board uses: rank 1 takes the pool, rank 2 half of it, and so on. Sits
+ * alongside Missions, Crypt Conquest and DHC Fighters; DHC Arena stays the
+ * headline at 250,000.
+ *
+ * THE ROWS COME FROM dhcb_ladder(), NOT FROM A QUERY WRITTEN HERE. The
+ * ordering is the feature's business and is deliberately not raw damage; a
+ * second copy of the ranking rule living in db.php is a copy that disagrees
+ * with the page the day either one changes.
+ *
+ * RANKED ON DAMAGE PER FIGHTER DEPLOYED, which matters most because of the
+ * harmonic curve: rank 1 takes twice rank 2, so ranking on volume would
+ * compound the largest roster every single month and the rest of the board
+ * would learn to stop looking.
+ *
+ * Paid by rewards.php?dhcbosses=1, which needs its OWN monthly crontab entry
+ * -- nothing in this repo schedules anything.
+ */
+function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
+	$carbon = defined('DHCB_CARBON') ? (int)DHCB_CARBON : 100000;
+	if (!function_exists('dhcb_ladder') && is_file(__DIR__ . '/dhcbosses-lib.php'))
+		require_once __DIR__ . '/dhcbosses-lib.php';
+	if (!function_exists('dhcb_ladder')) { echo "<p>DHC Bosses is not installed.</p>"; return; }
+
+	/* Settles the month that just closed when paying, and shows the month in
+	   progress otherwise -- equally safe late and equally unsafe twice. */
+	$season = $rewards ? date('Y-m', strtotime('first day of last month')) : dhcb_season();
+	$rows   = dhcb_ladder($conn, $season, 100);
+	if (!$rows) {
+		echo "<p>No Crews have been sent at the Bosses" . ($rewards ? " that month" : " yet") . ".</p>";
+		return;
+	}
+
+	$lb_rows = array(); $description = ""; $fireworks = false;
+	$leaderboardCounter = 0; $counter = 0; $last_score = null;
+	foreach ($rows as $row) {
+		$counter++;
+		$score = (int)$row['per'];
+		$leaderboardCounter++;
+		if ($leaderboardCounter > 3 && $last_score === $score) $leaderboardCounter--;
+		$trophy = ($leaderboardCounter === 1) ? "\u{1F947}" : (($leaderboardCounter === 2) ? "\u{1F948}" : (($leaderboardCounter === 3) ? "\u{1F949}" : ""));
+
+		$me = isset($_SESSION['userData']['user_id']) && (int)$_SESSION['userData']['user_id'] === (int)$row['user_id'];
+		if ($me) $fireworks = true;
+
+		$stats = array(
+			'Per Fighter' => number_format($row['per']),
+			'Damage'      => number_format($row['dealt']),
+			'Crews'       => number_format($row['runs']),
+			'Fighters'    => number_format($row['fighters']),
+		);
+		$pay = round($carbon / $leaderboardCounter);
+		$reward_col = ($monthly || $rewards)
+			? number_format($pay) . " CARBON = " . number_format(floor($pay / 100)) . " DIAMOND" : '';
+		$lb_rows[] = array('rank' => $leaderboardCounter, 'trophy' => $trophy,
+			'avatar_url' => avatar_url($row['discord_id'], $row['avatar']),
+			'name' => "<a href='profile.php?username=" . urlencode($row['name']) . "'>" . htmlspecialchars($row['name']) . "</a>",
+			'highlight' => $me, 'stats' => $stats, 'reward' => $reward_col);
+		$last_score = $score;
+
+		if ($rewards) {
+			updateBalance($conn, $row['user_id'], 15, $pay);
+			logCredit($conn, $row['user_id'], $pay, 15);
+			if ($counter <= 45) {
+				$description .= "- " . (($leaderboardCounter < 10) ? "0" : "") . $leaderboardCounter
+					. " <@" . $row['discord_id'] . "> " . number_format($row['per']) . " per Fighter, "
+					. number_format($row['dealt']) . " damage\r\n";
+				$description .= "        " . number_format($pay) . " CARBON = " . number_format(floor($pay / 100)) . " DIAMOND\r\n";
+			}
+		}
+	}
+
+	if ($rewards) {
+		/* Nothing is reset. The season column partitions the table, so last
+		   month's runs can never fall into this month's board however often
+		   this runs -- the one thing to avoid is running it twice for the
+		   SAME month. */
+		$last_month = date('F', strtotime('first day of last month'));
+		discordmsg("\u{1F480} " . $last_month . " DHC Bosses Results", $description, "",
+		           "https://skulliance.io/staking/leaderboards.php", 'dhcbosses');
+	}
+
+	renderLeaderboardList($lb_rows);
+	if ($fireworks) fireworks();
+}
+
 /*
  * Close the week.
  *

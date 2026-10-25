@@ -1,0 +1,952 @@
+<?php
+/**
+ * dhcbosses-lib.php — DHC Bosses. The daily crew everybody grinds at once.
+ *
+ * WHAT THIS IS. Three overpowered bosses stand up once a day with a SHARED
+ * health bar each. Any player can send a Crew of Fighters at them, as many
+ * times a day as the allowance permits, and every point of damage anybody
+ * lands is subtracted from the same three bars. At the end of the day the
+ * total damage the community dealt decides which trait table everybody who
+ * took part rolls on, and dropping all three unlocks the best one.
+ *
+ * ============================================================================
+ * THIS FILE IS AN OVERRIDE OF THE ARENA, NOT A SECOND COPY OF IT.
+ * ============================================================================
+ *
+ * A boss run is an Arena battle whose opponents happen to be enormous. So:
+ *
+ *   the board, the matching, the bombs, the terrain, the defending AI, the
+ *   extra-turn rules and the whole damage model  ->  dhcarena-engine.php
+ *   the exchange of one player move for its replies  ->  dhca_turn()
+ *   the player's roster, Fighter art, names, profiles  ->  dhca_crew()
+ *   the trait award and its tier tables  ->  dhcf_award()
+ *   the payout curve down a monthly board  ->  the same harmonic split
+ *
+ * None of that is reimplemented here. If somebody retunes a blast radius or
+ * fixes the merged fx timeline, Bosses inherits it the same day, because
+ * there is no second copy to remember.
+ *
+ * What this file genuinely owns is the four things the Arena has no concept
+ * of: a health bar shared between players, a daily spawn and settle, a tier
+ * chosen from how much the whole community managed, and a cooldown that is
+ * deliberately NOT the Arena's.
+ *
+ * WHY THE COOLDOWN IS SEPARATE. If sending a Crew at the boss benched it for
+ * ranked play, the boss would eat the Arena -- and the Arena's participation
+ * is what the boss is scaled against, so it would quietly scale itself down
+ * by cannibalising its own input. dhc_boss_fighters is its own table for
+ * that reason and no other.
+ */
+
+require_once __DIR__ . '/dhcfighters-lib.php';
+require_once __DIR__ . '/dhcarena-lib.php';
+
+/* ---------- the dials -------------------------------------------------------
+   Every one of these is a starting guess, deliberately. See dhcbosses.md: the
+   scaling is meant to be FITTED from dhc_boss_runs once there is a month of
+   it, and a curve derived today would be fitted to ten players' worth of
+   noise. They are constants so the fitting changes one line. */
+if (!defined('DHCB_CREW_SIZE'))   define('DHCB_CREW_SIZE', DHCA_CREW_SIZE);  // follow the Arena
+if (!defined('DHCB_DAILY_RUNS'))  define('DHCB_DAILY_RUNS', 6);
+if (!defined('DHCB_BENCH_H'))     define('DHCB_BENCH_H', 3);   // flat, after any run
+if (!defined('DHCB_BENCH_KO_H'))  define('DHCB_BENCH_KO_H', 6);// extra if it fell
+
+/*
+ * How much harder a boss hits than a baseline Fighter. FLAT, not scaled with
+ * the health budget: if power grew with participation too, a busy week would
+ * make runs shorter as well as the bar longer, and the damage-per-run figure
+ * the whole feature is tuned on would stop meaning anything.
+ *
+ * 1.4 IS MEASURED, NOT GUESSED. Twelve seeds played out by a best-move
+ * player against each setting:
+ *
+ *     1.0  ->  17.6 turns, 1386 damage per run
+ *     1.4  ->  11.7 turns,  953
+ *     1.8  ->   8.6 turns,  715
+ *     2.2  ->   8.2 turns,  672
+ *
+ * A ranked Arena battle runs about 15 turns at DHCA_HP_BASE. 2.2 shipped
+ * first and gave eight-turn runs, which is not a fight, it is an ambush.
+ * 1.4 is shorter and nastier than the Arena without being over before the
+ * board has been read once.
+ */
+if (!defined('DHCB_POW_MULT'))    define('DHCB_POW_MULT', 1.4);
+
+/* What one run takes off the crew, from the same measurement. The health
+   budget is built from this, so if the engine is retuned, re-run the sweep
+   in dhcbosses-harness.php and move this with it. */
+if (!defined('DHCB_DMG_PER_RUN'))  define('DHCB_DMG_PER_RUN', 950);
+/* What share of the theoretically available runs actually get played. Nobody
+   spends every allowance every day; at 1.0 the crew would survive every day
+   and the feature would feel pointless. */
+if (!defined('DHCB_TARGET_PCT'))   define('DHCB_TARGET_PCT', 0.60);
+/* Floors and ceilings, so a quiet week is not trivial and a surge is not
+   impossible. Both are on the CREW total, before the per-boss split. */
+if (!defined('DHCB_HP_MIN'))      define('DHCB_HP_MIN', 9000);
+if (!defined('DHCB_HP_MAX'))      define('DHCB_HP_MAX', 400000);
+/* Who counts as "likely to show up": anybody who played the Arena or the
+   Bosses in this window. Lagging on purpose -- a live count would mean a
+   player joining today made today's boss harder for everyone already in it. */
+if (!defined('DHCB_ACTIVE_DAYS')) define('DHCB_ACTIVE_DAYS', 14);
+
+/** Monthly ladder key, same shape and meaning as the Arena season. */
+function dhcb_season() { return date('Y-m'); }
+
+/**
+ * TODAY, AS MYSQL SEES IT.
+ *
+ * Not PHP's date(). php.ini is UTC on this host and MySQL is not, and every
+ * row this feature writes is stamped by MySQL -- so a day boundary computed
+ * in PHP puts runs in one day and the spawn in another for several hours
+ * every night. The Arena's bench column carries the same warning at length.
+ */
+function dhcb_day($conn) {
+	$r = @$conn->query("SELECT CURDATE() AS d");
+	if ($r && ($row = $r->fetch_assoc())) return $row['d'];
+	return date('Y-m-d');                      // only if the database is gone
+}
+
+/* ---------- the crew --------------------------------------------------------
+   Three bosses, in the order they stand on the board: front, mid, back. The
+   art is the flat collection piece, NOT a trait assembly, which is the one
+   place a boss is not simply a Fighter -- see dhcb_art() and layerImgs() in
+   the Arena client, where a single `art` field short-circuits the layer
+   stack.
+
+   hp/pow are shares of the crew budget and of the baseline power, shaped by
+   what the art plainly is: the armoured squad is a wall, the reaper is quick
+   and vicious, the mech sits between them. Same total overpoweredness, three
+   different fights -- which is what stops the daily boss being one fight with
+   three pictures. */
+function dhcb_bosses() {
+	return array(
+		array('key'=>'d34thbrngr', 'name'=>'D34THBRNGR', 'rank'=>0,
+		      'hp'=>0.42, 'pow'=>0.80, 'kit'=>0,
+		      'blurb'=>'Three bodies, one wall. Slow, and it does not stop.'),
+		array('key'=>'cip-666',    'name'=>'CIP-666',    'rank'=>1,
+		      'hp'=>0.34, 'pow'=>1.00, 'kit'=>1,
+		      'blurb'=>'The bruiser. Hits back hardest of the three.'),
+		array('key'=>'x-k4t',      'name'=>'X-K4T',      'rank'=>2,
+		      'hp'=>0.24, 'pow'=>1.35, 'kit'=>2,
+		      'blurb'=>'Fast and vicious. Falls soonest, hurts most getting there.'),
+	);
+}
+
+/** The flat art, which is why a boss is not assembled from traits. */
+function dhcb_art($key) {
+	return 'images/monstrocity/bosses/' . preg_replace('/[^a-z0-9-]/', '', (string)$key) . '.png';
+}
+
+function dhcb_boss($key) {
+	foreach (dhcb_bosses() as $b) if ($b['key'] === $key) return $b;
+	return null;
+}
+
+/* ---------- how big they are today ------------------------------------------ */
+
+/**
+ * The firepower the platform could field, which is what the crew is sized to.
+ *
+ * FIGHTERS, NOT PLAYERS. A player with twenty Fighters can send far more at a
+ * boss than one with three, so headcount is the wrong unit -- and counting
+ * Fighters means a thin turnout of committed players is not punished the way
+ * a headcount would punish it.
+ *
+ * LAGGING, AND LOCKED AT SPAWN. Anybody active in the last DHCB_ACTIVE_DAYS
+ * counts, measured once when the crew stands up. A live count would mean the
+ * boss grew while people were hitting it, and that somebody joining made it
+ * worse for everyone already in -- the scaling tax that makes players hope
+ * their friends stay away.
+ */
+function dhcb_deployable($conn) {
+	$d = max(1, (int)DHCB_ACTIVE_DAYS);
+	$who = "SELECT attacker_id AS uid FROM dhc_arena_battles
+	         WHERE started_at > DATE_SUB(NOW(), INTERVAL $d DAY)
+	        UNION
+	        SELECT user_id AS uid FROM dhc_boss_runs
+	         WHERE started_at > DATE_SUB(NOW(), INTERVAL $d DAY)";
+	$sql = "SELECT COUNT(*) AS fighters, COUNT(DISTINCT f.user_id) AS players
+	          FROM dhc_fighters f
+	         WHERE f.disassembled_at IS NULL AND f.user_id IN ($who)";
+	$r = @$conn->query($sql);
+	if (!$r) {
+		/* dhc_boss_runs will not exist until the migration is run, and an
+		   older dhc_fighters has no disassembled_at. Neither is a reason to
+		   refuse to spawn a boss. */
+		$r = @$conn->query("SELECT COUNT(*) AS fighters, COUNT(DISTINCT f.user_id) AS players
+		                      FROM dhc_fighters f
+		                     WHERE f.user_id IN (SELECT attacker_id FROM dhc_arena_battles
+		                      WHERE started_at > DATE_SUB(NOW(), INTERVAL $d DAY))");
+	}
+	if (!$r || !($row = $r->fetch_assoc())) return array('fighters'=>0, 'players'=>0);
+	return array('fighters'=>max(0, (int)$row['fighters']), 'players'=>max(0, (int)$row['players']));
+}
+
+/**
+ * Total shared health for the whole crew today, before the per-boss split.
+ *
+ * SIZED ON RUNS THAT CAN ACTUALLY BE PLAYED, not on the roster.
+ *
+ * The first version multiplied total Fighters by a per-Fighter figure, and
+ * it was wrong in a way that only shows up with a deep collection: a player
+ * with forty Fighters still cannot send more than DHCB_DAILY_RUNS Crews, so
+ * thirty of those Fighters contribute nothing to how much damage the day can
+ * possibly hold. Scaling on them makes the boss enormous because somebody
+ * owns a lot of art.
+ *
+ * So the cap is the lower of the two real limits -- the allowance everybody
+ * has, and the Fighters there are to field -- and the budget is that many
+ * runs' worth of damage, discounted because nobody spends every allowance.
+ */
+function dhcb_crew_budget($conn) {
+	$d = dhcb_deployable($conn);
+	$byAllowance = $d['players']  * (int)DHCB_DAILY_RUNS;
+	$byRoster    = (int)floor($d['fighters'] / max(1, DHCB_CREW_SIZE));
+	$runs        = min($byAllowance, $byRoster);
+	$hp = (int)round($runs * DHCB_DMG_PER_RUN * DHCB_TARGET_PCT);
+	if ($hp < DHCB_HP_MIN) $hp = DHCB_HP_MIN;
+	if ($hp > DHCB_HP_MAX) $hp = DHCB_HP_MAX;
+	return (int)$hp;
+}
+
+/**
+ * Stand the crew up for today if it is not already standing.
+ *
+ * INSERT IGNORE on the (day, boss_key) key is the whole concurrency story:
+ * the first page load of the day creates the rows and every other one that
+ * arrives in the same second quietly does nothing. No lock, no race, and no
+ * chance of two different health bars for the same boss.
+ */
+function dhcb_spawn($conn) {
+	$day = dhcb_day($conn);
+	$esc = $conn->real_escape_string($day);
+	$r = @$conn->query("SELECT COUNT(*) AS n FROM dhc_boss_day WHERE day = '$esc'");
+	if ($r && ($row = $r->fetch_assoc()) && (int)$row['n'] >= count(dhcb_bosses())) return $day;
+
+	$budget = dhcb_crew_budget($conn);
+	$rows = array();
+	foreach (dhcb_bosses() as $b) {
+		$hp = max(1, (int)round($budget * $b['hp']));
+		$rows[] = sprintf("('%s','%s',%d,%d,%.3f,NOW())",
+			$esc, $conn->real_escape_string($b['key']), $hp, $hp,
+			$budget > 0 ? $budget / max(1, DHCB_HP_MIN) : 1);
+	}
+	@$conn->query("INSERT IGNORE INTO dhc_boss_day
+	               (day, boss_key, max_health, health, scale, created_at)
+	               VALUES " . implode(',', $rows));
+	return $day;
+}
+
+/**
+ * Today's crew with its live health, in board order.
+ *
+ * Returns array keyed by boss_key: key, name, rank, max_health, health, dead,
+ * blurb, art. Empty if the table is missing, which every caller treats as
+ * "the feature is not migrated yet" rather than as an error.
+ */
+function dhcb_state($conn, $day = null) {
+	if ($day === null) $day = dhcb_spawn($conn);
+	$esc = $conn->real_escape_string($day);
+	$r = @$conn->query("SELECT boss_key, max_health, health, killed_at, killed_by
+	                      FROM dhc_boss_day WHERE day = '$esc'");
+	if (!$r) return array();
+	$have = array();
+	while ($x = $r->fetch_assoc()) $have[$x['boss_key']] = $x;
+	$out = array();
+	foreach (dhcb_bosses() as $b) {
+		if (!isset($have[$b['key']])) continue;
+		$h = $have[$b['key']];
+		$out[$b['key']] = array(
+			'key'=>$b['key'], 'name'=>$b['name'], 'rank'=>$b['rank'],
+			'blurb'=>$b['blurb'], 'art'=>dhcb_art($b['key']),
+			'max_health'=>(int)$h['max_health'], 'health'=>(int)$h['health'],
+			'dead'=>((int)$h['health'] <= 0),
+			'killed_at'=>$h['killed_at'], 'killed_by'=>(int)$h['killed_by'],
+		);
+	}
+	return $out;
+}
+
+/** Aggregate progress across the crew: the number the tier is chosen from. */
+function dhcb_progress($state) {
+	$max = 0; $left = 0; $dead = 0;
+	foreach ($state as $s) { $max += $s['max_health']; $left += $s['health']; if ($s['dead']) $dead++; }
+	$dealt = max(0, $max - $left);
+	return array(
+		'max'=>$max, 'left'=>$left, 'dealt'=>$dealt,
+		'pct'=> $max > 0 ? ($dealt / $max) : 0.0,
+		'dead'=>$dead, 'total'=>count($state),
+		'cleared'=>($max > 0 && $left <= 0),
+	);
+}
+
+/* ---------- the player's side ----------------------------------------------- */
+
+/**
+ * The player's roster, with the BOSS cooldown overlaid on the Arena's.
+ *
+ * dhca_crew() does all the real work -- Fighter rows, traits, display names,
+ * profiles, the whole decoration -- and is called rather than copied so a
+ * Fighter looks identical in both places. Only `available`, `bench_left` and
+ * `fell` are overwritten, from dhc_boss_fighters, because a Fighter resting
+ * from the Arena is perfectly free to fight a boss and the other way round.
+ *
+ * The remaining time is asked of MySQL for the same reason the Arena asks it
+ * of MySQL: the two clocks on this host do not agree and a cooldown compared
+ * across them is hours out.
+ */
+function dhcb_roster($conn, $user_id) {
+	$uid  = (int)$user_id;
+	$crew = dhca_crew($conn, $uid);
+	if (!$crew) return $crew;
+
+	$bench = array();
+	$r = @$conn->query("SELECT fighter_id, ko,
+	                           GREATEST(0, COALESCE(TIMESTAMPDIFF(SECOND, NOW(), benched_until), 0)) AS left_s
+	                      FROM dhc_boss_fighters WHERE user_id = $uid");
+	if ($r) while ($x = $r->fetch_assoc()) $bench[(int)$x['fighter_id']] = $x;
+
+	foreach ($crew as $i => $f) {
+		$fid  = (int)$f['id'];
+		$left = isset($bench[$fid]) ? (int)$bench[$fid]['left_s'] : 0;
+		$crew[$i]['available']  = ($left <= 0);
+		$crew[$i]['bench_left'] = $left;
+		$crew[$i]['fell']       = isset($bench[$fid]) ? !empty($bench[$fid]['ko']) : false;
+	}
+	return $crew;
+}
+
+/** Runs started today. Counted, never stored, exactly as the Arena counts. */
+function dhcb_runs_today($conn, $user_id, $day = null) {
+	if ($day === null) $day = dhcb_day($conn);
+	$r = @$conn->query("SELECT COUNT(*) AS n FROM dhc_boss_runs
+	                     WHERE user_id = " . (int)$user_id . "
+	                       AND day = '" . $conn->real_escape_string($day) . "'");
+	if (!$r || !($x = $r->fetch_assoc())) return 0;
+	return (int)$x['n'];
+}
+
+/** A run left unfinished, if any. Resumed rather than abandoned. */
+function dhcb_open_run($conn, $user_id) {
+	$r = @$conn->query("SELECT s.run_id FROM dhc_boss_state s
+	                     INNER JOIN dhc_boss_runs r ON r.id = s.run_id
+	                     WHERE s.user_id = " . (int)$user_id . " AND r.outcome = 0
+	                     ORDER BY s.run_id DESC LIMIT 1");
+	if (!$r || !$r->num_rows) return 0;
+	$x = $r->fetch_assoc();
+	return (int)$x['run_id'];
+}
+
+/** Why this player cannot send a Crew right now, or '' if they can. */
+function dhcb_entry_block($conn, $user_id) {
+	$state = dhcb_state($conn);
+	if (!$state) return 'The Bosses are not up yet.';
+	$p = dhcb_progress($state);
+	if ($p['cleared']) return 'The crew is down for today. They return tomorrow.';
+	if (dhcb_open_run($conn, $user_id)) return '';          // resume is always allowed
+	if (dhcb_runs_today($conn, $user_id) >= DHCB_DAILY_RUNS)
+		return 'You have sent all ' . DHCB_DAILY_RUNS . ' Crews today.';
+	$avail = 0;
+	foreach (dhcb_roster($conn, $user_id) as $f) if ($f['available']) $avail++;
+	if ($avail < DHCB_CREW_SIZE)
+		return 'You need ' . DHCB_CREW_SIZE . ' rested Fighters. ' . $avail . ' ready.';
+	return '';
+}
+
+/* ---------- starting a run --------------------------------------------------- */
+
+/**
+ * Send a Crew at the boss crew.
+ *
+ * THE BOSSES ARE THE THREE FOES, which is why none of the Arena's targeting,
+ * rank or board code needed changing: the engine already expects exactly
+ * three opponents in three ranks, and a boss simply occupies one of those
+ * slots with a very large number in it.
+ *
+ * EACH BOSS ENTERS AT ITS SHARED HEALTH, so a boss the community has nearly
+ * finished can actually be dropped in your run, and one at full health
+ * cannot. That is the grind working as intended: most runs end with your
+ * Crew wiped and the bar a little lower, and that run still pays, because
+ * the day's reward is decided by damage rather than by kills.
+ *
+ * A SNAPSHOT, NOT A LIVE READ. The run is fought against the health the
+ * bosses had when it started; what other players do meanwhile is reconciled
+ * once, at the end, in SQL. Two people fighting the same boss at the same
+ * time therefore never see each other's damage mid-battle -- which is
+ * correct, because a bar that jumped underneath you would make your own
+ * contribution unreadable.
+ */
+function dhcb_start($conn, $user_id, $fighter_ids) {
+	$uid   = (int)$user_id;
+	$block = dhcb_entry_block($conn, $uid);
+	if ($block) return array(false, $block, null);
+
+	$day   = dhcb_spawn($conn);
+	$state = dhcb_state($conn, $day);
+	if (!$state) return array(false, 'The Bosses are not up yet.', null);
+
+	$roster = dhcb_roster($conn, $uid);
+	$byId = array(); foreach ($roster as $f) $byId[(int)$f['id']] = $f;
+	$mine = array();
+	foreach ($fighter_ids as $fid) {
+		$fid = (int)$fid;
+		if (!isset($byId[$fid]))       return array(false, 'That is not your Fighter.', null);
+		if (!$byId[$fid]['available']) return array(false, $byId[$fid]['display'] . ' is still '
+			. (!empty($byId[$fid]['fell']) ? 'resurrecting' : 'recovering') . '.', null);
+		$mine[] = $byId[$fid];
+	}
+	if (count($mine) !== DHCB_CREW_SIZE) return array(false, 'Pick ' . DHCB_CREW_SIZE . ' Fighters.', null);
+
+	/* Three empty trait sets: a boss's numbers are assigned below rather than
+	   derived from traits, and its picture is flat art. Passing empty slots
+	   means dhca_build_fighter() returns the clean baseline to scale from,
+	   with no rarity multiplier and no per-slug variance smuggled in. */
+	$order = array_values(dhcb_bosses());
+	$foeTraits = array(); $foeNames = array();
+	foreach ($order as $b) { $foeTraits[] = array(); $foeNames[] = $b['name']; }
+
+	$seed = random_int(1, 0x7FFFFFFE);
+	$bat  = dhca_new_battle(
+		array_map(function ($f) { return $f['traits']; }, $mine),
+		$foeTraits,
+		array('mine' => array_map(function ($f) { return $f['display']; }, $mine),
+		      'foes' => $foeNames),
+		dhcf_rarity(), $seed);
+
+	$kits = dhca_kits();
+	foreach ($order as $i => $b) {
+		$live = isset($state[$b['key']]) ? $state[$b['key']] : null;
+		if (!$live) continue;
+		$hp = (int)$live['health'];
+		$bat['foes'][$i]['bossKey'] = $b['key'];
+		$bat['foes'][$i]['art']     = dhcb_art($b['key']);
+		$bat['foes'][$i]['maxHp']   = max(1, $hp);
+		$bat['foes'][$i]['hp']      = max(0, $hp);
+		$bat['foes'][$i]['ko']      = ($hp <= 0);
+		$bat['foes'][$i]['power']   = (int)round(DHCA_POWER_BASE * DHCB_POW_MULT * $b['pow']);
+		$bat['foes'][$i]['kit']     = $kits[$b['kit'] % count($kits)];
+		/* The snapshot each boss entered on. dhcb_finish() subtracts the
+		   remainder from this to learn what this run actually dealt -- it
+		   cannot read it off the shared row, which other runs have moved. */
+		$bat['foes'][$i]['hp0']     = max(0, $hp);
+	}
+
+	$bat['meta'] = array(
+		'attacker' => $uid,
+		'day'      => $day,
+		'mineIds'  => array_map(function ($f) { return (int)$f['id']; }, $mine),
+		'bossKeys' => array_map(function ($b) { return $b['key']; }, $order),
+		'moves'    => array(),
+		'boss'     => true,
+	);
+
+	$ok = @$conn->query(sprintf(
+		"INSERT INTO dhc_boss_runs (user_id, day, boss_key, seed, crew_size, season, started_at)
+		 VALUES (%d, '%s', '%s', %d, %d, '%s', NOW())",
+		$uid, $conn->real_escape_string($day), 'crew', $seed, count($mine),
+		$conn->real_escape_string(dhcb_season())));
+	if (!$ok) return array(false, 'Could not start the run.', null);
+	$rid = (int)$conn->insert_id;
+	if (!$rid) return array(false, 'Could not start the run.', null);
+	$bat['meta']['run_id'] = $rid;
+	dhcb_save($conn, $rid, $uid, $bat);
+	return array(true, '', $bat);
+}
+
+function dhcb_save($conn, $run_id, $user_id, $b) {
+	$json = $conn->real_escape_string(json_encode($b));
+	@$conn->query("INSERT INTO dhc_boss_state (run_id, user_id, state, updated_at)
+	               VALUES (" . (int)$run_id . "," . (int)$user_id . ",'$json',NOW())
+	               ON DUPLICATE KEY UPDATE state=VALUES(state), updated_at=NOW()");
+}
+
+function dhcb_load($conn, $run_id, $user_id) {
+	$r = @$conn->query("SELECT state FROM dhc_boss_state
+	                     WHERE run_id = " . (int)$run_id . "
+	                       AND user_id = " . (int)$user_id . " LIMIT 1");
+	if (!$r || !$r->num_rows) return null;
+	$x = $r->fetch_assoc();
+	$b = json_decode($x['state'], true);
+	return is_array($b) ? $b : null;
+}
+
+/** The run this player is in the middle of, if any. */
+function dhcb_active($conn, $user_id) {
+	$rid = dhcb_open_run($conn, $user_id);
+	return $rid ? dhcb_load($conn, $rid, $user_id) : null;
+}
+
+/**
+ * One move. The exchange itself is dhca_turn() -- the Arena's, not a copy.
+ */
+function dhcb_move($conn, $user_id, $run_id, $a, $z) {
+	$b = dhcb_load($conn, $run_id, $user_id);
+	if (!$b) return array(false, 'No run in progress.', null);
+
+	list($ok, $msg) = dhca_turn($b, $a, $z);
+	if (!$ok) return array(false, $msg, $b);
+
+	if ($b['over'] !== null) dhcb_finish($conn, $b);
+	else                     dhcb_save($conn, $run_id, $user_id, $b);
+	return array(true, '', $b);
+}
+
+/* ---------- the end of a run ------------------------------------------------ */
+
+/**
+ * Settle a run: commit its damage to the shared bars, record it, bench the
+ * Crew.
+ *
+ * THE DAMAGE IS COMMITTED UNDER A ROW LOCK, and this is the one place where
+ * two players genuinely collide. Both may have started against a boss on
+ * 1,000 health and both may have taken 800 off their own snapshot; between
+ * them they cannot remove 1,600 from a bar that only had 1,000 on it. The
+ * row is read FOR UPDATE, the damage is clamped to what is actually left,
+ * and the clamped figure is what gets recorded -- so the ledger adds up to
+ * the health that really came off and the leaderboard cannot be inflated by
+ * racing somebody.
+ *
+ * Idempotent. A retried request finds outcome already set and does nothing,
+ * because a double-settled run would pay its damage twice.
+ */
+function dhcb_finish($conn, &$b) {
+	$m   = $b['meta'];
+	$rid = (int)$m['run_id'];
+	$uid = (int)$m['attacker'];
+	$day = isset($m['day']) ? $m['day'] : dhcb_day($conn);
+
+	$r = @$conn->query("SELECT outcome FROM dhc_boss_runs WHERE id = $rid LIMIT 1");
+	if (!$r || !$r->num_rows) return;
+	$row = $r->fetch_assoc();
+	if ((int)$row['outcome'] !== 0) return;              // already settled
+
+	$cleared = ($b['over'] === 'mine');                  // this run dropped all three
+	$outcome = $cleared ? 1 : 2;
+
+	$applied = array();    // boss_key => damage that actually landed
+	$killed  = array();    // boss_key => this run dropped it
+	$total   = 0;
+
+	$conn->begin_transaction();
+	try {
+		foreach ($b['foes'] as $i => $f) {
+			if (empty($f['bossKey'])) continue;
+			$key  = $f['bossKey'];
+			$hp0  = isset($f['hp0']) ? (int)$f['hp0'] : (int)$f['maxHp'];
+			$want = max(0, $hp0 - max(0, (int)$f['hp']));
+			if ($want <= 0) { $applied[$key] = 0; continue; }
+
+			$q = $conn->query("SELECT health FROM dhc_boss_day
+			                    WHERE day = '" . $conn->real_escape_string($day) . "'
+			                      AND boss_key = '" . $conn->real_escape_string($key) . "'
+			                    FOR UPDATE");
+			if (!$q || !$q->num_rows) { $applied[$key] = 0; continue; }
+			$cur  = (int)$q->fetch_assoc()['health'];
+			$hit  = min($want, max(0, $cur));
+			$left = $cur - $hit;
+			if ($hit > 0) {
+				$conn->query(sprintf(
+					"UPDATE dhc_boss_day SET health = %d%s
+					  WHERE day = '%s' AND boss_key = '%s'",
+					$left,
+					($left <= 0 ? ", killed_at = NOW(), killed_by = $uid" : ''),
+					$conn->real_escape_string($day), $conn->real_escape_string($key)));
+			}
+			$applied[$key] = $hit;
+			$total += $hit;
+			if ($left <= 0 && $cur > 0) $killed[$key] = true;
+		}
+		$conn->commit();
+	} catch (Throwable $e) {
+		$conn->rollback();
+		error_log('dhcb_finish: ' . $e->getMessage());
+		return;
+	}
+
+	/* The Crew rests from BOSSES only. Nothing here touches dhc_arena_fighters. */
+	foreach ($m['mineIds'] as $i => $fid) {
+		$fell  = isset($b['mine'][$i]) ? !empty($b['mine'][$i]['ko']) : false;
+		dhcb_bench($conn, $uid, (int)$fid, DHCB_BENCH_H + ($fell ? DHCB_BENCH_KO_H : 0), $fell);
+	}
+
+	/* Per-Fighter rows, for the reports and for ranking on damage per Fighter
+	   rather than on roster size. Same reasoning as the Arena's participant
+	   ledger: a counter drifts, a ledger can be recomputed. */
+	$rows = array();
+	foreach ($m['mineIds'] as $i => $fid) {
+		$f = isset($b['mine'][$i]) ? $b['mine'][$i] : null;
+		if (!$f) continue;
+		$rows[] = sprintf('(%d,%d,%d,%d,%d)', $rid, (int)$fid,
+			isset($f['rank']) ? (int)$f['rank'] : $i,
+			!empty($f['ko']) ? 1 : 0,
+			isset($f['dealt']) ? (int)$f['dealt'] : 0);
+	}
+	if ($rows) @$conn->query('INSERT IGNORE INTO dhc_boss_run_fighters
+	                          (run_id, fighter_id, `rank`, fell, dealt) VALUES ' . implode(',', $rows));
+
+	@$conn->query(sprintf(
+		"UPDATE dhc_boss_runs
+		    SET outcome=%d, dealt=%d, killed=%d, rounds=%d, moves='%s', ended_at=NOW()
+		  WHERE id=%d AND outcome=0",
+		$outcome, $total, (count($killed) ? 1 : 0), (int)$b['round'],
+		$conn->real_escape_string(json_encode($m['moves'])), $rid));
+
+	@$conn->query("DELETE FROM dhc_boss_state WHERE run_id = $rid");
+
+	$b['dealtTotal'] = $total;
+	$b['applied']    = $applied;
+	$b['killedKeys'] = array_keys($killed);
+
+	/* A sweep closing an abandoned run has nobody to report on. */
+	if (empty($b['forfeit'])) dhcb_announce($conn, $b, $total, array_keys($killed));
+}
+
+/** Rest a Fighter from BOSSES. Deliberately not dhca_bench(). */
+function dhcb_bench($conn, $user_id, $fighter_id, $hours, $fell) {
+	$uid = (int)$user_id; $fid = (int)$fighter_id; $h = max(0, (int)$hours);
+	@$conn->query("INSERT INTO dhc_boss_fighters (fighter_id, user_id, benched_until, ko)
+	               VALUES ($fid, $uid, DATE_ADD(NOW(), INTERVAL $h HOUR), " . ($fell ? 1 : 0) . ")
+	               ON DUPLICATE KEY UPDATE
+	                 benched_until = DATE_ADD(NOW(), INTERVAL $h HOUR),
+	                 ko = VALUES(ko)");
+}
+
+/**
+ * Close runs left open for hours, so an abandoned one does not block the
+ * player out of the feature forever. Mirrors dhca_sweep_stale() in intent;
+ * the damage already committed is NOT withdrawn, because it genuinely landed.
+ */
+function dhcb_sweep_stale($conn, $user_id) {
+	$uid = (int)$user_id;
+	$r = @$conn->query("SELECT s.run_id FROM dhc_boss_state s
+	                     INNER JOIN dhc_boss_runs rr ON rr.id = s.run_id
+	                     WHERE s.user_id = $uid AND rr.outcome = 0
+	                       AND s.updated_at < DATE_SUB(NOW(), INTERVAL 6 HOUR)");
+	if (!$r) return;
+	while ($x = $r->fetch_assoc()) {
+		$b = dhcb_load($conn, (int)$x['run_id'], $uid);
+		if (!$b) continue;
+		$b['over'] = 'foes';
+		$b['forfeit'] = true;
+		dhcb_finish($conn, $b);
+	}
+}
+
+/* ---------- what the day pays ----------------------------------------------- */
+
+/** A run has to be a real attempt to qualify for the day's trait. */
+if (!defined('DHCB_MIN_DEALT'))      define('DHCB_MIN_DEALT', 150);
+if (!defined('DHCB_LADDER_MIN_RUNS'))define('DHCB_LADDER_MIN_RUNS', 5);
+if (!defined('DHCB_CARBON'))         define('DHCB_CARBON', 100000);
+
+/**
+ * Which table the day rolls on, from how far the whole community got.
+ *
+ * A GRADIENT, NOT A THRESHOLD, which is the thing that makes this safe. The
+ * reward improves continuously as the bars come down, so there is no point
+ * at which stopping beats continuing and nothing to coordinate around. An
+ * earlier design escalated the table on days the crew SURVIVED, and the
+ * optimal play under it was to beat the bosses to 1% and stop -- which with
+ * a small community is one message in Discord, not a theoretical exploit.
+ *
+ * THE FULL CLEAR IS A DISCRETE JUMP on top of the gradient, not the top of
+ * it. At 99% with one boss on a sliver you are still one table short, so the
+ * last push is worth making. That is the whole drama of the thing.
+ *
+ * The four tables are DHCF_TIERS and nothing here invents a rarity: every
+ * one of them keeps a non-zero mythic chance, so a kill is a real shot at a
+ * mythic rather than a guaranteed one. Guaranteeing mythics on a daily
+ * clearable boss would mint more of them in a fortnight than exist.
+ */
+function dhcb_tier_table($progress) {
+	if (!empty($progress['cleared'])) return 'placement_1';
+	$pct = isset($progress['pct']) ? (float)$progress['pct'] : 0.0;
+	if ($pct >= 0.50) return 'placement_3';
+	if ($pct >= 0.25) return 'placement_10';
+	return 'run';
+}
+
+/** Everyone who put in a real shift on a given day, with what they dealt. */
+function dhcb_participants($conn, $day) {
+	$esc = $conn->real_escape_string($day);
+	$out = array();
+	$r = @$conn->query("SELECT user_id, SUM(dealt) AS dealt, COUNT(*) AS runs,
+	                           SUM(crew_size) AS fighters
+	                      FROM dhc_boss_runs
+	                     WHERE day = '$esc' AND outcome <> 0
+	                     GROUP BY user_id");
+	if (!$r) return $out;
+	while ($x = $r->fetch_assoc()) {
+		$out[(int)$x['user_id']] = array(
+			'user_id'=>(int)$x['user_id'], 'dealt'=>(int)$x['dealt'],
+			'runs'=>(int)$x['runs'], 'fighters'=>(int)$x['fighters']);
+	}
+	return $out;
+}
+
+/**
+ * Close a day: roll everybody's trait and record that it was paid.
+ *
+ * IDEMPOTENT BY PRIMARY KEY. dhc_boss_payouts is keyed (day, user_id), so a
+ * cron run late pays correctly and a cron run twice pays nothing the second
+ * time. Nothing here checks a flag that could be wrong; the row either
+ * exists or it does not.
+ *
+ * THE LEDGER ROW IS WRITTEN BEFORE THE TRAIT, the same ordering
+ * return_gift_grant() uses and for the same reason: if the pair half-fails,
+ * somebody being owed a trait is recoverable and somebody collecting every
+ * time the cron runs is not.
+ *
+ * Returns array(paid, table, progress).
+ */
+function dhcb_settle($conn, $day = null, $announce = true) {
+	if ($day === null) $day = dhcb_day($conn);
+	$state = dhcb_state($conn, $day);
+	$prog  = dhcb_progress($state);
+	$table = dhcb_tier_table($prog);
+	$tiers = defined('DHCF_TIERS') && isset(DHCF_TIERS[$table]) ? DHCF_TIERS[$table] : null;
+
+	$paid = 0; $who = array();
+	foreach (dhcb_participants($conn, $day) as $uid => $p) {
+		if ($p['dealt'] < DHCB_MIN_DEALT) continue;
+		$ok = @$conn->query(sprintf(
+			"INSERT INTO dhc_boss_payouts (day, user_id, tier_table, dealt, paid_at)
+			 VALUES ('%s', %d, '%s', %d, NOW())",
+			$conn->real_escape_string($day), (int)$uid,
+			$conn->real_escape_string($table), (int)$p['dealt']));
+		if (!$ok) continue;                        // already paid, or no table
+		if (function_exists('dhcf_award')) {
+			dhcf_award($conn, (int)$uid, 'wildcard', 'dhcbosses',
+			           'the daily boss crew', $tiers);
+		}
+		$paid++; $who[] = (int)$uid;
+	}
+	if ($announce && $paid > 0) dhcb_announce_day($conn, $day, $prog, $table, $paid);
+	return array('paid'=>$paid, 'table'=>$table, 'progress'=>$prog, 'users'=>$who);
+}
+
+/* ---------- the monthly ladder ---------------------------------------------- */
+
+/**
+ * The month's board.
+ *
+ * RANKED ON DAMAGE PER FIGHTER DEPLOYED, not on raw damage. Raw damage is
+ * mostly a measure of roster size, and the harmonic payout below weights
+ * rank 1 at twice rank 2 -- so ranking on volume would compound the biggest
+ * collection every month and the rest of the board would learn to stop
+ * looking. Efficiency puts a well-built five-Fighter stable in contention.
+ *
+ * TOTAL DAMAGE, RUNS AND FIGHTERS ARE STILL CARRIED, because they are worth
+ * seeing even though they do not decide anything. A column you rank on
+ * creates incentives; a column you display tells a story. Conflating the two
+ * is how a leaderboard quietly starts rewarding something nobody intended.
+ */
+function dhcb_ladder($conn, $season = null, $limit = 25) {
+	if ($season === null) $season = dhcb_season();
+	$esc = $conn->real_escape_string($season);
+	$lim = max(1, (int)$limit);
+	$min = max(1, (int)DHCB_LADDER_MIN_RUNS);
+	$sql = "SELECT r.user_id, u.username, u.discord_id, u.avatar,
+	               SUM(r.dealt) AS dealt, COUNT(*) AS runs,
+	               SUM(r.crew_size) AS fighters, SUM(r.killed) AS kills
+	          FROM dhc_boss_runs r
+	          INNER JOIN users u ON u.id = r.user_id
+	         WHERE r.season = '$esc' AND r.outcome <> 0
+	         GROUP BY r.user_id
+	        HAVING runs >= $min AND fighters > 0
+	         ORDER BY (SUM(r.dealt) / SUM(r.crew_size)) DESC, dealt DESC
+	         LIMIT $lim";
+	$res = @$conn->query($sql);
+	$out = array();
+	if (!$res) return $out;
+	while ($x = $res->fetch_assoc()) {
+		$f = max(1, (int)$x['fighters']);
+		$out[] = array(
+			'user_id'=>(int)$x['user_id'],
+			'name'=>($x['username'] !== '' ? $x['username'] : 'Unknown'),
+			'discord_id'=>$x['discord_id'], 'avatar'=>$x['avatar'],
+			'dealt'=>(int)$x['dealt'], 'runs'=>(int)$x['runs'],
+			'fighters'=>$f, 'kills'=>(int)$x['kills'],
+			'per'=>(int)round((int)$x['dealt'] / $f),
+		);
+	}
+	return $out;
+}
+
+/* ---------- reports --------------------------------------------------------- */
+
+/** Every Crew that went in on a day, newest first. The owner's report. */
+function dhcb_runs_report($conn, $day = null, $limit = 200) {
+	if ($day === null) $day = dhcb_day($conn);
+	$esc = $conn->real_escape_string($day);
+	$lim = max(1, (int)$limit);
+	$rows = array();
+	$res = @$conn->query("SELECT r.id, r.user_id, u.username, r.dealt, r.crew_size,
+	                             r.outcome, r.killed, r.rounds, r.started_at, r.ended_at
+	                        FROM dhc_boss_runs r
+	                        LEFT JOIN users u ON u.id = r.user_id
+	                       WHERE r.day = '$esc'
+	                       ORDER BY r.id DESC LIMIT $lim");
+	if (!$res) return $rows;
+	while ($x = $res->fetch_assoc()) $rows[] = $x;
+	if (!$rows) return $rows;
+
+	/* The Fighters in each, in one pass rather than one query per run. */
+	$ids = array(); foreach ($rows as $r) $ids[] = (int)$r['id'];
+	$byRun = array();
+	$q = @$conn->query("SELECT rf.run_id, rf.fighter_id, rf.fell, rf.dealt, f.serial, f.name
+	                      FROM dhc_boss_run_fighters rf
+	                      LEFT JOIN dhc_fighters f ON f.id = rf.fighter_id
+	                     WHERE rf.run_id IN (" . implode(',', $ids) . ")
+	                     ORDER BY rf.`rank` ASC");
+	if ($q) while ($x = $q->fetch_assoc()) {
+		$x['display'] = ($x['name'] !== null && $x['name'] !== '')
+			? $x['name'] : (function_exists('dhcf_default_name') ? dhcf_default_name($x['serial']) : ('#' . $x['serial']));
+		$byRun[(int)$x['run_id']][] = $x;
+	}
+	foreach ($rows as $i => $r) {
+		$rows[$i]['fighters'] = isset($byRun[(int)$r['id']]) ? $byRun[(int)$r['id']] : array();
+	}
+	return $rows;
+}
+
+/* ---------- telling people ---------------------------------------------------
+   Fire and forget, caught, and buffered: a Discord outage must never cost
+   somebody their run. Channel key 'dhcbosses' -- the webhook for it does not
+   exist yet, and getWebhook() returning nothing simply means no post, which
+   is why nothing below checks for one. */
+
+function dhcb_webhooks_loaded() {
+	if (function_exists('discordmsg')) return true;
+	if (is_file(__DIR__ . '/webhooks.php')) {
+		ob_start(); include_once __DIR__ . '/webhooks.php'; ob_end_clean();
+	}
+	return function_exists('discordmsg');
+}
+
+/** Who this is, for an embed. Mirrors dhca_identity() rather than guessing. */
+function dhcb_identity($conn, $user_id) {
+	if (function_exists('dhca_identity')) return dhca_identity($conn, (int)$user_id);
+	return array('name' => 'a player', 'avatar' => '', 'mention' => '');
+}
+
+/**
+ * One Crew went in. Reported because the owner asked for a record of every
+ * crew that goes in, and because a shared bar is only interesting if people
+ * can see it moving.
+ *
+ * A RUN THAT KILLED SOMETHING IS LOUD, everything else is quiet. Six runs a
+ * day times a dozen players is a lot of posts, so an ordinary chip gets a
+ * short line and a kill gets the full treatment with the art.
+ */
+function dhcb_announce($conn, $b, $dealt, $killedKeys) {
+	if (!dhcb_webhooks_loaded()) return;
+	try {
+		$uid   = (int)$b['meta']['attacker'];
+		$me    = dhcb_identity($conn, $uid);
+		$day   = isset($b['meta']['day']) ? $b['meta']['day'] : dhcb_day($conn);
+		$state = dhcb_state($conn, $day);
+		$prog  = dhcb_progress($state);
+
+		$bars = array();
+		foreach ($state as $s) {
+			$pct = $s['max_health'] > 0 ? round(100 * $s['health'] / $s['max_health']) : 0;
+			$bars[] = ($s['dead'] ? '~~' . $s['name'] . '~~ down' : $s['name'] . ' ' . $pct . '%');
+		}
+
+		$crew = array();
+		foreach ($b['mine'] as $f) $crew[] = $f['name'] . (!empty($f['ko']) ? ' (fell)' : '');
+
+		$killed = is_array($killedKeys) ? $killedKeys : array();
+		$kname  = array();
+		foreach ($killed as $k) { $kb = dhcb_boss($k); if ($kb) $kname[] = $kb['name']; }
+
+		$title = $kname
+			? '💀 DHC Bosses — ' . implode(' and ', $kname) . ' is down'
+			: '🩸 DHC Bosses — ' . number_format((int)$dealt) . ' damage';
+		$desc  = '**' . $me['name'] . '** sent ' . implode(', ', $crew) . "\n"
+		       . number_format((int)$dealt) . ' damage dealt' . "\n\n"
+		       . implode(' · ', $bars) . "\n"
+		       . 'Crew at **' . round(100 * $prog['pct']) . '%** down.';
+
+		$img = '';
+		if ($kname) {
+			$kb = dhcb_boss($killed[0]);
+			if ($kb) $img = 'https://skulliance.io/staking/' . dhcb_art($kb['key']);
+		}
+		$author = array('name' => $me['name']);
+		if ($me['avatar'] !== '') $author['icon_url'] = $me['avatar'];
+
+		ob_start();
+		discordmsg($title, $desc, $img, 'https://skulliance.io/staking/dhcbosses.php',
+			'dhcbosses', ($me['avatar'] !== '' ? $me['avatar'] : ''),
+			($kname ? 'FFC800' : '8A1C2B'), $author, null, '', $uid);
+		ob_end_clean();
+	} catch (Throwable $e) {
+		error_log('dhcb_announce: ' . $e->getMessage());
+	}
+}
+
+/** The day closed. One post, with what everybody earned. */
+function dhcb_announce_day($conn, $day, $prog, $table, $paid) {
+	if (!dhcb_webhooks_loaded()) return;
+	try {
+		$cleared = !empty($prog['cleared']);
+		$label = array('run'=>'standard', 'placement_10'=>'improved',
+		               'placement_3'=>'rare', 'placement_1'=>'best');
+		$tl = isset($label[$table]) ? $label[$table] : $table;
+		$title = $cleared ? '🏆 DHC Bosses — the crew is down'
+		                  : '🌒 DHC Bosses — the day closes';
+		$desc  = ($cleared
+				? 'All three went down. Everybody who took part rolls on the **best** table.'
+				: 'The crew took **' . round(100 * $prog['pct']) . '%** damage and held. '
+				  . 'Everybody who took part rolls on the **' . $tl . '** table.')
+			. "\n\n" . number_format((int)$paid) . ' '
+			. ((int)$paid === 1 ? 'player' : 'players') . ' paid · '
+			. number_format((int)$prog['dealt']) . ' of '
+			. number_format((int)$prog['max']) . ' damage'
+			. "\n\nThey come back tomorrow.";
+		ob_start();
+		discordmsg($title, $desc,
+			'https://skulliance.io/staking/' . dhcb_art('d34thbrngr'),
+			'https://skulliance.io/staking/dhcbosses.php', 'dhcbosses', '',
+			($cleared ? '00C8A0' : '8A1C2B'), null, null, '');
+		ob_end_clean();
+	} catch (Throwable $e) {
+		error_log('dhcb_announce_day: ' . $e->getMessage());
+	}
+}
+
+/* ---------- sharing ---------------------------------------------------------- */
+
+/**
+ * The post a player makes about a run. Built from what actually happened,
+ * so it is worth reading -- a share that could have been written before the
+ * fight is the kind nobody clicks twice.
+ *
+ * NO @ IN FRONT OF A PLAYER NAME. The platform stores Discord usernames and
+ * no X handles, so @-tagging one hands a stranger the notification. Same
+ * rule dhca_start() documents for the Arena share.
+ */
+function dhcb_share_text($dealt, $killedNames, $prog) {
+	$pct = isset($prog['pct']) ? round(100 * $prog['pct']) : 0;
+	if (!empty($prog['cleared'])) {
+		return 'The DHC boss crew is DOWN. ' . number_format((int)$dealt)
+		     . ' damage from my Crew on the way.';
+	}
+	if ($killedNames) {
+		return 'Dropped ' . implode(' and ', $killedNames) . ' in the DHC Bosses. '
+		     . number_format((int)$dealt) . ' damage. Crew at ' . $pct . '%.';
+	}
+	return number_format((int)$dealt) . ' damage into the DHC boss crew. '
+	     . 'They are at ' . $pct . '% and still standing.';
+}
+
+/** The button, using the platform's own share helper. */
+function dhcb_share_button($dealt, $killedNames, $prog) {
+	if (!function_exists('shareOnXButton')) {
+		if (is_file(__DIR__ . '/lib/share-x.php')) require_once __DIR__ . '/lib/share-x.php';
+	}
+	if (!function_exists('shareOnXButton')) return '';
+	return shareOnXButton(dhcb_share_text($dealt, $killedNames, $prog), 'dhcbosses.php');
+}

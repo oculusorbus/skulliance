@@ -990,6 +990,12 @@ function dhca_public(&$b) {
 		$layers = function_exists('dhcf_layer_order') ? dhcf_layer_order($f['traits']) : null;
 		return array('uid'=>$f['uid'],'name'=>$f['name'],'traits'=>$f['traits'],
 			'layers'=>$layers,
+			/* A FLAT PICTURE INSTEAD OF A TRAIT STACK, for DHC Bosses. A boss
+			   is an Arena Fighter in every other respect, but its art is one
+			   collection piece rather than ten layers -- so it carries `art`
+			   and the client short-circuits on it. Empty for every real
+			   Fighter, which is every other caller. */
+			'art'=>(isset($f['art']) ? $f['art'] : ''),
 			'kit'=>array('id'=>$f['kit']['id'],'emoji'=>$f['kit']['emoji'],
 			             'icon'=>isset($f['kit']['icon']) ? $f['kit']['icon'] : '',
 			             'name'=>$f['kit']['name'],'note'=>$f['kit']['note']),

@@ -608,6 +608,7 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
     <ul class="pt-games">
       <li><i>&#129516;</i><span>DHC Fighters</span></li>
       <li><i>&#127967;</i><span>DHC Arena</span></li>
+      <li><i>&#128128;</i><span>DHC Bosses</span></li>
       <li><i>&#128126;</i><span>Monstrocity</span></li>
       <li><i>&#128121;</i><span>Boss Battles</span></li>
       <li><i>&#128260;</i><span>Skull Swap</span></li>

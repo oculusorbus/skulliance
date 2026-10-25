@@ -456,6 +456,11 @@
 		           state and pays nothing, so a player finding it would only be
 		           confused about which one counts. See dhcarena.md. -->
 		      <a href="dhcarena.php">DHC Arena</a>
+		      <!-- DHC Bosses is a PANEL on the Arena page, not a page of its own:
+		           same engine, same board, same Crew, same client. The link goes
+		           to the anchor so the menu can still name it, because what a
+		           player is choosing here is an activity, not a URL. -->
+		      <a href="dhcarena.php#aBossPanel">DHC Bosses</a>
 		      <!-- WITH THE OTHER TWO DHC ENTRIES, not down with the Drop Ship
 		           themes, because what a player is picking here is DHC and not
 		           a battler. Every Fighter they have assembled fields in this

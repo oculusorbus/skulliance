@@ -761,14 +761,24 @@ function dhca_active($conn, $user_id) {
  * Returns array(ok, message, battle). A refusal is never explained in detail --
  * an illegal move is either a stale page or somebody poking the endpoint.
  */
-function dhca_move($conn, $user_id, $battle_id, $a, $z) {
-	$b = dhca_load($conn, $battle_id, $user_id);
-	if (!$b)                  return array(false, 'No battle in progress.', null);
-	if ($b['over'] !== null)  return array(false, 'That battle is over.', $b);
-	if ($b['turn'] !== 'mine')return array(false, 'Not your turn.', $b);
+/**
+ * ONE PLAYER MOVE AND THE REPLIES IT EARNS, with no persistence in it.
+ *
+ * EXTRACTED SO DHC BOSSES CAN USE IT RATHER THAN COPY IT. A boss run is the
+ * same engine, the same board and the same defending AI -- only what it is
+ * fought against and what happens afterwards differ. Pulling the turn out of
+ * dhca_move() means a change to the exchange (an extra-turn rule, a cap on
+ * the reply chain, a fix to the merged timeline) lands in both without
+ * anybody remembering there are two callers.
+ *
+ * Mutates $b. Returns array(ok, message).
+ */
+function dhca_turn(&$b, $a, $z) {
+	if ($b['over'] !== null)   return array(false, 'That battle is over.');
+	if ($b['turn'] !== 'mine') return array(false, 'Not your turn.');
 
 	if (!dhca_play($b, 'mine', (int)$a, (int)$z))
-		return array(false, 'That slide makes no match.', $b);
+		return array(false, 'That slide makes no match.');
 	$b['meta']['moves'][] = array((int)$a, (int)$z);
 
 	// the defending Crew answers, and keeps answering while it earns extra turns
@@ -786,6 +796,15 @@ function dhca_move($conn, $user_id, $battle_id, $a, $z) {
 		$b['log'] = array_merge($beforeLog, $b['log']);
 		$b['meta']['moves'][] = array($mv[0], $mv[1]);
 	}
+	return array(true, '');
+}
+
+function dhca_move($conn, $user_id, $battle_id, $a, $z) {
+	$b = dhca_load($conn, $battle_id, $user_id);
+	if (!$b) return array(false, 'No battle in progress.', null);
+
+	list($ok, $msg) = dhca_turn($b, $a, $z);
+	if (!$ok) return array(false, $msg, $b);
 
 	if ($b['over'] !== null) dhca_finish($conn, $b);
 	else                     dhca_save($conn, $battle_id, $user_id, $b);

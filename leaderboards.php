@@ -777,6 +777,12 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				        case ($filterby == "monthly-dhcarena"):
 				            checkDHCArenaLeaderboard($conn, true);
 				            break;
+				        case ($filterby == "dhcbosses"):
+				            checkDHCBossesLeaderboard($conn, false);
+				            break;
+				        case ($filterby == "monthly-dhcbosses"):
+				            checkDHCBossesLeaderboard($conn, true);
+				            break;
 				        case ($filterby == "guardians"):
 				            checkGuardiansLeaderboard($conn, false);
 				            break;
