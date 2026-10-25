@@ -340,5 +340,73 @@ ok(strpos($ros, 'TIMESTAMPDIFF(SECOND, NOW(), benched_until)') !== false,
    'the cooldown is compared in PHP; MySQL and php.ini are hours apart on this host and '
  . 'the Arena lost a whole class of bug to exactly that');
 
+/* ---------------------------------------------------------------- *
+ * THE SHARE
+ * ---------------------------------------------------------------- */
+echo "\nthe post says what the run did, in the right direction\n";
+/*
+ * progress.pct is damage DEALT. The first version said "they are at 42%",
+ * which reads as 42% health remaining and means the opposite -- a post that
+ * gets the direction backwards is worse than one with no number in it.
+ */
+$sh = dhcb_share_text(1850, array(), array('pct'=>0.42, 'cleared'=>false));
+ok(strpos($sh, '42% down') !== false, 'the share does not say which way the number runs: ' . $sh);
+ok(strpos($sh, 'at 42%') === false, 'the share still reads as 42% health left: ' . $sh);
+/* It must not claim a kill it did not get, and must claim one it did. */
+ok(stripos(dhcb_share_text(100, array(), array('pct'=>0.1,'cleared'=>false)), 'dropped') === false,
+   'a run that killed nothing still says it dropped something');
+ok(stripos(dhcb_share_text(100, array('X-K4T'), array('pct'=>0.5,'cleared'=>false)), 'X-K4T') !== false,
+   'a run that dropped a boss does not name it');
+/* 280 including X's flat 23-character url cost and the platform tail. */
+$tail = 92;
+foreach (array(array(999999, array('D34THBRNGR','CIP-666','X-K4T'), 1.0, true),
+               array(1850, array(), 0.42, false)) as $cse) {
+	$t = dhcb_share_text($cse[0], $cse[1], array('pct'=>$cse[2], 'cleared'=>$cse[3]));
+	ok(mb_strlen($t) + $tail + 24 <= 280,
+	   'the post overflows 280 once the tail and url are counted: ' . mb_strlen($t));
+}
+
+/* ---------------------------------------------------------------- *
+ * THE PICKER KNOWS BOTH CLOCKS
+ * ---------------------------------------------------------------- */
+echo "\nthe Crew picker shows the right cooldown for the game being picked\n";
+/*
+ * THE BUG THIS EXISTS FOR. The cards are rendered from dhca_crew(), so a
+ * Fighter resting from the Arena showed as unavailable for the Bosses too --
+ * which is exactly what the separate cooldown exists to prevent. The player
+ * would have been locked out of the boss crew by a ranked battle they fought
+ * an hour earlier, and nothing would have looked broken.
+ */
+$ARE = file_get_contents(__DIR__ . '/dhcarena.php');
+ok(strpos($ARE, 'data-bok=') !== false && strpos($ARE, 'data-bleft=') !== false,
+   'the Fighter cards carry only one availability, so one of the two games shows the wrong one');
+ok(strpos($ARE, 'dhcb_roster($conn, $user_id)') !== false,
+   'the page never reads the boss roster, so the boss availability is guesswork');
+ok(strpos($ARE, 'function applyPickMode') !== false,
+   'there is no way to switch the picker between the two cooldowns');
+/* Switching modes must drop a pick the new mode cannot field, or the player
+   sends a Crew the server is about to refuse. */
+/* AT THE START OF ITS LINE. A presence check survives the statement being
+   disabled behind an if(0), which is how this first passed a mutation that
+   had plainly broken it. */
+ok(preg_match('~\n\s*picked = picked\.filter\(~', $ARE) === 1,
+   'switching mode keeps picks the new mode cannot field');
+/* The clock rewritten in the browser has to read like the one PHP printed. */
+ok(strpos($ARE, 'Math.max(1, m)') !== false,
+   'the client clock can print 0m, which reads as available when it is not');
+
+/* ---------------------------------------------------------------- *
+ * THE ADMIN REPORT
+ * ---------------------------------------------------------------- */
+echo "\nthe owner can see every Crew that went in\n";
+$ADM = harness_strip_comments(file_get_contents(__DIR__ . '/admin-dhcbosses.php'));
+ok(strpos($ADM, 'admin_require()') !== false, 'the report is not behind the admin gate');
+ok(strpos($ADM, 'dhcb_runs_report(') !== false, 'the report does not list the runs');
+/* READ ONLY. A settle button would be a second caller of the one thing that
+   must happen exactly once. */
+foreach (array('dhcb_settle(', 'dhcb_spawn(', 'INSERT', 'UPDATE ', 'DELETE') as $w) {
+	if (!ok(strpos($ADM, $w) === false, "the report page can write ($w), and it must not")) break;
+}
+
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all DHC Bosses checks passed\n");
 exit($fail ? 1 : 0);

@@ -929,17 +929,23 @@ function dhcb_announce_day($conn, $day, $prog, $table, $paid) {
  * rule dhca_start() documents for the Arena share.
  */
 function dhcb_share_text($dealt, $killedNames, $prog) {
-	$pct = isset($prog['pct']) ? round(100 * $prog['pct']) : 0;
+	/*
+	 * SAY "DOWN", NEVER "AT". progress.pct is damage DEALT, so "they are at
+	 * 42%" reads as 42% health left and means the opposite of what it says
+	 * -- and a post that gets the direction wrong is worse than one that
+	 * omits the number. "42% down" cannot be read backwards.
+	 */
+	$down = isset($prog['pct']) ? round(100 * $prog['pct']) : 0;
 	if (!empty($prog['cleared'])) {
 		return 'The DHC boss crew is DOWN. ' . number_format((int)$dealt)
 		     . ' damage from my Crew on the way.';
 	}
 	if ($killedNames) {
 		return 'Dropped ' . implode(' and ', $killedNames) . ' in the DHC Bosses. '
-		     . number_format((int)$dealt) . ' damage. Crew at ' . $pct . '%.';
+		     . number_format((int)$dealt) . ' damage. The crew is ' . $down . '% down.';
 	}
 	return number_format((int)$dealt) . ' damage into the DHC boss crew. '
-	     . 'They are at ' . $pct . '% and still standing.';
+	     . $down . '% down and still standing.';
 }
 
 /** The button, using the platform's own share helper. */

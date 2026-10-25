@@ -222,7 +222,7 @@ $ladderAth = dhca_ladder($conn, DHCA_LADDER_ALL_TIME, 10);
  * dhcb_state() returns empty until the migration has been run, which every
  * read below treats as "not switched on yet" rather than as an error.
  */
-$dhcb_on = array(); $dhcb_prog = null; $dhcb_block = ''; $dhcb_runs = 0;
+$dhcb_on = array(); $dhcb_prog = null; $dhcb_block = ''; $dhcb_runs = 0; $dhcb_av = array();
 if (is_file(__DIR__ . '/dhcbosses-lib.php')) {
 	require_once __DIR__ . '/dhcbosses-lib.php';
 	$dhcb_on = dhcb_state($conn);
@@ -230,6 +230,20 @@ if (is_file(__DIR__ . '/dhcbosses-lib.php')) {
 		$dhcb_prog  = dhcb_progress($dhcb_on);
 		$dhcb_block = $user_id ? dhcb_entry_block($conn, $user_id) : 'Sign in to send a Crew.';
 		$dhcb_runs  = $user_id ? dhcb_runs_today($conn, $user_id) : 0;
+		/*
+		 * THE PICKER HAS TO KNOW BOTH CLOCKS.
+		 *
+		 * The cards are rendered from dhca_crew(), so a Fighter resting from
+		 * the Arena showed as unavailable for the Bosses as well -- which is
+		 * precisely the thing the separate cooldown exists to prevent. Both
+		 * sets of availability go onto every card and the picker switches
+		 * between them, rather than the page guessing which game the player
+		 * is about to play.
+		 */
+		if ($user_id) foreach (dhcb_roster($conn, $user_id) as $bf)
+			$dhcb_av[(int)$bf['id']] = array('ok' => !empty($bf['available']) ? 1 : 0,
+			                                 'left' => (int)$bf['bench_left'],
+			                                 'fell' => !empty($bf['fell']) ? 1 : 0);
 	}
 }
 
@@ -1124,6 +1138,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-bblurb{font-size:9px;color:var(--dim);margin-top:4px;line-height:1.45}
 .arena-wrap .a-bsum{font-size:11px;color:var(--dim);margin:0 0 6px}
 .arena-wrap .a-bsum b{color:#e8eaed}
+.arena-wrap .a-pmode{display:flex;gap:0;margin:0 0 8px}
+.arena-wrap .a-pmode a{padding:5px 11px;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--dim);border:1px solid rgba(255,255,255,.12);text-decoration:none}
+.arena-wrap .a-pmode a + a{border-left:0}
+.arena-wrap .a-pmode a.on{color:#06222b;background:var(--teal);border-color:var(--teal)}
 @media (max-width:420px){ .arena-wrap .a-bblurb{display:none} }
 /* Removing is the one destructive affordance on this screen, and --blood is
    the platform's own accent here, so it needs a colour of its own to read as
@@ -1562,12 +1581,30 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <?php endforeach; ?>
         <?php endif; ?>
       </div>
+      <?php if ($dhcb_on && !$dhca_guest): ?>
+      <?php /* THE SEPARATE SELECTOR. One picker, two clocks: a Fighter
+               resting from the Arena is free for the Bosses and the other
+               way round, so the cards have to be told which game they are
+               being picked for. Hidden entirely when Bosses is not
+               installed, so the Arena is unchanged by its absence. */ ?>
+      <div class="a-range a-pmode" id="aPickMode">
+        <a href="#" data-m="arena" class="on">For the Arena</a>
+        <a href="#" data-m="boss">For the Bosses</a>
+      </div>
+      <?php endif; ?>
       <div class="a-picked" id="aPicked"></div>
       <div class="a-pick">
       <?php foreach ($crew as $f):
         $t = $f['traits']; $ok = $f['available']; ?>
+        <?php $bv = isset($dhcb_av[(int)$f['id']]) ? $dhcb_av[(int)$f['id']] : null; ?>
         <div class="a-card<?php echo $ok?'':' out'; ?>" data-fid="<?php echo (int)$f['id']; ?>"
-             data-ok="<?php echo $ok?1:0; ?>" data-hp="<?php echo (int)$f['hp']; ?>"
+             data-ok="<?php echo $ok?1:0; ?>"
+             data-bok="<?php echo $bv ? (int)$bv['ok'] : 1; ?>"
+             data-bleft="<?php echo $bv ? (int)$bv['left'] : 0; ?>"
+             data-bfell="<?php echo $bv ? (int)$bv['fell'] : 0; ?>"
+             data-aleft="<?php echo (int)$f['bench_left']; ?>"
+             data-afell="<?php echo !empty($f['fell']) ? 1 : 0; ?>"
+             data-hp="<?php echo (int)$f['hp']; ?>"
              data-pow="<?php echo (int)$f['pow']; ?>" data-kit="<?php echo htmlspecialchars($f['kit']['id']); ?>"
              data-score="<?php echo (int)$f['rarity_score']; ?>"
              data-pf="<?php echo htmlspecialchars(isset($f['profile']) ? $f['profile']['key'] : 'unproven'); ?>"
@@ -1593,14 +1630,17 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
               $kc = dhcf_slot_category($k); ?>
               <img loading="lazy" alt="" src="<?php echo $ART; ?>/250/<?php echo $kc; ?>/<?php echo htmlspecialchars($t[$k]); ?>.png" onerror="this.remove()">
             <?php endforeach; ?>
-            <?php if (!$ok): ?>
-              <?php /* Two different things are happening and they deserve two
-                       different words: a Fighter that fell is being brought
-                       back, one that merely fought is catching its breath. */ ?>
-              <div class="recover<?php echo !empty($f['fell']) ? ' fell' : ''; ?>"><?php
-                echo !empty($f['fell']) ? 'resurrecting' : 'recovering'; ?><b><?php
+            <?php /* Two different things are happening and they deserve two
+                     different words: a Fighter that fell is being brought
+                     back, one that merely fought is catching its breath.
+                     ALWAYS RENDERED, hidden when the current mode says the
+                     Fighter is free -- the picker switches between the Arena
+                     and the Bosses clocks and cannot create an element that
+                     was never printed. */ ?>
+            <div class="recover<?php echo !empty($f['fell']) ? ' fell' : ''; ?>"<?php
+                 echo $ok ? ' hidden' : ''; ?>><span><?php
+                echo !empty($f['fell']) ? 'resurrecting' : 'recovering'; ?></span><b><?php
                 echo dhca_hms($f['bench_left']); ?></b></div>
-            <?php endif; ?>
           </div>
           <div class="nm"><?php echo htmlspecialchars($f['display']); ?></div>
           <div class="st"><span>♥ <?php echo (int)$f['hp']; ?></span><span>⚔ <?php echo (int)$f['pow']; ?></span>
@@ -3105,6 +3145,25 @@ function showEnd(res){
   $('ecAgain').textContent = practice ? 'Practice again' : 'Back to the Arena';
   $('ecLeave').hidden = !practice;
   shareLink(won, standing.length);
+  /*
+   * A BOSS RUN POSTS WHAT IT ACTUALLY DID, and the text is built on the
+   * SERVER -- dhcb_share_text() -- so a post cannot claim a kill the run
+   * did not get and the 280-character budget is enforced in one place
+   * rather than in two that disagree. shareLink() above has already set a
+   * ranked href; this replaces it for the boss case.
+   */
+  if (bossRun && res.share) {
+    var bel = $('ecShare');
+    if (bel) {
+      var btail = '\n\nJoin @skulliance and take on the DHC boss crew, free and in any browser.'
+                + '\n\nArt by @MMAXI404';
+      var bbody = String(res.share);
+      var blimit = 280 - 24 - btail.length;
+      if (bbody.length > blimit) bbody = bbody.slice(0, blimit - 1).replace(/\s+\S*$/, '') + '…';
+      bel.href = 'https://x.com/intent/post?text=' + encodeURIComponent(bbody + btail)
+               + '&url=' + encodeURIComponent('https://skulliance.io/staking/dhcbosses.php');
+    }
+  }
   card.hidden = false;
   sfx(won ? 'win' : 'lose');
   logLine('big', won ? 'VICTORY — their Crew is down.' : 'DEFEAT — your Crew is down.');
@@ -3244,6 +3303,72 @@ var picked = [], rival = 0;
    this" gains one more arm and nothing else changes. */
 var bossRun = 0;
 var BOSS_URL = 'ajax/dhcbosses-action.php';
+
+/*
+ * WHICH GAME THE PICKER IS PICKING FOR.
+ *
+ * The Arena and the Bosses keep independent cooldowns on the same Fighters,
+ * so one card has two availabilities and the picker has to be told which one
+ * to show. Every card carries both (data-ok/data-aleft against
+ * data-bok/data-bleft); this swaps the display and drops any pick that the
+ * new mode cannot field, rather than letting somebody send a Crew the server
+ * is about to refuse.
+ */
+var pickMode = 'arena';
+function applyPickMode(m){
+  pickMode = (m === 'boss') ? 'boss' : 'arena';
+  var boss = pickMode === 'boss';
+  Array.prototype.forEach.call(document.querySelectorAll('.a-card'), function(c){
+    var okAttr = boss ? 'data-bok' : 'data-ok';
+    var free   = c.getAttribute(okAttr) !== '0';
+    c.classList.toggle('out', !free);
+    c.setAttribute('data-ok', free ? 1 : 0);      // the pick handler reads this
+    var ov = c.querySelector('.recover');
+    if (ov) {
+      if (free) { ov.hidden = true; }
+      else {
+        var fell = c.getAttribute(boss ? 'data-bfell' : 'data-afell') === '1';
+        var left = parseInt(c.getAttribute(boss ? 'data-bleft' : 'data-aleft'), 10) || 0;
+        ov.hidden = false;
+        ov.classList.toggle('fell', fell);
+        var lab = ov.querySelector('span'), clk = ov.querySelector('b');
+        if (lab) lab.textContent = fell ? 'resurrecting' : 'recovering';
+        if (clk) clk.textContent = hms(left);
+      }
+    }
+  });
+  /* A pick that the new mode cannot field is dropped rather than carried
+     into a request the server will refuse. */
+  picked = picked.filter(function(id){
+    var c = document.querySelector('.a-card[data-fid="' + id + '"]');
+    return c && c.getAttribute('data-ok') !== '0';
+  });
+  if (typeof paintPicked === 'function') paintPicked();
+  var box = $('aPickMode');
+  if (box) Array.prototype.forEach.call(box.querySelectorAll('a'), function(a){
+    a.classList.toggle('on', a.getAttribute('data-m') === pickMode);
+  });
+}
+/*
+ * The same clock dhca_hms() prints, so a card rewritten client-side cannot
+ * disagree with one rendered by the server. Including the floor at 1m:
+ * "0m" reads as available when it is not.
+ */
+function hms(s){
+  s = Math.max(0, s|0);
+  var h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  return h > 0 ? (h + 'h ' + m + 'm') : (Math.max(1, m) + 'm');
+}
+(function(){
+  var box = document.getElementById('aPickMode');
+  if (!box) return;
+  box.addEventListener('click', function(e){
+    var a = e.target.closest ? e.target.closest('a[data-m]') : null;
+    if (!a) return;
+    e.preventDefault();
+    applyPickMode(a.getAttribute('data-m'));
+  });
+})();
 
 /* ---------------------------------------------------------------- paging ----
    Cards are hidden, never removed: a pick made on page 1 has to survive a walk
@@ -3814,6 +3939,10 @@ function startFailed(msg){
 if (startBtn) startBtn.addEventListener('click', function(){
   if (busy) return;
   if (battle.classList.contains('on')) return;   // already in one
+  if (pickMode !== 'arena') {
+    applyPickMode('arena');
+    if (picked.length !== 3) { $('aMsg').textContent = 'Pick three Fighters rested for the Arena.'; return; }
+  }
   busy = true; startBtn.disabled = true; practice = null; bossRun = 0;
   $('aMsg').textContent = 'Entering…';
   post({do:'start', defender:rival, fighters:picked}, function(res){
@@ -3838,7 +3967,12 @@ var bossBtn = $('aBossGo');
 if (bossBtn) bossBtn.addEventListener('click', function(){
   if (busy) return;
   if (battle.classList.contains('on')) return;
-  if (picked.length !== 3) { $('aMsg').textContent = 'Pick three Fighters first.'; return; }
+  if (pickMode !== 'boss') applyPickMode('boss');
+  if (picked.length !== 3) {
+    $('aMsg').textContent = 'Pick three Fighters first — the picker is now showing who is '
+                          + 'rested for the Bosses.';
+    return;
+  }
   busy = true; bossBtn.disabled = true; practice = null; live = null;
   $('aMsg').textContent = 'Sending…';
   post({do:'start', fighters:picked}, function(res){

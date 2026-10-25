@@ -880,6 +880,10 @@ function admin_tabs() {
 		'digest'      => array('admin-digest.php',      'Daily Digest'),
 		'flyers'      => array('admin-flyers.php',      'Flyers'),
 		'nudges'      => array('admin-nudges.php',      'Nudges'),
+		/* 'bosses' above is the MONSTROCITY boss editor and predates this; the
+		   DHC boss crew is a different game and a read-only report, so it gets
+		   its own key rather than crowding that one. */
+		'dhcbosses'   => array('admin-dhcbosses.php',   'DHC Bosses'),
 		'lapsed'      => array('admin-lapsed.php',      'Lapsed'),
 		'collage'     => array('admin-collage.php',     'Avatar Wall'),
 	);
