@@ -1937,7 +1937,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
              another place to go. */ ?>
     <?php if ($IS_BOSS && $dhcb_on): $dp = $dhcb_prog; ?>
     <div class="a-panel" id="aBossPanel">
-      <h2>The crew this week</h2>
+      <h2>Bosses Crew</h2>
       <div class="body">
         <p class="a-sub" style="margin:0 0 10px">Three bosses, one health bar each, shared by
            everybody, standing all week. <b>Every point of damage counts</b> — the traits
