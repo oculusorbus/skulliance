@@ -464,6 +464,72 @@ foreach (array(array(999999, array('D34THBRNGR','CIP-666','X-K4T'), 1.0, true),
 }
 
 /* ---------------------------------------------------------------- *
+ * THE BOSSES FIGHT SOMEWHERE
+ * ---------------------------------------------------------------- */
+echo "\nthe boss crew brings its own ground, and it is real ground\n";
+/*
+ * THE BUG THIS EXISTS FOR, AND IT COST THE PLAYER 8% OF THEIR CREW.
+ *
+ * The bosses were sent into dhca_new_battle() with EMPTY trait sets, because
+ * a boss is a painted piece and not an assembly. But the arena is read off
+ * the defender's front-rank BACKGROUND, so every run resolved '' ->
+ * dhca_terrain_for('') -> 'frail', the "unrecognised field is a bare one"
+ * fallback. Frail takes 8% off everybody's max health -- and dhcb_start()
+ * then overwrites the foes' health with the shared bar, undoing it for the
+ * BOSSES and leaving it on the player.
+ *
+ * Every run ever played was eight per cent down on one side only, silently,
+ * and the board read "Unknown Ground" because there was no ground. The owner
+ * found it by asking whether the label was for dramatic effect.
+ */
+require_once __DIR__ . '/dhcarena-roles.php';
+$rarAll = dhcf_rarity();
+foreach (dhcb_bosses() as $bz) {
+	ok(!empty($bz['bg']),
+	   $bz['name'] . ' has no background, so it contributes no ground');
+	ok(isset($rarAll['background'][$bz['bg']]),
+	   $bz['name'] . "'s background '" . $bz['bg'] . "' is not in the collection, so the "
+	 . 'board renders no backdrop and the terrain falls back to frail');
+	ok(dhca_terrain_name($bz['bg']) !== 'Unknown Ground',
+	   $bz['name'] . "'s ground has no name");
+}
+/*
+ * THE FRONT RANK SETS THE ARENA -- same rule as a ranked battle, no special
+ * case -- so that is the one that must not be frail. Frail is the only
+ * terrain that is a pure penalty here, because the bosses get their health
+ * overwritten afterwards and the player does not.
+ */
+$front = null;
+foreach (dhcb_bosses() as $bz) if ((int)$bz['rank'] === 0) $front = $bz;
+ok($front !== null, 'no boss is front rank, so nothing sets the arena');
+ok($front && dhca_terrain_for($front['bg']) !== 'frail',
+   'the front-rank boss stands on frail ground, which takes 8% off the player\'s Crew and '
+ . 'nothing off the bosses');
+/* AND IT IS ACTUALLY PASSED. A background on the roster that dhcb_start()
+   does not forward is a background that changes nothing. */
+ok(strpos($LIB, "\$foeTraits[] = !empty(\$b['bg']) ? array('background' => \$b['bg']) : array();") !== false,
+   'the boss backgrounds are not passed into the battle, so the arena is still nothing');
+/*
+ * PROVEN BY PLAYING ONE. The checks above are about the roster; this is the
+ * engine agreeing -- a real battle built the way dhcb_start() builds it has
+ * to come out on named, non-frail ground.
+ */
+$bgT = array(); foreach (dhcb_bosses() as $i => $bz)
+	$bgT[] = !empty($bz['bg']) ? array('background' => $bz['bg']) : array();
+$probe = dhca_new_battle($mine, $bgT,
+	array('mine'=>array('A','B','C'), 'foes'=>array('X','Y','Z')), $rar, 4242);
+ok($probe['terrain'] !== 'frail',
+   'a real boss battle still resolves to frail ground: ' . $probe['terrain']);
+ok(dhca_terrain_name($probe['terrainBg']) !== 'Unknown Ground',
+   'a real boss battle still reports Unknown Ground');
+/* And the player's Crew keeps its full health, which is the actual cost. */
+$flat = dhca_new_battle($mine, array(array(), array(), array()),
+	array('mine'=>array('A','B','C'), 'foes'=>array('X','Y','Z')), $rar, 4242);
+ok($probe['mine'][0]['maxHp'] > $flat['mine'][0]['maxHp'],
+   'the Crew is no healthier on real ground than it was on no ground, so the frail penalty '
+ . 'is still being applied');
+
+/* ---------------------------------------------------------------- *
  * EVERY ANNOUNCEMENT CARRIES A PICTURE
  * ---------------------------------------------------------------- */
 echo "\nthe Discord post shows what happened, not just what it totalled\n";

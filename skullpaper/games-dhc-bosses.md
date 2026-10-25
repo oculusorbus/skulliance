@@ -19,6 +19,10 @@ battle can still be sent at the bosses, and the other way round.
 | **CIP-666** | The bruiser. Hits back hardest of the three. |
 | **X-K4T** | Fast and vicious. Falls soonest, hurts most getting there. |
 
+They fight on **The Dark Blast**, the ground D34THBRNGR brings with it, where every
+attack lands 10% harder. The arena is read off the front-rank opponent's background
+exactly as it is in a ranked battle.
+
 They are the same Fighters you fight in the Arena, with much larger numbers.
 Same board, same matching, same reach, same bombs. What is different is that
 there are three of them at once and their health does not reset when your run

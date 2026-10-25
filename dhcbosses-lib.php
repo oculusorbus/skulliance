@@ -345,13 +345,13 @@ function dhcb_wave_pow($wave) {
 function dhcb_bosses() {
 	return array(
 		array('key'=>'d34thbrngr', 'name'=>'D34THBRNGR', 'rank'=>0,
-		      'hp'=>0.42, 'pow'=>0.80, 'kit'=>0,
+		      'hp'=>0.42, 'pow'=>0.80, 'kit'=>0, 'bg'=>'dark-explosion',
 		      'blurb'=>'Three bodies, one wall. Slow, and it does not stop.'),
 		array('key'=>'cip-666',    'name'=>'CIP-666',    'rank'=>1,
-		      'hp'=>0.34, 'pow'=>1.00, 'kit'=>1,
+		      'hp'=>0.34, 'pow'=>1.00, 'kit'=>1, 'bg'=>'xlon-s-psi-attack',
 		      'blurb'=>'The bruiser. Hits back hardest of the three.'),
 		array('key'=>'x-k4t',      'name'=>'X-K4T',      'rank'=>2,
-		      'hp'=>0.24, 'pow'=>1.35, 'kit'=>2,
+		      'hp'=>0.24, 'pow'=>1.35, 'kit'=>2, 'bg'=>'wormhole-passage',
 		      'blurb'=>'Fast and vicious. Falls soonest, hurts most getting there.'),
 	);
 }
@@ -836,8 +836,37 @@ function dhcb_start($conn, $user_id, $fighter_ids) {
 	   means dhca_build_fighter() returns the clean baseline to scale from,
 	   with no rarity multiplier and no per-slug variance smuggled in. */
 	$order = array_values(dhcb_bosses());
+	/*
+	 * THE BOSSES BRING THEIR OWN GROUND, AND THIS WAS A REAL BUG.
+	 *
+	 * They were sent in with EMPTY trait sets, because a boss is a painted
+	 * piece rather than an assembly. But dhca_new_battle() reads the arena
+	 * off the defender's front-rank BACKGROUND -- so every boss run resolved
+	 * to '' -> dhca_terrain_for('') -> 'frail', the "unrecognised field is a
+	 * bare one" fallback.
+	 *
+	 * Frail takes 8% off everybody's max health. dhcb_start() then overwrites
+	 * the foes' health with the shared bar, which undoes it for the BOSSES
+	 * and leaves it on the player. Every run ever played was eight per cent
+	 * down on one side only, silently, and the board said "Unknown Ground"
+	 * because there was no ground.
+	 *
+	 * So each boss carries a real background slug from the collection, and
+	 * the front rank sets the arena exactly as it does in a ranked battle --
+	 * no special case, no override, the same rule reading a real value. The
+	 * slugs are chosen from what the art actually shows: a dark field with a
+	 * red blast behind D34THBRNGR, the radiating spikes behind CIP-666, the
+	 * drifting planets behind X-K4T.
+	 *
+	 * Nothing else about the boss survives dhca_new_battle() -- health,
+	 * power, kit and art are all overwritten below -- so the background is
+	 * doing one job.
+	 */
 	$foeTraits = array(); $foeNames = array();
-	foreach ($order as $b) { $foeTraits[] = array(); $foeNames[] = $b['name']; }
+	foreach ($order as $b) {
+		$foeTraits[] = !empty($b['bg']) ? array('background' => $b['bg']) : array();
+		$foeNames[]  = $b['name'];
+	}
 
 	$seed = random_int(1, 0x7FFFFFFE);
 	$bat  = dhca_new_battle(
