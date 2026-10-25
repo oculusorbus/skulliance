@@ -139,6 +139,30 @@ if (!defined('DHCB_WAVE_POW'))     define('DHCB_WAVE_POW', 1.18);
    on the last block is still worth a run for everybody rather than being
    clamped to nothing by the first two players who reach it. */
 if (!defined('DHCB_WAVE_MIN_DAY')) define('DHCB_WAVE_MIN_DAY', 0.60);
+
+/*
+ * WHAT A RUN ACTUALLY DEALS, WHICH IS NOT WHAT THE HARNESS MEASURES.
+ *
+ * DHCB_DMG_PER_RUN was measured by playing the engine with a greedy search
+ * over all 112 slides every turn, and it is a correct measurement of THAT:
+ * ~1,000 damage a run. No person plays that way. The first real run on the
+ * live site, by a player who knows the game well, landed 535 -- a little
+ * over half -- and a deliberately weak model of play lands about 200.
+ *
+ * The health budget was built from the solver's figure, which made the crew
+ * roughly 1.8x too big: 7.5 days to clear instead of 4.2. It would never
+ * have fallen, so nobody would have seen a wave 2 or reached the best trait
+ * table, and nothing would have errored. The owner caught it in one run.
+ *
+ * So the constant stays what it is -- the engine's ceiling, which is the
+ * right thing for the harness to re-measure and catch drift against -- and
+ * the BUDGET uses dhcb_dmg_per_run() instead: the community's own observed
+ * figure, read off the ledger of real runs, with this haircut as the
+ * fallback until there is enough of it.
+ */
+if (!defined('DHCB_HUMAN_PCT'))   define('DHCB_HUMAN_PCT', 0.55);
+/* How many finished runs before the ledger is trusted over the fallback. */
+if (!defined('DHCB_CAL_MIN_RUNS')) define('DHCB_CAL_MIN_RUNS', 20);
 /* Floors and ceilings, so a quiet week is not trivial and a surge is not
    impossible. Both are on the CREW total, before the per-boss split. */
 if (!defined('DHCB_HP_MIN'))      define('DHCB_HP_MIN', 24000);
@@ -211,6 +235,44 @@ function dhcb_week_day($conn) {
  * How much harder wave N hits than wave 1. Compounding, so the step is the
  * same size every time and the whole curve reads off one constant.
  */
+/**
+ * The damage one Crew lands, from the ledger of real runs.
+ *
+ * SELF-CORRECTING, because the alternative is a constant that is right for
+ * one community on one day. dhc_boss_runs is append-only and every finished
+ * run has its `dealt` on it, so the number the health budget is built from
+ * can be the one this community actually produces -- a sharper crowd gets a
+ * bigger boss, a quieter one gets a smaller boss, and nobody has to retune
+ * anything by hand.
+ *
+ * CLAMPED TO A BAND, because the feedback loop runs both ways. Damage is
+ * capped at the health actually left on the bar, so runs that finish a crew
+ * record less than they dealt -- and a sequence of those would drag the
+ * average down, shrink the next budget, and shrink it again. The band stops
+ * that becoming a spiral in either direction.
+ *
+ * Windowed to the last 28 days so a retuned engine is reflected within a
+ * month rather than averaged against a year of a different game.
+ */
+function dhcb_dmg_per_run($conn) {
+	/* NO MEMO. It is one indexed aggregate and the only caller is
+	   dhcb_crew_budget(), which only runs when a wave is actually being
+	   stood up -- at most once a request, behind dhcb_spawn()'s own memo. A
+	   static here would buy nothing and would make the two branches below
+	   untestable in one process, which is how the figure it replaced went
+	   un-checked in the first place. */
+	$fallback = DHCB_DMG_PER_RUN * DHCB_HUMAN_PCT;
+	$lo = DHCB_DMG_PER_RUN * 0.25;
+	$hi = DHCB_DMG_PER_RUN * 1.10;
+	$r = @$conn->query("SELECT COUNT(*) AS n, AVG(dealt) AS d
+	                      FROM dhc_boss_runs
+	                     WHERE outcome <> 0 AND dealt > 0
+	                       AND started_at > DATE_SUB(NOW(), INTERVAL 28 DAY)");
+	if ($r && ($x = $r->fetch_assoc()) && (int)$x['n'] >= (int)DHCB_CAL_MIN_RUNS)
+		return max($lo, min($hi, (float)$x['d']));
+	return max($lo, min($hi, $fallback));
+}
+
 function dhcb_wave_pow($wave) {
 	return pow((float)DHCB_WAVE_POW, max(1, (int)$wave) - 1);
 }
@@ -336,7 +398,8 @@ function dhcb_crew_budget($conn, $days = 7, $wave = 1) {
 	 * factor is rough -- the relationship is not exactly linear -- but it is
 	 * the right direction, and the 0.60 target carries the slack.
 	 */
-	$perRun = DHCB_DMG_PER_RUN / max(0.01, dhcb_wave_pow($wave));
+	/* THE LEDGER'S FIGURE, NOT THE SOLVER'S -- see dhcb_dmg_per_run(). */
+	$perRun = dhcb_dmg_per_run($conn) / max(0.01, dhcb_wave_pow($wave));
 	$hp = (int)round($runs * $perRun * DHCB_TARGET_PCT);
 	/*
 	 * THE FLOOR IS WAVE 1'S ONLY. It exists so a quiet week is not trivial,
@@ -1355,11 +1418,65 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 			       . 'Crew at **' . round(100 * $prog['pct']) . '%** down.';
 		}
 
-		$img = '';
-		if ($kname) {
+		/*
+		 * EVERY POST CARRIES A PICTURE, AND THE PICTURE IS THE STORY.
+		 *
+		 * Only a run that killed something had one before, so the ordinary
+		 * post -- which is most of them, because losing is the normal
+		 * outcome here -- was a wall of text in a feed of embeds.
+		 *
+		 * Three states, strongest first:
+		 *
+		 *   THE CREW WENT DOWN: the player's own Fighter that dealt the
+		 *   most, because at that point the story is who did it. A Fighter
+		 *   is a trait stack rather than a file, so the picture is
+		 *   dhc-card.php, the same public 1200x630 renderer the X shares
+		 *   use.
+		 *   A BOSS WENT DOWN: that boss, as before.
+		 *   EVERYTHING ELSE: the boss that hit the player hardest. The
+		 *   engine already credits damage to whoever dealt it, on both
+		 *   sides, so this costs a loop and no new bookkeeping -- and it
+		 *   answers the question a wiped player actually has, which is
+		 *   what killed them.
+		 */
+		$img = ''; $didIt = '';
+		if ($wiped) {
+			$bestI = -1; $bestD = -1;
+			foreach ($b['mine'] as $i => $f) {
+				$d = isset($f['dealt']) ? (int)$f['dealt'] : 0;
+				if ($d > $bestD) { $bestD = $d; $bestI = $i; }
+			}
+			$fid = ($bestI >= 0 && isset($b['meta']['mineIds'][$bestI]))
+			     ? (int)$b['meta']['mineIds'][$bestI] : 0;
+			if ($fid > 0) {
+				/* dhc-card.php keys on SERIAL, not on the row id. */
+				$q = @$conn->query("SELECT serial FROM dhc_fighters WHERE id = $fid LIMIT 1");
+				if ($q && ($sr = $q->fetch_assoc()) && (int)$sr['serial'] > 0)
+					$img = 'https://skulliance.io/staking/dhc-card.php?serial=' . (int)$sr['serial'];
+			}
+			if ($bestI >= 0 && $bestD > 0)
+				$didIt = '**' . $b['mine'][$bestI]['name'] . '** landed the most of them: '
+				       . number_format($bestD) . '.';
+		}
+		if ($img === '' && $kname) {
 			$kb = dhcb_boss($killed[0]);
 			if ($kb) $img = 'https://skulliance.io/staking/' . dhcb_art($kb['key']);
 		}
+		if ($img === '') {
+			$hitI = null; $hitD = -1;
+			foreach ($b['foes'] as $f) {
+				$d = isset($f['dealt']) ? (int)$f['dealt'] : 0;
+				if ($d > $hitD && !empty($f['bossKey'])) { $hitD = $d; $hitI = $f; }
+			}
+			if ($hitI) {
+				$img = 'https://skulliance.io/staking/' . dhcb_art($hitI['bossKey']);
+				$hb  = dhcb_boss($hitI['bossKey']);
+				if ($hb && $hitD > 0)
+					$didIt = '**' . $hb['name'] . '** did the most of it back: '
+					       . number_format($hitD) . '.';
+			}
+		}
+		if ($didIt !== '') $desc .= "\n" . $didIt;
 		$author = array('name' => $me['name']);
 		if ($me['avatar'] !== '') $author['icon_url'] = $me['avatar'];
 

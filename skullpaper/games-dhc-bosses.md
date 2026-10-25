@@ -30,6 +30,12 @@ ends.
 the week can deliver, so a community that turns up drops it around day four or
 five. Surviving until Thursday is the unusual outcome, not the normal one.
 
+That scaling is measured against **what runs actually deal**, not against a
+theoretical best: once enough Crews have been sent, the crew's health is sized
+from the real average this community produces. A sharper week gets a bigger
+crew next time, a quieter one gets a smaller crew, and nobody tunes anything by
+hand.
+
 So a downed crew **stands back up the same week**, one wave higher, in a
 different colourway, hitting harder. The week's question is not "can we drop
 them", it is **how many times**.

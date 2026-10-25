@@ -102,10 +102,16 @@ echo "\nthe crew is sized by runs that can be played, not by roster size\n";
  */
 class HBCount {
 	public $players = 0, $fighters = 0;
+	/* The calibration ledger: how many finished runs, averaging what. Zero
+	   runs is the week-one case, where the budget falls back to the constant
+	   with the human haircut on it. */
+	public $runs = 0, $avgDealt = 0;
 	public function real_escape_string($x) { return addslashes((string)$x); }
 	public function query($sql) {
 		if (stripos($sql, 'COUNT(*) AS fighters') !== false)
 			return new HBRes2(array(array('fighters' => $this->fighters, 'players' => $this->players)));
+		if (stripos($sql, 'AVG(dealt)') !== false)
+			return new HBRes2(array(array('n' => $this->runs, 'd' => $this->avgDealt)));
 		return new HBRes2();
 	}
 }
@@ -114,10 +120,28 @@ class HBRes2 {
 	public function __construct($r = array()) { $this->r = $r; $this->num_rows = count($r); }
 	public function fetch_assoc() { return isset($this->r[$this->i]) ? $this->r[$this->i++] : null; }
 }
-function hb_budget($players, $fighters, $days = 7, $wave = 1) {
+function hb_conn($players, $fighters, $runs = 0, $avg = 0) {
 	$c = new HBCount();
 	$c->players = $players; $c->fighters = $fighters;
-	return dhcb_crew_budget($c, $days, $wave);
+	$c->runs = $runs; $c->avgDealt = $avg;
+	return $c;
+}
+function hb_budget($players, $fighters, $days = 7, $wave = 1, $runs = 0, $avg = 0) {
+	return dhcb_crew_budget(hb_conn($players, $fighters, $runs, $avg), $days, $wave);
+}
+/*
+ * WHAT A RUN IS WORTH, AS THE BUDGET SEES IT. Every ceiling below has to be
+ * computed from this and not from DHCB_DMG_PER_RUN -- the constant is the
+ * greedy solver's figure and the budget deliberately does not use it, so a
+ * ceiling built on the constant grades a different formula than the one
+ * that ships. That is the exact mistake that let the crew be sized 1.8x too
+ * big with every check green.
+ */
+function hb_per_run($wave = 1, $runs = 0, $avg = 0) {
+	/* The memo inside dhcb_dmg_per_run() is per-process, so it is primed
+	   once here with the no-ledger case and every caller sees the same
+	   figure the budget saw. */
+	return dhcb_dmg_per_run(hb_conn(1, 1, $runs, $avg)) / dhcb_wave_pow($wave);
 }
 $deep    = hb_budget(2, 400);     // two players, enormous collection
 $crowd   = hb_budget(20, 60);     // twenty players, one Crew each
@@ -132,7 +156,7 @@ ok($crowd > $deep, 'twenty players field a smaller boss than two hoarders, so th
 foreach (array(array(1,3), array(2,6), array(3,9), array(4,12)) as $tiny) {
 	list($tp, $tf) = $tiny;
 	$perDay = min($tp * DHCB_DAILY_RUNS, (int)floor($tf / DHCB_CREW_SIZE));
-	$maxDmg = $perDay * 7 * DHCB_DMG_PER_RUN;
+	$maxDmg = $perDay * 7 * hb_per_run();
 	if (!ok(hb_budget($tp, $tf) <= $maxDmg,
 	        "$tp players with $tf Fighters get a crew of " . number_format(hb_budget($tp, $tf))
 	      . ' they could not clear in a perfect week (' . number_format($maxDmg) . ' is their ceiling)')) break;
@@ -424,6 +448,107 @@ foreach (array(array(999999, array('D34THBRNGR','CIP-666','X-K4T'), 1.0, true),
 }
 
 /* ---------------------------------------------------------------- *
+ * EVERY ANNOUNCEMENT CARRIES A PICTURE
+ * ---------------------------------------------------------------- */
+echo "\nthe Discord post shows what happened, not just what it totalled\n";
+/*
+ * Only a run that KILLED something had an image, and losing is the normal
+ * outcome here by design -- so the ordinary post was a wall of text sitting
+ * in a feed of embeds. Three states, strongest first: the crew went down
+ * (the player's own best Fighter did it), a boss went down (that boss), or
+ * neither (the boss that hit the player hardest, which is the question a
+ * wiped player actually has).
+ *
+ * Read off the SOURCE rather than posted to Discord: the webhook is a
+ * credential this harness does not have and must not use.
+ */
+$ANN = substr($LIB, strpos($LIB, 'function dhcb_announce('));
+$ANN = substr($ANN, 0, strpos($ANN, 'function dhcb_announce_day('));
+ok(strpos($ANN, 'dhc-card.php?serial=') !== false,
+   'a run that drops the crew does not show the Fighter that did it');
+ok(strpos($ANN, "SELECT serial FROM dhc_fighters WHERE id =") !== false,
+   'the Fighter card is built from the row id, but dhc-card.php keys on serial, so the '
+ . 'image 404s and the embed loses its picture');
+ok(preg_match('~foreach \(\$b\[.foes.\] as \$f\).*?bossKey~s', $ANN) === 1,
+   'nothing picks the boss that hit hardest, so an ordinary run still has no picture');
+/* All three branches assign $img, and the last one is unconditional apart
+   from there being a boss at all -- so there is no path to a pictureless
+   post on a run that happened. */
+ok(substr_count($ANN, '$img = ') >= 3,
+   'there are fewer than three ways to get a picture, so some runs still post without one');
+ok(strpos($ANN, 'if ($img === \'\') {') !== false,
+   'the fallback picture is not a fallback, so it can overwrite the kill shot');
+/* And the post says who did it, or the picture is unexplained. */
+ok(strpos($ANN, '$didIt') !== false && strpos($ANN, '$desc .= "\n" . $didIt') !== false,
+   'the picture is never named in the text, so the reader cannot tell why it is there');
+
+/* ---------------------------------------------------------------- *
+ * THE CREW IS SIZED FOR PEOPLE, NOT FOR A SOLVER
+ * ---------------------------------------------------------------- */
+echo "\nthe health budget is built from what a run really deals\n";
+/*
+ * THE BUG THIS EXISTS FOR, AND IT WAS GREEN THE WHOLE TIME.
+ *
+ * DHCB_DMG_PER_RUN was measured by playing the engine with a greedy search
+ * over all 112 slides every turn, and as a measurement of the engine it is
+ * correct: ~1,000 damage a run. Nobody plays that way. The first real run on
+ * the live site, by a player who knows the game, landed 535. A deliberately
+ * weak model of play lands about 200.
+ *
+ * The budget was built from the solver's figure, so the crew was about 1.8x
+ * too big -- 7.5 days to clear against a 7-day week. It would never have
+ * fallen: no wave 2, nobody on the best trait table, and no error anywhere.
+ * Every check in this file passed, because the checks computed their
+ * ceilings from the same wrong constant the budget used. They grade the
+ * shipped formula now.
+ */
+ok(strpos($LIB, '$perRun = dhcb_dmg_per_run($conn)') !== false,
+   'the budget is back on the raw constant, which is a greedy solver\'s ceiling and about '
+ . 'twice what a person lands');
+
+/* THE FALLBACK, for a week with no ledger behind it yet. */
+$fb = dhcb_dmg_per_run(hb_conn(1, 1, 0, 0));
+ok(abs($fb - DHCB_DMG_PER_RUN * DHCB_HUMAN_PCT) < 1,
+   'with no runs on the ledger the budget does not fall back to the human figure: ' . $fb);
+ok($fb < DHCB_DMG_PER_RUN,
+   'the fallback is not below the solver figure, so week one is sized for a solver again');
+
+/* AND THE LEDGER TAKES OVER once there is enough of it. */
+ok(abs(dhcb_dmg_per_run(hb_conn(1, 1, DHCB_CAL_MIN_RUNS, 600)) - 600) < 1,
+   'the ledger is ignored even with enough runs on it, so the crew never adapts to the '
+ . 'community actually playing it');
+ok(abs(dhcb_dmg_per_run(hb_conn(1, 1, DHCB_CAL_MIN_RUNS - 1, 600)) - $fb) < 1,
+   'a handful of runs is enough to move the budget, so one unlucky evening resizes the week');
+/*
+ * CLAMPED BOTH WAYS. Damage is capped at the health left on the bar, so runs
+ * that finish a crew record less than they dealt -- left unbounded those
+ * would drag the average down, shrink the next budget, and shrink it again.
+ */
+ok(dhcb_dmg_per_run(hb_conn(1, 1, 99, 5)) > 5,
+   'a collapsed average is taken at face value, so the budget can spiral to nothing');
+ok(dhcb_dmg_per_run(hb_conn(1, 1, 99, 99999)) <= DHCB_DMG_PER_RUN * 1.10 + 1,
+   'a freak average is taken at face value, so one big week makes the crew unclearable');
+
+/*
+ * AND THE WHOLE POINT, STATED AS AN OUTCOME: a community that turns up has
+ * to put the crew down BEFORE the week ends, or waves are dead content and
+ * the best table is unreachable. This is the check that was missing.
+ */
+foreach (array(array(10, 90), array(3, 9), array(20, 60), array(6, 54)) as $pop) {
+	list($pp, $pf) = $pop;
+	$perDay = min($pp * DHCB_DAILY_RUNS, (int)floor($pf / DHCB_CREW_SIZE));
+	$dayDmg = $perDay * hb_per_run();
+	$days   = $dayDmg > 0 ? hb_budget($pp, $pf) / $dayDmg : 99;
+	ok($days <= 6.0,
+	   sprintf('%d players with %d Fighters need %.1f days of full turnout to drop the crew, '
+		 . 'so they never see a wave 2 or the best table', $pp, $pf, $days));
+	/* Nor so small that a day and a half finishes it -- the other failure. */
+	ok($days >= 2.0,
+	   sprintf('%d players with %d Fighters clear the crew in %.1f days, which is the dead '
+		 . 'rest-of-week this was all meant to avoid', $pp, $pf, $days));
+}
+
+/* ---------------------------------------------------------------- *
  * WAVES: THEY GET BACK UP
  * ---------------------------------------------------------------- */
 echo "\na crew that falls mid-week stands up again instead of closing the feature\n";
@@ -505,7 +630,7 @@ foreach (array(array(10, 90), array(3, 9), array(20, 60)) as $pop) {
 	foreach (array(0.5, 1, 2, 3) as $d) {
 		$perDay = min($pp * DHCB_DAILY_RUNS, (int)floor($pf / DHCB_CREW_SIZE));
 		foreach (array(2, 3, 4) as $w) {
-			$ceiling = $perDay * $d * (DHCB_DMG_PER_RUN / dhcb_wave_pow($w));
+			$ceiling = $perDay * $d * hb_per_run($w);
 			if (!ok(hb_budget($pp, $pf, $d, $w) <= $ceiling + 1,
 			        "wave $w with $d days left is bigger than $pp players can deliver in them"))
 				break 3;
@@ -539,7 +664,7 @@ ok(hb_budget(1, 3, 7, 1) >= 1, 'wave 1 can be budgeted to nothing');
  * to check is the share of the time left, not an absolute figure.
  */
 foreach (array(0.5, 1, 2) as $d) {
-	$per  = DHCB_DMG_PER_RUN / dhcb_wave_pow(3);
+	$per  = hb_per_run(3);
 	$cap  = min(10 * DHCB_DAILY_RUNS, 30) * $d * $per;
 	$hp   = hb_budget(10, 90, $d, 3);
 	ok($hp >= 0.5 * $cap,
