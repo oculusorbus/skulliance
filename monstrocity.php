@@ -499,6 +499,17 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
     .glow-recoil { box-shadow: 0 0 10px 5px #FF0000; }
     .winner { animation: bounce 1.5s infinite, pulseGlow 1.5s infinite; }
     .loser { animation: pulseRedGlow 1.5s infinite; }
+    /*
+     * NO BATTLE-DAMAGED ART? GREY THE BOSS INSTEAD.
+     *
+     * The damaged swap used to fall back to icons/skull.png, so a boss
+     * without a damaged variant turned into a generic skull at the exact
+     * moment you beat it. Falling back to the boss's own art with the
+     * same grayscale a defeated player gets reads as defeat rather than
+     * as a missing file. grayscale(100%) is deliberately the player's
+     * treatment, not the boss picker's sepia, which is a different thing.
+     */
+    #p2-image.no-damaged-art { filter: grayscale(100%); }
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-10px); }
@@ -2731,8 +2742,13 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 		            let damagedUrl = this.player2.battleDamagedUrl || `images/monstrocity/bosses/battle-damaged/${monstrocitySlug(this.player2.name)}.${this.player2.extension || 'png'}`;
 		            const p2Image = document.getElementById('p2-image');
 		            if (p2Image.tagName === 'IMG') {
+		                const p2Prior = p2Image.currentSrc || p2Image.src || '';
 		                p2Image.src = damagedUrl;
-		                p2Image.onerror = () => { p2Image.src = this.player2.fallbackUrl; };
+		                p2Image.onerror = () => {
+		                    p2Image.onerror = null;
+		                    if (p2Prior) { p2Image.src = p2Prior; p2Image.classList.add('no-damaged-art'); }
+		                    else { p2Image.src = this.player2.fallbackUrl; }
+		                };
 		            }
 		            p2Image.classList.add("loser");
 		            currentP1Image.classList.add("winner");
@@ -5214,44 +5230,48 @@ if (isset($_SESSION['userData']) && is_array($_SESSION['userData'])) {
 	          const p2Image = document.getElementById('p2-image');
 	          const parent = p2Image.parentNode;
 
+	          /*
+	           * Restore the art that was showing a moment ago, greyed.
+	           * Captured rather than looked up, so it works whichever of
+	           * the paths above produced it. onerror is cleared first:
+	           * without that, art that is ALSO missing loops forever.
+	           */
+	          const p2Restore = (el, priorSrc) => () => {
+	              el.onerror = null;
+	              if (priorSrc) { el.src = priorSrc; el.classList.add('no-damaged-art'); }
+	              else { el.src = fallbackUrl; }
+	          };
+
 	          if (this.player2.mediaType === 'video') {
 	              if (p2Image.tagName !== 'VIDEO') {
 	                  const newVideo = document.createElement('video');
 	                  newVideo.id = 'p2-image';
+	                  const p2PriorV = p2Image.currentSrc || p2Image.src || '';
 	                  newVideo.src = damagedUrl;
 	                  newVideo.autoplay = true;
 	                  newVideo.loop = true;
 	                  newVideo.muted = true;
 	                  newVideo.alt = this.player2.name;
-	                  newVideo.onerror = () => {
-	                      console.warn(`Failed to load battle-damaged video: ${damagedUrl}, using fallback`);
-	                      newVideo.src = fallbackUrl;
-	                  };
+	                  newVideo.onerror = p2Restore(newVideo, p2PriorV);
 	                  parent.replaceChild(newVideo, p2Image);
 	              } else {
+	                  const p2PriorV2 = p2Image.currentSrc || p2Image.src || '';
 	                  p2Image.src = damagedUrl;
-	                  p2Image.onerror = () => {
-	                      console.warn(`Failed to load battle-damaged video: ${damagedUrl}, using fallback`);
-	                      p2Image.src = fallbackUrl;
-	                  };
+	                  p2Image.onerror = p2Restore(p2Image, p2PriorV2);
 	              }
 	          } else {
 	              if (p2Image.tagName !== 'IMG') {
 	                  const newImage = document.createElement('img');
 	                  newImage.id = 'p2-image';
+	                  const p2PriorI = p2Image.currentSrc || p2Image.src || '';
 	                  newImage.src = damagedUrl;
 	                  newImage.alt = this.player2.name;
-	                  newImage.onerror = () => {
-	                      console.warn(`Failed to load battle-damaged image: ${damagedUrl}, using fallback`);
-	                      newImage.src = fallbackUrl;
-	                  };
+	                  newImage.onerror = p2Restore(newImage, p2PriorI);
 	                  parent.replaceChild(newImage, p2Image);
 	              } else {
+	                  const p2PriorI2 = p2Image.currentSrc || p2Image.src || '';
 	                  p2Image.src = damagedUrl;
-	                  p2Image.onerror = () => {
-	                      console.warn(`Failed to load battle-damaged image: ${damagedUrl}, using fallback`);
-	                      p2Image.src = fallbackUrl;
-	                  };
+	                  p2Image.onerror = p2Restore(p2Image, p2PriorI2);
 	              }
 	          }
 

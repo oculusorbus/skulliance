@@ -1049,5 +1049,28 @@ ok(strpos($game, 'alt="${boss.name}" loading="lazy"') !== false,
 ok(strpos($game, 'transform: translateZ(0);') !== false,
    'the boss image is no longer promoted to its own layer');
 
+/*
+ * A BOSS WITH NO DAMAGED ART MUST NOT BECOME A SKULL.
+ *
+ * On defeat the code swaps p2's image to the battle-damaged variant,
+ * and every one of those swaps used to fall back to icons/skull.png.
+ * So a boss without a damaged variant turned into a generic skull at
+ * the exact moment you beat it -- the most anticlimactic frame in the
+ * game, and it reads as a broken image rather than a defeat.
+ */
+echo "\na boss with no damaged variant greys out rather than vanishing\n";
+ok(strpos($game, "#p2-image.no-damaged-art { filter: grayscale(100%); }") !== false,
+   'there is no grey treatment for a boss without battle-damaged art');
+ok(strpos($game, 'const p2Restore =') !== false,
+   'the damaged-image recovery helper is gone');
+/* Every swap has to use it, or the one that does not still shows a
+   skull -- there were five of them and they were easy to miss. */
+$swaps = substr_count($game, 'src = damagedUrl;') + substr_count($game, 'src = damagedUrl');
+ok(substr_count($game, 'p2Restore(') + substr_count($game, "classList.add('no-damaged-art')") >= 5,
+   'not every battle-damaged swap recovers to the greyed art; some still fall back to a skull');
+/* And the recovery must not loop when the restored art is also gone. */
+ok(strpos($game, 'el.onerror = null;') !== false,
+   'the recovery does not clear its own handler, so missing art loops forever');
+
 echo ($fail ? "\n$fail check(s) FAILED\n" : "\nall art checks passed\n");
 exit($fail ? 1 : 0);
