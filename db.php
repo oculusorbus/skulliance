@@ -5829,6 +5829,13 @@ function calculateScore($total_duration, $success, $failure, $progress){
 //=============================================================================
 define('DROPSHIP_PROJECT_DROPSHIP', 1);
 define('DROPSHIP_PROJECT_LOUNGE',   4);
+/* The other three, ids straight from dropshipArtThemes() and
+   dropshipRewardTokens(). 2 and 3 are reskins of Drop Ship paying DREAD; 5 is
+   DHC2 Fighters paying MAXI, which is not a "theme" in dropshipArtThemes()
+   but is a Drop Ship game with its own runs and its own board. */
+define('DROPSHIP_PROJECT_DREADCITY', 2);
+define('DROPSHIP_PROJECT_MERMAID',   3);
+define('DROPSHIP_PROJECT_DHC',       5);
 
 // Game art, used as the podium backdrop when the leader has no realm theme
 // -- common here, since many Drop Ship players predate Skulliance entirely.
@@ -5837,6 +5844,11 @@ define('DROPSHIP_PROJECT_LOUNGE',   4);
 $DROPSHIP_BACKDROPS = array(
 	DROPSHIP_PROJECT_DROPSHIP => '/staking/dropship/images/dropshipbackground.jpg',
 	DROPSHIP_PROJECT_LOUNGE   => '/staking/dropship/oculus-lounge/oculusloungebackground.png',
+	/* Verified 200 like the two above. Dread City and DHC are deliberately
+	   absent: neither has a background file on the server, and
+	   dropShipBackdrop() returning null is already the "flat background"
+	   path -- naming a file that is not there would be a silent 404. */
+	DROPSHIP_PROJECT_MERMAID  => '/staking/dropship/filthy-mermaid/filthymermaidbackground.jpg',
 );
 
 function dropShipBackdrop($ds_project_id) {
@@ -7447,6 +7459,15 @@ $SKULLIANCE_BOARDS = array(
 	'dropship'          => array('label'=>'Drop Ship',         'icon'=>'🪖', 'group'=>'Specialty Games',
 		'blurb'=>'Best single run',
 		'periods'=>array('All-Time'=>'dropship','Weekly'=>'dropship-weekly','XP'=>'dropship-xp')),
+	'dreadcity'         => array('label'=>'Dread City',        'icon'=>'🌃', 'group'=>'Specialty Games',
+		'blurb'=>'Best single run',
+		'periods'=>array('All-Time'=>'dreadcity','Weekly'=>'dreadcity-weekly','XP'=>'dreadcity-xp')),
+	'filthymermaid'     => array('label'=>'Filthy Mermaid',    'icon'=>'🧜‍♀️', 'group'=>'Specialty Games',
+		'blurb'=>'Best single run',
+		'periods'=>array('All-Time'=>'filthymermaid','Weekly'=>'filthymermaid-weekly','XP'=>'filthymermaid-xp')),
+	'dhcdropship'       => array('label'=>'DHC Drop Ship',     'icon'=>'🚀', 'group'=>'Specialty Games',
+		'blurb'=>'Fighters fielded as soldiers',
+		'periods'=>array('All-Time'=>'dhcdropship','Weekly'=>'dhcdropship-weekly','XP'=>'dhcdropship-xp')),
 	'oculuslounge'      => array('label'=>'Oculus Lounge',     'icon'=>'🪩', 'group'=>'Specialty Games',
 		'blurb'=>'Best night at the club',
 		'periods'=>array('All-Time'=>'oculuslounge','Weekly'=>'oculuslounge-weekly','XP'=>'oculuslounge-xp')),
@@ -7535,6 +7556,9 @@ function refreshLeaderboardSnapshots($conn) {
 		   -- it ranks damage per Fighter within a week and there is no
 		   all-time variant to snapshot. */
 		'dhcbosses'         => function($c) { checkDHCBossesLeaderboard($c, true); },
+		'dreadcity'         => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_DREADCITY); },
+		'filthymermaid'     => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_MERMAID); },
+		'dhcdropship'       => function($c) { checkDropShipLeaderboard($c, DROPSHIP_PROJECT_DHC); },
 		'swaps'             => function($c) { checkSkullSwapsLeaderboard($c); },
 		'monstrocity'       => function($c) { checkMonstrocityLeaderboard($c); },
 		'bosses'            => function($c) { checkBossBattlesLeaderboard($c); },

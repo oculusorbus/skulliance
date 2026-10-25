@@ -81,13 +81,50 @@ foreach ($lp_sections as $sec) {
 		if (strpos($it[0], 'dropship/') === 0) $ds_tiles[$it[2]] = $it[0];
 	}
 }
-ok(count($ds_tiles) === 2, 'expected two Drop Ship tiles, found ' . count($ds_tiles));
+/*
+ * DRIVEN OFF THE PROJECT MAP, NOT A COUNT.
+ *
+ * This asserted "exactly two" and went red the moment the other three Drop
+ * Ship games were added, which is a check measuring the wrong thing: what
+ * matters is that every tile pins ITS OWN id and that no game is missing a
+ * tile. Tied to the ids the games themselves use, it now fails on a new
+ * Drop Ship game with no tile as well as on a tile with the wrong id.
+ */
+$ds_games = array(
+	1 => 'Drop Ship',
+	2 => 'Dread City',
+	3 => 'Filthy Mermaid',
+	4 => 'Oculus Lounge',
+	5 => 'DHC Drop Ship',
+);
+ok(count($ds_tiles) === count($ds_games),
+   'there are ' . count($ds_tiles) . ' Drop Ship tiles for ' . count($ds_games)
+ . ' Drop Ship games: ' . implode(', ', array_keys($ds_tiles)));
+$seen_ids = array();
 foreach ($ds_tiles as $label => $href) {
-	ok(strpos($href, 'project_id=') !== false,
+	ok(preg_match('~project_id=(\d+)~', $href, $pm) === 1,
 	   "the \"$label\" tile has no project_id, so it opens whichever game the session was last on");
+	if (!empty($pm)) {
+		$id = (int)$pm[1];
+		ok(!isset($seen_ids[$id]),
+		   "\"$label\" opens project $id, and so does \"" . ($seen_ids[$id] ?? '') . '"');
+		$seen_ids[$id] = $label;
+		ok(isset($ds_games[$id]) && $ds_games[$id] === $label,
+		   "the \"$label\" tile pins project $id, which is "
+		 . (isset($ds_games[$id]) ? '"' . $ds_games[$id] . '"' : 'not a Drop Ship game'));
+	}
 }
-ok(isset($ds_tiles['Drop Ship'])     && strpos($ds_tiles['Drop Ship'], 'project_id=1') !== false,     'Drop Ship no longer pins project 1');
-ok(isset($ds_tiles['Oculus Lounge']) && strpos($ds_tiles['Oculus Lounge'], 'project_id=4') !== false, 'Oculus Lounge no longer pins project 4');
+foreach ($ds_games as $id => $label) {
+	ok(isset($seen_ids[$id]),
+	   "$label (project $id) is a Drop Ship game with no tile on the launchpad");
+}
+/* AND EVERY ONE OF THEM HAS A BOARD. The launchpad and the leaderboard
+   catalogue are two lists of the same games, and they drifted once already. */
+$dbsrc = file_get_contents(__DIR__ . '/db.php');
+foreach ($ds_games as $id => $label) {
+	ok(strpos($dbsrc, "'label'=>'" . $label . "',") !== false,
+	   $label . ' is on the launchpad and has no board in $SKULLIANCE_BOARDS');
+}
 
 /* NSFW IS IN THE DESCRIPTION, not a badge. It was a badge briefly and the
    pill was the wrong shape for it; what matters is only that the warning is
@@ -128,14 +165,18 @@ ok(($nav_ids['Oculus Lounge'] ?? 0) === 4, 'Oculus Lounge is not in the Play men
 ok(($nav_ids['DHC Drop Ship'] ?? 0) === 5, 'DHC Drop Ship is not in the Play menu, or no longer pins project 5');
 
 /*
- * DHC Drop Ship IS NOT ON THE LAUNCHPAD, which is a decision rather than
- * an oversight: the owner asked for the nav entry only. Noted and not
- * asserted -- the two surfaces are otherwise kept in step by this file,
- * so the next reader would fairly call the gap a bug, but a check on the
- * ABSENCE of a tile reports a failure on the day somebody adds one, which
- * is backwards. If it gets a tile, it goes in the DHC group next to
- * Fighters and Arena and pins project_id=5.
+ * THE NAV AND THE LAUNCHPAD LIST THE SAME FIVE NOW.
+ *
+ * This note used to say DHC Drop Ship was deliberately nav-only and
+ * predicted that if it ever got a tile it would sit in the DHC group
+ * beside Fighters and Arena pinning project_id=5. It did, and it does.
+ * Dread City and Filthy Mermaid came with it, so the two surfaces are
+ * back in step and the check below is per game rather than a count.
  */
+foreach ($ds_games as $id => $label) {
+	ok(($nav_ids[$label] ?? 0) === $id,
+	   $label . ' is not in the Play menu, or no longer pins project ' . $id);
+}
 /* NO NSFW IN THE MENU, deliberately -- the nav is a plain list of game names
    and the label went in the launchpad description instead, which is the one
    place with room to say it. Asserted so it does not drift back in: this is

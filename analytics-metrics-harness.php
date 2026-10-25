@@ -115,10 +115,16 @@ $board_to_metric = array(
      gamemaster       - the cross-game aggregate, not a game
      skullracer-laps  - a second board on the same runs as 'skullracer'
      dropship,
-     oculuslounge     - their own database, and `results` has no date column
-                        at all, so there is nothing to plot against. See the
-                        note at the top of ajax/analytics-trends.php. */
-$exempt = array('gamemaster', 'skullracer-laps', 'dropship', 'oculuslounge');
+     dreadcity,
+     filthymermaid,
+     dhcdropship,
+     oculuslounge     - all five run on Drop Ship's own database, and its
+                        `results` table has no date column at all, so there is
+                        nothing to plot a trend against. One reason, five
+                        boards. See the note at the top of
+                        ajax/analytics-trends.php. */
+$exempt = array('gamemaster', 'skullracer-laps',
+                'dropship', 'dreadcity', 'filthymermaid', 'dhcdropship', 'oculuslounge');
 
 foreach ($SKULLIANCE_BOARDS as $key => $meta) {
 	if ($meta['group'] !== 'Games' && $meta['group'] !== 'Specialty Games') continue;

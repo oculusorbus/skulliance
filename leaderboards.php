@@ -411,7 +411,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "dhcbosses" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
-				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
+				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp" && $filterby != "dreadcity" && $filterby != "dreadcity-weekly" && $filterby != "dreadcity-xp" && $filterby != "filthymermaid" && $filterby != "filthymermaid-weekly" && $filterby != "filthymermaid-xp" && $filterby != "dhcdropship" && $filterby != "dhcdropship-weekly" && $filterby != "dhcdropship-xp"):
 				        /*
 				         * This branch means "not a known board, so treat it as a
 				         * project id". getProjectInfo() returns NULL when it is
@@ -608,6 +608,45 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				        $title = "Oculus Lounge";
 				        $filterby = "oculuslounge";
 				        break;
+				    /* The remaining Drop Ship games. One renderer, three ids -- see
+				       DROPSHIP_PROJECT_* in db.php. Each keeps the same three periods
+				       the first two have, because it is literally the same board. */
+				    case ($filterby == "dreadcity-weekly"):
+				        $title = "Weekly Dread City";
+				        $filterby = "dreadcity-weekly";
+				        break;
+				    case ($filterby == "dreadcity-xp"):
+				        $title = "Dread City XP";
+				        $filterby = "dreadcity-xp";
+				        break;
+				    case ($filterby == "dreadcity"):
+				        $title = "Dread City";
+				        $filterby = "dreadcity";
+				        break;
+				    case ($filterby == "filthymermaid-weekly"):
+				        $title = "Weekly Filthy Mermaid";
+				        $filterby = "filthymermaid-weekly";
+				        break;
+				    case ($filterby == "filthymermaid-xp"):
+				        $title = "Filthy Mermaid XP";
+				        $filterby = "filthymermaid-xp";
+				        break;
+				    case ($filterby == "filthymermaid"):
+				        $title = "Filthy Mermaid";
+				        $filterby = "filthymermaid";
+				        break;
+				    case ($filterby == "dhcdropship-weekly"):
+				        $title = "Weekly DHC Drop Ship";
+				        $filterby = "dhcdropship-weekly";
+				        break;
+				    case ($filterby == "dhcdropship-xp"):
+				        $title = "DHC Drop Ship XP";
+				        $filterby = "dhcdropship-xp";
+				        break;
+				    case ($filterby == "dhcdropship"):
+				        $title = "DHC Drop Ship";
+				        $filterby = "dhcdropship";
+				        break;
 				    case ($filterby == "gamemaster-ath"):
 				        $title = "All-Time Game Master";
 				        $filterby = "gamemaster-ath";
@@ -691,7 +730,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "dhcbosses" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
-				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
+				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp" && $filterby != "dreadcity" && $filterby != "dreadcity-weekly" && $filterby != "dreadcity-xp" && $filterby != "filthymermaid" && $filterby != "filthymermaid-weekly" && $filterby != "filthymermaid-xp" && $filterby != "dhcdropship" && $filterby != "dhcdropship-weekly" && $filterby != "dhcdropship-xp"):
 				            getTotalNFTs($conn, $filterby);
 				            checkLeaderboard($conn, false, $filterby);
 				            break;
@@ -829,6 +868,33 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				            break;
 				        case ($filterby == "oculuslounge"):
 				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_LOUNGE);
+				            break;
+				        case ($filterby == "dreadcity-weekly"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_DREADCITY, 'weekly');
+				            break;
+				        case ($filterby == "dreadcity-xp"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_DREADCITY, 'xp');
+				            break;
+				        case ($filterby == "dreadcity"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_DREADCITY);
+				            break;
+				        case ($filterby == "filthymermaid-weekly"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_MERMAID, 'weekly');
+				            break;
+				        case ($filterby == "filthymermaid-xp"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_MERMAID, 'xp');
+				            break;
+				        case ($filterby == "filthymermaid"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_MERMAID);
+				            break;
+				        case ($filterby == "dhcdropship-weekly"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_DHC, 'weekly');
+				            break;
+				        case ($filterby == "dhcdropship-xp"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_DHC, 'xp');
+				            break;
+				        case ($filterby == "dhcdropship"):
+				            checkDropShipLeaderboard($conn, DROPSHIP_PROJECT_DHC);
 				            break;
 				        case ($filterby == "gamemaster-ath"):
 				            checkActivityLeaderboard($conn, 'ath', 'games');

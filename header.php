@@ -491,13 +491,18 @@
 		           page, which is where someone already inside DHC will find
 		           them -- and the only place they can be without this list
 		           turning into every page that mentions a Fighter. -->
-		      <!-- ?project_id= on both: Drop Ship and Oculus Lounge are one
-		           codebase switched by a session value, so without it each
-		           link opens whichever theme the session was last left on.
-		           DHC Drop Ship is a third one, listed up with DHC Fighters
-		           and DHC Arena rather than here. dropship/dropship.php
-		           validates the id against getProjects() before storing it. -->
+		      <!-- ?project_id= on EVERY one: these are a single codebase
+		           switched by a session value, so without it each link opens
+		           whichever theme the session was last left on.
+		           DHC Drop Ship is the fifth, listed up with DHC Fighters and
+		           DHC Arena rather than here, because a player picking it is
+		           picking DHC. dropship/dropship.php validates the id against
+		           getProjects() before storing it.
+		           Ids are the ones in dropshipArtThemes(): 1 Drop Ship,
+		           2 Dread City, 3 Filthy Mermaid, 4 Oculus Lounge. -->
 		      <a href="dropship/dashboard.php?project_id=1">Drop Ship</a>
+		      <a href="dropship/dashboard.php?project_id=2">Dread City</a>
+		      <a href="dropship/dashboard.php?project_id=3">Filthy Mermaid</a>
 		      <a href="dropship/dashboard.php?project_id=4">Oculus Lounge</a>
 		    </div>
 		  </div>

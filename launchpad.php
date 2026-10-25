@@ -63,6 +63,24 @@ $lp_sections = array(
 		'accent' => '#ffcc44',
 		'blurb'  => 'Every game on the platform. Most pay CARBON just for finishing a run.',
 		'items'  => array(
+			/*
+			 * DHC LEADS THE LIST. It is four surfaces of one activity -- build
+			 * a Fighter, fight a rival with it, fight the community's bosses
+			 * with it, field it as a soldier -- and it is the thing a new
+			 * player is most likely to be here for. Everything below is a
+			 * game you can play on its own; these four feed each other, so
+			 * they read as a block rather than four entries scattered through
+			 * an alphabet.
+			 */
+			array('dhcfighters.php',     '🧬', 'DHC Fighters',    'Earn traits, assemble Fighters, top the board'),
+			array('dhcarena.php',        '🏟️', 'DHC Arena',       'Send a Crew of three against a rival'),
+			array('dhcbosses.php',       '☠️', 'DHC Bosses',      'Three shared bosses, one health bar each'),
+			/* ?project_id=5 for the same reason every Drop Ship entry below
+			   carries one: they are a single codebase switched by a session
+			   value, so without it each tile opens whichever game the session
+			   was last left on. */
+			array('dropship/dashboard.php?project_id=5', '🚀', 'DHC Drop Ship', 'Field your Fighters as soldiers'),
+
 			array('missions.php',        '🗺️', 'Missions',        'Send NFTs on timed runs for points'),
 			array('realms.php',          '🏰', 'Realms',          'Build a realm, raid your rivals'),
 			array('guardians.php',       '🛡️', 'Realm Guardians', 'Hold your realm against the horde'),
@@ -72,26 +90,25 @@ $lp_sections = array(
 			array('monstrocity.php#boss', '🐉', 'Boss Battles',    'Co-op community boss fights'),
 			array('skullswap.php',       '🔄', 'Skull Swap',      'Match 3 score chase'),
 			array('skullracer.php',      '🏁', 'Skull Racer',     'Pseudo-3D arcade racer'),
-			array('gauntlets.php',       '🥊', 'Gauntlets',       'NFT roguelike run'),			
+			array('gauntlets.php',       '🥊', 'Gauntlets',       'NFT roguelike run'),
 			array('obscura.php',         '🔍', 'Obscura',         'Name the collection from a sliver'),
-			// Listed with the games because it is the reason to play them: every
-			// game on this list pays a different part of a Fighter.
-			array('dhcfighters.php',     '🧬', 'DHC Fighters',    'Earn traits, assemble Fighters, top the board'),
-			// Straight after DHC Fighters, because it is the only thing on this
-			// list you cannot reach without one: entering costs a Crew of three.
-			array('dhcarena.php',        '🏟️', 'DHC Arena',       'Send a Crew of three against a rival'),
+
 			// dashboard.php, NOT the bare directory. `dropship/` serves index.php,
 			// which is an unconditional redirect to the Skulliance login -- so a
 			// player who was ALREADY logged in got bounced to a login page. The
 			// nav link in header.php has always pointed at dashboard.php, which is
 			// why that one worked and this one did not.
-			// ?project_id= on BOTH, not just the Lounge. Drop Ship and Oculus
-			// Lounge are one codebase switched by a session value, so without
-			// it each tile opened whichever game the session was last left on
-			// -- click Oculus Lounge, then Drop Ship, and you got the Lounge
-			// again. dropship.php validates the id against getProjects().
-			array('dropship/dashboard.php?project_id=1', '🪖', 'Drop Ship',    'NFT battler'),
-			array('dropship/dashboard.php?project_id=4', '🪩', 'Oculus Lounge', 'NSFW Club Crawler'),
+			// ?project_id= on EVERY one of them, not just the Lounge. They are one
+			// codebase switched by a session value, so without it each tile opened
+			// whichever game the session was last left on -- click Oculus Lounge,
+			// then Drop Ship, and you got the Lounge again. dropship.php validates
+			// the id against getProjects(). The ids are the ones in
+			// dropshipArtThemes(): 1 Drop Ship, 2 Dread City, 3 Filthy Mermaid,
+			// 4 Oculus Lounge.
+			array('dropship/dashboard.php?project_id=1', '🪖', 'Drop Ship',      'NFT battler'),
+			array('dropship/dashboard.php?project_id=2', '🌃', 'Dread City',     'NFT battler, Dread City theme'),
+			array('dropship/dashboard.php?project_id=3', '🧜‍♀️', 'Filthy Mermaid', 'NFT battler, Filthy Mermaid theme'),
+			array('dropship/dashboard.php?project_id=4', '🪩', 'Oculus Lounge',  'NSFW Club Crawler'),
 		),
 	),
 	'Collect' => array(
