@@ -9,8 +9,9 @@ Arena's — see `dhcbosses.md` for what is reused and why none of it is copied.
 
 - **`dhc_boss_day`** — one row per boss per WEEK. The shared health bar, and
   the only mutable state the whole feature has. The column is still called
-  `day` and holds the **Monday** of the week: the crew was daily in the first
-  draft and renaming a column is not worth a migration for a word.
+  `day` and holds the date of the **Thursday the week began**: the platform's
+  week turns at 4pm Thursday, the crew was daily in the first draft, and
+  renaming a column is not worth a migration for a word.
 - **`dhc_boss_runs`** — an append-only record of every Crew sent in. The ledger
   the leaderboard, the reports and the trait distribution are all derived from,
   so every number is a query rather than a counter that can drift.
@@ -25,7 +26,7 @@ Arena's — see `dhcbosses.md` for what is reused and why none of it is copied.
 
 ```sql
 CREATE TABLE IF NOT EXISTS dhc_boss_day (
-	day           DATE         NOT NULL,       -- the MONDAY of the week
+	day           DATE         NOT NULL,       -- the THURSDAY the week began
 	boss_key      VARCHAR(32)  NOT NULL,       -- 'cip-666' etc, matches the art slug
 	max_health    INT          NOT NULL,       -- what it spawned with, after scaling
 	health        INT          NOT NULL,       -- what is left
@@ -39,7 +40,7 @@ CREATE TABLE IF NOT EXISTS dhc_boss_day (
 CREATE TABLE IF NOT EXISTS dhc_boss_runs (
 	id            INT AUTO_INCREMENT PRIMARY KEY,
 	user_id       INT          NOT NULL,
-	day           DATE         NOT NULL,       -- the MONDAY of the week
+	day           DATE         NOT NULL,       -- the THURSDAY the week began
 	boss_key      VARCHAR(32)  NOT NULL,
 	seed          INT UNSIGNED NOT NULL,
 	moves         MEDIUMTEXT   DEFAULT NULL,
@@ -48,7 +49,9 @@ CREATE TABLE IF NOT EXISTS dhc_boss_runs (
 	outcome       TINYINT(1)   NOT NULL DEFAULT 0,  -- 0 running, 1 crew survived, 2 crew wiped
 	killed        TINYINT(1)   NOT NULL DEFAULT 0,  -- did this run drop the boss
 	rounds        INT          NOT NULL DEFAULT 0,
-	season        CHAR(7)      NOT NULL,            -- 'YYYY-MM', the monthly ladder
+	season        CHAR(7)      NOT NULL,            -- 'YYYY-MM'. NOT what the ladder
+	                                               -- groups on -- that is `day`, the week.
+	                                               -- Kept for a monthly view later.
 	started_at    DATETIME     NOT NULL,
 	ended_at      DATETIME     DEFAULT NULL,
 	INDEX idx_user_day (user_id, day),
@@ -88,7 +91,7 @@ CREATE TABLE IF NOT EXISTS dhc_boss_state (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS dhc_boss_payouts (
-	day           DATE         NOT NULL,       -- the MONDAY of the week
+	day           DATE         NOT NULL,       -- the THURSDAY the week began
 	user_id       INT          NOT NULL,
 	tier_table    VARCHAR(24)  NOT NULL,       -- which dhcf table it rolled on
 	dealt         INT          NOT NULL DEFAULT 0,
