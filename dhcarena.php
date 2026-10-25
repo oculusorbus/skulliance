@@ -1191,6 +1191,53 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-boss img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:5px;
   background:#0d2030;display:block;transform:translateZ(0)}
 .arena-wrap .a-boss.dead img{filter:grayscale(100%);opacity:.45}
+/*
+ * A WAVE LOOKS LIKE WHAT IT IS.
+ *
+ * The crew is dropped and gets back up the same week, angrier. There is one
+ * flat picture per boss and no appetite for three more sets of art, so the
+ * wave is a COLOURWAY of the picture that is already there.
+ *
+ * HUE ONLY. The first pass also pushed saturation, contrast and brightness,
+ * and that reads as a filter laid over the art rather than as the art -- the
+ * tonality shifts and the piece stops looking like itself. A pure
+ * hue-rotate() leaves every value and every relationship exactly where the
+ * artist put them and moves only the colour, which is what a colourway is.
+ *
+ * Even fifths around the wheel, walked in one direction, so the series reads
+ * as a sequence rather than four unrelated colours.
+ *
+ * Wave 1 is deliberately unrotated: the first crew of the week is the
+ * baseline the others are read against.
+ *
+ * The rotation is scoped from the WRAPPER so the dead state below still
+ * wins -- a downed boss is grey whatever wave it belongs to.
+ */
+.arena-wrap .a-bosses[data-wave="2"] .a-boss img{filter:hue-rotate(72deg)}
+.arena-wrap .a-bosses[data-wave="3"] .a-boss img{filter:hue-rotate(144deg)}
+.arena-wrap .a-bosses[data-wave="4"] .a-boss img{filter:hue-rotate(216deg)}
+.arena-wrap .a-bosses[data-wave="5"] .a-boss img{filter:hue-rotate(288deg)}
+.arena-wrap .a-bosses[data-wave="2"] .a-boss.dead img,
+.arena-wrap .a-bosses[data-wave="3"] .a-boss.dead img,
+.arena-wrap .a-bosses[data-wave="4"] .a-boss.dead img,
+.arena-wrap .a-bosses[data-wave="5"] .a-boss.dead img{filter:grayscale(100%)}
+/* The wave itself, stated. A colourway tells you something changed; only a
+   number tells you it is the third time this week. Neutral chrome on
+   purpose -- the art carries the identity, and a badge painted to guess at
+   a rotated hue would only ever nearly match it. */
+.arena-wrap .a-wave{display:inline-flex;align-items:center;gap:6px;margin:0 0 8px;
+  padding:3px 9px;border-radius:3px;font-size:9px;letter-spacing:.14em;
+  text-transform:uppercase;border:1px solid var(--line);color:var(--dim);
+  background:var(--panel2)}
+.arena-wrap .a-wave b{font-weight:600;letter-spacing:.02em;font-size:11px;color:var(--ochre)}
+/* AND THE SAME COLOURWAY ON THE BOARD. A crew that is one colour on the
+   panel and another in the fight is two different crews as far as the player
+   is concerned. Scoped to [data-s="boss"] so a ranked opponent's Fighters
+   are never touched by it, whatever the column happens to be carrying. */
+.arena-wrap .teamcol.foes[data-wave="2"] img[data-s="boss"]{filter:hue-rotate(72deg)}
+.arena-wrap .teamcol.foes[data-wave="3"] img[data-s="boss"]{filter:hue-rotate(144deg)}
+.arena-wrap .teamcol.foes[data-wave="4"] img[data-s="boss"]{filter:hue-rotate(216deg)}
+.arena-wrap .teamcol.foes[data-wave="5"] img[data-s="boss"]{filter:hue-rotate(288deg)}
 .arena-wrap .a-bname{font-size:9px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--ochre);margin:5px 0 3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .arena-wrap .a-bbar{height:5px;border-radius:3px;background:rgba(255,255,255,.10);overflow:hidden}
@@ -1951,7 +1998,27 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                     for everybody and wrong by more outside Central time. */ ?>
            The week turns <b>Thursday at 4pm CT</b>.</p>
 
-        <div class="a-bosses">
+        <?php
+          /* WAVES, AND WHY THE PANEL LEADS WITH THEM once there has been one.
+             The crew is scaled to fall mid-week, so dropping it is the
+             expected outcome rather than the end of the week -- and the
+             thing a player wants to know on arrival is which crew is
+             standing and how many the community has already put down. */
+          $wv = max(1, (int)$dp['wave']);
+        ?>
+        <?php if ($wv > 1 || $dp['downed'] > 0): ?>
+        <div class="a-wave">
+          <span>Wave</span> <b><?php echo $wv; ?></b>
+          <span><?php echo (int)$dp['downed']; ?> down this week</span>
+        </div>
+        <p class="a-sub" style="margin:0 0 10px">You already dropped
+           <?php echo $dp['downed'] === 1 ? 'a crew' : (int)$dp['downed'] . ' crews'; ?>
+           this week, so <b>the best trait table is locked in</b> for everyone who takes
+           part — nothing below can take it back. They get back up angrier each time:
+           what is left is the ladder, and your cache.</p>
+        <?php endif; ?>
+
+        <div class="a-bosses" data-wave="<?php echo min(5, $wv); ?>">
           <?php foreach ($dhcb_on as $bz):
             $pct = $bz['max_health'] > 0 ? max(0, min(100, round(100 * $bz['health'] / $bz['max_health']))) : 0; ?>
           <div class="a-boss<?php echo $bz['dead'] ? ' dead' : ''; ?>">
@@ -2011,7 +2078,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                            'placement_3'=>'rare', 'placement_1'=>'best');
           $tnow = dhcb_tier_table($dp);
         ?>
-        <div class="a-bsum">Rolling on the <b><?php echo $tlabels[$tnow]; ?></b> table right now.</div>
+        <div class="a-bsum">Rolling on the <b><?php echo $tlabels[$tnow]; ?></b> table<?php
+          echo $dp['downed'] > 0 ? ', locked in.' : ' right now.'; ?></div>
 
         <?php if ($dhca_guest): ?>
           <p class="a-sub" style="margin:10px 0 0">Sign in to send a Crew.</p>
@@ -3334,11 +3402,27 @@ function showEnd(res){
       : (won ? 'The crew is down' : 'Crew wiped');
     card.className = 'endcard ' + ((won || (res.killed && res.killed.length)) ? 'win' : 'lose');
     sub = dealt.toLocaleString() + ' damage landed on the boss crew.';
-    if (res.progress) {
-      sub += ' They are at ' + Math.round(100 * (1 - res.progress.pct)) + '% and '
-           + (res.progress.cleared ? 'all three are down.' : 'still standing.');
+    /*
+     * DID THIS RUN DROP THE CREW. The reply carries the week's state AFTER
+     * the damage was committed, so a wave number higher than the one this
+     * run was fought on means the crew fell and the next one is already
+     * standing. That is the biggest thing that can happen in a week and it
+     * should not be left to a percentage.
+     */
+    var pr = res.progress;
+    var dropped = pr && (pr.cleared || (res.wave && pr.wave > res.wave));
+    if (dropped) {
+      $('ecTitle').textContent = 'The crew is down';
+      card.className = 'endcard win';
+      sub = dealt.toLocaleString() + ' damage, and that is the crew down — '
+          + (pr.downed === 1 ? 'the first' : 'number ' + pr.downed) + ' this week. '
+          + 'The best trait table is locked in for everyone who takes part, and it '
+          + 'cannot be taken back.';
+      if (pr.wave > 1) sub += ' They are getting back up angrier: wave ' + pr.wave + '.';
+    } else if (pr) {
+      sub += ' They are at ' + Math.round(100 * (1 - pr.pct)) + '% and still standing.';
+      sub += ' Everyone who takes part is paid when the week closes.';
     }
-    sub += ' Everyone who takes part is paid when the week closes.';
   }
   $('ecSub').textContent = sub;
   $('ecStats').innerHTML =
@@ -3513,6 +3597,20 @@ var BOSS_URL = 'ajax/dhcbosses-action.php';
    cooldown, the one that applies here. It is read only for the few sentences
    the two pages word differently. */
 var BOSS_MODE = <?php echo $IS_BOSS ? 'true' : 'false'; ?>;
+/*
+ * WHICH CREW IS ON THE BOARD, for the colour grade. The bosses get back up
+ * within the week one wave higher and the grade is how that reads -- the
+ * panel does it from PHP, the board has to be told, because the board is
+ * drawn from a JSON reply. Cleared on anything that is not a boss run so a
+ * ranked opponent can never inherit it.
+ */
+function bossWave(res){
+  var col = document.querySelector('.teamcol.foes');
+  if (!col) return;
+  var w = (res && res.progress && res.progress.wave) ? Math.min(5, res.progress.wave) : 0;
+  if (w > 1) col.setAttribute('data-wave', w);
+  else       col.removeAttribute('data-wave');
+}
 
 /* ---------------------------------------------------------------- paging ----
    Cards are hidden, never removed: a pick made on page 1 has to survive a walk
@@ -4130,6 +4228,7 @@ if (bossBtn) bossBtn.addEventListener('click', function(){
     if (!res || !res.ok) { $('aMsg').textContent = (res && res.message) || 'Could not send.'; return; }
     $('aMsg').textContent = '';
     bossRun = res.run_id || 0;
+    bossWave(res);
     try { openBattle({battle_id:0, state:res.state}, true); }
     catch (e) { $('aMsg').textContent = 'Could not draw the run. Reload and resume.'; }
   }, function(){
@@ -4153,7 +4252,7 @@ function leaveBattle(){
     liveStopPoll(); liveTickStop(); live = null;
     $('lclock').hidden = true;
   }
-  cineStop(); practice = null; bossRun = 0;
+  cineStop(); practice = null; bossRun = 0; bossWave(null);
   $('endcard').hidden = true;
   // hidden by #arenaBattle going away regardless, but leaving it set would be a
   // stale flag waiting to be believed
@@ -4453,6 +4552,7 @@ post({do:'resume'}, function(res){
   if (!res || !res.ok) return;
   if (battle.classList.contains('on') || practice || live) return;
   bossRun = res.run_id || 0;
+  bossWave(res);
   try {
     openBattle({battle_id:0, state:res.state}, !res.state.moves);
     logLine('sys', res.state.moves ? 'Picked up where you left off.'

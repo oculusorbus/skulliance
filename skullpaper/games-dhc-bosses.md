@@ -24,6 +24,33 @@ Same board, same matching, same reach, same bombs. What is different is that
 there are three of them at once and their health does not reset when your run
 ends.
 
+## They get back up
+
+**The crew is meant to fall mid-week.** Its health is scaled to a share of what
+the week can deliver, so a community that turns up drops it around day four or
+five. Surviving until Thursday is the unusual outcome, not the normal one.
+
+So a downed crew **stands back up the same week**, one wave higher, in a
+different colourway, hitting harder. The week's question is not "can we drop
+them", it is **how many times**.
+
+Two things are true from the moment the first crew falls:
+
+- **The best trait table is locked in** for everyone who takes part, and nothing
+  later can take it back. A fresh crew at full health does not undo what the
+  week already achieved.
+- **Each wave is sized to the days that are left**, not to the whole week, so a
+  crew that stands up on Tuesday can still be dropped by Thursday. Waves arrive
+  faster as the week runs down.
+
+Later waves are **angrier, not fatter**. Health sets the pace; power sets the
+threat, so a wave 3 crew ends your runs sooner and costs you more Fighters for
+every point of damage.
+
+The whole crew respawns together, not boss by boss. A boss you drop stays down
+until all three are down, which is what makes the panel readable as progress,
+and what makes the moment they all fall worth something.
+
 ## The cache: one trait for every day you turn up
 
 Every day you send a Crew that does real damage banks **one trait**, up to
@@ -106,6 +133,6 @@ is the season.
 
 ## If nobody finishes them
 
-A new crew stands up on Thursday at 4pm at full health. Nothing carries over, and
-nothing is lost: everybody who took part is paid their cache either way, just
-on a lower table.
+A new crew stands up on Thursday at 4pm at full health, back to wave 1. Nothing
+carries over, and nothing is lost: everybody who took part is paid their cache
+either way, just on a lower table.

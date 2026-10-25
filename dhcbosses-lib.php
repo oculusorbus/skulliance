@@ -99,6 +99,46 @@ if (!defined('DHCB_DMG_PER_RUN'))  define('DHCB_DMG_PER_RUN', 950);
    spends every allowance every day; at 1.0 the crew would survive every day
    and the feature would feel pointless. */
 if (!defined('DHCB_TARGET_PCT'))   define('DHCB_TARGET_PCT', 0.60);
+/*
+ * WAVES.
+ *
+ * THE CREW IS SCALED TO FALL MID-WEEK, AND THAT IS NOT AN ACCIDENT: health is
+ * DHCB_TARGET_PCT of what the week can deliver, so days-to-clear is
+ * 7 x 0.60 = 4.2 whatever the community size, capped at 7 x 0.85 = 6.0 when
+ * the reach clamp binds. The crew SURVIVING to Thursday is the unusual case.
+ *
+ * The first design had nothing for that. dhcb_entry_block() refused with "the
+ * crew is down for today, they return tomorrow" -- which closed the feature
+ * for the rest of the week and was a lie about when they came back. Worse,
+ * the cache pays one trait per day attended, so a clear on day four capped
+ * everybody at four of seven with no way to fix it, on the one mechanic that
+ * exists to bring people back daily.
+ *
+ * So they get back up. A downed crew stands again within the same week, one
+ * wave higher, and the week's question changes from "can we drop them" to
+ * "how many times". Two rules make that safe:
+ *
+ *   THE TIER IS STICKY. The moment wave 1 falls the week is locked on the
+ *   best trait table and no later wave can take it back -- see
+ *   dhcb_tier_table(). A fresh crew at full health must never read as
+ *   "nobody has touched them", which would downgrade the whole community for
+ *   winning.
+ *
+ *   EACH WAVE IS BUDGETED AGAINST THE DAYS THAT ARE LEFT, not a flat
+ *   multiplier on the first. A 1.5x wave 2 with 2.8 days left would need 6.3
+ *   days to shift and would be a wall nobody dents -- dead content again,
+ *   just later. Sized to the remaining time, waves arrive faster as Thursday
+ *   approaches, which is the right shape anyway.
+ *
+ * HARDER MEANS ANGRIER, NOT FATTER. Each wave multiplies boss POWER, so runs
+ * end sooner and cost more per point of damage. Health does the pacing; power
+ * does the threat.
+ */
+if (!defined('DHCB_WAVE_POW'))     define('DHCB_WAVE_POW', 1.18);
+/* No wave is smaller than this share of a day's damage, so a crew standing up
+   on the last block is still worth a run for everybody rather than being
+   clamped to nothing by the first two players who reach it. */
+if (!defined('DHCB_WAVE_MIN_DAY')) define('DHCB_WAVE_MIN_DAY', 0.60);
 /* Floors and ceilings, so a quiet week is not trivial and a surge is not
    impossible. Both are on the CREW total, before the per-boss split. */
 if (!defined('DHCB_HP_MIN'))      define('DHCB_HP_MIN', 24000);
@@ -167,6 +207,14 @@ function dhcb_week_day($conn) {
    and vicious, the mech sits between them. Same total overpoweredness, three
    different fights -- which is what stops the daily boss being one fight with
    three pictures. */
+/**
+ * How much harder wave N hits than wave 1. Compounding, so the step is the
+ * same size every time and the whole curve reads off one constant.
+ */
+function dhcb_wave_pow($wave) {
+	return pow((float)DHCB_WAVE_POW, max(1, (int)$wave) - 1);
+}
+
 function dhcb_bosses() {
 	return array(
 		array('key'=>'d34thbrngr', 'name'=>'D34THBRNGR', 'rank'=>0,
@@ -266,7 +314,8 @@ function dhcb_deployable($conn) {
  * has, and the Fighters there are to field -- and the budget is that many
  * runs' worth of damage, discounted because nobody spends every allowance.
  */
-function dhcb_crew_budget($conn) {
+function dhcb_crew_budget($conn, $days = 7, $wave = 1) {
+	$days = max(0.5, (float)$days);
 	$d = dhcb_deployable($conn);
 	/*
 	 * A WEEK OF RUNS, and the roster cap is per DAY rather than per week:
@@ -278,9 +327,29 @@ function dhcb_crew_budget($conn) {
 	$byAllowanceDay = $d['players'] * (int)DHCB_DAILY_RUNS;
 	$byRosterDay    = (int)floor($d['fighters'] / max(1, DHCB_CREW_SIZE));
 	$runsPerDay     = min($byAllowanceDay, $byRosterDay);
-	$runs           = $runsPerDay * 7;
-	$hp = (int)round($runs * DHCB_DMG_PER_RUN * DHCB_TARGET_PCT);
-	if ($hp < DHCB_HP_MIN) $hp = DHCB_HP_MIN;
+	$runs           = $runsPerDay * $days;
+	/*
+	 * A LATER WAVE HITS HARDER, SO A RUN AGAINST IT DEALS LESS before the
+	 * Crew is wiped. Budgeting it at wave 1's damage-per-run would overstate
+	 * what the remaining days can deliver and leave a crew standing by
+	 * arithmetic rather than by anyone's choice. Dividing by the power
+	 * factor is rough -- the relationship is not exactly linear -- but it is
+	 * the right direction, and the 0.60 target carries the slack.
+	 */
+	$perRun = DHCB_DMG_PER_RUN / max(0.01, dhcb_wave_pow($wave));
+	$hp = (int)round($runs * $perRun * DHCB_TARGET_PCT);
+	/*
+	 * THE FLOOR IS WAVE 1'S ONLY. It exists so a quiet week is not trivial,
+	 * and applying it to a crew standing up on the last block of the week
+	 * would put a 24,000 wall in front of a day nobody can finish. A late
+	 * wave is MEANT to be small -- that is the escalating pace -- and its
+	 * own floor below keeps it worth a run for everybody.
+	 */
+	if ($wave <= 1 && $hp < DHCB_HP_MIN) $hp = DHCB_HP_MIN;
+	else {
+		$min = (int)round($runsPerDay * $perRun * DHCB_WAVE_MIN_DAY);
+		if ($hp < $min) $hp = $min;
+	}
 	if ($hp > DHCB_HP_MAX) $hp = DHCB_HP_MAX;
 	/*
 	 * AND NEVER MORE THAN THE WEEK CAN PHYSICALLY DELIVER.
@@ -295,7 +364,7 @@ function dhcb_crew_budget($conn) {
 	 * 0.85 rather than 1.0 so a clear still needs most of the community
 	 * showing up rather than literally everybody spending every run.
 	 */
-	$reach = (int)round($runs * DHCB_DMG_PER_RUN * 0.85);
+	$reach = (int)round($runs * $perRun * 0.85);
 	if ($reach > 0 && $hp > $reach) $hp = $reach;
 	return max(1, (int)$hp);
 }
@@ -308,35 +377,96 @@ function dhcb_crew_budget($conn) {
  * arrives in the same second quietly does nothing. No lock, no race, and no
  * chance of two different health bars for the same boss.
  */
+/**
+ * The spawn memo, in a holder so it can be INVALIDATED.
+ *
+ * It used to be a plain static inside dhcb_spawn(), which was correct while
+ * a wave could only change once a week: three callers per page load, one
+ * scaling query. Waves broke that. dhcb_finish() can now drop the crew and
+ * then read the bars back in the SAME request, and a memo nothing could
+ * clear would have handed it the crew it just killed -- so the reply would
+ * have shown a dead crew with no wave behind it, and the end card would
+ * never have said the player finished them.
+ */
+function dhcb_spawn_memo($set = null, $clear = false) {
+	static $v = null;
+	if ($clear)        { $v = null; return null; }
+	if ($set !== null) { $v = $set; }
+	return $v;
+}
+
 function dhcb_spawn($conn) {
 	/*
-	 * ONCE PER REQUEST. dhcb_state() spawns if it has no week, and the Arena
-	 * page reaches dhcb_state() through three different callers -- so on the
-	 * first load of a week the scaling query ran three times before anything
-	 * rendered, and that load is already the slowest of the week.
+	 * ONCE PER REQUEST. dhcb_state() spawns if it has no crew standing, and
+	 * the page reaches dhcb_state() through three different callers -- so on
+	 * the first load of a week the scaling query ran three times before
+	 * anything rendered, and that load is already the slowest of the week.
+	 *
+	 * The memo is keyed on nothing because a request cannot outlive a wave:
+	 * the only thing that stands a new wave up is a run finishing, and that
+	 * is a different request from the one that reads the result.
 	 */
-	static $done = null;
+	$done = dhcb_spawn_memo();
 	if ($done !== null) return $done;
 	$day = dhcb_week($conn);
 	$esc = $conn->real_escape_string($day);
-	$r = @$conn->query("SELECT COUNT(*) AS n FROM dhc_boss_day WHERE day = '$esc'");
-	if ($r && ($row = $r->fetch_assoc()) && (int)$row['n'] >= count(dhcb_bosses())) {
-		$done = $day; return $day;
-	}
+	$n   = count(dhcb_bosses());
 
-	$budget = dhcb_crew_budget($conn);
-	$rows = array();
+	/*
+	 * WHICH WAVE IS STANDING, AND IS IT STILL STANDING.
+	 *
+	 * One query answers both. The highest wave of the week is the current
+	 * one by construction -- a wave only exists because the one before it
+	 * fell -- and the sum of its health says whether it is down.
+	 */
+	$wave = 0; $left = 0; $rows = 0;
+	$r = @$conn->query("SELECT wave, COUNT(*) AS n, SUM(GREATEST(health,0)) AS hp
+	                      FROM dhc_boss_day WHERE day = '$esc'
+	                     GROUP BY wave ORDER BY wave DESC LIMIT 1");
+	if ($r && ($x = $r->fetch_assoc())) {
+		$wave = (int)$x['wave']; $rows = (int)$x['n']; $left = (int)$x['hp'];
+	}
+	/* A wave is standing and has health on it: nothing to do. */
+	if ($wave > 0 && $rows >= $n && $left > 0) return dhcb_spawn_memo($day);
+
+	/*
+	 * STAND THE NEXT ONE UP. Wave 1 gets the whole week; every wave after it
+	 * gets only the days that are left, because it is competing for the same
+	 * runs as the days remaining can supply. dhcb_week_day() is 0-based, so
+	 * blocks remaining INCLUDING the one in progress is 7 - index.
+	 */
+	$next = $wave + 1;
+	$daysLeft = ($next <= 1) ? 7 : max(0.5, 7 - dhcb_week_day($conn));
+	$budget = dhcb_crew_budget($conn, $daysLeft, $next);
+
+	$ins = array();
 	foreach (dhcb_bosses() as $b) {
 		$hp = max(1, (int)round($budget * $b['hp']));
-		$rows[] = sprintf("('%s','%s',%d,%d,%.3f,NOW())",
-			$esc, $conn->real_escape_string($b['key']), $hp, $hp,
+		$ins[] = sprintf("('%s',%d,'%s',%d,%d,%.3f,NOW())",
+			$esc, $next, $conn->real_escape_string($b['key']), $hp, $hp,
 			$budget / max(1, (float)DHCB_HP_MIN));   // how far above the floor it spawned
 	}
+	/*
+	 * INSERT IGNORE on (day, wave, boss_key) is the whole concurrency story:
+	 * two runs that finish in the same second both see the wave down, both
+	 * try to raise wave N+1, and the second one quietly does nothing. No
+	 * lock, no race, and no chance of two different health bars for the same
+	 * boss -- which matters far more now than it did when a wave could only
+	 * appear once a week.
+	 */
 	@$conn->query("INSERT IGNORE INTO dhc_boss_day
-	               (day, boss_key, max_health, health, scale, created_at)
-	               VALUES " . implode(',', $rows));
-	$done = $day;
-	return $day;
+	               (day, wave, boss_key, max_health, health, scale, created_at)
+	               VALUES " . implode(',', $ins));
+	return dhcb_spawn_memo($day);
+}
+
+/** The wave standing this week, 1 if the crew has never been dropped. */
+function dhcb_wave($conn, $day = null) {
+	if ($day === null) $day = dhcb_week($conn);
+	$r = @$conn->query("SELECT MAX(wave) AS w FROM dhc_boss_day
+	                     WHERE day = '" . $conn->real_escape_string($day) . "'");
+	if ($r && ($x = $r->fetch_assoc()) && $x['w'] !== null) return max(1, (int)$x['w']);
+	return 1;
 }
 
 /**
@@ -349,8 +479,13 @@ function dhcb_spawn($conn) {
 function dhcb_state($conn, $day = null) {
 	if ($day === null) $day = dhcb_spawn($conn);
 	$esc = $conn->real_escape_string($day);
-	$r = @$conn->query("SELECT boss_key, max_health, health, killed_at, killed_by
-	                      FROM dhc_boss_day WHERE day = '$esc'");
+	/* THE STANDING WAVE, which is the highest one on the week -- a wave only
+	   exists because the one before it fell. Reading every wave and summing
+	   would show a crew at a health nobody is fighting. */
+	$r = @$conn->query("SELECT boss_key, wave, max_health, health, killed_at, killed_by
+	                      FROM dhc_boss_day
+	                     WHERE day = '$esc'
+	                       AND wave = (SELECT MAX(wave) FROM dhc_boss_day WHERE day = '$esc')");
 	if (!$r) return array();
 	$have = array();
 	while ($x = $r->fetch_assoc()) $have[$x['boss_key']] = $x;
@@ -362,6 +497,7 @@ function dhcb_state($conn, $day = null) {
 			'key'=>$b['key'], 'name'=>$b['name'], 'rank'=>$b['rank'],
 			'blurb'=>$b['blurb'], 'art'=>dhcb_art($b['key']),
 			'max_health'=>(int)$h['max_health'], 'health'=>(int)$h['health'],
+			'wave'=>max(1, (int)$h['wave']),
 			'dead'=>((int)$h['health'] <= 0),
 			'killed_at'=>$h['killed_at'], 'killed_by'=>(int)$h['killed_by'],
 		);
@@ -371,14 +507,27 @@ function dhcb_state($conn, $day = null) {
 
 /** Aggregate progress across the crew: the number the tier is chosen from. */
 function dhcb_progress($state) {
-	$max = 0; $left = 0; $dead = 0;
-	foreach ($state as $s) { $max += $s['max_health']; $left += $s['health']; if ($s['dead']) $dead++; }
-	$dealt = max(0, $max - $left);
+	$max = 0; $left = 0; $dead = 0; $wave = 1;
+	foreach ($state as $s) {
+		$max += $s['max_health']; $left += $s['health']; if ($s['dead']) $dead++;
+		if (isset($s['wave'])) $wave = max($wave, (int)$s['wave']);
+	}
+	$dealt   = max(0, $max - $left);
+	$cleared = ($max > 0 && $left <= 0);
 	return array(
 		'max'=>$max, 'left'=>$left, 'dealt'=>$dealt,
 		'pct'=> $max > 0 ? ($dealt / $max) : 0.0,
 		'dead'=>$dead, 'total'=>count($state),
-		'cleared'=>($max > 0 && $left <= 0),
+		/* THE WAVE ON THE BOARD, and how many the week has already put down.
+		   A wave only exists because the one before it fell, so wave - 1 IS
+		   the count of crews dropped -- no second query, and no counter that
+		   can drift away from the rows it describes. */
+		'wave'=>$wave,
+		'downed'=>($wave - 1) + ($cleared ? 1 : 0),
+		/* `cleared` is about the crew ON THE BOARD, which is what the end
+		   card and the entry gate ask about. The week's achievement is
+		   `downed`, and that is what the trait table reads. */
+		'cleared'=>$cleared,
 	);
 }
 
@@ -481,7 +630,16 @@ function dhcb_entry_block($conn, $user_id, $crew = null) {
 	$state = dhcb_state($conn);
 	if (!$state) return 'The Bosses are not up yet.';
 	$p = dhcb_progress($state);
-	if ($p['cleared']) return 'The crew is down for today. They return tomorrow.';
+	/*
+	 * NO REFUSAL FOR A DOWNED CREW. This used to return "the crew is down for
+	 * today, they return tomorrow", which closed the feature for the rest of
+	 * the week and named the wrong day. They get back up now, and dhcb_state()
+	 * above has already stood the next wave if the last one fell -- so by the
+	 * time anybody reads this there is something to fight. The only way
+	 * `cleared` survives to here is a database that refused the insert, and a
+	 * truthful "try again shortly" beats a lie about tomorrow.
+	 */
+	if ($p['cleared']) return 'The crew is on its way back up. Try again in a moment.';
 	if (dhcb_open_run($conn, $user_id)) return '';          // resume is always allowed
 	if (dhcb_runs_today($conn, $user_id) >= DHCB_DAILY_RUNS)
 		return 'You have sent all ' . DHCB_DAILY_RUNS . ' Crews today. '
@@ -556,6 +714,12 @@ function dhcb_start($conn, $user_id, $fighter_ids) {
 		dhcf_rarity(), $seed);
 
 	$kits = dhca_kits();
+	/* THE WAVE THIS RUN IS FOUGHT AGAINST, read off the crew that is actually
+	   standing. Every boss in a wave carries the same number, so the first one
+	   answers for all three. */
+	$wave = 1;
+	foreach ($state as $sv) if (isset($sv['wave'])) { $wave = max(1, (int)$sv['wave']); break; }
+	$wpow = dhcb_wave_pow($wave);
 	foreach ($order as $i => $b) {
 		$live = isset($state[$b['key']]) ? $state[$b['key']] : null;
 		if (!$live) continue;
@@ -565,7 +729,10 @@ function dhcb_start($conn, $user_id, $fighter_ids) {
 		$bat['foes'][$i]['maxHp']   = max(1, $hp);
 		$bat['foes'][$i]['hp']      = max(0, $hp);
 		$bat['foes'][$i]['ko']      = ($hp <= 0);
-		$bat['foes'][$i]['power']   = (int)round(DHCA_POWER_BASE * DHCB_POW_MULT * $b['pow']);
+		/* ANGRIER EACH WAVE, not fatter. Health does the pacing -- it is
+		   budgeted against the days left -- and power does the threat, so a
+		   later crew ends runs sooner and costs more per point of damage. */
+		$bat['foes'][$i]['power']   = (int)round(DHCA_POWER_BASE * DHCB_POW_MULT * $b['pow'] * $wpow);
 		$bat['foes'][$i]['kit']     = $kits[$b['kit'] % count($kits)];
 		/* The snapshot each boss entered on. dhcb_finish() subtracts the
 		   remainder from this to learn what this run actually dealt -- it
@@ -578,14 +745,18 @@ function dhcb_start($conn, $user_id, $fighter_ids) {
 		'day'      => $day,
 		'mineIds'  => array_map(function ($f) { return (int)$f['id']; }, $mine),
 		'bossKeys' => array_map(function ($b) { return $b['key']; }, $order),
+		'wave'     => $wave,
 		'moves'    => array(),
 		'boss'     => true,
 	);
 
+	/* THE WAVE IS RECORDED ON THE RUN, not derived later. A run is fought
+	   against the crew that was standing when it started, and by the time it
+	   is reported on the week may be two waves further along. */
 	$ok = @$conn->query(sprintf(
-		"INSERT INTO dhc_boss_runs (user_id, day, boss_key, seed, crew_size, season, started_at)
-		 VALUES (%d, '%s', '%s', %d, %d, '%s', NOW())",
-		$uid, $conn->real_escape_string($day), 'crew', $seed, count($mine),
+		"INSERT INTO dhc_boss_runs (user_id, day, wave, boss_key, seed, crew_size, season, started_at)
+		 VALUES (%d, '%s', %d, '%s', %d, %d, '%s', NOW())",
+		$uid, $conn->real_escape_string($day), $wave, 'crew', $seed, count($mine),
 		$conn->real_escape_string(dhcb_season())));
 	if (!$ok) return array(false, 'Could not start the run.', null);
 	$rid = (int)$conn->insert_id;
@@ -668,6 +839,19 @@ function dhcb_finish($conn, &$b) {
 	$applied = array();    // boss_key => damage that actually landed
 	$killed  = array();    // boss_key => this run dropped it
 	$total   = 0;
+	/*
+	 * THE WAVE THIS RUN WAS FOUGHT AGAINST, and every write below is scoped
+	 * to it.
+	 *
+	 * Without that scope a run that started against wave 1, and finished
+	 * after somebody else dropped wave 1 and raised wave 2, would subtract
+	 * its damage from wave 2 -- a crew it never saw, at a health it was
+	 * never scaled against. Scoped, the damage lands on the row it was
+	 * earned from, which is already at zero, and the existing clamp turns it
+	 * into nothing. That is the correct answer: somebody else finished the
+	 * crew you were fighting.
+	 */
+	$wave = isset($m['wave']) ? max(1, (int)$m['wave']) : 1;
 
 	$conn->begin_transaction();
 	try {
@@ -680,6 +864,7 @@ function dhcb_finish($conn, &$b) {
 
 			$q = $conn->query("SELECT health FROM dhc_boss_day
 			                    WHERE day = '" . $conn->real_escape_string($day) . "'
+			                      AND wave = $wave
 			                      AND boss_key = '" . $conn->real_escape_string($key) . "'
 			                    FOR UPDATE");
 			if (!$q || !$q->num_rows) { $applied[$key] = 0; continue; }
@@ -689,10 +874,10 @@ function dhcb_finish($conn, &$b) {
 			if ($hit > 0) {
 				$conn->query(sprintf(
 					"UPDATE dhc_boss_day SET health = %d%s
-					  WHERE day = '%s' AND boss_key = '%s'",
+					  WHERE day = '%s' AND wave = %d AND boss_key = '%s'",
 					$left,
 					($left <= 0 ? ", killed_at = NOW(), killed_by = $uid" : ''),
-					$conn->real_escape_string($day), $conn->real_escape_string($key)));
+					$conn->real_escape_string($day), $wave, $conn->real_escape_string($key)));
 			}
 			$applied[$key] = $hit;
 			$total += $hit;
@@ -734,6 +919,14 @@ function dhcb_finish($conn, &$b) {
 		$conn->real_escape_string(json_encode($m['moves'])), $rid));
 
 	@$conn->query("DELETE FROM dhc_boss_state WHERE run_id = $rid");
+
+	/*
+	 * A KILL CHANGES THE WORLD INSIDE THIS REQUEST, so the memo has to go.
+	 * The very next dhcb_state() -- the announcement below, and the reply
+	 * the endpoint builds after it -- must stand the next wave up and read
+	 * IT, not the crew that was just dropped.
+	 */
+	if ($killed) dhcb_spawn_memo(null, true);
 
 	$b['dealtTotal'] = $total;
 	$b['applied']    = $applied;
@@ -816,6 +1009,18 @@ if (!defined('DHCB_CARBON'))         define('DHCB_CARBON', 50000);
  * clearable boss would mint more of them in a fortnight than exist.
  */
 function dhcb_tier_table($progress) {
+	/*
+	 * STICKY, AND THIS IS THE ONE THING WAVES MUST NOT GET WRONG.
+	 *
+	 * It used to read `cleared`, which is about the crew currently on the
+	 * board. Stand wave 2 up at full health and that goes false and the
+	 * percentage goes back to zero -- so the entire community would have
+	 * been silently downgraded from the best table to the worst, as a direct
+	 * consequence of WINNING. `downed` counts crews the week has actually
+	 * put down and only ever rises, so the best table is locked the moment
+	 * the first crew falls and no later wave can take it back.
+	 */
+	if (!empty($progress['downed'])) return 'placement_1';
 	if (!empty($progress['cleared'])) return 'placement_1';
 	$pct = isset($progress['pct']) ? (float)$progress['pct'] : 0.0;
 	if ($pct >= 0.50) return 'placement_3';
@@ -1122,13 +1327,33 @@ function dhcb_announce($conn, $b, $dealt, $killedKeys) {
 		$kname  = array();
 		foreach ($killed as $k) { $kb = dhcb_boss($k); if ($kb) $kname[] = $kb['name']; }
 
-		$title = $kname
-			? '💀 DHC Bosses — ' . implode(' and ', $kname) . ' is down'
-			: '🩸 DHC Bosses — ' . number_format((int)$dealt) . ' damage';
+		/*
+		 * A WHOLE CREW FALLING IS THE WEEK'S EVENT, not a footnote under a
+		 * damage number. It is also the moment the best trait table locks
+		 * in for everybody, so the post says so -- a player who reads only
+		 * Discord should know their week just got better.
+		 */
+		$fellWave = isset($b['meta']['wave']) ? max(1, (int)$b['meta']['wave']) : 1;
+		$wiped    = !empty($prog['cleared']) || $prog['wave'] > $fellWave;
+		$title = $wiped
+			? '☠️ DHC Bosses — wave ' . $fellWave . ' is down'
+			: ($kname
+				? '💀 DHC Bosses — ' . implode(' and ', $kname) . ' is down'
+				: '🩸 DHC Bosses — ' . number_format((int)$dealt) . ' damage');
 		$desc  = '**' . $me['name'] . '** sent ' . implode(', ', $crew) . "\n"
-		       . number_format((int)$dealt) . ' damage dealt' . "\n\n"
-		       . implode(' · ', $bars) . "\n"
-		       . 'Crew at **' . round(100 * $prog['pct']) . '%** down.';
+		       . number_format((int)$dealt) . ' damage dealt' . "\n\n";
+		if ($wiped) {
+			$desc .= 'That is **' . $prog['downed'] . ' crew'
+			       . ($prog['downed'] === 1 ? '' : 's') . ' dropped this week**, and the '
+			       . 'best trait table is locked in for everyone who takes part.' . "\n\n"
+			       . 'They are getting back up angrier — **wave ' . $prog['wave'] . '** is '
+			       . 'standing now.' . "\n"
+			       . implode(' · ', $bars);
+		} else {
+			$desc .= 'Wave **' . $prog['wave'] . '**' . "\n"
+			       . implode(' · ', $bars) . "\n"
+			       . 'Crew at **' . round(100 * $prog['pct']) . '%** down.';
+		}
 
 		$img = '';
 		if ($kname) {

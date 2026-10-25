@@ -28,6 +28,9 @@ function ok($cond, $what) {
 require_once __DIR__ . '/harness-strip.php';
 require_once __DIR__ . '/dhcbosses-lib.php';
 $LIB = harness_strip_comments(file_get_contents(__DIR__ . '/dhcbosses-lib.php'));
+/* The Arena page, which is also the Bosses page -- read once, here, because
+   both the wave checks and the interface checks below work on it. */
+$ARE = file_get_contents(__DIR__ . '/dhcarena.php');
 
 /* ---------------------------------------------------------------- *
  * IT IS AN OVERRIDE, NOT A SECOND ARENA
@@ -111,10 +114,10 @@ class HBRes2 {
 	public function __construct($r = array()) { $this->r = $r; $this->num_rows = count($r); }
 	public function fetch_assoc() { return isset($this->r[$this->i]) ? $this->r[$this->i++] : null; }
 }
-function hb_budget($players, $fighters) {
+function hb_budget($players, $fighters, $days = 7, $wave = 1) {
 	$c = new HBCount();
 	$c->players = $players; $c->fighters = $fighters;
-	return dhcb_crew_budget($c);
+	return dhcb_crew_budget($c, $days, $wave);
 }
 $deep    = hb_budget(2, 400);     // two players, enormous collection
 $crowd   = hb_budget(20, 60);     // twenty players, one Crew each
@@ -421,6 +424,226 @@ foreach (array(array(999999, array('D34THBRNGR','CIP-666','X-K4T'), 1.0, true),
 }
 
 /* ---------------------------------------------------------------- *
+ * WAVES: THEY GET BACK UP
+ * ---------------------------------------------------------------- */
+echo "\na crew that falls mid-week stands up again instead of closing the feature\n";
+/*
+ * THE BLIND SPOT THIS CLOSES. Health is DHCB_TARGET_PCT of what the week can
+ * deliver, so days-to-clear is 7 x 0.60 = 4.2 WHATEVER THE COMMUNITY SIZE,
+ * capped at 7 x 0.85 = 6.0 when the reach clamp binds. The crew falling
+ * mid-week is the DESIGNED outcome, not bad luck, and the first version had
+ * nothing for it: entry closed with "they return tomorrow" (they returned
+ * Thursday), the cache capped everybody at the days played before the clear,
+ * and anyone short of DHCB_LADDER_MIN_RUNS could never reach the board.
+ * Three of seven days dead, on the mechanic built to bring people back daily.
+ */
+$clearDay = 7 * DHCB_TARGET_PCT;
+ok($clearDay < 7,
+   'the crew is scaled to survive the week, so waves are solving a problem that no longer '
+ . 'exists -- re-read this block before deleting it');
+
+/*
+ * THE TIER IS STICKY, AND IT IS THE ONE THING THAT MUST NOT BREAK.
+ *
+ * dhcb_tier_table() used to read `cleared`, which describes the crew on the
+ * board. Stand a fresh crew at full health and that goes false and pct goes
+ * to zero -- so the whole community would drop from the best table to the
+ * worst as a direct consequence of winning, with nothing on screen saying so.
+ */
+function hb_prog($wave, $max, $left) {
+	return dhcb_progress(array(
+		array('max_health'=>$max, 'health'=>$left, 'dead'=>($left <= 0), 'wave'=>$wave)));
+}
+$justCleared = hb_prog(1, 100000, 0);
+ok($justCleared['downed'] === 1, 'a cleared wave 1 does not count as a crew downed');
+ok(dhcb_tier_table($justCleared) === 'placement_1', 'clearing the crew is not the best table');
+$waveTwoFresh = hb_prog(2, 30000, 30000);
+ok((float)$waveTwoFresh['pct'] === 0.0 && empty($waveTwoFresh['cleared']),
+   'a fresh wave 2 does not read as untouched, so this cannot test the sticky tier');
+ok($waveTwoFresh['downed'] === 1,
+   'wave 2 standing does not imply wave 1 fell, so the week forgets what it achieved');
+ok(dhcb_tier_table($waveTwoFresh) === 'placement_1',
+   'standing a fresh crew DOWNGRADES the whole community from the best table to the worst, '
+ . 'as a reward for winning -- the single worst failure waves can have');
+/* And it stays locked however far the week goes. */
+foreach (array(2, 3, 4, 5) as $w) {
+	ok(dhcb_tier_table(hb_prog($w, 20000, 20000)) === 'placement_1',
+	   'the table is not locked at wave ' . $w);
+}
+/* A week with nothing downed still reads off the live bar, as before. */
+ok(dhcb_tier_table(hb_prog(1, 100000, 100000)) === 'run',  'an untouched crew is not the run table');
+ok(dhcb_tier_table(hb_prog(1, 100000, 70000))  === 'placement_10', '30% down is not the improved table');
+ok(dhcb_tier_table(hb_prog(1, 100000, 40000))  === 'placement_3',  '60% down is not the rare table');
+
+/*
+ * EACH WAVE IS BUDGETED AGAINST THE DAYS THAT ARE LEFT. A flat multiplier on
+ * wave 1 is the failure mode here: 1.5x wave 1 with 2.8 days left needs 6.3
+ * days to shift, so it is a wall nobody dents -- dead content again, just
+ * later, which is exactly what waves exist to prevent.
+ */
+$full = hb_budget(10, 90, 7, 1);
+$two  = hb_budget(10, 90, 2, 2);
+ok($two < $full, 'a wave with two days left is not smaller than a wave with seven');
+ok($two < $full / 2,
+   'a late wave is barely smaller than the week-long one, so it cannot be cleared in the '
+ . 'days remaining: ' . number_format($two) . ' vs ' . number_format($full));
+/* Monotonic in the days remaining, which it must be or the pacing inverts. */
+$prev = 0;
+foreach (array(0.5, 1, 2, 3, 5, 7) as $d) {
+	$hp = hb_budget(10, 90, $d, 2);
+	ok($hp >= $prev, 'the budget is not monotonic in days remaining at ' . $d . ' days');
+	$prev = $hp;
+}
+/*
+ * AND IT IS STILL CLEARABLE IN THOSE DAYS. The point of sizing to the time
+ * left is that the time left is enough, so the check is the same shape as
+ * the one wave 1 gets: what the remaining days can physically deliver has to
+ * exceed what is standing.
+ */
+foreach (array(array(10, 90), array(3, 9), array(20, 60)) as $pop) {
+	list($pp, $pf) = $pop;
+	foreach (array(0.5, 1, 2, 3) as $d) {
+		$perDay = min($pp * DHCB_DAILY_RUNS, (int)floor($pf / DHCB_CREW_SIZE));
+		foreach (array(2, 3, 4) as $w) {
+			$ceiling = $perDay * $d * (DHCB_DMG_PER_RUN / dhcb_wave_pow($w));
+			if (!ok(hb_budget($pp, $pf, $d, $w) <= $ceiling + 1,
+			        "wave $w with $d days left is bigger than $pp players can deliver in them"))
+				break 3;
+		}
+	}
+}
+/*
+ * THE WAVE FLOOR IS NOT WAVE 1'S FLOOR. DHCB_HP_MIN exists so a quiet week is
+ * not trivial; applied to a crew standing on the last block of the week it
+ * would be a 24,000 wall in front of a day nobody can finish.
+ */
+/*
+ * 1.4 DAYS AND WAVE 2 IS THE CASE THAT ACTUALLY TESTS THIS, and the obvious
+ * one does not: with half a day left the reach clamp cuts the budget below
+ * DHCB_HP_MIN anyway, so the floor could be wrongly applied to every wave
+ * and nothing would show. Here the unfloored budget is ~20,300 and reach is
+ * ~28,700, so the floor is the only thing that could lift it to 24,000.
+ */
+ok(hb_budget(10, 90, 1.4, 2) < DHCB_HP_MIN,
+   'a late wave is still floored at DHCB_HP_MIN (' . number_format(hb_budget(10, 90, 1.4, 2))
+ . '), which puts a wall in front of days nobody can finish');
+ok(hb_budget(1, 3, 7, 1) >= 1, 'wave 1 can be budgeted to nothing');
+/*
+ * But not to nothing either, or the first two players to reach it clamp
+ * everybody else out of a cache slot.
+ *
+ * DHCB_WAVE_MIN_DAY is a floor of 0.6 of a DAY, and the reach clamp is a
+ * ceiling of 0.85 of what the REMAINING TIME can deliver -- with half a day
+ * left the ceiling is the lower of the two and has to win, or the late wave
+ * is unclearable, which is the failure waves exist to prevent. So the thing
+ * to check is the share of the time left, not an absolute figure.
+ */
+foreach (array(0.5, 1, 2) as $d) {
+	$per  = DHCB_DMG_PER_RUN / dhcb_wave_pow(3);
+	$cap  = min(10 * DHCB_DAILY_RUNS, 30) * $d * $per;
+	$hp   = hb_budget(10, 90, $d, 3);
+	ok($hp >= 0.5 * $cap,
+	   'a wave with ' . $d . ' days left is only ' . round(100 * $hp / $cap) . '% of what '
+	 . 'those days can deliver, so the first players to reach it clamp everybody else out '
+	 . 'of a cache slot');
+	ok($hp <= $cap,
+	   'a wave with ' . $d . ' days left needs more damage than those days can deliver');
+}
+
+/* HARDER MEANS ANGRIER. Power compounds; health does the pacing. */
+ok(dhcb_wave_pow(1) === 1.0, 'wave 1 is not the baseline');
+ok(dhcb_wave_pow(2) > dhcb_wave_pow(1) && dhcb_wave_pow(3) > dhcb_wave_pow(2),
+   'later waves do not hit harder');
+ok(abs(dhcb_wave_pow(3) - pow(DHCB_WAVE_POW, 2)) < 1e-9, 'the power curve is not compounding');
+ok(strpos($LIB, "* \$b['pow'] * \$wpow") !== false,
+   'the wave factor is not applied to boss power, so every wave hits exactly the same');
+
+/*
+ * THE DAMAGE COMMIT IS SCOPED TO THE WAVE. Without that, a run that started
+ * against wave 1 and finished after somebody else dropped it would subtract
+ * from wave 2 -- a crew it never fought, at a health it was never scaled
+ * against. Scoped, it lands on a row already at zero and the clamp makes it
+ * nothing, which is the correct answer.
+ */
+$fin = substr($LIB, strpos($LIB, 'function dhcb_finish('));
+$fin = substr($fin, 0, strpos($fin, 'function dhcb_bench('));
+ok(strpos($fin, 'AND wave = $wave') !== false,
+   'the FOR UPDATE read is not scoped to the wave, so a late-finishing run reads the wrong bar');
+ok(strpos($fin, "AND wave = %d AND boss_key = '%s'") !== false,
+   'the damage UPDATE is not scoped to the wave, so it lands on a crew nobody fought');
+ok(strpos($fin, 'dhcb_spawn_memo(null, true)') !== false,
+   'a kill does not clear the spawn memo, so the reply shows the crew that was just '
+ . 'dropped and the end card never says the player finished them');
+
+/* THE STATE IS THE STANDING WAVE, not every wave summed. */
+ok(strpos($LIB, 'wave = (SELECT MAX(wave) FROM dhc_boss_day') !== false,
+   'dhcb_state() reads every wave of the week, so the bar shows a health nobody is fighting');
+
+/* AND THE GATE NO LONGER CLOSES THE WEEK. */
+ok(strpos($LIB, 'They return tomorrow.') === false,
+   'the entry gate still closes the feature for the rest of the week, and names the wrong day');
+
+/* THE MIGRATION IS WRITTEN DOWN, because nothing in the app creates columns. */
+$SCH = file_get_contents(__DIR__ . '/dhcbosses-schema.md');
+ok(strpos($SCH, 'ADD COLUMN wave TINYINT NOT NULL DEFAULT 1 AFTER day') !== false,
+   'the wave migration is not in the schema notes, so the live database never gets the column');
+ok(strpos($SCH, 'ADD PRIMARY KEY (day, wave, boss_key)') !== false,
+   'the primary key is not widened, so wave 2 cannot be inserted at all');
+
+/* THE TWIST IS VISIBLE. A wave the player cannot see is a number in a table. */
+/*
+ * HUE ONLY, ON EVERY WAVE RULE.
+ *
+ * The first pass pushed saturation, contrast and brightness as well, and the
+ * owner read it exactly right: "instead of an overlay tint, can you just
+ * adjust the hue of the boss art, that way it feels more cohesive instead of
+ * filter altered." A hue rotation moves the colour and leaves every value
+ * and relationship where the artist put them. Anything else is a treatment
+ * laid over the art, and the art stops looking like itself.
+ *
+ * So the check is on the FILTER VALUE, not on the rule existing: a rule that
+ * says filter:sepia(1) satisfies "there is a filter here" and fails the
+ * thing that was actually asked for.
+ */
+$waveRules = array();
+preg_match_all('~\[data-wave="([2-5])"\][^\{]*\{filter:([^}]+)\}~', $ARE, $wm, PREG_SET_ORDER);
+foreach ($wm as $hit) if (strpos($hit[0], 'dead') === false) $waveRules[] = $hit;
+ok(count($waveRules) >= 8,
+   'the wave colourways are gone from the panel or the board (' . count($waveRules)
+ . ' rules found, expected 4 of each)');
+foreach ($waveRules as $hit) {
+	ok(preg_match('~^hue-rotate\(-?\d+deg\)$~', trim($hit[2])) === 1,
+	   'wave ' . $hit[1] . ' is a treatment laid over the art rather than a hue rotation of '
+	 . 'it: filter:' . trim($hit[2]));
+}
+/*
+ * FOUR DISTINCT ROTATIONS, AND THE PANEL AND THE BOARD AGREE ON EACH.
+ *
+ * Two failures in one check. If two waves share a rotation they are the same
+ * crew to look at, and the escalation stops reading. If the panel and the
+ * board disagree on one wave, the crew is one colour in the list and another
+ * in the fight -- which is the thing the board rules were added for.
+ */
+$byWave = array();
+foreach ($waveRules as $hit)
+	if (preg_match('~(-?\d+)deg~', $hit[2], $dm)) $byWave[$hit[1]][] = (int)$dm[1];
+ok(count($byWave) === 4, 'there are not four waves of colourway: ' . implode(',', array_keys($byWave)));
+foreach ($byWave as $w => $list) {
+	ok(count(array_unique($list)) === 1,
+	   'wave ' . $w . ' is one colour on the panel and another on the board: '
+	 . implode(' vs ', array_unique($list)));
+}
+$one = array_map(function ($l) { return $l[0]; }, $byWave);
+ok(count(array_unique($one)) === count($one),
+   'two waves share a rotation, so they are the same crew to look at: ' . json_encode($one));
+ok(preg_match('~data-wave="<\?php echo min\(5, \$wv\); \?>"~', $ARE) === 1,
+   'the panel never emits the wave, so the grade has nothing to hang on');
+ok(strpos($ARE, 'teamcol.foes[data-wave="2"] img[data-s="boss"]') !== false,
+   'the board does not grade the crew, so it is scorched on the panel and ordinary in the fight');
+ok(strpos($ARE, 'function bossWave(res)') !== false && substr_count($ARE, 'bossWave(') >= 4,
+   'nothing tells the board which wave it is fighting');
+
+/* ---------------------------------------------------------------- *
  * TWO INTERFACES, ONE IMPLEMENTATION
  * ---------------------------------------------------------------- */
 echo "\nthe Bosses are their own page without being their own codebase\n";
@@ -441,7 +664,6 @@ echo "\nthe Bosses are their own page without being their own codebase\n";
  *   lines of board, drag, cascade, timeline and end-card; a copy is correct
  *   the day it is made and wrong from the next engine fix onward.
  */
-$ARE = file_get_contents(__DIR__ . '/dhcarena.php');
 $BOS = file_get_contents(__DIR__ . '/dhcbosses.php');
 
 /*

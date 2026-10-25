@@ -73,6 +73,11 @@ if ($do === 'move') {
 	list($ok, $msg, $b) = dhcb_move($conn, $user_id, $rid, (int)($_POST['a'] ?? -1), (int)($_POST['z'] ?? -1));
 	if (!$ok) dhcb_out(false, $msg, $b ? array('state' => dhca_public($b)) : array());
 	$out = array_merge(dhcb_bars($conn), array('state' => dhca_public($b)));
+	/* THE WAVE THIS RUN WAS FOUGHT ON, which the bars above no longer carry:
+	   if this run dropped the crew, dhcb_bars() has already read the NEXT
+	   wave standing. The end card compares the two to know whether it was
+	   this Crew that finished them. */
+	$out['wave'] = isset($b['meta']['wave']) ? (int)$b['meta']['wave'] : 1;
 	if ($b['over'] !== null) {
 		$out['over']  = $b['over'];
 		$out['dealt'] = isset($b['dealtTotal']) ? (int)$b['dealtTotal'] : 0;

@@ -299,11 +299,32 @@ ok($iMerge !== false && $iMerge < $iGuest,
 ok(strpos($act, '$_SESSION = $ck') === false,
    'the restore replaces $_SESSION instead of merging; that wipes other pages state');
 
-/* And the client must not route a practice move to the ranked endpoint
-   in the first place. */
+/*
+ * And the client must not route a battle with no id to the ranked endpoint
+ * in the first place -- a practice draw that failed, or any other state that
+ * leaves a board on screen with nothing behind it.
+ *
+ * ANCHORED ON THE PROPERTY, not the spelling. This pinned the exact
+ * condition, and the condition legitimately grew an arm when DHC Bosses
+ * became a third kind of battle, so a correct guard failed here. What has to
+ * hold is that there IS a guard, that it fires only when there is no id, and
+ * that it does not post -- dhcbosses-harness.php owns the separate question
+ * of whether the guard lists every kind the router routes.
+ */
 $pg = file_get_contents(__DIR__ . '/dhcarena.php');
-ok(preg_match('/if \(!live && !practice && !\(battleId > 0\)\)/', $pg) === 1,
-   'sendMove() will post a battle with no id and no spec to the ranked endpoint again');
+$mv = strpos($pg, 'function sendMove(a, z){');
+$seg = $mv !== false ? substr($pg, $mv, 2200) : '';
+ok(preg_match('~if \((![A-Za-z0-9_ &!]*?)!\(battleId > 0\)\) \{~', $seg, $gm) === 1,
+   'sendMove() has no "no id" guard, so it will post a battle with no id and no spec to '
+ . 'the ranked endpoint again');
+if (!empty($gm)) {
+	ok(strpos($gm[1], '!practice') !== false,
+	   'the guard no longer exempts practice, so a practice move is refused');
+	/* It must RETURN, not fall through: a guard that only logs still posts. */
+	$body = substr($seg, strpos($seg, $gm[0]), 420);
+	ok(strpos($body, 'return;') !== false && strpos($body, 'return;') < strpos($body, 'post('),
+	   'the guard does not return, so the unconnected battle is posted anyway');
+}
 ok(preg_match('/catch \(e\) \{\s*\n(?:.*\n)*?\s*try \{ leaveBattle\(\); \}/', $pg) === 1,
    'a practice battle that cannot be drawn is left on screen instead of closed');
 

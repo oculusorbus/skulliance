@@ -7,8 +7,10 @@ DHC Fighters and DHC Arena.
 engine, the board, the Fighter art pipeline and the trait tables are the
 Arena's — see `dhcbosses.md` for what is reused and why none of it is copied.
 
-- **`dhc_boss_day`** — one row per boss per WEEK. The shared health bar, and
-  the only mutable state the whole feature has. The column is still called
+- **`dhc_boss_day`** — one row per boss per WAVE per WEEK. The shared health
+  bar, and the only mutable state the whole feature has. A crew that is
+  dropped stands back up the same week one wave higher, so a busy week has
+  several waves on one `day` and the highest one is the crew on the board. The column is still called
   `day` and holds the date of the **Thursday the week began**: the platform's
   week turns at 4pm Thursday, the crew was daily in the first draft, and
   renaming a column is not worth a migration for a word.
@@ -27,6 +29,7 @@ Arena's — see `dhcbosses.md` for what is reused and why none of it is copied.
 ```sql
 CREATE TABLE IF NOT EXISTS dhc_boss_day (
 	day           DATE         NOT NULL,       -- the THURSDAY the week began
+	wave          TINYINT      NOT NULL DEFAULT 1,  -- 1, then 2 when the first crew falls
 	boss_key      VARCHAR(32)  NOT NULL,       -- 'cip-666' etc, matches the art slug
 	max_health    INT          NOT NULL,       -- what it spawned with, after scaling
 	health        INT          NOT NULL,       -- what is left
@@ -34,13 +37,14 @@ CREATE TABLE IF NOT EXISTS dhc_boss_day (
 	killed_at     DATETIME     DEFAULT NULL,
 	killed_by     INT          DEFAULT NULL,   -- users.id who landed the last hit
 	created_at    DATETIME     NOT NULL,
-	PRIMARY KEY (day, boss_key)
+	PRIMARY KEY (day, wave, boss_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS dhc_boss_runs (
 	id            INT AUTO_INCREMENT PRIMARY KEY,
 	user_id       INT          NOT NULL,
 	day           DATE         NOT NULL,       -- the THURSDAY the week began
+	wave          TINYINT      NOT NULL DEFAULT 1,  -- which crew this run fought
 	boss_key      VARCHAR(32)  NOT NULL,
 	seed          INT UNSIGNED NOT NULL,
 	moves         MEDIUMTEXT   DEFAULT NULL,
@@ -117,3 +121,21 @@ ledger; a counter can drift from it.
 
 It is the idempotency guard for the daily settle. The cron can be run late,
 and it can be run twice; the second run inserts nothing and pays nothing.
+
+
+## Migration: waves (run after the tables above already exist)
+
+The crew is scaled to fall on day 4.2 of 7 -- see DHCB_TARGET_PCT -- so a
+downed crew now stands back up within the same week instead of closing the
+feature until Thursday. That needs a wave number on the health bar and on the
+ledger. Existing rows are wave 1, which is what the defaults give them.
+
+```sql
+ALTER TABLE dhc_boss_day
+	ADD COLUMN wave TINYINT NOT NULL DEFAULT 1 AFTER day,
+	DROP PRIMARY KEY,
+	ADD PRIMARY KEY (day, wave, boss_key);
+
+ALTER TABLE dhc_boss_runs
+	ADD COLUMN wave TINYINT NOT NULL DEFAULT 1 AFTER day;
+```
