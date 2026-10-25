@@ -438,18 +438,30 @@ ok(strpos($ARE, 'data-bok=') !== false && strpos($ARE, 'data-bleft=') !== false,
    pre-fetched roster and this pinned the old argument list. */
 ok(preg_match('~dhcb_roster\(\$conn, \$user_id~', $ARE) === 1,
    'the page never reads the boss roster, so the boss availability is guesswork');
-ok(strpos($ARE, 'function applyPickMode') !== false,
-   'there is no way to switch the picker between the two cooldowns');
-/* Switching modes must drop a pick the new mode cannot field, or the player
-   sends a Crew the server is about to refuse. */
-/* AT THE START OF ITS LINE. A presence check survives the statement being
-   disabled behind an if(0), which is how this first passed a mutation that
-   had plainly broken it. */
-ok(preg_match('~\n\s*picked = picked\.filter\(~', $ARE) === 1,
-   'switching mode keeps picks the new mode cannot field');
-/* The clock rewritten in the browser has to read like the one PHP printed. */
-ok(strpos($ARE, 'Math.max(1, m)') !== false,
-   'the client clock can print 0m, which reads as available when it is not');
+/*
+ * BOTH CLOCKS ON EVERY CARD, WITH NO MODE TO DISCOVER.
+ *
+ * The first version put the two behind an Arena/Bosses toggle, and the
+ * owner hit exactly what that costs: a Crew perfectly able to fight a boss
+ * looked unavailable because the picker happened to be showing the Arena,
+ * and the send button sat dead with nothing on screen saying why. Two pips
+ * take less room than the toggle did and there is no hidden state.
+ */
+ok(strpos($ARE, 'applyPickMode') === false && strpos($ARE, 'pickMode') === false,
+   'the picker mode is back; one Fighter has two cooldowns and hiding one behind a toggle '
+ . 'is what made the send button look broken');
+ok(substr_count($ARE, 'class="pip') >= 1 && strpos($ARE, '$dhcb_av[(int)$f') !== false,
+   'the cards do not show both cooldowns');
+/*
+ * AND A CARD IS ONLY DEAD WHEN BOTH GAMES ARE. Greying a Fighter out
+ * because it is cooling down from a ranked battle says it cannot fight a
+ * boss, which is the opposite of true and the whole reason the second
+ * table exists.
+ */
+ok(strpos($ARE, '$anyOk = $ok || ($dhcb_on && $bok);') !== false,
+   'a Fighter resting from the Arena is greyed out for the Bosses too');
+ok(strpos($ARE, 'echo $anyOk?\'\':\' out\'') !== false,
+   'the card still dims on the Arena cooldown alone');
 
 /* ---------------------------------------------------------------- *
  * THE ADMIN REPORT
@@ -659,6 +671,19 @@ ok(strpos($ARE, 'a-slot') !== false && strpos($ARE, 'dhcb_cache_slots(') !== fal
    'the cache is not drawn, so the one thing that rewards coming back is invisible');
 ok(strpos($ARE, 'prefers-reduced-motion') !== false,
    'the pulsing slot has no reduced-motion escape');
+/*
+ * THE ARENA RESTYLED ITS OWN CONTROLS. Every button on that page is .btn,
+ * and .button is the GLOBAL flexbox.css style -- the old drop-shadowed one
+ * -- so a boss control written against the platform default lands in the
+ * middle of a panel where nothing else has a shadow. Easy to do and
+ * invisible until somebody looks at the page.
+ */
+preg_match_all('~<button[^>]*class="([^"]*)"[^>]*id="(a[A-Za-z-]+)"~', $ARE, $bm, PREG_SET_ORDER);
+$offStyle = array();
+foreach ($bm as $bx) if (strpos($bx[1], 'btn') === false) $offStyle[] = $bx[2];
+ok(!$offStyle, 'an Arena button uses the global .button style instead of .btn: '
+             . implode(', ', $offStyle));
+ok(count($bm) >= 8, 'the button sweep found only ' . count($bm) . ' buttons, so it is not sweeping');
 
 echo "\n" . ($fail ? "$fail check(s) FAILED\n" : "all DHC Bosses checks passed\n");
 exit($fail ? 1 : 0);

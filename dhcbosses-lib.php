@@ -209,23 +209,42 @@ function dhcb_boss($key) {
  */
 function dhcb_deployable($conn) {
 	$d = max(1, (int)DHCB_ACTIVE_DAYS);
-	$who = "SELECT attacker_id AS uid FROM dhc_arena_battles
-	         WHERE started_at > DATE_SUB(NOW(), INTERVAL $d DAY)
-	        UNION
-	        SELECT user_id AS uid FROM dhc_boss_runs
-	         WHERE started_at > DATE_SUB(NOW(), INTERVAL $d DAY)";
-	$sql = "SELECT COUNT(*) AS fighters, COUNT(DISTINCT f.user_id) AS players
+
+	/*
+	 * A JOIN TO A DERIVED TABLE, NOT `IN (subquery)`.
+	 *
+	 * This was written as WHERE f.user_id IN (SELECT ... UNION SELECT ...)
+	 * and it hung the Arena page. MySQL is entitled to treat an IN with a
+	 * correlated-looking subquery as a DEPENDENT SUBQUERY and re-run it for
+	 * every row of dhc_fighters -- thousands of scans of an ever-growing
+	 * battle table, on the one page load of the week that happens to spawn
+	 * the crew. A join to a derived table is materialised once.
+	 *
+	 * MAX_EXECUTION_TIME is the belt to that braces. This runs inside a
+	 * page render, and no boss crew is worth a white screen: if the
+	 * optimiser ever makes a different choice on a bigger table, the query
+	 * is killed at two seconds and the caller falls back to the floor.
+	 */
+	$sql = "SELECT /*+ MAX_EXECUTION_TIME(2000) */
+	               COUNT(*) AS fighters, COUNT(DISTINCT f.user_id) AS players
 	          FROM dhc_fighters f
-	         WHERE f.disassembled_at IS NULL AND f.user_id IN ($who)";
+	          JOIN (SELECT DISTINCT attacker_id AS uid FROM dhc_arena_battles
+	                 WHERE started_at > DATE_SUB(NOW(), INTERVAL $d DAY)
+	                UNION
+	                SELECT DISTINCT user_id AS uid FROM dhc_boss_runs
+	                 WHERE started_at > DATE_SUB(NOW(), INTERVAL $d DAY)) act
+	            ON act.uid = f.user_id
+	         WHERE f.disassembled_at IS NULL";
 	$r = @$conn->query($sql);
 	if (!$r) {
-		/* dhc_boss_runs will not exist until the migration is run, and an
-		   older dhc_fighters has no disassembled_at. Neither is a reason to
-		   refuse to spawn a boss. */
+		/* dhc_boss_runs will not exist until the migration is run, an older
+		   dhc_fighters has no disassembled_at, and MySQL below 5.7 rejects
+		   the hint. None of them is a reason to refuse to spawn a crew. */
 		$r = @$conn->query("SELECT COUNT(*) AS fighters, COUNT(DISTINCT f.user_id) AS players
 		                      FROM dhc_fighters f
-		                     WHERE f.user_id IN (SELECT attacker_id FROM dhc_arena_battles
-		                      WHERE started_at > DATE_SUB(NOW(), INTERVAL $d DAY))");
+		                      JOIN (SELECT DISTINCT attacker_id AS uid FROM dhc_arena_battles
+		                             WHERE started_at > DATE_SUB(NOW(), INTERVAL $d DAY)) act
+		                        ON act.uid = f.user_id");
 	}
 	if (!$r || !($row = $r->fetch_assoc())) return array('fighters'=>0, 'players'=>0);
 	return array('fighters'=>max(0, (int)$row['fighters']), 'players'=>max(0, (int)$row['players']));
@@ -290,10 +309,20 @@ function dhcb_crew_budget($conn) {
  * chance of two different health bars for the same boss.
  */
 function dhcb_spawn($conn) {
+	/*
+	 * ONCE PER REQUEST. dhcb_state() spawns if it has no week, and the Arena
+	 * page reaches dhcb_state() through three different callers -- so on the
+	 * first load of a week the scaling query ran three times before anything
+	 * rendered, and that load is already the slowest of the week.
+	 */
+	static $done = null;
+	if ($done !== null) return $done;
 	$day = dhcb_week($conn);
 	$esc = $conn->real_escape_string($day);
 	$r = @$conn->query("SELECT COUNT(*) AS n FROM dhc_boss_day WHERE day = '$esc'");
-	if ($r && ($row = $r->fetch_assoc()) && (int)$row['n'] >= count(dhcb_bosses())) return $day;
+	if ($r && ($row = $r->fetch_assoc()) && (int)$row['n'] >= count(dhcb_bosses())) {
+		$done = $day; return $day;
+	}
 
 	$budget = dhcb_crew_budget($conn);
 	$rows = array();
@@ -306,6 +335,7 @@ function dhcb_spawn($conn) {
 	@$conn->query("INSERT IGNORE INTO dhc_boss_day
 	               (day, boss_key, max_health, health, scale, created_at)
 	               VALUES " . implode(',', $rows));
+	$done = $day;
 	return $day;
 }
 

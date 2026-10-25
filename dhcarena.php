@@ -1139,11 +1139,13 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-bblurb{font-size:9px;color:var(--dim);margin-top:4px;line-height:1.45}
 .arena-wrap .a-bsum{font-size:11px;color:var(--dim);margin:0 0 6px}
 .arena-wrap .a-bsum b{color:#e8eaed}
-.arena-wrap .a-pmode{display:flex;gap:0;margin:0 0 8px}
-.arena-wrap .a-pmode a{padding:5px 11px;font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--dim);border:1px solid rgba(255,255,255,.12);text-decoration:none}
-.arena-wrap .a-pmode a + a{border-left:0}
-.arena-wrap .a-pmode a.on{color:#06222b;background:var(--teal);border-color:var(--teal)}
+/* Both cooldowns, on every card, always. A = Arena, B = Bosses. */
+.arena-wrap .a-card .avail{position:absolute;left:3px;bottom:3px;display:flex;gap:3px;z-index:2}
+.arena-wrap .a-card .pip{display:inline-flex;align-items:center;gap:2px;padding:1px 4px;
+  font-size:7.5px;font-weight:700;letter-spacing:.04em;border-radius:3px;
+  background:rgba(8,14,20,.88);color:var(--dim);border:1px solid rgba(255,255,255,.14)}
+.arena-wrap .a-card .pip.ok{color:var(--teal);border-color:rgba(0,200,160,.5)}
+.arena-wrap .a-card .pip b{font-weight:400;opacity:.85}
 /* ---- the trait cache ---- */
 .arena-wrap .a-cache{display:flex;gap:4px;margin:0 0 6px}
 .arena-wrap .a-slot{flex:1 1 0;min-width:0;text-align:center}
@@ -1600,23 +1602,20 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <?php endforeach; ?>
         <?php endif; ?>
       </div>
-      <?php if ($dhcb_on && !$dhca_guest): ?>
-      <?php /* THE SEPARATE SELECTOR. One picker, two clocks: a Fighter
-               resting from the Arena is free for the Bosses and the other
-               way round, so the cards have to be told which game they are
-               being picked for. Hidden entirely when Bosses is not
-               installed, so the Arena is unchanged by its absence. */ ?>
-      <div class="a-range a-pmode" id="aPickMode">
-        <a href="#" data-m="arena" class="on">For the Arena</a>
-        <a href="#" data-m="boss">For the Bosses</a>
-      </div>
-      <?php endif; ?>
       <div class="a-picked" id="aPicked"></div>
       <div class="a-pick">
       <?php foreach ($crew as $f):
         $t = $f['traits']; $ok = $f['available']; ?>
-        <?php $bv = isset($dhcb_av[(int)$f['id']]) ? $dhcb_av[(int)$f['id']] : null; ?>
-        <div class="a-card<?php echo $ok?'':' out'; ?>" data-fid="<?php echo (int)$f['id']; ?>"
+        <?php
+          $bv  = isset($dhcb_av[(int)$f['id']]) ? $dhcb_av[(int)$f['id']] : null;
+          $bok = $bv ? !empty($bv['ok']) : true;      // no Bosses installed: never blocks
+          /* OUT ONLY WHEN BOTH GAMES ARE RESTING. A Fighter cooling down
+             from a ranked battle is perfectly able to fight a boss, and
+             greying it out said the opposite -- which is what made the
+             send button look broken for no visible reason. */
+          $anyOk = $ok || ($dhcb_on && $bok);
+        ?>
+        <div class="a-card<?php echo $anyOk?'':' out'; ?>" data-fid="<?php echo (int)$f['id']; ?>"
              data-ok="<?php echo $ok?1:0; ?>"
              data-bok="<?php echo $bv ? (int)$bv['ok'] : 1; ?>"
              data-bleft="<?php echo $bv ? (int)$bv['left'] : 0; ?>"
@@ -1649,17 +1648,28 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
               $kc = dhcf_slot_category($k); ?>
               <img loading="lazy" alt="" src="<?php echo $ART; ?>/250/<?php echo $kc; ?>/<?php echo htmlspecialchars($t[$k]); ?>.png" onerror="this.remove()">
             <?php endforeach; ?>
-            <?php /* Two different things are happening and they deserve two
-                     different words: a Fighter that fell is being brought
-                     back, one that merely fought is catching its breath.
-                     ALWAYS RENDERED, hidden when the current mode says the
-                     Fighter is free -- the picker switches between the Arena
-                     and the Bosses clocks and cannot create an element that
-                     was never printed. */ ?>
-            <div class="recover<?php echo !empty($f['fell']) ? ' fell' : ''; ?>"<?php
-                 echo $ok ? ' hidden' : ''; ?>><span><?php
-                echo !empty($f['fell']) ? 'resurrecting' : 'recovering'; ?></span><b><?php
-                echo dhca_hms($f['bench_left']); ?></b></div>
+            <?php /* BOTH CLOCKS, ALWAYS VISIBLE, NAMED.
+                     One Fighter has two independent cooldowns and the first
+                     version showed one of them behind a mode toggle -- so a
+                     Crew that could fight the bosses looked unavailable
+                     because the picker happened to be set to Arena, and the
+                     send button was dead with nothing on screen explaining
+                     it. Two pips cost less room than the toggle did and
+                     there is no state to discover. */ ?>
+            <div class="avail">
+              <span class="pip<?php echo $ok ? ' ok' : ''; ?>"
+                    title="<?php echo $ok ? 'Ready for the Arena'
+                      : (!empty($f['fell']) ? 'Resurrecting' : 'Recovering') . ' — Arena in '
+                        . dhca_hms($f['bench_left']); ?>">A<?php
+                echo $ok ? '' : '<b>' . dhca_hms($f['bench_left']) . '</b>'; ?></span>
+              <?php if ($dhcb_on): ?>
+              <span class="pip<?php echo $bok ? ' ok' : ''; ?>"
+                    title="<?php echo $bok ? 'Ready for the Bosses'
+                      : (!empty($bv['fell']) ? 'Resurrecting' : 'Recovering') . ' — Bosses in '
+                        . dhca_hms($bv ? (int)$bv['left'] : 0); ?>">B<?php
+                echo $bok ? '' : '<b>' . dhca_hms($bv ? (int)$bv['left'] : 0) . '</b>'; ?></span>
+              <?php endif; ?>
+            </div>
           </div>
           <div class="nm"><?php echo htmlspecialchars($f['display']); ?></div>
           <div class="st"><span>♥ <?php echo (int)$f['hp']; ?></span><span>⚔ <?php echo (int)$f['pow']; ?></span>
@@ -1941,7 +1951,17 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <?php elseif ($dhcb_block !== ''): ?>
           <p class="a-sub" style="margin:10px 0 0"><?php echo htmlspecialchars($dhcb_block); ?></p>
         <?php else: ?>
-          <button class="button" id="aBossGo" type="button">Send Crew at the Bosses</button>
+          <?php /* .btn go, like every other button on this page. .button is
+                   the GLOBAL flexbox.css style -- the old drop-shadowed one --
+                   and it lands in the middle of a panel where nothing else
+                   has a shadow. The Arena restyled its own controls and this
+                   one was written against the platform default. */ ?>
+          <?php /* DISABLED IN THE MARKUP. The gate below runs on the first
+                   paint, but between parse and paint the button is live, and
+                   a click in that window posts an empty Crew. Starting dead
+                   costs nothing -- there is no state in which three Fighters
+                   are already picked when the page loads. */ ?>
+          <button class="btn go" id="aBossGo" type="button" disabled>Send Crew at the Bosses</button>
           <p class="a-sub" style="margin:8px 0 0"><?php
             echo (int)($dhcb_runs); ?> of <?php echo DHCB_DAILY_RUNS; ?> Crews sent today.
             Fighters rest from Bosses only — your Arena Crew is untouched.</p>
@@ -3360,70 +3380,13 @@ var bossRun = 0;
 var BOSS_URL = 'ajax/dhcbosses-action.php';
 
 /*
- * WHICH GAME THE PICKER IS PICKING FOR.
- *
- * The Arena and the Bosses keep independent cooldowns on the same Fighters,
- * so one card has two availabilities and the picker has to be told which one
- * to show. Every card carries both (data-ok/data-aleft against
- * data-bok/data-bleft); this swaps the display and drops any pick that the
- * new mode cannot field, rather than letting somebody send a Crew the server
- * is about to refuse.
+ * NO MODE. One Fighter has two independent cooldowns, and the first version
+ * showed one of them behind an Arena/Bosses toggle -- so a Crew perfectly
+ * able to fight a boss looked unavailable because the picker happened to be
+ * set to Arena, and the send button sat dead with nothing on screen saying
+ * why. Both clocks are now printed on every card as two pips, each button
+ * reads the one it cares about, and there is no hidden state to discover.
  */
-var pickMode = 'arena';
-function applyPickMode(m){
-  pickMode = (m === 'boss') ? 'boss' : 'arena';
-  var boss = pickMode === 'boss';
-  Array.prototype.forEach.call(document.querySelectorAll('.a-card'), function(c){
-    var okAttr = boss ? 'data-bok' : 'data-ok';
-    var free   = c.getAttribute(okAttr) !== '0';
-    c.classList.toggle('out', !free);
-    c.setAttribute('data-ok', free ? 1 : 0);      // the pick handler reads this
-    var ov = c.querySelector('.recover');
-    if (ov) {
-      if (free) { ov.hidden = true; }
-      else {
-        var fell = c.getAttribute(boss ? 'data-bfell' : 'data-afell') === '1';
-        var left = parseInt(c.getAttribute(boss ? 'data-bleft' : 'data-aleft'), 10) || 0;
-        ov.hidden = false;
-        ov.classList.toggle('fell', fell);
-        var lab = ov.querySelector('span'), clk = ov.querySelector('b');
-        if (lab) lab.textContent = fell ? 'resurrecting' : 'recovering';
-        if (clk) clk.textContent = hms(left);
-      }
-    }
-  });
-  /* A pick that the new mode cannot field is dropped rather than carried
-     into a request the server will refuse. */
-  picked = picked.filter(function(id){
-    var c = document.querySelector('.a-card[data-fid="' + id + '"]');
-    return c && c.getAttribute('data-ok') !== '0';
-  });
-  if (typeof paintPicked === 'function') paintPicked();
-  var box = $('aPickMode');
-  if (box) Array.prototype.forEach.call(box.querySelectorAll('a'), function(a){
-    a.classList.toggle('on', a.getAttribute('data-m') === pickMode);
-  });
-}
-/*
- * The same clock dhca_hms() prints, so a card rewritten client-side cannot
- * disagree with one rendered by the server. Including the floor at 1m:
- * "0m" reads as available when it is not.
- */
-function hms(s){
-  s = Math.max(0, s|0);
-  var h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
-  return h > 0 ? (h + 'h ' + m + 'm') : (Math.max(1, m) + 'm');
-}
-(function(){
-  var box = document.getElementById('aPickMode');
-  if (!box) return;
-  box.addEventListener('click', function(e){
-    var a = e.target.closest ? e.target.closest('a[data-m]') : null;
-    if (!a) return;
-    e.preventDefault();
-    applyPickMode(a.getAttribute('data-m'));
-  });
-})();
 
 /* ---------------------------------------------------------------- paging ----
    Cards are hidden, never removed: a pick made on page 1 has to survive a walk
@@ -3584,6 +3547,26 @@ function paintPicker(){
      battles. A live match has no price, so neither applies. */
   var ch = $('aChallenge');
   if (ch) ch.disabled = !ready;
+  /*
+   * THE BOSSES NEED A CREW BUT NO RIVAL, so they cannot ride `ready` --
+   * that one requires a rival and would keep the button dead forever.
+   *
+   * RESTED FOR BOSSES, read from data-bok rather than from data-ok. The
+   * picker swaps data-ok between the two cooldowns, so reading it here
+   * would make the button depend on which mode the picker happens to be
+   * showing, and a Crew perfectly able to fight a boss would look blocked
+   * because the picker was set to Arena.
+   *
+   * The button only exists when the server says entry is open, so there is
+   * nothing to check for the allowance or a downed crew.
+   */
+  var bg = $('aBossGo');
+  if (bg) {
+    var bossResting = picked.filter(function(id){
+      var c = byFid(id); return c && c.getAttribute('data-bok') !== '1';
+    }).length;
+    bg.disabled = (picked.length !== CREW_SIZE) || bossResting > 0;
+  }
   var msg = $('aMsg');
   if (!msg) return;
   if (picked.length !== CREW_SIZE) msg.textContent = 'Pick '+(CREW_SIZE - picked.length)+' more.';
@@ -3994,10 +3977,6 @@ function startFailed(msg){
 if (startBtn) startBtn.addEventListener('click', function(){
   if (busy) return;
   if (battle.classList.contains('on')) return;   // already in one
-  if (pickMode !== 'arena') {
-    applyPickMode('arena');
-    if (picked.length !== 3) { $('aMsg').textContent = 'Pick three Fighters rested for the Arena.'; return; }
-  }
   busy = true; startBtn.disabled = true; practice = null; bossRun = 0;
   $('aMsg').textContent = 'Entering…';
   post({do:'start', defender:rival, fighters:picked}, function(res){
@@ -4022,12 +4001,7 @@ var bossBtn = $('aBossGo');
 if (bossBtn) bossBtn.addEventListener('click', function(){
   if (busy) return;
   if (battle.classList.contains('on')) return;
-  if (pickMode !== 'boss') applyPickMode('boss');
-  if (picked.length !== 3) {
-    $('aMsg').textContent = 'Pick three Fighters first — the picker is now showing who is '
-                          + 'rested for the Bosses.';
-    return;
-  }
+  if (picked.length !== 3) { $('aMsg').textContent = 'Pick three Fighters first.'; return; }
   busy = true; bossBtn.disabled = true; practice = null; live = null;
   $('aMsg').textContent = 'Sending…';
   post({do:'start', fighters:picked}, function(res){
