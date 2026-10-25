@@ -637,6 +637,53 @@ ok($probe['mine'][0]['maxHp'] > $flat['mine'][0]['maxHp'],
  . 'is still being applied');
 
 /* ---------------------------------------------------------------- *
+ * THE POST NAMES BOTH CREWS
+ * ---------------------------------------------------------------- */
+echo "\nthe X post says whose damage it was and what is falling\n";
+/*
+ * It was written as fragments -- "4,800 damage into the DHC boss crew. 62%
+ * down and still standing." -- and a reader who does not already play
+ * cannot tell whose damage that was or what is 62% down. Two actors, both
+ * named, in full sentences. The owner's rewrite, verbatim.
+ */
+$sh = dhcb_share_text(4800, array(), array('pct' => 0.62, 'cleared' => false));
+ok($sh === 'My DHC Fighter Crew inflicted 4,800 damage. The DHC Boss Crew is now 62% down '
+         . 'but still standing.',
+   'the ordinary post is not the agreed wording: ' . $sh);
+/* Both actors named in EVERY variant, not just the common one. */
+foreach (array(
+	array(7310, array('X-K4T'),            array('pct'=>0.78, 'cleared'=>false)),
+	array(5120, array('CIP-666','X-K4T'),  array('pct'=>0.91, 'cleared'=>false)),
+	array(9044, array('D34THBRNGR'),       array('pct'=>1.0,  'cleared'=>true)),
+) as $cse) {
+	$t = dhcb_share_text($cse[0], $cse[1], $cse[2]);
+	ok(strpos($t, 'My DHC Fighter Crew') !== false,
+	   'a post does not say whose Crew did the damage: ' . $t);
+	ok(strpos($t, 'DHC Boss Crew') !== false,
+	   'a post does not name what is falling: ' . $t);
+	/* Still under budget once the tail and the shortened URL are counted. */
+	$tail = "\n\nJoin @skulliance and take on the DHC boss crew, free and in any browser."
+	      . "\n\nArt by @MMAXI404";
+	ok(mb_strlen($t . $tail) + 24 <= 280,
+	   'the post overflows 280 with the tail and url: ' . (mb_strlen($t . $tail) + 24));
+}
+/* ONE grammatical trap, since the kill list is built from a variable-length
+   array: "CIP-666 and X-K4T is down" would be the obvious way to get it
+   wrong. */
+ok(strpos(dhcb_share_text(1, array('X-K4T'), array('pct'=>0.5)), 'X-K4T is down') !== false,
+   'a single kill reads as plural');
+ok(strpos(dhcb_share_text(1, array('CIP-666','X-K4T'), array('pct'=>0.5)), 'X-K4T are down') !== false,
+   'two kills read as singular');
+/* AND IT NEVER SAYS "AT". progress.pct is damage DEALT, so "they are at
+   42%" reads as 42% health LEFT and means the opposite. */
+foreach (array(0.0, 0.42, 1.0) as $pc) {
+	$t = dhcb_share_text(100, array(), array('pct'=>$pc, 'cleared'=>($pc >= 1.0)));
+	ok(strpos($t, 'is at ') === false && strpos($t, 'are at ') === false,
+	   'the post says the crew is "at" a percentage, which reads as health remaining and '
+	 . 'means the opposite of what it counts: ' . $t);
+}
+
+/* ---------------------------------------------------------------- *
  * EVERY ANNOUNCEMENT CARRIES A PICTURE
  * ---------------------------------------------------------------- */
 echo "\nthe Discord post shows what happened, not just what it totalled\n";

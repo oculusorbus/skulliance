@@ -408,6 +408,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
 				              $filterby != "dhcfighters" && $filterby != "monthly-dhcfighters" &&
 				              $filterby != "dhcarena" && $filterby != "monthly-dhcarena" &&
+				              $filterby != "dhcbosses" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
@@ -559,6 +560,15 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				        $title = date("F") . " DHC Arena Ladder";
 				        $filterby = "monthly-dhcarena";
 				        break;
+				    /* WEEKLY ONLY. The board ranks damage per Fighter fielded
+				       within one week, and summing that across every week ever
+				       would rank one perfect Crew in March above somebody who
+				       turns up daily. The week is the season, and it is what
+				       the CARBON is paid against. */
+				    case ($filterby == "dhcbosses"):
+				        $title = "This Week's DHC Bosses Ladder";
+				        $filterby = "dhcbosses";
+				        break;
 				    case ($filterby == "guardians"):
 				        $title = "All Realm Guardians Sieges";
 				        $filterby = "guardians";
@@ -678,6 +688,7 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				              $filterby != "guardians" && $filterby != "monthly-guardians" &&
 				              $filterby != "dhcfighters" && $filterby != "monthly-dhcfighters" &&
 				              $filterby != "dhcarena" && $filterby != "monthly-dhcarena" &&
+				              $filterby != "dhcbosses" &&
 				              $filterby != "missions-unlocked" && $filterby != "hub" &&
 				              $filterby != "gamemaster-ath" && $filterby != "gamemaster-monthly" && $filterby != "gamemaster-weekly" &&
 				              $filterby != "dropship" && $filterby != "oculuslounge" && $filterby != "dropship-weekly" && $filterby != "dropship-xp" && $filterby != "oculuslounge-weekly" && $filterby != "oculuslounge-xp"):
@@ -779,8 +790,11 @@ function renderPodium($top3, $conn=null, $override_theme_id=null, $fallback_imag
 				            break;
 				        case ($filterby == "dhcbosses"):
 				            /* Weekly, like the crew it ranks. There is no
-				               all-time variant: a board whose content resets
-				               every Monday has no meaningful all-time. */
+				               all-time variant: the ranking is damage per
+				               Fighter WITHIN a week, so adding it up across
+				               weeks would rank one good Crew above turning up.
+				               The week turns 4pm Thursday, not Monday -- this
+				               comment said Monday and so did two queries. */
 				            checkDHCBossesLeaderboard($conn, true);
 				            break;
 				        case ($filterby == "guardians"):

@@ -7417,6 +7417,14 @@ $SKULLIANCE_BOARDS = array(
 	'dhcarena'          => array('label'=>'DHC Arena',         'icon'=>'🏟️', 'group'=>'Games',
 		'blurb'=>'Crew battles won',
 		'periods'=>array('All-Time'=>'dhcarena','Monthly'=>'monthly-dhcarena')),
+	// WEEKLY ONLY, and that is not an omission. The board ranks damage per
+	// Fighter fielded WITHIN one week; adding that up across every week ever
+	// would put a player who sent one perfect Crew in March above somebody
+	// who has turned up every day since. The week is the season here, and it
+	// is what the 50,000 CARBON is paid against.
+	'dhcbosses'         => array('label'=>'DHC Bosses',        'icon'=>'☠️', 'group'=>'Games',
+		'blurb'=>'Damage per Fighter fielded',
+		'periods'=>array('Weekly'=>'dhcbosses')),
 	'bosses'            => array('label'=>'Boss Battles',      'icon'=>'🐉', 'group'=>'Games',
 		'blurb'=>'Community boss fights',
 		'periods'=>array('All-Time'=>'bosses','Weekly'=>'weekly-bosses')),
@@ -7523,6 +7531,10 @@ function refreshLeaderboardSnapshots($conn) {
 		'guardians'         => function($c) { checkGuardiansLeaderboard($c); },
 		'dhcfighters'       => function($c) { checkDHCFightersLeaderboard($c); },
 		'dhcarena'          => function($c) { checkDHCArenaLeaderboard($c); },
+		/* The WEEK in progress, because that is the only cut this board has
+		   -- it ranks damage per Fighter within a week and there is no
+		   all-time variant to snapshot. */
+		'dhcbosses'         => function($c) { checkDHCBossesLeaderboard($c, true); },
 		'swaps'             => function($c) { checkSkullSwapsLeaderboard($c); },
 		'monstrocity'       => function($c) { checkMonstrocityLeaderboard($c); },
 		'bosses'            => function($c) { checkBossBattlesLeaderboard($c); },
@@ -16414,9 +16426,26 @@ function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false) {
 	   Monday morning that is the difference between last week and this. */
 	$wk = null;
 	if ($rewards) {
-		$wr = $conn->query("SELECT DATE_SUB(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY),
-		                                    INTERVAL 7 DAY) AS w");
-		$wk = ($wr && ($wx = $wr->fetch_assoc())) ? $wx['w'] : date('Y-m-d', strtotime('monday last week'));
+		/*
+		 * THE THURSDAY THAT JUST CLOSED, NOT LAST MONDAY.
+		 *
+		 * This asked MySQL for a Monday, and no row in dhc_boss_runs carries
+		 * one -- the platform week turns 4pm Thursday and `day` holds that
+		 * Thursday. On the payout path that is the whole board coming back
+		 * empty: nobody ranked, nobody paid, and a tidy "no Crews were sent
+		 * that week" printed over a week somebody won.
+		 *
+		 * skl_week_start_sql() is the single home for the rule, in MySQL's
+		 * dialect because `day` is written by the database and the two
+		 * clocks on this host disagree. Seven days back from the current
+		 * boundary IS the week that just ended -- the cron fires after the
+		 * turn, so "now" is already inside the new week.
+		 */
+		require_once __DIR__ . '/lib/week-start.php';
+		$wr = $conn->query('SELECT DATE(DATE_SUB(' . skl_week_start_sql()
+		                 . ', INTERVAL 7 DAY)) AS w');
+		$wk = ($wr && ($wx = $wr->fetch_assoc()))
+		    ? $wx['w'] : date('Y-m-d', strtotime('-7 days', strtotime(skl_week_key())));
 	}
 	$rows = dhcb_ladder($conn, $wk, 100);
 	if (!$rows) {

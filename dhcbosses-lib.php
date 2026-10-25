@@ -1683,17 +1683,25 @@ function dhcb_share_text($dealt, $killedNames, $prog) {
 	 * -- and a post that gets the direction wrong is worse than one that
 	 * omits the number. "42% down" cannot be read backwards.
 	 */
+	/*
+	 * TWO SUBJECTS, BOTH NAMED. The post was written as fragments -- "4,800
+	 * damage into the DHC boss crew. 62% down and still standing." -- and a
+	 * reader who does not already know the game cannot tell whose damage it
+	 * was or what is 62% down. The owner's rewrite is the fix: say MY DHC
+	 * Fighter Crew did it, and say THE DHC Boss Crew is the thing falling.
+	 * Full sentences, both actors named, nothing to infer.
+	 */
 	$down = isset($prog['pct']) ? round(100 * $prog['pct']) : 0;
+	$mine = 'My DHC Fighter Crew inflicted ' . number_format((int)$dealt) . ' damage.';
 	if (!empty($prog['cleared'])) {
-		return 'The DHC boss crew is DOWN. ' . number_format((int)$dealt)
-		     . ' damage from my Crew on the way.';
+		return $mine . ' The DHC Boss Crew is DOWN.';
 	}
 	if ($killedNames) {
-		return 'Dropped ' . implode(' and ', $killedNames) . ' in the DHC Bosses. '
-		     . number_format((int)$dealt) . ' damage. The crew is ' . $down . '% down.';
+		return $mine . ' ' . implode(' and ', $killedNames)
+		     . (count($killedNames) === 1 ? ' is' : ' are') . ' down, and the DHC Boss Crew '
+		     . 'is now ' . $down . '% down.';
 	}
-	return number_format((int)$dealt) . ' damage into the DHC boss crew. '
-	     . $down . '% down and still standing.';
+	return $mine . ' The DHC Boss Crew is now ' . $down . '% down but still standing.';
 }
 
 /** The button, using the platform's own share helper. */

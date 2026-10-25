@@ -215,6 +215,68 @@ ok(preg_match('/\.lb-subhead \{[^}]*z-index:\s*1/s', $lb) === 1,
    'the subhead has no stacking context, so anything pulled up from the '
  . 'panel below can paint over the controls again');
 
+/* ---------------------------------------------------------------- *
+ * A REGISTERED BOARD IS WIRED EVERYWHERE, NOT JUST LISTED
+ * ---------------------------------------------------------------- */
+echo "\nevery board in the catalogue is routable, titled and snapshot\n";
+/*
+ * THE GAP THIS CLOSES. DHC Bosses shipped with a working renderer in
+ * leaderboards.php and nothing else: not in the catalogue, not in either
+ * "is this a known board" whitelist, no title case, no snapshot. The board
+ * existed and the page could not reach it -- ?filterby=dhcbosses fell
+ * through to the branch that treats an unknown slug as a PROJECT ID.
+ *
+ * Four places and nothing links them, so a board can be half-added and
+ * every individual file still looks finished. This walks the catalogue --
+ * the list that is meant to be authoritative -- and makes the other three
+ * agree with it.
+ */
+$lbsrc = file_get_contents(__DIR__ . '/leaderboards.php');
+$chains = substr_count($lbsrc, '$filterby != "missions-unlocked" && $filterby != "hub"');
+ok($chains === 2,
+   'there are ' . $chains . ' known-board whitelists, not 2 -- this check is reading the '
+ . 'wrong thing and would pass on a half-wired board');
+foreach ($SKULLIANCE_BOARDS as $bkey => $bmeta) {
+	foreach ($bmeta['periods'] as $blabel => $bslug) {
+		/* Numeric slugs ARE project ids (the delegations board), so the
+		   whitelist deliberately does not carry them. */
+		if (ctype_digit((string)$bslug)) continue;
+		ok(substr_count($lbsrc, '$filterby != "' . $bslug . '"') === 2,
+		   $bmeta['label'] . ' / ' . $blabel . ' (' . $bslug . ') is missing from one of the '
+		 . 'two known-board whitelists, so it renders as a project id');
+		/* TWO cases, not one: a board has a TITLE switch and a RENDER
+		   switch, and "at least one" passed with the title missing -- the
+		   render case alone satisfied it, which is exactly the half-wired
+		   state this is here to catch. */
+		ok(substr_count($lbsrc, '$filterby == "' . $bslug . '"') === 2,
+		   $bmeta['label'] . ' / ' . $blabel . ' (' . $bslug . ') has '
+		 . substr_count($lbsrc, '$filterby == "' . $bslug . '"') . ' cases in '
+		 . 'leaderboards.php, not 2 -- it is missing either its title or its renderer');
+	}
+	/* Every board needs a champion on the hub, or its card is blank. */
+	ok(preg_match("~'" . preg_quote($bkey, '~') . "'\s*=> function\(\\\$c\)~", $db) === 1,
+	   $bmeta['label'] . ' has no snapshot in refreshLeaderboardSnapshots(), so its hub card '
+	 . 'shows no champion');
+}
+
+/*
+ * AND THE BOSS BOARD SETTLES A THURSDAY. The same bug rewards.php had, on
+ * the path that actually pays: checkDHCBossesLeaderboard() asked MySQL for
+ * last MONDAY, and no row in dhc_boss_runs carries one -- the week turns 4pm
+ * Thursday and `day` holds that Thursday. On the payout run that is the
+ * whole board coming back empty: nobody ranked, nobody paid, and a tidy "no
+ * Crews were sent that week" printed over a week somebody won.
+ */
+$bfn = brace_extract($db, 'function checkDHCBossesLeaderboard($conn, $monthly = false, $rewards = false)');
+ok($bfn !== '', 'checkDHCBossesLeaderboard() is gone or its signature changed');
+ok(strpos($bfn, 'WEEKDAY(CURDATE())') === false && strpos($bfn, 'monday last week') === false,
+   'the boss board is back on a Monday week; no row in dhc_boss_runs carries one, so the '
+ . 'payout run would rank nobody and pay nobody');
+ok(strpos($bfn, 'skl_week_start_sql()') !== false,
+   'the boss board does not use the one home for the week rule');
+ok(strpos($bfn, 'INTERVAL 7 DAY') !== false,
+   'the payout run does not step back a week, so it settles the week still being played');
+
 echo "\n";
 if ($fail) { echo "$fail check(s) FAILED\n"; exit(1); }
 echo "all leaderboard period checks passed\n";
