@@ -3,6 +3,14 @@
  * dhc-arena-card.php?battle=N -- the picture X and Discord put on a shared
  * Arena result: your Crew of three facing theirs, the fallen dimmed.
  *
+ * dhc-arena-card.php?run=N does the same for a DHC Bosses run: your Crew of
+ * three facing the boss crew. Same endpoint on purpose -- the layout, the
+ * crop, the seam, the mirroring and the dimming are the thing being shared
+ * in both cases, and a second file would be a copy of all of it that drifted
+ * the first time either was touched. Only the two loaders differ, and the
+ * right-hand three carry flat art instead of a trait stack, which is the
+ * same single difference the battle client already handles.
+ *
  * WHY. A shared match carried dhcarena.php's own og:image, which is the same
  * site collage for every result anybody has ever posted. The text now says
  * who was beaten and which Fighters held the line; this makes the picture
@@ -83,8 +91,75 @@ function dac_send($file) {
 }
 
 $battle = isset($_GET['battle']) ? (int)$_GET['battle'] : 0;
-if ($battle <= 0) dac_fail(400);
+$run    = isset($_GET['run'])    ? (int)$_GET['run']    : 0;
+if ($battle <= 0 && $run <= 0) dac_fail(400);
 if (!function_exists('imagecreatetruecolor')) dac_fail(503);
+
+$b = array('mine' => array(), 'foes' => array());
+
+if ($run > 0) {
+	/*
+	 * A BOSS RUN. Same two sides, loaded from the Bosses ledger.
+	 *
+	 * MOST RUNS END WITH THE CREW WIPED and that is the normal, paying
+	 * outcome here -- so this card is usually three dimmed Fighters facing
+	 * three bosses still standing, which is exactly the picture worth
+	 * posting. It says what the fight is in one look.
+	 */
+	/* BUFFERED, like the includes at the top of this file and for the same
+	   reason: display_errors is on platform-wide, and one notice in front
+	   of the JPEG header is a corrupt image the crawler caches for a week. */
+	ob_start();
+	require_once __DIR__ . '/dhcbosses-lib.php';
+	ob_end_clean();
+	$rr = $conn->query("SELECT user_id, day, wave FROM dhc_boss_runs
+	                     WHERE id = $run AND outcome <> 0 LIMIT 1");
+	if (!$rr) dac_fail(503);
+	$meta = $rr->fetch_assoc();
+	if (!$meta) dac_fail();
+	$uid  = (int)$meta['user_id'];
+	$wave = max(1, (int)$meta['wave']);
+	$day  = $conn->real_escape_string($meta['day']);
+
+	$res = $conn->query(
+		"SELECT rf.`rank`, rf.fell, f.serial, f.traits
+		   FROM dhc_boss_run_fighters rf
+		   INNER JOIN dhc_fighters f ON f.id = rf.fighter_id
+		  WHERE rf.run_id = $run
+		  ORDER BY rf.`rank` ASC, rf.fighter_id ASC");
+	if (!$res) dac_fail(503);
+	while ($r = $res->fetch_assoc()) {
+		$traits = json_decode($r['traits'], true);
+		if (!is_array($traits)) continue;
+		$b['mine'][] = array('traits' => $traits, 'uid' => (int)$r['serial'],
+		                     'ko' => !empty($r['fell']));
+	}
+
+	/*
+	 * WHICH BOSSES THIS PLAYER PUT DOWN. dhc_boss_day records who landed
+	 * the last hit, per boss per wave, so no new column is needed -- and
+	 * dimming a boss somebody else finished would be claiming their kill.
+	 */
+	$downed = array();
+	$kr = $conn->query("SELECT boss_key FROM dhc_boss_day
+	                     WHERE day = '$day' AND wave = $wave
+	                       AND killed_at IS NOT NULL AND killed_by = $uid");
+	if ($kr) while ($k = $kr->fetch_assoc()) $downed[$k['boss_key']] = true;
+
+	foreach (dhcb_bosses() as $bz) {
+		$abs = __DIR__ . '/' . dhcb_art($bz['key']);
+		$b['foes'][] = array('file' => $abs, 'boss' => true,
+		                     'ko' => isset($downed[$bz['key']]));
+	}
+	if (!$b['mine'] || !$b['foes']) dac_fail();
+	$sig = 'run|' . $run . '|' . $wave;
+	foreach (array('mine', 'foes') as $side)
+		foreach ($b[$side] as $f) $sig .= ($f['ko'] ? '1' : '0');
+	$key   = substr(md5($sig . '|' . DAC_W . 'x' . DAC_H), 0, 24);
+	$dir   = __DIR__ . '/dhcrenders';
+	$cache = $dir . '/arena-' . $key . '.jpg';
+	if (is_file($cache) && filesize($cache) > 0) dac_send($cache);
+} else {
 
 /*
  * THE LEDGER, NOT THE LIVE STATE.
@@ -112,7 +187,6 @@ $res = $conn->query(
 	  ORDER BY bf.side ASC, bf.`rank` ASC, bf.fighter_id ASC");
 if (!$res) dac_fail(503);
 
-$b = array('mine' => array(), 'foes' => array());
 while ($r = $res->fetch_assoc()) {
 	$traits = json_decode($r['traits'], true);
 	if (!is_array($traits)) continue;
@@ -136,6 +210,7 @@ $key   = substr(md5('arena|' . $battle . '|' . $sig . '|' . DAC_W . 'x' . DAC_H)
 $dir   = __DIR__ . '/dhcrenders';
 $cache = $dir . '/arena-' . $key . '.jpg';
 if (is_file($cache) && filesize($cache) > 0) dac_send($cache);
+}
 
 if (!function_exists('dhcf_render_fighter')) dac_fail(503);
 
@@ -143,6 +218,10 @@ if (!function_exists('dhcf_render_fighter')) dac_fail(503);
    assembler, the Arena and Discord all use. A second opinion about draw
    order is the bug class that has already cost this codebase twice. */
 function dac_art($f, $dir) {
+	/* A BOSS IS ONE PICTURE, which is the single place a boss is not simply
+	   a Fighter -- the same short-circuit layerImgs() makes in the battle
+	   client and dhcb_art() makes on the panel. */
+	if (!empty($f['file'])) return is_file($f['file']) ? @imagecreatefrompng($f['file']) : null;
 	if (empty($f['traits'])) return null;
 	$url = dhcf_render_fighter($f['traits'], isset($f['uid']) ? (int)$f['uid'] : 0, 500);
 	if ($url === '') return null;
@@ -233,11 +312,24 @@ foreach (array('mine' => true, 'foes' => false) as $side => $isLeft) {
 		if ($winW > $aw) { $winW = $aw; $winH = (int)round($winW * ($TH / $TW)); }
 		$sw2 = $winW;
 		$sh2 = $winH;
+		/*
+		 * A BOSS IS CROPPED FROM THE CENTRE, NOT FROM DAC_HEAD.
+		 *
+		 * Those two constants were measured across all 71 head and headgear
+		 * layers of the collection -- they are a property of the assembled
+		 * body layout, and the bosses are not assembled. They are painted
+		 * pieces that fill their own square, so the only honest window is
+		 * the middle of it; DAC_HEAD_X 0.605 on a piece composed to its own
+		 * centre slices off a third of the figure.
+		 */
+		$isBoss = !empty($fs[$n]['boss']);
+		$hx = $isBoss ? 0.5 : DAC_HEAD_X;
+		$hy = $isBoss ? 0.5 : DAC_HEAD_Y;
 		/* Centred on the head, then clamped -- and the clamp should never
 		   fire at these proportions, which is the point of deriving them
 		   from the measurement rather than trimming until it looks right. */
-		$sx = (int)max(0, min($aw - $sw2, $aw * DAC_HEAD_X - $sw2 / 2));
-		$sy = (int)max(0, min($ah - $sh2, $ah * DAC_HEAD_Y - $sh2 / 2));
+		$sx = (int)max(0, min($aw - $sw2, $aw * $hx - $sw2 / 2));
+		$sy = (int)max(0, min($ah - $sh2, $ah * $hy - $sh2 / 2));
 
 		$tile = imagecreatetruecolor($TW, $TH);
 		imagecopyresampled($tile, $art, 0, 0, $sx, $sy, $TW, $TH, $sw2, $sh2);
@@ -249,7 +341,12 @@ foreach (array('mine' => true, 'foes' => false) as $side => $isLeft) {
 		 * and a card of a fight where nobody is facing anybody is a card of
 		 * six portraits.
 		 */
-		if (!$isLeft && function_exists('imageflip')) imageflip($tile, IMG_FLIP_HORIZONTAL);
+		/* A BOSS IS NOT MIRRORED. The three of them are signed, composed
+		   pieces with lettering on the armour, and flipping one reverses
+		   the text. A Fighter's render is symmetrical enough that nobody
+		   reads it as backwards; a boss is not. */
+		if (!$isLeft && !$isBoss && function_exists('imageflip'))
+			imageflip($tile, IMG_FLIP_HORIZONTAL);
 
 		/*
 		 * A FALLEN FIGHTER IS DIMMED, NOT HIDDEN -- leaving it out would make

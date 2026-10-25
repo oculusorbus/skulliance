@@ -135,6 +135,21 @@ if ($dhca_share_battle > 0) {
 	$dhca_og_image = 'https://www.skulliance.io/staking/dhc-arena-card.php?battle='
 	               . $dhca_share_battle;
 }
+/*
+ * ?run=N DOES THE SAME FOR A BOSS RUN, and it is the same endpoint: your
+ * Crew of three against the boss crew, the fallen dimmed. Most runs end
+ * with the Crew wiped and the bosses standing, which is precisely the
+ * picture worth posting -- it says what the fight is without a word on it.
+ *
+ * Boss mode only. ?run= on the Arena would claim a boss card for a page
+ * about ranked battles, and the canonical above already keeps every shared
+ * result consolidated on one indexable URL either way.
+ */
+$dhca_share_run = ($IS_BOSS && isset($_GET['run'])) ? (int)$_GET['run'] : 0;
+if ($dhca_share_run > 0) {
+	$dhca_og_image = 'https://www.skulliance.io/staking/dhc-arena-card.php?run='
+	               . $dhca_share_run;
+}
 if ($IS_BOSS) {
 	/* ITS OWN CARD, because it is its own game as far as anybody sharing it
 	   is concerned. A link to the boss fight that unfurled as "free Crew vs
@@ -169,7 +184,7 @@ $extra_head = '
 <meta property="og:title" content="'.htmlspecialchars($dhca_title).'">
 <meta property="og:description" content="'.htmlspecialchars($dhca_desc).'">
 <meta property="og:image" content="'.$dhca_og_image.'">
-<meta property="og:image:alt" content="'.($dhca_share_battle ? 'The two Crews from this DHC Arena match, the fallen Fighters dimmed' : $dhca_alt).'">
+<meta property="og:image:alt" content="'.($dhca_share_battle ? 'The two Crews from this DHC Arena match, the fallen Fighters dimmed' : ($dhca_share_run ? 'The Crew sent at the DHC boss crew, the fallen Fighters dimmed' : $dhca_alt)).'">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="en_US">
@@ -3449,8 +3464,13 @@ function showEnd(res){
       var bbody = String(res.share);
       var blimit = 280 - 24 - btail.length;
       if (bbody.length > blimit) bbody = bbody.slice(0, blimit - 1).replace(/\s+\S*$/, '') + '…';
+      /* NAMING THE RUN is what gives the post a picture of the fight
+         instead of the site's stock card -- same mechanism the ranked
+         share uses, and the link still opens the playable page. */
+      var burl = 'https://skulliance.io/staking/dhcbosses.php'
+               + (bossRun > 0 ? '?run=' + bossRun : '');
       bel.href = 'https://x.com/intent/post?text=' + encodeURIComponent(bbody + btail)
-               + '&url=' + encodeURIComponent('https://skulliance.io/staking/dhcbosses.php');
+               + '&url=' + encodeURIComponent(burl);
     }
   }
   card.hidden = false;

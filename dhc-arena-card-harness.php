@@ -439,6 +439,60 @@ $gr = 'get_' . 'result(';
 ok(strpos($clean, $gr) === false,
    'the endpoint calls ' . $gr . '), which is fatal on this server (no mysqlnd)');
 
+echo "\nand a boss run gets the same card, from the same endpoint\n";
+{
+	$src = file_get_contents(__DIR__ . '/dhc-arena-card.php');
+	/*
+	 * SAME ENDPOINT, TWO LOADERS. The layout, the crop, the seam, the
+	 * mirroring and the dimming are the thing being shared in both cases; a
+	 * second file would be a copy of all of it that drifted the first time
+	 * either was touched. So what this checks is that the DRAWING is shared
+	 * and only the loading forks.
+	 */
+	ok(strpos($src, "\$run    = isset(\$_GET['run'])") !== false,
+	   'the card does not take ?run=, so a shared boss run has no picture');
+	ok(substr_count($src, 'imagecopyresampled(') === 1
+	   && substr_count($src, '$TW = 180; $TH = 310;') === 1,
+	   'there are two drawing paths now, which is the copy this endpoint exists to avoid');
+	ok(strpos($src, 'FROM dhc_boss_run_fighters rf') !== false,
+	   'the boss loader does not read the run ledger, so it cannot know who fell');
+	/* A BOSS IS ONE PICTURE, not a trait stack -- the same short-circuit the
+	   battle client and the panel make. */
+	ok(strpos($src, "if (!empty(\$f['file'])) return is_file(\$f['file'])") !== false,
+	   'a boss is sent through the Fighter renderer, which has no traits to stack and '
+	 . 'returns nothing, so the right-hand tiles come out empty');
+	/*
+	 * AND THE TWO THINGS MEASURED FOR FIGHTERS MUST NOT BE APPLIED TO THEM.
+	 * DAC_HEAD_X/Y were measured across the collection's 71 head layers and
+	 * describe the assembled body layout; the bosses are painted pieces
+	 * composed to their own centre, so that window slices a third off.
+	 * Mirroring reverses the lettering on their armour.
+	 */
+	ok(strpos($src, "\$isBoss = !empty(\$fs[\$n]['boss']);") !== false,
+	   'the card cannot tell a boss from a Fighter, so both get the head-measured crop');
+	ok(strpos($src, '$hx = $isBoss ? 0.5 : DAC_HEAD_X;') !== false,
+	   'a boss is cropped on the Fighter head window, which cuts a third off the figure');
+	ok(strpos($src, 'if (!$isLeft && !$isBoss && function_exists(\'imageflip\'))') !== false,
+	   'a boss is mirrored, which reverses the lettering on its armour');
+	/* KILLS ARE ATTRIBUTED, not assumed: dimming a boss somebody else
+	   finished would be claiming their kill. */
+	ok(strpos($src, 'killed_at IS NOT NULL AND killed_by = $uid') !== false,
+	   'the card dims bosses without checking who dropped them');
+	/* Nothing may print before the JPEG, and the boss library is the one
+	   include that happens after the buffered block at the top. */
+	$at = strpos($src, "require_once __DIR__ . '/dhcbosses-lib.php';");
+	ok($at !== false && strpos(substr($src, max(0, $at - 220), 220), 'ob_start();') !== false,
+	   'the boss library is included unbuffered, so one notice from it corrupts the JPEG');
+	/* And the page has to point og:image at it, or none of this is reached. */
+	$page = file_get_contents(__DIR__ . '/dhcarena.php');
+	ok(strpos($page, 'dhc-arena-card.php?run=') !== false,
+	   'the Bosses page never points og:image at the run card');
+	ok(strpos($page, "\$dhca_share_run = (\$IS_BOSS && isset(\$_GET['run']))") !== false,
+	   'the run card is claimed outside boss mode, so the Arena can serve a boss picture');
+	ok(strpos($page, "+ (bossRun > 0 ? '?run=' + bossRun : '')") !== false,
+	   'the share link does not name the run, so the post gets the generic card');
+}
+
 echo "\nthe Arena page only claims a match card when there is a match\n";
 {
 	$page = file_get_contents(__DIR__ . '/dhcarena.php');
