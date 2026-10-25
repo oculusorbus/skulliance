@@ -1867,7 +1867,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
            everyone who takes part rolls for when the week closes get better the further the
            crew falls, and dropping all three unlocks the best table.</p>
         <p class="a-sub" style="margin:0 0 10px"><b><?php echo DHCB_DAILY_RUNS; ?> Crews a day</b>,
-           and every day you send one banks another trait. Seven days, seven traits.</p>
+           and every day you send one banks another trait. Seven days, seven traits.
+           <?php /* NUMBERED, NOT NAMED. The week turns at 4pm Thursday like every
+                    other weekly game here, so a "day" runs 4pm to 4pm and straddles
+                    two dates -- calling one "Friday" would be wrong by eight hours
+                    for everybody and wrong by more outside Central time. */ ?>
+           The week turns <b>Thursday at 4pm CT</b>.</p>
 
         <div class="a-bosses">
           <?php foreach ($dhcb_on as $bz):
@@ -1896,9 +1901,9 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         <div class="a-cache">
           <?php foreach ($dhcb_slots as $sl): ?>
           <div class="a-slot <?php echo $sl['state']; ?>"
-               title="<?php echo htmlspecialchars(date('j M', strtotime($sl['date']))) . ' — ' . (
-                 $sl['state'] === 'filled' ? 'earned'
-                 : ($sl['state'] === 'today' ? 'today, still open'
+               title="<?php echo 'Day ' . htmlspecialchars($sl['label']) . ' — ' . (
+                 $sl['state'] === 'filled' ? 'banked'
+                 : ($sl['state'] === 'today' ? 'now, still open'
                  : ($sl['state'] === 'missed' ? 'missed' : 'still to come'))); ?>">
             <i></i><span><?php echo htmlspecialchars($sl['label']); ?></span>
           </div>

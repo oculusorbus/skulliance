@@ -1,6 +1,6 @@
 # DHC Bosses
 
-Three bosses stand up every **Monday** with a health bar each, and **everybody
+Three bosses stand up every **Thursday at 4pm CT** with a health bar each, and **everybody
 shares them**. You can send **three Crews a day**; every point of damage anyone
 lands comes off the same three bars, all week.
 
@@ -22,12 +22,16 @@ ends.
 ## The cache: one trait for every day you turn up
 
 Every day you send a Crew that does real damage banks **one trait**, up to
-seven. Miss Wednesday and you finish the week with six.
+seven. Miss a day and you finish the week with six.
 
 Three Crews a day is deliberately too few to bank the week in one sitting, so
 a full cache is seven separate visits. You can see it filling on the Bosses
-panel: seven boxes, one per day, with today's outlined and any day you missed
-dotted out.
+panel: seven boxes, numbered 1 to 7, with the current one outlined and any you
+missed dotted out.
+
+The boxes are **numbered rather than named** because the week turns at 4pm, so
+a day here runs 4pm to 4pm and straddles two dates. "Day 3" is true wherever
+you are; "Saturday" would not be.
 
 The whole cache rolls when the week closes, on the table the community earned.
 
@@ -70,7 +74,7 @@ ranked battle.
 
 ## How big they are
 
-The crew is sized every Monday from how much firepower the platform could
+The crew is sized every Thursday from how much firepower the platform could
 actually field over a week: how many players have been active, how many Crews
 they could send between them, and how much damage a run is worth. It is locked
 when the crew stands up, so nobody who joins later makes it harder for the
@@ -87,11 +91,11 @@ Fighters is not the same as fighting well, and a player with five good
 Fighters should be able to top it. Total damage, Crews sent and Fighters sent
 are all shown; none of them decide the order.
 
-CARBON is paid down the board by rank when the week closes, the same harmonic
+CARBON is paid down the board by rank when the week closes on Thursday, the same harmonic
 split every board uses.
 
 ## If nobody finishes them
 
-A new crew stands up on Monday at full health. Nothing carries over, and
+A new crew stands up on Thursday at 4pm at full health. Nothing carries over, and
 nothing is lost: everybody who took part is paid their cache either way, just
 on a lower table.

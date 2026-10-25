@@ -40,6 +40,7 @@
 
 require_once __DIR__ . '/dhcfighters-lib.php';
 require_once __DIR__ . '/dhcarena-lib.php';
+require_once __DIR__ . '/lib/week-start.php';
 
 /* ---------- the dials -------------------------------------------------------
    Every one of these is a starting guess, deliberately. See dhcbosses.md: the
@@ -125,21 +126,33 @@ function dhcb_day($conn) {
 }
 
 /**
- * THE WEEK THE CREW BELONGS TO, as the Monday of that week.
+ * THE WEEK THE CREW BELONGS TO, keyed on the date of its Thursday.
  *
- * The crew stands up weekly, not daily, so this is the key everything is
- * stored against -- dhc_boss_day.day holds a Monday and the column name is
- * now a slight lie that is not worth a migration to fix.
+ * 4PM THURSDAY, AMERICA/CHICAGO, which is where every weekly game on this
+ * platform turns -- Skull Swap, Boss Battles, Gauntlets, Crypt Crawl,
+ * Obscura, Skull Racer and Drop Ship all lock their week there. Most of
+ * them never compute it, because they select WHERE reward = 0 and the
+ * crontab line IS the boundary; this one needs the date, because the crew
+ * is keyed on the week and the trait cache counts blocks within it.
  *
- * WEEKDAY() rather than DAYOFWEEK(): the first is 0 for Monday regardless
- * of the server's first-day-of-week setting, the second is locale-dependent
- * and would silently shift the boundary.
+ * ASKED OF MYSQL, not of PHP, because started_at is written by MySQL's
+ * NOW() and the two clocks on this host do not agree. The rule itself
+ * lives in lib/week-start.php in both dialects.
+ *
+ * dhc_boss_day.day therefore holds a THURSDAY. The column name is a
+ * leftover from the daily draft and is not worth a migration for a word.
  */
-function dhcb_week($conn, $on = null) {
-	$base = ($on === null) ? 'CURDATE()' : "'" . $conn->real_escape_string($on) . "'";
-	$r = @$conn->query("SELECT DATE_SUB($base, INTERVAL WEEKDAY($base) DAY) AS w");
+function dhcb_week($conn) {
+	$r = @$conn->query('SELECT ' . skl_week_key_sql() . ' AS w');
 	if ($r && ($row = $r->fetch_assoc())) return $row['w'];
-	return date('Y-m-d', strtotime('monday this week'));
+	return skl_week_key();                     // only if the database is gone
+}
+
+/** Which 24-hour block of the week we are in now, 0 to 6. */
+function dhcb_week_day($conn) {
+	$r = @$conn->query('SELECT ' . skl_week_day_sql('NOW()') . ' AS d');
+	if ($r && ($row = $r->fetch_assoc())) return (int)$row['d'];
+	return 0;
 }
 
 /* ---------- the crew --------------------------------------------------------
@@ -390,9 +403,13 @@ function dhcb_roster($conn, $user_id, $crew = null) {
  * the entire week, which is the thing the daily cap exists to stop.
  */
 function dhcb_runs_today($conn, $user_id) {
+	/* The CURRENT BLOCK, not the calendar day. The week turns at 4pm on a
+	   Thursday, so a midnight allowance would reset in the middle of day
+	   seven and hand out a free extra slot every week. */
 	$r = @$conn->query("SELECT COUNT(*) AS n FROM dhc_boss_runs
 	                     WHERE user_id = " . (int)$user_id . "
-	                       AND DATE(started_at) = CURDATE()");
+	                       AND started_at >= " . skl_week_start_sql() . "
+	                       AND " . skl_week_day_sql('started_at') . " = " . skl_week_day_sql('NOW()'));
 	if (!$r || !($x = $r->fetch_assoc())) return 0;
 	return (int)$x['n'];
 }
@@ -409,7 +426,7 @@ function dhcb_runs_today($conn, $user_id) {
  */
 function dhcb_cache_days($conn, $user_id, $week = null) {
 	if ($week === null) $week = dhcb_week($conn);
-	$r = @$conn->query("SELECT COUNT(DISTINCT DATE(started_at)) AS n
+	$r = @$conn->query("SELECT COUNT(DISTINCT " . skl_week_day_sql('started_at') . ") AS n
 	                      FROM dhc_boss_runs
 	                     WHERE user_id = " . (int)$user_id . "
 	                       AND day = '" . $conn->real_escape_string($week) . "'
@@ -786,7 +803,8 @@ function dhcb_participants($conn, $day) {
 	$min = (int)DHCB_MIN_DEALT;
 	$r = @$conn->query("SELECT user_id, SUM(dealt) AS dealt, COUNT(*) AS runs,
 	                           SUM(crew_size) AS fighters,
-	                           COUNT(DISTINCT CASE WHEN dealt >= $min THEN DATE(started_at) END) AS days
+	                           COUNT(DISTINCT CASE WHEN dealt >= $min
+	                                 THEN " . skl_week_day_sql('started_at') . " END) AS days
 	                      FROM dhc_boss_runs
 	                     WHERE day = '$esc' AND outcome <> 0
 	                     GROUP BY user_id");
@@ -869,24 +887,28 @@ function dhcb_cache_slots($conn, $user_id, $week = null) {
 	if ($week === null) $week = dhcb_week($conn);
 	$uid  = (int)$user_id;
 	$done = array();
-	$r = @$conn->query("SELECT DISTINCT DATE(started_at) AS d FROM dhc_boss_runs
+	/* Blocks of the week, not calendar dates -- see skl_week_day_sql(). */
+	$r = @$conn->query("SELECT DISTINCT " . skl_week_day_sql('started_at') . " AS d
+	                      FROM dhc_boss_runs
 	                     WHERE user_id = $uid
 	                       AND day = '" . $conn->real_escape_string($week) . "'
 	                       AND outcome <> 0 AND dealt >= " . (int)DHCB_MIN_DEALT);
-	if ($r) while ($x = $r->fetch_assoc()) $done[$x['d']] = true;
+	if ($r) while ($x = $r->fetch_assoc()) $done[(int)$x['d']] = true;
 
-	/* Today from the DATABASE, so the slot that lights up is the same one
-	   the allowance is counted against. */
-	$today = dhcb_day($conn);
+	$now = dhcb_week_day($conn);
 	$out = array();
-	$t0  = strtotime($week);
 	for ($i = 0; $i < 7; $i++) {
-		$d = date('Y-m-d', strtotime("+$i day", $t0));
-		if (isset($done[$d]))   $st = 'filled';
-		elseif ($d === $today)  $st = 'today';
-		elseif ($d < $today)    $st = 'missed';
-		else                    $st = 'open';
-		$out[] = array('date'=>$d, 'label'=>date('D', strtotime($d)), 'state'=>$st);
+		if (isset($done[$i])) $st = 'filled';
+		elseif ($i === $now)  $st = 'today';
+		elseif ($i < $now)    $st = 'missed';
+		else                  $st = 'open';
+		/*
+		 * NUMBERED, NOT NAMED. A block runs 4pm to 4pm, so it straddles two
+		 * calendar dates -- calling one of them "Fri" would be wrong by
+		 * eight hours for everybody and wrong by more for anyone outside
+		 * Central time. "Day 3" is true in every timezone.
+		 */
+		$out[] = array('index' => $i, 'label' => (string)($i + 1), 'state' => $st);
 	}
 	return $out;
 }

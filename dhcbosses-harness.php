@@ -547,21 +547,88 @@ echo "\nthe crew is weekly and the cache counts days, not runs\n";
  */
 $today = substr($LIB, strpos($LIB, 'function dhcb_runs_today'));
 $today = substr($today, 0, strpos($today, "\nfunction "));
-ok(strpos($today, 'DATE(started_at) = CURDATE()') !== false,
-   'the daily allowance is counted against the week, so one sitting can spend all seven days');
-ok(strpos($today, "day = '") === false,
-   'the allowance still filters on the week column');
+/*
+ * THE ALLOWANCE IS THE CURRENT 4PM-TO-4PM BLOCK, not the calendar day. A
+ * midnight allowance under a Thursday-4pm week resets in the middle of day
+ * seven and hands out a free extra slot every single week.
+ */
+ok(strpos($today, 'skl_week_day_sql') !== false,
+   'the allowance counts calendar days under a 4pm week boundary, which gives a free slot '
+ . 'every Thursday');
+ok(strpos($today, 'CURDATE()') === false, 'the allowance still resets at midnight');
 
 $slots = substr($LIB, strpos($LIB, 'function dhcb_cache_slots'));
 $slots = substr($slots, 0, strpos($slots, "\nfunction "));
-ok(strpos($slots, 'DISTINCT DATE(started_at)') !== false,
-   'the cache counts runs rather than days, so three Crews on Monday would fill three slots');
+ok(strpos($slots, 'DISTINCT ') !== false && strpos($slots, 'skl_week_day_sql') !== false,
+   'the cache counts runs rather than blocks of the week, so three Crews in one sitting '
+ . 'would fill three slots');
+ok(strpos($slots, "'label' => (string)(\$i + 1)") !== false,
+   'the slots are labelled by weekday name, which is wrong by eight hours under a 4pm '
+ . 'boundary and wrong by more outside Central time');
 ok(strpos($slots, 'dealt >= ') !== false,
    'a run that dealt nothing fills a cache slot');
 
 $days = substr($LIB, strpos($LIB, 'function dhcb_cache_days'));
 $days = substr($days, 0, strpos($days, "\nfunction "));
 ok(strpos($days, 'DHCB_CACHE_MAX') !== false, 'the cache is uncapped');
+
+/*
+ * THE WEEK TURNS AT 4PM THURSDAY, like every other weekly game here, and
+ * the boundary is computed in MySQL because started_at is written by
+ * MySQL's NOW() and the two clocks on this host disagree.
+ */
+require_once __DIR__ . '/lib/week-start.php';
+/*
+ * DRIVEN, NOT GREPPED. The first version of these searched the SQL for
+ * '16:00:00' and for 'WEEKDAY(NOW()) = 3' and passed while one of the
+ * four branches had been changed, because the other three still matched.
+ * The PHP twin can simply be run, which is the honest test; the SQL is
+ * then checked structurally, since every branch has to carry the hour.
+ */
+$wk = function ($iso) {
+	return skl_week_key(new DateTime($iso, new DateTimeZone('America/Chicago')));
+};
+$wd = function ($iso) {
+	$n = new DateTime($iso, new DateTimeZone('America/Chicago'));
+	$u = (clone $n)->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+	return skl_week_day_index($u, $n);
+};
+/* 2026-10-29 is a Thursday. 15:59 belongs to the week that began the
+   Thursday before; 16:01 opens the new one. */
+ok($wk('2026-10-29 15:59:00') === '2026-10-22', 'Thursday before 4pm is not still last week');
+ok($wk('2026-10-29 16:01:00') === '2026-10-29', 'Thursday after 4pm does not start the new week');
+ok($wk('2026-10-30 09:00:00') === '2026-10-29', 'Friday belongs to the wrong week');
+ok($wk('2026-11-02 09:00:00') === '2026-10-29', 'Monday belongs to the wrong week');
+ok($wk('2026-11-04 23:00:00') === '2026-10-29', 'Wednesday night belongs to the wrong week');
+/* Seven blocks, 0 to 6, and the last one must not roll over early. */
+ok($wd('2026-10-29 16:01:00') === 0, 'the first hour of the week is not day 0');
+ok($wd('2026-11-04 23:00:00') === 6, 'the last night of the week is not day 6');
+ok($wd('2026-11-05 15:59:00') === 6, 'the final afternoon rolled past day 6');
+/* The week spans eight calendar dates; the index must still stop at 6. */
+$seen = array();
+for ($h = 0; $h < 168; $h++) {
+	$t = (new DateTime('2026-10-29 16:30:00', new DateTimeZone('America/Chicago')))
+	     ->modify("+$h hour");
+	$seen[$wd((clone $t)->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'), $t)] = true;
+}
+ok(count($seen) === 7, 'a week produced ' . count($seen) . ' distinct day indices, not 7');
+
+/* Every branch of the SQL has to carry the hour and the weekday. */
+/* FIVE: four branches that build the timestamp, plus the comparison that
+   decides whether today's Thursday has turned yet. */
+ok(substr_count(skl_week_start_sql(), "'16:00:00'") === 5,
+   'the SQL no longer carries 4pm in every branch, found '
+ . substr_count(skl_week_start_sql(), "'16:00:00'") . ' of 5');
+ok(substr_count(skl_week_start_sql(), 'WEEKDAY(NOW()) = 3') === 2,
+   'a Thursday branch in the SQL has moved to another weekday');
+ok(strpos(skl_week_start_sql(), 'DAYOFWEEK') === false,
+   'DAYOFWEEK is locale dependent and would move the boundary on some servers');
+/* Seven blocks, never eight -- the week spans eight calendar dates. */
+ok(strpos(skl_week_day_sql(), 'LEAST(6') !== false,
+   'the day index is unbounded, so a week that touches eight dates offers eight slots');
+$LIBW = harness_strip_comments(file_get_contents(__DIR__ . '/dhcbosses-lib.php'));
+ok(strpos($LIBW, 'skl_week_key_sql()') !== false,
+   'the week key is computed in PHP, against timestamps MySQL wrote');
 
 /* The settle pays one trait per day attended, not one per player. */
 $set = substr($LIB, strpos($LIB, 'function dhcb_settle'));
