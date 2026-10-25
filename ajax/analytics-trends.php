@@ -66,6 +66,10 @@ $metrics = [
     'obscura'       => ['obscura_scores',         'date_created',     "AND active = 0",                                  'COUNT(*)'],
     'guardians'     => ['guardians_scores',       'date_created',     '',                                                'COUNT(*)'],
     'dhcarena'      => ['dhc_arena_battles',      'started_at',       '',                                                'COUNT(*)'],
+    /* Crews SENT, not runs finished: an abandoned run is still somebody
+       turning up, and the sweep closes it later anyway. Same shape as the
+       Arena above it, which counts battles started for the same reason. */
+    'dhcbosses'     => ['dhc_boss_runs',          'started_at',       '',                                                'COUNT(*)'],
     'dhcfighters'   => ['dhc_fighters',           'created_at',       '',                                                'COUNT(*)'],
     'dhctraits'     => ['dhc_trait_drops',        'awarded_at',       '',                                                'COUNT(*)'],
 ];

@@ -106,6 +106,7 @@ $board_to_metric = array(
 	'monstrocity'   => 'monstrocity',
 	'dhcfighters'   => 'dhcfighters',
 	'dhcarena'      => 'dhcarena',
+	'dhcbosses'     => 'dhcbosses',
 	'bosses'        => 'bossbattles',
 	'gauntlets'     => 'gauntlets',
 	'obscura'       => 'obscura',

@@ -445,6 +445,7 @@ include 'header.php';
                     <option value="obscura">Obscura</option>
                     <option value="guardians">Realm Guardians</option>
                     <option value="dhcarena">DHC Arena</option>
+                    <option value="dhcbosses">DHC Bosses</option>
                     <option value="dhcfighters">DHC Fighters Assembled</option>
                     <option value="dhctraits">DHC Traits Awarded</option>
                 </optgroup>
@@ -521,6 +522,7 @@ fetch('ajax/analytics-content.php')
         obscura:       'Obscura',
         guardians:     'Realm Guardians',
         dhcarena:      'DHC Arena',
+        dhcbosses:     'DHC Bosses',
         dhcfighters:   'DHC Fighters Assembled',
         dhctraits:     'DHC Traits Awarded',
     };
