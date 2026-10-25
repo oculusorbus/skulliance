@@ -637,6 +637,60 @@ ok($probe['mine'][0]['maxHp'] > $flat['mine'][0]['maxHp'],
  . 'is still being applied');
 
 /* ---------------------------------------------------------------- *
+ * THE WEEK'S CREWS, DRAWN
+ * ---------------------------------------------------------------- */
+echo "\nthe page shows what everybody else is throwing at the bar\n";
+/*
+ * A shared health bar makes "what is everyone else sending" the question a
+ * player opens the page with, and until now only the admin report could
+ * answer it -- as a table of names. This is the same data drawn: a face,
+ * the three Fighters, the damage, and whether anybody walked away.
+ */
+ok(strpos($ARE, 'class="a-feed"') !== false,
+   'the Crews feed is gone, so the page never says what anybody else sent');
+ok(strpos($ARE, 'if ($IS_BOSS && $dhcb_feed)') !== false,
+   'the feed is not fenced to boss mode, so the Arena renders a boss report');
+/* THE SHARED REPORT, not a second query. admin-dhcbosses.php reads the same
+   function; two of them would drift the first time either was touched. */
+ok(strpos($ARE, 'dhcb_runs_report($conn, null, 12)') !== false,
+   'the feed does not come from dhcb_runs_report(), or is not capped -- the admin report '
+ . 'pulls 200 and every row here draws three Fighters');
+/* ONE RENDER PER FIGHTER. The picker stacks eight layers per Fighter, which
+   at twelve runs would be nearly three hundred image requests. */
+ok(strpos($ARE, 'dhcf_render_fighter($t, (int)$f[\'serial\'], 250)') !== false,
+   'the feed does not use the shared cached composite, so it is either stacking layers or '
+ . 'drawing nothing');
+ok(strpos($ARE, 'function_exists(\'dhcf_render_fighter\')') !== false,
+   'the feed assumes the renderer exists, and it is in a file this page only maybe loads');
+/*
+ * FELL IS GREY AND STANDING IS LIT, per Fighter, from the ledger.
+ *
+ * The first pass copied the share card's grayscale + opacity .45. That is
+ * tuned for a 180px tile; at 38px it erased the Crew, and since almost
+ * every run is a wipe the whole feed rendered as unreadable mush -- which
+ * defeats the one thing it is for. Rendered the realistic all-wiped case
+ * and fixed it: lighter dim, and the real signal on the border, which
+ * survives at thumbnail size where saturation does not.
+ */
+/* Anchored to the feed's own class, because the Crew picker's recover
+   overlay is built from the same expression and a bare match counted it. */
+ok(preg_match("~a-rf<\?php echo !empty\(\\\$f\['fell'\]\)~", $ARE) === 1,
+   'the feed does not mark fallen Fighters, so a wipe looks like a clean run');
+ok(preg_match('~\.a-rf\.fell img\{filter:grayscale\(100%\);opacity:\.(\d+)\}~', $ARE, $om) === 1,
+   'the fallen treatment is gone or no longer one rule');
+ok(!empty($om) && (int)$om[1] >= 60,
+   'the fallen Fighters are dimmed to .' . ($om[1] ?? '?') . ' at 38px, which is the share '
+ . 'card\'s figure and erases the Crew at this size');
+ok(strpos($ARE, '.arena-wrap .a-rf:not(.fell){border-color:var(--teal)') !== false,
+   'a surviving Fighter has no lit edge, so the rare good outcome does not read in a wall '
+ . 'of grey');
+/* AND THE OUTCOME IS WORDED FOR THIS GAME. Win/lose is meaningless when
+   almost every run is a paying wipe; what is worth saying is whether
+   anybody came back. */
+ok(strpos($ARE, 'walked away') !== false && strpos($ARE, 'Crew wiped') !== false,
+   'the feed reports win or lose rather than who survived');
+
+/* ---------------------------------------------------------------- *
  * THE POST NAMES BOTH CREWS
  * ---------------------------------------------------------------- */
 echo "\nthe X post says whose damage it was and what is falling\n";

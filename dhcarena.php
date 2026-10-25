@@ -308,7 +308,7 @@ $ladderAth = dhca_ladder($conn, DHCA_LADDER_ALL_TIME, 10);
  * read below treats as "not switched on yet" rather than as an error.
  */
 $dhcb_on = array(); $dhcb_prog = null; $dhcb_block = ''; $dhcb_runs = 0;
-$dhcb_slots = array(); $dhcb_lad = array(); $dhcb_days = 0; $dhcb_left = 0; $dhcb_round = 1;
+$dhcb_slots = array(); $dhcb_lad = array(); $dhcb_days = 0; $dhcb_left = 0; $dhcb_round = 1; $dhcb_feed = array();
 if ($dhcb_lib) {
 	$dhcb_on = dhcb_state($conn);
 	if ($dhcb_on) {
@@ -325,6 +325,10 @@ if ($dhcb_lib) {
 			$dhcb_round = $dhcb_rd['n'];
 			$dhcb_days  = $user_id ? dhcb_cache_days($conn, $user_id) : 0;
 			$dhcb_lad   = dhcb_ladder($conn, null, 10);
+			/* The week's Crews, newest first, for the feed under the panels.
+			   Twelve rather than the admin report's 200: this is "what is
+			   happening", not an audit, and every row draws three Fighters. */
+			$dhcb_feed  = dhcb_runs_report($conn, null, 12);
 		}
 	}
 }
@@ -1513,6 +1517,56 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-lad .r{opacity:.65;font-variant-numeric:tabular-nums}
 .arena-wrap .a-lad .me{color:var(--ochre)}
 .arena-wrap .a-lad .me .r{opacity:1}
+/* ---- the week's Crews, a full-width row under the panels ---- */
+.arena-wrap .a-feed{margin-top:14px;border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.arena-wrap .a-feed h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--dim);background:var(--panel2);
+  border-bottom:1px solid var(--line);font-weight:600}
+.arena-wrap .a-feed .body{padding:4px 12px 10px}
+.arena-wrap .a-run{display:flex;align-items:center;gap:14px;padding:8px 0;
+  border-bottom:1px solid var(--line)}
+.arena-wrap .a-run:last-child{border-bottom:0}
+.arena-wrap .a-runwho{display:flex;align-items:center;gap:7px;min-width:0;
+  flex:0 0 170px;font-size:12px;color:#e8eaed}
+.arena-wrap .a-runwho span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.arena-wrap .a-av{width:24px;height:24px;border-radius:50%;object-fit:cover;flex:0 0 auto;
+  border:1px solid var(--line)}
+/* The Crew. Fixed squares so every row lines up whatever the art is. */
+.arena-wrap .a-runcrew{display:flex;gap:4px;flex:0 0 auto}
+.arena-wrap .a-rf{display:block;width:38px;height:38px;border-radius:3px;overflow:hidden;
+  border:1px solid var(--line);background:var(--panel2)}
+.arena-wrap .a-rf img{width:100%;height:100%;object-fit:cover;display:block}
+/*
+ * FELL IS GREY, STANDING IS FULL COLOUR AND A LIT EDGE.
+ *
+ * The share card greys a fallen Fighter with grayscale + opacity .45, and
+ * copying that here was wrong: it is tuned for a 180px tile, and at 38px it
+ * erased the Crew completely. Rendered the realistic case -- almost every
+ * run is a wipe, so almost every row is three greyed Fighters -- and the
+ * whole feed came out as unreadable mush, which defeats the one thing it is
+ * for, showing what people are throwing at the bar.
+ *
+ * So the dimming is lighter and the real signal moved to the BORDER, which
+ * survives at thumbnail size where a saturation difference does not. A
+ * survivor is the rare thing here and now it is the one that glows.
+ */
+.arena-wrap .a-rf.fell img{filter:grayscale(100%);opacity:.72}
+.arena-wrap .a-rf:not(.fell){border-color:var(--teal);box-shadow:0 0 0 1px rgba(0,200,160,.25)}
+.arena-wrap .a-runnum{flex:0 0 76px;text-align:right;font-size:11px;color:var(--dim)}
+.arena-wrap .a-runnum b{display:block;font-size:13px;color:#e8eaed;font-weight:600;
+  font-variant-numeric:tabular-nums}
+.arena-wrap .a-runnum span{font-size:9px;letter-spacing:.1em;text-transform:uppercase;opacity:.7}
+.arena-wrap .a-runout{margin-left:auto;font-size:9px;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--dim);white-space:nowrap}
+.arena-wrap .a-runout.ok{color:var(--teal)}
+@media (max-width:640px){
+  /* Two lines on a phone: who and the Crew, then the figures. The row is
+     six things wide and none of them survives a 400px squeeze. */
+  .arena-wrap .a-run{flex-wrap:wrap;gap:8px 10px}
+  .arena-wrap .a-runwho{flex:1 1 100%}
+  .arena-wrap .a-runnum{flex:0 0 auto;text-align:left}
+  .arena-wrap .a-runout{margin-left:0}
+}
 .arena-wrap #arenaBattle{display:none;margin-top:12px}
 .arena-wrap #arenaBattle.on{display:block}
 .arena-wrap .a-busy{opacity:.55;pointer-events:none}
@@ -2237,6 +2291,80 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
              which is also the honest size of the relationship, since the
              ladder is what people come to this page for. */ ?>
   </div>
+
+<?php if ($IS_BOSS && $dhcb_feed): ?>
+<?php
+/*
+ * WHO WENT IN, AND WHAT CAME BACK.
+ *
+ * A FULL-WIDTH ROW UNDER THE PANELS, not a fourth column. It is a wide
+ * thing -- a face, three Fighters, three figures -- and squeezing it into
+ * a 320px grid cell would make it a list of names, which is what the admin
+ * report already is. This exists to be looked at.
+ *
+ * THE CREW IS DRAWN, NOT NAMED, and that is the whole point of it: this is
+ * a shared bar, so the question a player has when they open the page is
+ * what everyone else is throwing at it. Three portraits answer that
+ * instantly and three names do not.
+ *
+ * GREYED MEANS FELL. Per Fighter, from dhc_boss_run_fighters.fell, so a run
+ * where one survived reads differently from a wipe at a glance -- and a
+ * wipe is the normal outcome here, which makes the survivor the
+ * interesting thing rather than the loss.
+ *
+ * ONE RENDER PER FIGHTER, through dhcf_render_fighter() -- the same cached
+ * composite the Collection, the share cards and Discord all use, so a
+ * Fighter anybody has already seen anywhere costs nothing to draw again.
+ * The alternative is the picker's eight stacked layers, which at twelve
+ * runs would be nearly three hundred image requests.
+ */
+$dhcb_art_ok = function_exists('dhcf_render_fighter');
+?>
+  <div class="a-feed">
+    <h2>Crews sent this week</h2>
+    <div class="body">
+      <?php foreach ($dhcb_feed as $rn):
+        $fell = 0; foreach ($rn['fighters'] as $f) if (!empty($f['fell'])) $fell++;
+        $stood = count($rn['fighters']) - $fell;
+        $av = ($rn['discord_id'] && $rn['avatar']) ? avatar_url($rn['discord_id'], $rn['avatar']) : '';
+        $who = ($rn['username'] !== null && $rn['username'] !== '') ? $rn['username'] : 'Unknown';
+      ?>
+      <div class="a-run">
+        <div class="a-runwho">
+          <?php if ($av !== ''): ?>
+            <img class="a-av" loading="lazy" alt="" src="<?php echo htmlspecialchars($av); ?>"
+                 onerror="this.remove()">
+          <?php endif; ?>
+          <span><?php echo htmlspecialchars($who); ?></span>
+        </div>
+        <div class="a-runcrew">
+          <?php foreach ($rn['fighters'] as $f):
+            $t = json_decode((string)$f['traits'], true);
+            $url = ($dhcb_art_ok && is_array($t))
+                 ? dhcf_render_fighter($t, (int)$f['serial'], 250) : '';
+            if ($url === '') continue; ?>
+          <span class="a-rf<?php echo !empty($f['fell']) ? ' fell' : ''; ?>"
+                title="<?php echo htmlspecialchars($f['display']
+                  . (!empty($f['fell']) ? ' — fell' : ' — walked away')
+                  . ' · ' . number_format((int)$f['dealt']) . ' damage'); ?>">
+            <img loading="lazy" alt="" src="<?php echo htmlspecialchars($url); ?>" onerror="this.remove()">
+          </span>
+          <?php endforeach; ?>
+        </div>
+        <div class="a-runnum"><b><?php echo number_format((int)$rn['dealt']); ?></b><span>damage</span></div>
+        <div class="a-runnum"><b><?php echo (int)$rn['rounds']; ?></b><span>rounds</span></div>
+        <?php /* The outcome a player cares about is not win or lose -- almost
+                 every run is a wipe and still pays. What is worth saying is
+                 whether anybody walked away from it. */ ?>
+        <div class="a-runout<?php echo $stood > 0 ? ' ok' : ''; ?>"><?php
+          echo $stood > 0
+            ? $stood . ' walked away'
+            : 'Crew wiped'; ?></div>
+      </div>
+      <?php endforeach; ?>
+    </div>
+  </div>
+<?php endif; ?>
 
   <!-- the board, hidden until a battle starts -->
   <div id="arenaBattle">

@@ -61,6 +61,14 @@ The whole crew respawns together, not boss by boss. A boss you drop stays down
 until all three are down, which is what makes the panel readable as progress,
 and what makes the moment they all fall worth something.
 
+## Who else went in
+
+Under the panels, the Crews sent this week: who sent them, the three Fighters
+they fielded, the damage, and whether anybody walked away. The Fighters are
+drawn rather than listed, and a Fighter who fell is greyed while a survivor
+keeps its colour and a lit edge. Almost every run is a wipe, so the survivor is
+the thing worth looking for.
+
 ## The cache: one trait for every day you turn up
 
 Every **round** you send a Crew that does real damage banks **one trait**, up to

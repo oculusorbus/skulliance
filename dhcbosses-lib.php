@@ -1454,7 +1454,10 @@ function dhcb_runs_report($conn, $day = null, $limit = 200) {
 	$esc = $conn->real_escape_string($day);
 	$lim = max(1, (int)$limit);
 	$rows = array();
-	$res = @$conn->query("SELECT r.id, r.user_id, u.username, r.dealt, r.crew_size,
+	/* discord_id and avatar come along for the player face on the public
+	   feed; the admin table ignores them. One query either way. */
+	$res = @$conn->query("SELECT r.id, r.user_id, u.username, u.discord_id, u.avatar,
+	                             r.dealt, r.crew_size, r.wave,
 	                             r.outcome, r.killed, r.rounds, r.started_at, r.ended_at
 	                        FROM dhc_boss_runs r
 	                        LEFT JOIN users u ON u.id = r.user_id
@@ -1467,7 +1470,10 @@ function dhcb_runs_report($conn, $day = null, $limit = 200) {
 	/* The Fighters in each, in one pass rather than one query per run. */
 	$ids = array(); foreach ($rows as $r) $ids[] = (int)$r['id'];
 	$byRun = array();
-	$q = @$conn->query("SELECT rf.run_id, rf.fighter_id, rf.fell, rf.dealt, f.serial, f.name
+	/* traits too, so the feed can draw the Crew that went in rather than
+	   list its names. Still one query for every run on the page. */
+	$q = @$conn->query("SELECT rf.run_id, rf.fighter_id, rf.fell, rf.dealt, rf.`rank`,
+	                           f.serial, f.name, f.traits
 	                      FROM dhc_boss_run_fighters rf
 	                      LEFT JOIN dhc_fighters f ON f.id = rf.fighter_id
 	                     WHERE rf.run_id IN (" . implode(',', $ids) . ")
