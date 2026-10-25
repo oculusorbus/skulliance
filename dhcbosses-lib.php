@@ -188,19 +188,23 @@ if (!defined('DHCB_ACTIVE_DAYS')) define('DHCB_ACTIVE_DAYS', 14);
 /** Monthly ladder key, same shape and meaning as the Arena season. */
 function dhcb_season() { return date('Y-m'); }
 
-/**
- * TODAY, AS MYSQL SEES IT.
+/*
+ * dhcb_day() IS GONE, AND ON PURPOSE.
  *
- * Not PHP's date(). php.ini is UTC on this host and MySQL is not, and every
- * row this feature writes is stamped by MySQL -- so a boundary computed in
- * PHP puts runs on one side and the spawn on the other for several hours
- * every night. The Arena's bench column carries the same warning at length.
+ * It returned CURDATE(), from the first draft where the crew stood up and
+ * fell every day. The feature is weekly now and EVERY `day` column in this
+ * schema holds the Thursday the week began -- so a default of "today" was a
+ * date nothing is keyed on for six days out of seven.
+ *
+ * Three callers had it. The admin report showed "no crew has stood up for
+ * 2026-10-25" while the crew was standing perfectly well under 2026-10-22;
+ * dhcb_settle() would have settled a day with no participants on it and
+ * reported a clean run paying nobody; dhcb_runs_report() would have shown an
+ * empty week. All three now default to dhcb_week().
+ *
+ * It is DELETED rather than corrected because a function called dhcb_day()
+ * that returns a Thursday is the same trap wearing a fix.
  */
-function dhcb_day($conn) {
-	$r = @$conn->query("SELECT CURDATE() AS d");
-	if ($r && ($row = $r->fetch_assoc())) return $row['d'];
-	return date('Y-m-d');                      // only if the database is gone
-}
 
 /**
  * THE WEEK THE CREW BELONGS TO, keyed on the date of its Thursday.
@@ -1232,7 +1236,7 @@ function dhcb_participants($conn, $day) {
  * Returns array(paid, table, progress).
  */
 function dhcb_settle($conn, $day = null, $announce = true) {
-	if ($day === null) $day = dhcb_day($conn);
+	if ($day === null) $day = dhcb_week($conn);
 	$state = dhcb_state($conn, $day);
 	$prog  = dhcb_progress($state);
 	$table = dhcb_tier_table($prog);
@@ -1406,7 +1410,7 @@ function dhcb_ladder_html($rows, $user_id, $guest, $empty) {
 
 /** Every Crew that went in on a day, newest first. The owner's report. */
 function dhcb_runs_report($conn, $day = null, $limit = 200) {
-	if ($day === null) $day = dhcb_day($conn);
+	if ($day === null) $day = dhcb_week($conn);
 	$esc = $conn->real_escape_string($day);
 	$lim = max(1, (int)$limit);
 	$rows = array();

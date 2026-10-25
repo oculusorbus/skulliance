@@ -21,8 +21,18 @@ admin_require();   // before any output, and before header.php
 require_once __DIR__ . '/avatar-lib.php';
 require_once __DIR__ . '/dhcbosses-lib.php';
 
-/* Which day to look at. In the query string so a view can be linked. */
-$ab_today = dhcb_day($conn);
+/*
+ * WHICH WEEK TO LOOK AT. In the query string so a view can be linked.
+ *
+ * This asked for CURDATE() and every `day` column in the schema holds the
+ * THURSDAY the week began -- so for six days out of seven the page looked
+ * up a date nothing is keyed on and reported "no crew has stood up" while
+ * the crew was standing perfectly well under the Thursday.
+ *
+ * The parameter is still called `day` because the column is, and renaming a
+ * column is not worth a migration for a word -- see dhcbosses-schema.md.
+ */
+$ab_today = dhcb_week($conn);
 $ab_day   = isset($_GET['day']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $_GET['day'])
           ? $_GET['day'] : $ab_today;
 
@@ -41,8 +51,9 @@ $q = @$conn->query("SELECT COUNT(*) AS n FROM dhc_boss_payouts
                      WHERE day = '" . $conn->real_escape_string($ab_day) . "'");
 if ($q && ($x = $q->fetch_assoc())) $ab_paid = (int)$x['n'];
 
-/* The last fortnight, for the day picker and for the one chart that matters:
-   is participation climbing or is it the same people. */
+/* The last fourteen WEEKS, for the picker and for the one chart that
+   matters: is participation climbing or is it the same people. Grouped on
+   `day`, which holds the Thursday -- so a row is a week, not a day. */
 $ab_hist = array();
 $q = @$conn->query("SELECT day, COUNT(DISTINCT user_id) AS players, COUNT(*) AS runs,
                            SUM(dealt) AS dealt
@@ -83,8 +94,15 @@ admin_chrome('dhcbosses');
 </style>
 
 <?php if (!$ab_state): ?>
-  <p class="ab-sum ab-warn">No crew has stood up for <?php echo htmlspecialchars($ab_day); ?>.
-     If that is today, the tables in dhcbosses-schema.md have probably not been created yet.</p>
+  <p class="ab-sum ab-warn">No crew has stood up for the week of
+     <?php echo htmlspecialchars($ab_day); ?>.
+     <?php if ($ab_day === $ab_today): ?>
+       That is this week, so either the tables in dhcbosses-schema.md have not been created
+       yet or nobody has opened the Bosses page since the week turned — the crew is stood up
+       lazily, on the first read.
+     <?php else: ?>
+       Nothing was keyed to that Thursday.
+     <?php endif; ?></p>
 <?php else: ?>
 
 <div class="ab-crew">
@@ -101,6 +119,11 @@ admin_chrome('dhcbosses');
 </div>
 
 <p class="ab-sum">
+  <?php /* THE WAVE, because the crew gets back up inside the week now and
+           "40% down" means nothing without knowing which crew. */ ?>
+  <b>Wave <?php echo (int)$ab_prog['wave']; ?></b><?php
+    if ($ab_prog['downed'] > 0): ?> · <b><?php echo (int)$ab_prog['downed']; ?></b>
+    crew<?php echo $ab_prog['downed'] === 1 ? '' : 's'; ?> dropped<?php endif; ?> ·
   <b><?php echo round(100 * $ab_prog['pct']); ?>%</b> down ·
   <?php echo number_format($ab_prog['dealt']); ?> of <?php echo number_format($ab_prog['max']); ?> damage ·
   <b><?php echo count($ab_part); ?></b> players ·
@@ -109,7 +132,7 @@ admin_chrome('dhcbosses');
   <?php if ($ab_paid > 0): ?>
     · <b><?php echo (int)$ab_paid; ?></b> paid
   <?php elseif ($ab_day < $ab_today): ?>
-    · <span class="ab-warn">not settled yet — run rewards.php?dhcbosses-day=1</span>
+    · <span class="ab-warn">not settled yet — run rewards.php?dhcbosses-week=1</span>
   <?php endif; ?>
 </p>
 <?php endif; ?>
@@ -162,9 +185,13 @@ admin_chrome('dhcbosses');
 <?php endif; ?>
 
 <?php if ($ab_hist): ?>
-<h3 style="margin:26px 0 8px;font-size:.9rem;color:#8fa8b8">The last fortnight</h3>
+<?php /* FOURTEEN WEEKS, not fourteen days. The query groups on `day` and
+         `day` holds the Thursday the week began, so every row here is a
+         week -- it said "fortnight" from the daily draft and would have had
+         the owner reading a quarter as two weeks. */ ?>
+<h3 style="margin:26px 0 8px;font-size:.9rem;color:#8fa8b8">The last fourteen weeks</h3>
 <table class="ab-t">
-  <thead><tr><th>Day</th><th>Players</th><th>Crews</th><th>Damage</th></tr></thead>
+  <thead><tr><th>Week of</th><th>Players</th><th>Crews</th><th>Damage</th></tr></thead>
   <tbody>
   <?php foreach ($ab_hist as $h): ?>
   <tr>

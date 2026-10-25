@@ -1192,6 +1192,44 @@ echo "\nthe owner can see every Crew that went in\n";
 $ADM = harness_strip_comments(file_get_contents(__DIR__ . '/admin-dhcbosses.php'));
 ok(strpos($ADM, 'admin_require()') !== false, 'the report is not behind the admin gate');
 ok(strpos($ADM, 'dhcb_runs_report(') !== false, 'the report does not list the runs');
+/*
+ * EVERY DEFAULT DATE IN THIS FEATURE IS A THURSDAY.
+ *
+ * dhcb_day() returned CURDATE(), left over from the draft where the crew
+ * stood up and fell daily. Every `day` column holds the Thursday the week
+ * began, so for six days out of seven that default looked up a date nothing
+ * is keyed on: the admin report said "no crew has stood up for 2026-10-25"
+ * while the crew was standing perfectly well under 2026-10-22, dhcb_settle()
+ * would have settled a week with no participants and reported a clean run
+ * paying nobody, and dhcb_runs_report() would have shown an empty week.
+ *
+ * The function is deleted rather than corrected -- a dhcb_day() that returns
+ * a Thursday is the same trap wearing a fix -- so the check is that it is
+ * GONE and that nothing reaches for CURDATE() in its place.
+ */
+ok(strpos($LIB, 'function dhcb_day(') === false,
+   'dhcb_day() is back; it returns today and every day column here holds a Thursday');
+ok(strpos($ADM, 'dhcb_day(') === false && strpos($ADM, 'CURDATE()') === false,
+   'the admin report is back on today\'s date, so it reads an empty week six days in seven');
+ok(strpos($ADM, '$ab_today = dhcb_week($conn);') !== false,
+   'the admin report does not default to the current week');
+foreach (array('dhcb_settle', 'dhcb_runs_report') as $fn) {
+	$at = strpos($LIB, 'function ' . $fn . '(');
+	ok($at !== false && strpos(substr($LIB, $at, 220), 'dhcb_week($conn)') !== false,
+	   $fn . '() does not default to the week, so calling it without a date works on a '
+	 . 'date nothing is keyed to');
+}
+/* And the page has to show WHICH crew, now that they come back inside a
+   week -- "40% down" means nothing without the wave beside it. */
+ok(strpos($ADM, "\$ab_prog['wave']") !== false,
+   'the admin report never says which wave it is describing');
+/* The flag it tells the owner to run has to be a flag that exists. */
+preg_match_all('~rewards\.php\?([a-z-]+)=1~', $ADM, $fm);
+$jobs = file_get_contents(__DIR__ . '/rewards.php');
+foreach (array_unique($fm[1]) as $flag) {
+	ok(strpos($jobs, "'" . $flag . "'") !== false,
+	   'the report tells the owner to run rewards.php?' . $flag . '=1, and no such job exists');
+}
 /* READ ONLY. A settle button would be a second caller of the one thing that
    must happen exactly once. */
 foreach (array('dhcb_settle(', 'dhcb_spawn(', 'INSERT', 'UPDATE ', 'DELETE') as $w) {
