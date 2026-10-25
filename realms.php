@@ -1479,23 +1479,53 @@ $conn->close();
 <script type="text/javascript" src="map-kit.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="map.js?var=<?php echo rand(0,999); ?>"></script>
 <script type="text/javascript" src="swipe-nav.js?var=<?php echo rand(0,999); ?>"></script>
+<?php
+/*
+ * TAKING THE LOADER DOWN, DEFINED ONCE AND EMITTED TWICE.
+ *
+ * THE BUG. This lived inside the if($realm_status) block below -- which
+ * runs to the END OF THE FILE -- so it was the one thing that lifts the
+ * full-screen loader and it never rendered for a player who has no realm
+ * yet. They got a locked overlay with the rail easing out around 90%,
+ * on every device, with a perfectly good Create Realm form sitting
+ * underneath it. Reported by a new player who went to Realms to make one,
+ * which is exactly who cannot have a realm.
+ *
+ * WHY IT IS NOT SIMPLY HOISTED OUT. The comment it carried is right: it is
+ * inside that block deliberately, because everything below is ONE <script>
+ * and a PHP warning printed into any of it is a parse error that stops the
+ * lot -- which has happened twice. Keeping the removal in there makes that
+ * failure VISIBLE as a stuck loader rather than a silently half-dead page.
+ * A separate <script> tag is parsed independently and would have taken the
+ * loader down over the wreckage.
+ *
+ * So the canary stays for a player who HAS a realm, and the else branch
+ * below covers the player who does not -- for whom that block, and its
+ * entire failure mode, does not exist.
+ */
+$rl_loader_off = "(function () {\n"
+               . "\t\tvar l = document.getElementById('rl-loader');\n"
+               . "\t\tif (!l) return;\n"
+               . "\t\tl.classList.add('gone');\n"
+               . "\t\tsetTimeout(function () { l.remove(); }, 450);\n"
+               . "\t}());";
+?>
+<?php if(!$realm_status){ ?>
+<script type='text/javascript'>
+	<?php echo $rl_loader_off; ?>
+</script>
+<?php } ?>
 <?php if($realm_status){ ?>
 <script type='text/javascript'>
 	/* THE PAGE IS HERE, so the loader goes. Not on window.load -- that waits
 	   on the map's artwork and every location icon, and the page is usable
 	   long before the last one decodes.
 
-	   FIRST STATEMENT IN THE BLOCK ON PURPOSE. Everything below is one
-	   <script>, and a PHP warning printed into any of it is a syntax error
-	   that stops the lot -- which has happened twice. If that ever recurs,
-	   the loader staying up is a visible symptom instead of a silently
-	   half-dead page. */
-	(function () {
-		var l = document.getElementById('rl-loader');
-		if (!l) return;
-		l.classList.add('gone');
-		setTimeout(function () { l.remove(); }, 450);
-	}());
+	   FIRST STATEMENT IN THE BLOCK ON PURPOSE -- see the note above where
+	   this is defined. A PHP warning anywhere below is a parse error that
+	   stops this whole script, and then the loader staying up is the
+	   symptom. */
+	<?php echo $rl_loader_off; ?>
 
 	document.getElementById('back-to-top-button').style.zIndex = "-1";
 	/*

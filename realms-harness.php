@@ -1069,5 +1069,60 @@ if ($raid_at !== false) {
 	 . 'being raidable -- that is a gameplay change, not a display one');
 }
 
+/* ---------------------------------------------------------------- *
+ * A PLAYER WITH NO REALM CAN SEE THE PAGE
+ * ---------------------------------------------------------------- */
+echo "\n-- the loader comes down for somebody who has not made a realm yet --\n";
+/*
+ * THE BUG THIS EXISTS FOR, reported by the only person who could hit it.
+ *
+ * realms.php opens behind a full-screen #rl-loader, and the script that
+ * lifts it lived inside if($realm_status) -- a block that runs to the END
+ * OF THE FILE. A player who has no realm got a locked overlay with the rail
+ * easing out around 90%, on every device, with a working Create Realm form
+ * sitting underneath it. Which is to say: the page was unreachable for
+ * exactly the people who go there to make one.
+ *
+ * The removal is deliberately still INSIDE that block for a player who has
+ * a realm -- everything below it is one <script>, and a PHP warning printed
+ * into any of it is a parse error that stops the lot, so a stuck loader is
+ * the visible symptom. The else branch covers the player for whom that
+ * block does not exist.
+ */
+$rsrc = file_get_contents(__DIR__ . '/realms.php');
+ok(strpos($rsrc, "id=\"rl-loader\"") !== false,
+   'the loader is gone, so these checks are describing a page that no longer exists');
+/* ONE DEFINITION, so the two emissions cannot drift. */
+ok(substr_count($rsrc, '$rl_loader_off = ') === 1,
+   'the loader removal is defined more than once, so the two branches can disagree');
+ok(substr_count($rsrc, 'echo $rl_loader_off;') === 2,
+   'the loader removal is emitted ' . substr_count($rsrc, 'echo $rl_loader_off;')
+ . ' times, not twice -- one branch of $realm_status is not covered');
+/* AND THE NO-REALM BRANCH IS THE ONE THAT WAS MISSING. */
+$noRealm = strpos($rsrc, 'if(!$realm_status){ ?>');
+ok($noRealm !== false, 'there is no !$realm_status branch, so a player without one is stranded');
+if ($noRealm !== false) {
+	ok(strpos(substr($rsrc, $noRealm, 220), 'echo $rl_loader_off;') !== false,
+	   'the !$realm_status branch does not lift the loader, which is the whole bug');
+}
+/* THE EMITTED JAVASCRIPT ACTUALLY RUNS. A string that does not parse would
+   satisfy every check above and still strand the player. */
+$at = strpos($rsrc, '$rl_loader_off = ');
+$end = strpos($rsrc, '?>', $at);
+$rl_loader_off = '';
+if ($at !== false && $end !== false) @eval(substr($rsrc, $at, $end - $at));
+ok($rl_loader_off !== '', 'the loader removal could not be read out of the page');
+ok(strpos($rl_loader_off, "getElementById('rl-loader')") !== false,
+   'the loader removal does not reach for the loader');
+ok(strpos($rl_loader_off, "classList.add('gone')") !== false && strpos($rl_loader_off, 'remove()') !== false,
+   'the loader removal neither fades nor removes it');
+/* Balanced, which is the cheap proxy for "parses" without a JS engine. */
+ok(substr_count($rl_loader_off, '{') === substr_count($rl_loader_off, '}')
+   && substr_count($rl_loader_off, '(') === substr_count($rl_loader_off, ')'),
+   'the emitted loader removal is unbalanced, so it is a syntax error and the overlay stays');
+/* And there IS something to see once it lifts. */
+ok(strpos($rsrc, 'value="Create Realm"') !== false,
+   'there is no Create Realm form, so lifting the loader reveals an empty page');
+
 echo "\n" . ($fail ? "FAILED: $fail check(s)\n" : "all realms page checks passed\n");
 exit($fail ? 1 : 0);
