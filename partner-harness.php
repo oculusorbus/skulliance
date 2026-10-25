@@ -452,5 +452,57 @@ echo "\nthe column is as wide as the menu, and so is the text\n";
 	ok(strpos($clean, 'columns:2') === false, 'prose is being laid out in CSS columns again');
 }
 
+/* ---------------------------------------------------------------- *
+ * THE ASK, AND THE GAPS IT USED TO LEAVE
+ * ---------------------------------------------------------------- */
+echo "\nthe ask answers the questions a real partner asked anyway\n";
+/*
+ * MEASURED AGAINST A REAL CONVERSATION. The page existed and the owner
+ * still had to explain three things down a DM: that the point name has
+ * to be unique (MOON was gone, to Disco Solaris), that a logo is wanted
+ * as well as the point icon, and that their art and lore are what
+ * missions and realms get built out of. All three are now on the page.
+ */
+ok(stripos($clean, 'nobody is using yet') !== false,
+   'the page asks for a point name without saying it has to be unique, which is the first '
+ . 'thing a real partner hit');
+ok(strpos($clean, 'Already taken') !== false,
+   'the taken point names are not listed, so a partner cannot check before asking');
+ok(stripos($clean, '<b>Your logo</b>') !== false, 'the page does not ask for a logo');
+ok(stripos($clean, '<b>Your collateral</b>') !== false,
+   'the page does not ask for art and lore, which is what missions and realms are built from');
+
+/*
+ * THE LIST MUST COVER EVERY CURRENCY, not just the ones with an icon on
+ * disk. The collision check is the whole point, and a project missing
+ * from it because it never uploaded an icon is the one omission that
+ * matters -- so it is collected BEFORE the is_file() continue.
+ */
+$loop = substr($src, strpos($src, 'while ($row = $pt_res->fetch_assoc())'));
+$loop = substr($loop, 0, strpos($loop, 'pt_icons[] ='));
+ok(strpos($loop, '$pt_curs[') !== false,
+   'the taken-names list is built after the icon check, so projects without an icon are '
+ . 'missing from it and their ticker reads as free');
+
+/*
+ * AND THE COUNT HAS TO MATCH THE LIST. "Two things" sat above a list of
+ * four for as long as the list had been four; a number written in prose
+ * next to the thing it counts is exactly what drifts.
+ */
+if (preg_match('~<p>([A-Za-z]+) things, and ([a-z]+) more only if you want them~', $clean, $cm)) {
+	$words = array('one'=>1,'two'=>2,'three'=>3,'four'=>4,'five'=>5,'six'=>6,'seven'=>7);
+	$said  = isset($words[strtolower($cm[1])]) ? $words[strtolower($cm[1])] : -1;
+	$opt   = isset($words[strtolower($cm[2])]) ? $words[strtolower($cm[2])] : -1;
+	$list  = substr($clean, strpos($clean, '<ul class="pt-ask">'));
+	$list  = substr($list, 0, strpos($list, '</ul>'));
+	$items = substr_count($list, '<li>');
+	$ifyou = substr_count($list, 'if you want them') + substr_count($list, 'Someone to talk to');
+	ok($said + $opt === $items,
+	   "the ask says $said plus $opt but lists $items");
+	ok($opt === $ifyou, "the ask calls $opt of them optional but $ifyou read as optional");
+} else {
+	ok(false, 'the ask no longer states how many things it wants, so the count cannot be checked');
+}
+
 echo "\n" . ($fail ? "$fail FAILED\n" : "all good\n");
 exit($fail ? 1 : 0);

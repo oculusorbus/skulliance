@@ -88,12 +88,18 @@ $pt_url   = 'https://www.skulliance.io/staking/partner.php'
  */
 $pt_icons = array();        // only those with an icon on disk -- the marquee
 $pt_names = array();        // all of them -- the roster
+$pt_curs  = array();        // every ticker in use -- the name collision check
 $pt_res = $conn->query("SELECT name, currency FROM projects
                          WHERE currency IS NOT NULL AND currency <> ''
                          ORDER BY name ASC");
 if ($pt_res) {
 	while ($row = $pt_res->fetch_assoc()) {
 		$pt_names[] = $row['name'];
+		/* EVERY currency, not just the ones with an icon on disk: this list
+		   is the answer to "is my name free", and a name missing from it
+		   because its project never uploaded an icon would be the one
+		   answer that matters getting it wrong. */
+		$pt_curs[strtoupper($row['currency'])] = true;
 		$file = admin_currency_icon($row['currency']);         // icons/{currency}.png
 		if (!is_file(__DIR__ . '/' . $file)) continue;
 		$pt_icons[] = array('name' => $row['name'], 'cur' => strtoupper($row['currency']), 'img' => $file);
@@ -336,6 +342,8 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
 #pt .pt-games i{font-style:normal;font-size:15px;line-height:1}
 
 /* ---- what we need back ---- */
+#pt .pt-taken{display:block;margin-top:5px;font-size:12px;color:var(--dim);line-height:1.6;
+  word-break:break-word}
 #pt .pt-ask{margin:24px 0 0;padding:0;list-style:none;counter-reset:ask}
 #pt .pt-ask li{counter-increment:ask;display:flex;gap:14px;padding:13px 0;
   border-top:1px solid var(--line);font-size:13.5px;line-height:1.6;color:#c7d3dc}
@@ -739,16 +747,36 @@ if ($pt_public_nav) include __DIR__ . '/site-header.php';
   <div class="pt-sect">
     <p class="pt-kicker">Your side of it</p>
     <h2>Everything we need from you</h2>
-    <p>Two things, and two more only if you want them.</p>
+    <p>Four things, and two more only if you want them.</p>
     <ul class="pt-ask">
-      <li><span><b>A name for your points</b> - 2 to 16 letters or digits.</span></li>
-      <li><span><b>One icon</b> - 150 &times; 150 PNG, white on transparent.</span></li>
+      <?php /* THE NAME HAS TO BE FREE, AND THE PAGE NOW SAYS SO. It asked for
+               "2 to 16 letters or digits" and stopped, so the first thing a
+               real partner hit was being told their obvious choice was gone
+               -- MOON, to Disco Solaris. The list is every ticker in use,
+               read live, so they can check before asking rather than after. */ ?>
+      <li><span><b>A name for your points</b> - 2 to 16 letters or digits, and it has to be
+        one nobody is using yet.
+        <?php if ($pt_curs): ksort($pt_curs); ?>
+        <span class="pt-taken">Already taken: <?php
+          echo $pt_e(implode(', ', array_keys($pt_curs))); ?>.</span>
+        <?php endif; ?></span></li>
+      <li><span><b>One icon for the points</b> - 150 &times; 150 PNG, white on transparent.</span></li>
+      <li><span><b>Your logo</b> - whatever you already have, any size.</span></li>
+      <?php /* THE ONE HE HAD TO EXPLAIN EVERY TIME. "We build the artwork" is
+               true of the icons and the game art, and it reads as "send us
+               nothing" -- but missions, realms and the rest are curated out
+               of the partner's own world, and without their art and lore
+               there is nothing to curate. */ ?>
+      <li><span><b>Your collateral</b> - art, lore, promo material, anything you have. It is what
+        missions, realms and the rest get built out of, so the more there is the more of your
+        world ends up in the game.</span></li>
       <li><span><b>Store rewards</b>, if you want them - sent to <code>$diamondskulls</code> whenever you
         have something to give away.</span></li>
       <li><span><b>Someone to talk to</b> - one person on your side who can answer a question.</span></li>
     </ul>
     <p style="margin-top:20px;color:var(--dim);font-size:13px">That is the whole list. We find your
-      collections on chain ourselves, we set the rates, and we build the artwork. No fee, no
+      collections on chain ourselves, we set the rates, and we draw every icon, card and game
+      asset from what you send. No fee, no
       revenue share, no exclusivity, and no token - points are off chain and stay that way. You
       can leave whenever you like.</p>
   </div>
