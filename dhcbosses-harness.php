@@ -682,8 +682,12 @@ $AREC = harness_strip_comments($ARE);
 ok(strpos($AREC, 'dhcf_render_fighter') === false,
    'dhcarena.php calls dhcf_render_fighter(), which lives in dhcfighters-notify.php -- a '
  . 'file this page never loads, so the call silently returns nothing');
+/* To the numbers, not a guessed span -- the crew cell grew a placeholder
+   branch for runs still in progress and a fixed window stopped reaching the
+   layer loop. */
 $feedAt = strpos($ARE, 'class="a-runcrew"');
-$feed = $feedAt !== false ? substr($ARE, $feedAt, 1400) : '';
+$feedEnd = $feedAt !== false ? strpos($ARE, 'class="a-runnum"', $feedAt) : false;
+$feed = ($feedAt !== false && $feedEnd !== false) ? substr($ARE, $feedAt, $feedEnd - $feedAt) : '';
 ok(strpos($feed, 'dhcf_layer_order($t)') !== false && strpos($feed, 'dhcf_slot_category($k)') !== false,
    'the feed does not draw the Crew with the shared layer order, so it can disagree with '
  . 'the same Fighter in the picker and the Collection');
@@ -721,7 +725,7 @@ ok(!$onlyNotify,
    overlay is built from the same expression and a bare match counted it. */
 ok(preg_match("~a-rf<\?php echo !empty\(\\\$f\['fell'\]\)~", $ARE) === 1,
    'the feed does not mark fallen Fighters, so a wipe looks like a clean run');
-ok(preg_match('~\.a-rf\.fell img\{filter:grayscale\(100%\);opacity:\.(\d+)\}~', $ARE, $om) === 1,
+ok(preg_match('~\.a-rf\.fell img\{filter:grayscale\(100%\);opacity:\.(\d+)~', $ARE, $om) === 1,
    'the fallen treatment is gone or no longer one rule');
 ok(!empty($om) && (int)$om[1] >= 60,
    'the fallen Fighters are dimmed to .' . ($om[1] ?? '?') . ' at 38px, which is the share '
@@ -734,6 +738,59 @@ ok(strpos($ARE, '.arena-wrap .a-rf:not(.fell){border-color:var(--teal)') !== fal
    anybody came back. */
 ok(strpos($ARE, 'walked away') !== false && strpos($ARE, 'Crew wiped') !== false,
    'the feed reports win or lose rather than who survived');
+/*
+ * A RUN IN PROGRESS IS NOT A WIPE.
+ *
+ * dhc_boss_run_fighters is written by dhcb_finish(), so a run still being
+ * played has no Crew rows, no damage and no rounds. The feed printed that
+ * as "0 damage, 0 rounds, Crew wiped" with no Fighters -- a defeat the
+ * player had not had yet. The admin report has always distinguished the
+ * four states and the feed is the same data, so it has to agree.
+ */
+ok(strpos($ARE, "\$live  = ((int)\$rn['outcome'] === 0);") !== false,
+   'the feed cannot tell a running Crew from a finished one, so an unfinished run reads as '
+ . 'a wipe');
+ok(strpos($ARE, 'Still out there') !== false,
+   'a run in progress has no wording of its own');
+ok(strpos($ARE, 'Took one down') !== false,
+   'a run that dropped a boss reads the same as one that did not, and that is the biggest '
+ . 'thing a run can do');
+/* THE NUMBERS TOO. A nought before the run resolves is the absence of a
+   result, not a result, and printing it says the Crew achieved nothing. */
+ok(preg_match("~\\\$live \\? '&mdash;' : number_format\\(\\(int\\)\\\$rn\\['dealt'\\]\\)~", $ARE) === 1,
+   'a running Crew is shown as 0 damage rather than no damage yet');
+ok(preg_match("~\\\$live \\? '&mdash;' : \\(int\\)\\\$rn\\['rounds'\\]~", $ARE) === 1,
+   'a running Crew is shown as 0 rounds rather than no rounds yet');
+ok(strpos($ARE, 'class="a-rf pending"') !== false,
+   'a running Crew leaves a hole where the Fighters go instead of holding the row shape');
+
+/*
+ * CLICKING A FIGHTER OPENS THE COLLECTION'S PANEL, not a second one built
+ * here. The proven ranks, the trait metadata and the download all live in
+ * dhc-fighter-modal.php, and a copy is how two surfaces start disagreeing
+ * about what a Fighter is.
+ */
+ok(strpos($ARE, "include __DIR__ . '/dhc-fighter-modal.php';") !== false,
+   'the shared Fighter panel is not included, so a click has nothing to open');
+ok(strpos($ARE, "ajax/dhc-fighter.php?serial=") !== false,
+   'the feed does not fetch the shared Fighter payload');
+ok(strpos($ARE, 'window.DHC_MODAL.open(d.fighter)') !== false,
+   'the fetched Fighter is never handed to the panel');
+ok(strpos($ARE, '$dhcm_deeplink = false;') !== false,
+   'the panel rewrites the address here, and dhcgallery.php owns the ?fighter= URL');
+/* A BUTTON, so it is reachable by keyboard and announces itself. */
+ok(preg_match('~<button type="button" class="a-rf~', $ARE) === 1,
+   'the Fighter tile is not a button, so it opens a panel but cannot be tabbed to');
+ok(strpos($ARE, 'data-serial="<?php echo (int)$f[\'serial\']; ?>"') !== false,
+   'the tile carries no serial, so the click has nothing to look up');
+ok(strpos($ARE, "t.classList.contains('pending')") !== false,
+   'an unresolved placeholder is clickable and would look up serial 0');
+/* AND HOVER BRINGS THE COLOUR BACK, which is the other half of the ask and
+   doubles as the affordance that says the tile can be pressed. */
+ok(strpos($ARE, '.arena-wrap .a-rf:hover img{filter:none;opacity:1}') !== false,
+   'hovering a fallen Fighter no longer shows it in full colour');
+ok(strpos($ARE, '.arena-wrap .a-rf{cursor:pointer}') !== false,
+   'nothing says the Fighter tiles are clickable');
 
 /* ---------------------------------------------------------------- *
  * THE POST NAMES BOTH CREWS

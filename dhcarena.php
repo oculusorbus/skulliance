@@ -1536,7 +1536,8 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 /* A STACK, not one picture: the layers sit on top of each other inside the
    tile, which is why it is positioned and they are absolute. */
 .arena-wrap .a-rf{position:relative;display:block;width:38px;height:38px;border-radius:3px;
-  overflow:hidden;border:1px solid var(--line);background:var(--panel2)}
+  overflow:hidden;border:1px solid var(--line);background:var(--panel2);padding:0;
+  -webkit-appearance:none;appearance:none}
 .arena-wrap .a-rf img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 /*
  * FELL IS GREY, STANDING IS FULL COLOUR AND A LIT EDGE.
@@ -1552,8 +1553,18 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
  * survives at thumbnail size where a saturation difference does not. A
  * survivor is the rare thing here and now it is the one that glows.
  */
-.arena-wrap .a-rf.fell img{filter:grayscale(100%);opacity:.72}
+.arena-wrap .a-rf.fell img{filter:grayscale(100%);opacity:.72;
+  transition:filter .15s ease,opacity .15s ease}
 .arena-wrap .a-rf:not(.fell){border-color:var(--teal);box-shadow:0 0 0 1px rgba(0,200,160,.25)}
+/* HOVER BRINGS A FALLEN FIGHTER BACK. The grey says what happened in the
+   run; the colour is what the Fighter actually looks like, and wanting to
+   see it is the reason somebody is pointing at it. Also the affordance:
+   together with the cursor it is what says the tile is clickable. */
+.arena-wrap .a-rf{cursor:pointer}
+.arena-wrap .a-rf:hover img{filter:none;opacity:1}
+.arena-wrap .a-rf:hover{border-color:var(--ochre)}
+.arena-wrap .a-rf:focus-visible{outline:2px solid var(--ochre);outline-offset:1px}
+@media (prefers-reduced-motion:reduce){ .arena-wrap .a-rf.fell img{transition:none} }
 .arena-wrap .a-runnum{flex:0 0 76px;text-align:right;font-size:11px;color:var(--dim)}
 .arena-wrap .a-runnum b{display:block;font-size:13px;color:#e8eaed;font-weight:600;
   font-variant-numeric:tabular-nums}
@@ -1561,6 +1572,13 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-runout{margin-left:auto;font-size:9px;letter-spacing:.11em;text-transform:uppercase;
   color:var(--dim);white-space:nowrap}
 .arena-wrap .a-runout.ok{color:var(--teal)}
+/* Still being played: the same amber the admin report uses for "running",
+   so the two surfaces describe the same state in the same colour. */
+.arena-wrap .a-runout.live{color:var(--ochre)}
+.arena-wrap .a-runout.kill{color:var(--warn);font-weight:600}
+/* An unresolved Crew: three empty slots so the row keeps its shape. */
+.arena-wrap .a-rf.pending{border-style:dashed;cursor:default;opacity:.5}
+.arena-wrap .a-rf.pending:hover{border-color:var(--line)}
 @media (max-width:640px){
   /* Two lines on a phone: who and the Crew, then the figures. The row is
      six things wide and none of them survives a 400px squeeze. */
@@ -2344,7 +2362,23 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
     <h2>Crews sent this week</h2>
     <div class="body">
       <?php foreach ($dhcb_feed as $rn):
-        $fell = 0; foreach ($rn['fighters'] as $f) if (!empty($f['fell'])) $fell++;
+        /*
+         * A RUN IN PROGRESS IS NOT A WIPE, and the first version said it was.
+         *
+         * dhc_boss_run_fighters is written by dhcb_finish(), so a run still
+         * being played has no Crew rows, no damage and no rounds -- and the
+         * row came out as "0 damage, 0 rounds, Crew wiped" with no Fighters,
+         * which is a loss this player has not had yet. The admin report has
+         * always distinguished these; the feed is the same data and has to
+         * make the same distinction.
+         *
+         * Four states, the admin's: running, killed something, cleared the
+         * crew, wiped. A live run stays in the list rather than being hidden,
+         * because somebody out there right now is the liveliest thing this
+         * page can say.
+         */
+        $live  = ((int)$rn['outcome'] === 0);
+        $fell  = 0; foreach ($rn['fighters'] as $f) if (!empty($f['fell'])) $fell++;
         $stood = count($rn['fighters']) - $fell;
         $av = ($rn['discord_id'] && $rn['avatar']) ? avatar_url($rn['discord_id'], $rn['avatar']) : '';
         $who = ($rn['username'] !== null && $rn['username'] !== '') ? $rn['username'] : 'Unknown';
@@ -2358,10 +2392,23 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <span><?php echo htmlspecialchars($who); ?></span>
         </div>
         <div class="a-runcrew">
+          <?php if ($live && !$rn['fighters']): ?>
+            <?php /* The Crew is not recorded until the run resolves, so three
+                     empty slots rather than a gap -- the row keeps its shape
+                     and the blanks say the result is not in. */ ?>
+            <?php for ($i = 0; $i < DHCA_CREW_SIZE; $i++): ?>
+              <span class="a-rf pending" title="Still out there"></span>
+            <?php endfor; ?>
+          <?php endif; ?>
           <?php foreach ($rn['fighters'] as $f):
             $t = json_decode((string)$f['traits'], true);
             if (!is_array($t) || !$t) continue; ?>
-          <span class="a-rf<?php echo !empty($f['fell']) ? ' fell' : ''; ?>"
+          <?php /* A BUTTON, not a span: it opens a panel, so it has to be
+                   reachable by keyboard and announce itself as something you
+                   can press. The serial is what ajax/dhc-fighter.php is keyed
+                   on. */ ?>
+          <button type="button" class="a-rf<?php echo !empty($f['fell']) ? ' fell' : ''; ?>"
+                data-serial="<?php echo (int)$f['serial']; ?>"
                 title="<?php echo htmlspecialchars($f['display']
                   . (!empty($f['fell']) ? ' — fell' : ' — walked away')
                   . ' · ' . number_format((int)$f['dealt']) . ' damage'); ?>">
@@ -2377,22 +2424,46 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
               <img loading="lazy" alt="" src="<?php echo $ART; ?>/250/<?php echo $kc; ?>/<?php
                 echo htmlspecialchars($t[$k]); ?>.png" onerror="this.remove()">
             <?php endforeach; ?>
-          </span>
+          </button>
           <?php endforeach; ?>
         </div>
-        <div class="a-runnum"><b><?php echo number_format((int)$rn['dealt']); ?></b><span>damage</span></div>
-        <div class="a-runnum"><b><?php echo (int)$rn['rounds']; ?></b><span>rounds</span></div>
+        <?php /* A DASH, NOT A ZERO, while it is still being played. Damage
+                 and rounds are written at the end, so a nought there is not
+                 a result -- it is the absence of one, and printing it as a
+                 number says the Crew achieved nothing. */ ?>
+        <div class="a-runnum"><b><?php echo $live ? '&mdash;' : number_format((int)$rn['dealt']); ?></b><span>damage</span></div>
+        <div class="a-runnum"><b><?php echo $live ? '&mdash;' : (int)$rn['rounds']; ?></b><span>rounds</span></div>
         <?php /* The outcome a player cares about is not win or lose -- almost
                  every run is a wipe and still pays. What is worth saying is
-                 whether anybody walked away from it. */ ?>
-        <div class="a-runout<?php echo $stood > 0 ? ' ok' : ''; ?>"><?php
-          echo $stood > 0
-            ? $stood . ' walked away'
-            : 'Crew wiped'; ?></div>
+                 whether anybody walked away, and whether anything went down. */ ?>
+        <?php if ($live): ?>
+          <div class="a-runout live">Still out there</div>
+        <?php elseif (!empty($rn['killed'])): ?>
+          <div class="a-runout kill">Took one down</div>
+        <?php else: ?>
+          <div class="a-runout<?php echo $stood > 0 ? ' ok' : ''; ?>"><?php
+            echo $stood > 0 ? $stood . ' walked away' : 'Crew wiped'; ?></div>
+        <?php endif; ?>
       </div>
       <?php endforeach; ?>
     </div>
   </div>
+<?php
+  /*
+   * THE FIGHTER PANEL, INCLUDED NOT REBUILT -- the same partial the
+   * Collection, the assembler and Rivalries open, driven by the same
+   * ajax/dhc-fighter.php payload. A second panel saying nearly the same
+   * things is how two surfaces come to disagree about what a Fighter is,
+   * and the proven ranks and the download live in that file.
+   *
+   * $dhcm_deeplink stays false: dhcgallery.php owns the ?fighter= URL and
+   * two pages rewriting the address for one panel would fight over it.
+   */
+  $dhcm_user = (int)$user_id;
+  $dhcm_base = function_exists('dhcf_art_dir') ? dhcf_art_dir() : $ART;
+  $dhcm_deeplink = false;
+  include __DIR__ . '/dhc-fighter-modal.php';
+?>
 <?php endif; ?>
 
   <!-- the board, hidden until a battle starts -->
@@ -4479,6 +4550,37 @@ if (startBtn) startBtn.addEventListener('click', function(){
  * The same picker, the same three Fighters, the same board. Only the
  * endpoint and the id differ, which is the whole of what a mode is here.
  */
+/*
+ * A FIGHTER IN THE FEED OPENS THE COLLECTION'S PANEL.
+ *
+ * dhc-fighter-modal.php is included above and ajax/dhc-fighter.php returns
+ * exactly the payload it expects, keyed on serial -- the same pair the
+ * Collection, the assembler and Rivalries use. So a Fighter clicked here
+ * shows its traits, its ranks and its record identically to everywhere
+ * else, and none of that has to be known about on this page.
+ *
+ * DELEGATED from the container rather than bound per tile: twelve runs is
+ * thirty-six buttons, and the feed is server-rendered so there is nothing
+ * to rebind.
+ */
+(function(){
+  var feed = document.querySelector('.a-feed');
+  if (!feed) return;
+  var figBusy = false;
+  feed.addEventListener('click', function(e){
+    var t = e.target.closest ? e.target.closest('.a-rf') : null;
+    if (!t || t.classList.contains('pending')) return;
+    var serial = +t.getAttribute('data-serial');
+    if (!serial || figBusy || !window.DHC_MODAL) return;
+    figBusy = true;
+    fetch('ajax/dhc-fighter.php?serial=' + encodeURIComponent(serial), {credentials:'same-origin'})
+      .then(function(r){ return r.json(); })
+      .then(function(d){ if (d && d.ok && d.fighter) window.DHC_MODAL.open(d.fighter); })
+      .catch(function(){})
+      .then(function(){ figBusy = false; });
+  });
+}());
+
 var bossBtn = $('aBossGo');
 if (bossBtn) bossBtn.addEventListener('click', function(){
   if (busy) return;

@@ -490,6 +490,116 @@ echo "\nand a boss run gets the same card, from the same endpoint\n";
 	$at = strpos($src, "require_once __DIR__ . '/dhcbosses-lib.php';");
 	ok($at !== false && strpos(substr($src, max(0, $at - 220), 220), 'ob_start();') !== false,
 	   'the boss library is included unbuffered, so one notice from it corrupts the JPEG');
+	/*
+	 * THE WAVE'S COLOURWAY REACHES THE CARD.
+	 *
+	 * The bosses get back up each week in a different colourway and the
+	 * page does that with filter:hue-rotate() in even fifths. A card drawn
+	 * from the flat art would post a wave 3 crew in wave 1 colours -- a
+	 * picture of a crew nobody fought.
+	 *
+	 * GD has no hue filter, so this is the Filter Effects matrix the
+	 * browser itself uses. It is LUMINANCE PRESERVING, which is why it is
+	 * these coefficients and not an HSL spin: that shifts brightness and
+	 * the card would not match the page beside it.
+	 */
+	ok(strpos($src, 'function dac_hue($im, $deg)') !== false,
+	   'the card cannot rotate hue, so every wave posts in wave 1 colours');
+	ok(strpos($src, "'wave' => \$wave") !== false,
+	   'the wave is not carried onto the boss tiles, so the card cannot know which '
+	 . 'colourway to draw');
+	ok(strpos($src, "(int)\$fs[\$n]['wave'] - 1) * 72") !== false,
+	   'the card does not step the hue in even fifths, so it disagrees with the page');
+	/* AND THE CALL IS REACHABLE. Checking the arithmetic is present passes
+	   with the whole block behind if(false) -- the strings survive, the
+	   rotation does not. */
+	ok(strpos($src, "if (\$isBoss && !empty(\$fs[\$n]['wave']) && (int)\$fs[\$n]['wave'] > 1) {") !== false,
+	   'the hue is not applied under its real guard, so it may never run');
+	/* EXECUTED against the spec's own numbers rather than read. A
+	   transcription slip in one coefficient would still look like a hue
+	   rotation and be the wrong one. */
+	/* This file has no brace_extract(); lift it here rather than add a
+	   second helper nobody else uses. */
+	$hfA = strpos($src, 'function dac_hue($im, $deg)');
+	$hf  = '';
+	if ($hfA !== false) {
+		$d = 0;
+		for ($j = strpos($src, '{', $hfA); $j < strlen($src); $j++) {
+			if ($src[$j] === '{') $d++;
+			elseif ($src[$j] === '}') { $d--; if (!$d) { $hf = substr($src, $hfA, $j - $hfA + 1); break; } }
+		}
+	}
+	ok($hf !== '', 'dac_hue() could not be lifted');
+	if ($hf !== '' && function_exists('imagecreatetruecolor')) {
+		eval(str_replace('function dac_hue(', 'function dac_hue_t(', $hf));
+		/* Pure red through 120 degrees is pure green in this matrix's
+		   luminance-preserving form -- the channels rotate but the
+		   brightness does not jump. Checked as a direction rather than an
+		   exact value, because the spec's matrix is deliberately not a
+		   naive HSL spin. */
+		$im = imagecreatetruecolor(1, 1);
+		imagesetpixel($im, 0, 0, (255 << 16));          // pure red
+		dac_hue_t($im, 120);
+		$p = imagecolorat($im, 0, 0);
+		$r = ($p >> 16) & 255; $g = ($p >> 8) & 255; $bl = $p & 255;
+		ok($g > $r && $g > $bl,
+		   'red rotated 120 degrees is not predominantly green (' . "$r/$g/$bl" . '), so the '
+		 . 'matrix is transcribed wrong');
+		/*
+		 * LUMINANCE IS INVARIANT, which is the defining property of this
+		 * matrix and the reason it is not a naive HSL spin. It is also the
+		 * only check that catches a slip in ANY single coefficient -- a
+		 * direction test passes with one number wrong, because the hue
+		 * still moves, just to the wrong place and at the wrong brightness.
+		 */
+		$lum = function ($rr, $gg, $bb) { return 0.213*$rr + 0.715*$gg + 0.072*$bb; };
+		$worst = 0.0;
+		/* MID-TONES ONLY. A fully saturated primary rotates straight off the
+		   edge of the gamut and the clamp eats 30 to 45 of luminance, which
+		   is the clamp doing its job and not the matrix being wrong. In
+		   gamut the drift is under half a unit, so the tolerance can be
+		   tight enough to catch a single coefficient. */
+		foreach (array(array(200,120,40), array(128,128,128), array(150,110,90),
+		               array(120,140,100), array(90,100,130)) as $c0) {
+			foreach (array(36, 72, 144, 216, 288) as $dg) {
+				$t = imagecreatetruecolor(1, 1);
+				imagesetpixel($t, 0, 0, ($c0[0] << 16) | ($c0[1] << 8) | $c0[2]);
+				dac_hue_t($t, $dg);
+				$v = imagecolorat($t, 0, 0);
+				$d = abs($lum(($v >> 16) & 255, ($v >> 8) & 255, $v & 255)
+				       - $lum($c0[0], $c0[1], $c0[2]));
+				if ($d > $worst) $worst = $d;
+			}
+		}
+		/* Clamping at the gamut edges moves it a little; a transcription
+		   error moves it a lot. */
+		ok($worst < 1.5,
+		   sprintf('the hue matrix shifts luminance by up to %.1f, so it is not the '
+		 . 'luminance-preserving one from the spec and the card will not match the page',
+		   $worst));
+		/* And 0 degrees must be identity, or every wave 1 card is subtly
+		   recoloured for no reason. */
+		$im2 = imagecreatetruecolor(1, 1);
+		imagesetpixel($im2, 0, 0, (137 << 16) | (42 << 8) | 200);
+		dac_hue_t($im2, 0);
+		ok(imagecolorat($im2, 0, 0) === ((137 << 16) | (42 << 8) | 200),
+		   'hue-rotate(0) is not identity, so an unrotated wave 1 boss is still altered');
+		/* 360 is a full turn and must come back to itself. */
+		$im3 = imagecreatetruecolor(1, 1);
+		imagesetpixel($im3, 0, 0, (137 << 16) | (42 << 8) | 200);
+		dac_hue_t($im3, 360);
+		$q = imagecolorat($im3, 0, 0);
+		ok(abs((($q >> 16) & 255) - 137) <= 2 && abs((($q >> 8) & 255) - 42) <= 2
+		   && abs(($q & 255) - 200) <= 2,
+		   'a full 360 turn does not return the original colour, so the matrix drifts');
+	}
+	/* THE GREY FOR A DOWNED BOSS STILL WINS. The page stacks them that way
+	   too: a boss somebody dropped is grey whatever wave it belonged to. */
+	$hueAt  = strpos($src, 'dac_hue($tile');
+	$greyAt = strpos($src, 'IMG_FILTER_GRAYSCALE');
+	ok($hueAt !== false && $greyAt !== false && $hueAt < $greyAt,
+	   'the hue is applied after the dimming, so a dropped boss comes out coloured');
+
 	/* And the page has to point og:image at it, or none of this is reached. */
 	$page = file_get_contents(__DIR__ . '/dhcarena.php');
 	ok(strpos($page, 'dhc-arena-card.php?run=') !== false,
