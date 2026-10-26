@@ -1373,3 +1373,29 @@ if ($bodyAt !== false) {
 	   'an unclosed <?php survives the strip, so the rest of the page is inside it');
 }
 echo ($pl_fail ? "\n$pl_fail source-leak check(s) FAILED\n" : "the page never prints its own source: ok\n");
+
+/* ---------------------------------------------------------------- *
+ * THE SHARE POST, EXECUTED
+ * ---------------------------------------------------------------- */
+/*
+ * WHAT THE PLAYER ACTUALLY POSTS, which no check in this file could answer.
+ *
+ * Every loss ever played shared the same sentence -- "My Crew went down to
+ * X's Crew in the DHC Arena. Going again." -- describing no battle and
+ * asserting an intention the game has no way to know. Nothing was wrong
+ * with the source text; the source text was the bug, and a grep for a
+ * phrase cannot tell a good sentence from a useless one.
+ *
+ * So shareLink() is lifted out of the page and RUN, and the post is read
+ * back off the href. Reported here as one assertion, the same arrangement
+ * nft-dossier-harness.php uses for its panel render.
+ */
+$sh_out = array(); $sh_rc = 0;
+exec('node ' . escapeshellarg(__DIR__ . '/dhcarena-share-harness.js') . ' 2>&1', $sh_out, $sh_rc);
+if ($sh_rc !== 0) {
+	echo "  --- dhcarena-share-harness.js ---\n";
+	foreach ($sh_out as $line) if (strpos($line, 'FAIL') !== false) echo "  $line\n";
+	echo "\nthe share post check FAILED\n";
+} else {
+	echo "the share post says what the battle did: ok\n";
+}

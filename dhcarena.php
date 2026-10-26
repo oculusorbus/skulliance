@@ -3877,7 +3877,29 @@ function shareLink(won, standing){
         + (standing === 1 ? '' : 's') + ' still standing.';
     if (heroes.length && standing < 3) body += ' ' + heroes.join(' and ') + ' held the line.';
   } else {
-    body = 'My Crew went down to ' + vs + ' in the DHC Arena. Going again.';
+    /*
+     * HOW CLOSE IT WAS, WHICH THE POST ALREADY HAD AND THREW AWAY.
+     *
+     * "Going again." was the whole of a loss post. It says nothing about
+     * the battle it is sharing, and it is not even a fact the game can
+     * stand behind -- the player may have no battles left today, and
+     * asserting an intention on their behalf is not the post's to make.
+     *
+     * `standing` is ALREADY the opponent's surviving Fighters on a loss
+     * (showEnd filters S.foes, not S.mine, when you lose), so the one
+     * thing worth saying was sitting unused in the argument list. A Crew
+     * that took two of three down before it fell is a far better post
+     * than one that was swept, and the two read identically until now.
+     *
+     * Deliberately the same sentence shape as the win above -- "with 2
+     * Fighters still standing" / "with 1 of theirs still standing" -- so
+     * the two outcomes are comparable at a glance. "of theirs" because
+     * the win line's Fighters are the poster's and these are not.
+     */
+    var crewN = (S && S.foes && S.foes.length) ? S.foes.length : 3;
+    body = 'My Crew went down to ' + vs + ' in the DHC Arena'
+         + (standing >= crewN ? ' with their whole Crew still standing.'
+                              : ' with ' + standing + ' of theirs still standing.');
   }
   if (S && S.stats && S.stats.best > 1) body += ' Best chain x' + S.stats.best + '.';
   /* IN FRONT, because the budget trims from the END. Appended, a long
