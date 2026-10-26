@@ -1533,9 +1533,11 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
   border:1px solid var(--line)}
 /* The Crew. Fixed squares so every row lines up whatever the art is. */
 .arena-wrap .a-runcrew{display:flex;gap:4px;flex:0 0 auto}
-.arena-wrap .a-rf{display:block;width:38px;height:38px;border-radius:3px;overflow:hidden;
-  border:1px solid var(--line);background:var(--panel2)}
-.arena-wrap .a-rf img{width:100%;height:100%;object-fit:cover;display:block}
+/* A STACK, not one picture: the layers sit on top of each other inside the
+   tile, which is why it is positioned and they are absolute. */
+.arena-wrap .a-rf{position:relative;display:block;width:38px;height:38px;border-radius:3px;
+  overflow:hidden;border:1px solid var(--line);background:var(--panel2)}
+.arena-wrap .a-rf img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
 /*
  * FELL IS GREY, STANDING IS FULL COLOUR AND A LIT EDGE.
  *
@@ -2312,13 +2314,31 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
  * wipe is the normal outcome here, which makes the survivor the
  * interesting thing rather than the loss.
  *
- * ONE RENDER PER FIGHTER, through dhcf_render_fighter() -- the same cached
- * composite the Collection, the share cards and Discord all use, so a
- * Fighter anybody has already seen anywhere costs nothing to draw again.
- * The alternative is the picker's eight stacked layers, which at twelve
- * runs would be nearly three hundred image requests.
+ * STACKED TRAIT LAYERS, THE WAY THE PICKER AND THE COLLECTION DO IT -- not
+ * a server-side composite.
+ *
+ * The first version called dhcf_render_fighter() and drew nothing at all,
+ * for two reasons that both had to be found before it would have worked:
+ *
+ *   THAT FUNCTION IS NOT LOADED HERE. It lives in dhcfighters-notify.php,
+ *   which dhcarena-lib.php only includes INSIDE dhca_announce() -- a
+ *   function that runs when a battle ends, not when a page renders. So it
+ *   was undefined, the function_exists() guard returned '', and every
+ *   Fighter was skipped in silence. A guard that turns a missing
+ *   dependency into an empty row is worse than the crash it prevents.
+ *
+ *   AND 500 IS THE SHARED CACHE, not 250. The size is only in the filename
+ *   when it is not 500, so asking for 250 writes a second cache that
+ *   nothing else on the platform fills -- every Fighter here would have
+ *   composed a thousand-pixel stack from scratch on first view. Twelve
+ *   runs is thirty-six of those on one page load.
+ *
+ * Layers cost the server nothing, the trait PNGs are shared by every
+ * surface on the site so they are already in the browser's cache, and
+ * loading="lazy" means a feed below the fold fetches none of them until it
+ * is scrolled to. Same call the Collection makes, so a Crew here cannot
+ * disagree with the same Fighter anywhere else.
  */
-$dhcb_art_ok = function_exists('dhcf_render_fighter');
 ?>
   <div class="a-feed">
     <h2>Crews sent this week</h2>
@@ -2340,14 +2360,23 @@ $dhcb_art_ok = function_exists('dhcf_render_fighter');
         <div class="a-runcrew">
           <?php foreach ($rn['fighters'] as $f):
             $t = json_decode((string)$f['traits'], true);
-            $url = ($dhcb_art_ok && is_array($t))
-                 ? dhcf_render_fighter($t, (int)$f['serial'], 250) : '';
-            if ($url === '') continue; ?>
+            if (!is_array($t) || !$t) continue; ?>
           <span class="a-rf<?php echo !empty($f['fell']) ? ' fell' : ''; ?>"
                 title="<?php echo htmlspecialchars($f['display']
                   . (!empty($f['fell']) ? ' — fell' : ' — walked away')
                   . ' · ' . number_format((int)$f['dealt']) . ' damage'); ?>">
-            <img loading="lazy" alt="" src="<?php echo htmlspecialchars($url); ?>" onerror="this.remove()">
+            <?php /* dhcf_layer_order(), the same call the picker and the
+                     assembler make -- it handles the armless-torso swap and
+                     the effects1/weaponBack slots, which a hand-written list
+                     got wrong once already. The SLOT names the layer and the
+                     CATEGORY names the folder, and for two of them they
+                     differ. */ ?>
+            <?php foreach (dhcf_layer_order($t) as $k):
+              if (empty($t[$k])) continue;
+              $kc = dhcf_slot_category($k); ?>
+              <img loading="lazy" alt="" src="<?php echo $ART; ?>/250/<?php echo $kc; ?>/<?php
+                echo htmlspecialchars($t[$k]); ?>.png" onerror="this.remove()">
+            <?php endforeach; ?>
           </span>
           <?php endforeach; ?>
         </div>

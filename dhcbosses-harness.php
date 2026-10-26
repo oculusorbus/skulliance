@@ -655,13 +655,58 @@ ok(strpos($ARE, 'if ($IS_BOSS && $dhcb_feed)') !== false,
 ok(strpos($ARE, 'dhcb_runs_report($conn, null, 12)') !== false,
    'the feed does not come from dhcb_runs_report(), or is not capped -- the admin report '
  . 'pulls 200 and every row here draws three Fighters');
-/* ONE RENDER PER FIGHTER. The picker stacks eight layers per Fighter, which
-   at twelve runs would be nearly three hundred image requests. */
-ok(strpos($ARE, 'dhcf_render_fighter($t, (int)$f[\'serial\'], 250)') !== false,
-   'the feed does not use the shared cached composite, so it is either stacking layers or '
- . 'drawing nothing');
-ok(strpos($ARE, 'function_exists(\'dhcf_render_fighter\')') !== false,
-   'the feed assumes the renderer exists, and it is in a file this page only maybe loads');
+/*
+ * THE CREW IS DRAWN THE WAY EVERY OTHER CREW ON THE PLATFORM IS, and the
+ * first attempt drew nothing at all for two reasons worth recording.
+ *
+ * IT CALLED dhcf_render_fighter(), WHICH THIS PAGE DOES NOT LOAD. That
+ * function lives in dhcfighters-notify.php, and dhcarena-lib.php only
+ * includes it INSIDE dhca_announce() -- a function that runs when a battle
+ * ends, not when a page renders. So it was undefined, the function_exists()
+ * guard returned '', and every Fighter was skipped in silence. The guard is
+ * what made it invisible: a missing dependency turning into an empty row is
+ * worse than the crash it was there to prevent.
+ *
+ * AND IT ASKED FOR 250, WHICH IS A CACHE NOTHING ELSE FILLS. The size only
+ * appears in the filename when it is not 500, so 250 would have composed a
+ * thousand-pixel stack per Fighter on first view -- thirty-six of them on
+ * one page load.
+ *
+ * Stacked layers cost the server nothing and the trait art is already in
+ * every visitor's browser cache from every other DHC surface.
+ */
+/* STRIPPED, because the comment above the feed explains this bug by name
+   and a bare search found that instead of code -- which is the same way a
+   check in this repo has gone quiet five times before. */
+$AREC = harness_strip_comments($ARE);
+ok(strpos($AREC, 'dhcf_render_fighter') === false,
+   'dhcarena.php calls dhcf_render_fighter(), which lives in dhcfighters-notify.php -- a '
+ . 'file this page never loads, so the call silently returns nothing');
+$feedAt = strpos($ARE, 'class="a-runcrew"');
+$feed = $feedAt !== false ? substr($ARE, $feedAt, 1400) : '';
+ok(strpos($feed, 'dhcf_layer_order($t)') !== false && strpos($feed, 'dhcf_slot_category($k)') !== false,
+   'the feed does not draw the Crew with the shared layer order, so it can disagree with '
+ . 'the same Fighter in the picker and the Collection');
+ok(strpos($feed, 'loading="lazy"') !== false,
+   'the feed loads its Crew art eagerly, and it sits below the fold');
+/*
+ * AND THE GENERAL RULE, because this is the second time a dhcfighters-notify
+ * function has been called from a file that does not load it: nothing in the
+ * Arena page may call a dhcf_ function that is ONLY defined there.
+ */
+$notify = file_get_contents(__DIR__ . '/dhcfighters-notify.php');
+$lib    = file_get_contents(__DIR__ . '/dhcfighters-lib.php');
+preg_match_all('~\b(dhcf_[a-z0-9_]+)\s*\(~i', $AREC, $cm);
+$onlyNotify = array();
+foreach (array_unique($cm[1]) as $fn) {
+	$inNotify = preg_match('~function\s+' . preg_quote($fn, '~') . '\s*\(~i', $notify) === 1;
+	$inLib    = preg_match('~function\s+' . preg_quote($fn, '~') . '\s*\(~i', $lib) === 1;
+	if ($inNotify && !$inLib) $onlyNotify[] = $fn;
+}
+ok(!$onlyNotify,
+   'dhcarena.php calls ' . implode(', ', $onlyNotify) . ' -- defined only in '
+ . 'dhcfighters-notify.php, which this page loads only from inside dhca_announce(), so the '
+ . 'call is undefined on a page render');
 /*
  * FELL IS GREY AND STANDING IS LIT, per Fighter, from the ledger.
  *
