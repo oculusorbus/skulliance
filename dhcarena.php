@@ -325,10 +325,18 @@ if ($dhcb_lib) {
 			$dhcb_round = $dhcb_rd['n'];
 			$dhcb_days  = $user_id ? dhcb_cache_days($conn, $user_id) : 0;
 			$dhcb_lad   = dhcb_ladder($conn, null, 10);
-			/* The week's Crews, newest first, for the feed under the panels.
-			   Twelve rather than the admin report's 200: this is "what is
-			   happening", not an audit, and every row draws three Fighters. */
-			$dhcb_feed  = dhcb_runs_report($conn, null, 12);
+			/*
+			 * THE WHOLE WEEK, with all but the newest dozen folded away
+			 * behind a button.
+			 *
+			 * It was capped at twelve, which answers "what is happening"
+			 * and loses the week -- and the week is the thing a shared bar
+			 * is about. Hidden rows cost DOM nodes and nothing else: a
+			 * display:none subtree is not fetched, so the Fighter art for
+			 * everything below the fold is never requested until somebody
+			 * asks for it.
+			 */
+			$dhcb_feed  = dhcb_runs_report($conn, null, 200);
 		}
 	}
 }
@@ -1060,6 +1068,34 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-intro-txt{flex:1 1 420px;min-width:0}
 .arena-wrap .a-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin:0 0 4px}
 .arena-wrap .a-head h1{font-size:22px;letter-spacing:.02em;margin:0}
+/*
+ * EXPLANATIONS FOLD AWAY; NUMBERS AND CONTROLS DO NOT.
+ *
+ * Every time something on this page confused somebody I answered with
+ * another paragraph, and the answer to "this is confusing" turned out to
+ * be a wall of prose around the thing they were trying to use. The owner
+ * put it plainly: wading through a sea of text to get to UI elements.
+ *
+ * So the rules collapse and the state stays. A <details> rather than a
+ * JS toggle because it is keyboard reachable, works before any script
+ * runs, and a browser's own find-in-page opens it to show a match --
+ * which a div with display:none does not.
+ *
+ * WHAT NEVER FOLDS: anything that is a number, a control, or the reason
+ * a control is disabled. A player must never have to open something to
+ * find out why they cannot press a button.
+ */
+.arena-wrap details.a-note{margin:0 0 9px}
+.arena-wrap details.a-note > summary{list-style:none;cursor:pointer;display:inline-flex;
+  align-items:center;gap:6px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--dim);padding:2px 0}
+.arena-wrap details.a-note > summary::-webkit-details-marker{display:none}
+.arena-wrap details.a-note > summary:before{content:'+';font-size:11px;line-height:1;
+  width:11px;text-align:center;opacity:.8}
+.arena-wrap details.a-note[open] > summary:before{content:'\2212'}
+.arena-wrap details.a-note > summary:hover{color:var(--ochre)}
+.arena-wrap details.a-note[open] > summary{margin-bottom:6px}
+.arena-wrap details.a-note .a-sub:last-child{margin-bottom:0}
 .arena-wrap .a-sub{font-size:11.5px;opacity:.65;line-height:1.6;margin:0}
 .arena-wrap .a-sub b{opacity:.95}
 .arena-wrap .a-sub a{color:var(--ochre)}
@@ -1109,9 +1145,25 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 	.arena-wrap .a-block{border:1px solid var(--ochre);background:rgba(0,200,160,.07);
   border-radius:3px;padding:9px 12px;font-size:12px;margin-bottom:14px}
 .arena-wrap .a-block a{color:var(--ochre)}
+/*
+ * THE PANELS IN A ROW ARE THE SAME HEIGHT.
+ *
+ * This was align-items:start, so each one stopped at its own content and
+ * the row ended in a ragged staircase -- three outlines finishing at
+ * three different depths with nothing below them. Collapsing the
+ * explanations behind disclosures made it worse, because a panel's height
+ * now changes when somebody opens one.
+ *
+ * Stretch, so the outlines agree. The content still sits at the top of
+ * each panel; it is the frame that reaches the bottom of the row.
+ */
 .arena-wrap .a-panels{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-  gap:14px;align-items:start}
-.arena-wrap .a-panel{border:1px solid var(--line);border-radius:3px;overflow:hidden}
+  gap:14px;align-items:stretch}
+/* The body takes the slack, so the panel's own border is what extends
+   rather than a gap opening between the body and the frame. */
+.arena-wrap .a-panel > .body{flex:1 1 auto}
+.arena-wrap .a-panel{border:1px solid var(--line);border-radius:3px;overflow:hidden;
+  display:flex;flex-direction:column}
 .arena-wrap .a-panel h2{margin:0;padding:9px 12px;font-size:10px;letter-spacing:.16em;
   text-transform:uppercase;opacity:.65;border-bottom:1px solid var(--line);
   display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px}
@@ -1535,7 +1587,12 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
    the Crews column, so somebody one Crew short can see exactly that
    instead of wondering why they are missing. */
 .arena-wrap .a-lad .unranked{opacity:.5}
-.arena-wrap .a-lad .unranked em{font-style:normal;color:var(--ochre);font-size:10px}
+/* The rule between the ranked and the rest. Says what the dim rows are,
+   where the question is asked, so the table needs no paragraph to be
+   read. */
+.arena-wrap .a-lad .lad-break td{padding:9px 7px 5px;font-size:8.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--dim);opacity:.8;border-bottom:0;
+  border-top:1px solid rgba(0,200,160,.25)}
 .arena-wrap .a-lad .unranked.me{opacity:.75;color:var(--ochre)}
 .arena-wrap .a-lad .me .r{opacity:1}
 /* ---- the week's Crews, a full-width row under the panels ---- */
@@ -1555,6 +1612,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
 .arena-wrap .a-run{display:flex;align-items:center;gap:14px;padding:8px 0;
   border-bottom:1px solid var(--line)}
 .arena-wrap .a-run:last-child{border-bottom:0}
+/* Folded away: display:none rather than height 0, because a browser does
+   not fetch images inside a display:none subtree -- so the rest of the
+   week costs DOM nodes and no requests until it is opened. */
+.arena-wrap .a-run.off,.arena-wrap .a-wavebreak.off{display:none}
+.arena-wrap .a-feed.open .a-run.off,.arena-wrap .a-feed.open .a-wavebreak.off{display:flex}
+/* .btn supplies the look; this only makes it span the panel and shrinks
+   the label to the size of the other things in this row. */
+.arena-wrap .a-feedmore{display:block;width:100%;margin:10px 0 0;border-radius:3px;
+  cursor:pointer;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 .arena-wrap .a-runwho{display:flex;align-items:center;gap:7px;min-width:0;
   flex:0 0 170px;font-size:12px;color:#e8eaed}
 .arena-wrap .a-runwho span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2146,6 +2212,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
     <div class="a-panel" id="aBossPanel">
       <h2>Bosses Crew</h2>
       <div class="body">
+        <details class="a-note"><summary>How it works</summary>
         <p class="a-sub" style="margin:0 0 10px">Three bosses, one health bar each, shared by
            everybody, standing all week. <b>Every point of damage counts</b> — the traits
            everyone who takes part rolls for when the week closes get better the further the
@@ -2163,6 +2230,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
                     two dates -- calling one "Friday" would be wrong by eight hours
                     for everybody and wrong by more outside Central time. */ ?>
            The week turns <b>Thursday at 4pm CT</b>.</p>
+        </details>
 
         <?php
           /* WAVES, AND WHY THE PANEL LEADS WITH THEM once there has been one.
@@ -2177,11 +2245,13 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <span>Wave</span> <b><?php echo $wv; ?></b>
           <span><?php echo (int)$dp['downed']; ?> down this week</span>
         </div>
+        <details class="a-note"><summary>What a downed crew means</summary>
         <p class="a-sub" style="margin:0 0 10px">You already dropped
            <?php echo $dp['downed'] === 1 ? 'a crew' : (int)$dp['downed'] . ' crews'; ?>
            this week, so <b>the best trait table is locked in</b> for everyone who takes
            part — nothing below can take it back. They get back up angrier each time:
            what is left is the ladder, and your cache.</p>
+        </details>
         <?php endif; ?>
 
         <div class="a-bosses" data-wave="<?php echo min(5, $wv); ?>">
@@ -2345,15 +2415,22 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
           <?php echo dhcb_ladder_html($dhcb_lad, $user_id, $dhca_guest,
                     'Nobody has finished a Crew against them yet this week. Be first.'); ?>
         </div>
+        <details class="a-note"><summary>How the ladder works</summary>
         <p class="a-sub" style="margin:0">Ranked on <b>damage per Fighter fielded</b>, so a
            deep Crew list is an advantage and not a win on its own. A Crew that landed
            nothing because the boss crew fell while it was still out there does not count
            against that average. A minimum of
            <?php echo (int)DHCB_LADDER_MIN_RUNS; ?> finished Crews puts you in the running,
-           and anybody short of it is listed underneath with how many they need. The pool of
+           and anybody short of it is listed underneath with how many they need.
+           <?php /* ASKED WITHIN A MINUTE OF THE BOARD GOING UP: "it's a 3 crew minimum to be
+                    eligible for the trait?" No -- the two gates are unrelated and they sit
+                    next to each other, so the page has to say which is which. */ ?>
+           <b>The traits are separate</b>: one Crew that does a real run banks that round's
+           trait, whatever the board says. The minimum is only for the CARBON. The pool of
            <b><?php echo number_format(DHCB_CARBON); ?> CARBON</b> is split down the ranked
            part when the week closes — first place takes the largest share, and each rank
            below takes the pool divided by its own position.</p>
+        </details>
       </div>
     </div>
     <?php endif; ?>
@@ -2431,15 +2508,20 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
          * is also the point where wave N-1 died.
          */
         $prevWave = null;
+        /* The newest dozen are open; the rest of the week folds away. A
+           wave break inside the folded part folds with it. */
+        $shown = 0;
+        $FEED_OPEN = 12;
       ?>
       <?php foreach ($dhcb_feed as $rn):
         $wv = max(1, (int)$rn['wave']);
+        $off = ($shown >= $FEED_OPEN) ? ' off' : '';
         if ($prevWave !== null && $wv < $prevWave): ?>
-        <div class="a-wavebreak">
+        <div class="a-wavebreak<?php echo $off; ?>">
           <span>Wave <?php echo (int)$prevWave; ?> stood up
             &middot; wave <?php echo (int)$wv; ?> had fallen</span>
         </div>
-      <?php endif; $prevWave = $wv; ?>
+      <?php endif; $prevWave = $wv; $shown++; ?>
       <?php
         /*
          * A RUN IN PROGRESS IS NOT A WIPE, and the first version said it was.
@@ -2475,7 +2557,7 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         $av = ($rn['discord_id'] && $rn['avatar']) ? avatar_url($rn['discord_id'], $rn['avatar']) : '';
         $who = ($rn['username'] !== null && $rn['username'] !== '') ? $rn['username'] : 'Unknown';
       ?>
-      <div class="a-run">
+      <div class="a-run<?php echo $off; ?>">
         <div class="a-runwho">
           <?php if ($av !== ''): ?>
             <img class="a-av" loading="lazy" alt="" src="<?php echo htmlspecialchars($av); ?>"
@@ -2582,6 +2664,15 @@ foreach (array('dhc/web','web','dhc','traits') as $c) {
         </div>
       </div>
       <?php endforeach; ?>
+      <?php if (count($dhcb_feed) > $FEED_OPEN): ?>
+      <?php /* The count is the whole week, so a player can see at a glance
+               how much is folded away before deciding to open it. */ ?>
+      <?php /* .btn, like every other control on this page -- .button is the
+               global flexbox.css style and lands a drop shadow in a panel
+               where nothing else has one. a-feedmore only widens it. */ ?>
+      <button type="button" class="btn a-feedmore" id="aFeedMore"
+              data-less="Show fewer">Show all <?php echo count($dhcb_feed); ?> Crews</button>
+      <?php endif; ?>
     </div>
   </div>
 <?php
@@ -4699,6 +4790,26 @@ if (startBtn) startBtn.addEventListener('click', function(){
  * thirty-six buttons, and the feed is server-rendered so there is nothing
  * to rebind.
  */
+/*
+ * SHOW ALL. The newest dozen are open and the rest of the week is folded
+ * behind this -- a display:none subtree fetches no images, so the week
+ * costs nothing until somebody asks for it.
+ */
+(function(){
+  var btn = document.getElementById('aFeedMore');
+  if (!btn) return;
+  var feed = btn.closest ? btn.closest('.a-feed') : null;
+  if (!feed) return;
+  var more = btn.textContent;
+  btn.addEventListener('click', function(){
+    var open = feed.classList.toggle('open');
+    btn.textContent = open ? btn.getAttribute('data-less') : more;
+    /* Collapsing from the bottom of a long list would leave the reader
+       somewhere arbitrary, so put them back at the feed's head. */
+    if (!open) feed.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+}());
+
 (function(){
   var feed = document.querySelector('.a-feed');
   if (!feed) return;

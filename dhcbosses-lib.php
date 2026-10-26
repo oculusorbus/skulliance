@@ -1542,10 +1542,28 @@ function dhcb_ladder_html($rows, $user_id, $guest, $empty) {
 	 * of leaving somebody invisible. They get no position number and the
 	 * row says what they need.
 	 */
-	$pos = 0;
+	$pos = 0; $brokeOut = false;
 	foreach ($rows as $i => $l) {
 		$unranked = isset($l['ranked']) && !$l['ranked'];
 		if (!$unranked) $pos++;
+		/*
+		 * A LINE THAT SAYS WHAT THE DIM ROWS ARE.
+		 *
+		 * They were simply greyed with a dash for a position and a "+1" in
+		 * the Crews column, and the only explanation was a paragraph under
+		 * the table. The owner looked at their own board and asked why
+		 * some rows were subdued, which settles it: if the person who
+		 * asked for the feature cannot read it at a glance, nobody can.
+		 *
+		 * The rule goes between the two groups, where the question gets
+		 * asked, and the "+N" goes away with it -- the line says three are
+		 * needed and the row says how many they have.
+		 */
+		if ($unranked && !$brokeOut) {
+			$brokeOut = true;
+			$h .= '<tr class="lad-break"><td colspan="5">Not yet ranked &middot; '
+			    . (int)DHCB_LADDER_MIN_RUNS . ' finished Crews puts you on the board</td></tr>';
+		}
 		$me = ((int)$l['user_id'] === (int)$user_id) ? ' class="me"' : '';
 		if ($unranked) $me = ' class="unranked' . ($me !== '' ? ' me' : '') . '"';
 		/* The Fighter count rides the Crews cell rather than taking a sixth
@@ -1558,10 +1576,6 @@ function dhcb_ladder_html($rows, $user_id, $guest, $empty) {
 		    . '<td class="r">' . number_format($l['dealt']) . '</td>'
 		    . '<td class="r" title="' . (int)$l['fighters'] . ' Fighters fielded">'
 		    . (int)$l['runs']
-		    . ($unranked
-		        ? ' <em title="A minimum of ' . (int)DHCB_LADDER_MIN_RUNS . ' finished Crews '
-		          . 'puts you on the board">+' . (int)$l['needs'] . '</em>'
-		        : '')
 		    . '</td>'
 		    . '</tr>';
 	}

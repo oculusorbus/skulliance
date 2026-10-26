@@ -746,6 +746,25 @@ ok(strpos($LIB, "\$unranked = isset(\$l['ranked']) && !\$l['ranked'];") !== fals
 ok(strpos($ARE, '.arena-wrap .a-lad .unranked{opacity:.5}') !== false,
    'the unranked rows are not dimmed, so they read as ranked positions');
 
+/*
+ * THE TRAIT GATE AND THE CARBON GATE ARE NOT THE SAME GATE.
+ *
+ * Asked within a minute of the board going up: "it's a 3 crew minimum to
+ * be eligible for the trait?" No -- DHCB_LADDER_MIN_RUNS exists only in
+ * dhcb_ladder(), and the settle pays one slot per ROUND attended, gated
+ * per run on damage-or-rounds. One Crew that does a real run banks that
+ * round's trait. But the two sit next to each other on the page, so the
+ * page has to say which is which.
+ */
+$settleFn = substr($LIB, strpos($LIB, 'function dhcb_settle('));
+$settleFn = substr($settleFn, 0, strpos($settleFn, "\n}\n") + 3);
+ok(strpos($settleFn, 'DHCB_LADDER_MIN_RUNS') === false,
+   'the trait settle now consults the LADDER minimum, so a player who sent one Crew and '
+ . 'fought is being denied the round\'s trait');
+ok(strpos($ARE, '<b>The traits are separate</b>') !== false,
+   'the ladder copy does not say the trait gate is a different gate, and the first '
+ . 'question anybody asked was whether three Crews are needed for a trait');
+
 /* ---------------------------------------------------------------- *
  * THE WEEK'S CREWS, DRAWN
  * ---------------------------------------------------------------- */
@@ -762,9 +781,19 @@ ok(strpos($ARE, 'if ($IS_BOSS && $dhcb_feed)') !== false,
    'the feed is not fenced to boss mode, so the Arena renders a boss report');
 /* THE SHARED REPORT, not a second query. admin-dhcbosses.php reads the same
    function; two of them would drift the first time either was touched. */
-ok(strpos($ARE, 'dhcb_runs_report($conn, null, 12)') !== false,
-   'the feed does not come from dhcb_runs_report(), or is not capped -- the admin report '
- . 'pulls 200 and every row here draws three Fighters');
+/* THE WHOLE WEEK IS FETCHED and all but the newest dozen are folded away.
+   A display:none subtree fetches no images, so the rest of the week costs
+   DOM nodes and no requests until somebody opens it. */
+ok(strpos($ARE, 'dhcb_runs_report($conn, null, 200)') !== false,
+   'the feed does not come from dhcb_runs_report(), or no longer reads the week');
+ok(strpos($ARE, '$FEED_OPEN = 12;') !== false,
+   'the feed opens on the whole week, which is a wall of rows on arrival');
+ok(strpos($ARE, '.arena-wrap .a-run.off,.arena-wrap .a-wavebreak.off{display:none}') !== false,
+   'the folded rows are not display:none, so the browser fetches every Fighter in the '
+ . 'week whether or not anybody opens it');
+ok(strpos($ARE, 'id="aFeedMore"') !== false
+   && strpos($ARE, "feed.classList.toggle('open')") !== false,
+   'there is no way to see the rest of the week');
 /*
  * THE CREW IS DRAWN THE WAY EVERY OTHER CREW ON THE PLATFORM IS, and the
  * first attempt drew nothing at all for two reasons worth recording.
@@ -881,7 +910,7 @@ if ($feedA2 !== false && $feedB2 !== false) {
  * there the greyed Fighters above and below the boundary look like one
  * long fight.
  */
-ok(strpos($ARE, 'class="a-wavebreak"') !== false,
+ok(strpos($ARE, 'class="a-wavebreak<?php echo $off; ?>"') !== false,
    'nothing marks where a wave ended, so the week reads as one undifferentiated list');
 ok(strpos($ARE, '$prevWave !== null && $wv < $prevWave') !== false,
    'the break is not driven by the wave each run was fought against');
