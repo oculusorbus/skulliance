@@ -636,16 +636,26 @@ function dhcb_wave($conn, $day = null) {
  * blurb, art. Empty if the table is missing, which every caller treats as
  * "the feature is not migrated yet" rather than as an error.
  */
-function dhcb_state($conn, $day = null) {
+function dhcb_state($conn, $day = null, $wave = null) {
 	if ($day === null) $day = dhcb_spawn($conn);
 	$esc = $conn->real_escape_string($day);
 	/* THE STANDING WAVE, which is the highest one on the week -- a wave only
 	   exists because the one before it fell. Reading every wave and summing
-	   would show a crew at a health nobody is fighting. */
+	   would show a crew at a health nobody is fighting.
+	 *
+	 * AN EXPLICIT WAVE ASKS FOR A CREW THAT IS NO LONGER STANDING, and the
+	 * one caller that wants that is the end of a run: a Crew that just
+	 * dropped the last boss has to be told about the crew it dropped, not
+	 * about the one that stood up in the same request. The share said
+	 * "CIP-666 is down, and the DHC Boss Crew is now 0% down" -- 0% being
+	 * the untouched wave behind it.
+	 */
+	$sel = ($wave === null) ? "(SELECT MAX(wave) FROM dhc_boss_day WHERE day = '$esc')"
+	                        : (string)max(1, (int)$wave);
 	$r = @$conn->query("SELECT boss_key, wave, max_health, health, killed_at, killed_by
 	                      FROM dhc_boss_day
 	                     WHERE day = '$esc'
-	                       AND wave = (SELECT MAX(wave) FROM dhc_boss_day WHERE day = '$esc')");
+	                       AND wave = $sel");
 	if (!$r) return array();
 	$have = array();
 	while ($x = $r->fetch_assoc()) $have[$x['boss_key']] = $x;
@@ -1021,14 +1031,226 @@ function dhcb_active($conn, $user_id) {
 }
 
 /**
+ * LAND THIS MOVE'S DAMAGE ON THE SHARED BARS, NOW, AND READ THEM BACK.
+ *
+ * WHY THIS IS NOT DONE AT THE END ANY MORE. It used to be: a run fought a
+ * private snapshot for twenty minutes and committed the lot on its last
+ * move, clamped to whatever was still on the bar. Two things came out of
+ * that, and a player hit both in the first week.
+ *
+ *   The bar lied. A run in progress was invisible to everyone else, so the
+ *   number on the page was up to twenty minutes stale and two Crews could
+ *   both be swinging at health that was already gone.
+ *
+ *   And the loser of that race banked NOTHING. Somebody went twenty rounds
+ *   against a crew that died under them, committed into empty bars, and
+ *   recorded a flat zero -- no damage, no ladder, no kill. They had done
+ *   the work. The clamp was right that the bar cannot go below zero; it was
+ *   wrong that the damage had to wait until the end to find that out.
+ *
+ * Committing per move fixes both at the root rather than compensating for
+ * them. Damage lands the instant it is dealt, so it can never be taken back
+ * by somebody else finishing first, and the bar everyone is looking at is
+ * current to the last move anybody made.
+ *
+ * AND THE BOARD IS RE-SYNCED FROM THE BAR, which is the other half. The
+ * foes a player is looking at ARE the shared crew, so when another Crew
+ * takes a boss down it goes down on this board too -- immediately, with a
+ * line in the log saying why. Nobody fights a corpse for fifteen rounds
+ * again, because there is no longer a window in which that is possible.
+ *
+ * Scoped to the wave this run was started against, like every other write
+ * here: a run that outlives its crew must not subtract from the one that
+ * replaced it.
+ */
+function dhcb_commit($conn, &$b, $dealtNow) {
+	$m    = $b['meta'];
+	$day  = isset($m['day'])  ? $m['day'] : dhcb_week($conn);
+	$wave = isset($m['wave']) ? max(1, (int)$m['wave']) : 1;
+	$uid  = (int)$m['attacker'];
+	$esc  = $conn->real_escape_string($day);
+
+	/* WHAT THIS RUN HAS ACTUALLY LANDED, carried on the run rather than
+	   re-derived. hp0 - hp stopped meaning "my damage" the moment the board
+	   started following the shared bar, because that difference now holds
+	   everybody's. */
+	if (!isset($b['meta']['sent']))   $b['meta']['sent']   = array();
+	if (!isset($b['meta']['killed'])) $b['meta']['killed'] = array();
+
+	/*
+	 * A BOSS ON THE DRAIN KIT HEALS ITSELF, AND THE BAR HAS TO SEE IT.
+	 *
+	 * dhca_heal() gives back 45% of what a drain hit landed, so a boss's
+	 * health goes UP between moves. Committing only the positive deltas
+	 * banked damage the boss then regenerated -- over a nineteen-move run
+	 * against this crew, 127 of 940 -- and the next re-sync pulled the
+	 * board back down to the bar, quietly erasing the heal on this board
+	 * too. The mechanic would have been dead and nothing would have said
+	 * so. Negative deltas are committed like any other, so the bar and the
+	 * board agree and a drain boss still drains.
+	 *
+	 * CAPPED AT THIS RUN'S OWN DAMAGE, below: a run can give back what it
+	 * took and not one point more, so no amount of healing can undo
+	 * somebody else's work or lift a bar above where this Crew found it.
+	 */
+	$write = array();
+	foreach ($dealtNow as $k => $v) if ((int)$v !== 0) $write[$k] = (int)$v;
+
+	$live  = array();   // boss_key => shared health, after this commit
+	$fresh = array();   // boss_key => this Crew took it to zero, this move
+
+	if ($write) {
+		$conn->begin_transaction();
+		try {
+			/*
+			 * LOCKED IN dhcb_bosses() ORDER, BY EVERY RUN, EVERY TIME.
+			 * Three rows is cheap enough to take all of them even when only
+			 * one is being written, and one fixed order over one fixed set
+			 * is what makes two Crews hitting the same crew in the same
+			 * instant impossible to deadlock rather than unlikely to.
+			 */
+			foreach (dhcb_bosses() as $bz) {
+				$k = $bz['key'];
+				$q = $conn->query("SELECT health FROM dhc_boss_day
+				                    WHERE day = '$esc' AND wave = $wave
+				                      AND boss_key = '" . $conn->real_escape_string($k) . "'
+				                    FOR UPDATE");
+				if (!$q || !$q->num_rows) continue;
+				$cur = (int)$q->fetch_assoc()['health'];
+				$live[$k] = $cur;
+				/* $cur <= 0 covers both directions: no damage lands on a
+				   corpse, and nothing gets a dead boss back on its feet in
+				   the middle of somebody's run. */
+				if (!isset($write[$k]) || $cur <= 0) continue;
+				$d = (int)$write[$k];
+				if ($d > 0) {
+					/* Still clamped, and now it almost never bites: the
+					   board was level with the bar one move ago, so the
+					   only thing this can trim is a collision inside the
+					   same instant. */
+					$hit = min($d, $cur);
+				} else {
+					$own = isset($b['meta']['sent'][$k]) ? (int)$b['meta']['sent'][$k] : 0;
+					$hit = -min(-$d, max(0, $own));
+				}
+				if ($hit === 0) continue;
+				$left = $cur - $hit;
+				$conn->query(sprintf(
+					"UPDATE dhc_boss_day SET health = %d%s
+					  WHERE day = '%s' AND wave = %d AND boss_key = '%s'",
+					$left, ($left <= 0 ? ", killed_at = NOW(), killed_by = $uid" : ''),
+					$esc, $wave, $conn->real_escape_string($k)));
+				$live[$k] = $left;
+				$b['meta']['sent'][$k] = (isset($b['meta']['sent'][$k])
+					? (int)$b['meta']['sent'][$k] : 0) + $hit;
+				if ($left <= 0) { $b['meta']['killed'][$k] = true; $fresh[$k] = true; }
+				/* A kill changes the world inside this request and the memo
+				   is how the rest of it would miss that. Cleared here, not
+				   only at the end of a run, because a kill is no longer
+				   something only the end of a run can do. */
+				if ($left <= 0) dhcb_spawn_memo(null, true);
+			}
+			$conn->commit();
+		} catch (Throwable $e) {
+			/* Nothing landed and nothing was recorded, so the board is left
+			   where it is and the next move tries again with its own
+			   damage. The run is not corrupted by a failed commit. */
+			$conn->rollback();
+			error_log('dhcb_commit: ' . $e->getMessage());
+			return;
+		}
+	} else {
+		/* A move that dealt nothing still reads the bar, because somebody
+		   else may have moved it -- that read is the whole point. No lock:
+		   there is nothing to write and a stale-by-microseconds number is
+		   corrected by the next move. */
+		$q = @$conn->query("SELECT boss_key, health FROM dhc_boss_day
+		                     WHERE day = '$esc' AND wave = $wave");
+		if ($q) while ($x = $q->fetch_assoc()) $live[$x['boss_key']] = (int)$x['health'];
+	}
+
+	/*
+	 * THE BOARD FOLLOWS THE BAR, DOWNWARD ONLY.
+	 *
+	 * min() against what is already on screen is a guard, not arithmetic: a
+	 * boss must never heal mid-fight because a read came back odd. Within a
+	 * wave the shared health only falls, so in practice this is an
+	 * assignment.
+	 */
+	foreach ($b['foes'] as $i => $f) {
+		if (empty($f['bossKey'])) continue;
+		$k = $f['bossKey'];
+		if (!isset($live[$k])) continue;
+		$was = max(0, (int)$f['hp']);
+		$now = max(0, min($was, (int)$live[$k]));
+		if ($now === $was) continue;
+		$b['foes'][$i]['hp'] = $now;
+		if ($now <= 0) {
+			if (!empty($b['foes'][$i]['ko'])) continue;
+			$b['foes'][$i]['ko'] = true;
+			/* Not this Crew's kill, or dhca_turn() would have called it. */
+			if (empty($fresh[$k])) $b['log'][] = '☠ ' . $f['name'] . ' fell to another Crew.';
+		} elseif (empty($fresh[$k])) {
+			/*
+			 * SAY WHY THE BAR JUMPED. A health bar that drops on its own is
+			 * the kind of unexplained thing players report as a bug. One
+			 * per cent of the boss keeps a trickle of concurrent chip
+			 * damage from burying this Crew's own log.
+			 */
+			$mx = max(1, (int)$f['maxHp']);
+			if (($was - $now) * 100 >= $mx)
+				$b['log'][] = '⚔ Another Crew is on ' . $f['name']
+				            . ' — ' . number_format($now) . ' left.';
+		}
+	}
+}
+
+/**
  * One move. The exchange itself is dhca_turn() -- the Arena's, not a copy.
  */
 function dhcb_move($conn, $user_id, $run_id, $a, $z) {
 	$b = dhcb_load($conn, $run_id, $user_id);
 	if (!$b) return array(false, 'No run in progress.', null);
 
+	/*
+	 * THIS MOVE'S DAMAGE, MEASURED AS A DELTA ACROSS THE EXCHANGE, because
+	 * hp0 - hp is everybody's damage now that the board follows the shared
+	 * bar. The difference either side of dhca_turn() is this Crew's alone.
+	 *
+	 * A RUN THAT PREDATES PER-MOVE COMMIT measures from hp0 instead, once:
+	 * it has been fighting a private snapshot and owes the bar everything
+	 * it has dealt so far. meta.sent is the marker, and it exists from the
+	 * first commit onward, so this is true exactly once per legacy run.
+	 */
+	$owed   = !isset($b['meta']['sent']);
+	$before = array();
+	foreach ($b['foes'] as $i => $f)
+		$before[$i] = $owed && isset($f['hp0']) ? (int)$f['hp0'] : (int)$f['hp'];
+
 	list($ok, $msg) = dhca_turn($b, $a, $z);
 	if (!$ok) return array(false, $msg, $b);
+
+	$dealtNow = array();
+	foreach ($b['foes'] as $i => $f) {
+		if (empty($f['bossKey'])) continue;
+		/* NEGATIVE TOO: a drain boss heals itself between moves and the
+		   bar has to see that, or the heal is banked as damage and then
+		   erased off this board by the next re-sync. */
+		$d = $before[$i] - max(0, (int)$f['hp']);
+		if ($d !== 0) $dealtNow[$f['bossKey']] = $d;
+	}
+	dhcb_commit($conn, $b, $dealtNow);
+
+	/*
+	 * THE COMMIT CAN END THE RUN, so the check happens after it rather than
+	 * only inside dhca_turn(). A boss this Crew never touched can come back
+	 * from that read already dead, and if it was the last one standing the
+	 * run is over -- with every point this Crew landed already banked.
+	 */
+	if ($b['over'] === null) {
+		dhca_check_over($b);
+		if ($b['over'] !== null) dhca_final_hurrah($b);
+	}
 
 	if ($b['over'] !== null) dhcb_finish($conn, $b);
 	else                     dhcb_save($conn, $run_id, $user_id, $b);
@@ -1038,20 +1260,16 @@ function dhcb_move($conn, $user_id, $run_id, $a, $z) {
 /* ---------- the end of a run ------------------------------------------------ */
 
 /**
- * Settle a run: commit its damage to the shared bars, record it, bench the
- * Crew.
+ * Close a run: record it, bench the Crew, announce it.
  *
- * THE DAMAGE IS COMMITTED UNDER A ROW LOCK, and this is the one place where
- * two players genuinely collide. Both may have started against a boss on
- * 1,000 health and both may have taken 800 off their own snapshot; between
- * them they cannot remove 1,600 from a bar that only had 1,000 on it. The
- * row is read FOR UPDATE, the damage is clamped to what is actually left,
- * and the clamped figure is what gets recorded -- so the ledger adds up to
- * the health that really came off and the leaderboard cannot be inflated by
- * racing somebody.
+ * IT NO LONGER COMMITS ANY DAMAGE. dhcb_commit() did that on every move, as
+ * the damage was dealt -- read the long note there for why it moved. What
+ * is left here is bookkeeping over a figure that is already true, and the
+ * figure is meta.sent: the sum of what this run ACTUALLY took off the
+ * shared bars, under a row lock, move by move.
  *
  * Idempotent. A retried request finds outcome already set and does nothing,
- * because a double-settled run would pay its damage twice.
+ * because a double-settled run would bench the Crew twice and post twice.
  */
 function dhcb_finish($conn, &$b) {
 	$m   = $b['meta'];
@@ -1064,62 +1282,35 @@ function dhcb_finish($conn, &$b) {
 	$row = $r->fetch_assoc();
 	if ((int)$row['outcome'] !== 0) return;              // already settled
 
-	$cleared = ($b['over'] === 'mine');                  // this run dropped all three
+	$cleared = ($b['over'] === 'mine');                  // the crew was down when this ended
 	$outcome = $cleared ? 1 : 2;
+	$wave    = isset($m['wave']) ? max(1, (int)$m['wave']) : 1;
 
-	$applied = array();    // boss_key => damage that actually landed
-	$killed  = array();    // boss_key => this run dropped it
-	$total   = 0;
 	/*
-	 * THE WAVE THIS RUN WAS FOUGHT AGAINST, and every write below is scoped
-	 * to it.
-	 *
-	 * Without that scope a run that started against wave 1, and finished
-	 * after somebody else dropped wave 1 and raised wave 2, would subtract
-	 * its damage from wave 2 -- a crew it never saw, at a health it was
-	 * never scaled against. Scoped, the damage lands on the row it was
-	 * earned from, which is already at zero, and the existing clamp turns it
-	 * into nothing. That is the correct answer: somebody else finished the
-	 * crew you were fighting.
+	 * A RUN THAT PREDATES PER-MOVE COMMIT, closed without making another
+	 * move -- the stale sweep reaching one that was mid-fight when this
+	 * shipped. It owes the bar everything it dealt, so it pays it here,
+	 * through the same function and the same row lock as every other
+	 * commit. There is one damage path, not two.
 	 */
-	$wave = isset($m['wave']) ? max(1, (int)$m['wave']) : 1;
-
-	$conn->begin_transaction();
-	try {
-		foreach ($b['foes'] as $i => $f) {
+	if (!isset($b['meta']['sent'])) {
+		$owed = array();
+		foreach ($b['foes'] as $f) {
 			if (empty($f['bossKey'])) continue;
-			$key  = $f['bossKey'];
-			$hp0  = isset($f['hp0']) ? (int)$f['hp0'] : (int)$f['maxHp'];
-			$want = max(0, $hp0 - max(0, (int)$f['hp']));
-			if ($want <= 0) { $applied[$key] = 0; continue; }
-
-			$q = $conn->query("SELECT health FROM dhc_boss_day
-			                    WHERE day = '" . $conn->real_escape_string($day) . "'
-			                      AND wave = $wave
-			                      AND boss_key = '" . $conn->real_escape_string($key) . "'
-			                    FOR UPDATE");
-			if (!$q || !$q->num_rows) { $applied[$key] = 0; continue; }
-			$cur  = (int)$q->fetch_assoc()['health'];
-			$hit  = min($want, max(0, $cur));
-			$left = $cur - $hit;
-			if ($hit > 0) {
-				$conn->query(sprintf(
-					"UPDATE dhc_boss_day SET health = %d%s
-					  WHERE day = '%s' AND wave = %d AND boss_key = '%s'",
-					$left,
-					($left <= 0 ? ", killed_at = NOW(), killed_by = $uid" : ''),
-					$conn->real_escape_string($day), $wave, $conn->real_escape_string($key)));
-			}
-			$applied[$key] = $hit;
-			$total += $hit;
-			if ($left <= 0 && $cur > 0) $killed[$key] = true;
+			$d = (isset($f['hp0']) ? (int)$f['hp0'] : (int)$f['maxHp']) - max(0, (int)$f['hp']);
+			if ($d > 0) $owed[$f['bossKey']] = $d;
 		}
-		$conn->commit();
-	} catch (Throwable $e) {
-		$conn->rollback();
-		error_log('dhcb_finish: ' . $e->getMessage());
-		return;
+		dhcb_commit($conn, $b, $owed);
+		$m = $b['meta'];
 	}
+
+	/* WHAT LANDED, AND WHAT THIS CREW DROPPED. Both were written under the
+	   row lock at the moment they happened, so neither can be contradicted
+	   by anything that has occurred since. */
+	$applied = isset($m['sent'])   && is_array($m['sent'])   ? $m['sent']   : array();
+	$killed  = isset($m['killed']) && is_array($m['killed']) ? $m['killed'] : array();
+	$total   = 0;
+	foreach ($applied as $v) $total += max(0, (int)$v);
 
 	/* The Crew rests from BOSSES only. Nothing here touches dhc_arena_fighters. */
 	foreach ($m['mineIds'] as $i => $fid) {
@@ -1162,6 +1353,17 @@ function dhcb_finish($conn, &$b) {
 	$b['dealtTotal'] = $total;
 	$b['applied']    = $applied;
 	$b['killedKeys'] = array_keys($killed);
+	/*
+	 * THE CREW THIS RUN FOUGHT, for the share and the end card.
+	 *
+	 * Read AFTER the spawn memo is cleared and scoped to this run's own
+	 * wave, so a Crew that just dropped the last boss is described against
+	 * the crew it dropped. Unscoped it read whatever had stood up in the
+	 * meantime, and the share for a clear said "CIP-666 is down, and the
+	 * DHC Boss Crew is now 0% down" -- nought per cent being the untouched
+	 * replacement.
+	 */
+	$b['waveProg'] = dhcb_progress(dhcb_state($conn, $day, $wave));
 
 	/* A sweep closing an abandoned run has nobody to report on. */
 	if (empty($b['forfeit'])) dhcb_announce($conn, $b, $total, array_keys($killed));

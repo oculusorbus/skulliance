@@ -307,7 +307,9 @@ class HBRes {
 	public function fetch_assoc() { return isset($this->rows[$this->i]) ? $this->rows[$this->i++] : null; }
 }
 class HBConn {
-	public $health = array();     // boss_key => health
+	public $health = array();     // boss_key => health, now
+	public $maxHealth = array();  // boss_key => health at spawn (defaults to now)
+	public $state = array();      // run_id => the saved battle JSON
 	public $runOutcome = 0;
 	public $log = array();
 	public $insert_id = 1;
@@ -316,6 +318,28 @@ class HBConn {
 	public function commit()   { $this->log[] = 'COMMIT'; return true; }
 	public function rollback() { $this->log[] = 'ROLLBACK'; return true; }
 	public function query($sql) {
+		/*
+		 * THE RUN STATE IS HANDLED BEFORE THE WHITESPACE IS COLLAPSED. The
+		 * payload is a JSON battle and the log lines inside it carry real
+		 * spacing; squeezing runs of whitespace out of it would hand back a
+		 * different battle than the one that was saved.
+		 */
+		if (stripos(ltrim($sql), 'INSERT INTO dhc_boss_state') === 0) {
+			if (preg_match("~VALUES \((\d+),(\d+),'(.*)',NOW\(\)\)~s", $sql, $m))
+				$this->state[(int)$m[1]] = stripslashes($m[3]);
+			return true;
+		}
+		if (stripos(ltrim($sql), 'SELECT state FROM dhc_boss_state') === 0) {
+			preg_match('~run_id = (\d+)~', $sql, $m);
+			$rid = $m ? (int)$m[1] : 0;
+			return isset($this->state[$rid])
+				? new HBRes(array(array('state' => $this->state[$rid]))) : new HBRes();
+		}
+		if (stripos(ltrim($sql), 'DELETE FROM dhc_boss_state') === 0) {
+			preg_match('~run_id = (\d+)~', $sql, $m);
+			if ($m) unset($this->state[(int)$m[1]]);
+			return true;
+		}
 		$q = preg_replace('~\s+~', ' ', trim($sql));
 		$this->log[] = $q;
 		if (stripos($q, 'SELECT outcome FROM dhc_boss_runs') === 0)
@@ -325,6 +349,20 @@ class HBConn {
 			$k = $m[1];
 			if (!isset($this->health[$k])) return new HBRes();
 			return new HBRes(array(array('health' => $this->health[$k])));
+		}
+		/* THE WHOLE CREW IN ONE READ, which is how dhcb_commit() re-syncs a
+		   board on a move that dealt nothing, and how dhcb_state() describes
+		   the crew a run fought. A stub that answered `true` here sent the
+		   code down a path no real connection can produce. */
+		if (stripos($q, 'SELECT boss_key, health FROM dhc_boss_day') === 0
+		 || stripos($q, 'SELECT boss_key, wave, max_health, health') === 0) {
+			$rows = array();
+			foreach ($this->health as $k => $h) {
+				$mx = isset($this->maxHealth[$k]) ? (int)$this->maxHealth[$k] : max(1, (int)$h);
+				$rows[] = array('boss_key'=>$k, 'wave'=>1, 'max_health'=>$mx,
+				                'health'=>(int)$h, 'killed_at'=>null, 'killed_by'=>0);
+			}
+			return new HBRes($rows);
 		}
 		if (stripos($q, 'UPDATE dhc_boss_day SET health =') === 0) {
 			preg_match('~SET health = (-?\d+)~', $q, $hm);
@@ -391,6 +429,190 @@ $b3 = hb_battle(array('d34thbrngr'=>1000), array('d34thbrngr'=>500));
 dhcb_finish($c2, $b3);
 ok($c2->health['d34thbrngr'] === 1000,
    'a run that was already settled committed its damage a second time');
+
+/* ---------------------------------------------------------------- *
+ * NOBODY FIGHTS A CORPSE: THE COMMIT IS PER MOVE
+ * ---------------------------------------------------------------- */
+echo "\nthe crew falling under a Crew costs it nothing it had already landed\n";
+/*
+ * THE BUG THIS REPLACED, REPORTED IN THE FIRST WEEK.
+ *
+ * Damage used to be committed in one lump on a run's last move, clamped to
+ * whatever was still on the bar. A player went twenty rounds, the crew died
+ * under them to somebody else, their lump landed on empty bars and they
+ * recorded a flat zero -- no damage, no ladder, no kill, after doing the
+ * work. The feed had to grow a "Beaten to it" label to explain it.
+ *
+ * dhcb_commit() lands each move's damage as it is dealt, and re-syncs the
+ * board from the shared bar, so there is no window in which either of those
+ * can happen. Driven here through the REAL dhcb_move() against the REAL
+ * engine, with a stub standing in only for the connection -- a check that
+ * read the source for the word "commit" would pass on code that committed
+ * the wrong number.
+ */
+/* 15838 RATHER THAN THE 7919 THE SECTION ABOVE USES: that seed produces a
+   four-move run, which leaves room for one move of damage either side of an
+   interruption and tests almost nothing. This one runs nineteen. */
+function hb_board($hpEach, $rid = 41, $uid = 7, $seed = 15838) {
+	$order = dhcb_bosses(); $kits = dhca_kits();
+	$foeT = array(); $foeN = array();
+	foreach ($order as $b) { $foeT[] = array(); $foeN[] = $b['name']; }
+	$bat = dhca_new_battle(
+		array(array('background'=>'hellscape','torso'=>'red-cyborg','head'=>'gas-mask'),
+		      array('background'=>'white','torso'=>'c38','head'=>'sentinel'),
+		      array('background'=>'bright-red','torso'=>'silver-cyborg','head'=>'c73')),
+		$foeT, array('mine'=>array('A','B','C'), 'foes'=>$foeN), dhcf_rarity(), $seed);
+	foreach ($order as $i => $b) {
+		$bat['foes'][$i]['bossKey'] = $b['key'];
+		$bat['foes'][$i]['maxHp']   = $hpEach;
+		$bat['foes'][$i]['hp']      = $hpEach;
+		$bat['foes'][$i]['hp0']     = $hpEach;
+		$bat['foes'][$i]['power']   = (int)round(DHCA_POWER_BASE * DHCB_POW_MULT * $b['pow']);
+		$bat['foes'][$i]['kit']     = $kits[$b['kit'] % count($kits)];
+	}
+	/* forfeit: dhcb_finish() skips the Discord post. webhooks.php defines
+	   discordmsg() on this machine, so without it the harness would post. */
+	$bat['forfeit'] = true;
+	$bat['meta'] = array('attacker'=>$uid, 'run_id'=>$rid, 'day'=>'2026-10-25', 'wave'=>1,
+	                     'mineIds'=>array(1,2,3), 'moves'=>array(), 'boss'=>true);
+	return $bat;
+}
+/** Play a run move by move through dhcb_move(). $at fires before move N. */
+function hb_play($c, $bat, $maxTurns = 400, $at = null) {
+	$rid = (int)$bat['meta']['run_id']; $uid = (int)$bat['meta']['attacker'];
+	dhcb_save($c, $rid, $uid, $bat);
+	$turns = 0; $last = $bat;
+	while ($turns < $maxTurns) {
+		$b = dhcb_load($c, $rid, $uid);
+		if (!$b || $b['over'] !== null) break;
+		$best = null; $bs = 0;
+		foreach (dhca_all_slides() as $mv) {
+			$sc = dhca_score_move($b, 'mine', $mv[0], $mv[1]);
+			if ($sc > $bs) { $bs = $sc; $best = $mv; }
+		}
+		if (!$best) break;
+		if ($at) $at($c, $turns);
+		list($ok, $msg, $out) = dhcb_move($c, $uid, $rid, $best[0], $best[1]);
+		if (!$ok) break;
+		$last = $out; $turns++;
+	}
+	return array($last, $turns);
+}
+
+/* ---- a clean run: what the bar loses is exactly what the run records ---- */
+$cc = new HBConn();
+$cc->health = $cc->maxHealth = array('d34thbrngr'=>900000, 'cip-666'=>900000, 'x-k4t'=>900000);
+$start = array_sum($cc->health);
+list($rb, $rt) = hb_play($cc, hb_board(900000));
+$removed = $start - array_sum($cc->health);
+/*
+ * AN INDEPENDENT ORACLE, because the two obvious numbers move together.
+ *
+ * "the bars lost what the run recorded" passes just as happily when BOTH
+ * are double -- which is exactly what committing per move and again at the
+ * close would produce, and a mutation proved it passes. hb_run() plays the
+ * same seed through dhca_turn() with no commit anywhere near it, so the
+ * damage it measures is the engine's alone and neither of the figures below
+ * can be graded against itself.
+ */
+list($ref, $rtn) = hb_run($mine, $rar, 15838, 900000);
+$true = 0; foreach ($ref['foes'] as $f) $true += $f['hp0'] - max(0, $f['hp']);
+ok($rt > 1, "the run only managed $rt move(s), so nothing below is exercising anything");
+ok($rt === $rtn, "the same seed played $rt moves through dhcb_move() and $rtn through the "
+               . 'engine alone, so the two runs below are not the same fight');
+ok($rb['over'] !== null, 'the run never resolved');
+ok((int)$rb['dealtTotal'] === $true,
+   'the engine dealt ' . $true . ' and the run recorded ' . (int)$rb['dealtTotal']);
+ok($removed === $true,
+   'the engine dealt ' . $true . ' and the bars lost ' . $removed
+ . ' -- the commit is landing a different number than the fight produced');
+ok($removed <= $start, 'the bars went below where they started');
+
+/* ---- the crew dies under the Crew, three moves in ---- */
+$cd = new HBConn();
+$cd->health = $cd->maxHealth = array('d34thbrngr'=>900000, 'cip-666'=>900000, 'x-k4t'=>900000);
+/* HALFWAY THROUGH A RUN OF THE LENGTH THIS SEED ACTUALLY PRODUCES. Fixed at
+   three, the kill landed on the same move the Crew was wiped on, and the test
+   was measuring a coincidence rather than the rule. */
+$killedAt = max(1, (int)floor($rt / 2));
+list($db, $dt) = hb_play($cd, hb_board(900000, 42), 400, function ($c, $turn) use ($killedAt) {
+	/* Another Crew finishes all three, between this Crew's moves. */
+	if ($turn === $killedAt) foreach ($c->health as $k => $v) $c->health[$k] = 0;
+});
+ok($dt === $killedAt + 1,
+   "the run played $dt moves; it should have ended on the move after the crew fell ($killedAt + 1). "
+ . 'A Crew that keeps swinging at a crew that is already down is the reported bug');
+ok((int)$db['dealtTotal'] > 0,
+   'the run banked ' . (int)$db['dealtTotal'] . ' after the crew fell under it. THIS IS THE BUG: '
+ . 'every point it landed in the first ' . $killedAt . ' moves was already committed and must survive');
+ok(empty($db['killedKeys']),
+   'the run is credited with kills it did not land: ' . implode(',', (array)$db['killedKeys']));
+ok($db['over'] !== null && $dt < $rt,
+   'the run did not end early: it played ' . $dt . ' moves of the ' . $rt
+ . ' this seed produces, so the crew going down did not stop it');
+$allKo = true;
+foreach ($db['foes'] as $f) if (empty($f['ko'])) $allKo = false;
+ok($allKo, 'a boss that is down on the shared bar is still standing on this board');
+$hpLeft = 0; foreach ($db['foes'] as $f) $hpLeft += max(0, (int)$f['hp']);
+ok($hpLeft === 0, "the board shows $hpLeft health on a crew the week has at zero");
+$told = false;
+foreach ((array)$db['log'] as $l) if (strpos($l, 'fell to another Crew') !== false) $told = true;
+ok($told, 'the board goes silent while three bosses drop on their own, which reads as a bug');
+
+/* ---- and a legacy run, mid-fight when this shipped, pays exactly once ---- */
+$cl = new HBConn();
+$cl->health = $cl->maxHealth = array('d34thbrngr'=>900000, 'cip-666'=>900000, 'x-k4t'=>900000);
+$leg = hb_board(900000, 43);
+foreach ($leg['foes'] as $i => $f) $leg['foes'][$i]['hp'] = 900000 - 2000;   // dealt, never committed
+unset($leg['meta']['sent']);
+list($lb, $lt) = hb_play($cl, $leg, 1);              // exactly one move
+$owed = 3 * 2000;
+ok($lt === 1, 'the legacy run did not take its one move');
+$landed = 2700000 - array_sum($cl->health);
+ok($landed >= $owed,
+   "a run that predates per-move commit landed $landed, which does not cover the $owed it "
+ . 'had already dealt -- its whole fight so far was dropped');
+list($lb2, $lt2) = hb_play($cl, dhcb_load($cl, 43, 7), 1);
+$after = 2700000 - array_sum($cl->health);
+ok($after - $landed < $owed,
+   'the backlog was committed a second time on the next move, so a legacy run pays twice');
+
+/* ---- a drain boss heals the bar, but only out of its own run's damage ---- */
+/*
+ * The drain kit gives a boss 45% of what it hits for, so its health goes UP
+ * between moves and the shared bar has to follow or the heal is banked as
+ * damage and then erased off the board by the next re-sync. What it must
+ * never do is hand back damage this run did not deal.
+ */
+$ch = new HBConn();
+$ch->health = $ch->maxHealth = array('d34thbrngr'=>1000);
+$hb = array('log'=>array(), 'meta'=>array('attacker'=>7, 'day'=>'2026-10-25', 'wave'=>1),
+            'foes'=>array(array('bossKey'=>'d34thbrngr', 'name'=>'D34THBRNGR',
+                                'hp'=>1000, 'maxHp'=>1000, 'hp0'=>1000, 'ko'=>false)));
+dhcb_commit($ch, $hb, array('d34thbrngr' => 60));
+ok($ch->health['d34thbrngr'] === 940, 'the bar is at ' . $ch->health['d34thbrngr'] . ', expected 940');
+dhcb_commit($ch, $hb, array('d34thbrngr' => -500));      // heals ten times what it took
+ok($ch->health['d34thbrngr'] === 1000,
+   'a heal put the bar at ' . $ch->health['d34thbrngr'] . ', above the 1000 this run found it at '
+ . '-- a drain boss can hand back damage somebody else dealt');
+ok((int)$hb['meta']['sent']['d34thbrngr'] === 0,
+   'the run still claims ' . (int)$hb['meta']['sent']['d34thbrngr'] . ' damage it healed back');
+$ch->health['d34thbrngr'] = 0;
+$hb['meta']['sent']['d34thbrngr'] = 400;
+dhcb_commit($ch, $hb, array('d34thbrngr' => -300));
+ok($ch->health['d34thbrngr'] === 0, 'a drain boss got back up after the week had put it down');
+
+/* ---- the lock order is fixed, which is what makes it deadlock-free ---- */
+$seen = array();
+foreach ($cd->log as $q)
+	if (stripos($q, 'SELECT health FROM dhc_boss_day') === 0 && stripos($q, 'FOR UPDATE') !== false
+	    && preg_match("~boss_key = '([^']+)'~", $q, $m)) $seen[] = $m[1];
+$order = array(); foreach (dhcb_bosses() as $bz) $order[] = $bz['key'];
+$chunks = array_chunk($seen, count($order));
+$fixed = count($chunks) > 0;
+foreach ($chunks as $ch) if (count($ch) === count($order) && $ch !== $order) $fixed = false;
+ok($fixed, 'the rows are not locked in one fixed order, so two Crews committing in the same '
+         . 'instant can deadlock rather than queue');
 
 /* ---------------------------------------------------------------- *
  * THE DAILY SETTLE
@@ -1483,8 +1705,8 @@ ok(strpos($LIB, "* \$b['pow'] * \$wpow") !== false,
  * against. Scoped, it lands on a row already at zero and the clamp makes it
  * nothing, which is the correct answer.
  */
-$fin = substr($LIB, strpos($LIB, 'function dhcb_finish('));
-$fin = substr($fin, 0, strpos($fin, 'function dhcb_bench('));
+$fin = substr($LIB, strpos($LIB, 'function dhcb_commit('));
+$fin = substr($fin, 0, strpos($fin, 'function dhcb_move('));
 ok(strpos($fin, 'AND wave = $wave') !== false,
    'the FOR UPDATE read is not scoped to the wave, so a late-finishing run reads the wrong bar');
 ok(strpos($fin, "AND wave = %d AND boss_key = '%s'") !== false,
@@ -1492,10 +1714,20 @@ ok(strpos($fin, "AND wave = %d AND boss_key = '%s'") !== false,
 ok(strpos($fin, 'dhcb_spawn_memo(null, true)') !== false,
    'a kill does not clear the spawn memo, so the reply shows the crew that was just '
  . 'dropped and the end card never says the player finished them');
+/* And the unlocked re-sync read is scoped the same way, or a board would
+   follow a bar belonging to the wave that replaced the one it is fighting. */
+ok(strpos($fin, "SELECT boss_key, health FROM dhc_boss_day\n\t\t                     WHERE day = '\$esc' AND wave = \$wave") !== false,
+   'the re-sync read is not scoped to the wave, so a board follows the crew that '
+ . 'replaced the one it is fighting');
 
-/* THE STATE IS THE STANDING WAVE, not every wave summed. */
-ok(strpos($LIB, 'wave = (SELECT MAX(wave) FROM dhc_boss_day') !== false,
+/* THE STATE IS THE STANDING WAVE unless a caller names one, and the only
+   caller that names one is the end of a run describing the crew it fought. */
+ok(strpos($LIB, "(SELECT MAX(wave) FROM dhc_boss_day WHERE day = '\$esc')") !== false
+   && strpos($LIB, 'AND wave = $sel') !== false,
    'dhcb_state() reads every wave of the week, so the bar shows a health nobody is fighting');
+ok(strpos($LIB, '$sel = ($wave === null) ?') !== false,
+   'dhcb_state() cannot be asked for a named wave, so a run that just cleared the crew '
+ . 'is described against the untouched one that replaced it');
 
 /* AND THE GATE NO LONGER CLOSES THE WEEK. */
 ok(strpos($LIB, 'They return tomorrow.') === false,

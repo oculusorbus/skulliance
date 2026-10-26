@@ -4,6 +4,13 @@ Three bosses stand up every **Thursday at 4pm CT** with a health bar each, and *
 shares them**. You can send **three Crews a round**, a round being 24 hours from 4pm CT; every
 point of damage anyone lands comes off the same three bars, all week.
 
+Your damage lands the moment you deal it. The bar everyone is looking at is current to
+the last move anybody made, so nothing you land can be taken back by somebody else
+finishing first, and the bosses on your own board are the shared crew: if another Crew
+takes one down while you are out there, it goes down in front of you and the log says
+so. If they take the last one down, your run ends there and everything you landed
+counts in full.
+
 It has **its own page**, the Bosses tab in the DHC strip, with its own Crew picker and
 its own ladder. It is the same engine as [[games-dhc-arena]] underneath, which is why the
 board, the gems, the reach rule and the bombs are identical, but the two are separate
@@ -144,7 +151,7 @@ deliver, so a perfect week always clears it.
 
 Everybody who sends a Crew appears. The minimum decides who can hold a **position** and who is paid, not who is listed, so if you are a Crew or two short the board tells you how many rather than leaving you off it.
 
-A Crew that landed nothing because the boss crew fell while it was still out there does not count against your average, and the round still banks its trait. You turned up; the clamp is not your fault.
+A Crew that was still out there when the boss crew fell keeps every point it landed, because damage is committed as it is dealt rather than at the end of a run. It does not land the last blow and it is not credited with the kill, but the damage, the round and the trait are all yours.
 
 Ranked on **damage per Fighter deployed**, not on total damage. Sending more
 Fighters is not the same as fighting well, and a player with five good

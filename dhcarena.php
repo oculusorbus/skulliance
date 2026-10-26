@@ -3959,7 +3959,23 @@ function showEnd(res){
      */
     var pr = res.progress;
     var dropped = pr && (pr.cleared || (res.wave && pr.wave > res.wave));
-    if (dropped) {
+    if (dropped && res.assist) {
+      /*
+       * THE CREW FELL TO SOMEBODY ELSE WHILE THIS ONE WAS OUT THERE.
+       *
+       * It used to bank nothing and the row read "Beaten to it". Damage is
+       * committed move by move now, so every point this Crew landed is
+       * already on the board and already paid -- but it did not land the
+       * last blow, and saying "that is the crew down" would hand it a kill
+       * that belongs to another player.
+       */
+      $('ecTitle').textContent = 'The crew went down';
+      card.className = 'endcard win';
+      sub = 'Another Crew landed the last blow while you were still out there. '
+          + 'Your ' + dealt.toLocaleString() + ' damage is already on the board '
+          + 'and it counts in full — the round, the cache slot and the ladder.';
+      if (pr.wave > 1) sub += ' They are getting back up angrier: wave ' + pr.wave + '.';
+    } else if (dropped) {
       $('ecTitle').textContent = 'The crew is down';
       card.className = 'endcard win';
       sub = dealt.toLocaleString() + ' damage, and that is the crew down — '

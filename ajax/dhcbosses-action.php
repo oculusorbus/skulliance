@@ -11,9 +11,11 @@
  * endpoint: iOS and the PWA drop PHPSESSID and keep SessionCookie, so a check
  * made before the restore logs out every PWA player instead of every guest.
  *
- * Nothing slow lives in the turn request. The damage commit, the Discord post
- * and the share text all happen inside dhcb_finish(), which is reached only on
- * the move that ends a run.
+ * Nothing slow lives in the turn request. The Discord post and the share text
+ * happen inside dhcb_finish(), which is reached only on the move that ends a
+ * run. The DAMAGE COMMIT is on every move -- dhcb_commit() -- and is three
+ * locked reads and at most three updates on a three-row table, which is
+ * cheaper than the dhcb_bars() read this endpoint already does per move.
  */
 include '../db.php';
 require_once __DIR__ . '/../dhc-json.php';
@@ -86,9 +88,18 @@ if ($do === 'move') {
 			$kb = dhcb_boss($k); if ($kb) $killed[] = $kb['name'];
 		}
 		$out['killed'] = $killed;
+		/* WAS THIS CREW STILL OUT THERE WHEN THE BOSSES FELL. With damage
+		   committed move by move it cannot be "beaten to it" any more --
+		   everything it landed is banked -- but it did not land the last
+		   blow either, and the end card must not congratulate it for one. */
+		$out['assist'] = !$killed && !empty($b['waveProg']['cleared']);
+		/* THE CREW THIS RUN FOUGHT, not the one standing after it. A clear
+		   stands the next wave up in this same request, so the live bars
+		   describe an untouched crew at nought per cent. */
+		$prog = isset($b['waveProg']) ? $b['waveProg'] : $out['progress'];
 		/* Built server-side so the post cannot claim something the run did
 		   not do, and so the 280-character budget is enforced in one place. */
-		$out['share']  = dhcb_share_text($out['dealt'], $killed, $out['progress']);
+		$out['share']  = dhcb_share_text($out['dealt'], $killed, $prog);
 	}
 	dhcb_out(true, '', $out);
 }
